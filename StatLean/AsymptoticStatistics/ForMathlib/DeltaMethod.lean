@@ -20,7 +20,7 @@ the instance `E := EuclideanSpace ℝ (Fin k)`, `F := EuclideanSpace ℝ (Fin m)
   first-order Taylor remainder. Given consistency `T k → θ₀` in probability and
   tightness `sqn k • (T k − θ₀) = O_P(1)`, the scaled Fréchet remainder `→ₚ 0`. **The one
   genuinely new mathematical brick.**
-* `delta_method` — the headline. Consistency and tightness are **derived** from the weak
+* `delta_method` — the main theorem. Consistency and tightness are **derived** from the weak
   convergence hypothesis `h_wc` (Prokhorov, via `isBoundedInProb_of_weakConverges` and
   `tendstoInProbZero_of_isBoundedInProb_smul`); they are *not* free hypotheses. Assembly:
   push the source law through the linear `φ'` (`WeakConverges.map`), then bridge to the
@@ -82,10 +82,10 @@ theorem delta_method_remainder
     by_cases hd : δ ≤ ‖T k ω - θ₀‖
     · exact Or.inl hd
     · refine Or.inr ?_
-      show M < ‖sqn k • (T k ω - θ₀)‖
-      push_neg at hd
+      change M < ‖sqn k • (T k ω - θ₀)‖
+      push Not at hd
       by_contra hM'
-      push_neg at hM'
+      push Not at hM'
       have hxδ : dist (T k ω) θ₀ < δ := by rwa [dist_eq_norm]
       have hR : ‖φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀)‖ ≤ (ε / (2 * M)) * ‖T k ω - θ₀‖ :=
         hδ hxδ
@@ -133,19 +133,12 @@ theorem delta_method
     [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
       [SecondCountableTopology F] [Nonempty F]
     {P : ∀ k, Measure (Ω k)} [∀ k, IsProbabilityMeasure (P k)]
-    -- LEAN-ONLY: measurability of the statistics, so their pushforward laws exist;
-    -- no scope change (vdV works with Borel-measurable maps throughout).
     {T : ∀ k, Ω k → E} (hT_meas : ∀ k, Measurable (T k))
     {φ : E → F} {φ' : E →L[ℝ] F} {θ₀ : E}
-    -- USER-INPUT: φ is (Fréchet) differentiable at θ₀ with derivative φ'; vdV §3.1, Thm 3.1
     (hφ : HasFDerivAt φ φ' θ₀)
-    -- LEAN-ONLY: a.e.-measurability of φ ∘ Tₙ, so the transformed law exists;
-    -- no scope change (automatic for Borel φ in the book's setting).
     (hφT_meas : ∀ k, AEMeasurable (fun ω => φ (T k ω)) (P k))
-    -- USER-INPUT: the norming rates rₙ → ∞; vdV Thm 3.1
     {sqn : ℕ → ℝ} (h_sqn : Tendsto sqn atTop atTop)
     {ν : Measure E} [IsProbabilityMeasure ν]
-    -- USER-INPUT: rₙ(Tₙ − θ₀) ⇝ T for some limit law; vdV Thm 3.1
     (h_wc : WeakConverges (fun k => (P k).map (fun ω => sqn k • (T k ω - θ₀))) ν) :
     WeakConverges (fun k => (P k).map (fun ω => sqn k • (φ (T k ω) - φ θ₀))) (ν.map φ')
       ∧ TendstoInProbZero P

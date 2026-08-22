@@ -510,5 +510,285 @@ theorem mutuallyContiguous_of_log_normal_of_integral_comparison
     have h8 : Real.exp M * (((Q n) (A n)).toReal + ρ n) < ε / 2 := hN₂ n hn₂
     linarith
 
+/-! ## Eventwise asymptotic integral comparison APIs -/
+
+private lemma measureReal_le_lowerTail_add_exp_mul_setIntegral
+    {S : Type*} [MeasurableSpace S] (P : Measure S) [IsProbabilityMeasure P]
+    (L : S → ℝ) (hL : Measurable L) (h_exp : Integrable (fun ω => Real.exp (L ω)) P)
+    (A : Set S) (hA : MeasurableSet A) (K : ℝ) :
+    P.real A ≤ P.real {ω | L ω ≤ -K} + Real.exp K * ∫ ω in A, Real.exp (L ω) ∂P := by
+  let B : Set S := A ∩ {ω | -K < L ω}
+  have hB : MeasurableSet B := hA.inter (measurableSet_lt measurable_const hL)
+  have hcover : A ⊆ {ω | L ω ≤ -K} ∪ B := by
+    intro ω hω
+    by_cases hlow : L ω ≤ -K
+    · exact Or.inl hlow
+    · exact Or.inr ⟨hω, lt_of_not_ge hlow⟩
+  have hB_bound : P.real B ≤ Real.exp K * ∫ ω in A, Real.exp (L ω) ∂P := by
+    calc
+      P.real B = ∫ _ in B, (1 : ℝ) ∂P := by rw [setIntegral_const]; simp
+      _ ≤ ∫ ω in B, Real.exp K * Real.exp (L ω) ∂P := by
+        refine setIntegral_mono_on (integrable_const 1).restrict
+          (h_exp.const_mul (Real.exp K)).restrict hB (fun ω hω => ?_)
+        rw [← Real.exp_add]
+        exact Real.one_le_exp (by
+          have := hω.2
+          change -K < L ω at this
+          linarith)
+      _ = Real.exp K * ∫ ω in B, Real.exp (L ω) ∂P := by rw [integral_const_mul]
+      _ ≤ Real.exp K * ∫ ω in A, Real.exp (L ω) ∂P := by
+        exact mul_le_mul_of_nonneg_left
+          (setIntegral_mono_set (s := B) (t := A) h_exp.restrict
+            (Eventually.of_forall fun ω => (Real.exp_pos _).le)
+            (Eventually.of_forall fun _ hω => hω.1)) (Real.exp_pos K).le
+  exact (measureReal_mono hcover).trans <|
+    (measureReal_union_le _ _).trans (add_le_add (le_refl _) hB_bound)
+
+private lemma eventually_measureReal_lowerTail_lt_of_weakConverges
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n)) [∀ n, IsProbabilityMeasure (P n)]
+    (L : ∀ n, Ω n → ℝ) (hL : ∀ n, Measurable (L n))
+    (nu : Measure ℝ) [IsProbabilityMeasure nu]
+    (hweak : WeakConverges (fun n => (P n).map (L n)) nu) {ε : ℝ} (hε : 0 < ε) :
+    ∃ K : ℕ, ∀ᶠ n in atTop, (P n).real {ω | L n ω ≤ -(K : ℝ)} < ε := by
+  let pn : ℕ → ProbabilityMeasure ℝ := fun n =>
+    ⟨(P n).map (L n), Measure.isProbabilityMeasure_map (hL n).aemeasurable⟩
+  let pnu : ProbabilityMeasure ℝ := ⟨nu, inferInstance⟩
+  have ht : Tendsto pn atTop (nhds pnu) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr hweak
+  let C : ℕ → Set ℝ := fun K => Set.Iic (-(K : ℝ))
+  have hCmeas : ∀ K, MeasurableSet (C K) := fun _ => measurableSet_Iic
+  have hCanti : Antitone C := by
+    intro a b hab x hx
+    simp only [C, Set.mem_Iic] at hx ⊢
+    exact hx.trans (neg_le_neg (by exact_mod_cast hab : (a : ℝ) ≤ (b : ℝ)))
+  have hCinter : ⋂ K, C K = (∅ : Set ℝ) := by
+    ext x
+    simp only [C, Set.mem_iInter, Set.mem_Iic, Set.mem_empty_iff_false, iff_false,
+      not_forall, not_le]
+    obtain ⟨K, hK⟩ := exists_nat_gt (-x)
+    exact ⟨K, by linarith⟩
+  have htail : Tendsto (fun K => nu (C K)) atTop (nhds 0) := by
+    have h := tendsto_measure_iInter_atTop (μ := nu) (fun K => (hCmeas K).nullMeasurableSet)
+      hCanti ⟨0, measure_ne_top nu _⟩
+    simpa [hCinter] using h
+  obtain ⟨K, hK⟩ := (htail.eventually (Iio_mem_nhds (ENNReal.ofReal_pos.mpr hε))).exists
+  have hport := ProbabilityMeasure.limsup_measure_closed_le_of_tendsto ht
+    (isClosed_Iic : IsClosed (C K))
+  have hlim : limsup (fun n => (P n) {ω | L n ω ≤ -(K : ℝ)}) atTop < ENNReal.ofReal ε := by
+    calc
+      _ = limsup (fun n => (pn n : Measure ℝ) (C K)) atTop := by
+        apply limsup_congr
+        exact Eventually.of_forall fun n => by
+          change (P n) ((L n) ⁻¹' C K) = ((P n).map (L n)) (C K)
+          exact (Measure.map_apply (hL n) (hCmeas K)).symm
+      _ ≤ (pnu : Measure ℝ) (C K) := hport
+      _ < ENNReal.ofReal ε := hK
+  have hev := eventually_lt_of_limsup_lt hlim
+  refine ⟨K, hev.mono (fun n hn => ?_)⟩
+  simpa [Measure.real, ENNReal.toReal_ofReal hε.le] using
+    (ENNReal.toReal_lt_toReal (measure_ne_top (P n) _) ENNReal.ofReal_ne_top).mpr hn
+
+/-- **Forward contiguity from asymptotic log-normality and event-integral comparison.**
+
+If the laws of `L n` under `P n` converge weakly to `N(-v/2, v)`, the exponential
+weights have asymptotic mass one, and their integrals over every measurable event
+approximate the corresponding `Q n` probabilities with a uniform vanishing error,
+then `Q` is contiguous with respect to `P`.
+
+The proof route is the usual truncated-exponential uniform-integrability argument;
+the comparison error is added after bounding the weighted event integral.
+-/
+theorem contiguous_of_asymptotically_log_normal_of_integral_comparison
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n))
+    (Q : ∀ n, Measure (Ω n))
+    [∀ n, IsProbabilityMeasure (P n)] [∀ n, IsProbabilityMeasure (Q n)]
+    (L : ∀ n, Ω n → ℝ)
+    (hL_meas : ∀ n, Measurable (L n))
+    (h_exp_int : ∀ n, Integrable (fun ω => Real.exp (L n ω)) (P n))
+    (h_mass : Tendsto (fun n => ∫ ω, Real.exp (L n ω) ∂(P n)) atTop (𝓝 1))
+    (h_integral_comparison : ∃ ρ : ℕ → ℝ,
+      Tendsto ρ atTop (𝓝 0) ∧
+      ∀ A : ∀ n, Set (Ω n), (∀ n, MeasurableSet (A n)) → ∀ n,
+        |(Q n).real (A n) - ∫ ω in A n, Real.exp (L n ω) ∂(P n)| ≤ ρ n)
+    (v : NNReal)
+    (h_weak : WeakConverges (fun n => (P n).map (L n))
+      (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v)) :
+    Contiguous (ι := ℕ) (Ω := Ω) atTop P Q := by
+  intro A hA hPA
+  obtain ⟨ρ, hρ, hcomp⟩ := h_integral_comparison
+  have hPA_real : Tendsto (fun n => (P n).real (A n)) atTop (nhds 0) :=
+    (ENNReal.tendsto_toReal_zero_iff fun n => measure_ne_top (P n) _).mpr hPA
+  let I : ℕ → ℝ := fun n => ∫ ω in A n, Real.exp (L n ω) ∂(P n)
+  have hI : Tendsto I atTop (nhds 0) := by
+    rw [Metric.tendsto_nhds]
+    intro ε hε
+    obtain ⟨M, hM, N₁, hN₁⟩ :=
+      uniform_integrability_exp_L_of_integral_tendsto_one P Q L hL_meas h_exp_int
+        h_mass v h_weak (ε / 2) (by linarith)
+    have hPA_ev := (Metric.tendsto_nhds.mp hPA_real)
+      (ε / (2 * (M + 1))) (by positivity)
+    obtain ⟨N₂, hN₂⟩ := eventually_atTop.mp hPA_ev
+    refine eventually_atTop.mpr ⟨max N₁ N₂, fun n hn => ?_⟩
+    have hn₁ : N₁ ≤ n := le_of_max_le_left hn
+    have hn₂ : N₂ ≤ n := le_of_max_le_right hn
+    have hmin : Integrable (fun ω => min (Real.exp (L n ω)) M) (P n) := by
+      refine (h_exp_int n).mono' (((Real.continuous_exp.measurable.comp
+        (hL_meas n)).min measurable_const).aestronglyMeasurable) ?_
+      filter_upwards [] with ω
+      rw [Real.norm_eq_abs, abs_of_nonneg (le_min (Real.exp_pos _).le hM)]
+      exact min_le_left _ _
+    have hres := (h_exp_int n).sub hmin
+    have hres_nn : 0 ≤ᵐ[P n] fun ω => Real.exp (L n ω) - min (Real.exp (L n ω)) M :=
+      Eventually.of_forall fun ω => sub_nonneg.mpr (min_le_left _ _)
+    have hdecomp : I n =
+        ∫ ω in A n, min (Real.exp (L n ω)) M ∂(P n) +
+          ∫ ω in A n, Real.exp (L n ω) - min (Real.exp (L n ω)) M ∂(P n) := by
+      change (∫ ω in A n, Real.exp (L n ω) ∂(P n)) = _
+      calc
+        _ = ∫ ω in A n, min (Real.exp (L n ω)) M +
+            (Real.exp (L n ω) - min (Real.exp (L n ω)) M) ∂(P n) := by
+          apply integral_congr_ae
+          exact Eventually.of_forall fun ω => by ring
+        _ = _ := integral_add hmin.restrict hres.restrict
+    have hmin_bound : ∫ ω in A n, min (Real.exp (L n ω)) M ∂(P n) ≤
+        M * (P n).real (A n) := by
+      calc
+        _ ≤ ∫ _ in A n, M ∂(P n) :=
+          setIntegral_mono_on hmin.restrict (integrable_const M).restrict (hA n)
+            (fun _ _ => min_le_right _ _)
+        _ = _ := by rw [setIntegral_const]; simp [smul_eq_mul, mul_comm]
+    have hres_bound : ∫ ω in A n,
+        Real.exp (L n ω) - min (Real.exp (L n ω)) M ∂(P n) ≤ ε / 2 :=
+      (setIntegral_le_integral hres hres_nn).trans (hN₁ n hn₁)
+    have hPsmall : (P n).real (A n) < ε / (2 * (M + 1)) := by
+      simpa [Real.dist_eq, abs_of_nonneg measureReal_nonneg] using hN₂ n hn₂
+    have hInn : 0 ≤ I n := integral_nonneg_of_ae <|
+      ae_restrict_of_ae (Eventually.of_forall fun ω => (Real.exp_pos _).le)
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg hInn]
+    rw [hdecomp]
+    have hMratio : M * (ε / (2 * (M + 1))) ≤ ε / 2 := by
+      have : M / (M + 1) ≤ 1 := (div_le_one (by linarith)).mpr (by linarith)
+      calc
+        _ = (M / (M + 1)) * (ε / 2) := by field_simp
+        _ ≤ 1 * (ε / 2) := mul_le_mul_of_nonneg_right this (by linarith)
+        _ = _ := one_mul _
+    rcases hM.eq_or_lt with rfl | hMpos
+    · linarith
+    · have := mul_lt_mul_of_pos_left hPsmall hMpos
+      linarith
+  have hQ_real : Tendsto (fun n => (Q n).real (A n)) atTop (nhds 0) := by
+    have hupper : Tendsto (fun n => I n + ρ n) atTop (nhds 0) := by
+      simpa using hI.add hρ
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop (nhds 0))
+      hupper (Eventually.of_forall fun _ => measureReal_nonneg) ?_
+    exact Eventually.of_forall fun n => by
+      have hb := (abs_le.mp (hcomp A hA n)).2
+      dsimp [I]
+      linarith
+  exact (ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Q n) (A n))).mp hQ_real
+
+/-- **Reverse contiguity from a lower-tail bound and event-integral comparison.**
+
+Under the same log-normal weak limit and measurable-event comparison, `P` is
+contiguous with respect to `Q`.  For fixed `K > 0`, split an event according to
+`L ≤ -K` and use
+`P(A) ≤ P(L ≤ -K) + exp K * ∫_A exp L dP`.  Portmanteau controls the closed
+left tail, while the comparison and `Q(A) → 0` control the weighted integral.
+
+This direction does not need exponential integrability or a separate total-mass
+limit, so those forward-only assumptions are deliberately absent.
+-/
+theorem reverse_contiguous_of_asymptotically_log_normal_of_integral_comparison
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n))
+    (Q : ∀ n, Measure (Ω n))
+    [∀ n, IsProbabilityMeasure (P n)] [∀ n, IsProbabilityMeasure (Q n)]
+    (L : ∀ n, Ω n → ℝ)
+    (hL_meas : ∀ n, Measurable (L n))
+    (h_integral_comparison : ∃ ρ : ℕ → ℝ,
+      Tendsto ρ atTop (𝓝 0) ∧
+      ∀ A : ∀ n, Set (Ω n), (∀ n, MeasurableSet (A n)) → ∀ n,
+        |(Q n).real (A n) - ∫ ω in A n, Real.exp (L n ω) ∂(P n)| ≤ ρ n)
+    (v : NNReal)
+    (h_weak : WeakConverges (fun n => (P n).map (L n))
+      (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v)) :
+    Contiguous (ι := ℕ) (Ω := Ω) atTop Q P := by
+  intro A hA hQA
+  obtain ⟨ρ, hρ, hcomp⟩ := h_integral_comparison
+  have hQA_real : Tendsto (fun n => (Q n).real (A n)) atTop (nhds 0) :=
+    (ENNReal.tendsto_toReal_zero_iff fun n => measure_ne_top (Q n) _).mpr hQA
+  have h_exp_ev : ∀ᶠ n in atTop, Integrable (fun ω => Real.exp (L n ω)) (P n) := by
+    let U : ∀ n, Set (Ω n) := fun _ => Set.univ
+    have hU := hcomp U (fun _ => MeasurableSet.univ)
+    filter_upwards [hρ.eventually (Iio_mem_nhds zero_lt_one)] with n hn
+    by_contra hnot
+    have hz : ∫ ω, Real.exp (L n ω) ∂(P n) = 0 := integral_undef hnot
+    have hb := hU n
+    simp only [U, probReal_univ, setIntegral_univ, hz, sub_zero, abs_one] at hb
+    linarith
+  let I : ℕ → ℝ := fun n => ∫ ω in A n, Real.exp (L n ω) ∂(P n)
+  have hI : Tendsto I atTop (nhds 0) := by
+    have hupper : Tendsto (fun n => (Q n).real (A n) + ρ n) atTop (nhds 0) := by
+      simpa using hQA_real.add hρ
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop (nhds 0))
+      hupper ?_ ?_
+    · exact h_exp_ev.mono fun n hn => integral_nonneg_of_ae <|
+        ae_restrict_of_ae (Eventually.of_forall fun ω => (Real.exp_pos _).le)
+    · exact Eventually.of_forall fun n => by
+        have hb := (abs_le.mp (hcomp A hA n)).1
+        dsimp [I]
+        linarith
+  apply (ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (P n) (A n))).mp
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨K, htail⟩ := eventually_measureReal_lowerTail_lt_of_weakConverges
+    P L hL_meas (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v) h_weak
+    (show 0 < ε / 2 by linarith)
+  have hscaled_ev : ∀ᶠ n in atTop, Real.exp (K : ℝ) * I n < ε / 2 :=
+    (show Tendsto (fun n => Real.exp (K : ℝ) * I n) atTop (nhds 0) from
+      by simpa using hI.const_mul (Real.exp (K : ℝ))).eventually
+      (Iio_mem_nhds (by linarith))
+  filter_upwards [htail, hscaled_ev, h_exp_ev] with n hn_tail hn_I hn_exp
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg]
+  have hbound := measureReal_le_lowerTail_add_exp_mul_setIntegral
+    (P n) (L n) (hL_meas n) hn_exp (A n) (hA n) (K : ℝ)
+  change (P n).real (A n) < ε
+  dsimp [I] at hn_I
+  linarith
+
+/-- **Mutual contiguity from asymptotic log-normality and integral comparison.**
+
+Packages the forward truncated-exponential argument and the reverse lower-tail
+argument.  The statement is support-free: it assumes only the two probability
+sequences, the measurable log statistic, exponential integrability and mass
+normalization needed by the forward direction, the vanishing event-comparison
+error, and the log-normal weak limit.
+-/
+theorem mutuallyContiguous_of_asymptotically_log_normal_of_integral_comparison
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n))
+    (Q : ∀ n, Measure (Ω n))
+    [∀ n, IsProbabilityMeasure (P n)] [∀ n, IsProbabilityMeasure (Q n)]
+    (L : ∀ n, Ω n → ℝ)
+    (hL_meas : ∀ n, Measurable (L n))
+    (h_exp_int : ∀ n, Integrable (fun ω => Real.exp (L n ω)) (P n))
+    (h_mass : Tendsto (fun n => ∫ ω, Real.exp (L n ω) ∂(P n)) atTop (𝓝 1))
+    (h_integral_comparison : ∃ ρ : ℕ → ℝ,
+      Tendsto ρ atTop (𝓝 0) ∧
+      ∀ A : ∀ n, Set (Ω n), (∀ n, MeasurableSet (A n)) → ∀ n,
+        |(Q n).real (A n) - ∫ ω in A n, Real.exp (L n ω) ∂(P n)| ≤ ρ n)
+    (v : NNReal)
+    (h_weak : WeakConverges (fun n => (P n).map (L n))
+      (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v)) :
+    MutuallyContiguous (ι := ℕ) (Ω := Ω) atTop P Q := by
+  exact ⟨contiguous_of_asymptotically_log_normal_of_integral_comparison
+      P Q L hL_meas h_exp_int h_mass h_integral_comparison v h_weak,
+    reverse_contiguous_of_asymptotically_log_normal_of_integral_comparison
+      P Q L hL_meas h_integral_comparison v h_weak⟩
+
 end Contiguity
 end AsymptoticStatistics

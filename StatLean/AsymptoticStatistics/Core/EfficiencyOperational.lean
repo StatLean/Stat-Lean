@@ -1,4 +1,6 @@
 import StatLean.AsymptoticStatistics.Core.EIF
+import StatLean.AsymptoticStatistics.Core.QMDPath
+import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
@@ -79,8 +81,63 @@ namespace AsymptoticStatistics.Core.EfficiencyOperational
 
 open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.Pathwise
+open AsymptoticStatistics.Core.TangentAbstract
 
 variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- A raw baseline limit distribution for the root-`n` centered estimator.
+
+Constitutive (vdV §25.3, Lemma 25.23): this records only weak convergence
+of the centered estimator law. It does not mention asymptotic linearity,
+an influence function, pathwise differentiability, or Gaussianity.
+
+Edge behavior: `c` is an explicit centering, so the definition also applies
+when the functional is locally constant or the eventual limit is degenerate. -/
+def HasLimitDistributionAt
+    (T_n : ∀ n, (Fin n → Ω) → ℝ)
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (c : ℝ) (L : Measure ℝ) : Prop :=
+  AsymptoticStatistics.WeakConverges
+    (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+      (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - c)))
+    L
+
+/-- A selected QMD path for every tangent direction, including the zero
+direction.
+
+Constitutive (vdV §25.3, Lemma 25.23): regularity means that recentering at
+the perturbed truth gives the same limit law along all tangent paths.
+
+Joint satisfiability witness: for a singleton model, constant functional and
+constant estimator, take a tangent specification whose carrier is `{0}` and
+`L = dirac 0`; the only selected score is zero and every centered statistic is
+identically zero. -/
+structure SelectedQMDPaths
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (T_set : TangentSpec P) where
+  zero_mem : (0 : ↥(L2ZeroMean P)) ∈ T_set.carrier
+  path : {g : ↥(L2ZeroMean P) // g ∈ T_set.carrier} →
+    AsymptoticStatistics.Core.QMDPath.QMDPath P
+  score_eq : ∀ g, (path g).score = (g : ↥(L2ZeroMean P))
+
+/-- Raw regularity along the selected QMD family, with a common local weak
+limit for every scalar local parameter and no derivative, EIF, AL, or
+normality bundled into the predicate. -/
+def IsRegularAt
+    {P : Measure Ω} [IsProbabilityMeasure P]
+    {T_set : TangentSpec P}
+    (paths : SelectedQMDPaths P T_set)
+    (T_n : ∀ n, (Fin n → Ω) → ℝ)
+    (ψ : Measure Ω → ℝ) (L : Measure ℝ) : Prop :=
+  ∀ (g : {g : ↥(L2ZeroMean P) // g ∈ T_set.carrier}) (a : ℝ),
+    AsymptoticStatistics.WeakConverges
+      (fun n : ℕ =>
+        (Measure.pi (fun _ : Fin n =>
+          (paths.path g).curve (a * (Real.sqrt n)⁻¹))).map
+          (fun X : Fin n → Ω =>
+            Real.sqrt n *
+              (T_n n X - ψ ((paths.path g).curve (a * (Real.sqrt n)⁻¹)))))
+      L
 
 /-- An estimator sequence `T_n : (Fin n → Ω) → ℝ` is *asymptotically
 linear* at a probability measure `P` with influence function

@@ -15,7 +15,7 @@ project (cf. `WeakConverges`, `slutsky_of_tendstoInMeasure_dist`).
 * `IsBoundedInProb P X` — the family `{X k}` is uniformly tight, i.e. bounded in
   probability, `O_P(1)`.
 
-Headline lemmas:
+Main lemmas:
 
 * `isBoundedInProb_of_weakConverges` — a weakly convergent sequence of pushforward laws
   is `O_P(1)` (Prokhorov: `weakConverges_range_tight` + compact ⟹ bounded).
@@ -63,6 +63,73 @@ tight: for every `ε > 0` there is a threshold `M` such that the `P k`-mass of
 def IsBoundedInProb {G : Type*} [NormedAddCommGroup G]
     (P : ∀ k, Measure (Ω k)) (X : ∀ k, Ω k → G) : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, ∀ k, (P k).real {ω | M < ‖X k ω‖} ≤ ε
+
+/-- **Convergence in probability implies boundedness in probability.**
+
+This is a generic probability adapter, not a numbered book claim.  The measurability
+binder is essential: it supplies tightness for the finitely many indices before the
+eventual `o_P(1)` tail bound applies. -/
+theorem TendstoInProbZero.isBoundedInProb
+    {G : Type*} [NormedAddCommGroup G]
+    [MeasurableSpace G] [BorelSpace G]
+    {P : ∀ k, Measure (Ω k)} [∀ k, IsProbabilityMeasure (P k)]
+    {Z : ∀ k, Ω k → G}
+    (h : TendstoInProbZero P Z)
+    (hZ_meas : ∀ k, Measurable (Z k)) :
+    IsBoundedInProb P Z := by
+  intro ε hε
+  have hev : ∀ᶠ k in atTop, (P k).real {ω | (1 : ℝ) ≤ ‖Z k ω‖} < ε :=
+    (h 1 zero_lt_one).eventually (Iio_mem_nhds hε)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp hev
+  have hindiv : ∀ k : ℕ, ∃ M : ℝ, (P k).real {ω | M < ‖Z k ω‖} ≤ ε := by
+    intro k
+    set s : ℕ → Set (Ω k) := fun M => {ω | (M : ℝ) < ‖Z k ω‖} with hs_def
+    have hmeas : ∀ M, MeasurableSet (s M) :=
+      fun M => measurableSet_lt measurable_const (hZ_meas k).norm
+    have hanti : Antitone s := by
+      intro a b hab ω hω
+      change (b : ℝ) < ‖Z k ω‖ at hω
+      change (a : ℝ) < ‖Z k ω‖
+      exact lt_of_le_of_lt (by exact_mod_cast hab) hω
+    have hiInter : (⋂ M, s M) = ∅ := by
+      ext ω
+      simp only [hs_def, Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        not_forall, not_lt]
+      obtain ⟨M, hM⟩ := exists_nat_gt ‖Z k ω‖
+      exact ⟨M, hM.le⟩
+    have htends : Tendsto (fun M => (P k) (s M)) atTop (nhds ((P k) (⋂ M, s M))) :=
+      tendsto_measure_iInter_atTop (fun M => (hmeas M).nullMeasurableSet) hanti
+        ⟨0, measure_ne_top (P k) _⟩
+    rw [hiInter, measure_empty] at htends
+    have hs_eventually : ∀ᶠ M in atTop, (P k) (s M) < ENNReal.ofReal ε :=
+      htends.eventually (Iio_mem_nhds (ENNReal.ofReal_pos.mpr hε))
+    obtain ⟨M, hM⟩ := hs_eventually.exists
+    refine ⟨(M : ℝ), ?_⟩
+    rw [measureReal_def]
+    calc
+      ((P k) (s M)).toReal ≤ (ENNReal.ofReal ε).toReal :=
+        ENNReal.toReal_mono ENNReal.ofReal_ne_top hM.le
+      _ = ε := ENNReal.toReal_ofReal hε.le
+  have hprefix : ∀ K : ℕ, ∃ M : ℝ, (1 : ℝ) ≤ M ∧
+      ∀ k, k < K → (P k).real {ω | M < ‖Z k ω‖} ≤ ε := by
+    intro K
+    induction K with
+    | zero => exact ⟨1, le_rfl, fun k hk => absurd hk (Nat.not_lt_zero k)⟩
+    | succ K ih =>
+      obtain ⟨M, hM1, hM⟩ := ih
+      obtain ⟨MK, hMK⟩ := hindiv K
+      refine ⟨max M MK, hM1.trans (le_max_left _ _), fun k hk => ?_⟩
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hlt | rfl
+      · exact (measureReal_mono (fun ω hω =>
+          lt_of_le_of_lt (le_max_left M MK) hω)).trans (hM k hlt)
+      · exact (measureReal_mono (fun ω hω =>
+          lt_of_le_of_lt (le_max_right M MK) hω)).trans hMK
+  obtain ⟨M, hM1, hM⟩ := hprefix N
+  refine ⟨M, fun k => ?_⟩
+  rcases lt_or_ge k N with hk | hk
+  · exact hM k hk
+  · exact (measureReal_mono (fun ω hω =>
+      hM1.trans (le_of_lt hω))).trans (le_of_lt (hN k hk))
 
 /-- **A weakly convergent sequence of pushforward laws is `O_P(1)`.**
 

@@ -2371,7 +2371,7 @@ theorem contiguous_imp_limit_pos
         -- `φ K ≤ φ k ⟹ K ≤ k` (φ mono).
         have hKk : K ≤ k := by
           by_contra hlt
-          push_neg at hlt
+          push Not at hlt
           exact absurd (hφ hlt) (not_lt.mpr hi)
         rw [hA_at_φ k]
         calc (P (φ k)) {ω | r k ω < c k}
@@ -2508,7 +2508,7 @@ theorem mean_one_imp_contiguous
   obtain ⟨δ, hδ_pos, hψ_freq⟩ :
       ∃ δ : ℝ≥0∞, 0 < δ ∧ ∃ᶠ n in atTop, δ ≤ (Q n) (A n) := by
     by_contra h_all
-    push_neg at h_all
+    push Not at h_all
     -- `∀ δ > 0, ∀ᶠ n, Q n (A n) < δ`, i.e. `Q n (A n) → 0`.
     apply h_not
     rw [ENNReal.tendsto_atTop_zero]
@@ -2532,7 +2532,6 @@ theorem mean_one_imp_contiguous
     intro n ω; rcases hs01 n ω with h | h
     · rw [h]
     · rw [h]; exact zero_le_one
-
   -- Joint map `ω ↦ (q (ψ m) ω, s (ψ m) ω)` and its pushforward under `P (ψ m)`.
   set pair : ∀ m, Ω (ψ m) → ℝ × ℝ := fun m ω => (q (ψ m) ω, s (ψ m) ω) with hpair_def
   have hpair_meas : ∀ m, Measurable (pair m) := fun m =>
@@ -2664,13 +2663,13 @@ theorem mean_one_imp_contiguous
             have : ω ∉ (A (χ k))ᶜ := fun hc => hc hω
             simp only [hs_def, Set.indicator_of_notMem this]
           rw [hs0, Set.indicator_of_mem hω]
-          show g 0 = g 1 + (g 0 - g 1) * 1
+          change g 0 = g 1 + (g 0 - g 1) * 1
           ring
         · have hs1 : s (χ k) ω = 1 := by
             have : ω ∈ (A (χ k))ᶜ := hω
             simp only [hs_def, Set.indicator_of_mem this]
           rw [hs1, Set.indicator_of_notMem hω]
-          show g 1 = g 1 + (g 0 - g 1) * 0
+          change g 1 = g 1 + (g 0 - g 1) * 0
           ring
       rw [h_pt]
       rw [MeasureTheory.integral_add (integrable_const _)
@@ -2817,7 +2816,8 @@ theorem mean_one_imp_contiguous
       = fun k => (Q (χ k)) (A (χ k))ᶜ := by
     funext k; rw [hF_on_J (φ k)]
   rw [h_rhs_eq] at h_liminf_int
-  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ` eventually (since `δ ≤ Q (χ k) (A (χ k))`).
+  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ` eventually,
+  -- since `δ ≤ Q (χ k) (A (χ k))`.
   have hχ_ge : ∀ k, δ ≤ (Q (χ k)) (A (χ k)) := fun k => hψ_ge (φ k)
   have hcompl_le : ∀ k, (Q (χ k)) (A (χ k))ᶜ ≤ 1 - δ := by
     intro k
