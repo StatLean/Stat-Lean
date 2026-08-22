@@ -914,7 +914,7 @@
     "citation": "van der Vaart (1998), Thm 5.55",
     "file": "StatLean/AsymptoticStatistics/MEstimator/NuisanceRate.lean",
     "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/NuisanceRate.html#AsymptoticStatistics.MEstimator.mEstimator_nuisance_rate",
-    "informal": "Consider criteria $m_{\\theta,\\eta}$ with target $(\\theta_0,\\eta_0)$ and parameter sets $\\Theta_n,H_n$. Suppose <span data-link=\"h1\">the population criterion plus its deterministic correction is bounded above by $-d_n(\\theta,\\theta_0)^2+d_H(\\eta,\\eta_0)^2$</span>, and <span data-link=\"h2\">the corrected empirical-process oscillation over a $d_n$-ball is controlled by a modulus $\\phi_n(\\delta)$ whose ratio to $\\delta^\\beta$ is decreasing, with $\\beta<2$</span>. If <span data-link=\"h3\">the estimated pair lies in $\\Theta_n\\times H_n$ with inner probability tending to one</span>, <span data-link=\"h4\">the estimated criterion nearly maximizes over the target comparison point</span>, and <span data-link=\"h5\">the normalized nonnegative remainder is bounded in probability</span>, then $d_n(\\hat\\theta_n,\\theta_0)$ is bounded in outer probability relative to $\\delta_n+d_H(\\hat\\eta_n,\\eta_0)$.",
+    "informal": "Consider criteria $m_{\\theta,\\eta}$ with target $(\\theta_0,\\eta_0)$ and parameter sets $\\Theta_n,H_n$. Suppose <span data-link=\"h1\">the population criterion plus its deterministic correction is bounded above by $-d_n(\\theta,\\theta_0)^2+d_H(\\eta,\\eta_0)^2$</span>, and <span data-link=\"h2\">the corrected empirical-process oscillation over a $d_n$-ball is controlled by a modulus $\\phi_n(\\delta)$ whose ratio to $\\delta^\\beta$ is decreasing, with $\\beta<2$</span>. Let $\\delta_n>0$ be a balancing sequence satisfying <span data-link=\"h6\">$\\phi_n(\\delta_n)\\le\\sqrt{n+1}\\,\\delta_n^2$</span>. If <span data-link=\"h3\">the estimated pair lies in $\\Theta_n\\times H_n$ with inner probability tending to one</span>, <span data-link=\"h4\">the estimated criterion nearly maximizes over the target comparison point</span>, and <span data-link=\"h5\">the normalized nonnegative remainder is bounded in probability</span>, then $d_n(\\hat\\theta_n,\\theta_0)$ is bounded in outer probability relative to $\\delta_n+d_H(\\hat\\eta_n,\\eta_0)$.",
     "summary": "The target-parameter rate is controlled by the balancing rate plus the nuisance-estimation error.",
     "leanSignature": "theorem mEstimator_nuisance_rate\n    {Ω Θ H Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]\n    (P : Measure Ω) [IsProbabilityMeasure P]\n    (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)\n    (hm_meas : ∀ θ η, Measurable (m θ η))\n    (X : ℕ → Ξ → Ω)\n    (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)\n    (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →\n      Integrable (fun ω => m θ η ω - m θ₀ η ω) P)\n    (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)\n    (e : ℕ → Θ → H → ℝ) (φ : ℕ → ℝ → ℝ)\n    (β : ℝ) (hβ : β < 2)\n    (hφanti : ∀ n, AntitoneOn (fun δ => φ n δ / Real.rpow δ β) (Set.Ioi 0))\n    (δn : ℕ → ℝ) (hδn : ∀ n, 0 < δn n)\n    (hbalance : ∀ n, φ n (δn n) ≤ Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2)\n    (hdet : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →\n      (∫ ω, (m θ η ω - m θ₀ η ω) ∂P) + e n θ η ≤\n        -(dΘ n θ θ₀ : ℝ) ^ 2 + (dH η η₀ : ℝ) ^ 2)\n    (hmod : ∀ n δ, 0 < δ →\n      outerExpectation μ (fun ξ =>\n        ⨆ θ : {θ : Θ // θ ∈ Θn n ∧ (dΘ n θ θ₀ : ℝ) < δ},\n          ⨆ η : {η : H // η ∈ Hn n}, ENNReal.ofReal\n            |nuisanceCenteredProcess P m X θ₀ n ξ θ.1 η.1 -\n                Real.sqrt ((n + 1 : ℕ) : ℝ) * e n θ.1 η.1|) ≤\n        ENNReal.ofReal (φ n δ))\n    (θhat : ℕ → Ξ → Θ) (ηhat : ℕ → Ξ → H)\n    (hmem : TendstoInnerProbOne μ (fun n =>\n      {ξ | θhat n ξ ∈ Θn n ∧ ηhat n ξ ∈ Hn n}))\n    (R : ℕ → Ξ → ℝ) (hR_meas : ∀ n, Measurable (R n))\n    (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)\n    (hNearMax : ∀ n ξ,\n      nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥\n        nuisanceEmpiricalCriterion m X n ξ θ₀ (ηhat n ξ) - R n ξ)\n    (hR : IsBoundedInProb (fun _ : ℕ => μ) (fun n ξ => R n ξ / (δn n) ^ 2)) :\n    IsBoundedInOuterProbScalarWt μ\n      (fun n ξ => δn n + (dH (ηhat n ξ) η₀ : ℝ))\n      (fun n ξ => (dΘ n (θhat n ξ) θ₀ : ℝ))",
     "hypotheses": [
@@ -947,6 +947,12 @@
         "leanToken": "hR : IsBoundedInProb",
         "label": "controlled remainder",
         "note": "The remainder divided by δ_n² is bounded in probability."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hbalance",
+        "label": "balancing sequence",
+        "note": "The positive sequence δ_n satisfies φ_n(δ_n) ≤ √(n+1) δ_n² for every n."
       }
     ],
     "hasGraph": true,
@@ -1460,7 +1466,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§7.2, Theorem 7.2",
-      "biblio": "Local asymptotic normality originates with L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98, where the LAN concept and the quadratic log-likelihood expansion were introduced. The differentiability-in-quadratic-mean formulation under which Theorem 7.2 is stated is the modern presentation (Le Cam and Hájek) adopted by van der Vaart.",
+      "biblio": "Local asymptotic normality originates with L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98, where the LAN concept and the quadratic log-likelihood expansion were introduced. Le Cam's subsequent differentiability-in-quadratic-mean formulation supplies the modern route from square-root-density differentiability to the LAN expansion.",
       "keys": [
         "vdv1998",
         "lecam1960"
@@ -2680,7 +2686,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.5.3, Theorem 25.40",
-      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
@@ -2730,7 +2736,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.5.3, Lemma 25.41",
-      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
@@ -3919,7 +3925,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.4, Lemma 19.24",
-      "biblio": "This is folklore with no single seminal origin: a routine consequence of weak convergence of the empirical process over a Donsker class combined with asymptotic equicontinuity, the framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes: With Applications to Statistics*, Springer, 1996. vdV (1998) presents it as Lemma 19.24.",
+      "biblio": "This is folklore with no single seminal origin: a routine consequence of weak convergence of the empirical process over a Donsker class combined with asymptotic equicontinuity, the framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes: With Applications to Statistics*, Springer, 1996.",
       "keys": [
         "vdv1998",
         "vandervaart-wellner1996"
