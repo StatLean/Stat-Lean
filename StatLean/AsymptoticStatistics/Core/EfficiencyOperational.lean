@@ -108,7 +108,7 @@ direction.
 Constitutive (vdV §25.3, Lemma 25.23): regularity means that recentering at
 the perturbed truth gives the same limit law along all tangent paths.
 
-Joint satisfiability witness: for a singleton model, constant functional and
+Concrete finite-model example: for a singleton model, constant functional and
 constant estimator, take a tangent specification whose carrier is `{0}` and
 `L = dirac 0`; the only selected score is zero and every centered statistic is
 identically zero. -/

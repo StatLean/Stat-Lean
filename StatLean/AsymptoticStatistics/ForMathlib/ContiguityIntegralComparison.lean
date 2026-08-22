@@ -35,7 +35,7 @@ namespace Contiguity
 
 variable {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
 
-/-! ### LEAN-ONLY plumbing: transporting events along an index equality -/
+/-! ### Transporting events across index equalities -/
 
 /-- Transport a set along an equality of indices. -/
 private def transportSet (α : ℕ → Type*) {a b : ℕ} (h : a = b) (s : Set (α a)) : Set (α b) :=
@@ -58,7 +58,7 @@ private lemma transportSet_comp {α : ℕ → Type*} {ψ : ℕ → ℕ} (hψ : F
   subst hkn
   rfl
 
-/-! ### LEAN-ONLY plumbing: `ℝ≥0∞`-valued versus real-valued convergence to `0` -/
+/-! ### Relating `ℝ≥0∞`-valued and real-valued convergence to `0` -/
 
 private lemma toReal_tendsto_zero {u : ℕ → ℝ≥0∞} (h : Tendsto u atTop (𝓝 0)) :
     Tendsto (fun n => (u n).toReal) atTop (𝓝 0) := by
@@ -82,7 +82,7 @@ private lemma integrable_of_abs_le {β : Type*} [MeasurableSpace β] (μ : Measu
     MeasureTheory.HasFiniteIntegral.of_bounded (C := C)
       (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hC x)⟩
 
-/-! ### LEAN-ONLY plumbing: a continuous ramp majorizing a left half-line indicator -/
+/-! ### A continuous ramp majorizing a left half-line indicator -/
 
 /-- The ramp `x ↦ max 0 (min 1 (a - x))`, a bounded continuous function that equals `1` on
 `Iic (a - 1)` and vanishes on `Ici a`. -/
@@ -172,7 +172,7 @@ subsequences `P ∘ φ`, `Q ∘ φ` for any strictly monotone `φ` (pad the even
 range of `φ`). -/
 theorem Contiguous.comp_subseq {P Q : ∀ n, Measure (Ω n)}
     (hPQ : Contiguous (ι := ℕ) (Ω := Ω) atTop P Q) {φ : ℕ → ℕ}
-    -- LEAN-ONLY: subsequence extraction (regularity of the index map)
+    -- Strict monotonicity ensures that the index map defines a subsequence.
     (hφ : StrictMono φ) :
     Contiguous (ι := ℕ) (Ω := fun n => Ω (φ n)) atTop
       (fun n => P (φ n)) (fun n => Q (φ n)) := by
@@ -228,16 +228,16 @@ theorem mutuallyContiguous_of_log_normal_of_integral_comparison
     (P Q : ∀ n, Measure (Ω n))
     [∀ n, IsProbabilityMeasure (P n)] [∀ n, IsProbabilityMeasure (Q n)]
     (L : ∀ n, Ω n → ℝ)
-    -- LEAN-ONLY: measurability of the log-likelihood statistics (regularity)
+    -- Measurability of the log-likelihood statistics.
     (hL_meas : ∀ n, Measurable (L n))
-    -- USER-INPUT: asymptotic integral comparison replacing the exact change of measure;
+    -- The asymptotic integral comparison replaces the exact change of measure;
     -- vdV §7.2 (supplied by `productMeasure_integral_comparison_boundedMeasurable`)
     (h_comparison : ∃ ρ : ℕ → ℝ, Tendsto ρ atTop (𝓝 0) ∧
       ∀ (g : ∀ n, Ω n → ℝ) (C : ℝ), (∀ n, Measurable (g n)) → 0 ≤ C →
         (∀ n ω, |g n ω| ≤ C) → ∀ n,
         |∫ ω, g n ω ∂(Q n) - ∫ ω, g n ω * Real.exp (L n ω) ∂(P n)| ≤ C * ρ n)
     (v : NNReal)
-    -- USER-INPUT: asymptotic log-normality of `Lₙ` under `Pₙ`; vdV Example 6.5
+    -- Asymptotic log-normality of `Lₙ` under `Pₙ`; vdV Example 6.5.
     (h_weak : WeakConverges (fun n => (P n).map (L n))
       (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v)) :
     MutuallyContiguous (ι := ℕ) (Ω := Ω) atTop P Q := by
