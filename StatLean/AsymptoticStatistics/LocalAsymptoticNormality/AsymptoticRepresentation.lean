@@ -188,8 +188,6 @@ product of per-coordinate tilts, then closes each factor via
 theorem logLikelihood_is_log_ratio
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (h : Θ k) (n : ℕ)
-    (hint_perturb :
-      Integrable (M.density (θ₀ + (Real.sqrt n)⁻¹ • h)) μ)
     (h_same_support : ∀ᵐ x ∂μ,
       (0 < M.density θ₀ x ↔ 0 < M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x)) :
     productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
@@ -218,12 +216,6 @@ theorem logLikelihood_is_log_ratio
       (μ.withDensity pEnn).withDensity fUnit
         = μ.withDensity (fun x => ENNReal.ofReal (M.density θ' x)) :=
     withDensity_density_eq_withDensity_mul_exp_log_ratio M μ θ₀ h n h_same_support
-  -- Register sigma-finiteness of the per-factor tilt (needed by
-  -- `pi_withDensity_prod`) using that it equals `μ.withDensity (ENNReal.ofReal ∘ p')`,
-  -- which is a finite measure by `hint_perturb`.
-  haveI : IsFiniteMeasure ((μ.withDensity pEnn).withDensity fUnit) := by
-    rw [h_factor]
-    exact isFiniteMeasure_withDensity_ofReal hint_perturb.hasFiniteIntegral
   -- Unfold `productMeasure` and invoke `pi_withDensity_prod` in reverse.
   change Measure.pi (fun _ : Fin n => _)
     = (Measure.pi (fun _ : Fin n => μ.withDensity pEnn)).withDensity
@@ -248,7 +240,7 @@ The whole chain is assembled by `scoreSum_weakly_converges` below. The wrapper
 `score_clt_local` is a thin type-adapter. -/
 
 theorem score_clt_local
-    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k) (ℓ : 𝓧 → Θ k) (_hℓ : Measurable ℓ)
     (_hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (J : Matrix (Fin k) (Fin k) ℝ)
@@ -271,7 +263,7 @@ assembled by `scoreSum_weakly_converges` and used downstream in
 (`pi_const_eq_infinitePi_map`) through the re-indexing identity
 `scoreSum ℓ n ∘ restrict_n = abstract_sum n`. -/
 lemma scoreSum_pushforward_eq
-    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -314,7 +306,7 @@ lemma scoreSum_pushforward_eq
 from the abstract `(ℕ → 𝓧, infinitePi)` CLT output. Transport-only; no probabilistic
 content beyond applying `scoreSum_pushforward_eq`. -/
 lemma scoreSum_weakly_converges_of_abstract
-    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -358,7 +350,7 @@ The four `clt_finDim` iid hypotheses are discharged internally:
   `dqm_fisher_integrable` bounds over the standard basis.
 -/
 theorem scoreSum_weakly_converges
-    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k)
     (ℓ : 𝓧 → Θ k) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
@@ -878,7 +870,7 @@ coordinate projections as the iid sample), then transports the resulting
 This is exactly the hypothesis shape consumed by `slutsky_bridge_of_lanResidual`
 (after composition with a subsequence `φ`). -/
 theorem lanResidual_tendsto_productMeasure
-    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k)
     [∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n)]
     (ℓ : 𝓧 → Θ k) (hℓ : Measurable ℓ)

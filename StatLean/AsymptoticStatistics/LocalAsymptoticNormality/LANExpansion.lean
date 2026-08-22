@@ -115,7 +115,7 @@ Proof idea (informal): DQM gives `√n(√p_{θ₀+h/√n} − √p_{θ₀}) →
 so by inner-product continuity `√n ∫ (√p_n − √p) √p dμ → ½ ⟨h, P_{θ₀} ℓ⟩`. The LHS is
 identically `0` (both densities integrate to 1), hence `P_{θ₀} ℓ = 0`. -/
 lemma score_mean_zero
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -443,7 +443,8 @@ lemma variance_tendsto_zero
     by_cases hp_zero : p = 0
     · -- p = 0: LHS = 0, RHS ≥ 0.
       rw [hp_zero]
-      simp
+      simp only [div_zero, Real.sqrt_zero, zero_sub, mul_neg, mul_one, mul_zero, one_div,
+        Nat.ofNat_pos, mul_nonneg_iff_of_pos_left, ge_iff_le]
       positivity
     -- p > 0: show equality.
     have hp_pos : 0 < p := lt_of_le_of_ne hp_nn (Ne.symm hp_zero)
@@ -597,7 +598,7 @@ The identical-distribution hypothesis transfers expectations/variances from P to
 integrals against `p · μ`; pairwise independence makes variance of the sum additive. -/
 lemma sum_W_decomp
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -1114,7 +1115,7 @@ lemma auxStatistic_sq_mul_density_le
 omit [SecondCountableTopology Θ] in
 /-- Integrability of `|n · W_n² − g²| · p` for each `n`. -/
 lemma delta_l1_integrable
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -1191,7 +1192,7 @@ the factorisation `n · W_n² − g² = (√n · W_n − g)(√n · W_n + g)`, w
 factor's L² norm going to 0 by Step 3 (`variance_tendsto_zero`) and the second
 factor's L² norm eventually bounded via `(a+b)² ≤ 2(a−b)² + 8b²`. -/
 lemma delta_l1_tendsto
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -1550,9 +1551,10 @@ where `Δ_{n,i} := n · W_n(X_i)² − g(X_i)²`. Then:
   * `(1/n) Σ Δ_{n,i} →ₚ 0` from the `L¹` bound supplied by `delta_l1_tendsto`
     and `tendstoInMeasure_of_tendsto_eLpNorm` at exponent `1`.
 The two convergences are combined by an `ε/2` estimate. -/
+omit [SecondCountableTopology Θ] in
 lemma sum_W_sq_tendsto_to_Pg_sq
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -2032,9 +2034,10 @@ iid setup as `sum_W_decomp`/`sum_W_sq_tendsto_to_Pg_sq`, we bound
 `P(⋃_{i<n} {|W_n(X_i)| > ε}) ≤ n · ν({|W_n|>ε})` (union bound + `IdentDistrib`),
 then identify `n · ν(…) = ENNReal.ofReal(n · ∫_{|W_n|>ε} p dμ) → 0` via the
 single-index lemma. -/
+omit [SecondCountableTopology Θ] in
 lemma max_abs_W_tendsto_zero_iid
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -2171,7 +2174,6 @@ theorem LAN_expansion_iii
     {k : ℕ}
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
-    [SigmaFinite μ]
     (θ₀ : EuclideanSpace ℝ (Fin k))
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
@@ -2410,7 +2412,7 @@ The iid-sample conclusion (clause (iii), the LAN expansion proper) is
 `LAN_expansion_iii` above, on a separately-carried probability space `(Ω, P)`
 with `X : ℕ → Ω → 𝓧` iid under `P_{θ₀}`. -/
 theorem LAN_expansion_score_fisher_part
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -2459,7 +2461,6 @@ theorem LAN_expansion
     {k : ℕ}
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
-    [SigmaFinite μ]
     (θ₀ : EuclideanSpace ℝ (Fin k))
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
     (hPDF : IsPDFOf M μ)

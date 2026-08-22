@@ -367,14 +367,14 @@ only that no two parameters disagree about which points are impossible, which is
 source assumes implicitly whenever it writes a likelihood ratio. -/
 private lemma productMeasure_eq_withDensity_exp_logLikelihood
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
-    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (θ₀ : EuclideanSpace ℝ (Fin k))
     (hsupp : ∀ (θ θ' : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
       M.density θ x ≠ 0 → M.density θ' x ≠ 0)
     (h : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
     productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
       = (productMeasure M μ θ₀ n).withDensity
           (fun ω => ENNReal.ofReal (Real.exp (logLikelihood M θ₀ h n ω))) := by
-  refine logLikelihood_is_log_ratio M μ θ₀ h n (hPDF.density_integrable _)
+  refine logLikelihood_is_log_ratio M μ θ₀ h n
     (Filter.Eventually.of_forall fun x => ?_)
   constructor
   · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
