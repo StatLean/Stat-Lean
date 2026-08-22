@@ -2679,7 +2679,7 @@
     "shortRef": "van der Vaart (1998), Thm 25.40",
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
-      "pointer": "§25.6, Theorem 25.40",
+      "pointer": "§25.5.3, Theorem 25.40",
       "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
@@ -2729,7 +2729,7 @@
     "shortRef": "van der Vaart (1998), Lem 25.41",
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
-      "pointer": "§25.6, Lemma 25.41",
+      "pointer": "§25.5.3, Lemma 25.41",
       "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
@@ -2842,7 +2842,8 @@
     "keywords": [
       "Z-estimator",
       "asymptotic linearity"
-    ]
+    ],
+    "formalizationNotes": "This is the scalar analytic core of Theorem 25.54: the raw normalized no-bias condition is used to derive root-n tightness, vanishing moving bias, and asymptotic linearity. It does not by itself state the complete semiparametric-efficiency conclusion."
   },
   {
     "id": "rawMovingBias_asympLinear_2554_vec",
@@ -2893,7 +2894,8 @@
     "keywords": [
       "Z-estimator",
       "asymptotic linearity"
-    ]
+    ],
+    "formalizationNotes": "This is the vector analytic core of Theorem 25.54: the raw normalized no-bias condition is used to derive root-n tightness, vanishing moving bias, and asymptotic linearity. It does not by itself state the complete semiparametric-efficiency conclusion."
   },
   {
     "id": "oneStep_semiparametricallyEfficient",
@@ -2950,7 +2952,7 @@
     "citation": "van der Vaart (1998), Thm 25.59",
     "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.lean",
     "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansion.rawMovingBias_normalized_expansion_2559",
-    "informal": "Under <span data-link=\"h1\">the primitive scalar estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then $$\\frac{\\Delta_n-I^{-1}n^{-1/2}\\sum_i s_0(X_i)-I^{-1}B_n}{1+|\\Delta_n|}\\ \\longrightarrow_P\\ 0.$$ Thus the rearranged expansion contains the positive covariant correction $+I^{-1}B_n$; the printed $+B_n$ form is recovered under information normalization.",
+    "informal": "Under <span data-link=\"h1\">the primitive scalar estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then $$\\frac{\\Delta_n-I^{-1}n^{-1/2}\\sum_i s_0(X_i)-I^{-1}B_n}{1+|\\Delta_n|}\\ \\longrightarrow_P\\ 0.$$ Thus the rearranged expansion contains the positive covariant correction $+I^{-1}B_n$; the printed $+B_n$ form is recovered only when $I=1$.",
     "summary": "The rate-free scalar expansion applies I⁻¹ to both the empirical score and the moving-bias correction.",
     "leanSignature": "theorem rawMovingBias_normalized_expansion_2559\n    {P : Measure Omega} [IsProbabilityMeasure P]\n    {gamma : QMDPath P}\n    {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}\n    {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}\n    {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}\n    (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I) :\n    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        let Delta := Real.sqrt n * (estimator n X - theta0)\n        (1 + |Delta|)⁻¹ *\n          (Delta\n            - I⁻¹ * ((Real.sqrt n)⁻¹ *\n                ∑ i : Fin n, (score0 : Lp Real 2 P) (X i))\n            - I⁻¹ * rawMovingBias gamma estimator theta0 scoreHat n X))",
     "hypotheses": [
@@ -2978,7 +2980,7 @@
       "Z-estimator",
       "bias correction"
     ],
-    "formalizationNotes": "The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only under information normalization."
+    "formalizationNotes": "This is a rate-free normalized scalar expansion. The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only when $I=1$."
   },
   {
     "id": "rawMovingBias_normalized_expansion_2559_vec",
@@ -2990,7 +2992,7 @@
     "citation": "van der Vaart (1998), Thm 25.59",
     "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.lean",
     "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_normalized_expansion_2559_vec",
-    "informal": "Under <span data-link=\"h1\">the primitive vector estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-definite information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then, after division by $1+\\lVert\\Delta_n\\rVert$, $$\\Delta_n-I^{-1}\\frac1{\\sqrt n}\\sum_i s(X_i)-I^{-1}B_n\\ \\longrightarrow_P\\ 0.$$ Equivalently, the rearranged expansion carries the covariant positive correction $+I^{-1}B_n$. The printed $+B_n$ form is recovered under information normalization.",
+    "informal": "Under <span data-link=\"h1\">the primitive vector estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-definite information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then, after division by $1+\\lVert\\Delta_n\\rVert$, $$\\Delta_n-I^{-1}\\frac1{\\sqrt n}\\sum_i s(X_i)-I^{-1}B_n\\ \\longrightarrow_P\\ 0.$$ Equivalently, the rearranged expansion carries the covariant positive correction $+I^{-1}B_n$. The printed $+B_n$ form is recovered only when the information matrix is the identity.",
     "summary": "The rate-free vector expansion applies I⁻¹ to both the empirical score and the moving-bias correction.",
     "leanSignature": "theorem rawMovingBias_normalized_expansion_2559_vec\n    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]\n    {M : QMDModel (Omega := Omega) P d}\n    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}\n    {theta0 : EuclideanSpace Real (Fin d)}\n    {scoreHat : forall n,\n      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}\n    {score0 : Fin d -> ↥(L2ZeroMean P)}\n    {F : Fin d -> Set (Omega -> Real)}\n    {I : Matrix (Fin d) (Fin d) Real}\n    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :\n    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        let Delta := Real.sqrt n • (estimator n X - theta0)\n        (1 + ‖Delta‖)⁻¹ •\n          (Delta\n            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹\n                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))\n            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹\n                (rawMovingBias_vec M estimator theta0 scoreHat n X)))",
     "hypotheses": [
@@ -3018,7 +3020,7 @@
       "Z-estimator",
       "bias correction"
     ],
-    "formalizationNotes": "The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only when the information matrix is the identity."
+    "formalizationNotes": "This is a rate-free normalized vector expansion. The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only when the information matrix is the identity."
   },
   {
     "id": "convexLinear_zEstimator_efficient_2561",
@@ -3715,32 +3717,38 @@
     "kind": "theorem",
     "leanName": "donskerWithBridge_of_finite_bracketing_entropy",
     "fullName": "AsymptoticStatistics.EmpiricalProcess.donskerWithBridge_of_finite_bracketing_entropy",
-    "title": "Donsker Theorem from Bracketing Entropy",
-    "citation": "van der Vaart (1998), Thm 19.5",
+    "title": "Donsker Theorem from Bracketing Entropy, Nonempty Specialization",
+    "citation": "van der Vaart (1998), Thm 19.5, nonempty specialization",
     "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/AbstractDonsker/FiniteCarrier.lean",
     "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/AbstractDonsker/FiniteCarrier.html#AsymptoticStatistics.EmpiricalProcess.donskerWithBridge_of_finite_bracketing_entropy",
-    "informal": "Let $\\mathcal F$ be <span data-link=\"h1\">a nonempty class of measurable functions</span> with <span data-link=\"h2\">finite bracketing entropy integral $\\int_0^1\\sqrt{\\log N_{[\\,]}(\\varepsilon,\\mathcal F,L^2(P))}\\,d\\varepsilon$</span>. Then the class has a square-integrable envelope and is $P$-Donsker in the literal process sense: there exists a tight $P$-Brownian-bridge law on $\\ell^\\infty(\\mathcal F)$ to which every jointly i.i.d. empirical process with law $P$ converges weakly in the outer sense.",
-    "summary": "Finite L² bracketing entropy yields an envelope and full carrier-agnostic Brownian-bridge convergence.",
+    "informal": "Let $\\mathcal F$ be <span data-link=\"h1\">nonempty</span>, suppose <span data-link=\"h2\">every member of $\\mathcal F$ is measurable</span>, and assume <span data-link=\"h3\">the bracketing entropy integral $\\int_0^1\\sqrt{\\log N_{[\\,]}(\\varepsilon,\\mathcal F,L^2(P))}\\,d\\varepsilon$ is finite</span>. Then the class has a square-integrable envelope, is $P$-Donsker, and admits a tight $P$-Brownian-bridge law on $\\ell^\\infty(\\mathcal F)$ to which every jointly i.i.d. empirical process with law $P$ converges weakly in the outer sense.",
+    "summary": "For a nonempty measurable class, finite L² bracketing entropy yields an envelope, the Donsker property, and a Brownian-bridge limit law.",
     "leanSignature": "theorem donskerWithBridge_of_finite_bracketing_entropy\n    {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]\n    (hF_ne : F.Nonempty)\n    (hF_meas : ∀ f ∈ F, Measurable f)\n    (h_int : bracketingEntropyIntegral 1 F P < ⊤)\n    : ∃ (G : Ω → ℝ) (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P),\n        IsPDonskerWithBridge F P",
     "hypotheses": [
       {
         "id": "h1",
         "leanToken": "hF_ne",
-        "label": "nonempty measurable class",
-        "note": "The class is nonempty and all its members are measurable."
+        "label": "nonempty class",
+        "note": "The function class contains at least one member."
       },
       {
         "id": "h2",
+        "leanToken": "hF_meas",
+        "label": "measurable class members",
+        "note": "Every function in the class is measurable."
+      },
+      {
+        "id": "h3",
         "leanToken": "h_int",
         "label": "finite bracketing entropy",
         "note": "The L²(P) bracketing entropy integral from zero to one is finite."
       }
     ],
     "hasGraph": true,
-    "shortRef": "van der Vaart (1998), Thm 19.5",
+    "shortRef": "van der Vaart (1998), Thm 19.5, nonempty specialization",
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
-      "pointer": "§19.2, Theorem 19.5",
+      "pointer": "§19.2, Theorem 19.5, nonempty specialization",
       "biblio": "The bracketing central limit theorem was proved by M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *Annals of Probability* **15** (1987), 897–919.",
       "keys": [
         "vdv1998",
@@ -3750,7 +3758,8 @@
     "keywords": [
       "Donsker class",
       "entropy integral"
-    ]
+    ],
+    "formalizationNotes": "This is the nonempty specialization of Theorem 19.5. Nonemptiness is an additional input needed by the bridge construction. The conclusion is packaged with a derived square-integrable envelope and an explicit tight Brownian-bridge limit law; the page does not identify this strengthened package with the unrestricted book statement."
   },
   {
     "id": "uniformCovering_isPGlivenkoCantelliIID",
@@ -3862,50 +3871,8 @@
     "keywords": [
       "Donsker class",
       "entropy integral"
-    ]
-  },
-  {
-    "id": "continuousCDF_gof_limit_distributionFree",
-    "category": "concentration",
-    "kind": "corollary",
-    "leanName": "continuousCDF_gof_limit_distributionFree",
-    "fullName": "AsymptoticStatistics.EmpiricalProcess.continuousCDF_gof_limit_distributionFree",
-    "title": "Distribution-Free Goodness-of-Fit Limits",
-    "citation": "van der Vaart (1998), Cor 19.21",
-    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/HalfLineBridgeTransport.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/HalfLineBridgeTransport.html#AsymptoticStatistics.EmpiricalProcess.continuousCDF_gof_limit_distributionFree",
-    "informal": "Let $P$ be a probability law on the real line with <span data-link=\"h1\">continuous distribution function</span>. Brownian-bridge laws exist for both $P$ and the uniform distribution on $[0,1]$, and every such pair has the same joint pushforward law under the Kolmogorov–Smirnov supremum functional and the Cramér–von Mises integrated-square functional. Hence both limiting goodness-of-fit statistics are distribution-free.",
-    "summary": "For a continuous CDF, the joint Kolmogorov–Smirnov and Cramér–von Mises bridge limit law is the uniform one.",
-    "leanSignature": "theorem continuousCDF_gof_limit_distributionFree\n    (P : Measure ℝ) [IsProbabilityMeasure P]\n    (hF : Continuous (cdf P)) :\n    (∃ νP : Measure (LinfF halfLineIndicatorClass),\n      IsPBrownianBridge halfLineIndicatorClass P νP) ∧\n    (∃ νU : Measure (LinfF halfLineIndicatorClass),\n      IsPBrownianBridge halfLineIndicatorClass uniform01 νU) ∧\n    ∀ {νP νU : Measure (LinfF halfLineIndicatorClass)},\n      IsPBrownianBridge halfLineIndicatorClass P νP →\n      IsPBrownianBridge halfLineIndicatorClass uniform01 νU →\n      νP.map (gofFunctional P) =\n        νU.map (gofFunctional uniform01)",
-    "hypotheses": [
-      {
-        "id": "h1",
-        "leanToken": "hF",
-        "label": "continuous distribution",
-        "note": "The distribution function of P is continuous on the real line."
-      }
     ],
-    "hasGraph": true,
-    "shortRef": "van der Vaart (1998), Cor 19.21",
-    "reference": {
-      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
-      "pointer": "Corollary 19.21",
-      "biblio": "The distribution-free empirical-process limit follows J. L. Doob (1949) and M. D. Donsker (1952); the Kolmogorov–Smirnov and Cramér–von Mises functionals descend respectively from N. V. Smirnov (1948) and R. von Mises (1931).",
-      "keys": [
-        "vdv1998",
-        "doob1949",
-        "donsker1952",
-        "smirnov1948",
-        "vonmises1931"
-      ]
-    },
-    "keywords": [
-      "goodness-of-fit",
-      "Brownian bridge"
-    ],
-    "crossListed": [
-      "hypothesistesting"
-    ]
+    "formalizationNotes": "This declaration is the core package used to realize Theorem 19.14. It returns both the operational Donsker property and an explicit tight Brownian-bridge law with full outer weak convergence. This strengthened package is an implementation of the theorem's conclusion, not a separate book result."
   },
   {
     "id": "donsker_random_function_consistency",
