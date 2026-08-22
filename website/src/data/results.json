@@ -2686,7 +2686,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.5.3, Theorem 25.40",
-      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
@@ -2736,7 +2736,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.5.3, Lemma 25.41",
-      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
@@ -3078,7 +3078,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Example 25.61 (scalar form)",
-      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
@@ -3139,7 +3139,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Example 25.61 (vector form)",
-      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "biblio": "The convex-linear nuisance-model construction, efficient-score projection, and Z-estimation route to semiparametric efficiency are developed systematically by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993"
