@@ -320,7 +320,7 @@ def DifferentiableRelScoreRange (A : ScoreOperator H P) (chiTilde : H) : Prop :=
   ∃ dψ : (A.toCLM.range) →L[ℝ] ℝ,
     ∀ (v : H), dψ ⟨A.toCLM v, ⟨v, rfl⟩⟩ = ⟪chiTilde, v⟫_ℝ
 
-/-- *vdV §25.5, thm:25.31 — the constructive direction (HEADLINE).*
+/-- *vdV §25.5, thm:25.31 — the constructive direction.*
 If the influence representer `χ̃ = chiTilde` lies in the range of the adjoint
 `A*` (i.e. there is `psiTilde` with `A* psiTilde = χ̃`), then `psiTilde` is an
 influence function for the parameter-derivative `dψ` on the tangent space
@@ -393,7 +393,7 @@ information equation. The invertibility hypothesis is load-bearing — the
 book is explicit that `A*A` need not be invertible — and is carried as the
 two-sided equivalence `e`, matching the book's "continuously invertible".
 
-The construction follows the task design: `psiTilde := A (e.symm χ̃)`,
+The construction takes `psiTilde := A (e.symm χ̃)`,
 `h_range := A* psiTilde = e (e.symm χ̃) = χ̃`, then `isIF_of_mem_range_adjoint`
 with `dψ := ⟪psiTilde, ·⟫` restricted to the score range. The chain
 `⟪psiTilde, A v⟫ = ⟪A* psiTilde, v⟫ = ⟪χ̃, v⟫` certifies `h_dψ`. -/
@@ -421,8 +421,38 @@ theorem eif_formula_of_information_invertible
     change ⟪psiTilde, (A.toCLM v : ↥(L2ZeroMean P))⟫_ℝ = ⟪chiTilde, v⟫_ℝ
     rw [← h_range, h_adj v psiTilde, real_inner_comm]
   refine ⟨⟨dψ, h_dψ⟩, ?_⟩
-  -- The influence-function identity on `T = range A`, via the headline D2.
+  -- The influence-function identity on `T = range A` follows from the
+  -- adjoint-range construction above.
   exact isIF_of_mem_range_adjoint A Astar h_adj chiTilde psiTilde h_range rfl h_dψ
+
+/-- *vdV §25.5, thm:25.31 — unrestricted score-range form.*
+Differentiability on the possibly nonclosed actual range of `A` gives a
+bounded functional there. Hahn--Banach extends it to the ambient
+`L2ZeroMean P`; ambient Riesz representation then supplies a representer whose
+image under the certified adjoint is `chiTilde`.
+
+No closed-range hypothesis is needed: the extension theorem applies directly
+to the normed subspace `range A`. -/
+theorem mem_range_adjoint_of_differentiable_unrestricted
+    (A : ScoreOperator H P) (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
+    (h_adj : ∀ (v : H) (y : ↥(L2ZeroMean P)), ⟪Astar y, v⟫_ℝ = ⟪y, A.toCLM v⟫_ℝ)
+    (chiTilde : H) (h_diff : DifferentiableRelScoreRange A chiTilde) :
+    chiTilde ∈ (Astar.range : Submodule ℝ H) := by
+  have hL2 : CompleteSpace ↥(L2ZeroMean P) :=
+    (AsymptoticStatistics.Core.Hilbert.L2ZeroMean_isClosed P).completeSpace_coe
+  obtain ⟨dψ, h_dψ⟩ := h_diff
+  obtain ⟨dψext, h_ext, _⟩ := Real.exists_extension_norm_eq A.toCLM.range dψ
+  set y₀ : ↥(L2ZeroMean P) :=
+    (@InnerProductSpace.toDual ℝ ↥(L2ZeroMean P) _ _ _ hL2).symm dψext with hy₀
+  refine ⟨y₀, ?_⟩
+  refine ext_inner_right ℝ (fun v => ?_)
+  have hriesz : (⟪y₀, A.toCLM v⟫_ℝ : ℝ) = ⟪chiTilde, v⟫_ℝ := by
+    rw [hy₀, @InnerProductSpace.toDual_symm_apply ℝ ↥(L2ZeroMean P) _ _ _ hL2]
+    rw [h_ext (⟨A.toCLM v, ⟨v, rfl⟩⟩ : ↥(A.toCLM.range))]
+    exact h_dψ v
+  calc (⟪Astar y₀, v⟫_ℝ : ℝ)
+      = ⟪y₀, A.toCLM v⟫_ℝ := h_adj v y₀
+    _ = ⟪chiTilde, v⟫_ℝ := hriesz
 
 /-- *vdV §25.5, thm:25.31 — the forward direction, closed-range form.*
 If `ψ` is differentiable relative to the score range with representer
@@ -488,5 +518,27 @@ theorem mem_range_adjoint_of_differentiable
       = ⟪(y₀ : ↥(L2ZeroMean P)), A.toCLM v⟫_ℝ := hadj
     _ = ⟪y₀, (⟨A.toCLM v, ⟨v, rfl⟩⟩ : ↥(A.toCLM.range))⟫_ℝ := hsub
     _ = ⟪chiTilde, v⟫_ℝ := hriesz
+
+/-- Actual-range form of vdV Theorem 25.31: differentiability relative to the
+score range is equivalent to membership in the actual adjoint range. The
+forward direction uses Hahn--Banach and ambient Riesz representation; the
+reverse direction constructs the derivative from an adjoint representer. -/
+theorem differentiableRelScoreRange_iff_mem_range_adjoint
+    (A : ScoreOperator H P) (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
+    (h_adj : ∀ (v : H) (y : ↥(L2ZeroMean P)),
+      ⟪Astar y, v⟫_ℝ = ⟪y, A.toCLM v⟫_ℝ)
+    (chiTilde : H) :
+    DifferentiableRelScoreRange A chiTilde ↔
+      chiTilde ∈ (Astar.range : Submodule ℝ H) := by
+  constructor
+  · exact mem_range_adjoint_of_differentiable_unrestricted A Astar h_adj chiTilde
+  · rintro ⟨psiTilde, hpsi⟩
+    rw [ContinuousLinearMap.coe_coe] at hpsi
+    let dψ : A.toCLM.range →L[ℝ] ℝ :=
+      (innerSL ℝ psiTilde).comp A.toCLM.range.subtypeL
+    refine ⟨dψ, ?_⟩
+    intro v
+    change ⟪psiTilde, (A.toCLM v : ↥(L2ZeroMean P))⟫_ℝ = ⟪chiTilde, v⟫_ℝ
+    rw [← hpsi, h_adj v psiTilde]
 
 end AsymptoticStatistics.Operators.ScoreOperator

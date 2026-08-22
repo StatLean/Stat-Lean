@@ -7,6 +7,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.CondExpL2
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.RadonNikodym
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Measure.WithDensityFinite
 
 /-!
 # QMD limit for the coarsened path (vdV Lem 25.34-I, the `qmd_limit` field)
@@ -47,6 +48,130 @@ variable {Ω_full Ω_obs : Type*}
   [MeasurableSpace Ω_full] [MeasurableSpace Ω_obs]
   {M : Ω_full → Ω_obs}
   {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
+
+/-! ## Finite equivalent dominator adapter -/
+
+/-- **change-of-dominator adapter.** Multiplication by the square root
+of `dν/dν.toFinite` identifies the `L²(ν.toFinite)` seminorm with `L²(ν)`.
+
+This is the minimal analytic layer needed to rebase a `QMDPath`; it is not part
+of vdV Lemma 25.34-I's statistical content. -/
+private lemma eLpNorm_sqrt_rnDeriv_toFinite_mul_eq
+    (ν : Measure Ω_full) [SigmaFinite ν] {f : Ω_full → ℝ} (hf : Measurable f) :
+    eLpNorm (fun ω => Real.sqrt (ν.rnDeriv ν.toFinite ω).toReal * f ω) 2 ν.toFinite
+      = eLpNorm f 2 ν := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
+    eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  have htwo : (2 : ℝ≥0∞).toReal = 2 := by norm_num
+  rw [htwo]
+  congr 1
+  have h_integrand :
+      (fun ω => ‖Real.sqrt (ν.rnDeriv ν.toFinite ω).toReal * f ω‖ₑ ^ (2 : ℝ))
+        =ᵐ[ν.toFinite] fun ω => ν.rnDeriv ν.toFinite ω * ‖f ω‖ₑ ^ (2 : ℝ) := by
+    filter_upwards [Measure.rnDeriv_lt_top ν ν.toFinite] with ω hω
+    rw [enorm_mul, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    rw [Real.enorm_of_nonneg (Real.sqrt_nonneg _),
+      ENNReal.ofReal_rpow_of_nonneg (Real.sqrt_nonneg _) (by norm_num : (0 : ℝ) ≤ 2),
+      Real.rpow_two, Real.sq_sqrt ENNReal.toReal_nonneg,
+      ENNReal.ofReal_toReal hω.ne]
+  rw [lintegral_congr_ae h_integrand]
+  exact lintegral_rnDeriv_mul (absolutelyContinuous_toFinite ν)
+    ((hf.enorm.pow_const (2 : ℝ)).aemeasurable)
+
+/-- **QMD change-of-dominator identity.** Computing a path's QMD
+residual against the equivalent finite dominator preserves its `L²` seminorm.
+The RN chain rule factors the new residual by `sqrt (dμ/dμ.toFinite)`, which is
+absorbed by `eLpNorm_sqrt_rnDeriv_toFinite_mul_eq`. -/
+private lemma eLpNorm_qmdResidual_toFinite_eq (γ : QMDPath P_full) (t : ℝ) :
+    eLpNorm (fun ω =>
+        Real.sqrt ((γ.curve t).rnDeriv γ.dominating.toFinite ω).toReal
+        - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating.toFinite ω).toReal
+        - (t / 2) * (γ.score : Ω_full → ℝ) ω
+            * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating.toFinite ω).toReal)
+      2 γ.dominating.toFinite
+      = eLpNorm (fun ω =>
+        Real.sqrt ((γ.curve t).rnDeriv γ.dominating ω).toReal
+        - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal
+        - (t / 2) * (γ.score : Ω_full → ℝ) ω
+            * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal)
+      2 γ.dominating := by
+  haveI := γ.curve_isProbability t
+  haveI := γ.curve_isProbability 0
+  have hscore : Measurable (γ.score : Ω_full → ℝ) :=
+    (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
+  have hres : Measurable (fun ω =>
+      Real.sqrt ((γ.curve t).rnDeriv γ.dominating ω).toReal
+      - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal
+      - (t / 2) * (γ.score : Ω_full → ℝ) ω
+          * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal) := by
+    have ht := (Measure.measurable_rnDeriv (γ.curve t) γ.dominating).ennreal_toReal.sqrt
+    have h0 := (Measure.measurable_rnDeriv (γ.curve 0) γ.dominating).ennreal_toReal.sqrt
+    exact (ht.sub h0).sub ((measurable_const.mul hscore).mul h0)
+  have hfactor : (fun ω =>
+        Real.sqrt ((γ.curve t).rnDeriv γ.dominating.toFinite ω).toReal
+        - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating.toFinite ω).toReal
+        - (t / 2) * (γ.score : Ω_full → ℝ) ω
+            * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating.toFinite ω).toReal)
+      =ᵐ[γ.dominating.toFinite] fun ω =>
+        Real.sqrt (γ.dominating.rnDeriv γ.dominating.toFinite ω).toReal *
+          (Real.sqrt ((γ.curve t).rnDeriv γ.dominating ω).toReal
+          - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal
+          - (t / 2) * (γ.score : Ω_full → ℝ) ω
+              * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal) := by
+    have ht := Measure.rnDeriv_mul_rnDeriv (κ := γ.dominating.toFinite)
+      (γ.curve_absContinuous t)
+    have h0 := Measure.rnDeriv_mul_rnDeriv (κ := γ.dominating.toFinite)
+      (γ.curve_absContinuous 0)
+    filter_upwards [ht, h0] with ω htω h0ω
+    have hsqrt_t : Real.sqrt ((γ.curve t).rnDeriv γ.dominating.toFinite ω).toReal
+        = Real.sqrt ((γ.curve t).rnDeriv γ.dominating ω).toReal
+            * Real.sqrt (γ.dominating.rnDeriv γ.dominating.toFinite ω).toReal := by
+      rw [← htω, Pi.mul_apply, ENNReal.toReal_mul,
+        Real.sqrt_mul ENNReal.toReal_nonneg]
+    have hsqrt_0 : Real.sqrt ((γ.curve 0).rnDeriv γ.dominating.toFinite ω).toReal
+        = Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal
+            * Real.sqrt (γ.dominating.rnDeriv γ.dominating.toFinite ω).toReal := by
+      rw [← h0ω, Pi.mul_apply, ENNReal.toReal_mul,
+        Real.sqrt_mul ENNReal.toReal_nonneg]
+    rw [hsqrt_t, hsqrt_0]
+    ring
+  rw [eLpNorm_congr_ae hfactor]
+  exact eLpNorm_sqrt_rnDeriv_toFinite_mul_eq γ.dominating hres
+
+/-- **Finite equivalent-dominator representation of a QMD path.**
+
+For every dominated QMD path `γ`, this packages a representation of the same
+measure-valued curve, at the same base probability measure and with the same score,
+whose dominating measure is Mathlib's equivalent finite measure
+`γ.dominating.toFinite`. The equivalence is handled internally, so callers supply no
+additional regularity hypothesis.  In particular, the finite dominator may safely be
+mapped through a measurable coarsening before invoking the low-level QMD-limit core.
+
+The returned subtype records the preservation obligations in the interface rather
+than hiding them in the implementation.  `Measure.toFinite` has the same null sets as
+the original sigma-finite dominator; the downstream proof transfers the QMD residual
+along this equivalence.
+
+This is an adapter for vdV Lemma 25.34-I, not an additional book
+hypothesis. -/
+noncomputable def finiteDominatorRepresentation (gamma : QMDPath P_full) :
+    {gamma' : QMDPath P_full //
+      gamma'.curve = gamma.curve ∧
+      gamma'.dominating = gamma.dominating.toFinite ∧
+      gamma'.score = gamma.score} := by
+  let gamma' : QMDPath P_full :=
+    { curve := gamma.curve
+      curve_at_zero := gamma.curve_at_zero
+      curve_isProbability := gamma.curve_isProbability
+      dominating := gamma.dominating.toFinite
+      curve_absContinuous := fun t =>
+        (gamma.curve_absContinuous t).trans (absolutelyContinuous_toFinite gamma.dominating)
+      dominating_sigmaFinite := inferInstance
+      score := gamma.score
+      qmd_limit := gamma.qmd_limit.congr fun t => by
+        rw [eLpNorm_qmdResidual_toFinite_eq gamma t] }
+  exact ⟨gamma', rfl, rfl, rfl⟩
 
 /-! ## Notation-packaging definitions (vdV Lem 25.34-I) -/
 
@@ -469,7 +594,7 @@ theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω)
             - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- Surface `Cdom` and name the three functions. (Do NOT bind the σ-algebra to a
@@ -704,7 +829,7 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
         γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- `∫ r_t² = ‖r_t‖²`.
@@ -818,7 +943,7 @@ private lemma memLp_qmdRem (γ : QMDPath P_full) (t : ℝ) :
       γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
   have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
       = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-    funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+    funext ω; simp only [qmdRem, xi_apply]; ring
   rw [heq]
   exact hξdiff.sub (hsξ0.const_mul (t / 2))
 
@@ -901,7 +1026,7 @@ private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
       = qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         + (t / 2) • fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω := by
     funext ω
-    simp only [qmdRem, xi_apply, pbar_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [qmdRem, xi_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   rw [hfun]
   calc eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
@@ -954,7 +1079,7 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
     (hξt.add hξ0).aestronglyMeasurable (hξt.sub hξ0).aestronglyMeasurable) ?_
-  exact le_of_le_of_eq (mul_le_mul_left' hb2 _) (mul_comm _ _)
+  exact le_of_le_of_eq (mul_le_mul_right hb2 _) (mul_comm _ _)
 
 /-- `‖cross_t − q̃_0‖_{L¹(μ)} → 0` (condExp contraction + Hölder + `‖ξ₀‖₂ = 1`). -/
 private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
@@ -1604,9 +1729,10 @@ theorem residual_sq_over_t_tendsto (hM : Measurable M) (γ : QMDPath P_full)
       rw [integral_add (hf_int.const_mul 2) (hs_int.const_mul 2), integral_const_mul,
         integral_const_mul]
 
-/-- The coarsened `qmd_limit` field statement (vdV Lem 25.34-I), in the exact
-form required by `QMDPath.coarsen`. -/
-theorem coarsen_qmd_limit (hM : Measurable M) (γ : QMDPath P_full)
+/-- Compatibility form of the coarsened `qmd_limit` field under an explicit
+mapped sigma-finiteness instance. The faithful public statement is
+`coarsen_qmd_limit` below. -/
+theorem coarsen_qmd_limit_withMappedSigmaFinite (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
     Tendsto
       (fun t : ℝ =>
@@ -1664,6 +1790,36 @@ theorem coarsen_qmd_limit (hM : Measurable M) (γ : QMDPath P_full)
   have hT0 := AsymptoticStatistics.L2Utils.tendsto_eLpNorm_div_ofReal_of_toReal_sq
     (Filter.Eventually.of_forall (fun t => memLp_residual hM γ t)) hsq'
   exact hT0.congr (fun t => by rw [hkey t])
+
+/-- **Score preservation for vdV Lemma 25.34-I.**
+
+The coarsened curve has score `informationLossOperator hM P_full γ.score`, with
+the QMD residual computed against the pushforward of the internally constructed
+finite equivalent dominator.  Unlike the compatibility core
+`coarsen_qmd_limit_withMappedSigmaFinite`, this public statement does not expose
+`[SigmaFinite (γ.dominating.map M)]`: finiteness, hence sigma-finiteness after
+mapping, is discharged through `finiteDominatorRepresentation`. -/
+theorem coarsen_qmd_limit (hM : Measurable M) (γ : QMDPath P_full) :
+    Tendsto
+      (fun t : ℝ =>
+        eLpNorm (fun y : Ω_obs =>
+          Real.sqrt (((γ.curve t).map M).rnDeriv (γ.dominating.toFinite.map M) y).toReal
+            - Real.sqrt
+                (((γ.curve 0).map M).rnDeriv (γ.dominating.toFinite.map M) y).toReal
+            - t / 2 * (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) y
+                * Real.sqrt
+                  (((γ.curve 0).map M).rnDeriv (γ.dominating.toFinite.map M) y).toReal)
+          2 (γ.dominating.toFinite.map M) / ENNReal.ofReal |t|)
+      (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+  let γ' := (finiteDominatorRepresentation γ).1
+  have hcurve : γ'.curve = γ.curve := (finiteDominatorRepresentation γ).2.1
+  have hdom : γ'.dominating = γ.dominating.toFinite :=
+    (finiteDominatorRepresentation γ).2.2.1
+  have hscore : γ'.score = γ.score := (finiteDominatorRepresentation γ).2.2.2
+  haveI : SigmaFinite (γ'.dominating.map M) := by
+    rw [hdom]
+    infer_instance
+  simpa only [hcurve, hdom, hscore] using coarsen_qmd_limit_withMappedSigmaFinite hM γ'
 
 end Coarsen
 

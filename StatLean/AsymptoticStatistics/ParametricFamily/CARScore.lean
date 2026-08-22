@@ -1,6 +1,10 @@
 import StatLean.AsymptoticStatistics.ForMathlib.ConditionalQMD
+import StatLean.AsymptoticStatistics.ForMathlib.CondExpL2
+import StatLean.AsymptoticStatistics.Core.Hilbert
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
+import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 import Mathlib.Probability.Kernel.Composition.AbsolutelyContinuous
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Coarsening-At-Random restriction on conditional scores (vdV §25.5.3)
@@ -14,17 +18,19 @@ The *family-level* CAR restriction: the conditional censoring densities
 of Coarsening At Random beyond a single-measure disintegration — it is a
 statement about the whole differentiable family `t ↦ rₜ`.
 
-Its consequence for the score (vdV p.380): "Because the conditional densities
-satisfy CAR, the function `b₀(δ | y)` must actually be a function `b(x)` of `x`
-only." That descent — from CAR on the densities to CAR on the score — is
-`conditionalScore_factorsThrough`, an `L²`-closedness argument.
+Its consequence for the score (vdV p.380) is that the conditional score
+`b₀(δ | y)` factors through the observed value `x`.  The theorem
+`conditionalScore_factorsThrough` proves this descent by an `L²`-closedness
+argument.
 
-Headline declarations: `IsCARFamily`, `conditionalScore_factorsThrough`.
+Headline declarations: `IsCARFamily`, `conditionalScore_factorsThrough`,
+`conditionalQMDObservedScore`, `conditionalQMDObservedScore_pullback`.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
 open AsymptoticStatistics.ForMathlib.ConditionalQMD
-open scoped ENNReal
+open AsymptoticStatistics.ForMathlib.CondExpL2
+open scoped ENNReal InnerProductSpace
 
 namespace AsymptoticStatistics.ParametricFamily.CARScore
 
@@ -41,9 +47,9 @@ map `M : 𝓨 × 𝓓 → 𝓧` if, for every `t`, the `ν`-density of each fibr
 w.r.t. `Q ⊗ ν`: the conditional density depends on `(y, δ)` only through the
 observed `x = M(y, δ)`.
 
-This is a genuine external hypothesis: CAR is the defining
-restriction of the coarsening model, false for outcome-dependent missingness. It
-is the family-level strengthening of the single-measure disintegration clause in
+CAR is the defining restriction of the coarsening model and is false for
+general outcome-dependent missingness. It is the family-level strengthening of
+the single-measure disintegration clause in
 `Operators.CAR.IsCoarseningAtRandom`. -/
 def IsCARFamily (M : 𝓨 × 𝓓 → 𝓧) (γ : ConditionalQMDPath Q ν r) : Prop :=
   ∀ t : ℝ,
@@ -56,8 +62,7 @@ private noncomputable def condSqrt (γ : ConditionalQMDPath Q ν r) (t : ℝ) :
     𝓨 × 𝓓 → ℝ :=
   fun p => Real.sqrt ((γ.curve t p.1).rnDeriv ν p.2).toReal
 
-/-- The product-level score times the reference square-root density `b₀ · √p₀`,
-whose `(M⁻¹σ_𝓧)`-measurability is used below. -/
+/-- The product-level score times the reference square-root density `b₀ · √p₀`. -/
 private noncomputable def condScoreSqrt (γ : ConditionalQMDPath Q ν r) :
     𝓨 × 𝓓 → ℝ :=
   fun p => γ.score p.1 p.2 * condSqrt γ 0 p
@@ -71,8 +76,8 @@ private noncomputable def condRem (γ : ConditionalQMDPath Q ν r) (t : ℝ) :
 /-- Product-space `L²`-membership of the conditional square-root density:
 `√pₜ ∈ L²(Q ⊗ ν)`, where `pₜ(y, δ) = ((curve t y).rnDeriv ν δ).toReal`.
 
-The measurability of `pₜ` is supplied by the caller through the CAR hypothesis, so
-no joint measurability of the bare fibrewise kernel density is
+The CAR hypothesis supplies the measurability of `pₜ`, so no joint
+measurability of the bare fibrewise kernel density is
 needed. The joint integral is finite by Tonelli and the fibrewise Radon–Nikodym
 mass identity: `∫∫ pₜ d(Q ⊗ ν) = ∫ (curve t y) univ dQ = 1`, since each fibre
 `curve t y` is a probability measure dominated by `ν`. A *finite* dominating `ν`
@@ -116,74 +121,32 @@ private lemma condSqrtDensity_memLp (γ : ConditionalQMDPath Q ν r) (t : ℝ)
       _ = 1 := by rw [lintegral_const, one_mul, measure_univ]
   exact lt_of_le_of_lt h_bound ENNReal.one_lt_top
 
-/-- *Measurability of the score times the square-root density* (vdV §25.5.3,
-book p.380).
-
-The product `b₀ · √p₀ = (score · √p₀)` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`.
-
-From the joint QMD limit `γ.qmd_limit`, the
-difference quotients `qₜ = (√pₜ − √p₀)/(t/2)` converge in `L²(Q ⊗ ν)` to
-`score · √p₀`. Under `IsCARFamily M γ` each `√pₜ`, `√p₀` is `(M⁻¹σ_𝓧)`-measurable
-(square-root of a CAR-measurable density), so each `qₜ` is; the
-`(M⁻¹σ_𝓧)`-measurable functions form an `L²(Q ⊗ ν)`-closed subspace
-(`MeasureTheory.isClosed_aestronglyMeasurable`, `hm := hM.comap_le`), so the
-`L²`-limit `score · √p₀` inherits `(M⁻¹σ_𝓧)`-measurability.
-
-The two required ingredients are supplied directly. First, `L²`-membership of
-the fibrewise `√pₜ` on the product comes from
-`condSqrtDensity_memLp` (Tonelli + `Measure.lintegral_rnDeriv`, giving
-`∫∫ pₜ d(Q ⊗ ν) = ∫ (curve t y) univ dQ = 1`); the measurability of `pₜ` is
-supplied by `IsCARFamily`, so no joint measurability of the bare kernel density
-— and in particular no strengthening of `ν` to a finite measure — is needed
-(`σ`-finiteness of `ν` suffices throughout). (ii) The closed-subspace convergence
-is `IsClosed.mem_of_tendsto` against `isClosed_aestronglyMeasurable`, with the
-`L²`-convergence `qₜ → score · √p₀` read off from `γ.qmd_limit` via
-`eLpNorm (qₜ − score·√p₀) = ofReal 2 · (eLpNorm (condRem γ t) / ofReal |t|)`. -/
-private lemma score_mul_sqrt_aestronglyMeasurable_comap
+/-- The weighted conditional score controlled by the joint QMD limit belongs to
+`L²(Q ⊗ ν)`.  CAR supplies the joint measurability of the conditional densities. -/
+private lemma condScoreSqrt_memLp
     (M : 𝓨 × 𝓓 → 𝓧) (hM : Measurable M) (γ : ConditionalQMDPath Q ν r)
     (hCAR : IsCARFamily M γ) :
-    AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
-      (fun p : 𝓨 × 𝓓 => γ.score p.1 p.2
-        * Real.sqrt ((γ.curve 0 p.1).rnDeriv ν p.2).toReal) (Q.prod ν) := by
-  classical
-  haveI : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
-  -- The observed sub-σ-algebra `m = M⁻¹σ_𝓧` and its inclusion. We do NOT bind it
-  -- as a local `set` variable: a local `MeasurableSpace (𝓨 × 𝓓)` would shadow the
-  -- ambient product σ-algebra in instance resolution.
+    MemLp (condScoreSqrt γ) 2 (Q.prod ν) := by
   have hm : MeasurableSpace.comap M ‹MeasurableSpace 𝓧›
       ≤ (inferInstance : MeasurableSpace (𝓨 × 𝓓)) := hM.comap_le
-  -- The goal function is `condScoreSqrt γ` (definitionally).
-  change AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
-    (condScoreSqrt γ) (Q.prod ν)
-  -- Score joint measurability (full σ-algebra).
   have h_score_meas : AEStronglyMeasurable
       (fun p : 𝓨 × 𝓓 => γ.score p.1 p.2) (Q.prod ν) :=
     γ.score_meas.aestronglyMeasurable
-  -- `√pₜ` is `m`-measurable a.e. (CAR at `t`) and lies in `L²(Q ⊗ ν)`.
-  have hSQ_meas_m : ∀ t, AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
-      (condSqrt γ t) (Q.prod ν) :=
-    fun t => Real.continuous_sqrt.comp_aestronglyMeasurable (hCAR t)
   have hpR_meas : ∀ t, AEStronglyMeasurable
       (fun p : 𝓨 × 𝓓 => ((γ.curve t p.1).rnDeriv ν p.2).toReal) (Q.prod ν) :=
     fun t => (hCAR t).mono hm
   have hSQ_mem : ∀ t, MemLp (condSqrt γ t) 2 (Q.prod ν) :=
     fun t => condSqrtDensity_memLp γ t (hpR_meas t)
-  have hSQ_meas : ∀ t, AEStronglyMeasurable (condSqrt γ t) (Q.prod ν) :=
-    fun t => (hSQ_mem t).aestronglyMeasurable
-  -- `condRem γ t` is measurable (full σ-algebra).
   have hRem_meas : ∀ t, AEStronglyMeasurable (condRem γ t) (Q.prod ν) := by
     intro t
-    have h_eq : condRem γ t = fun p : 𝓨 × 𝓓 =>
-        (condSqrt γ t p - condSqrt γ 0 p) - (t / 2) * γ.score p.1 p.2 * condSqrt γ 0 p :=
-      rfl
-    rw [h_eq]
-    exact ((hSQ_meas t).sub (hSQ_meas 0)).sub
-      ((h_score_meas.const_mul (t / 2)).mul (hSQ_meas 0))
-  -- Reinterpret the joint QMD limit through `condRem` (defeq unfold).
+    change AEStronglyMeasurable (fun p : 𝓨 × 𝓓 =>
+      (condSqrt γ t p - condSqrt γ 0 p)
+        - (t / 2) * γ.score p.1 p.2 * condSqrt γ 0 p) (Q.prod ν)
+    exact (((hSQ_mem t).sub (hSQ_mem 0)).aestronglyMeasurable).sub
+      ((h_score_meas.const_mul (t / 2)).mul (hSQ_mem 0).aestronglyMeasurable)
   have h_qmd : Tendsto (fun t : ℝ =>
       eLpNorm (condRem γ t) 2 (Q.prod ν) / ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) :=
     γ.qmd_limit
-  -- (1) `G = condScoreSqrt γ ∈ L²(Q ⊗ ν)` via a single small `t`.
   obtain ⟨t₀, ht₀_ne, ht₀_lt⟩ : ∃ t : ℝ, t ≠ 0 ∧
       eLpNorm (condRem γ t) 2 (Q.prod ν) < ENNReal.ofReal |t| := by
     have h_lt_one : ∀ᶠ t in 𝓝[≠] (0 : ℝ),
@@ -203,20 +166,72 @@ private lemma score_mul_sqrt_aestronglyMeasurable_comap
       _ = ENNReal.ofReal |t| := one_mul _
   have hRem_mem₀ : MemLp (condRem γ t₀) 2 (Q.prod ν) :=
     ⟨hRem_meas t₀, lt_trans ht₀_lt ENNReal.ofReal_lt_top⟩
-  -- `(t₀/2) • G = (√p_{t₀} - √p₀) - condRem γ t₀`  ⇒  `G ∈ L²`.
   have hG_scaled_mem : MemLp (fun p => (t₀ / 2) * condScoreSqrt γ p) 2 (Q.prod ν) := by
     have h_eq : (fun p : 𝓨 × 𝓓 => (t₀ / 2) * condScoreSqrt γ p)
         = fun p => (condSqrt γ t₀ p - condSqrt γ 0 p) - condRem γ t₀ p := by
       funext p; simp only [condRem, condScoreSqrt]; ring
     rw [h_eq]
     exact ((hSQ_mem t₀).sub (hSQ_mem 0)).sub hRem_mem₀
-  have hG_mem : MemLp (condScoreSqrt γ) 2 (Q.prod ν) := by
-    have h2 := hG_scaled_mem.const_mul (2 / t₀)
-    have h_eq : (fun p => (2 / t₀) * ((t₀ / 2) * condScoreSqrt γ p)) = condScoreSqrt γ := by
-      funext p
-      have hc : (2 / t₀) * (t₀ / 2) = 1 := by field_simp
-      rw [← mul_assoc, hc, one_mul]
-    rwa [h_eq] at h2
+  have h2 := hG_scaled_mem.const_mul (2 / t₀)
+  have h_eq : (fun p => (2 / t₀) * ((t₀ / 2) * condScoreSqrt γ p)) = condScoreSqrt γ := by
+    funext p
+    have hc : (2 / t₀) * (t₀ / 2) = 1 := by field_simp
+    rw [← mul_assoc, hc, one_mul]
+  rwa [h_eq] at h2
+
+/-- Weighted-score measurability under CAR (vdV §25.5.3, book p.380).
+
+The product `b₀ · √p₀ = (score · √p₀)` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`.
+
+From the joint QMD limit `γ.qmd_limit`, the
+difference quotients `qₜ = (√pₜ − √p₀)/(t/2)` converge in `L²(Q ⊗ ν)` to
+`score · √p₀`. Under `IsCARFamily M γ` each `√pₜ`, `√p₀` is `(M⁻¹σ_𝓧)`-measurable
+(square-root of a CAR-measurable density), so each `qₜ` is; the
+`(M⁻¹σ_𝓧)`-measurable functions form an `L²(Q ⊗ ν)`-closed subspace
+(`MeasureTheory.isClosed_aestronglyMeasurable`, `hm := hM.comap_le`), so the
+`L²`-limit `score · √p₀` inherits `(M⁻¹σ_𝓧)`-measurability.
+
+The two key ingredients are as follows. First, `L²`-membership of the
+fibrewise `√pₜ` on the product comes from
+`condSqrtDensity_memLp` (Tonelli + `Measure.lintegral_rnDeriv`, giving
+`∫∫ pₜ d(Q ⊗ ν) = ∫ (curve t y) univ dQ = 1`); the measurability of `pₜ` is
+supplied by `IsCARFamily`, so no joint measurability of the bare kernel density
+— and in particular no strengthening of `ν` to a finite measure — is needed
+(`σ`-finiteness of `ν` suffices throughout). Second, the closed-subspace convergence
+is `IsClosed.mem_of_tendsto` against `isClosed_aestronglyMeasurable`, with the
+`L²`-convergence `qₜ → score · √p₀` read off from `γ.qmd_limit` via
+`eLpNorm (qₜ − score·√p₀) = ofReal 2 · (eLpNorm (condRem γ t) / ofReal |t|)`. -/
+private lemma score_mul_sqrt_aestronglyMeasurable_comap
+    (M : 𝓨 × 𝓓 → 𝓧) (hM : Measurable M) (γ : ConditionalQMDPath Q ν r)
+    (hCAR : IsCARFamily M γ) :
+    AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
+      (fun p : 𝓨 × 𝓓 => γ.score p.1 p.2
+        * Real.sqrt ((γ.curve 0 p.1).rnDeriv ν p.2).toReal) (Q.prod ν) := by
+  classical
+  haveI : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
+  -- The observed sub-σ-algebra `m = M⁻¹σ_𝓧` and its inclusion. We do NOT bind it
+  -- as a local `set` variable: a local `MeasurableSpace (𝓨 × 𝓓)` would shadow the
+  -- ambient product σ-algebra in instance resolution.
+  have hm : MeasurableSpace.comap M ‹MeasurableSpace 𝓧›
+      ≤ (inferInstance : MeasurableSpace (𝓨 × 𝓓)) := hM.comap_le
+  -- The goal function is `condScoreSqrt γ` (definitionally).
+  change AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
+    (condScoreSqrt γ) (Q.prod ν)
+  -- `√pₜ` is `m`-measurable a.e. (CAR at `t`) and lies in `L²(Q ⊗ ν)`.
+  have hSQ_meas_m : ∀ t, AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
+      (condSqrt γ t) (Q.prod ν) :=
+    fun t => Real.continuous_sqrt.comp_aestronglyMeasurable (hCAR t)
+  have hpR_meas : ∀ t, AEStronglyMeasurable
+      (fun p : 𝓨 × 𝓓 => ((γ.curve t p.1).rnDeriv ν p.2).toReal) (Q.prod ν) :=
+    fun t => (hCAR t).mono hm
+  have hSQ_mem : ∀ t, MemLp (condSqrt γ t) 2 (Q.prod ν) :=
+    fun t => condSqrtDensity_memLp γ t (hpR_meas t)
+  -- Reinterpret the joint QMD limit through `condRem` (defeq unfold).
+  have h_qmd : Tendsto (fun t : ℝ =>
+      eLpNorm (condRem γ t) 2 (Q.prod ν) / ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) :=
+    γ.qmd_limit
+  have hG_mem : MemLp (condScoreSqrt γ) 2 (Q.prod ν) :=
+    condScoreSqrt_memLp M hM γ hCAR
   -- (2) The difference quotients `q t = (2/t)(√pₜ − √p₀)`, `m`-measurable and `L²`.
   set q : ℝ → 𝓨 × 𝓓 → ℝ :=
     fun t p => (2 / t) * (condSqrt γ t p - condSqrt γ 0 p) with hq_def
@@ -286,8 +301,8 @@ null-set `{p₀ = 0}` the score is unconstrained by the QMD limit (which only se
 `score · √p₀`), so the factorization can only hold where the reference density is
 positive — exactly the `Q ⊗ₘ r`-support.
 
-The function `score · √p₀` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`
-by `score_mul_sqrt_aestronglyMeasurable_comap`,
+The proof first shows that `score · √p₀` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`
+using `score_mul_sqrt_aestronglyMeasurable_comap`,
 and so is `p₀` itself (`hCAR 0` at `curve 0 = r`); both transfer to `Q ⊗ₘ r` via
 `Q ⊗ₘ r ≪ Q ⊗ ν`. Where `p₀ > 0` (`Q ⊗ₘ r`-a.e., proved inline: fibrewise
 `Measure.rnDeriv_pos (r y ≪ ν)` lifted through `Measure.ae_compProd_of_ae_ae`,
@@ -295,8 +310,8 @@ using the joint-measurable a.e.-representative of `p₀` that `hCAR 0` supplies 
 the measurable set) one has `score = (score · √p₀) · (√p₀)⁻¹`, a product of
 `(M⁻¹σ_𝓧)`-measurable functions.
 
-`hM : Measurable M` expresses the standing regularity assumption that the
-coarsening map is measurable. -/
+Measurability of `M` is the standard regularity condition on the observation
+mechanism. -/
 theorem conditionalScore_factorsThrough
     (M : 𝓨 × 𝓓 → 𝓧) (hM : Measurable M) (γ : ConditionalQMDPath Q ν r)
     (hCAR : IsCARFamily M γ) :
@@ -378,5 +393,129 @@ theorem conditionalScore_factorsThrough
     simp only [Function.uncurry]
     rw [mul_assoc, mul_inv_cancel₀ hs, mul_one]
   exact (hSq'.mul h_inv).congr h_eq.symm
+
+/-- The bare conditional score is square-integrable under the full-data law
+`Q ⊗ₘ r` when the supplied conditional-QMD path satisfies CAR
+(vdV §25.5.3, book p.380).
+
+The CAR hypothesis supplies the joint density measurability needed to pass from
+the weighted score controlled by the QMD limit to the raw score under the
+reference full-data law. -/
+theorem conditionalScore_memLp_compProd_of_car
+    (M : 𝓨 × 𝓓 → 𝓧)
+    (hM : Measurable M)
+    (γ : ConditionalQMDPath Q ν r)
+    (hCAR : IsCARFamily M γ) :
+    MemLp (Function.uncurry γ.score) 2 (Q ⊗ₘ r) := by
+  have hscore_meas : AEStronglyMeasurable (Function.uncurry γ.score) (Q ⊗ₘ r) :=
+    (conditionalScore_factorsThrough M hM γ hCAR).mono hM.comap_le
+  rw [memLp_two_iff_integrable_sq hscore_meas]
+  have hweighted : Integrable (fun p => condScoreSqrt γ p ^ 2) (Q.prod ν) :=
+    (condScoreSqrt_memLp M hM γ hCAR).integrable_sq
+  have hweighted_prod :=
+    (integrable_prod_iff hweighted.aestronglyMeasurable).mp hweighted
+  have hfibre : ∀ᵐ y ∂Q, Integrable (fun δ => γ.score y δ ^ 2) (r y) := by
+    filter_upwards [hweighted_prod.1] with y hy
+    have h_eq : (fun δ => condScoreSqrt γ (y, δ) ^ 2) = fun δ =>
+        ((γ.curve 0 y).rnDeriv ν δ).toReal * γ.score y δ ^ 2 := by
+      funext δ
+      simp only [condScoreSqrt, condSqrt, mul_pow,
+        Real.sq_sqrt ENNReal.toReal_nonneg]
+      ring
+    rw [h_eq] at hy
+    have h := (integrable_toReal_rnDeriv_mul_iff
+      (γ.curve_absCont 0 y)).mp hy
+    simpa only [γ.curve_at_zero] using h
+  have hnorm_eq : (fun y => ∫ δ, ‖γ.score y δ ^ 2‖ ∂(r y)) =
+      fun y => ∫ δ, ‖condScoreSqrt γ (y, δ) ^ 2‖ ∂ν := by
+    funext y
+    calc
+      ∫ δ, ‖γ.score y δ ^ 2‖ ∂(r y)
+          = ∫ δ, ‖γ.score y δ ^ 2‖ ∂(γ.curve 0 y) := by rw [γ.curve_at_zero]
+      _ = ∫ δ, ((γ.curve 0 y).rnDeriv ν δ).toReal
+            * ‖γ.score y δ ^ 2‖ ∂ν :=
+        (integral_toReal_rnDeriv_mul (γ.curve_absCont 0 y)).symm
+      _ = ∫ δ, ‖condScoreSqrt γ (y, δ) ^ 2‖ ∂ν := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun δ => ?_)
+        simp only [condScoreSqrt, condSqrt, mul_pow,
+          Real.norm_of_nonneg (sq_nonneg _), Real.sq_sqrt ENNReal.toReal_nonneg]
+        rw [Real.norm_of_nonneg
+          (mul_nonneg (sq_nonneg (γ.score y δ)) ENNReal.toReal_nonneg)]
+        ring
+  refine (Measure.integrable_compProd_iff (hscore_meas.pow 2)).2 ⟨hfibre, ?_⟩
+  change Integrable (fun y => ∫ δ, ‖γ.score y δ ^ 2‖ ∂(r y)) Q
+  rw [hnorm_eq]
+  exact hweighted_prod.2
+
+/-- The observed `L²₀` score supplied by a conditional-QMD path satisfying CAR
+(vdV §25.5.3, book p.380).
+
+The CAR hypothesis is used to descend the bare conditional score through the
+measurable coarsening map. Square-integrability comes from
+`conditionalScore_memLp_compProd_of_car`, and mean zero comes from
+`conditionalScore_fibre_mean_zero`; neither fact is exposed as a caller
+hypothesis. -/
+noncomputable def conditionalQMDObservedScore
+    (M : 𝓨 × 𝓓 → 𝓧)
+    (hM : Measurable M)
+    (γ : ConditionalQMDPath Q ν r)
+    (hCAR : IsCARFamily M γ) :
+    ↥(AsymptoticStatistics.Core.Hilbert.L2ZeroMean ((Q ⊗ₘ r).map M)) := by
+  have hscore := conditionalScore_memLp_compProd_of_car M hM γ hCAR
+  let scoreLp : Lp ℝ 2 (Q ⊗ₘ r) := hscore.toLp (Function.uncurry γ.score)
+  have hscoreLp_meas :
+      AEStronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace 𝓧›]
+        (scoreLp : 𝓨 × 𝓓 → ℝ) (Q ⊗ₘ r) :=
+    (conditionalScore_factorsThrough M hM γ hCAR).congr
+      (MemLp.coeFn_toLp hscore).symm
+  let scoreMeas : lpMeas ℝ ℝ
+      (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2 (Q ⊗ₘ r) :=
+    ⟨scoreLp, mem_lpMeas_iff_aestronglyMeasurable.mpr hscoreLp_meas⟩
+  let observedLp : Lp ℝ 2 ((Q ⊗ₘ r).map M) := doobL2Equiv hM scoreMeas
+  have hpull : (fun p => observedLp (M p)) =ᵐ[Q ⊗ₘ r]
+      Function.uncurry γ.score :=
+    (doobL2Equiv_comp_apply hM scoreMeas).trans (MemLp.coeFn_toLp hscore)
+  have hscore_int : Integrable (Function.uncurry γ.score) (Q ⊗ₘ r) :=
+    hscore.integrable one_le_two
+  have hscore_mean : ∫ p, Function.uncurry γ.score p ∂(Q ⊗ₘ r) = 0 := by
+    rw [Measure.integral_compProd hscore_int]
+    exact integral_eq_zero_of_ae (conditionalScore_fibre_mean_zero γ)
+  have hobserved_mean : ∫ x, observedLp x ∂((Q ⊗ₘ r).map M) = 0 := by
+    rw [integral_map hM.aemeasurable (Lp.aestronglyMeasurable observedLp)]
+    rw [integral_congr_ae hpull]
+    exact hscore_mean
+  refine ⟨observedLp, ?_⟩
+  unfold AsymptoticStatistics.Core.Hilbert.L2ZeroMean
+  rw [LinearMap.mem_ker]
+  change AsymptoticStatistics.Core.Hilbert.integralL2 ((Q ⊗ₘ r).map M) observedLp = 0
+  unfold AsymptoticStatistics.Core.Hilbert.integralL2
+    AsymptoticStatistics.Core.Hilbert.oneL2
+  rw [innerSL_apply_apply, L2.inner_def]
+  calc
+    ∫ x, ⟪((memLp_const (1 : ℝ)).toLp (fun _ : 𝓧 => 1)) x, observedLp x⟫_ℝ
+        ∂((Q ⊗ₘ r).map M) = ∫ x, observedLp x ∂((Q ⊗ₘ r).map M) := by
+          refine integral_congr_ae ?_
+          filter_upwards [(memLp_const (1 : ℝ)).coeFn_toLp] with x hx
+          rw [hx]
+          change observedLp x * 1 = observedLp x
+          ring
+    _ = 0 := hobserved_mean
+
+/-- Pulling the observed conditional-QMD/CAR score back along `M` recovers the
+bare conditional score `b₀(δ | y)` almost everywhere under `Q ⊗ₘ r`
+(vdV §25.5.3, book p.380). -/
+theorem conditionalQMDObservedScore_pullback
+    (M : 𝓨 × 𝓓 → 𝓧)
+    (hM : Measurable M)
+    (γ : ConditionalQMDPath Q ν r)
+    (hCAR : IsCARFamily M γ) :
+    (fun p =>
+      (((conditionalQMDObservedScore M hM γ hCAR :
+          ↥(AsymptoticStatistics.Core.Hilbert.L2ZeroMean ((Q ⊗ₘ r).map M))) :
+          Lp ℝ 2 ((Q ⊗ₘ r).map M)) : 𝓧 → ℝ) (M p))
+      =ᵐ[Q ⊗ₘ r] Function.uncurry γ.score := by
+  unfold conditionalQMDObservedScore
+  exact (doobL2Equiv_comp_apply hM _).trans
+    (MemLp.coeFn_toLp (conditionalScore_memLp_compProd_of_car M hM γ hCAR))
 
 end AsymptoticStatistics.ParametricFamily.CARScore
