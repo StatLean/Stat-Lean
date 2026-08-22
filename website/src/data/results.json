@@ -843,6 +843,251 @@
     ]
   },
   {
+    "id": "mEstimator_rate_of_convergence",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "mEstimator_rate_of_convergence",
+    "fullName": "AsymptoticStatistics.MEstimator.mEstimator_rate_of_convergence",
+    "title": "Rate of Convergence for M-Estimators, Corrected Form",
+    "citation": "van der Vaart (1998), Thm 5.52, corrected form",
+    "file": "StatLean/AsymptoticStatistics/MEstimator/MetricRate.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/MetricRate.html#AsymptoticStatistics.MEstimator.mEstimator_rate_of_convergence",
+    "informal": "Let $m_\\theta$ be a measurable criterion and let $\\hat\\theta_n$ nearly maximize its empirical average. Suppose <span data-link=\"h1\">the population criterion has a negative shell drift of order $\\delta^\\alpha$ around $\\theta_0$</span>, while <span data-link=\"h2\">the outer expected empirical-process oscillation on a $\\delta$-ball is at most a constant times $\\delta^\\beta$, with $0<\\alpha$ and $\\beta<\\alpha$</span>. Assume <span data-link=\"h3\">the empirical criterion at $\\hat\\theta_n$ is within a nonnegative measurable remainder $R_n$ of its value at $\\theta_0$</span>, <span data-link=\"h4\">the rescaled remainders are bounded in probability</span>, and <span data-link=\"h5\">$\\hat\\theta_n$ is consistent in outer probability</span>. Then $(n+1)^{1/(2(\\alpha-\\beta))}d(\\hat\\theta_n,\\theta_0)$ is bounded in outer probability.",
+    "summary": "Curvature of order α and empirical oscillation of order β give the corrected M-estimator rate (n+1)^{1/(2(α−β))}.",
+    "leanSignature": "theorem mEstimator_rate_of_convergence\n    {Ω Θ Ξ : Type*} [MeasurableSpace Ω] [MetricSpace Θ] [MeasurableSpace Ξ]\n    (P : Measure Ω) [IsProbabilityMeasure P]\n    (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (m : Θ → Ω → ℝ) (θ₀ : Θ)\n    (hm_meas : ∀ θ, Measurable (m θ))\n    (X : ℕ → Ξ → Ω)\n    (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)\n    (hR_meas : ∀ n, Measurable (R n))\n    (α β C ρ : ℝ)\n    (hα : 0 < α) (hβα : β < α) (hC : 0 < C) (hρ : 0 < ρ)\n    (hm_int : ∀ θ, dist θ θ₀ < ρ → Integrable (fun ω => m θ ω - m θ₀ ω) P)\n    (hcurv : ∀ δ, 0 < δ → δ < ρ → ∀ θ,\n      δ / 2 < dist θ θ₀ → dist θ θ₀ < δ →\n      ∫ ω, (m θ ω - m θ₀ ω) ∂P ≤ -C * Real.rpow δ α)\n    (hmod : ∀ δ, 0 < δ → δ < ρ → ∀ n,\n      outerExpectation μ (fun ξ =>\n        ⨆ θ : {θ : Θ // dist θ θ₀ < δ}, ENNReal.ofReal\n          |empiricalProcess P (n + 1) (fun i : Fin (n + 1) => X i.val ξ)\n            (fun ω => m θ.1 ω - m θ₀ ω)|) ≤\n        ENNReal.ofReal (C * Real.rpow δ β))\n    (hNearMax : ∀ n ξ,\n      empiricalAvg (m (θhat n ξ)) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) ≥\n        empiricalAvg (m θ₀) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) - R n ξ)\n    (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)\n    (hR : IsBoundedInProb (fun _ : ℕ => μ) (fun n ξ =>\n      Real.rpow (rateScale α β n) α * R n ξ))\n    (hcons : TendstoZeroInOuterProbScalar μ (fun n ξ => dist (θhat n ξ) θ₀)) :\n    IsBoundedInOuterProbScalar μ (fun n ξ => rateScale α β n * dist (θhat n ξ) θ₀)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hcurv",
+        "label": "population curvature",
+        "note": "On every sufficiently small shell, the population criterion falls by at least a positive constant times δ^α."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmod",
+        "label": "empirical modulus",
+        "note": "The outer expected empirical-process oscillation on a δ-neighborhood is bounded by a constant times δ^β."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hNearMax",
+        "label": "near maximization",
+        "note": "The estimator's empirical criterion is no smaller than the criterion at θ₀ minus a nonnegative remainder."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hR : IsBoundedInProb",
+        "label": "controlled remainder",
+        "note": "The remainder multiplied by the αth power of the target rate is bounded in probability."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hcons",
+        "label": "outer consistency",
+        "note": "The estimator's distance from θ₀ tends to zero in outer probability."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.52, corrected form",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.52, corrected form",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "M-estimator",
+      "rate of convergence"
+    ],
+    "formalizationNotes": "We use the official annular-curvature correction to Theorem 5.52. The formal statement additionally assumes α > 0, a condition supported by the geometric-shell argument but not listed in the official errata, and uses a measurable nonnegative near-maximization slack plus local integrability. Samples are indexed by n + 1 to avoid a zero-size denominator, giving the equivalent positive-sample rate (n + 1)^{1/(2(α − β))}."
+  },
+  {
+    "id": "mEstimator_nuisance_rate",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "mEstimator_nuisance_rate",
+    "fullName": "AsymptoticStatistics.MEstimator.mEstimator_nuisance_rate",
+    "title": "M-Estimator Rate with a Nuisance Parameter",
+    "citation": "van der Vaart (1998), Thm 5.55",
+    "file": "StatLean/AsymptoticStatistics/MEstimator/NuisanceRate.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/NuisanceRate.html#AsymptoticStatistics.MEstimator.mEstimator_nuisance_rate",
+    "informal": "Consider criteria $m_{\\theta,\\eta}$ with target $(\\theta_0,\\eta_0)$ and parameter sets $\\Theta_n,H_n$. Suppose <span data-link=\"h1\">the population criterion plus its deterministic correction is bounded above by $-d_n(\\theta,\\theta_0)^2+d_H(\\eta,\\eta_0)^2$</span>, and <span data-link=\"h2\">the corrected empirical-process oscillation over a $d_n$-ball is controlled by a modulus $\\phi_n(\\delta)$ whose ratio to $\\delta^\\beta$ is decreasing, with $\\beta<2$</span>. If <span data-link=\"h3\">the estimated pair lies in $\\Theta_n\\times H_n$ with inner probability tending to one</span>, <span data-link=\"h4\">the estimated criterion nearly maximizes over the target comparison point</span>, and <span data-link=\"h5\">the normalized nonnegative remainder is bounded in probability</span>, then $d_n(\\hat\\theta_n,\\theta_0)$ is bounded in outer probability relative to $\\delta_n+d_H(\\hat\\eta_n,\\eta_0)$.",
+    "summary": "The target-parameter rate is controlled by the balancing rate plus the nuisance-estimation error.",
+    "leanSignature": "theorem mEstimator_nuisance_rate\n    {Ω Θ H Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]\n    (P : Measure Ω) [IsProbabilityMeasure P]\n    (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)\n    (hm_meas : ∀ θ η, Measurable (m θ η))\n    (X : ℕ → Ξ → Ω)\n    (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)\n    (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →\n      Integrable (fun ω => m θ η ω - m θ₀ η ω) P)\n    (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)\n    (e : ℕ → Θ → H → ℝ) (φ : ℕ → ℝ → ℝ)\n    (β : ℝ) (hβ : β < 2)\n    (hφanti : ∀ n, AntitoneOn (fun δ => φ n δ / Real.rpow δ β) (Set.Ioi 0))\n    (δn : ℕ → ℝ) (hδn : ∀ n, 0 < δn n)\n    (hbalance : ∀ n, φ n (δn n) ≤ Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2)\n    (hdet : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →\n      (∫ ω, (m θ η ω - m θ₀ η ω) ∂P) + e n θ η ≤\n        -(dΘ n θ θ₀ : ℝ) ^ 2 + (dH η η₀ : ℝ) ^ 2)\n    (hmod : ∀ n δ, 0 < δ →\n      outerExpectation μ (fun ξ =>\n        ⨆ θ : {θ : Θ // θ ∈ Θn n ∧ (dΘ n θ θ₀ : ℝ) < δ},\n          ⨆ η : {η : H // η ∈ Hn n}, ENNReal.ofReal\n            |nuisanceCenteredProcess P m X θ₀ n ξ θ.1 η.1 -\n                Real.sqrt ((n + 1 : ℕ) : ℝ) * e n θ.1 η.1|) ≤\n        ENNReal.ofReal (φ n δ))\n    (θhat : ℕ → Ξ → Θ) (ηhat : ℕ → Ξ → H)\n    (hmem : TendstoInnerProbOne μ (fun n =>\n      {ξ | θhat n ξ ∈ Θn n ∧ ηhat n ξ ∈ Hn n}))\n    (R : ℕ → Ξ → ℝ) (hR_meas : ∀ n, Measurable (R n))\n    (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)\n    (hNearMax : ∀ n ξ,\n      nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥\n        nuisanceEmpiricalCriterion m X n ξ θ₀ (ηhat n ξ) - R n ξ)\n    (hR : IsBoundedInProb (fun _ : ℕ => μ) (fun n ξ => R n ξ / (δn n) ^ 2)) :\n    IsBoundedInOuterProbScalarWt μ\n      (fun n ξ => δn n + (dH (ηhat n ξ) η₀ : ℝ))\n      (fun n ξ => (dΘ n (θhat n ξ) θ₀ : ℝ))",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hdet",
+        "label": "quadratic identification",
+        "note": "The population criterion separates θ from θ₀ quadratically, up to the nuisance distance."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmod",
+        "label": "stochastic modulus",
+        "note": "The corrected empirical-process oscillation obeys the stated modulus bound."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hmem",
+        "label": "parameter membership",
+        "note": "The estimated target and nuisance parameters lie in the prescribed sets with inner probability tending to one."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hNearMax",
+        "label": "near maximization",
+        "note": "The estimated criterion is within a nonnegative remainder of the criterion at θ₀ with the fitted nuisance parameter."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hR : IsBoundedInProb",
+        "label": "controlled remainder",
+        "note": "The remainder divided by δ_n² is bounded in probability."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.55",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.55",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "M-estimator",
+      "nuisance parameter",
+      "rate of convergence"
+    ],
+    "formalizationNotes": "The target and nuisance discrepancies are arbitrary nonnegative-valued functions rather than metrics. Membership in the changing parameter sets is imposed with inner probability tending to one. The selected nonnegative near-maximization slack is measurable and bounded at the balancing scale. Empirical averages use n + 1 observations to keep the finite-sample normalization positive."
+  },
+  {
+    "id": "argmax_theorem",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "argmax_theorem",
+    "fullName": "AsymptoticStatistics.MEstimator.argmax_theorem",
+    "title": "Argmax Theorem",
+    "citation": "van der Vaart (1998), Thm 5.56",
+    "file": "StatLean/AsymptoticStatistics/MEstimator/Argmax.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/Argmax.html#AsymptoticStatistics.MEstimator.argmax_theorem",
+    "informal": "Let $M_n$ be stochastic processes on changing sets $H_n$ and let $M$ be a limit process on $H$. Suppose <span data-link=\"h1\">$\\hat h_n$ nearly maximizes $M_n$ up to a nonnegative term tending to zero in outer probability</span>. Assume <span data-link=\"h2\">the limit maximizer $\\hat h$ is almost surely well separated on every open neighborhood and compact localization</span>, <span data-link=\"h3\">the sample and limit maximizers are uniformly contained in common compact localizations</span>, and <span data-link=\"h4\">the localized full-set and closed-set suprema converge jointly in outer distribution and are measurable at the limit</span>. Then $\\hat h_n$ converges weakly in the outer sense to the law of $\\hat h$.",
+    "summary": "Joint convergence of localized suprema and a well-separated limit maximizer imply outer weak convergence of argmax estimators.",
+    "leanSignature": "theorem argmax_theorem\n    {Ω Ωlim D : Type*} [MeasurableSpace Ω] [MeasurableSpace Ωlim]\n    [MeasurableSpace D] [MetricSpace D] [OpensMeasurableSpace D]\n    {μ : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (μ n)]\n    {μlim : Measure Ωlim} [IsProbabilityMeasure μlim]\n    (Mn : ℕ → Ω → D → ℝ) (M : Ωlim → D → ℝ)\n    (Hn : ℕ → Set D) (H : Set D) (𝒦 : Set (Set D))\n    (hhatn : ℕ → Ω → D) (hhat : Ωlim → D) (hhmeas : Measurable hhat)\n    (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)\n    (hmem : ∀ᵐ ω ∂μlim, hhat ω ∈ H)\n    (r : ℕ → Ω → ℝ) (hrnonneg : ∀ n ω, 0 ≤ r n ω)\n    (hr : TendstoInOuterProbabilityZero μ r)\n    (hnear : ∀ n ω h, h ∈ Hn n →\n      Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)\n    (hsep : ∀ (G : Set D), IsOpen G → ∀ K ∈ 𝒦,\n      ∀ᵐ ω ∂μlim, hhat ω ∈ G →\n        ForMathlib.setSupEReal (M ω) (Gᶜ ∩ K ∩ H)\n          < (M ω (hhat ω) : EReal))\n    (hcontain : ∀ ε : ℝ, 0 < ε → ∃ K ∈ 𝒦,\n      (⨆ n, (μ n).outerMeasureStar {ω | hhatn n ω ∉ K}) < ENNReal.ofReal ε ∧\n      μlim {ω | hhat ω ∉ K} < ENNReal.ofReal ε)\n    (hpairMeas : PairSupLimitMeasurable M H 𝒦)\n    (hpair : PairSupConvergesOuter μ μlim Mn M Hn H 𝒦) :\n    WeakConvergesOuter μ hhatn (μlim.map hhat)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hnear",
+        "label": "near maximization",
+        "note": "The estimator is within a nonnegative remainder tending to zero in outer probability of every competing criterion value."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hsep",
+        "label": "separated maximizer",
+        "note": "Outside every neighborhood of the limit maximizer, the localized criterion supremum is strictly smaller almost surely."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hcontain",
+        "label": "compact containment",
+        "note": "Sample and limit maximizers are uniformly localized in a common compact set with arbitrarily high probability."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hpair : PairSupConvergesOuter",
+        "label": "joint supremum convergence",
+        "note": "Localized closed-set and full-set suprema converge jointly in outer distribution, with measurable limits."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.56",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.56",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "M-estimator",
+      "argmax theorem",
+      "convergence in distribution"
+    ],
+    "formalizationNotes": "The separation condition holds almost everywhere separately for each fixed open neighborhood and compact localization; it does not assert one common null set for all pairs. Localized suprema are extended-real valued, retaining empty-set and unbounded cases without subtraction."
+  },
+  {
+    "id": "argmax_continuous_corollary",
+    "category": "parametric",
+    "kind": "corollary",
+    "leanName": "argmax_continuous_corollary",
+    "fullName": "AsymptoticStatistics.MEstimator.argmax_continuous_corollary",
+    "title": "Continuous-Process Argmax Corollary",
+    "citation": "van der Vaart (1998), Cor 5.58",
+    "file": "StatLean/AsymptoticStatistics/MEstimator/ArgmaxContinuous.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/ArgmaxContinuous.html#AsymptoticStatistics.MEstimator.argmax_continuous_corollary",
+    "informal": "For processes $M_n$ and $M$ on changing subsets of a finite-dimensional Euclidean space, suppose <span data-link=\"h1\">the index sets converge</span>, <span data-link=\"h2\">each limit path is continuous and has the unique maximizer $\\hat h$ on the limit set</span>, <span data-link=\"h3\">on every compact set the restricted processes converge weakly in the uniform norm</span>, <span data-link=\"h4\">$\\hat h_n$ nearly maximizes $M_n$ up to a term tending to zero in outer probability</span>, and <span data-link=\"h5\">the sample maximizers are uniformly tight</span>. Then $\\hat h_n$ converges weakly in the outer sense to the law of $\\hat h$.",
+    "summary": "Local uniform process convergence, a unique continuous-limit maximizer, and tightness yield the argmax limit law.",
+    "leanSignature": "theorem argmax_continuous_corollary\n    {Ω Ωlim : Type*} [MeasurableSpace Ω] [MeasurableSpace Ωlim]\n    {d : ℕ}\n    {μ : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (μ n)]\n    {μlim : Measure Ωlim} [IsProbabilityMeasure μlim]\n    (Mn : ℕ → Ω → EuclideanSpace ℝ (Fin d) → ℝ)\n    (M : Ωlim → EuclideanSpace ℝ (Fin d) → ℝ)\n    (Hn : ℕ → Set (EuclideanSpace ℝ (Fin d)))\n    (H : Set (EuclideanSpace ℝ (Fin d)))\n    (hset : ForMathlib.SetConverges Hn H)\n    (hhatn : ℕ → Ω → EuclideanSpace ℝ (Fin d))\n    (hhat : Ωlim → EuclideanSpace ℝ (Fin d))\n    (hhmeas : Measurable hhat)\n    (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)\n    (hmem : ∀ ω, hhat ω ∈ H)\n    (r : ℕ → Ω → ℝ) (hrnonneg : ∀ n ω, 0 ≤ r n ω)\n    (hr : TendstoInOuterProbabilityZero μ r)\n    (hnear : ∀ n ω h, h ∈ Hn n →\n      Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)\n    (hcontinuous : ∀ ω, Continuous (M ω))\n    (hunique : ∀ ω h, h ∈ H → h ≠ hhat ω → M ω h < M ω (hhat ω))\n    (hMnBounded : ∀ n ω (K : Set (EuclideanSpace ℝ (Fin d))), IsCompact K →\n      Memℓp (fun h : K => Mn n ω h) ∞)\n    (hLocalMeas : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),\n      Measurable (fun ω => ForMathlib.restrictToLinfOn K (M ω)\n        (continuous_memℓp_infty_on_compact (M ω) K (hcontinuous ω) hK)))\n    (hlocal : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),\n      WeakConvergesOuter μ\n        (fun n ω => ForMathlib.restrictToLinfOn K (Mn n ω) (hMnBounded n ω K hK))\n        (μlim.map (fun ω =>\n          ForMathlib.restrictToLinfOn K (M ω)\n            (continuous_memℓp_infty_on_compact (M ω) K (hcontinuous ω) hK))))\n    (htight : ∀ ε : ℝ, 0 < ε →\n      ∃ K : Set (EuclideanSpace ℝ (Fin d)), IsCompact K ∧\n        (⨆ n, (μ n).outerMeasureStar {ω | hhatn n ω ∉ K}) < ENNReal.ofReal ε) :\n    WeakConvergesOuter μ hhatn (μlim.map hhat)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hset",
+        "label": "set convergence",
+        "note": "The changing index sets converge to the limit index set."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hunique",
+        "label": "unique maximizer",
+        "note": "Every continuous limit path has the designated unique maximizer on the limit set."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hlocal",
+        "label": "local process convergence",
+        "note": "Restrictions to every compact set converge weakly in the uniform norm."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hnear",
+        "label": "near maximization",
+        "note": "The sample maximizers are within a nonnegative vanishing remainder of all competing values."
+      },
+      {
+        "id": "h5",
+        "leanToken": "htight",
+        "label": "uniform tightness",
+        "note": "The sample maximizers lie in a compact set with arbitrarily high outer probability, uniformly in n."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Cor 5.58",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Corollary 5.58",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "M-estimator",
+      "argmax theorem",
+      "convergence in distribution"
+    ],
+    "formalizationNotes": "The chosen representative of the limit process is required to have continuous paths everywhere, and its designated maximizer must belong to the limit set and be unique pointwise. This is stronger than an almost-sure reading. Sample paths are assumed bounded on each compact set; limit boundedness follows from continuity and compactness."
+  },
+  {
     "id": "DifferentiableQuadraticMean",
     "category": "parametric",
     "kind": "definition",
@@ -1182,7 +1427,7 @@
     "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LocalAsymptoticNormality/LANExpansion.html#AsymptoticStatistics.LANExpansion.LAN_expansion",
     "informal": "Let $(P_\\theta)$ be a parametric family that is <span data-link=\"h2\"><a href=\"#/result/DifferentiableQuadraticMean\">differentiable in quadratic mean</a> at $\\theta_0$ with score $\\ell$</span>, with <span data-link=\"h1\">$p_\\theta$ a genuine $\\mu$-density for every $\\theta$ (nonnegative, integrable, integrating to $1$)</span>, and let $X_i$ be <span data-link=\"h4\">i.i.d. with law $P_{\\theta_0}$</span>. Then for any <span data-link=\"h3\">$h_n\\to h$</span> the score has zero mean, the Fisher information $\\langle h,I_{\\theta_0}h\\rangle$ is finite in every direction, and the log-likelihood ratio admits the expansion $$\\log\\prod_{i\\le n}\\frac{p_{\\theta_0+h_n/\\sqrt n}(X_i)}{p_{\\theta_0}(X_i)}=\\frac1{\\sqrt n}\\sum_{i\\le n}\\langle h,\\ell(X_i)\\rangle-\\tfrac12\\langle h,I_{\\theta_0}h\\rangle+o_P(1).$$",
     "summary": "Under DQM at theta0 with iid data and a converging local parameter sequence, the log-likelihood ratio of local alternatives expands as a score average minus half the Fisher quadratic form plus o_P(1).",
-    "leanSignature": "theorem LAN_expansion\n    {k : ℕ}\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]\n    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)\n    [SigmaFinite μ]\n    (θ₀ : EuclideanSpace ℝ (Fin k))\n    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)\n    (hPDF : IsPDFOf M μ)\n    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)\n    (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))\n    (hconv : Filter.Tendsto h_n Filter.atTop (𝓝 h))\n    (X : ℕ → Ω → 𝓧) (hX_meas : ∀ i, Measurable (X i))\n    (hindep : Pairwise fun i j => ProbabilityTheory.IndepFun (X i) (X j) P)\n    (hident : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) P P)\n    (hlaw : Measure.map (X 0) P\n              = μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :\n    (∀ u : EuclideanSpace ℝ (Fin k), ∫ x, ⟪u, ℓ x⟫ * M.density θ₀ x ∂μ = 0) ∧\n    (∀ u : EuclideanSpace ℝ (Fin k),\n      Integrable (fun x => ⟪u, ℓ x⟫ ^ 2 * M.density θ₀ x) μ) ∧\n    TendstoInMeasure P\n      (fun n ω =>\n        (∑ i ∈ Finset.range n,\n          Real.log (M.density (θ₀ + (Real.sqrt n)⁻¹ • h_n n) (X i ω)\n                    / M.density θ₀ (X i ω)))\n        - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, ⟪h, ℓ (X i ω)⟫\n        + (1/2 : ℝ) * fisherInformation M μ θ₀ ℓ h h)\n      Filter.atTop (fun _ => (0 : ℝ))",
+    "leanSignature": "theorem LAN_expansion\n    {k : ℕ}\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]\n    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)\n    (θ₀ : EuclideanSpace ℝ (Fin k))\n    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)\n    (hPDF : IsPDFOf M μ)\n    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)\n    (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))\n    (hconv : Filter.Tendsto h_n Filter.atTop (𝓝 h))\n    (X : ℕ → Ω → 𝓧) (hX_meas : ∀ i, Measurable (X i))\n    (hindep : Pairwise fun i j => ProbabilityTheory.IndepFun (X i) (X j) P)\n    (hident : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) P P)\n    (hlaw : Measure.map (X 0) P\n              = μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :\n    (∀ u : EuclideanSpace ℝ (Fin k), ∫ x, ⟪u, ℓ x⟫ * M.density θ₀ x ∂μ = 0) ∧\n    (∀ u : EuclideanSpace ℝ (Fin k),\n      Integrable (fun x => ⟪u, ℓ x⟫ ^ 2 * M.density θ₀ x) μ) ∧\n    TendstoInMeasure P\n      (fun n ω =>\n        (∑ i ∈ Finset.range n,\n          Real.log (M.density (θ₀ + (Real.sqrt n)⁻¹ • h_n n) (X i ω)\n                    / M.density θ₀ (X i ω)))\n        - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, ⟪h, ℓ (X i ω)⟫\n        + (1/2 : ℝ) * fisherInformation M μ θ₀ ℓ h h)\n      Filter.atTop (fun _ => (0 : ℝ))",
     "formalizationNotes": "The o_P(1) remainder is encoded as TendstoInMeasure to 0. The conclusion bundles three claims: score mean zero (i), finite Fisher information (ii), and the LAN expansion (iii). hPDF (IsPDFOf) packages that p_θ normalises and is integrable for every θ — the tacit assumption in writing p_θ. The iid sample is given by explicit pairwise-independence, identical-distribution, and law fields.",
     "hypotheses": [
       {
@@ -1719,40 +1964,33 @@
     "id": "score_in_L2ZeroMean",
     "category": "semiparametric",
     "kind": "lemma",
-    "leanName": "score_in_L2ZeroMean",
-    "fullName": "AsymptoticStatistics.Core.QMDPath.score_in_L2ZeroMean",
-    "title": "QMD score has mean zero and is square-integrable",
+    "leanName": "qmd_score_mean_integrable_and_lan_nondominated",
+    "fullName": "AsymptoticStatistics.LowerBounds.T6_FinDimLAN.NondominatedQMDLAN.qmd_score_mean_integrable_and_lan_nondominated",
+    "title": "Nondominated QMD Score and LAN Expansion",
     "citation": "van der Vaart (1998), Lem 25.14",
-    "file": "StatLean/AsymptoticStatistics/Core/QMDPath.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Core/QMDPath.html#AsymptoticStatistics.Core.QMDPath.score_in_L2ZeroMean",
-    "informal": "<p>The score of a quadratic-mean-differentiable submodel is mean-zero and square-integrable. If a measurable function $g$ satisfies the <span data-link=\"h5\">QMD limit</span> on the square-root density expansion $\\bigl\\| \\sqrt{p_t} - \\sqrt{p_0} - \\tfrac{t}{2}\\, g\\,\\sqrt{p_0}\\bigr\\|_{L^2(\\mu)} = o(t)$ along a <span data-link=\"h1\">family of probability measures</span> <span data-link=\"h2\">through $P$</span> and <span data-link=\"h3\">dominated by $\\mu$</span>, then $g$ agrees $P$-a.e. with an element of $L^2_0(P)$.</p>",
-    "summary": "A function satisfying the QMD square-root-density limit is P-a.e. equal to a mean-zero, square-integrable function.",
-    "leanSignature": "theorem score_in_L2ZeroMean\n    {P : Measure Ω} [IsProbabilityMeasure P]\n    {μ : Measure Ω} [SigmaFinite μ] (curve : ℝ → Measure Ω)\n    (h_prob : ∀ t, IsProbabilityMeasure (curve t))\n    (h_zero : curve 0 = P) (h_ac : ∀ t, curve t ≪ μ)\n    (g : Ω → ℝ) (hg_meas : Measurable g)\n    (h_qmd :\n      Tendsto\n        (fun t : ℝ =>\n          eLpNorm (fun ω : Ω =>\n            Real.sqrt ((curve t).rnDeriv μ ω).toReal\n              - Real.sqrt ((curve 0).rnDeriv μ ω).toReal\n              - (t / 2) * g ω\n                  * Real.sqrt ((curve 0).rnDeriv μ ω).toReal)\n            2 μ / ENNReal.ofReal |t|)\n        (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞))) :\n    ∃ g' : ↥(L2ZeroMean P), g =ᵐ[P] (g' : Ω → ℝ)",
-    "formalizationNotes": "Dominated specialisation (fixed σ-finite μ, densities pt = dQt/dμ). The QMD condition is stated in ℝ≥0∞-quotient form `eLpNorm … / ENNReal.ofReal |t| → 0`, which genuinely forces square-integrability of the residual (a `.toReal²/t²` form would be vacuously satisfied when the residual leaves L²). The `IsProbabilityMeasure (curve t)` hypothesis is added — needed for the L²(μ)-norm bound on √(rnDeriv). This is the analytic part of Lemma 25.14. In particular, this means $\\int g\\,dP = 0$ and $g \\in L^2(P)$.",
+    "file": "StatLean/AsymptoticStatistics/LowerBounds/T6_FinDimLAN/NondominatedQMDLAN.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/T6_FinDimLAN/NondominatedQMDLAN.html#AsymptoticStatistics.LowerBounds.T6_FinDimLAN.NondominatedQMDLAN.qmd_score_mean_integrable_and_lan_nondominated",
+    "informal": "Let $Q_t$ be <span data-link=\"h1\">a right-sided curve of probability measures through $P$</span>, and let <span data-link=\"h2\">a measurable score $g$ satisfy the nondominated right quadratic-mean differentiability condition</span>. For <span data-link=\"h3\">a jointly i.i.d. sample with law $P$</span>, the score has mean zero and square-integrable square, and the actual Radon–Nikodym log-likelihood ratio at $t=1/\\sqrt n$ satisfies $$\\sum_{i=1}^n\\log\\frac{dQ_{1/\\sqrt n}}{dP}(X_i)-\\frac1{\\sqrt n}\\sum_{i=1}^n g(X_i)+\\frac12\\int g^2\\,dP\\ \\longrightarrow_P\\ 0.$$\n",
+    "summary": "A bare nondominated right-QMD score is mean zero and square-integrable and yields the actual-likelihood LAN expansion.",
+    "leanSignature": "theorem qmd_score_mean_integrable_and_lan_nondominated\n    (P : Measure Ω) [IsProbabilityMeasure P]\n    (curve : ℝ → Measure Ω)\n    (hprob : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t))\n    (hzero : curve 0 = P)\n    (g : Ω → ℝ) (hg : Measurable g)\n    (hqmd : IsRightQMD P curve g)\n    (P' : Measure Ω') [IsProbabilityMeasure P']\n    (X : ℕ → Ω' → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hindep : ProbabilityTheory.iIndepFun X P')\n    (hident : ∀ i, IdentDistrib (X i) (X 0) P' P')\n    (hlaw : Measure.map (X 0) P' = P) :\n    (∫ ω, g ω ∂P = 0) ∧ Integrable (fun ω => g ω ^ 2) P ∧\n      TendstoInMeasure P'\n        (fun n ω =>\n          (∑ i ∈ Finset.range n,\n            Real.log (((curve ((Real.sqrt n)⁻¹)).rnDeriv P (X i ω)).toReal))\n            - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, g (X i ω)\n            + (1 / 2 : ℝ) * ∫ x, g x ^ 2 ∂P)\n        atTop (fun _ => (0 : ℝ))",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(h_prob : ∀ t, IsProbabilityMeasure (curve t))",
-        "label": "curve of probability measures",
-        "note": "Every member of the curve is a probability measure, which bounds the norm of the square-root density."
+        "leanToken": "hzero",
+        "label": "probability path",
+        "note": "The nonnegative-time curve consists of probability measures and passes through P at zero."
       },
       {
         "id": "h2",
-        "leanToken": "(h_zero : curve 0 = P)",
-        "label": "passes through P",
-        "note": "The curve equals P at t = 0."
+        "leanToken": "hqmd",
+        "label": "right QMD",
+        "note": "The measurable score satisfies the right quadratic-mean differentiability expansion."
       },
       {
         "id": "h3",
-        "leanToken": "(h_ac : ∀ t, curve t ≪ μ)",
-        "label": "common dominating measure",
-        "note": "Every member of the curve is absolutely continuous with respect to the dominating measure μ."
-      },
-      {
-        "id": "h5",
-        "leanToken": "(h_qmd :\n      Tendsto",
-        "label": "quadratic-mean limit",
-        "note": "The L²(μ) norm of the square-root-density residual, divided by |t|, tends to zero."
+        "leanToken": "hlaw",
+        "label": "i.i.d. sample",
+        "note": "The measurable sample coordinates are jointly independent, identically distributed, and have common law P."
       }
     ],
     "hasGraph": true,
@@ -1760,13 +1998,15 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.3, Lemma 25.14",
-      "biblio": "Differentiability in quadratic mean originates with L. Le Cam, \"On the assumptions used to prove asymptotic normality of maximum likelihood estimates,\" *The Annals of Mathematical Statistics* **41** (1970), no. 3, 802–828, who introduced this $L^2$/Hellinger differentiability of the root density as the minimal regularity replacing the classical pointwise smoothness-and-domination conditions, and used it to establish local asymptotic normality and asymptotic normality of the MLE. Van der Vaart's §7.2 (Eq. 7.1) and §25.3 (Lemma 25.14) restate this notion.",
+      "biblio": "Differentiability in quadratic mean and its local-likelihood consequences originate with L. Le Cam, \"On the assumptions used to prove asymptotic normality of maximum likelihood estimates,\" *Annals of Mathematical Statistics* **41** (1970), 802–828.",
       "keys": [
         "vdv1998",
         "lecam1970"
       ]
     },
     "keywords": [
+      "differentiability in quadratic mean",
+      "local asymptotic normality",
       "score function"
     ]
   },
@@ -1969,40 +2209,45 @@
     "id": "semiparametric_local_asymptotic_minimax_theorem",
     "category": "semiparametric",
     "kind": "theorem",
-    "leanName": "semiparametric_local_asymptotic_minimax_theorem",
-    "fullName": "AsymptoticStatistics.LowerBounds.LAM.semiparametric_local_asymptotic_minimax_theorem",
-    "title": "Local asymptotic minimax (vector)",
+    "leanName": "semiparametric_local_asymptotic_minimax_nondominated",
+    "fullName": "AsymptoticStatistics.LowerBounds.LAMSemiparametricCone.semiparametric_local_asymptotic_minimax_nondominated",
+    "title": "Nondominated Semiparametric Local Asymptotic Minimax Theorem",
     "citation": "van der Vaart (1998), Thm 25.21",
-    "file": "StatLean/AsymptoticStatistics/LowerBounds/LAM.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/LAM.html#AsymptoticStatistics.LowerBounds.LAM.semiparametric_local_asymptotic_minimax_theorem",
-    "informal": "<p>Assume the tangent set is closed under <span data-link=\"h1\">nonnegative scaling</span>, under <span data-link=\"h2\">convex combinations</span> and under <span data-link=\"h3\">negation</span> — together these make it a linear subspace of $L^2_0(P)$ — and let the loss be <span data-link=\"h7\">nonnegative and <a href=\"#/result/BowlShaped\">bowl-shaped</a>: measurable, symmetric about the origin, with convex sublevel sets</span>. Then the local asymptotic minimax risk of any estimator sequence is bounded below by the Gaussian risk: $$\\sup_{I}\\ \\liminf_{n\\to\\infty}\\ \\sup_{g\\in I}\\ \\mathbb E_{P_{1/\\sqrt n,g}}\\ \\ell\\bigl(\\sqrt n(T_n-\\psi(P_{1/\\sqrt n,g}))\\bigr)\\ \\ge\\ \\int \\ell\\,dN\\bigl(0,\\ P\\tilde\\psi_P\\tilde\\psi_P^{\\mathsf T}\\bigr),$$ where the outer supremum runs over finite subsets $I$ of the tangent set and the Gaussian covariance is the Gram matrix of the efficient influence functions. No estimator beats the Gaussian shift limit.</p>",
-    "summary": "Over a convex-cone tangent, the local minimax risk for a subconvex loss is at least its integral against N(0, Gram(ψ̃)).",
-    "leanSignature": "theorem semiparametric_local_asymptotic_minimax_theorem\n    (T_set : TangentSpec P)\n    (hCone : ∀ x ∈ T_set.carrier, ∀ t : ℝ, 0 ≤ t →\n      t • x ∈ T_set.carrier)\n    (hConvex : ∀ x ∈ T_set.carrier, ∀ y ∈ T_set.carrier,\n      ∀ a b : ℝ, 0 ≤ a → 0 ≤ b → a + b = 1 →\n      a • x + b • y ∈ T_set.carrier)\n    (hNegClosed : ∀ x ∈ T_set.carrier, -x ∈ T_set.carrier)\n    (hCarrier_nonempty : T_set.carrier.Nonempty)\n    {d : ℕ}\n    {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}\n    (hψ : PathwiseDifferentiableAt_vec P (tangentSpace T_set) ψ)\n    {IF_eff : Fin d → ↥(L2ZeroMean P)}\n    (hEIF : IsEfficientInfluenceFunction_vec hψ.derivative IF_eff)\n    (T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))\n    (hT_n : ∀ n, Measurable (T_n n))\n    (ℓ : EuclideanSpace ℝ (Fin d) → ℝ≥0∞)\n    (hℓ_sub : BowlShaped ℓ)\n    (hℓ_M_lsc : ∀ M : ℕ,\n      LowerSemicontinuous (fun u : EuclideanSpace ℝ (Fin d) => ℓ u ⊓ (M : ℝ≥0∞)))\n    (hTight : MeasureTheory.IsTightMeasureSet\n        (Set.range (fun n : ℕ =>\n          (MeasureTheory.Measure.pi (fun _ : Fin n => P)).map\n            (fun ω => (Real.sqrt n) •\n              (T_param_of_vec T_n n ω - ψ P))))) :\n    ⨆ I : { S : Finset ↥(L2ZeroMean P) //\n            (S : Set ↥(L2ZeroMean P)) ⊆ T_set.carrier },\n      Filter.liminf\n        (fun n : ℕ =>\n          ((I : { _S : Finset ↥(L2ZeroMean P) // _ }) :\n              Finset ↥(L2ZeroMean P)).sup\n            (fun g =>\n              ∫⁻ X : Fin n → Ω,\n                ℓ (Real.sqrt n •\n                  (T_n n X - ψ ((canonicalPath g).curve ((Real.sqrt n)⁻¹))))\n                ∂(MeasureTheory.Measure.pi\n                    (fun _ : Fin n => (canonicalPath g).curve ((Real.sqrt n)⁻¹)))))\n        atTop\n      ≥\n    ∫⁻ y : EuclideanSpace ℝ (Fin d), ℓ y\n        ∂(ProbabilityTheory.multivariateGaussian 0 (Matrix.gram ℝ IF_eff))",
-    "formalizationNotes": "The convex-cone + negation-closure hypotheses are reduced to a linear subspace (via `LAMLinearFromCone`) and forwarded to `lam_semiparametric_unbounded_vec` (the local-asymptotic-minimax reduction). The covariance `P ψ̃ ψ̃ᵀ` is `Matrix.gram ℝ IF_eff`. `hTight` is root-n consistency at P; `hCarrier_nonempty` supplies 0 ∈ carrier for the linear-space reduction. `Finset.sup` (total on ℝ≥0∞) handles the empty-subset baseline.",
+    "file": "StatLean/AsymptoticStatistics/LowerBounds/LAMSemiparametricCone.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/LAMSemiparametricCone.html#AsymptoticStatistics.LowerBounds.LAMSemiparametricCone.semiparametric_local_asymptotic_minimax_nondominated",
+    "informal": "Let $C$ be a nondominated tangent cone whose carrier is <span data-link=\"h1\">convex</span>. Suppose <span data-link=\"h2\">a finite-dimensional parameter is pathwise differentiable along the selected paths of $C$</span> with <span data-link=\"h3\">efficient influence coordinates $\\varphi$</span>, and <span data-link=\"h4\">the estimator sequence is measurable</span>. For every <span data-link=\"h5\">bowl-shaped lower-semicontinuous loss $\\ell$</span>, the selected-path local asymptotic minimax risk is at least $\\int\\ell\\,dN_d(0,\\operatorname{Gram}(\\varphi))$. Singular Gram matrices, the zero-dimensional case, and zero influence coordinates are included.",
+    "summary": "The nondominated selected-path local minimax risk is bounded below by the efficient Gaussian risk.",
+    "leanSignature": "theorem semiparametric_local_asymptotic_minimax_nondominated\n    (C : NondominatedTangentCone P)\n    (hconv : Convex ℝ C.carrier)\n    {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}\n    (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)\n    {φ : Fin d → ↥(L2ZeroMean P)}\n    (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)\n    (T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))\n    (hT : ∀ n, Measurable (T_n n))\n    (ℓ : EuclideanSpace ℝ (Fin d) → ℝ≥0∞)\n    (hbowl : BowlShaped ℓ) (hlsc : LowerSemicontinuous ℓ) :\n    selectedPathCanonicalLHSVec C T_n ψ ℓ ≥\n      ∫⁻ y, ℓ y ∂(multivariateGaussian 0 (Matrix.gram ℝ φ))",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(hCone : ∀ x ∈ T_set.carrier, ∀ t : ℝ, 0 ≤ t →\n      t • x ∈ T_set.carrier)",
-        "label": "closed under scaling",
-        "note": "The tangent set contains every nonnegative multiple of each of its elements."
+        "leanToken": "hconv",
+        "label": "convex tangent cone",
+        "note": "The carrier of the nondominated tangent cone is convex."
       },
       {
         "id": "h2",
-        "leanToken": "(hConvex : ∀ x ∈ T_set.carrier, ∀ y ∈ T_set.carrier,\n      ∀ a b : ℝ, 0 ≤ a → 0 ≤ b → a + b = 1 →\n      a • x + b • y ∈ T_set.carrier)",
-        "label": "closed under convex combinations",
-        "note": "The tangent set contains every convex combination of two of its elements."
+        "leanToken": "hpd",
+        "label": "pathwise differentiability",
+        "note": "The vector parameter has a derivative along every selected nondominated path."
       },
       {
         "id": "h3",
-        "leanToken": "(hNegClosed : ∀ x ∈ T_set.carrier, -x ∈ T_set.carrier)",
-        "label": "closed under negation",
-        "note": "The tangent set contains the negative of each of its elements; with the two previous properties it is a linear subspace."
+        "leanToken": "hEIF",
+        "label": "efficient influence vector",
+        "note": "The influence coordinates represent the derivative and lie in the tangent-space closure."
       },
       {
-        "id": "h7",
-        "leanToken": "(hℓ_sub : BowlShaped ℓ)",
-        "label": "bowl-shaped loss",
-        "note": "The loss is nonnegative, measurable, symmetric about the origin, and has convex sublevel sets."
+        "id": "h4",
+        "leanToken": "hT",
+        "label": "measurable estimator",
+        "note": "Every estimator in the sequence is measurable."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hbowl",
+        "label": "regular bowl loss",
+        "note": "The loss is bowl-shaped and lower semicontinuous."
       }
     ],
     "hasGraph": true,
@@ -2010,7 +2255,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.3, Theorem 25.21 (vector form)",
-      "biblio": "The local asymptotic minimax theorem originates with J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1972, pp. 175–194, the companion lower-bound result to Hájek's convolution theorem (*Z. Wahrscheinlichkeitstheorie verw. Gebiete* **14** (1970), 323–330). L. Le Cam's local asymptotic normality theory underlies the parametric reduction. The semiparametric formulation is the one developed in P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993, presented as vdV Theorem 25.21.",
+      "biblio": "The local asymptotic minimax theorem originates with J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" *Proceedings of the Sixth Berkeley Symposium* **1** (1972), 175–194, and its semiparametric formulation is developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993).",
       "keys": [
         "vdv1998",
         "hajek1972",
@@ -2085,36 +2330,92 @@
     "id": "estimator_semiparametricallyEfficient_of_asympLinear_eif",
     "category": "semiparametric",
     "kind": "theorem",
-    "leanName": "estimator_semiparametricallyEfficient_of_asympLinear_eif",
-    "fullName": "AsymptoticStatistics.Core.EfficiencyOperational.estimator_semiparametricallyEfficient_of_asympLinear_eif",
-    "title": "Operational semiparametric efficiency from asymptotic linearity",
-    "citation": "van der Vaart (1998), Eq (25.22)",
-    "file": "StatLean/AsymptoticStatistics/Core/EfficiencyOperational.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Core/EfficiencyOperational.html#AsymptoticStatistics.Core.EfficiencyOperational.estimator_semiparametricallyEfficient_of_asympLinear_eif",
-    "informal": "<p>The operational characterization of efficiency. If $\\varphi$ is an <span data-link=\"h1\">efficient influence function</span> for the pathwise derivative $d\\psi$ at $P$ relative to $T$, and $T_n$ is <span data-link=\"h2\">asymptotically linear</span> at $P$ with influence function $\\varphi$ and centering $\\psi(P)$ — i.e. $\\sqrt n(T_n - \\psi(P)) = \\tfrac{1}{\\sqrt n}\\sum_i \\varphi(X_i) + o_P(1)$ — then $T_n$ is semiparametrically efficient at $P$ relative to $T$ for $\\psi$.</p>",
-    "summary": "An estimator asymptotically linear with the EIF as influence function is semiparametrically efficient.",
-    "leanSignature": "theorem estimator_semiparametricallyEfficient_of_asympLinear_eif\n    {T_n : ∀ n, (Fin n → Ω) → ℝ}\n    {ψ : Measure Ω → ℝ}\n    {P : Measure Ω} [IsProbabilityMeasure P]\n    {T : Submodule ℝ ↥(L2ZeroMean P)}\n    {dψ : T →L[ℝ] ℝ} {φ : ↥(L2ZeroMean P)}\n    (hEIF : IsEfficientInfluenceFunction P T dψ φ)\n    (hAL : AsymptoticallyLinearAt T_n P φ (ψ P)) :\n    SemiparametricallyEfficientAt T_n ψ P T",
-    "formalizationNotes": "`AsymptoticallyLinearAt` (Eq 25.22) is stated as convergence in Pⁿ-probability of the linearization residual to zero, with the centering c kept abstract (consumers pass c = ψ P). The proof is definitional (And-introduction under the existential witnesses defining operational efficiency).",
+    "leanName": "operational_efficiency_characterization_nondominated",
+    "fullName": "AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationNondominated.operational_efficiency_characterization_nondominated",
+    "title": "Operational Efficiency Characterization, Nondominated Form",
+    "citation": "van der Vaart (1998), Lem 25.23",
+    "file": "StatLean/AsymptoticStatistics/LowerBounds/OperationalEfficiencyCharacterizationNondominated.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/OperationalEfficiencyCharacterizationNondominated.html#AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationNondominated.operational_efficiency_characterization_nondominated",
+    "informal": "For a nondominated tangent cone, suppose <span data-link=\"h1\">a scalar parameter is pathwise differentiable</span> with <span data-link=\"h2\">efficient influence function $\\varphi$</span>, and <span data-link=\"h3\">the estimator sequence is measurable</span>. Then regularity with limit law $N(0,\\lVert\\varphi\\rVert_{P,2}^2)$ is equivalent to asymptotic linearity with influence function $\\varphi$. Degenerate variance and the zero tangent cone are included.",
+    "summary": "Scalar regularity at the efficient Gaussian law is equivalent to asymptotic linearity with the efficient influence function.",
+    "leanSignature": "theorem operational_efficiency_characterization_nondominated\n    {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}\n    (C : NondominatedTangentCone P)\n    (hpd : NondominatedPathwiseDifferentiableAt P C ψ)\n    {φ : ↥(L2ZeroMean P)}\n    (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)\n    (hT : ∀ n, Measurable (T_n n)) :\n    IsRegularAtND C T_n ψ\n        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) ↔\n      AsymptoticallyLinearAt T_n P φ (ψ P)",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(hEIF : IsEfficientInfluenceFunction P T dψ φ)",
-        "label": "efficient influence function",
-        "note": "φ lies in the tangent space and represents the derivative dψ there as an inner product."
+        "leanToken": "hpd",
+        "label": "pathwise differentiability",
+        "note": "The scalar parameter has a continuous derivative along the selected nondominated paths."
       },
       {
         "id": "h2",
-        "leanToken": "(hAL : AsymptoticallyLinearAt T_n P φ (ψ P))",
-        "label": "asymptotic linearity",
-        "note": "The estimator satisfies √n(T_n − ψ(P)) = n^(−1/2) Σ φ(X_i) + o_P(1)."
+        "leanToken": "hEIF",
+        "label": "efficient influence function",
+        "note": "The influence function represents the derivative and belongs to the tangent-space closure."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hT",
+        "label": "measurable estimator",
+        "note": "Each estimator in the sequence is measurable."
       }
     ],
     "hasGraph": true,
-    "shortRef": "van der Vaart (1998), Eq (25.22)",
+    "shortRef": "van der Vaart (1998), Lem 25.23",
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.3, Lemma 25.23, Eq. (25.22)",
-      "biblio": "The systematic theory of efficient influence functions, asymptotic linearity, and semiparametric efficiency bounds was developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993, which van der Vaart's Chapter 25 summarizes. The efficiency lower bound descends from the convolution theorem of J. Hájek (*Z. Wahrscheinlichkeitstheorie verw. Geb.* **14** (1970), 323–330) and Le Cam's local asymptotic minimax theory; the influence-function representation of regular asymptotically linear estimators originates with P. J. Bickel, \"On adaptive estimation,\" *Ann. Statist.* **10** (1982), 647–671.",
+      "biblio": "The operational theory of efficient influence functions is developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; its lower bound descends from J. Hájek's 1970 convolution theorem and P. J. Bickel's 1982 work on adaptive estimation.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993",
+        "hajek1970",
+        "bickel1982"
+      ]
+    },
+    "keywords": [
+      "asymptotic efficiency",
+      "influence function"
+    ]
+  },
+  {
+    "id": "operational_efficiency_characterization_vec_nondominated",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "operational_efficiency_characterization_vec_nondominated",
+    "fullName": "AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationVecNondominated.operational_efficiency_characterization_vec_nondominated",
+    "title": "Operational Efficiency Characterization, Vector Nondominated Form",
+    "citation": "van der Vaart (1998), Lem 25.23",
+    "file": "StatLean/AsymptoticStatistics/LowerBounds/OperationalEfficiencyCharacterizationVecNondominated.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/OperationalEfficiencyCharacterizationVecNondominated.html#AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationVecNondominated.operational_efficiency_characterization_vec_nondominated",
+    "informal": "For a nondominated tangent cone, suppose <span data-link=\"h1\">a finite-dimensional parameter is pathwise differentiable</span> with <span data-link=\"h2\">efficient influence coordinates $\\varphi_1,\\ldots,\\varphi_d$</span>, and <span data-link=\"h3\">the estimator sequence is measurable</span>. Then regularity with limit law $N_d(0,\\operatorname{Gram}(\\varphi))$ is equivalent to asymptotic linearity with influence vector $\\varphi$. Singular Gram matrices, repeated coordinates, the zero-dimensional case, and the zero influence function are included.",
+    "summary": "Vector regularity at the efficient Gaussian law is equivalent to asymptotic linearity with the efficient influence vector.",
+    "leanSignature": "theorem operational_efficiency_characterization_vec_nondominated\n    (C : NondominatedTangentCone P)\n    {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}\n    {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}\n    (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)\n    (φ : Fin d → ↥(L2ZeroMean P))\n    (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)\n    (hT : ∀ n, Measurable (T_n n)) :\n    IsRegularAtNDVec C T_n ψ\n        (multivariateGaussian 0 (Matrix.gram ℝ φ)) ↔\n      AsymptoticallyLinearAt_vec T_n P φ (ψ P)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hpd",
+        "label": "pathwise differentiability",
+        "note": "The vector parameter has a continuous derivative along the selected nondominated tangent paths."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hEIF",
+        "label": "efficient influence vector",
+        "note": "The influence coordinates represent the derivative and belong to the tangent-space closure."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hT",
+        "label": "measurable estimator",
+        "note": "Each estimator in the sequence is measurable."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Lem 25.23",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.3, Lemma 25.23 (vector form)",
+      "biblio": "The operational theory of efficient influence functions is developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; its lower bound descends from J. Hájek's 1970 convolution theorem and P. J. Bickel's 1982 work on adaptive estimation.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993",
@@ -2310,6 +2611,138 @@
     ]
   },
   {
+    "id": "no_rawRegularity_of_not_mem_range_adjoint",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "no_rawRegularity_of_not_mem_range_adjoint",
+    "fullName": "AsymptoticStatistics.LowerBounds.ScoreOperatorRegularityObstruction.no_rawRegularity_of_not_mem_range_adjoint",
+    "title": "Adjoint-Range Obstruction to Regular Estimation",
+    "citation": "van der Vaart (1998), Thm 25.32",
+    "file": "StatLean/AsymptoticStatistics/LowerBounds/ScoreOperatorRegularityObstruction.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/LowerBounds/ScoreOperatorRegularityObstruction.html#AsymptoticStatistics.LowerBounds.ScoreOperatorRegularityObstruction.no_rawRegularity_of_not_mem_range_adjoint",
+    "informal": "Let $A$ be a score operator and let $A^*$ satisfy <span data-link=\"h1\">the adjoint identity $\\langle A^*y,b\\rangle=\\langle y,Ab\\rangle$</span>. If <span data-link=\"h2\">the derivative representer $\\tilde\\chi$ does not belong to the range of $A^*$</span>, then for <span data-link=\"h3\">the supplied score paths realizing that derivative</span> there is no estimator sequence satisfying raw regularity. No closed-range assumption is imposed.",
+    "summary": "A derivative outside the adjoint score range rules out regular estimation.",
+    "leanSignature": "theorem no_rawRegularity_of_not_mem_range_adjoint\n    (A : ScoreOperator H P)\n    (Astar : ↥(L2ZeroMean P) →L[ℝ] H)\n    (h_adj : ∀ (b : H) (y : ↥(L2ZeroMean P)),\n      ⟪Astar y, b⟫_ℝ = ⟪y, A.toCLM b⟫_ℝ)\n    (chiTilde : H)\n    (h_not_mem : chiTilde ∉ (Astar.range : Submodule ℝ H))\n    (ψ : Measure Ω → ℝ)\n    (paths : ScorePathDerivativeData A chiTilde ψ)\n    (T_n : ∀ n, (Fin n → Ω) → ℝ) :\n    RawRegularity A chiTilde ψ paths T_n → False",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "h_adj",
+        "label": "adjoint identity",
+        "note": "The supplied operator A* is the Hilbert-space adjoint of the score operator A."
+      },
+      {
+        "id": "h2",
+        "leanToken": "h_not_mem",
+        "label": "range obstruction",
+        "note": "The derivative representer does not lie in the range of A*."
+      },
+      {
+        "id": "h3",
+        "leanToken": "paths",
+        "label": "score paths",
+        "note": "The path family realizes the derivative represented by the specified vector."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 25.32",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.5, Theorem 25.32",
+      "biblio": "The score-operator and adjoint calculus is developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993), with geometric roots in C. Stein's 1956 projection method and P. J. Bickel's 1982 work on adaptive estimation.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993",
+        "stein1956",
+        "bickel1982"
+      ]
+    },
+    "keywords": [
+      "score operator",
+      "regular estimator"
+    ]
+  },
+  {
+    "id": "car_actual_and_maximal_tangent_2540",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "car_actual_and_maximal_tangent_2540",
+    "fullName": "AsymptoticStatistics.Operators.CoarseningScoreIdentification.car_actual_and_maximal_tangent_2540",
+    "title": "Actual and Maximal CAR Tangent Spaces",
+    "citation": "van der Vaart (1998), Thm 25.40",
+    "file": "StatLean/AsymptoticStatistics/Operators/CoarseningScoreIdentification.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Operators/CoarseningScoreIdentification.html#AsymptoticStatistics.Operators.CoarseningScoreIdentification.car_actual_and_maximal_tangent_2540",
+    "informal": "For a fixed sigma-finite conditional dominator, every conditional quadratic-mean-differentiable path that satisfies coarsening at random has an observed nuisance score lying both in the closed span generated by the supplied paths and in the maximal fibre-mean-zero score space. Independently, every observed mean-zero square-integrable score splits orthogonally into a limit of observed full-data scores plus a maximal fibre-mean-zero coarsening score. The statement does not identify the supplied closed span with the maximal space.",
+    "summary": "Actual CAR scores lie in both relevant tangent spaces, while the maximal space supplies the orthogonal decomposition.",
+    "leanSignature": "theorem car_actual_and_maximal_tangent_2540\n    (ν : Measure 𝓓) [SigmaFinite ν] :\n    (∀ (γ : ConditionalQMDPath Q ν r) (hCAR : IsCARFamily M γ),\n      conditionalQMDObservedScore M hM γ hCAR ∈\n        carNuisanceScores Q r hM ν ⊓ concreteCoarseningScores Q r hM) ∧\n    (∀ g : ↥(L2ZeroMean ((Q ⊗ₘ r).map M)),\n      ∃ p ∈ (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)).topologicalClosure,\n        ∃ b ∈ concreteCoarseningScores Q r hM,\n          g = p + b ∧\n          ⟪(p : Lp ℝ 2 ((Q ⊗ₘ r).map M)),\n            (b : Lp ℝ 2 ((Q ⊗ₘ r).map M))⟫_ℝ = 0)",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 25.40",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.6, Theorem 25.40",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993"
+      ]
+    },
+    "keywords": [
+      "coarsening at random",
+      "tangent space"
+    ],
+    "formalizationNotes": "The two conjuncts deliberately stop short of claiming equality between the actual fixed-dominator closed span and the maximal concrete fibre-mean-zero space."
+  },
+  {
+    "id": "completeCaseIPW_characterization_2541",
+    "category": "semiparametric",
+    "kind": "lemma",
+    "leanName": "completeCaseIPW_characterization_2541",
+    "fullName": "AsymptoticStatistics.Operators.CoarseningScoreIdentification.completeCaseIPW_characterization_2541",
+    "title": "Complete-Case IPW Influence Characterization",
+    "citation": "van der Vaart (1998), Lem 25.41",
+    "file": "StatLean/AsymptoticStatistics/Operators/CoarseningScoreIdentification.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Operators/CoarseningScoreIdentification.html#AsymptoticStatistics.Operators.CoarseningScoreIdentification.completeCaseIPW_characterization_2541",
+    "informal": "In a known coarsening mechanism with complete-case observations, suppose <span data-link=\"h1\">the selection probability is bounded below by a positive constant</span>, <span data-link=\"h2\">$\\chi$ represents the full-data parameter derivative</span>, and <span data-link=\"h3\">the observed derivative agrees with the full-data derivative on lifted score directions</span>. Then an observed influence function is exactly the complete-case inverse-probability-weighted influence function plus a fibre-mean-zero coarsening score.",
+    "summary": "Observed influence functions form the affine space of the complete-case IPW base plus fibre-mean-zero coarsening scores.",
+    "leanSignature": "theorem completeCaseIPW_characterization_2541\n    (cc : CompleteCaseData M)\n    (ε : ℝ) (hε : 0 < ε)\n    (hπ : ∀ᵐ y ∂Q, ε ≤ selectionProbability r cc y)\n    (dψQ : (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) →L[ℝ] ℝ)\n    (χ : ↥(L2ZeroMean Q))\n    (hχ : IsInfluenceFunction Q (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) dψQ χ)\n    (dψObs :\n      (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) →L[ℝ] ℝ)\n    (hDerivativeRestriction : ∀ s : ↥(L2ZeroMean Q),\n      dψObs\n          ⟨informationLossOperator hM (Q ⊗ₘ r) (qScoreLift Q r s),\n            informationLossOperator_mem_observedTangent hM (Q ⊗ₘ r)\n              (fullQTangent Q r) ((mem_fullQTangent_iff_eq_qScoreLift Q r\n                (qScoreLift Q r s)).2 ⟨s, rfl⟩)⟩ =\n        dψQ ⟨s, Submodule.mem_top⟩)\n    (φobs : ↥(L2ZeroMean ((Q ⊗ₘ r).map M))) :\n    letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=\n      Measure.isProbabilityMeasure_map hM.aemeasurable\n    IsInfluenceFunction ((Q ⊗ₘ r).map M)\n        (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs φobs ↔\n      ∃ b ∈ concreteCoarseningScores Q r hM,\n        φobs = completeCaseIPW hM Q r cc χ ε hε hπ + b",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hπ",
+        "label": "positive selection",
+        "note": "The complete-case selection probability is almost surely bounded below by a positive constant."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hχ",
+        "label": "full-data influence",
+        "note": "The full-data influence function represents the derivative on the full tangent space."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hDerivativeRestriction",
+        "label": "derivative agreement",
+        "note": "The observed and full-data derivatives agree on the canonical lifted full-data scores."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Lem 25.41",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.6, Lemma 25.41",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993"
+      ]
+    },
+    "keywords": [
+      "inverse probability weighting",
+      "influence function",
+      "coarsening at random"
+    ]
+  },
+  {
     "id": "influence_on_sup_of_subtract_proj_nuisance",
     "category": "semiparametric",
     "kind": "corollary",
@@ -2364,28 +2797,33 @@
     "id": "zEstimator_semiparametricallyEfficient",
     "category": "semiparametric",
     "kind": "theorem",
-    "leanName": "zEstimator_semiparametricallyEfficient",
-    "fullName": "AsymptoticStatistics.Asymptotics.ZEstimator.zEstimator_semiparametricallyEfficient",
-    "title": "Z-estimator semiparametric efficiency",
+    "leanName": "rawMovingBias_asympLinear_2554",
+    "fullName": "AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansion.rawMovingBias_asympLinear_2554",
+    "title": "Z-Estimator Asymptotic Linearity from the No-Bias Condition",
     "citation": "van der Vaart (1998), Thm 25.54",
-    "file": "StatLean/AsymptoticStatistics/Asymptotics/ZEstimator.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/ZEstimator.html#AsymptoticStatistics.Asymptotics.ZEstimator.zEstimator_semiparametricallyEfficient",
-    "informal": "<p>A Z-estimator $\\hat\\theta_n$ solves an estimating equation $\\mathbb P_n\\hat\\psi_n(\\cdot,\\hat\\theta_n)\\approx0$ built from functions that estimate the <em>efficient score</em> $\\tilde\\ell=\\tilde\\ell_{\\theta_0,\\eta_0}$ — the ordinary score in the direction of interest minus its orthogonal projection onto the nuisance tangent space — with <em>efficient information</em> $\\tilde I=\\|\\tilde\\ell\\|^2_{L^2(P)}$. Assume <span data-link=\"h1\">$\\tilde I>0$; the normalized efficient score $\\tilde\\ell/\\tilde I$ lies in the tangent space $T$ and represents the derivative there, $d\\psi(g)=\\langle\\tilde\\ell,g\\rangle/\\tilde I$ for every $g\\in T$; and the estimator is asymptotically linear with that influence function, $\\sqrt n(\\hat\\theta_n-\\theta_0)=n^{-1/2}\\sum_{i\\le n}\\tilde\\ell(X_i)/\\tilde I+o_P(1)$ under $P^n$</span>, and that <span data-link=\"h2\">$\\psi(P)=\\theta_0$</span>. Then $\\hat\\theta_n$ is semiparametrically efficient at $P$ for $\\psi$ relative to $T$: its limit law $N(0,1/\\tilde I)$ attains the convolution and local minimax bounds.</p>",
-    "summary": "Under the bundled estimating-equation assumptions, a Z-estimator is semiparametrically efficient with the normalized efficient score as influence function.",
-    "leanSignature": "theorem zEstimator_semiparametricallyEfficient\n    {P : Measure Ω} [IsProbabilityMeasure P]\n    {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]\n    {S_θ : OrdinaryScore P Θ} {T_nuis : NuisanceTangentSpace P}\n    [T_nuis.HasOrthogonalProjection] {v : Θ}\n    {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}\n    {estimator : ∀ n, (Fin n → Ω) → ℝ} {θ₀ : ℝ}\n    (h : EfficientScoreEqAssumptions P Θ S_θ T_nuis v T dψ estimator θ₀)\n    {ψ : Measure Ω → ℝ} (h_ψ : ψ P = θ₀) :\n    SemiparametricallyEfficientAt estimator ψ P T",
-    "formalizationNotes": "Scalar parameter / 1-dim score direction v. The empirical-process content of the no-bias condition (25.52), the Donsker condition (25.53), and the estimating equation `ℙ_n ψ̂_n = o_P(n^{-1/2})` is bundled into `EfficientScoreEqAssumptions.asympLinear_25_54` (an `AsymptoticallyLinearAt` field) and not reproved; the theorem assembles EIF + asymptotic linearity via the operational-efficiency lemma.",
+    "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansion.rawMovingBias_asympLinear_2554",
+    "informal": "For a scalar Z-estimator, assume <span data-link=\"h1\">the fitted estimating equation, empirical-score replacement, quadratic-mean transport, positive information, and score/path cross-moment conditions</span>, <span data-link=\"h2\">measurability of each estimator</span>, and <span data-link=\"h3\">the rate-free normalized no-bias condition</span>. Then the estimator is asymptotically linear at $\\theta_0$ with influence function $I^{-1}s_0$. Root-$n$ tightness and the unnormalized vanishing of the moving bias are consequences, not assumptions.",
+    "summary": "Primitive score conditions and normalized no bias imply scalar asymptotic linearity with influence I⁻¹s₀.",
+    "leanSignature": "theorem rawMovingBias_asympLinear_2554\n    {P : Measure Omega} [IsProbabilityMeasure P]\n    {gamma : QMDPath P}\n    {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}\n    {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}\n    {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}\n    (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)\n    (hEstimator_meas : forall n, Measurable (estimator n))\n    (h52 : TendstoInProbZero\n      (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        (1 + |Real.sqrt n * (estimator n X - theta0)|)⁻¹ *\n          rawMovingBias gamma estimator theta0 scoreHat n X)) :\n    AsymptoticallyLinearAt estimator P (I⁻¹ • score0) theta0",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(h : EfficientScoreEqAssumptions P Θ S_θ T_nuis v T dψ estimator θ₀)",
-        "label": "efficient-score expansion",
-        "note": "The efficient information Ĩ = ‖ℓ̃‖² is positive, the normalized efficient score ℓ̃/Ĩ lies in the tangent space and represents dψ there, and √n(θ̂_n − θ₀) = n^(−1/2) Σ ℓ̃(X_i)/Ĩ + o_P(1)."
+        "leanToken": "h : RawMovingBiasExpansionHyp",
+        "label": "score expansion inputs",
+        "note": "The estimating equation, empirical replacement, model transport, cross moment, and positive information conditions hold."
       },
       {
         "id": "h2",
-        "leanToken": "(h_ψ : ψ P = θ₀)",
-        "label": "matching centring",
-        "note": "The functional value ψ(P) equals the centring constant θ₀."
+        "leanToken": "hEstimator_meas",
+        "label": "measurable estimator",
+        "note": "Each finite-sample estimator is measurable."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h52",
+        "label": "normalized no bias",
+        "note": "The moving-score bias divided by one plus the absolute root-n estimation error tends to zero in probability."
       }
     ],
     "hasGraph": true,
@@ -2393,7 +2831,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Theorem 25.54",
-      "biblio": "This is folklore with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
+      "biblio": "Efficient-score Z-estimation is part of the semiparametric efficiency theory developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993), building on J. Hájek's 1970 lower bound and C. Stein's 1956 projection method.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993",
@@ -2403,7 +2841,58 @@
     },
     "keywords": [
       "Z-estimator",
-      "asymptotic efficiency"
+      "asymptotic linearity"
+    ]
+  },
+  {
+    "id": "rawMovingBias_asympLinear_2554_vec",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "rawMovingBias_asympLinear_2554_vec",
+    "fullName": "AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_asympLinear_2554_vec",
+    "title": "Vector Z-Estimator Asymptotic Linearity",
+    "citation": "van der Vaart (1998), Thm 25.54",
+    "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_asympLinear_2554_vec",
+    "informal": "For a finite-dimensional Z-estimator, assume <span data-link=\"h1\">the fitted estimating equation, empirical-score replacement, quadratic-mean transport, and positive-definite information matrix conditions</span>, <span data-link=\"h2\">measurability of each estimator</span>, and <span data-link=\"h3\">the rate-free normalized no-bias condition</span>. Then the estimator is asymptotically linear with influence coordinates $\\sum_k(I^{-1})_{jk}s_k$. The conclusion and root-$n$ tightness are derived rather than assumed.",
+    "summary": "Primitive vector estimating-equation conditions and normalized no bias imply asymptotic linearity with influence I⁻¹s.",
+    "leanSignature": "theorem rawMovingBias_asympLinear_2554_vec\n    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]\n    {M : QMDModel (Omega := Omega) P d}\n    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}\n    {theta0 : EuclideanSpace Real (Fin d)}\n    {scoreHat : forall n,\n      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}\n    {score0 : Fin d -> ↥(L2ZeroMean P)}\n    {F : Fin d -> Set (Omega -> Real)}\n    {I : Matrix (Fin d) (Fin d) Real}\n    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)\n    (hEstimator_meas : forall n, Measurable (estimator n))\n    (h52 : TendstoInProbZero\n      (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        (1 + ‖Real.sqrt n • (estimator n X - theta0)‖)⁻¹ •\n          rawMovingBias_vec M estimator theta0 scoreHat n X)) :\n    AsymptoticallyLinearAt_vec estimator P\n      (fun j => ∑ k, I⁻¹ j k • score0 k) theta0",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "h : RawMovingBiasExpansionHyp_vec",
+        "label": "score expansion inputs",
+        "note": "The estimating equation, empirical replacement, model transport, cross moment, and positive-definite information conditions hold."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hEstimator_meas",
+        "label": "measurable estimator",
+        "note": "Each finite-sample estimator is measurable."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h52",
+        "label": "normalized no bias",
+        "note": "The moving-score bias divided by one plus the root-n estimation norm tends to zero in probability."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 25.54",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.8, Theorem 25.54 (vector form)",
+      "biblio": "Efficient-score Z-estimation is part of the semiparametric efficiency theory developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993), building on J. Hájek's 1970 lower bound and C. Stein's 1956 projection method.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993",
+        "hajek1970",
+        "stein1956"
+      ]
+    },
+    "keywords": [
+      "Z-estimator",
+      "asymptotic linearity"
     ]
   },
   {
@@ -2455,22 +2944,21 @@
     "id": "zEstimator_biasResidual_expansion",
     "category": "semiparametric",
     "kind": "theorem",
-    "leanName": "zEstimator_biasResidual_expansion",
-    "fullName": "AsymptoticStatistics.Asymptotics.ZEstimator.zEstimator_biasResidual_expansion",
-    "title": "Z-estimator bias-residual expansion",
+    "leanName": "rawMovingBias_normalized_expansion_2559",
+    "fullName": "AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansion.rawMovingBias_normalized_expansion_2559",
+    "title": "Normalized Z-Estimator Bias Expansion",
     "citation": "van der Vaart (1998), Thm 25.59",
-    "file": "StatLean/AsymptoticStatistics/Asymptotics/ZEstimator.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/ZEstimator.html#AsymptoticStatistics.Asymptotics.ZEstimator.zEstimator_biasResidual_expansion",
-    "informal": "<p>Write $\\tilde\\ell=\\tilde\\ell_{\\theta_0,\\eta_0}$ for the <em>efficient score</em> in the direction of interest — the ordinary score minus its orthogonal projection onto the nuisance tangent space — and $\\tilde I=\\|\\tilde\\ell\\|^2_{L^2(P)}$ for the <em>efficient information</em>. Assume <span data-link=\"h1\">$\\tilde I>0$; the normalized efficient score $\\tilde\\ell/\\tilde I$ lies in the tangent space $T$ and represents the parameter derivative there, $d\\psi(g)=\\langle\\tilde\\ell,g\\rangle/\\tilde I$ for every $g\\in T$; and the Z-estimator is asymptotically linear with that influence function <em>up to an additive term</em> $\\mathrm{bias}_n$ which is not assumed to vanish</span>. Then, under $P^n$, $$\\sqrt n\\,(\\hat\\theta_n-\\theta_0)=\\frac1{\\sqrt n}\\sum_{i\\le n}\\frac{\\tilde\\ell(X_i)}{\\tilde I}+\\mathrm{bias}_n+o_P(1).$$ In applications $\\mathrm{bias}_n=\\sqrt n\\int\\tilde\\ell_{\\hat\\theta_n,\\hat\\eta_n}\\,dP_{\\hat\\theta_n,\\eta}$, the drift left over from plugging estimated parameters into the efficient score. Since an estimator is semiparametrically efficient exactly when it is <a href=\"#/result/estimator_semiparametricallyEfficient_of_asympLinear_eif\">asymptotically linear with influence function $\\tilde\\ell/\\tilde I$</a>, this expansion shows that efficiency forces $\\mathrm{bias}_n\\to_P0$: the no-bias requirement is necessary, not a convenience of the proof.</p>",
-    "summary": "The Z-estimator's expansion with the bias-residual term retained, dropping the no-bias condition (25.52).",
-    "leanSignature": "theorem zEstimator_biasResidual_expansion\n    {P : Measure Ω} [IsProbabilityMeasure P]\n    {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]\n    {S_θ : OrdinaryScore P Θ} {T_nuis : NuisanceTangentSpace P}\n    [T_nuis.HasOrthogonalProjection] {v : Θ}\n    {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}\n    {estimator : ∀ n, (Fin n → Ω) → ℝ}\n    {bias : ∀ n, (Fin n → Ω) → ℝ} {θ₀ : ℝ}\n    (h : EfficientScoreEqBiasResidualAssumptions\n            P Θ S_θ T_nuis v T dψ estimator bias θ₀) :\n    AsymptoticallyLinearWithBiasAt estimator P\n      ((1 / efficientInformation S_θ T_nuis v)\n        • efficientScore S_θ T_nuis v) θ₀ bias",
-    "formalizationNotes": "This is the Z-estimator expansion without the no-bias condition, exhibiting the bias-residual term explicitly. It is Theorem 25.54 without condition (25.52). Conclusion is the asymptotic-linear-with-bias expansion itself (not `SemiparametricallyEfficientAt`); proved by unwrapping the bundled `asympLinear_25_59` field. The recovery direction (bias = 0 ⇒ Thm 25.54) is shipped as `EfficientScoreEqBiasResidualAssumptions.toEfficientScoreEqAssumptions`.",
+    "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansion.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansion.rawMovingBias_normalized_expansion_2559",
+    "informal": "Under <span data-link=\"h1\">the primitive scalar estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then $$\\frac{\\Delta_n-I^{-1}n^{-1/2}\\sum_i s_0(X_i)-I^{-1}B_n}{1+|\\Delta_n|}\\ \\longrightarrow_P\\ 0.$$ Thus the rearranged expansion contains the positive covariant correction $+I^{-1}B_n$; the printed $+B_n$ form is recovered under information normalization.",
+    "summary": "The rate-free scalar expansion applies I⁻¹ to both the empirical score and the moving-bias correction.",
+    "leanSignature": "theorem rawMovingBias_normalized_expansion_2559\n    {P : Measure Omega} [IsProbabilityMeasure P]\n    {gamma : QMDPath P}\n    {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}\n    {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}\n    {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}\n    (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I) :\n    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        let Delta := Real.sqrt n * (estimator n X - theta0)\n        (1 + |Delta|)⁻¹ *\n          (Delta\n            - I⁻¹ * ((Real.sqrt n)⁻¹ *\n                ∑ i : Fin n, (score0 : Lp Real 2 P) (X i))\n            - I⁻¹ * rawMovingBias gamma estimator theta0 scoreHat n X))",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(h : EfficientScoreEqBiasResidualAssumptions\n            P Θ S_θ T_nuis v T dψ estimator bias θ₀)",
-        "label": "asymptotic linearity with bias",
-        "note": "The efficient information Ĩ = ‖ℓ̃‖² is positive, the normalized efficient score ℓ̃/Ĩ lies in the tangent space and represents dψ there, and the estimator satisfies √n(θ̂_n − θ₀) = n^(−1/2) Σ ℓ̃(X_i)/Ĩ + bias_n + o_P(1) with the additive term bias_n not assumed to tend to zero."
+        "leanToken": "h : RawMovingBiasExpansionHyp",
+        "label": "score expansion inputs",
+        "note": "The estimating equation, empirical replacement, model transport, cross moment, and positive information conditions hold."
       }
     ],
     "hasGraph": true,
@@ -2478,12 +2966,175 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Theorem 25.59",
-      "biblio": "This is folklore with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
+      "biblio": "Efficient-score Z-estimation is part of the semiparametric efficiency theory developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993), building on J. Hájek's 1970 lower bound and C. Stein's 1956 projection method.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993",
         "hajek1970",
         "stein1956"
+      ]
+    },
+    "keywords": [
+      "Z-estimator",
+      "bias correction"
+    ],
+    "formalizationNotes": "The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only under information normalization."
+  },
+  {
+    "id": "rawMovingBias_normalized_expansion_2559_vec",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "rawMovingBias_normalized_expansion_2559_vec",
+    "fullName": "AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_normalized_expansion_2559_vec",
+    "title": "Normalized Vector Z-Estimator Bias Expansion",
+    "citation": "van der Vaart (1998), Thm 25.59",
+    "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimatorBiasExpansionVec.html#AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasExpansionVec.rawMovingBias_normalized_expansion_2559_vec",
+    "informal": "Under <span data-link=\"h1\">the primitive vector estimating-equation, empirical-replacement, quadratic-mean transport, cross-moment, and positive-definite information conditions</span>, let $\\Delta_n=\\sqrt n(\\hat\\theta_n-\\theta_0)$ and let $B_n$ be the raw moving-score bias. Then, after division by $1+\\lVert\\Delta_n\\rVert$, $$\\Delta_n-I^{-1}\\frac1{\\sqrt n}\\sum_i s(X_i)-I^{-1}B_n\\ \\longrightarrow_P\\ 0.$$ Equivalently, the rearranged expansion carries the covariant positive correction $+I^{-1}B_n$. The printed $+B_n$ form is recovered under information normalization.",
+    "summary": "The rate-free vector expansion applies I⁻¹ to both the empirical score and the moving-bias correction.",
+    "leanSignature": "theorem rawMovingBias_normalized_expansion_2559_vec\n    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]\n    {M : QMDModel (Omega := Omega) P d}\n    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}\n    {theta0 : EuclideanSpace Real (Fin d)}\n    {scoreHat : forall n,\n      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}\n    {score0 : Fin d -> ↥(L2ZeroMean P)}\n    {F : Fin d -> Set (Omega -> Real)}\n    {I : Matrix (Fin d) (Fin d) Real}\n    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :\n    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X =>\n        let Delta := Real.sqrt n • (estimator n X - theta0)\n        (1 + ‖Delta‖)⁻¹ •\n          (Delta\n            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹\n                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))\n            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹\n                (rawMovingBias_vec M estimator theta0 scoreHat n X)))",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "h : RawMovingBiasExpansionHyp_vec",
+        "label": "score expansion inputs",
+        "note": "The estimating equation, empirical replacement, model transport, cross moment, and positive-definite information conditions hold."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 25.59",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.8, Theorem 25.59 (vector, covariantly corrected form)",
+      "biblio": "Efficient-score Z-estimation is part of the semiparametric efficiency theory developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner (1993), building on J. Hájek's 1970 lower bound and C. Stein's 1956 projection method.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993",
+        "hajek1970",
+        "stein1956"
+      ]
+    },
+    "keywords": [
+      "Z-estimator",
+      "bias correction"
+    ],
+    "formalizationNotes": "The covariant correction is $+I^{-1}B_n$ after rearranging the residual. The unscaled $+B_n$ display is obtained only when the information matrix is the identity."
+  },
+  {
+    "id": "convexLinear_zEstimator_efficient_2561",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "convexLinear_zEstimator_efficient_2561",
+    "fullName": "AsymptoticStatistics.Efficiency.ConvexLinearEfficiency.convexLinear_zEstimator_efficient_2561",
+    "title": "Efficient Z-Estimation in a Convex-Linear Model",
+    "citation": "van der Vaart (1998), Ex 25.61",
+    "file": "StatLean/AsymptoticStatistics/Efficiency/ConvexLinearEfficiency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Efficiency/ConvexLinearEfficiency.html#AsymptoticStatistics.Efficiency.ConvexLinearEfficiency.convexLinear_zEstimator_efficient_2561",
+    "informal": "Consider a scalar Z-estimator in a convex-linear nuisance model. Assume <span data-link=\"h1\">the fitted empirical score equation is asymptotically solved</span>, <span data-link=\"h2\">the random fitted score can be replaced by the truth score in the empirical process</span>, <span data-link=\"h3\">quadratic-mean transport controls the moving-law score</span>, <span data-link=\"h4\">the fitted convex-linear model supplies the exact efficient score under the moving law</span>, and <span data-link=\"h5\">the normalized efficient score represents the target derivative in the tangent space and the target is correctly centered</span>. With positive efficient information and estimator measurability, the estimator is semiparametrically efficient.",
+    "summary": "Primitive convex-linear score conditions imply scalar semiparametric efficiency of the Z-estimator.",
+    "leanSignature": "theorem convexLinear_zEstimator_efficient_2561\n    {Omega : Type} [MeasurableSpace Omega]\n    (P : Measure Omega)\n    [IsProbabilityMeasure P]\n    {Theta : Type*} [NormedAddCommGroup Theta] [InnerProductSpace Real Theta]\n    [CompleteSpace Theta]\n    (S_theta : OrdinaryScore P Theta)\n    (T_nuis : NuisanceTangentSpace P)\n    [proj : T_nuis.HasOrthogonalProjection]\n    (v : Theta)\n    (gamma : QMDPath P)\n    (estimator : forall n, (Fin n -> Omega) -> Real) (theta0 : Real)\n    (scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real)\n    (F : Set (Omega -> Real))\n    (score_eq : TendstoInProbZero\n      (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X => (Real.sqrt n)⁻¹ * ∑ i : Fin n, scoreHat n X (X i)))\n    (B0 : RandomIndexScoreReplacementHyp P scoreHat\n      (fun omega => ((@efficientScore Omega _ P _ Theta _ _ _\n        S_theta T_nuis proj v : Lp Real 2 P) : Omega -> Real) omega) F)\n    (hTransport : HellingerScoreTransportHyp P gamma estimator theta0 scoreHat\n      (fun omega => ((@efficientScore Omega _ P _ Theta _ _ _\n        S_theta T_nuis proj v : Lp Real 2 P) : Omega -> Real) omega))\n    (hScore : gamma.score = S_theta v)\n    (hI : 0 < @efficientInformation Omega _ P _ Theta _ _ _\n      S_theta T_nuis proj v)\n    (hEstimator_meas : forall n, Measurable (estimator n))\n    (P_hat : forall n, (Fin n -> Omega) -> Measure Omega)\n    [forall n X, IsProbabilityMeasure (P_hat n X)]\n    (T_hat : forall n X, NuisanceTangentSpace (P_hat n X))\n    [forall n X, (T_hat n X).HasOrthogonalProjection]\n    (S_hat : forall n X, OrdinaryScore (P_hat n X) Theta)\n    (M_hat : forall n X, ConvexLinearModel (P_hat n X) (T_hat n X))\n    (hConvex : forall n X, ConvexLinearEfficientScoreWitness\n      (M_hat n X) (gamma.curve (estimator n X - theta0))\n      (S_hat n X) v (scoreHat n X))\n    (T : Submodule Real ↥(L2ZeroMean P)) (dpsi : T →L[Real] Real)\n    (h_mem : (1 / @efficientInformation Omega _ P _ Theta _ _ _\n      S_theta T_nuis proj v) •\n        @efficientScore Omega _ P _ Theta _ _ _ S_theta T_nuis proj v ∈ T)\n    (h_dpsi : forall g : T, dpsi g =\n      (1 / @efficientInformation Omega _ P _ Theta _ _ _\n        S_theta T_nuis proj v) *\n        ⟪@efficientScore Omega _ P _ Theta _ _ _ S_theta T_nuis proj v,\n          (g : ↥(L2ZeroMean P))⟫_ℝ)\n    (psi : Measure Omega -> Real) (hpsi : psi P = theta0) :\n    SemiparametricallyEfficientAt estimator psi P T",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "score_eq",
+        "label": "estimating equation",
+        "note": "The fitted empirical score is negligible at root-n scale."
+      },
+      {
+        "id": "h2",
+        "leanToken": "B0",
+        "label": "score replacement",
+        "note": "The random fitted score admits the required empirical-process replacement by the truth efficient score."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hTransport",
+        "label": "QMD transport",
+        "note": "Quadratic-mean transport controls the fitted score along the moving parameter law."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hConvex",
+        "label": "convex-linear witness",
+        "note": "At every fitted law, the supplied score is the efficient score generated by the convex-linear nuisance model."
+      },
+      {
+        "id": "h5",
+        "leanToken": "h_dpsi",
+        "label": "derivative representation",
+        "note": "The normalized efficient score lies in the tangent space, represents the derivative, and the target value equals the estimator centering."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Ex 25.61",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.8, Example 25.61 (scalar form)",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993"
+      ]
+    },
+    "keywords": [
+      "Z-estimator",
+      "asymptotic efficiency"
+    ]
+  },
+  {
+    "id": "convexLinear_zEstimator_efficient_2561_vec",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "convexLinear_zEstimator_efficient_2561_vec",
+    "fullName": "AsymptoticStatistics.Efficiency.ConvexLinearEfficiency.convexLinear_zEstimator_efficient_2561_vec",
+    "title": "Efficient Vector Z-Estimation in a Convex-Linear Model",
+    "citation": "van der Vaart (1998), Ex 25.61",
+    "file": "StatLean/AsymptoticStatistics/Efficiency/ConvexLinearEfficiency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Efficiency/ConvexLinearEfficiency.html#AsymptoticStatistics.Efficiency.ConvexLinearEfficiency.convexLinear_zEstimator_efficient_2561_vec",
+    "informal": "For a finite-dimensional Z-estimator in a convex-linear nuisance model, suppose <span data-link=\"h1\">the fitted vector score equation is asymptotically solved</span>, <span data-link=\"h2\">coordinatewise empirical-score replacement holds</span>, <span data-link=\"h3\">quadratic-mean transport controls the moving-law score vector</span>, <span data-link=\"h4\">the fitted convex-linear model supplies the joint efficient-score witness</span>, and <span data-link=\"h5\">the candidate efficient influence coordinates represent the vector derivative and the target is correctly centered</span>. With positive-definite efficient information and estimator measurability, the estimator is semiparametrically efficient.",
+    "summary": "Primitive convex-linear score conditions imply finite-dimensional semiparametric efficiency of the vector Z-estimator.",
+    "leanSignature": "theorem convexLinear_zEstimator_efficient_2561_vec\n    {d : Nat} {Omega : Type} [MeasurableSpace Omega]\n    (P : Measure Omega)\n    [IsProbabilityMeasure P]\n    {Theta : Type*} [NormedAddCommGroup Theta] [InnerProductSpace Real Theta]\n    [CompleteSpace Theta]\n    (S_theta : OrdinaryScore P Theta) (T_nuis : NuisanceTangentSpace P)\n    [proj : T_nuis.HasOrthogonalProjection]\n    (e : Fin d -> Theta)\n    (M : QMDModel (Omega := Omega) P d)\n    (estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d))\n    (theta0 : EuclideanSpace Real (Fin d))\n    (scoreHat : forall n,\n      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d))\n    (F : Fin d -> Set (Omega -> Real))\n    (score_eq : TendstoInProbZero\n      (fun n : Nat => Measure.pi (fun _ : Fin n => P))\n      (fun n X => (Real.sqrt n)⁻¹ • ∑ i : Fin n, scoreHat n X (X i)))\n    (B0 : RandomIndexScoreReplacementHyp_vec P d scoreHat\n      (tupleEval P (fun k => @efficientScore Omega _ P _ Theta _ _ _\n        S_theta T_nuis proj (e k))) F)\n    (hTransport : HellingerScoreTransportHypVec P M estimator theta0 scoreHat\n      (tupleEval P (fun k => @efficientScore Omega _ P _ Theta _ _ _\n        S_theta T_nuis proj (e k))))\n    (hScore : forall k, (fun omega => M.score omega k) =ᵐ[P]\n      fun omega => ((S_theta (e k) : Lp Real 2 P) : Omega -> Real) omega)\n    (hPD : (@efficientInformationMatrix Omega _ P _ Theta _ _ _ d\n      S_theta T_nuis proj e).PosDef)\n    (hEstimator_meas : forall n, Measurable (estimator n))\n    (P_hat : forall n, (Fin n -> Omega) -> Measure Omega)\n    [forall n X, IsProbabilityMeasure (P_hat n X)]\n    (T_hat : forall n X, NuisanceTangentSpace (P_hat n X))\n    [forall n X, (T_hat n X).HasOrthogonalProjection]\n    (S_hat : forall n X, OrdinaryScore (P_hat n X) Theta)\n    (C_hat : forall n X, ConvexLinearModel (P_hat n X) (T_hat n X))\n    (hConvex : forall n X, ConvexLinearEfficientScoresWitness\n      (C_hat n X) (M.curve (estimator n X - theta0))\n      (S_hat n X) e (scoreHat n X))\n    (T : Submodule Real ↥(L2ZeroMean P))\n    (Dpsi : T →L[Real] EuclideanSpace Real (Fin d))\n    (h_mem : forall j, @candidateVecEIF Omega _ P _ Theta _ _ _ d\n      S_theta T_nuis proj e j ∈ T)\n    (h_Dpsi : forall (j : Fin d) (g : T),\n      (EuclideanSpace.proj j ∘L Dpsi) g =\n        ⟪@candidateVecEIF Omega _ P _ Theta _ _ _ d\n          S_theta T_nuis proj e j, (g : ↥(L2ZeroMean P))⟫_ℝ)\n    (psi : Measure Omega -> EuclideanSpace Real (Fin d))\n    (hpsi : psi P = theta0) :\n    SemiparametricallyEfficientAt_vec estimator psi P T",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "score_eq",
+        "label": "estimating equation",
+        "note": "The fitted empirical vector score is negligible at root-n scale."
+      },
+      {
+        "id": "h2",
+        "leanToken": "B0",
+        "label": "score replacement",
+        "note": "Each fitted score coordinate admits the required empirical-process replacement."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hTransport",
+        "label": "QMD transport",
+        "note": "Quadratic-mean transport controls the fitted vector score along the moving model."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hConvex",
+        "label": "convex-linear witness",
+        "note": "The fitted convex-linear model supplies the efficient score tuple under every moving law."
+      },
+      {
+        "id": "h5",
+        "leanToken": "h_Dpsi",
+        "label": "derivative representation",
+        "note": "The candidate influence coordinates lie in the tangent space, represent the vector derivative, and the target matches the centering."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Ex 25.61",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.8, Example 25.61 (vector form)",
+      "biblio": "The coarsening-at-random tangent-space analysis is developed in the semiparametric framework of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993.",
+      "keys": [
+        "vdv1998",
+        "bickel-klaassen-ritov-wellner1993"
       ]
     },
     "keywords": [
@@ -2534,6 +3185,68 @@
     "keywords": [
       "maximum likelihood estimator",
       "asymptotic efficiency"
+    ]
+  },
+  {
+    "id": "halfLine_isPGlivenkoCantelli",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "halfLine_isPGlivenkoCantelli",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.halfLine_isPGlivenkoCantelli",
+    "title": "Glivenko–Cantelli Theorem for Empirical Distribution Functions",
+    "citation": "van der Vaart (1998), Thm 19.1",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/EmpiricalDistribution.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/EmpiricalDistribution.html#AsymptoticStatistics.EmpiricalProcess.halfLine_isPGlivenkoCantelli",
+    "informal": "For every probability law $P$ on the real line, the class of closed half-line indicators $\\{\\mathbf 1_{(-\\infty,t]}:t\\in\\mathbb R\\}$ is $P$-Glivenko–Cantelli. Equivalently, the empirical distribution function converges uniformly to the distribution function, almost surely. No continuity or nonatomicity assumption is required.",
+    "summary": "The empirical distribution function converges uniformly almost surely for every real probability law.",
+    "leanSignature": "theorem halfLine_isPGlivenkoCantelli\n    (P : Measure ℝ) [IsProbabilityMeasure P] :\n    IsPGlivenkoCantelli halfLineIndicatorClass P",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 19.1",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 19.1",
+      "biblio": "J. L. Doob's 1949 empirical-process viewpoint led to the modern process formulation of uniform convergence for the empirical distribution function.",
+      "keys": [
+        "vdv1998",
+        "doob1949"
+      ]
+    },
+    "keywords": [
+      "Glivenko–Cantelli theorem",
+      "empirical distribution function"
+    ]
+  },
+  {
+    "id": "halfLine_isPDonskerWithBridge",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "halfLine_isPDonskerWithBridge",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.halfLine_isPDonskerWithBridge",
+    "title": "Donsker Theorem for the Empirical Distribution Process",
+    "citation": "van der Vaart (1998), Thm 19.3",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/EmpiricalDistribution.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/EmpiricalDistribution.html#AsymptoticStatistics.EmpiricalProcess.halfLine_isPDonskerWithBridge",
+    "informal": "For every probability law $P$ on the real line, the centered empirical process indexed by closed half-lines converges weakly in the uniform-norm space $\\ell^\\infty\\{\\mathbf 1_{(-\\infty,t]}:t\\in\\mathbb R\\}$ to a tight $P$-Brownian bridge. The statement concerns the full path process, not merely its finite-dimensional distributions.",
+    "summary": "The full empirical distribution process converges to a tight Brownian bridge in the uniform norm.",
+    "leanSignature": "theorem halfLine_isPDonskerWithBridge\n    (P : Measure ℝ) [IsProbabilityMeasure P] :\n    IsPDonskerWithBridge halfLineIndicatorClass P",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 19.3",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 19.3",
+      "biblio": "The process limit follows the program of J. L. Doob, \"Heuristic approach to the Kolmogorov–Smirnov theorems,\" *Annals of Mathematical Statistics* **20** (1949), 393–403, and M. D. Donsker, \"Justification and extension of Doob's heuristic approach to the Kolmogorov–Smirnov theorems,\" *Annals of Mathematical Statistics* **23** (1952), 277–281.",
+      "keys": [
+        "vdv1998",
+        "doob1949",
+        "donsker1952"
+      ]
+    },
+    "keywords": [
+      "Donsker theorem",
+      "empirical distribution function",
+      "Brownian bridge"
     ]
   },
   {
@@ -2801,6 +3514,156 @@
     ]
   },
   {
+    "id": "IsPointwiseMeasurable",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "IsPointwiseMeasurable",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable",
+    "title": "Pointwise-Measurable Function Class",
+    "citation": "van der Vaart (1998), §19.2",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.html#AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable",
+    "informal": "A function class $\\mathcal F$ is pointwise measurable if it contains a countable subclass $\\mathcal F_0$ such that every $f\\in\\mathcal F$ is the pointwise limit of a sequence from $\\mathcal F_0$. The empty class is pointwise measurable with the empty skeleton.",
+    "summary": "A countable skeleton sequentially approximates every class member at every point.",
+    "leanSignature": "def IsPointwiseMeasurable (F : Set (Ω → ℝ)) : Prop :=\n  ∃ F₀ : Set (Ω → ℝ), F₀.Countable ∧ F₀ ⊆ F ∧\n    ∀ f ∈ F, ∃ g : ℕ → (Ω → ℝ), (∀ n, g n ∈ F₀) ∧\n      ∀ x, Tendsto (fun n => g n x) atTop (𝓝 (f x))",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), §19.2",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§19.2 (suitable measurability following Theorem 19.14)",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "empirical process",
+      "measurability"
+    ]
+  },
+  {
+    "id": "uniformLpCoveringNumber",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "uniformLpCoveringNumber",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.uniformLpCoveringNumber",
+    "title": "Uniform Relative Covering Number",
+    "citation": "van der Vaart (1998), §19.2",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.html#AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.uniformLpCoveringNumber",
+    "informal": "For a class $\\mathcal F$, a nonnegative envelope $G$, an exponent $r$, and a relative radius $\\varepsilon$, the uniform covering number is the supremum over probability measures $Q$ with $0<\\lVert G\\rVert^*_{Q,r}<\\infty$ of the least size of a finite strict $L^r(Q)$ cover of $\\mathcal F$ by balls of radius $\\varepsilon\\lVert G\\rVert^*_{Q,r}$. If there is no admissible measure, the supremum is zero.",
+    "summary": "The worst finite relative L^r covering number over probability measures with a positive finite envelope norm.",
+    "leanSignature": "noncomputable def uniformLpCoveringNumber (F : Set (Ω → ℝ)) (G : Ω → ℝ)\n    (r ε : ℝ) : ℕ∞ :=\n  ⨆ (Q : Measure Ω), ⨆ (_hQ : IsAdmissibleMeasure G r Q),\n    finiteLpCoveringNumber F G Q r ε",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), §19.2",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§19.2, p. 274 (uniform covering number)",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "covering number",
+      "empirical process"
+    ]
+  },
+  {
+    "id": "uniformEntropyIntegral",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "uniformEntropyIntegral",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.uniformEntropyIntegral",
+    "title": "Uniform Entropy Integral",
+    "citation": "van der Vaart (1998), §19.2",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyStructural.html#AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.uniformEntropyIntegral",
+    "informal": "The uniform entropy integral of a class $\\mathcal F$ with envelope $G$ is $$J(\\delta,\\mathcal F,G,L^r)=\\int_0^\\delta\\sqrt{\\log\\!\\left(1+\\sup_Q N\\!\\left(\\varepsilon\\lVert G\\rVert^*_{Q,r},\\mathcal F,L^r(Q)\\right)\\right)}\\,d\\varepsilon,$$ where the supremum is over probability measures having positive finite outer $L^r$ envelope norm. A nonpositive upper endpoint gives an empty integral.",
+    "summary": "The entropy integral formed from worst-case relative L^r covering numbers.",
+    "leanSignature": "noncomputable def uniformEntropyIntegral (δ : ℝ) (F : Set (Ω → ℝ))\n    (G : Ω → ℝ) (r : ℝ) : ℝ≥0∞ :=\n  ∫⁻ ε in Set.Ioc 0 δ, entropyWeight (uniformLpCoveringNumber F G r ε) ∂volume",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), §19.2",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§19.2, p. 274 (uniform entropy integral)",
+      "biblio": "Metric-entropy control of Gaussian and empirical processes originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1** (1967), 290–330, and is developed systematically by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "dudley1967",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "entropy integral",
+      "covering number"
+    ]
+  },
+  {
+    "id": "VCIndexLE",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "VCIndexLE",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.VCIndexLE",
+    "title": "Upper Bound on the VC Index",
+    "citation": "van der Vaart (1998), §19.2",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/VCClass.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/VCClass.html#AsymptoticStatistics.EmpiricalProcess.VCIndexLE",
+    "informal": "A family of sets $\\mathcal A$ has book VC index at most $V$ if it shatters no finite set of cardinality at least $V$. Thus, when a largest shattered size exists, this index is one more than the usual VC dimension. At $V=0$, even the empty set must not be shattered.",
+    "summary": "No finite set of size at least V is shattered by the set family.",
+    "leanSignature": "noncomputable def VCIndexLE (𝒜 : Set (Set α)) (V : ℕ) : Prop := by\n  exact ∀ s : Finset α, V ≤ s.card → ¬ SetFamilyShatters 𝒜 s",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), §19.2",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§19.2, pp. 274–275 (VC index)",
+      "biblio": "The sharp polynomial covering bounds for VC classes used in empirical-process theory were developed by D. Haussler, \"Decision theoretic generalizations of the PAC model for neural net and other learning applications,\" *Information and Computation* **100** (1992), 78–150.",
+      "keys": [
+        "vdv1998",
+        "haussler1992"
+      ]
+    },
+    "keywords": [
+      "VC dimension"
+    ]
+  },
+  {
+    "id": "IsVCSubgraphClass",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "IsVCSubgraphClass",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.IsVCSubgraphClass",
+    "title": "VC-Subgraph Function Class",
+    "citation": "van der Vaart (1998), §19.2",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/VCClass.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/VCClass.html#AsymptoticStatistics.EmpiricalProcess.IsVCSubgraphClass",
+    "informal": "A real-valued function class $\\mathcal F$ is a VC-subgraph class of index at most $V$ when every member is measurable and the family of strict subgraphs $\\{(x,t):t<f(x)\\}$ shatters no finite set of cardinality at least $V$. Suitable pointwise measurability for uniform entropy theorems remains a separate condition.",
+    "summary": "A measurable function class whose strict-subgraph family has VC index at most V.",
+    "leanSignature": "noncomputable def IsVCSubgraphClass [MeasurableSpace Ω]\n    (F : Set (Ω → ℝ)) (V : ℕ) : Prop :=\n  (∀ f ∈ F, Measurable f) ∧ HasVCSubgraphIndexLE F V",
+    "hypotheses": [],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), §19.2",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§19.2, p. 275 (VC-subgraph class)",
+      "biblio": "The sharp polynomial covering bounds for VC classes used in empirical-process theory were developed by D. Haussler, \"Decision theoretic generalizations of the PAC model for neural net and other learning applications,\" *Information and Computation* **100** (1992), 78–150.",
+      "keys": [
+        "vdv1998",
+        "haussler1992"
+      ]
+    },
+    "keywords": [
+      "VC dimension",
+      "empirical process"
+    ]
+  },
+  {
     "id": "isPGlivenkoCantelli_of_finite_bracketing_L1",
     "category": "concentration",
     "kind": "theorem",
@@ -2850,28 +3713,27 @@
     "id": "isPDonsker_of_finite_bracketing_entropy_integral",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "isPDonsker_of_finite_bracketing_entropy_integral",
-    "fullName": "AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral",
-    "title": "Donsker via bracketing entropy integral",
+    "leanName": "donskerWithBridge_of_finite_bracketing_entropy",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.donskerWithBridge_of_finite_bracketing_entropy",
+    "title": "Donsker Theorem from Bracketing Entropy",
     "citation": "van der Vaart (1998), Thm 19.5",
-    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/DonskerBracketing.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/DonskerBracketing.html#AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral",
-    "informal": "<p>Every class $\\mathcal{F}$ of <span data-link=\"h1\">functions that are measurable under $P$</span> whose <span data-link=\"h2\">bracketing entropy integral is finite</span>, $$J_{[\\,]}(1, \\mathcal{F}, L_2(P)) \\;=\\; \\int_0^{1} \\sqrt{\\log N_{[\\,]}(\\varepsilon, \\mathcal{F}, L_2(P))}\\;d\\varepsilon \\;<\\; \\infty,$$ is $P$-Donsker, where $N_{[\\,]}(\\varepsilon, \\mathcal{F}, L_2(P))$ is the bracketing number: the least number of $\\varepsilon$-brackets in $L_2(P)$ needed to cover $\\mathcal{F}$.</p>",
-    "summary": "If F is P-measurable and J_[](1,F,L₂(P)) < ∞, then F is P-Donsker (with positivity of J at every scale and the chaining bound supplied).",
-    "leanSignature": "theorem isPDonsker_of_finite_bracketing_entropy_integral\n    (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]\n    (h_meas : ∀ f ∈ F, AEMeasurable f P)\n    (h_int : bracketingEntropyIntegral 1 F P < ⊤)\n    (hJ_pos : ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' F P)\n    (hChainBound_outer :\n      ∀ {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n        (X : ℕ → Ξ → Ω),\n        ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →\n          ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),\n            ∫⁻ ξ, supNormOver F\n                  (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ\n              ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P\n                + ENNReal.ofReal 2 *\n                  (ENNReal.ofReal (Real.sqrt n)\n                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)\n                        * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)) :\n    IsPDonsker F P",
-    "formalizationNotes": "Proof idea: split Donsker into the marginal CLT (obtained by bracket extraction at a finite scale plus L²-membership) and asymptotic equicontinuity (driven by the bracketing maximal inequality, Lem 19.34, with the envelope tail vanishing under truncation at δ√n). Beyond the bare statement, the Lean theorem takes two extra inputs: hJ_pos (positivity of the bracketing-entropy integral at every scale, ruling out the L²-trivial degenerate case) and hChainBound_outer (the per-scale chaining sup-norm integral bound from Maximal.lean / Lem 19.34, supplied as a hypothesis rather than rederived here).",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/AbstractDonsker/FiniteCarrier.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/AbstractDonsker/FiniteCarrier.html#AsymptoticStatistics.EmpiricalProcess.donskerWithBridge_of_finite_bracketing_entropy",
+    "informal": "Let $\\mathcal F$ be <span data-link=\"h1\">a nonempty class of measurable functions</span> with <span data-link=\"h2\">finite bracketing entropy integral $\\int_0^1\\sqrt{\\log N_{[\\,]}(\\varepsilon,\\mathcal F,L^2(P))}\\,d\\varepsilon$</span>. Then the class has a square-integrable envelope and is $P$-Donsker in the literal process sense: there exists a tight $P$-Brownian-bridge law on $\\ell^\\infty(\\mathcal F)$ to which every jointly i.i.d. empirical process with law $P$ converges weakly in the outer sense.",
+    "summary": "Finite L² bracketing entropy yields an envelope and full carrier-agnostic Brownian-bridge convergence.",
+    "leanSignature": "theorem donskerWithBridge_of_finite_bracketing_entropy\n    {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]\n    (hF_ne : F.Nonempty)\n    (hF_meas : ∀ f ∈ F, Measurable f)\n    (h_int : bracketingEntropyIntegral 1 F P < ⊤)\n    : ∃ (G : Ω → ℝ) (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P),\n        IsPDonskerWithBridge F P",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "h_meas : ∀ f ∈ F, AEMeasurable f P",
-        "label": "every f ∈ F is P-measurable",
-        "note": "Every f ∈ F is measurable up to a P-null set."
+        "leanToken": "hF_ne",
+        "label": "nonempty measurable class",
+        "note": "The class is nonempty and all its members are measurable."
       },
       {
         "id": "h2",
-        "leanToken": "h_int : bracketingEntropyIntegral 1 F P < ⊤",
-        "label": "finite bracketing entropy integral",
-        "note": "J_[](1, F, L₂(P)) < ∞."
+        "leanToken": "h_int",
+        "label": "finite bracketing entropy",
+        "note": "The L²(P) bracketing entropy integral from zero to one is finite."
       }
     ],
     "hasGraph": true,
@@ -2879,7 +3741,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.2, Theorem 19.5",
-      "biblio": "The bracketing-entropy Donsker theorem originates with M. Ossiander, \"A Central Limit Theorem Under Metric Entropy with $L_2$ Bracketing,\" *The Annals of Probability* **15** (1987), no. 3, 897–919, who proved an empirical-process central limit theorem under the integrability condition $\\int_0^1 \\sqrt{\\log N_{[\\,]}(\\varepsilon, \\mathcal{F}, L_2(P))}\\,d\\varepsilon < \\infty$, generalizing earlier uniform-entropy results of Dudley. The form stated here is van der Vaart's Theorem 19.5.",
+      "biblio": "The bracketing central limit theorem was proved by M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *Annals of Probability* **15** (1987), 897–919.",
       "keys": [
         "vdv1998",
         "ossiander1987"
@@ -2888,6 +3750,161 @@
     "keywords": [
       "Donsker class",
       "entropy integral"
+    ]
+  },
+  {
+    "id": "uniformCovering_isPGlivenkoCantelliIID",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "uniformCovering_isPGlivenkoCantelliIID",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.uniformCovering_isPGlivenkoCantelliIID",
+    "title": "Uniform-Covering Glivenko–Cantelli Theorem",
+    "citation": "van der Vaart (1998), Thm 19.13",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropySymmetrization.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropySymmetrization.html#AsymptoticStatistics.EmpiricalProcess.uniformCovering_isPGlivenkoCantelliIID",
+    "informal": "Let $\\mathcal F$ be a class of measurable real functions. Assume <span data-link=\"h1\">$\\mathcal F$ has a countable pointwise-dense skeleton</span>, <span data-link=\"h2\">$G$ is a nonnegative envelope for the class</span>, <span data-link=\"h3\">the outer first moment of $G$ under $P$ is finite</span>, and <span data-link=\"h4\">for every positive radius the uniform relative $L^1$ covering number is finite</span>. Then, for every jointly i.i.d. sample with law $P$, the empirical averages converge uniformly over $\\mathcal F$ almost surely.",
+    "summary": "Finite uniform L¹ covering numbers and an integrable envelope imply the i.i.d. Glivenko–Cantelli property.",
+    "leanSignature": "theorem uniformCovering_isPGlivenkoCantelliIID\n    (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]\n    (hFmeas : ∀ f ∈ F, Measurable f)\n    (hPM : IsPointwiseMeasurable F)\n    (hEnv : UniformEntropyStructural.IsEnvelope F G)\n    (hG1 : outerLpNorm P G 1 < ⊤)\n    (hcover : ∀ ε > 0, uniformLpCoveringNumber F G 1 ε < ⊤)\n    : IsPGlivenkoCantelliIID F P",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hPM",
+        "label": "pointwise measurability",
+        "note": "A countable subclass approximates every class member pointwise."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hEnv",
+        "label": "nonnegative envelope",
+        "note": "The function G is nonnegative and dominates every class member in absolute value."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hG1",
+        "label": "integrable envelope",
+        "note": "The outer L¹(P) norm of G is finite."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hcover",
+        "label": "finite uniform covers",
+        "note": "Every positive relative radius has a finite uniform L¹ covering number."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 19.13",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 19.13",
+      "biblio": "The systematic empirical-process treatment, including changing-index-set and entropy methods, is developed by A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "keys": [
+        "vdv1998",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "Glivenko–Cantelli theorem",
+      "covering number"
+    ]
+  },
+  {
+    "id": "uniformEntropy_pdonskerProcessData_core",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "uniformEntropy_pdonskerProcessData_core",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.uniformEntropy_pdonskerProcessData_core",
+    "title": "Uniform-Entropy Donsker Theorem",
+    "citation": "van der Vaart (1998), Thm 19.14",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyGaussianBridge.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyGaussianBridge.html#AsymptoticStatistics.EmpiricalProcess.uniformEntropy_pdonskerProcessData_core",
+    "informal": "Let $\\mathcal F$ be a class of measurable real functions. Suppose <span data-link=\"h1\">the class is pointwise measurable</span>, <span data-link=\"h2\">$G$ is a nonnegative envelope</span>, <span data-link=\"h3\">$G$ has finite outer $L^2(P)$ norm</span>, and <span data-link=\"h4\">the uniform $L^2$ entropy integral at radius one is finite</span>. Then $\\mathcal F$ has the complete $P$-Donsker package: marginal Gaussian limits, asymptotic equicontinuity, a tight Brownian-bridge law, and full outer weak convergence of the empirical process for every jointly i.i.d. sample with law $P$.",
+    "summary": "A finite uniform L² entropy integral and square-integrable envelope yield full Brownian-bridge Donsker convergence.",
+    "leanSignature": "theorem uniformEntropy_pdonskerProcessData_core\n    (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]\n    (hFmeas : ∀ f ∈ F, Measurable f)\n    (hPM : IsPointwiseMeasurable F)\n    (hEnv : UniformEntropyStructural.IsEnvelope F G)\n    (hG2 : outerLpNorm P G 2 < ⊤)\n    (hJ : uniformEntropyIntegral 1 F G 2 < ⊤)\n    : PDonskerProcessData F P",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hPM",
+        "label": "pointwise measurability",
+        "note": "A countable subclass approximates every class member pointwise."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hEnv",
+        "label": "nonnegative envelope",
+        "note": "The function G is nonnegative and dominates every class member in absolute value."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hG2",
+        "label": "square-integrable envelope",
+        "note": "The outer L²(P) norm of G is finite."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hJ",
+        "label": "finite uniform entropy",
+        "note": "The uniform relative L² entropy integral from zero to one is finite."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 19.14",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 19.14",
+      "biblio": "Uniform entropy methods originate with R. M. Dudley (1967), were developed for empirical processes by D. Pollard (1985), and are treated systematically by A. W. van der Vaart and J. A. Wellner (1996).",
+      "keys": [
+        "vdv1998",
+        "dudley1967",
+        "pollard1985",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "Donsker class",
+      "entropy integral"
+    ]
+  },
+  {
+    "id": "continuousCDF_gof_limit_distributionFree",
+    "category": "concentration",
+    "kind": "corollary",
+    "leanName": "continuousCDF_gof_limit_distributionFree",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.continuousCDF_gof_limit_distributionFree",
+    "title": "Distribution-Free Goodness-of-Fit Limits",
+    "citation": "van der Vaart (1998), Cor 19.21",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/HalfLineBridgeTransport.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/HalfLineBridgeTransport.html#AsymptoticStatistics.EmpiricalProcess.continuousCDF_gof_limit_distributionFree",
+    "informal": "Let $P$ be a probability law on the real line with <span data-link=\"h1\">continuous distribution function</span>. Brownian-bridge laws exist for both $P$ and the uniform distribution on $[0,1]$, and every such pair has the same joint pushforward law under the Kolmogorov–Smirnov supremum functional and the Cramér–von Mises integrated-square functional. Hence both limiting goodness-of-fit statistics are distribution-free.",
+    "summary": "For a continuous CDF, the joint Kolmogorov–Smirnov and Cramér–von Mises bridge limit law is the uniform one.",
+    "leanSignature": "theorem continuousCDF_gof_limit_distributionFree\n    (P : Measure ℝ) [IsProbabilityMeasure P]\n    (hF : Continuous (cdf P)) :\n    (∃ νP : Measure (LinfF halfLineIndicatorClass),\n      IsPBrownianBridge halfLineIndicatorClass P νP) ∧\n    (∃ νU : Measure (LinfF halfLineIndicatorClass),\n      IsPBrownianBridge halfLineIndicatorClass uniform01 νU) ∧\n    ∀ {νP νU : Measure (LinfF halfLineIndicatorClass)},\n      IsPBrownianBridge halfLineIndicatorClass P νP →\n      IsPBrownianBridge halfLineIndicatorClass uniform01 νU →\n      νP.map (gofFunctional P) =\n        νU.map (gofFunctional uniform01)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hF",
+        "label": "continuous distribution",
+        "note": "The distribution function of P is continuous on the real line."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Cor 19.21",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Corollary 19.21",
+      "biblio": "The distribution-free empirical-process limit follows J. L. Doob (1949) and M. D. Donsker (1952); the Kolmogorov–Smirnov and Cramér–von Mises functionals descend respectively from N. V. Smirnov (1948) and R. von Mises (1931).",
+      "keys": [
+        "vdv1998",
+        "doob1949",
+        "donsker1952",
+        "smirnov1948",
+        "vonmises1931"
+      ]
+    },
+    "keywords": [
+      "goodness-of-fit",
+      "Brownian bridge"
+    ],
+    "crossListed": [
+      "hypothesistesting"
     ]
   },
   {
@@ -2950,28 +3967,27 @@
     "id": "empiricalProcess_param_estimation",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "empiricalProcess_param_estimation",
-    "fullName": "AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation",
-    "title": "Empirical process under parameter estimation",
-    "citation": "van der Vaart (1998), Thm 19.26",
-    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/ParameterEstimation.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/ParameterEstimation.html#AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation",
-    "informal": "<p>Let $\\mathcal{F}$ be a class of functions on the sample space and let $\\{P_\\theta : \\theta \\in \\mathbb{R}\\}$ be a family of laws. Assume <span data-link=\"h1\">the three structural conditions: $\\mathcal{F}$ is $P_{\\theta_0}$-Donsker; the estimator is asymptotically linear at $\\theta_0$ with influence function $\\psi_{\\theta_0}$, meaning $\\sqrt n\\,(\\hat\\theta_n - \\theta_0) = \\tfrac{1}{\\sqrt n}\\sum_{i<n}\\psi_{\\theta_0}(X_i) + o_P(1)$; and the map $\\theta \\mapsto P_\\theta$, viewed as a map into $\\ell^\\infty(\\mathcal{F})$, is Fréchet differentiable at $\\theta_0$ with derivative $\\dot P_\\theta$</span>, and let <span data-link=\"h2\">$X_1, X_2, \\dots$ be an i.i.d. sample with law $P_{\\theta_0}$</span>. Then for every $f \\in \\mathcal{F}$ the rescaled “empirical minus estimated” functional satisfies $$\\sqrt n\\,\\bigl(P_n f - P_{\\hat\\theta_n} f\\bigr) \\;\\rightsquigarrow\\; N(0, \\sigma_f^2), \\qquad \\sigma_f^2 = \\int \\bigl(f - P_{\\theta_0}f - \\dot P_\\theta f \\cdot \\psi_{\\theta_0}\\bigr)^2 \\, dP_{\\theta_0},$$ where $P_n f = \\tfrac1n\\sum_{i<n} f(X_i)$.</p>",
-    "summary": "Under parameter estimation √n(P_n f − P_{θ̂_n} f) →_d N(0, σ_f²) for each f ∈ F, with σ_f² the influence-adjusted variance.",
-    "leanSignature": "theorem empiricalProcess_param_estimation\n    (F : Set (Ω → ℝ)) (P_θ : ℝ → Measure Ω) (θ₀ : ℝ)\n    [IsProbabilityMeasure (P_θ θ₀)]\n    (ψ_θ₀ : ↑(L2ZeroMean (P_θ θ₀)))\n    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω)\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_iindep : ProbabilityTheory.iIndepFun X μ)\n    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P_θ θ₀)\n    (θ_hat : ∀ n, (Fin n → Ω) → ℝ)\n    (dPθ : (Ω → ℝ) → ℝ)\n    (h : Theorem19_23Hyp F P_θ θ₀ ψ_θ₀ θ_hat dPθ)\n    (target_aem : ∀ f ∈ F, ∀ (n : ℕ),\n      AEMeasurable\n        (fun ξ : Ξ => Real.sqrt n *\n          ((1 / (n : ℝ)) * ∑ i : Fin n, f (X i.val ξ)\n            - ∫ y, f y ∂(P_θ (θ_hat n (fun i : Fin n => X i.val ξ))))) μ) :\n    ∀ f ∈ F,\n      let σ_sq : ℝ :=\n        ∫ x, (f x - ∫ y, f y ∂(P_θ θ₀)\n                - dPθ f\n                  * (((ψ_θ₀ : ↑(L2ZeroMean (P_θ θ₀))) : Lp ℝ 2 (P_θ θ₀)) : Ω → ℝ) x) ^ 2\n          ∂(P_θ θ₀)\n      MeasureTheory.TendstoInDistribution\n        (fun (n : ℕ) (ξ : Ξ) => Real.sqrt n *\n          ((1 / (n : ℝ)) * ∑ i : Fin n, f (X i.val ξ)\n            - ∫ y, f y ∂(P_θ (θ_hat n (fun i : Fin n => X i.val ξ)))))\n        atTop\n        (id : ℝ → ℝ)\n        (fun _ => μ)\n        (ProbabilityTheory.gaussianReal 0 σ_sq.toNNReal)",
-    "formalizationNotes": "Proof idea: combine the master decomposition (Lemma 2.12 + Fréchet expansion), the one-dimensional iid CLT, Slutsky absorption of the o_P remainder, and finiteness of the limiting variance. The structural assumptions (Fréchet differentiability, F Donsker, asymptotic linearity of θ̂_n with influence function ψ_θ₀) are bundled in the predicate Theorem19_23Hyp (the Lean docstring labels this the k=1 specialisation of Thm 19.23, cited as Thm 19.26). target_aem supplies AE-measurability of the F-indexed target sequence.",
+    "leanName": "empiricalProcess_parameter_estimation_finite",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.empiricalProcess_parameter_estimation_finite",
+    "title": "Empirical Process under Finite-Dimensional Parameter Estimation",
+    "citation": "van der Vaart (1998), Thm 19.23",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/ParameterEstimationProcess.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/ParameterEstimationProcess.html#AsymptoticStatistics.EmpiricalProcess.empiricalProcess_parameter_estimation_finite",
+    "informal": "Let $\\mathcal F$ be a function class and let $P_\\theta$ be a finite-dimensional model. Assume <span data-link=\"h1\">the class has a Brownian-bridge Donsker law, the estimator is asymptotically linear with influence vector $\\psi$, and the map $\\theta\\mapsto(f\\mapsto P_\\theta f)$ is differentiable at $\\theta_0$ with derivative $D$</span>. For <span data-link=\"h2\">a jointly i.i.d. sample with law $P_{\\theta_0}$</span>, the empirical process and influence-vector sum converge jointly; consequently the full path $f\\mapsto\\sqrt n(P_nf-P_{\\hat\\theta_n}f)$ converges weakly in $\\ell^\\infty(\\mathcal F)$ to the linear correction of that joint Gaussian limit, whose covariance is the corresponding influence-adjusted covariance.",
+    "summary": "The full estimated-parameter empirical process is the continuous linear correction of the joint bridge–influence Gaussian limit.",
+    "leanSignature": "theorem empiricalProcess_parameter_estimation_finite\n    {F : Set (Ω → ℝ)}\n    (P_θ : EuclideanSpace ℝ (Fin k) → Measure Ω)\n    (θ₀ : EuclideanSpace ℝ (Fin k)) [IsProbabilityMeasure (P_θ θ₀)]\n    (ψ : Fin k → ↥(L2ZeroMean (P_θ θ₀)))\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))\n    (Q : EuclideanSpace ℝ (Fin k) → LinfF F)\n    (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F)\n    (h : Theorem19_23FiniteHyp F P_θ θ₀ ψ θ_hat Q D)\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)\n    [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P_θ θ₀) :\n    ∃ (ν : Measure (LinfF F))\n      (κ : Measure (LinfF F × EuclideanSpace ℝ (Fin k)))\n      (hν : IsPBrownianBridge F (P_θ θ₀) ν)\n      (hκ : IsJointBridgeInfluence F (P_θ θ₀) ψ ν κ)\n      (hmem : ∀ n ξ, Memℓp\n        (fun f : ↥F => empiricalProcess (P_θ θ₀) n\n          (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)) ∞),\n      WeakConvergesOuter (fun _ => μ)\n        (fun n ξ =>\n          (empiricalProcessLinf (fun i : Fin n => X i.val ξ) (hmem n ξ),\n            influenceEmpiricalVector (P_θ θ₀) ψ n\n              (fun i : Fin n => X i.val ξ))) κ\n      ∧ WeakConvergesOuter (fun _ => μ)\n        (fun n ξ => parameterEstimatedProcess Q θ₀ (θ_hat n)\n          (fun i : Fin n => X i.val ξ) (hmem n ξ))\n        (κ.map (parameterCorrectionCLM D))\n      ∧ IsParameterEstimationLimit F (P_θ θ₀) ψ D\n        (κ.map (parameterCorrectionCLM D))",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "h : Theorem19_23Hyp F P_θ θ₀ ψ_θ₀ θ_hat dPθ",
-        "label": "Donsker, linear, differentiable",
-        "note": "F is P_{θ₀}-Donsker, θ̂_n is asymptotically linear at θ₀ with influence function ψ_{θ₀}, and θ ↦ P_θ is Fréchet differentiable at θ₀ as a map into ℓ^∞(F) with derivative dP_θ."
+        "leanToken": "h : Theorem19_23FiniteHyp",
+        "label": "Donsker linearization",
+        "note": "The class is Donsker, the estimator has a finite-dimensional asymptotic linearization, and the model expectation path has derivative D."
       },
       {
         "id": "h2",
-        "leanToken": "hX_law : μ.map (X 0) = P_θ θ₀",
-        "label": "iid sample with law P_{θ₀}",
-        "note": "The observations are measurable, independent, and identically distributed with common law P_{θ₀}."
+        "leanToken": "hX_law",
+        "label": "i.i.d. observations",
+        "note": "The measurable sample coordinates are jointly independent, identically distributed, and have common law P_{θ₀}."
       }
     ],
     "hasGraph": true,
@@ -2979,7 +3995,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.4, Theorem 19.23, Eq. (19.22)",
-      "biblio": "Theorem 19.23 is a synthesis rather than a single seminal paper: van der Vaart derives it from the master approximation (19.22) by combining the continuous-mapping theorem with the asymptotic linearity of $\\hat\\theta_n$. The underlying uniform central limit theorems for empirical processes trace back to R. M. Dudley, E. Giné and J. Zinn; vdV §19.4 assembles them into this estimated-parameter limit law.",
+      "biblio": "Uniform central limit methods for estimated-parameter empirical processes build on R. M. Dudley's metric-entropy theory and the systematic treatment by A. W. van der Vaart and J. A. Wellner (1996).",
       "keys": [
         "vdv1998",
         "dudley1967",
@@ -2989,7 +4005,7 @@
     "keywords": [
       "empirical process",
       "influence function",
-      "asymptotic normality"
+      "convergence in distribution"
     ]
   },
   {
@@ -3102,34 +4118,33 @@
     "id": "maximal_inequality_bracketing",
     "category": "concentration",
     "kind": "lemma",
-    "leanName": "maximal_inequality_bracketing",
-    "fullName": "AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing",
-    "title": "Bracketing maximal inequality",
+    "leanName": "bracketingMaximal_full",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full",
+    "title": "Bracketing Maximal Inequality",
     "citation": "van der Vaart (1998), Lem 19.34",
-    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/Maximal.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/Maximal.html#AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing",
-    "informal": "<p>Let $\\mathcal{F}$ be a class with <span data-link=\"h3\">$Pf^2 \\le \\delta^2$ for every $f \\in \\mathcal{F}$</span>, admitting a <span data-link=\"h1\">measurable envelope $\\Phi$, so that $|f| \\le \\Phi$ pointwise for every $f \\in \\mathcal{F}$</span>, and let <span data-link=\"h2\">$J < \\infty$ be a finite upper bound for the bracketing entropy integral $J_{[\\,]}(\\delta, \\mathcal{F}, L_2(P)) = \\int_0^{\\delta}\\sqrt{\\log N_{[\\,]}(\\varepsilon, \\mathcal{F}, L_2(P))}\\,d\\varepsilon$</span>. Then there is a constant $K$ with $$\\mathbb{E}^*\\,\\sup_{f \\in \\mathcal{F}}|\\mathbb{G}_n f| \\;\\le\\; K\\left(1 + J_{[\\,]}(\\delta,\\mathcal{F},L_2(P)) + \\sqrt n\\, P^*\\bigl[\\Phi\\,\\mathbf{1}\\{\\Phi > \\delta\\sqrt n\\}\\bigr]\\right),$$ where $\\mathbb{E}^*$ and $P^*$ denote outer expectation and outer integral, used because the supremum over $\\mathcal{F}$ need not be measurable.</p>",
-    "summary": "E*‖G_n‖_F ≤ K(1 + J_[](δ,F,L₂(P)) + √n·P*Φ·1{Φ>δ√n}) for some (non-universal) K, given an envelope Φ and Pf² ≤ δ² on F.",
-    "leanSignature": "theorem maximal_inequality_bracketing\n    (P : Measure Ω) [IsProbabilityMeasure P]\n    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]\n    {X : ℕ → Ξ → Ω}\n    (hX_meas : ∀ i, Measurable (X i))\n    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)\n    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (hΦ_env : IsEnvelope F Φ)\n    (hΦ_meas : Measurable Φ)\n    {δ : ℝ} (hδ : 0 < δ)\n    (_h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2)\n    (J : ℝ≥0∞) (_hJ : J < ⊤)\n    (n : ℕ) (hn : 1 ≤ n) :\n    ∃ K : ℝ, 0 < K ∧\n      ∫⁻ ω, supNormOver F\n          (fun f => empiricalProcess P n (fun j : Fin n => X j.val ω) f) ∂μ\n        ≤ ENNReal.ofReal K *\n            (1 + J + ENNReal.ofReal (Real.sqrt n)\n              * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)\n                  * Set.indicator {x | δ * Real.sqrt n < |Φ x|} 1 ω ∂P)",
-    "formalizationNotes": "This is the crude variant: the chaining argument is replaced by an envelope + Cauchy–Schwarz bound, so K = 2nδ + 2 depends on (n,δ) and is not universal; the leading 1 cushion is a crude-bound artifact absorbed by the tight version. J is an arbitrary user-supplied finite upper bound on J_[](δ,F,L₂(P)). A tight universal-K variant maximal_inequality_bracketing_tight is also in the file.",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingMaximalGeneral.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingMaximalGeneral.html#AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full",
+    "informal": "There is a universal positive constant $C$ such that, for <span data-link=\"h1\">every jointly i.i.d. sample with law $P$</span>, every positive radius $\\delta$, and every measurable class $\\mathcal F$ satisfying <span data-link=\"h2\">$\\lVert f\\rVert_{P,2}<\\delta$ for every $f\\in\\mathcal F$</span> with <span data-link=\"h3\">envelope $\\Phi$</span>, the outer expected empirical-process supremum is bounded by $C$ times the sum of the bracketing entropy integral and the outer envelope tail beyond the book cutoff. Empty classes, zero sample size, and infinite entropy are handled within the statement.",
+    "summary": "A universal constant controls the empirical-process supremum by bracketing entropy plus the envelope tail.",
+    "leanSignature": "theorem bracketingMaximal_full :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ (Ω : Type*) [MeasurableSpace Ω]\n        (P : Measure Ω) [IsProbabilityMeasure P]\n        (Ξ : Type*) [MeasurableSpace Ξ]\n        (μ : Measure Ξ) [IsProbabilityMeasure μ]\n        (X : ℕ → Ξ → Ω)\n        (hX_meas : ∀ i, Measurable (X i))\n        (hX_iindep : ProbabilityTheory.iIndepFun X μ)\n        (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n        (hX_law : μ.map (X 0) = P)\n        (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (δ : ℝ)\n        (hδ : 0 < δ)\n        (hF_meas : ∀ f ∈ F, Measurable f)\n        (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)\n        (hΦ_env : IsEnvelope F Φ)\n        (n : ℕ),\n        outerExpectation μ (fun ξ => supNormOver F\n            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤\n          ENNReal.ofReal C *\n            (bracketingEntropyIntegral δ F P +\n              ENNReal.ofReal (Real.sqrt n) *\n                outerExpectation P (fun x => ENNReal.ofReal\n                  (Φ x * Set.indicator\n                    {y | Real.sqrt n * bracketingBookCutoff δ\n                        (bracketingNumber δ F 2 P) < Φ y}\n                    (1 : Ω → ℝ) x)))",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(Φ : Ω → ℝ) (hΦ_env : IsEnvelope F Φ)",
-        "label": "measurable envelope Φ",
-        "note": "Φ is measurable and satisfies |f(x)| ≤ Φ(x) for every f ∈ F and every x."
+        "leanToken": "hX_law",
+        "label": "i.i.d. sample",
+        "note": "The measurable sample coordinates are jointly independent, identically distributed, and have common law P."
       },
       {
         "id": "h2",
-        "leanToken": "(J : ℝ≥0∞) (_hJ : J < ⊤)",
-        "label": "finite entropy bound J",
-        "note": "J is a finite upper bound for the bracketing entropy integral J_[](δ, F, L₂(P))."
+        "leanToken": "hF_L2",
+        "label": "strict L² radius",
+        "note": "Every class member has L²(P) norm strictly below δ."
       },
       {
         "id": "h3",
-        "leanToken": "_h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2",
-        "label": "Pf² ≤ δ² on F",
-        "note": "Uniform L²(P)-radius δ over the class."
+        "leanToken": "hΦ_env",
+        "label": "envelope function",
+        "note": "The function Φ dominates every class member pointwise in absolute value."
       }
     ],
     "hasGraph": true,
@@ -3137,12 +4152,108 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.6, Lemma 19.34",
-      "biblio": "These maximal inequalities are folklore of empirical-process theory with no single seminal-paper origin; vdV §19.6 attributes the chaining technique to R. M. Dudley (\"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *J. Functional Analysis* **1** (1967), 290–330) and D. Pollard, and notes that the bracketing central limit theorem they serve was obtained by M. Ossiander (*Ann. Probab.* **15** (1987), 897–919). The systematic treatment is A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996, §2.14. The exponential bound (Lemma 19.32) is the classical Bernstein inequality (S. N. Bernstein, 1924) applied to the centered empirical sum.",
+      "biblio": "The entropy integral originates with R. M. Dudley (1967), while the bracketing central limit theorem was proved by M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *Annals of Probability* **15** (1987), 897–919; the systematic treatment is due to A. W. van der Vaart and J. A. Wellner (1996).",
       "keys": [
         "vdv1998",
         "dudley1967",
         "ossiander1987",
         "bernstein1924",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "maximal inequality",
+      "bracketing number"
+    ]
+  },
+  {
+    "id": "bracketingMaximal_integrableEnvelope",
+    "category": "concentration",
+    "kind": "corollary",
+    "leanName": "bracketingMaximal_integrableEnvelope",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope",
+    "title": "Bracketing Bound with an Integrable Envelope",
+    "citation": "van der Vaart (1998), Cor 19.35",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingMaximalGeneral.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingMaximalGeneral.html#AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_integrableEnvelope",
+    "informal": "There is a universal positive constant $C$ such that, for <span data-link=\"h1\">every jointly i.i.d. sample with law $P$</span> and every measurable function class $\\mathcal F$ with <span data-link=\"h2\">a measurable $L^2(P)$ envelope $\\Phi$</span>, the outer expected empirical-process supremum is bounded by $$C\\,J_{[\\,]}\\!\\left(\\lVert\\Phi\\rVert_{P,2},\\mathcal F,L^2(P)\\right).$$ Empty classes, zero envelope norm, zero sample size, and infinite entropy are included.",
+    "summary": "A universal constant times the bracketing entropy integral at the envelope norm controls the expected empirical supremum.",
+    "leanSignature": "theorem bracketingMaximal_integrableEnvelope :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ (Ω : Type*) [MeasurableSpace Ω]\n        (P : Measure Ω) [IsProbabilityMeasure P]\n        (Ξ : Type*) [MeasurableSpace Ξ]\n        (μ : Measure Ξ) [IsProbabilityMeasure μ]\n        (X : ℕ → Ξ → Ω)\n        (hX_meas : ∀ i, Measurable (X i))\n        (hX_iindep : ProbabilityTheory.iIndepFun X μ)\n        (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n        (hX_law : μ.map (X 0) = P)\n        (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)\n        (hF_meas : ∀ f ∈ F, Measurable f) (hΦ_env : IsEnvelope F Φ)\n        (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) (n : ℕ),\n        outerExpectation μ (fun ξ => supNormOver F\n            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤\n          ENNReal.ofReal C * bracketingEntropyIntegral\n            (eLpNorm Φ 2 P).toReal F P",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hX_law",
+        "label": "i.i.d. sample",
+        "note": "The measurable sample coordinates are jointly independent, identically distributed, and have common law P."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hΦ_L2",
+        "label": "integrable envelope",
+        "note": "The measurable envelope Φ belongs to L²(P)."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Cor 19.35",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Corollary 19.35",
+      "biblio": "The entropy integral originates with R. M. Dudley (1967), while the bracketing central limit theorem was proved by M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *Annals of Probability* **15** (1987), 897–919; the systematic treatment is due to A. W. van der Vaart and J. A. Wellner (1996).",
+      "keys": [
+        "vdv1998",
+        "dudley1967",
+        "ossiander1987",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "maximal inequality",
+      "entropy integral"
+    ]
+  },
+  {
+    "id": "bracketingMaximal_bounded",
+    "category": "concentration",
+    "kind": "lemma",
+    "leanName": "bracketingMaximal_bounded",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded",
+    "title": "Bounded Bracketing Maximal Inequality",
+    "citation": "van der Vaart (1998), Lem 19.36",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingBounded.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/BracketingBounded.html#AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_bounded",
+    "informal": "There is a universal positive constant $C$ such that, for <span data-link=\"h1\">every jointly i.i.d. sample with law $P$</span>, every positive radius $\\delta$, and every measurable class $\\mathcal F$ satisfying <span data-link=\"h2\">$\\lVert f\\rVert_{P,2}<\\delta$ for all $f\\in\\mathcal F$</span> and <span data-link=\"h3\">$|f(x)|\\le M$ for all class members and sample points</span>, the outer expected empirical-process supremum is at most $$C J_{[\\,]}(\\delta)\\left(1+J_{[\\,]}(\\delta)\\frac{M}{\\delta^2\\sqrt n}\\right).$$ Empty classes, zero sample size, and infinite entropy are included.",
+    "summary": "A universal bracketing-entropy bound controls uniformly bounded empirical-process classes.",
+    "leanSignature": "theorem bracketingMaximal_bounded :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ (Ω : Type*) [MeasurableSpace Ω] (P : Measure Ω)\n        [IsProbabilityMeasure P]\n        (Ξ : Type*) [MeasurableSpace Ξ] (μ : Measure Ξ)\n        [IsProbabilityMeasure μ]\n        (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n        (hX_iindep : ProbabilityTheory.iIndepFun X μ)\n        (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n        (hX_law : μ.map (X 0) = P)\n        (F : Set (Ω → ℝ)) (δ M : ℝ) (n : ℕ) (hδ : 0 < δ)\n        (hF_meas : ∀ f ∈ F, Measurable f)\n        (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)\n        (hF_bdd : ∀ f ∈ F, ∀ x, |f x| ≤ M),\n      outerExpectation μ (fun ξ => supNormOver F (fun f =>\n        empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤\n        ENNReal.ofReal C * bracketingEntropyIntegral δ F P *\n          (1 + bracketingEntropyIntegral δ F P *\n            ENNReal.ofReal (M / (δ ^ 2 * Real.sqrt n)))",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hX_law",
+        "label": "i.i.d. sample",
+        "note": "The measurable sample coordinates are jointly independent, identically distributed, and have common law P."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hF_L2",
+        "label": "strict L² radius",
+        "note": "Every class member has L²(P) norm strictly below δ."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hF_bdd",
+        "label": "uniform boundedness",
+        "note": "Every function in the class is bounded in absolute value by M at every point."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Lem 19.36",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Lemma 19.36",
+      "biblio": "The entropy integral originates with R. M. Dudley (1967), while the bracketing central limit theorem was proved by M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *Annals of Probability* **15** (1987), 897–919; the systematic treatment is due to A. W. van der Vaart and J. A. Wellner (1996).",
+      "keys": [
+        "vdv1998",
+        "dudley1967",
+        "ossiander1987",
         "vandervaart-wellner1996"
       ]
     },
