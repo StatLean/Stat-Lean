@@ -1,0 +1,18 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.VCIndexLE",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","label":"VCIndexLE","full":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.VCClass"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"Finset.card","label":"card","full":"Finset.card","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Card"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.SetFamilyShatters","label":"SetFamilyShatters","full":"AsymptoticStatistics.EmpiricalProcess.SetFamilyShatters","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.VCClass"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","target":"Set"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","target":"Finset"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","target":"Finset.card"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.VCIndexLE","target":"AsymptoticStatistics.EmpiricalProcess.SetFamilyShatters"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.SetFamilyShatters","target":"Set"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.SetFamilyShatters","target":"Finset"}
+  ]
+}
