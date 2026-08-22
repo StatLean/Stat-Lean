@@ -351,10 +351,11 @@ lemma linPerturb_truncated_nonneg
 truncRadius`, the density is `1 + Σᵢ θ i · gMk i ω`; otherwise the
 density falls back to `1` (so the family stays well-defined globally).
 
-The fallback at `‖θ‖ ≥ truncRadius` is an engineering convenience: the
-book's analysis only ever uses `θ` near `0`, so the cutoff is invisible
-at the analytic level. The truncation `truncRadius = 1 / (M·m + 1)` keeps
-the density pointwise non-negative without invoking exponentials. -/
+The fallback at `‖θ‖ ≥ truncRadius` totalizes the definition outside the
+local parameter domain. The book's argument uses only `θ` near `0`, so this
+cutoff does not affect the local analysis. The truncation
+`truncRadius = 1 / (M·m + 1)` keeps the density pointwise non-negative
+without invoking exponentials. -/
 noncomputable def submodelDensity
     (θ : EuclideanSpace ℝ (Fin m)) (ω : Ω) : ℝ :=
   if ‖θ‖ < truncRadius g_P hg then 1 + linPerturb g_P θ ω else 1
