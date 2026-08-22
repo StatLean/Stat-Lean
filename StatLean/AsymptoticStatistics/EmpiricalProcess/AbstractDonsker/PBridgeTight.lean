@@ -302,7 +302,7 @@ theorem gpPath_mem_modulusBall_of_avoid
     (hnet : letI := distL2PseudoMetric hG_env hG hF_meas
       ∀ (j : ℕ) (t : ↥F), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
     (hnet_mono : Monotone net)
-    (hskel : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
+    (hskel : gpSkeleton hF_ent hF_ne
       = ⋃ j : ℕ, (↑(net j) : Set ↥F))
     {a : ℕ → ℝ} (ha_pos : ∀ j, 0 < a j) (ha_summable : Summable a)
     (M : ℝ)
@@ -332,7 +332,7 @@ theorem gpPath_mem_modulusBall_of_avoid
   -- `pe` agrees with `X · ω` on the skeleton `⋃ net`.
   have hagree : ∀ u : ↥F, u ∈ (⋃ j : ℕ, (↑(net j) : Set ↥F)) → pe u = X u ω := by
     intro u hu
-    have hu' : u ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne := by
+    have hu' : u ∈ gpSkeleton hF_ent hF_ne := by
       rw [hskel]; exact hu
     exact pathExtend_eq_on_skeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω ⟨u, hu'⟩
   -- The skeleton-pair bound at scale `J+k` from `osc_le_of_avoid_bigOsc'`.
@@ -411,7 +411,9 @@ decrease (in `M` along ℕ) to the null set `⋂ₙ {ω | n < ‖gpPath ω‖}` 
 Hence for any `ε > 0` there is `M` with
 `iidStdGaussian {ω | M < ‖gpPath ω‖} ≤ ε`. -/
 theorem exists_bound_mass {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ M : ℝ, iidStdGaussian {ω | M < ‖gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω‖} ≤ ε := by
+    ∃ M : ℝ,
+      iidStdGaussian
+        {ω | M < ‖gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω‖} ≤ ε := by
   classical
   set g := gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hg
   -- `‖g ·‖` is a.e.-strongly-measurable.
@@ -483,7 +485,7 @@ theorem pBridge_tight :
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   -- The Dudley dyadic net of `(↥F, distL2 P)` — *the same net the skeleton uses*
   -- (`gpSkeletonNet`), so `gpSkeleton = ⋃ j, net j` holds definitionally.
-  set net : ℕ → Finset ↥F := gpSkeletonNet hF_meas hF_ent hF_ne with hnetdef
+  set net : ℕ → Finset ↥F := gpSkeletonNet hF_ent hF_ne with hnetdef
   obtain ⟨hnet, hmono, hDud⟩ := (exists_dudley_net hF_ent hF_ne).choose_spec
   -- Sub-Gaussian increments of `gpX` with proxy `K = 1` (proxy weakening as in `gpX_aeUC`).
   have hSG : ∀ s t : ↥F, ProbabilityTheory.HasSubgaussianMGF
@@ -498,7 +500,8 @@ theorem pBridge_tight :
     exact le_refl _
   -- The chaining schedule `a` + level-mass summability.
   obtain ⟨a, ha_pos, ha_summable, ha_tsum⟩ :=
-    GaussianChaining.summable_bigOsc (μ := iidStdGaussian) (X := gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
+    GaussianChaining.summable_bigOsc (μ := iidStdGaussian)
+      (X := gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
       (K := 1) zero_le_one net hSG hDud
   -- The deterministic modulus `η k = a (J + k) + 2 ∑' i, a (J + k + i)`; for any `J`
   -- it tends to `0` (shifted-tail summability), giving compactness of the ball.
@@ -575,9 +578,9 @@ theorem pBridge_tight :
       intro m hm hmemb
       exact hnt (Set.mem_biUnion hm hmemb)
     -- Net–skeleton alignment: `gpSkeleton = ⋃ j, net j` (both from `exists_dudley_net`).
-    have hskel : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
+    have hskel : gpSkeleton hF_ent hF_ne
         = ⋃ j : ℕ, (↑(net j) : Set ↥F) :=
-      gpSkeleton_eq_iUnion_net hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
+      gpSkeleton_eq_iUnion_net hF_ent hF_ne
     have := gpPath_mem_modulusBall_of_avoid hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
       net hnet hmono hskel ha_pos ha_summable M hgω hMω (J := J) havoidω
     -- The lemma lands `gpPath ω` in `modulusBall … δ η` (same schedules by definition).

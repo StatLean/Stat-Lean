@@ -473,8 +473,7 @@ theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   obtain ⟨net, hnet, hmono, hDud⟩ := exists_dudley_net hF_ent hF_ne
   refine _root_.GaussianChaining.gaussianChaining_UC (μ := iidStdGaussian) (K := 1) zero_le_one
-    (gpX_measurable ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep) net hnet hmono
-    (fun s t => ?_) hDud
+    net hnet hmono (fun s t => ?_) hDud
   -- Sub-Gaussian proxy: `dist s t = distL2 P s t` (defeq under the `letI`), and the
   -- chaining wants `⟨1² · dist s t², _⟩ = ⟨distL2 P s t², _⟩` (`1² · x = x`).
   refine (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy ?_
@@ -505,7 +504,7 @@ variable {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
 `Classical.choose` of `exists_dudley_net`. Fixed independently of `ω`. The skeleton
 `gpSkeleton` is its dyadic union `⋃ j, net j`, exposing the net to the chaining
 modulus consumer (`PBridgeTight`). -/
-def gpSkeletonNet (hF_meas : ∀ f ∈ F, Measurable f)
+def gpSkeletonNet
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) : ℕ → Finset ↥F :=
   (exists_dudley_net hF_ent hF_ne).choose
 
@@ -514,20 +513,16 @@ of the Dudley net. Defined transparently (not as an opaque `Classical.choose` of
 `gpX_aeUC`) so that `gpSkeleton = ⋃ j, net j` holds **definitionally** for the net
 of `exists_dudley_net`; this is the net–skeleton alignment the chaining-modulus
 transport in `PBridgeTight` consumes. -/
-def gpSkeleton (hF_meas : ∀ f ∈ F, Measurable f)
-    (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
-    (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
+def gpSkeleton
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) : Set ↥F :=
-  ⋃ j : ℕ, (↑(gpSkeletonNet hF_meas hF_ent hF_ne j) : Set ↥F)
+  ⋃ j : ℕ, (↑(gpSkeletonNet hF_ent hF_ne j) : Set ↥F)
 
 /-- **Net–skeleton alignment.** The skeleton is the dyadic union of its net (true
 by definition); stated as a lemma so consumers can rewrite without unfolding. -/
-theorem gpSkeleton_eq_iUnion_net (hF_meas : ∀ f ∈ F, Measurable f)
-    (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
-    (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
+theorem gpSkeleton_eq_iUnion_net
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) :
-    gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
-      = ⋃ j : ℕ, (↑(gpSkeletonNet hF_meas hF_ent hF_ne j) : Set ↥F) :=
+    gpSkeleton hF_ent hF_ne
+      = ⋃ j : ℕ, (↑(gpSkeletonNet hF_ent hF_ne j) : Set ↥F) :=
   rfl
 
 /-- The specification of `gpSkeleton`: countable, dense (in the `distL2`
@@ -539,25 +534,24 @@ theorem gpSkeleton_spec (hF_meas : ∀ f ∈ F, Measurable f)
     (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) :
     letI inst := distL2PseudoMetric hG_env hG hF_meas
-    (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).Countable
+    (gpSkeleton hF_ent hF_ne).Countable
       ∧ @Dense ↥F inst.toUniformSpace.toTopologicalSpace
-          (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) ∧
+          (gpSkeleton hF_ent hF_ne) ∧
       (∀ᵐ ω ∂iidStdGaussian,
         (BddAbove (Set.range
-          (fun t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne =>
+          (fun t : gpSkeleton hF_ent hF_ne =>
             |gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω|))) ∧
         @UniformContinuousOn ↥F ℝ
           (distL2PseudoMetric hG_env hG hF_meas).toUniformSpace _
           (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
-          (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)) := by
+          (gpSkeleton hF_ent hF_ne)) := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   -- Specs of the explicit Dudley net (= `gpSkeletonNet` by definition).
   obtain ⟨hnet, hmono, hDud⟩ := (exists_dudley_net hF_ent hF_ne).choose_spec
   -- The explicit-witness chaining variant states `countable ∧ dense ∧ a.e.-(bdd+UC)`
   -- on `⋃ j, net j`, which is `gpSkeleton` *definitionally* (no opaque choose).
   exact _root_.GaussianChaining.gaussianChaining_UC_iUnion (μ := iidStdGaussian) (K := 1)
-    zero_le_one (gpX_measurable ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
-    (gpSkeletonNet hF_meas hF_ent hF_ne) hnet hmono
+    zero_le_one (gpSkeletonNet hF_ent hF_ne) hnet hmono
     (fun s t => (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy
       (by
         rw [← NNReal.coe_le_coe]
@@ -576,12 +570,12 @@ This is the a.s. event of `gpSkeleton_spec`; `gpPath ω` uses the UC extension o
 this event and is `0` off it. -/
 def gpGood (ω : ℕ → ℝ) : Prop :=
     (BddAbove (Set.range
-      (fun t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne =>
+      (fun t : gpSkeleton hF_ent hF_ne =>
         |gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω|)))
     ∧ @UniformContinuousOn ↥F ℝ
         (distL2PseudoMetric hG_env hG hF_meas).toUniformSpace _
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
-        (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
+        (gpSkeleton hF_ent hF_ne)
 
 /-- The **uniformly-continuous extension** of the skeleton path `t ↦ gpX t ω`
 (restricted to `T₀ = gpSkeleton`) to all of `↥F`, in the `distL2` pseudometric
@@ -590,9 +584,9 @@ boundedness, agreement on `T₀`) hold on the good set. -/
 def pathExtend (ω : ℕ → ℝ) : ↥F → ℝ :=
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @Dense.extend ↥F ℝ inst.toUniformSpace.toTopologicalSpace _
-      (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
+      (gpSkeleton hF_ent hF_ne)
       (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hF_ent hF_ne).restrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω))
 
 /-- On the good set, the restriction of the skeleton path to `T₀` is uniformly
@@ -602,7 +596,7 @@ theorem uniformContinuous_restrict_of_good {ω : ℕ → ℝ}
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @UniformContinuous _ ℝ
       (@instUniformSpaceSubtype ↥F _ inst.toUniformSpace) _
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hF_ent hF_ne).restrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)) := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   exact (@uniformContinuousOn_iff_restrict ↥F ℝ inst.toUniformSpace _ _ _).mp hω.2
@@ -674,7 +668,7 @@ theorem bddAbove_pathExtend_of_good {ω : ℕ → ℝ}
 /-- On the good set, `pathExtend ω` agrees with `gpX · ω` on the skeleton `T₀`. -/
 theorem pathExtend_eq_on_skeleton {ω : ℕ → ℝ}
     (hω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω)
-    (t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :
+    (t : gpSkeleton hF_ent hF_ne) :
     pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω (t : ↥F)
       = gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t : ↥F) ω := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
@@ -737,7 +731,7 @@ theorem gpPath_aeeq_coord (f : ↥F) :
   -- skeleton sequence `tₙ → f`.
   have hdense := (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
   have hf_mem : f ∈ @closure ↥F inst.toUniformSpace.toTopologicalSpace
-      (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
+      (gpSkeleton hF_ent hF_ne) := by
     rw [@Dense.closure_eq ↥F inst.toUniformSpace.toTopologicalSpace _ hdense]; trivial
   obtain ⟨t, ht_mem, ht_tendsto⟩ :=
     (@mem_closure_iff_seq_limit ↥F inst.toUniformSpace.toTopologicalSpace hfu _ _).mp hf_mem
@@ -842,7 +836,7 @@ def gpEnum : ℕ → ↥F :=
 /-- Each `gpEnum k` lies in the skeleton `T₀`. -/
 theorem gpEnum_mem (k : ℕ) :
     gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k
-      ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne := by
+      ∈ gpSkeleton hF_ent hF_ne := by
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
     (by
@@ -855,7 +849,7 @@ theorem gpEnum_mem (k : ℕ) :
 /-- Every skeleton point is `gpEnum k` for some index `k` (the enumeration is
 onto `T₀`). -/
 theorem gpEnum_surjOn {t : ↥F}
-    (ht : t ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :
+    (ht : t ∈ gpSkeleton hF_ent hF_ne) :
     ∃ k, gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k = t := by
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
@@ -883,7 +877,7 @@ theorem gpFinset_nonempty (n : ℕ) :
 /-- Every element of `gpFinset n` lies in the skeleton `T₀`. -/
 theorem gpFinset_subset_skeleton (n : ℕ) {x : ↥F}
     (hx : x ∈ gpFinset hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n) :
-    x ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne := by
+    x ∈ gpSkeleton hF_ent hF_ne := by
   classical
   rw [gpFinset, Finset.mem_image] at hx
   obtain ⟨k, _, rfl⟩ := hx
@@ -909,7 +903,7 @@ theorem gpNearest_mem (n : ℕ) (f : ↥F) :
 /-- `gpNearest n f` lies in the skeleton `T₀`. -/
 theorem gpNearest_mem_skeleton (n : ℕ) (f : ↥F) :
     gpNearest hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n f
-      ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne :=
+      ∈ gpSkeleton hF_ent hF_ne :=
   gpFinset_subset_skeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n
     (gpNearest_mem hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n f)
 
@@ -1029,7 +1023,7 @@ theorem gpNearest_eventually_close {δ : ℝ} (hδ : 0 < δ) :
       dist (gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k) s < δ / 2 := by
     intro s
     have hmem : s ∈ @closure ↥F inst.toUniformSpace.toTopologicalSpace
-        (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
+        (gpSkeleton hF_ent hF_ne) := by
       rw [@Dense.closure_eq ↥F inst.toUniformSpace.toTopologicalSpace _ hdense]; trivial
     obtain ⟨σ, hσ_mem, hσ_dist⟩ := (@Metric.mem_closure_iff ↥F inst _ _).mp hmem (δ / 2)
       (by positivity)

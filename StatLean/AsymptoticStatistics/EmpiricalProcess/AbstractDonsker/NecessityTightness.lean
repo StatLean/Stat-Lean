@@ -86,6 +86,7 @@ theorem isClosed_goodModulusSet (P : Measure Ω) (F : Set (Ω → ℝ)) (δ c : 
       exact fun h => absurd h hfg
     rw [hset]; exact isClosed_univ
 
+omit [MeasurableSpace Ω] in
 /-- **Coordinate sup-norm bound.** For `z w : LinfF F` and `f : ↥F`,
 `|z f − w f| ≤ ‖z − w‖` (each coordinate is dominated by the sup-norm). -/
 theorem abs_coordEval_sub_le_norm {F : Set (Ω → ℝ)} (z w : LinfF F) (f : ↥F) :
@@ -107,7 +108,8 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
   classical
   haveI : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+      hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The increasing family of good-modulus sets `S k = goodModulusSet … (1/(k+1)) c`.
   set S : ℕ → Set (LinfF F) := fun k => goodModulusSet P F ((k + 1 : ℝ)⁻¹) c with hS
@@ -160,7 +162,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
     rw [measure_compl (isClosed_goodModulusSet P F _ c).measurableSet (measure_ne_top _ _),
       measure_univ]
   -- The goal's set is `(goodModulusSet … ((k+1)⁻¹) c)ᶜ`, which is `(S k)ᶜ` by definition.
-  show ν (S k)ᶜ ≤ ENNReal.ofReal η
+  change ν (S k)ᶜ ≤ ENNReal.ofReal η
   rw [hScompl]
   -- `1 − ν (S k) ≤ 1 − (1 − η) = η` (since `η ≤ 1` after capping; if `η > 1` the bound is trivial).
   rcases le_or_gt 1 (ENNReal.ofReal η) with hle | hlt
@@ -176,11 +178,11 @@ any `w` in that set has `|w f − w g| ≤ η/2`, so if `‖z − w‖ < η/4` t
 `|z f − z g| ≤ |w f − w g| + 2‖z − w‖ < η/2 + η/2 = η`, a contradiction. The
 thickening complement is closed, as required by portmanteau. -/
 theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
-    {δ η : ℝ} (hη : 0 < η) (z : LinfF F) (f g : ↥F)
+    {δ η : ℝ} (z : LinfF F) (f g : ↥F)
     (hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ) (hosc : η < |z f - z g|) :
     z ∈ (Metric.thickening (η / 4) (goodModulusSet P F δ (η / 2)))ᶜ := by
   rw [Set.mem_compl_iff, Metric.mem_thickening_iff]
-  push_neg
+  push Not
   intro w hw
   -- `w ∈ goodModulusSet` ⟹ `|w f − w g| ≤ η/2`; coordinate sup-norm bound.
   have hwmod : |w f - w g| ≤ η / 2 := hw f g hfg
@@ -195,7 +197,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     exact abs_sub _ _
   -- A bound `dist z w < η/4`, i.e. `‖z − w‖ < η/4`, forces a contradiction.
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   rw [dist_eq_norm] at hlt
   have hfinal : |z f - z g| < η := by
     have h2 : ‖z - w‖ < η / 4 := hlt
@@ -257,7 +259,8 @@ theorem outerMeasure_modulusComplement_le
   intro ε η hε hη
   haveI : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+      hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The `⇝ₒ` instance for this iid sample.
   have hwc := h μ X hX_meas hX_indep hX_id hX_law
@@ -290,7 +293,7 @@ theorem outerMeasure_modulusComplement_le
     intro n ξ hξ
     obtain ⟨f, g, hclose, hosc⟩ := hξ
     rw [Set.mem_preimage, hC, hK]
-    exact closePair_mem_thickening_compl hε (Xn n ξ) f g (le_of_lt hclose) hosc
+    exact closePair_mem_thickening_compl (Xn n ξ) f g (le_of_lt hclose) hosc
   -- Apply portmanteau to the closed `C`, then `outerMeasureStar`-monotonicity.
   calc limsup (fun n => μ.outerMeasureStar
           {ξ | ∃ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ ∧
@@ -344,7 +347,8 @@ theorem empiricalProcess_asymptoticallyTight
           (fun i : Fin n => X i.val ξ))) := by
   haveI : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+      hF_ne).isProbabilityMeasure
   exact AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter
     (h μ X hX_meas hX_indep hX_id hX_law)
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).tight

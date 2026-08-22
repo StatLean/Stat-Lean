@@ -202,7 +202,7 @@ variable (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)
 /-! ### Finite-dimensional convergence
 
 `weakConvergesOuter_findim_proj` is the finite-dimensional CLT through the
-net. It is HIGH-risk: the projected map is `LinfF F`-valued (not a finite tuple),
+net. The projected map is `LinfF F`-valued (not a finite tuple),
 the marginal CLT (`IsMarginalCLT.fdd`) and the Gaussian limit
 (`gaussianPBridge`'s `isGaussian_fdd`) are both phrased as **finite-tuple**
 (`Fin k → ℝ`) coordinate readouts, and `gaussianPBridge` is a `choose` witness
@@ -210,6 +210,7 @@ exposing only the `IsPBrownianBridge` field set. The proof splits into explicit
 sublemmas. The result at the bottom is a `weakConvergesOuter_of_measurable` reduction
 plus an application of `weakConverges_findim_proj_of_marginalCLT`. -/
 
+omit [IsProbabilityMeasure P] in
 /-- **Coordinate measurability of the empirical process** (for a
 genuinely Borel-measurable readout `g`). For a measurable `g : Ω → ℝ`, the
 coordinate evaluation `ξ ↦ empiricalProcess P n (X· ξ) g` is measurable
@@ -267,7 +268,7 @@ theorem netRep_mem_range (m : ℕ) (t : ↥F) :
     netRep hG_env hG hF_meas hF_ent m t ∈ Set.range (netRep hG_env hG hF_meas hF_ent m) :=
   Set.mem_range_self t
 
-omit [IsProbabilityMeasure P] in
+omit [MeasurableSpace Ω] [IsProbabilityMeasure P] in
 /-- **Continuity of coordinate evaluation on `ℓ∞(F)`.** For each `i : ↥F`, the
 evaluation `z ↦ z i` is `1`-Lipschitz (`lp.norm_apply_le_norm`), hence continuous. -/
 theorem continuous_linfF_eval (i : ↥F) :
@@ -491,7 +492,7 @@ omit [IsProbabilityMeasure P] in
 evaluation of the input Euclidean vector at `netEnum m s`. -/
 theorem continuous_netReindex (m : ℕ) :
     Continuous (netReindex hG_env hG hF_meas hF_ent m) :=
-  continuous_pi (fun s => (continuous_apply _).comp (EuclideanSpace.equiv _ ℝ).continuous)
+  continuous_pi (fun _s => (continuous_apply _).comp (EuclideanSpace.equiv _ ℝ).continuous)
 
 omit [IsProbabilityMeasure P] in
 /-- `netReindex` is measurable. -/
@@ -511,7 +512,7 @@ omit [IsProbabilityMeasure P] in
 /-- `netReindexInv` is continuous. -/
 theorem continuous_netReindexInv (m : ℕ) :
     Continuous (netReindexInv hG_env hG hF_meas hF_ent m) :=
-  (PiLp.continuous_toLp 2 _).comp (continuous_pi (fun i => continuous_apply _))
+  (PiLp.continuous_toLp 2 _).comp (continuous_pi (fun _i => continuous_apply _))
 
 omit [IsProbabilityMeasure P] in
 /-- `netReindexInv` is measurable. -/
@@ -567,7 +568,8 @@ theorem gaussianPBridge_readout_isGaussian (m : ℕ) :
       ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
         (fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))))) := by
+          EuclideanSpace ℝ
+            (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))))) := by
   classical
   set k := Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)) with hk
   set ψ : Fin k → ↥F := fun i => ((netEnum hG_env hG hF_meas hF_ent m).symm i).1 with hψ
@@ -594,7 +596,8 @@ theorem gaussianPBridge_readout_mean (m : ℕ) :
         ∂((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ
+              (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
       = ∫ x, id x
         ∂(ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
             (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -651,7 +654,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
         ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ
+              (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
       = ProbabilityTheory.covarianceBilin
           (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
               (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -664,7 +668,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
   set R : LinfF F → EuclideanSpace ℝ (Fin k) :=
     fun z => (WithLp.toLp 2 (fun i => z (ψ i)) : EuclideanSpace ℝ (Fin k)) with hR
   haveI hν_prob : IsProbabilityMeasure ν :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+      hF_ne).isProbabilityMeasure
   -- Measurability + Gaussianity + L²-membership of the readout `R`.
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
@@ -824,7 +829,6 @@ This is the standardisation-form bridge between the two centrings. -/
 theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
     (m : ℕ) {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) (n : ℕ) (ξ : Ξ) :
     netTuple hG_env hG hF_meas hF_ent m
         (empiricalProcessLinf (fun i : Fin n => X i.val ξ)
@@ -889,7 +893,7 @@ theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
     rw [← hkey, EuclideanSpace.coe_proj]
   rw [hcoord]
   -- LHS: `netTuple (𝔾ₙ ξ) s = empiricalProcess P n (X·ξ) s.1`.
-  show empiricalProcess P n (fun j : Fin n => X j.val ξ) (s.1 : Ω → ℝ)
+  change empiricalProcess P n (fun j : Fin n => X j.val ξ) (s.1 : Ω → ℝ)
     = (Real.sqrt n)⁻¹ * ((∑ j ∈ Finset.range n, φ i (X j ξ))
         - n * ∫ ζ, φ i (X 0 ζ) ∂μ)
   -- The integral over `μ` of `φ i ∘ X 0` equals `∫ φ i dP` (law of `X 0` is `P`).
@@ -965,7 +969,8 @@ theorem gaussianPBridge_map_netTuple_eq (m : ℕ) :
       (netTuple hG_env hG hF_meas hF_ent m)
       = fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))) := by
+          EuclideanSpace ℝ
+            (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))) := by
     funext z
     rfl
   rw [hcomp]
@@ -1059,7 +1064,7 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
     refine Measure.map_congr (Filter.Eventually.of_forall (fun ξ => ?_))
     rw [Function.comp_apply]
     exact (netTuple_empirical_eq_reindex_std hG_env hG hF_meas hF_ent h_clt m μ X hX_meas
-      hX_id hX_law n ξ).symm
+      hX_law n ξ).symm
   rw [funext hseq] at hWC_net
   exact hWC_net
 
@@ -1188,7 +1193,7 @@ The sup-norm error is majorized by `supNormOver (localized 2⁻ᵐ-class) 𝔾�
 `𝔾ₙ f − 𝔾ₙ (netRep m f)` of `2⁻ᵐ`-close pairs). The `m → ∞` vanishing of its
 `limsupₙ` is the chaining content of `hF_ent`
 (`localizedChainBound_of_finiteEntropy` / `equicontinuity_chaining_assembly_brick`
-in `ChainingAssembly.lean`); the genuinely-new content here is the lift of that
+in `ChainingAssembly.lean`); the remaining content is the lift of that
 real-valued/`∫⁻` bound to the **outer probability** `E*`/`P*`.
 
 vdV p.261 (⟸), step 2: the empirical process is asymptotically uniformly close

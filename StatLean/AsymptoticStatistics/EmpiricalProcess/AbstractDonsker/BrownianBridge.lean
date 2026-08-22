@@ -234,6 +234,7 @@ theorem pBridge_mean (f : ↥F) :
     (integral_map (Lp.aestronglyMeasurable W).aemeasurable aestronglyMeasurable_id).symm
   rw [hmap, isonormal_map_eq_gaussianReal, integral_id_gaussianReal]
 
+omit [IsProbabilityMeasure P] in
 /-- **Measurability of the UC-path predicate set.** The set of paths `z : LinfF F`
 satisfying the `distL2 P`-ε-δ uniform-continuity predicate is Borel-measurable.
 

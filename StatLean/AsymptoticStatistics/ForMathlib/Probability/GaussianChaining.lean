@@ -145,7 +145,7 @@ theorem dyadicProj_consecutive_close
 omit [MeasurableSpace Ω] [IsProbabilityMeasure μ] in
 /-- **Chaining telescope.** The increment from the coarsest scale `π₀ t` to scale
 `π_J t` is the telescoping sum of the per-level link increments.  Proved inline
-via `Finset.sum_range_sub` (do NOT import any assembly file). -/
+via `Finset.sum_range_sub`. -/
 theorem chain_telescope_path
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
@@ -305,14 +305,14 @@ tail with proxy `σ_j² = K²·(6·2^{-j})²`:
 The per-pair distance bound is `mem_closePairs_dist` (direct, from the
 `closePairs` filter predicate). -/
 theorem measure_bigOsc_le
-    (hK : 0 ≤ K)
     (net : ℕ → Finset T)
     (hSG : ∀ s t, ProbabilityTheory.HasSubgaussianMGF (fun ω => X s ω - X t ω)
       ⟨K ^ 2 * dist s t ^ 2, by positivity⟩ μ)
     (j : ℕ) {a : ℝ} (ha : 0 ≤ a) :
     μ (bigOsc X net j a)
       ≤ (closePairs net j).card
-          * (2 * ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
+          * (2 * ENNReal.ofReal (Real.exp
+            (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
   classical
   -- Abbreviations.
   set σsq : ℝ := K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2 with hσsq
@@ -464,7 +464,7 @@ theorem summable_bigOsc
           rw [bigOsc, hempty]; simp
         rw [this, measure_empty]; exact zero_le _
       · have hcardpos : (0 : ℝ) < (closePairs net j).card := by exact_mod_cast hpos
-        have hbound := measure_bigOsc_le hK net hSG j (a := a j) (hapos j).le
+        have hbound := measure_bigOsc_le net hSG j (a := a j) (hapos j).le
         have hexparg : -(a j) ^ 2 / (2 * Dj j) = -(Lj j + Mj j) := by
           rw [ha]
           simp only
@@ -972,7 +972,6 @@ The lemma `MeasureTheory.ae_eventually_notMem (summable_bigOsc …)` gives
 via the pseudometric of `T` restricted to `T₀` (`UniformContinuousOn`). -/
 theorem aeUC_via_borelCantelli
     (hK : 0 ≤ K)
-    (hXmeas : ∀ t, Measurable (X t))
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
     (hnet_mono : Monotone net)
@@ -1072,7 +1071,6 @@ both `gaussianChaining_UC` and its explicit-witness variant). A.s. UC comes from
 totally bounded `⋃ j, net j` is totally bounded, hence bounded. -/
 private theorem gaussianChaining_UC_iUnion_aux
     (hK : 0 ≤ K)
-    (hXmeas : ∀ t, Measurable (X t))
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
     (hnet_mono : Monotone net)
@@ -1087,7 +1085,7 @@ private theorem gaussianChaining_UC_iUnion_aux
   -- `T₀ = ⋃ j, net j` is totally bounded (subset of the totally bounded `T`).
   have hT₀_tb : TotallyBounded (⋃ j : ℕ, (↑(net j) : Set T)) :=
     (gc_totallyBounded_univ net hnet).subset (Set.subset_univ _)
-  filter_upwards [aeUC_via_borelCantelli hK hXmeas net hnet hnet_mono hSG hDudley] with ω hUC
+  filter_upwards [aeUC_via_borelCantelli hK net hnet hnet_mono hSG hDudley] with ω hUC
   refine ⟨?_, hUC⟩
   -- BddAbove: `fun t : T₀ => |X t ω|` is uniformly continuous on the totally
   -- bounded `T₀`, so its range is totally bounded, hence bounded above.
@@ -1108,7 +1106,7 @@ private theorem gaussianChaining_UC_iUnion_aux
     exact huniv_tb.image habs
   exact hrange_tb.isBounded.bddAbove
 
-/-- **Gaussian chaining: a.s. bounded, uniformly-continuous paths (HEADLINE).**
+/-- **Gaussian chaining: a.s. bounded, uniformly-continuous paths.**
 For a sub-Gaussian-increment process over a totally bounded pseudometric index
 with finite Dudley entropy, there is a countable dense set `T₀` on which the
 sample paths are a.s. bounded and uniformly continuous.  This is the analytic
@@ -1123,7 +1121,6 @@ This signature provides the `G_P` existence result and the
 `IsPBrownianBridge` uniformly-continuous-path field used downstream. -/
 theorem gaussianChaining_UC
     (hK : 0 ≤ K)
-    (hXmeas : ∀ t, Measurable (X t))
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
     (hnet_mono : Monotone net)
@@ -1137,7 +1134,7 @@ theorem gaussianChaining_UC
   ⟨⋃ j : ℕ, (↑(net j) : Set T),
     Set.countable_iUnion (fun j => (net j).finite_toSet.countable),
     gc_dense_iUnion net hnet,
-    gaussianChaining_UC_iUnion_aux hK hXmeas net hnet hnet_mono hSG hDudley⟩
+    gaussianChaining_UC_iUnion_aux hK net hnet hnet_mono hSG hDudley⟩
 
 /-- **Explicit-witness Gaussian chaining (skeleton = `⋃ j, net j`).** Identical
 content to `gaussianChaining_UC`, but with the dense skeleton named explicitly as
@@ -1147,7 +1144,6 @@ chaining oscillation net to be the **same** set; this variant supplies that
 alignment definitionally. -/
 theorem gaussianChaining_UC_iUnion
     (hK : 0 ≤ K)
-    (hXmeas : ∀ t, Measurable (X t))
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
     (hnet_mono : Monotone net)
@@ -1162,6 +1158,6 @@ theorem gaussianChaining_UC_iUnion
         UniformContinuousOn (fun t => X t ω) (⋃ j : ℕ, (↑(net j) : Set T))) :=
   ⟨Set.countable_iUnion (fun j => (net j).finite_toSet.countable),
     gc_dense_iUnion net hnet,
-    gaussianChaining_UC_iUnion_aux hK hXmeas net hnet hnet_mono hSG hDudley⟩
+    gaussianChaining_UC_iUnion_aux hK net hnet hnet_mono hSG hDudley⟩
 
 end GaussianChaining
