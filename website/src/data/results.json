@@ -323,6 +323,86 @@
     ]
   },
   {
+    "id": "wald_consistent_on_compact",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "wald_consistent_on_compact",
+    "fullName": "AsymptoticStatistics.Consistency.wald_consistent_on_compact",
+    "title": "Wald Consistency on Compact Sets",
+    "citation": "van der Vaart (1998), Thm 5.14",
+    "file": "StatLean/AsymptoticStatistics/Consistency/WaldConsistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Consistency/WaldConsistency.html#AsymptoticStatistics.Consistency.wald_consistent_on_compact",
+    "informal": "Let $Q$ be the observation law and let $m_\\theta$ be an extended-real criterion on a metric parameter space. Define $M(\\theta)$ as the one-sided expectation of $m_\\theta$, allowing an infinite negative part. Assume <span data-link=\"h1\">the criteria never take the value $+\\infty$</span>; <span data-link=\"h2\">for every $\\theta$, the map $\\eta\\mapsto m_\\eta(x)$ is upper semicontinuous at $\\theta$ for $Q$-almost every $x$</span>; and <span data-link=\"h3\">around every $\\theta$, shrinking-ball suprema of the criterion are measurable and have finite positive-part expectation</span>. Suppose <span data-link=\"h4\">$\\theta_0$ maximizes $M$</span>, <span data-link=\"h5\">$X_1,X_2,\\ldots$ are measurable, independent, and identically distributed with law $Q$</span>, and <span data-link=\"h6\">$\\hat\\theta_n$ nearly maximizes the empirical criterion, up to a real remainder $R_n$</span> with <span data-link=\"h7\">$R_n\\to_P0$</span>. Then for <span data-link=\"h8\">every compact set $K$</span> and every $\\varepsilon>0$, the probability that $\\hat\\theta_n\\in K$ while its distance from the population argmax set is at least $\\varepsilon$ tends to zero.",
+    "summary": "A near-maximizer of an upper-semicontinuous one-sided empirical criterion cannot remain in a compact set away from the population argmax set.",
+    "leanSignature": "theorem wald_consistent_on_compact\n    {X Ω Θ : Type*} [MeasurableSpace X] [MeasurableSpace Ω] [MetricSpace Θ]\n    (Q : Measure X) [IsProbabilityMeasure Q]\n    (ℙ : Measure Ω) [IsProbabilityMeasure ℙ]\n    (Xs : ℕ → Ω → X) (m : Θ → X → EReal) (θ₀ : Θ)\n    (θhat : ℕ → Ω → Θ) (R : ℕ → Ω → ℝ)\n    (hm_top : ∀ θ x, m θ x ≠ ⊤)\n    (husc : ∀ θ, ∀ᵐ x ∂Q, UpperSemicontinuousAt (fun η => m η x) θ)\n    (hlocal : ∀ θ, ∃ ρ > 0, ∀ r, 0 < r → r ≤ ρ →\n      Measurable (localCriterionSup m θ r) ∧\n      (∫⁻ x, (localCriterionSup m θ r x).toENNReal ∂Q) ≠ ∞)\n    (hmax : θ₀ ∈ {θ | ∀ η,\n      extendedExpectation Q (m η) ≤ extendedExpectation Q (m θ)})\n    (hXs_meas : ∀ i, Measurable (Xs i))\n    (hXs_indep : ProbabilityTheory.iIndepFun Xs ℙ)\n    (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) ℙ ℙ)\n    (hXs_law : ℙ.map (Xs 0) = Q)\n    (hnear : ∀ n ω,\n      extendedEmpiricalAvg (m θ₀) n (fun i : Fin n => Xs i.val ω) - (R n ω : EReal) ≤\n      extendedEmpiricalAvg (m (θhat n ω)) n (fun i : Fin n => Xs i.val ω))\n    (hR : TendstoInMeasure ℙ R atTop (fun _ => 0))\n    (K : Set Θ) (hK : IsCompact K) :\n    ∀ ε > 0, Tendsto (fun n => ℙ {ω |\n      ε ≤ Metric.infDist (θhat n ω)\n        {θ | ∀ η, extendedExpectation Q (m η) ≤ extendedExpectation Q (m θ)} ∧\n      θhat n ω ∈ K}) atTop (𝓝 0)",
+    "formalizationNotes": "We state the compact-local conclusion in the proof of Theorem 5.14: a global consistency conclusion additionally needs the estimators to concentrate on compact sets. The population and empirical criteria use one-sided extended expectations, so an infinite negative part is allowed. The population maximizer need not be unique, and estimator measurability is not assumed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hm_top",
+        "label": "no positive infinity",
+        "note": "Every criterion value lies in the extended interval [−∞, ∞)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "husc",
+        "label": "upper semicontinuity",
+        "note": "At every parameter θ, the criterion is upper semicontinuous in the parameter for Q-almost every observation."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hlocal",
+        "label": "integrable local envelopes",
+        "note": "Sufficiently small local suprema are measurable and have finite positive-part expectation."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hmax",
+        "label": "population maximizer",
+        "note": "The comparison point θ₀ maximizes the one-sided population expectation."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hXs_law",
+        "label": "i.i.d. observations",
+        "note": "The sample coordinates are measurable, independent, identically distributed, and have common law Q."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hnear",
+        "label": "near maximization",
+        "note": "The empirical criterion at θ̂_n is at least its value at θ₀ minus the remainder R_n."
+      },
+      {
+        "id": "h7",
+        "leanToken": "hR",
+        "label": "vanishing remainder",
+        "note": "The near-maximization remainder R_n tends to zero in probability."
+      },
+      {
+        "id": "h8",
+        "leanToken": "hK",
+        "label": "compact localization",
+        "note": "K is a compact subset of the parameter space."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.14",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.14",
+      "biblio": "The compact-cover consistency argument descends from A. Wald, \"Note on the consistency of the maximum likelihood estimate,\" *The Annals of Mathematical Statistics* **20** (1949), 595–601.",
+      "keys": [
+        "vdv1998",
+        "wald1949"
+      ]
+    },
+    "keywords": [
+      "M-estimator",
+      "consistency"
+    ]
+  },
+  {
     "id": "zEstimator_asymptotic_normality",
     "category": "parametric",
     "kind": "theorem",
