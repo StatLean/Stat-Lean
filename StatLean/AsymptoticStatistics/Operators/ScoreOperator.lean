@@ -454,20 +454,18 @@ theorem mem_range_adjoint_of_differentiable_unrestricted
       = ⟪y₀, A.toCLM v⟫_ℝ := h_adj v y₀
     _ = ⟪chiTilde, v⟫_ℝ := hriesz
 
-/-- *vdV §25.5, thm:25.31 — the forward direction, closed-range form.*
+/-- *vdV §25.5, thm:25.31 — closed-range compatibility specialization.*
 If `ψ` is differentiable relative to the score range with representer
 `χ̃ = chiTilde`, and the score range `range A` is **closed**, then `χ̃` lies
 in the range of the adjoint `A*`. Together with `isIF_of_mem_range_adjoint`
 this gives the full iff of Theorem 25.31 *on a closed score range*.
 
-The closed-range hypothesis `h_closed` is **load-bearing**, not removable: it
-is exactly the gap the book flags (vdV p.373, the discussion before Thm
-25.32). The naive iff is FALSE in general because `R(A)` is often dense but
-not closed — "for any `χ̃` there exist elements in `R(A)` arbitrarily close
-to `χ̃`, but (25.29) may still fail. This happens quite often." Thm 25.32
-shows that this failure has serious consequences (no regular estimator
-sequence exists). So the forward direction holds only when the closure
-defect is absent, i.e. when `R(A)` is closed.
+This theorem retains the original closed-range interface and proves the result
+by applying Riesz representation directly on `range A`. The preceding theorem
+`mem_range_adjoint_of_differentiable_unrestricted` removes `h_closed` by first
+extending the derivative to the ambient space with Hahn--Banach. Thus
+`h_closed` belongs to this compatibility specialization and its direct proof,
+not to the general adjoint-range conclusion.
 
 Proof (Riesz on the closed range): `h_closed` makes `range A` a complete
 Hilbert subspace, so the continuous functional `dψ : range A →L[ℝ] ℝ` has a
