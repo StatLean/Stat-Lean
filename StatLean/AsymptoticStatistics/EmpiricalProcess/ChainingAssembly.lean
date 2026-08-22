@@ -2528,7 +2528,7 @@ lemma chainB_chain_iff (B : NestedBracketPartition F P q₀ C)
     exact hsmall j hjk
 
 omit [MeasurableSpace Ξ] in
-/-- **Gated-telescope interchange (vdV p.287, the genuine chaining hand-wave).**
+/-- **Gated-telescope interchange (vdV §19.6, p.287).**
 
 For a fixed sample point `ξ` and a function `f ∈ F` with `q₀`-cell `i₀`
 (`f ∈ cell q₀ i₀`, so `π_{q₀}f = B.π q₀ i₀`), the centred empirical-process value
@@ -2537,7 +2537,7 @@ For a fixed sample point `ξ` and a function `f ∈ F` with `q₀`-cell `i₀`
 * the **B-link** series `∑'_q ⨆ᵢ ⨆_{g∈cell(q₀+q) i} ofReal|𝔾ₙ((g − π_{q₀+q} i)·1{chainB})|`;
 * the **A-series** jump sups `∑'_q ⨆ᵢ ofReal|𝔾ₙ(truncJump i)|`.
 
-This isolates vdV's genuine hand-wave (§19.6 p.287, *"q₁ possibly infinite"*):
+This expands the infinite-depth case in vdV §19.6, p.287 (*"q₁ possibly infinite"*):
 the **gated telescope** `f − π_{q₀}f = Σ_{q≥q₀} (π_{q+1}f − π_q f)·A_q f +
 Σ_{q>q₀} (f − π_q f)·B_q f` (each indicator gating its sum to a single relevant
 term per `(f, x)`: at most one B-break level `q₁`, A-jumps up to it), and the
@@ -2956,8 +2956,7 @@ private theorem Gn_telescope_link_bound
   simpa using hperK K
 
 omit [MeasurableSpace Ξ] in
-/-- **Per-`ξ` gated-telescope pointwise bound (vdV p.287, the genuine chaining
-hand-wave).**
+/-- **Per-`ξ` gated-telescope pointwise bound (vdV §19.6, p.287).**
 
 For each sample point `ξ`, the empirical-process supremum
 `supNormOver F (𝔾ₙ ·)(ξ)` is pointwise dominated by the four chaining integrands
@@ -2984,8 +2983,8 @@ on a probability space) and `abs_add` to
 The first piece is `≤ head` (`le_iSup` at `i₀`); the second is `≤ trunc` because
 `π_{q₀}f = B.π q₀ i₀ ∈ F` (so it is captured by the `supNormOver F` of the
 envelope-tail evaluator); the third is `≤ blink + jump` by the
-core `Gn_telescope_link_bound` (the genuine gated-telescope interchange in vdV's
-*"q₁ possibly infinite"* hand-wave).
+core `Gn_telescope_link_bound` (the gated-telescope interchange corresponding to vdV's
+*"q₁ possibly infinite"* case).
 `[IsProbabilityMeasure P]` + `hΦ_meas`/`hπ_meas`/`hF_meas` are the forced
 regularity inputs (the unique consumer `chain_supnorm_le_decomposition` already
 carries them) needed for the integrable `𝔾ₙ`-linearity split. -/
