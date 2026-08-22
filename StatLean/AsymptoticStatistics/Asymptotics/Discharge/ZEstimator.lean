@@ -2,6 +2,7 @@ import StatLean.AsymptoticStatistics.Asymptotics.ZEstimator
 import StatLean.AsymptoticStatistics.EmpiricalProcess.RandomFunctions
 import StatLean.AsymptoticStatistics.ForMathlib.IIdJointLaw
 import StatLean.AsymptoticStatistics.ForMathlib.IidWLLN
+import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterSlutsky
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Moments.Variance
@@ -488,13 +489,41 @@ private lemma step1_random_index_oP
     exact (MeasureTheory.integrable_map_measure
       (h_inner_strMeas n).aestronglyMeasurable
       (h_proj_meas n).aemeasurable).mp h_pi
-  -- Apply Lem 19.24 at η := ε/2.
-  have h_lem19_24 := donsker_random_function_consistency
+  -- Derive the explicit outer-probability tail from the expectation and
+  -- integrability hypotheses by Markov's inequality.
+  set ghat : ℕ → (ℕ → Ω) → (Ω → ℝ) := fun _ _ => score_truth with hghat_def
+  have hghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)) := by
+    intro n
+    exact h.truth_meas.comp measurable_snd
+  have h_outer_tail : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth})
+      atTop (𝓝 0) := by
+    intro δ hδ
+    have htail : Tendsto (fun n =>
+        μ {ξ | δ ≤ distL2 P (f_hat n ξ) (ghat n ξ)}) atTop (𝓝 0) := by
+      exact markov_distL2_tail μ f_hat ghat
+        hf_hat_meas hghat_meas
+        (fun n => by simpa [hghat_def] using h_l2_int_μ n)
+        (by simpa [hghat_def] using h_l2_μ) hδ
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds htail
+      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+    calc
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth}
+          ≤ μ.outerMeasureStar {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
+            outerMeasureStar_mono μ (by
+              intro ξ hξ
+              change δ < distL2 P (f_hat n ξ) score_truth at hξ
+              change δ ≤ distL2 P (f_hat n ξ) score_truth
+              exact le_of_lt hξ)
+      _ ≤ μ {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
+        AsymptoticStatistics.outerMeasureStar_le_measure μ _
+  -- Apply Lemma 19.24 at η := ε/2.
+  have h_lem19_24 := donsker_random_function_consistency_core
     (F := donsker_class) (P := P) h.is_donsker
-    score_truth h.truth_memLp h.truth_in_donsker h.truth_meas
+    score_truth h.truth_memLp
     (Ξ := ℕ → Ω) (μ := μ)
     (X := fun (i : ℕ) (ξ : ℕ → Ω) => ξ i) hX_meas h_iIndep hX_idem hX_law
-    f_hat hf_hat_meas hf_hat_range h_l2_int_μ h_l2_μ
+    f_hat hf_hat_range h_outer_tail
     (ε / 2) (by linarith)
   -- Translate the conclusion under μ to the conclusion under Pⁿ.
   -- Lem 19.24 gives:

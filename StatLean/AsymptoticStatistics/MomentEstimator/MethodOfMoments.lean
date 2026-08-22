@@ -401,22 +401,14 @@ linearisation + `momentGaussian_map_eq` for the limit law + `WeakConverges` Slut
 absorbing the vanishing-mass discrepancy between `θhatₙ` and `φ(ℙₙ f)`. -/
 theorem method_of_moments_normality {d : ℕ}
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-    -- LEAN-ONLY (hf_meas): measurability of the moment map; no scope change.
-    -- USER-INPUT (hf_L2): P‖f‖² < ∞; vdV Thm 4.1
     {f : Ω → EuclideanSpace ℝ (Fin d)} (hf_meas : Measurable f) (hf_L2 : MemLp f 2 P)
     {e : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d)}
     {e' : EuclideanSpace ℝ (Fin d) ≃L[ℝ] EuclideanSpace ℝ (Fin d)}
     {θ₀ : EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: e is differentiable at θ₀ with nonsingular derivative (bundled as
-    -- the continuous linear equivalence e'); strict differentiability encodes vdV's
-    -- "continuously differentiable" locally; vdV Thm 4.1
     (he : HasStrictFDerivAt e (e' : _ →L[ℝ] _) θ₀)
-    -- USER-INPUT: θ₀ solves the population moment equation e(θ₀) = Pf; vdV §4.1
     (hμ : e θ₀ = ∫ x, f x ∂P)
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: measurability of the observations; no scope change.
     {X : ℕ → Ξ → Ω} (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §4.1
     (hX_indep : iIndepFun X μ)
     (hX_id : ∀ i, IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :
@@ -454,7 +446,7 @@ theorem method_of_moments_normality {d : ℕ}
   -- ── Measurability, CLT, O_P(1), and consistency ─────────────────────────
   have hemp_meas : ∀ n, Measurable (empiricalMoment f n X) := by
     intro n
-    show Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
+    change Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
     exact (Finset.measurable_sum _ fun i _ => hf_meas.comp (hX_meas i)).const_smul ((n : ℝ)⁻¹)
   have hZmeas : ∀ n : ℕ, Measurable (fun ξ => Real.sqrt n • (empiricalMoment f n X ξ - μ_vec)) :=
     fun n => ((hemp_meas n).sub measurable_const).const_smul (Real.sqrt n)
@@ -489,7 +481,7 @@ theorem method_of_moments_normality {d : ℕ}
       intro n ξ hξ
       simp only [Set.mem_setOf_eq] at hξ ⊢
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       exact hξ (hball (by simpa [Metric.mem_ball, dist_eq_norm] using hlt))
     exact squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg)
       (Eventually.of_forall fun n => measureReal_mono (hsub n)) (hcons ε hε)
@@ -502,7 +494,8 @@ theorem method_of_moments_normality {d : ℕ}
         (hemp_meas n) hU_open.measurableSet
       have hc : {ξ | empiricalMoment f n X ξ ∉ U}
           = {ξ | empiricalMoment f n X ξ ∈ U}ᶜ := rfl
-      rw [hc, measureReal_compl hm, measureReal_univ_eq_one]; ring
+      rw [hc, measureReal_compl hm, probReal_univ]
+      ring
     rw [tendsto_congr heq]
     simpa using hmassU_compl.const_sub (1 : ℝ)
   -- shared: `Wn := e'⁻¹(√n•(ℙₙf−μ))`, `Zn := √n•(θ̂−θ₀)`, and `dist(Wn,Zn) →ₚ 0`.
@@ -550,8 +543,7 @@ theorem method_of_moments_normality {d : ℕ}
             (φ (empiricalMoment f n X ξ) - φ μ_vec
               - (↑e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d))
                   (empiricalMoment f n X ξ - μ_vec))) := by
-          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub,
-            smul_neg]
+          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub]
           abel
         rwa [dist_eq_norm, hWZ, norm_neg] at hξ
       · right; exact hmem

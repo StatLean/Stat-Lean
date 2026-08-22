@@ -54,9 +54,6 @@ structure Theorem19_26Hyp
   /-- Constitutive (vdV §19.4 p.281): the class `𝓕` contains every `ψ_{θ,h}` with
   `‖θ − θ₀‖ < δcls` (definition of the Donsker class). -/
   hclass_mem : ∀ θ : B, ‖θ - θ₀‖ < δcls → ∀ h, ψ θ h ∈ 𝓕
-  /-- Constitutive (vdV §19.4 p.281): the reference functions `ψ_{θ₀,h}` lie in
-  `𝓕` (the class ball is centred at `θ₀`). -/
-  hθ₀_mem : ∀ h, ψ θ₀ h ∈ 𝓕
   /-- Constitutive (vdV §19.4 p.281): each `x ↦ ψ_{θ,h}(x)` is measurable ("let
   `x ↦ ψ_{θ,h}(x)` be a measurable function"). -/
   hψ_meas : ∀ (θ : B) (h : H), Measurable (ψ θ h)
@@ -222,6 +219,9 @@ theorem infinite_dim_z_estimator
       Real.sqrt n * V (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) h
         + empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)) := by
   obtain ⟨c, hc_pos, hc_bd⟩ := hyp.bddbelow_V
+  have hθ₀_mem : ∀ h, ψ θ₀ h ∈ 𝓕 := by
+    intro h
+    exact hyp.hclass_mem θ₀ (by simpa using hyp.hδcls) h
   -- The uniform-19.24 remainder `Rhat` is `o_P`.
   have h_sup := sup_distL2_tendsto_zero_of_unif_L2_cont P ψ θ₀ hyp.unif_L2_cont μ θ_hat X h_consist
   have h_bad : Tendsto (fun n =>
@@ -233,10 +233,10 @@ theorem infinite_dim_z_estimator
     simp only [Set.mem_setOf_eq] at hξ ⊢
     linarith [half_lt_self hyp.hδcls]
   have h_tail := modifiedRandomFunction_tail P ψ θ₀ δcls θ_hat μ X h_sup h_bad
-  have h_mem := modifiedRandomFunction_mem ψ θ₀ δcls θ_hat X 𝓕 hyp.hclass_mem hyp.hθ₀_mem
+  have h_mem := modifiedRandomFunction_mem ψ θ₀ δcls θ_hat X 𝓕 hyp.hclass_mem hθ₀_mem
   have Rmod_oP := uniform_donsker_random_function_consistency 𝓕 P hyp.h_equicont μ X
     hX_meas hX_indep hX_id hX_law (modifiedRandomFunction ψ θ₀ δcls θ_hat X) h_mem
-    (ψ θ₀) hyp.hθ₀_mem h_tail
+    (ψ θ₀) hθ₀_mem h_tail
   have Rhat_oP : TendstoZeroInOuterProbSup μ (fun n ξ h =>
       empiricalProcess P n (fun i : Fin n => X i.val ξ)
           (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h)

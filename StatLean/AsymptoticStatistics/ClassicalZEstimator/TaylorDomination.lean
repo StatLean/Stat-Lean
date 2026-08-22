@@ -303,7 +303,7 @@ the mean-value bound for the first derivative with Lipschitz constant `sup‖D²
 theorem psiDot_lipschitz {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
-    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
+    (ψddot : Ω → ℝ) {ρ : ℝ}
     (hΘ_open : IsOpen Θ)
     (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ' => ψ θ' j x) Θ)
@@ -408,7 +408,7 @@ integral sign is justified by the domination `hdom` + integrability. -/
 theorem Psi_differentiable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
-    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
+    (ψddot : Ω → ℝ) {ρ : ℝ}
     (hΘ_open : IsOpen Θ)
     (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ' => ψ θ' j x) Θ)
@@ -528,9 +528,7 @@ vdV p.68 "the derivative `Pψ̇` can be seen to be continuous throughout this ne
 -/
 theorem PsiDot_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
-    (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
-    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
-    (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (ψddot : Ω → ℝ) {ρ : ℝ}
     (hlip : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ θ' ∈ Metric.closedBall θ₀ ρ,
       ∀ (j i : Fin k) (x : Ω), |psiDot ψ θ x j i - psiDot ψ θ' x j i| ≤ ψddot x * ‖θ - θ'‖)
     (hψddot_int : Integrable ψddot P)
@@ -565,9 +563,8 @@ still smaller ... to ensure that the derivative of `Ψ` is nonsingular throughou
 neighborhood." -/
 theorem PsiDot_nonsingular_nbhd {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
-    (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
+    (θ₀ : EuclideanSpace ℝ (Fin k))
     (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
-    (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hKlip : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ θ' ∈ Metric.closedBall θ₀ ρ, ∀ (j i : Fin k),
       |Vmat P ψ θ j i - Vmat P ψ θ' j i| ≤ (∫ x, ψddot x ∂P) * ‖θ - θ'‖)
     (hV : IsUnit (Vmat P ψ θ₀).det) :

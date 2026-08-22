@@ -776,10 +776,10 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
               (fun i : Fin n => X i.val ξ)) x⟫ ≤ - (c / 2) * ‖x‖ ^ 2}) atTop (𝓝 0) := by
   classical
   -- The Jacobian is `ψ̈`-Lipschitz on the ball.
-  have hlip := psiDot_lipschitz ψ θ₀ Θ ψddot hρ hΘ_open hball hC2 hdom
+  have hlip := psiDot_lipschitz ψ θ₀ Θ ψddot hΘ_open hball hC2 hdom
   -- The empirical Jacobian converges entrywise, while `ℙₙψ̈ = O_P(1)`.
   have hD := empiricalPsiDot_tendsto P ψ θ₀ hVmeas hVint μ X hX_meas hX_indep hX_id hX_law
-  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_indep hX_id
+  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_id
     hX_law
   -- Averaging B' over the sample bounds the "moving centre" part of the Hessian.
   have hentry1 : ∀ t ∈ Metric.closedBall θ₀ ρ, ∀ (n : ℕ) (Xs : Fin n → Ω) (j i : Fin k),

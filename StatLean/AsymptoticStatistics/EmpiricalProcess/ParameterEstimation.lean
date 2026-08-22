@@ -1,4 +1,5 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
+import StatLean.AsymptoticStatistics.EmpiricalProcess.IIDFiniteRestriction
 import StatLean.AsymptoticStatistics.EmpiricalProcess.RandomFunctions
 import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 import StatLean.AsymptoticStatistics.ForMathlib.TendstoInMeasureAlgebra
@@ -82,44 +83,6 @@ open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.EfficiencyOperational
 
 variable {Ω : Type*} [MeasurableSpace Ω]
-
-/-- Bridge from the sample-space measure `μ` to the n-fold product measure `Pⁿ`
-via the iid sample `X`.
-
-For any `n`, the pushforward of `μ` along the map `ξ ↦ (i ↦ X i.val ξ) : Ξ → (Fin n → Ω)`
-is the product measure `Pⁿ := Measure.pi (fun _ : Fin n => P_θ θ₀)`.
-
-Proof: restrict the independence to `Fin n`, convert to a product-measure equality
-via `iIndepFun_iff_map_fun_eq_pi_map`, then identify each per-index pushforward
-`μ.map (X i.val) = P_θ θ₀`. -/
-private theorem pi_map_eq_of_iid
-    (P_θ : ℝ → Measure Ω) (θ₀ : ℝ) [IsProbabilityMeasure (P_θ θ₀)]
-    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω)
-    (_hX_meas : ∀ i, Measurable (X i))
-    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (_hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (_hX_law : μ.map (X 0) = P_θ θ₀)
-    (n : ℕ) :
-    μ.map (fun ξ : Ξ => fun i : Fin n => X i.val ξ)
-      = MeasureTheory.Measure.pi (fun _ : Fin n => P_θ θ₀) := by
-  -- Step 1: restrict iIndepFun to the Fin n subindex via the injective Fin.val.
-  have hY_indep : ProbabilityTheory.iIndepFun (fun i : Fin n => X i.val) μ :=
-    _hX_iindep.precomp Fin.val_injective
-  -- Step 2: identify each per-index pushforward with P_θ θ₀.
-  have h_per_i : ∀ i : Fin n, μ.map (X i.val) = P_θ θ₀ := by
-    intro i
-    rw [(_hX_idem i.val).map_eq]
-    exact _hX_law
-  -- Step 3: convert iIndepFun to a product-measure equality.
-  have hY_aem : ∀ i : Fin n, AEMeasurable (fun ξ : Ξ => X i.val ξ) μ :=
-    fun i => (_hX_meas i.val).aemeasurable
-  have h_pi :=
-    (ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map hY_aem).mp hY_indep
-  rw [h_pi]
-  congr 1
-  funext i
-  exact h_per_i i
 
 /-- **Bundled hypotheses for Theorem 19.23 (single-direction k=1 case).**
 
@@ -213,11 +176,6 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         (fun ξ : Ξ => Real.sqrt n *
           ((1 / (n : ℝ)) * ∑ i : Fin n, f (X i.val ξ)
             - ∫ y, f y ∂(P_θ (θ_hat n (fun i : Fin n => X i.val ξ))))) μ) :
-    let σ_sq : ℝ :=
-      ∫ x, (f x - ∫ y, f y ∂(P_θ θ₀)
-              - dPθ f
-                * (((ψ_θ₀ : ↥(L2ZeroMean (P_θ θ₀))) : Lp ℝ 2 (P_θ θ₀)) : Ω → ℝ) x) ^ 2
-        ∂(P_θ θ₀)
     MeasureTheory.TendstoInDistribution
       (fun (n : ℕ) (ξ : Ξ) => Real.sqrt n *
         ((1 / (n : ℝ)) * ∑ i : Fin n, f (X i.val ξ)
@@ -231,7 +189,6 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                   * (((ψ_θ₀ : ↥(L2ZeroMean (P_θ θ₀))) : Lp ℝ 2 (P_θ θ₀)) : Ω → ℝ) x) ^ 2
             ∂(P_θ θ₀)).toNNReal) := by
   classical
-  simp only
   -- Step 0: Setup notation.
   set ψ : Ω → ℝ :=
     (((ψ_θ₀ : ↥(L2ZeroMean (P_θ θ₀))) : Lp ℝ 2 (P_θ θ₀)) : Ω → ℝ) with hψ_def
@@ -474,7 +431,8 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                 {x : Fin n → Ω | ε.toReal ≤
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
-              rw [pi_map_eq_of_iid P_θ θ₀ μ X _hX_meas _hX_iindep _hX_idem _hX_law n]
+              rw [iidFiniteRestriction_map_eq_pi (P_θ θ₀) μ X _hX_meas
+                _hX_iindep _hX_idem _hX_law n]
     -- Closure of A via Fréchet ε-δ + consistency + tightness.
     have h_A_to_zero : MeasureTheory.TendstoInMeasure μ A atTop (fun _ => (0 : ℝ)) := by
       -- ψ-side tightness via Chebyshev on the mean-zero iid sum `(1/√n)·Σ ψ(X_i ξ)`.
@@ -906,7 +864,8 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                 {x : Fin n → Ω | ε.toReal ≤
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
-              rw [pi_map_eq_of_iid P_θ θ₀ μ X _hX_meas _hX_iindep _hX_idem _hX_law n]
+              rw [iidFiniteRestriction_map_eq_pi (P_θ θ₀) μ X _hX_meas
+                _hX_iindep _hX_idem _hX_law n]
     -- Combine via the h_identity bridge + TendstoInMeasure algebra helpers.
     have h_combine : MeasureTheory.TendstoInMeasure μ
         (fun (n : ℕ) (ξ : Ξ) => -(A n ξ) - dPθ f * (B n ξ))

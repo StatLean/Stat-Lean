@@ -604,7 +604,7 @@ private lemma jacobian_sum
       _ = Real.sqrt n * ((n : ℝ)⁻¹) := by rw [one_mul]
   apply (WithLp.equiv 2 (Fin d → ℝ)).injective
   funext j
-  show ((Real.sqrt n)⁻¹ • (∑ i : Fin n, scoreDerivApply M (X i) δ)).ofLp j
+  change ((Real.sqrt n)⁻¹ • (∑ i : Fin n, scoreDerivApply M (X i) δ)).ofLp j
       = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) (empJacobian M X)
           (Real.sqrt n • δ)).ofLp j
   rw [Matrix.ofLp_toEuclideanCLM]
@@ -1292,7 +1292,7 @@ theorem native_influence_eq_candidateVecEIF
   filter_upwards [hall] with x hx
   apply (WithLp.equiv 2 (Fin d → ℝ)).injective
   funext j
-  show (∑ k, (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
+  change (∑ k, (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
         * ((efficientScore S_θ T_nuis (e k) : ↥(L2ZeroMean P)) : Lp ℝ 2 P) x)
       = ((candidateVecEIF S_θ T_nuis e j : ↥(L2ZeroMean P)) : Lp ℝ 2 P) x
   exact (hx j).symm

@@ -493,34 +493,20 @@ The argument combines `empirical_meanValue_bound`, `approximatesLinearOn_empEsti
 "clairvoyant statistician" caveat (book p.69). -/
 theorem classical_zEstimator_root_exists_consistent
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
-    -- USER-INPUT: open parameter set Θ containing the truth; vdV Thm 5.41
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → Ω → ℝ)
     (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ)
-    -- LEAN-ONLY: measurability of the criterion functions; no scope change.
     (hψ_meas : ∀ θ j, Measurable (ψ θ j))
-    -- USER-INPUT: θ ↦ ψ_θ(x) is twice continuously differentiable on Θ for every x;
-    -- vdV Thm 5.41
     (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ => ψ θ j x) Θ)
-    -- USER-INPUT: the population equation Pψ_{θ₀} = 0; vdV Thm 5.41
     (hPθ₀_zero : ∀ j, ∫ x, ψ θ₀ j x ∂P = 0)
-    -- USER-INPUT: P‖ψ_{θ₀}‖² < ∞; vdV Thm 5.41
     (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)
-    -- USER-INPUT: the first-order partials at θ₀ are P-integrable, so the derivative
-    -- matrix V_{θ₀} = Pψ̇_{θ₀} exists; vdV Thm 5.41
     (hVint : ∀ j i, Integrable (fun x => psiDot ψ θ₀ x j i) P)
-    -- USER-INPUT: V_{θ₀} is nonsingular; vdV Thm 5.41
     (hV : IsUnit (Vmat P ψ θ₀).det)
-    -- USER-INPUT (ψddot, hψddot_int, hρ, hball, hdom): the second-order partials are
-    -- dominated by a fixed P-integrable function ψ̈ on a ball around θ₀ inside Θ;
-    -- vdV Thm 5.41. (hψddot_meas is LEAN-ONLY measurability.)
     (ψddot : Ω → ℝ) (hψddot_meas : Measurable ψddot) (hψddot_int : Integrable ψddot P)
     {ρ : ℝ} (hρ : 0 < ρ) (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hdom : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ (j : Fin k) (x : Ω),
       ‖iteratedFDeriv ℝ 2 (fun θ' => ψ θ' j x) θ‖ ≤ ψddot x)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §5.6.
-    -- (hX_meas is LEAN-ONLY measurability.)
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
@@ -582,7 +568,7 @@ theorem classical_zEstimator_root_exists_consistent
     (‖(V'.symm : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k))‖₊ : ℝ) with hNv
   have hNv0 : 0 < Nv := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hz : Nv = 0 := le_antisymm hcon (by rw [hNv]; positivity)
     set v : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ) with hv
     have hvn : ‖v‖ = 1 := by rw [hv, PiLp.norm_single]; simp
