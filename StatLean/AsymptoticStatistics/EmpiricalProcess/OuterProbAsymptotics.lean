@@ -111,7 +111,7 @@ theorem oP_sup_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : ε < |g₁ n ξ h| + |g₂ n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : ε / 2 < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 < |g₁ n ξ h|}
@@ -165,7 +165,7 @@ theorem OP_add_oP_sup {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : M + 1 < |a n ξ h| + |s n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : M < |a n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, M + 1 < |a n ξ h + s n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, M < |a n ξ h|}
@@ -289,7 +289,7 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
       simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push_neg at hr
+      push Not at hr
       refine ⟨h, ?_⟩
       have h1 : ε' * r n ξ ≤ ε' * M₀ := mul_le_mul_of_nonneg_left hr hε'0.le
       have h2 : ε' * M₀ < ε := by
@@ -435,7 +435,7 @@ def IsBoundedInOuterProbScalarWt {Ξ : Type*} [MeasurableSpace Ξ]
 /-- **Weighted `o_P` is closed under addition (sup form).** Weighted sibling of
 `oP_sup_add`; the `ε/2`-split uses `w ≥ 1 > 0`. -/
 theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
-    {w : ℕ → Ξ → ℝ} (hw : ∀ n ξ, 1 ≤ w n ξ)
+    {w : ℕ → Ξ → ℝ}
     {g₁ g₂ : ℕ → Ξ → H → ℝ}
     (h₁ : TendstoZeroInOuterProbSupWt μ w g₁) (h₂ : TendstoZeroInOuterProbSupWt μ w g₂) :
     TendstoZeroInOuterProbSupWt μ w (fun n ξ h => g₁ n ξ h + g₂ n ξ h) := by
@@ -448,7 +448,7 @@ theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have hww : ε * w n ξ = ε / 2 * w n ξ + ε / 2 * w n ξ := by ring
     by_cases h1 : ε / 2 * w n ξ < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε * w n ξ < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 * w n ξ < |g₁ n ξ h|}
@@ -676,7 +676,7 @@ theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure �
       simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push_neg at hr
+      push Not at hr
       refine ⟨h, ?_⟩
       have hwpos : 0 < w n ξ := lt_of_lt_of_le one_pos (hw n ξ)
       have h1 : ε' * r n ξ ≤ ε' * (M₀ * w n ξ) := mul_le_mul_of_nonneg_left hr hε'0.le

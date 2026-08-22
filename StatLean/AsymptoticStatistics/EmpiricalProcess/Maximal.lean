@@ -2090,7 +2090,7 @@ private theorem chaining_integral_universal_K
                     * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                         * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P)) :
     ∃ K_chain : ℝ, 0 < K_chain ∧
-      ∀ q : ℕ, ∀ (δq : ℝ), 0 < δq → δq ≤ 1 / 4 →
+      ∀ (δq : ℝ), 0 < δq → δq ≤ 1 / 4 →
         ∃ N_chain : ℕ, ∀ n ≥ N_chain,
           ∫⁻ ξ, ENNReal.ofReal
                 |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -2116,7 +2116,7 @@ private theorem chaining_integral_universal_K
   -- Step 2: Universal K_chain = 2·c (one envelope-tail bookkeeping factor; the
   -- localized route has NO F−F→F doubling — the localized class IS the slice).
   refine ⟨2 * c, by positivity, ?_⟩
-  intro q δq hδq_pos hδq_le_quarter
+  intro δq hδq_pos hδq_le_quarter
   -- `0 < J(δq)` follows from `F.Nonempty` (the entropy integrand
   -- `√(log (1 + N))` is `≥ √(log 2) > 0` pointwise).
   have hJ_pos : 0 < bracketingEntropyIntegral δq F P :=
@@ -2347,7 +2347,7 @@ private theorem chaining_per_q_integral_bound_aux
   refine ⟨K_chain', hK_chain'_pos, ?_⟩
   intro q
   obtain ⟨N_chain', h_N_chain'⟩ :=
-    h_K_chain' q (δ q) (_hδ_pos q) (_hδ_le_quarter q)
+    h_K_chain' (δ q) (_hδ_pos q) (_hδ_le_quarter q)
   refine ⟨N_chain', fun n hn => ?_⟩
   refine ⟨?_, ?_⟩
   · -- AEMeasurability of the integrand. Decompose `empiricalProcess` as

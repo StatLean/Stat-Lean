@@ -235,37 +235,46 @@ lemma distL2_comm {P : Measure Ω} (f g : Ω → ℝ) : distL2 P f g = distL2 P 
   unfold distL2
   rw [eLpNorm_sub_comm]
 
-/-- **Triangle inequality for `distL2`.** For `f, g, h ∈ F` with an `L²` envelope
-and measurable members, `distL2 P f h ≤ distL2 P f g + distL2 P g h`.
+/-- **Triangle inequality for `distL2` from direct `L²` membership.**
+
+For any three `L²(P)` functions, the `L²(P)` semidistance satisfies
+`distL2 P f h ≤ distL2 P f g + distL2 P g h`. This is the carrier-independent
+form used when one endpoint is only in the `L²(P)` closure of a function class.
 
 The `ℝ≥0∞`-level triangle inequality `eLpNorm_add_le` (using
 `AEStronglyMeasurable` of the summands and `1 ≤ 2`) transfers to `.toReal` because
-both summands are finite: `memLp_of_mem_F` gives `MemLp f 2 P`, etc., whence each
-`eLpNorm _ 2 P ≠ ⊤`, so `ENNReal.toReal_add` is additive and `ENNReal.toReal_mono`
-is monotone. -/
-lemma distL2_triangle {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
-    (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
-    (hF_meas : ∀ f ∈ F, Measurable f)
-    {f g h : Ω → ℝ} (hf : f ∈ F) (hg : g ∈ F) (hh : h ∈ F) :
+both summands are finite by `MemLp`, so `ENNReal.toReal_add` is additive and
+`ENNReal.toReal_mono` is monotone. -/
+lemma distL2_triangle_of_memLp {P : Measure Ω} {f g h : Ω → ℝ}
+    (hf : MemLp f 2 P) (hg : MemLp g 2 P) (hh : MemLp h 2 P) :
     distL2 P f h ≤ distL2 P f g + distL2 P g h := by
   unfold distL2
   -- Finiteness of all three `eLpNorm`s, from `L²`-membership.
-  have hfg_ne : eLpNorm (f - g) 2 P ≠ ⊤ :=
-    ((memLp_of_mem_F hG_env hG hF_meas hf).sub
-      (memLp_of_mem_F hG_env hG hF_meas hg)).eLpNorm_ne_top
-  have hgh_ne : eLpNorm (g - h) 2 P ≠ ⊤ :=
-    ((memLp_of_mem_F hG_env hG hF_meas hg).sub
-      (memLp_of_mem_F hG_env hG hF_meas hh)).eLpNorm_ne_top
+  have hfg_ne : eLpNorm (f - g) 2 P ≠ ⊤ := (hf.sub hg).eLpNorm_ne_top
+  have hgh_ne : eLpNorm (g - h) 2 P ≠ ⊤ := (hg.sub hh).eLpNorm_ne_top
   -- `ℝ≥0∞` triangle inequality: `eLpNorm (f - h) ≤ eLpNorm (f - g) + eLpNorm (g - h)`.
   have h_tri : eLpNorm (f - h) 2 P ≤ eLpNorm (f - g) 2 P + eLpNorm (g - h) 2 P := by
     have hfh_eq : f - h = (f - g) + (g - h) := by ring
     rw [hfh_eq]
     exact eLpNorm_add_le
-      ((hF_meas f hf).aestronglyMeasurable.sub (hF_meas g hg).aestronglyMeasurable)
-      ((hF_meas g hg).aestronglyMeasurable.sub (hF_meas h hh).aestronglyMeasurable) (by norm_num)
+      (hf.aestronglyMeasurable.sub hg.aestronglyMeasurable)
+      (hg.aestronglyMeasurable.sub hh.aestronglyMeasurable) (by norm_num)
   -- Transfer to `.toReal`: monotone (RHS finite) + additive (both summands finite).
   rw [← ENNReal.toReal_add hfg_ne hgh_ne]
   exact ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hfg_ne, hgh_ne⟩) h_tri
+
+/-- **Triangle inequality for `distL2` on an enveloped class.** For `f, g, h ∈ F`
+with an `L²` envelope and measurable members,
+`distL2 P f h ≤ distL2 P f g + distL2 P g h`. -/
+lemma distL2_triangle {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
+    (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
+    (hF_meas : ∀ f ∈ F, Measurable f)
+    {f g h : Ω → ℝ} (hf : f ∈ F) (hg : g ∈ F) (hh : h ∈ F) :
+    distL2 P f h ≤ distL2 P f g + distL2 P g h :=
+  distL2_triangle_of_memLp
+    (memLp_of_mem_F hG_env hG hF_meas hf)
+    (memLp_of_mem_F hG_env hG hF_meas hg)
+    (memLp_of_mem_F hG_env hG hF_meas hh)
 
 /-- The **`distL2` pseudometric on the subtype `↥F`.** Under an `L²` envelope and
 measurability of `F`'s members, `distL2 P f.1 g.1` is a genuine pseudometric on

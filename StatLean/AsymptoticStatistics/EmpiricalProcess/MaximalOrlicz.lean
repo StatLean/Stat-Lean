@@ -1425,6 +1425,38 @@ private lemma finite_sup_bound_orlicz_core
   congr 1
   field_simp
 
+/-- **Literal-constant adapter for vdV Lemma 19.33.**
+
+This public form exposes the concrete universal constant `96` proved by
+`finite_sup_bound_orlicz_core`, rather than packaging it in a data-dependent
+existential. It is the finite-class input intended for the universal-constant
+chaining assemblies of the general Lemma 19.34 and bounded Lemma 19.36 routes.
+
+Binder taxonomy: `P`, the finite class `g`, its measurability/boundedness/second-
+moment bounds, and the sample size are the mathematical inputs of Lemma 19.33;
+`Ξ`, `μ`, `X`, and the four `hX_*` hypotheses are the Lean encoding of the iid
+sample underlying `Gₙ`. -/
+lemma finite_sup_bound_96
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {X : ℕ → Ξ → Ω}
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    {ι : Type*} [Fintype ι] (g : ι → Ω → ℝ) (hg_meas : ∀ i, Measurable (g i))
+    {M σ : ℝ} (hM : 0 ≤ M) (hσ : 0 ≤ σ)
+    (hg_bdd : ∀ i ω, |g i ω| ≤ M)
+    (hg_var : ∀ i, ∫ ω, (g i ω) ^ 2 ∂P ≤ σ ^ 2)
+    (n : ℕ) (hn : 1 ≤ n) :
+    ∫⁻ ω, ENNReal.ofReal
+        (⨆ i : ι, |empiricalProcess P n (fun j : Fin n => X j.val ω) (g i)|) ∂μ
+      ≤ ENNReal.ofReal
+          (96 * (M * Real.log (1 + Fintype.card ι) / Real.sqrt n
+            + σ * Real.sqrt (Real.log (1 + Fintype.card ι)))) := by
+  exact finite_sup_bound_orlicz_core P hX_meas hX_iindep hX_idem hX_law
+    g hg_meas hM hσ hg_bdd hg_var n hn
+
 /-- **Public assembly of `finite_sup_bound` body** — invoked from
 `Maximal.lean`.  Identical statement; routes through the private
 `finite_sup_bound_orlicz_core` (the full Orlicz-route content), then

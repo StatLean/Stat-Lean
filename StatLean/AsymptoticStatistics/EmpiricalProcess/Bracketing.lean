@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.SqrtLogProduct
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -325,6 +326,37 @@ noncomputable def entropyWeight (N : ℕ∞) : ℝ≥0∞ :=
 
 @[simp] lemma entropyWeight_coe (n : ℕ) :
     entropyWeight (n : ℕ∞) = ENNReal.ofReal (Real.sqrt (Real.log (1 + (n : ℝ)))) := rfl
+
+lemma entropyWeight_mul_le (N M : ℕ∞) :
+    entropyWeight (N * M) ≤ entropyWeight N + entropyWeight M := by
+  rcases eq_or_ne N ⊤ with rfl | hN
+  · simp
+  rcases eq_or_ne M ⊤ with rfl | hM
+  · simp
+  obtain ⟨n, rfl⟩ := ENat.ne_top_iff_exists.mp hN
+  obtain ⟨m, rfl⟩ := ENat.ne_top_iff_exists.mp hM
+  rw [show (n : ℕ∞) * (m : ℕ∞) = ((n * m : ℕ) : ℕ∞) by norm_cast,
+    entropyWeight_coe, entropyWeight_coe, entropyWeight_coe,
+    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)]
+  apply ENNReal.ofReal_le_ofReal
+  have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
+  have hm : (0 : ℝ) ≤ m := Nat.cast_nonneg m
+  have hprod : (1 : ℝ) + (n : ℝ) * m ≤ (1 + n) * (1 + m) := by
+    nlinarith [hn, hm, mul_nonneg hn hm]
+  have hnpos : (0 : ℝ) < 1 + n := by positivity
+  have hmpos : (0 : ℝ) < 1 + m := by positivity
+  calc
+    Real.sqrt (Real.log (1 + ((n * m : ℕ) : ℝ))) =
+        Real.sqrt (Real.log (1 + (n : ℝ) * m)) := by push_cast; ring
+    _ ≤ Real.sqrt (Real.log ((1 + (n : ℝ)) * (1 + m))) := by
+      apply Real.sqrt_le_sqrt
+      exact Real.log_le_log (by positivity) hprod
+    _ = Real.sqrt (Real.log (1 + (n : ℝ)) + Real.log (1 + m)) := by
+      rw [Real.log_mul hnpos.ne' hmpos.ne']
+    _ ≤ Real.sqrt (Real.log (1 + (n : ℝ))) +
+        Real.sqrt (Real.log (1 + m)) :=
+      ForMathlib.Real.sqrt_add_le (Real.log_nonneg (by linarith))
+        (Real.log_nonneg (by linarith))
 
 /-- The **pointwise integrand** of `bracketingEntropyIntegral`: the value
 `√(log (1 + N_{[]}(ε, F, L_2(P))))` at scale `ε`, with the `⊤` convention when no

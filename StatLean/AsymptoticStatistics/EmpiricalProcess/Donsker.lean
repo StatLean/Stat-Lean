@@ -174,7 +174,7 @@ vdV §19.2 + Theorem 18.14(a) (book p.269: the empirical process of a Donsker
 class has Gaussian finite-dimensional marginals with covariance
 `Pfᵢfⱼ − Pfᵢ·Pfⱼ`). -/
 lemma marginalCLT_fdd_of_iid
-    {F : Set (Ω → ℝ)} {P : Measure Ω}
+    {P : Measure Ω}
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
     (_hX_meas : ∀ i, Measurable (X i))
@@ -418,7 +418,7 @@ lemma isMarginalCLT_of_memLp {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hmem : ∀ f ∈ F, MemLp f 2 P) : IsMarginalCLT F P := by
   refine ⟨hmem, ?_⟩
   intro Ξ _ μ _ X hX_meas hX_iindep hX_id hX_law k f hf_in
-  exact marginalCLT_fdd_of_iid (F := F) μ X hX_meas hX_iindep hX_id hX_law f
+  exact marginalCLT_fdd_of_iid μ X hX_meas hX_iindep hX_id hX_law f
     (fun i => hmem (f i) (hf_in i))
 
 /-- **Asymptotic equicontinuity** — van der Vaart Theorem 18.14(ii), the
@@ -515,7 +515,7 @@ theorem outerMeasureStar_mono {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ
   refine outerExpectation_mono fun ω => ?_
   by_cases hω : ω ∈ A
   · simp only [Set.indicator_of_mem hω, Set.indicator_of_mem (hAB hω), le_refl]
-  · simp only [Set.indicator_of_notMem hω, Pi.zero_apply, zero_le]
+  · simp only [Set.indicator_of_notMem hω, zero_le]
 
 /-- **`μ`-measure is dominated by the outer measure `P*`.** `μ A ≤ P*(A)`: every
 measurable majorant `U ≥ 1_A` has `μ A = ∫⁻ 1_A ≤ ∫⁻ U`, so `μ A` is below the
@@ -572,7 +572,7 @@ vanishing of the squared `L²`-distance), the `μ`-mass of the complement event
 `distL2_ge_imp_integral_ge` lands the tail event inside
 `{ξ | δ² ≤ ∫ (fhat − ghat)²}`, Markov bounds its real mass by
 `(∫ξ ∫x (fhat − ghat)²)/δ²`, which `→ 0`. -/
-theorem markov_distL2_tail {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
+theorem markov_distL2_tail {P : Measure Ω} [IsProbabilityMeasure P]
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (fhat ghat : ℕ → Ξ → (Ω → ℝ))
     (hfm : ∀ n, Measurable (Function.uncurry (fhat n)))
@@ -757,7 +757,7 @@ theorem osc_modulus_to_random_pair {F : Set (Ω → ℝ)} {P : Measure Ω}
   obtain ⟨δ, hδpos, hBlimsup⟩ :=
     h_eq μ X hX_meas hX_indep hX_id hX_law η' η' hη'pos hη'pos
   -- The `distL2`-tail event mass vanishes (Markov).
-  have htail := markov_distL2_tail (F := F) μ fhat ghat hfm hgm
+  have htail := markov_distL2_tail μ fhat ghat hfm hgm
     hint htend hδpos
   -- Abbreviate the modulus existential close-pair event and the `distL2`-tail event.
   set Bev : ℕ → Set Ξ := fun n =>

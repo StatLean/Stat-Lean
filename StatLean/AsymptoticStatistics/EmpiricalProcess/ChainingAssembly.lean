@@ -1259,7 +1259,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
         rw [hthr_eq]
         by_cases hω : ω ∈ {y | chainB B δ n (m + 1) i y}
         · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
-          -- Per-ancestor gate (W0): the middle clause pins `f`'s OWN level-`m`
+          -- Per-ancestor gate: the middle clause pins `f`'s own level-`m`
           -- cell-ancestor envelope directly, `Δ_m (ancestor) ω ≤ √n·chainThreshold m`;
           -- nesting `Δ_{m+1} i ≤ Δ_m (ancestor)` is `Δ_le_ancestor`.
           have hΔ_nn : 0 ≤ B.Δ (m + 1) i ω :=
@@ -1634,7 +1634,7 @@ theorem chain_A_dyadic_bound
       exact ⟨i⟩
     -- The A-gated jump family.
     set g : Fin (B.Nq (m + 1)) → Ω → ℝ := fun i => truncJump B δ n hm i with hg_def
-    -- Per-ancestor gate (W0): the A-set `{x | chainA B δ n m (parent i) x}` is, for
+    -- Per-ancestor gate: the A-set `{x | chainA B δ n m (parent i) x}` is, for
     -- each cell index, a countable intersection (over levels `p ≤ m`) of the
     -- single-cell sublevel sets `{x | Δ_p (ancestor) x ≤ √n·a_p}` (the `∀ j` layer is
     -- gone; each `p` contributes ONE cell, the parent's level-`p` ancestor).
@@ -1937,6 +1937,7 @@ private lemma chainB_measurableSet
     MeasurableSet.iInter (fun hpq => ?_)))
   exact measurableSet_le (B.Δ_meas hp₀ _) measurable_const
 
+omit [MeasurableSpace Ξ] in
 /-- **B-link mean split — pointwise (per-`ξ`) form (vdV p.287).**
 
 The genuine substance of the B-link mean split, stated *pointwise* in `ξ` (before
@@ -4789,6 +4790,7 @@ lemma localized_dyadic_to_J
           congr 1; ring]
         ring
 
+omit [MeasurableSpace Ω] in
 /-- **Reindexing the clamped sup as a sup over the truncated class.** For any
 evaluator `z`, the supremum of `z (clampFn M h)` over `h ∈ G` equals the supremum of
 `z g'` over the truncated class `truncateClass G M = clampFn M '' G`. Pure reindex of
@@ -4860,7 +4862,7 @@ lemma localized_supNorm_lift
   have hdom : ∀ g ∈ 𝒢, ∀ x, |g x| ≤ Ψ x := by
     rintro g ⟨h, hhG, rfl⟩ x
     have hhΦ : |h x| ≤ Φ x := hΦ_envG h hhG x
-    show |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
+    change |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
     by_cases hx : x ∈ {y | Mc < |Φ y|}
     · -- on `{Mc < |Φ|}`: `|h − clamp h| ≤ |h| ≤ |Φ| = |Φ|·1`
       rw [Set.indicator_of_mem hx]
