@@ -409,6 +409,8 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
     (C : NondominatedTangentCone P)
     {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
+    -- USER-INPUT: vector pathwise differentiability and an efficient influence
+    -- tuple; vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     (φ : Fin d → ↥(L2ZeroMean P))
     (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)
@@ -694,9 +696,12 @@ theorem operational_efficiency_characterization_vec_nondominated
     (C : NondominatedTangentCone P)
     {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
+    -- USER-INPUT: vector pathwise differentiability and an efficient influence
+    -- tuple; vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     (φ : Fin d → ↥(L2ZeroMean P))
     (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)
+    -- LEAN-ONLY: measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtNDVec C T_n ψ
         (multivariateGaussian 0 (Matrix.gram ℝ φ)) ↔

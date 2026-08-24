@@ -1778,16 +1778,14 @@ The empty-class and zero-envelope branches are handled internally; the caller
 does not provide equicontinuity, a bridge, Donsker data, or a Dudley schedule. -/
 theorem uniformEntropy_pdonskerProcessData_core
     (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]
+    -- LEAN-ONLY: explicit measurability of the class members.
     (hFmeas : ∀ f ∈ F, Measurable f)
-      -- vdV 19.14 measurable class members.
+    -- USER-INPUT: pointwise measurability, a finite-`L²` envelope, and finite
+    -- uniform entropy integral; vdV Theorem 19.14.
     (hPM : IsPointwiseMeasurable F)
-      -- vdV 19.14 suitable measurability.
     (hEnv : UniformEntropyStructural.IsEnvelope F G)
-      -- vdV 19.14 possibly nonmeasurable envelope.
     (hG2 : outerLpNorm P G 2 < ⊤)
-      -- vdV 19.14 finite outer squared-envelope moment.
     (hJ : uniformEntropyIntegral 1 F G 2 < ⊤)
-      -- vdV 19.14 uniform entropy integral.
     : PDonskerProcessData F P := by
   refine
     { measurable := hFmeas

@@ -544,15 +544,18 @@ theorem bracketingMaximal_full :
         (P : Measure Ω) [IsProbabilityMeasure P]
         (Ξ : Type*) [MeasurableSpace Ξ]
         (μ : Measure Ξ) [IsProbabilityMeasure μ]
-        -- iid sample representation of the empirical process.
         (X : ℕ → Ξ → Ω)
+        -- LEAN-ONLY: measurability of each sample coordinate.
         (hX_meas : ∀ i, Measurable (X i))
+        -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.34.
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (δ : ℝ)
-        -- exact Lemma 19.34 class/radius/envelope hypotheses.
+        -- USER-INPUT: positive radius, `L²`-localized class, and envelope;
+        -- vdV Lemma 19.34.
         (hδ : 0 < δ)
+        -- LEAN-ONLY: explicit measurability of the class members.
         (hF_meas : ∀ f ∈ F, Measurable f)
         (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)
         (hΦ_env : IsEnvelope F Φ)
@@ -662,17 +665,18 @@ theorem bracketingMaximal_integrableEnvelope :
         (P : Measure Ω) [IsProbabilityMeasure P]
         (Ξ : Type*) [MeasurableSpace Ξ]
         (μ : Measure Ξ) [IsProbabilityMeasure μ]
-        -- iid sample representation of the empirical process.
         (X : ℕ → Ξ → Ω)
+        -- LEAN-ONLY: measurability of each sample coordinate.
         (hX_meas : ∀ i, Measurable (X i))
+        -- USER-INPUT: iid observations with common law `P`; vdV Corollary 19.35.
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
-        -- measurable class and the book's envelope relation.
-        (hF_meas : ∀ f ∈ F, Measurable f) (hΦ_env : IsEnvelope F Φ)
-        -- measurable finite-L² envelope realizes the
-        -- finite norm appearing in Corollary 19.35.
+        -- LEAN-ONLY: explicit measurability of the class and envelope.
+        (hF_meas : ∀ f ∈ F, Measurable f)
+        -- USER-INPUT: a square-integrable envelope; vdV Corollary 19.35.
+        (hΦ_env : IsEnvelope F Φ)
         (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) (n : ℕ),
         outerExpectation μ (fun ξ => supNormOver F
             (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤

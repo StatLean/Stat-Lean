@@ -138,23 +138,36 @@ theorem argmax_continuous_corollary
     (M : Ωlim → EuclideanSpace ℝ (Fin d) → ℝ)
     (Hn : ℕ → Set (EuclideanSpace ℝ (Fin d)))
     (H : Set (EuclideanSpace ℝ (Fin d)))
+    -- USER-INPUT: convergence of the changing index sets; vdV Corollary 5.58.
     (hset : ForMathlib.SetConverges Hn H)
     (hhatn : ℕ → Ω → EuclideanSpace ℝ (Fin d))
     (hhat : Ωlim → EuclideanSpace ℝ (Fin d))
+    -- LEAN-ONLY: measurability of the limiting argmax.
     (hhmeas : Measurable hhat)
+    -- USER-INPUT: the sample and limiting argmaxes lie in their index sets;
+    -- vdV Corollary 5.58.
     (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)
     (hmem : ∀ ω, hhat ω ∈ H)
-    (r : ℕ → Ω → ℝ) (hrnonneg : ∀ n ω, 0 ≤ r n ω)
+    (r : ℕ → Ω → ℝ)
+    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
+    (hrnonneg : ∀ n ω, 0 ≤ r n ω)
+    -- USER-INPUT: near-maximization with an `o_P(1)` remainder;
+    -- vdV Corollary 5.58.
     (hr : TendstoInOuterProbabilityZero μ r)
     (hnear : ∀ n ω h, h ∈ Hn n →
       Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)
+    -- USER-INPUT: continuous limit paths with a unique maximizer;
+    -- vdV Corollary 5.58.
     (hcontinuous : ∀ ω, Continuous (M ω))
     (hunique : ∀ ω h, h ∈ H → h ≠ hhat ω → M ω h < M ω (hhat ω))
+    -- LEAN-ONLY: boundedness and measurability needed to realize restrictions in `ℓ∞(K)`.
     (hMnBounded : ∀ n ω (K : Set (EuclideanSpace ℝ (Fin d))), IsCompact K →
       Memℓp (fun h : K => Mn n ω h) ∞)
     (hLocalMeas : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),
       Measurable (fun ω => ForMathlib.restrictToLinfOn K (M ω)
         (continuous_memℓp_infty_on_compact (M ω) K (hcontinuous ω) hK)))
+    -- USER-INPUT: local outer weak convergence and uniform tightness;
+    -- vdV Corollary 5.58.
     (hlocal : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),
       WeakConvergesOuter μ
         (fun n ω => ForMathlib.restrictToLinfOn K (Mn n ω) (hMnBounded n ω K hK))

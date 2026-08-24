@@ -3328,8 +3328,10 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.5.3, Example 25.43",
+      "biblio": "The inverse-probability-weighted semiparametric methods for regression with incompletely observed covariates were developed by J. M. Robins, A. Rotnitzky, and L. P. Zhao, \"Estimation of regression coefficients when some regressors are not always observed,\" *Journal of the American Statistical Association* **89**(427), 1994, pp. 846–866. Van der Vaart's Example 25.43 presents the corresponding tangent-space and efficient-influence-function calculation for missing-at-random models.",
       "keys": [
-        "vdv1998"
+        "vdv1998",
+        "robins-rotnitzky-zhao1994"
       ]
     },
     "keywords": [

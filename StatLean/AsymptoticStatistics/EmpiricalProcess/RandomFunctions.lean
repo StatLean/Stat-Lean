@@ -401,20 +401,27 @@ Both compatibility parameters remain in the signature; only `_hf₀` is needed
 by the core theorem. -/
 theorem donsker_random_function_consistency
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
+    -- USER-INPUT: `F` is `P`-Donsker and contains the square-integrable limit;
+    -- vdV Lemma 19.24.
     (h_donsker : IsPDonsker F P)
     (f₀ : Ω → ℝ) (_hf₀ : MemLp f₀ 2 P)
     (_hf₀_in_F : f₀ ∈ F)
+    -- LEAN-ONLY: a measurable representative of the limit function.
     (hf₀_meas : Measurable f₀)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (X : ℕ → Ξ → Ω)
+    -- LEAN-ONLY: measurability of each sample coordinate.
+    (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.24.
     (hX_iindep : ProbabilityTheory.iIndepFun X μ)
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
     (f_hat : ℕ → Ξ → (Ω → ℝ))
+    -- LEAN-ONLY: joint measurability of each random function.
     (h_fhat_meas : ∀ n, Measurable (Function.uncurry (f_hat n)))
+    -- USER-INPUT: class membership and mean-square `L²(P)` consistency;
+    -- vdV Lemma 19.24.
     (h_range : ∀ n ω, f_hat n ω ∈ F)
-    -- Expectation of squared L²-distance. Markov converts this
-    -- stronger input to the explicit outer tail consumed by the faithful core.
     (h_l2_int : ∀ n, MeasureTheory.Integrable
       (fun ξ => ∫ x, (f_hat n ξ x - f₀ x) ^ 2 ∂P) μ)
     (h_l2_consistent :

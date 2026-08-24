@@ -87,6 +87,7 @@ theorem continuous_halfLine_evaluation (t : ℝ) :
 For every real probability law, the closed half-line indicator class is
 `P`-Glivenko–Cantelli. No continuity or nonatomicity assumption is present. -/
 theorem halfLine_isPGlivenkoCantelli
+    -- USER-INPUT: an arbitrary probability law on `ℝ`; vdV Theorem 19.1.
     (P : Measure ℝ) [IsProbabilityMeasure P] :
     IsPGlivenkoCantelli halfLineIndicatorClass P := by
   apply isPGlivenkoCantelli_of_finite_bracketing_L1 halfLineIndicatorClass P
@@ -101,6 +102,7 @@ carrier `ℓ∞(halfLineIndicatorClass)`, to a tight `P`-Brownian bridge.
 This invokes the carrier-agnostic finite-bracketing-entropy theorem. It does
 not assert that the Gaussian carrier is finite-dimensional. -/
 theorem halfLine_isPDonskerWithBridge
+    -- USER-INPUT: an arbitrary probability law on `ℝ`; vdV Theorem 19.3.
     (P : Measure ℝ) [IsProbabilityMeasure P] :
     IsPDonskerWithBridge halfLineIndicatorClass P := by
   obtain ⟨_, _, _, hbridge⟩ := donskerWithBridge_of_finite_bracketing_entropy

@@ -258,14 +258,19 @@ benchmark by the supremum of finite Gaussian carrier experiments;
 to the selected nondominated paths by finite loss-profile compactification. -/
 theorem semiparametric_local_asymptotic_minimax_nondominated
     (C : NondominatedTangentCone P)
+    -- USER-INPUT: convex tangent cone; vdV Theorem 25.21.
     (hconv : Convex ℝ C.carrier)
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
+    -- USER-INPUT: pathwise differentiability and an efficient influence function;
+    -- vdV Theorem 25.21.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     {φ : Fin d → ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)
     (T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
+    -- LEAN-ONLY: measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n))
     (ℓ : EuclideanSpace ℝ (Fin d) → ℝ≥0∞)
+    -- USER-INPUT: bowl-shaped lower-semicontinuous loss; vdV Theorem 25.21.
     (hbowl : BowlShaped ℓ) (hlsc : LowerSemicontinuous ℓ) :
     selectedPathCanonicalLHSVec C T_n ψ ℓ ≥
       ∫⁻ y, ℓ y ∂(multivariateGaussian 0 (Matrix.gram ℝ φ)) := by

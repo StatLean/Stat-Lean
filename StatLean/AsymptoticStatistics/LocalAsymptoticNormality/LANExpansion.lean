@@ -2462,12 +2462,20 @@ theorem LAN_expansion
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
     (θ₀ : EuclideanSpace ℝ (Fin k))
-    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
+    -- LEAN-ONLY: measurability of the score representative.
+    (hℓ : Measurable ℓ)
+    -- USER-INPUT: normalized density family and differentiability in quadratic
+    -- mean at `θ₀`; vdV Theorem 7.2.
     (hPDF : IsPDFOf M μ)
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
+    -- USER-INPUT: convergence of the local parameter directions; vdV Theorem 7.2.
     (hconv : Filter.Tendsto h_n Filter.atTop (𝓝 h))
-    (X : ℕ → Ω → 𝓧) (hX_meas : ∀ i, Measurable (X i))
+    (X : ℕ → Ω → 𝓧)
+    -- LEAN-ONLY: measurability of each sample coordinate.
+    (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT: iid observations from the base law `P_{θ₀}`; vdV Theorem 7.2.
     (hindep : Pairwise fun i j => ProbabilityTheory.IndepFun (X i) (X j) P)
     (hident : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) P P)
     (hlaw : Measure.map (X 0) P

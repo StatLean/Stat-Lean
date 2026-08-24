@@ -126,7 +126,8 @@ theorem rawMovingBias_normalized_expansion_2559
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- the minimal raw moving-bias assembly bundle above.
+    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- cross-moment identity, and nonsingularity; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I) :
     TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
@@ -383,11 +384,13 @@ theorem rawMovingBias_sqrtN_tight_2554
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- the minimal raw moving-bias assembly bundle above.
+    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- cross-moment identity, and nonsingularity; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
-    -- finite-prefix tightness for the project's all-`n` `O_P(1)` predicate.
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vdV equation (25.52), in the rate-free normalized form.
+    -- USER-INPUT: equation (25.52), in rate-free normalized form;
+    -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
@@ -593,11 +596,13 @@ theorem rawMovingBias_asympLinear_2554
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- the minimal raw moving-bias assembly bundle above.
+    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- cross-moment identity, and nonsingularity; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
-    -- finite-prefix tightness for the project's all-`n` `O_P(1)` predicate.
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vdV equation (25.52), in the rate-free normalized form.
+    -- USER-INPUT: equation (25.52), in rate-free normalized form;
+    -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>

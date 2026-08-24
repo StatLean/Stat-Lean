@@ -57,15 +57,20 @@ theorem mle_asympLinear_2577_native
 /-- Scalar semiparametric efficiency as a `Fin 1` specialization of the
 native proper-submodel theorem. -/
 theorem mle_semiparametricallyEfficient_2577_native
+    -- USER-INPUT: the approximate least-favorable submodel hypotheses;
+    -- vdV Theorem 25.77.
     (h : @ApproxLeastFavorable2577NativeHyp_vec Omega _ 1 P _ Theta _ _ _
       S_theta T_nuis proj e H M modelLaw nuisancePath estimator nuisanceEstimator
       theta0 eta0 F envelope)
     {T : Submodule Real ↥(L2ZeroMean P)} {dpsi : T →L[Real] Real}
+    -- USER-INPUT: the candidate lies in the tangent space and represents the
+    -- pathwise derivative; vdV Theorem 25.77.
     (h_mem : @candidateVecEIF Omega _ P _ Theta _ _ _ 1
       S_theta T_nuis proj e 0 ∈ T)
     (h_dpsi : forall g : T, dpsi g = inner Real
       (@candidateVecEIF Omega _ P _ Theta _ _ _ 1 S_theta T_nuis proj e 0)
       (g : ↥(L2ZeroMean P)))
+    -- USER-INPUT: the target functional has truth value `theta0 0`.
     {psi : Measure Omega -> Real} (hpsi : psi P = theta0 0) :
     SemiparametricallyEfficientAt (fun n X => estimator n X 0) psi P T := by
   have hEIF : IsEfficientInfluenceFunction P T dpsi

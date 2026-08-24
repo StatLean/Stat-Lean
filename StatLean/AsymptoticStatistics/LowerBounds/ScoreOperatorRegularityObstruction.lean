@@ -1127,12 +1127,16 @@ Gaussian sample mean is raw regular.  The theorem's negative premise is
 therefore correctly false in that model. -/
 theorem no_rawRegularity_of_not_mem_range_adjoint
     (A : ScoreOperator H P)
+    -- LEAN-ONLY: an explicit adjoint representative and its defining identity.
     (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
     (h_adj : ∀ (b : H) (y : ↥(L2ZeroMean P)),
       ⟪Astar y, b⟫_ℝ = ⟪y, A.toCLM b⟫_ℝ)
     (chiTilde : H)
+    -- USER-INPUT: the parameter derivative is outside the adjoint range;
+    -- vdV Theorem 25.32.
     (h_not_mem : chiTilde ∉ (Astar.range : Submodule ℝ H))
     (ψ : Measure Ω → ℝ)
+    -- USER-INPUT: score paths realize the derivative represented by `chiTilde`.
     (paths : ScorePathDerivativeData A chiTilde ψ)
     (T_n : ∀ n, (Fin n → Ω) → ℝ) :
     RawRegularity A chiTilde ψ paths T_n → False := by

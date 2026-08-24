@@ -1959,7 +1959,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
   · have hn : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0
     have h8δ : 0 < 8 * δ := by positivity
     let B := D.base.partition
-    -- The three measurable pieces corresponding to the reviewed pointwise chain.
+    -- The three measurable pieces corresponding to the pointwise chain.
     set head : Ξ → ℝ≥0∞ := fun ξ => ⨆ i : Fin (B.Nq 0), ENNReal.ofReal
         |empiricalProcess P n (fun k : Fin n => X k.val ξ)
           (truncRep B (fun _ => t) (8 * δ) n 0 i)| with hhead_def
@@ -2048,7 +2048,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
       rw [hMaj_def]
       exact (hhead_meas.add (Measurable.ennreal_tsum hoscDom_meas)).add
         (Measurable.ennreal_tsum hjump_meas)
-    -- `head` is the reviewed `levelRepSup`: head visibility makes truncation inert.
+    -- `head` is `levelRepSup`: head visibility makes truncation inert.
     have hrep : ∀ i : Fin (B.Nq 0),
         truncRep B (fun _ => t) (8 * δ) n 0 i = B.π 0 i := by
       intro i

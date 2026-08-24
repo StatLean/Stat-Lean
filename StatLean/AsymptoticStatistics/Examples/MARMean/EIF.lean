@@ -545,12 +545,15 @@ theorem marMean_isEIF
     (Q : Measure (X × ℝ)) [IsProbabilityMeasure Q]
     (r : Kernel (X × ℝ) Bool) [IsMarkovKernel r]
     (π m : X → ℝ)
-    -- The response kernel has propensity `π`; vdV Example 25.43, p. 383.
+    -- USER-INPUT: MAR response model, propensity, regression, and conditional
+    -- variance identities; vdV Example 25.43, p. 383.
     (hπr : MARResponseKernel π r)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π (marObsMeasure Q r))
     (hReg : MARRegression π m (marObsMeasure Q r))
     (hVar : MARVariance π (marObsMeasure Q r))
+    -- USER-INPUT: square-integrability of the influence-function and coarsening-score
+    -- representatives; vdV Example 25.43's moment conditions.
     (hLp : MemLp (marMean_eif π m (marMean_Ψ π (marObsMeasure Q r))) 2
       (marObsMeasure Q r))
     (hLp_ipw : MemLp (marMean_ipwRep π (marMean_Ψ π (marObsMeasure Q r))) 2
@@ -559,15 +562,15 @@ theorem marMean_isEIF
       (marMean_coarseningScore π (fun x => m x - marMean_Ψ π (marObsMeasure Q r))) 2
       (marObsMeasure Q r))
     (hLp_bm : MemLp (marMean_coarseningScore π m) 2 (marObsMeasure Q r))
-    -- vdV Ex 25.43 "existence of moments": `m = E(Y|W)` integrable; IPW weight `R/π`
-    -- integrable.
+    -- USER-INPUT: integrability of `m = E(Y|W)` and the IPW weight `R/π`;
+    -- vdV Example 25.43's moment conditions.
     (hm_int : Integrable (fun o : MARObs X => m o.x) (marObsMeasure Q r))
     (hInt_weight : Integrable (fun o : MARObs X => ind o.r / π o.x) (marObsMeasure Q r))
-    -- Measurable IPW integrand and an explicit bounded-response restriction under
-    -- the observed law. The latter identifies the clipped extension with the raw
-    -- estimand at the model law.
+    -- LEAN-ONLY: measurability of the IPW integrand used to define the clipped extension.
     (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
     (C : ℝ)
+    -- USER-INPUT: bounded observed IPW response; this strengthened regularity
+    -- identifies the clipped extension with the raw estimand at the model law.
     (h_ipwBddAE : ∀ᵐ o ∂(marObsMeasure Q r), |ind o.r * o.ry / π o.x| ≤ C)
     :
     IsEfficientInfluenceFunction (marObsMeasure Q r) (marObservedTangent Q r)
@@ -809,7 +812,7 @@ Two inputs at vdV's exact level:
 The AIPW algebra and orthogonality are derived by the shared
 `marMean_eif_isIF` / `marMean_eif_mem_T` core. Literal tangent membership in this
 harness remains conditional on its supplied `hT_char`.
-Accordingly this declaration is an axiom-clean conditional theorem at the `L²` level,
+Accordingly this declaration is a conditional theorem at the `L²` level,
 not a completed formal derivation of Example 25.43. -/
 theorem marMean_isEIF_of_pathwise (π m : X → ℝ)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)

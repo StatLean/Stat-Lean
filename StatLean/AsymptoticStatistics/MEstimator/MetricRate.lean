@@ -25,7 +25,7 @@ theorem metricRate_shell_tail
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → Ω → ℝ) (θ₀ : Θ)
-    -- VdV 5.52 starts with measurable criterion functions.
+    -- LEAN-ONLY: explicit measurability of the criterion functions.
     (hm_meas : ∀ θ, Measurable (m θ))
     (X : ℕ → Ξ → Ω)
     (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)
@@ -322,17 +322,20 @@ theorem mEstimator_rate_of_convergence
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → Ω → ℝ) (θ₀ : Θ)
-    -- VdV 5.52 starts with measurable criterion functions.
+    -- LEAN-ONLY: explicit measurability of the criterion functions.
     (hm_meas : ∀ θ, Measurable (m θ))
     (X : ℕ → Ξ → Ω)
     (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)
-    -- Remainder measurability converts ordinary `O_P` to outer probability.
+    -- LEAN-ONLY: remainder measurability converts ordinary `O_P` to outer probability.
     (hR_meas : ∀ n, Measurable (R n))
     (α β C ρ : ℝ)
-    -- The geometric-shell proof requires a positive curvature exponent.
+    -- USER-INPUT: exponent ordering and positive local constants in the rate
+    -- conditions; vdV Theorem 5.52.
     (hα : 0 < α) (hβα : β < α) (hC : 0 < C) (hρ : 0 < ρ)
-    -- Local integrability on the same neighborhood as curvature/modulus.
+    -- LEAN-ONLY: explicit local integrability on the curvature/modulus neighborhood.
     (hm_int : ∀ θ, dist θ θ₀ < ρ → Integrable (fun ω => m θ ω - m θ₀ ω) P)
+    -- USER-INPUT: local population curvature and empirical-process modulus;
+    -- vdV Theorem 5.52.
     (hcurv : ∀ δ, 0 < δ → δ < ρ → ∀ θ,
       δ / 2 < dist θ θ₀ → dist θ θ₀ < δ →
       ∫ ω, (m θ ω - m θ₀ ω) ∂P ≤ -C * Real.rpow δ α)
@@ -342,10 +345,14 @@ theorem mEstimator_rate_of_convergence
           |empiricalProcess P (n + 1) (fun i : Fin (n + 1) => X i.val ξ)
             (fun ω => m θ.1 ω - m θ₀ ω)|) ≤
         ENNReal.ofReal (C * Real.rpow δ β))
+    -- USER-INPUT: approximate maximization; vdV Theorem 5.52.
     (hNearMax : ∀ n ξ,
       empiricalAvg (m (θhat n ξ)) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) ≥
         empiricalAvg (m θ₀) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) - R n ξ)
+    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
     (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)
+    -- USER-INPUT: scaled remainder is `O_P(1)` and the estimator is consistent;
+    -- vdV Theorem 5.52.
     (hR : IsBoundedInProb (fun _ : ℕ => μ) (fun n ξ =>
       Real.rpow (rateScale α β n) α * R n ξ))
     (hcons : TendstoZeroInOuterProbScalar μ (fun n ξ => dist (θhat n ξ) θ₀)) :

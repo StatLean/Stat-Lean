@@ -402,6 +402,8 @@ property. The two clauses deliberately do **not** assert that the actual supplie
 span equals the maximal concrete space; constant families and empty generators
 show why such an identification is unavailable in general. -/
 theorem car_actual_and_maximal_tangent_2540
+    -- USER-INPUT: a fixed sigma-finite conditional dominator for the supplied
+    -- CAR paths; vdV Theorem 25.40.
     (ν : Measure 𝓓) [SigmaFinite ν] :
     (∀ (γ : ConditionalQMDPath Q ν r) (hCAR : IsCARFamily M γ),
       conditionalQMDObservedScore M hM γ hCAR ∈
@@ -651,18 +653,19 @@ An observed influence function is exactly the explicit complete-case IPW base
 plus a concrete fibre-mean-zero coarsening score. The base influence property
 is derived by `completeCaseIPW_influence_2541`; no `h_ipw` hypothesis is required. -/
 theorem completeCaseIPW_characterization_2541
-    (cc : CompleteCaseData M) -- complete-case observation interface.
-    (ε : ℝ) (hε : 0 < ε) -- vdV Lemma 25.41 positivity constant.
+    -- USER-INPUT: complete-case observation interface and selection probability
+    -- bounded away from zero; vdV Lemma 25.41.
+    (cc : CompleteCaseData M)
+    (ε : ℝ) (hε : 0 < ε)
     (hπ : ∀ᵐ y ∂Q, ε ≤ selectionProbability r cc y)
-      -- vdV Lemma 25.41 bounded-away-from-zero condition.
+    -- USER-INPUT: full-data derivative and influence representer.
     (dψQ : (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) →L[ℝ] ℝ)
-      -- derivative of the differentiable full-`Q` parameter.
-    (χ : ↥(L2ZeroMean Q)) -- full-`Q` influence representer.
+    (χ : ↥(L2ZeroMean Q))
     (hχ : IsInfluenceFunction Q (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) dψQ χ)
-      -- `χ` represents the full-`Q` derivative.
+    -- USER-INPUT: observed derivative agrees with the full-data derivative on
+    -- canonical score lifts; vdV Lemma 25.41.
     (dψObs :
       (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) →L[ℝ] ℝ)
-      -- derivative of the induced observed parameter.
     (hDerivativeRestriction : ∀ s : ↥(L2ZeroMean Q),
       dψObs
           ⟨informationLossOperator hM (Q ⊗ₘ r) (qScoreLift Q r s),
@@ -670,7 +673,6 @@ theorem completeCaseIPW_characterization_2541
               (fullQTangent Q r) ((mem_fullQTangent_iff_eq_qScoreLift Q r
                 (qScoreLift Q r s)).2 ⟨s, rfl⟩)⟩ =
         dψQ ⟨s, Submodule.mem_top⟩)
-      -- The two derivative encodings agree on canonical `Q`-score lifts.
     (φobs : ↥(L2ZeroMean ((Q ⊗ₘ r).map M))) :
     letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
       Measure.isProbabilityMeasure_map hM.aemeasurable

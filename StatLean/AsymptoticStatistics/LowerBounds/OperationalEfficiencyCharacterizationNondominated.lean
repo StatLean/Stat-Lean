@@ -148,6 +148,8 @@ For example, take `φ = 0` in the constant model. -/
 theorem regular_and_gaussian_of_asymptoticallyLinearND
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
+    -- USER-INPUT: pathwise differentiability and its efficient influence function;
+    -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
@@ -478,9 +480,12 @@ For example, take the zero cone, a constant functional and estimator, and `φ = 
 theorem operational_efficiency_characterization_nondominated
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
+    -- USER-INPUT: pathwise differentiability and its efficient influence function;
+    -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
+    -- LEAN-ONLY: measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtND C T_n ψ
         (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) ↔

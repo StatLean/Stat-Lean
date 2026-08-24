@@ -943,13 +943,12 @@ There is no `hH_inf`: finite carriers, including rank zero, are handled by
 `finiteGaussianPBridge`, and infinite carriers by the existing construction. -/
 theorem donskerWithBridge_of_finite_bracketing_entropy
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
+    -- LEAN-ONLY: nonemptiness needed to choose the bridge carrier.
     (hF_ne : F.Nonempty)
-    -- vdV does not state nonemptiness; the Lean bridge construction needs it,
-    -- and it excludes the vacuous empty-class case.
+    -- LEAN-ONLY: explicit measurability of the class members.
     (hF_meas : ∀ f ∈ F, Measurable f)
-    -- vdV's class consists of measurable functions.
+    -- USER-INPUT: finite bracketing-entropy integral; vdV Theorem 19.5.
     (h_int : bracketingEntropyIntegral 1 F P < ⊤)
-    -- the finite bracketing-entropy integral of vdV Theorem 19.5.
     : ∃ (G : Ω → ℝ) (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P),
         IsPDonskerWithBridge F P := by
   obtain ⟨G, hG_env, hG⟩ := exists_l2_envelope_of_entropyIntegral h_int
