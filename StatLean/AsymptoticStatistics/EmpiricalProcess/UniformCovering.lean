@@ -80,6 +80,17 @@ lemma l2Seminorm_nonneg (Q : FiniteDiscreteProbability Ω) (f : Ω → ℝ) :
   Real.sqrt_nonneg _
 
 omit [MeasurableSpace Ω] in
+/-- Pointwise domination in absolute value contracts the finite-discrete
+`L²` seminorm. -/
+lemma l2Seminorm_mono_abs (Q : FiniteDiscreteProbability Ω)
+    (f g : Ω → ℝ) (h : ∀ x, |f x| ≤ |g x|) :
+    Q.l2Seminorm f ≤ Q.l2Seminorm g := by
+  unfold l2Seminorm
+  apply Real.sqrt_le_sqrt
+  refine Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_left ?_ (by positivity)
+  nlinarith [abs_nonneg (f (Q.atom i)), abs_nonneg (g (Q.atom i)), h (Q.atom i)]
+
+omit [MeasurableSpace Ω] in
 lemma l2Seminorm_mul (Q : FiniteDiscreteProbability Ω)
     (c : ℝ) (f : Ω → ℝ) :
     Q.l2Seminorm (fun x => c * f x) = |c| * Q.l2Seminorm f := by

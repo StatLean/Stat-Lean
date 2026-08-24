@@ -275,7 +275,104 @@ theorem donsker_random_function_consistency_core
       congr 1
       ring
 
-/-- **Compatibility wrapper for Lemma 19.24.**
+/-- **Lemma 19.24 with asymptotic class membership.**
+
+This is the form used in vdV Theorem 25.77.  The random function need only
+belong to the fixed Donsker class with probability tending to one.  A supplied
+anchor in the class is used to localize the function on the exceptional event;
+the anchor does not restrict the theorem, since asymptotic membership already
+forces the class to be nonempty.
+
+The `L²(P)` consistency premise remains in the explicit outer-probability form
+of `donsker_random_function_consistency_core`. -/
+theorem donsker_random_function_consistency_wpa
+    (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
+    (h_donsker : IsPDonsker F P)
+    (f₀ : Ω → ℝ) (hf₀ : MemLp f₀ 2 P)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (f_hat : ℕ → Ξ → (Ω → ℝ))
+    (anchor : Ω → ℝ) (hanchor : anchor ∈ F)
+    (h_range_bad : Tendsto (fun n =>
+      μ {ξ | f_hat n ξ ∉ F}) atTop (𝓝 0))
+    (h_l2_consistent : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) f₀}) atTop (𝓝 0)) :
+    ∀ η : ℝ, 0 < η → Tendsto (fun n =>
+      μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ) -
+                  empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|}) atTop (𝓝 0) := by
+  classical
+  let f_loc : ℕ → Ξ → (Ω → ℝ) := fun n ξ =>
+    if f_hat n ξ ∈ F then f_hat n ξ else anchor
+  have hloc_range : ∀ n ξ, f_loc n ξ ∈ F := by
+    intro n ξ
+    simp only [f_loc]
+    split_ifs with hmem
+    · exact hmem
+    · exact hanchor
+  have hloc_l2 : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_loc n ξ) f₀}) atTop (𝓝 0) := by
+    intro δ hδ
+    have hsum := (h_l2_consistent δ hδ).add h_range_bad
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (by simpa using hsum) (Eventually.of_forall fun _ => bot_le)
+      (Eventually.of_forall fun n => ?_)
+    calc
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_loc n ξ) f₀}
+          ≤ μ.outerMeasureStar
+              ({ξ | δ < distL2 P (f_hat n ξ) f₀} ∪ {ξ | f_hat n ξ ∉ F}) :=
+        outerMeasureStar_mono μ (by
+          intro ξ hξ
+          by_cases hmem : f_hat n ξ ∈ F
+          · left
+            change δ < distL2 P (f_loc n ξ) f₀ at hξ
+            rw [show f_loc n ξ = f_hat n ξ by simp [f_loc, hmem]] at hξ
+            exact hξ
+          · exact Or.inr hmem)
+      _ ≤ μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) f₀} +
+            μ.outerMeasureStar {ξ | f_hat n ξ ∉ F} := outerMeasureStar_union_le μ _ _
+      _ ≤ μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) f₀} +
+            μ {ξ | f_hat n ξ ∉ F} :=
+        add_le_add_right (outerMeasureStar_le_measure_local μ _) _
+  intro η hη
+  have hloc := donsker_random_function_consistency_core F P h_donsker f₀ hf₀ μ
+    X hX_meas hX_iindep hX_idem hX_law f_loc hloc_range hloc_l2 η hη
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using hloc.add h_range_bad)
+    (Eventually.of_forall fun _ => bot_le) (Eventually.of_forall fun n => ?_)
+  calc
+    μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ) -
+          empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|}
+        ≤ μ.outerMeasureStar
+            {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ) -
+              empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|} :=
+      measure_le_outerMeasureStar μ _
+    _ ≤ μ.outerMeasureStar
+          ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_loc n ξ) -
+              empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|} ∪
+            {ξ | f_hat n ξ ∉ F}) := outerMeasureStar_mono μ (by
+      intro ξ hξ
+      by_cases hmem : f_hat n ξ ∈ F
+      · left
+        change η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ) -
+          empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀| at hξ
+        change η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_loc n ξ) -
+          empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|
+        rw [show f_loc n ξ = f_hat n ξ by simp [f_loc, hmem]]
+        exact hξ
+      · exact Or.inr hmem)
+    _ ≤ μ.outerMeasureStar
+          {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_loc n ξ) -
+              empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|} +
+            μ.outerMeasureStar {ξ | f_hat n ξ ∉ F} := outerMeasureStar_union_le μ _ _
+    _ ≤ μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_loc n ξ) -
+              empiricalProcess P n (fun i : Fin n => X i.val ξ) f₀|} +
+            μ {ξ | f_hat n ξ ∉ F} := add_le_add
+      (outerMeasureStar_le_measure_local μ _) (outerMeasureStar_le_measure_local μ _)
+
+/-- **Integrable formulation of Lemma 19.24.**
 
 Suppose `F` is a `P`-Donsker class of measurable functions and `f_hat n`
 is a sequence of jointly measurable random functions taking values in
@@ -284,14 +381,13 @@ is a sequence of jointly measurable random functions taking values in
 `μ{ξ | η < |G_n(f_hat n ξ) − G_n(f₀)|} → 0`,
 i.e. `G_n(f_hat n) − G_n(f₀) →_P 0`.
 
-This public signature is retained for source compatibility. Its expectation,
-integrability, and joint-measurability hypotheses are
+Its expectation, integrability, and joint-measurability hypotheses are
 stronger than the explicit outer-probability premise of
 `donsker_random_function_consistency_core`.
 
 Hypotheses:
 * `h_donsker` — vdV §19.4 Lemma 19.24: `F` is `P`-Donsker.
-* `_hf₀_in_F` — compatibility-only binder; the core theorem
+* `_hf₀_in_F` — the limiting function belongs to the class; the core theorem
   derives anchors in `F` and does not require the limit itself to belong to `F`.
 * `_hf₀` — vdV §19.4's assumption `f₀ ∈ L²(P)`; supplied to the core theorem.
 * `h_range` — vdV §19.4: random functions take values in `F`.

@@ -19,11 +19,9 @@ case is exactly the `(j,k)` entry of the matrix Bartlett identity
 `E_P[∂_k ℓ̃_j] = − Ĩ_{jk}`, `Ĩ_{jk} = ∫ ℓ̃_j ℓ̃_k dP`, feeding the matrix-coupled vector
 efficient influence function `Ĩ⁻¹ ℓ̃`.
 
-Downstream semiparametric-efficiency bundles (`ZEstimatorTaylorCore`,
-`OneStepTaylorHyp`, `LeastFavorableTaylorHyp`, and their vector forms) expose the
-Bartlett identity as a field (`score_l_dot_bartlett` / matrix Bartlett). This
-concept-layer lemma permits deriving that field from QMD regularity (vdV §7.2 / §5),
-where Bartlett's identity is a consequence rather than an independent hypothesis.
+The polarized identity supplies the matrix derivative condition used by smooth
+vector Taylor/Z-estimator theorems. It is a consequence of differentiating the
+moving-law score normalization, rather than a first-order QMD identity.
 
 Note on QMDPath: `Core.QMDPath.QMDPath` is based at a *fixed* `P` (`curve 0 = P`) and
 carries only the *first-order* score, not its θ-derivative; the second Bartlett needs the

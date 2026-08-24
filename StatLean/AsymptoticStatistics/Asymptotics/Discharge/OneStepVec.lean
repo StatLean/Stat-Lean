@@ -17,7 +17,7 @@ The one-step estimator solves the vector estimating equation `√n·𝕡_n ℓ̃
 one Newton step, represented here by the vector/matrix primitive bundle
 `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector estimating equation `score_eq_vec`, the
 matrix Bartlett identity `matrix_bartlett`, the matrix DQM-Taylor remainder `matrix_taylor`).
-The native discharge `ZEstimatorVecNative.mle_asympLinear_of_leastFavorable_native_vec` then
+The native discharge `ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec` then
 gives its asymptotic linearity directly, with influence `Ĩ⁻¹ℓ̃ = candidateVecEIF` **by
 construction** (arbitrary, non-diagonal `Ĩ`) and no coordinatewise identification.
 
@@ -51,7 +51,7 @@ variable {θ₀ : EuclideanSpace ℝ (Fin d)}
 /-- vdV thm:25.57 (vector form) — asymptotic linearity of the one-step estimator, native
 discharge. Because the one-step estimator solves the vector estimating equation
 (`score_eq_vec` of the native bundle), the book-faithful native discharge
-`ZEstimatorVecNative.mle_asympLinear_of_leastFavorable_native_vec` makes it asymptotically
+`ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec` makes it asymptotically
 linear at `P` with influence tuple `candidateVecEIF S_θ T_nuis e` and vector centering `θ₀`.
 Carries no diagonal-only coordinatewise identification (the matrix coupling is handled inside
 the native master identity). -/
@@ -59,14 +59,14 @@ theorem oneStep_asympLinear_native_vec
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
             score_func_seq score_l_dot θ₀) :
     AsymptoticallyLinearAt_vec estimator P (candidateVecEIF S_θ T_nuis e) θ₀ :=
-  mle_asympLinear_of_leastFavorable_native_vec h
+  mle_asympLinear_of_nativeTaylorCore_vec h
 
 /-- vdV thm:25.57 (vector form) — semiparametric-efficiency headline of the one-step
 estimator, native discharge. From
 `ZEstimatorTaylorCoreNative_vec` (solved estimating equation etc.) plus the EIF-construction
 inputs (`h_mem`, `h_Dψ`) and `ψ P = θ₀`, the one-step estimator is asymptotically efficient
 at `P` relative to the tangent space `T` for the vector functional `ψ`. Re-export of
-`ZEstimatorVecNative.mle_semiparametricallyEfficient_of_leastFavorable_native_vec`; carries
+`ZEstimatorVecNative.mle_semiparametricallyEfficient_of_nativeTaylorCore_vec`; carries
 no diagonal-only coordinatewise identification. -/
 theorem oneStep_semiparametricallyEfficient_native_vec
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
@@ -78,6 +78,6 @@ theorem oneStep_semiparametricallyEfficient_native_vec
         = ⟪candidateVecEIF S_θ T_nuis e j, (g : ↥(L2ZeroMean P))⟫_ℝ)
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)} (h_ψ : ψ P = θ₀) :
     SemiparametricallyEfficientAt_vec estimator ψ P T :=
-  mle_semiparametricallyEfficient_of_leastFavorable_native_vec h h_mem h_Dψ h_ψ
+  mle_semiparametricallyEfficient_of_nativeTaylorCore_vec h h_mem h_Dψ h_ψ
 
 end AsymptoticStatistics.Asymptotics.Discharge.OneStepVec

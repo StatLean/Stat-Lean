@@ -805,6 +805,17 @@ lemma clampReal_width_le (M : ℝ) {a b : ℝ} (hab : a ≤ b) :
   rcases le_total a M with h1 | h1 <;> rcases le_total b M with h2 | h2 <;>
     simp only [max_def, min_def] <;> split_ifs <;> linarith
 
+/-- Projection onto `[-M, M]` is `1`-Lipschitz. -/
+lemma abs_clampReal_sub_clampReal_le (M a b : ℝ) :
+    |clampReal M a - clampReal M b| ≤ |a - b| := by
+  rcases le_total a b with hab | hba
+  · have hmono := clampReal_mono M hab
+    rw [abs_of_nonpos (sub_nonpos.mpr hmono), abs_of_nonpos (sub_nonpos.mpr hab)]
+    simpa only [neg_sub] using clampReal_width_le M hab
+  · have hmono := clampReal_mono M hba
+    rw [abs_of_nonneg (sub_nonneg.mpr hmono), abs_of_nonneg (sub_nonneg.mpr hba)]
+    exact clampReal_width_le M hba
+
 /-- The clamped width is at most `2M`: both clamped endpoints lie in `[−M, M]`. -/
 lemma clampReal_width_le_two (M : ℝ) (hM : 0 ≤ M) (a b : ℝ) :
     clampReal M b - clampReal M a ≤ 2 * M := by

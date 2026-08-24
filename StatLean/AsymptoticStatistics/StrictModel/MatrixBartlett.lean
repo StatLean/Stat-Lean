@@ -81,20 +81,14 @@ theorem matrixBartlett_entry
     ∫ ω, (M j k).scoreDot ω ∂P = - efficientInformationMatrix S_θ T_nuis e j k := by
   rw [(M j k).bartlett_identity, h_match j k, efficientInformationMatrix_apply]
 
-/-- **Derivation of the native bundle's `matrix_bartlett` field.**
-
-The `matrix_bartlett` field of `ZEstimatorTaylorCoreNative_vec`
-(`∫ score_l_dot j k dP = − Ĩ_{jk}`) is a *derived* consequence of differentiable score
-submodels, **not** an independent assumption on the estimator. Given submodels `M j k`
-whose density-weighted score products realize the efficient inner products (`h_match`) and
-whose score derivatives `(M j k).scoreDot` `P`-a.e. agree with
-the bundle's matrix entries `score_l_dot j k` (`h_id`, definitional at instantiation), the
-field holds by `matrixBartlett_entry` (itself the polarized second Bartlett identity
+/-- The identity `∫ score_l_dot j k dP = − Ĩ_{jk}` follows from differentiable
+score submodels. Given submodels `M j k`
+whose density-weighted score products realize the efficient inner products (`h_match`, the
+matching condition) and whose score derivatives `(M j k).scoreDot` `P`-a.e. agree with
+the matrix entries `score_l_dot j k` (`h_id`), the identity follows from
+`matrixBartlett_entry`, the polarized second Bartlett identity
 `DifferentiableScoreSubmodel.bartlett_identity`, obtained by differentiating
-`∫ ℓ̃_θ p_θ = 0` under the integral).
-
-This is the vector/matrix counterpart of the scalar
-`Discharge.LeastFavorable.score_l_dot_bartlett_of_differentiableScoreSubmodel`.
+`∫ ℓ̃_θ p_θ = 0` under the integral.
 
 Reference: vdV §25.4 (matrix Bartlett / information identity). -/
 theorem matrix_bartlett_of_submodels

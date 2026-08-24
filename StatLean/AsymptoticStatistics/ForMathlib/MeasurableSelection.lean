@@ -54,9 +54,9 @@ The hypotheses:
   theorem.
 - `[SFinite m]` — regularity for the null-measurable conclusion.
 
-Proof: via `MeasurableSet.analyticSet_image` and Suslin's theorem
-(`AnalyticSet.measurableSet_of_compl`), composed with σ-finite `m` to get
-m-a.e. measurability of the projection. -/
+Proof: `MeasurableSet.analyticSet_image` gives an analytic projection; the project
+theorem `AnalyticSet.nullMeasurableSet`, proved by Choquet capacitability, then gives
+null-measurability for the s-finite measure `m`. -/
 theorem analytic_projection_aeMeasurable
     {α β : Type*} [MeasurableSpace α] [StandardBorelSpace α]
     [MeasurableSpace β] [TopologicalSpace β] [PolishSpace β] [BorelSpace β]

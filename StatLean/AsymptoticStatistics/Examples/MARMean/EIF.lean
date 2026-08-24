@@ -1,5 +1,5 @@
-import StatLean.AsymptoticStatistics.Examples.MARMean.Model
-import StatLean.AsymptoticStatistics.Core.LinearFunctional
+import StatLean.AsymptoticStatistics.Examples.MARMean.Tangent
+import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
 
 /-!
 # Efficient influence function for the MAR-mean parameter (vdV Example 25.43)
@@ -29,23 +29,23 @@ hence certifies it as the efficient influence function.
 
 ## Formalization
 
-`marMean_isEIF` concludes that the concrete AIPW formula `marMean_eif` is an
-efficient influence function for the derivative constructed by
-`marMean_pathwise`. Its proof establishes two constituent facts:
+The theorem `marMean_isEIF` uses the induced law `marObsMeasure Q r` and the
+constructed closed tangent `marObservedTangent Q r`. The bridge from the latent
+full-data/kernel representation to abstract Theorem 25.40 is established in
+`MARMean/Tangent.lean`.
 
-* **efficiency** (`φ ∈ T`): reduces via `hT_char` (T = orthocomplement of the
-  coarsening scores, i.e. the closed observed tangent of Theorem 25.40) to the
-  orthogonality relation `marMean_eif_orthogonal_coarsening`, which is *proved*
-  from the MAR moment identities;
+* **orthogonality / efficiency membership**: the relation
+  `marMean_eif_orthogonal_coarsening` is proved from the MAR moment identities, and
+  `mem_marObservedTangent_iff` converts it to membership in the constructed tangent;
 * **influence-function property** (`⟪φ, g⟫ = ψ̇(g)`): from the decomposition
   `φ = φ_IPW − b_{m−ψ}` (`marMean_eif_eq_ipw_sub_coarsening`), the coarsening
   correction is `T`-orthogonal, so `φ` inherits the IF property of `φ_IPW`.
 
-Its hypotheses record the propensity, complete-case, and Bernoulli-variance
-moment identities (`hProp`, `hReg`, `hVar`), the tangent characterization
-`hT_char` (Theorem 25.40), and boundedness and measurability of the IPW
-representer. The mass-method construction `marMean_pathwise` supplies both the
-pathwise derivative and the centered IPW influence-function identity.
+The assumptions record the response-kernel linkage, the propensity,
+complete-case and Bernoulli-variance moment identities (`hProp`, `hReg`, `hVar`),
+and the stated moment regularity. The separate `L²` formulation supplies `T`, its
+orthogonal characterization, pathwise differentiability, and the Lemma 25.41
+base-representer property.
 
 The companion theorem `marMean_isEIF_of_pathwise` instead accepts pathwise
 differentiability (`hpd`) and the centered IPW representer identity
@@ -54,7 +54,7 @@ differentiability (`hpd`) and the centered IPW representer identity
 Main declaration: `marMean_isEIF`.
 -/
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 open scoped InnerProductSpace ENNReal
 open AsymptoticStatistics.Core
 open AsymptoticStatistics.Core.Hilbert
@@ -501,89 +501,316 @@ noncomputable def marMean_pathwise (π : X → ℝ)
       (meanFunctional_isTVFrechetExpansion (P := P) h_ipwMeas h_ipwBdd)).derivative_spec γ
       Submodule.mem_top
 
+/-- **Pathwise differentiability of the globally bounded MAR extension.**
+
+Unlike `marMean_pathwise`, this helper does not claim differentiability of the
+raw IPW functional from an almost-everywhere bound.  It differentiates the
+explicit global extension `marMeanBounded_Ψ π C`; the latter agrees with the raw
+functional at the MAR model law under `h_ipwBddAE`, while remaining bounded along
+unrestricted QMD paths. -/
+noncomputable def marMeanBounded_pathwise (π : X → ℝ) (C : ℝ)
+    (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
+    (T : Submodule ℝ ↥(L2ZeroMean P)) :
+    PathwiseDifferentiableAt P T (marMeanBounded_Ψ π C) := by
+  exact clippedMeanFunctional_pathwise C h_ipwMeas T
+
 /-- **Efficient influence function for the MAR-mean parameter (vdV Example 25.43).**
 
 For the MAR observation model on `MARObs X` with propensity `π` and outcome
 regression `m`, the AIPW formula
-`φ = (R/π)·(Y − m) + m − ψ = marMean_eif π m (marMean_Ψ π P)` is the **efficient
-influence function** of the mean functional `marMean_Ψ π` over the observed tangent
-space `T`.
+`φ = (R/π)·(Y − m) + m − ψ` is the **efficient influence function** of the mean
+functional `marMeanBounded_Ψ π C` at the induced observed law `marObsMeasure Q r`,
+over the constructed closed tangent `marObservedTangent Q r`.  Under the explicit
+`P`-a.e. bound this extension has the same base-point value as `marMean_Ψ π`.
 
-The proof establishes both defining conditions:
-* `φ ∈ T` (efficiency) — `marMean_eif_mem_T`, from the orthogonality relation
-  `marMean_eif_orthogonal_coarsening`, itself proved from the MAR moment identities;
+The analytic and Example-25.43 algebraic content is combined with the concrete
+latent-model bridge:
+* `φ ∈ marObservedTangent Q r` (efficiency) — `marMean_eif_mem_T` derives the
+  needed orthogonality from the MAR moment identities, while
+  `mem_marObservedTangent_iff` derives the tangent characterization from the
+  induced law `(Q ⊗ₘ r).map marObsMap` and abstract Theorem 25.40;
 * `⟪φ, g⟫ = ψ̇(g)` (influence function) — `marMean_eif_isIF`, from the decomposition
   `φ = φ_c − b_m` (`φ_c = R·Y/π − ψ` the centered IPW representer) plus the
-  influence-function identity of `φ_c`, supplied by the mass-method theorem
-  `marMean_pathwise` for the linear functional `marMean_Ψ`.
+  influence-function identity of `φ_c`, obtained from the mass
+  method for the globally clipped extension (`marMeanBounded_pathwise`), followed
+  by the `P`-a.e. centered-representer transport.
 
-The theorem `marMean_pathwise` constructs the pathwise derivative and the
-influence-function property from the score identity
-`meanFunctional_isTVFrechetExpansion` for `marMean_Ψ = ∫ R·Y/π` (vdV Example 25.24),
-assuming that the IPW representer is bounded (`h_ipwBdd`) and measurable
-(`h_ipwMeas`). A propensity bounded away from zero and a bounded observed
-response together provide one sufficient condition for `h_ipwBdd`. -/
-theorem marMean_isEIF (π m : X → ℝ)
+The pathwise derivative is `marMeanBounded_pathwise …`, and the differentiated
+functional is the globally clipped extension `marMeanBounded_Ψ π C`.
+It agrees at the observed law with the raw IPW estimand under `h_ipwBddAE`, but
+unrestricted QMD paths remain globally controlled.  The stronger bounded-response
+restriction is therefore explicit and separate from tangent identification.
+The observed tangent and its characterization are constructed from the latent model. -/
+theorem marMean_isEIF
+    (Q : Measure (X × ℝ)) [IsProbabilityMeasure Q]
+    (r : Kernel (X × ℝ) Bool) [IsMarkovKernel r]
+    (π m : X → ℝ)
+    -- The response kernel has propensity `π`; vdV Example 25.43, p. 383.
+    (hπr : MARResponseKernel π r)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
-    (hProp : MARPropensity π P)
-    (hReg : MARRegression π m P)
-    (hVar : MARVariance π P)
-    (hLp : MemLp (marMean_eif π m (marMean_Ψ π P)) 2 P)
-    (hLp_ipw : MemLp (marMean_ipwRep π (marMean_Ψ π P)) 2 P)
-    (hLp_coar : MemLp (marMean_coarseningScore π (fun x => m x - marMean_Ψ π P)) 2 P)
-    (hLp_bm : MemLp (marMean_coarseningScore π m) 2 P)
+    (hProp : MARPropensity π (marObsMeasure Q r))
+    (hReg : MARRegression π m (marObsMeasure Q r))
+    (hVar : MARVariance π (marObsMeasure Q r))
+    (hLp : MemLp (marMean_eif π m (marMean_Ψ π (marObsMeasure Q r))) 2
+      (marObsMeasure Q r))
+    (hLp_ipw : MemLp (marMean_ipwRep π (marMean_Ψ π (marObsMeasure Q r))) 2
+      (marObsMeasure Q r))
+    (hLp_coar : MemLp
+      (marMean_coarseningScore π (fun x => m x - marMean_Ψ π (marObsMeasure Q r))) 2
+      (marObsMeasure Q r))
+    (hLp_bm : MemLp (marMean_coarseningScore π m) 2 (marObsMeasure Q r))
     -- vdV Ex 25.43 "existence of moments": `m = E(Y|W)` integrable; IPW weight `R/π`
     -- integrable.
-    (hm_int : Integrable (fun o => m o.x) P)
-    (hInt_weight : Integrable (fun o => ind o.r / π o.x) P)
-    -- Regularity of the IPW representer `R·Y/π` (measurable + bounded). A positive
-    -- lower bound on `π`, together with a bounded response, suffices for `h_ipwBdd`.
-    -- `meanFunctional_isTVFrechetExpansion` then supplies the pathwise derivative
-    -- and influence-function property (vdV Example 25.24).
+    (hm_int : Integrable (fun o : MARObs X => m o.x) (marObsMeasure Q r))
+    (hInt_weight : Integrable (fun o : MARObs X => ind o.r / π o.x) (marObsMeasure Q r))
+    -- Measurable IPW integrand and an explicit bounded-response restriction under
+    -- the observed law. The latter identifies the clipped extension with the raw
+    -- estimand at the model law.
     (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
-    (h_ipwBdd : ∃ C : ℝ, ∀ o : MARObs X, |ind o.r * o.ry / π o.x| ≤ C)
-    (T : Submodule ℝ ↥(L2ZeroMean P))
-    -- vdV Thm 25.40 (modeling input, as in every EIF example — cf. regression's
-    -- `hchar` / symmetric-location's `T_nuis`): `T` is the observed tangent =
-    -- orthocomplement of the coarsening scores `b_c`.
-    (hT_char : ∀ (w : ↥(L2ZeroMean P)), w ∈ T ↔
-        ∀ (c : X → ℝ), Integrable (fun o => c o.x) P →
-          MemLp (marMean_coarseningScore π c) 2 P →
-          ∫ o, ((w : Lp ℝ 2 P) : MARObs X → ℝ) o
-                * marMean_coarseningScore π c o ∂P = 0) :
-    IsEfficientInfluenceFunction P T (marMean_pathwise π h_ipwMeas h_ipwBdd T).derivative
+    (C : ℝ)
+    (h_ipwBddAE : ∀ᵐ o ∂(marObsMeasure Q r), |ind o.r * o.ry / π o.x| ≤ C)
+    :
+    IsEfficientInfluenceFunction (marObsMeasure Q r) (marObservedTangent Q r)
+      (marMeanBounded_pathwise π C h_ipwMeas (marObservedTangent Q r)).derivative
       (marMean_eifCandidate π m hπ hProp hLp hLp_ipw hLp_coar hm_int hInt_weight).toL2ZeroMean := by
-  -- The centered IPW representer `φ_c = R·Y/π − ψ` from the mass method.
-  set φ_c := (centeredCandidate (fun o : MARObs X => ind o.r * o.ry / π o.x)
-      (memLp_two_of_bounded (P := P) h_ipwMeas h_ipwBdd)).toL2ZeroMean with hφ_c_def
-  have hφ_c_ae : ((φ_c : Lp ℝ 2 P) : MARObs X → ℝ)
-      =ᵐ[P] fun o => ind o.r * o.ry / π o.x - marMean_Ψ π P :=
-    CandidateIF.coeFn_toL2ZeroMean _
-  -- The IF identity of `φ_c` is definitional from `marMean_pathwise`'s derivative.
-  have hipw_c_IF :
-      IsInfluenceFunction P T (marMean_pathwise π h_ipwMeas h_ipwBdd T).derivative φ_c :=
-    fun g => rfl
-  exact ⟨marMean_eif_isIF π m hπ hProp hLp hLp_ipw hLp_coar hLp_bm hm_int hInt_weight T hT_char
-      (marMean_pathwise π h_ipwMeas h_ipwBdd T).derivative φ_c hφ_c_ae hipw_c_IF,
+  have hπ' : ∀ x, π x ≠ 0 := fun x ↦ hπ ⟨x, false, 0⟩
+  have hT_char : ∀ (w : ↥(L2ZeroMean (marObsMeasure Q r))),
+      w ∈ marObservedTangent Q r ↔
+        ∀ (c : X → ℝ), Integrable (fun o : MARObs X ↦ c o.x) (marObsMeasure Q r) →
+          MemLp (marMean_coarseningScore π c) 2 (marObsMeasure Q r) →
+          ∫ o, ((w : Lp ℝ 2 (marObsMeasure Q r)) : MARObs X → ℝ) o
+                * marMean_coarseningScore π c o ∂(marObsMeasure Q r) = 0 :=
+    fun w ↦ mem_marObservedTangent_iff Q r π hπr hπ' w
+  let hf : MemLp (clippedFunction (fun o : MARObs X ↦ ind o.r * o.ry / π o.x) C) 2
+      (marObsMeasure Q r) :=
+    memLp_two_of_bounded (measurable_clippedFunction h_ipwMeas)
+      ⟨|C + 1|, fun o ↦ abs_clippedFunction_le o⟩
+  let φ_c := (centeredCandidate
+      (P := marObsMeasure Q r)
+      (clippedFunction (fun o : MARObs X ↦ ind o.r * o.ry / π o.x) C) hf).toL2ZeroMean
+  have hφ_c_ae :
+      (((φ_c : ↥(L2ZeroMean (marObsMeasure Q r))) : Lp ℝ 2 (marObsMeasure Q r)) :
+          MARObs X → ℝ)
+        =ᵐ[marObsMeasure Q r]
+          fun o ↦ ind o.r * o.ry / π o.x - marMean_Ψ π (marObsMeasure Q r) := by
+    exact centeredCandidate_clipped_ae_eq_raw_centered h_ipwMeas h_ipwBddAE
+  have hipw_c_IF : IsInfluenceFunction (marObsMeasure Q r) (marObservedTangent Q r)
+      (marMeanBounded_pathwise π C h_ipwMeas (marObservedTangent Q r)).derivative φ_c := by
+    intro g
+    rfl
+  exact ⟨marMean_eif_isIF π m hπ hProp hLp hLp_ipw hLp_coar hLp_bm hm_int hInt_weight
+      (marObservedTangent Q r) hT_char
+      (marMeanBounded_pathwise π C h_ipwMeas (marObservedTangent Q r)).derivative
+      φ_c hφ_c_ae hipw_c_IF,
     marMean_eif_mem_T π m hπ hProp hReg hVar hLp hLp_ipw hLp_coar hm_int hInt_weight
-      T hT_char hLp_bm⟩
+      (marObservedTangent Q r) hT_char hLp_bm⟩
+
+/-- A finite example satisfying the assumptions of the bounded MAR theorem.
+
+The finite latent model uses `X = Unit`, `Q = dirac ((),0)`, the fair Bool
+response kernel, `π ≡ 1/2`, and `m ≡ 0`. The conjunction covers every external
+input of `marMean_isEIF`, together with positive observed/missing atoms and a
+nonzero concrete coarsening score. -/
+theorem fairMAR_bounded_headline_inputs :
+    let Q : Measure (Unit × ℝ) := Measure.dirac ((), 0)
+    let r : Kernel (Unit × ℝ) Bool := fairBoolKernel
+    let P : Measure (MARObs Unit) := marObsMeasure Q r
+    let π : Unit → ℝ := fun _ ↦ 1 / 2
+    let m : Unit → ℝ := fun _ ↦ 0
+    let C : ℝ := 0
+    MARResponseKernel π r ∧
+    (∀ o : MARObs Unit, π o.x ≠ 0) ∧
+    MARPropensity π P ∧
+    MARRegression π m P ∧
+    MARVariance π P ∧
+    MemLp (marMean_eif π m (marMean_Ψ π P)) 2 P ∧
+    MemLp (marMean_ipwRep π (marMean_Ψ π P)) 2 P ∧
+    MemLp (marMean_coarseningScore π (fun x => m x - marMean_Ψ π P)) 2 P ∧
+    MemLp (marMean_coarseningScore π m) 2 P ∧
+    Integrable (fun o : MARObs Unit => m o.x) P ∧
+    Integrable (fun o : MARObs Unit => ind o.r / π o.x) P ∧
+    Measurable (fun o : MARObs Unit => ind o.r * o.ry / π o.x) ∧
+    (∀ᵐ o ∂P, |ind o.r * o.ry / π o.x| ≤ C) ∧
+    0 < P {o : MARObs Unit | o.r = true} ∧
+    0 < P {o : MARObs Unit | o.r = false} ∧
+    ¬ (marMean_coarseningScore π (fun _ => 1) =ᵐ[P] fun _ => 0) := by
+  dsimp only
+  let obs : Bool → MARObs Unit := fun b ↦ ⟨(), b, 0⟩
+  have hobs : Measurable obs := by
+    have hsource : Measurable (fun b : Bool ↦ (((), (0 : ℝ)), b)) := by fun_prop
+    simpa [obs, marObsMap] using (measurable_marObsMap (X := Unit)).comp hsource
+  have htuple : Measurable (fun o : MARObs Unit ↦ (o.x, o.r, o.ry)) :=
+    Measurable.of_comap_le le_rfl
+  have hx : Measurable (fun o : MARObs Unit ↦ o.x) := measurable_fst.comp htuple
+  have hr : Measurable (fun o : MARObs Unit ↦ o.r) :=
+    measurable_fst.comp (measurable_snd.comp htuple)
+  have hry : Measurable (fun o : MARObs Unit ↦ o.ry) :=
+    measurable_snd.comp (measurable_snd.comp htuple)
+  have hind : Measurable (fun o : MARObs Unit ↦ ind o.r) :=
+    (measurable_of_finite ind).comp hr
+  have hrawMeas : Measurable
+      (fun o : MARObs Unit ↦ ind o.r * o.ry / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x) :=
+    (hind.mul hry).div measurable_const
+  have hweightMeas : Measurable
+      (fun o : MARObs Unit ↦ ind o.r / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x) :=
+    hind.div measurable_const
+  have hP : marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel =
+      fairBoolMeasure.map obs := by
+    rw [marObsMeasure, fairBoolKernel, Measure.compProd_const, Measure.dirac_prod,
+      Measure.map_map]
+    · congr 1
+      funext b
+      cases b <;> rfl
+    · exact measurable_marObsMap
+    · fun_prop
+  have hIntegral (F : MARObs Unit → ℝ) (hF : StronglyMeasurable F) :
+      ∫ o, F o ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel =
+        (F (obs false) + F (obs true)) / 2 := by
+    rw [hP, integral_map_of_stronglyMeasurable hobs hF, fairBoolMeasure,
+      integral_fintype Integrable.of_finite]
+    simp [measureReal_def, PMF.uniformOfFintype_apply]
+    ring
+  have hraw_zero :
+      (fun o : MARObs Unit ↦ ind o.r * o.ry / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x)
+        =ᵐ[marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel] fun _ ↦ 0 := by
+    rw [hP, Filter.EventuallyEq,
+      ae_map_iff hobs.aemeasurable (measurableSet_eq_fun hrawMeas measurable_const)]
+    filter_upwards with b
+    cases b <;> norm_num [obs, ind]
+  have hψ : marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) = 0 := by
+    unfold marMean_Ψ
+    rw [integral_congr_ae hraw_zero, integral_zero]
+  have hProp : MARPropensity (fun _ : Unit ↦ (1 / 2 : ℝ))
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    intro f
+    have hf : Measurable f := measurable_of_finite f
+    calc
+      ∫ o, ind o.r * f o.x
+          ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel =
+          ((fun o : MARObs Unit ↦ ind o.r * f o.x) (obs false) +
+            (fun o : MARObs Unit ↦ ind o.r * f o.x) (obs true)) / 2 :=
+        hIntegral _ ((hind.mul (hf.comp hx)).stronglyMeasurable)
+      _ = (((fun x : Unit ↦ (1 / 2 : ℝ)) (obs false).x * f (obs false).x) +
+            ((fun x : Unit ↦ (1 / 2 : ℝ)) (obs true).x * f (obs true).x)) / 2 := by
+        simp [obs, ind]
+        ring
+      _ = ∫ o, (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x * f o.x
+            ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel :=
+        (hIntegral _ ((measurable_const.mul (hf.comp hx)).stronglyMeasurable)).symm
+  have hReg : MARRegression (fun _ : Unit ↦ (1 / 2 : ℝ)) (fun _ ↦ 0)
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    intro g
+    have hg : Measurable g := measurable_of_finite g
+    calc
+      ∫ o, ind o.r * o.ry * g o.x
+          ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel =
+          ((fun o : MARObs Unit ↦ ind o.r * o.ry * g o.x) (obs false) +
+            (fun o : MARObs Unit ↦ ind o.r * o.ry * g o.x) (obs true)) / 2 :=
+        hIntegral _ (((hind.mul hry).mul (hg.comp hx)).stronglyMeasurable)
+      _ = (((fun x : Unit ↦ (1 / 2 : ℝ)) (obs false).x * (fun _ : Unit ↦ 0)
+              (obs false).x * g (obs false).x) +
+            ((fun x : Unit ↦ (1 / 2 : ℝ)) (obs true).x * (fun _ : Unit ↦ 0)
+              (obs true).x * g (obs true).x)) / 2 := by
+        simp [obs, ind]
+      _ = ∫ o, (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x * (fun _ : Unit ↦ 0) o.x * g o.x
+            ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel :=
+        (hIntegral _ (((measurable_const.mul measurable_const).mul
+          (hg.comp hx)).stronglyMeasurable)).symm
+  have hVar : MARVariance (fun _ : Unit ↦ (1 / 2 : ℝ))
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    intro h
+    apply integral_congr_ae
+    filter_upwards with o
+    cases o.r <;> norm_num [ind]
+  have hEIFzero :
+      marMean_eif (fun _ : Unit ↦ (1 / 2 : ℝ)) (fun _ ↦ (0 : ℝ))
+          (marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+            (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel))
+        =ᵐ[marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel] fun _ ↦ 0 := by
+    filter_upwards [hraw_zero] with o ho
+    rw [marMean_eif, hψ]
+    simp only [mul_zero, sub_zero]
+    exact ho
+  have hIPWzero :
+      marMean_ipwRep (fun _ : Unit ↦ (1 / 2 : ℝ))
+          (marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+            (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel))
+        =ᵐ[marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel] fun _ ↦ 0 := by
+    filter_upwards [hraw_zero] with o ho
+    rw [marMean_ipwRep, hψ, sub_zero]
+    exact ho
+  have hLp_eif : MemLp
+      (marMean_eif (fun _ : Unit ↦ (1 / 2 : ℝ)) (fun _ ↦ (0 : ℝ))
+        (marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+          (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel))) 2
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) :=
+    (memLp_congr_ae hEIFzero).2 (memLp_const 0)
+  have hLp_ipw : MemLp
+      (marMean_ipwRep (fun _ : Unit ↦ (1 / 2 : ℝ))
+        (marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+          (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel))) 2
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) :=
+    (memLp_congr_ae hIPWzero).2 (memLp_const 0)
+  have hLp_coar : MemLp
+      (marMean_coarseningScore (fun _ : Unit ↦ (1 / 2 : ℝ))
+        (fun x ↦ (fun _ : Unit ↦ (0 : ℝ)) x -
+          marMean_Ψ (fun _ : Unit ↦ (1 / 2 : ℝ))
+            (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel))) 2
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    apply (memLp_congr_ae (Filter.Eventually.of_forall fun o ↦ ?_)).2 (memLp_const 0)
+    rw [hψ]
+    simp [marMean_coarseningScore]
+  have hLp_bm : MemLp
+      (marMean_coarseningScore (fun _ : Unit ↦ (1 / 2 : ℝ)) (fun _ ↦ (0 : ℝ))) 2
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    apply (memLp_congr_ae (Filter.Eventually.of_forall fun o ↦ ?_)).2 (memLp_const 0)
+    simp [marMean_coarseningScore]
+  have hm_int : Integrable (fun _ : MARObs Unit ↦ (0 : ℝ))
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) := by
+    exact integrable_const 0
+  have hweight_bdd : ∀ o : MARObs Unit,
+      |ind o.r / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x| ≤ 2 := by
+    intro o
+    cases o.r <;> norm_num [ind]
+  have hweight_int : Integrable
+      (fun o : MARObs Unit ↦ ind o.r / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x)
+      (marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel) :=
+    (memLp_two_of_bounded hweightMeas ⟨(2 : ℝ), hweight_bdd⟩).integrable
+      (by norm_num : (1 : ℝ≥0∞) ≤ 2)
+  have hraw_bdd : ∀ᵐ o ∂marObsMeasure (Measure.dirac ((), (0 : ℝ))) fairBoolKernel,
+      |ind o.r * o.ry / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x| ≤ 0 := by
+    filter_upwards [hraw_zero] with o ho
+    rw [ho]
+    norm_num
+  have hAtoms := fairMAR_atoms_positive
+  dsimp only at hAtoms
+  have hNonzero := fairMAR_coarseningScore_nonzero
+  dsimp only at hNonzero
+  exact ⟨fairBoolKernel_isMAR, by intro o; norm_num, hProp, hReg, hVar,
+    hLp_eif, hLp_ipw, hLp_coar, hLp_bm, hm_int, hweight_int, hrawMeas, hraw_bdd,
+    hAtoms.1, hAtoms.2, hNonzero⟩
 
 /-- **MAR-mean EIF under pathwise differentiability (vdV Example 25.43).**
 
-This companion to `marMean_isEIF` takes pathwise differentiability as an input,
-as in vdV §25.3 and Lemma 25.41, and requires only square-integrability (`hf`) of
-the IPW representer. By contrast, `marMean_isEIF` constructs pathwise
-differentiability under a bounded-representer condition.
+The companion to `marMean_isEIF`. Whereas `marMean_isEIF` **derives** pathwise
+differentiability of the globally bounded extension `marMeanBounded_Ψ` (at the cost of
+a bounded IPW representer — *more* restrictive than the book's `L²` moment level),
+whose base-law value agrees with `marMean_Ψ` under `h_ipwBddAE`, this version
+**supplies** the observed pathwise differentiability and base representer identity as
+harness premises. It therefore avoids the bounded-response strengthening, but it is
+not a standalone book-faithful derivation of those conclusions.
 
 Two inputs at vdV's exact level:
 * `hpd` — `marMean_Ψ` is pathwise differentiable (vdV's assertion);
 * `hipw_c_IF` — its derivative is represented by the centered IPW representer
   `φ_c = R·Y/π − ψ` (vdV Lem 25.41's representer `1{δ∈C}/R(C|y)·χ_Q`).
 
-Efficiency (`φ ∈ T`) and the AIPW influence-function identity follow from the
-shared results `marMean_eif_isIF` and `marMean_eif_mem_T`. Thus the two theorems
-provide interfaces for either pathwise-differentiability data at the `L²` level or
-the bounded-representer construction in `marMean_isEIF`. -/
+The AIPW algebra and orthogonality are derived by the shared
+`marMean_eif_isIF` / `marMean_eif_mem_T` core. Literal tangent membership in this
+harness remains conditional on its supplied `hT_char`.
+Accordingly this declaration is an axiom-clean conditional theorem at the `L²` level,
+not a completed formal derivation of Example 25.43. -/
 theorem marMean_isEIF_of_pathwise (π m : X → ℝ)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π P)

@@ -33,6 +33,7 @@ import StatLean.AsymptoticStatistics.Consistency.OneDimMonotoneConsistency
 import StatLean.AsymptoticStatistics.Consistency.UniformConsistency
 import StatLean.AsymptoticStatistics.Consistency.WaldCompactAvoidance
 import StatLean.AsymptoticStatistics.Consistency.WaldConsistency
+import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
 import StatLean.AsymptoticStatistics.Core.CandidateIF
 import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.Core.EIFVec
@@ -145,6 +146,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyBracketingTr
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyChaining
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyGaussianBridge
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyLimitTheorems
+import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyMaximal
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropySymmetrization
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformRandomFunctions
@@ -158,6 +160,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNuisance
 import StatLean.AsymptoticStatistics.Examples.EmpiricalDistribution.Model
 import StatLean.AsymptoticStatistics.Examples.MARMean.EIF
 import StatLean.AsymptoticStatistics.Examples.MARMean.Model
+import StatLean.AsymptoticStatistics.Examples.MARMean.Tangent
 import StatLean.AsymptoticStatistics.Examples.Regression.EIF
 import StatLean.AsymptoticStatistics.Examples.Regression.Model
 import StatLean.AsymptoticStatistics.Examples.ScoreOperatorDenseRange
@@ -179,6 +182,8 @@ import StatLean.AsymptoticStatistics.ForMathlib.BivariateMGFUniqueness
 import StatLean.AsymptoticStatistics.ForMathlib.BowlShaped
 import StatLean.AsymptoticStatistics.ForMathlib.Brunn1D
 import StatLean.AsymptoticStatistics.ForMathlib.CharFnConvolution
+import StatLean.AsymptoticStatistics.ForMathlib.ChoquetCapacity.Analytic
+import StatLean.AsymptoticStatistics.ForMathlib.ChoquetCapacity.Basic
 import StatLean.AsymptoticStatistics.ForMathlib.CondExpCauchySchwarz
 import StatLean.AsymptoticStatistics.ForMathlib.CondExpCompProd
 import StatLean.AsymptoticStatistics.ForMathlib.CondExpL2
@@ -222,6 +227,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.MassMethodUtilities
 import StatLean.AsymptoticStatistics.ForMathlib.MatrixInProbability
 import StatLean.AsymptoticStatistics.ForMathlib.MeanVarConvergence
 import StatLean.AsymptoticStatistics.ForMathlib.MeasurableCountableRange
+import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelection
 import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelectionRandomFunctions
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGF

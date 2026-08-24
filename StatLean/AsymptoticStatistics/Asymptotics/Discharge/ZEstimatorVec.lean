@@ -13,15 +13,13 @@ mirroring the scalar `Discharge/ZEstimator.lean`.
 
 ## Native route (no diagonal-only coordinatewise identification)
 
-The Taylor-route discharge of the vector `asympLinear_25_54_vec` uses
-the **native** multivariate discharge
-`ZEstimatorVecNative.mle_asympLinear_of_leastFavorable_native_vec`, which
+The Taylor-route discharge of `asympLinear_25_54_vec` uses the native
+multivariate discharge
+`ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec`, which
 derives the vector residual directly through the `d × d` master identity
 `√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` and then applies `Ĩ⁻¹`, so the influence is
 `Ĩ⁻¹ℓ̃ = candidateVecEIF` **by construction** — valid for arbitrary
-(non-diagonal) `Ĩ`. The native interface omits the diagonal-only
-per-coordinate identification, which is valid only for info-orthogonal
-directions; its vector/matrix primitive bundle is
+(non-diagonal) `Ĩ`. Its vector/matrix regularity bundle is
 `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector estimating equation
 `score_eq_vec`, the matrix Bartlett identity `matrix_bartlett`, the matrix
 DQM-Taylor remainder `matrix_taylor`).
@@ -204,7 +202,7 @@ asymptotically linear at `P` with influence tuple `candidateVecEIF S_θ T_nuis e
 and vector centering `θ₀`.
 
 **Proof.** Re-export of the book-faithful native discharge
-`ZEstimatorVecNative.mle_asympLinear_of_leastFavorable_native_vec`, which
+`ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec`, which
 derives the vector residual directly through the `d × d` master identity
 `√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` and then applies `Ĩ⁻¹`, so the influence is
 `Ĩ⁻¹ℓ̃ = candidateVecEIF` **by construction** — valid for arbitrary
@@ -216,7 +214,7 @@ theorem zEstimator_asympLinear_of_taylor_vec
             score_func_seq score_l_dot θ₀) :
     AsymptoticallyLinearAt_vec estimator P
       (candidateVecEIF S_θ T_nuis e) θ₀ :=
-  mle_asympLinear_of_leastFavorable_native_vec h
+  mle_asympLinear_of_nativeTaylorCore_vec h
 
 /-- **Vector Taylor assumptions as an efficient-score equation bundle.**
 

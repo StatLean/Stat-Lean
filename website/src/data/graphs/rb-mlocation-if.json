@@ -39,7 +39,7 @@
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
     {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
-    {"id":"HasDerivAt.congr_simp","label":"congr_simp","full":"HasDerivAt.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Pow"},
+    {"id":"HasDerivAt.congr_simp","label":"congr_simp","full":"HasDerivAt.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Comp"},
     {"id":"mul_neg","label":"mul_neg","full":"mul_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"HasDerivAt.comp","label":"comp","full":"HasDerivAt.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Comp"},

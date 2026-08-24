@@ -1,4 +1,4 @@
-import StatLean.AsymptoticStatistics.Core.MassMethod
+import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
 
 /-!
 # The MAR observation type and the MAR-mean parameter functional
@@ -58,6 +58,7 @@ open scoped InnerProductSpace
 open AsymptoticStatistics.Core
 open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.Pathwise
+open AsymptoticStatistics.Core.MassMethod
 
 namespace AsymptoticStatistics.Examples.MARMean
 
@@ -111,6 +112,26 @@ proves this identification separately if needed; the present file
 only uses the IPW form because it is well-defined for any `Q`. -/
 noncomputable def marMean_Ψ (π : X → ℝ) : Measure (MARObs X) → ℝ :=
   fun Q => ∫ o, ind o.r * o.ry / π o.x ∂Q
+
+/-- The globally bounded extension of the MAR IPW mean functional used by the
+bounded public EIF theorem.
+
+On a MAR model law where `|R·Y/π(X)| ≤ C` almost everywhere, this
+agrees with `marMean_Ψ π`.  Away from that model law it applies
+`Core.MassMethod.clippedFunction` at radius `C + 1`, so unrestricted QMD paths
+cannot visit arbitrarily large response values.  Edge behavior for `C < 0` is
+the literal Mathlib truncation at radius `C + 1`. -/
+noncomputable def marMeanBounded_Ψ (π : X → ℝ) (C : ℝ) : Measure (MARObs X) → ℝ :=
+  clippedMeanFunctional (fun o : MARObs X => ind o.r * o.ry / π o.x) C
+
+omit [IsProbabilityMeasure P] in
+/-- On the bounded MAR model, the globally clipped functional agrees with the
+raw IPW estimand at the observed law. -/
+theorem marMeanBounded_Ψ_eq_marMean_Ψ (π : X → ℝ) (C : ℝ)
+    -- Explicit bounded-response restriction under the model law.
+    (h_ipwBddAE : ∀ᵐ o ∂P, |ind o.r * o.ry / π o.x| ≤ C) :
+    marMeanBounded_Ψ π C P = marMean_Ψ π P := by
+  exact clippedMeanFunctional_eq_meanFunctional h_ipwBddAE
 
 /-! ### Example 25.43 raw functions (IPW representer, coarsening scores, AIPW EIF) -/
 

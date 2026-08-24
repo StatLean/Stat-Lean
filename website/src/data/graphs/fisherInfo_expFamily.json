@@ -20,7 +20,7 @@
     {"id":"ProbabilityTheory.analyticAt_cgf","label":"analyticAt_cgf","full":"ProbabilityTheory.analyticAt_cgf","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.MGFAnalytic"},
     {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
     {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
-    {"id":"HasDerivAt.congr_simp","label":"congr_simp","full":"HasDerivAt.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Pow"},
+    {"id":"HasDerivAt.congr_simp","label":"congr_simp","full":"HasDerivAt.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Comp"},
     {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"HasDerivAt.mul_const","label":"mul_const","full":"HasDerivAt.mul_const","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Mul"},
     {"id":"hasDerivAt_id","label":"hasDerivAt_id","full":"hasDerivAt_id","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},

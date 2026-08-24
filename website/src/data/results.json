@@ -3154,28 +3154,40 @@
     "id": "mle_semiparametricallyEfficient",
     "category": "semiparametric",
     "kind": "theorem",
-    "leanName": "mle_semiparametricallyEfficient",
-    "fullName": "AsymptoticStatistics.Asymptotics.LeastFavorable.mle_semiparametricallyEfficient",
-    "title": "MLE semiparametric efficiency via least-favorable submodel",
+    "leanName": "mle_semiparametricallyEfficient_2577_native",
+    "fullName": "AsymptoticStatistics.Asymptotics.Discharge.LeastFavorable.mle_semiparametricallyEfficient_2577_native",
+    "title": "Semiparametric efficiency of an MLE along a least-favorable submodel",
     "citation": "van der Vaart (1998), Thm 25.77",
-    "file": "StatLean/AsymptoticStatistics/Asymptotics/LeastFavorable.lean",
-    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/LeastFavorable.html#AsymptoticStatistics.Asymptotics.LeastFavorable.mle_semiparametricallyEfficient",
-    "informal": "<p>The maximum-likelihood estimator in a semiparametric model is efficient when it is computed along an approximately least-favorable submodel. Write $\\tilde\\ell$ for the efficient score — the ordinary score minus its orthogonal projection onto the nuisance tangent space — and $\\tilde I=\\|\\tilde\\ell\\|^2_{L^2(P)}$ for the efficient information. Assume <span data-link=\"h1\">$\\tilde I>0$; the normalized efficient score $\\tilde\\ell/\\tilde I$ lies in the tangent space $T$ and represents the derivative there, $d\\psi(g)=\\langle\\tilde\\ell,g\\rangle/\\tilde I$; the chosen <a href=\"#/result/QMDPath\">quadratic-mean-differentiable submodel</a> $s\\mapsto P_s$ has score exactly $\\tilde\\ell$ at $s=0$ (this is the least-favorable property: among parametric paths inside the model, it is hardest at $P$); and the maximum-likelihood estimator is asymptotically linear with influence function $\\tilde\\ell/\\tilde I$, $\\sqrt n(\\hat\\theta_n-\\theta_0)=n^{-1/2}\\sum_{i\\le n}\\tilde\\ell(X_i)/\\tilde I+o_P(1)$</span>, and that <span data-link=\"h2\">$\\psi(P)=\\theta_0$</span>. Then the estimator is semiparametrically efficient at $P$ for $\\psi$ relative to $T$.</p>",
-    "summary": "Under the bundled approximate-least-favorable assumptions, the MLE is semiparametrically efficient.",
-    "leanSignature": "theorem mle_semiparametricallyEfficient\n    {P : Measure Ω} [IsProbabilityMeasure P]\n    {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]\n    {S_θ : OrdinaryScore P Θ} {T_nuis : NuisanceTangentSpace P}\n    [T_nuis.HasOrthogonalProjection] {v : Θ}\n    {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}\n    {submodel_path : Θ → QMDPath P}\n    {estimator : ∀ n, (Fin n → Ω) → ℝ} {θ₀ : ℝ}\n    (h : ApproxLeastFavAssumptions P Θ S_θ T_nuis v T dψ\n            submodel_path estimator θ₀)\n    {ψ : Measure Ω → ℝ} (h_ψ : ψ P = θ₀) :\n    SemiparametricallyEfficientAt estimator ψ P T",
-    "formalizationNotes": "The least-favorable-submodel score identity (25.75 at s = 0) is bundled as the `submodel_score_at_zero` field of `ApproxLeastFavAssumptions` and not used directly in the proof (it shapes `asympLinear_25_77` for downstream consumers). Proof template shared with ZEstimator/OneStep: EIF + asymptotic linearity via the operational-efficiency lemma.",
+    "file": "StatLean/AsymptoticStatistics/Asymptotics/Discharge/LeastFavorable.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Asymptotics/Discharge/LeastFavorable.html#AsymptoticStatistics.Asymptotics.Discharge.LeastFavorable.mle_semiparametricallyEfficient_2577_native",
+    "informal": "For a scalar parameter, consider the one-dimensional specialization of a vector semiparametric model. Assume <span data-link=\"h1\">the model laws generate a proper approximately least-favorable submodel whose score at the truth is the efficient score; the efficient-information matrix is invertible; the fitted scores satisfy the Donsker, localization, consistency, local-likelihood maximality, and moving-law conditions corresponding to equations (25.75) and (25.76)</span>. Let $\\tilde\\psi$ be the resulting candidate efficient influence function. If <span data-link=\"h2\">$\\tilde\\psi$ belongs to the tangent space $T$</span>, <span data-link=\"h3\">it represents the derivative, so $d\\psi(g)=\\langle\\tilde\\psi,g\\rangle$ for every $g\\in T$</span>, and <span data-link=\"h4\">the target is centred at the true scalar parameter, $\\psi(P)=\\theta_0$</span>, then the maximum-likelihood estimator is semiparametrically efficient for $\\psi$ relative to $T$.",
+    "summary": "A proper approximately least-favorable submodel yields a semiparametrically efficient scalar MLE.",
+    "leanSignature": "theorem mle_semiparametricallyEfficient_2577_native\n    (h : @ApproxLeastFavorable2577NativeHyp_vec Omega _ 1 P _ Theta _ _ _\n      S_theta T_nuis proj e H M modelLaw nuisancePath estimator nuisanceEstimator\n      theta0 eta0 F envelope)\n    {T : Submodule Real ↥(L2ZeroMean P)} {dpsi : T →L[Real] Real}\n    (h_mem : @candidateVecEIF Omega _ P _ Theta _ _ _ 1\n      S_theta T_nuis proj e 0 ∈ T)\n    (h_dpsi : forall g : T, dpsi g = inner Real\n      (@candidateVecEIF Omega _ P _ Theta _ _ _ 1 S_theta T_nuis proj e 0)\n      (g : ↥(L2ZeroMean P)))\n    {psi : Measure Omega -> Real} (hpsi : psi P = theta0 0) :\n    SemiparametricallyEfficientAt (fun n X => estimator n X 0) psi P T",
+    "formalizationNotes": "This page targets the native proper-submodel discharge rather than the earlier conditional interface. The hypotheses construct the proper-submodel likelihood and score from model laws and state the score convergence, moving-bias, and local MLE conditions used in (25.75)–(25.76); asymptotic linearity is proved rather than assumed. The scalar theorem is the `Fin 1` specialization of a vector theorem that uses the full inverse efficient-information matrix, so non-diagonal information is retained before specialization.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "(h : ApproxLeastFavAssumptions P Θ S_θ T_nuis v T dψ\n            submodel_path estimator θ₀)",
-        "label": "least-favorable submodel expansion",
-        "note": "The efficient information is positive, the normalized efficient score ℓ̃/Ĩ lies in the tangent space and represents dψ there, the chosen submodel has score ℓ̃ at the origin, and √n(θ̂_n − θ₀) = n^(−1/2) Σ ℓ̃(X_i)/Ĩ + o_P(1)."
+        "leanToken": "(h : @ApproxLeastFavorable2577NativeHyp_vec",
+        "label": "least-favorable model",
+        "note": "The generated proper submodel has the efficient score at the truth, invertible efficient information, Donsker-localized fitted scores, a consistent local MLE, and the moving-law conditions (25.75)–(25.76)."
       },
       {
         "id": "h2",
-        "leanToken": "(h_ψ : ψ P = θ₀)",
+        "leanToken": "(h_mem : @candidateVecEIF",
+        "label": "tangent membership",
+        "note": "The candidate efficient influence function belongs to the tangent space T."
+      },
+      {
+        "id": "h3",
+        "leanToken": "(h_dpsi : forall g : T",
+        "label": "derivative representation",
+        "note": "The candidate influence function represents the derivative on every tangent direction."
+      },
+      {
+        "id": "h4",
+        "leanToken": "(hpsi : psi P = theta0 0)",
         "label": "matching centring",
-        "note": "The functional value ψ(P) equals the centring constant θ₀."
+        "note": "The functional value ψ(P) equals the true scalar coordinate θ₀."
       }
     ],
     "hasGraph": true,
@@ -3193,6 +3205,137 @@
     "keywords": [
       "maximum likelihood estimator",
       "asymptotic efficiency"
+    ]
+  },
+  {
+    "id": "centeredLipschitz_localizedModulus_bound",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "centeredLipschitz_localizedModulus_bound",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.centeredLipschitz_localizedModulus_bound",
+    "title": "Localized uniform-entropy modulus for Lipschitz classes",
+    "citation": "van der Vaart (1998), Cor 19.35",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyMaximal.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/UniformEntropyMaximal.html#AsymptoticStatistics.EmpiricalProcess.centeredLipschitz_localizedModulus_bound",
+    "informal": "Let $\\theta\\mapsto m_\\theta$ be a finite-dimensional family of real criterion functions centred at $\\theta_0$. Suppose <span data-link=\"h1\">each $m_\\theta$ is measurable</span>, <span data-link=\"h2\">there is a measurable square-integrable envelope $M$</span>, and <span data-link=\"h3\">$|m_{\\theta_1}(x)-m_{\\theta_2}(x)|\\le M(x)\\|\\theta_1-\\theta_2\\|$</span>. For <span data-link=\"h4\">a measurable i.i.d. sample with common law $P$</span>, there are constants $C,\\rho>0$ such that, for every $0<\\delta<\\rho$ and every sample size $n$, the expected empirical-process supremum over the fixed-centre shell $\\{m_\\theta-m_{\\theta_0}:\\|\\theta-\\theta_0\\|<\\delta\\}$ is at most $C\\delta$.",
+    "summary": "The empirical-process modulus of a finite-dimensional Lipschitz shell grows linearly with its radius, uniformly in sample size.",
+    "leanSignature": "theorem centeredLipschitz_localizedModulus_bound\n    {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]\n    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))\n    (hm_meas : ∀ θ, Measurable (m θ))\n    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)\n    (hLip : ∀ θ₁ θ₂ ω, |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P) :\n    ∃ C : ℝ, 0 < C ∧ ∃ ρ : ℝ, 0 < ρ ∧\n      ∀ δ : ℝ, 0 < δ → δ < ρ → ∀ n : ℕ,\n        ∫⁻ ξ, supNormOver\n            {g : Ω → ℝ | ∃ θ : EuclideanSpace ℝ (Fin d), ‖θ - θ₀‖ < δ ∧\n              g = fun ω => m θ ω - m θ₀ ω}\n            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ\n          ≤ ENNReal.ofReal (C * δ)",
+    "formalizationNotes": "The formal statement uses a fixed-centre parameter shell. This is the form supported by the relative covering-number argument: a pairwise-difference slice has envelope $2M$ and does not supply the shell radius in the numerator of its covering estimate. The proof first treats the closed shell and then restricts to the open shell.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hm_meas",
+        "label": "measurable criteria",
+        "note": "Every criterion function mθ is measurable."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmenv",
+        "label": "square-integrable envelope",
+        "note": "The measurable envelope M belongs to L²(P)."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hLip",
+        "label": "Lipschitz family",
+        "note": "Differences of criterion functions are bounded pointwise by M times the Euclidean parameter distance."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hX_law",
+        "label": "i.i.d. sample",
+        "note": "The sample coordinates are measurable, jointly independent, identically distributed, and have common law P."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Cor 19.35",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Corollary 19.35; see also the note after Lemma 19.38",
+      "biblio": "The entropy-integral method originates with R. M. Dudley (1967), and its systematic empirical-process treatment is due to A. W. van der Vaart and J. A. Wellner (1996).",
+      "keys": [
+        "vdv1998",
+        "dudley1967",
+        "vandervaart-wellner1996"
+      ]
+    },
+    "keywords": [
+      "uniform entropy",
+      "localized empirical process",
+      "maximal inequality"
+    ]
+  },
+  {
+    "id": "marMean_isEIF",
+    "category": "semiparametric",
+    "kind": "theorem",
+    "leanName": "marMean_isEIF",
+    "fullName": "AsymptoticStatistics.Examples.MARMean.marMean_isEIF",
+    "title": "Efficient influence function for a mean under missing at random",
+    "citation": "van der Vaart (1998), Ex 25.43",
+    "file": "StatLean/AsymptoticStatistics/Examples/MARMean/EIF.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Examples/MARMean/EIF.html#AsymptoticStatistics.Examples.MARMean.marMean_isEIF",
+    "informal": "Let $Q$ be the full-data law of $(X,Y)$ and let a response kernel generate the observed data $O=(X,R,RY)$. Suppose <span data-link=\"h1\">the response kernel has propensity $\\pi(X)$</span>, <span data-link=\"h2\">$\\pi$ is nonzero on the observation space</span>, and <span data-link=\"h3\">the observed law satisfies the propensity, complete-case regression, and Bernoulli conditional-variance identities with regression function $m(X)$</span>. Assume <span data-link=\"h4\">the augmented inverse-probability representer and its coarsening-score components are square-integrable</span>, <span data-link=\"h5\">$m(X)$ and $R/\\pi(X)$ are integrable</span>, <span data-link=\"h6\">$RY/\\pi(X)$ is measurable</span>, and <span data-link=\"h7\">$|RY/\\pi(X)|\\le C$ almost surely under the observed law</span>. Then, for the tangent space constructed from the induced observed-data model, the efficient influence function is $$\\phi(O)=\\frac{R}{\\pi(X)}\\{Y-m(X)\\}+m(X)-\\psi.$$ Here $\\psi$ is the mean identified by inverse-probability weighting.",
+    "summary": "The augmented inverse-probability formula is the efficient influence function for the bounded MAR mean functional.",
+    "leanSignature": "theorem marMean_isEIF\n    (Q : Measure (X × ℝ)) [IsProbabilityMeasure Q]\n    (r : Kernel (X × ℝ) Bool) [IsMarkovKernel r]\n    (π m : X → ℝ)\n    (hπr : MARResponseKernel π r)\n    (hπ : ∀ o : MARObs X, π o.x ≠ 0)\n    (hProp : MARPropensity π (marObsMeasure Q r))\n    (hReg : MARRegression π m (marObsMeasure Q r))\n    (hVar : MARVariance π (marObsMeasure Q r))\n    (hLp : MemLp (marMean_eif π m (marMean_Ψ π (marObsMeasure Q r))) 2\n      (marObsMeasure Q r))\n    (hLp_ipw : MemLp (marMean_ipwRep π (marMean_Ψ π (marObsMeasure Q r))) 2\n      (marObsMeasure Q r))\n    (hLp_coar : MemLp\n      (marMean_coarseningScore π (fun x => m x - marMean_Ψ π (marObsMeasure Q r))) 2\n      (marObsMeasure Q r))\n    (hLp_bm : MemLp (marMean_coarseningScore π m) 2 (marObsMeasure Q r))\n    (hm_int : Integrable (fun o : MARObs X => m o.x) (marObsMeasure Q r))\n    (hInt_weight : Integrable (fun o : MARObs X => ind o.r / π o.x) (marObsMeasure Q r))\n    (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))\n    (C : ℝ)\n    (h_ipwBddAE : ∀ᵐ o ∂(marObsMeasure Q r), |ind o.r * o.ry / π o.x| ≤ C)\n    :\n    IsEfficientInfluenceFunction (marObsMeasure Q r) (marObservedTangent Q r)\n      (marMeanBounded_pathwise π C h_ipwMeas (marObservedTangent Q r)).derivative\n      (marMean_eifCandidate π m hπ hProp hLp hLp_ipw hLp_coar hm_int hInt_weight).toL2ZeroMean",
+    "formalizationNotes": "The observed tangent space is constructed from the latent law and response kernel through the tangent characterization of Theorem 25.40, rather than supplied as a hypothesis. To control unrestricted QMD paths, the formalization differentiates a globally clipped extension of the inverse-probability mean. The almost-sure bound is stronger than the moment condition in Example 25.43; it makes the extension agree with the raw estimand at the model law while leaving the tangent identification independent of that bound.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hπr",
+        "label": "response propensity",
+        "note": "The response kernel has conditional response probability π(X)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hπ",
+        "label": "nonzero propensity",
+        "note": "The propensity π does not vanish on the observation space."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hVar",
+        "label": "MAR moments",
+        "note": "The observed law has the stated propensity, complete-case regression, and Bernoulli conditional-variance moments."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hLp_bm",
+        "label": "square-integrable scores",
+        "note": "The AIPW representer, IPW representer, and the two coarsening-score terms belong to L² of the observed law."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hInt_weight",
+        "label": "finite moments",
+        "note": "The regression m(X) and inverse-probability weight R/π(X) are integrable."
+      },
+      {
+        "id": "h6",
+        "leanToken": "h_ipwMeas",
+        "label": "measurable IPW term",
+        "note": "The inverse-probability weighted outcome RY/π(X) is measurable."
+      },
+      {
+        "id": "h7",
+        "leanToken": "h_ipwBddAE",
+        "label": "bounded IPW outcome",
+        "note": "The absolute inverse-probability weighted outcome is at most C almost surely."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Ex 25.43",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "§25.5.3, Example 25.43",
+      "keys": [
+        "vdv1998"
+      ]
+    },
+    "keywords": [
+      "missing at random",
+      "efficient influence function",
+      "inverse-probability weighting"
     ]
   },
   {

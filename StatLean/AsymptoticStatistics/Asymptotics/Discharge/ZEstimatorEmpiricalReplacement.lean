@@ -68,12 +68,7 @@ structure RandomIndexScoreReplacementHyp
 set_option maxHeartbeats 2000000 in
 -- The infinite-product transport and empirical-process event normalization are heartbeat-heavy.
 /-- The centered empirical-process residual obtained by replacing a random estimated
-scalar score by its fixed reference score is `o_P(1)` under the product sample laws.
-
-Proof idea: transport `P^n` to the truncation of the infinite iid product, derive the
-explicit `distL2` tail from `score_l2_consistency` and `score_l2_int` by Markov, apply
-`donsker_random_function_consistency_core`, and transport its empirical-process event
-back to `P^n`. -/
+scalar score by its fixed reference score is `o_P(1)` under the product sample laws. -/
 theorem randomIndex_empiricalScoreReplacement_oP
     {P : Measure Omega} [IsProbabilityMeasure P]
     {scoreHat : forall n, (Fin n -> Omega) -> (Omega -> Real)}
@@ -194,6 +189,196 @@ theorem randomIndex_empiricalScoreReplacement_oP
   rw [Real.norm_eq_abs] at hξ
   exact (half_lt_self hε).trans_le hξ
 
+/-- Product-law hypotheses for vdV Lemma 19.24 with the asymptotic class
+membership and in-probability `L²(P)` consistency used in Theorem 25.77.
+
+The class anchor is a Lean localization witness.  It is scope-neutral:
+w.p.a.1 membership already implies that the Donsker class is nonempty. -/
+structure RandomIndexScoreReplacementWPAHyp
+    (P : Measure Omega) [IsProbabilityMeasure P]
+    (scoreHat : forall n, (Fin n -> Omega) -> (Omega -> Real))
+    (score0 anchor : Omega -> Real) (F : Set (Omega -> Real)) : Prop where
+  /-- Measurable representative of the fixed score. -/
+  score0_meas : Measurable score0
+  /-- vdV Lemma 19.24: the fixed score is square-integrable. -/
+  score0_memLp : MemLp score0 2 P
+  /-- vdV Lemma 19.24: the fixed class is `P`-Donsker. -/
+  is_donsker : IsPDonsker F P
+  /-- Joint measurability of the fitted score. -/
+  scoreHat_meas : forall n,
+    Measurable (fun p : (Fin n -> Omega) × Omega => scoreHat n p.1 p.2)
+  /-- Measurable event representing class membership. -/
+  scoreHat_bad_meas : forall n, MeasurableSet
+    {X : Fin n -> Omega | scoreHat n X ∉ F}
+  /-- vdV Theorem 25.77: fitted scores belong to `F` with probability tending
+  to one. -/
+  scoreHat_mem_wpa : Tendsto (fun n =>
+    (Measure.pi (fun _ : Fin n => P)) {X | scoreHat n X ∉ F}) atTop (nhds 0)
+  /-- A localization anchor in the fixed Donsker class, used only on
+  the exceptional class-membership event. -/
+  anchor_mem : anchor ∈ F
+  /-- vdV equation (25.76a), scalar tail form: squared `L²(P)` distance
+  converges to zero in probability. -/
+  score_l2_consistency : forall delta : Real, 0 < delta -> Tendsto (fun n =>
+    (Measure.pi (fun _ : Fin n => P))
+      {X | delta ^ 2 <= ∫ x, (scoreHat n X x - score0 x) ^ 2 ∂P})
+    atTop (nhds 0)
+
+set_option maxHeartbeats 2500000 in
+-- The infinite-product transport and the w.p.a.1 localization are elaboration-heavy.
+/-- Product-law random-index empirical replacement with literal w.p.a.1 class
+membership and in-probability `L²(P)` consistency. -/
+theorem randomIndex_empiricalScoreReplacement_oP_wpa
+    {P : Measure Omega} [IsProbabilityMeasure P]
+    {scoreHat : forall n, (Fin n -> Omega) -> (Omega -> Real)}
+    {score0 anchor : Omega -> Real} {F : Set (Omega -> Real)}
+    (h : RandomIndexScoreReplacementWPAHyp P scoreHat score0 anchor F) :
+    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        (Real.sqrt n)⁻¹ *
+            (∑ i : Fin n, (scoreHat n X (X i) - score0 (X i)))
+          - Real.sqrt n * (∫ x, (scoreHat n X x - score0 x) ∂P)) := by
+  classical
+  intro epsilon hepsilon
+  let mu : Measure (Nat -> Omega) := Measure.infinitePi (fun _ : Nat => P)
+  let trunc (n : Nat) (xi : Nat -> Omega) : Fin n -> Omega := fun i => xi i.val
+  let fhat (n : Nat) (xi : Nat -> Omega) := scoreHat n (trunc n xi)
+  have htrunc : forall n, Measurable (trunc n) := fun n =>
+    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  have hXmeas : forall i : Nat, Measurable (fun xi : Nat -> Omega => xi i) :=
+    fun _ => measurable_pi_apply _
+  have hXindep : ProbabilityTheory.iIndepFun
+      (fun (i : Nat) (xi : Nat -> Omega) => xi i) mu := by
+    simpa [mu] using ProbabilityTheory.iIndepFun_infinitePi
+      (P := fun _ : Nat => P) (X := fun _ : Nat => id) (mX := fun _ => measurable_id)
+  have hXlaw : mu.map (fun xi : Nat -> Omega => xi 0) = P := by
+    change (Measure.infinitePi (fun _ : Nat => P)).map (Function.eval 0) = P
+    rw [Measure.infinitePi_map_eval]
+  have hXidem : forall i : Nat, ProbabilityTheory.IdentDistrib
+      (fun xi : Nat -> Omega => xi i) (fun xi : Nat -> Omega => xi 0) mu mu := by
+    intro i
+    refine ⟨(hXmeas i).aemeasurable, (hXmeas 0).aemeasurable, ?_⟩
+    change mu.map (Function.eval i) = mu.map (Function.eval 0)
+    simp [mu, Measure.infinitePi_map_eval]
+  have hbad : Tendsto (fun n => mu {xi | fhat n xi ∉ F}) atTop (nhds 0) := by
+    apply h.scoreHat_mem_wpa.congr'
+    filter_upwards [] with n
+    rw [AsymptoticStatistics.pi_const_eq_infinitePi_map P n,
+      Measure.map_apply (htrunc n) (h.scoreHat_bad_meas n)]
+    rfl
+  have htail : forall delta : Real, 0 < delta -> Tendsto (fun n =>
+      mu.outerMeasureStar {xi | delta < distL2 P (fhat n xi) score0})
+      atTop (nhds 0) := by
+    intro delta hdelta
+    have ht := h.score_l2_consistency delta hdelta
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds ht
+      (Eventually.of_forall fun _ => bot_le) (Eventually.of_forall fun n => ?_)
+    calc
+      mu.outerMeasureStar {xi | delta < distL2 P (fhat n xi) score0}
+          <= mu {xi | delta < distL2 P (fhat n xi) score0} :=
+        AsymptoticStatistics.outerMeasureStar_le_measure mu _
+      _ <= mu {xi | delta ^ 2 <=
+          ∫ x, (fhat n xi x - score0 x) ^ 2 ∂P} := measure_mono (by
+        intro xi hxi
+        have hfmeas : Measurable (fhat n xi) := by
+          exact (h.scoreHat_meas n).comp measurable_prodMk_left
+        exact distL2_ge_imp_integral_ge
+          hfmeas.aestronglyMeasurable
+          h.score0_meas.aestronglyMeasurable hdelta hxi.le)
+      _ = (Measure.pi (fun _ : Fin n => P))
+          {X | delta ^ 2 <= ∫ x, (scoreHat n X x - score0 x) ^ 2 ∂P} := by
+        rw [AsymptoticStatistics.pi_const_eq_infinitePi_map P n]
+        rw [Measure.map_apply]
+        · rfl
+        · exact htrunc n
+        · exact (((h.scoreHat_meas n).sub (h.score0_meas.comp measurable_snd)).pow_const 2
+            |>.stronglyMeasurable.integral_prod_right').measurable measurableSet_Ici
+  have hcore := donsker_random_function_consistency_wpa F P h.is_donsker score0
+    h.score0_memLp mu (fun i xi => xi i) hXmeas hXindep hXidem hXlaw fhat
+    anchor h.anchor_mem hbad htail (epsilon / 2) (half_pos hepsilon)
+  have hstat : forall n (xi : Nat -> Omega), fhat n xi ∈ F ->
+      (Real.sqrt n)⁻¹ *
+          (∑ i : Fin n, (scoreHat n (trunc n xi) (xi i) - score0 (xi i)))
+        - Real.sqrt n *
+            (∫ x, (scoreHat n (trunc n xi) x - score0 x) ∂P)
+        = empiricalProcess P n (trunc n xi) (fhat n xi) -
+            empiricalProcess P n (trunc n xi) score0 := by
+    intro n xi hmem
+    have hfint : Integrable (fhat n xi) P :=
+      (h.is_donsker.marginalCLT.memLp _ hmem).integrable (by norm_num)
+    rw [integral_sub hfint (h.score0_memLp.integrable (by norm_num)),
+      Finset.sum_sub_distrib]
+    unfold empiricalProcess empiricalAvg
+    simp only [fhat, trunc]
+    by_cases hn : n = 0
+    · subst n; simp
+    · have hnpos : (0 : Real) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+      have hinv : (Real.sqrt (n : Real))⁻¹ = Real.sqrt n * (n : Real)⁻¹ := by
+        field_simp
+        exact (Real.sq_sqrt hnpos.le).symm
+      rw [hinv]
+      ring
+  have hZmeas : forall n, Measurable (fun X : Fin n -> Omega =>
+      (Real.sqrt n)⁻¹ * (∑ i : Fin n, (scoreHat n X (X i) - score0 (X i)))
+        - Real.sqrt n * (∫ x, (scoreHat n X x - score0 x) ∂P)) := by
+    intro n
+    apply Measurable.sub (measurable_const.mul <| Finset.measurable_sum _ fun i _ =>
+      ((h.scoreHat_meas n).comp (Measurable.prodMk measurable_id
+        (measurable_pi_apply i))).sub (h.score0_meas.comp (measurable_pi_apply i)))
+    exact measurable_const.mul <|
+      ((h.scoreHat_meas n).sub (h.score0_meas.comp measurable_snd)).stronglyMeasurable
+        |>.integral_prod_right'.measurable
+  have hsum : Tendsto (fun n =>
+      mu {xi | epsilon / 2 <
+          |empiricalProcess P n (fun i : Fin n => xi i.val) (fhat n xi) -
+            empiricalProcess P n (fun i : Fin n => xi i.val) score0|} +
+        mu {xi | fhat n xi ∉ F}) atTop (nhds 0) := by
+    simpa using hcore.add hbad
+  have hsumR := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsumR
+    (Eventually.of_forall fun _ => measureReal_nonneg) (Eventually.of_forall fun n => ?_)
+  rw [AsymptoticStatistics.pi_real_eq_infinitePi_real_of_truncate P n
+    (measurableSet_le measurable_const (hZmeas n).norm)]
+  calc
+    mu.real {xi | epsilon <= ‖
+        (Real.sqrt n)⁻¹ *
+            (∑ i : Fin n, (scoreHat n (trunc n xi) (xi i) - score0 (xi i)))
+          - Real.sqrt n *
+              (∫ x, (scoreHat n (trunc n xi) x - score0 x) ∂P)‖}
+        <= mu.real ({xi | epsilon / 2 <
+            |empiricalProcess P n (fun i : Fin n => xi i.val) (fhat n xi) -
+              empiricalProcess P n (fun i : Fin n => xi i.val) score0|} ∪
+            {xi | fhat n xi ∉ F}) := measureReal_mono (by
+          intro xi hxi
+          by_cases hmem : fhat n xi ∈ F
+          · left
+            have hident := hstat n xi hmem
+            simp only [trunc] at hident
+            change epsilon / 2 <
+              |empiricalProcess P n (fun i : Fin n => xi i.val) (fhat n xi) -
+                empiricalProcess P n (fun i : Fin n => xi i.val) score0|
+            rw [← hident]
+            have hxi' : epsilon ≤
+                |(Real.sqrt n)⁻¹ *
+                    (∑ i : Fin n,
+                      (scoreHat n (fun i : Fin n => xi i.val) (xi i.val) -
+                        score0 (xi i.val))) -
+                  Real.sqrt n *
+                    (∫ x, (scoreHat n (fun i : Fin n => xi i.val) x - score0 x) ∂P)| := by
+              simpa only [Set.mem_setOf_eq, trunc, Real.norm_eq_abs] using hxi
+            exact (half_lt_self hepsilon).trans_le hxi'
+          · exact Or.inr hmem)
+    _ <= mu.real {xi | epsilon / 2 <
+          |empiricalProcess P n (fun i : Fin n => xi i.val) (fhat n xi) -
+            empiricalProcess P n (fun i : Fin n => xi i.val) score0|} +
+        mu.real {xi | fhat n xi ∉ F} := measureReal_union_le _ _
+    _ <= (mu {xi | epsilon / 2 <
+          |empiricalProcess P n (fun i : Fin n => xi i.val) (fhat n xi) -
+            empiricalProcess P n (fun i : Fin n => xi i.val) score0|} +
+        mu {xi | fhat n xi ∉ F}).toReal := by
+      rw [ENNReal.toReal_add (measure_ne_top mu _) (measure_ne_top mu _)]
+      rfl
+
 /-- Coordinatewise scalar hypotheses for native finite-dimensional empirical-score
 replacement.  Each coordinate may use its own scalar Donsker class; no Donsker
 assumption is made on the vector-valued score class. -/
@@ -210,13 +395,110 @@ structure RandomIndexScoreReplacementHyp_vec
     RandomIndexScoreReplacementHyp P
       (fun n X x => scoreHat n X x j) (fun x => score0 x j) (F j)
 
-/-- Native finite-dimensional empirical-score replacement from the scalar theorem in
-each coordinate.  The conclusion is the Euclidean centered residual under `P^n`; its
-proof uses only finiteness of `Fin d`, not a vector-Donsker assumption.
+/-- Coordinatewise hypotheses for native finite-dimensional empirical-score
+replacement with the w.p.a.1 class membership of vdV Theorem 25.77.  The
+global fitted-score `L²(P)` field is a representative adapter used to commute
+Bochner integration with finite-dimensional coordinate evaluation, including
+on the exceptional localization event. -/
+structure RandomIndexScoreReplacementWPAHyp_vec
+    (P : Measure Omega) [IsProbabilityMeasure P] (d : Nat)
+    (scoreHat : forall n,
+      (Fin n -> Omega) -> (Omega -> EuclideanSpace Real (Fin d)))
+    (score0 anchor : Omega -> EuclideanSpace Real (Fin d))
+    (F : Fin d -> Set (Omega -> Real)) : Prop where
+  /-- Coordinatewise Donsker, w.p.a.1 membership, and equation (25.76a)
+  hypotheses. -/
+  coord_hyp : forall j : Fin d,
+    RandomIndexScoreReplacementWPAHyp P
+      (fun n X x => scoreHat n X x j) (fun x => score0 x j)
+      (fun x => anchor x j) (F j)
+  /-- A square-integrable vector representative of every fitted
+  score under the truth law. -/
+  scoreHat_memLp : forall n X, MemLp (scoreHat n X) 2 P
+  /-- A square-integrable vector representative of the fixed score. -/
+  score0_memLp : MemLp score0 2 P
 
-Proof idea: apply `randomIndex_empiricalScoreReplacement_oP` to every coordinate and
-combine the finitely many scalar `o_P(1)` bounds using the Euclidean norm formula and a
-finite union bound. -/
+/-- Native finite-dimensional empirical-score replacement with w.p.a.1
+coordinatewise membership in fixed Donsker classes. -/
+theorem randomIndex_empiricalScoreReplacement_oP_wpa_vec
+    {P : Measure Omega} [IsProbabilityMeasure P] {d : Nat}
+    {scoreHat : forall n,
+      (Fin n -> Omega) -> (Omega -> EuclideanSpace Real (Fin d))}
+    {score0 anchor : Omega -> EuclideanSpace Real (Fin d)}
+    {F : Fin d -> Set (Omega -> Real)}
+    (h : RandomIndexScoreReplacementWPAHyp_vec P d scoreHat score0 anchor F) :
+    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        (Real.sqrt n)⁻¹ •
+            (∑ i : Fin n, (scoreHat n X (X i) - score0 (X i)))
+          - Real.sqrt n • (∫ x, (scoreHat n X x - score0 x) ∂P)) := by
+  classical
+  let Z (n : Nat) (X : Fin n -> Omega) :=
+    (Real.sqrt n)⁻¹ • (∑ i : Fin n, (scoreHat n X (X i) - score0 (X i)))
+      - Real.sqrt n • (∫ x, (scoreHat n X x - score0 x) ∂P)
+  change TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P)) Z
+  have hint (n : Nat) (X : Fin n -> Omega) (j : Fin d) :
+      (∫ x, (scoreHat n X x - score0 x) ∂P) j
+        = ∫ x, (scoreHat n X x j - score0 x j) ∂P := by
+    apply MeasureTheory.eval_integral_piLp
+    intro k
+    have hdiff : MemLp (fun x => scoreHat n X x - score0 x) 2 P :=
+      (h.scoreHat_memLp n X).sub h.score0_memLp
+    simpa only [PiLp.proj_apply, PiLp.sub_apply] using
+      (hdiff.continuousLinearMap_comp
+        (PiLp.proj (𝕜 := Real) (p := 2) (β := fun _ : Fin d => Real) k)).integrable
+        (by norm_num)
+  have hcoord : forall j : Fin d, TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P)) (fun n X => Z n X j) := by
+    intro j
+    have hj := randomIndex_empiricalScoreReplacement_oP_wpa (h.coord_hyp j)
+    convert hj using 1
+    funext n X
+    simp only [Z, PiLp.smul_apply, PiLp.sub_apply, smul_eq_mul]
+    rw [show (∑ i : Fin n, (scoreHat n X (X i) - score0 (X i))).ofLp j
+        = ∑ i : Fin n, (scoreHat n X (X i) j - score0 (X i) j) by
+          simp only [WithLp.ofLp_sum, Finset.sum_apply, PiLp.sub_apply], hint n X j]
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · intro epsilon hepsilon
+    have hz : forall n (X : Fin n -> Omega), Z n X = 0 :=
+      fun _ _ => Subsingleton.elim _ _
+    simp only [hz, norm_zero, not_le.mpr hepsilon, Set.setOf_false, measureReal_empty]
+    exact tendsto_const_nhds
+  · intro epsilon hepsilon
+    have hdR : (0 : Real) < d := by exact_mod_cast hd
+    have hlevel : 0 < epsilon / d := div_pos hepsilon hdR
+    have hsum : Tendsto (fun n => ∑ j : Fin d,
+        (Measure.pi (fun _ : Fin n => P)).real {X | epsilon / d <= ‖Z n X j‖})
+        atTop (nhds 0) := by
+      simpa using tendsto_finset_sum (Finset.univ : Finset (Fin d))
+        (fun j _ => hcoord j (epsilon / d) hlevel)
+    refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) hsum
+    refine (measureReal_mono (fun X hX => ?_)).trans (measureReal_iUnion_fintype_le _)
+    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    by_contra hall
+    push Not at hall
+    have hnorm : ‖Z n X‖ < epsilon := by
+      calc
+        ‖Z n X‖ = ‖∑ j : Fin d,
+            PiLp.single (β := fun _ : Fin d => Real) 2 j (Z n X j)‖ := by
+          congr 1
+          ext j
+          simp
+        _ <= ∑ j : Fin d,
+            ‖PiLp.single (β := fun _ : Fin d => Real) 2 j (Z n X j)‖ :=
+          norm_sum_le _ _
+        _ = ∑ j : Fin d, ‖Z n X j‖ := by simp
+        _ < ∑ _j : Fin d, epsilon / d := Finset.sum_lt_sum_of_nonempty
+          (Finset.univ_nonempty_iff.mpr (Fin.pos_iff_nonempty.mp hd))
+          (fun j _ => hall j)
+        _ = epsilon := by
+          simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+          field_simp
+    exact (not_lt_of_ge hX) hnorm
+
+/-- Native finite-dimensional empirical-score replacement from the scalar theorem in
+each coordinate.  The conclusion is the Euclidean centered residual under `P^n`; it
+uses only finiteness of `Fin d`, not a vector-Donsker assumption. -/
 theorem randomIndex_empiricalScoreReplacement_oP_vec
     {P : Measure Omega} [IsProbabilityMeasure P] {d : Nat}
     {scoreHat : forall n,

@@ -270,6 +270,21 @@ theorem coarseningScores_eq_concrete :
     coarseningScores hM (Q ⊗ₘ r) (fullQTangent Q r) = concreteCoarseningScores Q r hM :=
   le_antisymm (le_concreteCoarseningScores Q r hM) (concreteCoarseningScores_le Q r hM)
 
+/-- *Closed observed-Q tangent as the orthogonal complement of the concrete
+coarsening scores* (vdV thm:25.40, book p.380).
+
+This is the closed-tangent form of `coarseningScores_eq_concrete`: taking a
+second orthogonal complement turns the abstract observed tangent into its
+topological closure. It is the general operator-layer bridge consumed by
+concrete coarsening examples. -/
+theorem closedObservedQTangent_eq_concreteOrthogonal :
+    (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)).topologicalClosure
+      = (concreteCoarseningScores Q r hM)ᗮ := by
+  letI hcsE : CompleteSpace ↥(L2ZeroMean ((Q ⊗ₘ r).map M)) :=
+    (L2ZeroMean_isClosed ((Q ⊗ₘ r).map M)).completeSpace_coe
+  rw [← coarseningScores_eq_concrete Q r hM, coarseningScores]
+  exact (@Submodule.orthogonal_orthogonal_eq_closure ℝ _ _ _ _ _ hcsE).symm
+
 /-! ### Actual supplied conditional-QMD/CAR nuisance scores -/
 
 /-- Generators of the *actual supplied* conditional-QMD/CAR nuisance-score space

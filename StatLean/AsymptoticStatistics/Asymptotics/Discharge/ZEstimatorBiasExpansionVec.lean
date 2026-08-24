@@ -134,13 +134,8 @@ structure RawMovingBiasExpansionHyp_vec
 
 The residual is normalized by `1 + ‖Delta_n‖`.  Both the empirical influence
 term and raw moving bias are acted on by the same matrix inverse, with positive
-bias correction after the residual is rearranged.
-
-Proof idea: `h.score_eq`; `randomIndex_empiricalScoreReplacement_oP_vec h.B0`;
-`qmdModel_modelShift_normalized_oP h.hTransport`; `h.hCross`; and invertibility
-from `h.hPD`.
--/
-theorem rawMovingBias_normalized_expansion_2559_vec
+bias correction after the residual is rearranged. -/
+theorem normalizedMovingBias_expansion_vec
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
     {M : QMDModel (Omega := Omega) P d}
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
@@ -148,10 +143,33 @@ theorem rawMovingBias_normalized_expansion_2559_vec
     {scoreHat : forall n,
       (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}
     {score0 : Fin d -> ↥(L2ZeroMean P)}
-    {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- the minimal native raw moving-bias assembly bundle above.
-    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :
+    (score_eq : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X => (Real.sqrt n)⁻¹ • ∑ i : Fin n, scoreHat n X (X i)))
+    (scoreHat_integrable_truth : forall n X, Integrable (scoreHat n X) P)
+    (score0_memLp : MemLp (tupleEval P score0) 2 P)
+    (score0_coord_memLp : forall j,
+      MemLp (fun x => (score0 j : Lp Real 2 P) x) 2 P)
+    (hReplacement : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        (Real.sqrt n)⁻¹ •
+            (∑ i : Fin n, (scoreHat n X (X i) - tupleEval P score0 (X i)))
+          - Real.sqrt n •
+              (∫ x, (scoreHat n X x - tupleEval P score0 x) ∂P)))
+    (hShift : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        let delta := estimator n X - theta0
+        if delta = 0 then 0 else
+          ‖delta‖⁻¹ •
+            (((∫ omega, scoreHat n X omega ∂(M.curve delta)) -
+                ∫ omega, scoreHat n X omega ∂P) -
+              Matrix.toEuclideanCLM (𝕜 := Real)
+                (qmdCrossMoment P M (tupleEval P score0)) delta)))
+    (hCross : qmdCrossMoment P M (tupleEval P score0) = I)
+    (hPD : I.PosDef) :
     TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
         let Delta := Real.sqrt n • (estimator n X - theta0)
@@ -176,21 +194,20 @@ theorem rawMovingBias_normalized_expansion_2559_vec
       · filter_upwards [hone] with x hx
         change (score0 j : Lp ℝ 2 P) x * (oneL2 P : Lp ℝ 2 P) x = _
         rw [hx, mul_one]
-    · exact fun j => (h.B0.coord_hyp j).score0_memLp.integrable (by norm_num)
-  have hB0 := randomIndex_empiricalScoreReplacement_oP_vec h.B0
-  have hShift := qmdModel_modelShift_normalized_oP h.hTransport
+    · exact fun j => (score0_coord_memLp j).integrable (by norm_num)
+  have hB0 := hReplacement
   let L := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) I⁻¹
   have hInv : L * Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) I = 1 := by
     rw [show L = Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) I⁻¹ from rfl, ← map_mul,
-      Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp h.hPD.isUnit), map_one]
+      Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp hPD.isUnit), map_one]
   have hLI : ∀ w : EuclideanSpace ℝ (Fin d), L (Matrix.toEuclideanCLM (𝕜 := ℝ) I w) = w := by
     intro w; rw [← ContinuousLinearMap.mul_apply, hInv, ContinuousLinearMap.one_apply]
   refine tendstoInProbZero_of_norm_le_three (c := ‖L‖ + 1) (by positivity)
-    hB0 hShift h.score_eq ?_
-  intro n X; rw [integral_sub (h.hTransport.scoreHat_integrable_truth n X)
-    (h.hTransport.score0_memLp.integrable (by norm_num))]
+    hB0 hShift score_eq ?_
+  intro n X; rw [integral_sub (scoreHat_integrable_truth n X)
+    (score0_memLp.integrable (by norm_num))]
   rw [hmean, sub_zero, Finset.sum_sub_distrib]
-  simp only [rawMovingBias_vec, h.hCross]
+  simp only [rawMovingBias_vec, hCross]
   let r : ℝ := Real.sqrt n; let q : ℝ := (Real.sqrt n)⁻¹
   let delta := estimator n X - theta0; let Delta := r • delta
   let sumHat := ∑ i : Fin n, scoreHat n X (X i); let sum0 := ∑ i : Fin n, tupleEval P score0 (X i)
@@ -258,19 +275,9 @@ theorem rawMovingBias_normalized_expansion_2559_vec
           gcongr
           exact le_add_of_nonneg_right zero_le_one
 
-/-- Conditional ordinary native expansion obtained from the rate-free corrected vdV 25.59 form.
-
-The influence tuple is the matrix-coupled `I⁻¹ score0`; the bias sequence is
-`+ I⁻¹ B_n`. Root-`n`
-tightness is an additional user input not supplied by the stated vdV 25.59
-hypotheses, so this result is a conditional corollary rather than the
-unqualified book theorem.
-
-Proof idea: `rawMovingBias_normalized_expansion_2559_vec h` and
-`hDelta_tight` remove the self-normalizer; `h.hPD` supplies matrix
-invertibility and the finite matrix sum identifies the influence tuple.
--/
-theorem rawMovingBias_expansion_2559_vec_of_sqrtN_tight
+/-- Rate-free normalized expansion for the original corrected native vdV
+25.59 hypothesis bundle. -/
+theorem rawMovingBias_normalized_expansion_2559_vec
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
     {M : QMDModel (Omega := Omega) P d}
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
@@ -280,25 +287,59 @@ theorem rawMovingBias_expansion_2559_vec_of_sqrtN_tight
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- the minimal native raw moving-bias assembly bundle above.
-    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- Additional assumption: root-`n` tightness is not supplied by the stated vdV 25.59
-    -- hypotheses; it makes this result a conditional corollary.
+    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :
+    TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        let Delta := Real.sqrt n • (estimator n X - theta0)
+        (1 + ‖Delta‖)⁻¹ •
+          (Delta
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+                (rawMovingBias_vec M estimator theta0 scoreHat n X))) := by
+  exact normalizedMovingBias_expansion_vec h.score_eq
+    h.hTransport.scoreHat_integrable_truth h.hTransport.score0_memLp
+    (fun j => (h.B0.coord_hyp j).score0_memLp)
+    (randomIndex_empiricalScoreReplacement_oP_vec h.B0)
+    (qmdModel_modelShift_normalized_oP h.hTransport) h.hCross h.hPD
+
+/-- Conditional ordinary native expansion obtained from the rate-free corrected vdV 25.59 form.
+
+The influence tuple is the matrix-coupled `I⁻¹ score0`; the bias sequence is
+`+ I⁻¹ B_n`, not the negative residual used by the superseded wrapper. Root-`n`
+tightness is an additional hypothesis not supplied by the stated vdV 25.59
+hypotheses, so this result is a conditional corollary rather than the
+unqualified book theorem. -/
+theorem expansion_of_normalizedExpansion_sqrtN_tight_vec
+    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
+    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    {theta0 : EuclideanSpace Real (Fin d)}
+    {score0 : Fin d -> ↥(L2ZeroMean P)}
+    {I : Matrix (Fin d) (Fin d) Real}
+    {B : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    (hNormalized : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        let Delta := Real.sqrt n • (estimator n X - theta0)
+        (1 + ‖Delta‖)⁻¹ •
+          (Delta
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹ (B n X))))
     (hDelta_tight : IsBoundedInProb
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X => Real.sqrt n • (estimator n X - theta0))) :
     AsymptoticallyLinearWithBiasAt_vec estimator P
       (fun j => ∑ k, I⁻¹ j k • score0 k) theta0
-      (fun n X => Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
-        (rawMovingBias_vec M estimator theta0 scoreHat n X)) := by
+      (fun n X => Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹ (B n X)) := by
   classical
   let Pn := fun n : ℕ => Measure.pi (fun _ : Fin n => P)
   let Delta := fun n (X : Fin n → Omega) => Real.sqrt n • (estimator n X - theta0)
   let R := fun n (X : Fin n → Omega) =>
     Delta n X - Matrix.toEuclideanCLM (𝕜 := ℝ) I⁻¹ ((Real.sqrt n)⁻¹ •
       ∑ i : Fin n, tupleEval P score0 (X i)) - Matrix.toEuclideanCLM (𝕜 := ℝ) I⁻¹
-      (rawMovingBias_vec M estimator theta0 scoreHat n X)
-  have hnorm := rawMovingBias_normalized_expansion_2559_vec h
+      (B n X)
+  have hnorm := hNormalized
   have hfactor : IsBoundedInProb Pn (fun n X => 1 + ‖Delta n X‖) := by
     intro epsilon hepsilon
     obtain ⟨K, hK⟩ := hDelta_tight epsilon hepsilon
@@ -334,21 +375,39 @@ theorem rawMovingBias_expansion_2559_vec_of_sqrtN_tight
     rw [Finset.sum_congr rfl (fun i _ => hX i), map_sum]
   change (epsilon ≤ ‖R n X‖) = (epsilon ≤ ‖Real.sqrt n • (estimator n X-theta0) -
     (Real.sqrt n)⁻¹ • (∑ i : Fin n, tupleEval P (fun j => ∑ k, I⁻¹ j k • score0 k) (X i)) -
-    Matrix.toEuclideanCLM (𝕜 := ℝ) I⁻¹ (rawMovingBias_vec M estimator theta0 scoreHat n X)‖)
+    Matrix.toEuclideanCLM (𝕜 := ℝ) I⁻¹ (B n X)‖)
   simp only [R, Delta]
   rw [hsum, map_smul]
 
-/-- `d = 1` bridge between the native and scalar formulations.
+/-- Conditional ordinary native expansion obtained from the original corrected
+vdV 25.59 hypotheses and a supplied root-`n` tightness conclusion. -/
+theorem rawMovingBias_expansion_2559_vec_of_sqrtN_tight
+    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
+    {M : QMDModel (Omega := Omega) P d}
+    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    {theta0 : EuclideanSpace Real (Fin d)}
+    {scoreHat : forall n,
+      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}
+    {score0 : Fin d -> ↥(L2ZeroMean P)}
+    {F : Fin d -> Set (Omega -> Real)}
+    {I : Matrix (Fin d) (Fin d) Real}
+    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
+    (hDelta_tight : IsBoundedInProb
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X => Real.sqrt n • (estimator n X - theta0))) :
+    AsymptoticallyLinearWithBiasAt_vec estimator P
+      (fun j => ∑ k, I⁻¹ j k • score0 k) theta0
+      (fun n X => Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+        (rawMovingBias_vec M estimator theta0 scoreHat n X)) := by
+  exact expansion_of_normalizedExpansion_sqrtN_tight_vec
+    (rawMovingBias_normalized_expansion_2559_vec h) hDelta_tight
+
+/-- `d = 1` bridge between the native and scalar biased-linearity predicates.
 
 This literal predicate bridge is kept separate from the native theorem because
 the scalar `QMDPath` and native `QMDModel` model interfaces are not definitionally
-the same.  After this bridge, specializing `I = 1` gives the printed vdV p. 395
-`+ B_n` normalization.
-
-Proof idea: identify the norm on `EuclideanSpace Real (Fin 1)` with absolute
-value at coordinate `0`, and rewrite `tupleEval`, finite sums, and bias coordinate
-evaluation literally.
--/
+the same.  Specializing `I = 1` gives the printed vdV p. 395 `+ B_n`
+normalization. -/
 theorem asymptoticallyLinearWithBiasAt_vec_fin_one_iff
     {P : Measure Omega} [IsProbabilityMeasure P]
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin 1)}
@@ -364,12 +423,7 @@ theorem asymptoticallyLinearWithBiasAt_vec_fin_one_iff
     Finset.sum_apply, tupleEval_fin_one_apply, smul_eq_mul]
 
 /-- Literal `d = 1` bridge between the native and scalar asymptotic-linearity
-predicates. This is an API adapter only and introduces no mathematical
-hypotheses.
-
-Proof idea: unfold both predicates, reduce the Euclidean norm to coordinate
-`0`, and rewrite `tupleEval` and the finite sample sum coordinatewise.
--/
+predicates. This adapter introduces no mathematical hypotheses. -/
 theorem asymptoticallyLinearAt_vec_fin_one_iff
     {P : Measure Omega} [IsProbabilityMeasure P]
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin 1)}
@@ -382,45 +436,42 @@ theorem asymptoticallyLinearAt_vec_fin_one_iff
     norm_fin_one, PiLp.smul_apply, PiLp.sub_apply, WithLp.ofLp_sum,
     Finset.sum_apply, tupleEval_fin_one_apply, smul_eq_mul]
 
-/-- Root-`n` tightness bootstrap for the native vector form of vdV Theorem 25.54.
+/-- Root-`n` tightness bootstrap from a normalized native moving-bias
+expansion and the normalized no-bias condition of vdV Theorem 25.54.
 
 The normalized no-bias condition (25.52), together with the corrected native
 25.59 expansion, rules out escape of
 `Delta_n = sqrt n • (thetaHat_n - theta0)`.  The finite-dimensional fixed-score
-empirical sum supplies the `O_P(1)` coordinate, while `hEstimator_meas` is used
-only for the finitely many pre-asymptotic estimator laws.
-
-Proof idea: prove the finite-dimensional score sum is `O_P(1)` from the
-coordinate `L2ZeroMean` data in `h.B0`; combine
-`rawMovingBias_normalized_expansion_2559_vec h` with `h52`; bootstrap the rate
-by the scalar event-split argument using vector norms.  Downstream, this rate
-feeds the corrected vector 25.59 expansion and removes the self-normalizer.
-
-Here `h52` is precisely vdV's additional no-bias condition beyond
-25.59, while `h` supplies the estimating equation, empirical replacement, QMD
-transport, cross moment, and nonsingularity.  No asymptotic-linearity,
-tightness, raw-bias-vanishing, or Bartlett conclusion is assumed.
--/
-theorem rawMovingBias_sqrtN_tight_2554_vec
+empirical sum supplies the `O_P(1)` coordinate, while `hEstimator_meas` handles
+the finitely many pre-asymptotic estimator laws. -/
+theorem sqrtN_tight_of_normalizedExpansion_vec
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
-    {M : QMDModel (Omega := Omega) P d}
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
     {theta0 : EuclideanSpace Real (Fin d)}
-    {scoreHat : forall n,
-      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}
     {score0 : Fin d -> ↥(L2ZeroMean P)}
-    {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- the minimal native raw moving-bias assembly bundle above.
-    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- finite-prefix tightness for the project's all-`n` `O_P(1)` predicate.
+    {B : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    -- Square-integrable representatives of the fixed score tuple.
+    (score0_memLp : forall j,
+      MemLp (fun x => (score0 j : Lp Real 2 P) x) 2 P)
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vdV equation (25.52), in the native rate-free normalized form.
+    -- The normalized moving-bias/Z expansion.
+    (hNormalized : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        let Delta := Real.sqrt n • (estimator n X - theta0)
+        (1 + ‖Delta‖)⁻¹ •
+          (Delta
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹ (B n X))))
+    -- vdV equation (25.75), in normalized moving-bias form.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
         (1 + ‖Real.sqrt n • (estimator n X - theta0)‖)⁻¹ •
-          rawMovingBias_vec M estimator theta0 scoreHat n X)) :
+          B n X)) :
     IsBoundedInProb
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X => Real.sqrt n • (estimator n X - theta0)) := by
@@ -458,7 +509,7 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
       exact hepsilon.le
     have hnR : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
     have hgmem : MemLp g 2 P := by
-      simpa only [g] using (h.B0.coord_hyp j).score0_memLp
+      simpa only [g] using score0_memLp j
     have hgi : ∀ i : Fin n, MemLp (fun X : Fin n → Omega => g (X i)) 2 (Pn n) :=
       fun i => hgmem.comp_measurePreserving
         (measurePreserving_eval (μ := fun _ : Fin n => P) i)
@@ -527,7 +578,12 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
     · intro epsilon hepsilon
       have hdR : (0 : ℝ) < d := by exact_mod_cast hd
       have hlevel : 0 < epsilon / d := div_pos hepsilon hdR
-      choose K hK using fun j : Fin d => hScoord j (epsilon / d) hlevel
+      let K : Fin d -> Real := fun j =>
+        Classical.choose (hScoord j (epsilon / d) hlevel)
+      have hK : forall j : Fin d, forall n,
+          (Pn n).real {X | K j < ‖S n X j‖} <= epsilon / d := fun j => by
+        simpa only [K] using
+          Classical.choose_spec (hScoord j (epsilon / d) hlevel)
       let K' := ∑ j : Fin d, max (K j) 0
       refine ⟨K', fun n => ?_⟩
       calc
@@ -566,12 +622,11 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
     have hSn : ‖S n X‖ ≤ max K 0 := (not_lt.mp hsmall).trans (le_max_left K 0)
     exact (not_lt_of_ge ((L.le_opNorm _).trans
       (mul_le_mul_of_nonneg_left hSn (norm_nonneg L)))) hX
-  let B := rawMovingBias_vec M estimator theta0 scoreHat
   let rho := fun n (X : Fin n → Omega) => (1 + ‖Delta n X‖)⁻¹
   let R := fun n (X : Fin n → Omega) =>
     rho n X • (Delta n X - T n X - L (B n X))
   have hR : TendstoInProbZero Pn R := by
-    simpa [Pn, Delta, S, T, L, B, rho, R] using rawMovingBias_normalized_expansion_2559_vec h
+    simpa [Pn, Delta, S, T, L, rho, R] using hNormalized
   have hzero : TendstoInProbZero Pn (fun n X => (0 : EuclideanSpace ℝ (Fin d))) := by
     intro a ha
     simpa only [norm_zero, not_le.mpr ha, Set.setOf_false, measureReal_empty] using
@@ -579,7 +634,7 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
   have hE : TendstoInProbZero Pn
       (fun n X => R n X + L (rho n X • B n X)) := by
     refine tendstoInProbZero_of_norm_le_three (c := ‖L‖ + 1) (by positivity)
-      hR (by simpa [Pn, Delta, B, rho] using h52) hzero ?_
+      hR (by simpa [Pn, Delta, rho] using h52) hzero ?_
     intro n X
     have hL := L.le_opNorm (rho n X • B n X)
     calc
@@ -645,26 +700,8 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
       measureReal_union_le _ _
     _ ≤ epsilon := by linarith [hK n, hN n (not_lt.mp hn)]
 
-/-- Native vector vdV Theorem 25.54 assembled from its raw no-bias condition.
-
-The normalized equation (25.52) first bootstraps root-`n` tightness, then the
-same tightness removes the self-normalizer and yields vanishing raw moving
-bias.  The corrected vector 25.59 expansion consequently collapses to the
-matrix-coupled asymptotic-linear influence tuple `I⁻¹ score0`.
-
-Proof idea: apply `rawMovingBias_sqrtN_tight_2554_vec h hEstimator_meas h52`;
-combine its rate with `h52` to prove the raw bias vanishes; specialize
-`rawMovingBias_expansion_2559_vec_of_sqrtN_tight`; then use the existing vector
-25.59-to-25.54 vanishing-bias collapse.  Finite-dimensional matrix/sum
-coordination is explicit in the influence tuple below.
-
-Here `h52` distinguishes 25.54 from 25.59, while `h` supplies both the
-tightness bootstrap and corrected 25.59 expansion. The measurability adapter
-is passed only to the finite-prefix bootstrap step. No
-asymptotic-linearity, tightness, raw-bias-vanishing, or Bartlett conclusion is
-assumed.
--/
-theorem rawMovingBias_asympLinear_2554_vec
+/-- Root-`n` tightness for the original corrected native vdV 25.54 bundle. -/
+theorem rawMovingBias_sqrtN_tight_2554_vec
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
     {M : QMDModel (Omega := Omega) P d}
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
@@ -674,23 +711,59 @@ theorem rawMovingBias_asympLinear_2554_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- the minimal native raw moving-bias assembly bundle above.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- finite-prefix tightness for the project's all-`n` `O_P(1)` predicate.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vdV equation (25.52), in the native rate-free normalized form.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
         (1 + ‖Real.sqrt n • (estimator n X - theta0)‖)⁻¹ •
           rawMovingBias_vec M estimator theta0 scoreHat n X)) :
+    IsBoundedInProb
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X => Real.sqrt n • (estimator n X - theta0)) := by
+  exact sqrtN_tight_of_normalizedExpansion_vec
+    (fun j => (h.B0.coord_hyp j).score0_memLp) hEstimator_meas
+    (rawMovingBias_normalized_expansion_2559_vec h) h52
+
+/-- Native vector vdV Theorem 25.54 assembled from its raw no-bias condition.
+
+The normalized equation (25.52) first bootstraps root-`n` tightness, then the
+same tightness removes the self-normalizer and yields vanishing raw moving
+bias.  The corrected vector 25.59 expansion consequently collapses to the
+matrix-coupled asymptotic-linear influence tuple `I⁻¹ score0`. -/
+theorem asympLinear_of_normalizedExpansion_2554_vec
+    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
+    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    {theta0 : EuclideanSpace Real (Fin d)}
+    {score0 : Fin d -> ↥(L2ZeroMean P)}
+    {I : Matrix (Fin d) (Fin d) Real}
+    {B : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    (score0_memLp : forall j,
+      MemLp (fun x => (score0 j : Lp Real 2 P) x) 2 P)
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate.
+    (hEstimator_meas : forall n, Measurable (estimator n))
+    (hNormalized : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        let Delta := Real.sqrt n • (estimator n X - theta0)
+        (1 + ‖Delta‖)⁻¹ •
+          (Delta
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹
+                ((Real.sqrt n)⁻¹ • ∑ i : Fin n, tupleEval P score0 (X i))
+            - Matrix.toEuclideanCLM (𝕜 := Real) I⁻¹ (B n X))))
+    -- vdV equation (25.75), in normalized moving-bias form.
+    (h52 : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        (1 + ‖Real.sqrt n • (estimator n X - theta0)‖)⁻¹ •
+          B n X)) :
     AsymptoticallyLinearAt_vec estimator P
       (fun j => ∑ k, I⁻¹ j k • score0 k) theta0 := by
   let Pn := fun n : ℕ => Measure.pi (fun _ : Fin n => P)
   let Delta := fun n (X : Fin n → Omega) => Real.sqrt n • (estimator n X - theta0)
-  let B := rawMovingBias_vec M estimator theta0 scoreHat
   let L := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) I⁻¹
-  have hDelta := rawMovingBias_sqrtN_tight_2554_vec h hEstimator_meas h52
+  have hDelta := sqrtN_tight_of_normalizedExpansion_vec
+    score0_memLp hEstimator_meas hNormalized h52
   have hfactor : IsBoundedInProb Pn (fun n X => 1 + ‖Delta n X‖) := by
     intro epsilon hepsilon
     obtain ⟨M0, hM0⟩ := hDelta epsilon hepsilon
@@ -718,13 +791,13 @@ theorem rawMovingBias_asympLinear_2554_vec
     have hL := L.le_opNorm (B n X)
     simp only [norm_zero, add_zero]
     nlinarith [hL, norm_nonneg (B n X), norm_nonneg L]
-  have hALB := rawMovingBias_expansion_2559_vec_of_sqrtN_tight h hDelta
+  have hALB := expansion_of_normalizedExpansion_sqrtN_tight_vec hNormalized hDelta
   let A := fun n (X : Fin n → Omega) => Delta n X - (Real.sqrt n)⁻¹ •
     ∑ i : Fin n, tupleEval P (fun j => ∑ k, I⁻¹ j k • score0 k) (X i)
   have hR0 : TendstoInProbZero Pn (fun n X => A n X - L (B n X)) := by
     intro a ha
     apply (ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Pn n) _)).mpr
-    simpa [Pn, Delta, B, L, A] using hALB a ha
+    simpa [Pn, Delta, L, A] using hALB a ha
   have hA : TendstoInProbZero Pn A := by
     refine tendstoInProbZero_of_norm_le_three (c := 1) zero_lt_one hR0 hBias hzero ?_
     intro n X
@@ -735,17 +808,36 @@ theorem rawMovingBias_asympLinear_2554_vec
   rw [← ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Pn n) _)]
   simpa [Pn, Delta, A] using hA a ha
 
+/-- Native vector vdV Theorem 25.54 for the original corrected moving-bias
+bundle. -/
+theorem rawMovingBias_asympLinear_2554_vec
+    {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
+    {M : QMDModel (Omega := Omega) P d}
+    {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
+    {theta0 : EuclideanSpace Real (Fin d)}
+    {scoreHat : forall n,
+      (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d)}
+    {score0 : Fin d -> ↥(L2ZeroMean P)}
+    {F : Fin d -> Set (Omega -> Real)}
+    {I : Matrix (Fin d) (Fin d) Real}
+    (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
+    (hEstimator_meas : forall n, Measurable (estimator n))
+    (h52 : TendstoInProbZero
+      (fun n : Nat => Measure.pi (fun _ : Fin n => P))
+      (fun n X =>
+        (1 + ‖Real.sqrt n • (estimator n X - theta0)‖)⁻¹ •
+          rawMovingBias_vec M estimator theta0 scoreHat n X)) :
+    AsymptoticallyLinearAt_vec estimator P
+      (fun j => ∑ k, I⁻¹ j k • score0 k) theta0 := by
+  exact asympLinear_of_normalizedExpansion_2554_vec
+    (fun j => (h.B0.coord_hyp j).score0_memLp) hEstimator_meas
+    (rawMovingBias_normalized_expansion_2559_vec h) h52
+
 namespace RawMovingBiasExpansionHyp_vec
 
 /-- Build the native raw moving-bias bundle from efficient-score coordinates
-and a native QMD model. The cross-moment matrix is deliberately not an input:
-each entry follows from `hScore` and efficient-score
-orthogonality.
-
-Proof idea: extensionality on matrix entries; rewrite the native score
-coordinate almost everywhere using `hScore`; identify each integral with the
-efficient-score Gram entry; finish with `efficientInformationMatrix_apply`.
--/
+and a native QMD model. The cross-moment matrix is derived from `hScore` and
+efficient-score orthogonality rather than supplied as an input. -/
 theorem ofEfficientScores
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
     {Theta : Type*} [NormedAddCommGroup Theta] [InnerProductSpace Real Theta]
