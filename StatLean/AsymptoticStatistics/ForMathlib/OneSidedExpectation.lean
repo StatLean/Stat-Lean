@@ -42,13 +42,13 @@ of vdV Theorem 5.14, p.48. -/
 theorem extendedExpectation_tendsto_of_antitone
     {X : Type*} [MeasurableSpace X] (Q : Measure X)
     (f : ℕ → X → EReal) (g : X → EReal)
-    -- Measurable local envelopes, as required by van der Vaart (5.13), p. 48.
+    -- measurable local envelopes, as required by vdV (5.13), p.48.
     (hf_meas : ∀ n, Measurable (f n))
-    -- Explicit a.e. form of the decreasing-envelope construction.
+    -- explicit a.e. form of the decreasing-envelope construction.
     (hf_anti : ∀ᵐ x ∂Q, Antitone fun n => f n x)
-    -- Explicit a.e. pointwise limit of the upper-semicontinuous envelopes.
+    -- explicit a.e. pointwise limit supplied by the USC envelope theorem.
     (hf_lim : ∀ᵐ x ∂Q, Tendsto (fun n => f n x) atTop (𝓝 (g x)))
-    -- Finite positive part from van der Vaart condition (5.13), p. 48.
+    -- finite positive part from vdV condition (5.13), p.48.
     (hpos : (∫⁻ x, (f 0 x).toENNReal ∂Q) ≠ ∞) :
     Tendsto (fun n => extendedExpectation Q (f n)) atTop
       (𝓝 (extendedExpectation Q g)) := by

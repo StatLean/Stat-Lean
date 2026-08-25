@@ -622,7 +622,7 @@ theorem localizedChainBound_shell_MLower {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
     positivity
   obtain ⟨M, hM_pos, _, hM_Nbd, hbound⟩ :=
     localized_core_construction (F := F) hF_ne hF_meas hF_int
-      μ X hX_meas hX_id hX_law c₀ hc₀_one hengine
+      μ X hX_meas hX_indep hX_id hX_law c₀ hc₀_one hengine
       (shellDiffEnvelope menv δ) hΦ_meas hΦ_env hΦ_L2 hδq_pos hδq4
   -- feed the δ-free `N*` into the bracketing-explicit clamp lower bound ⇒ δ-free `cM·δq ≤ M`.
   have hM_lb := hM_Nbd Nstar (hNstar δ hδ hδρ).1 (hNstar δ hδ hδρ).2

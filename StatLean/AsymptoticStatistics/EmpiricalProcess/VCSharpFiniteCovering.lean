@@ -5,8 +5,8 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.VCSharpPacking
 /-!
 # Sharp finite `Lʳ` packings for VC-subgraph classes
 
-This file proves P5 of the Chazelle--Haussler/layer-cake decomposition of van
-der Vaart Lemma 19.15.  The result is deliberately stated for finite
+This file proves the finite-packing step of the Chazelle--Haussler/layer-cake
+argument in van der Vaart Lemma 19.15. The result is stated for finite
 subfamilies and arbitrary probability laws.  The original envelope need not
 be measurable.
 
@@ -381,7 +381,7 @@ private theorem finite_lp_packing_of_integral_separation
     hsepGraph
 
 /-- A finite probability-measure packing is witnessed by one finite empirical
-trace, so the frozen finite Chazelle--Haussler bound applies.  Repeated sample
+trace, so the finite Chazelle--Haussler bound applies. Repeated sample
 points are retained as distinct coordinates; pullback VC monotonicity handles
 them without a finite-support assumption on the original law. -/
 private theorem finite_measure_packing
@@ -533,7 +533,7 @@ def IsUniversalVCFiniteLpPackingConstant (K₀ : ℝ) : Prop :=
     (A.card : ℝ) ≤ K₀ * V * (16 * Real.exp 1) ^ V *
       (1 / η) ^ (r * (V - 1 : ℕ))
 
-/-- P5: existence of the universal finite `Lʳ` packing constant. -/
+/-- Existence of the universal finite `Lʳ` packing constant. -/
 theorem exists_universalVCFiniteLpPackingConstant :
     ∃ K₀ : ℝ, 0 < K₀ ∧ IsUniversalVCFiniteLpPackingConstant.{u} K₀ := by
   refine ⟨1, one_pos, ?_⟩

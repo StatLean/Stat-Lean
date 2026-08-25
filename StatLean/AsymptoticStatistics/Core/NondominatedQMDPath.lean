@@ -26,8 +26,8 @@ structure NondominatedQMDPath (P : Measure Ω) [IsProbabilityMeasure P] where
   /-- Constitutive (vdV §25.3 p.362): the path passes through `P`. -/
   curve_at_zero : curve 0 = P
   /-- Constitutive (vdV §25.3 p.362): every nonnegative point of the
-  one-sided path is a probability law in the model.  Values at negative
-  parameters are inert bookkeeping and carry no condition. -/
+  one-sided path is a probability law in the model. The definition imposes no
+  condition at negative parameters. -/
   curve_isProbability : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t)
   /-- Constitutive (vdV §25.3 p.362): the QMD score, after Lemma 25.14's
   analytic conclusion has placed it in `L²₀(P)`. -/
@@ -35,14 +35,14 @@ structure NondominatedQMDPath (P : Measure Ω) [IsProbabilityMeasure P] where
   /-- Constitutive (vdV §25.3 eq.25.13): right pairwise QMD at zero. -/
   qmd_limit : IsRightQMD P curve (score : Ω → ℝ)
 
-/-- Compatibility name emphasizing that domination is pairwise, not global. -/
+/-- The canonical pairwise QMD path, with no fixed common dominator. -/
 abbrev PairwiseQMDPath {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P] := NondominatedQMDPath P
 
 /-- Package bare one-sided QMD data after the analytic score theorem.
 
 The construction applies `rightQMD_score_in_L2ZeroMean` and transports the QMD
-residual across the resulting `P`-almost-everywhere score representative. -/
+residual across its `P`-a.e. score representative. -/
 theorem exists_nondominatedQMDPath_of_bare_qmd
     (P : Measure Ω) [IsProbabilityMeasure P]
     (curve : ℝ → Measure Ω)
@@ -83,9 +83,9 @@ theorem exists_nondominatedQMDPath_of_bare_qmd
 
 namespace QMDPath
 
-/-- Additive adapter from a common-dominator, two-sided `QMDPath`
-to the faithful one-sided nondominated path.  There is intentionally no
-reverse adapter without extra left-QMD/common-domination data. -/
+/-- A common-dominator, two-sided `QMDPath` determines a one-sided
+nondominated path. The converse requires additional left-QMD and
+common-domination hypotheses. -/
 noncomputable def toNondominatedQMDPath
     {P : Measure Ω} [IsProbabilityMeasure P]
     (γ : AsymptoticStatistics.Core.QMDPath.QMDPath P) :

@@ -4,9 +4,10 @@ import StatLean.AsymptoticStatistics.LowerBounds.T6_FinDimLAN.Abstract1DLAN
 /-!
 # Bare QMD scores and the literal one-dimensional LAN expansion
 
-Formalization of van der Vaart Lemma 25.14. Unlike
-`Core.QMDPath`, the headline begins with a measurable bare function and a
-genuine QMD limit; mean zero and square integrability are conclusions.
+This is the formulation of van der Vaart Lemma 25.14 that begins with a
+measurable bare function and a genuine QMD limit; mean zero and square
+integrability are conclusions. In contrast, `Core.QMDPath` assumes these
+properties as part of the path data.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -18,14 +19,9 @@ open AsymptoticStatistics.Core.Hilbert
 
 variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
 
-/-- Package bare QMD data after Lemma 25.14 has produced the L2-zero-mean
-score.  This is a Lean adapter, not the analytic content of the lemma.
-
-Proof idea: apply `Core.QMDPath.score_in_L2ZeroMean`, choose its `g'`, and
-reuse the given curve/base/absolute-continuity/QMD fields.
-
-Example: `curve t = P`, `g = 0`, `μ = P`; the QMD
-residual is identically zero and the resulting path is constant. -/
+/-- Bare QMD data whose score has zero mean determine a `QMDPath`.
+The proof applies `Core.QMDPath.score_in_L2ZeroMean` and reuses the given
+curve, base-point, absolute-continuity, and QMD properties. -/
 theorem exists_qmdPath_of_bare_qmd
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ω) [SigmaFinite μ]
@@ -115,13 +111,9 @@ score, the genuine nonvacuous QMD limit, and iid sample/law data.  Mean zero,
 integrability of `g^2`, and LAN are all conclusions.
 
 Proof idea: `score_in_L2ZeroMean`, `exists_qmdPath_of_bare_qmd`, then
-`QMDPath.lanExpansion1D`, rewriting its dominating measure with the adapter's
+`QMDPath.lanExpansion1D`, rewriting its dominating measure using
 `γ.dominating = μ`, and transporting the score and Fisher term across the
-almost-everywhere identification.
-
-Example: on any probability space use the singleton
-constant path `curve t = P`, `g = 0`, and an iid sample with law `P`; all
-three conclusions reduce to zero identities. -/
+almost-everywhere identification. -/
 theorem qmd_score_mean_integrable_and_lan
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ω) [SigmaFinite μ]

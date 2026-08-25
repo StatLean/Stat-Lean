@@ -205,7 +205,9 @@ private theorem semiparametricCone_minimax_compatibility
   exact hnd.trans (selectedPathCanonicalLHSVec_le_commonDominator
     T_set h0 hcone T_n ψ ℓ)
 
-/-- Common-dominator formulation over a supplied `TangentSpec`. -/
+/-- Common-dominator form of the semiparametric local asymptotic minimax bound,
+formulated with `TangentSpec`. The nondominated form is
+`semiparametric_local_asymptotic_minimax_nondominated`. -/
 theorem semiparametricCone_minimax_of_tight
     (T_set : TangentSpec P)
     (_h0 : (0 : ↥(L2ZeroMean P)) ∈ T_set.carrier)
@@ -224,8 +226,8 @@ theorem semiparametricCone_minimax_of_tight
   exact semiparametricCone_minimax_compatibility T_set _h0 _hcone _hconv hpd
     _hEIF T_n _hT ℓ _hbowl _hlsc
 
-/-- Common-dominator cone bound using `TangentSpec` and `canonicalPath`, rather
-than paths independently selected by the cone as in the nondominated form. -/
+/-- Common-dominator cone theorem using `TangentSpec` and `canonicalPath`.
+The nondominated theorem instead uses paths independently selected by the cone. -/
 theorem semiparametric_local_asymptotic_minimax_cone
     (T_set : TangentSpec P)
     (_h0 : (0 : ↥(L2ZeroMean P)) ∈ T_set.carrier)
@@ -249,8 +251,8 @@ theorem semiparametric_local_asymptotic_minimax_cone
 The tangent object supplies zero and nonnegative scaling structurally; the
 only extra cone datum is convexity.  The conclusion uses the selected path of
 each carrier-subtype score and the raw Gram covariance.  It includes singular
-Gram matrices, `d = 0`, and `φ = 0`, and has no dominator, negation, tightness,
-provider, or positive-definiteness hypothesis.
+Gram matrices, `d = 0`, and `φ = 0`, and has no common dominating measure,
+negation, tightness, or positive-definiteness hypothesis.
 
 Proof idea: `finiteCarrierChart_exhausts_eifGram` bounds the raw Gram
 benchmark by the supremum of finite Gaussian carrier experiments;
@@ -258,19 +260,19 @@ benchmark by the supremum of finite Gaussian carrier experiments;
 to the selected nondominated paths by finite loss-profile compactification. -/
 theorem semiparametric_local_asymptotic_minimax_nondominated
     (C : NondominatedTangentCone P)
-    -- USER-INPUT: convex tangent cone; vdV Theorem 25.21.
+    -- convex tangent cone; vdV Theorem 25.21.
     (hconv : Convex ℝ C.carrier)
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: pathwise differentiability and an efficient influence function;
+    -- pathwise differentiability and an efficient influence function;
     -- vdV Theorem 25.21.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     {φ : Fin d → ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)
     (T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
-    -- LEAN-ONLY: measurability of each estimator.
+    -- measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n))
     (ℓ : EuclideanSpace ℝ (Fin d) → ℝ≥0∞)
-    -- USER-INPUT: bowl-shaped lower-semicontinuous loss; vdV Theorem 25.21.
+    -- bowl-shaped lower-semicontinuous loss; vdV Theorem 25.21.
     (hbowl : BowlShaped ℓ) (hlsc : LowerSemicontinuous ℓ) :
     selectedPathCanonicalLHSVec C T_n ψ ℓ ≥
       ∫⁻ y, ℓ y ∂(multivariateGaussian 0 (Matrix.gram ℝ φ)) := by

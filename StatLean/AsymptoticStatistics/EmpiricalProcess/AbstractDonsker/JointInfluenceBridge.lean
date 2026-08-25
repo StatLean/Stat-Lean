@@ -8,8 +8,8 @@ import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterFiniteProdu
 /-!
 # Joint empirical-process and influence-function weak convergence
 
-This final assembly layer identifies every mixed finite-dimensional law and
-combines it with asymptotic tightness to prove genuine joint outer weak
+This theorem identifies every mixed finite-dimensional law and combines it
+with asymptotic tightness to prove joint outer weak
 convergence in `ℓ∞(F) × EuclideanSpace ℝ (Fin k)`.
 
 Reference: van der Vaart, *Asymptotic Statistics*, Theorem 19.23, pp.278–279.
@@ -337,7 +337,7 @@ private theorem jointEmpirical_mixed_weakConvergesOuter
       a hmem n ξ
   have hWmeas : ∀ n, Measurable (Wmix n) := fun n => hWstd n ▸ hstd_meas n
   obtain ⟨Y, hYlaw, hTID⟩ := marginalCLT_fdd_of_iid
-    μ X hX_meas hX_indep hX_id hX_law φ hφmem
+    (F := Set.range φ) μ X hX_meas hX_indep hX_id hX_law φ hφmem
   have hWC : WeakConverges (fun n => μ.map (stdVec n))
       (multivariateGaussian 0 (marginalCovMatrix P φ)) := by
     have hlim_eq :

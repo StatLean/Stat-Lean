@@ -1,11 +1,13 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.LipschitzShellModulus
+import StatLean.AsymptoticStatistics.EmpiricalProcess.IIDChebyshev
+import StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNormality
 import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation
 
 /-!
 # √n-scaled shell / linearization modulus (vdV Lem 19.34 / Thm 19.28)
 
-The conclusion matches
-`LinearizationEquicontinuity.sqrtScaled_shell_modulus_tendstoZero`:
+The principal conclusion, also stated as
+`LinearizationEquicontinuity.sqrtScaled_shell_modulus_tendstoZero`, is:
 
     ∀ ε > 0, ∀ η > 0, ∃ δ > 0,
       limsupₙ μ* { ξ | ∃ h₁ h₂ ∈ ball_M, ‖h₁ − h₂‖ < δ ∧
@@ -91,7 +93,8 @@ machinery run at the fixed localization scale.
 
 `hLip` is only assumed on the `θ₀`-ball `closedBall θ₀ ρ` (vdV "neighborhood of θ₀"); the two
 shifted points `θ₀ + (√n)⁻¹•hᵢ` land in that ball exactly when `‖hᵢ‖ ≤ ρ·√n` (the small-`n`
-guards `hh₁`, `hh₂`).  Downstream this forces the `n ≥ N₀ := ⌈(M/ρ)²⌉` split; a `limsup`/`Tendsto`
+guards `hh₁`, `hh₂`). Consequently the proof splits at
+`n ≥ N₀ := ⌈(M/ρ)²⌉`; a `limsup`/`Tendsto`
 conclusion ignores the finite prefix. -/
 lemma scaledIncrement_lipschitz
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -131,16 +134,82 @@ lemma scaledIncrement_lipschitz
               = (Real.sqrt ↑n * (Real.sqrt ↑n)⁻¹) * (menv ω * ‖h₁ - h₂‖) by ring,
           mul_inv_cancel₀ hne, one_mul]
 
+omit [MeasurableSpace Ω] in
+/-- The local increment at an arbitrary deterministic rate `r`: this definition is total,
+including at indices where `r n = 0`. -/
+noncomputable def scaledIncrementAt
+    (r : ℕ → ℝ) (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin d)) (n : ℕ) :
+    EuclideanSpace ℝ (Fin d) → Ω → ℝ :=
+  fun h ω => r n * (m (θ₀ + (r n)⁻¹ • h) ω - m θ₀ ω)
+
+omit [MeasurableSpace Ω] in
+/-- `scaledIncrementAt r m θ₀ n 0 = 0` at every rate, including `r n = 0`. -/
+@[simp] lemma scaledIncrementAt_apply_zero
+    (r : ℕ → ℝ) (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin d)) (n : ℕ) :
+    scaledIncrementAt r m θ₀ n 0 = fun _ => (0 : ℝ) := by
+  funext ω
+  simp only [scaledIncrementAt, smul_zero, add_zero, sub_self, mul_zero]
+
+/-- `scaledIncrementAt r m θ₀ n h` is measurable in the observation. -/
+lemma scaledIncrementAt_measurable
+    (r : ℕ → ℝ) (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin d)) (n : ℕ)
+    (hm_meas : ∀ θ, Measurable (m θ)) (h : EuclideanSpace ℝ (Fin d)) :
+    Measurable (scaledIncrementAt r m θ₀ n h) := by
+  unfold scaledIncrementAt
+  exact (hm_meas _).sub (hm_meas θ₀) |>.const_mul _
+
+omit [MeasurableSpace Ω] in
+/-- At a positive rate, the outer rate and inverse parameter shift cancel, so the arbitrary-
+rate local increment has the same localized Lipschitz envelope as the original criterion. -/
+lemma scaledIncrementAt_lipschitz
+    (r : ℕ → ℝ) (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin d)) (menv : Ω → ℝ) (ρ : ℝ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    {n : ℕ} (hrn : 0 < r n) (h₁ h₂ : EuclideanSpace ℝ (Fin d))
+    (hh₁ : ‖h₁‖ ≤ ρ * r n) (hh₂ : ‖h₂‖ ≤ ρ * r n) (ω : Ω) :
+    |scaledIncrementAt r m θ₀ n h₁ ω - scaledIncrementAt r m θ₀ n h₂ ω|
+      ≤ menv ω * ‖h₁ - h₂‖ := by
+  have hrn_ne : r n ≠ 0 := hrn.ne'
+  have hmem : ∀ h : EuclideanSpace ℝ (Fin d), ‖h‖ ≤ ρ * r n →
+      θ₀ + (r n)⁻¹ • h ∈ Metric.closedBall θ₀ ρ := by
+    intro h hh
+    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+      abs_of_pos (inv_pos.mpr hrn), inv_mul_eq_div, div_le_iff₀ hrn]
+    exact hh
+  have hdiff : scaledIncrementAt r m θ₀ n h₁ ω - scaledIncrementAt r m θ₀ n h₂ ω
+      = r n * (m (θ₀ + (r n)⁻¹ • h₁) ω - m (θ₀ + (r n)⁻¹ • h₂) ω) := by
+    simp only [scaledIncrementAt]
+    ring
+  rw [hdiff, abs_mul, abs_of_pos hrn]
+  have hab : ‖(θ₀ + (r n)⁻¹ • h₁) - (θ₀ + (r n)⁻¹ • h₂)‖
+      = (r n)⁻¹ * ‖h₁ - h₂‖ := by
+    have hvec : (θ₀ + (r n)⁻¹ • h₁) - (θ₀ + (r n)⁻¹ • h₂)
+        = (r n)⁻¹ • (h₁ - h₂) := by rw [smul_sub]; abel
+    rw [hvec, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hrn)]
+  calc r n * |m (θ₀ + (r n)⁻¹ • h₁) ω - m (θ₀ + (r n)⁻¹ • h₂) ω|
+      ≤ r n * (menv ω * ‖(θ₀ + (r n)⁻¹ • h₁) - (θ₀ + (r n)⁻¹ • h₂)‖) :=
+        mul_le_mul_of_nonneg_left
+          (hLip _ (hmem h₁ hh₁) _ (hmem h₂ hh₂) ω) hrn.le
+    _ = r n * (menv ω * ((r n)⁻¹ * ‖h₁ - h₂‖)) := by rw [hab]
+    _ = menv ω * ‖h₁ - h₂‖ := by
+      rw [show r n * (menv ω * ((r n)⁻¹ * ‖h₁ - h₂‖))
+            = (r n * (r n)⁻¹) * (menv ω * ‖h₁ - h₂‖) by ring,
+        mul_inv_cancel₀ hrn_ne, one_mul]
+
 /-! ### Free-scale relative bracketing entropy of the shell
 
 The entropy integral of the (fixed-centre) shell of radius `R` at a **free** localization
 scale `s ∈ (0, R]`.  Because the bracketing number is *relative* (`∝ (R/s)^d`), the integral
 is `≤ 2·√(log 2 + d·|log(2CR/s)| + d)·s`, which `→ 0` as `s → 0` (the `√log(R/s)` factor is
 sub-linear).  This is the free-scale analogue of `paramClass_shell_bracketingEntropyIntegral_le`
-(which is tied to `s = δ·(‖menv‖₂+1)`).  We track the constant *explicitly* (not the opaque
-existential of `sqrt_log_pow_ratio_lintegral_le`) so the `s → 0` limit is provable downstream. -/
+(which is tied to `s = δ·(‖menv‖₂+1)`). The explicit constant makes the
+`s → 0` limit immediate. -/
 
-/-- `∫₀^δq √(δq/ε) dε = 2·δq` (re-derivation of the private `lintegral_sqrt_ratio`). -/
+/-- `∫₀^δq √(δq/ε) dε = 2·δq`. -/
 private lemma lintegral_sqrt_ratio' {δq : ℝ} (hδq : 0 < δq) :
     ∫⁻ ε in Set.Ioc (0 : ℝ) δq, ENNReal.ofReal (Real.sqrt (δq / ε)) ∂volume
       = ENNReal.ofReal (2 * δq) := by
@@ -169,9 +238,9 @@ private lemma lintegral_sqrt_ratio' {δq : ℝ} (hδq : 0 < δq) :
     show Real.sqrt δq * (Real.sqrt δq / (1 / 2)) = 2 * (Real.sqrt δq * Real.sqrt δq) from by ring,
     Real.mul_self_sqrt hδq.le]
 
-/-- Explicit-constant form of `sqrt_log_pow_ratio_lintegral_le`: the leading constant is
-`2·√(log 2 + p·|log C| + p)`, exposed (not existentially hidden) so downstream `s → 0`
-limits can be proved. -/
+/-- Explicit-constant form of `sqrt_log_pow_ratio_lintegral_le`: the leading
+constant is `2·√(log 2 + p·|log C| + p)`, which is independent of the scale
+and therefore suitable for `s → 0` limits. -/
 private lemma sqrt_log_pow_ratio_lintegral_le_explicit
     (C : ℝ) (hC : 0 < C) (p : ℕ) {δq : ℝ} (hδq : 0 < δq) :
     ∫⁻ ε in Set.Ioc (0 : ℝ) δq,
@@ -247,9 +316,7 @@ private lemma sqrt_log_pow_ratio_lintegral_le_explicit
     _ = ENNReal.ofReal (2 * Real.sqrt (Real.log 2 + p * |Real.log C| + p) * δq) := by
         rw [hBdef, hAdef]
 
-/-- Re-derivation of the private closed-ball relative bracketing-number bound used in the
-free-scale entropy estimate below. Same statement and proof as
-`LipschitzShellModulus.shellClosedBall_bracketingNumber_le`. -/
+/-- Closed-ball relative bracketing-number bound. -/
 private theorem shellClosedBall_bracketingNumber_le' {d : ℕ}
     {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) (θ₀ : EuclideanSpace ℝ (Fin d))
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv) :
@@ -494,18 +561,17 @@ theorem entropyScaleBound_tendsto_zero {d : ℕ} (C R : ℝ) (hC : 0 < C) (hR : 
   rw [Real.sqrt_mul hXnn, Real.sqrt_sq hs0.le]
   ring
 
-/-! ### Free-scale bracketing numbers for the localized difference class
+/-! ### Free-scale bracketing number of the localized difference class
 
 Free-scale analogue of `shell_localizedDiff_bracketingNumber_le`: a single `N*` (free of
 `s`, function of the ratio `R/s`) bounds both localized-difference bracketing numbers at
 scales `s`, `s/2` for the shell of radius `R` at localization scale `s`. -/
 
-/-- **Free-scale δ-uniform relative bracketing number of the localized difference class.**
+/-- **Free-scale uniform relative bracketing number of the localized difference class.**
 
 The bracketing constant `C = 2·Ce·(‖menv‖₂+1)` (from the unit-ball covering number `Ce`)
-depends only on `(θ₀, menv)`, NOT on the specific function `m`; we therefore quantify `m`
-*inside* the `∃ C` and **expose** the explicit count `⌊d·(4CR/s)^d⌋₊²` in the conclusion.
-This `m`-uniformity is exactly what lets the √n-scaled chaining bound feed one clamp
+depends only on `(θ₀, menv)`, not on the specific function `m`. The explicit count is
+`⌊d·(4CR/s)^d⌋₊²`. This uniformity gives the √n-scaled chaining bound one truncation
 lower-bound constant `cM` uniformly across the family `m := scaledIncrement m₀ θ₀ n`. -/
 theorem shell_localizedDiff_bracketingNumber_freeS {d : ℕ}
     {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
@@ -708,7 +774,7 @@ theorem scaledShell_localizedChainBound_freeS {d : ℕ} (hd : 1 ≤ d)
                         * Set.indicator {x | Real.sqrt n * Mc < |shellDiffEnvelope menv M x|}
                             1 ω ∂P) := by
   classical
-  -- Step 1: `F`-independent uniform engine constant `c₀`.
+  -- Step 1: choose the `F`-independent uniform constant `c₀`.
   obtain ⟨c₀, hc₀_one, hengine⟩ :=
     chain_supnorm_dyadic_bound_uniform (P := P) (μ := μ) hX_meas hX_indep hX_id hX_law
   have hc₀_pos : 0 < c₀ := lt_of_lt_of_le one_pos hc₀_one
@@ -793,7 +859,7 @@ theorem scaledShell_localizedChainBound_freeS {d : ℕ} (hd : 1 ≤ d)
   -- Step 5: the `F`-independent-constant core construction at scale `s`.
   obtain ⟨Mc, hMc_pos, _, hMc_Nbd, hbound⟩ :=
     localized_core_construction (F := F) hF_ne hF_meas hF_int
-      μ X hX_meas hX_id hX_law c₀ hc₀_one hengine
+      μ X hX_meas hX_indep hX_id hX_law c₀ hc₀_one hengine
       (shellDiffEnvelope menv M) hΦ_meas hΦ_env hΦ_L2 hs hs4
   -- Feed the `n`-uniform count `Nval` into the clamp lower bound to get `cM·s ≤ Mc`.
   have hbn := hfreeBN (scaledIncrement m θ₀ n) hInc_meas hInc_lip s hs hsM
@@ -804,11 +870,145 @@ theorem scaledShell_localizedChainBound_freeS {d : ℕ} (hd : 1 ≤ d)
     rw [hNval_def]; exact hbn.2
   exact ⟨Mc, hMc_Nbd Nval hb1 hb2, hMc_pos, hbound n hn⟩
 
-/-! ### Markov bricks for the headline -/
+/-- The free-scale localized chaining bound for an arbitrary deterministic local rate.
+The empirical-process normalization and the envelope-tail threshold remain at `√n`; only the
+criterion shell is reparametrized by `r n`. -/
+theorem scaledShellAt_localizedChainBound_freeS
+    {d : ℕ} (hd : 1 ≤ d) {Ω : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ)) (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
+    (hmenv_meas : Measurable menv) (ρ : ℝ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P) (r : ℕ → ℝ) (M : ℝ) (hM : 0 < M) :
+    ∃ c : ℝ, 0 < c ∧ ∀ s : ℝ, 0 < s → s ≤ min M (1 / 4) → ∃ cM : ℝ, 0 < cM ∧
+      ∀ n : ℕ, 1 ≤ n → 0 < r n → M ≤ ρ * r n → ∃ Mc : ℝ, cM * s ≤ Mc ∧ 0 < Mc ∧
+      ∫⁻ ξ, supNormOver
+          (localizedDifferenceClass
+            (paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 M)) P s)
+          (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
+        ≤ ENNReal.ofReal c * bracketingEntropyIntegral s
+            (paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 M)) P
+          + ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+            ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv M ω|) *
+              Set.indicator {x | Real.sqrt n * Mc < |shellDiffEnvelope menv M x|} 1 ω ∂P) := by
+  classical
+  obtain ⟨c₀, hc₀_one, hengine⟩ :=
+    chain_supnorm_dyadic_bound_uniform (P := P) (μ := μ) hX_meas hX_indep hX_id hX_law
+  have hc₀_pos : 0 < c₀ := lt_of_lt_of_le one_pos hc₀_one
+  obtain ⟨Cbn, hCbn_pos, hfreeBN⟩ :=
+    shell_localizedDiff_bracketingNumber_freeS P (0 : EuclideanSpace ℝ (Fin d))
+      menv hmenv hmenv_meas M hM
+  refine ⟨c₀ * (4 * Real.sqrt 2) + 4 * c₀, by positivity, fun s hs hsle => ?_⟩
+  have hsM : s ≤ M := le_trans hsle (min_le_left _ _)
+  have hs4 : s ≤ 1 / 4 := le_trans hsle (min_le_right _ _)
+  set Nval : ℕ := ⌊(d : ℝ) * (4 * Cbn * M / s) ^ d⌋₊ ^ 2 with hNval_def
+  refine ⟨min (1 / (2 * (1 + Real.sqrt (Real.log (1 + ((Nval * Nval : ℕ) : ℝ))))))
+      (1 / (1 + Real.sqrt (Real.log (1 + (Nval : ℝ))))), by positivity,
+    fun n hn hrn hnρ => ?_⟩
+  set F : Set (Ω → ℝ) :=
+    paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 M) with hF_def
+  have hguard : ∀ θ ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) M,
+      ‖θ‖ ≤ ρ * r n := by
+    intro θ hθ
+    have hθM : ‖θ‖ ≤ M := by
+      rw [← dist_zero_right]
+      exact Metric.mem_closedBall.mp hθ
+    exact hθM.trans hnρ
+  have hInc_lip : ∀ θ₁ ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) M,
+      ∀ θ₂ ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) M, ∀ ω,
+      |scaledIncrementAt r m θ₀ n θ₁ ω - scaledIncrementAt r m θ₀ n θ₂ ω|
+        ≤ menv ω * ‖θ₁ - θ₂‖ :=
+    fun θ₁ hθ₁ θ₂ hθ₂ ω =>
+      scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip hrn θ₁ θ₂
+        (hguard θ₁ hθ₁) (hguard θ₂ hθ₂) ω
+  have hInc_meas : ∀ θ, Measurable (scaledIncrementAt r m θ₀ n θ) :=
+    fun θ => scaledIncrementAt_measurable r m θ₀ n hm_meas θ
+  have h0_mem : (0 : EuclideanSpace ℝ (Fin d)) ∈
+      Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M := by
+    rw [Metric.mem_ball]
+    simpa using hM
+  have hΘ_bdd : Bornology.IsBounded (Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M) :=
+    Metric.isBounded_ball
+  have hψ_meas : ∀ θ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M, ∀ j : Fin d,
+      Measurable (shellPsi (scaledIncrementAt r m θ₀ n) 0 θ j) :=
+    fun θ _ j => (hInc_meas θ).sub (hInc_meas 0)
+  have hψ_L2 : ∀ θ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M, ∀ j : Fin d,
+      MemLp (shellPsi (scaledIncrementAt r m θ₀ n) 0 θ j) 2 P :=
+    fun θ hθ j => shellPsi_memLp (scaledIncrementAt r m θ₀ n) 0 hInc_meas menv hmenv M hM
+      hInc_lip θ (Metric.ball_subset_closedBall hθ) j
+  have hψLip : ∀ θ₁ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M,
+      ∀ θ₂ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) M, ∀ (j : Fin d) (x : Ω),
+      |shellPsi (scaledIncrementAt r m θ₀ n) 0 θ₁ j x -
+          shellPsi (scaledIncrementAt r m θ₀ n) 0 θ₂ j x| ≤ menv x * ‖θ₁ - θ₂‖ :=
+    fun θ₁ hθ₁ θ₂ hθ₂ j x =>
+      shellPsi_lipschitz (scaledIncrementAt r m θ₀ n) 0 menv M hM hInc_lip θ₁
+        (Metric.ball_subset_closedBall hθ₁) θ₂ (Metric.ball_subset_closedBall hθ₂) j x
+  have hF_int : bracketingEntropyIntegral 1 F P < ⊤ :=
+    parametricClass_bracketingEntropyIntegral_lt_top P
+      (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 M) hΘ_bdd menv hmenv
+      hmenv_meas hψ_meas hψ_L2 hψLip
+  have hF_ne : F.Nonempty :=
+    ⟨shellPsi (scaledIncrementAt r m θ₀ n) 0 0 ⟨0, hd⟩, ⟨0, h0_mem, ⟨0, hd⟩, rfl⟩⟩
+  have hF_meas : ∀ f ∈ F, Measurable f := by
+    rintro _ ⟨θ, _, j, rfl⟩
+    exact (hInc_meas θ).sub (hInc_meas 0)
+  have hΦ_meas : Measurable (shellDiffEnvelope menv M) := by
+    unfold shellDiffEnvelope
+    exact hmenv_meas.norm.const_mul _
+  have hΦ_L2 : MemLp (shellDiffEnvelope menv M) 2 P := by
+    have hEq : shellDiffEnvelope menv M = fun ω => (2 * M) * ‖menv ω‖ := rfl
+    rw [hEq]
+    exact hmenv.norm.const_mul' (2 * M)
+  have hΦ_env : IsEnvelope (differenceClass F) (shellDiffEnvelope menv M) := by
+    rintro _ ⟨f, g, ⟨θ, hθ, j, rfl⟩, ⟨θ', hθ', j', rfl⟩, rfl⟩ x
+    simp only [shellPsi, shellDiffEnvelope]
+    have heq : scaledIncrementAt r m θ₀ n θ x - scaledIncrementAt r m θ₀ n 0 x
+        - (scaledIncrementAt r m θ₀ n θ' x - scaledIncrementAt r m θ₀ n 0 x)
+        = scaledIncrementAt r m θ₀ n θ x - scaledIncrementAt r m θ₀ n θ' x := by
+      ring
+    rw [heq]
+    have h2 : ‖θ - θ'‖ ≤ 2 * M := by
+      have hθn : ‖θ‖ < M := by
+        have := Metric.mem_ball.mp hθ
+        rwa [dist_zero_right] at this
+      have hθ'n : ‖θ'‖ < M := by
+        have := Metric.mem_ball.mp hθ'
+        rwa [dist_zero_right] at this
+      calc ‖θ - θ'‖ ≤ ‖θ‖ + ‖θ'‖ := norm_sub_le _ _
+        _ ≤ 2 * M := by linarith
+    calc |scaledIncrementAt r m θ₀ n θ x - scaledIncrementAt r m θ₀ n θ' x|
+        ≤ menv x * ‖θ - θ'‖ :=
+          hInc_lip θ (Metric.ball_subset_closedBall hθ) θ'
+            (Metric.ball_subset_closedBall hθ') x
+      _ ≤ |menv x| * (2 * M) :=
+          mul_le_mul (le_abs_self _) h2 (norm_nonneg _) (abs_nonneg _)
+      _ = 2 * M * ‖menv x‖ := by rw [Real.norm_eq_abs]; ring
+  obtain ⟨Mc, hMc_pos, _, hMc_Nbd, hbound⟩ :=
+    localized_core_construction (F := F) hF_ne hF_meas hF_int
+      μ X hX_meas hX_indep hX_id hX_law c₀ hc₀_one hengine
+      (shellDiffEnvelope menv M) hΦ_meas hΦ_env hΦ_L2 hs hs4
+  have hbn := hfreeBN (scaledIncrementAt r m θ₀ n) hInc_meas hInc_lip s hs hsM
+  rw [← hF_def] at hbn
+  have hb1 : bracketingNumber s (localizedDifferenceClass F P s) 2 P ≤ (Nval : ℕ∞) := by
+    rw [hNval_def]
+    exact hbn.1
+  have hb2 : bracketingNumber (s / 2) (localizedDifferenceClass F P s) 2 P ≤
+      (Nval : ℕ∞) := by
+    rw [hNval_def]
+    exact hbn.2
+  exact ⟨Mc, hMc_Nbd Nval hb1 hb2, hMc_pos, hbound n hn⟩
+
+/-! ### Markov bounds -/
 
 /-- **Continuity of the population-mean difference** `θ ↦ ∫ (m_θ − m_{θ₀})` on the localization
-ball.  Local copy of `MEstimator.Rate.popMeanDiff_continuous` (private there; not importable): the
-map is Lipschitz with constant `∫|menv|` (`hLip` pointwise + `integral_mono`) on `closedBall θ₀ ρ`,
+ball. The map is Lipschitz with constant `∫|menv|` (`hLip` pointwise +
+`integral_mono`) on `closedBall θ₀ ρ`,
 hence continuous there.  Localized to the ball because `hLip` is only assumed near `θ₀`. -/
 private theorem popMeanDiff_continuous'
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
@@ -849,9 +1049,8 @@ private theorem popMeanDiff_continuous'
           _ ≤ |menv ω| * ‖θ - θ'‖ := mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
     _ = (∫ ω, |menv ω| ∂P) * ‖θ - θ'‖ := integral_mul_const _ _
 
-/-- **`P*` is dominated by `μ` (all sets).** Local copy of
-`UniformRandomFunctions.outerMeasureStar_le_measure` (avoids importing an assembly-layer
-file): `P*(A) ≤ μ A` for every `A`, via `measure_eq_iInf` + the `1_t` measurable majorant. -/
+/-- **`P*` is dominated by `μ` on every set:** `P*(A) ≤ μ A`, by
+`measure_eq_iInf` and the measurable majorant `1_t`. -/
 private theorem outerMeasureStar_le_measure' {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
     (A : Set Ξ) : μ.outerMeasureStar A ≤ μ A := by
   rw [measure_eq_iInf]
@@ -1107,17 +1306,235 @@ private theorem scaledDiffModulus_aemeasurable
     rw [hconst]
     exact measurable_const
 
-/-! ### Scaled-shell modulus -/
+/-- Aemeasurability of the parameter-constrained difference modulus for an arbitrary positive
+local rate. -/
+private theorem scaledDiffModulusAt_aemeasurable
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (r : ℕ → ℝ) (n : ℕ) (hrn : 0 < r n)
+    (R δ : ℝ) (hRρ : R ≤ ρ * r n) :
+    AEMeasurable (fun ξ : Ξ => supNormOver
+      {g : Ω → ℝ | ∃ p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d),
+        p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ ∧
+        g = fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω}
+      (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) μ := by
+  classical
+  have hm_conton : ∀ x : Ω,
+      ContinuousOn (fun θ : EuclideanSpace ℝ (Fin d) => m θ x) (Metric.closedBall θ₀ ρ) := by
+    intro x
+    refine (LipschitzOnWith.of_dist_le_mul
+      (K := Real.toNNReal |menv x|) (fun θ hθ θ' hθ' => ?_)).continuousOn
+    rw [Real.dist_eq, Real.coe_toNNReal _ (abs_nonneg _), dist_eq_norm]
+    calc |m θ x - m θ' x| ≤ menv x * ‖θ - θ'‖ := hLip θ hθ θ' hθ' x
+      _ ≤ |menv x| * ‖θ - θ'‖ := mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
+  have hInc_meas : ∀ θ, Measurable (scaledIncrementAt r m θ₀ n θ) :=
+    fun θ => scaledIncrementAt_measurable r m θ₀ n hm_meas θ
+  have hg1_cont : Continuous
+      (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+          p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+        θ₀ + (r n)⁻¹ • p'.1.1) :=
+    continuous_const.add ((continuous_fst.comp continuous_subtype_val).const_smul _)
+  have hg2_cont : Continuous
+      (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+          p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+        θ₀ + (r n)⁻¹ • p'.1.2) :=
+    continuous_const.add ((continuous_snd.comp continuous_subtype_val).const_smul _)
+  have hmem_ball : ∀ (v : EuclideanSpace ℝ (Fin d)), v ∈ Metric.ball 0 R →
+      θ₀ + (r n)⁻¹ • v ∈ Metric.closedBall θ₀ ρ := by
+    intro v hv
+    have hnorm : ‖v‖ < R := by rw [← dist_zero_right]; exact Metric.mem_ball.mp hv
+    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+      abs_of_pos (inv_pos.mpr hrn), inv_mul_eq_div, div_le_iff₀ hrn]
+    exact le_of_lt (lt_of_lt_of_le hnorm hRρ)
+  have hg1_mem : ∀ p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+      p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ},
+      θ₀ + (r n)⁻¹ • p'.1.1 ∈ Metric.closedBall θ₀ ρ :=
+    fun p' => hmem_ball p'.1.1 p'.2.1
+  have hg2_mem : ∀ p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+      p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ},
+      θ₀ + (r n)⁻¹ • p'.1.2 ∈ Metric.closedBall θ₀ ρ :=
+    fun p' => hmem_ball p'.1.2 p'.2.2.1
+  have hmenv_int : Integrable menv P := hmenv.integrable one_le_two
+  have hInc_int : ∀ v ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) R,
+      Integrable (scaledIncrementAt r m θ₀ n v) P := by
+    intro v hv
+    have hmemv : θ₀ + (r n)⁻¹ • v ∈ Metric.closedBall θ₀ ρ := hmem_ball v hv
+    have hdiff : Integrable (fun ω => m (θ₀ + (r n)⁻¹ • v) ω - m θ₀ ω) P := by
+      refine Integrable.mono' (hmenv_int.abs.mul_const ‖θ₀ + (r n)⁻¹ • v - θ₀‖)
+        (((hm_meas _).sub (hm_meas θ₀)).aestronglyMeasurable) (Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs]
+      calc |m (θ₀ + (r n)⁻¹ • v) ω - m θ₀ ω|
+          ≤ menv ω * ‖θ₀ + (r n)⁻¹ • v - θ₀‖ :=
+            hLip _ hmemv _ (Metric.mem_closedBall_self hρ.le) ω
+        _ ≤ |menv ω| * ‖θ₀ + (r n)⁻¹ • v - θ₀‖ :=
+            mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
+    unfold scaledIncrementAt
+    exact hdiff.const_mul (r n)
+  have hpop_conton : ContinuousOn
+      (fun θ : EuclideanSpace ℝ (Fin d) => ∫ ω, (m θ ω - m θ₀ ω) ∂P)
+      (Metric.closedBall θ₀ ρ) :=
+    popMeanDiff_continuous' P m θ₀ hm_meas menv hmenv ρ hρ hLip
+  have hemp_cont : ∀ ξ : Ξ, Continuous
+      (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+          p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+        empiricalProcess P n (fun i : Fin n => X i.val ξ)
+          (fun ω => scaledIncrementAt r m θ₀ n p'.1.1 ω -
+            scaledIncrementAt r m θ₀ n p'.1.2 ω)) := by
+    intro ξ
+    have hinc1 : ∀ x : Ω, Continuous
+        (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+          scaledIncrementAt r m θ₀ n p'.1.1 x) := by
+      intro x
+      simp only [scaledIncrementAt]
+      exact continuous_const.mul
+        (((hm_conton x).comp_continuous hg1_cont hg1_mem).sub continuous_const)
+    have hinc2 : ∀ x : Ω, Continuous
+        (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+          scaledIncrementAt r m θ₀ n p'.1.2 x) := by
+      intro x
+      simp only [scaledIncrementAt]
+      exact continuous_const.mul
+        (((hm_conton x).comp_continuous hg2_cont hg2_mem).sub continuous_const)
+    have hsum : Continuous
+        (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+          ∑ i : Fin n, (scaledIncrementAt r m θ₀ n p'.1.1 (X i.val ξ) -
+            scaledIncrementAt r m θ₀ n p'.1.2 (X i.val ξ))) :=
+      continuous_finset_sum Finset.univ (fun i _ =>
+        (hinc1 (X i.val ξ)).sub (hinc2 (X i.val ξ)))
+    have hint : Continuous
+        (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+          ∫ ω, (scaledIncrementAt r m θ₀ n p'.1.1 ω -
+            scaledIncrementAt r m θ₀ n p'.1.2 ω) ∂P) := by
+      have heq2 : (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+              ∫ ω, (scaledIncrementAt r m θ₀ n p'.1.1 ω -
+                scaledIncrementAt r m θ₀ n p'.1.2 ω) ∂P)
+          = fun p' => (∫ ω, scaledIncrementAt r m θ₀ n p'.1.1 ω ∂P) -
+              (∫ ω, scaledIncrementAt r m θ₀ n p'.1.2 ω ∂P) := by
+        funext p'
+        rw [integral_sub (hInc_int p'.1.1 p'.2.1) (hInc_int p'.1.2 p'.2.2.1)]
+      rw [heq2]
+      have hpop1 : Continuous
+          (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+              p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+            ∫ ω, scaledIncrementAt r m θ₀ n p'.1.1 ω ∂P) := by
+        have he : (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+              p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+                ∫ ω, scaledIncrementAt r m θ₀ n p'.1.1 ω ∂P)
+            = fun p' => r n * ∫ ω, (m (θ₀ + (r n)⁻¹ • p'.1.1) ω - m θ₀ ω) ∂P := by
+          funext p'; unfold scaledIncrementAt; rw [integral_const_mul]
+        rw [he]
+        exact continuous_const.mul (hpop_conton.comp_continuous hg1_cont hg1_mem)
+      have hpop2 : Continuous
+          (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+              p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+            ∫ ω, scaledIncrementAt r m θ₀ n p'.1.2 ω ∂P) := by
+        have he : (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+              p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+                ∫ ω, scaledIncrementAt r m θ₀ n p'.1.2 ω ∂P)
+            = fun p' => r n * ∫ ω, (m (θ₀ + (r n)⁻¹ • p'.1.2) ω - m θ₀ ω) ∂P := by
+          funext p'; unfold scaledIncrementAt; rw [integral_const_mul]
+        rw [he]
+        exact continuous_const.mul (hpop_conton.comp_continuous hg2_cont hg2_mem)
+      exact hpop1.sub hpop2
+    exact (((hsum.const_mul ((n : ℝ)⁻¹)).sub hint).const_mul (Real.sqrt n))
+  have hmeas_perp : ∀ a b : EuclideanSpace ℝ (Fin d),
+      Measurable (fun ξ : Ξ => ENNReal.ofReal
+        |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+          (fun ω => scaledIncrementAt r m θ₀ n a ω - scaledIncrementAt r m θ₀ n b ω)|) := by
+    intro a b
+    have hg : Measurable (fun ω => scaledIncrementAt r m θ₀ n a ω -
+        scaledIncrementAt r m θ₀ n b ω) := (hInc_meas a).sub (hInc_meas b)
+    have hE : Measurable (fun ξ : Ξ =>
+        empiricalProcess P n (fun i : Fin n => X i.val ξ)
+          (fun ω => scaledIncrementAt r m θ₀ n a ω - scaledIncrementAt r m θ₀ n b ω)) := by
+      unfold empiricalProcess empiricalAvg
+      refine Measurable.const_mul (Measurable.sub ?_ measurable_const) _
+      refine Measurable.const_mul ?_ _
+      exact Finset.measurable_sum Finset.univ (fun i _ => hg.comp (hX_meas i.val))
+    exact hE.abs.ennreal_ofReal
+  refine Measurable.aemeasurable ?_
+  by_cases hSne : Nonempty {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+      p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ}
+  · obtain ⟨q, hq⟩ := TopologicalSpace.exists_dense_seq
+      {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+        p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ}
+    have hkey : (fun ξ : Ξ => supNormOver
+          {g : Ω → ℝ | ∃ p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d),
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ ∧
+            g = fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω}
+          (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
+        = fun ξ : Ξ => ⨆ j : ℕ, ENNReal.ofReal
+            |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+              (fun ω => scaledIncrementAt r m θ₀ n (q j).1.1 ω -
+                scaledIncrementAt r m θ₀ n (q j).1.2 ω)| := by
+      funext ξ
+      apply le_antisymm
+      · simp only [supNormOver]
+        refine iSup₂_le ?_
+        rintro f ⟨p, hp1, hp2, hp3, rfl⟩
+        have hΨcont : Continuous
+            (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+                p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
+              ENNReal.ofReal |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (fun ω => scaledIncrementAt r m θ₀ n p'.1.1 ω -
+                  scaledIncrementAt r m θ₀ n p'.1.2 ω)|) :=
+          ENNReal.continuous_ofReal.comp (continuous_abs.comp (hemp_cont ξ))
+        have hmem : (⟨p, hp1, hp2, hp3⟩ :
+            {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
+              p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ})
+            ∈ closure (Set.range q) := hq _
+        rw [mem_closure_iff_seq_limit] at hmem
+        obtain ⟨y, hy_mem, hy_lim⟩ := hmem
+        refine le_of_tendsto ((hΨcont.tendsto ⟨p, hp1, hp2, hp3⟩).comp hy_lim)
+          (Eventually.of_forall (fun k => ?_))
+        obtain ⟨j, hj⟩ := hy_mem k
+        simp only [Function.comp_apply]
+        rw [← hj]
+        exact le_iSup (fun j : ℕ => ENNReal.ofReal
+          |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+            (fun ω => scaledIncrementAt r m θ₀ n (q j).1.1 ω -
+              scaledIncrementAt r m θ₀ n (q j).1.2 ω)|) j
+      · refine iSup_le (fun j => ?_)
+        exact le_supNormOver ⟨(q j).1, (q j).2.1, (q j).2.2.1, (q j).2.2.2, rfl⟩
+    rw [hkey]
+    exact Measurable.iSup (fun j => hmeas_perp (q j).1.1 (q j).1.2)
+  · have hconst : (fun ξ : Ξ => supNormOver
+          {g : Ω → ℝ | ∃ p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d),
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ ∧
+            g = fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω}
+          (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
+        = fun _ => (0 : ℝ≥0∞) := by
+      funext ξ
+      refine le_antisymm ?_ (zero_le _)
+      simp only [supNormOver]
+      refine iSup₂_le (fun f hf => ?_)
+      obtain ⟨p, hp1, hp2, hp3, -⟩ := hf
+      exact absurd ⟨⟨p, hp1, hp2, hp3⟩⟩ hSne
+    rw [hconst]
+    exact measurable_const
 
+/-! ### The scaled-shell modulus -/
+
+-- The `limsup` argument identifies two copies of the pair-oscillation event,
+-- whose defeq check exceeds the default heartbeat budget.
 set_option maxHeartbeats 1000000 in
--- The `limsup` assembly unifies two copies of a large pair-oscillation event set-builder.
--- Elaborating their definitional equality exceeds the default heartbeat budget.
-/-- **The √n-scaled shell / linearization modulus vanishes** (vdV Lemma 19.34 /
-Theorem 19.28).
+/-- **The √n-scaled shell/linearization modulus vanishes**
+(vdV Lemma 19.34 and Theorem 19.28).
 
 Exactly the conclusion of `LinearizationEquicontinuity.sqrtScaled_shell_modulus_tendstoZero`
-(the un-used `mdot` argument dropped; `hmenv_meas` added — the bracketing machinery needs a
-measurable envelope).  Assembled from the SCALED-shell route (see file header). -/
+in the form required by the bracketing argument. The envelope is assumed measurable. -/
 theorem sqrtScaled_shell_modulus_bound
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1168,7 +1585,7 @@ theorem sqrtScaled_shell_modulus_bound
         exact absurd hosc (not_lt.mpr hε.le)
       · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
         exact zero_le _
-    · -- `0 < M`: the genuine SCALED-shell assembly.
+    · -- The scaled-shell argument for `0 < M`.
       -- Constants.
       set Kmenv : ℝ := (eLpNorm menv 2 P).toReal + 1 with hKmenv_def
       have hKmenv_pos : 0 < Kmenv := by
@@ -1189,11 +1606,11 @@ theorem sqrtScaled_shell_modulus_bound
           exact Real.sqrt_le_sqrt h1
         rw [div_le_iff₀ hρ] at h2
         exact h2.trans_eq (mul_comm _ _)
-      -- Chaining bound at radius `R = 2M` (so closed-`M`-ball ⊆ open-`R`-ball).
+      -- Chaining at radius `R = 2M` (so the closed `M`-ball lies in the open `R`-ball).
       obtain ⟨c, hc_pos, hChain⟩ :=
         scaledShell_localizedChainBound_freeS hd P m θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip
           μ X hX_meas hX_indep hX_id hX_law R hR_pos
-      -- Uniform entropy bound for the scaled-increment class, centred at `0`.
+      -- Entropy bound, centred at `0`.
       obtain ⟨Cent, hCent_pos, hEnt⟩ :=
         shell_bracketingEntropyIntegral_freeS P (0 : EuclideanSpace ℝ (Fin d)) menv hmenv hmenv_meas
       -- `δ ↦ c·bd(Kmenv·δ) → 0`; choose `δ` small.
@@ -1231,7 +1648,7 @@ theorem sqrtScaled_shell_modulus_bound
       set bdval : ℝ :=
         2 * Real.sqrt (Real.log 2 + d * |Real.log (2 * Cent * R / s)| + d) * s with hbdval_def
       have hbdval_nn : 0 ≤ bdval := by rw [hbdval_def]; positivity
-      -- Instantiate the localized chaining bound at scale `s`.
+      -- Apply the chaining bound at scale `s`.
       obtain ⟨cM, hcM_pos, hEng⟩ := hChain s hs_pos hs_leR4
       -- The tail envelope `Φ = shellDiffEnvelope menv R = 2R|menv|`.
       have hΦ_meas : Measurable (shellDiffEnvelope menv R) := by
@@ -1495,5 +1912,710 @@ theorem sqrtScaled_shell_modulus_bound
                         1 ω ∂P)) / ENNReal.ofReal ε)
               _ (le_of_eq (limsup_const _)) hVf_tendsto
         _ ≤ ENNReal.ofReal η := hUf_le
+
+set_option maxHeartbeats 1000000 in
+-- Outer Markov bounds compare the two pair events.
+/-- The arbitrary-rate shell modulus vanishes while the empirical process retains its `√n`
+normalization. -/
+theorem scaledAt_shell_modulus_bound
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop) (M : ℝ) (hM : 0 ≤ M) :
+    ∀ ε : ℝ, 0 < ε → ∀ η : ℝ, 0 < η → ∃ δ : ℝ, 0 < δ ∧
+      limsup (fun n => μ.outerMeasureStar
+        {ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}, ‖h₁.1 - h₂.1‖ < δ ∧
+          ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₁.1) -
+              empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₂.1)|})
+        atTop ≤ ENNReal.ofReal η := by
+  rcases Nat.eq_zero_or_pos d with hd0 | hd
+  · subst hd0
+    intro ε hε η hη
+    refine ⟨1, one_pos, ?_⟩
+    refine Filter.limsup_le_of_le isCobounded_le_of_bot (Eventually.of_forall fun n => ?_)
+    refine le_trans (outerMeasureStar_mono μ (show _ ⊆ (∅ : Set Ξ) from ?_)) ?_
+    · rintro ξ ⟨h₁, h₂, _, hosc⟩
+      have hh : h₁.1 = h₂.1 := Subsingleton.elim _ _
+      rw [hh] at hosc
+      exact absurd hosc (by simp [hε.le])
+    · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
+      exact zero_le _
+  · intro ε hε η hη
+    rcases eq_or_lt_of_le hM with hM0 | hM'
+    · refine ⟨1, one_pos, ?_⟩
+      refine Filter.limsup_le_of_le isCobounded_le_of_bot (Eventually.of_forall fun n => ?_)
+      refine le_trans (outerMeasureStar_mono μ (show _ ⊆ (∅ : Set Ξ) from ?_)) ?_
+      · rintro ξ ⟨h₁, h₂, _, hosc⟩
+        have hh1 : h₁.1 = 0 := norm_le_zero_iff.mp (hM0 ▸ h₁.2)
+        have hh2 : h₂.1 = 0 := norm_le_zero_iff.mp (hM0 ▸ h₂.2)
+        rw [hh1, hh2] at hosc
+        exact absurd hosc (by simp [hε.le])
+      · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
+        exact zero_le _
+    · set Kmenv : ℝ := (eLpNorm menv 2 P).toReal + 1 with hKmenv_def
+      have hKmenv_pos : 0 < Kmenv := by
+        have := ENNReal.toReal_nonneg (a := eLpNorm menv 2 P)
+        rw [hKmenv_def]
+        linarith
+      set R : ℝ := 2 * M with hR_def
+      have hR_pos : 0 < R := by rw [hR_def]; linarith
+      obtain ⟨c, hc_pos, hChain⟩ :=
+        scaledShellAt_localizedChainBound_freeS hd P m θ₀ hm_meas menv hmenv hmenv_meas ρ
+          hLip μ X hX_meas hX_indep hX_id hX_law r R hR_pos
+      obtain ⟨Cent, hCent_pos, hEnt⟩ :=
+        shell_bracketingEntropyIntegral_freeS P (0 : EuclideanSpace ℝ (Fin d)) menv hmenv
+          hmenv_meas
+      have hminpos : (0 : ℝ) < min R (1 / 4) := lt_min hR_pos (by norm_num)
+      have hηε_pos : (0 : ℝ) < η * ε := mul_pos hη hε
+      have hmul0 : Tendsto (fun δ' : ℝ => Kmenv * δ') (𝓝[>] 0) (𝓝 0) := by
+        have h : Tendsto (fun δ' : ℝ => Kmenv * δ') (𝓝 0) (𝓝 (Kmenv * 0)) :=
+          tendsto_const_nhds.mul tendsto_id
+        rw [mul_zero] at h
+        exact h.mono_left nhdsWithin_le_nhds
+      have hKδ : Tendsto (fun δ' : ℝ => Kmenv * δ') (𝓝[>] 0) (𝓝[>] 0) := by
+        rw [tendsto_nhdsWithin_iff]
+        refine ⟨hmul0, ?_⟩
+        filter_upwards [self_mem_nhdsWithin] with δ' hδ'
+        exact mul_pos hKmenv_pos hδ'
+      have hbd_tendsto : Tendsto (fun δ' : ℝ => c * (2 * Real.sqrt (Real.log 2
+            + d * |Real.log (2 * Cent * R / (Kmenv * δ'))| + d) * (Kmenv * δ')))
+          (𝓝[>] 0) (𝓝 0) := by
+        have h0 := (entropyScaleBound_tendsto_zero (d := d) Cent R hCent_pos hR_pos).comp hKδ
+        simpa using h0.const_mul c
+      have hev : ∀ᶠ δ' in 𝓝[>] (0 : ℝ), 0 < δ' ∧ Kmenv * δ' ≤ min R (1 / 4) ∧
+          c * (2 * Real.sqrt (Real.log 2 + d * |Real.log (2 * Cent * R / (Kmenv * δ'))| + d)
+            * (Kmenv * δ')) ≤ η * ε := by
+        filter_upwards [self_mem_nhdsWithin, hmul0.eventually (Iio_mem_nhds hminpos),
+          hbd_tendsto.eventually (Iio_mem_nhds hηε_pos)] with δ' hδ' hA hB
+        exact ⟨hδ', hA.le, hB.le⟩
+      obtain ⟨δ, hδ_pos, hδ_leR4, hδ_bd⟩ := hev.exists
+      refine ⟨δ, hδ_pos, ?_⟩
+      set s : ℝ := Kmenv * δ with hs_def
+      have hs_pos : 0 < s := mul_pos hKmenv_pos hδ_pos
+      have hs_leR4 : s ≤ min R (1 / 4) := hδ_leR4
+      have hs_le_R : s ≤ R := hs_leR4.trans (min_le_left _ _)
+      set bdval : ℝ :=
+        2 * Real.sqrt (Real.log 2 + d * |Real.log (2 * Cent * R / s)| + d) * s with hbdval_def
+      have hbdval_nn : 0 ≤ bdval := by rw [hbdval_def]; positivity
+      obtain ⟨cM, hcM_pos, hEng⟩ := hChain s hs_pos hs_leR4
+      have hΦ_meas : Measurable (shellDiffEnvelope menv R) := by
+        unfold shellDiffEnvelope
+        exact hmenv_meas.norm.const_mul _
+      have hΦ_L2 : MemLp (shellDiffEnvelope menv R) 2 P := by
+        have hEq : shellDiffEnvelope menv R = fun ω => (2 * R) * ‖menv ω‖ := rfl
+        rw [hEq]
+        exact hmenv.norm.const_mul' (2 * R)
+      have hεE_ne : ENNReal.ofReal ε ≠ 0 := (ENNReal.ofReal_pos.mpr hε).ne'
+      have hεE_ne_top : ENNReal.ofReal ε ≠ ⊤ := ENNReal.ofReal_ne_top
+      have hmenv_int : Integrable menv P := hmenv.integrable one_le_two
+      have hInc_int : ∀ n : ℕ, 0 < r n → M ≤ ρ * r n →
+          ∀ θ : EuclideanSpace ℝ (Fin d), ‖θ‖ ≤ M →
+          Integrable (scaledIncrementAt r m θ₀ n θ) P := by
+        intro n hrn hnM θ hθM
+        have hmemθ : θ₀ + (r n)⁻¹ • θ ∈ Metric.closedBall θ₀ ρ := by
+          rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul,
+            Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hrn), inv_mul_eq_div, div_le_iff₀ hrn]
+          exact hθM.trans hnM
+        have hdiff : Integrable (fun ω => m (θ₀ + (r n)⁻¹ • θ) ω - m θ₀ ω) P := by
+          refine Integrable.mono' (hmenv_int.abs.mul_const ‖θ₀ + (r n)⁻¹ • θ - θ₀‖)
+            (((hm_meas _).sub (hm_meas θ₀)).aestronglyMeasurable)
+            (Eventually.of_forall fun ω => ?_)
+          rw [Real.norm_eq_abs]
+          calc |m (θ₀ + (r n)⁻¹ • θ) ω - m θ₀ ω|
+              ≤ menv ω * ‖θ₀ + (r n)⁻¹ • θ - θ₀‖ :=
+                hLip _ hmemθ _ (Metric.mem_closedBall_self hρ.le) ω
+            _ ≤ |menv ω| * ‖θ₀ + (r n)⁻¹ • θ - θ₀‖ :=
+                mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
+        unfold scaledIncrementAt
+        exact hdiff.const_mul (r n)
+      have hkey : ∀ᶠ n in atTop, μ.outerMeasureStar
+          {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ ∧ ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+              (scaledIncrementAt r m θ₀ n h₁.1) - empiricalProcess P n
+                (fun i : Fin n => X i.val ξ) (scaledIncrementAt r m θ₀ n h₂.1)|}
+          ≤ (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε
+            + (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+              ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+                Set.indicator {x | Real.sqrt n * (cM * s) < |shellDiffEnvelope menv R x|}
+                  1 ω ∂P)) / ENNReal.ofReal ε := by
+        filter_upwards [eventually_ge_atTop 1, hr.eventually (eventually_gt_atTop 0),
+          (Filter.Tendsto.const_mul_atTop hρ hr).eventually (eventually_ge_atTop R)]
+          with n hn1 hrn hRρ
+        have hMρ : M ≤ ρ * r n := (by rw [hR_def]; linarith : M ≤ R).trans hRρ
+        have hcbguard : ∀ v ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) R,
+            ‖v‖ ≤ ρ * r n := by
+          intro v hv
+          exact (by rw [← dist_zero_right]; exact Metric.mem_closedBall.mp hv : ‖v‖ ≤ R).trans hRρ
+        obtain ⟨Mc, hMc_lb, hMc_pos, hEng_bound⟩ := hEng n hn1 hrn hRρ
+        set Cn : Set (Ω → ℝ) :=
+          {g : Ω → ℝ | ∃ p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d),
+            p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ ∧
+            g = fun ω => scaledIncrementAt r m θ₀ n p.1 ω -
+              scaledIncrementAt r m θ₀ n p.2 ω} with hCn_def
+        have hshell : ∀ θ : EuclideanSpace ℝ (Fin d),
+            shellPsi (scaledIncrementAt r m θ₀ n) 0 θ ⟨0, hd⟩ =
+              fun ω => scaledIncrementAt r m θ₀ n θ ω := by
+          intro θ
+          funext ω
+          simp only [shellPsi, scaledIncrementAt_apply_zero, sub_zero]
+        have hCn_loc : Cn ⊆ localizedDifferenceClass
+            (paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R)) P s := by
+          rintro g ⟨p, hp1, hp2, hp3, rfl⟩
+          have hf : (fun ω => scaledIncrementAt r m θ₀ n p.1 ω) ∈
+              paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R) :=
+            ⟨p.1, hp1, ⟨0, hd⟩, (hshell p.1).symm⟩
+          have hg' : (fun ω => scaledIncrementAt r m θ₀ n p.2 ω) ∈
+              paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R) :=
+            ⟨p.2, hp2, ⟨0, hd⟩, (hshell p.2).symm⟩
+          have hpt : eLpNorm
+              (fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω)
+              2 P ≤ eLpNorm (fun ω => δ * menv ω) 2 P := by
+            apply eLpNorm_mono
+            intro ω
+            simp only [Real.norm_eq_abs, abs_mul]
+            calc |scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω|
+                ≤ menv ω * ‖p.1 - p.2‖ := scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip
+                  hrn p.1 p.2 (hcbguard p.1 (Metric.ball_subset_closedBall hp1))
+                  (hcbguard p.2 (Metric.ball_subset_closedBall hp2)) ω
+              _ ≤ |menv ω| * ‖p.1 - p.2‖ :=
+                  mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
+              _ ≤ |menv ω| * δ := mul_le_mul_of_nonneg_left hp3.le (abs_nonneg _)
+              _ = |δ| * |menv ω| := by rw [abs_of_pos hδ_pos]; ring
+          have hrad : eLpNorm
+              (fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω)
+              2 P ≤ ENNReal.ofReal s := hpt.trans (by
+            have hsmul : (fun ω => δ * menv ω) = δ • menv := by
+              funext ω; simp [Pi.smul_apply, smul_eq_mul]
+            rw [hsmul, eLpNorm_const_smul]
+            have hmenv_ne : eLpNorm menv 2 P ≠ ⊤ := hmenv.eLpNorm_lt_top.ne
+            have hnn : 0 ≤ (eLpNorm menv 2 P).toReal := ENNReal.toReal_nonneg
+            calc ‖δ‖ₑ * eLpNorm menv 2 P
+                = ENNReal.ofReal δ * ENNReal.ofReal (eLpNorm menv 2 P).toReal := by
+                  rw [ENNReal.ofReal_toReal hmenv_ne, Real.enorm_eq_ofReal_abs, abs_of_pos hδ_pos]
+              _ = ENNReal.ofReal (δ * (eLpNorm menv 2 P).toReal) :=
+                  (ENNReal.ofReal_mul hδ_pos.le).symm
+              _ ≤ ENNReal.ofReal s := by
+                  apply ENNReal.ofReal_le_ofReal
+                  rw [hs_def, hKmenv_def]
+                  nlinarith [hnn, hδ_pos.le])
+          exact mem_localizedDifferenceClass hf hg' hrad
+        have hsub : {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ ∧ ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+              (scaledIncrementAt r m θ₀ n h₁.1) - empiricalProcess P n
+                (fun i : Fin n => X i.val ξ) (scaledIncrementAt r m θ₀ n h₂.1)|}
+            ⊆ {ξ : Ξ | ENNReal.ofReal ε ≤ supNormOver Cn
+              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)} := by
+          rintro ξ ⟨h₁, h₂, hclose, hosc⟩
+          have hp1 : h₁.1 ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) R := by
+            rw [Metric.mem_ball, dist_zero_right]
+            exact lt_of_le_of_lt h₁.2 (by rw [hR_def]; linarith)
+          have hp2 : h₂.1 ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin d)) R := by
+            rw [Metric.mem_ball, dist_zero_right]
+            exact lt_of_le_of_lt h₂.2 (by rw [hR_def]; linarith)
+          have hg_mem : (fun ω => scaledIncrementAt r m θ₀ n h₁.1 ω -
+              scaledIncrementAt r m θ₀ n h₂.1 ω) ∈ Cn :=
+            ⟨(h₁.1, h₂.1), hp1, hp2, hclose, rfl⟩
+          have hlin := empiricalProcess_sub P n (fun i : Fin n => X i.val ξ)
+            (scaledIncrementAt r m θ₀ n h₁.1) (scaledIncrementAt r m θ₀ n h₂.1)
+            (hInc_int n hrn hMρ h₁.1 h₁.2) (hInc_int n hrn hMρ h₂.1 h₂.2)
+          have hosc' : ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+              (fun ω => scaledIncrementAt r m θ₀ n h₁.1 ω -
+                scaledIncrementAt r m θ₀ n h₂.1 ω)| := by
+            rw [hlin]
+            exact hosc
+          exact (ENNReal.ofReal_le_ofReal hosc'.le).trans (le_supNormOver hg_mem)
+        have haem : AEMeasurable (fun ξ : Ξ => supNormOver Cn
+            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) μ := by
+          rw [hCn_def]
+          exact scaledDiffModulusAt_aemeasurable P m θ₀ hm_meas menv hmenv ρ hρ hLip μ X
+            hX_meas r n hrn R δ hRρ
+        calc μ.outerMeasureStar
+              {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+                ‖h₁.1 - h₂.1‖ < δ ∧ ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                  (scaledIncrementAt r m θ₀ n h₁.1) - empiricalProcess P n
+                    (fun i : Fin n => X i.val ξ) (scaledIncrementAt r m θ₀ n h₂.1)|}
+            ≤ μ.outerMeasureStar {ξ : Ξ | ENNReal.ofReal ε ≤ supNormOver Cn
+                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)} :=
+              outerMeasureStar_mono μ hsub
+          _ ≤ μ {ξ : Ξ | ENNReal.ofReal ε ≤ supNormOver Cn
+                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)} :=
+              outerMeasureStar_le_measure' μ _
+          _ ≤ (∫⁻ ξ, supNormOver Cn
+                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ) /
+                ENNReal.ofReal ε := meas_ge_le_lintegral_div haem hεE_ne hεE_ne_top
+          _ ≤ (∫⁻ ξ, supNormOver
+                (localizedDifferenceClass
+                  (paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R)) P s)
+                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ) /
+                ENNReal.ofReal ε :=
+              ENNReal.div_le_div_right (lintegral_mono fun ξ => supNormOver_mono hCn_loc _) _
+          _ ≤ (ENNReal.ofReal c * bracketingEntropyIntegral s
+                (paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R)) P
+              + ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+                ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+                  Set.indicator {x | Real.sqrt n * Mc < |shellDiffEnvelope menv R x|} 1 ω ∂P)) /
+                ENNReal.ofReal ε := ENNReal.div_le_div_right hEng_bound _
+          _ ≤ (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε +
+              (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+                ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+                  Set.indicator {x | Real.sqrt n * (cM * s) < |shellDiffEnvelope menv R x|}
+                    1 ω ∂P)) / ENNReal.ofReal ε := by
+            rw [ENNReal.add_div]
+            refine add_le_add (ENNReal.div_le_div_right ?_ _)
+              (ENNReal.div_le_div_right ?_ _)
+            · refine mul_le_mul_right ?_ _
+              have hJ := hEnt (scaledIncrementAt r m θ₀ n)
+                (fun θ => scaledIncrementAt_measurable r m θ₀ n hm_meas θ) R hR_pos
+                (fun θ₁ hθ₁ θ₂ hθ₂ ω => scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip
+                  hrn θ₁ θ₂ (hcbguard θ₁ hθ₁) (hcbguard θ₂ hθ₂) ω)
+                s hs_pos hs_le_R
+              rw [← hbdval_def] at hJ
+              exact hJ
+            · refine mul_le_mul_right (mul_le_mul_right ?_ _) _
+              refine lintegral_mono fun ω => mul_le_mul_of_nonneg_left ?_ (by positivity)
+              exact Set.indicator_le_indicator_of_subset
+                (fun x hx => lt_of_le_of_lt
+                  (mul_le_mul_of_nonneg_left hMc_lb (Real.sqrt_nonneg _)) hx)
+                (fun _ => zero_le _) ω
+      have hVf_tendsto : Tendsto (fun n : ℕ =>
+          (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+            ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+              Set.indicator {x | Real.sqrt n * (cM * s) < |shellDiffEnvelope menv R x|}
+                1 ω ∂P)) / ENNReal.ofReal ε) atTop (𝓝 0) := by
+        have hT := envelopeTail_vanishes (shellDiffEnvelope menv R) hΦ_L2 hΦ_meas
+          (mul_pos hcM_pos hs_pos)
+        have h1 := ENNReal.Tendsto.const_mul hT (Or.inr (ENNReal.ofReal_ne_top (r := c)))
+        rw [mul_zero] at h1
+        have h2 := ENNReal.Tendsto.div_const h1 (Or.inr hεE_ne)
+        rwa [ENNReal.zero_div] at h2
+      have hUf_le : (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε ≤
+          ENNReal.ofReal η := by
+        rw [ENNReal.div_le_iff hεE_ne hεE_ne_top, ← ENNReal.ofReal_mul hc_pos.le,
+          ← ENNReal.ofReal_mul hη.le]
+        exact ENNReal.ofReal_le_ofReal hδ_bd
+      calc limsup (fun n => μ.outerMeasureStar
+              {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+                ‖h₁.1 - h₂.1‖ < δ ∧ ε < |empiricalProcess P n
+                  (fun i : Fin n => X i.val ξ) (scaledIncrementAt r m θ₀ n h₁.1) -
+                    empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                      (scaledIncrementAt r m θ₀ n h₂.1)|}) atTop
+          ≤ limsup (fun n : ℕ => (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε +
+              (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+                ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+                  Set.indicator {x | Real.sqrt n * (cM * s) < |shellDiffEnvelope menv R x|}
+                    1 ω ∂P)) / ENNReal.ofReal ε) atTop :=
+            limsup_le_limsup hkey isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
+        _ ≤ (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε :=
+            limsup_add_tendsto_zero_le
+              (fun _ => (ENNReal.ofReal c * ENNReal.ofReal bdval) / ENNReal.ofReal ε)
+              (fun n => (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
+                ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
+                  Set.indicator {x | Real.sqrt n * (cM * s) < |shellDiffEnvelope menv R x|}
+                    1 ω ∂P)) / ENNReal.ofReal ε)
+              _ (le_of_eq (limsup_const _)) hVf_tendsto
+        _ ≤ ENNReal.ofReal η := hUf_le
+
+/-! ### Lemma 19.31 input — score integrability derived from the local envelope -/
+
+/-- The a.e. derivative appearing in vdV Lemma 19.31 belongs to `L²(P)` whenever the
+criterion is locally Lipschitz with an `L²(P)` envelope.  No measurability or integrability
+certificate for `mdot` is assumed: its coordinates are a.e. limits of measurable directional
+difference quotients, and the derivative norm is bounded by the envelope norm.
+
+The conclusion is deliberately `MemLp`, hence carries a.e. strong measurability.  Literal
+measurability of the supplied representative cannot be derived from an a.e. derivative
+hypothesis, since that representative may be changed arbitrarily on a null set. -/
+theorem psiVec_memLp_two_of_ae_hasFDerivAt_lipschitz
+    (P : Measure Ω)
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (mdot : Fin d → Ω → ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
+      ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+        |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
+      (innerSL ℝ (psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) θ₀) :
+    MemLp (psiVec
+      (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P := by
+  have hmdot_ae : ∀ i, AEMeasurable (mdot i) P := by
+    intro i
+    let e : EuclideanSpace ℝ (Fin d) := EuclideanSpace.single i 1
+    let q : ℕ → Ω → ℝ := fun n ω =>
+      (((n : ℝ) + 1)⁻¹)⁻¹ *
+        (m (θ₀ + ((n : ℝ) + 1)⁻¹ • e) ω - m θ₀ ω)
+    have hq_meas : ∀ n, Measurable (q n) := by
+      intro n
+      exact ((hm_meas _).sub (hm_meas θ₀)).const_mul _
+    refine aemeasurable_of_tendsto_metrizable_ae'
+      (fun n => (hq_meas n).aemeasurable) ?_
+    filter_upwards [hderiv] with ω hd
+    have hcoord :
+        (innerSL ℝ (psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) e = mdot i ω := by
+      rw [innerSL_apply_apply]
+      simp only [e]
+      rw [real_inner_comm]
+      simpa [psiVec] using
+        (EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ)
+          (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω))
+    have hγ : HasDerivAt (fun s : ℝ => θ₀ + s • e) e 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_add θ₀
+    have hline : HasDerivAt (fun s : ℝ => m (θ₀ + s • e) ω) (mdot i ω) 0 := by
+      have hF : HasFDerivAt (fun θ => m θ ω)
+          (innerSL ℝ (psiVec
+            (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω))
+          (θ₀ + (0 : ℝ) • e) := by
+        simpa using hd
+      have hcomp := hF.comp_hasDerivAt (0 : ℝ) hγ
+      change HasDerivAt (fun s : ℝ => m (θ₀ + s • e) ω)
+        ((innerSL ℝ (psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) e) 0 at hcomp
+      rwa [hcoord] at hcomp
+    have hseq : Tendsto (fun n : ℕ => ((n : ℝ) + 1)⁻¹) atTop (𝓝[≠] (0 : ℝ)) := by
+      rw [tendsto_nhdsWithin_iff]
+      refine ⟨by simpa only [one_div] using
+          tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ), ?_⟩
+      exact Filter.Eventually.of_forall fun n => by
+        simp only [Set.mem_compl_iff, Set.mem_singleton_iff]
+        positivity
+    simpa [q, Function.comp_def, smul_eq_mul] using
+      hline.tendsto_slope_zero.comp hseq
+  have hcoords : AEMeasurable (fun ω i => mdot i ω) P :=
+    aemeasurable_pi_iff.mpr hmdot_ae
+  have hpsi_ae : AEMeasurable
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) P :=
+    (MeasurableEquiv.toLp 2 (Fin d → ℝ)).measurable.comp_aemeasurable' hcoords
+  refine hmenv.norm.mono' hpsi_ae.aestronglyMeasurable ?_
+  filter_upwards [hderiv] with ω hd
+  have hlipω : LipschitzOnWith (Real.nnabs (menv ω))
+      (fun θ => m θ ω) (Metric.closedBall θ₀ ρ) := by
+    rw [lipschitzOnWith_iff_dist_le_mul]
+    intro θ₁ hθ₁ θ₂ hθ₂
+    rw [Real.dist_eq, dist_eq_norm, Real.coe_nnabs]
+    calc
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖ :=
+        hLip θ₁ hθ₁ θ₂ hθ₂ ω
+      _ ≤ |menv ω| * ‖θ₁ - θ₂‖ :=
+        mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
+  have hnorm_le :=
+    hd.le_of_lipschitzOn (Metric.closedBall_mem_nhds θ₀ hρ) hlipω
+  rw [innerSL_apply_norm] at hnorm_le
+  rwa [Real.coe_nnabs, ← Real.norm_eq_abs] at hnorm_le
+
+/-! ### Lemma 19.31 fixed-direction linearization at an arbitrary rate -/
+
+section
+
+open scoped RealInnerProductSpace
+
+omit [MeasurableSpace Ω] in
+/-- The fixed-direction linearization residual at a deterministic local rate.
+
+This is the integrand in equation (19.30) of vdV Lemma 19.31.
+The definition is total at indices where `r n = 0`; convergence arguments use only the
+eventual positive-rate tail supplied by `r → +∞`. -/
+noncomputable def linResidAt
+    (r : ℕ → ℝ) (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (mdot : Fin d → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (n : ℕ) : EuclideanSpace ℝ (Fin d) → Ω → ℝ :=
+  fun h ω => scaledIncrementAt r m θ₀ n h ω -
+      ⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫
+
+/-- For every fixed direction, the arbitrary-rate criterion increment converges in
+`L²(P)` to its derivative readout.  Positivity of `r n` and containment of the shifted
+parameter in the local Lipschitz ball are derived eventually from `r → +∞`; no
+all-index guard or measurability certificate for the supplied derivative representative is
+required. -/
+theorem linearization_distL2_tendstoZero_atRate
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (mdot : Fin d → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
+      ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+        |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
+      (innerSL ℝ (psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) θ₀)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop)
+    (h : EuclideanSpace ℝ (Fin d)) :
+    Tendsto (fun n => distL2 P (scaledIncrementAt r m θ₀ n h)
+      (fun ω => ⟪h, psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)) atTop (𝓝 0) := by
+  classical
+  have hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P :=
+    psiVec_memLp_two_of_ae_hasFDerivAt_lipschitz
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv
+  let Good : ℕ → Prop := fun n => 0 < r n ∧ ‖h‖ ≤ ρ * r n
+  have hr_pos : ∀ᶠ n in atTop, 0 < r n :=
+    hr.eventually (eventually_gt_atTop 0)
+  have hball : ∀ᶠ n in atTop, ‖h‖ ≤ ρ * r n :=
+    (Filter.Tendsto.const_mul_atTop hρ hr).eventually (eventually_ge_atTop ‖h‖)
+  have hGood : ∀ᶠ n in atTop, Good n := by
+    filter_upwards [hr_pos, hball] with n hn hnh
+    exact ⟨hn, hnh⟩
+  let f : ℕ → Ω → ℝ := fun n ω =>
+    if Good n then linResidAt r m mdot θ₀ n h ω else 0
+  let D : Ω → ℝ := fun ω =>
+    ‖h‖ * (‖menv ω‖ +
+      ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖)
+  have hD_memLp : MemLp D 2 P :=
+    (hmenv.norm.add hscore.norm).const_mul ‖h‖
+  have hD_nonneg : ∀ ω, 0 ≤ D ω := fun ω => by
+    dsimp only [D]
+    positivity
+  have hresid_aesm : ∀ n,
+      AEStronglyMeasurable (linResidAt r m mdot θ₀ n h) P := by
+    intro n
+    unfold linResidAt
+    exact (scaledIncrementAt_measurable r m θ₀ n hm_meas h).aestronglyMeasurable.sub
+      (aestronglyMeasurable_const.inner hscore.aestronglyMeasurable)
+  have hresid_le : ∀ n, Good n → ∀ ω,
+      |linResidAt r m mdot θ₀ n h ω| ≤ D ω := by
+    intro n hn ω
+    have hzero : ‖(0 : EuclideanSpace ℝ (Fin d))‖ ≤ ρ * r n := by
+      simpa using (norm_nonneg h).trans hn.2
+    have hinc : |scaledIncrementAt r m θ₀ n h ω| ≤ ‖menv ω‖ * ‖h‖ := by
+      calc
+        |scaledIncrementAt r m θ₀ n h ω| =
+            |scaledIncrementAt r m θ₀ n h ω -
+              scaledIncrementAt r m θ₀ n 0 ω| := by simp
+        _ ≤ menv ω * ‖h - 0‖ :=
+          scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip hn.1 h 0 hn.2 hzero ω
+        _ ≤ ‖menv ω‖ * ‖h‖ := by
+          rw [sub_zero]
+          exact mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg h)
+    have hinner :
+        |(⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ)| ≤
+          ‖h‖ * ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖ :=
+      abs_real_inner_le_norm _ _
+    unfold linResidAt
+    calc
+      |scaledIncrementAt r m θ₀ n h ω -
+          ⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫|
+          ≤ |scaledIncrementAt r m θ₀ n h ω| +
+              |(⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ)| :=
+            abs_sub _ _
+      _ ≤ ‖menv ω‖ * ‖h‖ + ‖h‖ *
+          ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖ :=
+        add_le_add hinc hinner
+      _ = D ω := by dsimp only [D]; ring
+  have hf_aesm : ∀ n, AEStronglyMeasurable (f n) P := by
+    intro n
+    by_cases hn : Good n
+    · simpa only [f, if_pos hn] using hresid_aesm n
+    · simp only [f, if_neg hn]
+      exact aestronglyMeasurable_const
+  have hf_le_D : ∀ n ω, ‖f n ω‖ ≤ D ω := by
+    intro n ω
+    by_cases hn : Good n
+    · simp only [f, if_pos hn, Real.norm_eq_abs]
+      exact hresid_le n hn ω
+    · simp only [f, if_neg hn, norm_zero]
+      exact hD_nonneg ω
+  have hf_tendsto_ae : ∀ᵐ ω ∂P, Tendsto (fun n => f n ω) atTop (𝓝 0) := by
+    filter_upwards [hderiv] with ω hω
+    have hγ : HasDerivAt (fun s : ℝ => θ₀ + s • h) h 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const h).const_add θ₀
+    have hline : HasDerivAt (fun s : ℝ => m (θ₀ + s • h) ω)
+        (⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ) 0 := by
+      have hF : HasFDerivAt (fun θ => m θ ω)
+          (innerSL ℝ (psiVec
+            (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω))
+          (θ₀ + (0 : ℝ) • h) := by
+        simpa using hω
+      have hcomp := hF.comp_hasDerivAt (0 : ℝ) hγ
+      change HasDerivAt (fun s : ℝ => m (θ₀ + s • h) ω)
+        ((innerSL ℝ (psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) h) 0 at hcomp
+      rw [innerSL_apply_apply, real_inner_comm] at hcomp
+      exact hcomp
+    have hseq : Tendsto (fun n => (r n)⁻¹) atTop (𝓝[≠] (0 : ℝ)) := by
+      rw [tendsto_nhdsWithin_iff]
+      refine ⟨tendsto_inv_atTop_zero.comp hr, ?_⟩
+      filter_upwards [hr_pos] with n hn
+      simp only [Set.mem_compl_iff, Set.mem_singleton_iff, inv_eq_zero]
+      exact hn.ne'
+    have hslope := (hline.tendsto_slope_zero.comp hseq).sub_const
+      (⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ)
+    have hresid : Tendsto (fun n => linResidAt r m mdot θ₀ n h ω) atTop (𝓝 0) := by
+      simpa [linResidAt, scaledIncrementAt, Function.comp_def, smul_eq_mul] using hslope
+    refine hresid.congr' ?_
+    filter_upwards [hGood] with n hn
+    simp only [f, if_pos hn]
+  have hUI : UnifIntegrable f 2 P := by
+    intro ε hε
+    obtain ⟨δ, hδpos, hδ⟩ :=
+      hD_memLp.eLpNorm_indicator_le one_le_two (by norm_num) hε
+    refine ⟨δ, hδpos, fun n s hs hμs => le_trans ?_ (hδ s hs hμs)⟩
+    refine eLpNorm_mono_real (fun ω => ?_)
+    by_cases hω : ω ∈ s
+    · simp only [Set.indicator_of_mem hω]
+      exact hf_le_D n ω
+    · simp only [Set.indicator_of_notMem hω, norm_zero, le_refl]
+  have hLp : Tendsto (fun n => eLpNorm (f n) 2 P) atTop (𝓝 0) := by
+    have h := tendsto_Lp_finite_of_tendsto_ae (p := 2) one_le_two (by norm_num)
+      hf_aesm MemLp.zero hUI hf_tendsto_ae
+    simpa using h
+  have hLp_real : Tendsto (fun n => (eLpNorm (f n) 2 P).toReal) atTop (𝓝 0) := by
+    have h := (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ∞)).comp hLp
+    simpa using h
+  refine hLp_real.congr' ?_
+  filter_upwards [hGood] with n hn
+  rw [distL2]
+  apply congrArg ENNReal.toReal
+  apply congrArg (fun g : Ω → ℝ => eLpNorm g 2 P)
+  funext ω
+  simp only [f, if_pos hn, linResidAt, Pi.sub_apply]
+
+/-- For every fixed direction, the empirical process of the arbitrary-rate linearization
+residual converges to zero in probability.  The local rate guards and residual `L²`
+membership are derived only on an eventual tail from `r → +∞`. -/
+theorem linearization_marginal_tendstoInProbZero_atRate
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (mdot : Fin d → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
+      ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+        |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
+      (innerSL ℝ (psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) θ₀)
+    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop)
+    (h : EuclideanSpace ℝ (Fin d)) :
+    TendstoInProbZero (fun _ : ℕ => μ)
+      (fun n ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ)
+        (linResidAt r m mdot θ₀ n h)) := by
+  intro ε hε
+  have hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P :=
+    psiVec_memLp_two_of_ae_hasFDerivAt_lipschitz
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv
+  have hdist : Tendsto (fun n => distL2 P (scaledIncrementAt r m θ₀ n h)
+      (fun ω => ⟪h, psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)) atTop (𝓝 0) :=
+    linearization_distL2_tendstoZero_atRate
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv r hr h
+  have hr_pos : ∀ᶠ n in atTop, 0 < r n :=
+    hr.eventually (eventually_gt_atTop 0)
+  have hball : ∀ᶠ n in atTop, ‖h‖ ≤ ρ * r n :=
+    (Filter.Tendsto.const_mul_atTop hρ hr).eventually (eventually_ge_atTop ‖h‖)
+  have hf_L2 : ∀ᶠ n in atTop, MemLp (linResidAt r m mdot θ₀ n h) 2 P := by
+    filter_upwards [hr_pos, hball] with n hrn hhn
+    have hdom : MemLp (fun ω => ‖h‖ *
+        (‖menv ω‖ +
+          ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖)) 2 P :=
+      (hmenv.norm.add hscore.norm).const_mul ‖h‖
+    refine MemLp.mono' hdom ?_ ?_
+    · unfold linResidAt
+      exact (scaledIncrementAt_measurable r m θ₀ n hm_meas h).aestronglyMeasurable.sub
+        (aestronglyMeasurable_const.inner hscore.aestronglyMeasurable)
+    · filter_upwards with ω
+      have hzero : ‖(0 : EuclideanSpace ℝ (Fin d))‖ ≤ ρ * r n := by
+        simpa using (norm_nonneg h).trans hhn
+      have hinc : |scaledIncrementAt r m θ₀ n h ω| ≤ ‖menv ω‖ * ‖h‖ := by
+        calc
+          |scaledIncrementAt r m θ₀ n h ω| =
+              |scaledIncrementAt r m θ₀ n h ω -
+                scaledIncrementAt r m θ₀ n 0 ω| := by simp
+          _ ≤ menv ω * ‖h - 0‖ :=
+            scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip
+              hrn h 0 hhn hzero ω
+          _ ≤ ‖menv ω‖ * ‖h‖ := by
+            rw [sub_zero]
+            exact mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg h)
+      have hinner :
+          |(⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ)| ≤
+            ‖h‖ * ‖psiVec
+              (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖ :=
+        abs_real_inner_le_norm _ _
+      rw [Real.norm_eq_abs]
+      unfold linResidAt
+      calc
+        |scaledIncrementAt r m θ₀ n h ω -
+            ⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫|
+            ≤ |scaledIncrementAt r m θ₀ n h ω| +
+                |(⟪h, psiVec
+                  (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫ : ℝ)| :=
+              abs_sub _ _
+        _ ≤ ‖menv ω‖ * ‖h‖ + ‖h‖ *
+            ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖ :=
+          add_le_add hinc hinner
+        _ = ‖h‖ * (‖menv ω‖ +
+            ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖) := by ring
+  have hint_le : ∀ n : ℕ, (∫ x, (linResidAt r m mdot θ₀ n h x) ^ 2 ∂P) ≤
+      (distL2 P (scaledIncrementAt r m θ₀ n h)
+        (fun ω => ⟪h, psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)) ^ 2 := by
+    intro n
+    set I : ℝ := ∫ x, (linResidAt r m mdot θ₀ n h x) ^ 2 ∂P with hI
+    have hI_nonneg : 0 ≤ I := by
+      rw [hI]
+      exact integral_nonneg fun _ => sq_nonneg _
+    have hle : Real.sqrt I ≤ distL2 P (scaledIncrementAt r m θ₀ n h)
+        (fun ω => ⟪h, psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫) := by
+      apply le_distL2_of_integral_sq_ge
+      rw [Real.sq_sqrt hI_nonneg, hI]
+      rfl
+    calc
+      I = Real.sqrt I ^ 2 := (Real.sq_sqrt hI_nonneg).symm
+      _ ≤ _ := pow_le_pow_left₀ (Real.sqrt_nonneg _) hle 2
+  set gseq : ℕ → ℝ := fun n =>
+    (distL2 P (scaledIncrementAt r m θ₀ n h)
+      (fun ω => ⟪h, psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)) ^ 2 / ε ^ 2 with hgseq
+  have hgseq_tendsto : Tendsto gseq atTop (𝓝 0) := by
+    rw [hgseq]
+    simpa using (hdist.pow 2).div_const (ε ^ 2)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hgseq_tendsto
+    (Eventually.of_forall (fun _ => measureReal_nonneg)) ?_
+  filter_upwards [hf_L2] with n hn
+  have htail := empiricalProcess_chebyshev_tail P μ X hX_meas hX_indep hX_id hX_law n
+    (linResidAt r m mdot θ₀ n h) hn hε
+  have hInn : 0 ≤ (∫ x, (linResidAt r m mdot θ₀ n h x) ^ 2 ∂P) / ε ^ 2 :=
+    div_nonneg (integral_nonneg fun _ => sq_nonneg _) (by positivity)
+  simp only [Real.norm_eq_abs]
+  rw [hgseq]
+  calc
+    (μ {ξ | ε ≤ |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+        (linResidAt r m mdot θ₀ n h)|}).toReal
+        ≤ (ENNReal.ofReal ((∫ x, (linResidAt r m mdot θ₀ n h x) ^ 2 ∂P) /
+          ε ^ 2)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top htail
+    _ = (∫ x, (linResidAt r m mdot θ₀ n h x) ^ 2 ∂P) / ε ^ 2 :=
+      ENNReal.toReal_ofReal hInn
+    _ ≤ (distL2 P (scaledIncrementAt r m θ₀ n h)
+        (fun ω => ⟪h, psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)) ^ 2 / ε ^ 2 := by
+      gcongr
+      exact hint_le n
+
+end
 
 end AsymptoticStatistics.EmpiricalProcess

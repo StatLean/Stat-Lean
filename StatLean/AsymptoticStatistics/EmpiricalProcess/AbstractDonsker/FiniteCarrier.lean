@@ -11,9 +11,8 @@ import Mathlib
 This file removes the infinite-dimensional-carrier restriction from the
 abstract bracketing-Donsker headline. In finite dimension (including rank zero)
 the Brownian bridge is the pushforward of the standard Gaussian on `gpH` by the
-bounded linear path map. The public predicate records an arbitrary bridge law,
-so the finite- and infinite-carrier constructions feed one common sufficiency
-statement.
+bounded linear path map. The predicate records an arbitrary bridge law, treating
+finite- and infinite-dimensional carriers uniformly.
 
 Reference: van der Vaart, *Asymptotic Statistics*, Theorem 19.5 (book p.270).
 -/
@@ -30,8 +29,8 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 bounded empirical-process path exists and converges weakly in outer expectation
 to that same law.
 
-The existential `hmem` exposes, rather than assumes away, the boundedness needed
-to package the empirical process in `LinfF F`. There is no finite- or
+The existential witness `hmem` records the boundedness needed to regard the
+empirical process as an element of `LinfF F`. There is no finite- or
 infinite-dimensional carrier clause in this definition. -/
 def IsPDonskerWithBridge (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
   ∃ ν : Measure (LinfF F), IsPBrownianBridge F P ν ∧
@@ -143,8 +142,8 @@ noncomputable def finiteGpPathCLM
     exact (abs_real_inner_le_norm _ _).trans
       (mul_le_mul_of_nonneg_right (hbound f) (norm_nonneg h)))
 
-/-- Coordinate formula for `finiteGpPathCLM`; this is the finite-projection
-adapter used to identify covariance and Gaussian marginals. -/
+/-- Coordinate formula for `finiteGpPathCLM`, used to identify covariance and
+Gaussian marginals of finite projections. -/
 theorem finiteGpPathCLM_apply
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
@@ -312,17 +311,54 @@ private theorem exists_pBrownianBridge_finrank_zero
   ⟨finiteGaussianPBridge hG_env hG hF_meas,
     isPBrownianBridge_finiteGaussianPBridge hG_env hG hF_meas⟩
 
-/-- A `P`-Brownian-bridge law exists for every centred carrier. The proof
-branches on `FiniteDimensional ℝ gpH`: the finite branch uses
-`finiteGaussianPBridge` (including rank zero), while the infinite branch uses
-the existing separable `gpBridgeMeasure` construction. -/
+/-- The point mass at the zero path is the `P`-Brownian bridge indexed by the
+empty class. -/
+theorem emptyClass_pBrownianBridge (P : Measure Ω) [IsProbabilityMeasure P] :
+    IsPBrownianBridge (∅ : Set (Ω → ℝ)) P (Measure.dirac 0) := by
+  refine
+    { isProbabilityMeasure := inferInstance
+      cov := ?_
+      mean := ?_
+      isGaussian_fdd := ?_
+      tight := ?_
+      ucPaths := ?_ }
+  · intro f
+    exact (Set.notMem_empty (f : Ω → ℝ) f.2).elim
+  · intro f
+    exact (Set.notMem_empty (f : Ω → ℝ) f.2).elim
+  · intro m φ
+    refine ⟨?_⟩
+    simp only [Measure.map_dirac]
+    infer_instance
+  · rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le]
+    intro ε _
+    refine ⟨{0}, isCompact_singleton, ?_⟩
+    intro μ hμ
+    rw [Set.mem_singleton_iff.mp hμ]
+    simp
+  · filter_upwards [ae_eq_dirac (fun z : LinfF (∅ : Set (Ω → ℝ)) => z)] with z hz
+    change z = 0 at hz
+    subst z
+    intro ε hε
+    exact ⟨1, zero_lt_one, fun f => (Set.notMem_empty (f : Ω → ℝ) f.2).elim⟩
+
+/-- A `P`-Brownian-bridge law exists for every function class. The empty class
+has the degenerate zero bridge. Otherwise the proof branches on
+`FiniteDimensional ℝ gpH`: the finite branch uses `finiteGaussianPBridge`,
+including rank zero, while the infinite branch uses the separable
+`gpBridgeMeasure` construction. -/
 theorem exists_pBrownianBridge_all
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
     (hF_meas : ∀ f ∈ F, Measurable f)
-    (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) :
+    (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) :
     ∃ ν : Measure (LinfF F), IsPBrownianBridge F P ν := by
   classical
+  by_cases hF_ne : F.Nonempty
+  swap
+  · have hF_empty : F = ∅ := Set.not_nonempty_iff_eq_empty.mp hF_ne
+    subst F
+    exact ⟨Measure.dirac 0, emptyClass_pBrownianBridge P⟩
   by_cases hfin : FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)
   · letI : FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := hfin
     exact ⟨finiteGaussianPBridge hG_env hG hF_meas,
@@ -331,7 +367,7 @@ theorem exists_pBrownianBridge_all
       (separableSpace_gpH_of_entropyIntegral hF_ent ⟨G, hG_env, hG⟩ hF_meas)
       hF_ent hF_ne
 
-/-! ## Arbitrary-bridge finite-projection adapters -/
+/-! ## Finite projections of arbitrary bridge laws -/
 
 private theorem pBrownianBridge_readout_isGaussian_aux
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
@@ -506,8 +542,7 @@ private theorem pBrownianBridge_readout_covarianceBilin_aux
   simp only [S, marginalCovMatrix, marginalCovEntry, netPhi, ψ]
 
 /-- The finite net-coordinate readout of any `P`-Brownian bridge is the
-corresponding centred marginal Gaussian. This is the carrier-agnostic version
-of the Gaussian-limit identification used by the discretization engine. -/
+corresponding centred marginal Gaussian. -/
 theorem pBrownianBridge_readout_eq_multivariateGaussian
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
@@ -539,8 +574,7 @@ theorem pBrownianBridge_readout_eq_multivariateGaussian
       ν hν m hS_psd
 
 /-- The `netTuple` pushforward of an arbitrary `P`-Brownian bridge agrees with
-the reindexed marginal Gaussian. This is the exact finite-projection adapter
-used in the finite-dimensional convergence argument. -/
+the reindexed marginal Gaussian. -/
 theorem pBrownianBridge_map_netTuple_eq
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
@@ -644,7 +678,7 @@ private theorem weakConverges_netTuple_withBridge_aux
     refine Measure.map_congr (Filter.Eventually.of_forall (fun ξ => ?_))
     rw [Function.comp_apply]
     exact (netTuple_empirical_eq_reindex_std hG_env hG hF_meas hF_ent h_clt m μ X
-      hX_meas hX_law n ξ).symm
+      hX_meas hX_id hX_law n ξ).symm
   rw [funext hseq] at hWC_net
   exact hWC_net
 
@@ -903,8 +937,8 @@ private theorem weakConvergesOuter_withBridge_readout_aux
 
 /-- **Generic arbitrary-bridge sufficiency.** Marginal CLT plus asymptotic
 equicontinuity implies full outer weak convergence to any explicitly supplied
-`P`-Brownian bridge law. The finite-net and limit-tail arguments use only `hν`;
-no carrier-dimensionality or separability premise is present. -/
+`P`-Brownian bridge law. No carrier-dimensionality or separability premise is
+present. -/
 theorem weakConvergesOuter_of_marginalCLT_and_asymptoticallyEquicontinuous_withBridge
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
@@ -934,29 +968,27 @@ theorem weakConvergesOuter_of_marginalCLT_and_asymptoticallyEquicontinuous_withB
       hG_env hG hF_meas hF_ent ν hν h_clt h_eq μ X hX_meas hX_indep hX_id hX_law
       f hf_lip)
 
-/-- **Theorem 19.5, strict-small closure.** A nonempty measurable class with
-finite bracketing-entropy integral has a derived square-integrable envelope
-and is Donsker in the literal carrier-agnostic sense,
-with an existential `P`-Brownian-bridge limit law.
+/-- **Theorem 19.5, carrier-agnostic form.** A measurable class with finite
+bracketing-entropy integral has a derived square-integrable envelope and is
+Donsker in the literal carrier-agnostic sense, with an existential
+`P`-Brownian-bridge limit law.
 
-There is no `hH_inf`: finite carriers, including rank zero, are handled by
-`finiteGaussianPBridge`, and infinite carriers by the existing construction. -/
+There is no `hH_inf`: `finiteGaussianPBridge` handles finite carriers, including
+rank zero, while the isonormal construction handles infinite carriers. -/
 theorem donskerWithBridge_of_finite_bracketing_entropy
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
-    -- LEAN-ONLY: nonemptiness needed to choose the bridge carrier.
-    (hF_ne : F.Nonempty)
-    -- LEAN-ONLY: explicit measurability of the class members.
+    -- Every member of the function class is measurable.
     (hF_meas : ∀ f ∈ F, Measurable f)
-    -- USER-INPUT: finite bracketing-entropy integral; vdV Theorem 19.5.
+    -- Finite bracketing-entropy integral, as in vdV Theorem 19.5.
     (h_int : bracketingEntropyIntegral 1 F P < ⊤)
     : ∃ (G : Ω → ℝ) (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P),
         IsPDonskerWithBridge F P := by
   obtain ⟨G, hG_env, hG⟩ := exists_l2_envelope_of_entropyIntegral h_int
   have hPD : IsPDonsker F P :=
     isPDonsker_of_finite_bracketing_entropy_integral
-      F P hF_ne hF_meas h_int
+      F P hF_meas h_int
   obtain ⟨ν, hν⟩ :=
-    exists_pBrownianBridge_all hG_env hG hF_meas h_int hF_ne
+    exists_pBrownianBridge_all hG_env hG hF_meas h_int
   refine ⟨G, hG_env, hG, ν, hν, ?_⟩
   intro Ξ _ μ _ X hX_meas hX_indep hX_id hX_law
   refine ⟨fun n ξ => memℓp_empiricalProcess

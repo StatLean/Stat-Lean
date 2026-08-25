@@ -31,8 +31,8 @@ noncomputable def finiteLossProfile {d r : ℕ}
 /-- A bounded uniformly-continuous loss has a uniformly-continuous finite
 loss-profile map whose range lies in a compact finite cube.
 
-The compact cube is supplied by a common finite bound on the coordinatewise
-loss profile. -/
+The proof takes the coordinatewise loss profile and the closed cube supplied
+by the common finite bound. -/
 theorem finiteLossProfile_uniform_center {d r : ℕ}
     (center : Fin r → EuclideanSpace ℝ (Fin d))
     (ℓ : EuclideanSpace ℝ (Fin d) → ℝ≥0∞)
@@ -225,7 +225,7 @@ subsequence whose finite loss profiles are represented by one Markov kernel
 into a compact profile cube.
 
 The proof dominates the finitely many source laws by their uniform mixture,
-extracts a joint weak subsequence, and disintegrates its limit. -/
+extract the joint weak subsequence, and disintegrate its limit. -/
 theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     (μ : Fin r → Measure (EuclideanSpace ℝ (Fin m)))
     (_hprob : ∀ i, IsProbabilityMeasure (μ i))
@@ -412,8 +412,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
       exact (prob_compl_eq_zero_iff _hK.measurableSet).1 (hac hzeroNu)
 
 /-- A finite family of genuine profile points admits a Borel rounding map to
-corresponding actions.  This is the measurable finite-partition core used by
-`actionKernel_approx_of_lossProfileKernel`. -/
+corresponding actions. -/
 private theorem exists_measurable_rounding_of_finite_cover
     {A Y : Type*} [MeasurableSpace A] [Nonempty A]
     [PseudoMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
@@ -448,8 +447,8 @@ private theorem exists_measurable_rounding_of_finite_cover
 action profiles can be approximated, simultaneously for the finite experiment,
 by one action-valued Markov kernel.
 
-Choose a finite net in the genuine profile range and measurably round the
-profile kernel to corresponding actions. -/
+The proof chooses a finite net in the genuine profile range and measurably
+round the profile kernel to corresponding actions. -/
 theorem actionKernel_approx_of_lossProfileKernel {m d r : ℕ}
     (μ : Fin r → Measure (EuclideanSpace ℝ (Fin m)))
     (_hprob : ∀ i, IsProbabilityMeasure (μ i))

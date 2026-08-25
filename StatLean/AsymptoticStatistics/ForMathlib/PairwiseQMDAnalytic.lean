@@ -72,9 +72,10 @@ private lemma eLpNorm_sqrt_rnDeriv_mul_eq
 /-- Pairwise square-root residual norms do not depend on the chosen common
 dominator.
 
-The proof rewrites both Radon–Nikodym derivatives through `μ`, splits where
-the canonical density vanishes, and applies the with-density `eLpNorm`
-identity. -/
+Proof idea: rewrite both RN derivatives through `μ`, split where the
+canonical density vanishes, and apply the with-density `eLpNorm` identity.
+
+Joint witness: `P=Q=μ` and `g=0`. -/
 theorem eLpNorm_residualAgainst_change_dominator
     (P Q μ : Measure Ω) [IsProbabilityMeasure P] [IsProbabilityMeasure Q]
     [SigmaFinite μ] (hP : P ≪ μ) (hQ : Q ≪ μ)
@@ -179,8 +180,10 @@ set_option maxHeartbeats 3000000 in
 /-- Analytic part of Lemma 25.14 for one-sided pairwise QMD: the bare score
 has an `L²₀(P)` representative.
 
-Square-integrability follows from one positive parameter; differentiating the
-unit-mass identity from the right then proves that the score has mean zero. -/
+Proof idea: obtain `L²` from one positive parameter, then differentiate the
+unit-mass identity from the right to prove mean zero.
+
+Joint witness: the constant path with bare score zero. -/
 theorem rightQMD_score_in_L2ZeroMean
     (P : Measure Ω) [IsProbabilityMeasure P]
     (curve : ℝ → Measure Ω)

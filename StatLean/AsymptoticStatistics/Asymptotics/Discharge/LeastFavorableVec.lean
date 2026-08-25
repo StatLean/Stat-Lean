@@ -151,7 +151,7 @@ noncomputable def localizedFittedScore2577_vec
         nuisanceEstimator n X omega
       else 0
 
-/-- Book-facing vector hypotheses for van der Vaart, Theorem 25.77. The QMD
+/-- Vector hypotheses for van der Vaart, Theorem 25.77. The QMD
 curve is the fixed-nuisance law `P_{theta0+delta,eta0}`; the proper-submodel
 likelihood and score are generated canonically from the model laws. -/
 structure ApproxLeastFavorable2577NativeHyp_vec
@@ -203,8 +203,8 @@ structure ApproxLeastFavorable2577NativeHyp_vec
     (Measure.pi (fun _ : Fin n => P))
       {X | ¬ fittedScoreGood2577_vec M modelLaw nuisancePath estimator
         nuisanceEstimator F n X}) atTop (nhds 0)
-  /-- Scope-neutral representative adapter on the common good event for the
-  moving law in (25.76b). -/
+  /-- Square-integrability of the fitted-score representative on the common
+  good event under the moving law in (25.76b). -/
   fitted_score_memLp_moving_on_good : forall n X,
     fittedScoreGood2577_vec M modelLaw nuisancePath estimator nuisanceEstimator F n X ->
     MemLp (fittedProperSubmodelScore2577_vec M modelLaw nuisancePath estimator
@@ -961,7 +961,7 @@ private theorem moving_bias_localization_transfer : TendstoInProbZero
             · exact Or.inr hgood)
     _ <= _ := measureReal_union_le _ _
 
-/-- Internal native moving-bias master identity derived from the book inputs. -/
+/-- Native moving-bias identity derived from the hypotheses of the theorem. -/
 theorem normalized_master_identity : TendstoInProbZero
     (fun n => Measure.pi (fun _ : Fin n => P))
     (fun n X =>

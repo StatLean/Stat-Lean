@@ -10,13 +10,13 @@ import StatLean.AsymptoticStatistics.ForMathlib.AnalyticSetCapacitability
 
 Measurable selection of approximate ε-minimisers from a jointly measurable
 function on a Polish target space, via the Aumann / Jankov-von Neumann
-construction. The pieces are theorem-agnostic and reusable:
+construction. The principal results are:
 
 * `analytic_projection_aeMeasurable` — analytic projection of a Borel
   level set is m-a.e. measurable (Suslin / Choquet capacitability).
 * `exists_measurable_approx_argmin` — abstract ε-approximate argmin
   selector for a jointly measurable `f : α × β → ℝ≥0∞` on Polish `β`.
-* `exists_measurable_approx_argmin_lintegral` — entry-point form
+* `exists_measurable_approx_argmin_lintegral` — form
   specialised to the Bayes-risk integrand
   `(x, b) ↦ ∫⁻ θ, ℓ θ b ∂(posterior x)`.
 
@@ -46,9 +46,8 @@ give this projection's m-a.e. measurability.
 The hypotheses:
 - `f`, `c`, `m` — the integrand, threshold, and σ-finite measure (vdV §8.5).
 - `hf` — joint measurability of the integrand.
-- `[StandardBorelSpace α]` — needed for `MeasurableSet.analyticSet_image`
-  (the source-space hypothesis in Mathlib's API). Polish ⇒ standard-Borel
-  is automatic on the consumer site.
+- `[StandardBorelSpace α]` — needed for `MeasurableSet.analyticSet_image`;
+  Polish spaces are automatically standard Borel.
 - `[TopologicalSpace β] [PolishSpace β] [BorelSpace β]` — Polish
   target gives second-countable Borel structure required by the analytic-image
   theorem.
@@ -139,7 +138,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
   -- is contained in the vertical strip N × β where N := {x | φ x ≠ φ' x}
   -- is m-null. We expose N (and the Borel set hosting it) as the witness.
   set φ : α → ℝ≥0∞ := fun x => ⨅ b' : β, f (x, b') with hφ_def
-  -- Step 1: For every `c : ℝ≥0∞`, `{x | φ x < c}` is null-measurable on `m`.
+  -- For every `c : ℝ≥0∞`, `{x | φ x < c}` is null-measurable on `m`.
   have h_phi_lt_NMS : ∀ c : ℝ≥0∞,
       NullMeasurableSet {x : α | φ x < c} m := by
     intro c
@@ -147,7 +146,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
       ext x; simp [φ, iInf_lt_iff]
     rw [hset_eq]
     exact analytic_projection_aeMeasurable f hf c m
-  -- Step 2: φ is `AEMeasurable m` via `aemeasurable_of_exist_almost_disjoint_supersets`.
+  -- Hence φ is `AEMeasurable m` via `aemeasurable_of_exist_almost_disjoint_supersets`.
   have hφ_aemeas : AEMeasurable φ m := by
     refine ENNReal.aemeasurable_of_exist_almost_disjoint_supersets m φ ?_
     intro p q hpq
@@ -213,11 +212,11 @@ private theorem nullMeasurableSet_approx_argmin_graph
     have hzero : m (U ∩ V) = m ((∅ : Set α)) := by
       rw [← hempty]; exact measure_congr hUV_eq
     simp [hzero]
-  -- Step 3: choose a measurable representative φ' = AEMeasurable.mk φ.
+  -- Choose a measurable representative φ' = AEMeasurable.mk φ.
   set φ' : α → ℝ≥0∞ := hφ_aemeas.mk φ with hφ'_def
   have hφ'_meas : Measurable φ' := hφ_aemeas.measurable_mk
   have hφ'_ae : φ =ᵐ[m] φ' := hφ_aemeas.ae_eq_mk
-  -- Step 4: define the auxiliary "Borel" graph G' built with φ'.
+  -- Define the auxiliary "Borel" graph G' built with φ'.
   set G' : Set (α × β) := {p : α × β | f p ≤ φ' p.1 + ε} with hG'_def
   have hG'_meas : MeasurableSet G' := by
     -- G' is the preimage of `{(u, v) | u ≤ v}` under
@@ -226,8 +225,8 @@ private theorem nullMeasurableSet_approx_argmin_graph
       refine Measurable.prodMk hf ?_
       exact (hφ'_meas.comp measurable_fst).add measurable_const
     exact h_map measurableSet_le'
-  -- Step 5: build the vertical-strip null witness.
-  -- `hφ'_ae : φ =ᵐ[m] φ'` provides an m-null exceptional set; we need
+  -- Build the vertical-strip null witness.
+  -- The equality `hφ'_ae : φ =ᵐ[m] φ'` provides an m-null exceptional set;
   -- a measurable representative of that null set. Use
   -- `ae_iff` + measurability of `{x | φ x ≠ φ' x}` is NOT immediate (φ
   -- is only a.e.-measurable). Instead, use `ae_eq_iff_exists_mem`-style
@@ -245,7 +244,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
     rw [hN_def]
     exact (MeasureTheory.measure_toMeasurable Nraw).trans hNraw_null
   have hNraw_subset_N : Nraw ⊆ N := MeasureTheory.subset_toMeasurable m Nraw
-  -- Step 6: package the witnesses.
+  -- Package the witnesses.
   refine ⟨G', hG'_meas, N, hN_meas, hN_null, ?_⟩
   intro x hxN b
   -- For x ∉ N, in particular x ∉ Nraw, so φ x = φ' x; thus the two
@@ -352,7 +351,7 @@ private theorem cauchy_selector_inductive_step
   -- A default value in β.
   let b₀ : β := Classical.arbitrary β
   ----------------------------------------------------------------------------
-  -- STEP 1. Per-level/index building block — the fiber-witness predicate as
+  -- Per-level/index building block: the fiber-witness predicate as
   -- a measurable subset of `α` (modulo a null set).
   --
   -- For each pair `(k, i)`, define
@@ -392,7 +391,7 @@ private theorem cauchy_selector_inductive_step
     calc m (W' k i \ W k i) = m (∅ : Set α) := measure_congr hdiff
       _ = 0 := measure_empty
   ----------------------------------------------------------------------------
-  -- STEP 2. Build `b : ℕ → α → β` by recursion, plus measurable index
+  -- Build `b : ℕ → α → β` by recursion, together with measurable index
   -- functions `idx k : α → ℕ` with `b k x = d (idx k x)`.
   --
   -- Augment with a guaranteed-existence fallback at i = 0 so `Nat.find` is
@@ -478,7 +477,7 @@ private theorem cauchy_selector_inductive_step
       have h_pair : Measurable (fun x : α => (b k x, x)) := ih.prodMk measurable_id
       exact (hidxStep_meas k).comp h_pair
   ----------------------------------------------------------------------------
-  -- STEP 3. The null exception set `N₀ := N ∪ E*`, where `E* := toMeasurable m
+  -- The null exception set `N₀ := N ∪ E*`, where `E* := toMeasurable m
   -- (⋃ k, E k)` is a measurable null superset of the per-level slack union.
   ----------------------------------------------------------------------------
   -- The "raw" slack union (not necessarily measurable, since W k i isn't).
@@ -500,7 +499,7 @@ private theorem cauchy_selector_inductive_step
       _ = 0 := by simp
   have hN_subset_N₀ : N ⊆ N₀ := Set.subset_union_left
   ----------------------------------------------------------------------------
-  -- STEP 4. For x ∉ N₀, prove existence of fiber witnesses at every level.
+  -- Off `N₀`, prove existence of fiber witnesses at every level.
   --
   -- This is an induction on k: at level 0, x ∉ N gives `∃ w ∈ F_x`, then
   -- density gives `j` with `dist w (d j) < δ 1`, so `x ∈ W 0 j ⊆ W' 0 j`. At
@@ -523,7 +522,7 @@ private theorem cauchy_selector_inductive_step
     intro w r hr
     exact Metric.denseRange_iff.mp hd_dense w r hr
   ----------------------------------------------------------------------------
-  -- STEP 5. The invariant: at every level k, for x ∉ N₀,
+  -- The invariant: at every level k, for x ∉ N₀,
   --   `x ∈ W' k (idx k x)` where `idx k x` is the index at level `k`.
   -- (Concretely, `idx 0 x = idx0 x` and `idx (k+1) x = idxStep k (b k x) x`.)
   ----------------------------------------------------------------------------
@@ -544,7 +543,7 @@ private theorem cauchy_selector_inductive_step
     -- Hence Q0 x j holds via Or.inl.
     have hQ0j : Q0 x j := Or.inl hxW'j
     -- Goal: x ∈ W' 0 (idx0 x). Use Nat.find_spec.
-    -- idx0 x = Nat.find (hQ0_ex x); we need Q0 x (Nat.find …) ⇒ split cases.
+    -- Since `idx0 x = Nat.find (hQ0_ex x)`, split cases to establish `Q0 x (idx0 x)`.
     have h_spec : Q0 x (idx0 x) := Nat.find_spec (hQ0_ex x)
     rcases h_spec with h_left | ⟨_, h_no⟩
     · exact h_left
@@ -610,7 +609,7 @@ private theorem cauchy_selector_inductive_step
       · exact h_W'
       · exact absurd ⟨hdj_dist, hxW'k1_j⟩ (h_no j)
   ----------------------------------------------------------------------------
-  -- STEP 6. Geometric bounds and assembly.
+  -- Establish the geometric bounds and assemble the selector.
   ----------------------------------------------------------------------------
   -- For x ∉ N₀, the fiber witness at level k satisfies dist b' (b k x) ≤ (1/2)^k.
   have h_witness : ∀ x, x ∉ N₀ → ∀ k, ∃ b' : β, dist b' (b k x) ≤ (1/2 : ℝ)^k ∧ (x, b') ∈ F := by
@@ -877,10 +876,10 @@ topology, then projects back to `α` via an m.a.e. fiber identity.
 The chain consists of:
 
 * `polishRefinement_of_measurable_singleSpace` — single-space Polish
-  refinement on `α × β` making a Borel set `G'` clopen, plus Borel-σ-algebra
-  preservation. Direct adapter to Mathlib's `MeasurableSet.isClopenable`.
-* `aumann_suslin_scheme_cauchy` — outer wrapper, composing the
-  single-space refinement with the closed-graph selector and the fiber identity.
+  refinement on `α × β` making a Borel set `G'` clopen while preserving the
+  Borel σ-algebra, by `MeasurableSet.isClopenable`.
+* `aumann_suslin_scheme_cauchy` — composition of the single-space refinement,
+  the closed-graph selector, and the fiber identity.
 * `aumann_selector_closed_graph_polish_singleSpace` — closed-graph
   Aumann selection where the **graph lives in α × γ** and γ = α × β is
   treated as a single Polish target, with **m.a.e. fiber identity** on
@@ -916,8 +915,8 @@ Given a Borel set `G' ⊆ α × β` (both α and β Polish, with their Borel
   measurable structure on `α × β`;
 * `G'` is **clopen** under `τ'`.
 
-This is the direct adapter of Mathlib's `MeasurableSet.isClopenable`
-applied to the single Polish space `α × β` (Polish-product is Polish
+This follows by applying Mathlib's `MeasurableSet.isClopenable` to the single
+Polish space `α × β` (a product of Polish spaces is Polish
 automatically; product `BorelSpace` instance is auto-derived in Mathlib).
 
 Doing this **factor-wise** would be false for arbitrary Borel `G'` (Cantor
@@ -1048,7 +1047,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
   -- A default value in γ.
   let c₀ : γ := Classical.arbitrary γ
   ----------------------------------------------------------------------------
-  -- STEP 1. Per-level/index building block — the fiber-witness predicate as
+  -- Per-level/index building block: the fiber-witness predicate as
   -- a measurable subset of `α` (modulo a null set).
   --
   -- For each pair `(k, i)`, define
@@ -1087,7 +1086,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
     calc m (W' k i \ W k i) = m (∅ : Set α) := measure_congr hdiff
       _ = 0 := measure_empty
   ----------------------------------------------------------------------------
-  -- STEP 2. Build `b : ℕ → α → γ` by recursion, plus measurable index
+  -- Build `b : ℕ → α → γ` by recursion, together with measurable index
   -- functions `idx k : α → ℕ` with `b k x = d (idx k x)`.
   ----------------------------------------------------------------------------
   let Q0 : α → ℕ → Prop := fun x i => x ∈ W' 0 i ∨ (i = 0 ∧ ∀ j, x ∉ W' 0 j)
@@ -1166,7 +1165,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
       have h_pair : Measurable (fun x : α => (b k x, x)) := ih.prodMk measurable_id
       exact (hidxStep_meas k).comp h_pair
   ----------------------------------------------------------------------------
-  -- STEP 3. The null exception set `N₀ := N ∪ E*`.
+  -- The null exception set is `N₀ := N ∪ E*`.
   ----------------------------------------------------------------------------
   let Eraw : Set α := ⋃ k, E k
   have hEraw_null : m Eraw = 0 := by
@@ -1186,7 +1185,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
       _ = 0 := by simp
   have hN_subset_N₀ : N ⊆ N₀ := Set.subset_union_left
   ----------------------------------------------------------------------------
-  -- STEP 4. For x ∉ N₀, prove existence of fiber witnesses at every level.
+  -- Off `N₀`, prove existence of fiber witnesses at every level.
   ----------------------------------------------------------------------------
   have h_strip_E : ∀ x, x ∉ N₀ → ∀ k i, x ∈ W' k i → x ∈ W k i := by
     intro x hxN₀ k i hxW'
@@ -1199,7 +1198,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
     intro w r hr
     exact Metric.denseRange_iff.mp hd_dense w r hr
   ----------------------------------------------------------------------------
-  -- STEP 5. The invariant: at every level k, for x ∉ N₀, `x ∈ W' k (idx k x)`.
+  -- The invariant: at every level k, for x ∉ N₀, `x ∈ W' k (idx k x)`.
   ----------------------------------------------------------------------------
   have h_base : ∀ x, x ∉ N₀ → x ∈ W' 0 (idx0 x) := by
     intro x hxN₀
@@ -1262,7 +1261,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
       · exact h_W'
       · exact absurd ⟨hdj_dist, hxW'k1_j⟩ (h_no j)
   ----------------------------------------------------------------------------
-  -- STEP 6. Geometric bounds and assembly.
+  -- Establish the geometric bounds and assemble the selector.
   ----------------------------------------------------------------------------
   have h_witness : ∀ x, x ∉ N₀ → ∀ k, ∃ c' : γ, dist c' (b k x) ≤ (1/2 : ℝ)^k ∧ (x, c') ∈ Ĝ := by
     intro x hxN₀ k
@@ -1544,7 +1543,7 @@ structures under the refined topology coincide with the original
 (`borel_eq_borel_of_le`), so the selector is measurable in the original Borel
 sense as well.
 
-The body delegates to the single-space Polish refinement chain:
+The proof uses the following single-space Polish refinement chain:
 
 - `polishRefinement_of_measurable_singleSpace`: Polish refinement on
   the product `α × β` directly (single space), making `G'` clopen.
@@ -1559,8 +1558,8 @@ The body delegates to the single-space Polish refinement chain:
 
 The hypotheses:
 - `G'`, `m`, `N`, `hG'_meas`, `hN_meas`, `hN_null`, `hΓ_ne_offN` —
-  same shape as the wrapper.
-- structural typeclasses inherited from the wrapper. -/
+  the graph, measure, exceptional set, and their regularity properties.
+- the stated structural typeclasses. -/
 private theorem aumann_suslin_scheme_cauchy
     {α β : Type*} [MeasurableSpace α] [StandardBorelSpace α]
     [MeasurableSpace β] [TopologicalSpace β] [PolishSpace β] [BorelSpace β]
@@ -1589,25 +1588,25 @@ private theorem aumann_suslin_scheme_cauchy
   -- 6. Conclude `(x, s x) ∈ G'` for `x ∉ N₀` (after possibly enlarging
   --    `N₀` by the m-null projection exception set).
   classical
-  -- Step 0: Special-case `IsEmpty α` — the conclusion is vacuous off any null
+  -- First handle `IsEmpty α`: the conclusion is vacuous off any null
   -- set, so we take `N₀ := N`, `s := fun _ => Classical.arbitrary β`.
   rcases isEmpty_or_nonempty α with hα_empty | hα_ne
   · refine ⟨N, hN_meas, hN_null, le_refl _, fun _ => Classical.arbitrary β,
       measurable_const, ?_⟩
     intro x _
     exact hα_empty.elim x
-  -- Step 1: Endow `α` with a compatible Polish topology + Borel structure.
+  -- Endow `α` with a compatible Polish topology and Borel structure.
   letI := upgradeStandardBorel α
-  -- Step 2: Obtain a Polish refinement τ' on `α × β` making `G'` clopen, plus
+  -- Obtain a Polish refinement τ' on `α × β` making `G'` clopen, together with
   -- Borel-preservation `@borel (α × β) τ' = Prod.instMeasurableSpace`.
   obtain ⟨τ', _τ'_le, τ'_polish, hτ'_borel, hG'_closed_τ', _hG'_open_τ'⟩ :=
     polishRefinement_of_measurable_singleSpace G' hG'_meas
-  -- Step 3: Install τ' as the topology on `α × β`. Construct `BorelSpace`
+  -- Install τ' as the topology on `α × β`. Construct `BorelSpace`
   -- instance under τ' from `hτ'_borel`.
   letI : TopologicalSpace (α × β) := τ'
   haveI : PolishSpace (α × β) := τ'_polish
   haveI : BorelSpace (α × β) := ⟨hτ'_borel.symm⟩
-  -- Step 4: Build the lifted closed graph `Ĝ ⊆ α × (α × β)`:
+  -- Build the lifted closed graph `Ĝ ⊆ α × (α × β)`:
   --   `Ĝ := {q | q.2.1 = q.1 ∧ q.2 ∈ G'}`.
   -- Its fiber over `x` is `{(y, b) | y = x ∧ (y, b) ∈ G'} = {(x, b) | (x, b) ∈ G'}`.
   set Ĝ : Set (α × (α × β)) := {q : α × (α × β) | q.2.1 = q.1 ∧ q.2 ∈ G'}
@@ -1656,14 +1655,13 @@ private theorem aumann_suslin_scheme_cauchy
     obtain ⟨b, hxb⟩ := hΓ_ne_offN x hxN
     refine ⟨(x, b), ?_, hxb⟩
     rfl
-  -- We need `Nonempty (α × β)`. We have `Nonempty α` from `hα_ne` and
-  -- `Nonempty β` from the wrapper hypothesis.
+  -- The hypotheses supply `Nonempty α` and `Nonempty β`, hence `Nonempty (α × β)`.
   haveI : Nonempty (α × β) := ⟨(Classical.arbitrary α, Classical.arbitrary β)⟩
-  -- Step 5: Invoke the closed-graph selector with γ := α × β (under τ').
+  -- Invoke the closed-graph selector with γ := α × β (under τ').
   obtain ⟨N₀, hN₀_meas, hN₀_null, hN_sub_N₀, t, ht_meas, ht_inĜ⟩ :=
     aumann_selector_closed_graph_polish_singleSpace
       Ĝ hĜ_meas hĜ_closed m N hN_meas hN_null hĜ_ne_offN
-  -- Step 6: Extract `(t x).1 = x` m-a.e. from the diagonal-fiber identity.
+  -- Extract `(t x).1 = x` m-a.e. from the diagonal-fiber identity.
   have hĜ_diag : ∀ x : α, ∀ p : α × β, (x, p) ∈ Ĝ → p.1 = x := by
     intro x p hxp
     exact hxp.1
@@ -1675,7 +1673,7 @@ private theorem aumann_suslin_scheme_cauchy
     exact hx (ht_inĜ x hxN₀)
   have h_proj_ae : ∀ᵐ x ∂m, (t x).1 = x :=
     proj_identity_mae_of_closed_graph Ĝ hĜ_meas hĜ_diag t ht_meas m hĜ_t_ae
-  -- Step 7: Enlarge `N₀` by the m-null exception set where `(t x).1 ≠ x`.
+  -- Enlarge `N₀` by the m-null exception set where `(t x).1 ≠ x`.
   set E : Set α := {x : α | (t x).1 ≠ x} with hE_def
   have hE_meas : MeasurableSet E := by
     have hf : Measurable (fun x : α => (t x).1) := measurable_fst.comp ht_meas
@@ -1699,7 +1697,7 @@ private theorem aumann_suslin_scheme_cauchy
       _ = 0 + 0 := by rw [hN₀_null, hE_null]
       _ = 0 := by simp
   have hN_sub_N₁ : N ⊆ N₁ := Set.Subset.trans hN_sub_N₀ Set.subset_union_left
-  -- Step 8: Extract `s := fun x => (t x).2` via `coordProj_snd_measurable_singleSpace`.
+  -- Extract `s := fun x => (t x).2` via `coordProj_snd_measurable_singleSpace`.
   refine ⟨N₁, hN₁_meas, hN₁_null, hN_sub_N₁,
     fun x => (t x).2, coordProj_snd_measurable_singleSpace t ht_meas, ?_⟩
   intro x hxN₁
@@ -1896,9 +1894,7 @@ theorem exists_measurable_approx_argmin
   -- hx : (x, s x) ∈ G'; hxN : x ∉ N; goal: f (x, s x) ≤ φ x + ε.
   exact (hGG'_eq x hxN (s x)).mpr hx
 
-/-- **Sub-lemma 3 (entry-point) — Bayes-risk ε-approximate selector**.
-
-The form consumed by `bayesRisk_le_lintegral_iInf_minRisk_selector`.
+/-- **Bayes-risk ε-approximate selector.**
 Specialises `exists_measurable_approx_argmin` to the joint integrand
 `(x, b) ↦ ∫⁻ θ, ℓ θ b ∂(posterior x)` on a Polish 𝓨 target (e.g.
 `EuclideanSpace ℝ (Fin d)`, Polish via metric + second-countable instances).
@@ -1921,7 +1917,7 @@ The hypotheses:
   `IsFiniteMeasure.toSigmaFinite`. The conclusion `+ ε` requires
   `m univ < ∞` so the slack `ε' := ε / (m univ + 1)` satisfies
   `ε' * m univ ≤ ε`; under `[SFinite m]` alone `m univ` can be `∞`,
-  breaking absorption. A probability measure (the typical consumer) satisfies
+  breaking absorption. A probability measure satisfies
   `[IsFiniteMeasure m]` automatically.
 
 Proof: compose the above:
@@ -1948,9 +1944,9 @@ theorem exists_measurable_approx_argmin_lintegral
       ∫⁻ x, ∫⁻ θ, ℓ θ (f x) ∂(posterior x) ∂m
         ≤ (∫⁻ x, ⨅ b : 𝓨, ∫⁻ θ, ℓ θ b ∂(posterior x) ∂m) + ε := by
   classical
-  -- ## Step 1: Joint integrand `φ (x, b) := ∫⁻ θ, ℓ θ b ∂(posterior x)`
+  -- Joint integrand `φ (x, b) := ∫⁻ θ, ℓ θ b ∂(posterior x)`.
   set φ : 𝓧 × 𝓨 → ℝ≥0∞ := fun p => ∫⁻ θ, ℓ θ p.2 ∂(posterior p.1) with hφ_def
-  -- ## Step 2: φ is jointly measurable.
+  -- The integrand φ is jointly measurable.
   -- Use `Measurable.lintegral_kernel_prod_right'` on the comapped kernel
   -- `posterior' := posterior.comap Prod.fst measurable_fst : Kernel (𝓧 × 𝓨) Θ`,
   -- with integrand `(p, θ) ↦ ℓ θ p.2`.
@@ -1973,7 +1969,7 @@ theorem exists_measurable_approx_argmin_lintegral
       simp [posterior', ProbabilityTheory.Kernel.comap_apply]
     rw [hsimp] at hmeas
     exact hmeas
-  -- ## Step 3: Slack `ε' := (ε : ℝ≥0∞) / (m univ + 1)`, positive.
+  -- The slack `ε' := (ε : ℝ≥0∞) / (m univ + 1)` is positive.
   set ε' : ℝ≥0∞ := (ε : ℝ≥0∞) / (m univ + 1) with hε'_def
   have hm_univ_lt_top : m univ < ⊤ := IsFiniteMeasure.measure_univ_lt_top
   have hm_univ_ne_top : m univ ≠ ⊤ := hm_univ_lt_top.ne
@@ -1986,7 +1982,7 @@ theorem exists_measurable_approx_argmin_lintegral
   have hε'_pos : 0 < ε' := by
     rw [hε'_def]
     exact ENNReal.div_pos hε_pos.ne' hden_ne_top
-  -- ## Step 4: Apply `exists_measurable_approx_argmin`.
+  -- Apply `exists_measurable_approx_argmin`.
   obtain ⟨f, hf_meas, hf_ae⟩ :=
     exists_measurable_approx_argmin (α := 𝓧) (β := 𝓨) φ hφ_meas m ε' hε'_pos
   refine ⟨f, hf_meas, ?_⟩

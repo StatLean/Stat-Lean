@@ -4,8 +4,8 @@ import Mathlib.Probability.Independence.Basic
 /-!
 # Finite restrictions of iid samples
 
-This module records the structural product-law adapter for restricting an
-infinite iid sample to its first `n` coordinates.
+This module identifies the product law of the first `n` coordinates of an
+infinite iid sample.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -15,9 +15,8 @@ open MeasureTheory
 /-- The pushforward law of the first `n` coordinates of an iid sample with
 common law `P` is the `n`-fold product measure `Pⁿ`.
 
-This is a sample-space adapter: `X` may realize the iid sequence on any
-probability space `Ξ`, and the conclusion identifies its finite restriction
-with the canonical product experiment on `Fin n → Ω`. -/
+The iid sequence `X` may be realized on any probability space `Ξ`; its finite
+restriction has the canonical product law on `Fin n → Ω`. -/
 theorem iidFiniteRestriction_map_eq_pi
     {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]

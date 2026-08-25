@@ -11,7 +11,7 @@ import Mathlib.Probability.StrongLaw
 
 Reusable probability lemmas for empirical means and Gram matrices whose summands use
 an auxiliary function estimated from the opposite block of a deterministic two-block
-split.  The declarations are theorem-agnostic: they make no reference to a numbered
+split. The declarations make no reference to a numbered
 statistical theorem or to asymptotic linearity.
 -/
 
@@ -603,9 +603,9 @@ noncomputable def empGram {Ω : Type*} {d : ℕ}
     (n : ℕ) (X : Fin n → Ω) : Matrix (Fin d) (Fin d) ℝ :=
   fun j k => (n : ℝ)⁻¹ * ∑ i, base n (X i) j * base n (X i) k
 
-/-- Population Gram matrix of a vector-valued function under `P`.  Bochner
-integration is totalized by Mathlib; downstream `MemLp` hypotheses rule out the
-nonintegrable fallback for the coordinate products used here. -/
+/-- Population Gram matrix of a vector-valued function under `P`. Bochner
+integration is totalized by Mathlib; `MemLp` hypotheses ensure integrability of
+the coordinate products whenever this definition is applied. -/
 noncomputable def populationGram {Ω : Type*} [MeasurableSpace Ω] {d : ℕ}
     (P : Measure Ω) (f : Ω → EuclideanSpace ℝ (Fin d)) : Matrix (Fin d) (Fin d) ℝ :=
   fun j k => ∫ x, f x j * f x k ∂P
@@ -619,23 +619,23 @@ theorem splitMean_sub_empMean_tendstoInProbZero
     (side : ∀ n, Fin n → Bool)
     (half : ∀ n, (Fin n → Ω) → Bool → Ω → EuclideanSpace ℝ (Fin d))
     (base : ℕ → Ω → EuclideanSpace ℝ (Fin d))
-    -- The function used on block `b` depends only on the opposite block.
+    -- the function used on block `b` depends only on the opposite block.
     (h_local : ∀ n (X Y : Fin n → Ω) b,
       (∀ i, side n i ≠ b → X i = Y i) → half n X b = half n Y b)
-    -- Joint measurability supplies all sample and observation sections
+    -- joint measurability supplies all sample and observation sections
     -- needed by product-measure conditioning and Fubini.
     (h_joint : ∀ n b, Measurable (fun p : (Fin n → Ω) × Ω => half n p.1 b p.2))
-    -- The deterministic row anchor is square-integrable.
+    -- the deterministic row anchor is square-integrable.
     (h_base_memLp : ∀ n, MemLp (base n) 2 (P n))
-    -- Each realized opposite-block estimate is square-integrable.
+    -- each realized opposite-block estimate is square-integrable.
     (h_half_memLp : ∀ n X b, MemLp (half n X b) 2 (P n))
-    -- The deterministic row anchor is centered under its row law.
+    -- the deterministic row anchor is centered under its row law.
     (h_base_centered : ∀ n, (∫ x, base n x ∂(P n)) = 0)
-    -- Each blockwise estimated function has root-n negligible mean.
+    -- each blockwise estimated function has root-n negligible mean.
     (h_mean : ∀ b : Bool,
       TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P n))
         (fun n X => Real.sqrt n • ∫ x, half n X b x ∂(P n)))
-    -- Each blockwise estimate has negligible population L2 distance
+    -- each blockwise estimate has negligible population L2 distance
     -- from the deterministic row anchor.
     (h_l2 : ∀ b : Bool,
       TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P n))
@@ -876,7 +876,7 @@ theorem splitMean_sub_empMean_tendstoInProbZero
   rw [hemp]
 
 set_option maxHeartbeats 800000 in
--- The proof combines product-law conditioning with a finite matrix-coordinate argument.
+-- The product-law conditioning and finite matrix-coordinate lift need the larger elaboration budget.
 /-- Population L2 replacement and a uniform L2 anchor replace a sample-split Gram
 matrix by the empirical Gram matrix of its deterministic row anchor.  No balance
 or asymptotic-size condition is imposed on the two blocks. -/
@@ -886,21 +886,21 @@ theorem splitGram_sub_empGram_tendstoInProbZero
     (side : ∀ n, Fin n → Bool)
     (half : ∀ n, (Fin n → Ω) → Bool → Ω → EuclideanSpace ℝ (Fin d))
     (base : ℕ → Ω → EuclideanSpace ℝ (Fin d))
-    -- The function used on block `b` depends only on the opposite block.
+    -- the function used on block `b` depends only on the opposite block.
     (h_local : ∀ n (X Y : Fin n → Ω) b,
       (∀ i, side n i ≠ b → X i = Y i) → half n X b = half n Y b)
-    -- Joint measurability supplies all sections used by product Fubini.
+    -- joint measurability supplies all sections used by product Fubini.
     (h_joint : ∀ n b, Measurable (fun p : (Fin n → Ω) × Ω => half n p.1 b p.2))
-    -- The deterministic row anchor is square-integrable.
+    -- the deterministic row anchor is square-integrable.
     (h_base_memLp : ∀ n, MemLp (base n) 2 (P n))
-    -- Each realized opposite-block estimate is square-integrable.
+    -- each realized opposite-block estimate is square-integrable.
     (h_half_memLp : ∀ n X b, MemLp (half n X b) 2 (P n))
-    -- Each blockwise estimate has negligible population L2 distance
+    -- each blockwise estimate has negligible population L2 distance
     -- from the deterministic row anchor.
     (h_l2 : ∀ b : Bool,
       TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P n))
         (fun n X => ∫ x, ‖half n X b x - base n x‖ ^ 2 ∂(P n)))
-    -- The anchor's rowwise L2 energies are uniformly bounded; this
+    -- the anchor's rowwise L2 energies are uniformly bounded; this
     -- prevents the product replacement estimate from being vacuous.
     (h_base_l2_bdd : ∃ C : ℝ, ∀ n, ∫ x, ‖base n x‖ ^ 2 ∂(P n) ≤ C) :
     TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P n))
@@ -1249,23 +1249,23 @@ theorem splitGram_tendstoInProbZero
     (half : ∀ n, (Fin n → Ω) → Bool → Ω → EuclideanSpace ℝ (Fin d))
     (base : ℕ → Ω → EuclideanSpace ℝ (Fin d))
     (base0 : Ω → EuclideanSpace ℝ (Fin d))
-    -- The function used on block `b` depends only on the opposite block.
+    -- the function used on block `b` depends only on the opposite block.
     (h_local : ∀ n (X Y : Fin n → Ω) b,
       (∀ i, side n i ≠ b → X i = Y i) → half n X b = half n Y b)
-    -- Joint measurability supplies all sections used by product Fubini.
+    -- joint measurability supplies all sections used by product Fubini.
     (h_joint : ∀ n b, Measurable (fun p : (Fin n → Ω) × Ω => half n p.1 b p.2))
-    -- Every deterministic row function is square-integrable.
+    -- every deterministic row function is square-integrable.
     (h_base_memLp : ∀ n, MemLp (base n) 2 P)
-    -- Each realized opposite-block estimate is square-integrable.
+    -- each realized opposite-block estimate is square-integrable.
     (h_half_memLp : ∀ n X b, MemLp (half n X b) 2 P)
-    -- Each blockwise estimate has negligible population L2 distance
+    -- each blockwise estimate has negligible population L2 distance
     -- from its deterministic row function.
     (h_l2 : ∀ b : Bool,
       TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P))
         (fun n X => ∫ x, ‖half n X b x - base n x‖ ^ 2 ∂P))
-    -- The fixed limiting anchor is square-integrable.
+    -- the fixed limiting anchor is square-integrable.
     (h_base0_memLp : MemLp base0 2 P)
-    -- The deterministic rows converge to the fixed anchor in L2.
+    -- the deterministic rows converge to the fixed anchor in L2.
     (h_base_l2 : Tendsto (fun n => ∫ x, ‖base n x - base0 x‖ ^ 2 ∂P)
       atTop (nhds 0)) :
     TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P))
@@ -1634,15 +1634,15 @@ theorem rootNGrid_tendstoInProbZero_at_random
     (R : ∀ n, Ξ n → EuclideanSpace ℝ (Fin k) → G)
     (preliminary : ∀ n, Ξ n → EuclideanSpace ℝ (Fin k))
     (theta0 : EuclideanSpace ℝ (Fin k))
-    -- Deterministic root-n-bounded paths have negligible residual.
+    -- deterministic root-n-bounded paths have negligible residual.
     (h_det : ∀ thetaSeq : ℕ → EuclideanSpace ℝ (Fin k),
       (∃ C : ℝ, ∀ᶠ n : ℕ in atTop,
         Real.sqrt n * ‖thetaSeq n - theta0‖ ≤ C) →
       TendstoInProbZero P (fun n ξ => R n ξ (thetaSeq n)))
-    -- The random preliminary point is root-n bounded in probability.
+    -- the random preliminary point is root-n bounded in probability.
     (h_preliminary : IsBoundedInProb P
       (fun n ξ => Real.sqrt n • (preliminary n ξ - theta0)))
-    -- The preliminary point lies on the exact coordinatewise root-n grid.
+    -- the preliminary point lies on the exact coordinatewise root-n grid.
     (h_grid : ∀ n, 0 < n → ∀ ξ, ∃ z : Fin k → ℤ, ∀ j,
       preliminary n ξ j = (z j : ℝ) / Real.sqrt n) :
     TendstoInProbZero P (fun n ξ => R n ξ (preliminary n ξ)) := by
@@ -1771,7 +1771,7 @@ theorem rootNGrid_tendstoInProbZero_at_random
     _ < η := by linarith
   simpa only [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] using hfinal
 
-/-! Weighted-density and triangular-row results. -/
+/-! Weighted-density and triangular-row lemmas. -/
 
 private theorem memLp_sqrt_density_smul
     {Omega E : Type*} [MeasurableSpace Omega] [MeasurableSpace E]
@@ -2190,10 +2190,10 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
     (Q0 : Measure Omega) [IsProbabilityMeasure Q0]
     (Qn : Nat -> Measure Omega) [forall n, IsProbabilityMeasure (Qn n)]
     (q0 : Omega -> Real) (qn : Nat -> Omega -> Real)
-    -- Measurable density representatives are required by `withDensity`
+    -- measurable density representatives are required by `withDensity`
     -- and by the weighted Bochner-integral arguments.
     (hq0_meas : Measurable q0) (hqn_meas : forall n, Measurable (qn n))
-    -- The chosen real-valued density representatives are nonnegative.
+    -- the chosen real-valued density representatives are nonnegative.
     (hq0_nonneg : forall x, 0 <= q0 x) (hqn_nonneg : forall n x, 0 <= qn n x)
     -- `q0` and `qn` are densities of the fixed and row laws relative
     -- to the common dominating measure `mu`.
@@ -2201,17 +2201,17 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
     (hQn : forall n, Qn n = mu.withDensity (fun x => ENNReal.ofReal (qn n x)))
     (f0 : Omega -> EuclideanSpace Real (Fin d))
     (fn : Nat -> Omega -> EuclideanSpace Real (Fin d))
-    -- Measurable representatives make the empirical rows and weighted
+    -- measurable representatives make the empirical rows and weighted
     -- common-dominator functions measurable.
     (hf0_meas : Measurable f0) (hfn_meas : forall n, Measurable (fn n))
-    -- The limiting and row functions are square-integrable under
+    -- the limiting and row functions are square-integrable under
     -- their own probability laws, ruling out totalized-integral fallback.
     (hf0_memLp : MemLp f0 2 Q0) (hfn_memLp : forall n, MemLp (fn n) 2 (Qn n))
-    -- The row densities converge to the fixed density in Hellinger L2.
+    -- the row densities converge to the fixed density in Hellinger L2.
     (hDensityHell : Tendsto
       (fun n => ∫ x, (Real.sqrt (qn n x) - Real.sqrt (q0 x)) ^ 2 ∂mu)
       atTop (nhds 0))
-    -- The square-root-density weighted row functions converge in L2(mu).
+    -- the square-root-density weighted row functions converge in L2(mu).
     (hWeighted : Tendsto
       (fun n => ∫ x,
         norm (Real.sqrt (qn n x) • fn n x - Real.sqrt (q0 x) • f0 x) ^ 2 ∂mu)

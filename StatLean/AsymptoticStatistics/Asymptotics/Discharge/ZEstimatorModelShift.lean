@@ -6,7 +6,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.MatrixInProbability
 /-!
 # QMD transport of a random score under a moving model
 
-QMD infrastructure for the model-shift term in vdV (25.52) and
+This file proves the model-shift term in vdV (25.52) and
 Theorem 25.59.  The scalar statements expose the sign before any information
 inverse is applied:
 
@@ -50,7 +50,8 @@ private lemma tendsto_zeroExtension {E F : Type*}
   · simpa [h0, hzero] using mem_of_mem_nhds hs
   · simpa [hne x h0] using hts ⟨hx, h0⟩
 
-/-- Continuous-at-zero maps preserve the project's varying-base convergence in probability. -/
+/-- Continuous-at-zero maps preserve convergence in probability when the
+underlying probability spaces vary with `n`. -/
 private lemma tendstoInProbZero_comp_zero
     {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
     {Omega' : ℕ → Type*} [∀ n, MeasurableSpace (Omega' n)]
@@ -73,8 +74,8 @@ private lemma tendstoInProbZero_comp_zero
     (hZ delta hdelta) (Eventually.of_forall fun _ => measureReal_nonneg)
     (Eventually.of_forall fun n => measureReal_mono (hsub n))
 
-/-- Local `o_P(1)` additivity, kept here because the existing project proof is private
-to an unrelated assembly module. -/
+/-- The sum of two sequences converging to zero in probability also converges
+to zero in probability. -/
 private lemma tendstoInProbZero_add
     {G : Type*} [NormedAddCommGroup G]
     {Omega' : ℕ → Type*} [∀ n, MeasurableSpace (Omega' n)]
@@ -700,7 +701,7 @@ noncomputable def rawMovingBias
   Real.sqrt n * ∫ omega, scoreHat n X omega
     ∂(gamma.curve (estimator n X - theta0))
 
-/-- Analytic hypotheses for transporting a random scalar score along a
+/-- Honest analytic hypotheses for transporting a random scalar score along a
 dominated QMD path.
 
 The bundle contains only integrability, consistency, and the three robust
@@ -771,7 +772,7 @@ This is the rate-free transport statement: consistency selects the local QMD
 regime.  The value at zero is set explicitly to zero, avoiding a false demand
 that an arbitrary `0/0` representation converge.
 
-Proof idea: `h.consistency` localizes the punctured-neighborhood QMD limit;
+The proof uses `h.consistency` to localize the punctured-neighborhood QMD limit;
 `weightedScore_memLp` excludes Bochner fallback; `weightedScore_tight` pairs
 with the normalized QMD remainder; and `weightedScore_transport` identifies
 the limiting cross moment. -/
@@ -953,7 +954,7 @@ The displayed sign is deliberately `P scoreHat - P_{thetaHat,eta} scoreHat`
 plus the QMD cross moment.  Thus solving the estimating equation yields the
 corrected `+ I^{-1} B_n` term.
 
-Proof idea: apply `qmdPath_modelShift_normalized_oP`; `hTight` controls
+The proof applies `qmdPath_modelShift_normalized_oP`; `hTight` controls
 `sqrt n * |delta|`, while the shared bundle's consistency is the independent
 localization input needed by the normalized theorem. -/
 theorem qmdPath_modelShift_oP_of_sqrtN_tight
@@ -992,7 +993,7 @@ theorem qmdPath_modelShift_oP_of_sqrtN_tight
     field_simp [habs]
     ring
 
-/-! ## Genuine native finite-dimensional interface -/
+/-! ## Finite-dimensional formulation -/
 
 /-- A dominated QMD model with a native Euclidean parameter and score.
 
@@ -1351,7 +1352,7 @@ private lemma native_modelShift_normalized_bound
           (mul_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2) (Real.sqrt_nonneg _)))
     _ = _ := by ring
 
-/-- Native analogue of `HellingerScoreTransportHyp`, with the same
+/-- Honest native analogue of `HellingerScoreTransportHyp`, with the same
 membership/tightness/transport split and no integral-shift conclusion. -/
 structure HellingerScoreTransportHypVec
     {d : ℕ} (P : Measure Omega) [IsProbabilityMeasure P]
@@ -1413,7 +1414,7 @@ structure FirstOrder2576ScoreTransportHypVec
     (theta0 : EuclideanSpace ℝ (Fin d))
     (scoreHat : ∀ n, (Fin n → Omega) → Omega → EuclideanSpace ℝ (Fin d))
     (score0 : Omega → EuclideanSpace ℝ (Fin d)) : Prop where
-  /-- Jointly measurable representative of the fitted score. -/
+  /-- jointly measurable representative of the fitted score. -/
   scoreHat_measurable : ∀ n,
     Measurable (fun p : (Fin n → Omega) × Omega => scoreHat n p.1 p.2)
   /-- The fitted score has a genuine `L²(P₀)` representative. -/
@@ -1427,7 +1428,7 @@ structure FirstOrder2576ScoreTransportHypVec
   score_l2_truth : TendstoInProbZero
     (fun n => Measure.pi (fun _ : Fin n => P))
     (fun n X => Real.sqrt (∫ omega, ‖scoreHat n X omega - score0 omega‖ ^ 2 ∂P))
-  /-- Measurability of the random `L²(P₀)` distance. -/
+  /-- measurability of the random `L²(P₀)` distance. -/
   score_l2_truth_measurable : ∀ n, Measurable (fun X =>
     Real.sqrt (∫ omega, ‖scoreHat n X omega - score0 omega‖ ^ 2 ∂P))
   /-- Equation (25.76b): the moving-law score-square expectation is `O_P(1)`. -/
@@ -1986,7 +1987,7 @@ set_option maxHeartbeats 4000000 in
 /-- Native model-shift expansion normalized by the nonzero local-parameter norm.
 The value at zero is explicitly defined to be zero.
 
-Proof idea: the native consistency field localizes `M.qmd_limit`; the three
+The proof uses the native consistency field to localize `M.qmd_limit`; the three
 weighted-score fields respectively guarantee a genuine L2 object, supply the
 `O_P(1)` factor, and identify the matrix cross moment through one CLM. -/
 theorem qmdModel_modelShift_normalized_oP
@@ -2164,7 +2165,7 @@ theorem qmdModel_modelShift_normalized_oP
 The cross moment acts through one matrix/continuous-linear-map expression; no
 coordinatewise inverse or scalar discharge appears in the statement.
 
-Proof idea: apply `qmdModel_modelShift_normalized_oP` and multiply its native
+The proof applies `qmdModel_modelShift_normalized_oP` and multiplies its native
 remainder by the `O_P(1)` root-`n` local parameter supplied by `hTight`. -/
 theorem qmdModel_modelShift_oP_of_sqrtN_tight
     {d : ℕ} {P : Measure Omega} [IsProbabilityMeasure P]

@@ -5,9 +5,9 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.DonskerPro
 /-!
 # Gaussian bridge and full outer weak convergence from uniform entropy
 
-Gaussian and assembly results for van der Vaart Theorem 19.14.  The
+Gaussian results for van der Vaart Theorem 19.14. The
 bridge, asymptotic equicontinuity, and full `LinfF` convergence are constructed
-inside this module; none appears as a caller-supplied provider.
+from the theorem's assumptions.
 
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, Theorem 19.14,
 book p.274.
@@ -21,35 +21,6 @@ open scoped ENNReal Topology
 open UniformEntropyStructural
 
 variable {Ω : Type*} [MeasurableSpace Ω]
-
-private theorem emptyClass_pBrownianBridge (P : Measure Ω) [IsProbabilityMeasure P] :
-    IsPBrownianBridge (∅ : Set (Ω → ℝ)) P (Measure.dirac 0) := by
-  refine
-    { isProbabilityMeasure := inferInstance
-      cov := ?_
-      mean := ?_
-      isGaussian_fdd := ?_
-      tight := ?_
-      ucPaths := ?_ }
-  · intro f
-    exact (Set.notMem_empty (f : Ω → ℝ) f.2).elim
-  · intro f
-    exact (Set.notMem_empty (f : Ω → ℝ) f.2).elim
-  · intro m φ
-    refine ⟨?_⟩
-    simp only [Measure.map_dirac]
-    infer_instance
-  · rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le]
-    intro ε _
-    refine ⟨{0}, isCompact_singleton, ?_⟩
-    intro μ hμ
-    rw [Set.mem_singleton_iff.mp hμ]
-    simp
-  · filter_upwards [ae_eq_dirac (fun z : LinfF (∅ : Set (Ω → ℝ)) => z)] with z hz
-    change z = 0 at hz
-    subst z
-    intro ε hε
-    exact ⟨1, zero_lt_one, fun f => (Set.notMem_empty (f : Ω → ℝ) f.2).elim⟩
 
 private theorem outerLpNorm_eq_eLpNorm_of_measurable (Q : Measure Ω)
     (f : Ω → ℝ) (hf : Measurable f) :
@@ -356,7 +327,8 @@ private theorem ueSkeleton_spec
   letI inst := distL2PseudoMetric hHenv hH2 hFmeas
   exact _root_.GaussianChaining.gaussianChaining_UC_iUnion
     (μ := (iidStdGaussian : Measure (ℕ → ℝ))) (K := 1)
-    zero_le_one net hnet hmono
+    zero_le_one (gpX_measurable ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep)
+    net hnet hmono
     (fun s t => (gpX_subgaussian_increment ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep s t).mono_proxy
       (by
         rw [← NNReal.coe_le_coe]
@@ -968,7 +940,7 @@ private theorem ueStdRecon_readout {F : Set (Ω → ℝ)} {P : Measure Ω}
   rw [Equiv.symm_apply_apply]
   rfl
 
-/-- Algebraic adapter between empirical-process coordinates and the
+/-- Algebraic identity between empirical-process coordinates and the
 standardised-sum vector used by `IsMarginalCLT.fdd`. -/
 private theorem ueReadout_empirical_eq_std
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
@@ -1647,10 +1619,10 @@ private theorem ueWeakConvergesOuter_withBridge
     (fun f hflip => ueWeakConvergesOuter_readout hHenv hH2 hFmeas net hnet
       nu hnu hclt heq μ X hXmeas hXindep hXid hXlaw f hflip)
 
-/-- **B14.0 — tight `P`-Brownian bridge from uniform entropy.** The measurable
+/-- A tight `P`-Brownian bridge from uniform entropy. The measurable
 majorant, separable Gaussian carrier, finite/infinite-dimensional split, and
-tight uniformly-`distL2`-continuous path law must all be constructed from the
-book inputs.
+tight uniformly-`distL2`-continuous path law are constructed from the book
+inputs.
 
 Edge behavior: `F = ∅` and zero envelope norm yield the degenerate zero bridge.
 The supplied envelope itself need not be measurable. -/
@@ -1689,10 +1661,11 @@ theorem uniformEntropy_exists_pBrownianBridge
       uniformEntropy_infinite_pBrownianBridge hHenv hH2 hFmeas hfin hHsep net hnet
         hmono hDudley⟩
 
-/-- The canonical bridge law selected from B14.0.
+/-- The canonical bridge law selected by
+`uniformEntropy_exists_pBrownianBridge`.
 
-This is a choice of the internally constructed tight `P`-Brownian bridge, not
-additional data supplied by a caller. Edge behavior is inherited from
+This selects the tight `P`-Brownian bridge constructed by the preceding theorem.
+Edge behavior is inherited from
 `uniformEntropy_exists_pBrownianBridge`, including the empty/zero degenerate
 bridge. -/
 noncomputable def uniformEntropyPBrownianBridge
@@ -1703,11 +1676,12 @@ noncomputable def uniformEntropyPBrownianBridge
     (hJ : uniformEntropyIntegral 1 F G 2 < ⊤) : Measure (LinfF F) :=
   (uniformEntropy_exists_pBrownianBridge F G P hFmeas hPM hEnv hG2 hJ).choose
 
-/-- **B14.1 — uniform-net full `LinfF` outer weak convergence.** For every iid
+/-- Uniform-net full `LinfF` outer weak convergence. For every iid
 `P` sample, the complete empirical-process path is bounded and converges in
 outer weak distribution to the internally selected tight bridge.
 
-The proof must use the marginal CLT plus U14.4 and uniform-net discretization;
+The proof combines the marginal CLT, asymptotic equicontinuity, and uniform-net
+discretization;
 pointwise or finite-dimensional convergence alone does not discharge this
 statement. No bridge, equicontinuity, Donsker, or Dudley object is a hypothesis. -/
 theorem uniformEntropy_empiricalProcess_weakConvergesOuter
@@ -1769,18 +1743,17 @@ theorem uniformEntropy_empiricalProcess_weakConvergesOuter
       (uniformEntropyPBrownianBridge F G P hFmeas hPM hEnv hG2 hJ) hnu
       hclt heq μ X hXmeas hXindep hXid hXlaw)
 
-/-- **B14.2 — internal Theorem 19.14 Donsker package.** The measurable class,
-operational marginal-CLT/equicontinuity facet, and literal full-path bridge law
-are all constructed from the book hypotheses.  This is the core consumed by
-the later public headline `uniformEntropy_pdonskerProcessData`.
+/-- Theorem 19.14 Donsker package. The measurable class, marginal CLT,
+asymptotic equicontinuity, and full-path bridge law are all constructed from
+the book hypotheses and packaged as `PDonskerProcessData`.
 
-The empty-class and zero-envelope branches are handled internally; the caller
-does not provide equicontinuity, a bridge, Donsker data, or a Dudley schedule. -/
+The empty-class and zero-envelope branches are included, and equicontinuity,
+the bridge, Donsker data, and a Dudley schedule follow from the assumptions. -/
 theorem uniformEntropy_pdonskerProcessData_core
     (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]
-    -- LEAN-ONLY: explicit measurability of the class members.
+    -- explicit measurability of the class members.
     (hFmeas : ∀ f ∈ F, Measurable f)
-    -- USER-INPUT: pointwise measurability, a finite-`L²` envelope, and finite
+    -- pointwise measurability, a finite-`L²` envelope, and finite
     -- uniform entropy integral; vdV Theorem 19.14.
     (hPM : IsPointwiseMeasurable F)
     (hEnv : UniformEntropyStructural.IsEnvelope F G)

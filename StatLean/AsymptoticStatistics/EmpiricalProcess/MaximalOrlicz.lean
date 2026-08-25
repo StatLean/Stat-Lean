@@ -10,45 +10,10 @@ import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.Probability.IdentDistrib
 
 /-!
-# Orlicz finite-class supremum bound (maximal inequality)
+# Orlicz machinery for the finite-class supremum bound
 
-For a finite class of bounded, measurable, square-integrable functions
-`{f_i : i ∈ ι}` with `\sup_i \|f_i\|_\infty \le M` and
-`\sup_i \mathbb{E}_P[f_i^2] \le \sigma^2`, the empirical process
-`\mathbb{G}_n f = \sqrt{n}\,(\mathbb{P}_n f - P f)` formed from `n`
-i.i.d. observations satisfies the maximal inequality
+This file proves the finite-class supremum bound of vdV §19.6 Lemma 19.33.
 
-`\mathbb{E}\,\max_{i \in \iota} \bigl|\mathbb{G}_n f_i\bigr|
-  \;\le\; K\left(\frac{M\,\log(1 + |\iota|)}{\sqrt{n}}
-              + \sigma\,\sqrt{\log(1 + |\iota|)}\right)`
-
-for a universal constant `K`. The two terms reflect the sub-exponential
-(`M/\sqrt n` scale) and sub-Gaussian (`\sigma` scale) parts of the
-truncation. This is van der Vaart's Lemma 19.33.
-
-**Deviations from the book.** The book states the bound with an
-unspecified universal constant `K`; the Lean assembly produces the
-explicit value `K = 96` (witnessed in `finite_sup_bound_aux`), which is
-what the truncation-plus-Pisier route below actually yields. The
-informal `\log(1 + |\iota|)` uses `1 + |\iota|` rather than the book's
-`(1 + \log |\iota|)`-type bound so that the inequality is non-trivial
-already for a single function; this matches the Orlicz-inverse
-evaluations `\psi_1^{-1}(|\iota|)` and `\psi_2^{-1}(|\iota|)` used
-internally. The headline statements are over `\mathbb{E} = \int \cdot\,d\mu`
-expressed in the `ℝ≥0∞` layer-cake form `∫⁻ ω, ofReal(\sup_i |\mathbb{G}_n f_i|) dμ`.
-
-Headline declarations: `finite_sup_bound_aux` (public assembly,
-witnessing the existential `∃ K > 0, …`) and the private
-`finite_sup_bound_orlicz_core` (the full Orlicz-route content with the
-explicit constant).
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
-Series in Statistical and Probabilistic Mathematics, Cambridge University
-Press, 1998. Chapter 19 (Empirical Processes), §19.6 (Maximal
-Inequalities), Lemma 19.33. Bernstein's inequality used as the tail input
-is Lemma 19.32 of the same section.
-
-**Proof formalization notes.**
 The proof follows the tight Orlicz route rather than a naive union bound. Key ingredients:
 
 1. **Orlicz functions** `ψ₁(x) = exp x − 1`, `ψ₂(x) = exp(x²) − 1`, with
@@ -70,27 +35,16 @@ The proof follows the tight Orlicz route rather than a naive union bound. Key in
 
 4. **Truncation at threshold.** Split each `G_n f = A_f + B_f` via
    `1{|f| > b}` for an appropriate threshold `b`. Apply Bernstein
-   (`bernstein_inequality`, used as a black box here) to derive
+   (`bernstein_inequality`) to derive
    sub-exponential tails for `A_f` and sub-Gaussian tails for `B_f`.
 
-5. **Assembly.** Triangle inequality gives
+5. **Combination.** Triangle inequality gives
    `∫ ⨆_i |G_n f_i| dμ ≤ K · (M log(1+|ι|)/√n + σ √log(1+|ι|))`.
 
-**Bibliographic comments.**
-The finite-class maximal inequality via Orlicz norms is folklore of
-empirical-process theory rather than a result with a single seminal
-origin. Its core analytic device — the Orlicz-norm maximal inequality
-`\mathbb{E}\,\max_{i \le m} |Z_i| \le \psi^{-1}(m)\,\max_i \|Z_i\|_\psi`
-for a Young function `ψ` — is stated and proved as Lemma 2.2.2 in
-A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical
-Processes: With Applications to Statistics*, Springer Series in
-Statistics, Springer, 1996; the underlying exponential-moment argument is
-classically attributed to G. Pisier (see Pisier's work on Rademacher
-averages and Orlicz norms in Banach-space probability). The
-truncation-plus-Bernstein synthesis that turns this device into the
-two-term `(M\log/\sqrt n, \sigma\sqrt{\log})` finite-class bound is
-exactly the proof of Lemma 19.33 in van der Vaart (1998); there is no
-distinct journal article isolating this particular packaging.
+The principal declarations are `finite_sup_bound_aux` and
+`finite_sup_bound_orlicz_core`.
+
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -182,16 +136,12 @@ lemma psi_2_nonneg_of_nonneg {x : ℝ} (_hx : 0 ≤ x) : 0 ≤ psi_2 x := by
 
 /-! ### Pisier ψ-max maximal inequalities.
 
-The lemmas below restate vdV's Pisier ψ_p-max maximal inequality
+The lemmas below state vdV's Pisier ψ_p-max maximal inequality
 (Lem 8.4 in the Pisier formulation; used in the proof of Lem 19.33 in
-vdV §19.6) in terms of the underlying *tail bound* on each `Z_i`, rather
-than the Orlicz norm `‖Z_i‖_{ψ_p}` directly.  The imported Mathlib API does
-not supply the required Orlicz-norm interface, so the needed tail and calculus
-estimates are provided here.
+vdV §19.6) in terms of the underlying *tail bound*
+on each `Z_i`, rather than the Orlicz norm `‖Z_i‖_{ψ_p}` directly.
 
-Each top-level Pisier lemma (`orlicz_psi2_max_l1_bound`,
-`orlicz_psi1_max_l1_bound`) chains via `le_trans` through two named, more
-focused sub-auxes per Pisier route:
+The proof combines two estimates:
 
 * `psi_p_layer_cake_meas_bound` — pure measure-theory bridge.
   Combines Mathlib's `lintegral_eq_lintegral_meas_lt` (layer-cake formula),
@@ -201,9 +151,6 @@ focused sub-auxes per Pisier route:
 * `psi_p_calculus_integral_bound` — pure real-analysis calculus
   integral: `∫⁻ t in Ioi 0, min 1 (ofReal(N · 2 · exp(−tail))) dt
   ≤ ofReal(12 · scale · ψ_p⁻¹(1 + N))`.
-
-This isolates the deep calculus content from the
-measure-theoretic plumbing.
 
 Constants `12` here come from the standard Pisier ψ-max constant
 combined with the ψ-norm → L¹ bridge (`E|Z| ≤ ‖Z‖_{ψ_p}` for `p = 1, 2`
@@ -216,7 +163,7 @@ decomposition into sub-Gaussian and sub-exponential halves.
 -/
 
 /-- **ψ₂ layer-cake bridge** — measure-theory side of the ψ₂ Pisier
-maximal inequality (sub-aux of `orlicz_psi2_max_l1_bound`).
+maximal inequality used in `orlicz_psi2_max_l1_bound`.
 
 Combines the layer-cake formula (Mathlib `lintegral_eq_lintegral_meas_lt`),
 the finite-union bound on `{ω | t < ⨆_i |Z_i ω|}`, and the per-`i`
@@ -307,7 +254,8 @@ private lemma psi2_layer_cake_meas_bound
   rw [h_set_eq]
   -- Cap by 1 + ofReal bound. Both bounds combine via `le_min`.
   refine le_min prob_le_one ?_
-  -- Now: μ (⋃ i, {ω | t < |Z_i ω|}) ≤ ofReal((card) · 2 · exp(...)).
+  -- The union bound gives
+  -- `μ (⋃ i, {ω | t < |Z_i ω|}) ≤ ofReal((card) · 2 · exp(...))`.
   -- Chain: μ (⋃) ≤ ∑ μ ≤ ∑ ofReal(2 exp(...)) = ofReal(∑ 2 exp(...)) = ofReal(card · 2 · exp(...)).
   have h_2exp_nn : 0 ≤ 2 * Real.exp (-(t ^ 2) / (2 * σ_eff ^ 2)) := by positivity
   calc μ (⋃ i : ι, {ω | t < |_Z i ω|})
@@ -323,8 +271,8 @@ private lemma psi2_layer_cake_meas_bound
           ((Fintype.card ι : ℝ) * (2 * Real.exp (-(t ^ 2) / (2 * σ_eff ^ 2)))) := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
-/-- **ψ₂ deterministic calculus integral** (sub-aux of
-`orlicz_psi2_max_l1_bound`).
+/-- **ψ₂ deterministic calculus integral** used in
+`orlicz_psi2_max_l1_bound`.
 
 Pure real-analysis (no probability content):
 `∫⁻ t in Ioi 0, min 1 (ofReal((N:ℝ) · 2 · exp(-t²/(2σ²)))) dt
@@ -552,8 +500,8 @@ of the supremum is controlled:
 
 The signature requires `0 < σ_eff`; the `σ_eff = 0` corner is structurally
 false here (vacuous tail hypothesis cannot force `Z ≡ 0`) and is handled
-upstream in `finite_sup_bound_orlicz_core` via the `M = σ = 0 ⇒ g ≡ 0`
-cascade.  Chains through the two named sub-auxes `psi2_layer_cake_meas_bound`
+in `finite_sup_bound_orlicz_core` via the `M = σ = 0 ⇒ g ≡ 0`
+case. The proof uses `psi2_layer_cake_meas_bound`
 (measure-theory bridge) and `psi2_calculus_integral_bound` (real-analysis
 integral).
 -/
@@ -573,7 +521,7 @@ private lemma orlicz_psi2_max_l1_bound
   exact psi2_calculus_integral_bound (Fintype.card ι) _hσ_eff
 
 /-- **ψ₁ layer-cake bridge** — measure-theory side of the ψ₁ Pisier
-maximal inequality (sub-aux of `orlicz_psi1_max_l1_bound`).
+maximal inequality used in `orlicz_psi1_max_l1_bound`.
 
 Parallel to `psi2_layer_cake_meas_bound` with sub-exponential tail
 `2 · exp(-t/ρ)` in place of sub-Gaussian `2 · exp(-t²/(2σ²))`.
@@ -663,8 +611,8 @@ private lemma psi1_layer_cake_meas_bound
           ((Fintype.card ι : ℝ) * (2 * Real.exp (-t / ρ_eff))) := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
-/-- **ψ₁ deterministic calculus integral** (sub-aux of
-`orlicz_psi1_max_l1_bound`).
+/-- **ψ₁ deterministic calculus integral** used in
+`orlicz_psi1_max_l1_bound`.
 
 Pure real-analysis (no probability content):
 `∫⁻ t in Ioi 0, min 1 (ofReal((N:ℝ) · 2 · exp(-t/ρ))) dt
@@ -821,7 +769,7 @@ the supremum is controlled:
 
 `∫⁻ ⨆_i |Z_i| dμ ≤ 12 · ρ_eff · log(1 + |ι|)`.
 
-Chains through the two named sub-auxes `psi1_layer_cake_meas_bound`
+Chains through the two named lemmas `psi1_layer_cake_meas_bound`
 (measure-theory bridge) and `psi1_calculus_integral_bound`
 (real-analysis integral).
 -/
@@ -840,13 +788,11 @@ private lemma orlicz_psi1_max_l1_bound
 
 /-! ### Bernstein-tail → L¹-sup envelope via Pisier ψ₁/ψ₂ truncation.
 
-The assembly is decomposed into two truncation-piece sub-auxes
+The proof is decomposed into two truncation-piece lemmas
 (sub-Gaussian truncated piece via ψ₂, sub-exponential residual piece via
-ψ₁), each derived from the corresponding Pisier black box + a
-Bernstein-arithmetic tail-bound derivation. The assembly
-(`orlicz_bernstein_max_l1_bound`) routes the two truncation pieces via the
-sub-auxes and combines via pointwise sup-decomposition + lintegral
-additivity.
+ψ₁), each derived from the corresponding Pisier estimate and a
+Bernstein tail calculation. The theorem `orlicz_bernstein_max_l1_bound`
+combines them by pointwise supremum decomposition and lintegral additivity.
 -/
 
 /-- **Truncated-piece L¹-sup envelope** (routes via Pisier ψ₂).
@@ -1089,7 +1035,7 @@ private lemma orlicz_bernstein_residual_max_l1_bound
   have h_const : (12 : ℝ) * (8 * M_eff) = 96 * M_eff := by ring
   rw [h_const]
 
-/-- **Bernstein-tail to L¹-sup envelope** (assembly aux).
+/-- **Bernstein-tail to L¹-sup envelope.**
 
 For a finite family `Z : ι → Ξ → ℝ` of real-valued measurable random
 variables satisfying the **mixed sub-Gaussian / sub-exponential tail**
@@ -1099,7 +1045,7 @@ of Bernstein-type
 
 `∫⁻ ⨆_i |Z_i| dμ ≤ 96 · (M_eff · log(1+|ι|) + σ_eff · √log(1+|ι|))`.
 
-Routes through the two truncation-piece sub-auxes
+Uses the two truncation-piece lemmas
 (`orlicz_bernstein_truncated_max_l1_bound` for the sub-Gaussian truncated
 piece + `orlicz_bernstein_residual_max_l1_bound` for the sub-exponential
 residual piece) when `0 < M_eff`; falls back to direct invocation of
@@ -1109,13 +1055,12 @@ residual piece) when `0 < M_eff`; falls back to direct invocation of
 Requires `0 < σ_eff ∨ 0 < M_eff` (i.e. not both zero).  The
 `σ_eff = M_eff = 0` corner is structurally false (tail hypothesis is
 vacuous, conclusion `LHS ≤ 0` requires `Z ≡ 0` which cannot be derived at
-this layer) and is dispatched upstream in `finite_sup_bound_orlicz_core`
+this layer) and is handled in `finite_sup_bound_orlicz_core`
 via the `M = σ = 0 ⇒ g ≡ 0 ⇒ Z ≡ 0` case.
 
 The constant `96` absorbs the truncated `24σ √L` and residual `96 M L`
-contributions into a single ceiling. The public `finite_sup_bound` exposes
-only the existential `∃ K > 0, ...`, so the constant is invisible across
-the file boundary. -/
+contributions into a single ceiling. The theorem `finite_sup_bound` states the
+result with an existential constant `∃ K > 0, ...`. -/
 private lemma orlicz_bernstein_max_l1_bound
     {ι : Type*} [Fintype ι] {Ξ : Type*} [MeasurableSpace Ξ]
     {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1216,7 +1161,7 @@ private lemma orlicz_bernstein_max_l1_bound
         _ = ∫⁻ ω, ENNReal.ofReal (⨆ i : ι, min (|Z i ω|) T) ∂μ
             + ∫⁻ ω, ENNReal.ofReal (⨆ i : ι, max 0 (|Z i ω| - T)) ∂μ :=
             MeasureTheory.lintegral_add_left h_ofReal_iSup_A_meas _
-    -- Apply the two sub-auxes.
+    -- Apply the two truncation-piece lemmas.
     have hA_bound := orlicz_bernstein_truncated_max_l1_bound
         Z hZ_meas hσ_eff hM_pos h_tail
     have hB_bound := orlicz_bernstein_residual_max_l1_bound
@@ -1286,7 +1231,7 @@ private lemma orlicz_bernstein_max_l1_bound
 
 /-- **Orlicz-route core.** The full
 mathematical content of vdV §19.6 Lem 19.33 — the truncation-plus-Jensen
-argument that turns Bernstein's inequality (Lem 19.32, used as a black box)
+argument that turns Bernstein's inequality (Lemma 19.32)
 into the finite-class supremum bound.
 
 **Proof outline (vdV §19.6):**
@@ -1306,10 +1251,9 @@ into the finite-class supremum bound.
 5. **Triangle.** `∫ ⨆_i |G_n f_i| dμ ≤ ∫ ⨆_i |A_i| dμ + ∫ ⨆_i |B_i| dμ`,
    yielding `K = 24 = max(8 C₁, 8 C₂)`.
 
-The body derives the Bernstein tail bound on each `G_n (g i)` via the
-black box `bernstein_inequality_aux`, then routes through the named
-assembly sub-aux `orlicz_bernstein_max_l1_bound` (the truncation + ψ₁/ψ₂
-Pisier max assembly). -/
+The proof derives the Bernstein tail bound on each `G_n (g i)` via
+`bernstein_inequality_aux`, then applies `orlicz_bernstein_max_l1_bound` to the
+truncated ψ₁ and ψ₂ estimates. -/
 private lemma finite_sup_bound_orlicz_core
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1414,28 +1358,25 @@ private lemma finite_sup_bound_orlicz_core
     -- Goal:    `μ {...} ≤ ofReal (2 * exp(-t² / (4 * (σ² + t * (M / √n)))))`.
     rw [heq] at hbern
     exact hbern
-  -- Apply the assembly sub-aux.
+  -- Apply the Bernstein maximal inequality.
   have h_assembly :=
     orlicz_bernstein_max_l1_bound (Z := Z) hZ_meas (σ_eff := σ)
       (M_eff := M / Real.sqrt n) hσ hM_over_sqrtn_nn hσM_pos h_tail
-  -- The sub-aux conclusion has `96 * ((M / √n) * log + σ * √log)`; the goal
+  -- Its conclusion has `96 * ((M / √n) * log + σ * √log)`; the goal
   -- has `96 * (M * log / √n + σ * √log)`.  Bridge by `mul_div_assoc`.
   refine le_trans h_assembly ?_
   apply le_of_eq
   congr 1
   field_simp
 
-/-- **Literal-constant adapter for vdV Lemma 19.33.**
+/-- **Explicit-constant form of vdV Lemma 19.33.**
 
-This public form exposes the concrete universal constant `96` proved by
-`finite_sup_bound_orlicz_core`, rather than packaging it in a data-dependent
-existential. It is the finite-class input intended for the universal-constant
-chaining assemblies of the general Lemma 19.34 and bounded Lemma 19.36 routes.
+The universal constant is `96`, as proved by
+`finite_sup_bound_orlicz_core`. This finite-class inequality is used in the
+chaining arguments of Lemmas 19.34 and 19.36.
 
-Binder taxonomy: `P`, the finite class `g`, its measurability/boundedness/second-
-moment bounds, and the sample size are the mathematical inputs of Lemma 19.33;
-`Ξ`, `μ`, `X`, and the four `hX_*` hypotheses are the Lean encoding of the iid
-sample underlying `Gₙ`. -/
+Here `P` is the common law, `g` is the finite class, and `X` is an iid sample
+realized on the probability space `(Ξ, μ)`. -/
 lemma finite_sup_bound_96
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1457,10 +1398,8 @@ lemma finite_sup_bound_96
   exact finite_sup_bound_orlicz_core P hX_meas hX_iindep hX_idem hX_law
     g hg_meas hM hσ hg_bdd hg_var n hn
 
-/-- **Public assembly of `finite_sup_bound` body** — invoked from
-`Maximal.lean`.  Identical statement; routes through the private
-`finite_sup_bound_orlicz_core` (the full Orlicz-route content), then
-witnesses the existential `∃ K : ℝ, 0 < K ∧ …`. -/
+/-- The finite-class Orlicz estimate in existential-constant form. It follows
+from `finite_sup_bound_orlicz_core` with the universal constant `96`. -/
 lemma finite_sup_bound_aux
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]

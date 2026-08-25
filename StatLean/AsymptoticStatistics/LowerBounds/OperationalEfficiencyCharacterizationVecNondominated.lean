@@ -409,7 +409,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
     (C : NondominatedTangentCone P)
     {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: vector pathwise differentiability and an efficient influence
+    -- vector pathwise differentiability and an efficient influence
     -- tuple; vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     (φ : Fin d → ↥(L2ZeroMean P))
@@ -636,10 +636,9 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
   rw [hlim]
   simpa only [φu] using hscalar
 
-/-- Vector ND regularity with efficient Gram law forces vector AL.
-
-Proof idea: scalar coordinate converse followed by the finite-coordinate AL
-adapter. -/
+/-- Vector nondominated regularity with the efficient Gram law implies vector
+asymptotic linearity, by the scalar coordinate converse and finite-coordinate
+recombination. -/
 theorem asymptoticallyLinearAtVec_of_regularVecND
     (C : NondominatedTangentCone P)
     {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}
@@ -687,21 +686,17 @@ theorem asymptoticallyLinearAtVec_of_regularVecND
 /-- vdV Lemma 25.23, full vector nondominated characterization.
 
 The covariance is the raw Gram matrix, with no closed-range or PosDef
-hypothesis.  Rank-deficient Gram matrices, `d=0`, and `φ=0` are in scope.
-
-The zero cone and constant zero vector model give a degenerate example. A
-Gaussian location model gives a nondegenerate example, while repeated
-coordinates give a rank-deficient one. -/
+hypothesis. Rank-deficient Gram matrices, `d=0`, and `φ=0` are in scope. -/
 theorem operational_efficiency_characterization_vec_nondominated
     (C : NondominatedTangentCone P)
     {T_n : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d)}
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: vector pathwise differentiability and an efficient influence
+    -- vector pathwise differentiability and an efficient influence
     -- tuple; vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAtVec P C ψ)
     (φ : Fin d → ↥(L2ZeroMean P))
     (hEIF : IsEfficientInfluenceFunction_vec hpd.derivative φ)
-    -- LEAN-ONLY: measurability of each estimator.
+    -- measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtNDVec C T_n ψ
         (multivariateGaussian 0 (Matrix.gram ℝ φ)) ↔

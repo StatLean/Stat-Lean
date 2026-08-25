@@ -55,9 +55,9 @@ noncomputable def unitDistanceGraph (𝒜 : Finset (Finset α)) :
 
 /-- The number of unoriented edges of the unit-distance graph.
 
-Edge behavior: it is zero when the family has fewer than two members. This
-named totalization keeps classical decidability out of downstream theorem
-signatures. -/
+Edge behavior: it is zero when the family has fewer than two members. The
+definition is total and does not require a decidability assumption in theorem
+statements. -/
 noncomputable def unitDistanceEdgeCount (𝒜 : Finset (Finset α)) : ℕ := by
   classical
   exact ∑ B ∈ 𝒜, (B.filter fun x ↦ B.erase x ∈ 𝒜).card
@@ -466,7 +466,7 @@ private lemma sum_erase_zero
 
 end WeightedRaw
 
-/-- P1: the unit-distance graph of a family of book VC index at most `V` has
+/-- The unit-distance graph of a family of book VC index at most `V` has
 at most `(V - 1) * |𝒜|` edges. The truncated subtraction simultaneously
 encodes the `V = 0` and `V = 1` boundary cases. -/
 theorem unitDistance_edge_card_le
@@ -570,7 +570,7 @@ private theorem edgeMinWeightSumRaw_le
 
 end WeightedRawBound
 
-/-- P2: sharp weighted unit-distance/degeneracy estimate. Each unoriented
+/-- Sharp weighted unit-distance/degeneracy estimate. Each unoriented
 edge contributes the smaller endpoint weight, with no extraneous factor two. -/
 theorem weightedUnitDistance_le
     (𝒜 : Finset (Finset α)) (V : ℕ)
@@ -1537,16 +1537,17 @@ private theorem randomDeletion_incidence_upper
 
 end RestrictionMultiplicity
 
-/-- P3: weighted random-subset deletion double count used by P4.
+/-- Weighted random-subset deletion double count for the sharp packing bound.
 
 For every sampling level `m`, pairwise `δ`-separation makes the average loss
 of original packing multiplicity under restriction no larger than the
 weighted unit-edge incidence on `(m+1)`-coordinate traces. Each such trace is
 partitioned by the unique coordinate on which the endpoints differ, so no
-extra deletion multiplicity appears. P2 then bounds that same middle quantity
-by `(V-1)|P|` per sampled trace. Thus the two displayed inequalities compose
-directly into the sharp packing recurrence, without an unweighted/weighted
-adapter or an extraneous combinatorial factor. -/
+extra deletion multiplicity appears. The weighted unit-distance estimate then
+bounds that same middle quantity by `(V-1)|P|` per sampled trace. Thus the two
+displayed inequalities compose
+directly into the sharp packing recurrence, without an intermediate
+unweighted/weighted conversion or an extraneous combinatorial factor. -/
 theorem randomDeletion_incidence_lower
     (P : Finset (Finset α)) (s : Finset α) (V m : ℕ) (δ : ℝ)
     -- realizes the finite carrier of the packing.
@@ -1931,7 +1932,7 @@ private lemma finitePacking_intermediate
 
 end FinitePackingBound
 
-/-- P4: sharp finite Chazelle--Haussler packing bound in the book-index
+/-- Sharp finite Chazelle--Haussler packing bound in the book-index
 convention. Pairwise separation is normalized Hamming distance on `s`.
 
 The displayed constant and exponent are exact: no `2V`/`21V` exponent or

@@ -82,10 +82,10 @@ theorem delta_method_remainder
     by_cases hd : δ ≤ ‖T k ω - θ₀‖
     · exact Or.inl hd
     · refine Or.inr ?_
-      change M < ‖sqn k • (T k ω - θ₀)‖
-      push Not at hd
+      show M < ‖sqn k • (T k ω - θ₀)‖
+      push_neg at hd
       by_contra hM'
-      push Not at hM'
+      push_neg at hM'
       have hxδ : dist (T k ω) θ₀ < δ := by rwa [dist_eq_norm]
       have hR : ‖φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀)‖ ≤ (ε / (2 * M)) * ‖T k ω - θ₀‖ :=
         hδ hxδ

@@ -53,17 +53,18 @@ noncomputable def comparisonResidual
 
 /-- Lebesgue decomposition of a path law into singular and baseline-AC parts.
 
-This is Mathlib's Lebesgue decomposition with the sigma-finiteness instances
-provided by the probability laws. -/
+The proof uses Mathlib's Lebesgue decomposition with the probability-provided
+sigma-finiteness instances. -/
 theorem curve_eq_singularPart_add_acPart
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
     γ.curve t = γ.singularPart t + γ.acPart t := by
   letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   exact Measure.haveLebesgueDecomposition_add (γ.curve t) P
 
-/-- Singular mass is bounded by the squared canonical QMD residual norm.  On
-the zero-baseline-density set the score and baseline-root terms vanish, leaving
-the perturbed square root. -/
+/-- Singular mass is bounded by the squared canonical QMD residual norm.
+
+On the zero-baseline-density set the score and baseline-root
+terms vanish, leaving the perturbed square root. -/
 theorem singularMass_le_residual_sq
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
     γ.singularMass t ≤
@@ -124,8 +125,9 @@ theorem singularMass_le_residual_sq
     ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
   norm_num
 
-/-- QMD makes perturbed-law singular mass negligible at root-`n` scale, by
-combining `singularMass_le_residual_sq` with `qmd_limit`. -/
+/-- QMD makes perturbed-law singular mass negligible at root-`n` scale.
+
+The proof combines `singularMass_le_residual_sq` with `qmd_limit`. -/
 theorem singular_mass_localScale_tendsto
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a) :
     Tendsto (fun n : ℕ => (n : ℝ≥0∞) *
@@ -228,10 +230,11 @@ theorem singular_mass_localScale_tendsto
     (Filter.Eventually.of_forall fun n => bot_le)
     hupper
 
-/-- The baseline zero-likelihood mass is `o(t²)` from the right.  The proof
-uses the one-observation Hellinger/QMD inequality on the event where the actual
-Radon--Nikodym derivative vanishes; this is distinct from the singular-mass
-estimate. -/
+/-- The baseline zero-likelihood mass is `o(t²)` from the right.
+
+The proof uses the one-observation Hellinger/QMD inequality on the event where
+the actual RN derivative vanishes. This estimate is distinct from
+the singular-mass estimate. -/
 theorem baseZeroLikelihoodMass_isLittleO
     (γ : NondominatedQMDPath P) :
     (fun t : ℝ => (γ.baseZeroLikelihoodMass t).toReal)
@@ -496,7 +499,7 @@ theorem baseZeroLikelihoodMass_isLittleO
 zero local likelihood factor.
 
 For `a > 0`, specialize `baseZeroLikelihoodMass_isLittleO` at
-`a/sqrt n` and multiply by `n`; discharge `a=0` from `curve_at_zero`. -/
+`a/sqrt n` and multiply by `n`; the case `a = 0` follows from `curve_at_zero`. -/
 theorem base_zeroLikelihood_localScale_tendsto
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a) :
     Tendsto (fun n : ℕ => (n : ℝ≥0∞) *
@@ -570,8 +573,8 @@ theorem base_zeroLikelihood_localScale_tendsto
 /-- At a nonnegative path parameter, the product of AC parts is the baseline
 product weighted by the actual product likelihood.
 
-The proof obtains the path-law probability and sigma-finiteness instances from
-`ht`, then applies finite-product induction and `withDensity` Fubini.
+The proof uses `ht` to obtain the path-law probability/sigma-finiteness
+instance, then apply finite-product induction and `withDensity` Fubini.
 
 The side condition is internal and essential: a one-sided path imposes no
 condition at negative parameters. -/
@@ -588,8 +591,8 @@ theorem pi_acPart_eq_withDensity_acProductLikelihood
 /-- Exact integrability and normalization of the actual product likelihood.
 The integral is `(1-singularMass)^n`, not one.
 
-The result follows from the product AC identity, coordinatewise integration,
-and the Lebesgue decomposition.  For the constant path the integral equals one. -/
+The proof passes `ht` to the product AC identity, integrates coordinatewise,
+and uses the Lebesgue decomposition. -/
 theorem integrable_acProductLikelihood_and_integral
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) (n : ℕ) :
     Integrable (fun X => (γ.acProductLikelihood t n X).toReal)
@@ -619,12 +622,10 @@ theorem integrable_acProductLikelihood_and_integral
 /-- Bounded expectations under the full local product law are asymptotically
 equal to baseline expectations weighted by the actual RN product likelihood.
 
-Expand `(singularPart+acPart)^n`, bound all terms with a singular
-coordinate, and identify the all-AC term by the product AC identity at the
-nonnegative parameter supplied by `ha`.
-
-For the constant path one may take `error=0`; no MGF, uniform-integrability,
-absolute-continuity, or normalization assumption is required. -/
+The proof expands `(singularPart+acPart)^n`, bounds all terms with a singular
+coordinate, and identifies the all-AC term by the product AC identity at the
+nonnegative parameter supplied by `ha`; no MGF, uniform-integrability,
+absolute-continuity, or normalization assumption is used. -/
 theorem product_integral_comparison
     (γ : NondominatedQMDPath P) (a C : ℝ) (ha : 0 ≤ a)
     (f : ∀ n : ℕ, (Fin n → Ω) → ℝ)

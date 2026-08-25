@@ -6,8 +6,8 @@ import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
 /-!
 # Raw moving-bias expansion for native vector Z-estimators
 
-Native finite-dimensional counterpart of the covariantly corrected
-form of vdV Theorem 25.59.  With
+Native finite-dimensional counterpart of the covariantly corrected form of vdV
+Theorem 25.59.  With
 
 `B_n = sqrt n * P_{thetaHat,eta} scoreHat`,
 
@@ -15,7 +15,7 @@ solving the estimating equation gives the positive correction `+ I^-1 B_n`.
 The literal display on vdV p. 395 omits the information inverse; it is recovered
 only after the separate `d = 1`, `I = 1` specialization.
 
-The statements require no Bartlett identity, no no-bias condition, no Taylor
+The hypotheses contain no Bartlett identity, no no-bias condition, no Taylor
 remainder, and no asymptotic-linearity field.
 -/
 
@@ -32,7 +32,7 @@ open AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorModelShift
 open AsymptoticStatistics.StrictModel.EfficientScore
 open AsymptoticStatistics.StrictModel.EfficientScoreVec
 
--- Match the `Type`-valued carrier of the random-index replacement hypotheses.
+-- The random-index replacement carrier is universe-zero.
 variable {Omega : Type} [MeasurableSpace Omega]
 
 private lemma tendstoInProbZero_of_norm_le_three {Omega' : ℕ → Type*}
@@ -98,8 +98,8 @@ private lemma tupleEval_fin_one_apply {P : Measure Omega} [IsProbabilityMeasure 
 vdV Theorem 25.59.
 
 The fixed score is a tuple in `L2ZeroMean P`; `tupleEval` is its native
-Euclidean-valued representative.  The bundle reuses the existing empirical and
-Hellinger transport interfaces and contains no conclusion-bearing field.
+Euclidean-valued representative. The bundle collects the empirical replacement
+and Hellinger transport conditions and contains no conclusion-bearing field.
 -/
 structure RawMovingBiasExpansionHyp_vec
     {d : Nat} (P : Measure Omega) [IsProbabilityMeasure P]
@@ -287,7 +287,7 @@ theorem rawMovingBias_normalized_expansion_2559_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- USER-INPUT: native estimating equation, replacement, QMD transport,
+    -- native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :
     TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -307,11 +307,10 @@ theorem rawMovingBias_normalized_expansion_2559_vec
 
 /-- Conditional ordinary native expansion obtained from the rate-free corrected vdV 25.59 form.
 
-The influence tuple is the matrix-coupled `I⁻¹ score0`; the bias sequence is
-`+ I⁻¹ B_n`, not the negative residual used by the superseded wrapper. Root-`n`
-tightness is an additional hypothesis not supplied by the stated vdV 25.59
-hypotheses, so this result is a conditional corollary rather than the
-unqualified book theorem. -/
+The influence tuple is the matrix-coupled `I⁻¹ score0`, and the bias sequence
+has the positive correction `+ I⁻¹ B_n`. Root-`n` tightness is an additional
+hypothesis not supplied by the stated vdV 25.59 hypotheses, so this result is a
+conditional corollary rather than the unqualified book theorem. -/
 theorem expansion_of_normalizedExpansion_sqrtN_tight_vec
     {d : Nat} {P : Measure Omega} [IsProbabilityMeasure P]
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
@@ -406,10 +405,9 @@ theorem rawMovingBias_expansion_2559_vec_of_sqrtN_tight
 
 /-- `d = 1` bridge between the native and scalar biased-linearity predicates.
 
-This literal predicate bridge is kept separate from the native theorem because
-the scalar `QMDPath` and native `QMDModel` model interfaces are not definitionally
-the same.  Specializing `I = 1` gives the printed vdV p. 395 `+ B_n`
-normalization. -/
+The scalar `QMDPath` and native `QMDModel` encode distinct model data, so this
+statement identifies only their biased-linearity predicates. Specializing
+`I = 1` gives the printed vdV p. 395 `+ B_n` normalization. -/
 theorem asymptoticallyLinearWithBiasAt_vec_fin_one_iff
     {P : Measure Omega} [IsProbabilityMeasure P]
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin 1)}
@@ -424,8 +422,8 @@ theorem asymptoticallyLinearWithBiasAt_vec_fin_one_iff
     norm_fin_one, PiLp.smul_apply, PiLp.sub_apply, WithLp.ofLp_sum,
     Finset.sum_apply, tupleEval_fin_one_apply, smul_eq_mul]
 
-/-- Literal `d = 1` bridge between the native and scalar asymptotic-linearity
-predicates. This adapter introduces no mathematical hypotheses. -/
+/-- For `d = 1`, the native and scalar asymptotic-linearity predicates are
+equivalent without additional mathematical hypotheses. -/
 theorem asymptoticallyLinearAt_vec_fin_one_iff
     {P : Measure Omega} [IsProbabilityMeasure P]
     {estimator : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin 1)}
@@ -453,12 +451,12 @@ theorem sqrtN_tight_of_normalizedExpansion_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {I : Matrix (Fin d) (Fin d) Real}
     {B : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
-    -- Square-integrable representatives of the fixed score tuple.
+    -- square-integrable representatives of the fixed score tuple.
     (score0_memLp : forall j,
       MemLp (fun x => (score0 j : Lp Real 2 P) x) 2 P)
-    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate.
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate used here.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- The normalized moving-bias/Z expansion.
+    -- DERIVED INPUT: the normalized moving-bias/Z expansion.
     (hNormalized : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
@@ -713,12 +711,12 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- USER-INPUT: native estimating equation, replacement, QMD transport,
+    -- native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
+    -- estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- USER-INPUT: vector equation (25.52), in rate-free normalized form;
+    -- vector equation (25.52), in rate-free normalized form;
     -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -747,7 +745,7 @@ theorem asympLinear_of_normalizedExpansion_2554_vec
     {B : forall n, (Fin n -> Omega) -> EuclideanSpace Real (Fin d)}
     (score0_memLp : forall j,
       MemLp (fun x => (score0 j : Lp Real 2 P) x) 2 P)
-    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate.
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate used here.
     (hEstimator_meas : forall n, Measurable (estimator n))
     (hNormalized : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -827,12 +825,12 @@ theorem rawMovingBias_asympLinear_2554_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- USER-INPUT: native estimating equation, replacement, QMD transport,
+    -- native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
+    -- estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- USER-INPUT: vector equation (25.52), in rate-free normalized form;
+    -- vector equation (25.52), in rate-free normalized form;
     -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))

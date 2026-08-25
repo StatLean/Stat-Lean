@@ -13,9 +13,10 @@ finite-discrete `L²` size of the envelope.
 The zero-denominator convention is explicit: when `Q Φ² = 0`, the normalized
 covering number is `1`.
 
-Declarations involving only finite sums, functions, and order structure omit
-the unnecessary measurable-space instance. Measure-valued realizations retain
-it where required.
+Declarations marked with `omit [MeasurableSpace Ω]` are intentionally stated
+without that inert instance: they use only finite sums, functions, and order
+structure. The measure-valued and empirical realizations retain the
+measurable-space assumption where it is required.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -32,13 +33,13 @@ This representation is intentionally independent of ambient measurability:
 its `L²` seminorm is a finite weighted sum.  A measure-valued realization is
 provided separately when singletons are measurable. -/
 structure FiniteDiscreteProbability (Ω : Type*) where
-  /-- a finite discrete law has finitely many atoms. -/
+  /-- A finite discrete law has finitely many atoms. -/
   atomCount : ℕ
-  /-- locations of the atoms; repetitions are allowed. -/
+  /-- Locations of the atoms; repetitions are allowed. -/
   atom : Fin atomCount → Ω
-  /-- each atom carries a nonnegative weight. -/
+  /-- Each atom carries a nonnegative weight. -/
   weight : Fin atomCount → ℝ≥0
-  /-- probability weights have total mass one. -/
+  /-- Probability weights have total mass one. -/
   weight_sum : ∑ i, weight i = 1
 
 namespace FiniteDiscreteProbability
@@ -121,8 +122,8 @@ lemma distL2_mul (Q : FiniteDiscreteProbability Ω)
 /-- Every nonempty empirical measure has a finite-discrete representation,
 and its finite-sum `L²` seminorm is the empirical root-mean-square.
 
-This is the adapter used after conditioning on a realized sample in the
-uniform-entropy chaining route. -/
+This representation is used after conditioning on a realized sample in
+uniform-entropy chaining. -/
 theorem exists_empirical_adapter {n : ℕ} [NeZero n] (X : Fin n → Ω) :
     ∃ Q : FiniteDiscreteProbability Ω,
       Q.measure = empiricalMeasure n X ∧
@@ -149,7 +150,6 @@ This is the finite-discrete variant sufficient for conditional
 empirical chaining.  Van der Vaart p.274 takes the supremum over all
 probability measures; no claim of definitional identity is made here.  The
 ambient-center convention follows vdV: centers need not belong to `F`.
-
 Edge behavior: if
 `Q Φ² = 0`, equivalently `‖Φ‖_{Q,2}=0`, the value is defined to be `1` rather
 than exposing a zero-radius or division-by-zero artifact.  Otherwise the
@@ -182,8 +182,8 @@ noncomputable def uniformL2CoveringNumber
 /-- The relative finite-discrete radius
 `θ(Q,F,Φ) = sup_f ‖f‖_{Q,2} / ‖Φ‖_{Q,2}` used in Lemma 19.38.
 
-Encoding of the radius displayed in vdV Lemma 19.38 p.289: its square
-is `sup_f Qf² / QΦ²`. Edge behavior: when
+This encodes the radius displayed in vdV Lemma 19.38 p.289: its square is
+`sup_f Qf² / QΦ²`. Edge behavior: when
 `Q Φ² = 0`, the radius is defined to be zero. -/
 noncomputable def finiteDiscreteRelativeRadius
     (Q : FiniteDiscreteProbability Ω) (F : Set (Ω → ℝ))
@@ -519,9 +519,8 @@ theorem uniformL2CoveringNumber_dyadic_ne_top_of_entropyIntegral_ne_top
       (uniformCovering_dyadic_sum_le_entropyIntegral F Φ hδ)
   exact hsum_ne (ENNReal.tsum_eq_top_of_eq_top ⟨q, hterm⟩)
 
-/-- The empirical finite-discrete adapter places every normalized empirical
-cover below the uniform covering number.  This is the U0-to-U3 bridge used by
-sample-`L²` chaining. -/
+/-- The empirical finite-discrete representation places every normalized empirical
+cover below the uniform covering number, as required by sample-`L²` chaining. -/
 theorem empirical_normalizedCoveringNumber_le_uniform
     {n : ℕ} [NeZero n] (X : Fin n → Ω)
     (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (ε : ℝ) :

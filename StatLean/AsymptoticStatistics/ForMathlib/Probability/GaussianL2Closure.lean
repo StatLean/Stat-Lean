@@ -15,7 +15,7 @@ namespace ProbabilityTheory
 open MeasureTheory Filter
 open scoped ENNReal InnerProductSpace
 
-/-! A centred Gaussian sequence converging in `L²`
+/-! A local closure brick: a centred Gaussian sequence converging in `L²`
 has a centred Gaussian limit.  This is the scalar ingredient needed because
 the regression part of an influence function generally lies only in the
 closed, rather than algebraic, span of the bridge coordinates. -/

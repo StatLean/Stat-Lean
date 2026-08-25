@@ -2,15 +2,6 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.ChangingLindeberg
 import StatLean.AsymptoticStatistics.EmpiricalProcess.LocalizedEmpiricalSquareRadius
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringOuterMaximal
 import Mathlib.MeasureTheory.Integral.MeanInequalities
-
-/-!
-# Localized empirical square-radius asymptotics
-
-This module derives convergence of the expected empirical square radius for
-strictly localized difference classes under changing-envelope Lindeberg and
-uniform covering-entropy assumptions.
--/
-
 namespace AsymptoticStatistics.EmpiricalProcess
 open Filter MeasureTheory Topology
 open scoped ENNReal NNReal

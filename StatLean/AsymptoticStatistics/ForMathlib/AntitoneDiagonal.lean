@@ -3,13 +3,6 @@ import Mathlib.Data.Nat.Find
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 
-/-!
-# Diagonal selection for antitone scales
-
-An antitone null-scale hypothesis is converted into eventual control at one
-fixed positive scale.
--/
-
 namespace AsymptoticStatistics.ForMathlib
 
 open Filter Topology

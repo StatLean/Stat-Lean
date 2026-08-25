@@ -1,13 +1,6 @@
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
-/-!
-# Integral bounds for antitone functions
-
-The integral of a nonnegative antitone function over a long interval is
-controlled by its integral over an initial interval and the ratio of lengths.
--/
-
 namespace AsymptoticStatistics.ForMathlib
 
 open MeasureTheory

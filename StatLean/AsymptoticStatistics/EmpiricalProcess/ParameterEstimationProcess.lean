@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Basic
 
 This is the full path-space form of van der Vaart Theorem 19.23. The parameter
 has dimension `k`, the precursor converges jointly in `ℓ∞(F) × ℝᵏ`, and the
-headline conclusion is weak convergence in outer expectation in `ℓ∞(F)`.
+conclusion is weak convergence in outer expectation in `ℓ∞(F)`.
 It is deliberately separate from the existing scalar pointwise specialization
 in `ParameterEstimation.lean`.
 
@@ -767,7 +767,7 @@ theorem parameter_estimation_remainder_outer
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))
     (Q : EuclideanSpace ℝ (Fin k) → LinfF F)
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F)
-    -- USER-INPUT: Donsker, asymptotic-linearity, differentiability, and remainder
+    -- Donsker, asymptotic-linearity, differentiability, and remainder
     -- hypotheses bundled from vdV Theorem 19.23.
     (h : Theorem19_23FiniteHyp F P_θ θ₀ ψ θ_hat Q D)
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
@@ -1014,14 +1014,14 @@ theorem empiricalProcess_parameter_estimation_finite
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))
     (Q : EuclideanSpace ℝ (Fin k) → LinfF F)
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F)
-    -- USER-INPUT: Donsker, asymptotic-linearity, differentiability, and remainder
+    -- Donsker, asymptotic-linearity, differentiability, and remainder
     -- hypotheses bundled from vdV Theorem 19.23.
     (h : Theorem19_23FiniteHyp F P_θ θ₀ ψ θ_hat Q D)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
     [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)
-    -- LEAN-ONLY: measurability of each sample coordinate.
+    -- measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: iid observations from `P_{θ₀}`; vdV Theorem 19.23.
+    -- iid observations from `P_{θ₀}`; vdV Theorem 19.23.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P_θ θ₀) :

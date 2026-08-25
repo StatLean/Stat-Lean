@@ -5,7 +5,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.InProbability
 /-!
 # Outer-probability peeling infrastructure
 
-Support for the concentric-shell arguments in van der Vaart
+Outer-probability lemmas for the concentric-shell arguments in van der Vaart
 Theorems 5.52 and 5.55.  The positive sample size is always `n + 1`, so all
 real-valued rate exponents use `Real.rpow` without a zero-sample convention.
 -/
@@ -28,7 +28,7 @@ theorem outerExpectation_eq_lintegral_of_aemeasurable
     _ = ∫⁻ ξ, hZ.mk Z ξ ∂μ := outerExpectation_eq_lintegral hZ.measurable_mk
     _ = ∫⁻ ξ, Z ξ ∂μ := lintegral_congr_ae hZ.ae_eq_mk.symm
 
-/-- Finite subadditivity of the induced outer measure, in the
+/-- **Finite subadditivity of the induced outer measure**, in the
 finite-union form used by the shell decompositions. -/
 theorem outerMeasureStar_finset_iUnion_le
     {Ξ ι : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
@@ -47,12 +47,12 @@ theorem outerMeasureStar_finset_iUnion_le
       rw [hunion, Finset.sum_insert ha]
       exact (outerMeasureStar_union_le μ _ _).trans (add_le_add le_rfl ih)
 
-/-- Ordinary uniform boundedness in probability implies scalar
-boundedness in outer probability. -/
+/-- **Ordinary uniform boundedness in probability implies scalar
+boundedness in outer probability.** -/
 theorem isBoundedInOuterProbScalar_of_isBoundedInProb
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (Z : ℕ → Ξ → ℝ)
-    -- ordinary `O_P(1)` is the stronger, measurable-event interface.
+    -- Ordinary `O_P(1)` is the stronger measurable-event formulation.
     (hZ : IsBoundedInProb (fun _ : ℕ => μ) Z) :
     IsBoundedInOuterProbScalar μ Z := by
   have hstar_le : ∀ A : Set Ξ, μ.outerMeasureStar A ≤ μ A := by
@@ -89,8 +89,8 @@ theorem isBoundedInOuterProbScalar_of_isBoundedInProb
         (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
     _ = ENNReal.ofReal η := limsup_const _
 
-/-- Inner probability tending to one makes the outer measure of
-the complementary event tend to zero. -/
+/-- **Inner probability tending to one makes the outer measure of
+the complementary event tend to zero.** -/
 theorem TendstoInnerProbOne.tendsto_outerMeasureStar_compl
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {S : ℕ → Set Ξ}
@@ -124,7 +124,7 @@ interfaces always assume `0 < α` and `β < α`. -/
 noncomputable def rateScale (α β : ℝ) (n : ℕ) : ℝ :=
   Real.rpow ((n + 1 : ℕ) : ℝ) (1 / (2 * α - 2 * β))
 
-/-- Algebraic balance behind the shell scale:
+/-- **Algebraic balance behind the shell scale:**
 `sqrt(N_n) r_n^β = r_n^α`. -/
 theorem rpow_rate_shell_identity (α β : ℝ) (n : ℕ)
     -- BOOK: vdV 5.52 assumes the deterministic exponent is strictly larger.
@@ -165,7 +165,7 @@ theorem rpow_rate_shell_identity (α β : ℝ) (n : ℕ)
       field_simp [hab]
       ring
 
-/-- A uniform eventual outer-tail estimate, obtained by a
+/-- **A uniform eventual outer-tail estimate**, obtained by a
 geometric shell sum, yields scalar outer `O_P(1)`. -/
 theorem outer_geometric_peeling
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]

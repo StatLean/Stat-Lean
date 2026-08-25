@@ -55,16 +55,27 @@ comparison with `dqm_scaled_path_deficit_mass_tendsto` and
 assumption is imposed.
 -/
 theorem movingProductMeasure_likelihood_comparison
+    -- the parametric family under study.
     (M : ParametricFamily 𝓧 (Θ k))
+    -- a dominating measure for the supplied densities.
     (μ : Measure 𝓧)
+    -- the base parameter.
     (θ₀ : Θ k)
+    -- the DQM score at the base parameter.
     (ℓ : 𝓧 → Θ k)
+    -- every family member is a probability density with respect to `μ`.
     (hPDF : IsPDFOf M μ)
+    -- differentiability in quadratic mean at `θ₀` with score `ℓ`.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- sample sizes along the local path.
     (m : ℕ → ℕ)
+    -- strict monotonicity packages divergence of the indexed sample sizes.
     (hm : StrictMono m)
+    -- the moving parameter sequence.
     (θ : ℕ → Θ k)
+    -- the limiting scaled direction.
     (h : Θ k)
+    -- convergence of the sample-size-scaled displacement.
     (hθ : Tendsto (fun n => Real.sqrt (m n) • (θ n - θ₀)) atTop (nhds h)) :
     (∀ n : ℕ,
       Integrable (fun ω => Real.exp (movingLogLikelihood M θ₀ m θ n ω))

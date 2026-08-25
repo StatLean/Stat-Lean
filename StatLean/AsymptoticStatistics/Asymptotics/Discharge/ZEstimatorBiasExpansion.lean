@@ -5,7 +5,8 @@ import StatLean.AsymptoticStatistics.StrictModel.EfficientScore
 /-!
 # Raw moving-bias expansion for scalar Z-estimators
 
-Covariantly corrected scalar form of vdV Theorem 25.59. The raw moving bias is
+This file proves the covariantly corrected scalar form of vdV
+Theorem 25.59.  The raw moving bias is
 
 `B_n = sqrt n * P_{thetaHat,eta} scoreHat`.
 
@@ -13,8 +14,8 @@ Solving the estimating equation gives the positive correction
 `+ I⁻¹ B_n`.  The literal display on vdV p. 395 writes `+ B_n`; the final
 corollary below records that printed normalization only under `I = 1`.
 
-The results use the positive correction obtained directly from the estimating
-equation and assume no `submodel_at_zero` field.
+This formulation uses the positive-sign correction and assumes no
+`submodel_at_zero` field.
 -/
 
 open MeasureTheory Filter Topology
@@ -29,7 +30,7 @@ open AsymptoticStatistics.Asymptotics.Discharge.ZEstimator
 open AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorModelShift
 open AsymptoticStatistics.StrictModel.EfficientScore
 
--- Match the `Type`-valued carrier of `RandomIndexScoreReplacementHyp`.
+-- `RandomIndexScoreReplacementHyp` has a universe-zero carrier.
 variable {Omega : Type} [MeasurableSpace Omega]
 
 private lemma tendstoInProbZero_of_abs_le_three
@@ -70,7 +71,7 @@ private lemma rawMovingBias_algebra (I q r delta sumHat sum0 pHat pMove : ℝ)
       delta - I⁻¹ * (q * sum0) - I⁻¹ * (r * pMove) := by
   field_simp [hI]
   ring
-/-- Minimal assembly hypotheses for the corrected raw moving-bias expansion
+/-- Minimal hypotheses for the corrected raw moving-bias expansion
 of vdV Theorem 25.59.
 
 The fixed score is an element of `L2ZeroMean P`, so its measurability,
@@ -91,8 +92,8 @@ structure RawMovingBiasExpansionHyp
     (fun n : Nat => Measure.pi (fun _ : Fin n => P))
     (fun n X => (Real.sqrt n)⁻¹ * ∑ i : Fin n, scoreHat n X (X i))
   /-- Constitutive (vdV Lemma 19.24 as used in §25.8): random-index
-  empirical-score replacement, including exactly its measurability and
-  integrability adapters. -/
+  empirical-score replacement, including its measurability and
+  integrability conditions. -/
   B0 : RandomIndexScoreReplacementHyp P scoreHat
     (fun x => (score0 : Lp Real 2 P) x) F
   /-- Constitutive (vdV §25.8, DQM plus condition (25.53)): Hellinger/QMD
@@ -126,7 +127,7 @@ theorem rawMovingBias_normalized_expansion_2559
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- estimating equation, random-index replacement, QMD transport,
     -- cross-moment identity, and nonsingularity; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I) :
     TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -235,9 +236,10 @@ theorem rawMovingBias_normalized_expansion_2559
 
 /-- Conditional ordinary expansion obtained from the rate-free corrected vdV 25.59 form.
 
-The conclusion uses the project's exact asymptotic-linearity-with-bias
-predicate. Its bias argument is `+ I⁻¹ B_n`. Root-`n` tightness is an additional
-user input not supplied by the stated vdV 25.59 hypotheses, so this result is
+The conclusion uses the stated asymptotic-linearity-with-bias predicate.
+Its bias argument is `+ I⁻¹ B_n`, rather than the negative-residual convention.
+Root-`n` tightness is an additional assumption not supplied by the stated
+vdV 25.59 hypotheses, so this result is
 a conditional corollary rather than the unqualified book theorem.
 
 Proof idea: combine `rawMovingBias_normalized_expansion_2559` with
@@ -253,9 +255,10 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- the minimal raw moving-bias assembly bundle above.
+    -- estimating equation, random-index replacement, QMD transport,
+    -- cross-moment identity, and nonsingularity; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
-    -- Additional assumption: root-`n` tightness is not supplied by the stated vdV 25.59
+    -- root-`n` tightness is not supplied by the stated vdV 25.59
     -- hypotheses; it makes this result a conditional corollary.
     (hDelta_tight : IsBoundedInProb
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -325,7 +328,7 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
         ((((I⁻¹ • score0 : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Omega → ℝ) (X i)) -
       I⁻¹ * rawMovingBias gamma estimator theta0 scoreHat n X|)
   rw [hsum]
-  ring_nf
+  ring
 
 /-- Conditional corollary with the literal printed `+ B_n` form of vdV Theorem 25.59,
 valid in the information-normalized scalar coordinate `I = 1`.
@@ -344,11 +347,12 @@ theorem rawMovingBias_expansion_2559_vdv_printed_of_information_eq_one
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- the minimal raw moving-bias assembly bundle above.
+    -- estimating equation, random-index replacement, QMD transport,
+    -- cross-moment identity, and nonsingularity; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
     -- information-normalized coordinate required by vdV's printed display.
     (hI_one : I = 1)
-    -- Additional assumption: root-`n` tightness is not supplied by the stated vdV 25.59
+    -- root-`n` tightness is not supplied by the stated vdV 25.59
     -- hypotheses; it makes this result a conditional corollary.
     (hDelta_tight : IsBoundedInProb
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -374,9 +378,9 @@ O_P(1)`.
 
 Here `h` supplies the estimating-equation, empirical-replacement,
 QMD-transport, cross-moment, and nonsingularity inputs through the normalized
-25.59 theorem, while `h52` is precisely vdV's additional no-bias condition.
-The `hEstimator_meas` adapter is
-used solely to make the finitely many pre-asymptotic estimator laws tight.
+25.59 theorem; deleting `h52` removes exactly vdV's no-bias condition and
+leaves only the 25.59 conclusion.  The `hEstimator_meas` hypothesis makes the
+finitely many pre-asymptotic estimator laws tight.
 -/
 theorem rawMovingBias_sqrtN_tight_2554
     {P : Measure Omega} [IsProbabilityMeasure P]
@@ -384,13 +388,12 @@ theorem rawMovingBias_sqrtN_tight_2554
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- estimating equation, random-index replacement, QMD transport,
     -- cross-moment identity, and nonsingularity; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
-    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate used here.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- USER-INPUT: equation (25.52), in rate-free normalized form;
-    -- vdV Theorem 25.54.
+    -- vdV equation (25.52), in the rate-free normalized form.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X =>
@@ -585,7 +588,7 @@ prove `B_n ->_P 0`; specialize `rawMovingBias_expansion_2559_of_sqrtN_tight`;
 finally use the 25.59-to-25.54 vanishing-bias collapse.
 
 Here `h52` is precisely the additional (25.52) input distinguishing
-25.54 from 25.59, while `h` supplies both the tightness bootstrap and the
+25.54 from 25.59; `h` is consumed by both the tightness bootstrap and the
 corrected ordinary 25.59 expansion.  No asymptotic-linearity, tightness,
 raw-bias-vanishing, or Bartlett conclusion is assumed.  `hEstimator_meas` is
 passed only to the finite-prefix step of the tightness bootstrap.
@@ -596,12 +599,12 @@ theorem rawMovingBias_asympLinear_2554
     {estimator : forall n, (Fin n -> Omega) -> Real} {theta0 : Real}
     {scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real}
     {score0 : ↥(L2ZeroMean P)} {F : Set (Omega -> Real)} {I : Real}
-    -- USER-INPUT: estimating equation, random-index replacement, QMD transport,
+    -- estimating equation, random-index replacement, QMD transport,
     -- cross-moment identity, and nonsingularity; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp P gamma estimator theta0 scoreHat score0 F I)
-    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
+    -- Finite-prefix tightness for the all-`n` `O_P(1)` predicate used here.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- USER-INPUT: equation (25.52), in rate-free normalized form;
+    -- equation (25.52), in rate-free normalized form;
     -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -659,8 +662,8 @@ theorem rawMovingBias_asympLinear_2554
 namespace RawMovingBiasExpansionHyp
 
 /-- Build the scalar raw moving-bias bundle from an efficient score and an
-ordinary-score QMD path. The cross moment is not an input: it follows from
-efficient-score orthogonality and `hScore`.
+ordinary-score QMD path. The cross moment is derived from efficient-score
+orthogonality and `hScore`, rather than supplied separately.
 
 Proof idea: rewrite the QMD-path score with `hScore`, identify the resulting
 inner product by `efficientScore_inner_ordinary_eq_self`, and unfold

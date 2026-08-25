@@ -6,16 +6,17 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.InfinitePi
 
 /-!
-# A normal-location example for the classical Z-estimator theorems
+# A normal-location example for classical Z-estimators (vdV 5.41 / 5.42)
 
-This file instantiates the assumptions of three classical Z-estimator results:
+This file verifies the assumptions of three classical Z-estimator results in a concrete
+one-dimensional normal-location model:
 
 * `classical_zEstimator_normality` (vdV Theorem 5.41, book p.68),
 * `classical_zEstimator_root_exists_consistent` (vdV Theorem 5.42 (i)+(ii), p.68-69),
 * `classical_zEstimator_localmax_roots` (vdV Theorem 5.42 final assertion, p.69).
 
-The model supplies the smoothness, integrability, nonsingularity, sampling, consistency,
-and local-maximum assumptions appearing in these results.
+The example simultaneously satisfies the smoothness, second-order domination,
+`Pψ_{θ₀} = 0`, nonsingularity, i.i.d., consistency, and local-maximum assumptions.
 
 ## The one-dimensional normal location model
 
@@ -42,19 +43,19 @@ namespace AsymptoticStatistics.ClassicalZEstimator.Witness
 
 /-! ## 1. The model -/
 
-/-- The parameter space `ℝ`, represented as `EuclideanSpace ℝ (Fin 1)`. -/
+/-- The parameter space of the example: `ℝ` represented as `EuclideanSpace ℝ (Fin 1)`. -/
 abbrev E1 := EuclideanSpace ℝ (Fin 1)
 
-/-- The observation law `P = N(0,1)` on `Ω = ℝ`. -/
+/-- The witness law `P = N(0,1)` on `Ω = ℝ`. -/
 noncomputable def wP : Measure ℝ := ProbabilityTheory.gaussianReal 0 1
 
 instance : IsProbabilityMeasure wP := by unfold wP; infer_instance
 
-/-- The estimating function `ψ_θ(x) = x − θ 0`: the score of the normal location
+/-- The witness estimating function `ψ_θ(x) = x − θ 0`: the score of the normal location
 family. There is a single estimating equation (`j : Fin 1` is ignored). -/
 noncomputable def wpsi : E1 → Fin 1 → ℝ → ℝ := fun θ _ x => x - θ 0
 
-/-- The criterion function `m_θ(x) = −(x − θ 0)²/2`, i.e. the `N(θ,1)`
+/-- The witness criterion function `m_θ(x) = −(x − θ 0)²/2`, i.e. the `N(θ,1)`
 log-likelihood up to an additive constant. Its gradient in `θ` is `wpsi`. -/
 noncomputable def wm : E1 → ℝ → ℝ := fun θ x => -((x - θ 0) ^ 2 / 2)
 
@@ -75,11 +76,11 @@ lemma innerSL_E1 (a v : E1) : (innerSL ℝ a) v = a 0 * v 0 := by
   simp only [innerSL_apply_apply, PiLp.inner_apply, Fin.sum_univ_one]
   exact mul_comm _ _
 
-/-- The single coordinate of the bundled score vector. -/
+/-- The single coordinate of the bundled witness score vector. -/
 @[simp] lemma psiVec_witness_apply (θ : E1) (x : ℝ) (j : Fin 1) :
     psiVec wpsi θ x j = x - θ 0 := rfl
 
-/-! ## 2. Derivatives of `ψ` -/
+/-! ## 2. Derivatives of the witness `ψ` -/
 
 /-- `θ ↦ ψ_θ(x)` is affine with (constant) Fréchet derivative `−L1`. -/
 lemma hasFDerivAt_wpsi (x : ℝ) (j : Fin 1) (θ : E1) :
@@ -92,7 +93,7 @@ lemma fderiv_wpsi (x : ℝ) (j : Fin 1) :
     (fderiv ℝ fun θ' : E1 => wpsi θ' j x) = fun _ => -L1 :=
   funext fun θ => (hasFDerivAt_wpsi x j θ).fderiv
 
-/-- **`ψ̇_θ(x) = (−1)`.** The `1 × 1` Jacobian of the estimating function is the
+/-- **`ψ̇_θ(x) = (−1)`.** The `1 × 1` Jacobian of the witness estimating function is the
 constant matrix `−1`, at every `θ` and every `x`. -/
 lemma psiDot_witness (θ : E1) (x : ℝ) (j i : Fin 1) : psiDot wpsi θ x j i = -1 := by
   have hi : i = 0 := Subsingleton.elim _ _
@@ -105,7 +106,7 @@ lemma Vmat_witness : Vmat wP wpsi (0 : E1) = Matrix.of fun _ _ : Fin 1 => (-1 : 
   ext j i
   simp [Vmat, psiDot_witness]
 
-/-! ## 3. Regularity of the model -/
+/-! ## 3. The setup hypotheses of vdV 5.41 / 5.42, discharged -/
 
 lemma w_hΘ_open : IsOpen (Set.univ : Set E1) := isOpen_univ
 
@@ -198,7 +199,7 @@ lemma w_hX_id (i : ℕ) : ProbabilityTheory.IdentDistrib (wX i) (wX 0) wmu wmu :
 
 /-! ## 5. The estimator: the sample mean is an exact root, and is consistent -/
 
-/-- The estimator `θ̂ₙ = X̄ₙ`, packaged into `EuclideanSpace ℝ (Fin 1)`. -/
+/-- The witness estimator `θ̂ₙ = X̄ₙ`, packaged into `EuclideanSpace ℝ (Fin 1)`. -/
 noncomputable def wthetahat : ∀ n, (Fin n → ℝ) → E1 :=
   fun n xs => (WithLp.equiv 2 (Fin 1 → ℝ)).symm fun _ => empiricalAvg id n xs
 
@@ -296,12 +297,17 @@ lemma w_hmax : IsLocalMax (fun θ : E1 => ∫ x, (wm θ x - wm (0 : E1) x) ∂wP
   rw [h0]
   nlinarith [sq_nonneg (θ 0)]
 
-/-! ## 7. Applications of the classical Z-estimator theorems -/
+/-! ## 7. Applications of the general theorems
 
-/-- **Asymptotic normality of the sample mean in the normal location model.**
+Each of the following applies a general classical Z-estimator theorem to the normal-location
+example.
+-/
 
-The one-dimensional normal location model with the sample mean as estimator satisfies all
-the assumptions. Consequently, `√n·X̄ₙ` admits vdV's linear representation and converges to the
+/-- **Normal-location instance of vdV Theorem 5.41** (`classical_zEstimator_normality`).
+
+The assumptions are satisfied by the one-dimensional normal-location model with the sample
+mean as estimator, and the conclusion therefore
+holds for it: `√n·X̄ₙ` admits vdV's linear representation and converges weakly to the
 Gaussian limit with covariance `V⁻¹ P[ψψᵀ] V⁻ᵀ`. -/
 theorem classical_zEstimator_hypotheses_satisfiable :
     TendstoInProbZero (fun _ : ℕ => wmu) (fun n ξ =>
@@ -318,8 +324,8 @@ theorem classical_zEstimator_hypotheses_satisfiable :
     (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wthetahat wmu wX w_hX_meas
     w_hX_indep w_hX_id w_hX_law w_hθhat_meas w_hroot w_hcons
 
-/-- **Existence and consistency of roots in the normal location model.** The sample mean
-solves the empirical estimating equation and converges in probability to zero. -/
+/-- **Normal-location root existence and consistency for vdV Theorem 5.42 (i)+(ii)**
+(`classical_zEstimator_root_exists_consistent`). -/
 theorem classical_zEstimator_root_hypotheses_satisfiable :
     Filter.Tendsto (fun n => wmu.real {ξ | ∃ θ ∈ (Set.univ : Set E1), ∀ j,
         empiricalAvg (wpsi θ j) n (fun i : Fin n => wX i.val ξ) = 0}) Filter.atTop (𝓝 1)
@@ -334,8 +340,8 @@ theorem classical_zEstimator_root_hypotheses_satisfiable :
     (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
     w_hX_id w_hX_law
 
-/-- **Local-maximizing roots in the normal location model.** The selected empirical roots are
-also local maxima of the quadratic empirical criterion with probability tending to one. -/
+/-- **Normal-location local-maximizing roots for vdV Theorem 5.42, final assertion**
+(`classical_zEstimator_localmax_roots`). -/
 theorem classical_zEstimator_localmax_hypotheses_satisfiable :
     ∃ θ_hat : ∀ n, (Fin n → ℝ) → E1,
       Filter.Tendsto (fun n => wmu.real {ξ | ∀ j,

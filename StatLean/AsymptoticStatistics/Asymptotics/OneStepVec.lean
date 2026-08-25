@@ -13,13 +13,13 @@ preliminary estimator, the one-step estimator
 matrix correction) is asymptotically linear with vector influence
 function `Ĩ⁻¹ ℓ̃` and asymptotically efficient under (25.55) + (25.56).
 
-The generic interface below takes the empirical-process consequence as the
-explicit hypothesis `asympLinear_25_57_vec`. The native interface later in
-the file instead states the primitive assumptions used to derive it.
+The structure below records the empirical-process consequence as the explicit
+assumption `asympLinear_25_57_vec`. The primitive conditions (25.55)--(25.56)
+imply this assumption in `Asymptotics.Discharge.OneStepVec`.
 
 Reference: vdV §25.5, thm:25.57 (vector form).
 
-Headline declarations: `OneStepAssumptions_vec`,
+Main declarations: `OneStepAssumptions_vec`,
 `oneStep_semiparametricallyEfficient_vec`.
 -/
 
@@ -79,7 +79,7 @@ structure OneStepAssumptions_vec
   /-- vdV §25.5 (eqs:25.55 + 25.56 + `√n`-rate + info consistency
   `Î_n →_P Ĩ`): the one-step estimator is asymptotically linear at `P`
   with vector influence tuple `IF` and centering `θ₀`. This field is an
-  explicit conditional hypothesis of the generic bundled interface. -/
+  explicit assumption of this conditional theorem. -/
   asympLinear_25_57_vec :
     AsymptoticallyLinearAt_vec estimator P
       (@candidateVecEIF Ω _ P _ Θ _ _ _ d S_θ T_nuis proj e) θ₀
@@ -93,11 +93,10 @@ the vector functional `ψ` relative to `T`.
 
 Reference: vdV §25.5, thm:25.57 (vector form).
 
-Proof template (mirroring the scalar):
-* **Step A** — produce the vector EIF via `eif_from_efficientScore_vec`.
-* **Step B** — unwrap `asympLinear_25_57_vec` modulo `ψ P = θ₀`.
-* **Step C** — combine via
-  `estimator_semiparametricallyEfficient_of_asympLinear_eif_vec`. -/
+The efficient-score construction gives the vector EIF, while
+`asympLinear_25_57_vec` gives the required expansion after substituting
+`ψ P = θ₀`; `estimator_semiparametricallyEfficient_of_asympLinear_eif_vec`
+combines these conclusions. -/
 theorem oneStep_semiparametricallyEfficient_vec
     {P : Measure Ω} [IsProbabilityMeasure P]
     {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -123,10 +122,11 @@ theorem oneStep_semiparametricallyEfficient_vec
     rw [h_ψ]; exact h.asympLinear_25_57_vec
   exact estimator_semiparametricallyEfficient_of_asympLinear_eif_vec hEIF hAL
 
-/-! ## Native interface for vdV Theorem 25.57 -/
+/-! ## Native formulation of vdV Theorem 25.57 -/
 
 /-- The probability measure represented by a density in the local finite-dimensional
-model used in the native 25.57 interface.  This is the book's `P_{θ,η}` with the
+model used in the finite-dimensional form of Theorem 25.57. This is the book's
+`P_{θ,η}` with the
 nuisance value fixed. -/
 noncomputable def modelMeasure
     (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)
@@ -188,15 +188,14 @@ def indexedSplitScore
     EuclideanSpace ℝ (Fin d) → Ω → EuclideanSpace ℝ (Fin d) :=
   scoreHalf n X (splitSide n i)
 
-/-- Primitive hypotheses for the vector one-step theorem vdV 25.57.
+/-- Primitive hypotheses for the vector form of vdV Theorem 25.57.
 
 Constitutive (vdV §25.8 pp.393–394): the bundle contains the preliminary
 root-`n` estimator and grid restriction, the two shared half-sample scores,
 their book-constitutive `L²` integrability and score centering, the literal
 deterministic-sequence clauses (25.55) and (25.56), and the exact one-step
 formula.  It deliberately contains no asymptotic-linearity conclusion, no Ch5
-condition (5.47), and no Z-estimator score equation or Taylor conclusion.
-Those are named discharge obligations in `Asymptotics/Discharge/OneStepVec`. -/
+condition (5.47), and no Z-estimator score equation or Taylor conclusion. -/
 structure OneStep2557NativeHyp_vec
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -263,9 +262,8 @@ structure OneStep2557NativeHyp_vec
           tupleEval P (fun j =>
             @efficientScore Ω _ P _ Θ _ _ _ S_theta T_nuis proj (e j)) x‖ ^ 2 ∂μ)
       atTop (nhds 0)
-  /-- joint sample/observation measurability of each shared
-  half-score; both fixed-sample and fixed-observation sections are derived from
-  this product-space statement downstream. -/
+  /-- Joint sample/observation measurability of each shared half-score. In
+  particular, every fixed-sample and fixed-observation section is measurable. -/
   scoreHalf_joint_meas : ∀ n b t,
     Measurable (fun p : (Fin n → Ω) × Ω => scoreHalf n p.1 b t p.2)
   /-- measurability of the local fixed-nuisance score family. -/

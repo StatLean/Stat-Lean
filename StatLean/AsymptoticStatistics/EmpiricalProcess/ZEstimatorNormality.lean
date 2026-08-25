@@ -20,13 +20,11 @@ zero `θ₀` with nonsingular derivative matrix `V`. Under `P‖ψ_{θ₀}‖² 
 
 and in particular `√n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ψ_{θ₀}ψ_{θ₀}ᵀ] (V⁻¹)ᵀ)`.
 
-The parameter space is `EuclideanSpace ℝ (Fin k)`, the estimating-function index
-is `Fin k`, and the derivative is a matrix `V`. The covariance
-`psiCov = P[ψ_{θ₀}ψ_{θ₀}ᵀ]` is constructed from the estimating functions; its
-positive semidefiniteness and directional-variance identity are proved below.
-The linear representation is `zEstimator_linear_representation`, and
-`zEstimator_asymptotic_normality` derives the Donsker input from the Lipschitz
-assumption using vdV Example 19.7.
+The limit covariance `psiCov = P[ψ_{θ₀}ψ_{θ₀}ᵀ]` is constructed explicitly;
+`psiCov_posSemidef` and `psiCov_variance_eq` establish the properties needed
+for the multivariate central limit theorem. The final declaration
+`zEstimator_asymptotic_normality` derives the required Donsker property from
+the Lipschitz assumptions of vdV Example 19.7.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -38,9 +36,9 @@ open scoped ENNReal Topology RealInnerProductSpace Matrix ProbabilityTheory
 
 /-- **Linear map `Vlin V : ℝᵏ →ₗ ℝᵏ`.** Bridges the
 Euclidean parameter space `EuclideanSpace ℝ (Fin k)` to the plain `Fin k → ℝ`
-codomain used by the 19.26 engine's derivative field `V`, by first forgetting the
+codomain of the derivative field `V` in Theorem 19.26, by first forgetting the
 `L²` structure (`WithLp.linearEquiv`) and then applying the matrix `V`
-(`Matrix.mulVecLin`). It supplies `Theorem19_26Hyp … (Vlin V) …`, and its
+(`Matrix.mulVecLin`). Its
 bounded-below field is discharged by `matrix_bddbelow_of_isUnit_det`. -/
 noncomputable def Vlin {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ) :
     EuclideanSpace ℝ (Fin k) →ₗ[ℝ] (Fin k → ℝ) :=
@@ -48,17 +46,17 @@ noncomputable def Vlin {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ) :
 
 /-- **ψ bundled as a Euclidean vector.** Collects the `k` estimating
 functions `h ↦ ψ_{θ,h}(ω)` into a single `EuclideanSpace ℝ (Fin k)` point via the
-`L²` re-tagging `(WithLp.equiv 2 _).symm`. The condition `P‖ψ_{θ₀}‖² < ∞` is
-represented by `MemLp (psiVec ψ θ₀) 2 P`. -/
+`L²` re-tagging `(WithLp.equiv 2 _).symm`. This is the vector whose CLT / Gaussian
+limit (`P‖ψ_{θ₀}‖² < ∞` is `MemLp (psiVec ψ θ₀) 2 P`). -/
 noncomputable def psiVec {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ : EuclideanSpace ℝ (Fin k)) (ω : Ω) : EuclideanSpace ℝ (Fin k) :=
   (WithLp.equiv 2 (Fin k → ℝ)).symm (fun h => ψ θ h ω)
 
-/-- **Vector empirical process** `𝔾ₙψ_θ` bundled into `EuclideanSpace ℝ (Fin k)`
-(coordinate `h` is the scalar empirical process
+/-- **Vector empirical process** `𝔾ₙψ_θ` bundled into `EuclideanSpace ℝ (Fin k)`.
+Coordinate `h` is the scalar empirical process
 `empiricalProcess P n Xs (ψ θ h)`; re-tagged into the `L²` space so the CLT and
-`multivariateGaussian` apply). -/
+`multivariateGaussian` apply. Its weak limit is `N(0, psiCov)`. -/
 noncomputable def empiricalProcessVec {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ) (Xs : Fin n → Ω) :
@@ -69,23 +67,24 @@ noncomputable def empiricalProcessVec {k : ℕ} {Ω : Type*} [MeasurableSpace Ω
 `P[ψ_{θ₀,i} ψ_{θ₀,j}]`, which
 equals the covariance of `psiVec ψ θ₀` because `Pψ_{θ₀} = 0`. Its PSD
 (`psiCov_posSemidef`) and directional-variance identity (`psiCov_variance_eq`) feed
-the multivariate CLT and identify the Gaussian limit `N(0, V⁻¹ Σ V⁻ᵀ)`. -/
+the multivariate CLT and determine the Gaussian limit `N(0, V⁻¹ Σ V⁻ᵀ)`. -/
 noncomputable def psiCov {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) : Matrix (Fin k) (Fin k) ℝ :=
   Matrix.of (fun i j => ∫ x, ψ θ₀ i x * ψ θ₀ j x ∂P)
 
-/-! ### Finite-`H` collapse from outer probability to Euclidean convergence -/
+/-! ### Finite-`H` collapse of outer-probability suprema -/
 
 /-- **Finite-`H` collapse.** For a finite index `Fin k`, `‖g_n‖_{Fin k} →ₚ 0`
 in outer probability upgrades to `→ₚ 0` of the `EuclideanSpace ℝ (Fin k)`-bundled
-family: `measure_le_outerMeasureStar` compares its probability to the coordinatewise
-outer-probability bound, and the Euclidean norm is controlled by `√k · maxⱼ |·|`.
-Bridges the engine's
-`TendstoZeroInOuterProbSup` conclusion to vector-valued `TendstoInProbZero`. -/
+family in the ordinary (measurable) sense: the `∃ j` exceedance event is a finite
+union of measurable sets so the outer measure collapses to `μ`, and the Euclidean
+norm is controlled by `√k · maxⱼ |·|`. Thus `TendstoZeroInOuterProbSup` implies
+vector-valued `TendstoInProbZero`. -/
 theorem tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) {k : ℕ}
-    (g : ℕ → Ξ → Fin k → ℝ) (h : TendstoZeroInOuterProbSup μ g) :
+    (g : ℕ → Ξ → Fin k → ℝ) (hg : ∀ n j, Measurable fun ξ => g n ξ j)
+    (h : TendstoZeroInOuterProbSup μ g) :
     TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => ((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) :
         EuclideanSpace ℝ (Fin k))) := by
@@ -106,7 +105,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin
     intro n ξ hξ
     simp only [Set.mem_setOf_eq] at hξ ⊢
     by_contra hcon
-    push Not at hcon
+    push_neg at hcon
     have hnorm_sq :
         ‖((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) : EuclideanSpace ℝ (Fin k))‖ ^ 2
           = ∑ i, |g n ξ i| ^ 2 := by
@@ -144,8 +143,8 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin
 
 /-- **`IsUnit V.det` implies that `Vlin V` is bounded below.** An invertible finite-dimensional
 matrix is bounded below: `‖b‖ = ‖V⁻¹(V b)‖ ≤ ‖V⁻¹‖ · ‖V b‖₂ ≤ ‖V⁻¹‖ · √k · supⱼ|V b_j|`,
-so with `c = 1/(‖V⁻¹‖ √k)`, `c‖b‖ ≤ supⱼ|Vlin V b_j| ≤ ⨆ⱼ ofReal|Vlin V b_j|`.
-This supplies the `bddbelow_V` field of `Theorem19_26Hyp` from `hV`. -/
+so with `c = 1/(‖V⁻¹‖ √k)`, `c‖b‖ ≤ supⱼ|Vlin V b_j| ≤ ⨆ⱼ ofReal|Vlin V b_j|`. This
+discharges the `bddbelow_V` field of `Theorem19_26Hyp` from `hV`. -/
 theorem matrix_bddbelow_of_isUnit_det {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ)
     (hV : IsUnit V.det) :
     ∃ c : ℝ, 0 < c ∧ ∀ b : EuclideanSpace ℝ (Fin k),
@@ -213,11 +212,11 @@ theorem matrix_bddbelow_of_isUnit_det {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ)
       _ ≤ ⨆ h, ENNReal.ofReal |Vlin V b h| :=
           le_iSup (fun h => ENNReal.ofReal |Vlin V b h|) h₀
 
-/-! ### Properties of the constructed covariance `psiCov` -/
+/-! ### Properties of the covariance `psiCov` -/
 
 /-- **`psiCov` is positive semidefinite.** `psiCov = P[ψ_{θ₀}ψ_{θ₀}ᵀ]`
 is a Gram-type matrix of `L²` functions, hence PSD (`t ⬝ᵥ psiCov *ᵥ t = P[⟪t, ψ⟫²] ≥ 0`;
-`Matrix.posSemidef_gram`-flavored). This supplies the CLT hypothesis `hS_pos`. -/
+`Matrix.posSemidef_gram`-flavored), providing the CLT assumption `hS_pos`. -/
 theorem psiCov_posSemidef {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k))
@@ -265,7 +264,7 @@ theorem psiCov_posSemidef {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measu
 `Var[⟪t, psiVec ψ θ₀ ·⟫] = t ⬝ᵥ psiCov *ᵥ t` for every direction `t`: the inner
 product `⟪t, psiVec⟫ = ∑ⱼ tⱼ ψ_{θ₀,j}` is a linear combination whose variance is the
 quadratic form `∑ᵢⱼ tᵢ tⱼ P[ψ_{θ₀,i}ψ_{θ₀,j}]` (using `Pψ_{θ₀} = 0` to drop the mean
-correction). This supplies the CLT hypothesis `hS_eq`. -/
+correction), providing the CLT assumption `hS_eq`. -/
 theorem psiCov_variance_eq {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -326,11 +325,11 @@ theorem psiCov_variance_eq {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
 
 /-- **Linear representation of the Z-estimator.**
 
-Under the headline hypotheses,
+Under the stated hypotheses,
 `√n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)` in `EuclideanSpace ℝ (Fin k)`, stated as
 `√n(θ̂ₙ − θ₀) + V⁻¹ 𝔾ₙψ_{θ₀} →ₚ 0`.
 
-The theorem `infinite_dim_z_estimator` (fed the `Theorem19_26Hyp` bundle `hyp` with
+The theorem `infinite_dim_z_estimator`, applied to the `Theorem19_26Hyp` bundle `hyp` with
 derivative `Vlin V`) gives `√n · Vlin V(θ̂ − θ₀) + 𝔾ₙψ_{θ₀} →ₚ 0` in outer-prob-sup;
 `tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin` collapses the finite
 `Fin k` sup to Euclidean `→ₚ 0`; applying the CLM `toEuclideanCLM V⁻¹` (Lipschitz,
@@ -347,6 +346,13 @@ theorem zEstimator_linear_representation
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    (_hθhat_meas : ∀ n, Measurable
+      (fun ξ : Ξ => ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖))
+    (hθhat_meas' : ∀ n, Measurable
+      (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    (hψθ₀_meas : ∀ h, Measurable (ψ θ₀ h))
+    (_hψ_joint : ∀ (n : ℕ) (h : Fin k), Measurable
+      (fun p : Ξ × Ω => ψ (θ_hat n (fun i : Fin n => X i.val p.1)) h p.2))
     (h_tight : IsBoundedInOuterProbSup μ (fun n ξ h =>
       empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)))
     (h_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
@@ -359,14 +365,36 @@ theorem zEstimator_linear_representation
         + Matrix.toEuclideanCLM (𝕜 := ℝ) V⁻¹
             (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))) := by
   classical
-  -- Engine: outer-prob-sup vanishing of `√n · Vlin V(θ̂ − θ₀) + 𝔾ₙψ_{θ₀}`.
+  -- Apply Theorem 19.26 to the outer-probability supremum of
+  -- `√n · Vlin V(θ̂ − θ₀) + 𝔾ₙψ_{θ₀}`.
   have h_engine := infinite_dim_z_estimator P 𝓕 ψ θ₀ (Vlin V) δcls hyp θ_hat μ X
     hX_meas hX_indep hX_id hX_law h_tight h_consist h_est_eq
-  -- Collapse the finite sup to Euclidean `→ₚ 0`.
+  -- Coordinatewise measurability of the resulting `ℓ∞(Fin k)` family.
+  have hg_meas : ∀ (n : ℕ) (j : Fin k), Measurable (fun ξ : Ξ =>
+      Real.sqrt n * Vlin V (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) j
+        + empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ j)) := by
+    intro n j
+    have hVterm : Measurable (fun ξ : Ξ =>
+        Real.sqrt n * Vlin V (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) j) := by
+      refine measurable_const.mul ?_
+      have hclm : Measurable (fun ξ => Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V
+          (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :=
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V).continuous.measurable.comp
+          ((hθhat_meas' n).sub measurable_const)
+      exact (measurable_pi_apply j).comp
+        ((MeasurableEquiv.toLp 2 (Fin k → ℝ)).symm.measurable.comp hclm)
+    have hEP : Measurable (fun ξ : Ξ =>
+        empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ j)) := by
+      simp only [empiricalProcess, empiricalAvg]
+      refine measurable_const.mul
+        (Measurable.sub (measurable_const.mul ?_) measurable_const)
+      exact Finset.measurable_sum _ (fun i _ => (hψθ₀_meas j).comp (hX_meas i.val))
+    exact hVterm.add hEP
+  -- Collapse the finite supremum to Euclidean `→ₚ 0`.
   have h_L1 := tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin μ
     (fun n ξ h => Real.sqrt n * Vlin V (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) h
       + empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h))
-    h_engine
+    hg_meas h_engine
   -- Apply the (Lipschitz) inverse-derivative endomorphism `toEuclideanCLM V⁻¹`.
   have h_clm := tendstoInProbZero_clm μ
     (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V⁻¹) h_L1
@@ -424,7 +452,7 @@ theorem zEstimator_linear_representation
 
 /-! ### Weak limit of the vector empirical process -/
 
-/-- **Weak limit of the vector empirical process.**
+/-- **Weak limit of the vector empirical process** by the multivariate CLT.
 
 For the iid sample and `Pψ_{θ₀} = 0`, the vector empirical process
 `empiricalProcessVec P ψ θ₀ n` converges weakly to `N(0, Σ)` with `Σ = psiCov P ψ θ₀`.
@@ -433,8 +461,7 @@ The identity `Pψ_{θ₀} = 0` makes `empiricalProcess = (√n)⁻¹ ∑ᵢ ψ_{
 standardised statistic; `tendstoInDistribution_multivariate_clt` applied to
 `Xk := psiVec ψ θ₀ ∘ X k` with `hS_eq := psiCov_variance_eq`,
 `hS_pos := psiCov_posSemidef`, then reindex `Fin n ↔ range n` and bridge
-`TendstoInDistribution → WeakConverges`.
--/
+`TendstoInDistribution → WeakConverges`. -/
 theorem empiricalProcessVec_weakConverges
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -568,11 +595,10 @@ theorem empiricalProcessVec_weakConverges
 
 /-! ### Asymptotic normality -/
 
-/-- **Asymptotic normality of the finite-dimensional Z-estimator from a supplied
-Theorem 19.26 hypothesis bundle.** The theorem `zEstimator_asymptotic_normality`
-derives this bundle from vdV Theorem 5.21's Lipschitz assumptions. This result
-accepts the `Theorem19_26Hyp` bundle `hyp` as an argument. vdV Theorem 5.21,
-§5.3, book pp.52–53.
+/-- **Asymptotic normality of the finite-dimensional Z-estimator.**
+This core accepts a `Theorem19_26Hyp` bundle; `zEstimator_asymptotic_normality`
+carries vdV Theorem 5.21's stated hypotheses and constructs the
+`Theorem19_26Hyp` bundle `hyp` internally). vdV Thm 5.21, §5.3 book p.52-53.
 
 For an iid sample `X₁,…,Xₙ ~ P` and a Z-estimator `θ̂ₙ` solving the `k` estimating
 equations up to `o_P(n^{-1/2})` (`h_est_eq`) with `θ̂ₙ →ₚ θ₀` (`h_consist`), under
@@ -582,9 +608,12 @@ matrix `V` (`hV`, plus `hyp.frechet` / `hyp.hPθ₀_zero`) and `P‖ψ_{θ₀}�
 
     √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ψ_{θ₀}ψ_{θ₀}ᵀ] (V⁻¹)ᵀ).
 
-The covariance `psiCov = P[ψ_{θ₀}ψ_{θ₀}ᵀ]` is constructed rather than supplied as
-a hypothesis. The linear representation gives
-`√n(θ̂ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)`, while the multivariate CLT gives
+The covariance `psiCov = P[ψ_{θ₀}ψ_{θ₀}ᵀ]` is constructed explicitly, with
+its positive-semidefinite and variance properties proved by
+`psiCov_posSemidef` and `psiCov_variance_eq`.
+
+The linear representation gives `√n(θ̂ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)`, while
+the empirical-process CLT gives
 `𝔾ₙψ_{θ₀} ⇝ N(0, psiCov)`; CMT (`WeakConverges.map` by `−V⁻¹` via
 `multivariateGaussian_map_toEuclideanCLM`, using `(−A) Σ (−A)ᵀ = A Σ Aᵀ`) plus
 `vec_slutsky_recentering` (deterministic `o_P` shift) transport the limit to
@@ -602,9 +631,13 @@ theorem zEstimator_asymptotic_normality_core
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    (hθhat_meas : ∀ n, Measurable
+      (fun ξ : Ξ => ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖))
     (hθhat_meas' : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
     (hψθ₀_meas : ∀ h, Measurable (ψ θ₀ h))
+    (hψ_joint : ∀ (n : ℕ) (h : Fin k), Measurable
+      (fun p : Ξ × Ω => ψ (θ_hat n (fun i : Fin n => X i.val p.1)) h p.2))
     (h_tight : IsBoundedInOuterProbSup μ (fun n ξ h =>
       empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)))
     (h_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
@@ -617,12 +650,13 @@ theorem zEstimator_asymptotic_normality_core
         Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
       (multivariateGaussian 0 (V⁻¹ * psiCov P ψ θ₀ * (V⁻¹)ᵀ)) := by
   classical
-  -- `Pψ_{θ₀} = 0` from the engine hypothesis bundle.
+  -- The hypotheses give `Pψ_{θ₀} = 0`.
   have hPθ₀_zero := hyp.hPθ₀_zero
-  -- Linear representation `√n(θ̂ − θ₀) + V⁻¹ 𝔾ₙψ_{θ₀} →ₚ 0`.
+  -- Linear representation: `√n(θ̂ − θ₀) + V⁻¹ 𝔾ₙψ_{θ₀} →ₚ 0`.
   have hA := zEstimator_linear_representation P 𝓕 ψ θ₀ V hV δcls hyp θ_hat μ X
-    hX_meas hX_indep hX_id hX_law h_tight h_consist h_est_eq
-  -- The empirical process satisfies `𝔾ₙψ_{θ₀} ⇝ N(0, psiCov)`.
+    hX_meas hX_indep hX_id hX_law hθhat_meas hθhat_meas' hψθ₀_meas hψ_joint
+    h_tight h_consist h_est_eq
+  -- Empirical-process limit: `𝔾ₙψ_{θ₀} ⇝ N(0, psiCov)`.
   have hC := empiricalProcessVec_weakConverges P ψ θ₀ μ X hX_meas hX_indep hX_id hX_law
     hψθ₀_meas hψ_L2 hPθ₀_zero
   -- Measurability of the bundled empirical process (as a function of `ξ`).
@@ -651,7 +685,7 @@ theorem zEstimator_asymptotic_normality_core
         neg_mul, neg_mul_neg]
     rw [hg_def, multivariateGaussian_map_toEuclideanCLM (-V⁻¹) (0 : EuclideanSpace ℝ (Fin k))
       (psiCov_posSemidef P ψ θ₀ hψ_L2), hmean, hcov]
-  -- Push the Gaussian limit through `g`, then collapse the double pushforward.
+  -- Push the empirical-process limit through `g`, then collapse the double pushforward.
   have hCmap := hC.map g.continuous g.continuous.measurable
   rw [hgauss_map] at hCmap
   have hX_weak : WeakConverges
@@ -666,7 +700,8 @@ theorem zEstimator_asymptotic_normality_core
       rw [Measure.map_map g.continuous.measurable (heproc_meas n)]
       rfl
     rw [hfam]; exact hCmap
-  -- Rewrite the representation as `dist (g 𝔾ₙψ_{θ₀}) (√n(θ̂ − θ₀)) →ₚ 0`.
+  -- Rewrite the linear representation as
+  -- `dist (g 𝔾ₙψ_{θ₀}) (√n(θ̂ − θ₀)) →ₚ 0` (since `g = −V⁻¹`).
   have hpt : ∀ (n : ℕ) (ω : Ξ),
       dist (g (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ω)))
           (Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ω) - θ₀))
@@ -719,7 +754,7 @@ theorem zEstimator_asymptotic_normality_core
     (fun n => (hXslut_meas n).aemeasurable) (fun n => (hYtarget_meas n).aemeasurable)
     hX_weak hDist
 
-/-- **Book-faithful headline: asymptotic normality of the finite-dimensional
+/-- **Asymptotic normality of the finite-dimensional
 Z-estimator** (vdV Thm 5.21, §5.3 book p.52-53).
 
 Carries exactly van der Vaart's stated hypotheses: an `L²(P)` Lipschitz modulus
@@ -731,13 +766,15 @@ equation (`h_est_eq`) and consistency `θ̂ₙ →ₚ θ₀` (`h_consist`):
 
     √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ψ_{θ₀}ψ_{θ₀}ᵀ] (V⁻¹)ᵀ).
 
-The proof obtains `P`-Donsker equicontinuity from the Lipschitz data via
-`parametricClass_isPDonsker`, constructs the `Theorem19_26Hyp` fields `henv`,
-`unif_L2_cont`, and `bddbelow_V` from the Lipschitz, envelope, and nonsingularity
-assumptions, and derives marginal tightness from the vector CLT via
-`isBoundedInProb_of_weakConverges`. It then applies
-`zEstimator_asymptotic_normality_core` to the internally constructed class
-`𝓕 = paramClass ψ (Metric.ball θ₀ δcls)` and bundle. -/
+The `P`-Donsker equicontinuity hypothesis of the core is derived here
+from the Lipschitz data via `parametricClass_isPDonsker` (vdV Ex 19.7); the
+`henv`/`unif_L2_cont`/`bddbelow_V` fields of `Theorem19_26Hyp` are derived from
+the Lipschitz/envelope/nonsingularity data; and marginal tightness (`h_tight`)
+is derived from the vector CLT via
+`isBoundedInProb_of_weakConverges`. The class
+`𝓕 = paramClass ψ (ball θ₀ δcls)` and the corresponding
+`Theorem19_26Hyp` assumptions are constructed internally and supplied to
+`zEstimator_asymptotic_normality_core`. -/
 theorem zEstimator_asymptotic_normality
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -763,6 +800,8 @@ theorem zEstimator_asymptotic_normality
     (hX_law : μ.map (X 0) = P)
     (hθhat_meas' : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    (hψ_joint : ∀ (n : ℕ) (h : Fin k), Measurable
+      (fun p : Ξ × Ω => ψ (θ_hat n (fun i : Fin n => X i.val p.1)) h p.2))
     (h_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
       μ {ξ | ε < ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0))
     (h_est_eq : TendstoZeroInOuterProbSup μ (fun n ξ h =>
@@ -773,7 +812,11 @@ theorem zEstimator_asymptotic_normality
         Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
       (multivariateGaussian 0 (V⁻¹ * psiCov P ψ θ₀ * (V⁻¹)ᵀ)) := by
   classical
-  -- Derived measurability / L² facts (`hψθ₀_meas`, `hψ0_L2` are strict
+  -- Derived measurability / L² facts (`hθhat_meas`, `hψθ₀_meas`, `hψ0_L2` are strict
+  -- specializations of `hθhat_meas'`, `hψ_meas`, and `hψ_L2`).
+  have hθhat_meas : ∀ n, Measurable
+      (fun ξ : Ξ => ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖) :=
+    fun n => ((hθhat_meas' n).sub_const θ₀).norm
   have hψθ₀_meas : ∀ h, Measurable (ψ θ₀ h) := fun h => hψ_meas θ₀ h
   have hψ0_L2 : ∀ j, MemLp (ψ θ₀ j) 2 P := fun j => hψ_L2.eval_piLp j
   -- Donsker class and Lipschitz data reshaped to ball membership.
@@ -788,6 +831,7 @@ theorem zEstimator_asymptotic_normality
     rw [h𝓕def]; rintro g ⟨θ, _, j, rfl⟩; exact hψ_meas θ j
   set M : ℝ := (eLpNorm m 2 P).toReal with hMdef
   have hMnn : 0 ≤ M := ENNReal.toReal_nonneg
+  -- Verify the hypotheses of Theorem 19.26 from those of vdV Theorem 5.21.
   have hyp : Theorem19_26Hyp P 𝓕 ψ θ₀ (Vlin V) δcls := by
     refine
       { hδcls := hδcls
@@ -827,34 +871,12 @@ theorem zEstimator_asymptotic_normality
       · exact (integrable_finset_sum _
           (fun j _ => ((hψ0_L2 j).integrable (by norm_num)).abs)).add
           ((hm.integrable (by norm_num)).norm.const_mul δcls)
-    · -- h_equicont : vdV Ex 19.7 Lipschitz ⇒ Donsker (empty class for `k = 0`).
-      rcases Nat.eq_zero_or_pos k with hk0 | hk1
-      · -- `k = 0`: `𝓕 = ∅` (no `j : Fin 0`), so equicontinuity holds vacuously.
-        intro Ξ' _ μ' _ X' _ _ _ _ ε η _ hη
-        refine ⟨1, one_pos, ?_⟩
-        calc limsup (fun n => μ'.outerMeasureStar
-              {ξ | ∃ s t : ↥𝓕, distL2 P (s : Ω → ℝ) (t : Ω → ℝ) < 1 ∧
-                ε < |empiricalProcess P n (fun i : Fin n => X' i.val ξ) (s : Ω → ℝ)
-                  - empiricalProcess P n (fun i : Fin n => X' i.val ξ) (t : Ω → ℝ)|}) atTop
-            ≤ limsup (fun _ : ℕ => ENNReal.ofReal η) atTop := by
-              refine limsup_le_limsup (Eventually.of_forall (fun n => ?_))
-                isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
-              refine le_trans (outerMeasureStar_mono μ' (?_ : _ ⊆ (∅ : Set Ξ'))) ?_
-              · rintro ξ ⟨s, -⟩
-                obtain ⟨θ, -, j, -⟩ := s.2
-                exact absurd (Fin.pos_iff_nonempty.mpr ⟨j⟩) (by omega)
-              · exact le_trans (outerMeasureStar_le_measure μ' ∅)
-                  (by rw [measure_empty]; exact zero_le _)
-          _ = ENNReal.ofReal η := limsup_const _
-      · -- `k ≥ 1`: nonempty class, apply the Ex 19.7 Donsker headline.
-        haveI : Nonempty (Fin k) := ⟨⟨0, hk1⟩⟩
-        have hne : (paramClass ψ (Metric.ball θ₀ δcls)).Nonempty :=
-          ⟨ψ θ₀ ⟨0, hk1⟩, θ₀, hθ₀_ball, ⟨0, hk1⟩, rfl⟩
-        have hDonsker := parametricClass_isPDonsker P ψ (Metric.ball θ₀ δcls)
-          Metric.isBounded_ball m hm hm_meas hLip' θ₀ hθ₀_ball hψ0_L2 hne hmeas𝓕
-        rw [h𝓕def]
-        intro Ξ' _ μ' _ X' hX'm hX'i hX'id hX'l ε η hε hη
-        exact hDonsker.asymptoticallyEquicontinuous μ' X' hX'm hX'i hX'id hX'l ε η hε hη
+    · -- h_equicont : vdV Ex 19.7 Lipschitz ⇒ Donsker.
+      have hDonsker := parametricClass_isPDonsker P ψ (Metric.ball θ₀ δcls)
+        Metric.isBounded_ball m hm hm_meas hLip' θ₀ hθ₀_ball hψ0_L2 hmeas𝓕
+      rw [h𝓕def]
+      intro Ξ' _ μ' _ X' hX'm hX'i hX'id hX'l ε η hε hη
+      exact hDonsker.asymptoticallyEquicontinuous μ' X' hX'm hX'i hX'id hX'l ε η hε hη
     · -- unif_L2_cont : `distL2 P (ψθh)(ψθ₀h) ≤ ‖θ−θ₀‖·M`, pick `δ = min (ε/(M+1)) δcls`.
       intro ε hε
       refine ⟨min (ε / (M + 1)) δcls, lt_min (by positivity) hδcls, ?_⟩
@@ -895,8 +917,8 @@ theorem zEstimator_asymptotic_normality
         rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity : (0 : ℝ) < M + 1)]
         nlinarith [hMnn, hε.le]
       linarith [hdistbd, h2, h3]
-  -- Weak convergence of the vector empirical process gives marginal `O_P(1)`,
-  -- hence the marginal tightness hypothesis `h_tight`.
+  -- The vector empirical process converges weakly, hence is marginally `O_P(1)`;
+  -- this yields the marginal tightness `h_tight` required by the core.
   haveI : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (psiCov P ψ θ₀)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
@@ -959,8 +981,9 @@ theorem zEstimator_asymptotic_normality
           limsup_le_limsup (Eventually.of_forall hb) isCobounded_le_of_bot
             (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
       _ = ENNReal.ofReal η := limsup_const _
-  -- Assemble via the core.
+  -- Apply the preceding normality theorem.
   exact zEstimator_asymptotic_normality_core P 𝓕 ψ θ₀ V hV δcls hyp hψ_L2 θ_hat μ X
-    hX_meas hX_indep hX_id hX_law hθhat_meas' hψθ₀_meas h_tight h_consist h_est_eq
+    hX_meas hX_indep hX_id hX_law hθhat_meas hθhat_meas' hψθ₀_meas hψ_joint h_tight
+    h_consist h_est_eq
 
 end AsymptoticStatistics.EmpiricalProcess

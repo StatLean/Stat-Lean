@@ -4,7 +4,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterProbAsymptotics
 /-!
 # Infinite-dimensional Z-estimator (vdV Theorem 19.26)
 
-This is the `ℓ∞(H)`-indexed generalization of the scalar
+The `ℓ∞(H)`-indexed generalization of the scalar
 goodness-of-fit Theorem 19.23 (`empiricalProcess_param_estimation`). For a
 class `𝓕 = {ψ_{θ,h} : ‖θ − θ₀‖ < δcls, h ∈ H}` that is `P`-Donsker with finite
 envelope, with `θ ↦ Pψ_θ` Fréchet-differentiable at a zero `θ₀` with a
@@ -13,16 +13,16 @@ bounded-below derivative `V`, and with `sup_h P(ψ_{θ,h} − ψ_{θ₀,h})² �
 
     √n V(θ̂_n − θ₀) = −𝔾ₙψ_{θ₀} + o_P(1)   (in ℓ∞(H)).
 
-The parameter `θ` lies in a general normed space `B`; `ℓ∞(H)` is represented by
-plain functions `H → ℝ`; and the conclusion uses outer probability over the
-supremum across `H` (`TendstoZeroInOuterProbSup`). The
-`√n ℙₙψ_{θ̂_n}` rate is little-`o_P`, as in Theorem 5.21.
+Here `θ` belongs to a general normed space `B`, `ℓ∞(H)` is represented as
+`H → ℝ`, and the conclusion uses outer probability for the supremum over
+`H` (`TendstoZeroInOuterProbSup`). The `√n ℙₙψ_{θ̂_n}` rate is little-`o_P`,
+as in Theorem 5.21.
 
 Proof route: 5.21-style master identity + uniform Lemma 19.24
 (`uniform_donsker_random_function_consistency`) + Fréchet remainder bound
 (`frechet_remainder_sup_bound`) + rate bootstrap (`rate_bootstrap_oP`).
 
-Headline declaration: `infinite_dim_z_estimator`.
+Principal declaration: `infinite_dim_z_estimator`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -32,15 +32,13 @@ open scoped ENNReal Topology
 
 /-- **Bundled hypotheses for Theorem 19.26 (infinite-dimensional Z-estimator).**
 
-Here `B` is a general normed space, `H` is arbitrary, and `ℓ∞(H)` is represented
-by `H → ℝ`. The Fréchet derivative `V : B →ₗ[ℝ] (H → ℝ)` is paired with the
-explicit bounded-below field `bddbelow_V`, encoding continuity of the inverse on
-its range.
+Here `θ ∈ B` for a general normed space, `H` is arbitrary, and `ℓ∞(H)` is
+encoded as `H → ℝ`. The Fréchet derivative `V : B →ₗ[ℝ] (H → ℝ)` is a
+linear map together with the explicit bounded-below condition `bddbelow_V`.
 
-Only the **sample-agnostic** part of the book hypotheses lives here; the
-sample-specific tightness half of the Donsker hypothesis (`h_tight`) is a
-binder of the headline `infinite_dim_z_estimator`, since it references the iid
-sample `μ`, `X`. -/
+Only the sample-independent hypotheses are bundled here. The sample-specific
+tightness assumption `h_tight` is an argument of `infinite_dim_z_estimator`
+because it refers to the iid sample `μ`, `X`. -/
 structure Theorem19_26Hyp
     {Ω : Type*} [MeasurableSpace Ω]
     {B : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
@@ -60,8 +58,8 @@ structure Theorem19_26Hyp
   /-- Constitutive (vdV §19.4 p.281): `𝓕` has a finite (integrable) envelope
   function ("with finite envelope function"). -/
   henv : ∃ G : Ω → ℝ, IsEnvelope 𝓕 G ∧ Integrable G P
-  /-- Constitutive (vdV §19.4 p.281): `𝓕` is `P`-Donsker — this field records
-  equicontinuity, while `h_tight` records the sample-specific tightness half. -/
+  /-- Constitutive (vdV §19.4 p.281): `𝓕` is `P`-Donsker — equicontinuity half
+  The tightness half is supplied separately as `h_tight`. -/
   h_equicont : IsAsymptoticallyEquicontinuous 𝓕 P
   /-- Constitutive (vdV §19.4 p.281): `θ₀` is a zero of `θ ↦ Pψ_θ`, i.e.
   `Pψ_{θ₀,h} = 0` for all `h` ("Fréchet-differentiable at a zero `θ₀`"). -/
@@ -188,7 +186,7 @@ the centred estimator satisfies
 
 i.e. `√n V(θ̂_n − θ₀) = −𝔾ₙψ_{θ₀} + o_P(1)`.
 
-Assembly: `master_identity` rearranges the target into `√n ℙₙψ_{θ̂_n}` (the
+The identity `master_identity` rearranges the target into `√n ℙₙψ_{θ̂_n}` (the
 `o_P` estimating equation `h_est_eq`) minus the uniform-19.24 remainder
 `𝔾ₙψ_{θ̂_n} − 𝔾ₙψ_{θ₀}` (`o_P` via
 `uniform_donsker_random_function_consistency` fed by `modifiedRandomFunction`)
@@ -222,7 +220,7 @@ theorem infinite_dim_z_estimator
   have hθ₀_mem : ∀ h, ψ θ₀ h ∈ 𝓕 := by
     intro h
     exact hyp.hclass_mem θ₀ (by simpa using hyp.hδcls) h
-  -- The uniform-19.24 remainder `Rhat` is `o_P`.
+  -- ============ STEP 1a: the uniform-19.24 remainder `Rhat` is o_P. ============
   have h_sup := sup_distL2_tendsto_zero_of_unif_L2_cont P ψ θ₀ hyp.unif_L2_cont μ θ_hat X h_consist
   have h_bad : Tendsto (fun n =>
       μ {ξ | δcls ≤ ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0) := by
@@ -245,7 +243,7 @@ theorem infinite_dim_z_estimator
     intro n ξ hb hh
     simp only [Set.mem_setOf_eq, not_le] at hb
     rw [modifiedRandomFunction_eq_on_good ψ θ₀ δcls θ_hat X n ξ hh hb]
-  -- The Fréchet remainder `Sfam` is `o_P` after the rate bootstrap.
+  -- ============ STEP 1b: the Fréchet remainder `Sfam` is o_P (rate bootstrap). ============
   have hS := frechet_remainder_sup_bound P ψ θ₀ V hyp.hPθ₀_zero hyp.frechet μ θ_hat X h_consist
   have hlb : ∀ (n : ℕ) (ξ : Ξ), ENNReal.ofReal
       (c * (Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖))
@@ -359,7 +357,7 @@ theorem infinite_dim_z_estimator
     (fun (n : ℕ) ξ => Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖)
     (fun n ξ => mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))
     c hc_pos hlb hW hA hS
-  -- Combine the three `o_P` terms using `master_identity`.
+  -- ============ STEP 1c: assemble the three o_P pieces via `master_identity`. ============
   have hgoal_eq : (fun (n : ℕ) (ξ : Ξ) (h : H) =>
         Real.sqrt n * V (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) h
           + empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h))

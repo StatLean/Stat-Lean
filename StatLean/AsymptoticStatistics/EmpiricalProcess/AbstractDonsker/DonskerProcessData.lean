@@ -7,8 +7,8 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.FiniteCarr
 /-!
 # A constitutive bundle for a Donsker process
 
-There are two complementary encodings of a `P`-Donsker class: the operational
-Theorem-18.14 characterization
+Two complementary predicates describe the book's notion of a `P`-Donsker
+class: the operational Theorem-18.14 characterization
 `IsPDonsker`, and the literal path-space convergence statement
 `IsPDonskerWithBridge`. Theorem 19.23 needs both facets at once.
 
@@ -22,8 +22,8 @@ open MeasureTheory
 variable {Ω : Type*} [MeasurableSpace Ω]
 
 /-- **Constitutive Donsker process data.** This is one book-level Donsker
-assumption represented by the two complementary predicates presently used by
-the Lean library. Edge behavior: no nonemptiness or envelope assumption is
+assumption represented by the two complementary predicates above. Edge
+behavior: no nonemptiness or envelope assumption is
 added; those remain requirements of particular construction theorems. -/
 structure PDonskerProcessData (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop where
   /-- Constitutive (vdV §19.2 p.269): the index class consists of measurable

@@ -8,12 +8,13 @@ import StatLean.AsymptoticStatistics.MEstimator.AsymptoticNormality
 /-!
 # Maximum-likelihood asymptotic normality
 
-Statement-and-assembly layer for van der Vaart, *Asymptotic Statistics*,
-Theorem 5.39 (pp. 65--66).  The headline derives consistency through the
-stabilized Kullback--Leibler/T4 route, derives the score and Taylor inputs from
-DQM, and then applies the fixed-maximizer M-estimator interface.  It does not
-assume consistency, pointwise log-density derivatives, strict positivity, or
-provider equalities.
+Formalization of van der Vaart, *Asymptotic Statistics*, Theorem 5.39
+(pp. 65--66). The first theorem assumes consistency as in
+the text.  A companion corollary derives consistency through the stabilized
+Kullback--Leibler/T4 route.  Both derive the score and Taylor inputs from DQM
+and apply the fixed-comparison M-estimator theorem, without pointwise
+log-density derivatives, strict positivity, or additional equalities relating
+the score definitions.
 -/
 
 namespace AsymptoticStatistics.MaximumLikelihood
@@ -22,82 +23,59 @@ open MeasureTheory Filter ProbabilityTheory EmpiricalProcess
 open scoped ENNReal Topology RealInnerProductSpace Matrix ProbabilityTheory
 
 set_option maxHeartbeats 800000 in
--- The typeclass-heavy assembly instantiates the full T8 empirical-process interface.
+-- This specialization derives the M-estimator linearization and Gaussian limit under consistency.
 /-- **Maximum-likelihood asymptotic normality (vdV Theorem 5.39).**
 
-For a DQM model with a measurable local square-integrable log-Lipschitz
-envelope, positive-definite Fisher information, and an exact empirical MLE,
-the estimator has the inverse-Fisher asymptotic linear representation and is
-asymptotically `N(0, I⁻¹)`.  Consistency and every score/Fisher/Taylor adapter
-are derived by the preceding results rather than assumed by this theorem. -/
-theorem mle_asymptotic_normality
+For a consistent exact MLE in a DQM model with a measurable local
+square-integrable log-Lipschitz envelope and positive-definite Fisher
+information, the estimator has the inverse-Fisher asymptotic linear
+representation and is asymptotically `N(0, I⁻¹)`. -/
+theorem mle_asymptotic_normality_of_consistent
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)
     (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: the model is a family of probability densities w.r.t. μ; vdV §5.5
+    -- the model consists of probability densities.
     (hPDF : IsPDFOf M μ)
-    -- USER-INPUT: identifiability, P_θ = P_{θ₀} → θ = θ₀; vdV Lem 5.35 (used to
-    -- derive the consistency required by Thm 5.39)
-    (hident : ∀ θ,
-      parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)
-    -- USER-INPUT: upper semicontinuity of the population criterion (Wald-type
-    -- regularity for the internal consistency step); vdV §5.2
-    (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))
-    -- USER-INPUT: a compact superlevel set below the maximum (compactness caveat
-    -- for the internal consistency step); vdV §5.2
-    (hcompact : ∃ c : ℝ,
-      c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧
-        IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]
-    (X : ℕ → Ξ → Ω) (U : ℕ → Ξ → ℝ)
-    -- USER-INPUT (hU_dom, hU_conv): uniform convergence of the empirical criterion,
-    -- phrased through a measurable envelope U (input to the internal consistency
-    -- step); vdV Thm 5.7 route
-    (hU_dom : ∀ n ξ θ,
-      |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n
-          (fun i : Fin n => X i.val ξ) -
-        stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ξ)
-    -- (second half of the envelope input above)
-    (hU_conv : TendstoInMeasure ν U atTop (fun _ => (0 : ℝ)))
+    (X : ℕ → Ξ → Ω)
     (ℓ : Ω → EuclideanSpace ℝ (Fin d))
-    -- LEAN-ONLY: a measurable representative of the score; no scope change.
+    -- Measurability of the score, as required in vdV Theorem 5.39.
     (hℓ : Measurable ℓ)
-    -- USER-INPUT: the model is differentiable in quadratic mean at θ₀ with score ℓ;
-    -- vdV Thm 5.39
+    -- differentiability in quadratic mean at `θ₀`.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (menv : Ω → ℝ)
-    -- USER-INPUT (menv, hmenv, ρ, hρ, hLip): local log-likelihood Lipschitz envelope
-    -- with P_{θ₀} ṁ² < ∞ on a ball around θ₀; vdV Thm 5.39
+    -- vdV's local envelope is square-integrable under `P₀`.
     (hmenv : MemLp menv 2
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
-    -- LEAN-ONLY: a measurable representative for the envelope; no scope change.
+    -- measurable representative for the envelope.
     (hmenv_meas : Measurable menv)
     (ρ : ℝ)
-    -- (radius of the Lipschitz neighbourhood; part of the envelope input above)
+    -- the Lipschitz neighborhood is nontrivial.
     (hρ : 0 < ρ)
-    -- (the Lipschitz condition itself; part of the envelope input above)
+    -- vdV's pairwise local log-likelihood Lipschitz condition.
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
       ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ x,
         |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤
           menv x * ‖θ₁ - θ₂‖)
-    -- USER-INPUT: nonsingular Fisher information at θ₀ (positive definiteness);
-    -- vdV Thm 5.39
+    -- nonsingular Fisher information, encoded equivalently as PosDef.
     (hI : (fisherInformationMatrix M μ θ₀ ℓ).PosDef)
-    -- LEAN-ONLY: measurability of the sample coordinates; no scope change.
+    -- measurable sample-map encoding of the iid experiment.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with the true model law
-    -- P_{θ₀}; vdV §5.5
+    -- independence component of the iid sample encoding.
     (hX_indep : ProbabilityTheory.iIndepFun X ν)
-    -- (second component of the iid input above)
+    -- identical-distribution component of the iid sample encoding.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)
-    -- (third component of the iid input above)
+    -- identifies the common sample law with the true model law.
     (hX_law : ν.map (X 0) =
       μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
-    -- LEAN-ONLY: estimator measurability for pushforward laws; no scope change.
+    -- estimator measurability needed for pushforward laws and rate events.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
-    -- USER-INPUT: θ̂ₙ maximizes the product likelihood (exact MLE); vdV §5.5
+    -- consistency of the MLE, as assumed in vdV Theorem 5.39.
+    (hConsistent : TendstoInProbZero (fun _ => ν)
+      (fun n ξ => θ_hat n (fun i => X i.val ξ) - θ₀))
+    -- exact product-likelihood maximum-likelihood property.
     (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :
     TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>
         Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) -
@@ -115,10 +93,6 @@ theorem mle_asymptotic_normality
   letI : IsProbabilityMeasure
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :=
     withDensity_density_isProbabilityMeasure M μ hPDF θ₀
-  have hConsistent : TendstoInProbZero (fun _ : ℕ => ν)
-      (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) :=
-    mle_consistentInProb_of_kl_identifiable M μ θ₀ hPDF hident husc hcompact
-      θ_hat ν X U hU_dom hU_conv hX_meas hX_id hX_law hMLE
   have hm_meas : ∀ θ, Measurable (M.logDensity θ) := by
     intro θ
     exact (M.density_meas θ).log
@@ -206,5 +180,99 @@ theorem mle_asymptotic_normality
       mEstimator_fisher_covariance_collapse
         (fisherInformationMatrix M μ θ₀ ℓ) hI] at hT8
     exact hT8.2
+
+set_option maxHeartbeats 800000 in
+-- This specialization derives consistency from the KL conditions before applying normality.
+/-- **Maximum-likelihood asymptotic normality from KL-identifiable consistency.**
+
+For a DQM model with a measurable local square-integrable log-Lipschitz
+envelope, positive-definite Fisher information, and an exact empirical MLE,
+the estimator has the inverse-Fisher asymptotic linear representation and is
+asymptotically `N(0, I⁻¹)`.  This corollary supplies the consistency hypothesis
+of vdV Theorem 5.39 from the stabilized KL/T4 conditions; the score, Fisher,
+and Taylor adapters are also derived internally. -/
+theorem mle_asymptotic_normality
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
+    (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)
+    (θ₀ : EuclideanSpace ℝ (Fin d))
+    -- the model consists of probability densities.
+    (hPDF : IsPDFOf M μ)
+    -- identifiable parametrization at the truth.
+    (hident : ∀ θ,
+      parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)
+    -- upper semicontinuity for the W1/T4 consistency route.
+    (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))
+    -- one compact superlevel below the maximum for W1/T4 consistency.
+    (hcompact : ∃ c : ℝ,
+      c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧
+        IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})
+    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
+    {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]
+    (X : ℕ → Ξ → Ω) (U : ℕ → Ξ → ℝ)
+    -- measurable-envelope form of T4 uniform convergence.
+    (hU_dom : ∀ n ξ θ,
+      |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n
+          (fun i : Fin n => X i.val ξ) -
+        stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ξ)
+    -- convergence of the measurable T4 envelope.
+    (hU_conv : TendstoInMeasure ν U atTop (fun _ => (0 : ℝ)))
+    (ℓ : Ω → EuclideanSpace ℝ (Fin d))
+    -- Measurability of the score, as required in vdV Theorem 5.39.
+    (hℓ : Measurable ℓ)
+    -- differentiability in quadratic mean at `θ₀`.
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (menv : Ω → ℝ)
+    -- vdV's local envelope is square-integrable under `P₀`.
+    (hmenv : MemLp menv 2
+      (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
+    -- measurable representative for the envelope.
+    (hmenv_meas : Measurable menv)
+    (ρ : ℝ)
+    -- the Lipschitz neighborhood is nontrivial.
+    (hρ : 0 < ρ)
+    -- vdV's pairwise local log-likelihood Lipschitz condition.
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
+      ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ x,
+        |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤
+          menv x * ‖θ₁ - θ₂‖)
+    -- nonsingular Fisher information, encoded equivalently as PosDef.
+    (hI : (fisherInformationMatrix M μ θ₀ ℓ).PosDef)
+    -- measurable sample-map encoding of the iid experiment.
+    (hX_meas : ∀ i, Measurable (X i))
+    -- independence component of the iid sample encoding.
+    (hX_indep : ProbabilityTheory.iIndepFun X ν)
+    -- identical-distribution component of the iid sample encoding.
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)
+    -- identifies the common sample law with the true model law.
+    (hX_law : ν.map (X 0) =
+      μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
+    -- estimator measurability needed for pushforward laws and rate events.
+    (hθhat_meas : ∀ n, Measurable
+      (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    -- exact product-likelihood maximum-likelihood property.
+    (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :
+    TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>
+        Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) -
+          Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d)
+            (fisherInformationMatrix M μ θ₀ ℓ)⁻¹
+            (empiricalProcessVec
+              (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
+              (fun _ i x => ℓ x i) θ₀ n
+              (fun i : Fin n => X i.val ξ))) ∧
+      WeakConverges
+        (fun n => ν.map (fun ξ =>
+          Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
+        (multivariateGaussian 0
+          (fisherInformationMatrix M μ θ₀ ℓ)⁻¹) := by
+  letI : IsProbabilityMeasure
+      (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :=
+    withDensity_density_isProbabilityMeasure M μ hPDF θ₀
+  have hConsistent : TendstoInProbZero (fun _ : ℕ => ν)
+      (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) :=
+    mle_consistentInProb_of_kl_identifiable M μ θ₀ hPDF hident husc hcompact
+      θ_hat ν X U hU_dom hU_conv hX_meas hX_id hX_law hMLE
+  exact mle_asymptotic_normality_of_consistent M μ θ₀ hPDF θ_hat ν X ℓ hℓ hDQM
+    menv hmenv hmenv_meas ρ hρ hLip hI hX_meas hX_indep hX_id hX_law
+    hθhat_meas hConsistent hMLE
 
 end AsymptoticStatistics.MaximumLikelihood

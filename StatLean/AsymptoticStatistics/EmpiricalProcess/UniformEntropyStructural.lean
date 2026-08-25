@@ -34,8 +34,7 @@ def IsPointwiseMeasurable (F : Set (Ω → ℝ)) : Prop :=
 
 /-- A nonnegative envelope for a real-valued function class.
 
-Unlike the older project predicate `EmpiricalProcess.IsEnvelope`, this
-definition records nonnegativity even when `F` is empty. This makes the
+This definition records nonnegativity even when `F` is empty. This makes the
 zero-envelope branch explicit. Edge behavior: `G = 0` envelopes exactly the
 classes whose members vanish pointwise. -/
 def IsEnvelope (F : Set (Ω → ℝ)) (G : Ω → ℝ) : Prop :=

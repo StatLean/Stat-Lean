@@ -150,17 +150,12 @@ theorem bracketingMaximal_bounded :
         (Ξ : Type*) [MeasurableSpace Ξ] (μ : Measure Ξ)
         [IsProbabilityMeasure μ]
         (X : ℕ → Ξ → Ω)
-        -- LEAN-ONLY: measurability of each sample coordinate.
         (hX_meas : ∀ i, Measurable (X i))
-        -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.36.
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
         (F : Set (Ω → ℝ)) (δ M : ℝ) (n : ℕ) (hδ : 0 < δ)
-        -- LEAN-ONLY: explicit measurability of the class members.
         (hF_meas : ∀ f ∈ F, Measurable f)
-        -- USER-INPUT: `L²` localization and a uniform envelope bound;
-        -- vdV Lemma 19.36.
         (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)
         (hF_bdd : ∀ f ∈ F, ∀ x, |f x| ≤ M),
       outerExpectation μ (fun ξ => supNormOver F (fun f =>

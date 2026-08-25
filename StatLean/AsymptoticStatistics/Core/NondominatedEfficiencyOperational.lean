@@ -61,9 +61,9 @@ when singular; for `d=0` this is the empty matrix. -/
 noncomputable def influenceCovarianceMatrix {d : ℕ}
     (φ : Fin d → ↥(L2ZeroMean P)) : Matrix (Fin d) (Fin d) ℝ := Matrix.gram ℝ φ
 
-/-- Construct a nondominated tangent cone from common-dominator selected paths
-whose carrier is independently known to be a nonnegative cone.  Each selected
-path is converted pointwise by `QMDPath.toNondominatedQMDPath`. -/
+/-- A common-dominator selected-path family determines a nondominated family
+when its carrier is a nonnegative cone. The construction applies
+`QMDPath.toNondominatedQMDPath` pointwise. -/
 noncomputable def nondominatedTangentConeOfSelectedQMDPaths
     (T : TangentSpec P) (paths : SelectedQMDPaths P T)
     (hsmul : ∀ {a : ℝ}, 0 ≤ a → ∀ {g}, g ∈ T.carrier → a • g ∈ T.carrier) :
@@ -78,9 +78,8 @@ noncomputable def nondominatedTangentConeOfSelectedQMDPaths
     change (paths.path g).score = g
     exact paths.score_eq g
 
-/-- All-real, common-dominator regularity implies unit-path regularity for the
-associated nondominated cone, by specializing the scalar perturbation to
-`a = 1`. -/
+/-- The all-real common-dominator regularity predicate implies the unit-path
+predicate for its associated cone, by specializing regularity at `a = 1`. -/
 theorem isRegularAtND_of_commonDominated_allReal
     (T : TangentSpec P) (paths : SelectedQMDPaths P T)
     (hsmul : ∀ {a : ℝ}, 0 ≤ a → ∀ {g}, g ∈ T.carrier → a • g ∈ T.carrier)

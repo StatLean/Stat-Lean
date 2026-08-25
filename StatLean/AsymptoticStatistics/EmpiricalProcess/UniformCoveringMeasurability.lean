@@ -2,13 +2,6 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.PointwiseDense
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 import Mathlib.MeasureTheory.Measure.Prod
 
-/-!
-# Measurability of empirical and Rademacher suprema
-
-Countable pointwise-dense reductions and measurability results for empirical,
-ghost-sample, and conditional Rademacher suprema.
--/
-
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter Topology
 open scoped ENNReal

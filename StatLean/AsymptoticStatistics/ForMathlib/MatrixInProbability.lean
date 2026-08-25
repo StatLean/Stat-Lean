@@ -4,16 +4,22 @@ import Mathlib.Analysis.CStarAlgebra.Matrix
 /-!
 # Random finite matrices in probability
 
-Reusable finite-dimensional probability adapters for inversion near a nonsingular
+Finite-dimensional probability results for inversion near a nonsingular
 deterministic matrix and for applying a vanishing random matrix to an `O_P(1)` vector.
-The inversion result formalizes the nonsingular deterministic-matrix step used in
-van der Vaart, Theorems 5.45 and 5.48.
 -/
 
 open MeasureTheory Filter Topology
 open scoped Matrix.Norms.L2Operator
 
 namespace AsymptoticStatistics
+
+/-!
+## Proof outline
+
+Matrix inversion follows from continuity of inversion at a nonsingular limit.
+For matrix-vector products, split according to a tightness threshold for the
+vector and use the `L²` operator-norm bound off the tail event.
+-/
 
 /-- Matrix inversion preserves convergence in probability at a nonsingular deterministic
 matrix. The inverse is Mathlib's total `Matrix.inv`; the nonsingularity assumption excludes
@@ -22,8 +28,11 @@ theorem matrixInv_tendstoInProb_of_det_ne_zero
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     {k : ℕ} (Vhat : ℕ → Ξ → Matrix (Fin k) (Fin k) ℝ)
     (V0 : Matrix (Fin k) (Fin k) ℝ)
+    -- vdV 5.45/5.48 assume the deterministic limit matrix is nonsingular.
     (hV0 : V0.det ≠ 0)
+    -- needed for measurable pushforward/event manipulations.
     (hVhat_meas : ∀ n i j, Measurable (fun ξ => Vhat n ξ i j))
+    -- convergence in probability of the estimated matrix.
     (hVhat : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ => Vhat n ξ - V0)) :
     TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ => (Vhat n ξ)⁻¹ - V0⁻¹) := by
   intro ε hε
@@ -77,7 +86,9 @@ theorem matrixApply_oP_of_tendstoInProbZero_isBoundedInProb
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     {k : ℕ} (A : ℕ → Ξ → Matrix (Fin k) (Fin k) ℝ)
     (X : ℕ → Ξ → EuclideanSpace ℝ (Fin k))
+    -- the random matrix is `o_P(1)`.
     (hA : TendstoInProbZero (fun _ : ℕ => μ) A)
+    -- the random vector is `O_P(1)`.
     (hX : IsBoundedInProb (fun _ : ℕ => μ) X) :
     TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
       Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (A n ξ) (X n ξ)) := by

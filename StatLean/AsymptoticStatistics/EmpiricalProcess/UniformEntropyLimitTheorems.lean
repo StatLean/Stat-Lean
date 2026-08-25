@@ -4,7 +4,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.DonskerPro
 /-!
 # Uniform entropy limit theorems
 
-Structural leaves relevant to van der Vaart Theorems 19.13 and 19.14.
+Auxiliary results for van der Vaart Theorems 19.13 and 19.14.
 
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, p.274.
 -/

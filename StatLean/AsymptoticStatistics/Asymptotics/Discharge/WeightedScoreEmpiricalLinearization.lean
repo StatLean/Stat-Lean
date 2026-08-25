@@ -1346,7 +1346,7 @@ identify the moving centered empirical score increment with the negative
 population-Gram drift.  This is the single book-backed cancellation statement;
 neither summand is asserted to vanish separately.
 
-Downstream proof route: expand the square-root-density identity, use DQM for the
+The proof expands the square-root-density identity, uses DQM for the
 Hellinger remainder, and transfer the resulting triangular-array second-moment
 bound to the moving product laws. -/
 theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded

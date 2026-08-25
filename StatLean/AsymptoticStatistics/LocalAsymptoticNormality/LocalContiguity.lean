@@ -6,9 +6,9 @@ import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.MovingLAN
 # Local contiguity from differentiability in quadratic mean
 
 Support-free mutual contiguity of product experiments along finite-dimensional
-`1 / √n`-local parameter sequences.  The first theorem keeps an arbitrary sample-size
-subsequence `m n`; the second is the bounded-local-parameter wrapper used by
-subsequence arguments.
+`1 / √n`-local parameter sequences. The three theorems treat, respectively,
+a strictly increasing sample-size sequence `m n`, an arbitrary diverging
+sample-size sequence `m n`, and bounded local parameters at every sample size.
 -/
 
 open MeasureTheory Filter Topology
@@ -24,24 +24,34 @@ variable {𝒳 : Type*} [MeasurableSpace 𝒳]
 /-- **DQM local alternatives are mutually contiguous along a strictly increasing
 sample-size subsequence.**
 
-The proof combines the contiguity integral-comparison theorem, the
-moving-product likelihood comparison, and moving-path LAN.  Strict
+The proof combines the contiguity integral comparison, the moving-product
+likelihood comparison, and moving-path LAN.  Strict
 monotonicity packages both divergence of the sample sizes and the injective range
-needed by the moving-path construction.  No common-support, absolute-continuity,
-or public sigma-finiteness premise is exposed.
+needed by the moving-path construction. No common-support or
+absolute-continuity assumption is required.
 -/
 theorem mutuallyContiguous_products_of_dqm_of_scaled_tendsto_strictMono
     (M : ParametricFamily 𝒳 (EuclideanSpace ℝ (Fin d)))
     (μ : Measure 𝒳)
+    -- the base parameter of the product experiment.
     (θ₀ : EuclideanSpace ℝ (Fin d))
+    -- the DQM score supplied by the model.
     (ℓ : 𝒳 → EuclideanSpace ℝ (Fin d))
+    -- the family consists of probability densities with respect to `μ`.
     (hPDF : IsPDFOf M μ)
+    -- measurability of the supplied score.
     (hℓ : Measurable ℓ)
+    -- differentiability in quadratic mean at the base parameter.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- sample sizes along the sequence of local experiments.
     (m : ℕ → ℕ)
+    -- strict monotonicity packages divergence and an injective range.
     (hm : StrictMono m)
+    -- parameter sequence of local alternatives.
     (θ : ℕ → EuclideanSpace ℝ (Fin d))
+    -- limiting local parameter.
     (h : EuclideanSpace ℝ (Fin d))
+    -- the local `√(m n)` scaling condition.
     (hθ : Tendsto (fun n => Real.sqrt (m n) • (θ n - θ₀)) atTop (nhds h)) :
     Contiguity.MutuallyContiguous atTop
       (fun n => productMeasure M μ θ₀ (m n))
@@ -69,10 +79,9 @@ theorem mutuallyContiguous_products_of_dqm_of_scaled_tendsto_strictMono
 subsequence.**
 
 If `m n → ∞` and `√(m n) • (θ n - θ₀) → h`, then the `m n`-fold product
-laws at `θ₀` and `θ n` are mutually contiguous.  This is the support-free local
-contiguity consequence of DQM; its proof uses a finite dominating measure for each
-two-point local experiment rather than a public sigma-finiteness or common-support
-assumption.
+laws at `θ₀` and `θ n` are mutually contiguous. This local contiguity consequence
+of DQM uses a finite dominating measure for each two-point local experiment and
+requires no common-support assumption.
 
 The arbitrary `m` formulation is the form required when a failure of contiguity is
 pulled back to a bad subsequence.
@@ -80,15 +89,25 @@ pulled back to a bad subsequence.
 theorem mutuallyContiguous_products_of_dqm_of_scaled_tendsto
     (M : ParametricFamily 𝒳 (EuclideanSpace ℝ (Fin d)))
     (μ : Measure 𝒳)
+    -- the base parameter of the product experiment.
     (θ₀ : EuclideanSpace ℝ (Fin d))
+    -- the DQM score supplied by the model.
     (ℓ : 𝒳 → EuclideanSpace ℝ (Fin d))
+    -- the family consists of probability densities with respect to `μ`.
     (hPDF : IsPDFOf M μ)
+    -- measurability of the supplied score.
     (hℓ : Measurable ℓ)
+    -- differentiability in quadratic mean at the base parameter.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- sample sizes along the sequence of local experiments.
     (m : ℕ → ℕ)
+    -- the sample-size subsequence diverges.
     (hm : Tendsto m atTop atTop)
+    -- parameter sequence of local alternatives.
     (θ : ℕ → EuclideanSpace ℝ (Fin d))
+    -- limiting local parameter.
     (h : EuclideanSpace ℝ (Fin d))
+    -- the local `√(m n)` scaling condition.
     (hθ : Tendsto (fun n => Real.sqrt (m n) • (θ n - θ₀)) atTop (nhds h)) :
     Contiguity.MutuallyContiguous atTop
       (fun n => productMeasure M μ θ₀ (m n))
@@ -132,12 +151,19 @@ out failure of either contiguity direction.
 theorem mutuallyContiguous_products_of_dqm_of_rootNBounded
     (M : ParametricFamily 𝒳 (EuclideanSpace ℝ (Fin d)))
     (μ : Measure 𝒳)
+    -- the base parameter of the product experiment.
     (θ₀ : EuclideanSpace ℝ (Fin d))
+    -- the DQM score supplied by the model.
     (ℓ : 𝒳 → EuclideanSpace ℝ (Fin d))
+    -- the family consists of probability densities with respect to `μ`.
     (hPDF : IsPDFOf M μ)
+    -- measurability of the supplied score.
     (hℓ : Measurable ℓ)
+    -- differentiability in quadratic mean at the base parameter.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- parameter sequence of local alternatives.
     (θ : ℕ → EuclideanSpace ℝ (Fin d))
+    -- eventual root-sample-size boundedness of the local parameters.
     (hθ : ∃ C : ℝ, ∀ᶠ n : ℕ in atTop,
       Real.sqrt n * ‖θ n - θ₀‖ ≤ C) :
     Contiguity.MutuallyContiguous atTop

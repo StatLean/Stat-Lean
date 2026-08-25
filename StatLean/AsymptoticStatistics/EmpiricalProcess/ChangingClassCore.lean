@@ -38,7 +38,7 @@ structure FiniteApproximation (T : Type*) where
   cell : T → Fin k
   rep : Fin k → T
 
-/-- **LEAN-INTERNAL (vdV Theorem 18.14):** evaluation at one bounded-path coordinate, bundled as
+/-- **Evaluation at one bounded-path coordinate** (vdV Theorem 18.14), bundled as
 a continuous linear map of norm at most one. -/
 private noncomputable def linfEvalCLM {T : Type*} (t : T) : LinfT T →L[ℝ] ℝ :=
   LinearMap.mkContinuous

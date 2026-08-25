@@ -6,11 +6,9 @@ import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 /-!
 # Complete-case inverse-probability weighting
 
-This module isolates the explicit complete-case formula used in van der Vaart,
-*Asymptotic Statistics*, Lemma 25.41 (book pp.381–382).  It contains only the
-complete-event/recovery interface, the full- and observed-data raw IPW formulas,
-and their analytic `L²₀`/pairing interface.  The influence-function assembly is
-kept in `Operators/CoarseningScoreIdentification.lean`.
+The explicit complete-case formula from van der Vaart, *Asymptotic Statistics*,
+Lemma 25.41 (book pp.381–382), together with complete-event recovery data,
+full- and observed-data IPW formulas, and their `L²₀` pairing properties.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -30,9 +28,9 @@ variable {𝓨 𝓓 𝓧 : Type*}
 
 Constitutive (vdV §25.5.3, pp.381–382): `C`, `Cobs`, `recover`,
 `complete_iff`, and `recover_complete` express that on the complete event the
-observed datum contains the full response.  The three measurability fields are
-Lean regularity carried by this interface so that the displayed IPW formulas are
-measurable; they do not assert positivity.  In particular, the book's
+observed datum contains the full response. The three measurability fields ensure
+that the displayed IPW formulas are measurable; they do not assert positivity.
+In particular, the book's
 bounded-away-from-zero condition on `R(C | Y)` is deliberately not a field. -/
 structure CompleteCaseData (M : 𝓨 × 𝓓 → 𝓧) where
   /-- Constitutive (vdV §25.5.3, pp.381–382): complete coarsening states. -/
@@ -41,11 +39,11 @@ structure CompleteCaseData (M : 𝓨 × 𝓓 → 𝓧) where
   Cobs : Set 𝓧
   /-- Constitutive (vdV §25.5.3, pp.381–382): recovery of `Y` on complete cases. -/
   recover : 𝓧 → 𝓨
-  /-- regularity: measurability of the complete-state event. -/
+  /-- Measurability of the complete-state event. -/
   measurableSet_C : MeasurableSet C
-  /-- regularity: measurability of the observed complete-case event. -/
+  /-- Measurability of the observed complete-case event. -/
   measurableSet_Cobs : MeasurableSet Cobs
-  /-- regularity: measurability of the recovery map. -/
+  /-- Measurability of the recovery map. -/
   measurable_recover : Measurable recover
   /-- Constitutive (vdV §25.5.3, pp.381–382): observed completeness is exactly
   membership of the coarsening state in `C`. -/
@@ -67,7 +65,7 @@ noncomputable def selectionProbability
 `1{δ∈C} χ(y) / R(C|y)` (vdV Lemma 25.41, pp.381–382).
 
 Edge behavior: division by zero uses Lean's field convention.  The analytic and
-headline theorems assume the book's uniform positive lower bound, so this edge
+theorems below assume the book's uniform positive lower bound, so this edge
 case is outside their scope. -/
 noncomputable def ipwFullRaw
     {M : 𝓨 × 𝓓 → 𝓧} (Q : Measure 𝓨) [IsProbabilityMeasure Q]
@@ -149,7 +147,7 @@ noncomputable def qScoreLift
 /-- Under the book's bounded-away-from-zero condition, the observed IPW raw
 formula is square-integrable and mean-zero (vdV Lemma 25.41, pp.381–382).
 
-`ε > 0` and `ε ≤ R(C|Y)` `Q`-a.e. are regularity assumptions from
+`ε > 0` and `ε ≤ R(C|Y)` `Q`-a.e. are explicit regularity assumptions from
 the lemma; positivity is intentionally not hidden in `CompleteCaseData`. -/
 theorem completeCaseIPW_analytic
     {M : 𝓨 × 𝓓 → 𝓧} (hM : Measurable M)
@@ -289,9 +287,8 @@ noncomputable def completeCaseIPW
       memLp2 := (completeCaseIPW_analytic hM Q r cc χ ε hε hπ).1
       mean_zero := (completeCaseIPW_analytic hM Q r cc χ ε hε hπ).2.1 }
 
-/-- The same explicit IPW formula represented in full-data `L²₀(Q ⊗ₘ r)`.
-It is an internal bridge to the existing affine core; the public complete-case
-candidate remains `completeCaseIPW` on observed data. -/
+/-- The explicit IPW formula represented in full-data `L²₀(Q ⊗ₘ r)`. Its
+information-loss image is the observed-data formula `completeCaseIPW`. -/
 noncomputable def completeCaseIPWFull
     {M : 𝓨 × 𝓓 → 𝓧} (hM : Measurable M)
     (Q : Measure 𝓨) [IsProbabilityMeasure Q]
@@ -348,8 +345,8 @@ private theorem doobSymm_completeCaseIPW_eq_full
       ((ipwObsRaw_comp_ae_eq_ipwFullRaw Q r cc χ).trans hfull_raw.symm))
 
 /-- The information-loss image of the full-data IPW element is exactly the
-observed complete-case IPW element.  This is the adapter by which the explicit
-Lemma 25.41 headline consumes the pre-existing affine characterization core. -/
+observed complete-case IPW element.  This identity connects the explicit
+Lemma 25.41 formula with the affine characterization. -/
 theorem informationLoss_completeCaseIPWFull
     {M : 𝓨 × 𝓓 → 𝓧} (hM : Measurable M)
     (Q : Measure 𝓨) [IsProbabilityMeasure Q]

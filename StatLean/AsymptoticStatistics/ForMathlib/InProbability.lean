@@ -66,15 +66,16 @@ def IsBoundedInProb {G : Type*} [NormedAddCommGroup G]
 
 /-- **Convergence in probability implies boundedness in probability.**
 
-This is a generic probability adapter, not a numbered book claim.  The measurability
-binder is essential: it supplies tightness for the finitely many indices before the
-eventual `o_P(1)` tail bound applies. -/
+The measurability hypothesis supplies tightness for the finitely many indices
+preceding the eventual `o_P(1)` tail bound. -/
 theorem TendstoInProbZero.isBoundedInProb
     {G : Type*} [NormedAddCommGroup G]
     [MeasurableSpace G] [BorelSpace G]
     {P : ∀ k, Measure (Ω k)} [∀ k, IsProbabilityMeasure (P k)]
     {Z : ∀ k, Ω k → G}
+    -- Convergence to zero in probability.
     (h : TendstoInProbZero P Z)
+    -- required to obtain finite-prefix tightness of the pushforward laws.
     (hZ_meas : ∀ k, Measurable (Z k)) :
     IsBoundedInProb P Z := by
   intro ε hε

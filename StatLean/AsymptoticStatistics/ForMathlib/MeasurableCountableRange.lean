@@ -3,8 +3,8 @@ import Mathlib.MeasureTheory.MeasurableSpace.Defs
 /-!
 # Measurable diagonals over a countable parameter range
 
-This file provides a reusable measurability adapter for evaluating a family of
-measurable sections along a measurable parameter map with countable range.
+This file proves measurability of a family of measurable sections evaluated
+along a measurable parameter map with countable range.
 -/
 
 /-- Evaluating measurable sections along a measurable parameter map remains
@@ -12,12 +12,19 @@ measurable when the parameter map has countable range and singleton parameter
 sets are measurable. -/
 theorem measurable_diag_of_countable_range
     {α τ β : Type*}
+    -- the measurable structures on the source and parameter spaces.
     [MeasurableSpace α] [MeasurableSpace τ]
+    -- singleton measurability makes the countably many parameter fibers measurable.
     [MeasurableSingletonClass τ]
+    -- the measurable structure on the target space.
     [MeasurableSpace β]
+    -- the supplied parameter map and family of sections.
     (p : α → τ) (f : α → τ → β)
+    -- measurability of the supplied parameter map.
     (hp : Measurable p)
+    -- countability of the attained parameter values.
     (hrange : (Set.range p).Countable)
+    -- measurability of every supplied fixed-parameter section.
     (hf : ∀ t, Measurable (fun x => f x t)) :
     Measurable (fun x => f x (p x)) := by
   intro s hs

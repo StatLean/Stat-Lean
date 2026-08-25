@@ -18,13 +18,11 @@ The *family-level* CAR restriction: the conditional censoring densities
 of Coarsening At Random beyond a single-measure disintegration — it is a
 statement about the whole differentiable family `t ↦ rₜ`.
 
-Its consequence for the score (vdV p.380) is that the conditional score
-`b₀(δ | y)` factors through the observed value `x`.  The theorem
-`conditionalScore_factorsThrough` proves this descent by an `L²`-closedness
-argument.
+Its consequence for the score (vdV p.380): "Because the conditional densities
+satisfy CAR, the function `b₀(δ | y)` must actually be a function `b(x)` of `x`
+only." The theorem `conditionalScore_factorsThrough` proves this descent by an
+L²-closedness argument.
 
-Headline declarations: `IsCARFamily`, `conditionalScore_factorsThrough`,
-`conditionalQMDObservedScore`, `conditionalQMDObservedScore_pullback`.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -47,9 +45,9 @@ map `M : 𝓨 × 𝓓 → 𝓧` if, for every `t`, the `ν`-density of each fibr
 w.r.t. `Q ⊗ ν`: the conditional density depends on `(y, δ)` only through the
 observed `x = M(y, δ)`.
 
-CAR is the defining restriction of the coarsening model and is false for
-general outcome-dependent missingness. It is the family-level strengthening of
-the single-measure disintegration clause in
+This is a genuine external hypothesis: CAR is the defining
+restriction of the coarsening model, false for outcome-dependent missingness. It
+is the family-level strengthening of the single-measure disintegration clause in
 `Operators.CAR.IsCoarseningAtRandom`. -/
 def IsCARFamily (M : 𝓨 × 𝓓 → 𝓧) (γ : ConditionalQMDPath Q ν r) : Prop :=
   ∀ t : ℝ,
@@ -62,7 +60,8 @@ private noncomputable def condSqrt (γ : ConditionalQMDPath Q ν r) (t : ℝ) :
     𝓨 × 𝓓 → ℝ :=
   fun p => Real.sqrt ((γ.curve t p.1).rnDeriv ν p.2).toReal
 
-/-- The product-level score times the reference square-root density `b₀ · √p₀`. -/
+/-- The product-level score times the reference square-root density `b₀ · √p₀`.
+This is the function shown below to be `(M⁻¹σ_𝓧)`-measurable. -/
 private noncomputable def condScoreSqrt (γ : ConditionalQMDPath Q ν r) :
     𝓨 × 𝓓 → ℝ :=
   fun p => γ.score p.1 p.2 * condSqrt γ 0 p
@@ -76,7 +75,7 @@ private noncomputable def condRem (γ : ConditionalQMDPath Q ν r) (t : ℝ) :
 /-- Product-space `L²`-membership of the conditional square-root density:
 `√pₜ ∈ L²(Q ⊗ ν)`, where `pₜ(y, δ) = ((curve t y).rnDeriv ν δ).toReal`.
 
-The CAR hypothesis supplies the measurability of `pₜ`, so no joint
+The measurability of `pₜ` is supplied by the CAR hypothesis, so no joint
 measurability of the bare fibrewise kernel density is
 needed. The joint integral is finite by Tonelli and the fibrewise Radon–Nikodym
 mass identity: `∫∫ pₜ d(Q ⊗ ν) = ∫ (curve t y) univ dQ = 1`, since each fibre
@@ -179,7 +178,7 @@ private lemma condScoreSqrt_memLp
     rw [← mul_assoc, hc, one_mul]
   rwa [h_eq] at h2
 
-/-- Weighted-score measurability under CAR (vdV §25.5.3, book p.380).
+/-- *Weighted-score measurability* (vdV §25.5.3, book p.380).
 
 The product `b₀ · √p₀ = (score · √p₀)` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`.
 
@@ -191,7 +190,7 @@ difference quotients `qₜ = (√pₜ − √p₀)/(t/2)` converge in `L²(Q ⊗
 (`MeasureTheory.isClosed_aestronglyMeasurable`, `hm := hM.comap_le`), so the
 `L²`-limit `score · √p₀` inherits `(M⁻¹σ_𝓧)`-measurability.
 
-The two key ingredients are as follows. First, `L²`-membership of the
+The two analytic ingredients are as follows.  First, `L²`-membership of the
 fibrewise `√pₜ` on the product comes from
 `condSqrtDensity_memLp` (Tonelli + `Measure.lintegral_rnDeriv`, giving
 `∫∫ pₜ d(Q ⊗ ν) = ∫ (curve t y) univ dQ = 1`); the measurability of `pₜ` is
@@ -209,9 +208,8 @@ private lemma score_mul_sqrt_aestronglyMeasurable_comap
         * Real.sqrt ((γ.curve 0 p.1).rnDeriv ν p.2).toReal) (Q.prod ν) := by
   classical
   haveI : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
-  -- The observed sub-σ-algebra `m = M⁻¹σ_𝓧` and its inclusion. We do NOT bind it
-  -- as a local `set` variable: a local `MeasurableSpace (𝓨 × 𝓓)` would shadow the
-  -- ambient product σ-algebra in instance resolution.
+  -- Keep the observed sub-σ-algebra `m = M⁻¹σ_𝓧` explicit so the ambient
+  -- product σ-algebra remains available.
   have hm : MeasurableSpace.comap M ‹MeasurableSpace 𝓧›
       ≤ (inferInstance : MeasurableSpace (𝓨 × 𝓓)) := hM.comap_le
   -- The goal function is `condScoreSqrt γ` (definitionally).
@@ -301,8 +299,8 @@ null-set `{p₀ = 0}` the score is unconstrained by the QMD limit (which only se
 `score · √p₀`), so the factorization can only hold where the reference density is
 positive — exactly the `Q ⊗ₘ r`-support.
 
-The proof first shows that `score · √p₀` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`
-using `score_mul_sqrt_aestronglyMeasurable_comap`,
+The proof uses that `score · √p₀` is `(M⁻¹σ_𝓧)`-measurable a.e.-`Q ⊗ ν`
+(`score_mul_sqrt_aestronglyMeasurable_comap`),
 and so is `p₀` itself (`hCAR 0` at `curve 0 = r`); both transfer to `Q ⊗ₘ r` via
 `Q ⊗ₘ r ≪ Q ⊗ ν`. Where `p₀ > 0` (`Q ⊗ₘ r`-a.e., proved inline: fibrewise
 `Measure.rnDeriv_pos (r y ≪ ν)` lifted through `Measure.ae_compProd_of_ae_ae`,
@@ -310,8 +308,8 @@ using the joint-measurable a.e.-representative of `p₀` that `hCAR 0` supplies 
 the measurable set) one has `score = (score · √p₀) · (√p₀)⁻¹`, a product of
 `(M⁻¹σ_𝓧)`-measurable functions.
 
-Measurability of `M` is the standard regularity condition on the observation
-mechanism. -/
+`hM : Measurable M` states that the coarsening map is measurable, a standing
+regularity assumption on the observation mechanism). -/
 theorem conditionalScore_factorsThrough
     (M : 𝓨 × 𝓓 → 𝓧) (hM : Measurable M) (γ : ConditionalQMDPath Q ν r)
     (hCAR : IsCARFamily M γ) :
@@ -340,8 +338,8 @@ theorem conditionalScore_factorsThrough
   -- Transfer both to `Q ⊗ₘ r`.
   have hSq' := hSq.mono_ac hac
   have hp0' := hp0.mono_ac hac
-  -- `(√p₀)⁻¹` is `m`-measurable a.e.-`Q ⊗ₘ r` (`x ↦ (√x)⁻¹` is measurable). We
-  -- build it from an `m`-strongly-measurable representative of `p₀`, since
+  -- `(√p₀)⁻¹` is `m`-measurable a.e.-`Q ⊗ₘ r` (`x ↦ (√x)⁻¹` is measurable),
+  -- using an `m`-strongly-measurable representative of `p₀`, since
   -- `x ↦ x⁻¹` is not continuous at `0` on ℝ (no `ContinuousInv ℝ`).
   have hg : Measurable (fun x : ℝ => (Real.sqrt x)⁻¹) :=
     Real.continuous_sqrt.measurable.inv
@@ -403,9 +401,9 @@ the weighted score controlled by the QMD limit to the raw score under the
 reference full-data law. -/
 theorem conditionalScore_memLp_compProd_of_car
     (M : 𝓨 × 𝓓 → 𝓧)
-    (hM : Measurable M)
+    (hM : Measurable M) -- the observed coarsening map is measurable.
     (γ : ConditionalQMDPath Q ν r)
-    (hCAR : IsCARFamily M γ) :
+    (hCAR : IsCARFamily M γ) : -- the supplied conditional path satisfies CAR.
     MemLp (Function.uncurry γ.score) 2 (Q ⊗ₘ r) := by
   have hscore_meas : AEStronglyMeasurable (Function.uncurry γ.score) (Q ⊗ₘ r) :=
     (conditionalScore_factorsThrough M hM γ hCAR).mono hM.comap_le
@@ -451,15 +449,14 @@ theorem conditionalScore_memLp_compProd_of_car
 (vdV §25.5.3, book p.380).
 
 The CAR hypothesis is used to descend the bare conditional score through the
-measurable coarsening map. Square-integrability comes from
-`conditionalScore_memLp_compProd_of_car`, and mean zero comes from
-`conditionalScore_fibre_mean_zero`; neither fact is exposed as a caller
-hypothesis. -/
+measurable coarsening map. Square-integrability follows from
+`conditionalScore_memLp_compProd_of_car`, and mean zero follows from
+`conditionalScore_fibre_mean_zero`. -/
 noncomputable def conditionalQMDObservedScore
     (M : 𝓨 × 𝓓 → 𝓧)
-    (hM : Measurable M)
+    (hM : Measurable M) -- the observed coarsening map is measurable.
     (γ : ConditionalQMDPath Q ν r)
-    (hCAR : IsCARFamily M γ) :
+    (hCAR : IsCARFamily M γ) : -- the supplied conditional path satisfies CAR.
     ↥(AsymptoticStatistics.Core.Hilbert.L2ZeroMean ((Q ⊗ₘ r).map M)) := by
   have hscore := conditionalScore_memLp_compProd_of_car M hM γ hCAR
   let scoreLp : Lp ℝ 2 (Q ⊗ₘ r) := hscore.toLp (Function.uncurry γ.score)
@@ -506,9 +503,9 @@ bare conditional score `b₀(δ | y)` almost everywhere under `Q ⊗ₘ r`
 (vdV §25.5.3, book p.380). -/
 theorem conditionalQMDObservedScore_pullback
     (M : 𝓨 × 𝓓 → 𝓧)
-    (hM : Measurable M)
+    (hM : Measurable M) -- the observed coarsening map is measurable.
     (γ : ConditionalQMDPath Q ν r)
-    (hCAR : IsCARFamily M γ) :
+    (hCAR : IsCARFamily M γ) : -- the supplied conditional path satisfies CAR.
     (fun p =>
       (((conditionalQMDObservedScore M hM γ hCAR :
           ↥(AsymptoticStatistics.Core.Hilbert.L2ZeroMean ((Q ⊗ₘ r).map M))) :

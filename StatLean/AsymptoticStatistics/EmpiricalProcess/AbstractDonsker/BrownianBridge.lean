@@ -18,12 +18,12 @@ covariance `cov(G_P f, G_P g) = P(fg) − Pf · Pg` (van der Vaart,
 *Asymptotic Statistics* §19.2, book p.269; van der Vaart–Wellner Ch. 2.1), and
 which concentrates on the uniformly-`distL2 P`-continuous (UC) paths.
 
-Mathlib's `ProbabilityTheory.IsGaussianProcess` specifies finite-dimensional
-marginals. Here `IsPBrownianBridge` records the corresponding tight Borel path-space
-law on `ℓ∞(F)`, including centered Gaussian marginals, Brownian-bridge covariance,
-and uniformly-`distL2 P`-continuous paths. For `gpBridgeMeasure`, this file proves
-the probability, covariance, Gaussian-marginal, and UC-path clauses;
-`PBridgeTight.lean` proves tightness and packages `exists_pBrownianBridge`.
+The predicate `ProbabilityTheory.IsGaussianProcess` specifies finite-dimensional
+marginals. A Brownian bridge additionally requires a tight Borel path-space law
+on `ℓ∞(F)` with almost surely uniformly continuous sample paths. The structure
+below records these properties of `G_P`; four of its five fields hold for the
+candidate law `gpBridgeMeasure`, while tightness is proved in
+`PBridgeTight.lean`.
 
 ## Main definitions
 
@@ -34,10 +34,10 @@ the probability, covariance, Gaussian-marginal, and UC-path clauses;
 ## Main results
 
 * `pBridge_isProbabilityMeasure`, `pBridge_cov`, `pBridge_isGaussian_fdd`,
-  `pBridge_ucPaths` — four of the five `IsPBrownianBridge` fields for the
-  candidate law `ν = gpBridgeMeasure`. The fifth (`pBridge_tight`) and the
-  assembled existence lemma `exists_pBrownianBridge` / witness `gaussianPBridge`
-  live in `PBridgeTight.lean`.
+  `pBridge_ucPaths` — four of the five `IsPBrownianBridge` properties for the
+  candidate law `ν = gpBridgeMeasure`. Tightness (`pBridge_tight`) and the
+  existence theorem `exists_pBrownianBridge`, with witness `gaussianPBridge`,
+  are proved in `PBridgeTight.lean`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -234,7 +234,6 @@ theorem pBridge_mean (f : ↥F) :
     (integral_map (Lp.aestronglyMeasurable W).aemeasurable aestronglyMeasurable_id).symm
   rw [hmap, isonormal_map_eq_gaussianReal, integral_id_gaussianReal]
 
-omit [IsProbabilityMeasure P] in
 /-- **Measurability of the UC-path predicate set.** The set of paths `z : LinfF F`
 satisfying the `distL2 P`-ε-δ uniform-continuity predicate is Borel-measurable.
 

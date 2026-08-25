@@ -6,7 +6,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Finset.Prod
 
 /-!
-# Empirical L2 geometry for conditional Rademacher sums
+# Empirical `L²` geometry for conditional Rademacher sums
 
 This file records the realized empirical seminorm and its induced
 semidistance, including the finite-discrete readout used by conditional

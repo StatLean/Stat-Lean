@@ -226,10 +226,8 @@ private theorem integral_score_sq_eq_norm_sq (γ : NondominatedQMDPath P) :
 
 Proof idea: at each `a≥0`, truncate the square-root likelihood expansion,
 use the distinct baseline-zero-likelihood rate to justify `log`, and apply
-iid LLN to the quadratic term; split `a=0` at the base point.
-
-The constant zero-score path is an example requiring no additional
-absolute-continuity, MGF, or uniform-integrability hypotheses. -/
+iid LLN to the quadratic term; split `a=0` at the base point. No MGF or
+uniform-integrability assumption is required. -/
 theorem log_acProductLikelihood_lan_tendstoInMeasure
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a) :
     ∀ ε > 0, Tendsto
@@ -1176,28 +1174,26 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
 score is mean zero and square integrable, and generates the literal actual-RN
 LAN expansion at `1/sqrt n`.
 
-Proof idea: package the bare score as `NondominatedQMDPath`, invoke the
-actual-likelihood LAN expansion, and transport all terms across the `P`-a.e.
-representative.
-
-For example, take `curve t = P`, `g = 0`, and any iid sample with law `P`. -/
+Proof idea: construct a `NondominatedQMDPath` from the bare score, invoke the
+actual-likelihood LAN theorem, and transport all terms across the `P`-a.e.
+representative. -/
 theorem qmd_score_mean_integrable_and_lan_nondominated
     (P : Measure Ω) [IsProbabilityMeasure P]
     (curve : ℝ → Measure Ω)
-    -- USER-INPUT: a one-sided probability path through `P`; vdV Lemma 25.14.
+    -- a one-sided probability path through `P`; vdV Lemma 25.14.
     (hprob : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t))
     (hzero : curve 0 = P)
     (g : Ω → ℝ)
-    -- LEAN-ONLY: measurability of the score representative.
+    -- measurability of the score representative.
     (hg : Measurable g)
-    -- USER-INPUT: right differentiability in quadratic mean with score `g`;
+    -- right differentiability in quadratic mean with score `g`;
     -- vdV Lemma 25.14.
     (hqmd : IsRightQMD P curve g)
     (P' : Measure Ω') [IsProbabilityMeasure P']
     (X : ℕ → Ω' → Ω)
-    -- LEAN-ONLY: measurability of each sample coordinate.
+    -- measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 25.14.
+    -- iid observations with common law `P`; vdV Lemma 25.14.
     (hindep : ProbabilityTheory.iIndepFun X P')
     (hident : ∀ i, IdentDistrib (X i) (X 0) P' P')
     (hlaw : Measure.map (X 0) P' = P) :

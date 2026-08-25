@@ -11,15 +11,15 @@ import Mathlib.Probability.ProbabilityMassFunction.Integrals
 /-!
 # Uniform-entropy symmetrization for Glivenko--Cantelli classes
 
-This file develops the random-net symmetrization argument in van der Vaart
+This file formalizes the random-net symmetrization argument in van der Vaart
 Theorem 19.13. Its
 definitions expose the pooled empirical law, admissibility split, ghost
-sample, and Rademacher tails; none of those obligations is hidden behind a
-provider hypothesis.
+sample, and Rademacher tails; all are derived from the stated assumptions.
 
-The `r = 2` instances of the pooled-law, admissibility, strict-net,
-ghost-sample, and Rademacher results also support the Theorem 19.14 chaining
-argument. This file does not state the separate pairwise/bracketing theorem.
+The corresponding `r = 2` results supply the pooled-law, admissibility,
+strict-net, ghost-sample, and Rademacher ingredients for the uniform-entropy
+Donsker theorem. This file does not state the separate pairwise/bracketing
+result.
 
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, Theorem 19.13,
 p.274.
@@ -191,7 +191,7 @@ private theorem outerLpNorm_localized_le_conditionOn
     simpa only [ENNReal.one_rpow] using ENNReal.rpow_le_rpow hQAone hexp
   exact mul_le_of_le_one_left (zero_le _) hfac
 
-/-! ## Symmetrization ingredients -/
+/-! ### Symmetrization ingredients -/
 
 /-- The three-way pooled empirical law is a probability measure
 for every nonempty finite sample. -/
@@ -1505,8 +1505,7 @@ private theorem pooled_close_sample_sum
 
 /-- Conditional finite-net block tail bound.
 
-This result uses an extracted strict class net; it
-cannot be replaced by a free Dudley or maximal-inequality provider. -/
+The bound uses an explicitly extracted strict class net. -/
 theorem conditionalRademacher_finitePooledNet_blockMaxTail
     (E : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (r : ℝ) (m : ℕ) (M ε : ℝ) (T : Finset (Ω → ℝ))
@@ -2091,7 +2090,7 @@ private theorem localizedUniformCover_block_tsum_lt_top
       -- measurable majorant domination.
     (hVmeas : Measurable V) -- localization-set measurability.
     (hcov : ∀ η > 0, uniformLpCoveringNumber F G 1 η < ⊤)
-      -- vdV uniform finite L1 covering condition.
+      -- vdV uniform finite `L¹` covering condition.
     (hM : 0 < M) -- positive localization level.
     (hε : 0 < ε) -- positive deviation threshold.
     (hXmeas : ∀ i, Measurable (X i)) -- coordinate measurability.
@@ -2283,7 +2282,7 @@ theorem localizedUniformCover_block_summable
       -- measurable majorant domination.
     (hVmeas : Measurable V) -- localization-set measurability.
     (hcov : ∀ η > 0, uniformLpCoveringNumber F G 1 η < ⊤)
-      -- vdV uniform finite L1 covering condition.
+      -- vdV uniform finite `L¹` covering condition.
     (hM : 0 < M) -- positive localization level.
     (hε : 0 < ε) -- positive deviation threshold.
     (hXmeas : ∀ i, Measurable (X i)) -- coordinate measurability.
@@ -2706,7 +2705,7 @@ theorem uniformCovering_gc_iid_core
       -- vdV envelope condition.
     (hG1 : outerLpNorm P G 1 < ⊤) -- finite outer first moment.
     (hcov : ∀ ε > 0, uniformLpCoveringNumber F G 1 ε < ⊤)
-      -- vdV uniform finite L1 covering condition.
+      -- vdV uniform finite `L¹` covering condition.
     (hXmeas : ∀ i, Measurable (X i)) -- coordinate measurability.
     (hXiindep : ProbabilityTheory.iIndepFun X μ) -- iid independence.
     (hXid : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
@@ -2842,14 +2841,13 @@ theorem uniformCovering_gc_iid_core
         norm_num
       _ < a := hqa
 
-/-! ### IID-facing adapter -/
+/-! ### IID formulation -/
 
 /-- IID-facing formulation of a `P`-Glivenko--Cantelli class using Mathlib's
 joint-independence predicate.
 
-This quantifies only over jointly iid samples, a narrower sample universe
-than the existing pairwise-independence predicate.  It is the interface
-consumed by the symmetrization core rather than a replacement definition. -/
+This quantifies over jointly iid samples and is implied by the
+pairwise-independence formulation. -/
 def IsPGlivenkoCantelliIID (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
   ∀ {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {X : ℕ → Ξ → Ω},
@@ -2861,11 +2859,11 @@ def IsPGlivenkoCantelliIID (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
 
 universe uSample
 
-/-- The existing pairwise-independence GC predicate implies the narrower
-joint-iid adapter at the same sample-space universe. -/
+/-- The pairwise-independence GC predicate implies the joint-iid formulation
+at the same sample-space universe. -/
 theorem IsPGlivenkoCantelli.toIID {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hGC : IsPGlivenkoCantelli.{_, uSample} F P)
-      -- existing GC certification at this sample universe.
+      -- GC certification at this sample universe.
     : IsPGlivenkoCantelliIID.{_, uSample} F P := by
   intro Ξ _ μ _ X hXmeas hXiindep hXid hXlaw
   have hpw : Pairwise (fun i j => ProbabilityTheory.IndepFun (X i) (X j) μ) :=
@@ -2879,9 +2877,9 @@ theorem IsPGlivenkoCantelli.toIID {F : Set (Ω → ℝ)} {P : Measure Ω}
 19.13. -/
 theorem uniformCovering_isPGlivenkoCantelliIID
     (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]
-    -- LEAN-ONLY: explicit measurability of the class members.
+    -- explicit measurability of the class members.
     (hFmeas : ∀ f ∈ F, Measurable f)
-    -- USER-INPUT: pointwise measurability, an integrable envelope, and finite
+    -- pointwise measurability, an integrable envelope, and finite
     -- uniform `L¹` covering numbers; vdV Theorem 19.13.
     (hPM : IsPointwiseMeasurable F)
     (hEnv : UniformEntropyStructural.IsEnvelope F G)

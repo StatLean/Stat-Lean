@@ -3,7 +3,8 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
 /-!
 # Outer-probability `o_P` / `O_P` for sup-over-`H` random families
 
-These definitions support the infinite-dimensional Z-estimator, vdV §19.4
+This file provides outer-probability asymptotic predicates for the
+infinite-dimensional Z-estimator, vdV §19.4
 Theorem 19.26 (`infinite_dim_z_estimator`). The conclusion of 19.26 is a
 statement about convergence in the sup norm `‖·‖_H = sup over H` of an
 `ℓ∞(H)`-valued sequence, "in outer probability". We encode `ℓ∞(H)` as a plain
@@ -15,15 +16,15 @@ outer-probability modes:
 
 Both are stated with the **existential** event `{ξ | ∃ h, ε < |g n ξ h|}` rather
 than `{ξ | ε < sSup_h |g n ξ h|}`: the `∃h` form needs no `BddAbove` /
-`ciSup` junk-value side-condition and matches the shape of the
+`ciSup` side condition and matches the shape of the
 `IsAsymptoticallyEquicontinuous` predicate. Mass is measured with the outer
 measure `Measure.outerMeasureStar` (the sup / ∃ over uncountable `H` is generally
 not `μ`-measurable).
 
-The algebra uses `outerMeasureStar_mono` and `outerMeasureStar_union_le` from the
-empirical-process outer-measure framework.
+The algebra proofs use the outer-measure lemmas `outerMeasureStar_mono` and
+`outerMeasureStar_union_le` from `Donsker.lean`.
 
-Headline declarations: `TendstoZeroInOuterProbSup`, `IsBoundedInOuterProbSup`,
+Principal declarations: `TendstoZeroInOuterProbSup`, `IsBoundedInOuterProbSup`,
 `oP_sup_add`, `oP_sup_mono`, `OP_add_oP_sup`, `rate_bootstrap_oP`.
 -/
 
@@ -50,7 +51,7 @@ of the outer measure of `{ξ | ∃ h, M < |g n ξ h|}` is at most `η`.
 
 Edge: if `H` is empty every exceedance event is empty, so any `M` works.
 vdV §19.4 (marginal asymptotic tightness of the empirical process over the class,
-used in the rate argument of the 5.21-style proof). -/
+used in the rate bootstrap, step 5 of the 5.21-style proof). -/
 def IsBoundedInOuterProbSup {Ξ H : Type*} [MeasurableSpace Ξ]
     (μ : Measure Ξ) (g : ℕ → Ξ → H → ℝ) : Prop :=
   ∀ η : ℝ, 0 < η → ∃ M : ℝ,
@@ -69,7 +70,7 @@ def TendstoZeroInOuterProbScalar {Ξ : Type*} [MeasurableSpace Ξ]
 
 /-- **Scalar bounded in outer probability (`O_P(1)`).** The `H`-free
 specialization of `IsBoundedInOuterProbSup`. The conclusion `r_n = O_P(1)` of the
-rate argument is stated with this predicate on the scalar rate
+rate bootstrap (step 5) is stated with this predicate on the scalar rate
 `r_n := √n‖θ̂_n − θ₀‖`. -/
 def IsBoundedInOuterProbScalar {Ξ : Type*} [MeasurableSpace Ξ]
     (μ : Measure Ξ) (g : ℕ → Ξ → ℝ) : Prop :=
@@ -111,7 +112,7 @@ theorem oP_sup_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : ε < |g₁ n ξ h| + |g₂ n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : ε / 2 < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push Not at h1
+    · push_neg at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 < |g₁ n ξ h|}
@@ -165,7 +166,7 @@ theorem OP_add_oP_sup {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : M + 1 < |a n ξ h| + |s n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : M < |a n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push Not at h1
+    · push_neg at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, M + 1 < |a n ξ h + s n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, M < |a n ξ h|}
@@ -178,7 +179,7 @@ theorem OP_add_oP_sup {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
           (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
     _ ≤ ENNReal.ofReal η := limsup_add_tendsto_zero_le _ _ _ hM (hs 1 one_pos)
 
-/-- **Rate bootstrap for the vdV 5.21-style proof of Theorem 19.26.**
+/-- **Rate bootstrap (step 5 of the vdV 5.21-style proof of Thm 19.26).**
 
 Let `r_n ≥ 0` be a scalar rate. Suppose a family `Vfam` is bounded
 below by `c · r_n` in the `ℓ∞(H)` sup (`hlb`), decomposes as `Vfam ≤ Afam + Sfam`
@@ -191,9 +192,11 @@ O_P(1) + ε·r_n` one gets `(c − ε)·r_n ≤ O_P(1)`, hence `r_n = O_P(1)`; t
 `‖Sfam‖ ≤ ε·r_n = ε·O_P(1)` for arbitrary `ε`, giving `Sfam →ₚ 0`.
 
 The deterministic sups `⨆ h, ENNReal.ofReal |·|` are bridged to the `∃h`-events
-of `hA` and the conclusion via `lt_iSup_iff`; all exceedance events are handled
-by `outerMeasureStar`, so no measurability assumption on `r` is needed.
--/
+of `hA` / the conclusion via `lt_iSup_iff`. All event comparisons use
+`outerMeasureStar`, so no measurability premise on `r_n` is required.
+
+The self-referential argument is carried out directly with `ℝ≥0∞` `limsup`
+and outer-measure event comparisons. -/
 theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
     (Vfam Afam Sfam : ℕ → Ξ → H → ℝ) (r : ℕ → Ξ → ℝ)
     (hr_nonneg : ∀ n ξ, 0 ≤ r n ξ)
@@ -289,7 +292,7 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
       simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push Not at hr
+      push_neg at hr
       refine ⟨h, ?_⟩
       have h1 : ε' * r n ξ ≤ ε' * M₀ := mul_le_mul_of_nonneg_left hr hε'0.le
       have h2 : ε' * M₀ < ε := by
@@ -307,8 +310,11 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
           (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
     _ ≤ ENNReal.ofReal η := limsup_add_tendsto_zero_le _ _ _ hMr₀ (hS ε' hε'0)
 
-/-- `P*(A) ≤ μ A` for every set `A`. Every measurable superset `t ⊇ A` gives
-`E*[1_A] ≤ ∫⁻ 1_t = μ t`;
+/-- `P*(A) ≤ μ A` for every set `A`. The public
+copy `outerMeasureStar_le_measure` lives one layer up in
+`UniformRandomFunctions.lean`, which imports this file, so it is not in scope
+here; the four sign / modification helpers below need it, so we re-prove it
+privately. Every measurable superset `t ⊇ A` gives `E*[1_A] ≤ ∫⁻ 1_t = μ t`;
 the infimum over such `t` (`measure_eq_iInf`) is `μ A`. -/
 private theorem outerMeasureStar_le_measure_aux {Ξ : Type*} [MeasurableSpace Ξ]
     (μ : Measure Ξ) (A : Set Ξ) : μ.outerMeasureStar A ≤ μ A := by
@@ -394,7 +400,7 @@ theorem tendstoZeroInOuterProbSup_of_eq_off_vanishing {Ξ H : Type*}
     _ ≤ μ.outerMeasureStar {ξ | ∃ h, ε < |g' n ξ h|} + μ.outerMeasureStar (bad n) :=
         outerMeasureStar_union_le μ _ _
 
-/-! ### Weighted sup asymptotics relative to a rate
+/-! ### Weighted `o_P` and `O_P` relative to a random rate (vdV Theorem 5.31)
 
 The nuisance Z-estimator (`ZEstimatorNuisance.lean`, vdV Thm 5.31) states its
 error as `o_P(1 + √n‖P ψ_{θ₀,η̂ₙ}‖)`, i.e. relative to a *random weight* `w n ξ`.
@@ -435,7 +441,7 @@ def IsBoundedInOuterProbScalarWt {Ξ : Type*} [MeasurableSpace Ξ]
 /-- **Weighted `o_P` is closed under addition (sup form).** Weighted sibling of
 `oP_sup_add`; the `ε/2`-split uses `w ≥ 1 > 0`. -/
 theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
-    {w : ℕ → Ξ → ℝ}
+    {w : ℕ → Ξ → ℝ} (hw : ∀ n ξ, 1 ≤ w n ξ)
     {g₁ g₂ : ℕ → Ξ → H → ℝ}
     (h₁ : TendstoZeroInOuterProbSupWt μ w g₁) (h₂ : TendstoZeroInOuterProbSupWt μ w g₂) :
     TendstoZeroInOuterProbSupWt μ w (fun n ξ h => g₁ n ξ h + g₂ n ξ h) := by
@@ -448,7 +454,7 @@ theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have hww : ε * w n ξ = ε / 2 * w n ξ + ε / 2 * w n ξ := by ring
     by_cases h1 : ε / 2 * w n ξ < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push Not at h1
+    · push_neg at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε * w n ξ < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 * w n ξ < |g₁ n ξ h|}
@@ -463,8 +469,8 @@ theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
 
 /-- **A family dominated by the weight is `O_P(w)`.** If `|g n ξ h| ≤ w n ξ` for
 all `n ξ h`, then `g = O_P(w)` uniformly over `H` (the `M = 1` weighted exceedance
-event is empty, since `w < |g| ≤ w` is impossible). This absorbs drift terms
-whose absolute value is bounded by the weight. -/
+event is empty, since `w < |g| ≤ w` is impossible). Used to absorb the drift term
+`√n·driftVec` in the nuisance-estimator remainder. -/
 theorem isBoundedInOuterProbSupWt_of_le_wt {Ξ H : Type*} [MeasurableSpace Ξ]
     {μ : Measure Ξ} {w : ℕ → Ξ → ℝ} {g : ℕ → Ξ → H → ℝ}
     (h_dom : ∀ n ξ h, |g n ξ h| ≤ w n ξ) :
@@ -552,7 +558,7 @@ theorem oPWt_of_coeff_mul_rate {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure
     _ ≤ ENNReal.ofReal η :=
         limsup_add_tendsto_zero_le _ _ _ hM₀_limsup (h_coeff (ε / M₀) hεM₀)
 
-/-- **Weighted rate bootstrap for the vdV 5.21-style proof of Theorem 5.31.**
+/-- **Weighted rate bootstrap (step 5 of the vdV 5.21-style proof, Thm 5.31).**
 
 The weighted sibling of `rate_bootstrap_oP`. The lower bound `hlb` on `‖Vfam‖`
 may fail on a guard event `bad` of vanishing outer mass (`hbad`), reflecting that
@@ -560,7 +566,9 @@ the neighborhood nonsingularity of `V η` only holds once `η̂` is close to `η
 Under the decomposition `hW` with `Afam = O_P(w)` (`hA`) and `Sfam`
 controlled by `ε · r` (`hS`), the rate `r` is `O_P(w)` and `Sfam →ₚ 0` relative to
 `w`.
--/
+
+The proof combines the self-referential `ℝ≥0∞` `limsup` argument with the
+vanishing guard event. -/
 theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
     (Vfam Afam Sfam : ℕ → Ξ → H → ℝ) (r w : ℕ → Ξ → ℝ)
     (hr_nonneg : ∀ n ξ, 0 ≤ r n ξ)
@@ -676,7 +684,7 @@ theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure �
       simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push Not at hr
+      push_neg at hr
       refine ⟨h, ?_⟩
       have hwpos : 0 < w n ξ := lt_of_lt_of_le one_pos (hw n ξ)
       have h1 : ε' * r n ξ ≤ ε' * (M₀ * w n ξ) := mul_le_mul_of_nonneg_left hr hε'0.le

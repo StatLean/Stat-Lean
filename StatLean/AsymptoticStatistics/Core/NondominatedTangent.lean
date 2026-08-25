@@ -19,10 +19,9 @@ nondominated QMD realization of every carrier score.
 
 Constitutive (vdV §25.3 pp.362--363): the carrier is nonempty and closed
 under nonnegative scaling; each member is a score realized by a one-sided
-QMD path.  Addition and negation are intentionally absent.
-
-The singleton carrier `{0}` with the constant zero-score path is an example;
-moving-atom paths give examples without common domination. -/
+QMD path. Addition and negation are intentionally absent. The zero cone and
+moving-atom paths show that these conditions are non-vacuous and do not imply
+common domination. -/
 structure NondominatedTangentCone
     (P : Measure Ω) [IsProbabilityMeasure P] where
   /-- Constitutive (vdV §25.3 p.362): the admissible score set. -/
@@ -53,7 +52,7 @@ noncomputable def tangentSpace
   (Submodule.span ℝ C.carrier).topologicalClosure
 
 /-- Each selected carrier score belongs to the derived tangent space, by
-carrier-to-span followed by closure inclusion. -/
+inclusion in the span and then its closure. -/
 theorem selected_mem_tangentSpace
     (C : NondominatedTangentCone P)
     (g : {g : ↥(L2ZeroMean P) // g ∈ C.carrier}) :

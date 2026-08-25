@@ -34,14 +34,17 @@ finite vector from a point-separating family of continuous linear coordinates
 has the same pushforward law.
 
 The tightness hypotheses are essential in the possibly nonseparable carrier;
-finite-dimensional marginal equality alone does not imply path-space equality. -/
+finite-dimensional marginal equality alone is not silently promoted to
+path-space equality. -/
 theorem tightMeasure_eq_of_finiteCoordinate_laws
     {D ι : Type*} [SeminormedAddCommGroup D] [NormedSpace ℝ D]
     [MeasurableSpace D] [BorelSpace D]
     (eval : ι → D →L[ℝ] ℝ)
     (hsep : ∀ x y : D, (∀ i, eval i x = eval i y) → x = y)
     {ν κ : Measure D}
+    -- explicit evidence avoids installing local typeclass instances.
     (hνprob : IsProbabilityMeasure ν)
+    -- explicit evidence avoids installing local typeclass instances.
     (hκprob : IsProbabilityMeasure κ)
     (hνtight : IsTightMeasureSet ({ν} : Set (Measure D)))
     (hκtight : IsTightMeasureSet ({κ} : Set (Measure D)))

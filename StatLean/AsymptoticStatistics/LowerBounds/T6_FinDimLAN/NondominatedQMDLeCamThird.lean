@@ -7,7 +7,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
 import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import Mathlib.Probability.Independence.InfinitePi
 
-/-! # Provider-free Le Cam theory for nondominated QMD paths -/
+/-! # Le Cam theory for nondominated QMD paths -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal InnerProductSpace RealInnerProductSpace
@@ -616,8 +616,7 @@ private lemma exp_affine_score_integrable_and_integral
 
 /-- Baseline joint CLT for a score pair, including singular Gram covariance.
 
-Proof idea: finite-dimensional iid CLT and the `L²₀` moment facts.
-The case of two zero scores is a degenerate example. -/
+Proof idea: finite-dimensional iid CLT and the `L²₀` moment facts. -/
 theorem weakConverges_scorePair_under_pi
     (γ : NondominatedQMDPath P) (u : ↥(L2ZeroMean P)) :
     AsymptoticStatistics.WeakConverges
@@ -898,9 +897,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
 /-- Subsequence Le Cam third lemma using the actual RN product likelihood.
 
 Proof idea: bounded-test product comparison, actual-likelihood LAN,
-truncation and internally derived normalization/uniform integrability.
-
-Zero score or zero tilt gives a degenerate example. -/
+truncation, normalization, and uniform integrability. -/
 theorem qmd_lecamThird_along_subseq
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a)
     (Y : ∀ n, (Fin n → Ω) → ℝ) (hY : ∀ n, Measurable (Y n))
@@ -1078,8 +1075,7 @@ theorem qmd_lecamThird_along_subseq
 /-- Local score CLT under a nonnegative one-sided QMD tilt.
 
 Proof idea: score-pair CLT, `qmd_lecamThird_along_subseq`, and the tilted
-possibly-singular Gram-Gaussian calculation.
-The choice `u = 0` is a degenerate example. -/
+possibly-singular Gram-Gaussian calculation. -/
 theorem qmd_local_score_clt
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a)
     (u : ↥(L2ZeroMean P)) :
@@ -1311,8 +1307,7 @@ theorem qmd_local_contiguous
 uniformly bounded measurable tests.
 
 Proof idea: combine contiguity in both directions with the zero-score LAN
-limit and actual product comparison.
-The constant path is a degenerate example. -/
+limit and actual product comparison. -/
 theorem zero_score_local_product_equivalent
     (γ : NondominatedQMDPath P) (hscore : γ.score = 0)
     (f : ∀ n, (Fin n → Ω) → ℝ) (C : ℝ)

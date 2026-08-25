@@ -3,7 +3,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 /-!
 # M-estimator rates with nuisance parameters
 
-This module formalizes van der Vaart Theorem 5.55 (book pp. 78--79).
+Formalization of van der Vaart Theorem 5.55 (book pp. 78--79).
 The discrepancy functions are deliberately arbitrary nonnegative functions;
 neither parameter set is required to carry a metric structure.
 -/
@@ -65,14 +65,14 @@ private theorem outerMeasureStar_eq_measure_all
         · rw [Set.indicator_of_notMem hξ]
           exact zero_le _
 
-/-- deterministic shell geometry used in the nuisance peeling
+/-- Deterministic shell geometry used in the nuisance peeling
 argument. -/
 theorem nuisance_shell_geometry
     {Θ H : Type*} (dΘ : Θ → Θ → NNReal) (dH : H → H → NNReal)
     (θ θ₀ : Θ) (η η₀ : H) (δ : ℝ) (j M : ℕ)
     -- Membership in the `j`th parameter shell.
     (hlo : Real.rpow 2 (j : ℝ) * δ ≤ (dΘ θ θ₀ : ℝ))
-    -- Nuisance discrepancy is relatively small on the shell.
+    -- The nuisance discrepancy is relatively small on the shell.
     (hη : (dH η η₀ : ℝ) ≤ Real.rpow 2 (-(M : ℝ)) * (dΘ θ θ₀ : ℝ)) :
     (dH η η₀ : ℝ) ^ 2 ≤
       Real.rpow 2 (-2 * (M : ℝ)) * (dΘ θ θ₀ : ℝ) ^ 2 := by
@@ -93,17 +93,17 @@ theorem nuisance_shell_geometry
           _ = Real.rpow 2 (-2 * (M : ℝ)) := by congr 1; ring
   · exact (hshell hlo).elim
 
-/-- The shell-tail estimate used in vdV Theorem 5.55. -/
+/-- The shell-tail estimate used for vdV Theorem 5.55. -/
 theorem nuisanceRate_shell_tail
     {Ω Θ H Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)
-    -- Measurability of the criterion functions.
+    -- The criterion functions are measurable.
     (hm_meas : ∀ θ η, Measurable (m θ η))
     (X : ℕ → Ξ → Ω)
     (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)
-    -- Integrability on the same local domain as drift and modulus.
+    -- Integrability on the same local domain as the drift and modulus bounds.
     (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       Integrable (fun ω => m θ η ω - m θ₀ η ω) P)
     (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)
@@ -129,7 +129,7 @@ theorem nuisanceRate_shell_tail
     (hNearMax : ∀ n ξ,
       nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥
         nuisanceEmpiricalCriterion m X n ξ θ₀ (ηhat n ξ) - R n ξ)
-    -- The shell core permits a nonmeasurable error through outer `O_P`.
+    -- Outer `O_P` permits the shell estimate to use a nonmeasurable error term.
     (hR : IsBoundedInOuterProbScalar μ (fun n ξ => R n ξ / (δn n) ^ 2)) :
     ∀ γ : ℝ, 0 < γ → ∃ M : ℝ, ∃ N : ℕ, ∀ n, N ≤ n →
       μ.outerMeasureStar {ξ |
@@ -462,11 +462,11 @@ theorem mEstimator_nuisance_rate_outer
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)
-    -- Measurability of the criterion functions.
+    -- The criterion functions are measurable.
     (hm_meas : ∀ θ η, Measurable (m θ η))
     (X : ℕ → Ξ → Ω)
     (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)
-    -- Integrability on the same local domain as drift and modulus.
+    -- Integrability on the same local domain as the drift and modulus bounds.
     (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       Integrable (fun ω => m θ η ω - m θ₀ η ω) P)
     (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)
@@ -492,7 +492,7 @@ theorem mEstimator_nuisance_rate_outer
     (hNearMax : ∀ n ξ,
       nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥
         nuisanceEmpiricalCriterion m X n ξ θ₀ (ηhat n ξ) - R n ξ)
-    -- Outer-probability core, before the measurable-error wrapper.
+    -- Outer-probability form of the estimate.
     (hR : IsBoundedInOuterProbScalar μ (fun n ξ => R n ξ / (δn n) ^ 2)) :
     IsBoundedInOuterProbScalarWt μ
       (fun n ξ => δn n + (dH (ηhat n ξ) η₀ : ℝ))
@@ -510,29 +510,29 @@ theorem mEstimator_nuisance_rate_outer
         (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
     _ = ENNReal.ofReal γ := limsup_const _
 
-/-- **vdV Theorem 5.55 (rate with a nuisance parameter).** It assumes neither a nuisance
-rate nor the conclusion rate. -/
+/-- **vdV Theorem 5.55 (rate with a nuisance parameter).**
+it assumes neither a nuisance rate nor the conclusion rate. -/
 theorem mEstimator_nuisance_rate
     {Ω Θ H Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)
-    -- LEAN-ONLY: explicit measurability of the criterion functions.
+    -- Measurability of the criterion functions.
     (hm_meas : ∀ θ η, Measurable (m θ η))
     (X : ℕ → Ξ → Ω)
     (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)
-    -- LEAN-ONLY: explicit integrability on the local parameter sets.
+    -- Integrability on the local parameter sets.
     (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       Integrable (fun ω => m θ η ω - m θ₀ η ω) P)
     (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)
     (e : ℕ → Θ → H → ℝ) (φ : ℕ → ℝ → ℝ)
-    -- USER-INPUT: rate exponent, modulus monotonicity, and balancing sequence;
+    -- Rate exponent, modulus monotonicity, and balancing sequence;
     -- vdV Theorem 5.55.
     (β : ℝ) (hβ : β < 2)
     (hφanti : ∀ n, AntitoneOn (fun δ => φ n δ / Real.rpow δ β) (Set.Ioi 0))
     (δn : ℕ → ℝ) (hδn : ∀ n, 0 < δn n)
     (hbalance : ∀ n, φ n (δn n) ≤ Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2)
-    -- USER-INPUT: deterministic drift and empirical-process modulus bounds;
+    -- Deterministic drift and empirical-process modulus bounds;
     -- vdV Theorem 5.55.
     (hdet : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       (∫ ω, (m θ η ω - m θ₀ η ω) ∂P) + e n θ η ≤
@@ -545,15 +545,15 @@ theorem mEstimator_nuisance_rate
                 Real.sqrt ((n + 1 : ℕ) : ℝ) * e n θ.1 η.1|) ≤
         ENNReal.ofReal (φ n δ))
     (θhat : ℕ → Ξ → Θ) (ηhat : ℕ → Ξ → H)
-    -- USER-INPUT: the estimators eventually lie in the local parameter sets;
+    -- The estimators eventually lie in the local parameter sets;
     -- vdV Theorem 5.55.
     (hmem : TendstoInnerProbOne μ (fun n =>
       {ξ | θhat n ξ ∈ Θn n ∧ ηhat n ξ ∈ Hn n}))
     (R : ℕ → Ξ → ℝ)
-    -- LEAN-ONLY: measurability and a nonnegative representation of the remainder.
+    -- Measurability and a nonnegative representation of the remainder.
     (hR_meas : ∀ n, Measurable (R n))
     (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)
-    -- USER-INPUT: approximate maximization and an `O_P(δₙ²)` remainder;
+    -- Approximate maximization and an `O_P(δₙ²)` remainder;
     -- vdV Theorem 5.55.
     (hNearMax : ∀ n ξ,
       nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥

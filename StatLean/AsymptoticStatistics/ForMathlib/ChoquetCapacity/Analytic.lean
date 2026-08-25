@@ -112,7 +112,10 @@ private lemma cyl_ext (N N' : ℕ → ℕ) (n : ℕ) (h : ∀ i, i ≤ n → N i
   simp only [Cyl, Set.mem_setOf_eq]
   exact ⟨fun hg i hi => h i hi ▸ hg i hi, fun hg i hi => (h i hi).symm ▸ hg i hi⟩
 
-/-- Coordinatewise truncation into `Bnd N`, defined by coordinatewise minimum. -/
+/-- Coordinatewise truncation into `Bnd N`.
+
+Edge behavior is literal coordinatewise `min`; there is no exceptional or
+degenerate branch. -/
 private noncomputable def truncate (N : ℕ → ℕ) (g : ℕ → ℕ) : ℕ → ℕ := by
   exact fun i => min (g i) (N i)
 
@@ -193,7 +196,9 @@ private lemma iInter_closure_image_cyl_eq
     exact ⟨g, bnd_subset_cyl N n hg, hfg⟩
 
 /-- Choquet capacitability: on an analytic set, a Choquet capacity is the supremum of
-its values on compact subsets. -/
+its values on compact subsets.
+
+Polish/Borel structure is the theorem's mathematical scope. -/
 theorem MeasureTheory.AnalyticSet.cap_eq_iSup_isCompact
     {α : Type*}
     [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [PolishSpace α]
@@ -302,7 +307,9 @@ theorem MeasureTheory.AnalyticSet.cap_eq_iSup_isCompact
           le_iSup_of_le _ (le_iSup_of_le hK_compact (le_iSup_of_le hK_sub le_rfl))
   · exact iSup_le fun K => iSup_le fun _ => iSup_le fun hKs => hcap.mono hKs
 
-/-- For an analytic set and a finite Borel measure, compact capacity equals measure. -/
+/-- For an analytic set and a finite Borel measure, compact capacity equals measure.
+
+Finite-measure and Polish/Borel assumptions state the mathematical scope. -/
 theorem MeasureTheory.AnalyticSet.compactCap_eq
     {α : Type*}
     [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [PolishSpace α]

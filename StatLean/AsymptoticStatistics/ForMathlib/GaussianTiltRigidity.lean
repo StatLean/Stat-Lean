@@ -12,9 +12,11 @@ namespace AsymptoticStatistics.ForMathlib.GaussianTiltRigidity
 /-- A half-line of exact Gaussian exponential tilts determines the covariance,
 including the degenerate `v=0` case.
 
-The proof differentiates tilted first moments from the right at zero, using
-Gaussian exponential integrability. The case `v = 0` is handled separately;
-positive semidefiniteness then forces the covariance to vanish. -/
+Proof idea: establish right differentiability at zero of tilted first
+moments, justify it by Gaussian exponential integrability, and split `v=0`.
+
+Joint witness: any centered PSD bivariate Gaussian; PSD forces `c=0` when
+`v=0`. -/
 theorem covariance_eq_of_nonneg_gaussian_tilts
     (π : Measure (ℝ × ℝ)) [IsProbabilityMeasure π]
     (v s : ℝ≥0) (c : ℝ)

@@ -6,7 +6,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess
 /-!
 # Finite-dimensional convergence for changing classes
 
-This file is the marginal-convergence development for van der
+This file proves marginal convergence for van der
 Vaart Theorem 19.28.  It specializes the row-iid triangular Lindeberg theorem
 to finitely many coordinates of a changing class, derives positivity of every
 finite cut of the limiting covariance kernel, and records the exact empirical-
@@ -36,7 +36,7 @@ noncomputable def changingCovariance
 /-- The raw Euclidean vector obtained by reading finitely many coordinates of
 a changing class.
 
-Lean-internal finite-coordinate encoding for vdV Theorem 19.28.  Edge
+This is the finite-coordinate encoding used for vdV Theorem 19.28. Edge
 behavior: when `k = 0`, this is the unique vector in the zero-dimensional
 Euclidean space. -/
 noncomputable def coordinateVector
@@ -49,8 +49,6 @@ existing coordinatewise-centered vector. -/
 lemma coordinateVector_sub_integral_eq_centeredCoordinateVector
     (P : Measure Ω) (f : ℕ → T → Ω → ℝ) {k : ℕ} (t : Fin k → T)
     (n : ℕ) (x : Ω)
-    -- derived row integrability justifies commuting the finite-coordinate
-    -- readout with the Bochner integral; it is not a headline hypothesis.
     (hf_int : Integrable (coordinateVector f t n) P) :
     coordinateVector f t n x - ∫ y, coordinateVector f t n y ∂P =
       centeredCoordinateVector P f t n x := by
@@ -65,8 +63,6 @@ corresponding finite cut of `changingCovariance`. -/
 lemma centeredCovMatrix_coordinateVector
     (P : Measure Ω) [IsProbabilityMeasure P]
     (f : ℕ → T → Ω → ℝ) {k : ℕ} (t : Fin k → T) (n : ℕ)
-    -- this rowwise fact is derived from the changing envelope and
-    -- Lindeberg condition before the adapter is used.
     (hf_memLp : ∀ i, MemLp (fun x => f n (t i) x) 2 P) :
     centeredCovMatrix P (coordinateVector f t) n =
       fun i j => changingCovariance P f n (t i) (t j) := by
@@ -118,16 +114,11 @@ covariance matrices and is deliberately not a hypothesis of
 theorem changingClass_kernelCovariance_posSemidef
     {P : Measure Ω} [IsProbabilityMeasure P]
     {f : ℕ → T → Ω → ℝ} {Φ : ℕ → Ω → ℝ}
-    -- vdV Theorem 19.28 assumes an envelope of every row class.
     (hΦ : ChangingEnvelope f Φ)
-    -- the changing envelope satisfies the displayed Lindeberg condition.
     (hLin : ChangingLindeberg P Φ)
-    -- vdV Theorem 19.28 assumes measurable row functions.
     (hf_meas : ∀ n t, Measurable (f n t))
-    -- measurable-envelope admissibility used to derive rowwise `L²`.
     (hΦmeas : ∀ n, Measurable (Φ n))
     {C : T → T → ℝ}
-    -- pointwise covariance convergence in vdV Theorem 19.28.
     (hC : ∀ s t, Tendsto (fun n => changingCovariance P f n s t)
       atTop (𝓝 (C s t))) :
     ∀ k (t : Fin k → T),
@@ -169,26 +160,17 @@ theorem changingClass_fdd
     {Ξ : Type*} [MeasurableSpace Ξ]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- BOOK-ENCODING: measurable coordinates in the standard iid sample representation.
     (hX_meas : ∀ i, Measurable (X i))
-    -- BOOK-ENCODING: independence in the standard iid sample representation.
     (hX_iindep : iIndepFun X μ)
-    -- BOOK-ENCODING: identical distribution in the standard iid sample representation.
     (hX_idem : ∀ i, IdentDistrib (X i) (X 0) μ μ)
-    -- BOOK-ENCODING: each sample coordinate has population law `P`.
     (hX_law : μ.map (X 0) = P)
     (f : ℕ → T → Ω → ℝ)
     (Φ : ℕ → Ω → ℝ)
-    -- vdV Theorem 19.28 assumes an envelope of every row class.
     (hΦ : ChangingEnvelope f Φ)
-    -- the displayed changing-envelope Lindeberg condition.
     (hLin : ChangingLindeberg P Φ)
-    -- vdV Theorem 19.28 assumes measurable row functions.
     (hf_meas : ∀ n t, Measurable (f n t))
-    -- measurable-envelope admissibility for integration and `L²` derivations.
     (hΦmeas : ∀ n, Measurable (Φ n))
     (C : T → T → ℝ)
-    -- pointwise covariance convergence in vdV Theorem 19.28.
     (hC : ∀ s t, Tendsto (fun n => changingCovariance P f n s t)
       atTop (𝓝 (C s t)))
     {k : ℕ} (t : Fin k → T) :

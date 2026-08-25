@@ -10,7 +10,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.FiniteCarr
 # Empirical distribution process
 
 The empirical CDF and the structural statements of van der Vaart Theorems 19.1
-and 19.3 (book pp.265–266). The Donsker headline is genuine outer weak
+and 19.3 (book pp.265–266). The Donsker conclusion is genuine outer weak
 convergence in `LinfF halfLineIndicatorClass` to a tight Brownian-bridge law.
 
 The threshold parametrization is uniformly norm-isometric to bounded real
@@ -87,7 +87,6 @@ theorem continuous_halfLine_evaluation (t : ℝ) :
 For every real probability law, the closed half-line indicator class is
 `P`-Glivenko–Cantelli. No continuity or nonatomicity assumption is present. -/
 theorem halfLine_isPGlivenkoCantelli
-    -- USER-INPUT: an arbitrary probability law on `ℝ`; vdV Theorem 19.1.
     (P : Measure ℝ) [IsProbabilityMeasure P] :
     IsPGlivenkoCantelli halfLineIndicatorClass P := by
   apply isPGlivenkoCantelli_of_finite_bracketing_L1 halfLineIndicatorClass P
@@ -102,12 +101,10 @@ carrier `ℓ∞(halfLineIndicatorClass)`, to a tight `P`-Brownian bridge.
 This invokes the carrier-agnostic finite-bracketing-entropy theorem. It does
 not assert that the Gaussian carrier is finite-dimensional. -/
 theorem halfLine_isPDonskerWithBridge
-    -- USER-INPUT: an arbitrary probability law on `ℝ`; vdV Theorem 19.3.
     (P : Measure ℝ) [IsProbabilityMeasure P] :
     IsPDonskerWithBridge halfLineIndicatorClass P := by
   obtain ⟨_, _, _, hbridge⟩ := donskerWithBridge_of_finite_bracketing_entropy
     (F := halfLineIndicatorClass) (P := P)
-    ⟨halfLineIndicator 0, 0, rfl⟩
     (by rintro f ⟨t, rfl⟩; exact measurable_halfLineIndicator t)
     (halfLine_bracketingEntropyIntegral_lt_top P)
   exact hbridge

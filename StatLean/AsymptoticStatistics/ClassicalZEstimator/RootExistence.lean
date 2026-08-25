@@ -7,48 +7,27 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 /-!
 # Existence and consistency of classical Z-estimator roots (vdV Theorem 5.42 (i)+(ii))
 
-The smoothness conditions of vdV Theorem 5.41 **ensure the existence** of solutions of the
-estimating equation `ℙₙψ_θ = 0` and allow one to **construct a consistent sequence of
-roots**. The selected sequence need not be measurable:
+Under the classical conditions of vdV §*5.6 (book pp. 68–69), the
+smoothness conditions of Theorem 5.41 **ensure the existence** of solutions of the
+estimating equation `ℙₙψ_θ = 0`, and — provided some consistent estimator sequence exists —
+allow one to **select a consistent sequence of roots**:
 
-* the inner probability that `ℙₙψ_θ = 0` has at least one root tends to `1`;
+* the probability that `ℙₙψ_θ = 0` has at least one root tends to `1`;
 * there exists a sequence of roots `θ̂ₙ` with `θ̂ₙ →ₚ θ₀`.
 
-## Quantitative root-existence argument
+## Proof route
 
-vdV p.69 closes the existence half with **Brouwer's fixed point theorem** applied to
-`θ ↦ Ψ(θ) − Ψₙ(θ)` on `ball(0, δ)`, after an inverse-function-theorem homeomorphism
-`Ψ : G_δ ≃ ball(0, δ)`. This literal argument has two obstructions:
+The proof uses a quantitative near-linearity event on a closed ball. The empirical map
+`Ψₙ` differs from the affine map with linear part `ℙₙψ̇_{θ₀}` by at most
+`(ℙₙψ̈) · r · ‖θ − θ'‖`. Together with entrywise convergence of the empirical Jacobian,
+this gives `ApproximatesLinearOn Ψₙ V (closedBall θ₀ r) c`. Quantitative surjectivity then
+places a zero of `Ψₙ` in the ball whenever `c < ‖V⁻¹‖⁻¹` and
+`‖Ψₙθ₀‖ ≤ (‖V⁻¹‖⁻¹ − c)·r`.
 
-* the book's step is **false as literally stated** — Brouwer needs a *closed* ball while the
-  argument is run on the open `ball(0, δ)` with a non-strict `≤` (explicit `k = 1`
-  counterexample);
-* even after repair, a hypothesis that constrains `Ψₙ` only through a **sup-norm** distance to
-  `Ψ` is *equivalent* to Brouwer. Thus the formal argument instead uses quantitative
-  near-linearity of the empirical map.
-
-The route implemented here therefore keeps vdV's conclusion verbatim but replaces the
-sup-norm good event by a **quantitative near-linearity** good event, which the classical
-smoothness conditions supply for free:
-
-1. `pointwise_meanValue_bound` / `empirical_meanValue_bound` show that the empirical map
-   `Ψₙ` differs from the affine map with linear part `ℙₙψ̇_{θ₀}` by at most
-   `(ℙₙψ̈) · r · ‖θ − θ'‖` on `closedBall θ₀ r`. This is the mean-value bound with the
-   *frozen* Jacobian; this is **not** a consequence of the Taylor bound at `θ₀`, which only
-   yields an `r²` estimate after subtracting two instances.
-2. `approximatesLinearOn_empEstimatingMap` combines that bound with entrywise closeness of
-   `ℙₙψ̇_{θ₀}` to `V = Pψ̇_{θ₀}` and packages `Ψₙ` as
-   `ApproximatesLinearOn Ψₙ V (closedBall θ₀ r) c`.
-3. `root_in_ball_of_approximatesLinearOn` uses
-   `ApproximatesLinearOn.surjOn_closedBall_of_nonlinearRightInverse` to put `0` in the
-   image of `closedBall θ₀ r` as soon as `c < ‖V⁻¹‖⁻¹` and `‖Ψₙθ₀‖ ≤ (‖V⁻¹‖⁻¹ − c)·r`.
-4. The three quantities controlled by `empirical_goodEvent_prob_tendsto_one`
-   (`ℙₙψ̈`, `ℙₙψ̇_{θ₀}`, `ℙₙψ_{θ₀}`) are averages of finitely many integrable
-   functions, so a finite union bound over `iid_lln_in_prob_seq` makes the good event have
-   probability `→ 1`.
-5. Running the preceding estimates at radii `rₘ ↓ 0` and applying
-   `diagonal_delta_extraction` gives the consistent root sequence.
-
+The empirical quantities `ℙₙψ̈`, `ℙₙψ̇_{θ₀}`, and `ℙₙψ_{θ₀}` are averages of finitely many
+integrable functions. A finite union bound and the weak law give probability tending to one
+for the near-linearity event. Diagonalizing over radii tending to zero produces a consistent
+sequence of roots.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -93,8 +72,8 @@ theorem abs_coord_le_norm {k : ℕ} (w : EuclideanSpace ℝ (Fin k)) (i : Fin k)
 
 /-! ### Empirical mean-value bound with the frozen Jacobian `ψ̇_{θ₀}`
 
-The Taylor bound at `θ₀` alone is **not** enough for `ApproximatesLinearOn`:
-subtracting two such estimates gives an `r²` bound, not one proportional to `‖θ − θ'‖`. -/
+The Taylor estimate at `θ₀` alone gives an `r²` bound after subtracting two instances;
+the following mean-value estimate is instead proportional to `‖θ − θ'‖`. -/
 
 /-- **Pointwise mean-value bound against the frozen Jacobian.** For `θ, θ'` in the ball
 `‖· − θ₀‖ ≤ ρ`, the increment of `ψ_{·,j}(x)` differs from its linearisation *at `θ₀`* by at
@@ -163,7 +142,7 @@ theorem pointwise_meanValue_bound {k : ℕ} {Ω : Type*}
     `|ℙₙψ_{θ,j} − ℙₙψ_{θ',j} − ∑ᵢ (ℙₙψ̇_{θ₀})ⱼᵢ (θ − θ')ᵢ| ≤ (ℙₙψ̈) ρ ‖θ − θ'‖`,
 
 i.e. `Ψₙ` is within `(ℙₙψ̈)·ρ·‖θ − θ'‖` of the affine map with linear part `ℙₙψ̇_{θ₀}`.
-The Taylor bound `empirical_taylor_random` is `θ' = θ₀` only and cannot produce a bound
+The Taylor bound `empirical_taylor_random` is specialized to `θ' = θ₀` and cannot produce a bound
 proportional to `‖θ − θ'‖`. -/
 theorem empirical_meanValue_bound {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -222,7 +201,7 @@ theorem empirical_meanValue_bound {k : ℕ} {Ω : Type*}
 /-! ### Packaging `Ψₙ` as an `ApproximatesLinearOn` of the population Jacobian. -/
 
 /-- **`Ψₙ` approximates the linear map of `A` on `closedBall θ₀ r`.** Combining the empirical
-mean-value bound (G′, giving a coordinatewise `a·‖θ − θ'‖` residual against the *empirical*
+mean-value bound, which gives a coordinatewise `a·‖θ − θ'‖` residual against the *empirical*
 Jacobian `ℙₙψ̇_{θ₀}`) with entrywise closeness `|(ℙₙψ̇_{θ₀})ⱼᵢ − Aⱼᵢ| ≤ b` of that Jacobian to
 a fixed matrix `A` (in the application `A = V = Pψ̇_{θ₀}`), the bundled map `Ψₙ` satisfies
 
@@ -311,10 +290,8 @@ theorem approximatesLinearOn_empEstimatingMap {k : ℕ} {Ω : Type*}
 
     `∃ θ ∈ closedBall θ₀ r, ∀ j, ℙₙψ_{θ,j} = 0`.
 
-vdV p.69 gets the root from **Brouwer's fixed point theorem**. Mathlib has no Brouwer, and a
-hypothesis constraining `Ψₙ` only through a sup-norm distance to `Ψ` is Brouwer-equivalent,
-so the argument instead uses the quantitative near-linearity supplied by the classical
-smoothness conditions via
+The good event uses the quantitative near-linearity supplied by the classical smoothness
+conditions via
 `approximatesLinearOn_empEstimatingMap`. The root is then produced by Mathlib's
 `ApproximatesLinearOn.surjOn_closedBall_of_nonlinearRightInverse` (the contraction half of the
 inverse function theorem), applied with the nonlinear right inverse `V'.toNonlinearRightInverse`
@@ -385,18 +362,18 @@ theorem finite_empiricalAvg_bad_prob_tendsto_zero {Ω : Type*} [MeasurableSpace 
   rw [hset]
   exact measureReal_iUnion_fintype_le _
 
-/-- **The empirical good event has probability `→ 1`.** Specialising the finite-family bound
-to the three families of empirical averages needed below — `ℙₙψ̈`, the Jacobian
+/-- **The empirical good event has probability `→ 1`.** Applying the preceding finite-family bound to the three
+families of empirical averages the `ApproximatesLinearOn` route needs — `ℙₙψ̈`, the Jacobian
 entries `ℙₙψ̇_{θ₀,ⱼᵢ}`, and the estimating functions `ℙₙψ_{θ₀,j}` at the truth — the good
 event
 
     `Aₙ,ε = {|ℙₙψ̈ − Pψ̈| < ε} ∩ {∀ j i, |(ℙₙψ̇_{θ₀})ⱼᵢ − Vⱼᵢ| < ε}
               ∩ {∀ j, |ℙₙψ_{θ₀,j}| < ε}`
 
-has `μ.real Aₙ,ε → 1` for every fixed `ε > 0`. All three are ordinary scalar WLLN statements,
-strictly weaker than a uniform-over-a-set bound. The complementary bad-event form is returned
+has `μ.real Aₙ,ε → 1` for every fixed `ε > 0`. All three are ordinary scalar WLLN statements.
+The complementary bad-event form is returned
 alongside because the consistency half needs `μ.real Aᶜ → 0`, which does **not** follow from
-`μ.real A → 1` without measurability because `μ.real` is an outer measure. -/
+`μ.real A → 1` without measurability (`μ.real` is an outer measure, D-2). -/
 theorem empirical_goodEvent_prob_tendsto_one {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -482,15 +459,15 @@ Under the conditions of Theorem 5.41 (classical smoothness: `θ ↦ ψ_θ(x)` tw
 differentiable, `Pψ_{θ₀} = 0`, `P‖ψ_{θ₀}‖² < ∞`, `V = Pψ̇_{θ₀}` nonsingular, second-order
 partials dominated by an integrable `ψ̈`):
 
-* the inner probability that the equation `ℙₙψ_θ = 0` has at least one root in `Θ` tends to `1`;
+* the probability that the equation `ℙₙψ_θ = 0` has at least one root in `Θ` tends to `1`;
 * there exists a sequence of roots `θ̂ₙ` (measurable-selection-free, part of the conclusion)
   with `θ̂ₙ →ₚ θ₀`.
 
-The argument combines `empirical_meanValue_bound`, `approximatesLinearOn_empEstimatingMap`,
+The proof combines `empirical_meanValue_bound`, `approximatesLinearOn_empEstimatingMap`,
 `root_in_ball_of_approximatesLinearOn`, `empirical_goodEvent_prob_tendsto_one`, and
-`diagonal_delta_extraction`. The estimator `θ̂ₙ` is **existentially** produced, with no
-`Measurable θ̂` claim. Since `μ.real` is total on arbitrary sets, this matches vdV's
-"clairvoyant statistician" caveat (book p.69). -/
+`diagonal_delta_extraction`. The estimator `θ̂ₙ` is **existentially** produced, without a
+`Measurable θ̂` claim: `μ.real` is total on arbitrary sets, matching
+vdV's "clairvoyant statistician" caveat, book p.69). -/
 theorem classical_zEstimator_root_exists_consistent
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -568,7 +545,7 @@ theorem classical_zEstimator_root_exists_consistent
     (‖(V'.symm : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k))‖₊ : ℝ) with hNv
   have hNv0 : 0 < Nv := by
     by_contra hcon
-    push Not at hcon
+    push_neg at hcon
     have hz : Nv = 0 := le_antisymm hcon (by rw [hNv]; positivity)
     set v : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ) with hv
     have hvn : ‖v‖ = 1 := by rw [hv, PiLp.norm_single]; simp
@@ -754,7 +731,7 @@ theorem classical_zEstimator_root_exists_consistent
     have h : Tendsto (fun n => (1 : ℝ) - (1 - μ.real (Bad n (min (δ' n) r₀)))) atTop
         (𝓝 ((1 : ℝ) - 1)) := tendsto_const_nhds.sub hδ'lim
     simpa [hrseq] using h
-  -- The root selection need not be measurable.
+  -- The (non-measurable, D-2) root selection.
   set θhat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k) := fun n Xs =>
     if h : ∃ θ ∈ Metric.closedBall θ₀ (rseq n), ∀ j : Fin k, empiricalAvg (ψ θ j) n Xs = 0
       then h.choose else θ₀ with hθhat
@@ -790,9 +767,9 @@ theorem classical_zEstimator_root_exists_consistent
 
 /-- **Outer-measure form of classical Z-estimator root existence and consistency.**
 
-Backward-compatible corollary of `classical_zEstimator_root_exists_consistent`: each
-inner-probability-one certificate implies the former outer-measure limit. No measurability of
-the selected roots or of the target root events is assumed. -/
+The inner-probability statement `classical_zEstimator_root_exists_consistent` implies this
+outer-measure limit. No measurability of the selected roots or of the target root events is
+assumed. -/
 theorem classical_zEstimator_root_exists_consistent_outer
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)

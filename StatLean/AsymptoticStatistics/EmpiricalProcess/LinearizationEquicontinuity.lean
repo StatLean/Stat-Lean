@@ -1,28 +1,28 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformRandomFunctions
 import StatLean.AsymptoticStatistics.EmpiricalProcess.ParametricClassDonsker
 import StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNormality
+import StatLean.AsymptoticStatistics.EmpiricalProcess.IIDChebyshev
 import StatLean.AsymptoticStatistics.ForMathlib.InProbability
 import StatLean.AsymptoticStatistics.EmpiricalProcess.LinearizationModulus
 
 /-!
 # M-estimator linearization / equicontinuity (vdV Lemma 19.31)
 
-vdV Lemma 19.31 (book p.284): for a criterion `θ ↦ m_θ` that is differentiable
-at `θ₀` for `P`-almost every observation, with derivative `ṁ_{θ₀}` (here `mdot`),
-and whose local increments are dominated by a square-integrable Lipschitz envelope,
-the empirical-process increment along the local reparametrisation
+vdV Lemma 19.31 (book p.286): for a criterion `θ ↦ m_θ` with `m_θ` differentiable
+in quadratic mean at `θ₀` with derivative `ṁ_{θ₀}` (here `mdot`) and a Lipschitz
+envelope, the empirical-process increment along the local reparametrisation
 `θ = θ₀ + h/√n` linearises,
 
     𝔾ₙ[√n(m_{θ₀ + h/√n} − m_{θ₀}) − hᵀṁ_{θ₀}] →ₚ 0
 
-uniformly over bounded `h`. This is the empirical-process half of
+uniformly over bounded `h`. This is the empirical-process component of
 `mEstimator_quadratic_expansion`.
 
-The closed Lean proof follows the changing-class route of vdV Theorem 19.28.
-It controls the localized increments through the `√n`-scaled shell and its
-bracketing modulus, proves fixed-direction convergence from almost-everywhere
-differentiability and Lipschitz domination, and combines a finite net with the
-shell pair-modulus bound to obtain uniform convergence over bounded `h`.
+The proof uses `uniform_donsker_random_function_consistency`. Feeding
+`fhat n ξ h := √n·(m_{θ₀+h/√n} − m_{θ₀})` and `ψθ₀ h := ⟪h, ṁ_{θ₀}⟫` (both in a
+Lipschitz class `𝓕`), the theorem gives `𝔾ₙ(fhat) − 𝔾ₙ(ψθ₀) →ₚ 0` (uniform,
+random `fhat`) from `IsAsymptoticallyEquicontinuous 𝓕 P` and the
+`L²(P)`-distance convergence `distL2(fhat, ψθ₀) →ₚ 0`.
 
 -/
 
@@ -43,24 +43,24 @@ private theorem le_rho_mul_sqrt_of_ceil_le {A ρ : ℝ} (hρ : 0 < ρ) (hA : 0 �
   rw [div_le_iff₀ hρ, mul_comm] at hsqrt
   exact hsqrt
 
-/-! ### Linearization-residual helpers
+/-! ### Linearization residual
 
 The integrand `fhat n h − ψθ₀ h` is, at a sample point `ω` and direction `v = h`,
-the residual `√n·(m(θ₀ + v/√n) − m θ₀) − ⟪v, ṁ_{θ₀}⟫`. These `private` helpers
-package its Lipschitz domination, continuity in `v`, and (from differentiability
+the residual `√n·(m(θ₀ + v/√n) − m θ₀) − ⟪v, ṁ_{θ₀}⟫`. The following lemmas
+establish its Lipschitz domination, continuity in `v`, and (from differentiability
 in the Fréchet sense) uniform smallness over a bounded ball, used to drive the
 dominated-convergence argument in `linearization_distL2_tendstoZero`. -/
 
-/-- **The linearization residual**
+/-- The linearization residual
 `√n·(m(θ₀ + v/√n) − m θ₀) − ⟪v, ṁ_{θ₀}⟫`. For `v = h.1` this is
-`fhat n h ω − ψθ₀ h ω`, the integrand whose `L²(P)` size is controlled below. -/
+`fhat n h ω − ψθ₀ h ω`. -/
 private noncomputable def linResid {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (n : ℕ) (ω : Ω) (v : EuclideanSpace ℝ (Fin d)) : ℝ :=
   Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • v) ω - m θ₀ ω)
     - ⟪v, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫
 
-/-- **Continuity of the residual.** `θ ↦ m θ ω` is continuous (Lipschitz with
+/-- The map `θ ↦ m θ ω` is continuous (Lipschitz with
 constant `|menv ω|`), hence the residual `v ↦ linResid … n ω v` is continuous. -/
 private theorem continuous_linResid {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
@@ -101,9 +101,8 @@ private theorem continuous_linResid {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
   exact (continuousOn_const.mul (hmv.sub continuousOn_const)).sub
     ((continuous_id.inner continuous_const).continuousOn)
 
-/-- **Lipschitz and Cauchy–Schwarz domination of the residual.**
-
-The bound is uniform in the scale `n`:
+/-- Lipschitz and Cauchy–Schwarz domination of
+the residual, uniform in the scale `n`:
 `|linResid … n ω v| ≤ (‖menv ω‖ + ‖ṁ_{θ₀}(ω)‖)·‖v‖`. -/
 private theorem linResid_abs_le {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
@@ -149,7 +148,7 @@ private theorem linResid_abs_le {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     _ ≤ ‖menv ω‖ * ‖v‖ + ‖pv‖ * ‖v‖ := add_le_add hterm1 hterm2
     _ = (‖menv ω‖ + ‖pv‖) * ‖v‖ := by ring
 
-/-- **Uniform smallness from Fréchet differentiability.** From differentiability of
+/-- From Fréchet differentiability of
 `θ ↦ m θ ω` at `θ₀` with derivative `⟪ṁ_{θ₀}(ω), ·⟫`, the residual is uniformly
 small over any bounded ball: for every `ε' > 0` there is `N` with
 `|linResid … n ω v| ≤ ε'·‖v‖` for all `n ≥ N` and `‖v‖ ≤ M`. -/
@@ -203,19 +202,19 @@ private theorem linResid_abs_le_of_deriv {d : ℕ} {Ω : Type*} [MeasurableSpace
             = (Real.sqrt n * (Real.sqrt n)⁻¹) * (ε' * ‖v‖) from by ring,
           mul_inv_cancel₀ hs.ne', one_mul]
 
-/-! ### The `L²(P)` marginal -/
+/-! ### The `L²(P)`-distance limit -/
 
-/-- **Linearization `L²(P)` distance vanishes** (vdV Lemma 19.31).
+/-- **Linearization `L²(P)`-distance vanishes** (vdV Lemma 19.31).
 
 For every scale, the `L²(P)`-distance between the localized criterion increment
 `fhat n h := √n·(m_{θ₀ + h/√n} − m_{θ₀})` and its linearization
 `ψθ₀ h := ⟪h, ṁ_{θ₀}⟫ = ⟪h, psiVec (fun _ => mdot) θ₀⟫` tends to `0` uniformly
 over the `M`-ball `{‖h‖ ≤ M}`. This is the `h_tail` input of
-the fixed-direction marginal convergence used by the finite-net argument. The
-book hypotheses are almost-everywhere differentiability at `θ₀` and local
-Lipschitz domination by a square-integrable envelope; dominated convergence
-then gives the required `L²` limit. The distance is deterministic in the sample
-`ξ`. -/
+`uniform_donsker_random_function_consistency`. The proof uses differentiability
+in quadratic mean at `θ₀`, the Lipschitz envelope, and dominated
+convergence ("the variance tends to `0`"). The distance is deterministic in the
+sample `ξ`, so the outer-probability-sup statement is exactly the uniform
+`L²`-limit. -/
 theorem linearization_distL2_tendstoZero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
@@ -310,7 +309,7 @@ theorem linearization_distL2_tendstoZero
       filter_upwards with ω
       rw [Real.norm_eq_abs, abs_of_nonneg (hG_nonneg n ω)]
       exact hG_le_D n ω
-    -- For `n ≥ N₀`, the supremum over a dense sequence dominates every ball direction.
+    -- Core C: for `n ≥ N₀` the sup over a dense sequence dominates every direction in the ball.
     have hCoreC : ∀ n, N₀ ≤ n → ∀ ω (h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}),
         |linResid m mdot θ₀ n ω h.1| ≤ Gsqrt n ω := by
       intro n hn ω h
@@ -332,7 +331,7 @@ theorem linearization_distL2_tendstoZero
       obtain ⟨j, hj⟩ := hy_mem k
       simp only [Function.comp_apply, ← hj]
       exact le_ciSup (hG_bdd n hn ω) j
-    -- The ball-supremum residual converges pointwise almost everywhere to `0`.
+    -- Core B: pointwise-a.e. convergence of the ball-supremum residual to `0`.
     have hCoreB : ∀ᵐ ω ∂P, Tendsto (fun n => Gsqrt n ω) atTop (𝓝 0) := by
       filter_upwards [hderiv] with ω hω
       rw [Metric.tendsto_atTop]
@@ -386,7 +385,7 @@ theorem linearization_distL2_tendstoZero
       refine eLpNorm_mono_real (fun ω => ?_)
       rw [Pi.sub_apply, Real.norm_eq_abs]
       exact hCoreC n hn ω h
-    -- Assembly: eventually the exceedance set is empty.
+    -- Eventually the exceedance set is empty.
     have hbε : ∀ᶠ n in atTop, (eLpNorm (Gsqrt n) 2 P).toReal < ε :=
       hb_tendsto.eventually_lt_const hε
     refine tendsto_const_nhds.congr' ?_
@@ -404,13 +403,15 @@ theorem linearization_distL2_tendstoZero
 /-! ### Equicontinuity of the Lipschitz class -/
 
 /-- **The Lipschitz-parametrised class is asymptotically equicontinuous**
-(vdV Lemma 19.31, tightness half).
+(vdV Lemma 19.31, tightness part).
 
 `IsAsymptoticallyEquicontinuous (paramClass ψ Θ) P` for a bounded-index Lipschitz
 class, obtained as the `.asymptoticallyEquicontinuous` accessor of
-`parametricClass_isPDonsker` (`ParametricClassDonsker.lean`, vdV Example 19.7),
-the Donsker⇒equicontinuity bridge. This supplies the `h_equicont` input of
-`uniform_donsker_random_function_consistency`. -/
+`parametricClass_isPDonsker` (`ParametricClassDonsker.lean`, vdV Example 19.7) —
+the Donsker⇒equicontinuity bridge. This supplies the equicontinuity input
+to `uniform_donsker_random_function_consistency`. The M-estimator criterion class
+`{m_θ : θ ∈ Θ}` embeds into this `Fin k`-indexed `paramClass` shape by the constant
+reindexing `ψ θ (_ : Fin k) := m θ` (all coordinates equal). -/
 theorem localizedLipschitz_asymptoticallyEquicontinuous
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -419,11 +420,80 @@ theorem localizedLipschitz_asymptoticallyEquicontinuous
     (hLip : ∀ θ₁ ∈ Θ, ∀ θ₂ ∈ Θ, ∀ (j : Fin k) (x : Ω),
       |ψ θ₁ j x - ψ θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖)
     (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ) (hψ0_L2 : ∀ j, MemLp (ψ θ₀ j) 2 P)
-    (hne : (paramClass ψ Θ).Nonempty)
     (hmeas : ∀ g ∈ paramClass ψ Θ, Measurable g) :
     IsAsymptoticallyEquicontinuous (paramClass ψ Θ) P :=
-  (parametricClass_isPDonsker P ψ Θ hΘ m hm hm_meas hLip θ₀ hθ₀ hψ0_L2 hne
+  (parametricClass_isPDonsker P ψ Θ hΘ m hm hm_meas hLip θ₀ hθ₀ hψ0_L2
     hmeas).asymptoticallyEquicontinuous
+
+/-- **Outer `O_P` ball-collapse.** If `D` tends to zero uniformly in outer
+probability on every closed norm ball and the norms of the random indices are
+bounded in outer probability, then `D` evaluated at those indices tends to zero
+in outer probability. No measurability of the indices or probability assumption
+on the ambient measure is needed. -/
+theorem tendstoZeroInOuterProbScalar_of_ball_outerProbSup
+    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
+    {G : Type*} [Norm G]
+    (D : ℕ → Ξ → G → ℝ) (hₙ : ℕ → Ξ → G)
+    (hsup : ∀ M : ℝ, 0 ≤ M →
+      TendstoZeroInOuterProbSup μ (fun n ξ (h : {h : G // ‖h‖ ≤ M}) => D n ξ h.1))
+    (hbdd : IsBoundedInOuterProbScalar μ (fun n ξ => ‖hₙ n ξ‖)) :
+    TendstoZeroInOuterProbScalar μ (fun n ξ => D n ξ (hₙ n ξ)) := by
+  intro ε hε
+  set u : ℕ → ℝ≥0∞ := fun n =>
+    μ.outerMeasureStar {ξ | ε < |D n ξ (hₙ n ξ)|} with hu
+  change Tendsto u atTop (𝓝 0)
+  suffices hlimsup : ∀ η : ℝ, 0 < η → limsup u atTop ≤ ENNReal.ofReal η by
+    have hsup0 : limsup u atTop ≤ 0 := by
+      refine ENNReal.le_of_forall_pos_le_add fun η hηpos _ => ?_
+      rw [zero_add]
+      have := hlimsup (η : ℝ) (by exact_mod_cast hηpos)
+      rwa [ENNReal.ofReal_coe_nnreal] at this
+    have hsup0' : limsup u atTop = 0 := le_antisymm hsup0 bot_le
+    refine tendsto_of_le_liminf_of_limsup_le bot_le hsup0'.le ?_ ?_
+    · exact isBoundedUnder_of ⟨⊤, fun _ => le_top⟩
+    · exact isBoundedUnder_of ⟨0, fun _ => bot_le⟩
+  intro η hη
+  obtain ⟨M₀, hM₀⟩ := hbdd η hη
+  set M : ℝ := max M₀ 0 with hM
+  have hM_nonneg : 0 ≤ M := le_max_right _ _
+  have hM₀M : M₀ ≤ M := le_max_left _ _
+  set A : ℕ → Set Ξ := fun n =>
+    {ξ | ∃ h : {h : G // ‖h‖ ≤ M}, ε < |D n ξ h.1|} with hA
+  set B : ℕ → Set Ξ := fun n => {ξ | M < ‖hₙ n ξ‖} with hB
+  have hB_limsup :
+      limsup (fun n => μ.outerMeasureStar (B n)) atTop ≤ ENNReal.ofReal η := by
+    refine le_trans (limsup_le_limsup (Eventually.of_forall fun n =>
+      outerMeasureStar_mono μ ?_) isCobounded_le_of_bot
+      (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)) hM₀
+    intro ξ hξ
+    simp only [hB, Set.mem_setOf_eq] at hξ ⊢
+    exact (lt_of_le_of_lt hM₀M hξ).trans_le (le_abs_self _)
+  have hsplit : ∀ n, {ξ | ε < |D n ξ (hₙ n ξ)|} ⊆ A n ∪ B n := by
+    intro n ξ hξ
+    simp only [Set.mem_setOf_eq] at hξ
+    simp only [Set.mem_union, hA, hB, Set.mem_setOf_eq]
+    by_cases hle : ‖hₙ n ξ‖ ≤ M
+    · exact Or.inl ⟨⟨hₙ n ξ, hle⟩, hξ⟩
+    · exact Or.inr (not_le.mp hle)
+  have hbound : ∀ n,
+      u n ≤ μ.outerMeasureStar (B n) + μ.outerMeasureStar (A n) := by
+    intro n
+    simp only [hu]
+    calc μ.outerMeasureStar {ξ | ε < |D n ξ (hₙ n ξ)|}
+        ≤ μ.outerMeasureStar (A n ∪ B n) := outerMeasureStar_mono μ (hsplit n)
+      _ ≤ μ.outerMeasureStar (A n) + μ.outerMeasureStar (B n) :=
+        outerMeasureStar_union_le μ _ _
+      _ = μ.outerMeasureStar (B n) + μ.outerMeasureStar (A n) := add_comm _ _
+  have hAtendsto : Tendsto (fun n => μ.outerMeasureStar (A n)) atTop (𝓝 0) := by
+    simpa only [hA] using hsup M hM_nonneg ε hε
+  calc limsup u atTop
+      ≤ limsup (fun n =>
+          μ.outerMeasureStar (B n) + μ.outerMeasureStar (A n)) atTop :=
+        limsup_le_limsup (Eventually.of_forall hbound) isCobounded_le_of_bot
+          (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
+    _ ≤ ENNReal.ofReal η :=
+      limsup_add_tendsto_zero_le (fun n => μ.outerMeasureStar (B n))
+        (fun n => μ.outerMeasureStar (A n)) (ENNReal.ofReal η) hB_limsup hAtendsto
 
 /-- **O_P ball-collapse.** If the family `D` restricted to every closed `M`-ball is
 `→ₚ 0` uniformly (in outer probability, `TendstoZeroInOuterProbSup`), and the random
@@ -523,7 +593,7 @@ theorem tendstoInProbZero_of_ball_outerProbSup
   have hcomp := (ENNReal.tendsto_toReal (by simp)).comp hμ_tendsto
   rwa [ENNReal.toReal_zero] at hcomp
 
-/-! ### Linearization decomposition (vdV §19.5, Lemma 19.31, Theorem 19.28) -/
+/-! ### Uniform linearization (vdV §19.5, Lemma 19.31 and Theorem 19.28) -/
 
 /-- **Inner product ↔ empirical process bridge.**
 
@@ -533,9 +603,8 @@ fixed direction `h` with the vector empirical process
 of the pointwise readout `ω ↦ ⟪h, psiVec (fun _ => mdot) θ₀ ω⟫`. Both sides equal
 `∑ i, h i · 𝔾ₙ(mdot i)`: the LHS by `PiLp.inner_apply`, the RHS by pushing the finite
 inner-product sum through the linearity of `empiricalProcess`
-(`empiricalProcess_finset_sum` + `empiricalProcess_smul`). This identity rewrites the
-random-direction term `⟪hₙ, 𝔾ₙṁ⟫` in the final M-estimator adapter as the empirical
-process of a member of the linearized class. -/
+(`empiricalProcess_finset_sum` + `empiricalProcess_smul`). This rewrites
+`⟪hₙ, 𝔾ₙṁ⟫` as the empirical process of a member of the linearized class. -/
 theorem empiricalProcess_inner_empiricalProcessVec
     {d n : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (mdot : Fin d → (Ω → ℝ)) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -571,152 +640,17 @@ theorem empiricalProcess_inner_empiricalProcessVec
   rw [hL, hinner]
   exact hRHS.symm
 
-/-- **Chebyshev tail for a single empirical-process function.**
+/-! The reusable iid Chebyshev bound used below lives in
+`EmpiricalProcess/IIDChebyshev.lean`. -/
 
-For an `L²(P)` function `f` under an iid sample, the empirical process
-`𝔾ₙ f = √n·(P_n f − Pf)` is centred (`∫ 𝔾ₙ f ∂μ = 0`), with variance equal to the
-`P`-variance of `f`, hence `≤ ∫ f² ∂P`; Chebyshev then bounds its `M`-tail mass by
-`(∫ f² ∂P)/M²`. This supplies the fixed-direction marginal bound and the
-linear-term `O_P(1)` modulus estimate. -/
-private theorem empiricalProcess_chebyshev_tail
-    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
-    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
-    (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (hX_law : μ.map (X 0) = P)
-    (n : ℕ) (f : Ω → ℝ) (hf_L2 : MemLp f 2 P) {M : ℝ} (hM : 0 < M) :
-    μ {ξ | M ≤ |empiricalProcess P n (fun i : Fin n => X i.val ξ) f|}
-      ≤ ENNReal.ofReal ((∫ x, (f x) ^ 2 ∂P) / M ^ 2) := by
-  classical
-  -- Centre `f`: `c = Pf`, `g = f − c` (mean-zero under `P`).
-  set c : ℝ := ∫ x, f x ∂P with hc
-  set g : Ω → ℝ := fun x => f x - c with hg
-  have hf_int : Integrable f P := hf_L2.integrable one_le_two
-  have hg_L2 : MemLp g 2 P := hf_L2.sub (memLp_const c)
-  have hg_aem : AEMeasurable g P := hg_L2.aestronglyMeasurable.aemeasurable
-  have hg_int : Integrable g P := hg_L2.integrable one_le_two
-  have hg_mean : ∫ x, g x ∂P = 0 := by
-    simp only [hg]
-    rw [integral_sub hf_int (integrable_const c), integral_const, measureReal_univ_eq_one,
-      one_smul, hc, sub_self]
-  -- Per-index map facts: `μ.map (X i) = P`, so `g ∘ Xᵢ` is `L²` / mean-zero / iid.
-  have hX_aem : ∀ i, AEMeasurable (X i) μ := fun i => (hX_meas i).aemeasurable
-  have hmap : ∀ i, μ.map (X i) = P := fun i => (hX_id i).map_eq.trans hX_law
-  have hg_aem_map : ∀ i, AEMeasurable g (μ.map (X i)) := by
-    intro i; rw [hmap i]; exact hg_aem
-  have hgX_L2 : ∀ i, MemLp (g ∘ X i) 2 μ := by
-    intro i
-    have hgm : MemLp g 2 (μ.map (X i)) := by rw [hmap i]; exact hg_L2
-    exact hgm.comp_of_map (hX_aem i)
-  have hgX_indep : ProbabilityTheory.iIndepFun (fun i => g ∘ X i) μ :=
-    hX_indep.comp₀ (fun _ => g) hX_aem hg_aem_map
-  have hgX_idem : ∀ i, ProbabilityTheory.IdentDistrib (g ∘ X i) (g ∘ X 0) μ μ :=
-    fun i => (hX_id i).comp_of_aemeasurable (hg_aem_map i)
-  have hX0_aem : AEMeasurable (X 0) μ := hX_aem 0
-  have hgX0_mean : ∫ ξ, g (X 0 ξ) ∂μ = 0 := by
-    have hg_asm_map : AEStronglyMeasurable g (μ.map (X 0)) := by
-      rw [hmap 0]; exact hg_L2.aestronglyMeasurable
-    have h_int : ∫ ξ, g (X 0 ξ) ∂μ = ∫ x, g x ∂(μ.map (X 0)) :=
-      (integral_map hX0_aem hg_asm_map).symm
-    rw [h_int, hmap 0, hg_mean]
-  have hgX_mean : ∀ i, ∫ ξ, g (X i ξ) ∂μ = 0 := by
-    intro i
-    have h_eq : ∫ ξ, (g ∘ X i) ξ ∂μ = ∫ ξ, (g ∘ X 0) ξ ∂μ := (hgX_idem i).integral_eq
-    simpa [Function.comp_apply] using h_eq.trans hgX0_mean
-  -- `V = ∫ g² ∂P`; equals `variance (g ∘ Xᵢ)`, and `≤ ∫ f² ∂P`.
-  set V : ℝ := ∫ x, (g x) ^ 2 ∂P with hV
-  have hgX0_var : ProbabilityTheory.variance (g ∘ X 0) μ = V := by
-    have h_aem : AEMeasurable (g ∘ X 0) μ := (hgX_L2 0).aestronglyMeasurable.aemeasurable
-    rw [ProbabilityTheory.variance_eq_integral h_aem,
-      show (∫ ω, (g ∘ X 0) ω ∂μ) = 0 from hgX0_mean]
-    simp only [sub_zero, Function.comp_apply]
-    have hg_sq_asm_map : AEStronglyMeasurable (fun x : Ω => (g x) ^ 2) (μ.map (X 0)) := by
-      rw [hmap 0]; exact (hg_aem.pow_const 2).aestronglyMeasurable
-    have h_int : ∫ ξ, (g (X 0 ξ)) ^ 2 ∂μ = ∫ x, (g x) ^ 2 ∂(μ.map (X 0)) :=
-      (integral_map hX0_aem hg_sq_asm_map).symm
-    rw [h_int, hmap 0]
-  have hgXi_var : ∀ i, ProbabilityTheory.variance (g ∘ X i) μ = V :=
-    fun i => (hgX_idem i).variance_eq.trans hgX0_var
-  have hVle : V ≤ ∫ x, (f x) ^ 2 ∂P := by
-    have e1 : V = ProbabilityTheory.variance g P := by
-      rw [ProbabilityTheory.variance_eq_sub hg_L2, hg_mean, hV]; simp [Pi.pow_apply]
-    have e2 : ProbabilityTheory.variance g P = ProbabilityTheory.variance f P :=
-      ProbabilityTheory.variance_sub_const hf_L2.aestronglyMeasurable c
-    have e3 : ProbabilityTheory.variance f P = (∫ x, (f x) ^ 2 ∂P) - c ^ 2 := by
-      rw [ProbabilityTheory.variance_eq_sub hf_L2, ← hc]; simp [Pi.pow_apply]
-    rw [e1, e2, e3]; linarith [sq_nonneg c]
-  -- `n = 0`: the empirical process is `0`, so the `M`-event is empty.
-  rcases Nat.eq_zero_or_pos n with hn | hn
-  · subst hn
-    have hset : {ξ : Ξ | M ≤ |empiricalProcess P 0 (fun i : Fin 0 => X i.val ξ) f|} = ∅ := by
-      ext ξ
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
-        empiricalProcess_zero, abs_zero]
-      exact hM
-    rw [hset, measure_empty]; exact zero_le _
-  -- `n > 0`: `EP = (√n)⁻¹ · ∑ᵢ g(Xᵢ)`, mean `0`, variance `V`; apply Chebyshev.
-  · have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
-      Real.mul_self_sqrt (by positivity)
-    have hsqrt_pos : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.mpr (by exact_mod_cast hn)
-    have hsqrt_ne : Real.sqrt (n : ℝ) ≠ 0 := hsqrt_pos.ne'
-    have hn_ne : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
-    set Y : Ξ → ℝ := fun ξ => ∑ i : Fin n, g (X i.val ξ) with hYdef
-    have hY_eq : Y = ∑ i : Fin n, (g ∘ X i.val) := by
-      funext ξ; simp only [hYdef, Finset.sum_apply, Function.comp_apply]
-    have hY_L2 : ∀ i : Fin n, MemLp (g ∘ X i.val) 2 μ := fun i => hgX_L2 i.val
-    have hY_pairwise : Set.Pairwise (↑(Finset.univ : Finset (Fin n)) : Set (Fin n))
-        (fun i j => ProbabilityTheory.IndepFun (g ∘ X i.val) (g ∘ X j.val) μ) := by
-      intro i _ j _ hij
-      exact hgX_indep.indepFun (fun h => hij (Fin.ext h))
-    have hY_var : ProbabilityTheory.variance Y μ = (n : ℝ) * V := by
-      rw [hY_eq, ProbabilityTheory.IndepFun.variance_sum (fun i _ => hY_L2 i) hY_pairwise,
-        Finset.sum_congr rfl (fun i _ => hgXi_var i.val)]
-      simp [Finset.sum_const, Finset.card_univ]
-    have hY_memLp : MemLp Y 2 μ := by
-      rw [hY_eq]; exact memLp_finset_sum' _ (fun i _ => hY_L2 i)
-    have hEP_eq : (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)
-        = fun ξ => (Real.sqrt n)⁻¹ * Y ξ := by
-      funext ξ
-      have h_a : Real.sqrt (n : ℝ) * (n : ℝ)⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
-        nth_rewrite 2 [← hsq]
-        rw [mul_inv, ← mul_assoc, mul_inv_cancel₀ hsqrt_ne, one_mul]
-      have h_b : (Real.sqrt (n : ℝ))⁻¹ * (n : ℝ) = Real.sqrt (n : ℝ) := by
-        nth_rewrite 2 [← hsq]
-        rw [← mul_assoc, inv_mul_cancel₀ hsqrt_ne, one_mul]
-      simp only [hYdef, hg]
-      unfold empiricalProcess empiricalAvg
-      rw [← hc, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-        nsmul_eq_mul]
-      linear_combination (∑ i : Fin n, f (X i.val ξ)) * h_a + c * h_b
-    have hEP_memLp : MemLp (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) 2 μ := by
-      rw [hEP_eq]; exact hY_memLp.const_mul _
-    have hEP_mean : ∫ ξ, empiricalProcess P n (fun i : Fin n => X i.val ξ) f ∂μ = 0 := by
-      rw [show (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)
-          = fun ξ => (Real.sqrt n)⁻¹ * Y ξ from hEP_eq, integral_const_mul]
-      have hY_int : ∫ ξ, Y ξ ∂μ = 0 := by
-        rw [hY_eq]
-        simp_rw [Finset.sum_apply]
-        rw [integral_finset_sum _ (fun i _ => (hY_L2 i).integrable one_le_two)]
-        simp only [Function.comp_apply, hgX_mean, Finset.sum_const_zero]
-      rw [hY_int, mul_zero]
-    have hEP_var : ProbabilityTheory.variance
-        (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) μ = V := by
-      rw [hEP_eq, ProbabilityTheory.variance_const_mul, hY_var, inv_pow]
-      rw [show (Real.sqrt (n : ℝ)) ^ 2 = (n : ℝ) from by rw [sq]; exact hsq]
-      field_simp
-    have hcheb := ProbabilityTheory.meas_ge_le_variance_div_sq hEP_memLp hM
-    simp only [hEP_var, hEP_mean, sub_zero] at hcheb
-    refine hcheb.trans (ENNReal.ofReal_le_ofReal ?_)
-    gcongr
-
-/-- **Fixed-direction marginal vanishes.**
+/-- **The fixed-direction marginal vanishes.**
 
 For each fixed direction `h`, the empirical process of the linearization residual
 `R_n(h) ω = √n·(m_{θ₀ + h/√n} − m_{θ₀})(ω) − ⟪h, ṁ_{θ₀}(ω)⟫` tends to `0` in
-probability. The `L²(P)` size of `R_n(h)` vanishes by
+probability. The `L²(P)`-size of `R_n(h)` vanishes by
 `linearization_distL2_tendstoZero`) so its second moment `→ 0`, and the empirical
-process has vanishing variance (`markov_distL2_tail`, `Donsker.lean`). -/
+process has vanishing variance (`markov_distL2_tail`, `Donsker.lean`). This is the
+marginal input of the modulus argument below. -/
 theorem linearization_marginal_tendstoInProbZero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
@@ -762,8 +696,7 @@ theorem linearization_marginal_tendstoInProbZero
     · filter_upwards with ω
       rw [Real.norm_eq_abs]
       exact (linResid_abs_le m mdot θ₀ menv ρ hρ hLip n ω h (hMρ n hn)).trans_eq (mul_comm _ _)
-  -- Apply `linearization_distL2_tendstoZero` at `M := ‖h‖`:
-  -- the sample-independent `L²(P)` distance to the linearization tends to zero.
+  -- At `M := ‖h‖`, the deterministic `L²(P)`-distance to the linearization tends to zero.
   have hdistL2_tendsto : Tendsto (fun n : ℕ => distL2 P
       (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h) ω - m θ₀ ω))
       (fun ω => ⟪h, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫))
@@ -846,8 +779,7 @@ theorem linearization_marginal_tendstoInProbZero
           gcongr; exact hint_le n
 
 /-- Fixed-direction variant of `linearization_marginal_tendstoInProbZero` whose
-`L²(P)` convergence is supplied directly.  This is the honest adapter for
-differentiability in probability: the `MemLp` and Lipschitz guards remain
+`L²(P)` convergence is assumed directly. The `MemLp` and Lipschitz conditions remain
 necessary because `distL2` uses `ENNReal.toReal`. -/
 theorem linearization_marginal_tendstoInProbZero_of_distL2
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
@@ -960,12 +892,12 @@ so that the `limsupₙ` outer measure of the pair-oscillation event
 `{ξ | ∃ h₁ h₂ ∈ ball_M, ‖h₁ − h₂‖ < δ ∧ ε < |⟪h₁ − h₂, 𝔾ₙṁ_{θ₀}⟫|}` is `≤ η`.
 Route: `⟪·, 𝔾ₙṁ⟫` is a fixed linear functional of the CLT-tight vector
 `𝔾ₙṁ_{θ₀} = empiricalProcessVec …`, so `|⟪h₁ − h₂, 𝔾ₙṁ⟫| ≤ ‖h₁ − h₂‖·‖𝔾ₙṁ‖`
-and `O_P(1)` tightness of `‖𝔾ₙṁ‖` gives the modulus. -/
+and `O_P(1)`-tightness of `‖𝔾ₙṁ‖` gives the modulus. -/
 theorem linearTerm_modulus_tendstoZero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (mdot : Fin d → (Ω → ℝ)) (θ₀ : EuclideanSpace ℝ (Fin d))
-    (hmdot_meas : ∀ i, Measurable (mdot i))
-    (hmdot_L2 : ∀ i, MemLp (mdot i) 2 P)
+    (hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
@@ -1017,7 +949,7 @@ theorem linearTerm_modulus_tendstoZero
       μ {ξ | t ≤ |empiricalProcess P n (fun i : Fin n => X i.val ξ) (mdot i)|}
         ≤ ENNReal.ofReal ((∫ x, (mdot i x) ^ 2 ∂P) / t ^ 2) :=
     fun n i => empiricalProcess_chebyshev_tail P μ X hX_meas hX_indep hX_id hX_law n
-      (mdot i) (hmdot_L2 i) ht_pos
+      (mdot i) (hscore.eval_piLp i) ht_pos
   have huniftail : ∀ n : ℕ, μ {ξ | M₀ < ‖empiricalProcessVec P
         (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n (fun i : Fin n => X i.val ξ)‖}
       ≤ ENNReal.ofReal η := by
@@ -1091,16 +1023,19 @@ theorem linearTerm_modulus_tendstoZero
           (fun i : Fin n => X i.val ξ)‖} := outerMeasureStar_le_measure μ _
     _ ≤ ENNReal.ofReal η := huniftail n
 
-/-- **The √n-scaled shell / bracketing modulus vanishes** (vdV Lemma 19.34 /
-Theorem 19.28).
+/-- **The √n-scaled shell/bracketing modulus vanishes**
+(vdV Lemma 19.34 and Theorem 19.28).
 
 The empirical process of the localized increment class
 `fhat n h := √n·(m_{θ₀ + h/√n} − m_{θ₀})` (`= √n·(m_θ − m_{θ₀})` on the `√n`-shell
 `{θ : ‖θ − θ₀‖ ≤ M/√n}` after `θ = θ₀ + h/√n`) is asymptotically equicontinuous
 over the `M`-ball: for every `ε, η > 0` a radius `δ > 0` bounds the `limsupₙ` outer
-measure of the increment pair-oscillation event by `η`. The proof uses relative
-bracketing entropy of the localized increment class, a chaining maximal inequality,
-and cancellation of the outer `√n` against the `1/√n` localization scale. -/
+measure of the increment pair-oscillation event by `η`.
+
+The proof combines relative bracketing entropy of the localized increment class
+with a chaining maximal inequality; the factor `√n` cancels the `1/√n`
+localization scale. The conclusion is stated in the asymptotic-equicontinuity
+`limsup` form used by the residual modulus below. -/
 theorem sqrtScaled_shell_modulus_tendstoZero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
@@ -1128,11 +1063,10 @@ theorem sqrtScaled_shell_modulus_tendstoZero
   exact sqrtScaled_shell_modulus_bound P m θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip
     μ X hX_meas hX_indep hX_id hX_law M hM
 
-/-- **Empirical-process decomposition of the linearization residual.**
-
-The residual `R_n(h) ω = √n·(m_{θ₀+h/√n} − m_{θ₀})ω − ⟪h, ṁ_{θ₀}(ω)⟫` splits, by
-linearity of the empirical process (`empiricalProcess_sub`) and the inner-product
-identity `empiricalProcess_inner_empiricalProcessVec`, as the increment
+/-- The empirical process of the linearization
+residual `R_n(h) ω = √n·(m_{θ₀+h/√n} − m_{θ₀})ω − ⟪h, ṁ_{θ₀}(ω)⟫` splits, by
+linearity of the empirical process (`empiricalProcess_sub`) and the inner↔process
+bridge `empiricalProcess_inner_empiricalProcessVec`, as the increment
 process `𝔾ₙ[√n(m_{θ₀+h/√n} − m_{θ₀})]` minus the inner product `⟪h, 𝔾ₙṁ_{θ₀}⟫`.
 Both integrands are `L¹(P)` (Lipschitz / Cauchy–Schwarz domination by the `L²`
 envelope and score). -/
@@ -1204,9 +1138,8 @@ private theorem linearizationResidual_process_eq
   rw [← empiricalProcess_inner_empiricalProcessVec P mdot θ₀ Xs h hmdot_int] at hkey
   exact hkey
 
-/-- **Subadditivity of `limsup` under `ENNReal.ofReal` bounds.**
-
-For two `ℝ≥0∞` sequences, `ℝ≥0∞` is not an additive group, so
+/-- `limsup`-subadditivity for two `ℝ≥0∞`
+sequences with `ENNReal.ofReal` bounds. `ℝ≥0∞` is not an additive group, so
 Mathlib's `limsup_add_le` (which needs `AddCommGroup`) does not apply; we prove the
 specialization `limsup Uf ≤ ofReal a`, `limsup Vf ≤ ofReal b ⟹
 limsup (Uf + Vf) ≤ ofReal a + ofReal b` directly (split the target threshold
@@ -1241,14 +1174,13 @@ private theorem limsup_add_le_ofReal (Uf Vf : ℕ → ℝ≥0∞) {a b : ℝ}
       _ = (ENNReal.ofReal a + ENNReal.ofReal b) + dslack := by rw [ENNReal.add_halves]
       _ = c := add_tsub_cancel_of_le hc.le
 
-/-- **The residual pair modulus vanishes.**
+/-- **The residual pair-modulus vanishes.**
 
-The pair modulus of `h ↦ 𝔾ₙ(R_n(h))` is controlled: for every `ε, η > 0`
-there is `δ > 0` with `limsupₙ` outer
-measure of the residual pair-oscillation event `≤ η`. The decomposition
-`𝔾ₙ(R_n(h)) = 𝔾ₙ(fhat_h) − ⟪h, 𝔾ₙṁ⟫` from
-`linearizationResidual_process_eq` lets the triangle inequality split its modulus
-into the increment modulus and the linear-term modulus. -/
+The pair modulus of `h ↦ 𝔾ₙ(R_n(h))` is controlled: for every `ε, η > 0` there is
+`δ > 0` with `limsupₙ` outer
+measure of the residual pair-oscillation event `≤ η`. Route: `𝔾ₙ(R_n(h)) =
+𝔾ₙ(fhat_h) − ⟪h, 𝔾ₙṁ⟫`, so the triangle inequality splits its modulus into
+the increment modulus and the linear-term modulus. -/
 theorem linearizationResidual_pairModulus_tendstoZero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
@@ -1282,16 +1214,18 @@ theorem linearizationResidual_pairModulus_tendstoZero
   set N₀ : ℕ := ⌈(M / ρ) ^ 2⌉₊ with hN₀def
   have hMρ : ∀ n : ℕ, N₀ ≤ n → M ≤ ρ * Real.sqrt n := fun n hn =>
     le_rho_mul_sqrt_of_ceil_le hρ hM hn
-  -- The localized-increment modulus at oscillation `ε/2` and mass `η/2` gives `δ₁`.
+  -- The increment modulus at oscillation `ε/2` and mass `η/2` gives radius `δ₁`.
   obtain ⟨δ₁, hδ₁pos, hN3⟩ := sqrtScaled_shell_modulus_tendstoZero P m mdot θ₀ hm_meas menv hmenv
     hmenv_meas ρ hρ hLip μ X hX_meas hX_indep hX_id hX_law M hM (ε / 2) (by linarith) (η / 2)
     (by linarith)
-  -- The linear-term modulus at oscillation `ε/2` and mass `η/2` gives `δ₂`.
-  obtain ⟨δ₂, hδ₂pos, hN2⟩ := linearTerm_modulus_tendstoZero P mdot θ₀ hmdot_meas hmdot_L2
+  -- The linear-term modulus at oscillation `ε/2` and mass `η/2` gives radius `δ₂`.
+  have hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P :=
+    MemLp.of_eval_piLp (fun i => hmdot_L2 i)
+  obtain ⟨δ₂, hδ₂pos, hN2⟩ := linearTerm_modulus_tendstoZero P mdot θ₀ hscore
     μ X hX_meas hX_indep hX_id hX_law M hM (ε / 2) (by linarith) (η / 2) (by linarith)
   refine ⟨min δ₁ δ₂, lt_min hδ₁pos hδ₂pos, ?_⟩
-  -- The process decomposition holds for `n ≥ N₀`:
-  -- `𝔾ₙ(R_n(h)) = 𝔾ₙ[increment] − ⟪h, 𝔾ₙṁ⟫`.
+  -- For `n ≥ N₀`, `𝔾ₙ(R_n(h)) = 𝔾ₙ[increment] − ⟪h, 𝔾ₙṁ⟫`.
   have hpid : ∀ (n : ℕ), N₀ ≤ n → ∀ (ξ : Ξ) (v : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}),
       empiricalProcess P n (fun i : Fin n => X i.val ξ)
           (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • v.1) ω - m θ₀ ω)
@@ -1302,7 +1236,7 @@ theorem linearizationResidual_pairModulus_tendstoZero
                 (fun i : Fin n => X i.val ξ)⟫ :=
     fun n hn ξ v => linearizationResidual_process_eq P m mdot θ₀ hm_meas hmdot_L2 menv hmenv
       ρ hρ hLip n (fun i : Fin n => X i.val ξ) v.1 ((v.2).trans (hMρ n hn))
-  -- Split the residual pair-modulus event into increment- and linear-modulus events.
+  -- Split the residual pair-modulus event into increment and linear-term events.
   have hsub : ∀ n, N₀ ≤ n → {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
         ‖h₁.1 - h₂.1‖ < min δ₁ δ₂ ∧
         ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
@@ -1391,16 +1325,348 @@ theorem linearizationResidual_pairModulus_tendstoZero
         rw [← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η / 2) (by linarith : (0 : ℝ) ≤ η / 2),
           add_halves]
 
+/-- The residual process at an arbitrary deterministic local rate is asymptotically
+equicontinuous on every bounded direction ball.  The score `L²` property is derived from
+the local Lipschitz envelope and the a.e. derivative, rather than supplied separately. -/
+theorem linearizationResidual_pairModulus_tendstoZero_atRate
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
+    (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
+      (innerSL ℝ (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω)) θ₀)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop) (M : ℝ) (hM : 0 ≤ M) :
+    ∀ ε : ℝ, 0 < ε → ∀ η : ℝ, 0 < η → ∃ δ : ℝ, 0 < δ ∧
+      limsup (fun n => μ.outerMeasureStar
+        {ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+          ‖h₁.1 - h₂.1‖ < δ ∧
+          ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                  (scaledIncrementAt r m θ₀ n h₁.1)
+                - ⟪h₁.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫)
+              - (empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                  (scaledIncrementAt r m θ₀ n h₂.1)
+                - ⟪h₂.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫)|}) atTop
+        ≤ ENNReal.ofReal η := by
+  intro ε hε η hη
+  have hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀) 2 P :=
+    psiVec_memLp_two_of_ae_hasFDerivAt_lipschitz
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv
+  obtain ⟨δ₁, hδ₁pos, hN3⟩ := scaledAt_shell_modulus_bound P m θ₀ hm_meas menv hmenv
+    hmenv_meas ρ hρ hLip μ X hX_meas hX_indep hX_id hX_law r hr M hM
+    (ε / 2) (by linarith) (η / 2) (by linarith)
+  obtain ⟨δ₂, hδ₂pos, hN2⟩ := linearTerm_modulus_tendstoZero P mdot θ₀ hscore
+    μ X hX_meas hX_indep hX_id hX_law M hM
+    (ε / 2) (by linarith) (η / 2) (by linarith)
+  refine ⟨min δ₁ δ₂, lt_min hδ₁pos hδ₂pos, ?_⟩
+  have hsub : ∀ n, {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+        ‖h₁.1 - h₂.1‖ < min δ₁ δ₂ ∧
+        ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₁.1)
+              - ⟪h₁.1, empiricalProcessVec P
+                  (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                  (fun i : Fin n => X i.val ξ)⟫)
+            - (empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₂.1)
+              - ⟪h₂.1, empiricalProcessVec P
+                  (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                  (fun i : Fin n => X i.val ξ)⟫)|}
+      ⊆ {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ₁ ∧
+            ε / 2 < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                    (scaledIncrementAt r m θ₀ n h₁.1)
+                  - empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                    (scaledIncrementAt r m θ₀ n h₂.1)|}
+        ∪ {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ₂ ∧
+            ε / 2 < |(⟪h₁.1 - h₂.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫ : ℝ)|} := by
+    intro n ξ hξ
+    obtain ⟨h₁, h₂, hnorm, hosc⟩ := hξ
+    set E₁ := empiricalProcess P n (fun i : Fin n => X i.val ξ)
+      (scaledIncrementAt r m θ₀ n h₁.1) with hE₁
+    set E₂ := empiricalProcess P n (fun i : Fin n => X i.val ξ)
+      (scaledIncrementAt r m θ₀ n h₂.1) with hE₂
+    set 𝔾 := empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+      (fun i : Fin n => X i.val ξ) with h𝔾
+    have htri : ε < |E₁ - E₂| + |(⟪h₁.1 - h₂.1, 𝔾⟫ : ℝ)| := by
+      refine lt_of_lt_of_le hosc ?_
+      have heq : (E₁ - ⟪h₁.1, 𝔾⟫) - (E₂ - ⟪h₂.1, 𝔾⟫)
+          = (E₁ - E₂) + (-(⟪h₁.1 - h₂.1, 𝔾⟫ : ℝ)) := by
+        rw [inner_sub_left]
+        ring
+      rw [heq]
+      exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
+    by_cases hA : ε / 2 < |E₁ - E₂|
+    · exact Or.inl ⟨h₁, h₂, lt_of_lt_of_le hnorm (min_le_left δ₁ δ₂), hA⟩
+    · push Not at hA
+      refine Or.inr ⟨h₁, h₂, lt_of_lt_of_le hnorm (min_le_right δ₁ δ₂), ?_⟩
+      linarith [htri, hA]
+  have hbound : ∀ n,
+      μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+        ‖h₁.1 - h₂.1‖ < min δ₁ δ₂ ∧
+        ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₁.1)
+              - ⟪h₁.1, empiricalProcessVec P
+                  (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                  (fun i : Fin n => X i.val ξ)⟫)
+            - (empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (scaledIncrementAt r m θ₀ n h₂.1)
+              - ⟪h₂.1, empiricalProcessVec P
+                  (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                  (fun i : Fin n => X i.val ξ)⟫)|}
+      ≤ μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ₁ ∧
+            ε / 2 < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                    (scaledIncrementAt r m θ₀ n h₁.1)
+                  - empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                    (scaledIncrementAt r m θ₀ n h₂.1)|}
+        + μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+            ‖h₁.1 - h₂.1‖ < δ₂ ∧
+            ε / 2 < |(⟪h₁.1 - h₂.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫ : ℝ)|} := fun n =>
+    (outerMeasureStar_mono μ (hsub n)).trans (outerMeasureStar_union_le μ _ _)
+  calc
+    limsup (fun n => μ.outerMeasureStar
+        {ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+          ‖h₁.1 - h₂.1‖ < min δ₁ δ₂ ∧
+          ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                  (scaledIncrementAt r m θ₀ n h₁.1)
+                - ⟪h₁.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫)
+              - (empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                  (scaledIncrementAt r m θ₀ n h₂.1)
+                - ⟪h₂.1, empiricalProcessVec P
+                    (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                    (fun i : Fin n => X i.val ξ)⟫)|}) atTop
+        ≤ limsup (fun n => μ.outerMeasureStar {ξ : Ξ |
+              ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+              ‖h₁.1 - h₂.1‖ < δ₁ ∧
+              ε / 2 < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                      (scaledIncrementAt r m θ₀ n h₁.1)
+                    - empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                      (scaledIncrementAt r m θ₀ n h₂.1)|}
+            + μ.outerMeasureStar {ξ : Ξ |
+              ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+              ‖h₁.1 - h₂.1‖ < δ₂ ∧
+              ε / 2 < |(⟪h₁.1 - h₂.1, empiricalProcessVec P
+                      (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
+                      (fun i : Fin n => X i.val ξ)⟫ : ℝ)|}) atTop :=
+          limsup_le_limsup (Eventually.of_forall hbound) isCobounded_le_of_bot
+            (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
+    _ ≤ ENNReal.ofReal (η / 2) + ENNReal.ofReal (η / 2) :=
+      limsup_add_le_ofReal _ _ hN3 hN2
+    _ = ENNReal.ofReal η := by
+      rw [← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η / 2)
+        (by linarith : (0 : ℝ) ≤ η / 2), add_halves]
+
+/-- The arbitrary-rate linearization residual vanishes uniformly in outer probability on
+every bounded direction ball.  Compactness reduces the ball to a finite net; fixed-net
+marginals use `linearization_marginal_tendstoInProbZero_atRate`, while the remaining
+oscillation is controlled by `linearizationResidual_pairModulus_tendstoZero_atRate`. -/
+theorem linearizationSup_tendstoZeroInOuterProbSup_atRate
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
+    (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ ↦ m θ ω)
+      (innerSL ℝ (psiVec (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ ω)) θ₀)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop) (M : ℝ) (hM : 0 ≤ M) :
+    TendstoZeroInOuterProbSup μ
+      (fun n ξ (h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}) ↦
+        empiricalProcess P n (fun i : Fin n ↦ X i.val ξ)
+            (scaledIncrementAt r m θ₀ n h.1)
+          - ⟪h.1, empiricalProcessVec P
+              (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ n
+              (fun i : Fin n ↦ X i.val ξ)⟫) := by
+  simp only [TendstoZeroInOuterProbSup]
+  intro ε hε
+  let R : ℕ → Ξ → EuclideanSpace ℝ (Fin d) → ℝ := fun n ξ h ↦
+    empiricalProcess P n (fun i : Fin n ↦ X i.val ξ) (scaledIncrementAt r m θ₀ n h) -
+      ⟪h, empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ n
+        (fun i : Fin n ↦ X i.val ξ)⟫
+  change Tendsto (fun n ↦ μ.outerMeasureStar
+    {ξ | ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}, ε < |R n ξ h.1|}) atTop (𝓝 0)
+  have hscore : MemLp
+      (psiVec (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀) 2 P :=
+    psiVec_memLp_two_of_ae_hasFDerivAt_lipschitz
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv
+  have hr_pos : ∀ᶠ n in atTop, 0 < r n := hr.eventually (eventually_gt_atTop 0)
+  have hball : ∀ᶠ n in atTop, M ≤ ρ * r n :=
+    (Filter.Tendsto.const_mul_atTop hρ hr).eventually (eventually_ge_atTop M)
+  have hpid : ∀ᶠ n in atTop, ∀ (ξ : Ξ)
+      (v : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}),
+      empiricalProcess P n (fun i : Fin n ↦ X i.val ξ)
+          (linResidAt r m mdot θ₀ n v.1) = R n ξ v.1 := by
+    filter_upwards [hr_pos, hball] with n hrn hMr
+    intro ξ v
+    have hv : ‖v.1‖ ≤ ρ * r n := v.2.trans hMr
+    have hzero : ‖(0 : EuclideanSpace ℝ (Fin d))‖ ≤ ρ * r n := by
+      simpa using hM.trans hMr
+    have hincr : MemLp (scaledIncrementAt r m θ₀ n v.1) 2 P := by
+      refine MemLp.mono' (hmenv.norm.const_mul ‖v.1‖)
+        (scaledIncrementAt_measurable r m θ₀ n hm_meas v.1).aestronglyMeasurable ?_
+      filter_upwards with ω
+      rw [Real.norm_eq_abs]
+      calc
+        |scaledIncrementAt r m θ₀ n v.1 ω| =
+            |scaledIncrementAt r m θ₀ n v.1 ω -
+              scaledIncrementAt r m θ₀ n 0 ω| := by simp
+        _ ≤ menv ω * ‖v.1 - 0‖ :=
+          scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip hrn v.1 0 hv hzero ω
+        _ ≤ ‖v.1‖ * ‖menv ω‖ := by
+          rw [sub_zero, mul_comm (menv ω)]
+          exact mul_le_mul_of_nonneg_left (le_abs_self _) (norm_nonneg _)
+    have hinner : Integrable
+        (fun ω ↦ (⟪v.1, psiVec
+          (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ ω⟫ : ℝ)) P := by
+      refine (MemLp.mono' (hscore.norm.const_mul ‖v.1‖)
+        (aestronglyMeasurable_const.inner hscore.aestronglyMeasurable) ?_).integrable one_le_two
+      filter_upwards with ω
+      rw [Real.norm_eq_abs]
+      exact abs_real_inner_le_norm _ _
+    have hkey := empiricalProcess_sub P n (fun i : Fin n ↦ X i.val ξ)
+      (scaledIncrementAt r m θ₀ n v.1)
+      (fun ω ↦ (⟪v.1, psiVec
+        (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ ω⟫ : ℝ))
+      (hincr.integrable one_le_two) hinner
+    rw [← empiricalProcess_inner_empiricalProcessVec P mdot θ₀
+      (fun i : Fin n ↦ X i.val ξ) v.1
+      (fun i ↦ (hscore.eval_piLp i).integrable one_le_two)] at hkey
+    simpa only [linResidAt, Pi.sub_apply, R] using hkey
+  let u : ℕ → ℝ≥0∞ := fun n ↦ μ.outerMeasureStar
+    {ξ | ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}, ε < |R n ξ h.1|}
+  suffices hlimsup : ∀ η : ℝ, 0 < η → limsup u atTop ≤ ENNReal.ofReal η by
+    have hsup0 : limsup u atTop ≤ 0 := by
+      refine ENNReal.le_of_forall_pos_le_add fun η hηpos _ ↦ ?_
+      rw [zero_add]
+      have := hlimsup (η : ℝ) (by exact_mod_cast hηpos)
+      rwa [ENNReal.ofReal_coe_nnreal] at this
+    have hsup0' : limsup u atTop = 0 := le_antisymm hsup0 bot_le
+    refine tendsto_of_le_liminf_of_limsup_le bot_le hsup0'.le ?_ ?_
+    · exact isBoundedUnder_of ⟨⊤, fun _ ↦ le_top⟩
+    · exact isBoundedUnder_of ⟨0, fun _ ↦ bot_le⟩
+  intro η hη
+  obtain ⟨δ, hδ, hmod⟩ := linearizationResidual_pairModulus_tendstoZero_atRate
+    P m mdot θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip hderiv
+    μ X hX_meas hX_indep hX_id hX_law r hr M hM (ε / 2) (by linarith) η hη
+  obtain ⟨t, ht_sub, ht_fin, ht_cover⟩ :=
+    finite_cover_balls_of_compact
+      (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin d)) M) hδ
+  let T : Finset (EuclideanSpace ℝ (Fin d)) := ht_fin.toFinset
+  have hxM : ∀ x ∈ T, ‖x‖ ≤ M := by
+    intro x hx
+    have hxt : x ∈ t := (Set.Finite.mem_toFinset ht_fin).mp hx
+    simpa only [Metric.mem_closedBall, dist_zero_right] using ht_sub hxt
+  have hmar_each : ∀ x, ‖x‖ ≤ M → Tendsto
+      (fun n ↦ μ {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) atTop (𝓝 0) := by
+    intro x hx
+    have hN1 := linearization_marginal_tendstoInProbZero_atRate
+      P m mdot θ₀ hm_meas menv hmenv ρ hρ hLip hderiv
+      μ X hX_meas hX_indep hX_id hX_law r hr x (ε / 2) (by linarith)
+    simp only [Real.norm_eq_abs] at hN1
+    have hN1' : Tendsto (fun n ↦ μ.real {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) atTop (𝓝 0) := by
+      refine hN1.congr' ?_
+      filter_upwards [hpid] with n hn
+      congr 1
+      ext ξ
+      simp only [Set.mem_setOf_eq]
+      rw [hn ξ ⟨x, hx⟩]
+    have h1 : Tendsto (fun n ↦ ENNReal.ofReal
+        (μ.real {ξ : Ξ | ε / 2 ≤ |R n ξ x|})) atTop (𝓝 0) := by
+      rw [show (0 : ℝ≥0∞) = ENNReal.ofReal 0 by simp]
+      exact (ENNReal.continuous_ofReal.tendsto 0).comp hN1'
+    refine h1.congr (fun n ↦ ?_)
+    rw [Measure.real, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  have hMar0 : Tendsto (fun n ↦ μ.outerMeasureStar
+      (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|})) atTop (𝓝 0) := by
+    have hsum0 : Tendsto (fun n ↦ ∑ x ∈ T,
+        μ {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) atTop (𝓝 0) := by
+      simpa using tendsto_finset_sum T (fun x hx ↦ hmar_each x (hxM x hx))
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum0
+      (Eventually.of_forall fun _ ↦ zero_le _) (Eventually.of_forall fun n ↦ ?_)
+    calc
+      μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) ≤
+          μ (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) :=
+        outerMeasureStar_le_measure μ _
+      _ ≤ ∑ x ∈ T, μ {ξ : Ξ | ε / 2 ≤ |R n ξ x|} :=
+        measure_biUnion_finset_le T _
+  have hsplit : ∀ n, {ξ : Ξ | ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+        ε < |R n ξ h.1|} ⊆
+      (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) ∪
+        {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+          ‖h₁.1 - h₂.1‖ < δ ∧ ε / 2 < |R n ξ h₁.1 - R n ξ h₂.1|} := by
+    intro n ξ hξ
+    obtain ⟨h, hh⟩ := hξ
+    have hmem : h.1 ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) M := by
+      simpa only [Metric.mem_closedBall, dist_zero_right] using h.2
+    obtain ⟨x, hxt, hxball⟩ := Set.mem_iUnion₂.mp (ht_cover hmem)
+    rw [Metric.mem_ball, dist_eq_norm] at hxball
+    have hxT : x ∈ T := (Set.Finite.mem_toFinset ht_fin).mpr hxt
+    let A := R n ξ h.1
+    let B := R n ξ x
+    have htri : ε < |B| + |A - B| := by
+      have habs := abs_add_le B (A - B)
+      rw [show B + (A - B) = A by ring] at habs
+      linarith [hh, habs]
+    by_cases hx : ε / 2 ≤ |B|
+    · exact Or.inl (Set.mem_iUnion₂.mpr ⟨x, hxT, hx⟩)
+    · push Not at hx
+      exact Or.inr ⟨h, ⟨x, hxM x hxT⟩, hxball, by linarith⟩
+  have hbound : ∀ n, u n ≤
+      μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ :
+        {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+        ‖h₁.1 - h₂.1‖ < δ ∧ ε / 2 < |R n ξ h₁.1 - R n ξ h₂.1|} +
+      μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) := by
+    intro n
+    exact (outerMeasureStar_mono μ (hsplit n)).trans
+      ((outerMeasureStar_union_le μ _ _).trans_eq (add_comm _ _))
+  calc
+    limsup u atTop ≤ limsup (fun n ↦
+        μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ :
+          {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+          ‖h₁.1 - h₂.1‖ < δ ∧ ε / 2 < |R n ξ h₁.1 - R n ξ h₂.1|} +
+        μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|})) atTop :=
+      limsup_le_limsup (Eventually.of_forall hbound) isCobounded_le_of_bot
+        (isBoundedUnder_of ⟨⊤, fun _ ↦ le_top⟩)
+    _ ≤ ENNReal.ofReal η := by
+      apply limsup_add_tendsto_zero_le _ _ _ _ hMar0
+      simpa only [R] using hmod
+
 /-- **Sup-over-ball linearization vanishes in outer probability.**
 
 For each `M ≥ 0`, the linearization residual, as a family indexed by the closed
 `M`-ball `{h : ‖h‖ ≤ M}`, tends to `0` in outer probability uniformly:
 `𝔾ₙ[√n·(m_{θ₀ + h/√n} − m_{θ₀})] − ⟪h, 𝔾ₙṁ_{θ₀}⟫ →ₚ 0` (sup over the ball).
-Route: rewrite `⟪h, 𝔾ₙṁ⟫ = 𝔾ₙ(ω ↦ ⟪h, ṁ(ω)⟫)` using
-`empiricalProcess_inner_empiricalProcessVec`, then feed the marginal tail and
-the residual pair modulus — an `ε/η` split of the exceedance
-event into a fixed-net marginal part and an oscillation part — to the
-`ℓ∞` collapse argument. It is consumed through
+Rewrite `⟪h, 𝔾ₙṁ⟫ = 𝔾ₙ(ω ↦ ⟪h, ṁ(ω)⟫)` by the inner-product bridge, then combine
+the marginal tail and residual pair-modulus. An `ε/η`-split separates the
+exceedance event into a fixed-net marginal part and an oscillation part. The
+result is converted to convergence in probability by
 `tendstoInProbZero_of_ball_outerProbSup`. -/
 theorem linearizationSup_tendstoZeroInOuterProbSup
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
@@ -1434,8 +1700,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
   set N₀ : ℕ := ⌈(M / ρ) ^ 2⌉₊ with hN₀def
   have hMρ : ∀ n : ℕ, N₀ ≤ n → M ≤ ρ * Real.sqrt n := fun n hn =>
     le_rho_mul_sqrt_of_ceil_le hρ hM hn
-  -- Apply the process decomposition to each direction `v` once `n ≥ N₀`:
-  -- `𝔾ₙ(R_n(v)) = 𝔾ₙ[increment] − ⟪v, 𝔾ₙṁ⟫`.
+  -- For each direction `v` and `n ≥ N₀`, `𝔾ₙ(R_n(v)) = 𝔾ₙ[increment] − ⟪v, 𝔾ₙṁ⟫`.
   have hpid : ∀ (n : ℕ), N₀ ≤ n → ∀ (ξ : Ξ) (v : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}),
       empiricalProcess P n (fun i : Fin n => X i.val ξ)
           (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • v.1) ω - m θ₀ ω)
@@ -1446,7 +1711,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
                 (fun i : Fin n => X i.val ξ)⟫ :=
     fun n hn ξ v => linearizationResidual_process_eq P m mdot θ₀ hm_meas hmdot_L2 menv hmenv
       ρ hρ hLip n (fun i : Fin n => X i.val ξ) v.1 ((v.2).trans (hMρ n hn))
-  -- Rewrite the exceedance event in residual form, eventually for `n ≥ N₀`.
+  -- For `n ≥ N₀`, reduce the exceedance event to the residual `𝔾ₙ(R_n(h))` form.
   suffices hres : Tendsto (fun n => μ.outerMeasureStar {ξ : Ξ |
       ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
       ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
@@ -1476,7 +1741,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
     · exact isBoundedUnder_of ⟨⊤, fun _ => le_top⟩
     · exact isBoundedUnder_of ⟨0, fun _ => bot_le⟩
   intro η hη
-  -- The residual pair modulus at `(ε/2, η)` gives the radius `δ`.
+  -- The oscillation modulus at `(ε/2, η)` gives the radius `δ`.
   obtain ⟨δ, hδpos, hN4⟩ := linearizationResidual_pairModulus_tendstoZero P m mdot θ₀
     hm_meas hmdot_meas hmdot_L2 menv hmenv hmenv_meas ρ hρ hLip μ X hX_meas hX_indep hX_id hX_law
     M hM (ε / 2) (by linarith) η hη
@@ -1484,7 +1749,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
   obtain ⟨t, ht_sub, ht_fin, ht_cover⟩ :=
     finite_cover_balls_of_compact (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin d)) M) hδpos
   set T : Finset (EuclideanSpace ℝ (Fin d)) := ht_fin.toFinset with hT
-  -- Each net-point marginal vanishes by fixed-direction convergence (`μ.real → μ`).
+  -- Each net-point marginal vanishes at that direction (`μ.real → μ`).
   have hmar_each : ∀ x : EuclideanSpace ℝ (Fin d),
       Tendsto (fun n => μ {ξ : Ξ | ε / 2 ≤
         |empiricalProcess P n (fun i : Fin n => X i.val ξ)
@@ -1529,7 +1794,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
             (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • x) ω - m θ₀ ω)
               - ⟪x, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)|} :=
           measure_biUnion_finset_le T _
-  -- Ball-net split: exceedance ⊆ finite-net marginal event ∪ residual oscillation event.
+  -- Split the exceedance into a finite-net marginal event and an oscillation event.
   have hsplit : ∀ n, {ξ : Ξ | ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
         ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
               (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h.1) ω - m θ₀ ω)
@@ -1640,7 +1905,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
 /-- Sup-over-ball variant of
 `linearizationSup_tendstoZeroInOuterProbSup` supplied with fixed-direction
 `distL2` convergence.  Pair-modulus regularity is unchanged; in particular
-`hmdot_meas` remains required by the residual and linear-term modulus bounds. -/
+`hmdot_meas` is required by the residual and linear-term modulus estimates. -/
 theorem linearizationSup_tendstoZeroInOuterProbSup_of_distL2
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
@@ -1870,19 +2135,57 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_of_distL2
 
 /-! ### vdV Lemma 19.31 -/
 
-/-- **M-estimator linearization equicontinuity** (vdV Lemma 19.31).
+/-- **Arbitrary-rate M-estimator linearization equicontinuity** (vdV Lemma 19.31).
 
-For a bounded-in-probability random direction `hₙ`, the localized empirical
-process increment linearises,
+For every deterministic rate `r n → ∞` and every random direction bounded in outer
+probability, the empirical-process increment at scale `r` differs from its derivative
+linearization by a scalar that tends to zero in outer probability. -/
+theorem mEstimator_linearization_equicontinuity_atRate
+    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
+    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
+    (mdot : Fin d → (Ω → ℝ)) (θ₀ : EuclideanSpace ℝ (Fin d))
+    (hm_meas : ∀ θ, Measurable (m θ))
+    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
+    (ρ : ℝ) (hρ : 0 < ρ)
+    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
+      |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ ↦ m θ ω)
+      (innerSL ℝ (psiVec (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ ω)) θ₀)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (r : ℕ → ℝ) (hr : Tendsto r atTop atTop)
+    (hₙ : ℕ → Ξ → EuclideanSpace ℝ (Fin d))
+    (hₙ_bdd : IsBoundedInOuterProbScalar μ (fun n ξ ↦ ‖hₙ n ξ‖)) :
+    TendstoZeroInOuterProbScalar μ (fun n ξ ↦
+      empiricalProcess P n (fun i : Fin n ↦ X i.val ξ)
+          (scaledIncrementAt r m θ₀ n (hₙ n ξ))
+        - ⟪hₙ n ξ, empiricalProcessVec P
+            (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ n
+            (fun i : Fin n ↦ X i.val ξ)⟫) := by
+  refine tendstoZeroInOuterProbScalar_of_ball_outerProbSup μ
+    (fun n ξ h ↦ empiricalProcess P n (fun i : Fin n ↦ X i.val ξ)
+        (scaledIncrementAt r m θ₀ n h)
+      - ⟪h, empiricalProcessVec P
+          (fun _ : EuclideanSpace ℝ (Fin d) ↦ mdot) θ₀ n
+          (fun i : Fin n ↦ X i.val ξ)⟫)
+    hₙ (fun M hM ↦ ?_) hₙ_bdd
+  exact linearizationSup_tendstoZeroInOuterProbSup_atRate
+    P m mdot θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip hderiv
+    μ X hX_meas hX_indep hX_id hX_law r hr M hM
+
+/-- **Square-root-rate compatibility.**
+
+For a measurable bounded-in-probability random direction `hₙ`, the localized
+empirical-process increment at the square-root rate linearises,
 
     𝔾ₙ[√n(m_{θ₀ + hₙ/√n} − m_{θ₀})] − ⟪hₙ, 𝔾ₙṁ_{θ₀}⟫ →ₚ 0,
 
-where `𝔾ₙṁ_{θ₀} = empiricalProcessVec P (fun _ => mdot) θ₀ n Xs`. The Lean
-implementation uses `linearizationSup_tendstoZeroInOuterProbSup`: its
-changing-class argument combines the Theorem 19.28 scaled-shell pair modulus
-with fixed-direction convergence on a finite net. Since `hₙ` is `O_P(1)`, it
-eventually lies in a closed `M`-ball, so the uniform bound collapses to the
-single random value `hₙ n ξ`, yielding this scalar `TendstoInProbZero`. -/
+where `𝔾ₙṁ_{θ₀} = empiricalProcessVec P (fun _ => mdot) θ₀ n Xs`. The result
+specializes the arbitrary-rate ball theorem at `r n = √n` and then applies
+the measurable ordinary ball-collapse theorem. -/
 theorem mEstimator_linearization_equicontinuity
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ)
@@ -1911,17 +2214,19 @@ theorem mEstimator_linearization_equicontinuity
             (m (θ₀ + (Real.sqrt n)⁻¹ • hₙ n ξ) ω - m θ₀ ω))
         - ⟪hₙ n ξ, empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
               (fun i : Fin n => X i.val ξ)⟫) := by
-  -- Collapse the closed `M`-ball supremum onto the `O_P(1)` random direction `hₙ`.
   refine tendstoInProbZero_of_ball_outerProbSup μ
     (fun n ξ h => empiricalProcess P n (fun i : Fin n => X i.val ξ)
         (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h) ω - m θ₀ ω))
       - ⟪h, empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
             (fun i : Fin n => X i.val ξ)⟫)
     hₙ hₙ_meas (fun M hM => ?_) hₙ_bdd
-  exact linearizationSup_tendstoZeroInOuterProbSup P m mdot θ₀ hm_meas hmdot_meas hmdot_L2
-    menv hmenv ρ hρ hLip hderiv μ X hX_meas hX_indep hX_id hX_law hmenv_meas M hM
+  simpa only [scaledIncrementAt] using
+    (linearizationSup_tendstoZeroInOuterProbSup_atRate
+      P m mdot θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip hderiv
+      μ X hX_meas hX_indep hX_id hX_law (fun n ↦ Real.sqrt n)
+      (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop) M hM)
 
-/-- Adapter whose fixed-direction `distL2` convergence is supplied directly,
+/-- Version whose fixed-direction `distL2` convergence is supplied directly,
 matching the differentiability-in-probability route used by vdV 5.23/5.39. -/
 theorem mEstimator_linearization_equicontinuity_of_distL2
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]

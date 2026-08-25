@@ -7,69 +7,16 @@ import Mathlib.Data.ENat.Lattice
 /-!
 # Brackets and bracketing covers for empirical-process theory
 
-Given two functions $l$ and $u$, the **bracket** $[l, u]$ is the set of all
-functions $f$ with $l \le f \le u$ pointwise. An **$\varepsilon$-bracket** in
-$L_r(P)$ is a bracket $[l, u]$ whose size satisfies $\lVert u - l\rVert_{P,r}
-< \varepsilon$ (equivalently $P\,(u-l)^r < \varepsilon^r$). The **bracketing
-number** $N_{[\,]}(\varepsilon, \mathcal F, L_r(P))$ is the minimum number of
-$\varepsilon$-brackets needed to cover the class $\mathcal F$ — that is, the
-smallest collection of $\varepsilon$-brackets such that every $f \in \mathcal F$
-lies pointwise inside one of them. The **bracketing entropy** is the logarithm
-$\log N_{[\,]}(\varepsilon, \mathcal F, L_r(P))$, and the **bracketing entropy
-integral** is
-$$ J_{[\,]}(\delta, \mathcal F, L_2(P)) \;=\; \int_0^\delta
-\sqrt{\log N_{[\,]}(\varepsilon, \mathcal F, L_2(P))}\,\mathrm d\varepsilon. $$
-These are the combinatorial inputs to the bracketing forms of the
-Glivenko–Cantelli and Donsker theorems: finiteness of the $L_1$-bracketing
-numbers makes $\mathcal F$ Glivenko–Cantelli, and finiteness of
-$J_{[\,]}(\,\cdot, \mathcal F, L_2(P))$ makes $\mathcal F$ Donsker.
+A **bracket** `[l, u]` is a pair of functions `l ≤ u` pointwise. An
+**ε-bracket** in `L_r(P)` is one whose `L_r(P)`-size `‖u − l‖_{P,r}`
+is less than `ε`. A class `F` of measurable functions admits a
+**finite ε-bracketing cover** if there are finitely many ε-brackets
+that cover `F`: every `f ∈ F` lies pointwise inside some bracket. This
+is the combinatorial input to vdV's bracketing-entropy theorems (vdV
+§19.2, Theorems 19.4, 19.5).
 
-Headline declarations: `IsBracket`, `IsEpsBracket`,
+Principal declarations: `IsBracket`, `IsEpsBracket`,
 `HasFiniteBracketingCover`, `bracketingNumber`, `bracketingEntropyIntegral`.
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
-in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 19 (Empirical Processes), §19.2 — the definitions of bracket,
-$\varepsilon$-bracket, bracketing number $N_{[\,]}$, and the bracketing integral
-$J_{[\,]}$ are the hypotheses of Theorem 19.4 (Glivenko–Cantelli) and Theorem
-19.5 (Donsker).
-
-**Proof formalization notes.** This file supplies definitions and their basic
-order/monotonicity lemmas, not a headline theorem proof; it is the
-combinatorial input layer consumed downstream by the bracketing
-Glivenko–Cantelli (Thm 19.4) and Donsker (Thm 19.5) assembly. Conventions and
-deviations from the book:
-
-* `IsEpsBracket` bundles measurability of `l, u` and membership in `L_r(P)`
-  alongside the size bound `‖u − l‖_{P,r} < ε`. The book treats these as
-  ambient regularity; we make them explicit so the strong-LLN invocation in
-  the proof of Theorem 19.4 can fire directly on the bracket bounds (it needs
-  finite `L_r(P)`-norms), and so `IndepFun.comp` / `IdentDistrib.comp` can
-  post-compose the iid sequence by `l` / `u`.
-* `bracketingNumber` is valued in `ℕ∞` and equals `⊤` exactly when no finite
-  `ε`-bracketing cover exists (`bracketingNumber_lt_top_iff_HasFiniteBracketingCover`);
-  otherwise it returns the least finite cover size, matching the book's "minimum
-  number of `ε`-brackets". The empty class admits the trivial size-`0` cover.
-* `bracketingEntropyIntegral` is the `ℝ≥0∞`-valued Lebesgue integral of
-  `√(log N_{[]}(ε, F, L_2(P)))` over `(0, δ]`. The integrand at a scale where
-  `bracketingNumber = ⊤` is taken to be `⊤`, so the whole integral is `⊤`
-  whenever the bracketing number fails to be finite on a positive-measure
-  subset of `(0, δ]` — faithfully reflecting the textbook content that such a
-  class need not be Donsker.
-
-**Bibliographic comments.** The notions of bracket, bracketing number, and the
-bracketing entropy integral are folklore rather than the content of a
-single seminal paper; they crystallize a line of work on metric-entropy methods
-for empirical processes. The entropy-integral idea originates with R. M. Dudley,
-"The sizes of compact subsets of Hilbert space and continuity of Gaussian
-processes," *Journal of Functional Analysis* 1(3):290–330, 1967. The decisive
-result behind the $L_2$-bracketing condition formalized here — that finiteness
-of $J_{[\,]}(\,\cdot, \mathcal F, L_2(P))$ implies the Donsker property (vdV
-Theorem 19.5) — is due to M. Ossiander, "A central limit theorem under metric
-entropy with $L_2$ bracketing," *The Annals of Probability* 15(3):897–919, 1987.
-The systematic packaging of these definitions, including the $J_{[\,]}$ notation,
-follows A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical
-Processes*, Springer, 1996.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -295,14 +242,6 @@ this convention `J_{[]}(δ, F, L_2(P)) = ⊤` whenever `bracketingNumber`
 fails to be finite on a positive-measure subset of `(0, δ]`, faithfully
 reflecting the textbook content.
 
-**Change note (definition strengthened in place).** An earlier release used
-the integrand `√(log N)` without the `1 +` regularizer. The present
-`√(log (1 + N))` form dominates the old one (pointwise larger integrand), so
-every finiteness hypothesis `J_{[]} < ⊤` stated against this definition is at
-least as strong as before; downstream statements in `Maximal.lean`,
-`EquicontinuityChaining.lean`, and `DonskerBracketing.lean` were restated
-against this integrand.
-
 vdV §19.2. -/
 noncomputable def bracketingEntropyIntegral
     (δ : ℝ) (F : Set (Ω → ℝ)) (P : Measure Ω) : ℝ≥0∞ :=
@@ -315,9 +254,10 @@ noncomputable def bracketingEntropyIntegral
 /-- The weight `N ↦ √(log (1 + N))` on `ℕ∞` with the `⊤` convention, as a plain
 (non-dependent) function so its monotonicity can be stated cleanly.
 
-The `1 +` regularizer matches vdV Lemma 19.33's `log(1 + |F|)`. The weight is
-`0` at `N = 0` and strictly positive for every positive finite count, supplying
-a nonzero factor for nonempty covers. -/
+The `1 +` regularizer (matching vdV Lemma 19.33's `log(1 + |F|)`) keeps the
+weight strictly positive even when the bracketing count is `0` or `1`, so the
+chaining leaves' nonzero `levelJumpSup`/`levelOscSup` are dominated by a nonzero
+right-hand side. -/
 noncomputable def entropyWeight (N : ℕ∞) : ℝ≥0∞ :=
   ENat.recTopCoe (⊤ : ℝ≥0∞)
     (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (1 + (n : ℝ))))) N
@@ -364,10 +304,9 @@ finite ε-bracketing cover exists. By definition
 
 `bracketingEntropyIntegral δ F P = ∫⁻ ε in Ioc 0 δ, entropyIntegrand ε F P`.
 
-This is the same `ENat.recTopCoe` expression that appears literally inside
-`bracketingEntropyIntegral`; the named form lets downstream lemmas (the
-dyadic-series comparison `dyadic_sum_le_bracketingEntropyIntegral`) reason
-about it without re-unfolding. -/
+This is the `ENat.recTopCoe` expression occurring in
+`bracketingEntropyIntegral`; in particular,
+`dyadic_sum_le_bracketingEntropyIntegral` applies its monotonicity directly. -/
 noncomputable def entropyIntegrand
     (ε : ℝ) (F : Set (Ω → ℝ)) (P : Measure Ω) : ℝ≥0∞ :=
   entropyWeight (bracketingNumber ε F 2 P)
@@ -435,9 +374,8 @@ For any nonempty `F` and any positive scale `δ' > 0`, the entropy integral
 `≥ entropyWeight 1 = ofReal (√(log 2))`. Hence
 `J ≥ ofReal (√(log 2)) · volume (Ioc 0 δ') = ofReal (√(log 2)) · ofReal δ' > 0`.
 
-Consequently the Donsker-19.5 chaining argument derives
-`hJ_pos : ∀ δ' > 0, 0 < J(δ')` from `F.Nonempty`, keeping the headline's
-hypothesis set in line with vdV Theorem 19.5. -/
+Thus a separate positivity assumption on `J` is unnecessary: it follows from
+the nonemptiness of `F`, as in vdV Theorem 19.5. -/
 lemma bracketingEntropyIntegral_pos_of_nonempty
     {F : Set (Ω → ℝ)} {P : Measure Ω} {δ' : ℝ} (hF : F.Nonempty) (hδ : 0 < δ') :
     0 < bracketingEntropyIntegral δ' F P := by
@@ -553,7 +491,7 @@ private lemma iUnion_dyadic_Ioc_eq {δ : ℝ} (hδ : 0 < δ) :
       exfalso
       rw [show q₀ = 0 from h0] at hq₀; simp only [pow_zero, one_mul] at hq₀
       exact absurd hq₀ (not_lt.mpr hxδ)
-    -- Set `p := q₀ - 1`; the previous index `p` does not satisfy the bound.
+    -- set `p := q₀ - 1`; the previous index `p` does NOT satisfy the bound
     obtain ⟨p, hp⟩ : ∃ p, q₀ = p + 1 := ⟨q₀ - 1, by omega⟩
     have hprev : ¬ (1/2 : ℝ)^p * δ < x :=
       Nat.find_min hexists (by omega : p < q₀)

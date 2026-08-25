@@ -5,29 +5,26 @@ import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
 
 /-!
-# Z-estimator semiparametric efficiency (vector θ) — native discharge
+# Z-estimator semiparametric efficiency for vector parameters
 
-Vector-parameter (`θ ∈ ℝᵈ`) discharge layer for the bundled
-`asympLinear_25_54_vec` field of `EfficientScoreEqAssumptions_vec`,
-mirroring the scalar `Discharge/ZEstimator.lean`.
+This file proves the vector-parameter (`θ ∈ ℝᵈ`) form of van der Vaart,
+Theorem 25.54.
 
-## Native route (no diagonal-only coordinatewise identification)
+## Multivariate formulation
 
-The Taylor-route discharge of `asympLinear_25_54_vec` uses the native
-multivariate discharge
-`ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec`, which
-derives the vector residual directly through the `d × d` master identity
+The theorem `ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec`
+derives the vector residual directly through the `d × d` identity
 `√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` and then applies `Ĩ⁻¹`, so the influence is
-`Ĩ⁻¹ℓ̃ = candidateVecEIF` **by construction** — valid for arbitrary
-(non-diagonal) `Ĩ`. Its vector/matrix regularity bundle is
+`Ĩ⁻¹ℓ̃ = candidateVecEIF`. This is valid for arbitrary non-diagonal `Ĩ`.
+Its vector and matrix regularity assumptions are recorded by
 `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector estimating equation
-`score_eq_vec`, the matrix Bartlett identity `matrix_bartlett`, the matrix
+`score_eq_vec`, the matrix Bartlett identity `matrix_bartlett`, and the matrix
 DQM-Taylor remainder `matrix_taylor`).
 
 ## Coordinatewise reduction
 
 The **vector→coordinatewise reduction**
-`asymptoticallyLinearAt_vec_of_forall_coord` shows that a vector estimator
+`asymptoticallyLinearAt_vec_of_forall_coord` states that a vector estimator
 `T_n : (Fin n → Ω) → EuclideanSpace ℝ (Fin d)`
 is asymptotically linear with influence tuple `φ` and vector centering `c`
 if for every coordinate `j`, the scalar coordinate `T_n · j` is
@@ -57,7 +54,7 @@ open AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorVecNative
 variable {Ω : Type} [MeasurableSpace Ω]
 variable {d : ℕ}
 
-/-! ### Coordinate helpers for `EuclideanSpace ℝ (Fin d)` -/
+/-! ### Coordinate lemmas for `EuclideanSpace ℝ (Fin d)` -/
 
 /-- A single coordinate of a Euclidean vector is bounded by its norm. -/
 private lemma abs_coord_le_norm (x : EuclideanSpace ℝ (Fin d)) (j : Fin d) :
@@ -179,7 +176,7 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
       have := norm_lt_of_forall_coord_lt _ ε hdpos hε h_all
       exact absurd hX (not_le.mpr this)
 
-/-! ### Vector Taylor discharge (native) -/
+/-! ### Vector Taylor theorem -/
 
 open AsymptoticStatistics.StrictModel.EfficientScore
 open AsymptoticStatistics.StrictModel.EfficientScoreVec
@@ -193,20 +190,16 @@ variable {score_func_seq : ∀ n, (Fin n → Ω) → (Ω → EuclideanSpace ℝ 
 variable {score_l_dot : Matrix (Fin d) (Fin d) (Lp ℝ 2 P)}
 variable {θ₀ : EuclideanSpace ℝ (Fin d)}
 
-/-- *vdV thm:25.54 (vector form) — discharge of `asympLinear_25_54_vec`, native route.*
+/-- **vdV Theorem 25.54 (vector form): asymptotic linearity.**
 
-From `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector estimating equation
+From the vector and matrix assumptions
+`ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector estimating equation
 `score_eq_vec`, the matrix Bartlett identity `matrix_bartlett`, the matrix
 DQM-Taylor remainder `matrix_taylor`), the vector Z-estimator is
 asymptotically linear at `P` with influence tuple `candidateVecEIF S_θ T_nuis e`
-and vector centering `θ₀`.
-
-**Proof.** Re-export of the book-faithful native discharge
-`ZEstimatorVecNative.mle_asympLinear_of_nativeTaylorCore_vec`, which
-derives the vector residual directly through the `d × d` master identity
-`√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` and then applies `Ĩ⁻¹`, so the influence is
-`Ĩ⁻¹ℓ̃ = candidateVecEIF` **by construction** — valid for arbitrary
-(non-diagonal) `Ĩ`, with no coordinatewise identification.
+and vector centering `θ₀`. The proof uses the matrix identity
+`√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` and therefore permits arbitrary
+non-diagonal information matrices.
 
 Reference: vdV §25.5, thm:25.54 (vector form); §25.11 thm:25.77. -/
 theorem zEstimator_asympLinear_of_taylor_vec
@@ -216,14 +209,14 @@ theorem zEstimator_asympLinear_of_taylor_vec
       (candidateVecEIF S_θ T_nuis e) θ₀ :=
   mle_asympLinear_of_nativeTaylorCore_vec h
 
-/-- **Vector Taylor assumptions as an efficient-score equation bundle.**
+/-- Construct `EfficientScoreEqAssumptions_vec` from the vector Taylor assumptions.
 
-Constructs `EfficientScoreEqAssumptions_vec` from `ZEstimatorTaylorCoreNative_vec` and
-the EIF-construction inputs `h_mem` and `h_Dψ`. Positive definiteness is inherited from
-`h.hPD`, and `asympLinear_25_54_vec` is supplied by
-`zEstimator_asympLinear_of_taylor_vec`.
+The vector Taylor conclusion and the EIF characterization
+(`h_mem`, `h_Dψ`) yield `EfficientScoreEqAssumptions_vec`, so
+`zEstimator_semiparametricallyEfficient_vec` follows from the proved
+asymptotic-linear expansion.
 
-Reference: vdV §25.5, Theorem 25.54 (vector form). -/
+Reference: vdV §25.5, thm:25.54 (vector form). -/
 def toEfficientScoreEqAssumptions_vec
     {T : Submodule ℝ ↥(L2ZeroMean P)}
     {Dψ : T →L[ℝ] EuclideanSpace ℝ (Fin d)}

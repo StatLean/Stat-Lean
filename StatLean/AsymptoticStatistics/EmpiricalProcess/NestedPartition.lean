@@ -17,10 +17,10 @@ measurable functions `Δ_{qi} ≤ 2F` such that `sup_{f,g ∈ F_{qi}} |f − g| 
 
 The construction (`nestedBracketPartition_of_covers`) takes, for each level
 `p` in `[q₀, q]`, a finite `L²(P)`-bracketing cover of `F` at size `2^{−p}`
-(the project's `HasFiniteBracketingCover`), and builds the partition by the
-book's *disjointify + intersect across levels + prune empty cells* recipe.
+(`HasFiniteBracketingCover`), and builds the partition by disjointifying,
+intersecting across levels, and removing empty cells.
 
-Headline declarations: `NestedBracketPartition`, `nestedBracketPartition_of_covers`.
+Principal declarations: `NestedBracketPartition`, `nestedBracketPartition_of_covers`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -87,7 +87,7 @@ structure NestedBracketPartition (F : Set (Ω → ℝ)) (P : Measure Ω)
   /-- `Δ_{qi}` is in `L²(P)`. -/
   Δ_memLp : ∀ {q : ℕ}, q₀ ≤ q → ∀ i, MemLp (Δ q i) 2 P
   /-- The `L²(P)`-size of `Δ_{qi}` is at most `C · 2^{−(q − q₀)}` (the **offset**
-  scale of fix #2: partition level `q₀` sits at the coarsest scale `C = δ`, level
+  scale: partition level `q₀` sits at the coarsest scale `C = δ`, level
   `q₀ + k` at `(1/2)^k·δ`, matching vdV's "*first cover `F` with brackets of size
   `2^{-q}`*" with `2^{-q₀} ≈ δ`). The series-offset `k = q − q₀` therefore lands on
   the dyadic-series term `(1/2)^k·δ`. -/
@@ -96,13 +96,11 @@ structure NestedBracketPartition (F : Set (Ω → ℝ)) (P : Measure Ω)
   /-- **Oscillation nesting monotonicity** (Constitutive, vdV §19.6 p.287
   *"because the partitions are nested, `Δ_q B_q ≤ Δ_{q-1} B_q`"*). The level-`(q+1)`
   cell oscillation is pointwise dominated by the oscillation of its parent cell
-  `(refines hq i).choose` at level `q`. This is exactly the parent map used by
-  `NestedBracketPartition.parent` in the chaining assembly, so
+  `(refines hq i).choose` at level `q`. This is the parent map used by
+  `NestedBracketPartition.parent`, so
   `B.Δ_succ_le_parent hq i x : B.Δ (q+1) i x ≤ B.Δ q (B.parent hq i) x` holds by
-  `rfl` on the parent index. Removing this field makes the chaining B-core's
-  `hg_bdd` (the `Δ_q ≤ √n·a_{q-1}` truncation bound) underivable: the bare `diam`
-  field only asserts `Δ_q` is *an* upper bound on the cell oscillation, not that it
-  is dominated by the parent's chosen `Δ`. -/
+  `rfl` on the parent index. This monotonicity is stronger than the bare `diam`
+  bound and yields the truncation estimate `Δ_q ≤ √n·a_{q-1}`. -/
   Δ_succ_le_parent : ∀ {q : ℕ} (hq : q₀ ≤ q) (i : Fin (Nq (q + 1))) (x : Ω),
     Δ (q + 1) i x ≤ Δ q (refines hq i).choose x
   /-- `N_q` is bounded by the product `∏_{p=q₀}^{q} N_p` of the per-level
@@ -112,7 +110,7 @@ structure NestedBracketPartition (F : Set (Ω → ℝ)) (P : Measure Ω)
     (Nq q : ℕ) ≤ ∏ p ∈ Finset.Icc q₀ q, coverCard p
   /-- Each per-level cover cardinality `coverCard p` is bounded by the
   *bracketing number* of `F` at the **offset** dyadic scale `(1/2)^(p − q₀) · C`
-  (fix #2: at `p = q₀` the scale is `C = δ`, at `p = q₀ + k` it is `(1/2)^k·δ`).
+  (at `p = q₀` the scale is `C = δ`, while at `p = q₀ + k` it is `(1/2)^k·δ`).
   With the `C = δ` convention (the structure's scale constant doubles as the
   entropy integral's upper cutoff `δ`), this is exactly vdV's requirement that the
   partition be built from **minimal** `(1/2)^(p−q₀)·δ`-bracketing covers, so that
@@ -298,10 +296,10 @@ noncomputable def cellWidth {q : ℕ} (i : Fin (buildNq cov (q₀ := q₀) q))
   (cov p.1).ub (cellIdx cov i p) x - (cov p.1).lb (cellIdx cov i p) x
 
 /-- `Δ q i` is the **min over the cell's whole tuple `[q₀, q]`** of the per-level
-bracket widths (fix #3, the intersected-Δ as min-of-widths). The cell is the
+bracket widths, using the minimum of the intersected widths. The cell is the
 intersection of its chosen brackets across levels `q₀ … q`, so its oscillation is
 dominated by *every* level's width, hence by the minimum. Re-indexing to the
-offset scale (fix #2), the level-`q` width is itself a `(1/2)^(q−q₀)·δ`-bracket, so
+offset scale, the level-`q` width is itself a `(1/2)^(q−q₀)·δ`-bracket, so
 the min — being `≤` that width — inherits the offset `L²`-decay. -/
 noncomputable def buildΔ {q : ℕ} (hq : q₀ ≤ q)
     (i : Fin (buildNq cov (q₀ := q₀) q)) : Ω → ℝ :=
@@ -371,7 +369,7 @@ lemma buildCell_disjoint {q : ℕ} (i j : Fin (buildNq cov (q₀ := q₀) q))
 
 /-- An element of cell `i` lies inside the cell's chosen bracket at **every** level
 `p ∈ [q₀, q]`: at level `p`, `f`'s assigned bracket is exactly `cellIdx … p`. This
-is the intersection-of-brackets property of the cell (fix #3): the cell is the
+is the intersection-of-brackets property of the cell: the cell is the
 joint fiber of the assignment tuple, so every member sits in each level's bracket. -/
 lemma buildCell_in_bracket {q : ℕ}
     {i : Fin (buildNq cov (q₀ := q₀) q)} {f : Ω → ℝ}
@@ -471,7 +469,7 @@ lemma buildΔ_memLp {q : ℕ} (hq : q₀ ≤ q) (i : Fin (buildNq cov (q₀ := q
 pointwise `≤` the top-level width `width_q` (and `≥ 0`), and the top-level bracket is
 a `scale q`-bracket (`size_lt`). So `eLpNorm (Δ q i) ≤ eLpNorm width_q < ofReal (scale q)`
 via `eLpNorm_mono_ae_real`. With the offset scale `scale q = (1/2)^(q−q₀)·δ` fed by the
-constructors (fix #2), this is the offset `L²`-decay. -/
+constructors, this is the offset `L²`-decay. -/
 lemma buildΔ_L2_le {q : ℕ} (hq : q₀ ≤ q) (i : Fin (buildNq cov (q₀ := q₀) q)) :
     eLpNorm (buildΔ cov hq i) 2 P ≤ ENNReal.ofReal (scale q) := by
   -- `Δ q i ≤ width_q` pointwise (in absolute value, both nonneg), then `width_q`'s
@@ -559,7 +557,7 @@ lemma cellIdx_succ_restrict {q : ℕ}
   rw [← hf₀t, ← hf₀j]
   exact assignTuple_restrict cov hf₀F p
 
-/-- **Oscillation nesting monotonicity (the new constitutive field's discharge).**
+/-- **Oscillation nesting monotonicity.**
 `buildΔ (q+1) i ≤ buildΔ q j` pointwise whenever `cell (q+1) i ⊆ cell q j`: the
 child's min ranges over `[q₀, q+1]`, which (by `cellIdx_succ_restrict`) contains the
 exact same per-level widths as the parent's min over `[q₀, q]` *plus* the extra
@@ -621,14 +619,14 @@ makes the partitions successive refinements; and the achieved tuples number at
 most `∏_{p=q₀}^{q} N_p`.
 
 The hypothesis `hmin` records that the supplied per-level cover is *minimal*
-(size `≤ N_{[]}((1/2)^(p−q₀), F, L²(P))`, at the **offset** scale of fix #2),
-which the new `coverCard_le` structure field requires; arbitrary covers cannot
+(size `≤ N_{[]}((1/2)^(p−q₀), F, L²(P))`, at the **offset** scale),
+which the `coverCard_le` structure field requires; arbitrary covers cannot
 satisfy it (the cover size only bounds the bracketing number from *above*). For
 the canonical construction from a finite-entropy hypothesis,
 `nestedBracketPartition_of_finiteEntropy` discharges `hmin` automatically by
 feeding minimal covers from `exists_minimal_bracketingCover`.
 
-The per-level cover is supplied at the **offset** scale `(1/2)^(p−q₀)` (fix #2):
+The per-level cover is supplied at the **offset** scale `(1/2)^(p−q₀)`:
 level `q₀` sits at scale `1`, level `q₀ + k` at scale `(1/2)^k`, so the
 oscillation envelope `Δ = inf'_p (ub − lb)` has `‖Δ‖_{P,2} ≤ (1/2)^(q−q₀)`.
 
@@ -704,7 +702,7 @@ larger-scale one; here `p < q₀ ⇒ q₀ − q₀ = 0 ≤ p − q₀ = 0`, so t
 same `δ` and the weakening is `le_rfl`), purely to make the family a total
 function `ℕ → BracketingCoverData F ((1/2)^(p−q₀)·δ) P`.
 
-The cover is supplied at the **offset** scale `(1/2)^(p−q₀)·δ` (fix #2), so the
+The cover is supplied at the **offset** scale `(1/2)^(p−q₀)·δ`, so the
 `coverCard_le` field holds with equality at the offset bracketing number and
 `Δ_L2_le` carries the offset `(1/2)^(q−q₀)·δ` decay matching the dyadic series.
 
@@ -902,8 +900,8 @@ The countable separant is the clamp-image `clampFn M '' G'` of `G`'s separant
 `G'`; pointwise density transports through the continuity of `clampReal M`
 (`φₘ x → g x` gives `clampReal M (φₘ x) → clampReal M (g x)`); and the original
 integrable envelope `Φ` still dominates, since the clamp is a contraction toward
-`0` (`|clampReal M t| ≤ |t|`). Consumed by `localizedChainBound_pos_core`'s
-clamped-separability sub-gap. -/
+`0` (`|clampReal M t| ≤ |t|`). This transports the density input used by
+uniform-entropy maximal inequalities to their clamped classes. -/
 theorem EmpProcPointwiseDense_truncateClass {G : Set (Ω → ℝ)} {M : ℝ}
     (hM : 0 ≤ M) (h : EmpProcPointwiseDense G P) :
     EmpProcPointwiseDense (truncateClass G M) P := by
@@ -958,7 +956,7 @@ lemma hasFiniteBracketingCover_truncateClass {G : Set (Ω → ℝ)} {ε : ℝ} (
 Given any cover of the truncated class, clamping all bracket endpoints at `±M`
 yields another cover of the *same* truncated class (members are already
 `[−M, M]`-valued, so clamping the brackets still contains them: `clampReal M (g' x)
-= g' x` by `clampReal_of_mem`), now with every bracket width `≤ 2M`. The cardinality
+= g' x` by `clampReal_of_mem`), with every bracket width `≤ 2M`. The cardinality
 is preserved (same `k`). This is the key step letting the *minimal* truncated-class
 cover (whose cardinality is the bracketing number) acquire the uniform `≤ 2M` width
 bound that the envelope lemma needs. -/

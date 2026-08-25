@@ -120,9 +120,9 @@ theorem pi_const_eq_infinitePiNat_map
           = ψ ∘ (Finset.range n).restrict from h_factor,
       ← Measure.map_map hψ_meas h_restrict_meas]
   rw [h_step1, Measure.infinitePiNat_map_restrict]
-  -- Now the RHS is `(Measure.pi (fun i : ↥(Finset.range n) => ν)).map ψ`. Identify
+  -- Identify the resulting reindexing map with `piCongrLeft`.
   -- `ψ = piCongrLeft (·↦𝓧) (rangeEquivFin n)` — reindexing from `↥(Finset.range n)` to
-  -- `Fin n` — and close via `measurePreserving_piCongrLeft`.
+  -- `Fin n`; this map preserves the product measure.
   have h_ψ_eq : ψ = MeasurableEquiv.piCongrLeft (fun _ : Fin n => 𝓧)
       (rangeEquivFin n) := by
     funext f i

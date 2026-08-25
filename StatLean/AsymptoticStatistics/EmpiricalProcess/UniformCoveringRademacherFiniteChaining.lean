@@ -1,12 +1,5 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 
-/-!
-# Finite conditional Rademacher chaining
-
-Finite dyadic-net telescope and expectation bounds for conditional
-Rademacher suprema in the realized empirical seminorm.
--/
-
 namespace AsymptoticStatistics.EmpiricalProcess
 open scoped ENNReal NNReal
 

@@ -12,74 +12,21 @@ import Mathlib.Probability.Moments.Variance
 /-!
 # Donsker classes via the Theorem 18.14 characterization
 
-A class $\mathcal{F}$ of measurable functions is *$P$-Donsker* if the empirical
-process $\mathbb{G}_n f = \sqrt{n}\,(\mathbb{P}_n - P)f$ converges in distribution,
-as a process indexed by $\mathcal{F}$, to a tight Gaussian limit in
-$\ell^\infty(\mathcal{F})$. The characterization theorem states that this holds
-if and only if two conditions are met:
+Defines `IsPDonsker F P` for a class of measurable functions. Following
+vdV §19.2, `F` is `P`-Donsker iff the empirical process `G_n f` converges in
+distribution to a tight Gaussian limit in `ℓ^∞(F)`. vdV Theorem 18.14 gives an
+equivalent characterization: `F` is Donsker iff (a) finite marginals
+jointly satisfy the multivariate CLT, and (b) the empirical process is
+asymptotically equicontinuous in the `L²(P)`-semimetric. Here `IsPDonsker` is
+the conjunction of these two properties, `IsMarginalCLT` and
+`IsAsymptoticallyEquicontinuous`.
 
-* **(a) Finite-dimensional convergence.** Every finite tuple
-  $(f_1,\dots,f_k)$ of functions in $\mathcal{F}$ satisfies the joint
-  multivariate central limit theorem under i.i.d. sampling from $P$, with
-  limiting Gaussian covariance $\bigl(Pf_if_j - Pf_i\,Pf_j\bigr)_{i,j}$. (In the
-  Lean formalization this is encoded through the $L^2(P)$-integrability of every
-  $f\in\mathcal{F}$, without which the covariance is undefined.)
-* **(b) Asymptotic equicontinuity.** The empirical process is asymptotically
-  equicontinuous with respect to the $L^2(P)$-semimetric
-  $\rho(f,g) = \bigl(P(f-g)^2\bigr)^{1/2}$.
+The random-pair form of asymptotic equicontinuity is the standard
+formulation in Vaart–Wellner, *Weak Convergence and Empirical Processes*, §2.1.
 
-We adopt the (a)+(b) characterization as the working definition of
-`IsPDonsker`, splitting it into two predicates (`IsMarginalCLT`,
-`IsAsymptoticallyEquicontinuous`) so as to avoid formalising
-$\ell^\infty(\mathcal{F})$ as a topological space and weak convergence on it.
-The headline consumer result is closure under finite unions: the union of two
-$P$-Donsker classes is again $P$-Donsker, under measurable-selection
-admissibility and an $L^2(P)$-separation hypothesis on the symmetric difference
-of the two classes (both made explicit below as Vaart–Wellner regularity).
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 19 (Empirical Processes), §19.2 (Donsker classes; definitions), with the
-operational characterization from Chapter 18 (Weak Convergence), Theorem 18.14.
-The union-closure statement is van der Vaart §19.4 (used in the proof of
-Theorem 19.23). The asymptotic-equicontinuity machinery follows A. W. van der
-Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer,
-1996, §2.1 (random-pair workaround), §2.3 (admissibility), §2.10.1 (measurable
-selection). Headline declarations: `IsPDonsker`, `IsPDonsker.union`.
-
-**Proof formalization notes.** `IsAsymptoticallyEquicontinuous` is stated in
-the vdV Theorem 18.14(ii) outer-sup form: for every `ε, η > 0` there is a
-`δ > 0` with
-`limsup_n μ.outerMeasureStar {sup over pairs with distL2 < δ of the oscillation
-exceeds ε} ≤ ofReal η`. (An earlier release of this file used the weaker
-per-random-pair "consumer" form of Vaart–Wellner §2.1; that form is recovered
-from the present one by the bridge lemma `osc_modulus_to_random_pair`, so
-downstream consumers were unaffected by the strengthening.) The $\Xi$
-sample-space universe is fixed at `Type 0`. The union-closure proof
-(`isAsymptoticallyEquicontinuous_union`) splits the outer-sup event over
-`F ∪ G` by subadditivity (`outerMeasureStar_union_le`) into an `F`-pure piece,
-a `G`-pure piece, and a mixed straddling piece; the mixed piece is controlled
-by a Markov bound on the $L^2$-distance tail (`markov_distL2_tail`,
-`le_distL2_of_integral_sq_ge`) together with the bulk-oscillation membership
-lemma `bulk_osc_mem` and the `limsup` composition lemmas
-(`limsup_add_tendsto_zero_le`, `limsup_add_le_of_le`).
-
-**Bibliographic comments.** The notion that the empirical process indexed by a
-class of functions converges weakly to a Gaussian process — and the term
-"Donsker class" — originates with M. D. Donsker, "Justification and extension of
-Doob's heuristic approach to the Kolmogorov–Smirnov theorems," *Annals of
-Mathematical Statistics* 23 (1952), no. 2, 277–281, which rigorously established
-the functional central limit theorem for the empirical distribution function
-(the case $\mathcal{F} = \{\mathbf{1}_{(-\infty,t]} : t\in\mathbb{R}\}$),
-following the heuristic program of J. L. Doob, "Heuristic approach to the
-Kolmogorov–Smirnov theorems," *Annals of Mathematical Statistics* 20 (1949),
-no. 3, 393–403. The abstract uniform-CLT theory for general Donsker classes,
-including the equicontinuity characterization (van der Vaart Theorem 18.14) and
-the measurable-selection/admissibility apparatus, was developed primarily by
-R. M. Dudley and by Giné and Zinn in the 1970s–80s and is given its standard
-treatment in van der Vaart and Wellner, *Weak Convergence and Empirical
-Processes* (1996); the union-closure result formalized here is folklore within
-that theory.
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.2
+(definitions) + Theorem 18.14 (characterization). Principal declarations:
+`IsPDonsker`, `IsPDonsker.union`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -108,7 +55,7 @@ noncomputable def marginalCovMatrix
 
 /-- **Coordinate vector** of a finite tuple `f : Fin k → (Ω → ℝ)` at a point
 `ω : Ω`, as an element of `EuclideanSpace ℝ (Fin k)`: the `i`-th coordinate is
-`f i ω`. Used to phrase the marginal CLT through the multivariate CLT brick. -/
+`f i ω`. -/
 noncomputable def tupleVec
     {k : ℕ} (f : Fin k → (Ω → ℝ)) (ω : Ω) : EuclideanSpace ℝ (Fin k) :=
   (WithLp.equiv 2 _).symm (fun i => f i ω)
@@ -121,9 +68,8 @@ Gaussian limit's covariance matrix given by `(Pfᵢfⱼ − Pfᵢ·Pfⱼ)ᵢⱼ`
 Two conjuncts:
 
 * **`memLp`** — every `f ∈ F` is square-integrable (`MemLp f 2 P`), without
-  which the limiting covariance is undefined. This is the old (weaker)
-  content; it is recovered as the trivial projection `IsMarginalCLT.memLp`,
-  so consumers that only used L²-membership keep working unchanged.
+  which the limiting covariance is undefined. It is available separately as
+  the projection `IsMarginalCLT.memLp`.
 * **`fdd`** — genuine finite-dimensional (marginal) convergence in
   distribution. For every finite tuple `f : Fin k → (Ω → ℝ)` valued in `F` and
   every iid sample `X : ℕ → Ξ → Ω` with law `P`, the empirical-process random
@@ -153,28 +99,29 @@ def IsMarginalCLT (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
                 - n • μ[fun ξ => tupleVec f (X 0 ξ)]))
             atTop Y (fun _ => μ) (multivariateGaussian 0 (marginalCovMatrix P f)))
 
-/-- **iid-encoding adapter for the marginal CLT (`fdd` clause).**
+/-- **Marginal CLT for an iid empirical process (`fdd` clause).**
 
 From iid sampling `X : ℕ → Ξ → Ω` with law `P` and a finite tuple
 `f : Fin k → (Ω → ℝ)` of square-integrable functions, the empirical-process
 random vector converges in distribution to the centred Gaussian with covariance
 `marginalCovMatrix P f`.
 
-This is the genuine multivariate-CLT content of Theorem 18.14(a). It is the
-adapter between the empirical-process encoding (a tuple of functions evaluated
-along an iid sample) and the project's multivariate-CLT brick
-`ProbabilityTheory.tendstoInDistribution_multivariate_clt` /
-`ParametricFamily.ScoreCLT.clt_finDim`: it builds the coordinate vector
+This is the multivariate-CLT content of Theorem 18.14(a). The proof builds the
+coordinate vector
 `Y i ξ := tupleVec f (X i ξ)`, transports iid / `MemLp 2` from `X` and `f`,
 identifies the inner-product variance `Var[⟪t, Y 0⟫]` with the quadratic form of
 `marginalCovMatrix P f` (which is positive semidefinite, being a covariance
-Gram matrix), and applies the brick.
+Gram matrix), and applies the classical multivariate CLT.
 
 vdV §19.2 + Theorem 18.14(a) (book p.269: the empirical process of a Donsker
 class has Gaussian finite-dimensional marginals with covariance
-`Pfᵢfⱼ − Pfᵢ·Pfⱼ`). -/
+`Pfᵢfⱼ − Pfᵢ·Pfⱼ`).
+
+The proof applies the classical multivariate CLT to the iid vectors
+`tupleVec f (Xᵢ ·)`, identifies their covariance with `marginalCovMatrix P f`,
+and rewrites the standardized sum in empirical-process form. -/
 lemma marginalCLT_fdd_of_iid
-    {P : Measure Ω}
+    {F : Set (Ω → ℝ)} {P : Measure Ω}
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
     (_hX_meas : ∀ i, Measurable (X i))
@@ -379,7 +326,7 @@ lemma marginalCLT_fdd_of_iid
         (hvar ((WithLp.equiv 2 (Fin k → ℝ)).symm x)).symm
       rw [hxv]
       exact variance_nonneg _ _
-  -- Apply the project's multivariate iid CLT brick (witness `id`).
+  -- Apply the multivariate iid CLT with the identity witness.
   have hYid : ProbabilityTheory.HasLaw
       (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
       (multivariateGaussian 0 (marginalCovMatrix P f))
@@ -413,12 +360,12 @@ lemma marginalCLT_fdd_of_iid
 `IsMarginalCLT F P` from `∀ f ∈ F, MemLp f 2 P`: the `memLp` conjunct is the
 hypothesis itself; the `fdd` conjunct delegates, per finite tuple, to
 `marginalCLT_fdd_of_iid` (each tuple entry inherits `MemLp 2` from membership in
-`F`). Shared by both producers of `IsPDonsker`. -/
+`F`). -/
 lemma isMarginalCLT_of_memLp {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hmem : ∀ f ∈ F, MemLp f 2 P) : IsMarginalCLT F P := by
   refine ⟨hmem, ?_⟩
   intro Ξ _ μ _ X hX_meas hX_iindep hX_id hX_law k f hf_in
-  exact marginalCLT_fdd_of_iid μ X hX_meas hX_iindep hX_id hX_law f
+  exact marginalCLT_fdd_of_iid (F := F) μ X hX_meas hX_iindep hX_id hX_law f
     (fun i => hmem (f i) (hf_in i))
 
 /-- **Asymptotic equicontinuity** — van der Vaart Theorem 18.14(ii), the
@@ -433,21 +380,20 @@ process `G_n` oscillates by more than `ε` across some `distL2`-close pair
 `∀ ε η > 0, ∃ δ > 0, limsupₙ μ* {ξ | ∃ s t : ↥F, distL2 P s t < δ ∧
     ε < |G_n(s)(ξ) − G_n(t)(ξ)|} ≤ ofReal η`.
 
-This is exactly the conclusion shape that
-`outerMeasure_modulusComplement_le` in `NecessityTightness.lean` produces from
-asymptotic tightness of `G_n`, and that the C2 sufficiency discretization
-consumes — so the Theorem-18.14 necessity bridge becomes the identity. The
+This is exactly the conclusion of `outerMeasure_modulusComplement_le` in
+`NecessityTightness.lean` and the hypothesis used by the sufficiency
+discretization. The
 **three parameters are distinct**: `ε` is the oscillation threshold, `η` the
 outer-mass bound, `δ` the `distL2`-radius (vdV p.261).
 
-The older **consumer (per-pair) form** — "for any measurable random pair
+The corresponding **per-pair form** — "for any measurable random pair
 `(fhat, ghat)` in `F` with `∫ ‖fhat − ghat‖²_{L²(P)} dμ → 0`,
 `μ {ξ | ε < |G_n(fhat) − G_n(ghat)|} → 0`" — is recovered for any concrete
 pair through the bridge lemma `osc_modulus_to_random_pair`
 (`NecessityTightness.lean`, the Markov-tail + bulk split).
 
 **Universe of `Ξ`.** Fixed at `Type 0` (`Type`). All standard
-measure-theoretic sample spaces live at universe 0; downstream consumers
+measure-theoretic sample spaces live at universe 0; applications
 requiring a higher universe introduce an isomorphism to a `Type 0`
 representative.
 
@@ -480,8 +426,7 @@ vdV §19.2 + Theorem 18.14: `F` is `P`-Donsker. -/
 def IsPDonsker (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
   IsMarginalCLT F P ∧ IsAsymptoticallyEquicontinuous F P
 
-/-- **L²-membership projection of the marginal CLT.** Recovers the old
-(weaker) `IsMarginalCLT` content as a trivial conjunct accessor: every
+/-- **L²-membership projection of the marginal CLT.** Every
 `f ∈ F` is square-integrable. -/
 lemma IsMarginalCLT.memLp {F : Set (Ω → ℝ)} {P : Measure Ω}
     (h : IsMarginalCLT F P) : ∀ f ∈ F, MemLp f 2 P := h.1
@@ -497,15 +442,15 @@ lemma asymptoticallyEquicontinuous (h : IsPDonsker F P) :
 
 end IsPDonsker
 
-/-! ### Outer-measure helpers + the per-pair consumer bridge
+/-! ### Outer-measure bounds and the per-pair bridge
 
-The new `IsAsymptoticallyEquicontinuous` predicate is the vdV 18.14(ii) outer-sup
-modulus. Consumers that want the older **per-pair** consequence
-("`μ {ξ | ε < |G_n(fhat) − G_n(ghat)|} → 0` for a concrete measurable pair") go
-through `osc_modulus_to_random_pair` below (the Markov-tail + bulk split). The
+The `IsAsymptoticallyEquicontinuous` predicate is the vdV 18.14(ii) outer-sup
+modulus. The corresponding **per-pair** consequence
+("`μ {ξ | ε < |G_n(fhat) − G_n(ghat)|} → 0` for a concrete measurable pair")
+follows from `osc_modulus_to_random_pair` below (the Markov-tail + bulk split). The
 small outer-measure and `distL2`-tail bricks it needs are `distL2`-only /
 `outerMeasureStar`-only (no `gaussianPBridge` machinery), so they live here at the
-predicate layer and are reused by `NecessityTightness.lean`. -/
+predicate layer and are reused in `NecessityTightness.lean`. -/
 
 /-- **Monotonicity of the outer measure `P*`.** `A ⊆ B ⟹ P*(A) ≤ P*(B)`
 (the indicators satisfy `1_A ≤ 1_B`, and `E*` is monotone). -/
@@ -515,7 +460,7 @@ theorem outerMeasureStar_mono {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ
   refine outerExpectation_mono fun ω => ?_
   by_cases hω : ω ∈ A
   · simp only [Set.indicator_of_mem hω, Set.indicator_of_mem (hAB hω), le_refl]
-  · simp only [Set.indicator_of_notMem hω, zero_le]
+  · simp only [Set.indicator_of_notMem hω, Pi.zero_apply, zero_le]
 
 /-- **`μ`-measure is dominated by the outer measure `P*`.** `μ A ≤ P*(A)`: every
 measurable majorant `U ≥ 1_A` has `μ A = ∫⁻ 1_A ≤ ∫⁻ U`, so `μ A` is below the
@@ -572,7 +517,7 @@ vanishing of the squared `L²`-distance), the `μ`-mass of the complement event
 `distL2_ge_imp_integral_ge` lands the tail event inside
 `{ξ | δ² ≤ ∫ (fhat − ghat)²}`, Markov bounds its real mass by
 `(∫ξ ∫x (fhat − ghat)²)/δ²`, which `→ 0`. -/
-theorem markov_distL2_tail {P : Measure Ω} [IsProbabilityMeasure P]
+theorem markov_distL2_tail {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (fhat ghat : ℕ → Ξ → (Ω → ℝ))
     (hfm : ∀ n, Measurable (Function.uncurry (fhat n)))
@@ -641,9 +586,9 @@ theorem bulk_osc_mem {F : Set (Ω → ℝ)} {P : Measure Ω} {n : ℕ}
             - empiricalProcess P n X (g : Ω → ℝ)| :=
   ⟨⟨fhat, hf⟩, ⟨ghat, hg⟩, hclose, hosc⟩
 
+-- reason: the generic `limsup_add_le` `whnf`-explodes on `ℝ≥0∞`/`atTop` (even in a
+-- small context); we only need the `Vf → 0` specialization, proved here directly.
 set_option maxHeartbeats 800000 in
--- The generic `limsup_add_le` unfolds prohibitively on `ℝ≥0∞` over `atTop`.
--- This direct `Vf → 0` specialization still needs extra budget for the order arithmetic.
 /-- **`limsup (Uf + Vf) ≤ a` when `limsup Uf ≤ a` and `Vf → 0`** (over `atTop`,
 `ℝ≥0∞`). For every `b > a` the `limsup`-characterization needs `Uf n + Vf n < b`
 eventually: pick `c` with `limsup Uf < c < b`, so eventually `Uf n < c` and (from
@@ -690,16 +635,16 @@ theorem limsup_add_le_of_le (Uf Vf : ℕ → ℝ≥0∞) (a b : ℝ≥0∞)
   calc Uf n + Vf n < (a + c / 2) + (b + c / 2) := ENNReal.add_lt_add hUn hVn
     _ = d := hsum
 
+-- reason: the bulk/tail `limsup` split unfolds the giant empirical-process payload;
+-- the `clear_value` opacity device keeps it from `whnf`-exploding but the residual
+-- `limsup`/`Tendsto` arithmetic still needs headroom above the default.
 set_option maxHeartbeats 1000000 in
--- The bulk/tail `limsup` split unfolds a large empirical-process payload.
--- `clear_value` keeps it opaque, but the remaining `limsup`/`Tendsto` arithmetic
--- still exceeds the default heartbeat budget.
-/-- **Outer-sup modulus implies per-pair consistency.** From
-`IsAsymptoticallyEquicontinuous` (the vdV 18.14(ii) outer-sup modulus)
+/-- **Outer-sup modulus implies per-pair consistency.** From the
+`IsAsymptoticallyEquicontinuous` predicate (the vdV 18.14(ii) outer-sup modulus)
 and a concrete jointly-measurable random pair `(fhat, ghat)` valued in `F` whose
 mean squared `L²(P)`-distance tends to `0`, conclude that for every `ε > 0` the
 `μ`-probability of an `ε`-oscillation `μ {ξ | ε < |G_n(fhat) − G_n(ghat)|}` tends
-to `0`, giving the per-pair consequence of the outer-sup formulation.
+to `0`, which is the per-pair form.
 
 Fix `ε`; for the `limsup ≤ ofReal ε'` reduction take `η' := min ε ε'` and apply
 the modulus at oscillation `η'`, mass `η'`. Split `Ξ` on `{distL2 < δ}`: the bulk
@@ -757,7 +702,7 @@ theorem osc_modulus_to_random_pair {F : Set (Ω → ℝ)} {P : Measure Ω}
   obtain ⟨δ, hδpos, hBlimsup⟩ :=
     h_eq μ X hX_meas hX_indep hX_id hX_law η' η' hη'pos hη'pos
   -- The `distL2`-tail event mass vanishes (Markov).
-  have htail := markov_distL2_tail μ fhat ghat hfm hgm
+  have htail := markov_distL2_tail (F := F) μ fhat ghat hfm hgm
     hint htend hδpos
   -- Abbreviate the modulus existential close-pair event and the `distL2`-tail event.
   set Bev : ℕ → Set Ξ := fun n =>
@@ -867,7 +812,7 @@ vdV §19.4 (used inside the proof of Theorem 19.23): "The union of two Donsker
 classes is Donsker." For the marginal-CLT half this is trivial; the
 equicontinuity half is this lemma.
 
-In the outer-sup formulation of `IsAsymptoticallyEquicontinuous`, apply `hF`/`hG` at the
+**Proof.** For the vdV 18.14(ii) outer-sup modulus, apply `hF` and `hG` at the
 same iid sample with the halved mass `η/2`, yielding radii `δ_F`, `δ_G`; pick the
 union radius `δ := min (min δ_F δ_G) c` where `c` is the `L²`-separation constant.
 The `L²`-separation `hFG_sep` forces every cross-pair (`s ∈ F`, `t ∈ G`, or vice
@@ -877,16 +822,15 @@ both in `G`. Hence the `F ∪ G` close-pair event is contained in the union of t
 `F`-event and the `G`-event, and `μ*`-subadditivity (`outerMeasureStar_union_le`)
 plus monotonicity (`outerMeasureStar_mono`, since `δ ≤ δ_F, δ_G`) bound its limsup
 by `ofReal (η/2) + ofReal (η/2) = ofReal η`. The selection/nonempty admissibility
-hypotheses are unused under the outer-sup form; measurable selection is not
-needed for this argument. -/
+properties are not needed by the outer-sup formulation.
+-/
 lemma isAsymptoticallyEquicontinuous_union {F G : Set (Ω → ℝ)} {P : Measure Ω}
     (hF : IsAsymptoticallyEquicontinuous F P)
     (hG : IsAsymptoticallyEquicontinuous G P)
     -- admissibility hypotheses for F and G
     -- (Vaart–Wellner Thm 2.10.1 / vdV §19.4).
-    -- (selection / nonempty admissibility — unused under the outer-sup form, but
-    -- part of the locked Vaart–Wellner §2.10.1 signature; underscored to silence
-    -- the unused-variable linter without dropping them.)
+    -- Selection and nonempty admissibility as in Vaart–Wellner §2.10.1.
+    -- These hypotheses are not needed by the outer-sup formulation.
     (_hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
     (_hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)
     (_hF_nonempty : ∃ f₀ ∈ F, Measurable f₀)

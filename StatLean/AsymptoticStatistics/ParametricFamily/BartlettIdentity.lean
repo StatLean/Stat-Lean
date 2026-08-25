@@ -32,8 +32,6 @@ Reference: vdV §5.3 / §7.2; Mathlib
 `Mathlib/Analysis/Calculus/ParametricIntegral.lean`
 (`hasDerivAt_integral_of_dominated_loc_of_deriv_le`).
 
-Headline declarations: `DifferentiableScoreSubmodel`, `bartlett_identity`,
-`bartlett_identity_diag`.
 -/
 
 open MeasureTheory Filter Topology

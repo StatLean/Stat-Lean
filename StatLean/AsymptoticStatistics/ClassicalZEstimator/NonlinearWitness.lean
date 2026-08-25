@@ -3,17 +3,18 @@ import StatLean.AsymptoticStatistics.ClassicalZEstimator.Witness
 /-!
 # A nonlinear example for the classical Z-estimator theorems
 
-This file gives a second concrete model for vdV Theorems 5.41 and 5.42. It reuses
+This file gives a concrete nonlinear instance of vdV Theorems 5.41 and 5.42. It reuses
 the one-dimensional standard-normal model, i.i.d. sample, and sample-mean estimator from
 `ClassicalZEstimator.Witness`, but replaces the affine estimating function by
 
 `npsi θ x = (x - θ 0) * (1 + (θ 0)^2)`.
 
 Its second parameter derivative is genuinely nonzero and is dominated on the unit ball by
-the integrable function `2 * |x| + 6`. Thus this model satisfies the classical second-order
-domination hypothesis with a nonvanishing derivative. The
-last three theorems apply the classical results to this model, using inner probability for
-the two probability-one conclusions of Theorem 5.42.
+the integrable function `2 * |x| + 6`.  Thus the witness exercises the classical second-order
+domination hypothesis rather than satisfying it only through a vanishing derivative.  The
+last three theorems apply the general results to this example. The two conclusions associated
+with Theorem 5.42 are stated using inner probability, so their events have measurable inner
+approximations whose probabilities tend to one.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -29,25 +30,25 @@ open Witness
 /-- The nonlinear estimating function
 `npsi θ _ x = (x - θ 0) * (1 + (θ 0)^2)`.
 
-This is a concrete example rather than a separate definition from vdV. It is total for every
-parameter and observation; the equation index is ignored because `Fin 1` has only one
-coordinate. -/
+It is total for every parameter and observation;
+the sole equation index is ignored because `Fin 1` has only one coordinate. -/
 noncomputable def npsi : E1 → Fin 1 → ℝ → ℝ :=
   fun θ _ x => (x - θ 0) * (1 + (θ 0) ^ 2)
 
 /-- The nonnegative domination envelope `npsiDdot x = 2 * |x| + 6` for the nonlinear score.
 
-It supplies vdV's second-derivative domination condition. It is total, measurable,
-integrable under `wP`, and remains at least `6` even when `x = 0`. -/
+This concrete envelope satisfies vdV's second-derivative domination condition. It is total,
+measurable, integrable under `wP`, and remains at least
+`6` even when `x = 0`. -/
 noncomputable def npsiDdot : ℝ → ℝ := fun x => 2 * |x| + 6
 
 /-- The criterion
 `nm θ x = x*(θ 0) + x*(θ 0)^3/3 - (θ 0)^2/2 - (θ 0)^4/4`, whose parameter
 gradient is `npsi`.
 
-This polynomial primitive gives the final local-maximum assertion of vdV 5.42 in the
-nonlinear example. It is total for all real observations and parameters; division is only
-by the fixed nonzero numerals `2`, `3`, and `4`. -/
+This polynomial primitive realizes the local-maximum assertion of vdV Theorem 5.42. It is
+total for all real observations and parameters;
+division is only by the fixed nonzero numerals `2`, `3`, and `4`. -/
 noncomputable def nm : E1 → ℝ → ℝ := fun θ x =>
   x * θ 0 + x * (θ 0) ^ 3 / 3 - (θ 0) ^ 2 / 2 - (θ 0) ^ 4 / 4
 
@@ -56,7 +57,7 @@ noncomputable def nm : E1 → ℝ → ℝ := fun θ x =>
 /-- The exact first Fréchet derivative of the nonlinear score.  Its scalar coefficient is
 `2*x*(θ 0) - 1 - 3*(θ 0)^2` and its direction is the coordinate functional `L1`.
 
-This formula supplies the calculus assumptions of the classical theorems. -/
+This identity supplies the differentiability assumption of the classical theorems. -/
 lemma n_hasFDerivAt_npsi (x : ℝ) (j : Fin 1) (θ : E1) :
     HasFDerivAt (fun θ' : E1 => npsi θ' j x)
       ((2 * x * θ 0 - 1 - 3 * (θ 0) ^ 2) • L1) θ := by
@@ -72,7 +73,7 @@ lemma n_hasFDerivAt_npsi (x : ℝ) (j : Fin 1) (θ : E1) :
 
 /-- The nonlinear score is twice continuously differentiable on the full parameter space.
 
-The parameter domain is the whole space. -/
+The open parameter set in this example is the full space `univ`. -/
 lemma n_hC2 (j : Fin 1) (x : ℝ) :
     ContDiffOn ℝ 2 (fun θ : E1 => npsi θ j x) (Set.univ : Set E1) := by
   apply ContDiff.contDiffOn
@@ -82,7 +83,7 @@ lemma n_hC2 (j : Fin 1) (x : ℝ) :
 /-- Pointwise formula for the second iterated Fréchet derivative:
 `D² npsi(θ,x)[v₀,v₁] = (2*x - 6*(θ 0)) * (v₀ 0) * (v₁ 0)`.
 
-The explicit `Fin 2 → E1` adapter exposes the multilinear object used by `hdom`. -/
+The arguments are represented as a `Fin 2 → E1` family. -/
 lemma n_iteratedFDeriv_two_apply (θ : E1) (j : Fin 1) (x : ℝ) (v : Fin 2 → E1) :
     iteratedFDeriv ℝ 2 (fun θ' : E1 => npsi θ' j x) θ v =
       (2 * x - 6 * θ 0) * (v 0) 0 * (v 1) 0 := by
@@ -110,7 +111,8 @@ lemma n_iteratedFDeriv_two_apply (θ : E1) (j : Fin 1) (x : ℝ) (v : Fin 2 → 
 
 /-- Operator-norm bound for the nonlinear score's second derivative.
 
-This packages the coordinatewise formula in operator norm. -/
+This converts the coordinatewise formula into the operator-norm bound used by the
+domination hypothesis. -/
 lemma n_iteratedFDeriv_two_norm_le (θ : E1) (j : Fin 1) (x : ℝ) :
     ‖iteratedFDeriv ℝ 2 (fun θ' : E1 => npsi θ' j x) θ‖ ≤ |2 * x - 6 * θ 0| := by
   apply ContinuousMultilinearMap.opNorm_le_bound (abs_nonneg _)
@@ -121,10 +123,10 @@ lemma n_iteratedFDeriv_two_norm_le (θ : E1) (j : Fin 1) (x : ℝ) :
   ring_nf
   exact le_refl (|x * 2 - θ 0 * 6| * ‖v 0‖ * ‖v 1‖)
 
-/-- The second derivative in this example is genuinely nonzero: at `θ = 0` and `x = 1`
+/-- The second derivative used by the witness is genuinely nonzero: at `θ = 0` and `x = 1`
 it is a nonzero continuous bilinear map.
 
-Thus the example is genuinely nonlinear in the parameter. -/
+Thus the example genuinely uses a nonzero second derivative. -/
 lemma n_second_derivative_nonzero :
     iteratedFDeriv ℝ 2 (fun θ : E1 => npsi θ (0 : Fin 1) 1) (0 : E1) ≠ 0 := by
   intro hzero
@@ -139,9 +141,9 @@ lemma n_second_derivative_nonzero :
 /-- On the closed unit ball around zero, `npsiDdot` dominates the full operator norm of the
 second derivative.
 
-The bound is restricted to the closed unit ball. -/
+The domination holds on the closed unit ball required by `hdom`. -/
 lemma n_hdom (θ : E1)
-    -- Restrict the bound to the chosen neighborhood.
+    -- Restriction to the neighborhood on which the domination bound is asserted.
     (_hθ : θ ∈ Metric.closedBall (0 : E1) 1) (j : Fin 1) (x : ℝ) :
     ‖iteratedFDeriv ℝ 2 (fun θ' : E1 => npsi θ' j x) θ‖ ≤ npsiDdot x := by
   have hθnorm : ‖θ‖ ≤ 1 := by
@@ -162,22 +164,22 @@ lemma n_hdom (θ : E1)
 /-- The nonlinear estimating functions are measurable in the observation for every fixed
 parameter and coordinate.
 
-This supplies measurability of the estimating functions. -/
+This verifies the measurability assumption for the example. -/
 lemma n_hpsi_meas : ∀ (θ : E1) (j : Fin 1), Measurable (npsi θ j) := by
   intro θ j
   unfold npsi
   fun_prop
 
 /-- At the true parameter `θ₀ = 0`, the nonlinear score equals the identity and has mean zero
-under the standard Gaussian law.
+under the standard Gaussian witness law.
 
-Thus `Pψ_{θ₀}=0`. -/
+This verifies `Pψ_{θ₀}=0` for the example. -/
 lemma n_hPθ₀_zero (j : Fin 1) : ∫ x, npsi (0 : E1) j x ∂wP = 0 := by
   simpa [npsi, wpsi] using w_hPθ₀_zero j
 
 /-- The bundled nonlinear score at `θ₀ = 0` lies in `L²(wP)`.
 
-At zero it coincides with the identity score, whose `L²` integrability is known. -/
+At zero it reduces to the identity score. -/
 lemma n_hpsi_L2 : MemLp (psiVec npsi (0 : E1)) 2 wP := by
   have hvec : psiVec npsi (0 : E1) = psiVec wpsi (0 : E1) := by
     funext x
@@ -188,29 +190,29 @@ lemma n_hpsi_L2 : MemLp (psiVec npsi (0 : E1)) 2 wP := by
 
 /-- The entrywise Jacobian at `θ₀ = 0` is the constant `-1` matrix entry.
 
-This derivative identity supplies the concrete `V` calculation. -/
+This derivative identity supplies the calculation of `V`. -/
 lemma n_psiDot_zero (x : ℝ) (j i : Fin 1) : psiDot npsi (0 : E1) x j i = -1 := by
   have hi : i = 0 := Subsingleton.elim _ _
   subst hi
   simp only [psiDot, Matrix.of_apply, (n_hasFDerivAt_npsi x j 0).fderiv]
   simp [L1, EuclideanSpace.proj]
 
-/-- The population Jacobian of the nonlinear score at zero is the `1 × 1` matrix `(-1)`.
+/-- The population Jacobian of the nonlinear witness at zero is the `1 × 1` matrix `(-1)`.
 
-This is vdV's matrix `V = Pψ̇_{θ₀}` for the example. -/
+This is the value of vdV's `V = Pψ̇_{θ₀}` in the example. -/
 lemma n_Vmat : Vmat wP npsi (0 : E1) = Matrix.of fun _ _ : Fin 1 => (-1 : ℝ) := by
   ext j i
   simp [Vmat, n_psiDot_zero]
 
-/-- The nonlinear score's Jacobian entries at zero are integrable under `wP`.
+/-- The nonlinear witness's Jacobian entries at zero are integrable under `wP`.
 
-They are constant. -/
+The entries are constant and hence integrable. -/
 lemma n_hVint (j i : Fin 1) :
     Integrable (fun x => psiDot npsi (0 : E1) x j i) wP := by
   simp only [n_psiDot_zero]
   exact integrable_const _
 
-/-- The nonlinear score's population Jacobian is nonsingular.
+/-- The nonlinear witness's population Jacobian is nonsingular.
 
 In one dimension its determinant is the unit `-1`. -/
 lemma n_hV : IsUnit (Vmat wP npsi (0 : E1)).det := by
@@ -219,7 +221,7 @@ lemma n_hV : IsUnit (Vmat wP npsi (0 : E1)).det := by
 
 /-- The nonlinear domination envelope is measurable.
 
-This is the measurability part of the domination assumption. -/
+This establishes the required regularity of the envelope. -/
 lemma n_hpsiDdot_meas : Measurable npsiDdot := by
   unfold npsiDdot
   fun_prop
@@ -236,7 +238,8 @@ lemma n_hpsiDdot_int : Integrable npsiDdot wP := by
 /-- The reused sample mean is an exact root of the nonlinear empirical estimating equation
 for every sample size and every sample.
 
-This includes `n = 0`, where `empiricalAvg` equals zero because `(0 : ℝ)⁻¹ = 0`. -/
+This includes `n = 0`, where `empiricalAvg` is defined to be zero because
+`(0 : ℝ)⁻¹ = 0`. -/
 lemma n_hroot (n : ℕ) (xs : Fin n → ℝ) (j : Fin 1) :
     empiricalAvg (npsi (wthetahat n xs) j) n xs = 0 := by
   have hfun : npsi (wthetahat n xs) j = fun x =>
@@ -251,7 +254,7 @@ lemma n_hroot (n : ℕ) (xs : Fin n → ℝ) (j : Fin 1) :
 
 /-- The nonlinear criterion is measurable in the observation for every fixed parameter.
 
-This supplies measurability of the empirical criterion. -/
+This verifies criterion measurability in Theorem 5.42. -/
 lemma n_hm_meas (θ : E1) : Measurable (nm θ) := by
   unfold nm
   fun_prop
@@ -259,9 +262,10 @@ lemma n_hm_meas (θ : E1) : Measurable (nm θ) := by
 /-- The Fréchet derivative of the nonlinear criterion is the inner-product functional induced
 by the nonlinear score.
 
-The derivative identity holds on the full parameter space. -/
+The parameter domain is `univ`, so membership introduces no additional regularity
+assumption. -/
 lemma n_hgrad (θ : E1)
-    -- Membership is automatic because the parameter domain is `univ`.
+    -- Membership in the full parameter space.
     (_hθ : θ ∈ (Set.univ : Set E1)) (x : ℝ) :
     HasFDerivAt (fun θ' : E1 => nm θ' x) (innerSL ℝ (psiVec npsi θ x)) θ := by
   have hg : HasDerivAt (fun t : ℝ =>
@@ -287,7 +291,7 @@ lemma n_hgrad (θ : E1)
 /-- The population criterion difference is
 `-((θ 0)^2)/2 - ((θ 0)^4)/4`.
 
-The centered difference is the form used in the local-maximum assumption. -/
+This exact identity yields the centered difference used in the local-maximum premise. -/
 lemma n_criterion (θ : E1) :
     ∫ x, (nm θ x - nm (0 : E1) x) ∂wP = -((θ 0) ^ 2 / 2) - (θ 0) ^ 4 / 4 := by
   have hfun : (fun x : ℝ => nm θ x - nm (0 : E1) x) = fun x : ℝ =>
@@ -310,8 +314,8 @@ lemma n_criterion (θ : E1) :
 
 /-- Zero is a local maximum of the nonlinear population criterion difference.
 
-The stronger global inequality supplied by `n_criterion` implies vdV 5.42's
-local-maximum premise without adding a hypothesis. -/
+The global inequality supplied by `n_criterion` implies vdV Theorem 5.42's
+local-maximum premise. -/
 lemma n_hmax :
     IsLocalMax (fun θ : E1 => ∫ x, (nm θ x - nm (0 : E1) x) ∂wP) 0 := by
   refine Eventually.of_forall fun θ => ?_
@@ -321,13 +325,14 @@ lemma n_hmax :
     zero_pow (by norm_num : 4 ≠ 0), sub_zero]
   nlinarith [sq_nonneg (θ 0), sq_nonneg ((θ 0) ^ 2)]
 
-/-! ## 6. Applications to the nonlinear Gaussian example -/
+/-! ## Applications of the nonlinear example -/
 
-/-- **Asymptotic normality in the nonlinear Gaussian example.**
+/-- **Asymptotic normality for the nonlinear score.**
 
-For the concrete nonlinear score and a standard-normal sample, the sample mean is an exact
-root. Applying `classical_zEstimator_normality_of_exact_root` gives its linear representation
-and Gaussian limit; the example has genuinely nonzero second derivatives. -/
+The proof applies
+`classical_zEstimator_normality_of_exact_root` to the concrete nonlinear score,
+standard-normal sample, and exact sample-mean roots. In particular, the example exercises
+the second-derivative domination condition with a nonzero second derivative. -/
 theorem nonlinear_witness_normality :
     TendstoInProbZero (fun _ : ℕ => wmu) (fun n ξ =>
         Real.sqrt n • ((wthetahat n fun i : Fin n => wX i.val ξ) - (0 : E1))
@@ -343,9 +348,10 @@ theorem nonlinear_witness_normality :
     n_hpsiDdot_int (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) n_hdom wthetahat wmu wX
     w_hX_meas w_hX_indep w_hX_id w_hX_law w_hθhat_meas n_hroot w_hcons
 
-/-- **Existence and consistency of roots in the nonlinear Gaussian example.**
+/-- **Root existence and consistency for the nonlinear score.**
 
-Both root events carry measurable inner witnesses of probability tending to one, and the selected
+Both root
+events carry measurable inner witnesses of probability tending to one, and the selected
 root sequence is consistent. -/
 theorem nonlinear_witness_root_exists_consistent :
     TendstoInnerProbOne wmu (fun n => {ξ | ∃ θ ∈ (Set.univ : Set E1), ∀ j,
@@ -361,10 +367,10 @@ theorem nonlinear_witness_root_exists_consistent :
     n_hpsiDdot_int (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) n_hdom wmu wX
     w_hX_meas w_hX_indep w_hX_id w_hX_law
 
-/-- **Local-maximizing roots in the nonlinear Gaussian example.**
+/-- **Local-maximizing roots for the nonlinear criterion.**
 
-Using `nm` as a primitive of the nonlinear score, the selected roots are consistent and are
-local maxima of the empirical criterion with inner probability tending to one. -/
+The result states the strengthened inner-probability root and local-maximum events together
+with consistency, using `nm` as a primitive of the genuinely nonlinear score. -/
 theorem nonlinear_witness_localmax_roots :
     ∃ θ_hat : ∀ n, (Fin n → ℝ) → E1,
       TendstoInnerProbOne wmu (fun n => {ξ | ∀ j,

@@ -30,7 +30,7 @@ open AsymptoticStatistics.LowerBounds.NondominatedOperationalEfficiencyAnalytic
 variable {Ω : Type*} [MeasurableSpace Ω]
 variable {P : Measure Ω} [IsProbabilityMeasure P]
 
-/-- Selected-path LAM left-hand side. The finite sets range over
+/-- Selected-path local asymptotic minimax left-hand side. The finite sets range over
 the subtype carrier of the nondominated tangent cone, and every local law is
 the independently selected path stored in `C.selectedPath`. -/
 noncomputable def selectedPathCanonicalLHSVec {d : ℕ}
@@ -368,8 +368,8 @@ private lemma exp_affine_score_integrable_and_integral_euclidean {k : ℕ}
       _ = 1 := by rw [hsnd, hgauss_int]
 
 /-- Euclidean-valued selected-path Le Cam third lemma, obtained from the scalar
-theorem by Cramér--Wold.  The proof does not assume a caller-supplied joint-law
-provider or any common dominating measure. -/
+theorem by Cramér--Wold.  The joint law is derived in the proof, without a
+common dominating measure. -/
 private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a)
     (Y : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))
@@ -494,8 +494,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   simpa only [Measure.map_map hproj_meas (hY _), Function.comp_apply] using hscalar
 
 /-- Joint compactness for a finite baseline score vector and a bounded loss
-profile.  This is the internal finite-experiment replacement for any
-caller-supplied tightness or joint-law hypothesis. -/
+profile, obtained directly from the finite experiment. -/
 private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
     (v : Fin r → ↥(L2ZeroMean P))
     (action : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
@@ -2142,7 +2141,7 @@ selected-path local asymptotic risk of the original estimator sequence.
 
 Proof idea: apply finite loss-profile compactification jointly over `I`, use
 `qmd_lecamThird_along_subseq` and `qmd_local_score_clt` on the selected paths,
-and prove finite joint-vector convergence internally by finite-dimensional
+and prove finite joint-vector convergence by finite-dimensional
 Cramér--Wold.  Then disintegrate the profile limit and approximate it by an
 action kernel.  No global modified estimator sequence is constructed. -/
 theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec {d : ℕ}

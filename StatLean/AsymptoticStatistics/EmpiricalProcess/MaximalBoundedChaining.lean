@@ -4,8 +4,8 @@ import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectatio
 /-!
 # Finite-stop chaining for uniformly bounded classes
 
-This module contains the partition-level analytic core of vdV Lemma 19.36.
-It deliberately has no dependency on the general Lemma 19.34 assembly.
+This module contains the partition-level analytic argument of vdV Lemma 19.36,
+independent of the general bound in Lemma 19.34.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -86,8 +86,8 @@ structure BoundedChainingData (F : Set (Ω → ℝ)) (P : Measure Ω)
     (δ M : ℝ) (n : ℕ) where
   /-- Constitutive: nested brackets of the projection-truncated class. -/
   partition : NestedBracketPartition (truncateClass F M) P 0 δ
-  /-- Constitutive: the public pointwise bound makes projection truncation fix
-  the class. -/
+  /-- Constitutive: the pointwise bound makes projection truncation leave
+  the class unchanged. -/
   truncate_eq : truncateClass F M = F
   /-- Constitutive: every cell oscillation is bounded by twice the uniform
   bound. -/
@@ -248,7 +248,7 @@ private lemma boundedChainA_measurableSet
 retains the centering correction `2 sqrt(n) P g`. -/
 theorem empiricalProcess_abs_le_of_abs_le
     (P : Measure Ω) (n : ℕ) (x : Fin n → Ω) (h g : Ω → ℝ)
-    -- integrability makes the deterministic mean correction finite.
+    -- Integrability makes the deterministic mean correction finite.
     (hg_int : Integrable g P) (hg_nonneg : ∀ y, 0 ≤ g y)
     (hhg : ∀ y, |h y| ≤ g y) :
     |empiricalProcess P n x h| ≤ |empiricalProcess P n x g| +
@@ -891,9 +891,8 @@ private lemma bounded_chain_positive_sum_integrable_and_le_majorants
 set_option linter.style.longLine false in
 omit [MeasurableSpace Ξ] in
 /-- The finite telescope admits measurable head, crossing, small-link, and
-remainder majorants pointwise in the sample.  The BOOK measurability premise
-on every class member is forwarded from public Lemma 19.36 through the bounded
-assembly to this pointwise step; it is not stored in `BoundedChainingData`. -/
+remainder majorants pointwise in the sample. Measurability of every class member,
+as assumed in Lemma 19.36, is used directly in this pointwise estimate. -/
 theorem bounded_chain_supNorm_le_pointwise
     [IsProbabilityMeasure P]
     (D : BoundedChainingData F P δ M n)
@@ -1497,9 +1496,8 @@ theorem bounded_chain_A_Bpos_bound :
     _ ≤ ENNReal.ofReal (1000 * (1 + cE)) * bracketingEntropyIntegral δ F P := by gcongr
 
 /-- The terminal `A_L` remainder is bounded by five times the stopping endpoint,
-with no `M` in the stopping rule.  The former coefficient-one statement is
-false: the literal majorant spends `3 * 2 + 4 = 10` units while the endpoint
-pays `2`; the corrected literal constant is therefore `5`. -/
+with no `M` in the stopping rule. The literal majorant spends `3 * 2 + 4 = 10`
+units while the endpoint pays `2`, which gives the factor `5`. -/
 theorem bounded_chain_remainder_bound
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
     (D : BoundedChainingData F P δ M n)
@@ -1647,14 +1645,10 @@ theorem bounded_chain_remainder_bound
       gcongr
       simpa only [r] using D.endpoint
 
-/-- Partition-level bounded bracketing maximal inequality.  The supplied data
-are derived internally by the public assembly and contain no conclusion
-certificate.  The public BOOK measurability premise is forwarded explicitly
-to the pointwise majorization, while the strict classwise `L²(P)` radius is
-forwarded to the absolute-head bound, where it is load-bearing.  Class
-nonemptiness is derived internally after the public empty-class branch and is
-forwarded to the entropy-budget consumers.
--/
+/-- Partition-level bounded bracketing maximal inequality. The measurability
+premise gives pointwise majorization, while the strict classwise `L²(P)` radius
+gives the absolute-head bound. Class nonemptiness is derived after treating the
+empty-class case. -/
 theorem bracketingMaximal_of_boundedChainingData :
     ∃ C : ℝ, 0 < C ∧
       ∀ (Ω : Type*) [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]

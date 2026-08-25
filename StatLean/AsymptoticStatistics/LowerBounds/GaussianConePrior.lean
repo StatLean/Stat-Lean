@@ -63,8 +63,7 @@ theorem exists_effectiveInteriorBall
 /-- Exact Cramér--Wold specification of the translated isotropic Gaussian
 intrinsic to `effectiveSpan C`.  Every effective-span linear projection has
 mean `inner u h0` and variance `c²‖u‖²`; together with support on the span this
-characterizes the intrinsic Gaussian law and exposes the data used in Bayes
-flattening. -/
+characterizes the intrinsic Gaussian law used in Bayes flattening. -/
 def IsTranslatedIsotropicGaussian
     (C : Set (EuclideanSpace ℝ (Fin m)))
     (ν : Measure (EuclideanSpace ℝ (Fin m)))

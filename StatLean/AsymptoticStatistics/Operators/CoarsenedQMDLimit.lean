@@ -12,12 +12,11 @@ import Mathlib.MeasureTheory.Measure.WithDensityFinite
 /-!
 # QMD limit for the coarsened path (vdV Lem 25.34-I, the `qmd_limit` field)
 
-This file proves the score-preservation `qmd_limit` field of `QMDPath.coarsen`.
-Van der Vaart states this result as Lemma 25.34 half I (book p.375) and refers
-its proof to [139, pp.188-193]. The headline `coarsen_qmd_limit` is the exact
-field statement; `Operators/CoarsenedQMD.lean` plugs it into the structure.
+The score-preservation estimate is the `qmd_limit` property of
+`QMDPath.coarsen` (vdV Lemma 25.34 half I, book p.375, whose proof van der Vaart
+refers to [139, pp.188-193]).
 
-The denominator-safe conditional-projection argument proceeds by
+Proof outline (denominator-safe conditional-projection domination):
 writing `p̄ t := (dQ_t/dμ).toReal`, `ξ t := √(p̄ t)`, `q̃ t := μ[p̄ t | comap M]`,
 `cross t := μ[ξt·ξ0 | comap M]`, `A t := cross t / √q̃0` (guarded), the pulled-back
 field residual splits as
@@ -25,10 +24,8 @@ field residual splits as
 `o(t)` in `L²(μ)` (the first by conditional Cauchy–Schwarz on the QMD remainder,
 the second by a `ρ`-ratio DCT-along-subsequence argument).
 
-Internal definitions `pbar`, `xi`, `qtilde`, `cross`, `Cdom`, `Acoef`, and `rho`
-package the notation.
-
-Headline declaration: `coarsen_qmd_limit`.
+The definitions `pbar`, `xi`, `qtilde`, `cross`, `Cdom`, `Acoef`, and `rho`
+denote the quantities in this decomposition.
 -/
 
 open MeasureTheory Filter Topology
@@ -49,9 +46,9 @@ variable {Ω_full Ω_obs : Type*}
   {M : Ω_full → Ω_obs}
   {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
 
-/-! ## Finite equivalent dominator adapter -/
+/-! ## Finite equivalent dominating measure -/
 
-/-- **change-of-dominator adapter.** Multiplication by the square root
+/-- **Change of dominating measure.** Multiplication by the square root
 of `dν/dν.toFinite` identifies the `L²(ν.toFinite)` seminorm with `L²(ν)`.
 
 This is the minimal analytic layer needed to rebase a `QMDPath`; it is not part
@@ -143,18 +140,13 @@ private lemma eLpNorm_qmdResidual_toFinite_eq (γ : QMDPath P_full) (t : ℝ) :
 
 For every dominated QMD path `γ`, this packages a representation of the same
 measure-valued curve, at the same base probability measure and with the same score,
-whose dominating measure is Mathlib's equivalent finite measure
-`γ.dominating.toFinite`. The equivalence is handled internally, so callers supply no
-additional regularity hypothesis.  In particular, the finite dominator may safely be
-mapped through a measurable coarsening before invoking the low-level QMD-limit core.
-
-The returned subtype records the preservation obligations in the interface rather
-than hiding them in the implementation.  `Measure.toFinite` has the same null sets as
-the original sigma-finite dominator; the downstream proof transfers the QMD residual
-along this equivalence.
-
-This is an adapter for vdV Lemma 25.34-I, not an additional book
-hypothesis. -/
+whose dominating measure is the equivalent finite measure
+`γ.dominating.toFinite`. This finite measure can be pushed forward through any
+measurable coarsening while retaining sigma-finiteness. `Measure.toFinite` has
+the same null sets as the original sigma-finite dominating measure, and the QMD
+residual has the same `L²` seminorm by
+`eLpNorm_qmdResidual_toFinite_eq`. No additional statistical regularity
+assumption is introduced. -/
 noncomputable def finiteDominatorRepresentation (gamma : QMDPath P_full) :
     {gamma' : QMDPath P_full //
       gamma'.curve = gamma.curve ∧
@@ -279,7 +271,7 @@ lemma rho_of_zero (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_f
     rho hM γ t ω = 0 := by
   rw [rho_apply, if_neg h]
 
-/-! ## Main estimates -/
+/-! ## Auxiliary lemmas -/
 
 /-- **Density transport.** Pulling back the coarsened square-root density
 along `M` gives `√q̃ t`, a.e. under `μ = γ.dominating`. -/
@@ -292,7 +284,7 @@ theorem coarsen_density_transport (hM : Measurable M) (γ : QMDPath P_full)
   filter_upwards [toReal_rnDeriv_map (γ.curve_absContinuous t) hM] with ω hω
   exact congrArg Real.sqrt hω
 
-/-- **Bayes bridge.** The conditional expectation of `s·p̄0`
+/-- **B** — Bayes bridge (linchpin). The conditional expectation of `s·p̄0`
 factors as `(Π∘M)·q̃0`, via the Doob sub-identity `Π∘M =ᵐ[P] P[s|comap M]`. -/
 theorem coarsen_bayes_bridge (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
@@ -393,7 +385,7 @@ theorem coarsen_bayes_bridge (hM : Measurable M) (γ : QMDPath P_full)
     (fun G' _ _ => hg_int.integrableOn) ?_ hgm).symm
   intro G hG _
   have hGbase : MeasurableSet G := hm G hG
-  -- Adapter (set form) transported to the `pbar` weight, for `Π∘M` and for `s`.
+  -- Transfer both set integrals to the `pbar`-weighted dominating measure.
   have adaptPiM : ∫ ω in G, (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω) ∂P_full
       = ∫ ω in G, ((informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)
           * pbar γ 0 ω) ∂γ.dominating := by
@@ -416,7 +408,7 @@ theorem coarsen_bayes_bridge (hM : Measurable M) (γ : QMDPath P_full)
   have step4 := setIntegral_condExp hm hs_int_P hG
   exact step1.trans (adaptPiM.symm.trans (step3.trans (step4.trans adaptS)))
 
-/-! ## Shared pointwise and conditional-expectation helpers -/
+/-! ## Shared pointwise / conditional-expectation helpers (P-cluster) -/
 
 private lemma pbar_nonneg (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full) :
     0 ≤ pbar γ t ω := by rw [pbar_apply]; exact ENNReal.toReal_nonneg
@@ -462,7 +454,8 @@ private theorem cross_sq_le_helper (hM : Measurable M) (γ : QMDPath P_full)
   rw [cross_apply hM γ t, ← condExp_xi_sq_eq_qtilde hM γ t, ← condExp_xi_sq_eq_qtilde hM γ 0]
   exact hω
 
-/-- `A t² ≤ q̃t` a.e. by conditional Cauchy–Schwarz. -/
+/-- The bound `A t² ≤ q̃t` holds almost everywhere by conditional
+Cauchy--Schwarz. -/
 theorem A_sq_le (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     (fun ω => Acoef hM γ t ω ^ 2) ≤ᵐ[γ.dominating] qtilde hM γ t := by
@@ -473,14 +466,15 @@ theorem A_sq_le (hM : Measurable M) (γ : QMDPath P_full)
   · rw [Acoef_of_pos hM γ t ω hpos, div_pow, Real.sq_sqrt hpos.le, div_le_iff₀ hpos]
     exact hCS
 
-/-- `cross t² ≤ q̃t · q̃0` a.e. by conditional Cauchy–Schwarz. -/
+/-- The bound `cross t² ≤ q̃t · q̃0` holds almost everywhere by conditional
+Cauchy--Schwarz. -/
 theorem cross_sq_le (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     (fun ω => cross hM γ t ω ^ 2)
       ≤ᵐ[γ.dominating] fun ω => qtilde hM γ t ω * qtilde hM γ 0 ω :=
   cross_sq_le_helper hM γ t
 
-/-- `A t ≥ 0` a.e. -/
+/-- The coefficient `A t` is nonnegative almost everywhere. -/
 theorem A_nonneg (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     0 ≤ᵐ[γ.dominating] Acoef hM γ t := by
@@ -494,7 +488,7 @@ theorem A_nonneg (hM : Measurable M) (γ : QMDPath P_full)
   · rw [Acoef_of_pos hM γ t ω hpos]
     exact div_nonneg hcr (Real.sqrt_nonneg _)
 
-/-- `cross t = 0` a.e. on `{q̃0 = 0}`. -/
+/-- The cross term vanishes almost everywhere on `{q̃0 = 0}`. -/
 theorem cross_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     ∀ᵐ ω ∂γ.dominating, qtilde hM γ 0 ω = 0 → cross hM γ t ω = 0 := by
@@ -503,7 +497,8 @@ theorem cross_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_full)
   have hsq : cross hM γ t ω ^ 2 = 0 := le_antisymm hCS (sq_nonneg _)
   exact sq_eq_zero_iff.mp hsq
 
-/-- `q̃t − A t² ≤ μ[(ξt − ξ0)² | comap M]` a.e. -/
+/-- The conditional-projection bound
+`q̃t − A t² ≤ μ[(ξt − ξ0)² | comap M]` holds almost everywhere. -/
 theorem qtil_diff_le (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     (fun ω => qtilde hM γ t ω - Acoef hM γ t ω ^ 2)
@@ -562,7 +557,8 @@ theorem qtil_diff_le (hM : Measurable M) (γ : QMDPath P_full)
       nlinarith [sq_nonneg (cross hM γ t ω - qtilde hM γ 0 ω)]
     linarith
 
-/-- `μ[(ξt − ξ0)² | comap M] ≤ (t²/2)·Cdom + 2·μ[rt² | comap M]` a.e. -/
+/-- The conditional square-root increment satisfies
+`μ[(ξt − ξ0)² | comap M] ≤ (t²/2)·Cdom + 2·μ[rt² | comap M]` almost everywhere. -/
 theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     γ.dominating[(fun ω => (xi γ t ω - xi γ 0 ω) ^ 2)
@@ -594,7 +590,7 @@ theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω)
             - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- Surface `Cdom` and name the three functions. (Do NOT bind the σ-algebra to a
@@ -638,7 +634,8 @@ theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
   simp only [Pi.add_apply, hsA, hsB, Pi.smul_apply, smul_eq_mul] at hmono
   linarith
 
-/-- `(√q̃t − A t)²/t² ≤ (1/2)·Cdom·ρt + 2·μ[rt² | comap M]/t²` a.e. -/
+/-- The normalized second bracket satisfies
+`(√q̃t − A t)²/t² ≤ (1/2)·Cdom·ρt + 2·μ[rt² | comap M]/t²` almost everywhere. -/
 theorem sq_over_t_le (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     (fun ω => (Real.sqrt (qtilde hM γ t ω) - Acoef hM γ t ω) ^ 2 / t ^ 2)
@@ -741,7 +738,8 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
       ≤ 1 / 2 * ∫ ω, Cdom hM γ ω * rho hM γ t ω ∂γ.dominating
         + 2 * (eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t)
             2 γ.dominating).toReal ^ 2 / t ^ 2 := by
-  -- Apply the pointwise bound; the `ρ`/`MemLp`/measurability facts are repeated inline.
+  -- Apply the pointwise second-bracket bound; the required measurability and
+  -- integrability facts are established inline below.
   have hP4 := sq_over_t_le hM γ t
   have hm : MeasurableSpace.comap M ‹MeasurableSpace Ω_obs› ≤ ‹MeasurableSpace Ω_full› :=
     hM.comap_le
@@ -829,7 +827,7 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
         γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- `∫ r_t² = ‖r_t‖²`.
@@ -856,7 +854,7 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
       + 2 * (γ.dominating[(fun ω' => qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t ω' ^ 2)
           | MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›]) ω / t ^ 2) γ.dominating := by
     exact hf1_int.add hf2_int
-  -- The left-hand side is integrable because it is dominated by the right-hand side.
+  -- The left-hand side is integrable by domination by the right-hand side.
   have hLHS_aesm : AEStronglyMeasurable
       (fun ω => (Real.sqrt (qtilde hM γ t ω) - Acoef hM γ t ω) ^ 2 / t ^ 2) γ.dominating := by
     have hqtA : AEMeasurable (qtilde hM γ t) γ.dominating :=
@@ -914,7 +912,8 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
         + 2 * (eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2
             γ.dominating).toReal ^ 2 / t ^ 2 := hRHS_eq
 
-/-- The second term `2·‖rt‖²/t² → 0`, by `γ.qmd_limit_toReal_sq`. -/
+/-- The second term `2·‖rt‖²/t²` tends to zero by
+`γ.qmd_limit_toReal_sq`. -/
 theorem second_term_tendsto (γ : QMDPath P_full) :
     Tendsto (fun t => 2 * (eLpNorm
         (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating).toReal ^ 2
@@ -924,9 +923,10 @@ theorem second_term_tendsto (γ : QMDPath P_full) :
   simp only [mul_div_assoc]
   exact h
 
-/-! ### Dominated-convergence lemmas along subsequences -/
+/-! ### Dominated-convergence lemmas -/
 
-/-- The QMD remainder `r_t` is in `L²(μ)` for every `t`, not merely eventually. -/
+/-- The QMD remainder `r_t` is in `L²(μ)` for every `t` (all `t`, not just
+eventually). -/
 private lemma memLp_qmdRem (γ : QMDPath P_full) (t : ℝ) :
     MemLp (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating := by
   haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
@@ -943,7 +943,7 @@ private lemma memLp_qmdRem (γ : QMDPath P_full) (t : ℝ) :
       γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
   have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
       = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-    funext ω; simp only [qmdRem, xi_apply]; ring
+    funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
   rw [heq]
   exact hξdiff.sub (hsξ0.const_mul (t / 2))
 
@@ -1026,7 +1026,7 @@ private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
       = qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         + (t / 2) • fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω := by
     funext ω
-    simp only [qmdRem, xi_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [qmdRem, xi_apply, pbar_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   rw [hfun]
   calc eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
@@ -1079,7 +1079,7 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
     (hξt.add hξ0).aestronglyMeasurable (hξt.sub hξ0).aestronglyMeasurable) ?_
-  exact le_of_le_of_eq (mul_le_mul_right hb2 _) (mul_comm _ _)
+  exact le_of_le_of_eq (mul_le_mul_left' hb2 _) (mul_comm _ _)
 
 /-- `‖cross_t − q̃_0‖_{L¹(μ)} → 0` (condExp contraction + Hölder + `‖ξ₀‖₂ = 1`). -/
 private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
@@ -1179,7 +1179,7 @@ private lemma aestronglyMeasurable_rho (hM : Measurable M) (γ : QMDPath P_full)
       (fun ω => cross hM γ t ω / Real.sqrt (qtilde hM γ 0 ω)) γ.dominating := hcrA.div hsq0
   exact ((hsqt.sub hquot).div (hsqt.add hquot)).aestronglyMeasurable
 
-/-- `Cdom = 0` a.e. on `{q̃_0 = 0}` (conditional support gives `ξ₀ = 0` there
+/-- `Cdom = 0` a.e. on `{q̃_0 = 0}`: conditional support implies `ξ₀ = 0` there
 ⟹ `(s·ξ₀)² = 0` ⟹ its condExp vanishes on the `𝒢`-set). -/
 private lemma Cdom_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
@@ -1204,7 +1204,7 @@ private lemma Cdom_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_fu
   have hG_meas : MeasurableSet[MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›]
       {ω | qtilde hM γ 0 ω = 0} := hqtSM.measurableSet_eq_fun stronglyMeasurable_const
   have hG_meas0 : MeasurableSet {ω | qtilde hM γ 0 ω = 0} := hm _ hG_meas
-  -- `pbar 0 = 0` a.e. on `G`, by the conditional-support lemma.
+  -- `pbar 0 = 0` almost everywhere on `G`, by conditional support.
   have hpbar0_int : Integrable (pbar γ 0) γ.dominating := Measure.integrable_toReal_rnDeriv
   have hpbar0_nn : 0 ≤ᵐ[γ.dominating] pbar γ 0 :=
     Eventually.of_forall (fun ω => pbar_nonneg γ 0 ω)
@@ -1238,7 +1238,8 @@ private lemma Cdom_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_fu
   rw [ae_restrict_iff' hG_meas0] at hCd_zero
   exact hCd_zero
 
-/-- The first term `(1/2)∫ Cdom·ρt dμ → 0` by dominated convergence along subsequences. -/
+/-- The first term `(1/2)∫ Cdom·ρt dμ` tends to zero by dominated convergence
+along subsequences. -/
 theorem first_term_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
     Tendsto (fun t => 1 / 2 * ∫ ω, Cdom hM γ ω * rho hM γ t ω ∂γ.dominating)
@@ -1406,7 +1407,7 @@ theorem first_bracket_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul] at ho hi hs
     rw [ho, hi, hs, hbω, congrFun (cross_apply hM γ t).symm ω,
       congrFun (condExp_xi_sq_eq_qtilde hM γ 0) ω]
-  -- Conditional Cauchy–Schwarz with `f := r_t`, `g := ξ₀`.
+  -- Conditional Cauchy--Schwarz with `f := r_t`, `g := ξ₀`.
   have hCS := AsymptoticStatistics.ForMathlib.CondExpCauchySchwarz.condExp_sq_le_condExp_mul_condExp
     (μ := γ.dominating) (m := MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›)
     hM.comap_le hrt hξ0
@@ -1480,7 +1481,7 @@ theorem first_bracket_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   rw [integral_div, ← hInt_rt]
   exact (div_le_div_iff_of_pos_right ht2).mpr h_num_le
 
-/-! ## Final-assembly helpers for the residual -/
+/-! ## Square-integrability of the residual -/
 
 /-- `√q̃t ∈ L²(μ)`: `∫ (√q̃t)² = ∫ q̃t = ∫ p̄t = 1`. -/
 private lemma memLp_sqrt_qtilde (hM : Measurable M) (γ : QMDPath P_full)
@@ -1498,7 +1499,7 @@ private lemma memLp_sqrt_qtilde (hM : Measurable M) (γ : QMDPath P_full)
     exact (Real.sq_sqrt hω).symm
   exact hqt_int.congr hsq_eq
 
-/-- `A t ∈ L²(μ)`: `A t² ≤ q̃t` a.e. and `q̃t` is integrable. -/
+/-- `A t ∈ L²(μ)`: `A t² ≤ q̃t` almost everywhere and `q̃t` is integrable. -/
 private lemma memLp_Acoef (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     MemLp (Acoef hM γ t) 2 γ.dominating := by
@@ -1604,7 +1605,8 @@ private lemma memLp_PiM_sqrt_qtilde0 (hM : Measurable M) (γ : QMDPath P_full)
     exact hle
   exact hInt
 
-/-- The pulled-back residual `√q̃t − √q̃0 − (t/2)(Π∘M)√q̃0` belongs to `L²(μ)`. -/
+/-- The pulled-back residual `√q̃t − √q̃0 − (t/2)(Π∘M)√q̃0` belongs to
+`L²(μ)`. -/
 private lemma memLp_residual (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     MemLp (fun ω => Real.sqrt (qtilde hM γ t ω) - Real.sqrt (qtilde hM γ 0 ω)
@@ -1629,7 +1631,8 @@ theorem residual_sq_over_t_tendsto (hM : Measurable M) (γ : QMDPath P_full)
         - t / 2 * (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)
             * Real.sqrt (qtilde hM γ 0 ω)) ^ 2 / t ^ 2 ∂γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-  -- The second bracket `∫ (√q̃t − A)²/t² → 0` follows by squeezing the two terms.
+  -- The second bracket `∫ (√q̃t − A)²/t²` tends to zero by the integral
+  -- bound and the two preceding limit estimates.
   have hsecond : Tendsto (fun t => ∫ ω,
       (Real.sqrt (qtilde hM γ t ω) - Acoef hM γ t ω) ^ 2 / t ^ 2 ∂γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
@@ -1729,9 +1732,8 @@ theorem residual_sq_over_t_tendsto (hM : Measurable M) (γ : QMDPath P_full)
       rw [integral_add (hf_int.const_mul 2) (hs_int.const_mul 2), integral_const_mul,
         integral_const_mul]
 
-/-- Compatibility form of the coarsened `qmd_limit` field under an explicit
-mapped sigma-finiteness instance. The faithful public statement is
-`coarsen_qmd_limit` below. -/
+/-- The coarsened `qmd_limit` property under an explicit mapped
+sigma-finiteness assumption. -/
 theorem coarsen_qmd_limit_withMappedSigmaFinite (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
     Tendsto
@@ -1775,8 +1777,8 @@ theorem coarsen_qmd_limit_withMappedSigmaFinite (hM : Measurable M) (γ : QMDPat
       with ω h1 h0
     simp only [Function.comp_apply]
     rw [h1, h0]
-  -- The `.toReal²/t² → 0` hypothesis follows from the residual estimate via
-  -- `√(∫RES²) = ‖RES‖₂`.
+  -- The required `.toReal²/t² → 0` limit follows from the squared-residual
+  -- estimate via `√(∫RES²) = ‖RES‖₂`.
   have hsq' : Tendsto (fun t => (eLpNorm (fun ω => Real.sqrt (qtilde hM γ t ω)
         - Real.sqrt (qtilde hM γ 0 ω)
         - t / 2 * (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)
@@ -1794,11 +1796,10 @@ theorem coarsen_qmd_limit_withMappedSigmaFinite (hM : Measurable M) (γ : QMDPat
 /-- **Score preservation for vdV Lemma 25.34-I.**
 
 The coarsened curve has score `informationLossOperator hM P_full γ.score`, with
-the QMD residual computed against the pushforward of the internally constructed
-finite equivalent dominator.  Unlike the compatibility core
-`coarsen_qmd_limit_withMappedSigmaFinite`, this public statement does not expose
-`[SigmaFinite (γ.dominating.map M)]`: finiteness, hence sigma-finiteness after
-mapping, is discharged through `finiteDominatorRepresentation`. -/
+the QMD residual computed against the pushforward of the equivalent finite
+dominating measure. Finiteness, and hence sigma-finiteness after mapping,
+follows from `finiteDominatorRepresentation`; no
+`[SigmaFinite (γ.dominating.map M)]` assumption is required. -/
 theorem coarsen_qmd_limit (hM : Measurable M) (γ : QMDPath P_full) :
     Tendsto
       (fun t : ℝ =>

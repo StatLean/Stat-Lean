@@ -4,8 +4,8 @@ import Mathlib.Topology.MetricSpace.CoveringNumbers
 /-!
 # Supporting transfers for sharp VC covers
 
-This file contains the measure-theoretic and metric-space adapters used by the
-final transfer from finite VC packing bounds to strict covers.
+This file proves the measure-theoretic and metric-space lemmas that transfer
+finite VC packing bounds to strict covers.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -123,7 +123,7 @@ theorem finite_strictCover_two_mul_of_finset_separated_card_le
   obtain ⟨c, hc, hxc⟩ := hCcover x hx
   exact ⟨c, hc, by linarith⟩
 
-/-- Corrected P6: the sharp finite VC packing estimate transfers to a strict
+/-- The sharp finite VC packing estimate transfers to a strict
 cover at twice the relative radius, without changing the cardinal bound. -/
 theorem exists_universalVCAdmissibleStrictTwoRadiusCoverConstant :
     ∃ K : ℝ, 0 < K ∧

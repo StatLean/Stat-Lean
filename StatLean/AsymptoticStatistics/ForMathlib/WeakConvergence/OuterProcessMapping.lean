@@ -5,7 +5,7 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 /-!
 # Outer weak convergence under argmax supremum mappings
 
-Specialized portmanteau adapters for vdV Theorem 5.56 and Corollary 5.58.
+Specialized portmanteau theorems for vdV Theorem 5.56 and Corollary 5.58.
 These are not advertised as a general extended continuous-mapping theorem.
 Comparisons are written additively in `EReal`, never as `∞ - ∞`.
 -/
@@ -121,9 +121,8 @@ def PairSupConvergesOuter
         (ForMathlib.setSupEReal (M ω) (F ∩ K ∩ H),
           ForMathlib.setSupEReal (M ω) (K ∩ H))))
 
-/-- Unconditional measurability adapter for the extended-real limit pair in
-`PairSupConvergesOuter`.  It forms the pushforward law only and asserts no
-convergence or argmax conclusion. -/
+/-- Measurability of the extended-real limit pair in `PairSupConvergesOuter`.
+It asserts measurability only, with no convergence or argmax conclusion. -/
 def PairSupLimitMeasurable
     {Ωlim D : Type*} [MeasurableSpace Ωlim] [TopologicalSpace D]
     (M : Ωlim → D → ℝ) (H : Set D) (𝒦 : Set (Set D)) : Prop :=
@@ -134,9 +133,7 @@ def PairSupLimitMeasurable
 
 /-- Closed-set outer portmanteau sufficiency for a probability limit.
 
-This is the final generic adapter used by the argmax core after it proves the
-closed-event limsup inequality.  It contains no theorem-specific conclusion in
-its hypotheses. -/
+The closed-event limsup inequality implies outer weak convergence. -/
 theorem weakConvergesOuter_of_closedSet_limsup {Ω D : Type*}
     [MeasurableSpace Ω] [MeasurableSpace D] [PseudoMetricSpace D]
     [OpensMeasurableSpace D]
@@ -350,8 +347,8 @@ near-maximizer error tends to zero in outer probability, then the limsup of
 event.  The additive `EReal` relation remains meaningful for empty (`⊥`) and
 unbounded (`⊤`) suprema and avoids `∞ - ∞`.
 
-The measurability hypothesis `hpairLimMeas` makes the displayed limit law a
-well-defined pushforward. -/
+`hpairLimMeas` makes the displayed limit law a legal pushforward;
+vdV's limit pair is a random element, so this adds no mathematical regularity. -/
 theorem outer_supComparison_limsup_of_pair_weakConvergence
     {Ω Ωlim : Type*} [MeasurableSpace Ω] [MeasurableSpace Ωlim]
     {μ : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (μ n)]
@@ -449,19 +446,18 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
       hSanti ⟨0, measure_ne_top _ _⟩
   exact ge_of_tendsto hSmeasure (Eventually.of_forall fun k => hfixed (d k) (hdpos k))
 
-/-- The specialized varying-map adapter behind Corollary 5.58.
+/-- The varying-map comparison in Corollary 5.58.
 
 Local outer weak convergence in `ℓ∞(K)`, convergence `Hₙ → H`, and the
-deterministic varying-set sandwich imply the one-sided outer comparison needed
-by the shared argmax proof.  `F` is compact and `K` is a compact localization
-set; the limit comparison uses `interior K`, exactly as in the proof on
+deterministic varying-set sandwich imply the one-sided outer comparison. `F`
+is compact and `K` is a compact localization
+set; the limit comparison uses `interior K`, exactly as in the refined proof on
 vdV p.81.  No joint-pair convergence is assumed (and it may fail when `Hₙ`
 changes).
 
-The hypothesis `hZmeas` forms the displayed pushforward law. `hZcontinuous` records
-that this limit law is concentrated on the continuous paths required by the
-varying-set sandwich; it is discharged directly by Corollary 5.58's continuous
-sample-path premise. -/
+`hZmeas` gives the displayed pushforward law, while `hZcontinuous` states that
+the limit law is concentrated on the continuous paths required by the
+varying-set sandwich. -/
 theorem outer_supComparison_limsup_of_local_linf
     {Ω Ωlim D : Type*} [MeasurableSpace Ω] [MeasurableSpace Ωlim]
     [MetricSpace D]

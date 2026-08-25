@@ -8,8 +8,8 @@ import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 /-!
 # Uniform covering to finite bracketing by localization
 
-A decomposition of the pairwise-compatibility route used in
-van der Vaart Theorem 19.13.  A measurable majorant localizes the class on
+The pairwise-separation argument used in van der Vaart Theorem 19.13. A
+measurable majorant localizes the class on
 `{V ≤ M}`.  Uniform relative `L¹` covering is converted there to an
 absolute all-law cover with one uniform cardinal bound, hence to finite gamma
 dimension and finite bracketing.  A measurable tail expands the localized
@@ -51,8 +51,7 @@ noncomputable def gammaDimension (E : Set (Ω → ℝ)) (γ : ℝ) : ℕ∞ := b
 
 /-- Fixed-scale finite gamma dimension.
 
-This abbreviation exposes, rather than hides, the actual `ℕ∞` finiteness
-claim. -/
+This abbreviation states the `ℕ∞` finiteness claim directly. -/
 def HasFiniteGammaDimension (E : Set (Ω → ℝ)) (γ : ℝ) : Prop :=
   gammaDimension E γ < ⊤
 
@@ -951,7 +950,7 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
   exact (not_le_of_gt ((ENNReal.ofReal_lt_ofReal_iff (by positivity)).mpr (by linarith)))
     (hlower.trans hupper)
 
-/-! ### van Handel compatibility and tail expansion -/
+/-! ### Van Handel's bracketing theorem and tail expansion -/
 
 private abbrev VHMeasSet (Ω : Type*) [MeasurableSpace Ω] :=
   {s : Set Ω // MeasurableSet s}
@@ -1464,9 +1463,8 @@ private theorem exists_weaklyDense_of_boundary_lower
     exact Set.inter_subset_inter_left _ haC
 
 /-- A finite family of pointwise closed brackets that covers a skeleton also
-covers its pointwise sequential closure.  This is the only place where the
-sequential form of `IsPointwiseMeasurable` is used in the compatibility
-argument. -/
+covers its pointwise sequential closure. The proof uses the sequential form of
+`IsPointwiseMeasurable`. -/
 private theorem finiteBracketingCover_of_pointwiseSkeleton
     (E E₀ : Set (Ω → ℝ)) (P : Measure Ω) (ε : ℝ)
     (hdense : ∀ f ∈ E, ∃ g : ℕ → (Ω → ℝ), (∀ n, g n ∈ E₀) ∧
@@ -1988,7 +1986,7 @@ private theorem activePattern_corrected_isEpsBracket
         ← ENNReal.ofReal_add hgood (mul_nonneg hC measureReal_nonneg)]
       exact (ENNReal.ofReal_lt_ofReal_iff hεpos).mpr (by nlinarith [hXi])
 
-/-- Van Handel's pairwise-compatibility theorem on an arbitrary measurable
+/-- Van Handel's finite-bracketing theorem on an arbitrary measurable
 space: a measurable, pointwise-measurable, uniformly bounded class with finite
 gamma dimension at every positive scale has finite `L¹(P)` bracketing covers.
 No standard-Borel or countable-generation assumption is imposed. -/
@@ -1999,7 +1997,7 @@ theorem finiteBracketing_of_gammaDimension
     (hPM : IsPointwiseMeasurable E) -- suitable measurability.
     (hbdd : ∀ f ∈ E, ∀ x, |f x| ≤ B) -- localized uniform bound.
     (hdim : ∀ γ : ℝ, 0 < γ → gammaDimension E γ < ⊤)
-      -- all-scale compatibility conclusion.
+      -- The gamma-dimension bound holds at every positive scale.
     : ∀ ε : ℝ, 0 < ε → HasFiniteBracketingCover E ε 1 P := by
   classical
   intro ε hε
@@ -2209,10 +2207,10 @@ theorem expand_localized_bracketingCover
     (hδ : 0 < δ) -- positive localized bracket radius.
     (hη : 0 < η) -- positive tail radius.
     (htail : eLpNorm (tailReal V H M) 1 P < ENNReal.ofReal η)
-      -- small tail chosen upstream.
+      -- The tail has `L¹(P)` norm less than `η`.
     (hloc : HasFiniteBracketingCover
       (localizedClass F {x | V x ≤ ENNReal.ofReal M}) δ 1 P)
-      -- localized compatibility conclusion.
+      -- The localized class has a finite bracketing cover.
     : HasFiniteBracketingCover F (δ + 2 * η) 1 P := by
   obtain ⟨k, l, u, hbr, hcov⟩ := hloc
   let t : Ω → ℝ := tailReal V H M

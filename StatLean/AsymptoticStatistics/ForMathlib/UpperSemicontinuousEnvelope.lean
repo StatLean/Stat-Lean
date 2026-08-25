@@ -16,7 +16,7 @@ namespace AsymptoticStatistics
 (5.13), p.48.
 
 Edge behavior: for `r ≤ 0` the metric ball is empty, so the dependent supremum
-is `⊥`.  Wald's hypotheses and consumers use only positive radii. -/
+is `⊥`. Wald's hypotheses use only positive radii. -/
 noncomputable def localCriterionSup {X Θ : Type*} [MetricSpace Θ]
     (m : Θ → X → EReal) (θ : Θ) (r : ℝ) (x : X) : EReal :=
   ⨆ η : Metric.ball θ r, m η x
@@ -27,7 +27,7 @@ p.48; the quantifiers deliberately remain `∀ θ, AE x`. -/
 theorem iInf_localCriterionSup_eq
     {X Θ : Type*} [MeasurableSpace X] [MetricSpace Θ]
     (Q : Measure X) (m : Θ → X → EReal)
-    -- Van der Vaart (5.12), with a θ-dependent exceptional set.
+    -- vdV (5.12), with a θ-dependent exceptional set.
     (husc : ∀ θ, ∀ᵐ x ∂Q, UpperSemicontinuousAt (fun η => m η x) θ) :
     ∀ θ, ∀ᵐ x ∂Q,
       Antitone (fun k : ℕ => localCriterionSup m θ ((k + 1 : ℝ)⁻¹) x) ∧

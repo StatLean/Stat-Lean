@@ -3,7 +3,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalFullChaining
 /-!
 # General bracketing maximal inequalities
 
-This module contains the assembly for vdV Lemma 19.34 and
+This module proves vdV Lemma 19.34 and
 Corollary 19.35 (pp.286--288).  The full-class theorem branches internally on
 the empty class, `n = 0`, and an infinite entropy integral; its public surface
 therefore contains no finite-cover, partition, envelope-measurability,
@@ -23,7 +23,8 @@ variable {F : Set (Ω → ℝ)} {Φ : Ω → ℝ}
 `δ / entropyWeight(N).toReal = δ / sqrt (log (1 + N))`.
 
 Edge behavior: finite counts `0` and `1` remain total through `log (1 + N)`;
-if `N = ⊤`, Lean's total division returns `0`. -/
+if `N = ⊤`, Lean's total division returns `0`. This normalization is used only
+for intermediate estimates; `bracketingBookCutoff` gives the exact book normalization. -/
 noncomputable def bracketingThresholdRegularized (δ : ℝ) (N : ℕ∞) : ℝ :=
   δ / (entropyWeight N).toReal
 
@@ -72,12 +73,9 @@ private lemma sqrt_log_one_add_nat_le_two_bookLog_of_le_sq
     Real.sqrt_nonneg (max 1 (Real.log (N : ℝ)))]
 
 /-- A finite bracketing entropy integral up to a positive radius `δ` yields a
-finite bracketing cover at every positive cutoff `ε ≤ δ`.  This is the
-arbitrary-cutoff adapter required by the full-class partition construction. -/
+finite bracketing cover at every positive cutoff `ε ≤ δ`. -/
 theorem hasFiniteBracketingCover_of_entropyIntegral_lt_top_at
-    -- finite entropy selects the nontrivial internal branch.
     (hJ : bracketingEntropyIntegral δ F P < ⊤)
-    -- the requested cutoff lies in the positive integration range.
     (hε : 0 < ε) (hεδ : ε ≤ δ) :
     HasFiniteBracketingCover F ε 2 P := by
   rw [← bracketingNumber_lt_top_iff_HasFiniteBracketingCover]
@@ -107,9 +105,7 @@ theorem hasFiniteBracketingCover_of_entropyIntegral_lt_top_at
 with cardinality equal to the corresponding bracketing number.  The object is
 derived from entropy finiteness and is not a public hypothesis of Lemma 19.34. -/
 theorem finiteBracketingData_of_entropyIntegral_lt_top
-    -- finite entropy selects the nontrivial internal branch.
     (hJ : bracketingEntropyIntegral δ F P < ⊤)
-    -- the requested cutoff lies in the positive integration range.
     (hε : 0 < ε) (hεδ : ε ≤ δ) :
     ∃ cov : BracketingCoverData F ε P,
       (cov.k : ℕ∞) = bracketingNumber ε F 2 P := by
@@ -121,17 +117,13 @@ the genuine projection class `truncateClass F t`; the second is the outer
 envelope tail.  No measurability of `Φ` is assumed (vdV Lemma 19.34, p.286). -/
 theorem outerExpectation_supNorm_le_truncateClass_add_tail
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
-    -- measurable class and strict population-L² ball from Lemma 19.34.
     (hF_ne : F.Nonempty) (hF_meas : ∀ f ∈ F, Measurable f)
     {δ : ℝ}
     (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)
-    -- the book's envelope relation; no envelope regularity is added.
     (hΦ_env : IsEnvelope F Φ)
-    -- iid sample representation of `𝔾ₙ`.
     {X : ℕ → Ξ → Ω} (hX_meas : ∀ i, Measurable (X i))
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
-    -- the internal clamp level is nonnegative.
     {t : ℝ} (ht : 0 ≤ t) (n : ℕ) :
     outerExpectation μ (fun ξ => supNormOver F
         (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤
@@ -340,14 +332,10 @@ cutoff `sqrt n * bracketingBookCutoff δ Nδ`.  The scale-`8δ`,
 initial-smallness, and head-visibility facts are derived proof data consumed by
 the chaining module, never caller-supplied hypotheses of Lemma 19.34. -/
 theorem exists_fullClampedNestedPartition
-    -- finite entropy and nonemptiness select the constructive branch.
     (hJ : bracketingEntropyIntegral δ F P < ⊤) (hF_ne : F.Nonempty)
-    -- measurable members and strict radius are the Lemma 19.34 inputs.
     (hF_meas : ∀ f ∈ F, Measurable f)
     (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)
-    -- the book's envelope relation.
     (hΦ_env : IsEnvelope F Φ)
-    -- positive radius selects the chaining branch.
     (hδ : 0 < δ) (n : ℕ) :
     Nonempty (RegularizedFullClampedPartitionData F P Φ δ n
       (Real.sqrt n * bracketingBookCutoff δ
@@ -545,17 +533,12 @@ theorem bracketingMaximal_full :
         (Ξ : Type*) [MeasurableSpace Ξ]
         (μ : Measure Ξ) [IsProbabilityMeasure μ]
         (X : ℕ → Ξ → Ω)
-        -- LEAN-ONLY: measurability of each sample coordinate.
         (hX_meas : ∀ i, Measurable (X i))
-        -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.34.
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (δ : ℝ)
-        -- USER-INPUT: positive radius, `L²`-localized class, and envelope;
-        -- vdV Lemma 19.34.
         (hδ : 0 < δ)
-        -- LEAN-ONLY: explicit measurability of the class members.
         (hF_meas : ∀ f ∈ F, Measurable f)
         (hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal δ)
         (hΦ_env : IsEnvelope F Φ)
@@ -666,16 +649,12 @@ theorem bracketingMaximal_integrableEnvelope :
         (Ξ : Type*) [MeasurableSpace Ξ]
         (μ : Measure Ξ) [IsProbabilityMeasure μ]
         (X : ℕ → Ξ → Ω)
-        -- LEAN-ONLY: measurability of each sample coordinate.
         (hX_meas : ∀ i, Measurable (X i))
-        -- USER-INPUT: iid observations with common law `P`; vdV Corollary 19.35.
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
-        -- LEAN-ONLY: explicit measurability of the class and envelope.
         (hF_meas : ∀ f ∈ F, Measurable f)
-        -- USER-INPUT: a square-integrable envelope; vdV Corollary 19.35.
         (hΦ_env : IsEnvelope F Φ)
         (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) (n : ℕ),
         outerExpectation μ (fun ξ => supNormOver F

@@ -45,12 +45,19 @@ def commonPositiveSet (p q : X -> ℝ) : Set X :=
 and so does every finite product of that measure, including the empty product.
 -/
 theorem productMeasureOfDensity_isProbabilityMeasure
+    -- the common dominating measure.
     (mu : Measure X)
+    -- the supplied real density.
     (p : X -> ℝ)
+    -- the finite product size.
     (N : ℕ)
+    -- measurability of the supplied density.
     (hpm : Measurable p)
+    -- pointwise nonnegativity of the supplied density.
     (hp0 : ∀ x, 0 ≤ p x)
+    -- integrability of the supplied density.
     (hpi : Integrable p mu)
+    -- unit mass, making the supplied density a probability density.
     (hp1 : ∫ x, p x ∂(mu) = 1) :
     IsProbabilityMeasure (productMeasureOfDensity mu p N) := by
   have hpE : Measurable (ENNReal.ofReal ∘ p) := hpm.ennreal_ofReal
@@ -187,10 +194,15 @@ and `E` is the `p`-mass on `{q = 0}`.  The `E` term records the edge behavior of
 Lean's totalized `Real.log 0 = 0`.
 -/
 theorem exp_logLikelihood_integrable_and_integral_eq
+    -- the common dominating measure.
     (mu : Measure X) (p q : X -> ℝ) (N : ℕ)
+    -- measurability of the two supplied densities.
     (hpm : Measurable p) (hqm : Measurable q)
+    -- pointwise nonnegativity of the two supplied densities.
     (hp0 : ∀ x, 0 ≤ p x) (hq0 : ∀ x, 0 ≤ q x)
+    -- integrability of the two supplied densities.
     (hpi : Integrable p mu) (hqi : Integrable q mu)
+    -- both supplied densities have unit mass.
     (hp1 : ∫ x, p x ∂(mu) = 1) (hq1 : ∫ x, q x ∂(mu) = 1) :
     let D := ∫ x in {x | p x = 0}, q x ∂(mu)
     let E := ∫ x in {x | q x = 0}, p x ∂(mu)
@@ -225,9 +237,13 @@ alternative product law agrees with tilting the base product law by the exponent
 log-likelihood.  Outside this rectangle no absolute-continuity claim is made.
 -/
 theorem positiveRectangle_restrict_eq
+    -- the common dominating measure and the two supplied densities.
     (mu : Measure X) (p q : X -> ℝ) (N : ℕ)
+    -- measurability of the two supplied densities.
     (hpm : Measurable p) (hqm : Measurable q)
+    -- pointwise nonnegativity of the two supplied densities.
     (hp0 : ∀ x, 0 ≤ p x) (hq0 : ∀ x, 0 ≤ q x)
+    -- integrability makes the two one-coordinate laws finite.
     (hpi : Integrable p mu) (hqi : Integrable q mu) :
     (productMeasureOfDensity mu q N).restrict
         (Set.univ.pi fun _ : Fin N => commonPositiveSet p q) =
@@ -285,10 +301,15 @@ theorem positiveRectangle_restrict_eq
 `N` times the one-coordinate missing-support mass `D`.
 -/
 theorem alternative_positiveRectangle_compl_le
+    -- the common dominating measure and the two supplied densities.
     (mu : Measure X) (p q : X -> ℝ) (N : ℕ)
+    -- measurability of the two supplied densities.
     (hpm : Measurable p) (hqm : Measurable q)
+    -- pointwise nonnegativity of the two supplied densities.
     (hp0 : ∀ x, 0 ≤ p x) (hq0 : ∀ x, 0 ≤ q x)
+    -- integrability of the alternative density.
     (hqi : Integrable q mu)
+    -- unit mass of the alternative density.
     (hq1 : ∫ x, q x ∂(mu) = 1) :
     let D := ∫ x in {x | p x = 0}, q x ∂(mu)
     productMeasureOfDensity mu q N
@@ -380,10 +401,15 @@ integration under the base law.  The real error is the support-mismatch contribu
 `2 * N * D` plus the normalization defect `|c ^ N - 1|`.
 -/
 theorem finiteProduct_expLog_comparison
+    -- the common dominating measure.
     (mu : Measure X) (p q : X -> ℝ) (N : ℕ)
+    -- measurability of the two supplied densities.
     (hpm : Measurable p) (hqm : Measurable q)
+    -- pointwise nonnegativity of the two supplied densities.
     (hp0 : ∀ x, 0 ≤ p x) (hq0 : ∀ x, 0 ≤ q x)
+    -- integrability of the two supplied densities.
     (hpi : Integrable p mu) (hqi : Integrable q mu)
+    -- both supplied densities have unit mass.
     (hp1 : ∫ x, p x ∂(mu) = 1) (hq1 : ∫ x, q x ∂(mu) = 1) :
     let D := ∫ x in {x | p x = 0}, q x ∂(mu)
     let E := ∫ x in {x | q x = 0}, p x ∂(mu)
@@ -513,9 +539,13 @@ theorem finiteProduct_expLog_comparison
 powers `(1 + a n) ^ m n` tend to one.  No sign condition is imposed on `a`.
 -/
 theorem tendsto_one_add_pow_nat_zero_of_scaled_tendsto
+    -- the natural exponent sequence.
     (m : ℕ -> ℕ)
+    -- the real perturbation sequence.
     (a : ℕ -> ℝ)
+    -- divergence of the exponent sequence.
     (hm : Tendsto m atTop atTop)
+    -- the scaled perturbations vanish.
     (ha : Tendsto (fun n => (m n : ℝ) * a n) atTop (nhds 0)) :
     Tendsto (fun n => (1 + a n) ^ m n) atTop (nhds 1) := by
   have hmR : Tendsto (fun n => (m n : ℝ)) atTop atTop :=

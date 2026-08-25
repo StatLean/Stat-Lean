@@ -25,23 +25,34 @@ moving log-likelihood ratio converges weakly to
 `N(-Iθ₀(h,h)/2, Iθ₀(h,h))`.
 
 The proof extends the scaled directions from the range of the strictly
-monotone `m`, applies LAN clause (iii) along `m`, combines the score CLT along `m`
-with Slutsky, and uses the moving-product likelihood comparison for the
-support-free product-law interface.  No common-support, absolute-continuity, or
-public sigma-finiteness premise is part of the statement.
+monotone `m`, applies LAN clause (iii) along `m`, combines the score CLT along
+`m` with Slutsky, and uses the moving-product likelihood comparison for the
+product laws. No common-support or absolute-continuity assumption is required.
 -/
 theorem movingLogLikelihood_weaklyConverges
+    -- the parametric family under study.
     (M : ParametricFamily 𝒳 (Θ k))
+    -- a dominating measure for the supplied densities.
     (μ : Measure 𝒳)
+    -- the base parameter.
     (θ₀ : Θ k)
+    -- the DQM score at the base parameter.
     (ℓ : 𝒳 → Θ k)
+    -- every family member is a probability density with respect to `μ`.
     (hPDF : IsPDFOf M μ)
+    -- measurability of the supplied score.
     (hℓ : Measurable ℓ)
+    -- differentiability in quadratic mean at `θ₀` with score `ℓ`.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- sample sizes along the moving local path.
     (m : ℕ → ℕ)
+    -- strict monotonicity packages divergence and an injective range for extension.
     (hm : StrictMono m)
+    -- the moving parameter sequence.
     (θ : ℕ → Θ k)
+    -- the limiting local direction.
     (h : Θ k)
+    -- convergence of the sample-size-scaled displacement.
     (hθ : Tendsto (fun n => Real.sqrt (m n) • (θ n - θ₀)) atTop (nhds h)) :
     let P : ∀ n, Measure (Fin (m n) → 𝒳) :=
       fun n => productMeasure M μ θ₀ (m n)

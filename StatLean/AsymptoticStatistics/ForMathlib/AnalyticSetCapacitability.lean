@@ -14,8 +14,8 @@ the s-finite public API used by measurable selection.
 * `MeasureTheory.AnalyticSet.exists_isCompact_measure_diff_lt`
 * `MeasureTheory.AnalyticSet.nullMeasurableSet`
 
-The construction proceeds from `ChoquetCapacity.Basic` through `ChoquetCapacity.Analytic`,
-and the resulting theorem is used in `MeasurableSelection`.
+The dependency chain is `ChoquetCapacity.Basic` → `ChoquetCapacity.Analytic` →
+this file → `MeasurableSelection`.
 -/
 
 namespace MeasureTheory
@@ -26,8 +26,8 @@ open scoped ENNReal
 /-- An analytic set under a finite Borel measure admits a compact inner approximation
 whose missing mass is smaller than any positive tolerance.
 
-The Polish/Borel and finite-measure instances state the theorem's mathematical scope and are
-typeclass-encoded in Lean. -/
+The Polish/Borel and finite-measure assumptions state the theorem's
+mathematical scope. -/
 theorem AnalyticSet.exists_isCompact_measure_diff_lt
     {β : Type*} [TopologicalSpace β] [PolishSpace β]
     [MeasurableSpace β] [BorelSpace β]
@@ -53,7 +53,10 @@ theorem AnalyticSet.exists_isCompact_measure_diff_lt
     apply measure_diff_lt_of_lt_add hKc.nullMeasurableSet hKA (measure_ne_top m K)
     exact ENNReal.lt_add_of_sub_lt_right (Or.inl (measure_ne_top m A)) hK
 
-/-- Inner approximation for analytic sets under a finite Borel measure. -/
+/-- Inner approximation for analytic sets under a finite Borel measure.
+
+Its signature is the finite-measure form consumed by the s-finite theorem.
+The assumptions state the Polish/Borel finite-measure scope. -/
 private theorem analyticSet_innerApprox_of_isFiniteMeasure
     {β : Type*} [TopologicalSpace β] [PolishSpace β]
     [MeasurableSpace β] [BorelSpace β]
@@ -91,7 +94,10 @@ private theorem analyticSet_innerApprox_of_isFiniteMeasure
     exact le_antisymm hle0 (zero_le _)
 
 /-- In a Polish space, every analytic set is null-measurable for every s-finite Borel
-measure. -/
+measure.
+
+This is the form required by the measurable-selection module.
+The Polish/Borel and s-finite assumptions state the theorem's scope. -/
 theorem AnalyticSet.nullMeasurableSet
     {β : Type*} [TopologicalSpace β] [PolishSpace β]
     [MeasurableSpace β] [BorelSpace β]

@@ -3,8 +3,8 @@ import StatLean.AsymptoticStatistics.MEstimator.Argmax
 /-!
 # Continuous-path argmax corollary
 
-This module proves Corollary 5.58 using the closed-set result `argmax_closed_limsup`,
-rather than the joint-pair hypothesis of Theorem 5.56, because
+Book-facing Corollary 5.58.  The proof route is the refined shared closed-set
+core from `Argmax.lean`, not the joint-pair hypothesis of Theorem 5.56, because
 that pair convergence may fail for changing parameter sets.
 -/
 
@@ -16,8 +16,9 @@ namespace AsymptoticStatistics.MEstimator
 /-- A continuous real-valued function is uniformly bounded on a compact set,
 so its restriction defines an element of the local `ℓ∞(K)` carrier.
 
-This expresses compact-image boundedness in the `Memℓp ∞` form required by
-`ForMathlib.restrictToLinfOn`; no separate boundedness assumption is needed. -/
+This packages compact-image boundedness in the `Memℓp ∞` form
+required by `ForMathlib.restrictToLinfOn`; it is derived data, not a
+book-facing regularity assumption. -/
 theorem continuous_memℓp_infty_on_compact
     {D : Type*} [TopologicalSpace D] (f : D → ℝ) (K : Set D)
     (hf : Continuous f) (hK : IsCompact K) :
@@ -138,35 +139,35 @@ theorem argmax_continuous_corollary
     (M : Ωlim → EuclideanSpace ℝ (Fin d) → ℝ)
     (Hn : ℕ → Set (EuclideanSpace ℝ (Fin d)))
     (H : Set (EuclideanSpace ℝ (Fin d)))
-    -- USER-INPUT: convergence of the changing index sets; vdV Corollary 5.58.
+    -- Convergence of the changing index sets, as in vdV Corollary 5.58.
     (hset : ForMathlib.SetConverges Hn H)
     (hhatn : ℕ → Ω → EuclideanSpace ℝ (Fin d))
     (hhat : Ωlim → EuclideanSpace ℝ (Fin d))
-    -- LEAN-ONLY: measurability of the limiting argmax.
+    -- Measurability of the limiting argmax.
     (hhmeas : Measurable hhat)
-    -- USER-INPUT: the sample and limiting argmaxes lie in their index sets;
+    -- The sample and limiting argmaxes lie in their index sets;
     -- vdV Corollary 5.58.
     (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)
     (hmem : ∀ ω, hhat ω ∈ H)
     (r : ℕ → Ω → ℝ)
-    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
+    -- The approximation remainder is represented as nonnegative.
     (hrnonneg : ∀ n ω, 0 ≤ r n ω)
-    -- USER-INPUT: near-maximization with an `o_P(1)` remainder;
+    -- Near-maximization with an `o_P(1)` remainder;
     -- vdV Corollary 5.58.
     (hr : TendstoInOuterProbabilityZero μ r)
     (hnear : ∀ n ω h, h ∈ Hn n →
       Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)
-    -- USER-INPUT: continuous limit paths with a unique maximizer;
+    -- Continuous limit paths with a unique maximizer;
     -- vdV Corollary 5.58.
     (hcontinuous : ∀ ω, Continuous (M ω))
     (hunique : ∀ ω h, h ∈ H → h ≠ hhat ω → M ω h < M ω (hhat ω))
-    -- LEAN-ONLY: boundedness and measurability needed to realize restrictions in `ℓ∞(K)`.
+    -- Boundedness and measurability needed to realize restrictions in `ℓ∞(K)`.
     (hMnBounded : ∀ n ω (K : Set (EuclideanSpace ℝ (Fin d))), IsCompact K →
       Memℓp (fun h : K => Mn n ω h) ∞)
     (hLocalMeas : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),
       Measurable (fun ω => ForMathlib.restrictToLinfOn K (M ω)
         (continuous_memℓp_infty_on_compact (M ω) K (hcontinuous ω) hK)))
-    -- USER-INPUT: local outer weak convergence and uniform tightness;
+    -- Local outer weak convergence and uniform tightness;
     -- vdV Corollary 5.58.
     (hlocal : ∀ (K : Set (EuclideanSpace ℝ (Fin d))) (hK : IsCompact K),
       WeakConvergesOuter μ

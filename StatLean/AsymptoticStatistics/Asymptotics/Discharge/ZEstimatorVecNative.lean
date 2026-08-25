@@ -6,7 +6,7 @@ import StatLean.AsymptoticStatistics.Operators.InformationLoss
 import Mathlib.Analysis.CStarAlgebra.Matrix
 
 /-!
-# Native multivariate discharge of vdV Theorem 25.77
+# Multivariate Taylor expansion for Z-estimators
 
 This smooth conditional theorem takes a vector estimating equation, a matrix
 Bartlett identity, and a matrix Taylor remainder. It derives
@@ -14,9 +14,9 @@ Bartlett identity, and a matrix Taylor remainder. It derives
 of the full information matrix. Thus it supports non-diagonal information and
 has influence `I^-1 score = candidateVecEIF`.
 
-This interface is stronger than the proper-submodel hypotheses of van der
-Vaart, Theorem 25.77. References: van der Vaart, §25.5, Theorem 25.54 (vector
-form), and §25.4, Lemma 25.25.
+The matrix Taylor and Bartlett assumptions are stronger than the proper-submodel
+hypotheses of van der Vaart, Theorem 25.77. References: van der Vaart, §25.5,
+Theorem 25.54 (vector form), and §25.4, Lemma 25.25.
 -/
 
 open MeasureTheory Filter Topology
@@ -33,7 +33,7 @@ open AsymptoticStatistics.StrictModel.EfficientScoreVec
 variable {Ω : Type} [MeasurableSpace Ω]
 variable {d : ℕ}
 
-/-! ### Matrix-of-`L²`-derivatives evaluation helper -/
+/-! ### Evaluation of a matrix of `L²` derivatives -/
 
 /-- Sample-point action of the `d × d` matrix of `L²(P)`-derivatives
 `M = ∂_θ ℓ̃` on a Euclidean vector `v`: the vector whose `j`-th coordinate is
@@ -49,7 +49,7 @@ noncomputable def scoreDerivApply
   (EuclideanSpace.equiv (Fin d) ℝ).symm
     (fun j => ∑ k, ((M j k : Ω → ℝ) x) * v k)
 
-/-! ### The native hypothesis bundle -/
+/-! ### Strong regularity hypotheses -/
 
 /-- Native vector strong-regularity bundle for a generic Taylor/Z-estimator
 route. It carries the vector and matrix inputs used by the full `d x d`
@@ -66,7 +66,9 @@ The score-derivative matrix
 `score_l_dot : Matrix (Fin d) (Fin d) (Lp Real 2 P)` has
 `(j, k)` entry `∂_{θ_k} ℓ̃_j`.
 
-Reference: vdV §25.5 thm:25.54 (vector form); §25.4 lem:25.25. -/
+Reference for the Taylor pattern: vdV §25.5 thm:25.54 (vector form); §25.4
+lem:25.25 supplies the efficient-influence construction. These conditions differ
+from the approximately-least-favorable MLE hypotheses of Theorem 25.77. -/
 structure ZEstimatorTaylorCoreNative_vec
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -79,8 +81,8 @@ structure ZEstimatorTaylorCoreNative_vec
   /-- The efficient information matrix is positive-definite, so its full
   inverse is defined. Reference: vdV §25.4, Lemma 25.25. -/
   hPD : (efficientInformationMatrix S_θ T_nuis e).PosDef
-  /-- Constitutive (vdV §25.5 thm:25.54 hyp 4, vector form): the vector
-  Z/MLE-estimator solves the estimating equation up to `o_P(n^{-1/2})`:
+  /-- Generic Taylor-core input, patterned on vdV §25.5 thm:25.54 hyp 4: the
+  supplied vector estimator solves the estimating equation up to `o_P(n^{-1/2})`:
   `√n · 𝕡_n ℓ̃_{θ̂_n(X)} = o_P(1)` under `Pⁿ`, i.e. for every `ε > 0` the
   `Pⁿ`-probability that the Euclidean norm of
   `(√n)⁻¹ · Σᵢ ℓ̃_{θ̂_n(X)}(Xᵢ)` exceeds `ε` tends to `0`. Vector lift of the
@@ -90,10 +92,11 @@ structure ZEstimatorTaylorCoreNative_vec
       {X : Fin n → Ω |
         ε ≤ ‖(Real.sqrt n)⁻¹ • (∑ i, score_func_seq n X (X i))‖})
     atTop (𝓝 0)
-  /-- Constitutive (vdV §25.4, matrix Bartlett identity): the expectation of the
+  /-- Generic Taylor-core input (vdV §25.4 matrix Bartlett identity): the expectation of the
   `θ`-derivative of the efficient score is `−Ĩ`, entrywise
-  `E_P[∂_{θ_k} ℓ̃_j] = −Ĩ_{jk}`. This field records the conclusion of the polarized
-  Bartlett theorem; it is not an independent estimator assumption. -/
+  `E_P[∂_{θ_k} ℓ̃_j] = −Ĩ_{jk}`. It is deliberately a supplied field here;
+  separate infrastructure can derive it from suitable submodels, but this
+  generic bundle does not perform that derivation and does not encode 25.77. -/
   matrix_bartlett : ∀ j k,
     ∫ ω, ((score_l_dot j k : Ω → ℝ)) ω ∂P
       = - efficientInformationMatrix S_θ T_nuis e j k
@@ -745,8 +748,7 @@ private lemma frobenius_oP
 /-! ### The rate bootstrap `√n·(θ̂−θ₀) = O_P(1)` -/
 
 set_option maxHeartbeats 1600000 in
--- The matrix bootstrap expands a large good-event decomposition with Frobenius and coercivity
--- estimates, exceeding the default heartbeat budget.
+-- The matrix-bootstrap proof below needs 1,600,000 heartbeats; the default 200,000 times out.
 /-- **Bootstrap `√n·(θ̂−θ₀) = O_P(1)` (eventual form).** For every `η > 0` there
 is a bound `M` with `Pⁿ{M ≤ ‖√n·(θ̂−θ₀)‖} ≤ η` eventually. The matrix bootstrap:
 from the core identity `Ĩ·Δₙ = (Ĩ+D̂ₙ)·Δₙ + Sₙ + Rₙ − Lₙ`, invertibility of `Ĩ`
@@ -1256,9 +1258,9 @@ theorem mle_asympLinear_of_nativeTaylorCore_vec
 
 /-! ### Smooth conditional efficiency theorem -/
 
-/-- **vdV Theorem 25.77 (vector form), book-faithful native discharge.**
+/-- **Native generic Taylor/Z-estimator efficiency core.**
 
-The semiparametric MLE `estimator` is asymptotically efficient at `P` relative to the
+The supplied estimator `estimator` is asymptotically efficient at `P` relative to the
 tangent space `T` for the vector functional `ψ` with `ψ P = θ₀`, discharged from the
 native vector strong-regularity bundle `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector
 estimating equation `score_eq_vec`, the supplied matrix identity `matrix_bartlett`, and the

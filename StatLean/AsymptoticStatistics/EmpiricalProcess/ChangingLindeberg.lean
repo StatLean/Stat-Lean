@@ -7,13 +7,13 @@ import Mathlib.MeasureTheory.Function.L2Space
 /-!
 # Changing envelopes and their Lindeberg calculus
 
-This file provides the population/envelope core used in the
-finite-dimensional-convergence part of van der Vaart Theorem 19.28.  It does
+This file develops the population/envelope estimates used in the
+finite-dimensional-convergence part of van der Vaart Theorem 19.28. It does
 not choose an encoding of an empirical sample or of a triangular array.
 
-The public endpoint `envelope_lindeberg_vector` turns a changing-envelope
-Lindeberg condition into the centered Euclidean-vector tail condition used by
-the row-iid triangular Lindeberg theorem.
+The theorem `envelope_lindeberg_vector` turns a changing-envelope Lindeberg
+condition into the centered Euclidean-vector tail condition for a row-iid
+triangular Lindeberg theorem.
 
 Reference: van der Vaart, *Asymptotic Statistics*, Theorem 19.28, p.282.
 -/
@@ -52,7 +52,7 @@ def ChangingLindeberg (P : Measure Ω) (Φ : ℕ → Ω → ℝ) : Prop :=
           ENNReal.ofReal ((Φ n x) ^ 2) ∂P)
         atTop (nhds 0)
 
-/-- LEAN-INTERNAL: the changing-Lindeberg squared-envelope tail at scale `ε`.
+/-- The changing-Lindeberg squared-envelope tail at scale `ε`.
 
 This is the exact extended-valued tail appearing in `ChangingLindeberg`; no
 measurability or finiteness is imposed by the definition. -/
@@ -62,7 +62,7 @@ noncomputable def changingLindebergTail
   ∫⁻ x in {x | ε * Real.sqrt n < |Φ n x|},
     ENNReal.ofReal ((Φ n x) ^ 2) ∂P
 
-/-- DERIVED: choose a positive antitone null scale along which the
+/-- Choose a positive antitone null scale along which the
 changing-Lindeberg squared-envelope tail still converges to zero. -/
 theorem ChangingLindeberg.exists_pos_antitone_tail_scale
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -77,7 +77,7 @@ theorem ChangingLindeberg.exists_pos_antitone_tail_scale
   intro ε hε
   simpa [changingLindebergTail] using hLin.2 ε hε
 
-/-- DERIVED: jointly diagonalize the changing-Lindeberg tail and division by
+/-- Jointly diagonalize the changing-Lindeberg tail and division by
 an arbitrary extended-nonnegative null sequence. -/
 theorem ChangingLindeberg.exists_pos_antitone_tail_scale_div
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -118,12 +118,10 @@ theorem ChangingLindeberg.exists_pos_antitone_tail_scale_div
       (Eventually.of_forall fun n => by
         exact le_add_of_nonneg_left (zero_le _))
 
-/-- A measurable envelope satisfying the changing Lindeberg condition is in
-`L²(P)` in every row.  This named consequence prevents rowwise integrability
-from being passed downstream as a hidden provider hypothesis. -/
+/-- A measurable envelope satisfying the changing Lindeberg condition belongs
+to `L²(P)` in every row. -/
 lemma ChangingLindeberg.envelope_memLp_two
     {P : Measure Ω} {Φ : ℕ → Ω → ℝ} (hLin : ChangingLindeberg P Φ)
-    -- the displayed envelope in vdV 19.28 is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n)) (n : ℕ) :
     MemLp (Φ n) 2 P := by
   rw [memLp_two_iff_integrable_sq (hΦmeas n).aestronglyMeasurable]
@@ -137,9 +135,7 @@ lemma ChangingLindeberg.envelope_memLp_two
 in every row under a population probability law. -/
 lemma ChangingLindeberg.envelope_abs_integrable
     {P : Measure Ω} {Φ : ℕ → Ω → ℝ} (hLin : ChangingLindeberg P Φ)
-    -- the displayed envelope in vdV 19.28 is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n))
-    -- BOOK-ENCODING: `P` is the population probability law.
     [IsProbabilityMeasure P] (n : ℕ) :
     Integrable (fun x => |Φ n x|) P := by
   simpa only [Real.norm_eq_abs] using
@@ -167,17 +163,13 @@ lemma ChangingEnvelope.increment_abs_le
 /-- Centering one class member costs its pointwise envelope plus the population
 mean of the absolute envelope.
 
-The measurability and integrability assumptions are the genuine analytic
-inputs needed to interpret the Bochner means; they are not conclusions hidden
-as provider certificates. -/
+The measurability and integrability assumptions are the analytic conditions
+needed to interpret the Bochner means. -/
 lemma ChangingEnvelope.centered_abs_le
     {f : ℕ → T → Ω → ℝ} {Φ : ℕ → Ω → ℝ} {P : Measure Ω}
     (hΦ : ChangingEnvelope f Φ) (hLin : ChangingLindeberg P Φ)
-    -- vdV 19.28 assumes measurable row functions.
     (hf : ∀ n t, Integrable (f n t) P)
-    -- the displayed envelope in vdV 19.28 is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n))
-    -- BOOK-ENCODING: `P` is the population probability law.
     [IsProbabilityMeasure P]
     (n : ℕ) (t : T) (x : Ω) :
     |f n t x - ∫ y, f n t y ∂P| ≤
@@ -193,16 +185,13 @@ lemma ChangingEnvelope.centered_abs_le
         (fun y => (hΦ n t y).trans (le_abs_self _))) _
 
 /-- A finite linear combination of centered coordinates is dominated by the
-sum of the corresponding envelope bounds.  This is the scalar tail-reduction
-brick used by the Cramér--Wold form of the triangular Lindeberg argument. -/
+sum of the corresponding envelope bounds. This gives the scalar tail reduction
+in the Cramér--Wold form of the triangular Lindeberg argument. -/
 lemma changingEnvelope_centered_finset_sum_abs_le
     {f : ℕ → T → Ω → ℝ} {Φ : ℕ → Ω → ℝ} {P : Measure Ω}
     (hΦ : ChangingEnvelope f Φ) (hLin : ChangingLindeberg P Φ)
-    -- vdV 19.28 assumes measurable row functions.
     (hf : ∀ n t, Integrable (f n t) P)
-    -- the displayed envelope in vdV 19.28 is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n))
-    -- BOOK-ENCODING: `P` is the population probability law.
     [IsProbabilityMeasure P]
     {k : ℕ} (a : Fin k → ℝ) (t : Fin k → T) (n : ℕ) (x : Ω) :
     |∑ j, a j * (f n (t j) x - ∫ y, f n (t j) y ∂P)| ≤
@@ -322,11 +311,8 @@ Lindeberg tail required in a scalar Cramér--Wold reduction. -/
 theorem changingLindeberg_centered_linearCombination
     {f : ℕ → T → Ω → ℝ} {Φ : ℕ → Ω → ℝ} {P : Measure Ω}
     (hΦ : ChangingEnvelope f Φ) (hLin : ChangingLindeberg P Φ)
-    -- vdV 19.28 assumes measurable row functions.
     (hf : ∀ n t, Measurable (f n t))
-    -- the displayed envelope in vdV is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n))
-    -- BOOK-ENCODING: `P` is the population probability law.
     [IsProbabilityMeasure P]
     {k : ℕ} (a : Fin k → ℝ) (t : Fin k → T) (ε : ℝ) (hε : 0 < ε) :
     Tendsto
@@ -366,17 +352,13 @@ theorem changingLindeberg_centered_linearCombination
 /-- The changing-envelope condition gives the centered Euclidean-vector
 Lindeberg tail used by the row-iid triangular CLT.
 
-Its conclusion is the Lindeberg-tail hypothesis used by
-`tendstoInDistribution_triangular_iid_lindeberg` after choosing finitely many
-coordinates. -/
+Its conclusion is the finite-coordinate input to the row-iid triangular
+Lindeberg theorem. -/
 theorem envelope_lindeberg_vector
     {f : ℕ → T → Ω → ℝ} {Φ : ℕ → Ω → ℝ} {P : Measure Ω}
     (hΦ : ChangingEnvelope f Φ) (hLin : ChangingLindeberg P Φ)
-    -- vdV 19.28 assumes measurable row functions.
     (hf : ∀ n t, Measurable (f n t))
-    -- the displayed envelope in vdV is measurable.
     (hΦmeas : ∀ n, Measurable (Φ n))
-    -- BOOK-ENCODING: `P` is the population probability law.
     [IsProbabilityMeasure P]
     {k : ℕ} (t : Fin k → T) (ε : ℝ) (hε : 0 < ε) :
     Tendsto

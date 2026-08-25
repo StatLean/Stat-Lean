@@ -284,13 +284,9 @@ theorem goodnessOfFit_joint_weakConvergesOuter
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (P : Measure ℝ) [IsProbabilityMeasure P]
     (X : ℕ → Ξ → ℝ)
-    -- measurable observations, vdV 19.21 p.277 iid sample.
     (hX_meas : ∀ i, Measurable (X i))
-    -- independence, vdV 19.21 p.277 iid sample.
     (hX_indep : iIndepFun X μ)
-    -- identical distribution, vdV 19.21 p.277 iid sample.
     (hX_ident : ∀ i, IdentDistrib (X i) (X 0) μ μ)
-    -- the common observation law has CDF `P`, vdV 19.21 p.277.
     (hX_law : μ.map (X 0) = P) :
     ∃ ν : Measure (LinfF halfLineIndicatorClass),
       IsPBrownianBridge halfLineIndicatorClass P ν ∧

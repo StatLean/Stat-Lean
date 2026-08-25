@@ -8,8 +8,8 @@ import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 # Book uniform covering entropy definitions
 
 This file records the all-probability-measure definition layer for the uniform
-covering entropy used by van der Vaart on p.274. It is separate from the
-finite-discrete definitions.
+covering entropy used by van der Vaart on p.274.  It is separate from the
+finite-discrete definitions and makes no theorem-level claim.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -22,8 +22,7 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 namespace FiniteDiscreteProbability
 
 /-- The probability-measure subtype associated with a finite-discrete law.
-This is a definition-layer bridge; its probability property is supplied by
-the existing finite-discrete construction. -/
+Its probability property follows from the finite-discrete construction. -/
 noncomputable def toProbabilityMeasure
     (Q : FiniteDiscreteProbability Ω) : ProbabilityMeasure Ω :=
   ⟨Q.measure, Q.measure_isProbability⟩
@@ -74,8 +73,8 @@ noncomputable def bookEntropyWeight (N : ℕ∞) : ℝ≥0∞ :=
 @[simp] theorem bookEntropyWeight_one : bookEntropyWeight 1 = 0 := by
   simp [bookEntropyWeight]
 
-/-- The definition-layer all-probability covering entropy integral with the
-regularized weight `√(log (1+N))` used here.
+/-- The all-probability covering entropy integral with regularized weight
+`√(log (1+N))`.
 
 Edge behavior is inherited from the `ENNReal` lintegral: a nonpositive upper
 endpoint gives an empty interval, and an infinite integrand remains visible. -/
@@ -143,8 +142,8 @@ theorem eLpNorm_toProbabilityMeasure_eq_l2Seminorm
 
 end FiniteDiscreteProbability
 
-/-- Every book-layer cover for the realized finite-discrete law yields an
-ordinary cover after forgetting its extra measurable-`MemLp` center guarantees. -/
+/-- Every book-layer cover for the realized finite-discrete law is a finite-discrete
+cover after forgetting its extra measurable-`MemLp` center guarantees. -/
 theorem normalizedL2CoveringNumber_le_allProbabilityNormalizedL2CoveringNumber
     (Q : FiniteDiscreteProbability Ω)
     (F : Set (Ω → ℝ))

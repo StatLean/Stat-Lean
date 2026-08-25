@@ -110,9 +110,8 @@ theorem clippedMeanFunctional_eq_meanFunctional {a : Ω → ℝ} {C : ℝ}
   exact clippedFunction_eq_self_of_abs_le hω
 
 /-- Under a `P`-a.e. closed bound, the centered candidate of the clipped
-extension agrees `P`-a.e. with the raw centered integrand.  This is the
-assembly bridge from a globally controlled derivative to an existing
-in-model influence-function calculation. -/
+extension agrees `P`-a.e. with the raw centered integrand, relating the
+globally controlled derivative to the in-model influence-function calculation. -/
 theorem centeredCandidate_clipped_ae_eq_raw_centered {a : Ω → ℝ} {C : ℝ}
     (ha : Measurable a) (ha_bdd : ∀ᵐ ω ∂P, |a ω| ≤ C) :
     (((centeredCandidate (P := P) (clippedFunction a C)

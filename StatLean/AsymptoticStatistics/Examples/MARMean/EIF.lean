@@ -4,8 +4,8 @@ import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
 /-!
 # Efficient influence function for the MAR-mean parameter (vdV Example 25.43)
 
-This file formalizes the missing-at-random (MAR) mean concrete-EIF example of
-van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Example 25.43
+The verification half of the missing-at-random (MAR) mean concrete-EIF example
+of van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Example 25.43
 (§25.5.3, p.383), building on Lemma 25.41 (p.381-382) and Theorem 25.40 (p.380).
 
 ## The book content
@@ -27,11 +27,11 @@ The heart of the example is the **orthogonality relation** vdV verifies (p.383):
 `φ ⊥ b_c` for every `c`, which places `φ` inside the (closed) tangent space and
 hence certifies it as the efficient influence function.
 
-## Formalization
+## Formalized scope
 
-The theorem `marMean_isEIF` uses the induced law `marObsMeasure Q r` and the
-constructed closed tangent `marObservedTangent Q r`. The bridge from the latent
-full-data/kernel representation to abstract Theorem 25.40 is established in
+The theorem `marMean_isEIF` uses the induced law `marObsMeasure Q r`
+and the constructed closed tangent `marObservedTangent Q r`. The bridge from the
+latent full-data/kernel representation to abstract Theorem 25.40 is derived in
 `MARMean/Tangent.lean`.
 
 * **orthogonality / efficiency membership**: the relation
@@ -41,17 +41,13 @@ full-data/kernel representation to abstract Theorem 25.40 is established in
   `φ = φ_IPW − b_{m−ψ}` (`marMean_eif_eq_ipw_sub_coarsening`), the coarsening
   correction is `T`-orthogonal, so `φ` inherits the IF property of `φ_IPW`.
 
-The assumptions record the response-kernel linkage, the propensity,
-complete-case and Bernoulli-variance moment identities (`hProp`, `hReg`, `hVar`),
-and the stated moment regularity. The separate `L²` formulation supplies `T`, its
-orthogonal characterization, pathwise differentiability, and the Lemma 25.41
-base-representer property.
-
-The companion theorem `marMean_isEIF_of_pathwise` instead accepts pathwise
-differentiability (`hpd`) and the centered IPW representer identity
-(`hipw_c_IF`) explicitly, under an `L²` assumption on the representer.
-
-Main declaration: `marMean_isEIF`.
+The genuine external inputs are the response-kernel linkage, propensity /
+complete-case / Bernoulli-variance
+moment identities (`hProp`, `hReg`, `hVar` — vdV's model structure, mentioning only
+`π`, `m`, `R`, `Y`, never `φ`) and the stated moment regularity. The separate `L²`
+theorem `marMean_isEIF_of_pathwise` instead assumes a tangent space `T`, its
+orthogonality characterization `hT_char`, pathwise differentiability `hpd`, and
+the Lemma-25.41 base representer property `hipw_c_IF`.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -87,9 +83,10 @@ private lemma memLp_coeFn (v : ↥(L2ZeroMean P)) :
 
 /-! ### The MAR moment identities (vdV Example 25.43 model structure)
 
-These predicates encode the conditional-moment structure of the MAR model in
-terms of the propensity `π`, the outcome regression `m`, and the observed data
-`R`, `Y`.
+These are the genuine external inputs: the conditional-moment structure of the MAR
+model. They mention only the propensity `π`, the outcome regression `m`, and the
+raw data `R`, `Y` — never the efficient influence function — so nothing about the
+answer is assumed.
 
 They are stated in the *unconditional* weak form `∀ (test function), ∫ … = ∫ …`,
 i.e. the conditional-moment identities `E(R | W) = π`, `E(R·Y | W) = π·m`,
@@ -361,9 +358,9 @@ theorem marMean_eif_orthogonal_coarsening (π m : X → ℝ)
 
 /-! ### The two conditions of the EIF definition -/
 
-/-- The AIPW EIF lies in the tangent space `T` (the closed observed tangent,
-characterized by `hT_char` as the orthocomplement of the coarsening scores). The
-result follows from `marMean_eif_orthogonal_coarsening`. -/
+/-- Under the supplied characterization `hT_char`, the AIPW candidate lies in
+the tangent space `T`. Its orthogonality to every coarsening score follows from
+`marMean_eif_orthogonal_coarsening`. -/
 theorem marMean_eif_mem_T (π m : X → ℝ)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π P)
@@ -404,8 +401,9 @@ correction `b_m` is orthogonal to every `g ∈ T`, `φ` inherits the IF identity
 **centered IPW representer** `φ_c := R·Y/π − ψ` (`hipw_c_IF`).
 
 `φ_c` is the canonical influence function of the *linear* functional
-`marMean_Ψ = ∫ R·Y/π`. In `marMean_isEIF`, the mass-method construction
-`pathwiseDifferentiableAt_of_TVFrechet` supplies `hipw_c_IF`. -/
+`marMean_Ψ = ∫ R·Y/π`. In `marMean_isEIF`, this identity follows from the
+mass method (`pathwiseDifferentiableAt_of_TVFrechet`); in
+`marMean_isEIF_of_pathwise`, it is an explicit hypothesis. -/
 theorem marMean_eif_isIF (π m : X → ℝ)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π P)
@@ -422,8 +420,7 @@ theorem marMean_eif_isIF (π m : X → ℝ)
           ∫ o, ((w : Lp ℝ 2 P) : MARObs X → ℝ) o
                 * marMean_coarseningScore π c o ∂P = 0)
     (dψ : T →L[ℝ] ℝ)
-    -- The centered IPW representer `φ_c = R·Y/π − ψ` and its IF identity; the main
-    -- theorem supplies both through the mass method for the linear functional.
+    -- The centered IPW representer `φ_c = R·Y/π − ψ` and its influence-function identity.
     (φ_c : ↥(L2ZeroMean P))
     (hφ_c_ae : ((φ_c : Lp ℝ 2 P) : MARObs X → ℝ)
         =ᵐ[P] fun o => ind o.r * o.ry / π o.x - marMean_Ψ π P)
@@ -470,7 +467,7 @@ theorem marMean_eif_isIF (π m : X → ℝ)
     (hT_char (g : ↥(L2ZeroMean P))).mp g.2 m hm_int hLp_bm,
     sub_zero, ← l2zm_inner_eq_integral φ_c (g : ↥(L2ZeroMean P)), hipw_c_IF g]
 
-/-! ### Main construction -/
+/-! ### Pathwise differentiability and efficiency -/
 
 /-- **Pathwise differentiability of the MAR-mean functional over `T`.**
 `marMean_Ψ = ∫ R·Y/π = meanFunctional (R·Y/π)` is a *linear* functional; when its
@@ -481,11 +478,10 @@ nonparametric tangent `⊤`, with derivative the inner product against the cente
 representer `φ_c = R·Y/π − ψ`. This restricts to any `T ⊆ ⊤`; the derivative on `T` is
 `g ↦ ⟪φ_c, g⟫`.
 
-The construction uses the regularity inputs `h_ipwMeas` and `h_ipwBdd`. A
-positive lower bound on the propensity, together with a bounded observed
-response, is one sufficient condition for `h_ipwBdd`. Extending the construction
-to an unbounded `L²` representer would require the corresponding
-`linearFunctional_isTVFrechetExpansion` result. -/
+The regularity inputs `h_ipwMeas` and `h_ipwBdd` suffice to derive both pathwise
+differentiability and the influence-function property. The bounded IPW
+representer assumption subsumes vdV Lemma 25.41's condition that `R(C|y)` is
+bounded away from zero (via `π ≥ δ`) together with bounded observed response. -/
 noncomputable def marMean_pathwise (π : X → ℝ)
     (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
     (h_ipwBdd : ∃ C : ℝ, ∀ o : MARObs X, |ind o.r * o.ry / π o.x| ≤ C)
@@ -506,7 +502,7 @@ noncomputable def marMean_pathwise (π : X → ℝ)
 Unlike `marMean_pathwise`, this helper does not claim differentiability of the
 raw IPW functional from an almost-everywhere bound.  It differentiates the
 explicit global extension `marMeanBounded_Ψ π C`; the latter agrees with the raw
-functional at the MAR model law under `h_ipwBddAE`, while remaining bounded along
+functional at the MAR model law under `h_ipwBddAE` and stays bounded along
 unrestricted QMD paths. -/
 noncomputable def marMeanBounded_pathwise (π : X → ℝ) (C : ℝ)
     (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
@@ -531,28 +527,29 @@ latent-model bridge:
   induced law `(Q ⊗ₘ r).map marObsMap` and abstract Theorem 25.40;
 * `⟪φ, g⟫ = ψ̇(g)` (influence function) — `marMean_eif_isIF`, from the decomposition
   `φ = φ_c − b_m` (`φ_c = R·Y/π − ψ` the centered IPW representer) plus the
-  influence-function identity of `φ_c`, obtained from the mass
+  influence-function identity of `φ_c`, which is itself **derived** from the mass
   method for the globally clipped extension (`marMeanBounded_pathwise`), followed
   by the `P`-a.e. centered-representer transport.
 
-The pathwise derivative is `marMeanBounded_pathwise …`, and the differentiated
-functional is the globally clipped extension `marMeanBounded_Ψ π C`.
+The pathwise derivative is that of the globally clipped extension
+`marMeanBounded_Ψ π C`, as supplied by `marMeanBounded_pathwise`.
 It agrees at the observed law with the raw IPW estimand under `h_ipwBddAE`, but
 unrestricted QMD paths remain globally controlled.  The stronger bounded-response
-restriction is therefore explicit and separate from tangent identification.
-The observed tangent and its characterization are constructed from the latent model. -/
+restriction is explicit and independent of tangent identification. The tangent
+space is the constructed `marObservedTangent Q r`; its characterization follows
+from the latent MAR model. -/
 theorem marMean_isEIF
     (Q : Measure (X × ℝ)) [IsProbabilityMeasure Q]
     (r : Kernel (X × ℝ) Bool) [IsMarkovKernel r]
     (π m : X → ℝ)
-    -- USER-INPUT: MAR response model, propensity, regression, and conditional
+    -- MAR response model, propensity, regression, and conditional
     -- variance identities; vdV Example 25.43, p. 383.
     (hπr : MARResponseKernel π r)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π (marObsMeasure Q r))
     (hReg : MARRegression π m (marObsMeasure Q r))
     (hVar : MARVariance π (marObsMeasure Q r))
-    -- USER-INPUT: square-integrability of the influence-function and coarsening-score
+    -- square-integrability of the influence-function and coarsening-score
     -- representatives; vdV Example 25.43's moment conditions.
     (hLp : MemLp (marMean_eif π m (marMean_Ψ π (marObsMeasure Q r))) 2
       (marObsMeasure Q r))
@@ -562,14 +559,14 @@ theorem marMean_isEIF
       (marMean_coarseningScore π (fun x => m x - marMean_Ψ π (marObsMeasure Q r))) 2
       (marObsMeasure Q r))
     (hLp_bm : MemLp (marMean_coarseningScore π m) 2 (marObsMeasure Q r))
-    -- USER-INPUT: integrability of `m = E(Y|W)` and the IPW weight `R/π`;
+    -- integrability of `m = E(Y|W)` and the IPW weight `R/π`;
     -- vdV Example 25.43's moment conditions.
     (hm_int : Integrable (fun o : MARObs X => m o.x) (marObsMeasure Q r))
     (hInt_weight : Integrable (fun o : MARObs X => ind o.r / π o.x) (marObsMeasure Q r))
-    -- LEAN-ONLY: measurability of the IPW integrand used to define the clipped extension.
+    -- measurability of the IPW integrand used to define the clipped extension.
     (h_ipwMeas : Measurable (fun o : MARObs X => ind o.r * o.ry / π o.x))
     (C : ℝ)
-    -- USER-INPUT: bounded observed IPW response; this strengthened regularity
+    -- bounded observed IPW response; this strengthened regularity
     -- identifies the clipped extension with the raw estimand at the model law.
     (h_ipwBddAE : ∀ᵐ o ∂(marObsMeasure Q r), |ind o.r * o.ry / π o.x| ≤ C)
     :
@@ -608,7 +605,7 @@ theorem marMean_isEIF
     marMean_eif_mem_T π m hπ hProp hReg hVar hLp hLp_ipw hLp_coar hm_int hInt_weight
       (marObservedTangent Q r) hT_char hLp_bm⟩
 
-/-- A finite example satisfying the assumptions of the bounded MAR theorem.
+/-- Concrete jointly satisfiable instance of the bounded MAR assumptions.
 
 The finite latent model uses `X = Unit`, `Q = dirac ((),0)`, the fair Bool
 response kernel, `π ≡ 1/2`, and `m ≡ 0`. The conjunction covers every external
@@ -794,26 +791,18 @@ theorem fairMAR_bounded_headline_inputs :
     hLp_eif, hLp_ipw, hLp_coar, hLp_bm, hm_int, hweight_int, hrawMeas, hraw_bdd,
     hAtoms.1, hAtoms.2, hNonzero⟩
 
-/-- **MAR-mean EIF under pathwise differentiability (vdV Example 25.43).**
+/-- **Conditional `L²` MAR-mean EIF criterion for vdV Example 25.43.**
 
-The companion to `marMean_isEIF`. Whereas `marMean_isEIF` **derives** pathwise
-differentiability of the globally bounded extension `marMeanBounded_Ψ` (at the cost of
-a bounded IPW representer — *more* restrictive than the book's `L²` moment level),
-whose base-law value agrees with `marMean_Ψ` under `h_ipwBddAE`, this version
-**supplies** the observed pathwise differentiability and base representer identity as
-harness premises. It therefore avoids the bounded-response strengthening, but it is
-not a standalone book-faithful derivation of those conclusions.
-
-Two inputs at vdV's exact level:
-* `hpd` — `marMean_Ψ` is pathwise differentiable (vdV's assertion);
-* `hipw_c_IF` — its derivative is represented by the centered IPW representer
+This theorem assumes pathwise differentiability of `marMean_Ψ` and the base
+representer identity, rather than imposing the global boundedness used by
+`marMean_isEIF`. Its two conclusion-critical hypotheses are:
+* `hpd` — `marMean_Ψ` is pathwise differentiable on `T`;
+* `hipw_c_IF` — the derivative is represented by the centered IPW representer
   `φ_c = R·Y/π − ψ` (vdV Lem 25.41's representer `1{δ∈C}/R(C|y)·χ_Q`).
 
 The AIPW algebra and orthogonality are derived by the shared
-`marMean_eif_isIF` / `marMean_eif_mem_T` core. Literal tangent membership in this
-harness remains conditional on its supplied `hT_char`.
-Accordingly this declaration is a conditional theorem at the `L²` level,
-not a completed formal derivation of Example 25.43. -/
+`marMean_eif_isIF` and `marMean_eif_mem_T` theorems. Membership in `T` uses the
+supplied orthogonality characterization `hT_char`. -/
 theorem marMean_isEIF_of_pathwise (π m : X → ℝ)
     (hπ : ∀ o : MARObs X, π o.x ≠ 0)
     (hProp : MARPropensity π P)

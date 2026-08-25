@@ -3,7 +3,7 @@ import StatLean.AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacteri
 /-!
 # Raw regularity characterizes operational efficiency
 
-Formalization of van der Vaart Lemma 25.23. The statement
+Formalization of van der Vaart Lemma 25.23.  The premise/conclusion
 never uses `SemiparametricallyEfficientAt`; the theorem identifies the raw
 regular-plus-efficient-Gaussian-limit condition directly with asymptotic
 linearity by the EIF.
@@ -26,12 +26,12 @@ open AsymptoticStatistics.LowerBounds.OperationalEfficiencyCharacterizationNondo
 variable {Ω : Type*} [MeasurableSpace Ω]
 variable {P : Measure Ω} [IsProbabilityMeasure P]
 
-/-! ## Scalar saturation of selected directions
+/-! ## Real-scalar saturation of path scores
 
-The selected two-sided paths permit every real local parameter, although their
-carrier need not itself be a cone. Saturating the carrier under real scalar
-multiplication preserves its closed linear span. Reparameterizing a selected
-path by `t ↦ a * t` realizes the corresponding saturated score. -/
+A family of two-sided paths permits every real local parameter, although its
+set of scores need not itself be a cone.  Saturating the scores under real
+scalar multiplication is realized by reparameterizing each path by
+`t ↦ a * t`, and does not change their closed linear span. -/
 
 private noncomputable def scaledQMDPath
     (γ : AsymptoticStatistics.Core.QMDPath.QMDPath P) (a : ℝ) :
@@ -314,10 +314,7 @@ raw-regular with the efficient Gaussian limit and has that baseline limit.
 
 Proof idea: for every selected path and scalar `a`, use the iid CLT for the
 EIF empirical average, LAN/Le Cam shift along the `a / √n` tilt, and Slutsky
-for the vanishing residual.
-
-Example: `φ = 0`, a constant functional and constant
-estimator give the degenerate law `gaussianReal 0 0 = dirac 0`. -/
+for the vanishing residual. -/
 theorem regular_and_gaussian_of_asymptoticallyLinear
     {T_n : ∀ n, (Fin n → Ω) → ℝ}
     {ψ : Measure Ω → ℝ}
@@ -356,10 +353,7 @@ efficient Gaussian law forces the asymptotic-linear EIF expansion.
 Proof idea: use regularity simultaneously over every scalar `a` on each
 selected path in the convolution/characteristic-function equality case,
 applied jointly with the EIF empirical average; zero residual law implies
-convergence in probability to zero.
-
-The same constant-model example with `φ = 0` makes
-both premises and the conclusion identically zero. -/
+convergence in probability to zero. -/
 theorem asymptoticallyLinear_of_regular_and_gaussian
     {T_n : ∀ n, (Fin n → Ω) → ℝ}
     {ψ : Measure Ω → ℝ}
@@ -396,10 +390,7 @@ The assumptions are exactly pathwise differentiability, an EIF, and
 estimator measurability.  Raw regularity and the baseline efficient Gaussian
 law occur on the left of the equivalence, not as hidden fields of any
 efficiency predicate.  The statement includes `φ=0` without a positivity
-side condition.
-
-Example: take a singleton model, constant `ψ`, constant
-`T_n=ψ(P)`, a carrier containing only zero, and `φ=0`; the Gaussian is the point mass at zero. -/
+side condition. -/
 theorem operational_efficiency_characterization
     {T_n : ∀ n, (Fin n → Ω) → ℝ}
     {ψ : Measure Ω → ℝ}

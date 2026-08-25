@@ -3,8 +3,8 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
 /-!
 # Chebyshev bounds for iid empirical-process marginals
 
-This concept module packages the reusable fixed-function `L²(P)` tail bound for
-the empirical process under iid sampling.  It also records the corresponding
+This file proves the fixed-function `L²(P)` tail bound for the empirical process
+under iid sampling. It also proves the corresponding
 bound for a difference of two fixed `L²(P)` functions in terms of `distL2`.
 -/
 

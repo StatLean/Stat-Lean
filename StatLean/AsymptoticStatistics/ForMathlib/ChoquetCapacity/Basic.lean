@@ -35,13 +35,19 @@ pinned at commit `b1b9d16a552e3e09bfbb8151fe6aa14c805d7979` (Apache-2.0).
 open MeasureTheory Set Filter Topology
 
 /-- Compact capacity of `s` relative to `μ`: the supremum of `μ K` over compact
-subsets `K ⊆ s`. The empty family has supremum zero, so `compactCap μ ∅ = 0`. -/
+subsets `K ⊆ s`.
+
+The topology and measurable space are ambient structure. Edge behavior: the
+empty family has supremum
+zero, so `compactCap μ ∅ = 0`. -/
 noncomputable def MeasureTheory.compactCap
     {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     (μ : MeasureTheory.Measure α) (s : Set α) : ENNReal := by
   exact sSup {r : ENNReal | ∃ K : Set α, IsCompact K ∧ K ⊆ s ∧ r = μ K}
 
-/-- Compact capacity is monotone in its set argument. -/
+/-- Compact capacity is monotone in its set argument.
+
+The ambient instances encode the topological measurable space. -/
 theorem MeasureTheory.compactCap_mono
     {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     {μ : MeasureTheory.Measure α} {s t : Set α} (hst : s ⊆ t) :
@@ -53,6 +59,8 @@ theorem MeasureTheory.compactCap_mono
 /-- The three constitutive axioms of a Choquet capacity: monotonicity,
 continuity from below along increasing sequences, and continuity from above along
 decreasing sequences of closed sets.
+
+The functional `cap` is explicit data; the topology is ambient structure.
 -/
 structure MeasureTheory.IsChoquetCapacity
     {α : Type*} [TopologicalSpace α]
@@ -69,7 +77,10 @@ structure MeasureTheory.IsChoquetCapacity
     (∀ n, IsClosed (f n)) →
     cap (⋂ n, f n) = ⨅ n, cap (f n)
 
-/-- Every finite Borel measure on a Polish space is a Choquet capacity. -/
+/-- Every finite Borel measure on a Polish space is a Choquet capacity.
+
+Finiteness and the Polish/Borel instances state the mathematical scope of this
+general theorem. -/
 theorem MeasureTheory.measure_isChoquetCapacity
     {α : Type*}
     [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [PolishSpace α]
@@ -85,7 +96,10 @@ theorem MeasureTheory.measure_isChoquetCapacity
       (fun n => (hclosed n).measurableSet.nullMeasurableSet)
       ⟨0, measure_ne_top μ (f 0)⟩
 
-/-- On Borel-measurable sets, compact capacity equals the measure. -/
+/-- On Borel-measurable sets, compact capacity equals the measure.
+
+Finite measure and Polish/Borel structure are the theorem's mathematical scope.
+-/
 theorem MeasureTheory.MeasurableSet.compactCap_eq
     {α : Type*}
     [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [PolishSpace α]

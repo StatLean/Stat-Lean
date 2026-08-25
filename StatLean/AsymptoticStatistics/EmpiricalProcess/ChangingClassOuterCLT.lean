@@ -17,9 +17,9 @@ namespace AsymptoticStatistics.EmpiricalProcess
 open Filter MeasureTheory ProbabilityTheory
 
 /-- For an almost-everywhere measurable sequence, outer weak convergence is
-equivalent to ordinary weak convergence of its pushforward laws. This local
-adapter extends `weakConvergesOuter_of_measurable` using measurable versions
-and invariance of both outer expectation and `Measure.map` under a.e. equality.
+equivalent to ordinary weak convergence of its pushforward laws. The result
+follows by choosing measurable versions and using invariance of both outer
+expectation and `Measure.map` under a.e. equality.
 -/
 private theorem weakConvergesOuter_iff_of_forall_aemeasurable
     {Ω D : Type*} [MeasurableSpace Ω] [MeasurableSpace D]

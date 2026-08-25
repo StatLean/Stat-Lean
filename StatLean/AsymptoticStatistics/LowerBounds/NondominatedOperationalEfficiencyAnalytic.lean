@@ -4,7 +4,7 @@ import StatLean.AsymptoticStatistics.LowerBounds.T6_FinDimLAN.NondominatedQMDLeC
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianTiltRigidity
 import StatLean.AsymptoticStatistics.ForMathlib.Prohorov
 
-/-! # Provider-free analytic core of nondominated operational efficiency -/
+/-! # Analytic core of nondominated operational efficiency -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal NNReal InnerProductSpace
@@ -26,10 +26,8 @@ nondominated tangent space.
 
 Proof idea: unfold `NondominatedTangent.tangentSpace`, approximate from the
 algebraic carrier span, enlarge finite supports monotonically, and use
-finite-dimensional orthogonal projections.  All hypotheses are derived from
-the carrier of `C`; no `TangentSpec` or provider sequence occurs.
-
-For the zero cone, one may take every `V m = ⊥` and `p m = 0`. -/
+finite-dimensional orthogonal projections. All hypotheses are derived from
+the carrier of `C`. -/
 theorem proj_seq_to_eif_nd
     (C : NondominatedTangentCone P)
     {IF_eff : ↥(L2ZeroMean P)} (h_mem : IF_eff ∈ tangentSpace C) :
@@ -138,10 +136,7 @@ noncomputable def centeredEstimator
 baseline joint subsequential limit.
 
 Constitutive (vdV §25.3.2 p.366): the second marginal is the score Gaussian
-and every nonnegative exponential tilt has the shifted regular limit.  This
-is an internal proof object, never a hypothesis of Lemma 25.23.
-
-The degenerate choice `π = dirac (0,0)` and `v = s = c = 0` is an example. -/
+and every nonnegative exponential tilt has the shifted regular limit. -/
 structure NonnegativeTiltSupply
     (π : Measure (ℝ × ℝ)) (v s : ℝ≥0) (c : ℝ) : Prop where
   /-- Constitutive: the baseline subsequential law is a probability. -/
@@ -155,13 +150,11 @@ structure NonnegativeTiltSupply
       (Real.exp (a * q.2 - (a ^ 2 / 2) * (v : ℝ))))).map Prod.fst =
       gaussianReal (a * c) s
 
-/-- Regularity, pathwise differentiability and provider-free Le Cam theory
+/-- Regularity, pathwise differentiability and nondominated Le Cam theory
 construct the half-line tilt supply for one carrier score.
 
 Proof idea: use cone closure under `a≥0` to select the path for `a•g`, then
-Le Cam III, right pathwise differentiation, and unit-path regularity.
-
-The zero cone with a constant estimator and `dirac (0,0)` is an example. -/
+Le Cam III, right pathwise differentiation, and unit-path regularity. -/
 theorem nonnegativeTiltSupply_of_regular
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
@@ -473,8 +466,7 @@ theorem nonnegativeTiltSupply_of_regular
 /-- A constructed nonnegative tilt supply identifies the cross integral.
 
 Proof idea: install its probability instance and invoke nonnegative Gaussian
-tilt rigidity, including `v=0`.
-The degenerate supply satisfies these hypotheses. -/
+tilt rigidity, including `v=0`. -/
 theorem cross_integral_eq_of_tiltSupply
     (π : Measure (ℝ × ℝ)) (v s : ℝ≥0) (c : ℝ)
     (H : NonnegativeTiltSupply π v s c) :
@@ -509,9 +501,7 @@ private lemma integral_sq_eq_of_map_eq_gaussianReal
 `4‖φ-p‖²`, not a Dirac conclusion.
 
 Proof idea: expand `p` in the finite span, apply the cross identity to each
-carrier coordinate, and use Chebyshev.
-
-For example, take `φ = p = 0` and point-mass joint laws. -/
+carrier coordinate, and use Chebyshev. -/
 theorem residual_secondMoment_bound_of_finset_extension
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
@@ -1003,8 +993,7 @@ limit to be `dirac 0`.
 
 Proof idea: invoke `proj_seq_to_eif_nd C hEIF.2`, internally extract finite
 joint extensions, and send the preceding `4‖φ-p‖²` bound to zero.
-
-The constant zero model is a degenerate example. -/
+-/
 theorem residual_subseq_limit_eq_dirac_of_regular
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)

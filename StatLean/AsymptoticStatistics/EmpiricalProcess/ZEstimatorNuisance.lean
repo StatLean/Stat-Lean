@@ -7,7 +7,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.InProbability
 /-!
 # Z-estimator with an estimated nuisance parameter (vdV Theorem 5.31)
 
-This generalizes the finite-dimensional Z-estimator
+This file generalizes the finite-dimensional Z-estimator
 asymptotic linear representation of vdV §5.3 (`zEstimator_asymptotic_normality`,
 Theorem 5.21) to the case where an **estimated nuisance** `η̂ₙ` rides along
 (vdV §*5.4 "Estimated Parameters", book p.60). For `θ ∈` an open subset of `ℝᵏ`,
@@ -20,30 +20,28 @@ derivative `V_{θ₀,η} → V_{θ₀,η₀}`): if `√n ℙₙψ_{θ̂ₙ,η̂�
     √n(θ̂ₙ − θ₀) = −V⁻¹_{η₀} √n P ψ_{θ₀,η̂ₙ} − V⁻¹_{η₀} 𝔾ₙ ψ_{θ₀,η₀}
                     + o_P(1 + √n‖P ψ_{θ₀,η̂ₙ}‖).
 
-Encoded as a scaled `TendstoInProbZero` with weight
+The conclusion is encoded as a scaled `TendstoInProbZero` with weight
 `wDrift n ξ := 1 + √n‖driftVec P ψ θ₀ η̂ₙ‖`:
 
     wDrift⁻¹ • ( √n•(θ̂ₙ−θ₀) + V⁻¹_{η₀}(√n•driftVec) + V⁻¹_{η₀}(𝔾ₙψ_{θ₀,η₀}) ) →ₚ 0.
 
 vdV gives no separate proof (*"The proof follows the same steps as the proof of
-Theorem 5.21."*), so the formal proof follows Theorems 5.21 and 19.26
-component-by-component.
-Because `infinite_dim_z_estimator` fixes `V` at `θ₀`, assumes `Pψ_{θ₀}=0`, and
-has a drift-free, unweighted conclusion, this proof combines its component
-lemmas with the **weighted** `o_P`/`O_P` layer in
-`OuterProbAsymptotics` and the **guarded / metric** random-function layer in
+Theorem 5.21."*). The Theorem 19.26 result `infinite_dim_z_estimator` does not
+apply directly because it has fixed `V` at
+`θ₀`, `Pψ_{θ₀}=0`, drift-free, unweighted bootstrap); only its components are
+reused, together with the weighted `o_P`/`O_P` predicates from
+`OuterProbAsymptotics` and the guarded metric-space random functions from
 `UniformRandomFunctions`.
 
-The Donsker hypothesis is expressed as
-`IsPDonsker (pairClass ψ (ball ×ˢ ball)) P`. Nonsingularity at `η₀` and continuity
-of `V` give nonsingularity on a neighborhood. The conclusion is the book's linear
-representation with drift, not a normality claim. The encoding uses
-`EuclideanSpace ℝ (Fin k)`, `X : ℕ → Ξ → Ω`, and a nuisance metric space `H`;
-the required `L²` property follows from the Donsker marginal central limit theorem.
-
-The definition `pairClass` renders the book's `ℝᵏ`-valued class as the union of
-its scalar coordinate slices, matching the scalar predicate `IsPDonsker`; these
-formulations are equivalent for finite `k`.
+The Donsker assumption is stated as `IsPDonsker (pairClass ψ (ball ×ˢ ball)) P`.
+Neighborhood nonsingularity is derived from `IsUnit (V η₀).det` and
+`ContinuousAt V η₀`; the `L²` property is derived from `hDonsker`. The conclusion
+is the book's linear representation with drift and makes no normality claim.
+The `pairClass` renders the `ℝᵏ`-valued class in van der Vaart, Theorem 5.31,
+as the union of its scalar coordinate slices because `IsPDonsker` is a scalar
+predicate. For finite `k`, Donsker convergence of this union yields the required
+vector convergence; stated as a hypothesis, it is the stronger direction of
+this comparison.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -53,18 +51,18 @@ open scoped ENNReal Topology RealInnerProductSpace Matrix ProbabilityTheory
 
 /-! ### Setup and abbreviations -/
 
-/-- **The pair-indexed function class** `𝓕 = {ψ_{θ,η,j} : (θ,η) ∈ S, j ∈ Fin k}`
-Collects the coordinate estimating functions `ψ p.1 p.2 j` as the pair
-`p = (θ,η)` ranges over `S ⊆ ℝᵏ × H` and `j` over the `k` fibers. Nuisance analog
-of `paramClass`; feeds the Donsker hypothesis `IsPDonsker (pairClass ψ (ball ×ˢ
-ball)) P`. (vdV §5.4 p.60: "the class of functions {ψ_{θ,η} : ‖θ−θ₀‖ < δ,
+/-- **The pair-indexed function class** `𝓕 = {ψ_{θ,η,j} : (θ,η) ∈ S, j ∈ Fin k}`.
+It collects the coordinate estimating functions `ψ p.1 p.2 j` as the pair
+`p = (θ,η)` ranges over `S ⊆ ℝᵏ × H` and `j` over the `k` fibers. It is the
+nuisance analogue of `paramClass` and appears in the Donsker hypothesis
+`IsPDonsker (pairClass ψ (ball ×ˢ ball)) P`. (vdV §5.4 p.60: "the class of functions {ψ_{θ,η} : ‖θ−θ₀‖ < δ,
 d(η,η₀) < δ}".) -/
 def pairClass {k : ℕ} {Ω : Type*} {H : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → H → Fin k → (Ω → ℝ))
     (S : Set (EuclideanSpace ℝ (Fin k) × H)) : Set (Ω → ℝ) :=
   {g | ∃ p ∈ S, ∃ j, g = ψ p.1 p.2 j}
 
-/-- **The drift vector** `P ψ_{θ₀,η}` bundled into `EuclideanSpace ℝ (Fin k)`
+/-- **The drift vector** `P ψ_{θ₀,η}` bundled into `EuclideanSpace ℝ (Fin k)`.
 Coordinate `j` is the mean `∫ ψ_{θ₀,η,j} dP`; at the true nuisance
 `Pψ_{θ₀,η₀} = 0`, but for the estimated `η̂ₙ` it is the nonzero **drift** whose
 norm sets the weight `wDrift`. (vdV §5.4 p.60: the `√n P ψ_{θ₀,η̂ₙ}` term of the
@@ -74,7 +72,7 @@ noncomputable def driftVec {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] {H : Type
     (θ₀ : EuclideanSpace ℝ (Fin k)) (η : H) : EuclideanSpace ℝ (Fin k) :=
   (WithLp.equiv 2 (Fin k → ℝ)).symm (fun j => ∫ x, ψ θ₀ η j x ∂P)
 
-/-! ### Master identity -/
+/-! ### Master identity with drift -/
 
 /-- **Pair master identity** (pure algebra; vdV §5.4 / 5.21 rearrangement
 with the nuisance drift term). For a realized `b : ℝᵏ` (= `θ̂ₙ`), nuisance
@@ -101,7 +99,7 @@ theorem pair_master_identity
   simp only [empiricalProcess]
   ring
 
-/-! ### Fréchet remainder, uniform in the nuisance parameter -/
+/-! ### The uniform Fréchet remainder -/
 
 /-- **Pair Fréchet remainder bound.** With
 `r_n(ξ) := √n‖θ̂ₙ − θ₀‖` and remainder
@@ -190,17 +188,17 @@ theorem frechet_remainder_pair_sup_bound
         _ = ε * (Real.sqrt n * ‖b - θ₀‖) := by ring
   exact absurd hkey (not_le.2 hj)
 
-/-! ### Matrix lower bound on a nuisance neighborhood -/
+/-! ### Uniform boundedness below on a nuisance neighborhood -/
 
 /-- **Neighborhood bounded-below derivative.** From
 `IsUnit (V η₀).det` and `ContinuousAt V η₀`, there is a nuisance ball
 `{η : d(η,η₀) < δV}` on which `Vlin (V η)` is uniformly bounded below:
 `∃ c > 0, δV > 0, ∀ η, d(η,η₀) < δV → ∀ b, ofReal(c‖b‖) ≤ ⨆ⱼ ofReal|Vlin(V η) b_j|`.
-Route: `matrix_bddbelow_of_isUnit_det` gives `c₀` for `V η₀`; entrywise continuity
-of `V` at `η₀` makes `V η` close to `V η₀`, so `⨆ⱼ|V η b_j| ≥ ⨆ⱼ|V η₀ b_j| −
-k·maxent(Δ)·‖b‖`; take `c := c₀/2`. The same bound shows that nearby `V η` are
-nonsingular, yielding the corresponding regularity condition without a separate
-hypothesis. -/
+The proof uses `matrix_bddbelow_of_isUnit_det` to obtain `c₀` for `V η₀`;
+entrywise continuity of `V` at `η₀` makes `V η` close to `V η₀`, so
+`⨆ⱼ|V η b_j| ≥ ⨆ⱼ|V η₀ b_j| −
+k·maxent(Δ)·‖b‖`; take `c := c₀/2`. This also proves that nearby `V η` are
+nonsingular, without an additional nonsingularity hypothesis. -/
 theorem matrix_bddbelow_near
     {k : ℕ} {H : Type*} [MetricSpace H]
     (V : H → Matrix (Fin k) (Fin k) ℝ) (η₀ : H)
@@ -288,14 +286,14 @@ theorem matrix_bddbelow_near
       _ ≤ ⨆ j, ENNReal.ofReal |Vlin (V η) b j| :=
           le_iSup (fun j => ENNReal.ofReal |Vlin (V η) b j|) h₀
 
-/-! ### Derivative swap `V η₀ ↔ V η̂` -/
+/-! ### The derivative swap `V η₀ ↔ V η̂` -/
 
 /-- **Derivative-swap remainder.** The family
 `fun n ξ j => √n Vlin(V η₀ − V η̂ₙ)(θ̂ₙ − θ₀)_j` is weighted-`o_P` relative to
-`wDrift`. Route: `|gap_j| ≤ k·maxent(V η₀ − V η̂ₙ)·‖θ̂ₙ − θ₀‖`; the entrywise
-modulus `maxent(V η₀ − V η̂ₙ) →ₚ 0` (`hV_cont` ε-δ + η-consistency), and the rate
-`√n‖θ̂ₙ − θ₀‖ = O_P(wDrift)` (`h_rate`, supplied by the weighted rate bootstrap);
-combine via `oPWt_of_coeff_mul_rate`. -/
+`wDrift`. The bound `|gap_j| ≤ k·maxent(V η₀ − V η̂ₙ)·‖θ̂ₙ − θ₀‖`, the entrywise
+modulus `maxent(V η₀ − V η̂ₙ) →ₚ 0` (`hV_cont` ε-δ + η-consistency), and the
+rate `√n‖θ̂ₙ − θ₀‖ = O_P(wDrift)` (`h_rate`) combine through
+`oPWt_of_coeff_mul_rate`. -/
 theorem vSwap_oPWt
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] {H : Type*} [MetricSpace H]
     (P : Measure Ω) (ψ : EuclideanSpace ℝ (Fin k) → H → Fin k → (Ω → ℝ))
@@ -357,7 +355,7 @@ theorem vSwap_oPWt
     intro ξ hξ
     simp only [Set.mem_setOf_eq] at hξ ⊢
     by_contra hcon
-    push Not at hcon
+    push_neg at hcon
     have hd : dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀ < δ :=
       lt_of_le_of_lt hcon (by linarith)
     have hFsmall := hδ hd
@@ -402,11 +400,11 @@ theorem vSwap_oPWt
 
 /-! ### `L²` membership and marginal tightness at the `η₀` slice -/
 
-/-- **The `η₀` slice `ψ_{·,η₀}` is in `L²(P)`.** The bundled estimating function
-`psiVec ψ(·,η₀) θ₀` is square-integrable by `hDonsker.marginalCLT.memLp`: each
-coordinate `ψ_{θ₀,η₀,j} ∈ 𝓕` lies in `L²`, and `MemLp` on `PiLp 2` combines the
-finitely many coordinates. This is the `L²` consequence of vdV 5.31's Donsker
-condition. -/
+/-- **`ψ_{·,η₀}` is `L²(P)`.** The bundled
+estimating function `psiVec ψ(·,η₀) θ₀` is square-integrable, derived from
+`hDonsker.marginalCLT.memLp` (each `ψ_{θ₀,η₀,j} ∈ 𝓕` is `L²`) and the coordinatewise
+`MemLp` theorem on `PiLp 2`. Thus it follows from the Donsker assumption of vdV
+Theorem 5.31. -/
 theorem pair_hpsi_L2
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] {H : Type*} [MetricSpace H]
     (P : Measure Ω) [IsProbabilityMeasure P]
@@ -421,11 +419,11 @@ theorem pair_hpsi_L2
     ⟨(θ₀, η₀), ⟨Metric.mem_ball_self hδcls, Metric.mem_ball_self hδcls⟩, j, rfl⟩
   exact hDonsker.marginalCLT.memLp _ hmem
 
-/-- **Marginal tightness of `𝔾ₙψ_{θ₀,η₀}`.** The `η₀`-slice empirical process is
-`O_P(1)` in the `ℓ∞(Fin k)` supremum. This follows from
-`empiricalProcessVec_weakConverges` at `ψ(·,η₀)`,
-`isBoundedInProb_of_weakConverges`, and the finite-coordinate collapse. The result
-supplies the marginal tightness input to the weighted rate bootstrap. -/
+/-- **Marginal tightness of `𝔾ₙψ_{θ₀,η₀}`.** The `η₀`-slice
+empirical process is `O_P(1)` in the `ℓ∞(Fin k)` sup, derived from the vector CLT
+(`empiricalProcessVec_weakConverges` at slice `ψ(·,η₀)`) via
+`isBoundedInProb_of_weakConverges` and the finite-coordinate collapse. This
+supplies the `hA` and `h_tight` assumptions used in the weighted bootstrap. -/
 theorem pair_h_tight
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] {H : Type*} [MetricSpace H]
     (P : Measure Ω) [IsProbabilityMeasure P]
@@ -509,11 +507,10 @@ theorem pair_h_tight
           (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
     _ = ENNReal.ofReal η := limsup_const _
 
-/-! ### Weighted core -/
+/-! ### Weighted `o_P(wDrift)` bound for the assembled residual -/
 
-/-- Weighted `o_P` is closed under negation: `|−x| = |x|`, so the two weighted
-exceedance events coincide. This is the weighted analogue of
-`TendstoZeroInOuterProbSup.neg`. -/
+/-- Weighted `o_P` is closed under negation: `|−x| = |x|`,
+so the two weighted exceedance events coincide. -/
 theorem TendstoZeroInOuterProbSupWt.neg {Ξ H : Type*} [MeasurableSpace Ξ]
     {μ : Measure Ξ} {w : ℕ → Ξ → ℝ} {g : ℕ → Ξ → H → ℝ}
     (h : TendstoZeroInOuterProbSupWt μ w g) :
@@ -562,16 +559,18 @@ theorem isBoundedInOuterProbSupWt_add_wt_dominated
   have hMle : M ≤ max M 0 := le_max_left _ _
   linarith [h₂ n ξ h']
 
-/-- **Nuisance weighted core.** The coordinatewise residual
+/-- **Weighted nuisance remainder.** The coordinatewise residual
 
     fun n ξ j => √n Vlin(V η₀)(θ̂ₙ − θ₀)_j + 𝔾ₙψ_{θ₀,η₀,j} + √n (driftVec η̂ₙ)_j
 
-is weighted-`o_P` relative to `wDrift n ξ = 1 + √n‖driftVec η̂ₙ‖`. Following
-`infinite_dim_z_estimator`, `pair_master_identity` rewrites the residual into the
-estimating-equation error minus the uniform-19.24 and Fréchet remainders. The proof
-uses `guardedRandomFunction`, `uniform_donsker_random_function_consistency`,
-`rate_bootstrap_oP_wt`, the neighborhood lower bound, and `vSwap_oPWt`; weight
-domination absorbs the drift, and `oP_supWt_add` combines the terms. -/
+is weighted-`o_P` relative to `wDrift n ξ = 1 + √n‖driftVec η̂ₙ‖`. Mirroring
+`infinite_dim_z_estimator`, `pair_master_identity` rewrites the residual
+into the `o_P` estimating equation (`h_est_eq`) minus the uniform-19.24 remainder
+(`guardedRandomFunction` and `uniform_donsker_random_function_consistency`) minus
+the Fréchet remainder (`rate_bootstrap_oP_wt`, using the bounded-below estimate
+on the guard event `bad := {η̂ₙ outside δV}`), with the derivative swap and the drift
+absorbed by weight domination (`isBoundedInOuterProbSupWt_of_le_wt`);
+`oP_supWt_add` combines. -/
 theorem nuisance_weighted_core
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     {H : Type*} [MetricSpace H]
@@ -647,7 +646,7 @@ theorem nuisance_weighted_core
     rw [Matrix.sub_apply, sub_mul]
   -- The derivative is bounded below on a nuisance ball around `η₀`.
   obtain ⟨c, hc_pos, δV, hδV_pos, hV_bd⟩ := matrix_bddbelow_near V η₀ hV hV_cont
-  -- ============ STEP 1a: the uniform-19.24 remainder `Rhat` is `o_P(1)`. ============
+  -- The uniform Lemma 19.24 remainder `Rhat` is `o_P(1)`.
   -- Pair consistency `(θ̂ₙ, η̂ₙ) →ₚ (θ₀, η₀)` in the max-metric of the product.
   have h_pair_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
       μ {ξ | ε < dist ((θ_hat n (fun i : Fin n => X i.val ξ),
@@ -665,7 +664,7 @@ theorem nuisance_weighted_core
     simp only [Set.mem_setOf_eq, Prod.dist_eq, lt_max_iff, dist_eq_norm] at hξ
     simp only [Set.mem_union, Set.mem_setOf_eq]
     exact hξ
-  -- Uniform `L²`-continuity of the plug-in pair `(θ̂ₙ, η̂ₙ)` in the product metric.
+  -- Uniform `L²`-continuity of the plug-in pair `(θ̂ₙ, η̂ₙ)`.
   have h_sup : TendstoZeroInOuterProbSup μ (fun n ξ (j : Fin k) =>
       distL2 P (ψ (θ_hat n (fun i : Fin n => X i.val ξ))
         (eta_hat n (fun i : Fin n => X i.val ξ)) j) (ψ θ₀ η₀ j)) := by
@@ -754,7 +753,7 @@ theorem nuisance_weighted_core
         ∧ dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀ < δcls := by
       simpa only [Set.mem_setOf_eq, not_not] using hb
     rw [guardedRandomFunction_eq_on_good _ _ _ n ξ j hg]
-  -- Fréchet remainder and weighted rate bootstrap.
+  -- Combine the Fréchet remainder with the weighted rate bootstrap.
   have hS := frechet_remainder_pair_sup_bound P ψ θ₀ η₀ V hfrechet_unif μ θ_hat eta_hat X
     h_consist_θ h_consist_η
   have hbad : Tendsto (fun n => μ.outerMeasureStar
@@ -766,7 +765,7 @@ theorem nuisance_weighted_core
     intro ξ hξ
     simp only [Set.mem_setOf_eq] at hξ ⊢
     linarith [half_lt_self hδV_pos]
-  -- Lower bound on `Vfam` off the guard event at `η := η̂ₙ`, `b := √n(θ̂ₙ−θ₀)`.
+  -- Lower bound on `Vfam` off the guard event.
   have hlb : ∀ (n : ℕ) (ξ : Ξ),
       ξ ∉ {ξ | δV ≤ dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀} →
       ENNReal.ofReal (c * (Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖))
@@ -849,7 +848,7 @@ theorem nuisance_weighted_core
     linarith
   have hA := isBoundedInOuterProbSupWt_add_wt_dominated hw
     (OP_add_oP_sup (OP_add_oP_sup h_tight.neg h_est_eq) Rhat_oP.neg) hdom
-  -- The weighted rate bootstrap.
+  -- Apply the weighted rate bootstrap.
   obtain ⟨hrate, Sfam_oPWt⟩ := rate_bootstrap_oP_wt μ
     (fun (n : ℕ) (ξ : Ξ) (j : Fin k) => Real.sqrt n *
       Vlin (V (eta_hat n (fun i : Fin n => X i.val ξ)))
@@ -902,27 +901,26 @@ theorem nuisance_weighted_core
       (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) j, hdrift_coord]
     linear_combination hmi
   rw [hgoal_eq]
-  exact oP_supWt_add (oP_supWt_add (oP_supWt_add
+  exact oP_supWt_add hw (oP_supWt_add hw (oP_supWt_add hw
       (tendstoZeroInOuterProbSupWt_of_tendstoZeroInOuterProbSup hw h_est_eq)
       (tendstoZeroInOuterProbSupWt_of_tendstoZeroInOuterProbSup hw Rhat_oP.neg))
       Sfam_oPWt.neg)
     (vSwap_oPWt P ψ θ₀ η₀ V hV_cont μ θ_hat eta_hat X h_consist_η hrate)
 
-/-! ### Weighted finite-index collapse to Euclidean convergence -/
+/-! ### Weighted finite-`H` collapse to Euclidean `→ₚ 0` -/
 
-/-- **Weighted finite-index collapse.** For finite index `Fin k`, weighted
+/-- **Weighted finite-`H` collapse.** For finite index `Fin k`, weighted
 `o_P(w)` in the sup (`TendstoZeroInOuterProbSupWt`) upgrades to `→ₚ 0` of the
-`w⁻¹`-scaled `EuclideanSpace`-bundled family. Route (mirror
-`tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin`): `ε ≤ ‖w⁻¹•v‖ ↔ ε·w ≤ ‖v‖`
+`w⁻¹`-scaled `EuclideanSpace`-bundled family. As in
+`tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin`, `ε ≤ ‖w⁻¹•v‖ ↔ ε·w ≤ ‖v‖`
 (since `w ≥ 1 > 0`) and the Euclidean norm is controlled by `√k·maxⱼ|·|`, so the
 `ε`-exceedance is dominated by the `∃j` weighted event, whose outer measure
-vanishes. This bridges the weighted supremum to the vector `TendstoInProbZero` in
-the main linear-representation theorem.
+vanishes. This bridges the weighted supremum to vector-valued
+`TendstoInProbZero`.
 
 No measurability hypotheses are needed: the squeeze runs
 `μ E ≤ μ* E ≤ μ* (∃j-event) → 0` through `measure_le_outerMeasureStar`, which
-holds for arbitrary sets, so neither `w` nor `g` needs to be measurable. Mirrors
-the unweighted template, whose `hg` argument is likewise unused. -/
+holds for arbitrary sets, so neither `w` nor `g` needs to be measurable. -/
 theorem tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) {k : ℕ}
     (w : ℕ → Ξ → ℝ) (hw : ∀ n ξ, 1 ≤ w n ξ)
@@ -962,7 +960,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin
         field_simp
       rwa [hid] at hmul
     by_contra hcon
-    push Not at hcon
+    push_neg at hcon
     have hnorm_sq :
         ‖((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) : EuclideanSpace ℝ (Fin k))‖ ^ 2
           = ∑ i, |g n ξ i| ^ 2 := by
@@ -1018,11 +1016,10 @@ book's **linear representation with drift**, encoded as the scaled
 
     wDrift⁻¹ • ( √n•(θ̂ₙ−θ₀) + V⁻¹_{η₀}(√n•driftVec) + V⁻¹_{η₀}(𝔾ₙψ_{θ₀,η₀}) ) →ₚ 0.
 
-The theorem `nuisance_weighted_core` gives the weighted-supremum `o_P`, and
-`tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin` converts it to Euclidean
-convergence. Applying `tendstoInProbZero_clm` with `(V η₀)⁻¹` and
-`nonsing_inv_mul` yields the stated representation. No asymptotic-normality claim
-is made because the book states none. -/
+`nuisance_weighted_core` gives the weighted supremum `o_P`; the finite-index lemma collapses
+to Euclidean `→ₚ 0`; `tendstoInProbZero_clm` with `(V η₀)⁻¹` (the scalar `wDrift⁻¹•`
+commutes with the CLM) and `nonsing_inv_mul` collapse the first term, as in
+`zEstimator_linear_representation`. The book makes no asymptotic-normality claim here. -/
 theorem zEstimator_nuisance_linear_representation
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     {H : Type*} [MetricSpace H]
@@ -1065,9 +1062,9 @@ theorem zEstimator_nuisance_linear_representation
               (empiricalProcessVec P (fun θ h => ψ θ η₀ h) θ₀ n
                 (fun i : Fin n => X i.val ξ)))) := by
   classical
-  -- Obtain `L²` membership of the `η₀`-slice from `hDonsker`.
+  -- Derive `L²` membership of the `η₀` slice from `hDonsker`.
   have hψ_L2 := pair_hpsi_L2 P ψ θ₀ η₀ δcls hδcls hDonsker
-  -- Establish the weighted `ℓ∞(Fin k)` core.
+  -- Establish the weighted `ℓ∞(Fin k)` remainder bound.
   have hN8 := nuisance_weighted_core P ψ θ₀ η₀ V hV hV_cont δcls hδcls hDonsker
     hL2_cont hPθ₀_zero hfrechet_unif hψ_meas hψ_L2 θ_hat eta_hat μ X hX_meas
     hX_indep hX_id hX_law h_consist_θ h_consist_η h_est_eq
@@ -1079,7 +1076,7 @@ theorem zEstimator_nuisance_linear_representation
         ‖driftVec P ψ θ₀ (eta_hat n (fun i : Fin n => X i.val ξ))‖ :=
       mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _)
     linarith
-  -- Collapse the finite weighted supremum to Euclidean convergence in probability.
+  -- Collapse the finite weighted supremum to Euclidean `→ₚ 0`.
   have h_N9 := tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin μ
     (fun n ξ => 1 + Real.sqrt n *
       ‖driftVec P ψ θ₀ (eta_hat n (fun i : Fin n => X i.val ξ))‖) hw _ hN8

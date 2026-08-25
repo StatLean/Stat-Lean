@@ -12,7 +12,7 @@ Lindeberg theorem used for the marginal-convergence step of van der Vaart
 Theorem 19.28.  Rows are specified by raw population functions; centering,
 limiting variance nonnegativity, and infinitesimality are derived internally.
 
-Its interfaces admit the degenerate cases `n = 0` and `σ2 = 0` and impose no
+The theorem admits the degenerate cases `n = 0` and `σ2 = 0` and imposes no
 Feller or cross-row identical-distribution hypothesis.
 
 Reference: van der Vaart, *Asymptotic Statistics*, Proposition 2.27 as used in
@@ -43,7 +43,7 @@ row.
 Constitutive (vdV Proposition 2.27 and Theorem 19.28 pp.282--283): finite
 coordinate vectors are centered by their rowwise population mean.  Edge
 behavior: for `k = 0` this is the unique zero vector; a nonintegrable mean is
-totalized by the Bochner integral, while downstream theorems assume `L²`. -/
+totalized by the Bochner integral. The limit theorems assume rowwise `L²`. -/
 noncomputable def centeredVectorRow {k : ℕ}
     (P : Measure Ω) (g : ℕ → Ω → EuclideanSpace ℝ (Fin k))
     (n : ℕ) (x : Ω) : EuclideanSpace ℝ (Fin k) :=
@@ -54,7 +54,7 @@ noncomputable def centeredVectorRow {k : ℕ}
 Constitutive (vdV Theorem 19.28 pp.282--283): its `(i,j)` entry is the
 population integral of the product of the two centered coordinates.  Edge
 behavior: for `k = 0` this is the unique empty matrix; nonintegrable entries
-use the totalized integral, while downstream theorems assume rowwise `L²`. -/
+use the totalized integral. The limit theorems assume rowwise `L²`. -/
 noncomputable def centeredCovMatrix {k : ℕ}
     (P : Measure Ω) (g : ℕ → Ω → EuclideanSpace ℝ (Fin k))
     (n : ℕ) : Matrix (Fin k) (Fin k) ℝ :=
@@ -487,7 +487,7 @@ lemma charFun_centered_invSqrt_isLittleO_of_lindeberg
     convert (hd.mul_const ((t : ℂ) ^ 2 / 2)).neg using 1
     · funext n
       ring
-    · ring_nf
+    · ring
   have hdenom : ∀ᶠ n : ℕ in atTop, (1 / (n : ℂ)) = 0 →
       charFun (P.map (centeredScalarRow P g n)) ((Real.sqrt n)⁻¹ * t) -
         (1 + ((-(σ2 * t ^ 2 / 2) : ℝ) : ℂ) / (n : ℂ)) = 0 := by

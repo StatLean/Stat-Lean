@@ -16,16 +16,9 @@ QMD path at `P_full.map M`, whose score is the information-loss image
 conditional expectation of a QMD score produces the QMD score of the induced
 coarsened path).
 
-`QMDPath.coarsen` packages this after internally rebasing to an equivalent finite
-dominator. Its routine fields (curve/probability/absolute
-continuity/curve-at-zero) are discharged directly; the **score field is
-`Π γ.score`**, and the `qmd_limit` field (the score-preservation statement that
-part vdV outsources to [139]) follows from `coarsen_qmd_limit`
-(`Operators/CoarsenedQMDLimit.lean`), which directly proves the result that vdV
-defers to [139].
-
-Headline declaration: `QMDPath.coarsen`. Compatibility core:
-`QMDPath.coarsenWithMappedSigmaFinite`.
+`QMDPath.coarsen` first replaces the dominating measure by an equivalent finite
+measure. Its score is `Π γ.score`, and `coarsen_qmd_limit` proves the
+score-preservation estimate that van der Vaart refers to [139] for.
 -/
 
 open MeasureTheory Filter Topology
@@ -40,10 +33,10 @@ open AsymptoticStatistics.Operators.InformationLoss
 variable {Ω_full Ω_obs : Type*}
   [MeasurableSpace Ω_full] [MeasurableSpace Ω_obs]
 
-/-- *Low-level coarsening core with an explicit mapped sigma-finiteness instance.*
+/-- *Coarsening with an explicit mapped sigma-finiteness assumption.*
 
-Compatibility form of vdV Lemma 25.34-I (book p.375; score preservation is
-book-deferred to [139]). The faithful public entry is `QMDPath.coarsen` below.
+This form of vdV Lemma 25.34-I (book p.375) assumes that the mapped dominating
+measure is sigma-finite.
 
 Pushes a full-data QMD path `γ : QMDPath P_full` forward through a measurable
 coarsening `M`, yielding a QMD path at `P_full.map M` with:
@@ -52,19 +45,20 @@ coarsening `M`, yielding a QMD path at `P_full.map M` with:
   * `score := informationLossOperator hM P_full γ.score = Π γ.score` (the
     conditional-expectation image of the full-data score — lem:25.34-I).
 
-The routine fields are discharged directly.
-  * `dominating_sigmaFinite` — discharged from the explicit low-level
-    `[SigmaFinite (γ.dominating.map M)]` compatibility instance. The public entry
-    derives this internally after rebasing to a finite equivalent dominator.
+The probability, absolute-continuity, and base-point properties follow under
+mapping.
+  * `dominating_sigmaFinite` records the explicit
+    `[SigmaFinite (γ.dominating.map M)]` assumption.
   * `qmd_limit` — the genuine score-preservation lem:25.34-I, which van der Vaart
-    outsources to [139, pp.188-193]; here proven directly via `coarsen_qmd_limit`. -/
+    outsources to [139, pp.188-193] and which is proved here by
+    `coarsen_qmd_limit_withMappedSigmaFinite`. -/
 noncomputable def QMDPath.coarsenWithMappedSigmaFinite {M : Ω_full → Ω_obs}
     (hM : Measurable M)
     {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
     (γ : QMDPath P_full)
-    -- Sigma-finiteness of the pushed-forward dominating measure is required by
-    -- this compatibility constructor; a pushforward of a sigma-finite measure
-    -- need not itself be sigma-finite.
+    -- σ-finiteness of the pushed-forward dominating
+    -- measure on the observed space; not forced by the setup (pushforward of a
+    -- σ-finite measure need not be σ-finite), so supplied explicitly.
     [hσ : SigmaFinite ((γ.dominating).map M)] :
     letI : IsProbabilityMeasure (P_full.map M) :=
       Measure.isProbabilityMeasure_map hM.aemeasurable
@@ -78,31 +72,27 @@ noncomputable def QMDPath.coarsenWithMappedSigmaFinite {M : Ω_full → Ω_obs}
       exact Measure.isProbabilityMeasure_map hM.aemeasurable
     dominating := γ.dominating.map M
     curve_absContinuous := fun t => (γ.curve_absContinuous t).map hM
-    -- Discharged from the explicit `[SigmaFinite (γ.dominating.map M)]` regularity
-    -- hypothesis (pushforward of a σ-finite measure need not be σ-finite).
+    -- The explicit `[SigmaFinite (γ.dominating.map M)]` hypothesis is needed because
+    -- a pushforward of a σ-finite measure need not be σ-finite.
     dominating_sigmaFinite := hσ
     score := informationLossOperator hM P_full γ.score
-    -- The score-preservation statement in Lemma 25.34-I, which vdV refers to
+    -- The score-preservation statement lem:25.34-I, attributed by vdV to
     -- [139, pp.188-193], follows from `coarsen_qmd_limit` via conditional-projection
-    -- domination
+    -- domination with λ=1
     -- (the pulled-back √-density residual splits into two `o(t)` L²(μ) brackets,
     -- bounded by conditional Cauchy–Schwarz on the QMD remainder plus a ρ-ratio
     -- DCT argument).
     qmd_limit := coarsen_qmd_limit_withMappedSigmaFinite hM γ }
 
 /-- *Coarsening of a QMD path through the observation map* (vdV Lemma 25.34-I,
-book p.375), with no mapped-sigma-finiteness obligation on the caller.
+book p.375).
 
-The implementation first replaces `γ.dominating` by the equivalent finite
-dominator supplied by `finiteDominatorRepresentation`.  Its pushforward through
-`M` is finite, hence sigma-finite, so the low-level compatibility constructor
-`coarsenWithMappedSigmaFinite` applies internally.  The adapter preserves the
-curve and score, and therefore the resulting observed path has curve
+The dominating measure is replaced by the equivalent finite measure from
+`finiteDominatorRepresentation`; its pushforward through `M` is finite and
+hence sigma-finite. The resulting observed path has curve
 `t ↦ (γ.curve t).map M` and score
-`informationLossOperator hM P_full γ.score`.
-
-This is the faithful public entry: the measurable coarsening map and the QMD path
-are the only caller-supplied data. -/
+`informationLossOperator hM P_full γ.score`. Thus no sigma-finiteness condition
+on `γ.dominating.map M` is required in this statement. -/
 noncomputable def QMDPath.coarsen {M : Ω_full → Ω_obs} (hM : Measurable M)
     {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
     (γ : QMDPath P_full) :

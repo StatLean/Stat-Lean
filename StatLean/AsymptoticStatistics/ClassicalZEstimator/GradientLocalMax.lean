@@ -6,13 +6,13 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 /-!
 # Classical Z-estimator roots as local maxima (vdV Theorem 5.42, final assertion)
 
-The final assertion of vdV Theorem 5.42 says that if the estimating function `ψ_θ = ṁ_θ` is
-the gradient of some
+This file proves the final assertion of vdV Theorem 5.42 (§*5.6, book p. 69): if the
+estimating function `ψ_θ = ṁ_θ` is the gradient of some
 function `m_θ`, and `θ₀` is a point of local maximum of `θ ↦ Pm_θ`, then the consistent root
-sequence `θ̂ₙ` produced by `classical_zEstimator_root_exists_consistent` can be
+sequence `θ̂ₙ` produced by `RootExistence.classical_zEstimator_root_exists_consistent` can be
 chosen to consist of **local maxima** of the empirical maps `θ ↦ ℙₙm_θ`.
 
-## Argument (vdV p.69)
+## Proof route (vdV p.69)
 
 The Hessian of `θ ↦ Pm_θ` at `θ₀` is `Pṁ̇_{θ₀} = Pψ̇_{θ₀} = V`, which is negative definite:
 `θ₀` is a local maximum so `V` is negative semidefinite (`hessian_negSemidef_of_isLocalMax`),
@@ -20,17 +20,15 @@ and `V` is nonsingular by the 5.41 hypothesis, hence negative definite
 (`V_negdef_of_localmax`). A Taylor expansion (as in the proof of Theorem 5.41) shows
 the empirical Hessian `ℙₙψ̇_{θ̂ₙ}` at a consistent zero `θ̂ₙ` converges in probability to `V`,
 so it is negative definite with probability tending to 1 (`empirical_hessian_negdef_wp1`).
-At a critical point with a negative-definite Hessian the empirical criterion has a
-local maximum (`isLocalMax_of_negdef_hessian`).
+At a critical point with a negative-definite Hessian the empirical criterion has a local
+maximum (`ForMathlib.isLocalMax_of_negdef_hessian`).
 
-Both facts needed about the population Hessian are **derived**, not
-assumed: `V` is symmetric because `ψ = ṁ` makes `ψ̇` a second derivative
+The needed properties of the population Hessian follow from the assumptions: `V` is
+symmetric because `ψ = ṁ` makes `ψ̇` a second derivative
 (`psiDot_symm_of_grad` / `Vmat_isHermitian_of_grad`, equality of mixed partials), and the
 second-order expansion of `θ ↦ P(m_θ − m_{θ₀})` comes from integrating the pointwise
 expansion of `m` (`population_taylor2_m`). The same pointwise expansion, averaged over the
-sample, supplies the Taylor hypothesis of `isLocalMax_of_negdef_hessian`
-(`empirical_taylor2_m`).
-
+sample, supplies the Taylor hypothesis of `isLocalMax_of_negdef_hessian`.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -42,8 +40,7 @@ open AsymptoticStatistics.EmpiricalProcess
 
 /-- **Empirical Jacobian `ℙₙψ̇_θ`** (empirical Hessian of `θ ↦ ℙₙm_θ` when `ψ = ṁ`). Entry
 `(j, i)` is the empirical average `ℙₙ ψ̇_{θ}(·)ⱼᵢ = (1/n)∑ₗ ψ̇_θ(Xₗ)ⱼᵢ`. Its negative
-definiteness at a consistent root is established by
-`empirical_hessian_negdef_wp1`. -/
+definiteness at a consistent root is established below. -/
 noncomputable def empVmat {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ) (Xs : Fin n → Ω) : Matrix (Fin k) (Fin k) ℝ :=
@@ -51,9 +48,9 @@ noncomputable def empVmat {k : ℕ} {Ω : Type*}
 
 /-! ### Euclidean and measure estimates
 
-The Euclidean coordinate bounds are stated locally because Lean `private` declarations are
-module-scoped; the measure lemma removes an outer-small bad event from a measurable
-inner witness, preserving convergence to one in inner probability. -/
+The Euclidean estimates compare coordinates, norms, and quadratic forms. The
+measure estimate removes an outer-small bad event from a measurable inner
+witness while preserving convergence to one in inner probability. -/
 
 /-- Real Euclidean inner product in coordinates. -/
 private lemma real_inner_euclid {k : ℕ} (v w : EuclideanSpace ℝ (Fin k)) :
@@ -104,7 +101,7 @@ private lemma inner_toEuclidCLM_quad {k : ℕ} (M : Matrix (Fin k) (Fin k) ℝ)
 
 /-- **Entrywise closeness ⇒ quadratic-form closeness.** If every entry of `M − V` is at most
 `ζ` in absolute value, the quadratic form of `M` exceeds that of `V` by at most
-`√k·k·ζ·‖x‖²`. -/
+`√k·k·ζ·‖x‖²`. This is the matrix-perturbation estimate used below. -/
 private lemma inner_toEuclidCLM_pert {k : ℕ} (M V : Matrix (Fin k) (Fin k) ℝ)
     (x : EuclideanSpace ℝ (Fin k)) {ζ : ℝ} (hζ : 0 ≤ ζ)
     (h : ∀ j i, |M j i - V j i| ≤ ζ) :
@@ -271,9 +268,9 @@ theorem Vmat_isHermitian_of_grad {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P 
   exact integral_congr_ae (Eventually.of_forall fun x =>
     psiDot_symm_of_grad m ψ Θ hΘ_open hC2 hgrad θ₀ hθ₀ x i j)
 
-/-! ### Negative definiteness of the population Hessian -/
+/-! ### The population Hessian `V` is negative definite -/
 
-/-- **`V = Pṁ̇_{θ₀}` is negative definite.** Since `θ₀` is a local maximum of
+/-- **The population Hessian `V = Pṁ̇_{θ₀}` is negative definite.** Since `θ₀` is a local maximum of
 `θ ↦ P(m_θ − m_{θ₀})` with second-order Hessian `V = Vmat P ψ θ₀` (`hTaylorPop`), the
 second-order necessary condition (`hessian_negSemidef_of_isLocalMax`) makes `V` negative
 semidefinite; being symmetric (`hVsymm`, from `ψ = ṁ`) and nonsingular (`hV`), it is negative
@@ -731,23 +728,22 @@ theorem population_taylor2_m {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Me
     _ = (k : ℝ) / 2 * (∫ x, ψddot x ∂P) * ‖v‖ ^ 3 := by
         rw [integral_mul_const, integral_const_mul]
 
-/-! ### Negative definiteness of the empirical Hessian with probability tending to one -/
+/-! ### The empirical Hessian is negative definite with probability tending to one -/
 
-/-- **Bad-event form.** The set on which the empirical Hessian at the consistent zero
-`θ̂ₙ` fails to satisfy the *uniform* negative-definiteness bound `⟪x, ℙₙψ̇_{θ̂ₙ} x⟫ ≤ −(c/2)‖x‖²`
-has outer measure tending to `0`.
+/-- **Bad-event form for the empirical Hessian.** The set on which the empirical Hessian at
+the consistent zero `θ̂ₙ` fails to satisfy the *uniform* negative-definiteness bound
+`⟪x, ℙₙψ̇_{θ̂ₙ} x⟫ ≤ −(c/2)‖x‖²` has outer measure tending to `0`.
 
 This form carries the uniform constant `c/2` needed by
 `isLocalMax_of_negdef_hessian`, and it is stated on the *bad* event so that it can be
 intersected with other high-probability events without any measurability assumption on
-`θ̂ₙ` (only subadditivity of the outer measure is used downstream).
+`θ̂ₙ` (only subadditivity of the outer measure is required).
 
 Route (vdV p.69): `ℙₙψ̇_{θ̂ₙ} − V = (ℙₙψ̇_{θ̂ₙ} − ℙₙψ̇_{θ₀}) + (ℙₙψ̇_{θ₀} − V)`. The second
 bracket is `o_P(1)` entrywise by the law of large numbers; the first is bounded by
-`(ℙₙψ̈)‖θ̂ₙ − θ₀‖ = O_P(1)·o_P(1)` by averaging the Lipschitz bound
-`psiDot_lipschitz`
-over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness
-transfers to the quadratic form by `inner_toEuclidCLM_pert`. -/
+`(ℙₙψ̈)‖θ̂ₙ − θ₀‖ = O_P(1)·o_P(1)` by the Lipschitz bound `psiDot_lipschitz` averaged
+over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness transfers to the
+quadratic form by `inner_toEuclidCLM_pert`. -/
 private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -776,12 +772,12 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
               (fun i : Fin n => X i.val ξ)) x⟫ ≤ - (c / 2) * ‖x‖ ^ 2}) atTop (𝓝 0) := by
   classical
   -- The Jacobian is `ψ̈`-Lipschitz on the ball.
-  have hlip := psiDot_lipschitz ψ θ₀ Θ ψddot hΘ_open hball hC2 hdom
-  -- The empirical Jacobian converges entrywise, while `ℙₙψ̈ = O_P(1)`.
+  have hlip := psiDot_lipschitz ψ θ₀ Θ ψddot hρ hΘ_open hball hC2 hdom
+  -- The empirical Jacobian converges entrywise and `ℙₙψ̈ = O_P(1)`.
   have hD := empiricalPsiDot_tendsto P ψ θ₀ hVmeas hVint μ X hX_meas hX_indep hX_id hX_law
-  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_id
+  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_indep hX_id
     hX_law
-  -- Averaging B' over the sample bounds the "moving centre" part of the Hessian.
+  -- Averaging the Lipschitz bound over the sample controls the moving-centre part of the Hessian.
   have hentry1 : ∀ t ∈ Metric.closedBall θ₀ ρ, ∀ (n : ℕ) (Xs : Fin n → Ω) (j i : Fin k),
       |empVmat ψ t n Xs j i - empVmat ψ θ₀ n Xs j i|
         ≤ empiricalAvg ψddot n Xs * ‖t - θ₀‖ := by
@@ -916,9 +912,9 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
   rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
   linarith
 
-/-- **`ℙₙψ̇_{θ̂ₙ}` is negative definite with inner probability tending to one.** By a Taylor
-expansion (as in the proof of Theorem 5.41), the empirical Hessian `empVmat ψ θ̂ₙ` at a
-consistent zero
+/-- **The empirical Hessian `ℙₙψ̇_{θ̂ₙ}` is negative definite with probability → 1.** By a
+Taylor expansion (as in the proof of Theorem 5.41), the empirical Hessian `empVmat ψ θ̂ₙ`
+at a consistent zero
 `θ̂ₙ →ₚ θ₀` converges in probability to the negative-definite `V = Vmat P ψ θ₀`
 (`empiricalPsiDot_tendsto`, `psiDot_lipschitz`, and `hcons`); hence its quadratic form
 is negative on all nonzero vectors with probability tending to `1`. vdV p.69 "the Hessian
@@ -928,7 +924,7 @@ matrix `Pψ̇_{θ₀}` and is negative-definite with probability tending to 1."
 Corollary of the bad-event form `empirical_hessian_negdef_bad`. The hypotheses beyond the
 Hessian data (`Θ`, `hΘ_open`, `hC2`, `ψddot`, `hψddot_meas`, `hψddot_int`, `ρ`, `hρ`,
 `hball`, `hdom`) are exactly the classical smoothness conditions of vdV §*5.6 (p.67) already
-carried by both theorems; they are what lets the proof move the Hessian's centre from `θ₀`
+carried by both theorems; they let the proof move the Hessian's centre from `θ₀`
 to `θ̂ₙ` via `psiDot_lipschitz` and `empiricalPsiDdot_OP`. -/
 theorem empirical_hessian_negdef_wp1 {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P]
@@ -969,7 +965,7 @@ theorem empirical_hessian_negdef_wp1 {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     exact lt_of_le_of_lt (hnot x) (by linarith [mul_pos hc hsq])
   · exact ⟨fun _ => Set.univ, fun _ => MeasurableSet.univ, fun _ _ h => h, by simp⟩
 
-/-! ### Roots can be chosen to be local maxima (vdV Theorem 5.42, final assertion) -/
+/-! ### Roots can be chosen to be local maxima (vdV Theorem 5.42) -/
 
 /-- **Classical Z-estimator roots as local maxima — vdV Theorem 5.42, final assertion**
 (§*5.6, book p.69).
@@ -980,12 +976,12 @@ and `θ₀` is a point of local maximum of `θ ↦ P(m_θ − m_{θ₀})` (`hmax
 avoiding global integrability of `m`), then the consistent sequence of roots `θ̂ₙ` can be
 chosen to be **local maxima** of `θ ↦ ℙₙm_θ`:
 
-* `∀ j, ℙₙψ_{θ̂ₙ, j} = 0` with inner probability tending to one, and `θ̂ₙ →ₚ θ₀`;
-* `θ̂ₙ` is a local maximum of `θ ↦ ℙₙm_θ` with inner probability tending to one.
+* `∀ j, ℙₙψ_{θ̂ₙ, j} = 0` with probability → 1 (roots), and `θ̂ₙ →ₚ θ₀` (consistency);
+* `θ̂ₙ` is a local maximum of `θ ↦ ℙₙm_θ` with probability → 1.
 
-`classical_zEstimator_root_exists_consistent` supplies the consistent roots;
-`V_negdef_of_localmax`, `empirical_hessian_negdef_wp1`, and
-`isLocalMax_of_negdef_hessian` upgrade them to local maxima. -/
+The theorem combines the consistent roots from `classical_zEstimator_root_exists_consistent`
+with `V_negdef_of_localmax`, `empirical_hessian_negdef_wp1`, and
+`isLocalMax_of_negdef_hessian` to obtain local maxima. -/
 theorem classical_zEstimator_localmax_roots
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -1085,7 +1081,7 @@ theorem classical_zEstimator_localmax_roots
       _ ≤ c' * ‖θ - θ₀‖ ^ 2 := le_trans hle1 hstep
   -- **(5)** `V` is negative definite with a uniform constant.
   obtain ⟨c, hc, hVneg⟩ := V_negdef_of_localmax P m ψ θ₀ hVsymm hmax hTaylorPop hV
-  -- **(6)** In bad-event form, the empirical Hessian at `θ̂ₙ` is uniformly negative
+  -- **(6)** The empirical Hessian at `θ̂ₙ` is uniformly negative
   -- definite off an event of vanishing outer measure.
   have hbad := empirical_hessian_negdef_bad P Θ hΘ_open ψ θ₀ hc hVneg hVmeas hVint hC2 ψddot
     hψddot_meas hψddot_int hρ hball hdom θ_hat μ X hX_meas hX_indep hX_id hX_law hcons
@@ -1175,9 +1171,9 @@ theorem classical_zEstimator_localmax_roots
 
 /-- **Outer-measure form of classical Z-estimator roots as local maxima.**
 
-Backward-compatible corollary of `classical_zEstimator_localmax_roots`: each
-inner-probability-one certificate implies the former outer-measure limit. No measurability of
-the selected roots or of the target root and local-maximum events is assumed. -/
+The inner-probability statement `classical_zEstimator_localmax_roots` implies this
+outer-measure limit. No measurability of the selected roots or of the target root and
+local-maximum events is assumed. -/
 theorem classical_zEstimator_localmax_roots_outer
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)

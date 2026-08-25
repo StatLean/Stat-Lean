@@ -7,8 +7,8 @@ import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
 The **matrix / information Bartlett identity** for the efficient information matrix `Ĩ`.
 Its `(j,k)` entry is the *off-diagonal* second Bartlett identity in polarized form,
 `E_P[∂_k ℓ̃_j] = − ∫ ℓ̃_j · ℓ̃_k dP = − Ĩ_{jk}`, one per pair of parameter directions
-`(e_j, e_k)`. Assembling the `d²` scalar identities supplied by the concept brick
-`AsymptoticStatistics.ParametricFamily.DifferentiableScoreSubmodel.bartlett_identity`
+`(e_j, e_k)`. Assembling the `d²` scalar identities (each certified by the already-closed
+concept brick `AsymptoticStatistics.ParametricFamily.DifferentiableScoreSubmodel.bartlett_identity`)
 against `efficientInformationMatrix_apply` yields the full matrix statement
 
   `(Matrix.of fun j k => ∫ (∂_k ℓ̃_j) dP) = − Ĩ`,
@@ -17,9 +17,9 @@ with `Ĩ` the efficient information matrix `Ĩ_{jk} = ⟪ℓ̃(e_j), ℓ̃(e_k)�
 
 All the analytic content (differentiating `∫ f_θ p_θ dμ = 0` under the integral sign) lives
 inside `bartlett_identity`; this file is pure entrywise assembly. The hypothesis `h_match`
-states that the `d²` supplied score submodels realize the efficient
+is the honest matching claim that the `d²` supplied score submodels realize the efficient
 scores `ℓ̃(e_j), ℓ̃(e_k)` — i.e. that `∫ f₀ · k₀ dP` for submodel `(j,k)` equals
-`⟪ℓ̃(e_j), ℓ̃(e_k)⟫`, a condition to verify for each concrete submodel construction.
+`⟪ℓ̃(e_j), ℓ̃(e_k)⟫`. It is discharged later by concrete submodel constructions.
 
 Reference: vdV §25.4 (efficient information matrix `Ĩ` and the matrix Bartlett identity);
 §5.3 / §7.2 (the underlying second Bartlett / information identity).
@@ -48,7 +48,7 @@ variable {d : ℕ}
 `(Matrix.of fun j k => ∫ (∂_k ℓ̃_j) dP) = − Ĩ`, where `Ĩ = efficientInformationMatrix`
 is the `d × d` efficient information matrix `Ĩ_{jk} = ⟪ℓ̃(e_j), ℓ̃(e_k)⟫`.
 
-Entrywise assembly of the polarized second Bartlett identity
+Entrywise application of the polarized second Bartlett identity
 (`DifferentiableScoreSubmodel.bartlett_identity`) over the
 `d²` supplied score submodels `M j k`. The matching hypothesis `h_match` records that the
 `(j,k)` submodel's density-weighted score product `∫ f₀ · k₀ dP` realizes the efficient
@@ -69,8 +69,8 @@ theorem matrixBartlett_eq_neg_information
       efficientInformationMatrix_apply]
 
 /-- The `(j,k)`-entry form of the matrix Bartlett identity:
-`∫ (∂_k ℓ̃_j) dP = − Ĩ_{jk}`. Convenient for entrywise consumers (e.g. the matrix-coupled
-vector EIF `Ĩ⁻¹ ℓ̃`). -/
+`∫ (∂_k ℓ̃_j) dP = − Ĩ_{jk}`. This form applies directly to the matrix-coupled
+vector EIF `Ĩ⁻¹ ℓ̃`. -/
 theorem matrixBartlett_entry
     (S_θ : OrdinaryScore P Θ) (T_nuis : NuisanceTangentSpace P)
     [T_nuis.HasOrthogonalProjection] (e : Fin d → Θ)

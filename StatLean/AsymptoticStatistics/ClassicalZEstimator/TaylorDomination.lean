@@ -8,7 +8,8 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 /-!
 # Taylor domination for the classical Z-estimator (vdV §*5.6, book p.67-68)
 
-The "essential condition" of vdV §*5.6 is that the estimating functions `θ ↦ ψ_θ(x)` are
+The classical conditions of vdV Theorems 5.41 and 5.42 require that the
+"essential condition" of vdV §*5.6 is that the estimating functions `θ ↦ ψ_θ(x)` are
 twice continuously differentiable in `θ` for every `x`, with second-order partials
 dominated by a fixed integrable `ψ̈(x)` on a neighborhood of `θ₀` (book p.67, "the
 second-order partial derivatives ... satisfy [domination] for some integrable measurable
@@ -16,20 +17,20 @@ function `ψ̈`").
 
 This file defines the derivative objects (`psiDot`, the entrywise Jacobian; `Vmat`, its
 `P`-average `V = Pψ̇_{θ₀}`) and states the deterministic Taylor / domination lemmas that
-feed both classical Z-estimator theorems:
+feed both theorems:
 
 * `pointwise_taylor_bound` — first-order Taylor remainder of `ψ_θ` controlled by
   `ψ̈·‖θ − θ₀‖²`;
 * `psiDot_lipschitz` — the Jacobian `ψ̇_θ` is `ψ̈`-Lipschitz in `θ`;
-* `empirical_taylor_random` — the empirical-average Taylor bound;
+* `empirical_taylor_random` — the empirical-average version of the Taylor bound;
 * `Psi_differentiable` — the population map `Ψ(θ) = Pψ_θ` is `C¹` with derivative
   `Vmat P ψ θ`;
 * `PsiDot_lipschitz` — `θ ↦ Vmat P ψ θ` is `(Pψ̈)`-Lipschitz;
 * `PsiDot_nonsingular_nbhd` — nonsingularity of `V` at `θ₀` propagates to a
   neighborhood.
 
-The shared calculus lemma `fderiv_lipschitz_opNorm` gives the operator-norm mean-value
-bound on `Dψ` from `hdom`.
+The shared calculus lemma `fderiv_lipschitz_opNorm` is the operator-norm mean-value bound
+on `Dψ` obtained from `hdom`.
 -/
 
 open MeasureTheory Filter Topology
@@ -109,11 +110,11 @@ theorem psiDot_measurable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     simpa [Function.comp_def, smul_eq_mul] using hline.tendsto_slope_zero.comp hseq
   exact measurable_of_tendsto_metrizable' Filter.atTop hgmeas (tendsto_pi_nhds.2 htend)
 
-/-- **Operator-norm Lipschitz bound.** The Fréchet derivative map
+/-- **Operator-norm Lipschitz bound for the derivative.** The Fréchet derivative map
 `θ ↦ D(ψ_{·,j}(x))(θ)` is `ψ̈(x)`-Lipschitz in operator norm on the ball, by the mean-value
 inequality applied to `fderiv` with the second derivative dominated by `ψ̈` (`hdom`).
 
-This implies the entrywise statement `psiDot_lipschitz` and the Taylor bound
+It implies both the entrywise statement `psiDot_lipschitz` and the Taylor bound
 `pointwise_taylor_bound`. -/
 theorem fderiv_lipschitz_opNorm {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -303,7 +304,7 @@ the mean-value bound for the first derivative with Lipschitz constant `sup‖D²
 theorem psiDot_lipschitz {k : ℕ} {Ω : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
-    (ψddot : Ω → ℝ) {ρ : ℝ}
+    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
     (hΘ_open : IsOpen Θ)
     (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ' => ψ θ' j x) Θ)
@@ -342,7 +343,7 @@ theorem empirical_taylor_random {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
           - ∑ i, empiricalAvg (fun x => psiDot ψ θ₀ x j i) n Xs * (θ - θ₀) i|
         ≤ (1 / 2) * empiricalAvg ψddot n Xs * ‖θ - θ₀‖ ^ 2 := by
   intro θ hθ j
-  -- The empirical remainder is the sample average of the pointwise remainders.
+  -- Step 1: the empirical remainder is the sample average of the pointwise remainders.
   have hrw : empiricalAvg (ψ θ j) n Xs - empiricalAvg (ψ θ₀ j) n Xs
       - ∑ i, empiricalAvg (fun x => psiDot ψ θ₀ x j i) n Xs * (θ - θ₀) i
       = (n : ℝ)⁻¹ * ∑ l, (ψ θ j (Xs l) - ψ θ₀ j (Xs l)
@@ -362,7 +363,7 @@ theorem empirical_taylor_random {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
         _ = (n : ℝ)⁻¹ * ∑ l, ∑ i, psiDot ψ θ₀ (Xs l) j i * (θ - θ₀) i := by
             rw [Finset.sum_comm]
     rw [hA, hC, ← mul_sub, ← Finset.sum_sub_distrib]
-  -- Average the pointwise Taylor bound.
+  -- Step 2: average the pointwise Taylor bound.
   have hstep : |∑ l, (ψ θ j (Xs l) - ψ θ₀ j (Xs l)
       - ∑ i, psiDot ψ θ₀ (Xs l) j i * (θ - θ₀) i)|
       ≤ ∑ l, ((1 : ℝ) / 2 * ψddot (Xs l) * ‖θ - θ₀‖ ^ 2) :=
@@ -408,7 +409,7 @@ integral sign is justified by the domination `hdom` + integrability. -/
 theorem Psi_differentiable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
-    (ψddot : Ω → ℝ) {ρ : ℝ}
+    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
     (hΘ_open : IsOpen Θ)
     (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ' => ψ θ' j x) Θ)
@@ -519,7 +520,7 @@ theorem Psi_differentiable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
 
 /-! ### Lipschitz continuity of `θ ↦ Vmat P ψ θ` -/
 
-/-- **`θ ↦ Vmat P ψ θ` is `(Pψ̈)`-Lipschitz.** Averaging the entrywise Jacobian
+/-- **The map `θ ↦ Vmat P ψ θ` is `(Pψ̈)`-Lipschitz.** Averaging the entrywise Jacobian
 Lipschitz bound over `P`:
 
     `|Vmat P ψ θ ⱼᵢ − Vmat P ψ θ' ⱼᵢ| ≤ (∫ ψ̈ ∂P) ‖θ − θ'‖`.
@@ -528,7 +529,9 @@ vdV p.68 "the derivative `Pψ̇` can be seen to be continuous throughout this ne
 -/
 theorem PsiDot_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
-    (θ₀ : EuclideanSpace ℝ (Fin k)) (ψddot : Ω → ℝ) {ρ : ℝ}
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
+    (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
+    (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hlip : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ θ' ∈ Metric.closedBall θ₀ ρ,
       ∀ (j i : Fin k) (x : Ω), |psiDot ψ θ x j i - psiDot ψ θ' x j i| ≤ ψddot x * ‖θ - θ'‖)
     (hψddot_int : Integrable ψddot P)
@@ -563,8 +566,9 @@ still smaller ... to ensure that the derivative of `Ψ` is nonsingular throughou
 neighborhood." -/
 theorem PsiDot_nonsingular_nbhd {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
-    (θ₀ : EuclideanSpace ℝ (Fin k))
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (Θ : Set (EuclideanSpace ℝ (Fin k)))
     (ψddot : Ω → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
+    (hball : Metric.closedBall θ₀ ρ ⊆ Θ)
     (hKlip : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ θ' ∈ Metric.closedBall θ₀ ρ, ∀ (j i : Fin k),
       |Vmat P ψ θ j i - Vmat P ψ θ' j i| ≤ (∫ x, ψddot x ∂P) * ‖θ - θ'‖)
     (hV : IsUnit (Vmat P ψ θ₀).det) :

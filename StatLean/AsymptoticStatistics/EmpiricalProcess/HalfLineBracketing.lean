@@ -236,7 +236,7 @@ theorem halfLine_hasFiniteBracketingCover_L2
 
 /-- Coarse polynomial bracketing count for `0 < δ ≤ 1`. The constant `8`
 absorbs the open-gap brackets, singleton jump brackets, and strict-scale
-inflation; only the `O(δ⁻²)` order is used downstream. -/
+inflation. -/
 theorem halfLine_bracketingNumber_L2_le
     (P : Measure ℝ) [IsProbabilityMeasure P] {δ : ℝ}
     (hδ : 0 < δ) (hδ1 : δ ≤ 1) :

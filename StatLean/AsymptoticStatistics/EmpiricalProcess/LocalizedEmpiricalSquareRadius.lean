@@ -2,13 +2,6 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalSquareRadius
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringBookDifference
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacherFiniteChaining
 
-/-!
-# Square-radius bounds for localized difference classes
-
-Population and empirical bounds for the square radius of strict localized
-difference classes, using conditional Rademacher chaining.
--/
-
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory

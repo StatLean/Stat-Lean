@@ -4,13 +4,6 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 
-/-!
-# Entropy bounds at a shrinking random radius
-
-Diagonal selection and antitone integral estimates yield shrinking scales at
-which random-radius entropy integrals converge to zero.
--/
-
 namespace AsymptoticStatistics.ForMathlib
 
 open Filter MeasureTheory Topology

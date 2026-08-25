@@ -4,74 +4,15 @@ import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
-# Operational semiparametric efficiency (asymptotic linearity)
+# Operational semiparametric efficiency
 
-An estimator sequence $T_n$ for a real functional $\psi(P)$ is *asymptotically
-linear* at $P$ with influence function $\varphi$ (a mean-zero, square-integrable
-function under $P$) and centering $c$ when, as the sample size grows, the
-normalized estimation error admits the expansion
-$$\sqrt{n}\,\bigl(T_n(X) - c\bigr)
-   = \frac{1}{\sqrt n}\sum_{i=1}^n \varphi(X_i) + o_P(1),$$
-i.e. the residual converges to $0$ in $P^n$-probability. The estimator is
-*semiparametrically efficient* at $P$, relative to a tangent space $T$ for the
-functional $\psi$, when this expansion holds with $c = \psi(P)$ and the
-influence function $\varphi$ equal to the *efficient influence function* — the
-canonical-gradient projection of $\psi$ onto the closed linear span of $T$. The
-headline result is the operational form of the efficiency criterion: an
-efficient influence function together with the asymptotically-linear expansion
-based on it certifies efficiency.
+Asymptotic linearity and the operational form of semiparametric efficiency:
+the predicates `AsymptoticallyLinearAt`, `AsymptoticallyLinearWithBiasAt`,
+`SemiparametricallyEfficientAt`, and the named theorem
+`estimator_semiparametricallyEfficient_of_asympLinear_eif`.
 
-This file states this in four pieces — the predicates `AsymptoticallyLinearAt`,
-`AsymptoticallyLinearWithBiasAt`, `SemiparametricallyEfficientAt`, and the named
-theorem `estimator_semiparametricallyEfficient_of_asympLinear_eif`. The
-bias-residual variant `AsymptoticallyLinearWithBiasAt` (vdV §25.8, Theorem
-25.59) retains the deterministic bias term $\sqrt{n}\,P_{\hat\theta_n,\eta}\,
-\tilde\ell_{\hat\theta_n,\hat\eta_n}$ rather than absorbing it into $o_P(1)$ via
-the no-bias condition (25.52); it collapses to `AsymptoticallyLinearAt` exactly
-when the bias is identically zero.
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 25 (Semiparametric Models), §25.3, Lemma 25.23, Eq (25.22). The
-bias-residual variant uses §25.8, Theorem 25.59 and the no-bias condition Eq
-(25.52).
-
-**Proof formalization notes.** The centering `c` is kept abstract (rather than
-hard-wired to `ψ P`) in `AsymptoticallyLinearAt` so the definition does not
-depend on the `PathwiseDifferentiableAt` machinery; concrete consumers pass
-`c := ψ P`. Edge behavior: when `φ = 0` the predicate reduces to
-`√n · (T_n - c) →_P 0` (consistency at rate), and `SemiparametricallyEfficientAt`
-is `False` when no efficient influence function exists for any derivative,
-matching vdV's convention that "no EIF" = "no operationally efficient
-estimator". The reduction lemma `asympLinearWithBiasAt_zero_iff_asympLinearAt`
-shows the bias-residual predicate at the constantly-zero bias is literally
-`AsymptoticallyLinearAt` (proved by `simp` through `sub_zero`); it lets the
-Theorem 25.54 bundle be recovered from a Theorem 25.59 bundle when the
-bias-residual vanishes. The main theorem
-`estimator_semiparametricallyEfficient_of_asympLinear_eif` is the And-intro
-under existential witnesses — definitional — and is shipped so concrete model
-files can supply the EIF and the asymptotically-linear expansion and then invoke
-it. The "operational" qualifier distinguishes this achievability statement from
-the lower-bound (convolution-theorem) characterization of efficiency; the two
-agree under regularity, but the operational form is what model files prove
-first.
-
-**Bibliographic comments.** The systematic theory of efficient influence
-functions, asymptotic linearity, and semiparametric efficiency bounds was
-developed by P. J. Bickel, C. A. J. Klaassen, Y. Ritov & J. A. Wellner,
-*Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins
-University Press, Baltimore, 1993 (reprinted Springer, 1998), which is the
-canonical monograph for the framework van der Vaart's Chapter 25 summarizes. The
-efficiency lower bound underlying the criterion descends from the convolution
-theorem of J. Hájek, "A characterization of limiting distributions of regular
-estimates", *Z. Wahrscheinlichkeitstheorie verw. Geb.* **14** (1970), 323–330,
-and the local asymptotic minimax theory of L. Le Cam; the influence-function
-representation of regular asymptotically linear estimators originates with
-P. J. Bickel, "On adaptive estimation", *Ann. Statist.* **10** (1982), 647–671.
-The specific Lemma 25.23 / Eq (25.22) packaging — an estimator is efficient iff
-it is asymptotically linear with influence function equal to the efficient
-influence function — is van der Vaart's textbook synthesis of this line of work
-rather than a single seminal theorem.
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3
+(eq:25.22 asymptotic linearity, lem:25.23 operational efficiency).
 -/
 
 open MeasureTheory Filter Topology
@@ -88,7 +29,7 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 /-- A raw baseline limit distribution for the root-`n` centered estimator.
 
 Constitutive (vdV §25.3, Lemma 25.23): this records only weak convergence
-of the centered estimator law. It does not mention asymptotic linearity,
+of the centered estimator law.  It does not mention asymptotic linearity,
 an influence function, pathwise differentiability, or Gaussianity.
 
 Edge behavior: `c` is an explicit centering, so the definition also applies
@@ -108,7 +49,7 @@ direction.
 Constitutive (vdV §25.3, Lemma 25.23): regularity means that recentering at
 the perturbed truth gives the same limit law along all tangent paths.
 
-Concrete finite-model example: for a singleton model, constant functional and
+Joint satisfiability witness: for a singleton model, constant functional and
 constant estimator, take a tangent specification whose carrier is `{0}` and
 `L = dirac 0`; the only selected score is zero and every centered statistic is
 identically zero. -/
@@ -148,8 +89,8 @@ tends to zero as `n → ∞`. (Convergence in `Pⁿ`-probability of the
 residual to zero.)
 
 Reference: vdV §25.3, eq:25.22. The centering `c` is typically `ψ(P)`;
-we keep it abstract so this definition does not depend on the
-`PathwiseDifferentiableAt` machinery (concrete consumers pass `c := ψ P`).
+an abstract centering keeps this definition independent of
+`PathwiseDifferentiableAt`.
 
 Edge behavior: when `φ = 0`, the predicate reduces to
 `√n · (T_n - c) →_P 0`, the consistency-at-rate condition. When `T_n`
@@ -167,7 +108,7 @@ def AsymptoticallyLinearAt
                 * (∑ i, ((φ : ↥(L2ZeroMean P)) : Lp ℝ 2 P) (X i))|})
     atTop (nhds 0)
 
-/-- *Bias-residual variant of asymptotic linearity (vdV §25.8,
+/-- *Bias-residual variant of asymptotic linearity (vdV §25.5,
 thm:25.59).*
 
 `T_n` is asymptotically linear at `P` with influence function
@@ -177,7 +118,7 @@ thm:25.59).*
 `√n · (T_n X − c) − (1/√n) · Σᵢ φ(Xᵢ) − bias n X` exceeds `ε` in
 absolute value tends to zero as `n → ∞`.
 
-Reference: vdV §25.8, thm:25.59 (the bias-residual expansion). The
+Reference: vdV §25.5, thm:25.59 (the bias-residual expansion). The
 predicate generalises `AsymptoticallyLinearAt` by retaining the bias
 term `√n · P_{θ̂_n,η} ℓ̃_{θ̂_n,η̂_n}` rather than absorbing it into
 `o_P(1)` via the no-bias condition (25.52).
@@ -207,7 +148,7 @@ to recover the thm:25.54 bundle from a thm:25.59 bundle when the
 bias-residual is identically zero (i.e., the no-bias condition
 (25.52) holds at rate `o_P(n^{−1/2})`).
 
-Reference: vdV §25.8, the (25.52)-collapse step in the discussion
+Reference: vdV §25.5, the (25.52)-collapse step in the discussion
 following thm:25.59. -/
 theorem asympLinearWithBiasAt_zero_iff_asympLinearAt
     (T_n : ∀ n, (Fin n → Ω) → ℝ)
@@ -249,10 +190,8 @@ function for `dψ : T →L[ℝ] ℝ` at `P` relative to `T`, and `T_n` is
 asymptotically linear at `P` with influence `φ` and centering `ψ P`, then
 `T_n` is semiparametrically efficient at `P` relative to `T` for `ψ`.
 
-Reference: vdV §25.3, lem:25.23 (operational form). The proof is the
-And-intro under existential witnesses — definitional. The named theorem
-is shipped for downstream consumers (concrete model files supply the
-EIF and the asymp-linear expansion, then invoke this theorem). -/
+Reference: vdV §25.3, lem:25.23 (operational form). The proof introduces
+the efficient influence function and derivative as the existential witnesses. -/
 theorem estimator_semiparametricallyEfficient_of_asympLinear_eif
     {T_n : ∀ n, (Fin n → Ω) → ℝ}
     {ψ : Measure Ω → ℝ}

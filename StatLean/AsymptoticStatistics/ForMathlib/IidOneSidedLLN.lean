@@ -52,13 +52,13 @@ theorem iid_extendedEmpiricalAvg_upper_tail
     (Q : Measure X) [IsProbabilityMeasure Q]
     (ℙ : Measure Ω) [IsProbabilityMeasure ℙ]
     (Xs : ℕ → Ω → X) (f : X → EReal)
-    -- Measurability needed for the one-sided LLN.
+    -- measurability needed for the one-sided LLN.
     (hf_meas : Measurable f)
-    -- Van der Vaart's criteria take values in `[-∞,∞)`, excluding `⊤`.
+    -- vdV criteria take values in `[-∞,∞)`, excluding `⊤`.
     (hf_top : ∀ x, f x ≠ ⊤)
-    -- Finite positive part, as in van der Vaart (5.13).
+    -- finite positive part, the content of vdV (5.13).
     (hf_pos : (∫⁻ x, (f x).toENNReal ∂Q) ≠ ∞)
-    -- Single-base measurable iid sample encoding.
+    -- single-base measurable iid sample encoding.
     (hXs_meas : ∀ i, Measurable (Xs i))
     (hXs_indep : ProbabilityTheory.iIndepFun Xs ℙ)
     (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) ℙ ℙ)
@@ -140,13 +140,13 @@ theorem iid_extendedEmpiricalAvg_tendsto_finite
     (Q : Measure X) [IsProbabilityMeasure Q]
     (ℙ : Measure Ω) [IsProbabilityMeasure ℙ]
     (Xs : ℕ → Ω → X) (f : X → EReal) (a : ℝ)
-    -- Measurability needed for the iid LLN.
+    -- measurability needed for the iid LLN.
     (hf_meas : Measurable f)
-    -- Van der Vaart's criteria take values in `[-∞,∞)`, excluding `⊤`.
+    -- vdV criteria take values in `[-∞,∞)`, excluding `⊤`.
     (hf_top : ∀ x, f x ≠ ⊤)
-    -- The selected maximizer has finite expectation (van der Vaart, p. 48).
+    -- the selected maximizer has finite expectation (vdV p.48).
     (hf_finite : extendedExpectation Q f = (a : EReal))
-    -- Single-base measurable iid sample encoding.
+    -- single-base measurable iid sample encoding.
     (hXs_meas : ∀ i, Measurable (Xs i))
     (hXs_indep : ProbabilityTheory.iIndepFun Xs ℙ)
     (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) ℙ ℙ)

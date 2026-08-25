@@ -13,28 +13,20 @@ centered Lipschitz class
 
     F_full = {ω ↦ m_θ ω − m_{θ₀} ω : θ ∈ ℝ^d, ‖θ − θ₀‖ ≤ 1},  envelope `menv ∈ L²(P)`, Lipschitz.
 
-For localized M-estimator arguments, the empirical modulus over the `δq`-slice
-`(F_full − F_full)_{δq}` is bounded **linearly** in the slice
+For M-estimator normality, the localized empirical
+modulus over the `δq`-slice `(F_full − F_full)_{δq}` is bounded **linearly** in the slice
 radius, **uniformly in `n`** and with a **clean constant** (no spurious `√log(1/δq)`):
 
     ∫⁻ ξ, ‖𝔾ₙ‖_{(F_full − F_full)_{δq}} ∂μ ≤ C · δq   ∀ δq > 0, ∀ n.
 
 **Why bracketing fails, why covering wins.** The absolute-scale bracketing entropy integral
-`J_{[]}(δq, F) ≈ δq·√(k log(1/δq))` carries a spurious `√log(1/δq)`. The fix is to use the
+`J_{[]}(δq, F) ≈ δq·√(k log(1/δq))` carries a spurious `√log(1/δq)`. Instead use the
 **radius-relative covering scale**: the `δq`-slice has `L²`-radius `δq`, so its covering number
 `N_{L²}(ε, slice_{δq}) ≤ (C·δq/ε)^{2d}` has the *ratio* `δq/ε` in it — a scaled copy — whence
 
     ∫₀^{δq} √log N_{L²}(ε, slice_{δq}) dε = δq · C_d   (scale-free constant),
 
 removing the `√log` and giving `E*‖𝔾ₙ‖ ≲ C_d·δq`.
-
-## Main declarations
-* `l2CoveringNumber`, `l2CoveringEntropyIntegral` — covering-number definitions.
-* `l2CoveringNumber_centeredLipschitz_le` — the Lipschitz-to-`L²` net bridge.
-* `l2CoveringNumber_shell_le` — the fixed-center shell-covering bound.
-* `l2CoveringEntropyIntegral_shell_le` — scale-free fixed-center-shell entropy.
-* `centeredLipschitz_shellModulus_bound_closed` — the uniform-covering maximal bound.
-* `centeredLipschitz_localizedModulus_bound` — the corresponding open-shell modulus.
 
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Thm 2.14.1, Cor 19.35.
 -/
@@ -76,7 +68,7 @@ lemma l2CoveringNumber_le_of_net {P : Measure Ω} {F : Set (Ω → ℝ)} {s : �
     l2CoveringNumber P F s ≤ (S.card : ℕ∞) := by
   refine iInf_le_of_le S (iInf_le_of_le ⟨hSF, hnet⟩ le_rfl)
 
-/-! ## Lipschitz-to-`L²` net bridge
+/-! ## Lipschitz-to-`L²`-net bridge
 
 An `η`-Euclidean-net of the parameter ball `‖θ − θ₀‖ ≤ 1` induces an
 `(η·‖menv‖₂)`-`L²`-net of `F_full`, because `‖m_θ − m_{θ'}‖₂ ≤ ‖menv‖₂·‖θ − θ'‖`. Combined
@@ -132,12 +124,12 @@ envelope `menv`, the `L²(P)` covering number is polynomial in `1/s`:
 
     N_{L²}(s, F_full) ≤ (C/s)^d   for `0 < s ≤ ‖menv‖₂ + 1`,
 
-with `C` depending only on `θ₀` (via the ball radius) and `‖menv‖₂`. An
+with `C` depending only on `θ₀` (via the ball radius) and `‖menv‖₂`. Route: an
 `η`-Euclidean-net of the ball `‖θ − θ₀‖ ≤ 1` (with `η = s/(‖menv‖₂+1)`) becomes an
 `s`-`L²`-net of `F_full` by `distL2_centeredDiff_le`; the finite-dim Euclidean cover
 `coveringNumber_le_of_bounded_euclidean` supplies `|S| ≤ (C_e/η)^d`.
 
-vdV Thm 2.14.1 / Cor 19.35. -/
+This is the covering-number input to vdV Theorem 2.14.1 and Corollary 19.35. -/
 theorem l2CoveringNumber_centeredLipschitz_le
     {d : ℕ} {P : Measure Ω}
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -217,8 +209,8 @@ theorem l2CoveringNumber_centeredLipschitz_le
 
 /-! ## Fixed-center shell-covering geometric bound
 
-As noted after vdV Lemma 19.38 (p. 289), the uniform-entropy counterpart of the
-*localized small-`L²`-ball* maximal inequality does not hold in this form: the
+**The soundness correction (vdV Lemma 19.38 note, book p.289).** The uniform-entropy counterpart
+of the *localized small-`L²`-ball* maximal inequality "appears to be untrue" (vdV): the
 pairwise-difference slice `(F − F)_{δq}` has pointwise envelope `2·menv` (base-point degeneracy —
 `m_θ − m_{θ'}` depends on both `θ` and the base `θ'`), so its covering number `~(‖menv‖₂/ε)^d`
 has **no `δ` in the numerator** and the spurious `√log(1/δ)` does not cancel. The clean `C·δ`
@@ -229,7 +221,7 @@ bound holds ONLY over the **fixed-center shell**
 whose covering number IS a scale-free `(δ/s)` ratio (`N(s, M_δ) ≤ (C·δ/s)^d`). This is
 vdV Cor 19.35 / Thm 2.14.1. The results below are therefore stated over `M_δ`. -/
 
-/-- **Shell-covering bound** — vdV Cor 19.35 / Lem 19.38.
+/-- **Shell-covering bound** — vdV Corollary 19.35 / Lemma 19.38.
 
 For the **fixed-center shell** `M_δ = {ω ↦ m_θ ω − m_{θ₀} ω : ‖θ − θ₀‖ ≤ δ}` (envelope `δ·menv`),
 the `L²(P)` covering number at scale `s ≤ δ` is bounded by the *ratio* `δ/s`:
@@ -248,11 +240,11 @@ The proof rescales `l2CoveringNumber_centeredLipschitz_le` to the shell: an
 `closedBall θ₀ δ`; the `L²` Lipschitz width `distL2_centeredDiff_le` (`≤ ‖menv‖₂·δ·‖u−c‖`) turns
 it into an `s`-`L²`-net of `M_δ` at `η = s/((‖menv‖₂+1)·δ)` (the `+1` slack forces strict `< s`).
 
-Stated over the CLOSED shell `‖θ−θ₀‖ ≤ δ` (rather than the open `< δ`) so the δ-dilation lands
-its net points cleanly inside; the open-shell modulus theorem
-`centeredLipschitz_localizedModulus_bound` bridges via `supNormOver_mono` (open ⊆ closed shell).
+The theorem is stated over the closed shell `‖θ−θ₀‖ ≤ δ`, so the
+δ-dilation maps net points into the shell. The open-shell modulus theorem
+`centeredLipschitz_localizedModulus_bound` follows by `supNormOver_mono`.
 
-vdV Thm 2.14.1 / Cor 19.35. -/
+This is the geometric core of vdV Theorem 2.14.1 and Corollary 19.35. -/
 theorem l2CoveringNumber_shell_le
     {d : ℕ} {P : Measure Ω}
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -356,7 +348,7 @@ theorem l2CoveringNumber_shell_le
           rw [hηdef, div_div_eq_mul_div]
           ring
 
-/-- `∫₀^{δq} √(δq/ε) dε = 2·δq`, the scale-free `ε^{-1/2}` integral used below.
+/-- `∫₀^{δq} √(δq/ε) dε = 2·δq`, the scale-free `ε^{-1/2}` integral.
 Via `√(δq/ε) = √δq · ε^{-1/2}`, `ofReal_integral_eq_lintegral_ofReal`, and `integral_rpow`. -/
 private lemma lintegral_sqrt_ratio {δq : ℝ} (hδq : 0 < δq) :
     ∫⁻ ε in Set.Ioc (0 : ℝ) δq, ENNReal.ofReal (Real.sqrt (δq / ε)) ∂volume
@@ -474,7 +466,7 @@ theorem sqrt_log_pow_ratio_lintegral_le (C : ℝ) (hC : 0 < C) (p : ℕ) :
 
 /-! ## Scale-free finite-dimensional covering entropy -/
 
-/-- **Scale-free fixed-center shell covering entropy integral** (vdV Cor 19.35).
+/-- **Scale-free fixed-center shell covering entropy integral** (vdV Corollary 19.35).
 
 For the fixed-center shell `M_δ = {ω ↦ m_θ ω − m_{θ₀} ω : ‖θ − θ₀‖ ≤ δ}` the covering entropy
 integral is linear in `δ` with a `δ`-free constant:
@@ -487,7 +479,7 @@ integrand pointwise via `entropyWeight_mono`, then integrate. This is the clean 
 bracketing `J_{[]}(δ) ≈ δ√log(1/δ)` (the spurious `√log` cancels because the covering scale is
 *relative* to the shell radius).
 
-vdV Thm 2.14.1 / Cor 19.35. -/
+This is the entropy-integral bound in vdV Theorem 2.14.1 and Corollary 19.35. -/
 theorem l2CoveringEntropyIntegral_shell_le
     {d : ℕ} {P : Measure Ω}
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -544,8 +536,7 @@ threshold is proportional to the envelope radius `δ`, so `δ` cancels in the le
 factor `√n · ∫⁻ |menv| 1_{√n·κ < |menv|}` is bounded by the `n`- and `δ`-free constant `‖menv‖₂²/κ`
 via the elementary estimate `|menv|·1_{|menv|>a} ≤ menv²/a` at `a = √n·κ` (`√n ≤ |menv|/κ` on the
 level set). This bounds the envelope-tail term in
-`centeredLipschitz_shellModulus_bound_closed`.
-envelope-tail term. -/
+`centeredLipschitz_shellModulus_bound_closed`. -/
 private lemma shellEnvelope_tail_le
     {P : Measure Ω} (menv : Ω → ℝ) (hmenv : MemLp menv 2 P)
     {κ : ℝ} (hκ : 0 < κ) :
@@ -841,17 +832,14 @@ private lemma supNorm_clamp_lift
         rw [hT_def] at this
         gcongr
 
-/-! ## Covering telescope comparison
+/-! ## Covering telescope comparison (dyadic sum ≤ covering entropy integral)
 
 The **pure real-analysis** half of the covering Dudley chain: the geometric dyadic series
 `Σ_q (1/2)^q·δ · √log(1 + N_{L²}((1/2)^q·δ, F))` is bounded by *twice* the covering entropy
 integral `l2CoveringEntropyIntegral δ F P` (no empirical process involved). This is the covering
-analogue of `dyadic_sum_le_bracketingEntropyIntegral` (`Bracketing.lean`): the proof is a
-mechanical mirror, replacing `entropyIntegrand ε F P = entropyWeight (bracketingNumber ε F 2 P)`
-by `entropyWeight (l2CoveringNumber P F ε)`; the only new ingredient is antitonicity of
-`l2CoveringNumber` in the scale (an `s₁`-net is an `s₂`-net for `s₁ ≤ s₂`). The private
-dyadic-partition helpers `iUnion_dyadic_Ioc_eq` / `dyadic_term_le_two_setLIntegral` of
-`Bracketing.lean` are re-proven here (they are `private` there, so unavailable across files). -/
+analogue of `dyadic_sum_le_bracketingEntropyIntegral` (`Bracketing.lean`). It
+uses antitonicity of `l2CoveringNumber` in the scale: an `s₁`-net is an
+`s₂`-net whenever `s₁ ≤ s₂`. -/
 
 /-- `l2CoveringNumber` is antitone in the scale `s`: every `s₁`-net is an `s₂`-net for
 `s₁ ≤ s₂`, so the infimum defining `l2CoveringNumber P F s₂` ranges over a superset. -/
@@ -872,7 +860,7 @@ private lemma covering_entropyWeight_antitone_eps {P : Measure Ω} {F : Set (Ω 
   entropyWeight_mono (l2CoveringNumber_antitone_eps hε)
 
 /-- The dyadic scales `(1/2)^q·δ` partition `Ioc 0 δ` into the intervals
-`Ioc ((1/2)^{q+1}·δ) ((1/2)^q·δ)` (covering copy of the private `iUnion_dyadic_Ioc_eq`). -/
+`Ioc ((1/2)^{q+1}·δ) ((1/2)^q·δ)`. -/
 private lemma covering_iUnion_dyadic_Ioc_eq {δ : ℝ} (hδ : 0 < δ) :
     ⋃ q : ℕ, Set.Ioc ((1/2 : ℝ)^(q+1) * δ) ((1/2 : ℝ)^q * δ) = Set.Ioc 0 δ := by
   have hhalf_pos : (0 : ℝ) < (1/2 : ℝ) := by norm_num
@@ -977,12 +965,12 @@ private theorem covering_dyadic_sum_le_l2CoveringEntropyIntegral
         unfold l2CoveringEntropyIntegral
         rw [hI, covering_iUnion_dyadic_Ioc_eq hδ]
 
-/-! ## Population-covering interface
+/-! ## Population-covering series
 
-The empirical-process estimate below uses the uniform finite-discrete covering chain,
-whose nets live in the realized sample metric.  The population-covering series also
-records attaining nets; these certify that the shell is nonempty and that the regularized
-series has a positive head term. -/
+The empirical-process estimate below uses the book-faithful uniform finite-discrete covering
+chain, whose nets live in the realized sample metric. The population-covering series records
+nets that certify that the shell is nonempty and hence that the regularized series has a
+positive head term. -/
 
 /-- **Minimal `L²`-net extraction (the `iInf` defining `l2CoveringNumber` is attained).**
 
@@ -991,8 +979,8 @@ infimum defining `l2CoveringNumber P F s` is *attained*: there is an actual fini
 `S ⊆ F` in the `distL2 P` semimetric whose cardinality **equals** `l2CoveringNumber P F s`
 (in particular `≤ N`).
 
-The shell-covering bound `l2CoveringNumber_shell_le` returns only a cardinality bound;
-the population series additionally records an attaining net.
+The shell-covering bound `l2CoveringNumber_shell_le` returns a cardinality bound,
+while the population-series formulation also records an attaining net.
 
 Proof: the admissible-net cardinalities `A = {|S| : S an s-net ⊆ F}` form a nonempty set of
 naturals (nonempty because `l2CoveringNumber < ⊤`), whose least element `Nat.sInf A` is attained
@@ -1034,21 +1022,21 @@ private lemma l2CoveringNumber_exists_min_net {P : Measure Ω} {F : Set (Ω → 
         _ = ((sInf A : ℕ) : ℕ∞) := by rw [hS₀_card]
   exact ⟨S₀, hS₀_adm.1, hS₀_adm.2, by rw [← hval, hS₀_card]⟩
 
-/-- **Dyadic shift-reindex of the covering-chain series (chaining stage-4 index shift).**
+/-- **Dyadic shift-reindex of the covering-chain series.**
 
 The per-level covering-chain bound is naturally indexed by the *finer* (link) scale
 `ε_{q+1} = (1/2)^{q+1}·δ` — the smaller of the two nets bridged at chain level `q` — so the
 process telescope produces the **shifted** covering series
 `∑_q ε_q·entropyWeight(N(ε_{q+1}))`. Because the dyadic scales satisfy `ε_q = 2·ε_{q+1}`, this
-shifted series is at most **twice** the on-diagonal series the headline consumes:
+shifted series is at most **twice** the on-diagonal series used below:
 
     ∑_q ofReal(ε_q)·entropyWeight(N(ε_{q+1})) ≤ 2·∑_q ofReal(ε_q)·entropyWeight(N(ε_q)).
 
 Pure `ℝ≥0∞`-series algebra: `ofReal(ε_q) = ofReal(2·ε_{q+1}) = 2·ofReal(ε_{q+1})`, so the LHS is
 `2·∑_q term(q+1)` with `term q := ofReal(ε_q)·entropyWeight(N(ε_q))`; the tail sum
 `∑_q term(q+1) ≤ ∑_q term(q)` drops the `q = 0` head (`ENNReal.tsum_comp_le_tsum_of_injective`
-along `Nat.succ`). This is the covering counterpart of the `ε_q = 2ε_{q+1}` index shift that the
-bracketing chaining engine absorbs into its universal constant. -/
+along `Nat.succ`). This is the covering analogue of the `ε_q = 2ε_{q+1}` index
+shift in the bracketing chaining bound. -/
 private lemma covering_shifted_dyadic_series_le
     {P : Measure Ω} {F : Set (Ω → ℝ)} {δ : ℝ} :
     ∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δ)
@@ -1313,19 +1301,18 @@ private lemma uniformCoveringEntropyIntegral_truncate_shell_le
     _ ≤ ENNReal.ofReal (Cd * 1) := hInt 1 one_pos
     _ = ENNReal.ofReal Cd := by rw [mul_one]
 
-/-- **Uniform-covering core with a population-series formulation.**
+/-- **Uniform-covering bound with a population covering series.**
 
 The stochastic estimate follows vdV's covering route: finite Euclidean parameter nets give
 normalized covers uniformly over finite-discrete laws; after conditioning on the sample, the
-existing Rademacher chain uses `L²(Pₙ)` projections, finite links, and a terminal residual that
+Rademacher chain uses `L²(Pₙ)` projections, finite links, and a terminal residual that
 vanishes in the sample metric.  Symmetrization and expected sample-`L²` envelope control then
 give `C·δ`, uniformly in `n`.
 
 The conclusion is expressed using a shifted population-`L²(P)` series. Population nets
-do **not** control the sample residual. Here `hnets` is used only for the population-series
-step: the shell contains zero, so its `q = 1` net is nonempty and the regularized `q = 0` series
-head is at least `δ·entropyWeight(1)`.  This positive head absorbs the book bound `C·δ`.
-This estimate is used by `covering_chain_tree_core`. -/
+do **not** control the sample residual. Here `hnets` establishes that the shell contains zero,
+so its `q = 1` net is nonempty and the regularized `q = 0` series head is at least
+`δ·entropyWeight(1)`. This positive head absorbs the book bound `C·δ`. -/
 private theorem covering_process_chain_shifted_core
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1494,8 +1481,8 @@ private theorem covering_process_chain_shifted_core
         mul_le_mul_right hseries (ENNReal.ofReal (C₀ / w))
 
 /-- Reindex the shifted population-covering series onto its diagonal form.
-The stochastic work has already been discharged by the uniform finite-discrete/sample-`L²`
-core; this lemma is only `ℝ≥0∞` series algebra. -/
+The stochastic estimate is supplied by the uniform finite-discrete/sample-`L²`
+bound; this lemma is `ℝ≥0∞` series algebra. -/
 private theorem covering_chain_tree_core
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1559,8 +1546,8 @@ private theorem covering_chain_tree_core
         rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
-/-- Populate the population-net formulation from the finite shell covers, then convert the
-shifted series supplied by the covering core to the diagonal dyadic series. The population
+/-- Populate the population-net assumptions from the finite shell covers, then convert the
+shifted series to the diagonal dyadic series. The population
 nets are used for non-vacuity of the regularized series, not for the sample residual. -/
 private theorem covering_clamped_chain_bound_dyadic
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
@@ -1602,8 +1589,8 @@ private theorem covering_clamped_chain_bound_dyadic
 
 This converts the diagonal population-series bound from
 `covering_clamped_chain_bound_dyadic` into the population covering entropy integral via
-`covering_dyadic_sum_le_l2CoveringEntropyIntegral`.  The stochastic estimate used by the former
-is the existing uniform finite-discrete/sample-`L²` chain, including its terminal residual.
+`covering_dyadic_sum_le_l2CoveringEntropyIntegral`. The stochastic estimate used by the first bound
+is the uniform finite-discrete/sample-`L²` chain, including its terminal residual.
 
 For the fixed-center CLOSED shell `M̄_δ = {ω ↦ m_θ ω − m_{θ₀} ω : ‖θ − θ₀‖ ≤ δ}`, the empirical
 modulus over its **envelope-clamped** truncation `truncateClass M̄_δ (√n·κ·δ)` (clamped at the
@@ -1613,14 +1600,13 @@ modulus over its **envelope-clamped** truncation `truncateClass M̄_δ (√n·κ
 
     ∫⁻ ‖𝔾ₙ‖_{truncate M̄_δ (√n·κ·δ)} ≤ c₁ · l2CoveringEntropyIntegral δ M̄_δ P.
 
-**Assembly.** The preceding bound `covering_clamped_chain_bound_dyadic` bounds the
-clamped modulus by
-`ofReal K · Σ_q (1/2)^q·δ · √log(1 + N((1/2)^q·δ, M̄_δ))`; the stage-3 telescope comparison
+The preceding bound
+`covering_clamped_chain_bound_dyadic` bounds the clamped modulus by
+`ofReal K · Σ_q (1/2)^q·δ · √log(1 + N((1/2)^q·δ, M̄_δ))`; the telescope comparison
 `covering_dyadic_sum_le_l2CoveringEntropyIntegral` bounds that dyadic series by
 `2 · l2CoveringEntropyIntegral δ M̄_δ P`. With `c₁ = 2K` the two fold into the conclusion.
 The `√log(1/δ)` cancels because the covering scale is *relative* to the shell radius `δ`.
-The theorem `covering_chaining_shell_core` adds the `supNorm_clamp_lift` envelope tail
-at `√n·κ·δ`. -/
+The `supNorm_clamp_lift` inequality then adds the envelope tail at `√n·κ·δ`. -/
 private theorem covering_clamped_chain_bound
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1660,7 +1646,7 @@ private theorem covering_clamped_chain_bound
         rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
-/-- **Covering Dudley-chaining tree core, vdV Thm 2.14.1 / Cor 19.35.**
+/-- **Covering Dudley-chaining bound, vdV Thm 2.14.1 / Cor 19.35.**
 This combines the clamp-lift split `supNorm_clamp_lift` and the clamped uniform-covering bound
 `covering_clamped_chain_bound`.
 
@@ -1672,7 +1658,7 @@ level set `{√n·κ < |menv|}`, since the envelope `δ·menv` already carries t
 
     ∫⁻ ‖𝔾ₙ‖_{M̄_δ} ≤ c·(covering entropy integral) + c·√n·∫⁻ δ|menv| 1_{√n·κ < |menv|}.
 
-**Assembly.** Take the truncation level `Mc = √n·κ·δ` (with `κ` from
+Take the truncation level `Mc = √n·κ·δ` (with `κ` from
 `covering_clamped_chain_bound`) and the envelope `Φ = δ·|menv|`. Then:
 
 * `supNorm_clamp_lift` splits `∫⁻ ‖𝔾ₙ‖_{M̄_δ}` into `∫⁻ ‖𝔾ₙ‖_{truncate M̄_δ Mc}` plus the tail
@@ -1682,7 +1668,7 @@ level set `{√n·κ < |menv|}`, since the envelope `δ·menv` already carries t
 * the tail rewrites to `4√n·∫⁻ δ|menv|·1{√n·κ<|menv|}` since `|Φ| = δ|menv|` and, dividing by `δ>0`,
   `{Mc<|Φ|} = {√n·κ·δ < δ|menv|} = {√n·κ < |menv|}`.
 
-With `c = c₁ + 4` both terms fold into the conclusion. -/
+With `c = c₁ + 4` both terms give the conclusion. -/
 private theorem covering_chaining_shell_core
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1797,13 +1783,14 @@ The empirical-process modulus over the **fixed-center CLOSED shell**
 
 The clamped part follows the book's covering route: normalized covers uniformly over finite
 discrete laws, conditional sample-`L²` Rademacher chaining (including the finest residual), and
-symmetrization with expected sample-`L²` envelope control.  Population `L²(P)` covering numbers
-only package the population-series right-hand side; they are not used to control the
-sample residual.
+symmetrization with expected sample-`L²` envelope control. Population `L²(P)` covering numbers
+only package the population-entropy right-hand side; they are not used to control the sample
+residual.
 The result combines `covering_chaining_shell_core` with the scale-free covering entropy bound
 `l2CoveringEntropyIntegral_shell_le` (`≤ C_d·δ`) and the Chebyshev envelope-tail bound
-`shellEnvelope_tail_le` (`≤ C·δ`); the `n = 0` case is the trivial `𝔾₀ = 0`. The open-shell
-version follows by `supNormOver_mono`. -/
+`shellEnvelope_tail_le` (`≤ C·δ`); the `n = 0` case is the trivial `𝔾₀ = 0`.
+The theorem `centeredLipschitz_localizedModulus_bound` restricts this to the open shell via
+`supNormOver_mono`). -/
 theorem centeredLipschitz_shellModulus_bound_closed
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -1872,7 +1859,7 @@ theorem centeredLipschitz_shellModulus_bound_closed
                 (mul_nonneg hc_pos.le (mul_nonneg hCB_pos.le hδ.le))]
           congr 1; ring
 
-/-- **Uniform-entropy localized modulus bound (vdV Thm 2.14.1 / Cor 19.35).**
+/-- **Uniform-entropy localized modulus bound (vdV Theorem 2.14.1 / Corollary 19.35).**
 
 For `m` finite-dimensional (`θ ∈ ℝ^d`) with common `L²(P)` Lipschitz envelope `menv`, the expected
 empirical modulus over the **open shell** `M_δ = {ω ↦ m_θ ω − m_{θ₀} ω : ‖θ − θ₀‖ < δ}` grows
@@ -1880,29 +1867,31 @@ linearly in the shell radius, uniformly in `n`:
 
     ∃ C > 0, ∃ ρ > 0, ∀ 0 < δ < ρ, ∀ n,   ∫⁻ ξ, ‖𝔾ₙ‖_{M_δ} ∂μ ≤ C · δ.
 
-The bound is over the fixed-center shell `M_δ`, rather than the pairwise-difference slice
-`localizedDifferenceClass`. For nonlinear Lipschitz `m`, the latter has envelope `2·menv`, with
-no `δ` in the numerator of its covering estimate, so the `√log(1/δ)` term does not cancel; see
-the note after vdV Lemma 19.38 (p. 289).
+This is the conclusion used by `modulus_maximal_bound` in `MEstimator/Rate.lean`.
+The bound is over the fixed-center shell `M_δ`, not
+the pairwise-difference slice `localizedDifferenceClass` — the latter form is FALSE for nonlinear
+Lipschitz `m` (vdV Lemma 19.38 note, book p.289; its envelope is `2·menv`, no `δ` in the covering
+numerator, and the `√log(1/δ)` does not cancel). See `l2CoveringNumber_shell_le` for the
+corresponding covering bound.
 
 Proof: the covering-chaining core `centeredLipschitz_shellModulus_bound_closed` delivers the clean
 `C·δ` bound over the *closed* shell `M̄_δ`; the open shell `M_δ ⊆ M̄_δ`, so `supNormOver_mono` +
-`lintegral_mono` transports the bound. The proof chooses `ρ = 1`, although any positive value
-works because the covering bound is uniform in `δ > 0`. -/
+`lintegral_mono` transports the bound. `ρ = 1` (any positive value works — the covering bound is
+uniform in `δ > 0`; the `∃ ρ` binder is carried only to match `modulus_maximal_bound`). -/
 theorem centeredLipschitz_localizedModulus_bound
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- LEAN-ONLY: explicit measurability of the criterion and envelope.
+    -- explicit measurability of the criterion and envelope.
     (hm_meas : ∀ θ, Measurable (m θ))
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
-    -- USER-INPUT: an `L²(P)` envelope controls the criterion's Lipschitz modulus;
+    -- an `L²(P)` envelope controls the criterion's Lipschitz modulus;
     -- vdV Corollary 19.35.
     (hLip : ∀ θ₁ θ₂ ω, |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- LEAN-ONLY: measurability of each sample coordinate.
+    -- measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: iid observations with common law `P`.
+    -- iid observations with common law `P`.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :

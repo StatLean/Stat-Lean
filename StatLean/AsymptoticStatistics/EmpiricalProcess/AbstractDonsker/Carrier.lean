@@ -60,16 +60,11 @@ abbrev LinfF (F : Set (Ω → ℝ)) : Type _ := lp (fun _ : ↥F => ℝ) ∞
 
 /-- Borel `σ`-algebra on the carrier `ℓ∞(F)`, induced by its sup-norm topology.
 `lp` does not auto-carry a `MeasurableSpace`, so we install the Borel one (the
-standard choice for weak-convergence statements).
-
-`scoped` (active inside `AsymptoticStatistics.EmpiricalProcess`) rather than
-global: `LinfF` is reducibly a Mathlib `lp` type, and a global instance on a
-Mathlib type would leak to every importer and clash if Mathlib ever installs
-its own `MeasurableSpace` on `lp`. -/
-noncomputable scoped instance instMeasurableSpaceLinfF (F : Set (Ω → ℝ)) :
+standard choice for weak-convergence statements). -/
+noncomputable instance instMeasurableSpaceLinfF (F : Set (Ω → ℝ)) :
     MeasurableSpace (LinfF F) := borel _
 
-scoped instance instBorelSpaceLinfF (F : Set (Ω → ℝ)) :
+instance instBorelSpaceLinfF (F : Set (Ω → ℝ)) :
     BorelSpace (LinfF F) := ⟨rfl⟩
 
 /-- **Uniform `ℓ∞`-boundedness of the empirical process.** When `F` has an
@@ -146,7 +141,7 @@ Stated directly as an **ε-net** condition in the `distL2 P` semimetric (avoidin
 committing to a `UniformSpace` instance on the subtype `↥F`): for every `ε > 0`
 there is a finite subset `S ⊆ F` such that every `f ∈ F` is within `ε` of some
 `g ∈ S`. This is the `Metric.totallyBounded_iff` content of "`F` totally bounded
-in `L²(P)`", and is the form downstream Theorem 18.14 consumes. (vdV §19.2.) -/
+in `L²(P)`", in the form used in Theorem 18.14. (vdV §19.2.) -/
 lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hF : bracketingEntropyIntegral 1 F P < ⊤) :
     ∀ ε : ℝ, 0 < ε → ∃ S : Finset (Ω → ℝ), (↑S ⊆ F) ∧
@@ -214,8 +209,8 @@ dominated by `G ∈ L²` gives `MemLp f 2 P` via `MemLp.mono'`.
 
 The measurability hypothesis `hF_meas` is genuinely required: `IsEnvelope` is a
 pointwise size bound and carries no measurability of `F`'s members, while
-`MemLp.mono'` needs `AEStronglyMeasurable f P`. This matches vdV's assumption
-that `F` is a class of measurable functions. -/
+`MemLp.mono'` needs `AEStronglyMeasurable f P`. In vdV, `F` is a class of
+measurable functions. -/
 lemma memLp_of_mem_F {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
     (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
     (hF_meas : ∀ f ∈ F, Measurable f)
@@ -238,7 +233,7 @@ lemma distL2_comm {P : Measure Ω} (f g : Ω → ℝ) : distL2 P f g = distL2 P 
 /-- **Triangle inequality for `distL2` from direct `L²` membership.**
 
 For any three `L²(P)` functions, the `L²(P)` semidistance satisfies
-`distL2 P f h ≤ distL2 P f g + distL2 P g h`. This is the carrier-independent
+`distL2 P f h ≤ distL2 P f g + distL2 P g h`.  This is the carrier-independent
 form used when one endpoint is only in the `L²(P)` closure of a function class.
 
 The `ℝ≥0∞`-level triangle inequality `eLpNorm_add_le` (using
@@ -283,7 +278,7 @@ measurability of `F`'s members, `distL2 P f.1 g.1` is a genuine pseudometric on
 `PseudoMetricSpace.mk` defaults derived from `dist`.
 
 This is a `def` (not a global `instance`) because it depends on the hypotheses
-`hG_env`, `hG`, `hF_meas`; downstream consumers install it with `letI`. -/
+`hG_env`, `hG`, and `hF_meas`. -/
 @[reducible]
 noncomputable def distL2PseudoMetric {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
     (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)

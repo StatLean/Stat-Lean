@@ -6,14 +6,14 @@ import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterSlutsky
 /-!
 # Classical Z-estimator asymptotic normality (vdV Theorem 5.41, book p.68)
 
-Under the classical smoothness conditions of vdV §*5.6 (`θ ↦ ψ_θ(x)` twice continuously
-differentiable with second-order
+Under the classical conditions of vdV §*5.6,
+smoothness conditions (`θ ↦ ψ_θ(x)` twice continuously differentiable with second-order
 partials dominated by an integrable `ψ̈`, `Pψ_{θ₀} = 0`, `P‖ψ_{θ₀}‖² < ∞`, and `V = Pψ̇_{θ₀}`
 nonsingular), **every** consistent root sequence `θ̂ₙ` of `ℙₙψ_θ = 0` satisfies
 
     √n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)   and   √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ψψᵀ] V⁻ᵀ).
 
-## Argument (vdV p.68)
+## Proof route (vdV p.68)
 
 Taylor-expand `0 = ℙₙψ_{θ̂ₙ}` around `θ₀`: `ℙₙψ_{θ₀} + (ℙₙψ̇_{θ₀})(θ̂ₙ − θ₀) + R = 0` with
 the remainder `R` bounded by `½(ℙₙψ̈)‖θ̂ₙ − θ₀‖²` (`empirical_taylor_random`). The CLT gives
@@ -21,9 +21,9 @@ the remainder `R` bounded by `½(ℙₙψ̈)‖θ̂ₙ − θ₀‖²` (`empiric
 `ℙₙψ̈ = O_P(1)` (`empiricalPsiDdot_OP`); the remainder is `O_P(1)·o_P(1)² = o_P(1)`
 (`tendstoInProbZero_of_isBoundedInProb_mul`). Solving for `√n(θ̂ₙ − θ₀)` and multiplying by
 `(V + o_P(1))⁻¹` gives the linear representation (`classical_linear_representation`), and the
-CLT + continuous mapping + Slutsky give the normality (using
+CLT, continuous mapping, and Slutsky's theorem give asymptotic normality via
 `empiricalProcessVec_weakConverges` and the Gaussian pushforward
-`multivariateGaussian_map_toEuclideanCLM`, exactly as in vdV 5.21).
+`multivariateGaussian_map_toEuclideanCLM`, exactly as in vdV Theorem 5.21.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -67,7 +67,7 @@ theorem empiricalPsiDot_tendsto {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P :
 in probability. This is vdV's "This is bounded in probability by the law of large numbers"
 (book p.68), the boundedness of the second-derivative term controlling the Taylor remainder.
 
-The proof uses a *uniform-in-`n`* Markov bound rather than the WLLN. Each `ψ̈ ∘ Xᵢ` has law `P`
+Proof route: a *uniform-in-`n`* Markov bound rather than the WLLN. Each `ψ̈ ∘ Xᵢ` has law `P`
 (`hX_id` + `hX_law`), so the triangle inequality gives `E_μ|ℙₙψ̈| ≤ P|ψ̈| =: C` for **every**
 `n`, and Markov turns this into `μ{|ℙₙψ̈| > M} ≤ C/M ≤ ε` for `M := C/ε + 1`, simultaneously
 for all `n`. The WLLN route (`iid_lln_in_prob_seq`, converge to `Pψ̈` hence `O_P(1)`) would
@@ -78,6 +78,7 @@ theorem empiricalPsiDdot_OP {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (ψddot : Ω → ℝ) (hψddot_meas : Measurable ψddot) (hψddot_int : Integrable ψddot P)
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :
     IsBoundedInProb (fun _ : ℕ => μ)
@@ -155,7 +156,11 @@ theorem empiricalPsiDdot_OP {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     rw [hM]; field_simp
   nlinarith [hkey, hM_pos, hε, hMe]
 
-/-! ### Quantitative inversion and Euclidean estimates -/
+/-! ### Auxiliary estimates
+
+These estimates give a lower bound for an invertible matrix, two Euclidean
+coordinate/norm comparisons, and the deterministic core
+of vdV's "solve the Taylor expansion for `√n(θ̂ − θ₀)`" step. -/
 
 /-- **Invertible matrix ⇒ bounded below.** If `V.det` is a unit, then `toEuclideanCLM V`
 is bounded below: `‖x‖ = ‖V⁻¹(Vx)‖ ≤ ‖V⁻¹‖‖Vx‖`, so `b := 1/(‖V⁻¹‖ + 1)` works. This is
@@ -301,7 +306,7 @@ private lemma euclideanCLM_pert_bound {k : ℕ} (M V : Matrix (Fin k) (Fin k) �
     _ = Real.sqrt k * ((k : ℝ) * ζ) * ‖A‖ := by ring
 
 /-- **The `√n`-scaled Taylor expansion at a root** (vdV p.68, "Taylor-expand and multiply
-by `√n`"). Deterministic consequence of `empirical_taylor_random` together with
+by `√n`"). This is a deterministic consequence of `empirical_taylor_random` together with
 `ℙₙψ_{θ̂} = 0` (`hroot`) and `Pψ_{θ₀} = 0` (`hPθ₀_zero`): on the event `θ̂ ∈ closedBall θ₀ ρ`,
 the empirical Jacobian applied to `√n(θ̂ − θ₀)` reproduces `−𝔾ₙψ_{θ₀}` up to a remainder
 bounded by `√k·½|ℙₙψ̈|·‖θ̂ − θ₀‖ · ‖√n(θ̂ − θ₀)‖`. -/
@@ -350,7 +355,7 @@ private lemma classical_scaled_taylor {k : ℕ} {Ω : Type*} [MeasurableSpace Ω
         = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k)
             (Matrix.of fun j i => empiricalAvg (fun x => psiDot ψ θ₀ x j i) n Xs)
             (Real.sqrt n • (t - θ₀))) j + (empiricalProcessVec P ψ θ₀ n Xs) j := rfl
-    -- Apply the empirical Taylor bound with the root condition substituted.
+    -- The empirical Taylor expansion with the root condition substituted.
     have hTb := empirical_taylor_random ψ θ₀ ψddot hbound n Xs t ht j
     rw [hroot j] at hTb
     rw [hadd, hMj, hGj]
@@ -388,15 +393,15 @@ private lemma classical_scaled_taylor {k : ℕ} {Ω : Type*} [MeasurableSpace Ω
 /-! ### Linear representation -/
 
 set_option maxHeartbeats 400000 in
--- The five-event outer-measure estimate requires a larger elaboration budget.
-/-- **Linear representation of the classical Z-estimator.** Under the hypotheses of
-vdV Theorem 5.41, the estimator admits the `o_P(1)` linear expansion
+-- The five-event probability assembly exceeds the default elaboration budget.
+/-- **Linear representation of the classical Z-estimator.** Under the stated
+hypotheses, the estimator admits the `o_P(1)` linear expansion
 
     `√n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)`,
 
 stated as `√n(θ̂ₙ − θ₀) + V⁻¹ 𝔾ₙψ_{θ₀} →ₚ 0` (`empiricalProcessVec P ψ θ₀` reduces to
-`√n ℙₙψ_{θ₀}` because `Pψ_{θ₀} = 0`). The argument combines the Taylor expansion
-of `0 = ℙₙψ_{θ̂ₙ}`, `ℙₙψ̇_{θ₀} →ₚ V`, `ℙₙψ̈ = O_P(1)`, and `𝔾ₙψ_{θ₀} = O_P(1)` (CLT +
+`√n ℙₙψ_{θ₀}` because `Pψ_{θ₀} = 0`). Assembly: Taylor expansion of `0 = ℙₙψ_{θ̂ₙ}` (`G`),
+`ℙₙψ̇_{θ₀} →ₚ V` (`D`), `ℙₙψ̈ = O_P(1)` (`E`), `𝔾ₙψ_{θ₀} = O_P(1)` (CLT +
 `isBoundedInProb_of_weakConverges`).
 
 The rate `√n(θ̂ₙ − θ₀) = O_P(1)` is **not** assumed: as in vdV it is bootstrapped from the
@@ -449,9 +454,9 @@ theorem classical_linear_representation
   -- Measurability of the Jacobian entries and the pointwise Taylor bound.
   have hVmeas := psiDot_measurable ψ θ₀ Θ hΘ_open hθ₀ hψ_meas hC2
   have hbound := pointwise_taylor_bound ψ θ₀ Θ ψddot hρ hΘ_open hball hC2 hdom
-  -- The empirical Jacobian converges entrywise, while `ℙₙψ̈ = O_P(1)`.
+  -- The empirical Jacobian converges entrywise and the derivative envelope is `O_P(1)`.
   have hD := empiricalPsiDot_tendsto P ψ θ₀ hVmeas hVint μ X hX_meas hX_indep hX_id hX_law
-  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_id
+  have hE := empiricalPsiDdot_OP P ψddot hψddot_meas hψddot_int μ X hX_meas hX_indep hX_id
     hX_law
   -- CLT ⇒ `𝔾ₙψ_{θ₀} = O_P(1)`.
   have hG_meas : ∀ n, Measurable (fun ξ : Ξ =>
@@ -469,7 +474,7 @@ theorem classical_linear_representation
     isBoundedInProb_of_weakConverges hG_meas
       (empiricalProcessVec_weakConverges P ψ θ₀ μ X hX_meas hX_indep hX_id hX_law
         (hψ_meas θ₀) hψ_L2 hPθ₀_zero)
-  -- Combine the probabilistic estimates.
+  -- The probabilistic assembly.
   intro ε hε
   refine Metric.tendsto_atTop.mpr fun η hη => ?_
   -- Uniform `O_P(1)` thresholds for `ℙₙψ̈` and `𝔾ₙψ_{θ₀}`.
@@ -733,17 +738,17 @@ continuously differentiable for every `x` (`hC2`). Suppose `Pψ_{θ₀} = 0` (`h
 `P‖ψ_{θ₀}‖² < ∞` (`hψ_L2`), and the matrix `V = Pψ̇_{θ₀}` exists (`hVint`) and is
 nonsingular (`hV`). Assume the second-order partial derivatives are dominated by a fixed
 integrable function `ψ̈(x)` for every `θ` in a neighborhood of `θ₀` (`hdom`, `hψddot_int`).
-Then every measurable consistent estimator sequence `θ̂ₙ` whose exact-root event has inner
-probability tending to one (`hroot`, `hcons`) satisfies vdV's displayed representation and its
-"in particular" asymptotic normality. The literal exact-for-all-samples premise is recovered by
+Then every consistent estimator sequence `θ̂ₙ` whose exact-root event has inner probability tending
+to one (`hroot`, `hcons`) satisfies vdV's displayed representation and its "in particular"
+asymptotic normality. The literal exact-for-all-samples premise is recovered by
 `classical_zEstimator_normality_of_exact_root` below.
 
     √n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙψ_{θ₀} + o_P(1)   and   √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ψψᵀ] V⁻ᵀ).
 
-`classical_linear_representation` gives the representation;
+The theorem `classical_linear_representation` gives the representation;
 `empiricalProcessVec_weakConverges` (CLT) + `multivariateGaussian_map_toEuclideanCLM` (CMT
 by `−V⁻¹`) + `WeakConverges.slutsky_of_tendstoInMeasure_dist` transport it to the Gaussian
-limit, exactly as in vdV 5.21. -/
+limit, exactly as in vdV Theorem 5.21. -/
 theorem classical_zEstimator_normality
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -787,7 +792,7 @@ theorem classical_zEstimator_normality
   -- The "in particular": CLT + continuous mapping by `−V⁻¹` + Slutsky.
   obtain ⟨hlead_meas, hmap'⟩ := classical_leading_term_limit P ψ θ₀ hψ_meas hPθ₀_zero
     hψ_L2 μ X hX_meas hX_indep hX_id hX_law
-  -- Slutsky transports the Gaussian limit along the `o_P(1)` representation error.
+  -- Slutsky: transport the Gaussian limit along the `o_P(1)` difference.
   refine WeakConverges.slutsky_of_tendstoInMeasure_dist
     (X := fun n ξ => Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (-(Vmat P ψ θ₀)⁻¹)
       (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)))
@@ -817,8 +822,7 @@ theorem classical_zEstimator_normality
   exact hlin ε hε
 
 /-- **Classical Z-estimator outer asymptotic normality — vdV Theorem 5.41.**
-This form does not require measurability of the selected root; it assumes that the exact-root
-event has inner probability tending to one. -/
+This form does not require measurability of the selected approximate root. -/
 theorem classical_zEstimator_normality_outer
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -892,9 +896,9 @@ theorem classical_zEstimator_normality_outer
   simp only [hset]
   exact hlin ε hε
 
-/-- **Exact-root compatibility form of vdV Theorem 5.41.** This preserves the former
-exact-for-every-sample interface. Its premise supplies `univ` as a measurable inner witness,
-so the inner-probability form applies without any additional assumption. -/
+/-- **Exact-root form of vdV Theorem 5.41.** Its premise supplies `univ` as a
+measurable inner witness, so the inner-probability theorem applies without an
+additional assumption. -/
 theorem classical_zEstimator_normality_of_exact_root
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)

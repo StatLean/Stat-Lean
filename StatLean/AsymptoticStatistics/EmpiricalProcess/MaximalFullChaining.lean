@@ -4,10 +4,9 @@ import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectatio
 /-!
 # Tail-free chaining for a fully clamped bracketing partition
 
-This module reserves the partition-level analytic core used by the full-class
-bracketing maximal inequality (vdV Lemma 19.34, pp.286--288).  It deliberately
-does not import the general assembly module: callers construct the data below
-and pass it into the tail-free chain.
+The full-class bracketing maximal inequality (vdV Lemma 19.34, pp.286--288)
+uses a clamped nested partition whose head and successive links satisfy a
+tail-free chaining bound.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -63,8 +62,8 @@ structure FullClampedPartitionData
   initial_comparison : partition.Nq q₀ ≤ partition.coverCard q₀
   /-- Constitutive (vdV §19.6 p.287): along every member's cell chain, either
   all links remain small, or there is a first crossing and all later B-gates
-  are empty.  This is construction output, never a provider hypothesis of the
-  public Lemma 19.34 statement. -/
+  are empty.  This condition is supplied by the construction and does not
+  appear among the assumptions of the public Lemma 19.34 statement. -/
   firstCrossing_tailEmpty : ∀ f (hf : f ∈ truncateClass F t) x,
     (∀ k, partition.Δ (q₀ + k) (cellChain partition hf k) x ≤
         Real.sqrt n * chainThreshold partition δ (q₀ + k)) ∨
@@ -76,17 +75,16 @@ structure FullClampedPartitionData
         ∀ l, k < l →
           ¬ chainB partition δ n (q₀ + l) (cellChain partition hf l) x
 
-/-- The regularized factor-eight proof object for the full-class chain.
+/-- The regularized factor-eight data for the full-class chain.
 
-Following vdV §19.6 p.287, `base` is the
+Constitutive (vdV §19.6 p.287): `base` is the
 full clamped partition at scale `8 * δ` and initial index `0`;
 `initial_small` and `head_visible` encode the two comparisons corresponding to
-the book's `4δ ≤ 2⁻ᵠ₀ ≤ 8δ` and `2a(δ) ≤ a_q₀`.  This derived object is
-never a public hypothesis of Lemma 19.34. -/
+the book's `4δ ≤ 2⁻ᵠ₀ ≤ 8δ` and `2a(δ) ≤ a_q₀`. -/
 structure RegularizedFullClampedPartitionData
     (F : Set (Ω → ℝ)) (P : Measure Ω) (Φ : Ω → ℝ)
     (δ : ℝ) (n : ℕ) (t : ℝ) where
-  /-- Constitutive (vdV §19.6 p.287, LEAN-INTERNAL): the clamped nested
+  /-- Constitutive (vdV §19.6 p.287): the clamped nested
   partition is built at scale `8 * δ` with initial index `0`. -/
   base : FullClampedPartitionData F P Φ 0 (8 * δ) n t
   /-- Constitutive (vdV §19.6 p.287): every head-cell oscillation lies below
@@ -423,7 +421,7 @@ theorem fullClamped_chain_A_dyadic_bound :
         exact ⟨i⟩
       -- The A-gated jump family.
       set g : Fin (B.Nq (m + 1)) → Ω → ℝ := fun i => truncJump B δ (n + 1) hm i with hg_def
-      -- Per-ancestor gate: the A-set `{x | chainA B δ (n + 1) m (parent i) x}` is, for
+      -- The A-set `{x | chainA B δ (n + 1) m (parent i) x}` is, for
       -- each cell index, a countable intersection (over levels `p ≤ m`) of the
       -- single-cell sublevel sets `{x | Δ_p (ancestor) x ≤ √(n + 1)·a_p}` (the `∀ j` layer is
       -- gone; each `p` contributes ONE cell, the parent's level-`p` ancestor).
@@ -813,7 +811,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
               rw [hε_def, hpoweq]; ring
             rw [hexp, hofpow (m + 1),
               ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
-          -- Final per-level assembly.
+          -- Combine the estimates at this level.
           rw [hKε_eq]
           -- `∑ b p = ofReal δ · ∑ entropyIntegrand` (each `p ∈ Icc` has `q₀ ≤ p`).
           have hb_sum :
@@ -853,7 +851,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
           rw [hthr_eq]
           by_cases hω : ω ∈ {y | chainB B δ (n + 1) (m + 1) i y}
           · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
-            -- Per-ancestor gate: the middle clause pins `f`'s OWN level-`m`
+            -- The middle clause pins `f`'s own level-`m`
             -- cell-ancestor envelope directly, `Δ_m (ancestor) ω ≤ √(n + 1)·chainThreshold m`;
             -- nesting `Δ_{m+1} i ≤ Δ_m (ancestor)` is `Δ_le_ancestor`.
             have hΔ_nn : 0 ≤ B.Δ (m + 1) i ω :=
@@ -1355,8 +1353,8 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
               ring
 
 /-- The scale-`8δ` dyadic entropy series is controlled by fifteen times the
-target-`δ` series. The constants `8` and `15` normalize the book's
-initial-scale window (vdV §19.6 p.287). -/
+target-`δ` series. The constants `8` and `15` encode the
+normalization of the book's initial-scale window (vdV §19.6 p.287). -/
 theorem fullClamped_factorEight_dyadic_le_target (hδ : 0 < δ) :
     (∑' k : ℕ, ENNReal.ofReal ((1 / 2 : ℝ) ^ k * (8 * δ)) *
       entropyIntegrand ((1 / 2 : ℝ) ^ k * (8 * δ)) F P) ≤
@@ -1404,11 +1402,7 @@ theorem fullClamped_factorEight_dyadic_le_target (hδ : 0 < δ) :
             norm_num
 
 omit [MeasurableSpace Ξ] in
-/-- Tail-free specialization of the existing gated-telescope interchange.
-
-This local copy is needed because the generic chaining core in
-`ChainingAssembly` is private; its hypotheses are discharged from the
-regularized full-clamped data below. -/
+/-- The gated-telescope interchange for a tail-free full-clamped chain. -/
 private theorem fullClamped_Gn_telescope_link_bound
     [IsProbabilityMeasure P]
     (B : NestedBracketPartition F P q₀ C)
@@ -1847,9 +1841,7 @@ for the full clamped class (vdV Lemma 19.34, p.287). -/
 theorem fullClamped_chain_supNorm_le_pointwise
     [IsProbabilityMeasure P]
     (D : RegularizedFullClampedPartitionData F P Φ δ n t)
-    -- a realized iid-sample coordinate map for `𝔾ₙ`.
     {X : ℕ → Ξ → Ω} (ξ : Ξ)
-    -- positive scale/sample size select the chaining branch.
     (hδ : 0 < δ) (hn : 1 ≤ n) :
     supNormOver (truncateClass F t)
         (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ≤
@@ -1925,13 +1917,11 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
         (μ : Measure Ξ) [IsProbabilityMeasure μ]
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (δ : ℝ) (n : ℕ) (t : ℝ)
         (D : RegularizedFullClampedPartitionData F P Φ δ n t)
-        -- iid sample representation of `𝔾ₙ`.
         (X : ℕ → Ξ → Ω)
         (hX_meas : ∀ i, Measurable (X i))
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
-        -- positivity selects the finite dyadic construction.
         (hδ : 0 < δ),
       ∃ Maj : Ξ → ℝ≥0∞, Measurable Maj ∧
       (∀ ξ, supNormOver (truncateClass F t)
@@ -1979,7 +1969,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
           (truncOsc B (8 * δ) n (0 + q) i)|) + bmeanConst q with hoscDom_def
     set Maj : Ξ → ℝ≥0∞ := fun ξ =>
       head ξ + (∑' q, oscDom q ξ) + (∑' q, jump q ξ) with hMaj_def
-    -- Local measurable-set adapters for the A/B gates at initial index zero.
+    -- Measurability of the A/B gates at initial index zero.
     have hchainA_meas (q : ℕ) (i : Fin (B.Nq q)) :
         MeasurableSet {x | chainA B (8 * δ) n q i x} := by
       have hset : {x | chainA B (8 * δ) n q i x} =
@@ -2161,7 +2151,6 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
 /-- The full-class dyadic series is bounded by the bracketing entropy integral
 at `δ` (vdV Lemma 19.34, p.288). -/
 theorem fullClamped_dyadic_to_J
-    -- positivity is the domain of the entropy integral comparison.
     (hδ : 0 < δ) :
     (∑' k : ℕ, ENNReal.ofReal ((1 / 2 : ℝ) ^ k * δ) *
         entropyIntegrand ((1 / 2 : ℝ) ^ k * δ) F P) ≤
@@ -2169,10 +2158,8 @@ theorem fullClamped_dyadic_to_J
   exact dyadic_sum_le_bracketingEntropyIntegral hδ
 
 set_option linter.unusedVariables false in
-/-- Partition-level, tail-free full-clamped maximal bound. It consumes the
-structural object constructed by
-`exists_fullClampedNestedPartition`, rather than exposing any of those derived
-facts on the public theorem. -/
+/-- Partition-level, tail-free full-clamped maximal bound. It uses the structural
+object constructed by `exists_fullClampedNestedPartition`. -/
 theorem bracketingMaximal_of_fullClampedPartition :
     ∃ c : ℝ, 0 < c ∧
       ∀ (Ω : Type*) [MeasurableSpace Ω]
@@ -2182,13 +2169,11 @@ theorem bracketingMaximal_of_fullClampedPartition :
         (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
         (δ : ℝ) (n : ℕ) (t : ℝ)
         (D : RegularizedFullClampedPartitionData F P Φ δ n t)
-        -- iid sample representation of `𝔾ₙ`.
         (X : ℕ → Ξ → Ω)
         (hX_meas : ∀ i, Measurable (X i))
         (hX_iindep : ProbabilityTheory.iIndepFun X μ)
         (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
         (hX_law : μ.map (X 0) = P)
-        -- positivity selects the finite-entropy chaining branch.
         (hδ : 0 < δ),
       outerExpectation μ (fun ξ => supNormOver (truncateClass F t)
         (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) ≤

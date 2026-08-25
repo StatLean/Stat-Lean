@@ -7,8 +7,8 @@ import Mathlib.Topology.MetricSpace.Pseudo.Basic
 /-!
 # Local difference geometry for changing classes
 
-Elementary adapters connecting metric-local increments of a changing class
-to the global difference-class uniform covering bounds.
+The results connect metric-local increments of a changing class to global
+uniform covering bounds for its difference class.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

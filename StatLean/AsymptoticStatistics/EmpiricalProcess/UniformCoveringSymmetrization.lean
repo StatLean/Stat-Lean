@@ -4,13 +4,6 @@ import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectatio
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Pi
 
-/-!
-# Symmetrization of empirical-process suprema
-
-Ghost-sample and Rademacher-sign symmetrization for pointwise-dense classes,
-including the exact factor-two conditional Rademacher bound.
--/
-
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter
 open scoped ENNReal

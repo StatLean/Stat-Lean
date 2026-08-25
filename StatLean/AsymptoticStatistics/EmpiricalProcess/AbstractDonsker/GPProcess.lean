@@ -46,14 +46,12 @@ which is exactly the Brownian-bridge covariance.
 * `gpX_hasGaussianLaw` — each `gpX f` has a Gaussian law under `iidStdGaussian`.
 * `gpX_cov` — `∫ gpX f · gpX g = P(fg) − Pf·Pg`, the Brownian-bridge covariance.
 
-## Hypotheses (threaded downstream to `exists_pBrownianBridge`)
+## Hypotheses
 
-The construction uses three genuine inputs:
-`hF_meas` (measurability of `F`'s members), `hH_inf` (infinite-dimensionality of
-the centred span), and `hH_sep` (separability of the centred span). The first is
-the carrier's standing measurability assumption; the latter two pin down that
-`gpH` is a separable infinite-dimensional Hilbert space, the exact hypotheses of
-`HilbertBasis.exists_hilbertBasis_nat`.
+The construction assumes `hF_meas` (measurability of `F`'s members), `hH_inf`
+(infinite-dimensionality of the centred span), and `hH_sep` (separability of the
+centred span). Thus `gpH` is a separable infinite-dimensional Hilbert space, the
+setting of `HilbertBasis.exists_hilbertBasis_nat`.
 
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §18.1, §19.2.
 -/
@@ -263,9 +261,8 @@ theorem gpX_cov (f g : ↥F) :
 /-! ## Helper C: the centred-embedding norm is dominated by the `L²` distance -/
 
 /-- **`L²` norm as a real square-root integral.** For `MemLp f 2 P`, the real
-`Lp`-norm `(eLpNorm f 2 P).toReal` equals `√(∫ f² ∂P)`. (Re-derived inline from
-`MemLp.eLpNorm_eq_integral_rpow_norm`; identical to the `QMDAnalytic` bridge but
-that module is not in this file's import closure.) -/
+`Lp`-norm `(eLpNorm f 2 P).toReal` equals `√(∫ f² ∂P)`, by
+`MemLp.eLpNorm_eq_integral_rpow_norm`. -/
 private theorem eLpNorm_toReal_eq_sqrt_integral_sq {μ : Measure Ω}
     {f : Ω → ℝ} (hf : MemLp f 2 μ) :
     (eLpNorm f 2 μ).toReal = Real.sqrt (∫ ω, f ω ^ 2 ∂μ) := by
@@ -404,8 +401,7 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
 /-- **`L²`-norm of the increment is bounded by the `L²` distance.** Since
 `gpX s − gpX t` agrees a.e. with the isonormal image `W h'` (`h' = gpEmbed s −
 gpEmbed t`), and `W` is an isometry into `L²(iidStdGaussian)`, the `eLpNorm` of the
-increment equals `‖h'‖_H`, which is `≤ distL2 P s t` by `norm_gpEmbed_sub_le`. This
-feeds the convergence-in-measure step of `gpPath_aeeq_coord`. -/
+increment equals `‖h'‖_H`, which is `≤ distL2 P s t` by `norm_gpEmbed_sub_le`. -/
 theorem eLpNorm_gpX_sub_le (s t : ↥F) :
     eLpNorm (fun ω => gpX hF_env hF_meas hH_inf hH_sep s ω
         - gpX hF_env hF_meas hH_inf hH_sep t ω) 2 iidStdGaussian
@@ -450,13 +446,9 @@ the `F`-indexed process `gpX` on the `distL2`-pseudometric space `↥F`:
   bracketing-entropy integral).
 
 The conclusion is a countable dense `T₀ ⊆ ↥F` on which, almost surely, the path
-`f ↦ gpX f ω` is bounded and uniformly continuous. This is the per-skeleton input
-that `exists_pBrownianBridge` extends to a path over all of `↥F`.
-
-`hF_ne : F.Nonempty` is kept as a hypothesis (rather than derived from `hH_inf`):
-deriving nonemptiness of `↥F` from `¬FiniteDimensional ℝ ↥(gpH …)` is a multi-step
-detour; the carrier nonemptiness is a genuine, cheap external input that threads
-downstream to `exists_pBrownianBridge` anyway. -/
+`f ↦ gpX f ω` is bounded and uniformly continuous. The hypothesis
+`hF_ne : F.Nonempty` supplies the nonempty carrier needed for the dense
+skeleton. -/
 theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
     (hF_meas : ∀ f ∈ F, Measurable f)
     (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
@@ -473,7 +465,8 @@ theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   obtain ⟨net, hnet, hmono, hDud⟩ := exists_dudley_net hF_ent hF_ne
   refine _root_.GaussianChaining.gaussianChaining_UC (μ := iidStdGaussian) (K := 1) zero_le_one
-    net hnet hmono (fun s t => ?_) hDud
+    (gpX_measurable ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep) net hnet hmono
+    (fun s t => ?_) hDud
   -- Sub-Gaussian proxy: `dist s t = distL2 P s t` (defeq under the `letI`), and the
   -- chaining wants `⟨1² · dist s t², _⟩ = ⟨distL2 P s t², _⟩` (`1² · x = x`).
   refine (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy ?_
@@ -502,27 +495,29 @@ variable {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
 
 /-- The **Dudley dyadic net** of `(↥F, distL2 P)` used to build the skeleton: the
 `Classical.choose` of `exists_dudley_net`. Fixed independently of `ω`. The skeleton
-`gpSkeleton` is its dyadic union `⋃ j, net j`, exposing the net to the chaining
-modulus consumer (`PBridgeTight`). -/
-def gpSkeletonNet
+`gpSkeleton` is its dyadic union `⋃ j, net j`, used for the chaining modulus in
+`PBridgeTight`. -/
+def gpSkeletonNet (hF_meas : ∀ f ∈ F, Measurable f)
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) : ℕ → Finset ↥F :=
   (exists_dudley_net hF_ent hF_ne).choose
 
-/-- The countable dense skeleton `T₀ = ⋃ j, gpSkeletonNet j ⊆ ↥F`: the dyadic union
-of the Dudley net. Defined transparently (not as an opaque `Classical.choose` of
-`gpX_aeUC`) so that `gpSkeleton = ⋃ j, net j` holds **definitionally** for the net
-of `exists_dudley_net`; this is the net–skeleton alignment the chaining-modulus
-transport in `PBridgeTight` consumes. -/
-def gpSkeleton
+/-- The countable dense skeleton `T₀ = ⋃ j, gpSkeletonNet j ⊆ ↥F`, defined as the
+dyadic union of the Dudley net. The identity `gpSkeleton = ⋃ j, net j` is used in
+the chaining-modulus argument in `PBridgeTight`. -/
+def gpSkeleton (hF_meas : ∀ f ∈ F, Measurable f)
+    (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
+    (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) : Set ↥F :=
-  ⋃ j : ℕ, (↑(gpSkeletonNet hF_ent hF_ne j) : Set ↥F)
+  ⋃ j : ℕ, (↑(gpSkeletonNet hF_meas hF_ent hF_ne j) : Set ↥F)
 
-/-- **Net–skeleton alignment.** The skeleton is the dyadic union of its net (true
-by definition); stated as a lemma so consumers can rewrite without unfolding. -/
-theorem gpSkeleton_eq_iUnion_net
+/-- **Net–skeleton alignment.** The skeleton is the dyadic union of its net by
+definition. -/
+theorem gpSkeleton_eq_iUnion_net (hF_meas : ∀ f ∈ F, Measurable f)
+    (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
+    (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) :
-    gpSkeleton hF_ent hF_ne
-      = ⋃ j : ℕ, (↑(gpSkeletonNet hF_ent hF_ne j) : Set ↥F) :=
+    gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
+      = ⋃ j : ℕ, (↑(gpSkeletonNet hF_meas hF_ent hF_ne j) : Set ↥F) :=
   rfl
 
 /-- The specification of `gpSkeleton`: countable, dense (in the `distL2`
@@ -534,24 +529,25 @@ theorem gpSkeleton_spec (hF_meas : ∀ f ∈ F, Measurable f)
     (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty) :
     letI inst := distL2PseudoMetric hG_env hG hF_meas
-    (gpSkeleton hF_ent hF_ne).Countable
+    (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).Countable
       ∧ @Dense ↥F inst.toUniformSpace.toTopologicalSpace
-          (gpSkeleton hF_ent hF_ne) ∧
+          (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) ∧
       (∀ᵐ ω ∂iidStdGaussian,
         (BddAbove (Set.range
-          (fun t : gpSkeleton hF_ent hF_ne =>
+          (fun t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne =>
             |gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω|))) ∧
         @UniformContinuousOn ↥F ℝ
           (distL2PseudoMetric hG_env hG hF_meas).toUniformSpace _
           (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
-          (gpSkeleton hF_ent hF_ne)) := by
+          (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)) := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   -- Specs of the explicit Dudley net (= `gpSkeletonNet` by definition).
   obtain ⟨hnet, hmono, hDud⟩ := (exists_dudley_net hF_ent hF_ne).choose_spec
-  -- The explicit-witness chaining variant states `countable ∧ dense ∧ a.e.-(bdd+UC)`
-  -- on `⋃ j, net j`, which is `gpSkeleton` *definitionally* (no opaque choose).
+  -- The chaining theorem gives countability, density, and almost-sure bounded
+  -- uniform continuity on `⋃ j, net j = gpSkeleton`.
   exact _root_.GaussianChaining.gaussianChaining_UC_iUnion (μ := iidStdGaussian) (K := 1)
-    zero_le_one (gpSkeletonNet hF_ent hF_ne) hnet hmono
+    zero_le_one (gpX_measurable ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
+    (gpSkeletonNet hF_meas hF_ent hF_ne) hnet hmono
     (fun s t => (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy
       (by
         rw [← NNReal.coe_le_coe]
@@ -570,12 +566,12 @@ This is the a.s. event of `gpSkeleton_spec`; `gpPath ω` uses the UC extension o
 this event and is `0` off it. -/
 def gpGood (ω : ℕ → ℝ) : Prop :=
     (BddAbove (Set.range
-      (fun t : gpSkeleton hF_ent hF_ne =>
+      (fun t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne =>
         |gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω|)))
     ∧ @UniformContinuousOn ↥F ℝ
         (distL2PseudoMetric hG_env hG hF_meas).toUniformSpace _
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
-        (gpSkeleton hF_ent hF_ne)
+        (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
 
 /-- The **uniformly-continuous extension** of the skeleton path `t ↦ gpX t ω`
 (restricted to `T₀ = gpSkeleton`) to all of `↥F`, in the `distL2` pseudometric
@@ -584,9 +580,9 @@ boundedness, agreement on `T₀`) hold on the good set. -/
 def pathExtend (ω : ℕ → ℝ) : ↥F → ℝ :=
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @Dense.extend ↥F ℝ inst.toUniformSpace.toTopologicalSpace _
-      (gpSkeleton hF_ent hF_ne)
+      (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
       (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
-      ((gpSkeleton hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω))
 
 /-- On the good set, the restriction of the skeleton path to `T₀` is uniformly
@@ -596,7 +592,7 @@ theorem uniformContinuous_restrict_of_good {ω : ℕ → ℝ}
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @UniformContinuous _ ℝ
       (@instUniformSpaceSubtype ↥F _ inst.toUniformSpace) _
-      ((gpSkeleton hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)) := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   exact (@uniformContinuousOn_iff_restrict ↥F ℝ inst.toUniformSpace _ _ _).mp hω.2
@@ -668,7 +664,7 @@ theorem bddAbove_pathExtend_of_good {ω : ℕ → ℝ}
 /-- On the good set, `pathExtend ω` agrees with `gpX · ω` on the skeleton `T₀`. -/
 theorem pathExtend_eq_on_skeleton {ω : ℕ → ℝ}
     (hω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω)
-    (t : gpSkeleton hF_ent hF_ne) :
+    (t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :
     pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω (t : ↥F)
       = gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t : ↥F) ω := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
@@ -692,8 +688,8 @@ open scoped Classical in
 uniformly-continuous extension `pathExtend ω` of the skeleton path, packaged as an
 element of `ℓ∞(F)` via `memℓp_pathExtend_of_good`. Off the good set it is `0`.
 
-This is the genuine, bounded-by-construction realisation of the `P`-Brownian-bridge
-candidate limit used by `exists_pBrownianBridge` for Theorem 18.14. -/
+This is a bounded realisation of the `P`-Brownian-bridge candidate limit used in
+Theorem 18.14. -/
 noncomputable def gpPath (ω : ℕ → ℝ) : LinfF F :=
   if hω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω then
     ⟨fun f => pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f,
@@ -731,7 +727,7 @@ theorem gpPath_aeeq_coord (f : ↥F) :
   -- skeleton sequence `tₙ → f`.
   have hdense := (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
   have hf_mem : f ∈ @closure ↥F inst.toUniformSpace.toTopologicalSpace
-      (gpSkeleton hF_ent hF_ne) := by
+      (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
     rw [@Dense.closure_eq ↥F inst.toUniformSpace.toTopologicalSpace _ hdense]; trivial
   obtain ⟨t, ht_mem, ht_tendsto⟩ :=
     (@mem_closure_iff_seq_limit ↥F inst.toUniformSpace.toTopologicalSpace hfu _ _).mp hf_mem
@@ -804,7 +800,7 @@ theorem gpPath_aeeq_coord (f : ↥F) :
   -- and `gpX (t (ns k)) ω → gpX f ω` (a.e. subsequence).
   exact tendsto_nhds_unique hgpX_tendsto_path hns_ae_ω
 
-/-! ## Strong measurability of `gpPath` and the law `ν`
+/-! ## Strong measurability of `gpPath` and its law `ν`
 
 `gpPath` is **not** directly Borel-measurable into `ℓ∞(F)` (the UC extension
 `Dense.extend` is a choice-based cluster-point limit with no measurable-in-`ω`
@@ -836,7 +832,7 @@ def gpEnum : ℕ → ↥F :=
 /-- Each `gpEnum k` lies in the skeleton `T₀`. -/
 theorem gpEnum_mem (k : ℕ) :
     gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k
-      ∈ gpSkeleton hF_ent hF_ne := by
+      ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne := by
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
     (by
@@ -849,7 +845,7 @@ theorem gpEnum_mem (k : ℕ) :
 /-- Every skeleton point is `gpEnum k` for some index `k` (the enumeration is
 onto `T₀`). -/
 theorem gpEnum_surjOn {t : ↥F}
-    (ht : t ∈ gpSkeleton hF_ent hF_ne) :
+    (ht : t ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :
     ∃ k, gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k = t := by
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
@@ -877,7 +873,7 @@ theorem gpFinset_nonempty (n : ℕ) :
 /-- Every element of `gpFinset n` lies in the skeleton `T₀`. -/
 theorem gpFinset_subset_skeleton (n : ℕ) {x : ↥F}
     (hx : x ∈ gpFinset hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n) :
-    x ∈ gpSkeleton hF_ent hF_ne := by
+    x ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne := by
   classical
   rw [gpFinset, Finset.mem_image] at hx
   obtain ⟨k, _, rfl⟩ := hx
@@ -903,7 +899,7 @@ theorem gpNearest_mem (n : ℕ) (f : ↥F) :
 /-- `gpNearest n f` lies in the skeleton `T₀`. -/
 theorem gpNearest_mem_skeleton (n : ℕ) (f : ↥F) :
     gpNearest hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n f
-      ∈ gpSkeleton hF_ent hF_ne :=
+      ∈ gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne :=
   gpFinset_subset_skeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n
     (gpNearest_mem hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n f)
 
@@ -923,7 +919,7 @@ theorem gpNearest_min (n : ℕ) (f : ↥F) {g : ↥F}
 
 `approxₙ ω = gpLin n (gpTuple n ω)`, factoring through the finite-dimensional
 tuple `gpTuple n ω : ↥(gpFinset n) → ℝ` (Measurable in `ω`, hence StronglyMeasurable
-since the codomain is second-countable) and the **1-Lipschitz** assembly map
+since the codomain is second-countable) and the **1-Lipschitz** map
 `gpLin n : (↥(gpFinset n) → ℝ) → ℓ∞(F)` (Continuous). -/
 
 /-- `gpLin n x` sends each coordinate `f` to the `x`-value at the nearest skeleton
@@ -1023,7 +1019,7 @@ theorem gpNearest_eventually_close {δ : ℝ} (hδ : 0 < δ) :
       dist (gpEnum hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne k) s < δ / 2 := by
     intro s
     have hmem : s ∈ @closure ↥F inst.toUniformSpace.toTopologicalSpace
-        (gpSkeleton hF_ent hF_ne) := by
+        (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
       rw [@Dense.closure_eq ↥F inst.toUniformSpace.toTopologicalSpace _ hdense]; trivial
     obtain ⟨σ, hσ_mem, hσ_dist⟩ := (@Metric.mem_closure_iff ↥F inst _ _).mp hmem (δ / 2)
       (by positivity)
@@ -1135,8 +1131,8 @@ theorem gpPath_aemeasurable :
   (gpPath_aestronglyMeasurable hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).aemeasurable
 
 /-- **The law `ν = gpBridgeMeasure`** of the `ℓ∞(F)`-valued path `gpPath` under
-`iidStdGaussian`: the candidate `P`-Brownian-bridge measure on `ℓ∞(F)` used by
-`exists_pBrownianBridge` for Theorem 18.14. -/
+`iidStdGaussian`: the candidate `P`-Brownian-bridge measure on `ℓ∞(F)` for
+Theorem 18.14. -/
 noncomputable def gpBridgeMeasure : Measure (LinfF F) :=
   iidStdGaussian.map (gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
 

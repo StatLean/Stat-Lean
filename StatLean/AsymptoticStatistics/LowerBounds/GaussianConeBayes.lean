@@ -21,8 +21,8 @@ case: membership records exactly the Markov property. -/
 def MarkovDecision (X A : Type*) [MeasurableSpace X] [MeasurableSpace A] :=
   {κ : Kernel X A // IsMarkovKernel κ}
 
-/-- Rectangular matrix action on Euclidean spaces.  This only repackages
-Mathlib's `Matrix.mulVec` function-valued result in the `WithLp` model. -/
+/-- Rectangular matrix action on Euclidean spaces, represented in the
+`WithLp` model. -/
 noncomputable def matrixActionVec {d : ℕ}
     (A : Matrix (Fin d) (Fin m) ℝ) (h : EuclideanSpace ℝ (Fin m)) :
     EuclideanSpace ℝ (Fin d) :=
@@ -1403,7 +1403,7 @@ theorem exists_conePrior_bayes_lower_bound
             ∂(restrictedTranslatedGaussianPrior C h₀ τ)) + ε := by
       rw [add_assoc, hee]
 
-/-- Compatibility headline for the existential diffuse-prior Bayes brick. -/
+/-- Existential diffuse-prior Bayes lower bound. -/
 theorem conePrior_bayes_lower_bound
     (C : Set (EuclideanSpace ℝ (Fin m)))
     (_h0 : (0 : EuclideanSpace ℝ (Fin m)) ∈ C)

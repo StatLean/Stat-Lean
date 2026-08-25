@@ -24,15 +24,15 @@ Declarations:
   statement of Lemma 19.24.
 * `exists_mem_distL2_lt_of_outer_consistency` extracts deterministic anchors
   in `F` approaching the possibly external `L²(P)` limit `f₀`.
-* `donsker_random_function_consistency` is a compatibility wrapper with
+* `donsker_random_function_consistency` is an expectation-form corollary under
   stronger expectation and measurability assumptions.
 * `empiricalProcessMarginalGaussian` is the scalar Brownian-bridge marginal law
   obtained by projecting the one-function Gaussian marginal.
 * `empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp` is the direct
-  fixed-function marginal adapter; the unsuffixed declaration is its
-  source-compatible class-based wrapper.
-* `donsker_random_function_consistency_weakConvergesOuter` combines the faithful
-  consistency core with the fixed-function adapter to give the final outer weak
+  fixed-function marginal result; the unsuffixed declaration derives its
+  `L²(P)` premise from class membership.
+* `donsker_random_function_consistency_weakConvergesOuter` combines the
+  consistency result with the fixed-function marginal result to give the outer weak
   convergence form of Lemma 19.24.
 -/
 
@@ -43,8 +43,7 @@ open scoped ENNReal Topology
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-- Local import-layer adapter: `RandomFunctions` cannot import the downstream
-`UniformRandomFunctions` theorem carrying this inequality. -/
+/-- Outer measure is bounded by the ambient measure for every set. -/
 private theorem outerMeasureStar_le_measure_local
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) (A : Set Ξ) :
     μ.outerMeasureStar A ≤ μ A := by
@@ -102,12 +101,9 @@ take values in `F`. If `distL2 P (f_hat n) f₀` tends to zero in explicit
 outer probability, then for every `η > 0` the probability that the empirical
 processes at `f_hat n` and `f₀` differ by more than `η` tends to zero.
 
-This is the process-difference claim used in vdV §19.4 Lemma 19.24. It does
-not add a weak-convergence headline.  The proof derives deterministic anchors
-`g ∈ F` arbitrarily close to `f₀`, rather than using vdV's informal WLOG
-replacement of `F` by `F ∪ {f₀}`.
-
-The hypotheses are the explicit outer-probability form of vdV's assumptions. -/
+This is the process-difference claim used in vdV §19.4 Lemma 19.24. The proof
+derives deterministic anchors `g ∈ F` arbitrarily close to `f₀`, rather than
+using vdV's informal WLOG replacement of `F` by `F ∪ {f₀}`. -/
 theorem donsker_random_function_consistency_core
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (h_donsker : IsPDonsker F P)
@@ -283,7 +279,7 @@ anchor in the class is used to localize the function on the exceptional event;
 the anchor does not restrict the theorem, since asymptotic membership already
 forces the class to be nonempty.
 
-The `L²(P)` consistency premise remains in the explicit outer-probability form
+The `L²(P)` consistency premise is stated in the explicit outer-probability form
 of `donsker_random_function_consistency_core`. -/
 theorem donsker_random_function_consistency_wpa
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
@@ -372,56 +368,56 @@ theorem donsker_random_function_consistency_wpa
             μ {ξ | f_hat n ξ ∉ F} := add_le_add
       (outerMeasureStar_le_measure_local μ _) (outerMeasureStar_le_measure_local μ _)
 
-/-- **Integrable formulation of Lemma 19.24.**
+/-- **Expectation-form corollary of Lemma 19.24.**
 
 Suppose `F` is a `P`-Donsker class of measurable functions and `f_hat n`
 is a sequence of jointly measurable random functions taking values in
-`F` such that `∫ (f_hat n − f₀)² dP →_P 0` for some `f₀ ∈ F` with
+`F` such that `E_μ[∫ (f_hat n − f₀)² dP] → 0` for some `f₀ ∈ F` with
 `f₀ ∈ L²(P)`. Then for every `η > 0`,
 `μ{ξ | η < |G_n(f_hat n ξ) − G_n(f₀)|} → 0`,
 i.e. `G_n(f_hat n) − G_n(f₀) →_P 0`.
 
-Its expectation, integrability, and joint-measurability hypotheses are
-stronger than the explicit outer-probability premise of
-`donsker_random_function_consistency_core`.
+The expectation, integrability, and joint-measurability hypotheses imply the
+explicit outer-probability premise of
+`donsker_random_function_consistency_core`. They are stronger than the
+corresponding assumptions of that theorem.
 
 Hypotheses:
 * `h_donsker` — vdV §19.4 Lemma 19.24: `F` is `P`-Donsker.
-* `_hf₀_in_F` — the limiting function belongs to the class; the core theorem
-  derives anchors in `F` and does not require the limit itself to belong to `F`.
-* `_hf₀` — vdV §19.4's assumption `f₀ ∈ L²(P)`; supplied to the core theorem.
+* `_hf₀_in_F` — the stronger assumption `f₀ ∈ F`; the process-difference
+  core derives anchors in `F` and does not use membership of the limit itself.
+* `_hf₀` — vdV §19.4's assumption `f₀ ∈ L²(P)`.
 * `h_range` — vdV §19.4: random functions take values in `F`.
-* `h_l2_int`, `h_l2_consistent` — stronger integrability and
-  expectation-convergence premises used to derive the core's outer tail.
-* `hf₀_meas`, `h_fhat_meas` — joint measurability adapters required to
-  apply equicontinuity at the random pair `(f_hat n, const f₀)`.
-* `hX_*` — iid hypotheses on the sample (empirical-process setup).
-
-Both compatibility parameters remain in the signature; only `_hf₀` is needed
-by the core theorem. -/
+* `h_l2_int`, `h_l2_consistent` — integrability and expectation convergence of
+  the squared `L²(P)` distance, which imply the outer-probability tail bound.
+* `hf₀_meas`, `h_fhat_meas` — joint measurability assumptions used to apply
+  equicontinuity at the random pair `(f_hat n, const f₀)`.
+* `hX_*` — iid hypotheses on the sample (empirical-process setup). -/
 theorem donsker_random_function_consistency
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
-    -- USER-INPUT: `F` is `P`-Donsker and contains the square-integrable limit;
+    -- `F` is `P`-Donsker and contains the square-integrable limit;
     -- vdV Lemma 19.24.
     (h_donsker : IsPDonsker F P)
     (f₀ : Ω → ℝ) (_hf₀ : MemLp f₀ 2 P)
     (_hf₀_in_F : f₀ ∈ F)
-    -- LEAN-ONLY: a measurable representative of the limit function.
+    -- a measurable representative of the limit function.
     (hf₀_meas : Measurable f₀)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- LEAN-ONLY: measurability of each sample coordinate.
+    -- measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.24.
+    -- iid observations with common law `P`; vdV Lemma 19.24.
     (hX_iindep : ProbabilityTheory.iIndepFun X μ)
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
     (f_hat : ℕ → Ξ → (Ω → ℝ))
-    -- LEAN-ONLY: joint measurability of each random function.
+    -- joint measurability of each random function.
     (h_fhat_meas : ∀ n, Measurable (Function.uncurry (f_hat n)))
-    -- USER-INPUT: class membership and mean-square `L²(P)` consistency;
+    -- class membership and mean-square `L²(P)` consistency;
     -- vdV Lemma 19.24.
     (h_range : ∀ n ω, f_hat n ω ∈ F)
+    -- Expectation of squared L²-distance. Markov converts this stronger input
+    -- to the explicit outer tail used by the process-difference theorem.
     (h_l2_int : ∀ n, MeasureTheory.Integrable
       (fun ξ => ∫ x, (f_hat n ξ x - f₀ x) ^ 2 ∂P) μ)
     (h_l2_consistent :
@@ -440,7 +436,7 @@ theorem donsker_random_function_consistency
     have htail : Tendsto (fun n =>
         μ {ξ | δ ≤ distL2 P (f_hat n ξ) ((fun _ : ℕ => fun _ : Ξ => f₀) n ξ)})
         atTop (𝓝 0) := by
-      exact markov_distL2_tail μ f_hat (fun _ _ => f₀)
+      exact markov_distL2_tail (F := F) μ f_hat (fun _ _ => f₀)
         h_fhat_meas hconst_meas
         (fun n => by simpa using h_l2_int n)
         (by simpa using h_l2_consistent) hδ
@@ -459,7 +455,7 @@ theorem donsker_random_function_consistency
   exact donsker_random_function_consistency_core F P h_donsker f₀ _hf₀ μ
     X hX_meas hX_iindep hX_idem hX_law f_hat h_range h_outer_tail
 
-/-! ## Final weak-convergence headline -/
+/-! ## Weak-convergence form -/
 
 /-- The scalar Gaussian law obtained from the `k = 1` marginal CLT by reading
 coordinate `0`. This is the law of the Brownian-bridge marginal `G_P f`.
@@ -471,7 +467,7 @@ noncomputable def empiricalProcessMarginalGaussian
   (ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P ![f])).map
     (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1))
 
-/-- **Direct scalar marginal adapter.** The iid multivariate CLT at `k = 1`,
+/-- **Direct scalar marginal convergence.** The iid multivariate CLT at `k = 1`,
 followed by coordinate `0`, gives outer weak convergence of the fixed-function
 empirical process to `empiricalProcessMarginalGaussian P f`.
 
@@ -489,7 +485,7 @@ theorem empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp
       (fun n ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)
       (empiricalProcessMarginalGaussian P f) := by
   classical
-  obtain ⟨Y, hY_law, hY_tend⟩ := marginalCLT_fdd_of_iid μ X hX_meas hX_iindep hX_idem
+  obtain ⟨Y, hY_law, hY_tend⟩ := marginalCLT_fdd_of_iid (F := {f}) μ X hX_meas hX_iindep hX_idem
     hX_law (k := 1) ![f] (fun i => by fin_cases i; exact hf_memLp)
   set stdSeq : ℕ → Ξ → EuclideanSpace ℝ (Fin 1) := fun n ξ =>
     (Real.sqrt n)⁻¹ • (∑ i ∈ Finset.range n, tupleVec ![f] (X i ξ)
@@ -535,9 +531,9 @@ theorem empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp
   exact measurable_const.mul ((measurable_const.mul
     (Finset.measurable_sum _ fun i _ => hf_meas.comp (hX_meas i.val))).sub measurable_const)
 
-/-- **Class-based scalar marginal adapter.** Source-compatible wrapper around
-`empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp`; class
-membership supplies the selected function's `L²(P)` membership. -/
+/-- **Class-based scalar marginal convergence.** For `f ∈ F`, the marginal CLT in
+the `P`-Donsker assumption supplies the selected function's `L²(P)` membership,
+and the direct fixed-function result gives the claimed outer weak convergence. -/
 theorem empiricalProcess_weakConvergesOuter_marginalGaussian
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (h_donsker : IsPDonsker F P)
@@ -560,14 +556,14 @@ random-index empirical process `Gₙ(f_hat n)` converges weakly in outer
 expectation to the scalar Brownian-bridge marginal at `f₀`.
 
 The representative measurability premise is used only by the direct scalar
-marginal adapter; the process-difference core needs only `f₀ ∈ L²(P)`. -/
+marginal result; the process-difference theorem needs only `f₀ ∈ L²(P)`. -/
 theorem donsker_random_function_consistency_weakConvergesOuter
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (h_donsker : IsPDonsker F P)
     (f₀ : Ω → ℝ) (hf₀ : MemLp f₀ 2 P)
     -- vdV Lemma 19.24 assumes `f₀ ∈ L²(P)`.
     (hf₀_meas : Measurable f₀)
-    -- measurable representative required by the fixed-marginal adapter.
+    -- Measurable representative required by the fixed-function marginal result.
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_iindep : ProbabilityTheory.iIndepFun X μ)

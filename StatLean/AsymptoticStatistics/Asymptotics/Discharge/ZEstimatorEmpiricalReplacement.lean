@@ -5,15 +5,15 @@ import StatLean.AsymptoticStatistics.ForMathlib.IIdJointLaw
 /-!
 # Random-index empirical-score replacement
 
-This file isolates the public empirical-process layer used when an estimated score is
-evaluated at the same product sample that selected it.  It contains no estimator,
+An estimated score may be evaluated at the same product sample that selected it. The
+results below treat this random-index empirical-process setting without an estimator,
 parametric model, score equation, Taylor condition, Bartlett identity, bias condition,
 or asymptotic-linearity conclusion.
 
-The scalar result is the product-law form of vdV Lemma 19.24 used privately by the
-Z-estimator discharge.  The finite-dimensional result assumes the scalar Donsker and
-expected-`L²` inputs coordinatewise and concludes the native Euclidean residual by
-finite-coordinate assembly; in particular, it introduces no vector-Donsker predicate.
+The scalar result is the product-law form of vdV Lemma 19.24. The finite-dimensional
+result assumes the scalar Donsker and
+expected-`L²` inputs coordinatewise and concludes the native Euclidean residual from
+the finitely many coordinate bounds; in particular, it introduces no vector-Donsker predicate.
 -/
 
 open MeasureTheory Filter Topology
@@ -23,15 +23,15 @@ namespace AsymptoticStatistics.Asymptotics.Discharge.ZEstimator
 
 open AsymptoticStatistics.EmpiricalProcess
 
--- The iid carrier agrees with the `Type`-valued carrier of `RandomFunctions`.
+-- The `RandomFunctions` iid carrier lives in universe zero.
 variable {Omega : Type} [MeasurableSpace Omega]
 
 /-- Minimal scalar hypotheses for replacing a random estimated score by its fixed
 reference score inside the centered empirical process under the product laws `P^n`.
 
-This bundle records only the concrete inputs used by the public product-law transport
-of vdV Lemma 19.24.  In particular, membership of `score0` in `F` is unnecessary: the
-faithful random-function theorem extracts deterministic anchors in `F` from the `L²`
+This bundle records only the concrete inputs used by the product-law form of vdV
+Lemma 19.24. In particular, membership of `score0` in `F` is unnecessary: the
+random-function theorem extracts deterministic anchors in `F` from the `L²`
 consistency premise. -/
 structure RandomIndexScoreReplacementHyp
     (P : Measure Omega) [IsProbabilityMeasure P]
@@ -44,7 +44,7 @@ structure RandomIndexScoreReplacementHyp
   score0_memLp : MemLp score0 2 P
   /-- Constitutive (vdV Lemma 19.24): scalar `P`-Donsker class. -/
   is_donsker : IsPDonsker F P
-  /-- Constitutive (Lean product-law adapter): joint measurability of the
+  /-- Joint measurability of the
   sample-indexed score, used to transport expected `L²` consistency from `P^n` to the
   infinite iid product representation. -/
   scoreHat_meas : forall n,
@@ -59,7 +59,7 @@ structure RandomIndexScoreReplacementHyp
     Tendsto (fun n =>
       ∫ X, (∫ x, (scoreHat n X x - score0 x) ^ 2 ∂P)
         ∂(Measure.pi (fun _ : Fin n => P))) atTop (nhds 0)
-  /-- Constitutive (Lean Markov adapter): integrability needed to convert
+  /-- Integrability needed to convert
   expected `L²` consistency into the explicit outer-probability tail of Lemma 19.24. -/
   score_l2_int : forall n, Integrable
     (fun X : Fin n -> Omega => ∫ x, (scoreHat n X x - score0 x) ^ 2 ∂P)
@@ -128,7 +128,7 @@ theorem randomIndex_empiricalScoreReplacement_oP
       μ.outerMeasureStar {ξ | δ < distL2 P (fhat n ξ) score0}) atTop (nhds 0) := by
     intro δ hδ
     have hm : Tendsto (fun n => μ {ξ | δ ≤ distL2 P (fhat n ξ) score0})
-        atTop (nhds 0) := markov_distL2_tail (P := P)
+        atTop (nhds 0) := markov_distL2_tail (F := F) (P := P)
       (Ξ := ℕ → Omega) μ fhat (fun _ _ => score0) hfhat_meas
       (fun _ => h.score0_meas.comp measurable_snd) hl2int (by simpa using hl2) hδ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hm
@@ -198,23 +198,23 @@ structure RandomIndexScoreReplacementWPAHyp
     (P : Measure Omega) [IsProbabilityMeasure P]
     (scoreHat : forall n, (Fin n -> Omega) -> (Omega -> Real))
     (score0 anchor : Omega -> Real) (F : Set (Omega -> Real)) : Prop where
-  /-- Measurable representative of the fixed score. -/
+  /-- measurable representative of the fixed score. -/
   score0_meas : Measurable score0
   /-- vdV Lemma 19.24: the fixed score is square-integrable. -/
   score0_memLp : MemLp score0 2 P
   /-- vdV Lemma 19.24: the fixed class is `P`-Donsker. -/
   is_donsker : IsPDonsker F P
-  /-- Joint measurability of the fitted score. -/
+  /-- joint measurability of the fitted score. -/
   scoreHat_meas : forall n,
     Measurable (fun p : (Fin n -> Omega) × Omega => scoreHat n p.1 p.2)
-  /-- Measurable event representing class membership. -/
+  /-- measurable event representing class membership. -/
   scoreHat_bad_meas : forall n, MeasurableSet
     {X : Fin n -> Omega | scoreHat n X ∉ F}
   /-- vdV Theorem 25.77: fitted scores belong to `F` with probability tending
   to one. -/
   scoreHat_mem_wpa : Tendsto (fun n =>
     (Measure.pi (fun _ : Fin n => P)) {X | scoreHat n X ∉ F}) atTop (nhds 0)
-  /-- A localization anchor in the fixed Donsker class, used only on
+  /-- localization anchor in the fixed Donsker class, used only on
   the exceptional class-membership event. -/
   anchor_mem : anchor ∈ F
   /-- vdV equation (25.76a), scalar tail form: squared `L²(P)` distance
@@ -397,9 +397,9 @@ structure RandomIndexScoreReplacementHyp_vec
 
 /-- Coordinatewise hypotheses for native finite-dimensional empirical-score
 replacement with the w.p.a.1 class membership of vdV Theorem 25.77.  The
-global fitted-score `L²(P)` field is a representative adapter used to commute
-Bochner integration with finite-dimensional coordinate evaluation, including
-on the exceptional localization event. -/
+global fitted-score `L²(P)` condition permits Bochner integration to commute
+with finite-dimensional coordinate evaluation, including on the exceptional
+localization event. -/
 structure RandomIndexScoreReplacementWPAHyp_vec
     (P : Measure Omega) [IsProbabilityMeasure P] (d : Nat)
     (scoreHat : forall n,
@@ -412,10 +412,10 @@ structure RandomIndexScoreReplacementWPAHyp_vec
     RandomIndexScoreReplacementWPAHyp P
       (fun n X x => scoreHat n X x j) (fun x => score0 x j)
       (fun x => anchor x j) (F j)
-  /-- A square-integrable vector representative of every fitted
+  /-- square-integrable vector representative of every fitted
   score under the truth law. -/
   scoreHat_memLp : forall n X, MemLp (scoreHat n X) 2 P
-  /-- A square-integrable vector representative of the fixed score. -/
+  /-- square-integrable vector representative of the fixed score. -/
   score0_memLp : MemLp score0 2 P
 
 /-- Native finite-dimensional empirical-score replacement with w.p.a.1

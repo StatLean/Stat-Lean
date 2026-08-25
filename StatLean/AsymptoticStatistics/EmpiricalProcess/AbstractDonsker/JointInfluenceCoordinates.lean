@@ -8,9 +8,9 @@ import StatLean.AsymptoticStatistics.Core.EfficiencyOperationalVec
 /-!
 # Coordinates for joint Brownian-bridge and influence-function limits
 
-This module isolates the continuous finite-coordinate readouts, measurable
-influence representatives, covariance kernel, and constitutive joint-law
-interface used in the structural form of van der Vaart Theorem 19.23.
+This module defines the continuous finite-coordinate readouts, measurable
+influence representatives, covariance kernel, and joint-law assumptions in the
+structural form of van der Vaart Theorem 19.23.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

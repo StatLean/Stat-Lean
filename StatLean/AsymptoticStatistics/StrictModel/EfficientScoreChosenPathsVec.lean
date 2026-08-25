@@ -26,7 +26,7 @@ noncomputable def coordinateBasis (j : Fin d) : EuclideanSpace ℝ (Fin d) :=
 
 Constitutive: every vector parameter direction and nuisance score has one
 selected QMD path with score `Sθ a + g` and functional quotient `a`.
-The multivariate Gaussian location model with nuisance `{0}` is an example. -/
+Joint witness: the multivariate Gaussian location model with nuisance `{0}`. -/
 structure VectorPaths25_26
     (Sθ : OrdinaryScore P (EuclideanSpace ℝ (Fin d)))
     (ψ : Measure Ω → EuclideanSpace ℝ (Fin d)) where

@@ -120,9 +120,9 @@ both empty intersections and unbounded global sets honest:
 `sup_(interior B ∩ H) z ≤ liminf sup_(B ∩ Hₙ) zₙ
   ≤ limsup sup_(B ∩ Hₙ) zₙ ≤ sup_(closure B ∩ H) z`.
 
-The inclusion `hBK` permits all evaluations in
-the single carrier `LinfOn K`; it does not strengthen the book's `B ⊆ K`
-localization because the proof uses the closure of the precompact set. -/
+The hypothesis `hBK` places every evaluation in the single carrier `LinfOn K`;
+it does not strengthen the book's `B ⊆ K` localization because the proof uses
+the closure of the precompact set. -/
 theorem varyingSetSupremum_sandwich {D : Type*} [MetricSpace D]
     {Hn : ℕ → Set D} {H B K : Set D}
     (hset : SetConverges Hn H)

@@ -8,7 +8,8 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 
 This file bounds the expected realized empirical `L²` seminorm by the
 population `L²` seminorm, first under the canonical product law and then for
-an abstract iid sample.
+an abstract iid sample. It is the analytic normalization step in the
+finite-discrete outer maximal inequality.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

@@ -3,11 +3,9 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 /-!
 # Metric-space rates for M-estimators
 
-This module formalizes van der Vaart Theorem 5.52 (book pp. 75--76), including the official
-erratum replacing the ball supremum by the annulus `δ / 2 < dist θ θ₀ < δ`.
-
-The declarations assume `α > 0`, which is stronger than the displayed book assumption
-`α > β`; positivity is used in the geometric-shell argument.
+Formalization of van der Vaart Theorem 5.52 (book pp. 75--76),
+including the official erratum replacing the impossible ball supremum by the
+annulus `δ / 2 < dist θ θ₀ < δ`.
 -/
 
 namespace AsymptoticStatistics.MEstimator
@@ -25,26 +23,27 @@ theorem metricRate_shell_tail
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → Ω → ℝ) (θ₀ : Θ)
-    -- LEAN-ONLY: explicit measurability of the criterion functions.
+    -- Measurability of the criterion functions.
     (hm_meas : ∀ θ, Measurable (m θ))
     (X : ℕ → Ξ → Ω)
     (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)
     (α β C ρ : ℝ)
-    -- The geometric-shell proof requires a positive curvature exponent.
+    -- The proof additionally requires `α > 0`; vdV states only `α > β`.
     (hα : 0 < α)
     -- The modulus exponent is strictly smaller than the curvature exponent.
     (hβα : β < α)
-    -- Common positive constant in the two local bounds.
+    -- A common positive constant is used in the two local bounds.
     (hC : 0 < C)
     -- The hypotheses hold for all sufficiently small radii.
     (hρ : 0 < ρ)
-    -- Local integrability on the same neighborhood as curvature/modulus.
+    -- Local integrability on the same neighborhood as the curvature and modulus bounds.
     (hm_int : ∀ θ, dist θ θ₀ < ρ → Integrable (fun ω => m θ ω - m θ₀ ω) P)
-    -- The official erratum (p.75) uses curvature on `δ/2 < dist θ θ₀ < δ`.
+    -- The official erratum on p. 75 uses curvature on
+    -- `δ / 2 < dist θ θ₀ < δ`.
     (hcurv : ∀ δ, 0 < δ → δ < ρ → ∀ θ,
       δ / 2 < dist θ θ₀ → dist θ θ₀ < δ →
       ∫ ω, (m θ ω - m θ₀ ω) ∂P ≤ -C * Real.rpow δ α)
-    -- Genuine outer expectation of the localized empirical-process modulus.
+    -- Outer expectation controls the localized empirical-process modulus.
     (hmod : ∀ δ, 0 < δ → δ < ρ → ∀ n,
       outerExpectation μ (fun ξ =>
         ⨆ θ : {θ : Θ // dist θ θ₀ < δ}, ENNReal.ofReal
@@ -55,12 +54,12 @@ theorem metricRate_shell_tail
     (hNearMax : ∀ n ξ,
       empiricalAvg (m (θhat n ξ)) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) ≥
         empiricalAvg (m θ₀) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) - R n ξ)
-    -- The nonnegative near-maximality remainder.
+    -- The near-maximality remainder is nonnegative.
     (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)
-    -- `R_n = O_P(r_n^{-α})`, in outer probability for the core theorem.
+    -- The remainder satisfies `R_n = O_P(r_n^{-α})` in outer probability.
     (hR : IsBoundedInOuterProbScalar μ (fun n ξ =>
       Real.rpow (rateScale α β n) α * R n ξ))
-    -- Outer consistency; no measurability of `θhat` is required.
+    -- Outer consistency does not require measurability of `θhat`.
     (hcons : TendstoZeroInOuterProbScalar μ (fun n ξ => dist (θhat n ξ) θ₀)) :
     ∀ η : ℝ, 0 < η → ∃ M : ℝ, ∃ N : ℕ, ∀ n, N ≤ n →
       μ.outerMeasureStar {ξ | M < rateScale α β n * dist (θhat n ξ) θ₀} ≤
@@ -279,12 +278,12 @@ theorem mEstimator_rate_of_convergence_outer
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → Ω → ℝ) (θ₀ : Θ)
-    -- VdV 5.52 starts with measurable criterion functions.
+    -- The criterion functions in vdV Theorem 5.52 are measurable.
     (hm_meas : ∀ θ, Measurable (m θ))
     (X : ℕ → Ξ → Ω)
     (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)
     (α β C ρ : ℝ) (hα : 0 < α) (hβα : β < α) (hC : 0 < C) (hρ : 0 < ρ)
-    -- Local integrability on the same neighborhood as curvature/modulus.
+    -- Local integrability on the same neighborhood as the curvature and modulus bounds.
     (hm_int : ∀ θ, dist θ θ₀ < ρ → Integrable (fun ω => m θ ω - m θ₀ ω) P)
     (hcurv : ∀ δ, 0 < δ → δ < ρ → ∀ θ,
       δ / 2 < dist θ θ₀ → dist θ θ₀ < δ →
@@ -314,27 +313,27 @@ theorem mEstimator_rate_of_convergence_outer
     constructor <;> intro h <;> simpa only [abs_of_nonneg hp] using h
   rw [heq]; exact hMN n hn
 
-/-- **A measurable-remainder form of vdV Theorem 5.52 (rate of convergence).** The theorem uses
-a measurable nonnegative remainder and ordinary `O_P`; it does not assume the
-conclusion rate or measurability of the estimator. -/
+/-- **vdV Theorem 5.52 (Rate of convergence).**  The remainder is measurable
+and nonnegative and satisfies ordinary `O_P`; the estimator itself need not be
+measurable. -/
 theorem mEstimator_rate_of_convergence
     {Ω Θ Ξ : Type*} [MeasurableSpace Ω] [MetricSpace Θ] [MeasurableSpace Ξ]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → Ω → ℝ) (θ₀ : Θ)
-    -- LEAN-ONLY: explicit measurability of the criterion functions.
+    -- The criterion functions in vdV Theorem 5.52 are measurable.
     (hm_meas : ∀ θ, Measurable (m θ))
     (X : ℕ → Ξ → Ω)
     (θhat : ℕ → Ξ → Θ) (R : ℕ → Ξ → ℝ)
-    -- LEAN-ONLY: remainder measurability converts ordinary `O_P` to outer probability.
+    -- Remainder measurability converts ordinary `O_P` to outer probability.
     (hR_meas : ∀ n, Measurable (R n))
     (α β C ρ : ℝ)
-    -- USER-INPUT: exponent ordering and positive local constants in the rate
-    -- conditions; vdV Theorem 5.52.
+    -- Exponent ordering and positive local constants in the rate
+    -- calculation; the formal statement records the required `α > 0` explicitly.
     (hα : 0 < α) (hβα : β < α) (hC : 0 < C) (hρ : 0 < ρ)
-    -- LEAN-ONLY: explicit local integrability on the curvature/modulus neighborhood.
+    -- Local integrability on the same neighborhood as the curvature and modulus bounds.
     (hm_int : ∀ θ, dist θ θ₀ < ρ → Integrable (fun ω => m θ ω - m θ₀ ω) P)
-    -- USER-INPUT: local population curvature and empirical-process modulus;
+    -- Local population curvature and empirical-process modulus;
     -- vdV Theorem 5.52.
     (hcurv : ∀ δ, 0 < δ → δ < ρ → ∀ θ,
       δ / 2 < dist θ θ₀ → dist θ θ₀ < δ →
@@ -345,13 +344,12 @@ theorem mEstimator_rate_of_convergence
           |empiricalProcess P (n + 1) (fun i : Fin (n + 1) => X i.val ξ)
             (fun ω => m θ.1 ω - m θ₀ ω)|) ≤
         ENNReal.ofReal (C * Real.rpow δ β))
-    -- USER-INPUT: approximate maximization; vdV Theorem 5.52.
+    -- Approximate maximization, as in vdV Theorem 5.52.
     (hNearMax : ∀ n ξ,
       empiricalAvg (m (θhat n ξ)) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) ≥
         empiricalAvg (m θ₀) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) - R n ξ)
-    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
     (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)
-    -- USER-INPUT: scaled remainder is `O_P(1)` and the estimator is consistent;
+    -- The scaled remainder is `O_P(1)` and the estimator is consistent;
     -- vdV Theorem 5.52.
     (hR : IsBoundedInProb (fun _ : ℕ => μ) (fun n ξ =>
       Real.rpow (rateScale α β n) α * R n ξ))

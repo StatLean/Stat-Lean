@@ -40,7 +40,6 @@ noncomputable instance instIsProbabilityMeasureUniform01 :
 allowed: continuity, not strict monotonicity, is the book hypothesis. -/
 theorem probabilityIntegralTransform
     (P : Measure ℝ) [IsProbabilityMeasure P]
-    -- continuity is exactly the distribution-free clause of vdV 19.21 p.277.
     (hF : Continuous (cdf P)) :
     P.map (cdf P) = uniform01 := by
   have hlevel : ∀ {u : ℝ}, 0 < u → u < 1 →
@@ -778,12 +777,11 @@ theorem continuousCDF_cvm_limit_law_eq_uniform
   filter_upwards [gofFunctional_cdfPullback_ae P hF hνU] with z hz
   simpa only [gofFunctional] using congrArg Prod.snd hz
 
-/-- **Corollary 19.21, provider-free distribution-free joint headline.**
+/-- **Corollary 19.21, distribution-free joint limit.**
 For a continuous CDF, bridge laws exist both for `P` and for `uniform01`, and
 every such pair gives the same joint KS/CvM pushforward law. -/
 theorem continuousCDF_gof_limit_distributionFree
     (P : Measure ℝ) [IsProbabilityMeasure P]
-    -- continuity is exactly the distribution-free hypothesis of vdV 19.21 p.277.
     (hF : Continuous (cdf P)) :
     (∃ νP : Measure (LinfF halfLineIndicatorClass),
       IsPBrownianBridge halfLineIndicatorClass P νP) ∧
@@ -800,7 +798,7 @@ theorem continuousCDF_gof_limit_distributionFree
   intro νP' νU' hνP' hνU'
   exact continuousCDF_gof_limit_law_eq_uniform P hF hνP' hνU'
 
-/-- **Corollary 19.21, provider-free distribution-free KS headline.** -/
+/-- **Corollary 19.21, distribution-free Kolmogorov–Smirnov limit.** -/
 theorem continuousCDF_ks_limit_distributionFree
     (P : Measure ℝ) [IsProbabilityMeasure P]
     (hF : Continuous (cdf P)) :
@@ -818,7 +816,7 @@ theorem continuousCDF_ks_limit_distributionFree
   intro νP' νU' hνP' hνU'
   exact continuousCDF_ks_limit_law_eq_uniform P hF hνP' hνU'
 
-/-- **Corollary 19.21, provider-free distribution-free CvM headline.** -/
+/-- **Corollary 19.21, distribution-free Cramér–von Mises limit.** -/
 theorem continuousCDF_cvm_limit_distributionFree
     (P : Measure ℝ) [IsProbabilityMeasure P]
     (hF : Continuous (cdf P)) :

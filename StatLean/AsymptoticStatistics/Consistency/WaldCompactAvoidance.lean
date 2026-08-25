@@ -4,7 +4,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.UpperSemicontinuousEnvelope
 /-!
 # Wald compact avoidance
 
-The finite-subcover assembly in the proof of vdV Theorem 5.14.
+The finite-subcover argument in the proof of vdV Theorem 5.14.
 -/
 
 open MeasureTheory Filter Topology Set
@@ -42,25 +42,25 @@ theorem wald_avoids_compact_disjoint
     (ℙ : Measure Ω) [IsProbabilityMeasure ℙ]
     (Xs : ℕ → Ω → X) (m : Θ → X → EReal) (θ₀ : Θ)
     (θhat : ℕ → Ω → Θ) (R : ℕ → Ω → ℝ)
-    -- VdV's codomain `[-∞,∞)` excludes pointwise `⊤`.
+    -- vdV's codomain `[-∞,∞)` excludes pointwise `⊤`.
     (hm_top : ∀ θ x, m θ x ≠ ⊤)
-    -- VdV (5.12), retaining θ-dependent exceptional sets.
+    -- vdV (5.12), retaining θ-dependent exceptional sets.
     (husc : ∀ θ, ∀ᵐ x ∂Q, UpperSemicontinuousAt (fun η => m η x) θ)
-    -- Local measurability and finite positive part in vdV (5.13).
+    -- local measurability and finite positive part in vdV (5.13).
     (hlocal : ∀ θ, ∃ ρ > 0, ∀ r, 0 < r → r ≤ ρ →
       Measurable (localCriterionSup m θ r) ∧
       (∫⁻ x, (localCriterionSup m θ r x).toENNReal ∂Q) ≠ ∞)
-    -- The chosen comparison point belongs to vdV's nonempty argmax set.
+    -- the chosen comparison point belongs to vdV's nonempty argmax set.
     (hmax : θ₀ ∈ {θ | ∀ η,
       extendedExpectation Q (m η) ≤ extendedExpectation Q (m θ)})
-    -- VdV p.48 requires at least one maximizing expectation finite.
+    -- vdV p.48 requires at least one maximizing expectation finite.
     (hfinite : ∃ a : ℝ, extendedExpectation Q (m θ₀) = (a : EReal))
-    -- Single-base measurable iid sample encoding of a random sample.
+    -- single-base measurable iid sample encoding of a random sample.
     (hXs_meas : ∀ i, Measurable (Xs i))
     (hXs_indep : ProbabilityTheory.iIndepFun Xs ℙ)
     (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) ℙ ℙ)
     (hXs_law : ℙ.map (Xs 0) = Q)
-    -- VdV near-maximizer inequality with a real `oₚ(1)` remainder.
+    -- vdV near-maximizer inequality with a real `oₚ(1)` remainder.
     (hnear : ∀ n ω,
       extendedEmpiricalAvg (m θ₀) n (fun i : Fin n => Xs i.val ω) - (R n ω : EReal) ≤
       extendedEmpiricalAvg (m (θhat n ω)) n (fun i : Fin n => Xs i.val ω))

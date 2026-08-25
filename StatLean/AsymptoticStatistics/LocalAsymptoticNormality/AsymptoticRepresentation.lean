@@ -18,51 +18,18 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
-# Asymptotic Representation Theorem (kernel form)
+# Theorem 7.10 — Asymptotic Representation (kernel form)
 
-Consider a parametric family $\{P_\theta\}$ that is differentiable in quadratic mean at
-$\theta_0$ with score function $\ell_{\theta_0}$ and non-singular Fisher information matrix
-$J$. Suppose $T_n$ is a sequence of estimators (more generally, statistics taking values in
-a Euclidean space $\mathcal{Y}$) whose law converges, for every local parameter $h$, under
-the contiguous alternatives $P^{\,n}_{\theta_0 + h/\sqrt{n}}$ to a limit law $L_h$. Then there
-exists a Markov transition kernel $\kappa$ such that, for every $h$,
-$$ L_h \;=\; N(h,\, J^{-1}) \,\ast\, \kappa, $$
-i.e. $L_h$ is the distribution obtained by drawing $X \sim N(h, J^{-1})$ and then drawing the
-output from $\kappa(\cdot \mid X)$. In other words, every limit distribution of the (local)
-sequence of estimators is the image, through a single $h$-free randomization $\kappa$, of the
-Gaussian shift experiment $N(h, J^{-1})$. The kernel $\kappa$ is the limit experiment's
-randomization that reproduces the estimator's behaviour.
+Given a parametric family differentiable in
+quadratic mean at `θ₀` with score `ℓ_{θ₀}` and non-singular Fisher information `J`, and an
+`𝓨`-valued statistic `T_n` with `T_n ⇝ L_h` under each `P^n_{θ₀ + h/√n}`, there exists a
+Markov kernel `κ` such that `L_h = N(h, J⁻¹) >>= κ` for every `h`.
 
-The headline declaration is `LAN_representation`, the literal normal-experiment statement
-of van der Vaart's theorem. The auxiliary `LAN_representation_of_gaussianShift` keeps the
-more general Gaussian-shift parameterization used internally.
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
-and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 7 (Local Asymptotic
-Normality), §7.3 (Convergence to a Normal Experiment), Theorem 7.10 (Asymptotic
-Representation Theorem).
-
-**Proof formalization notes.** This is the assembly layer for vdV Theorem 7.10 (§7.3). The eight-step proof
-wires together contiguity, the score CLT, the Gaussian shift family, Prohorov tightness, the
-Urysohn subsequence principle, and `LAN_expansion_iii` from Theorem 7.2. Step 1 establishes the
-score CLT under $P^{\,n}_{\theta_0}$ (`scoreSum_weakly_converges`); Step 2 extracts a weakly
-convergent subsequence of the joint sequence $(T_n, \Delta_n)$ via marginal tightness +
-Prohorov, identifying the second marginal as $N(0, J)$; Step 3 introduces the log-likelihood
-ratio via the LAN expansion and Slutsky; the remaining steps build the Gaussian-shift
-experiment and the randomization kernel. The headline `LAN_representation` is the vdV-literal
-normal-experiment statement; `LAN_representation_of_gaussianShift` keeps the more general
-Gaussian-shift parameterization used internally.
-
-**Bibliographic comments.** The result and the surrounding theory of *limit experiments*
-originate with L. Le Cam, "Limits of experiments," *Proceedings of the Sixth Berkeley Symposium
-on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972,
-pp. 245–261, where the general representation of limit distributions through a randomization of
-the limit (Gaussian shift) experiment is developed. Closely related convolution- and
-representation-theorem ideas were pioneered concurrently by J. Hájek, "Local asymptotic
-minimax and admissibility in estimation," in the same Proceedings (Vol. I, pp. 175–194, 1972),
-and later extended by A. W. van der Vaart, "An asymptotic representation theorem,"
-*International Statistical Review* **59** (1991), 97–121. The kernel form stated here is the
-textbook synthesis presented as vdV Theorem 7.10.
+The proof combines contiguity, the score CLT, the Gaussian shift family,
+Prohorov tightness, the Urysohn subsequence principle, and `LAN_expansion_iii` from
+Theorem 7.2. `LAN_representation_of_gaussianShift` states the result for an
+abstract Gaussian-shift family; `LAN_representation` specializes it to the canonical
+multivariate Gaussian experiment.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -188,6 +155,8 @@ product of per-coordinate tilts, then closes each factor via
 theorem logLikelihood_is_log_ratio
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (h : Θ k) (n : ℕ)
+    (hint_perturb :
+      Integrable (M.density (θ₀ + (Real.sqrt n)⁻¹ • h)) μ)
     (h_same_support : ∀ᵐ x ∂μ,
       (0 < M.density θ₀ x ↔ 0 < M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x)) :
     productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
@@ -216,12 +185,18 @@ theorem logLikelihood_is_log_ratio
       (μ.withDensity pEnn).withDensity fUnit
         = μ.withDensity (fun x => ENNReal.ofReal (M.density θ' x)) :=
     withDensity_density_eq_withDensity_mul_exp_log_ratio M μ θ₀ h n h_same_support
+  -- Register sigma-finiteness of the per-factor tilt (needed by
+  -- `pi_withDensity_prod`) using that it equals `μ.withDensity (ENNReal.ofReal ∘ p')`,
+  -- which is a finite measure by `hint_perturb`.
+  haveI : IsFiniteMeasure ((μ.withDensity pEnn).withDensity fUnit) := by
+    rw [h_factor]
+    exact isFiniteMeasure_withDensity_ofReal hint_perturb.hasFiniteIntegral
   -- Unfold `productMeasure` and invoke `pi_withDensity_prod` in reverse.
   change Measure.pi (fun _ : Fin n => _)
     = (Measure.pi (fun _ : Fin n => μ.withDensity pEnn)).withDensity
         (fun ω => ∏ i, fUnit (ω i))
   rw [pi_withDensity_prod (fun _ : Fin n => hfUnit_meas)]
-  -- Now both sides are `Measure.pi (fun _ => ...)`; match factor-by-factor.
+  -- Both sides are product measures; compare their factors.
   congr 1
   funext _
   exact h_factor.symm
@@ -236,8 +211,7 @@ The normalized score sum `Δ_n` is asymptotically `N(0, J)` under the base measu
 * an iid-joint-law bridge `productMeasure = P.map (ω ↦ (fun i ↦ X i ω))` to convert from
   the abstract-Ω setup `clt_finDim` expects to the `productMeasure` setup used here.
 
-The whole chain is assembled by `scoreSum_weakly_converges` below. The wrapper
-`score_clt_local` is a thin type-adapter. -/
+The theorem `scoreSum_weakly_converges` combines these ingredients. -/
 
 theorem score_clt_local
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
@@ -257,9 +231,8 @@ theorem score_clt_local
 under the Kolmogorov extension `infinitePi (const ν)` on `ℕ → 𝓧` equals the law of
 `scoreSum ℓ n` under `productMeasure M μ θ₀ n` on `Fin n → 𝓧`.
 
-This is the bridge from the abstract `clt_finDim`-style output to the shape
-assembled by `scoreSum_weakly_converges` and used downstream in
-`LAN_representation`. Factors the restriction-map transport
+The equality transports the abstract `clt_finDim` expression to the finite-product
+score sum. It factors the restriction-map transport
 (`pi_const_eq_infinitePi_map`) through the re-indexing identity
 `scoreSum ℓ n ∘ restrict_n = abstract_sum n`. -/
 lemma scoreSum_pushforward_eq
@@ -302,9 +275,8 @@ lemma scoreSum_pushforward_eq
     ← AsymptoticStatistics.pi_const_eq_infinitePi_map ν n]
   rfl
 
-/-- **Wrapper for `clt_finDim`**: derives the `hScoreCLT` shape on `productMeasure`
-from the abstract `(ℕ → 𝓧, infinitePi)` CLT output. Transport-only; no probabilistic
-content beyond applying `scoreSum_pushforward_eq`. -/
+/-- Transport of the abstract `(ℕ → 𝓧, infinitePi)` central limit theorem to
+`productMeasure`, using `scoreSum_pushforward_eq`. -/
 lemma scoreSum_weakly_converges_of_abstract
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k)
@@ -593,7 +565,7 @@ theorem joint_weak_subsequence
 
 /-- **Joint weak convergence with the score sum, plus second-marginal identification.**
 
-Wrapper around `joint_weak_subsequence` that bundles three steps into a reusable theorem:
+The theorem combines three facts:
 
 1. The score CLT under `P^n_{θ₀}` (via `scoreSum_weakly_converges`) gives
    `Δ_n ⇝ multivariateGaussian 0 J`.
@@ -602,9 +574,7 @@ Wrapper around `joint_weak_subsequence` that bundles three steps into a reusable
 3. The second marginal of `π` is identified as `multivariateGaussian 0 J` via
    `WeakConverges.snd_eq`.
 
-This is infrastructure for downstream consumers (e.g. `semiparametric_convolution_theorem`)
-that need both joint convergence **and** the marginal identification but should not
-duplicate `LAN_representation`'s body. -/
+Thus the extracted joint limit includes its Gaussian second-marginal identity. -/
 theorem joint_weak_conv_with_scoreSum
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (ℓ : 𝓧 → Θ k) (hℓ : Measurable ℓ)
@@ -640,7 +610,7 @@ theorem joint_weak_conv_with_scoreSum
       (ProbabilityTheory.multivariateGaussian (0 : Θ k) J) :=
     scoreSum_weakly_converges M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb
       hDQM J hJ_pd.posSemidef hJ
-  -- Tightness adapter.
+  -- Weak convergence of the score laws implies tightness.
   have h_Δ_tight := score_clt_local M μ θ₀ ℓ hℓ hDQM J hJ hScoreCLT
   -- Step 2: extract joint subsequence via Prohorov.
   obtain ⟨φ, hφ_mono, π, hπ_prob, h_joint⟩ :=
@@ -780,12 +750,10 @@ theorem joint_weak_with_logLikelihood
   -- Piece (2): apply the Slutsky perturbation hypothesis.
   exact h_slutsky_bridge h_linear_joint
 
-/-- **Discharge of the `h_slutsky_bridge` hypothesis** via the `WeakConverges`-form
-Slutsky adapter. Given that the LAN residual `logLikelihood - linearized` vanishes
+/-- **Slutsky theorem for the LAN residual.** Given that the LAN residual
+`logLikelihood - linearized` vanishes
 in probability under `productMeasure`, the linearised joint weak convergence lifts
-to the log-likelihood joint weak convergence: exactly the bridge consumed by
-`joint_weak_with_logLikelihood`. The residual hypothesis is supplied by
-`lanResidual_tendsto_productMeasure`. -/
+to the log-likelihood joint weak convergence. -/
 theorem slutsky_bridge_of_lanResidual
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : Θ k, ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
@@ -841,7 +809,7 @@ theorem slutsky_bridge_of_lanResidual
     (hT_meas _).prodMk ((Measurable.const_inner (c := h) (hΔ_meas _)).sub measurable_const)
   have hY_meas : ∀ n, Measurable (Y n) := fun n =>
     (hT_meas _).prodMk (hLogLik_meas _)
-  -- Apply the Slutsky adapter.
+  -- Apply Slutsky's theorem.
   refine WeakConverges.slutsky_of_tendstoInMeasure_dist
     (fun n => (hX_meas n).aemeasurable) (fun n => (hY_meas n).aemeasurable)
     h_linear_joint ?_
@@ -1084,23 +1052,20 @@ private lemma tilted_marginal_simplify
 
 /-! ## Product-level integral-comparison bound
 
-These lemmas are the chapter-level bridge from the DQM-derived per-factor singular-mass
-control (in `DQM/Properties.lean`) to the abstract Le Cam variants in
-`ForMathlib/Contiguity.lean`. They live in the chapter file because they mention
-`productMeasure` and `logLikelihood`, both chapter-level.
+These lemmas pass from the DQM-derived per-factor singular-mass control to
+product-measure comparisons for `productMeasure` and `logLikelihood`.
 
 This is the vdV §7.3 contiguity footing: it replaces the *exact* finite-`n` change-of-measure
 identity `Q_n = P_n.withDensity(exp Lₙ)` (which forced absolute continuity hence common
 support) by a DQM-derived *asymptotic* comparison. -/
 
-/-! ### Shared per-factor infrastructure
+/-! ### Per-factor decomposition
 
 These lemmas all rest on the per-factor decomposition of the log-likelihood: writing
 `r x := M.density (θ₀+(√n)⁻¹•h) x / M.density θ₀ x`, we have
 `exp(logLikelihood … n ω) = ∏ᵢ exp(log (r (ω i)))`, and the per-factor "tilt density" w.r.t. `μ`
 is `g₀ x := M.density θ₀ x · exp(log (r x))`, with mass
-`c_n := ∫ g₀ dμ = 1 − deficit_n + excess_n`. These private lemmas package that decomposition once
-so the public lemmas can share it. -/
+`c_n := ∫ g₀ dμ = 1 − deficit_n + excess_n`. -/
 
 /-- Per-factor real density `g₀ x = p₀ x · exp(log(p'/p₀))`. On `{p₀>0,p'>0}` it equals `p'`, on
 `{p₀>0,p'=0}` it equals `p₀` (the `exp∘log` junk), on `{p₀=0}` it equals `0`. -/
@@ -2013,8 +1978,8 @@ theorem limit_law_under_h
         WeakConverges
           (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ _h n))
           (ProbabilityTheory.gaussianReal (-(vLog : ℝ) / 2) vLog))
-    -- Gaussian MGF at `_h` via the tilted joint law. These hypotheses provide the
-    -- multivariate Gaussian-MGF identities not supplied by the imported API.
+    -- Gaussian MGF at `_h` via the tilted joint law.  These package the multivariate
+    -- Gaussian-MGF identities that Mathlib currently lacks (`π.map snd ~ N(0, J)` + MGF).
     (h_exp_int_πtilt :
         Integrable (fun q : 𝓨 d × ℝ => Real.exp q.2)
           (π.map (fun p : 𝓨 d × Θ k =>
@@ -2129,7 +2094,7 @@ multiplying by `J` maps `N(h, J⁻¹)` to `N(J h, J)`, matching the marginal sca
 that `condDistrib fst snd π` expects. This composed kernel is the one claimed by
 the main theorem.
 
-Matches vdV Theorem 7.10 (§7.3)'s `κ' := κ ∘ J`. Without the pre-composition, `(gauss h).bind κ`
+Matches vdV §7.10's `κ' := κ ∘ J`. Without the pre-composition, `(gauss h).bind κ`
 is type-correct but semantically wrong (it would pair J⁻¹-covariance arguments
 with a J-covariance kernel). -/
 
@@ -2152,7 +2117,7 @@ instance representationKernel_isMarkov
 
 /-! ## Step 7 — `N(h, J⁻¹) >>= κ ∘ J = L_h`
 
-The Gaussian-specific content of Step 7 is packaged as the hypothesis
+The Gaussian-specific content is expressed by the hypothesis
 `hTilt : GaussianShift.HasTiltedLinearPushforward gauss (π.map snd) J`, which bundles
 "J-pushforward of `N(h, J⁻¹)` equals `N(0, J)` tilted by `exp(⟨h, y⟩ − ½ ⟨h, J h⟩)`".
 The remaining measure-theoretic algebra is carried by two purely general bridges:
@@ -2161,7 +2126,8 @@ The remaining measure-theoretic algebra is carried by two purely general bridges
 * `Measure.withDensity_bind_condDistrib` — `(ν.withDensity f).bind (condDistrib fst snd π)
   = (π.withDensity (f ∘ snd)).map fst` when `ν = π.map snd`.
 
-The proof chains these three identities and the `_hL_h_formula` hypothesis from Step 5. -/
+The proof chains these three identities with the preceding tilted-law formula
+`_hL_h_formula`. -/
 
 theorem gaussianShift_bind_eq_limit
     [StandardBorelSpace (𝓨 d)] [Nonempty (𝓨 d)]
@@ -2270,7 +2236,7 @@ theorem LAN_representation_of_gaussianShift
     have h := hT_weak 0
     simp only [smul_zero, add_zero] at h
     exact h
-  -- Unpack `hPDF` into the per-parameter conditions that downstream helpers expect.
+  -- Extract the density normalization and integrability conditions from `hPDF`.
   have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
   have hint : Integrable (M.density θ₀) μ := hPDF.density_integrable θ₀
   have h_one_perturb : ∀ t : ℝ, ∀ u : Θ k,
@@ -2288,8 +2254,7 @@ theorem LAN_representation_of_gaussianShift
     scoreSum_weakly_converges M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb
       hDQM J hJ_pd.posSemidef hJ
   -- Step 1: `Δ_n` converges weakly to `multivariateGaussian 0 J` under `P^n_{θ₀}`.
-  -- (`limit_law_under_h` derives the asymptotic comparison internally from `hDQM` + `hPDF`,
-  -- so no exact change-of-measure identity is threaded here.)
+  -- `limit_law_under_h` derives the asymptotic comparison from `hDQM` and `hPDF`.
   have h_Δ_tight := score_clt_local M μ θ₀ ℓ hℓ hDQM J hJ hScoreCLT
   -- Step 2: extract a joint subsequence `φ` with limit `π`.
   obtain ⟨φ, hφ_mono, π, hπ_prob, h_joint⟩ :=
@@ -2442,7 +2407,7 @@ theorem LAN_representation_of_gaussianShift
   -- End of `vLog` / `hLogLik_weak` internal derivation.
   refine ⟨representationKernel J π, inferInstance, ?_⟩
   intro h
-  -- Step 3: derive `hSlutsky` internally via `slutsky_bridge_of_lanResidual` +
+  -- Derive `hSlutsky` via `slutsky_bridge_of_lanResidual` and
   -- `lanResidual_tendsto_productMeasure` (LAN_expansion_iii transported from abstract
   -- iid `Ω = ℕ → 𝓧` to `productMeasure`).
   have h_lanResidual_full :=
@@ -2457,17 +2422,17 @@ theorem LAN_representation_of_gaussianShift
     (h_lanResidual_full ε hε).comp hφ_mono.tendsto_atTop
   have hSlutsky_π := slutsky_bridge_of_lanResidual M μ θ₀ ℓ hℓ J T hT_meas h π φ
     (fun n => logLikelihood_measurable M θ₀ h n) h_lanResidual_subseq
-  -- Step 3: joint weak convergence with the log-likelihood ratio, along the same `φ`.
+  -- Obtain joint weak convergence with the log-likelihood ratio along the same `φ`.
   have h_joint_log := joint_weak_with_logLikelihood
     M μ θ₀ ℓ hℓ hDQM J hJ T hT_meas h π φ hφ_mono h_joint hSlutsky_π
-  -- Step 4 (mutual contiguity `P^n_θ₀ ⊲⊳ P^n_{θ₀+h/√n}`) is not materialised here: Step 5
-  -- consumes the log-normal weak convergence directly. Using the marginal identification
-  -- `π.map snd = multivariateGaussian 0 J` and the MGF lemmas, derive the tilt's MGF facts.
+  -- Mutual contiguity `P^n_θ₀ ⊲⊳ P^n_{θ₀+h/√n}` need not be materialized here:
+  -- the tilted-law argument consumes log-normal weak convergence directly. Use the
+  -- marginal identity `π.map snd = multivariateGaussian 0 J` and the MGF lemmas.
   have h_mgfTilt_integrable := ProbabilityTheory.integrable_exp_tilt
     π J hJ_pd.posSemidef h_π_snd h
   have h_mgfTilt_integral_one := ProbabilityTheory.integral_exp_tilt_eq_one
     π J hJ_pd.posSemidef h_π_snd h
-  -- Step 5: `L_h = Measure.map Prod.fst (π.withDensity (exp ∘ tilt))`.
+  -- Identify `L_h = Measure.map Prod.fst (π.withDensity (exp ∘ tilt))`.
   have h_L_h_formula := limit_law_under_h
     M μ θ₀ ℓ hℓ hDQM hPDF J hJ_pd T hT_meas h π (L h) (hT_weak h)
     φ hφ_mono h_joint_log
@@ -2480,10 +2445,10 @@ theorem LAN_representation_of_gaussianShift
   have hTilt_π : GaussianShift.HasTiltedLinearPushforward gauss (π.map Prod.snd) J := by
     rw [h_π_snd]
     exact GaussianShift.hasTiltedLinearPushforward_of_isGaussianShift hJ_pd hGauss
-  -- Step 7: rewrite the tilted-formula form as `(gauss h).bind κ`.
+  -- Rewrite the tilted-law formula as `(gauss h).bind κ`.
   exact gaussianShift_bind_eq_limit J hJ_pd gauss hGauss π h (L h) hTilt_π h_L_h_formula
 
-/-! ## Main theorem: `LAN_representation` (vdV Theorem 7.10 (§7.3), kernel form)
+/-! ## Main theorem: `LAN_representation` (vdV §7.10, kernel form)
 
 Specialises `LAN_representation_of_gaussianShift` to the concrete Gaussian family
 `multivariateGaussian h J⁻¹`, matching van der Vaart's statement:
@@ -2517,7 +2482,7 @@ theorem LAN_representation
     (GaussianShift.isGaussianShift_multivariateGaussian J⁻¹ hJ_pd.inv)
     hPDF
 
-/-- Compatibility alias for `LAN_representation`. -/
+/-- Equivalent name for `LAN_representation`. -/
 theorem LAN_representation_vdV
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (ℓ : 𝓧 → Θ k) (hℓ : Measurable ℓ)

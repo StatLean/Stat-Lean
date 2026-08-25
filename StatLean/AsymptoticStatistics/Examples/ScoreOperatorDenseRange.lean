@@ -761,7 +761,7 @@ private lemma densePsi_halfGeometricP : densePsi halfGeometricP = 0 := by
 `L2ZeroMean P` score operator, the dense nonclosed adjoint obstruction, and
 the normalized-square-tilt derivative paths for the same `A`, `q`, and `ψ`.
 
-Proof idea: the half-geometric law on `ℕ`, compressed multiplier
+The construction uses the half-geometric law on `ℕ`, compressed multiplier
 `m(n)=2^{-n/2}`, bounded mean-zero `q` outside the multiplier range, and
 normalized square tilts. -/
 structure DenseRangeScoreWitness where

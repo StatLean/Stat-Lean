@@ -3,8 +3,9 @@ import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterProcessMapp
 /-!
 # The argmax theorem
 
-This module proves van der Vaart Theorem 5.56 through a shared closed-set argument. The theorem
-assumes near-maximizer, well-separated maximum, compact containment, and pair-process
+Shared closed-set core and the book-facing statement of van der Vaart Theorem
+5.56. The theorem assumes the
+near-maximizer, well-separated maximum, compact containment, and pair-process
 outer weak convergence assumptions.
 -/
 
@@ -15,10 +16,10 @@ namespace AsymptoticStatistics.MEstimator
 
 /-- The shared closed-set argmax core used by Theorem 5.56 and Corollary 5.58.
 
-The input `hcomparison` is the one-sided supremum-event inequality delivered
-either by pair weak convergence (Theorem 5.56) or by the refined local
-`ℓ∞(K)` changing-set argument (Corollary 5.58). Argmax convergence is derived from these
-assumptions.
+The input `hcomparison` is the one-sided supremum-event inequality obtained
+either from pair weak convergence (Theorem 5.56) or from the refined local
+`ℓ∞(K)` changing-set comparison (Corollary 5.58).  The conclusion is constructed
+here; argmax convergence is not present in any hypothesis or bundle.
 
 Each `p ∈ 𝓛` carries a sample/numerator set `p.1` and a possibly different
 limit-denominator set `p.2`.  Their geometric properties are supplied only by
@@ -197,21 +198,21 @@ theorem argmax_theorem
     (Mn : ℕ → Ω → D → ℝ) (M : Ωlim → D → ℝ)
     (Hn : ℕ → Set D) (H : Set D) (𝒦 : Set (Set D))
     (hhatn : ℕ → Ω → D) (hhat : Ωlim → D)
-    -- LEAN-ONLY: measurability of the limiting argmax.
+    -- Measurability of the limiting argmax.
     (hhmeas : Measurable hhat)
-    -- USER-INPUT: the sample and limiting argmaxes lie in their index sets;
+    -- The sample and limiting argmaxes lie in their index sets;
     -- vdV Theorem 5.56.
     (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)
     (hmem : ∀ᵐ ω ∂μlim, hhat ω ∈ H)
     (r : ℕ → Ω → ℝ)
-    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
+    -- The approximation remainder is represented as nonnegative.
     (hrnonneg : ∀ n ω, 0 ≤ r n ω)
-    -- USER-INPUT: near-maximization with an `o_P(1)` remainder;
+    -- Near-maximization with an `o_P(1)` remainder;
     -- vdV Theorem 5.56.
     (hr : TendstoInOuterProbabilityZero μ r)
     (hnear : ∀ n ω h, h ∈ Hn n →
       Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)
-    -- USER-INPUT: well separation and uniform compact containment;
+    -- Well separation and uniform compact containment;
     -- vdV Theorem 5.56.
     (hsep : ∀ (G : Set D), IsOpen G → ∀ K ∈ 𝒦,
       ∀ᵐ ω ∂μlim, hhat ω ∈ G →
@@ -220,9 +221,9 @@ theorem argmax_theorem
     (hcontain : ∀ ε : ℝ, 0 < ε → ∃ K ∈ 𝒦,
       (⨆ n, (μ n).outerMeasureStar {ω | hhatn n ω ∉ K}) < ENNReal.ofReal ε ∧
       μlim {ω | hhat ω ∉ K} < ENNReal.ofReal ε)
-    -- LEAN-ONLY: measurability of the paired limiting suprema.
+    -- Measurability of the paired limiting suprema.
     (hpairMeas : PairSupLimitMeasurable M H 𝒦)
-    -- USER-INPUT: joint outer weak convergence of localized process suprema;
+    -- Joint outer weak convergence of localized process suprema;
     -- vdV Theorem 5.56.
     (hpair : PairSupConvergesOuter μ μlim Mn M Hn H 𝒦) :
     WeakConvergesOuter μ hhatn (μlim.map hhat) := by

@@ -24,8 +24,7 @@ variable {P : Measure Ω} [IsProbabilityMeasure P]
 
 Proof idea: select the derived zero carrier score, use `hpd.derivative_spec`
 and linearity to show the local functional-center displacement is `o(1/√n)`,
-then apply provider-free zero-score local-product equivalence.
-The zero cone with a constant estimator is an example. -/
+then apply the zero-score local-product equivalence. -/
 theorem hasLimitDistributionAt_of_isRegularAtND
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P) (L : Measure ℝ)
@@ -143,12 +142,11 @@ theorem hasLimitDistributionAt_of_isRegularAtND
 efficient Gaussian law.
 
 Proof idea: local score CLT on every selected path, right pathwise
-differentiability, contiguity transfer of the AL residual, and Slutsky.
-For example, take `φ = 0` in the constant model. -/
+differentiability, contiguity transfer of the AL residual, and Slutsky. -/
 theorem regular_and_gaussian_of_asymptoticallyLinearND
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
-    -- USER-INPUT: pathwise differentiability and its efficient influence function;
+    -- pathwise differentiability and its efficient influence function;
     -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
@@ -310,8 +308,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
 asymptotically linear expansion.
 
 Proof idea: baseline joint subsequences, nonnegative tilt rigidity, finite
-carrier projection bounds, and outer projection exhaustion.
-The constant zero model with `φ = 0` is an example. -/
+carrier projection bounds, and outer projection exhaustion. -/
 theorem asymptoticallyLinear_of_regular_and_gaussianND
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
@@ -474,18 +471,16 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
 Regularity, the efficient normal law, and asymptotic linearity appear as the
 two sides of the equivalence; none is a field of pathwise differentiability.
 Only tangent-cone data, pathwise differentiability, an EIF, and estimator
-measurability are inputs.
-
-For example, take the zero cone, a constant functional and estimator, and `φ = 0`. -/
+measurability are inputs. -/
 theorem operational_efficiency_characterization_nondominated
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
-    -- USER-INPUT: pathwise differentiability and its efficient influence function;
+    -- pathwise differentiability and its efficient influence function;
     -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
-    -- LEAN-ONLY: measurability of each estimator.
+    -- measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtND C T_n ψ
         (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) ↔

@@ -3,7 +3,7 @@ import StatLean.AsymptoticStatistics.Consistency.WaldCompactAvoidance
 /-!
 # Wald consistency on compact sets
 
-Statement and final compact-set assembly of van der Vaart, Theorem 5.14.
+Statement and compact-set proof of van der Vaart, Theorem 5.14.
 -/
 
 open MeasureTheory Filter Topology Set
@@ -14,8 +14,8 @@ namespace AsymptoticStatistics.Consistency
 /-- **van der Vaart, Theorem 5.14 (Wald consistency).**
 
 For every positive separation radius and compact parameter set, a near
-maximizer of the iid empirical criterion lies in that compact set while
-remaining separated from the population argmax set with probability tending
+maximizer of the iid empirical criterion lies in that compact set and stays
+separated from the population argmax set with probability tending
 to zero. -/
 theorem wald_consistent_on_compact
     {X Ω Θ : Type*} [MeasurableSpace X] [MeasurableSpace Ω] [MetricSpace Θ]
@@ -23,29 +23,29 @@ theorem wald_consistent_on_compact
     (ℙ : Measure Ω) [IsProbabilityMeasure ℙ]
     (Xs : ℕ → Ω → X) (m : Θ → X → EReal) (θ₀ : Θ)
     (θhat : ℕ → Ω → Θ) (R : ℕ → Ω → ℝ)
-    -- USER-INPUT: finite-valued criterion, upper semicontinuity, and local
+    -- finite-valued criterion, upper semicontinuity, and local
     -- integrable envelopes; vdV Theorem 5.14.
     (hm_top : ∀ θ x, m θ x ≠ ⊤)
     (husc : ∀ θ, ∀ᵐ x ∂Q, UpperSemicontinuousAt (fun η => m η x) θ)
     (hlocal : ∀ θ, ∃ ρ > 0, ∀ r, 0 < r → r ≤ ρ →
       Measurable (localCriterionSup m θ r) ∧
       (∫⁻ x, (localCriterionSup m θ r x).toENNReal ∂Q) ≠ ∞)
-    -- USER-INPUT: `θ₀` maximizes the population criterion; vdV Theorem 5.14.
+    -- `θ₀` maximizes the population criterion; vdV Theorem 5.14.
     (hmax : θ₀ ∈ {θ | ∀ η,
       extendedExpectation Q (m η) ≤ extendedExpectation Q (m θ)})
-    -- LEAN-ONLY: measurability of each sample coordinate.
+    -- measurability of each sample coordinate.
     (hXs_meas : ∀ i, Measurable (Xs i))
-    -- USER-INPUT: iid observations with common law `Q`; vdV Theorem 5.14.
+    -- iid observations with common law `Q`; vdV Theorem 5.14.
     (hXs_indep : ProbabilityTheory.iIndepFun Xs ℙ)
     (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) ℙ ℙ)
     (hXs_law : ℙ.map (Xs 0) = Q)
-    -- USER-INPUT: approximate maximization with an `o_P(1)` remainder;
+    -- approximate maximization with an `o_P(1)` remainder;
     -- vdV Theorem 5.14.
     (hnear : ∀ n ω,
       extendedEmpiricalAvg (m θ₀) n (fun i : Fin n => Xs i.val ω) - (R n ω : EReal) ≤
       extendedEmpiricalAvg (m (θhat n ω)) n (fun i : Fin n => Xs i.val ω))
     (hR : TendstoInMeasure ℙ R atTop (fun _ => 0))
-    -- USER-INPUT: compact subset on which consistency is asserted.
+    -- compact subset on which consistency is asserted.
     (K : Set Θ) (hK : IsCompact K) :
     ∀ ε > 0, Tendsto (fun n => ℙ {ω |
       ε ≤ Metric.infDist (θhat n ω)

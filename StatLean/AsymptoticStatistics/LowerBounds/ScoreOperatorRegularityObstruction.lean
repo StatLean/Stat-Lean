@@ -22,10 +22,8 @@ open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.QMDPath
 open AsymptoticStatistics.Operators.ScoreOperator
 
-/-- Reparameterize a dominated QMD path by the scalar map `t ↦ a t`.
-
-This is the local adapter needed to compare one fixed parametric submodel with
-the independently selected path for the score `a • g`. -/
+/-- Reparameterize a dominated QMD path by the scalar map `t ↦ a t`, so that
+its score is multiplied by `a`. -/
 noncomputable def reparamQMDPath
     {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsProbabilityMeasure P]
@@ -118,8 +116,8 @@ Constitutive (vdV §25.5, Theorem 25.32): every parameter direction `b`
 has a selected QMD path whose score is `A b`, and whose parameter quotient
 is the Riesz derivative `inner chiTilde b`.
 
-Example: in a one-dimensional Gaussian location model,
-take `H=ℝ`, `A` the location-score isometry, `chiTilde=1`, and the standard
+For example, in a one-dimensional Gaussian location model one may take
+`H=ℝ`, `A` to be the location-score isometry, `chiTilde=1`, and the standard
 location paths. -/
 structure ScorePathDerivativeData
     (A : ScoreOperator H P) (chiTilde : H)
@@ -139,8 +137,8 @@ along all selected paths.  There is no hpd/eif/normality field.
 Constitutive (vdV §25.5, Theorem 25.32): regularity is precisely invariance
 of the centered local limit law over `b`.
 
-For the Gaussian location sample mean, the
-common limit is `N(0,1)` along every local location path. -/
+For the Gaussian location sample mean, the common limit is `N(0,1)` along
+every local location path. -/
 structure RawRegularity
     (A : ScoreOperator H P) (chiTilde : H)
     (ψ : Measure Ω → ℝ)
@@ -495,8 +493,8 @@ direction.
 Proof idea: 1D LAN for the selected path, Le Cam's third lemma, and the
 regular shift identity.
 
-The Gaussian location sample mean has zero
-residual convolution factor. -/
+The Gaussian location sample mean is an example with zero residual
+convolution factor. -/
 theorem rawRegularity_oneDim_convolution
     (A : ScoreOperator H P) (chiTilde : H)
     (ψ : Measure Ω → ℝ)
@@ -1054,8 +1052,8 @@ theorem rawRegularity_uniform_derivative_bound
 /-- A uniformly bounded range functional is continuous on the actual score
 range and hence gives `DifferentiableRelScoreRange`.
 
-Proof idea: define the value on `A b`, use the bound to prove kernel
-independence and continuity, then package the continuous linear map. -/
+The value on `A b` is well defined by the bound, which also gives continuity
+and hence a continuous linear map. -/
 theorem differentiableRelScoreRange_of_uniform_bound
     (A : ScoreOperator H P) (chiTilde : H)
     (hbound : ∃ C : ℝ, 0 ≤ C ∧
@@ -1121,22 +1119,21 @@ Proof idea: the preceding bridge gives differentiability on `range A`;
 `mem_range_adjoint_of_differentiable_unrestricted` then contradicts the
 stated range obstruction.  No closed-range assumption is present.
 
-Example for the positive case: with a finite-dimensional
-identity score operator, every `chiTilde` is in the adjoint range and the
-Gaussian sample mean is raw regular.  The theorem's negative premise is
+For a finite-dimensional identity score operator, every `chiTilde` is in the
+adjoint range and the Gaussian sample mean is raw regular. The negative premise is
 therefore correctly false in that model. -/
 theorem no_rawRegularity_of_not_mem_range_adjoint
     (A : ScoreOperator H P)
-    -- LEAN-ONLY: an explicit adjoint representative and its defining identity.
+    -- an explicit adjoint representative and its defining identity.
     (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
     (h_adj : ∀ (b : H) (y : ↥(L2ZeroMean P)),
       ⟪Astar y, b⟫_ℝ = ⟪y, A.toCLM b⟫_ℝ)
     (chiTilde : H)
-    -- USER-INPUT: the parameter derivative is outside the adjoint range;
+    -- the parameter derivative is outside the adjoint range;
     -- vdV Theorem 25.32.
     (h_not_mem : chiTilde ∉ (Astar.range : Submodule ℝ H))
     (ψ : Measure Ω → ℝ)
-    -- USER-INPUT: score paths realize the derivative represented by `chiTilde`.
+    -- score paths realize the derivative represented by `chiTilde`.
     (paths : ScorePathDerivativeData A chiTilde ψ)
     (T_n : ∀ n, (Fin n → Ω) → ℝ) :
     RawRegularity A chiTilde ψ paths T_n → False := by
