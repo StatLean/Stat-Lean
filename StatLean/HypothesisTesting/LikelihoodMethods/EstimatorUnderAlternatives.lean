@@ -56,14 +56,19 @@ estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
 * The proof route is: contiguity of `P^n_{θₙ}` to `P^n_{θ₀}` (from quadratic-mean
   differentiability) plus Le Cam's third lemma, applied to the pair
   `(⟪I⁻¹(θ₀)Z_n, t⟫, log L_{n,h})`, followed by the Cramér–Wold device.
-* For a fixed direction, `weak_limit_estimator_under_fixed_local_alternative` applies
-  Le Cam's third lemma to the full sequence. Asymptotic linearity identifies the joint
-  limit `(J⁻¹Δ, Δ)`, so no subsequence extraction is needed. The three theorems listed
-  above reduce the moving direction `hₙ` to its limit `h` through the `n`-fold Hellinger
-  estimate `integral_close_varying_direction`. This estimate tensorises the per-sample
+* **Status.** The route above is realised for a *fixed* direction by
+  `weak_limit_estimator_under_fixed_local_alternative`, which is axiom-clean and holds for
+  the full sequence (no subsequence extraction: asymptotic linearity identifies the joint
+  limit `(J⁻¹Δ, Δ)` outright, so Le Cam 3 in the form
+  `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` *produces* the limit
+  under the alternative rather than identifying a pre-supplied one). The three theorems
+  listed above are then reductions to it, over the `n`-fold Hellinger estimate
+  `integral_close_varying_direction` that lets the *moving* direction `hₙ` be replaced by
+  its limit `h`. That estimate is now PROVED as well, by tensorising the per-sample
   Hellinger residual (`HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample`)
-  and applies `dqm_sqrt_density_l2_convergence` to both the moving and constant sequences.
-  Both limits are centred at `½⟪h, ℓ⟫√p_{θ₀}`, so the centring terms cancel.
+  and feeding it the DQM limit `dqm_sqrt_density_l2_convergence` at the moving sequence and
+  at the constant one — both centred at the same `½⟪h, ℓ⟫√p_{θ₀}`, so the centrings cancel.
+  **The file is therefore 0-sorry and every theorem in it is axiom-clean.**
 
 **Bibliographic comments.** Contiguity, local asymptotic normality and the third lemma are
 due to L. Le Cam ("Locally asymptotically normal families of distributions," *Univ.
@@ -308,7 +313,7 @@ If the laws of `f n` under two sequences of measures have asymptotically the sam
 against every bounded continuous test function, then a weak limit for one is a weak limit for
 the other.
 
-This lemma reduces the *varying*-direction local-alternative limit to the
+This is the brick that reduces the *varying*-direction local-alternative limit to the
 *fixed*-direction one: with `Q n = P^n_{θ₀ + hₙ/√n}` and `Q' n = P^n_{θ₀ + h/√n}` the
 hypothesis `hclose` is implied by `‖Q n − Q' n‖_TV → 0`, which for a quadratic-mean
 differentiable family follows from `n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0`.
@@ -362,16 +367,14 @@ only that no two parameters disagree about which points are impossible, which is
 source assumes implicitly whenever it writes a likelihood ratio. -/
 private lemma productMeasure_eq_withDensity_exp_logLikelihood
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
-    (hPDF : IsPDFOf M μ)
-    (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
     (hsupp : ∀ (θ θ' : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
       M.density θ x ≠ 0 → M.density θ' x ≠ 0)
     (h : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
     productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
       = (productMeasure M μ θ₀ n).withDensity
           (fun ω => ENNReal.ofReal (Real.exp (logLikelihood M θ₀ h n ω))) := by
-  refine logLikelihood_is_log_ratio M μ θ₀ h n
-    (hPDF.density_integrable _)
+  refine logLikelihood_is_log_ratio M μ θ₀ h n (hPDF.density_integrable _)
     (Filter.Eventually.of_forall fun x => ?_)
   constructor
   · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
@@ -467,8 +470,9 @@ in the limit, so no tightness or subsequence argument is needed to produce the j
 it is the pushforward of the score limit along `δ ↦ (J⁻¹δ, δ)`, and Slutsky replaces
 `J⁻¹Δₙ` by `√n(θ̂ₙ − θ₀)`.
 
-Consequently, `hlin` identifies the joint limit along the full sequence, without the
-subsequence extraction used by `joint_weak_subsequence`. -/
+This is what makes the full-sequence route possible: `joint_weak_subsequence` extracts a
+subsequence precisely because it does not know the joint limit, whereas here `hlin`
+*identifies* it. -/
 private lemma joint_weak_estimator_scoreSum
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
@@ -675,14 +679,15 @@ private lemma logLikelihood_weakConverges_gaussianReal
 
 /-- **Limit law of an efficient estimator under a FIXED local alternative.**
 
-Under `P^n_{θ₀+h/√n}`, `√n(θ̂ₙ − θ₀) ⇝ N(h, I⁻¹(θ₀))`. This is the fixed-direction form of
-`weak_limit_estimator_under_local_alternatives` and holds along the full sequence, without
-extracting a subsequence.
+Under `P^n_{θ₀+h/√n}`, `√n(θ̂ₙ − θ₀) ⇝ N(h, I⁻¹(θ₀))`. This is the fixed-direction core of
+`weak_limit_estimator_under_local_alternatives`, and it is proved for the **full** sequence:
+no subsequence is extracted anywhere.
 
-The proof uses Le Cam's third lemma in its contiguity-footing form
-(`Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison`), which derives the
-weak limit under `Q` rather than identifying a pre-supplied one. Thus `limit_law_under_h`,
-whose `h_weak_under_h` is a hypothesis, is not the vehicle here. Its five inputs are:
+The assembly is Le Cam's third lemma in its contiguity-footing form
+(`Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison`), which *produces* the
+weak limit under `Q` rather than identifying a pre-supplied one — which is why
+`limit_law_under_h`, whose `h_weak_under_h` is a hypothesis, is not the vehicle here. Its five
+inputs are all now available:
 
 * the integral comparison — `productMeasure_integral_comparison`, the DQM-derived asymptotic
   substitute for the exact change of measure. Note that this is what lets the theorem avoid a
@@ -696,7 +701,7 @@ whose `h_weak_under_h` is a hypothesis, is not the vehicle here. Its five inputs
   `logLikelihood_weakConverges_gaussianReal`;
 * the Gaussian-MGF pair — `GaussianMGF.integrable_exp_tilt` / `integral_exp_tilt_eq_one`,
   whose only input is that the joint limit has second marginal `N(0, J)`; that marginal is
-  exactly `N(0,J)` because the joint is carried by the graph of `J⁻¹`.
+  `N(0,J)` on the nose because the joint is carried by the graph of `J⁻¹`.
 
 The resulting limit `((π ∘ tilt).withDensity e^{·})∘fst` is then evaluated in closed form by
 `map_fst_withDensity_exp_tilt_graphJoint`, giving `N(h, J⁻¹)`. -/
@@ -801,15 +806,15 @@ private lemma eLpNorm_two_toReal_eq_sqrt_integral_sq {Ω : Type*} [MeasurableSpa
   rw [ENNReal.toReal_ofReal (Real.rpow_nonneg hnn _), Real.sqrt_eq_rpow]
   norm_num
 
-/-- **Varying-direction transfer by Hellinger comparison.**
+/-- **Brick (B), the varying-direction transfer — PROVED.**
 
 `P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
 functions of the sample.
 
-The fixed-direction limit is supplied by
-`weak_limit_estimator_under_fixed_local_alternative`, while
-`weakConverges_of_integral_close` reduces the varying case to the comparison established
-here.
+**Why this is the whole remaining gap.** Everything else in this lane was already proved:
+`weak_limit_estimator_under_fixed_local_alternative` closes the *fixed*-direction statement
+for the full sequence, and `weakConverges_of_integral_close` above reduces the varying case
+to the fixed one over exactly this hypothesis.
 
 **What it is mathematically.** `|∫g dQₙ − ∫g dQ'ₙ| ≤ 2‖g‖·H(Qₙ, Q'ₙ)`, and for a
 quadratic-mean differentiable family the two local alternatives are close in Hellinger
@@ -817,14 +822,14 @@ distance because the `n`-fold Hellinger residual tensorises:
 `n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → 0` (using `hconv`). This is a statement about the
 *model*, not about the estimator: it does not mention `est` beyond the test function.
 
-**Hellinger argument.** The asymptotic
+**The route, and why it does not need the `h`-indexed LAN machinery.** Every asymptotic
 tool in `AsymptoticRepresentation.lean` fixes the direction `h` in advance —
 `logLikelihood M θ₀ h n` is defined with a single `h`, `productMeasure_integral_comparison`
 builds its slack `ρ n` from the `h`-dependent `goodSet M θ₀ h n`, and
 `lanResidual_tendsto_productMeasure` calls `LAN_expansion_iii` at the constant sequence.
 Re-running any of them at the *moving* parameter `hₙ` would need uniformity of `ρ` over a
-compact set of directions. The Hellinger comparison instead uses the following three
-ingredients:
+compact set of directions. The Hellinger route sidesteps all of that, and the three pieces
+it needs are already in the library:
 
 * `HellingerIntegralBound.integral_diff_le_hellinger_product_iid` — the bounded-test
   inequality `|∫F dμ^n − ∫F dν^n| ≤ 2‖F‖_∞ · ‖√(dμ^n/dξ^n) − √(dν^n/dξ^n)‖_{L²(ξ^n)}`;
@@ -1058,47 +1063,65 @@ Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recen
 `√n(θ̂ₙ − θₙ)` converges weakly to `N(0, I⁻¹(θ₀))` — the same law as under `θ₀`. -/
 theorem weak_limit_estimator_under_local_alternatives
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
-    -- Probability instances for the i.i.d. product laws.
+    -- LEAN-ONLY: instance plumbing for the i.i.d. laws; forced by `hPDF` through
+    -- `productMeasure_isProbabilityMeasure`
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n,
       IsProbabilityMeasure (productMeasure M μ θ n)]
-    -- Normalization and integrability of the model densities.
+    -- USER-INPUT: the densities normalize and are integrable; the model is a density family
     (hPDF : IsPDFOf M μ)
-    -- Parameter at which the expansion is assumed.
+    -- USER-INPUT: the parameter at which the expansion is assumed
     (θ₀ : EuclideanSpace ℝ (Fin k))
-    -- Score function of the model at `θ₀`.
+    -- USER-INPUT: the score function of the model at `θ₀`
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
-    -- Measurability of the score.
+    -- LEAN-ONLY: measurability of the score; standard regularity
     (hℓ : Measurable ℓ)
-    -- Differentiability in quadratic mean at `θ₀` with score `ℓ`.
+    -- USER-INPUT: the model is differentiable in quadratic mean at `θ₀` with score `ℓ`
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
-    -- Fisher information matrix at `θ₀`.
+    -- USER-INPUT: the Fisher information matrix at `θ₀`
     (J : Matrix (Fin k) (Fin k) ℝ)
-    -- Matrix representation of the Fisher information bilinear form.
+    -- LEAN-ONLY: matrix form of the Fisher information bilinear form; the area convention
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
-    -- Nonsingularity of the Fisher information matrix.
+    -- USER-INPUT: the Fisher information matrix is nonsingular
     (hJ_inv : IsUnit J.det)
-    -- Estimator sequence.
+    -- USER-INPUT: the estimator sequence
     (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
-    -- Measurability of the estimators, used for pushforward measures.
+    -- LEAN-ONLY: measurability of the estimators; needed to push measures forward
     (hest : ∀ n, Measurable (est n))
-    -- Asymptotic linearity of the estimator sequence at `θ₀`.
+    -- USER-INPUT: the estimator sequence is asymptotically linear at `θ₀`
     (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
-    -- Local direction and converging sequence of directions.
+    -- USER-INPUT: the local direction and the converging sequence of directions
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
     (hconv : Tendsto h_n atTop (𝓝 h)) :
     WeakConverges
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
-  -- First apply the fixed-direction theorem, which uses Le Cam's third lemma together with
-  -- the DQM-based `productMeasure_integral_comparison`. This asymptotic comparison avoids
-  -- the common-support condition required by an exact likelihood-ratio change of measure.
-  -- Asymptotic linearity identifies the joint limit as the law of `(J⁻¹Δ, Δ)`, carried by
-  -- the graph of `J⁻¹`; its second marginal is `N(0, J)`, so the Gaussian exponential tilt
-  -- follows from `GaussianMGF.integrable_exp_tilt` and `integral_exp_tilt_eq_one`.
-  -- Next, `integral_close_varying_direction` compares the moving and fixed local
-  -- alternatives by tensorising their per-sample Hellinger residuals. The DQM limits have
-  -- the common centring `½⟪h, ℓ⟫√p_{θ₀}`, which cancels in the difference.
+  -- ROUTE, NOW REALISED. The fixed-direction statement is
+  -- `weak_limit_estimator_under_fixed_local_alternative` above — CLOSED this session, for the
+  -- full sequence, by Le Cam's third lemma in its contiguity-footing form. The previous
+  -- note's three obstructions are all discharged:
+  --   * the common-support defect of `hL_is_log_ratio` is real (it is recorded, with both
+  --     junk-value failure modes, at `productMeasure_eq_withDensity_exp_logLikelihood`, where
+  --     the authorised repair is applied) — but the fixed-direction route does not need the
+  --     exact change of measure at all: `productMeasure_integral_comparison` is the
+  --     DQM-derived asymptotic substitute, and that is exactly why it exists;
+  --   * "existence-plus-identification" is not needed either. `limit_law_under_h` takes the
+  --     weak limit under the alternative as a *hypothesis*, but
+  --     `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` PRODUCES it; and
+  --     the subsequence extraction of `joint_weak_subsequence` is unnecessary because `hlin`
+  --     identifies the joint limit outright — it is the law of `(J⁻¹Δ, Δ)`, carried by the
+  --     graph of `J⁻¹` (`joint_weak_estimator_scoreSum`);
+  --   * the Gaussian-MGF pair is derived, not assumed: the graph joint has second marginal
+  --     `N(0, J)` on the nose, which is the only input of `GaussianMGF.integrable_exp_tilt`
+  --     and `integral_exp_tilt_eq_one`, and the resulting tilt is evaluated in closed form by
+  --     `map_fst_withDensity_exp_tilt_graphJoint`.
+  -- Brick (B) — `integral_close_varying_direction`, the `n`-fold Hellinger estimate that
+  -- makes the two local alternatives `θ₀ + hₙ/√n` and `θ₀ + h/√n` indistinguishable — is
+  -- now PROVED too (see its docstring: tensorisation of the per-sample Hellinger residual
+  -- fed by the DQM `L²`-limit at the moving and at the constant sequence, whose common
+  -- centring `½⟪h, ℓ⟫√p_{θ₀}` cancels in the difference). The reduction of the varying case
+  -- to the fixed one is `weakConverges_of_integral_close`, spelled out below, so this
+  -- theorem is axiom-clean.
   classical
   have hTmeas : ∀ n : ℕ, Measurable
       (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
@@ -1106,7 +1129,7 @@ theorem weak_limit_estimator_under_local_alternatives
   have hXmeas : ∀ n : ℕ, Measurable
       (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) :=
     fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
-  -- Apply the fixed-direction limit, then transfer it to the moving direction.
+  -- (A) the fixed direction, then (B) the transfer to the moving direction
   have hfix := weak_limit_estimator_under_fixed_local_alternative M μ hPDF θ₀ ℓ hℓ hDQM J hJ
     hJ_inv est hest hlin h
   have hA : WeakConverges
@@ -1155,32 +1178,32 @@ The equivalent form of the previous theorem: under `P^n_{θₙ}`, `√n(θ̂ₙ 
 weakly to `N(h, I⁻¹(θ₀))`; the local shift `h` appears as the mean. -/
 theorem weak_limit_estimator_centered_under_local_alternatives
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
-    -- Probability instances for the i.i.d. product laws.
+    -- LEAN-ONLY: instance plumbing for the i.i.d. laws; forced by `hPDF`
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n,
       IsProbabilityMeasure (productMeasure M μ θ n)]
-    -- Normalization and integrability of the model densities.
+    -- USER-INPUT: the densities normalize and are integrable
     (hPDF : IsPDFOf M μ)
-    -- Parameter at which the expansion is assumed.
+    -- USER-INPUT: the parameter at which the expansion is assumed
     (θ₀ : EuclideanSpace ℝ (Fin k))
-    -- Score function of the model at `θ₀`.
+    -- USER-INPUT: the score function of the model at `θ₀`
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
-    -- Measurability of the score.
+    -- LEAN-ONLY: measurability of the score; standard regularity
     (hℓ : Measurable ℓ)
-    -- Differentiability in quadratic mean at `θ₀` with score `ℓ`.
+    -- USER-INPUT: the model is differentiable in quadratic mean at `θ₀` with score `ℓ`
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
-    -- Fisher information matrix at `θ₀`.
+    -- USER-INPUT: the Fisher information matrix at `θ₀`
     (J : Matrix (Fin k) (Fin k) ℝ)
-    -- Matrix representation of the Fisher information bilinear form.
+    -- LEAN-ONLY: matrix form of the Fisher information bilinear form; the area convention
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
-    -- Nonsingularity of the Fisher information matrix.
+    -- USER-INPUT: the Fisher information matrix is nonsingular
     (hJ_inv : IsUnit J.det)
-    -- Estimator sequence.
+    -- USER-INPUT: the estimator sequence
     (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
-    -- Measurability of the estimators.
+    -- LEAN-ONLY: measurability of the estimators
     (hest : ∀ n, Measurable (est n))
-    -- Asymptotic linearity of the estimator sequence at `θ₀`.
+    -- USER-INPUT: the estimator sequence is asymptotically linear at `θ₀`
     (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
-    -- Local direction and converging sequence of directions.
+    -- USER-INPUT: the local direction and the converging sequence of directions
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
     (hconv : Tendsto h_n atTop (𝓝 h)) :
     WeakConverges
@@ -1247,39 +1270,39 @@ satisfies, under `P^n_{θₙ}`,
 `√n(g(θ̂ₙ) − g(θₙ)) ⇝ N(0, σ²)` with `σ² = ġ(θ₀)·I⁻¹(θ₀)·ġ(θ₀)ᵀ`. -/
 theorem weak_limit_g_estimator_under_local_alternatives
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
-    -- Probability instances for the i.i.d. product laws.
+    -- LEAN-ONLY: instance plumbing for the i.i.d. laws; forced by `hPDF`
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n,
       IsProbabilityMeasure (productMeasure M μ θ n)]
-    -- Normalization and integrability of the model densities.
+    -- USER-INPUT: the densities normalize and are integrable
     (hPDF : IsPDFOf M μ)
-    -- Parameter at which the expansion is assumed.
+    -- USER-INPUT: the parameter at which the expansion is assumed
     (θ₀ : EuclideanSpace ℝ (Fin k))
-    -- Score function of the model at `θ₀`.
+    -- USER-INPUT: the score function of the model at `θ₀`
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
-    -- Measurability of the score.
+    -- LEAN-ONLY: measurability of the score; standard regularity
     (hℓ : Measurable ℓ)
-    -- Differentiability in quadratic mean at `θ₀` with score `ℓ`.
+    -- USER-INPUT: the model is differentiable in quadratic mean at `θ₀` with score `ℓ`
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
-    -- Fisher information matrix at `θ₀`.
+    -- USER-INPUT: the Fisher information matrix at `θ₀`
     (J : Matrix (Fin k) (Fin k) ℝ)
-    -- Matrix representation of the Fisher information bilinear form.
+    -- LEAN-ONLY: matrix form of the Fisher information bilinear form; the area convention
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
-    -- Nonsingularity of the Fisher information matrix.
+    -- USER-INPUT: the Fisher information matrix is nonsingular
     (hJ_inv : IsUnit J.det)
-    -- Estimator sequence, measurable and asymptotically linear at `θ₀`.
+    -- USER-INPUT: the estimator sequence, measurable and asymptotically linear at `θ₀`
     (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
     (hest : ∀ n, Measurable (est n))
     (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
-    -- Local direction and converging sequence of directions.
+    -- USER-INPUT: the local direction and the converging sequence of directions
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
     (hconv : Tendsto h_n atTop (𝓝 h))
-    -- Differentiable real-valued parameter functional with gradient `gr`.
+    -- USER-INPUT: a differentiable real-valued parameter functional with gradient `gr`
     (g : EuclideanSpace ℝ (Fin k) → ℝ)
     (gr : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
     (hg : ∀ θ, HasGradientAt g (gr θ) θ)
-    -- Nonvanishing gradient at `θ₀`.
+    -- USER-INPUT: the gradient does not vanish at `θ₀`
     (hgr_ne : gr θ₀ ≠ 0)
-    -- Asymptotic variance `σ² = ġ(θ₀)I⁻¹(θ₀)ġ(θ₀)ᵀ`.
+    -- USER-INPUT: the asymptotic variance `σ² = ġ(θ₀)I⁻¹(θ₀)ġ(θ₀)ᵀ`
     (σ : NNReal) (hσ : (σ : ℝ) = ⟪gr θ₀, mulVecE J⁻¹ (gr θ₀)⟫) :
     WeakConverges
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
