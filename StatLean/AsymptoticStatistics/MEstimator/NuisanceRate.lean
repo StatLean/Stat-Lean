@@ -517,22 +517,22 @@ theorem mEstimator_nuisance_rate
     (P : Measure Ω) [IsProbabilityMeasure P]
     (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (m : Θ → H → Ω → ℝ) (θ₀ : Θ) (η₀ : H)
-    -- Measurability of the criterion functions.
+    -- LEAN-ONLY: measurability of the criterion functions.
     (hm_meas : ∀ θ η, Measurable (m θ η))
     (X : ℕ → Ξ → Ω)
     (Θn : ℕ → Set Θ) (Hn : ℕ → Set H)
-    -- Integrability on the local parameter sets.
+    -- LEAN-ONLY: integrability on the local parameter sets.
     (hm_int : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       Integrable (fun ω => m θ η ω - m θ₀ η ω) P)
     (dΘ : ℕ → Θ → Θ → NNReal) (dH : H → H → NNReal)
     (e : ℕ → Θ → H → ℝ) (φ : ℕ → ℝ → ℝ)
-    -- Rate exponent, modulus monotonicity, and balancing sequence;
+    -- USER-INPUT: rate exponent, modulus monotonicity, and balancing sequence;
     -- vdV Theorem 5.55.
     (β : ℝ) (hβ : β < 2)
     (hφanti : ∀ n, AntitoneOn (fun δ => φ n δ / Real.rpow δ β) (Set.Ioi 0))
     (δn : ℕ → ℝ) (hδn : ∀ n, 0 < δn n)
     (hbalance : ∀ n, φ n (δn n) ≤ Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2)
-    -- Deterministic drift and empirical-process modulus bounds;
+    -- USER-INPUT: deterministic drift and empirical-process modulus bounds;
     -- vdV Theorem 5.55.
     (hdet : ∀ n θ, θ ∈ Θn n → ∀ η, η ∈ Hn n →
       (∫ ω, (m θ η ω - m θ₀ η ω) ∂P) + e n θ η ≤
@@ -545,15 +545,15 @@ theorem mEstimator_nuisance_rate
                 Real.sqrt ((n + 1 : ℕ) : ℝ) * e n θ.1 η.1|) ≤
         ENNReal.ofReal (φ n δ))
     (θhat : ℕ → Ξ → Θ) (ηhat : ℕ → Ξ → H)
-    -- The estimators eventually lie in the local parameter sets;
+    -- USER-INPUT: the estimators eventually lie in the local parameter sets;
     -- vdV Theorem 5.55.
     (hmem : TendstoInnerProbOne μ (fun n =>
       {ξ | θhat n ξ ∈ Θn n ∧ ηhat n ξ ∈ Hn n}))
     (R : ℕ → Ξ → ℝ)
-    -- Measurability and a nonnegative representation of the remainder.
+    -- LEAN-ONLY: measurability and a nonnegative representation of the remainder.
     (hR_meas : ∀ n, Measurable (R n))
     (hR_nonneg : ∀ n ξ, 0 ≤ R n ξ)
-    -- Approximate maximization and an `O_P(δₙ²)` remainder;
+    -- USER-INPUT: approximate maximization and an `O_P(δₙ²)` remainder;
     -- vdV Theorem 5.55.
     (hNearMax : ∀ n ξ,
       nuisanceEmpiricalCriterion m X n ξ (θhat n ξ) (ηhat n ξ) ≥

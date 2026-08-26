@@ -287,7 +287,7 @@ theorem rawMovingBias_normalized_expansion_2559_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- native estimating equation, replacement, QMD transport,
+    -- USER-INPUT: native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.59.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I) :
     TendstoInProbZero (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -711,12 +711,12 @@ theorem rawMovingBias_sqrtN_tight_2554_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- native estimating equation, replacement, QMD transport,
+    -- USER-INPUT: native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- estimator measurability for the finite-prefix tightness step.
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vector equation (25.52), in rate-free normalized form;
+    -- USER-INPUT: vector equation (25.52), in rate-free normalized form;
     -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
@@ -825,12 +825,12 @@ theorem rawMovingBias_asympLinear_2554_vec
     {score0 : Fin d -> ↥(L2ZeroMean P)}
     {F : Fin d -> Set (Omega -> Real)}
     {I : Matrix (Fin d) (Fin d) Real}
-    -- native estimating equation, replacement, QMD transport,
+    -- USER-INPUT: native estimating equation, replacement, QMD transport,
     -- cross-moment identity, and positive-definite information; vdV Theorem 25.54.
     (h : RawMovingBiasExpansionHyp_vec P M estimator theta0 scoreHat score0 F I)
-    -- estimator measurability for the finite-prefix tightness step.
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
-    -- vector equation (25.52), in rate-free normalized form;
+    -- USER-INPUT: vector equation (25.52), in rate-free normalized form;
     -- vdV Theorem 25.54.
     (h52 : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))

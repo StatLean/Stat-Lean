@@ -1881,17 +1881,17 @@ uniform in `δ > 0`; the `∃ ρ` binder is carried only to match `modulus_maxim
 theorem centeredLipschitz_localizedModulus_bound
     {d : ℕ} (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- explicit measurability of the criterion and envelope.
+    -- LEAN-ONLY: explicit measurability of the criterion and envelope.
     (hm_meas : ∀ θ, Measurable (m θ))
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
-    -- an `L²(P)` envelope controls the criterion's Lipschitz modulus;
+    -- USER-INPUT: an `L²(P)` envelope controls the criterion's Lipschitz modulus;
     -- vdV Corollary 19.35.
     (hLip : ∀ θ₁ θ₂ ω, |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- measurability of each sample coordinate.
+    -- LEAN-ONLY: measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- iid observations with common law `P`.
+    -- USER-INPUT: iid observations with common law `P`.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :

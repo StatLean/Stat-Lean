@@ -507,12 +507,15 @@ theorem convexLinear_zEstimator_efficient_2561
     [CompleteSpace Theta]
     (S_theta : OrdinaryScore P Theta)
     (T_nuis : NuisanceTangentSpace P)
+    -- LEAN-ONLY: Mathlib's orthogonal projection API for the nuisance tangent.
     [proj : T_nuis.HasOrthogonalProjection]
     (v : Theta)
     (gamma : QMDPath P)
     (estimator : forall n, (Fin n -> Omega) -> Real) (theta0 : Real)
     (scoreHat : forall n, (Fin n -> Omega) -> Omega -> Real)
     (F : Set (Omega -> Real))
+    -- USER-INPUT: fitted-score estimating equation, random-index replacement,
+    -- QMD transport, and score identification; vdV §25.8 and Example 25.61.
     (score_eq : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X => (Real.sqrt n)⁻¹ * ∑ i : Fin n, scoreHat n X (X i)))
@@ -523,12 +526,17 @@ theorem convexLinear_zEstimator_efficient_2561
       (fun omega => ((@efficientScore Omega _ P _ Theta _ _ _
         S_theta T_nuis proj v : Lp Real 2 P) : Omega -> Real) omega))
     (hScore : gamma.score = S_theta v)
+    -- USER-INPUT: nonsingular efficient information; vdV Theorem 25.54.
     (hI : 0 < @efficientInformation Omega _ P _ Theta _ _ _
       S_theta T_nuis proj v)
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
+    -- USER-INPUT: fitted nuisance laws, tangents, scores, and convex-linear
+    -- efficient-score witnesses; vdV Example 25.61.
     (P_hat : forall n, (Fin n -> Omega) -> Measure Omega)
     [forall n X, IsProbabilityMeasure (P_hat n X)]
     (T_hat : forall n X, NuisanceTangentSpace (P_hat n X))
+    -- LEAN-ONLY: fitted tangent projections required by Mathlib's Hilbert API.
     [forall n X, (T_hat n X).HasOrthogonalProjection]
     (S_hat : forall n X, OrdinaryScore (P_hat n X) Theta)
     (M_hat : forall n X, ConvexLinearModel (P_hat n X) (T_hat n X))
@@ -536,6 +544,8 @@ theorem convexLinear_zEstimator_efficient_2561
       (M_hat n X) (gamma.curve (estimator n X - theta0))
       (S_hat n X) v (scoreHat n X))
     (T : Submodule Real ↥(L2ZeroMean P)) (dpsi : T →L[Real] Real)
+    -- USER-INPUT: the efficient-score representer lies in the tangent and
+    -- represents the derivative; vdV Example 25.61.
     (h_mem : (1 / @efficientInformation Omega _ P _ Theta _ _ _
       S_theta T_nuis proj v) •
         @efficientScore Omega _ P _ Theta _ _ _ S_theta T_nuis proj v ∈ T)
@@ -544,6 +554,7 @@ theorem convexLinear_zEstimator_efficient_2561
         S_theta T_nuis proj v) *
         ⟪@efficientScore Omega _ P _ Theta _ _ _ S_theta T_nuis proj v,
           (g : ↥(L2ZeroMean P))⟫_ℝ)
+    -- USER-INPUT: target functional and its value at the truth.
     (psi : Measure Omega -> Real) (hpsi : psi P = theta0) :
     SemiparametricallyEfficientAt estimator psi P T := by
   have hRaw := RawMovingBiasExpansionHyp.ofEfficientScore (proj := proj)
@@ -578,6 +589,7 @@ theorem convexLinear_zEstimator_efficient_2561_vec
     {Theta : Type*} [NormedAddCommGroup Theta] [InnerProductSpace Real Theta]
     [CompleteSpace Theta]
     (S_theta : OrdinaryScore P Theta) (T_nuis : NuisanceTangentSpace P)
+    -- LEAN-ONLY: Mathlib's orthogonal projection API for the nuisance tangent.
     [proj : T_nuis.HasOrthogonalProjection]
     (e : Fin d -> Theta)
     (M : QMDModel (Omega := Omega) P d)
@@ -586,6 +598,8 @@ theorem convexLinear_zEstimator_efficient_2561_vec
     (scoreHat : forall n,
       (Fin n -> Omega) -> Omega -> EuclideanSpace Real (Fin d))
     (F : Fin d -> Set (Omega -> Real))
+    -- USER-INPUT: native estimating equation, coordinatewise replacement,
+    -- QMD transport, and score identification; vdV §25.8 and Example 25.61.
     (score_eq : TendstoInProbZero
       (fun n : Nat => Measure.pi (fun _ : Fin n => P))
       (fun n X => (Real.sqrt n)⁻¹ • ∑ i : Fin n, scoreHat n X (X i)))
@@ -597,12 +611,17 @@ theorem convexLinear_zEstimator_efficient_2561_vec
         S_theta T_nuis proj (e k))))
     (hScore : forall k, (fun omega => M.score omega k) =ᵐ[P]
       fun omega => ((S_theta (e k) : Lp Real 2 P) : Omega -> Real) omega)
+    -- USER-INPUT: positive-definite efficient information; vdV Theorem 25.54.
     (hPD : (@efficientInformationMatrix Omega _ P _ Theta _ _ _ d
       S_theta T_nuis proj e).PosDef)
+    -- LEAN-ONLY: estimator measurability for the finite-prefix tightness step.
     (hEstimator_meas : forall n, Measurable (estimator n))
+    -- USER-INPUT: fitted nuisance laws, tangents, scores, and convex-linear
+    -- efficient-score witnesses; vdV Example 25.61.
     (P_hat : forall n, (Fin n -> Omega) -> Measure Omega)
     [forall n X, IsProbabilityMeasure (P_hat n X)]
     (T_hat : forall n X, NuisanceTangentSpace (P_hat n X))
+    -- LEAN-ONLY: fitted tangent projections required by Mathlib's Hilbert API.
     [forall n X, (T_hat n X).HasOrthogonalProjection]
     (S_hat : forall n X, OrdinaryScore (P_hat n X) Theta)
     (C_hat : forall n X, ConvexLinearModel (P_hat n X) (T_hat n X))
@@ -611,12 +630,15 @@ theorem convexLinear_zEstimator_efficient_2561_vec
       (S_hat n X) e (scoreHat n X))
     (T : Submodule Real ↥(L2ZeroMean P))
     (Dpsi : T →L[Real] EuclideanSpace Real (Fin d))
+    -- USER-INPUT: every candidate coordinate lies in the tangent and represents
+    -- the corresponding derivative coordinate; vdV Example 25.61.
     (h_mem : forall j, @candidateVecEIF Omega _ P _ Theta _ _ _ d
       S_theta T_nuis proj e j ∈ T)
     (h_Dpsi : forall (j : Fin d) (g : T),
       (EuclideanSpace.proj j ∘L Dpsi) g =
         ⟪@candidateVecEIF Omega _ P _ Theta _ _ _ d
           S_theta T_nuis proj e j, (g : ↥(L2ZeroMean P))⟫_ℝ)
+    -- USER-INPUT: native target functional and its value at the truth.
     (psi : Measure Omega -> EuclideanSpace Real (Fin d))
     (hpsi : psi P = theta0) :
     SemiparametricallyEfficientAt_vec estimator psi P T := by

@@ -26,23 +26,26 @@ theorem mle_asymptotic_normality_on_of_consistent
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     {Θ : Set (EuclideanSpace ℝ (Fin d))}
     (M : ParametricFamily Ω Θ) (μ : Measure Ω) (θ₀ : Θ)
-    -- Theorem 5.39 assumes that the truth is an inner point of `Θ`.
+    -- USER-INPUT: the truth is an interior point of the parameter set;
+    -- vdV Theorem 5.39.
     (hθ₀int : (θ₀ : EuclideanSpace ℝ (Fin d)) ∈ interior Θ)
-    -- The model consists of probability densities.
+    -- USER-INPUT: the model is a family of probability densities; vdV Section 5.5.
     (hPDF : IsPDFOf M μ)
     (θ_hat : ∀ n, (Fin n → Ω) → Θ)
     {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]
     (X : ℕ → Ξ → Ω)
     (ℓ : Ω → EuclideanSpace ℝ (Fin d))
-    -- Measurability of the score, as required in Theorem 5.39.
+    -- USER-INPUT: a measurable score representative; vdV Theorem 5.39.
     (hℓ : Measurable ℓ)
-    -- Differentiability in quadratic mean at `θ₀` within `Θ`.
+    -- USER-INPUT: differentiability in quadratic mean at the true parameter within
+    -- the parameter set; vdV Theorem 5.39.
     (hDQM : DifferentiableQuadraticMeanOn M μ θ₀ ℓ)
+    -- USER-INPUT: a square-integrable local log-likelihood Lipschitz envelope on a
+    -- nontrivial neighborhood; vdV Theorem 5.39.
     (menv : Ω → ℝ)
-    -- The local envelope is square-integrable under the true law.
     (hmenv : MemLp menv 2
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
-    -- Measurable representative for the envelope.
+    -- LEAN-ONLY: measurability of the chosen envelope representative.
     (hmenv_meas : Measurable menv)
     (ρ : ℝ)
     -- The supplied likelihood neighborhood is nontrivial.
@@ -55,26 +58,26 @@ theorem mle_asymptotic_normality_on_of_consistent
         ∀ x,
           |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤
             menv x * ‖(θ₁ : EuclideanSpace ℝ (Fin d)) - (θ₂ : EuclideanSpace ℝ (Fin d))‖)
-    -- Nonsingular Fisher information, encoded equivalently as positivity.
+    -- USER-INPUT: nonsingular Fisher information, encoded as positive definiteness;
+    -- vdV Theorem 5.39.
     (hI : (fisherInformationMatrixOn M μ θ₀ ℓ).PosDef)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- LEAN-ONLY: an explicit measurable independent identically distributed sequence
+    -- realizing the abstract sample under the true model law.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
     (hX_indep : ProbabilityTheory.iIndepFun X ν)
-    -- Identical-distribution component of the iid sample encoding.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)
-    -- Identifies the common sample law with the true model law.
     (hX_law : ν.map (X 0) =
       μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
-    -- Estimator measurability after coercion to the ambient Euclidean space.
+    -- LEAN-ONLY: measurability after coercion to the ambient Euclidean space.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => (θ_hat n (fun i : Fin n => X i.val ξ) :
         EuclideanSpace ℝ (Fin d))))
-    -- Consistency of the MLE, as assumed in Theorem 5.39.
+    -- USER-INPUT: consistency for the true parameter; vdV Theorem 5.39.
     (hConsistent : TendstoInProbZero (fun _ => ν) (fun n ξ =>
       (θ_hat n (fun i : Fin n => X i.val ξ) : EuclideanSpace ℝ (Fin d)) -
         (θ₀ : EuclideanSpace ℝ (Fin d))))
-    -- Exact product-likelihood maximization over `Θ`.
+    -- USER-INPUT: exact maximization of the product likelihood over the parameter set;
+    -- vdV Section 5.5.
     (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :
     TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>
         Real.sqrt n •

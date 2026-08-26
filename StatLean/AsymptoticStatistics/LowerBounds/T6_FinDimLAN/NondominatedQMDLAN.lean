@@ -1180,20 +1180,20 @@ representative. -/
 theorem qmd_score_mean_integrable_and_lan_nondominated
     (P : Measure Ω) [IsProbabilityMeasure P]
     (curve : ℝ → Measure Ω)
-    -- a one-sided probability path through `P`; vdV Lemma 25.14.
+    -- USER-INPUT: a one-sided probability path through `P`; vdV Lemma 25.14.
     (hprob : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t))
     (hzero : curve 0 = P)
     (g : Ω → ℝ)
-    -- measurability of the score representative.
+    -- LEAN-ONLY: measurability of the score representative.
     (hg : Measurable g)
-    -- right differentiability in quadratic mean with score `g`;
+    -- USER-INPUT: right differentiability in quadratic mean with score `g`;
     -- vdV Lemma 25.14.
     (hqmd : IsRightQMD P curve g)
     (P' : Measure Ω') [IsProbabilityMeasure P']
     (X : ℕ → Ω' → Ω)
-    -- measurability of each sample coordinate.
+    -- LEAN-ONLY: measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- iid observations with common law `P`; vdV Lemma 25.14.
+    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 25.14.
     (hindep : ProbabilityTheory.iIndepFun X P')
     (hident : ∀ i, IdentDistrib (X i) (X 0) P' P')
     (hlaw : Measure.map (X 0) P' = P) :

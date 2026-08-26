@@ -195,21 +195,24 @@ theorem mle_asymptotic_normality
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)
     (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- the model consists of probability densities.
+    -- USER-INPUT: the model is a family of probability densities; vdV Section 5.5.
     (hPDF : IsPDFOf M μ)
-    -- identifiable parametrization at the truth.
+    -- USER-INPUT: identifiability at the true parameter; vdV Lemma 5.35.
     (hident : ∀ θ,
       parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)
-    -- upper semicontinuity for the W1/T4 consistency route.
+    -- USER-INPUT: upper semicontinuity of the population criterion for the
+    -- consistency argument; vdV Section 5.2.
     (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))
-    -- one compact superlevel below the maximum for W1/T4 consistency.
+    -- USER-INPUT: a compact superlevel below the maximum for the consistency
+    -- argument; vdV Section 5.2.
     (hcompact : ∃ c : ℝ,
       c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧
         IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]
     (X : ℕ → Ξ → Ω) (U : ℕ → Ξ → ℝ)
-    -- measurable-envelope form of T4 uniform convergence.
+    -- LEAN-ONLY: a measurable envelope encoding uniform convergence of the
+    -- empirical criterion in the internal consistency argument.
     (hU_dom : ∀ n ξ θ,
       |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n
           (fun i : Fin n => X i.val ξ) -
@@ -217,15 +220,17 @@ theorem mle_asymptotic_normality
     -- convergence of the measurable T4 envelope.
     (hU_conv : TendstoInMeasure ν U atTop (fun _ => (0 : ℝ)))
     (ℓ : Ω → EuclideanSpace ℝ (Fin d))
-    -- Measurability of the score, as required in vdV Theorem 5.39.
+    -- USER-INPUT: a measurable score representative; vdV Theorem 5.39.
     (hℓ : Measurable ℓ)
-    -- differentiability in quadratic mean at `θ₀`.
+    -- USER-INPUT: differentiability in quadratic mean at the true parameter;
+    -- vdV Theorem 5.39.
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    -- USER-INPUT: a square-integrable local log-likelihood Lipschitz envelope
+    -- on a nontrivial neighborhood; vdV Theorem 5.39.
     (menv : Ω → ℝ)
-    -- vdV's local envelope is square-integrable under `P₀`.
     (hmenv : MemLp menv 2
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
-    -- measurable representative for the envelope.
+    -- LEAN-ONLY: measurability of the chosen envelope representative.
     (hmenv_meas : Measurable menv)
     (ρ : ℝ)
     -- the Lipschitz neighborhood is nontrivial.
@@ -235,21 +240,20 @@ theorem mle_asymptotic_normality
       ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ x,
         |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤
           menv x * ‖θ₁ - θ₂‖)
-    -- nonsingular Fisher information, encoded equivalently as PosDef.
+    -- USER-INPUT: nonsingular Fisher information, encoded as positive definiteness;
+    -- vdV Theorem 5.39.
     (hI : (fisherInformationMatrix M μ θ₀ ℓ).PosDef)
-    -- measurable sample-map encoding of the iid experiment.
+    -- LEAN-ONLY: an explicit measurable independent identically distributed sequence
+    -- realizing the abstract sample under the true model law.
     (hX_meas : ∀ i, Measurable (X i))
-    -- independence component of the iid sample encoding.
     (hX_indep : ProbabilityTheory.iIndepFun X ν)
-    -- identical-distribution component of the iid sample encoding.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)
-    -- identifies the common sample law with the true model law.
     (hX_law : ν.map (X 0) =
       μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
-    -- estimator measurability needed for pushforward laws and rate events.
+    -- LEAN-ONLY: measurability of the estimator as a random vector.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
-    -- exact product-likelihood maximum-likelihood property.
+    -- USER-INPUT: exact maximization of the product likelihood; vdV Section 5.5.
     (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :
     TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>
         Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) -

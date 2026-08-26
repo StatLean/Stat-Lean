@@ -396,7 +396,7 @@ property. The two clauses deliberately do **not** assert that the actual supplie
 span equals the maximal concrete space; constant families and empty generators
 show why such an identification is unavailable in general. -/
 theorem car_actual_and_maximal_tangent_2540
-    -- a fixed sigma-finite conditional dominator for the supplied
+    -- USER-INPUT: a fixed sigma-finite conditional dominator for the supplied
     -- conditional QMD paths; vdV Lemma 25.40.
     (ν : Measure 𝓓) [SigmaFinite ν] :
     (∀ (γ : ConditionalQMDPath Q ν r) (hCAR : IsCARFamily M γ),
@@ -645,15 +645,20 @@ An observed influence function is exactly the explicit complete-case IPW base
 plus a concrete fibre-mean-zero coarsening score.  The base influence property
 is derived by `completeCaseIPW_influence_2541`. -/
 theorem completeCaseIPW_characterization_2541
+    -- USER-INPUT: complete-case observation interface and selection probability
+    -- bounded away from zero; vdV Lemma 25.41.
     (cc : CompleteCaseData M) -- complete-case observation data.
     (ε : ℝ) (hε : 0 < ε) -- vdV Lemma 25.41 positivity constant.
     (hπ : ∀ᵐ y ∂Q, ε ≤ selectionProbability r cc y)
       -- vdV Lemma 25.41 bounded-away-from-zero condition.
+    -- USER-INPUT: full-data derivative and influence representer.
     (dψQ : (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) →L[ℝ] ℝ)
       -- derivative of the differentiable full-`Q` parameter.
     (χ : ↥(L2ZeroMean Q)) -- full-`Q` influence representer.
     (hχ : IsInfluenceFunction Q (⊤ : Submodule ℝ ↥(L2ZeroMean Q)) dψQ χ)
       -- `χ` represents the full-`Q` derivative.
+    -- USER-INPUT: observed derivative agrees with the full-data derivative on
+    -- canonical score lifts; vdV Lemma 25.41.
     (dψObs :
       (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) →L[ℝ] ℝ)
       -- derivative of the induced observed parameter.

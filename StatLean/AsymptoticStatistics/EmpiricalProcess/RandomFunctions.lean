@@ -395,25 +395,25 @@ Hypotheses:
 * `hX_*` — iid hypotheses on the sample (empirical-process setup). -/
 theorem donsker_random_function_consistency
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
-    -- `F` is `P`-Donsker and contains the square-integrable limit;
+    -- USER-INPUT: `F` is `P`-Donsker and contains the square-integrable limit;
     -- vdV Lemma 19.24.
     (h_donsker : IsPDonsker F P)
     (f₀ : Ω → ℝ) (_hf₀ : MemLp f₀ 2 P)
     (_hf₀_in_F : f₀ ∈ F)
-    -- a measurable representative of the limit function.
+    -- LEAN-ONLY: a measurable representative of the limit function.
     (hf₀_meas : Measurable f₀)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- measurability of each sample coordinate.
+    -- LEAN-ONLY: measurability of each sample coordinate.
     (hX_meas : ∀ i, Measurable (X i))
-    -- iid observations with common law `P`; vdV Lemma 19.24.
+    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.24.
     (hX_iindep : ProbabilityTheory.iIndepFun X μ)
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
     (f_hat : ℕ → Ξ → (Ω → ℝ))
-    -- joint measurability of each random function.
+    -- LEAN-ONLY: joint measurability of each random function.
     (h_fhat_meas : ∀ n, Measurable (Function.uncurry (f_hat n)))
-    -- class membership and mean-square `L²(P)` consistency;
+    -- USER-INPUT: class membership and mean-square `L²(P)` consistency;
     -- vdV Lemma 19.24.
     (h_range : ∀ n ω, f_hat n ω ∈ F)
     -- Expectation of squared L²-distance. Markov converts this stronger input
@@ -559,23 +559,26 @@ The representative measurability premise is used only by the direct scalar
 marginal result; the process-difference theorem needs only `f₀ ∈ L²(P)`. -/
 theorem donsker_random_function_consistency_weakConvergesOuter
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
+    -- USER-INPUT: `F` is `P`-Donsker and `f₀` is square-integrable;
+    -- vdV Lemma 19.24.
     (h_donsker : IsPDonsker F P)
     (f₀ : Ω → ℝ) (hf₀ : MemLp f₀ 2 P)
-    -- vdV Lemma 19.24 assumes `f₀ ∈ L²(P)`.
+    -- LEAN-ONLY: a measurable representative of the limit function.
     (hf₀_meas : Measurable f₀)
-    -- Measurable representative required by the fixed-function marginal result.
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (X : ℕ → Ξ → Ω)
+    -- LEAN-ONLY: measurability of each sample coordinate.
+    (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT: iid observations with common law `P`; vdV Lemma 19.24.
     (hX_iindep : ProbabilityTheory.iIndepFun X μ)
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
-    -- these clauses encode the iid `P` sample underlying `Gₙ`.
     (f_hat : ℕ → Ξ → (Ω → ℝ))
+    -- USER-INPUT: class membership and `L²(P)` consistency in outer probability;
+    -- vdV Lemma 19.24.
     (h_range : ∀ n ξ, f_hat n ξ ∈ F)
-    -- vdV Lemma 19.24 assumes the random functions take values in `F`.
     (h_l2_consistent : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
       μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) f₀}) atTop (𝓝 0))
-    -- vdV's `∫(f̂ₙ-f₀)² dP →_P 0`, in explicit outer-probability form.
     : WeakConvergesOuter (fun _ => μ)
         (fun n ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ))
         (empiricalProcessMarginalGaussian P f₀) := by

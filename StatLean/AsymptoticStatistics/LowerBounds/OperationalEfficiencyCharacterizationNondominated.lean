@@ -146,7 +146,7 @@ differentiability, contiguity transfer of the AL residual, and Slutsky. -/
 theorem regular_and_gaussian_of_asymptoticallyLinearND
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
-    -- pathwise differentiability and its efficient influence function;
+    -- USER-INPUT: pathwise differentiability and its efficient influence function;
     -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
@@ -475,12 +475,12 @@ measurability are inputs. -/
 theorem operational_efficiency_characterization_nondominated
     {T_n : ∀ n, (Fin n → Ω) → ℝ} {ψ : Measure Ω → ℝ}
     (C : NondominatedTangentCone P)
-    -- pathwise differentiability and its efficient influence function;
+    -- USER-INPUT: pathwise differentiability and its efficient influence function;
     -- vdV Lemma 25.23.
     (hpd : NondominatedPathwiseDifferentiableAt P C ψ)
     {φ : ↥(L2ZeroMean P)}
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
-    -- measurability of each estimator.
+    -- LEAN-ONLY: measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtND C T_n ψ
         (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) ↔

@@ -2877,9 +2877,9 @@ theorem IsPGlivenkoCantelli.toIID {F : Set (Ω → ℝ)} {P : Measure Ω}
 19.13. -/
 theorem uniformCovering_isPGlivenkoCantelliIID
     (F : Set (Ω → ℝ)) (G : Ω → ℝ) (P : Measure Ω) [IsProbabilityMeasure P]
-    -- explicit measurability of the class members.
+    -- LEAN-ONLY: explicit measurability of the class members.
     (hFmeas : ∀ f ∈ F, Measurable f)
-    -- pointwise measurability, an integrable envelope, and finite
+    -- USER-INPUT: pointwise measurability, an integrable envelope, and finite
     -- uniform `L¹` covering numbers; vdV Theorem 19.13.
     (hPM : IsPointwiseMeasurable F)
     (hEnv : UniformEntropyStructural.IsEnvelope F G)

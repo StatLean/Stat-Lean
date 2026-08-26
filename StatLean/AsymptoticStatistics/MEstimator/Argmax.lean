@@ -198,21 +198,21 @@ theorem argmax_theorem
     (Mn : ℕ → Ω → D → ℝ) (M : Ωlim → D → ℝ)
     (Hn : ℕ → Set D) (H : Set D) (𝒦 : Set (Set D))
     (hhatn : ℕ → Ω → D) (hhat : Ωlim → D)
-    -- Measurability of the limiting argmax.
+    -- LEAN-ONLY: measurability of the limiting argmax.
     (hhmeas : Measurable hhat)
-    -- The sample and limiting argmaxes lie in their index sets;
+    -- USER-INPUT: the sample and limiting argmaxes lie in their index sets;
     -- vdV Theorem 5.56.
     (hmemn : ∀ n ω, hhatn n ω ∈ Hn n)
     (hmem : ∀ᵐ ω ∂μlim, hhat ω ∈ H)
     (r : ℕ → Ω → ℝ)
-    -- The approximation remainder is represented as nonnegative.
+    -- LEAN-ONLY: the approximation remainder is represented as nonnegative.
     (hrnonneg : ∀ n ω, 0 ≤ r n ω)
-    -- Near-maximization with an `o_P(1)` remainder;
+    -- USER-INPUT: near-maximization with an `o_P(1)` remainder;
     -- vdV Theorem 5.56.
     (hr : TendstoInOuterProbabilityZero μ r)
     (hnear : ∀ n ω h, h ∈ Hn n →
       Mn n ω h ≤ Mn n ω (hhatn n ω) + r n ω)
-    -- Well separation and uniform compact containment;
+    -- USER-INPUT: well separation and uniform compact containment;
     -- vdV Theorem 5.56.
     (hsep : ∀ (G : Set D), IsOpen G → ∀ K ∈ 𝒦,
       ∀ᵐ ω ∂μlim, hhat ω ∈ G →
@@ -221,9 +221,9 @@ theorem argmax_theorem
     (hcontain : ∀ ε : ℝ, 0 < ε → ∃ K ∈ 𝒦,
       (⨆ n, (μ n).outerMeasureStar {ω | hhatn n ω ∉ K}) < ENNReal.ofReal ε ∧
       μlim {ω | hhat ω ∉ K} < ENNReal.ofReal ε)
-    -- Measurability of the paired limiting suprema.
+    -- LEAN-ONLY: measurability of the paired limiting suprema.
     (hpairMeas : PairSupLimitMeasurable M H 𝒦)
-    -- Joint outer weak convergence of localized process suprema;
+    -- USER-INPUT: joint outer weak convergence of localized process suprema;
     -- vdV Theorem 5.56.
     (hpair : PairSupConvergesOuter μ μlim Mn M Hn H 𝒦) :
     WeakConvergesOuter μ hhatn (μlim.map hhat) := by

@@ -977,9 +977,10 @@ There is no `hH_inf`: `finiteGaussianPBridge` handles finite carriers, including
 rank zero, while the isonormal construction handles infinite carriers. -/
 theorem donskerWithBridge_of_finite_bracketing_entropy
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
-    -- Every member of the function class is measurable.
+    -- USER-INPUT: every member of the function class is measurable;
+    -- vdV Theorem 19.5.
     (hF_meas : ∀ f ∈ F, Measurable f)
-    -- Finite bracketing-entropy integral, as in vdV Theorem 19.5.
+    -- USER-INPUT: finite bracketing-entropy integral; vdV Theorem 19.5.
     (h_int : bracketingEntropyIntegral 1 F P < ⊤)
     : ∃ (G : Ω → ℝ) (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P),
         IsPDonskerWithBridge F P := by

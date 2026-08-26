@@ -541,37 +541,53 @@ theorem m_estimator_normality
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
+    -- USER-INPUT: symmetric uniformly negative curvature of the population criterion;
+    -- vdV Theorem 5.23.
     (hVsymm : V.IsHermitian)
     {c : ℝ} (hc : 0 < c)
     (hVneg : ∀ x : EuclideanSpace ℝ (Fin d),
       ⟪x, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V x⟫ ≤ - c * ‖x‖ ^ 2)
+    -- USER-INPUT: measurable criterion functions and derivative coordinates;
+    -- vdV Theorem 5.23.
     (hm_meas : ∀ θ, Measurable (m θ)) (hmdot_meas : ∀ i, Measurable (mdot i))
+    -- USER-INPUT: almost-everywhere differentiability at the true parameter;
+    -- vdV Theorem 5.23.
     (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
       (innerSL ℝ (psiVec (fun _ => mdot) θ₀ ω)) θ₀)
+    -- USER-INPUT: a measurable square-integrable local Lipschitz envelope on a
+    -- nontrivial neighborhood; vdV Theorem 5.23.
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
     (ρ : ℝ) (hρ : 0 < ρ)
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
               |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    -- USER-INPUT: the second-order population-criterion expansion at its maximum;
+    -- vdV Theorem 5.23.
     (hTaylor : Asymptotics.IsLittleO (𝓝 θ₀)
       (fun θ => (∫ x, (m θ x - m θ₀ x) ∂P)
         - (1 / 2) * ⟪θ - θ₀, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (θ - θ₀)⟫)
       (fun θ => ‖θ - θ₀‖ ^ 2))
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: an explicit measurable independent identically distributed sequence
+    -- realizing the abstract sample with law P.
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    -- LEAN-ONLY: measurability of the estimator as a random vector.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    -- USER-INPUT: near-maximization of the empirical criterion at the required rate;
+    -- vdV Theorem 5.23.
     (hNearMax : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
       (n : ℝ) * max 0 ((⨆ θ : EuclideanSpace ℝ (Fin d),
           empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ))
         - empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
             (fun i : Fin n => X i.val ξ))))
+    -- USER-INPUT: consistency for the true parameter; vdV Theorem 5.23.
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))
-    -- Boundedness above ensures that the empirical supremum is finite.
+    -- LEAN-ONLY: boundedness above makes the real-valued empirical supremum explicit.
     (hBdd : ∀ (n : ℕ) (ξ : Ξ), BddAbove (Set.range (fun θ : EuclideanSpace ℝ (Fin d) =>
       empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ)))) :
     (TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>

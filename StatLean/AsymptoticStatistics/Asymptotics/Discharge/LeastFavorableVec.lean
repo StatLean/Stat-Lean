@@ -1041,16 +1041,21 @@ theorem mle_asympLinear_2577_native_vec
 
 /-- van der Vaart, Theorem 25.77: native vector semiparametric efficiency. -/
 theorem mle_semiparametricallyEfficient_2577_native_vec
+    -- USER-INPUT: the approximate least-favorable submodel hypotheses;
+    -- vdV Theorem 25.77.
     (h : ApproxLeastFavorable2577NativeHyp_vec P Theta S_theta T_nuis e H M
       modelLaw nuisancePath estimator nuisanceEstimator theta0 eta0 F envelope)
     {T : Submodule Real ↥(L2ZeroMean P)}
     {Dpsi : T →L[Real] EuclideanSpace Real (Fin d)}
+    -- USER-INPUT: the candidate coordinates lie in the tangent space and
+    -- represent the pathwise derivative; vdV Theorem 25.77.
     (h_mem : forall j,
       @candidateVecEIF Omega _ P _ Theta _ _ _ d S_theta T_nuis proj e j ∈ T)
     (h_Dpsi : forall (j : Fin d) (g : T),
       ((EuclideanSpace.proj j) ∘L Dpsi) g = inner Real
         (@candidateVecEIF Omega _ P _ Theta _ _ _ d S_theta T_nuis proj e j)
         (g : ↥(L2ZeroMean P)))
+    -- USER-INPUT: the target functional is centered at `theta0`.
     {psi : Measure Omega -> EuclideanSpace Real (Fin d)} (hpsi : psi P = theta0) :
     SemiparametricallyEfficientAt_vec estimator psi P T := by
   have hPD : (@efficientInformationMatrix Omega _ P _ Theta _ _ _ d
