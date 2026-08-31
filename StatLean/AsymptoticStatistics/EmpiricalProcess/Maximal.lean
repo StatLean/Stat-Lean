@@ -9,108 +9,23 @@ import Mathlib.Probability.IdentDistrib
 /-!
 # Maximal inequalities for empirical processes
 
-The three core maximal inequalities for the empirical process
-$\mathbb{G}_n = \sqrt{n}\,(\mathbb{P}_n - P)$ indexed by a class $\mathcal{F}$ of
-measurable functions, drawn from an i.i.d. sample $X_1, \dots, X_n \sim P$.
+This file contains Bernstein's inequality
+(`bernstein_inequality`, Lem 19.32), the finite-class supremum bound
+(`finite_sup_bound`, Lem 19.33), and two crude bracketing bounds
+(`maximal_inequality_bracketing` and its cushioned `_tight` restatement).
+Because their constants depend on `n`, neither crude theorem is Lemma 19.34.
 
-1. **Bernstein's inequality.** For a measurable $f$ with $|f| \le M$ almost
-   surely and $Pf^2 \le \sigma^2$,
-   $$
-   P\bigl(|\mathbb{G}_n f| > x\bigr)
-     \;\le\; 2\,\exp\!\Bigl(-\tfrac{x^2}{4\,(\sigma^2 + xM/\sqrt{n})}\Bigr),
-     \qquad x > 0 .
-   $$
+**Note on the "tight" lemma.** `maximal_inequality_bracketing_tight` in this
+file does NOT, despite its name, witness a universal (`n`-independent) constant:
+it is a cushioned restatement of the crude bound and is NOT on the Donsker
+argument. The universal-constant Lemma 19.34 (independent of `n`)
+is `localizedChainBound_of_finiteEntropy` in `ChainingAssembly.lean`
+(stated in the localized-difference-class form that vdV's chaining produces).
+The per-level chaining lemmas in this file
+(`tight_chain_level_bound`/`_uniform`, `tight_chain_telescope_bound`,
+`tight_envelope_truncation_bound`) provide its ingredients.
 
-2. **Finite-class supremum bound.** For a *finite* class $\mathcal{F}$ whose
-   members all satisfy $|f| \le M$ and $Pf^2 \le \sigma^2$,
-   $$
-   \mathbb{E}\,\|\mathbb{G}_n\|_{\mathcal{F}}
-     \;\le\; K\Bigl(\tfrac{M\,\log(1+|\mathcal{F}|)}{\sqrt{n}}
-        + \sigma\,\sqrt{\log(1+|\mathcal{F}|)}\Bigr)
-   $$
-   for a universal constant $K$.
-
-3. **Bracketing maximal inequality.** For a class $\mathcal{F}$ with
-   $Pf^2 \le \delta^2$ for every $f \in \mathcal{F}$, envelope function $\Phi$,
-   and bracketing entropy integral $J_{[\,]}(\delta, \mathcal{F}, L^2(P))$,
-   $$
-   \mathbb{E}^{*}\,\|\mathbb{G}_n\|_{\mathcal{F}}
-     \;\lesssim\; J_{[\,]}(\delta, \mathcal{F}, L^2(P))
-        + \sqrt{n}\, P^{*}\bigl(\Phi\,\mathbf{1}\{\Phi > \sqrt{n}\,a(\delta)\}\bigr),
-     \qquad a(\delta) = \frac{\delta}{\sqrt{\log N_{[\,]}(\delta, \mathcal{F}, L^2(P))}} .
-   $$
-
-The corresponding Lean statements are `bernstein_inequality`,
-`finite_sup_bound`, and `maximal_inequality_bracketing`. Notable deviations
-from the book are recorded in the per-declaration docstrings and in the
-proof-formalization notes below; the most significant is that the latter is a
-**crude** variant in which the existential constant $K = 2n\delta + 2$ may depend
-on $(n, \delta)$ and the parenthesised factor carries an extra additive $1$
-cushion. `maximal_inequality_bracketing_tight` is a conditional full-class
-restatement for fixed $(n,\delta)$. The genuine uniform localized form is
-`localizedChainBound_of_finiteEntropy` in `ChainingAssembly.lean`, assembled
-from the `tight_*` per-level estimates developed here.
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 19 (Empirical Processes), §19.6 (Maximal Inequalities), Lemma 19.32
-(Bernstein's inequality), Lemma 19.33 (finite-class maximal inequality), Lemma
-19.34 (bracketing maximal inequality).
-
-**Proof formalization notes.**
-The chaining strategy of §19.6 builds the infinite-supremum bound from two
-devices, exactly as in the book: an exponential tail inequality (Lemma 19.32) is
-turned into a bound on finite suprema (Lemma 19.33) via union bound plus a
-Jensen/Orlicz argument, and the latter is summed across dyadic scales by a
-chaining (telescoping) argument to give the bracketing inequality (Lemma 19.34).
-
-* `bernstein_inequality` (Lem 19.32) delegates to
-  `MaximalBernstein.bernstein_inequality_aux`, closing the two-sided bound from
-  the one-sided bound applied to `f` and `-f` (via `empiricalProcess_neg`), with
-  the analytic core `mgf_bounded_taylor` / `bernstein_one_sided`. The leading
-  constant $1/4$ is the *provable* value; vdV remarks the sharp constant is
-  $1/2$, obtainable by a finer argument.
-* `finite_sup_bound` (Lem 19.33) delegates to `MaximalOrlicz.finite_sup_bound_aux`
-  (truncation + Jensen via the Orlicz route); its existential witness is $K = 96$.
-* `maximal_inequality_bracketing` (Lem 19.34) is proved here as the **crude**
-  variant: rather than the full chaining argument, it bounds the supremum by an
-  envelope + triangle/Cauchy–Schwarz argument, yielding the *non-universal*
-  constant $K = 2n\delta + 2$. Concretely it bounds
-  $\int^{*} \|\mathbb{G}_n\|_{\mathcal{F}}$ by
-  $2n\delta + 2\sqrt{n}\,T$ with $T = \int |\Phi|\,\mathbf{1}\{|\Phi| > \delta\sqrt{n}\}\,dP$,
-  using the envelope inequality $|f| \le \Phi$, the lintegral bound
-  $\operatorname{ofReal}|\!\int f\,dP| \le \int |\Phi|\,dP$ (via
-  `norm_integral_le_lintegral_norm`), Fubini through `IdentDistrib`, and a
-  dyadic split of $\int |\Phi|\,dP$ at the threshold $\delta\sqrt{n}$. The extra
-  additive $1$ cushion and the $(n,\delta)$-dependence of $K$ are crude-bound
-  artifacts; vdV's sharper statement absorbs the cushion into $J_{[\,]}$ for
-  non-trivial classes.
-* The **tight** chaining ingredients are factored into
-  `tight_chain_level_bound`/`tight_chain_level_bound_uniform` (per-level
-  finite-class bounds at the truncation threshold $a(\delta)$),
-  `tight_chain_telescope_bound` (dyadic series $\to$ entropy integral), and
-  `tight_envelope_truncation_bound` (envelope-tail correction above
-  $\delta\sqrt{n}$). `ChainingAssembly.lean` assembles them into
-  `localizedChainBound_of_finiteEntropy`, whose constant is uniform in $n$ and
-  the localization scale. This localized form is the input required for the
-  equicontinuity half of the Donsker theorem (vdV Theorem 19.5).
-
-**Bibliographic comments.**
-These maximal inequalities are part of the folklore of empirical-process theory
-and have no single seminal-paper origin; vdV §19.6 itself attributes the
-underlying chaining technique to R. M. Dudley ("The sizes of compact subsets of
-Hilbert space and continuity of Gaussian processes", *J. Functional Analysis*
-**1** (1967), 290–330) and D. Pollard, and notes that the bracketing central
-limit theorem they serve was obtained by M. Ossiander ("A central limit theorem
-under metric entropy with $L^2$ bracketing", *Ann. Probab.* **15** (1987),
-897–919). The systematic textbook treatment, including the bracketing maximal
-inequality with the entropy integral $J_{[\,]}$ and the truncation level
-$a(\delta)$, is A. W. van der Vaart and J. A. Wellner, *Weak Convergence and
-Empirical Processes: With Applications to Statistics*, Springer Series in
-Statistics, Springer, 1996, §2.14 (Bracketing), of which vdV Lemmas 19.32–19.34
-are a streamlined exposition. The exponential bound (Lemma 19.32) is the
-classical Bernstein inequality (S. N. Bernstein, 1924) applied to the centered
-empirical sum.
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -146,11 +61,10 @@ theorem bernstein_inequality
     (n : ℕ) (_hn : 1 ≤ n) {x : ℝ} (_hx : 0 < x) :
     μ {ω : Ξ | x < |empiricalProcess P n (fun j : Fin n => X j.val ω) f|}
       ≤ ENNReal.ofReal (2 * Real.exp (-(x ^ 2) / (4 * (σ ^ 2 + x * M / Real.sqrt n)))) := by
-  -- Apply `MaximalBernstein.bernstein_inequality_aux`,
-  -- which closes the two-sided bound via:
+  -- The two-sided bound follows from:
   --   * `empiricalProcess_neg` (linear-odd in `f`),
   --   * `bernstein_two_sided` (one-sided bound applied to `f` and `-f`),
-  -- with the analytic core (`mgf_bounded_taylor`, `bernstein_one_sided`).
+  -- together with `mgf_bounded_taylor` and `bernstein_one_sided`.
   exact bernstein_inequality_aux P f _hf_meas _hM _hσ _hf_bdd _hf_var
     hX_meas hX_iindep _hX_idem hX_law n _hn _hx
 
@@ -183,9 +97,7 @@ theorem finite_sup_bound
         ≤ ENNReal.ofReal
             (K * (M * Real.log (1 + Fintype.card ι) / Real.sqrt n
               + σ * Real.sqrt (Real.log (1 + Fintype.card ι)))) := by
-  -- Apply `MaximalOrlicz.finite_sup_bound_aux`,
-  -- which routes through the Orlicz-route core helper for the
-  -- truncation + Jensen content (see `MaximalOrlicz.lean`).
+  -- Apply the Orlicz truncation and Jensen bound from `MaximalOrlicz.lean`.
   exact finite_sup_bound_aux P hX_meas hX_iindep _hX_idem hX_law
     g _hg_meas _hM _hσ _hg_bdd _hg_var n _hn
 
@@ -195,7 +107,7 @@ private lemma measurable_abs_of_real {Φ : Ω → ℝ} (hΦ : Measurable Φ) :
     Measurable (fun x => |Φ x|) :=
   hΦ.norm
 
-/-- **Lemma 19.34 (Bracketing maximal inequality, the chaining argument)**.
+/-- **A crude bracketing bound (not Lemma 19.34).**
 
 For a class `F` of measurable functions with `Pf² ≤ δ²` for every `f ∈ F`,
 envelope function `Φ`, and the bracketing entropy integral
@@ -213,11 +125,11 @@ the existential `K` cover the residual `2 n δ` term that arises when
 both `J = 0` and the envelope-tail evaluates to `0` (a corner case the
 tight chaining bound rules out structurally).
 
-vdV §19.6 Lem 19.34. This is the crude variant: the full chaining
-argument is replaced by an envelope + Cauchy–Schwarz-style argument that
+This theorem is motivated by the RHS shape in vdV §19.6 Lemma 19.34,
+but it is not that lemma: the full chaining argument is replaced by an
+envelope + Cauchy–Schwarz-style argument that
 yields a non-tight `K = 2nδ + 2` depending on the inputs `(n, δ)`; the `K`
-here is therefore **not** a universal constant. This suffices for
-downstream consumers that only need the existential form.
+here is therefore **not** a universal constant.
 
 Concretely, the proof bounds
 `∫⁻ ω, supNormOver F (G_n)(ω) ∂μ ≤ ENNReal.ofReal (2 n δ)
@@ -563,7 +475,7 @@ theorem maximal_inequality_bracketing
     _ = Ksum * (1 + (J + ENNReal.ofReal (Real.sqrt n) * T)) := by rw [← mul_add]
     _ = Ksum * (1 + J + ENNReal.ofReal (Real.sqrt n) * T) := by rw [add_assoc]
 
-/-! ### Per-level chaining estimates and a conditional full-class restatement
+/-! ### Universal-constant chaining estimates
 
 The genuine §19.6 chaining argument of Lem 19.34 yields a **universal** constant
 `K` (independent of `n` and `δ`), as opposed to the crude variant above with
@@ -571,15 +483,16 @@ The genuine §19.6 chaining argument of Lem 19.34 yields a **universal** constan
 equicontinuity half of Theorem 19.5 (sending `δ ↓ 0` along a `1/√n`-summable
 sequence requires `K` not to grow with `n`).
 
-The uniform form is `localizedChainBound_of_finiteEntropy`, stated over
-`localizedDifferenceClass F P δq`. The three estimates below isolate its
-per-level finite-class bound, dyadic entropy comparison, and envelope-tail
-correction. By contrast, `maximal_inequality_bracketing_tight` gives a
-full-class bound for fixed `n` and `δ`, conditional on `hAbsorb`, with an
-`n`-dependent witness obtained from `maximal_inequality_bracketing`.
+The universal-`K` chaining result is `localizedChainBound_of_finiteEntropy`,
+stated for the localized difference class. The three estimates below
+(`tight_chain_level_bound` / its uniform variant `tight_chain_level_bound_uniform`,
+`tight_chain_telescope_bound`, `tight_envelope_truncation_bound`) provide its ingredients.
+The theorem `maximal_inequality_bracketing_tight` retains the `n`-dependent
+constant `K = 2nδ + 2` and assumes `hAbsorb`; the universal-constant conclusion
+is `localizedChainBound_of_finiteEntropy`.
 
-For the localized chaining argument, choose at each `q ≥ 0` the dyadic scale
-`ε_q = δ · 2^{-q}` and a bracket cover of size
+**Chaining argument.** For each `q ≥ 0`,
+choose dyadic scale `ε_q = δ · 2^{-q}` and bracket cover of size
 `N_q = N_{[]}(ε_q, F, L²(P))`. For each `f ∈ F` let `π_q(f)` be the *lower*
 bracket function at scale `ε_q`. The chain telescope
   `f − π_0(f) = Σ_{q ≥ 1} (π_q(f) − π_{q-1}(f))`
@@ -590,10 +503,11 @@ plus an envelope-remainder term. Apply `finite_sup_bound` at each level
 Sum across `q` via Σ ε_q √log N_q ≤ K · J_{[]}(δ, F, L²(P)) (geometric
 sum vs decreasing integrand).
 
-These three estimates respectively capture the per-level supremum, the
-telescope-to-entropy comparison, and the envelope truncation correction. -/
+The three estimates below give (a) the finite-class supremum bound at each
+level, (b) the comparison of the telescoping series with the entropy integral,
+and (c) the envelope truncation correction. -/
 
-/-- **Sub-aux A — per chain-level finite-class sup bound.**
+/-- **Per chain-level finite-class supremum bound.**
 
 For a chain level with finite class `g : ι → Ω → ℝ` representing the
 *jump* between adjacent bracket levels (`g i = π_q(f_i) − π_{q-1}(f_i)`
@@ -609,10 +523,8 @@ with `K` a universal constant. The `M log(1+|ι|) / √n` term in
 choice of `M`, which is the key vdV trick (truncate at threshold `a(δ)`
 so the M-piece matches the σ-piece up to a universal constant).
 
-The constant `K` is left existential because `finite_sup_bound`'s
-witness is itself existential (the underlying `finite_sup_bound_aux`
-witnesses `K = 96`, hence Sub-aux A here gives `K_A = 3 · 96 = 288`,
-but Lean's API exposes only the existential).
+The theorem states `K` existentially, as does `finite_sup_bound`. The bound
+`K = 96` in `finite_sup_bound_aux` would give `K_A = 3 · 96 = 288`.
 
 Proof: direct invocation of `finite_sup_bound` with
 `M = √n · ε / (1 + √log(1+|ι|))` and `σ = 2ε`, followed by the algebraic
@@ -711,16 +623,15 @@ lemma tight_chain_level_bound
 is hoisted *before* the class / scale / `n` arguments, so a single universal `K`
 works for every finite chain-level class simultaneously.
 
-The chaining dyadic-bound leaves (`chain_head_dyadic_bound`, `chain_A_dyadic_bound`,
+The chaining dyadic bounds (`chain_head_dyadic_bound`, `chain_A_dyadic_bound`,
 `chain_B_levelOscSup_dyadic_bound`) must quantify their constant `c` *before*
 `∀ Φ ∀ δ ∀ n`; the additive `tight_chain_level_bound` returns `∃ K` only *after* the
-family / scale / `n` arguments, so `c` cannot be hoisted from it.  This variant
-exposes the concrete witness `K = 3 · 96 = 288` (from the literal `96` of
+family / scale / `n` arguments, so `c` cannot be hoisted from it. This form
+uses the concrete witness `K = 3 · 96 = 288` (from the value `96` in
 `finite_sup_bound_uniform` / `finite_sup_bound_orlicz_core`) once, before the
 `∀`-block, via the same vdV `a(δ)`-truncation algebraic compression
-`M log(1+|ι|)/√n + σ √log ≤ 3 ε √log` used by the additive leaf.
-
-`tight_chain_level_bound` is kept as-is (additive). -/
+`M log(1+|ι|)/√n + σ √log ≤ 3 ε √log` used by
+`tight_chain_level_bound`. -/
 lemma tight_chain_level_bound_uniform
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -806,45 +717,52 @@ lemma tight_chain_level_bound_uniform
         mul_le_mul_of_nonneg_left h_sum_le hK_pos.le
     _ = 3 * K * ε * Real.sqrt (Real.log (1 + Fintype.card ι)) := by ring
 
-/-- **Sub-aux B — chain series → entropy integral upper bound.**
+/-- **Chain series to entropy-integral upper bound.**
 
-Given a per-level sup sequence `S : ℕ → ℝ≥0∞` (e.g., from Sub-aux A)
+Given a per-level sup sequence `S : ℕ → ℝ≥0∞` (e.g., from
+`tight_chain_level_bound`)
 dominated by an upper-bound sequence `B : ℕ → ℝ≥0∞`, and a chain
 comparison `(∑' q, B q) ≤ J`, conclude `∑' q, S q ≤ K · J`.
 
-The hypothesis `hJ_telescope` states the dyadic comparison between the
-per-level bound `B q = K_A · ε_q · √log N_q` and the bracketing entropy
-integral `J_{[]}(δ, F, L²(P))`. The standard comparison for
-`B q = K_A · δ · 2^{-q} · √log N_{[]}(ε_q, F, L²(P))` is
+The telescoping/dyadic comparison linking the
+per-level dyadic bound `B q = K_A · ε_q · √log N_q` to the bracketing
+entropy integral `J_{[]}(δ, F, L²(P))` is the hypothesis `hJ_telescope`.
+For the standard choice
+`B q := K_A · δ · 2^{-q} · √log N_{[]}(ε_q, F, L²(P))`, the comparison is
 `Σ_q B q ≤ 2 K_A · ∫_0^δ √log N_{[]}(ε,F,L²) dε ≤ 2 K_A · J`
 (geometric sum vs monotone integrand on dyadic mesh + `log(1+N²) ≤ 2
-log(1+N)` for chain-link size squaring). Given this comparison and
-`S q ≤ B q`, the conclusion is `Σ' S ≤ Σ' B ≤ J`.
+log(1+N)` for chain-link size squaring). Under the hypothesis
+`hJ_telescope`, the conclusion reduces to
+`Σ' S ≤ Σ' B ≤ J`.
 
-Proof: `ENNReal.tsum_le_tsum` followed by `hJ_telescope`. -/
+The conclusion follows from `ENNReal.tsum_le_tsum` and the chain-comparison
+hypothesis. -/
 lemma tight_chain_telescope_bound
     (_P : Measure Ω) [IsProbabilityMeasure _P]
     {Ξ : Type*} [MeasurableSpace Ξ] {_μ : Measure Ξ} [IsProbabilityMeasure _μ]
     (_F : Set (Ω → ℝ))
     {_δ : ℝ} (_hδ : 0 < _δ)
-    -- per-level sup S_q (e.g., from Sub-aux A)
+    -- per-level sup S_q (e.g., from `tight_chain_level_bound`)
     (S : ℕ → ℝ≥0∞)
     -- per-level upper bound B_q (e.g., `K_A · ε_q · √log N_q` from chain)
     (B : ℕ → ℝ≥0∞)
     (hS_bound : ∀ q : ℕ, S q ≤ B q)
-    -- Dyadic entropy comparison: the sum of the per-level bounds is at most `J`.
+    -- chain comparison: dyadic sum of B is bounded by J.  The
+    -- substantive `Σ ε_q √log N_q ≤ K · ∫_0^δ √log N(ε) dε` work is
+    -- pushed into this hypothesis.
     (J : ℝ≥0∞) (_hJ_lt : J < ⊤)
     (hJ_telescope : (∑' q : ℕ, B q) ≤ J)
     (n : ℕ) (_hn : 1 ≤ n) :
     ∃ K : ℝ, 0 < K ∧ (∑' q : ℕ, S q) ≤ ENNReal.ofReal K * J := by
-  -- The normalization in `hJ_telescope` permits the witness `K = 1`.
+  -- Witnesses K = 1 (the substantive K from the dyadic comparison is
+  -- absorbed into the hypothesis `hJ_telescope`).
   refine ⟨1, by norm_num, ?_⟩
   rw [ENNReal.ofReal_one, one_mul]
   calc (∑' q : ℕ, S q)
       ≤ ∑' q : ℕ, B q := ENNReal.tsum_le_tsum hS_bound
     _ ≤ J := hJ_telescope
 
-/-- **Sub-aux C — envelope-truncation correction at an arbitrary threshold `t`.**
+/-- **Envelope-truncation correction at an arbitrary threshold `t`.**
 
 For `f ∈ F` and envelope `Φ`, the chain telescope leaves a remainder
 on the envelope-tail set `{|Φ| > t}` (above the global truncation
@@ -1434,28 +1352,18 @@ lemma process_pair_mean_bound
           + 2 * ENNReal.ofReal (Real.sqrt n) * T :=
         add_le_add le_rfl h_d_int
 
-/-- **Conditional full-class bracketing bound at fixed `n` and `δ`.**
+/-- **Cushioned crude bound for a fixed `(n, δ)`.**
 
-The conclusion supplies `K > 0` for one fixed pair `(n, δ)`. The proof uses
-`maximal_inequality_bracketing` with `K_crude = 2nδ + 2` and absorbs its
-additive cushion through
+The witness is `K = 2 · K_crude`, where `K_crude = 2nδ + 2`. Thus this result
+does not assert the universal-constant conclusion of vdV Lemma 19.34. The
+hypothesis `hAbsorb : 1 ≤ J + √n · tail` absorbs the additive `1` in
+`maximal_inequality_bracketing` and gives the multiplicative bound
+`(2 · K_crude) · (J + √n · tail)`. This extra hypothesis is essential: without
+it the right-hand side may vanish while the left-hand side is positive.
 
-`hAbsorb : 1 ≤ J + √n · tail`
-
-to obtain the multiplicative form with `K = 2 · K_crude`. Consequently this
-constant may depend on `n`; the declaration is not the uniform localized form
-of vdV Lemma 19.34. That form is
-`localizedChainBound_of_finiteEntropy`, whose supremum is over
-`localizedDifferenceClass F P δq` and whose constant is independent of `n`,
-`δq`, and the envelope.
-
-`hAbsorb` is an additional assumption of this conditional theorem. It does not
-follow from the other hypotheses: without it the RHS can be zero while the LHS
-is positive (e.g. `F = {centered bounded function}` with
-`J = 0`, `Φ ≤ δ√n` a.e.). For non-trivial classes `F` with at least two brackets,
-`J ≥ ∫_0^δ √log N_[](ε,F,L²(P)) dε` is bounded below by a positive multiple of
-`δ`, which is the corresponding lower-bound mechanism in the localized
-chaining theorem. -/
+The universal-constant result is `localizedChainBound_of_finiteEntropy`, for
+the localized difference class `localizedDifferenceClass F P δq`, with bound
+`c·J_{[]}(δq, F) + c·√n·(envelope tail at threshold √n·M)`. -/
 private lemma tight_chain_full_assembly_brick
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1470,8 +1378,8 @@ private lemma tight_chain_full_assembly_brick
     (h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2)
     (J : ℝ≥0∞) (hJ_lt : J < ⊤)
     (n : ℕ) (hn : 1 ≤ n)
-    -- Absorption condition for the additive constant in the crude bound;
-    -- without it the conclusion is false in the
+    -- The right-hand side dominates `1`; without this condition the
+    -- conclusion is false in the
     -- degenerate case `J = 0`, `Φ ≤ δ√n` a.e. with `F` containing a
     -- non-zero centered bounded function.
     (hAbsorb : (1 : ℝ≥0∞) ≤
@@ -1520,13 +1428,9 @@ private lemma tight_chain_full_assembly_brick
     _ = ENNReal.ofReal (2 * K_crude) * (J + tail) := by
         rw [← mul_assoc, h_K_mul]
 
-/-- Packages `tight_chain_full_assembly_brick` in the signature used by
-`maximal_inequality_bracketing_tight`.
-
-For fixed `n` and `δ`, this conditional full-class bound uses `hAbsorb` and the
-`n`-dependent witness inherited from `maximal_inequality_bracketing`. The
-uniform localized theorem with an `n`-independent constant is
-`localizedChainBound_of_finiteEntropy`. -/
+/-- The fixed-`(n, δ)` cushioned bound in the form used by
+`maximal_inequality_bracketing_tight`. Its witness depends on `n`; it is not the
+universal-constant form of vdV Lemma 19.34. -/
 private lemma maximal_inequality_bracketing_tight_core
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1541,7 +1445,7 @@ private lemma maximal_inequality_bracketing_tight_core
     (h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2)
     (J : ℝ≥0∞) (hJ_lt : J < ⊤)
     (n : ℕ) (hn : 1 ≤ n)
-    -- Absorption condition; see `tight_chain_full_assembly_brick`.
+    -- chain-comparison content; see `tight_chain_full_assembly_brick`.
     (hAbsorb : (1 : ℝ≥0∞) ≤
       J + ENNReal.ofReal (Real.sqrt n) *
         ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
@@ -1553,22 +1457,40 @@ private lemma maximal_inequality_bracketing_tight_core
             (J + ENNReal.ofReal (Real.sqrt n)
               * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                   * Set.indicator {x | δ * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
-  -- Apply the conditional full-class bound.
+  -- Apply `tight_chain_full_assembly_brick`, using `hAbsorb` to absorb the
+  -- additive constant in the crude bound.
   exact tight_chain_full_assembly_brick P hX_meas hX_iindep hX_idem hX_law
     F Φ hΦ_env hΦ_meas hΦ_memLp hδ h_var J hJ_lt n hn hAbsorb
 
-/-- **Conditional full-class bracketing maximal inequality.**
+/-- **Cushioned crude bracketing restatement (not Lemma 19.34).**
 
-For a class `F` with `Pf² ≤ δ²`, an `L²(P)` envelope `Φ`, and an entropy bound
-`J < ⊤`, this theorem supplies a positive constant for one fixed `(n, δ)`.
-The witness is `2 · (2nδ + 2)`, obtained from
-`maximal_inequality_bracketing`, so the statement does not assert a constant
-uniform in `n`. The uniform localized form of vdV Lemma 19.34 is
-`localizedChainBound_of_finiteEntropy`; it bounds the supremum over
-`localizedDifferenceClass F P δq` with a constant independent of `n`, `δq`,
-and the envelope.
+For comparison, vdV §19.6 gives the following form for a class `F` of measurable functions with
+`Pf² ≤ δ²` for every `f ∈ F`, envelope `Φ ∈ L²(P)`, and bracketing entropy
+integral upper bound `J < ⊤`: a
+**universal** constant `K` (independent of `n` and `δ`) with
 
-The proof applies `tight_chain_full_assembly_brick`. The hypothesis
+`E* ‖G_n‖F ≤ K · ( J_{[]}(δ, F, L²(P)) + √n · P*( |Φ| · 1{|Φ| > √n · δ} ) )`.
+
+This lemma does not witness a universal (`n`-independent) constant. Its
+conclusion is the existential `∃ K, 0 < K ∧ …` for a *single fixed* `(n, δ)`,
+conditional on the cushion hypothesis `hAbsorb`. The witnessed `K` is `2 · K_crude` with
+`K_crude = 2nδ + 2` (from the crude bound `maximal_inequality_bracketing`);
+this constant is **`n`-dependent**, so it does not give the uniform-in-`n`
+control of Lemma 19.34. The existential `∃ K` is satisfied
+per-`(n, δ)` precisely because the quantifier is re-bindable at each `(n, δ)`;
+it does not certify a single `K` working for all `n`.
+
+The `n`-independent maximal inequality is `localizedChainBound_of_finiteEntropy`:
+a single
+universal `c > 0`, free of `n`/`δq`/`Φ`, bounding the **localized difference
+class** sup by `c·J_{[]}(δq, F) + c·√n·(envelope tail at threshold √n·M)`. That
+localized-difference-class form is the effective content of vdV Lem 19.34 and
+the form used for the equicontinuity half of Theorem 19.5 and
+`isPDonsker_of_finite_bracketing_entropy_integral`.
+
+The proof routes through `tight_chain_full_assembly_brick`, which closes the
+bound via the crude bound `maximal_inequality_bracketing` combined with the
+chain-comparison absorption hypothesis `hAbsorb`. The hypothesis
 `hAbsorb : 1 ≤ J + √n · tail` is needed to absorb the crude bound's additive
 `+1` cushion into the multiplicative form; without it the conclusion is false
 in the degenerate case `J = 0`, `Φ ≤ δ√n` a.e. with `F` containing a non-zero
@@ -1614,8 +1536,7 @@ On the L²-good slice `{ξ : ‖fhat n ξ − ghat n ξ‖²_L²(P) < δq²}`, t
 diff is bounded pointwise by `C · √(bracketingEntropyIntegral δq F P).toReal`
 via Cauchy-Schwarz applied to the L²-restricted bracket geometry.
 
-Used by `chaining_integral_universal_K` for the pointwise step of the chain
-assembly. -/
+This is the pointwise estimate used in `chaining_integral_universal_K`. -/
 private theorem chaining_l2_slice_pointwise_bound
     (_F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ]
@@ -1724,14 +1645,12 @@ private theorem chaining_envelope_from_bracket
     exact (MemLp.abs (hbracket i).memLp_lower).add
       (MemLp.abs (hbracket i).memLp_upper)
 
-/-- **Bracket-extraction (C2 helper)**: from a finite bracketing-entropy integral
-at scale 1, extract a single scale `ε ∈ (0, 1]` with a finite ε-bracketing cover.
+/-- **Bracket extraction from a finite bracketing-entropy integral.** At scale 1,
+extract a single scale `ε ∈ (0, 1]` with a finite ε-bracketing cover.
 
 Contrapositive: if `bracketingNumber ε F 2 P = ⊤` for every `ε ∈ (0, 1]`, then the
 `bracketingEntropyIntegral` integrand is `⊤` on `(0, 1]`, so the lintegral is
-`⊤ · volume((0,1]) = ⊤`, contradicting `h_int`. Mirrors the (private) extraction
-in `DonskerBracketing.lean`, lifted here so `memLp_of_mem_of_finiteBracketing`
-(consumed by the localized chaining rewrite) is self-contained. -/
+`⊤ · volume((0,1]) = ⊤`, contradicting `h_int`. -/
 private lemma exists_finite_bracketingNumber_of_integral_lt_top'
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     (h_int : bracketingEntropyIntegral 1 F P < ⊤) :
@@ -1750,17 +1669,13 @@ private lemma exists_finite_bracketingNumber_of_integral_lt_top'
   rw [h_int_top] at h_int
   exact (lt_irrefl _ h_int).elim
 
-/-- **`MemLp` from class membership and finite bracketing entropy**.
+/-- **`MemLp` from class membership and finite bracketing entropy.**
 
 If `F` has a finite bracketing-entropy integral at scale 1 and `f ∈ F` is
-AE-strongly-measurable, then `MemLp f 2 P`. Lifted from the inline argument in
-`DonskerBracketing.marginalCLT_of_finite_bracketing_entropy_integral_aux`: extract
+AE-strongly-measurable, then `MemLp f 2 P`. Extract
 a finite bracket cover at some scale `ε`, find a bracket `[l, u]` containing `f`,
 bound `|f x| ≤ |l x| + |u x|` pointwise, and conclude via `MemLp.of_le_mul` from
-`MemLp (l) 2 P`, `MemLp (u) 2 P`.
-
-Consumed by the localized chaining rewrite to feed `MemLp (f̂ − ĝ) 2 P` (via
-`MemLp.sub`) into `mem_localizedDifferenceClass_of_integral_sq`. -/
+`MemLp (l) 2 P`, `MemLp (u) 2 P`. -/
 lemma memLp_of_mem_of_finiteBracketing
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     (h_int : bracketingEntropyIntegral 1 F P < ⊤)
@@ -1789,14 +1704,12 @@ lemma memLp_of_mem_of_finiteBracketing
       _ ≤ |l i x| := neg_le_abs _
       _ ≤ |l i x| + |u i x| := by linarith [abs_nonneg (u i x)]
 
-/-- **Envelope-tail DCT at a fixed positive threshold scale `a`**.
+/-- **Envelope-tail convergence at a fixed positive threshold scale `a`.**
 
 For `Φ ∈ L²(P)` and a fixed `a > 0`, the truncated envelope tail
 `√n · ∫⁻ ω, |Φ ω| · 1_{a·√n < |Φ ω|} dP` tends to `0` as `n → ∞`.
 
-The threshold scale `a` is any fixed positive constant, so the result applies
-at the localized chaining truncation scale (in particular, `a = M`). The proof
-is the standard L¹ envelope-tail DCT: dominator
+The proof is the standard L¹ envelope-tail dominated-convergence argument: dominator
 `|Φ|²/a` (on `{a·√n < |Φ|}`, `√n ≤ |Φ|/a`, so `√n·|Φ| ≤ |Φ|²/a`); pointwise
 limit `0` (eventually `a·√n > |Φ ω|`, indicator vanishes); `|Φ|² ∈ L¹` from
 `MemLp Φ 2 P`.
@@ -1823,12 +1736,12 @@ lemma tendsto_envelope_tail_const_threshold
       Set.indicator {x | a * Real.sqrt n < |Φ x|} 1 ω) with hFn_def
   set g : Ω → ℝ≥0∞ := fun ω =>
     (ENNReal.ofReal a)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) with hg_def
-  -- Step A: T n = ∫⁻ Fn n.
+  -- First identify T n with ∫⁻ Fn n.
   have hT_eq : ∀ n, T n = ∫⁻ ω, Fn n ω ∂P := by
     intro n
     simp only [hT_def, hFn_def]
     rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  -- Step B: each Fn n is measurable.
+  -- Each Fn n is measurable.
   have hΦ_abs_meas : Measurable (fun ω => |Φ ω|) :=
     _root_.continuous_abs.measurable.comp hΦ_meas
   have hFn_meas : ∀ n, Measurable (Fn n) := by
@@ -1837,7 +1750,7 @@ lemma tendsto_envelope_tail_const_threshold
     refine hΦ_abs_meas.ennreal_ofReal.mul ?_
     exact Measurable.indicator measurable_const
       (measurableSet_lt measurable_const hΦ_abs_meas)
-  -- Step C: pointwise bound Fn n ω ≤ g ω.
+  -- Pointwise, Fn n ω ≤ g ω.
   have h_bound : ∀ n ω, Fn n ω ≤ g ω := by
     intro n ω
     simp only [hFn_def, hg_def]
@@ -1860,7 +1773,7 @@ lemma tendsto_envelope_tail_const_threshold
             rw [ENNReal.ofReal_div_of_pos ha, ENNReal.div_eq_inv_mul]
     · rw [Set.indicator_of_notMem hω]
       simp
-  -- Step D: pointwise limit Fn n ω → 0 for every ω.
+  -- For every ω, Fn n ω tends to zero.
   have h_lim : ∀ ω, Filter.Tendsto (fun n => Fn n ω) Filter.atTop (𝓝 0) := by
     intro ω
     have h_sqrt_tendsto :
@@ -1877,7 +1790,7 @@ lemma tendsto_envelope_tail_const_threshold
       simp
     have h_evEq : (fun n => Fn n ω) =ᶠ[Filter.atTop] (fun _ => (0 : ℝ≥0∞)) := h_ev
     exact Filter.Tendsto.congr' h_evEq.symm tendsto_const_nhds
-  -- Step E: integrability of |Φ|² (from MemLp Φ 2 P).
+  -- The assumption MemLp Φ 2 P gives integrability of |Φ|².
   have h_phi_sq_int : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P ≠ ∞ := by
     have h_eLp : eLpNorm Φ 2 P < ∞ := hΦ_L2.eLpNorm_lt_top
     have h_rpow := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
@@ -1891,12 +1804,12 @@ lemma tendsto_envelope_tail_const_threshold
       rw [ENNReal.rpow_natCast, Real.enorm_eq_ofReal_abs,
           ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
     rw [h_int_eq]; exact h_rpow.ne
-  -- Step F: integrability of g.
+  -- Hence g is integrable.
   have h_g_int : ∫⁻ ω, g ω ∂P ≠ ∞ := by
     simp only [hg_def]
     rw [lintegral_const_mul' _ _ ha_inv_ne_top]
     exact ENNReal.mul_ne_top ha_inv_ne_top h_phi_sq_int
-  -- Step G: assemble via DCT.
+  -- Conclude by dominated convergence.
   have h_dct :=
     MeasureTheory.tendsto_lintegral_of_dominated_convergence
       (μ := P) (F := Fn) (f := fun _ => (0 : ℝ≥0∞)) g hFn_meas
@@ -1908,9 +1821,8 @@ lemma tendsto_envelope_tail_const_threshold
 /-- **Eventual envelope-tail absorption into a positive target.**
 
 For `Φ ∈ L²(P)`, fixed `a > 0`, and any positive target `J`, there is `N`
-beyond which `√n · ∫⁻ |Φ| · 1_{a·√n < |Φ|} ≤ J`. Direct from
-`tendsto_envelope_tail_const_threshold` + `ENNReal.tendsto_atTop_zero`. This is
-the localized-consumer's tail-absorption step at the truncation scale `a`. -/
+beyond which `√n · ∫⁻ |Φ| · 1_{a·√n < |Φ|} ≤ J`. This follows from
+`tendsto_envelope_tail_const_threshold` and `ENNReal.tendsto_atTop_zero`. -/
 lemma exists_envelope_tail_le_const_threshold
     (P : Measure Ω) [IsProbabilityMeasure P] {Φ : Ω → ℝ}
     (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) {a : ℝ} (ha : 0 < a)
@@ -1922,21 +1834,17 @@ lemma exists_envelope_tail_le_const_threshold
   ENNReal.tendsto_atTop_zero.mp
     (tendsto_envelope_tail_const_threshold P hΦ_meas hΦ_L2 ha) _ hJ
 
-/-- **Envelope-tail DCT at the construction's `n·M` threshold**.
+/-- **Envelope-tail DCT at the `n·M` threshold.**
 
-The localized chaining constructor (`localized_core_construction`,
-`ChainingAssembly.lean`) produces its envelope tail at the truncation level
+The truncation level
 `√n · M_old` with `M_old = √n · chainThreshold / 2`, i.e. at the **`n`-scaled**
 threshold `{(n:ℝ) · M < |Φ|}` for the `n`-independent positive constant
 `M := chainThreshold B δq q₀ / 2`. This variant of
 `tendsto_envelope_tail_const_threshold` runs the same envelope-tail DCT at that
 `(n:ℝ)·M` threshold (a strictly faster-growing cutoff than `a·√n`, so the tail
-vanishes a fortiori), so the localized consumer can absorb it into `K·J(δq)`.
+vanishes a fortiori).
 
-This is the envelope-tail result the localized chaining consumer needs once the
-`localizedChainBound_of_finiteEntropy` exposes a *uniform* positive `M`
-(outside `∀ n`) with the `(n:ℝ)·M` threshold — the form the construction
-actually delivers. Domination on `{n·M < |Φ|}`: there `n·M < |Φ|` gives
+Domination on `{n·M < |Φ|}` uses `n·M < |Φ|` to obtain
 `√n ≤ n ≤ |Φ|/M` (for `n ≥ 1`), so `√n·|Φ| ≤ |Φ|²/M ∈ L¹`. -/
 lemma tendsto_envelope_tail_natMul_threshold
     (P : Measure Ω) [IsProbabilityMeasure P] {Φ : Ω → ℝ}
@@ -2042,20 +1950,20 @@ lemma tendsto_envelope_tail_natMul_threshold
   simp only [lintegral_zero] at h_dct
   exact (Filter.tendsto_congr hT_eq).mpr h_dct
 
-/-- Sub-Lemma C: chain integral assembly orchestrating the localized chaining
-engine (`localizedChainBound_of_finiteEntropy`, supplied as `hChainBound_outer`)
-and the envelope-tail DCT (`tendsto_envelope_tail_const_threshold`).
+/-- Sub-Lemma C: localized chaining integral bound using
+`localizedChainBound_of_finiteEntropy` (supplied as `hChainBound_outer`) and the
+envelope-tail convergence theorem `tendsto_envelope_tail_const_threshold`.
 
 vdV §19.2 **localized** equicontinuity. On the `L²`-good event
 `{∫(f̂−ĝ)² < δq²}`, the random difference `f̂(ξ) − ĝ(ξ)` lands in the
 δq-LOCALIZED difference class `localizedDifferenceClass F P δq` (whose sup DOES
 vanish, unlike the full-`F` sup), so the per-ξ integrand is bounded by the
-localized-class sup — NOT by `2·supNormOver F`. The engine's
+localized-class supremum rather than by `2·supNormOver F`. The bound
 `∫⁻ supNormOver (localized) 𝔾ₙ ≤ c·J(δq) + c·√n·tail(√n·M)` then bounds the slice
 integral, and the tail at threshold `√n·M` (uniform positive `M`, outside `∀n`)
 is absorbed into `J(δq)` via the envelope-tail DCT at `a = M > 0`.
 
-The engine requires `δq ≤ 1/4`; the conclusion carries that constraint.
+The hypothesis `δq ≤ 1/4` is retained in the conclusion.
 Universal `K_chain := 2·c` (one envelope-tail factor; the localized route has no
 F−F→F doubling — the localized class already IS the difference slice). -/
 private theorem chaining_integral_universal_K
@@ -2074,9 +1982,8 @@ private theorem chaining_integral_universal_K
     -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form):
     -- `∫⁻ supNormOver (localizedDifferenceClass F P δq) 𝔾ₙ ≤ c·J(δq) + c·√n·tail`
     -- with a uniform positive truncation level `M` (outside `∀ n`) at threshold
-    -- `√n·M`. The headline obtains this bound from
-    -- `localizedChainBound_of_finiteEntropy`. The class-`F` envelope `Φ` is
-    -- upgraded to the difference-class envelope `2Φ` (`isEnvelope_differenceClass_two`).
+    -- `√n·M`. The class-`F` envelope `Φ` is upgraded to the difference-class
+    -- envelope `2Φ` (`isEnvelope_differenceClass_two`).
     (hChainBound_outer :
       ∃ c : ℝ, 0 < c ∧
       ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
@@ -2102,14 +2009,14 @@ private theorem chaining_integral_universal_K
   -- Step 0: destructure the existential universal chaining constant `c`.
   obtain ⟨c, hc_pos, hChainBound_outer⟩ := hChainBound_outer
   -- Step 1: Extract the class-`F` envelope Φ; upgrade to the difference-class
-  -- envelope `Φ₂ := 2Φ` (`isEnvelope_differenceClass_two`), which the engine
-  -- consumes (the localized class ⊆ differenceClass F).
+  -- envelope `Φ₂ := 2Φ` (`isEnvelope_differenceClass_two`) for the localized
+  -- subclass of `differenceClass F`.
   obtain ⟨Φ, hΦ_meas, hΦ_env, hΦ_L2⟩ := chaining_envelope_from_bracket F P h_int
   set Φ₂ : Ω → ℝ := fun x => 2 * Φ x with hΦ₂_def
   have hΦ₂_meas : Measurable Φ₂ := measurable_const.mul hΦ_meas
   have hΦ₂_env : IsEnvelope (differenceClass F) Φ₂ := isEnvelope_differenceClass_two hΦ_env
   have hΦ₂_L2 : MemLp Φ₂ 2 P := hΦ_L2.const_mul 2
-  -- `F` is nonempty (it contains every `fhat n ξ`), which implies positivity
+  -- `F` is nonempty because it contains every `fhat n ξ`; this gives positivity
   -- of `J(δq)`.
   obtain ⟨ξ₀⟩ := nonempty_of_isProbabilityMeasure μ
   have hF_ne : F.Nonempty := ⟨fhat 0 ξ₀, h_fhat_in 0 ξ₀⟩
@@ -2117,12 +2024,12 @@ private theorem chaining_integral_universal_K
   -- localized route has NO F−F→F doubling — the localized class IS the slice).
   refine ⟨2 * c, by positivity, ?_⟩
   intro q δq hδq_pos hδq_le_quarter
-  -- `0 < J(δq)` follows from `F.Nonempty` (the entropy integrand
-  -- `√(log (1 + N))` is `≥ √(log 2) > 0` pointwise).
+  -- `0 < J(δq)` is forced by `F.Nonempty` (the entropy integrand
+  -- `√(log (1 + N))` is `≥ √(log 2) > 0` pointwise) — no longer a hypothesis.
   have hJ_pos : 0 < bracketingEntropyIntegral δq F P :=
     bracketingEntropyIntegral_pos_of_nonempty hF_ne hδq_pos
   -- Obtain the uniform positive truncation level `M` and the per-`n` localized
-  -- chaining bound at scale δq from the engine.
+  -- chaining bound at scale `δq`.
   obtain ⟨M, hM_pos, hMbound⟩ :=
     hChainBound_outer Φ₂ hΦ₂_meas hΦ₂_env hΦ₂_L2 hδq_pos hδq_le_quarter
   -- Step 3: Pick `N_chain` via the envelope-tail DCT at the FIXED positive
@@ -2134,8 +2041,8 @@ private theorem chaining_integral_universal_K
             * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P
         ≤ bracketingEntropyIntegral δq F P := by
     have h_tendsto := tendsto_envelope_tail_const_threshold P hΦ₂_meas hΦ₂_L2 hM_pos
-    -- the brick's threshold set is `{M·√n < |Φ₂|}`; the engine's is
-    -- `{√n·M < |Φ₂|}`. Reconcile by `mul_comm`.
+    -- Reconcile the threshold sets `{M·√n < |Φ₂|}` and
+    -- `{√n·M < |Φ₂|}` by commutativity of multiplication.
     have h_set_eq : ∀ n : ℕ,
         (fun ω => ENNReal.ofReal (|Φ₂ ω|)
             * Set.indicator {x | M * Real.sqrt n < |Φ₂ x|} 1 ω)
@@ -2212,7 +2119,7 @@ private theorem chaining_integral_universal_K
       · -- off the good event: indicator = 0.
         rw [Set.indicator_of_notMem hgood, mul_zero]
         exact zero_le _
-    -- Step (b): the localized chaining engine bound at scale δq (per `n`).
+    -- Step (b): the localized chaining bound at scale `δq` for this `n`.
     have h_max : ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
             (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
         ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
@@ -2257,7 +2164,7 @@ private theorem chaining_integral_universal_K
 L²-good slice of `F − F`, the chaining content of
 `chaining_per_q_max_ineq_bound`.
 
-**Proof structure (vdV §19.6; the three leaves apply at scale δq).**
+**Proof outline (vdV §19.6; the three bounds apply at scale δq).**
 
 1. **Bracket-restricted pointwise bound (vdV §19.2 Lem 2.12).** On the
    L²-good slice `{ξ | ‖fhat n ξ − ghat n ξ‖²_L²(P) < (δ q)²}`, the pair
@@ -2306,9 +2213,8 @@ private theorem chaining_per_q_integral_bound_aux
     (_h_fhat_in : ∀ n ξ, fhat n ξ ∈ F)
     (_h_ghat_in : ∀ n ξ, ghat n ξ ∈ F)
     (δ : ℕ → ℝ) (_hδ_pos : ∀ q, 0 < δ q) (_hδ_le_quarter : ∀ q, δ q ≤ 1 / 4)
-    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
-    -- `chaining_integral_universal_K`. Supplied internally at the headline by
-    -- `localizedChainBound_of_finiteEntropy`. The universal constant `c > 0` and
+    -- The δq-localized chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K`. The universal constant `c > 0` and
     -- the uniform positive truncation level `M` are existentially quantified.
     (hChainBound_outer :
       ∃ c : ℝ, 0 < c ∧
@@ -2419,12 +2325,12 @@ private theorem chaining_per_q_integral_bound_aux
     -- `h_N_chain' n hn` obtained at the top of this proof.
     exact h_N_chain' n hn
 
-/-- Per-`q` chaining bound on the L²-good portion of `badEvent`, carrying
-the vdV §19.2 chaining content (envelope extraction from the level-1 bracket
-cover of `F − F`, application of `maximal_inequality_bracketing_tight` to the
-L²-`δ q`-slice of `F − F`, Markov on the threshold `η`, DCT for the envelope
-tail absorbed into the eventually-in-`n` quantifier, and the F-F-to-F
-bracketing-integral reduction).
+/-- Per-`q` chaining bound on the L²-good portion of `badEvent`. The proof uses
+envelope extraction from the level-1 bracket cover of `F − F`, the localized
+universal-constant chaining bound on the L²-`δ q` slice, and Markov's inequality.
+Dominated convergence absorbs the envelope tail into the eventually-in-`n`
+quantifier, and the F-F-to-F bracketing-integral inequality gives the stated
+entropy bound.
 
 **Proof outline (vdV §19.2).**
 1. From the finite bracketing-entropy at scale 1 (`h_int`), extract
@@ -2433,8 +2339,7 @@ bracketing-integral reduction).
    cover of `F − F`; construct the envelope
    `Φ ω = max_i (|l_i ω| + |u_i ω|)` over the level-1 brackets of
    `F − F`. This `Φ` is measurable and `MemLp Φ 2 P`.
-2. For each `q`, instantiate the maximal inequality
-   `maximal_inequality_bracketing_tight` on the L²-`δ q`-slice
+2. For each `q`, apply `hChainBound_outer` on the L²-`δ q` slice
    subclass `F'_q := {h ∈ F − F | ‖h‖_{L²(P)} ≤ δ q}` at scale
    `δ q`, with the bracketing entropy integral
    `J_q := J_{[]}(δ q, F − F, L²(P))`. The hypothesis `hAbsorb` is
@@ -2457,12 +2362,10 @@ bracketing-integral reduction).
 7. Combining steps 3–6 with step 4 gives the desired bound with
    `K := 4 K' / η`. This `K` is uniform in `q`.
 
-The closure requires the `K'` from `maximal_inequality_bracketing_tight` to
-be a universal constant independent of `(n, δ)`, supplied here by the
-universal-K chaining of `chaining_per_q_integral_bound_aux` (level-by-level
-`finite_sup_bound`, telescope sum, envelope truncation). Markov on threshold
-`η` then converts the integral bound to the measure bound, with outer
-`K = K_chain / η` universal in `q`. -/
+The universal constant comes from `hChainBound_outer` and
+`chaining_per_q_integral_bound_aux`, which combine `finite_sup_bound`, the
+telescoping sum, and envelope truncation. Markov's inequality converts the
+integral bound to the measure bound with `K = K_chain / η`, uniformly in `q`. -/
 theorem chaining_per_q_max_ineq_bound
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (_h_int : bracketingEntropyIntegral 1 F P < ⊤)
@@ -2504,12 +2407,11 @@ theorem chaining_per_q_max_ineq_bound
           ENNReal.ofReal K * bracketingEntropyIntegral (δ q) F P := by
   -- The leaves `tight_chain_level_bound`, `tight_chain_telescope_bound`,
   -- `tight_envelope_truncation_bound` each return constants universal in
-  -- `(n, δ)`; their assembly (vdV §19.6) yields a universal `K_chain`
+  -- `(n, δ)`; combining them as in vdV §19.6 yields a universal `K_chain`
   -- on the integral of `|G_n(f̂) − G_n(ĝ)|` restricted to the L²-good event.
   -- Markov on threshold `η` converts this integral bound to the measure
   -- bound below; the outer `K = K_chain / η` is therefore universal in `q`.
-  -- Apply the file-level universal-K integral bound
-  -- `chaining_per_q_integral_bound_aux` (which bundles AEMeasurability of the
+  -- Apply `chaining_per_q_integral_bound_aux`, which bundles AEMeasurability of the
   -- integrand and the integral bound); the Markov + ENNReal-algebra wrap-up
   -- is closed inline.
   obtain ⟨K_chain, hK_chain_pos, h_chain⟩ :=

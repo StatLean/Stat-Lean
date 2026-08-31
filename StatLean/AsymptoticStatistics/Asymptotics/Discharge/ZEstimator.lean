@@ -2,31 +2,32 @@ import StatLean.AsymptoticStatistics.Asymptotics.ZEstimator
 import StatLean.AsymptoticStatistics.EmpiricalProcess.RandomFunctions
 import StatLean.AsymptoticStatistics.ForMathlib.IIdJointLaw
 import StatLean.AsymptoticStatistics.ForMathlib.IidWLLN
+import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterSlutsky
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Integral.Pi
 
 /-!
-# Z-estimator semiparametric efficiency: Taylor + Donsker discharge layer
+# Z-estimator semiparametric efficiency from Taylor and Donsker conditions
 
-Closes the bundled `asympLinear_25_54` field of `EfficientScoreEqAssumptions`
-from book-level primitives: a Donsker class containing the estimated efficient
+This file derives the `asympLinear_25_54` condition of `EfficientScoreEqAssumptions`
+from the hypotheses in the book: a Donsker class containing the estimated efficient
 scores w.p.a.1 (vdV thm:25.54 hyp 6), the L²-consistency of the estimated
 score (eq:25.53), the no-bias condition (eq:25.52), the estimating-equation
 `√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} →_P 0`, the consistency of `θ̂_n`, and the
 DQM-in-θ Taylor regularity for `θ ↦ ℓ̃_{θ,η}`.
 
-Strong-regularity / Taylor route. The book's proof (vdV §25.8) decomposes
+Strong-regularity / Taylor route. The book's proof (vdV §25.5) decomposes
 the residual into a random-index empirical-process step closed by Lemma 19.24,
 an algebraic rewrite using the no-bias condition (eq:25.52) and the estimating
 equation, and a second-order Taylor decomposition of
 `(P_{θ̂_n,η} − P) ℓ̃_{θ̂_n,η̂_n}` via the DQM-in-θ Taylor identity
 (vdV §7.2 Theorem 7.2 + Lemma 7.6).
 
-Reference: vdV §25.8 (Efficient Score Equations), eq:25.52 (no-bias), eq:25.53 (Donsker / regularity),
+Reference: vdV §25.5, eq:25.52 (no-bias), eq:25.53 (Donsker / regularity),
 thm:25.54 (Z-estimator semiparametric efficiency); Lemma 19.24; vdV §7.2
-Theorem 7.2 + Lemma 7.6 (DQM-Taylor). Headline declarations:
+Theorem 7.2 + Lemma 7.6 (DQM-Taylor). Main declarations:
 `zEstimator_asympLinear_of_taylor` and `toEfficientScoreEqAssumptions`.
 -/
 
@@ -136,8 +137,8 @@ regularity hypothesis on the efficient score.
 **Parameters** (in addition to the standard model identity):
 - `score_func_seq : ∀ n, (Fin n → Ω) → (Ω → ℝ)` — the random function
   `(n, X) ↦ ℓ̃_{θ̂_n(X), η̂_n(X)}` viewed as a measurable element of
-  `L²(P)` for each sample. Concrete consumers supply this via their
-  nuisance estimator `η̂_n` and the model's score map.
+  `L²(P)` for each sample. This is determined by the nuisance estimator
+  `η̂_n` and the model's score map.
 - `score_truth : Ω → ℝ` — a measurable representative of
   `efficientScore S_θ T_nuis v` in `L²(P)`. Supplied as a separate
   parameter (rather than coerced from `↥(L2ZeroMean P)`) so that
@@ -150,25 +151,24 @@ regularity hypothesis on the efficient score.
   `θ ↦ ℓ̃_{θ,η}` at θ₀ (vdV §7.2 Lemma 7.6 derivative; consumed by the
   Taylor remainder bound).
 
-Every field traces back to a primitive in vdV §25.8. See the docstring
+Every field traces back to a primitive in vdV §25.5. See the docstring
 on each field for the book reference.
 
-Reference: vdV §25.8 (Efficient Score Equations), thm:25.54; eq:25.52, eq:25.53 (book primitives);
+Reference: vdV §25.5, thm:25.54; eq:25.52, eq:25.53 (book primitives);
 Lemma 19.24.
 
-The bundle is shipped in three layers:
+The hypotheses are organized into three structures:
 - `ZEstimatorTaylorCoreBase`: every field of vdV's thm:25.54 hypothesis
   set **except** the no-bias condition (25.52) **and** the
-  estimating-equation rate (`score_eq`). The fields here are the ones
-  Steps 3, 4 (Taylor-remainder Cauchy-Schwarz + Bartlett LLN on `ℓ̇`)
-  consume. Also the base for the explicit-bias variant of thm:25.59,
+  estimating-equation rate (`score_eq`). These fields give Steps 3 and 4
+  (Taylor-remainder Cauchy–Schwarz and the Bartlett LLN on `ℓ̇`). This is
+  also the base for the explicit-bias variant of thm:25.59,
   which drops `score_eq` and reinstates it with an explicit bias residual.
 - `ZEstimatorTaylorCore`: extends `Base` with `score_eq`. The
   hypothesis bundle for thm:25.54's Taylor-route AL conclusion and
   thm:25.59's bias=0 specialization.
-- `ZEstimatorTaylorHyp`: extends `Core` with the `no_bias` field. The direct
-  Donsker-route helpers accept this combined bundle and use its inherited
-  empirical-process and estimating-equation fields.
+- `ZEstimatorTaylorHyp`: extends `Core` with the `no_bias` field used in
+  Steps 1 and 2 of vdV's Donsker argument.
 -/
 structure ZEstimatorTaylorCoreBase
     (P : Measure Ω) [IsProbabilityMeasure P]
@@ -185,18 +185,20 @@ structure ZEstimatorTaylorCoreBase
   to invert `Ĩ` in the EIF formula `(1/Ĩ) • ℓ̃` and for the Z-estimator
   influence function to be well-defined. -/
   hI_pos : 0 < efficientInformation S_θ T_nuis v
-  /-- The truth representative `score_truth` is measurable. Required to
-  feed `donsker_random_function_consistency` (Lem 19.24). Trivially
-  satisfied by any concrete `score_truth` constructed from a measurable
-  model. -/
+  /-- The truth representative `score_truth` is measurable. Used in this
+  to derive the explicit outer-probability tail used by
+  `donsker_random_function_consistency_core`; that theorem itself does
+  not require this measurability input. Trivially satisfied by any concrete
+  `score_truth` constructed from a measurable model. -/
   truth_meas : Measurable score_truth
-  /-- `score_truth` is in `L²(P)`. Required for Lem 19.24 and for
-  Cauchy-Schwarz in the Taylor remainder bound. Holds for any efficient
-  score by `score_l2 (efficientScore …)`. -/
+  /-- `score_truth` is in `L²(P)`. This is a hypothesis of Lemma 19.24 and
+  is also used by the Taylor algebra and integrability
+  arguments below. Holds for any efficient score by
+  `score_l2 (efficientScore …)`. -/
   truth_memLp : MemLp score_truth 2 P
   /-- `score_truth` agrees `P`-a.e. with the abstract efficient score
-  `efficientScore S_θ T_nuis v`. Bridges the abstract L²₀(P) layer and
-  the concrete-function layer needed by Lem 19.24. -/
+  `efficientScore S_θ T_nuis v`, connecting the abstract L²₀(P) element
+  to the measurable representative needed by Lemma 19.24. -/
   truth_aeEq :
     (((efficientScore S_θ T_nuis v : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ)
       =ᵐ[P] score_truth
@@ -205,34 +207,33 @@ structure ZEstimatorTaylorCoreBase
   truth_in_donsker : score_truth ∈ donsker_class
   /-- vdV thm:25.54 hyp 6: the random function family is P-Donsker. -/
   is_donsker : IsPDonsker donsker_class P
-  /-- `score_func_seq n` is jointly measurable in (sample, ω).
-  Boilerplate empirical-process measurability. -/
+  /-- `score_func_seq n` is jointly measurable in (sample, ω). This gives
+  measurability in the Markov derivation of the explicit outer tail; it is not
+  a hypothesis of Lemma 19.24 itself. -/
   score_func_meas : ∀ n,
     Measurable (fun p : (Fin n → Ω) × Ω => score_func_seq n p.1 p.2)
   /-- vdV thm:25.54 hyp 6 (w.p.a.1 form): for every n, the random
   function `score_func_seq n X` belongs to the Donsker class for every
   sample `X`. (The "w.p.a.1" weakening is folded into the always-true
-  case here; concrete consumers may have to enlarge the Donsker class to
+  case here; the Donsker class may have to be enlarged to
   absorb measure-zero exceptions, which is standard Donsker-class
   practice.) -/
   score_func_in_donsker : ∀ n (X : Fin n → Ω), score_func_seq n X ∈ donsker_class
-  /-- vdV eq:25.53 (expectation form): the L²(P)-distance between
-  `score_func_seq` and `score_truth` tends to zero (in expectation under
-  `Pⁿ`). The expectation form is what
-  `donsker_random_function_consistency` consumes; it is implied by the
-  probability form (eq:25.53 textbook) under the L² envelope condition
-  on the Donsker class (a standard step in vdV's argument). -/
+  /-- A sufficient form of vdV equation (25.53): the expected
+  squared L²(P)-distance between `score_func_seq` and `score_truth` tends to
+  zero under `Pⁿ`. Together with `score_l2_int`, it yields by Markov's
+  inequality the explicit outer-probability tail required by
+  `donsker_random_function_consistency_core`; the core does not consume an
+  expectation hypothesis. -/
   score_l2_consistency :
     Tendsto (fun n =>
       ∫ X, (∫ x, (score_func_seq n X x - score_truth x) ^ 2 ∂P)
         ∂(Measure.pi (fun _ : Fin n => P)))
       atTop (𝓝 0)
-  /-- Outer integrability of the squared L²-distance under `Pⁿ`
-  (Vaart–Wellner §2.3 admissibility). Strengthening of
-  `score_l2_consistency` to integrability form, required by the
-  strengthened `IsAsymptoticallyEquicontinuous` predicate consumed in
-  `step1_random_index_oP`. Standard Donsker-class regularity: every
-  L²-bounded random function class has integrable L²-distance pairs. -/
+  /-- Integrability of the squared L²-distance under `Pⁿ`. This condition
+  supplies the integrability premise of
+  `markov_distL2_tail`, from which `step1_random_index_oP` derives the
+  outer-probability tail. It is not a hypothesis of Lemma 19.24 itself. -/
   score_l2_int : ∀ n, MeasureTheory.Integrable
     (fun X : Fin n → Ω => ∫ x, (score_func_seq n X x - score_truth x) ^ 2 ∂P)
     (Measure.pi (fun _ : Fin n => P))
@@ -242,8 +243,8 @@ structure ZEstimatorTaylorCoreBase
       {X : Fin n → Ω | ε ≤ |estimator n X - θ₀|})
     atTop (𝓝 0)
   /-- `estimator n` is measurable for every `n`. Required so that the
-  `Pⁿ`-measure of sets carved out by `estimator n` (used in the small-`n`
-  initial-segment tightness wrapper) is well-defined as the Lebesgue
+  `Pⁿ`-measure of sets carved out by `estimator n` (used for small-`n`
+  initial-segment tightness) is well-defined as the Lebesgue
   measure rather than only the outer measure. Trivially holds for any
   concretely constructed Z-estimator. -/
   estimator_meas : ∀ n, Measurable (estimator n)
@@ -278,10 +279,9 @@ structure ZEstimatorTaylorCoreBase
 /-- vdV thm:25.54 / 25.59-bias=0 hypothesis bundle (Taylor route).
 
 Extends `ZEstimatorTaylorCoreBase` with the estimating-equation rate
-`score_eq`, used by `step5_sqrt_n_consistency`, `step6_residual_oP`, and
-the main theorem `zEstimator_asympLinear_of_taylor` (AL form). Used as the
-hypothesis bundle for thm:25.54's discharge layer adapter and for
-thm:25.59's bias=0 specialization.
+`score_eq`. These hypotheses imply Steps 5 and 6 and the asymptotic-linear
+conclusion `zEstimator_asympLinear_of_taylor`. They also give the bias-zero
+specialization of thm:25.59.
 
 The explicit-bias variant of thm:25.59 takes `ZEstimatorTaylorCoreBase`
 directly with bias-residual fields added, since `score_eq` is
@@ -312,13 +312,12 @@ structure ZEstimatorTaylorCore
 
 /-- vdV thm:25.54 strong-regularity bundle (Taylor route).
 
-Extends `ZEstimatorTaylorCore` with the no-bias condition (25.52).
-The direct Donsker-route helpers are stated against this combined bundle and use
-its inherited empirical-process and estimating-equation fields. Steps 3–6 and
-`zEstimator_asympLinear_of_taylor` take `ZEstimatorTaylorCore` and therefore do
-not require `no_bias`.
+Extends `ZEstimatorTaylorCore` with the no-bias condition (25.52). This field
+is used by `step1_random_index_oP` and `step2_score_eq_to_no_bias` in vdV's
+§25.5 Donsker argument; Steps 3–6 and `zEstimator_asympLinear_of_taylor` do
+not use it.
 
-Reference: vdV §25.8 (Efficient Score Equations), thm:25.54; eq:25.52 (the no-bias condition added
+Reference: vdV §25.5, thm:25.54; eq:25.52 (the no-bias condition added
 by this extension).
 -/
 structure ZEstimatorTaylorHyp
@@ -341,7 +340,7 @@ structure ZEstimatorTaylorHyp
   Encoded here as the tightest local form: `√n · ∫ score_func_seq n X dP
   →_P 0` under `Pⁿ`. (The `+ √n‖θ̂_n − θ₀‖` slack is absorbed by combining
   with the consistency hypothesis at proof time.) Concrete model files
-  prove this from a model-specific bias control (vdV §25.8, eq:25.52). -/
+  prove this from a model-specific bias control (vdV §25.5, eq:25.52). -/
   no_bias : ∀ ε > 0, Tendsto
     (fun n : ℕ => (Measure.pi (fun _ : Fin n => P))
       {X : Fin n → Ω |
@@ -371,14 +370,18 @@ Equivalent unrolled form: for every ε > 0,
 `Pⁿ {X | ε ≤ |(1/√n) Σᵢ (score_func_seq n X (X_i) − score_truth(X_i))
                  − √n ∫ (score_func_seq n X − score_truth) dP|} → 0`.
 
-**Proof strategy.** Apply vdV Lemma 19.24
-(`donsker_random_function_consistency`) at:
+**Proof strategy.** Derive the explicit outer-probability L² tail by applying
+`markov_distL2_tail` to the random pair `score_func_seq` and the constant
+function `score_truth`, then apply vdV Lemma 19.24
+(`donsker_random_function_consistency_core`) at:
 * `F := donsker_class`
-* `f₀ := score_truth` (with hypotheses `truth_meas`, `truth_memLp`,
-  `truth_in_donsker`)
-* `f_hat := score_func_seq` (with `score_func_meas`,
-  `score_func_in_donsker`, and `score_l2_consistency` for the
-  L²-consistency input).
+* `f₀ := score_truth` with `truth_memLp`
+* `f_hat := score_func_seq` (with `score_func_in_donsker` and the derived
+  explicit outer tail).
+
+The stronger `truth_meas`, `score_func_meas`, `score_l2_int`, and
+`score_l2_consistency` fields are used only to derive this Markov bound; they
+are not hypotheses of Lemma 19.24 itself.
 
 The bridging step from Lem 19.24's `(Ξ, μ, X : ℕ → Ξ → Ω)` setup to the
 `Pⁿ := Measure.pi (fun _ : Fin n => P)` setup uses the iid product
@@ -400,7 +403,7 @@ private lemma step1_random_index_oP
                   * (∫ ω, (score_func_seq n X ω - score_truth ω) ∂P)|})
       atTop (𝓝 0) := by
   -- Bridge `Pⁿ` to `μ := infinitePi (const P)` via `pi_const_eq_infinitePi_map`,
-  -- then apply Lem 19.24 (`donsker_random_function_consistency`) at:
+  -- then apply Lem 19.24 (`donsker_random_function_consistency_core`) at:
   --   Ξ := ℕ → Ω, μ := infinitePi (const P), X i ξ := ξ i,
   --   f_hat n ξ := score_func_seq n (fun i : Fin n => ξ i.val),
   --   f₀ := score_truth.
@@ -488,13 +491,41 @@ private lemma step1_random_index_oP
     exact (MeasureTheory.integrable_map_measure
       (h_inner_strMeas n).aestronglyMeasurable
       (h_proj_meas n).aemeasurable).mp h_pi
+  -- Derive the explicit outer-probability tail from the
+  -- expectation and integrability assumptions by Markov's inequality.
+  set ghat : ℕ → (ℕ → Ω) → (Ω → ℝ) := fun _ _ => score_truth with hghat_def
+  have hghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)) := by
+    intro n
+    exact h.truth_meas.comp measurable_snd
+  have h_outer_tail : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth})
+      atTop (𝓝 0) := by
+    intro δ hδ
+    have htail : Tendsto (fun n =>
+        μ {ξ | δ ≤ distL2 P (f_hat n ξ) (ghat n ξ)}) atTop (𝓝 0) := by
+      exact markov_distL2_tail (F := donsker_class) μ f_hat ghat
+        hf_hat_meas hghat_meas
+        (fun n => by simpa [hghat_def] using h_l2_int_μ n)
+        (by simpa [hghat_def] using h_l2_μ) hδ
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds htail
+      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+    calc
+      μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth}
+          ≤ μ.outerMeasureStar {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
+            outerMeasureStar_mono μ (by
+              intro ξ hξ
+              change δ < distL2 P (f_hat n ξ) score_truth at hξ
+              change δ ≤ distL2 P (f_hat n ξ) score_truth
+              exact le_of_lt hξ)
+      _ ≤ μ {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
+        AsymptoticStatistics.outerMeasureStar_le_measure μ _
   -- Apply Lem 19.24 at η := ε/2.
-  have h_lem19_24 := donsker_random_function_consistency
+  have h_lem19_24 := donsker_random_function_consistency_core
     (F := donsker_class) (P := P) h.is_donsker
-    score_truth h.truth_memLp h.truth_in_donsker h.truth_meas
+    score_truth h.truth_memLp
     (Ξ := ℕ → Ω) (μ := μ)
     (X := fun (i : ℕ) (ξ : ℕ → Ω) => ξ i) hX_meas h_iIndep hX_idem hX_law
-    f_hat hf_hat_meas hf_hat_range h_l2_int_μ h_l2_μ
+    f_hat hf_hat_range h_outer_tail
     (ε / 2) (by linarith)
   -- Translate the conclusion under μ to the conclusion under Pⁿ.
   -- Lem 19.24 gives:
@@ -561,8 +592,9 @@ private lemma step1_random_index_oP
       unfold EmpiricalProcess.empiricalProcess EmpiricalProcess.empiricalAvg
       -- Goal: ε/2 < |√n * ((1/n)·Σ (f_hat n ξ) (ξ i.val) - ∫f_hat n ξ ∂P)
       --             - √n * ((1/n)·Σ score_truth (ξ i.val) - ∫score_truth ∂P)|.
-      -- We have hξ : ε ≤ |(1/√n)·Σ (score_func_seq n proj X(_) - score_truth(_))
-      --                   - √n · ∫(score_func_seq n proj X(_) - score_truth(_)) ∂P|
+      -- The hypothesis gives the projected empirical-score inequality
+      -- ε ≤ |(1/√n)·Σ(score_func_seq n proj X(_) - score_truth(_))
+      --      - √n · ∫(score_func_seq n proj X(_) - score_truth(_)) ∂P|.
       -- where proj X = (fun i : Fin n => ξ i.val).
       -- Rewrite the μ side as the same expression after algebra.
       -- For n = 0, hξ ⇒ ε ≤ 0 (RHS is 0), contradiction.
@@ -639,7 +671,7 @@ private lemma step1_random_index_oP
         rw [h_inv_eq, Finset.sum_sub_distrib, h_int_split]
         ring
       rw [h_pn_form] at hξ
-      -- Now hξ has the expected μ-form (modulo ε/2 vs ε strict/non-strict).
+      -- This is the required μ-form after weakening the threshold from ε to ε/2.
       have h_le : ε / 2 < ε := by linarith
       exact lt_of_lt_of_le h_le hξ
     -- Apply the bridge `pi_meas_eq_infinitePi_meas_of_truncate`.
@@ -651,17 +683,22 @@ private lemma step1_random_index_oP
     intro ξ hξ
     exact h_incl hξ
 
-/-- **Step 2 (bias rewrite).**
+/-- **Step 2 (no-bias rewrite).**
 
-The score equation and the random-index bound from Step 1 imply
-`√n · ∫ score_func_seq n X dP + (1/√n) · Σᵢ score_truth(Xᵢ) →_P 0`.
-Thus the bias term is asymptotically the negative centred sum of the true score.
+`√n · (∫ score_func_seq n X − score_truth dP) = G_n(score_truth) + o_P(1)`
+modulo absorbing the `score_eq` (estimating equation) term.
 
-**Proof strategy.** Let `A_n` be the scaled bias term, `B_n` the true-score sum,
-`C_n` the estimating-equation term, and `D_n` the Step 1 empirical-process
-difference. Since `score_truth` has mean zero under `P`, direct algebra gives
-`A_n + B_n = C_n - D_n`. The triangle inequality, a threshold split at `ε / 2`,
-and the union bound reduce the conclusion to `h.score_eq` and Step 1. -/
+Combining Step 1 with the score equation (`h.score_eq`,
+`√n · 𝕡_n score_func_seq →_P 0`) gives the relation between
+the estimated-score bias and the empirical process used at the start of
+vdV's §25.5 proof. Indeed,
+`√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} = G_n(ℓ̃_{θ̂_n,η̂_n}) + √n · ∫ ℓ̃_{θ̂_n,η̂_n} dP`.
+By Step 1, `G_n(ℓ̃_{θ̂_n,η̂_n}) = G_n(ℓ̃) + o_P(1)`. By `score_eq`,
+the left side is `o_P(1)`, and hence
+`√n · ∫ ℓ̃_{θ̂_n,η̂_n} dP = −G_n(ℓ̃) + o_P(1)`.
+
+Thus the bias term `√n · ∫ ℓ̃_{θ̂_n,η̂_n} dP` is expressed in terms of
+`G_n(ℓ̃)`, the asymptotically Gaussian centred score sum under the truth. -/
 private lemma step2_score_eq_to_no_bias
     (h : ZEstimatorTaylorHyp P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -805,11 +842,9 @@ so `|(1/√n) Σ r_n| ≤ √(Σ r_n²)`. The hypothesis `score_l2_taylor`
 (`Σᵢ r_n(X_i)² →_P 0` under `Pⁿ`) plus continuity of `√·` at `0` give
 the conclusion via squeeze.
 
-This is the load-bearing substitution-via-Taylor step in the Taylor
-route of the proof (vdV §25.8 strong-regularity remark), playing the
-role of the book's "second-order term vanishes" in the §25.8 original
-argument. Mirrors `oneStep_asympLinear_of_taylor`'s treatment of the
-empirical-Taylor remainder. -/
+This is the vanishing second-order term in the strong-regularity argument of
+vdV §25.5, and is the same Taylor-remainder estimate used in
+`oneStep_asympLinear_of_taylor`. -/
 lemma step3_taylor_remainder_oP
     (h : ZEstimatorTaylorCoreBase P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -1043,15 +1078,15 @@ private lemma score_truth_sum_bddAbove_in_prob
   refine h_cheb.trans ?_
   exact ENNReal.ofReal_le_ofReal hVM
 
-/-- **Finite-`n` tightness wrapper for `√n(estimator − θ₀)`.**
+/-- **Finite-`n` tightness of `√n(estimator − θ₀)`.**
 
 For any fixed n, the random variable `X ↦ √n(estimator n X − θ₀)` is a
 measurable function on the finite measure `Pⁿ`; tightness of finite measures
 gives `Pⁿ{|√n(est − θ₀)| ≥ M_n} → 0` as `M_n → ∞`. Combining over a finite
 initial segment produces a single bound `M_init` covering all `n < N`.
 
-This wraps the standard "for finitely many n, take the max of per-n bounds"
-construction, using measurability of `estimator n` plus tightness of finite
+The proof takes the maximum of the individual bounds for finitely many `n`,
+using measurability of `estimator n` and tightness of finite
 measures (`MeasureTheory.tendsto_measure_compl_atTop` or similar). Used to
 absorb the small-n initial segment in `step5_sqrt_n_consistency` after the
 bootstrap pins down large-n behaviour. -/
@@ -1140,10 +1175,9 @@ function `ℓ̇ ∈ L²(P) ⊂ L¹(P)`: under iid product `Pⁿ`,
 `score_l_dot_bartlett` gives `E_P[ℓ̇] = −efficientInformation S_θ T_nuis v`,
 yielding the stated probability limit.
 
-**Mathlib bridge.** The iid LLN bridge `(1/n) Σᵢ f(X_i) →_P E[f]` for
-`f ∈ L¹` under `Pⁿ` is not packaged in Mathlib in this exact form.
-Closure pattern: `MeasureTheory.lln_strong_iid` + product-space
-unwrapping. -/
+The product-law form `(1/n) Σᵢ f(X_i) →_P E[f]` follows from
+`MeasureTheory.lln_strong_iid` after identifying the finite product
+coordinates. -/
 lemma step4_score_dot_lln
     (h : ZEstimatorTaylorCoreBase P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -1177,7 +1211,7 @@ Invoke Step 3 (`(1/√n) Σ r_n(X_i) →_P 0`), Step 4
 `hI_pos` keeps `Ĩ` bounded away from zero, so
 `√n(estimator − θ₀) = O_P(1)`.
 
-This is the bootstrap step that the book's original §25.8 proof handles
+This is the bootstrap step that the book's original §25.5 proof handles
 via Lem 19.24 + Donsker (Step 1 / Step 2 above) and the Taylor route
 handles via direct Cauchy-Schwarz + boundedness arguments. -/
 private lemma step5_sqrt_n_consistency
@@ -1197,7 +1231,7 @@ private lemma step5_sqrt_n_consistency
   -- Markov bound on `(1/√n) Σ score_truth(X_i)` — uniform over n.
   obtain ⟨M_S, hM_S⟩ := score_truth_sum_bddAbove_in_prob h (ε / 4) hε4
   -- Choose `M_target := max(6·M_S/Ĩ, 6/Ĩ, 1)` and a threshold C := M·Ĩ/6.
-  -- We need M·Ĩ/6 ≥ M_S to absorb the score-truth bound; pick M ≥ 6·M_S/Ĩ + 1.
+  -- Choose `M` so that `M·Ĩ/6 ≥ M_S`, absorbing the score-truth bound.
   set M_main : ℝ := max (6 * (M_S + 1) / Ĩ) 1 with hM_main_def
   have hM_main_pos : 0 < M_main := lt_of_lt_of_le one_pos (le_max_right _ _)
   have hM_threshold : M_S ≤ M_main * Ĩ / 6 := by
@@ -1209,7 +1243,8 @@ private lemma step5_sqrt_n_consistency
       have hineq : 6 * (M_S + 1) / Ĩ * Ĩ ≤ M_main * Ĩ := this
       linarith
     linarith [h3 ▸ h4]
-  -- For large n, we need ε/4 bounds on |D_n − 0|, |R_n|, |LHS_n|, each at threshold M·Ĩ/6.
+  -- For large `n`, each of `|D_n|`, `|R_n|`, and `|LHS_n|` has an ε/4 bound
+  -- at threshold `M·Ĩ/6`.
   -- Apply step3, step4, h.score_eq each at threshold M_main·Ĩ/6.
   have hThresh_pos : 0 < M_main * Ĩ / 6 := by positivity
   have h_step3_inst := step3_taylor_remainder_oP h.toZEstimatorTaylorCoreBase (M_main * Ĩ / 6)
@@ -1266,7 +1301,7 @@ private lemma step5_sqrt_n_consistency
   -- Final M.
   refine ⟨max M_main M_init, fun n => ?_⟩
   by_cases hnN : n < N
-  · -- Small-n: absorbed by `M_init` from the tightness helper.
+  · -- The finite initial segment is bounded by `M_init`.
     refine le_trans (measure_mono ?_) ((hM_init n hnN).trans ?_)
     · intro X hX; exact (le_max_right M_main M_init).trans hX
     · exact ENNReal.ofReal_le_ofReal (by linarith)
@@ -1319,9 +1354,8 @@ private lemma step5_sqrt_n_consistency
       set D_n : ℝ :=
         (n : ℝ)⁻¹ * (∑ i : Fin n, (score_l_dot : Ω → ℝ) (X i)) + Ĩ with hD_def
       set Δ_n : ℝ := Real.sqrt n * (estimator n X - θ₀) with hΔ_def
-      -- n ≥ N ≥ 1 — actually need n ≥ 1 for √n > 0.
-      -- Since hnN : N ≤ n and N can be 0, we cannot guarantee n ≥ 1 directly.
-      -- However for n = 0, Δ_n = 0 and the LHS set is empty (M_main > 0).
+      -- When `n = 0`, `Δ_n = 0` and the left-side set is empty; otherwise
+      -- `√n > 0` and the following algebra applies.
       by_cases hn0 : n = 0
       · subst hn0
         -- Δ_n definitionally is Real.sqrt 0 * ... = 0.
@@ -1335,10 +1369,15 @@ private lemma step5_sqrt_n_consistency
       have h_sqrt_pos : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR_pos
       have h_sqrt_ne : Real.sqrt n ≠ 0 := ne_of_gt h_sqrt_pos
       have hnR_ne : (n : ℝ) ≠ 0 := ne_of_gt hnR_pos
-      -- Summing the pointwise remainder identity and scaling by `(1/√n)` gives
-      -- `LHS_n = S_n + Δ_n · ((1/n) · Σℓ̇) + R_n`.
-      -- Since `D_n = (1/n) · Σℓ̇ + Ĩ`, this is
-      -- `LHS_n = S_n + Δ_n · (D_n - Ĩ) + R_n`.
+      -- Pointwise, by the definition of `r_n`,
+      --   score_func_seq(X_i) = score_truth(X_i) + (est-θ₀)·ℓ̇(X_i) + r_n(X_i),
+      -- so summing and multiplying by `1/√n` gives
+      --   LHS_n = S_n + (est-θ₀)·(1/√n)·Σℓ̇ + R_n
+      --         = S_n + Δ_n · ((1/n)·Σℓ̇) + R_n,
+      -- because `Δ_n = √n·(est-θ₀)` and `(√n)² = n` for `n > 0`.
+      -- Consequently,
+      --   LHS_n = S_n + Δ_n · ((1/n)·Σℓ̇) + R_n
+      --         = S_n + Δ_n · (D_n - Ĩ) + R_n.
       have h_sum_split : ∀ i : Fin n,
           score_func_seq n X (X i)
             = score_truth (X i)
@@ -1774,11 +1813,11 @@ variable {θ₀ : ℝ}
 
 /-- vdV thm:25.54 — discharge of `asympLinear_25_54` from book primitives.
 
-Given the strong-regularity bundle `ZEstimatorTaylorCore`, the Z-estimator
+Given the strong-regularity bundle `ZEstimatorTaylorHyp`, the Z-estimator
 `estimator` is asymptotically linear at `P` with influence function
 `(1/Ĩ_{θ₀,η₀}) • ℓ̃_{θ₀,η₀}` and centering `θ₀`.
 
-**Proof outline (Taylor route — vdV §25.8 strong-regularity remark):**
+**Proof outline (Taylor route — vdV §25.5 strong-regularity remark):**
 
 The score equation `score_eq` says `(1/√n) Σᵢ score_func_seq n X (X_i) →_P 0`.
 Substitute the empirical Taylor identity (encoded via `score_l2_taylor` and
@@ -1809,10 +1848,11 @@ substituting the influence-function representation
 `((1/Ĩ) • efficientScore : Lp ℝ 2 P)(X_i) = (1/Ĩ) · score_truth(X_i)`
 modulo `truth_aeEq` and the `Lp.coeFn`/`smul` distributivity on Lp.
 
-For the Donsker-route identities, `step1_random_index_oP` invokes Lemma 19.24
-to produce `G_n(score_func_seq) − G_n(score_truth) →_P 0`, and
-`step2_score_eq_to_no_bias` combines that result with the inherited score equation.
-The theorem below instead combines Steps 3–6. -/
+The book's original Donsker route: Step 1 (`step1_random_index_oP`)
+invokes Lem 19.24 to produce `G_n(score_func_seq) − G_n(score_truth) →_P 0`;
+Step 2 (`step2_score_eq_to_no_bias`) produces the corresponding algebraic
+rewrite using `no_bias`. These lemmas give the connection to vdV's §25.5
+Donsker proof, while the theorem below uses the Taylor argument. -/
 theorem zEstimator_asympLinear_of_taylor
     (h : ZEstimatorTaylorCore P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -1892,14 +1932,8 @@ theorem zEstimator_asympLinear_of_taylor
   -- Close via `congrArg` lifting `h_inner_eq` to `(ε ≤ |·|)`.
   exact congrArg (fun x : ℝ => ε ≤ |x|) h_inner_eq
 
-/-- **Taylor assumptions as an efficient-score equation bundle.**
-
-Constructs `EfficientScoreEqAssumptions` from `ZEstimatorTaylorCore` and the
-EIF-construction inputs `h_mem` and `h_dψ`. Positivity of the efficient information is
-inherited from `h.hI_pos`, and `asympLinear_25_54` is supplied by
-`zEstimator_asympLinear_of_taylor`.
-
-Reference: vdV §25.8 (Efficient Score Equations), thm:25.54. -/
+/-- Constructs `EfficientScoreEqAssumptions` from the Taylor conditions and
+the EIF hypotheses `h_mem` and `h_dψ`. -/
 def toEfficientScoreEqAssumptions
     {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}
     (h : ZEstimatorTaylorCore P Θ S_θ T_nuis v

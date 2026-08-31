@@ -1,5 +1,4 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.DonskerBracketing
-import StatLean.AsymptoticStatistics.ForMathlib.SqrtLogProduct
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Topology.MetricSpace.CoveringNumbers
@@ -21,11 +20,8 @@ PDF p.286-287). Concretely, an `ε`-net `S` of `Θ` induces `k · |S|` brackets
 `N_{[]}(2ε‖m‖₂, 𝓕, L²(P)) ≤ k · |S| ≤ k · (C/ε)^k`; the polynomial covering
 bound makes `∫₀¹ √(log N_{[]}) dε < ∞`.
 
-This supplies the Donsker adapter for the book-faithful Z-estimator normality
-argument (vdV Thm 5.21): `IsPDonsker.asymptoticallyEquicontinuous` feeds the
-Theorem-19.26 engine's `h_equicont` field.
-
-Main declaration: `parametricClass_isPDonsker`.
+The Donsker property supplies the asymptotic equicontinuity used in the
+Z-estimator normality theorem via `IsPDonsker.asymptoticallyEquicontinuous`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -50,11 +46,11 @@ A bounded set `Θ ⊆ ℝ^k` admits, for every scale `ε > 0`, a finite `ε`-net
 (a finite subset with `Θ ⊆ ⋃_{c ∈ S} B(c, ε)`) whose cardinality is polynomial
 in `1/ε`: `|S| ≤ (C/ε)^k` for a constant `C` depending only on `Θ`.
 
-Following vdV Example 19.7, take a maximal `ε`-separated
+For vdV Example 19.7, take a maximal `ε`-separated
 subset `S ⊆ Θ`; maximality forces `S` to be an `ε`-cover, and the disjoint
 half-balls `B(c, ε/2)` all sit inside `B(x₀, R + ε/2)`, so the Haar-volume count
 `|S| · vol(B(·, ε/2)) ≤ vol(B(·, R + ε/2))` with `vol(B(·, r)) ∝ r^k` gives the
-bound. Mathlib has no finite-dim covering bound, so this is genuinely new. -/
+bound. -/
 theorem coveringNumber_le_of_bounded_euclidean {k : ℕ}
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ : Bornology.IsBounded Θ) :
     ∃ C : ℝ, 0 < C ∧ ∀ ε : ℝ, 0 < ε → ε ≤ 1 →
@@ -205,10 +201,9 @@ for `g = ψ_{θ, j}` pick `c ∈ S` with `θ ∈ B(c, ε)`; the Lipschitz bound
 which has `L²(P)`-size `‖2ε|m|‖_{P,2} = 2ε‖m‖_{P,2}`.
 
 The scale is a *strict* upper bound `2ε‖m‖_{P,2} < s` because `IsEpsBracket`
-requires the strict size inequality; the harmless inflation is absorbed in the
-entropy-integral estimate below.
-
-This is the bracket construction in vdV Example 19.7. -/
+requires the strict size inequality; the harmless inflation is absorbed by the
+entropy integral below. This is the covering-to-bracketing step in vdV
+Example 19.7. -/
 theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω)
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -276,10 +271,19 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
     have h := abs_le.mp habs
     exact ⟨by linarith [h.1], by linarith [h.2]⟩
 
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b` for `a, b ≥ 0`.
+(Mathlib has no packaged `Real.sqrt_add_le`; prove via `(√a + √b)² ≥ a + b`.) -/
+private lemma sqrt_add_le (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    Real.sqrt (a + b) ≤ Real.sqrt a + Real.sqrt b := by
+  rw [show a + b = Real.sqrt a ^ 2 + Real.sqrt b ^ 2 by rw [Real.sq_sqrt ha, Real.sq_sqrt hb]]
+  calc Real.sqrt (Real.sqrt a ^ 2 + Real.sqrt b ^ 2)
+      ≤ Real.sqrt ((Real.sqrt a + Real.sqrt b) ^ 2) := by
+        apply Real.sqrt_le_sqrt; nlinarith [Real.sqrt_nonneg a, Real.sqrt_nonneg b]
+    _ = Real.sqrt a + Real.sqrt b := Real.sqrt_sq (by positivity)
+
 /-- **Finite bracketing entropy integral for the Lipschitz class.**
 
-Combining the polynomial `ε`-net bound and the induced bracket construction with
-the substitution
+Combining the polynomial `ε`-net bound and the induced bracketing cover with the substitution
 `ε = s / (4‖m‖_{P,2} + 1)` gives `N_{[]}(s, 𝓕, L²(P)) ≤ k · (C'/s)^k` for every
 `0 < s ≤ 1`; the integrand `√(log(1 + k(C'/s)^k)) ≲ (√A + √k)·s^{-1/2}` is
 Lebesgue-integrable on `(0, 1]`, so the bracketing entropy integral
@@ -288,7 +292,7 @@ Lebesgue-integrable on `(0, 1]`, so the bracketing entropy integral
 Requires each `ψ θ j` measurable (`hψ_meas`) and in `L²(P)` (`hψ_L2`) so that the
 brackets `[ψ_c j − ε|m|, ψ_c j + ε|m|]` satisfy the `IsEpsBracket` data.
 
-This is the entropy-integrability conclusion of vdV Example 19.7. -/
+This is the entropy-integral step in vdV Example 19.7. -/
 theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
     [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -320,7 +324,7 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
     have hε0 : 0 < ε := by rw [hεdef]; positivity
     have hε1 : ε ≤ 1 := by rw [hεdef, div_le_one hden]; linarith [hMnn, hs1]
     obtain ⟨S, hSΘ, hcover, hScard⟩ := hE1 ε hε0 hε1
-    -- The strict bracket-size condition: `2εM < s`.
+    -- The induced brackets have size `2εM < s`.
     have hlt : 2 * ε * M < s := by
       rw [hεdef, show 2 * (s / (4 * M + 1)) * M = (2 * M * s) / (4 * M + 1) by ring,
         div_lt_iff₀ hden]
@@ -365,7 +369,7 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
       calc Real.sqrt (Real.log (1 + (k : ℝ) * (C' / s) ^ k))
           ≤ Real.sqrt (A + (k : ℝ) * (1 / s)) := Real.sqrt_le_sqrt hlog1
         _ ≤ Real.sqrt A + Real.sqrt ((k : ℝ) * (1 / s)) :=
-            ForMathlib.Real.sqrt_add_le hAnn (by positivity)
+            sqrt_add_le A ((k : ℝ) * (1 / s)) hAnn (by positivity)
         _ = Real.sqrt A + Real.sqrt (k : ℝ) / Real.sqrt s := by
             rw [Real.sqrt_mul (Nat.cast_nonneg k), one_div, Real.sqrt_inv]; ring
         _ ≤ Real.sqrt A / Real.sqrt s + Real.sqrt (k : ℝ) / Real.sqrt s := by
@@ -373,7 +377,7 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
               rw [le_div_iff₀ hsqrt_s_pos]; nlinarith [Real.sqrt_nonneg A, hsqrt_s_le]
             linarith
         _ = B * s ^ (-(1/2) : ℝ) := by rw [hBdef, hss]; ring
-    -- Combine the bracket-number bound with the analytic domination.
+    -- Combine the bracketing bound with the analytic domination.
     have hEI := entropyWeight_mono hE2
     rw [entropyWeight_coe] at hEI
     refine le_trans hEI ?_
@@ -405,9 +409,9 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
 
 /-- From a single anchor `ψ θ₀ j ∈ L²(P)` plus the Lipschitz/`L²`-envelope data,
 every `ψ θ j` (`θ ∈ Θ`) lies in `L²(P)`: `ψ θ j = ψ θ₀ j + (ψ θ j − ψ θ₀ j)`, and
-the difference is dominated by `(diam Θ)·|m| ∈ L²`. Thus the classwise `L²`
-condition used by the bracketing and Donsker results follows from a single
-reference point. -/
+the difference is dominated by `(diam Θ)·|m| ∈ L²`. Thus a single
+square-integrable anchor and the Lipschitz envelope imply square integrability
+of the whole class. -/
 private lemma memLp_two_psi_of_ref {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ : Bornology.IsBounded Θ)
@@ -444,8 +448,7 @@ approximates every `ψ θ j` (`θ ∈ Θ`) pointwise: pick `θₘ ∈ D`, `θₘ
 Lipschitz bound `|ψ θₘ j x − ψ θ j x| ≤ m x‖θₘ − θ‖ → 0` gives `ψ θₘ j x → ψ θ j x`
 for every `x`. The envelope `Φ = ∑_j |ψ θ₀ j| + (diam Θ)|m|` dominates the class
 and is integrable. No separate continuity hypothesis is needed — the Lipschitz
-condition supplies it, as required by the measurable-class formulation of
-vdV Example 19.7. -/
+condition supplies it, as required in vdV Example 19.7. -/
 theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -522,14 +525,14 @@ theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [Measurable
 
 /-- **The Lipschitz-parametrized class is `P`-Donsker.**
 
-The finite bracketing entropy integral gives `IsPDonsker (paramClass ψ Θ) P` through
-`isPDonsker_of_finite_bracketing_entropy_integral`.  Its asymptotic-
-equicontinuity component supplies the corresponding hypothesis in the
-Z-estimator normality theorem.
+Feeding the finite bracketing entropy integral into vdV Theorem 19.5
+(`isPDonsker_of_finite_bracketing_entropy_integral`) yields
+`IsPDonsker (paramClass ψ Θ) P`. Its asymptotic-equicontinuity conclusion
+supplies the condition `h_equicont` in Theorem 19.26.
 
-The anchor data `(θ₀, hθ₀, hψ0_L2)` specify one point of `Θ` whose coordinate
-functions lie in `L²(P)`.  Together with the Lipschitz envelope, they imply
-`L²(P)` membership for the whole class.  This is vdV Example 19.7. -/
+The anchor data `(θ₀, hθ₀, hψ0_L2)` — one point of `Θ` with its `k` coordinate
+functions in `L²(P)` — yields whole-class `L²` membership together with the
+Lipschitz/envelope hypotheses. This is vdV Example 19.7. -/
 theorem parametricClass_isPDonsker {k : ℕ} {Ω : Type*}
     [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
@@ -538,14 +541,13 @@ theorem parametricClass_isPDonsker {k : ℕ} {Ω : Type*}
     (hLip : ∀ θ₁ ∈ Θ, ∀ θ₂ ∈ Θ, ∀ (j : Fin k) (x : Ω),
       |ψ θ₁ j x - ψ θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖)
     (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ) (hψ0_L2 : ∀ j, MemLp (ψ θ₀ j) 2 P)
-    (hne : (paramClass ψ Θ).Nonempty)
     (hmeas : ∀ g ∈ paramClass ψ Θ, Measurable g) :
     IsPDonsker (paramClass ψ Θ) P := by
   have hψ_meas : ∀ θ ∈ Θ, ∀ j, Measurable (ψ θ j) :=
     fun θ hθ j => hmeas (ψ θ j) ⟨θ, hθ, j, rfl⟩
   have hψ_L2 : ∀ θ ∈ Θ, ∀ j, MemLp (ψ θ j) 2 P :=
     memLp_two_psi_of_ref P ψ Θ hΘ m hm hψ_meas hLip θ₀ hθ₀ hψ0_L2
-  exact isPDonsker_of_finite_bracketing_entropy_integral (paramClass ψ Θ) P hne hmeas
+  exact isPDonsker_of_finite_bracketing_entropy_integral (paramClass ψ Θ) P hmeas
     (parametricClass_bracketingEntropyIntegral_lt_top P ψ Θ hΘ m hm hm_meas hψ_meas hψ_L2 hLip)
 
 end AsymptoticStatistics.EmpiricalProcess

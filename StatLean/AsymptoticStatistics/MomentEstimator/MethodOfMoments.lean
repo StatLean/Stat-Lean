@@ -26,8 +26,7 @@ at `μ` with derivative `e_{θ₀}⁻¹`, `φ μ = θ₀`).  It solves the momen
 as `ℙₙ f ∈ V`, which happens with probability → 1 by consistency `ℙₙ f →ₚ μ`.
 
 Asymptotic normality is the **delta method** (`delta_method_remainder`) applied to `φ`:
-the multivariate CLT gives `√n(ℙₙ f − μ) ⇝ N(0, Σ_f)` via
-`empiricalMoment_weakConverges`,
+the multivariate CLT gives `√n(ℙₙ f − μ) ⇝ N(0, Σ_f)` (`empiricalMoment_weakConverges`),
 whence consistency and `O_P(1)` are derived; `delta_method_remainder` linearises
 `√n(φ(ℙₙ f) − θ₀) = e_{θ₀}⁻¹ √n(ℙₙ f − μ) + o_P(1)`, and the linear part's limit is
 `N(0, Σ_f).map e_{θ₀}⁻¹ = N(0, e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ)` (`momentGaussian_map_eq`).
@@ -38,16 +37,6 @@ The i.i.d. sample is `X : ℕ → Ξ → Ω` on a base `(Ξ, μ)` with `μ.map (
 `delta_method_remainder` engine is used at the *constant* varying base `Ω k := Ξ`,
 `P k := μ`.
 
-## Main ingredients
-
-* `empiricalMoment` / `fCov` / `invDerivMatrix` / `momentLimitCov` — setup.
-* `exists_measurable_eq_on_open` (M) — measurable selection past the local-inverse junk.
-* `fCov_posSemidef` (C0a) / `fCov_variance_eq` (C0b) — covariance naming, feed the CLT.
-* `empiricalMoment_weakConverges` (C) — CLT ⇒ `WeakConverges` (the reusable brick; the
-  `Pf = 0` special case is `EmpiricalProcess`'s `empiricalProcessVec_weakConverges`).
-* `momentGaussian_map_eq` (G) — push `N(0,Σ_f)` through `e_{θ₀}⁻¹`.
-* `method_of_moments_normality` — existence with probability tending to one and
-  asymptotic normality.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -55,7 +44,7 @@ open scoped ENNReal Topology RealInnerProductSpace Matrix
 
 namespace AsymptoticStatistics.MomentEstimator
 
-/-! ### Setup and abbreviations -/
+/-! ### Definitions -/
 
 /-- **Empirical moment `ℙₙ f`.** The sample mean `(1/n) Σ_{i<n} f(Xᵢ)` of the moment
 functions, as a function of the base point `ξ`.  Written with `Finset.range n` to align
@@ -65,11 +54,9 @@ noncomputable def empiricalMoment {d : ℕ} {Ω Ξ : Type*}
     EuclideanSpace ℝ (Fin d) :=
   (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
 
-/-- **Limit covariance `Σ_f = P[(f − Pf)(f − Pf)ᵀ]`.** Entry `(i,j)` is the covariance
-of the `i`-th and `j`-th coordinates of `f` under `P`. The matrix is defined directly
-from `P` and `f`; `fCov_posSemidef` proves it is positive semidefinite, and
-`fCov_variance_eq` identifies its quadratic forms with the directional variances used
-by the multivariate CLT. -/
+/-- **Limit covariance `Σ_f = P[(f − Pf)(f − Pf)ᵀ]`.** Entry `(i,j)` is the covariance of
+the `i`-th and `j`-th coordinates of `f` under `P`.  Its PSD (`fCov_posSemidef`) and
+directional-variance identity (`fCov_variance_eq`) feed the multivariate CLT. -/
 noncomputable def fCov {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (f : Ω → EuclideanSpace ℝ (Fin d)) : Matrix (Fin d) (Fin d) ℝ :=
   Matrix.of fun i j =>
@@ -83,18 +70,18 @@ noncomputable def invDerivMatrix {d : ℕ}
     Matrix (Fin d) (Fin d) ℝ :=
   (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d)).symm (e'.symm : _ →L[ℝ] _)
 
-/-- **Headline limit covariance `e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ`.** -/
+/-- **Limit covariance `e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ`.** -/
 noncomputable def momentLimitCov {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (f : Ω → EuclideanSpace ℝ (Fin d))
     (e' : EuclideanSpace ℝ (Fin d) ≃L[ℝ] EuclideanSpace ℝ (Fin d)) :
     Matrix (Fin d) (Fin d) ℝ :=
   invDerivMatrix e' * fCov P f * (invDerivMatrix e')ᵀ
 
-/-! ### Measurable selection for the local inverse -/
+/-! ### Measurable extension of the local inverse -/
 
-/-- **M: measurable modification of a continuous-on-open map.** The IFT local inverse
+/-- **Measurable modification of a continuous-on-open map.** The IFT local inverse
 `φ` is continuous only on the open target `U`; composed with a measurable statistic `Z`
-it is not globally measurable (junk off `U`).  This produces a globally measurable `g`
+it need not be globally measurable. This produces a globally measurable `g`
 agreeing with `φ ∘ Z` wherever `Z ∈ U` (elsewhere the constant `c`), so pushforwards
 `μ.map (√n • (g − θ₀))` are well-defined while `g = φ ∘ Z` on the good event.
 
@@ -115,7 +102,7 @@ theorem exists_measurable_eq_on_open
   intro ξ hξ
   simp only [Set.piecewise_eq_of_mem _ _ _ hξ]
 
-/-! ### Covariance identities for the CLT -/
+/-! ### Covariance identities -/
 
 /-- **Shared quadratic-form core.** The quadratic form of `fCov P f` in direction `x`
 equals the mean square of the linear combination `∑ᵢ xᵢ (fᵢ − Pfᵢ)` of the centred
@@ -176,8 +163,8 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
     rw [integral_const_mul]
   rw [hLHS, hRHS]
 
-/-- **C0a: `Σ_f = P[(f−Pf)(f−Pf)ᵀ]` is positive semidefinite.** Gram-type matrix of the
-centred `L²` coordinates (`Matrix.posSemidef_gram`-flavoured). -/
+/-- **The covariance matrix `Σ_f = P[(f−Pf)(f−Pf)ᵀ]` is positive semidefinite.** It is a
+Gram-type matrix of the centred `L²` coordinates (`Matrix.posSemidef_gram`-flavoured). -/
 theorem fCov_posSemidef {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {f : Ω → EuclideanSpace ℝ (Fin d)}
     (hf_L2 : MemLp f 2 P) :
@@ -194,7 +181,7 @@ theorem fCov_posSemidef {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure
     rw [hstar, fCov_quad_eq P hf_L2 x]
     exact integral_nonneg fun ω => sq_nonneg _
 
-/-- **C0b: directional-variance identity.** `Var[⟪t, f⟫; P] = t ⬝ᵥ Σ_f *ᵥ t` for every
+/-- **Directional-variance identity.** `Var[⟪t, f⟫; P] = t ⬝ᵥ Σ_f *ᵥ t` for every
 direction `t`: the variance of the linear combination `⟪t, f⟫ = Σⱼ tⱼ fⱼ` is the
 quadratic form of the covariance matrix `Σ_f`.  Feeds the CLT `hS_eq`. -/
 theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
@@ -235,12 +222,12 @@ theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measur
 
 /-! ### Weak limit of the empirical moment -/
 
-/-- **C: `√n(ℙₙ f − Pf) ⇝ N(0, Σ_f)`** (multivariate CLT, general nonzero mean).
+/-- **`√n(ℙₙ f − Pf) ⇝ N(0, Σ_f)`** (multivariate CLT, general nonzero mean).
 
 For the i.i.d. sample `X : ℕ → Ξ → Ω` with `μ.map (X 0) = P` and `P‖f‖² < ∞`, the
 rescaled centred empirical moment converges weakly to `N(0, Σ_f)`.
 
-The reusable CLT ⇒ `WeakConverges` brick.  Assembly: apply
+The proof applies
 `tendstoInDistribution_multivariate_clt` to the i.i.d. sequence `Yₖ := f ∘ Xₖ` on
 `(Ξ, μ)` with `hS_pos := fCov_posSemidef`, `hS_eq := fCov_variance_eq` (transported along
 `μ.map (X 0) = P`), match `(√n)⁻¹•(Σ − n•μ) = √n•(ℙₙf − μ)`, reindex `range n ↔ Fin n`,
@@ -350,9 +337,9 @@ theorem empiricalMoment_weakConverges {d : ℕ} {Ω : Type*} [MeasurableSpace Ω
     fun n => by rw [h_map_eq n]
   simpa [h_pw] using h_it
 
-/-! ### Push the Gaussian through the inverse derivative -/
+/-! ### Push the Gaussian law through the inverse derivative -/
 
-/-- **G: `N(0, Σ_f).map e_{θ₀}⁻¹ = N(0, e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ)`.** The delta-method
+/-- **`N(0, Σ_f).map e_{θ₀}⁻¹ = N(0, e_{θ₀}⁻¹ Σ_f e_{θ₀}⁻ᵀ)`.** The delta-method
 limit law, computed via `multivariateGaussian_map_toEuclideanCLM` with
 `A := invDerivMatrix e'` (using `toEuclideanCLM A = ↑e'.symm`, `A 0 = 0`, `Aᴴ = Aᵀ`). -/
 theorem momentGaussian_map_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
@@ -401,22 +388,14 @@ linearisation + `momentGaussian_map_eq` for the limit law + `WeakConverges` Slut
 absorbing the vanishing-mass discrepancy between `θhatₙ` and `φ(ℙₙ f)`. -/
 theorem method_of_moments_normality {d : ℕ}
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-    -- LEAN-ONLY (hf_meas): measurability of the moment map; no scope change.
-    -- USER-INPUT (hf_L2): P‖f‖² < ∞; vdV Thm 4.1
     {f : Ω → EuclideanSpace ℝ (Fin d)} (hf_meas : Measurable f) (hf_L2 : MemLp f 2 P)
     {e : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d)}
     {e' : EuclideanSpace ℝ (Fin d) ≃L[ℝ] EuclideanSpace ℝ (Fin d)}
     {θ₀ : EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: e is differentiable at θ₀ with nonsingular derivative (bundled as
-    -- the continuous linear equivalence e'); strict differentiability encodes vdV's
-    -- "continuously differentiable" locally; vdV Thm 4.1
     (he : HasStrictFDerivAt e (e' : _ →L[ℝ] _) θ₀)
-    -- USER-INPUT: θ₀ solves the population moment equation e(θ₀) = Pf; vdV §4.1
     (hμ : e θ₀ = ∫ x, f x ∂P)
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: measurability of the observations; no scope change.
     {X : ℕ → Ξ → Ω} (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §4.1
     (hX_indep : iIndepFun X μ)
     (hX_id : ∀ i, IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :
@@ -451,7 +430,7 @@ theorem method_of_moments_normality {d : ℕ}
     · have h1 := he.to_localInverse.hasFDerivAt
       rw [he.localInverse_def, hμ] at h1
       exact h1
-  -- ── Measurability, CLT, O_P(1), and consistency ─────────────────────────
+  -- Measurability, the multivariate CLT, boundedness, and consistency.
   have hemp_meas : ∀ n, Measurable (empiricalMoment f n X) := by
     intro n
     show Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)

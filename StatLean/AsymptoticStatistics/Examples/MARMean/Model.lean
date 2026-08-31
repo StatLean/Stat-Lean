@@ -1,56 +1,18 @@
-import StatLean.AsymptoticStatistics.Core.MassMethod
+import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
 
 /-!
 # The MAR observation type and the MAR-mean parameter functional
 
-This file is the model-setup half of the concrete-EIF verification template. It
-fixes the data model for a missing-at-random (MAR) problem, its target parameter,
-and the raw IPW, coarsening-score, and AIPW functions used to verify the efficient
-influence function elsewhere.
+This file defines the `(X, R, RY)` observation tuple for missing-at-random data, the
+inverse-probability-weighted (IPW) mean functional `marMean_Ψ`, and the raw
+`MARObs X → ℝ` functions of Example 25.43 (the IPW representer, the MAR coarsening
+scores, and the AIPW efficient influence function).
 
-A single unit is observed as the tuple $(X, R, RY)$, where $X$ is an
-always-observed covariate, $R \in \{0, 1\}$ is the response indicator (with
-$R = 1$ meaning the outcome is recorded), and $RY$ is the partial response that
-equals the outcome $Y$ when $R = 1$ and is unused otherwise. Writing
-$\pi(x) = P(R = 1 \mid X = x)$ for the propensity score, the target functional
-is the inverse-probability-weighted (IPW) mean
-$$\Psi(Q) = \int \frac{R\,Y}{\pi(X)}\,dQ.$$
-Under MAR (equivalently, coarsening-at-random, CAR), this estimand identifies
-the marginal outcome mean $E_Q[Y]$; the present file only commits to the IPW
-form, which is well defined for every probability measure $Q$ regardless of
-whether the identification holds.
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.5.3 (CAR / MAR);
+the observation tuple appears in lem:25.41 and ex:25.43.
 
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 25 (Semiparametric Models), §25.6 (coarsening at random / missing at
-random). The $(X, \Delta, \Delta Y)$ observation tuple and the IPW mean
-estimand appear at Lemma 25.41 and Example 25.43 (vdV's $\Delta \in \{0, 1\}$ is
-the missingness indicator written here as $R$).
-
-**Proof formalization notes.** The structure `MARObs X` carries the three fields
-`x`, `r`, `ry`; the helper `ind : Bool → ℝ` lifts the Boolean indicator `r` to the
-real weight used in the IPW formula (`ind true = 1`, `ind false = 0`); and
-`marMean_Ψ π` is the functional `Q ↦ ∫ (ind R · RY / π X) ∂Q`. The raw functions
-`marMean_ipwRep`, `marMean_coarseningScore`, and `marMean_eif` encode the IPW
-representer, MAR coarsening scores, and AIPW efficient influence function from
-Example 25.43. Two pointwise algebra lemmas express `marMean_eif` both as the IPW
-representer minus a coarsening score and as the centered IPW representer minus a
-coarsening score. The σ-algebra on `MARObs X` is the pullback of the product
-σ-algebra on `X × Bool × ℝ`, so the field accessors are measurable. The MAR
-identification $\Psi(Q) = E_Q[Y]$ is not assumed here: the IPW form is taken as
-the definition because it is well-posed for arbitrary `Q`, and the identification
-is supplied separately by the caller when needed.
-
-**Bibliographic comments.** The IPW estimand and its semiparametric efficiency
-theory originate with J. M. Robins, A. Rotnitzky and L. P. Zhao, "Estimation of
-regression coefficients when some regressors are not always observed", *Journal
-of the American Statistical Association* **89** (427), 1994, 846–866, which
-introduced inverse-probability-of-observation weighting and the augmented-IPW
-class of estimating equations for data missing at random. van der Vaart §25.6
-presents the same construction within the CAR/MAR coarsening framework as a
-worked example of the efficient-influence-function calculus; the underlying
-coarsening-at-random condition is due to D. F. Heitjan and D. B. Rubin, "Ignorability
-and coarse data", *Annals of Statistics* **19** (4), 1991, 2244–2253.
+Main declarations: `MARObs`, `marMean_Ψ`, `marMean_ipwRep`,
+`marMean_coarseningScore`, `marMean_eif`.
 -/
 
 open MeasureTheory
@@ -58,6 +20,7 @@ open scoped InnerProductSpace
 open AsymptoticStatistics.Core
 open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.Pathwise
+open AsymptoticStatistics.Core.MassMethod
 
 namespace AsymptoticStatistics.Examples.MARMean
 
@@ -112,6 +75,26 @@ only uses the IPW form because it is well-defined for any `Q`. -/
 noncomputable def marMean_Ψ (π : X → ℝ) : Measure (MARObs X) → ℝ :=
   fun Q => ∫ o, ind o.r * o.ry / π o.x ∂Q
 
+/-- The globally bounded extension of the MAR IPW mean functional used by the
+bounded public EIF theorem.
+
+On a MAR model law where `|R·Y/π(X)| ≤ C` almost everywhere, this
+agrees with `marMean_Ψ π`.  Away from that model law it applies
+`Core.MassMethod.clippedFunction` at radius `C + 1`, so unrestricted QMD paths
+cannot visit arbitrarily large response values.  Edge behavior for `C < 0` is
+the literal Mathlib truncation at radius `C + 1`. -/
+noncomputable def marMeanBounded_Ψ (π : X → ℝ) (C : ℝ) : Measure (MARObs X) → ℝ :=
+  clippedMeanFunctional (fun o : MARObs X => ind o.r * o.ry / π o.x) C
+
+omit [IsProbabilityMeasure P] in
+/-- On the bounded MAR model, the globally clipped functional agrees with the
+raw IPW estimand at the observed law. -/
+theorem marMeanBounded_Ψ_eq_marMean_Ψ (π : X → ℝ) (C : ℝ)
+    -- explicit stronger bounded-response restriction under the model law.
+    (h_ipwBddAE : ∀ᵐ o ∂P, |ind o.r * o.ry / π o.x| ≤ C) :
+    marMeanBounded_Ψ π C P = marMean_Ψ π P := by
+  exact clippedMeanFunctional_eq_meanFunctional h_ipwBddAE
+
 /-! ### Example 25.43 raw functions (IPW representer, coarsening scores, AIPW EIF) -/
 
 /-- The **IPW representer** `φ_IPW = (R/π(X))·(Y − ψ)` of vdV Lemma 25.41 / Example
@@ -121,7 +104,7 @@ model to eliminate the bias" (vdV p.381). In observed coordinates `R·Y = ry`, s
 this is `ind(R)·(ry − ψ)/π(X)` (the `ind R` factor zeroes out the arbitrary `ry`
 on `{R = false}`).
 
-Reference: vdV §25.6, Example 25.43 / Lemma 25.41 (book p.381), `1{δ∈C}/R(C|y)·χ_Q(Y)`. -/
+Reference: vdV §25.5.3, Example 25.43 / Lemma 25.41 (book p.381), `1{δ∈C}/R(C|y)·χ_Q(Y)`. -/
 noncomputable def marMean_ipwRep (π : X → ℝ) (ψ : ℝ) (o : MARObs X) : ℝ :=
   ind o.r * (o.ry - ψ) / π o.x
 
@@ -130,7 +113,7 @@ the general form of the functions `b(x)` of Lemma 25.41 in the MAR case, obtaine
 by differentiating the likelihood of the missingness mechanism. Here `c : X → ℝ`
 is an arbitrary (square-integrable) function of the always-observed covariate `X`.
 
-Reference: vdV §25.6, Example 25.43 (book p.383), `((δ − π(y))/π(y))·c(y)` with
+Reference: vdV §25.5.3, Example 25.43 (book p.383), `((δ − π(y))/π(y))·c(y)` with
 `c` depending on `y` through `x = ξ(y,δ)` only. -/
 noncomputable def marMean_coarseningScore (π c : X → ℝ) (o : MARObs X) : ℝ :=
   (ind o.r - π o.x) / π o.x * c o.x
@@ -142,7 +125,7 @@ of vdV Example 25.43, where `m(X) = E(Y | X)` is the outcome regression and
 minus the coarsening score at the variance-minimizing choice `c = m − ψ`
 (`marMean_eif_eq_ipw_sub_coarsening`).
 
-Reference: vdV §25.6, Example 25.43 (book p.383), the efficient influence
+Reference: vdV §25.5.3, Example 25.43 (book p.383), the efficient influence
 function `(δ/π)·χ_Q(Y) − ((δ − π)/π)·c(y)` with `c(Y) = E(χ_Q(Y) | ξ(Y,δ))`. -/
 noncomputable def marMean_eif (π m : X → ℝ) (ψ : ℝ) (o : MARObs X) : ℝ :=
   ind o.r * o.ry / π o.x - (ind o.r - π o.x) / π o.x * m o.x - ψ

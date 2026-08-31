@@ -15,17 +15,16 @@ The hard direction of van der Vaart, *Asymptotic Statistics* Theorem 18.14
 the outer sense `⇝ₒ` to the tight `P`-Brownian bridge `G_P = gaussianPBridge` in
 `ℓ∞(F)`.
 
-The vdV proof has four ingredients: finite `2⁻ᵐ`-net projections of
-`(↥F, ρ_P)`, finite-dimensional convergence through each projection, outer-
-probability control of the empirical projection error, and convergence of the
-projected Brownian bridge to the full bridge.  A subadditive outer-expectation
-estimate combines them in an ε/3 argument.  The resulting auxiliary theorem is
-used by the headline characterization in `Characterization.lean`.
+The vdV proof discretizes `(↥F, ρ_P)` along a sequence of finite `2⁻ᵐ`-nets
+`Sₘ` (extracted from `totallyBounded_L2`), pushes the finite-dimensional CLT
+through each net, controls both empirical and limiting discretization errors,
+and combines the three errors through the subadditive outer-expectation
+triangle inequality.
 
 ## Main definitions
 
-* `finiteNetProj` — the coordinate-collapsing projection of `ℓ∞(F)` onto the
-  finite `2⁻ᵐ`-net `Sₘ` of `(↥F, distL2 P)`.
+* `finiteNetProj` — the coordinate-collapsing projection of `ℓ∞(F)` onto
+  the finite `2⁻ᵐ`-net `Sₘ` of `(↥F, distL2 P)`.
 
 ## Main results
 
@@ -36,8 +35,7 @@ used by the headline characterization in `Characterization.lean`.
 * `limit_proj_error` — the limit discretization error
   `∫ |f(πₘ z) − f z| dG_P` → 0 as `m → ∞` (a.s. UC paths + tightness + DCT).
 * `isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux` — the
-  ε/3 assembly, packaged so the headline theorem in `Characterization.lean` is a
-  one-line application.
+  ε/3 combination for a bounded-Lipschitz test function.
 
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Theorem
 18.14 (book p.261), §19.2.
@@ -56,12 +54,11 @@ variable {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
 variable {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
   (hF_meas : ∀ f ∈ F, Measurable f)
 
-/-- **A finite `2⁻ᵐ` net `Sₘ ⊆ F`.** The finite subset of `F` extracted from
+/-- **Finite `2⁻ᵐ`-net `Sₘ ⊆ F`.** The finite subset of `F` extracted from
 `totallyBounded_L2 hF_ent` at scale `2⁻ᵐ`: every `f ∈ F` is `distL2`-within `2⁻ᵐ`
-of some `g ∈ Sₘ`. This FIXED finite cover is what makes `netRep`'s range finite
+of some `g ∈ Sₘ`. This fixed finite cover makes `netRep`'s range finite
 (`finite_range_netRep`).
-
-The net is the `choice`-extracted finite cover of the totally-bounded
+The net is a choice of finite cover of the totally bounded space
 `(↥F, distL2 P)`. -/
 noncomputable def netCover {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (m : ℕ) : Finset (Ω → ℝ) :=
@@ -89,15 +86,14 @@ of `(↥F, distL2 P)`, with `distL2 P t (netRep m t) < 2⁻ᵐ`. The net itself 
 Edge: when `F = ∅` the subtype `↥F` is empty and `netRep m` is the unique empty
 map; the `2⁻ᵐ`-net is empty.
 
-The representative is the `choice`-extracted nearest cover point of
-the FIXED finite net `netCover hF_ent m`; only its membership in `netCover` and
-`distL2`-closeness to `t` are used downstream (`netRep_mem_cover`,
-`netRep_distL2_lt`). -/
+The representative is a chosen cover point in `netCover hF_ent m`; its
+membership and `distL2`-closeness are recorded by `netRep_mem_cover` and
+`netRep_distL2_lt`. -/
 noncomputable def netRep {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
     (_hG_env : IsEnvelope F G) (_hG : MemLp G 2 P)
     (_hF_meas : ∀ f ∈ F, Measurable f)
     (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (m : ℕ) (t : ↥F) : ↥F :=
-  -- Pick the cover point of the FIXED finite net `netCover hF_ent m` that is
+  -- Pick the cover point of the fixed finite net `netCover hF_ent m` that is
   -- `2⁻ᵐ`-close to `t`. The cover spec `netCover_spec` applied to `t ∈ F`
   -- supplies such a `g ∈ netCover hF_ent m`; membership in the cover (which lies
   -- in `F` via `netCover_subset`) lifts it to `↥F`. Range finiteness follows
@@ -106,7 +102,7 @@ noncomputable def netRep {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ
   ⟨h.choose, netCover_subset hF_ent m h.choose_spec.1⟩
 
 omit [IsProbabilityMeasure P] in
-/-- The `netRep m`-representative lies in the FIXED finite net `netCover hF_ent m`.
+/-- The `netRep m`-representative lies in the fixed finite net `netCover hF_ent m`.
 This is the key fact making `netRep`'s range finite. -/
 theorem netRep_mem_cover (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (m : ℕ) (t : ↥F) :
     (netRep hG_env hG hF_meas hF_ent m t : Ω → ℝ) ∈ netCover hF_ent m :=
@@ -114,8 +110,7 @@ theorem netRep_mem_cover (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (m : �
 
 omit [IsProbabilityMeasure P] in
 /-- The `netRep m`-representative is `2⁻ᵐ`-close to its argument in `distL2 P`
-(the defining property of the finite-net representative; here it is the cover spec
-`netCover_spec`). -/
+by `netCover_spec`. -/
 theorem netRep_distL2_lt (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (m : ℕ) (t : ↥F) :
     distL2 P (t : Ω → ℝ) (netRep hG_env hG hF_meas hF_ent m t : Ω → ℝ) < (2 : ℝ) ^ (-(m : ℤ)) :=
   (netCover_spec hF_ent m (t : Ω → ℝ) t.2).choose_spec.2
@@ -124,7 +119,7 @@ omit [IsProbabilityMeasure P] in
 /-- The `netRep m`-representatives range over a finite set (the `2⁻ᵐ`-net `Sₘ`):
 the image of `↥F` under `netRep m` is finite.
 
-The values of `netRep m` all lie in the FIXED finite cover `netCover hF_ent m`
+The values of `netRep m` all lie in the fixed finite cover `netCover hF_ent m`
 (`netRep_mem_cover`). Hence the image of `Set.range (netRep m)` under the
 injective `Subtype.val : ↥F → (Ω → ℝ)` is contained in the finite set
 `↑(netCover hF_ent m)`, so the range itself is finite
@@ -199,16 +194,14 @@ variable (hH_inf : ¬ FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)
   (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
   (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty)
 
-/-! ### Finite-dimensional convergence
+/-! ### Finite-dimensional convergence through the net
 
-`weakConvergesOuter_findim_proj` is the finite-dimensional CLT through the
-net. It is HIGH-risk: the projected map is `LinfF F`-valued (not a finite tuple),
-the marginal CLT (`IsMarginalCLT.fdd`) and the Gaussian limit
+The projected map is `LinfF F`-valued rather than a finite tuple, while the
+marginal CLT (`IsMarginalCLT.fdd`) and the Gaussian limit
 (`gaussianPBridge`'s `isGaussian_fdd`) are both phrased as **finite-tuple**
 (`Fin k → ℝ`) coordinate readouts, and `gaussianPBridge` is a `choose` witness
-exposing only the `IsPBrownianBridge` field set. The proof splits into explicit
-sublemmas. The result at the bottom is a `weakConvergesOuter_of_measurable` reduction
-plus an application of `weakConverges_findim_proj_of_marginalCLT`. -/
+exposing only the `IsPBrownianBridge` field set. Finite-coordinate restriction,
+Gaussian identification, and continuous reconstruction connect these forms. -/
 
 /-- **Coordinate measurability of the empirical process** (for a
 genuinely Borel-measurable readout `g`). For a measurable `g : Ω → ℝ`, the
@@ -218,7 +211,7 @@ coordinate evaluation `ξ ↦ empiricalProcess P n (X· ξ) g` is measurable
 each measurable since `X i` is measurable and `g` is Borel) and the constant
 `∫ g dP`.
 
-NOTE on the carrier map (route subtlety, important downstream): the full map
+The full carrier map
 `ξ ↦ 𝔾ₙ ξ` into `ℓ∞(F)` is in general **NOT** Borel measurable for uncountable
 `F` — this non-measurability is precisely why the abstract-Donsker theory uses
 outer expectation `E*`. Even the *projected* map reads finitely many functions
@@ -228,9 +221,7 @@ outer expectation `E*`. Even the *projected* map reads finitely many functions
 representatives `s' =ᵐ[P] s` and using that pushforward laws are insensitive to
 `μ`-a.e. modification (the same representative machinery as
 `marginalCLT_fdd_of_iid` in `Donsker.lean`). This lemma is the measurable-readout
-core of that argument.
-
-This is the per-coordinate measurability bridge for the empirical process. -/
+core of that argument. -/
 theorem measurable_empiricalProcess_coord
     {Ξ : Type} [MeasurableSpace Ξ] (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (n : ℕ) (g : Ω → ℝ) (hg : Measurable g) :
@@ -248,8 +239,7 @@ theorem measurable_empiricalProcess_coord
 
 /-! ### Shared finite-net factorization
 
-Both projected-process measurability and the finite-dimensional CLT in law factor
-the map `πₘ` through the FINITE coordinate space `Sₘ → ℝ`, where
+The projected map `πₘ` factors through the finite coordinate space `Sₘ → ℝ`, where
 `Sₘ = Set.range (netRep m)` is finite (`finite_range_netRep`). We package this
 once: the finite index type `netIndex m`, the continuous coordinate-collapse
 reconstruction `netRecon m`, and the factorization
@@ -379,10 +369,10 @@ omit [IsProbabilityMeasure P] in
 Each net coordinate `s : ↥Sₘ` is (the subtype packaging of) a member of `F`:
 `s.1 : ↥F`, so `(s.1 : Ω → ℝ) ∈ F` via `s.1.2`, and the chapter hypothesis
 `hF_meas : ∀ f ∈ F, Measurable f` supplies `Measurable (s.1 : Ω → ℝ)` directly.
-`measurable_empiricalProcess_coord` evaluates `s` **pointwise** at the
-sample points `X i ξ`, so it genuinely requires this `Measurable` (not merely
-`AEStronglyMeasurable … P`) form. As in vdV, `F` is a class of measurable
-functions, and `hF_meas` supplies exactly this property. -/
+`measurable_empiricalProcess_coord` evaluates `s` **pointwise** at the sample
+points `X i ξ`, so it requires `Measurable`, rather than merely
+`AEStronglyMeasurable … P`; van der Vaart likewise assumes that `F` is a class
+of measurable functions. -/
 theorem measurable_net_member (m : ℕ)
     (s : ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))) :
     Measurable (s.1 : Ω → ℝ) :=
@@ -397,12 +387,10 @@ equals `(𝔾ₙ ξ) (netRep m t)`, which takes values in the finite set of coor
 `{(𝔾ₙ ξ) s : s ∈ Sₘ}`. The map therefore factors through the finite-dimensional
 coordinate space `ℝ^{Sₘ}` as `(finite coordinate restriction) ∘ (ℝ^{Sₘ}-recon)`;
 the restriction is measurable because each coordinate `ξ ↦ (𝔾ₙ ξ) s` is measurable
-by `measurable_empiricalProcess_coord`, and the reconstruction
+(`measurable_empiricalProcess_coord`) and the reconstruction
 `ℝ^{Sₘ} → LinfF F` is continuous (so the Borel σ-algebra obstruction that defeats
 the un-projected map does not arise). This is the genuine measurability content of
-the discretization.
-
-The finite-net factorization makes the projected process measurable. -/
+the discretization. -/
 theorem measurable_projectedEmpirical (m : ℕ)
     {Ξ : Type} [MeasurableSpace Ξ] (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (n : ℕ) :
@@ -426,7 +414,7 @@ theorem measurable_projectedEmpirical (m : ℕ)
   rw [hfac]
   refine (continuous_netRecon hG_env hG hF_meas hF_ent m).measurable.comp ?_
   -- Each net-coordinate `ξ ↦ empiricalProcess P n (X·ξ) (s.1 : Ω → ℝ)` is measurable
-  -- This follows from `measurable_empiricalProcess_coord`, which needs measurability of `s.1`.
+  -- by `measurable_empiricalProcess_coord`, which needs `Measurable (s.1 : Ω → ℝ)`.
   refine measurable_pi_iff.mpr (fun s => ?_)
   exact measurable_empiricalProcess_coord X hX_meas n (s.1 : Ω → ℝ)
     (measurable_net_member hG_env hG hF_meas hF_ent m s)
@@ -434,8 +422,7 @@ theorem measurable_projectedEmpirical (m : ℕ)
 /-- **Measurability of the finite-net coordinate restriction of `𝔾ₙ`.** The map
 `ξ ↦ netTuple m (𝔾ₙ ξ)` into `Sₘ → ℝ` is measurable: it equals
 `fun ξ s => empiricalProcess P n (X·ξ) (s.1 : Ω → ℝ)`, measurable coordinatewise by
-`measurable_empiricalProcess_coord` and `measurable_net_member`. (Same
-net-member wall as `measurable_projectedEmpirical`.) -/
+`measurable_empiricalProcess_coord` and `measurable_net_member`. -/
 theorem measurable_projectedEmpirical' (m : ℕ)
     {Ξ : Type} [MeasurableSpace Ξ] (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (n : ℕ) :
@@ -450,11 +437,11 @@ theorem measurable_projectedEmpirical' (m : ℕ)
 
 /-! ### Reindexing the finite net: `Sₘ ≃ Fin k`
 
-The marginal-CLT brick `IsMarginalCLT.fdd` and the multivariate Gaussian limit
+The marginal CLT `IsMarginalCLT.fdd` and the multivariate Gaussian limit
 both live on `EuclideanSpace ℝ (Fin k)` (a `Fin k`-indexed tuple), whereas the net
-coordinate space is the finite **subtype** `↥(Set.range (netRep m))`. We bridge the
-two with the canonical enumeration `netEnum : ↥Sₘ ≃ Fin (card Sₘ)` and the
-continuous reindexing `netReindex : EuclideanSpace ℝ (Fin k) → (↥Sₘ → ℝ)`. -/
+coordinate space is the finite **subtype** `↥(Set.range (netRep m))`. The
+canonical enumeration `netEnum : ↥Sₘ ≃ Fin (card Sₘ)` and continuous
+reindexing `netReindex : EuclideanSpace ℝ (Fin k) → (↥Sₘ → ℝ)` identify them. -/
 
 /-- The canonical enumeration of the finite net `Sₘ = Set.range (netRep m)` as
 `Fin (Fintype.card ↥Sₘ)`. -/
@@ -558,7 +545,7 @@ theorem marginalCovMatrix_netPhi_posSemidef (m : ℕ) :
   rw [hgram]
   exact Matrix.posSemidef_gram ℝ _
 
-/-- **Gaussianity of the Euclidean readout.** The Euclidean `ψ`-readout pushforward of
+/-- **Gaussianity of the Euclidean bridge readout.** The Euclidean `ψ`-readout pushforward of
 `G_P` is an `IsGaussian` measure: it is the CLE-transport (`WithLp.toLp 2`, i.e.
 `(EuclideanSpace.equiv).symm`) of the Pi-readout law, which is Gaussian by the
 `isGaussian_fdd` field (`pBridge_isGaussian_fdd`). -/
@@ -586,7 +573,7 @@ theorem gaussianPBridge_readout_isGaussian (m : ℕ) :
     (L.continuous.measurable.aemeasurable) hpi.aemeasurable]
   exact ProbabilityTheory.isGaussian_map_equiv L
 
-/-- **The means of the two measures agree.** Both are zero
+/-- **Mean of the Euclidean bridge readout.** The means of the two measures agree
 (both `0`): RHS by `integral_id_multivariateGaussian`; LHS coordinatewise by the
 mean-zero field `gaussianPBridge_mean`. -/
 theorem gaussianPBridge_readout_mean (m : ℕ) :
@@ -642,9 +629,9 @@ theorem gaussianPBridge_readout_mean (m : ℕ) :
   simp_rw [hcoord]
   exact gaussianPBridge_mean hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne (ψ i)
 
-/-- **The covariance bilinear forms agree.** Evaluation on Euclidean basis pairs reduces
-the Gaussian covariance via `covariance_eval_multivariateGaussian`; the `cov` field of
-`G_P` gives the same entries through `pBridge_cov` and `marginalCovEntry`. -/
+/-- **Covariance of the Euclidean bridge readout.** The covariance bilinear forms of the two
+measures agree, reducing on basis pairs (`covariance_eval_multivariateGaussian`)
+to the `cov` field of `G_P` (`pBridge_cov`) matching `marginalCovEntry`. -/
 theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
     (hS_psd : (marginalCovMatrix P (netPhi hG_env hG hF_meas hF_ent m)).PosSemidef) :
     ProbabilityTheory.covarianceBilin
@@ -760,16 +747,12 @@ Both are centred Gaussian (mean 0): the readout law is Gaussian by
 covariances agree entrywise: `cov[z(ψ i), z(ψ j); G_P] = P(ψi·ψj) − Pψi·Pψj`
 (`pBridge_cov`, plus mean-zero) `= marginalCovEntry P (netPhi m) i j` (since
 `(netPhi m) i = ψ i` as `Ω → ℝ`). Two centred Gaussians with equal covariance are
-equal (`IsGaussian.ext`).
-
-The proof uses `IsGaussian.ext` on `EuclideanSpace ℝ (Fin k)`:
+equal (`IsGaussian.ext`) on `EuclideanSpace ℝ (Fin k)`:
 * **IsGaussian (LHS).** `pBridge_isGaussian_fdd m ψ` gives `IsGaussian` of the
   `Fin k → ℝ` (Pi) readout law `ν.map (fun z => fun i => z (ψ i))`; transport to
   the `EuclideanSpace` readout via `WithLp.toLp 2` (a continuous linear equiv, so
   pushforward preserves Gaussianity: `map_map` + `IsGaussian.map` of a CLE).
-* **Mean 0.** `μ[id] = 0` for both. For the bridge readout,
-  `gaussianPBridge_readout_mean` supplies the coordinatewise mean-zero identity;
-  for `multivariateGaussian 0 S` it is
+* **Mean 0.** `μ[id] = 0` for both, by `gaussianPBridge_mean` and
   `integral_id_multivariateGaussian'`.
 * **Covariance.** `covarianceBilin` equality reduces (basis pairs) to
   `cov[xᵢ,xⱼ]` matching: `covariance_eval_multivariateGaussian` gives `S i j =
@@ -808,7 +791,7 @@ theorem gaussianPBridge_readout_eq_multivariateGaussian (m : ℕ) :
     exact gaussianPBridge_readout_covarianceBilin hG_env hG hF_meas hH_inf hH_sep
       hF_ent hF_ne m hS_psd
 
-/-- **Standard-form reconciliation and enumeration.** The net-coordinate
+/-- **Standardized-form reconciliation and enumeration.** The net-coordinate
 empirical readout equals the reindexed `IsMarginalCLT`-standardised vector,
 pointwise in `ξ`. For every `ξ` and net point `s`,
 `netTuple m (𝔾ₙ ξ) s = netReindex m (stdVec n ξ) s`, where
@@ -818,9 +801,7 @@ This is the algebraic identity reconciling `empiricalProcess`'s `√n(Pₙ − P
 centring with the standardised-sum form: for `s` with `netPhi m (netEnum m s) = s.1`,
 the coordinate `(√n)⁻¹(∑_j s.1(X_jξ) − n∫ s.1 dP)` equals
 `√n(n⁻¹∑_j s.1(X_jξ) − ∫ s.1 dP) = empiricalProcess P n (X·ξ) s.1`
-(using `(√n)⁻¹·n = √n` and `E[s.1(X_0)] = ∫ s.1 dP` via `hX_law`).
-
-This is the standardisation-form bridge between the two centrings. -/
+(using `(√n)⁻¹·n = √n` and `E[s.1(X_0)] = ∫ s.1 dP` via `hX_law`). -/
 theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
     (m : ℕ) {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
@@ -929,9 +910,7 @@ Both are centred Gaussian laws on `↥Sₘ → ℝ`; they have equal covariance 
 `marginalCovEntry P (netPhi m)` (the `(netEnum s, netEnum t)` entry of
 `marginalCovMatrix`). Two centred finite-dim Gaussians with equal covariance are
 equal (`IsGaussian.ext` on the pushed-forward Euclidean laws, via the enumeration
-isometry). `pBridge_isGaussian_fdd` supplies the Gaussianity of the `G_P` marginal.
-
-This is the finite-dimensional Gaussian-uniqueness identification of the two limits. -/
+isometry). `pBridge_isGaussian_fdd` supplies the Gaussianity of the `G_P` marginal. -/
 theorem gaussianPBridge_map_netTuple_eq (m : ℕ) :
     (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
         (netTuple hG_env hG hF_meas hF_ent m)
@@ -991,7 +970,7 @@ centring `√n(Pₙ − P)f` and the `IsMarginalCLT` standardisation
 `(√n)⁻¹•(∑ tupleVec − n•E)` coincide coordinatewise (`empiricalProcess` /
 `tupleVec` unfolding).
 
-vdV p.261 (⟸), step 1 finite-dimensional core. -/
+vdV p.261 (⟸), step 1: finite-dimensional convergence. -/
 theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
     (m : ℕ) {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
@@ -1034,7 +1013,7 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
   -- Map both sides by the continuous reindexing `netReindex` (continuous-mapping).
   have hWC_net := hWC_euclid.map (continuous_netReindex hG_env hG hF_meas hF_ent m)
     (measurable_netReindex hG_env hG hF_meas hF_ent m)
-  -- Rewrite the limit via Helper B (Gaussian identification).
+  -- Rewrite the limit via Gaussian identification.
   rw [← gaussianPBridge_map_netTuple_eq hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne m] at hWC_net
   -- Rewrite the sequence: `(μ.map stdVec).map netReindex = μ.map (netTuple ∘ 𝔾ₙ)`.
   have hseq : ∀ n : ℕ,
@@ -1055,7 +1034,7 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
         exact Measurable.const_smul
           ((Finset.measurable_sum _ (fun i _ => htv.comp (hX_meas i))).sub measurable_const)
           ((Real.sqrt (n : ℝ))⁻¹))]
-    -- Pointwise: `netReindex (stdVec n ξ) = netTuple (𝔾ₙ ξ)` via Helper A.
+    -- Pointwise: `netReindex (stdVec n ξ) = netTuple (𝔾ₙ ξ)`.
     refine Measure.map_congr (Filter.Eventually.of_forall (fun ξ => ?_))
     rw [Function.comp_apply]
     exact (netTuple_empirical_eq_reindex_std hG_env hG hF_meas hF_ent h_clt m μ X hX_meas
@@ -1063,13 +1042,12 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
   rw [funext hseq] at hWC_net
   exact hWC_net
 
-/-- **The finite-dimensional CLT through the net, in law form.** The pushforward
+/-- **Finite-dimensional CLT through the net, in law form.** The pushforward
 laws of the projected empirical process `μ.map (πₘ ∘ 𝔾ₙ)` converge weakly to the
 `πₘ`-pushforward of `G_P = gaussianPBridge`.
 
-This is the analytic core of finite-dimensional convergence. The projected map
-`πₘ z` depends only on the values of `z` on the finite net
-`Sₘ = range (netRep m)` (finite by
+The projected map `πₘ z` depends only on
+the values of `z` on the finite net `Sₘ = range (netRep m)` (finite by
 `finite_range_netRep`), so both `μ.map (πₘ ∘ 𝔾ₙ)` and `gaussianPBridge.map πₘ`
 factor through the finite-dimensional coordinate space `ℝ^{Sₘ}`. On that space the
 convergence is exactly the finite-dim CLT: enumerate `Sₘ` as a tuple
@@ -1147,10 +1125,10 @@ theorem weakConverges_findim_proj_of_marginalCLT (h_clt : IsMarginalCLT F P)
 the pushforward of `G_P = gaussianPBridge` under `πₘ`.
 
 The projected map `ξ ↦ finiteNetProj m (𝔾ₙ ξ)` factors through the finite-
-dimensional coordinate space `ℝ^{Sₘ}`, hence is Borel-measurable by
-`measurable_projectedEmpirical`; so `weakConvergesOuter_of_measurable`
+dimensional coordinate space `ℝ^{Sₘ}`, hence is Borel-measurable
+(`measurable_projectedEmpirical`); so `weakConvergesOuter_of_measurable`
 reduces the `⇝ₒ` claim to ordinary weak convergence of pushforwards
-by `weakConverges_findim_proj_of_marginalCLT`, which is exactly the
+(`weakConverges_findim_proj_of_marginalCLT`), which is exactly the
 finite-dim CLT `IsMarginalCLT.fdd` evaluated on the net tuple. Covariance
 identification of the limit with the `πₘ`-pushforward of the `G_P` marginal
 uses `pBridge_cov` and `pBridge_isGaussian_fdd`.
@@ -1171,14 +1149,14 @@ theorem weakConvergesOuter_findim_proj (h_clt : IsMarginalCLT F P) (m : ℕ)
       ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
         (finiteNetProj hG_env hG hF_meas hF_ent m)) := by
   -- Reduce the `⇝ₒ` goal to ordinary weak convergence of pushforwards via the
-  -- measurable-reduction lemma, using measurability of each projected process `Xₙ`.
+  -- measurable-reduction lemma.
   rw [weakConvergesOuter_of_measurable
     (fun n => measurable_projectedEmpirical hG_env hG hF_meas hF_ent m X hX_meas n)]
   -- The reduced goal is exactly the finite-dimensional CLT in law form.
   exact weakConverges_findim_proj_of_marginalCLT hG_env hG hF_meas hH_inf hH_sep
     hF_ent hF_ne h_clt m μ X hX_meas hX_indep hX_id hX_law
 
-/-- **The empirical discretization error is asymptotically negligible.** For
+/-- **Empirical discretization error is asymptotically negligible.** For
 every `ε > 0`, the outer probability that the `ℓ∞(F)`-distance between the
 empirical process `𝔾ₙ` and its net projection `πₘ𝔾ₙ` exceeds `ε` tends to `0` as
 `m → ∞`, uniformly in `n` in the `limsupₙ` sense.
@@ -1188,8 +1166,8 @@ The sup-norm error is majorized by `supNormOver (localized 2⁻ᵐ-class) 𝔾�
 `𝔾ₙ f − 𝔾ₙ (netRep m f)` of `2⁻ᵐ`-close pairs). The `m → ∞` vanishing of its
 `limsupₙ` is the chaining content of `hF_ent`
 (`localizedChainBound_of_finiteEntropy` / `equicontinuity_chaining_assembly_brick`
-in `ChainingAssembly.lean`); the genuinely-new content here is the lift of that
-real-valued/`∫⁻` bound to the **outer probability** `E*`/`P*`.
+in `ChainingAssembly.lean`), followed here by passage from that real-valued
+`∫⁻` bound to the **outer probability** `E*`/`P*`.
 
 vdV p.261 (⟸), step 2: the empirical process is asymptotically uniformly close
 to its finite-net discretization. -/
@@ -1298,7 +1276,7 @@ theorem empirical_proj_error_outer (h_eq : IsAsymptoticallyEquicontinuous F P)
     _ ≤ η₀ := haη.le
 
 omit [IsProbabilityMeasure P] in
-/-- **The scale `2⁻ᵐ` eventually undercuts any `δ > 0`.** For every `δ > 0`
+/-- **The sequence `2⁻ᵐ` eventually undercuts every `δ > 0`.** For every `δ > 0`
 there is `N` such that `(2 : ℝ) ^ (-(m : ℤ)) < δ` for all `m ≥ N`. (The net
 scales `2⁻ᵐ` form a null sequence, so they eventually fall below any radius.) -/
 theorem eventually_two_zpow_neg_lt {δ : ℝ} (hδ : 0 < δ) :
@@ -1314,7 +1292,7 @@ theorem eventually_two_zpow_neg_lt {δ : ℝ} (hδ : 0 < δ) :
       _ < δ := hN
 
 omit [IsProbabilityMeasure P] in
-/-- **The net projection converges to a uniformly continuous path.** If a
+/-- **The net projection converges to every uniformly continuous path.** If a
 path `z : LinfF F` is `distL2 P`-uniformly continuous (the `ucPaths` predicate),
 then its finite-net projections converge to it in `ℓ∞(F)`:
 `Tendsto (fun m => finiteNetProj m z) atTop (𝓝 z)`.
@@ -1356,7 +1334,7 @@ theorem tendsto_finiteNetProj_of_ucPath (z : LinfF F)
         ≤ ε / 2 := lp.norm_le_of_forall_le (by linarith) hbound
       _ < ε := by linarith
 
-/-- **The limit discretization error vanishes.** For every bounded continuous
+/-- **Limit discretization error vanishes.** For every bounded continuous
 readout `f : LinfF F →ᵇ ℝ`, the integral of `|f(πₘ z) − f z|` against
 `G_P = gaussianPBridge` tends to `0` as `m → ∞`.
 
@@ -1426,12 +1404,11 @@ theorem limit_proj_error (f : LinfF F →ᵇ ℝ) :
     have := (continuous_abs.tendsto (0 : ℝ)).comp hsub
     simpa [Φ] using this
 
-/-! ### The ε/3 assembly
+/-! ### The ε/3 argument
 
-The ε/3 readout split (vdV p.261) factors through two generic outer-expectation
-lemmas (`outerReadout_le_of_modulus`, the one-sided readout majorant;
-and the symmetric two-sided `abs_outerReadout_diff_le`) and the per-`f`
-ε/3 combiner `tendsto_outerReadout_of_pieces`. -/
+The ε/3 readout split (vdV p.261) uses two generic outer-expectation lemmas,
+`outerReadout_le_of_modulus` and `abs_outerReadout_diff_le`, together with the
+combiner `tendsto_outerReadout_of_pieces`. -/
 
 omit [IsProbabilityMeasure P] hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne in
 /-- **One-sided readout majorant (real form).** For probability `μ`, a
@@ -1597,7 +1574,7 @@ modulus hypothesis at all, the absolute `.toReal`-readout difference of `f ∘ X
 `|EX.toReal − EY.toReal| ≤ (E*[ ofReal |f∘X − f∘Y| ]).toReal`.
 
 This is the `η = 0` / no-bad-event specialisation of `abs_outerReadout_diff_le`:
-apply `outerExpectation_readout_triangle` at `Lip = 1` with
+applying `outerExpectation_readout_triangle` at `Lip = 1` with
 `err ξ = ofReal |f (X ξ) − f (Y ξ)|` in both directions (the pointwise majorant
 `f (X ξ) + ‖f‖ ≤ (f (Y ξ) + ‖f‖) + |f (X ξ) − f (Y ξ)|` holds since
 `f (X ξ) − f (Y ξ) ≤ |f (X ξ) − f (Y ξ)|`). Finiteness of all readouts
@@ -1628,7 +1605,8 @@ theorem abs_outerReadout_diff_le_readout_abs {Ξ D : Type*} [MeasurableSpace Ξ]
       _ = ENNReal.ofReal (2 * ‖f‖) := by rw [outerExpectation_const]; simp
   have hEX_top : EX ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hbound X)
   have hEY_top : EY ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hbound Y)
-  -- The two one-sided readouts at `Lip = 1`, with `err ξ = ofReal |f(Xξ) − f(Yξ)|`.
+  -- The two one-sided readouts at `Lip = 1`, with
+  -- `err ξ = ofReal |f(Xξ) − f(Yξ)|`.
   set err : Ξ → ℝ≥0∞ := fun ξ => ENNReal.ofReal |f (X ξ) - f (Y ξ)| with herr
   -- One-sided majorant, used in both directions (`err` is symmetric in `X, Y`).
   have hmaj : ∀ (Z W : Ξ → D),
@@ -1675,7 +1653,7 @@ theorem abs_outerReadout_diff_le_readout_abs {Ξ D : Type*} [MeasurableSpace Ξ]
     rw [ENNReal.toReal_add hEX_top hE_top] at this; linarith
 
 omit [IsProbabilityMeasure P] hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne in
-/-- **Per-`f` ε/3 combiner (abstract).** Given a readout sequence `R`, a limit `L`,
+/-- **Per-`f` ε/3 combiner.** Given a readout sequence `R`, a limit `L`,
 a projected readout `Rproj : ℕ → ℕ → ℝ` (in `m` then `n`), projected limits
 `Lproj : ℕ → ℝ`, and a per-`(m,n)` discretization-tail family `Dtail : ℕ → ℕ → ℝ`,
 with
@@ -1683,14 +1661,13 @@ with
 * (limit tail) `Lproj m → L` as `m→∞`;
 * (readout diff) the unconditional per-`(m,n)` bound `|R n − Rproj m n| ≤ Dtail m n`;
 * (tail vanishing) `limsupₙ (Dtail m n) → 0` as `m→∞`,
-the unprojected readout `R n → L` as `n→∞`. This is the ε/3 limsup-combine: the
-discretization tail is folded into the single limiting hypothesis `hDtail`, supplied
-by the asymptotic-tightness lemma `empirical_readout_tail_outer` at the call site.
+the unprojected readout `R n → L` as `n→∞`. The hypothesis `hDtail` packages
+the vanishing discretization tail; `empirical_readout_tail_outer` establishes it
+for empirical-process readouts.
 
-`hDbdd` (eventual upper-boundedness of `Dtail m` in `n`) is the mechanical side
-condition of `eventually_lt_of_limsup_lt` over `ℝ` (a `ConditionallyCompleteLinearOrder`,
-not `ℝ≥0∞`): without it `limsup` is junk on an unbounded sequence. At the call
-site `Dtail m n = (E*[…]).toReal ≤ 2‖f‖`, so the constant `2‖f‖` discharges it. -/
+`hDbdd` ensures that `limsup (Dtail m) atTop` has its usual finite-order
+behavior over `ℝ`; for empirical-process readouts the bound
+`Dtail m n = (E*[…]).toReal ≤ 2‖f‖` supplies this condition. -/
 theorem tendsto_outerReadout_of_pieces
     (R : ℕ → ℝ) (Rproj : ℕ → ℕ → ℝ) (Lproj : ℕ → ℝ) (L : ℝ)
     (Dtail : ℕ → ℕ → ℝ)
@@ -1741,7 +1718,7 @@ theorem tendsto_outerReadout_of_pieces
   linarith [htri, hdiffn, hdtailn, hmidn, hm_lim]
 
 include hG_env hG hF_meas hF_ent in
-/-- **Empirical readout-tail vanishing (vdV's Lipschitz argument).** For a
+/-- **Empirical readout-tail vanishing.** For a
 *bounded-Lipschitz* `f : LinfF F →ᵇ ℝ`, the `n`-`limsup` of the pointwise-gap
 `E*`-readout `E*[ |f(𝔾ₙ) − f(πₘ𝔾ₙ)| ]` tends to `0` as `m → ∞`.
 
@@ -1750,8 +1727,7 @@ This is van der Vaart's own readout-difference bound (book p.261-262), which doe
 `K`-Lipschitz `f`, split at the fixed oscillation threshold `ε`:
 `|f(𝔾ₙ) − f(πₘ𝔾ₙ)| ≤ K·ε + 2‖f‖·𝟙{ε < ‖𝔾ₙ − πₘ𝔾ₙ‖}`, so the readout obeys
 `Dtail m n ≤ K·ε + 2‖f‖·P*{ε < ‖𝔾ₙ − πₘ𝔾ₙ‖}`. The second factor's `limsupₙ`
-vanishes as `m → ∞` by the empirical discretization-error theorem
-`empirical_proj_error_outer`, leaving
+vanishes as `m → ∞` by `empirical_proj_error_outer`, leaving
 `limsupₘ limsupₙ Dtail ≤ K·ε`. Since `ε > 0` is arbitrary, the tail tends to `0`.
 
 The Lipschitz hypothesis is essential: a merely bounded-*continuous* `f` on the
@@ -1796,7 +1772,7 @@ theorem empirical_readout_tail_outer
   -- It suffices to prove the `ε/0`-squeeze: `limsupₘ limsupₙ Dtail ≤ K·ε` for every
   -- fixed oscillation threshold `ε > 0`, with `0 ≤ Dtail`. Send `ε → 0`.
   -- We package this as: the `m`-limsup of `Dtail m ·` is dominated, for each fixed `ε`,
-  -- Bound by `K·ε + 2‖f‖·limsupₙ P*{ε < ‖𝔾ₙ − πₘ𝔾ₙ‖}`, whose `m`-limit is `K·ε`.
+  -- by `K·ε + 2‖f‖·limsupₙ P*{ε < ‖𝔾ₙ − πₘ𝔾ₙ‖}`, whose `m`-limit is `K·ε`.
   -- Reduce to `Tendsto … (𝓝 0)` via the `Metric` ε-bound: prove the
   -- limsup function is eventually `< ε'` (in norm) for every `ε' > 0`.
   refine NormedAddGroup.tendsto_nhds_zero.2 (fun ε' hε' => ?_)
@@ -1814,11 +1790,11 @@ theorem empirical_readout_tail_outer
   -- outer-prob mass `P*{ε < ‖𝔾ₙ − πₘ𝔾ₙ‖}` tends to `0` in `m`.
   have hS3 := empirical_proj_error_outer (F := F) (P := P) (G := G) hG_env hG hF_meas hF_ent
     h_eq μ X hX_meas hX_indep hX_id hX_law ε hε_pos
-  -- Abbreviate the outer-probability readout as `Pstar m n : ℝ≥0∞`.
+  -- Abbreviate the outer probability as `Pstar m n : ℝ≥0∞`.
   set Pstar : ℕ → ℕ → ℝ≥0∞ := fun m n =>
     μ.outerMeasureStar
       {ξ | ε < ‖𝔾 n ξ - finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ)‖} with hPstar
-  -- Re-express the convergence using `Pstar` (`E*` of the indicator is definitionally equal).
+  -- The preceding convergence in `Pstar` form.
   have hS3' : Tendsto (fun m => limsup (fun n => Pstar m n) atTop) atTop (𝓝 0) := by
     refine hS3.congr (fun m => ?_)
     rfl
@@ -1981,7 +1957,7 @@ theorem empirical_readout_tail_outer
           (hφ_mono.map_limsup_of_continuousAt (fun n => (Pstar m n).toReal)
             hφ_cont.continuousAt (hS_bdd m) (hS_cobdd m)).symm
       _ = φ ((limsup (fun n => Pstar m n) atTop).toReal) := by rw [hPtoReal]
-  -- **Send `m → ∞`.** The convergence `limsupₙ Pstar m · → 0` gives
+  -- **Send `m → ∞`.** Since `limsupₙ Pstar m · → 0`,
   -- `φ(.toReal) → φ 0 = K·ε`.
   have hmtail : Tendsto (fun m => φ ((limsup (fun n => Pstar m n) atTop).toReal))
       atTop (𝓝 (Kr * ε)) := by
@@ -2005,26 +1981,20 @@ theorem empirical_readout_tail_outer
   rw [Real.norm_eq_abs, abs_of_nonneg hnonneg]
   exact lt_of_le_of_lt (hlimsup_bound m) hm
 
-/-- **The ε/3 assembly of Theorem 18.14 sufficiency (⟸).** Packaged for the
-headline theorem in `Characterization.lean`: under the marginal CLT and
-asymptotic equicontinuity, the empirical process converges `⇝ₒ` to `G_P` in
-`ℓ∞(F)`.
+/-- **The ε/3 argument for Theorem 18.14 sufficiency (⟸).** Under the marginal
+CLT and asymptotic equicontinuity, the empirical process converges `⇝ₒ` to
+`G_P` in `ℓ∞(F)`.
 
 For each `f : LinfF F →ᵇ ℝ`, split the readout error into three pieces:
-the `n → ∞` finite-dimensional convergence at fixed `m`
-(`weakConvergesOuter_findim_proj`), the empirical tail `‖𝔾ₙ − πₘ𝔾ₙ‖` lifted
-through the subadditive `E*`-triangle (`empirical_proj_error_outer` and
-`outerExpectation_readout_triangle`), and the limit tail
-`∫|f(πₘ·) − f·| dG_P` (`limit_proj_error`). Choosing `m` large
+the `n → ∞` finite-dimensional convergence at fixed `m`, the empirical tail
+`‖𝔾ₙ − πₘ𝔾ₙ‖` lifted through the subadditive `E*` triangle inequality,
+and the limit tail `∫|f(πₘ·) − f·| dG_P`. Choosing `m` large
 (controls both tails) then `n` large (controls the middle) gives the ε/3 bound.
 
-The conclusion is the per-`f` `WeakConvergesOuter` *readout-Tendsto* for a fixed
-bounded-Lipschitz `f` (the body of `WeakConvergesOuter` at one test function), so the
-headline theorem in `Characterization.lean` builds the family `hlip` of these and
-upgrades to the full `WeakConvergesOuter` (all bounded-*continuous* `f`) via the
-bounded-Lipschitz portmanteau `weakConvergesOuter_of_lipschitz_readout`. The Lipschitz
-hypothesis `hf_lip` is consumed only by the empirical-tail piece (`_Dtail`); the
-other three pieces (`_middle` / `_limtail` / `_hdiff` / `_hDbdd`) are `f`-agnostic.
+The conclusion is the `WeakConvergesOuter` readout convergence for a fixed
+bounded-Lipschitz `f`; `weakConvergesOuter_of_lipschitz_readout` upgrades this to
+all bounded-continuous test functions. The Lipschitz hypothesis enters only in
+the empirical-tail bound.
 
 vdV p.261 (⟸): the readout-difference + finite-dim CLT + limit-tail step, at a single
 bounded-Lipschitz test function. -/
@@ -2073,7 +2043,7 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
   refine tendsto_outerReadout_of_pieces R Rproj Lproj L Dtail
     ?_middle ?_limtail ?_hdiff ?_Dtail ?_hDbdd
   case _middle =>
-    -- Middle: apply `weakConvergesOuter_findim_proj` to `f`, with the
+    -- Apply `weakConvergesOuter_findim_proj` to `f`, with the
     -- limit pushforward identified via `integral_map`.
     intro m
     have hS2 := weakConvergesOuter_findim_proj hG_env hG hF_meas hH_inf hH_sep
@@ -2086,10 +2056,10 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
         (measurable_finiteNetProj hG_env hG hF_meas hF_ent m).aemeasurable
         f.continuous.aestronglyMeasurable, hLproj, hGP]
     rw [hRproj, ← hmap]
-    -- This readout is exactly `Rproj m n`; the limit is the pushforward integral.
+    -- The readout is exactly `Rproj m n`; the limit is the pushforward integral.
     convert hS2 using 2
   case _limtail =>
-    -- Limit tail: `limit_proj_error` gives `∫|f(πₘ·) − f·| → 0`, hence
+    -- The theorem `limit_proj_error` gives `∫|f(πₘ·) − f·| → 0`, hence
     -- `Lproj m = ∫ f(πₘ·) → ∫ f· = L`.
     have hS4 := limit_proj_error hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne f
     -- `GP` is a probability measure (so `f` and `f ∘ πₘ` are integrable).
@@ -2097,7 +2067,7 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
       rw [hGP]
       exact (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep
         hF_ent hF_ne).isProbabilityMeasure
-    -- `|Lproj m − L| ≤ ∫ |f(πₘ·) − f·| dGP`; squeeze using its convergence to `0`.
+    -- `|Lproj m − L| ≤ ∫ |f(πₘ·) − f·| dGP`, and the RHS → 0; squeeze.
     rw [tendsto_iff_dist_tendsto_zero]
     have hbound : ∀ m, dist (Lproj m) L
         ≤ ∫ z, |f (finiteNetProj hG_env hG hF_meas hF_ent m z) - f z| ∂GP := by
@@ -2114,13 +2084,13 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
       rw [← integral_sub hfπ_int hf_int]
       exact abs_integral_le_integral_abs
     refine squeeze_zero (fun m => dist_nonneg) hbound ?_
-    -- The right-hand side `∫ |f(πₘ·) − f·| dGP` tends to `0`.
+    -- The right-hand side `∫ |f(πₘ·) − f·| dGP → 0`.
     simpa only [hGP] using hS4
   case _hdiff =>
     -- Readout diff (UNCONDITIONAL): the `‖f‖·(μ univ).toReal` shifts in `R` and
     -- `Rproj` cancel, so `|R n − Rproj m n|` is exactly the abs `.toReal`-readout
     -- difference of `f∘𝔾ₙ` and `f∘πₘ𝔾ₙ`, bounded by the pointwise-gap readout
-    -- `Dtail m n` via `abs_outerReadout_diff_le_readout_abs` at `Lip = 1`.
+    -- `Dtail m n` via `abs_outerReadout_diff_le_readout_abs`.
     intro m n
     have hbnd := abs_outerReadout_diff_le_readout_abs μ f (𝔾 n)
       (fun ξ => finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ))
@@ -2133,8 +2103,8 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
     rw [hsub, hDtail]
     exact hbnd
   case _Dtail =>
-    -- Apply `empirical_readout_tail_outer`; after unfolding `𝔾`, its integrand
-    -- is exactly `Dtail`.
+    -- Tail vanishing follows from `empirical_readout_tail_outer`; unfold `𝔾`
+    -- to identify its integrand with `Dtail`.
     have hHP4 := empirical_readout_tail_outer hG_env hG hF_meas hF_ent
       h_eq μ X hX_meas hX_indep hX_id hX_law f hf_lip
     simpa only [hDtail, h𝔾] using hHP4

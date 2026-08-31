@@ -19,12 +19,10 @@ threshold `δ` shrinks with the dimension (by a factor `m`) to keep
 
 Construction note: `ParametricFamily.density_meas` requires a *plain*
 `Measurable` density, but `Lp ℝ 2 P`'s coercion is only
-`AEStronglyMeasurable`. We therefore build the density from the
+`AEStronglyMeasurable`. The density is therefore defined using the
 strongly-measurable representatives `(Lp.aestronglyMeasurable (g_P i)).mk`
 rather than the bare coercions; the two agree `P`-a.e., and all integral
 identities (mean-zero, normalisation) carry over via `integral_congr_ae`.
-
-Headline declarations: `paramSubmodel`, `paramSubmodel_isPDFOf`.
 
 Reference: van der Vaart §25.5 (parametric submodels through scores).
 -/
@@ -105,7 +103,7 @@ lemma ae_abs_le_uniformBound (hg : IsBoundedMixtureScores g_P) (i : Fin m) :
         (fun j : Fin m => max 0 (Classical.choose (hg j))) :=
     Finset.le_sup' (f := fun j : Fin m => max 0 (Classical.choose (hg j)))
       (Finset.mem_univ i)
-  -- Now identify hg.uniformBound with the dif_pos branch.
+  -- Identify `hg.uniformBound` with the nonempty `dif_pos` branch.
   have h3 : hg.uniformBound =
       Finset.univ.sup' ⟨i, Finset.mem_univ i⟩
         (fun j : Fin m => max 0 (Classical.choose (hg j))) := by
@@ -118,8 +116,8 @@ end IsBoundedMixtureScores
 /-! ## Strongly-measurable representatives of `g_P i`
 
 `Lp ℝ 2 P` coercions are `AEStronglyMeasurable` but not `Measurable` in
-general. To populate `ParametricFamily.density_meas` (which requires
-plain `Measurable`), we work with the canonical strongly-measurable
+general. To obtain `ParametricFamily.density_meas` (which requires
+plain `Measurable`), use the canonical strongly-measurable
 representatives `gMk i := (Lp.aestronglyMeasurable (g_P i)).mk _`. They
 agree with the bare coercions `P`-a.e. -/
 
@@ -351,10 +349,9 @@ lemma linPerturb_truncated_nonneg
 truncRadius`, the density is `1 + Σᵢ θ i · gMk i ω`; otherwise the
 density falls back to `1` (so the family stays well-defined globally).
 
-The fallback at `‖θ‖ ≥ truncRadius` is an engineering convenience: the
-book's analysis only ever uses `θ` near `0`, so the cutoff is invisible
-at the analytic level. The truncation `truncRadius = 1 / (M·m + 1)` keeps
-the density pointwise non-negative without invoking exponentials. -/
+The fallback at `‖θ‖ ≥ truncRadius` extends the local family globally without
+changing it near `0`. The truncation `truncRadius = 1 / (M·m + 1)` keeps the
+density pointwise non-negative. -/
 noncomputable def submodelDensity
     (θ : EuclideanSpace ℝ (Fin m)) (ω : Ω) : ℝ :=
   if ‖θ‖ < truncRadius g_P hg then 1 + linPerturb g_P θ ω else 1
@@ -376,8 +373,8 @@ lemma submodelDensity_meas
 
 /-- Pointwise-everywhere non-negative density: take the max with `0`. This is
 a.e.-equal to `submodelDensity` (since `submodelDensity ≥ 0` a.e. for
-`‖θ‖ < truncRadius`, and `= 1` otherwise) and is the actual density we
-ship in `paramSubmodel`. -/
+`‖θ‖ < truncRadius`, and `= 1` otherwise) and is the density used by
+`paramSubmodel`. -/
 noncomputable def submodelDensityNN
     (θ : EuclideanSpace ℝ (Fin m)) (ω : Ω) : ℝ :=
   max 0 (submodelDensity g_P hg θ ω)
@@ -446,7 +443,7 @@ lemma submodelDensity_integrable
     rw [h_eq]
     exact integrable_const _
 
-/-- ∫ submodelDensityNN θ ∂P = 1 (the actual normalisation we ship). -/
+/-- `∫ submodelDensityNN θ ∂P = 1`. -/
 lemma integral_submodelDensityNN_eq_one
     (θ : EuclideanSpace ℝ (Fin m)) :
     ∫ ω, submodelDensityNN g_P hg θ ω ∂P = 1 := by
@@ -469,10 +466,9 @@ The density at parameter `θ` is `1 + Σᵢ θ i · g_P i` (truncated to keep
 non-negativity for small `‖θ‖`, falling back to `1` outside the
 truncation radius and additionally clipped pointwise via `max 0`).
 
-The orthonormality hypothesis is **not used** in the construction itself
-(only in II-β for Fisher = `I_m`), but we keep it in the constructor
-signature so callers immediately have the joint orthonormality fact
-available downstream. -/
+The orthonormality hypothesis is not needed to define the density; it records
+the score normalization used later to identify the Fisher information with
+`I_m`. -/
 noncomputable def paramSubmodel
     {m : ℕ} (g_P : Fin m → ↥(L2ZeroMean P))
     (hg : IsBoundedMixtureScores g_P)
@@ -492,7 +488,7 @@ theorem paramSubmodel_isPDFOf
   density_integral_eq_one := integral_submodelDensityNN_eq_one g_P hg
   density_integrable := submodelDensityNN_integrable g_P hg
 
-/-! ## Auxiliary lemmas for downstream slices -/
+/-! ## Density properties -/
 
 /-- Density at `θ = 0` is identically `1` (everywhere). -/
 theorem paramSubmodel_density_at_zero
@@ -554,10 +550,8 @@ so joint measurability in `(θ, ω)` follows from:
   composed with `WithLp.measurable_ofLp` to bridge `EuclideanSpace ℝ (Fin m)
   = WithLp 2 (Fin m → ℝ)`).
 
-Used by `lam_semiparametric` to discharge Theorem 8.11's `hM_joint` hypothesis,
-and by `ψ_param_measurable_of_ψ_measurable` (in `LAMSemiparametricBridge`) to
-derive measurability of the parametric functional from a global measurability
-hypothesis on the underlying `ψ`. -/
+This gives joint measurability of the submodel density in its parameter and
+sample arguments. -/
 theorem paramSubmodel_density_joint_meas
     {m : ℕ} (g_P : Fin m → ↥(L2ZeroMean P))
     (hg : IsBoundedMixtureScores g_P)

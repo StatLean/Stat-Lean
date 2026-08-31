@@ -1,17 +1,10 @@
-import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.MeasureTheory.Measure.Tight
-import Mathlib.Analysis.PSeries
-import Mathlib.Analysis.SpecificLimits.Normed
-
-/-!
+/-
 # Abstract Dudley / Gaussian-chaining for sub-Gaussian-increment processes
 
-This is the abstract chaining construction behind the existence of the `P`-Brownian
+This is the abstract chaining argument behind the existence of the `P`-Brownian
 bridge `G_P` (vdV §19.2 / §18.1; van der Vaart–Wellner §2.1).  It is
-**theorem-agnostic** (`ForMathlib/`): a process `X : T → Ω → ℝ` over a
-pseudo-metric index `T`, whose increments are sub-Gaussian with proxy variance
+stated for a process `X : T → Ω → ℝ` over a pseudo-metric index `T`, whose
+increments are sub-Gaussian with proxy variance
 `K² · dist²`, has (a.s.) bounded, uniformly-continuous sample paths on a
 countable dense subset.
 
@@ -28,15 +21,17 @@ inequality `√(2σ² log(2·#links))`
 Dudley-finite schedule and a Borel–Cantelli argument yields a.s. uniform
 continuity.
 
-This file restates the chaining telescope **inline** to preserve the one-way
-dependency from `ForMathlib` to `EmpiricalProcess`; the consumer in
-`EmpiricalProcess/AbstractDonsker/` invokes the headline `gaussianChaining_UC`.
-
-The mechanical leaves (nets, nearest-point projection, telescope) are proved
-here; the analytic chain runs over the `closePairs` Dudley level set
+The proof develops nets, nearest-point projections, and the chaining telescope.
+The analytic argument runs over the `closePairs` Dudley level set
 (`measure_bigOsc_le`, `summable_bigOsc`, `aeUC_via_borelCantelli`) and assembles
-into the headline `gaussianChaining_UC`.
+into `gaussianChaining_UC`.
 -/
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.Topology.MetricSpace.Basic
+import Mathlib.MeasureTheory.Measure.Tight
+import Mathlib.Analysis.PSeries
+import Mathlib.Analysis.SpecificLimits.Normed
 
 open MeasureTheory Real
 open scoped ENNReal NNReal
@@ -47,25 +42,22 @@ variable {T : Type*} [PseudoMetricSpace T]
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 variable {X : T → Ω → ℝ} {K : ℝ}
 
-/-! ## The dyadic-net input (explicit data, no `EmpiricalProcess` import)
+/-! ## The dyadic-net input
 
 The chaining input is an **explicit dyadic net family** `net : ℕ → Finset T`
 together with `hnet` (each `net j` is a `2^{-j}`-net of `T`) and `hnet_mono`
 (the family is nested).  Taking the net as data — rather than deriving it from a
-bare ε-net total-boundedness existential via `Classical.choose` — keeps the net
-cardinality under the caller's control, which is what makes the `hDudley` entropy
-hypothesis (stated on `(net j).card`) dischargeable at a call site. The net
-hypotheses also imply total boundedness of `T` through
-`gc_totallyBounded_univ`. -/
+bare ε-net total-boundedness existential via `Classical.choose` — makes the net
+cardinality explicit in the `hDudley` entropy hypothesis. Total boundedness of
+`T` follows from `hnet` by `gc_totallyBounded_univ`. -/
 
-/-! ## Dyadic nets and nearest-point projection (★ mechanical leaves)
+/-! ## Dyadic nets and nearest-point projection
 
 The chaining input is an **explicit dyadic net family** `net : ℕ → Finset T`
 with two properties: each `net j` is a `2^{-j}`-net of `T` (`hnet`), and the
 family is nested (`hnet_mono`).  Taking the net as data (rather than deriving it
 from a bare ε-net existential via `Classical.choose`) keeps the net cardinality
-under the caller's control, which is what makes the `hDudley` entropy hypothesis
-(stated on `(net j).card`) dischargeable at a call site. -/
+explicit in the `hDudley` entropy hypothesis, stated on `(net j).card`. -/
 
 /-- **Self-projecting nearest net point.** `dyadicProj net hnet j t` is `t`
 itself when `t` is already in `net j`, and otherwise *a* net point within
@@ -162,8 +154,7 @@ sub-Gaussian with proxy `c` and `0 ≤ a`, `(c : ℝ) ≤ σsq`, then the right 
 `μ {a < Z}` is bounded by `exp(-a²/(2σ²))`. Handles two regimes: `c = 0` (then
 `Z =ᵐ 0` and the strict-threshold tail is null, which is `≤ anything`); and
 `0 < c ≤ σsq` (Chernoff + exp-monotonicity in the denominator, using `-a² ≤ 0`;
-note `0 < c ≤ σsq` already forces `0 < σsq`). Private helper for
-`measure_bigOsc_le`. -/
+note `0 < c ≤ σsq` already forces `0 < σsq`). -/
 private theorem tail_one_sided_le {Z : Ω → ℝ} {c : ℝ≥0} {a σsq : ℝ}
     (hZ : ProbabilityTheory.HasSubgaussianMGF Z c μ)
     (ha : 0 ≤ a) (hcle : (c : ℝ) ≤ σsq) :
@@ -256,7 +247,7 @@ between two arbitrary close skeleton points.  The standard Dudley level set is
 **all close net-pairs at each scale**: pairs `(s, t)` of net points within
 `6·2^{-j}`.  The level oscillation event `bigOsc j a` collects the `ω` where some
 such pair's increment exceeds `a`, and the Borel–Cantelli summability over a
-Dudley-finite schedule (`summable_bigOsc`) feeds the headline.  The card bound
+Dudley-finite schedule (`summable_bigOsc`) feeds the main theorem.  The cardinality bound
 here is `#closePairs ≤ #net²` (a filtered product), giving the extra
 `√(log 2 + 2 log #net)` wrinkle handled below by sqrt-subadditivity. -/
 
@@ -593,7 +584,7 @@ theorem summable_bigOsc
           -- √(2 Lj) = √2·√(Lj) ≤ √2·(…).
           rw [Real.sqrt_mul (by norm_num)]
           exact mul_le_mul_of_nonneg_left hLjbnd (Real.sqrt_nonneg 2)
-        -- Now dominate σj j·√(2 Lj j) by 6 K √2·(√(log2) 2^{-j} + √2·(2^{-j}√(log(2#net j)))).
+        -- Dominate `σj j·√(2 Lj j)` by the displayed dyadic entropy term.
         have hbound : ∀ j, σj j * Real.sqrt (2 * Lj j)
             ≤ (6 * K * Real.sqrt 2) * (Real.sqrt (Real.log 2) * (2 : ℝ) ^ (-(j : ℤ)))
               + (6 * K * Real.sqrt 2 * Real.sqrt 2)
@@ -843,9 +834,9 @@ schedule** `η J = a J + 2·∑' k, a (J + k)`:
 
 This is the pointwise crux of `aeUC_via_borelCantelli`: a triangle split into two
 vertical legs (`aeUC_vertical_leg`, each `≤ ∑' k, a (J + k)`) and a horizontal
-middle (`mem_closePairs_same_level`, `≤ a J`).  The a.s. statement then follows by
-Borel–Cantelli, and the modulus-ball `G_P`-tightness consumer (`PBridgeTight`)
-uses this same deterministic `η` to land paths in a fixed compact modulus ball. -/
+middle (`mem_closePairs_same_level`, `≤ a J`). The almost-sure statement then
+follows by Borel–Cantelli; the same deterministic `η` places paths in a fixed
+compact modulus ball. -/
 theorem osc_le_of_avoid_bigOsc
     (net : ℕ → Finset T)
     (hnet : ∀ (j : ℕ) (t : T), ∃ s ∈ net j, dist t s < (2 : ℝ) ^ (-(j : ℤ)))
@@ -966,7 +957,7 @@ Off a `μ`-null set, only finitely many level events occur, so the dyadic
 chaining sum converges uniformly and the path `t ↦ X t ω` is uniformly
 continuous on the countable dense set `T₀ = ⋃ j, net j`.
 
-The lemma `MeasureTheory.ae_eventually_notMem (summable_bigOsc …)` gives
+Proof detail: `MeasureTheory.ae_eventually_notMem (summable_bigOsc …)` gives
 `∀ᵐ ω, ∀ᶠ j, ω ∉ bigOsc net j (a j)`; combine with the telescope
 `chain_telescope_path` to get a uniform Cauchy modulus on `T₀`.  UC is stated
 via the pseudometric of `T` restricted to `T₀` (`UniformContinuousOn`). -/
@@ -1108,7 +1099,7 @@ private theorem gaussianChaining_UC_iUnion_aux
     exact huniv_tb.image habs
   exact hrange_tb.isBounded.bddAbove
 
-/-- **Gaussian chaining: a.s. bounded, uniformly-continuous paths (HEADLINE).**
+/-- **Gaussian chaining: a.s. bounded, uniformly-continuous paths.**
 For a sub-Gaussian-increment process over a totally bounded pseudometric index
 with finite Dudley entropy, there is a countable dense set `T₀` on which the
 sample paths are a.s. bounded and uniformly continuous.  This is the analytic
@@ -1119,8 +1110,8 @@ then follows because a uniformly continuous map on the totally bounded `T₀` ha
 totally bounded (hence bounded) range. `T₀ = ⋃ j, net j`; its density is
 the `2^{-j} → 0` net coverage; countability is a countable union of finite sets.
 
-This signature provides the `G_P` existence result and the
-`IsPBrownianBridge` uniformly-continuous-path field used downstream. -/
+This conclusion supplies the uniformly continuous path field used in the
+construction of `G_P` and `IsPBrownianBridge`. -/
 theorem gaussianChaining_UC
     (hK : 0 ≤ K)
     (hXmeas : ∀ t, Measurable (X t))

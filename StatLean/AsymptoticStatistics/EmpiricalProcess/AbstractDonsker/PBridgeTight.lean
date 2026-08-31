@@ -21,9 +21,9 @@ and (when `a k → 0` and `↥F` is totally bounded in `distL2 P`) totally bound
 Completeness of `ℓ∞(F)` (`lp.completeSpace`) then upgrades closed + totally bounded
 to compact.
 
-There is **no measure theory** in this file. The companion fact that the bridge
-law `ν` concentrates on some `modulusBall` follows from a separate probabilistic
-tightness argument.
+The compactness argument above is purely topological. The later
+measure-theoretic argument shows that the bridge law `ν` concentrates on some
+`modulusBall`.
 
 ## Main definitions
 
@@ -202,7 +202,8 @@ theorem totallyBounded_modulusBall {F : Set (Ω → ℝ)} {P : Measure Ω}
         have e : Φ z i - Φ (rep t) i = (Φ z i - t i) - (Φ (rep t) i - t i) := by ring
         rw [e]; exact abs_sub _ _
       linarith
-    -- now the sup-norm bound via equicontinuity. Per-coordinate `≤ 2 a k + 2(ε/5) < 4ε/5`.
+    -- Equicontinuity gives the per-coordinate sup-norm bound
+    -- `2 a k + 2(ε/5) < 4ε/5`.
     rw [dist_eq_norm]
     refine lt_of_le_of_lt (lp.norm_le_of_forall_le' (4 * ε / 5) ?_) (by linarith)
     intro f
@@ -277,8 +278,8 @@ variable (hF_meas : ∀ f ∈ F, Measurable f)
   (hH_sep : TopologicalSpace.SeparableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas))
   (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) (hF_ne : F.Nonempty)
 
-/-- **Transport of the chaining modulus from net-pairs to all of `↥F`** (the
-intricate crux of `G_P`-tightness).  Fix a "good" sample point `ω` (so
+/-- **Transport of the chaining modulus from net-pairs to all of `↥F`.** Fix a
+"good" sample point `ω` (so
 `gpPath ω = pathExtend ω`, the uniformly-continuous extension of the skeleton
 path) that *avoids* every level oscillation event `bigOsc gpX net m (a m)` at
 scales `m ≥ J`.  Then `gpPath ω` lies in the modulus ball
@@ -293,10 +294,9 @@ uniform continuity of `pathExtend` (= `gpPath ω` on the good set) lifts this to
 limiting argument (skeleton sequences `fₙ → f`, `gₙ → g`, with the increment
 bound stable under the `distL2`-uniform limit).
 
-The skeleton `gpSkeleton` and the oscillation net `net` must be the **same** set
-(else "skeleton pairs" and "net pairs" are different); this is supplied by the
-alignment hypothesis `hskel`, discharged at the `pBridge_tight` call site by the
-definitional `gpSkeleton = ⋃ j, net j` (both come from `exists_dudley_net`). -/
+The alignment hypothesis `hskel` identifies the skeleton with the union of the
+oscillation nets, `gpSkeleton = ⋃ j, net j`, so both estimates apply to the
+same pairs. -/
 theorem gpPath_mem_modulusBall_of_avoid
     (net : ℕ → Finset ↥F)
     (hnet : letI := distL2PseudoMetric hG_env hG hF_meas
@@ -344,7 +344,7 @@ theorem gpPath_mem_modulusBall_of_avoid
     rw [hagree s hs, hagree t ht]
     exact GaussianChaining.osc_le_of_avoid_bigOsc' (X := X) net hnet hnet_mono ha_pos ha_summable
       ω havoid (Nat.le_add_right J k) hs ht hst
-  -- Now the modulus-ball membership.
+  -- The preceding estimates give membership in the modulus ball.
   refine ⟨hM, ?_⟩
   intro k f g hfg
   -- Rewrite `gpPath ω · = pe ·` on the good set.
@@ -617,25 +617,27 @@ theorem pBridge_tight :
 
 include hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne in
 /-- **Existence of the tight `P`-Brownian-bridge law `G_P`.** Assembled from the
-five `IsPBrownianBridge` field lemmas for the candidate law
+six `IsPBrownianBridge` field lemmas for the candidate law
 `ν = gpBridgeMeasure` (`= iidStdGaussian.map gpPath`): probability measure
 (`pBridge_isProbabilityMeasure`), Brownian-bridge covariance (`pBridge_cov`),
-centred Gaussian finite-dimensional marginals (`pBridge_isGaussian_fdd`),
-tightness of the Borel law (`pBridge_tight`), and concentration on the
-`distL2 P`-uniformly-continuous sample paths (`pBridge_ucPaths`).
+zero coordinate means (`pBridge_mean`), centred Gaussian finite-dimensional
+marginals (`pBridge_isGaussian_fdd`), tightness of the Borel law
+(`pBridge_tight`), and concentration on the `distL2 P`-uniformly-continuous
+sample paths (`pBridge_ucPaths`).
 
-The construction hypotheses are the full vdV §19.2 Donsker preconditions, taken
-in their unbundled form to feed the field lemmas and `gpBridgeMeasure`:
+The envelope and entropy assumptions are those of the bracketing criterion in
+vdV §19.2, while the Hilbert-space assumptions select the Gaussian-process
+construction used here:
 
-* `hG_env` / `hG` — `F` has a **square-integrable envelope** `G` (vdV
-  §19.2): `IsEnvelope F G` plus `MemLp G 2 P`.
-* `hF_meas` (vdV §19.2) — every `f ∈ F` is `AEStronglyMeasurable`.
-* `hH_inf` (vdV §19.2) — the Gaussian Hilbert space `gpH ⟨G,…⟩ hF_meas`
-  is **infinite-dimensional**, as required by the `gpBridgeMeasure` construction.
-* `hH_sep` (vdV §19.2) — `gpH ⟨G,…⟩ hF_meas` is a `SeparableSpace`.
-  It is supplied explicitly to the `gpBridgeMeasure` construction.
-* `hF_ent` (vdV §19.2) — **finite bracketing-entropy integral**.
-* `hF_ne` (vdV §19.2) — `F` is nonempty. -/
+* `hG_env` and `hG` give `F` a square-integrable envelope `G`.
+* `hF_meas` makes every member of `F` measurable.
+* `hH_inf` restricts the construction to an infinite-dimensional Gaussian
+  Hilbert space; finite-dimensional carriers are handled by the separate
+  finite-carrier construction.
+* `hH_sep` supplies separability of the Gaussian Hilbert space. In this setting
+  it also follows from `hF_ent` through `totallyBounded_L2`.
+* `hF_ent` states finiteness of the bracketing-entropy integral.
+* `hF_ne` states that `F` is nonempty. -/
 theorem exists_pBrownianBridge :
     ∃ ν : Measure (LinfF F),
       IsPBrownianBridge F P ν :=

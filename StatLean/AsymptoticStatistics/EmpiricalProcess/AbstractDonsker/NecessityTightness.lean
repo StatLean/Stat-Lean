@@ -16,24 +16,20 @@ tightness machinery (vdV §18.3 Theorem 18.12; van der Vaart–Wellner §1.5.7).
 
 Weak convergence of the empirical process `𝔾ₙ` in `ℓ∞(F)` (the outer sense
 `⇝ₒ`) to the tight `P`-Brownian-bridge law `G_P` forces, by the easy-Prohorov
-direction, asymptotic tightness of `𝔾ₙ`. Asymptotic tightness around the compact
-`G_P`-concentration set (a `modulusBall`) gives a `distL2`-oscillation modulus
-control in outer probability, which (splitting the sample space on the close-pair
-event) is exactly the `IsAsymptoticallyEquicontinuous` predicate.
+direction, asymptotic tightness of `𝔾ₙ`. The uniform `distL2`-continuity of
+the Brownian-bridge paths, together with closed-set outer portmanteau, gives the
+oscillation-modulus control in outer probability that defines
+`IsAsymptoticallyEquicontinuous`.
 
-The bridge lemma `equicont_of_weakConvergesOuter_gp` accepts the unfolded
-universal `WeakConvergesOuter` hypothesis underlying `IsPDonsker'`.  This lets
-`Characterization.lean` apply the bridge directly while preserving an acyclic
-import structure.
+## Main results (all proved; vdV p.261 / 18.12)
 
-## Main results
-
-* `outerMeasure_modulusComplement_le` converts asymptotic tightness of `𝔾ₙ`
-  into close-pair `distL2` oscillation control in outer probability.
-* `empiricalProcess_asymptoticallyTight` obtains asymptotic tightness from
-  `𝔾ₙ ⇝ₒ G_P` using easy Prohorov and `pBridge_tight`.
-* `equicont_of_weakConvergesOuter_gp` combines these facts to prove
-  `IsAsymptoticallyEquicontinuous F P` from convergence to `G_P`.
+* `outerMeasure_modulusComplement_le` — weak convergence of `𝔾ₙ` to the
+  uniformly `distL2`-continuous Brownian bridge ⟹ close-pair oscillations above
+  any threshold `ε` have limiting outer probability at most any prescribed `η`.
+* `empiricalProcess_asymptoticallyTight` — the `⇝ₒ`-to-`G_P` hypothesis ⟹
+  asymptotic tightness of `𝔾ₙ` (easy-Prohorov + `pBridge_tight`).
+* `equicont_of_weakConvergesOuter_gp` — the `⇝ₒ`-to-`G_P` hypothesis ⟹
+  `IsAsymptoticallyEquicontinuous F P`.
 
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Theorem
 18.14 (book p.261), Theorem 18.12 (book p.260), §19.2.
@@ -57,8 +53,8 @@ variable {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
 
 /-- The **good-modulus set** at radius `δ` and level `c`: paths whose
 `distL2 P`-modulus of continuity is `≤ c` at scale `δ`. This is the modulus part
-of a `modulusBall` (no sup-bound constraint); it is the *closed* set the
-closed-set outer-portmanteau theorem is applied to via its thickening. -/
+of a `modulusBall` (no sup-bound constraint); its metric thickening is used in
+the closed-set outer-portmanteau argument. -/
 def goodModulusSet (P : Measure Ω) (F : Set (Ω → ℝ)) (δ c : ℝ) : Set (LinfF F) :=
   {z | ∀ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c}
 
@@ -94,7 +90,7 @@ theorem abs_coordEval_sub_le_norm {F : Set (Ω → ℝ)} (z w : LinfF F) (f : �
   rw [hsub, ← Real.norm_eq_abs]
   exact lp.norm_apply_le_norm ENNReal.top_ne_zero (z - w) f
 
-/-- **The `G_P` mass of the good-modulus complement is small.** Because
+/-- **`G_P`-mass of the good-modulus complement is small.** Because
 `gaussianPBridge` concentrates on the `distL2 P`-uniformly-continuous paths
 (`IsPBrownianBridge.ucPaths`), the good-modulus sets `goodModulusSet P F (1/(k+1)) c`
 increase to a full-measure set as `k → ∞`, so for any `η > 0` there is a radius
@@ -169,12 +165,12 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
         ≤ 1 - (1 - ENNReal.ofReal η) := tsub_le_tsub_left hk 1
       _ = ENNReal.ofReal η := ENNReal.sub_sub_cancel ENNReal.one_ne_top (le_of_lt hlt)
 
-/-- **A close-pair event lands in a thickening complement.** If a path `z` has
+/-- **Close-pair event lies in a thickening complement.** If a path `z` has
 a close pair `(f, g)` with `distL2 f g ≤ δ` and `η < |z f − z g|`, then `z` lies
 *outside* the `(η/4)`-thickening of the good-modulus set `goodModulusSet P F δ (η/2)`:
 any `w` in that set has `|w f − w g| ≤ η/2`, so if `‖z − w‖ < η/4` then
 `|z f − z g| ≤ |w f − w g| + 2‖z − w‖ < η/2 + η/2 = η`, a contradiction. The
-thickening complement is closed, as required by portmanteau. -/
+thickening complement is closed, so outer portmanteau applies. -/
 theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     {δ η : ℝ} (hη : 0 < η) (z : LinfF F) (f g : ↥F)
     (hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ) (hosc : η < |z f - z g|) :
@@ -193,7 +189,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     refine (abs_add_le _ _).trans ?_
     gcongr
     exact abs_sub _ _
-  -- A bound `dist z w < η/4`, i.e. `‖z − w‖ < η/4`, forces a contradiction.
+  -- if `dist z w < η/4`, i.e. `‖z − w‖ < η/4`, then `|z f − z g| < η`, contradiction.
   by_contra hlt
   push_neg at hlt
   rw [dist_eq_norm] at hlt
@@ -202,33 +198,24 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     nlinarith [hwmod, hzf, hzg, htri, h2]
   exact absurd hosc (not_lt.2 (le_of_lt hfinal))
 
-/-- **B — modulus control in outer probability from asymptotic tightness.**
+/-- **Modulus control from weak convergence to the uniformly continuous bridge.**
 
-Asymptotic tightness of the empirical process `𝔾ₙ` (packaged through
-`empiricalProcessLinf`) around the compact `G_P`-concentration `modulusBall`
-yields: for every oscillation level `η > 0` there is a `distL2`-radius `δ > 0`
-such that the outer-probability mass of the close-pair oscillation event
+Suppose the empirical process `𝔾ₙ` (packaged through `empiricalProcessLinf`)
+converges weakly in the outer sense to the `P`-Brownian bridge. For every
+oscillation threshold `ε > 0` and probability tolerance `η > 0`, there is a
+`distL2`-radius `δ > 0` such that the close-pair oscillation event
 
-`{ξ | ∃ f g : ↥F, distL2 P f g < δ ∧ η < |𝔾ₙ(f)(ξ) − 𝔾ₙ(g)(ξ)|}`
+`{ξ | ∃ f g : ↥F, distL2 P f g < δ ∧ ε < |𝔾ₙ(f)(ξ) − 𝔾ₙ(g)(ξ)|}`
 
-is, in the `limsup` along `atTop`, at most `ENNReal.ofReal η`. (The `∃`-over-
-close-pairs form is exactly what `D` consumes after splitting the sample space.)
+is, in the `limsup` along `atTop`, at most `ENNReal.ofReal η`.
 
-The compactness witnesses `modulusBall` / `isCompact_modulusBall` from
-`PBridgeTight.lean` pin the equicontinuity modulus `(δ k, a k)`; outside any fixed
-`δ`-thickening of such a ball the increment of any close pair is controlled, and
-asymptotic tightness bounds the outer mass of the complement uniformly in `n`.
-
-vdV p.260 (Theorem 18.12) / p.261 (Theorem 18.14, ⟹): tightness ⟹ modulus
-control.
-
-To keep the import graph acyclic, `h` is the unfolded
-`WeakConvergesOuter`-∀ predicate (the body of `IsPDonsker'` after the iid binder
-block). The `htight`-route is provably impossible (a compact set in `ℓ∞(F)` is not
-`distL2`-equicontinuous), so the modulus is read off `G_P` directly: `gaussianPBridge`
-concentrates on `distL2 P`-uniformly-continuous paths (`IsPBrownianBridge.ucPaths`),
-which supplies the uniform `δ` at oscillation level `η`, and closed-set
-outer-portmanteau transports the resulting `G_P`-mass bound back to `𝔾ₙ`. -/
+The measure `gaussianPBridge` concentrates on paths that are uniformly
+continuous for `distL2 P` (`IsPBrownianBridge.ucPaths`). This supplies a radius
+`δ` for the oscillation threshold `ε`, with bridge-complement mass bounded by
+the independent tolerance `η`; closed-set outer portmanteau transports that
+bound to `𝔾ₙ`. The hypothesis `h` is the unfolded `WeakConvergesOuter`
+predicate. This is the modulus implication used in vdV Theorem 18.14 (p.261),
+with the weak-convergence and tightness background of Theorem 18.12 (p.260). -/
 theorem outerMeasure_modulusComplement_le
     (h : ∀ {Ξ : Type} [_inst : MeasurableSpace Ξ] (μ : Measure Ξ)
         [_inst2 : IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω),
@@ -261,13 +248,14 @@ theorem outerMeasure_modulusComplement_le
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The `⇝ₒ` instance for this iid sample.
   have hwc := h μ X hX_meas hX_indep hX_id hX_law
-  -- The empirical process as `Xn` for closed-set portmanteau.
+  -- The empirical process as `Xn` for the portmanteau bound.
   set Xn : ℕ → Ξ → LinfF F := fun n ξ =>
     empiricalProcessLinf (fun i : Fin n => X i.val ξ)
       (memℓp_empiricalProcess ⟨G, hG_env, hG.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
         (fun i : Fin n => X i.val ξ)) with hXn
   -- The good-modulus radius `δ` at oscillation tolerance `ε/2` with `ν`-complement
-  -- mass `≤ ofReal η` (oscillation `ε` and mass `η` are independent).
+  -- The complement has mass at most `ofReal η`; the oscillation tolerance
+  -- `ε` and mass tolerance `η` are independent.
   obtain ⟨δ, hδpos, hδmass⟩ :=
     gp_goodModulusSet_compl_mass_le hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
       (by linarith : (0 : ℝ) < ε / 2) hη
@@ -291,7 +279,7 @@ theorem outerMeasure_modulusComplement_le
     obtain ⟨f, g, hclose, hosc⟩ := hξ
     rw [Set.mem_preimage, hC, hK]
     exact closePair_mem_thickening_compl hε (Xn n ξ) f g (le_of_lt hclose) hosc
-  -- Apply portmanteau to the closed `C`, then `outerMeasureStar`-monotonicity.
+  -- Apply portmanteau to the closed set `C`, then use `outerMeasureStar` monotonicity.
   calc limsup (fun n => μ.outerMeasureStar
           {ξ | ∃ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ ∧
             ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)
@@ -302,23 +290,18 @@ theorem outerMeasure_modulusComplement_le
     _ ≤ ν C := limsup_outerMeasureStar_preimage_isClosed_le (μ := fun _ => μ) hwc hCclosed
     _ ≤ ENNReal.ofReal η := hνC
 
-/-- **C — asymptotic tightness of `𝔾ₙ` from `⇝ₒ`-to-`G_P`.**
+/-- **Asymptotic tightness of `𝔾ₙ` from `⇝ₒ`-to-`G_P`.**
 
 If the empirical process converges weakly in `ℓ∞(F)` (outer sense) to the tight
-`P`-Brownian bridge `G_P` (taken in the **unfolded** `WeakConvergesOuter`-∀ form,
-to keep the import graph acyclic — mirrors `isPDonsker'_..._aux`), then `𝔾ₙ` is
-asymptotically tight.
+`P`-Brownian bridge `G_P`, stated in the unfolded `WeakConvergesOuter` form, then
+`𝔾ₙ` is asymptotically tight.
 
 Glue: `isAsymptoticallyTight_of_weakConvergesOuter` (easy-Prohorov direction)
 applied to the per-sample `WeakConvergesOuter` instance from `h`, with the tight
-Borel limit supplied by `pBridge_tight` (the `G_P` tightness established in
-`PBridgeTight.lean`, transported from `gpBridgeMeasure` to `gaussianPBridge`).
+Borel limit supplied by `pBridge_tight`, transported from `gpBridgeMeasure` to
+`gaussianPBridge`.
 
-vdV p.261 (⟹): `⇝ₒ` limit tight + portmanteau ⟹ sequence asymptotically tight.
-
-To keep the import graph acyclic, `h` is the unfolded predicate rather than
-`IsPDonsker'`; the binder block makes the conclusion the bare
-`IsAsymptoticallyTight` claim used below. -/
+vdV p.261 (⟹): `⇝ₒ` limit tight + portmanteau ⟹ sequence asymptotically tight. -/
 theorem empiricalProcess_asymptoticallyTight
     (h : ∀ {Ξ : Type} [_inst : MeasurableSpace Ξ] (μ : Measure Ξ)
         [_inst2 : IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω),
@@ -349,27 +332,20 @@ theorem empiricalProcess_asymptoticallyTight
     (h μ X hX_meas hX_indep hX_id hX_law)
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).tight
 
-/-- **D — `⇝ₒ`-to-`G_P` ⟹ asymptotic equicontinuity (the vdV 18.14(ii) form).**
+/-- **`⇝ₒ`-to-`G_P` ⟹ asymptotic equicontinuity (the vdV 18.14(ii) form).**
 
 If the empirical process converges weakly in `ℓ∞(F)` (outer sense) to the tight
-`P`-Brownian bridge `G_P` (taken in the **unfolded** `WeakConvergesOuter`-∀ form,
-to keep the import graph acyclic), then `F` is asymptotically equicontinuous.
+`P`-Brownian bridge `G_P`, stated in the unfolded `WeakConvergesOuter` form,
+then `F` is asymptotically equicontinuous.
 
-Since `IsAsymptoticallyEquicontinuous` is exactly the vdV 18.14(ii) outer-sup
-modulus, `outerMeasure_modulusComplement_le` produces precisely that modulus
-from `⇝ₒ`. The Markov-tail and bulk argument converting the modulus into the
-per-pair consumer form lives in
-the standalone bridge `osc_modulus_to_random_pair` in `Donsker.lean`, which
-consumers apply at concrete pairs.)
+The predicate `IsAsymptoticallyEquicontinuous` is the vdV 18.14(ii) outer-sup
+modulus, and `outerMeasure_modulusComplement_le` supplies that modulus from
+`⇝ₒ` at the same `(ε, η)`.
 
-This is what `Characterization.lean`'s `asymptoticallyEquicontinuous_of_isPDonsker'`
-calls: since `IsPDonsker'` is defeq the ∀-form `h`, that theorem introduces the
-`IsPDonsker'` binders and applies this result directly.
+Since `IsPDonsker'` is definitionally equal to the universal form `h`, this
+theorem yields the equicontinuity half of the characterization.
 
-vdV p.261 (⟹): tightness ⟹ the modulus-of-continuity control.
-
-To keep the import graph acyclic, `h` is the unfolded `WeakConvergesOuter`-∀
-predicate rather than `IsPDonsker'`. -/
+vdV p.261 (⟹): tightness ⟹ the modulus-of-continuity control. -/
 theorem equicont_of_weakConvergesOuter_gp
     (h : ∀ {Ξ : Type} [_inst : MeasurableSpace Ξ] (μ : Measure Ξ)
         [_inst2 : IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω),

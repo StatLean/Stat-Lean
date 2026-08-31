@@ -268,7 +268,9 @@ console.log(`[layout] core fcose finished in ${((Date.now() - started) / 1000).t
 // on-demand Mathlib layout.
 const previousPath = existsSync(LEGACY_LAYOUT) ? LEGACY_LAYOUT : FULL_LAYOUT;
 const previous = JSON.parse(readFileSync(previousPath, "utf8"));
-const fullPositions = { ...previous.positions };
+const fullPositions = Object.fromEntries(
+  Object.entries(previous.positions).filter(([id]) => nodeById.has(id)),
+);
 // The legacy full layout treated nodes as points.  Expanding it preserves its
 // force-directed silhouette while giving the rendered glyphs room to breathe;
 // the collision pass below handles the few coincident coordinates that remain.

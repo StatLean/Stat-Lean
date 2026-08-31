@@ -2,88 +2,16 @@ import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.StrictModel.EfficientScore
 
 /-!
-# Score-operator / adjoint calculus for efficient influence functions
+# Score-operator / adjoint calculus
 
-Let $\mathcal{P}$ be a statistical model indexed by an infinite-dimensional
-parameter, with a *score operator* $A : H \to L^2_0(P)$, a continuous linear
-map carrying directions in a parameter Hilbert space $H$ into the mean-zero
-square-integrable functions $L^2_0(P)$. The "calculus of scores" produces the
-efficient influence function $\tilde\psi_P$ of a differentiable functional
-$\psi$ from $A$ in three equivalent ways:
+The abstract score operator `A : H →L[ℝ] ↥(L²₀(P))` from a parameter Hilbert
+space `H` into mean-zero `L²(P)`, and the calculus for producing efficient
+influence functions from it: the adjoint equation, the information-operator
+formula, and the semiparametric specialization.
 
-* **Adjoint equation.** With $A^*$ the adjoint of $A$ and $\tilde\chi$ the
-  derivative-representing element, the efficient influence function solves
-  $A^*\tilde\psi_P = \tilde\chi$; equivalently, for every direction $g$ in the
-  tangent space $T$ one has $d\psi(g) = \langle \tilde\psi_P, g\rangle_{L^2_0(P)}$.
-* **Information-operator formula.** When $\tilde\chi$ lies in the range of the
-  *information operator* $A^*A$, the solution is $\tilde\psi_P = A(A^*A)^{-}\tilde\chi$,
-  where $(A^*A)^{-}$ is a generalized inverse. We encode the information
-  equation by its defining inner-product identity
-  $\langle A\kappa,\, Av\rangle_{L^2_0(P)} = \langle\chi, v\rangle_H$ for all
-  $v \in H$, so that $\kappa$ plays the role of $(A^*A)^{-}\tilde\chi$.
-* **Semiparametric specialization.** When the model splits into a $\theta$-part
-  and a nuisance $\eta$-part, the score operator splits accordingly and the
-  efficient score in a $\theta$-direction is the residual of the ordinary
-  $\theta$-score after orthogonal projection onto the closed linear span of
-  the nuisance scores.
-
-**Lean alignment / added hypotheses.** The Lean statements certify each
-conclusion through an *inner-product hypothesis* rather than through
-`ContinuousLinearMap.adjoint`: `eif_via_adjoint_equation` and
-`eif_via_information_operator` take the hypothesis that the parameter
-derivative `dψ` acts on the tangent space as the inner product against the
-candidate, which is exactly what the adjoint/information equation yields on
-the score range. This avoids requiring `CompleteSpace` on the
-`Submodule`-coerced $L^2_0(P)$ space (needed to synthesize the Mathlib adjoint
-through the sort coercion). The extension of the certification from the score
-range to the full tangent space $T = \overline{\operatorname{range}A}$ — a
-density/continuity argument in the book — is taken as the supplied hypothesis,
-not re-proved here.
-
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
-in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 25 (Semiparametric Models), §25.5 (Score and Information Operators),
-Theorem 25.31, Eqs (25.29), (25.30), (25.33).
-
-**Proof formalization notes.**
-* `ScoreOperator` packages the score operator $A : H \to L^2_0(P)$ as a
-  continuous linear map (vdV §25.5, the operator $A_\eta$ of Eq (25.29)). For
-  parametric models take `H := EuclideanSpace ℝ (Fin k)`; for
-  semiparametric/nonparametric models `H` may be any Hilbert space. Edge case:
-  for `H = 0` the only score operator is the zero map and the tangent range is
-  `⊥`.
-* `eif_via_adjoint_equation` (Theorem 25.31): the book conclusion is "$\phi$
-  solves the adjoint equation $A^*\phi = \chi$". On $g \in \operatorname{range}A$
-  the adjoint identity $\langle Av, \phi\rangle = \langle v, A^*\phi\rangle =
-  \langle v, \chi\rangle = d\psi(Av)$ recovers the inner-product hypothesis
-  `h_dψ_eq_inner` from $A^*\phi = \chi$. Reduces to
-  `eif_of_representation_and_membership`.
-* `eif_via_information_operator` (Eq (25.30)): the book conclusion is
-  $\phi = A(A^*A)^{-}\chi$. The information-operator inversion $(A^*A)\kappa = \chi$
-  is captured by the inner-product condition `h_information`,
-  $\langle A\kappa, Av\rangle = \langle\chi, v\rangle$ for all $v$, the defining
-  property of $A^*A$. Same reduction shape as the adjoint form.
-* `efficientScore_projection_formula` (Eq (25.33)): a vocabulary-alignment
-  lemma (`rfl`) identifying the operator-side residual
-  $A_\theta v - \Pi_{T_\eta}(A_\theta v)$ with the projection-side
-  `efficientScore`, so concrete model files move freely between the two
-  characterizations.
-
-**Bibliographic comments.** The score-operator / adjoint calculus for
-semiparametric efficiency originates with P. J. Bickel, C. A. J. Klaassen,
-Y. Ritov, and J. A. Wellner, *Efficient and Adaptive Estimation for
-Semiparametric Models*, Johns Hopkins University Press, Baltimore, 1993
-(reprinted Springer, 1998). That monograph develops the geometry of tangent
-spaces, score operators, and their adjoints (the "calculus of scores") of
-which van der Vaart's Chapter 25 is a condensed account; vdV §25.5 follows
-their treatment, and the information operator $A^*A$ and adjoint equation
-$A^*\tilde\psi = \tilde\chi$ are theirs. Earlier roots lie in C. Stein's
-heuristic for the hardest one-dimensional submodel (1956) and the
-projection/least-favorable-direction viewpoint of P. J. Bickel,
-*On adaptive estimation*, Annals of Statistics 10 (1982), 647–671.
-
-Headline declarations: `ScoreOperator`, `eif_via_adjoint_equation`,
-`eif_via_information_operator`, `efficientScore_projection_formula`.
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.5
+— eq:25.29 (score operator), eq:25.30 (information-operator formula),
+thm:25.31 (adjoint equation), eq:25.33 (semiparametric specialization).
 -/
 
 open MeasureTheory
@@ -136,9 +64,8 @@ parameter derivative shape on the score range. Extending to the full
 `T` (when `T = closure(range A)`) requires a density / continuity
 argument, omitted here.
 
-Concrete callers prove `h_dψ_eq_inner` from a model-specific
-`PathwiseDifferentiableAt` plus the adjoint equation. The named
-theorem reduces this to `eif_of_representation_and_membership`.
+The hypothesis `h_dψ_eq_inner` is the inner-product form of the adjoint
+equation on the chosen tangent space.
 -/
 theorem eif_via_adjoint_equation
     {T : Submodule ℝ ↥(L2ZeroMean P)}
@@ -151,8 +78,8 @@ theorem eif_via_adjoint_equation
   intro g
   exact (h_dψ_eq_inner g).symm
 
-/-- *vdV eq:25.30 (information-operator form, Option-A inner-product
-encoding) — derived from the information equation.* Suppose `κ : H`
+/-- *vdV eq:25.30 in inner-product form, derived from the information
+equation.* Suppose `κ : H`
 solves the *information equation* `(A*A) κ = χ`, encoded without an
 explicit adjoint as
 
@@ -180,16 +107,13 @@ run here purely in inner-product vocabulary (no
 ↥(L2ZeroMean P)` synthesizable through the Submodule sort-coercion):
 the first equality is the inner-product *definition* of `A*A`, supplied
 as `h_information`; the last is `h_dψ_on_range`. The information
-equation is therefore load-bearing — it is exactly what turns the
+equation turns the
 candidate `A κ` into a representer of `dψ` on `range A = T`.
 
-What this *proves* (vs. what the book asserts): for every `g ∈ T` the
-representer identity `⟪A κ, g⟫ = dψ g` holds, and `A κ ∈ T`. The book's
-extra claim that `κ = (A*A)⁻¹ χ` is the *unique* solution in
-`R(A)` (modulo `N(A)`) is not formalised here; we only use that *some*
-`κ` solving the information equation produces the EIF. Concrete callers
-in finite-dim parametric models compute `κ` by inverting the
-information matrix and prove `h_information` by direct computation. -/
+The conclusion establishes `⟪A κ, g⟫ = dψ g` for every `g ∈ T` and
+`A κ ∈ T`. It does not assert uniqueness of the solution
+`κ = (A*A)⁻¹ χ` modulo `N(A)`; existence of a solution to the information
+equation suffices. -/
 theorem eif_via_information_operator
     (A : ScoreOperator H P) (χ : H) (κ : H)
     (h_information :
@@ -225,9 +149,7 @@ semiparametric model the score operator splits into a θ-component
 the closure of `range A_η`), coincides with `efficientScore` when
 the ordinary-score operator is taken to be `A_θ.toCLM`.
 
-Reference: vdV §25.5, eq:25.33. This vocabulary-alignment theorem
-lets concrete model files freely move between the operator-side
-and projection-side characterisations. -/
+Reference: vdV §25.5, eq:25.33. -/
 theorem efficientScore_projection_formula
     {H_θ : Type*}
     [NormedAddCommGroup H_θ] [InnerProductSpace ℝ H_θ] [CompleteSpace H_θ]
@@ -238,34 +160,27 @@ theorem efficientScore_projection_formula
       = AsymptoticStatistics.StrictModel.EfficientScore.efficientScore
           A_θ.toCLM T_η v := rfl
 
-/-- *vdV eq:25.33 — the genuine operator identity.* Let `B := B_{θ,η}` be
-the nuisance score operator and `Bstar = B*` its adjoint (here supplied
-explicitly, certified by the adjoint identity `h_adj`, exactly as
-`eif_via_information_operator` encodes the information operator `A*A`
-without invoking `ContinuousLinearMap.adjoint`; the Mathlib adjoint does
-not apply because `CompleteSpace ↥(L²₀(P))` does not synthesize through
-the `Submodule` sort-coercion that the score operator's codomain uses).
+/-- *vdV eq:25.33 — the nuisance-score projection identity.* Let
+`B := B_{θ,η}` be the nuisance score operator and let `Bstar = B*` satisfy
+the adjoint identity `h_adj`.
 
 The book asserts (p.374): *"if the operator `B*B` is continuously
 invertible (but in many examples it is not), then the operator
 `B(B*B)⁻¹B*` is the orthogonal projection onto the nuisance score
 space"* (= the range of `B`).
 
-This is the content `efficientScore_projection_formula` does **not**
-carry: that earlier theorem is a definitional rename of `efficientScore`,
-taking the projected element on faith. Here we *prove* that the explicit
-operator `B ∘ (B*B)⁻¹ ∘ B*` equals `(range B).starProjection`.
+The explicit operator `B ∘ (B*B)⁻¹ ∘ B*` equals
+`(range B).starProjection`.
 
-The invertibility hypothesis is **load-bearing**: it is supplied as a
+The invertibility hypothesis is represented by a
 `ContinuousLinearEquiv ℝ H H` whose forward map is `B*B`, packaged as
 `hBB : ∀ z, Bstar (B z) = e z`. The book is explicit that without it the
-identity is false ("in many examples it is not invertible"). Only the
-right-inverse direction `(B*B) ∘ e⁻¹ = id` is used below, but we carry the
-full two-sided equivalence to match the book's "continuously invertible".
+identity is false ("in many examples it is not invertible"). The equivalence
+`e` records the book's two-sided continuous invertibility, although the proof
+uses only `(B*B) ∘ e⁻¹ = id`.
 
-`h_adj` is the defining adjoint identity `⟪Bstar y, w⟫_H = ⟪y, B w⟫_{L²}`;
-it pins `Bstar` down to the genuine adjoint of `B` (mathematically forced,
-supplied with its certificate in the project's inner-product style).
+`h_adj` is the defining adjoint identity
+`⟪Bstar y, w⟫_H = ⟪y, B w⟫_{L²}`.
 
 Proof: write `Px := B (e⁻¹ (Bstar x))`. By
 `eq_starProjection_of_mem_orthogonal` it suffices to show
@@ -312,15 +227,15 @@ with influence representer `chiTilde : H`, iff there is a continuous-linear
 derivative `dψ` on the score range whose value on each score `A v` is the
 Riesz inner product `⟪chiTilde, v⟫_H`.
 
-This directly formalizes the abstract differentiability hypothesis of Theorem
-25.31 (vdV p.372–373): the book writes the derivative `χ_η` as the inner product
+This is the abstract differentiability hypothesis of Theorem 25.31 (vdV
+p.372–373): the book writes the derivative `χ_η` as the inner product
 `χ_η b = ⟪χ̃, b⟫_H` for `χ̃ ∈ lin H`, and the score range `A H` is the
 tangent set against which `ψ` is differentiated. -/
 def DifferentiableRelScoreRange (A : ScoreOperator H P) (chiTilde : H) : Prop :=
   ∃ dψ : (A.toCLM.range) →L[ℝ] ℝ,
     ∀ (v : H), dψ ⟨A.toCLM v, ⟨v, rfl⟩⟩ = ⟪chiTilde, v⟫_ℝ
 
-/-- *vdV §25.5, thm:25.31 — the constructive direction (HEADLINE).*
+/-- *vdV §25.5, thm:25.31 — the constructive direction.*
 If the influence representer `χ̃ = chiTilde` lies in the range of the adjoint
 `A*` (i.e. there is `psiTilde` with `A* psiTilde = χ̃`), then `psiTilde` is an
 influence function for the parameter-derivative `dψ` on the tangent space
@@ -328,22 +243,16 @@ influence function for the parameter-derivative `dψ` on the tangent space
 
 This is the book's "if each coordinate of `χ̃` is contained in the range of
 `A*`, then `ψ` is differentiable and the influence function satisfies
-(25.30)" (vdV Thm 25.31, p.372). The theorem constructs the derivative on
-`range A` together with the corresponding influence-function identity;
-`eif_via_adjoint_equation` supplies the latter identity when a derivative on
-a tangent space is already given.
+(25.30)" (vdV Thm 25.31, p.372).
 
 Here the tangent space `T` is required to be exactly the score range
 (`h_range_eq : A.toCLM.range = T`), matching the book's tangent set
 `A H`: `IsInfluenceFunction` quantifies over *all* `g ∈ T`, and `h_dψ`
 only specifies `dψ` on scores `A v`, so faithfully `T` must be the range.
 
-The adjoint `A*` is supplied explicitly with its certificate `h_adj`
+The adjoint `A*` is specified by the identity `h_adj`
 (`⟪A* y, v⟫_H = ⟪y, A v⟫_{L²}`), exactly the encoding of
-`nuisanceProjection_eq_BinvBstar` / `eif_via_information_operator`: the
-Mathlib `ContinuousLinearMap.adjoint` does not synthesize here because
-`CompleteSpace ↥(L²₀(P))` does not resolve through the `Submodule`
-sort-coercion of the codomain.
+`nuisanceProjection_eq_BinvBstar` and `eif_via_information_operator`.
 
 Proof: for any `g ∈ T = range A`, write `g = A v`; then
 `⟪psiTilde, A v⟫ = ⟪A* psiTilde, v⟫ = ⟪χ̃, v⟫ = dψ ⟨A v, _⟩`, the three
@@ -389,11 +298,11 @@ automatically in the range of `A*`, with explicit preimage
 
 This is the book's eq:25.30 `ψ̃ = A(A*A)⁻¹χ` (vdV p.372): the efficient
 influence function is the image under `A` of the solution `(A*A)⁻¹χ` of the
-information equation. The invertibility hypothesis is load-bearing — the
-book is explicit that `A*A` need not be invertible — and is carried as the
+information equation. The book is explicit that `A*A` need not be invertible;
+continuous invertibility is represented by the
 two-sided equivalence `e`, matching the book's "continuously invertible".
 
-The construction follows the task design: `psiTilde := A (e.symm χ̃)`,
+The construction takes `psiTilde := A (e.symm χ̃)`,
 `h_range := A* psiTilde = e (e.symm χ̃) = χ̃`, then `isIF_of_mem_range_adjoint`
 with `dψ := ⟪psiTilde, ·⟫` restricted to the score range. The chain
 `⟪psiTilde, A v⟫ = ⟪A* psiTilde, v⟫ = ⟪χ̃, v⟫` certifies `h_dψ`. -/
@@ -421,37 +330,50 @@ theorem eif_formula_of_information_invertible
     change ⟪psiTilde, (A.toCLM v : ↥(L2ZeroMean P))⟫_ℝ = ⟪chiTilde, v⟫_ℝ
     rw [← h_range, h_adj v psiTilde, real_inner_comm]
   refine ⟨⟨dψ, h_dψ⟩, ?_⟩
-  -- The influence-function identity on `T = range A`, via the headline D2.
+  -- The influence-function identity on `T = range A`.
   exact isIF_of_mem_range_adjoint A Astar h_adj chiTilde psiTilde h_range rfl h_dψ
 
-/-- *vdV §25.5, thm:25.31 — the forward direction, closed-range form.*
-If `ψ` is differentiable relative to the score range with representer
-`χ̃ = chiTilde`, and the score range `range A` is **closed**, then `χ̃` lies
-in the range of the adjoint `A*`. Together with `isIF_of_mem_range_adjoint`
-this gives the full iff of Theorem 25.31 *on a closed score range*.
+/-- *vdV §25.5, thm:25.31 — unrestricted score-range form.*
+Differentiability on the (possibly nonclosed) actual range of `A` gives a
+bounded functional there.  Hahn--Banach extends it to the ambient
+`L2ZeroMean P`; ambient Riesz then supplies a representer whose image under
+the certified adjoint is `chiTilde`.
 
-The closed-range hypothesis `h_closed` is **load-bearing**, not removable: it
-is exactly the gap the book flags (vdV p.373, the discussion before Thm
-25.32). The naive iff is FALSE in general because `R(A)` is often dense but
-not closed — "for any `χ̃` there exist elements in `R(A)` arbitrarily close
-to `χ̃`, but (25.29) may still fail. This happens quite often." Thm 25.32
-shows that this failure has serious consequences (no regular estimator
-sequence exists). So the forward direction holds only when the closure
-defect is absent, i.e. when `R(A)` is closed.
+Proof idea: `Real.exists_extension_norm_eq`, followed by ambient Riesz and
+the adjoint identity.  No closed-range hypothesis is needed.
 
-Proof (Riesz on the closed range): `h_closed` makes `range A` a complete
-Hilbert subspace, so the continuous functional `dψ : range A →L[ℝ] ℝ` has a
-Riesz representer `y₀ := (InnerProductSpace.toDual ℝ ↥(range A)).symm dψ`,
-with `⟪y₀, x⟫ = dψ x` for `x ∈ range A` (`toDual_symm_apply`). Then for
-every `v`, `⟪A* ↑y₀, v⟫ = ⟪↑y₀, A v⟫` (by `h_adj`)
-`= ⟪y₀, ⟨A v, _⟩⟫` (`Submodule.coe_inner`) `= dψ ⟨A v, _⟩ = ⟪χ̃, v⟫`
-(`h_dψ`); so `A* ↑y₀ = χ̃` by `ext_inner_right`, hence `χ̃ ∈ range A*`.
-The ambient completeness `CompleteSpace ↥(L²₀(P))` (needed before
-`IsClosed.completeSpace_coe` applies) is supplied explicitly from
-`L2ZeroMean_isClosed` — it does not auto-synthesize through the `Submodule`
-sort-coercion, the same obstruction that forces the explicit-adjoint style
-throughout this file; and the per-subspace `CompleteSpace ↥(range A)` and
-`toDual` instances are threaded with `@` for the same reason. -/
+Joint satisfiability witness: take `H = ℝ`, `A = id` (after identifying the
+codomain with a one-dimensional mean-zero subspace), and any Riesz
+functional; the representer is already in the actual adjoint range. -/
+theorem mem_range_adjoint_of_differentiable_unrestricted
+    (A : ScoreOperator H P) (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
+    (h_adj : ∀ (v : H) (y : ↥(L2ZeroMean P)), ⟪Astar y, v⟫_ℝ = ⟪y, A.toCLM v⟫_ℝ)
+    (chiTilde : H) (h_diff : DifferentiableRelScoreRange A chiTilde) :
+    chiTilde ∈ (Astar.range : Submodule ℝ H) := by
+  -- The ambient mean-zero `L²(P)` is complete (closed kernel of `integralL2`);
+  -- this instance does not auto-synthesize through the `Submodule` coercion.
+  have hL2 : CompleteSpace ↥(L2ZeroMean P) :=
+    (AsymptoticStatistics.Core.Hilbert.L2ZeroMean_isClosed P).completeSpace_coe
+  obtain ⟨dψ, h_dψ⟩ := h_diff
+  -- Hahn--Banach extends `dψ` from the possibly nonclosed score range to the
+  -- ambient mean-zero `L²(P)` space.
+  obtain ⟨dψext, h_ext, _⟩ := Real.exists_extension_norm_eq A.toCLM.range dψ
+  -- Ambient Riesz representer of the extension.
+  set y₀ : ↥(L2ZeroMean P) :=
+    (@InnerProductSpace.toDual ℝ ↥(L2ZeroMean P) _ _ _ hL2).symm dψext with hy₀
+  refine ⟨y₀, ?_⟩
+  -- Test `A* y₀ = χ̃` against every direction `v`.
+  refine ext_inner_right ℝ (fun v => ?_)
+  have hriesz : (⟪y₀, A.toCLM v⟫_ℝ : ℝ) = ⟪chiTilde, v⟫_ℝ := by
+    rw [hy₀, @InnerProductSpace.toDual_symm_apply ℝ ↥(L2ZeroMean P) _ _ _ hL2]
+    rw [h_ext (⟨A.toCLM v, ⟨v, rfl⟩⟩ : ↥(A.toCLM.range))]
+    exact h_dψ v
+  calc (⟪Astar y₀, v⟫_ℝ : ℝ)
+      = ⟪y₀, A.toCLM v⟫_ℝ := h_adj v y₀
+    _ = ⟪chiTilde, v⟫_ℝ := hriesz
+
+/-- Closed-range form of the adjoint-range characterization, using Riesz on
+the complete score range. -/
 theorem mem_range_adjoint_of_differentiable
     (A : ScoreOperator H P) (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
     (h_adj : ∀ (v : H) (y : ↥(L2ZeroMean P)), ⟪Astar y, v⟫_ℝ = ⟪y, A.toCLM v⟫_ℝ)
@@ -488,5 +410,27 @@ theorem mem_range_adjoint_of_differentiable
       = ⟪(y₀ : ↥(L2ZeroMean P)), A.toCLM v⟫_ℝ := hadj
     _ = ⟪y₀, (⟨A.toCLM v, ⟨v, rfl⟩⟩ : ↥(A.toCLM.range))⟫_ℝ := hsub
     _ = ⟪chiTilde, v⟫_ℝ := hriesz
+
+/-- Actual-range form of vdV 25.31: differentiability relative to the score
+range is equivalent to membership in the actual adjoint range.  The reverse
+direction uses the existing adjoint representer construction; the forward
+direction is Hahn--Banach plus ambient Riesz. -/
+theorem differentiableRelScoreRange_iff_mem_range_adjoint
+    (A : ScoreOperator H P) (Astar : ↥(L2ZeroMean P) →L[ℝ] H)
+    (h_adj : ∀ (v : H) (y : ↥(L2ZeroMean P)),
+      ⟪Astar y, v⟫_ℝ = ⟪y, A.toCLM v⟫_ℝ)
+    (chiTilde : H) :
+    DifferentiableRelScoreRange A chiTilde ↔
+      chiTilde ∈ (Astar.range : Submodule ℝ H) := by
+  constructor
+  · exact mem_range_adjoint_of_differentiable_unrestricted A Astar h_adj chiTilde
+  · rintro ⟨psiTilde, hpsi⟩
+    rw [ContinuousLinearMap.coe_coe] at hpsi
+    let dψ : A.toCLM.range →L[ℝ] ℝ :=
+      (innerSL ℝ psiTilde).comp A.toCLM.range.subtypeL
+    refine ⟨dψ, ?_⟩
+    intro v
+    change ⟪psiTilde, (A.toCLM v : ↥(L2ZeroMean P))⟫_ℝ = ⟪chiTilde, v⟫_ℝ
+    rw [← hpsi, h_adj v psiTilde]
 
 end AsymptoticStatistics.Operators.ScoreOperator

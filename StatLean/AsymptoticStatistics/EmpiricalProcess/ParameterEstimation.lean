@@ -1,4 +1,5 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
+import StatLean.AsymptoticStatistics.EmpiricalProcess.IIDFiniteRestriction
 import StatLean.AsymptoticStatistics.EmpiricalProcess.RandomFunctions
 import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 import StatLean.AsymptoticStatistics.ForMathlib.TendstoInMeasureAlgebra
@@ -8,70 +9,22 @@ import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Probability.HasLaw
 
 /-!
-# Empirical process under parameter estimation (Theorem 19.23)
+# Theorem 19.23: empirical process under parameter estimation
 
-Let $X_1, \dots, X_n$ be a random sample from a distribution $P_\theta$ indexed by
-a parameter $\theta \in \mathbb{R}^k$. Suppose $\mathcal{F}$ is a $P_\theta$-Donsker
-class of measurable functions, the estimators $\hat\theta_n$ are asymptotically
-linear with influence function $\psi_\theta$ (so that
-$\sqrt{n}(\hat\theta_n - \theta) = n^{-1/2}\sum_{i} \psi_\theta(X_i) + o_P(1)$, with
-$P_\theta \psi_\theta = 0$ and $P_\theta \|\psi_\theta\|^2 < \infty$), and the map
-$\theta \mapsto P_\theta$ from $\mathbb{R}^k$ to $\ell^\infty(\mathcal{F})$ is Fréchet
-differentiable at $\theta$ with derivative $\dot P_\theta$. Then the empirical
-process under the estimated parameter,
-$\sqrt{n}\,(\mathbb{P}_n - P_{\hat\theta_n})$, converges in distribution in
-$\ell^\infty(\mathcal{F})$ to the Gaussian process
-$f \mapsto \mathbb{G}_{P_\theta} f - \mathbb{G}_{P_\theta}\big(\psi_\theta^{\mathsf T}\dot P_\theta f\big)$,
-where $\mathbb{G}_{P_\theta}$ is the $P_\theta$-Brownian bridge.
+vdV §19.4. Let `X_1, …, X_n` be a random sample from `P_θ` indexed by
+`θ ∈ ℝ^k`. If `F` is `P_θ`-Donsker, `θ̂_n` is asymptotically linear with
+influence function `ψ_θ`, and `θ ↦ P_θ` from `ℝ^k` to `ℓ^∞(F)` is Fréchet
+differentiable at `θ`, then `√n(P_n − P_{θ̂})` converges in distribution to
+the process `f ↦ G_{P_θ} f − G_{P_θ}(ψ_θᵀ Ṗ_θ f)`.
 
-This file ships the single-direction ($k = 1$) special case, expressed against
-the $\mathbb{R}$-target `AsymptoticallyLinearAt`. The conclusion is the pointwise
-weak-convergence statement: for every $f \in \mathcal{F}$, the rescaled
-"empirical minus estimated" functional
-$\sqrt{n}\,\big(\mathbb{P}_n f - P_{\hat\theta_n} f\big)$ converges in distribution
-under the sample-space measure $\mu$ to the centered normal law $N(0, \sigma_f^2)$
-with variance
-$\sigma_f^2 := \int \big(f - P_{\theta_0}f - \dot P_{\theta_0} f \cdot \psi_{\theta_0}\big)^2\,dP_{\theta_0}$.
+This file ships the single-direction (`k = 1`) special case, expressed against
+the ℝ-target `AsymptoticallyLinearAt`. The conclusion is the pointwise
+weak-convergence statement: for every `f ∈ F`, `√n · (P_n f − P_{θ̂_n} f)`
+converges in distribution under `μ` to `N(0, σ_f²)` with
+`σ_f² := ∫ (f − Pf − dPθ f · ψ_{θ₀})² ∂P_{θ₀}`.
 
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 19 (Empirical Processes), §19.4 (Random Functions), Theorem 19.23,
-Eq (19.22).
-
-**Proof formalization notes.**
-The full $k$-dimensional theorem of vdV takes $\theta \in \mathbb{R}^k$; this Lean
-version restricts to $k = 1$ (an $\mathbb{R}$-valued parameter) so as to use the
-$\mathbb{R}$-target `AsymptoticallyLinearAt`. The bundled hypotheses are collected
-in `Theorem19_23Hyp` (Donsker, asymptotic linearity, ε–δ Fréchet differentiability
-of $\theta \mapsto P_\theta$ in the $\ell^\infty(\mathcal{F})$ norm) and the headline
-result is `empiricalProcess_param_estimation`. The proof follows the textbook
-4-step argument specialised to $k = 1$:
-
-1. **Master decomposition (Eq 19.22).** Combine the ε–δ Fréchet bound at $\theta_0$
-   with the asymptotic-linearity expansion of $\hat\theta_n - \theta_0$ to obtain
-   $\sqrt{n}\,(\mathbb{P}_n f - P_{\hat\theta_n} f)
-     = n^{-1/2}\sum_i \big[f(X_i) - P_{\theta_0}f - \dot P_{\theta_0} f\cdot\psi_{\theta_0}(X_i)\big] + o_P(1)$.
-2. **Real CLT.** Apply Mathlib's i.i.d. 1D CLT
-   (`ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub`) to the centered
-   summand $g(X_i) := f(X_i) - P_{\theta_0}f - \dot P_{\theta_0} f\cdot\psi_{\theta_0}(X_i)$;
-   mean zero follows from $\psi_{\theta_0}$ being centered and $f - P_{\theta_0}f$
-   being the standard centering, and the variance is $\sigma_f^2$ by definition.
-3. **Slutsky.** Absorb the $o_P(1)$ residual via
-   `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub`.
-4. **Variance finiteness.** From the Donsker marginal CLT, $f \in L^2(P_{\theta_0})$;
-   together with $\psi_{\theta_0} \in L^2(P_{\theta_0})$ this gives
-   $\sigma_f^2 < \infty$, so the limit Gaussian is well-defined.
-
-**Bibliographic comments.**
-Theorem 19.23 is folklore rather than the statement of a single
-seminal paper: van der Vaart derives it directly from the master approximation
-(19.22) by combining the continuous-mapping theorem with the asymptotic linearity of
-$\hat\theta_n$, leaning on the abstract Donsker machinery for empirical processes
-indexed by parametric classes. The underlying tools — uniform central limit theorems
-for empirical processes and the delta method for asymptotically linear estimators —
-trace back to the empirical-process theory developed by R. M. Dudley, E. Giné and
-J. Zinn, and others; vdV §19.4 (Random Functions) assembles them into this estimated-
-parameter limit law without attributing it to one origin.
+Principal declarations: `Theorem19_23Hyp` (bundled hypotheses) and
+`empiricalProcess_param_estimation`.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -82,44 +35,6 @@ open AsymptoticStatistics.Core.Hilbert
 open AsymptoticStatistics.Core.EfficiencyOperational
 
 variable {Ω : Type*} [MeasurableSpace Ω]
-
-/-- Bridge from the sample-space measure `μ` to the n-fold product measure `Pⁿ`
-via the iid sample `X`.
-
-For any `n`, the pushforward of `μ` along the map `ξ ↦ (i ↦ X i.val ξ) : Ξ → (Fin n → Ω)`
-is the product measure `Pⁿ := Measure.pi (fun _ : Fin n => P_θ θ₀)`.
-
-Proof: restrict the independence to `Fin n`, convert to a product-measure equality
-via `iIndepFun_iff_map_fun_eq_pi_map`, then identify each per-index pushforward
-`μ.map (X i.val) = P_θ θ₀`. -/
-private theorem pi_map_eq_of_iid
-    (P_θ : ℝ → Measure Ω) (θ₀ : ℝ) [IsProbabilityMeasure (P_θ θ₀)]
-    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω)
-    (_hX_meas : ∀ i, Measurable (X i))
-    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (_hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (_hX_law : μ.map (X 0) = P_θ θ₀)
-    (n : ℕ) :
-    μ.map (fun ξ : Ξ => fun i : Fin n => X i.val ξ)
-      = MeasureTheory.Measure.pi (fun _ : Fin n => P_θ θ₀) := by
-  -- Step 1: restrict iIndepFun to the Fin n subindex via the injective Fin.val.
-  have hY_indep : ProbabilityTheory.iIndepFun (fun i : Fin n => X i.val) μ :=
-    _hX_iindep.precomp Fin.val_injective
-  -- Step 2: identify each per-index pushforward with P_θ θ₀.
-  have h_per_i : ∀ i : Fin n, μ.map (X i.val) = P_θ θ₀ := by
-    intro i
-    rw [(_hX_idem i.val).map_eq]
-    exact _hX_law
-  -- Step 3: convert iIndepFun to a product-measure equality.
-  have hY_aem : ∀ i : Fin n, AEMeasurable (fun ξ : Ξ => X i.val ξ) μ :=
-    fun i => (_hX_meas i.val).aemeasurable
-  have h_pi :=
-    (ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map hY_aem).mp hY_indep
-  rw [h_pi]
-  congr 1
-  funext i
-  exact h_per_i i
 
 /-- **Bundled hypotheses for Theorem 19.23 (single-direction k=1 case).**
 
@@ -438,8 +353,8 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
               rw [← mul_assoc, eq2]]
         ring
     -- (a) and (b): A and B both →_P 0 under μ.
-    -- Local copy: B →_P 0 under μ (re-derived from `_h.asymp_linear` via
-    -- `pi_map_eq_of_iid`; matches the standalone `h_B_to_zero` defined below).
+    -- The asymptotic linearity hypothesis and `iidFiniteRestriction_map_eq_pi`
+    -- imply `B →_P 0` under `μ`.
     have h_B_mu : MeasureTheory.TendstoInMeasure μ B atTop (fun _ => (0 : ℝ)) := by
       apply MeasureTheory.tendstoInMeasure_of_ne_top
       intro ε hε hε_top
@@ -474,7 +389,8 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                 {x : Fin n → Ω | ε.toReal ≤
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
-              rw [pi_map_eq_of_iid P_θ θ₀ μ X _hX_meas _hX_iindep _hX_idem _hX_law n]
+              rw [iidFiniteRestriction_map_eq_pi (P_θ θ₀) μ X _hX_meas
+                _hX_iindep _hX_idem _hX_law n]
     -- Closure of A via Fréchet ε-δ + consistency + tightness.
     have h_A_to_zero : MeasureTheory.TendstoInMeasure μ A atTop (fun _ => (0 : ℝ)) := by
       -- ψ-side tightness via Chebyshev on the mean-zero iid sum `(1/√n)·Σ ψ(X_i ξ)`.
@@ -528,7 +444,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         have hψXi_var : ∀ i, ProbabilityTheory.variance (ψ ∘ X i) μ = V := by
           intro i
           rw [(hψX_idem i).variance_eq, hψX0_var]
-        -- Now the proof. Trivial case ε'' = ⊤.
+        -- The case `ε'' = ⊤` is immediate.
         intro ε'' hε''_pos
         by_cases hε''_top : ε'' = ⊤
         · refine ⟨1, one_pos, fun n => ?_⟩
@@ -748,7 +664,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
             ≤ μ {ξ | M < |Real.sqrt n *
                   (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)|} := measure_mono h_subset
           _ ≤ ε := hN₀ n hn₀
-      -- Sub-step 3: Fréchet ε-δ assembly using h_consistency + h_tight + _h.frechet + _hf.
+      -- Sub-step 3: Fréchet ε-δ argument using h_consistency + h_tight + _h.frechet + _hf.
       rw [MeasureTheory.tendstoInMeasure_iff_dist]
       intro ε hε
       rw [ENNReal.tendsto_atTop_zero]
@@ -906,7 +822,8 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                 {x : Fin n → Ω | ε.toReal ≤
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
-              rw [pi_map_eq_of_iid P_θ θ₀ μ X _hX_meas _hX_iindep _hX_idem _hX_law n]
+              rw [iidFiniteRestriction_map_eq_pi (P_θ θ₀) μ X _hX_meas
+                _hX_iindep _hX_idem _hX_law n]
     -- Combine via the h_identity bridge + TendstoInMeasure algebra helpers.
     have h_combine : MeasureTheory.TendstoInMeasure μ
         (fun (n : ℕ) (ξ : Ξ) => -(A n ξ) - dPθ f * (B n ξ))

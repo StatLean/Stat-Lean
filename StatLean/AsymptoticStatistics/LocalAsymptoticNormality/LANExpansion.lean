@@ -15,60 +15,24 @@ import Mathlib.Probability.IdentDistrib
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
-# Local Asymptotic Normality (LAN) expansion
+# Theorem 7.2 — Local Asymptotic Normality (LAN) expansion
 
-Let $(P_\theta : \theta \in \Theta)$ be a parametric family on a sample space
-$(\mathcal X, \mu)$ that is differentiable in quadratic mean (DQM) at the
-parameter $\theta$ with score function $\ell_\theta$. Then the score has mean
-zero, $P_\theta \ell_\theta = 0$, and for every sequence of local parameters
-$h_n \to h$ and i.i.d.\ observations $X_1, \dots, X_n \sim P_\theta$ the
-log-likelihood ratio of the perturbed model relative to the base model admits
-the quadratic expansion
+Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §7.2.
 
-$$
-  \log \prod_{i=1}^n
-    \frac{p_{\theta + h_n/\sqrt n}(X_i)}{p_\theta(X_i)}
-  = \frac{1}{\sqrt n} \sum_{i=1}^n \langle h, \ell_\theta(X_i)\rangle
-    - \tfrac12 \langle h, I_\theta\, h\rangle + o_{P_\theta}(1),
-$$
+Let `(P_θ : θ ∈ Θ)` be a parametric family on `(𝓧, μ)` differentiable in
+quadratic mean (DQM) at `θ` with score `ℓ_θ`. Then for any `h_n → h` and
+i.i.d. `X_i ∼ P_θ`:
 
-where $I_\theta = P_\theta\, \ell_\theta \ell_\theta^{\mathsf T}$ is the Fisher
-information matrix at $\theta$. The leading linear term is, up to scaling, a sum
-of i.i.d.\ mean-zero score contributions, while the deterministic quadratic term
-$-\tfrac12 \langle h, I_\theta h\rangle$ captures the local curvature of the model.
-This is the central structural result of locally asymptotically normal experiments:
-the local log-likelihood behaves asymptotically like that of a single Gaussian
-shift experiment with covariance $I_\theta$.
+  log ∏_i (p_{θ + h_n/√n}(X_i) / p_θ(X_i))
+    = (1/√n) ∑_i ⟨h, ℓ_θ(X_i)⟩  -  ½ ⟨h, I_θ h⟩  +  o_P(1),
 
-**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
-Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
-Chapter 7 (Local Asymptotic Normality), §7.2, Theorem 7.2 (the mean-zero score
-identity $P_\theta \ell_\theta = 0$ is stated within the same theorem).
+where `I_θ = P_θ ℓ_θ ℓ_θᵀ` is the Fisher information.
 
-**Proof formalization notes.** The argument proceeds through the $L^2(\mu)$
-convergence
-$\sqrt n\,(\sqrt{p_{\theta + h_n/\sqrt n}} - \sqrt{p_\theta})
-   \to \tfrac12 \langle h, \ell_\theta\rangle \sqrt{p_\theta}$
-— the defining condition of DQM — combined with a Taylor expansion
-$2\log(1 + W/2) = W - W^2/4 + o_P(W^2)$ applied to the Hellinger-type statistic
-$W_{n,i} := 2(\sqrt{p_{\theta + h_n/\sqrt n}/p_\theta}(X_i) - 1)$, and a
-mean–variance law-of-large-numbers / central-limit-theorem pair for the i.i.d.\
-sample $(W_{n,i})$. The file is organized into the corresponding steps: zero-mean
-score (`score_mean_zero`), the limit of $\sum_i \mathbb{E}[W_{n,i}]$ towards
-$-\tfrac14\langle h, I_\theta h\rangle$ (`sum_expect_W_tendsto`), variance control
-(`variance_tendsto_zero`), and the convergence-in-probability assembly
-(`sum_W_decomp`). The auxiliary statistic uses the convention that at $n = 0$ the
-scaling factor $(\sqrt 0)^{-1} = 0$ collapses the perturbation, which is harmless
-for `atTop` limits.
-
-**Bibliographic comments.** Local asymptotic normality originates with
-L. Le Cam, "Locally asymptotically normal families of distributions. Certain
-approximations to families of distributions and their use in the theory of
-estimation and testing hypotheses," *University of California Publications in
-Statistics*, vol. 3, pp. 37–98, 1960, where the LAN concept and the quadratic
-log-likelihood expansion were introduced. The differentiability-in-quadratic-mean
-formulation under which Theorem 7.2 is stated here is the modern presentation
-due to Le Cam and Hájek.
+The proof goes through the L²(μ)-convergence
+`√n (√p_{θ + h_n/√n} - √p_θ) → ½ ⟨h, ℓ_θ⟩ √p_θ` (the defining condition of DQM),
+a Taylor expansion of `2 log(1 + W/2) = W - W²/4 + o_P(W²)` applied to
+`W_i := 2 (√(p_{θ + h_n/√n}/p_θ)(X_i) - 1)`, and a mean-variance LLN/CLT
+pair for the i.i.d. sample `(W_i)`.
 -/
 
 open MeasureTheory ProbabilityTheory Asymptotics Filter Topology
@@ -83,9 +47,8 @@ variable {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ]
 
 /-! ## Setup
 
-Throughout this file we fix a model `M`, a base parameter `θ₀`, an equilibrium dominating
-measure `μ`, a score `ℓ`, and a converging sequence `h_n → h ∈ Θ`. Many statements take
-these as explicit arguments to keep dependencies visible. -/
+Fix a model `M`, a base parameter `θ₀`, a dominating measure `μ`, a score `ℓ`,
+and a convergent sequence `h_n → h ∈ Θ`. -/
 
 /-! ## Auxiliary Hellinger-type statistic
 
@@ -115,7 +78,7 @@ Proof idea (informal): DQM gives `√n(√p_{θ₀+h/√n} − √p_{θ₀}) →
 so by inner-product continuity `√n ∫ (√p_n − √p) √p dμ → ½ ⟨h, P_{θ₀} ℓ⟩`. The LHS is
 identically `0` (both densities integrate to 1), hence `P_{θ₀} ℓ = 0`. -/
 lemma score_mean_zero
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -124,8 +87,7 @@ lemma score_mean_zero
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (u : Θ) :
     ∫ x, ⟪u, ℓ x⟫ * M.density θ₀ x ∂μ = 0 :=
-  -- Supply `Score.score_mean_zero`'s Fisher-integrability and residual-`MemLp`
-  -- inputs using `dqm_fisher_integrable` and `dqm_residual_eventually_memLp`.
+  -- DQM supplies Fisher integrability and the residual `L²` bound.
   Score.score_mean_zero M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb hDQM
     (dqm_fisher_integrable M μ θ₀ ℓ hint hDQM u (fun t => hint_perturb t u))
     (dqm_residual_eventually_memLp M μ θ₀ ℓ hDQM u)
@@ -159,7 +121,7 @@ lemma sum_expect_W_tendsto
             * M.density θ₀ x ∂μ)
       Filter.atTop
       (𝓝 (- (1/4 : ℝ) * fisherInformation M μ θ₀ ℓ h h)) := by
-  -- Step D1: Algebraic identity `∫W_n · p dμ = -∫(√p_n - √p)² dμ`.
+  -- Algebraic identity `∫W_n · p dμ = -∫(√p_n - √p)² dμ`.
   have h_alg : ∀ n : ℕ,
       ∫ x, 2 * (Real.sqrt ((M.density (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x) /
                             M.density θ₀ x) - 1) * M.density θ₀ x ∂μ
@@ -223,7 +185,7 @@ lemma sum_expect_W_tendsto
                 - 2 * (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x
                         * M.sqrtDensity θ₀ x) := by ring
         rw [this, h_sqDensity_pn, h_sqDensity_p, h_sqrt_mul]
-      -- Now LHS = 2 · (√(pn/p) · p - p) = 2√(pn·p) - 2p.
+      -- The left side simplifies to `2√(pn·p) - 2p`.
       have h_LHS : 2 * (Real.sqrt (pn / p) - 1) * p
                  = 2 * Real.sqrt (pn * p) - 2 * p := by
         have : 2 * (Real.sqrt (pn / p) - 1) * p
@@ -292,7 +254,7 @@ lemma sum_expect_W_tendsto
             ring
       _ = -∫ x, (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x
                     - M.sqrtDensity θ₀ x) ^ 2 ∂μ := by ring
-  -- Step D2: L² norm-square limit. Apply the ForMathlib L² lemma.
+  -- Apply the L² norm-square limit.
   -- f_n := √n·(√p_n - √p), g := (1/2)⟨h, ℓ⟩√p. From dqm_sqrt_density_l2_convergence:
   -- ∫(f_n - g)² → 0. Hence ∫f_n² → ∫g² = (1/4)·I(h, h).
   have h_g_memLp : MemLp (fun x => (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) 2 μ := by
@@ -334,7 +296,7 @@ lemma sum_expect_W_tendsto
                         - M.sqrtDensity θ₀ x))
       (g := fun x => (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x)
       h_g_memLp (Filter.Eventually.of_forall h_fn_diff_memLp) h_l2_conv
-  -- Now compute ∫g² = (1/4) · I(h, h) = (1/4) · fisherInformation.
+  -- Compute `∫g² = (1/4) · I(h, h)`.
   have h_g_sq_eq :
       ∫ x, ((1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ
         = (1 / 4 : ℝ) * fisherInformation M μ θ₀ ℓ h h := by
@@ -588,7 +550,7 @@ gives `P_{θ₀} ⟨h, ℓ⟩ = 0`, this is the `(⋆)` clause of the informal o
   `∑_i W_{n,i} = (1/√n) ∑_i g(X_i) − ¼ P g² + o_P(1)`.
 
 The proof applies `tendstoInMeasure_of_tendsto_mean_of_tendsto_variance`
-to the centred sum `Y_n`, using
+with the centred sum as `Y_n`, using
   * `E_{P}[Y_n] = n · ∫ W_n · p dμ − √n · ∫ ⟨h, ℓ⟩ · p dμ → −¼ · I(h, h)`
     (Step 2 `sum_expect_W_tendsto` + Step 1 `score_mean_zero`),
   * `Var_{P}[Y_n] = n · Var[W_n(X_0) − (1/√n) g(X_0)]
@@ -597,7 +559,7 @@ The identical-distribution hypothesis transfers expectations/variances from P to
 integrals against `p · μ`; pairwise independence makes variance of the sum additive. -/
 lemma sum_W_decomp
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -784,7 +746,7 @@ lemma sum_W_decomp
     fun n i => h_transfer (W n) (hWn_aesm_ν n) i
   have hEg : ∀ i, ∫ ω, g (X i ω) ∂P = ∫ x, g x * p x ∂μ :=
     fun i => h_transfer g hg_aesm_ν i
-  -- Score zero mean (Step 1 wrapper) ⇒ ∫ g · p dμ = 0.
+  -- The score has zero mean, hence `∫ g · p dμ = 0`.
   have h_Pg_zero : ∫ x, g x * p x ∂μ = 0 :=
     score_mean_zero M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb hDQM h
   -- Integrability of `W n² · p` and `g² · p`.
@@ -900,7 +862,7 @@ lemma sum_W_decomp
           - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, g (X i ω)) ∂P)
       Filter.atTop
       (𝓝 (-(1/4 : ℝ) * fisherInformation M μ θ₀ ℓ h h)) := by
-    -- Step D1: expand the integral of the sum.
+    -- Expand the integral of the sum.
     have h_expand : ∀ n : ℕ, ∫ ω,
         ((∑ i ∈ Finset.range n, W n (X i ω))
           - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, g (X i ω)) ∂P
@@ -921,7 +883,7 @@ lemma sum_W_decomp
             (MeasureTheory.integrable_finset_sum _ (fun i _ => hWnX_int n i))
             ((MeasureTheory.integrable_finset_sum _ (fun i _ => hgX_int i)).const_mul _),
           h_sumW, MeasureTheory.integral_const_mul, h_sumg]
-      -- Now: n·∫W·p - (√n)⁻¹·(n·∫g·p) = n·∫W·p - √n·∫g·p.
+      -- Simplify `n·∫W·p - (√n)⁻¹·(n·∫g·p)` to `n·∫W·p - √n·∫g·p`.
       have h_inv_mul : (Real.sqrt n)⁻¹ * ((n : ℝ) * ∫ x, g x * p x ∂μ)
                      = Real.sqrt n * ∫ x, g x * p x ∂μ := by
         rcases Nat.eq_zero_or_pos n with rfl | hn_pos
@@ -935,13 +897,13 @@ lemma sum_W_decomp
             field_simp; linarith [h_sqrt_sq]
           rw [← mul_assoc, h_key]
       linarith [h_inv_mul]
-    -- Step D2: score zero mean eliminates the g term.
+    -- Score zero mean eliminates the g term.
     have h_expand' : ∀ n, ∫ ω,
         ((∑ i ∈ Finset.range n, W n (X i ω))
           - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, g (X i ω)) ∂P
         = n * ∫ x, W n x * p x ∂μ := by
       intro n; rw [h_expand n, h_Pg_zero]; ring
-    -- Step D3: rewrite target via `sum_expect_W_tendsto`.
+    -- Rewrite the target via `sum_expect_W_tendsto`.
     have h_step2 := sum_expect_W_tendsto M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb
       hDQM h_fisher_cont h h_n hconv
     refine h_step2.congr fun n => ?_
@@ -960,10 +922,10 @@ lemma sum_W_decomp
       (Filter.Eventually.of_forall fun n => ProbabilityTheory.variance_nonneg _ _)
       ?_
     refine Filter.eventually_atTop.mpr ⟨1, fun n hn => ?_⟩
-    -- Step V1: variance Y_n = variance (Σᵢ Z_n ∘ X_i) via hY_eq.
+    -- The variance of Y_n equals the variance of (Σᵢ Z_n ∘ X_i) via hY_eq.
     rw [ProbabilityTheory.variance_congr
           (MeasureTheory.ae_of_all P fun ω => hY_eq n ω)]
-    -- Step V2: variance_sum (pairwise independent).
+    -- Apply variance_sum to the pairwise independent summands.
     have h_Zn_indep : (↑(Finset.range n) : Set ℕ).Pairwise
         fun i j => ProbabilityTheory.IndepFun (fun ω => Z n (X i ω))
                                               (fun ω => Z n (X j ω)) P := by
@@ -976,14 +938,14 @@ lemma sum_W_decomp
     rw [h_sum_fn,
         ProbabilityTheory.IndepFun.variance_sum
           (fun i _ => hZnX_memLp n i) h_Zn_indep]
-    -- Step V3: all summands have same variance (IdentDistrib).
+    -- All summands have the same variance by identical distribution.
     have h_var_same : ∀ i ∈ Finset.range n,
         ProbabilityTheory.variance (fun ω => Z n (X i ω)) P
           = ProbabilityTheory.variance (fun ω => Z n (X 0 ω)) P := by
       intros i _
       exact ((hident i).comp (hZ_meas n)).variance_eq
     rw [Finset.sum_congr rfl h_var_same, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-    -- Step V4: variance ≤ E[X²] (using IsProbabilityMeasure P).
+    -- Bound the variance by E[X²] using IsProbabilityMeasure P.
     have h_aesm_Z0 : AEStronglyMeasurable (fun ω => Z n (X 0 ω)) P :=
       ((hZ_meas n).comp (hX_meas 0)).aestronglyMeasurable
     have h_var_le :
@@ -994,18 +956,18 @@ lemma sum_W_decomp
     have h_mul_le : (n : ℝ) * ProbabilityTheory.variance (fun ω => Z n (X 0 ω)) P
                   ≤ (n : ℝ) * ∫ ω, Z n (X 0 ω) ^ 2 ∂P :=
       mul_le_mul_of_nonneg_left h_var_le (Nat.cast_nonneg n)
-    -- Step V5: transfer E_P[(Z_n ∘ X_0)²] = ∫ Z_n² · p dμ.
+    -- Transfer E_P[(Z_n ∘ X_0)²] = ∫ Z_n² · p dμ.
     have h_int_eq : ∫ ω, Z n (X 0 ω) ^ 2 ∂P
                  = ∫ x, Z n x ^ 2 * p x ∂μ :=
       h_transfer (fun x => Z n x ^ 2)
         ((hZ_meas n).pow_const 2).aestronglyMeasurable 0
     rw [h_int_eq] at h_mul_le
-    -- Step V6: pull n inside the integral.
+    -- Pull n inside the integral.
     have h_pull : (n : ℝ) * ∫ x, Z n x ^ 2 * p x ∂μ
                 = ∫ x, (n : ℝ) * (Z n x ^ 2 * p x) ∂μ :=
       (MeasureTheory.integral_const_mul _ _).symm
     rw [h_pull] at h_mul_le
-    -- Step V7: pointwise identity for n ≥ 1:
+    -- Pointwise identity for n ≥ 1:
     --   n · (Z_n x)² · p x = (√n · W_n x - g x)² · p x.
     have hn_pos_real : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have h_sqrt_sq : Real.sqrt n * Real.sqrt n = (n : ℝ) :=
@@ -1048,13 +1010,13 @@ lemma sum_W_decomp
     exact MeasureTheory.integral_congr_ae (MeasureTheory.ae_of_all μ h_integrand_eq)
   exact tendstoInMeasure_of_tendsto_mean_of_tendsto_variance h_mem h_mean h_var
 
-/-! ## Step 5 — Taylor expansion of `log` (existence wrapper)
+/-! ## Step 5 — Taylor expansion of `log`
 
 For all `x > -1`, `log(1+x) = x − ½ x² + x² R(2x)` with one **global** `R` that
-satisfies `R(u) → 0` as `u → 0`. This quantifier order supplies a single remainder
-function valid simultaneously for every `x`. The concrete choice
-`R = ForMathlib.logTaylorRemainder` is constructed in `ForMathlib/LogTaylor.lean`,
-and this lemma packages its existential interface. -/
+satisfies `R(u) → 0` as `u → 0`. Here
+`R = ForMathlib.logTaylorRemainder`. The same global remainder function applies
+to every `x`, which is needed to pass from `max |W_{n,i}| → 0` to
+`max |R(W_{n,i})| → 0`. -/
 lemma log_one_add_taylor :
     ∃ R : ℝ → ℝ, Filter.Tendsto R (𝓝 0) (𝓝 0) ∧
       ∀ x : ℝ, -1 < x →
@@ -1065,9 +1027,9 @@ lemma log_one_add_taylor :
 
 /-! ## Step-3 L¹ corollary — `∫ |n·W_n² − g²| · p dμ → 0`
 
-This corollary of `variance_tendsto_zero` supplies the two Δ-hypotheses of
-`max_abs_W_tendsto_zero` and controls the quadratic error used below. The
-argument is Cauchy–Schwarz on the factorisation
+This corollary of `variance_tendsto_zero` supplies the two Δ-hypotheses
+of `max_abs_W_tendsto_zero` and the primary estimate for the Markov bound. The
+core argument is Cauchy–Schwarz on the factorisation
 
   `|n · W_n² − g²| = |√n · W_n − g| · |√n · W_n + g|`
 
@@ -1075,8 +1037,7 @@ followed by bounding the second factor using
 `(√n W_n + g)² ≤ 2(√n W_n − g)² + 8 g²` and integrating. -/
 
 omit [MeasurableSpace Θ] [OpensMeasurableSpace Θ] [SecondCountableTopology Θ] in
-/-- Pointwise bound `W_n(x)² · p(x) ≤ 4 · (√p_n − √p)²`, re-exported from
-`sum_W_decomp`'s internal proof for reuse across Step 6a/6b. -/
+/-- Pointwise bound `W_n(x)² · p(x) ≤ 4 · (√p_n − √p)²`. -/
 lemma auxStatistic_sq_mul_density_le
     (M : ParametricFamily 𝓧 Θ) (θ₀ : Θ) (h_n : ℕ → Θ) (n : ℕ) (x : 𝓧) :
     auxStatistic M θ₀ h_n n x ^ 2 * M.density θ₀ x
@@ -1114,7 +1075,7 @@ lemma auxStatistic_sq_mul_density_le
 omit [SecondCountableTopology Θ] in
 /-- Integrability of `|n · W_n² − g²| · p` for each `n`. -/
 lemma delta_l1_integrable
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -1191,7 +1152,7 @@ the factorisation `n · W_n² − g² = (√n · W_n − g)(√n · W_n + g)`, w
 factor's L² norm going to 0 by Step 3 (`variance_tendsto_zero`) and the second
 factor's L² norm eventually bounded via `(a+b)² ≤ 2(a−b)² + 8b²`. -/
 lemma delta_l1_tendsto
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -1547,12 +1508,12 @@ where `Δ_{n,i} := n · W_n(X_i)² − g(X_i)²`. Then:
   * `(1/n) Σ g²(X_i) →ₚ P g²` by the strong law of large numbers applied
     to the iid sequence `g² ∘ X_i` (in-probability follows from a.s.),
     using `dqm_fisher_integrable` for `g² · p ∈ L¹(μ) ⇒ g² ∘ X_i ∈ L¹(ℙ)`.
-  * `(1/n) Σ Δ_{n,i} →ₚ 0` from the `L¹` bound supplied by `delta_l1_tendsto`
-    and `tendstoInMeasure_of_tendsto_eLpNorm` at exponent `1`.
-The two convergences are combined by an `ε/2` estimate. -/
+  * `(1/n) Σ Δ_{n,i} →ₚ 0` by Markov, via
+    `E|Δ_{n,1}| = ∫ |n · W_n² − g²| · p dμ → 0` (a Step-3 corollary, proved
+    by Cauchy–Schwarz on `|n W_n² − g²| ≤ |√n W_n − g| · |√n W_n + g|`). -/
 lemma sum_W_sq_tendsto_to_Pg_sq
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -1918,7 +1879,7 @@ lemma max_abs_W_tendsto_zero
     ∫ x in {y | (n : ℝ) * ε ^ 2 / 2 < g y ^ 2}, g x ^ 2 * p x ∂μ with hA₁_def
   set A₂ : ℕ → ℝ := fun n =>
     ∫ x, |(n : ℝ) * (W n x) ^ 2 - g x ^ 2| * p x ∂μ with hA₂_def
-  -- Step D1: A₁ → 0 by DCT on the `g²`-tail (via `tendsto_setIntegral_tail_of_integrable`).
+  -- A₁ → 0 by DCT on the `g²`-tail (via `tendsto_setIntegral_tail_of_integrable`).
   have hA₁_tendsto : Filter.Tendsto A₁ Filter.atTop (𝓝 0) := by
     have h_threshold_tendsto :
         Filter.Tendsto (fun n : ℕ => (n : ℝ) * ε ^ 2 / 2) Filter.atTop Filter.atTop := by
@@ -1930,9 +1891,9 @@ lemma max_abs_W_tendsto_zero
       simpa [mul_div_assoc] using h_scaled
     exact ForMathlib.tendsto_setIntegral_tail_of_integrable
       hg2p_int (hg_meas.pow_const 2) h_threshold_tendsto
-  -- Step D2: A₂ → 0 by hypothesis.
+  -- A₂ → 0 by hypothesis.
   have hA₂_tendsto : Filter.Tendsto A₂ Filter.atTop (𝓝 0) := h_delta_l1
-  -- Step D3: combined upper bound → 0.
+  -- The combined upper bound tends to zero.
   have h_upper_tendsto :
       Filter.Tendsto (fun n : ℕ => (2 / ε ^ 2) * (A₁ n + A₂ n))
         Filter.atTop (𝓝 0) := by
@@ -2034,7 +1995,7 @@ then identify `n · ν(…) = ENNReal.ofReal(n · ∫_{|W_n|>ε} p dμ) → 0` v
 single-index lemma. -/
 lemma max_abs_W_tendsto_zero_iid
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (hint : Integrable (M.density θ₀) μ)
     (hint_perturb : ∀ t : ℝ, ∀ u : Θ, Integrable (M.density (θ₀ + t • u)) μ)
@@ -2171,7 +2132,6 @@ theorem LAN_expansion_iii
     {k : ℕ}
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
-    [SigmaFinite μ]
     (θ₀ : EuclideanSpace ℝ (Fin k))
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
@@ -2201,8 +2161,7 @@ theorem LAN_expansion_iii
   set I : ℝ := fisherInformation M μ θ₀ ℓ h h with hI_def
   set R : ℝ → ℝ := ForMathlib.logTaylorRemainder with hR_def
   have hp_nn : ∀ x, 0 ≤ M.density θ₀ x := M.density_nonneg θ₀
-  -- Fisher quadratic form is continuous at 0 — a DQM consequence, discharged
-  -- via `dqm_fisher_cont` instead of being taken as a provider hypothesis.
+  -- Fisher quadratic-form continuity at zero follows from DQM via `dqm_fisher_cont`.
   have h_fisher_cont :
       Filter.Tendsto
         (fun v : EuclideanSpace ℝ (Fin k) =>
@@ -2374,9 +2333,8 @@ theorem LAN_expansion_iii
     have h_zero : (0 : ℝ) + 0 + 0 = 0 := by ring
     rw [show (0 : ℝ) = (0 : ℝ) + 0 + 0 from by ring]
     exact h123
-  -- Identify target with combined via the pointwise Taylor identity.
-  -- `log_density_ratio_taylor` now holds universally (no positivity needed), so
-  -- the two `TendstoInMeasure` targets agree pointwise — congruence is trivial.
+  -- Identify the target using the pointwise Taylor identity, which holds without
+  -- a separate positivity assumption.
   refine h_combined.congr (fun n => ?_) (Filter.Eventually.of_forall fun _ => rfl)
   filter_upwards with ω
   -- Pointwise Taylor identity for each summand.
@@ -2410,7 +2368,7 @@ The iid-sample conclusion (clause (iii), the LAN expansion proper) is
 `LAN_expansion_iii` above, on a separately-carried probability space `(Ω, P)`
 with `X : ℕ → Ω → 𝓧` iid under `P_{θ₀}`. -/
 theorem LAN_expansion_score_fisher_part
-    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
+    (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧)
     (θ₀ : Θ) (ℓ : 𝓧 → Θ) (hℓ : Measurable ℓ)
     (h_one : ∫ x, M.density θ₀ x ∂μ = 1)
     (hint : Integrable (M.density θ₀) μ)
@@ -2442,7 +2400,7 @@ van der Vaart, *Asymptotic Statistics*, Theorem 7.2 in full. Conclusions:
      = (1/√n) ∑_{i<n} ⟨h, ℓ(X_i)⟩  − (1/2) ⟨h, I_{θ₀} h⟩  + o_{P_{θ₀}}(1)`.
 
 Specialised to `Θ = EuclideanSpace ℝ (Fin k)` to match vdV's finite-dimensional
-setting (via `dqm_fisher_cont` discharge inside `LAN_expansion_iii`).
+setting; `dqm_fisher_cont` supplies continuity of Fisher information.
 
 **Only vdV-structural hypotheses remain**:
 
@@ -2452,21 +2410,28 @@ setting (via `dqm_fisher_cont` discharge inside `LAN_expansion_iii`).
 * `hconv : h_n → h` — the parameter perturbation sequence converges.
 * iid sample setup (`X`, `hX_meas`, `hindep`, `hident`, `hlaw`).
 
-No Fisher-continuity provider (DQM consequence via `dqm_fisher_cont`), no
-positivity provider (the Taylor identity in `log_density_ratio_taylor` holds
-universally under Lean's `log 0 = 0` convention). -/
+Fisher continuity follows from DQM via `dqm_fisher_cont`. The Taylor identity
+in `log_density_ratio_taylor` requires no positivity assumption because it
+holds universally under Lean's `log 0 = 0` convention. -/
 theorem LAN_expansion
     {k : ℕ}
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
-    [SigmaFinite μ]
     (θ₀ : EuclideanSpace ℝ (Fin k))
-    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
+    -- LEAN-ONLY: measurability of the score representative.
+    (hℓ : Measurable ℓ)
+    -- USER-INPUT: normalized density family and differentiability in quadratic
+    -- mean at `θ₀`; vdV Theorem 7.2.
     (hPDF : IsPDFOf M μ)
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
+    -- USER-INPUT: convergence of the local parameter directions; vdV Theorem 7.2.
     (hconv : Filter.Tendsto h_n Filter.atTop (𝓝 h))
-    (X : ℕ → Ω → 𝓧) (hX_meas : ∀ i, Measurable (X i))
+    (X : ℕ → Ω → 𝓧)
+    -- LEAN-ONLY: measurability of each sample coordinate.
+    (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT: iid observations from the base law `P_{θ₀}`; vdV Theorem 7.2.
     (hindep : Pairwise fun i j => ProbabilityTheory.IndepFun (X i) (X j) P)
     (hident : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) P P)
     (hlaw : Measure.map (X 0) P

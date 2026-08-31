@@ -5,14 +5,15 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.LocalizedClass
 import StatLean.AsymptoticStatistics.ForMathlib.SqrtLogProduct
 
 /-!
-# Chaining assembly for vdV Lemma 19.34
+# Chaining proof of vdV Lemma 19.34
 
-This file performs the **chaining assembly** at the heart of van der Vaart's
+This file formalizes the chaining argument at the heart of van der Vaart's
 proof of Lemma 19.34 (*Asymptotic Statistics*, p.286-288): given a
 `NestedBracketPartition` of a function class `F` (the combinatorial object
-built in `NestedPartition.lean`), it produces the genuine chaining bound on
-`∫⁻ supNormOver F (𝔾ₙ)` with a **universal** constant, in the exact existential
-shape `hChainBound_outer` consumed by `DonskerBracketing.lean`.
+built in `NestedPartition.lean`), it produces the chaining bound with a
+**universal** constant. The main theorem
+`localizedChainBound_of_finiteEntropy` is stated over the localized difference
+class.
 
 ## The book's argument (vdV p.287)
 
@@ -25,8 +26,8 @@ Fix levels `q₀ ≤ q`. For `f ∈ F`, with `π_q f` the level-`q` representati
   (the first level whose oscillation crosses the threshold `√n·a_q` is exactly
   `q`),
 
-where `a_q = a(2^{−(q−q₀)}δ) = 2^{−(q−q₀)}δ / √(log N_q)` (the **offset** dyadic
-scale: the head level `q₀` sits at the coarsest scale `2^{−0}δ = δ`,
+where `a_q = a(2^{−(q−q₀)}δ) = 2^{−(q−q₀)}δ / √(log N_q)`. The head level
+`q₀` sits at the coarsest scale `2^{−0}δ = δ`,
 level `q₀+k` at `2^{−k}δ`, matching vdV's `2^{−q₀} ≈ δ`). The book's construction
 ensures `A_{q₀} f = 1` pointwise. Then, pointwise in `x`,
 
@@ -48,15 +49,6 @@ f − π_{q₀}f = Σ_{q>q₀} (f − π_q f)·B_q f + Σ_{q>q₀} (π_q f − �
 Composing with `dyadic_sum_le_bracketingEntropyIntegral` reassembles the
 dyadic entropy series into `J_{[]}(δ, F, L²(P))`.
 
-## Layout
-
-* `jumpFamily`, `jumpFamily_card_le`, `jumpFamily_measurable`, and
-  `jumpFamily_L2_le` extract the jump class from a `NestedBracketPartition`.
-* `chainBound_of_nestedPartition` is the assembly theorem, producing the
-  `hChainBound_outer` existential.
-* The bridging lemma `hChainBound_outer_of_covers` wires the assembly to
-  `nestedBracketPartition_of_covers` + the dyadic-entropy comparison.
-
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6,
 p.286-288.
 -/
@@ -68,13 +60,13 @@ open scoped ENNReal Topology
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-! ## L2 — Jump-class extraction from a nested bracketing partition
+/-! ## Jump-class extraction from a nested bracketing partition
 
 The chaining argument's A-series is controlled by the per-level **jump classes**
 `{π_q f − π_{q−1}(parent f)}`. We extract the data and bounds the per-level
 maximal inequality needs: a parent map, the jump family itself, its cardinality
 bookkeeping, measurability under a measurability hypothesis on the representatives,
-and the key `L²` bound `‖jump‖_{P,2} ≲ 2^{−(q−q₀)}` at the offset scale. -/
+and the key `L²` bound `‖jump‖_{P,2} ≲ 2^{−(q−q₀)}`. -/
 
 variable {F : Set (Ω → ℝ)} {P : Measure Ω} {q₀ : ℕ} {C : ℝ}
 
@@ -101,8 +93,8 @@ cell `q i`, obtained by iterating the one-step `parent` map `q − p` times. At
 This is the book's `Δ_p f` reading: for `f ∈ cell q i`, the level-`p` ancestor cell
 is the cell of `f` at level `p`, so the per-`f` truncation indicators `A_q f` / `B_q f`
 gate on `Δ_p (ancestor)` rather than on *all* cells `∀ j` (vdV pp.286-288). Defined
-by recursion on `q` (with the dependent `Fin (B.Nq p)` return type annotated through
-`Fin.cast` on the boundary branches). -/
+by recursion on `q`, with `Fin.cast` handling the boundary branches of the
+dependent return type `Fin (B.Nq p)`. -/
 noncomputable def NestedBracketPartition.ancestor
     (B : NestedBracketPartition F P q₀ C) :
     ∀ {q : ℕ}, q₀ ≤ q → Fin (B.Nq q) → ∀ p, q₀ ≤ p → p ≤ q → Fin (B.Nq p)
@@ -233,13 +225,13 @@ lemma NestedBracketPartition.jump_abs_le
     B.π_mem hq (B.parent hq i)
   exact B.diam hq (B.parent hq i) _ hmem_succ _ hmem_par x
 
-/-- **The `L²` bound `‖jump‖_{P,2} ≤ C·2^{−(q − q₀)}`** (offset scale).
+/-- **Key `L²` bound: `‖jump‖_{P,2} ≤ C·2^{−(q − q₀)}`.**
 By `jump_abs_le` the jump is pointwise dominated by `Δ q (parent i)`, so by
 monotonicity of `eLpNorm` and the partition's `Δ_L2_le` field its `L²` size is
 at most `C·2^{−(q − q₀)}` — the offset-scale form that lands the A-series jump at
 series-offset `k = q − q₀` on the dyadic-series term `(1/2)^k·δ` (the book absorbs
 the constant factor into the universal constant). The conclusion's scale tracks
-the structure field `Δ_L2_le`, which moved to the offset scale `(1/2)^(q−q₀)`. -/
+the structure field `Δ_L2_le`. -/
 lemma NestedBracketPartition.jump_L2_le
     (B : NestedBracketPartition F P q₀ C) {q : ℕ} (hq : q₀ ≤ q)
     (i : Fin (B.Nq (q + 1))) :
@@ -249,22 +241,21 @@ lemma NestedBracketPartition.jump_L2_le
   rw [Real.norm_eq_abs]
   exact B.jump_abs_le hq i x
 
-/-! ## L7 — The chaining assembly theorem
+/-! ## The chaining theorem
 
-We assemble the genuine chaining bound on `∫⁻ supNormOver F (𝔾ₙ)` from a
-`NestedBracketPartition`, in the exact `hChainBound_outer` existential shape.
+The chaining bound on `∫⁻ supNormOver F (𝔾ₙ)` follows from a
+`NestedBracketPartition`, in the `hChainBound_outer` existential form.
 
-The mechanical glue (envelope threading, indicator algebra, dyadic summation
-via L5) is combined with three substantive subclaims from the book's p.287–288
-argument:
+The proof combines envelope bounds, indicator algebra, and dyadic summation
+with three substantive parts of the argument on pp.287–288:
 
 * `chain_pointwise_decomposition` — the pointwise telescope identity (verified
   numerically; algebraic);
 * `chain_B_series_bound` — the B-series maximal-inequality bound;
 * `chain_A_series_bound` — the A-series (jump-class) maximal-inequality bound.
 
-These three plus the head-term bound `finite_sup_bound` and the
-dyadic-entropy comparison (`dyadic_sum_le_bracketingEntropyIntegral`, L5) compose
+Together with the head-term bound `finite_sup_bound` and the
+dyadic-entropy comparison `dyadic_sum_le_bracketingEntropyIntegral` compose
 into `chainBound_of_nestedPartition`. -/
 
 /-- **Per-`ξ` pointwise empirical-process bound for a class dominated by an integrable
@@ -273,7 +264,7 @@ envelope `Ψ`.** The pointwise (non-integrated) heart of
 process is bounded by the EXPLICIT measurable function
 `√n·(empAvg Ψ + ∫⁻ Ψ)`.  Exposed separately so the F→F̃ lift can dominate the
 (non-measurable) excess sup by this measurable function and split the `lintegral`
-via the measurability-free lemma `lintegral_add_right'`. -/
+via `lintegral_add_right'`, without requiring measurability of the excess supremum. -/
 lemma supNormProcess_dominated_pointwise_bound
     {Ξ : Type*} [MeasurableSpace Ξ]
     {X : ℕ → Ξ → Ω}
@@ -339,8 +330,10 @@ lemma supNormProcess_dominated_pointwise_bound
 envelope `Ψ`.** Generalises `tight_envelope_truncation_bound` (which is the special
 case `Ψ = |Φ|·1_A`, `𝒢 = {f·1_A}`): if every member of `𝒢` is pointwise dominated by
 the measurable nonneg `Ψ`, then the integrated sup of the empirical process over `𝒢`
-is at most `4√n·∫⁻ Ψ`.  Same `signed-average triangle + IdentDistrib-Fubini` mechanism
-as Sub-aux C, with `|g x| ≤ Ψ x` replacing the indicator-envelope bound. -/
+is at most `4√n·∫⁻ Ψ`.  This uses the same
+`signed-average triangle + IdentDistrib-Fubini` mechanism as
+`tight_envelope_truncation_bound`, with `|g x| ≤ Ψ x` replacing the
+indicator-envelope bound. -/
 lemma supNormProcess_dominated_integral_bound
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {X : ℕ → Ξ → Ω}
@@ -521,8 +514,8 @@ section Assembly
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
 
 /-- **Truncation threshold of the chaining argument** at level `q`, scale `δ`,
-sample size `n`: `a_q = 2^{−(q − q₀)}·δ / (1 + √(log(1 + N_{q+1})))` (the **offset**
-scale, with the regularizer cardinality at the *next* level `N_{q+1}`). The
+sample size `n`: `a_q = 2^{−(q − q₀)}·δ / (1 + √(log(1 + N_{q+1})))`, with
+the regularizer cardinality at the next level `N_{q+1}`. The
 dyadic factor is `(1/2)^(q − q₀)` so that the head level `q = q₀` sits at the
 coarsest scale `δ` (matching vdV's *"fix `q₀` such that `4δ ≤ 2^{−q₀} ≤ 8δ`"*,
 p.287), and level `q₀ + k` at `(1/2)^k·δ`, aligned with the dyadic-series term at
@@ -607,7 +600,7 @@ The level-`(m+1)` jump function `B.jump hm i = π_{m+1} i − π_m (parent i)`,
 multiplied by the real `0/1` indicator of the A-series event
 `chainA B δ n m (B.parent hm i)` for the **level-`m` parent cell** of the
 level-`(m+1)` jump index `i` (the chain along `f`'s own ancestor cells is still
-"small" through level `m`; `chainA` now reads a per-`f` cell index, so the gate uses
+"small" through level `m`; `chainA` reads a per-`f` cell index, so the gate uses
 the parent cell that both `π_{m+1} i` and `π_m (parent i)` belong to). On the A-set
 the jump is pointwise `L∞`-bounded by the parent oscillation `Δ_m ≤ √n · a_m` (via
 `jump_abs_le` plus the A-indicator constraint `Δ_m (parent) ≤ √n · a_m`), so the gated
@@ -652,8 +645,7 @@ f x − π_{q₀}f x = (f x − π_{q₁}f x) + Σ_{q=q₀+1}^{q₁} (π_q f x �
 ```
 
 is the algebraic telescope: the single B-term `(f − π_{q₁})` at the break, plus
-the A-telescope of chain links up to `q₁`, reassembles `f − π_{q₀}`. Verified
-numerically (Python trial, all break levels and the "all small" case OK).
+the A-telescope of chain links up to `q₁`, reassembles `f − π_{q₀}`.
 
 This finite form is exactly what the chaining bound consumes pointwise (the two
 series in the displayed decomposition are finite because, for each `x`, either
@@ -687,8 +679,8 @@ The chaining decomposition writes the empirical-process evaluator `f ↦ 𝔾ₙ
 as a finite sum of pieces (head + telescope links + remainder). Taking
 `supNormOver F` of a sum is sub-additive because `supNormOver` is a supremum of
 `ENNReal.ofReal |·|` and both `|·|` (triangle) and `ENNReal.ofReal` are
-sub-additive. The binary and finite-sum lemmas below let the chaining assembly
-pass from the algebraic telescope to separate supremum bounds for its pieces. -/
+sub-additive. These two glue lemmas are theorem-agnostic facts about
+`supNormOver`. -/
 
 omit [MeasurableSpace Ω] in
 /-- **Sub-additivity of `supNormOver` over a binary sum.**
@@ -708,7 +700,7 @@ lemma supNormOver_add_le (F : Set (Ω → ℝ)) (z₁ z₂ : (Ω → ℝ) → �
 omit [MeasurableSpace Ω] in
 /-- **Sub-additivity of `supNormOver` over a finite sum.**
 `supNormOver F (fun f => ∑ i ∈ s, z i f) ≤ ∑ i ∈ s, supNormOver F (z i)`.
-This is `supNormOver_add_le` iterated over the index `Finset`. -/
+Iterated `supNormOver_add_le` over the index `Finset`. -/
 lemma supNormOver_sum_le {ι : Type*} (F : Set (Ω → ℝ)) (s : Finset ι)
     (z : ι → (Ω → ℝ) → ℝ) :
     supNormOver F (fun f => ∑ i ∈ s, z i f)
@@ -725,7 +717,7 @@ lemma supNormOver_sum_le {ι : Type*} (F : Set (Ω → ℝ)) (s : Finset ι)
       refine le_trans (supNormOver_add_le F (z a) (fun f => ∑ i ∈ s, z i f)) ?_
       exact add_le_add le_rfl ih
 
-/-! ### Chaining assembly bound in dyadic-series form (vdV p.287-288)
+/-! ### Chaining bound in dyadic-series form (vdV p.287-288)
 
 The genuine chaining bound of vdV Lemma 19.34, before substituting the dyadic
 entropy series by the bracketing entropy integral. From a `NestedBracketPartition`
@@ -736,16 +728,15 @@ scale `δ`, and the sample size `n`) with
 ∫⁻ supNormOver F (𝔾ₙ) ≤ c·(dyadic entropy series at δ) + c·√n·(envelope tail at δ√n).
 ```
 
-The universal constant is placed *outside* the `∀ Φ ∀ δ ∀ n` quantifiers, exactly
-as the downstream `hChainBound_outer` requires. The right-hand side is the sum of
-the book's three contributions:
+The universal constant is placed *outside* the `∀ Φ ∀ δ ∀ n` quantifiers. The
+right-hand side is the sum of the book's three contributions:
 
 * the **B-series** `Σ_q (f − π_q f)·B_q f`, bounded by `tight_chain_level_bound`
   (per-level finite-class bound on `{f − π_q f}`: cardinality `N_q`, sup-norm
   `≤ √n·a_q`, `L²`-norm `≤ 2·2^{−(q−q₀)}δ` offset scale)
   + `tight_envelope_truncation_bound`;
 * the **A-series** `Σ_q (π_q f − π_{q−1}f)·A_{q−1}f`, bounded via
-  `tight_chain_level_bound` on the **jump classes** `{π_q f − π_{q−1}f}` (L2:
+  `tight_chain_level_bound` on the **jump classes** `{π_q f − π_{q−1}f}` (using
   `jump_card_le`, `jump_measurable`, `jump_L2_le`) + `tight_chain_telescope_bound`;
 * the **head term** `π_{q₀}f` over `≤ N_{q₀}` functions (`finite_sup_bound`).
 
@@ -757,10 +748,9 @@ lemmas below — a pointwise-telescope/`supNormOver`/integrate **split**
 integral contributions, and three **dyadic-series bounds** (`chain_head_dyadic_bound`,
 `chain_B_dyadic_bound`, `chain_A_dyadic_bound`) bounding each contribution by a
 universal multiple of the dyadic entropy series (the head/A pieces) or the series
-plus the envelope tail (the B piece). This theorem is the mechanical assembly:
-combine the four constants and add up the contributions. The dyadic→`J`
-substitution and the `n = 0` edge live one layer up
-(`hChainBound_outer_of_nestedPartition`). -/
+plus the envelope tail (the B piece). Combining the four constants gives the
+stated bound. The dyadic-to-`J` comparison and the `n = 0` case are handled by
+`hChainBound_outer_of_nestedPartition`. -/
 
 /-- **Per-level finite-sup contribution at level `m`** (envelope-truncated).
 `∫⁻ ξ, ⨆ i, |𝔾ₙ(truncRep i)| ∂μ` — the expected supremum of the empirical process
@@ -831,7 +821,7 @@ the full dyadic entropy series. The `coverCard → bracketingNumber` comparison 
 
 The head term is the only one of the three that reads vdV's two standing
 parameters directly: `hF_L2` is the standing `‖f‖_{P,2} ≤ δ` (vdV's `Pf² ≤ δ²`,
-p.286 — a standing assumption carried by the caller), used to bound
+p.286), used to bound
 `‖π_{q₀}f‖_{P,2} ≤ ‖f‖ + ‖Δ_{q₀}‖`; `hq₀` is vdV's *"fix an integer `q₀` such that
 `4δ ≤ 2^{−q₀} ≤ 8δ`"* (p.287), used to put the truncation threshold `√n·a_{q₀}` at
 the right dyadic scale. `hF_ne` (`F.Nonempty`) supplies the `[Nonempty (Fin (B.Nq q₀))]`
@@ -882,7 +872,7 @@ theorem chain_head_dyadic_bound
   have hbnd := hb g hg_meas (ε := δ) hδ n hn ?_ ?_
   · -- Bridge `levelRepSup` (⨆ ofReal|·|) to the leaf LHS (ofReal (⨆ |·|)),
     -- then bound the leaf RHS by the `q = 0` term of the dyadic series.
-    -- Step A: `levelRepSup = ∫⁻ ⨆ ofReal|𝔾ₙ(g i)|` (defeq via `hg_def`/`truncRep`),
+    -- Here `levelRepSup = ∫⁻ ⨆ ofReal|𝔾ₙ(g i)|` by `hg_def` and `truncRep`,
     -- and `⨆ ofReal|·| ≤ ofReal(⨆ |·|)` pointwise, giving `levelRepSup ≤ hbnd LHS`.
     have hLHS : levelRepSup B μ X Φ δ n q₀
         ≤ ∫⁻ ω : Ξ,
@@ -894,7 +884,7 @@ theorem chain_head_dyadic_bound
         (fun i : Fin (B.Nq q₀) =>
           |empiricalProcess P n (fun j : Fin n => X j.val ξ) (g i)|)) i
     refine hLHS.trans (hbnd.trans ?_)
-    -- Step B: bound the entropy weight `√log(1 + N_{q₀})` by `entropyIntegrand δ`.
+    -- Bound the entropy weight `√log(1 + N_{q₀})` by `entropyIntegrand δ`.
     -- `(N_{q₀} : ℕ∞) ≤ coverCard q₀ ≤ bracketingNumber δ`, monotone through entropyWeight.
     have hweight_le :
         ENNReal.ofReal (Real.sqrt (Real.log (1 + (B.Nq q₀ : ℝ))))
@@ -911,7 +901,7 @@ theorem chain_head_dyadic_bound
         _ ≤ entropyWeight (bracketingNumber δ F 2 P) :=
             entropyWeight_mono (le_trans hcard_le hcover_le)
         _ = entropyIntegrand δ F P := rfl
-    -- Step C: the leaf RHS `ofReal(K·δ·√log(1+N_{q₀}))` is below the `q = 0` series term
+    -- The right-hand side `ofReal(K·δ·√log(1+N_{q₀}))` is below the `q = 0` series term
     -- `ofReal(δ)·entropyIntegrand(δ)` times `ofReal(2K)`, hence below the whole series.
     have hcard_eq : (Fintype.card (Fin (B.Nq q₀)) : ℝ) = (B.Nq q₀ : ℝ) := by
       rw [hcard]
@@ -1027,7 +1017,7 @@ empirical process over the B-gated cell oscillations `truncOsc B δ n q i =
   `Δ_q f B_q f ≤ Δ_{q-1}f B_q f ≤ √n a_{q-1}` trivially"* (vdV p.287, lines after
   the `A_q/B_q` display) — the chain was still small through `q-1` on the
   B-support, and the level-`q` oscillation is dominated by its parent's by
-  nesting, now supplied by the constitutive field `B.Δ_succ_le_parent`;
+  nesting, using the constitutive field `B.Δ_succ_le_parent`;
 * `L²`-bound `‖truncOsc i‖_{P,2} ≤ ‖Δ_q i‖_{P,2} ≤ C·2^{−(q−q₀)}` (`B.Δ_L2_le`,
   offset scale, `C = δ`, plus `eLpNorm_mono_ae_real` since the indicator is `≤ 1`).
 
@@ -1037,9 +1027,9 @@ Summing the per-level bounds and reindexing `q = q₀ + k`
 level on its matching series term).
 
 The `L∞` nesting monotonicity `Δ_q i ≤ Δ_{q-1}(parent i)` is the constitutive
-field `Δ_succ_le_parent` (discharged in both constructors via the min-of-widths
-`buildΔ` + `assignTuple_restrict`), and the `1 +`-regularized cardinality collapse
-is `Real.sqrt_log_prod_le_sum_one_add`. The per-level maximal inequality is vdV
+field `Δ_succ_le_parent`, established by the min-of-widths construction
+`buildΔ` and `assignTuple_restrict`. The `1 +`-regularized cardinality estimate is
+`Real.sqrt_log_prod_le_sum_one_add`; the per-level maximal inequality is vdV
 Lemma 19.33 applied to `{truncOsc i}`.
 
 vdV §19.6 p.287, the B-series `Σ_{q>q₀} ‖𝔾ₙ Δ_q f B_q f‖_F`. -/
@@ -1095,7 +1085,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
   -- STEP 1 — Per-level bound.
   -- For `q ≤ q₀` the summand vanishes (`chainB` has the false `q₀ < q` conjunct);
   -- for `q > q₀` the uniform leaf at scale `ε_q = (1/2)^{q−q₀−1}·δ` discharges it,
-  -- and the cardinality `√log(1+N_q)` collapses to `∑_{p∈Icc q₀ q} b p` (salvage).
+  -- and the cardinality `√log(1+N_q)` collapses to `∑_{p∈Icc q₀ q} b p`.
   -- =====================================================================
   have hlevel : ∀ q : ℕ,
       levelOscSup B μ X δ n q
@@ -1158,7 +1148,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
         refine hLHS.trans (hbnd.trans ?_)
         -- Leaf RHS = `ofReal(K·ε·√log(1+N_{m+1}))`.
         rw [hcard]
-        -- `√log(1+N_{m+1}) ≤ ∑_{p∈Icc q₀ (m+1)} √log(1+coverCard p)` (salvage).
+        -- `√log(1+N_{m+1}) ≤ ∑_{p∈Icc q₀ (m+1)} √log(1+coverCard p)`.
         have hsalvage :
             Real.sqrt (Real.log (1 + (B.Nq (m + 1) : ℝ)))
               ≤ ∑ p ∈ Finset.Icc q₀ (m + 1), Real.sqrt (Real.log (1 + (B.coverCard p : ℝ))) := by
@@ -1219,7 +1209,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
             rw [hε_def, hpoweq]; ring
           rw [hexp, hofpow (m + 1),
             ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
-        -- Final per-level assembly.
+        -- Combine the estimates at this level.
         rw [hKε_eq]
         -- `∑ b p = ofReal δ · ∑ entropyIntegrand` (each `p ∈ Icc` has `q₀ ≤ p`).
         have hb_sum :
@@ -1259,7 +1249,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
         rw [hthr_eq]
         by_cases hω : ω ∈ {y | chainB B δ n (m + 1) i y}
         · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
-          -- Per-ancestor gate (W0): the middle clause pins `f`'s OWN level-`m`
+          -- The middle clause pins `f`'s own level-`m`
           -- cell-ancestor envelope directly, `Δ_m (ancestor) ω ≤ √n·chainThreshold m`;
           -- nesting `Δ_{m+1} i ≤ Δ_m (ancestor)` is `Δ_le_ancestor`.
           have hΔ_nn : 0 ≤ B.Δ (m + 1) i ω :=
@@ -1471,10 +1461,10 @@ theorem chain_B_dyadic_bound
                       * Set.indicator {x | Real.sqrt n * globalThreshold B δ < |Φ x|} 1 ω ∂P) := by
   -- The B-series splits into two summands handled independently:
   --   (i)  the **envelope-tail** integral, closed by the public
-  --        `tight_envelope_truncation_bound` (Sub-aux C, vdV p.287-288); its
+  --        `tight_envelope_truncation_bound` (vdV p.287-288); its
   --        conclusion is exactly the second RHS term up to the constant `4`;
-  --   (ii) the **`∑' q, levelOscSup`** B-series, lifted to the named private
-  --        leaf `chain_B_levelOscSup_dyadic_bound` below.
+  --   (ii) the **`∑' q, levelOscSup`** B-series, bounded by
+  --        `chain_B_levelOscSup_dyadic_bound` below.
   -- A universal constant `c = max 4 cB` dominates both pieces.
   obtain ⟨cB, hcB_pos, hcB⟩ :=
     chain_B_levelOscSup_dyadic_bound hX_meas hX_iindep hX_idem hX_law
@@ -1517,7 +1507,7 @@ theorem chain_B_dyadic_bound
 The A-series jump class at level `m = q₀ + q` has cardinality `N_{m+1}` bounded by a
 product over `Icc q₀ (m+1)`, so the per-level entropy collapse produces an *inner sum
 over `Icc 0 (q+1)`* (the offset range, one level longer than the outer index `q`).
-Splitting `Icc 0 (q+1) = Icc 0 q ∪ {q+1}` reduces to the base brick
+Splitting `Icc 0 (q+1) = Icc 0 q ∪ {q+1}` reduces to
 `ENNReal.tsum_pow_half_sum_Icc_le` (factor `2`) plus a `q ↦ q+1` reindexed tail
 (factor `2`), giving the universal factor `4`. The constant is `q₀`-independent. -/
 private lemma tsum_pow_half_sum_Icc_succ_le (a : ℕ → ℝ≥0∞) :
@@ -1564,7 +1554,7 @@ private lemma tsum_pow_half_sum_Icc_succ_le (a : ℕ → ℝ≥0∞) :
 /-- **A-series dyadic bound (vdV p.287-288).**
 
 The A-series `Σ_{q>q₀} (π_q f − π_{q−1}f)·A_{q−1}f`, where the chain links are the
-jump functions `B.jump` (`π_{q+1} − π_q(parent)`, L2 data: `jump_card_le`,
+jump functions `B.jump` (`π_{q+1} − π_q(parent)`, with `jump_card_le`,
 `jump_measurable`, `jump_L2_le`). Summed as `levelJumpSup` over levels `q₀ + q`.
 By the per-level finite-class bound on the jump classes (cardinality
 `≤ ∏ coverCard ≤ N_q·N_{q-1}`, sup-norm `≤ 2√n·a_{q-1}`, `L²`-norm
@@ -1576,12 +1566,10 @@ rearrangement `ENNReal.tsum_pow_half_sum_Icc_le`), this is bounded by
 The final `√(log(1 + coverCard)) → entropyIntegrand((1/2)^{p−q₀}·C)` step uses the
 partition's `coverCard_le` field — `(coverCard p : ℕ∞) ≤ bracketingNumber
 ((1/2)^{p−q₀}·C) F 2 P` (offset scale) — so `√log(1 + coverCard) ≤ entropyIntegrand`
-via `entropyWeight_mono`. This is now a constitutive field of
-`NestedBracketPartition` (added with the `pi_meas`/`coverCard` enrichment) and is
-discharged with equality by `nestedBracketPartition_of_finiteEntropy` (which feeds
-*minimal* covers from `minimalCoverData`). Thus cover-cardinality control is built
-into the partition construction; the analytic step here is the chaining algebra.
-The `δ` scale is carried by the partition's scale constant `C`
+via `entropyWeight_mono`. This is a constitutive field of `NestedBracketPartition`
+and is discharged with equality by `nestedBracketPartition_of_finiteEntropy`,
+using minimal covers from `minimalCoverData`. The `δ` scale is carried by the
+partition's scale constant `C`
 (the finiteEntropy construction sets `C = δ`, so `Δ_L2_le`'s `C·(1/2)^{q−q₀}` is
 exactly the series-offset term `(1/2)^{q−q₀}·δ`).
 `hF_ne` (`F.Nonempty`) supplies the `[Nonempty (Fin (B.Nq (q+1)))]` the jump-class
@@ -1634,7 +1622,7 @@ theorem chain_A_dyadic_bound
       exact ⟨i⟩
     -- The A-gated jump family.
     set g : Fin (B.Nq (m + 1)) → Ω → ℝ := fun i => truncJump B δ n hm i with hg_def
-    -- Per-ancestor gate (W0): the A-set `{x | chainA B δ n m (parent i) x}` is, for
+    -- The A-set `{x | chainA B δ n m (parent i) x}` is, for
     -- each cell index, a countable intersection (over levels `p ≤ m`) of the
     -- single-cell sublevel sets `{x | Δ_p (ancestor) x ≤ √n·a_p}` (the `∀ j` layer is
     -- gone; each `p` contributes ONE cell, the parent's level-`p` ancestor).
@@ -1855,11 +1843,9 @@ sups (`levelOscSup`), and the A-series jump sups (`levelJumpSup`).
 
 The `levelRepSup` / `levelOscSup` / `levelJumpSup` integrands are finite
 `ℝ≥0∞`-suprema of `ξ ↦ ofReal|𝔾ₙ(g i)|`, hence measurable in the sample index
-`ξ` whenever the underlying functions `g i : Ω → ℝ` are measurable. These two
-private helpers provide the measurability the integration assembly of
-`chain_supnorm_le_three_part` needs to apply `lintegral_add` / `lintegral_tsum`
-(both of which require an `AEMeasurable` integrand). They are local glue, not
-chaining content. -/
+`ξ` whenever the underlying functions `g i : Ω → ℝ` are measurable. These
+facts permit the applications of `lintegral_add` and `lintegral_tsum` in
+`chain_supnorm_le_three_part`. -/
 
 /-- `ξ ↦ ofReal|𝔾ₙ(g)|` is measurable when `g` is measurable. -/
 private lemma measurable_ofReal_abs_empiricalProcess
@@ -1894,8 +1880,7 @@ private lemma measurable_iSup_ofReal_abs_empiricalProcess
 **per-ancestor gate** it is a countable intersection (over levels `p` with
 `q₀ ≤ p ≤ q`) of the sublevel sets `{x | Δ_p (ancestor) x ≤ √n·a_p}` of the
 measurable cell oscillation `B.Δ p (B.ancestor … i p …)` (`measurableSet_le` +
-`Δ_meas`). The `∀ j` layer is gone: each `p` contributes exactly ONE cell (`f`'s
-level-`p` ancestor). Local glue. -/
+`Δ_meas`). Each `p` contributes the single level-`p` ancestor cell of `f`. -/
 private lemma chainA_measurableSet
     (B : NestedBracketPartition F P q₀ C) (δ : ℝ) (n q : ℕ) (i : Fin (B.Nq q)) :
     MeasurableSet {x | chainA B δ n q i x} := by
@@ -1915,8 +1900,8 @@ measurable by `measurableSet_const`), the "all small below `q`" conjunct is — 
 the **per-ancestor gate** — a countable intersection (over levels `p < q`) of the
 single-cell sublevel sets `{x | Δ_p (ancestor) x ≤ √n·a_p}` (the `∀ j` layer is
 gone), and the "crosses at `q`" conjunct `{x | √n·a_q < Δ_q i x}` is measurable via
-`measurableSet_lt` + `Δ_meas hq`. Requires `q₀ ≤ q` so that the top-level
-oscillation `B.Δ q i` is measurable. Local glue. -/
+`measurableSet_lt` + `Δ_meas hq`. The condition `q₀ ≤ q` ensures that the
+top-level oscillation `B.Δ q i` is measurable. -/
 private lemma chainB_measurableSet
     (B : NestedBracketPartition F P q₀ C) {δ : ℝ} (n : ℕ) {q : ℕ} (hq : q₀ ≤ q)
     (i : Fin (B.Nq q)) :
@@ -1939,8 +1924,8 @@ private lemma chainB_measurableSet
 
 /-- **B-link mean split — pointwise (per-`ξ`) form (vdV p.287).**
 
-The genuine substance of the B-link mean split, stated *pointwise* in `ξ` (before
-integration): the cell-grouped B-link supremum at level `q` is dominated by `3 ×`
+The B-link mean split, stated *pointwise* in `ξ` before integration, bounds the
+cell-grouped B-link supremum at level `q` by `3 ×`
 the finite cell-oscillation sup `⨆ i, ofReal|𝔾ₙ(truncOsc i)|` plus the
 **ξ-constant** deterministic `P`-side correction `4√n·⨆_i ∫⁻ Δ_q i·1{chainB} ∂P`:
 
@@ -1952,15 +1937,13 @@ the finite cell-oscillation sup `⨆ i, ofReal|𝔾ₙ(truncOsc i)|` plus the
 The RHS, viewed as a function of `ξ`, is **measurable** (the first summand is a
 finite `⨆_i` of `ofReal|𝔾ₙ(truncOsc i)|`, measurable by
 `measurable_iSup_ofReal_abs_empiricalProcess`; the second is a `ξ`-constant), which
-is exactly what lets the `∫⁻`-mean assembly (`chain_supnorm_le_decomposition`)
-dominate the *uncountable* per-cell B-link supremum by a measurable envelope and
-split the integral **without** any per-cell separability/measurability bridge.  See
-`supNormOver_link_meanSplit_le` for the integrated corollary (used in
-`chain_supnorm_le_three_part`).
+allows `chain_supnorm_le_decomposition` to dominate the uncountable per-cell
+B-link supremum by a measurable envelope and split the integral without a
+per-cell separability hypothesis. The integrated form is
+`supNormOver_link_meanSplit_le`.
 
 The signed-`𝔾ₙ` correction reasoning (why `+4√n·P(Δ·1{cB})`, why `⨆_i` not `Σ_i`)
-is documented on the integrated form `supNormOver_link_meanSplit_le` below; the
-proof of this pointwise form is its per-`ξ` core (the `h_pt` step). -/
+is explained in the statement of `supNormOver_link_meanSplit_le` below. -/
 theorem supNormOver_link_meanSplit_pointwise_le
     [IsProbabilityMeasure P]
     (B : NestedBracketPartition F P q₀ C)
@@ -2284,9 +2267,9 @@ plus a deterministic `P`-side correction `4√n·⨆_i P(Δ_q i · 1{chainB i})`
 ```
 
 **The signed-process correction, in maximal form.** `𝔾ₙ` is a *signed* functional, so
-the cell domination `|f − π_q f| ≤ Δ_q` (`B.diam`) does NOT give
-`|𝔾ₙ((f − π_q f)·B_q)| ≤ |𝔾ₙ(Δ_q · B_q)|` directly (the per-`ξ` pointwise inequality
-`|𝔾ₙ a| ≤ |𝔾ₙ b|` from `|a| ≤ |b|` is FALSE for the centred process). Instead, with
+the cell domination `|f − π_q f| ≤ Δ_q` (`B.diam`) does not give
+`|𝔾ₙ((f − π_q f)·B_q)| ≤ |𝔾ₙ(Δ_q · B_q)|` directly: the corresponding
+pointwise implication does not hold for a centred process. Instead, with
 `a = (f − π_q i)·1{chainB i}`, `G i = Δ_q i·1{chainB i} = truncOsc i`, the difference
 `a − G i` has `|a − G i| ≤ 2·G i` pointwise (from `|f − π_q i| ≤ Δ_q i` and `Δ_q i ≥ 0`),
 and `𝔾ₙ a = 𝔾ₙ(G i) + 𝔾ₙ(a − G i)`.  The correction `𝔾ₙ(a − G i)` splits into a random
@@ -2301,10 +2284,12 @@ cell-oscillation process itself, `√n·empAvg(2G i) = 𝔾ₙ(2G i) + √n·P(2
 the outer `⨆_i (3|𝔾ₙ G_i| + 4√n·P G_i)` distributes by sup-subadditivity
 `⨆_i (a_i + b_i) ≤ ⨆_i a_i + ⨆_i b_i` into `3⨆_i|𝔾ₙ G_i| + 4√n·⨆_i P(G_i)`.  The
 correction is therefore a **max** over cells (`⨆_i`, no `N_q` over-count), which is the
-vdV maximal bound that folds dyadically. Summing over cells would overcount by `N_q`,
-while a direct per-`ξ` comparison `|𝔾ₙ B-link| ≤ |𝔾ₙ truncOsc|` is invalid for the
-centred signed process. The mean-level maximal split above avoids both problems.
-It is theorem-agnostic over the cell structure; vdV §19.6 p.287, the displayed
+genuine vdV maximal bound that folds dyadically. A `Σ_i` bound would over-count
+by `N_q` and would not yield the required dyadic estimate.
+
+The estimate is necessarily at the mean level because the corresponding
+pointwise inequality for the signed process does not hold. It uses only the cell
+structure; see vdV §19.6 p.287 and the displayed
 `𝔾ₙ((f − π_q f)·B_q f)` triangle + maximal inequality. -/
 theorem supNormOver_link_meanSplit_le
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
@@ -2354,10 +2339,9 @@ theorem supNormOver_link_meanSplit_le
         rw [MeasureTheory.lintegral_const, measure_univ, mul_one]
 
 /-- **Linearity of `empiricalProcess` over a `Finset` sum.** For a family of
-integrable functions `h : ι → Ω → ℝ`, `𝔾ₙ(Σ_{a∈s} h a) = Σ_{a∈s} 𝔾ₙ(h a)`. This follows by
+integrable functions `h : ι → Ω → ℝ`, `𝔾ₙ(Σ_{a∈s} h a) = Σ_{a∈s} 𝔾ₙ(h a)`. Proven by
 `Finset.induction`, using the binary `empiricalProcess_add` (each partial sum stays
-integrable as a finite sum of integrables), and is used below to apply `𝔾ₙ` to the
-finite chain telescope. -/
+integrable as a finite sum of integrables). -/
 lemma empiricalProcess_finset_sum {ι : Type*} (P : Measure Ω) (n : ℕ) (X : Fin n → Ω)
     (s : Finset ι) (h : ι → Ω → ℝ) (hint : ∀ a ∈ s, Integrable (h a) P) :
     empiricalProcess P n X (fun x => ∑ a ∈ s, h a x)
@@ -2965,8 +2949,8 @@ For each sample point `ξ`, the empirical-process supremum
 * the **head** finite-sup `⨆ᵢ ofReal|𝔾ₙ(truncRep i)|`;
 * the **threshold-truncated** evaluator sup `supNormOver F (𝔾ₙ(f·1{√n·a<|Φ|}))`;
 * the **B-link** series `∑'_q ⨆ᵢ ⨆_{f∈cell} ofReal|𝔾ₙ((f − π_{q₀+q} i)·1{chainB})|`,
-  in honest `f`-dependent form (the signed-`𝔾ₙ` mean correction is accounted for
-  by `chain_supnorm_le_three_part`);
+  in honest `f`-dependent form, with the signed-`𝔾ₙ` mean correction incorporated
+  by `chain_supnorm_le_three_part`;
 * the **A-series** jump sups `∑'_q ⨆ᵢ ofReal|𝔾ₙ(truncJump i)|`.
 
 This is the **gated telescope**: for each `ξ` and `f ∈ F`, either every level's
@@ -2974,7 +2958,7 @@ oscillation stays below the threshold `√n·a_q` (the *never-crossing* branch, 
 which `π_q f → f` is gate-forced: `chainThreshold q ≤ (1/2)^{q−q₀}δ → 0`, so
 `Δ_q f(x) ≤ √n·chainThreshold q → 0` and `|f − π_Q f| ≤ Δ_Q f → 0`), or there is a
 first crossing level `q₁` (the B-term break, `chain_pointwise_telescope` at `q₁`).
-The head/envelope split gives, for each `f ∈ F`
+The head/envelope split proceeds as follows. For each `f ∈ F`
 with `q₀`-cell `i₀`, the pointwise identity `f = π_{q₀}f·1{≤} + π_{q₀}f·1{>} +
 (f − π_{q₀}f)` (complementary envelope indicators) lifts through `𝔾ₙ`-linearity
 (`empiricalProcess_add`, all three pieces integrable since `|·| ≤ Φ ∈ L²(P) ⊆ L¹`
@@ -2982,12 +2966,11 @@ on a probability space) and `abs_add` to
 `ofReal|𝔾ₙ f| ≤ ofReal|𝔾ₙ(truncRep i₀)| + ofReal|𝔾ₙ(π_{q₀}f·1{>})| + ofReal|𝔾ₙ(f − π_{q₀}f)|`.
 The first piece is `≤ head` (`le_iSup` at `i₀`); the second is `≤ trunc` because
 `π_{q₀}f = B.π q₀ i₀ ∈ F` (so it is captured by the `supNormOver F` of the
-envelope-tail evaluator); the third is `≤ blink + jump` by the
-core `Gn_telescope_link_bound` (the genuine gated-telescope interchange in vdV's
-*"q₁ possibly infinite"* hand-wave).
-`[IsProbabilityMeasure P]` + `hΦ_meas`/`hπ_meas`/`hF_meas` are the forced
-regularity inputs (the unique consumer `chain_supnorm_le_decomposition` already
-carries them) needed for the integrable `𝔾ₙ`-linearity split. -/
+envelope-tail evaluator); the third is `≤ blink + jump` by
+`Gn_telescope_link_bound`, the gated-telescope interchange corresponding to
+vdV's *"q₁ possibly infinite"* argument. The assumptions
+`[IsProbabilityMeasure P]`, `hΦ_meas`, `hπ_meas`, and `hF_meas` ensure the
+integrability needed for the `𝔾ₙ`-linearity split. -/
 private theorem chain_supnorm_le_pointwise
     [IsProbabilityMeasure P]
     (B : NestedBracketPartition F P q₀ C)
@@ -3059,7 +3042,7 @@ private theorem chain_supnorm_le_pointwise
   have hsGT_meas : MeasurableSet {y | Real.sqrt n * globalThreshold B δ < |Φ y|} :=
     measurableSet_lt measurable_const hΦabs_meas
   -- `a := truncRep i₀ = π_{q₀}f·1{≤}`; `b := π_{q₀}f·1{>}`; both integrable (dominated
-  -- Integrability follows from `|π_{q₀}f| ≤ Φ`; also `c := f − π_{q₀}f` is integrable.
+  -- by `|π_{q₀}f| ≤ Φ`), and `c := f − π_{q₀}f` integrable (`f`, `π` both integrable).
   have ha_int : Integrable (truncRep B Φ δ n q₀ i₀) P := by
     unfold truncRep
     exact (hπ_int.indicator hsLE_meas).congr
@@ -3074,7 +3057,7 @@ private theorem chain_supnorm_le_pointwise
         by_cases hx : Real.sqrt n * globalThreshold B δ < |Φ x| <;>
           simp [Set.indicator, hx]))
   have hc_int : Integrable (fun x => f x - B.π q₀ i₀ x) P := hf_int.sub hπ_int
-  -- Local notation for the empirical-process evaluator at this fixed `ξ`.
+  -- Abbreviate the empirical-process evaluator at this fixed `ξ`.
   let G : (Ω → ℝ) → ℝ := fun g =>
     empiricalProcess P n (fun i : Fin n => X i.val ξ) g
   -- The head/envelope pointwise split identity: `f = a + b + c`.
@@ -3145,8 +3128,7 @@ private theorem chain_supnorm_le_pointwise
     _ = head + (trunc + blink) + jump := by
         rw [add_assoc, add_assoc, ← add_assoc trunc blink jump]
 
-/-- **B-series mean-correction term** (the √n-correction of the B-link
-mean split). Summing the per-level **maximal** mean corrections from
+/-- **B-series mean-correction term.** Summing the per-level **maximal** mean corrections of
 `supNormOver_link_meanSplit_le` over the B-series levels `q₀ + q`:
 `Bmean := ∑'_q 4√n · ⨆_i ∫⁻ Δ_{q₀+q} i · 1{chainB} ∂P` — a **max** (`⨆_i`) over
 cells, not a `Σ_i` sum. This is the price of keeping the B-link in its honest
@@ -3378,9 +3360,9 @@ reassembles the three-part RHS plus the B-series mean correction `Bmean`:
   directly (`f` enters only via its cell `i` because the jump is a fixed cell
   representative), no mean correction.
 
-The B-link mean correction replaces the false per-`ξ`
-`chain_pointwise_three_part` (for signed `𝔾ₙ`) with this honest ∫⁻-level split.
-`hF_meas` supplies the required class measurability. vdV §19.6 p.287. -/
+Because `𝔾ₙ` is signed, the B-link correction must be handled at the
+`∫⁻` level by this mean split. The assumption `hF_meas` supplies the required
+class measurability. See vdV §19.6 p.287. -/
 theorem chain_supnorm_le_three_part
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
     (B : NestedBracketPartition F P q₀ C)
@@ -3406,14 +3388,11 @@ theorem chain_supnorm_le_three_part
             + 3 * (∑' q : ℕ, levelOscSup B μ X δ n q))
         + (∑' q : ℕ, levelJumpSup B μ X δ n (Nat.le_add_right q₀ q))
         + Bmean B δ n :=
-  -- The ∫⁻-level gated-telescope decomposition now outputs this three-part RHS
-  -- directly (the per-level B-link mean split + the `Bmean` fold are folded into
-  -- `chain_supnorm_le_decomposition` via `supNormOver_link_meanSplit_pointwise_le`,
-  -- with no separability bridge).
+  -- The integrated gated telescope gives the three terms directly; the
+  -- pointwise B-link mean split contributes `Bmean` without a separability
+  -- assumption.
   chain_supnorm_le_decomposition B hπ_meas hF_meas hX_meas Φ hΦ_meas
     hΦ_env hΦ_L2 hδ n hn hΔq0_ptwise
-
--- The entropy-positivity lemmas are imported from `Bracketing.lean`.
 
 /-- **B-series mean-correction dyadic bound (the √n-cancellation).**
 
@@ -3605,7 +3584,7 @@ private theorem chain_Bmean_dyadic_bound
     refine hsup_le.trans ?_
     -- `ofReal(4δ(1/2)^q·D) ≤ ofReal(K₀(1/2)^q δ)·∑_{k∈Icc 0 (q+1)} a k`.
     -- `D = 1 + √log(1+N_{Q+1}) ≤ (1 + 1/√log2)·∑_{p∈Icc q₀ (Q+1)} entropyIntegrand`.
-    -- Salvage: `√log(1+N_{Q+1}) ≤ ∑_{p∈Icc q₀ (Q+1)} √log(1+coverCard p)`.
+    -- `√log(1+N_{Q+1}) ≤ ∑_{p∈Icc q₀ (Q+1)} √log(1+coverCard p)`.
     have hIcc_ne : (Finset.Icc q₀ (Q + 1)).Nonempty :=
       ⟨q₀, Finset.mem_Icc.mpr ⟨le_rfl, by omega⟩⟩
     have hcard_prod :
@@ -3748,8 +3727,7 @@ Soundness of the hoist: the four sub-bound constants
 from the **partition-free** `tight_chain_level_bound_uniform P hX_*` constant `K`
 (and the pure numeral `K₀`); none reads `B`.  Obtaining `K` once before `∀ B` and
 re-running the four sub-bounds per `B` therefore reproduces the *same* `c` for every
-partition (definitional through the shared `Classical.choose`).  The assembly body is
-identical to `chain_supnorm_dyadic_bound`'s. -/
+partition (definitionally through the shared `Classical.choose`). -/
 theorem chain_supnorm_dyadic_bound_uniform
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
     {X : ℕ → Ξ → Ω}
@@ -3780,10 +3758,8 @@ theorem chain_supnorm_dyadic_bound_uniform
                         * Set.indicator {x | Real.sqrt n * globalThreshold B δ < |Φ x|}
                             1 ω ∂P) := by
   classical
-  -- The four sub-bound constants are now uniform over *class, base level, and scale*
-  -- (`∃ c, ∀ F q₀ C B …`); obtain them once so the engine constant `cH + 3cB + cA + cM`
-  -- is a single real shared across all `(F, q₀, C, B)` (each reads only
-  -- `tight_chain_level_bound_uniform P hX_*` / the numeral `K₀`, never `F`, `q₀`, `C`, `B`).
+  -- The four constants are uniform over the class, base level, and scale;
+  -- their sum is therefore uniform in `(F, q₀, C, B)`.
   obtain ⟨cH, hcH_pos, hH⟩ :=
     chain_head_dyadic_bound hX_meas hX_iindep hX_idem hX_law
   obtain ⟨cB, hcB_pos, hBb⟩ :=
@@ -3815,7 +3791,7 @@ theorem chain_supnorm_dyadic_bound_uniform
   have hMδ := hMb F q₀ C B hF_ne hδ hCδ n hn
   rw [← hS_def] at hHδ hAδ hMδ
   rw [← hS_def, ← hT_def] at hBδ
-  -- The three-part split of the LHS (now with the `Bmean` correction).
+  -- Split the left-hand side, including the `Bmean` correction.
   have hsplit := chain_supnorm_le_three_part B hπ_meas hF_meas hX_meas hX_iindep hX_idem
     hX_law Φ hΦ_meas hΦ_env hΦ_L2 hδ n hn hΔq0_ptwise
   -- Assemble: LHS ≤ head + (TRUNC + Bseries) + Aseries + Bmean
@@ -3956,7 +3932,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
   obtain ⟨cM, hcM_pos, hMb⟩ :=
     chain_Bmean_dyadic_bound (P := P)
   -- universal constant: `cH + 3·cOsc + cA + cM` carries the dyadic series (`S`), plus `+4`
-  -- to absorb the `Btrunc` tail `∫⁻Btrunc ≤ 4√n·∫⁻Ψ = 4·T` (the same `4` as the engine's
+  -- to absorb the `Btrunc` tail `∫⁻Btrunc ≤ 4√n·∫⁻Ψ = 4·T` (the same `4` as the
   -- `tight_envelope_truncation_bound`, here via `supNormProcess_dominated_integral_bound`).
   refine ⟨cH + 3 * cOsc + cA + cM + 4,
     by nlinarith [hcH_pos, hcA_pos, hcM_pos, hcOsc_pos], ?_⟩
@@ -4090,7 +4066,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
         (Nat.le_add_right q₀ q) ξ
   refine ⟨Maj, hMaj_meas, hptwise, ?_⟩
   -- ===== Integral bound `∫⁻ Maj ≤ RHS` (same arithmetic as the uniform bound) =====
-  -- Abbreviations matching the uniform engine's `S` (dyadic series) and `T` (envelope tail).
+  -- Abbreviate the dyadic series by `S` and the envelope tail by `T`.
   set S : ℝ≥0∞ := ∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δ)
       * entropyIntegrand ((1/2 : ℝ)^q * δ) F P with hS_def
   set T : ℝ≥0∞ := ENNReal.ofReal (Real.sqrt n)
@@ -4213,21 +4189,17 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
         · exact le_add_of_nonneg_right (zero_le _)
         · exact le_add_of_nonneg_left (zero_le _)
 
-/-- **Integrated dyadic chaining bound for `∫⁻ supNormOver F (𝔾ₙ)`** (vdV Lemma 19.34
-assembly).
+/-- **Integrated dyadic chaining bound for `∫⁻ supNormOver F (𝔾ₙ)`**
+(vdV Lemma 19.34).
 
-No `EmpProcSeparable`/`hF_sep` hypothesis (book-faithful): the `∫⁻`-assembly that
-splits the integral (`chain_supnorm_le_decomposition` → `chain_supnorm_le_three_part`)
-bounds the uncountable per-cell B-link supremum by the MEASURABLE finite-`⨆ᵢ` envelope
+No `EmpProcSeparable`/`hF_sep` hypothesis is needed. Splitting the integral with
+`chain_supnorm_le_decomposition` and `chain_supnorm_le_three_part` bounds the
+uncountable per-cell B-link supremum by the measurable finite-`⨆ᵢ` envelope
 of the explicit cell oscillation `truncOsc i` (via the per-`ξ` mean split
 `supNormOver_link_meanSplit_pointwise_le`), so no per-cell separability bridge is
-needed.  The per-level dyadic components (head / A / B / B-mean dyadic bounds
+needed. The per-level dyadic components (head / A / B / B-mean dyadic bounds
 `chain_head_dyadic_bound`, `chain_A_dyadic_bound`, `chain_B_dyadic_bound`,
-`chain_Bmean_dyadic_bound`) and the telescope are unchanged.  See
-the cited vdV argument for the underlying decomposition.
-
-This is the per-partition wrapper over `chain_supnorm_dyadic_bound_uniform`; the
-substantive assembly lives in the uniform form. -/
+`chain_Bmean_dyadic_bound`) and the telescope give the resulting estimate. -/
 theorem chain_supnorm_dyadic_bound
     [IsProbabilityMeasure P] [IsProbabilityMeasure μ]
     (B : NestedBracketPartition F P q₀ C)
@@ -4257,36 +4229,32 @@ theorem chain_supnorm_dyadic_bound
                     * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                         * Set.indicator {x | Real.sqrt n * globalThreshold B δ < |Φ x|}
                             1 ω ∂P) :=
-  -- Delegate to the class/level/scale-uniform form: specialise to this `F`, `q₀`, `C`, `B`.
+  -- Specialise the class/level/scale-uniform form to `F`, `q₀`, `C`, and `B`.
   let ⟨c, hc_pos, hbound⟩ :=
     chain_supnorm_dyadic_bound_uniform hX_meas hX_iindep hX_idem hX_law
   ⟨c, lt_of_lt_of_le one_pos hc_pos, hbound F q₀ C B hπ_meas hF_ne hF_meas⟩
 
 end Assembly
 
-/-! ## Bridging to `hChainBound_outer`
+/-! ## The bound `hChainBound_outer`
 
-The final bridging lemma packages L7 in the exact existential shape that
-`DonskerBracketing.lean`'s `isPDonsker_of_finite_bracketing_entropy_integral`
-consumes, wiring through `nestedBracketPartition_of_covers` (L1) and
-`dyadic_sum_le_bracketingEntropyIntegral` (L5). -/
+The following lemma states the chaining estimate in the existential form used
+with `nestedBracketPartition_of_covers` and
+`dyadic_sum_le_bracketingEntropyIntegral`. -/
 
-/-- **Bridging lemma: `hChainBound_outer` from a nested bracketing partition.**
+/-- **The bound `hChainBound_outer` from a nested bracketing partition.**
 
-Assembles the universal-constant chaining bound in the exact `hChainBound_outer`
-existential shape of `DonskerBracketing.lean`. Given a `NestedBracketPartition`
-of `F`, the B-series and A-series bounds (L7) sum to `c'·(dyadic entropy series)
+Given a `NestedBracketPartition` of `F`, this gives the universal-constant
+chaining bound in the existential form `hChainBound_outer` used in
+`DonskerBracketing.lean`. The B-series and A-series bounds sum to
+`c'·(dyadic entropy series)
 + c'·√n·tail`; the dyadic-entropy comparison `dyadic_sum_le_bracketingEntropyIntegral`
-(L5) replaces the dyadic series by `2·J_{[]}(δ, F, L²(P))`, yielding the universal
+replaces the dyadic series by `2·J_{[]}(δ, F, L²(P))`, yielding the universal
 `c = 2c'`.
 
 vdV §19.6 p.286-288. The substantive content is in `chain_supnorm_dyadic_bound`;
-this lemma is the mechanical assembly: dyadic → `J` substitution via L5, plus the
-`n = 0` edge (where the empirical process vanishes).
-
-The full-`F` integral shape does not localize as the Donsker consumer requires;
-`localizedChainBound_of_finiteEntropy` supplies the localized finite-entropy
-variant. This theorem is the corresponding partition-level entry point. -/
+this lemma substitutes the dyadic series by `J` and handles the `n = 0` case,
+where the empirical process vanishes. -/
 theorem hChainBound_outer_of_nestedPartition
     [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
@@ -4315,10 +4283,10 @@ theorem hChainBound_outer_of_nestedPartition
                   * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                       * Set.indicator {x | Real.sqrt n * globalThreshold B δq < |Φ x|} 1 ω ∂P) :=
   by
-  -- Universal constant from the dyadic-series assembly bound.
+  -- Use the universal constant from the dyadic-series bound.
   obtain ⟨c₀, hc₀_pos, hbound⟩ :=
     chain_supnorm_dyadic_bound B hπ_meas hF_ne hF_meas hX_meas hX_iindep hX_idem hX_law
-  -- The outer universal constant absorbs the factor 2 from `dyadic ≤ 2·J` (L5).
+  -- The outer universal constant absorbs the factor 2 from `dyadic ≤ 2·J`.
   refine ⟨2 * c₀, by positivity, ?_⟩
   intro Φ hΦ_meas hΦ_env hΦ_L2 δq hδq hCδ hF_L2 hq₀ n hΔq0_ptwise
   rcases Nat.eq_zero_or_pos n with hn0 | hn_pos
@@ -4333,10 +4301,10 @@ theorem hChainBound_outer_of_nestedPartition
         exact le_antisymm (by simp) (by positivity)
       simp only [h_sup0, lintegral_zero]
     rw [h_lhs]; exact zero_le _
-  -- `n ≥ 1`: apply the dyadic bound, then substitute `dyadic ≤ 2·J` via L5.
+  -- `n ≥ 1`: apply the dyadic bound, then substitute `dyadic ≤ 2·J`.
   have hn1 : 1 ≤ n := hn_pos
   have hdyadic := hbound Φ hΦ_meas hΦ_env hΦ_L2 hδq hCδ hF_L2 hq₀ n hn1 hΔq0_ptwise
-  -- L5: dyadic entropy series ≤ 2 · J_{[]}(δq, F, L²(P)).
+  -- The dyadic entropy series is at most `2 · J_{[]}(δq, F, L²(P))`.
   have hL5 :
       (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δq)
           * entropyIntegrand ((1/2 : ℝ)^q * δq) F P)
@@ -4365,22 +4333,22 @@ theorem hChainBound_outer_of_nestedPartition
 
 The genuine vdV §19.2 localized chaining bound: bounds
 `∫⁻ supNormOver (localizedDifferenceClass F P δq) (𝔾ₙ)` (the δq-shrunk difference
-class, whose supremum vanishes, rather than the nonlocal full-`F` shape.
+class, whose supremum vanishes with `δq`) rather than the unlocalized full-class
+supremum.
 
-The construction runs `chain_supnorm_dyadic_bound` over a
+The construction applies `chain_supnorm_dyadic_bound` to a
 **clamped truncated** version of the localized difference class
 `G := localizedDifferenceClass F P δq`, then lifts back from
 `truncateClass G M` to `G` via `empiricalProcess_add` + `tight_envelope_truncation_bound`.
-The localized class genuinely satisfies the engine's `hF_L2` at scale `δq` by
-construction (`localizedDifferenceClass_hF_L2` + clamp-shrinks-L²), which is what
-makes this route sound where the full-`F` route was not. -/
+The localized class satisfies `hF_L2` at scale `δq` by
+construction (`localizedDifferenceClass_hF_L2` and clamp-shrinks-L²). -/
 
 /-- **Dyadic-scale `q₀` exists for small `δ`.** For `0 < δ ≤ 1/4` there is a natural
 number `q₀` with `4δ ≤ (1/2)^{q₀} ≤ 8δ`: the dyadic powers `(1/2)^q` step by ratio `2`,
 and the target window `[4δ, 8δ]` (also ratio `2`) sits inside `(0, 1]` when `δ ≤ 1/4`,
 so one power lands inside. vdV p.287 ("fix an integer `q₀` such that `4δ ≤ 2^{−q₀} ≤ 8δ`").
-The `δ ≤ 1/4` constraint is exactly the localization regime (the consumer shrinks the
-radius `δq → 0`); large `δq` is handled separately by a trivial bound in the main
+The `δ ≤ 1/4` constraint is the localization regime in which the
+radius `δq → 0`; large `δq` is handled separately by a trivial bound in the main
 theorem. -/
 lemma exists_q0_window {δ : ℝ} (hδ : 0 < δ) (hδ4 : δ ≤ 1 / 4) :
     ∃ q₀ : ℕ, 4 * δ ≤ (1 / 2 : ℝ) ^ q₀ ∧ (1 / 2 : ℝ) ^ q₀ ≤ 8 * δ := by
@@ -4445,8 +4413,7 @@ lemma hasFiniteBracketingCover_localized
 cover `(l, u)` of `G` clamps to an ε-bracketing cover `(clampFn M l, clampFn M u)` of the
 *same cardinality* of `truncateClass G M` (`isEpsBracket_clamp` keeps the brackets, the
 cover transports via `clampReal` monotonicity), so the infimum defining
-`bracketingNumber (truncateClass G M)` ranges over a superset of admissible sizes. Clone of
-`bracketingNumber_mono_class` with the clamp transport. -/
+`bracketingNumber (truncateClass G M)` ranges over a superset of admissible sizes. -/
 lemma bracketingNumber_truncateClass_le {G : Set (Ω → ℝ)} {ε : ℝ} {M : ℝ} (hM : 0 ≤ M) :
     bracketingNumber ε (truncateClass G M) 2 P ≤ bracketingNumber ε G 2 P := by
   unfold bracketingNumber
@@ -4473,28 +4440,29 @@ lemma bracketingEntropyIntegral_truncateClass_le {G : Set (Ω → ℝ)} {δ : �
 
 /-! ## Localized chaining bound — helper lemmas
 
-The genuine localized bound runs the engine over a clamped truncation of the
-localized difference class. Two book-grounded facts are isolated as named lemmas:
+The localized bound is proved over a clamped truncation of the localized
+difference class. Two facts are used:
 
-* `localized_clamp_Δq0_discharge` turns the fixed-point inequality
-  `2M ≤ √n · chainThreshold B δq q₀` into the required pointwise bound using
-  `nestedBracketPartition_of_finiteEntropy_clamped_Δ_le`. The accompanying
-  `localized_chainThreshold_lower_bound` supplies an `M`-independent lower bound
-  on the threshold: `card_le`, `coverCard_le`, and
-  `bracketingNumber_truncateClass_le` bound the truncated partition's cover
-  cardinality by bracketing numbers of the untruncated localized class.
+* `localized_clamp_Δq0_discharge` — the `hΔq0_ptwise` discharge (vdV `A_{q₀} f = 1`).
+  The clamped partition's oscillation envelope satisfies `Δ_{q₀} ≤ 2M`
+  (`nestedBracketPartition_of_finiteEntropy_clamped_Δ_le`); choosing the clamp level
+  `M = √n · chainThreshold B δq q₀ / 2` would make `2M = √n · chainThreshold B δq q₀`
+  exactly, except that `chainThreshold B δq q₀` reads `B.Nq (q₀+1)`, which itself
+  depends on `M` (the truncated-class cover cardinality), creating a self-reference.
+  The book breaks this by an `M`-independent **upper** bound on the truncated class's
+  bracketing number (`N_{[]}(·, truncate(localized)) ≤ N_{[]}(·, F − F)`, since every
+  `F − F` cover clamps to a truncated-localized cover of the same cardinality), which
+  lower-bounds `chainThreshold` independently of `M`; one then picks `M` from that
+  `M`-independent bound.
 
-* `localized_dyadic_to_J` — the dyadic-series → `J_{[]}(δq, F)` reduction. The engine's
-  dyadic series over `truncateClass (localized) M` is bounded (L5,
-  `dyadic_sum_le_bracketingEntropyIntegral`) by `2·J_{[]}(δq, truncate(localized))`,
-  then by `2·J_{[]}(δq, localized)` via
-  `bracketingEntropyIntegral_truncateClass_le`, then by `2·J_{[]}(δq, F − F)`
-  through `bracketingEntropyIntegral_mono_class` and
-  `localizedDifferenceClass_subset`, and finally by `2 · 2√2 · J_{[]}(δq, F)`
-  using `bracketingEntropyIntegral_diff_le_class`. -/
+* `localized_dyadic_to_J` — the dyadic-series → `J_{[]}(δq, F)` reduction. By
+  `dyadic_sum_le_bracketingEntropyIntegral`, the dyadic series over
+  `truncateClass (localized) M` is bounded by `2·J_{[]}(δq, truncate(localized))`,
+  then by `2·J_{[]}(δq, F − F)` (entropy monotone in the class), then by
+  `2 · 2√2 · J_{[]}(δq, F)` (`bracketingEntropyIntegral_diff_le_class`). -/
 
-/-- **`M`-free lower bound on the clamped partition's chain threshold.** The genuine
-break of the `M`-fixed-point self-reference (section docstring): `chainThreshold (B(M))
+/-- **`M`-free lower bound on the clamped partition's chain threshold.** To avoid
+the `M`-fixed-point self-reference, observe that `chainThreshold (B(M))
 δq q₀ = δq / (1 + √log(1 + B(M).Nq(q₀+1)))` reads the truncated-class cover card
 `B(M).Nq(q₀+1)`, which depends on `M`; but it is bounded *above* by the `M`-free product
 `NB_{q₀}·NB_{q₀+1}` of bracketing numbers of the (un-truncated) localized class `G`
@@ -4743,12 +4711,12 @@ lemma localized_clamp_Δq0_discharge
     (hasFiniteBracketingCover_localized h_int δq hδq)
     hF_diff_meas le_rfl i x) hfix
 
-/-- **Dyadic-series → `J_{[]}(δq, F)` for the clamped localized partition.** The engine's
+/-- **Dyadic-series → `J_{[]}(δq, F)` for the clamped localized partition.** The
 dyadic entropy series over the truncated localized class is bounded by `cJ · J_{[]}(δq, F)`
 with `cJ = 4√2`, via the chain:
 
-`∑' ... entropyIntegrand(truncate(localized)) ≤ 2·J(δq, truncate(localized))` (L5,
-`dyadic_sum_le_bracketingEntropyIntegral`)
+`∑' ... entropyIntegrand(truncate(localized)) ≤ 2·J(δq, truncate(localized))`
+(`dyadic_sum_le_bracketingEntropyIntegral`)
 `≤ 2·J(δq, localized)` (`bracketingEntropyIntegral_truncateClass_le`)
 `≤ 2·J(δq, F − F)` (`bracketingEntropyIntegral_mono_class`, `localizedDifferenceClass_subset`)
 `≤ 2·(2√2)·J(δq, F)` (`bracketingEntropyIntegral_diff_le_class`, vdV Lemma 19.31). -/
@@ -4765,7 +4733,7 @@ lemma localized_dyadic_to_J
   have hcover : ∀ ε : ℝ, 0 < ε → HasFiniteBracketingCover F (ε / 2) 2 P :=
     fun ε hε => hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by positivity)
   refine ⟨4 * Real.sqrt 2, by positivity, ?_⟩
-  -- L5: dyadic series over the truncated localized class ≤ 2 · J(δq, truncate(localized)).
+  -- The dyadic series over the truncated localized class is at most twice its entropy integral.
   refine (dyadic_sum_le_bracketingEntropyIntegral (F := truncateClass
       (localizedDifferenceClass F P δq) M) hδq).trans ?_
   -- Chain the three entropy-class comparisons.
@@ -4818,7 +4786,7 @@ both pieces integrable since `|·| ≤ Φ ∈ L²(P) ⊆ L¹(P)`); `supNormOver`
 clamped sup reindexes to `truncateClass G Mc` (`supNormOver_clamp_image_eq`); the excess
 class `{h − clampFn Mc h : h ∈ G}` is pointwise dominated by `Ψ = |Φ|·1{Mc<|Φ|}` (the clamp
 is the identity on `{|h| ≤ Mc}` and `|h − clampFn Mc h| ≤ |h| ≤ Φ` on `{|h| > Mc} ⊆ {Φ > Mc}`),
-so the excess integral is bounded by `supNormProcess_dominated_integral_bound`. -/
+so the excess integral is closed by `supNormProcess_dominated_integral_bound`. -/
 lemma localized_supNorm_lift
     [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -4935,10 +4903,10 @@ lemma localized_supNorm_lift
         · exact le_supNormOver (z := fun g => empiricalProcess P n
             (fun i : Fin n => X i.val ξ) g) ⟨h, hhG, rfl⟩
   -- Measurability-free split: dominate the (non-measurable) excess sup `supNormOver 𝒢`
-  -- Use the explicit measurable process `Bproc ξ = √n·(empAvg Ψ ξ + ∫⁻Ψ)`
+  -- by the EXPLICIT measurable process `Bproc ξ = √n·(empAvg Ψ ξ + ∫⁻Ψ)`
   -- (`supNormProcess_dominated_pointwise_bound`), then split via `lintegral_add_right'`
-  -- (which needs ONLY the measurable RIGHT summand `Bproc`; the clamped-class sup on the
-  -- left summand need not be measurable).
+  -- (which needs only the measurable right summand `Bproc`; the clamped-class supremum
+  -- need not be measurable).
   set T : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P with hT_def
   set Bproc : Ξ → ℝ≥0∞ := fun ξ => ENNReal.ofReal (Real.sqrt n) *
       (ENNReal.ofReal (empiricalAvg Ψ n (fun j : Fin n => X j.val ξ)) + T) with hBproc_def
@@ -5045,13 +5013,12 @@ lemma localized_supNorm_lift
         gcongr
 
 /-- **Per-scale localized chaining construction.**
-For fixed `Φ, δq, n` (with the engine constant `c₀` and the dyadic→J constant `cJ`
-already extracted), the clamped-localized construction produces a clamp level
+For fixed `Φ, δq, n`, the clamped-localized construction produces a clamp level
 `M ≥ 0` and the localized bound with constant `c₀·cJ + 4·c₀`.
 
 * **M-fixed-point**: a clamp level `Mc = √n·M` with
   `2·Mc ≤ √n·chainThreshold (B(Mc)) δq q₀` (so `localized_clamp_Δq0_discharge` fires)
-  AND `Mc ≤ √n·globalThreshold (B(Mc)) δq` (so the engine's `globalThreshold` tail folds
+  AND `Mc ≤ √n·globalThreshold (B(Mc)) δq` (so the `globalThreshold` tail is bounded
   into the conclusion's `√n·M = Mc` tail).  Self-referential because `chainThreshold` /
   `globalThreshold` read `B(Mc)`'s cover cardinalities. Here
   `chainThreshold B δq q₀ = δq / (1 + √log(1 + B.Nq(q₀+1)))` and
@@ -5064,11 +5031,14 @@ already extracted), the clamped-localized construction produces a clamp level
   `Mc := √n·θ/2` gives `2·Mc = √n·θ ≤ √n·chainThreshold (B(Mc))` and the `globalThreshold`
   bound analogously (`globalThreshold` reads `Nq q₀ ≤ N₀`, so `globalThreshold ≥ θ' ≥ θ/2`
   for a suitable `Mc`-free `θ'`).
-* **localized-class measurability** for `localized_supNorm_lift`, derived directly
-  from `hF_meas` because every member is a difference `f - g` with `f, g ∈ F`.
-* **δq ≤ 1/4 localization**: the hypothesis `hδq4 : δq ≤ 1/4` ensures that the dyadic
-  `q₀` window exists and that the construction produces the positive clamp
-  `M = min(θ/2, θ') > 0`; the consumer applies the bound as `δq ↓ 0`. -/
+* **Clamped-class measurability** follows from measurability of `F`, by taking
+  differences and applying the measurable clamp.
+* **δq ≤ 1/4**: in this localization regime the dyadic `q₀`-window always exists,
+  and the construction returns the positive
+  `M = min(θ/2, θ') > 0`.
+
+The proof combines the estimate over `truncateClass`, `localized_supNorm_lift`,
+`localized_dyadic_to_J`, and the two tail bounds. -/
 lemma localized_core_construction
     [IsProbabilityMeasure P]
     (hF_ne : F.Nonempty)
@@ -5077,10 +5047,11 @@ lemma localized_core_construction
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
     (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
     (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
     (c₀ : ℝ) (hc₀ : 1 ≤ c₀)
-    -- the engine bound, uniform over class / base level / scale (applied per scale to
+    -- the chaining bound, uniform over the class, base level, and scale (applied to
     -- `truncateClass (localized) Mc` with the freshly-chosen `q₀(δq)` and `C = δq`)
     (hengine : ∀ (F' : Set (Ω → ℝ)) (q₀' : ℕ) (C' : ℝ)
         (B : NestedBracketPartition F' P q₀' C')
@@ -5133,10 +5104,11 @@ lemma localized_core_construction
   have hF_diff_meas : ∀ h ∈ G, Measurable h := by
     rintro h ⟨f, hf, g, hg, rfl, _⟩
     exact (hF_meas f hf).sub (hF_meas g hg)
-  -- The uniform clamp level `M` is chosen **outside** the `∀ n` (independent of `n`).
-  -- Under `δq ≤ 1/4`, the threshold lemmas give positive `M`-free lower bounds, and
-  -- `M = min (θ / 2) θ'` makes the per-`n` clamp `Mc := √n·M` satisfy both threshold
-  -- inequalities while remaining strictly positive.
+  -- The uniform clamp level `M` is chosen **outside** the `∀ n` (independent of `n`); in
+  -- the chaining regime it is the `M`-free positive `θ/2` (`localized_chainThreshold_lower_bound`),
+  -- so the per-`n` clamp `Mc := √n·M` makes `2·Mc = √n·θ ≤ √n·chainThreshold` self-consistently.
+  -- The hypothesis `δq ≤ 1/4` ensures that the chaining regime produces the
+  -- positive clamp level `M = min(θ/2, θ')`.
   · -- main chaining branch (`δq ≤ 1/4`)
     -- vdV's dyadic window `q₀` with `4δq ≤ (1/2)^{q₀} ≤ 8δq` (p.287).
     obtain ⟨q₀, hq₀⟩ := exists_q0_window hδq hδq4
@@ -5145,7 +5117,7 @@ lemma localized_core_construction
       localized_chainThreshold_lower_bound (F := F) h_int hδq hF_diff_meas (q₀ := q₀)
     obtain ⟨θ', hθ'_pos, ⟨cθ', hcθ'_pos, hcθ'_le⟩, hθ'_Nbd, hθ'_le⟩ :=
       localized_globalThreshold_lower_bound (F := F) h_int hδq hF_diff_meas (q₀ := q₀)
-    -- uniform clamp level: `M ≤ θ/2` (discharge) and `M ≤ θ'` (engine-tail fold).
+    -- Uniform clamp level: `M ≤ θ/2` and `M ≤ θ'`.
     set M : ℝ := min (θ / 2) θ' with hM_def
     have hM_pos : 0 < M := lt_min (by positivity) hθ'_pos
     have hM_nonneg : 0 ≤ M := hM_pos.le
@@ -5174,8 +5146,8 @@ lemma localized_core_construction
       simp only [sub_self]
       rw [show (fun _ : Ω => (0 : ℝ)) = (0 : Ω → ℝ) from rfl, eLpNorm_zero]
       exact zero_le _
-    -- **Bracketing-based δq-explicit lower bound** on `M` (exposes `cM` via the two
-    -- localized-difference bracketing numbers, for the relative-bracketing consumer).
+    -- The two localized-difference bracketing numbers give an explicit
+    -- lower bound on `M` in terms of `δq`.
     have hM_Nbd : ∀ N : ℕ,
         bracketingNumber δq (localizedDifferenceClass F P δq) 2 P ≤ (N : ℕ∞) →
         bracketingNumber (δq / 2) (localizedDifferenceClass F P δq) 2 P ≤ (N : ℕ∞) →
@@ -5207,7 +5179,7 @@ lemma localized_core_construction
       exact Real.sqrt_le_sqrt (by exact_mod_cast hn)
     set Mc : ℝ := Real.sqrt n * M with hMc_def
     have hMc_nonneg : 0 ≤ Mc := mul_nonneg hsn_nonneg hM_nonneg
-    -- the engine's class `F' := truncateClass G Mc` (set BEFORE `B`, so `B`'s definitional
+    -- Let `F' := truncateClass G Mc` before defining `B`, so the definitional
     -- link to the constructor survives — `set` on `B` would otherwise re-abstract this).
     set F' : Set (Ω → ℝ) := truncateClass G Mc with hF'_def
     -- the clamped partition over the truncated localized class.
@@ -5227,7 +5199,7 @@ lemma localized_core_construction
       rintro _ ⟨g, hg, rfl⟩
       refine le_trans (eLpNorm_mono (fun x => ?_)) (localizedDifferenceClass_hF_L2 hg)
       simpa [clampFn, Real.norm_eq_abs] using abs_clampReal_le Mc hMc_nonneg (g x)
-    -- partition `π`-measurability (engine input).
+    -- Measurability of the partition representatives.
     have hπ_meas : ∀ {q : ℕ}, q₀ ≤ q → ∀ i, Measurable (B.π q i) :=
       fun {q} hq i => B.π_meas hq i
     -- discharge `hΔq0_ptwise` via the clamp envelope `Δ ≤ 2Mc` and the fixed-point
@@ -5245,7 +5217,7 @@ lemma localized_core_construction
       rw [hB_def]
       exact localized_clamp_Δq0_discharge (F := F) h_int hδq hF_diff_meas
         (q₀ := q₀) Mc hMc_nonneg n hfix
-    -- Apply the uniform engine to `F' = truncateClass G Mc` at scale `δq`.
+    -- Apply the uniform chaining bound to `F'` at scale `δq`.
     have heng := hengine F' q₀ δq B hπ_meas hF'_ne hF'_meas Φ hΦ_meas hΦ_envF' hΦ_L2
       hδq rfl hF'_L2 hq₀ n hn hΔq0
     -- the `F → F̃` lift: localized sup ≤ clamped sup + truncation excess at `Mc`.
@@ -5277,7 +5249,7 @@ lemma localized_core_construction
               rw [← ENNReal.ofReal_ofNat (n := 2), ← ENNReal.ofReal_mul (by norm_num)]
               congr 1; ring]
             ring
-    -- abbreviations for the final assembly.
+    -- Abbreviations for the concluding estimate.
     set J : ℝ≥0∞ := bracketingEntropyIntegral δq F P with hJ_def
     set sn : ℝ≥0∞ := ENNReal.ofReal (Real.sqrt n) with hsn_def
     set Tail : ℝ≥0∞ := ∫⁻ ω, ENNReal.ofReal |Φ ω|
@@ -5290,7 +5262,7 @@ lemma localized_core_construction
       by_cases hx : x ∈ {y | Mc < |Φ y|}
       · simp [Set.indicator_of_mem hx]
       · simp [Set.indicator_of_notMem hx]
-    -- the engine tail (threshold `√n·globalThreshold B`) folds into `Tail` (threshold `Mc`),
+    -- The tail at threshold `√n·globalThreshold B` is bounded by `Tail` at threshold `Mc`,
     -- since `Mc = √n·M ≤ √n·θ' ≤ √n·globalThreshold B` ⟹ `{√n·gt<|Φ|} ⊆ {Mc<|Φ|}`.
     have hMc_le_gt : Mc ≤ Real.sqrt n * globalThreshold B δq := by
       have hg : θ' ≤ globalThreshold B δq := by rw [hB_def]; exact hθ'_le Mc hMc_nonneg
@@ -5376,47 +5348,51 @@ lemma localizedChainBound_pos_core
             + ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n)
                 * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                     * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P) := by
-  -- Extract the uniform engine constant `c₀` (free of `F`, `q₀`, `C`; from
-  -- `tight_chain_level_bound_uniform`), so a single `c` serves every scale `δq`.
+  -- Use the uniform chaining constant `c₀`, independent of `F`, `q₀`, and
+  -- `C`, so a single `c` serves every scale `δq`.
   obtain ⟨c₀, hc₀_pos, hengine⟩ :=
     chain_supnorm_dyadic_bound_uniform (P := P) (μ := μ)
       hX_meas hX_iindep hX_idem hX_law
-  -- The localized constant combines the engine constant `c₀` with the dyadic→J factor
+  -- The localized constant combines `c₀` with the dyadic-to-integral factor
   -- `cJ = 4√2` (`localized_dyadic_to_J`) and the F→F̃ excess factor `4` (`localized_supNorm_lift`).
   have hc₀_pos' : 0 < c₀ := lt_of_lt_of_le one_pos hc₀_pos
   refine ⟨c₀ * (4 * Real.sqrt 2) + 4 * c₀, by positivity, ?_⟩
   exact localized_core_construction hF_ne hF_meas h_int μ X
-    hX_meas hX_idem hX_law c₀ hc₀_pos hengine
+    hX_meas hX_iindep hX_idem hX_law c₀ hc₀_pos hengine
 
-/-- **The genuine localized chaining bound (vdV §19.2 localization).**
+/-- **Lemma 19.34: localized chaining bound.**
 
 Bounds `∫⁻ supNormOver (localizedDifferenceClass F P δq) (𝔾ₙ)` — the δq-shrunk
-difference class whose sup genuinely vanishes — by `c·J_{[]}(δq, F)` plus an envelope
-tail. Localizing is essential because the analogous full-`F` supremum need not
-vanish.
+difference class whose supremum vanishes with `δq` — by
+`c·J_{[]}(δq, F)` plus an envelope tail. This is the localized form used in
+the proof of the Donsker theorem.
 
-**M-interface (uniform positive clamp level, outside `∀ n`).** The hypothesis
-`δq ≤ 1/4` supplies the dyadic localization window. The clamp level
-`M = min(θ/2, θ') > 0` is chosen before quantifying over `n`, using the `M`-free
-positive lower bounds on `chainThreshold`
+**Uniform positive clamp level.** The clamp level `M` is chosen
+**before** quantifying over `n` (the existential `∃ M, 0 < M ∧ ∀ n …` has `M` outside
+the `∀ n`). In the chaining regime `δq ≤ 1/4`, `M = min(θ/2, θ') > 0`
+is built from the `M`-free positive lower bounds on `chainThreshold`
 (`localized_chainThreshold_lower_bound`) and `globalThreshold`
-(`localized_globalThreshold_lower_bound`), and the per-`n` clamp used in the engine is
+(`localized_globalThreshold_lower_bound`), and the per-`n` clamp is
 `Mc := √n · M`, so `2·Mc = √n·θ ≤ √n·chainThreshold` self-consistently.  The genuine
-positivity `0 < M` is exactly the shape the equicontinuity consumer requires: a
+positivity `0 < M` is needed for equicontinuity: a
 possibly-zero `M` would make the tail `√n·∫⁻|Φ|·1{√n·M<|Φ|} = √n·E|Φ|` fail to vanish.
 
-**Tail threshold `√n · M`.** The
-construction folds both the engine's `globalThreshold` tail and the truncation excess
-into the conclusion tail at threshold `√n · M`. A linear threshold `(n : ℝ) · M`
-is incompatible with the clamp constraint: the clamp level is bounded by
+**Tail threshold `√n · M`.** Both the `globalThreshold` tail and the
+truncation excess are bounded by the tail at threshold `√n · M`. A linear
+threshold `(n:ℝ)·M`
+cannot be obtained because the clamp level is bounded by
 `Mc ≤ √n·δq/2` (because `chainThreshold ≤ δq`), so every threshold the conclusion can be
-folded under is at most `√n`-growing.  `√n · M` is exactly vdV's truncation scale
-`√n · a(δ)` (p.286); the consumer's DCT-to-0 absorbs any positive-const · √n threshold
+folded under is at most `√n`-growing. `√n · M` is exactly vdV's truncation scale
+`√n · a(δ)` (p.286); dominated convergence absorbs any positive-constant `√n` threshold
 equally (`√n·E[|Φ|·1{|Φ|>√n·M}] → 0` for `Φ ∈ L²`), so this is sound.
 
 The `n = 0` edge (empirical process ≡ 0 ⟹ LHS = 0) holds for the same uniform positive `M`;
-the `n ≥ 1` core is `localizedChainBound_pos_core`. The localization hypothesis
-`δq ≤ 1/4` ensures that the same strictly positive `M` works throughout this interface. -/
+the `n ≥ 1` core is `localizedChainBound_pos_core`.  The hypothesis `δq ≤ 1/4` restricts to
+the chaining regime `δq ↓ 0`, where `M = min(θ/2, θ') > 0`; the
+large-`δq` case is excluded by the hypothesis.
+
+The assumptions are nonemptiness and measurability of `F`, together with
+finiteness of its bracketing entropy integral. -/
 theorem localizedChainBound_of_finiteEntropy
     [IsProbabilityMeasure P]
     (hF_ne : F.Nonempty)
@@ -5440,15 +5416,12 @@ theorem localizedChainBound_of_finiteEntropy
                     * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P) := by
   -- The universal constant `c` and the uniform clamp level `M` (outside `∀ n`) come from
   -- the `n ≥ 1` core; the `n = 0` edge (empirical process ≡ 0 ⟹ LHS integral = 0) holds for
-  -- the SAME positive `M` and any `c > 0`.
+  -- the same positive `M` and any `c > 0`.
   obtain ⟨c, hc_pos, hcore⟩ := localizedChainBound_pos_core hF_ne hF_meas h_int
     μ X hX_meas hX_iindep hX_idem hX_law
   refine ⟨c, hc_pos, ?_⟩
   intro Φ hΦ_meas hΦ_env hΦ_L2 δq hδq hδq4
-  -- the core supplies the uniform positive `M` (independent of `n`); reuse it for the `n = 0` edge.
-  -- (the two extra conjuncts — the opaque `∃ cM` and the bracketing-explicit lower bound — are
-  -- discarded here; this theorem's conclusion is byte-identical to before, and the `_MLower`
-  -- variant exposes the bracketing-explicit clause instead.)
+  -- Reuse the core's uniform positive `M` for the `n = 0` edge.
   obtain ⟨M, hM, _, _, hbound⟩ := hcore Φ hΦ_meas hΦ_env hΦ_L2 hδq hδq4
   refine ⟨M, hM, fun n => ?_⟩
   rcases Nat.eq_zero_or_pos n with hn0 | hn_pos
@@ -5464,30 +5437,30 @@ theorem localizedChainBound_of_finiteEntropy
       simp only [h_sup0, lintegral_zero]
     rw [h_lhs]; exact zero_le _
   · exact hbound n hn_pos
-
 /-- **M-lower-bound variant of `localizedChainBound_of_finiteEntropy`.**
 
-Byte-identical hypotheses and RHS to `localizedChainBound_of_finiteEntropy`, but additionally
-exposes a **bracketing-explicit lower bound on the clamp level** `M`: for any common upper
+This has the same hypotheses and right-hand side as
+`localizedChainBound_of_finiteEntropy`, and additionally states a
+**bracketing-explicit lower bound on the clamp level** `M`: for any common upper
 bound `N` on the two localized-difference bracketing numbers at scales `δq`, `δq/2`,
 
     min ( 1/(2·(1 + √log(1 + N²))) , 1/(1 + √log(1 + N)) ) · δq ≤ M.
 
-This is exactly what the quantitative-modulus consumer (`LipschitzShellModulus`) needs — the
+This lower bound yields the quantitative modulus in `LipschitzShellModulus`: the
 Chebyshev envelope tail `≈ δq² / M` can only be folded to `≤ C · δq` once `M` is bounded below by
 a positive multiple of `δq`; the bare `∃ M > 0` of the base theorem is insufficient.
 
 **Construction.** `M = min(θ/2, θ')` where `θ, θ'` are the two threshold lower bounds
 (`localized_chainThreshold_lower_bound` / `localized_globalThreshold_lower_bound`), each exactly of
 the form `δq / (1 + √log(1 + N))`.  Because those lower bounds are *monotone in an upper bound on
-the bracketing count*, the exposed clause holds for **any** `N` dominating both bracketing numbers.
+the bracketing count*, the clause holds for **any** `N` dominating both bracketing numbers.
 
-**Why the explicit form (not an opaque `∃ cM`).** The bracketing counts `NB₀`, `NB₁` are of the
+**Role of the explicit form.** The bracketing counts `NB₀`, `NB₁` are of the
 `δq`-*localized* difference class `localizedDifferenceClass F P δq`, so an opaque `cM` is
 `δq`-dependent.  A `δq`-uniform `cM` requires a **relative-bracketing** upper bound
-`N(δq, localized(δq)) ≤ N_uniform` — supplied by the consumer, not this file.  Exposing the clause
-as `∀ N, (bracketing ≤ N) → cM(N)·δq ≤ M` lets the consumer plug in its own `δ`-free relative
-bracketing bound and obtain a `δ`-free `cM`.  (The shell consumer does exactly this.) -/
+`N(δq, localized(δq)) ≤ N_uniform`. The clause
+`∀ N, (bracketing ≤ N) → cM(N)·δq ≤ M` combines with any such `δ`-free relative
+bracketing bound to give a `δ`-free `cM`. -/
 theorem localizedChainBound_of_finiteEntropy_MLower
     [IsProbabilityMeasure P]
     (hF_ne : F.Nonempty)
@@ -5515,8 +5488,7 @@ theorem localizedChainBound_of_finiteEntropy_MLower
             + ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n)
                 * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                     * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P) := by
-  -- Same core as `localizedChainBound_of_finiteEntropy`; here we KEEP the bracketing-explicit
-  -- lower-bound conjunct (the base theorem discards it) and reuse the identical `n = 0` edge.
+  -- Retain the bracketing-explicit lower-bound conjunct and handle the same `n = 0` edge.
   obtain ⟨c, hc_pos, hcore⟩ := localizedChainBound_pos_core hF_ne hF_meas h_int
     μ X hX_meas hX_iindep hX_idem hX_law
   refine ⟨c, hc_pos, ?_⟩
@@ -5543,14 +5515,14 @@ Same hypotheses and same RHS as `localizedChainBound_of_finiteEntropy`, but inst
 bounding the (non-measurable) integrand
 `g ξ := supNormOver (localizedDifferenceClass F P δq) (𝔾ₙ ξ)` directly inside the `∫⁻`, it
 produces a MEASURABLE `Maj : Ξ → ℝ≥0∞` with `g ≤ Maj` pointwise and `∫⁻ Maj ≤ RHS`.  This
-is exactly the shape the equicontinuity / outer-expectation consumer needs:
+is suitable for equicontinuity and outer-expectation arguments:
 `outerExpectation g ≤ ∫⁻ Maj` (the upper integral of a non-measurable `g` is bounded by the
-integral of any measurable majorant), so the chaining tail becomes usable downstream.
+integral of any measurable majorant).
 
-Construction (mirrors `localizedChainBound_of_finiteEntropy`'s `localized_core_construction`):
-the engine-level measurable majorant `chain_supnorm_measurableMajorant_dyadic_bound_uniform`
-supplies `Maj_F'` over the clamped class `F' = truncateClass G Mc` with `supNormOver F' (𝔾ₙ) ≤
-Maj_F'` and `∫⁻ Maj_F' ≤` engine-RHS; the `F → F̃` lift's per-`ξ` split bounds the localized
+The theorem `chain_supnorm_measurableMajorant_dyadic_bound_uniform` supplies
+`Maj_F'` over the clamped class `F' = truncateClass G Mc` with
+`supNormOver F' (𝔾ₙ) ≤ Maj_F'` and the corresponding integral bound. The `F → F̃`
+split bounds the localized
 sup by `supNormOver F' (𝔾ₙ) + Bproc` (`Bproc` the measurable excess dominator,
 `supNormProcess_dominated_pointwise_bound`), so `Maj := Maj_F' + Bproc` is measurable, dominates
 `g` pointwise, and `∫⁻ Maj = ∫⁻ Maj_F' + ∫⁻ Bproc` folds to the SAME `C·J + C·√n·Tail` RHS via
@@ -5579,7 +5551,8 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
                   * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                       * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P) := by
   classical
-  -- the engine-level measurable majorant (uniform constant `c₀`, free of class/level/scale).
+  -- Use the measurable majorant with a constant independent of class, level,
+  -- and scale.
   obtain ⟨c₀, hc₀, hengineMaj⟩ :=
     chain_supnorm_measurableMajorant_dyadic_bound_uniform (P := P) (μ := μ)
       hX_meas hX_iindep hX_idem hX_law
@@ -5660,7 +5633,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
     rw [hB_def]
     exact localized_clamp_Δq0_discharge (F := F) h_int hδq hF_diff_meas
       (q₀ := q₀) Mc hMc_nonneg n hfix
-  -- the engine-level measurable majorant `Maj_F'` over `F' = truncateClass G Mc`.
+  -- The measurable majorant `Maj_F'` over `F' = truncateClass G Mc`.
   obtain ⟨MajF', hMajF'_meas, hMajF'_dom, hMajF'_int⟩ :=
     hengineMaj F' q₀ δq B hπ_meas hF'_ne hF'_meas Φ hΦ_meas hΦ_envF' hΦ_L2
       hδq rfl hF'_L2 hq₀ n hn hΔq0
@@ -5811,7 +5784,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
       _ = 2 * sn * ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P := by rw [hsn_def]; ring
       _ = 2 * sn * Tail := by rw [hΨ_int_eq]
       _ ≤ 4 * sn * Tail := by gcongr; norm_num
-  -- the engine majorant integral bound over `F'`: `∫⁻ MajF' ≤ c₀·dyadic + c₀·sn·EngTail`.
+  -- Its integral over `F'` is at most `c₀·dyadic + c₀·sn·EngTail`.
   -- dyadic series over `F'` ≤ `4√2·J` (same chain as `localized_core_construction`).
   have hdyadic : (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δq)
         * entropyIntegrand ((1/2 : ℝ)^q * δq) F' P)
@@ -5837,7 +5810,8 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
             rw [← ENNReal.ofReal_ofNat (n := 2), ← ENNReal.ofReal_mul (by norm_num)]
             congr 1; ring]
           ring
-  -- engine tail (threshold `√n·globalThreshold B`) folds into `Tail` (threshold `Mc`).
+  -- The tail at threshold `√n·globalThreshold B` is bounded by `Tail` at
+  -- threshold `Mc`.
   have hMc_le_gt : Mc ≤ Real.sqrt n * globalThreshold B δq := by
     have hg : θ' ≤ globalThreshold B δq := by rw [hB_def]; exact hθ'_le Mc hMc_nonneg
     calc Mc = Real.sqrt n * M := hMc_def

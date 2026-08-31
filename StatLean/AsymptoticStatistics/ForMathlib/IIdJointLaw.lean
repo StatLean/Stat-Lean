@@ -1,4 +1,6 @@
 import Mathlib.Probability.ProductMeasure
+import Mathlib.Probability.Independence.Basic
+import Mathlib.Probability.IdentDistrib
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
@@ -24,6 +26,44 @@ open MeasureTheory Filter Topology
 open scoped ENNReal
 
 namespace AsymptoticStatistics
+
+theorem map_fin_restrict_eq_pi_of_iid
+    {Ω Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω)
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P) (n : ℕ) :
+    μ.map (fun ξ : Ξ => fun i : Fin n => X i.val ξ) =
+      Measure.pi (fun _ : Fin n => P) := by
+  have h_indep : ProbabilityTheory.iIndepFun (fun i : Fin n => X i.val) μ :=
+    hX_iindep.precomp Fin.val_injective
+  rw [(ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map
+    (fun i : Fin n => (hX_meas i.val).aemeasurable)).mp h_indep]
+  congr with i
+  rw [(hX_idem i.val).map_eq, hX_law]
+
+theorem map_ghost_fin_restrict_eq_pi_prod_of_iid
+    {Ω Ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ξ]
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω)
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P) (n : ℕ) :
+    (μ.prod μ).map (fun z : Ξ × Ξ =>
+        ((fun i : Fin n => X i.val z.1), (fun i : Fin n => X i.val z.2))) =
+      (Measure.pi (fun _ : Fin n => P)).prod
+        (Measure.pi (fun _ : Fin n => P)) := by
+  let Y : Ξ → (Fin n → Ω) := fun ξ i => X i.val ξ
+  have hY_meas : Measurable Y := measurable_pi_lambda _ fun i => hX_meas i.val
+  have hY_law : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
+    map_fin_restrict_eq_pi_of_iid P μ X hX_meas hX_iindep hX_idem hX_law n
+  rw [← hY_law, Measure.map_prod_map μ μ hY_meas hY_meas]
+  rfl
 
 /-- `Fin n` and the Finset-range coercion `↥(Finset.range n)` are canonically
 equivalent (both are `{k : ℕ // k < n}` up to `Finset.mem_range`). Packaged
@@ -80,9 +120,9 @@ theorem pi_const_eq_infinitePiNat_map
           = ψ ∘ (Finset.range n).restrict from h_factor,
       ← Measure.map_map hψ_meas h_restrict_meas]
   rw [h_step1, Measure.infinitePiNat_map_restrict]
-  -- Now the RHS is `(Measure.pi (fun i : ↥(Finset.range n) => ν)).map ψ`. Identify
+  -- Identify the resulting reindexing map with `piCongrLeft`.
   -- `ψ = piCongrLeft (·↦𝓧) (rangeEquivFin n)` — reindexing from `↥(Finset.range n)` to
-  -- `Fin n` — and close via `measurePreserving_piCongrLeft`.
+  -- `Fin n`; this map preserves the product measure.
   have h_ψ_eq : ψ = MeasurableEquiv.piCongrLeft (fun _ : Fin n => 𝓧)
       (rangeEquivFin n) := by
     funext f i

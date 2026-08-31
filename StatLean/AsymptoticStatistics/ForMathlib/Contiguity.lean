@@ -14,15 +14,15 @@ import Mathlib.Topology.ContinuousMap.Bounded.Basic
 /-!
 # Contiguity of sequences of probability measures
 
-Contiguity (van der Vaart §6.3-§6.7) and Le Cam's first and third lemmas, as pure
-probability-theoretic results.
+Contiguity (van der Vaart §6.3-§6.7) and Le Cam's first and third lemmas as
+general probability-theoretic results.
 
 Main declarations:
 * `WeakConverges` — test-function-based weak convergence of measures.
 * `Contiguous`, `MutuallyContiguous` — the two notions.
 * `contiguous_of_asymptotically_log_normal` — vdV Example 6.5, direction `Q ⊲ P`.
 * `mutuallyContiguous_of_asymptotically_log_normal` — mutual-contiguity version.
-* `weak_limit_under_Q_of_lecam_third` — Le Cam's third lemma (vdV Example 6.7).
+* `weak_limit_under_Q_of_lecam_third` — Le Cam's third lemma (vdV Theorem 6.6).
 -/
 
 open MeasureTheory Filter Topology BoundedContinuousFunction
@@ -177,8 +177,7 @@ lemma WeakConverges.bind_kernel
     -- `∫ y, f y d(ρ ⊗ₘ κ).map snd = ∫ z, f z.2 d(ρ ⊗ₘ κ)`
     rw [MeasureTheory.integral_map measurable_snd.aemeasurable
       f.continuous.aestronglyMeasurable]
-    -- Now apply `Measure.integral_compProd`: bounded integrand against a probability
-    -- measure on a product is integrable.
+    -- The bounded integrand is integrable against the product probability measure.
     have hfmeas : Measurable (fun z : α × β => f z.2) := by
       exact f.continuous.measurable.comp measurable_snd
     have hinteg : Integrable (fun z : α × β => f z.2) (ρ.compProd κ) := by
@@ -192,7 +191,7 @@ lemma WeakConverges.bind_kernel
         (Filter.Eventually.of_forall
           (fun z => BoundedContinuousFunction.norm_coe_le_norm f z.2))
     rw [MeasureTheory.Measure.integral_compProd hinteg]
-    -- Now `∫ a, ∫ b, f b ∂(κ a) ∂ρ = ∫ a, g a ∂ρ` by definition of `g`.
+    -- The iterated integral is `∫ a, g a ∂ρ` by definition of `g`.
     rfl
   -- Apply weak convergence to g.
   have htendsto : Tendsto (fun n => ∫ a, g a ∂(μ_n n)) atTop (𝓝 (∫ a, g a ∂ν)) := hμν g
@@ -244,7 +243,7 @@ a density `f : β → ℝ≥0∞` and binding with `κ` equals marginalising the
 
 `(ν.withDensity f).bind κ = (π.withDensity (fun p ↦ f p.2)).map fst`.
 
-This is the measure-theoretic core of vdV Theorem 7.10 (§7.3) Step 7 — pushing a density through
+This is the measure-theoretic core of vdV §7.10 Step 7 — pushing a density through
 the second marginal of a joint law factors through the tilted joint + marginalisation.
 It sees use whenever a tilted Gaussian-shift law is re-expressed through a conditional
 distribution kernel. -/
@@ -321,7 +320,7 @@ theorem Measure.withDensity_bind_condDistrib
         rw [MeasureTheory.lintegral_const_mul _ ((measurable_one.indicator hs))]
         rw [MeasureTheory.lintegral_indicator_one hs]
       rw [h1]
-      -- Now ∫⁻ y, f y * κ y s ∂ν = ∫⁻ p, f p.2 * κ p.2 s ∂π
+      -- Pulling back along the second projection gives the desired integral over `π`.
       rw [hν_def, MeasureTheory.lintegral_map h_fκs_meas measurable_snd]
     -- RHS, via the compProd → π.map swap substitution. After map-pullback the
     -- integrand evaluates to `g (p.2, p.1) = f p.2 * s.indicator 1 p.1`, matching RHS.
@@ -360,6 +359,73 @@ lemma Contiguous.trans {l : Filter ι} {P Q R : ∀ i, Measure (Ω i)}
 lemma MutuallyContiguous.symm {l : Filter ι} {P Q : ∀ i, Measure (Ω i)}
     (h : MutuallyContiguous l P Q) : MutuallyContiguous l Q P :=
   ⟨h.2, h.1⟩
+
+/-! ## Subsequences -/
+
+/-- Transport a set along an equality between indices of a dependent family. -/
+private def transportSet (α : ℕ → Type*) {a b : ℕ} (h : a = b)
+    (s : Set (α a)) : Set (α b) :=
+  h ▸ s
+
+private lemma measurableSet_transportSet
+    {α : ℕ → Type*} [∀ n, MeasurableSpace (α n)]
+    {a b : ℕ} (h : a = b) {s : Set (α a)} (hs : MeasurableSet s) :
+    MeasurableSet (transportSet α h s) := by
+  subst h
+  exact hs
+
+private lemma transportSet_comp
+    {α : ℕ → Type*} {ψ : ℕ → ℕ} (hψ : Function.Injective ψ)
+    {k n : ℕ} (h : ψ k = ψ n) (A : ∀ m, Set (α (ψ m))) :
+    transportSet α h (A k) = A n := by
+  have hkn : k = n := hψ h
+  subst hkn
+  rfl
+
+/-- Contiguity is preserved by restriction to a strictly monotone subsequence,
+including when the sample space depends on the index. -/
+theorem Contiguous.comp_subseq
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    {P Q : ∀ n, Measure (Ω n)}
+    (hPQ : Contiguous (ι := ℕ) (Ω := Ω) atTop P Q) {φ : ℕ → ℕ}
+    (hφ : StrictMono φ) :
+    Contiguous (ι := ℕ) (Ω := fun n => Ω (φ n)) atTop
+      (fun n => P (φ n)) (fun n => Q (φ n)) := by
+  classical
+  intro A hA_meas hA_tendsto
+  obtain ⟨B, hB_def⟩ : ∃ B : ∀ m, Set (Ω m), ∀ m, B m =
+      if h : ∃ n, φ n = m then transportSet Ω h.choose_spec (A h.choose) else ∅ :=
+    ⟨_, fun _ => rfl⟩
+  have hB_at : ∀ n, B (φ n) = A n := by
+    intro n
+    have hex : ∃ k, φ k = φ n := ⟨n, rfl⟩
+    rw [hB_def, dif_pos hex, transportSet_comp hφ.injective]
+  have hB_meas : ∀ m, MeasurableSet (B m) := by
+    intro m
+    rw [hB_def]
+    by_cases h : ∃ n, φ n = m
+    · rw [dif_pos h]
+      exact measurableSet_transportSet _ (hA_meas _)
+    · rw [dif_neg h]
+      exact MeasurableSet.empty
+  have hB_empty : ∀ m, (¬ ∃ n, φ n = m) → B m = ∅ := by
+    intro m h
+    rw [hB_def, dif_neg h]
+  have hP_tendsto : Tendsto (fun m => (P m) (B m)) atTop (𝓝 0) := by
+    rw [ENNReal.tendsto_nhds_zero]
+    intro ε hε
+    rw [ENNReal.tendsto_nhds_zero] at hA_tendsto
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (hA_tendsto ε hε)
+    refine Filter.eventually_atTop.mpr ⟨φ N, fun m hm => ?_⟩
+    by_cases h : ∃ n, φ n = m
+    · obtain ⟨n, rfl⟩ := h
+      rw [hB_at n]
+      exact hN n (hφ.le_iff_le.mp hm)
+    · rw [hB_empty m h]
+      simp
+  have hQB := hPQ B hB_meas hP_tendsto
+  have hcomp := hQB.comp hφ.tendsto_atTop
+  simpa [Function.comp_def, hB_at] using hcomp
 
 /-! ## Le Cam's first lemma — asymptotic log normality criterion
 
@@ -520,8 +586,8 @@ Proof idea: by `tendsto_integral_truncExp_gaussianReal` pick a natural `M` so th
 `∫ min(exp, M) dN > 1 - ε/2`; by `tendsto_integral_truncExp_L` pick `N₀` so that for
 `n ≥ N₀`, `∫ min(exp(L n), M) dP_n > 1 - ε`; and use `∫ exp(L n) dP_n = 1` to rearrange.
 
-Lets downstream consumers derive the Le Cam 3 uniform-integrability hypothesis from
-the log-normal weak convergence already in scope. -/
+Thus log-normal weak convergence implies the uniform-integrability estimate
+used in Le Cam's third lemma. -/
 lemma uniform_integrability_exp_L
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     (P Q : ∀ n, Measure (Ω n))
@@ -619,7 +685,7 @@ theorem contiguous_of_asymptotically_log_normal
       funext n; rw [ENNReal.ofReal_toReal (h_Q_lt_top n)]
     rw [h_eq] at h_of_real
     exact h_of_real
-  -- Now prove the real-valued version.
+  -- It remains to prove convergence of the real-valued measures.
   rw [Metric.tendsto_nhds]
   intro ε hε
   -- UI: get M and N₁ with `∫ (exp(L n) - min(exp(L n), M)) dP_n ≤ ε/2` for `n ≥ N₁`.
@@ -701,7 +767,7 @@ theorem contiguous_of_asymptotically_log_normal
             h_int_decomp
       _ ≤ M * ((P n) (A n)).toReal + ε / 2 := by
             linarith [h_T1_bound, h_T2_bound]
-  -- Now `M · ((P n)(A n)).toReal + ε/2 < ε`, by case on `M = 0` / `M > 0`.
+  -- The final strict bound follows by separating the cases `M = 0` and `M > 0`.
   rcases eq_or_lt_of_le hM_nonneg with hM_eq | hM_pos
   · -- `M = 0`: LHS = ε/2 < ε.
     have : M * ((P n) (A n)).toReal = 0 := by rw [← hM_eq]; ring
@@ -1190,7 +1256,7 @@ theorem mutuallyContiguous_of_asymptotically_log_normal
 
 /-! ## Le Cam's third lemma -/
 
-/-- **Le Cam's third lemma** (vdV Example 6.7).
+/-- **Le Cam's third lemma** (vdV Theorem 6.6).
 
 `P_n ⊲⊳ Q_n`, together with joint weak convergence of `(X_n, L_n)` under `P_n` to the
 law `π` on `E × ℝ` (the law of `(X, V)`), yields that `X_n` converges weakly under `Q_n`
@@ -1524,15 +1590,12 @@ theorem weak_limit_under_Q_of_lecam_third
     _ < ε / 3 + ε / 3 + ε / 3 := by linarith [h_seq_piece, h_weak_bound, h_target_piece]
     _ = ε := by ring
 
-/-- ENNReal-form variant of `weak_limit_under_Q_of_lecam_third`: the density
-`ρ_n : Ω → ℝ≥0∞` (e.g. an `rnDeriv`) is converted to the real-valued log form
-`L_n := log (ρ_n).toReal` via `hρ_AE_pos`, then forwarded to the exp-form theorem.
+/-- ENNReal-density form of Le Cam's third lemma (vdV Example 6.7).
 
-The `h_joint_weak` hypothesis is phrased in terms of
-`(X n ω, Real.log (ρ n ω).toReal)` for caller convenience.
-
-Reference: vdV Example 6.7 (Le Cam's third lemma); the exp-form
-`weak_limit_under_Q_of_lecam_third` supplies the analytic step. -/
+For an almost everywhere positive finite density `ρ_n : Ω → ℝ≥0∞`, set
+`L_n := log (ρ_n).toReal` and apply the exponential-density form of the
+theorem. The joint weak-convergence hypothesis is stated directly for
+`(X n ω, Real.log (ρ n ω).toReal)`. -/
 theorem weak_limit_under_Q_of_lecam_third_ennreal
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {E : Type*} [MeasurableSpace E] [TopologicalSpace E] [OpensMeasurableSpace E]
@@ -1579,34 +1642,25 @@ theorem weak_limit_under_Q_of_lecam_third_ennreal
     hX_meas hL_n_meas hQ_via_exp π h_joint_weak h_UI
     h_exp_int_π h_exp_int_π_eq_one
 
-/-! ## Contiguity-footing Le Cam variants
+/-! ## Le Cam variants under asymptotic density comparison
 
 The two lemmas below are asymptotic-footing reformulations of `uniform_integrability_exp_L`
 and `weak_limit_under_Q_of_lecam_third`. They replace the **exact** change-of-measure
 hypothesis `hL_is_log_ratio` (`Q n = (P n).withDensity (exp ∘ L n)`, which forces absolute
 continuity hence common support) by asymptotic data: an integral-comparison bound with
-vanishing slack and a mass hypothesis `∫ exp(L n) dP_n → 1`. They are added alongside the
-exact lemmas: concrete-support callers keep citing the exact ones. Conclusions are identical
-to their exact counterparts; only the hypothesis set changes. -/
+vanishing slack and a mass hypothesis `∫ exp(L n) dP_n → 1`. Their conclusions agree
+with the exact-density formulations. -/
 
 /-- **Uniform-integrability of `exp(L n)` from `∫ exp(L n) dP_n → 1`.**
 
-Contiguity-footing variant of `uniform_integrability_exp_L`. The exact identity
-`hL_is_log_ratio` is replaced by the two pieces it was only ever used to extract:
-* `h_exp_int` — integrability of `exp(L n)` under `P n` (in the AC case this came from
-  `exp_L_integrable`; on the contiguity footing it is supplied directly — `withDensity` is a finite
-  sub-probability measure of mass `≤ 1`);
-* `h_mass` — the asymptotic normalization `∫ exp(L n) dP_n → 1` (in the AC case this was the exact
-  `integral_exp_L_eq_one`; now `(1 + δₙ)` with `δₙ → 0`).
+The exact identity `hL_is_log_ratio` is replaced by integrability of
+`exp(L n)` and the asymptotic normalization `∫ exp(L n) dP_n → 1`.
 
-Conclusion identical to the exact lemma.
-
-**Proof:** mirror `uniform_integrability_exp_L`'s structure (Gaussian truncation pick +
-`tendsto_integral_truncExp_L`), but rework the tail ε-budget: the exact `1 − ∫min` becomes
+The proof follows the Gaussian truncation argument of
+`uniform_integrability_exp_L`. The exact term `1 − ∫min` becomes
 `(∫ exp(L n) dP_n) − ∫min = (1 + δₙ) − ∫min`. Split ε across the `δₙ` slack and the
 truncation gap; `δₙ = o(1)` is absorbable but must be carried explicitly (UI only needs
-`≤ ε` eventually). Reuse: `tendsto_integral_truncExp_L`,
-`tendsto_integral_truncExp_gaussianReal`. -/
+`≤ ε` eventually). -/
 lemma uniform_integrability_exp_L_of_integral_tendsto_one
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     (P Q : ∀ n, Measure (Ω n))
@@ -1685,22 +1739,14 @@ lemma uniform_integrability_exp_L_of_integral_tendsto_one
 
 /-- **Le Cam's third lemma from an integral-comparison bound.**
 
-Contiguity-footing variant of `weak_limit_under_Q_of_lecam_third`. The exact identity
-`hL_is_log_ratio` is replaced by the abstract integral-comparison hypothesis
-`h_integral_comparison`:
+Assume the integral-comparison hypothesis `h_integral_comparison`:
 for some `ρ → 0` and every bounded continuous `f`,
-`|∫ f(X n) dQ_n − ∫ f(X n)·exp(L n) dP_n| ≤ ‖f‖·ρ_n`. The exact `rw [← hL_is_log_ratio n]`
-is gone; the `‖f‖·ρ_n → 0` slack is carried through the existing truncation/residue
-estimate to the same weak limit (limits are exact, so the vanishing slack does not perturb them).
+`|∫ f(X n) dQ_n − ∫ f(X n)·exp(L n) dP_n| ≤ ‖f‖·ρ_n`. The vanishing
+slack does not affect the weak limit.
 
-Conclusion identical to the exact lemma.
-
-**Proof:** mirror `weak_limit_under_Q_of_lecam_third`'s ε-argument
-(`h_residue_EℝR` + BCF truncation + triangle inequality), but where the exact lemma rewrites
-`∫ f d((Q n).map X) = ∫ f(p.1)·exp(p.2) d((P n).map (X,L))` exactly, here that equality holds only
-up to `‖f‖·ρ_n`; add a fourth ε/4 (or rescale to ε/3 with the slack folded into one piece) for the
-`h_integral_comparison` term, eventually `< ε` since `ρ_n → 0`. Reuse: the entire existing body of
-`weak_limit_under_Q_of_lecam_third` (residue bound, target-side DCT, weak-convergence at `g_M`). -/
+The proof combines bounded-continuous truncation, the residue estimate, the
+target-side dominated-convergence argument, and an ε/4 bound for the
+integral-comparison error. -/
 theorem weak_limit_under_Q_of_lecam_third_of_integral_comparison
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {E : Type*} [MeasurableSpace E] [TopologicalSpace E] [OpensMeasurableSpace E]
@@ -1708,8 +1754,7 @@ theorem weak_limit_under_Q_of_lecam_third_of_integral_comparison
     [∀ n, IsProbabilityMeasure (P n)] [∀ n, IsProbabilityMeasure (Q n)]
     (X : ∀ n, Ω n → E) (L : ∀ n, Ω n → ℝ)
     (hX_meas : ∀ n, Measurable (X n)) (hL_meas : ∀ n, Measurable (L n))
-    -- replaces the exact identity `hL_is_log_ratio` by asymptotic singular-mass control (not common
-    -- support).
+    -- Asymptotic integral comparison without a common-support assumption.
     (h_integral_comparison :
       ∃ ρ : ℕ → ℝ, Tendsto ρ atTop (𝓝 0) ∧
         ∀ (f : E →ᵇ ℝ) (n : ℕ),
@@ -1791,10 +1836,8 @@ theorem weak_limit_under_Q_of_lecam_third_of_integral_comparison
     have hb := hg1_simp n
     rw [h_zero, sub_zero, abs_one] at hb
     linarith
-  -- ── Replay of the exact `weak_limit_under_Q_of_lecam_third` residue/ε argument to show ──
-  -- `aₙ` (in map form) converges to the target. The ONLY change is that `exp(L n)`
-  -- integrability under `P n` is now `h_eventually_int` (eventual) rather than the exact
-  -- `exp_L_integrable`; the threshold `N₀` is enlarged to absorb `N_int`.
+  -- The residue estimate applies after enlarging the threshold so that
+  -- `exp(L n)` is integrable under `P n`.
   have h_map_tendsto : Tendsto
       (fun n => ∫ p, f p.1 * Real.exp p.2 ∂((P n).map (fun ω => (X n ω, L n ω))))
       atTop (𝓝 (∫ p, f p.1 * Real.exp p.2 ∂π)) := by
@@ -2075,7 +2118,7 @@ theorem weak_limit_under_Q_of_lecam_third_of_integral_comparison
 
 We package the four equivalent characterizations of contiguity from van der Vaart
 Lemma 6.4. The notion `Contiguous atTop P Q` (`Q ⊲ P`) is the book's statement (i)
-in event form; the statistic form (iv) is stated below. Statements (ii) and (iii)
+in event form; its statistic form is statement (iv). Statements (ii) and (iii)
 concern the weak limit points of the likelihood ratios `dPₙ/dQₙ` (under `Qₙ`) and
 `dQₙ/dPₙ` (under `Pₙ`).
 
@@ -2411,9 +2454,7 @@ theorem contiguous_imp_limit_pos
   rw [eq_comm, tsub_eq_zero_iff_le] at h_eq
   exact le_antisymm h_le_one h_eq
 
-/-- **Marginals tight ⇒ joint tight** (local copy for the Le Cam (iii)⟹(i) proof; cf.
-`AsymptoticStatistics.Prohorov.tight_prod_of_tight_marginals`, which lives downstream of
-this file). -/
+/-- **Marginal tightness implies joint tightness.** -/
 private theorem tight_prod_of_tight_marginals_local
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [TopologicalSpace X] [TopologicalSpace Y]
@@ -2441,8 +2482,7 @@ private theorem tight_prod_of_tight_marginals_local
         add_le_add (hK_X _ ⟨μ, hμ, rfl⟩) (hK_Y _ ⟨μ, hμ, rfl⟩)
     _ = ε := ENNReal.add_halves _
 
-/-- **Prohorov: tight ⇒ weakly-convergent subsequence** (local copy for the Le Cam
-(iii)⟹(i) proof; cf. `AsymptoticStatistics.Prohorov.extract_weak_subseq`, downstream). -/
+/-- **A tight sequence of probability measures has a weakly convergent subsequence.** -/
 private theorem extract_weak_subseq_local
     {E : Type*} [MeasurableSpace E] [TopologicalSpace E] [PolishSpace E] [BorelSpace E]
     (μ : ℕ → Measure E) [∀ n, IsProbabilityMeasure (μ n)]
@@ -3672,7 +3712,10 @@ points of `dPₙ/dQₙ` give mass `0` to `0`], (iii) [limit points of `dQₙ/dP�
 
 Mutual absolute continuity `hac_PQ : ∀ n, P n ≪ Q n` and `hac_QP : ∀ n, Q n ≪ P n` makes
 the two likelihood ratios honest (van der Vaart's convention); it is genuinely needed for
-directions (i) ⟹ (ii) and (iii) ⟹ (i) (see those lemmas for the singular counterexample). -/
+directions (i) ⟹ (ii) and (iii) ⟹ (i) (see those lemmas for the singular counterexample).
+
+Mutual absolute continuity is essential for the directions (i) ⟹ (ii) and
+(iii) ⟹ (i); the corresponding lemmas record singular counterexamples. -/
 theorem leCam_first_tfae
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     (P Q : ∀ n, Measure (Ω n))

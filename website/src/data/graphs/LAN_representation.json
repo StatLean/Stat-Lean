@@ -1,7 +1,7 @@
 {
-  "root": "AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV",
+  "root": "AsymptoticStatistics.AsymptoticRepresentation.LAN_representation",
   "nodes": [
-    {"id":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","label":"LAN_representation_vdV","full":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","label":"LAN_representation","full":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.Θ","label":"Θ","full":"AsymptoticStatistics.AsymptoticRepresentation.Θ","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.Defs"},
@@ -11,7 +11,6 @@
     {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
-    {"id":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","label":"LAN_representation","full":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","label":"LAN_representation_of_gaussianShift","full":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.GaussianShift.isGaussianShift_multivariateGaussian","label":"isGaussianShift_multivariateGaussian","full":"AsymptoticStatistics.GaussianShift.isGaussianShift_multivariateGaussian","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.Experiment.GaussianShift"},
     {"id":"Matrix.PosDef.inv","label":"inv","full":"Matrix.PosDef.inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
@@ -46,24 +45,10 @@
     {"id":"AsymptoticStatistics.WeakConverges.snd_eq","label":"snd_eq","full":"AsymptoticStatistics.WeakConverges.snd_eq","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"Matrix.PosSemidef.re_dotProduct_nonneg","label":"re_dotProduct_nonneg","full":"Matrix.PosSemidef.re_dotProduct_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Matrix.PosDef"}
+    {"id":"Matrix.PosSemidef.re_dotProduct_nonneg","label":"re_dotProduct_nonneg","full":"Matrix.PosSemidef.re_dotProduct_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Matrix.PosDef"},
+    {"id":"Real.coe_toNNReal","label":"coe_toNNReal","full":"Real.coe_toNNReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"}
   ],
   "edges": [
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.DifferentiableQuadraticMean"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"fact_one_le_two_ennreal"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.fisherInformation"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.AsymptoticRepresentation.𝓨"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.WeakConverges"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.IsPDFOf"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_vdV","target":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation"},
-    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"AsymptoticStatistics.fisherInformation","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
-    {"source":"AsymptoticStatistics.IsPDFOf","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"AsymptoticStatistics.DifferentiableQuadraticMean"},
@@ -76,6 +61,11 @@
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"AsymptoticStatistics.GaussianShift.isGaussianShift_multivariateGaussian"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation","target":"Matrix.PosDef.inv"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.fisherInformation","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
+    {"source":"AsymptoticStatistics.IsPDFOf","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"AsymptoticStatistics.DifferentiableQuadraticMean"},
@@ -116,6 +106,7 @@
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"AsymptoticStatistics.WeakConverges.snd_eq"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
     {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"Matrix.PosSemidef.re_dotProduct_nonneg"}
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"Matrix.PosSemidef.re_dotProduct_nonneg"},
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.LAN_representation_of_gaussianShift","target":"Real.coe_toNNReal"}
   ]
 }

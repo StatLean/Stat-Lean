@@ -1,0 +1,22 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","label":"IsPointwiseMeasurable","full":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Set.Countable","label":"Countable","full":"Set.Countable","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Countable"},
+    {"id":"Filter.Tendsto","label":"Tendsto","full":"Filter.Tendsto","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Filter.atTop","label":"atTop","full":"Filter.atTop","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.AtTopBot.Defs"},
+    {"id":"nhds","label":"nhds","full":"nhds","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Defs.Filter"},
+    {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Set"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Real"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Set.Countable"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Filter.Tendsto"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Filter.atTop"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"nhds"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","target":"Real.pseudoMetricSpace"}
+  ]
+}

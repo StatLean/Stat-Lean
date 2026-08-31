@@ -428,6 +428,13 @@ theorem huberLocation_asymptoticNormal
   have hΘmeas : ∀ n, Measurable
       (fun ξ => packFin1 (θhat n (fun i : Fin n => X i.val ξ))) := fun n =>
     continuous_packFin1.measurable.comp (hθhat_meas n)
+  have hψ_joint : ∀ (n : ℕ) (h : Fin 1), Measurable
+      (fun p : Ξ × ℝ => huberPsiFin1 c
+        (packFin1 (θhat n (fun i : Fin n => X i.val p.1))) h p.2) := by
+    intro n h
+    simpa [huberPsiFin1, packFin1] using
+      (huberPsi_continuous c).measurable.comp
+        (measurable_snd.sub ((hθhat_meas n).comp measurable_fst))
   have hcons : ∀ ε : ℝ, 0 < ε →
       Tendsto (fun n => μ {ξ | ε < ‖packFin1 (θhat n (fun i : Fin n => X i.val ξ))
         - packFin1 θ₀‖}) atTop (𝓝 0) := by
@@ -458,7 +465,8 @@ theorem huberLocation_asymptoticNormal
   have hWC := EmpiricalProcess.zEstimator_asymptotic_normality P (huberPsiFin1 c)
     (packFin1 θ₀) (Matrix.of (fun _ _ : Fin 1 => -A)) hVdet 1 one_pos
     (fun _ => 1) (memLp_const 1) measurable_const hLip hψmeasE hrootE hfrechet hL2
-    (fun n s => packFin1 (θhat n s)) μ X hX_meas hX_indep hX_id hX_law hΘmeas hcons hest
+    (fun n s => packFin1 (θhat n s)) μ X hX_meas hX_indep hX_id hX_law hΘmeas
+    hψ_joint hcons hest
   set J : Matrix (Fin 1) (Fin 1) ℝ :=
     (Matrix.of (fun _ _ : Fin 1 => -A))⁻¹ * EmpiricalProcess.psiCov P (huberPsiFin1 c)
       (packFin1 θ₀) * Matrix.transpose ((Matrix.of (fun _ _ : Fin 1 => -A))⁻¹) with hJ_def

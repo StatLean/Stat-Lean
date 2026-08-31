@@ -6,51 +6,17 @@ import StatLean.AsymptoticStatistics.Operators.InformationLoss
 import Mathlib.Analysis.CStarAlgebra.Matrix
 
 /-!
-# Native multivariate discharge of vdV Theorem 25.77
+# Multivariate Taylor expansion for Z-estimators
 
-Vector-parameter (`θ ∈ ℝᵈ`) discharge layer that produces the asymptotically
-linear expansion of the semiparametric MLE **without** the coordinatewise
-detour of `Discharge/ZEstimatorVec.lean`. It uses vector and matrix hypotheses
-directly, with the `d × d` master identity as the central result.
+This smooth conditional theorem takes a vector estimating equation, a matrix
+Bartlett identity, and a matrix Taylor remainder. It derives
+`sqrt n * I * (thetaHat - theta0) = G_n score + o_P(1)` and applies the inverse
+of the full information matrix. Thus it supports non-diagonal information and
+has influence `I^-1 score = candidateVecEIF`.
 
-## Why native, not coordinatewise
-
-`ZEstimatorTaylorCore_vec` (in `Discharge/ZEstimatorVec.lean`) carries
-a `coord_eif_eq` field identifying the per-coordinate scalar discharge with the
-matrix-coupled influence `candidateVecEIF j`. This identification is available in
-the information-orthogonal case, where the efficient information matrix `Ĩ` is
-diagonal: the scalar engine produces influence `(1/Ĩⱼⱼ)·ℓ̃(eⱼ)`, which equals
-`candidateVecEIF j = ∑ₖ (Ĩ⁻¹)ⱼₖ·ℓ̃(eₖ)` when the off-diagonal terms vanish.
-The native route below supports the general positive-definite matrix case.
-
-The native route derives the vector residual directly:
-`√n·Ĩ·(θ̂−θ₀) = 𝔾ₙℓ̃ + o_P` (the **master identity**), then applies `Ĩ⁻¹`,
-so the influence is `Ĩ⁻¹ℓ̃ = candidateVecEIF` **by definition** — no
-`coord_eif_eq` needed. The off-diagonal coupling absent from the coordinatewise
-scalar route is contained in the master identity, proved using a native matrix
-bootstrap (Frobenius `o_P` + coercivity from `Ĩ⁻¹`).
-
-## Main ingredients
-
-1. `ZEstimatorTaylorCoreNative_vec` — native bundle: `hPD`, a **vector estimating
-   equation**, a **matrix Bartlett** field `E_P[∂_θℓ̃] = −Ĩ`, and a **matrix
-   DQM-Taylor** remainder. Drops `coord_hyp` + `coord_eif_eq`.
-2. `zEstimatorVec_master_identity` — `√n·Ĩ.mulVec(θ̂−θ₀) − 𝔾ₙℓ̃ = o_P`, using
-   matrix Taylor expansion, the matrix Bartlett identity, and off-diagonal coupling.
-   Its multivariate controls are entrywise LLN, vector Taylor `o_P`, Frobenius-`o_P`
-   of `Ĩ+D̂ₙ`, coordinatewise Chebyshev `O_P(1)` for `𝔾ₙℓ̃`, and the
-   `√n·(θ̂−θ₀) = O_P(1)` matrix bootstrap.
-3. `zEstimatorVec_linear_representation` — apply `Matrix.toEuclideanCLM Ĩ⁻¹`
-   to obtain the native AL residual with influence `−Ĩ⁻¹𝔾ₙℓ̃`.
-4. `native_influence_eq_candidateVecEIF` — sample-level bridge
-   `toEuclideanCLM Ĩ⁻¹ (ℓ̃(x)) = candidateVecEIF(x)`, using
-   `StrictModel.MatrixInfluenceEIF.matrix_influence_eq_candidateVecEIF`.
-5. `mle_asympLinear_of_leastFavorable_native_vec` — combine the linear representation
-   and influence identity to obtain
-   `AsymptoticallyLinearAt_vec estimator P (candidateVecEIF S_θ T_nuis e) θ₀`, so
-   the downstream `LeastFavorableVec` / `OneStepVec` adapters stay valid.
-
-Reference: vdV §25.5 thm:25.54 (vector form), §25.4 lem:25.25, §25.11 thm:25.77.
+The matrix Taylor and Bartlett assumptions are stronger than the proper-submodel
+hypotheses of van der Vaart, Theorem 25.77. References: van der Vaart, §25.5,
+Theorem 25.54 (vector form), and §25.4, Lemma 25.25.
 -/
 
 open MeasureTheory Filter Topology
@@ -67,7 +33,7 @@ open AsymptoticStatistics.StrictModel.EfficientScoreVec
 variable {Ω : Type} [MeasurableSpace Ω]
 variable {d : ℕ}
 
-/-! ### Matrix-of-`L²`-derivatives evaluation helper -/
+/-! ### Evaluation of a matrix of `L²` derivatives -/
 
 /-- Sample-point action of the `d × d` matrix of `L²(P)`-derivatives
 `M = ∂_θ ℓ̃` on a Euclidean vector `v`: the vector whose `j`-th coordinate is
@@ -83,16 +49,11 @@ noncomputable def scoreDerivApply
   (EuclideanSpace.equiv (Fin d) ℝ).symm
     (fun j => ∑ k, ((M j k : Ω → ℝ) x) * v k)
 
-/-! ### The native hypothesis bundle -/
+/-! ### Strong regularity hypotheses -/
 
-/-- *Native vector strong-regularity (Taylor-route) bundle for vdV thm:25.54 /
-thm:25.77.*
-
-The bundle for the native multivariate discharge. Unlike
-`ZEstimatorTaylorCore_vec`, it drops the `d` scalar
-sub-bundles (`coord_hyp`) and the info-orthogonality-only `coord_eif_eq` field.
-Instead it carries the **vector/matrix** primitives that the `d × d`
-master identity consumes directly:
+/-- Native vector strong-regularity bundle for a generic Taylor/Z-estimator
+route. It carries the vector and matrix inputs used by the full `d x d`
+identity:
 
 * `hPD` — positive-definiteness of the efficient information matrix `Ĩ`;
 * `score_eq_vec` — the vector estimating equation
@@ -101,13 +62,13 @@ master identity consumes directly:
 * `matrix_taylor` — the matrix DQM-Taylor remainder (vector lift of the scalar
   `score_l2_taylor`).
 
-Together these fields provide the nondegeneracy, estimating equation, Bartlett
-identity, and Taylor control used to derive the master identity; they do not assume
-the asymptotic-linear conclusion. The score-derivative matrix
-`score_l_dot : Matrix (Fin d) (Fin d) (Lp ℝ 2 P)` has `(j, k)` entry
-`∂_{θ_k} ℓ̃_j`.
+The score-derivative matrix
+`score_l_dot : Matrix (Fin d) (Fin d) (Lp Real 2 P)` has
+`(j, k)` entry `∂_{θ_k} ℓ̃_j`.
 
-Reference: vdV §25.5 thm:25.54 (vector form); §25.4 lem:25.25. -/
+Reference for the Taylor pattern: vdV §25.5 thm:25.54 (vector form); §25.4
+lem:25.25 supplies the efficient-influence construction. These conditions differ
+from the approximately-least-favorable MLE hypotheses of Theorem 25.77. -/
 structure ZEstimatorTaylorCoreNative_vec
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -117,12 +78,11 @@ structure ZEstimatorTaylorCoreNative_vec
     (score_func_seq : ∀ n, (Fin n → Ω) → (Ω → EuclideanSpace ℝ (Fin d)))
     (score_l_dot : Matrix (Fin d) (Fin d) (Lp ℝ 2 P))
     (θ₀ : EuclideanSpace ℝ (Fin d)) : Prop where
-  /-- Constitutive (vdV §25.4 lem:25.25): the efficient information matrix `Ĩ`
-  is positive-definite (identifiability), so `Ĩ⁻¹` exists and `candidateVecEIF`
-  is well-defined. Removal makes the linear representation undefined. -/
+  /-- The efficient information matrix is positive-definite, so its full
+  inverse is defined. Reference: vdV §25.4, Lemma 25.25. -/
   hPD : (efficientInformationMatrix S_θ T_nuis e).PosDef
-  /-- Constitutive (vdV §25.5 thm:25.54 hyp 4, vector form): the vector
-  Z/MLE-estimator solves the estimating equation up to `o_P(n^{-1/2})`:
+  /-- Generic Taylor-core input, patterned on vdV §25.5 thm:25.54 hyp 4: the
+  supplied vector estimator solves the estimating equation up to `o_P(n^{-1/2})`:
   `√n · 𝕡_n ℓ̃_{θ̂_n(X)} = o_P(1)` under `Pⁿ`, i.e. for every `ε > 0` the
   `Pⁿ`-probability that the Euclidean norm of
   `(√n)⁻¹ · Σᵢ ℓ̃_{θ̂_n(X)}(Xᵢ)` exceeds `ε` tends to `0`. Vector lift of the
@@ -132,10 +92,11 @@ structure ZEstimatorTaylorCoreNative_vec
       {X : Fin n → Ω |
         ε ≤ ‖(Real.sqrt n)⁻¹ • (∑ i, score_func_seq n X (X i))‖})
     atTop (𝓝 0)
-  /-- Constitutive (vdV §25.4, matrix Bartlett identity): the expectation of the
+  /-- Generic Taylor-core input (vdV §25.4 matrix Bartlett identity): the expectation of the
   `θ`-derivative of the efficient score is `−Ĩ`, entrywise
-  `E_P[∂_{θ_k} ℓ̃_j] = −Ĩ_{jk}`. This field records the conclusion of the polarized
-  Bartlett theorem; it is not an independent estimator assumption. -/
+  `E_P[∂_{θ_k} ℓ̃_j] = −Ĩ_{jk}`. It is deliberately a supplied field here;
+  separate infrastructure can derive it from suitable submodels, but this
+  generic bundle does not perform that derivation and does not encode 25.77. -/
   matrix_bartlett : ∀ j k,
     ∫ ω, ((score_l_dot j k : Ω → ℝ)) ω ∂P
       = - efficientInformationMatrix S_θ T_nuis e j k
@@ -238,7 +199,7 @@ private lemma norm_toEuclideanCLM_apply_le
     exact Real.sqrt_le_sqrt hsq
   rwa [Real.sqrt_mul hQnn, Real.sqrt_sq (norm_nonneg v)] at hle
 
-/-! ### Generic centered i.i.d. `O_P(1)` bound -/
+/-! ### Centered i.i.d. `O_P(1)` by scalar Chebyshev -/
 
 /-- **Generic centered i.i.d. `O_P(1)`.** For a mean-zero `L²(P)` function `g`,
 the normalized partial sum `(√n)⁻¹ · Σᵢ g(Xᵢ)` is bounded in `Pⁿ`-probability,
@@ -470,7 +431,7 @@ private lemma zEstimatorVec_step3_taylor
           apply div_le_div_of_nonneg_right h_cs h_n_pos.le
       _ = ∑ i, ‖r i‖ ^ 2 := by field_simp
 
-/-! ### Vector empirical-process `O_P(1)` bound (`√n·𝕡_n ℓ̃`) -/
+/-! ### Vector empirical-process `O_P(1)` for `√n·𝕡_n ℓ̃` -/
 
 /-- **Vector `O_P(1)` for the truth empirical process.** The normalized sum
 `(√n)⁻¹ · Σᵢ ℓ̃(Xᵢ)` of the (mean-zero, `L²`) vector efficient score is bounded in
@@ -604,7 +565,7 @@ private lemma jacobian_sum
       _ = Real.sqrt n * ((n : ℝ)⁻¹) := by rw [one_mul]
   apply (WithLp.equiv 2 (Fin d → ℝ)).injective
   funext j
-  show ((Real.sqrt n)⁻¹ • (∑ i : Fin n, scoreDerivApply M (X i) δ)).ofLp j
+  change ((Real.sqrt n)⁻¹ • (∑ i : Fin n, scoreDerivApply M (X i) δ)).ofLp j
       = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) (empJacobian M X)
           (Real.sqrt n • δ)).ofLp j
   rw [Matrix.ofLp_toEuclideanCLM]
@@ -684,7 +645,7 @@ private lemma core_identity
   rw [hadd, hexp]
   abel
 
-/-! ### Frobenius smallness of `Ĩ + D̂ₙ` (`o_P`) -/
+/-! ### Frobenius smallness of `Ĩ + D̂ₙ` -/
 
 /-- **Frobenius `o_P` of `Ĩ + D̂ₙ`.** For every `δ > 0`, the `Pⁿ`-probability that
 the Frobenius norm `√(Σⱼₖ (Ĩ + D̂ₙ)_{jk}²)` exceeds `δ` tends to `0`, since each
@@ -784,11 +745,10 @@ private lemma frobenius_oP
           hsum_lt
       exact absurd hX (not_le.mpr hlt)
 
-/-! ### The bootstrap bound `√n·(θ̂−θ₀) = O_P(1)` -/
+/-! ### The rate bootstrap `√n·(θ̂−θ₀) = O_P(1)` -/
 
 set_option maxHeartbeats 1600000 in
--- The matrix bootstrap expands a large good-event decomposition with Frobenius and coercivity
--- estimates, exceeding the default heartbeat budget.
+-- The matrix-bootstrap proof below needs 1,600,000 heartbeats; the default 200,000 times out.
 /-- **Bootstrap `√n·(θ̂−θ₀) = O_P(1)` (eventual form).** For every `η > 0` there
 is a bound `M` with `Pⁿ{M ≤ ‖√n·(θ̂−θ₀)‖} ≤ η` eventually. The matrix bootstrap:
 from the core identity `Ĩ·Δₙ = (Ĩ+D̂ₙ)·Δₙ + Sₙ + Rₙ − Lₙ`, invertibility of `Ĩ`
@@ -956,7 +916,7 @@ private lemma zEstimatorVec_step5
     congr 1; ring
   exact le_trans (add_le_add (add_le_add hfr hSbnd) (add_le_add h3 hsc)) h_sum_eps.le
 
-/-! ### The cross term `(Ĩ + D̂ₙ)·Δₙ →_P 0` (`o_P · O_P`) -/
+/-! ### Cross term `(Ĩ + D̂ₙ)·Δₙ →_P 0` -/
 
 /-- **Cross term `o_P`.** `toEuclideanCLM (Ĩ + D̂ₙ) Δₙ →_P 0`: the product of the
 Frobenius-`o_P` factor `√(Σ (Ĩ+D̂ₙ)²)` (`frobenius_oP`) and the `O_P(1)` factor
@@ -1024,27 +984,17 @@ private lemma crossterm_oP
 
 /-! ### The `d × d` master identity -/
 
-/-- **The `d × d` master identity.**
-`≈ 1000`-line scalar analogue (`Discharge/ZEstimator.lean` Steps 3–6), here
-proved natively for the vector parameter via the preceding lemmas:
-`emp_expansion`/`core_identity` (the empirical Taylor algebraic identity),
-`zEstimatorVec_step4_lln` (entrywise LLN + matrix Bartlett), `frobenius_oP`
-(`o_P` of `Ĩ+D̂ₙ`), `zEstimatorVec_step5` (the `√n·(θ̂−θ₀)=O_P(1)` matrix
-bootstrap), `crossterm_oP` (`(Ĩ+D̂ₙ)·Δₙ →_P 0`), `zEstimatorVec_step3_taylor`,
-and the estimating equation.
-
-From the native bundle,
+/-- From the native bundle,
 `√n · Ĩ·(θ̂_n − θ₀) − 𝔾ₙℓ̃ = o_P` under `Pⁿ`, i.e. for every `ε > 0` the
 `Pⁿ`-probability that the Euclidean norm of
 `Ĩ·(√n·(θ̂_n − θ₀)) − (√n)⁻¹·Σᵢ ℓ̃(Xᵢ)` exceeds `ε` tends to `0`, where
 `Ĩ = efficientInformationMatrix S_θ T_nuis e` acts as `Matrix.toEuclideanCLM Ĩ`
 and `ℓ̃(x) = tupleEval P (ℓ̃(e·)) x` is the vector efficient score.
 
-Encoding note: the sign convention is fixed by the *scalar* master identity
-(`Discharge/ZEstimator.lean`, `step6_residual_oP`), which reads
+The sign agrees with the scalar master identity in
+`Discharge/ZEstimator.lean`, which reads
 `Ĩ·√n·(est − θ₀) − (√n)⁻¹·Σ ℓ̃ = o_P` (minus on the empirical-process term) so
-that applying `Ĩ⁻¹` yields the influence `+Ĩ⁻¹ℓ̃ = candidateVecEIF` with the
-correct (positive) sign required by the unchanged headline output. -/
+that applying `Ĩ⁻¹` yields `+Ĩ⁻¹ℓ̃ = candidateVecEIF`. -/
 theorem zEstimatorVec_master_identity
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
             score_func_seq score_l_dot θ₀) :
@@ -1135,29 +1085,15 @@ theorem zEstimatorVec_master_identity
       (le_trans (measure_union_le _ _)
         (add_le_add (measure_union_le _ _) le_rfl))
 
-/-! ### Linear representation after applying `Ĩ⁻¹` -/
+/-! ### Linear representation by applying `Ĩ⁻¹` -/
 
-/-- **Native vector linear representation.**
-
-Apply the (Lipschitz) endomorphism `Matrix.toEuclideanCLM Ĩ⁻¹` to the master
-identity and collapse `Ĩ⁻¹ Ĩ = 1` (from `hPD`), obtaining the native AL
+/-- Apply the continuous linear map `Matrix.toEuclideanCLM Ĩ⁻¹` to the master
+identity and collapse `Ĩ⁻¹ Ĩ = 1`, obtaining the native asymptotic-linearity
 residual with influence `−Ĩ⁻¹𝔾ₙℓ̃`:
 `√n·(θ̂_n − θ₀) − (√n)⁻¹·Σᵢ (Ĩ⁻¹ ℓ̃)(Xᵢ) = o_P` under `Pⁿ`.
 
-This is the `Measure.pi` specialization of the finite-dimensional representation
-`EmpiricalProcess.ZEstimatorNormality.zEstimator_linear_representation`:
-`√n·(θ̂ − θ₀) + toEuclideanCLM V⁻¹ (empiricalProcessVec …) →ₚ 0`.
-
-**Proof.** The linear-representation residual is *pointwise* (for every `X`, no a.e.
-needed) the image of the master-identity residual under `L = toEuclideanCLM Ĩ⁻¹`.
-Applying `L` distributes over
-the subtraction (`map_sub`), collapses `L (toEuclideanCLM Ĩ (√n•(θ̂−θ₀))) = √n•(θ̂−θ₀)`
-via `Ĩ⁻¹ Ĩ = 1` (`hPD ⇒ IsUnit Ĩ`), and pushes through the scaled sum
-(`map_smul`, `map_sum`). Then the Lipschitz bound `‖L v‖ ≤ ‖L‖·‖v‖` includes the
-linear-representation `ε`-exceedance set in the master-identity
-`ε/(‖L‖+1)`-exceedance set, whose `Pⁿ`-measure tends to zero (the
-`Measure.pi {X | ε ≤ ‖·‖}`-encoding analogue of
-`tendstoInProbZero_clm`). -/
+The Lipschitz bound for this map transfers the corresponding `o_P(1)`
+statement in the `Measure.pi` encoding. -/
 theorem zEstimatorVec_linear_representation
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
             score_func_seq score_l_dot θ₀) :
@@ -1187,7 +1123,8 @@ theorem zEstimatorVec_linear_representation
       rw [hL, ← map_mul, Matrix.nonsing_inv_mul _
         ((Matrix.isUnit_iff_isUnit_det _).mp h.hPD.isUnit), map_one]
     rw [← ContinuousLinearMap.mul_apply, hInv, ContinuousLinearMap.one_apply]
-  -- Pointwise identity: the new residual is the image of the master residual under `L`.
+  -- Pointwise identity: the linear-representation residual is `L` applied to
+  -- the information-weighted residual.
   have hpt : ∀ (n : ℕ) (X : Fin n → Ω),
       Real.sqrt n • (estimator n X - θ₀)
           - (Real.sqrt n)⁻¹ • (∑ i, L (tupleEval P
@@ -1199,7 +1136,7 @@ theorem zEstimatorVec_linear_representation
                 (fun j => efficientScore S_θ T_nuis (e j)) (X i))) := by
     intro n X
     rw [map_sub, hLI, map_smul, map_sum]
-  -- Lipschitz inclusion of the new `ε`-set in the master `ε/(‖L‖+1)`-set.
+  -- Lipschitz inclusion between the corresponding exceedance sets.
   have hsub : ∀ n : ℕ,
       {X : Fin n → Ω | ε ≤ ‖Real.sqrt n • (estimator n X - θ₀)
           - (Real.sqrt n)⁻¹ • (∑ i, L (tupleEval P
@@ -1227,28 +1164,16 @@ theorem zEstimatorVec_linear_representation
     (Eventually.of_forall fun n => zero_le _)
     (Eventually.of_forall fun n => measure_mono (hsub n))
 
-/-! ### Sample-level influence identity -/
+/-! ### Sample-level influence bridge -/
 
-/-- **Sample-level influence identity (`P`-a.e.).**
-
-For `P`-almost every sample point `x`, applying `Ĩ⁻¹` (as `Matrix.toEuclideanCLM Ĩ⁻¹`)
+/-- For `P`-almost every sample point `x`, applying `Ĩ⁻¹` as a continuous linear map
 to the vector efficient score `ℓ̃(x)` yields the sample evaluation of the vector EIF:
 `toEuclideanCLM Ĩ⁻¹ (ℓ̃(x)) = candidateVecEIF(x)`.
 
-**Why a.e., not pointwise (∀x).** `tupleEval P φ x`
+This identity is almost-everywhere rather than pointwise because `tupleEval P φ x`
 (`Core/EfficiencyOperationalVec.lean`) reads the `Lp.coeFn` a.e.-representative, and
 the underlying identity `⇑(∑ₖ (Ĩ⁻¹)ⱼₖ • ℓ̃ₖ) x = ∑ₖ (Ĩ⁻¹)ⱼₖ · ⇑ℓ̃ₖ x` holds only
-`P`-a.e. (`Lp.coeFn_add`/`_smul` are a.e. statements), **not** for a fixed `x`. This is
-exactly the a.e. bridge used by the scalar discharge in
-`zEstimator_asympLinear_of_taylor` (`Discharge/ZEstimator.lean`).
-
-**Proof.** Coordinate `j` of the LHS is `∑ₖ (Ĩ⁻¹)ⱼₖ · ⇑(ℓ̃(eₖ)) x`
-(`Matrix.toEuclideanCLM` reduces to `mulVec` via `WithLp.equiv`, rfl); coordinate `j`
-of the RHS is `⇑(candidateVecEIF j) x`. Since `candidateVecEIF j = ∑ₖ (Ĩ⁻¹)ⱼₖ • ℓ̃(eₖ)`
-in `↥(L2ZeroMean P)`, the submodule coercion commutes with the finite sum/smul
-genuinely, and `Lp.coeFn` commutes a.e. (`Lp_coeFn_finset_sum` + `Lp.coeFn_smul`),
-giving the per-coordinate a.e. identity; assembling over the finite `Fin d` (`ae_all_iff`)
-gives the vector equality. -/
+`P`-a.e. -/
 theorem native_influence_eq_candidateVecEIF
     (S_θ : OrdinaryScore P Θ) (T_nuis : NuisanceTangentSpace P)
     [T_nuis.HasOrthogonalProjection] (e : Fin d → Θ) :
@@ -1292,31 +1217,18 @@ theorem native_influence_eq_candidateVecEIF
   filter_upwards [hall] with x hx
   apply (WithLp.equiv 2 (Fin d → ℝ)).injective
   funext j
-  show (∑ k, (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
+  change (∑ k, (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
         * ((efficientScore S_θ T_nuis (e k) : ↥(L2ZeroMean P)) : Lp ℝ 2 P) x)
       = ((candidateVecEIF S_θ T_nuis e j : ↥(L2ZeroMean P)) : Lp ℝ 2 P) x
   exact (hx j).symm
 
-/-! ### Assemble the native vector asymptotic-linear conclusion -/
+/-! ### Smooth conditional asymptotic linearity -/
 
-/-- **Native vector asymptotic-linear conclusion.**
-
-From the linear representation and the sample-level influence identity, the
-vector MLE is asymptotically linear at `P` with influence tuple
-`candidateVecEIF S_θ T_nuis e` and vector centering `θ₀` — the **exact same
-output type** as the coordinatewise
-`zEstimator_asympLinear_of_taylor_vec`, so downstream `LeastFavorableVec` /
-`OneStepVec` adapters remain valid after the eventual swap.
-
-**Proof.** The linear representation gives the `o_P` residual with influence
-`toEuclideanCLM Ĩ⁻¹ (ℓ̃(Xᵢ))`; the sample-level identity rewrites each summand to
-`tupleEval P (candidateVecEIF …) (Xᵢ)`. Because the identity holds `P`-a.e. (see its
-docstring: `tupleEval` is `Lp.coeFn`-based), the two influence sums agree only `Pⁿ`-a.e.;
-lifting it through each coordinate `Xᵢ` (`measurePreserving_eval`) and combining over
-`Fin n` (`ae_all_iff`) shows the two residual **sets** are `Pⁿ`-a.e. equal, so `measure_congr`
-gives the measures equal. This mirrors the scalar `zEstimator_asympLinear_of_taylor`
-a.e. identity. -/
-theorem mle_asympLinear_of_leastFavorable_native_vec
+/-- From the linear representation and the sample-level bridge,
+the supplied estimator is asymptotically linear at `P` with influence tuple
+`candidateVecEIF S_θ T_nuis e` and vector centering `θ₀`. This is the generic
+smooth conditional theorem, not Theorem 25.77. -/
+theorem mle_asympLinear_of_nativeTaylorCore_vec
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
             score_func_seq score_l_dot θ₀) :
     AsymptoticallyLinearAt_vec estimator P
@@ -1325,7 +1237,7 @@ theorem mle_asympLinear_of_leastFavorable_native_vec
   refine (zEstimatorVec_linear_representation h ε hε).congr (fun n => ?_)
   refine MeasureTheory.measure_congr ?_
   rw [Filter.eventuallyEq_set]
-  -- Lift the `P`-a.e. identity through each coordinate `X i` via `measurePreserving_eval`.
+  -- The sample-level identity is lifted through each coordinate `X i`.
   have h5 := native_influence_eq_candidateVecEIF S_θ T_nuis e
   have h_all : ∀ᵐ X ∂(Measure.pi (fun _ : Fin n => P)), ∀ i : Fin n,
       Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d)
@@ -1344,38 +1256,28 @@ theorem mle_asympLinear_of_leastFavorable_native_vec
     Finset.sum_congr rfl (fun i _ => hX i)
   simp only [hsum]
 
-/-! ### Book-faithful native headline (vdV Thm 25.77, vector form) -/
+/-! ### Smooth conditional efficiency theorem -/
 
-/-- **vdV Theorem 25.77 (vector form), book-faithful native discharge.**
+/-- **Native generic Taylor/Z-estimator efficiency core.**
 
-The semiparametric MLE `estimator` is asymptotically efficient at `P` relative to the
+The supplied estimator `estimator` is asymptotically efficient at `P` relative to the
 tangent space `T` for the vector functional `ψ` with `ψ P = θ₀`, discharged from the
-**native** vector strong-regularity bundle `ZEstimatorTaylorCoreNative_vec`, whose explicit
-vector/matrix primitives are `hPD`, the vector estimating equation `score_eq_vec`,
-the matrix Bartlett identity `matrix_bartlett = E_P[∂_θℓ̃] = −Ĩ`, the matrix DQM-Taylor
-remainder `matrix_taylor`. The theorem additionally takes the EIF-construction inputs
-`h_mem` and `h_Dψ`.
+native vector strong-regularity bundle `ZEstimatorTaylorCoreNative_vec` (`hPD`, the vector
+estimating equation `score_eq_vec`, the supplied matrix identity `matrix_bartlett`, and the
+matrix Taylor remainder `matrix_taylor`) plus the EIF-construction inputs (`h_mem`, `h_Dψ`).
 
-This vector formulation does not require the coordinatewise `coord_eif_eq`
-identification used for info-orthogonal directions (`Ĩ` diagonal). The full matrix
-coupling is handled inside the native master identity
-(`zEstimatorVec_master_identity`), so the influence is
-`Ĩ⁻¹ℓ̃ = candidateVecEIF` by construction for arbitrary positive-definite `Ĩ`.
-
-The `matrix_bartlett` field is the conclusion form of the concept theorem
-`StrictModel.MatrixBartlett.matrixBartlett_eq_neg_information`, derived by differentiating
-`∫ ℓ̃_θ p_θ = 0` under the integral via the polarized
-`DifferentiableScoreSubmodel.bartlett_identity`. Thus it is supplied by a named DQM
-result rather than introduced as a separate condition on the estimator.
+This theorem applies to arbitrary non-diagonal efficient information. It does
+not carry the coordinatewise `coord_eif_eq` identification; matrix coupling is
+handled in `zEstimatorVec_master_identity`.
 
 **Proof.** `eif_from_efficientScore_vec` (from `hPD`, `h_mem`, `h_Dψ`) makes `candidateVecEIF`
 a vector efficient influence function for `Dψ`; the native discharge
-`mle_asympLinear_of_leastFavorable_native_vec` makes `estimator` asymptotically linear with
-that influence and centering `ψ P = θ₀`; `estimator_semiparametricallyEfficient_of_asympLinear_eif_vec`
-combines them.
+`mle_asympLinear_of_nativeTaylorCore_vec` makes `estimator` asymptotically linear with
+that influence and centering `ψ P = θ₀`;
+`estimator_semiparametricallyEfficient_of_asympLinear_eif_vec` combines them.
 
-Reference: vdV §25.11, thm:25.77 (vector form) — "Theorem 25.54, with `ℓ̃` replaced by `κ̃`". -/
-theorem mle_semiparametricallyEfficient_of_leastFavorable_native_vec
+Reference: vdV §25.5, Theorem 25.54 (smooth vector form). -/
+theorem mle_semiparametricallyEfficient_of_nativeTaylorCore_vec
     (h : ZEstimatorTaylorCoreNative_vec P Θ S_θ T_nuis e estimator
             score_func_seq score_l_dot θ₀)
     {T : Submodule ℝ ↥(L2ZeroMean P)} {Dψ : T →L[ℝ] EuclideanSpace ℝ (Fin d)}
@@ -1388,7 +1290,7 @@ theorem mle_semiparametricallyEfficient_of_leastFavorable_native_vec
   have hEIF := eif_from_efficientScore_vec S_θ T_nuis e T Dψ h.hPD h_mem h_Dψ
   have hAL : AsymptoticallyLinearAt_vec estimator P
       (candidateVecEIF S_θ T_nuis e) (ψ P) := by
-    rw [h_ψ]; exact mle_asympLinear_of_leastFavorable_native_vec h
+    rw [h_ψ]; exact mle_asympLinear_of_nativeTaylorCore_vec h
   exact estimator_semiparametricallyEfficient_of_asympLinear_eif_vec hEIF hAL
 
 end AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorVecNative

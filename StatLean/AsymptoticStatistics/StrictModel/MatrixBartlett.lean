@@ -7,8 +7,8 @@ import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
 The **matrix / information Bartlett identity** for the efficient information matrix `Ĩ`.
 Its `(j,k)` entry is the *off-diagonal* second Bartlett identity in polarized form,
 `E_P[∂_k ℓ̃_j] = − ∫ ℓ̃_j · ℓ̃_k dP = − Ĩ_{jk}`, one per pair of parameter directions
-`(e_j, e_k)`. Assembling the `d²` scalar identities supplied by the concept brick
-`AsymptoticStatistics.ParametricFamily.DifferentiableScoreSubmodel.bartlett_identity`
+`(e_j, e_k)`. Assembling the `d²` scalar identities (each certified by the already-closed
+concept brick `AsymptoticStatistics.ParametricFamily.DifferentiableScoreSubmodel.bartlett_identity`)
 against `efficientInformationMatrix_apply` yields the full matrix statement
 
   `(Matrix.of fun j k => ∫ (∂_k ℓ̃_j) dP) = − Ĩ`,
@@ -17,9 +17,9 @@ with `Ĩ` the efficient information matrix `Ĩ_{jk} = ⟪ℓ̃(e_j), ℓ̃(e_k)�
 
 All the analytic content (differentiating `∫ f_θ p_θ dμ = 0` under the integral sign) lives
 inside `bartlett_identity`; this file is pure entrywise assembly. The hypothesis `h_match`
-states that the `d²` supplied score submodels realize the efficient
+is the honest matching claim that the `d²` supplied score submodels realize the efficient
 scores `ℓ̃(e_j), ℓ̃(e_k)` — i.e. that `∫ f₀ · k₀ dP` for submodel `(j,k)` equals
-`⟪ℓ̃(e_j), ℓ̃(e_k)⟫`, a condition to verify for each concrete submodel construction.
+`⟪ℓ̃(e_j), ℓ̃(e_k)⟫`. It is discharged later by concrete submodel constructions.
 
 Reference: vdV §25.4 (efficient information matrix `Ĩ` and the matrix Bartlett identity);
 §5.3 / §7.2 (the underlying second Bartlett / information identity).
@@ -48,7 +48,7 @@ variable {d : ℕ}
 `(Matrix.of fun j k => ∫ (∂_k ℓ̃_j) dP) = − Ĩ`, where `Ĩ = efficientInformationMatrix`
 is the `d × d` efficient information matrix `Ĩ_{jk} = ⟪ℓ̃(e_j), ℓ̃(e_k)⟫`.
 
-Entrywise assembly of the polarized second Bartlett identity
+Entrywise application of the polarized second Bartlett identity
 (`DifferentiableScoreSubmodel.bartlett_identity`) over the
 `d²` supplied score submodels `M j k`. The matching hypothesis `h_match` records that the
 `(j,k)` submodel's density-weighted score product `∫ f₀ · k₀ dP` realizes the efficient
@@ -69,8 +69,8 @@ theorem matrixBartlett_eq_neg_information
       efficientInformationMatrix_apply]
 
 /-- The `(j,k)`-entry form of the matrix Bartlett identity:
-`∫ (∂_k ℓ̃_j) dP = − Ĩ_{jk}`. Convenient for entrywise consumers (e.g. the matrix-coupled
-vector EIF `Ĩ⁻¹ ℓ̃`). -/
+`∫ (∂_k ℓ̃_j) dP = − Ĩ_{jk}`. This form applies directly to the matrix-coupled
+vector EIF `Ĩ⁻¹ ℓ̃`. -/
 theorem matrixBartlett_entry
     (S_θ : OrdinaryScore P Θ) (T_nuis : NuisanceTangentSpace P)
     [T_nuis.HasOrthogonalProjection] (e : Fin d → Θ)
@@ -81,20 +81,14 @@ theorem matrixBartlett_entry
     ∫ ω, (M j k).scoreDot ω ∂P = - efficientInformationMatrix S_θ T_nuis e j k := by
   rw [(M j k).bartlett_identity, h_match j k, efficientInformationMatrix_apply]
 
-/-- **Derivation of the native bundle's `matrix_bartlett` field.**
-
-The `matrix_bartlett` field of `ZEstimatorTaylorCoreNative_vec`
-(`∫ score_l_dot j k dP = − Ĩ_{jk}`) is a *derived* consequence of differentiable score
-submodels, **not** an independent assumption on the estimator. Given submodels `M j k`
-whose density-weighted score products realize the efficient inner products (`h_match`) and
-whose score derivatives `(M j k).scoreDot` `P`-a.e. agree with
-the bundle's matrix entries `score_l_dot j k` (`h_id`, definitional at instantiation), the
-field holds by `matrixBartlett_entry` (itself the polarized second Bartlett identity
+/-- The identity `∫ score_l_dot j k dP = − Ĩ_{jk}` follows from differentiable
+score submodels. Given submodels `M j k`
+whose density-weighted score products realize the efficient inner products (`h_match`, the
+matching condition) and whose score derivatives `(M j k).scoreDot` `P`-a.e. agree with
+the matrix entries `score_l_dot j k` (`h_id`), the identity follows from
+`matrixBartlett_entry`, the polarized second Bartlett identity
 `DifferentiableScoreSubmodel.bartlett_identity`, obtained by differentiating
-`∫ ℓ̃_θ p_θ = 0` under the integral).
-
-This is the vector/matrix counterpart of the scalar
-`Discharge.LeastFavorable.score_l_dot_bartlett_of_differentiableScoreSubmodel`.
+`∫ ℓ̃_θ p_θ = 0` under the integral.
 
 Reference: vdV §25.4 (matrix Bartlett / information identity). -/
 theorem matrix_bartlett_of_submodels

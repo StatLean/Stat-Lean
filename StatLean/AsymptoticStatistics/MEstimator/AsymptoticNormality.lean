@@ -4,58 +4,19 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.LinearizationEquicontinuit
 /-!
 # M-estimator asymptotic normality — vdV Theorem 5.23
 
-This file states the **book-faithful headline theorem**
-`m_estimator_normality` and its reduction to the CLT⇒normality theorem
-`mEstimator_normality_of_expansion` (`MEstimator/MEstimatorNormality.lean`).
+Under the differentiability, local Lipschitz, quadratic-expansion, near-maximization, and
+consistency assumptions of vdV Theorem 5.23, `m_estimator_normality` proves
 
-## Why a separate file (import-cycle break)
+    √n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙṁ_{θ₀} + o_P(1)
 
-The headline must consume both
+and the resulting Gaussian weak limit. The proof first obtains the `√n` rate, expands the
+criterion at both the estimator and the quadratic maximizer `−V⁻¹𝔾ₙṁ`, and then applies
+the argmax localization result.
 
-* `Rate.mEstimator_sqrtn_rate` (the `√n`-rate, `MEstimator/Rate.lean`), and
-* `LinearizationEquicontinuity.mEstimator_linearization_equicontinuity` (vdV Lemma
-  19.31), combined through `mEstimator_quadratic_expansion`.
-
-But `MEstimator/Rate.lean` **imports** `MEstimator/MEstimatorNormality.lean` (it reuses
-`empiricalProcess`/`empiricalAvg`/`TendstoInProbZero`), so the headline cannot live in
-`MEstimatorNormality.lean` without a cycle. This file imports `Rate` +
-`LinearizationEquicontinuity` (+ transitively `MEstimatorNormality`) and closes the loop.
-
-## Reduction map
-
-`m_estimator_normality` reduces to `mEstimator_normality_of_expansion` by deriving its
-inputs `A, B, hExpA, hExpB, hNearMax, hPmdot_zero`:
-
-* `A := n·ℙₙ(m_{θ₀+(√n)⁻¹•hA} − m_{θ₀})`, `hA := √n(θ̂−θ₀)`; `hExpA` is the
-  quadratic expansion at `hA`, and `mEstimator_sqrtn_rate` gives `hA = O_P(1)`.
-* `B := n·ℙₙ(m_{θ₀+(√n)⁻¹•hB} − m_{θ₀})`, `hB := −V⁻¹𝔾ₙṁ`; `hExpB` uses the
-  same quadratic expansion at `hB` and
-  complete-the-square (`mEstimator_hExpB_completeSquare`).
-  `hB = O_P(1)` via the CLT (`mEstimator_hB_boundedInProb`).
-* `hNearMax` (glue form `max0(B−A) →ₚ 0`): reconnection of the headline sup-form near-max
-  through `BddAbove` (`nearMaxGlue_of_sup`).
-* `hPmdot_zero`: `Pṁ_{θ₀} = 0`, the first-order condition at the max
-  (`firstOrder_condition_Pmdot_zero`, differentiation-under-∫).
-
-## Additional regularity hypothesis
-
-One additional regularity hypothesis beyond vdV's Lipschitz-only formulation is:
-
-* `hBdd : ∀ n ξ, BddAbove (Set.range (θ ↦ ℙₙm_θ))` — the empirical `sup`
-  `⨆_θ ℙₙm_θ` has its intended finite value (an unbounded family's `⨆` defaults
-  to `0` in this encoding); implicit in vdV's "`θ̂` is a genuine near-maximizer".
-
-## Main ingredients
-
-* `firstOrder_condition_Pmdot_zero` — `Pṁ_{θ₀}=0` by differentiation under the integral.
-* `mEstimator_hB_boundedInProb` — `−V⁻¹𝔾ₙṁ = O_P(1)` from the CLT and mapping theorem.
-* `nearMaxTheta0_of_sup` — near-maximality at `θ₀` from the supremum form and `hBdd`.
-* `nearMaxGlue_of_sup` — glue near-maximality (`max0(B−A)`) from the supremum form.
-* `taylorBoundedForm_of_littleO` — a localized quadratic bound from little-o Taylor.
-* `mEstimator_hExpB_completeSquare` — the complete-the-square identity.
-
-The headline combines these with `mEstimator_linearization_equicontinuity`
-(vdV Lemma 19.31) through `mEstimator_quadratic_expansion_of_distL2`.
+The empirical supremum is assumed bounded above for every sample. This ensures that the
+supremum formulation of near-maximality represents a finite value. The first-order
+condition `Pṁ_{θ₀}=0`, nonsingularity of `V`, and square-integrability of the score are all
+derived from the stated assumptions.
 -/
 
 namespace AsymptoticStatistics.MEstimator
@@ -63,14 +24,14 @@ namespace AsymptoticStatistics.MEstimator
 open MeasureTheory Filter ProbabilityTheory EmpiricalProcess
 open scoped ENNReal Topology RealInnerProductSpace Matrix ProbabilityTheory
 
-/-! ### Little-o Taylor implies a bounded remainder -/
+/-! ### Little-o Taylor expansion in bounded remainder form -/
 
-/-- **Taylor remainder in bounded form** (used by `mEstimator_sqrtn_rate`).
+/-- **Taylor remainder in bounded form** for `mEstimator_sqrtn_rate`.
 
-The headline carries the second-order population Taylor expansion as an
+The theorem carries the second-order population Taylor expansion as an
 `Asymptotics.IsLittleO`; `mEstimator_sqrtn_rate` instead consumes the concrete
 localized bound `|remainder| ≤ (c/4)·‖θ−θ₀‖²` on a ball. This is the standard
-`isLittleO_iff` unpacking at `ε := c/4`. -/
+`isLittleO_iff` unpacking at `ε := c/4`. Derived, not assumed. -/
 theorem taylorBoundedForm_of_littleO
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -98,8 +59,8 @@ theorem taylorBoundedForm_of_littleO
 
 With `hB = −V⁻¹G` (`G = 𝔾ₙṁ`), the local quadratic `q(hB) = ½⟪hB,V hB⟫ + ⟪hB,G⟫`
 collapses to `−½⟪G, V⁻¹G⟫`. This is `complete_the_square` evaluated at the vertex
-`x = −V⁻¹G`, where the leftover square `½⟪x+V⁻¹G, V(x+V⁻¹G)⟫` vanishes. This relates
-`hB` to the shape `mEstimator_normality_of_expansion` expects for `hExpB`. -/
+`x = −V⁻¹G`, where the second square `½⟪x+V⁻¹G, V(x+V⁻¹G)⟫` vanishes. This
+gives the form expected by `mEstimator_normality_of_expansion`. -/
 theorem mEstimator_hExpB_completeSquare {d : ℕ} (V : Matrix (Fin d) (Fin d) ℝ)
     (hVunit : IsUnit V.det) (hVsymm : V.IsHermitian) (G : EuclideanSpace ℝ (Fin d)) :
     (1 / 2) * ⟪- Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V⁻¹ G,
@@ -119,12 +80,11 @@ theorem mEstimator_hExpB_completeSquare {d : ℕ} (V : Matrix (Fin d) (Fin d) �
 At the population maximum `θ₀` the gradient of `θ ↦ Pm_θ` vanishes. Differentiating under
 the integral (`hderiv` a.e. + the Lipschitz `L²` envelope for domination) gives
 `∇(Pm_θ)|_{θ₀} = ∫ ṁ_{θ₀} dP`; the second-order Taylor `hTaylor` has **no linear term**,
-so the gradient is `0`. The identity `Pṁ_{θ₀} = 0` is the stationarity
-condition used by the Z-estimator normality theorem. The theorem
-`hasFDerivAt_integral_of_dominated_loc_of_lip`
+so the gradient is `0`. Book-forced (not assumed): `Pṁ_{θ₀} = 0` is the stationarity
+condition. The theorem `hasFDerivAt_integral_of_dominated_loc_of_lip`
 gives `∇(Pm_θ)|_{θ₀} = ∫ innerSL(ṁ)`; `hTaylor` (little-o `‖·‖²`, no linear term) forces that
 gradient to `0` by `HasFDerivAt.unique`; `innerSL` injectivity + coordinate projection then
-read off `Pṁ_i = 0`. The proof uses the measurability condition `hm_meas`. -/
+read off `Pṁ_i = 0`. -/
 theorem firstOrder_condition_Pmdot_zero
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
@@ -254,8 +214,8 @@ theorem firstOrder_condition_Pmdot_zero
 `Yₙ = A 𝔾ₙψ + o_P(1)` is asymptotically Gaussian with covariance
 `A * psiCov * Aᵀ`.
 
-The empirical-process CLT inputs are the existing constructed-covariance
-binders; no covariance or weak-convergence provider is accepted. -/
+The empirical-process CLT assumptions use the covariance constructed above;
+covariance and weak convergence are not separate assumptions. -/
 theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
@@ -264,13 +224,13 @@ theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
     (A : Matrix (Fin k) (Fin k) ℝ)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- Measurability of the sample maps.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
+    -- Independence of the sample coordinates.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    -- Identical-distribution component of the iid sample encoding.
+    -- Identical distribution of the sample coordinates.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    -- Identifies the common sample law with `P`.
+    -- Identification of the common sample law with `P`.
     (hX_law : μ.map (X 0) = P)
     -- Measurable score coordinates at the truth.
     (hψθ₀_meas : ∀ i, Measurable (ψ θ₀ i))
@@ -279,7 +239,7 @@ theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
     -- Centering of every score coordinate.
     (hPθ₀_zero : ∀ i, ∫ x, ψ θ₀ i x ∂P = 0)
     (T : ℕ → Ξ → EuclideanSpace ℝ (Fin k))
-    -- Almost-everywhere measurability required for pushforward laws and Slutsky.
+    -- Almost-everywhere measurability required for pushforward laws and Slutsky's theorem.
     (hT_meas : ∀ n, AEMeasurable (T n) μ)
     -- The asymptotic linear representation.
     (hlinear : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
@@ -364,8 +324,8 @@ theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
 (`empiricalProcessVec_weakConverges`), so its continuous-linear image
 `−V⁻¹𝔾ₙṁ ⇝ N(0, V⁻¹ psiCov (V⁻¹)ᵀ)`; a weakly-convergent pushforward family is bounded in
 probability (`isBoundedInProb_of_weakConverges`). Map the CLT through `toEuclideanCLM (-V⁻¹)`
-via `WeakConverges.map` + `multivariateGaussian_map_toEuclideanCLM`, then
-`isBoundedInProb_of_weakConverges`). -/
+via `WeakConverges.map` and `multivariateGaussian_map_toEuclideanCLM`, then apply
+`isBoundedInProb_of_weakConverges`. -/
 theorem mEstimator_hB_boundedInProb
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (mdot : Fin d → (Ω → ℝ)) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -441,13 +401,13 @@ theorem mEstimator_hB_boundedInProb
 
 /-! ### Near-maximality through `BddAbove` -/
 
-/-- **Near-maximality at `θ₀`.**
+/-- **Near-maximality in θ₀-form.**
 
-The headline near-maximality is stated in **supremum form**
-`n·max0(⨆_θ ℙₙm_θ − ℙₙm_{θ̂}) →ₚ 0`; `mEstimator_sqrtn_rate` uses the **θ₀-form**
+The main near-maximality assumption is stated in **sup-form**
+`n·max0(⨆_θ ℙₙm_θ − ℙₙm_{θ̂}) →ₚ 0`; `mEstimator_sqrtn_rate` consumes the **θ₀-form**
 `n·max0(ℙₙm_{θ₀} − ℙₙm_{θ̂}) →ₚ 0`. Since `ℙₙm_{θ₀} ≤ ⨆_θ ℙₙm_θ` (`le_ciSup hBdd`), the
 θ₀-slack is dominated by the sup-slack, so `tendstoInProbZero_of_norm_le` transports the
-limit, using `le_ciSup hBdd` and monotonicity of `max` and scalar multiplication. -/
+limit by `le_ciSup hBdd` and monotonicity. -/
 theorem nearMaxTheta0_of_sup
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d))
@@ -475,14 +435,14 @@ theorem nearMaxTheta0_of_sup
   exact mul_le_mul_of_nonneg_left (max_le_max (le_refl 0) (sub_le_sub_right has _))
     (Nat.cast_nonneg n)
 
-/-- **Near-maximality in glue form.**
+/-- **Near-maximality for the two localized criteria.**
 
-The CLT⇒normality glue `mEstimator_normality_of_expansion` consumes near-max as
+The theorem `mEstimator_normality_of_expansion` uses near-maximality in the form
 `max0(B − A) →ₚ 0`, where (with `hA := √n(θ̂−θ₀)`, `hB := −V⁻¹𝔾ₙṁ`)
 `A = n·(ℙₙm_{θ̂} − ℙₙm_{θ₀})` and `B = n·(ℙₙm_{θ_B} − ℙₙm_{θ₀})` are the two localized
 increments, so `B − A = n·(ℙₙm_{θ_B} − ℙₙm_{θ̂})`. Since `ℙₙm_{θ_B} ≤ ⨆_θ ℙₙm_θ`
 (`le_ciSup hBdd`), `max0(B − A) ≤ n·max0(⨆ − ℙₙm_{θ̂}) →ₚ 0`
-(`tendstoInProbZero_of_norm_le`). The `A`-reconnection uses
+(`tendstoInProbZero_of_norm_le`). The identity for `A` uses
 `θ₀ + (√n)⁻¹•(√n•(θ̂−θ₀)) = θ̂` (`n ≥ 1`) and `empiricalAvg` sub-additivity. -/
 theorem nearMaxGlue_of_sup
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
@@ -551,11 +511,11 @@ theorem nearMaxGlue_of_sup
       _ ≤ (n : ℝ) * max 0 (S - A) :=
           mul_le_mul_of_nonneg_left (le_max_right _ _) (Nat.cast_nonneg n)
 
-/-! ### Headline — vdV Theorem 5.23. -/
+/-! ### vdV Theorem 5.23 -/
 
 /-- **M-estimator asymptotic normality — vdV Theorem 5.23** (§5.3, book p.53–54).
 
-Book-faithful formulation of vdV Theorem 5.23. For each `θ` in an
+For each `θ` in an
 open subset of Euclidean space let `x ↦ m_θ(x)` be measurable with `θ ↦ m_θ(x)`
 differentiable at `θ₀` `P`-a.e. with derivative `ṁ_{θ₀}` (`hderiv`), Lipschitz
 `|m_{θ₁}−m_{θ₂}| ≤ ṁ·‖θ₁−θ₂‖` with `Pṁ² < ∞` (`hLip`, `hmenv`). Assume `θ ↦ Pm_θ` admits
@@ -566,7 +526,7 @@ a second-order Taylor expansion at the maximum `θ₀` with symmetric negative-d
 
     √n(θ̂ₙ − θ₀) = −V⁻¹ 𝔾ₙṁ_{θ₀} + o_P(1)   and   √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ṁṁᵀ] (V⁻¹)ᵀ).
 
-The proof derives three consequences stated by vdV:
+Three facts vdV states as consequences are derived from the hypotheses:
 * `Pṁ_{θ₀} = 0`, the first-order condition (`firstOrder_condition_Pmdot_zero`);
 * `IsUnit V.det` (nonsingularity of `V`), from `hVneg` + `c > 0`: `toEuclideanCLM V` is
   coercive hence a unit CLM (`ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map`),
@@ -574,65 +534,60 @@ The proof derives three consequences stated by vdV:
 * `ṁ_{θ₀} ∈ L²`, from the `L²` envelope: `‖ṁ_{θ₀}‖ ≤ |menv|` a.e. by
   `HasFDerivAt.le_of_lipschitzOn` + `innerSL_apply_norm`, then `MemLp` by domination.
 
-The regularity companion `hBdd` ensures that `⨆_θ ℙₙm_θ` is well-defined.
-
-Both conjuncts reduce to the same two quadratic expansions (`hExpA`/`hExpB`) and
-glue near-maximality (`hNearMaxGlue`): the representation follows from
-`mEstimator_linear_representation` (the argmax step) and the normality to
-`mEstimator_normality_of_expansion` (the CLT⇒normality theorem). -/
+The additional condition `hBdd` states that `⨆_θ ℙₙm_θ` is finite for every sample,
+which makes the supremum formulation of near-maximality meaningful. Both conclusions follow
+from the same two quadratic expansions and the comparison of localized criteria. -/
 theorem m_estimator_normality
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
-    -- USER-INPUT (hVsymm, hc, hVneg): the second-derivative matrix V of the population
-    -- criterion is symmetric and negative definite (θ₀ an interior maximum); vdV Thm 5.23
+    -- USER-INPUT: symmetric uniformly negative curvature of the population criterion;
+    -- vdV Theorem 5.23.
     (hVsymm : V.IsHermitian)
     {c : ℝ} (hc : 0 < c)
     (hVneg : ∀ x : EuclideanSpace ℝ (Fin d),
       ⟪x, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V x⟫ ≤ - c * ‖x‖ ^ 2)
-    -- LEAN-ONLY: measurability of the criterion and its derivative; no scope change.
+    -- USER-INPUT: measurable criterion functions and derivative coordinates;
+    -- vdV Theorem 5.23.
     (hm_meas : ∀ θ, Measurable (m θ)) (hmdot_meas : ∀ i, Measurable (mdot i))
-    -- USER-INPUT: for P-almost every x, θ ↦ m_θ(x) is differentiable at θ₀ with
-    -- gradient ṁ_{θ₀}(x); vdV Thm 5.23
+    -- USER-INPUT: almost-everywhere differentiability at the true parameter;
+    -- vdV Theorem 5.23.
     (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
       (innerSL ℝ (psiVec (fun _ => mdot) θ₀ ω)) θ₀)
-    -- USER-INPUT (menv, hmenv, ρ, hρ, hLip): local Lipschitz condition
-    -- |m_{θ₁} − m_{θ₂}| ≤ ṁ·‖θ₁ − θ₂‖ on a ball around θ₀ with P ṁ² < ∞;
-    -- vdV Thm 5.23. (hmenv_meas is LEAN-ONLY measurability.)
+    -- USER-INPUT: a measurable square-integrable local Lipschitz envelope on a
+    -- nontrivial neighborhood; vdV Theorem 5.23.
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
     (ρ : ℝ) (hρ : 0 < ρ)
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
               |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
-    -- USER-INPUT: second-order Taylor expansion of the population criterion,
-    -- P(m_θ − m_{θ₀}) = ½⟨θ − θ₀, V(θ − θ₀)⟩ + o(‖θ − θ₀‖²); vdV Thm 5.23
+    -- USER-INPUT: the second-order population-criterion expansion at its maximum;
+    -- vdV Theorem 5.23.
     (hTaylor : Asymptotics.IsLittleO (𝓝 θ₀)
       (fun θ => (∫ x, (m θ x - m θ₀ x) ∂P)
         - (1 / 2) * ⟪θ - θ₀, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (θ - θ₀)⟫)
       (fun θ => ‖θ - θ₀‖ ^ 2))
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §5.3.
-    -- (hX_meas is LEAN-ONLY measurability.)
+    -- LEAN-ONLY: an explicit measurable independent identically distributed sequence
+    -- realizing the abstract sample with law P.
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
-    -- LEAN-ONLY: measurability of the estimator sequence; no scope change.
+    -- LEAN-ONLY: measurability of the estimator as a random vector.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
-    -- USER-INPUT: θ̂ₙ near-maximizes the empirical criterion at rate o_P(n⁻¹),
-    -- 𝔓ₙ m_{θ̂ₙ} ≥ sup_θ 𝔓ₙ m_θ − o_P(n⁻¹); vdV Thm 5.23
+    -- USER-INPUT: near-maximization of the empirical criterion at the required rate;
+    -- vdV Theorem 5.23.
     (hNearMax : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
       (n : ℝ) * max 0 ((⨆ θ : EuclideanSpace ℝ (Fin d),
           empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ))
         - empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
             (fun i : Fin n => X i.val ξ))))
-    -- USER-INPUT: θ̂ₙ is consistent for θ₀; vdV Thm 5.23
+    -- USER-INPUT: consistency for the true parameter; vdV Theorem 5.23.
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))
-    -- LEAN-ONLY: the empirical criterion's supremum over θ is finite for each sample,
-    -- so the supremum in `hNearMax` is meaningful; no scope change (implicit in the
-    -- book's use of sup_θ 𝕄ₙ(θ)).
+    -- LEAN-ONLY: boundedness above makes the real-valued empirical supremum explicit.
     (hBdd : ∀ (n : ℕ) (ξ : Ξ), BddAbove (Set.range (fun θ : EuclideanSpace ℝ (Fin d) =>
       empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ)))) :
     (TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
@@ -645,10 +600,10 @@ theorem m_estimator_normality
           Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
         (multivariateGaussian 0 (V⁻¹ * psiCov P (fun _ => mdot) θ₀ * (V⁻¹)ᵀ)) := by
   classical
-  -- Derive the nonsingularity of `V` and the score
-  -- being `L²` are NOT external inputs — vdV derives both from negative-definiteness of
+  -- Nonsingularity of `V` and square-integrability of the score follow from
+  -- negative-definiteness of
   -- `V` and the `L²` envelope, respectively.
-  -- Derive `IsUnit V.det` from `hVneg` (`c > 0`): `toEuclideanCLM V` is coercive, hence a
+  -- `IsUnit V.det` follows from `hVneg` (`c > 0`): `toEuclideanCLM V` is coercive, hence a
   -- unit CLM (`isUnit_of_forall_le_norm_inner_map`), transported to `V` (`MulEquiv.isUnit_map`)
   -- and to `V.det` (`Matrix.isUnit_iff_isUnit_det`).
   have hVunit : IsUnit V.det := by
@@ -663,7 +618,7 @@ theorem m_estimator_normality
       nlinarith [hVneg x]
     exact (Matrix.isUnit_iff_isUnit_det V).mp
       ((MulEquiv.isUnit_map (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d))).mp hVc_unit)
-  -- Derive `ṁ_{θ₀} ∈ L²` from the `L²` envelope. For a.e. `ω`, `hderiv` gives the
+  -- `ṁ_{θ₀} ∈ L²` follows from the `L²` envelope. For a.e. `ω`, `hderiv` gives the
   -- derivative `innerSL (ṁ_{θ₀} ω)`, whose operator norm is `≤ |menv ω|` by the local
   -- Lipschitz bound (`HasFDerivAt.le_of_lipschitzOn`); `‖innerSL v‖ = ‖v‖`, so
   -- `‖ṁ_{θ₀} ω‖ ≤ ‖menv ω‖`, and `MemLp` follows by domination against `hmenv`.
@@ -689,19 +644,20 @@ theorem m_estimator_normality
   have hPmdot_zero : ∀ i, ∫ x, mdot i x ∂P = 0 :=
     firstOrder_condition_Pmdot_zero P m mdot θ₀ V hmdot_meas hmdot_L2 hm_meas menv hmenv ρ hρ
       hLip hderiv hTaylor
-  -- Convert the Taylor remainder to the bounded form used by the rate theorem.
+  -- Bounded form of the curvature Taylor expansion.
   obtain ⟨ρT, hρT, hTb⟩ := taylorBoundedForm_of_littleO P m θ₀ V hc hTaylor
   -- `hA := √n(θ̂−θ₀)` and its measurability.
   have hA_meas : ∀ (n : ℕ), Measurable
       (fun ξ : Ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :=
     fun n => ((hθhat_meas n).sub measurable_const).const_smul (Real.sqrt n)
-  -- The √n-rate gives `hA = √n(θ̂−θ₀) = O_P(1)`.
+  -- `hA = √n(θ̂−θ₀) = O_P(1)` via the `√n` rate.
   have hA_bdd : IsBoundedInProb (fun _ : ℕ => μ)
       (fun n ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :=
-    mEstimator_sqrtn_rate P m θ₀ V hc hVneg hm_meas menv hmenv hmenv_meas ρ hρ hLip
+    mEstimator_sqrtn_rate_of_tendstoInProbZero P m θ₀ V hc hVneg hm_meas menv hmenv
+      hmenv_meas ρ hρ hLip
       ⟨ρT, hρT, hTb⟩ θ_hat μ X hX_meas hX_indep hX_id hX_law
       (nearMaxTheta0_of_sup P m θ₀ θ_hat μ X hBdd hNearMax) hConsistent hθhat_meas
-  -- Apply the quadratic expansion at `hA`.
+  -- Quadratic expansion at `hA`.
   have hExpA := mEstimator_quadratic_expansion P m mdot θ₀ V hm_meas hmdot_meas hmdot_L2
     menv hmenv hmenv_meas ρ hρ hLip hderiv hTaylor μ X hX_meas hX_indep hX_id hX_law
     (fun n ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) hA_meas hA_bdd
@@ -723,7 +679,7 @@ theorem m_estimator_normality
       (hG_meas n)).neg
   have hB_bdd := mEstimator_hB_boundedInProb P mdot θ₀ V hmdot_meas hψ_L2 hPmdot_zero
     μ X hX_meas hX_indep hX_id hX_law
-  -- Apply the quadratic expansion at `hB`, then complete the square.
+  -- Quadratic expansion at `hB`, reshaped by completing the square.
   have hExpB1 := mEstimator_quadratic_expansion P m mdot θ₀ V hm_meas hmdot_meas hmdot_L2
     menv hmenv hmenv_meas ρ hρ hLip hderiv hTaylor μ X hX_meas hX_indep hX_id hX_law
     (fun n ξ => - Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V⁻¹
@@ -766,9 +722,9 @@ theorem m_estimator_normality
   -- Glue-form near-max.
   have hNearMaxGlue := nearMaxGlue_of_sup P m θ₀ V mdot θ_hat μ X hBdd hNearMax
   refine ⟨?_, ?_⟩
-  · -- vdV 5.23's primary displayed conclusion: the linear representation.
-    -- The linear representation uses the same two expansions and near-maximality
-    -- argument as the normality branch below.
+  · -- vdV Theorem 5.23's primary displayed conclusion, the linear representation
+    -- `√n(θ̂ₙ − θ₀) = −V⁻¹𝔾ₙṁ_{θ₀} + o_P(1)` from `mEstimator_linear_representation`, fed
+    -- the SAME two expansions + glue near-max as the normality branch below.
     exact mEstimator_linear_representation P mdot θ₀ V hVunit hVsymm hc hVneg θ_hat μ X
       (fun (n : ℕ) (ξ : Ξ) => (n : ℝ) * empiricalAvg (fun ω => m (θ₀ + (Real.sqrt n)⁻¹ •
           (Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))) ω - m θ₀ ω) n
@@ -778,7 +734,7 @@ theorem m_estimator_normality
               (empiricalProcessVec P (fun _ => mdot) θ₀ n (fun i : Fin n => X i.val ξ)))) ω
           - m θ₀ ω) n (fun i : Fin n => X i.val ξ))
       hExpA hExpB hNearMaxGlue
-  · -- The "in particular" normality `⇝ N(0, Σ)` via the CLT⇒normality theorem.
+  · -- The "in particular" normality `⇝ N(0, Σ)` via the CLT and Slutsky's theorem.
     exact mEstimator_normality_of_expansion P mdot θ₀ V hVunit hVsymm hc hVneg hmdot_meas hψ_L2
       hPmdot_zero θ_hat μ X hX_meas hX_indep hX_id hX_law
       (fun (n : ℕ) (ξ : Ξ) => (n : ℝ) * empiricalAvg (fun ω => m (θ₀ + (Real.sqrt n)⁻¹ •
@@ -790,19 +746,17 @@ theorem m_estimator_normality
           - m θ₀ ω) n (fun i : Fin n => X i.val ξ))
       hExpA hExpB hNearMaxGlue hθhat_meas
 
-/-- **Fixed-direction `L²` adapter** for vdV 5.39.
+/-- **Fixed-direction `L²` form** used for vdV Theorem 5.39.
 
 This has the same estimator/sample data and the same representation-and-normality
-conclusion as `m_estimator_normality`. It replaces pointwise-a.e. differentiability by
-the three facts supplied by the MLE route: bundled score `L²`, zero score mean, and
-fixed-direction `distL2` linearization. These are assembly boundaries rather than
-additional hypotheses of the eventual 5.39 headline; no auxiliary equality between
-separate influence-function constructions is required. -/
+conclusion as `m_estimator_normality`.  It replaces pointwise-a.e. differentiability by
+the three facts the MLE route derives honestly: bundled score `L²`, zero score mean, and
+fixed-direction `distL2` linearization. -/
 theorem m_estimator_normality_of_distL2
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
-    -- Symmetric population Hessian, as in vdV 5.23.
+    -- Symmetric population Hessian, as in vdV Theorem 5.23.
     (hVsymm : V.IsHermitian)
     {c : ℝ}
     -- Positive coercivity constant for negative definiteness.
@@ -814,9 +768,9 @@ theorem m_estimator_normality_of_distL2
     (hm_meas : ∀ θ, Measurable (m θ))
     -- Measurable score coordinates.
     (hmdot_meas : ∀ i, Measurable (mdot i))
-    -- Bundled score `L²`, derived from the 5.39 assumptions.
+    -- Bundled score `L²`, derived in the specialization to Theorem 5.39.
     (hψ_L2 : MemLp (psiVec (fun _ => mdot) θ₀) 2 P)
-    -- The score has mean zero, as follows from DQM in 5.39.
+    -- Zero score mean, derived from quadratic-mean differentiability in Theorem 5.39.
     (hPmdot_zero : ∀ i, ∫ x, mdot i x ∂P = 0)
     (menv : Ω → ℝ)
     -- vdV's common local Lipschitz envelope belongs to `L²(P)`.
@@ -843,15 +797,15 @@ theorem m_estimator_normality_of_distL2
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- Measurability of the sample maps.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
+    -- Independence of the sample coordinates.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    -- Identical-distribution component of the iid sample encoding.
+    -- Identical distribution of the sample coordinates.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    -- Identifies the common sample law with `P`.
+    -- Identification of the common sample law with `P`.
     (hX_law : μ.map (X 0) = P)
-    -- Measurable estimator encoding needed for pushforwards and rate events.
+    -- Estimator measurability needed for pushforward laws and rate events.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
     -- Empirical near-maximization at `o_P(n⁻¹)` scale.
@@ -860,10 +814,10 @@ theorem m_estimator_normality_of_distL2
           empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ))
         - empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
             (fun i : Fin n => X i.val ξ))))
-    -- Consistency of the estimator, as supplied by the MLE consistency theorem.
+    -- Consistency of the estimator; the MLE specialization derives it from Theorem 5.35.
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))
-    -- Boundedness that makes the empirical supremum meaningful.
+    -- Boundedness above of the empirical criterion.
     (hBdd : ∀ (n : ℕ) (ξ : Ξ), BddAbove (Set.range
       (fun θ : EuclideanSpace ℝ (Fin d) =>
         empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ)))) :
@@ -896,7 +850,8 @@ theorem m_estimator_normality_of_distL2
     fun n => ((hθhat_meas n).sub measurable_const).const_smul (Real.sqrt n)
   have hA_bdd : IsBoundedInProb (fun _ : ℕ => μ)
       (fun n ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :=
-    mEstimator_sqrtn_rate P m θ₀ V hc hVneg hm_meas menv hmenv hmenv_meas ρ hρ hLip
+    mEstimator_sqrtn_rate_of_tendstoInProbZero P m θ₀ V hc hVneg hm_meas menv hmenv
+      hmenv_meas ρ hρ hLip
       ⟨ρT, hρT, hTb⟩ θ_hat μ X hX_meas hX_indep hX_id hX_law
       (nearMaxTheta0_of_sup P m θ₀ θ_hat μ X hBdd hNearMax) hConsistent hθhat_meas
   have hExpA := mEstimator_quadratic_expansion_of_distL2 P m mdot θ₀ V hm_meas hmdot_meas
@@ -981,19 +936,18 @@ theorem m_estimator_normality_of_distL2
           - m θ₀ ω) n (fun i : Fin n => X i.val ξ))
       hExpA hExpB hNearMaxGlue hθhat_meas
 
-/-- **Fixed-comparison `L²` adapter.**
+/-- **Fixed-comparison `L²` form.**
 
-This preserves the analytic and sample binders of
-`m_estimator_normality_of_distL2`, but replaces the supremum near-maximality
-interface by comparisons with every fixed local direction.  The comparison at
-`a = 0` feeds the rate theorem; `argmax_localization_of_fixed_comparisons`
-supplies the linear representation, and the generic linear-representation
-normality theorem supplies the Gaussian conclusion. -/
+Assume near-maximality through comparisons with every fixed local direction.
+The comparison at `a = 0` gives the rate bound;
+`argmax_localization_of_fixed_comparisons` gives the linear representation,
+whose Gaussian limit then follows from the empirical-process central limit
+theorem. -/
 theorem m_estimator_normality_of_distL2_fixed_comparisons
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
-    -- Symmetric population Hessian, as in vdV 5.23.
+    -- Symmetric population Hessian, as in vdV Theorem 5.23.
     (hVsymm : V.IsHermitian) {c : ℝ}
     -- Positive coercivity constant for negative definiteness.
     (hc : 0 < c)
@@ -1004,7 +958,7 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
     (hm_meas : ∀ θ, Measurable (m θ))
     -- Measurable score coordinates.
     (hmdot_meas : ∀ i, Measurable (mdot i))
-    -- Bundled score `L²`.
+    -- Square-integrability of the bundled score.
     (hψ_L2 : MemLp (psiVec (fun _ => mdot) θ₀) 2 P)
     -- Coordinatewise zero score mean.
     (hPmdot_zero : ∀ i, ∫ x, mdot i x ∂P = 0)
@@ -1033,15 +987,15 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- Measurability of the sample maps.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
+    -- Independence of the sample coordinates.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    -- Identical-distribution component of the iid sample encoding.
+    -- Identical distribution of the sample coordinates.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    -- Identifies the common sample law with `P`.
+    -- Identification of the common sample law with `P`.
     (hX_law : μ.map (X 0) = P)
-    -- Measurable estimator encoding needed for pushforwards and rate events.
+    -- Estimator measurability needed for pushforward laws and rate events.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
     -- Near-maximality against every fixed local comparison.
@@ -1052,7 +1006,7 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
               (fun i : Fin n => X i.val ξ) -
             empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
               (fun i : Fin n => X i.val ξ))))
-    -- Consistency, as derived by the MLE theorem.
+    -- Consistency, derived internally in the MLE specialization.
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :
     TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
@@ -1102,7 +1056,8 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
       (hFixedComparison (0 : EuclideanSpace ℝ (Fin d)))
   have hA_bdd : IsBoundedInProb (fun _ : ℕ => μ) hA := by
     simpa only [hA] using
-      (mEstimator_sqrtn_rate P m θ₀ V hc hVneg hm_meas menv hmenv hmenv_meas ρ hρ hLip
+      (mEstimator_sqrtn_rate_of_tendstoInProbZero P m θ₀ V hc hVneg hm_meas menv hmenv
+        hmenv_meas ρ hρ hLip
         ⟨ρT, hρT, hTb⟩ θ_hat μ X hX_meas hX_indep hX_id hX_law hRateNear
         hConsistent hθhat_meas)
   have hG_meas : ∀ n, Measurable (G n) := by
@@ -1186,7 +1141,7 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
         hX_law hmdot_meas hψ_L2 hPmdot_zero hA (fun n => (hA_meas n).aemeasurable)
         hlinear)
 
-/-- **Exact-maximizer adapter** used by the vdV 5.39 assembly.
+/-- **Exact-maximizer form** used for vdV Theorem 5.39.
 
 This has the same analytic prefix and paired conclusion as
 `m_estimator_normality_of_distL2`, but an exact pointwise maximizer supplies
@@ -1196,7 +1151,7 @@ theorem m_estimator_normality_of_distL2_fixed_maximizer
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
-    -- Symmetric population Hessian, as in vdV 5.23.
+    -- Symmetric population Hessian, as in vdV Theorem 5.23.
     (hVsymm : V.IsHermitian)
     {c : ℝ}
     -- Positive coercivity constant for negative definiteness.
@@ -1208,7 +1163,7 @@ theorem m_estimator_normality_of_distL2_fixed_maximizer
     (hm_meas : ∀ θ, Measurable (m θ))
     -- Measurable score coordinates.
     (hmdot_meas : ∀ i, Measurable (mdot i))
-    -- Bundled score `L²`.
+    -- Square-integrability of the bundled score.
     (hψ_L2 : MemLp (psiVec (fun _ => mdot) θ₀) 2 P)
     -- Coordinatewise zero score mean.
     (hPmdot_zero : ∀ i, ∫ x, mdot i x ∂P = 0)
@@ -1236,13 +1191,13 @@ theorem m_estimator_normality_of_distL2_fixed_maximizer
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
     (X : ℕ → Ξ → Ω)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- Measurability of the sample maps.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
+    -- Independence of the sample coordinates.
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    -- Identical-distribution component of the iid sample encoding.
+    -- Identical distribution of the sample coordinates.
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    -- Identifies the common sample law with `P`.
+    -- Identification of the common sample law with `P`.
     (hX_law : μ.map (X 0) = P)
     -- Estimator measurability needed for pushforward laws and rate events.
     (hθhat_meas : ∀ n, Measurable
@@ -1252,7 +1207,7 @@ theorem m_estimator_normality_of_distL2_fixed_maximizer
       empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ) ≤
         empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
           (fun i : Fin n => X i.val ξ))
-    -- Consistency, as derived by the MLE theorem.
+    -- Consistency, derived internally in the MLE specialization.
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :
     (TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
