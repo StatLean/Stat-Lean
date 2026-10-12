@@ -5,11 +5,11 @@
     {"id":"StatLean.Bayesian.doobJoint","label":"doobJoint","full":"StatLean.Bayesian.doobJoint","kind":"repo","decl":"def","module":"StatLean.Bayesian.DoobConsistency.Defs"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"StatLean.Bayesian.exists_countable_measure_determining","label":"exists_countable_measure_determining","full":"StatLean.Bayesian.exists_countable_measure_determining","kind":"repo","decl":"thm","module":"StatLean.Bayesian.DoobConsistency.Accessible"},
-    {"id":"measurable_pi_lambda","label":"measurable_pi_lambda","full":"measurable_pi_lambda","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Measurable.of_eval","label":"of_eval","full":"Measurable.of_eval","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"Measurable.ennreal_toReal","label":"ennreal_toReal","full":"Measurable.ennreal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"},
     {"id":"ProbabilityTheory.Kernel.measurable_coe","label":"measurable_coe","full":"ProbabilityTheory.Kernel.measurable_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","label":"is_probability_measure'","full":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"ENNReal.toReal_eq_toReal_iff'","label":"toReal_eq_toReal_iff'","full":"ENNReal.toReal_eq_toReal_iff'","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.toReal_eq_toReal_iff'","label":"toReal_eq_toReal_iff'","full":"ENNReal.toReal_eq_toReal_iff'","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"ProbabilityTheory.IsFiniteKernel.isFiniteMeasure","label":"isFiniteMeasure","full":"ProbabilityTheory.IsFiniteKernel.isFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","label":"isFiniteKernel","full":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
@@ -46,13 +46,13 @@
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.Tendsto.limsup_eq","label":"limsup_eq","full":"Filter.Tendsto.limsup_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.LiminfLimsup"},
     {"id":"Filter.atTop_neBot","label":"atTop_neBot","full":"Filter.atTop_neBot","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Basic"},
-    {"id":"IsStrictOrderedRing.toIsOrderedRing","label":"toIsOrderedRing","full":"IsStrictOrderedRing.toIsOrderedRing","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Defs"}
+    {"id":"StarOrderedRing.toIsOrderedRing","label":"toIsOrderedRing","full":"StarOrderedRing.toIsOrderedRing","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Star"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"StatLean.Bayesian.doobJoint"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"StatLean.Bayesian.exists_countable_measure_determining"},
-    {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"measurable_pi_lambda"},
+    {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"Measurable.of_eval"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"Measurable.ennreal_toReal"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"ProbabilityTheory.Kernel.measurable_coe"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'"},
@@ -93,6 +93,6 @@
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"Filter.univ_mem'"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"Filter.Tendsto.limsup_eq"},
     {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"Filter.atTop_neBot"},
-    {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"IsStrictOrderedRing.toIsOrderedRing"}
+    {"source":"StatLean.Bayesian.exists_measurable_retraction","target":"StarOrderedRing.toIsOrderedRing"}
   ]
 }

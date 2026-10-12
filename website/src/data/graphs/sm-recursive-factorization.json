@@ -4,7 +4,7 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.RecursivelyFactorizes","label":"RecursivelyFactorizes","full":"StatLean.StatisticalModels.GraphicalModels.RecursivelyFactorizes","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Directed.Factorization"},
     {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.DAG","label":"DAG","full":"StatLean.StatisticalModels.GraphicalModels.DAG","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Directed.DAG"},
-    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.RecursivelyFactorizesOn","label":"RecursivelyFactorizesOn","full":"StatLean.StatisticalModels.GraphicalModels.RecursivelyFactorizesOn","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Directed.Factorization"},
     {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},

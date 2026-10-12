@@ -45,7 +45,7 @@
     {"id":"IsTopologicalAddGroup.to_continuousSub","label":"to_continuousSub","full":"IsTopologicalAddGroup.to_continuousSub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
     {"id":"measurable_fst","label":"measurable_fst","full":"measurable_fst","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"StatLean.Bayesian.lintegral_sqLoss_eq_ofReal_integral","label":"lintegral_sqLoss_eq_ofReal_integral","full":"StatLean.Bayesian.lintegral_sqLoss_eq_ofReal_integral","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.SquaredLoss"},
-    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"StatLean.Bayesian.integral_sq_sub_integral_le","label":"integral_sq_sub_integral_le","full":"StatLean.Bayesian.integral_sq_sub_integral_le","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.SquaredLoss"}
   ],
   "edges": [

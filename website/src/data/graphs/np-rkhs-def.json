@@ -12,16 +12,15 @@
     {"id":"NormedCommRing.toNonUnitalNormedCommRing","label":"toNonUnitalNormedCommRing","full":"NormedCommRing.toNonUnitalNormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"NormedField.toNormedCommRing","label":"toNormedCommRing","full":"NormedField.toNormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Field.Basic"},
     {"id":"RCLike.innerProductSpace","label":"innerProductSpace","full":"RCLike.innerProductSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
-    {"id":"ContinuousLinearMap","label":"ContinuousLinearMap","full":"ContinuousLinearMap","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
-    {"id":"Semifield.toDivisionSemiring","label":"toDivisionSemiring","full":"Semifield.toDivisionSemiring","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Field.Defs"},
+    {"id":"ContinuousLinearMap","label":"ContinuousLinearMap","full":"ContinuousLinearMap","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"Field.toSemifield","label":"toSemifield","full":"Field.toSemifield","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Field.Defs"},
     {"id":"RingHom.id","label":"id","full":"RingHom.id","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Hom.Defs"},
     {"id":"Semiring.toNonAssocSemiring","label":"toNonAssocSemiring","full":"Semiring.toNonAssocSemiring","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"},
-    {"id":"ESeminormedAddCommMonoid.toAddCommMonoid","label":"toAddCommMonoid","full":"ESeminormedAddCommMonoid.toAddCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
-    {"id":"NormedAddCommGroup.toENormedAddCommMonoid","label":"toENormedAddCommMonoid","full":"NormedAddCommGroup.toENormedAddCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Continuity"},
-    {"id":"ContinuousLinearMap.funLike","label":"funLike","full":"ContinuousLinearMap.funLike","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
+    {"id":"AddCommGroup.toAddCommMonoid","label":"toAddCommMonoid","full":"AddCommGroup.toAddCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ContinuousLinearMap.funLike","label":"funLike","full":"ContinuousLinearMap.funLike","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"RKHS.kerFun","label":"kerFun","full":"RKHS.kerFun","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
-    {"id":"Ring.toAddGroupWithOne","label":"toAddGroupWithOne","full":"Ring.toAddGroupWithOne","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"}
+    {"id":"Ring.toAddGroupWithOne","label":"toAddGroupWithOne","full":"Ring.toAddGroupWithOne","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"Field.toDivisionRing","label":"toDivisionRing","full":"Field.toDivisionRing","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Field.Defs"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"RCLike"},
@@ -35,14 +34,13 @@
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"NormedField.toNormedCommRing"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"RCLike.innerProductSpace"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"ContinuousLinearMap"},
-    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Semifield.toDivisionSemiring"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Field.toSemifield"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"RingHom.id"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Semiring.toNonAssocSemiring"},
-    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"ESeminormedAddCommMonoid.toAddCommMonoid"},
-    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"NormedAddCommGroup.toENormedAddCommMonoid"},
+    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"AddCommGroup.toAddCommMonoid"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"ContinuousLinearMap.funLike"},
     {"source":"StatLean.NonparametricStatistics.kernelFun","target":"RKHS.kerFun"},
-    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Ring.toAddGroupWithOne"}
+    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Ring.toAddGroupWithOne"},
+    {"source":"StatLean.NonparametricStatistics.kernelFun","target":"Field.toDivisionRing"}
   ]
 }

@@ -10,7 +10,7 @@
     {"id":"StatLean.RobustStatistics.sampleMAD_implodes_under","label":"sampleMAD_implodes_under","full":"StatLean.RobustStatistics.sampleMAD_implodes_under","kind":"repo","decl":"thm","module":"StatLean.RobustStatistics.Scale.DispersionBreakdown"},
     {"id":"StatLean.RobustStatistics.DispersionResists","label":"DispersionResists","full":"StatLean.RobustStatistics.DispersionResists","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.Scale.DispersionBreakdown"},
     {"id":"StatLean.RobustStatistics.sampleMedian","label":"sampleMedian","full":"StatLean.RobustStatistics.sampleMedian","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Median"},
-    {"id":"Nat.sSup_mem","label":"sSup_mem","full":"Nat.sSup_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Lattice"},
+    {"id":"Nat.sSup_mem","label":"sSup_mem","full":"Nat.sSup_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice.Nat"},
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"StatLean.RobustStatistics.DispersionResists.anti","label":"anti","full":"StatLean.RobustStatistics.DispersionResists.anti","kind":"repo","decl":"thm","module":"StatLean.RobustStatistics.Scale.DispersionBreakdown"},
     {"id":"le_csSup","label":"le_csSup","full":"le_csSup","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
@@ -32,21 +32,21 @@
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"StatLean.RobustStatistics.sampleMedian_mem_Icc_of_hammingDist","label":"sampleMedian_mem_Icc_of_hammingDist","full":"StatLean.RobustStatistics.sampleMedian_mem_Icc_of_hammingDist","kind":"repo","decl":"thm","module":"StatLean.RobustStatistics.LocationScale.MedianBreakdown"},
     {"id":"StatLean.MultipleTesting.orderStat","label":"orderStat","full":"StatLean.MultipleTesting.orderStat","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.OrderStatistics"},
     {"id":"StatLean.RobustStatistics.sampleMedian_odd","label":"sampleMedian_odd","full":"StatLean.RobustStatistics.sampleMedian_odd","kind":"repo","decl":"thm","module":"StatLean.RobustStatistics.LocationScale.Median"},
     {"id":"Finset.card_le_one","label":"card_le_one","full":"Finset.card_le_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"},
     {"id":"Finset.mem_sdiff","label":"mem_sdiff","full":"Finset.mem_sdiff","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.SDiff"},
-    {"id":"pow_one","label":"pow_one","full":"pow_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"pow_one","label":"pow_one","full":"pow_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"abs_sub","label":"abs_sub","full":"abs_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Abs"},
     {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Finset.mem_union_right","label":"mem_union_right","full":"Finset.mem_union_right","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Lattice.Basic"},
     {"id":"Finset.mem_union_left","label":"mem_union_left","full":"Finset.mem_union_left","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Lattice.Basic"},
-    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"}
+    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"Finset.card_le_card","label":"card_le_card","full":"Finset.card_le_card","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"}
   ],
   "edges": [
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionBreakdownCount","target":"StatLean.RobustStatistics.dispersionBreakdownCount"},
@@ -84,7 +84,6 @@
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"lt_of_not_ge"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"Nat.cast_zero"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"Nat.cast_one"},
-    {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"le_trans"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"StatLean.RobustStatistics.sampleMedian"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"StatLean.RobustStatistics.sampleMedian_mem_Icc_of_hammingDist"},
@@ -99,6 +98,7 @@
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"not_le"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"Finset.mem_union_right"},
     {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"Finset.mem_union_left"},
-    {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"LE.le.trans"}
+    {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"LE.le.trans"},
+    {"source":"StatLean.RobustStatistics.sampleMAD_dispersionResists","target":"Finset.card_le_card"}
   ]
 }

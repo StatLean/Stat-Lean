@@ -4,7 +4,7 @@
     {"id":"StatLean.PointEstimation.IsCompleteFamily","label":"IsCompleteFamily","full":"StatLean.PointEstimation.IsCompleteFamily","kind":"root","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Measurable","label":"Measurable","full":"Measurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"MeasureTheory.Integrable","label":"Integrable","full":"MeasureTheory.Integrable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},

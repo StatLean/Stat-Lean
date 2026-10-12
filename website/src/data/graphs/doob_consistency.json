@@ -26,19 +26,18 @@
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"exists_rat_btwn","label":"exists_rat_btwn","full":"exists_rat_btwn","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Archimedean.Basic"},
     {"id":"Metric.mem_ball","label":"mem_ball","full":"Metric.mem_ball","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"LT.lt.trans","label":"trans","full":"LT.lt.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"Metric.ball_subset_ball'","label":"ball_subset_ball'","full":"Metric.ball_subset_ball'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"dist_comm","label":"dist_comm","full":"dist_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"ENNReal.toReal_mono","label":"toReal_mono","full":"ENNReal.toReal_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.toReal_mono","label":"toReal_mono","full":"ENNReal.toReal_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"ProbabilityTheory.IsFiniteKernel.isFiniteMeasure","label":"isFiniteMeasure","full":"ProbabilityTheory.IsFiniteKernel.isFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"MeasureTheory.measure_mono","label":"measure_mono","full":"MeasureTheory.measure_mono","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
-    {"id":"ENNReal.toReal_one","label":"toReal_one","full":"ENNReal.toReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
-    {"id":"ENNReal.one_ne_top","label":"one_ne_top","full":"ENNReal.one_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.toReal_one","label":"toReal_one","full":"ENNReal.toReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"ENNReal.one_ne_top","label":"one_ne_top","full":"ENNReal.one_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.prob_le_one","label":"prob_le_one","full":"MeasureTheory.prob_le_one","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"ProbabilityTheory.IsZeroOrMarkovKernel.isZeroOrProbabilityMeasure","label":"isZeroOrProbabilityMeasure","full":"ProbabilityTheory.IsZeroOrMarkovKernel.isZeroOrProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"tendsto_of_tendsto_of_tendsto_of_le_of_le","label":"tendsto_of_tendsto_of_tendsto_of_le_of_le","full":"tendsto_of_tendsto_of_tendsto_of_le_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.Basic"},
@@ -46,7 +45,8 @@
     {"id":"tendsto_const_nhds","label":"tendsto_const_nhds","full":"tendsto_const_nhds","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Neighborhoods"},
     {"id":"ENNReal.tendsto_toReal_iff","label":"tendsto_toReal_iff","full":"ENNReal.tendsto_toReal_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Instances.ENNReal.Lemmas"},
     {"id":"StatLean.Bayesian.iidSeqKernel","label":"iidSeqKernel","full":"StatLean.Bayesian.iidSeqKernel","kind":"repo","decl":"def","module":"StatLean.Bayesian.ForMathlib.IIDSeqKernel"},
-    {"id":"MeasureTheory.Measure.ae_ae_of_ae_compProd","label":"ae_ae_of_ae_compProd","full":"MeasureTheory.Measure.ae_ae_of_ae_compProd","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"}
+    {"id":"MeasureTheory.Measure.ae_ae_of_ae_compProd","label":"ae_ae_of_ae_compProd","full":"MeasureTheory.Measure.ae_ae_of_ae_compProd","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"},
+    {"id":"MeasureTheory.sigmaFinite_of_locallyFinite","label":"sigmaFinite_of_locallyFinite","full":"MeasureTheory.sigmaFinite_of_locallyFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.doob_consistency","target":"StatLean.Bayesian.StronglyConsistentAt"},
@@ -73,7 +73,6 @@
     {"source":"StatLean.Bayesian.doob_consistency","target":"lt_of_not_ge"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"Nat.cast_zero"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"Nat.cast_one"},
-    {"source":"StatLean.Bayesian.doob_consistency","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"exists_rat_btwn"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"Metric.mem_ball"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"LT.lt.trans"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.Bayesian.doob_consistency","target":"tendsto_const_nhds"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"ENNReal.tendsto_toReal_iff"},
     {"source":"StatLean.Bayesian.doob_consistency","target":"StatLean.Bayesian.iidSeqKernel"},
-    {"source":"StatLean.Bayesian.doob_consistency","target":"MeasureTheory.Measure.ae_ae_of_ae_compProd"}
+    {"source":"StatLean.Bayesian.doob_consistency","target":"MeasureTheory.Measure.ae_ae_of_ae_compProd"},
+    {"source":"StatLean.Bayesian.doob_consistency","target":"MeasureTheory.sigmaFinite_of_locallyFinite"}
   ]
 }

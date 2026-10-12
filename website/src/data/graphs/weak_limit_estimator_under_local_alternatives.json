@@ -6,7 +6,7 @@
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.fisherInformation","label":"fisherInformation","full":"AsymptoticStatistics.fisherInformation","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation"},
     {"id":"StatLean.HypothesisTesting.mulVecE","label":"mulVecE","full":"StatLean.HypothesisTesting.mulVecE","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
     {"id":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","label":"IsAsymptoticallyLinear","full":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
@@ -17,8 +17,7 @@
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
-    {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"Real.isBoundedSMul","label":"isBoundedSMul","full":"Real.isBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
+    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
     {"id":"Measurable.sub","label":"sub","full":"Measurable.sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousSub.measurableSub₂","label":"measurableSub₂","full":"ContinuousSub.measurableSub₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.secondCountableTopology","label":"secondCountableTopology","full":"PiLp.secondCountableTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
@@ -44,9 +43,10 @@
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.eventually_ge_atTop","label":"eventually_ge_atTop","full":"Filter.eventually_ge_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Defs"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
-    {"id":"Real.sqrt_pos","label":"sqrt_pos","full":"Real.sqrt_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"Real.sqrt_pos","label":"sqrt_pos","full":"Real.sqrt_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"}
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"smul_sub","label":"smul_sub","full":"smul_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Action.Defs"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"AsymptoticStatistics.ParametricFamily"},
@@ -64,8 +64,7 @@
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"BorelSpace.opensMeasurable"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Real.borelSpace"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"PiLp.borelSpace"},
-    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"IsBoundedSMul.continuousSMul"},
-    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Real.isBoundedSMul"},
+    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"PolynormableSpace.continuousSMul"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Measurable.sub"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"ContinuousSub.measurableSub₂"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"PiLp.secondCountableTopology"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Filter.univ_mem'"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Real.sqrt_pos"},
     {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"Nat.cast_zero"},
-    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"IsOrderedAddMonoid.toAddLeftMono"}
+    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.HypothesisTesting.weak_limit_estimator_under_local_alternatives","target":"smul_sub"}
   ]
 }

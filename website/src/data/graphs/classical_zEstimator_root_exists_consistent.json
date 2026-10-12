@@ -2,7 +2,7 @@
   "root": "AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent",
   "nodes": [
     {"id":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","label":"classical_zEstimator_root_exists_consistent","full":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ClassicalZEstimator.RootExistence"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.psiVec","label":"psiVec","full":"AsymptoticStatistics.EmpiricalProcess.psiVec","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNormality"},
     {"id":"AsymptoticStatistics.ClassicalZEstimator.psiDot","label":"psiDot","full":"AsymptoticStatistics.ClassicalZEstimator.psiDot","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ClassicalZEstimator.TaylorDomination"},
     {"id":"AsymptoticStatistics.ClassicalZEstimator.Vmat","label":"Vmat","full":"AsymptoticStatistics.ClassicalZEstimator.Vmat","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ClassicalZEstimator.TaylorDomination"},
@@ -20,7 +20,6 @@
     {"id":"MeasureTheory.measureReal_empty","label":"measureReal_empty","full":"MeasureTheory.measureReal_empty","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Real"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"norm_nonneg","label":"norm_nonneg","full":"norm_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"Metric.mem_closedBall_self","label":"mem_closedBall_self","full":"Metric.mem_closedBall_self","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
@@ -44,9 +43,10 @@
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"Function.smulCommClass","label":"smulCommClass","full":"Function.smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
-    {"id":"UniformContinuousConstSMul.to_continuousConstSMul","label":"to_continuousConstSMul","full":"UniformContinuousConstSMul.to_continuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformMulAction"},
     {"id":"IsBoundedSMul.toUniformContinuousConstSMul","label":"toUniformContinuousConstSMul","full":"IsBoundedSMul.toUniformContinuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"}
+    {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
+    {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
+    {"id":"IsUnit.map","label":"map","full":"IsUnit.map","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Units.Hom"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"fact_one_le_two_ennreal"},
@@ -67,7 +67,6 @@
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"MeasureTheory.measureReal_empty"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"Nat.cast_zero"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"IsOrderedAddMonoid.toAddLeftMono"},
-    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"RCLike.charZero_rclike"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"le_trans"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"norm_nonneg"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"Metric.mem_closedBall_self"},
@@ -91,8 +90,9 @@
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"Function.smulCommClass"},
-    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"UniformContinuousConstSMul.to_continuousConstSMul"},
     {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"IsBoundedSMul.toUniformContinuousConstSMul"},
-    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"NormedSpace.toIsBoundedSMul"}
+    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"NormedSpace.toIsBoundedSMul"},
+    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"PiLp.completeSpace"},
+    {"source":"AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent","target":"IsUnit.map"}
   ]
 }

@@ -5,7 +5,7 @@
     {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.fisherInformation","label":"fisherInformation","full":"AsymptoticStatistics.fisherInformation","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation"},
     {"id":"StatLean.Bayesian.HasLocalDensity","label":"HasLocalDensity","full":"StatLean.Bayesian.HasLocalDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.Defs"},
     {"id":"AsymptoticStatistics.Contiguity.MutuallyContiguous","label":"MutuallyContiguous","full":"AsymptoticStatistics.Contiguity.MutuallyContiguous","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
@@ -30,23 +30,23 @@
     {"id":"measurableSet_ball","label":"measurableSet_ball","full":"measurableSet_ball","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Metric"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"top_le_iff","label":"top_le_iff","full":"top_le_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Order.BoundedOrder.Basic"},
-    {"id":"ENNReal.top_mul","label":"top_mul","full":"ENNReal.top_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Operations"},
+    {"id":"ENNReal.top_mul","label":"top_mul","full":"ENNReal.top_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Operations"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"mul_ne_zero","label":"mul_ne_zero","full":"mul_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Basic"},
-    {"id":"ENNReal.mul_ne_top","label":"mul_ne_top","full":"ENNReal.mul_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Operations"},
+    {"id":"ENNReal.mul_ne_top","label":"mul_ne_top","full":"ENNReal.mul_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Operations"},
     {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"Measurable.const_add","label":"const_add","full":"Measurable.const_add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousAdd.measurableAdd","label":"measurableAdd","full":"ContinuousAdd.measurableAdd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"Measurable.fun_const_smul","label":"fun_const_smul","full":"Measurable.fun_const_smul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousSMul.toMeasurableSMul","label":"toMeasurableSMul","full":"ContinuousSMul.toMeasurableSMul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"Real.isBoundedSMul","label":"isBoundedSMul","full":"Real.isBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
+    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
     {"id":"measurable_id'","label":"measurable_id'","full":"measurable_id'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"Filter.Tendsto.comp","label":"comp","full":"Filter.Tendsto.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
-    {"id":"Real.tendsto_sqrt_atTop","label":"tendsto_sqrt_atTop","full":"Real.tendsto_sqrt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
-    {"id":"tendsto_natCast_atTop_atTop","label":"tendsto_natCast_atTop_atTop","full":"tendsto_natCast_atTop_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"}
+    {"id":"Real.tendsto_sqrt_atTop","label":"tendsto_sqrt_atTop","full":"Real.tendsto_sqrt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
+    {"id":"tendsto_natCast_atTop_atTop","label":"tendsto_natCast_atTop_atTop","full":"tendsto_natCast_atTop_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"},
+    {"id":"Filter.Tendsto.div_atTop","label":"div_atTop","full":"Filter.Tendsto.div_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Order.Field"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"AsymptoticStatistics.ParametricFamily"},
@@ -88,11 +88,11 @@
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Measurable.fun_const_smul"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"ContinuousSMul.toMeasurableSMul"},
-    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"IsBoundedSMul.continuousSMul"},
-    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Real.isBoundedSMul"},
+    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"PolynormableSpace.continuousSMul"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"measurable_id'"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Filter.Tendsto.comp"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Real.tendsto_sqrt_atTop"},
-    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"tendsto_natCast_atTop_atTop"}
+    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"tendsto_natCast_atTop_atTop"},
+    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Filter.Tendsto.div_atTop"}
   ]
 }

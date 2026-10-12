@@ -4,7 +4,7 @@
     {"id":"StatLean.HypothesisTesting.smoothTest_asymptotically_maximin","label":"smoothTest_asymptotically_maximin","full":"StatLean.HypothesisTesting.smoothTest_asymptotically_maximin","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest"},
     {"id":"StatLean.MultipleTesting.chiSquared","label":"chiSquared","full":"StatLean.MultipleTesting.chiSquared","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.ChiSquared"},
     {"id":"StatLean.PointEstimation.ExpFamily.natSet","label":"natSet","full":"StatLean.PointEstimation.ExpFamily.natSet","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.HypothesisTesting.smoothModel","label":"smoothModel","full":"StatLean.HypothesisTesting.smoothModel","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest"},
     {"id":"StatLean.PointEstimation.ExpFamily.P","label":"P","full":"StatLean.PointEstimation.ExpFamily.P","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.HypothesisTesting.power","label":"power","full":"StatLean.HypothesisTesting.power","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
@@ -21,13 +21,11 @@
     {"id":"WithLp.measurable_ofLp","label":"measurable_ofLp","full":"WithLp.measurable_ofLp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
     {"id":"StatLean.HypothesisTesting.psiVec","label":"psiVec","full":"StatLean.HypothesisTesting.psiVec","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest"},
     {"id":"WithLp.measurable_toLp","label":"measurable_toLp","full":"WithLp.measurable_toLp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
-    {"id":"measurable_pi_lambda","label":"measurable_pi_lambda","full":"measurable_pi_lambda","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Measurable.of_eval","label":"of_eval","full":"Measurable.of_eval","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"Real.sqrt_one","label":"sqrt_one","full":"Real.sqrt_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
-    {"id":"inv_one","label":"inv_one","full":"inv_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Real.sqrt_one","label":"sqrt_one","full":"Real.sqrt_one","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
+    {"id":"inv_one","label":"inv_one","full":"inv_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"one_smul","label":"one_smul","full":"one_smul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
-    {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.integral_exp_pos","label":"integral_exp_pos","full":"MeasureTheory.integral_exp_pos","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.IsProbabilityMeasure.neZero","label":"neZero","full":"MeasureTheory.IsProbabilityMeasure.neZero","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"inner_zero_left","label":"inner_zero_left","full":"inner_zero_left","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
@@ -46,7 +44,9 @@
     {"id":"measurable_snd","label":"measurable_snd","full":"measurable_snd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"MeasureTheory.StronglyMeasurable.integral_prod_right'","label":"integral_prod_right'","full":"MeasureTheory.StronglyMeasurable.integral_prod_right'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Prod"},
     {"id":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","label":"toSigmaFinite","full":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
-    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"}
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"Measurable.stronglyMeasurable","label":"stronglyMeasurable","full":"Measurable.stronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic"},
+    {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.smoothTest_asymptotically_maximin","target":"StatLean.MultipleTesting.chiSquared"},
@@ -79,13 +79,11 @@
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"WithLp.measurable_ofLp"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"StatLean.HypothesisTesting.psiVec"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"WithLp.measurable_toLp"},
-    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"measurable_pi_lambda"},
+    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"Measurable.of_eval"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"Nat.cast_one"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"Real.sqrt_one"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"inv_one"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"one_smul"},
-    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.Measure.isProbabilityMeasure_map"},
-    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"Measurable.aemeasurable"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.integral_exp_pos"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.IsProbabilityMeasure.neZero"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"inner_zero_left"},
@@ -104,6 +102,8 @@
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"measurable_snd"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.StronglyMeasurable.integral_prod_right'"},
     {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.IsFiniteMeasure.toSigmaFinite"},
-    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"}
+    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"Measurable.stronglyMeasurable"},
+    {"source":"StatLean.HypothesisTesting.smoothTest_maximin_upper_bound","target":"PseudoEMetricSpace.pseudoMetrizableSpace"}
   ]
 }

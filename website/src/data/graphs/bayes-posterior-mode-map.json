@@ -9,13 +9,12 @@
     {"id":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","label":"isBayesEstimator_of_ae_argmax_posterior","full":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.ZeroOneLoss"},
     {"id":"MeasureTheory.ae_of_all","label":"ae_of_all","full":"MeasureTheory.ae_of_all","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
     {"id":"standardBorelSpace_of_discreteMeasurableSpace","label":"standardBorelSpace_of_discreteMeasurableSpace","full":"standardBorelSpace_of_discreteMeasurableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
-    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"},
+    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"StatLean.Bayesian.le_fintypeArgmax","label":"le_fintypeArgmax","full":"StatLean.Bayesian.le_fintypeArgmax","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.ZeroOneLoss"},
     {"id":"StatLean.Bayesian.fintypeArgmax","label":"fintypeArgmax","full":"StatLean.Bayesian.fintypeArgmax","kind":"repo","decl":"def","module":"StatLean.Bayesian.Decision.Defs"},
     {"id":"StatLean.Bayesian.measurable_fintypeArgmax","label":"measurable_fintypeArgmax","full":"StatLean.Bayesian.measurable_fintypeArgmax","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.ZeroOneLoss"},
     {"id":"ProbabilityTheory.Kernel.measurable_coe","label":"measurable_coe","full":"ProbabilityTheory.Kernel.measurable_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"measurableSingleton_of_standardBorel","label":"measurableSingleton_of_standardBorel","full":"measurableSingleton_of_standardBorel","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
     {"id":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","label":"isBayesEstimator_of_ae_argmin","full":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.BayesEstimator"},
     {"id":"StatLean.Bayesian.measurable_uncurry_zeroOneLoss","label":"measurable_uncurry_zeroOneLoss","full":"StatLean.Bayesian.measurable_uncurry_zeroOneLoss","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.ZeroOneLoss"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
@@ -46,7 +45,8 @@
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"StatLean.Bayesian.avgRisk_deterministic_eq_lintegral_posteriorRisk","label":"avgRisk_deterministic_eq_lintegral_posteriorRisk","full":"StatLean.Bayesian.avgRisk_deterministic_eq_lintegral_posteriorRisk","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.BayesEstimator"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"le_of_eq","label":"le_of_eq","full":"le_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"}
+    {"id":"le_of_eq","label":"le_of_eq","full":"le_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"MeasureTheory.lintegral_congr_ae","label":"lintegral_congr_ae","full":"MeasureTheory.lintegral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.posteriorMode_isBayesEstimator_zeroOneLoss","target":"StatLean.Bayesian.IsBayesEstimator"},
@@ -66,7 +66,6 @@
     {"source":"StatLean.Bayesian.measurable_posteriorMode","target":"standardBorelSpace_of_discreteMeasurableSpace"},
     {"source":"StatLean.Bayesian.measurable_posteriorMode","target":"Finite.to_countable"},
     {"source":"StatLean.Bayesian.measurable_posteriorMode","target":"Finite.of_fintype"},
-    {"source":"StatLean.Bayesian.measurable_posteriorMode","target":"measurableSingleton_of_standardBorel"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"standardBorelSpace_of_discreteMeasurableSpace"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"Finite.to_countable"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"Finite.of_fintype"},
@@ -74,7 +73,6 @@
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"StatLean.Bayesian.zeroOneLoss"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"StatLean.Bayesian.measurable_uncurry_zeroOneLoss"},
-    {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"measurableSingleton_of_standardBorel"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"Filter.mp_mem"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"Filter.univ_mem'"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmax_posterior","target":"StatLean.Bayesian.lintegral_zeroOneLoss_eq"},
@@ -109,6 +107,7 @@
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"StatLean.Bayesian.avgRisk_deterministic_eq_lintegral_posteriorRisk"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"le_trans"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"le_of_eq"},
+    {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"MeasureTheory.lintegral_congr_ae"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"Filter.mp_mem"},
     {"source":"StatLean.Bayesian.isBayesEstimator_of_ae_argmin","target":"Filter.univ_mem'"}
   ]

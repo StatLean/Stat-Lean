@@ -4,7 +4,7 @@
     {"id":"StatLean.StatisticalModels.Coarsening.attenuation","label":"attenuation","full":"StatLean.StatisticalModels.Coarsening.attenuation","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Coarsening.Attenuation"},
     {"id":"StatLean.StatisticalModels.Coarsening.covariance_response_observed","label":"covariance_response_observed","full":"StatLean.StatisticalModels.Coarsening.covariance_response_observed","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Coarsening.Attenuation"},
     {"id":"StatLean.StatisticalModels.Coarsening.variance_observed","label":"variance_observed","full":"StatLean.StatisticalModels.Coarsening.variance_observed","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Coarsening.Attenuation"},
-    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"MeasureTheory.MemLp.const_mul","label":"const_mul","full":"MeasureTheory.MemLp.const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.SMul"},
     {"id":"MeasureTheory.MemLp.integrable","label":"integrable","full":"MeasureTheory.MemLp.integrable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"one_le_two","label":"one_le_two","full":"one_le_two","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.NatCast"},

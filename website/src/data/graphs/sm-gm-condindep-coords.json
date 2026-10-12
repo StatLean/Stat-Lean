@@ -10,10 +10,12 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.coords","label":"coords","full":"StatLean.StatisticalModels.GraphicalModels.coords","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Coordinates"},
     {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"ProbabilityTheory.IsMarkovKernel","label":"IsMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"MeasureTheory.Measure.compProd","label":"compProd","full":"MeasureTheory.Measure.compProd","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"},
     {"id":"ProbabilityTheory.Kernel.prod","label":"prod","full":"ProbabilityTheory.Kernel.prod","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Composition.Prod"},
-    {"id":"Finset.restrict","label":"restrict","full":"Finset.restrict","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Pi"}
+    {"id":"Finset.restrict","label":"restrict","full":"Finset.restrict","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Pi"},
+    {"id":"AEMeasurable","label":"AEMeasurable","full":"AEMeasurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndepCoords","target":"MeasurableSpace"},
@@ -26,10 +28,14 @@
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.Kernel"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.IsMarkovKernel"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.map"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.compProd"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.Kernel.prod"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.coords","target":"Finset"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.coords","target":"Finset.restrict"}
+    {"source":"StatLean.StatisticalModels.GraphicalModels.coords","target":"Finset.restrict"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasurableSpace"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasureTheory.Measure"},
+    {"source":"MeasureTheory.Measure.map₀","target":"AEMeasurable"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasureTheory.Measure.map"}
   ]
 }

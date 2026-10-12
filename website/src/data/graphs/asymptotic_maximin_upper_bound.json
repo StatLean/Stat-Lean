@@ -6,7 +6,7 @@
     {"id":"StatLean.HypothesisTesting.IsCriticalFn","label":"IsCriticalFn","full":"StatLean.HypothesisTesting.IsCriticalFn","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.HypothesisTesting.power","label":"power","full":"StatLean.HypothesisTesting.power","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"FiniteDimensional.finiteDimensional_pi'","label":"finiteDimensional_pi'","full":"FiniteDimensional.finiteDimensional_pi'","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.FiniteDimensional.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
@@ -22,7 +22,7 @@
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"secondCountableTopologyEither_of_right","label":"secondCountableTopologyEither_of_right","full":"secondCountableTopologyEither_of_right","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"Continuous.rexp","label":"rexp","full":"Continuous.rexp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Exp"},
-    {"id":"Continuous.sub","label":"sub","full":"Continuous.sub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
+    {"id":"Continuous.fun_sub","label":"fun_sub","full":"Continuous.fun_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
     {"id":"IsTopologicalAddGroup.to_continuousSub","label":"to_continuousSub","full":"IsTopologicalAddGroup.to_continuousSub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
     {"id":"Continuous.inner","label":"inner","full":"Continuous.inner","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Continuous"},
     {"id":"continuous_id'","label":"continuous_id'","full":"continuous_id'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
@@ -40,13 +40,13 @@
     {"id":"sq_nonneg","label":"sq_nonneg","full":"sq_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"},
     {"id":"StarOrderedRing.toExistsAddOfLE","label":"toExistsAddOfLE","full":"StarOrderedRing.toExistsAddOfLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Star.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"MeasureTheory.integral_nonneg","label":"integral_nonneg","full":"MeasureTheory.integral_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
     {"id":"Algebra.to_smulCommClass","label":"to_smulCommClass","full":"Algebra.to_smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Basic"},
     {"id":"HasSolidNorm.orderClosedTopology","label":"orderClosedTopology","full":"HasSolidNorm.orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
     {"id":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal","label":"ofReal_integral_eq_lintegral_ofReal","full":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"}
+    {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
+    {"id":"Continuous.comp","label":"comp","full":"Continuous.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"StatLean.MultipleTesting.chiSquared"},
@@ -69,7 +69,7 @@
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"secondCountableTopologyEither_of_right"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Continuous.rexp"},
-    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Continuous.sub"},
+    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Continuous.fun_sub"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"IsTopologicalAddGroup.to_continuousSub"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Continuous.inner"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"continuous_id'"},
@@ -87,12 +87,12 @@
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"sq_nonneg"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"StarOrderedRing.toExistsAddOfLE"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"IsOrderedAddMonoid.toAddLeftMono"},
-    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"MeasureTheory.integral_nonneg"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"IsScalarTower.right"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Algebra.to_smulCommClass"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"HasSolidNorm.orderClosedTopology"},
     {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal"},
-    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Filter.Eventually.of_forall"}
+    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Filter.Eventually.of_forall"},
+    {"source":"StatLean.HypothesisTesting.asymptotic_maximin_upper_bound","target":"Continuous.comp"}
   ]
 }

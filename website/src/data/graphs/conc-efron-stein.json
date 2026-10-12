@@ -20,7 +20,7 @@
     {"id":"Finset.piecewise_univ","label":"piecewise_univ","full":"Finset.piecewise_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Piecewise"},
     {"id":"MeasureTheory.integral_const","label":"integral_const","full":"MeasureTheory.integral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.probReal_univ","label":"probReal_univ","full":"MeasureTheory.probReal_univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Finset.piecewise_empty","label":"piecewise_empty","full":"Finset.piecewise_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Piecewise"},
     {"id":"ProbabilityTheory.variance_eq_integral","label":"variance_eq_integral","full":"ProbabilityTheory.variance_eq_integral","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Variance"},
     {"id":"aemeasurable_const","label":"aemeasurable_const","full":"aemeasurable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},

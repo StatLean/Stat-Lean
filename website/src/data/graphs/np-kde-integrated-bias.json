@@ -17,13 +17,12 @@
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"MeasureTheory.integral_undef","label":"integral_undef","full":"MeasureTheory.integral_undef","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal","label":"ofReal_integral_eq_lintegral_ofReal","full":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.ae_of_all","label":"ae_of_all","full":"MeasureTheory.ae_of_all","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
-    {"id":"ENNReal.ofReal_one","label":"ofReal_one","full":"ENNReal.ofReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
-    {"id":"pow_zero","label":"pow_zero","full":"pow_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ENNReal.ofReal_one","label":"ofReal_one","full":"ENNReal.ofReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"pow_zero","label":"pow_zero","full":"pow_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.Integrable.abs","label":"abs","full":"MeasureTheory.Integrable.abs","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"Continuous.sub","label":"sub","full":"Continuous.sub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
     {"id":"IsTopologicalAddGroup.to_continuousSub","label":"to_continuousSub","full":"IsTopologicalAddGroup.to_continuousSub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
@@ -36,7 +35,7 @@
     {"id":"continuous_id'","label":"continuous_id'","full":"continuous_id'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"Continuous.mul_const","label":"mul_const","full":"Continuous.mul_const","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
     {"id":"Continuous.fst","label":"fst","full":"Continuous.fst","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Constructions.SumProd"},
-    {"id":"continuous_finset_sum","label":"continuous_finset_sum","full":"continuous_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"},
+    {"id":"continuous_finsetSum","label":"continuous_finsetSum","full":"continuous_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"},
     {"id":"ContDiff.continuous_iteratedDeriv","label":"continuous_iteratedDeriv","full":"ContDiff.continuous_iteratedDeriv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.IteratedDeriv.Defs"},
     {"id":"WithTop.addLeftMono","label":"addLeftMono","full":"WithTop.addLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.WithTop"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
@@ -46,7 +45,8 @@
     {"id":"Continuous.div_const","label":"div_const","full":"Continuous.div_const","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.GroupWithZero"},
     {"id":"Continuous.mul","label":"mul","full":"Continuous.mul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
     {"id":"continuous_snd","label":"continuous_snd","full":"continuous_snd","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Constructions.SumProd"},
-    {"id":"Continuous.pow","label":"pow","full":"Continuous.pow","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"}
+    {"id":"Continuous.fun_pow","label":"fun_pow","full":"Continuous.fun_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"},
+    {"id":"Measurable.ennreal_ofReal","label":"ennreal_ofReal","full":"Measurable.ennreal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"StatLean.NonparametricStatistics.IsIIDSample"},
@@ -64,7 +64,6 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"LT.lt.le"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"one_ne_zero"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"NeZero.charZero_one"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"MeasureTheory.integral_undef"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"MeasureTheory.ofReal_integral_eq_lintegral_ofReal"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"MeasureTheory.ae_of_all"},
@@ -83,7 +82,7 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"continuous_id'"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.mul_const"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.fst"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"continuous_finset_sum"},
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"continuous_finsetSum"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"ContDiff.continuous_iteratedDeriv"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"WithTop.addLeftMono"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"IsOrderedAddMonoid.toAddLeftMono"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.div_const"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.mul"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"continuous_snd"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.pow"}
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Continuous.fun_pow"},
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_sq_bias_le","target":"Measurable.ennreal_ofReal"}
   ]
 }

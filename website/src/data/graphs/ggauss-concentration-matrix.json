@@ -4,9 +4,9 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix","label":"precisionMatrix","full":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision"},
     {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"Matrix","label":"Matrix","full":"Matrix","kind":"mathlib","decl":"def","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Matrix.inv","label":"inv","full":"Matrix.inv","kind":"mathlib","decl":"def","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"},
-    {"id":"Real.commRing","label":"commRing","full":"Real.commRing","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+    {"id":"Real.commRing","label":"commRing","full":"Real.commRing","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix","target":"Fintype"},

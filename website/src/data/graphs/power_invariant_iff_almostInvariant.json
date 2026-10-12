@@ -23,7 +23,7 @@
     {"id":"Filter.EventuallyEq.symm","label":"symm","full":"Filter.EventuallyEq.symm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"MeasureTheory.Integrable.mono'","label":"mono'","full":"MeasureTheory.Integrable.mono'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"MeasureTheory.integrable_const","label":"integrable_const","full":"MeasureTheory.integrable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
-    {"id":"MeasureTheory.Measure.isFiniteMeasure_map","label":"isFiniteMeasure_map","full":"MeasureTheory.Measure.isFiniteMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"Measurable.aestronglyMeasurable","label":"aestronglyMeasurable","full":"Measurable.aestronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
@@ -33,12 +33,14 @@
     {"id":"MeasureTheory.integral_sub","label":"integral_sub","full":"MeasureTheory.integral_sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"StatLean.PointEstimation.IsInvariantModel.map_eq","label":"map_eq","full":"StatLean.PointEstimation.IsInvariantModel.map_eq","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Equivariance.Defs"},
     {"id":"MeasureTheory.integral_map","label":"integral_map","full":"MeasureTheory.integral_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.integral_congr_ae","label":"integral_congr_ae","full":"MeasureTheory.integral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"sub_self","label":"sub_self","full":"sub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","label":"IsBoundedlyCompleteFamily","full":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"}
+    {"id":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","label":"IsBoundedlyCompleteFamily","full":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"},
+    {"id":"MeasureTheory.Measure.map₀_of_aemeasurable","label":"map₀_of_aemeasurable","full":"MeasureTheory.Measure.map₀_of_aemeasurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"StatLean.PointEstimation.IsBoundedlyCompleteStat"},
@@ -62,7 +64,7 @@
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"Filter.EventuallyEq.symm"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.Integrable.mono'"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.integrable_const"},
-    {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.Measure.isFiniteMeasure_map"},
+    {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"Measurable.aestronglyMeasurable"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
@@ -72,11 +74,19 @@
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.integral_sub"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"Filter.mp_mem"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"Filter.univ_mem'"},
+    {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"StatLean.PointEstimation.IsInvariantModel.map_eq"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.integral_map"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"MeasureTheory.integral_congr_ae"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"sub_self"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"neg_eq_zero"},
     {"source":"StatLean.HypothesisTesting.power_invariant_iff_almostInvariant","target":"sub_eq_zero_of_eq"},
-    {"source":"StatLean.PointEstimation.IsBoundedlyCompleteStat","target":"StatLean.PointEstimation.IsBoundedlyCompleteFamily"}
+    {"source":"StatLean.PointEstimation.IsBoundedlyCompleteStat","target":"StatLean.PointEstimation.IsBoundedlyCompleteFamily"},
+    {"source":"StatLean.PointEstimation.IsBoundedlyCompleteStat","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.statLaw","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"StatLean.PointEstimation.IsInvariantModel"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"MeasureTheory.Measure.map₀_of_aemeasurable"},
+    {"source":"MeasureTheory.Measure.map₀_of_aemeasurable","target":"MeasureTheory.Measure.map₀"}
   ]
 }

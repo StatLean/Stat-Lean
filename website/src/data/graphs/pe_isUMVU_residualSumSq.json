@@ -2,7 +2,7 @@
   "root": "StatLean.PointEstimation.isUMVU_residualSumSq",
   "nodes": [
     {"id":"StatLean.PointEstimation.isUMVU_residualSumSq","label":"isUMVU_residualSumSq","full":"StatLean.PointEstimation.isUMVU_residualSumSq","kind":"root","decl":"thm","module":"StatLean.PointEstimation.LinearModel.LeastSquares"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.IsUMVU","label":"IsUMVU","full":"StatLean.PointEstimation.IsUMVU","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
     {"id":"StatLean.PointEstimation.PosVar","label":"PosVar","full":"StatLean.PointEstimation.PosVar","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Canonical"},
     {"id":"StatLean.PointEstimation.linearModelFull","label":"linearModelFull","full":"StatLean.PointEstimation.linearModelFull","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.LeastSquares"},
@@ -20,7 +20,6 @@
     {"id":"StatLean.PointEstimation.gaussianVector_map_linearIsometryEquiv","label":"gaussianVector_map_linearIsometryEquiv","full":"StatLean.PointEstimation.gaussianVector_map_linearIsometryEquiv","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.LinearModel.LeastSquares"},
     {"id":"StatLean.PointEstimation.CanonicalParam","label":"CanonicalParam","full":"StatLean.PointEstimation.CanonicalParam","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Canonical"},
     {"id":"StatLean.PointEstimation.isUMVU_residual_variance","label":"isUMVU_residual_variance","full":"StatLean.PointEstimation.isUMVU_residual_variance","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.LinearModel.Canonical"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
@@ -46,7 +45,8 @@
     {"id":"coe_basisOfOrthonormalOfCardEqFinrank","label":"coe_basisOfOrthonormalOfCardEqFinrank","full":"coe_basisOfOrthonormalOfCardEqFinrank","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Orthonormal"},
     {"id":"Module.Basis.coe_toOrthonormalBasis","label":"coe_toOrthonormalBasis","full":"Module.Basis.coe_toOrthonormalBasis","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
     {"id":"OrthonormalBasis.repr_apply_apply","label":"repr_apply_apply","full":"OrthonormalBasis.repr_apply_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
-    {"id":"PiLp.ext","label":"ext","full":"PiLp.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"}
+    {"id":"PiLp.ext","label":"ext","full":"PiLp.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
+    {"id":"Pi.zero_apply","label":"zero_apply","full":"Pi.zero_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Pi.Defs"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"fact_one_le_two_ennreal"},
@@ -67,13 +67,11 @@
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"StatLean.PointEstimation.gaussianVector_map_linearIsometryEquiv"},
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"StatLean.PointEstimation.CanonicalParam"},
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"StatLean.PointEstimation.isUMVU_residual_variance"},
-    {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"Nat.cast_zero"},
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"sub_eq_zero_of_eq"},
     {"source":"StatLean.PointEstimation.isUMVU_residualSumSq","target":"neg_eq_zero"},
     {"source":"StatLean.PointEstimation.IsUMVU","target":"StatLean.PointEstimation.IsUnbiased"},
     {"source":"StatLean.PointEstimation.IsUMVU","target":"StatLean.PointEstimation.MemEstL2"},
-    {"source":"StatLean.PointEstimation.linearModelFull","target":"fact_one_le_two_ennreal"},
     {"source":"StatLean.PointEstimation.linearModelFull","target":"StatLean.PointEstimation.PosVar"},
     {"source":"StatLean.PointEstimation.linearModelFull","target":"StatLean.PointEstimation.linearModel"},
     {"source":"StatLean.PointEstimation.residualSumSq","target":"fact_one_le_two_ennreal"},
@@ -105,6 +103,7 @@
     {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"coe_basisOfOrthonormalOfCardEqFinrank"},
     {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"Module.Basis.coe_toOrthonormalBasis"},
     {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"OrthonormalBasis.repr_apply_apply"},
-    {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"PiLp.ext"}
+    {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"PiLp.ext"},
+    {"source":"StatLean.PointEstimation.exists_headSubspace_isometry","target":"Pi.zero_apply"}
   ]
 }

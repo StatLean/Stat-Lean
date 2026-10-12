@@ -8,7 +8,6 @@
     {"id":"StatLean.CausalInference.diffInMeans","label":"diffInMeans","full":"StatLean.CausalInference.diffInMeans","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"StatLean.CausalInference.ScienceTable.finiteATE","label":"finiteATE","full":"StatLean.CausalInference.ScienceTable.finiteATE","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"StatLean.CausalInference.Assignment","label":"Assignment","full":"StatLean.CausalInference.Assignment","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"StatLean.CausalInference.ind","label":"ind","full":"StatLean.CausalInference.ind","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
@@ -19,8 +18,8 @@
     {"id":"Finset.sum_add_distrib","label":"sum_add_distrib","full":"Finset.sum_add_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"congr_arg","label":"congr_arg","full":"congr_arg","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
@@ -46,7 +45,8 @@
     {"id":"mul_sub","label":"mul_sub","full":"mul_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"StatLean.CausalInference.numTreated","label":"numTreated","full":"StatLean.CausalInference.numTreated","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"Finset.exists_subset_card_eq","label":"exists_subset_card_eq","full":"Finset.exists_subset_card_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"},
-    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"}
+    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"StatLean.CausalInference.armIdx","label":"armIdx","full":"StatLean.CausalInference.armIdx","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"}
   ],
   "edges": [
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"StatLean.CausalInference.ScienceTable"},
@@ -55,7 +55,6 @@
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"StatLean.CausalInference.diffInMeans"},
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"StatLean.CausalInference.ScienceTable.finiteATE"},
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"Nat.cast_ne_zero"},
-    {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"LT.lt.ne'"},
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"StatLean.CausalInference.Assignment"},
     {"source":"StatLean.CausalInference.differenceInMeans_unbiased","target":"StatLean.CausalInference.ind"},
@@ -90,7 +89,6 @@
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"StatLean.CausalInference.completeSupport"},
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"StatLean.CausalInference.diffInMeans"},
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"StatLean.CausalInference.ind"},
-    {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"Nat.cast_one"},
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"StatLean.CausalInference.armMean"},
     {"source":"StatLean.CausalInference.diffInMeans_eq_affine","target":"StatLean.CausalInference.armMean_true_eq"},
@@ -113,7 +111,6 @@
     {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"StatLean.CausalInference.ScienceTable.finiteATE"},
     {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"StatLean.CausalInference.popMean"},
     {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"StatLean.CausalInference.ScienceTable.unitEffect"},
-    {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"Finset.sum_congr"},
     {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"Finset.sum_sub_distrib"},
     {"source":"StatLean.CausalInference.finiteATE_eq_sub_popMean","target":"mul_sub"},
     {"source":"StatLean.CausalInference.Design.mk","target":"StatLean.CausalInference.Assignment"},
@@ -124,6 +121,7 @@
     {"source":"StatLean.CausalInference.completeSupport_nonempty","target":"StatLean.CausalInference.completeSupport"},
     {"source":"StatLean.CausalInference.completeSupport_nonempty","target":"Finset.exists_subset_card_eq"},
     {"source":"StatLean.CausalInference.completeSupport_nonempty","target":"Fintype.card_fin"},
+    {"source":"StatLean.CausalInference.completeSupport_nonempty","target":"StatLean.CausalInference.armIdx"},
     {"source":"StatLean.CausalInference.completeSupport_nonempty","target":"StatLean.CausalInference.numTreated"}
   ]
 }

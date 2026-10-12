@@ -16,14 +16,13 @@
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"abs_lt","label":"abs_lt","full":"abs_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"covariant_swap_add_of_covariant_add","label":"covariant_swap_add_of_covariant_add","full":"covariant_swap_add_of_covariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"IsOrderedAddMonoid.toAddRightMono","label":"toAddRightMono","full":"IsOrderedAddMonoid.toAddRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"le_or_gt","label":"le_or_gt","full":"le_or_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
-    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"div_nonneg","label":"div_nonneg","full":"div_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"div_nonneg","label":"div_nonneg","full":"div_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"le_refl","label":"le_refl","full":"le_refl","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
@@ -42,11 +41,12 @@
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"Set.indicator_apply","label":"indicator_apply","full":"Set.indicator_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Indicator"},
     {"id":"integral_comp_neg_Ioi","label":"integral_comp_neg_Ioi","full":"integral_comp_neg_Ioi","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Lebesgue.Integral"},
-    {"id":"neg_neg","label":"neg_neg","full":"neg_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"neg_neg","label":"neg_neg","full":"neg_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"MeasureTheory.setIntegral_congr_fun","label":"setIntegral_congr_fun","full":"MeasureTheory.setIntegral_congr_fun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Set"},
     {"id":"MeasureTheory.integral_add_compl","label":"integral_add_compl","full":"MeasureTheory.integral_add_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Set"},
     {"id":"measurableSet_Iic","label":"measurableSet_Iic","full":"measurableSet_Iic","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Order"},
-    {"id":"Set.compl_Iic","label":"compl_Iic","full":"Set.compl_Iic","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Interval.Set.LinearOrder"}
+    {"id":"Set.compl_Iic","label":"compl_Iic","full":"Set.compl_Iic","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Interval.Set.LinearOrder"},
+    {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
   ],
   "edges": [
     {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"StatLean.RobustStatistics.IsLocationEquivariantOn"},
@@ -63,14 +63,13 @@
     {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"Nat.cast_zero"},
     {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"abs_lt"},
     {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"IsOrderedAddMonoid.toAddLeftMono"},
-    {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"covariant_swap_add_of_covariant_add"},
+    {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"IsOrderedAddMonoid.toAddRightMono"},
     {"source":"StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median","target":"not_le"},
     {"source":"StatLean.RobustStatistics.grossErrorNbhd","target":"StatLean.RobustStatistics.contaminate"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"StatLean.RobustStatistics.minimaxWitnessDensity"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"le_or_gt"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"le_of_not_gt"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"Nat.cast_zero"},
-    {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"mul_nonneg"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"div_nonneg"},
     {"source":"StatLean.RobustStatistics.minimaxWitnessDensity_nonneg","target":"PosMulReflectLE.toPosMulReflectLT"},
@@ -102,6 +101,6 @@
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"MeasureTheory.integral_add_compl"},
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"measurableSet_Iic"},
     {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"Set.compl_Iic"},
-    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"RCLike.charZero_rclike"}
+    {"source":"StatLean.RobustStatistics.integral_minimaxWitnessDensity","target":"neg_eq_zero"}
   ]
 }

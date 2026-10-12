@@ -17,7 +17,7 @@
     {"id":"Matrix.mul_apply","label":"mul_apply","full":"Matrix.mul_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
     {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"Matrix.transpose_apply","label":"transpose_apply","full":"Matrix.transpose_apply","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
-    {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.FactorModels.variance_eq_communality_add_specificVariance","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},

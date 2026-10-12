@@ -20,6 +20,9 @@
     {"id":"ProbabilityTheory.Kernel.IsFiniteKernel.isSFiniteKernel","label":"isSFiniteKernel","full":"ProbabilityTheory.Kernel.IsFiniteKernel.isSFiniteKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","label":"comp_prod_eq_compProd_posteriorPredictive","full":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Updating.Predictive"},
     {"id":"ProbabilityTheory.condDistrib_ae_eq_of_measure_eq_compProd","label":"condDistrib_ae_eq_of_measure_eq_compProd","full":"ProbabilityTheory.condDistrib_ae_eq_of_measure_eq_compProd","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.CondDistrib"},
+    {"id":"AEMeasurable.fst","label":"fst","full":"AEMeasurable.fst","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AEMeasurable"},
+    {"id":"AEMeasurable.snd","label":"snd","full":"AEMeasurable.snd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AEMeasurable"},
+    {"id":"aemeasurable_id","label":"aemeasurable_id","full":"aemeasurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.ext_of_generate_finite","label":"ext_of_generate_finite","full":"MeasureTheory.ext_of_generate_finite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"generateFrom_prod","label":"generateFrom_prod","full":"generateFrom_prod","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Prod"},
     {"id":"isPiSystem_prod","label":"isPiSystem_prod","full":"isPiSystem_prod","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Prod"},
@@ -38,15 +41,12 @@
     {"id":"MeasureTheory.lintegral_indicator","label":"lintegral_indicator","full":"MeasureTheory.lintegral_indicator","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
     {"id":"MeasureTheory.lintegral_const_mul","label":"lintegral_const_mul","full":"MeasureTheory.lintegral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Add"},
     {"id":"Set.indicator_of_mem","label":"indicator_of_mem","full":"Set.indicator_of_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Indicator"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Set.indicator_of_notMem","label":"indicator_of_notMem","full":"Set.indicator_of_notMem","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Notation.Indicator"},
     {"id":"MeasureTheory.Measure.bind_apply","label":"bind_apply","full":"MeasureTheory.Measure.bind_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
     {"id":"MeasurableSet.prod","label":"prod","full":"MeasurableSet.prod","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"ProbabilityTheory.Kernel.aemeasurable","label":"aemeasurable","full":"ProbabilityTheory.Kernel.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"ProbabilityTheory.Kernel.prod_apply_prod","label":"prod_apply_prod","full":"ProbabilityTheory.Kernel.prod_apply_prod","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.Prod"},
-    {"id":"MeasureTheory.Measure.compProd_apply_prod","label":"compProd_apply_prod","full":"MeasureTheory.Measure.compProd_apply_prod","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"},
-    {"id":"StatLean.Bayesian.posteriorPredictive_apply","label":"posteriorPredictive_apply","full":"StatLean.Bayesian.posteriorPredictive_apply","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Updating.Defs"},
-    {"id":"MeasureTheory.Measure.comp_apply_univ","label":"comp_apply_univ","full":"MeasureTheory.Measure.comp_apply_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.CompNotation"}
+    {"id":"ProbabilityTheory.Kernel.prod_apply_prod","label":"prod_apply_prod","full":"ProbabilityTheory.Kernel.prod_apply_prod","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.Prod"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"ProbabilityTheory.Kernel.IsFiniteKernel.prod"},
@@ -67,6 +67,9 @@
     {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"ProbabilityTheory.Kernel.IsFiniteKernel.isSFiniteKernel"},
     {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive"},
     {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"ProbabilityTheory.condDistrib_ae_eq_of_measure_eq_compProd"},
+    {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"AEMeasurable.fst"},
+    {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"AEMeasurable.snd"},
+    {"source":"StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive","target":"aemeasurable_id"},
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"StatLean.Bayesian.posteriorPredictive"},
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel"},
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel"},
@@ -99,9 +102,6 @@
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"MeasureTheory.Measure.bind_apply"},
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"MeasurableSet.prod"},
     {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"ProbabilityTheory.Kernel.aemeasurable"},
-    {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"ProbabilityTheory.Kernel.prod_apply_prod"},
-    {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"MeasureTheory.Measure.compProd_apply_prod"},
-    {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"StatLean.Bayesian.posteriorPredictive_apply"},
-    {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"MeasureTheory.Measure.comp_apply_univ"}
+    {"source":"StatLean.Bayesian.comp_prod_eq_compProd_posteriorPredictive","target":"ProbabilityTheory.Kernel.prod_apply_prod"}
   ]
 }

@@ -18,16 +18,16 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.CondIndep","label":"CondIndep","full":"StatLean.StatisticalModels.GraphicalModels.CondIndep","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.CondIndep"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.coords","label":"coords","full":"StatLean.StatisticalModels.GraphicalModels.coords","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Coordinates"},
     {"id":"RingHomInvPair.ids","label":"ids","full":"RingHomInvPair.ids","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.CompTypeclasses"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.posDef_submatrix_of_injective","label":"posDef_submatrix_of_injective","full":"StatLean.StatisticalModels.GraphicalModels.posDef_submatrix_of_injective","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision"},
     {"id":"Equiv.injective","label":"injective","full":"Equiv.injective","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Equiv.Defs"},
     {"id":"Continuous.measurable","label":"measurable","full":"Continuous.measurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
-    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"},
+    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"Subtype.countable","label":"countable","full":"Subtype.countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"},
+    {"id":"Subtype.countable","label":"countable","full":"Subtype.countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"},
     {"id":"LinearIsometryEquiv.continuous","label":"continuous","full":"LinearIsometryEquiv.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Operator.LinearIsometry"},
     {"id":"StatLean.StatisticalModels.multivariateGaussian_map_reindex","label":"multivariateGaussian_map_reindex","full":"StatLean.StatisticalModels.multivariateGaussian_map_reindex","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Gaussian.FinCorridor"},
     {"id":"Matrix.PosDef.posSemidef","label":"posSemidef","full":"Matrix.PosDef.posSemidef","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
@@ -42,11 +42,11 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.measurable_gaussianCoords","label":"measurable_gaussianCoords","full":"StatLean.StatisticalModels.GraphicalModels.measurable_gaussianCoords","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision"},
     {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"WithLp.measurable_ofLp","label":"measurable_ofLp","full":"WithLp.measurable_ofLp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
-    {"id":"ContinuousLinearMap.continuous","label":"continuous","full":"ContinuousLinearMap.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
+    {"id":"ContinuousLinearMap.continuous","label":"continuous","full":"ContinuousLinearMap.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"MeasureTheory.Measure.map_map","label":"map_map","full":"MeasureTheory.Measure.map_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.condIndep_congr_law","label":"condIndep_congr_law","full":"StatLean.StatisticalModels.GraphicalModels.condIndep_congr_law","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Core.CondIndep"},
-    {"id":"Matrix.posDef_iff_dotProduct_mulVec","label":"posDef_iff_dotProduct_mulVec","full":"Matrix.posDef_iff_dotProduct_mulVec","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
-    {"id":"Matrix.IsHermitian.submatrix","label":"submatrix","full":"Matrix.IsHermitian.submatrix","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Hermitian"}
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"Matrix.posDef_iff_dotProduct_mulVec","label":"posDef_iff_dotProduct_mulVec","full":"Matrix.posDef_iff_dotProduct_mulVec","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.GraphicalModels.condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero","target":"StatLean.StatisticalModels.GraphicalModels.CondIndepCoords"},
@@ -101,7 +101,7 @@
     {"source":"StatLean.StatisticalModels.GraphicalModels.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero","target":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix_def"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero","target":"Matrix.inv_submatrix_equiv"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix_def","target":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.posDef_submatrix_of_injective","target":"Matrix.posDef_iff_dotProduct_mulVec"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.posDef_submatrix_of_injective","target":"Matrix.IsHermitian.submatrix"}
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.posDef_submatrix_of_injective","target":"Matrix.posDef_iff_dotProduct_mulVec"}
   ]
 }

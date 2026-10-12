@@ -25,7 +25,7 @@
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"MeasureTheory.integral_const","label":"integral_const","full":"MeasureTheory.integral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.probReal_univ","label":"probReal_univ","full":"MeasureTheory.probReal_univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"le_min","label":"le_min","full":"le_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"zero_le_one","label":"zero_le_one","full":"zero_le_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.ZeroLEOne"},
@@ -34,19 +34,19 @@
     {"id":"StatLean.HypothesisTesting.exists_mostPowerful","label":"exists_mostPowerful","full":"StatLean.HypothesisTesting.exists_mostPowerful","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.NeymanPearson.Lemma"},
     {"id":"min_le_left","label":"min_le_left","full":"min_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Basic"},
+    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Logic.Basic"},
     {"id":"Eq.le","label":"le","full":"Eq.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"le_total","label":"le_total","full":"le_total","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"min_eq_left","label":"min_eq_left","full":"min_eq_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"min_eq_right","label":"min_eq_right","full":"min_eq_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"lt_or_ge","label":"lt_or_ge","full":"lt_or_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"measurable_const","label":"measurable_const","full":"measurable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"le_rfl","label":"le_rfl","full":"le_rfl","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"lt_of_le_of_ne","label":"lt_of_le_of_ne","full":"lt_of_le_of_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"MeasureTheory.integral_congr_ae","label":"integral_congr_ae","full":"MeasureTheory.integral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
+    {"id":"MeasureTheory.integral_congr_ae","label":"integral_congr_ae","full":"MeasureTheory.integral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"StatLean.HypothesisTesting.HasDensity"},
@@ -88,11 +88,11 @@
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"min_eq_right"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"one_ne_zero"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"NeZero.charZero_one"},
-    {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"lt_or_ge"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"measurable_const"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"le_rfl"},
     {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"lt_of_le_of_ne"},
-    {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"MeasureTheory.integral_congr_ae"}
+    {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"MeasureTheory.integral_congr_ae"},
+    {"source":"StatLean.HypothesisTesting.npTest_necessity","target":"Filter.mp_mem"}
   ]
 }

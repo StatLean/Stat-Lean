@@ -10,7 +10,7 @@
     {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Fintype.card_fun","label":"card_fun","full":"Fintype.card_fun","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.BigOperators"},
     {"id":"Fintype.card_bool","label":"card_bool","full":"Fintype.card_bool","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"Nat.cast_pow","label":"cast_pow","full":"Nat.cast_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Basic"},

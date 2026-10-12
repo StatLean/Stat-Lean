@@ -4,7 +4,7 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","label":"FactorizesOver","full":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Discrete.Factorization"},
     {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"SimpleGraph","label":"SimpleGraph","full":"SimpleGraph","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Basic"},
-    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","label":"IsCliquePotential","full":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Discrete.Factorization"},
     {"id":"Finset.prod","label":"prod","full":"Finset.prod","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},

@@ -6,6 +6,9 @@
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"MulAction","label":"MulAction","full":"MulAction","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Action.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"Monoid.toSemigroup","label":"toSemigroup","full":"Monoid.toSemigroup","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"AEMeasurable","label":"AEMeasurable","full":"AEMeasurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"}
   ],
   "edges": [
@@ -13,6 +16,11 @@
     {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"MeasurableSpace"},
     {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"MulAction"},
     {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"MeasureTheory.Measure"},
-    {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"MeasureTheory.Measure.map"}
+    {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.HypothesisTesting.RandomizationHypothesis","target":"Monoid.toSemigroup"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasurableSpace"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasureTheory.Measure"},
+    {"source":"MeasureTheory.Measure.map₀","target":"AEMeasurable"},
+    {"source":"MeasureTheory.Measure.map₀","target":"MeasureTheory.Measure.map"}
   ]
 }

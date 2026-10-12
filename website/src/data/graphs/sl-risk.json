@@ -4,7 +4,7 @@
     {"id":"StatLean.StatisticalLearning.risk","label":"risk","full":"StatLean.StatisticalLearning.risk","kind":"root","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"MeasureTheory.integral","label":"integral","full":"MeasureTheory.integral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"Real.normedAddCommGroup","label":"normedAddCommGroup","full":"Real.normedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Real"},
     {"id":"NormedField.toNormedSpace","label":"toNormedSpace","full":"NormedField.toNormedSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Module.Basic"},

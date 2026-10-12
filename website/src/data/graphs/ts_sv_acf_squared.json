@@ -6,7 +6,8 @@
     {"id":"StatLean.TimeSeries.IsLinearProcessOf","label":"IsLinearProcessOf","full":"StatLean.TimeSeries.IsLinearProcessOf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.LinearProcess"},
     {"id":"StatLean.TimeSeries.acvf","label":"acvf","full":"StatLean.TimeSeries.acvf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
     {"id":"StatLean.TimeSeries.IsStrictlyStationary","label":"IsStrictlyStationary","full":"StatLean.TimeSeries.IsStrictlyStationary","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
-    {"id":"StatLean.TimeSeries.acf","label":"acf","full":"StatLean.TimeSeries.acf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"}
+    {"id":"StatLean.TimeSeries.acf","label":"acf","full":"StatLean.TimeSeries.acf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"}
   ],
   "edges": [
     {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.IsSV"},
@@ -14,6 +15,7 @@
     {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.acvf"},
     {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.IsStrictlyStationary"},
     {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.acf"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.TimeSeries.acf","target":"StatLean.TimeSeries.acvf"}
   ]
 }

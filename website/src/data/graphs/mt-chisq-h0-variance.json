@@ -22,8 +22,8 @@
     {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
-    {"id":"MeasureTheory.integral_finset_sum","label":"integral_finset_sum","full":"MeasureTheory.integral_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"MeasureTheory.integral_finsetSum","label":"integral_finsetSum","full":"MeasureTheory.integral_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.MultipleTesting.chiSq_H0_variance","target":"Measurable.aemeasurable"},
@@ -46,7 +46,7 @@
     {"source":"StatLean.MultipleTesting.chiSq_H0_variance","target":"Finset.card_univ"},
     {"source":"StatLean.MultipleTesting.chiSq_H0_variance","target":"Fintype.card_fin"},
     {"source":"StatLean.MultipleTesting.chiSq_H0_variance","target":"nsmul_eq_mul"},
-    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"MeasureTheory.integral_finset_sum"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"MeasureTheory.integral_finsetSum"},
     {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.sum_congr"},
     {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.sum_const"},
     {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.card_univ"},

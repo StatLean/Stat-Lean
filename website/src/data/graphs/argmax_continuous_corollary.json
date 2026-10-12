@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"AsymptoticStatistics.MEstimator.argmax_continuous_corollary","label":"argmax_continuous_corollary","full":"AsymptoticStatistics.MEstimator.argmax_continuous_corollary","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.MEstimator.ArgmaxContinuous"},
     {"id":"AsymptoticStatistics.ForMathlib.SetConverges","label":"SetConverges","full":"AsymptoticStatistics.ForMathlib.SetConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.SetConvergence"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.TendstoInOuterProbabilityZero","label":"TendstoInOuterProbabilityZero","full":"AsymptoticStatistics.TendstoInOuterProbabilityZero","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterProcessMapping"},
     {"id":"AsymptoticStatistics.ForMathlib.LinfOn","label":"LinfOn","full":"AsymptoticStatistics.ForMathlib.LinfOn","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.VaryingSetSupremum"},
     {"id":"AsymptoticStatistics.ForMathlib.restrictToLinfOn","label":"restrictToLinfOn","full":"AsymptoticStatistics.ForMathlib.restrictToLinfOn","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.VaryingSetSupremum"},

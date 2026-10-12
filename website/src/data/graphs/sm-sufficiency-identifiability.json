@@ -7,8 +7,15 @@
     {"id":"StatLean.StatisticalModels.pushforward","label":"pushforward","full":"StatLean.StatisticalModels.pushforward","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Calculus.Defs"},
     {"id":"StatLean.StatisticalModels.identifiable_of_pushforward","label":"identifiable_of_pushforward","full":"StatLean.StatisticalModels.identifiable_of_pushforward","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
     {"id":"StatLean.PointEstimation.statLaw","label":"statLaw","full":"StatLean.PointEstimation.statLaw","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"StatLean.PointEstimation.HasSufficientKernel.exists_map","label":"exists_map","full":"StatLean.PointEstimation.HasSufficientKernel.exists_map","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"StatLean.StatisticalModels.identifiesTarget_of_comp","label":"identifiesTarget_of_comp","full":"StatLean.StatisticalModels.identifiesTarget_of_comp","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
-    {"id":"StatLean.StatisticalModels.IdentifiesTarget","label":"IdentifiesTarget","full":"StatLean.StatisticalModels.IdentifiesTarget","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Identifiability.Defs"}
+    {"id":"MeasureTheory.Measure.map₀_of_measurable","label":"map₀_of_measurable","full":"MeasureTheory.Measure.map₀_of_measurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"Measurable.prodMk","label":"prodMk","full":"Measurable.prodMk","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"measurable_id'","label":"measurable_id'","full":"measurable_id'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"StatLean.StatisticalModels.IdentifiesTarget","label":"IdentifiesTarget","full":"StatLean.StatisticalModels.IdentifiesTarget","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Identifiability.Defs"},
+    {"id":"MeasureTheory.Measure.map₀_of_aemeasurable","label":"map₀_of_aemeasurable","full":"MeasureTheory.Measure.map₀_of_aemeasurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.HasSufficientKernel"},
@@ -16,10 +23,25 @@
     {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.StatisticalModels.pushforward"},
     {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.StatisticalModels.identifiable_of_pushforward"},
     {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.HasSufficientKernel.exists_map"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.PointEstimation.HasSufficientKernel","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.StatisticalModels.pushforward","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.PointEstimation.Identifiable"},
     {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.StatisticalModels.pushforward"},
     {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.StatisticalModels.identifiesTarget_of_comp"},
-    {"source":"StatLean.StatisticalModels.identifiesTarget_of_comp","target":"StatLean.StatisticalModels.IdentifiesTarget"}
+    {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.statLaw","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"StatLean.PointEstimation.HasSufficientKernel"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"MeasureTheory.Measure.map₀_of_measurable"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"Measurable.prodMk"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel.exists_map","target":"measurable_id'"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_of_comp","target":"StatLean.StatisticalModels.IdentifiesTarget"},
+    {"source":"MeasureTheory.Measure.map₀_of_measurable","target":"MeasureTheory.Measure.map₀"},
+    {"source":"MeasureTheory.Measure.map₀_of_measurable","target":"MeasureTheory.Measure.map₀_of_aemeasurable"},
+    {"source":"MeasureTheory.Measure.map₀_of_measurable","target":"Measurable.aemeasurable"},
+    {"source":"MeasureTheory.Measure.map₀_of_aemeasurable","target":"MeasureTheory.Measure.map₀"}
   ]
 }

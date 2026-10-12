@@ -8,7 +8,7 @@
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.𝓨","label":"𝓨","full":"AsymptoticStatistics.AsymptoticRepresentation.𝓨","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"EuclideanSpace","label":"EuclideanSpace","full":"EuclideanSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","target":"MeasurableSpace"},

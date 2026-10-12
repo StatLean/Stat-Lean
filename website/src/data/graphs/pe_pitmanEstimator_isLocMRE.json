@@ -8,7 +8,7 @@
     {"id":"StatLean.PointEstimation.pitmanEstimator","label":"pitmanEstimator","full":"StatLean.PointEstimation.pitmanEstimator","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
     {"id":"measurable_pi_apply","label":"measurable_pi_apply","full":"measurable_pi_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"StatLean.PointEstimation.IsLocEquivariant","label":"IsLocEquivariant","full":"StatLean.PointEstimation.IsLocEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Measurable.mul","label":"mul","full":"Measurable.mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousMul.measurableMul₂","label":"measurableMul₂","full":"ContinuousMul.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},

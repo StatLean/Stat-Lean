@@ -5,7 +5,7 @@
     {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMeanOn","label":"DifferentiableQuadraticMeanOn","full":"AsymptoticStatistics.DifferentiableQuadraticMeanOn","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.ParameterSubset"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.ParametricFamily.logDensity","label":"logDensity","full":"AsymptoticStatistics.ParametricFamily.logDensity","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.LogDensity"},
     {"id":"AsymptoticStatistics.MaximumLikelihood.fisherInformationMatrixOn","label":"fisherInformationMatrixOn","full":"AsymptoticStatistics.MaximumLikelihood.fisherInformationMatrixOn","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.MaximumLikelihood.ParameterSubset"},
     {"id":"AsymptoticStatistics.TendstoInProbZero","label":"TendstoInProbZero","full":"AsymptoticStatistics.TendstoInProbZero","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.InProbability"},
@@ -13,7 +13,6 @@
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"Function.smulCommClass","label":"smulCommClass","full":"Function.smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
     {"id":"Algebra.to_smulCommClass","label":"to_smulCommClass","full":"Algebra.to_smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Basic"},
-    {"id":"UniformContinuousConstSMul.to_continuousConstSMul","label":"to_continuousConstSMul","full":"UniformContinuousConstSMul.to_continuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformMulAction"},
     {"id":"IsBoundedSMul.toUniformContinuousConstSMul","label":"toUniformContinuousConstSMul","full":"IsBoundedSMul.toUniformContinuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
     {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
@@ -40,13 +39,14 @@
     {"id":"isOpen_interior","label":"isOpen_interior","full":"isOpen_interior","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Closure"},
     {"id":"interior_subset","label":"interior_subset","full":"interior_subset","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Closure"},
     {"id":"Metric.mem_nhds_iff","label":"mem_nhds_iff","full":"Metric.mem_nhds_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"lt_min","label":"lt_min","full":"lt_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"min_le_left","label":"min_le_left","full":"min_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"AsymptoticStatistics.ParametricFamily"},
@@ -60,7 +60,6 @@
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"Function.smulCommClass"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"Algebra.to_smulCommClass"},
-    {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"UniformContinuousConstSMul.to_continuousConstSMul"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"IsBoundedSMul.toUniformContinuousConstSMul"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"NormedSpace.toIsBoundedSMul"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality_on_of_consistent","target":"PiLp.completeSpace"},
@@ -115,6 +114,7 @@
     {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"lt_min"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"le_of_not_gt"},
     {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"Nat.cast_zero"},
-    {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"Nat.cast_one"}
+    {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"Nat.cast_one"},
+    {"source":"AsymptoticStatistics.MaximumLikelihood.exists_radius_extendFromSetAt_logDensity_lipschitz","target":"min_le_left"}
   ]
 }

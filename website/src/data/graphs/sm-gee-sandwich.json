@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","label":"covMatrix_geeEstimator","full":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
     {"id":"StatLean.StatisticalModels.covMatrix","label":"covMatrix","full":"StatLean.StatisticalModels.covMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","label":"geeEstimatorMap","full":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
     {"id":"StatLean.StatisticalModels.Longitudinal.geeBread","label":"geeBread","full":"StatLean.StatisticalModels.Longitudinal.geeBread","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
     {"id":"StatLean.StatisticalModels.Longitudinal.geeMeat","label":"geeMeat","full":"StatLean.StatisticalModels.Longitudinal.geeMeat","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
@@ -34,7 +34,6 @@
     {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.transpose_mul"},
     {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.transpose_transpose"},
     {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.mul_assoc"},
-    {"source":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","target":"fact_one_le_two_ennreal"},
     {"source":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","target":"StatLean.StatisticalModels.Longitudinal.geeBread"}
   ]
 }

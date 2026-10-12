@@ -20,8 +20,8 @@
     {"id":"StatLean.NonparametricStatistics.abs_integral_kernel_taylor_le","label":"abs_integral_kernel_taylor_le","full":"StatLean.NonparametricStatistics.abs_integral_kernel_taylor_le","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.KernelDensity.Bias"},
     {"id":"StatLean.NonparametricStatistics.MemHolder","label":"MemHolder","full":"StatLean.NonparametricStatistics.MemHolder","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.SmoothnessClasses.Defs"},
     {"id":"MeasureTheory.Integrable.aestronglyMeasurable","label":"aestronglyMeasurable","full":"MeasureTheory.Integrable.aestronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
-    {"id":"pow_zero","label":"pow_zero","full":"pow_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"pow_zero","label":"pow_zero","full":"pow_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.AEStronglyMeasurable.mul","label":"mul","full":"MeasureTheory.AEStronglyMeasurable.mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
     {"id":"Continuous.aestronglyMeasurable","label":"aestronglyMeasurable","full":"Continuous.aestronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
@@ -32,7 +32,7 @@
     {"id":"Continuous.mul_const","label":"mul_const","full":"Continuous.mul_const","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
     {"id":"continuous_id'","label":"continuous_id'","full":"continuous_id'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"MeasureTheory.Integrable.add","label":"add","full":"MeasureTheory.Integrable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
-    {"id":"MeasureTheory.integrable_finset_sum","label":"integrable_finset_sum","full":"MeasureTheory.integrable_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
+    {"id":"MeasureTheory.integrable_finsetSum","label":"integrable_finsetSum","full":"MeasureTheory.integrable_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"Finset.mem_range_succ_iff","label":"mem_range_succ_iff","full":"Finset.mem_range_succ_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Range"},
     {"id":"MeasureTheory.Integrable.abs","label":"abs","full":"MeasureTheory.Integrable.abs","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
@@ -44,9 +44,9 @@
     {"id":"StatLean.NonparametricStatistics.MemHolder.abs_le_growth","label":"abs_le_growth","full":"StatLean.NonparametricStatistics.MemHolder.abs_le_growth","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.SmoothnessClasses.HolderTaylor"},
     {"id":"abs_of_pos","label":"abs_of_pos","full":"abs_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"abs_nonneg","label":"abs_nonneg","full":"abs_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
-    {"id":"covariant_swap_add_of_covariant_add","label":"covariant_swap_add_of_covariant_add","full":"covariant_swap_add_of_covariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"}
+    {"id":"IsOrderedAddMonoid.toAddRightMono","label":"toAddRightMono","full":"IsOrderedAddMonoid.toAddRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.kde_bias_abs_le","target":"StatLean.NonparametricStatistics.IsIIDSample"},
@@ -87,7 +87,7 @@
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"Continuous.mul_const"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"continuous_id'"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"MeasureTheory.Integrable.add"},
-    {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"MeasureTheory.integrable_finset_sum"},
+    {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"MeasureTheory.integrable_finsetSum"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"Finset.mem_range_succ_iff"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"MeasureTheory.Integrable.abs"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"abs_mul"},
@@ -101,6 +101,6 @@
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"IsOrderedAddMonoid.toAddLeftMono"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"mul_le_mul_of_nonneg_left"},
     {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"abs_nonneg"},
-    {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"covariant_swap_add_of_covariant_add"}
+    {"source":"StatLean.NonparametricStatistics.integrable_kernel_mul_holder","target":"IsOrderedAddMonoid.toAddRightMono"}
   ]
 }

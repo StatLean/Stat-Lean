@@ -5,7 +5,7 @@
     {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.fisherInformation","label":"fisherInformation","full":"AsymptoticStatistics.fisherInformation","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation"},
     {"id":"StatLean.Bayesian.UniformlyConsistentTests","label":"UniformlyConsistentTests","full":"StatLean.Bayesian.UniformlyConsistentTests","kind":"repo","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.Defs"},
     {"id":"StatLean.Bayesian.IsExpConsistentTestSeq","label":"IsExpConsistentTestSeq","full":"StatLean.Bayesian.IsExpConsistentTestSeq","kind":"repo","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.Defs"},
@@ -14,7 +14,6 @@
     {"id":"lt_min","label":"lt_min","full":"lt_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"one_pos","label":"one_pos","full":"one_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.ZeroLEOne"},
     {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"min_le_right","label":"min_le_right","full":"min_le_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"min_le_left","label":"min_le_left","full":"min_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"StatLean.Bayesian.exists_boosted_tests","label":"exists_boosted_tests","full":"StatLean.Bayesian.exists_boosted_tests","kind":"repo","decl":"thm","module":"StatLean.Bayesian.BernsteinVonMises.TestBoost"},
@@ -42,11 +41,12 @@
     {"id":"MeasureTheory.Integrable.add","label":"add","full":"MeasureTheory.Integrable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
     {"id":"squeeze_zero","label":"squeeze_zero","full":"squeeze_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Lemmas"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Filter.Tendsto.add","label":"add","full":"Filter.Tendsto.add","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
     {"id":"le_max_right","label":"le_max_right","full":"le_max_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_nonneg","label":"cast_nonneg","full":"Nat.cast_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Order.Ring"},
-    {"id":"le_min","label":"le_min","full":"le_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"}
+    {"id":"le_min","label":"le_min","full":"le_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"sq_nonneg","label":"sq_nonneg","full":"sq_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.exponential_tests","target":"AsymptoticStatistics.ParametricFamily"},
@@ -61,7 +61,6 @@
     {"source":"StatLean.Bayesian.exponential_tests","target":"lt_min"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"one_pos"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"NeZero.charZero_one"},
-    {"source":"StatLean.Bayesian.exponential_tests","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"min_le_right"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"min_le_left"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"StatLean.Bayesian.exists_boosted_tests"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.Bayesian.exponential_tests","target":"Filter.Tendsto.add"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"le_max_right"},
     {"source":"StatLean.Bayesian.exponential_tests","target":"Nat.cast_nonneg"},
-    {"source":"StatLean.Bayesian.exponential_tests","target":"le_min"}
+    {"source":"StatLean.Bayesian.exponential_tests","target":"le_min"},
+    {"source":"StatLean.Bayesian.exponential_tests","target":"sq_nonneg"}
   ]
 }

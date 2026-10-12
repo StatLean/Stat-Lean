@@ -42,8 +42,8 @@
     {"id":"MeasureTheory.lintegral_withDensity_eq_lintegral_mul","label":"lintegral_withDensity_eq_lintegral_mul","full":"MeasureTheory.lintegral_withDensity_eq_lintegral_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"MeasureTheory.lintegral_const_mul","label":"lintegral_const_mul","full":"MeasureTheory.lintegral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Add"},
     {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
-    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"ENNReal.mul_div_cancel","label":"mul_div_cancel","full":"ENNReal.mul_div_cancel","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
+    {"id":"ENNReal.mul_div_cancel","label":"mul_div_cancel","full":"ENNReal.mul_div_cancel","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"StatLean.Bayesian.generalizedPosterior_def","label":"generalizedPosterior_def","full":"StatLean.Bayesian.generalizedPosterior_def","kind":"repo","decl":"thm","module":"StatLean.Bayesian.GeneralizedBayes.Defs"},
     {"id":"MeasureTheory.withDensity_mul","label":"withDensity_mul","full":"MeasureTheory.withDensity_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"MeasureTheory.withDensity_congr_ae","label":"withDensity_congr_ae","full":"MeasureTheory.withDensity_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"}

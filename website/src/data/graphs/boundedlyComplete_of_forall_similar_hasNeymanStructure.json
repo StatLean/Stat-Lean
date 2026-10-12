@@ -10,7 +10,6 @@
     {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"one_pos","label":"one_pos","full":"one_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.ZeroLEOne"},
     {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"le_max_right","label":"le_max_right","full":"le_max_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"le_max_left","label":"le_max_left","full":"le_max_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
@@ -28,25 +27,26 @@
     {"id":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","label":"IsZeroOrMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"MeasureTheory.ae_of_all","label":"ae_of_all","full":"MeasureTheory.ae_of_all","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
     {"id":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","label":"is_probability_measure'","full":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"ENNReal.toReal_one","label":"toReal_one","full":"ENNReal.toReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ENNReal.toReal_one","label":"toReal_one","full":"ENNReal.toReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"lt_min","label":"lt_min","full":"lt_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"min_le_left","label":"min_le_left","full":"min_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"min_le_right","label":"min_le_right","full":"min_le_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"ne_of_gt","label":"ne_of_gt","full":"ne_of_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
-    {"id":"abs_of_pos","label":"abs_of_pos","full":"abs_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"}
+    {"id":"abs_of_pos","label":"abs_of_pos","full":"abs_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"StatLean.PointEstimation.statLaw"},
@@ -57,7 +57,6 @@
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"lt_of_lt_of_le"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"one_pos"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"NeZero.charZero_one"},
-    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"le_max_right"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"LE.le.trans"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"le_max_left"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"one_ne_zero"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"NeZero.one"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_mul"},
-    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_of_pos"}
+    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_of_pos"},
+    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"IsOrderedAddMonoid.toAddLeftMono"}
   ]
 }

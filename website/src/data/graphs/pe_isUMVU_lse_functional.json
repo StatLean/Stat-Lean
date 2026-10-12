@@ -2,7 +2,7 @@
   "root": "StatLean.PointEstimation.isUMVU_lse_functional",
   "nodes": [
     {"id":"StatLean.PointEstimation.isUMVU_lse_functional","label":"isUMVU_lse_functional","full":"StatLean.PointEstimation.isUMVU_lse_functional","kind":"root","decl":"thm","module":"StatLean.PointEstimation.LinearModel.LeastSquares"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.IsUMVU","label":"IsUMVU","full":"StatLean.PointEstimation.IsUMVU","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
     {"id":"StatLean.PointEstimation.PosVar","label":"PosVar","full":"StatLean.PointEstimation.PosVar","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Canonical"},
     {"id":"StatLean.PointEstimation.linearModelFull","label":"linearModelFull","full":"StatLean.PointEstimation.linearModelFull","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.LeastSquares"},
@@ -70,7 +70,6 @@
     {"source":"StatLean.PointEstimation.isUMVU_lse_functional","target":"Submodule.starProjection_eq_self_iff"},
     {"source":"StatLean.PointEstimation.IsUMVU","target":"StatLean.PointEstimation.IsUnbiased"},
     {"source":"StatLean.PointEstimation.IsUMVU","target":"StatLean.PointEstimation.MemEstL2"},
-    {"source":"StatLean.PointEstimation.linearModelFull","target":"fact_one_le_two_ennreal"},
     {"source":"StatLean.PointEstimation.linearModelFull","target":"StatLean.PointEstimation.PosVar"},
     {"source":"StatLean.PointEstimation.linearModelFull","target":"StatLean.PointEstimation.linearModel"},
     {"source":"StatLean.PointEstimation.lse","target":"fact_one_le_two_ennreal"},

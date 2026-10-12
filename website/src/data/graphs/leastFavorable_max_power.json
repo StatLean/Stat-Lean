@@ -18,7 +18,7 @@
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"MeasureTheory.integral_const","label":"integral_const","full":"MeasureTheory.integral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.probReal_univ","label":"probReal_univ","full":"MeasureTheory.probReal_univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"StatLean.HypothesisTesting.maxPower","label":"maxPower","full":"StatLean.HypothesisTesting.maxPower","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.NeymanPearson.LeastFavorable"},
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"csSup_le","label":"csSup_le","full":"csSup_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},

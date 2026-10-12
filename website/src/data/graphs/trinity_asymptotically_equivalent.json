@@ -6,7 +6,7 @@
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
     {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.DQM.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"AsymptoticStatistics.fisherInformation","label":"fisherInformation","full":"AsymptoticStatistics.fisherInformation","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation"},
     {"id":"StatLean.HypothesisTesting.mulVecE","label":"mulVecE","full":"StatLean.HypothesisTesting.mulVecE","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
     {"id":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","label":"IsAsymptoticallyLinear","full":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.LikelihoodMethods.EstimatorUnderAlternatives"},
@@ -35,7 +35,6 @@
     {"source":"AsymptoticStatistics.fisherInformation","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure"},
-    {"source":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","target":"fact_one_le_two_ennreal"},
     {"source":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","target":"StatLean.HypothesisTesting.mulVecE"},
     {"source":"StatLean.HypothesisTesting.IsAsymptoticallyLinear","target":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum"},
     {"source":"StatLean.HypothesisTesting.waldStatistic","target":"fact_one_le_two_ennreal"},
@@ -45,7 +44,6 @@
     {"source":"StatLean.HypothesisTesting.scoreStatistic","target":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum"},
     {"source":"StatLean.HypothesisTesting.scoreStatistic","target":"StatLean.HypothesisTesting.mulVecE"},
     {"source":"StatLean.HypothesisTesting.logLRStatistic","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
-    {"source":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","target":"fact_one_le_two_ennreal"}
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"}
   ]
 }

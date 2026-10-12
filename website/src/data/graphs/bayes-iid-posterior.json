@@ -37,16 +37,16 @@
     {"id":"MeasureTheory.Measure.pi_pi","label":"pi_pi","full":"MeasureTheory.Measure.pi_pi","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
     {"id":"ProbabilityTheory.Kernel.measurable_coe","label":"measurable_coe","full":"ProbabilityTheory.Kernel.measurable_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"Set.mem_univ","label":"mem_univ","full":"Set.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Operations"},
-    {"id":"MeasureTheory.measure_compl","label":"measure_compl","full":"MeasureTheory.measure_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"MeasureTheory.measure_compl","label":"measure_compl","full":"MeasureTheory.measure_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","label":"is_probability_measure'","full":"ProbabilityTheory.IsMarkovKernel.is_probability_measure'","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"Measurable.const_sub","label":"const_sub","full":"Measurable.const_sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"MeasurableSub₂.toMeasurableSub","label":"toMeasurableSub","full":"MeasurableSub₂.toMeasurableSub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"MeasureTheory.measure_iUnion","label":"measure_iUnion","full":"MeasureTheory.measure_iUnion","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.NullMeasurable"},
-    {"id":"Measurable.ennreal_tsum","label":"ennreal_tsum","full":"Measurable.ennreal_tsum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"},
-    {"id":"ProbabilityTheory.ae_eq_posterior_of_compProd_eq","label":"ae_eq_posterior_of_compProd_eq","full":"ProbabilityTheory.ae_eq_posterior_of_compProd_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Posterior"},
-    {"id":"StatLean.Bayesian.isFiniteKernel_bayesKernel","label":"isFiniteKernel_bayesKernel","full":"StatLean.Bayesian.isFiniteKernel_bayesKernel","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PosteriorDensity"},
-    {"id":"StatLean.Bayesian.compProd_bayesKernel_eq_map_swap","label":"compProd_bayesKernel_eq_map_swap","full":"StatLean.Bayesian.compProd_bayesKernel_eq_map_swap","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PosteriorDensity"}
+    {"id":"Measurable.tsum","label":"tsum","full":"Measurable.tsum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
+    {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.toIsCompletelyPseudoMetrizableSpace","label":"toIsCompletelyPseudoMetrizableSpace","full":"TopologicalSpace.IsCompletelyMetrizableSpace.toIsCompletelyPseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
+    {"id":"ENNReal.borelSpace","label":"borelSpace","full":"ENNReal.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"ContinuousAdd.measurableMul₂","label":"measurableMul₂","full":"ContinuousAdd.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.posterior_iid_eq_withDensity_prod_likelihood","target":"StatLean.Bayesian.iidKernel"},
@@ -101,11 +101,9 @@
     {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"Measurable.const_sub"},
     {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"MeasurableSub₂.toMeasurableSub"},
     {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"MeasureTheory.measure_iUnion"},
-    {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"Measurable.ennreal_tsum"},
-    {"source":"StatLean.Bayesian.bayesKernel","target":"StatLean.Bayesian.bayesDensity"},
-    {"source":"StatLean.Bayesian.bayesKernel_ae_eq_posterior","target":"StatLean.Bayesian.bayesKernel"},
-    {"source":"StatLean.Bayesian.bayesKernel_ae_eq_posterior","target":"ProbabilityTheory.ae_eq_posterior_of_compProd_eq"},
-    {"source":"StatLean.Bayesian.bayesKernel_ae_eq_posterior","target":"StatLean.Bayesian.isFiniteKernel_bayesKernel"},
-    {"source":"StatLean.Bayesian.bayesKernel_ae_eq_posterior","target":"StatLean.Bayesian.compProd_bayesKernel_eq_map_swap"}
+    {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"Measurable.tsum"},
+    {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"TopologicalSpace.IsCompletelyMetrizableSpace.toIsCompletelyPseudoMetrizableSpace"},
+    {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"ENNReal.borelSpace"},
+    {"source":"StatLean.Bayesian.measurable_pi_const_kernel","target":"ContinuousAdd.measurableMul₂"}
   ]
 }

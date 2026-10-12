@@ -7,8 +7,7 @@
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"StatLean.ConcentrationInequalities.signVec","label":"signVec","full":"StatLean.ConcentrationInequalities.signVec","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.Symmetrization.Rademacher"},
     {"id":"StatLean.ConcentrationInequalities.symmetrization_adapter","label":"symmetrization_adapter","full":"StatLean.ConcentrationInequalities.symmetrization_adapter","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.VC.LawOfLargeNumbers"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
-    {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"Finset.sup'_apply","label":"sup'_apply","full":"Finset.sup'_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Lattice.Fold"},
     {"id":"Finset.measurable_sup'","label":"measurable_sup'","full":"Finset.measurable_sup'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Order.Lattice"},
     {"id":"ContinuousSup.measurableSup₂","label":"measurableSup₂","full":"ContinuousSup.measurableSup₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Order"},
@@ -46,7 +45,8 @@
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"StatLean.ConcentrationInequalities.signVec_ae_pm","label":"signVec_ae_pm","full":"StatLean.ConcentrationInequalities.signVec_ae_pm","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.Symmetrization.Rademacher"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
-    {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"}
+    {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"StatLean.ConcentrationInequalities.vcDim"},
@@ -54,7 +54,6 @@
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"LE.le.trans"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"StatLean.ConcentrationInequalities.signVec"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"StatLean.ConcentrationInequalities.symmetrization_adapter"},
-    {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"mul_le_mul_of_nonneg_left"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Finset.sup'_apply"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Finset.measurable_sup'"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"StatLean.ConcentrationInequalities.signVec_ae_pm"},
     {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Filter.mp_mem"},
-    {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Filter.univ_mem'"}
+    {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Filter.univ_mem'"},
+    {"source":"StatLean.ConcentrationInequalities.vc_lln_finset","target":"Nat.cast_zero"}
   ]
 }

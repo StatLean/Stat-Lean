@@ -8,7 +8,7 @@
     {"id":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","label":"isMinimaxEstimator_of_isBayesEstimator_of_risk_le","full":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.Minimax"},
     {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
     {"id":"MeasureTheory.lintegral_const","label":"lintegral_const","full":"MeasureTheory.lintegral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Eq.le","label":"le","full":"Eq.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},

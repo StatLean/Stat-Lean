@@ -18,10 +18,9 @@
     {"id":"DifferentiableAt.hasDerivAt","label":"hasDerivAt","full":"DifferentiableAt.hasDerivAt","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},
     {"id":"AnalyticAt.differentiableAt","label":"differentiableAt","full":"AnalyticAt.differentiableAt","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.FDeriv.Analytic"},
     {"id":"ProbabilityTheory.analyticAt_cgf","label":"analyticAt_cgf","full":"ProbabilityTheory.analyticAt_cgf","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.MGFAnalytic"},
-    {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
+    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
     {"id":"HasDerivAt.congr_simp","label":"congr_simp","full":"HasDerivAt.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Comp"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"HasDerivAt.mul_const","label":"mul_const","full":"HasDerivAt.mul_const","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Mul"},
     {"id":"hasDerivAt_id","label":"hasDerivAt_id","full":"hasDerivAt_id","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},
     {"id":"HasDerivAt.sub","label":"sub","full":"HasDerivAt.sub","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Add"},
@@ -29,11 +28,11 @@
     {"id":"StatLean.PointEstimation.score","label":"score","full":"StatLean.PointEstimation.score","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Defs"},
     {"id":"Real.exp_pos","label":"exp_pos","full":"Real.exp_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
     {"id":"HasDerivAt.deriv","label":"deriv","full":"HasDerivAt.deriv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},
-    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
+    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"div_self","label":"div_self","full":"div_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Units.Basic"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"AsymptoticStatistics.ParametricFamily.toMeasure","label":"toMeasure","full":"AsymptoticStatistics.ParametricFamily.toMeasure","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
     {"id":"StatLean.PointEstimation.ExpFamily.P","label":"P","full":"StatLean.PointEstimation.ExpFamily.P","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.PointEstimation.ExpFamily.P_eq_withDensity","label":"P_eq_withDensity","full":"StatLean.PointEstimation.ExpFamily.P_eq_withDensity","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ExponentialFamily.Basic"},
@@ -46,7 +45,8 @@
     {"id":"StatLean.PointEstimation.ExpFamily.variance_stat_P","label":"variance_stat_P","full":"StatLean.PointEstimation.ExpFamily.variance_stat_P","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ExponentialFamily.MGF"},
     {"id":"iteratedDeriv_succ","label":"iteratedDeriv_succ","full":"iteratedDeriv_succ","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.IteratedDeriv.Defs"},
     {"id":"iteratedDeriv_one","label":"iteratedDeriv_one","full":"iteratedDeriv_one","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.IteratedDeriv.Defs"},
-    {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"}
+    {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
+    {"id":"AsymptoticStatistics.ParametricFamily.mk","label":"mk","full":"AsymptoticStatistics.ParametricFamily.mk","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"StatLean.PointEstimation.ExpFamily"},
@@ -65,8 +65,7 @@
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"DifferentiableAt.hasDerivAt"},
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"AnalyticAt.differentiableAt"},
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"ProbabilityTheory.analyticAt_cgf"},
-    {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"IsBoundedSMul.continuousSMul"},
-    {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"NormedSpace.toIsBoundedSMul"},
+    {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"PolynormableSpace.continuousSMul"},
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"HasDerivAt.congr_simp"},
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"one_mul"},
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"HasDerivAt.mul_const"},
@@ -95,6 +94,10 @@
     {"source":"StatLean.PointEstimation.fisherInfo_expFamily","target":"iteratedDeriv_one"},
     {"source":"StatLean.PointEstimation.ExpFamily.natSet","target":"StatLean.PointEstimation.ExpFamily"},
     {"source":"StatLean.PointEstimation.fisherInfo","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"StatLean.PointEstimation.fisherInfo","target":"StatLean.PointEstimation.score"}
+    {"source":"StatLean.PointEstimation.fisherInfo","target":"StatLean.PointEstimation.score"},
+    {"source":"StatLean.PointEstimation.ExpFamily.toParametricFamily","target":"StatLean.PointEstimation.ExpFamily"},
+    {"source":"StatLean.PointEstimation.ExpFamily.toParametricFamily","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.ExpFamily.toParametricFamily","target":"AsymptoticStatistics.ParametricFamily.mk"},
+    {"source":"StatLean.PointEstimation.ExpFamily.toParametricFamily","target":"StatLean.PointEstimation.ExpFamily.logPartition"}
   ]
 }

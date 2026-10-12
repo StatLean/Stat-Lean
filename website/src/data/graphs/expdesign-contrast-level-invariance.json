@@ -8,7 +8,7 @@
     {"id":"mul_add","label":"mul_add","full":"mul_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"Distrib.leftDistribClass","label":"leftDistribClass","full":"Distrib.leftDistribClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"Finset.sum_add_distrib","label":"sum_add_distrib","full":"Finset.sum_add_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"StatLean.ExperimentalDesign.Contrast"},

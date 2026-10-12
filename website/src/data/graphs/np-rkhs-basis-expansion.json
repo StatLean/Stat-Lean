@@ -11,7 +11,7 @@
     {"id":"StatLean.NonparametricStatistics.evalCLM_apply","label":"evalCLM_apply","full":"StatLean.NonparametricStatistics.evalCLM_apply","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"RKHS.coe_smul","label":"coe_smul","full":"RKHS.coe_smul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
     {"id":"RingHomInvPair.ids","label":"ids","full":"RingHomInvPair.ids","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.CompTypeclasses"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
     {"id":"HilbertBasis.hasSum_repr","label":"hasSum_repr","full":"HilbertBasis.hasSum_repr","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.l2Space"},
     {"id":"HilbertBasis.repr_apply_apply","label":"repr_apply_apply","full":"HilbertBasis.repr_apply_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.l2Space"},
@@ -22,7 +22,7 @@
     {"id":"RCLike.inner_apply'","label":"inner_apply'","full":"RCLike.inner_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"map_one","label":"map_one","full":"map_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"RingHomClass.toMonoidWithZeroHomClass","label":"toMonoidWithZeroHomClass","full":"RingHomClass.toMonoidWithZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Hom.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.hasSum_scalarKernel","target":"StatLean.NonparametricStatistics.scalarKernel"},

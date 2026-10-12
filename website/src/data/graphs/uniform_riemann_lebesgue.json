@@ -6,7 +6,6 @@
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"NormedAddGroup.tendsto_nhds_zero","label":"tendsto_nhds_zero","full":"NormedAddGroup.tendsto_nhds_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","label":"tendsto_fourierOsc_cocompact","full":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.ForMathlib.UniformRiemannLebesgue"},
@@ -20,7 +19,7 @@
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Real.tendsto_integral_exp_smul_cocompact","label":"tendsto_integral_exp_smul_cocompact","full":"Real.tendsto_integral_exp_smul_cocompact","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Fourier.RiemannLebesgueLemma"},
     {"id":"Real.pi_ne_zero","label":"pi_ne_zero","full":"Real.pi_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic"},
-    {"id":"mul_inv_rev","label":"mul_inv_rev","full":"mul_inv_rev","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_inv_rev","label":"mul_inv_rev","full":"mul_inv_rev","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"NormMulClass.toNoZeroDivisors","label":"toNoZeroDivisors","full":"NormMulClass.toNoZeroDivisors","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"NormedDivisionRing.toNormMulClass","label":"toNormMulClass","full":"NormedDivisionRing.toNormMulClass","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Field.Basic"},
     {"id":"le_of_eq","label":"le_of_eq","full":"le_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
@@ -31,7 +30,7 @@
     {"id":"Filter.Tendsto.comp","label":"comp","full":"Filter.Tendsto.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
     {"id":"norm_mul","label":"norm_mul","full":"norm_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"Complex.norm_exp_ofReal_mul_I","label":"norm_exp_ofReal_mul_I","full":"Complex.norm_exp_ofReal_mul_I","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Trigonometric"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.Integrable.mono'","label":"mono'","full":"MeasureTheory.Integrable.mono'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"MeasureTheory.Integrable.norm","label":"norm","full":"MeasureTheory.Integrable.norm","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"MeasureTheory.AEStronglyMeasurable.mul","label":"mul","full":"MeasureTheory.AEStronglyMeasurable.mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
@@ -46,14 +45,14 @@
     {"id":"Complex.continuous_exp","label":"continuous_exp","full":"Complex.continuous_exp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Exp"},
     {"id":"Continuous.comp'","label":"comp'","full":"Continuous.comp'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"continuous_mul_const","label":"continuous_mul_const","full":"continuous_mul_const","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
-    {"id":"Complex.continuous_ofReal","label":"continuous_ofReal","full":"Complex.continuous_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Basic"}
+    {"id":"Complex.continuous_ofReal","label":"continuous_ofReal","full":"Complex.continuous_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Basic"},
+    {"id":"MeasureTheory.Integrable.aestronglyMeasurable","label":"aestronglyMeasurable","full":"MeasureTheory.Integrable.aestronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"StatLean.HypothesisTesting.fourierOsc"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"lt_of_not_ge"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"Nat.cast_zero"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"Nat.cast_one"},
-    {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"Filter.mp_mem"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"NormedAddGroup.tendsto_nhds_zero"},
     {"source":"StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded","target":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact"},
@@ -71,7 +70,6 @@
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"mul_inv_rev"},
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"NormMulClass.toNoZeroDivisors"},
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"NormedDivisionRing.toNormMulClass"},
-    {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"le_of_eq"},
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"Homeomorph.map_cocompact"},
     {"source":"StatLean.HypothesisTesting.tendsto_fourierOsc_cocompact","target":"IsTopologicalRing.toIsSemitopologicalRing"},
@@ -99,6 +97,7 @@
     {"source":"StatLean.HypothesisTesting.norm_fourierOsc_sub_le","target":"continuous_mul_const"},
     {"source":"StatLean.HypothesisTesting.norm_fourierOsc_sub_le","target":"IsTopologicalRing.toIsSemitopologicalRing"},
     {"source":"StatLean.HypothesisTesting.norm_fourierOsc_sub_le","target":"Complex.continuous_ofReal"},
+    {"source":"StatLean.HypothesisTesting.norm_fourierOsc_sub_le","target":"MeasureTheory.Integrable.aestronglyMeasurable"},
     {"source":"StatLean.HypothesisTesting.norm_fourierOsc_sub_le","target":"le_of_eq"}
   ]
 }

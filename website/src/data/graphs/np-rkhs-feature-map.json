@@ -16,14 +16,16 @@
     {"id":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","label":"scalarKernel_eq_kernel_one","full":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"RKHS.OfKernel.kernel_ofKernel","label":"kernel_ofKernel","full":"RKHS.OfKernel.kernel_ofKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
     {"id":"StatLean.NonparametricStatistics.toCLMMatrix_apply","label":"toCLMMatrix_apply","full":"StatLean.NonparametricStatistics.toCLMMatrix_apply","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"StatLean.NonparametricStatistics.inner_kernelFun","label":"inner_kernelFun","full":"StatLean.NonparametricStatistics.inner_kernelFun","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"RKHS.kerFun_apply","label":"kerFun_apply","full":"RKHS.kerFun_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
+    {"id":"smul_apply","label":"smul_apply","full":"smul_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Data.FunLike.IsApply"},
+    {"id":"one_apply_eq_self","label":"one_apply_eq_self","full":"one_apply_eq_self","kind":"mathlib","decl":"thm","module":"Mathlib.Data.FunLike.IsApply"},
     {"id":"RKHS.kerFun_inner","label":"kerFun_inner","full":"RKHS.kerFun_inner","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
     {"id":"RCLike.inner_apply'","label":"inner_apply'","full":"RCLike.inner_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"map_one","label":"map_one","full":"map_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"RingHomClass.toMonoidWithZeroHomClass","label":"toMonoidWithZeroHomClass","full":"RingHomClass.toMonoidWithZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Hom.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_featureMap","target":"StatLean.NonparametricStatistics.IsKernelFun"},
@@ -61,6 +63,8 @@
     {"source":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","target":"StatLean.NonparametricStatistics.kernelFun"},
     {"source":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","target":"RKHS.kerFun_apply"},
     {"source":"StatLean.NonparametricStatistics.toCLMMatrix_apply","target":"StatLean.NonparametricStatistics.toCLMMatrix"},
+    {"source":"StatLean.NonparametricStatistics.toCLMMatrix_apply","target":"smul_apply"},
+    {"source":"StatLean.NonparametricStatistics.toCLMMatrix_apply","target":"one_apply_eq_self"},
     {"source":"StatLean.NonparametricStatistics.inner_kernelFun","target":"StatLean.NonparametricStatistics.kernelFun"},
     {"source":"StatLean.NonparametricStatistics.inner_kernelFun","target":"RKHS.kerFun_inner"},
     {"source":"StatLean.NonparametricStatistics.inner_kernelFun","target":"RCLike.inner_apply'"},

@@ -6,7 +6,7 @@
     {"id":"StatLean.HypothesisTesting.ksThreshold","label":"ksThreshold","full":"StatLean.HypothesisTesting.ksThreshold","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"StatLean.HypothesisTesting.ksStat","label":"ksStat","full":"StatLean.HypothesisTesting.ksStat","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"Filter.Tendsto.comp","label":"comp","full":"Filter.Tendsto.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
-    {"id":"Real.tendsto_sqrt_atTop","label":"tendsto_sqrt_atTop","full":"Real.tendsto_sqrt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"Real.tendsto_sqrt_atTop","label":"tendsto_sqrt_atTop","full":"Real.tendsto_sqrt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
     {"id":"tendsto_natCast_atTop_atTop","label":"tendsto_natCast_atTop_atTop","full":"tendsto_natCast_atTop_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"},
     {"id":"Filter.Tendsto.atTop_mul_const'","label":"atTop_mul_const'","full":"Filter.Tendsto.atTop_mul_const'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"},
     {"id":"StatLean.HypothesisTesting.ks_uniform_power","label":"ks_uniform_power","full":"StatLean.HypothesisTesting.ks_uniform_power","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
@@ -14,10 +14,9 @@
     {"id":"Fin.val_injective","label":"val_injective","full":"Fin.val_injective","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fin.Basic"},
     {"id":"le_refl","label":"le_refl","full":"le_refl","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"StatLean.MultipleTesting.empiricalCDF","label":"empiricalCDF","full":"StatLean.MultipleTesting.empiricalCDF","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.EmpiricalCDF"},
-    {"id":"sub_eq_add_neg","label":"sub_eq_add_neg","full":"sub_eq_add_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"sub_eq_add_neg","label":"sub_eq_add_neg","full":"sub_eq_add_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"Filter.tendsto_atTop_add_const_right","label":"tendsto_atTop_add_const_right","full":"Filter.tendsto_atTop_add_const_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Group"},
     {"id":"Filter.Tendsto.atTop_div_const","label":"atTop_div_const","full":"Filter.Tendsto.atTop_div_const","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Field"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Filter.tendsto_pow_atTop","label":"tendsto_pow_atTop","full":"Filter.tendsto_pow_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Ring"},
     {"id":"two_ne_zero","label":"two_ne_zero","full":"two_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
@@ -35,18 +34,19 @@
     {"id":"Filter.Tendsto.eventually_gt_atTop","label":"eventually_gt_atTop","full":"Filter.Tendsto.eventually_gt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Tendsto"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"StatLean.HypothesisTesting.ks_power_lower_bound","label":"ks_power_lower_bound","full":"StatLean.HypothesisTesting.ks_power_lower_bound","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
-    {"id":"ENNReal.toReal_ofReal","label":"toReal_ofReal","full":"ENNReal.toReal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.toReal_ofReal","label":"toReal_ofReal","full":"ENNReal.toReal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"ENNReal.toReal_nonneg","label":"toReal_nonneg","full":"ENNReal.toReal_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.toReal_nonneg","label":"toReal_nonneg","full":"ENNReal.toReal_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"ENNReal.toReal_mono","label":"toReal_mono","full":"ENNReal.toReal_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.toReal_mono","label":"toReal_mono","full":"ENNReal.toReal_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"LE.le.trans_eq","label":"trans_eq","full":"LE.le.trans_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"MeasureTheory.measure_mono","label":"measure_mono","full":"MeasureTheory.measure_mono","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
-    {"id":"Set.subset_univ","label":"subset_univ","full":"Set.subset_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"}
+    {"id":"Set.subset_univ","label":"subset_univ","full":"Set.subset_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
+    {"id":"ENNReal.one_ne_top","label":"one_ne_top","full":"ENNReal.one_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.ks_consistent","target":"StatLean.HypothesisTesting.supCDFDist"},
@@ -68,7 +68,6 @@
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"sub_eq_add_neg"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Filter.tendsto_atTop_add_const_right"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Filter.Tendsto.atTop_div_const"},
-    {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Nat.cast_zero"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Filter.Tendsto.comp"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Filter.tendsto_pow_atTop"},
@@ -99,6 +98,7 @@
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"LE.le.trans_eq"},
     {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"MeasureTheory.measure_mono"},
-    {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Set.subset_univ"}
+    {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"Set.subset_univ"},
+    {"source":"StatLean.HypothesisTesting.ks_uniform_power","target":"ENNReal.one_ne_top"}
   ]
 }

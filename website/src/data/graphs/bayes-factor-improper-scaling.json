@@ -6,7 +6,7 @@
     {"id":"StatLean.Bayesian.bayesFactorM","label":"bayesFactorM","full":"StatLean.Bayesian.bayesFactorM","kind":"repo","decl":"def","module":"StatLean.Bayesian.ModelChoice.Defs"},
     {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
     {"id":"StatLean.Bayesian.predictiveDensity_smul_prior","label":"predictiveDensity_smul_prior","full":"StatLean.Bayesian.predictiveDensity_smul_prior","kind":"repo","decl":"thm","module":"StatLean.Bayesian.GeneralizedBayes.Basic"},
-    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"MeasureTheory.lintegral_smul_measure","label":"lintegral_smul_measure","full":"MeasureTheory.lintegral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
   ],
   "edges": [

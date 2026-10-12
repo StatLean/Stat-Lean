@@ -13,7 +13,6 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.CondIndepCoords.of_isEmpty_left","label":"of_isEmpty_left","full":"StatLean.StatisticalModels.GraphicalModels.CondIndepCoords.of_isEmpty_left","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Core.Coordinates"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure","label":"toIsProbabilityMeasure","full":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Basic"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
     {"id":"ProbabilityTheory.isGaussian_multivariateGaussian","label":"isGaussian_multivariateGaussian","full":"ProbabilityTheory.isGaussian_multivariateGaussian","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Multivariate"},
     {"id":"standardBorel_of_polish","label":"standardBorel_of_polish","full":"standardBorel_of_polish","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
@@ -32,7 +31,7 @@
     {"id":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix_posDef","label":"precisionMatrix_posDef","full":"StatLean.StatisticalModels.GraphicalModels.precisionMatrix_posDef","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.condIndep_of_subsingleton_left","label":"condIndep_of_subsingleton_left","full":"StatLean.StatisticalModels.GraphicalModels.condIndep_of_subsingleton_left","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Core.CondIndep"},
     {"id":"StandardBorelSpace.pi_countable","label":"pi_countable","full":"StandardBorelSpace.pi_countable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
-    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"},
+    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.measurable_coords","label":"measurable_coords","full":"StatLean.StatisticalModels.GraphicalModels.measurable_coords","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Core.Coordinates"},
@@ -46,7 +45,8 @@
     {"id":"Finset.Subset.refl","label":"refl","full":"Finset.Subset.refl","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Defs"},
     {"id":"Finset.subset_union_left","label":"subset_union_left","full":"Finset.subset_union_left","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Lattice.Basic"},
     {"id":"Finset.mem_sdiff","label":"mem_sdiff","full":"Finset.mem_sdiff","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.SDiff"},
-    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"}
+    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Finset.disjoint_left","label":"disjoint_left","full":"Finset.disjoint_left","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Disjoint"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"StatLean.StatisticalModels.GraphicalModels.gaussianGraphicalModel"},
@@ -60,7 +60,6 @@
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"StatLean.StatisticalModels.GraphicalModels.CondIndepCoords.of_isEmpty_left"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"fact_one_le_two_ennreal"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"ProbabilityTheory.isGaussian_multivariateGaussian"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"standardBorel_of_polish"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.isGlobalMarkov_of_mem_gaussianGraphicalModel","target":"Real.borelSpace"},
@@ -104,6 +103,7 @@
     {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.Subset.refl"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.subset_union_left"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.mem_sdiff"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.mem_univ"}
+    {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.mem_univ"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.pairwiseMarkov_implies_globalMarkov_of_nonempty","target":"Finset.disjoint_left"}
   ]
 }

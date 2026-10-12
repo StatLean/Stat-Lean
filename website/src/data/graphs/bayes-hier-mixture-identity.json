@@ -44,7 +44,7 @@
     {"id":"ProbabilityTheory.Kernel.aemeasurable","label":"aemeasurable","full":"ProbabilityTheory.Kernel.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.lintegral_congr_ae","label":"lintegral_congr_ae","full":"MeasureTheory.lintegral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
-    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Basic"},
+    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Logic.Basic"},
     {"id":"StatLean.Bayesian.likelihood_ae_eq_zero_of_predictiveDensity_eq_zero","label":"likelihood_ae_eq_zero_of_predictiveDensity_eq_zero","full":"StatLean.Bayesian.likelihood_ae_eq_zero_of_predictiveDensity_eq_zero","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PredictiveDensity"},
     {"id":"MeasureTheory.lintegral_eq_zero_iff","label":"lintegral_eq_zero_iff","full":"MeasureTheory.lintegral_eq_zero_iff","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
   ],

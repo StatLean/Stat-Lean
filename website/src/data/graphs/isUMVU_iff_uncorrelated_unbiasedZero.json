@@ -13,7 +13,7 @@
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"MeasureTheory.Integrable.const_mul","label":"const_mul","full":"MeasureTheory.Integrable.const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"MeasureTheory.integral_const_mul","label":"integral_const_mul","full":"MeasureTheory.integral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.MemLp.add","label":"add","full":"MeasureTheory.MemLp.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
     {"id":"MeasureTheory.MemLp.const_mul","label":"const_mul","full":"MeasureTheory.MemLp.const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.SMul"},

@@ -16,24 +16,23 @@
     {"id":"AddGroupSeminormClass.toNonnegHomClass","label":"toNonnegHomClass","full":"AddGroupSeminormClass.toNonnegHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Hom.Basic"},
     {"id":"add_nonneg","label":"add_nonneg","full":"add_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"sq_nonneg","label":"sq_nonneg","full":"sq_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"},
     {"id":"AddGroup.existsAddOfLE","label":"existsAddOfLE","full":"AddGroup.existsAddOfLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.ExistsOfLE"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
-    {"id":"pow_pos","label":"pow_pos","full":"pow_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
+    {"id":"pow_pos","label":"pow_pos","full":"pow_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"Even.pow_nonneg","label":"pow_nonneg","full":"Even.pow_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Basic"},
     {"id":"IsStrictOrderedRing.toIsOrderedRing","label":"toIsOrderedRing","full":"IsStrictOrderedRing.toIsOrderedRing","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Defs"},
     {"id":"even_two_mul","label":"even_two_mul","full":"even_two_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Parity"},
-    {"id":"div_nonneg","label":"div_nonneg","full":"div_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"div_nonneg","label":"div_nonneg","full":"div_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"eq_or_lt_of_le","label":"eq_or_lt_of_le","full":"eq_or_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"mul_eq_zero","label":"mul_eq_zero","full":"mul_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
@@ -46,7 +45,8 @@
     {"id":"StatLean.HighDimensionalStatistics.MEstimator.Fcal","label":"Fcal","full":"StatLean.HighDimensionalStatistics.MEstimator.Fcal","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.MEstimator.Defs"},
     {"id":"lt_min","label":"lt_min","full":"lt_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"}
+    {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"StatLean.HighDimensionalStatistics.MEstimator.norm_error_le_of_pos_on_sphere","label":"norm_error_le_of_pos_on_sphere","full":"StatLean.HighDimensionalStatistics.MEstimator.norm_error_le_of_pos_on_sphere","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.MEstimator.Bound"}
   ],
   "edges": [
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"StatLean.HighDimensionalStatistics.MEstimator.DecomposableReg"},
@@ -70,7 +70,6 @@
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"AddGroup.existsAddOfLE"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"le_of_not_gt"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"Nat.cast_one"},
-    {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"le_of_lt"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"mul_pos"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"div_pos"},
@@ -93,6 +92,7 @@
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"StatLean.HighDimensionalStatistics.MEstimator.Fcal"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"lt_min"},
     {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"lt_of_not_ge"},
-    {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"not_le"}
+    {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"not_le"},
+    {"source":"StatLean.HighDimensionalStatistics.MEstimator.mestimator_l2_bound","target":"StatLean.HighDimensionalStatistics.MEstimator.norm_error_le_of_pos_on_sphere"}
   ]
 }

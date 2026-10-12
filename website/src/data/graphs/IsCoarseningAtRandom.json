@@ -9,11 +9,11 @@
     {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"ProbabilityTheory.IsMarkovKernel","label":"IsMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"AsymptoticStatistics.ForMathlib.ConditionalQMD.ConditionalQMDPath","label":"ConditionalQMDPath","full":"AsymptoticStatistics.ForMathlib.ConditionalQMD.ConditionalQMDPath","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.ConditionalQMD"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"MeasureTheory.AEStronglyMeasurable","label":"AEStronglyMeasurable","full":"MeasureTheory.AEStronglyMeasurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
     {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"MeasurableSpace.comap","label":"comap","full":"MeasurableSpace.comap","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Basic"},
-    {"id":"ENNReal.toReal","label":"toReal","full":"ENNReal.toReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.toReal","label":"toReal","full":"ENNReal.toReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.Measure.rnDeriv","label":"rnDeriv","full":"MeasureTheory.Measure.rnDeriv","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue"},
     {"id":"MeasureTheory.Measure.prod","label":"prod","full":"MeasureTheory.Measure.prod","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Prod"}
   ],

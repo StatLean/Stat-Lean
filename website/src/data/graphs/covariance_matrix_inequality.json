@@ -2,7 +2,7 @@
   "root": "StatLean.PointEstimation.covariance_matrix_inequality",
   "nodes": [
     {"id":"StatLean.PointEstimation.covariance_matrix_inequality","label":"covariance_matrix_inequality","full":"StatLean.PointEstimation.covariance_matrix_inequality","kind":"root","decl":"thm","module":"StatLean.PointEstimation.InformationInequality.Multiparameter"},
-    {"id":"MeasureTheory.memLp_finset_sum","label":"memLp_finset_sum","full":"MeasureTheory.memLp_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality"},
+    {"id":"MeasureTheory.memLp_finsetSum","label":"memLp_finsetSum","full":"MeasureTheory.memLp_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
     {"id":"MeasureTheory.MemLp.const_mul","label":"const_mul","full":"MeasureTheory.MemLp.const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.SMul"},
     {"id":"Matrix.PosDef.inv","label":"inv","full":"Matrix.PosDef.inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
@@ -24,15 +24,15 @@
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"ProbabilityTheory.covariance_fun_sum_left","label":"covariance_fun_sum_left","full":"ProbabilityTheory.covariance_fun_sum_left","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"ProbabilityTheory.covariance_const_mul_left","label":"covariance_const_mul_left","full":"ProbabilityTheory.covariance_const_mul_left","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
-    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"eq_or_lt_of_le","label":"eq_or_lt_of_le","full":"eq_or_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"ProbabilityTheory.variance_nonneg","label":"variance_nonneg","full":"ProbabilityTheory.variance_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Variance"},
-    {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"le_of_mul_le_mul_right","label":"le_of_mul_le_mul_right","full":"le_of_mul_le_mul_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
-    {"id":"MulPosStrictMono.toMulPosReflectLE","label":"toMulPosReflectLE","full":"MulPosStrictMono.toMulPosReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"}
+    {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"le_of_mul_le_mul_right","label":"le_of_mul_le_mul_right","full":"le_of_mul_le_mul_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
+    {"id":"MulPosStrictMono.toMulPosReflectLE","label":"toMulPosReflectLE","full":"MulPosStrictMono.toMulPosReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"}
   ],
   "edges": [
-    {"source":"StatLean.PointEstimation.covariance_matrix_inequality","target":"MeasureTheory.memLp_finset_sum"},
+    {"source":"StatLean.PointEstimation.covariance_matrix_inequality","target":"MeasureTheory.memLp_finsetSum"},
     {"source":"StatLean.PointEstimation.covariance_matrix_inequality","target":"IsTopologicalRing.toIsSemitopologicalRing"},
     {"source":"StatLean.PointEstimation.covariance_matrix_inequality","target":"MeasureTheory.MemLp.const_mul"},
     {"source":"StatLean.PointEstimation.covariance_matrix_inequality","target":"Matrix.PosDef.inv"},

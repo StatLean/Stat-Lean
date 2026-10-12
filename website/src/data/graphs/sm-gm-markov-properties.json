@@ -5,16 +5,14 @@
     {"id":"SimpleGraph","label":"SimpleGraph","full":"SimpleGraph","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Basic"},
     {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
     {"id":"Disjoint","label":"Disjoint","full":"Disjoint","kind":"mathlib","decl":"def","module":"Mathlib.Order.Disjoint"},
-    {"id":"Finset.partialOrder","label":"partialOrder","full":"Finset.partialOrder","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
     {"id":"StatLean.StatisticalModels.GraphicalModels.Separates","label":"Separates","full":"StatLean.StatisticalModels.GraphicalModels.Separates","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Separation"},
-    {"id":"SimpleGraph.Walk","label":"Walk","full":"SimpleGraph.Walk","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walks.Basic"},
-    {"id":"SimpleGraph.Walk.support","label":"support","full":"SimpleGraph.Walk.support","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walks.Basic"}
+    {"id":"SimpleGraph.Walk","label":"Walk","full":"SimpleGraph.Walk","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walk.Basic"},
+    {"id":"SimpleGraph.Walk.support","label":"support","full":"SimpleGraph.Walk.support","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walk.Basic"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"SimpleGraph"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"Finset"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"Disjoint"},
-    {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"Finset.partialOrder"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.Separates"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"SimpleGraph"},
     {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"Finset"},

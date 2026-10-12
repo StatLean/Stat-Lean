@@ -4,7 +4,7 @@
     {"id":"StatLean.StatisticalModels.Coarsening.IsMAR","label":"IsMAR","full":"StatLean.StatisticalModels.Coarsening.IsMAR","kind":"root","decl":"def","module":"StatLean.StatisticalModels.Coarsening.Defs"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"ProbabilityTheory.Kernel.comap","label":"comap","full":"ProbabilityTheory.Kernel.comap","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Composition.MapComap"},
     {"id":"measurable_fst","label":"measurable_fst","full":"measurable_fst","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"}

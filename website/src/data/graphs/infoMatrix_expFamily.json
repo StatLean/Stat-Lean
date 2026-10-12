@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.PointEstimation.infoMatrix_expFamily","label":"infoMatrix_expFamily","full":"StatLean.PointEstimation.infoMatrix_expFamily","kind":"root","decl":"thm","module":"StatLean.PointEstimation.InformationInequality.ExpFamilyInfo"},
     {"id":"StatLean.PointEstimation.ExpFamily","label":"ExpFamily","full":"StatLean.PointEstimation.ExpFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.ExpFamily.natSet","label":"natSet","full":"StatLean.PointEstimation.ExpFamily.natSet","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.PointEstimation.infoMatrix","label":"infoMatrix","full":"StatLean.PointEstimation.infoMatrix","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Defs"},
     {"id":"StatLean.PointEstimation.ExpFamily.toParametricFamily","label":"toParametricFamily","full":"StatLean.PointEstimation.ExpFamily.toParametricFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.ExpFamilyInfo"},
@@ -11,7 +11,7 @@
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"StatLean.PointEstimation.ExpFamily.P","label":"P","full":"StatLean.PointEstimation.ExpFamily.P","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
-    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Basic"},
+    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Logic.Basic"},
     {"id":"MeasureTheory.tilted_zero_measure","label":"tilted_zero_measure","full":"MeasureTheory.tilted_zero_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Tilted"},
     {"id":"StatLean.PointEstimation.scoreVec","label":"scoreVec","full":"StatLean.PointEstimation.scoreVec","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Defs"},
     {"id":"MeasureTheory.integral_zero_measure","label":"integral_zero_measure","full":"MeasureTheory.integral_zero_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
@@ -46,7 +46,6 @@
     {"source":"StatLean.PointEstimation.ExpFamily.toParametricFamily","target":"StatLean.PointEstimation.ExpFamily.logPartition"},
     {"source":"StatLean.PointEstimation.ExpFamily.P","target":"StatLean.PointEstimation.ExpFamily"},
     {"source":"StatLean.PointEstimation.scoreVec","target":"AsymptoticStatistics.ParametricFamily"},
-    {"source":"StatLean.PointEstimation.scoreVec","target":"fact_one_le_two_ennreal"},
     {"source":"AsymptoticStatistics.ParametricFamily.mk","target":"AsymptoticStatistics.ParametricFamily"},
     {"source":"StatLean.PointEstimation.ExpFamily.logPartition","target":"StatLean.PointEstimation.ExpFamily"}
   ]

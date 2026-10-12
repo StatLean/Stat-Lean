@@ -8,8 +8,8 @@
     {"id":"OrderTopology.to_orderClosedTopology","label":"to_orderClosedTopology","full":"OrderTopology.to_orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.Basic"},
     {"id":"nhdsGT_neBot","label":"nhdsGT_neBot","full":"nhdsGT_neBot","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.DenselyOrdered"},
     {"id":"LinearOrderedSemiField.toDenselyOrdered","label":"toDenselyOrdered","full":"LinearOrderedSemiField.toDenselyOrdered","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"Filter.Tendsto.mono_left","label":"mono_left","full":"Filter.Tendsto.mono_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
     {"id":"Continuous.tendsto","label":"tendsto","full":"Continuous.tendsto","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"ENNReal.continuous_ofReal","label":"continuous_ofReal","full":"ENNReal.continuous_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Instances.ENNReal.Lemmas"},
@@ -31,7 +31,7 @@
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Set.subset_univ","label":"subset_univ","full":"Set.subset_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
-    {"id":"ENNReal.one_le_ofReal","label":"one_le_ofReal","full":"ENNReal.one_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"}
+    {"id":"ENNReal.one_le_ofReal","label":"one_le_ofReal","full":"ENNReal.one_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.superUniform_nestedPValue","target":"StatLean.MultipleTesting.SuperUniform"},

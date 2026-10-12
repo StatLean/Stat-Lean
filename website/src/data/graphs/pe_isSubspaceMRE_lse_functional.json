@@ -2,7 +2,7 @@
   "root": "StatLean.PointEstimation.isSubspaceMRE_lse_functional",
   "nodes": [
     {"id":"StatLean.PointEstimation.isSubspaceMRE_lse_functional","label":"isSubspaceMRE_lse_functional","full":"StatLean.PointEstimation.isSubspaceMRE_lse_functional","kind":"root","decl":"thm","module":"StatLean.PointEstimation.LinearModel.Equivariant"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.PosVar","label":"PosVar","full":"StatLean.PointEstimation.PosVar","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Canonical"},
     {"id":"StatLean.PointEstimation.IsSubspaceMRE","label":"IsSubspaceMRE","full":"StatLean.PointEstimation.IsSubspaceMRE","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Equivariant"},
     {"id":"StatLean.PointEstimation.lse","label":"lse","full":"StatLean.PointEstimation.lse","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Defs"},
@@ -40,10 +40,10 @@
     {"id":"LinearIsometryEquiv.apply_symm_apply","label":"apply_symm_apply","full":"LinearIsometryEquiv.apply_symm_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Operator.LinearIsometry"},
     {"id":"Continuous.inner","label":"inner","full":"Continuous.inner","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Continuous"},
     {"id":"continuous_const","label":"continuous_const","full":"continuous_const","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
-    {"id":"ContinuousLinearMap.continuous","label":"continuous","full":"ContinuousLinearMap.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
+    {"id":"ContinuousLinearMap.continuous","label":"continuous","full":"ContinuousLinearMap.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"StatLean.PointEstimation.IsSubspaceEquivariant","label":"IsSubspaceEquivariant","full":"StatLean.PointEstimation.IsSubspaceEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Equivariant"},
     {"id":"map_add","label":"map_add","full":"map_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
-    {"id":"ContinuousLinearMap.continuousSemilinearMapClass","label":"continuousSemilinearMapClass","full":"ContinuousLinearMap.continuousSemilinearMapClass","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
+    {"id":"ContinuousLinearMap.continuousSemilinearMapClass","label":"continuousSemilinearMapClass","full":"ContinuousLinearMap.continuousSemilinearMapClass","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"Submodule.starProjection_eq_self_iff","label":"starProjection_eq_self_iff","full":"Submodule.starProjection_eq_self_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Projection.Basic"},
     {"id":"inner_add_right","label":"inner_add_right","full":"inner_add_right","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"StatLean.PointEstimation.IsCanonicalEquivariant","label":"IsCanonicalEquivariant","full":"StatLean.PointEstimation.IsCanonicalEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.LinearModel.Equivariant"}

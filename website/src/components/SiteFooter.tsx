@@ -41,7 +41,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t hairline">
         <div className="max-w-page mx-auto px-5 sm:px-8 py-5 text-xs text-ink-faint font-sans flex flex-wrap gap-x-4 gap-y-1 justify-between">
-          <span>Formalized in Lean 4 · Mathlib v4.29.1</span>
+          <span>Formalized in Lean 4 · Mathlib v4.34.1</span>
           <span>Built with a hypothesis-disciplined multi-agent workflow.</span>
         </div>
       </div>

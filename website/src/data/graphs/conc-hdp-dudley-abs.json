@@ -44,9 +44,9 @@
     {"id":"HasSolidNorm.toTopologicalLattice","label":"toTopologicalLattice","full":"HasSolidNorm.toTopologicalLattice","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
     {"id":"AEMeasurable.sub","label":"sub","full":"AEMeasurable.sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousSub.measurableSub₂","label":"measurableSub₂","full":"ContinuousSub.measurableSub₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"HasSubset.Subset.trans","label":"trans","full":"HasSubset.Subset.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.RelClasses"},
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"abs_nonneg","label":"abs_nonneg","full":"abs_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"}
+    {"id":"abs_nonneg","label":"abs_nonneg","full":"abs_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_separable","target":"StatLean.ConcentrationInequalities.coveringNumber"},
@@ -95,8 +95,8 @@
     {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"AEMeasurable.sub"},
     {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"ContinuousSub.measurableSub₂"},
     {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"IsTopologicalAddGroup.to_continuousSub"},
-    {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"HasSubset.Subset.trans"},
     {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"LE.le.trans"},
-    {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"abs_nonneg"}
+    {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"abs_nonneg"},
+    {"source":"StatLean.ConcentrationInequalities.dudley_inequality_abs_countable_subset","target":"IsOrderedAddMonoid.toAddLeftMono"}
   ]
 }
