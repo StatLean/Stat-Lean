@@ -80,6 +80,7 @@ private theorem birkhoffMax_le {g : α → ℝ} (N : ℕ) (x : α) :
   refine Finset.sup'_le _ _ fun k hk => ?_
   have hkN : k ≤ N := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
   rw [birkhoffSum_succ']
+  simp only [Pi.add_apply, Function.comp_apply]
   have h : birkhoffSum f g k (f x) ≤ max (birkhoffMax f g N (f x)) 0 := by
     cases k with
     | zero => simp
@@ -109,7 +110,7 @@ private theorem measurable_birkhoffMax {g : α → ℝ} (hfm : Measurable f) (hg
 private theorem integrable_birkhoffSum (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     (hg : Integrable g μ) (n : ℕ) : Integrable (birkhoffSum f g n) μ := by
   unfold birkhoffSum
-  exact integrable_finset_sum _ fun k _ => (hf.iterate k).integrable_comp_of_integrable hg
+  exact integrable_finsetSum _ fun k _ => (hf.iterate k).integrable_comp_of_integrable hg
 
 private theorem integrable_birkhoffMax (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     (hg : Integrable g μ) (N : ℕ) : Integrable (birkhoffMax f g N) μ := by
@@ -284,7 +285,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
       rw [birkhoffSum_of_comp_eq hφf]
       simp [hφ, Pi.smul_apply, nsmul_eq_mul]
       ring
-    rw [hhPi, birkhoffSum_sub, hSφ]
+    rw [hhPi, birkhoffSum_sub, Pi.sub_apply, Pi.sub_apply, hSφ]
   -- the invariant set of points with unbounded Birkhoff sums
   set B : Set α := {x | ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x} with hB
   have hmemB : ∀ x, x ∈ B ↔ ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x :=
@@ -307,6 +308,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
       birkhoffSum f h n (f x) = birkhoffSum f h (n + 1) x - h x := by
     intro x n
     rw [birkhoffSum_succ']
+    simp only [Pi.add_apply, Function.comp_apply]
     ring
   have hBinv : f ⁻¹' B = B := by
     ext x

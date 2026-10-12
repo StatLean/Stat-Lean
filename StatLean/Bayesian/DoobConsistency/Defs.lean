@@ -50,7 +50,7 @@ noncomputable def doobJoint (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measur
 instance (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measure Θ) [IsProbabilityMeasure π] :
     IsProbabilityMeasure (doobJoint K π) := by
   unfold doobJoint
-  exact Measure.isProbabilityMeasure_map measurable_swap.aemeasurable
+  exact (by infer_instance)
 
 /-- The first-`n`-observations statistic on the joint space. -/
 def doobData (n : ℕ) (ω : (ℕ → 𝓧) × Θ) : Fin n → 𝓧 :=

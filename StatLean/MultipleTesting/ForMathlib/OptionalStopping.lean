@@ -47,7 +47,7 @@ theorem supermartingale_integral_stoppedValue_le
     {N : ℕ} (hbdd : ∀ ω, τ ω ≤ (N : ℕ∞)) :
     ∫ x, stoppedValue f τ x ∂μ ≤ ∫ x, f 0 x ∂μ := by
   have h0 : IsStoppingTime 𝒢 (fun _ : Ω => (0 : ℕ∞)) := isStoppingTime_const 𝒢 (0 : ℕ)
-  have hle : (fun _ : Ω => (0 : ℕ∞)) ≤ τ := fun _ => zero_le _
+  have hle : (fun _ : Ω => (0 : ℕ∞)) ≤ τ := fun _ => zero_le
   -- stoppedValue_const is proved by rfl, so stoppedValue f (fun _ => 0) = f 0 definitionally.
   exact supermartingale_expected_stoppedValue_antitone hf h0 hτ hle hbdd
 

@@ -543,7 +543,7 @@ noncomputable def boundedDensityPath
       apply tendsto_of_tendsto_of_tendsto_of_le_of_le' h_lower_tendsto
               h_upper_tendsto
       · -- Lower bound: ∀ᶠ t in 𝓝[≠] 0, 0 ≤ eLpNorm / ofReal|t|.
-        refine Eventually.of_forall (fun t => zero_le _)
+        refine Eventually.of_forall (fun t => zero_le)
       · -- Upper bound: eventually `eLpNorm / ofReal|t| ≤ ofReal(|t|·M²/2)`.
         -- Use the open neighborhood `Set.Ioo (-δ) δ ∈ 𝓝 0`, restricted to
         -- `𝓝[≠] 0`, and require `t ≠ 0`.
@@ -642,7 +642,10 @@ noncomputable def boundedDensityPath
                         (mul_le_mul_of_nonneg_left h_g_sq_le ht2_nn) h_two_nn
         -- eLpNorm LSE 2 P ≤ ENNReal.ofReal (t²·M²/2) via eLpNorm_le_of_ae_bound.
         have h_LSE'_bound : eLpNorm LSE' 2 P ≤ ENNReal.ofReal (t ^ 2 * M ^ 2 / 2) := by
-          have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞)) h_LSE_bound
+          have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞))
+            (show AEStronglyMeasurable LSE' P from by
+              dsimp only [LSE']
+              fun_prop) h_LSE_bound
           have h_univ : P Set.univ = 1 := measure_univ
           rw [h_univ] at this
           have h_pow : (1 : ℝ≥0∞) ^ ((2 : ℝ≥0∞).toReal⁻¹) = 1 := by
@@ -956,7 +959,10 @@ theorem boundedDensityPath_residual_eLpNorm_le
                   (mul_le_mul_of_nonneg_left h_g_sq_le ht2_nn) h_two_nn
   -- eLpNorm RES' 2 P ≤ ENNReal.ofReal (t²·M²/2) via eLpNorm_le_of_ae_bound.
   have h_RES'_eLp : eLpNorm RES' 2 P ≤ ENNReal.ofReal (t ^ 2 * M ^ 2 / 2) := by
-    have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞)) h_RES'_bound
+    have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞))
+      (show AEStronglyMeasurable RES' P from by
+        dsimp only [RES']
+        fun_prop) h_RES'_bound
     have h_univ : P Set.univ = 1 := measure_univ
     rw [h_univ] at this
     have h_pow : (1 : ℝ≥0∞) ^ ((2 : ℝ≥0∞).toReal⁻¹) = 1 := by
@@ -970,22 +976,8 @@ theorem boundedDensityPath_residual_memLp
     (g : ↥(L2ZeroMean P)) (hg : IsEssBoundedMixtureScore g) {t : ℝ}
     (ht : |t| < boundedDensityPath_truncRadius hg) :
     MemLp (boundedDensityPath_residual g hg t) 2 P := by
-  refine ⟨?_, ?_⟩
-  · -- AEStronglyMeasurable.
-    unfold boundedDensityPath_residual
-    have h_meas_t : AEStronglyMeasurable
-        (fun ω => Real.sqrt (((boundedDensityPath g hg).curve t).rnDeriv P ω).toReal) P :=
-      ((Measure.measurable_rnDeriv _ _).ennreal_toReal.sqrt).aestronglyMeasurable
-    have h_meas_0 : AEStronglyMeasurable
-        (fun ω => Real.sqrt (((boundedDensityPath g hg).curve 0).rnDeriv P ω).toReal) P :=
-      ((Measure.measurable_rnDeriv _ _).ennreal_toReal.sqrt).aestronglyMeasurable
-    have h_meas_g : AEStronglyMeasurable (((g : Lp ℝ 2 P) : Ω → ℝ)) P :=
-      (Lp.aestronglyMeasurable (g : Lp ℝ 2 P))
-    exact ((h_meas_t.sub h_meas_0).sub
-      (((aestronglyMeasurable_const).mul h_meas_g).mul h_meas_0))
-  · -- eLpNorm < ⊤.
-    exact lt_of_le_of_lt (boundedDensityPath_residual_eLpNorm_le g hg ht)
-      ENNReal.ofReal_lt_top
+  exact lt_of_le_of_lt (boundedDensityPath_residual_eLpNorm_le g hg ht)
+    ENNReal.ofReal_lt_top
 
 /-- **`P`-AE positive-and-finite Radon-Nikodym derivative**, valid for
 all `t : ℝ`.
@@ -1874,7 +1866,7 @@ theorem gateaux_representer_eq_pathwise_derivative
           Set ↥(L2ZeroMean P)) = Set.univ := by
       have := congrArg (fun S : Submodule ℝ ↥(L2ZeroMean P) =>
           (S : Set ↥(L2ZeroMean P))) h_eq_top
-      simpa [Submodule.topologicalClosure] using this
+      simpa only [Submodule.topologicalClosure_coe, Submodule.top_coe] using! this
     exact dense_iff_closure_eq.mpr h_carrier
   -- *Step 3.* `ContinuousLinearMap.ext_on` from Mathlib gives equal
   -- CLMs on the whole space.

@@ -90,7 +90,7 @@ theorem stdGaussian_map_inner (c : EuclideanSpace ℝ ι) :
     (continuous_const.inner continuous_id).measurable
   haveI : IsProbabilityMeasure
       ((stdGaussian (EuclideanSpace ℝ ι)).map (fun y => ⟪c, y⟫)) :=
-    Measure.isProbabilityMeasure_map hL_meas.aemeasurable
+    (by infer_instance)
   apply MeasureTheory.Measure.ext_of_charFun
   funext t
   have hLHS : charFun ((stdGaussian (EuclideanSpace ℝ ι)).map (fun y => ⟪c, y⟫)) t

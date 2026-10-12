@@ -49,6 +49,7 @@ namespace StatLean.Bayesian
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {ι : Type*} [Fintype ι]
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Heterogeneous Tonelli over `Fin n` (private engine; re-derivation of the `Fin n`
 peeling used to seed the `Fintype` transport). Mirrors the Bochner
 `integral_fin_nat_prod_eq_prod`, peeling one coordinate with `piFinSuccAbove`. -/

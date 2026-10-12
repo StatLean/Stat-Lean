@@ -178,7 +178,7 @@ private lemma tendsto_prob_zero_add {Ω : ℕ → Type*} [∀ n, MeasurableSpace
     exact absurd hω (not_le.2 hlt)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
     (h := fun n => P n {ω | δ / 2 ≤ a n ω} + P n {ω | δ / 2 ≤ b n ω})
-    tendsto_const_nhds ?_ (fun n => zero_le _) (fun n => ?_)
+    tendsto_const_nhds ?_ (fun n => zero_le) (fun n => ?_)
   · simpa using (ha _ hhalf).add (hb _ hhalf)
   · exact (measure_mono (hsub n)).trans (measure_union_le _ _)
 
@@ -243,7 +243,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
   have hb0 : Tendsto b atTop (𝓝 0) := by
     have h1 : Tendsto (fun n => (∫⁻ ω, T n ω ∂(P n)).toReal) atTop (𝓝 0) := by
       have h := (ENNReal.tendsto_toReal (a := 0) (by simp)).comp hint
-      simpa using h
+      simpa using! h
     have h2 : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
     have h3 := h1.max h2
@@ -315,7 +315,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
         have hcont : ContinuousAt (fun x : ℝ => x ^ (1 - q * p)) 0 :=
           Real.continuousAt_rpow_const 0 (1 - q * p) (Or.inr hqp.le)
         have h := hcont.tendsto.comp hb0
-        simpa [Real.zero_rpow (ne_of_gt hqp)] using h
+        simpa [Real.zero_rpow (ne_of_gt hqp)] using! h
       have h := hb0.add hlim
       simp only [zero_add] at h
       exact h.congr fun n => (heq n).symm
@@ -325,7 +325,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
         (Or.inr (ENNReal.inv_ne_top.mpr hδ'0))
       simpa using h
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
-      tendsto_const_nhds hfinal (fun n => zero_le _) hbnd
+      tendsto_const_nhds hfinal (fun n => zero_le) hbnd
 
 /-! ### The Gaussian tails -/
 
@@ -441,7 +441,7 @@ private lemma gaussTail_tendsto_prob
       have h3 := Real.rpow_le_rpow (norm_nonneg (bvmEffScore J sc n ω + z)) h2 hp
       linarith
     · rw [Set.indicator_of_notMem hz]
-      exact zero_le _
+      exact zero_le
   filter_upwards [hKev, hE0.eventually (Iio_mem_nhds hδ)] with n h1 h2
   refine le_trans (measure_mono ?_) h1
   intro ω hω
@@ -554,7 +554,7 @@ private lemma bpe_two_sided
       rw [hB]
       gcongr
     · rw [Set.indicator_of_notMem hh]
-      exact zero_le _
+      exact zero_le
   -- the two truncated comparisons
   have hTVP : ∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn
       ≤ ∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn + D * B * tv := by

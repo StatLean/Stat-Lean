@@ -147,6 +147,7 @@ theorem changingClass_kernelCovariance_posSemidef
       (centeredCovMatrix_coordinateVector P f t n (hf_coord n)) i) j
   exact posSemidef_of_tendsto_centeredCovMatrix hvec_memLp hcov
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Finite-dimensional convergence for the changing-class empirical process
 in van der Vaart Theorem 19.28.
 
@@ -289,6 +290,7 @@ lemma finiteCoordinateProjection_changingClassEmpiricalProcessLinf
   ext j
   rfl
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- The changing-class empirical-process paths satisfy the finite-dimensional
 convergence predicate on `LinfT T`. -/
 theorem changingClass_fdd_linfT

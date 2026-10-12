@@ -75,13 +75,13 @@ theorem lintegral_iSup_sq_le_log {Ω : Type*} [MeasurableSpace Ω] {P : Measure 
     rw [← lintegral_ofReal_ne_top_iff_integrable (by fun_prop)
       (Filter.Eventually.of_forall (fun ω => (Real.exp_pos _).le))]
     exact ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hexp j)
-  have hZ_int : Integrable Z P := integrable_finset_sum _ (fun j _ => hg_int j)
+  have hZ_int : Integrable Z P := integrable_finsetSum _ (fun j _ => hg_int j)
   -- `∫ Z ≤ C₀·M` (union bound).
   have hZ_int_le : ∫ ω, Z ω ∂P ≤ C₀ * M := by
     have hlint : ∫⁻ ω, ENNReal.ofReal (Z ω) ∂P ≤ ENNReal.ofReal (C₀ * M) := by
       calc ∫⁻ ω, ENNReal.ofReal (Z ω) ∂P
           = ∑ j, ∫⁻ ω, ENNReal.ofReal (Real.exp (α₀ * (η j ω) ^ 2)) ∂P := by
-            rw [← lintegral_finset_sum _ (fun j _ => by fun_prop)]
+            rw [← lintegral_finsetSum _ (fun j _ => by fun_prop)]
             exact lintegral_congr (fun ω =>
               ENNReal.ofReal_sum_of_nonneg (fun j _ => (Real.exp_pos _).le))
         _ ≤ ∑ _j : Fin M, ENNReal.ofReal C₀ := Finset.sum_le_sum (fun j _ => hexp j)
@@ -163,14 +163,14 @@ theorem lintegral_iSup_normSq_gaussian_le {Ω : Type*} [MeasurableSpace Ω] {P :
       ≤ ENNReal.ofReal (4 * d * (vmax : ℝ) * Real.log (Real.sqrt 2 * M * d)) := by
   classical
   haveI : Nonempty (Fin M) := Fin.pos_iff_nonempty.mp hM
-  rcases (zero_le vmax).eq_or_lt with hvmax | hvmax
+  rcases (zero_le (a := vmax)).eq_or_lt with hvmax | hvmax
   · -- `vmax = 0`: every coordinate is a.e. `0`, so both sides vanish.
     have hvz : vmax = 0 := hvmax.symm
     subst hvz
     have hzero : ∀ j k, ∫⁻ ω, ENNReal.ofReal ((η j ω k) ^ 2) ∂P = 0 := by
       intro j k
       obtain ⟨v, hv, hlaw⟩ := hgauss j k
-      have hv0 : v = 0 := le_antisymm hv (zero_le v)
+      have hv0 : v = 0 := le_antisymm hv (zero_le (a := v))
       have h := hlaw.lintegral_comp (f := fun x => ENNReal.ofReal (x ^ 2)) (by fun_prop)
       rw [h, hv0, gaussianReal_zero_var, lintegral_dirac]
       simp
@@ -185,16 +185,16 @@ theorem lintegral_iSup_normSq_gaussian_le {Ω : Type*} [MeasurableSpace Ω] {P :
       exact Finset.sum_congr rfl fun j _ =>
         (ENNReal.ofReal_sum_of_nonneg fun k _ => sq_nonneg _).symm
     have key : ∫⁻ ω, ENNReal.ofReal (⨆ j, ∑ k, (η j ω k) ^ 2) ∂P = 0 := by
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       calc ∫⁻ ω, ENNReal.ofReal (⨆ j, ∑ k, (η j ω k) ^ 2) ∂P
           ≤ ∫⁻ ω, ∑ j, ∑ k, ENNReal.ofReal ((η j ω k) ^ 2) ∂P := by
             refine lintegral_mono (fun ω => ?_)
             rw [hsum_ofReal ω]
             exact ENNReal.ofReal_le_ofReal (hsup_le_sum ω)
         _ = ∑ j, ∑ k, ∫⁻ ω, ENNReal.ofReal ((η j ω k) ^ 2) ∂P := by
-            rw [lintegral_finset_sum _ (fun j _ => by fun_prop)]
+            rw [lintegral_finsetSum _ (fun j _ => by fun_prop)]
             exact Finset.sum_congr rfl fun j _ =>
-              lintegral_finset_sum _ (fun k _ => by fun_prop)
+              lintegral_finsetSum _ (fun k _ => by fun_prop)
         _ = 0 := by simp [hzero]
     rw [key, show (4 * (d : ℝ) * ((0 : ℝ≥0) : ℝ) * Real.log (Real.sqrt 2 * M * d)) = 0 by simp,
       ENNReal.ofReal_zero]

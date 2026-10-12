@@ -118,9 +118,10 @@ theorem setLIntegral_comp_withDensity_comap_eq
     rw [setLIntegral_map hB hg hT, Measure.restrict_restrict (hT hB), Set.inter_comm,
         restrict_withDensity hB, lintegral_withDensity_eq_lintegral_mul _ hκA hg] at h
     simp only [Pi.mul_apply] at h
-    rw [setLIntegral_map hB (hκA.mul hg) hT] at h
+    erw [setLIntegral_map hB (hκA.mul hg) hT] at h
     rw [h]
     refine lintegral_congr fun x => ?_
+    simp only [Pi.mul_apply]
     rw [mul_comm]
   rw [withDensity_apply _ (hA.inter (hT hB)), ← key, restrict_withDensity (hT hB),
       lintegral_withDensity_eq_lintegral_mul _ hgT hκAT]
@@ -178,7 +179,7 @@ theorem condExp_withDensity_comap_ae_eq
       ((μ.withDensity fun x => g (T x)).restrict s)
     rw [restrict_withDensity (hT.comap_le s hs),
         integrable_withDensity_iff_integrable_smul' hd_meas (ae_restrict_of_ae hd_lt)]
-    simpa [smul_eq_mul] using hwc.integrableOn
+    simpa [smul_eq_mul] using! hwc.integrableOn
   · -- the set-integral identity, via pull-out and `setIntegral_condExp`
     intro s hs _
     rw [setIntegral_withDensity_eq_setIntegral_toReal_smul hd_meas

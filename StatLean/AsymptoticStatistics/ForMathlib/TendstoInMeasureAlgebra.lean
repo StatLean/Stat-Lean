@@ -102,7 +102,7 @@ theorem TendstoInMeasure.add_zero {f g : ι → α → ℝ}
     have := hf'.add hg'
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    h_sum_tendsto (.of_forall fun _ => zero_le _) (.of_forall fun n => ?_)
+    h_sum_tendsto (.of_forall fun _ => zero_le) (.of_forall fun n => ?_)
   exact (measure_mono (h_sub n)).trans (measure_union_le _ _)
 
 /-- `f - g →_P 0` from each →_P 0. Composed from `add_zero` + `neg_zero`. -/

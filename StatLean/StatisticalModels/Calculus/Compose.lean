@@ -85,7 +85,8 @@ theorem isProbabilityMeasure_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 →
     (hT : Measurable T) (θ : Θ) :
     IsProbabilityMeasure (pushforward P T θ) := by
   unfold pushforward
-  exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  rw [Measure.map₀_of_measurable hT]
+  exact (by infer_instance)
 
 /-! ## Composition laws -/
 
@@ -103,14 +104,15 @@ theorem observe_deterministic (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     (hT : Measurable T) :
     observe P (Kernel.deterministic T hT) = pushforward P T := by
   funext θ
-  exact Measure.deterministic_comp_eq_map hT
+  simpa only [observe, pushforward, Measure.map₀_of_measurable hT] using
+    (Measure.deterministic_comp_eq_map (μ := P θ) hT)
 
 /-- Observing through the identity mechanism returns the model. -/
 theorem observe_id (P : Θ → Measure 𝓧) :
     observe P (Kernel.deterministic id measurable_id) = P := by
   rw [observe_deterministic P measurable_id]
   funext θ
-  exact Measure.map_id
+  exact Measure.map₀_id
 
 /-- Functoriality of `pushforward`. -/
 theorem pushforward_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨} {S : 𝓨 → 𝓩}
@@ -118,12 +120,14 @@ theorem pushforward_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨} {S
     (hT : Measurable T) (hS : Measurable S) :
     pushforward (pushforward P T) S = pushforward P (S ∘ T) := by
   funext θ
+  simp only [pushforward, Measure.map₀_of_measurable hS,
+    Measure.map₀_of_measurable hT, Measure.map₀_of_measurable (hS.comp hT)]
   exact Measure.map_map hS hT
 
 @[simp]
 theorem pushforward_id (P : Θ → Measure 𝓧) : pushforward P id = P := by
   funext θ
-  exact Measure.map_id
+  exact Measure.map₀_id
 
 /-- Observation after latent marginalization is latent marginalization with the composed
 conditional kernels. -/

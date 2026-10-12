@@ -226,12 +226,21 @@ theorem scalar_regularity_of_vector
     change IsProbabilityMeasure (L.map (fun v => ⟪lam_lifted, v⟫_ℝ))
     have h_meas : Measurable (fun v : EuclideanSpace ℝ (Fin k) =>
         ⟪lam_lifted, v⟫_ℝ) := Linner.measurable
-    exact Measure.isProbabilityMeasure_map h_meas.aemeasurable
+    exact (by infer_instance)
   · -- ============== Step 4: IsRegularEstimator ==============
     -- Need: ∀ g hg curve hscore, WeakConverges (...) L_lam.
     intro g hg curve hscore
     -- From vector regularity: vec weak conv to L.
     have hRegV := hReg g hg curve hscore
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹))))
+      (fun n => ((hT_meas n).sub measurable_const).const_smul (Real.sqrt n))] at hRegV
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n_lam n X - ψ_lam (curve.curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul
+        ((Linner.measurable.comp (hT_meas n)).sub measurable_const) _)]
     -- Push through Linner (continuous + measurable) to get pushforward weak conv.
     have h_pushed := hRegV.map (f := fun v => ⟪lam_lifted, v⟫_ℝ)
         Linner.continuous Linner.measurable
@@ -259,7 +268,7 @@ theorem scalar_regularity_of_vector
       -- Measurability of the vec scaled diff function.
       have h_vec_meas : Measurable (fun X : Fin n → Ω =>
           Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))) :=
-        measurable_const.smul ((hT_meas n).sub measurable_const)
+        by fun_prop
       -- Compose the two maps.
       rw [Measure.map_map h_inner_meas h_vec_meas]
       -- Show the composed function equals the scalar form.
@@ -413,10 +422,10 @@ theorem pushforward_variance_eq_quadratic
           intro y; exact h_sq_double_sum y
     _ = ∑ i : Fin k, ∑ j : Fin k,
           ∫ y, lam i * lam j * ((y.ofLp i - μ.ofLp i) * (y.ofLp j - μ.ofLp j)) ∂L := by
-          rw [integral_finset_sum _ (fun i _ =>
-            integrable_finset_sum _ (fun j _ => h_term_int i j))]
+          rw [integral_finsetSum _ (fun i _ =>
+            integrable_finsetSum _ (fun j _ => h_term_int i j))]
           refine Finset.sum_congr rfl (fun i _ => ?_)
-          rw [integral_finset_sum _ (fun j _ => h_term_int i j)]
+          rw [integral_finsetSum _ (fun j _ => h_term_int i j)]
     _ = ∑ i : Fin k, ∑ j : Fin k,
           lam i * lam j *
             ∫ y, (y.ofLp i - μ.ofLp i) * (y.ofLp j - μ.ofLp j) ∂L := by
@@ -696,7 +705,7 @@ theorem semiparametric_convolution_theorem_vec_clause_b
         (fun i : Fin (Module.finrank ℝ ↥(V m)) =>
           (g_P_m i : ↥(L2ZeroMean P))) := by
       have hb := b.orthonormal
-      simpa [g_P_m, Function.comp] using
+      simpa [g_P_m, Function.comp] using!
         ((V m).subtypeₗᵢ.orthonormal_comp_iff).mpr hb
     have hg_in_T : ∀ i, (g_P_m i : ↥(L2ZeroMean P)) ∈ Submodule.span ℝ T_set.carrier :=
       fun i => hV_le_span m (b i).2

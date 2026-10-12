@@ -70,7 +70,7 @@ private lemma lintegral_kernel_shift_mv {F : ℝ → ℝ≥0∞} (hF : Measurabl
     rw [hcomp, ← Measure.map_map (show Measurable (fun y : ℝ => y + z / h) by fun_prop)
       (show Measurable (fun x : ℝ => x * (-h⁻¹)) by fun_prop),
       Real.map_volume_mul_right (neg_ne_zero.2 (inv_ne_zero hh.ne')),
-      Measure.map_smul, map_add_right_eq_self]
+      Measure.map_smul _ (by fun_prop), map_add_right_eq_self]
     congr 1
     rw [inv_neg, inv_inv, abs_neg, abs_of_pos hh]
   calc ∫⁻ x, F ((z - x) / h)
@@ -121,7 +121,7 @@ private lemma conv_sq_lintegral_le_mv {p K : ℝ → ℝ} {h : ℝ} (hh : 0 < h)
       by_cases hint : Integrable (fun u => |K u| * p (x + u * h))
       · rw [ofReal_integral_eq_lintegral_ofReal hint
           (ae_of_all _ fun u => mul_nonneg (abs_nonneg _) (h0 _))]
-      · rw [integral_undef hint, ENNReal.ofReal_zero]; exact zero_le _
+      · rw [integral_undef hint, ENNReal.ofReal_zero]; exact zero_le
     calc ENNReal.ofReal ((∫ u, K u * p (x + u * h)) ^ 2)
         = ENNReal.ofReal (|∫ u, K u * p (x + u * h)| ^ 2) := by rw [sq_abs]
       _ ≤ ENNReal.ofReal ((∫ u, |K u| * p (x + u * h)) ^ 2) := by
@@ -200,14 +200,14 @@ theorem kde_integrated_variance_ge {Ω : Type*} [MeasurableSpace Ω] {P : Measur
   -- The density is a probability density.
   have hprob : IsProbabilityMeasure (densityMeasure p) := by
     rw [← (hs.law ⟨0, hn⟩).map_eq]
-    exact Measure.isProbabilityMeasure_map (hs.law ⟨0, hn⟩).aemeasurable
+    exact (by infer_instance)
   have hmass : (∫⁻ z, ENNReal.ofReal (p z)) = 1 := by
     have h := hprob.measure_univ
     rwa [densityMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
   have hp_int : Integrable p := by
     rw [← memLp_one_iff_integrable]
-    refine ⟨hp.aestronglyMeasurable, ?_⟩
-    rw [eLpNorm_one_eq_lintegral_enorm]
+    change eLpNorm p 1 volume < ∞
+    rw [eLpNorm_one_eq_lintegral_enorm hp.aestronglyMeasurable]
     rw [lintegral_congr fun z => by rw [Real.enorm_eq_ofReal_abs, abs_of_nonneg (h0 z)]]
     rw [hmass]; exact ENNReal.one_lt_top
   -- Real functions of `x`.
@@ -339,7 +339,7 @@ theorem kde_integrated_variance_ge {Ω : Type*} [MeasurableSpace Ω] {P : Measur
       have hfun : (∑ i : Fin n, fun ω => K ((X i ω - x) / h))
           = fun ω => ∑ i, K ((X i ω - x) / h) := by funext ω; simp only [Finset.sum_apply]
       have hsum : MemLp (fun ω => ∑ i, K ((X i ω - x) / h)) 2 P := by
-        rw [← hfun]; exact memLp_finset_sum' _ (fun i _ => hmemP i)
+        rw [← hfun]; exact memLp_finsetSum' _ (fun i _ => hmemP i)
       exact hsum.const_mul ((n : ℝ) * h)⁻¹
     have hvar : variance (fun ω => kde X K h ω x) P = c * (Amv x - (meanℓ x) ^ 2) := by
       have hrfl : (fun ω => kde X K h ω x)
@@ -382,7 +382,7 @@ theorem kde_integrated_variance_ge {Ω : Type*} [MeasurableSpace Ω] {P : Measur
           * ∫⁻ x, ENNReal.ofReal ((∫ u, K u * p (x + u * h)) ^ 2)
         ≤ ENNReal.ofReal (c * h ^ 2)
             * ENNReal.ofReal ((∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2) :=
-          mul_le_mul_left' (conv_sq_lintegral_le_mv hh hp h0 hp2 hK hK1) _
+          mul_le_mul_right (conv_sq_lintegral_le_mv hh hp h0 hp2 hK hK1) _
       _ = ENNReal.ofReal ((n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2) := by
           rw [← ENNReal.ofReal_mul (by positivity)]
           have halg2 : c * h ^ 2 * ((∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2)

@@ -119,7 +119,7 @@ theorem integral_contaminate_dirac [MeasurableSingletonClass Ω] {P : Measure Ω
 /-- Measurable pushforward commutes with contamination. -/
 theorem map_contaminate {P Q : Measure Ω} {f : Ω → Ω'} (hf : Measurable f) (ε : ℝ) :
     (contaminate P Q ε).map f = contaminate (P.map f) (Q.map f) ε := by
-  simp only [contaminate, Measure.map_add _ _ hf, Measure.map_smul]
+  simp only [contaminate, Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable]
 
 /-! ### The gross-error neighbourhood -/
 

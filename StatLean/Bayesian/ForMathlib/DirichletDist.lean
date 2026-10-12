@@ -117,7 +117,6 @@ theorem lintegral_Ioo_rpow_mul_rpow {a b : ℝ}
     rw [hI, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← h1]
     apply lintegral_congr
     intro t
-    dsimp only
     rw [← ENNReal.ofReal_mul (one_div_nonneg.mpr hc.le)]
     congr 1
     ring

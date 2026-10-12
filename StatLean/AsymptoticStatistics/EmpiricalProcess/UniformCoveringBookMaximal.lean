@@ -45,7 +45,7 @@ theorem outer_empiricalProcessSup_le_bookUniformEntropy_of_zero_mem
     ENNReal.ofReal (empiricalL2Seminorm n (Y ξ) Φ)
   let J₁ : ℝ≥0∞ := bookUniformCoveringEntropyIntegral 1 F Φ
   have hY_meas : Measurable Y :=
-    measurable_pi_lambda _ fun i => hX_meas i.val
+    Measurable.of_eval fun i => hX_meas i.val
   have hD_meas : Measurable D :=
     ((measurable_empiricalL2Seminorm Φ hΦ_meas n).comp hY_meas).ennreal_ofReal
   have hJ_le : ∀ ξ,

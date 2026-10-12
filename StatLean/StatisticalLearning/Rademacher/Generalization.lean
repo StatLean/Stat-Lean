@@ -386,7 +386,7 @@ private lemma markov_prob {X : Type*} [MeasurableSpace X] {ν : Measure X} [IsPr
       exact fun h => absurd h (ne_of_gt hx')
     calc ν {x | f x ≤ R / δ}ᶜ ≤ ν {x | ¬ (f x = 0)} := measure_mono hsub
       _ = 0 := hnull
-      _ ≤ ENNReal.ofReal δ := zero_le _
+      _ ≤ ENNReal.ofReal δ := zero_le
   · have hsub : {x | f x ≤ R / δ}ᶜ ⊆ {x | R / δ ≤ f x} := by
       intro x hx
       simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx

@@ -245,9 +245,9 @@ theorem isMercerKernel_trace_smul_sub_boxProd {K : X → X → 𝕜}
         rw [hpt, integral_const_mul]
       rw [Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => e1 i j]
       rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) =>
-        (integral_finset_sum Finset.univ fun j _ => hintbl i j).symm]
-      rw [← integral_finset_sum Finset.univ
-        fun i _ => integrable_finset_sum Finset.univ fun j _ => hintbl i j]
+        (integral_finsetSum Finset.univ fun j _ => hintbl i j).symm]
+      rw [← integral_finsetSum Finset.univ
+        fun i _ => integrable_finsetSum Finset.univ fun j _ => hintbl i j]
       rw [← integral_ofReal]
       exact integral_congr_ae (Filter.Eventually.of_forall hcomb)
     rw [hfinal, RCLike.ofReal_re]
@@ -407,7 +407,8 @@ private theorem coeFn_starLp (g : Lp 𝕜 2 μ) :
 private theorem norm_starLp (f : Lp 𝕜 2 μ) : ‖starLp f‖ = ‖f‖ := by
   rw [starLp, Lp.norm_toLp, Lp.norm_def]
   congr 1
-  exact eLpNorm_congr_norm_ae (Filter.Eventually.of_forall fun y => by simp)
+  exact eLpNorm_congr_norm_ae (by fun_prop) (Lp.aestronglyMeasurable f)
+      (Filter.Eventually.of_forall fun y => by simp)
 
 private theorem norm_sq_eq_integral (u : Lp 𝕜 2 μ) :
     ‖u‖ ^ 2 = ∫ x, ‖(u : X → 𝕜) x‖ ^ 2 ∂μ := by
@@ -622,7 +623,7 @@ private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → �
       =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | empty => simpa using! Lp.coeFn_zero 𝕜 2 μ
   | insert a t ha ih =>
       rw [Finset.sum_insert ha]
       filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
@@ -780,7 +781,7 @@ private theorem norm_partial_sub_le (g : Lp 𝕜 2 μ) (s : Finset d.ι) :
   have hcontK : Continuous fun x : X => RCLike.re (K x x) :=
     (RCLike.continuous_re (K := 𝕜)).comp' (hKc.comp' (continuous_id.prodMk continuous_id))
   have hcontS : Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
-    continuous_finset_sum s fun n _ =>
+    continuous_finsetSum s fun n _ =>
       continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
   have hintb : Integrable (fun x : X =>
       (RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2) * ‖g‖ ^ 2) μ :=
@@ -791,10 +792,11 @@ private theorem norm_partial_sub_le (g : Lp 𝕜 2 μ) (s : Finset d.ι) :
     rw [integral_mul_const, integral_sub (integrable_of_cont_real hcontK)
       (integrable_of_cont_real hcontS)]
     congr 2
-    rw [integral_finset_sum s fun n _ =>
+    erw [integral_finsetSum s fun n _ =>
       (integrable_of_cont_real (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
     exact Finset.sum_congr rfl fun n _ => by
-      rw [integral_const_mul, integral_normSq_eigfun' d n, mul_one]
+      simp only [Pi.pow_apply]
+      erw [integral_const_mul, integral_normSq_eigfun' d n, mul_one]
   have hnorm : ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
         ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
         ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖ ^ 2

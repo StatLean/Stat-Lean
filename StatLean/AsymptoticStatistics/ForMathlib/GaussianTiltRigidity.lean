@@ -42,7 +42,7 @@ theorem covariance_eq_of_nonneg_gaussian_tilts
     simpa [Function.comp_def] using
       hY_map.comp_of_map measurable_snd.aemeasurable
   have hXY : Integrable (fun q : ℝ × ℝ => q.1 * q.2) π := by
-    simpa only [Pi.mul_apply] using hX.integrable_mul hY
+    simpa only [Pi.mul_apply] using! hX.integrable_mul hY
   have h_exp_snd (t : ℝ) :
       Integrable (fun q : ℝ × ℝ => Real.exp (t * q.2)) π := by
     have h_map : Integrable (fun y : ℝ => Real.exp (t * y)) (π.map Prod.snd) := by
@@ -82,7 +82,7 @@ theorem covariance_eq_of_nonneg_gaussian_tilts
           (fun q : ℝ × ℝ => (2 * (v : ℝ) ^ 2) *
             (|q.2| ^ 0 * Real.exp (0 * q.2 + 2 * |q.2|))) π :=
         h_pow_zero.const_mul (2 * (v : ℝ) ^ 2)
-      simpa [mul_assoc] using h_two.add h_zero
+      simpa [mul_assoc] using! h_two.add h_zero
     refine h_majorant.mono' (by fun_prop) (Filter.Eventually.of_forall (fun q => ?_))
     rw [Real.norm_eq_abs, abs_sq]
     dsimp only [B]
@@ -105,7 +105,7 @@ theorem covariance_eq_of_nonneg_gaussian_tilts
   have hB : MemLp B 2 π :=
     (memLp_two_iff_integrable_sq (by fun_prop)).2 h_B_sq
   have h_bound : Integrable (fun q : ℝ × ℝ => |q.1| * B q) π := by
-    simpa only [Real.norm_eq_abs, Pi.mul_apply] using hX.norm.integrable_mul hB
+    simpa only [Real.norm_eq_abs, Pi.mul_apply] using! hX.norm.integrable_mul hB
   let F : ℝ → (ℝ × ℝ) → ℝ := fun a q =>
     q.1 * Real.exp (a * q.2 - (a ^ 2 / 2) * (v : ℝ))
   let F' : ℝ → (ℝ × ℝ) → ℝ := fun a q =>
@@ -160,11 +160,11 @@ theorem covariance_eq_of_nonneg_gaussian_tilts
     have harg : HasDerivAt
         (fun x : ℝ => x * q.2 - (x ^ 2 / 2) * (v : ℝ))
         (q.2 - a * (v : ℝ)) a := by
-      convert ((hasDerivAt_id a).mul_const q.2).sub
+      convert! ((hasDerivAt_id a).mul_const q.2).sub
         ((((hasDerivAt_id a).pow 2).div_const 2).mul_const (v : ℝ)) using 1
       all_goals simp only [id_eq]
       all_goals ring
-    convert (hasDerivAt_const a q.1).mul harg.exp using 1
+    convert! (hasDerivAt_const a q.1).mul harg.exp using 1
     all_goals ring
   obtain ⟨_, hF_deriv⟩ :=
     hasDerivAt_integral_of_dominated_loc_of_deriv_le

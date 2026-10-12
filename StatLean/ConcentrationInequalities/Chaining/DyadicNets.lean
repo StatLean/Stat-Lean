@@ -228,7 +228,7 @@ lemma exists_coarse_scale {D : ℝ}
     ∃ κ : ℤ, D ≤ (2 : ℝ) ^ (-κ) ∧ (2 : ℝ) ^ (-κ) < 2 * D := by
   refine ⟨-Int.clog 2 D, ?_, ?_⟩
   · rw [neg_neg]
-    simpa using Int.self_le_zpow_clog (by norm_num) D
+    simpa using! Int.self_le_zpow_clog (by norm_num) D
   · rw [neg_neg]
     have hpred := Int.zpow_pred_clog_lt_self (R := ℝ) (b := 2) (by norm_num) hD
     simp only [Nat.cast_ofNat] at hpred

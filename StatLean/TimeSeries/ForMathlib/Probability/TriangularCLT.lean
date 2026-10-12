@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Basic
@@ -193,7 +194,7 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, norm_mul]
     have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
-      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+      rw [norm_prod]; exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) hg'
     have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
       calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
             ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
@@ -264,7 +265,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
   · have hone : ∀ n i, charFun (μ.map (X n i)) 0 = 1 := by
       intro n i
       haveI : IsProbabilityMeasure (μ.map (X n i)) :=
-        Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+        (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 (Real.toNNReal σ2)) 0 = 1 := by
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
@@ -519,7 +520,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
       exact hlim.eventually_lt_const (by linarith)
     filter_upwards [hev1, hVarlt, hLinlt] with n hn1 hn2 hn3
     have hpm : ∀ i, IsProbabilityMeasure (μ.map (X n i)) := fun i =>
-      Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      (by infer_instance)
     have htel := norm_prod_sub_prod_le (𝕜 := ℂ) Finset.univ
       (fun i => charFun (μ.map (X n i)) t)
       (fun i => ((1 - t ^ 2 * variance (X n i) μ / 2 : ℝ) : ℂ))
@@ -587,7 +588,8 @@ theorem tendsto_charFun_rowSum_gaussian_of_lindeberg [IsProbabilityMeasure μ]
     have hI2 : Integrable (fun ω => (X n i ω) ^ 2) μ := (hL2 n i).integrable_sq
     refine setIntegral_mono_set hI2.integrableOn
       (ae_of_all _ fun ω => sq_nonneg _) (ae_of_all _ fun ω hω => ?_)
-    exact le_of_lt hω
+    have hω' : ε < |X n i ω| := hω
+    exact le_of_lt hω'
   -- Independence turns the row-sum charFun into the product of the entry charFuns.
   have hcf : ∀ n, charFun (μ.map fun ω => ∑ i, X n i ω) u
       = ∏ i, charFun (μ.map (X n i)) u := fun n => by

@@ -102,7 +102,7 @@ theorem cumHazardJump_le_one (μ : Measure ℝ) (t : ℝ) :
   have hsub : μ {t} ≤ μ (Ici t) := measure_mono (singleton_subset_iff.2 self_mem_Ici)
   rw [hval]
   rcases eq_or_ne (μ (Ici t)) 0 with h0 | h0
-  · simp [le_antisymm (h0 ▸ hsub) (zero_le _)]
+  · simp [le_antisymm (h0 ▸ hsub) (zero_le)]
   · rcases eq_or_ne (μ (Ici t)) ⊤ with htop | htop
     · simp [htop]
     · calc (μ (Ici t))⁻¹ * μ {t} ≤ (μ (Ici t))⁻¹ * μ (Ici t) := by gcongr

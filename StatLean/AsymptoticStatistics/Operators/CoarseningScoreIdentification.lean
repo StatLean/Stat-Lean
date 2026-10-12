@@ -167,8 +167,8 @@ theorem mem_concreteCoarseningScores_iff
     have hmp : MeasurePreserving (Prod.fst : 𝓨 × 𝓓 → 𝓨) (Q ⊗ₘ r) Q :=
       ⟨measurable_fst, Measure.fst_compProd Q r⟩
     have hcomp := hmp.quasiMeasurePreserving.ae_eq_comp
-      (g := fun y => ∫ δ, ((b : Lp ℝ 2 ((Q ⊗ₘ r).map M)) : 𝓧 → ℝ) (M (y, δ)) ∂(r y))
-      (g' := 0) hh
+      (g₁ := fun y => ∫ δ, ((b : Lp ℝ 2 ((Q ⊗ₘ r).map M)) : 𝓧 → ℝ) (M (y, δ)) ∂(r y))
+      (g₂ := 0) hh
     filter_upwards [hcomp] with p hp
     simpa using hp
 
@@ -328,7 +328,7 @@ theorem conditionalQMDObservedScore_mem_concrete
             ↥(L2ZeroMean ((Q ⊗ₘ r).map M))) :
             Lp ℝ 2 ((Q ⊗ₘ r).map M)) : 𝓧 → ℝ) (M (y, δ)) ∂(r y)
         = ∫ δ, γ.score y δ ∂(r y) := integral_congr_ae (by
-            simpa only [Function.uncurry] using hy)
+            simpa only [Function.uncurry] using! hy)
     _ = 0 := hy_zero
 
 /-- The actual supplied conditional-QMD/CAR nuisance span is contained in the
@@ -443,19 +443,19 @@ theorem ipw_influence_characterization
     (φ_full : ↥(L2ZeroMean (Q ⊗ₘ r)))
     -- `Π φ_full` is an influence function for `χ(Q)`.
     (h_ipw : letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-          Measure.isProbabilityMeasure_map hM.aemeasurable
+          (by infer_instance)
         IsInfluenceFunction ((Q ⊗ₘ r).map M)
           (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψ_obs
           (informationLossOperator hM (Q ⊗ₘ r) φ_full))
     (φ_obs : ↥(L2ZeroMean ((Q ⊗ₘ r).map M))) :
     letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-      Measure.isProbabilityMeasure_map hM.aemeasurable
+      (by infer_instance)
     IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψ_obs φ_obs
       ↔ ∃ b ∈ concreteCoarseningScores Q r hM,
           φ_obs = informationLossOperator hM (Q ⊗ₘ r) φ_full + b := by
   haveI hpm : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   -- Membership in the concrete score space is equivalent to membership in
   -- the orthogonal complement of the observed tangent.
   have hb_orth_iff : ∀ b : ↥(L2ZeroMean ((Q ⊗ₘ r).map M)),
@@ -602,12 +602,12 @@ theorem completeCaseIPW_influence_2541
       -- This derivative-restriction hypothesis only
       -- identifies the two derivative encodings on canonical `Q`-score lifts.
     : letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-        Measure.isProbabilityMeasure_map hM.aemeasurable
+        (by infer_instance)
       IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs
         (completeCaseIPW hM Q r cc χ ε hε hπ) := by
   letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   intro g
   obtain ⟨a, ha, hga⟩ :=
     (mem_observedTangent_iff hM (Q ⊗ₘ r) (fullQTangent Q r)
@@ -672,13 +672,13 @@ theorem completeCaseIPW_characterization_2541
       -- agreement of the full and observed derivatives on canonical score lifts.
     (φobs : ↥(L2ZeroMean ((Q ⊗ₘ r).map M))) :
     letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-      Measure.isProbabilityMeasure_map hM.aemeasurable
+      (by infer_instance)
     IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs φobs ↔
       ∃ b ∈ concreteCoarseningScores Q r hM,
         φobs = completeCaseIPW hM Q r cc χ ε hε hπ + b := by
   letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   have hbase := completeCaseIPW_influence_2541 Q r hM cc ε hε hπ
     dψQ χ hχ dψObs hDerivativeRestriction
   have hchar := ipw_influence_characterization Q r hM dψObs
@@ -751,13 +751,13 @@ theorem completeCaseIPW_subtract_projection_2542
       dψTotal ⟨b, Submodule.mem_sup_right hb⟩ = 0)
       -- χ(Q) has zero derivative along actual fixed-`Q` CAR paths.
     : letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-        Measure.isProbabilityMeasure_map hM.aemeasurable
+        (by infer_instance)
       IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r) ⊔
           carNuisanceScores Q r hM ν) dψTotal
         (completeCaseIPWMinusCARProjection Q r hM ν cc χ ε hε hπ) := by
   letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   have hbase := completeCaseIPW_influence_2541 Q r hM cc ε hε hπ
     dψQ χ hχ dψObs hDerivativeRestriction
   have hOrth : ∀ u ∈ observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r),

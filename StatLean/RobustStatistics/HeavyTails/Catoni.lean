@@ -178,7 +178,7 @@ theorem catoniR_strictAnti {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
 /-- The estimating function is continuous in `y`. -/
 theorem catoniR_continuous {n : ℕ} (α : ℝ) (x : Fin n → ℝ) :
     Continuous (catoniR α x) :=
-  continuous_finset_sum _ fun i _ => catoniPsi_continuous.comp (by fun_prop)
+  continuous_finsetSum _ fun i _ => catoniPsi_continuous.comp (by fun_prop)
 
 /-- **Existence and uniqueness of Catoni's estimate** (`LM §2.2`, "the unique value `y`
 such that `R_{n,α}(y) = 0`"): for `α > 0` and a nonempty sample, the estimating function
@@ -422,10 +422,10 @@ private theorem integrable_exp_catoniR {n : ℕ} {X : Fin n → Ξ → ℝ} {α 
       (μprob.map (fun ω => (fun i => X i ω))) := by
     rw [hmap]; exact Integrable.fintype_prod (fun _ => hfi)
   have hgc : Continuous (fun x : Fin n → ℝ => ∏ i, f (x i)) :=
-    continuous_finset_prod _ fun i _ => hfc.comp (continuous_apply i)
+    continuous_finsetProd _ fun i _ => hfc.comp (continuous_apply i)
   have hcomp : Integrable (fun ξ => ∏ i, f (X i ξ)) μprob :=
     (integrable_map_measure hgc.aestronglyMeasurable
-      (measurable_pi_lambda _ hX_meas).aemeasurable).1 hF
+      (Measurable.of_eval hX_meas).aemeasurable).1 hF
   have heq : (fun ξ => Real.exp (catoniR α (fun i => X i ξ) y)) = fun ξ => ∏ i, f (X i ξ) := by
     funext ξ; rw [catoniR, Real.exp_sum]
   rw [heq]; exact hcomp

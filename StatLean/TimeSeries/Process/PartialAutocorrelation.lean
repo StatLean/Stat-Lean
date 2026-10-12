@@ -108,7 +108,7 @@ private lemma linRegCoeffs_eq (X : ℤ → Ω → ℝ) (μ : Measure Ω) {n : �
 /-- Square-integrability of a linear combination of the window. -/
 private lemma memLp_window (hstat : IsStationary X μ) {n : ℕ} (w : Fin n → ℤ)
     (c : Fin n → ℝ) : MemLp (fun ω => ∑ i, c i * X (w i) ω) 2 μ :=
-  memLp_finset_sum _ fun i _ => (hstat.memLp (w i)).const_mul (c i)
+  memLp_finsetSum _ fun i _ => (hstat.memLp (w i)).const_mul (c i)
 
 /-- Square-integrability of the regression residual. -/
 private lemma memLp_linRegResidual (hstat : IsStationary X μ) {n : ℕ} (t0 : ℤ)
@@ -756,7 +756,7 @@ private lemma cov_eq_zero_of_lt [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
     cov[X s, ε t; μ] = 0 := by
   have hSm : ∀ N : ℕ,
       MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ := fun N =>
-    memLp_finset_sum _ fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)
+    memLp_finsetSum _ fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)
   -- the partial sums are exactly orthogonal to the future innovation
   have hSc : ∀ N : ℕ,
       cov[fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω, ε t; μ] = 0 := by
@@ -786,7 +786,9 @@ private lemma cov_eq_zero_of_lt [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
   have h0 : Tendsto (fun N : ℕ =>
       (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal)
       atTop (𝓝 0) := by
-    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hlin s)
+    simpa using! (ENNReal.continuousAt_toReal (by simp)).tendsto.comp ((hlin s).congr fun N => by
+      simpa only [Pi.sub_apply] using!
+        (eLpNorm_two_eq_eLpNorm' (hX.sub (hSm N)).aestronglyMeasurable).symm)
   have hlim : Tendsto (fun N : ℕ =>
       (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal
         * ‖(hε.memLp t).toLp (ε t)‖) atTop (𝓝 0) := by

@@ -294,7 +294,7 @@ theorem weakConverges_scoreSumScalar_under_pi
     intro f
     have h_t := h_TID.tendsto
     -- Convert via `ProbabilityMeasure.tendsto_iff_forall_integral_tendsto`.
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_t
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_t
     have h_t_f := h_t f
     -- `id ∘ Z = Z`. The pushforward by `id` on the limit measure is itself.
     have h_id : (gaussianReal 0 (‖(g : Lp ℝ 2 P)‖ ^ 2).toNNReal).map
@@ -339,7 +339,7 @@ theorem weakConverges_scoreSumScalar_under_pi
     rw [h_pi]
     have h_truncate_meas :
         Measurable (fun ω : ℕ → Ω => fun i : Fin n => ω i.val) := by
-      refine measurable_pi_lambda _ (fun i => ?_)
+      refine Measurable.of_eval (fun i => ?_)
       exact measurable_pi_apply _
     have h_score_meas : Measurable (scoreSumScalar (P := P) g n) :=
       measurable_scoreSumScalar g n

@@ -111,12 +111,12 @@ private theorem integrable_norm_sign_prod {E : Type*} [NormedAddCommGroup E]
     Integrable (fun p : D × (Fin N → ℝ) => ‖∑ i, p.2 i • a p.1 i‖)
       (Q.prod (signVec N)) := by
   have hsum : Integrable (fun d => ∑ i, ‖a d i‖) Q :=
-    integrable_finset_sum _ (fun i _ => ha_int i)
+    integrable_finsetSum _ (fun i _ => ha_int i)
   have hg : Integrable (fun p : D × (Fin N → ℝ) => ∑ i, ‖a p.1 i‖)
       (Q.prod (signVec N)) := by
     have h := ((measurePreserving_fst (μ := Q) (ν := signVec N)).integrable_comp
       (g := fun d => ∑ i, ‖a d i‖) hsum.aestronglyMeasurable).mpr hsum
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hmeas0 : Measurable
       (fun p : D × (Fin N → ℝ) => ∑ i, p.2 i • a p.1 i) := by
     apply Finset.measurable_sum
@@ -156,14 +156,14 @@ private theorem flip_average {E : Type*} [NormedAddCommGroup E]
     have h := ((measurePreserving_fst (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hw2 : ∀ i, Integrable
       (fun w : (Fin N → E) × (Fin N → E) => w.2 i)
       ((Measure.pi ν).prod (Measure.pi ν)) := fun i => by
     have h := ((measurePreserving_snd (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hF_int : Integrable
       (fun q : ((Fin N → E) × (Fin N → E)) × (Fin N → ℝ) =>
         ‖∑ i, q.2 i • (q.1.1 i - q.1.2 i)‖)
@@ -209,23 +209,23 @@ theorem symmetrization_upper_pi {E : Type*} [NormedAddCommGroup E]
     have h := ((measurePreserving_fst (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hw2 : ∀ i, Integrable
       (fun w : (Fin N → E) × (Fin N → E) => w.2 i)
       ((Measure.pi ν).prod (Measure.pi ν)) := fun i => by
     have h := ((measurePreserving_snd (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   -- E-valued centered sums on `Measure.pi ν`
   have hf : Integrable (fun y => ∑ i, (y i - ∫ z, z ∂(ν i))) (Measure.pi ν) :=
-    integrable_finset_sum _ (fun i _ => (hyi i).sub (integrable_const _))
+    integrable_finsetSum _ (fun i _ => (hyi i).sub (integrable_const _))
   have hg : Integrable (fun y => ∑ i, ((∫ z, z ∂(ν i)) - y i)) (Measure.pi ν) :=
-    integrable_finset_sum _ (fun i _ => (integrable_const _).sub (hyi i))
+    integrable_finsetSum _ (fun i _ => (integrable_const _).sub (hyi i))
   have hg0 : ∫ y, ∑ i, ((∫ z, z ∂(ν i)) - y i) ∂(Measure.pi ν) = 0 := by
     have hsplit : ∫ y, ∑ i, ((∫ z, z ∂(ν i)) - y i) ∂(Measure.pi ν)
         = ∑ i, ∫ y, ((∫ z, z ∂(ν i)) - y i) ∂(Measure.pi ν) :=
-      integral_finset_sum _ (fun i _ => (integrable_const _).sub (hyi i))
+      integral_finsetSum _ (fun i _ => (integrable_const _).sub (hyi i))
     rw [hsplit]
     apply Finset.sum_eq_zero
     intro i _
@@ -367,14 +367,14 @@ theorem symmetrization_lower_pi {E : Type*} [NormedAddCommGroup E]
     have h := ((measurePreserving_fst (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hw2 : ∀ i, Integrable
       (fun w : (Fin N → E) × (Fin N → E) => w.2 i)
       ((Measure.pi ν).prod (Measure.pi ν)) := fun i => by
     have h := ((measurePreserving_snd (μ := Measure.pi ν)
       (ν := Measure.pi ν)).integrable_comp
       (g := fun y : Fin N → E => y i) (hyi i).aestronglyMeasurable).mpr (hyi i)
-    simpa [Function.comp] using h
+    simpa [Function.comp] using! h
   have hΦμS : Integrable
       (fun p : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, p.2 i • p.1 i‖)
       ((Measure.pi ν).prod (signVec N)) :=
@@ -396,13 +396,13 @@ theorem symmetrization_lower_pi {E : Type*} [NormedAddCommGroup E]
         ≤ ∫ w, ‖∑ i, s i • (w.1 i - w.2 i)‖ ∂((Measure.pi ν).prod (Measure.pi ν)) := by
     intro s
     have hfs : Integrable (fun y => ∑ i, s i • y i) (Measure.pi ν) :=
-      integrable_finset_sum _ (fun i _ => (hyi i).smul (s i))
+      integrable_finsetSum _ (fun i _ => (hyi i).smul (s i))
     have hgs : Integrable (fun y => ∑ i, s i • (-(y i))) (Measure.pi ν) :=
-      integrable_finset_sum _ (fun i _ => ((hyi i).neg).smul (s i))
+      integrable_finsetSum _ (fun i _ => ((hyi i).neg).smul (s i))
     have hgs0 : ∫ y, ∑ i, s i • (-(y i)) ∂(Measure.pi ν) = 0 := by
       have hsplit : ∫ y, ∑ i, s i • (-(y i)) ∂(Measure.pi ν)
           = ∑ i, ∫ y, s i • (-(y i)) ∂(Measure.pi ν) :=
-        integral_finset_sum _ (fun i _ => ((hyi i).neg).smul (s i))
+        integral_finsetSum _ (fun i _ => ((hyi i).neg).smul (s i))
       rw [hsplit]
       apply Finset.sum_eq_zero
       intro i _
@@ -435,16 +435,16 @@ theorem symmetrization_lower_pi {E : Type*} [NormedAddCommGroup E]
       (ae_of_all _ hL1s)
   -- STEP L3: triangle inequality on the difference of copies
   have hsumy : Integrable (fun y => ∑ i, y i) (Measure.pi ν) :=
-    integrable_finset_sum _ (fun i _ => hyi i)
+    integrable_finsetSum _ (fun i _ => hyi i)
   have hsumw1 : Integrable (fun w : (Fin N → E) × (Fin N → E) => ∑ i, w.1 i)
       ((Measure.pi ν).prod (Measure.pi ν)) :=
-    integrable_finset_sum _ (fun i _ => hw1 i)
+    integrable_finsetSum _ (fun i _ => hw1 i)
   have hsumw2 : Integrable (fun w : (Fin N → E) × (Fin N → E) => ∑ i, w.2 i)
       ((Measure.pi ν).prod (Measure.pi ν)) :=
-    integrable_finset_sum _ (fun i _ => hw2 i)
+    integrable_finsetSum _ (fun i _ => hw2 i)
   have hsumdiff : Integrable (fun w : (Fin N → E) × (Fin N → E) => ∑ i, (w.1 i - w.2 i))
       ((Measure.pi ν).prod (Measure.pi ν)) :=
-    integrable_finset_sum _ (fun i _ => (hw1 i).sub (hw2 i))
+    integrable_finsetSum _ (fun i _ => (hw1 i).sub (hw2 i))
   have hpt3 : ∀ w : (Fin N → E) × (Fin N → E),
       ‖∑ i, (w.1 i - w.2 i)‖ ≤ ‖∑ i, w.1 i‖ + ‖∑ i, w.2 i‖ := by
     intro w
@@ -492,7 +492,7 @@ theorem symmetrization_upper {μ : Measure Ω} [IsProbabilityMeasure μ]
     ∫ ω, ‖∑ i, X i ω‖ ∂μ
       ≤ 2 * ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) := by
   haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
-    fun i => Measure.isProbabilityMeasure_map (hX_meas i).aemeasurable
+    fun i => (by infer_instance)
   have hν_int : ∀ i, Integrable id (μ.map (X i)) := fun i =>
     (integrable_map_measure aestronglyMeasurable_id (hX_meas i).aemeasurable).mpr
       (by simpa using hX_int i)
@@ -546,7 +546,7 @@ theorem symmetrization_lower {μ : Measure Ω} [IsProbabilityMeasure μ]
     ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N))
       ≤ 2 * ∫ ω, ‖∑ i, X i ω‖ ∂μ := by
   haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
-    fun i => Measure.isProbabilityMeasure_map (hX_meas i).aemeasurable
+    fun i => (by infer_instance)
   have hν_int : ∀ i, Integrable id (μ.map (X i)) := fun i =>
     (integrable_map_measure aestronglyMeasurable_id (hX_meas i).aemeasurable).mpr
       (by simpa using hX_int i)

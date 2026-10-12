@@ -130,7 +130,7 @@ private lemma one_sub_naJump_mem_Icc (d : Fin n → ℝ × Bool) (s : ℝ) :
 private lemma prod_one_sub_naJump_mem_Icc (d : Fin n → ℝ × Bool) (F : Finset ℝ) :
     0 ≤ ∏ s ∈ F, (1 - naJump d s) ∧ ∏ s ∈ F, (1 - naJump d s) ≤ 1 :=
   ⟨Finset.prod_nonneg fun s _ => (one_sub_naJump_mem_Icc d s).1,
-    Finset.prod_le_one (fun s _ => (one_sub_naJump_mem_Icc d s).1)
+    Finset.prod_le_one₀ (fun s _ => (one_sub_naJump_mem_Icc d s).1)
       fun s _ => (one_sub_naJump_mem_Icc d s).2⟩
 
 /-- At an event time the truncated set of event times splits off its top point. -/
@@ -250,7 +250,7 @@ private lemma leftLim_kaplanMeierSF (d : Fin n → ℝ × Bool) (t : ℝ) :
     Function.leftLim (kaplanMeierSF d) t
       = 1 - ∏ s ∈ (eventTimes d).filter (· < t), (1 - naJump d s) := by
   obtain ⟨ε, hε, hcon⟩ := kaplanMeier_eventually_constant_left d t
-  refine leftLim_eq_of_tendsto (nhdsLT_neBot t).ne ?_
+  refine leftLim_eq_of_tendsto ?_
   refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
   filter_upwards [Ioo_mem_nhdsLT (show t - ε < t by linarith)] with u hu
   rw [kaplanMeierSF_apply, hcon u hu]
@@ -531,9 +531,10 @@ private lemma cex_atRisk : atRisk cexData 1 = 2 := by
   rw [atRisk, Finset.filter_true_of_mem fun i _ => by fin_cases i <;> norm_num [cexData],
     Finset.card_univ, Fintype.card_fin]
 
+set_option backward.isDefEq.respectTransparency.types false in
 private lemma cex_eventCount : eventCount cexData 1 = 1 := by
   rw [eventCount, show (univ.filter fun i => (cexData i).1 = (1 : ℝ) ∧ (cexData i).2 = true)
-    = {0} from by ext i; fin_cases i <;> simp [cexData]]
+    = {0} from by ext i; fin_cases i <;> simp [cexData, Set.mem_setOf_eq]]
   rfl
 
 private lemma cex_naJump : naJump cexData 1 = 1 / 2 := by

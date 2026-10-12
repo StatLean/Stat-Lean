@@ -209,7 +209,7 @@ theorem weakConverges_randPairLaw_signChange_sum
     have heq : (fun y : EuclideanSpace ℝ (Fin p) => ⟪y, EuclideanSpace.single j (1 : ℝ)⟫)
         = fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j := by
       funext y
-      simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+      simp [EuclideanSpace.inner_single_right]
     rwa [heq] at h
   have hinner_expand : ∀ y v : EuclideanSpace ℝ (Fin p),
       ⟪y, v⟫ = ∑ j, y.ofLp j * v.ofLp j := by
@@ -228,17 +228,17 @@ theorem weakConverges_randPairLaw_signChange_sum
     have hint : ∀ j k : Fin p,
         Integrable (fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j * y.ofLp k) P := by
       intro j k
-      simpa using (hcoord j).integrable_mul (hcoord k)
+      simpa using! (hcoord j).integrable_mul (hcoord k)
     have h1 : ∫ y, ⟪y, v⟫ ^ 2 ∂P
         = ∫ y, (∑ j, ∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) ∂P :=
       integral_congr_ae (Filter.Eventually.of_forall hpt)
-    rw [h1, integral_finset_sum (f := fun j : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
+    rw [h1, integral_finsetSum (f := fun j : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
         ∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) Finset.univ
-      (fun j _ => integrable_finset_sum Finset.univ fun k _ => (hint j k).const_mul _)]
+      (fun j _ => integrable_finsetSum Finset.univ fun k _ => (hint j k).const_mul _)]
     have h2 : ∀ j : Fin p, ∫ y, (∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) ∂P
         = ∑ k, (v.ofLp j * v.ofLp k) * S j k := by
       intro j
-      rw [integral_finset_sum (f := fun k : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
+      rw [integral_finsetSum (f := fun k : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
           (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) Finset.univ
         (fun k _ => (hint j k).const_mul _)]
       exact Finset.sum_congr rfl fun k _ => by rw [integral_const_mul, hsecond j k]
@@ -258,7 +258,7 @@ theorem weakConverges_randPairLaw_signChange_sum
 /-- Measurability of the sign-change action on vector-valued data. -/
 private lemma measurable_signChange_smul_vec {n : ℕ} (ε : Fin n → ℤˣ) :
     Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) := by
-  refine measurable_pi_lambda (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) fun i => ?_
+  refine Measurable.of_eval fun i => ?_
   have heq : (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (ε • x) i)
       = fun x => ((ε i : ℤ) : ℝ) • x i :=
     funext fun x => signChange_smul_apply_vec ε x i
@@ -292,7 +292,7 @@ private lemma continuous_ofLp_coord (j : Fin p) :
 private lemma continuous_quadFormInv (S : Matrix (Fin p) (Fin p) ℝ) :
     Continuous (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp) := by
   simp only [quadFormInv_eq]
-  exact continuous_finset_sum _ fun j _ => continuous_finset_sum _ fun k _ =>
+  exact continuous_finsetSum _ fun j _ => continuous_finsetSum _ fun k _ =>
     continuous_const.mul ((continuous_ofLp_coord j).mul (continuous_ofLp_coord k))
 
 /-- The quadratic form `v ↦ vᵀ S⁻¹ v` is measurable. -/
@@ -400,7 +400,7 @@ convergence-in-probability argument consumes. -/
 private lemma abs_ofLp_le_norm (v : EuclideanSpace ℝ (Fin p)) (j : Fin p) :
     |v.ofLp j| ≤ ‖v‖ := by
   have heq : v.ofLp j = ⟪v, EuclideanSpace.single j (1 : ℝ)⟫ := by
-    simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+    simp [EuclideanSpace.inner_single_right]
   rw [heq]
   simpa [PiLp.norm_single] using
     abs_real_inner_le_norm v (EuclideanSpace.single j (1 : ℝ))
@@ -552,9 +552,9 @@ private lemma integrable_ofLp_mul (P : Measure (EuclideanSpace ℝ (Fin p)))
     have heq : (fun y : EuclideanSpace ℝ (Fin p) => ⟪y, EuclideanSpace.single j (1 : ℝ)⟫)
         = fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j := by
       funext y
-      simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+      simp [EuclideanSpace.inner_single_right]
     rwa [heq] at h
-  simpa using (hcoord j).integrable_mul (hcoord k)
+  simpa using! (hcoord j).integrable_mul (hcoord k)
 
 /-- The modified `T²` statistic is measurable. -/
 private lemma measurable_modifiedTSq {n : ℕ} :
@@ -611,7 +611,7 @@ private lemma weakConverges_randPairLaw_normSq
       (fun ε => measurable_signChange_smul_vec ε)
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map w) :=
-    Measure.isProbabilityMeasure_map hwm.aemeasurable
+    (by infer_instance)
   simpa using hmapped.map continuous_fst measurable_fst
 
 /-! ### Quadratic-form limits -/
@@ -657,11 +657,11 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)).map Prod.fst) := fun n =>
-    Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2)) :=
-    Measure.isProbabilityMeasure_map hwm.aemeasurable
+    (by infer_instance)
   have hmarg := weakConverges_randPairLaw_normSq P hpd hL2 hmean hsecond
   -- (a) The `L¹` law of large numbers: the uncentred second-moment matrix is consistent,
   -- entrywise. Its entries are products of two coordinates, hence only `L¹`.
@@ -682,8 +682,8 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
         {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
       atTop (𝓝 0) := by
     intro ρ hρ
-    have h := tendsto_finset_sum (Finset.univ : Finset (Fin p))
-      (fun j (_ : j ∈ Finset.univ) => tendsto_finset_sum (Finset.univ : Finset (Fin p))
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin p))
+      (fun j (_ : j ∈ Finset.univ) => tendsto_finsetSum (Finset.univ : Finset (Fin p))
         fun k (_ : k ∈ Finset.univ) => hlln j k ρ hρ)
     simpa using h
   refine weakConverges_randPairLaw_of_tendstoInProb_avg
@@ -1000,11 +1000,11 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)).map Prod.fst) := fun n =>
-    Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2)) :=
-    Measure.isProbabilityMeasure_map hwm.aemeasurable
+    (by infer_instance)
   have hmarg := weakConverges_randPairLaw_normSq P hpd hL2 hmean hsecond
   have hlln : ∀ (j k : Fin p) (ρ : ℝ), 0 < ρ → Tendsto (fun n : ℕ =>
       (Measure.pi fun _ : Fin n => P).real
@@ -1023,8 +1023,8 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
         {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
       atTop (𝓝 0) := by
     intro ρ hρ
-    have h := tendsto_finset_sum (Finset.univ : Finset (Fin p))
-      (fun j (_ : j ∈ Finset.univ) => tendsto_finset_sum (Finset.univ : Finset (Fin p))
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin p))
+      (fun j (_ : j ∈ Finset.univ) => tendsto_finsetSum (Finset.univ : Finset (Fin p))
         fun k (_ : k ∈ Finset.univ) => hlln j k ρ hρ)
     simpa using h
   refine weakConverges_randPairLaw_of_tendstoInProb_avg

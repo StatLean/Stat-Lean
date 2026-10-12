@@ -159,7 +159,7 @@ theorem kdeMeanAt_eq_integral_kernel {n : ℕ} [IsProbabilityMeasure P]
   have hmean : kdeMeanAt P X K h x
       = ((n : ℝ) * h)⁻¹ * ∑ i, ∫ ω, K ((X i ω - x) / h) ∂P := by
     unfold kdeMeanAt kde kdeData
-    rw [integral_const_mul, integral_finset_sum _ (fun i _ => hintP i)]
+    rw [integral_const_mul, integral_finsetSum _ (fun i _ => hintP i)]
   rw [hmean]
   simp_rw [hper]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]

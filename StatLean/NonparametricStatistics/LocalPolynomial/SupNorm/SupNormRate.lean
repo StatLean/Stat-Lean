@@ -201,7 +201,7 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
         · rw [lintegral_const, measure_univ, mul_one]
     _ ≤ 2 * ENNReal.ofReal (Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
         + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) :=
-        add_le_add (mul_le_mul_left' hCsapp 2) (le_refl _)
+        add_le_add (mul_le_mul_right hCsapp 2) (le_refl _)
     _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
         + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) := by rw [hdbl]
     _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)

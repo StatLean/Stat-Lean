@@ -119,7 +119,7 @@ theorem gaussian_location_minimax_rate (n : ℕ) (hn : 1 ≤ n) (v : ℝ≥0) (h
         show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
     apply le_of_eq; congr 1; ring
   have htv := gaussian_two_point_tvDist_le n hn v hv P hP
-  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2))
+  have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2
       = ENNReal.ofReal ((v : ℝ) / (4 * n)) := by
     change (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2 = _
     rw [← ENNReal.ofReal_pow (by positivity)]

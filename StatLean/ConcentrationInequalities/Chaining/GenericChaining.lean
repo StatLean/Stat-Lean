@@ -192,10 +192,10 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
     have hnull : μ {ω | (0 : ℝ) < ⨆ t ∈ T, |X t ω - X t₀ ω|} = 0 := by
       refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp hallz)
       simp only [Set.mem_setOf_eq, not_le]; exact hω
-    rw [hnull]; exact zero_le _
+    rw [hnull]; exact zero_le
   · -- Main case: K > 0.
     have hKpos : (0 : ℝ) < (K : ℝ) := by
-      have : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le K) (Ne.symm hK0)
+      have : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le (a := K)) (Ne.symm hK0)
       exact_mod_cast this
     set thr : ℝ := (12 + 4 * u) * (K : ℝ) * G with hthr
     -- Number of chaining levels: past `n` every point has a net point at distance 0.
@@ -275,7 +275,7 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
           have : (0 : ℝ) ≤ (K : ℝ) * dist p.1 p.2 * s k :=
             mul_nonneg (mul_nonneg hKpos.le dist_nonneg) (hs_nn k)
           linarith
-        rw [hnull]; exact zero_le _
+        rw [hnull]; exact zero_le
       · -- non-degenerate: B1 tail with an exact exponent.
         have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
         have hKd : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
@@ -738,7 +738,7 @@ theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
       (fun t ht => ((hmeas t ht).sub (hmeas t₀ ht₀)).abs)
   -- Integrability of the increment sup via domination by a finite sum.
   have hSumInt : Integrable (fun ω => ∑ t ∈ hfin.toFinset, |X t ω - X t₀ ω|) μ :=
-    integrable_finset_sum _
+    integrable_finsetSum _
       (fun t ht => ((hint t (hfin.mem_toFinset.mp ht)).sub (hint t₀ ht₀)).abs)
   have hWint : Integrable (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) μ := by
     refine Integrable.mono' hSumInt hWm.aestronglyMeasurable
@@ -887,9 +887,9 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hnull : μ {ω | (0 : ℝ) < F.sup' hFne (fun t => |X t ω - X t₀ ω|)} = 0 := by
       refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp hallz)
       simp only [Set.mem_setOf_eq, not_le]; exact hω
-    rw [hnull]; exact zero_le _
+    rw [hnull]; exact zero_le
   · -- Main case: K > 0.
-    have hKnn : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le K) (Ne.symm hK0)
+    have hKnn : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le (a := K)) (Ne.symm hK0)
     have hKpos : (0 : ℝ) < (K : ℝ) := by exact_mod_cast hKnn
     set thr : ℝ := (12 + 4 * u) * (K : ℝ) * G with hthr
     -- Projections onto the admissible levels.
@@ -956,7 +956,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           have : (0 : ℝ) ≤ (K : ℝ) * dist p.1 p.2 * s k :=
             mul_nonneg (mul_nonneg hKpos.le dist_nonneg) (hs_nn k)
           linarith
-        rw [hnull]; exact zero_le _
+        rw [hnull]; exact zero_le
       · have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
         have hKd : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
         have hτ0 : 0 ≤ (K : ℝ) * dist p.1 p.2 * s k :=

@@ -92,7 +92,7 @@ theorem exp_le_one_add_add_sq_half_of_nonpos {x : ℝ}
       have hpow : HasDerivAt (fun s : ℝ => s ^ 2 / 2) ((2 : ℝ) * s ^ (2 - 1) / 2) s :=
         (hasDerivAt_pow 2 s).div_const 2
       have := ((hasDerivAt_const s (1 : ℝ)).add (hasDerivAt_id s)).add hpow
-      convert this using 1
+      convert! this using 1
       ring
     exact h1.sub (Real.hasDerivAt_exp s)
   have hdiff : Differentiable ℝ (fun s => 1 + s + s ^ 2 / 2 - Real.exp s) :=
@@ -125,7 +125,7 @@ private theorem exp_le_one_add_add_sq_half_mul_exp_of_nonneg {x : ℝ} (hx : 0 �
     have hd : ∀ t ∈ Set.uIcc (0 : ℝ) x,
         HasDerivAt (fun s => Real.exp s - s) (Real.exp t - 1) t := by
       intro t _
-      simpa using (Real.hasDerivAt_exp t).sub (hasDerivAt_id t)
+      simpa using! (Real.hasDerivAt_exp t).sub (hasDerivAt_id t)
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd hii1]
     simp
   -- Pointwise comparison on [0, x].

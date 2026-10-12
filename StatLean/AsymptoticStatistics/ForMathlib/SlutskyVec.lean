@@ -55,7 +55,7 @@ theorem vec_slutsky_recentering
   -- Show eventually-zero: pick `n` large enough that `‖cn n‖ < ε`.
   have h_norm_tendsto : Filter.Tendsto (fun n => ‖cn n‖) Filter.atTop (𝓝 0) := by
     have h := (continuous_norm.tendsto (0 : E)).comp h_det
-    simpa using h
+    simpa using! h
   have h_eventually : ∀ᶠ n in Filter.atTop, ‖cn n‖ < ε := by
     have := (Metric.tendsto_nhds.mp h_norm_tendsto) ε hε
     filter_upwards [this] with n hn

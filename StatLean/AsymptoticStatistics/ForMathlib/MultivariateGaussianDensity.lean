@@ -190,7 +190,9 @@ theorem multivariateGaussian_eq_smul_withDensity
               (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2))) := by
   classical
   obtain ⟨c₀, hc₀pos, hc₀top, hstd⟩ := stdGaussian_eq_smul_withDensity_euclidean (ι := ι)
-  have hQPD : (CFC.sqrt S).PosDef := hS.posDef_sqrt
+  have hQPD : (CFC.sqrt S).PosDef :=
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hS.isStrictlyPositive).1).posDef
   obtain ⟨r, hrpos, hrtop, hr⟩ := exists_smul_volume_map_toEuclideanCLM hQPD
   have hQdet : IsUnit (CFC.sqrt S).det := (Matrix.isUnit_iff_isUnit_det _).mp hQPD.isUnit
   have hQQ : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
@@ -243,7 +245,7 @@ theorem multivariateGaussian_eq_smul_withDensity
     funext y
     simp only [Function.comp_apply]
     rw [hdens, hA'A y]
-  rw [hmvg, hstd, Measure.map_smul, ← hcompose,
+  rw [hmvg, hstd, Measure.map_smul _ (by fun_prop), ← hcompose,
     ← Measure.withDensity_map_eq_map_withDensity _ _ (by fun_prop) _ (by fun_prop), hr,
     withDensity_smul_measure, smul_smul]
 
@@ -315,7 +317,7 @@ theorem exists_forall_multivariateGaussian_le_smul_volume
     intro B hB
     rw [hc]
     simp only [Measure.smul_apply, smul_eq_mul]
-    refine mul_le_mul_left' ?_ c
+    refine mul_le_mul_right ?_ c
     rw [withDensity_apply _ hB]
     calc ∫⁻ x in B, ENNReal.ofReal
             (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) ∂volume
@@ -384,7 +386,7 @@ theorem exists_pos_smul_volume_le_multivariateGaussian
   simp only [Measure.smul_apply, smul_eq_mul]
   have hvolP : volume P = volume A := measure_preimage_add _ _ _
   rw [withDensity_apply _ hPmeas, mul_assoc, ← hvolP]
-  refine mul_le_mul_left' ?_ c₀
+  refine mul_le_mul_right ?_ c₀
   calc ε * volume P = ∫⁻ _ in P, ε ∂volume := (setLIntegral_const P ε).symm
     _ ≤ ∫⁻ x in P, ENNReal.ofReal
           (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) ∂volume :=
@@ -464,7 +466,7 @@ theorem gaussian_loss_convolution_lt_top
           IsGaussian.memLp_id ν (ENNReal.ofReal p) ENNReal.ofReal_ne_top
         exact h1.sub h2
       have hlt := hmem.eLpNorm_lt_top
-      rw [eLpNorm_eq_lintegral_rpow_enorm hq0 ENNReal.ofReal_ne_top,
+      rw [eLpNorm_eq_lintegral_rpow_enorm hq0 ENNReal.ofReal_ne_top hmem.aestronglyMeasurable,
         ENNReal.toReal_ofReal hp] at hlt
       intro hcon
       rw [hcon, ENNReal.top_rpow_of_pos (by positivity)] at hlt
@@ -478,7 +480,9 @@ private lemma inner_mahalanobis_eq_norm_sq {S : Matrix ι ι ℝ} (hS : S.PosDef
     ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫
       = ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) x‖ ^ 2 := by
   classical
-  have hQPD : (CFC.sqrt S).PosDef := hS.posDef_sqrt
+  have hQPD : (CFC.sqrt S).PosDef :=
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hS.isStrictlyPositive).1).posDef
   have hQQ : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
   have hBB : (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by rw [← Matrix.mul_inv_rev, hQQ]
   have hBsa : IsSelfAdjoint ((CFC.sqrt S)⁻¹) := hQPD.isHermitian.inv

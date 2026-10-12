@@ -168,11 +168,11 @@ theorem binary_testingError_eq_tvDist (Q : Kernel (Fin 2) 𝓧) [IsMarkovKernel 
             refine add_le_add (lintegral_mono fun x => min_le_left _ _) (lintegral_mono fun x => ?_)
             rcases le_total (f₀ x) 1 with h | h
             · rw [min_eq_left h, tsub_le_iff_right, add_comm]; exact hfeas x
-            · rw [min_eq_right h, tsub_self]; exact zero_le _
+            · rw [min_eq_right h, tsub_self]; exact zero_le
     calc multiwayTestingError Q
         = 2⁻¹ * (2 * multiwayTestingError Q) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel h2 h2', one_mul]
-      _ ≤ 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := mul_le_mul_left' key _
+      _ ≤ 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := mul_le_mul_right key _
   · -- Lower bound: every Markov test contributes a feasible pair to the variational `iInf`.
     unfold multiwayTestingError bayesRisk
     refine le_iInf fun κ => le_iInf fun hκ => ?_

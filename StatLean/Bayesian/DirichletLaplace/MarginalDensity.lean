@@ -150,8 +150,9 @@ lemma integrable_dlDensity_integrand
   -- dominating integrable function `(4/|x|²)·ψ^a·e^{-ψ/2}`
   have hg_int : IntegrableOn (fun ψ => ψ ^ a * Real.exp (-ψ / 2)) (Set.Ioi (0 : ℝ)) := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (s := a) (p := 1) (b := 1 / 2)
-      (by linarith) le_rfl (by norm_num)
+      (by linarith) (by norm_num) (by norm_num)
     refine h.congr_fun (fun ψ _ => ?_) measurableSet_Ioi
+    change ψ ^ a * Real.exp (-(1 / 2) * ψ ^ (1 : ℝ)) = _
     rw [Real.rpow_one]; ring_nf
   have hdom : IntegrableOn (fun ψ => 4 / |x| ^ 2 * (ψ ^ a * Real.exp (-ψ / 2)))
       (Set.Ioi (0 : ℝ)) := hg_int.const_mul _
@@ -245,7 +246,7 @@ lemma dlDensity_anti {x y : ℝ} (hxy : |x| ≤ |y|) :
       simp only [laplacePDF, laplacePDFReal, ENNReal.ofReal_eq_zero]
       have h2ψ : (2 * ψ)⁻¹ ≤ 0 := inv_nonpos.mpr (by linarith)
       exact mul_nonpos_of_nonpos_of_nonneg h2ψ (Real.exp_pos _).le
-    rw [hz]; exact zero_le _
+    rw [hz]; exact zero_le
   · refine ENNReal.ofReal_le_ofReal ?_
     refine mul_le_mul_of_nonneg_left ?_ (by positivity)
     refine Real.exp_le_exp.mpr ?_

@@ -30,7 +30,7 @@ noncomputable def linfEvalCLM (F : Set (Ω → ℝ)) (f : ↥F) :
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
   refine L.mkContinuous 1 (fun z => ?_)
-  simpa only [one_mul] using lp.norm_apply_le_norm ENNReal.top_ne_zero z f
+  simpa only [one_mul] using! lp.norm_apply_le_norm ENNReal.top_ne_zero z f
 
 /-- A measurable pointwise representative chosen from the `L²(P)` equivalence
 class of the `j`th influence coordinate. -/

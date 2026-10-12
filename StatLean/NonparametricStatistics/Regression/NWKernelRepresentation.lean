@@ -119,7 +119,7 @@ theorem nadarayaWatson_eq_kde_ratio {n : ℕ} (xdat ydat : Fin n → ℝ) {K : �
     calc ∫ y, y * kde2Data xdat ydat K h x y
         = ∑ i, ((n : ℝ) * h ^ 2)⁻¹ * (K ((xdat i - x) / h) * (h * ydat i)) := by
           rw [integral_congr_ae (ae_of_all _ hpt),
-            integral_finset_sum _ (fun i _ =>
+            integral_finsetSum _ (fun i _ =>
               ((hintg i).const_mul (K ((xdat i - x) / h))).const_mul ((n : ℝ) * h ^ 2)⁻¹)]
           refine Finset.sum_congr rfl (fun i _ => ?_)
           rw [integral_const_mul, integral_const_mul, hval i]

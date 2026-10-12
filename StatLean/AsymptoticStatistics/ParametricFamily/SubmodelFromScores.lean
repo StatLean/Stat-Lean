@@ -166,7 +166,7 @@ lemma linPerturb_integrable (θ : EuclideanSpace ℝ (Fin m)) :
     Integrable (linPerturb g_P θ) P := by
   classical
   unfold linPerturb
-  refine integrable_finset_sum _ (fun i _ => ?_)
+  refine integrable_finsetSum _ (fun i _ => ?_)
   -- Integrability via a.e.-equality with `(g_P i : Ω → ℝ)`, which is
   -- integrable from `Lp.memLp.integrable`.
   have hg_int : Integrable (((g_P i : Lp ℝ 2 P) : Ω → ℝ)) P :=
@@ -210,7 +210,7 @@ lemma integral_linPerturb_eq_zero (θ : EuclideanSpace ℝ (Fin m)) :
     ∫ ω, linPerturb g_P θ ω ∂P = 0 := by
   classical
   unfold linPerturb
-  rw [integral_finset_sum]
+  rw [integral_finsetSum]
   · simp [integral_const_mul, integral_gMk_eq_zero g_P]
   · intro i _
     have hg_int : Integrable (((g_P i : Lp ℝ 2 P) : Ω → ℝ)) P :=

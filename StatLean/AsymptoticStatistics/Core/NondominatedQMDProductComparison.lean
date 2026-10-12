@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.Core.NondominatedQMDPath
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct
@@ -50,6 +51,24 @@ noncomputable def comparisonResidual
     (γ : NondominatedQMDPath P) (t : ℝ) : Ω → ℝ :=
   residualAgainst P (γ.curve t) (canonicalDominator P (γ.curve t))
     (γ.score : Ω → ℝ) t
+
+private theorem comparisonResidual_aestronglyMeasurable
+    (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
+    AEStronglyMeasurable (γ.comparisonResidual t) (canonicalDominator P (γ.curve t)) := by
+  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let μ := canonicalDominator P (γ.curve t)
+  letI : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
+  have hPμ : P ≪ μ := (Measure.le_add_right le_rfl).absolutelyContinuous
+  have hw := (AsymptoticStatistics.ForMathlib.RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff
+    hPμ (γ.score : Ω → ℝ)).2 (Lp.aestronglyMeasurable γ.score.val)
+  have hp := ((Measure.measurable_rnDeriv P μ).ennreal_toReal.sqrt).aestronglyMeasurable (μ := μ)
+  have hq := ((Measure.measurable_rnDeriv (γ.curve t) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have h := (hq.sub hp).sub (hw.const_mul (t / 2))
+  convert! h using 1
+  funext ω
+  simp only [comparisonResidual, residualAgainst, Pi.sub_apply, μ]
+  ring
 
 /-- Lebesgue decomposition of a path law into singular and baseline-AC parts.
 
@@ -120,8 +139,9 @@ theorem singularMass_le_residual_sq
       ∫⁻ ω, ‖γ.comparisonResidual t ω‖ₑ ^ (2 : ℝ)
         ∂(canonicalDominator P (γ.curve t)) := by
     simpa only [μ] using hlin
-  convert hlin' using 1
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
+  convert! hlin' using 1
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+        (comparisonResidual_aestronglyMeasurable γ t (by positivity)),
     ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
   norm_num
 
@@ -158,8 +178,9 @@ theorem singular_mass_localScale_tendsto
       (canonicalDominator P (γ.curve (u n)))
   have hquot : Tendsto (fun n => r n / ENNReal.ofReal (u n))
       atTop (nhds 0) := by
-    simpa only [IsRightQMD, comparisonResidual, Function.comp_apply, r] using
-      γ.qmd_limit.comp hu_right
+    simpa only [IsRightQMD, comparisonResidual, Function.comp_apply, r] using!
+      ((isRightQMD_iff_eLpNorm γ.curve γ.curve_isProbability
+        (Lp.aestronglyMeasurable γ.score.val)).1 γ.qmd_limit).comp hu_right
   have henvelope : Tendsto
       (fun n => ENNReal.ofReal a ^ 2 *
         (r n / ENNReal.ofReal (u n)) ^ 2) atTop (nhds 0) := by
@@ -318,7 +339,7 @@ theorem baseZeroLikelihoodMass_isLittleO
       simpa only [hP_eq] using hchainP
     have hchainμ : ∀ᵐ ω ∂μ, p ω ≠ 0 →
         qP ω * p ω = q ω := by
-      simpa only [p, qP, q] using
+      simpa only [p, qP, q] using!
         (ae_withDensity_iff (Measure.measurable_rnDeriv P μ)).mp hchainP'
     have hqPfinP : ∀ᵐ ω ∂P, qP ω ≠ ⊤ := by
       simpa only [qP] using Measure.rnDeriv_ne_top (γ.curve t) P
@@ -381,9 +402,10 @@ theorem baseZeroLikelihoodMass_isLittleO
     have hnormsq :
         eLpNorm (γ.comparisonResidual t) 2 μ ^ 2 =
           ∫⁻ ω, ‖γ.comparisonResidual t ω‖ₑ ^ (2 : ℝ) ∂μ := by
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+        (comparisonResidual_aestronglyMeasurable γ t (by positivity)),
         ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-      norm_num
+      norm_num [μ]
     have hPA : P A ≤ 4 *
         eLpNorm (γ.comparisonResidual t) 2 μ ^ 2 := by
       rw [← Measure.setLIntegral_rnDeriv hPμ A]
@@ -414,7 +436,8 @@ theorem baseZeroLikelihoodMass_isLittleO
   rw [Asymptotics.isLittleO_iff]
   intro c hc
   have htail_bound := (Asymptotics.isLittleO_iff.mp htail) (half_pos hc)
-  have hqmd := γ.qmd_limit
+  have hqmd := (isRightQMD_iff_eLpNorm γ.curve γ.curve_isProbability
+    (Lp.aestronglyMeasurable γ.score.val)).1 γ.qmd_limit
   have hqmd_real :
       Tendsto (fun t : ℝ =>
         (eLpNorm (γ.comparisonResidual t) 2
@@ -532,7 +555,7 @@ theorem base_zeroLikelihood_localScale_tendsto
     exact ⟨hu_zero, hu_pos⟩
   have hsmall : (fun n => (γ.baseZeroLikelihoodMass (u n)).toReal)
       =o[atTop] (fun n => u n ^ 2) := by
-    simpa only [Function.comp_apply] using
+    simpa only [Function.comp_apply] using!
       γ.baseZeroLikelihoodMass_isLittleO.comp_tendsto hu_right
   have hmul : (fun n : ℕ => (n : ℝ) *
       (γ.baseZeroLikelihoodMass (u n)).toReal)
@@ -584,7 +607,7 @@ theorem pi_acPart_eq_withDensity_acProductLikelihood
       (Measure.pi (fun _ : Fin n => P)).withDensity
         (γ.acProductLikelihood t n) := by
   letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
-  simpa only [acPart, acProductLikelihood] using
+  simpa only [acPart, acProductLikelihood] using!
     (MeasureTheory.pi_withDensity_prod (fun _ : Fin n =>
       Measure.measurable_rnDeriv (γ.curve t) P)).symm
 
@@ -647,7 +670,7 @@ theorem product_integral_comparison
   refine ⟨error, ?_, ?_⟩
   · have hs := γ.singular_mass_localScale_tendsto a ha
     have hsreal := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hs
-    convert hsreal.const_mul C using 1
+    convert! hsreal.const_mul C using 1
     all_goals simp only [ENNReal.toReal_zero, mul_zero]
   intro n
   have hut : 0 ≤ u n :=
@@ -672,11 +695,11 @@ theorem product_integral_comparison
       fun _ => Measure.rnDeriv_le_one_of_le hAQ
     have hall : (fun X : Fin n → Ω => fun i => A.rnDeriv Q (X i))
         ≤ᵐ[ν] (fun _ => fun _ : Fin n => (1 : ℝ≥0∞)) := by
-      simpa only [ν] using Measure.ae_le_pi hcoord
+      simpa only [ν] using! Measure.ae_le_pi hcoord
     have hDle : D ≤ᵐ[ν] 1 := by
       filter_upwards [hall] with X hX
       dsimp only [D]
-      exact Finset.prod_le_one (fun _ _ => zero_le _)
+      exact Finset.prod_le_one₀ (fun _ _ => zero_le)
         (fun i _ => hX i)
     have htilt : ν.withDensity D = ρ := by
       have hcoordtilt : Q.withDensity (A.rnDeriv Q) = A :=

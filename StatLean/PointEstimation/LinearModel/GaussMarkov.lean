@@ -111,7 +111,7 @@ private lemma memLp_inner_linear (a : EuclideanSpace ℝ (Fin n))
       = ∑ i, (fun y => a i * y i) := by
     funext y; rw [real_inner_euclidean, Finset.sum_apply]
   rw [hbody]
-  exact memLp_finset_sum' _ (fun i _ => (hL2 i).const_mul (a i))
+  exact memLp_finsetSum' _ (fun i _ => (hL2 i).const_mul (a i))
 
 /-- The mean of a linear statistic `⟪a, ·⟫` is `⟪a, ξ⟫`. -/
 private lemma integral_inner_linear (a : EuclideanSpace ℝ (Fin n))
@@ -120,7 +120,7 @@ private lemma integral_inner_linear (a : EuclideanSpace ℝ (Fin n))
     (hint : ∀ i, Integrable (fun y => y i) P) :
     ∫ y, ⟪a, y⟫_ℝ ∂P = ⟪a, ξ⟫_ℝ := by
   simp_rw [real_inner_euclidean a]
-  rw [integral_finset_sum Finset.univ (fun i _ => (hint i).const_mul (a i))]
+  rw [integral_finsetSum Finset.univ (fun i _ => (hint i).const_mul (a i))]
   simp_rw [integral_const_mul, hmean]
 
 /-- The least-squares functional rewritten as the linear statistic `⟪P_W γ, ·⟫`. -/
@@ -157,7 +157,7 @@ theorem integral_inner_lse {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
   have hbody : ∀ y, ⟪γ, lse W y⟫_ℝ = ∑ i, (W.starProjection γ) i * y i := by
     intro y; rw [inner_lse_eq_inner_starProjection, real_inner_euclidean]
   simp_rw [hbody]
-  rw [integral_finset_sum Finset.univ
+  rw [integral_finsetSum Finset.univ
         (fun i _ => (hint i).const_mul (W.starProjection γ i))]
   simp_rw [integral_const_mul, hmean]
   rw [← real_inner_euclidean, Submodule.inner_starProjection_left_eq_right,

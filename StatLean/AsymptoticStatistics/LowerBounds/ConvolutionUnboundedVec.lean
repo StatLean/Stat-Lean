@@ -257,8 +257,13 @@ private theorem productMeasure_unbounded_pushforward_vec_target
             (fun X : Fin n → Ω =>
               Real.sqrt n •
                 (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))))
-        L :=
-    hReg (linPerturbScore g_P h) hLin_in_span γ hScore_eq
+        L := by
+    have hweak := hReg (linPerturbScore g_P h) hLin_in_span γ hScore_eq
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => γ.curve ((Real.sqrt n)⁻¹)))
+      (fun n : ℕ => fun X => Real.sqrt n • (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹))))
+      (fun n => ((hT_meas n).sub measurable_const).const_smul (Real.sqrt n))] at hweak
+    exact hweak
   -- Step 2: Identify `Measure.pi (γ.curve _) = productMeasure unbounded P ((√n)⁻¹•h) n`.
   have h_pi_eq : ∀ n : ℕ,
       MeasureTheory.Measure.pi
@@ -528,9 +533,18 @@ noncomputable def unboundedParamSubmodel_RegularEstimatorSequence_vec
   limitDist := L
   isProb := inferInstance
   tendsto h := by
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n : ℕ => AsymptoticStatistics.AsymptoticRepresentation.productMeasure
+        (unboundedParamSubmodel g_P h_orth) P
+        ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n)
+      (fun n : ℕ => fun X => Real.sqrt n •
+        (T_param_of_vec T_n n X - ψ_proj_vec g_P IF_eff (ψ P)
+          ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h)))
+      (fun n : ℕ => (measurable_const (a := Real.sqrt n)).smul
+        (((T_param_of_vec_measurable hT_meas) n).sub measurable_const))]
     have := productMeasure_unbounded_pushforward_vec_target
       T_set hψ hEIF T_n hT_meas hReg g_P h_orth h_in_T h
-    simpa [zero_add] using this
+    simpa [zero_add] using! this
 
 /-! ## Main vec convolution decomposition -/
 

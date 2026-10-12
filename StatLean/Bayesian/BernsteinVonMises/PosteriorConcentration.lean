@@ -165,7 +165,7 @@ private lemma tendsto_measure_ge_of_tendsto_lintegral {Ω : ℕ → Type*}
     have h2 := ENNReal.Tendsto.mul_const h (Or.inr (ENNReal.inv_ne_top.2 hε))
     rwa [zero_mul] at h2
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hb
-    (Eventually.of_forall fun n => zero_le _)
+    (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => meas_ge_le_lintegral_div (hg n).aemeasurable hε hε')
 
 /-- For a `[0,1]`-valued measurable statistic on a probability space the `ℝ≥0∞`-integral of
@@ -319,7 +319,7 @@ theorem posterior_mass_compl_ball_tendsto
         (Or.inr (ENNReal.inv_ne_top.2 hc₀.ne'))
       rwa [mul_zero] at h
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbnd0
-      (Eventually.of_forall fun n => zero_le _) ?_
+      (Eventually.of_forall fun n => zero_le) ?_
     filter_upwards [hball, eventually_ge_atTop (max N₀ 1)] with n hbn hn
     have hn1 : 1 ≤ n := le_of_max_le_right hn
     have hnR : (0 : ℝ) < n := by exact_mod_cast hn1
@@ -352,7 +352,7 @@ theorem posterior_mass_compl_ball_tendsto
             ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
               ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π) := mul_assoc _ _ _
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa using hS1.add hS2) (Eventually.of_forall fun n => zero_le _)
+    (by simpa using hS1.add hS2) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   exact le_trans (measure_mono (hsub n)) (measure_union_le _ _)
 

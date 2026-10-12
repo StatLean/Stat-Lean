@@ -112,7 +112,7 @@ private lemma colInner_isSubGaussian
     exact h
   -- ── Step 2: scaled family Y i ω := X i j * ε i ω has proxy (X i j)² · σ² ──
   have hY_sg : ∀ i : Fin n, HasSubgaussianMGF (fun ω => X i j * ε i ω)
-      (⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      ((NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     intro i
     have hsg_scaled := isSubGaussian_const_mul (hε_sg i) (X i j)
     have hmean : ∫ ω, X i j * ε i ω ∂μ = 0 := by
@@ -125,26 +125,27 @@ private lemma colInner_isSubGaussian
   -- ── Step 4: the sum ∑ᵢ Y i is sub-Gaussian with proxy ∑ᵢ (X i j)² · σ² ─────
   have hsum_mg : HasSubgaussianMGF
       (fun ω => ∑ i : Fin n, X i j * ε i ω)
-      (∑ i : Fin n, ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      (∑ i : Fin n, (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     have := HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i => ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2)
+      (c := fun i => (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2)
       (s := Finset.univ)
       (fun i _ => hY_sg i)
     simpa using this
   -- ── Step 5: upgrade proxy from ∑ᵢ (X i j)² · σ² to n · σ² (monotonicity) ────
-  have hproxy_le : ∑ i : Fin n, ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 ≤ (n : ℝ≥0) * σ2 := by
-    rw [← Finset.sum_mul]
-    apply mul_le_mul_of_nonneg_right _ (zero_le _)
+  have hproxy_le : ∑ i : Fin n, (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 ≤ (n : ℝ≥0) * σ2 := by
+    erw [← Finset.sum_mul]
+    apply mul_le_mul_of_nonneg_right _ (zero_le)
     rw [← NNReal.coe_le_coe]
-    simp only [NNReal.coe_sum, NNReal.coe_natCast, NNReal.coe_mk]
-    exact_mod_cast hcolnorm j
+    rw [NNReal.coe_sum, NNReal.coe_natCast]
+    change (∑ i : Fin n, (X i j) ^ 2) ≤ (n : ℝ)
+    exact hcolnorm j
   have hsum_up : HasSubgaussianMGF
       (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ :=
     ⟨hsum_mg.integrable_exp_mul, fun t => (hsum_mg.mgf_le t).trans (by
       apply Real.exp_le_exp.mpr; gcongr)⟩
   -- ── Step 6: conclude IsSubGaussian using zero mean ────────────────────────────
   have hsum_mean : ∫ ω, ∑ i : Fin n, X i j * ε i ω ∂μ = 0 := by
-    rw [integral_finset_sum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
+    rw [integral_finsetSum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
     simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
   unfold IsSubGaussian
   simp only [hsum_mean, sub_zero]
@@ -203,7 +204,7 @@ private lemma linfNorm_noise_tail
       ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (n * (σ2 : ℝ))))) := by
     intro j
     have hm : ∫ x, ∑ i : Fin n, X i j * ε i x ∂μ = 0 := by
-      rw [integral_finset_sum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
+      rw [integral_finsetSum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
       simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
     have hset : {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} =
         {ω | t < |∑ i : Fin n, X i j * ε i ω - ∫ x, (∑ i, X i j * ε i x) ∂μ|} := by

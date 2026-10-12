@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.ConcentrationInequalities.SubGaussian.Defs
 import StatLean.ConcentrationInequalities.Orlicz.Basic
 import StatLean.ConcentrationInequalities.Orlicz.Generators
@@ -56,8 +57,8 @@ private lemma hasDerivAt_gaussianAntideriv {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
   have h1 : HasDerivAt (fun s : ℝ => -c * s ^ 2) (-c * (2 * t)) t := by
     simpa using (hasDerivAt_pow 2 t).const_mul (-c)
   have h2 := (h1.exp).const_mul (-(2 * c)⁻¹)
-  convert h2 using 1
-  field_simp
+  convert! h2 using 1
+  try field_simp
 
 /-- Improper integral `∫_{(0,∞)} t·exp(−c·t²) dt = 1/(2c)` (antiderivative
 `−e^{−ct²}/(2c)` + `integral_Ioi_of_hasDerivAt_of_tendsto`); designated
@@ -232,7 +233,7 @@ theorem lintegral_psiTwo_le_one_of_tail_le {X : Ω → ℝ} {μ : Measure Ω}
           * ENNReal.ofReal (2 * t / (K : ℝ) ^ 2 * Real.exp (t ^ 2 / (K : ℝ) ^ 2)) := by
         apply lintegral_mono_ae
         filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-        exact mul_le_mul_right' (htail t (le_of_lt (Set.mem_Ioi.mp ht))) _
+        exact mul_le_mul_left (htail t (le_of_lt (Set.mem_Ioi.mp ht))) _
     _ = ∫⁻ t in Set.Ioi (0 : ℝ), ENNReal.ofReal
           (2 * Real.exp (-t ^ 2 / (K₁ : ℝ) ^ 2)
             * (2 * t / (K : ℝ) ^ 2 * Real.exp (t ^ 2 / (K : ℝ) ^ 2))) := by
@@ -285,9 +286,9 @@ theorem subGaussianNorm_le_of_hasSubgaussianMGF {X : Ω → ℝ} {μ : Measure �
     calc subGaussianNorm X μ = orliczNorm psiTwo X μ := subGaussianNorm_def X μ
       _ = orliczNorm psiTwo (fun _ => (0 : ℝ)) μ := orliczNorm_congr_ae hae'
       _ = 0 := hz
-      _ ≤ (NNReal.sqrt (6 * σ2) : ℝ≥0∞) := zero_le _
+      _ ≤ (NNReal.sqrt (6 * σ2) : ℝ≥0∞) := zero_le
   · -- nondegenerate: Chernoff tails at K₁ = √(2σ2) feed the layer-cake core
-    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le _) (Ne.symm hσ)
+    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le) (Ne.symm hσ)
     have hfin : IsFiniteMeasure μ := by
       have hi := h.integrable_exp_mul 0
       simp only [zero_mul, Real.exp_zero] at hi

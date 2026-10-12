@@ -88,6 +88,7 @@ of the empirical process `F̂ₙ(t) − t` (attained at the order statistics). -
 noncomputable def ksPlus (p : Fin n → Ω → ℝ) (ω : Ω) : ℝ :=
   ⨆ i : Fin n, (((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i)
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- **Order statistic ↔ threshold count.** The `i`-th order statistic of `p(·, ω)` is `≤ s` iff at
 least `i + 1` of the `pⱼ(ω)` are `≤ s`, i.e. `(i : ℕ) < countLE p s ω`. This is the discrete
 reduction underlying the KS tail: the empirical-process event `{(k/n) − p₍ₖ₎ ≥ u}` becomes the
@@ -133,7 +134,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
         measure_mono (fun ω hω => le_trans hω (le_of_lt hs0))
       have h2 : μ {ω | p j ω ≤ 0} ≤ ENNReal.ofReal 0 := hnull j 0 le_rfl
       simp only [ENNReal.ofReal_zero] at h2
-      exact le_antisymm (le_trans h1 h2) (zero_le _)
+      exact le_antisymm (le_trans h1 h2) (zero_le)
     have hsub : {ω | k ≤ countLE p s ω} ⊆ ⋃ j, {ω | p j ω ≤ s} := by
       intro ω hω
       simp only [Set.mem_setOf_eq] at hω
@@ -146,7 +147,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
         ≤ μ (⋃ j, {ω | p j ω ≤ s}) := measure_mono hsub
       _ ≤ ∑ j, μ {ω | p j ω ≤ s} := measure_iUnion_fintype_le _ _
       _ = 0 := by simp [hnull0]
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   · -- Main case `s ≥ 0`: Hoeffding on the centered indicators.
     set c : ℝ≥0 := (‖(1 : ℝ) - 0‖₊ / 2) ^ 2 with hc
     have hcR : (c : ℝ) = 1 / 4 := by

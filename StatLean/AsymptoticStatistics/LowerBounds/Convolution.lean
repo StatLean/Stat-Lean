@@ -117,6 +117,7 @@ open AsymptoticStatistics
 variable {Ω : Type*} [MeasurableSpace Ω]
 variable {P : Measure Ω} [IsProbabilityMeasure P]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- *Theorem 25.20 clause (a) — variance lower bound (standalone).*
 
 Clause-(a) projection of `semiparametric_convolution_theorem`, split out
@@ -219,7 +220,7 @@ theorem semiparametric_convolution_theorem_clause_a
                       (g_P i : ↥(L2ZeroMean P))⟫_ℝ) ^ 2,
                   Finset.sum_nonneg (fun _ _ => sq_nonneg _)⟩) =
             (⟪(IF_eff : ↥(L2ZeroMean P)), (b : ↥(L2ZeroMean P))⟫_ℝ) ^ 2 := by
-        rw [ProbabilityTheory.variance_id_gaussianReal]
+        erw [ProbabilityTheory.variance_id_gaussianReal]
         change (⟨_, _⟩ : ℝ≥0).val = _
         exact h_sum
       have hL_memLp_conv :
@@ -367,9 +368,15 @@ theorem semiparametric_convolution_theorem_clause_b
   have hWeak : WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi (fun _ : Fin n => P)).map
-          (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P))) L :=
-    AsymptoticStatistics.LowerBounds.RegularEstimator.weak_limit_under_P_of_regular
-      T_set ψ hψ hEIF T_n L hReg
+          (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P))) L := by
+    have hweak :=
+      AsymptoticStatistics.LowerBounds.RegularEstimator.weak_limit_under_P_of_regular
+        T_set ψ hψ hEIF T_n L hReg
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => P))
+      (fun n X => Real.sqrt n * (T_n n X - ψ P))
+      (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Extract `IF_eff ∈ tangentSpace T_set` from the EIF data.
   have h_mem : (IF_eff : ↥(L2ZeroMean P)) ∈ tangentSpace T_set := hEIF.2
   -- Step 1a: build the projection sequence + norm-sq convergence.
@@ -408,7 +415,7 @@ theorem semiparametric_convolution_theorem_clause_b
         (fun i : Fin (Module.finrank ℝ ↥(V m)) =>
           (g_P i : ↥(L2ZeroMean P))) := by
       have hb := b.orthonormal
-      simpa [g_P, Function.comp] using
+      simpa [g_P, Function.comp] using!
         ((V m).subtypeₗᵢ.orthonormal_comp_iff).mpr hb
     have hg_in_T : ∀ i, (g_P i : ↥(L2ZeroMean P)) ∈ Submodule.span ℝ T_set.carrier := by
       intro i

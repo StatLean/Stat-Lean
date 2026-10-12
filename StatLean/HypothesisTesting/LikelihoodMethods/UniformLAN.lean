@@ -271,7 +271,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
         = fun ω : Fin n → 𝓧 => ∑ i, ENNReal.ofReal (G (ω i)) := by
       funext ω
       exact ENNReal.ofReal_sum_of_nonneg fun i _ => hG0 _
-    rw [hpt, lintegral_finset_sum (μ := Measure.pi fun _ : Fin n => ν) Finset.univ
+    rw [hpt, lintegral_finsetSum (μ := Measure.pi fun _ : Fin n => ν) Finset.univ
       (f := fun (i : Fin n) (ω : Fin n → 𝓧) => ENNReal.ofReal (G (ω i)))
       (fun i _ => ((hGm.comp (measurable_pi_apply i)).ennreal_ofReal))]
     have heval : ∀ i : Fin n,

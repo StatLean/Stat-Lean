@@ -137,7 +137,6 @@ lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
   have hlb : ∀ x, b < x → ρ b + s₀ * (x - b) ≤ ρ x := by
     intro x hbx
     have hslope := hconv.slope_mono_adjacent (Set.mem_univ a) (Set.mem_univ x) hab hbx
-    simp only [slope_def_field] at hslope
     have hxb : 0 < x - b := by linarith
     have hstep : s₀ * (x - b) ≤ ρ x - ρ b := by
       calc s₀ * (x - b) = (ρ b - ρ a) / (b - a) * (x - b) := by rw [hs₀]
@@ -160,7 +159,7 @@ lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
     Filter.Tendsto ρ Filter.atBot Filter.atTop := by
   have hconv' : ConvexOn ℝ Set.univ (fun x => ρ (-x)) := by
     have := hconv.comp_affineMap (AffineMap.const ℝ ℝ (0 : ℝ) - AffineMap.id ℝ ℝ)
-    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using
+    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using!
       this.subset (Set.subset_univ _) convex_univ
   have hna' : ¬ Antitone (fun x => ρ (-x)) := by
     intro h
@@ -517,7 +516,8 @@ private lemma tendsto_lintegral_mul_of_tendsto_of_mass_eq
             _ = ψ x * h₀ x + ψ x * e n x := mul_add _ _ _
             _ ≤ ψ x * h₀ x + K * e n x := by gcongr; exact hK x
       _ = (∫⁻ x, ψ x * h₀ x ∂ν) + K * ∫⁻ x, e n x ∂ν := by
-          rw [lintegral_add_left (hψ.mul hmeas₀), lintegral_const_mul _ (hem n)]
+          erw [lintegral_add_left (hψ.mul hmeas₀), lintegral_const_mul _ (hem n)]
+          simp only [Pi.mul_apply]
       _ = _ := by rw [hde n]
   have hlb : ∀ n, ∫⁻ x, ψ x * h₀ x ∂ν ≤ (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
     intro n
@@ -529,7 +529,8 @@ private lemma tendsto_lintegral_mul_of_tendsto_of_mass_eq
             _ = ψ x * h n x + ψ x * d n x := mul_add _ _ _
             _ ≤ ψ x * h n x + K * d n x := by gcongr; exact hK x
       _ = (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
-          rw [lintegral_add_left (hψ.mul (hmeas n)), lintegral_const_mul _ (hdm n)]
+          erw [lintegral_add_left (hψ.mul (hmeas n)), lintegral_const_mul _ (hdm n)]
+          simp only [Pi.mul_apply]
   -- (iv) squeeze
   have hAfin : ∫⁻ x, ψ x * h₀ x ∂ν ≠ ∞ := by
     refine ne_top_of_le_ne_top (ENNReal.mul_ne_top hKfin hfin) ?_

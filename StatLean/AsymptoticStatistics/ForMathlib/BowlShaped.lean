@@ -151,7 +151,7 @@ lemma indicator_compl_of_convexSymm
           exact hc (top_unique hx_le)
         · have hxCc : x ∉ Cᶜ := fun h => h hxC
           change Cᶜ.indicator (fun _ : E => (∞ : ℝ≥0∞)) x ≤ c
-          rw [Set.indicator_of_notMem hxCc]; exact zero_le _
+          rw [Set.indicator_of_notMem hxCc]; exact zero_le
       rw [hsub]; exact hC_conv
 
 /-- The norm-`p` loss `L x = ENNReal.ofReal (‖x‖^p)` is bowl-shaped for `p ≥ 1`.

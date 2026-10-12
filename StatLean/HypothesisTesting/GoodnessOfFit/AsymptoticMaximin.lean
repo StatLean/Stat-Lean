@@ -141,7 +141,7 @@ private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
       rfl
     · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
         Measure.pi_map_eval]
-      haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+      haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
       simp
   have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
     rw [ae_iff]
@@ -160,9 +160,9 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
   set γ : Measure E := stdGaussian E with hγ
   set p : E → E := fun y => (b * ‖y‖⁻¹) • y with hp
   have hpmeas : Measurable p := by
-    refine Measurable.smul ?_ measurable_id
+    refine Measurable.smul (f := fun y : E => b * ‖y‖⁻¹) ?_ measurable_id
     exact measurable_const.mul measurable_norm.inv
-  refine ⟨γ.map p, Measure.isProbabilityMeasure_map hpmeas.aemeasurable, ?_, ?_⟩
+  refine ⟨γ.map p, (by infer_instance), ?_, ?_⟩
   · have hset : MeasurableSet {z : E | ¬ ‖z‖ = b} :=
       (measurableSet_eq_fun measurable_norm measurable_const).compl
     rw [ae_iff, Measure.map_apply hpmeas hset]
@@ -565,7 +565,7 @@ private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k
       = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
     rw [← hmapT, Measure.map_map (by fun_prop) hT,
       Measure.map_map hT
-        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+        (Measurable.of_eval (fun i => (measurable_pi_apply i).const_add (a i)))]
     congr 1
   rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift' a, ← hπ₀,
     map_toLp_withDensity' π₀ (by fun_prop), hmapT]
@@ -679,7 +679,7 @@ private lemma lintegral_sphereAverage_eq_one {b : ℝ} {σ : Measure (EuclideanS
     have h2 : (γ.withDensity
         (fun z => ENNReal.ofReal (Real.exp (⟪h, z⟫_ℝ - ‖h‖ ^ 2 / 2)))) Set.univ = 1 := by
       rw [hγ, ← this]
-      exact (Measure.isProbabilityMeasure_map (by fun_prop)).measure_univ
+      exact measure_univ
     rwa [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
   rw [lintegral_congr_ae hinner, lintegral_one, measure_univ]
 
@@ -1113,7 +1113,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     linarith
   -- ### Step 6. The weak limit of the mixture ratio.
   haveI hprobmap : IsProbabilityMeasure (γ.map G) :=
-    Measure.isProbabilityMeasure_map hGmeas.aemeasurable
+    (by infer_instance)
   have hGZlaw : WeakConverges (fun n => (Q n 0).map (fun ω => G (Z n ω))) (γ.map G) := by
     have h1 := hZ.map hGcont hGmeas
     have hseq : (fun n => ((Q n 0).map (Z n)).map G)

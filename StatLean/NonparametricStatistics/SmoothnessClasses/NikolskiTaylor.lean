@@ -82,7 +82,7 @@ theorem taylor_integral_remainder_sub {f : ℝ → ℝ} {ℓ : ℕ}
       have hw := ((hasDerivAt_id τ).const_sub (1 : ℝ)).pow (m + 1)
       simp only [id_eq] at hw
       have h3 := hw.neg.div_const ((m : ℝ) + 1)
-      convert h3 using 1
+      convert! h3 using 1
       rw [Nat.add_sub_cancel]; push_cast; field_simp
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv (hpow.intervalIntegrable 0 1)]
     simp only [sub_self, sub_zero, one_pow, zero_pow (Nat.succ_ne_zero m), neg_zero, zero_div]
@@ -125,7 +125,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
       intro x; rw [hz x]; norm_num
     rw [lintegral_congr (fun x => hz2 x)]
     simp only [MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   rcases Nat.eq_zero_or_pos (holderIndex β) with hℓ0 | hℓpos
   · -- ℓ = 0: reduces to the Nikol'skii translate condition at shift `t`.
     have hnik := hf.translate_sq_le t
@@ -168,7 +168,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
       have h1 : Continuous fun p : ℝ × ℝ => iteratedDeriv ℓ f (p.2 + p.1 * t) :=
         hcont.comp (by fun_prop)
       have h2 : Continuous fun p : ℝ × ℝ => iteratedDeriv ℓ f p.2 := hcont.comp (by fun_prop)
-      simpa [Function.uncurry, hΔdef] using h1.sub h2
+      simpa [Function.uncurry, hΔdef] using! h1.sub h2
     have hgmeas : Measurable (Function.uncurry g) := by
       have hcw : Continuous fun p : ℝ × ℝ => (1 - p.1) ^ (ℓ - 1) := by fun_prop
       have : Continuous fun p : ℝ × ℝ => |(1 - p.1) ^ (ℓ - 1) * Δ p.1 p.2| :=
@@ -265,7 +265,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
         have hw := ((hasDerivAt_id τ).const_sub (1 : ℝ)).pow (m + 1)
         simp only [id_eq] at hw
         have h3 := hw.neg.div_const ((m : ℝ) + 1)
-        convert h3 using 1
+        convert! h3 using 1
         rw [Nat.add_sub_cancel]; push_cast; field_simp
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
         (((continuous_const.sub continuous_id).pow m).intervalIntegrable 0 1)]

@@ -85,7 +85,7 @@ private theorem TendstoInProbZero.euclidean_of_coordinate
       exact le_rfl)
   have hsum := TendstoInProbZero.finset_sum (Finset.univ : Finset (Fin d))
     (fun j _ => hsingle j)
-  convert hsum using 1
+  convert! hsum using 1
   funext n x
   ext j
   simp
@@ -105,7 +105,7 @@ private theorem TendstoInProbZero.smul_const
   · have hvpos : 0 < ‖v‖ := (norm_pos_iff.mpr hv)
     intro ε hε
     have h := hZ (ε / ‖v‖) (div_pos hε hvpos)
-    convert h using 1
+    convert! h using 1
     funext n
     apply measureReal_congr
     apply Filter.Eventually.of_forall
@@ -125,14 +125,14 @@ private theorem TendstoInProbZero.matrix_of_entry
       (fun n x => Matrix.single j k (Z n x j k)) := by
     have h := TendstoInProbZero.smul_const (hZ j k)
       (Matrix.single j k (1 : ℝ))
-    convert h using 1
+    convert! h using 1
     funext n x
     ext a b
     simp [Matrix.single]
   have hsum := TendstoInProbZero.finset_sum (Finset.univ : Finset (Fin d))
     (fun j _ => TendstoInProbZero.finset_sum (Finset.univ : Finset (Fin d))
       (fun k _ => hsingle j k))
-  convert hsum using 1
+  convert! hsum using 1
   funext n x
   exact Matrix.matrix_eq_sum_single (Z n x)
 
@@ -206,7 +206,7 @@ private theorem splitBlock_centered_tail
     simpa only [combine] using e.symm.measurable
   have hg_meas : Measurable (fun q :
       ({i : I // ¬ block i} -> Omega) × Omega => g q.1 q.2) := by
-    simpa only [g, Function.comp_apply] using hf.comp
+    simpa only [g, Function.comp_apply] using! hf.comp
       ((hcombine_meas.comp (measurable_const.prodMk measurable_fst)).prodMk measurable_snd)
   have henergy_meas : Measurable energy := by
     exact (hg_meas.pow_const 2).stronglyMeasurable.integral_prod_right'.measurable
@@ -274,7 +274,7 @@ private theorem splitBlock_centered_tail
           ∑ i, centered i ∘ Function.eval i by
         ext U
         simp [Function.comp_apply]]
-      simpa only [muS] using memLp_finset_sum' Finset.univ (fun i _ =>
+      simpa only [muS] using memLp_finsetSum' Finset.univ (fun i _ =>
         (hcL2 i).comp_measurePreserving (measurePreserving_eval (fun _ => P) i))
     have hmean : ∫ U, a * ∑ i, centered i (U i) ∂muS = 0 := by
       rw [integral_const_mul]
@@ -287,7 +287,7 @@ private theorem splitBlock_centered_tail
         rw [MeasureTheory.integral_comp_eval (hcL2 i).aestronglyMeasurable]
         simp [centered, integral_sub (hgL2.integrable one_le_two)
           (integrable_const (∫ y, g V y ∂P))]
-      rw [integral_finset_sum _ (fun i _ => hint i)]
+      rw [integral_finsetSum _ (fun i _ => hint i)]
       simp only [hmean_i, Finset.sum_const_zero, mul_zero]
     have hvar : ProbabilityTheory.variance (fun U => a * ∑ i, centered i (U i)) muS <=
         delta := by
@@ -425,7 +425,7 @@ private theorem splitBlock_nonneg_tail
     simpa only [combine] using e.symm.measurable
   have hg_meas : Measurable (fun q :
       ({i : I // ¬ block i} -> Omega) × Omega => g q.1 q.2) := by
-    simpa only [g, Function.comp_apply] using hf.comp
+    simpa only [g, Function.comp_apply] using! hf.comp
       ((hcombine_meas.comp (measurable_const.prodMk measurable_fst)).prodMk measurable_snd)
   have henergy_meas : Measurable energy :=
     hg_meas.stronglyMeasurable.integral_prod_right'.measurable
@@ -472,14 +472,14 @@ private theorem splitBlock_nonneg_tail
           ∑ i, g V ∘ Function.eval i by
         ext U
         simp [Function.comp_apply]]
-      simpa only [muS] using integrable_finset_sum' Finset.univ (fun i _ =>
+      simpa only [muS] using integrable_finsetSum' Finset.univ (fun i _ =>
         (measurePreserving_eval (fun _ => P) i).integrable_comp_of_integrable hg_int)
     have hsum_nonneg : 0 ≤ᵐ[muS] (fun U => c * ∑ i, g V (U i)) :=
       Eventually.of_forall fun U => mul_nonneg hc (Finset.sum_nonneg fun i _ =>
         hf_nonneg (combine U0 V) (U i))
     have h_int_sum : (∫ U, ∑ i, g V (U i) ∂muS) =
         ∑ i, ∫ U, g V (U i) ∂muS := by
-      have hs := integral_finset_sum (μ := muS)
+      have hs := integral_finsetSum (μ := muS)
         (Finset.univ : Finset {i : I // block i}) (fun i _ =>
           (measurePreserving_eval (fun _ => P) i).integrable_comp_of_integrable hg_int)
       simpa only [Finset.sum_apply, Function.comp_apply] using hs
@@ -766,7 +766,7 @@ theorem splitMean_sub_empMean_tendstoInProbZero
       TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P n)) (centered b) := by
     apply TendstoInProbZero.euclidean_of_coordinate
     intro j
-    simpa only [centered] using hcenter_coord b j
+    simpa only [centered] using! hcenter_coord b j
   let bias : Bool → ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d) := fun b n X =>
     ((Fintype.card {i : Fin n // side n i = b} : ℝ) * (n : ℝ)⁻¹) •
       (Real.sqrt n • ∫ x, half n X b x ∂(P n))
@@ -854,11 +854,11 @@ theorem splitMean_sub_empMean_tendstoInProbZero
   have hrepresentative : TendstoInProbZero
       (fun n => Measure.pi (fun _ : Fin n => P n))
       (fun n X => Real.sqrt n • (splitMean side half n X - empMean base' n X)) := by
-    convert hblocks using 1
+    convert! hblocks using 1
     funext n X
     exact hdecomp n X
   intro epsilon hepsilon
-  convert hrepresentative epsilon hepsilon using 1
+  convert! hrepresentative epsilon hepsilon using 1
   funext n
   apply measureReal_congr
   have hpi : (fun (X : Fin n → Ω) i => base n (X i)) =ᵐ[
@@ -977,7 +977,7 @@ theorem splitGram_sub_empGram_tendstoInProbZero
       simpa using ((hbase'_memLp n).continuousLinearMap_comp
         (PiLp.proj (p := 2) (β := fun _ : Fin d => ℝ) k :
           EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ))
-    simpa only [q, Real.norm_eq_abs] using
+    simpa only [q, Real.norm_eq_abs] using!
       ((hhj.integrable_mul hhk).sub (hbj.integrable_mul hbk)).norm
   have hq_bound (b : Bool) (n : ℕ) (X : Fin n → Ω) (j k : Fin d)
       (A : ℝ) (hA : 0 < A) :
@@ -1219,7 +1219,7 @@ theorem splitGram_sub_empGram_tendstoInProbZero
       (fun n X => splitGram side half n X - empGram base' n X) :=
     TendstoInProbZero.matrix_of_entry hentry
   intro epsilon hepsilon
-  convert hrepresentative epsilon hepsilon using 1
+  convert! hrepresentative epsilon hepsilon using 1
   funext n
   apply measureReal_congr
   have hpi : (fun (X : Fin n → Ω) i => base n (X i)) =ᵐ[
@@ -1351,7 +1351,7 @@ theorem splitGram_tendstoInProbZero
       simpa using (hbase0'_memLp.continuousLinearMap_comp
         (PiLp.proj (p := 2) (β := fun _ : Fin d => ℝ) k :
           EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ))
-    simpa only [q, Real.norm_eq_abs] using
+    simpa only [q, Real.norm_eq_abs] using!
       ((hnj.integrable_mul hnk).sub (h0j.integrable_mul h0k)).norm
   have hq_bound (n : ℕ) (j k : Fin d) :
       (∫ x, q n j k x ∂P) <= D n + 2 * Real.sqrt (D n) * Real.sqrt B0 := by
@@ -1398,9 +1398,9 @@ theorem splitGram_tendstoInProbZero
       let E := ‖base' n x - base0' x‖
       let A0 := ‖base0' x‖
       have hdj : |base' n x j - base0' x j| <= E := by
-        simpa only [Real.norm_eq_abs, E] using PiLp.norm_apply_le (base' n x - base0' x) j
+        simpa only [Real.norm_eq_abs, E] using! PiLp.norm_apply_le (base' n x - base0' x) j
       have hdk : |base' n x k - base0' x k| <= E := by
-        simpa only [Real.norm_eq_abs, E] using PiLp.norm_apply_le (base' n x - base0' x) k
+        simpa only [Real.norm_eq_abs, E] using! PiLp.norm_apply_le (base' n x - base0' x) k
       have h0j : |base0' x j| <= A0 := by
         simpa only [Real.norm_eq_abs, A0] using PiLp.norm_apply_le (base0' x) j
       have h0k : |base0' x k| <= A0 := by
@@ -1466,7 +1466,7 @@ theorem splitGram_tendstoInProbZero
           ∑ i, q n j k ∘ Function.eval i by
         ext X
         simp [Function.comp_apply]]
-      exact integrable_finset_sum' Finset.univ (fun i _ =>
+      exact integrable_finsetSum' Finset.univ (fun i _ =>
         (measurePreserving_eval (fun _ : Fin n => P) i).integrable_comp_of_integrable
           (hq_int n j k))
     have hsum_nonneg : 0 ≤ᵐ[Measure.pi (fun _ : Fin n => P)] R j k n :=
@@ -1482,7 +1482,7 @@ theorem splitGram_tendstoInProbZero
       rw [integral_const_mul]
       have hsum_eq : (∫ X, ∑ i, q n j k (X i) ∂(Measure.pi (fun _ : Fin n => P))) =
           ∑ i, ∫ X, q n j k (X i) ∂(Measure.pi (fun _ : Fin n => P)) := by
-        simpa only [Finset.sum_apply, Function.comp_apply] using integral_finset_sum
+        simpa only [Finset.sum_apply, Function.comp_apply] using integral_finsetSum
           (μ := Measure.pi (fun _ : Fin n => P)) (Finset.univ : Finset (Fin n))
           (fun i _ => (measurePreserving_eval (fun _ : Fin n => P) i).integrable_comp_of_integrable
             (hq_int n j k))
@@ -1506,7 +1506,7 @@ theorem splitGram_tendstoInProbZero
     have hreal : (Measure.pi (fun _ : Fin n => P)).real
         {X | epsilon <= R j k n X} < eta := by
       apply (lt_of_mul_lt_mul_left (hmarkov.trans_lt (hmean.trans_lt hqsmall)) hepsilon.le)
-    convert hreal using 1
+    convert! hreal using 1
     apply measureReal_congr
     apply Filter.Eventually.of_forall
     intro X
@@ -1552,20 +1552,20 @@ theorem splitGram_tendstoInProbZero
     have h := iid_lln_in_prob_l1 f0 hf0 epsilon hepsilon
     have ht := (ENNReal.tendsto_toReal (by simp : (0 : ℝ≥0∞) ≠ ∞)).comp h
     simpa only [empGram, populationGram, Matrix.sub_apply, Real.norm_eq_abs,
-      measureReal_def, f0] using ht
+      measureReal_def, f0] using! ht
   have hemp_rep : TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P))
       (fun n X => empGram base' n X - populationGram P base0') := by
     apply TendstoInProbZero.matrix_of_entry
     intro j k
     have h := TendstoInProbZero.add (hreplace_entry j k) (hfixed_entry j k)
-    convert h using 1
+    convert! h using 1
     funext n X
     simp only [Matrix.sub_apply]
     ring
   have hemp : TendstoInProbZero (fun n => Measure.pi (fun _ : Fin n => P))
       (fun n X => empGram base n X - populationGram P base0) := by
     intro epsilon hepsilon
-    convert hemp_rep epsilon hepsilon using 1
+    convert! hemp_rep epsilon hepsilon using 1
     funext n
     apply measureReal_congr
     have hpi : (fun (X : Fin n → Ω) i => base n (X i)) =ᵐ[
@@ -1589,7 +1589,7 @@ theorem splitGram_tendstoInProbZero
       (epsilon <= ‖empGram base' n X - populationGram P base0'‖)
     rw [he, hp]
   have hsum := TendstoInProbZero.add hsplit hemp
-  convert hsum using 1
+  convert! hsum using 1
   funext n X
   abel
 
@@ -1716,7 +1716,7 @@ theorem rootNGrid_tendstoInProbZero_at_random
     h_det (fun n => point n z) (hpoint_bdd z)
   have hsum : Tendsto (fun n => ∑ z ∈ codes,
       (P n).real {ξ | ε ≤ ‖R n ξ (point n z)‖}) atTop (nhds 0) := by
-    simpa using tendsto_finset_sum codes (fun z _ => hcode z ε hε)
+    simpa using tendsto_finsetSum codes (fun z _ => hcode z ε hε)
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hsum (η / 2) (by positivity)
   refine ⟨max N 1, fun n hn => ?_⟩
   have hnN : N ≤ n := (le_max_left N 1).trans hn
@@ -1788,13 +1788,13 @@ private theorem memLp_sqrt_density_smul
   have hi' : Integrable
       (fun x => ‖f x‖ ^ 2 * (ENNReal.ofReal (q x)).toReal) mu := by
     rw [← MeasureTheory.integrable_withDensity_iff hq_meas.ennreal_ofReal (by simp), ← hQ]
-    convert (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf using 1
+    convert! (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf using 1
   have hi : Integrable (fun x => ‖f x‖ ^ 2 * q x) mu := by
-    convert hi' using 1
+    convert! hi' using 1
     funext x
     rw [ENNReal.toReal_ofReal (hq_nonneg x)]
   rw [memLp_two_iff_integrable_sq_norm hweighted_meas]
-  convert hi using 1
+  convert! hi using 1
   funext x
   rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow,
     Real.sq_sqrt (hq_nonneg x)]
@@ -1942,7 +1942,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
           ∑ i, (fun x => |Y n x - T n x|) ∘ Function.eval i by
         ext X
         simp [Function.comp_apply]]
-      exact integrable_finset_sum' Finset.univ (fun i _ =>
+      exact integrable_finsetSum' Finset.univ (fun i _ =>
         (measurePreserving_eval (fun _ : Fin n => P n) i).integrable_comp_of_integrable
           (hdiff_int n).norm)
     have hR_nonneg : 0 ≤ᵐ[Measure.pi (fun _ : Fin n => P n)] R :=
@@ -1956,7 +1956,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
           ∂(Measure.pi (fun _ : Fin n => P n))) =
           ∑ i, ∫ X, |Y n (X i) - T n (X i)|
             ∂(Measure.pi (fun _ : Fin n => P n)) := by
-        simpa only [Finset.sum_apply] using integral_finset_sum
+        simpa only [Finset.sum_apply] using! integral_finsetSum
           (μ := Measure.pi (fun _ : Fin n => P n)) (Finset.univ : Finset (Fin n))
           (fun i _ =>
             (measurePreserving_eval (fun _ : Fin n => P n) i).integrable_comp_of_integrable
@@ -1967,7 +1967,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
             ∫ x, |Y n x - T n x| ∂(P n) := by
         change (∫ X, ((fun x => |Y n x - T n x|) ∘ Function.eval i) X
           ∂(Measure.pi (fun _ : Fin n => P n))) = _
-        simpa only [Function.comp_apply] using
+        simpa only [Function.comp_apply] using!
           (MeasureTheory.integral_comp_eval (μ := fun _ : Fin n => P n) (i := i)
             (hdiff_int n).norm.aestronglyMeasurable)
       simp_rw [heval]
@@ -2036,7 +2036,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
           ∑ i, centered i ∘ Function.eval i by
         ext X
         simp [Function.comp_apply]]
-      exact memLp_finset_sum' Finset.univ (fun i _ =>
+      exact memLp_finsetSum' Finset.univ (fun i _ =>
         (hcL2 i).comp_measurePreserving (measurePreserving_eval (fun _ : Fin n => P n) i))
     have hmean : ∫ X, S X ∂(Measure.pi (fun _ : Fin n => P n)) = 0 := by
       rw [integral_const_mul]
@@ -2050,7 +2050,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
           (Measure.pi (fun _ : Fin n => P n)) := fun i =>
         ((hcL2 i).comp_measurePreserving
           (measurePreserving_eval (fun _ : Fin n => P n) i)).integrable one_le_two
-      rw [integral_finset_sum _ (fun i _ => hint i)]
+      rw [integral_finsetSum _ (fun i _ => hint i)]
       simp only [heval, Finset.sum_const_zero, mul_zero]
     have hvar : ProbabilityTheory.variance S (Measure.pi (fun _ : Fin n => P n)) <=
         Real.sqrt n * (n : Real)⁻¹ * C := by
@@ -2123,7 +2123,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
       exact hreal_le.trans_lt ((div_lt_iff₀ (sq_pos_of_pos hepsilon)).2 (by
         nlinarith [hvar, hbound_small]))
     rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
-    convert hreal using 1
+    convert! hreal using 1
     apply measureReal_congr
     exact Eventually.of_forall fun X => by
       change (epsilon <= |(n : Real)⁻¹ * ∑ i, T n (X i) - ∫ x, T n x ∂(P n)|) =
@@ -2175,7 +2175,7 @@ theorem triangular_empirical_mean_of_sqrt_tail
           ((n : Real)⁻¹ * ∑ i, T n (X i) - ∫ x, T n x ∂(P n)) +
           ((∫ x, T n x ∂(P n)) - ∫ x, Y n x ∂(P n))) :=
     TendstoInProbZero.add (TendstoInProbZero.add hrem hcenter) hbias
-  convert hsum using 1
+  convert! hsum using 1
   funext n X
   rw [Finset.sum_sub_distrib]
   ring
@@ -2331,7 +2331,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
     Real.tendsto_sqrt_atTop.comp
       (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
   have hbeta : Tendsto beta atTop (nhds 0) := by
-    simpa only [beta] using tendsto_inv_atTop_zero.comp hrootroot
+    simpa only [beta] using! tendsto_inv_atTop_zero.comp hrootroot
   have hsqrtH : Tendsto (fun n => Real.sqrt (H n)) atTop (nhds 0) := by simpa using hH.sqrt
   have halpha : Tendsto alpha atTop (nhds 0) := by
     simpa only [alpha, max_self] using hbeta.max hsqrtH
@@ -2390,7 +2390,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
     · simpa only [integral_indicator (hlow0_meas _), integral_zero] using hdom
     · by_cases hq : q0 x = 0
       · have hgzero : g0 x = 0 := by simp [g0, hq]
-        convert (tendsto_const_nhds : Tendsto (fun _ : Nat => (0 : Real)) atTop (nhds 0)) using 1
+        convert! (tendsto_const_nhds : Tendsto (fun _ : Nat => (0 : Real)) atTop (nhds 0)) using 1
         funext n
         simp [hgzero]
       · have hqpos : 0 < q0 x := lt_of_le_of_ne (hq0_nonneg x) (Ne.symm hq)
@@ -2409,7 +2409,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
     rw [tendsto_nhdsWithin_iff]
     exact ⟨halpha, halpha_pos⟩
   have hM : Tendsto M atTop atTop := by
-    simpa only [M] using halphaWithin.inv_tendsto_nhdsGT_zero
+    simpa only [M] using! halphaWithin.inv_tendsto_nhdsGT_zero
   have hM_nonneg (n : Nat) : 0 <= M n := inv_nonneg.mpr (halpha_nonneg n)
   have hf0_sq_int : Integrable (fun x => ‖f0 x‖ ^ 2) Q0 :=
     (memLp_two_iff_integrable_sq_norm hf0_memLp.aestronglyMeasurable).mp hf0_memLp
@@ -2637,7 +2637,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
         ← hQn n]
       exact (hY_int n j k).norm
     have hi : Integrable (fun x => |Y n j k x| * qn n x) mu := by
-      convert hi' using 1
+      convert! hi' using 1
       funext x
       rw [ENNReal.toReal_ofReal (hqn_nonneg n x)]
     simpa only [mul_comm] using hi
@@ -2712,7 +2712,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
       (((hz_int n).indicator hweightedTail_meas).add ((hz_int n).indicator (hlow_meas n)))
       ?_
     · have := hweighted_Y n j k
-      convert this.indicator hrowTail_meas using 1
+      convert! this.indicator hrowTail_meas using 1
       funext x
       simp only [Set.indicator]
       split_ifs <;> simp_all [ENNReal.toReal_ofReal (hqn_nonneg n x), smul_eq_mul]
@@ -2825,7 +2825,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
           EuclideanSpace Real (Fin d) →L[Real] Real))
     exact h0j.integrable_mul h0k
   have hqEntry_int (n : Nat) (j k : Fin d) : Integrable (qEntry n j k) mu := by
-    simpa only [qEntry, Real.norm_eq_abs] using
+    simpa only [qEntry, Real.norm_eq_abs] using!
       ((hgprod_int n j k).sub (hg0prod_int j k)).norm
   have hqEntry_bound (n : Nat) (j k : Fin d) :
       (∫ x, qEntry n j k x ∂mu) <=
@@ -2849,9 +2849,9 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
       let E := ‖g n x - g0 x‖
       let A0 := ‖g0 x‖
       have hdj : |g n x j - g0 x j| <= E := by
-        simpa only [Real.norm_eq_abs, E] using PiLp.norm_apply_le (g n x - g0 x) j
+        simpa only [Real.norm_eq_abs, E] using! PiLp.norm_apply_le (g n x - g0 x) j
       have hdk : |g n x k - g0 x k| <= E := by
-        simpa only [Real.norm_eq_abs, E] using PiLp.norm_apply_le (g n x - g0 x) k
+        simpa only [Real.norm_eq_abs, E] using! PiLp.norm_apply_le (g n x - g0 x) k
       have h0j : |g0 x j| <= A0 := by
         simpa only [Real.norm_eq_abs, A0] using PiLp.norm_apply_le (g0 x) j
       have h0k : |g0 x k| <= A0 := by
@@ -2933,7 +2933,7 @@ theorem empGram_tendstoInProbZero_of_weightedAnchor
   apply TendstoInProbZero.matrix_of_entry
   intro j k
   have hsum := TendstoInProbZero.add (hcenter j k) (hbias j k)
-  convert hsum using 1
+  convert! hsum using 1
   funext n X
   simp only [empGram, Matrix.sub_apply, Y]
   ring

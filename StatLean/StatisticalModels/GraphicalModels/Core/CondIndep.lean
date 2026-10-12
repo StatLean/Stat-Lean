@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Kernel.Composition.Prod
 import Mathlib.Probability.Kernel.Composition.MapComap
@@ -76,15 +77,23 @@ Edge behaviour: the predicate quantifies existentially over the disintegrating k
 is meaningful for an arbitrary measure `μ` on an arbitrary measurable space — no
 standard-Borel hypothesis, no dominating measure. For `μ = 0` it holds vacuously (both sides
 are `0`), and for non-measurable `f`, `g` or `h` it is a statement about the junk pushforward
-`Measure.map`, which is `0` there; substantive theorems therefore carry explicit measurability
+`Measure.map₀`, which is `0` there; substantive theorems therefore carry explicit measurability
 hypotheses. -/
 def CondIndep {Ω α β γ : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
     [MeasurableSpace γ] (μ : Measure Ω) (f : Ω → α) (g : Ω → β) (h : Ω → γ) : Prop :=
   ∃ κ : Kernel γ α, ∃ η : Kernel γ β, IsMarkovKernel κ ∧ IsMarkovKernel η ∧
-    μ.map (fun ω => (h ω, (f ω, g ω))) = (μ.map h) ⊗ₘ (κ ×ₖ η)
+    μ.map₀ (fun ω => (h ω, (f ω, g ω))) = (μ.map₀ h) ⊗ₘ (κ ×ₖ η)
 
 variable {Ω α β γ : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
   [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → α} {g : Ω → β} {h : Ω → γ}
+
+/-- On a.e. measurable triples, conditional independence can be stated with `Measure.map`. -/
+theorem condIndep_iff_map (hT : AEMeasurable (fun ω => (h ω, (f ω, g ω))) μ) :
+    CondIndep μ f g h ↔
+      ∃ κ : Kernel γ α, ∃ η : Kernel γ β, IsMarkovKernel κ ∧ IsMarkovKernel η ∧
+        μ.map (fun ω => (h ω, (f ω, g ω))) = (μ.map h) ⊗ₘ (κ ×ₖ η) := by
+  simp only [CondIndep, Measure.map₀_of_aemeasurable hT,
+    Measure.map₀_of_aemeasurable hT.fst]
 
 /-- Pushing a law forward through a map with a measurable left inverse commutes with `Measure.map`
 **unconditionally** — no measurability of `T` is needed, because a left inverse transports the
@@ -96,14 +105,16 @@ measurability hypothesis on `f`, `g`, `h`. -/
 private theorem map_comp_of_leftInverse {δ ε : Type*} [MeasurableSpace δ] [MeasurableSpace ε]
     {e : δ → ε} {e' : ε → δ} (he : Measurable e) (he' : Measurable e')
     (hee : Function.LeftInverse e' e) (T : Ω → δ) :
-    μ.map (e ∘ T) = (μ.map T).map e := by
+    μ.map₀ (e ∘ T) = (μ.map₀ T).map e := by
   by_cases hT : AEMeasurable T μ
-  · exact (AEMeasurable.map_map_of_aemeasurable he.aemeasurable hT).symm
+  · rw [Measure.map₀_of_aemeasurable hT,
+      Measure.map₀_of_aemeasurable (he.comp_aemeasurable hT)]
+    exact (AEMeasurable.map_map_of_aemeasurable he.aemeasurable hT).symm
   · have hT' : ¬ AEMeasurable (e ∘ T) μ := by
       intro hc
       have hTc : (fun ω => e' (e (T ω))) = T := funext fun ω => hee (T ω)
       exact hT (hTc ▸ he'.comp_aemeasurable hc)
-    rw [Measure.map_of_not_aemeasurable hT', Measure.map_of_not_aemeasurable hT, Measure.map_zero]
+    rw [Measure.map₀_of_not_aemeasurable hT', Measure.map₀_of_not_aemeasurable hT, Measure.map_zero]
 
 /-- **(C1), symmetry** (Lauritzen p. 29; Pearl 1988 calls it *symmetry*): conditional
 independence is symmetric in its two arguments. Structural — swap the kernel pair. -/
@@ -122,7 +133,7 @@ theorem CondIndep.symm
   rw [hcomp, map_comp_of_leftInverse he he' (fun p => rfl), hmap]
   -- the swap is an involution, so no measurability of `f`, `g`, `h` is needed; the `⊗ₘ`-junk
   -- regime (`μ.map h` not s-finite) is closed off by `Measure.compProd_of_not_sfinite`
-  by_cases hs : SFinite (μ.map h)
+  by_cases hs : SFinite (μ.map₀ h)
   · rw [← Kernel.map_prod_swap κ η, Measure.compProd_map measurable_swap]
   · rw [Measure.compProd_of_not_sfinite _ _ hs, Measure.compProd_of_not_sfinite _ _ hs,
       Measure.map_zero]
@@ -190,23 +201,30 @@ theorem CondIndep.comp_of_sfinite {α' β' : Type*} [MeasurableSpace α'] [Measu
     -- USER-INPUT: the conditional independence to be transformed; Lauritzen §3.1 (C2)
     (hci : CondIndep μ f g h) :
     CondIndep μ (φ ∘ f) (ψ ∘ g) h := by
+  haveI : SFinite (μ.map₀ h) := by
+    by_cases hh : AEMeasurable h μ
+    · rw [Measure.map₀_of_aemeasurable hh]; infer_instance
+    · rw [Measure.map₀_of_not_aemeasurable hh]; infer_instance
   obtain ⟨κ, η, hκ, hη, hmap⟩ := hci
   refine ⟨κ.map φ, η.map ψ, Kernel.IsMarkovKernel.map _ hφ, Kernel.IsMarkovKernel.map _ hψ, ?_⟩
   rw [Kernel.map_prod_map κ η hφ hψ, Measure.compProd_map (hφ.prodMap hψ), ← hmap]
-  change μ.map ((Prod.map (id : γ → γ) (Prod.map φ ψ)) ∘ (fun ω => (h ω, (f ω, g ω)))) = _
+  change μ.map₀ ((Prod.map (id : γ → γ) (Prod.map φ ψ)) ∘ (fun ω => (h ω, (f ω, g ω)))) = _
   by_cases hT : AEMeasurable (fun ω => (h ω, (f ω, g ω))) μ
-  · exact (AEMeasurable.map_map_of_aemeasurable
+  · rw [Measure.map₀_of_aemeasurable hT,
+      Measure.map₀_of_aemeasurable
+        ((measurable_id.prodMap (hφ.prodMap hψ)).comp_aemeasurable hT)]
+    exact (AEMeasurable.map_map_of_aemeasurable
       (measurable_id.prodMap (hφ.prodMap hψ)).aemeasurable hT).symm
-  · have hzero : μ.map (fun ω => (h ω, (f ω, g ω))) = 0 := Measure.map_of_not_aemeasurable hT
+  · have hzero : μ.map₀ (fun ω => (h ω, (f ω, g ω))) = 0 := Measure.map₀_of_not_aemeasurable hT
     rw [hzero, Measure.map_zero]
-    have hfst : μ.map h = 0 := by
-      have hc := Measure.fst_compProd (μ.map h) (κ ×ₖ η)
+    have hfst : μ.map₀ h = 0 := by
+      have hc := Measure.fst_compProd (μ.map₀ h) (κ ×ₖ η)
       rw [← hmap, hzero] at hc
       simpa using hc.symm
     by_cases hh : AEMeasurable h μ
-    · have hμ : μ = 0 := (Measure.map_eq_zero_iff hh).1 hfst
+    · have hμ : μ = 0 := (Measure.map₀_eq_zero_iff hh).1 hfst
       simp [hμ]
-    · exact Measure.map_of_not_aemeasurable fun hc => hh (measurable_fst.comp_aemeasurable hc)
+    · exact Measure.map₀_of_not_aemeasurable fun hc => hh (measurable_fst.comp_aemeasurable hc)
 
 /-- Marginalising a `dirac`-conditioned disintegration: pushing `(dirac c) ⊗ₘ K` forward through
 `Prod.snd` returns the kernel's value at `c`.
@@ -237,12 +255,12 @@ theorem CondIndep.const_right
     -- Lauritzen §3.1
     (hci : CondIndep μ f g (fun _ => c)) :
     IndepFun f g μ := by
+  rw [condIndep_iff_map (measurable_const.prodMk (hf.prodMk hg)).aemeasurable] at hci
   obtain ⟨κ, η, hκ, hη, hmap⟩ := hci
   rw [Measure.map_const, measure_univ, one_smul] at hmap
   have hT : Measurable (fun ω => (c, (f ω, g ω))) := measurable_const.prodMk (hf.prodMk hg)
   have h2 : μ.map (fun ω => (f ω, g ω)) = (κ c).prod (η c) := by
     have h3 := congrArg (fun ν : Measure (γ × (α × β)) => ν.map Prod.snd) hmap
-    simp only at h3
     rwa [Measure.map_map measurable_snd hT, map_snd_dirac_compProd, Kernel.prod_apply] at h3
   refine (indepFun_iff_map_prod_eq_prod_map_map hf.aemeasurable hg.aemeasurable).2 ?_
   have hfc : μ.map f = κ c := by
@@ -268,8 +286,9 @@ theorem condIndep_const_of_indepFun
     -- USER-INPUT: unconditional independence of the two variables; Lauritzen §3.1
     (hind : IndepFun f g μ) :
     CondIndep μ f g (fun _ => c) := by
-  have hpf : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  have hpg : IsProbabilityMeasure (μ.map g) := Measure.isProbabilityMeasure_map hg.aemeasurable
+  rw [condIndep_iff_map (measurable_const.prodMk (hf.prodMk hg)).aemeasurable]
+  have hpf : IsProbabilityMeasure (μ.map f) := (by infer_instance)
+  have hpg : IsProbabilityMeasure (μ.map g) := (by infer_instance)
   refine ⟨Kernel.const _ (μ.map f), Kernel.const _ (μ.map g), inferInstance, inferInstance, ?_⟩
   rw [Kernel.prod_const, Measure.map_const, measure_univ, one_smul, Measure.compProd_const,
     Measure.dirac_prod, ← (indepFun_iff_map_prod_eq_prod_map_map hf.aemeasurable
@@ -296,6 +315,7 @@ theorem condIndep_congr_law {Ω' : Type*} [MeasurableSpace Ω'] {ν : Measure Ω
     -- USER-INPUT: the two triples have the same joint law
     (hlaw : μ.map (fun ω => (h ω, (f ω, g ω))) = ν.map (fun ω => (h' ω, (f' ω, g' ω)))) :
     CondIndep μ f g h ↔ CondIndep ν f' g' h' := by
+  rw [condIndep_iff_map hT.aemeasurable, condIndep_iff_map hT'.aemeasurable]
   have hh : μ.map h = ν.map h' := by
     have h1 : μ.map h = (μ.map fun ω => (h ω, (f ω, g ω))).map Prod.fst := by
       rw [Measure.map_map measurable_fst hT]; rfl
@@ -332,6 +352,14 @@ theorem condIndep_of_subsingleton_left
     -- defining property
     (hg : AEMeasurable g μ) :
     CondIndep μ f g h := by
+  by_cases hh : AEMeasurable h μ
+  case neg =>
+    obtain ⟨a₀⟩ := ‹Nonempty α›
+    refine ⟨Kernel.const γ (Measure.dirac a₀), condDistrib g h μ,
+      inferInstance, inferInstance, ?_⟩
+    rw [Measure.map₀_of_not_aemeasurable hh, Measure.compProd_zero_left]
+    exact Measure.map₀_of_not_aemeasurable fun hc => hh hc.fst
+  rw [condIndep_iff_map (hh.prodMk ((by fun_prop : AEMeasurable f μ).prodMk hg))]
   obtain ⟨a₀⟩ := ‹Nonempty α›
   refine ⟨Kernel.const γ (Measure.dirac a₀), condDistrib g h μ, inferInstance, inferInstance, ?_⟩
   -- the triple is the pair `(h, g)` padded by the constant `a₀`
@@ -349,7 +377,8 @@ theorem condIndep_of_subsingleton_left
     refine (Kernel.ext fun c => ?_).symm
     rw [Kernel.prod_apply, Kernel.const_apply, Kernel.map_apply _ measurable_prodMk_left,
       Measure.dirac_prod]
-  rw [hcomp, map_comp_of_leftInverse he he' (fun p => rfl), ← compProd_map_condDistrib hg,
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable he.aemeasurable (hh.prodMk hg),
+    ← compProd_map_condDistrib hh hg,
     ← hker, Measure.compProd_map measurable_prodMk_left]
 
 /-- **Export bridge (ours ⇒ Mathlib's).** On a standard Borel sample space with a finite
@@ -373,13 +402,14 @@ theorem condIndepFun_of_condIndep
     -- USER-INPUT: conditional independence in our sense; Lauritzen §3.1
     (hci : CondIndep μ f g h) :
     f ⟂ᵢ[h, hh; μ] g := by
+  rw [condIndep_iff_map (hh.prodMk (hf.prodMk hg)).aemeasurable] at hci
   obtain ⟨κ, η, hκ, hη, hmap⟩ := hci
   have hT : Measurable (fun ω => (h ω, (f ω, g ω))) := hh.prodMk (hf.prodMk hg)
   -- marginalise the disintegration onto each of the two variables ...
   have hfst : μ.map (fun ω => (h ω, f ω)) = μ.map h ⊗ₘ κ := by
     have h3 := congrArg
       (fun ν : Measure (γ × (α × β)) => ν.map (Prod.map (id : γ → γ) (Prod.fst : α × β → α))) hmap
-    simp only at h3
+    try simp only at h3
     rw [Measure.map_map (measurable_id.prodMap measurable_fst) hT,
       ← Measure.compProd_map measurable_fst,
       show (κ ×ₖ η).map Prod.fst = κ from (Kernel.fst_eq _).symm.trans (Kernel.fst_prod κ η)] at h3
@@ -387,16 +417,16 @@ theorem condIndepFun_of_condIndep
   have hsnd : μ.map (fun ω => (h ω, g ω)) = μ.map h ⊗ₘ η := by
     have h3 := congrArg
       (fun ν : Measure (γ × (α × β)) => ν.map (Prod.map (id : γ → γ) (Prod.snd : α × β → β))) hmap
-    simp only at h3
+    try simp only at h3
     rw [Measure.map_map (measurable_id.prodMap measurable_snd) hT,
       ← Measure.compProd_map measurable_snd,
       show (κ ×ₖ η).map Prod.snd = η from (Kernel.snd_eq _).symm.trans (Kernel.snd_prod κ η)] at h3
     exact h3
   -- ... and identify the anonymous witnesses with the two conditional distributions
   have h1 : condDistrib f h μ =ᵐ[μ.map h] κ :=
-    condDistrib_ae_eq_of_measure_eq_compProd h hf.aemeasurable hfst
+    condDistrib_ae_eq_of_measure_eq_compProd hh.aemeasurable hf.aemeasurable hfst
   have h2 : condDistrib g h μ =ᵐ[μ.map h] η :=
-    condDistrib_ae_eq_of_measure_eq_compProd h hg.aemeasurable hsnd
+    condDistrib_ae_eq_of_measure_eq_compProd hh.aemeasurable hg.aemeasurable hsnd
   rw [condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib hf hg hh,
     ← Measure.compProd_eq_comp_prod, hmap]
   refine Measure.compProd_congr ?_
@@ -510,8 +540,8 @@ is not a.e. measurable), and so is the right-hand side (`mu` is not s-finite). -
 theorem condIndep_snd' : CondIndep mu snd' snd' id := by
   refine ⟨Kernel.const _ (Measure.dirac true), Kernel.const _ (Measure.dirac true),
     inferInstance, inferInstance, ?_⟩
-  rw [Measure.map_id, Measure.compProd_of_not_sfinite _ _ not_sfinite_mu]
-  refine Measure.map_of_not_aemeasurable ?_
+  rw [Measure.map₀_id, Measure.compProd_of_not_sfinite _ _ not_sfinite_mu]
+  refine Measure.map₀_of_not_aemeasurable ?_
   intro hc
   exact not_aemeasurable_snd'
     (measurable_fst.comp_aemeasurable (measurable_snd.comp_aemeasurable hc))
@@ -524,7 +554,8 @@ theorem not_condIndep_comp_snd' :
   have hm : Measurable (fun ω : Pt =>
       (id ω, (((fun _ : Bool => ()) ∘ snd') ω, ((fun _ : Bool => ()) ∘ snd') ω))) :=
     measurable_id.prodMk (measurable_const.prodMk measurable_const)
-  rw [Measure.map_id, Measure.compProd_of_not_sfinite _ _ not_sfinite_mu,
+  rw [Measure.map₀_id, Measure.map₀_of_aemeasurable hm.aemeasurable,
+    Measure.compProd_of_not_sfinite _ _ not_sfinite_mu,
     Measure.map_eq_zero_iff hm.aemeasurable] at hmap
   exact mu_ne_zero' hmap
 

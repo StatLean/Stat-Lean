@@ -440,7 +440,7 @@ private lemma step1_random_index_oP
   have h_proj_meas : ∀ n : ℕ,
       Measurable (fun ξ : ℕ → Ω => fun i : Fin n => ξ i.val) := by
     intro n
-    refine measurable_pi_lambda _ (fun _ => ?_)
+    refine Measurable.of_eval (fun _ => ?_)
     exact measurable_pi_apply _
   have hf_hat_meas : ∀ n, Measurable (Function.uncurry (f_hat n)) := by
     intro n
@@ -508,7 +508,7 @@ private lemma step1_random_index_oP
         (fun n => by simpa [hghat_def] using h_l2_int_μ n)
         (by simpa [hghat_def] using h_l2_μ) hδ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds htail
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     calc
       μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth}
           ≤ μ.outerMeasureStar {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
@@ -537,7 +537,7 @@ private lemma step1_random_index_oP
   -- which rewrites via `empiricalProcess` def to the same shape.
   -- Squeeze `μ`-form between 0 and the Lem 19.24 bound.
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_lem19_24
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- For each n, the Pⁿ-set is ⊆ μ-preimage of an μ-set. Bridge via
     -- `pi_meas_eq_infinitePi_meas_of_truncate`.
     refine Filter.Eventually.of_forall (fun n => ?_)
@@ -752,7 +752,7 @@ private lemma step2_score_eq_to_no_bias
       atTop (𝓝 (0 : ℝ≥0∞)) := by
     simpa using h_se.add h_s1
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_upper
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- Set-inclusion + union bound (the algebraic identity step).
     -- Even without integrability of `score_func_seq n X`, the identity
     -- `A_n + B_n = C_n - D_n` holds: in the non-integrable case, both
@@ -864,7 +864,7 @@ lemma step3_taylor_remainder_oP
   have h_taylor := h.score_l2_taylor (ε^2) (by positivity)
   -- Squeeze: `0 ≤ Pⁿ{ε ≤ |(1/√n)·Σ r_n|} ≤ Pⁿ{ε² ≤ Σ r_n²} → 0`.
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_taylor
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- Set inclusion via Cauchy-Schwarz: `(Σ r_n)² ≤ n · Σ r_n²`.
     -- Skip n = 0 (where the LHS set is empty since `(0)⁻¹ * 0 = 0 < ε`).
     filter_upwards [eventually_ge_atTop 1] with n hn
@@ -992,7 +992,7 @@ private lemma score_truth_sum_bddAbove_in_prob
   have h_sum_mLp :
       MemLp (fun X : Fin n → Ω => ∑ i : Fin n, score_truth (X i)) 2
         (Measure.pi (fun _ : Fin n => P)) :=
-    memLp_finset_sum (Finset.univ : Finset (Fin n))
+    memLp_finsetSum (Finset.univ : Finset (Fin n))
       (fun i _ => h_truth_mp i)
   -- Constant scaling by `(√n)⁻¹` preserves MemLp 2.
   have h_Z_mLp :
@@ -1018,7 +1018,7 @@ private lemma score_truth_sum_bddAbove_in_prob
     have h_int_sum :
         ∫ X : Fin n → Ω, (∑ i : Fin n, score_truth (X i))
           ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
-      rw [MeasureTheory.integral_finset_sum (Finset.univ : Finset (Fin n))
+      rw [MeasureTheory.integral_finsetSum (Finset.univ : Finset (Fin n))
             (fun i _ => (h_truth_mp i).integrable (by norm_num : (1:ℝ≥0∞) ≤ 2))]
       apply Finset.sum_eq_zero
       intro i _

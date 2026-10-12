@@ -253,6 +253,7 @@ theorem condIndep_eval_latentObsJointLaw (P : FactorParams p q)
     GraphicalModels.CondIndep
         (latentObsJointLaw P F (multivariateGaussian 0 P.uniqueCov))
         (fun z => z.2 i) (fun z => z.2 j) Prod.fst := by
+  rw [GraphicalModels.condIndep_iff_map (by fun_prop)]
   set K := measurementKernel P (multivariateGaussian 0 P.uniqueCov) with hKdef
   have hmi : Measurable (fun x : EuclideanSpace ℝ (Fin p) => x i) := by fun_prop
   have hmj : Measurable (fun x : EuclideanSpace ℝ (Fin p) => x j) := by fun_prop

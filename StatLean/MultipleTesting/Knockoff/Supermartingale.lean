@@ -699,8 +699,8 @@ private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
   have hiff := cIdx_eq_iff W n h ω hω j
   simp only [Function.comp_apply, cproc]
   by_cases hc : cIdx W n h ω = j
-  · rw [if_pos hc, if_pos]; exact hiff.mp hc
-  · rw [if_neg hc, if_neg]; exact fun hh => hc (hiff.mpr hh)
+  · erw [if_pos hc, if_pos]; exact hiff.mp hc
+  · erw [if_neg hc, if_neg]; exact fun hh => hc (hiff.mpr hh)
 
 /-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
 `sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
@@ -883,7 +883,7 @@ private lemma Vplus_add_Vminus_eq_card (W : Fin d → Ω → ℝ) (H₀ : Finset
     constructor
     · intro hlt; linarith
     · intro hnlt; exact lt_of_le_of_ne (not_lt.mp hnlt) this
-  rw [hneg, Finset.filter_card_add_filter_neg_card_eq_card]
+  rw [hneg, Finset.card_filter_add_card_filter_not]
 
 /-! 𝒢rev-measurability of magnitude-only quantities. -/
 
@@ -897,13 +897,13 @@ private lemma gmeas_abs (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (l : Fin d) :
     Measurable[𝒢rev W H₀ hWmeas n] (fun ω => |W l ω|) := by
   have := (measurable_pi_apply l).comp (gmeas_cproc_fst W H₀ hWmeas n)
-  simpa [cproc] using this
+  simpa [cproc] using! this
 
 private lemma gmeas_theta (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) :
     Measurable[𝒢rev W H₀ hWmeas n] (fun ω => θ W ⟨n, h⟩ ω) := by
   have := (measurable_orderStat_eval n h).comp (gmeas_cproc_fst W H₀ hWmeas n)
-  simpa [cproc, θ] using this
+  simpa [cproc, θ] using! this
 
 private lemma measurableSet'_theta_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) (l : Fin d) :
@@ -1331,7 +1331,7 @@ private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
       exact ⟨fun hlt => le_of_lt hlt, fun hle => lt_of_le_of_ne hle (Ne.symm hω)⟩
     calc μ (F ∩ {ω | 0 < W c ω})
         = μ (F ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
-          measure_congr ((Filter.EventuallyEq.refl _ F).inter h0)
+          measure_congr (Filter.EventuallyEq.inter (Filter.EventuallyEq.refl _ F) h0)
       _ = μ ((fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C
             ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
           measure_congr (hFC.inter (Filter.EventuallyEq.refl _ _))
@@ -1416,7 +1416,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
     exact integrable_sel_mul W H₀ μ hW.meas hmag n h j
       (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
       (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
-        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+        measurable_const) (fun ω => by split_ifs <;> norm_num)
   -- A, B as `𝒢rev`-measurable reals (count components of `cproc`)
   have hcproc : StronglyMeasurable[𝒢rev W H₀ hW.meas n] (cproc W H₀ n) :=
     Filtration.stronglyAdapted_natural
@@ -1494,7 +1494,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
           setIntegral_congr_fun (hle s hs) (fun ω _ => hpt ω)
       _ = ∑ T ∈ H₀.powerset,
             ∫ ω in s, ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω ∂μ :=
-          integral_finset_sum _ (fun T _ =>
+          integral_finsetSum _ (fun T _ =>
             (hφ.indicator (hle _ (measurableSet'_aboveNulls_eq W H₀ hW.meas n h T))).integrableOn)
       _ = ∑ T ∈ H₀.powerset, ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, φ ω ∂μ := by
           apply Finset.sum_congr rfl; intro T _
@@ -1569,7 +1569,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
           apply Finset.sum_congr rfl; intro l _; split_ifs <;> simp
         rw [hcidxeq, hAB, hVp, hcard, ← mul_div_assoc, Finset.mul_sum]
       rw [hgeq, integral_div,
-        integral_finset_sum T (fun l _ =>
+        integral_finsetSum T (fun l _ =>
           (integrable_ite_mul_ite μ _ _ hcevamb
             (measurableSet_lt measurable_const (hW.meas l))).integrableOn)]
       congr 1
@@ -1632,7 +1632,7 @@ private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
   have hfj_int := integrable_sel_mul W H₀ μ hW.meas hmag n h j
     (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
     (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
-      measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+      measurable_const) (fun ω => by split_ifs <;> norm_num)
   -- condExp of the bare selector equals itself (𝒢rev-measurable a.e.)
   have hcej : μ[(fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) | 𝒢rev W H₀ hW.meas n]
       =ᵐ[μ] fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0 :=
@@ -1700,14 +1700,14 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
-  -- ΔV₊ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(0<Wj); push through condExp via `condExp_finset_sum` and the
+  -- ΔV₊ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(0<Wj); push through condExp via `condExp_finsetSum` and the
   -- per-coordinate core `core_condExp_plus`; reassemble the sum to `𝟙(cIdx∈H₀)·A/(A+B)`.
   have hfint : ∀ j ∈ H₀, Integrable
       (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)) μ :=
     fun j _ => integrable_sel_mul W H₀ μ hW.meas hmag n h j
       (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
       (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
-        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+        measurable_const) (fun ω => by split_ifs <;> norm_num)
   have hdP : (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
         - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ))
       =ᵐ[μ] ∑ j ∈ H₀, fun ω =>
@@ -1730,7 +1730,7 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
         | 𝒢rev W H₀ hW.meas n] := condExp_congr_ae hdP
     _ =ᵐ[μ] ∑ j ∈ H₀, μ[fun ω =>
         (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)
-        | 𝒢rev W H₀ hW.meas n] := condExp_finset_sum hfint _
+        | 𝒢rev W H₀ hW.meas n] := condExp_finsetSum hfint _
     _ =ᵐ[μ] ∑ j ∈ H₀, fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
         * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
             / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) :=
@@ -1752,14 +1752,14 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
-  -- ΔV₋ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(Wj<0); push through condExp via `condExp_finset_sum` and the
+  -- ΔV₋ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(Wj<0); push through condExp via `condExp_finsetSum` and the
   -- per-coordinate core `core_condExp_minus`; reassemble to `𝟙(cIdx∈H₀)·B/(A+B)`.
   have hfint : ∀ j ∈ H₀, Integrable
       (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)) μ :=
     fun j _ => integrable_sel_mul W H₀ μ hW.meas hmag n h j
       (fun ω => if W j ω < 0 then (1 : ℝ) else 0)
       (Measurable.ite (measurableSet_lt (hW.meas j) measurable_const) measurable_const
-        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+        measurable_const) (fun ω => by split_ifs <;> norm_num)
   have hdM : (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
         - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ))
       =ᵐ[μ] ∑ j ∈ H₀, fun ω =>
@@ -1782,7 +1782,7 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
         | 𝒢rev W H₀ hW.meas n] := condExp_congr_ae hdM
     _ =ᵐ[μ] ∑ j ∈ H₀, μ[fun ω =>
         (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)
-        | 𝒢rev W H₀ hW.meas n] := condExp_finset_sum hfint _
+        | 𝒢rev W H₀ hW.meas n] := condExp_finsetSum hfint _
     _ =ᵐ[μ] ∑ j ∈ H₀, fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
         * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
             / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) :=

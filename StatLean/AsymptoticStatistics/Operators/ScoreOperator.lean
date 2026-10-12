@@ -339,7 +339,7 @@ bounded functional there.  Hahn--Banach extends it to the ambient
 `L2ZeroMean P`; ambient Riesz then supplies a representer whose image under
 the certified adjoint is `chiTilde`.
 
-Proof idea: `Real.exists_extension_norm_eq`, followed by ambient Riesz and
+Proof idea: `_root_.exists_extension_norm_eq`, followed by ambient Riesz and
 the adjoint identity.  No closed-range hypothesis is needed.
 
 Joint satisfiability witness: take `H = ℝ`, `A = id` (after identifying the
@@ -357,7 +357,7 @@ theorem mem_range_adjoint_of_differentiable_unrestricted
   obtain ⟨dψ, h_dψ⟩ := h_diff
   -- Hahn--Banach extends `dψ` from the possibly nonclosed score range to the
   -- ambient mean-zero `L²(P)` space.
-  obtain ⟨dψext, h_ext, _⟩ := Real.exists_extension_norm_eq A.toCLM.range dψ
+  obtain ⟨dψext, h_ext, _⟩ := _root_.exists_extension_norm_eq A.toCLM.range dψ
   -- Ambient Riesz representer of the extension.
   set y₀ : ↥(L2ZeroMean P) :=
     (@InnerProductSpace.toDual ℝ ↥(L2ZeroMean P) _ _ _ hL2).symm dψext with hy₀

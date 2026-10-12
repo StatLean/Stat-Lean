@@ -323,7 +323,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   have hshell_meas : MeasurableSet shell := by
     rw [hshelldef]
     have hcoord : ∀ i, Measurable (fun θ : EuclideanSpace ℝ ι => θ i) := fun i =>
-      (measurable_pi_apply i).comp (EuclideanSpace.measurableEquiv ι).measurable
+      (EuclideanSpace.proj i).continuous.measurable
     have hnormc : Continuous (fun θ : EuclideanSpace ℝ ι => ‖θ - θ₀‖) := by fun_prop
     have h2 : MeasurableSet {θ : EuclideanSpace ℝ ι | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} :=
       measurableSet_le measurable_const hnormc.measurable
@@ -456,7 +456,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
           = fun _ => (0 : ℝ≥0∞) := by
         funext y; simp [dlNumer, hPk]
       rw [hzero, lintegral_zero]
-      exact zero_le _
+      exact zero_le
     · -- Nonempty piece: test the true parameter against the net point `enum ⟨k, _⟩`.
       have hk_lt : k < net.card := Finset.mem_range.mp hk
       have hBk : B k = Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := by
@@ -503,9 +503,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       exact le_trans hkbound (add_le_add hI (le_refl _))
   -- Sum the per-piece bounds.
   simp_rw [hdiv_sum]
-  rw [lintegral_finset_sum _ (fun k _ => (hnum_meas (P k)).div hden_meas)]
+  erw [lintegral_finsetSum _ (fun k _ => (hnum_meas (P k)).div hden_meas)]
   refine le_trans (Finset.sum_le_sum hk_all) ?_
   rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul, hsum2]
-  exact add_le_add (mul_le_mul_right' hcard_le b) (le_refl _)
+  exact add_le_add (mul_le_mul_left hcard_le b) (le_refl _)
 
 end StatLean.Bayesian

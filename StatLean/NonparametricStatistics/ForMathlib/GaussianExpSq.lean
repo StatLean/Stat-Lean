@@ -132,8 +132,7 @@ theorem hasLaw_sum_mul_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measu
       rw [gaussianReal_map_const_mul]
       congr 1
       · ring
-      · rw [show (⟨(c i) ^ 2, sq_nonneg _⟩ : ℝ≥0) = ((c i) ^ 2).toNNReal from
-          NNReal.eq (by rw [NNReal.coe_mk, Real.coe_toNNReal _ (sq_nonneg _)])]
+      · rw [Real.toNNReal_of_nonneg (sq_nonneg (c i))]
     exact hmap.comp (hlaw i)
   -- Prove the `Finset`-indexed version by induction, then specialise to `univ`.
   suffices H : ∀ s : Finset (Fin n),

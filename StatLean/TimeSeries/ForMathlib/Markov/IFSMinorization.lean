@@ -111,8 +111,8 @@ private theorem measurable_sclStep {f s : (Fin (p + 1) → ℝ) → ℝ}
       (Fin.cons (f xe.1 + s xe.1 * xe.2) (fun i => xe.1 i.castSucc) : Fin (p + 1) → ℝ) := by
   rw [measurable_pi_iff]
   refine Fin.cases ?_ ?_
-  · simpa using (hf.comp measurable_fst).add ((hs.comp measurable_fst).mul measurable_snd)
-  · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+  · simpa using! (hf.comp measurable_fst).add ((hs.comp measurable_fst).mul measurable_snd)
+  · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
 
 theorem isMarkovKernel_sclARKernel {f s : (Fin (p + 1) → ℝ) → ℝ}
     (hf : Measurable f) (hs : Measurable s) (ν : Measure ℝ) [IsProbabilityMeasure ν] :
@@ -165,7 +165,7 @@ theorem sclAR_lintegral {f s : (Fin (p + 1) → ℝ) → ℝ}
     have hcompm : (fun e : ℝ => f x + s x * e)
         = (fun v : ℝ => f x + v) ∘ (fun e : ℝ => s x * e) := rfl
     rw [hcompm, ← Measure.map_map (measurable_const_add _) (measurable_const_mul _), h1,
-      Measure.map_smul, h2, abs_of_pos (inv_pos.2 ha)]
+      Measure.map_smul _ (measurable_const_add _).aemeasurable, h2, abs_of_pos (inv_pos.2 ha)]
   have step2 : ∫⁻ e, (fun u => sclDens f s g x u * h (shiftPush x u)) (f x + s x * e)
       = ENNReal.ofReal (s x)⁻¹ * ∫⁻ u, sclDens f s g x u * h (shiftPush x u) := by
     rw [← lintegral_map hΨm hΦ, hmapΦ, lintegral_smul_measure, smul_eq_mul]

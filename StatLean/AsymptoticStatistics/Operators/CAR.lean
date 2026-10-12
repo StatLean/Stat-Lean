@@ -330,7 +330,7 @@ theorem coarseningScoreSpace_eq_observedTangent_orthogonal
     coarseningScoreSpace hM hπY P_full
       = (observedTangent hM P_full (nonparametricYTangent hπY P_full))ᗮ := by
   haveI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   apply Submodule.ext
   intro b
   -- The adjoint identity `⟪Π a, b⟫ = ⟪E(doobSymm b | Y), a⟫` for any `σ(πY)`-measurable `a`.
@@ -450,7 +450,7 @@ theorem observedTangent_carScore_factors
     ∧ (observedTangent hM P_full (nonparametricYTangent hπY P_full)
          ⊔ coarseningScoreSpace hM hπY P_full).topologicalClosure = ⊤ := by
   haveI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   haveI hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   refine ⟨inner_observedTangent_coarseningScore_eq_zero hM hπY P_full, ?_⟩
@@ -480,7 +480,7 @@ theorem observedTangent_decomp
       g = p + b ∧
       ⟪(p : Lp ℝ 2 (P_full.map M)), (b : Lp ℝ 2 (P_full.map M))⟫_ℝ = 0 := by
   haveI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   haveI hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   -- `coarseningScoreSpace` is the kernel of a continuous linear map, hence closed,
@@ -581,12 +581,12 @@ theorem observedData_influence_subtract_proj
     (hZero : ∀ (v : ↥(L2ZeroMean (P_full.map M))) (hv : v ∈ T_nuis_obs),
         dψ_obs ⟨v, Submodule.mem_sup_right hv⟩ = 0) :
     letI : IsProbabilityMeasure (P_full.map M) :=
-      Measure.isProbabilityMeasure_map hM.aemeasurable
+      (by infer_instance)
     AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction (P_full.map M)
       (T_main_obs ⊔ T_nuis_obs) dψ_obs
       (φ₀_obs - T_nuis_obs.starProjection φ₀_obs) := by
   haveI hp : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   exact @AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance
     _ _ (P_full.map M) hp T_main_obs T_nuis_obs _ dψ_obs φ₀_obs hOrth hMain hZero
 

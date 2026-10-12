@@ -102,6 +102,6 @@ theorem predictiveDensity_pos_ae [IsFiniteMeasure π] [IsFiniteKernel κ] [SFini
     exact measurable_predictiveDensity hp (measurableSet_singleton 0)
   rw [comp_eq_withDensity_predictiveDensity hp hκ, withDensity_apply _ hms]
   refine setLIntegral_eq_zero hms fun x hx => ?_
-  simpa only [not_lt, nonpos_iff_eq_zero] using hx
+  simpa only [not_lt, nonpos_iff_eq_zero] using! hx
 
 end StatLean.Bayesian

@@ -72,7 +72,7 @@ lemma exists_l2_envelope_of_entropyIntegral
     exact Finset.single_le_sum (f := fun j => |l j x| + |u j x|)
       h_nonneg (Finset.mem_univ i)
   · -- `L²`: a finite sum of `|l i| + |u i| ∈ L²(P)`.
-    refine memLp_finset_sum _ ?_
+    refine memLp_finsetSum _ ?_
     intro i _
     exact (MemLp.abs (hbr i).memLp_lower).add (MemLp.abs (hbr i).memLp_upper)
 

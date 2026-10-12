@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.TimeSeries.ARMA.Likelihood
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.Defs
 import Mathlib.Probability.ConditionalExpectation
@@ -1106,9 +1107,28 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 def IsARMAResidualOf {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
     (r X : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop :=
   ∀ t : ℤ, Tendsto
-    (fun N : ℕ => eLpNorm
+    (fun N : ℕ => eLpNorm'
       (fun ω => r t ω - ∑ j ∈ Finset.range N, armaPi b a j * X (t - (j : ℕ)) ω) 2 μ)
     atTop (𝓝 0)
+
+/-- For a.e. strongly measurable residual and data sections, the convergence also holds for
+`eLpNorm`. -/
+lemma IsARMAResidualOf.tendsto_eLpNorm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    {r X : ℤ → Ω → ℝ} (h : IsARMAResidualOf b a r X μ)
+    (hr : ∀ t, AEStronglyMeasurable (r t) μ)
+    (hX : ∀ t, AEStronglyMeasurable (X t) μ) (t : ℤ) :
+    Tendsto (fun N : ℕ => eLpNorm
+      (fun ω => r t ω - ∑ j ∈ Finset.range N, armaPi b a j * X (t - (j : ℕ)) ω) 2 μ)
+      atTop (𝓝 0) := by
+  refine (h t).congr fun N => ?_
+  have hm : AEStronglyMeasurable
+      (fun ω => r t ω - ∑ j ∈ Finset.range N, armaPi b a j * X (t - (j : ℕ)) ω) μ := by
+    convert! (hr t).sub (Finset.aestronglyMeasurable_sum (Finset.range N)
+      fun j _ => (hX (t - (j : ℕ))).const_mul (armaPi b a j)) using 1
+    funext ω
+    simp only [Pi.sub_apply, Finset.sum_apply]
+  rw [eLpNorm_two_eq_eLpNorm' hm]
+
 
 section ResidualAux
 
@@ -1133,7 +1153,7 @@ private noncomputable def rpsum (φ : ℕ → ℝ) (X : ℤ → Ω → ℝ) (t :
 
 private lemma memLp_rpsum (hX : IsStationary X μ) (t : ℤ) (N : ℕ) :
     MemLp (rpsum φ X t N) 2 μ :=
-  memLp_finset_sum _ fun j _ => (hX.memLp (t - (j : ℕ))).const_mul (φ j)
+  memLp_finsetSum _ fun j _ => (hX.memLp (t - (j : ℕ))).const_mul (φ j)
 
 private noncomputable def rpsumLp (hX : IsStationary X μ) (φ : ℕ → ℝ) (t : ℤ) (N : ℕ) :
     Lp ℝ 2 μ := (memLp_rpsum (φ := φ) hX t N).toLp _
@@ -1211,7 +1231,9 @@ theorem exists_isARMAResidualOf [IsProbabilityMeasure μ] {p q : ℕ}
     ∃ r : ℤ → Ω → ℝ, (∀ t, Measurable (r t)) ∧ IsARMAResidualOf b a r X μ := by
   choose r hrm hrlim using fun t : ℤ =>
     exists_rpsum_limit (φ := armaPi b a) (summable_abs_armaPi hB) hstat t
-  exact ⟨r, hrm, hrlim⟩
+  refine ⟨r, hrm, fun t => ?_⟩
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hrlim t)
+    (fun _ => bot_le) (fun _ => eLpNorm'_two_le_eLpNorm)
 
 /-- A finite linear combination of `L²`-approximable families is `L²`-approximable. -/
 private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ] {ι : Type*} [Fintype ι]
@@ -1230,13 +1252,13 @@ private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ] {ι : Type*} [Finty
       ≤ ∑ i : ι, ‖α i‖ₑ * eLpNorm (fun ω => F i ω - G i N ω) 2 μ := by
     intro N
     rw [hfun N]
-    refine (eLpNorm_sum_le (fun i _ => (hm i N).const_smul _) one_le_two).trans ?_
+    refine (eLpNorm_sum_le one_le_two).trans ?_
     exact le_of_eq (Finset.sum_congr rfl fun i _ => by rw [eLpNorm_const_smul])
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun N => zero_le _) hbd
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun N => zero_le) hbd
   have hterm : ∀ i : ι, Tendsto
       (fun N : ℕ => ‖α i‖ₑ * eLpNorm (fun ω => F i ω - G i N ω) 2 μ) atTop (𝓝 0) := fun i => by
     simpa using ENNReal.Tendsto.const_mul (a := ‖α i‖ₑ) (hconv i) (Or.inr (by simp))
-  have hsum := tendsto_finset_sum (Finset.univ : Finset ι) fun i (_ : i ∈ Finset.univ) => hterm i
+  have hsum := tendsto_finsetSum (Finset.univ : Finset ι) fun i (_ : i ∈ Finset.univ) => hterm i
   simpa using hsum
 
 section ResidualId
@@ -1298,7 +1320,7 @@ private lemma eLpNorm_noise_eq [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε 
     rw [hsq] at hh
     exact hh.symm
   rw [Lp.norm_toLp] at hnorm
-  rw [← hnorm, ENNReal.ofReal_toReal (hε.memLp s).2.ne]
+  rw [← hnorm, ENNReal.ofReal_toReal (hε.memLp s).ne]
 
 /-- The `L²` norm of a finite noise combination is at most the `ℓ¹` mass of the
 coefficients times the noise scale. -/
@@ -1309,8 +1331,7 @@ private lemma eLpNorm_noise_comb_le [IsProbabilityMeasure μ] (hε : IsWhiteNois
   have hfun : (fun ω => ∑ i ∈ s, cc i * ε (u i) ω) = ∑ i ∈ s, fun ω => cc i * ε (u i) ω := by
     funext ω; simp
   rw [hfun]
-  refine (eLpNorm_sum_le (fun i _ =>
-    ((hε.measurable (u i)).const_mul (cc i)).aestronglyMeasurable) one_le_two).trans ?_
+  refine (eLpNorm_sum_le one_le_two).trans ?_
   have hterm : ∀ i, eLpNorm (fun ω => cc i * ε (u i) ω) 2 μ
       = ENNReal.ofReal |cc i| * ENNReal.ofReal (Real.sqrt σ2) := by
     intro i
@@ -1347,10 +1368,14 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
     rw [hπdef, hψdef]; exact armaPi_conv_armaPsi b a
   have hlin : ∀ s : ℤ, Tendsto (fun M : ℕ => eLpNorm
       (fun ω => X s ω - ∑ l ∈ Finset.range M, ψc l * ε (s - (l : ℕ)) ω) 2 μ) atTop (𝓝 0) := by
-    rw [hψdef]; exact hcausal
+    rw [hψdef]
+    exact hcausal.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+      (fun t => (hεWN.memLp t).aestronglyMeasurable)
   have hres : Tendsto (fun N : ℕ => eLpNorm
       (fun ω => r t ω - ∑ j ∈ Finset.range N, π j * X (t - (j : ℕ)) ω) 2 μ) atTop (𝓝 0) := by
-    rw [hπdef]; exact hr t
+    rw [hπdef]
+    exact hr.tendsto_eLpNorm (fun t => (hrmeas t).aestronglyMeasurable)
+      (fun t => (hmeas t).aestronglyMeasurable) t
   have hXmem : ∀ s, MemLp (X s) 2 μ :=
     hcausal.memLp (summable_abs_armaPsi a hB.1) hεWN hmeas
   have hF : Summable fun x : ℕ × ℕ => |π x.1| * |ψc x.2| :=
@@ -1477,15 +1502,14 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
     rw [hdiff]
     refine (eLpNorm_noise_comb_le hεWN D (fun x => π x.1 * ψc x.2)
       (fun x => t - (x.1 : ℕ) - (x.2 : ℕ))).trans ?_
-    -- (`mul_le_mul_right'` is deprecated upstream; the ENNReal `gcongr` route needs the
+    -- (`mul_le_mul_left` is deprecated upstream; the ENNReal `gcongr` route needs the
     -- same side goal, so keep the explicit form)
-    exact mul_le_mul_right' (ENNReal.ofReal_le_ofReal hmass) _
+    exact mul_le_mul_left (ENNReal.ofReal_le_ofReal hmass) _
   -- the tail mass vanishes
   have hTriTendsto : Tendsto (fun N => ∑ x ∈ Tri N, |π x.1| * |ψc x.2|)
       atTop (𝓝 (∑' x : ℕ × ℕ, |π x.1| * |ψc x.2|)) := by
     refine hF.hasSum.comp (tendsto_atTop_finset_of_monotone ?_ ?_)
     · intro m n hmn
-      simp only [Finset.le_eq_subset]
       intro x hx
       rw [hTriMem] at hx ⊢
       omega
@@ -1515,8 +1539,7 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
         ≤ eLpNorm (fun ω => S (N + 1) ω - P (N + 1) M ω) 2 μ
           + eLpNorm (fun ω => P (N + 1) M ω - ε t ω) 2 μ := by
           rw [hfun]
-          exact eLpNorm_add_le ((hSmeas _).sub (hPmeas _ _)).aestronglyMeasurable
-            ((hPmeas _ _).sub (hεWN.measurable t)).aestronglyMeasurable one_le_two
+          exact eLpNorm_add_le  one_le_two
       _ ≤ _ := add_le_add le_rfl (hPε N M hM)
   have hStend : Tendsto (fun N => eLpNorm (fun ω => S N ω - ε t ω) 2 μ) atTop (𝓝 0) := by
     have hb : Tendsto (fun N : ℕ =>
@@ -1527,7 +1550,7 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
       simpa using ENNReal.Tendsto.mul_const h1 (Or.inr ENNReal.ofReal_ne_top)
     have hshift : Tendsto (fun N => eLpNorm (fun ω => S (N + 1) ω - ε t ω) 2 μ) atTop (𝓝 0) :=
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hb
-        (fun N => zero_le _) hSε
+        (fun N => zero_le) hSε
     exact (tendsto_add_atTop_iff_nat 1).1 hshift
   -- ... and the residual is that same limit
   have hrS : Tendsto (fun N => eLpNorm (fun ω => r t ω - S N ω) 2 μ) atTop (𝓝 0) := by
@@ -1536,17 +1559,15 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
     have hlim : Tendsto (fun N => eLpNorm (fun ω => r t ω - S N ω) 2 μ
         + eLpNorm (fun ω => S N ω - ε t ω) 2 μ) atTop (𝓝 0) := by
       simpa using hrS.add hStend
-    refine le_antisymm (ge_of_tendsto hlim (Eventually.of_forall fun N => ?_)) (zero_le _)
+    refine le_antisymm (ge_of_tendsto hlim (Eventually.of_forall fun N => ?_)) (zero_le)
     have hfun : (fun ω => r t ω - ε t ω)
         = (fun ω => r t ω - S N ω) + fun ω => S N ω - ε t ω := by
       funext ω
       simp only [Pi.add_apply]
       ring
     rw [hfun]
-    exact eLpNorm_add_le ((hrmeas t).sub (hSmeas N)).aestronglyMeasurable
-      ((hSmeas N).sub (hεWN.measurable t)).aestronglyMeasurable one_le_two
-  have hae := (eLpNorm_eq_zero_iff
-    ((hrmeas t).sub (hεWN.measurable t)).aestronglyMeasurable two_ne_zero).1 hzero
+    exact eLpNorm_add_le  one_le_two
+  have hae := (eLpNorm_eq_zero_iff two_ne_zero).1 hzero
   filter_upwards [hae] with ω hω
   have hω' : r t ω - ε t ω = 0 := hω
   linarith
@@ -1584,7 +1605,7 @@ lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε 
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance)
     (fun s => (hm s).comap_le) hi hdisj
-  simpa using this
+  simpa using! this
 
 /-- `E[ε_t | 𝓕_{t−1}] = 0`: independence of the past plus the vanishing mean. -/
 private lemma condExp_noise_eq_zero [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
@@ -1652,17 +1673,16 @@ private lemma condExp_noise_mul_eq_zero [IsProbabilityMeasure μ] {ε : ℤ → 
     rw [hsmul]
     exact eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2) (r := 1)
       (hpqr := ENNReal.HolderConjugate.instTwoTwo)
-      ((hW.sub (hWNmem N)).aestronglyMeasurable) hεL2.aestronglyMeasurable
+      hεL2.aestronglyMeasurable ((hW.sub (hWNmem N)).aestronglyMeasurable)
   have hlim : Tendsto (fun N => eLpNorm (ε t) 2 μ * eLpNorm (fun ω => W ω - WN N ω) 2 μ)
       atTop (𝓝 0) := by
-    have := ENNReal.Tendsto.const_mul (a := eLpNorm (ε t) 2 μ) hconv (Or.inr hεL2.2.ne)
+    have := ENNReal.Tendsto.const_mul (a := eLpNorm (ε t) 2 μ) hconv (Or.inr hεL2.ne)
     simpa using this
   have hzero : eLpNorm (μ[ε t * W | sigmaLT ε t]) 1 μ = 0 :=
-    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hbound)) (zero_le _)
+    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hbound)) (zero_le)
   -- (the `mono` keeps the elaborator from unifying `sigmaLT ε t` with the ambient σ-algebra)
   have hle : sigmaLT ε t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le hiid.measurable t
-  exact (eLpNorm_eq_zero_iff
-    (stronglyMeasurable_condExp.mono hle).aestronglyMeasurable one_ne_zero).1 hzero
+  exact (eLpNorm_eq_zero_iff one_ne_zero).1 hzero
 
 end ScoreAux
 
@@ -1707,17 +1727,17 @@ theorem armaScore_condexp_zero [IsProbabilityMeasure μ] {p q : ℕ}
         + ∑ j : Fin q, c (.inr j) * ∑ n ∈ Finset.range N,
             armaPsi (fun j' => -a j') (Fin.elim0 : Fin 0 → ℝ) n
               * ε (t - 1 - (j : ℕ) - (n : ℕ)) ω) ?_ ?_ ?_
-  · exact (memLp_finset_sum _ fun i _ => (hUmem _).const_mul _).add
-      (memLp_finset_sum _ fun j _ => (hVmem _).const_mul _)
+  · exact (memLp_finsetSum _ fun i _ => (hUmem _).const_mul _).add
+      (memLp_finsetSum _ fun j _ => (hVmem _).const_mul _)
   · intro N
     refine Measurable.stronglyMeasurable (Measurable.add ?_ ?_) <;>
       exact Finset.measurable_sum _ fun i _ => measurable_const.mul
         (Finset.measurable_sum _ fun n _ => measurable_const.mul (measurable_sigmaLT (hlt _ _)))
   · intro N
-    exact (memLp_finset_sum _ fun i _ =>
-        (memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _).const_mul _).add
-      (memLp_finset_sum _ fun j _ =>
-        (memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _).const_mul _)
+    exact (memLp_finsetSum _ fun i _ =>
+        (memLp_finsetSum _ fun n _ => (hε.memLp _).const_mul _).const_mul _).add
+      (memLp_finsetSum _ fun j _ =>
+        (memLp_finsetSum _ fun n _ => (hε.memLp _).const_mul _).const_mul _)
   · -- the two blocks converge separately
     have hUconv := tendsto_eLpNorm_comb (μ := μ)
       (F := fun i : Fin p => U (t - 1 - (i : ℕ)))
@@ -1726,7 +1746,8 @@ theorem armaScore_condexp_zero [IsProbabilityMeasure μ] {p q : ℕ}
       (fun i => c (.inl i))
       (fun i N => (hUmeas _).aestronglyMeasurable.sub
         (Finset.measurable_sum _ fun n _ => (hε.measurable _).const_mul _).aestronglyMeasurable)
-      (fun i => hU (t - 1 - (i : ℕ)))
+      (fun i => hU.tendsto_eLpNorm (fun t => (hUmeas t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) (t - 1 - (i : ℕ)))
     have hVconv := tendsto_eLpNorm_comb (μ := μ)
       (F := fun j : Fin q => V (t - 1 - (j : ℕ)))
       (G := fun (j : Fin q) (N : ℕ) ω => ∑ n ∈ Finset.range N,
@@ -1735,7 +1756,8 @@ theorem armaScore_condexp_zero [IsProbabilityMeasure μ] {p q : ℕ}
       (fun j => c (.inr j))
       (fun j N => (hVmeas _).aestronglyMeasurable.sub
         (Finset.measurable_sum _ fun n _ => (hε.measurable _).const_mul _).aestronglyMeasurable)
-      (fun j => hV (t - 1 - (j : ℕ)))
+      (fun j => hV.tendsto_eLpNorm (fun t => (hVmeas t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) (t - 1 - (j : ℕ)))
     have hbd : ∀ N : ℕ,
         eLpNorm (fun ω =>
           ((∑ i : Fin p, c (.inl i) * U (t - 1 - (i : ℕ)) ω)
@@ -1770,15 +1792,9 @@ theorem armaScore_condexp_zero [IsProbabilityMeasure μ] {p q : ℕ}
                       * ε (t - 1 - (j : ℕ) - (n : ℕ)) ω) := by
         funext ω; simp only [Pi.add_apply]; ring
       rw [hfun]
-      refine eLpNorm_add_le ?_ ?_ one_le_two
-      · exact ((memLp_finset_sum _ fun i _ => (hUmem _).const_mul _).sub
-          (memLp_finset_sum _ fun i _ =>
-            (memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _).const_mul _)).1
-      · exact ((memLp_finset_sum _ fun j _ => (hVmem _).const_mul _).sub
-          (memLp_finset_sum _ fun j _ =>
-            (memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _).const_mul _)).1
+      exact eLpNorm_add_le one_le_two
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
-      (fun N => zero_le _) hbd
+      (fun N => zero_le) hbd
     simpa using hUconv.add hVconv
 
 end Process

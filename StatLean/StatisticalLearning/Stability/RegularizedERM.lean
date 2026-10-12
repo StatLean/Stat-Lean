@@ -394,7 +394,7 @@ theorem rlm_oracle (D : Measure Z) [IsProbabilityMeasure D]
   have hempStar : Integrable (fun s : Sample Z n => empRisk ℓ s wStar)
       (sampleLaw D n) := by
     simp only [empRisk]
-    exact (integrable_finset_sum _ fun i _ => hev i).const_mul _
+    exact (integrable_finsetSum _ fun i _ => hev i).const_mul _
   have hpt : ∀ s : Sample Z n,
       empRisk ℓ s (A s) ≤ empRisk ℓ s wStar + lam * ‖wStar‖ ^ 2 := by
     intro s

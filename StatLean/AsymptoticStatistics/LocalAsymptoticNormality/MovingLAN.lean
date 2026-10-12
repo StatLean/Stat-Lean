@@ -161,7 +161,7 @@ theorem movingLogLikelihood_weaklyConverges
       (gaussianReal 0 (fisherInformation M μ θ₀ ℓ h h).toNNReal) := by
     intro f
     have ht := hTID.tendsto
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at ht
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at ht
     have hmap : ∀ n : ℕ, Pinf.map (fun ω => (Real.sqrt n)⁻¹ *
           (∑ i ∈ Finset.range n, Y i ω - (n : ℝ) * ∫ x, Y 0 x ∂Pinf)) =
         Pinf.map (fun ω => (Real.sqrt n)⁻¹ *
@@ -246,7 +246,7 @@ theorem movingLogLikelihood_weaklyConverges
       (movingLogLikelihood M θ₀ m θ n) = Pinf.map (B n) := by
     intro n
     let R : (ℕ → 𝒳) → (Fin (m n) → 𝒳) := fun ω i => ω i.val
-    have hR : Measurable R := measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    have hR : Measurable R := Measurable.of_eval fun i => measurable_pi_apply i.val
     have hprod : Pinf.map R = productMeasure M μ θ₀ (m n) := by
       change (Measure.infinitePi (fun _ : ℕ => ν)).map R = Measure.pi (fun _ : Fin (m n) => ν)
       exact (AsymptoticStatistics.pi_const_eq_infinitePi_map ν (m n)).symm

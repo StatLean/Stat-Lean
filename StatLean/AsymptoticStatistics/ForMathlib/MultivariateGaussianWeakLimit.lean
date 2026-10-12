@@ -349,7 +349,8 @@ lemma multivariateGaussian_absolutelyContinuous_volume_of_posDef
     (multivariateGaussian (0 : EuclideanSpace ℝ ι) S).AbsolutelyContinuous
       (volume : Measure (EuclideanSpace ℝ ι)) := by
   -- Step 1: Build the CLE `T_cle := toEuclideanCLM (CFC.sqrt S)` from PosDef.
-  have h_sqrt_unit : IsUnit (CFC.sqrt S) := hS.posDef_sqrt.isUnit
+  have h_sqrt_unit : IsUnit (CFC.sqrt S) :=
+      CFC.isUnit_sqrt_iff_isStrictlyPositive.mpr hS.isStrictlyPositive
   have h_T_unit : IsUnit (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) :=
     (MulEquiv.isUnit_map (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := ι))).mpr h_sqrt_unit
   let T_cle : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι :=
@@ -918,7 +919,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
       exact _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
         hS hS_zero hD_conv
     exact le_antisymm
-      ((measure_mono h_image_subset).trans h_image_eq_zero.le) (zero_le _)
+      ((measure_mono h_image_subset).trans h_image_eq_zero.le) (zero_le)
 
 /-- **Convex sets are continuity sets for PSD multivariate Gaussians.**
 

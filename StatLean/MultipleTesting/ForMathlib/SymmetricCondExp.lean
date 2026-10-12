@@ -336,7 +336,7 @@ theorem condExp_coord_eq_count_div {k : ℕ} (hk : 0 < k)
   have hLHS : ∫ ω in s, (signCount σ ω : ℝ) / (k : ℝ) ∂μ
             = (1 / (k : ℝ)) * ∑ l, (μ (s ∩ {ω | σ l ω = true})).toReal := by
     rw [setIntegral_congr_fun hsm0 (fun ω _ => hgsum ω), integral_const_mul,
-       integral_finset_sum Finset.univ (fun l _ => (hFint l).integrableOn)]
+       integral_finsetSum Finset.univ (fun l _ => (hFint l).integrableOn)]
     simp_rw [hF]
   have hsum : ∑ l, (μ (s ∩ {ω | σ l ω = true})).toReal
             = (k : ℝ) * (μ (s ∩ {ω | σ i₀ ω = true})).toReal := by

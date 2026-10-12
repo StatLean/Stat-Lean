@@ -81,7 +81,7 @@ theorem argmax_closed_limsup
           ⨆ q : {q : D // q ∈ F ∩ p.1 ∩ Hn n}, (Mn n ω q : EReal) :=
         add_le_add_right hhat_le _
   letI : IsProbabilityMeasure (μlim.map hhat) :=
-    Measure.isProbabilityMeasure_map hhmeas.aemeasurable
+    (by infer_instance)
   refine weakConvergesOuter_of_closedSet_limsup ?_
   intro F hF
   rw [Measure.map_apply hhmeas hF.measurableSet]
@@ -237,6 +237,8 @@ theorem argmax_theorem
     exact ⟨(K, K), ⟨rfl, hK⟩, hsample, hlimit⟩
   · rintro F p hF ⟨hpEq, hpK⟩
     have hpEq' : p.2 = p.1 := hpEq.symm
+    have hpairCurrent := hpair F p.1 hF hpK
+    rw [Measure.map₀_of_measurable (hpairMeas F p.1 hF hpK)] at hpairCurrent
     simpa only [hpEq'] using
       (outer_supComparison_limsup_of_pair_weakConvergence
         (fun n ω =>
@@ -245,7 +247,7 @@ theorem argmax_theorem
         (fun ω =>
           (ForMathlib.setSupEReal (M ω) (F ∩ p.1 ∩ H),
             ForMathlib.setSupEReal (M ω) (p.1 ∩ H)))
-        (hpairMeas F p.1 hF hpK) (hpair F p.1 hF hpK)
+        (hpairMeas F p.1 hF hpK) hpairCurrent
         r hrnonneg hr)
 
 end AsymptoticStatistics.MEstimator

@@ -118,7 +118,7 @@ private theorem bridgeEval_memLp
     MemLp (fun z : LinfF F => z f) 2 nu := by
   let pr : (Fin 1 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj 0
   have h := (hnu.isGaussian_fdd 1 (fun _ => f)).map pr
-  simpa only [Function.comp_apply, pr] using h.memLp_two
+  simpa only [Function.comp_apply, pr] using! h.memLp_two
 
 private noncomputable def bridgeEvalLp
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
@@ -231,7 +231,7 @@ private theorem centeredSpanInclusion_denseRange
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) :
     DenseRange (centeredSpanInclusion P hF_L2) := by
-  simpa only [centeredSpanInclusion] using
+  simpa only [centeredSpanInclusion] using!
     (denseRange_inclusion_iff (Submodule.le_topologicalClosure
       (centeredSpan P hF_L2))).2 (by intro x hx; exact hx)
 
@@ -292,7 +292,7 @@ private theorem coeFn_finset_sum_L2
   classical
   induction s using Finset.induction_on with
   | empty =>
-      simpa using (Lp.coeFn_zero (E := ℝ) (p := 2) (μ := μ))
+      simpa using! (Lp.coeFn_zero (E := ℝ) (p := 2) (μ := μ))
   | @insert a s ha ih =>
       have hadd := Lp.coeFn_add (v a) (∑ i ∈ s, v i)
       filter_upwards [hadd, ih] with x hx hsum
@@ -360,7 +360,7 @@ private theorem bridgeCombination_mean
   letI := hν.isProbabilityMeasure
   rw [integral_congr_ae (bridgeCombination_ae_eq hν u)]
   simp only [Finsupp.sum]
-  rw [integral_finset_sum _ (fun f _ =>
+  rw [integral_finsetSum _ (fun f _ =>
     ((bridgeEval_memLp hν f).integrable (by norm_num)).const_mul (u f))]
   simp_rw [integral_const_mul, hν.mean, mul_zero]
   exact Finset.sum_const_zero
@@ -836,7 +836,7 @@ private theorem residualCoordinate_memLp
   letI : IsGaussian (residualLaw hF_L2 ψ) := by
     unfold residualLaw
     infer_instance
-  simpa only [Function.comp_id] using
+  simpa only [Function.comp_id] using!
     ((IsGaussian.hasGaussianLaw_id (μ := residualLaw hF_L2 ψ)).map
       (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin k => ℝ) j)).memLp_two
 
@@ -1004,7 +1004,7 @@ private theorem jointInfluenceLaw_gaussianFDD
     | inr j => exact
         (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin k => ℝ) j).continuous.measurable.comp measurable_snd
   have hsource := bridgeResidualCoordinates_hasGaussianLaw hν hF_L2 ψ a
-  refine ⟨?_⟩
+  refine ⟨hY.aemeasurable, ?_⟩
   rw [jointInfluenceLaw,
     Measure.map_map hY (jointExtensionMap_measurable hν hF_L2 ψ)]
   have hcomp : Y ∘ jointExtensionMap hν hF_L2 ψ =
@@ -1120,7 +1120,7 @@ private theorem jointInfluenceLaw_covariance
   letI : SFinite ν := by infer_instance
   letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
-  rw [jointInfluenceLaw, integral_map
+  erw [jointInfluenceLaw, integral_map
     (jointExtensionMap_measurable hν hF_L2 ψ).aemeasurable
     ((jointEval_measurable a).mul (jointEval_measurable b)).aestronglyMeasurable]
   cases a with
@@ -1329,8 +1329,7 @@ private theorem jointInfluenceLaw_tight
   letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   letI : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
-    Measure.isProbabilityMeasure_map
-      (jointExtensionMap_measurable hν hF_L2 ψ).aemeasurable
+    (by unfold jointInfluenceLaw; infer_instance)
   apply AsymptoticStatistics.Prohorov.tight_prod_of_tight_marginals
   · have himage :
         ((fun μ : Measure (LinfF F × EuclideanSpace ℝ (Fin k)) => μ.map Prod.fst) ''
@@ -1342,7 +1341,7 @@ private theorem jointInfluenceLaw_tight
   · rw [Set.image_singleton]
     letI : IsProbabilityMeasure
         ((jointInfluenceLaw hν hF_L2 ψ).map Prod.snd) :=
-      Measure.isProbabilityMeasure_map measurable_snd.aemeasurable
+      (by unfold jointInfluenceLaw; infer_instance)
     exact MeasureTheory.isTightMeasureSet_singleton
 
 /-- Existence of the finite Gaussian influence extension of a supplied
@@ -1359,8 +1358,7 @@ theorem exists_jointBridgeInfluence
   letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   letI : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
-    Measure.isProbabilityMeasure_map
-      (jointExtensionMap_measurable hν hF_L2 ψ).aemeasurable
+    (by unfold jointInfluenceLaw; infer_instance)
   refine ⟨jointInfluenceLaw hν hF_L2 ψ, ?_⟩
   exact
     { isProbabilityMeasure := inferInstance

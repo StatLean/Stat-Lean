@@ -78,7 +78,7 @@ lemma lintegral_biSup_le_of_forall_finset {ι : Type*} {g : ι → Ω → ℝ≥
   rcases Set.eq_empty_or_nonempty C with rfl | hCne
   · have hz : ∀ ω, (⨆ i ∈ (∅ : Set ι), g i ω) = 0 := by intro ω; simp
     simp only [hz, lintegral_zero]
-    exact zero_le B
+    exact zero_le (a := B)
   -- Prefix exhaustion of the countable index set by finite windows.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef
@@ -141,7 +141,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
   · have hE : {ω | ∃ i ∈ (∅ : Set ι), thr < f i ω} = (∅ : Set Ω) := by
       ext ω; simp
     rw [hE, measure_empty]
-    exact zero_le β
+    exact zero_le (a := β)
   -- Finite exhaustion of the countable carrier.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef
@@ -199,7 +199,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
         = (∅ : Set Ω) := by
       ext ω; simp
     rw [hE, measure_empty]
-    exact zero_le β
+    exact zero_le (a := β)
   -- Finite exhaustion of the countable carrier.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef

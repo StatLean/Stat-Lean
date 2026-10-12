@@ -1,3 +1,5 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
+import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.Core.Hilbert
 import StatLean.AsymptoticStatistics.ForMathlib.QMDAnalytic
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
@@ -36,10 +38,40 @@ dominator separately for every `t`.  The ENNReal quotient prevents a
 non-`L²` residual from being hidden by `toReal`. -/
 def IsRightQMD (P : Measure Ω) (curve : ℝ → Measure Ω) (g : Ω → ℝ) : Prop :=
   Tendsto
-    (fun t => eLpNorm
+    (fun t => eLpNorm'
       (residualAgainst P (curve t) (canonicalDominator P (curve t)) g t)
       2 (canonicalDominator P (curve t)) / ENNReal.ofReal t)
     (nhdsWithin 0 (Set.Ioi 0)) (nhds (0 : ℝ≥0∞))
+
+/-- A baseline-measurable score gives a measurable residual under a dominating measure. -/
+lemma residualAgainst_aestronglyMeasurable {P Q μ : Measure Ω} [SigmaFinite P] [SigmaFinite μ]
+    (hPμ : P ≪ μ) {g : Ω → ℝ} (hg : AEStronglyMeasurable g P) (t : ℝ) :
+    AEStronglyMeasurable (residualAgainst P Q μ g t) μ := by
+  have hw := (AsymptoticStatistics.ForMathlib.RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff
+      hPμ g).2 hg
+  have hp := ((Measure.measurable_rnDeriv P μ).ennreal_toReal.sqrt).aestronglyMeasurable (μ := μ)
+  have hq := ((Measure.measurable_rnDeriv Q μ).ennreal_toReal.sqrt).aestronglyMeasurable (μ := μ)
+  convert! (hq.sub hp).sub (hw.const_mul (t / 2)) using 1
+  funext ω
+  simp only [residualAgainst, Pi.sub_apply]
+  ring
+
+/-- For a baseline-measurable score, right QMD can be stated with `eLpNorm`. -/
+lemma isRightQMD_iff_eLpNorm {P : Measure Ω} [IsProbabilityMeasure P]
+    (curve : ℝ → Measure Ω) (hprob : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t))
+    {g : Ω → ℝ} (hg : AEStronglyMeasurable g P) :
+    IsRightQMD P curve g ↔
+    Tendsto (fun t => eLpNorm (residualAgainst P (curve t) (canonicalDominator P (curve t)) g t)
+      2 (canonicalDominator P (curve t)) / ENNReal.ofReal t)
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+  unfold IsRightQMD
+  apply tendsto_congr'
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  letI : IsProbabilityMeasure (curve t) := hprob t ht.le
+  let μ := canonicalDominator P (curve t)
+  letI : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
+  have hPμ : P ≪ μ := (Measure.le_add_right le_rfl).absolutelyContinuous
+  rw [← eLpNorm_two_eq_eLpNorm' (residualAgainst_aestronglyMeasurable hPμ hg t)]
 
 /-- The weighted `L²` change-of-dominator identity used below. -/
 private lemma eLpNorm_sqrt_rnDeriv_mul_eq
@@ -47,27 +79,32 @@ private lemma eLpNorm_sqrt_rnDeriv_mul_eq
     (hνξ : ν ≪ ξ) (h : Ω → ℝ) :
     eLpNorm (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω) 2 ξ =
       eLpNorm h 2 ν := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
-  have h2 : (2 : ℝ≥0∞).toReal = 2 := by norm_num
-  rw [h2]
-  congr 1
-  have h_ae : (fun ω => ‖Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω‖ₑ ^ (2 : ℝ))
-      =ᵐ[ξ] (fun ω => ν.rnDeriv ξ ω * ‖h ω‖ₑ ^ (2 : ℝ)) := by
-    filter_upwards [Measure.rnDeriv_lt_top ν ξ] with ω hω
-    rw [enorm_mul, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2),
-      Real.enorm_of_nonneg (Real.sqrt_nonneg _),
-      ENNReal.ofReal_rpow_of_nonneg (Real.sqrt_nonneg _) (by norm_num : (0 : ℝ) ≤ 2),
-      Real.rpow_two, Real.sq_sqrt ENNReal.toReal_nonneg,
-      ENNReal.ofReal_toReal hω.ne]
-  rw [lintegral_congr_ae h_ae]
-  calc
-    ∫⁻ ω, ν.rnDeriv ξ ω * ‖h ω‖ₑ ^ (2 : ℝ) ∂ξ =
-        ∫⁻ ω, ‖h ω‖ₑ ^ (2 : ℝ) ∂ξ.withDensity (ν.rnDeriv ξ) :=
-      (lintegral_withDensity_eq_lintegral_mul_non_measurable ξ
-        (Measure.measurable_rnDeriv ν ξ) (Measure.rnDeriv_lt_top ν ξ) _).symm
-    _ = ∫⁻ ω, ‖h ω‖ₑ ^ (2 : ℝ) ∂ν := by
-      rw [Measure.withDensity_rnDeriv_eq ν ξ hνξ]
+  by_cases hh : AEStronglyMeasurable h ν
+  · have hw := (RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff hνξ h).2 hh
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hw,
+      eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hh]
+    have h2 : (2 : ℝ≥0∞).toReal = 2 := by norm_num
+    rw [h2]
+    congr 1
+    have h_ae : (fun ω => ‖Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω‖ₑ ^ (2 : ℝ))
+        =ᵐ[ξ] (fun ω => ν.rnDeriv ξ ω * ‖h ω‖ₑ ^ (2 : ℝ)) := by
+      filter_upwards [Measure.rnDeriv_lt_top ν ξ] with ω hω
+      rw [enorm_mul, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2),
+        Real.enorm_of_nonneg (Real.sqrt_nonneg _),
+        ENNReal.ofReal_rpow_of_nonneg (Real.sqrt_nonneg _) (by norm_num : (0 : ℝ) ≤ 2),
+        Real.rpow_two, Real.sq_sqrt ENNReal.toReal_nonneg,
+        ENNReal.ofReal_toReal hω.ne]
+    rw [lintegral_congr_ae h_ae]
+    calc
+      ∫⁻ ω, ν.rnDeriv ξ ω * ‖h ω‖ₑ ^ (2 : ℝ) ∂ξ =
+          ∫⁻ ω, ‖h ω‖ₑ ^ (2 : ℝ) ∂ξ.withDensity (ν.rnDeriv ξ) :=
+        (lintegral_withDensity_eq_lintegral_mul_non_measurable ξ
+          (Measure.measurable_rnDeriv ν ξ) (Measure.rnDeriv_lt_top ν ξ) _).symm
+      _ = ∫⁻ ω, ‖h ω‖ₑ ^ (2 : ℝ) ∂ν := by
+        rw [Measure.withDensity_rnDeriv_eq ν ξ hνξ]
+  · have hw : ¬ AEStronglyMeasurable (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω) ξ :=
+      fun hmeas => hh ((RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff hνξ h).1 hmeas)
+    rw [eLpNorm_of_not_aestronglyMeasurable hw, eLpNorm_of_not_aestronglyMeasurable hh]
 
 /-- Pairwise square-root residual norms do not depend on the chosen common
 dominator.
@@ -117,6 +154,7 @@ private lemma memLp_score_of_rightQMD
     (hprob : ∀ t, 0 ≤ t → IsProbabilityMeasure (curve t))
     (g : Ω → ℝ) (hg : Measurable g) (hqmd : IsRightQMD P curve g) :
     MemLp g 2 P := by
+  have hqmd := (isRightQMD_iff_eLpNorm curve hprob hg.aestronglyMeasurable).1 hqmd
   obtain ⟨t, ht, hlt⟩ : ∃ t : ℝ, 0 < t ∧
       eLpNorm (residualAgainst P (curve t) (canonicalDominator P (curve t)) g t)
           2 (canonicalDominator P (curve t)) < ENNReal.ofReal t := by
@@ -153,12 +191,8 @@ private lemma memLp_score_of_rightQMD
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv hPν
   have hq : MemLp (fun ω => Real.sqrt ((curve t).rnDeriv ν ω).toReal) 2 ν :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv hQν
-  have hr : MemLp (residualAgainst P (curve t) ν g t) 2 ν := by
-    refine ⟨?_, lt_trans hlt ENNReal.ofReal_lt_top⟩
-    exact (((Measure.measurable_rnDeriv (curve t) ν).ennreal_toReal.sqrt.sub
-      (Measure.measurable_rnDeriv P ν).ennreal_toReal.sqrt).sub
-      ((measurable_const.mul hg).mul
-        (Measure.measurable_rnDeriv P ν).ennreal_toReal.sqrt)).aestronglyMeasurable
+  have hr : MemLp (residualAgainst P (curve t) ν g t) 2 ν :=
+    lt_trans hlt ENNReal.ofReal_lt_top
   have hscaled : MemLp
       (fun ω => (t / 2) * (g ω * Real.sqrt (P.rnDeriv ν ω).toReal)) 2 ν := by
     convert (hq.sub hp).sub hr using 1
@@ -206,6 +240,7 @@ theorem rightQMD_score_in_L2ZeroMean
       Real.sqrt (P.rnDeriv (ν t) ω).toReal) 2 (ν t)).toReal
   let C : ℝ → ℝ := fun t => ∫ ω, r t ω *
     Real.sqrt (P.rnDeriv (ν t) ω).toReal ∂(ν t)
+  have hqmd := (isRightQMD_iff_eLpNorm curve hprob hg.aestronglyMeasurable).1 hqmd
   have hRratio : Tendsto (fun t => R t / t)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
     have hreal := (ENNReal.continuousAt_toReal (by simp : (0 : ℝ≥0∞) ≠ ∞)).tendsto.comp hqmd
@@ -257,19 +292,13 @@ theorem rightQMD_score_in_L2ZeroMean
         _ < 1 * ENNReal.ofReal t := ENNReal.mul_lt_mul_left
           (ENNReal.ofReal_pos.mpr ht).ne' ENNReal.ofReal_ne_top hlt
         _ = ENNReal.ofReal t := one_mul _
-    have hr : MemLp (r t) 2 (ν t) := by
-      refine ⟨?_, lt_trans hrlt ENNReal.ofReal_lt_top⟩
-      exact (((Measure.measurable_rnDeriv (curve t) (ν t)).ennreal_toReal.sqrt.sub
-        (Measure.measurable_rnDeriv P (ν t)).ennreal_toReal.sqrt).sub
-        ((measurable_const.mul hg).mul
-          (Measure.measurable_rnDeriv P (ν t)).ennreal_toReal.sqrt)).aestronglyMeasurable
+    have hr : MemLp (r t) 2 (ν t) := lt_trans hrlt ENNReal.ofReal_lt_top
     have hgp : MemLp (fun ω => g ω * p ω) 2 (ν t) := by
-      refine ⟨(hg.mul (Measure.measurable_rnDeriv P (ν t)).ennreal_toReal.sqrt)
-        |>.aestronglyMeasurable, ?_⟩
+      change eLpNorm (fun ω => g ω * p ω) 2 (ν t) < ∞
       rw [show (fun ω => g ω * p ω) = fun ω => p ω * g ω by
         funext ω; ring]
       rw [eLpNorm_sqrt_rnDeriv_mul_eq hPν g]
-      exact hgL2.2
+      exact hgL2
     have hgpNorm : eLpNorm (fun ω => g ω * p ω) 2 (ν t) = eLpNorm g 2 P := by
       rw [show (fun ω => g ω * p ω) = fun ω => p ω * g ω by
         funext ω; ring]
@@ -289,16 +318,16 @@ theorem rightQMD_score_in_L2ZeroMean
           congrArg (fun f => eLpNorm f 2 (ν t)) hfun
         _ ≤ eLpNorm ((t / 2) • (fun ω => g ω * p ω)) 2 (ν t) +
             eLpNorm (r t) 2 (ν t) :=
-          eLpNorm_add_le (hgp.1.const_smul (t / 2)) hr.1 (by norm_num)
+          eLpNorm_add_le  (by norm_num)
         _ = ‖t / 2‖ₑ * eLpNorm (fun ω => g ω * p ω) 2 (ν t) +
             eLpNorm (r t) 2 (ν t) := by rw [eLpNorm_const_smul]
     have htri : H t ≤ t / 2 * G + R t := by
       have ha : ‖t / 2‖ₑ * eLpNorm (fun ω => g ω * p ω) 2 (ν t) ≠ ∞ :=
-        ENNReal.mul_ne_top (by simp) hgp.2.ne
+        ENNReal.mul_ne_top (by simp) hgp.ne
       have htop : ‖t / 2‖ₑ * eLpNorm (fun ω => g ω * p ω) 2 (ν t) +
-          eLpNorm (r t) 2 (ν t) ≠ ∞ := ENNReal.add_ne_top.mpr ⟨ha, hr.2.ne⟩
+          eLpNorm (r t) 2 (ν t) ≠ ∞ := ENNReal.add_ne_top.mpr ⟨ha, hr.ne⟩
       have hle := ENNReal.toReal_mono htop htriE
-      rw [ENNReal.toReal_add ha hr.2.ne, ENNReal.toReal_mul, hgpNorm] at hle
+      rw [ENNReal.toReal_add ha hr.ne, ENNReal.toReal_mul, hgpNorm] at hle
       simpa [H, p, q, G, R, Real.enorm_eq_ofReal, abs_of_pos htpos]
         using hle
     have hpSq : ∫ ω, p ω ^ 2 ∂(ν t) = 1 := by

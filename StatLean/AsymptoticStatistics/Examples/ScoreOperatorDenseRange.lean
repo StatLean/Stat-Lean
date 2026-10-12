@@ -26,11 +26,12 @@ def IsHalfGeometricFullSupport (P : Measure ℕ) : Prop :=
     ∀ n : ℕ, P {n + 1} = (2 : ℝ≥0∞)⁻¹ * P {n}
 
 private noncomputable def halfGeometricP : Measure ℕ :=
-  geometricMeasure (p := (1 / 2 : ℝ)) (by norm_num) (by norm_num)
+  geometricMeasure ⟨(1 / 2 : ℝ), by constructor <;> norm_num⟩
 
 private noncomputable instance halfGeometricP_isProbability :
-    IsProbabilityMeasure halfGeometricP :=
-  isProbabilityMeasure_geometricMeasure (by norm_num) (by norm_num)
+    IsProbabilityMeasure halfGeometricP := by
+  unfold halfGeometricP
+  infer_instance
 
 private instance halfGeometricL2ZeroMean_closed :
     IsClosed (L2ZeroMean halfGeometricP : Set (Lp ℝ 2 halfGeometricP)) :=
@@ -42,12 +43,14 @@ private noncomputable instance halfGeometricL2ZeroMean_complete :
 
 private lemma halfGeometricP_singleton (n : ℕ) :
     halfGeometricP {n} = ENNReal.ofReal ((1 / 2 : ℝ) ^ (n + 1)) := by
-  unfold halfGeometricP geometricMeasure
-  rw [PMF.toMeasure_apply_singleton _ _ (MeasurableSet.singleton _)]
-  change ENNReal.ofReal (geometricPMFReal (1 / 2 : ℝ) n) = _
-  unfold geometricPMFReal
+  have hp : (⟨(1 / 2 : ℝ), by constructor <;> norm_num⟩ : unitInterval) ≠ 0 := by
+    intro h
+    have hv := congrArg (fun p : unitInterval => (p : ℝ)) h
+    norm_num at hv
+  rw [halfGeometricP, geometricMeasure_singleton hp]
+  change ENNReal.ofReal ((1 - (1 / 2 : ℝ)) ^ n * (1 / 2)) = _
   congr 1
-  ring
+  rw [show (1 - (1 / 2 : ℝ)) = 1 / 2 by norm_num, pow_succ]
 
 private lemma halfGeometricP_fullSupport :
     IsHalfGeometricFullSupport halfGeometricP := by
@@ -300,7 +303,7 @@ private lemma summable_singleton_norm_of_integrable
       (fun n : ℕ => ‖u n‖ₑ)]
     exact hu.hasFiniteIntegral.ne
   have hs := ENNReal.summable_toReal htop
-  convert hs using 1
+  convert! hs using 1
   ext n
   rw [ENNReal.toReal_mul]
   simp [mul_comm]
@@ -422,7 +425,7 @@ private lemma hasSum_halfGeometric_alternating :
       (1 / 3 : ℝ) := by
   have h := (hasSum_geometric_of_norm_lt_one
     (ξ := (-1 / 2 : ℝ)) (by norm_num)).mul_left (1 / 2 : ℝ)
-  convert h using 1
+  convert! h using 1
   · ext n
     rw [pow_succ]
     rw [show (-1 / 2 : ℝ) = (1 / 2) * (-1) by ring, mul_pow]
@@ -434,7 +437,7 @@ private lemma hasSum_halfGeometric_third :
       (1 / 3 : ℝ) := by
   have h := (hasSum_geometric_of_norm_lt_one
     (ξ := (1 / 2 : ℝ)) (by norm_num)).mul_left (1 / 6 : ℝ)
-  convert h using 1
+  convert! h using 1
   · ext n
     rw [pow_succ]
     ring
@@ -940,7 +943,7 @@ private lemma integral_id_mul_gaussian_exp_tilt (a : ℝ) :
     _ = ∫ x, x ∂gaussianReal a ⟨1, zero_le_one⟩ := by
       rw [show standardGaussian.withDensity w =
           gaussianReal a ⟨1, zero_le_one⟩ by
-        simpa [standardGaussian, w] using
+        simpa [standardGaussian, w] using!
           ProbabilityTheory.gaussianReal_withDensity_exp_shift a]
     _ = a := ProbabilityTheory.integral_id_gaussianReal
 
@@ -1044,26 +1047,26 @@ private lemma integral_gaussianQmdResidual_sq (a : ℝ) :
   change Integrable (fun x : ℝ => x) standardGaussian at hx
   have hxs : Integrable (fun x => x * gaussianSqrtDensity a x) standardGaussian := by
     exact (by
-      simpa only [id_eq] using
+      simpa only [id_eq] using!
         (ProbabilityTheory.memLp_id_gaussianReal' 2 (by norm_num) :
           MemLp (id : ℝ → ℝ) 2 standardGaussian).integrable_mul
             (gaussianSqrtDensity_memLp a))
   have hsum1 : Integrable (fun x : ℝ => gaussianSqrtDensity a x ^ 2 + 1)
       standardGaussian := by
-    simpa only [Pi.add_apply] using hs2.add (integrable_const (1 : ℝ))
+    simpa only [Pi.add_apply] using! hs2.add (integrable_const (1 : ℝ))
   have hsum2 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2)
       standardGaussian := by
-    simpa only [Pi.add_apply] using hsum1.add (hx2.const_mul (a ^ 2 / 4))
+    simpa only [Pi.add_apply] using! hsum1.add (hx2.const_mul (a ^ 2 / 4))
   have hsub1 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2 -
         2 * gaussianSqrtDensity a x) standardGaussian := by
-    simpa only [Pi.sub_apply] using hsum2.sub (hs.const_mul 2)
+    simpa only [Pi.sub_apply] using! hsum2.sub (hs.const_mul 2)
   have hsub2 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2 -
         2 * gaussianSqrtDensity a x - a * (x * gaussianSqrtDensity a x))
       standardGaussian := by
-    simpa only [Pi.sub_apply] using hsub1.sub (hxs.const_mul a)
+    simpa only [Pi.sub_apply] using! hsub1.sub (hxs.const_mul a)
   rw [show (fun x : ℝ => gaussianQmdResidual a x ^ 2) = fun x =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2
         - 2 * gaussianSqrtDensity a x
@@ -1181,7 +1184,7 @@ private lemma gaussianQmdENNReal_rate :
   apply hlift.congr'
   filter_upwards [self_mem_nhdsWithin] with a ha
   rw [ENNReal.ofReal_div_of_pos (abs_pos.mpr ha),
-    ENNReal.ofReal_toReal (gaussianQmdResidual_memLp a).2.ne]
+    ENNReal.ofReal_toReal (gaussianQmdResidual_memLp a).ne]
 
 private lemma gaussianLocationResidual_ae (b t : ℝ) :
     (fun x : ℝ =>
@@ -1289,9 +1292,7 @@ private lemma gaussian_sum_law (n : ℕ) (μ : ℝ) :
   letI : IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
         (fun X => ∑ i, X i)) :=
-    Measure.isProbabilityMeasure_map (by fun_prop :
-      AEMeasurable (fun X : Fin n → ℝ => ∑ i, X i)
-        (Measure.pi (fun _ : Fin n => gaussianReal μ 1)))
+    (by infer_instance)
   apply Measure.ext_of_charFun
   funext t
   rw [charFun_map_sum_pi_eq_prod]
@@ -1453,7 +1454,7 @@ theorem exists_rawRegularityWitness :
       psi := ψ
       paths := paths
       gaussian_location_path := fun _ _ => rfl
-      psi_on_location := fun θ => by simpa using hψloc θ
+      psi_on_location := fun θ => by simpa using! hψloc θ
       T_n := T_n
       sample_mean := fun _ _ => rfl
       raw := raw

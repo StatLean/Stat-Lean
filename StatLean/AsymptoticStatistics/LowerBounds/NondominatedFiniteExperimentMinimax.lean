@@ -131,7 +131,7 @@ private lemma measurable_finiteScoreAtom {r : ℕ}
     Measurable (finiteScoreAtom (P := P) v) := by
   unfold finiteScoreAtom
   refine (WithLp.measurable_toLp 2 (Fin r → ℝ)).comp ?_
-  exact measurable_pi_lambda _ fun i =>
+  exact Measurable.of_eval fun i =>
     (Lp.stronglyMeasurable (v i : Lp ℝ 2 P)).measurable
 
 private lemma inner_finiteScoreAtom {r : ℕ}
@@ -198,7 +198,7 @@ private theorem weakConverges_finiteScore_under_pi {r : ℕ}
     rw [hevalLaw 0] at hmap
     rw [← hmap, integral_congr_ae
       (Filter.Eventually.of_forall fun x => inner_finiteScoreAtom v a x)]
-    rw [MeasureTheory.integral_finset_sum _]
+    rw [MeasureTheory.integral_finsetSum _]
     · simp [MeasureTheory.integral_const_mul, integral_l2ZeroMean_eq_zero']
     · intro i _
       exact ((Lp.memLp (v i : Lp ℝ 2 P)).integrable (by norm_num)).const_mul (a i)
@@ -240,11 +240,11 @@ private theorem weakConverges_finiteScore_under_pi {r : ℕ}
       intro i j
       exact ((Lp.memLp (v i : Lp ℝ 2 P)).integrable_mul
         (Lp.memLp (v j : Lp ℝ 2 P))).const_mul (a i * b j)
-    rw [hpw, MeasureTheory.integral_finset_sum _]
+    rw [hpw, MeasureTheory.integral_finsetSum _]
     · simp only [dotProduct, Matrix.mulVec]
       apply Finset.sum_congr rfl
       intro i _
-      rw [MeasureTheory.integral_finset_sum _ (fun j _ => hint i j)]
+      rw [MeasureTheory.integral_finsetSum _ (fun j _ => hint i j)]
       simp_rw [MeasureTheory.integral_const_mul, integral_l2ZeroMean_mul']
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
@@ -252,7 +252,7 @@ private theorem weakConverges_finiteScore_under_pi {r : ℕ}
       rw [Matrix.gram_apply]
       ring_nf
     · intro i _
-      apply MeasureTheory.integrable_finset_sum
+      apply MeasureTheory.integrable_finsetSum
       intro j _
       exact hint i j
   have hL2atom : MemLp (finiteScoreAtom v) 2 P := by
@@ -274,12 +274,12 @@ private theorem weakConverges_finiteScore_under_pi {r : ℕ}
   have hVmeas : ∀ n, Measurable (V n) := fun n => by
     dsimp only [V, normalizedScoreSum]
     refine (WithLp.measurable_toLp 2 (Fin r → ℝ)).comp ?_
-    exact measurable_pi_lambda _ fun i => Measurable.const_mul
+    exact Measurable.of_eval fun i => Measurable.const_mul
       (Finset.measurable_sum _ fun j _ =>
         (Lp.stronglyMeasurable (v i : Lp ℝ 2 P)).measurable.comp
           (measurable_pi_apply j)) _
   have hrestrict : ∀ n, Measurable (fun X : ℕ → Ω => fun i : Fin n => X i.val) :=
-    fun n => measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    fun n => Measurable.of_eval fun i => measurable_pi_apply i.val
   have heq : ∀ n, (Measure.pi (fun _ : Fin n => P)).map (V n) =
       Pinf.map (fun X => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i X) := by
     intro n
@@ -320,7 +320,7 @@ private lemma exp_affine_score_integrable_and_integral_euclidean {k : ℕ}
     (π : Measure (EuclideanSpace ℝ (Fin k) × ℝ)) [IsProbabilityMeasure π]
     (γ : NondominatedQMDPath P) (a : ℝ)
     (hsnd : π.map Prod.snd =
-      gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) :
+      gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) :
     let tiltMap : EuclideanSpace ℝ (Fin k) × ℝ →
         EuclideanSpace ℝ (Fin k) × ℝ := fun q =>
       (q.1, a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)
@@ -334,15 +334,15 @@ private lemma exp_affine_score_integrable_and_integral_euclidean {k : ℕ}
   have hg_meas : Measurable g := by fun_prop
   have htilt : Measurable tiltMap := by fun_prop
   have hgauss : Integrable g
-      (gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by
     have hbase := ProbabilityTheory.integrable_exp_mul_gaussianReal
-      (μ := (0 : ℝ)) (v := ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) a
+      (μ := (0 : ℝ)) (v := (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) a
     have hmul := hbase.mul_const (Real.exp (-c))
     exact hmul.congr (Filter.Eventually.of_forall fun x => by
       dsimp only [g]
       rw [sub_eq_add_neg, Real.exp_add])
   have hgauss_int : ∫ x, g x
-        ∂(gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) = 1 := by
+        ∂(gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) = 1 := by
     dsimp only [g]
     simp_rw [sub_eq_add_neg, Real.exp_add]
     rw [integral_mul_const,
@@ -357,7 +357,7 @@ private lemma exp_affine_score_integrable_and_integral_euclidean {k : ℕ}
     exact hgauss.comp_measurable measurable_snd
   constructor
   · refine (integrable_map_measure (by fun_prop) htilt.aemeasurable).mpr ?_
-    simpa only [Function.comp_apply, tiltMap, g] using hpull
+    simpa only [Function.comp_apply, tiltMap, g] using! hpull
   · rw [integral_map htilt.aemeasurable (by fun_prop)]
     change ∫ q, g q.2 ∂π = 1
     calc
@@ -390,16 +390,16 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   have hscore_sub : WeakConverges
       (fun m => (Measure.pi (fun _ : Fin (χ m) => P)).map
         (normalizedScoreSum γ.score (χ m)))
-      (gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by
     simpa only [zero_mul, γ.curve_at_zero] using
       (qmd_local_score_clt γ 0 le_rfl γ.score).comp hχ
   have hscore_as_snd : WeakConverges
       (fun m => ((Measure.pi (fun _ : Fin (χ m) => P)).map
         (fun X => (Y (χ m) X, normalizedScoreSum γ.score (χ m) X))).map Prod.snd)
-      (gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by
-    simpa only [Measure.map_map measurable_snd (hpairMeas _)] using hscore_sub
+      (gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by
+    simpa only [Measure.map_map measurable_snd (hpairMeas _)] using! hscore_sub
   have hπsnd : π.map Prod.snd =
-      gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩ :=
+      gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _)) :=
     WeakConverges.snd_eq hπ hscore_as_snd
   let tiltMap : EuclideanSpace ℝ (Fin k) × ℝ →
       EuclideanSpace ℝ (Fin k) × ℝ := fun q =>
@@ -436,7 +436,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
         (a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)))) := ⟨hmass⟩
   haveI hνprob : IsProbabilityMeasure ν := by
     dsimp only [ν]
-    exact Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    exact (by infer_instance)
   letI : ∀ m, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin (χ m) =>
         γ.curve (a * (Real.sqrt (χ m))⁻¹))) := fun m => by
@@ -448,7 +448,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   letI : ∀ m, IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin (χ m) =>
         γ.curve (a * (Real.sqrt (χ m))⁻¹))).map (Y (χ m))) := fun m =>
-    Measure.isProbabilityMeasure_map (hY (χ m)).aemeasurable
+    (by infer_instance)
   change WeakConverges
     (fun m => (Measure.pi (fun _ : Fin (χ m) =>
       γ.curve (a * (Real.sqrt (χ m))⁻¹))).map (Y (χ m))) ν
@@ -462,7 +462,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   have hpairMap_cont : Continuous pairMap := by fun_prop
   have hpairMap_meas : Measurable pairMap := hpairMap_cont.measurable
   letI : IsProbabilityMeasure (π.map pairMap) :=
-    Measure.isProbabilityMeasure_map hpairMap_meas.aemeasurable
+    (by infer_instance)
   have hπlam0 := hπ.map hpairMap_cont hpairMap_meas
   have hπlam : WeakConverges
       (fun m => (Measure.pi (fun _ : Fin (χ m) => P)).map
@@ -474,7 +474,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
         (fun X => (Y (χ m) X,
           normalizedScoreSum γ.score (χ m) X))).map pairMap) _ at hπlam0
     simpa only [Measure.map_map hpairMap_meas (hpairMeas _),
-      Function.comp_apply, pairMap] using hπlam0
+      Function.comp_apply, pairMap] using! hπlam0
   have hscalar := qmd_lecamThird_along_subseq γ a ha
     (fun n X => proj (Y n X))
     (fun n => hproj_meas.comp (hY n)) χ hχ (π.map pairMap) hπlam
@@ -491,7 +491,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   change WeakConverges
     (fun m => ((Measure.pi (fun _ : Fin (χ m) =>
       γ.curve (a * (Real.sqrt (χ m))⁻¹))).map (Y (χ m))).map proj) _
-  simpa only [Measure.map_map hproj_meas (hY _), Function.comp_apply] using hscalar
+  simpa only [Measure.map_map hproj_meas (hY _), Function.comp_apply] using! hscalar
 
 /-- Joint compactness for a finite baseline score vector and a bounded loss
 profile, obtained directly from the finite experiment. -/
@@ -525,7 +525,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
   have hscore : ∀ n, Measurable (score n) := fun n => by
     dsimp only [score]
     refine (WithLp.measurable_toLp 2 (Fin r → ℝ)).comp ?_
-    exact measurable_pi_lambda _ fun j => measurable_normalizedScoreSum' (v j) n
+    exact Measurable.of_eval fun j => measurable_normalizedScoreSum' (v j) n
   have hprofile : Measurable profile :=
     (Experiment.FiniteRiskCompactification.finiteLossProfile_uniform_center
       center ℓ hfinite hbdd huc).1.continuous.measurable
@@ -544,7 +544,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
       (score (χ k) X, profile (action (χ k) X))) := fun k =>
     (hscore (χ k)).prodMk (hprofile.comp (haction (χ k)))
   letI : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
-    Measure.isProbabilityMeasure_map (hjointMeas k).aemeasurable
+    (by infer_instance)
   have hfst (k : ℕ) : (joint k).map Prod.fst =
       (Measure.pi (fun _ : Fin (χ k) => P)).map (score (χ k)) := by
     dsimp only [joint]
@@ -562,7 +562,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
     simpa only [score] using (weakConverges_finiteScore_under_pi v).comp hχ
   letI : ∀ k, IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin (χ k) => P)).map (score (χ k))) := fun k =>
-    Measure.isProbabilityMeasure_map (hscore (χ k)).aemeasurable
+    (by infer_instance)
   have hfstTight : IsTightMeasureSet
       ((fun ρ : Measure (EuclideanSpace ℝ (Fin r) ×
         EuclideanSpace ℝ (Fin r)) => ρ.map Prod.fst) '' Set.range joint) := by
@@ -599,7 +599,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
     refine ⟨closure (Set.range profile), hprofileCompact, ?_⟩
     rintro _ ⟨_, ⟨k, rfl⟩, rfl⟩
     letI : IsProbabilityMeasure ((joint k).map Prod.snd) :=
-      Measure.isProbabilityMeasure_map measurable_snd.aemeasurable
+      (by infer_instance)
     rw [(prob_compl_eq_zero_iff isClosed_closure.measurableSet).2 (hsndSupport k)]
     exact bot_le
   have hjointTight : IsTightMeasureSet (Set.range joint) :=
@@ -616,12 +616,12 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
   have hπsndSupport : (π.map Prod.snd) (closure (Set.range profile)) = 1 := by
     let Pn : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) := fun k =>
       ⟨(joint (τ k)).map Prod.snd,
-        Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+        (by infer_instance)⟩
     let Pπ : ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) :=
-      ⟨π.map Prod.snd, Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+      ⟨π.map Prod.snd, (by infer_instance)⟩
     have htend : Tendsto Pn atTop (nhds Pπ) := by
       apply ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr
-      simpa [Pn, Pπ] using hπweak.map continuous_snd measurable_snd
+      simpa [Pn, Pπ] using! hπweak.map continuous_snd measurable_snd
     have hclosed := ProbabilityMeasure.limsup_measure_closed_le_of_tendsto
       (F := closure (Set.range profile)) htend isClosed_closure
     have hlimsup : limsup (fun k => ((Pn k : ProbabilityMeasure
@@ -675,7 +675,7 @@ private theorem finiteScoreProfile_selected_tilt {r : ℕ}
   have hscore : ∀ n, Measurable (score n) := fun n => by
     dsimp only [score]
     refine (WithLp.measurable_toLp 2 (Fin r → ℝ)).comp ?_
-    exact measurable_pi_lambda _ fun i => measurable_normalizedScoreSum' (v i) n
+    exact Measurable.of_eval fun i => measurable_normalizedScoreSum' (v i) n
   have henc_cont : Continuous enc :=
     (EuclideanSpace.finAddEquivProd (𝕜 := ℝ)).symm.continuous
   have henc_meas : Measurable enc := henc_cont.measurable
@@ -696,7 +696,7 @@ private theorem finiteScoreProfile_selected_tilt {r : ℕ}
         continuous_fst)
   have hpairMap_meas : Measurable pairMap := hpairMap_cont.measurable
   letI : IsProbabilityMeasure (π.map pairMap) :=
-    Measure.isProbabilityMeasure_map hpairMap_meas.aemeasurable
+    (by infer_instance)
   have hπpair0 := hπ.map hpairMap_cont hpairMap_meas
   have hπpair : WeakConverges
       (fun k => (Measure.pi (fun _ : Fin (η k) => P)).map
@@ -707,7 +707,7 @@ private theorem finiteScoreProfile_selected_tilt {r : ℕ}
         (fun X => (score (η k) X, profile (η k) X))).map pairMap) _ at hπpair0
     simpa only [Measure.map_map hpairMap_meas
       ((hscore _).prodMk (hprofile _)), Function.comp_apply, pairMap, Y,
-      score, hγscore] using hπpair0
+      score, hγscore] using! hπpair0
   have htilt := qmd_lecamThird_euclidean_along_subseq γ 1 zero_le_one
     Y hY η hη (π.map pairMap) hπpair
   have htiltProfile := htilt.map hdec_cont hdec_meas
@@ -734,7 +734,7 @@ private theorem finiteScoreProfile_selected_tilt {r : ℕ}
     funext q
     exact hdecode q
   rw [← htarget]
-  convert htiltProfile using 1
+  convert! htiltProfile using 1
   funext k
   rw [Measure.map_map hdec_meas (hY (η k))]
   congr 1
@@ -876,7 +876,7 @@ private theorem exists_nondominatedEIFVec {d : ℕ}
   refine ⟨fun i => (q i : ↥(L2ZeroMean P)), fun i => ?_⟩
   apply AsymptoticStatistics.Core.EIF.eif_of_representation_and_membership
   · intro g
-    simpa only [di] using (hq i g).symm
+    simpa only [di] using! (hq i g).symm
   · exact (q i).property
 
 private noncomputable def firstBlockMatrix (r d : ℕ) :
@@ -1062,7 +1062,7 @@ private theorem rawGaussian_bind_eifKernel {r d : ℕ}
     (multivariateGaussian 0 G).map split
   letI : IsProbabilityMeasure π := by
     dsimp only [π]
-    exact Measure.isProbabilityMeasure_map split.continuous.measurable.aemeasurable
+    exact (by infer_instance)
   have hjoint := jointGramGaussian_fst_and_tilt_snd v φ j
   have hbridge := secondKernelOfJoint_tilt_eq_gaussian_bind v j π hjoint.1
   calc
@@ -1144,7 +1144,7 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
       EuclideanSpace ℝ (Fin d)) := (multivariateGaussian 0 G).map split
   letI : IsProbabilityMeasure π := by
     dsimp only [π]
-    exact Measure.isProbabilityMeasure_map split.continuous.measurable.aemeasurable
+    exact (by infer_instance)
   have hκMarkov : IsMarkovKernel (secondKernelOfJoint π) := by
     change IsMarkovKernel
       (ProbabilityTheory.condDistrib Prod.fst Prod.snd (π.map Prod.swap))
@@ -1311,14 +1311,14 @@ private theorem closed_support_eq_one_of_weakConverges
   let Pμ : ProbabilityMeasure X := ⟨μ, inferInstance⟩
   have htend : Tendsto Pn atTop (nhds Pμ) := by
     apply ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr
-    simpa only [Pn, Pμ] using hweak
+    simpa only [Pn, Pμ] using! hweak
   have hclosed := ProbabilityMeasure.limsup_measure_closed_le_of_tendsto
     htend hF
   have hlimsup : limsup (fun n => ((Pn n : ProbabilityMeasure X) : Measure X) F)
       atTop = 1 := by
     simp [Pn, hsupp]
   have hone : (1 : ℝ≥0∞) ≤ μ F := by
-    simpa only [Pμ, hlimsup] using hclosed
+    simpa only [Pμ, hlimsup] using! hclosed
   have hle : μ F ≤ μ Set.univ := measure_mono (Set.subset_univ F)
   rw [measure_univ] at hle
   exact le_antisymm hle hone
@@ -1522,7 +1522,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
     let qi : V m := ⟨p m i, hp_mem m i⟩
     let qj : V m := ⟨p m i', hp_mem m i'⟩
     have hparseval := (b m).sum_inner_mul_inner qi qj
-    rw [show
+    erw [show
         (∑ k, ⟪p m i, ((b m k : V m) : ↥(L2ZeroMean P))⟫_ℝ *
           ⟪p m i', ((b m k : V m) : ↥(L2ZeroMean P))⟫_ℝ) =
         ∑ k, ⟪qi, b m k⟫_ℝ * ⟪b m k, qj⟫_ℝ by
@@ -1799,7 +1799,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
       hGramPSD hSigmaPSD hSigmaTend _hlsc
   refine hlsc.trans ?_
   refine Filter.liminf_le_of_le ?_ ?_
-  · exact ⟨0, Filter.Eventually.of_forall (fun _ => zero_le _)⟩
+  · exact ⟨0, Filter.Eventually.of_forall (fun _ => zero_le)⟩
   · intro q hq
     obtain ⟨m, hm⟩ :=
       (hq.and (Filter.Eventually.of_forall (fun m => hperM m))).exists
@@ -1939,7 +1939,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
       finiteCarrierScoreMean_selected_eq I j] using ht
   letI hProfileLawProb (j : Fin I.card) (k : ℕ) :
       IsProbabilityMeasure ((alt j (η k)).map (profile (η k))) :=
-    Measure.isProbabilityMeasure_map (hprofile (η k)).aemeasurable
+    (by infer_instance)
   have hpreSupp (j : Fin I.card) (k : ℕ) :
       ((alt j (η k)).map (profile (η k)))
         (closure (Set.range
@@ -1983,7 +1983,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   letI hActionLawProb (j : Fin I.card) (k : ℕ) :
       IsProbabilityMeasure (actionLaw j k) := by
     dsimp only [actionLaw]
-    exact Measure.isProbabilityMeasure_map (haction (η k)).aemeasurable
+    exact (by infer_instance)
   have hcenterDiff (j : Fin I.card) : Tendsto (fun k =>
       (∫ a, (ℓ (a - centerN j (η k))).toReal ∂(actionLaw j k)) -
         ∫ a, (ℓ (a - center j)).toReal ∂(actionLaw j k))
@@ -2171,7 +2171,7 @@ theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec {d : ℕ}
     exact Filter.eventually_atTop.2 ⟨n, fun k hk => hmono x hk⟩
   have hcont (n : ℕ) : Continuous (ℓn n) := by
     have h := ENNReal.continuous_ofReal.comp (huc n).continuous
-    convert h using 1
+    convert! h using 1
     funext x
     exact (ENNReal.ofReal_toReal (hfinite n x)).symm
   have hbounded (n : ℕ) :

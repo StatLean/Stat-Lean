@@ -222,12 +222,12 @@ theorem finDimSubmodel_lan
       -- Combine via `Measure.map_map`.
       have h_truncate_meas :
           Measurable (fun ω : ℕ → Ω => fun i : Fin n => ω i.val) := by
-        refine measurable_pi_lambda _ (fun i => ?_)
+        refine Measurable.of_eval (fun i => ?_)
         exact measurable_pi_apply _
       have h_score_meas : Measurable (scoreSumStat g_P n) := by
         unfold scoreSumStat
         refine (WithLp.measurable_toLp 2 (Fin m → ℝ)).comp ?_
-        refine measurable_pi_lambda _ (fun i => ?_)
+        refine Measurable.of_eval (fun i => ?_)
         refine Measurable.const_mul ?_ _
         refine Finset.measurable_sum _ (fun j _ => ?_)
         exact (Lp.stronglyMeasurable _).measurable.comp (measurable_pi_apply _)

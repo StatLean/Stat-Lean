@@ -268,7 +268,7 @@ theorem lasso_minimizer_exists (X : Matrix (Fin n) (Fin d) ℝ)
     refine Continuous.add (Continuous.mul continuous_const ?_)
       (Continuous.mul continuous_const ?_)
     · exact ((continuous_const.sub hcontMap).norm).pow 2
-    · exact continuous_finset_sum _ fun i _ => (hcontCoord i).abs
+    · exact continuous_finsetSum _ fun i _ => (hcontCoord i).abs
   have hbdd : Bornology.IsBounded
       {β : EuclideanSpace ℝ (Fin d) | lassoObjective X Y lam β ≤ lassoObjective X Y lam 0} := by
     apply Bornology.IsBounded.subset

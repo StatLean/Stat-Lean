@@ -1236,7 +1236,7 @@ theorem bowl_shaped_loss_risk_kernel_form
         (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
             ∫⁻ y, L (y - ψDot p.1) ∂(κ' p)) :=
       Measurable.lintegral_kernel_prod_right' (κ := κ') h_int_meas
-    convert h_main using 1
+    convert! h_main using 1
   -- κ as an AEMeasurable function (needed by `lintegral_bind`).
   have hκ_meas : ∀ h : EuclideanSpace ℝ (Fin k),
       AEMeasurable (κ : EuclideanSpace ℝ (Fin k) → Measure (EuclideanSpace ℝ (Fin d)))

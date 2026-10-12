@@ -93,7 +93,7 @@ lemma cdf_map_affine (R : Measure ℝ) [IsProbabilityMeasure R] {a : ℝ}
     cdf (R.map (fun u => a * u + b)) t = cdf R ((t - b) / a) := by
   have hf : Measurable (fun u : ℝ => a * u + b) := by fun_prop
   have : IsProbabilityMeasure (R.map (fun u => a * u + b)) :=
-    Measure.isProbabilityMeasure_map hf.aemeasurable
+    (by infer_instance)
   rw [cdf_eq_real, cdf_eq_real, Measure.real, Measure.real,
     Measure.map_apply hf measurableSet_Iic]
   congr 2
@@ -144,7 +144,7 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
   set φ : ℝ → ℝ := fun u => a * u + b with hφdef
   have hφmeas : Measurable φ := by fun_prop
   have hφcont : Continuous φ := by fun_prop
-  haveI : IsProbabilityMeasure (R.map φ) := Measure.isProbabilityMeasure_map hφmeas.aemeasurable
+  haveI : IsProbabilityMeasure (R.map φ) := (by infer_instance)
   -- `L` is the *deterministic* affine image, `S` the actual (randomly rescaled) statistic.
   set L : ∀ n, 𝓧 n → ℝ := fun n x => φ (T n x) with hLdef
   set S : ∀ n, 𝓧 n → ℝ := fun n x => A n x * T n x + B n x with hSdef
@@ -170,7 +170,7 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
     have hmapped := hjoint.map (f := Prod.fst) continuous_fst measurable_fst
     simpa using hmapped
   haveI : ∀ n, IsProbabilityMeasure ((randPairLaw (G n) (T n) (P n)).map Prod.fst) := fun n =>
-    Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   have hrem : ∀ δ > (0 : ℝ), Tendsto (fun n => (Fintype.card (G n) : ℝ)⁻¹ *
       ∑ g : G n, (P n).real {x | δ ≤ ‖S n (g • x) - L n (g • x)‖}) atTop (𝓝 0) := by
     intro δ hδ

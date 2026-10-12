@@ -85,8 +85,10 @@ theorem completeStat_boundedlyCompleteStat {P : Θ → Measure 𝓧} {T : 𝓧 �
     (h : IsCompleteStat P T) :
     IsBoundedlyCompleteStat P T := by
   haveI : ∀ θ, IsProbabilityMeasure ((P θ).map T) :=
-    fun θ => Measure.isProbabilityMeasure_map hT.aemeasurable
-  exact h.boundedlyComplete
+    fun θ => (by infer_instance)
+  simpa only [IsBoundedlyCompleteStat, Measure.map₀_of_measurable hT] using
+    (show IsCompleteFamily (fun θ => (P θ).map T) from by
+      simpa only [IsCompleteStat, Measure.map₀_of_measurable hT] using h).boundedlyComplete
 
 /-- **Basu's theorem**: a boundedly complete sufficient statistic is independent of every
 ancillary statistic, under every member of the family. -/
@@ -106,10 +108,14 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
     -- USER-INPUT: ancillarity of `V`: its law does not depend on the parameter
     (hanc : IsAncillary P V) :
     ∀ θ, IndepFun T V (P θ) := by
-  obtain ⟨Q, hQ, hgraph⟩ := hsuff
+  obtain ⟨Q, hQ, hgraph⟩ := hsuff.exists_map hT
+  have hcomp_map : IsBoundedlyCompleteFamily (fun θ => (P θ).map T) := by
+    simpa only [IsBoundedlyCompleteStat, Measure.map₀_of_measurable hT] using hcomp
+  have hanc_map : ∀ θ θ', (P θ).map V = (P θ').map V := by
+    simpa only [IsAncillary, Measure.map₀_of_measurable hV] using hanc
   haveI := hQ
   have hsl : ∀ θ', IsProbabilityMeasure ((P θ').map T) :=
-    fun θ' => Measure.isProbabilityMeasure_map hT.aemeasurable
+    fun θ' => (by infer_instance)
   intro θ
   rw [indepFun_iff_measure_inter_preimage_eq_mul]
   intro B A hB hA
@@ -127,13 +133,15 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
   -- ancillarity makes `P_θ(V ∈ A)` parameter-free
   have hanc' : ∀ θ', P θ' (V ⁻¹' A) = P θ (V ⁻¹' A) := by
     intro θ'
-    rw [← Measure.map_apply hV hA, ← Measure.map_apply hV hA, hanc θ' θ]
+    rw [← Measure.map_apply hV hA, ← Measure.map_apply hV hA, hanc_map θ' θ]
   -- reconstruction identity, `ℝ≥0∞`- and `ℝ`-level
   have hlint : ∀ θ', ∫⁻ t, Q t (V ⁻¹' A) ∂((P θ').map T) = P θ' (V ⁻¹' A) := by
     intro θ'
     calc ∫⁻ t, Q t (V ⁻¹' A) ∂((P θ').map T)
         = (Q ∘ₘ (statLaw P T θ')) (V ⁻¹' A) :=
-          (Measure.bind_apply (hV hA) Q.aemeasurable).symm
+          by
+            rw [statLaw_eq_map P T θ' hT.aemeasurable]
+            exact (Measure.bind_apply (hV hA) Q.aemeasurable).symm
       _ = P θ' (V ⁻¹' A) := by rw [statLaw_snd P hT hgraph θ']
   have hrecon : ∀ θ', ∫ s, f s ∂((P θ').map T) = (P θ' (V ⁻¹' A)).toReal := by
     intro θ'
@@ -153,9 +161,11 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
       probReal_univ, one_smul, hanc' θ', hc, sub_self]
   -- bounded completeness forces the conditional probability to be constant a.e.
   have hae : (fun t => Q t (V ⁻¹' A)) =ᵐ[statLaw P T θ] fun _ => P θ (V ⁻¹' A) := by
-    have hbc : (fun t => f t - c) =ᵐ[statLaw P T θ] 0 :=
-      hcomp (fun t => f t - c) (hfmeas.sub measurable_const)
-        ⟨1, fun t => abs_le.mpr ⟨by linarith [hf0 t, hc1], by linarith [hf1 t, hc0]⟩⟩ hzero' θ
+    have hbc : (fun t => f t - c) =ᵐ[statLaw P T θ] 0 := by
+      simpa only [statLaw, Measure.map₀_of_measurable hT] using
+        (hcomp_map (fun t => f t - c) (hfmeas.sub measurable_const)
+          ⟨1, fun t => abs_le.mpr ⟨by linarith [hf0 t, hc1], by linarith [hf1 t, hc0]⟩⟩
+          hzero' θ)
     filter_upwards [hbc] with t ht
     simp only [Pi.zero_apply] at ht
     have hft : f t = c := sub_eq_zero.mp ht
@@ -166,7 +176,7 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hpre : T ⁻¹' B ∩ V ⁻¹' A = (fun x => (T x, x)) ⁻¹' (B ×ˢ (V ⁻¹' A)) := by
     ext x; simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod]
-  haveI : IsProbabilityMeasure (statLaw P T θ) := hsl θ
+  haveI : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
   have key : P θ (T ⁻¹' B ∩ V ⁻¹' A) = ∫⁻ t in B, Q t (V ⁻¹' A) ∂(statLaw P T θ) := by
     rw [hpre, ← Measure.map_apply hgm (hB.prod (hV hA)), hgraph θ,
       Measure.compProd_apply_prod hB (hV hA)]
@@ -176,6 +186,6 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
         lintegral_congr_ae (ae_restrict_of_ae hae)
     _ = P θ (V ⁻¹' A) * (statLaw P T θ) B := by rw [setLIntegral_const]
     _ = P θ (T ⁻¹' B) * P θ (V ⁻¹' A) := by
-        rw [mul_comm]; congr 1; rw [statLaw, Measure.map_apply hT hB]
+        rw [mul_comm]; congr 1; rw [statLaw, Measure.map₀_of_measurable hT, Measure.map_apply hT hB]
 
 end StatLean.PointEstimation

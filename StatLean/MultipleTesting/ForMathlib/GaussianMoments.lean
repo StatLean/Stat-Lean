@@ -112,8 +112,8 @@ private lemma integral_pow_four_mul_exp_half :
       rwa [show -(2 * x) / 2 = -x from by ring] at h
     have h2 : HasDerivAt (fun y : ℝ => Real.exp (-y ^ 2 / 2))
         (Real.exp (-x ^ 2 / 2) * (-x)) x := by
-      simpa [Function.comp] using (Real.hasDerivAt_exp (-x ^ 2 / 2)).comp x hu
-    convert h1.mul h2 using 1
+      simpa [Function.comp] using! (Real.hasDerivAt_exp (-x ^ 2 / 2)).comp x hu
+    convert! h1.mul h2 using 1
     ring
   have hf : Integrable (fun x : ℝ => x ^ 3 * Real.exp (-x ^ 2 / 2)) :=
     integrable_pow_mul_exp_half 3

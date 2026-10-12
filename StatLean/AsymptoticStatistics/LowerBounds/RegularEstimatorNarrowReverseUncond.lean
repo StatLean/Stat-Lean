@@ -115,7 +115,7 @@ theorem isRegularEstimator_of_narrow_explicit_common
   have h_inv_to_zero : Tendsto t atTop (𝓝 0) := by
     have h_sqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa [ht_def] using h_sqrt.inv_tendsto_atTop
+    simpa [ht_def] using! h_sqrt.inv_tendsto_atTop
   have h_inv_ne : ∀ᶠ n : ℕ in atTop, t n ≠ 0 := by
     filter_upwards [Filter.eventually_ge_atTop 1] with n hn
     have hpos : (0 : ℝ) < Real.sqrt n :=
@@ -313,9 +313,29 @@ theorem isRegularEstimator_of_narrow_unconditional
     (hT_meas : ∀ n, Measurable (T_n n)) :
     IsRegularEstimator P T_set ψ hψ hEIF T_n L := by
   obtain ⟨chosenFamily, h_score, h_regular⟩ := h_narrow
+  have h_regular_map (g : ↥(L2ZeroMean P))
+      (hg : (g : ↥(L2ZeroMean P)) ∈ Submodule.span ℝ T_set.carrier) :
+      WeakConverges
+        (fun n : ℕ =>
+          (Measure.pi (fun _ : Fin n =>
+            (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map
+            (fun X : Fin n → Ω => Real.sqrt n *
+              (T_n n X - ψ ((chosenFamily g hg).curve ((Real.sqrt n)⁻¹))))) L := by
+    have hweak := h_regular g hg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n =>
+        (chosenFamily g hg).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ
+        ((chosenFamily g hg).curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   intro g hg curve hscore
+  rw [map₀_sequence_eq_map
+    (fun n => Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)))
+    (fun n X => Real.sqrt n * (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹))))
+    (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)]
   exact isRegularEstimator_of_narrow_explicit_common
     (IF_eff := IF_eff) (hψ := hψ) (_hEIF := hEIF)
-    chosenFamily h_score h_regular hT_meas g hg curve hscore
+    chosenFamily h_score h_regular_map hT_meas g hg curve hscore
 
 end AsymptoticStatistics.LowerBounds.RegularEstimator

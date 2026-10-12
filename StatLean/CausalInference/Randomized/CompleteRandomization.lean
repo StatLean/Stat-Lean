@@ -57,7 +57,7 @@ private lemma ofFinset_armIdx (z : Assignment n) : ofFinset (armIdx z true) = z 
 /-- Membership in the complete-randomization support, unfolded. -/
 private lemma mem_completeSupport_iff {z : Assignment n} :
     z ∈ completeSupport n n₁ ↔ (armIdx z true).card = n₁ := by
-  simp [completeSupport, numTreated]
+  exact Finset.mem_filter.trans (and_iff_right (Finset.mem_univ z))
 
 /-- The support of complete randomization is in bijection with the `n₁`-subsets of the
 units. Stated privately so that `expect_completeDesign_eq`, which precedes the public

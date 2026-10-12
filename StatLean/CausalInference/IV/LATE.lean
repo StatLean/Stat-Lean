@@ -109,19 +109,19 @@ private lemma indepFun_boolComp (hrand : IVRandomized μ Z d1 d0 y1 y0) (φ₀ :
     IndepFun (fun ω => φ₀ (d1 ω, d0 ω)) Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => φ₀ p.1) (ψ := id)
     ((measurable_of_countable φ₀).comp measurable_fst) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-- Random assignment passes to `Y(1)`. -/
 private lemma indepFun_y1 (hrand : IVRandomized μ Z d1 d0 y1 y0) : IndepFun y1 Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => p.2.1) (ψ := id)
     (measurable_fst.comp measurable_snd) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-- Random assignment passes to `Y(0)`. -/
 private lemma indepFun_y0 (hrand : IVRandomized μ Z d1 d0 y1 y0) : IndepFun y0 Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => p.2.2) (ψ := id)
     (measurable_snd.comp measurable_snd) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-! ### The decompositions -/
 

@@ -158,7 +158,7 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
     -- Squeeze the vector measure between 0 and the sum of coordinate measures.
     rw [show (0 : ℝ≥0∞) = ∑ _j : Fin d, (0 : ℝ≥0∞) by simp]
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (tendsto_finset_sum (Finset.univ : Finset (Fin d)) (fun j _ => h_coord j))
+      (tendsto_finsetSum (Finset.univ : Finset (Fin d)) (fun j _ => h_coord j))
     · exact Filter.Eventually.of_forall (fun _ => by simp)
     · refine Filter.Eventually.of_forall (fun n => ?_)
       refine le_trans (measure_mono ?_) (measure_iUnion_fintype_le _ _)

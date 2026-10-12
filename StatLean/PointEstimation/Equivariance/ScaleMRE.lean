@@ -154,7 +154,7 @@ private lemma integral_orbitCondKernel_eq_self_of_invariant
   have hcompProd : (P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ
       = P₀.map (fun x => (scaleZ x, x)) := by
     unfold orbitCondKernel
-    exact ProbabilityTheory.compProd_map_condDistrib aemeasurable_id
+    exact ProbabilityTheory.compProd_map_condDistrib measurable_scaleZ.aemeasurable aemeasurable_id
   have hprodMeas : Measurable (fun x : Fin (m + 1) → ℝ => (scaleZ x, x)) :=
     measurable_scaleZ.prodMk measurable_id
   have hconc_cp : ∀ᵐ q ∂((P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ),
@@ -400,7 +400,7 @@ theorem isScaleMRE_steinLoss (P₀ : Measure (Fin (m + 1) → ℝ))
       rw [lintegral_congr_ae hae]
       simp
     rw [hrisk0]
-    exact zero_le _
+    exact zero_le
 
 /-- **The minimum risk equivariant estimator of `τ^r` under the standardized
 squared-error loss** `γ(v) = (v − 1)²`, i.e. `L(τ, d) = (d − τ^r)²/τ^{2r}`: the ratio of
@@ -472,7 +472,7 @@ theorem isScaleMRE_standardizedSquared (P₀ : Measure (Fin (m + 1) → ℝ))
       rw [lintegral_congr_ae hae]
       simp
     rw [hrisk0]
-    exact zero_le _
+    exact zero_le
 
 end ScaleMRE
 

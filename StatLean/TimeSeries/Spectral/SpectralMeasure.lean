@@ -138,7 +138,7 @@ theorem isSpectralMeasure_whiteNoise [IsProbabilityMeasure μ] {ε : ℤ → Ω 
   refine ⟨⟨?_⟩, ?_, fun k => ?_⟩
   · rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
     exact ENNReal.ofReal_lt_top
-  · rw [NegInvariant, Measure.map_smul, negInvariant_haarAddCircle]
+  · rw [NegInvariant, Measure.map_smul _ measurable_neg.aemeasurable, negInvariant_haarAddCircle]
   · rw [measureFourierCoeff_smul', measureFourierCoeff_haarAddCircle,
       ENNReal.toReal_ofReal hσ, hε.acvf_eq k]
     rcases eq_or_ne k 0 with rfl | hk

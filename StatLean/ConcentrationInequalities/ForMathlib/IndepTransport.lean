@@ -64,7 +64,7 @@ theorem integral_eq_integral_pi_map {μ : Measure Ω} [IsProbabilityMeasure μ]
     -- `integral_map` side condition
     (hG : AEStronglyMeasurable G (Measure.pi fun i => μ.map (X i))) :
     ∫ ω, G (fun i => X i ω) ∂μ = ∫ y, G y ∂(Measure.pi fun i => μ.map (X i)) := by
-  have hφ : AEMeasurable (fun ω i => X i ω) μ := aemeasurable_pi_lambda _ h_meas
+  have hφ : AEMeasurable (fun ω i => X i ω) μ := AEMeasurable.of_eval h_meas
   have hmap : μ.map (fun ω i => X i ω) = Measure.pi (fun i => μ.map (X i)) :=
     (iIndepFun_iff_map_fun_eq_pi_map h_meas).mp h_indep
   rw [← hmap] at hG ⊢
@@ -87,11 +87,11 @@ theorem integral_prod_eq_integral_pi_prod {μ : Measure Ω} [IsProbabilityMeasur
     (hG : AEStronglyMeasurable G ((Measure.pi fun i => μ.map (X i)).prod ρ)) :
     ∫ p, G (fun i => X i p.1, p.2) ∂(μ.prod ρ)
       = ∫ q, G q ∂((Measure.pi fun i => μ.map (X i)).prod ρ) := by
-  have hφ : Measurable (fun ω i => X i ω) := measurable_pi_lambda _ h_meas
+  have hφ : Measurable (fun ω i => X i ω) := Measurable.of_eval h_meas
   have hmapφ : μ.map (fun ω i => X i ω) = Measure.pi (fun i => μ.map (X i)) :=
     (iIndepFun_iff_map_fun_eq_pi_map (fun i => (h_meas i).aemeasurable)).mp h_indep
   have hψ : Measurable (fun p : Ω × γ => (fun i => X i p.1, p.2)) :=
-    (measurable_pi_lambda _ (fun i => (h_meas i).comp measurable_fst)).prodMk measurable_snd
+    (Measurable.of_eval (fun i => (h_meas i).comp measurable_fst)).prodMk measurable_snd
   have hmapψ : (μ.prod ρ).map (fun p : Ω × γ => (fun i => X i p.1, p.2))
       = (Measure.pi fun i => μ.map (X i)).prod ρ := by
     rw [show (fun p : Ω × γ => (fun i => X i p.1, p.2))
@@ -118,7 +118,7 @@ theorem integral_indepFun_eq_integral_prod {μ : Measure Ω} [IsProbabilityMeasu
     -- LEAN-ONLY: integrand measurability w.r.t. the pushforward product
     (hG : AEStronglyMeasurable G ((μ.map A).prod ρ)) :
     ∫ ω, G (A ω, B ω) ∂μ = ∫ p, G (A p.1, p.2) ∂(μ.prod ρ) := by
-  haveI : IsProbabilityMeasure ρ := hBlaw ▸ Measure.isProbabilityMeasure_map hB.aemeasurable
+  haveI : IsProbabilityMeasure ρ := hBlaw ▸ (by infer_instance)
   have hφ : AEMeasurable (fun ω => (A ω, B ω)) μ := hA.aemeasurable.prodMk hB.aemeasurable
   have hmapφ : μ.map (fun ω => (A ω, B ω)) = (μ.map A).prod ρ := by
     rw [(indepFun_iff_map_prod_eq_prod_map_map hA.aemeasurable hB.aemeasurable).mp hAB, hBlaw]

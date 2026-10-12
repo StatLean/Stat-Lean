@@ -101,7 +101,7 @@ definitional choice against the books' limit reading. -/
 theorem survivalLeft_eq_leftLim (μ : Measure ℝ) [IsFiniteMeasure μ] (t : ℝ) :
     survivalLeft μ t = Function.leftLim (survival μ) t := by
   have hL : Function.leftLim (survival μ) t = sInf (survival μ '' Iio t) :=
-    leftLim_eq_of_tendsto (nhdsLT_neBot t).ne
+    leftLim_eq_of_tendsto
       ((antitone_survival μ).tendsto_nhdsLT t)
   rw [hL]
   refine le_antisymm (le_sInf ?_) ?_

@@ -64,8 +64,8 @@ noncomputable instance instIsProbabilityMeasureMarObsMeasure
     (Q : Measure (X × ℝ)) [IsProbabilityMeasure Q]
     (r : Kernel (X × ℝ) Bool) [IsMarkovKernel r] :
     IsProbabilityMeasure (marObsMeasure Q r) := by
-  exact Measure.isProbabilityMeasure_map
-    (measurable_marObsMap (X := X)).aemeasurable
+  unfold marObsMeasure
+  infer_instance
 
 /-- The genuine MAR kernel/propensity linkage: conditionally on latent
 `(X,Y)=y`, the response probability is `π(y.1)`.
@@ -226,15 +226,14 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
     have hmap : marMean_coarseningScore π c =ᵐ[(Q ⊗ₘ r).map marObsMap] braw := by
       rw [Filter.EventuallyEq, ae_map_iff (measurable_marObsMap (X := X)).aemeasurable
         (measurableSet_eq_fun hscore_meas hbraw_meas.measurable)]
-      simpa only using hpull
-    simpa only [marObsMeasure] using hmap
+      simpa only using! hpull
+    simpa only [marObsMeasure] using! hmap
   apply le_antisymm
   · intro b hb
-    let b0 : ↥(L2ZeroMean (marObsMeasure Q r)) := by
-      simpa only [marObsMeasure] using b
+    let b0 : ↥(L2ZeroMean (marObsMeasure Q r)) := b
     have hb0 : b0 ∈ concreteCoarseningScores Q r
         (measurable_marObsMap (X := X)) := by
-      simpa only [b0, marObsMeasure] using hb
+      simpa only [b0, marObsMeasure] using! hb
     let braw : MARObs X → ℝ :=
       ((b0 : Lp ℝ 2 (marObsMeasure Q r)) : MARObs X → ℝ)
     let c : X → ℝ := fun x => -braw ⟨x, false, 0⟩
@@ -291,7 +290,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
       (marMeanCoarseningCandidate Q r π hπr (cn n) (hcn_int n) (hun_mem n)).toL2ZeroMean
     have hcand_tend : Filter.Tendsto cand Filter.atTop (nhds b0) := by
       rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-      convert hnorm using 1
+      convert! hnorm using 1
       funext n
       apply eLpNorm_congr_ae
       have hcand_ae := CandidateIF.coeFn_toL2ZeroMean
@@ -320,7 +319,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
     exact hb0_mem
   · unfold marMeanCoarseningSpace
     apply Submodule.topologicalClosure_minimal
-    · rw [Submodule.span_le]
+    · erw [Submodule.span_le]
       rintro b ⟨c, hc_int, hc_lp, rfl⟩
       have hcoe := CandidateIF.coeFn_toL2ZeroMean
         (marMeanCoarseningCandidate Q r π hπr c hc_int hc_lp)
@@ -332,7 +331,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
           fun p => marMean_coarseningScore π c (marObsMap p) := by
         unfold marObsMeasure at hcoe
         simpa only [Function.comp_apply, marMeanCoarseningCandidate, hc_int,
-          ↓reduceDIte] using
+          ↓reduceDIte] using!
           ae_eq_comp (measurable_marObsMap (X := X)).aemeasurable hcoe
       have hfibre : ∀ᵐ y ∂Q,
           ∫ δ,
@@ -355,7 +354,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
             rw [hπr y, hπr.false_mass y]
             field_simp [hπ y.1]
             ring
-      simpa only [marObsMeasure] using
+      simpa only [marObsMeasure] using!
         (mem_concreteCoarseningScores_iff Q r (measurable_marObsMap (X := X))
           (marMeanCoarseningCandidate Q r π hπr c hc_int hc_lp).toL2ZeroMean).2 hfibre
     · have hc : IsClosed
@@ -363,7 +362,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
             Set ↥(L2ZeroMean ((Q ⊗ₘ r).map marObsMap))) := by
         unfold concreteCoarseningScores
         exact ContinuousLinearMap.isClosed_ker _
-      simpa only [marObsMeasure] using hc
+      simpa only [marObsMeasure] using! hc
 
 /-- The closed observed `Q`-tangent of the induced concrete MAR law, obtained
 from the full latent `Q` tangent of vdV Theorem 25.40. -/

@@ -103,7 +103,7 @@ theorem empiricalPsiDdot_OP {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
       Integrable (fun ξ => empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)) μ := by
     intro n
     simp only [empiricalAvg]
-    exact (integrable_finset_sum _ fun i _ => hint i.val).const_mul _
+    exact (integrable_finsetSum _ fun i _ => hint i.val).const_mul _
   -- Uniform `L¹` bound: `E_μ|ℙₙψ̈| ≤ P|ψ̈|` for every `n`.
   have hAbound : ∀ n : ℕ,
       ∫ ξ, |empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)| ∂μ ≤ ∫ x, |ψddot x| ∂P := by
@@ -119,11 +119,11 @@ theorem empiricalPsiDdot_OP {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
           exact integral_congr_ae (Eventually.of_forall hpt)
       _ ≤ (n : ℝ)⁻¹ * ∫ ξ, ∑ i : Fin n, |ψddot (X i.val ξ)| ∂μ := by
           refine mul_le_mul_of_nonneg_left ?_ hinv
-          exact integral_mono ((integrable_finset_sum _ fun i _ => hint i.val).abs)
-            (integrable_finset_sum _ fun i _ => (hint i.val).abs)
+          exact integral_mono ((integrable_finsetSum _ fun i _ => hint i.val).abs)
+            (integrable_finsetSum _ fun i _ => (hint i.val).abs)
             (fun ξ => Finset.abs_sum_le_sum_abs _ _)
       _ = (n : ℝ)⁻¹ * ((n : ℝ) * ∫ x, |ψddot x| ∂P) := by
-          rw [integral_finset_sum _ fun i _ => (hint i.val).abs]
+          rw [integral_finsetSum _ fun i _ => (hint i.val).abs]
           simp [habs_eq]
       _ ≤ ∫ x, |ψddot x| ∂P := by
           rcases Nat.eq_zero_or_pos n with hn | hn
@@ -496,7 +496,7 @@ theorem classical_linear_representation
   have hMsum : Tendsto (fun n => ∑ p : Fin k × Fin k, μ.real
       {ξ | ζ ≤ ‖empiricalAvg (fun x => psiDot ψ θ₀ x p.1 p.2) n (fun i : Fin n => X i.val ξ)
         - Vmat P ψ θ₀ p.1 p.2‖}) atTop (𝓝 0) := by
-    have h := tendsto_finset_sum (Finset.univ : Finset (Fin k × Fin k))
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin k × Fin k))
       (fun p _ => hD p.1 p.2 ζ hζ_pos)
     simpa using h
   obtain ⟨N₄, hN₄⟩ := Metric.tendsto_atTop.mp hMsum (η / 8) (by positivity)

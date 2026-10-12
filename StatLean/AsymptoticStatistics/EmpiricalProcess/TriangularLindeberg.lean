@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -130,7 +131,7 @@ private lemma charFun_sub_quadratic_eq_integral_quadraticExpRemainder
   have hYint : Integrable Y P := hmem.integrable (by norm_num)
   have hYsq : Integrable (fun x => Y x ^ 2) P := hmem.integrable_sq
   have hlin : Integrable (fun x => ((u * Y x : ℝ) : ℂ) * Complex.I) P := by
-    convert hYint.ofReal.const_mul (u : ℂ) |>.mul_const Complex.I using 1
+    convert! hYint.ofReal.const_mul (u : ℂ) |>.mul_const Complex.I using 1
     ext x
     push_cast
     rfl
@@ -372,7 +373,7 @@ lemma nonneg_of_tendsto_centeredSecondMoment
   apply ge_of_tendsto' hvar
   intro n
   change 0 ≤ ∫ x, (g n x - ∫ y, g n y ∂P) ^ 2 ∂P
-  rw [← variance_eq_integral (hg_memLp n).1.aemeasurable]
+  rw [← variance_eq_integral (hg_memLp n).aestronglyMeasurable.aemeasurable]
   exact variance_nonneg _ _
 
 /-- Centered row variables divided by `√n` converge to zero in population
@@ -413,10 +414,10 @@ lemma tendstoInMeasure_centered_invSqrt_zero
   have hquot' : Tendsto
       (fun n => ENNReal.ofReal (v n / (ε * Real.sqrt n) ^ 2))
       atTop (nhds 0) := by
-    simpa only [ENNReal.ofReal_zero] using
+    simpa only [ENNReal.ofReal_zero] using!
       (ENNReal.continuous_ofReal.tendsto 0).comp hquot
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hquot'
-  · exact Eventually.of_forall fun _ => zero_le _
+  · exact Eventually.of_forall fun _ => zero_le
   · filter_upwards [eventually_atTop.2 ⟨1, fun _ hn => hn⟩] with n hn
     have hn0 : 0 < (n : ℝ) := by exact_mod_cast hn
     have hsq : 0 < Real.sqrt n := Real.sqrt_pos.2 hn0
@@ -426,11 +427,11 @@ lemma tendstoInMeasure_centered_invSqrt_zero
       ext x
       simp only [sub_zero, Real.norm_eq_abs, abs_mul, centeredScalarRow]
       rw [abs_of_nonneg (inv_nonneg.2 (Real.sqrt_nonneg n))]
-      simpa only [div_eq_mul_inv, mul_comm] using
+      simpa only [div_eq_mul_inv, mul_comm] using!
         (le_div_iff₀ hsq : ε ≤ |g n x - ∫ y, g n y ∂P| / Real.sqrt n ↔ _)
     rw [hset]
     have hcheb := meas_ge_le_variance_div_sq (hg_memLp n) (mul_pos hε hsq)
-    rw [variance_eq_integral (hg_memLp n).1.aemeasurable] at hcheb
+    rw [variance_eq_integral (hg_memLp n).aestronglyMeasurable.aemeasurable] at hcheb
     simpa only [v, centeredScalarRow] using hcheb
 
 /-- The centered row characteristic function has the quadratic Lindeberg
@@ -484,7 +485,7 @@ lemma charFun_centered_invSqrt_isLittleO_of_lindeberg
         (t : ℂ) ^ 2 / 2)) atTop (nhds 0) := by
     have hd := hvarC.sub
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => (σ2 : ℂ)) atTop (nhds (σ2 : ℂ)))
-    convert (hd.mul_const ((t : ℂ) ^ 2 / 2)).neg using 1
+    convert! (hd.mul_const ((t : ℂ) ^ 2 / 2)).neg using 1
     · funext n
       ring
     · ring
@@ -496,7 +497,7 @@ lemma charFun_centered_invSqrt_isLittleO_of_lindeberg
     have hn0 : (n : ℂ) ≠ 0 := by exact_mod_cast (Nat.ne_zero_of_lt hn)
     exact False.elim ((one_div_ne_zero hn0) hzero)
   refine (Asymptotics.isLittleO_iff_tendsto' hdenom).2 ?_
-  convert (hrem.add hcorr).congr' ?_ using 1
+  convert! (hrem.add hcorr).congr' ?_ using 1
   · norm_num
   filter_upwards [eventually_atTop.2 ⟨1, fun _ hn => hn⟩] with n hn
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
@@ -567,7 +568,7 @@ theorem tendstoInDistribution_triangular_iid_lindeberg_real
         (((hg_meas n).comp (hX_meas i.val)).sub measurable_const).aemeasurable
     exact hsum.const_smul ((Real.sqrt n)⁻¹ : ℝ)
   refine ⟨hsource, measurable_id.aemeasurable, ?_⟩
-  rw [ProbabilityMeasure.tendsto_iff_tendsto_charFun]
+  erw [ProbabilityMeasure.tendsto_iff_tendsto_charFun]
   intro t
   let f : ℕ → ℂ := fun n =>
     charFun (P.map (centeredScalarRow P g n)) ((Real.sqrt n)⁻¹ * t)
@@ -673,13 +674,13 @@ lemma centeredSecondMoment_inner_eq_quadratic
         ∑ i, ∫ x, ∑ j, a.ofLp i *
           ((centeredVectorRow P g n x).ofLp i *
             (centeredVectorRow P g n x).ofLp j) * a.ofLp j ∂P := by
-      rw [integral_finset_sum _ (fun i _ =>
-        integrable_finset_sum _ (fun j _ => hterm i j))]
+      rw [integral_finsetSum _ (fun i _ =>
+        integrable_finsetSum _ (fun j _ => hterm i j))]
     _ = ∑ i, ∑ j, ∫ x, a.ofLp i *
           ((centeredVectorRow P g n x).ofLp i *
             (centeredVectorRow P g n x).ofLp j) * a.ofLp j ∂P := by
       refine Finset.sum_congr rfl fun i _ => ?_
-      rw [integral_finset_sum _ (fun j _ => hterm i j)]
+      rw [integral_finsetSum _ (fun j _ => hterm i j)]
     _ = a.ofLp ⬝ᵥ (centeredCovMatrix P g n).mulVec a.ofLp := by
       simp only [centeredCovMatrix, Matrix.mulVec, dotProduct]
       refine Finset.sum_congr rfl fun i _ => ?_
@@ -708,7 +709,7 @@ lemma tendsto_centeredSecondMoment_inner_of_tendsto_centeredCovMatrix
       (𝓝 S) (𝓝 (a.ofLp ⬝ᵥ S.mulVec a.ofLp)) := by
     exact (by fun_prop : Continuous
       (fun M : Matrix (Fin k) (Fin k) ℝ => a.ofLp ⬝ᵥ M.mulVec a.ofLp)).tendsto S
-  convert hquad.comp hcov using 1
+  convert! hquad.comp hcov using 1
   funext n
   exact centeredSecondMoment_inner_eq_quadratic hg_memLp n a
 
@@ -806,7 +807,7 @@ lemma lindeberg_inner_of_vector_lindeberg
     (Or.inr (ENNReal.ofReal_ne_top (r := ‖a‖ ^ 2)))
   simp only [mul_zero] at hscaled
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hscaled
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall hupper)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall hupper)
 
 /-- Every centered covariance matrix is positive semidefinite. -/
 lemma centeredCovMatrix_posSemidef
@@ -846,7 +847,7 @@ lemma posSemidef_of_tendsto_centeredCovMatrix
     have hij := (tendsto_pi_nhds.mp (tendsto_pi_nhds.mp hcov j) i)
     have hji := (tendsto_pi_nhds.mp (tendsto_pi_nhds.mp hcov i) j)
     apply tendsto_nhds_unique hij
-    convert hji using 1
+    convert! hji using 1
     exact funext fun n => by
       simp only [centeredCovMatrix]
       exact integral_congr_ae (Eventually.of_forall fun y => mul_comm _ _)
@@ -911,7 +912,7 @@ theorem tendstoInDistribution_triangular_iid_lindeberg
     posSemidef_of_tendsto_centeredCovMatrix hg_memLp hcov
   let νn : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => μ.map (W n)
   haveI hνn_prob : ∀ n, IsProbabilityMeasure (νn n) := fun n =>
-    Measure.isProbabilityMeasure_map (hW_meas n).aemeasurable
+    (by infer_instance)
   have hweak : AsymptoticStatistics.WeakConverges νn
       (multivariateGaussian 0 S) := by
     apply AsymptoticStatistics.ForMathlib.cramerWold_weakConverges_euclidean
@@ -942,7 +943,7 @@ theorem tendstoInDistribution_triangular_iid_lindeberg
       have ht :=
         (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp
           hscalar.tendsto) f
-      simpa only [Measure.map_id] using ht
+      simpa only [Measure.map_id] using! ht
     have hproj : ∀ n,
         (νn n).map (fun v => ⟪a, v⟫_ℝ) = μ.map (Za n) := by
       intro n
@@ -965,8 +966,8 @@ theorem tendstoInDistribution_triangular_iid_lindeberg
     intro f
     simpa only [hproj] using hscalarWeak f
   refine ⟨fun n => (hW_meas n).aemeasurable, measurable_id.aemeasurable, ?_⟩
-  rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+  erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
   intro f
-  simpa only [W, νn, Measure.map_id] using hweak f
+  simpa only [W, νn, Measure.map_id] using! hweak f
 
 end AsymptoticStatistics.EmpiricalProcess

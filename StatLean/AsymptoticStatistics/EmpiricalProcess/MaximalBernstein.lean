@@ -598,7 +598,7 @@ private lemma bernstein_one_sided
           have h_compl_zero : P {y : Ω | f y = 0}ᶜ = 0 := by
             have := hf_zero_ae
             rw [Filter.eventually_iff] at this
-            convert this using 1
+            convert! this using 1
           have : P {y : Ω | f y = 0} + P {y : Ω | f y = 0}ᶜ = P Set.univ :=
             measure_add_measure_compl hmeas_set
           rw [h_compl_zero, add_zero] at this
@@ -657,7 +657,7 @@ private lemma bernstein_one_sided
           ≤ μ {ω : Ξ | empiricalProcess P n (fun j : Fin n => X j.val ω) f ≠ 0} :=
             measure_mono h_set_le
         _ = 0 := h_null
-        _ ≤ _ := zero_le _
+        _ ≤ _ := zero_le
     -- Main case: M > 0, σ > 0.
     · have hσ_pos : 0 < σ := lt_of_le_of_ne hσ (Ne.symm hσ_zero)
       have hσ2_pos : 0 < σ ^ 2 := by positivity

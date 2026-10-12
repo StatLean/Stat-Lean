@@ -160,7 +160,7 @@ theorem one_sub_lintegral_le_lintegral_one_sub (ν : Measure α) [IsProbabilityM
     -- the statement is genuinely false for non-measurable `Y` (Bernstein-set counterexample)
     {Y : α → ℝ≥0∞} (hY : Measurable Y) :
     1 - ∫⁻ x, Y x ∂ν ≤ ∫⁻ x, 1 - Y x ∂ν := by
-  rw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
+  erw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
   calc (1 : ℝ≥0∞) = ∫⁻ _, (1 : ℝ≥0∞) ∂ν := by simp
     _ ≤ ∫⁻ x, ((1 - Y x) + Y x) ∂ν := lintegral_mono fun _ => le_tsub_add
 
@@ -202,17 +202,18 @@ theorem lintegral_le_lintegral_add_tvDist (μ ν : Measure α)
   have hpt : ∀ x, p x * w x ≤ q x * w x + (p x - q x) * w x := by
     intro x
     rw [← add_mul]
-    exact mul_le_mul_right' le_add_tsub _
+    exact mul_le_mul_left le_add_tsub _
   calc ∫⁻ x, p x * w x ∂ξ
       ≤ ∫⁻ x, (q x * w x + (p x - q x) * w x) ∂ξ := lintegral_mono hpt
     _ = ∫⁻ x, q x * w x ∂ξ + ∫⁻ x, (p x - q x) * w x ∂ξ :=
         lintegral_add_left (hqm.mul hw) _
     _ ≤ ∫⁻ x, q x * w x ∂ξ + ∫⁻ x, (p x - q x) * B ∂ξ := by
         refine add_le_add le_rfl (lintegral_mono fun x => ?_)
-        exact mul_le_mul_left' (hwB x) (p x - q x)
+        exact mul_le_mul_right (hwB x) (p x - q x)
     _ = ∫⁻ x, q x * w x ∂ξ + B * ∫⁻ x, (p x - q x) ∂ξ := by
         simp_rw [mul_comm _ B]
-        rw [lintegral_const_mul _ (hpm.sub hqm)]
+        erw [lintegral_const_mul _ (hpm.sub hqm)]
+        simp only [Pi.sub_apply]
 
 -- `ℝ≥0∞` bookkeeping for the pair ratio: the `t g` factor of the `Q`-density cancels the
 -- `t g` in the denominator of the ratio, leaving a constant multiple of `s g`.

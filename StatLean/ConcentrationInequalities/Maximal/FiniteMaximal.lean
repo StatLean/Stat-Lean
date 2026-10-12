@@ -130,7 +130,7 @@ private lemma integrable_ciSup_fin
     Integrable (fun ω => ⨆ j, X j ω) μ := by
   haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖X j ω‖)
-  · exact integrable_finset_sum _ (fun j _ => (hX j).norm)
+  · exact integrable_finsetSum _ (fun j _ => (hX j).norm)
   · exact (AEMeasurable.iSup
       (fun j => (hX j).aestronglyMeasurable.aemeasurable)).aestronglyMeasurable
   · filter_upwards with ω
@@ -223,7 +223,7 @@ theorem expectation_max_le
   -- *** Main case: log d > 0 and σ² > 0 ***
   have hd_pos : (0 : ℝ) < (d : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_neZero d)
   have hσ_pos : (0 : ℝ) < (σ2 : ℝ) :=
-    NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le _) (Ne.symm hσ0))
+    NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le) (Ne.symm hσ0))
   -- Integrability pieces not depending on lam.
   have hint_Xj : ∀ j, Integrable (X j) μ := fun j => (hsg j).integrable
   have hint_max : Integrable (fun ω => ⨆ j, X j ω) μ :=
@@ -243,7 +243,7 @@ theorem expectation_max_le
     fun j => (hsg j).integrable_exp_mul lam
   -- Integrability of exp(lam · max): dominated by sum of exp(lam · X_j).
   have hint_sum_exp : Integrable (fun ω => ∑ j : Fin d, Real.exp (lam * X j ω)) μ :=
-    integrable_finset_sum _ (fun j _ => hint_exp_Xj j)
+    integrable_finsetSum _ (fun j _ => hint_exp_Xj j)
   have hint_exp_max : Integrable (fun ω => Real.exp (lam * ⨆ j, X j ω)) μ := by
     apply Integrable.mono' hint_sum_exp
     · exact continuous_exp.comp_aestronglyMeasurable
@@ -261,7 +261,7 @@ theorem expectation_max_le
   -- ** Step 2: max ≤ sum bound ** E[exp(lam · max)] ≤ ∑_j E[exp(lam · X_j)]
   have h_int_bound : ∫ ω, Real.exp (lam * ⨆ j, X j ω) ∂μ ≤
       ∑ j : Fin d, ∫ ω, Real.exp (lam * X j ω) ∂μ := by
-    rw [← integral_finset_sum _ (fun j _ => hint_exp_Xj j)]
+    rw [← integral_finsetSum _ (fun j _ => hint_exp_Xj j)]
     exact integral_mono hint_exp_max hint_sum_exp
       (fun ω => exp_mul_ciSup_le_sum_exp hlam_pos (fun j => X j ω))
   -- ** Step 3: MGF bound ** ∑_j E[exp(lam · X_j)] ≤ d · exp(σ² lam² / 2)

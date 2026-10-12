@@ -696,10 +696,25 @@ noncomputable def unboundedParamSubmodel_RegularEstimatorSequence
       (ψ_proj g_P IF_eff (ψ P)) (T_param_of T_n) where
   limitDist := L.map (EuclideanSpace.single (0 : Fin 1)
     : ℝ → EuclideanSpace ℝ (Fin 1))
-  isProb := MeasureTheory.Measure.isProbabilityMeasure_map
-    measurable_single_zero.aemeasurable
-  tendsto := productMeasure_unbounded_pushforward_vec
-    T_set hψ hEIF T_n hT_meas hReg g_P h_orth h_in_T
+  isProb := (by infer_instance)
+  tendsto h := by
+    have ht := productMeasure_unbounded_pushforward_vec
+      T_set hψ hEIF T_n hT_meas hReg g_P h_orth h_in_T h
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n : ℕ => AsymptoticStatistics.AsymptoticRepresentation.productMeasure
+        (unboundedParamSubmodel g_P h_orth) P
+        ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n)
+      (fun n : ℕ => fun X => Real.sqrt n •
+        (T_param_of T_n n X - ψ_proj g_P IF_eff (ψ P)
+          ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h)))
+      (fun n : ℕ => by
+        have hmT : Measurable (T_param_of T_n n) := by
+          unfold T_param_of
+          exact (WithLp.measurable_toLp 2 (Fin 1 → ℝ)).comp
+            (measurable_pi_lambda fun _ => hT_meas n)
+        exact (measurable_const_smul (Real.sqrt n)).comp
+          (hmT.sub measurable_const))]
+    exact ht
 
 /-! ## §7 — Main theorem: drift-free convolution decomposition -/
 
@@ -807,8 +822,6 @@ theorem derived_convolution_decomp_unbounded
     rw [innerSL_apply_apply, PiLp.inner_apply]
     rw [Fin.sum_univ_one]
     simp [EuclideanSpace.single]
-    change y.ofLp 0 * 1 = y.ofLp 0
-    ring
   have hpr0_single : ∀ r : ℝ, pr0 (EuclideanSpace.single (0 : Fin 1) r) = r := by
     intro r
     rw [hpr0_apply]
@@ -910,14 +923,13 @@ theorem derived_convolution_decomp_unbounded
     rw [h_dot_eq]
     exact Real.coe_toNNReal _ (by simpa [hσ_sq_real_def] using h_dot_nn.trans_eq h_dot_eq)
   -- ===== Step 5: assemble. =====
-  refine ⟨M_θ.map pr0, Measure.isProbabilityMeasure_map pr0.continuous.measurable.aemeasurable, ?_⟩
+  refine ⟨M_θ.map pr0, (by infer_instance), ?_⟩
   have h_limitDist :
       hReg_param.limitDist =
         L.map (EuclideanSpace.single (0 : Fin 1) : ℝ → EuclideanSpace ℝ (Fin 1)) := rfl
   rw [h_limitDist] at hConv
   have h_apply := congrArg (fun μ : Measure (EuclideanSpace ℝ (Fin 1)) =>
     μ.map (pr0 : _ → ℝ)) hConv
-  simp only at h_apply
   rw [h_map_LHS_eq] at h_apply
   rw [h_map_RHS_eq, h_gauss_collapse] at h_apply
   exact h_apply

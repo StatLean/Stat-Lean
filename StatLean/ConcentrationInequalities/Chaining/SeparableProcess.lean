@@ -1,5 +1,5 @@
 import StatLean.ConcentrationInequalities.Chaining.DyadicNets
-import Mathlib.MeasureTheory.Measure.MeasureSpace
+import Mathlib.MeasureTheory.Measure.Basic
 import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Topology.Metrizable.Basic
 

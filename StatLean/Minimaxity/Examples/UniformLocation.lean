@@ -531,7 +531,7 @@ theorem uniform_location_minimax_rate (n : ℕ) (hn : 2 ≤ n)
         show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
     apply le_of_eq; congr 1; ring
   have hcrux := uniform_two_point_tvDist_bound n hn P hP
-  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal ((n : ℝ)⁻¹ / 2))
+  have hΦδ : (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) ^ 2
       = ENNReal.ofReal (((n : ℝ)⁻¹ / 2) ^ 2) := by
     change (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) ^ 2 = _
     rw [← ENNReal.ofReal_pow (by positivity)]

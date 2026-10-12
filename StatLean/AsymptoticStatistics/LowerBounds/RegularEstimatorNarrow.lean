@@ -106,7 +106,7 @@ def IsRegularEstimator_narrow
       WeakConverges
         (fun n : ℕ =>
           (MeasureTheory.Measure.pi
-              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map
+              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X - ψ ((chosenFamily g hg).curve ((Real.sqrt n)⁻¹)))))
@@ -249,7 +249,7 @@ lemma hellinger_per_sample_residual_isLittleO
           eLpNorm (R₂ t) 2 ξ / ENNReal.ofReal |t|)
         (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
     have h_dom' : γ₂.dominating = ξ := h_dom.symm
-    convert hQ₂ using 1
+    convert! hQ₂ using 1
     funext t
     rw [h_dom']
   -- Sum: eLpNorm(R₁ t)/ofReal|t| + eLpNorm(R₂ t)/ofReal|t| → 0.
@@ -284,16 +284,16 @@ lemma hellinger_per_sample_residual_isLittleO
   have h_mem₂' : ∀ᶠ t : ℝ in 𝓝[≠] 0, MemLp (R₂ t) 2 ξ := by
     have h_dom' : γ₂.dominating = ξ := h_dom.symm
     filter_upwards [h_mem₂] with t ht
-    convert ht using 2
+    convert! ht using 2
   have h_triangle : ∀ᶠ t : ℝ in 𝓝[≠] 0,
       eLpNorm (H t) 2 ξ ≤ eLpNorm (R₁ t) 2 ξ + eLpNorm (R₂ t) 2 ξ := by
     filter_upwards [h_mem₁, h_mem₂'] with t hM₁ hM₂
-    have h₁_aes : AEStronglyMeasurable (R₁ t) ξ := hM₁.1
-    have h₂_aes : AEStronglyMeasurable (R₂ t) ξ := hM₂.1
+    have h₁_aes : AEStronglyMeasurable (R₁ t) ξ := hM₁.aestronglyMeasurable
+    have h₂_aes : AEStronglyMeasurable (R₂ t) ξ := hM₂.aestronglyMeasurable
     calc eLpNorm (H t) 2 ξ
         = eLpNorm (R₁ t - R₂ t) 2 ξ := by rw [h_H_eq_sub]
       _ ≤ eLpNorm (R₁ t) 2 ξ + eLpNorm (R₂ t) 2 ξ :=
-          eLpNorm_sub_le h₁_aes h₂_aes (by norm_num)
+          eLpNorm_sub_le (by norm_num)
   -- Divide by ofReal|t|: ratio bound.
   have h_div_bound : ∀ᶠ t : ℝ in 𝓝[≠] 0,
       eLpNorm (H t) 2 ξ / ENNReal.ofReal |t|
@@ -311,24 +311,24 @@ lemma hellinger_per_sample_residual_isLittleO
         eLpNorm (R₁ t) 2 ξ / ENNReal.ofReal |t|
           + eLpNorm (R₂ t) 2 ξ / ENNReal.ofReal |t|)
       tendsto_const_nhds h_sum
-      (Filter.Eventually.of_forall (fun _ => zero_le _))
+      (Filter.Eventually.of_forall (fun _ => zero_le))
       h_div_bound
   -- Convert to ℝ via .toReal, using eventual finiteness from MemLp(H t).
   -- Step: eLpNorm(H t) is finite for t in 𝓝[≠] 0 (from h_triangle + h_mem).
   have h_H_memLp : ∀ᶠ t : ℝ in 𝓝[≠] 0, MemLp (H t) 2 ξ := by
     filter_upwards [h_mem₁, h_mem₂'] with t hM₁ hM₂
-    have h₁_aes : AEStronglyMeasurable (R₁ t) ξ := hM₁.1
-    have h₂_aes : AEStronglyMeasurable (R₂ t) ξ := hM₂.1
+    have h₁_aes : AEStronglyMeasurable (R₁ t) ξ := hM₁.aestronglyMeasurable
+    have h₂_aes : AEStronglyMeasurable (R₂ t) ξ := hM₂.aestronglyMeasurable
     have h_H_aes : AEStronglyMeasurable (H t) ξ := by
       rw [h_H_eq_sub]
       exact h₁_aes.sub h₂_aes
-    refine ⟨h_H_aes, ?_⟩
+    refine ?_
     have h_sub_le : eLpNorm (H t) 2 ξ ≤ eLpNorm (R₁ t) 2 ξ + eLpNorm (R₂ t) 2 ξ := by
       calc eLpNorm (H t) 2 ξ
           = eLpNorm (R₁ t - R₂ t) 2 ξ := by rw [h_H_eq_sub]
         _ ≤ eLpNorm (R₁ t) 2 ξ + eLpNorm (R₂ t) 2 ξ :=
-            eLpNorm_sub_le h₁_aes h₂_aes (by norm_num)
-    exact lt_of_le_of_lt h_sub_le (ENNReal.add_lt_top.mpr ⟨hM₁.2, hM₂.2⟩)
+            eLpNorm_sub_le (by norm_num)
+    exact lt_of_le_of_lt h_sub_le (ENNReal.add_lt_top.mpr ⟨hM₁, hM₂⟩)
   -- Convert ℝ≥0∞ tendsto to ℝ tendsto via .toReal.
   have h_toReal :
       Tendsto (fun t : ℝ =>
@@ -344,7 +344,7 @@ lemma hellinger_per_sample_residual_isLittleO
         = (eLpNorm (H t) 2 ξ).toReal / |t| := by
     filter_upwards [h_self_ne, h_H_memLp] with t ht_ne ht_mem
     have habs : 0 < |t| := abs_pos.mpr ht_ne
-    have h_eLp_ne_top : eLpNorm (H t) 2 ξ ≠ ⊤ := ht_mem.2.ne
+    have h_eLp_ne_top : eLpNorm (H t) 2 ξ ≠ ⊤ := ht_mem.ne
     rw [ENNReal.toReal_div, ENNReal.toReal_ofReal habs.le]
   have h_final :
       Tendsto (fun t : ℝ => (eLpNorm (H t) 2 ξ).toReal / |t|)
@@ -534,7 +534,7 @@ theorem hellinger_locality_for_qmdpath_same_score
     · -- Tendsto t atTop (𝓝 0)
       have h_sqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop := by
         exact Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-      simpa [ht_def] using h_sqrt.inv_tendsto_atTop
+      simpa [ht_def] using! h_sqrt.inv_tendsto_atTop
     · -- ∀ᶠ n in atTop, t n ∈ {≠ 0}
       filter_upwards [Filter.eventually_ge_atTop 1] with n hn
       exact (h_t_pos n hn).ne'
@@ -544,7 +544,7 @@ theorem hellinger_locality_for_qmdpath_same_score
     -- substitution s := t n.
     have h_comp := h_sub.comp h_t_to_zero
     -- After composition: Tendsto (PerSample n / |t n|) atTop (𝓝 0).
-    convert h_comp using 1
+    convert! h_comp using 1
   -- Step E: For n ≥ 1, √n · PerSample n = PerSample n / t n = PerSample n / |t n|.
   have h_id : ∀ n : ℕ, 1 ≤ n → Real.sqrt n * PerSample n = PerSample n / |t n| := by
     intro n hn
@@ -655,7 +655,7 @@ theorem canonicalPath_score
       (0 : ↥(L2ZeroMean P)) _)
   · -- Nonzero branch: score = linPerturbScore g_P h = ‖g‖ • ((1/‖g‖) • g) = g.
     simp only [hg, dif_neg, not_false_eq_true]
-    rw [unboundedParamSubmodel_oneDimPath_score]
+    erw [unboundedParamSubmodel_oneDimPath_score]
     -- Goal: `linPerturbScore (fun _ => (1/‖g‖) • g) (single 0 ‖g‖) = g`.
     unfold linPerturbScore
     -- ∑ i : Fin 1, (single 0 ‖g‖) i • ((1/‖g‖) • g)

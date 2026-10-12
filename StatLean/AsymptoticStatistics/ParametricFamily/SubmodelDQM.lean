@@ -536,14 +536,14 @@ theorem paramSubmodel_fisher_info :
     ring
   rw [integral_congr_ae (Filter.Eventually.of_forall h_expand)]
   -- Swap integral with double sum.
-  rw [integral_finset_sum]
+  rw [integral_finsetSum]
   · -- ∫ ∑ⱼ (u i · v j) · (gMk i · gMk j) ∂P = ∑ⱼ (u i · v j) · ∫ gMk i · gMk j ∂P
     have h_inner_step : ∀ i,
         ∫ ω, ∑ j, (u i * v j) * (gMk g_P i ω * gMk g_P j ω) ∂P
         = ∑ j, (u i * v j) *
             ∫ ω, gMk g_P i ω * gMk g_P j ω ∂P := by
       intro i
-      rw [integral_finset_sum]
+      rw [integral_finsetSum]
       · apply Finset.sum_congr rfl; intro j _
         rw [integral_const_mul]
       · intro j _
@@ -578,7 +578,7 @@ theorem paramSubmodel_fisher_info :
       ring]
   · -- Integrability of ∑ⱼ (u i · v j) · (gMk i · gMk j) for each i.
     intro i _
-    refine integrable_finset_sum _ (fun j _ => ?_)
+    refine integrable_finsetSum _ (fun j _ => ?_)
     exact (integrable_gMk_mul g_P i j).const_mul _
 
 end FisherInfo

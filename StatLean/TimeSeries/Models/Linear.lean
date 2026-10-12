@@ -173,7 +173,7 @@ theorem IsMA.tendstoInMeasure_inversion [IsProbabilityMeasure μ] {a1 : ℝ} {σ
       atTop (nhds 0) := by
     simpa using ENNReal.tendsto_ofReal hreal
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun _ => zero_le _) hbound
+    (fun _ => zero_le) hbound
 
 /-! ### Lag polynomials acting on processes
 

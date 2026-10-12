@@ -61,7 +61,7 @@ theorem exists_isMLocationEstimate {ρ : ℝ → ℝ}
     have hb' : ∀ u, b ≤ ρ u := fun u => hb ⟨u, rfl⟩
     set i₀ : Fin n := ⟨0, hn⟩ with hi₀
     have hfc : Continuous (fun t : ℝ => ∑ i, ρ (x i - t)) :=
-      continuous_finset_sum _ fun i _ => hρc.comp (continuous_const.sub continuous_id)
+      continuous_finsetSum _ fun i _ => hρc.comp (continuous_const.sub continuous_id)
     -- `t ↦ a - t` is proper: it swaps the two ends of the line.
     have hmap : ∀ a : ℝ, Tendsto (fun t : ℝ => a - t) (cocompact ℝ) (cocompact ℝ) := by
       intro a

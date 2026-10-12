@@ -81,7 +81,7 @@ theorem lintegral_pow_le_of_lintegral_exp_sq_le_two {X : Ω → ℝ} {μ : Measu
     _ = ENNReal.ofReal ((K : ℝ) ^ (2 * n) * n.factorial)
           * ∫⁻ ω, ENNReal.ofReal (Real.exp ((X ω / (K : ℝ)) ^ 2)) ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
-    _ ≤ ENNReal.ofReal ((K : ℝ) ^ (2 * n) * n.factorial) * 2 := mul_le_mul_left' h _
+    _ ≤ ENNReal.ofReal ((K : ℝ) ^ (2 * n) * n.factorial) * 2 := mul_le_mul_right h _
     _ = ENNReal.ofReal (2 * n.factorial * (K : ℝ) ^ (2 * n)) := by
         rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by positivity)]
         congr 1; ring
@@ -133,7 +133,7 @@ theorem eLpNorm_two_mul_le_of_lintegral_exp_sq_le_two {X : Ω → ℝ} {μ : Mea
       mul_le_mul h2 h1 (Nat.cast_nonneg _) (by positivity)
     exact mul_le_mul_of_nonneg_right hfac (by positivity)
   -- Assemble via `eLpNorm'` and rpow monotonicity.
-  rw [eLpNorm_eq_eLpNorm' hp0 hptop, eLpNorm'_eq_lintegral_enorm, ← hqdef]
+  rw [eLpNorm_eq_eLpNorm' hp0 hptop hX.aestronglyMeasurable, eLpNorm'_eq_lintegral_enorm, ← hqdef]
   have hfin : (ENNReal.ofReal (c ^ (2 * n))) ^ (1 / q) = ENNReal.ofReal c := by
     rw [ENNReal.ofReal_pow hcnn, ← ENNReal.rpow_natCast (ENNReal.ofReal c) (2 * n),
       ← ENNReal.rpow_mul, hr, mul_one_div, div_self (by positivity), ENNReal.rpow_one]
@@ -172,7 +172,7 @@ theorem eLpNorm_le_of_subGaussianNorm_le
     rw [show (2 * (n : ℝ≥0∞)) = ENNReal.ofReal (2 * n) by
       rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat, ENNReal.ofReal_natCast]]
     exact ENNReal.ofReal_le_ofReal hpn
-  have hmono := eLpNorm_le_eLpNorm_of_exponent_le hexp hX.aestronglyMeasurable
+  have hmono := eLpNorm_le_eLpNorm_of_exponent_le (μ := μ) (f := X) hexp
   have hbound := eLpNorm_two_mul_le_of_lintegral_exp_sq_le_two hX hK hcond n hn1
   refine (hmono.trans hbound).trans (ENNReal.ofReal_le_ofReal ?_)
   have h2n3p : 2 * (n : ℝ) ≤ 3 * p := by

@@ -153,7 +153,7 @@ theorem posteriorWeights_weakly_converges_under_lan
   -- The joint limit `π = (multivariateGaussian 0 J).map diag`.
   set π : Measure (Θ k × ℝ) := (multivariateGaussian (0 : Θ k) J).map diag with hπ_def
   haveI hπ_prob : IsProbabilityMeasure π := by
-    refine Measure.isProbabilityMeasure_map hdiag_meas.aemeasurable
+    refine (by infer_instance)
   -- Joint weak convergence of `(Δ_n, g(Δ_n))` under `P_n` to `π`.
   have h_joint_lin :
       WeakConverges
@@ -335,7 +335,7 @@ theorem posteriorWeights_weakly_converges_under_lan
   set π_E : Measure (Θ k × Θ k) :=
     (multivariateGaussian (0 : Θ k) J).map diagE with hπE_def
   haveI hπE_prob : IsProbabilityMeasure π_E :=
-    Measure.isProbabilityMeasure_map hdiagE_meas.aemeasurable
+    (by infer_instance)
   have hπE_snd : π_E.map Prod.snd = multivariateGaussian (0 : Θ k) J := by
     rw [hπE_def, Measure.map_map measurable_snd hdiagE_meas]
     -- `Prod.snd ∘ diagE = id`.

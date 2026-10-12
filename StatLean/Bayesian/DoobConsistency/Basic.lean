@@ -21,12 +21,12 @@ namespace StatLean.Bayesian
 variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
 
 lemma measurable_doobData (n : ℕ) : Measurable (doobData (Θ := Θ) (𝓧 := 𝓧) n) :=
-  measurable_pi_lambda _ fun i => (measurable_pi_apply i.val).comp measurable_fst
+  Measurable.of_eval fun i => (measurable_pi_apply i.val).comp measurable_fst
 
 lemma doobSigma_mono {m n : ℕ} (hmn : m ≤ n) :
     doobSigma (Θ := Θ) (𝓧 := 𝓧) m ≤ doobSigma n := by
   have hr : Measurable (fun x : Fin n → 𝓧 => fun i : Fin m => x (Fin.castLE hmn i)) :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hfac : (doobData (Θ := Θ) (𝓧 := 𝓧) m)
       = (fun x : Fin n → 𝓧 => fun i : Fin m => x (Fin.castLE hmn i)) ∘ doobData n := rfl
   change MeasurableSpace.comap _ _ ≤ MeasurableSpace.comap _ _

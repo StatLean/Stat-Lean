@@ -609,7 +609,7 @@ private lemma unbiased_side_conditions (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
       = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) v := by
     intro v
     ext w
-    simp only [innerSL_apply, ContinuousLinearMap.smulRight_apply,
+    simp only [innerSL_apply_apply, ContinuousLinearMap.smulRight_apply,
       ContinuousLinearMap.one_apply, smul_eq_mul, inner_real]
     ring
   -- `|ψ| ≤ 1` puts the natural set inside the `ψ`-weighted one

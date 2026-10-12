@@ -79,7 +79,7 @@ open scoped ENNReal
 
 namespace StatLean.HypothesisTesting
 
-open StatLean.PointEstimation (IsInvariantModel statLaw HasSufficientKernel
+open StatLean.PointEstimation (IsInvariantModel statLaw statLaw_eq_map HasSufficientKernel
   IsBoundedlyCompleteStat)
 
 /-! ## Private measure-theoretic helpers for the sufficiency reduction -/
@@ -113,7 +113,7 @@ private theorem integral_condStat_smul_eq {Θ' 𝓧' 𝓣' : Type*}
     {w : 𝓣' → ℝ} (hw : Measurable w) {C : ℝ} (hwb : ∀ t, |w t| ≤ C) :
     ∫ t, w t * (∫ x, φ x ∂(Q t)) ∂(statLaw P T θ) = ∫ x, w (T x) * φ x ∂(P θ) := by
   haveI : IsProbabilityMeasure (statLaw P T θ) := by
-    rw [statLaw]; exact Measure.isProbabilityMeasure_map hTmeas.aemeasurable
+    rw [statLaw, Measure.map₀_of_measurable hTmeas]; infer_instance
   have hFmeas : Measurable (fun p : 𝓣' × 𝓧' => w p.1 * φ p.2) :=
     (hw.comp measurable_fst).mul (hφmeas.comp measurable_snd)
   have hFbound : ∀ p : 𝓣' × 𝓧', ‖w p.1 * φ p.2‖ ≤ C := by
@@ -171,7 +171,7 @@ private theorem aemeasurable_smul_of_invModel {G' Θ' 𝓣' : Type*} [Group G']
     AEMeasurable (fun t => g • t) (Q θ) := by
   by_contra h
   have hmap := hQ g θ
-  rw [Measure.map_of_not_aemeasurable h] at hmap
+  rw [Measure.map₀_of_not_aemeasurable h] at hmap
   exact h0 hmap.symm
 
 /-- The law-of-statistic model inherits invariance from an invariant raw model with an
@@ -189,12 +189,16 @@ private theorem isInvariantModel_statLaw {G' Θ' 𝓧' 𝓣' : Type*} [Group G']
     aemeasurable_smul_of_invModel hP g θ (IsProbabilityMeasure.ne_zero _)
   have haeT : AEMeasurable (fun t => g • t) (statLaw P T θ) :=
     hmm_meas.aemeasurable.congr (hmm_ae θ).symm
+  have haeTmap : AEMeasurable (fun t => g • t) ((P θ).map T) := by
+    simpa only [statLaw, Measure.map₀_of_measurable hTmeas] using haeT
   have lhs : (statLaw P T θ).map (fun t => g • t) = (P θ).map (fun x => g • T x) := by
-    rw [statLaw, AEMeasurable.map_map_of_aemeasurable haeT hTmeas.aemeasurable]; rfl
+    rw [statLaw, Measure.map₀_of_measurable hTmeas,
+        AEMeasurable.map_map_of_aemeasurable haeTmap hTmeas.aemeasurable]; rfl
   have rhs : statLaw P T (g • θ) = (P θ).map (fun x => g • T x) := by
-    rw [statLaw, ← hP g θ, AEMeasurable.map_map_of_aemeasurable hTmeas.aemeasurable haeX]
+    rw [statLaw, Measure.map₀_of_measurable hTmeas, ← hP.map_eq g θ haeX,
+        AEMeasurable.map_map_of_aemeasurable hTmeas.aemeasurable haeX]
     exact Measure.map_congr (ae_of_all _ (fun x => hTcompat g x))
-  rw [lhs, rhs]
+  rw [Measure.map₀_of_aemeasurable haeT, lhs, rhs]
 
 /-- **Set-integral pull-out identity for the sufficiency kernel** (`w = 1_B`). -/
 private theorem setIntegral_condStat_eq {Θ' 𝓧' 𝓣' : Type*}
@@ -237,7 +241,7 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
     ∫ t in B, (∫ x, φ x ∂(Q (g • t))) ∂(statLaw P T θ) = ∫ x in T ⁻¹' B, φ x ∂(P θ) := by
   classical
   haveI hprob : ∀ θ', IsProbabilityMeasure (statLaw P T θ') := fun θ' =>
-    Measure.isProbabilityMeasure_map hTmeas.aemeasurable
+    (by rw [statLaw_eq_map P T _ hTmeas.aemeasurable]; infer_instance)
   have hφb : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφIcc x).1], (hφIcc x).2⟩
   have hstat : IsInvariantModel (G := G') (statLaw P T) :=
@@ -263,9 +267,13 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
   have hFaesm : AEStronglyMeasurable (fun s => ind (g⁻¹ • s) * ψ s)
       (statLaw P T (g • θ)) :=
     ((hind_meas.comp_aemeasurable haeTinv).mul hψ_meas.aemeasurable).aestronglyMeasurable
+  have haeTinv_map : AEMeasurable (fun s => g⁻¹ • s) ((P (g • θ)).map T) := by
+    simpa only [statLaw, Measure.map₀_of_measurable hTmeas] using haeTinv
+  have hm'_ae_map : (fun s => g⁻¹ • s) =ᵐ[(P (g • θ)).map T] m' := by
+    simpa only [statLaw, Measure.map₀_of_measurable hTmeas] using hm'_ae (g • θ)
   have hFaesm2 : AEStronglyMeasurable (fun y => ind (g⁻¹ • T y) * φ y) (P (g • θ)) :=
     ((hind_meas.comp_aemeasurable
-      (haeTinv.comp_aemeasurable hTmeas.aemeasurable)).mul
+      (haeTinv_map.comp_aemeasurable hTmeas.aemeasurable)).mul
         hφmeas.aemeasurable).aestronglyMeasurable
   calc ∫ t in B, ψ (g • t) ∂(statLaw P T θ)
       = ∫ t, ind t * ψ (g • t) ∂(statLaw P T θ) := by
@@ -274,7 +282,7 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
         by_cases h : t ∈ B <;>
           simp [hinddef, Set.indicator_of_mem, Set.indicator_of_notMem, h]
     _ = ∫ s, ind (g⁻¹ • s) * ψ s ∂(statLaw P T (g • θ)) := by
-        rw [← hstat g θ] at hFaesm ⊢
+        rw [← hstat.map_eq g θ haeT] at hFaesm ⊢
         rw [integral_map haeT hFaesm]
         refine integral_congr_ae (ae_of_all _ (fun t => ?_))
         simp only [inv_smul_smul]
@@ -286,12 +294,12 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
         integral_condStat_smul_eq hTmeas hφmeas hφb (hker (g • θ)) hwt_meas (C := 1) hwt_b
     _ = ∫ y, ind (g⁻¹ • T y) * φ y ∂(P (g • θ)) := by
         refine integral_congr_ae ?_
-        have hcomp := ae_eq_comp hTmeas.aemeasurable (hm'_ae (g • θ))
+        have hcomp := ae_eq_comp hTmeas.aemeasurable hm'_ae_map
         filter_upwards [hcomp] with y hy
         simp only [hwtdef, Function.comp_apply] at hy ⊢
         rw [hy]
     _ = ∫ x, ind (g⁻¹ • T (g • x)) * φ (g • x) ∂(P θ) := by
-        rw [← hP g θ] at hFaesm2 ⊢
+        rw [← hP.map_eq g θ haeX] at hFaesm2 ⊢
         rw [integral_map haeX hFaesm2]
     _ = ∫ x, ind (T x) * φ x ∂(P θ) := by
         refine integral_congr_ae (ae_of_all _ (fun x => ?_))
@@ -331,7 +339,7 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
       rw [abs_le]; constructor <;> nlinarith [h1.1, h1.2, h2.1, h2.2]
     have hfint : ∀ θ', ∫ t, (ψ (m t) - ψ t) ∂(statLaw P T θ') = 0 := by
       intro θ'
-      haveI : IsFiniteMeasure (statLaw P T θ') := Measure.isFiniteMeasure_map (P θ') T
+      haveI : IsFiniteMeasure (statLaw P T θ') := by unfold statLaw; infer_instance
       have haem : AEMeasurable (fun t => g • t) (statLaw P T θ') :=
         hm_meas.aemeasurable.congr (hm_ae θ').symm
       have hInt1 : Integrable (fun t => ψ (m t)) (statLaw P T θ') :=
@@ -346,7 +354,7 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
       have ea : (fun t => ψ (m t)) =ᵐ[statLaw P T θ'] (fun t => ψ (g • t)) := by
         filter_upwards [hm_ae θ'] with t ht using by rw [ht]
       have eb : ∫ t, ψ (g • t) ∂(statLaw P T θ') = ∫ t, ψ t ∂(statLaw P T (g • θ')) := by
-        rw [← hQ g θ', integral_map haem hψ.1.aestronglyMeasurable]
+        rw [← hQ.map_eq g θ' haem, integral_map haem hψ.1.aestronglyMeasurable]
       have ec : ∫ t, ψ t ∂(statLaw P T (g • θ')) = ∫ t, ψ t ∂(statLaw P T θ') := by
         simpa only [power] using hpow g θ'
       rw [integral_congr_ae ea, eb, ec, sub_self]
@@ -360,7 +368,7 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
     have haem : AEMeasurable (fun t => g • t) (statLaw P T θ) :=
       hm_meas.aemeasurable.congr (hm_ae θ).symm
     simp only [power]
-    rw [← hQ g θ, integral_map haem hψ.1.aestronglyMeasurable]
+    rw [← hQ.map_eq g θ haem, integral_map haem hψ.1.aestronglyMeasurable]
     exact integral_congr_ae (hai θ g)
 
 /-- **A UMP almost invariant test based on a sufficient statistic is UMP in the class of
@@ -389,7 +397,7 @@ theorem isUMP_of_isUMPAlmostInvariant_sufficient [MulAction G 𝓣] [MulAction G
       ∀ φ : 𝓧 → ℝ, IsCriticalFn φ → IsLevel P Θ₀ φ α →
         (∀ θ θ' : Θ, v θ = v θ' → power P φ θ = power P φ θ') →
         ∀ θ ∈ Θ₁, power P φ θ ≤ power P (fun x => ψ₀ (T x)) θ := by
-  obtain ⟨Q, hQmark, hker⟩ := hsuf
+  obtain ⟨Q, hQmark, hker⟩ := hsuf.exists_map hTmeas
   haveI := hQmark
   refine ⟨⟨hψ₀.1.1.comp hTmeas, fun x => hψ₀.1.2 (T x)⟩, ?_⟩
   intro φ hφcrit hφlevel hφv θ hθ
@@ -410,7 +418,7 @@ theorem isUMP_of_isUMPAlmostInvariant_sufficient [MulAction G 𝓣] [MulAction G
     intro θ' hθ'; rw [hmatch θ']; exact hφlevel θ' hθ'
   have hdom := hψ₀.2.2.2 (fun t => ∫ x, φ x ∂(Q t)) hψφcrit hai hlevel θ hθ
   have hmapψ₀ : power (statLaw P T) ψ₀ θ = power P (fun x => ψ₀ (T x)) θ := by
-    simp only [power, statLaw]
+    simp only [power, statLaw, Measure.map₀_of_measurable hTmeas]
     rw [integral_map hTmeas.aemeasurable hψ₀.1.1.aestronglyMeasurable]
   rw [← hmatch θ, ← hmapψ₀]
   exact hdom
@@ -442,7 +450,7 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
     (hφ : IsCriticalFn φ) (hφinv : IsInvariantTest G φ) :
     ∃ ψ : 𝓣 → ℝ, IsCriticalFn ψ ∧ (∀ θ, IsAlmostInvariant G (statLaw P T θ) ψ) ∧
       ∀ θ, power (statLaw P T) ψ θ = power P φ θ := by
-  obtain ⟨Q, hQmark, hker⟩ := hsuf
+  obtain ⟨Q, hQmark, hker⟩ := hsuf.exists_map hTmeas
   haveI := hQmark
   have hφabs : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφ.2 x).1], (hφ.2 x).2⟩
@@ -451,7 +459,7 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
   · -- Almost invariance of `E[φ|T]`, via the equivariant set-integral pull-out.
     intro θ g
     haveI : IsProbabilityMeasure (statLaw P T θ) :=
-      Measure.isProbabilityMeasure_map hTmeas.aemeasurable
+      (by rw [statLaw_eq_map P T _ hTmeas.aemeasurable]; infer_instance)
     have hψ_meas := measurable_condStat Q hφ.1
     have haeT : AEMeasurable (fun t => g • t) (statLaw P T θ) := by
       obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
@@ -562,7 +570,7 @@ theorem isUMPInvariant_comp_of_isUMPInvariant_stat [MeasurableSpace G] [Measurab
   have hmapeq : ∀ (χ : 𝓣 → ℝ), Measurable χ → ∀ θ',
       power P (fun x => χ (T x)) θ' = power (statLaw P T) χ θ' := by
     intro χ hχ θ'
-    simp only [power, statLaw]
+    simp only [power, statLaw, Measure.map₀_of_measurable hTmeas]
     rw [integral_map hTmeas.aemeasurable hχ.aestronglyMeasurable]
   refine ⟨⟨hψ₀.1.1.comp hTmeas, fun x => hψ₀.1.2 (T x)⟩,
     fun g x => by change ψ₀ (T (g • x)) = ψ₀ (T x); rw [hTcompat g x]; exact hψ₀.2.1 g (T x),

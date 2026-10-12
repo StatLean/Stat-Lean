@@ -145,7 +145,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
   have hev : ∀ᶠ k in atTop, (1 : ℝ≥0∞) - ENNReal.ofReal η ≤ ν (S k) := by
     rcases le_or_gt 1 (ENNReal.ofReal η) with hle | hlt
     · refine Eventually.of_forall fun k => ?_
-      rw [tsub_eq_zero_of_le hle]; exact zero_le _
+      rw [tsub_eq_zero_of_le hle]; exact zero_le
     · refine htendsto.eventually (eventually_ge_nhds ?_)
       rw [ENNReal.sub_lt_self_iff ENNReal.one_ne_top]
       exact ⟨one_pos, ENNReal.ofReal_pos.2 hη⟩

@@ -176,7 +176,7 @@ private lemma rightCont_empiricalCDF {n : ℕ} (X : Fin n → Ω → ℝ) (ω : 
       = (n : ℝ)⁻¹ * ∑ i, if X i ω ≤ t then (1 : ℝ) else 0 := by
     intro t; rw [empiricalCDF_eq_empCDF]; rfl
   simp_rw [heq]
-  exact (tendsto_finset_sum Finset.univ
+  exact (tendsto_finsetSum Finset.univ
     (fun i _ => rightCont_stepIndicator (X i ω) s)).const_mul _
 
 /-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over

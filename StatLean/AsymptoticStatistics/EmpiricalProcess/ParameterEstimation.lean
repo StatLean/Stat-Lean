@@ -361,10 +361,10 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
       have hε_real : (0 : ℝ) < ε.toReal := ENNReal.toReal_pos hε.ne' hε_top
       have h_asymp := _h.asymp_linear ε.toReal hε_real
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_asymp
-        (Eventually.of_forall (fun _ => zero_le _))
+        (Eventually.of_forall (fun _ => zero_le))
         (Eventually.of_forall (fun n => ?_))
       have hΦ_meas : Measurable (fun ξ : Ξ => fun i : Fin n => X i.val ξ) :=
-        measurable_pi_lambda _ (fun i => _hX_meas i.val)
+        Measurable.of_eval (fun i => _hX_meas i.val)
       have hset_eq :
           {ξ : Ξ | ε ≤ edist (B n ξ) 0}
             = (fun ξ : Ξ => fun i : Fin n => X i.val ξ) ⁻¹'
@@ -372,7 +372,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
         ext ξ
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, edist_zero_right,
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, _root_.edist_zero_right,
           Real.enorm_eq_ofReal_abs]
         exact ENNReal.le_ofReal_iff_toReal_le hε_top (abs_nonneg _)
       calc μ {ξ : Ξ | ε ≤ edist (B n ξ) 0}
@@ -482,7 +482,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
             rw [this, abs_zero] at h
             linarith
           rw [hset_empty, measure_empty]
-          exact zero_le _
+          exact zero_le
         -- n > 0 case.
         have hn_pos : 0 < n := Nat.pos_of_ne_zero hn
         have hn_pos_real : (0 : ℝ) < n := by exact_mod_cast hn_pos
@@ -514,7 +514,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         -- Y is MemLp 2 μ as a finite sum of MemLp.
         have hY_memLp : MemLp Y 2 μ := by
           rw [hY_eq]
-          exact memLp_finset_sum' _ (fun i _ => hY_L2 i)
+          exact memLp_finsetSum' _ (fun i _ => hY_L2 i)
         -- S = (√n)⁻¹ * Y; so it's also MemLp 2.
         have hS_memLp : MemLp S 2 μ := by
           have : (fun ξ => (Real.sqrt n)⁻¹ * Y ξ) = S := by
@@ -537,7 +537,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
           have hY_int : ∫ ξ, Y ξ ∂μ = 0 := by
             rw [hY_def]
             -- ∫ Σ_i ψ(X i.val ξ) = Σ_i ∫ ψ(X i.val ξ) = Σ_i 0 = 0
-            rw [MeasureTheory.integral_finset_sum]
+            rw [MeasureTheory.integral_finsetSum]
             · simp [hψX_mean]
             · intro i _
               exact (hψX_L2 i.val).integrable (by norm_num)
@@ -590,7 +590,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
           rw [Set.mem_union, not_or] at hnot
           obtain ⟨hnB, hnψ⟩ := hnot
           simp only [Set.mem_setOf_eq] at hξ
-          simp only [Set.mem_setOf_eq, edist_zero_right,
+          simp only [Set.mem_setOf_eq, _root_.edist_zero_right,
             Real.enorm_eq_ofReal_abs, not_le] at hnB
           simp only [Set.mem_setOf_eq, not_le] at hnψ
           -- From hnB (ENNReal.ofReal |B| < 1) extract |B n ξ| < 1.
@@ -754,7 +754,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                 ∫ x, f x ∂(P_θ θ₀) - h_diff * dPθ f|
                   ≤ ENNReal.ofReal (ε_f * |h_diff|) := h_le_iSup.trans h_fre
             have hreal := (ENNReal.ofReal_le_ofReal_iff hrhs_nn).mp h_chain
-            convert hreal using 2
+            convert! hreal using 2
           have h_sqrt_nn : (0 : ℝ) ≤ Real.sqrt n := Real.sqrt_nonneg _
           have h_abs_A : |A n ξ| ≤ Real.sqrt n * (ε_f * |h_diff|) := by
             rw [h_A_eq, abs_mul, abs_of_nonneg h_sqrt_nn]
@@ -794,10 +794,10 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
       have hε_real : (0 : ℝ) < ε.toReal := ENNReal.toReal_pos hε.ne' hε_top
       have h_asymp := _h.asymp_linear ε.toReal hε_real
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_asymp
-        (Eventually.of_forall (fun _ => zero_le _))
+        (Eventually.of_forall (fun _ => zero_le))
         (Eventually.of_forall (fun n => ?_))
       have hΦ_meas : Measurable (fun ξ : Ξ => fun i : Fin n => X i.val ξ) :=
-        measurable_pi_lambda _ (fun i => _hX_meas i.val)
+        Measurable.of_eval (fun i => _hX_meas i.val)
       have hset_eq :
           {ξ : Ξ | ε ≤ edist (B n ξ) 0}
             = (fun ξ : Ξ => fun i : Fin n => X i.val ξ) ⁻¹'
@@ -805,7 +805,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
         ext ξ
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, edist_zero_right,
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, _root_.edist_zero_right,
           Real.enorm_eq_ofReal_abs]
         exact ENNReal.le_ofReal_iff_toReal_le hε_top (abs_nonneg _)
       calc μ {ξ : Ξ | ε ≤ edist (B n ξ) 0}
@@ -854,7 +854,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         - ∫ y, f y ∂(P_θ (θ_hat n (fun i : Fin n => X i.val ξ)))))
     (Z := (id : ℝ → ℝ))
     h_CLT_clean
-    (by simpa using h_residual)
+    (by simpa using! h_residual)
     h_target_aem
 
 /-- **Theorem 19.23 (Empirical process under parameter estimation, k=1)**.

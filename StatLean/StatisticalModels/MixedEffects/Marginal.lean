@@ -154,7 +154,7 @@ private theorem lmmInner_eq_conv (G : Measure (EuclideanSpace ℝ (Fin q)))
 instance (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n)))
     [IsProbabilityMeasure G] [IsProbabilityMeasure R] :
     IsProbabilityMeasure (lmmLaw D β G R) :=
-  Measure.isProbabilityMeasure_map (measurable_lmmMap D β).aemeasurable
+  (by unfold lmmLaw; infer_instance)
 
 /-- **M1a, marginal mean without Gaussianity**: centered latent effects and noise give
 `E Y = Xβ` (`LW82` Eq. (1.2), moment form). -/

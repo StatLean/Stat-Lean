@@ -148,7 +148,7 @@ theorem isBoundedInProb_of_weakConverges
     (h_wc : WeakConverges (fun k => (P k).map (X k)) ν) :
     IsBoundedInProb P X := by
   haveI : ∀ k, IsProbabilityMeasure ((P k).map (X k)) :=
-    fun k => Measure.isProbabilityMeasure_map (hX_meas k).aemeasurable
+    fun k => (by infer_instance)
   have htight : IsTightMeasureSet (Set.range (fun k => (P k).map (X k))) :=
     Prohorov.weakConverges_range_tight _ ν h_wc
   intro ε hε

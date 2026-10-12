@@ -233,7 +233,7 @@ private lemma integrable_slice_den (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Mea
   have hmp : MeasurePreserving (fun u : ℝ => -u) (volume : Measure ℝ) volume := by
     simpa using Measure.measurePreserving_neg (volume : Measure ℝ)
   refine (hmp.integrable_comp (measurable_slice f hf y).aestronglyMeasurable).mp ?_
-  simpa [Function.comp] using hrefl
+  simpa [Function.comp] using! hrefl
 
 /-- The first moment of the density slice is integrable at every `y`. -/
 private lemma integrable_slice_num (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
@@ -330,7 +330,7 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
     ENNReal.measurable_ofReal.comp (hf.comp measurable_pUnshear)
   set ρ : Measure ((Fin m → ℝ) × ℝ) := P₀.map pShear with hρ_def
   haveI : IsProbabilityMeasure ρ := by
-    rw [hρ_def]; exact Measure.isProbabilityMeasure_map measurable_pShear.aemeasurable
+    rw [hρ_def]; exact (by infer_instance)
   -- the slice-integral identities
   have hslice_int : ∀ t : Fin m → ℝ, Integrable (fun s : ℝ => f (pUnshear (t, s))) :=
     fun t => integrable_slice_den f hf hden t
@@ -364,7 +364,8 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
   have hccomp : condDistrib δ₀ diffs P₀
       =ᵐ[P₀.map diffs] (condDistrib id diffs P₀).map δ₀ := by
     have h := condDistrib_comp (μ := P₀) (Y := id) (mβ := inferInstance)
-      (X := (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ)) (aemeasurable_id (μ := P₀))
+      (X := (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ)) measurable_diffs.aemeasurable
+      (aemeasurable_id (μ := P₀))
       (f := δ₀) hδ₀meas
     simpa using h
   -- assemble everything, a.e. in the differences

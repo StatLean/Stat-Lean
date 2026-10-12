@@ -205,7 +205,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
     (memLp_two_iff_integrable_sq (hψmeas i).aestronglyMeasurable).2 (hsqint i)
   have hψint : ∀ i, Integrable (ψ i) P₀ := fun i => (hψL2 i).integrable one_le_two
   have hψψint : ∀ i j, Integrable (fun x => ψ i x * ψ j x) P₀ := fun i j => by
-    simpa using (hψL2 i).integrable_mul (hψL2 j)
+    simpa using! (hψL2 i).integrable_mul (hψL2 j)
   -- the canonical i.i.d. model `(Ω₀, P₀c, Z)` with marginal law `P₀`
   obtain ⟨Ω₀, mΩ₀, P₀c, Z, hZmeas, hZlaw, hZindep, hP₀cprob⟩ :=
     ProbabilityTheory.exists_iid ℕ P₀
@@ -214,7 +214,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
   -- per-observation score map `g` and per-observation vectors `Y`
   set g : 𝓧 → EuclideanSpace ℝ (Fin k) := fun x => psiVec ψ x with hg
   have hgmeas : Measurable g :=
-    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ (fun j => hψmeas j))
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval (fun j => hψmeas j))
   set Y : ℕ → Ω₀ → EuclideanSpace ℝ (Fin k) := fun i ω => g (Z i ω) with hY
   -- an integral of `F ∘ Z 0` reduces to an integral over `P₀`
   have hkey : ∀ (F : 𝓧 → ℝ), AEStronglyMeasurable F P₀ →
@@ -237,11 +237,11 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
       have hpt : (fun x => ⟪u, g x⟫_ℝ) = (fun x => ∑ i, u i * ψ i x) := by
         funext x; rw [inner_euclidean_sum]; rfl
       rw [hpt]
-      exact integrable_finset_sum _ (fun i _ => (hψint i).const_mul (u i))
+      exact integrable_finsetSum _ (fun i _ => (hψint i).const_mul (u i))
     rw [hkey _ hFint.aestronglyMeasurable]
     have hpt : (fun x => ⟪u, g x⟫_ℝ) = (fun x => ∑ i, u i * ψ i x) := by
       funext x; rw [inner_euclidean_sum]; rfl
-    rw [hpt, integral_finset_sum _ (fun i _ => (hψint i).const_mul (u i))]
+    rw [hpt, integral_finsetSum _ (fun i _ => (hψint i).const_mul (u i))]
     simp_rw [integral_const_mul, hcentred, mul_zero, Finset.sum_const_zero]
   -- the covariance identity `∫ ⟪u,·⟫⟪v,·⟫ = u ⬝ Iₖ v`
   have h_cov : ∀ u v : EuclideanSpace ℝ (Fin k),
@@ -257,16 +257,16 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
       ring
     have hFint : Integrable (fun x => ⟪u, g x⟫_ℝ * ⟪v, g x⟫_ℝ) P₀ := by
       rw [hpt]
-      exact integrable_finset_sum _
-        (fun i _ => integrable_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))
+      exact integrable_finsetSum _
+        (fun i _ => integrable_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))
     rw [hkey _ hFint.aestronglyMeasurable, hpt,
-      integral_finset_sum _
-        (fun i _ => integrable_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))]
+      integral_finsetSum _
+        (fun i _ => integrable_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))]
     have hRHS : u.ofLp ⬝ᵥ (1 : Matrix (Fin k) (Fin k) ℝ).mulVec v.ofLp = ∑ i, u i * v i := by
       rw [Matrix.one_mulVec]; rfl
     rw [hRHS]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    rw [integral_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
+    rw [integral_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
       (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
@@ -283,7 +283,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
         rw [Real.norm_eq_abs, sq_abs]
         rfl
       rw [hnorm]
-      exact integrable_finset_sum _ (fun i _ => hsqint i)
+      exact integrable_finsetSum _ (fun i _ => hsqint i)
     have hmap : MemLp g 2 (P₀c.map (Z 0)) := by rw [(hZlaw 0).map_eq]; exact hg_L2
     exact (memLp_map_measure_iff hmap.aestronglyMeasurable (hZmeas 0).aemeasurable).1 hmap
   -- the fixed-i.i.d. CLT for the canonical model
@@ -299,11 +299,13 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
       fun d => (Real.sqrt n)⁻¹ • ∑ i : Fin n, g (d i) with hF
     have hsum : Measurable (fun d : Fin n → 𝓧 => ∑ i : Fin n, g (d i)) :=
       Finset.univ.measurable_sum (fun i _ => hgmeas.comp (measurable_pi_apply i))
-    have hFmeas : Measurable F := by rw [hF]; exact measurable_const.smul hsum
+    have hFmeas : Measurable F := by
+      rw [hF]
+      simpa only [Pi.smul_apply] using! hsum.const_smul ((Real.sqrt n)⁻¹)
     have hgZ : Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
-      measurable_pi_lambda _ (fun i => hZmeas i)
+      Measurable.of_eval (fun i => hZmeas i)
     have hgX : Measurable (fun ω (i : Fin n) => X n i ω) :=
-      measurable_pi_lambda _ (fun i => hX n i)
+      Measurable.of_eval (fun i => hX n i)
     have hLHSfun : (fun ω => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i ω)
         = F ∘ (fun ω (i : Fin n) => Z (i : ℕ) ω) := by
       funext ω
@@ -518,7 +520,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
         nlinarith [Real.exp_pos (t * ψ j x)]
     have hle : ∏ j, Real.exp (t * |ψ j x|)
         ≤ ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x))) :=
-      Finset.prod_le_prod (fun j _ => (Real.exp_pos _).le) (fun j _ => hpt j)
+      Finset.prod_le_prod₀ (fun j _ => (Real.exp_pos _).le) (fun j _ => hpt j)
     have hexpand : ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x)))
         = ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset, Real.exp ⟪Θ s, psiVec ψ x⟫_ℝ := by
       rw [Finset.prod_add]
@@ -549,7 +551,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
       _ = _ := hexpand
   have hsumint : Integrable (fun x => ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset,
       Real.exp ⟪Θ s, psiVec ψ x⟫_ℝ) P₀ :=
-    integrable_finset_sum (Finset.univ : Finset (Fin k)).powerset (fun s _ => hint (Θ s))
+    integrable_finsetSum (Finset.univ : Finset (Fin k)).powerset (fun s _ => hint (Θ s))
   refine Integrable.mono' hsumint hmeas.aestronglyMeasurable ?_
   filter_upwards with x
   rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
@@ -579,7 +581,7 @@ private lemma score_L2_facts {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasu
   have hψL2 : ∀ i, MemLp (ψ i) 2 P₀ := fun i =>
     (memLp_two_iff_integrable_sq (hψmeas i).aestronglyMeasurable).2 (hsqint i)
   exact ⟨fun i => (hψL2 i).integrable one_le_two,
-    fun i j => by simpa using (hψL2 i).integrable_mul (hψL2 j)⟩
+    fun i j => by simpa using! (hψL2 i).integrable_mul (hψL2 j)⟩
 
 /-- **Quadratic expansion of the log-partition function of the smooth model.**  For a centred
 orthonormal score system whose exponential tilts are all integrable, the log-partition
@@ -633,30 +635,30 @@ private lemma logPartition_quadratic_bound {k : ℕ} {P₀ : Measure 𝓧} [IsPr
   have hzint : Integrable z P₀ := by
     have : z = fun x => ∑ j, θ j * ψ j x := funext hzval
     rw [this]
-    exact integrable_finset_sum _ fun j _ => (hψint j).const_mul _
+    exact integrable_finsetSum _ fun j _ => (hψint j).const_mul _
   have hzsqint : Integrable (fun x => z x ^ 2) P₀ := by
     have hpt : (fun x => z x ^ 2) = fun x => ∑ i, ∑ j, (θ i * θ j) * (ψ i x * ψ j x) := by
       funext x
       rw [hzval x, sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
     rw [hpt]
-    exact integrable_finset_sum _ fun i _ =>
-      integrable_finset_sum _ fun j _ => (hψψint i j).const_mul _
+    exact integrable_finsetSum _ fun i _ =>
+      integrable_finsetSum _ fun j _ => (hψψint i j).const_mul _
   -- the two moment identities
   have hmom1 : ∫ x, z x ∂P₀ = 0 := by
     have : z = fun x => ∑ j, θ j * ψ j x := funext hzval
-    rw [this, integral_finset_sum _ fun j _ => (hψint j).const_mul _]
+    rw [this, integral_finsetSum _ fun j _ => (hψint j).const_mul _]
     simp_rw [integral_const_mul, hcentred, mul_zero, Finset.sum_const_zero]
   have hmom2 : ∫ x, z x ^ 2 ∂P₀ = ‖θ‖ ^ 2 := by
     have hpt : (fun x => z x ^ 2) = fun x => ∑ i, ∑ j, (θ i * θ j) * (ψ i x * ψ j x) := by
       funext x
       rw [hzval x, sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-    rw [hpt, integral_finset_sum _ fun i _ =>
-      integrable_finset_sum _ fun j _ => (hψψint i j).const_mul _,
+    rw [hpt, integral_finsetSum _ fun i _ =>
+      integrable_finsetSum _ fun j _ => (hψψint i j).const_mul _,
       EuclideanSpace.real_norm_sq_eq]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ fun j _ => (hψψint i j).const_mul _]
+    rw [integral_finsetSum _ fun j _ => (hψψint i j).const_mul _]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
       (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
@@ -792,13 +794,14 @@ private lemma law_scoreVec_pi {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
           (fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i)) := by
   classical
   have hgmeas : Measurable (psiVec ψ) :=
-    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψmeas)
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval hψmeas)
   set F : (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
     fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) with hF
-  have hFmeas : Measurable F :=
-    measurable_const.smul
-      (Finset.univ.measurable_sum fun i _ => hgmeas.comp (measurable_pi_apply i))
-  have hXmeas : Measurable (fun ω (i : Fin n) => X i ω) := measurable_pi_lambda _ hX
+  have hFmeas : Measurable F := by
+    simpa only [hF, Pi.smul_apply, Function.comp_apply] using!
+      (Finset.measurable_sum (Finset.univ : Finset (Fin n))
+        fun i _ => hgmeas.comp (measurable_pi_apply i)).const_smul ((Real.sqrt (n : ℝ))⁻¹)
+  have hXmeas : Measurable (fun ω (i : Fin n) => X i ω) := Measurable.of_eval hX
   have hpiX : P.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => P₀) := by
     rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX i).aemeasurable)).1 hindep]
     congr 1; funext i; exact hlaw i
@@ -981,7 +984,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
   have hψmeas : ∀ j, Measurable (ψ j) := fun j =>
     ((measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hψ
   have hgmeas : Measurable (psiVec ψ) :=
-    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψmeas)
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval hψmeas)
   -- ### The log-partition function
   set A : EuclideanSpace ℝ (Fin k) → ℝ :=
     fun θ => Real.log (∫ x, Real.exp ⟪θ, psiVec ψ x⟫_ℝ ∂P₀) with hAdef
@@ -995,7 +998,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
       norm_num
     rw [hs] at h1
     rw [← h1]
-    exact Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+    exact (by infer_instance)
   haveI hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
   have hEint : ∀ θ, Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀ := by
     intro θ
@@ -1068,7 +1071,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     rw [show (∫ ω, φ n ω ∂(Q n h)) = ∫ ω, ρ n (fun i => X n i ω) ∂(Q n h) from
       integral_congr_ae (Filter.Eventually.of_forall (fun ω => hρval n ω))]
     rw [← hsample n h,
-      integral_map (measurable_pi_lambda _ (fun i => hX n i)).aemeasurable
+      integral_map (Measurable.of_eval (fun i => hX n i)).aemeasurable
         (hρmeas n).aestronglyMeasurable]
   have hQCval : ∀ n h, QC n h = Measure.pi (fun _ : Fin n =>
       (smoothModel P₀ ψ hψ).P ((Real.sqrt (n : ℝ))⁻¹ • h)) := fun n h => rfl
@@ -1077,9 +1080,11 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     fun n d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) with hZCdef
   have hZCval : ∀ n (d : Fin n → 𝓧),
       ZC n d = (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) := fun n d => rfl
-  have hZCmeas : ∀ n, Measurable (ZC n) := fun n =>
-    measurable_const.smul (Finset.univ.measurable_sum
-      fun i _ => hgmeas.comp (measurable_pi_apply i))
+  have hZCmeas : ∀ n, Measurable (ZC n) := by
+    intro n
+    simpa only [hZCdef, Pi.smul_apply, Function.comp_apply] using!
+      (Finset.measurable_sum (Finset.univ : Finset (Fin n))
+        fun i _ => hgmeas.comp (measurable_pi_apply i)).const_smul ((Real.sqrt (n : ℝ))⁻¹)
   have hZ : WeakConverges (fun n => (QC n 0).map (ZC n))
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
     have hbrick := pi_scoreLaw_weakConverges (P₀ := P₀) hψmeas hortho hcentred
@@ -1325,7 +1330,7 @@ private lemma stdGaussian_map_add_eq_withDensity (v : EuclideanSpace ℝ (Fin k)
       = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
     rw [← hmapT, Measure.map_map (by fun_prop) hT,
       Measure.map_map hT
-        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+        (Measurable.of_eval (fun i => (measurable_pi_apply i).const_add (a i)))]
     congr 1
   rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift a, ← hπ₀,
     map_toLp_withDensity π₀ (by fun_prop), hmapT]
@@ -1418,7 +1423,7 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
       (fun m => (hmeasset _).nullMeasurableSet) hanti ⟨0, measure_ne_top _ _⟩
     rw [hinter, measure_empty] at h
     have := (ENNReal.tendsto_toReal (by simp)).comp h
-    simpa [MeasureTheory.Measure.real] using this
+    simpa [MeasureTheory.Measure.real] using! this
   rw [NormedAddGroup.tendsto_nhds_zero]
   intro δ hδ
   -- choose the radius from the limit tail
@@ -1518,7 +1523,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
   have hψmeas : ∀ j, Measurable (ψ j) := fun j =>
     ((measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hψ
   have hgmeas : Measurable (psiVec ψ) :=
-    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψmeas)
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval hψmeas)
   -- ### The log-partition function and the exponential-tilt representation
   set A : EuclideanSpace ℝ (Fin k) → ℝ :=
     fun θ => Real.log (∫ x, Real.exp ⟪θ, psiVec ψ x⟫_ℝ ∂P₀) with hAdef
@@ -1529,7 +1534,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     have hs : (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • θ = θ := by norm_num
     rw [hs] at h1
     rw [← h1]
-    exact Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+    exact (by infer_instance)
   haveI hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
   have hEint : ∀ θ, Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀ := by
     intro θ
@@ -1559,8 +1564,9 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
   have hTmeas : ∀ n, Measurable (T n) := by
     intro n
     simp only [hT]
-    exact measurable_const.smul
-      (Finset.univ.measurable_sum fun i _ => hgmeas.comp (measurable_pi_apply i))
+    simpa only [Pi.smul_apply, Function.comp_apply] using!
+      (Finset.measurable_sum (Finset.univ : Finset (Fin n))
+        fun i _ => hgmeas.comp (measurable_pi_apply i)).const_smul ((Real.sqrt (n : ℝ))⁻¹)
   have hinnermeas : ∀ v : EuclideanSpace ℝ (Fin k),
       Measurable fun z : EuclideanSpace ℝ (Fin k) => ⟪v, z⟫_ℝ :=
     fun v => (continuous_const.inner continuous_id).measurable
@@ -1617,7 +1623,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     simpa only [hPN, hT] using
       pi_scoreLaw_weakConverges (P₀ := P₀) (ψ := ψ) hψmeas hortho hcentred
   haveI hmuprob : ∀ n, IsProbabilityMeasure ((PN n).map (T n)) :=
-    fun n => Measure.isProbabilityMeasure_map (hTmeas n).aemeasurable
+    fun n => (by infer_instance)
   -- ### The log-partition drift `n·A(t θₙ) → t²‖h₀‖²/2`
   obtain ⟨Mb, hMbmem⟩ := hu.norm.bddAbove_range
   have hMb : ∀ n, ‖u n‖ ≤ Mb := fun n => hMbmem ⟨n, rfl⟩
@@ -1725,7 +1731,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     have h2 := hAdrift 2 (by norm_num)
     have := h2.sub (haNlim.const_mul 2)
     simp only [hbN]
-    convert this using 2
+    convert! this using 2
     ring
   have hUI : ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, 0 ≤ M ∧ ∃ N₀ : ℕ, ∀ n, N₀ ≤ n →
       ∫ d, Real.exp (L n d) - min (Real.exp (L n d)) M ∂(PN n) ≤ ε := by
@@ -1799,7 +1805,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
   set π : Measure (EuclideanSpace ℝ (Fin k) × ℝ) :=
     (stdGaussian (EuclideanSpace ℝ (Fin k))).map gmap with hπ
   haveI hπprob : IsProbabilityMeasure π := by
-    rw [hπ]; exact Measure.isProbabilityMeasure_map hgmapcont.measurable.aemeasurable
+    rw [hπ]; exact (by infer_instance)
   have hjoint : WeakConverges (fun n => (PN n).map (fun d => (T n d, L n d))) π := by
     refine AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
       (X := fun n d => gmap (T n d)) (Y := fun n d => (T n d, L n d))
@@ -1860,14 +1866,15 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
           _ = ((PN n).map (T n)).real {z : EuclideanSpace ℝ (Fin k) |
                 ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖} := by
               simp only [MeasureTheory.Measure.real]
-              rw [Measure.map_apply (hTmeas n)
+              erw [Measure.map_apply (hTmeas n)
                 (measurableSet_le measurable_const (measurable_const.mul measurable_norm))]
+              simp only [Pi.mul_apply]
       · exact htail
   -- ### The tilted limit is the Cameron–Martin shift
   haveI hCMprob : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
       (fun z => ENNReal.ofReal (Real.exp (⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)))) := by
     rw [← stdGaussian_map_add_eq_withDensity h₀]
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact (by infer_instance)
   obtain ⟨hCMint, hCMone⟩ := integrable_exp_of_withDensity_isProbability
     (μ := stdGaussian (EuclideanSpace ℝ (Fin k)))
     (f := fun z => ⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)
@@ -2047,7 +2054,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
     intro v h₀ hv
     have hweak := scoreVec_weakConverges_drift hψ hortho hcentred hX hindep hlaw hv
     haveI hprob : ∀ n, IsProbabilityMeasure ((Q n (v n)).map (scoreVec ψ (X n))) := fun n =>
-      Measure.isProbabilityMeasure_map (measurable_scoreVec hψmeas (hX n)).aemeasurable
+      (by infer_instance)
     set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
       fun n => ⟨(Q n (v n)).map (scoreVec ψ (X n)), hprob n⟩ with hμs
     set νl : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=

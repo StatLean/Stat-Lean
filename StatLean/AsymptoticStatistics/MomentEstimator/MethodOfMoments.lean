@@ -118,7 +118,7 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
   have hf_coord : ∀ i, MemLp (fun ω => f ω i) 2 P := by
     intro i
     have h := (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hf_L2
-    simpa [Function.comp, EuclideanSpace.coe_proj] using h
+    simpa [Function.comp, EuclideanSpace.coe_proj] using! h
   -- centred coordinates are `L²`
   have hg : ∀ i, MemLp (fun ω => f ω i - ∫ y, f y i ∂P) 2 P := fun i =>
     (hf_coord i).sub (memLp_const _)
@@ -144,7 +144,7 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
   have hInt1 : ∀ i, Integrable
       (fun ω => ∑ j, x i * x j
           * ((f ω i - ∫ y, f y i ∂P) * (f ω j - ∫ y, f y j ∂P))) P := fun i =>
-    integrable_finset_sum _ fun j _ => hInt2 i j
+    integrable_finsetSum _ fun j _ => hInt2 i j
   -- RHS: expand the square, swap `∫`/`∑`
   have hRHS : ∫ ω, (∑ i, x i * (f ω i - ∫ y, f y i ∂P)) ^ 2 ∂P
       = ∑ i, ∑ j, x i * x j
@@ -156,9 +156,9 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
       rw [sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
     simp_rw [hpt]
-    rw [integral_finset_sum _ fun i _ => hInt1 i]
+    rw [integral_finsetSum _ fun i _ => hInt1 i]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ fun j _ => hInt2 i j]
+    rw [integral_finsetSum _ fun j _ => hInt2 i j]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [integral_const_mul]
   rw [hLHS, hRHS]
@@ -195,7 +195,7 @@ theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measur
   have hf_coord : ∀ i, MemLp (fun ω => f ω i) 2 P := by
     intro i
     have h := (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hf_L2
-    simpa [Function.comp, EuclideanSpace.coe_proj] using h
+    simpa [Function.comp, EuclideanSpace.coe_proj] using! h
   -- the linear functional `⟪t, f ·⟫` is AE(strongly)measurable
   have h_asm : AEStronglyMeasurable (fun ω => ⟪t, f ω⟫) P :=
     (continuous_const.inner continuous_id).comp_aestronglyMeasurable hf_L2.aestronglyMeasurable
@@ -210,7 +210,7 @@ theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measur
   -- integral of the inner product
   have h_int_inner : ∫ y, ⟪t, f y⟫ ∂P = ∑ i, t i * ∫ y, f y i ∂P := by
     simp_rw [h_inner]
-    rw [integral_finset_sum _ fun i _ =>
+    rw [integral_finsetSum _ fun i _ =>
       ((hf_coord i).integrable (by norm_num)).const_mul (t i)]
     exact Finset.sum_congr rfl fun i _ => integral_const_mul _ _
   rw [variance_eq_integral h_AEM, fCov_quad_eq P hf_L2 t]
@@ -481,7 +481,7 @@ theorem method_of_moments_normality {d : ℕ}
         (hemp_meas n) hU_open.measurableSet
       have hc : {ξ | empiricalMoment f n X ξ ∉ U}
           = {ξ | empiricalMoment f n X ξ ∈ U}ᶜ := rfl
-      rw [hc, measureReal_compl hm, measureReal_univ_eq_one]; ring
+      rw [hc, measureReal_compl hm, probReal_univ]; ring
     rw [tendsto_congr heq]
     simpa using hmassU_compl.const_sub (1 : ℝ)
   -- shared: `Wn := e'⁻¹(√n•(ℙₙf−μ))`, `Zn := √n•(θ̂−θ₀)`, and `dist(Wn,Zn) →ₚ 0`.

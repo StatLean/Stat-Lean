@@ -489,10 +489,10 @@ theorem pBridge_tight :
   have hSG : ∀ s t : ↥F, ProbabilityTheory.HasSubgaussianMGF
       (fun ω => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s ω
         - gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
-      ⟨(1 : ℝ) ^ 2 * dist s t ^ 2, by positivity⟩ iidStdGaussian := by
+      (NNReal.mk ((1 : ℝ) ^ 2 * dist s t ^ 2) (by positivity)) iidStdGaussian := by
     intro s t
     refine (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy ?_
-    rw [← NNReal.coe_le_coe]
+    erw [← NNReal.coe_le_coe]
     simp only [NNReal.coe_mk, one_pow, one_mul]
     change distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
     exact le_refl _

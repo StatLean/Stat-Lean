@@ -285,7 +285,7 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
     exact hM n
   have hR := tendstoInProbZero_of_isBoundedInProb_mul hfactor hnorm
   have hResidual : TendstoInProbZero Pn R := by
-    convert hR using 1
+    convert! hR using 1
     funext n X
     simp only [smul_eq_mul, R, Delta]
     conv_rhs => rw [← mul_assoc, mul_inv_cancel₀ (by positivity :
@@ -297,7 +297,7 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
         Omega → ℝ) x)) =ᵐ[P]
         fun x => I⁻¹ * (score0 : Lp ℝ 2 P) x := by
     change (((I⁻¹ • (score0 : Lp ℝ 2 P) : Lp ℝ 2 P) : Omega → ℝ)) =ᵐ[P] _
-    simpa only [smul_eq_mul] using Lp.coeFn_smul I⁻¹ (score0 : Lp ℝ 2 P)
+    simpa only [smul_eq_mul] using! Lp.coeFn_smul I⁻¹ (score0 : Lp ℝ 2 P)
   refine (hResidual epsilon hepsilon).congr' ?_
   filter_upwards [] with n
   rw [measureReal_def]
@@ -453,7 +453,7 @@ theorem rawMovingBias_sqrtN_tight_2554
       fun i => h.B0.score0_memLp.comp_measurePreserving
         (measurePreserving_eval (μ := fun _ : Fin n => P) i)
     have hSmem : MemLp (S n) 2 (Pn n) :=
-      (memLp_finset_sum Finset.univ (fun i _ => hgi i)).const_mul _
+      (memLp_finsetSum Finset.univ (fun i _ => hgi i)).const_mul _
     have hSint : ∫ X, S n X ∂(Pn n) = 0 := by
       have heach : ∀ i : Fin n,
           ∫ X : Fin n → Omega, g (X i) ∂(Pn n) = 0 := by
@@ -462,7 +462,7 @@ theorem rawMovingBias_sqrtN_tight_2554
           h.B0.score0_memLp.aestronglyMeasurable]
         exact hmean
       rw [show S n = fun X => (Real.sqrt n)⁻¹ * ∑ i : Fin n, g (X i) from rfl,
-        integral_const_mul, integral_finset_sum _
+        integral_const_mul, integral_finsetSum _
           (fun i _ => (hgi i).integrable (by norm_num))]
       simp [heach]
     have hSvar : ProbabilityTheory.variance (S n) (Pn n) = V := by
@@ -628,7 +628,7 @@ theorem rawMovingBias_asympLinear_2554
     exact hM n
   have hB0 : TendstoInProbZero Pn B := by
     have hp := tendstoInProbZero_of_isBoundedInProb_mul hfactor h52
-    convert hp using 1
+    convert! hp using 1
     funext n X
     change B n X = (1 + |Delta n X|) * ((1 + |Delta n X|)⁻¹ * B n X)
     rw [← mul_assoc, mul_inv_cancel₀ (by positivity : 1 + |Delta n X| ≠ 0), one_mul]
@@ -657,7 +657,7 @@ theorem rawMovingBias_asympLinear_2554
     simpa [Real.norm_eq_abs] using ht
   intro a ha
   rw [← ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Pn n) _)]
-  simpa [Pn, A, Real.norm_eq_abs] using hA a ha
+  simpa [Pn, A, Real.norm_eq_abs] using! hA a ha
 
 namespace RawMovingBiasExpansionHyp
 

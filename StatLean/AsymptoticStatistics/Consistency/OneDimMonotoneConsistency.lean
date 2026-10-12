@@ -89,7 +89,7 @@ theorem oneDim_monotone_zEstimator_consistent
           + P {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖}) atTop (𝓝 0) := by
         simpa using T_lo.add T_near
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-        (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+        (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
     · -- `θ₀−ε ∉ Θ`: order-connectedness forces the event to be empty.
       have hempty : ∀ n, {ω | θhat n ω ≤ θ₀ - ε} = (∅ : Set Ω) := by
         intro n
@@ -131,7 +131,7 @@ theorem oneDim_monotone_zEstimator_consistent
           + P {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖}) atTop (𝓝 0) := by
         simpa using T_hi.add T_near
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-        (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+        (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
     · -- `θ₀+ε ∉ Θ`: order-connectedness forces the event to be empty.
       have hempty : ∀ n, {ω | θ₀ + ε ≤ θhat n ω} = (∅ : Set Ω) := by
         intro n
@@ -156,7 +156,7 @@ theorem oneDim_monotone_zEstimator_consistent
       P {ω | θhat n ω ≤ θ₀ - ε} + P {ω | θ₀ + ε ≤ θhat n ω}) atTop (𝓝 0) := by
     simpa using h_lo.add h_hi
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
 
 /-- **`Θ = ℝ` specialization** of `oneDim_monotone_zEstimator_consistent`, for the
 common ambient-line callers (median sign-sum etc.). Each `Ψn n ω` is nondecreasing on

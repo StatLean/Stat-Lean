@@ -235,8 +235,8 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
       have huml : (fun x => (ψ c j x + ε * ‖m x‖) - (ψ c j x - ε * ‖m x‖))
                   = (2 * ε) • (fun x => ‖m x‖) := by
         funext x; simp only [Pi.smul_apply, smul_eq_mul]; ring
-      rw [huml, eLpNorm_const_smul, eLpNorm_norm]
-      have hfin : eLpNorm m 2 P = ENNReal.ofReal M := (ENNReal.ofReal_toReal hm.2.ne).symm
+      rw [huml, eLpNorm_const_smul, eLpNorm_norm _ hm.aestronglyMeasurable]
+      have hfin : eLpNorm m 2 P = ENNReal.ofReal M := (ENNReal.ofReal_toReal hm.ne).symm
       rw [hfin, Real.enorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
       exact (ENNReal.ofReal_lt_ofReal_iff hs_pos).mpr hs
   -- Enumerate the `k · |S|` brackets via an equiv `Fin (k*|S|) ≃ Fin k × ↥S`.
@@ -485,7 +485,7 @@ theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [Measurable
       have h2 : Tendsto (fun n => θseq n - θ) atTop (𝓝 0) := by
         simpa using hθseq_lim.sub
           (tendsto_const_nhds : Tendsto (fun _ : ℕ => θ) atTop (𝓝 θ))
-      simpa using (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin k))).comp h2
+      simpa using! (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin k))).comp h2
     have ha : Tendsto (fun n => ‖m x‖ * ‖θseq n - θ‖) atTop (𝓝 0) := by
       simpa using hnorm.const_mul ‖m x‖
     have hbd : ∀ n, ‖ψ (θseq n) j x - ψ θ j x‖ ≤ ‖m x‖ * ‖θseq n - θ‖ := by
@@ -500,7 +500,7 @@ theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [Measurable
     set Δ : ℝ := max Δ₀ 0 with hΔdef
     have hΔnn : 0 ≤ Δ := le_max_right _ _
     refine ⟨fun x => (∑ j, |ψ θ₀ j x|) + Δ * ‖m x‖, ?_, ?_⟩
-    · exact (integrable_finset_sum _
+    · exact (integrable_finsetSum _
         (fun j _ => ((hψ0_L2 j).integrable (by norm_num)).abs)).add
         ((hm.integrable (by norm_num)).norm.const_mul Δ)
     · rintro g ⟨θ, hθ, j, rfl⟩ x

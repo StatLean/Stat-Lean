@@ -119,6 +119,7 @@ end MultivariateCLT
 
 open MultivariateCLT
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- *Multivariate iid Central Limit Theorem* (Cramér–Wold form).
 
 For an iid sequence `X i : Ω → EuclideanSpace ℝ (Fin m)` with finite second

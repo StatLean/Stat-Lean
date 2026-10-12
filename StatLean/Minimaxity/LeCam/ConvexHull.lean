@@ -91,7 +91,7 @@ private lemma mul_measure_mem_le_avg [PseudoEMetricSpace Ω]
               by_cases hy : y ∈ S
               · rw [Set.indicator_of_mem hy, Pi.one_apply, mul_one]
                 exact hΦ (hSsep i y hy)
-              · rw [Set.indicator_of_notMem hy, mul_zero]; exact zero_le _
+              · rw [Set.indicator_of_notMem hy, mul_zero]; exact zero_le
 
 /-- **Le Cam's convex-hull lower bound** (Wainwright Lemma 15.9, Eq. (15.26)): for two `2δ`-separated
 subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`, the minimax risk dominates
@@ -167,7 +167,7 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
       calc 2 * δ ≤ d₀ y + d₁ y := htotal y
         _ ≤ d₀ y + d₀ y := add_le_add_right hlt.le _
         _ = 2 * d₀ y := (two_mul _).symm
-    have hδ : δ ≤ d₀ y := (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+    have hδ : δ ≤ d₀ y := (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
     refine hδ.trans ?_
     rw [hd₀ y, edist_comm (g (a₀ i₀)) y]
     exact iInf_le _ i₀
@@ -178,7 +178,7 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
       calc 2 * δ ≤ d₀ y + d₁ y := htotal y
         _ ≤ d₁ y + d₁ y := add_le_add_left hle _
         _ = 2 * d₁ y := (two_mul _).symm
-    have hδ : δ ≤ d₁ y := (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+    have hδ : δ ≤ d₁ y := (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
     refine hδ.trans ?_
     rw [hd₁ y, edist_comm (g (a₁ i₁)) y]
     exact iInf_le _ i₁

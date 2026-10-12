@@ -103,7 +103,7 @@ theorem condDistrib_ae_eq_posteriorPredictive
     have he : (fun ω : Θ × 𝓧 × 𝓨 => (X ω, Y ω)) = Prod.snd := rfl
     rw [he, show μ.map Prod.snd = μ.snd from rfl, hμ, Measure.snd_compProd,
       comp_prod_eq_compProd_posteriorPredictive, ← hmarg]
-  have h := condDistrib_ae_eq_of_measure_eq_compProd X hY hjoint
+  have h := condDistrib_ae_eq_of_measure_eq_compProd (by fun_prop) hY hjoint
   rwa [hmarg] at h
 
 end StatLean.Bayesian

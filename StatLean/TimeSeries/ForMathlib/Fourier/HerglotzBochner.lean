@@ -278,10 +278,10 @@ theorem isPosSemidefSeq_measureFourierCoeff (F : Measure (AddCircle (2 * π)))
   -- swap the finite sum with the integral (characters are bounded continuous)
   have h3 : (∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * measureFourierCoeff F (t i - t j))
       = ∫ z, ∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * fourier (T := 2 * π) (t i - t j) z ∂F := by
-    rw [integral_finset_sum _ (fun i _ =>
-      integrable_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _))]
+    rw [integral_finsetSum _ (fun i _ =>
+      integrable_finsetSum _ (fun j _ => (hint (t i - t j)).const_mul _))]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _)]
+    rw [integral_finsetSum _ (fun j _ => (hint (t i - t j)).const_mul _)]
     exact Finset.sum_congr rfl fun j _ => h2 i j
   rw [hre, h3, integral_congr_ae (Filter.Eventually.of_forall hkey), integral_complex_ofReal,
     Complex.ofReal_re]

@@ -132,7 +132,6 @@ theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}
       (fun i => by simpa using add_pos_of_pos_of_nonneg (hα i) (Nat.cast_nonneg (v i)))
   · -- recognized form at every data point
     intro v
-    dsimp only
     have hg : Measurable (fun θ => multinomialWeight (k + 1) n (simplexExtend θ) v) :=
       hp.comp (measurable_id.prodMk measurable_const)
     by_cases hv : ∑ i, v i = n

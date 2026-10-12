@@ -124,7 +124,7 @@ lemma lintegral_mono_of_meas_lt_le
               _ = (n : ℝ) := ENNReal.toReal_natCast n
               _ ≤ t := htn'
           rw [h_empty, measure_empty]
-          exact zero_le _
+          exact zero_le
     _ = ∫⁻ x, L x ∂ν := by
         conv_rhs => rw [hL_eq]
         exact (lintegral_iSup hF_meas hF_mono).symm
@@ -170,12 +170,12 @@ omit [DecidableEq ι] in
 /-- **Pi standard Gaussian density log-concavity** (real-valued, squared form).
 
 The product form of `gaussianPDFReal_one_log_concave`, lifted from each
-coordinate via `Finset.prod_le_prod`. -/
+coordinate via `Finset.prod_le_prod₀`. -/
 lemma gaussianPDFReal_pi_log_concave (u v : ι → ℝ) :
     (∏ i, gaussianPDFReal 0 1 (u i)) * (∏ i, gaussianPDFReal 0 1 (v i))
       ≤ (∏ i, gaussianPDFReal 0 1 ((u i + v i) / 2)) ^ 2 := by
   rw [← Finset.prod_mul_distrib, ← Finset.prod_pow]
-  exact Finset.prod_le_prod
+  exact Finset.prod_le_prod₀
     (fun i _ => mul_nonneg (gaussianPDFReal_nonneg _ _ _) (gaussianPDFReal_nonneg _ _ _))
     (fun i _ => gaussianPDFReal_one_log_concave (u i) (v i))
 
@@ -281,10 +281,10 @@ private lemma _pl_anderson_pi_general
         exact gaussianPDF_pi_geom_mean_le u v
       · rw [Set.indicator_of_notMem hv,
             ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2), mul_zero]
-        exact zero_le _
+        exact zero_le
     · rw [Set.indicator_of_notMem hu,
           ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2), zero_mul]
-      exact zero_le _
+      exact zero_le
   simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num] at h_PL
   rw [← h_ν_set A_plus hA_plus_meas, ← h_ν_set A_minus hA_minus_meas,
       ← h_ν_set K hK_meas] at h_PL
@@ -388,10 +388,10 @@ theorem anderson_lemma_set_pi
         exact gaussianPDF_pi_geom_mean_le u v
       · rw [Set.indicator_of_notMem hv, ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
             mul_zero]
-        exact zero_le _
+        exact zero_le
     · rw [Set.indicator_of_notMem hu, ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
           zero_mul]
-      exact zero_le _
+      exact zero_le
   -- Normalise `1 - 1/2 = 1/2` in `h_PL`.
   simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num] at h_PL
   -- Convert integrals back to measures.
@@ -508,11 +508,11 @@ theorem anderson_lemma_image_pi
       · rw [Set.indicator_of_notMem hv,
             ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
             mul_zero]
-        exact zero_le _
+        exact zero_le
     · rw [Set.indicator_of_notMem hu,
           ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
           zero_mul]
-      exact zero_le _
+      exact zero_le
   simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num] at h_PL
   rw [← h_ν_set A_plus hA_plus_meas, ← h_ν_set A_minus hA_minus_meas,
       ← h_ν_set A_target hA_target_meas] at h_PL
@@ -632,7 +632,8 @@ theorem anderson_lemma_set_posDef
     (multivariateGaussian 0 S) {x | x + y ∈ C} ≤ (multivariateGaussian 0 S) C := by
   -- From `S.PosDef`, the matrix square root `CFC.sqrt S` is also positive
   -- definite (`Matrix.PosDef.posDef_sqrt`), hence invertible.
-  have h_sqrt_unit : IsUnit (CFC.sqrt S) := hS.posDef_sqrt.isUnit
+  have h_sqrt_unit : IsUnit (CFC.sqrt S) :=
+      (CFC.isUnit_sqrt_iff_isStrictlyPositive.mpr hS.isStrictlyPositive)
   -- Lift to the corresponding CLM: `toEuclideanCLM` is a star algebra equiv
   -- (in particular a `MulEquivClass`), so it transfers `IsUnit`.
   have h_T_unit : IsUnit (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) :=

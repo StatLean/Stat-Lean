@@ -458,7 +458,7 @@ private lemma measurable_sampleACVF {T : ℕ} {X : ℤ → Ω → ℝ} (hmeas : 
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using ((hmeas _).sub hmean).mul ((hmeas _).sub hmean)
+    simpa [dif_pos hlt'] using! ((hmeas _).sub hmean).mul ((hmeas _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
     simp [dif_neg hlt']
 
@@ -560,7 +560,7 @@ private lemma wn_isLinearProcess :
       = fun _ => (0 : ℝ) := by
     funext ω; rw [hsum ω]; ring
   rw [this]
-  simp
+  simp only [← Pi.zero_def, eLpNorm'_zero (by norm_num : (0 : ℝ) < 2)]
 
 
 /-- The Yule-Walker estimator of the frozen statement, at the white-noise instance. -/
@@ -572,7 +572,7 @@ private noncomputable def wnYW (T : ℕ) (ω : ℤ → ℝ) : Fin 1 → ℝ :=
       ((i' : ℕ) + 1)
 
 private lemma wnYW_measurable (T : ℕ) : Measurable (wnYW T) := by
-  refine measurable_pi_lambda _ fun i => ?_
+  refine Measurable.of_eval fun i => ?_
   exact measurable_inv_mulVec (fun _ _ => measurable_sampleACVF wnCoord_measurable _)
     (fun _ => measurable_sampleACVF wnCoord_measurable _) i
 
@@ -596,7 +596,7 @@ private theorem ls_yw_mle_equivalent_debt_false
     False := by
   classical
   have hmle : ∀ T : ℕ, Measurable (fun ω : ℤ → ℝ => fun i : Fin 1 => wnYW T ω i + 1) :=
-    fun T => measurable_pi_lambda _ fun i =>
+    fun T => Measurable.of_eval fun i =>
       ((measurable_pi_apply i).comp (wnYW_measurable T)).add measurable_const
   have key := H wn_isAR wn_isIIDNoise one_pos wn_noRoot wn_isLinearProcess
     wnCoord_measurable wnYW (fun _ _ _ => rfl)

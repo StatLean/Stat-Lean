@@ -232,8 +232,9 @@ theorem outerExpectation_const_smul {μ : Measure Ω} (c : ℝ≥0∞) (hc : c �
       rw [← ENNReal.mul_le_iff_le_inv hc0 hc]
       exact U.2.2 ω
     · -- `c * ∫⁻ (c⁻¹ • U) = ∫⁻ U`.
-      rw [← lintegral_const_mul c (measurable_const.mul U.2.1)]
+      erw [← lintegral_const_mul c (measurable_const.mul U.2.1)]
       refine lintegral_mono fun ω => ?_
+      simp only [Pi.mul_apply]
       rw [← mul_assoc, ENNReal.mul_inv_cancel hc0 hc, one_mul]
 
 /-- Outer expectation of a constant function: `E*[fun _ => c] = c * μ univ`. -/

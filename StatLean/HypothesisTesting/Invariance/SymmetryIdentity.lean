@@ -230,7 +230,7 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
   have hintmap : ∀ ε : Fin N → Bool, Integrable φ ((Measure.pi ν).map (signFlip ε)) := by
     intro ε
     haveI : IsProbabilityMeasure ((Measure.pi ν).map (signFlip ε)) :=
-      Measure.isProbabilityMeasure_map (measurable_signFlip ε).aemeasurable
+      (by infer_instance)
     exact integrable_of_isCriticalFn hφ _
   have hintcomp : ∀ ε : Fin N → Bool,
       Integrable (fun z => φ (signFlip ε z)) (Measure.pi ν) :=
@@ -243,7 +243,7 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
       = (Fintype.card (Fin N → Bool) : ℝ)⁻¹ *
         ∑ ε : Fin N → Bool, ∫ z, φ (signFlip ε z) ∂(Measure.pi ν) := by
     unfold signAverage
-    rw [integral_const_mul, integral_finset_sum _ fun ε _ => hintcomp ε]
+    rw [integral_const_mul, integral_finsetSum _ fun ε _ => hintcomp ε]
   rw [pi_symmetrize_eq ν, integral_smul_measure,
     integral_finset_sum_measure (fun ε _ => hintmap ε),
     Finset.sum_congr rfl fun ε _ => heach ε, hRHS]
@@ -594,7 +594,7 @@ theorem integral_eq_of_sign_invariant {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
     rw [hMdef]; exact_mod_cast Fintype.card_ne_zero
   have hAvg : ∫ z, signAverage φ z ∂Q = ∫ z, φ z ∂Q := by
     unfold signAverage
-    rw [integral_const_mul, integral_finset_sum Finset.univ (fun ε _ => hIntg ε)]
+    rw [integral_const_mul, integral_finsetSum Finset.univ (fun ε _ => hIntg ε)]
     rw [Finset.sum_congr rfl (fun ε _ => hEach ε), Finset.sum_const, Finset.card_univ,
       nsmul_eq_mul, ← hMdef, ← mul_assoc, inv_mul_cancel₀ hMne, one_mul]
   -- the completeness step makes that average `α` off a Lebesgue-null, hence `Q`-null, set.

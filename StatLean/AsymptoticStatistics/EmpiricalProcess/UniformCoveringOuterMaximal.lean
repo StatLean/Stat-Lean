@@ -36,9 +36,9 @@ theorem lintegral_empiricalL2Seminorm_le_eLpNorm
         measurable_empiricalL2Seminorm Φ hΦ_meas (k + 1)
       have hL2 : eLpNorm g 2 ν = eLpNorm Φ 2 P := by
         rw [eLpNorm_eq_lintegral_rpow_enorm_toReal
-              (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num),
+              (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) hg_meas.aestronglyMeasurable,
           eLpNorm_eq_lintegral_rpow_enorm_toReal
-              (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num)]
+              (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) hΦ_meas.aestronglyMeasurable]
         simp only [ENNReal.toReal_ofNat]
         congr 1
         calc
@@ -79,7 +79,7 @@ theorem lintegral_empiricalL2Seminorm_le_eLpNorm
               ∑ i : Fin (k + 1),
                 ∫⁻ x, ENNReal.ofReal (|Φ (x i)| ^ 2) ∂ν := by
             rw [lintegral_const_mul]
-            · rw [lintegral_finset_sum]
+            · rw [lintegral_finsetSum]
               intro i hi
               exact ((hΦ_meas.comp (measurable_pi_apply i)).abs.pow_const 2).ennreal_ofReal
             · exact Finset.measurable_sum Finset.univ fun i _ =>
@@ -113,13 +113,13 @@ theorem lintegral_empiricalL2Seminorm_le_eLpNorm
       calc
         (∫⁻ x, ENNReal.ofReal (empiricalL2Seminorm (k + 1) x Φ) ∂ν) =
             eLpNorm g 1 ν := by
-          rw [eLpNorm_one_eq_lintegral_enorm]
+          rw [eLpNorm_one_eq_lintegral_enorm hg_meas.aestronglyMeasurable]
           apply lintegral_congr
           intro x
           rw [Real.enorm_eq_ofReal_abs,
             abs_of_nonneg (empiricalL2Seminorm_nonneg (k + 1) x Φ)]
         _ ≤ eLpNorm g 2 ν :=
-          eLpNorm_le_eLpNorm_of_exponent_le (by norm_num) hg_meas.aestronglyMeasurable
+          eLpNorm_le_eLpNorm_of_exponent_le (by norm_num)
         _ = eLpNorm Φ 2 P := hL2
 
 /-- The expected empirical `L²` seminorm bound transported to an abstract iid
@@ -139,7 +139,7 @@ theorem lintegral_iid_empiricalL2Seminorm_le_eLpNorm
   let rms : (Fin n → Ω) → ℝ≥0∞ := fun x =>
     ENNReal.ofReal (empiricalL2Seminorm n x Φ)
   have hY_meas : Measurable Y :=
-    measurable_pi_lambda _ fun i => hX_meas i.val
+    Measurable.of_eval fun i => hX_meas i.val
   have hY_map : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
     AsymptoticStatistics.map_fin_restrict_eq_pi_of_iid
       P μ X hX_meas hX_iindep hX_idem hX_law n
@@ -179,7 +179,7 @@ theorem lintegral_iid_empiricalUniformEntropy_le
       (empiricalRelativeRadiusReal F Φ n (Y ξ)) F Φ
   let J1 : ℝ≥0∞ := uniformCoveringEntropyIntegral 1 F Φ
   have hY_meas : Measurable Y :=
-    measurable_pi_lambda _ fun i => hX_meas i.val
+    Measurable.of_eval fun i => hX_meas i.val
   have hD_meas : Measurable D :=
     ((measurable_empiricalL2Seminorm Φ hΦ_meas n).comp hY_meas).ennreal_ofReal
   have hJ_le : ∀ ξ, J ξ ≤ J1 := fun ξ =>

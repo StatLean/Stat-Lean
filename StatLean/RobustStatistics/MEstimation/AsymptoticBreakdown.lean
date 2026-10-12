@@ -180,7 +180,7 @@ theorem mLocationRoot_contamination_unbounded {P : Measure ℝ} [IsProbabilityMe
   set x₀ : ℝ := B + 1 + u₀ with hx₀
   have hxs : x₀ - (B + 1) = u₀ := by rw [hx₀]; ring
   have hglowB : -k₁ ≤ mLocationScore ψ P (B + 1) := by
-    simpa using integral_mono (integrable_const (-k₁)) (hiP (B + 1))
+    simpa using! integral_mono (integrable_const (-k₁)) (hiP (B + 1))
       fun x => hlow (x - (B + 1))
   have hpos : 0 < (1 - ε) * mLocationScore ψ P (B + 1) + ε * ψ (x₀ - (B + 1)) := by
     have h2 : (1 - ε) * k₁ < ε * ψ (x₀ - (B + 1)) := by

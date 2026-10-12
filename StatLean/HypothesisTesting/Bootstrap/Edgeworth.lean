@@ -664,7 +664,7 @@ theorem normalCDF_sub_le {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {a b : ℝ} (hab
 /-- The standard normal distribution function is `(2π)^{-1/2}`-Lipschitz. -/
 theorem stdNormalCDF_sub_le {a b : ℝ} (hab : a ≤ b) :
     stdNormalCDF b - stdNormalCDF a ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (b - a) := by
-  simpa using normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
+  simpa using! normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
 
 /-! ## The law of the root
 
@@ -687,7 +687,7 @@ noncomputable def centredLaw (F : Measure ℝ) : Measure ℝ :=
 instance isProbabilityMeasure_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] :
     IsProbabilityMeasure (centredLaw F) := by
   rw [centredLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- The root map `y ↦ √n (X̄ₙ − E_F X)` is `(√n)⁻¹` times the sum of the centred coordinates. -/
 private lemma sqrt_mul_sub_mean_eq {n : ℕ} (hn : 0 < n) (m : ℝ) (y : Fin n → ℝ) :
@@ -761,7 +761,7 @@ theorem charFun_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
 instance isProbabilityMeasure_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
     IsProbabilityMeasure (meanRootLaw F n) := by
   rw [meanRootLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- The **standardized root law**: the law of `√n(X̄ₙ − E_F X)/σ`.
 
@@ -774,7 +774,7 @@ noncomputable def stdRootLaw (F : Measure ℝ) (n : ℕ) : Measure ℝ :=
 instance isProbabilityMeasure_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
     IsProbabilityMeasure (stdRootLaw F n) := by
   rw [stdRootLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- **The characteristic function of the standardized root**, as an `n`-th power. -/
 theorem charFun_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ} (hn : 0 < n)
@@ -972,7 +972,7 @@ noncomputable def studentPair (F : Measure ℝ) : ℝ → EuclideanSpace ℝ (Fi
 lemma measurable_studentPair (F : Measure ℝ) : Measurable (studentPair F) := by
   have hvec : Measurable fun x : ℝ =>
       (![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun x : ℝ => x - ∫ s, s ∂F
       fun_prop
@@ -1073,7 +1073,7 @@ theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure
       field_simp
       ring
     simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
-  rw [studentizedRootCDF, ← hm, hset, vecRootLaw,
+  rw [studentizedRootCDF, ← hm, hset, vecRootLaw_eq_map F (measurable_studentPair F),
     Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
 
 /-- The inner product with the studentizing pair, in coordinates. -/
@@ -1174,7 +1174,6 @@ lemma charFun_map_studentPair_eq (F : Measure ℝ) [IsProbabilityMeasure F] (hFa
           Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
           ∂(volume : Measure ℝ) := by
     rw [hstep1, ← hFd, integral_withDensity_eq_integral_toReal_smul hpm hplt]
-    rfl
   have hstep3 : (∫ x : ℝ, (p x).toReal *
         Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I))
       = ∫ y : ℝ, (p (y + m)).toReal *
@@ -1302,7 +1301,7 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair (F : Measure ℝ) [IsPr
       ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
         ‖charFun (vecRootLaw F (studentPair F) n) t‖ ≤ c ^ n := by
   haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+    (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
@@ -2232,7 +2231,7 @@ theorem measure_inter_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSp
           Set.mem_empty_iff_false, iff_false, not_and]
         exact fun h => absurd h ha
       rw [hempty, measure_empty]
-      exact zero_le _
+      exact zero_le
   calc ∫⁻ a, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B)) ∂ν
       ≤ ∫⁻ a, A₀.indicator (fun _ => c) a ∂ν := lintegral_mono hle
     _ = ν A₀ * c := by
@@ -2641,7 +2640,7 @@ theorem abs_measure_pi_sub_comp_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMea
   set τmap : (Fin n → ℝ) → (Fin n → ℝ) := fun y i => T (y i) with hτmap
   set Bad : Set (Fin n → ℝ) := {y : Fin n → ℝ | ∃ i, y i ∈ {x : ℝ | T x ≠ x}} with hBad
   have hτmeas : Measurable τmap :=
-    measurable_pi_lambda _ fun i => hT.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hT.comp (measurable_pi_apply i)
   have hfix : ∀ y : Fin n → ℝ, y ∉ Bad → τmap y = y := by
     intro y hy
     funext i
@@ -4168,7 +4167,7 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
     ∃ c : ℝ, c < 1 ∧ ∀ κ s : ℝ, ε ≤ |s| →
       ‖charFun (F.map (slabRoot (studentPair F) σ κ)) s‖ ≤ c := by
   haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+    (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht)
@@ -5396,7 +5395,7 @@ lemma integral_fourierSynth (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ �
     intro s
     have h := MeasureTheory.integral_const_mul (μ := μ) (a s)
       (fun w : E₂ => Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I))
-    exact h.trans (by rw [charFun_apply]; rfl)
+    exact h.trans (by rw [charFun_apply])
   simp only [fourierSynth]
   rw [hswap]
   exact integral_congr_ae (Filter.Eventually.of_forall hinner)
@@ -6209,7 +6208,7 @@ theorem vecRootLaw_one {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ
       = Z ∘ fun y : Fin 1 → ℝ => y 0 := by
     funext y
     simp [Fin.sum_univ_one]
-  rw [vecRootLaw, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
+  rw [vecRootLaw_eq_map F hZ, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
     (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => F) (0 : Fin 1)).map_eq]
 
 /-- **Truncation discharges every hypothesis of the surrogate's transform, at once.**
@@ -6376,7 +6375,7 @@ theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasu
             {w : EuclideanSpace ℝ (Fin 2) |
               w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
                 - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z})).toReal := by
-    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw,
+    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw_eq_map F hZm,
       Measure.map_apply (measurable_vecRoot hZm n) hRm]
   have h2 : (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
         {w : EuclideanSpace ℝ (Fin 2) |
@@ -6388,7 +6387,7 @@ theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasu
               {w : EuclideanSpace ℝ (Fin 2) |
                 w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
                   - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}))).toReal := by
-    rw [vecRootLaw, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
+    rw [vecRootLaw_eq_map F hZTm, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
     rfl
   rw [h1, h2]
   exact abs_measure_pi_sub_comp_le F hT hbad hsm
@@ -6523,7 +6522,7 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
           ≤ c ^ n := by
   haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+    (by infer_instance)
   obtain ⟨c₀, hc₀, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
@@ -6664,7 +6663,7 @@ lemma bulkMultiplier_eq_of_norm_le {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) {w : E
     have : ‖M⁻¹ • w‖ ≤ 1 := by
       rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, inv_mul_le_iff₀ hM]
       simpa using hw
-    simpa [Metric.mem_closedBall] using this
+    simpa [Metric.mem_closedBall] using! this
   rw [bulkMultiplier, hone]
   push_cast
   ring
@@ -7024,7 +7023,7 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
     (hwin2 : V * ε₁ ^ 2 ≤ 2) (hwin3 : R * ε₁ ≤ 3 * lam / 2)
     {n : ℕ} (hn : 0 < n) {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
     ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
@@ -10405,7 +10404,7 @@ lemma integral_pi_succ_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F] {n 
     have : Measurable fun p : ℝ × (Fin n → ℝ) =>
         (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm p :=
       MeasurableEquiv.measurable _
-    simpa only [hsym] using hfm.comp this
+    simpa only [hsym] using! hfm.comp this
   have hI : Integrable (fun p : ℝ × (Fin n → ℝ) => f (Fin.cons p.1 p.2))
       (F.prod (Measure.pi fun _ : Fin n => F)) :=
     integrable_of_ae_abs_le hmeas.aestronglyMeasurable
@@ -10676,7 +10675,7 @@ lemma integral_add_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measur
     rw [add_pow]
     exact Finset.sum_congr rfl fun k _ => by ring
   simp only [hexp]
-  rw [integral_finset_sum _ (fun k _ =>
+  rw [integral_finsetSum _ (fun k _ =>
     (integrable_pow_of_bounded ν hW hWb (p - k)).const_mul (a ^ k * (p.choose k : ℝ)))]
   exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
 
@@ -10721,7 +10720,7 @@ lemma integral_pi_sum_pow_succ (F : Measure ℝ) [IsProbabilityMeasure F] {V : �
     rw [integral_add_pow_of_bounded _ (hsumm n) (hsumb n) (V x) p]
     exact Finset.sum_congr rfl fun k _ => by ring
   simp only [hinner]
-  rw [integral_finset_sum _ (fun k _ =>
+  rw [integral_finsetSum _ (fun k _ =>
     (integrable_pow_of_bounded F hV hB k).mul_const _)]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [MeasureTheory.integral_mul_const]
@@ -11904,7 +11903,8 @@ theorem exists_integral_norm_pow_four_vecRootLaw_truncAt_le
   have hZm : Measurable
       (fun y : ℝ => studentPair F (truncAt m (Real.sqrt (n : ℝ)) y)) :=
     (measurable_studentPair F).comp (measurable_truncAt _ _)
-  rw [vecRootLaw, integral_map (measurable_vecRoot hZm n).aemeasurable (by fun_prop)]
+  rw [vecRootLaw_eq_map F hZm,
+    integral_map (measurable_vecRoot hZm n).aemeasurable (by fun_prop)]
   set τ : ℝ := Real.sqrt (n : ℝ) with hτdef
   have hτ2 : τ ^ 2 = (n : ℝ) := Real.sq_sqrt hn0.le
   have hτ0 : (0 : ℝ) < τ := Real.sqrt_pos.2 hn0
@@ -12771,12 +12771,12 @@ lemma hasDerivAt_stdNormalPDF (u : ℝ) :
     HasDerivAt stdNormalPDF (-u * stdNormalPDF u) u := by
   have h1 : HasDerivAt (fun x : ℝ => -x ^ 2 / 2) (-u) u := by
     have := ((hasDerivAt_pow 2 u).neg).div_const 2
-    convert this using 1
+    convert! this using 1
     push_cast
     ring
   have h2 := (h1.exp).div_const (Real.sqrt (2 * Real.pi))
   change HasDerivAt (fun x : ℝ => Real.exp (-x ^ 2 / 2) / Real.sqrt (2 * Real.pi)) _ u
-  convert h2 using 1
+  convert! h2 using 1
   rw [stdNormalPDF]
   ring
 
@@ -12785,7 +12785,7 @@ lemma hasDerivAt_hermiteAntideriv (u : ℝ) :
     HasDerivAt hermiteAntideriv (stdNormalPDF u * (u ^ 3 - 3 * u)) u := by
   have h := ((hasDerivAt_stdNormalPDF u).mul ((hasDerivAt_pow 2 u).sub_const 1)).neg
   change HasDerivAt (fun x : ℝ => -(stdNormalPDF x * (x ^ 2 - 1))) _ u
-  convert h using 1
+  convert! h using 1
   push_cast
   ring
 
@@ -13319,7 +13319,7 @@ lemma hasDerivAt_studentizedAntideriv (t : ℝ) :
     HasDerivAt studentizedAntideriv (stdNormalPDF t * (3 * t - 2 * t ^ 3)) t := by
   have h := (hasDerivAt_stdNormalPDF t).mul (((hasDerivAt_pow 2 t).const_mul 2).add_const 1)
   change HasDerivAt (fun x : ℝ => stdNormalPDF x * (2 * x ^ 2 + 1)) _ t
-  convert h using 1
+  convert! h using 1
   push_cast
   ring
 
@@ -15870,10 +15870,12 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
             hdom.integrableOn
             (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom_nonneg ξ))
             (Set.subset_univ {ξ : ℝ | |ξ| ≤ ρ}).eventuallyLE
-          rwa [setIntegral_univ] at h
+          have huniv : (fun _ : ℝ => True) = Set.univ := rfl
+          rw [huniv, setIntegral_univ] at h
+          exact h
       _ = Kw * ∫ ξ : ℝ, windowDom ξ := MeasureTheory.integral_const_mul _ _
   have hsplit := integral_add_compl hAmeas hInt
-  linarith
+  convert! hsplit.symm.trans_le (add_le_add hb1 (hb2.trans hb3)) using 1
 
 /-! #### The middle range costs a LOGARITHM, and wave 43's reason for not saying so is false
 
@@ -16170,7 +16172,8 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
         (integrable_windowDom₁.const_mul Kw).integrableOn
         (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom₁_nonneg ξ))
         (Set.subset_univ A).eventuallyLE
-      rw [setIntegral_univ] at h
+      have huniv : (fun _ : ℝ => True) = Set.univ := rfl
+      rw [huniv, setIntegral_univ] at h
       calc (∫ ξ in A, Kw * windowDom₁ ξ) ≤ ∫ ξ : ℝ, Kw * windowDom₁ ξ := h
         _ = Kw * ∫ ξ : ℝ, windowDom₁ ξ := MeasureTheory.integral_const_mul _ _
     have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
@@ -16996,7 +16999,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
     ((Measure.pi fun _ : Fin n => F)
         {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
       = meanRootCDF (F.map f) n x := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
@@ -17006,7 +17009,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
       = (Measure.pi fun _ : Fin n => F).map (fun z : Fin n → ℝ => fun i => f (z i)) :=
     (Measure.pi_map_pi (fun _ => hf.aemeasurable)).symm
   have hmeas : Measurable (fun z : Fin n → ℝ => fun i => f (z i)) :=
-    measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hf.comp (measurable_pi_apply i)
   have hset : MeasurableSet
       {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(F.map f)) ≤ x} := by
     refine measurableSet_le ?_ measurable_const
@@ -17030,7 +17033,7 @@ under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integ
 lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
     (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17040,7 +17043,7 @@ lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f :
 lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
     Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17110,7 +17113,7 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   set f : ℝ → ℝ := slabRoot Z σ κ with hfdef
   have hfm : Measurable f := measurable_slabRoot hZ σ κ
   have hf0 : (∫ y, f y ∂F) = 0 := hmean κ hκ
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hvarG : Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := variance_map_eq F hfm hf0
   have hfl : s₀ ^ 2 ≤ ∫ y, f y ^ 2 ∂F := hfloor κ hκ
   have hvarpos : 0 < Var[fun t : ℝ => t; F.map f] := by
@@ -17233,7 +17236,7 @@ lemma studentPair_eq_pairAt (F : Measure ℝ) :
 
 lemma measurable_pairAt (c v : ℝ) : Measurable (pairAt c v) := by
   have hvec : Measurable fun x : ℝ => (![x - c, (x - c) ^ 2 - v] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun x : ℝ => x - c
       fun_prop
@@ -17315,7 +17318,8 @@ theorem vecRootLaw_pairAt_region_eq (F : Measure ℝ) [IsProbabilityMeasure F] {
       ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
   have hZ : Measurable fun y : ℝ => pairAt c v (T y) := (measurable_pairAt c v).comp hT
   have hZ' : Measurable fun y : ℝ => pairAt c' v' (T y) := (measurable_pairAt c' v').comp hT
-  rw [vecRootLaw, vecRootLaw, Measure.map_apply (measurable_vecRoot hZ n) hR,
+  rw [vecRootLaw_eq_map F hZ, vecRootLaw_eq_map F hZ',
+    Measure.map_apply (measurable_vecRoot hZ n) hR,
     Measure.map_apply (measurable_vecRoot hZ' n) hR']
   congr 1
   ext y
@@ -17450,7 +17454,7 @@ lemma integral_inner_studentPair_map_truncAt (F : Measure ℝ) [IsProbabilityMea
     ∫ w, (⟪w, t⟫ : ℝ)
         ∂((F.map (truncAt m τ)).map (studentPair (F.map (truncAt m τ)))) = 0 := by
   haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
-    Measure.isProbabilityMeasure_map (measurable_truncAt m τ).aemeasurable
+    (by infer_instance)
   exact integral_inner_studentPair _ (memLp_id_map_truncAt F m hτ 4) t
 
 /-- **The re-centred truncated pair is bounded, at every point** — the hypothesis `hRg` needs
@@ -18320,7 +18324,7 @@ lemma variance_map_truncAt_eq (F : Measure ℝ) [IsProbabilityMeasure F] (m : �
       = (∫ x, (truncAt m τ x - m) ^ 2 ∂F) - (∫ x, (truncAt m τ x - m) ∂F) ^ 2 := by
   have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
   haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
-    Measure.isProbabilityMeasure_map hTm.aemeasurable
+    (by infer_instance)
   have hI1 : Integrable (fun x : ℝ => (truncAt m τ x - m) ^ 1) F :=
     integrable_truncAt_sub_pow F m hτ 1
   simp only [pow_one] at hI1
@@ -18704,7 +18708,7 @@ lemma inner_centringMap (δ : ℝ) (w t : E₂) :
 
 lemma measurable_centringMap (δ : ℝ) : Measurable (centringMap δ) := by
   have hvec : Measurable fun w : E₂ => (![w 0, w 1 + 2 * δ * w 0] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun w : E₂ => w 0
       fun_prop
@@ -18775,7 +18779,10 @@ lemma vecRootLaw_pairAt_map (F : Measure ℝ) (g : ℝ → ℝ) (hg : Measurable
   have haff : Measurable fun w : E₂ => centringMap (c' - c) w
       + Real.sqrt (n : ℝ) • (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) :=
     (measurable_centringMap _).add_const _
-  rw [vecRootLaw, vecRootLaw, Measure.map_map haff (measurable_vecRoot hZ' n)]
+  rw [vecRootLaw_eq_map F
+    (show Measurable (fun x => pairAt c v (g x)) from
+      (measurable_pairAt c v).comp hg),
+    vecRootLaw_eq_map F hZ', Measure.map_map haff (measurable_vecRoot hZ' n)]
   congr 1
   funext y
   exact vecRoot_pairAt_eq c v c' v' g y
@@ -19056,7 +19063,7 @@ private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityM
       ((Measure.pi fun _ : Fin n => P).map
         (fun y : Fin n → ℝ =>
           Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y))) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+    (by infer_instance)
   have heq : studentizedRootCDF P n = fun x =>
       (((Measure.pi fun _ : Fin n => P).map
         (fun y : Fin n → ℝ =>
@@ -19425,4 +19432,3 @@ of this section. -/
 end Edgeworth
 
 end StatLean.HypothesisTesting
-

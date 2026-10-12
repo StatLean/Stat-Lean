@@ -29,16 +29,15 @@ theorem changingLocalDifferenceClass_subset_strictLocalizedDifferenceClass_of_po
         ∫⁻ x, ENNReal.ofReal (g x ^ 2) ∂P)
       (fun x => f n s x - f n t x) hmem
   have hnorm_sq :
-      eLpNorm (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) =
+      eLpNorm' (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) =
         ∫⁻ x, ENNReal.ofReal ((f n s x - f n t x) ^ 2) ∂P := by
     calc
-      eLpNorm (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) =
-          eLpNorm (fun x => f n s x - f n t x) 2 P ^ (2 : ℝ) :=
+      eLpNorm' (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) =
+          eLpNorm' (fun x => f n s x - f n t x) 2 P ^ (2 : ℝ) :=
         (ENNReal.rpow_natCast _ 2).symm
       _ = ∫⁻ x, ‖f n s x - f n t x‖ₑ ^ (2 : ℝ) ∂P := by
-        simpa using eLpNorm_nnreal_pow_eq_lintegral
-          (f := fun x => f n s x - f n t x) (μ := P)
-          (p := (2 : NNReal)) (by norm_num : (2 : NNReal) ≠ 0)
+        rw [eLpNorm', ← ENNReal.rpow_mul]
+        norm_num
       _ = ∫⁻ x, ENNReal.ofReal ((f n s x - f n t x) ^ 2) ∂P := by
         refine lintegral_congr fun x => ?_
         calc
@@ -50,8 +49,8 @@ theorem changingLocalDifferenceClass_subset_strictLocalizedDifferenceClass_of_po
   rw [Real.sqrt_eq_rpow, ← ENNReal.ofReal_rpow_of_pos hε, one_div]
   refine (ENNReal.lt_rpow_inv_iff (z := (2 : ℝ)) (by norm_num)).2 ?_
   calc
-    eLpNorm (fun x => f n s x - f n t x) 2 P ^ (2 : ℝ) =
-        eLpNorm (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) :=
+    eLpNorm' (fun x => f n s x - f n t x) 2 P ^ (2 : ℝ) =
+        eLpNorm' (fun x => f n s x - f n t x) 2 P ^ (2 : ℕ) :=
       ENNReal.rpow_natCast _ 2
     _ < ENNReal.ofReal ε := hnorm_sq.trans_lt hmoment_lt
 

@@ -142,7 +142,7 @@ private noncomputable def commonDominatorPathwise
         (g : ↥(L2ZeroMean P))) hgscore).mono_left hfilter
     simpa only [commonDominatorCone,
       AsymptoticStatistics.Core.NondominatedQMDPath.QMDPath.toNondominatedQMDPath,
-      AsymptoticStatistics.LowerBounds.RegularEstimator.canonicalPath_score] using h
+      AsymptoticStatistics.LowerBounds.RegularEstimator.canonicalPath_score] using! h
 
 private theorem selectedPathCanonicalLHSVec_le_commonDominator
     (T_set : TangentSpec P)
@@ -166,7 +166,7 @@ private theorem selectedPathCanonicalLHSVec_le_commonDominator
     change g ∈ I.map e at hg
     rw [Finset.mem_map] at hg
     obtain ⟨g', _hg', rfl⟩ := hg
-    simpa only [commonDominatorCone] using g'.property
+    simpa only [commonDominatorCone] using! g'.property
   refine le_iSup_of_le (⟨S, hS⟩ :
     {S : Finset ↥(L2ZeroMean P) // (S : Set _) ⊆ T_set.carrier}) ?_
   apply le_of_eq
@@ -199,7 +199,7 @@ private theorem semiparametricCone_minimax_compatibility
     simpa only [C, commonDominatorCone] using hconv
   have hEIFC : IsEfficientInfluenceFunction_vec hpdC.derivative φ := by
     simpa only [hpdC, commonDominatorPathwise,
-      commonDominatorCone_tangentSpace_eq] using hEIF
+      commonDominatorCone_tangentSpace_eq] using! hEIF
   have hnd := nondominated_minimax_core
     C hconvC hpdC hEIFC T_n hT ℓ hbowl hlsc
   exact hnd.trans (selectedPathCanonicalLHSVec_le_commonDominator

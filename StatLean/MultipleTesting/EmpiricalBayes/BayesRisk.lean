@@ -84,22 +84,22 @@ private lemma integrable_sq_gaussianReal (v : ℝ≥0) :
 moment is `v`. Used for both the prior coordinate `θᵢ` (`v = τ²`) and noise `εᵢ` (`v = σ²`). -/
 private lemma coord_facts (μ : Measure Ω) [IsProbabilityMeasure μ] {X : Ω → ℝ}
     (hX : Measurable X) {v : ℝ} (hv : 0 < v)
-    (hlaw : Measure.map X μ = gaussianReal 0 ⟨v, hv.le⟩) :
+    (hlaw : Measure.map X μ = gaussianReal 0 (NNReal.mk v hv.le)) :
     Integrable X μ ∧ Integrable (fun ω => (X ω) ^ 2) μ ∧
       (∫ ω, X ω ∂μ = 0) ∧ (∫ ω, (X ω) ^ 2 ∂μ = v) := by
   refine ⟨?_, ?_, ?_, ?_⟩
   · -- `Integrable X μ`: `id ∈ L¹(N(0,v))`, transported through `Measure.map X μ`.
-    have hL1 : Integrable (fun y : ℝ => y) (gaussianReal 0 ⟨v, hv.le⟩) :=
-      (memLp_id_gaussianReal' (μ := 0) (v := ⟨v, hv.le⟩) 1 (by simp)).integrable le_rfl
+    have hL1 : Integrable (fun y : ℝ => y) (gaussianReal 0 (NNReal.mk v hv.le)) :=
+      (memLp_id_gaussianReal' (μ := 0) (v := (NNReal.mk v hv.le)) 1 (by simp)).integrable le_rfl
     rw [← hlaw] at hL1
     have := (integrable_map_measure hL1.aestronglyMeasurable hX.aemeasurable).mp hL1
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   · -- `Integrable X² μ`: same transport for `x ↦ x²`.
-    have hL2 : Integrable (fun y : ℝ => y ^ 2) (gaussianReal 0 ⟨v, hv.le⟩) :=
+    have hL2 : Integrable (fun y : ℝ => y ^ 2) (gaussianReal 0 (NNReal.mk v hv.le)) :=
       integrable_sq_gaussianReal _
     rw [← hlaw] at hL2
     have := (integrable_map_measure hL2.aestronglyMeasurable hX.aemeasurable).mp hL2
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   · -- `E[X] = 0` via `integral_map` and `integral_id_gaussianReal`.
     have h : ∫ y, y ∂(Measure.map X μ) = ∫ ω, X ω ∂μ :=
       integral_map hX.aemeasurable (f := fun y => y) (by fun_prop)
@@ -108,7 +108,8 @@ private lemma coord_facts (μ : Measure Ω) [IsProbabilityMeasure μ] {X : Ω �
     have h : ∫ y, y ^ 2 ∂(Measure.map X μ) = ∫ ω, (X ω) ^ 2 ∂μ :=
       integral_map hX.aemeasurable (f := fun y => y ^ 2) (by fun_prop)
     rw [← h, hlaw]
-    simp [integral_sq_gaussianReal]
+    simp only [integral_sq_gaussianReal, NNReal.coe_mk, zero_pow (by norm_num : (2 : ℕ) ≠ 0),
+        zero_add]
 
 /-- **Empirical-Bayes / Bayes risk of the Gaussian shrinkage estimator** (Candès, Lecture 15,
 §15.3.3, Proposition 1, STAT 300C). For a Gaussian prior `θᵢ ∼ N(0,τ²)` and independent noise
@@ -121,9 +122,9 @@ theorem empiricalBayes_risk {p : ℕ} {σ2 τ2 : ℝ} (hσ : 0 < σ2) (hτ : 0 <
     -- USER-INPUT: each noise coordinate is measurable; Candès L15 §15.3.3
     (hεmeas : ∀ i, Measurable (ε i))
     -- USER-INPUT: prior θᵢ ∼ N(0, τ²); Candès L15 §15.3.3
-    (hθlaw : ∀ i, Measure.map (θ i) μ = gaussianReal 0 ⟨τ2, hτ.le⟩)
+    (hθlaw : ∀ i, Measure.map (θ i) μ = gaussianReal 0 (NNReal.mk τ2 hτ.le))
     -- USER-INPUT: noise εᵢ ∼ N(0, σ²); Candès L15 §15.3.3
-    (hεlaw : ∀ i, Measure.map (ε i) μ = gaussianReal 0 ⟨σ2, hσ.le⟩)
+    (hεlaw : ∀ i, Measure.map (ε i) μ = gaussianReal 0 (NNReal.mk σ2 hσ.le))
     -- USER-INPUT: prior and noise are independent within each coordinate; Candès L15 §15.3.3
     (hindep : ∀ i, IndepFun (θ i) (ε i) μ) :
     (∫ ω, ∑ i, ((τ2 / (σ2 + τ2)) * (θ i ω + ε i ω) - θ i ω) ^ 2 ∂μ)
@@ -164,7 +165,7 @@ theorem empiricalBayes_risk {p : ℕ} {σ2 τ2 : ℝ} (hσ : 0 < σ2) (hτ : 0 <
   -- Sum out: `∫ ∑ = ∑ ∫ = ∑ σ²τ²/(σ²+τ²) = p · σ²τ²/(σ²+τ²)`.
   have hval : ∀ i, ∫ ω, ((τ2 / (σ2 + τ2)) * (θ i ω + ε i ω) - θ i ω) ^ 2 ∂μ
       = σ2 * τ2 / (σ2 + τ2) := fun i => (key i).2
-  rw [integral_finset_sum Finset.univ (fun i _ => (key i).1)]
+  rw [integral_finsetSum Finset.univ (fun i _ => (key i).1)]
   simp_rw [hval]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 

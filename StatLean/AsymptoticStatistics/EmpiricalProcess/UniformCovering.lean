@@ -56,7 +56,7 @@ theorem measure_isProbability
     (Q : FiniteDiscreteProbability Ω) : IsProbabilityMeasure Q.measure := by
   refine ⟨?_⟩
   unfold measure
-  rw [Measure.coe_finset_sum, Finset.sum_apply]
+  rw [Measure.coe_finsetSum, Finset.sum_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply_of_mem,
     Set.mem_univ, smul_eq_mul, mul_one]
   exact_mod_cast Q.weight_sum

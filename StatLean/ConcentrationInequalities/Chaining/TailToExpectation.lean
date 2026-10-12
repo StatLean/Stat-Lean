@@ -67,8 +67,8 @@ lemma integral_exp_neg_mul_sq_Ioi_le {a β : ℝ}
     have h1 : HasDerivAt (fun s : ℝ => -β * s ^ 2) (-β * (2 * x)) x := by
       simpa using (hasDerivAt_pow 2 x).const_mul (-β)
     have h2 := (h1.exp).const_mul (-(2 * β)⁻¹)
-    convert h2 using 1
-    field_simp
+    convert! h2 using 1
+    try field_simp
   have htend : Filter.Tendsto (fun s : ℝ => -(2 * β)⁻¹ * Real.exp (-β * s ^ 2))
       Filter.atTop (nhds 0) := by
     have h1 : Filter.Tendsto (fun s : ℝ => -β * s ^ 2) Filter.atTop Filter.atBot :=
@@ -163,10 +163,10 @@ theorem lintegral_ofReal_le_of_tail_le
             Real.tendsto_exp_atBot.comp h1
           simpa using h2.const_mul 2
         exact le_antisymm (ge_of_tendsto htends
-          (Filter.eventually_atTop.mpr ⟨0, hle⟩)) (zero_le _)
+          (Filter.eventually_atTop.mpr ⟨0, hle⟩)) (zero_le)
       have hzero_on : ∀ t ∈ Set.Ioi a, μ {ω | t < Z ω} = 0 := fun t ht =>
         le_antisymm ((measure_mono fun ω hω =>
-          lt_trans (Set.mem_Ioi.mp ht) hω).trans hazero.le) (zero_le _)
+          lt_trans (Set.mem_Ioi.mp ht) hω).trans hazero.le) (zero_le)
       have hae : (fun t => μ {ω | t < Z ω}) =ᵐ[volume.restrict (Set.Ioi a)] 0 :=
         (MeasureTheory.ae_restrict_iff' measurableSet_Ioi).mpr
           (Filter.Eventually.of_forall fun t ht => by simpa using hzero_on t ht)

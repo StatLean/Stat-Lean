@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -144,7 +145,7 @@ private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
       exact mul_le_mul_of_nonneg_left hnorm hc
     have hprod : ∏ i, Real.exp (c * |⟪b i, v⟫_ℝ|)
         ≤ ∏ i, (Real.exp (c * ⟪b i, v⟫_ℝ) + Real.exp (-(c * ⟪b i, v⟫_ℝ))) := by
-      apply Finset.prod_le_prod (fun i _ => Real.exp_nonneg _)
+      apply Finset.prod_le_prod₀ (fun i _ => Real.exp_nonneg _)
       intro i _
       rcases le_total 0 (⟪b i, v⟫_ℝ) with h | h
       · rw [abs_of_nonneg h]; linarith [Real.exp_pos (-(c * ⟪b i, v⟫_ℝ))]
@@ -181,7 +182,7 @@ private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
     (innerSL ℝ η).continuous.measurable.comp E.stat_meas
   have hg_int : Integrable
       (fun x => ∑ t : Finset (Fin N), |f x| * Real.exp ⟪η + w t, E.stat x⟫_ℝ) E.base :=
-    integrable_finset_sum _ (fun t _ => hwmem t)
+    integrable_finsetSum _ (fun t _ => hwmem t)
   refine hg_int.mono' ?_ (Filter.Eventually.of_forall fun x => ?_)
   · exact (hf.abs.aestronglyMeasurable).mul
       ((hinner_meas.add ((E.stat_meas.norm).const_mul c)).exp.aestronglyMeasurable)
@@ -638,7 +639,7 @@ theorem analyticOnNhd_integral_exp_inner
       rw [Finset.abs_prod]
       calc ∏ i, |⟪m i, E.stat x⟫_ℝ|
           ≤ ∏ i : Fin n, ‖m i‖ * ‖E.stat x‖ :=
-            Finset.prod_le_prod (fun i _ => abs_nonneg _)
+            Finset.prod_le_prod₀ (fun i _ => abs_nonneg _)
               (fun i _ => abs_real_inner_le_norm _ _)
         _ = (∏ i, ‖m i‖) * ‖E.stat x‖ ^ n := by
             rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,

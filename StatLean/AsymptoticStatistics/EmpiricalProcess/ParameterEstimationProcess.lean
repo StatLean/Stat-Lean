@@ -163,7 +163,7 @@ private theorem asymptoticallyLinearAt_vec_on_iid_sample
         {x : Fin n → Ω | δ ≤
           ‖Real.sqrt n • (θ_hat n x - θ₀) -
             (Real.sqrt n)⁻¹ • (∑ i, tupleEval P ψ (x i))‖}) atTop (𝓝 0) := by
-    simpa only [Measure.real, ENNReal.toReal_zero] using
+    simpa only [Measure.real, ENNReal.toReal_zero] using!
       (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hprod
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hprod_real
     (Eventually.of_forall fun _ => measureReal_nonneg)
@@ -173,7 +173,7 @@ private theorem asymptoticallyLinearAt_vec_on_iid_sample
     ‖Real.sqrt n • (θ_hat n x - θ₀) -
       (Real.sqrt n)⁻¹ • (∑ i, tupleEval P ψ (x i))‖}
   have hsample : Measurable sample :=
-    measurable_pi_lambda _ (fun i => hX_meas i.val)
+    Measurable.of_eval (fun i => hX_meas i.val)
   have hle : μ (sample ⁻¹' bad) ≤ (μ.map sample) bad :=
     Measure.le_map_apply hsample.aemeasurable bad
   have hmap : μ.map sample = Measure.pi (fun _ : Fin n => P) :=
@@ -445,9 +445,9 @@ private theorem parameterCorrection_fdd_gaussian_map
   have hE : Measurable E := measurable_pi_iff.mpr fun i =>
     (linfEvalCLM F (a i)).continuous.measurable
   have hg := parameterCorrection_fdd_gaussian_on_joint ψ hκ D m a
-  refine ⟨?_⟩
+  refine ⟨hE.aemeasurable, ?_⟩
   rw [Measure.map_map hE C.continuous.measurable]
-  simpa only [C, E, Function.comp_apply] using hg.isGaussian_map
+  simpa only [C, E, Function.comp_apply] using! hg.isGaussian_map
 
 private theorem jointEval_memLp_two
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P] {k : ℕ}
@@ -457,7 +457,7 @@ private theorem jointEval_memLp_two
     MemLp (fun w => jointEval w a) 2 κ := by
   let pr : (Fin 1 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj 0
   have hg := (hκ.gaussianFDD 1 (fun _ => a)).map pr
-  simpa only [Function.comp_apply, pr] using hg.memLp_two
+  simpa only [Function.comp_apply, pr] using! hg.memLp_two
 
 private noncomputable def parameterLinearIndex
     {F : Set (Ω → ℝ)} {k : ℕ} (f : ↥F) :
@@ -600,7 +600,7 @@ private theorem parameterJointLinear_memLp_two
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F) (f : ↥F) :
     MemLp (parameterJointLinear D f) 2 κ := by
   unfold parameterJointLinear
-  have hsum := memLp_finset_sum' Finset.univ fun q _ =>
+  have hsum := memLp_finsetSum' Finset.univ fun q _ =>
     (jointEval_memLp_two ψ hκ (parameterLinearIndex f q)).const_mul
       (parameterLinearWeight D f q)
   have heq : (∑ q : Sum Unit (Fin k), fun w =>
@@ -622,7 +622,7 @@ private theorem parameterJointLinear_integral_zero
   letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   change (∫ w, ∑ q : Sum Unit (Fin k),
     parameterLinearWeight D f q * jointEval w (parameterLinearIndex f q) ∂κ) = 0
-  rw [integral_finset_sum]
+  rw [integral_finsetSum]
   · apply Finset.sum_eq_zero
     intro q _
     rw [integral_const_mul, hκ.mean, mul_zero]
@@ -665,8 +665,8 @@ private theorem parameterResidual_ae_eq_centeredLinear
   have hPmean : ∫ y, parameterPopulationLinear ψ D f y ∂P =
       ∫ y, (f : Ω → ℝ) y ∂P := by
     rw [integral_congr_ae (Eventually.of_forall fun x => parameterPopulationLinear_apply ψ D f x)]
-    rw [integral_sub hfint (integrable_finset_sum _ fun j _ => (hjint j).const_mul _),
-      integral_finset_sum]
+    rw [integral_sub hfint (integrable_finsetSum _ fun j _ => (hjint j).const_mul _),
+      integral_finsetSum]
     · have hsum0 : ∑ j : Fin k,
           ∫ a, (D (euclideanBasisVector j)) f * influenceFunction ψ j a ∂P = 0 := by
         apply Finset.sum_eq_zero
@@ -747,8 +747,8 @@ private theorem parameterCorrection_mean_map
     fun j => (jointEval_memLp_two ψ hκ (Sum.inr j)).integrable (by norm_num)
   have hsumint : Integrable (fun w => ∑ j : Fin k,
       (D (euclideanBasisVector j)) f * jointEval w (Sum.inr j)) κ :=
-    integrable_finset_sum _ fun j _ => (hjint j).const_mul _
-  rw [integral_sub hfint hsumint, integral_finset_sum]
+    integrable_finsetSum _ fun j _ => (hjint j).const_mul _
+  rw [integral_sub hfint hsumint, integral_finsetSum]
   · rw [hκ.mean]
     simp only [zero_sub, neg_eq_zero]
     apply Finset.sum_eq_zero
@@ -1047,8 +1047,7 @@ theorem empiricalProcess_parameter_estimation_finite
     h.donsker.jointInfluence_weakConvergesOuter ψ μ X hX_meas hX_indep hX_id hX_law
   letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   letI : IsProbabilityMeasure (κ.map (parameterCorrectionCLM D)) :=
-    Measure.isProbabilityMeasure_map
-      (parameterCorrectionCLM D).continuous.measurable.aemeasurable
+    (by infer_instance)
   have hmapped := hjoint.map (parameterCorrectionCLM D)
     (parameterCorrectionCLM D).continuous
     (parameterCorrectionCLM D).continuous.measurable.aemeasurable

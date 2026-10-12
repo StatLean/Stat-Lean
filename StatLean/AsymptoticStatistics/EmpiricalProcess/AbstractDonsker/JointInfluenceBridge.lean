@@ -30,7 +30,7 @@ private theorem mixedEvalCLM_joint_apply
     (w : LinfF F × EuclideanSpace ℝ (Fin k)) (i : Fin m) :
     (mixedEvalCLM (linfEvalCLM F) a w).ofLp i = jointEval w (a i) := by
   cases h : a i with
-  | inl f => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]
+  | inl f => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]; rfl
   | inr j => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]
 
 private theorem jointBridge_mixedEval_hasGaussianLaw
@@ -342,7 +342,7 @@ private theorem jointEmpirical_mixed_weakConvergesOuter
       (multivariateGaussian 0 (marginalCovMatrix P φ)) := by
     have hlim_eq :
         (⟨(multivariateGaussian 0 (marginalCovMatrix P φ)).map Y,
-            Measure.isProbabilityMeasure_map hTID.aemeasurable_limit⟩ :
+            (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin m))) =
         ⟨multivariateGaussian 0 (marginalCovMatrix P φ), inferInstance⟩ :=
       Subtype.ext hYlaw.map_eq
@@ -407,8 +407,7 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
       hX_id hX_law hmem k ainfluence
   haveI : IsProbabilityMeasure
       (κ.map (mixedEvalCLM (linfEvalCLM F) ainfluence)) :=
-    Measure.isProbabilityMeasure_map
-      (mixedEvalCLM (linfEvalCLM F) ainfluence).continuous.measurable.aemeasurable
+    (by infer_instance)
   have hinfluenceTightMixed : IsAsymptoticallyTight (fun _ => μ)
       (fun n ξ => mixedEvalCLM (linfEvalCLM F) ainfluence (Wn n ξ)) :=
     AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter

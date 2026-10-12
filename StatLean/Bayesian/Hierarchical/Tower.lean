@@ -59,8 +59,8 @@ private theorem lintegral_generalizedPosterior_mul {Θ 𝓧 : Type*} [Measurable
   rw [generalizedPosterior_def, lintegral_withDensity_eq_lintegral_mul _
     (show Measurable (bayesDensity p π x) from hpx.div_const _) hg]
   simp only [bayesDensity, Pi.mul_apply, div_eq_mul_inv]
-  rw [← lintegral_mul_const _ (hg.mul hpx)]
-  exact lintegral_congr fun θ => by ring
+  erw [← lintegral_mul_const _ (hg.mul hpx)]
+  exact lintegral_congr fun θ => by simp only [Pi.mul_apply]; ring
 
 variable {Λ Θ 𝓧 𝓨 : Type*} [MeasurableSpace Λ] [MeasurableSpace Θ] [MeasurableSpace 𝓧]
   [MeasurableSpace 𝓨] [StandardBorelSpace Θ] [Nonempty Θ] [StandardBorelSpace Λ] [Nonempty Λ]
@@ -141,7 +141,8 @@ theorem posteriorExpectation_tower_hierarchical
   have hbind : ∫⁻ θ, g θ * p θ x ∂H.mixPrior
       = ∫⁻ lam, ∫⁻ θ, g θ * p θ x ∂(H.priorKernel lam) ∂H.hyperPrior := by
     unfold HierBayesExperiment.mixPrior
-    rw [Measure.lintegral_bind H.priorKernel.aemeasurable (hg.mul (hpx x)).aemeasurable]
+    erw [Measure.lintegral_bind H.priorKernel.aemeasurable (hg.mul (hpx x)).aemeasurable]
+    simp only [Pi.mul_apply]
   -- Reduce both sides to the density form, then cancel the per-`λ` normalizer.
   rw [hLHS, hRHS, lintegral_generalizedPosterior_mul hp H.mixPrior x hg,
     lintegral_generalizedPosterior_mul (p := q') hq' H.hyperPrior x hF, hW]
@@ -157,8 +158,8 @@ theorem posteriorExpectation_tower_hierarchical
     have hA0 : ∫⁻ θ, g θ * p θ x ∂(H.priorKernel lam) = 0 := by
       refine (lintegral_eq_zero_iff (hg.mul (hpx x))).mpr ?_
       filter_upwards [hp0] with θ hθ
-      simp only [Pi.zero_apply] at hθ ⊢
-      rw [hθ, mul_zero]
+      simp only [Pi.zero_apply, Pi.mul_apply] at hθ ⊢
+      erw [hθ, mul_zero]
     rw [hA0]; simp
   · rw [mul_assoc, ENNReal.inv_mul_cancel hz hlamfin.ne, mul_one]
 

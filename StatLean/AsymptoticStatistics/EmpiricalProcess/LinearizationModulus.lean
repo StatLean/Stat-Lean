@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.LipschitzShellModulus
 import StatLean.AsymptoticStatistics.EmpiricalProcess.IIDChebyshev
 import StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNormality
@@ -548,7 +549,7 @@ theorem entropyScaleBound_tendsto_zero {d : ℕ} (C R : ℝ) (hC : 0 < C) (hR : 
   have hsqrt : Tendsto (fun s : ℝ => Real.sqrt
       ((Real.log 2 + d * |Real.log (2 * C * R / s)| + d) * s ^ 2)) (𝓝[>] 0) (𝓝 0) := by
     have := (Real.continuous_sqrt.tendsto (0 : ℝ)).comp hbig
-    simpa [Real.sqrt_zero] using this
+    simpa [Real.sqrt_zero] using! this
   have hfinal : Tendsto (fun s : ℝ => 2 * Real.sqrt
       ((Real.log 2 + d * |Real.log (2 * C * R / s)| + d) * s ^ 2)) (𝓝[>] 0) (𝓝 0) := by
     simpa using hsqrt.const_mul 2
@@ -716,7 +717,7 @@ theorem envelopeTail_vanishes {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     simpa using hlim
   -- Squeeze the target between `0` and `∫⁻ G n`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hDCT
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   -- `ofReal(√n)·∫⁻(ofReal|Φ|·ind) = ∫⁻ ofReal(√n)·(ofReal|Φ|·ind) ≤ ∫⁻ G n`.
   rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_mono fun ω => ?_
@@ -1110,12 +1111,12 @@ private theorem scaledDiffModulus_aemeasurable
       (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
           p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
         θ₀ + (Real.sqrt n)⁻¹ • p'.1.1) :=
-    continuous_const.add ((continuous_fst.comp continuous_subtype_val).const_smul _)
+    by fun_prop
   have hg2_cont : Continuous
       (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
           p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
         θ₀ + (Real.sqrt n)⁻¹ • p'.1.2) :=
-    continuous_const.add ((continuous_snd.comp continuous_subtype_val).const_smul _)
+    by fun_prop
   have hmem_ball : ∀ (v : EuclideanSpace ℝ (Fin d)), v ∈ Metric.ball 0 R →
       θ₀ + (Real.sqrt n)⁻¹ • v ∈ Metric.closedBall θ₀ ρ := by
     intro v hv
@@ -1187,7 +1188,7 @@ private theorem scaledDiffModulus_aemeasurable
             p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
           ∑ i : Fin n, (scaledIncrement m θ₀ n p'.1.1 (X i.val ξ)
             - scaledIncrement m θ₀ n p'.1.2 (X i.val ξ))) :=
-      continuous_finset_sum Finset.univ (fun i _ =>
+      continuous_finsetSum Finset.univ (fun i _ =>
         (hinc1 (X i.val ξ)).sub (hinc2 (X i.val ξ)))
     have hint : Continuous
         (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
@@ -1298,7 +1299,7 @@ private theorem scaledDiffModulus_aemeasurable
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
         = fun _ => (0 : ℝ≥0∞) := by
       funext ξ
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       simp only [supNormOver]
       refine iSup₂_le (fun f hf => ?_)
       obtain ⟨p, hp1, hp2, hp3, -⟩ := hf
@@ -1340,12 +1341,12 @@ private theorem scaledDiffModulusAt_aemeasurable
       (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
           p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
         θ₀ + (r n)⁻¹ • p'.1.1) :=
-    continuous_const.add ((continuous_fst.comp continuous_subtype_val).const_smul _)
+    by fun_prop
   have hg2_cont : Continuous
       (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
           p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
         θ₀ + (r n)⁻¹ • p'.1.2) :=
-    continuous_const.add ((continuous_snd.comp continuous_subtype_val).const_smul _)
+    by fun_prop
   have hmem_ball : ∀ (v : EuclideanSpace ℝ (Fin d)), v ∈ Metric.ball 0 R →
       θ₀ + (r n)⁻¹ • v ∈ Metric.closedBall θ₀ ρ := by
     intro v hv
@@ -1409,7 +1410,7 @@ private theorem scaledDiffModulusAt_aemeasurable
             p.1 ∈ Metric.ball 0 R ∧ p.2 ∈ Metric.ball 0 R ∧ ‖p.1 - p.2‖ < δ} =>
           ∑ i : Fin n, (scaledIncrementAt r m θ₀ n p'.1.1 (X i.val ξ) -
             scaledIncrementAt r m θ₀ n p'.1.2 (X i.val ξ))) :=
-      continuous_finset_sum Finset.univ (fun i _ =>
+      continuous_finsetSum Finset.univ (fun i _ =>
         (hinc1 (X i.val ξ)).sub (hinc2 (X i.val ξ)))
     have hint : Continuous
         (fun p' : {p : EuclideanSpace ℝ (Fin d) × EuclideanSpace ℝ (Fin d) //
@@ -1517,7 +1518,7 @@ private theorem scaledDiffModulusAt_aemeasurable
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
         = fun _ => (0 : ℝ≥0∞) := by
       funext ξ
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       simp only [supNormOver]
       refine iSup₂_le (fun f hf => ?_)
       obtain ⟨p, hp1, hp2, hp3, -⟩ := hf
@@ -1570,7 +1571,7 @@ theorem sqrtScaled_shell_modulus_bound
       simp only [sub_self, abs_zero] at hosc
       exact absurd hosc (not_lt.mpr hε.le)
     · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-      exact zero_le _
+      exact zero_le
   · intro ε hε η hη
     rcases eq_or_lt_of_le hM with hM0 | hM'
     · -- `M = 0`: `‖h‖ ≤ 0` ⇒ `h = 0` ⇒ `h₁.1 = h₂.1`.
@@ -1584,7 +1585,7 @@ theorem sqrtScaled_shell_modulus_bound
         simp only [sub_self, abs_zero] at hosc
         exact absurd hosc (not_lt.mpr hε.le)
       · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-        exact zero_le _
+        exact zero_le
     · -- The scaled-shell argument for `0 < M`.
       -- Constants.
       set Kmenv : ℝ := (eLpNorm menv 2 P).toReal + 1 with hKmenv_def
@@ -1706,7 +1707,7 @@ theorem sqrtScaled_shell_modulus_bound
             simp only [empiricalProcess_zero, sub_self, abs_zero] at hosc
             exact absurd hosc (not_lt.mpr hε.le)
           · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-            exact zero_le _
+            exact zero_le
         · -- `n ≥ 1`: the Markov chain.  `n ≥ N₀` gives `R ≤ ρ·√n`, so `hLip` covers the shell.
           have hn1 : 1 ≤ n := hn_pos
           have hRρ : R ≤ ρ * Real.sqrt n := hN₀ n hn_ge
@@ -1739,14 +1740,14 @@ theorem sqrtScaled_shell_modulus_bound
             have hg' : (fun ω => scaledIncrement m θ₀ n p.2 ω)
                 ∈ paramClass (shellPsi (scaledIncrement m θ₀ n) 0) (Metric.ball 0 R) :=
               ⟨p.2, hp2, ⟨0, hd⟩, (hshell p.2).symm⟩
-            have hrad : eLpNorm
+            have hrad : eLpNorm'
                 (fun ω => scaledIncrement m θ₀ n p.1 ω - scaledIncrement m θ₀ n p.2 ω) 2 P
                 ≤ ENNReal.ofReal s := by
-              have hpt : eLpNorm
+              have hpt : eLpNorm'
                   (fun ω => scaledIncrement m θ₀ n p.1 ω - scaledIncrement m θ₀ n p.2 ω) 2 P
-                  ≤ eLpNorm (fun ω => δ * menv ω) 2 P := by
-                apply eLpNorm_mono
-                intro ω
+                  ≤ eLpNorm' (fun ω => δ * menv ω) 2 P := by
+                apply eLpNorm'_mono_ae (by norm_num)
+                filter_upwards with ω
                 simp only [Real.norm_eq_abs, abs_mul]
                 calc |scaledIncrement m θ₀ n p.1 ω - scaledIncrement m θ₀ n p.2 ω|
                     ≤ menv ω * ‖p.1 - p.2‖ :=
@@ -1760,7 +1761,8 @@ theorem sqrtScaled_shell_modulus_bound
               refine le_trans hpt ?_
               have hsmul : (fun ω => δ * menv ω) = δ • menv := by
                 funext ω; simp [Pi.smul_apply, smul_eq_mul]
-              rw [hsmul, eLpNorm_const_smul]
+              rw [hsmul, eLpNorm'_const_smul _ (by norm_num),
+              ← eLpNorm_two_eq_eLpNorm' hmenv.aestronglyMeasurable]
               have hmenv_ne : eLpNorm menv 2 P ≠ ⊤ := hmenv.eLpNorm_lt_top.ne
               have hnn : 0 ≤ (eLpNorm menv 2 P).toReal := ENNReal.toReal_nonneg
               calc ‖δ‖ₑ * eLpNorm menv 2 P
@@ -1852,7 +1854,7 @@ theorem sqrtScaled_shell_modulus_bound
                 refine add_le_add (ENNReal.div_le_div_right ?_ _)
                   (ENNReal.div_le_div_right ?_ _)
                 · -- Entropy term: `J(s, F_n) ≤ ofReal bdval`, uniformly in `n`.
-                  refine mul_le_mul_left' ?_ _
+                  refine mul_le_mul_right ?_ _
                   have hJ := hEnt (scaledIncrement m θ₀ n)
                     (fun θ => scaledIncrement_measurable m θ₀ n hm_meas θ)
                     R hR_pos
@@ -1862,12 +1864,12 @@ theorem sqrtScaled_shell_modulus_bound
                   rw [← hbdval_def] at hJ
                   exact hJ
                 · -- tail term: `Mc ≥ cM·s` shrinks the indicator set.
-                  refine mul_le_mul_left' (mul_le_mul_left' ?_ _) _
+                  refine mul_le_mul_right (mul_le_mul_right ?_ _) _
                   refine lintegral_mono fun ω => mul_le_mul_of_nonneg_left ?_ (by positivity)
                   exact Set.indicator_le_indicator_of_subset
                     (fun x hx => lt_of_le_of_lt
                       (mul_le_mul_of_nonneg_left hMc_lb (Real.sqrt_nonneg _)) hx)
-                    (fun _ => zero_le _) ω
+                    (fun _ => zero_le) ω
       -- Assemble the `limsup`.
       have hVf_tendsto : Tendsto (fun n : ℕ =>
           (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n)
@@ -1950,7 +1952,7 @@ theorem scaledAt_shell_modulus_bound
       rw [hh] at hosc
       exact absurd hosc (by simp [hε.le])
     · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-      exact zero_le _
+      exact zero_le
   · intro ε hε η hη
     rcases eq_or_lt_of_le hM with hM0 | hM'
     · refine ⟨1, one_pos, ?_⟩
@@ -1962,7 +1964,7 @@ theorem scaledAt_shell_modulus_bound
         rw [hh1, hh2] at hosc
         exact absurd hosc (by simp [hε.le])
       · rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-        exact zero_le _
+        exact zero_le
     · set Kmenv : ℝ := (eLpNorm menv 2 P).toReal + 1 with hKmenv_def
       have hKmenv_pos : 0 < Kmenv := by
         have := ENNReal.toReal_nonneg (a := eLpNorm menv 2 P)
@@ -2078,11 +2080,11 @@ theorem scaledAt_shell_modulus_bound
           have hg' : (fun ω => scaledIncrementAt r m θ₀ n p.2 ω) ∈
               paramClass (shellPsi (scaledIncrementAt r m θ₀ n) 0) (Metric.ball 0 R) :=
             ⟨p.2, hp2, ⟨0, hd⟩, (hshell p.2).symm⟩
-          have hpt : eLpNorm
+          have hpt : eLpNorm'
               (fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω)
-              2 P ≤ eLpNorm (fun ω => δ * menv ω) 2 P := by
-            apply eLpNorm_mono
-            intro ω
+              2 P ≤ eLpNorm' (fun ω => δ * menv ω) 2 P := by
+            apply eLpNorm'_mono_ae (by norm_num)
+            filter_upwards with ω
             simp only [Real.norm_eq_abs, abs_mul]
             calc |scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω|
                 ≤ menv ω * ‖p.1 - p.2‖ := scaledIncrementAt_lipschitz r m θ₀ menv ρ hLip
@@ -2092,12 +2094,13 @@ theorem scaledAt_shell_modulus_bound
                   mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
               _ ≤ |menv ω| * δ := mul_le_mul_of_nonneg_left hp3.le (abs_nonneg _)
               _ = |δ| * |menv ω| := by rw [abs_of_pos hδ_pos]; ring
-          have hrad : eLpNorm
+          have hrad : eLpNorm'
               (fun ω => scaledIncrementAt r m θ₀ n p.1 ω - scaledIncrementAt r m θ₀ n p.2 ω)
               2 P ≤ ENNReal.ofReal s := hpt.trans (by
             have hsmul : (fun ω => δ * menv ω) = δ • menv := by
               funext ω; simp [Pi.smul_apply, smul_eq_mul]
-            rw [hsmul, eLpNorm_const_smul]
+            rw [hsmul, eLpNorm'_const_smul _ (by norm_num),
+              ← eLpNorm_two_eq_eLpNorm' hmenv.aestronglyMeasurable]
             have hmenv_ne : eLpNorm menv 2 P ≠ ⊤ := hmenv.eLpNorm_lt_top.ne
             have hnn : 0 ≤ (eLpNorm menv 2 P).toReal := ENNReal.toReal_nonneg
             calc ‖δ‖ₑ * eLpNorm menv 2 P
@@ -2187,7 +2190,7 @@ theorem scaledAt_shell_modulus_bound
               exact Set.indicator_le_indicator_of_subset
                 (fun x hx => lt_of_le_of_lt
                   (mul_le_mul_of_nonneg_left hMc_lb (Real.sqrt_nonneg _)) hx)
-                (fun _ => zero_le _) ω
+                (fun _ => zero_le) ω
       have hVf_tendsto : Tendsto (fun n : ℕ =>
           (ENNReal.ofReal c * (ENNReal.ofReal (Real.sqrt n) *
             ∫⁻ ω, ENNReal.ofReal (|shellDiffEnvelope menv R ω|) *
@@ -2462,27 +2465,23 @@ theorem linearization_distL2_tendstoZero_atRate
     filter_upwards [hGood] with n hn
     simp only [f, if_pos hn]
   have hUI : UnifIntegrable f 2 P := by
-    intro ε hε
-    obtain ⟨δ, hδpos, hδ⟩ :=
-      hD_memLp.eLpNorm_indicator_le one_le_two (by norm_num) hε
-    refine ⟨δ, hδpos, fun n s hs hμs => le_trans ?_ (hδ s hs hμs)⟩
-    refine eLpNorm_mono_real (fun ω => ?_)
-    by_cases hω : ω ∈ s
-    · simp only [Set.indicator_of_mem hω]
-      exact hf_le_D n ω
-    · simp only [Set.indicator_of_notMem hω, norm_zero, le_refl]
+    apply (unifIntegrable_const one_le_two (by norm_num) hD_memLp).ae_mono hf_aesm
+    intro n
+    filter_upwards [] with ω
+    exact (enorm_le_iff_norm_le).2
+      (by simpa only [Real.norm_eq_abs, abs_of_nonneg (hD_nonneg ω)] using hf_le_D n ω)
   have hLp : Tendsto (fun n => eLpNorm (f n) 2 P) atTop (𝓝 0) := by
     have h := tendsto_Lp_finite_of_tendsto_ae (p := 2) one_le_two (by norm_num)
       hf_aesm MemLp.zero hUI hf_tendsto_ae
     simpa using h
   have hLp_real : Tendsto (fun n => (eLpNorm (f n) 2 P).toReal) atTop (𝓝 0) := by
     have h := (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ∞)).comp hLp
-    simpa using h
+    simpa using! h
   refine hLp_real.congr' ?_
   filter_upwards [hGood] with n hn
-  rw [distL2]
+  rw [eLpNorm_two_eq_eLpNorm' (hf_aesm n), distL2]
   apply congrArg ENNReal.toReal
-  apply congrArg (fun g : Ω → ℝ => eLpNorm g 2 P)
+  apply congrArg (fun g : Ω → ℝ => eLpNorm' g 2 P)
   funext ω
   simp only [f, if_pos hn, linResidAt, Pi.sub_apply]
 

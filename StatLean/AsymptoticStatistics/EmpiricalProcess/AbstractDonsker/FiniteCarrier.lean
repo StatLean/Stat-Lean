@@ -71,11 +71,11 @@ theorem gpEmbed_uniform_bound
       ‖∫ x, (f : Ω → ℝ) x ∂P‖
           ≤ ∫ x, ‖(f : Ω → ℝ) x‖ ∂P := norm_integral_le_integral_norm _
       _ = (eLpNorm (f : Ω → ℝ) 1 P).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm,
+        rw [eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable,
           integral_norm_eq_lintegral_enorm hf.aestronglyMeasurable]
       _ ≤ (eLpNorm (f : Ω → ℝ) 2 P).toReal :=
         ENNReal.toReal_mono hf.eLpNorm_ne_top
-          (eLpNorm_le_eLpNorm_of_exponent_le (by norm_num) hf.aestronglyMeasurable)
+          (eLpNorm_le_eLpNorm_of_exponent_le (by norm_num))
       _ = ‖hf.toLp (f : Ω → ℝ)‖ := (Lp.norm_toLp _ _).symm
       _ ≤ ‖hG.toLp G‖ := hf_norm
   rw [Submodule.coe_norm, coe_gpEmbed, centredLp]
@@ -192,7 +192,7 @@ theorem isPBrownianBridge_finiteGaussianPBridge
   letI hborel : BorelSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := ⟨rfl⟩
   letI hstdprob : IsProbabilityMeasure
       (stdGaussian ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)) :=
-    @ProbabilityTheory.isProbabilityMeasure_stdGaussian _ _ _ _ hmeas hborel
+    inferInstance
   letI hstdgauss : ProbabilityTheory.IsGaussian
       (stdGaussian ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)) :=
     @ProbabilityTheory.isGaussian_stdGaussian _ _ _ _ hmeas hborel
@@ -200,7 +200,7 @@ theorem isPBrownianBridge_finiteGaussianPBridge
     (finiteGpPathCLM hG_env hG hF_meas).continuous.measurable
   have hprob : IsProbabilityMeasure (finiteGaussianPBridge hG_env hG hF_meas) := by
     rw [finiteGaussianPBridge]
-    exact Measure.isProbabilityMeasure_map hT_meas.aemeasurable
+    exact (by infer_instance)
   have hmean : ∀ f : ↥F,
       ∫ z : LinfF F, z f ∂(finiteGaussianPBridge hG_env hG hF_meas) = 0 := by
     intro f
@@ -236,12 +236,8 @@ theorem isPBrownianBridge_finiteGaussianPBridge
       (gpEmbed ⟨G, hG_env, hG⟩ hF_meas g)
     have hcovstd := @covarianceBilin_stdGaussian
       ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) _ _ _ hmeas hborel
-    have hid : ∫ x : ↥(gpH ⟨G, hG_env, hG⟩ hF_meas), id x
-        ∂(stdGaussian ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)) = 0 := by
-      simpa using (@integral_id_stdGaussian
-        ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) _ _ _ hmeas hborel)
-    rw [hcovstd, hid] at hstd
-    simp only [sub_zero] at hstd
+    rw [hcovstd] at hstd
+    simp only [id_def, integral_id_stdGaussian, sub_zero] at hstd
     change ⟪gpEmbed ⟨G, hG_env, hG⟩ hF_meas f,
         gpEmbed ⟨G, hG_env, hG⟩ hF_meas g⟫ = _ at hstd
     rw [← hstd, Submodule.coe_inner, coe_gpEmbed, coe_gpEmbed,
@@ -255,7 +251,7 @@ theorem isPBrownianBridge_finiteGaussianPBridge
       ContinuousLinearMap.pi (fun k => innerSL ℝ (gpEmbed ⟨G, hG_env, hG⟩ hF_meas (φ k)))
     have hR_meas : Measurable (fun z : LinfF F => (fun k => z (φ k))) :=
       measurable_pi_iff.mpr (fun k => (continuous_linfF_eval (φ k)).measurable)
-    refine ⟨?_⟩
+    refine ⟨hR_meas.aemeasurable, ?_⟩
     rw [finiteGaussianPBridge,
       Measure.map_map hR_meas hT_meas]
     have hcomp : (fun z : LinfF F => (fun k => z (φ k))) ∘
@@ -327,7 +323,8 @@ theorem emptyClass_pBrownianBridge (P : Measure Ω) [IsProbabilityMeasure P] :
   · intro f
     exact (Set.notMem_empty (f : Ω → ℝ) f.2).elim
   · intro m φ
-    refine ⟨?_⟩
+    refine ⟨(Measurable.of_eval (fun k => (continuous_linfF_eval (φ k)).measurable)).aemeasurable,
+        ?_⟩
     simp only [Measure.map_dirac]
     infer_instance
   · rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le]
@@ -647,7 +644,7 @@ private theorem weakConverges_netTuple_withBridge_aux
     have hlim_eq :
         (⟨(ProbabilityTheory.multivariateGaussian 0
               (marginalCovMatrix P φ)).map Y,
-            Measure.isProbabilityMeasure_map hTID.aemeasurable_limit⟩ :
+            (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin _))) =
         ⟨ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ),
           inferInstance⟩ := Subtype.ext hY.map_eq
@@ -809,7 +806,7 @@ private theorem limit_proj_error_withBridge_aux
         (fun m => f (finiteNetProj hG_env hG hF_meas hF_ent m z) - f z)
         atTop (𝓝 (0 : ℝ)) := by
       simpa using hf_tendsto.sub (tendsto_const_nhds (x := f z))
-    simpa [Φ] using (continuous_abs.tendsto (0 : ℝ)).comp hsub
+    simpa [Φ] using! (continuous_abs.tendsto (0 : ℝ)).comp hsub
 
 private theorem weakConvergesOuter_withBridge_readout_aux
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]

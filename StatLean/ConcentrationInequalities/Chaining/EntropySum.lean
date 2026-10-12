@@ -550,7 +550,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
       ≤ 4 * dudleyLSum T := by
   have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
   rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hdiam0 | hdiam_pos
-  · rw [← hdiam0, zero_mul, ENNReal.ofReal_zero]; exact zero_le _
+  · rw [← hdiam0, zero_mul, ENNReal.ofReal_zero]; exact zero_le
   · -- Pick a dyadic scale `e = 2^{-κ}` with `diam/4 ≤ e < diam/2`.
     obtain ⟨κ, h_lo, h_hi⟩ := exists_coarse_scale (D := Metric.diam T / 4) (by linarith)
     set e : ℝ := (2 : ℝ) ^ (-κ) with he
@@ -591,7 +591,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
           rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4), ENNReal.ofReal_ofNat]
       _ ≤ 4 * dudleyLSum T := by
           gcongr
-          exact ENNReal.le_tsum κ
+          exact ENNReal.le_tsum (f := fun k => ENNReal.ofReal (dudleySummand T k)) κ
 
 /-- Capped-vs-`Ioi` display, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.7): beyond the
 diameter the integrand vanishes, so the `∫₀^∞` and capped forms agree. -/

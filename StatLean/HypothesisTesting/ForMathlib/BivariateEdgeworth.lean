@@ -1,4 +1,6 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.HypothesisTesting.ForMathlib.BerryEsseen
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # The damped Edgeworth expansion in an inner product space
@@ -122,7 +124,7 @@ noncomputable def projLaw (μ : Measure E) (t : E) : Measure ℝ :=
 instance isProbabilityMeasure_projLaw (μ : Measure E) [IsProbabilityMeasure μ] (t : E) :
     IsProbabilityMeasure (projLaw μ t) := by
   rw [projLaw]
-  exact Measure.isProbabilityMeasure_map (measurable_inner_right t).aemeasurable
+  exact (by infer_instance)
 
 /-- Integrals against the projected law are directional integrals against `μ`. -/
 lemma integral_projLaw (μ : Measure E) (t : E) {f : ℝ → ℝ}
@@ -258,12 +260,19 @@ lemma measurable_vecRoot {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
 /-- The **law of the vector root** `n^{-1/2} ∑_{i<n} Z(yᵢ)` under `n` independent draws from
 `F`. For `E = ℝ` and `Z = (· − E_F X)` this is `Bootstrap/Edgeworth.lean`'s `meanRootLaw`. -/
 noncomputable def vecRootLaw (F : Measure ℝ) (Z : ℝ → E) (n : ℕ) : Measure E :=
-  (Measure.pi fun _ : Fin n => F).map fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i)
+  (Measure.pi fun _ : Fin n => F).map₀ fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i)
 
-instance isProbabilityMeasure_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+/-- For a measurable summand, `vecRootLaw` is the pushforward `Measure.map`. -/
+theorem vecRootLaw_eq_map (F : Measure ℝ) {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
+    vecRootLaw F Z n = (Measure.pi fun _ : Fin n => F).map
+      (fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i)) :=
+  Measure.map₀_of_measurable (measurable_vecRoot hZ n)
+
+-- Not an instance: the measurability hypothesis `hZ` cannot be inferred.
+lemma isProbabilityMeasure_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
     (hZ : Measurable Z) (n : ℕ) : IsProbabilityMeasure (vecRootLaw F Z n) := by
-  rw [vecRootLaw]
-  exact Measure.isProbabilityMeasure_map (measurable_vecRoot hZ n).aemeasurable
+  rw [vecRootLaw_eq_map F hZ]
+  exact (by infer_instance)
 
 /-- **The characteristic function of a vector root, as an `n`-th power.**
 `φ_{vecRootLaw F Z n}(t) = φ_{F ∘ Z⁻¹}(n^{-1/2} • t)ⁿ`.
@@ -280,7 +289,8 @@ theorem charFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ �
   have hstep1 : charFun (vecRootLaw F Z n) t
       = ∫ y : Fin n → ℝ, ∏ i : Fin n, Complex.exp ((⟪Z (y i), c⟫ : ℝ) * Complex.I)
         ∂(Measure.pi fun _ : Fin n => F) := by
-    rw [charFun_apply, vecRootLaw, integral_map hmeasg.aemeasurable (by fun_prop)]
+    rw [charFun_apply, vecRootLaw_eq_map F hZ,
+      integral_map hmeasg.aemeasurable (by fun_prop)]
     refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
     have harg : (⟪(Real.sqrt n)⁻¹ • ∑ i, Z (y i), t⟫ : ℝ) = ∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ) :=
       calc (⟪(Real.sqrt n)⁻¹ • ∑ i, Z (y i), t⟫ : ℝ)
@@ -341,7 +351,7 @@ theorem norm_charFun_vecRootLaw_sub_edgeworth_le (F : Measure ℝ) [IsProbabilit
                 + ((∫ x, ⟪x, t⟫ ^ 4 ∂(F.map Z))
                     * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹| ^ 4 / 24
                   + (v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 2) ^ 2 / 2))) := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   set s : ℝ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ with hs
   have hne : ((m : ℝ) + 2) ≠ 0 := by positivity
   have hN : (0 : ℝ) < ((m + 2 : ℕ) : ℝ) := by push_cast; positivity
@@ -470,13 +480,13 @@ theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
         (Measure.pi fun _ : Fin (m + 1) => F) := by
       have := (measurePreserving_eval (μ := fun _ : Fin (m + 1) => F)
         i).integrable_comp_of_integrable hb.abs
-      simpa [Function.comp] using this
+      simpa [Function.comp] using! this
     have hmeas : ∀ j : Fin (m + 1),
         Measurable fun y : Fin (m + 1) → ℝ => h i j (y j) := by
       intro j
       rcases eq_or_ne j i with rfl | hji
-      · simpa [hhdef] using hfm.comp (measurable_pi_apply j)
-      · simpa [hhdef, hji] using hgm.comp (measurable_pi_apply j)
+      · simpa [hhdef] using! hfm.comp (measurable_pi_apply j)
+      · simpa [hhdef, hji] using! hgm.comp (measurable_pi_apply j)
     refine Integrable.mono' hdom
       ((Finset.measurable_prod _ fun j _ => hmeas j).aestronglyMeasurable) ?_
     filter_upwards with y
@@ -489,7 +499,7 @@ theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
   have hstep1 : mixCharFun (vecRootLaw F Z (m + 1)) b a
       = ∫ y : Fin (m + 1) → ℝ, ((r : ℂ) * ∑ i, ∏ j, h i j (y j))
         ∂(Measure.pi fun _ : Fin (m + 1) => F) := by
-    rw [mixCharFun, vecRootLaw,
+    rw [mixCharFun, vecRootLaw_eq_map F hZ,
       integral_map (measurable_vecRoot hZ (m + 1)).aemeasurable (by fun_prop)]
     simp only [← hrdef]
     refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
@@ -522,7 +532,7 @@ theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
         ∂(Measure.pi fun _ : Fin (m + 1) => F)
       = ∑ i, ∫ y : Fin (m + 1) → ℝ, ∏ j, h i j (y j)
         ∂(Measure.pi fun _ : Fin (m + 1) => F) :=
-    integral_finset_sum _ fun i _ => hint i
+    integral_finsetSum _ fun i _ => hint i
   -- step 3: Fubini on each summand, and the `n − 1` undistinguished factors give a power
   have hA : ∫ x, f x ∂F = mixCharFun (F.map Z) b c := by
     rw [mixCharFun_map F hZ]
@@ -686,7 +696,7 @@ theorem norm_mixCharFun_vecRootLaw_sub_le (F : Measure ℝ) [IsProbabilityMeasur
             * charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m‖
       ≤ 3 / (2 * Real.sqrt ((m + 1 : ℕ) : ℝ))
           * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
   have hsq : (0 : ℝ) < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.2 hNpos
   set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
@@ -896,7 +906,7 @@ theorem multiCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : 
   have hstep1 : multiCharFun (vecRootLaw F Z n) b a
       = ∫ y : Fin n → ℝ, ((r : ℂ) ^ k * ∑ σ : Fin k → Fin n, ∏ i, u (fib σ i) (y i))
         ∂(Measure.pi fun _ : Fin n => F) := by
-    rw [multiCharFun, vecRootLaw,
+    rw [multiCharFun, vecRootLaw_eq_map F hZ,
       integral_map (measurable_vecRoot hZ n).aemeasurable (by fun_prop)]
     simp only [← hrdef]
     refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
@@ -966,7 +976,7 @@ theorem multiCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : 
         ∂(Measure.pi fun _ : Fin n => F))
       = ∑ σ : Fin k → Fin n, ∫ y : Fin n → ℝ, ∏ i, u (fib σ i) (y i)
         ∂(Measure.pi fun _ : Fin n => F) :=
-    integral_finset_sum _ fun σ _ => hint2 σ
+    integral_finsetSum _ fun σ _ => hint2 σ
   -- step 3: Fubini on each assignment summand
   have hstep4 : ∀ σ : Fin k → Fin n,
       (∫ y : Fin n → ℝ, ∏ i, u (fib σ i) (y i) ∂(Measure.pi fun _ : Fin n => F))
@@ -1326,7 +1336,7 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbability
               * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2))‖
       ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
   have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
   have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -1595,7 +1605,7 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProb
       ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a
         * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - 2) := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
   have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
   have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -1940,7 +1950,7 @@ theorem norm_charFun_pow_sub_charFun_vecRootLaw_le (F : Measure ℝ) [IsProbabil
     ‖charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m
         - charFun (vecRootLaw F Z (m + 1)) a‖
       ≤ 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1)) := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
   set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
   set c : E := r • a with hcdef
@@ -2014,7 +2024,7 @@ theorem norm_mixCharFun_vecRootLaw_sub_charFun_le (F : Measure ℝ) [IsProbabili
             * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)
           + 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1))
               * |∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)| := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   set κ : ℝ := ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκdef
   set c : E := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a with hcdef
   have h1 := norm_mixCharFun_vecRootLaw_sub_le F hZ m hb hba hba2 hmeanb
@@ -2108,7 +2118,7 @@ theorem ae_norm_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
   have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
   have hmeas : MeasurableSet {w : E | ‖w‖ ≤ Real.sqrt (n : ℝ) * K} :=
     measurableSet_le (by fun_prop) measurable_const
-  rw [vecRootLaw, ae_map_iff (measurable_vecRoot hZ n).aemeasurable hmeas]
+  rw [vecRootLaw_eq_map F hZ, ae_map_iff (measurable_vecRoot hZ n).aemeasurable hmeas]
   refine Filter.Eventually.of_forall fun y => ?_
   have hsum : ‖∑ i, Z (y i)‖ ≤ (n : ℝ) * K := by
     calc ‖∑ i, Z (y i)‖ ≤ ∑ _i : Fin n, K :=
@@ -2263,7 +2273,6 @@ lemma sum_div_pow_card_image_le {k N : ℕ} (hN : 1 ≤ N) {Q : ℝ} (hQ : 1 ≤
       _ = (m : ℝ) ^ k * Q ^ m := hpow
       _ ≤ (k : ℝ) ^ k * Q ^ k := by
           gcongr
-          exact hQ
   calc (∑ m ∈ Finset.range (k + 1), ∑ σ ∈ Finset.univ.filter
           (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m),
           (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card)
@@ -2309,7 +2318,7 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
         ≤ Q * Real.sqrt (N : ℝ) ^ (T.card - 2)) :
     ‖multiCharFun (vecRootLaw F Z N) b a‖ ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
   have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -2411,7 +2420,7 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
         = ∏ i : Fin N, r ^ (Finset.univ.filter fun l : Fin k => σ l = i).card := by
       rw [Finset.prod_pow_eq_pow_sum, hsum]
     rw [hrk, ← Finset.prod_mul_distrib]
-    refine (Finset.prod_le_prod (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
+    refine (Finset.prod_le_prod₀ (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
       (fun i _ => hslot _)).trans (le_of_eq ?_)
     have hif : ∀ i : Fin N,
         (if (Finset.univ.filter fun l : Fin k => σ l = i) = ∅ then (1 : ℝ) else Q / (N : ℝ))
@@ -2482,7 +2491,7 @@ theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityM
       ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k
         * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - k) := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
   have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -2587,7 +2596,7 @@ theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityM
         = ∏ i : Fin N, r ^ (Finset.univ.filter fun l : Fin k => σ l = i).card := by
       rw [Finset.prod_pow_eq_pow_sum, hsum]
     rw [hrk, ← Finset.prod_mul_distrib]
-    refine (Finset.prod_le_prod (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
+    refine (Finset.prod_le_prod₀ (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
       (fun i _ => hslot _)).trans ?_
     have hif : ∀ i : Fin N,
         (if (Finset.univ.filter fun l : Fin k => σ l = i) = ∅ then D else Q / (N : ℝ))

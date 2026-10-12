@@ -457,7 +457,7 @@ private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) �
   haveI hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
   haveI hμprob : IsProbabilityMeasure μ := by
     rw [← hlaw 1 0]
-    exact Measure.isProbabilityMeasure_map (μ := P 1) (hX 1 0).aemeasurable
+    exact (by infer_instance)
   -- the canonical i.i.d. model `(Ω₀, P₀, Z)` with marginal law `μ`
   obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
     ProbabilityTheory.exists_iid ℕ μ
@@ -550,9 +550,9 @@ private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) �
       fun d => (Real.sqrt n)⁻¹ • ∑ i : Fin n, g (d i) with hF
     have hFmeas : Measurable F := measurable_of_finite F
     have hgZ : Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
-      measurable_pi_lambda _ (fun i => hZmeas i)
+      Measurable.of_eval (fun i => hZmeas i)
     have hgX : Measurable (fun ω (i : Fin n) => X n i ω) :=
-      measurable_pi_lambda _ (fun i => hX n i)
+      Measurable.of_eval (fun i => hX n i)
     have hLHSfun : (fun ω => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i ω)
         = F ∘ (fun ω (i : Fin n) => Z (i : ℕ) ω) := by
       funext ω
@@ -728,7 +728,7 @@ private lemma covMatrix_map_centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ
         - (∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) i)
           * ∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) j := by
   haveI : IsProbabilityMeasure (ρ.map (centredIndicator π)) :=
-    Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+    (by infer_instance)
   rw [covMatrix, Matrix.of_apply,
     covariance_eq_sub (memLp_map_centredIndicator π ρ
         (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop) 2)
@@ -787,7 +787,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
     isProbabilityMeasure_cellMeasure hπpos hπsum
   set Q : Measure (EuclideanSpace ℝ (Fin k)) := (cellMeasure π).map (centredIndicator π) with hQ
   haveI hQprob : IsProbabilityMeasure Q :=
-    Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+    (by infer_instance)
   set hred : EuclideanSpace ℝ (Fin k) := WithLp.toLp 2 (fun i : Fin k => h i.castSucc) with hhred
   -- the stage-`n` cell weights and their limit
   set w : ℕ → Fin (k + 1) → ℝ := fun n x => π x + h x / Real.sqrt (n : ℝ) with hw
@@ -804,7 +804,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
   have hμprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (μ n) := by
     intro n hn
     rw [← hlaw n ⟨0, hn⟩]
-    exact Measure.isProbabilityMeasure_map (hX n ⟨0, hn⟩).aemeasurable
+    exact (by infer_instance)
   have hμreal : ∀ n x, (μ n).real {x} = w n x := by
     intro n x
     rw [MeasureTheory.Measure.real, hcell n x]
@@ -818,7 +818,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
     intro n hn
     haveI := hμprob n hn
     rw [hFeq n hn]
-    exact Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+    exact (by infer_instance)
   -- the class conditions
   have hFclass : F ∈ meanVecSeqClass Q := by
     refine ⟨hFprob, ?_, ?_, ?_, ?_⟩
@@ -835,7 +835,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
         rw [hQ, integral_map_centredIndicator π (cellMeasure π) f.continuous]
         exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x, smul_eq_mul]
       rw [hQint]
-      refine Tendsto.congr' ?_ (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
+      refine Tendsto.congr' ?_ (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
       filter_upwards [eventually_gt_atTop 0] with n hn
       haveI := hμprob n hn
       rw [hFeq n hn, integral_map_centredIndicator π (μ n) f.continuous]
@@ -847,7 +847,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
           (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
         exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x, smul_eq_mul]
       rw [hQint]
-      refine Tendsto.congr' ?_ (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
+      refine Tendsto.congr' ?_ (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
       filter_upwards [eventually_gt_atTop 0] with n hn
       haveI := hμprob n hn
       rw [hFeq n hn, integral_map_centredIndicator π (μ n)
@@ -865,9 +865,9 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
         · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x]
       rw [hQcov]
       refine Tendsto.congr' ?_
-        (((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
-          ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
-            (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds))))
+        (((tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
+          ((tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
+            (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds))))
       filter_upwards [eventually_gt_atTop 0] with n hn
       haveI := hμprob n hn
       haveI := hFprob n hn
@@ -915,7 +915,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
     intro n hn
     haveI := hμprob n hn
     haveI hFnprob : IsProbabilityMeasure ((μ n).map (centredIndicator π)) :=
-      Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+      (by infer_instance)
     have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
     have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
@@ -938,8 +938,12 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       ring
     set Ψ : (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
       fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hΨ
-    have hΨcont : Continuous Ψ :=
-      (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+    have hΨcont : Continuous Ψ := by
+      simpa only [hΨ, Pi.smul_apply] using!
+        (continuous_finsetSum Finset.univ fun i _ =>
+          (continuous_apply i : Continuous
+              (fun y : Fin n → EuclideanSpace ℝ (Fin k) => y i))).const_smul
+          ((Real.sqrt (n : ℝ))⁻¹)
     have hstep1 : (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => hred + z)
         = (Measure.pi fun _ : Fin n => F n).map Ψ := by
       rw [meanVecRootLaw, Measure.map_map (by fun_prop) (by fun_prop)]
@@ -952,10 +956,10 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX n i).aemeasurable)).1 (hindep n)]
       congr 1; funext i; exact hlaw n i
     have hXmeas : Measurable (fun ω (i : Fin n) => X n i ω) :=
-      measurable_pi_lambda _ (fun i => hX n i)
+      Measurable.of_eval (fun i => hX n i)
     have hgmeas : Measurable
         (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => centredIndicator π (d i)) :=
-      measurable_pi_lambda _ (fun i =>
+      Measurable.of_eval (fun i =>
         (measurable_centredIndicator π).comp (measurable_pi_apply i))
     have hstep2 : (P n).map (reducedCount π (X n)) = (Measure.pi fun _ : Fin n => F n).map Ψ := by
       have hcomp : reducedCount π (X n)
@@ -1056,7 +1060,7 @@ private lemma measurable_pearsonQ {n k : ℕ} {π : Fin (k + 1) → ℝ}
   have : pearsonQ π X = pearsonQTuple π ∘ (fun ω (i : Fin n) => X i ω) := by
     funext ω; exact pearsonQ_eq_tuple π X ω
   rw [this]
-  exact (measurable_of_finite _).comp (measurable_pi_lambda _ hX)
+  exact (measurable_of_finite _).comp (Measurable.of_eval hX)
 
 /-- **Law transfer for Pearson's statistic.** The law of `pearsonQ` under any i.i.d. sample
 with marginal `μ` is the pushforward of the product measure `μ^{⊗ n}` under `pearsonQTuple`;
@@ -1071,7 +1075,7 @@ private lemma map_pearsonQ_eq_tuple {n k : ℕ} {π : Fin (k + 1) → ℝ} {μ :
     congr 1; funext i; exact hlaw i
   have hcomp : pearsonQ π X = pearsonQTuple π ∘ (fun ω (i : Fin n) => X i ω) := by
     funext ω; exact pearsonQ_eq_tuple π X ω
-  rw [hcomp, ← Measure.map_map (measurable_of_finite _) (measurable_pi_lambda _ hX), hpi]
+  rw [hcomp, ← Measure.map_map (measurable_of_finite _) (Measurable.of_eval hX), hpi]
 
 /-- **Consistency against a fixed alternative.** If the true cell probabilities differ
 from `π` in at least one cell, the power of the chi-squared test tends to one. The reason
@@ -1106,7 +1110,7 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
   haveI hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
   haveI hμprob : IsProbabilityMeasure μ := by
     rw [← hlaw 1 0]
-    exact Measure.isProbabilityMeasure_map (μ := P 1) (hX 1 0).aemeasurable
+    exact (by infer_instance)
   -- an offending cell `j₀` and the positive discrepancy `d = |p j₀ − π j₀|`
   obtain ⟨j₀, hj₀⟩ := hne
   set d : ℝ := |p j₀ - π j₀| with hd_def
@@ -1388,7 +1392,7 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
       intro i
       by_cases hi : i = i₀
       · simpa [hi] using h1
-      · simpa [hi] using (MeasurePreserving.id (volume : Measure ℝ))
+      · simpa [hi] using! (MeasurePreserving.id (volume : Measure ℝ))
     have hpi := MeasureTheory.measurePreserving_pi (fun _ : Fin k => (volume : Measure ℝ))
       (fun _ : Fin k => (volume : Measure ℝ)) hf
     rw [← volume_pi] at hpi
@@ -1502,7 +1506,7 @@ private lemma piGauss_piBall_pos {k : ℕ} (m : Fin k → ℝ) {t : ℝ} (ht : 0
 
 private lemma piGauss_singleton_zero {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin k => gaussianReal 0 1) {(0 : Fin k → ℝ)} = 0 := by
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hset : ({0} : Set (Fin k → ℝ)) = Set.pi Set.univ fun _ : Fin k => ({0} : Set ℝ) := by
     ext u; simp [funext_iff]
   rw [hset, Measure.pi_pi]
@@ -1659,7 +1663,7 @@ private lemma pos_of_chiSquared_tail_lt_one {k : ℕ} (hk : 0 < k) {α c : ℝ} 
         = fun _ : Fin k => (0 : ℝ) := by
       funext i; simp
     rw [hzero]
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     refine le_trans (measure_mono ?_) (le_of_eq (piGauss_singleton_zero hk))
     intro u hu
     have hu' : ∑ i, u i ^ 2 ≤ c := by
@@ -1734,7 +1738,7 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
   · -- (1) the limiting power, by the constant-threshold portmanteau step
     have hweak := pearsonQ_weakConverges_noncentral hk hπpos hπsum hhsum hX hindep hlaw hcell
     haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Measure.map (pearsonQ π (X n)) (P n)) :=
-      fun n => Measure.isProbabilityMeasure_map (measurable_pearsonQ (hX n)).aemeasurable
+      fun n => (by infer_instance)
     set μs : ℕ → ProbabilityMeasure ℝ :=
       fun n => ⟨Measure.map (pearsonQ π (X n)) (P n), hprob n⟩ with hμs
     set νl : ProbabilityMeasure ℝ :=

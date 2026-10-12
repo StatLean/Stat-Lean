@@ -70,8 +70,8 @@ theorem measurePreserving_condSwap {E : Type*} [MeasurableSpace E] {N : ℕ}
       ((ν i).prod (ν i)) ((ν i).prod (ν i)) := by
     intro i
     by_cases hσ : σ i
-    · simpa [hσ] using MeasurePreserving.id ((ν i).prod (ν i))
-    · simpa [hσ] using Measure.measurePreserving_swap (μ := ν i) (ν := ν i)
+    · simpa [hσ] using! MeasurePreserving.id ((ν i).prod (ν i))
+    · simpa [hσ] using! Measure.measurePreserving_swap (μ := ν i) (ν := ν i)
   have hH : MeasurePreserving
       (fun (u : Fin N → E × E) i => if σ i then u i else Prod.swap (u i))
       (Measure.pi fun i => (ν i).prod (ν i)) (Measure.pi fun i => (ν i).prod (ν i)) :=

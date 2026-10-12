@@ -130,7 +130,7 @@ lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
 
 /-- The distribution function of a probability law with no atoms is continuous. -/
 lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
+    [NullSingletonClass ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
   have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
     funext x
     rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
@@ -160,7 +160,7 @@ lemma isCDF_stdNormalCDF : IsCDF stdNormalCDF := isCDF_normalCDF 0 1
 
 /-- A nondegenerate normal distribution function is continuous. -/
 lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Continuous (normalCDF m v) :=
-  haveI : NoAtoms (gaussianReal m v) := noAtoms_gaussianReal hv
+  haveI : NullSingletonClass (gaussianReal m v) := nullSingletonClass_gaussianReal hv
   continuous_toReal_measure_Iic (gaussianReal m v)
 
 /-- The standard normal distribution function is continuous. -/
@@ -203,7 +203,7 @@ theorem normalCDF_sq_eq_stdNormalCDF {sigma : ℝ} (hsigma : 0 < sigma) (x : ℝ
   have hmap : (gaussianReal 0 1).map (fun z : ℝ => sigma * z)
       = gaussianReal 0 (Real.toNNReal (sigma ^ 2)) := by
     rw [hv]
-    simpa using gaussianReal_map_const_mul (μ := 0) (v := 1) sigma
+    simpa using! gaussianReal_map_const_mul (μ := 0) (v := 1) sigma
   have hmeas : Measurable (fun z : ℝ => sigma * z) := by fun_prop
   have hpre : (fun z : ℝ => sigma * z) ⁻¹' Set.Iic x = Set.Iic (x / sigma) := by
     ext z
@@ -541,7 +541,7 @@ theorem tendsto_measure_abs_sub_of_tendstoInMeasure {Pr : Measure Ω} [IsFiniteM
     exact (ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)).symm
   simp only [hset]
   have h' := h (ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
-  simpa using (ENNReal.tendsto_toReal (by simp)).comp h'
+  simpa using! (ENNReal.tendsto_toReal (by simp)).comp h'
 
 /-- **Slutsky coupling at a random threshold.**
 
@@ -806,7 +806,7 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
   -- the common law of the entries of row `n`
   set Gm : ℕ → Measure ℝ := fun n => Pr.map (Y n 0) with hGm
   haveI hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
-    Measure.isProbabilityMeasure_map (hYmeas n 0).aemeasurable
+    (by infer_instance)
   -- every entry of a row carries the row law: they share a distribution function, and a finite
   -- measure on the line is determined by its values on the rays `Iic x`
   have hlaw : ∀ (n : ℕ) (i : Fin n), Pr.map (Y n (i : ℕ)) = Gm n := by
@@ -851,7 +851,7 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
       (by simpa using hYint n)
   have hmain := triangular_wlln_of_L1 (P := Pr) (Y := fun n (i : Fin n) => Y n (i : ℕ))
     (G := Gm) (ν := ν) (fun n i => hYmeas n (i : ℕ)) hindep hlaw hGmint hweak
-    (by simpa using hint) hL1
+    (by simpa using! hint) hL1
   have hfun : (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω))
       = fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i : Fin n, Y n (i : ℕ) ω := by
     funext n ω

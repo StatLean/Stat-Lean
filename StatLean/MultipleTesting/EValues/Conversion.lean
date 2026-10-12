@@ -66,7 +66,7 @@ theorem superUniform_inv_of_isEVariable {E : Ω → ℝ} {μ : Measure Ω} [IsPr
       simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, one_div]
       exact inv_pos.mpr (hpos ω)
     rw [hempty, measure_empty]
-    exact zero_le _
+    exact zero_le
   -- For `t > 0`: rewrite the event in `ofReal` form and apply lintegral Markov.
   have hset : {ω | 1 / E ω ≤ t} = {ω | ENNReal.ofReal t⁻¹ ≤ ENNReal.ofReal (E ω)} := by
     ext ω

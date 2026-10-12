@@ -542,7 +542,7 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
       (∀ B : Set ℝ, MeasurableSet B →
         ∫⁻ ζ, gaussianReal ζ σ2 B ∂Λ = gaussianReal 0 M2 B) := by
   classical
-  have hM2pos : (0 : NNReal) < M2 := lt_of_le_of_lt (zero_le _) hσM
+  have hM2pos : (0 : NNReal) < M2 := lt_of_le_of_lt (zero_le) hσM
   have hM2 : M2 ≠ 0 := hM2pos.ne'
   -- The measure-level mixture identity, via the Gaussian convolution kernel.
   have hkey : ∀ B : Set ℝ, MeasurableSet B →

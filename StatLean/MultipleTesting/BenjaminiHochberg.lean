@@ -458,7 +458,7 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   let recon : (↥(({i} : Finset (Fin N))ᶜ) → ℝ) → (Fin N → ℝ) :=
     fun y j => if h : j ∈ (({i} : Finset (Fin N))ᶜ) then y ⟨j, h⟩ else 0
   have hrecon_meas : Measurable recon :=
-    measurable_pi_lambda _ (fun j => by
+    Measurable.of_eval (fun j => by
       by_cases h : j ∈ (({i} : Finset (Fin N))ᶜ)
       · simp only [recon, dif_pos h]; exact measurable_pi_apply _
       · simp only [recon, dif_neg h]; exact measurable_const)
@@ -682,13 +682,13 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
               else 0)) ∂μ :=
         integral_mono (integrable_bh_summand hN α hα μ p hmeas i)
-          (integrable_finset_sum _ hgint)
+          (integrable_finsetSum _ hgint)
           (fun ω => bh_summand_le_sum hN α hα p i ω)
     _ = ∑ k ∈ Finset.Icc 1 N, ∫ ω, (1 / (k : ℝ)) *
           ((if p i ω ≤ (k : ℝ) * α / N then (1 : ℝ) else 0) *
            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
               else 0)) ∂μ :=
-        integral_finset_sum _ hgint
+        integral_finsetSum _ hgint
     _ ≤ ∑ k ∈ Finset.Icc 1 N, (α / N) *
           (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal :=
         Finset.sum_le_sum bound_each
@@ -742,7 +742,7 @@ theorem benjamini_hochberg_fdr_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < �
     fun ω => fdp_eq_sum_div α H₀ p ω
   simp_rw [hfdp_sum]
   -- Step 2: Swap integral and sum.
-  rw [integral_finset_sum H₀ (fun i _ => integrable_bh_summand hN α hα μ p hmeas i)]
+  rw [integral_finsetSum H₀ (fun i _ => integrable_bh_summand hN α hα μ p hmeas i)]
   -- Step 3: Bound each summand by α/N using bh_claim, then sum.
   calc ∑ i ∈ H₀, ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
           max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ

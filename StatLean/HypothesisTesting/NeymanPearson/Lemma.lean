@@ -126,7 +126,7 @@ private lemma hasDensity_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P 
     [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
   have h1 : powerAgainst P (fun _ => (1 : ℝ)) = ∫ x, (1 : ℝ) * p x ∂μ := powerAgainst_eq h _
   unfold powerAgainst at h1
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, mul_one, one_mul] at h1
+  simp only [integral_const, probReal_univ, smul_eq_mul, mul_one, one_mul] at h1
   exact h1.symm
 
 /-- Real form of the two strict threshold comparisons, at a finite threshold: the `ℝ≥0∞`
@@ -575,7 +575,7 @@ theorem exists_mostPowerful
       simp only [zero_mul]
       by_cases h : ENNReal.ofReal (p₁ x) = 0
       · rw [if_neg (by rw [h]; exact lt_irrefl 0), if_pos h]
-      · rw [if_pos (lt_of_le_of_ne (zero_le _) (Ne.symm h))]
+      · rw [if_pos (lt_of_le_of_ne (zero_le) (Ne.symm h))]
     have hpe : powerAgainst P₀ (npTest p₀ p₁ 0 1) = α := by
       rw [hone]; unfold powerAgainst; rw [hα1']; simp
     exact ⟨0, 1, ⟨zero_le_one, le_refl 1⟩, hpe, mp 0 1 ⟨zero_le_one, le_refl 1⟩ hpe⟩
@@ -583,7 +583,7 @@ theorem exists_mostPowerful
   have hrmeas : Measurable fun x => p₁ x / p₀ x := h₁.1.div h₀.1
   have hrnn : ∀ x, 0 ≤ p₁ x / p₀ x := fun x => div_nonneg (h₁.2.1 x) (h₀.2.1 x)
   set Q : Measure ℝ := P₀.map (fun x => p₁ x / p₀ x) with hQ
-  haveI hQprob : IsProbabilityMeasure Q := Measure.isProbabilityMeasure_map hrmeas.aemeasurable
+  haveI hQprob : IsProbabilityMeasure Q := (by infer_instance)
   obtain ⟨c, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants Q hα0' hα1'
   have hsr : MeasurableSet {x : ℝ | c < x} := measurableSet_Ioi
   have hse : MeasurableSet {x : ℝ | x = c} := by
@@ -803,7 +803,7 @@ theorem npTest_necessity
         have hz : p₁ x = 0 :=
           le_antisymm (by simpa using ENNReal.ofReal_eq_zero.mp h) (h₁.2.1 x)
         rw [hz, mul_zero]
-      · rw [if_pos (lt_of_le_of_ne (zero_le _) (Ne.symm h)), one_mul]
+      · rw [if_pos (lt_of_le_of_ne (zero_le) (Ne.symm h)), one_mul]
     have hχpow : powerAgainst P₁ χ = 1 := by
       rw [powerAgainst_eq h₁ χ, integral_congr_ae (Filter.Eventually.of_forall hχp1), hp1one]
     exact hno ⟨φ, hφc, hlt, by rw [← hpoweq]; exact hχpow⟩

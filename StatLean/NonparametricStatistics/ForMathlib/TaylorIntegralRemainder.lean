@@ -81,7 +81,7 @@ private lemma taylor_integral_aux :
           (by exact_mod_cast Nat.lt_succ_self (m + 1))) (x₀ + τ * t)
         have := hd.hasDerivAt
         rwa [← iteratedDeriv_succ] at this
-      simpa [mul_comm] using hout.comp τ hin
+      simpa [mul_comm] using! hout.comp τ hin
     -- Derivative of `v τ = -(1-τ)^(m+1)/(m+1)`.
     have hv : ∀ τ : ℝ,
         HasDerivAt (fun s => -(1 - s) ^ (m + 1) / (↑(m + 1) : ℝ)) ((1 - τ) ^ m) τ := by
@@ -89,7 +89,7 @@ private lemma taylor_integral_aux :
       have hw := ((hasDerivAt_id τ).const_sub (1 : ℝ)).pow (m + 1)
       simp only [id_eq] at hw
       have h3 := hw.neg.div_const (↑(m + 1) : ℝ)
-      convert h3 using 1
+      convert! h3 using 1
       rw [Nat.add_sub_cancel]
       have hne : (↑(m + 1) : ℝ) ≠ 0 := by positivity
       field_simp

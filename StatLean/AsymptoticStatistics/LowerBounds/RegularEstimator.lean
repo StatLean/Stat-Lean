@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.AsymptoticStatistics.Core.Pathwise
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
@@ -107,6 +108,14 @@ open AsymptoticStatistics.Core.Pathwise
 open AsymptoticStatistics.Core.QMDPath
 open AsymptoticStatistics
 
+/-- Along a measurable family of maps, `Measure.map₀` agrees with `Measure.map`. -/
+theorem map₀_sequence_eq_map {ι : Type*} {α : ι → Type*} {β : Type*}
+    [∀ i, MeasurableSpace (α i)] [MeasurableSpace β]
+    (μ : ∀ i, Measure (α i)) (f : ∀ i, α i → β)
+    (hf : ∀ i, Measurable (f i)) :
+    (fun i => (μ i).map₀ (f i)) = (fun i => (μ i).map (f i)) :=
+  funext fun i => Measure.map₀_of_measurable (hf i)
+
 variable {Ω : Type*} [MeasurableSpace Ω]
 
 /-- *Hájek-style regular-estimator predicate (vdV §25.3.2 canonical form).*
@@ -167,7 +176,7 @@ def IsRegularEstimator
     WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi
-            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map
+            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))))
@@ -202,7 +211,7 @@ theorem IsRegularEstimator.shift [IsProbabilityMeasure L]
     WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi
-            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map
+            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))))
@@ -232,7 +241,7 @@ theorem IsRegularEstimator.weak_limit_at_zero [IsProbabilityMeasure L]
     WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi
-            (fun _ : Fin n => zero_curve.curve ((Real.sqrt n)⁻¹))).map
+            (fun _ : Fin n => zero_curve.curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X - ψ (zero_curve.curve ((Real.sqrt n)⁻¹)))))
@@ -374,9 +383,12 @@ theorem IsRegularEstimator.hajek_shift_form [IsProbabilityMeasure L]
   -- Step 4: `Pn n .map Xinner n ⇝ L` (this is `hReg` directly).
   have h_inner_weak :
       WeakConverges (fun n => (Pn n).map (Xinner n)) L := by
-    intro f
-    have := hReg g hg curve hscore f
-    simpa [hPn_def, hXinner_def] using this
+    have hcanon : WeakConverges (fun n => (Pn n).map₀ (Xinner n)) L := by
+      simpa [hPn_def, hXinner_def] using hReg g hg curve hscore
+    rw [map₀_sequence_eq_map Pn Xinner (fun n => by
+      rw [hXinner_def]
+      exact Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hcanon
+    exact hcanon
   -- Step 5: `Pn n .map Xshift n ⇝ L.map (· + c) = (dirac c) ∗ L`.
   -- Build measurabilities first.
   have hXinner_meas : ∀ n, Measurable (Xinner n) := by
@@ -415,7 +427,7 @@ theorem IsRegularEstimator.hajek_shift_form [IsProbabilityMeasure L]
     funext y; exact add_comm c y
   -- Step 6: apply Slutsky to absorb the vanishing deterministic shift.
   haveI : IsProbabilityMeasure (L.map (fun y : ℝ => y + c)) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map (by fun_prop)
+    (by infer_instance)
   have h_distance_to_zero :
       ∀ ε > 0,
         Tendsto (fun n : ℕ =>

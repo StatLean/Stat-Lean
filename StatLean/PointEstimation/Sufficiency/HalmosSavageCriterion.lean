@@ -91,7 +91,7 @@ theorem rnDeriv_comp_of_isSufficient (P : Θ → Measure 𝓧) [∀ θ, IsProbab
   haveI : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
   intro θ
   set gmap := (P θ).map T with hgmap
-  haveI : IsProbabilityMeasure gmap := Measure.isProbabilityMeasure_map hT.aemeasurable
+  haveI : IsProbabilityMeasure gmap := (by infer_instance)
   have hac : gmap ≪ ν.map T := (hdom θ).map hT
   have hPmapwd : (ν.map T).withDensity (gmap.rnDeriv (ν.map T)) = gmap :=
     Measure.withDensity_rnDeriv_eq gmap (ν.map T) hac

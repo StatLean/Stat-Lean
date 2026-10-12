@@ -128,7 +128,7 @@ theorem weakConvergesOuter_of_measurable {Ω D : Type*} [MeasurableSpace Ω]
     -- `(∫⁻_D ofReal g).toReal = ∫_D g` via the nonneg-ae integral identity.
     have hg_integrable : Integrable g ((μ n).map (Xn n)) :=
       haveI : IsProbabilityMeasure ((μ n).map (Xn n)) :=
-        Measure.isProbabilityMeasure_map (hXn n).aemeasurable
+        (by infer_instance)
       g.integrable _
     have htoReal : (∫⁻ y, ENNReal.ofReal (g y) ∂((μ n).map (Xn n))).toReal
         = ∫ y, g y ∂((μ n).map (Xn n)) := by
@@ -137,7 +137,7 @@ theorem weakConvergesOuter_of_measurable {Ω D : Type*} [MeasurableSpace Ω]
         g.continuous.measurable.aestronglyMeasurable]
     -- `∫_D g = ∫_D f + ‖f‖ · (νₙ univ).toReal`.
     haveI : IsProbabilityMeasure ((μ n).map (Xn n)) :=
-      Measure.isProbabilityMeasure_map (hXn n).aemeasurable
+      (by infer_instance)
     have hsplit : ∫ y, g y ∂((μ n).map (Xn n))
         = (∫ y, f y ∂((μ n).map (Xn n)))
           + ‖f‖ * ((μ n).map (Xn n) Set.univ).toReal := by

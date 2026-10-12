@@ -186,7 +186,7 @@ lemma log_one_add_sub_taylor_isLittleO :
     linarith
   -- Step 2: `logTaylorRemainder (2·) → 0` at `0`.
   have h_smul_tendsto : Tendsto (fun x : ℝ => 2 * x) (𝓝 0) (𝓝 0) := by
-    simpa using (continuous_const.mul continuous_id).tendsto (0 : ℝ)
+    simpa using! (continuous_const.mul continuous_id).tendsto (0 : ℝ)
   have h_R_tendsto :
       Tendsto (fun x : ℝ => logTaylorRemainder (2 * x)) (𝓝 0) (𝓝 0) :=
     logTaylorRemainder_tendsto_zero.comp h_smul_tendsto

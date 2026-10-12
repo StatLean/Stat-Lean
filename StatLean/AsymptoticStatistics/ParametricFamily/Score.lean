@@ -201,11 +201,11 @@ lemma inner_product_continuity
   have hf_sqrt : Filter.Tendsto
       (fun t => Real.sqrt (∫ x, (f_seq t x - f x) ^ 2 ∂μ)) l (𝓝 0) := by
     have := (Real.continuous_sqrt.tendsto 0).comp hf
-    simpa using this
+    simpa using! this
   have hg_sqrt : Filter.Tendsto
       (fun t => Real.sqrt (∫ x, (g_seq t x - g x) ^ 2 ∂μ)) l (𝓝 0) := by
     have := (Real.continuous_sqrt.tendsto 0).comp hg
-    simpa using this
+    simpa using! this
   -- Choose `δ > 0` small enough that `δ · (Sg + 1 + Sf) + δ < ε`.
   -- A safe choice: `δ = ε / (Sg + Sf + 3)` (then bound below). For simplicity
   -- we pick `δ = min 1 (ε / (Sg + Sf + 2))` so that `δ ≤ 1` *and* the linear
@@ -689,7 +689,7 @@ lemma score_mean_zero
     simpa [hg_def] using h_sqrt_memLp.const_mul (2 : ℝ)
   have h_gseq_memLp : ∀ t : ℝ, MemLp (g_seq t) 2 μ := by
     intro t
-    simpa [hg_seq_def] using (h_sqrt_perturb_memLp t).add h_sqrt_memLp
+    simpa [hg_seq_def] using! (h_sqrt_perturb_memLp t).add h_sqrt_memLp
   have h_gminus_memLp : ∀ t : ℝ,
       MemLp (fun x => M.sqrtDensity (θ₀ + t • u) x - M.sqrtDensity θ₀ x) 2 μ := by
     intro t

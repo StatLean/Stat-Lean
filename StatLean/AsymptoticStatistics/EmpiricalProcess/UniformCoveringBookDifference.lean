@@ -22,22 +22,22 @@ theorem exists_minimal_allProbabilityNormalizedL2Cover
     (F : Set (Ω → ℝ))
     (Φ : Ω → ℝ)
     (ε : ℝ)
-    (hΦ : eLpNorm Φ 2 (Q : Measure Ω) ≠ 0)
+    (hΦ : eLpNorm' Φ 2 (Q : Measure Ω) ≠ 0)
     (hN : allProbabilityNormalizedL2CoveringNumber Q F Φ ε ≠ ⊤) :
     ∃ S : Finset (Ω → ℝ),
       (∀ g ∈ S,
         Measurable g ∧ MemLp g 2 (Q : Measure Ω)) ∧
       (∀ f ∈ F, ∃ g ∈ S,
-        eLpNorm (f - g) 2 (Q : Measure Ω) <
-          ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)) ∧
+        eLpNorm' (f - g) 2 (Q : Measure Ω) <
+          ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)) ∧
       (S.card : ℕ∞) =
         allProbabilityNormalizedL2CoveringNumber Q F Φ ε := by
   classical
   let Covers : Finset (Ω → ℝ) → Prop := fun S =>
     (∀ g ∈ S, Measurable g ∧ MemLp g 2 (Q : Measure Ω)) ∧
       ∀ f ∈ F, ∃ g ∈ S,
-        eLpNorm (f - g) 2 (Q : Measure Ω) <
-          ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)
+        eLpNorm' (f - g) 2 (Q : Measure Ω) <
+          ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)
   obtain ⟨S, hS⟩ := ENat.exists_eq_iInf
     (fun S : Finset (Ω → ℝ) => ⨅ (_ : Covers S), (S.card : ℕ∞))
   have hN_eq : allProbabilityNormalizedL2CoveringNumber Q F Φ ε =
@@ -66,15 +66,15 @@ theorem exists_differenceClass_allProbabilityL2Cover
     (hS_center : ∀ g ∈ S,
       Measurable g ∧ MemLp g 2 (Q : Measure Ω))
     (hS_cover : ∀ f ∈ F, ∃ g ∈ S,
-      eLpNorm (f - g) 2 (Q : Measure Ω) <
-        ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)) :
+      eLpNorm' (f - g) 2 (Q : Measure Ω) <
+        ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)) :
     ∃ T : Finset (Ω → ℝ),
       (∀ k ∈ T,
         Measurable k ∧ MemLp k 2 (Q : Measure Ω)) ∧
       (∀ h ∈ differenceClass F, ∃ k ∈ T,
-        eLpNorm (h - k) 2 (Q : Measure Ω) <
+        eLpNorm' (h - k) 2 (Q : Measure Ω) <
           ENNReal.ofReal ε *
-            eLpNorm (fun x => 2 * Φ x) 2
+            eLpNorm' (fun x => 2 * Φ x) 2
               (Q : Measure Ω)) ∧
       (T.card : ℕ∞) ≤ (S.card : ℕ∞) ^ 2 := by
   classical
@@ -98,27 +98,29 @@ theorem exists_differenceClass_allProbabilityL2Cover
       have hgb_meas : AEStronglyMeasurable (g - b) (Q : Measure Ω) :=
         ((hF_meas g hg).sub (hS_center b hbS).1).aestronglyMeasurable
       have htriangle :
-          eLpNorm ((f - g) - centerDiff (a, b)) 2 (Q : Measure Ω) ≤
-            eLpNorm (f - a) 2 (Q : Measure Ω) +
-              eLpNorm (g - b) 2 (Q : Measure Ω) := by
+          eLpNorm' ((f - g) - centerDiff (a, b)) 2 (Q : Measure Ω) ≤
+            eLpNorm' (f - a) 2 (Q : Measure Ω) +
+              eLpNorm' (g - b) 2 (Q : Measure Ω) := by
         rw [show (f - g) - centerDiff (a, b) = (f - a) - (g - b) by
           funext x
           simp [centerDiff]
           ring]
-        exact MeasureTheory.eLpNorm_sub_le hfa_meas hgb_meas (by norm_num)
+        rw [← eLpNorm_two_eq_eLpNorm' (hfa_meas.sub hgb_meas),
+          ← eLpNorm_two_eq_eLpNorm' hfa_meas, ← eLpNorm_two_eq_eLpNorm' hgb_meas]
+        exact MeasureTheory.eLpNorm_sub_le (by norm_num : (1 : ℝ≥0∞) ≤ 2)
       refine lt_of_le_of_lt htriangle ?_
       calc
-        eLpNorm (f - a) 2 (Q : Measure Ω) +
-              eLpNorm (g - b) 2 (Q : Measure Ω) <
-            (ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)) +
-              (ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)) :=
+        eLpNorm' (f - a) 2 (Q : Measure Ω) +
+              eLpNorm' (g - b) 2 (Q : Measure Ω) <
+            (ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)) +
+              (ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)) :=
           ENNReal.add_lt_add hfa hgb
         _ = ENNReal.ofReal ε *
-              eLpNorm (fun x => 2 * Φ x) 2 (Q : Measure Ω) := by
+              eLpNorm' (fun x => 2 * Φ x) 2 (Q : Measure Ω) := by
           rw [show (fun x => 2 * Φ x) = (2 : ℝ) • Φ by
             funext x
             simp]
-          rw [MeasureTheory.eLpNorm_const_smul]
+          rw [MeasureTheory.eLpNorm'_const_smul _ (by norm_num)]
           have htwo : ‖(2 : ℝ)‖ₑ = (2 : ℝ≥0∞) := by
             norm_num [Real.enorm_eq_ofReal_abs]
           rw [htwo]
@@ -145,19 +147,19 @@ theorem allProbabilityNormalizedL2CoveringNumber_differenceClass_le_sq
       (allProbabilityNormalizedL2CoveringNumber Q F Φ ε) ^ 2 := by
   classical
   have hnorm_two :
-      eLpNorm (fun x => 2 * Φ x) 2 (Q : Measure Ω) =
-        (2 : ℝ≥0∞) * eLpNorm Φ 2 (Q : Measure Ω) := by
+      eLpNorm' (fun x => 2 * Φ x) 2 (Q : Measure Ω) =
+        (2 : ℝ≥0∞) * eLpNorm' Φ 2 (Q : Measure Ω) := by
     rw [show (fun x => 2 * Φ x) = (2 : ℝ) • Φ by
       funext x
       simp]
-    rw [MeasureTheory.eLpNorm_const_smul]
+    rw [MeasureTheory.eLpNorm'_const_smul _ (by norm_num)]
     norm_num [Real.enorm_eq_ofReal_abs]
-  by_cases hΦ : eLpNorm Φ 2 (Q : Measure Ω) = 0
-  · have htwoΦ : eLpNorm (fun x => 2 * Φ x) 2 (Q : Measure Ω) = 0 := by
+  by_cases hΦ : eLpNorm' Φ 2 (Q : Measure Ω) = 0
+  · have htwoΦ : eLpNorm' (fun x => 2 * Φ x) 2 (Q : Measure Ω) = 0 := by
       rw [hnorm_two, hΦ]
       simp
     simp [allProbabilityNormalizedL2CoveringNumber, hΦ, htwoΦ]
-  · have htwoΦ : eLpNorm (fun x => 2 * Φ x) 2 (Q : Measure Ω) ≠ 0 := by
+  · have htwoΦ : eLpNorm' (fun x => 2 * Φ x) 2 (Q : Measure Ω) ≠ 0 := by
       rw [hnorm_two]
       simp [hΦ]
     by_cases hN : allProbabilityNormalizedL2CoveringNumber Q F Φ ε = ⊤
@@ -209,7 +211,7 @@ theorem allProbabilityNormalizedL2CoveringNumber_mono_class
     (hFG : F ⊆ G) (Φ : Ω → ℝ) (ε : ℝ) :
     allProbabilityNormalizedL2CoveringNumber Q F Φ ε ≤
       allProbabilityNormalizedL2CoveringNumber Q G Φ ε := by
-  by_cases hΦ : eLpNorm Φ 2 (Q : Measure Ω) = 0
+  by_cases hΦ : eLpNorm' Φ 2 (Q : Measure Ω) = 0
   · simp [allProbabilityNormalizedL2CoveringNumber, hΦ]
   unfold allProbabilityNormalizedL2CoveringNumber
   rw [if_neg hΦ, if_neg hΦ]

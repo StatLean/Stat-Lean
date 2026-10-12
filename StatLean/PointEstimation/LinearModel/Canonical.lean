@@ -122,7 +122,7 @@ theorem measurable_canonicalStat :
       Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => y k) :=
     fun k => (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 (Fin (s + m) → ℝ))
   refine Measurable.prodMk ?_ ?_
-  · exact measurable_pi_lambda _ (fun i => hcoord (Fin.castAdd m i))
+  · exact Measurable.of_eval (fun i => hcoord (Fin.castAdd m i))
   · exact Finset.measurable_sum _ (fun j _ => (hcoord (Fin.natAdd s j)).pow_const 2)
 
 /-- **Product-Gaussian density.** The canonical normal law is the Lebesgue measure on
@@ -375,7 +375,7 @@ private lemma measurable_canonicalShear : Measurable (canonicalShear (s := s)) :
   have hcoord : ∀ k : Fin (s + 1),
       Measurable (fun v : EuclideanSpace ℝ (Fin (s + 1)) => v k) :=
     fun k => (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 (Fin (s + 1) → ℝ))
-  refine Measurable.prodMk (measurable_pi_lambda _ fun i => hcoord (Fin.castSucc i)) ?_
+  refine Measurable.prodMk (Measurable.of_eval fun i => hcoord (Fin.castSucc i)) ?_
   exact (hcoord (Fin.last s)).sub
     (Finset.measurable_sum _ fun i _ => (hcoord (Fin.castSucc i)).pow_const 2)
 
@@ -494,7 +494,7 @@ private instance isProbabilityMeasure_canonicalModel (θ : CanonicalParam s) :
   rw [hmap]
   haveI : IsProbabilityMeasure (canonicalNormal (Fin.append θ.1 (0 : Fin m → ℝ)) θ.2.1) := by
     unfold canonicalNormal; infer_instance
-  exact Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 _).aemeasurable
+  exact (by infer_instance)
 
 /-- **Domination density.** The canonical model is `volume` on the observation space weighted
 by `canonicalDensity`. -/
@@ -570,7 +570,7 @@ theorem canonicalStat_isCompleteStat
     rintro ⟨w, p, rfl⟩; exact ⟨p, rfl⟩
   have htrans := isCompleteFamily_map_comp hcomplete hρ (measurable_canonicalShear (s := s))
   -- Identify the transported family with the model pushed forward by `canonicalStat`.
-  show IsCompleteFamily (fun p => (canonicalModel p).map canonicalStat)
+  simp only [IsCompleteStat, Measure.map₀_of_measurable measurable_canonicalStat]
   have hfun : (fun p : CanonicalParam s => (canonicalModel (m := m) p).map (canonicalStat (m := m)))
       = fun p => (((canonicalExpFamily s m).P (canonicalEta p)).map
           (canonicalExpFamily s m).stat).map canonicalShear := by
@@ -652,13 +652,13 @@ private theorem isUMVU_canonical_of_stat (hm : 0 < m)
     (hunb : IsUnbiased (canonicalModel (s := s) (m := m)) g (fun y => φ (canonicalStat y)))
     (hL2 : MemEstL2 (canonicalModel (s := s) (m := m)) (fun y => φ (canonicalStat y))) :
     IsUMVU (canonicalModel (s := s) (m := m)) g (fun y => φ (canonicalStat y)) := by
-  obtain ⟨Q, hQm, hgraph⟩ := canonicalStat_hasSufficientKernel (s := s) hm
+  obtain ⟨Q, hQm, hgraph⟩ :=
+    (canonicalStat_hasSufficientKernel (s := s) hm).exists_map measurable_canonicalStat
   have hcomplete : IsCompleteStat (canonicalModel (s := s) (m := m)) canonicalStat :=
     canonicalStat_isCompleteStat (s := s) hm
   haveI hstatprob : ∀ θ' : CanonicalParam s,
       IsProbabilityMeasure (statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ') :=
-    fun θ' => Measure.isProbabilityMeasure_map
-      (μ := canonicalModel θ') measurable_canonicalStat.aemeasurable
+    fun θ' => (by rw [statLaw, Measure.map₀_of_measurable measurable_canonicalStat]; infer_instance)
   rw [isUMVU_iff_uncorrelated_unbiasedZero _ g hunb hL2]
   intro U hUz hUL2 θ
   obtain ⟨Û, hÛm, hÛae⟩ := exists_measurableRep hUL2
@@ -706,7 +706,8 @@ private theorem isUMVU_canonical_of_stat (hm : 0 < m)
   have hrbmean : ∀ θ', ∫ t, rbEstimator Q Û t
       ∂(statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ') = 0 := by
     intro θ'
-    rw [statLaw, integral_map measurable_canonicalStat.aemeasurable
+    rw [statLaw, Measure.map₀_of_measurable measurable_canonicalStat,
+      integral_map measurable_canonicalStat.aemeasurable
       hrbmeas.aestronglyMeasurable]
     exact hrbUnb θ'
   have hrbzero : rbEstimator Q Û
@@ -819,13 +820,13 @@ theorem isUMVU_linear_combination
   refine isUMVU_canonical_of_stat hm hφ ?_ ?_
   · intro p
     show ∫ y, ∑ i, lam i * y (Fin.castAdd m i) ∂(canonicalModel p) = ∑ i, lam i * p.1 i
-    rw [integral_finset_sum _
+    rw [integral_finsetSum _
       (fun i _ => ((hcoordMemLp p i).integrable one_le_two).const_mul (lam i))]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_const_mul, hcoordmean p i]
   · intro p
     show MemLp (fun y => ∑ i, lam i * y (Fin.castAdd m i)) 2 (canonicalModel p)
-    exact memLp_finset_sum _ fun i _ => (hcoordMemLp p i).const_mul (lam i)
+    exact memLp_finsetSum _ fun i _ => (hcoordMemLp p i).const_mul (lam i)
 
 /-- The rescaled residual sum of squares `S²/m` (that is, `S²/(n − s)`) is UMVU for the
 variance `σ²`. -/
@@ -875,7 +876,7 @@ theorem isUMVU_residual_variance
         = (m : ℝ) * p.2.1 := by
       show ∫ y : EuclideanSpace ℝ (Fin (s + m)), ∑ j, (y (Fin.natAdd s j)) ^ 2 ∂(canonicalModel p)
         = (m : ℝ) * p.2.1
-      rw [integral_finset_sum _ (fun j _ => hcoordsqint p j),
+      rw [integral_finsetSum _ (fun j _ => hcoordsqint p j),
         Finset.sum_congr rfl (fun j _ => hcoordsqmean p j), Finset.sum_const, Finset.card_univ,
         Fintype.card_fin, nsmul_eq_mul]
     rw [integral_div, hRSS, mul_comm, mul_div_assoc,
@@ -886,7 +887,7 @@ theorem isUMVU_residual_variance
         (canonicalModel p) := by
       show MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => ∑ j, (y (Fin.natAdd s j)) ^ 2) 2
         (canonicalModel p)
-      exact memLp_finset_sum _ fun j _ => canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j)
+      exact memLp_finsetSum _ fun j _ => canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j)
         (f := fun x => x ^ 2) (measurable_id.pow_const 2) (hsqMemLp _ _)
     simpa [div_eq_mul_inv] using hRSSmemLp.mul_const (m : ℝ)⁻¹
 

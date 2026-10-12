@@ -187,7 +187,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
     hδ2.sub (hscoreL2.const_mul c)
   have i1 : Integrable (fun x => (δ x - m) ^ 2) (M.toMeasure μ θ) := hδmL2.integrable_sq
   have i2 : Integrable (fun x => (δ x - m) * score M θ x) (M.toMeasure μ θ) :=
-    memLp_one_iff_integrable.mp (hscoreL2.mul' hδmL2)
+    memLp_one_iff_integrable.mp (hδmL2.mul' hscoreL2)
   have i3 : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := hscoreL2.integrable_sq
   have hEY : ∫ x, (δ x - c * score M θ x) ∂(M.toMeasure μ θ) = m := by
     rw [integral_sub hδ_intP (hscore_intP.const_mul c), integral_const_mul, hmean0P,
@@ -199,7 +199,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
   have hcross : ∫ x, (δ x - m) * score M θ x ∂(M.toMeasure μ θ) = g' := by
     have hsplit : (fun x => (δ x - m) * score M θ x)
         = fun x => δ x * score M θ x - m * score M θ x := by funext x; ring
-    rw [hsplit, integral_sub (memLp_one_iff_integrable.mp (hscoreL2.mul' hδ2))
+    rw [hsplit, integral_sub (memLp_one_iff_integrable.mp (hδ2.mul' hscoreL2))
       (hscore_intP.const_mul m), integral_const_mul, hmean0P, mul_zero, sub_zero, hcovP]
   -- the residual `δ − c·ℓ̇` has zero variance
   have hvarY : variance (fun x => δ x - c * score M θ x) (M.toMeasure μ θ) = 0 := by

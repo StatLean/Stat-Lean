@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import StatLean.HypothesisTesting.MLR.OneSided
 import StatLean.HypothesisTesting.NeymanPearson.Generalized
 
@@ -2128,7 +2129,7 @@ theorem isUMP_twoSided
       simp only [hpdef, ts_real_inner_mul]
     set ν : Measure ℝ := (P θ₁).map E.stat with hνdef
     haveI hνprob : IsProbabilityMeasure ν := by
-      rw [hνdef]; exact Measure.isProbabilityMeasure_map E.stat_meas.aemeasurable
+      rw [hνdef]; exact (by infer_instance)
     set r : ℝ → ℝ := fun t => Real.exp ((ηmap θ₂ - ηmap θ₁) * t
       - (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ₁))) with hrdef
     have hηlt : ηmap θ₁ < ηmap θ₂ := hη hθ
@@ -2157,8 +2158,9 @@ theorem isUMP_twoSided
           = ∫ x, (fun y => ψ y * r y) (E.stat x) * p θ₁ x ∂E.base :=
         integral_congr_ae (Filter.Eventually.of_forall fun x => by
           simp only [hratio x]; ring)
-      rw [hcongr, ← ts_integral_density_eq (hp θ₁), hνdef,
+      erw [hcongr, ← ts_integral_density_eq (hp θ₁), hνdef,
         integral_map E.stat_meas.aemeasurable (hψ.mul hrmeas).aestronglyMeasurable]
+      simp only [Pi.mul_apply]
     -- the ratio is a probability density on the law of the statistic
     have hrone : ∫ t, r t ∂ν = 1 := by
       have h := hpow₂ (fun _ => 1) measurable_const

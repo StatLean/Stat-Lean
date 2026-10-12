@@ -59,8 +59,10 @@ theorem distL2_localScale_mdot_of_differentiableInProbabilityAt
         psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫))
       atTop (𝓝 0) := by
   have hL2 := hdiff.eLpNorm_localScale hm_meas menv hmenv ρ hρ henv h
+  have hraw := tendsto_of_tendsto_of_tendsto_of_le_of_le
+    tendsto_const_nhds hL2 (fun _ => bot_le) (fun _ => eLpNorm'_two_le_eLpNorm)
   unfold EmpiricalProcess.distL2
   exact (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (by
-    simpa only [mdotProbabilityDerivative, innerSL_apply_apply, real_inner_comm] using hL2)
+    simpa only [mdotProbabilityDerivative, innerSL_apply_apply, real_inner_comm] using! hraw)
 
 end AsymptoticStatistics.MEstimator

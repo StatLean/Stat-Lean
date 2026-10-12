@@ -153,7 +153,7 @@ private lemma continuous_fourier_im (t : ℤ) :
 
 private lemma integrable_of_continuous (P : Measure (AddCircle (2 * π))) [IsFiniteMeasure P]
     {F : AddCircle (2 * π) → ℝ} (hF : Continuous F) : Integrable F P := by
-  simpa using (BoundedContinuousFunction.mkOfCompact
+  simpa using! (BoundedContinuousFunction.mkOfCompact
     (⟨F, hF⟩ : C(AddCircle (2 * π), ℝ))).integrable P
 
 /-- `Re(e^{isλ} · conj e^{itλ}) = Re e^{i(s−t)λ}` in coordinates. -/
@@ -440,9 +440,9 @@ private theorem map_tuple_eq_of_acvf [IsProbabilityMeasure μ] {X : ℤ → Ω �
   haveI hgσ : IsGaussian (μ.map fun ω (i : Fin n) => X (σ i) ω) :=
     (hasGaussianLaw_tuple hG σ).isGaussian_map
   have hmτ : Measurable fun ω (i : Fin n) => X (τ i) ω :=
-    measurable_pi_lambda _ fun i => hmeas _
+    Measurable.of_eval fun i => hmeas _
   have hmσ : Measurable fun ω (i : Fin n) => X (σ i) ω :=
-    measurable_pi_lambda _ fun i => hmeas _
+    Measurable.of_eval fun i => hmeas _
   have hIτ : Integrable (fun ω (i : Fin n) => X (τ i) ω) μ := by
     have h := IsGaussian.integrable_id (μ := μ.map fun ω (i : Fin n) => X (τ i) ω)
     rw [integrable_map_measure aestronglyMeasurable_id hmτ.aemeasurable] at h
@@ -487,6 +487,8 @@ theorem IsGaussianProcess.isStrictlyStationary [IsProbabilityMeasure μ]
     (hstat : IsStationary X μ) :
     IsStrictlyStationary X μ := by
   intro n t k
+  rw [Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i + k)),
+    Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i))]
   exact map_tuple_eq_of_acvf hG hmeas hstat (fun i => t i + k) t
     (fun i j => by rw [show t i + k - (t j + k) = t i - t j by ring])
 
@@ -509,7 +511,7 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
     (hYm : ∀ N, AEStronglyMeasurable (Y N) μ) (hZm : AEStronglyMeasurable Z μ)
     (hconv : Tendsto (fun N => eLpNorm (Y N - Z) 2 μ) atTop (𝓝 0)) :
     IsGaussian (μ.map Z) := by
-  haveI : IsProbabilityMeasure (μ.map Z) := Measure.isProbabilityMeasure_map hZm.aemeasurable
+  haveI : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
   -- `L²` membership
   have hYL2 : ∀ N, MemLp (Y N) 2 μ := by
     intro N
@@ -520,17 +522,17 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
   obtain ⟨N₀, hN₀⟩ : ∃ N₀, eLpNorm (Y N₀ - Z) 2 μ < ⊤ := by
     obtain ⟨N₀, hN₀⟩ := (hconv.eventually_lt_const (by norm_num : (0 : ℝ≥0∞) < 1)).exists
     exact ⟨N₀, hN₀.trans_le le_top⟩
-  have hdiff : MemLp (Y N₀ - Z) 2 μ := ⟨(hYm N₀).sub hZm, hN₀⟩
+  have hdiff : MemLp (Y N₀ - Z) 2 μ := hN₀
   have hZL2 : MemLp Z 2 μ := by
     have h := (hYL2 N₀).sub hdiff
     simpa using h
   -- means converge
   have hmean : Tendsto (fun N => ∫ ω, Y N ω ∂μ) atTop (𝓝 (∫ ω, Z ω ∂μ)) := by
-    refine tendsto_integral_of_L1' Z (hZL2.integrable one_le_two)
+    refine tendsto_integral_of_L1' Z
       (Eventually.of_forall fun N => (hYL2 N).integrable one_le_two) ?_
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hconv
-      (fun N => zero_le _) fun N => ?_
-    exact eLpNorm_le_eLpNorm_of_exponent_le one_le_two ((hYm N).sub hZm)
+      (fun N => zero_le) fun N => ?_
+    exact eLpNorm_le_eLpNorm_of_exponent_le one_le_two
   -- second moments converge (continuity of the `L²` norm)
   have hLp : Tendsto (fun N => (hYL2 N).toLp (Y N)) atTop (𝓝 (hZL2.toLp Z)) := by
     rw [tendsto_iff_dist_tendsto_zero]
@@ -551,8 +553,7 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
     exact hsq.sub (hmean.pow 2)
   -- pass to a subsequence along which `Y` converges a.e.
   obtain ⟨ns, hmono, hns⟩ :=
-    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) (fun N => hYm N) hZm
-      hconv).exists_seq_tendsto_ae
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hconv).exists_seq_tendsto_ae
   -- the characteristic functions agree in the limit
   suffices h : μ.map Z = gaussianReal (∫ ω, Z ω ∂μ) Var[Z; μ].toNNReal by
     rw [h]; infer_instance
@@ -633,7 +634,8 @@ private lemma isGaussian_noise_comb [IsProbabilityMeasure μ] {σ2 : ℝ}
     Finset.mem_image_of_mem τ (Finset.mem_univ a)
   have hblock : HasGaussianLaw
       (fun ω (b : {x // x ∈ Finset.image τ Finset.univ}) => ε (b : ℤ) ω) μ := by
-    refine iIndepFun.hasGaussianLaw (fun b => ⟨by rw [hgauss]; infer_instance⟩) ?_
+    refine iIndepFun.hasGaussianLaw (fun b =>
+        ⟨(hε.measurable _).aemeasurable, by rw [hgauss]; infer_instance⟩) ?_
     exact hε.iIndep.precomp Subtype.val_injective
   let G : ({x // x ∈ Finset.image τ Finset.univ} → ℝ) →L[ℝ] ℝ :=
     { toFun := fun v => ∑ a, c a * v ⟨τ a, hmem a⟩
@@ -683,20 +685,21 @@ private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ]
     intro a
     have h0 : Tendsto (fun N =>
         eLpNorm (fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) 2 μ) atTop (𝓝 0) := by
-      refine (hX (τ a)).congr fun N => ?_
+      refine (hX.tendsto_eLpNorm (fun t => (hmX t).aestronglyMeasurable)
+        (fun t => (hmε t).aestronglyMeasurable) (τ a)).congr fun N => ?_
       rw [← eLpNorm_neg]
       exact eLpNorm_congr_ae (Eventually.of_forall fun ω => by simp [gpsum])
     have hc : ∀ N, eLpNorm (fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω)) 2 μ
         = ‖c a‖ₑ * eLpNorm (fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) 2 μ := fun N => by
-      simpa using eLpNorm_const_smul (c := c a)
+      simpa using! eLpNorm_const_smul (c := c a)
         (f := fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) (p := 2) (μ := μ)
     simp only [hc]
     simpa using (ENNReal.Tendsto.const_mul h0 (Or.inr (by simp)))
   have hsum : Tendsto (fun N => ∑ a : A, eLpNorm
       (fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω)) 2 μ) atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum (Finset.univ : Finset A) fun a _ => hterm a
+    simpa using tendsto_finsetSum (Finset.univ : Finset A) fun a _ => hterm a
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-    (fun N => zero_le _) fun N => ?_
+    (fun N => zero_le) fun N => ?_
   have hcongr : ((fun ω => ∑ a, c a * gpsum ψ ε (τ a) N ω) - fun ω => ∑ a, c a * X (τ a) ω)
       = fun ω => ∑ a : A, c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω) := by
     funext ω
@@ -707,8 +710,7 @@ private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ]
       = ∑ a : A, fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω) := by
     funext ω; simp
   rw [hfun]
-  exact eLpNorm_sum_le (fun a _ => (((hmg a N).sub (hmX _)).const_mul _).aestronglyMeasurable)
-    one_le_two
+  exact eLpNorm_sum_le one_le_two
 
 
 
@@ -727,10 +729,11 @@ theorem isGaussianProcess_of_linearProcess [IsProbabilityMeasure μ]
     (hgauss : ∀ t, μ.map (ε t) = gaussianReal 0 1) :
     IsGaussianProcess X μ := by
 
-  refine ⟨fun I => ⟨?_⟩⟩
+  refine ⟨fun I => ⟨?_, ?_⟩⟩
+  · exact (Measurable.of_eval fun b => hmeas _).aemeasurable
   refine isGaussian_of_map_eq_gaussianReal fun L => ?_
   have hVm : Measurable fun ω => (I.restrict (X · ω) : {x // x ∈ I} → ℝ) :=
-    measurable_pi_lambda _ fun b => hmeas _
+    Measurable.of_eval fun b => hmeas _
   obtain ⟨c, hcdef⟩ : ∃ c : {x // x ∈ I} → ℝ,
       ∀ b, c b = L (fun j => if b = j then (1 : ℝ) else 0) := ⟨_, fun _ => rfl⟩
   have hZeq : (⇑L ∘ fun ω => (I.restrict (X · ω) : {x // x ∈ I} → ℝ))
@@ -1302,7 +1305,7 @@ private lemma coeFn_lp_sum {ι : Type*} (s : Finset ι) (f : ι → Lp ℝ 2 μ)
     ((∑ i ∈ s, f i : Lp ℝ 2 μ) : Ω → ℝ) =ᵐ[μ] fun ω => ∑ i ∈ s, (f i : Ω → ℝ) ω := by
   classical
   induction s using Finset.induction with
-  | empty => simpa using Lp.coeFn_zero ℝ 2 μ
+  | empty => simpa using! Lp.coeFn_zero ℝ 2 μ
   | insert a s ha ih =>
     rw [Finset.sum_insert ha]
     filter_upwards [Lp.coeFn_add (f a) (∑ i ∈ s, f i), ih] with ω h1 h2
@@ -1429,10 +1432,11 @@ private lemma isGaussianProcess_of_mem_gspan [IsProbabilityMeasure μ] {X : ℤ 
     (hZm : ∀ i, Measurable (Z i)) :
     IsGaussianProcess Z μ := by
   classical
-  refine ⟨fun I => ⟨?_⟩⟩
+  refine ⟨fun I => ⟨?_, ?_⟩⟩
+  · exact (Measurable.of_eval fun b => hZm _).aemeasurable
   refine isGaussian_of_map_eq_gaussianReal fun L => ?_
   have hVm : Measurable fun ω => (I.restrict (Z · ω) : {i // i ∈ I} → ℝ) :=
-    measurable_pi_lambda _ fun b => hZm _
+    Measurable.of_eval fun b => hZm _
   obtain ⟨c, hcdef⟩ : ∃ c : {i // i ∈ I} → ℝ,
       ∀ b, c b = L (fun j => if b = j then (1 : ℝ) else 0) := ⟨_, fun _ => rfl⟩
   have hZeq : (⇑L ∘ fun ω => (I.restrict (Z · ω) : {i // i ∈ I} → ℝ))

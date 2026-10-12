@@ -99,7 +99,7 @@ private theorem integral_coord (k : Fin N') :
 private theorem continuous_wsum (A : Fin N' → Matrix ι₃ ι₁ ℝ) :
     Continuous fun x : Fin N' → EuclideanSpace ℝ ι₁ =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k) := by
-  refine continuous_finset_sum Finset.univ fun k _ => ?_
+  refine continuous_finsetSum Finset.univ fun k _ => ?_
   exact (matCLM (A k)).continuous.comp (continuous_apply k)
 
 /-- **Mean of a weighted sum of independent coordinates plus a constant** — the `meanVec`
@@ -114,7 +114,7 @@ private theorem meanVec_map_wsum_add (A : Fin N' → Matrix ι₃ ι₁ ℝ) (b 
     (matCLM (A k)).integrable_comp (integrable_coord μs h1 k)
   have hG : Integrable (fun x : Fin N' → EuclideanSpace ℝ ι₁ =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) (Measure.pi μs) :=
-    integrable_finset_sum _ fun k _ => hterm k
+    integrable_finsetSum _ fun k _ => hterm k
   have hcont : Continuous fun x : Fin N' → EuclideanSpace ℝ ι₁ =>
       (∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) + b :=
     (continuous_wsum A).add continuous_const
@@ -126,7 +126,7 @@ private theorem meanVec_map_wsum_add (A : Fin N' → Matrix ι₃ ι₁ ℝ) (b 
           (∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) ∂(Measure.pi μs))
         + ∫ _x : Fin N' → EuclideanSpace ℝ ι₁, b ∂(Measure.pi μs) :=
     integral_add hG (integrable_const b)
-  rw [hsplit, integral_const, integral_finset_sum _ fun k _ => hterm k]
+  rw [hsplit, integral_const, integral_finsetSum _ fun k _ => hterm k]
   simp only [probReal_univ, one_smul]
   congr 1
   refine Finset.sum_congr rfl fun k _ => ?_
@@ -147,11 +147,11 @@ private theorem covMatrix_map_wsum_add (A : Fin N' → Matrix ι₃ ι₁ ℝ) (
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k) := (continuous_wsum A).measurable
   haveI hprob : IsProbabilityMeasure ((Measure.pi μs).map fun x =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) :=
-    Measure.isProbabilityMeasure_map hmeasG.aemeasurable
+    (by infer_instance)
   have hL2ν : MemLp id 2 ((Measure.pi μs).map fun x =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) := by
     rw [memLp_map_measure_iff aestronglyMeasurable_id hmeasG.aemeasurable]
-    simpa [Function.comp_def] using memLp_finset_sum Finset.univ fun k (_ : k ∈ Finset.univ) =>
+    simpa [Function.comp_def] using! memLp_finsetSum Finset.univ fun k (_ : k ∈ Finset.univ) =>
       (matCLM (A k)).comp_memLp' (memLp_coord μs hL2 k)
   have hmap : ((Measure.pi μs).map fun x =>
         (∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) + b)

@@ -651,6 +651,6 @@ theorem convexLinear_zEstimator_efficient_2561_vec
     S_theta T_nuis proj e T Dpsi hPD h_mem h_Dpsi
   refine estimator_semiparametricallyEfficient_of_asympLinear_eif_vec hEIF ?_
   rw [hpsi]
-  simpa only [candidateVecEIF] using hAL
+  simpa only [candidateVecEIF] using! hAL
 
 end AsymptoticStatistics.Efficiency.ConvexLinearEfficiency

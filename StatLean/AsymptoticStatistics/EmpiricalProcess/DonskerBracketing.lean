@@ -129,7 +129,7 @@ private lemma tendsto_meas_le_of_tendsto_integral_zero
     ENNReal.Tendsto.div_const h_int (Or.inr hε_ne)
   rw [ENNReal.zero_div] at h_div
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_div
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_markov)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_markov)
 
 /-- **Envelope extraction from a finite bracketing-entropy integral** (file-local).
 
@@ -168,7 +168,7 @@ private theorem chaining_envelope_from_bracket'
       fun j _ => by positivity
     exact Finset.single_le_sum (f := fun j => |l j x| + |u j x|)
       h_nonneg (Finset.mem_univ i)
-  · refine memLp_finset_sum _ ?_
+  · refine memLp_finsetSum _ ?_
     intro i _
     exact (MemLp.abs (hbracket i).memLp_lower).add
       (MemLp.abs (hbracket i).memLp_upper)
@@ -469,14 +469,19 @@ private lemma asymptoticallyEquicontinuous_of_finite_bracketing_entropy_integral
       have hradius : eLpNorm (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) 2 P
           ≤ ENNReal.ofReal δq := by
         have htoReal_lt : (eLpNorm (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) 2 P).toReal
-            < δq := hclose
+            < δq := by
+          simpa only [distL2_eq_eLpNorm (hs_mem.sub ht_mem).aestronglyMeasurable] using! hclose
         calc eLpNorm (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) 2 P
             = ENNReal.ofReal
                 (eLpNorm (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) 2 P).toReal := by
               rw [ENNReal.ofReal_toReal hne_top]
           _ ≤ ENNReal.ofReal δq := ENNReal.ofReal_le_ofReal htoReal_lt.le
       have hst_in : (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) ∈ G :=
-        mem_localizedDifferenceClass s.2 t.2 hradius
+        mem_localizedDifferenceClass s.2 t.2 (by
+          rw [← eLpNorm_two_eq_eLpNorm'
+            (show AEStronglyMeasurable (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x) P from
+                (hs_mem.sub ht_mem).aestronglyMeasurable)]
+          exact hradius)
       -- `ofReal ε ≤ ofReal |G_n(s−t)| ≤ supNormOver G (G_n) ≤ Maj ξ`.
       have hlin : empiricalProcess P n (fun i : Fin n => X i.val ξ)
             (fun x => (s : Ω → ℝ) x - (t : Ω → ℝ) x)
@@ -643,7 +648,7 @@ theorem isPDonsker_of_finite_bracketing_entropy_integral
                     (s : Ω → ℝ) - empiricalProcess P n
                       (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} ≤ ENNReal.ofReal η
             rw [hEvent, outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
-            exact zero_le _
+            exact zero_le
       _ = ENNReal.ofReal η := limsup_const _
 
 end AsymptoticStatistics.EmpiricalProcess

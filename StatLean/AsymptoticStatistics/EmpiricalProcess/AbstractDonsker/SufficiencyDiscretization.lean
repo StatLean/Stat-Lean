@@ -820,7 +820,7 @@ theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
   set φ := netPhi hG_env hG hF_meas hF_ent m with hφ
   -- `P` is a probability measure (pushforward of `μ` by the measurable `X 0`).
   haveI hP_prob : IsProbabilityMeasure P := by
-    rw [← hX_law]; exact Measure.isProbabilityMeasure_map (hX_meas 0).aemeasurable
+    rw [← hX_law]; exact (by infer_instance)
   -- Each `φ i ∈ F` is `MemLp 2 P`, hence integrable, and measurable.
   have hφ_mem : ∀ i, φ i ∈ F := netPhi_mem hG_env hG hF_meas hF_ent m
   have hφ_meas : ∀ i, Measurable (φ i) := fun i => hF_meas (φ i) (hφ_mem i)
@@ -1000,7 +1000,7 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
       (ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ)) := by
     -- The `ProbabilityMeasure`-valued limit point is `⟨mvg.map Y, _⟩ = ⟨mvg, _⟩`.
     have hlim_eq : (⟨(ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ)).map Y,
-          Measure.isProbabilityMeasure_map hTID.aemeasurable_limit⟩ :
+          (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin _)))
         = ⟨ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ),
             inferInstance⟩ :=
@@ -1402,7 +1402,7 @@ theorem limit_proj_error (f : LinfF F →ᵇ ℝ) :
       have := hf_tendsto.sub (tendsto_const_nhds (x := f z))
       simpa using this
     have := (continuous_abs.tendsto (0 : ℝ)).comp hsub
-    simpa [Φ] using this
+    simpa [Φ] using! this
 
 /-! ### The ε/3 argument
 
@@ -1488,7 +1488,7 @@ theorem outerReadout_le_of_modulus {Ξ D : Type*} [MeasurableSpace Ξ]
           + outerExpectation μ (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ) := by
       have := outerExpectation_add_le (μ := μ) (fun _ => ENNReal.ofReal η)
         (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ)
-      simpa [herr, Pi.add_apply] using this
+      simpa [herr, Pi.add_apply] using! this
     have hconst : outerExpectation μ (fun _ => ENNReal.ofReal η)
         = ENNReal.ofReal η := by rw [outerExpectation_const]; simp
     have hsmul : outerExpectation μ (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ)
@@ -1880,7 +1880,7 @@ theorem empirical_readout_tail_outer
                 ENNReal.ofReal_ne_top
                 ({ξ | ε < ‖𝔾 n ξ - finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ)‖}.indicator
                   (1 : Ξ → ℝ≥0∞))
-              simpa only [Pi.smul_apply, smul_eq_mul] using this
+              simpa only [Pi.smul_apply, smul_eq_mul] using! this
             rw [hcs, hPstar]
             rfl
     -- Take `.toReal` (everything finite: `ofReal`, `Pstar ≤ 1`).
@@ -1963,7 +1963,7 @@ theorem empirical_readout_tail_outer
       atTop (𝓝 (Kr * ε)) := by
     have h0 : Tendsto (fun m => (limsup (fun n => Pstar m n) atTop).toReal) atTop (𝓝 0) := by
       have := (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp hS3'
-      simpa using this
+      simpa using! this
     have hφ0 : φ 0 = Kr * ε := by simp only [hφ, mul_zero, add_zero]
     have := (hφ_cont.tendsto 0).comp h0
     rw [hφ0] at this
@@ -2057,7 +2057,7 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
         f.continuous.aestronglyMeasurable, hLproj, hGP]
     rw [hRproj, ← hmap]
     -- The readout is exactly `Rproj m n`; the limit is the pushforward integral.
-    convert hS2 using 2
+    convert! hS2 using 2
   case _limtail =>
     -- The theorem `limit_proj_error` gives `∫|f(πₘ·) − f·| → 0`, hence
     -- `Lproj m = ∫ f(πₘ·) → ∫ f· = L`.

@@ -162,7 +162,7 @@ private lemma oneDim_brunn_minkowski_compact_le
     linarith
   -- `vol(U ∩ V) ≤ vol{a+b} = 0`.
   have h_inter_zero : volume (U ∩ V) = 0 := by
-    apply le_antisymm _ (zero_le _)
+    apply le_antisymm _ (zero_le)
     calc volume (U ∩ V)
         ≤ volume ({a + b} : Set ℝ) := MeasureTheory.measure_mono h_inter_sub
       _ = 0 := MeasureTheory.measure_singleton (a + b)
@@ -606,7 +606,7 @@ private theorem prekopaLeindler_1d_arithBound
     -- {φ > β} ⊆ {φ > essSup φ}, latter null by `meas_essSup_lt`.
     have h_sub : {x | β < φ x} ⊆ {x | essSup φ volume < φ x} :=
       fun x hx => lt_of_le_of_lt h_essSup_le hx
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc volume {x | β < φ x}
         ≤ volume {x | essSup φ volume < φ x} := MeasureTheory.measure_mono h_sub
       _ = 0 := meas_essSup_lt
@@ -647,7 +647,7 @@ private theorem prekopaLeindler_1d_arithBound
       have hg_null : volG α = 0 := h_null_meas (h_ess_eq.symm.trans hM_def.symm) hαM
       change ENNReal.ofReal t * volF α + ENNReal.ofReal (1 - t) * volG α ≤ volH α
       rw [hf_null, hg_null, mul_zero, mul_zero, zero_add]
-      exact zero_le _
+      exact zero_le
   -- Layer cake.
   rw [lintegral_eq_lintegral_meas_lt_ennreal hf_meas,
       lintegral_eq_lintegral_meas_lt_ennreal hg_meas,
@@ -687,18 +687,18 @@ private theorem prekopaLeindler_1d_essBdd
       rw [MeasureTheory.lintegral_eq_zero_iff hf_meas]
       filter_upwards [ENNReal.ae_le_essSup f] with x hx
       rw [← hMf_def, hMf_zero] at hx
-      exact le_antisymm hx (zero_le _)
+      exact le_antisymm hx (zero_le)
     rw [hf_int_zero, ENNReal.zero_rpow_of_pos ht_pos, zero_mul]
-    exact zero_le _
+    exact zero_le
   -- Symmetric: `essSup g = 0`.
   by_cases hMg_zero : Mg = 0
   · have hg_int_zero : ∫⁻ y, g y = 0 := by
       rw [MeasureTheory.lintegral_eq_zero_iff hg_meas]
       filter_upwards [ENNReal.ae_le_essSup g] with y hy
       rw [← hMg_def, hMg_zero] at hy
-      exact le_antisymm hy (zero_le _)
+      exact le_antisymm hy (zero_le)
     rw [hg_int_zero, ENNReal.zero_rpow_of_pos h1t_pos, mul_zero]
-    exact zero_le _
+    exact zero_le
   -- Main case: `Mf, Mg ∈ (0, ⊤)`. Rescale `f → c•f, h → c^t•h` with
   -- `c := Mg / Mf` (so `essSup (c•f) = c · Mf = Mg`).
   set c : ℝ≥0∞ := Mg / Mf with hc_def

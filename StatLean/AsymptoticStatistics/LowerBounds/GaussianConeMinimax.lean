@@ -88,7 +88,7 @@ theorem gaussianCone_minimax
     exact Filter.eventually_atTop.2 ⟨n, fun k hk => hmono x hk⟩
   have hcont (n : ℕ) : Continuous (ℓn n) := by
     have h := ENNReal.continuous_ofReal.comp (huc n).continuous
-    convert h using 1
+    convert! h using 1
     funext x
     exact (ENNReal.ofReal_toReal (hfinite n x)).symm
   let M : ℝ≥0∞ :=
@@ -227,7 +227,7 @@ theorem gaussianCone_minimax_vec_fullSpan {d : ℕ}
     exact Filter.eventually_atTop.2 ⟨n, fun k hk => hmono x hk⟩
   have hcont (n : ℕ) : Continuous (ℓn n) := by
     have h := ENNReal.continuous_ofReal.comp (huc n).continuous
-    convert h using 1
+    convert! h using 1
     funext x
     exact (ENNReal.ofReal_toReal (hfinite n x)).symm
   let M : ℝ≥0∞ :=

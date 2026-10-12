@@ -132,8 +132,7 @@ theorem pBridge_isProbabilityMeasure :
     IsProbabilityMeasure
       (gpBridgeMeasure hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
   rw [gpBridgeMeasure]
-  exact Measure.isProbabilityMeasure_map
-    (gpPath_aemeasurable hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
+  exact (by infer_instance)
 
 /-- **B2 — Brownian-bridge covariance.** The second mixed moment of the coordinate
 evaluations `z ↦ z f`, `z ↦ z g` under `ν = gpBridgeMeasure` is `P(fg) − Pf·Pg`.
@@ -385,7 +384,7 @@ theorem pBridge_isGaussian_fdd (m : ℕ) (φ : Fin m → ↥F) :
       exact lp.norm_apply_le_norm ENNReal.top_ne_zero (z - w) i
     exact hlip.continuous
   have hR_meas : Measurable (fun z : LinfF F => (fun k => z (φ k))) :=
-    measurable_pi_lambda _ (fun k => (hcont_eval (φ k)).measurable)
+    Measurable.of_eval (fun k => (hcont_eval (φ k)).measurable)
   -- The `gpPath` tuple agrees a.e. with the isonormal tuple over `gpEmbed ∘ φ`.
   have hae : (fun ω => (fun k => gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω (φ k)))
       =ᵐ[iidStdGaussian]
@@ -410,7 +409,7 @@ theorem pBridge_isGaussian_fdd (m : ℕ) (φ : Fin m → ↥F) :
     (isonormal_hasGaussianLaw_tuple (gpBasis ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
       (fun k => gpEmbed ⟨G, hG_env, hG⟩ hF_meas (φ k))).congr hae.symm
   -- The readout law on `gpBridgeMeasure` is the pushforward of the tuple via `map_map`.
-  refine ⟨?_⟩
+  refine ⟨hR_meas.aemeasurable, ?_⟩
   rw [gpBridgeMeasure,
     AEMeasurable.map_map_of_aemeasurable hR_meas.aemeasurable
       (gpPath_aemeasurable hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)]

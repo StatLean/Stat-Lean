@@ -119,7 +119,7 @@ theorem prod_dlDensity_le {a δ : ℝ}
     mul_nonneg (mul_nonneg (by norm_num) ha.le) (Real.rpow_pos_of_pos hδ _).le
   calc ∏ j ∈ S, dlDensity a (θ j)
       ≤ ∏ _j ∈ S, ENNReal.ofReal (17 * a * δ ^ (a - 1)) :=
-        Finset.prod_le_prod' fun j hj => dlDensity_le ha ha' hδ hδ1 (hθ j hj).le
+        Finset.prod_le_prod fun j hj => dlDensity_le ha ha' hδ hδ1 (hθ j hj).le
     _ = (ENNReal.ofReal (17 * a * δ ^ (a - 1))) ^ S.card := by rw [Finset.prod_const]
     _ = ENNReal.ofReal ((17 * a * δ ^ (a - 1)) ^ S.card) := (ENNReal.ofReal_pow hCnn _).symm
 
@@ -176,7 +176,7 @@ theorem prod_dlDensity_ge {a : ℝ}
         Real.exp (-3 * (Fintype.card ι : ℝ) - (7 / 2) * (∑ j, Real.sqrt |θ j|)))
       ≤ ∏ j, dlDensity a (θ j) := by
   refine le_trans (le_of_eq ?_)
-    (Finset.prod_le_prod' fun j _ => dlDensity_ge ha ha' (θ j))
+    (Finset.prod_le_prod fun j _ => dlDensity_ge ha ha' (θ j))
   rw [← ENNReal.ofReal_prod_of_nonneg fun j _ => by positivity]
   congr 1
   rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, ← Real.exp_sum]

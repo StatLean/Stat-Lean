@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.PointEstimation.Model.Defs
 import Mathlib.Algebra.Group.Action.Pretransitive
 import Mathlib.MeasureTheory.Group.Arithmetic
@@ -32,7 +33,7 @@ Def 2.1–2.5`.)
 
 **Proof formalization notes.**
 * The induced parameter action is *data* (a `MulAction G Θ` instance), with the
-  intertwining law `(P θ).map (g • ·) = P (g • θ)` as the constitutive property
+  intertwining law `(P θ).map₀ (g • ·) = P (g • θ)` as the constitutive property
   (`IsInvariantModel`); identifiability makes the induced action unique, which is a
   lemma, not a definition.
 * The location theory is developed concretely (additive translations on `Fin n → ℝ`)
@@ -70,7 +71,13 @@ variable {G Θ 𝓧 D : Type*} [Group G] [MeasurableSpace 𝓧]
 /-- **Invariant model**: the group action on data induces the given action on
 parameters, `(P θ) ∘ g⁻¹ = P (g • θ)`. -/
 def IsInvariantModel (P : Θ → Measure 𝓧) : Prop :=
-  ∀ (g : G) (θ : Θ), (P θ).map (g • ·) = P (g • θ)
+  ∀ (g : G) (θ : Θ), (P θ).map₀ (g • ·) = P (g • θ)
+
+/-- An invariant model uses the ordinary pushforward for a.e. measurable actions. -/
+theorem IsInvariantModel.map_eq {P : Θ → Measure 𝓧} (hP : IsInvariantModel (G := G) P)
+    (g : G) (θ : Θ) (hg : AEMeasurable (g • ·) (P θ)) :
+    (P θ).map (g • ·) = P (g • θ) := by
+  simpa only [Measure.map₀_of_aemeasurable hg] using hP g θ
 
 /-- **Invariant loss**: unchanged under the simultaneous action on parameters and
 decisions. -/

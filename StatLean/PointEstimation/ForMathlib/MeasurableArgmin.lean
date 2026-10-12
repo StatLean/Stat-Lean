@@ -368,17 +368,17 @@ private theorem convex_iInf_le_aux {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ�
         have := (tendsto_const_nhds (x := (1 : ℝ))).sub htw
         simpa using this
       have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp h0
-      simpa using this
+      simpa using! this
     have h2 : Filter.Tendsto (fun x => ENNReal.ofReal (t x)) (𝓝 w) (𝓝 1) := by
       have := (ENNReal.continuous_ofReal.tendsto (1 : ℝ)).comp htw
-      simpa using this
+      simpa using! this
     have hL : Filter.Tendsto (fun x => ENNReal.ofReal (1 - t x) * g r) (𝓝 w) (𝓝 0) := by
       have := ENNReal.Tendsto.mul_const h1 (Or.inr hr.ne)
-      simpa using this
+      simpa using! this
     have hR : Filter.Tendsto (fun x => ENNReal.ofReal (t x) * g w) (𝓝 w) (𝓝 (g w)) := by
       have h := ENNReal.Tendsto.mul_const h2
         (show (1 : ℝ≥0∞) ≠ 0 ∨ g w ≠ ⊤ from Or.inl one_ne_zero)
-      simpa using h
+      simpa using! h
     have := hL.add hR
     simpa [hB] using this
   have hbound : ∀ x ∈ Set.Ioo (min r w) (max r w), g x ≤ B x := by
@@ -407,7 +407,7 @@ private theorem convex_iInf_le_aux {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ�
         Real.coe_toNNReal _ h1t, Real.coe_toNNReal _ h0t, ht]
       field_simp
       ring
-    have hconv := hg.2 (Set.mem_univ r) (Set.mem_univ w) (zero_le α) (zero_le β) hαβ
+    have hconv := hg.2 (Set.mem_univ r) (Set.mem_univ w) (zero_le (a := α)) (zero_le (a := β)) hαβ
     rw [hpt] at hconv
     refine hconv.trans_eq ?_
     simp only [hB, hα, hβ, ENNReal.smul_def, smul_eq_mul]
@@ -523,7 +523,8 @@ points. -/
 private theorem lt_top_of_convex_segment {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ≥0 Set.univ g)
     {a b : ℝ} (ha : g a < ⊤) (hb : g b < ⊤) {u v : ℝ≥0} (huv : u + v = 1) :
     g (u • a + v • b) < ⊤ := by
-  refine lt_of_le_of_lt (hg.2 (Set.mem_univ a) (Set.mem_univ b) (zero_le u) (zero_le v) huv) ?_
+  refine lt_of_le_of_lt (hg.2 (Set.mem_univ a) (Set.mem_univ b) (zero_le (a := u))
+      (zero_le (a := v)) huv) ?_
   rw [ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
   exact ENNReal.add_lt_top.mpr ⟨ENNReal.mul_lt_top ENNReal.coe_lt_top ha,
     ENNReal.mul_lt_top ENNReal.coe_lt_top hb⟩

@@ -300,12 +300,12 @@ private lemma norm_cexp_sub_taylor3_le (y : ℝ) :
       simpa using h
     have h2 : HasDerivAt (fun w : ℝ => I * (↑w : ℂ) ^ 3 / 6) (I * (↑u : ℂ) ^ 2 / 2) u := by
       have h := (((hof u).pow 3).const_mul I).div_const 6
-      convert h using 1
+      convert! h using 1
       push_cast
       ring
     have hbase := ((he u).sub (hasDerivAt_const u (1 : ℂ))).sub (hIu u)
     have h := (hbase.add h1).add h2
-    convert h using 1
+    convert! h using 1
     have hI2 : (I : ℂ) * I = -1 := Complex.I_mul_I
     linear_combination (-(↑u : ℂ)) * hI2
   have hcont3 : Continuous
@@ -387,7 +387,7 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, norm_mul]
     have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
-      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+      rw [norm_prod]; exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) hg'
     have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
       calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
             ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
@@ -681,9 +681,9 @@ private lemma exp_neg_le_quadratic {z : ℝ} (hz : 0 ≤ z) :
     have h1 : HasDerivAt (fun t : ℝ => 1 - t + t ^ 2 / 2) (0 - 1 + 2 * x ^ 1 / 2) x :=
       ((hasDerivAt_const x (1 : ℝ)).sub (hasDerivAt_id x)).add ((hasDerivAt_pow 2 x).div_const 2)
     have h2 : HasDerivAt (fun t : ℝ => Real.exp (-t)) (-Real.exp (-x)) x := by
-      simpa using (Real.hasDerivAt_exp (-x)).comp x (hasDerivAt_neg x)
+      simpa using! (Real.hasDerivAt_exp (-x)).comp x (hasDerivAt_neg x)
     have := h1.sub h2
-    convert this using 1; ring
+    convert! this using 1; ring
   have hdiff : Differentiable ℝ f := fun x => (hderiv x).differentiableAt
   have hmono : Monotone f := monotone_of_deriv_nonneg hdiff fun x => by
     rw [(hderiv x).deriv]; linarith [Real.add_one_le_exp (-x)]
@@ -949,7 +949,7 @@ theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
       ≤ n * ((∫ x, |x| ^ 3 ∂(P.map (X 0))) * |(√n)⁻¹ * t| ^ 3 / 6
         + (v * ((√n)⁻¹ * t) ^ 2 / 2) ^ 2 / 2) := by
   haveI : IsProbabilityMeasure (P.map (X 0)) :=
-    Measure.isProbabilityMeasure_map (hident 0).aemeasurable_fst
+    (by infer_instance)
   rw [charFun_inv_sqrt_mul_sum hindep hident]
   exact norm_charFun_pow_sub_gaussian_le (P.map (X 0)) hv hint1 hint2 hint3 hmean hvar _ n
 
@@ -992,14 +992,14 @@ private lemma norm_cexpGauss (θ u : ℝ) : ‖cexpGauss θ u‖ = Real.exp (-(u
 private lemma hasDerivAt_cexpGauss (θ u : ℝ) :
     HasDerivAt (cexpGauss θ) (cexpGauss θ u * ((θ : ℂ) * I - (u : ℂ))) u := by
   have hbu : HasDerivAt (fun w : ℝ => (w : ℂ)) 1 u := by
-    simpa using Complex.ofRealCLM.hasDerivAt (x := u)
+    simpa using! Complex.ofRealCLM.hasDerivAt (x := u)
   have hg : HasDerivAt (fun w : ℝ => (θ : ℂ) * (w : ℂ) * I - (w : ℂ) ^ 2 / 2)
       ((θ : ℂ) * I - (u : ℂ)) u := by
     have h1 : HasDerivAt (fun w : ℝ => (θ : ℂ) * (w : ℂ) * I) ((θ : ℂ) * I) u := by
-      simpa using (hbu.const_mul ((θ : ℂ))).mul_const I
+      simpa using! (hbu.const_mul ((θ : ℂ))).mul_const I
     have h2 : HasDerivAt (fun w : ℝ => (w : ℂ) ^ 2 / 2) ((u : ℂ)) u := by
       have := (hbu.pow 2).div_const 2
-      convert this using 1
+      convert! this using 1
       ring
     exact h1.sub h2
   unfold cexpGauss
@@ -1122,20 +1122,20 @@ private lemma integral_poly_cexpGauss_deriv_eq_zero (θ : ℝ) (a b c : ℂ) :
         + (a * (u : ℂ) ^ 2 + b * (u : ℂ) + c) * ((θ : ℂ) * I - (u : ℂ))) * cexpGauss θ u) u := by
     intro u
     have hbu : HasDerivAt (fun w : ℝ => (w : ℂ)) 1 u := by
-      simpa using Complex.ofRealCLM.hasDerivAt (x := u)
+      simpa using! Complex.ofRealCLM.hasDerivAt (x := u)
     have hp : HasDerivAt (fun w : ℝ => a * (w : ℂ) ^ 2 + b * (w : ℂ) + c)
         (2 * a * (u : ℂ) + b) u := by
       have h1 : HasDerivAt (fun w : ℝ => a * (w : ℂ) ^ 2) (a * (2 * (u : ℂ))) u := by
         have := (hbu.pow 2).const_mul a
-        convert this using 1
+        convert! this using 1
         ring
       have h2 : HasDerivAt (fun w : ℝ => b * (w : ℂ)) b u := by
         simpa using hbu.const_mul b
       have := (h1.add h2).add_const c
-      convert this using 1
+      convert! this using 1
       ring
     have := hp.mul (hasDerivAt_cexpGauss θ u)
-    convert this using 1
+    convert! this using 1
     ring
   have hInt : Integrable (fun w : ℝ => (a * (w : ℂ) ^ 2 + b * (w : ℂ) + c) * cexpGauss θ w) :=
     (integrable_cubic_cexpGauss θ 0 a b c).congr

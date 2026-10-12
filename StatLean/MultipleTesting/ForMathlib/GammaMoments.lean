@@ -88,9 +88,10 @@ private lemma integrable_pow_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) 
   have hmodel : IntegrableOn (fun x => x ^ (a + (n : ℝ) - 1) * Real.exp (-(r * x)))
       (Ioi (0 : ℝ)) volume := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a + (n : ℝ) - 1) (b := r)
-      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) le_rfl hr
+      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) (by norm_num) hr
     refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
+    change x ^ (a + (n : ℝ) - 1) * Real.exp (-r * x ^ (1 : ℝ)) = _
     rw [Real.rpow_one, neg_mul]
   have hIoi : IntegrableOn (fun x => x ^ n * gammaPDFReal a r x) (Ioi (0 : ℝ)) volume := by
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))

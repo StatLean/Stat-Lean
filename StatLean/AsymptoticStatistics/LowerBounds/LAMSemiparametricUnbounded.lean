@@ -323,7 +323,7 @@ private theorem basis_at_proj_m_pos_unbounded_vec
   have hg_orth : Orthonormal ℝ
       (fun i => ((g_P i : ↥(L2ZeroMean P)) : Lp ℝ 2 P)) := by
     have hb := b.orthonormal
-    simpa [g_P, Function.comp] using
+    simpa [g_P, Function.comp] using!
       ((V m).subtypeₗᵢ.orthonormal_comp_iff).mpr hb
   -- (i) carrier membership of each basis vector.
   have hg_in_car : ∀ l, (g_P l : ↥(L2ZeroMean P)) ∈ T_set.carrier :=
@@ -426,6 +426,7 @@ private theorem basis_at_proj_m_pos_unbounded_vec
       (fun l _ => carrier_sub.smul_mem _ (hg_in_car l))),
     h_cov_sum, h_entry_proj⟩
 
+set_option maxHeartbeats 1000000 in
 /-- **Vector basis-saturation: per-`m` family + `Σ_m → Matrix.gram ℝ IF_eff` convergence.**
 
 Hoists `basis_at_proj_m_pos_unbounded_vec` over all `m` and supplies the
@@ -656,8 +657,9 @@ theorem lam_semiparametric_unbounded
                 - EuclideanSpace.single (0 : Fin 1) (ψ P)))))) :
     LHS_canonical T_set T_n ψ ℓ
       ≥ ∫⁻ u : ℝ, ℓ u
-          ∂(ProbabilityTheory.gaussianReal 0 ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) := by
-  set sigma_sq : ℝ≥0 := ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ with hsigma_sq
+          ∂(ProbabilityTheory.gaussianReal 0
+              (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) := by
+  set sigma_sq : ℝ≥0 := (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) with hsigma_sq
   -- Hoist `proj_seq_to_eif` so the projection sequence `p_m` is in scope.
   obtain ⟨_V, p, _hV_le, _hV_inc, _hV_findim, _hV_span, hV_proj, hp_conv⟩ :=
     ProjSeqToEif.proj_seq_to_eif (P := P) T_set _hEIF.2
@@ -723,7 +725,7 @@ theorem lam_semiparametric_unbounded
   have hBdd_inner : ∀ (M : ℕ) (σ_m_sq : ℝ≥0)
       (_ : (σ_m_sq : ℝ) ≤ ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2)
       (m : ℕ)
-      (_ : σ_m_sq = ⟨‖(p m : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩),
+      (_ : σ_m_sq = (NNReal.mk (‖(p m : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))),
       LHS_canonical T_set T_n ψ (fun u : ℝ => ℓ u ⊓ (M : ℝ≥0∞))
         ≥ ∫⁻ u : ℝ, (ℓ u ⊓ (M : ℝ≥0∞))
             ∂(ProbabilityTheory.gaussianReal 0 σ_m_sq) := by
@@ -807,7 +809,7 @@ theorem lam_semiparametric_unbounded
         (LAMSemiparametricBridge.L_param_of
           (fun u : ℝ => ℓ u ⊓ (M : ℝ≥0∞))) := by
       unfold LAMSemiparametricBridge.L_param_of
-      exact (_hℓ_M_lsc M).comp_continuous <|
+      exact (_hℓ_M_lsc M).comp <|
         (continuous_apply (0 : Fin 1)).comp <|
           PiLp.continuous_ofLp 2 (fun _ : Fin 1 => ℝ)
     -- Derive `hTight` from the canonical `_hTight`.
@@ -929,9 +931,9 @@ theorem lam_semiparametric_unbounded
       LHS_canonical T_set T_n ψ (fun u : ℝ => ℓ u ⊓ (M : ℝ≥0∞))
         ≥ ∫⁻ u : ℝ, (ℓ u ⊓ (M : ℝ≥0∞))
             ∂(ProbabilityTheory.gaussianReal 0
-                ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) := by
+                (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) := by
     intro M
-    set v_inf : ℝ≥0 := ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ with hv_inf_def
+    set v_inf : ℝ≥0 := (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) with hv_inf_def
     set LHS_M : ℝ≥0∞ :=
       LHS_canonical T_set T_n ψ (fun u : ℝ => ℓ u ⊓ (M : ℝ≥0∞)) with hLHS_def
     by_cases h_pos : 0 < v_inf
@@ -949,7 +951,7 @@ theorem lam_semiparametric_unbounded
         have := hp_norm_conv.mul hp_norm_conv
         simpa [sq] using this
       let σ_m_sq : ℕ → ℝ≥0 := fun m =>
-        ⟨‖(p m : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
+        (NNReal.mk (‖(p m : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
       have hσ_conv : Filter.Tendsto (fun m => (σ_m_sq m : ℝ)) atTop
           (𝓝 (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2)) := by
         simpa [σ_m_sq, NNReal.coe_mk] using hp_sq_conv
@@ -1020,7 +1022,7 @@ theorem lam_semiparametric_unbounded
         le_of_tendsto' h_int_conv h_per_m
       simpa [v_inf] using hgoal
     · -- Zero-variance branch.
-      have hv_zero : v_inf = 0 := le_antisymm (not_lt.mp h_pos) (zero_le _)
+      have hv_zero : v_inf = 0 := le_antisymm (not_lt.mp h_pos) (zero_le)
       have h_bess0 : ((0 : ℝ≥0) : ℝ) ≤ ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 := by
         simpa using sq_nonneg ‖(IF_eff : ↥(L2ZeroMean P))‖
       have h_IF_norm_sq_zero : ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 = 0 := by
@@ -1031,7 +1033,7 @@ theorem lam_semiparametric_unbounded
         rw [h_IF_norm_sq_zero] at h_le
         exact le_antisymm h_le (sq_nonneg _)
       have h_σ_eq :
-          (0 : ℝ≥0) = ⟨‖(p 0 : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ := by
+          (0 : ℝ≥0) = (NNReal.mk (‖(p 0 : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) := by
         apply Subtype.ext
         change (0 : ℝ) = ‖(p 0 : ↥(L2ZeroMean P))‖ ^ 2
         exact h_p0_norm_sq_zero.symm
@@ -1278,7 +1280,7 @@ theorem lam_semiparametric_unbounded_vec
     -- second arg: for any lower bound `b` eventually-below the sequence, since
     -- the sequence is eventually ≤ the constant, `b ≤ const`.
     refine Filter.liminf_le_of_le ?_ ?_
-    · exact ⟨0, Filter.Eventually.of_forall (fun _ => zero_le _)⟩
+    · exact ⟨0, Filter.Eventually.of_forall (fun _ => zero_le)⟩
     · intro b hb
       obtain ⟨m, hm⟩ := (hb.and (Filter.eventually_atTop.2 ⟨0, fun m _ => hBdd_inner M m⟩)).exists
       exact le_trans hm.1 hm.2

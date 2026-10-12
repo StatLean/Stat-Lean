@@ -46,13 +46,15 @@ theorem posterior_lintegral_eq_div [StandardBorelSpace Θ] [Nonempty Θ]
     ∀ᵐ x ∂(κ ∘ₘ π),
       ∫⁻ θ, g θ ∂((κ†π) x) = (∫⁻ θ, g θ * p θ x ∂π) / ∫⁻ θ', p θ' x ∂π := by
   filter_upwards [posterior_eq_withDensity_likelihood_div_predictive (π := π) hp hκ] with x hx
-  rw [hx, lintegral_withDensity_eq_lintegral_mul _
+  erw [hx, lintegral_withDensity_eq_lintegral_mul _
     (hp.of_uncurry_right.div measurable_const) hg]
-  have hpt : ∀ θ, ((fun θ => p θ x / ∫⁻ θ', p θ' x ∂π) * g) θ
+  simp only [Pi.mul_apply, Pi.div_apply]
+  have hpt : ∀ θ, (p θ x / ∫⁻ θ', p θ' x ∂π) * g θ
       = (g θ * p θ x) * (∫⁻ θ', p θ' x ∂π)⁻¹ := by
-    intro θ; simp only [Pi.mul_apply, div_eq_mul_inv]; ring
+    intro θ; rw [div_eq_mul_inv]; ring
   simp_rw [hpt]
-  rw [lintegral_mul_const'' _ (hg.mul hp.of_uncurry_right).aemeasurable, ← div_eq_mul_inv]
+  erw [lintegral_mul_const'' _ (hg.mul hp.of_uncurry_right).aemeasurable, ← div_eq_mul_inv]
+  simp only [Pi.mul_apply]
 
 /-- Set form of Robert eq. (1.2.3): `π(s | x) = ∫_s p(·,x) dπ / ∫ p(·,x) dπ` for predictive-a.e.
 `x`. -/

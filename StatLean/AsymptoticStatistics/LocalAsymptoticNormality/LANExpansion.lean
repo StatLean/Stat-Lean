@@ -853,7 +853,7 @@ lemma sum_W_decomp
         - (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, g (X i ω)) 2 P := by
     intro n
     have h_sum_memLp : MemLp (fun ω => ∑ i ∈ Finset.range n, Z n (X i ω)) 2 P :=
-      MeasureTheory.memLp_finset_sum _ (fun i _ => hZnX_memLp n i)
+      MeasureTheory.memLp_finsetSum _ (fun i _ => hZnX_memLp n i)
     exact h_sum_memLp.ae_eq (MeasureTheory.ae_of_all P fun ω => (hY_eq n ω).symm)
   -- Mean limit.
   have h_mean : Filter.Tendsto
@@ -871,17 +871,17 @@ lemma sum_W_decomp
       intro n
       have h_sumW : ∫ ω, ∑ i ∈ Finset.range n, W n (X i ω) ∂P
                   = (n : ℝ) * ∫ x, W n x * p x ∂μ := by
-        rw [MeasureTheory.integral_finset_sum _ (fun i _ => hWnX_int n i)]
+        rw [MeasureTheory.integral_finsetSum _ (fun i _ => hWnX_int n i)]
         simp_rw [hEW n]
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
       have h_sumg : ∫ ω, ∑ i ∈ Finset.range n, g (X i ω) ∂P
                   = (n : ℝ) * ∫ x, g x * p x ∂μ := by
-        rw [MeasureTheory.integral_finset_sum _ (fun i _ => hgX_int i)]
+        rw [MeasureTheory.integral_finsetSum _ (fun i _ => hgX_int i)]
         simp_rw [hEg]
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
       rw [MeasureTheory.integral_sub
-            (MeasureTheory.integrable_finset_sum _ (fun i _ => hWnX_int n i))
-            ((MeasureTheory.integrable_finset_sum _ (fun i _ => hgX_int i)).const_mul _),
+            (MeasureTheory.integrable_finsetSum _ (fun i _ => hWnX_int n i))
+            ((MeasureTheory.integrable_finsetSum _ (fun i _ => hgX_int i)).const_mul _),
           h_sumW, MeasureTheory.integral_const_mul, h_sumg]
       -- Simplify `n·∫W·p - (√n)⁻¹·(n·∫g·p)` to `n·∫W·p - √n·∫g·p`.
       have h_inv_mul : (Real.sqrt n)⁻¹ * ((n : ℝ) * ∫ x, g x * p x ∂μ)
@@ -1472,7 +1472,7 @@ lemma delta_l1_tendsto
         Real.sqrt (∫ x, (Real.sqrt n * auxStatistic M θ₀ h_n n x - ⟪h, ℓ x⟫) ^ 2
                           * M.density θ₀ x ∂μ)) Filter.atTop (𝓝 0) := by
       have := (Real.continuous_sqrt.tendsto 0).comp h_α
-      simpa using this
+      simpa using! this
     have h2 : Filter.Tendsto (fun n : ℕ =>
         Real.sqrt (2 * (∫ x, (Real.sqrt n * auxStatistic M θ₀ h_n n x - ⟪h, ℓ x⟫) ^ 2
                           * M.density θ₀ x ∂μ) + 8 * Pg_sq))
@@ -1483,7 +1483,7 @@ lemma delta_l1_tendsto
           Filter.atTop (𝓝 (2 * 0 + 8 * Pg_sq)) :=
         (h_α.const_mul 2).add_const _
       have := (Real.continuous_sqrt.tendsto (2 * 0 + 8 * Pg_sq)).comp h_lin
-      simpa using this
+      simpa using! this
     have := h1.mul h2
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
@@ -1665,7 +1665,7 @@ lemma sum_W_sq_tendsto_to_Pg_sq
   have hB_int : ∀ n, Integrable
       (fun ω => (∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ)) P := by
     intro n
-    refine (MeasureTheory.integrable_finset_sum _ ?_).div_const _
+    refine (MeasureTheory.integrable_finsetSum _ ?_).div_const _
     intro i _
     exact hΔX_int n i
   -- L¹ bound: `∫ |B_n| dP ≤ ∫ |Δ_n| · p dμ` for `n ≥ 1`.
@@ -1683,7 +1683,7 @@ lemma sum_W_sq_tendsto_to_Pg_sq
       exact Finset.abs_sum_le_sum_abs _ _
     have h_int_abs : Integrable
         (fun ω => ∑ i ∈ Finset.range n, |Δ n (X i ω)|) P :=
-      MeasureTheory.integrable_finset_sum _ (fun i _ => (hΔX_int n i).abs)
+      MeasureTheory.integrable_finsetSum _ (fun i _ => (hΔX_int n i).abs)
     calc ∫ ω, |(∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ)| ∂P
         ≤ ∫ ω, (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, |Δ n (X i ω)| ∂P := by
           refine MeasureTheory.integral_mono_ae (hB_int n).abs ?_
@@ -1692,7 +1692,7 @@ lemma sum_W_sq_tendsto_to_Pg_sq
       _ = (n : ℝ)⁻¹ * ∫ ω, ∑ i ∈ Finset.range n, |Δ n (X i ω)| ∂P := by
           rw [MeasureTheory.integral_const_mul]
       _ = (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, ∫ ω, |Δ n (X i ω)| ∂P := by
-          rw [MeasureTheory.integral_finset_sum _ (fun i _ => (hΔX_int n i).abs)]
+          rw [MeasureTheory.integral_finsetSum _ (fun i _ => (hΔX_int n i).abs)]
       _ = (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, ∫ x, |Δ n x| * p x ∂μ := by
           congr 1
           refine Finset.sum_congr rfl fun i _ => ?_
@@ -1720,17 +1720,17 @@ lemma sum_W_sq_tendsto_to_Pg_sq
           = ENNReal.ofReal
               (∫ ω, |(∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ)| ∂P) := by
       intro n
-      rw [MeasureTheory.eLpNorm_one_eq_lintegral_enorm,
+      rw [MeasureTheory.eLpNorm_one_eq_lintegral_enorm (hB_meas n),
           ← MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm (hB_int n)]
       simp only [Real.norm_eq_abs]
     simp_rw [h_eLpNorm_eq]
     have := (ENNReal.continuous_ofReal.tendsto 0).comp h_integral_B_abs
-    simpa using this
+    simpa using! this
   have hB_tendsto : TendstoInMeasure P
       (fun n ω => (∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ))
       Filter.atTop (fun _ => (0 : ℝ)) := by
     refine MeasureTheory.tendstoInMeasure_of_tendsto_eLpNorm
-      (p := 1) (by norm_num) hB_meas aestronglyMeasurable_const ?_
+      (p := 1) (by norm_num) ?_
     refine hB_eLpNorm.congr fun n => ?_
     congr 1
     funext ω; simp
@@ -1797,7 +1797,7 @@ lemma sum_W_sq_tendsto_to_Pg_sq
     simpa using this
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
     tendsto_const_nhds h_sum_tendsto
-    (Filter.Eventually.of_forall fun n => zero_le _)
+    (Filter.Eventually.of_forall fun n => zero_le)
     (Filter.Eventually.of_forall h_meas_sub)
 
 /-! ## Step 6b — single-index tail of `|W_{n}|` (analytic core)
@@ -2085,7 +2085,7 @@ lemma max_abs_W_tendsto_zero_iid
           rw [hν_expr, h_of_real]
       _ = ENNReal.ofReal ((n : ℝ) * ∫ x in {y | ε < |W n y|}, p x ∂μ) := h_nsmul
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_single_ennreal
-    (Filter.Eventually.of_forall fun _ => zero_le _)
+    (Filter.Eventually.of_forall fun _ => zero_le)
     (Filter.Eventually.of_forall h_bound)
 
 /-! ## Step 5 corollary — pointwise Taylor identity for the log density ratio
@@ -2309,7 +2309,7 @@ theorem LAN_expansion_iii
       simpa using this
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
       tendsto_const_nhds h_sum_tendsto
-      (Filter.Eventually.of_forall fun _ => zero_le _)
+      (Filter.Eventually.of_forall fun _ => zero_le)
       (Filter.Eventually.of_forall fun n => ?_)
     calc P {ω | ε ≤ ‖(∑ i ∈ Finset.range n, W n (X i ω) ^ 2 * R (W n (X i ω))) - 0‖}
         ≤ P ((⋃ i ∈ Finset.range n, {ω | γ / 2 < |W n (X i ω)|})

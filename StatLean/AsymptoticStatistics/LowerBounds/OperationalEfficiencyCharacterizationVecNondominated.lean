@@ -41,7 +41,7 @@ noncomputable def nondominatedPathwiseDifferentiableAt_coordinate
   have hcoord :=
     ((EuclideanSpace.proj i).continuous.tendsto
       (hpd.derivative ⟨g, selected_mem_tangentSpace C g⟩)).comp hvec
-  convert hcoord using 1
+  convert! hcoord using 1
   ext t
   simp [div_eq_mul_inv, mul_comm]
 
@@ -71,6 +71,8 @@ theorem isRegularAtND_coordinate
     (hreg : IsRegularAtNDVec C T_n ψ L) (i : Fin d) :
     IsRegularAtND C (fun n X => T_n n X i) (fun Q => ψ Q i)
       (L.map (fun z => z i)) := by
+  apply (isRegularAtND_iff_map C _ _ _ (fun n => by fun_prop)).mpr
+  have hreg := (isRegularAtNDVec_iff_map C T_n ψ L hT).mp hreg
   intro g
   have hpushed := (hreg g).map (f := fun z => z i)
     (by fun_prop) (by fun_prop)
@@ -87,7 +89,7 @@ theorem isRegularAtND_coordinate
     intro n
     have hvecmeas : Measurable (fun X : Fin n → Ω => Real.sqrt n •
         (T_n n X - ψ ((C.selectedPath g).curve ((Real.sqrt n)⁻¹)))) :=
-      measurable_const.smul ((hT n).sub measurable_const)
+      by fun_prop
     have hcoordmeas : Measurable
         (fun z : EuclideanSpace ℝ (Fin d) => z i) := by fun_prop
     rw [Measure.map_map hcoordmeas hvecmeas]
@@ -134,7 +136,7 @@ theorem asymptoticallyLinearAt_coordinate
     AsymptoticallyLinearAt (fun n X => T_n n X i) P (φ i) (c i) := by
   intro ε hε
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hAL ε hε)
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · refine Filter.Eventually.of_forall (fun n => measure_mono ?_)
     intro X hX
     simp only [Set.mem_setOf_eq] at hX ⊢
@@ -168,7 +170,7 @@ theorem multivariateGaussian_map_inner_eq_gaussianReal
     (φ : Fin d → ↥(L2ZeroMean P)) (u : EuclideanSpace ℝ (Fin d)) :
     (multivariateGaussian 0 (Matrix.gram ℝ φ)).map (fun z => ⟪u, z⟫_ℝ) =
       gaussianReal 0
-        ⟨‖∑ i, (u i) • φ i‖ ^ 2, sq_nonneg _⟩ := by
+        (NNReal.mk (‖∑ i, (u i) • φ i‖ ^ 2) (sq_nonneg _)) := by
   rw [ProbabilityTheory.multivariateGaussian_map_inner_eq_gaussianReal u
     (Matrix.posSemidef_gram ℝ φ)]
   congr 1
@@ -186,7 +188,7 @@ theorem multivariateGaussian_map_inner_eq_gaussianReal
         rw [real_inner_self_eq_norm_sq]
   have hnonneg : 0 ≤ u.ofLp ⬝ᵥ (Matrix.gram ℝ φ).mulVec u.ofLp := by
     simpa using (Matrix.posSemidef_gram ℝ φ).re_dotProduct_nonneg u.ofLp
-  simpa [Real.coe_toNNReal _ hnonneg] using hquad
+  simpa [Real.coe_toNNReal _ hnonneg] using! hquad
 
 private lemma norm_lt_of_forall_coord_lt
     (x : EuclideanSpace ℝ (Fin d)) (ε : ℝ) (hd : 0 < d) (hε : 0 < ε)
@@ -244,7 +246,7 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
         atTop (nhds 0) := fun i => h i _ (div_pos hε hsqrt)
     rw [show (0 : ℝ≥0∞) = ∑ _i : Fin d, (0 : ℝ≥0∞) by simp]
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (tendsto_finset_sum Finset.univ (fun i _ => hcoord i))
+      (tendsto_finsetSum Finset.univ (fun i _ => hcoord i))
     · exact Filter.Eventually.of_forall (fun _ => by simp)
     · refine Filter.Eventually.of_forall (fun n =>
         le_trans (measure_mono ?_) (measure_iUnion_fintype_le _ _))
@@ -277,6 +279,8 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
     (hT : ∀ n, Measurable (T_n n))
     (hreg : IsRegularAtNDVec C T_n ψ L) :
     HasLimitDistributionAtNDVec (P := P) T_n (ψ P) L := by
+  apply (hasLimitDistributionAtNDVec_iff_map T_n (ψ P) L hT).mpr
+  have hreg := (isRegularAtNDVec_iff_map C T_n ψ L hT).mp hreg
   let z : {g : ↥(L2ZeroMean P) // g ∈ C.carrier} := ⟨0, zero_mem C⟩
   let Q : (n : ℕ) → Measure (Fin n → Ω) := fun n =>
     Measure.pi (fun _ : Fin n =>
@@ -291,9 +295,9 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
         (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hFmeas : ∀ n, Measurable (F n) := fun n =>
-    measurable_const.smul ((hT n).sub measurable_const)
+    by fun_prop
   haveI hpushProb : ∀ n, IsProbabilityMeasure ((Q n).map (F n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hFmeas n).aemeasurable
+    (by infer_instance)
   have hlocal : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (F n)) L := by
     simpa only [Q, F] using hreg z
@@ -312,10 +316,10 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
       (fun X => Real.sqrt n • (T_n n X - ψ P))
   have hμmeas : ∀ n, Measurable
       (fun X : Fin n → Ω => Real.sqrt n • (T_n n X - ψ P)) := fun n =>
-    measurable_const.smul ((hT n).sub measurable_const)
+    by fun_prop
   haveI hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
     simp only [μ]
-    exact Measure.isProbabilityMeasure_map (hμmeas n).aemeasurable
+    exact (by infer_instance)
   refine cramerWold_weakConverges_euclidean μ L ?_
   intro u
   let Linner : EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ := innerSL ℝ u
@@ -328,7 +332,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
         have hpushed := (Linner.continuous.tendsto
           (hpd.derivative ⟨g, selected_mem_tangentSpace C g⟩)).comp
             (hpd.derivative_spec g)
-        convert hpushed using 1
+        convert! hpushed using 1
         ext t
         symm
         change Linner (t⁻¹ •
@@ -342,6 +346,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
     Linner.measurable.comp (hT n)
   have hregu : IsRegularAtND C Tu ψu
       (L.map (fun v => ⟪u, v⟫_ℝ)) := by
+    apply (isRegularAtND_iff_map C Tu ψu _ hTu).mpr
     intro g
     have hpushed := (hreg g).map (f := fun v => ⟪u, v⟫_ℝ)
       Linner.continuous Linner.measurable
@@ -360,7 +365,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
       rw [Measure.map_map
         (by fun_prop : Measurable
           (fun v : EuclideanSpace ℝ (Fin d) => ⟪u, v⟫_ℝ))
-        (measurable_const.smul ((hT n).sub measurable_const))]
+        (by fun_prop)]
       congr 1
       funext X
       change ⟪u, Real.sqrt n •
@@ -398,7 +403,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
       (fun n => (Measure.pi (fun _ : Fin n => P)).map
         (fun X => Real.sqrt n * (Tu n X - ψu P))) by
     funext n; exact hmap n]
-  exact hbase
+  exact (hasLimitDistributionAt_iff_map Tu P (ψu P) _ hTu).mp hbase
 
 /-- Vector AL by the EIF implies ND regularity with the possibly singular
 Gram Gaussian law.
@@ -418,6 +423,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
     (hAL : AsymptoticallyLinearAt_vec T_n P φ (ψ P)) :
     IsRegularAtNDVec C T_n ψ
       (multivariateGaussian 0 (Matrix.gram ℝ φ)) := by
+  apply (isRegularAtNDVec_iff_map C T_n ψ _ hT).mpr
   intro g
   let μ : ℕ → Measure (EuclideanSpace ℝ (Fin d)) := fun n =>
     (Measure.pi (fun _ : Fin n =>
@@ -427,14 +433,14 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
   have hμmeas : ∀ n, Measurable (fun X : Fin n → Ω =>
       Real.sqrt n •
         (T_n n X - ψ ((C.selectedPath g).curve ((Real.sqrt n)⁻¹)))) := fun n =>
-    measurable_const.smul ((hT n).sub measurable_const)
+    by fun_prop
   haveI hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
     letI : IsProbabilityMeasure
         ((C.selectedPath g).curve ((Real.sqrt n)⁻¹)) :=
       (C.selectedPath g).curve_isProbability _
         (inv_nonneg.mpr (Real.sqrt_nonneg _))
     simp only [μ]
-    exact Measure.isProbabilityMeasure_map (hμmeas n).aemeasurable
+    exact (by infer_instance)
   refine cramerWold_weakConverges_euclidean μ
     (multivariateGaussian 0 (Matrix.gram ℝ φ)) ?_
   intro u
@@ -449,7 +455,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
         have hpushed := (Linner.continuous.tendsto
           (hpd.derivative ⟨v, selected_mem_tangentSpace C v⟩)).comp
             (hpd.derivative_spec v)
-        convert hpushed using 1
+        convert! hpushed using 1
         ext t
         symm
         change Linner (t⁻¹ •
@@ -598,7 +604,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
     · have hu_pos : 0 < ‖u‖ := lt_of_le_of_ne (norm_nonneg u) (Ne.symm hu)
       apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
         (hAL (ε / ‖u‖) (div_pos hε hu_pos))
-      · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+      · exact Filter.Eventually.of_forall (fun _ => zero_le)
       · refine Filter.Eventually.of_forall (fun n => measure_mono ?_)
         intro X hX
         simp only [Set.mem_setOf_eq] at hX ⊢
@@ -607,8 +613,9 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
             (Real.sqrt n)⁻¹ • (∑ j, tupleEval P φ (X j)))
         apply (div_le_iff₀ hu_pos).2
         exact hX.trans (by simpa only [mul_comm] using hbound)
-  have hscalar := regular_and_gaussian_of_asymptoticallyLinearND
-    C hpdu hEIFu hTu hALu g
+  have hregular := regular_and_gaussian_of_asymptoticallyLinearND
+    C hpdu hEIFu hTu hALu
+  have hscalar := (isRegularAtND_iff_map C Tu ψu _ hTu).mp hregular g
   have hseq : ∀ n,
       (μ n).map (fun v => ⟪u, v⟫_ℝ) =
         (Measure.pi (fun _ : Fin n =>
@@ -634,7 +641,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
             (Tu n X - ψu ((C.selectedPath g).curve
               ((Real.sqrt n)⁻¹))))) by funext n; exact hseq n]
   rw [hlim]
-  simpa only [φu] using hscalar
+  simpa only [φu] using! hscalar
 
 /-- Vector nondominated regularity with the efficient Gram law implies vector
 asymptotic linearity, by the scalar coordinate converse and finite-coordinate
@@ -660,7 +667,7 @@ theorem asymptoticallyLinearAtVec_of_regularVecND
   have hreg_i := isRegularAtND_coordinate C hT hreg i
   have hgauss_i :
       (multivariateGaussian 0 (Matrix.gram ℝ φ)).map (fun z => z i) =
-        gaussianReal 0 ⟨‖φ i‖ ^ 2, sq_nonneg _⟩ := by
+        gaussianReal 0 (NNReal.mk (‖φ i‖ ^ 2) (sq_nonneg _)) := by
     let e : EuclideanSpace ℝ (Fin d) := EuclideanSpace.single i 1
     have hinner : (fun z : EuclideanSpace ℝ (Fin d) => ⟪e, z⟫_ℝ) =
         (fun z => z i) := by

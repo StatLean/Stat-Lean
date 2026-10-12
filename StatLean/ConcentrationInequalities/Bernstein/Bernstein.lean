@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 import Mathlib.Probability.Moments.Basic
 
@@ -385,7 +386,7 @@ theorem bernstein_inequality {n : ℕ} {X : Fin n → Ω → ℝ} {σ2 b : ℝ�
     rw [hX_indep.mgf_sum (t := lam) hX_meas Finset.univ]
     calc ∏ i, mgf (X i) μ lam
         ≤ ∏ _i : Fin n, Real.exp (lam ^ 2 * ((σ2 : ℝ) + (b : ℝ) * t) / 2) :=
-          Finset.prod_le_prod (fun i _ => mgf_nonneg) (fun i _ => per_var_bound i)
+          Finset.prod_le_prod₀ (fun i _ => mgf_nonneg) (fun i _ => per_var_bound i)
       _ = Real.exp (lam ^ 2 * ((σ2 : ℝ) + (b : ℝ) * t) / 2) ^ n := by
           rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
       _ = Real.exp ((n : ℝ) * (lam ^ 2 * ((σ2 : ℝ) + (b : ℝ) * t) / 2)) :=

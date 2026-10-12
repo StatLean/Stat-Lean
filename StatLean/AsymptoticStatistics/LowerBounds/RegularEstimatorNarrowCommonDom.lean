@@ -56,8 +56,10 @@ lemma eLpNorm_sqrt_rnDeriv_mul_eq
     (hνξ : ν ≪ ξ) {h : Ω → ℝ} (hh : Measurable h) :
     eLpNorm (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω) 2 ξ
       = eLpNorm h 2 ν := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
-      eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+      (show AEStronglyMeasurable (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω) ξ from
+        (((Measure.measurable_rnDeriv ν ξ).ennreal_toReal.sqrt).mul hh).aestronglyMeasurable),
+      eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hh.aestronglyMeasurable]
   have h2 : (2 : ℝ≥0∞).toReal = 2 := by norm_num
   rw [h2]
   congr 1
@@ -263,10 +265,10 @@ lemma hellinger_per_sample_residual_isLittleO_common_dom
   -- Eventual `L²(ξ)`-finiteness of both residuals (via the change-of-dominator).
   have h_mem₁ : ∀ᶠ t : ℝ in 𝓝[≠] 0, eLpNorm (R₁ t) 2 ξ ≠ ⊤ := by
     filter_upwards [γ₁.residual_memLp_eventually] with t ht
-    rw [hR₁_def, eLpNorm_qmd_residual_change_dom γ₁ ξ h₁ t]; exact ht.2.ne
+    rw [hR₁_def, eLpNorm_qmd_residual_change_dom γ₁ ξ h₁ t]; exact ht.ne
   have h_mem₂ : ∀ᶠ t : ℝ in 𝓝[≠] 0, eLpNorm (R₂ t) 2 ξ ≠ ⊤ := by
     filter_upwards [γ₂.residual_memLp_eventually] with t ht
-    rw [hR₂_def, eLpNorm_qmd_residual_change_dom γ₂ ξ h₂ t]; exact ht.2.ne
+    rw [hR₂_def, eLpNorm_qmd_residual_change_dom γ₂ ξ h₂ t]; exact ht.ne
   -- Squeeze `0 ≤ (eLpNorm H).toReal/|t| ≤ (eLpNorm R₁).toReal/|t| + (eLpNorm R₂).toReal/|t|`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
     (Filter.Eventually.of_forall (fun t => by positivity)) ?_
@@ -277,7 +279,7 @@ lemma hellinger_per_sample_residual_isLittleO_common_dom
     (qmd_residual_measurable γ₂ ξ t).aestronglyMeasurable
   have h_tri : eLpNorm (H t) 2 ξ ≤ eLpNorm (R₁ t) 2 ξ + eLpNorm (R₂ t) 2 ξ := by
     rw [h_H_eq_sub t]
-    exact eLpNorm_sub_le h_aes₁ h_aes₂ (by norm_num)
+    exact eLpNorm_sub_le (by norm_num)
   have h_toReal_le : (eLpNorm (H t) 2 ξ).toReal
       ≤ (eLpNorm (R₁ t) 2 ξ).toReal + (eLpNorm (R₂ t) 2 ξ).toReal := by
     calc (eLpNorm (H t) 2 ξ).toReal
@@ -343,14 +345,14 @@ theorem hellinger_locality_for_qmdpath_same_score_common_dom
     refine ⟨?_, ?_⟩
     · have h_sqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
         Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-      simpa [ht_def] using h_sqrt.inv_tendsto_atTop
+      simpa [ht_def] using! h_sqrt.inv_tendsto_atTop
     · filter_upwards [Filter.eventually_ge_atTop 1] with n hn
       exact (h_t_pos n hn).ne'
   -- PerSample n / |t n| → 0 (common-dominator per-sample little-o composed with t n → 0).
   have h_per_div : Tendsto (fun n : ℕ => PerSample n / |t n|) atTop (𝓝 (0 : ℝ)) := by
     have h_sub := hellinger_per_sample_residual_isLittleO_common_dom γ₁ γ₂ ξ h₁ h₂ h_score
     have h_comp := h_sub.comp h_t_to_zero
-    convert h_comp using 1
+    convert! h_comp using 1
   -- For n ≥ 1, √n · PerSample n = PerSample n / |t n|.
   have h_id : ∀ n : ℕ, 1 ≤ n → Real.sqrt n * PerSample n = PerSample n / |t n| := by
     intro n hn

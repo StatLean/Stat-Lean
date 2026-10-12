@@ -57,14 +57,14 @@ private lemma tendstoInProbZero_of_norm_le_three {Omega' : ℕ → Type*}
   field_simp [ne_of_gt hc] at hall
   nlinarith [norm_nonneg (A n omega), norm_nonneg (B n omega), norm_nonneg (C n omega)]
 
-private lemma Lp_coeFn_finset_sum {P : Measure Omega} {iota : Type*}
+private lemma Lp_coeFn_finsetSum {P : Measure Omega} {iota : Type*}
     (s : Finset iota) (f : iota → Lp ℝ 2 P) :
     (⇑(∑ k ∈ s, f k) : Omega → ℝ) =ᵐ[P] fun x => ∑ k ∈ s, (f k : Omega → ℝ) x := by
   classical
   induction s using Finset.induction with
   | empty =>
     filter_upwards [Lp.coeFn_zero (E := ℝ) (p := 2) (μ := P)] with x hx
-    simpa only [Finset.sum_empty] using hx
+    simpa only [Finset.sum_empty] using! hx
   | insert a s ha ih =>
     rw [Finset.sum_insert ha]; filter_upwards [Lp.coeFn_add (f a) (∑ k ∈ s, f k), ih] with x h1 h2
     rw [h1, Pi.add_apply, h2, Finset.sum_insert ha]
@@ -80,8 +80,8 @@ private lemma tupleEval_matrix_smul_ae {d : ℕ} {P : Measure Omega} [IsProbabil
     intro j
     rw [show ((∑ k, A j k • phi k : ↥(L2ZeroMean P)) : Lp ℝ 2 P) =
       ∑ k, A j k • (phi k : Lp ℝ 2 P) by simp only
-        [AddSubmonoidClass.coe_finset_sum, Submodule.coe_smul]]
-    refine (Lp_coeFn_finset_sum Finset.univ (fun k => A j k • (phi k : Lp ℝ 2 P))).trans ?_
+        [AddSubmonoidClass.coe_finsetSum, Submodule.coe_smul]]
+    refine (Lp_coeFn_finsetSum Finset.univ (fun k => A j k • (phi k : Lp ℝ 2 P))).trans ?_
     filter_upwards [ae_all_iff.mpr fun k => Lp.coeFn_smul (A j k) (phi k : Lp ℝ 2 P)] with x hx
     exact Finset.sum_congr rfl fun k _ => by simpa only [Pi.smul_apply, smul_eq_mul] using hx k
   filter_upwards [ae_all_iff.mpr hcoord] with x hx
@@ -352,7 +352,7 @@ theorem expansion_of_normalizedExpansion_sqrtN_tight_vec
     exact hK n
   have hR : TendstoInProbZero Pn R := by
     have hp := tendstoInProbZero_of_isBoundedInProb_mul hfactor hnorm
-    convert hp using 1
+    convert! hp using 1
     funext n X
     simp only [R, Delta, smul_smul]
     rw [mul_inv_cancel₀ (by positivity : 1+‖Real.sqrt n • (estimator n X-theta0)‖ ≠ 0), one_smul]
@@ -520,7 +520,7 @@ theorem sqrtN_tight_of_normalizedExpansion_vec
       rfl
     have hSmem : MemLp (fun X : Fin n → Omega => S n X j) 2 (Pn n) := by
       rw [hS_eq]
-      exact (memLp_finset_sum Finset.univ (fun i _ => hgi i)).const_mul _
+      exact (memLp_finsetSum Finset.univ (fun i _ => hgi i)).const_mul _
     have hmean : ∫ x, g x ∂P = 0 := by
       have hker : (score0 j : Lp ℝ 2 P) ∈
           LinearMap.ker (integralL2 P).toLinearMap := (score0 j).2
@@ -542,7 +542,7 @@ theorem sqrtN_tight_of_normalizedExpansion_vec
           hgmem.aestronglyMeasurable]
         exact hmean
       rw [hS_eq]
-      rw [integral_const_mul, integral_finset_sum _
+      rw [integral_const_mul, integral_finsetSum _
         (fun i _ => (hgi i).integrable (by norm_num))]
       simp [heach]
     have hSvar : ProbabilityTheory.variance (fun X : Fin n → Omega => S n X j) (Pn n) = V := by
@@ -658,7 +658,7 @@ theorem sqrtN_tight_of_normalizedExpansion_vec
   have hDpre_meas : ∀ n, Measurable (Dpre n) := by
     intro n
     by_cases hn : n < N
-    · simpa [Dpre, hn, Delta] using
+    · simpa [Dpre, hn, Delta] using!
         ((hEstimator_meas n).sub_const theta0).const_smul (Real.sqrt n)
     · simp [Dpre, hn]
   obtain ⟨M0, hM0⟩ := hDpre0.isBoundedInProb hDpre_meas epsilon hepsilon
@@ -781,7 +781,7 @@ theorem asympLinear_of_normalizedExpansion_2554_vec
     exact hM0 n
   have hB0 : TendstoInProbZero Pn B := by
     have hp := tendstoInProbZero_of_isBoundedInProb_mul hfactor h52
-    convert hp using 1
+    convert! hp using 1
     funext n X
     change B n X = (1 + ‖Delta n X‖) • ((1 + ‖Delta n X‖)⁻¹ • B n X)
     rw [smul_smul, mul_inv_cancel₀ (by positivity : 1 + ‖Delta n X‖ ≠ 0), one_smul]
@@ -811,7 +811,7 @@ theorem asympLinear_of_normalizedExpansion_2554_vec
     simpa only [one_mul, norm_zero, add_zero] using ht
   intro a ha
   rw [← ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Pn n) _)]
-  simpa [Pn, Delta, A] using hA a ha
+  simpa [Pn, Delta, A] using! hA a ha
 
 /-- Native vector vdV Theorem 25.54 for the original corrected moving-bias
 bundle. -/

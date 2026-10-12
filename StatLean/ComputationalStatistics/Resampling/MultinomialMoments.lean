@@ -127,7 +127,7 @@ theorem integral_categoricalCount
       = n * q j := by
   haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
-  rw [integral_finset_sum _ fun i _ => Integrable.of_finite,
+  rw [integral_finsetSum _ fun i _ => Integrable.of_finite,
     Finset.sum_congr rfl fun i _ => integral_coord_ite hq0 hq1 i j 1]
   simp
 

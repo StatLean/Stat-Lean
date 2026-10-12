@@ -61,15 +61,15 @@ noncomputable def QMDPath.coarsenWithMappedSigmaFinite {M : Ω_full → Ω_obs}
     -- σ-finite measure need not be σ-finite), so supplied explicitly.
     [hσ : SigmaFinite ((γ.dominating).map M)] :
     letI : IsProbabilityMeasure (P_full.map M) :=
-      Measure.isProbabilityMeasure_map hM.aemeasurable
+      (by infer_instance)
     QMDPath (P_full.map M) :=
   letI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   { curve := fun t => (γ.curve t).map M
     curve_at_zero := by simp only [γ.curve_at_zero]
     curve_isProbability := fun t => by
       haveI := γ.curve_isProbability t
-      exact Measure.isProbabilityMeasure_map hM.aemeasurable
+      exact (by infer_instance)
     dominating := γ.dominating.map M
     curve_absContinuous := fun t => (γ.curve_absContinuous t).map hM
     -- The explicit `[SigmaFinite (γ.dominating.map M)]` hypothesis is needed because
@@ -97,7 +97,7 @@ noncomputable def QMDPath.coarsen {M : Ω_full → Ω_obs} (hM : Measurable M)
     {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
     (γ : QMDPath P_full) :
     letI : IsProbabilityMeasure (P_full.map M) :=
-      Measure.isProbabilityMeasure_map hM.aemeasurable
+      (by infer_instance)
     QMDPath (P_full.map M) := by
   let γfin := (finiteDominatorRepresentation γ).1
   have hcurve : γfin.curve = γ.curve := (finiteDominatorRepresentation γ).2.1
@@ -108,7 +108,7 @@ noncomputable def QMDPath.coarsen {M : Ω_full → Ω_obs} (hM : Measurable M)
     rw [hdom]
     infer_instance
   letI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
+    (by infer_instance)
   let γmapped := QMDPath.coarsenWithMappedSigmaFinite hM γfin
   exact
     { curve := γmapped.curve

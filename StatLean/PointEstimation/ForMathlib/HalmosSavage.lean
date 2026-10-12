@@ -178,7 +178,7 @@ theorem exists_equivalent_countable_mixture {Θ 𝓧 : Type*} [MeasurableSpace �
         by_cases hxU : x ∈ U
         · exact Or.inl ⟨hxA, hxU⟩
         · exact Or.inr ⟨hxs, hxU⟩
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       calc ν₀ (A ∩ supp θ) ≤ ν₀ ((A ∩ U) ∪ (supp θ \ U)) := measure_mono hsub
         _ ≤ ν₀ (A ∩ U) + ν₀ (supp θ \ U) := measure_union_le _ _
         _ = 0 := by rw [hAU, hmax θ, add_zero]

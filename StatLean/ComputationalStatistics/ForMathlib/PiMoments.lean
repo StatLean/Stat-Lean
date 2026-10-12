@@ -80,7 +80,7 @@ theorem integral_avg_eval_pi [NeZero n]
       = ∫ z, g z ∂P := by
   have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
   rw [integral_const_mul,
-    integral_finset_sum _ fun i _ => integrable_eval_pi i hg]
+    integral_finsetSum _ fun i _ => integrable_eval_pi i hg]
   simp only [integral_eval_pi _ hg, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]
   field_simp
@@ -115,7 +115,7 @@ theorem integral_sq_dev_avg_eval_pi [NeZero n]
   have hgi : Integrable g P := hg.integrable (by norm_num)
   have hmem : MemLp (fun x : Fin n → 𝓧 => ∑ i, g (x i)) 2
       (Measure.pi fun _ : Fin n => P) :=
-    memLp_finset_sum Finset.univ fun i _ => hg.comp_measurePreserving (mp_eval i)
+    memLp_finsetSum Finset.univ fun i _ => hg.comp_measurePreserving (mp_eval i)
   have hae : AEMeasurable (fun x : Fin n → 𝓧 => (n : ℝ)⁻¹ * ∑ i, g (x i))
       (Measure.pi fun _ : Fin n => P) :=
     hmem.aestronglyMeasurable.aemeasurable.const_mul _

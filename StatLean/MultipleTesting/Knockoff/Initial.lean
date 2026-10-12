@@ -419,7 +419,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
             (fun m _ hm => by rw [if_neg (fun h => hm h.symm), mul_zero])
             (fun hc => absurd (Finset.mem_range.mpr (Nat.lt_succ_of_le (hVm_le ω))) hc),
             if_pos rfl, mul_one]
-        rw [hpart, integral_finset_sum _ (fun m _ => by
+        rw [hpart, integral_finsetSum _ (fun m _ => by
           apply Integrable.const_mul
           apply Integrable.mono' (integrable_const (1 : ℝ))
             (Measurable.aestronglyMeasurable (Measurable.ite (hmVm (measurableSet_singleton m))

@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
@@ -242,7 +243,7 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, norm_mul]
     have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
-      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+      rw [norm_prod]; exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) hg'
     have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
       calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
             ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
@@ -303,7 +304,7 @@ private lemma tendsto_prod_charFun_lindeberg
   · have hone : ∀ n i, charFun (P.map (X n i)) 0 = 1 := by
       intro n i
       haveI : IsProbabilityMeasure (P.map (X n i)) :=
-        Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+        (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 1) 0 = 1 := by
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
@@ -567,7 +568,7 @@ private lemma tendsto_prod_charFun_lindeberg
     filter_upwards [hev1, hVarlt, hLinlt] with n hn1 hn2 hn3
     -- telescoping
     have hpm : ∀ i, IsProbabilityMeasure (P.map (X n i)) := fun i =>
-      Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      (by infer_instance)
     have htel := norm_prod_sub_prod_le (𝕜 := ℂ) Finset.univ
       (fun i => charFun (P.map (X n i)) t)
       (fun i => ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ))
@@ -849,7 +850,7 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
           (Eventually.of_forall fun ω => sq_nonneg _) (Eventually.of_forall fun ω hω => ?_)
         -- `{ε < |X n i|} ⊆ {K < |Y i|}`.
         have h1 : ε < |(s n)⁻¹ * w n i| * |Y (↑i : ℕ) ω| := by
-          rw [← abs_mul]; simpa only [hXdef] using hω
+          rw [← abs_mul]; simpa only [hXdef] using! hω
         have h3 : ε < (ε / K) * |Y (↑i : ℕ) ω| :=
           lt_of_lt_of_le h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
         show (K : ℝ) < |Y (↑i : ℕ) ω|
@@ -1024,11 +1025,11 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
   -- the truncated average
   set S : Ω → ℝ := fun ω => (n : ℝ)⁻¹ * ∑ i, Z i ω with hSdef
   have hSmem : MemLp S 2 P :=
-    (memLp_finset_sum (μ := P) (p := 2) Finset.univ fun i _ => hZmem i).const_mul _
+    (memLp_finsetSum (μ := P) (p := 2) Finset.univ fun i _ => hZmem i).const_mul _
   have hSmean : ∫ ω, S ω ∂P = a := by
     have hint : ∀ i : Fin n, Integrable (Z i) P := fun i => (hZmem i).integrable one_le_two
     rw [hSdef]
-    rw [integral_const_mul, integral_finset_sum _ fun i _ => hint i]
+    rw [integral_const_mul, integral_finsetSum _ fun i _ => hint i]
     simp only [hZmean]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       inv_mul_cancel_left₀ hnR.ne']
@@ -1073,7 +1074,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
     fun i => ((hYint i).sub ((hZmem i).integrable one_le_two)).abs
   have hWint : Integrable W P := by
     refine Integrable.const_mul ?_ _
-    exact integrable_finset_sum _ fun i _ => hWterm i
+    exact integrable_finsetSum _ fun i _ => hWterm i
   have hWnn : ∀ ω, 0 ≤ W ω := by
     intro ω
     have : (0 : ℝ) ≤ ∑ i, |Yn i ω - Z i ω| :=
@@ -1087,7 +1088,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
         funext ω; exact wllnTrunc_sub hK _
       rw [h1, ← hlaw i,
         integral_map (hmeas i).aemeasurable (by fun_prop)]
-    rw [hWdef, integral_const_mul, integral_finset_sum _ fun i _ => hWterm i]
+    rw [hWdef, integral_const_mul, integral_finsetSum _ fun i _ => hWterm i]
     simp only [hterm]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       inv_mul_cancel_left₀ hnR.ne']

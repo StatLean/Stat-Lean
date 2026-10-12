@@ -85,7 +85,7 @@ theorem proj_seq_to_eif
     have := h_mem
     -- `tangentSpace T = (span … T.carrier).topologicalClosure`, whose underlying set
     -- equals `closure (span …)` by `Submodule.topologicalClosure_coe`.
-    simpa [tangentSpace, Submodule.topologicalClosure_coe] using this
+    simpa [tangentSpace, Submodule.topologicalClosure_coe] using! this
   -- Step 1: pick approximations `a m ∈ span (T_set.carrier)` with `‖IF_eff - a m‖ < 1/(m+1)`.
   have h_approx : ∀ m : ℕ, ∃ a : ↥(L2ZeroMean P),
       a ∈ (Submodule.span ℝ T_set.carrier : Submodule ℝ ↥(L2ZeroMean P)) ∧

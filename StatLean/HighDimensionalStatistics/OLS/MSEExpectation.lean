@@ -105,7 +105,7 @@ private lemma hasSubgaussianMGF_integral_sq_le
       filter_upwards [hX0] with ω hω; simp [hω]
     rw [integral_congr_ae hsq0, integral_zero]; simp
   · -- σ2 > 0.
-    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le σ2) (Ne.symm hσ)
+    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le (a := σ2)) (Ne.symm hσ)
     have hσR : (0 : ℝ) < (σ2 : ℝ) := NNReal.coe_pos.mpr hσpos
     -- Key per-`t` bound from the cosh expansion of the MGF.
     have hkey : ∀ t : ℝ, t ≠ 0 →
@@ -358,7 +358,7 @@ theorem mse_ols_expectation_le
     -- proxy equality:  σ2 = ∑ i, ⟨(e i)², _⟩ * σ2
     apply NNReal.coe_injective
     rw [NNReal.coe_sum]
-    simp only [NNReal.coe_mul, NNReal.coe_mk]
+    change (σ2 : ℝ) = ∑ i, (e i) ^ 2 * (σ2 : ℝ)
     rw [← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq e, he_norm]
     simp
   -- Step 6: Variance bound ⟹ E[⟪e_k, ε⟫²] ≤ σ2 (mean-0 is implied by `HasSubgaussianMGF`).
@@ -379,7 +379,7 @@ theorem mse_ols_expectation_le
             ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ ^ 2
           from funext h_pointwise,
         integral_const_mul,
-        integral_finset_sum Finset.univ (fun k _ => hint_inner_sq k)]
+        integral_finsetSum Finset.univ (fun k _ => hint_inner_sq k)]
     apply mul_le_mul_of_nonneg_left _ (by positivity)
     calc ∑ k : Fin r, ∫ ω, ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ ^ 2 ∂μ
         ≤ ∑ _k : Fin r, (σ2 : ℝ) := Finset.sum_le_sum (fun k _ => hE_sq k)

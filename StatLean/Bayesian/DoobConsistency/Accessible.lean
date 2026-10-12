@@ -140,7 +140,7 @@ theorem exists_measurable_retraction [StandardBorelSpace Θ] [Nonempty Θ]
   -- the moment map `θ ↦ (K θ (Aₘ))ₘ`, measurable and injective by identifiability
   set F : Θ → (ℕ → ℝ) := fun θ m => (K θ (A m)).toReal with hF
   have hFmeas : Measurable F :=
-    measurable_pi_lambda _ fun m => (K.measurable_coe (hAmeas m)).ennreal_toReal
+    Measurable.of_eval fun m => (K.measurable_coe (hAmeas m)).ennreal_toReal
   have hFinj : Function.Injective F := by
     intro θ θ' h
     refine hK_inj (hAdet (K θ) (K θ') inferInstance inferInstance fun m => ?_)
@@ -154,7 +154,7 @@ theorem exists_measurable_retraction [StandardBorelSpace Θ] [Nonempty Θ]
     limsup (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, (A m).indicator 1 (ω i)) atTop
     with hE
   have hEmeas : Measurable E := by
-    refine measurable_pi_lambda _ fun m => Measurable.limsup fun n => ?_
+    refine Measurable.of_eval fun m => Measurable.limsup fun n => ?_
     exact measurable_const.mul (Finset.measurable_sum _ fun i _ =>
       (measurable_one.indicator (hAmeas m)).comp (measurable_pi_apply i))
   refine ⟨Finv ∘ E, hFinvmeas.comp hEmeas, ?_⟩

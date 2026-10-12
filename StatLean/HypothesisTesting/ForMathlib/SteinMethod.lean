@@ -172,7 +172,7 @@ theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
   have hexp : HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (w * Real.exp (w ^ 2 / 2)) w := by
     have hq : HasDerivAt (fun u : ℝ => u ^ 2 / 2) w w := by
       have h0 := (hasDerivAt_pow 2 w).div_const 2
-      convert h0 using 1
+      convert! h0 using 1
       push_cast
       ring
     have he := hq.exp
@@ -185,7 +185,7 @@ theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
   have hfun : steinSolution h = fun u : ℝ => Real.exp (u ^ 2 / 2) *
       ∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) := rfl
   rw [hfun]
-  convert hmul using 1
+  convert! hmul using 1
   linear_combination (stdGaussianExpect h - h w) * hee
 
 /-- **The Stein equation.** The derivative of the Stein solution minus `w` times the solution
@@ -211,11 +211,11 @@ theorem hasDerivAt_exp_neg_sq_half (x : ℝ) :
     HasDerivAt (fun u : ℝ => Real.exp (-u ^ 2 / 2)) (-x * Real.exp (-x ^ 2 / 2)) x := by
   have hq : HasDerivAt (fun u : ℝ => -u ^ 2 / 2) (-x) x := by
     have h0 := ((hasDerivAt_pow 2 x).neg).div_const 2
-    convert h0 using 1
+    convert! h0 using 1
     push_cast
     ring
   have h1 := hq.exp
-  convert h1 using 1
+  convert! h1 using 1
   ring
 
 /-- The Gaussian kernel vanishes at `+∞`. -/
@@ -261,7 +261,7 @@ theorem integral_Ioi_id_mul_exp_neg_sq_half (w : ℝ) :
   have h := integral_Ioi_of_hasDerivAt_of_tendsto'
     (f := fun u : ℝ => -Real.exp (-u ^ 2 / 2))
     (f' := fun u : ℝ => u * Real.exp (-u ^ 2 / 2)) (a := w)
-    (fun x _ => by simpa using (hasDerivAt_exp_neg_sq_half x).neg)
+    (fun x _ => by simpa using! (hasDerivAt_exp_neg_sq_half x).neg)
     integrable_id_mul_exp_neg_sq_half.integrableOn hlim
   simpa using h
 
@@ -273,7 +273,7 @@ theorem integral_Iic_id_mul_exp_neg_sq_half (w : ℝ) :
   have h := integral_Iic_of_hasDerivAt_of_tendsto'
     (f := fun u : ℝ => -Real.exp (-u ^ 2 / 2))
     (f' := fun u : ℝ => u * Real.exp (-u ^ 2 / 2)) (a := w)
-    (fun x _ => by simpa using (hasDerivAt_exp_neg_sq_half x).neg)
+    (fun x _ => by simpa using! (hasDerivAt_exp_neg_sq_half x).neg)
     integrable_id_mul_exp_neg_sq_half.integrableOn hlim
   simpa using h
 
@@ -295,7 +295,7 @@ private lemma hasDerivAt_mills {x : ℝ} (hx : x ≠ 0) :
     HasDerivAt (fun u : ℝ => -(Real.exp (-u ^ 2 / 2) / u))
       (Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)) x := by
   have hd := ((hasDerivAt_exp_neg_sq_half x).div (hasDerivAt_id' x) hx).neg
-  convert hd using 1
+  convert! hd using 1
   field_simp
   ring
 
@@ -658,7 +658,7 @@ theorem abs_gaussTail_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
       (fun v => by
         have h1 := ((hasDerivAt_exp_neg_sq_half v).const_mul L).add
           (hasDerivAt_gaussTail hh hC v)
-        convert h1 using 1
+        convert! h1 using 1
         ring)
       (fun _ => rfl)
       (fun s t hst => by
@@ -670,7 +670,6 @@ theorem abs_gaussTail_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
         linarith [this.1])
       (by simpa using (hEnat'.const_mul L).add hlimBot)
       (by simpa using (hEnat.const_mul L).add hlimTop) w
-    simp only at hpsi
     linarith
   · -- `L e^{-w²/2} - u(w) ≥ 0`
     have hpsi := nonneg_of_deriv_neg_mul_monotone
@@ -682,7 +681,7 @@ theorem abs_gaussTail_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
       (fun v => by
         have h1 := ((hasDerivAt_exp_neg_sq_half v).const_mul L).sub
           (hasDerivAt_gaussTail hh hC v)
-        convert h1 using 1
+        convert! h1 using 1
         ring)
       (fun _ => rfl)
       (fun s t hst => by
@@ -694,7 +693,6 @@ theorem abs_gaussTail_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
         linarith [this.2])
       (by simpa using (hEnat'.const_mul L).sub hlimBot)
       (by simpa using (hEnat.const_mul L).sub hlimTop) w
-    simp only at hpsi
     linarith
 
 /-- **Sup-norm bound on the Stein solution.** For an `L`-Lipschitz test function `h`,
@@ -917,12 +915,12 @@ private lemma abs_sub_le_of_abs_deriv_le {F F' : ℝ → ℝ} (hF : ∀ u, HasDe
   have hg1 : ∀ u : ℝ, HasDerivAt (fun v : ℝ => M * v - F v) (M - F' u) u := by
     intro u
     have hu := ((hasDerivAt_id' u).const_mul M).sub (hF u)
-    convert hu using 1
+    convert! hu using 1
     ring
   have hg2 : ∀ u : ℝ, HasDerivAt (fun v : ℝ => M * v + F v) (M + F' u) u := by
     intro u
     have hu := ((hasDerivAt_id' u).const_mul M).add (hF u)
-    convert hu using 1
+    convert! hu using 1
     ring
   have hmono1 : Monotone fun v : ℝ => M * v - F v :=
     monotone_of_deriv_nonneg (fun u => (hg1 u).differentiableAt) fun u => by
@@ -965,7 +963,7 @@ theorem lipschitz_deriv_steinSolution {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     have hd := hasDerivAt_steinSolution hh hC u
     have hmul := (hasDerivAt_id' u).mul hd
     rw [hd.deriv]
-    convert hmul using 1
+    convert! hmul using 1
     ring
   have hbound : ∀ u : ℝ, |steinSolution h u + u * deriv (steinSolution h) u| ≤ 4 * L := by
     intro u
@@ -1019,11 +1017,11 @@ private lemma sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt 
       simpa using ((hasDerivAt_id u).sub_const x).mul_const (f' x)
     have h3 : HasDerivAt (fun v : ℝ => M * (v - x) ^ 2 / 2) (M * (u - x)) u := by
       have hp : HasDerivAt (fun v : ℝ => (v - x) ^ 2) (2 * (u - x)) u := by
-        simpa using ((hasDerivAt_id u).sub_const x).pow 2
+        simpa using! ((hasDerivAt_id u).sub_const x).pow 2
       have := (hp.const_mul M).div_const 2
-      convert this using 1
+      convert! this using 1
       ring
-    simpa using (h1.sub h2).sub h3
+    simpa using! (h1.sub h2).sub h3
   have hFdiff : Differentiable ℝ F := fun u => (hFd u).differentiableAt
   have hderiv : ∀ u, deriv F u = f' u - f' x - M * (u - x) := fun u => (hFd u).deriv
   have hFx : F x = 0 := by simp [hFdef]
@@ -1038,7 +1036,7 @@ private lemma sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt 
         rw [abs_of_nonneg hux] at hb
         have := (le_abs_self (f' u - f' x)).trans hb
         rw [hderiv u]; linarith
-      have := hanti left_mem_Ici (mem_Ici.2 hxy) hxy
+      have := hanti self_mem_Ici (mem_Ici.2 hxy) hxy
       linarith [hFx]
     · have hmono : MonotoneOn F (Iic x) := by
         refine monotoneOn_of_deriv_nonneg (convex_Iic x) hFdiff.continuous.continuousOn
@@ -1049,7 +1047,7 @@ private lemma sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt 
         rw [abs_of_nonneg hux] at hb
         have := (le_abs_self (f' x - f' u)).trans hb
         rw [hderiv u]; linarith
-      have := hmono (mem_Iic.2 hxy) right_mem_Iic hxy
+      have := hmono (mem_Iic.2 hxy) self_mem_Iic hxy
       linarith [hFx]
   simp only [hFdef] at hFy
   linarith
@@ -1063,7 +1061,6 @@ theorem abs_sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt f 
   have hdn := sub_sub_mul_deriv_le (f := fun u => -f u) (f' := fun u => -f' u)
     (fun u => (hf u).neg)
     (fun u v => by rw [show -f' u - -f' v = -(f' u - f' v) by ring, abs_neg]; exact hlip u v) x y
-  simp only at hup hdn
   rw [abs_le]
   exact ⟨by linarith, by linarith⟩
 

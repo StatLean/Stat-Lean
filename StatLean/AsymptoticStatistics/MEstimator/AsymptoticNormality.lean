@@ -1068,7 +1068,7 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
       simp only [empiricalProcess, empiricalAvg]
       refine measurable_const.mul (Measurable.sub (measurable_const.mul ?_) measurable_const)
       exact Finset.measurable_sum _ (fun i _ => (hmdot_meas j).comp (hX_meas i.val))
-    simpa only [G] using
+    simpa only [G] using!
       (MeasurableEquiv.toLp 2 (Fin d → ℝ)).measurable.comp (measurable_pi_iff.mpr hcoord)
   haveI : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))

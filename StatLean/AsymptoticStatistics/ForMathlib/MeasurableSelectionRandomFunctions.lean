@@ -269,17 +269,17 @@ theorem vw_random_function_lp_locus_measurable
       {ξ | MemLp (fhat ξ) 2 P} = ψ ⁻¹' {a : ℝ≥0∞ | a < ∞} := by
     ext ξ
     simp only [Set.mem_setOf_eq, Set.mem_preimage, ψ]
-    refine ⟨fun hξ => ?_, fun hξ => ⟨h_ae_sm ξ, ?_⟩⟩
+    refine ⟨fun hξ => ?_, fun hξ => ?_⟩
     · have h_sq := eLpNorm_nnreal_pow_eq_lintegral (f := fhat ξ) (μ := P)
-        (p := (2 : ℝ≥0)) (by norm_num)
+        (p := (2 : ℝ≥0)) (by norm_num) (h_ae_sm ξ)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
       rw [← h_sq]
-      exact ENNReal.rpow_lt_top_of_nonneg (by norm_num : (0 : ℝ) ≤ 2) hξ.2.ne
+      exact ENNReal.rpow_lt_top_of_nonneg (by norm_num : (0 : ℝ) ≤ 2) hξ.ne
     · -- Goal: eLpNorm (fhat ξ) 2 P < ⊤
       have h_sq := eLpNorm_nnreal_pow_eq_lintegral (f := fhat ξ) (μ := P)
-        (p := (2 : ℝ≥0)) (by norm_num)
+        (p := (2 : ℝ≥0)) (by norm_num) (h_ae_sm ξ)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
@@ -425,6 +425,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       -- Relate `eLpNorm (fhat ξ - ⇑g) 2 P` to `(ψ ξ)^(1/2)`.
       have h_sq := eLpNorm_nnreal_pow_eq_lintegral
         (f := fhat ξ - ⇑g) (μ := P) (p := (2 : ℝ≥0)) (by norm_num)
+        (hξ.aestronglyMeasurable.sub (Lp.memLp g).aestronglyMeasurable)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
@@ -562,7 +563,7 @@ theorem vw_function_class_l2_image_closed
     -- Translate via toReal and the helper.
     have h_sub_lp : MemLp (⇑(gn n) - ⇑g) 2 P :=
       (Lp.memLp (gn n)).sub hg_lp
-    have h_eLpNorm_lt_top : eLpNorm (⇑(gn n) - ⇑g) 2 P < ⊤ := h_sub_lp.2
+    have h_eLpNorm_lt_top : eLpNorm (⇑(gn n) - ⇑g) 2 P < ⊤ := h_sub_lp
     have h_toReal_lt : (eLpNorm (⇑(gn n) - ⇑g) 2 P).toReal < Real.sqrt ε := by
       rw [← ENNReal.toReal_ofReal (Real.sqrt_nonneg ε)]
       exact (ENNReal.toReal_lt_toReal h_eLpNorm_lt_top.ne ENNReal.ofReal_ne_top).mpr hn

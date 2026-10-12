@@ -74,7 +74,7 @@ private theorem eq_comp_statLaw_of_graph {P : Θ → Measure 𝓧} {T : 𝓧 →
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = statLaw P T θ ⊗ₘ Q) (θ : Θ) :
     P θ = Q ∘ₘ statLaw P T θ := by
   have hst : IsProbabilityMeasure (statLaw P T θ) := by
-    rw [statLaw]; exact Measure.isProbabilityMeasure_map hTm.aemeasurable
+    rw [statLaw_eq_map P T θ hTm.aemeasurable]; infer_instance
   have hgm : Measurable fun x => (T x, x) := by fun_prop
   have h := congrArg Measure.snd (hgraph θ)
   rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd hgm] at h
@@ -94,7 +94,7 @@ theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 
     [∀ θ, IsProbabilityMeasure (P θ)] :
     Identifiable (pushforward P T) ↔ Identifiable P := by
   refine ⟨identifiable_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  obtain ⟨Q, _, hgraph⟩ := hT
+  obtain ⟨Q, _, hgraph⟩ := hT.exists_map hTm
   have hst : statLaw P T θ₁ = statLaw P T θ₂ := hEq
   exact hP (by rw [eq_comp_statLaw_of_graph hTm hgraph θ₁,
     eq_comp_statLaw_of_graph hTm hgraph θ₂, hst])
@@ -110,7 +110,7 @@ theorem identifiesTarget_pushforward_iff_of_hasSufficientKernel {Γ : Type*}
     [∀ θ, IsProbabilityMeasure (P θ)] :
     IdentifiesTarget (pushforward P T) ψ ↔ IdentifiesTarget P ψ := by
   refine ⟨identifiesTarget_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  obtain ⟨Q, _, hgraph⟩ := hT
+  obtain ⟨Q, _, hgraph⟩ := hT.exists_map hTm
   have hst : statLaw P T θ₁ = statLaw P T θ₂ := hEq
   exact hP (by rw [eq_comp_statLaw_of_graph hTm hgraph θ₁,
     eq_comp_statLaw_of_graph hTm hgraph θ₂, hst])

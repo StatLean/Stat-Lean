@@ -173,7 +173,7 @@ lemma subGaussianIncrements_inner_signVec {n : ℕ}
     simpa [hσ2] using h
   -- the increment is mean-zero
   have hmean : ∫ e, (∑ i, Y i e) ∂(signVec n) = 0 := by
-    rw [MeasureTheory.integral_finset_sum _ (fun i _ => hY_int i)]
+    rw [MeasureTheory.integral_finsetSum _ (fun i _ => hY_int i)]
     simp [hmean_i]
   -- package as `IsSubGaussian`
   have hSG : IsSubGaussian (fun e => ∑ i, Y i e) σ2 (signVec n) := by

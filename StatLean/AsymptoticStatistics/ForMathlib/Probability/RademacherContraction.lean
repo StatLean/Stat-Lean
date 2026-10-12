@@ -48,7 +48,7 @@ theorem measurePreserving_rademacherCoordinateFlip
   intro j
   by_cases hj : j = k
   · simpa [hj] using measurePreserving_bool_not_rademacher
-  · simpa [hj] using MeasurePreserving.id rademacherMeasure
+  · simpa [hj] using! MeasurePreserving.id rademacherMeasure
 
 theorem measurePreserving_rademacherFlipAll {n : ℕ} :
     MeasurePreserving rademacherFlipAll (rademacherCube n) (rademacherCube n) := by

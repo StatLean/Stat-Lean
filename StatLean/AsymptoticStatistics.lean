@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorable
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorableVec
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.OneStep

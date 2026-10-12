@@ -148,7 +148,7 @@ private noncomputable def tarObj {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d 
 
 private lemma tarObj_continuous {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
     Continuous (tarObj x A d P) :=
-  continuous_finset_sum _ fun t _ => ((continuous_const.sub (continuous_apply t)).pow 2)
+  continuous_finsetSum _ fun t _ => ((continuous_const.sub (continuous_apply t)).pow 2)
 
 private lemma tarObj_nonneg {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ)
     (w : Fin T → ℝ) : 0 ≤ tarObj x A d P w :=
@@ -306,22 +306,24 @@ private lemma wnMeasure_shift (k : ℤ) :
   unfold wnMeasure
   have h := Measure.infinitePi_map_piCongrLeft (X := fun _ : ℤ => ℝ)
     (μ := fun _ : ℤ => gaussianReal 0 1) (Equiv.addRight (-k))
-  convert h using 2
+  convert! h using 2
   funext ω s
   rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
   simp
 
 private lemma wn_strictlyStationary : IsStrictlyStationary wnCoord wnMeasure := by
   intro n t k
+  change wnMeasure.map₀ (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i + k)) =
+    wnMeasure.map₀ (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i))
   have hshift : Measurable (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
-    measurable_pi_lambda _ fun s => measurable_pi_apply _
+    Measurable.of_eval fun s => measurable_pi_apply _
   have htup : Measurable (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i)) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply _
-  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => wnCoord (t i + k) ω)
+    Measurable.of_eval fun i => measurable_pi_apply _
+  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i + k))
       = (fun (ω' : ℤ → ℝ) (i : Fin n) => ω' (t i)) ∘ (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
     rfl
-  rw [hcomp, ← Measure.map_map htup hshift, wnMeasure_shift k]
-  rfl
+  rw [hcomp, Measure.map₀_of_measurable (htup.comp hshift),
+    Measure.map₀_of_measurable htup, ← Measure.map_map htup hshift, wnMeasure_shift k]
 
 private lemma wn_indep_past (t : ℤ) :
     Indep (MeasurableSpace.comap (wnCoord t) inferInstance) (sigmaLT wnCoord t) wnMeasure := by
@@ -330,7 +332,7 @@ private lemma wn_indep_past (t : ℤ) :
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (wnCoord s) inferInstance)
     (fun s => (wnCoord_measurable s).comap_le) wn_isIIDNoise.iIndep hdisj
-  simpa using this
+  simpa using! this
 
 
 /-! ### The degenerate two-regime TAR witness -/
@@ -513,7 +515,7 @@ private lemma integral_radLaw (f : ℝ → ℝ) :
   ring
 
 private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
-  refine ⟨measurable_id.aestronglyMeasurable, ?_⟩
+  refine ?_
   have hbd : ∀ᵐ x ∂radLaw, ‖(id : ℝ → ℝ) x‖ ≤ 1 := by
     have h0 : radLaw {x : ℝ | ¬ ‖x‖ ≤ 1} = 0 := by
       have hsub : {x : ℝ | ¬ ‖x‖ ≤ 1} ⊆ ({-1, 1} : Set ℝ)ᶜ := by
@@ -524,7 +526,7 @@ private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
       rw [Measure.dirac_apply' _ (by measurability), Measure.dirac_apply' _ (by measurability)]
       simp
     exact h0
-  exact (eLpNorm_le_of_ae_bound hbd).trans_lt (by finiteness)
+  exact (eLpNorm_le_of_ae_bound measurable_id.aestronglyMeasurable hbd).trans_lt (by finiteness)
 
 private lemma integral_id_radLaw : ∫ x, (x : ℝ) ∂radLaw = 0 := by
   have := integral_radLaw (fun x : ℝ => x)
@@ -575,22 +577,24 @@ private lemma radMeasure_shift (k : ℤ) :
   unfold radMeasure
   have h := Measure.infinitePi_map_piCongrLeft (X := fun _ : ℤ => ℝ)
     (μ := fun _ : ℤ => radLaw) (Equiv.addRight (-k))
-  convert h using 2
+  convert! h using 2
   funext ω s
   rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
   simp
 
 private lemma rad_strictlyStationary : IsStrictlyStationary radCoord radMeasure := by
   intro n t k
+  change radMeasure.map₀ (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i + k)) =
+    radMeasure.map₀ (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i))
   have hshift : Measurable (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
-    measurable_pi_lambda _ fun s => measurable_pi_apply _
+    Measurable.of_eval fun s => measurable_pi_apply _
   have htup : Measurable (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i)) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply _
-  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => radCoord (t i + k) ω)
+    Measurable.of_eval fun i => measurable_pi_apply _
+  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i + k))
       = (fun (ω' : ℤ → ℝ) (i : Fin n) => ω' (t i)) ∘ (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
     rfl
-  rw [hcomp, ← Measure.map_map htup hshift, radMeasure_shift k]
-  rfl
+  rw [hcomp, Measure.map₀_of_measurable (htup.comp hshift),
+    Measure.map₀_of_measurable htup, ← Measure.map_map htup hshift, radMeasure_shift k]
 
 private lemma rad_indep_past (t : ℤ) :
     Indep (MeasurableSpace.comap (radCoord t) inferInstance) (sigmaLT radCoord t) radMeasure := by
@@ -599,7 +603,7 @@ private lemma rad_indep_past (t : ℤ) :
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (radCoord s) inferInstance)
     (fun s => (radCoord_measurable s).comap_le) rad_isIIDNoise.iIndep hdisj
-  simpa using this
+  simpa using! this
 
 /-! #### The singleton-regime TAR instance -/
 
@@ -831,7 +835,7 @@ private noncomputable def radBhat0 (T : ℕ) (ω : ℤ → ℝ) : ℝ :=
 
 private lemma radBhat0_measurable (T : ℕ) : Measurable (radBhat0 T) :=
   (measurable_radMean T).comp
-    (measurable_pi_lambda _ fun t => radCoord_measurable (((t : ℕ) : ℤ) + 1))
+    (Measurable.of_eval fun t => radCoord_measurable (((t : ℕ) : ℤ) + 1))
 
 /-- **The eq. (4.8) statement REPAIRED by wave `ts/s12b-model-repairs` is STILL FALSE.**
 

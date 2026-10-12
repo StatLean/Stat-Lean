@@ -391,10 +391,9 @@ lemma integrable_quadKer {f : ℝ → ℂ} (hf : Integrable f) (t₀ t₁ : ℝ)
 /-- **The oscillatory integral is bounded by the `L¹` norm**, at every frequency. -/
 lemma norm_fourierOsc_le {g : ℝ → ℂ} (hg : Integrable g) (s : ℝ) :
     ‖fourierOsc g s‖ ≤ ∫ z : ℝ, ‖g z‖ := by
-  have h0 : (0 : ℝ → ℂ) = fun _ => (0 : ℂ) := rfl
-  have hzero : fourierOsc (fun _ => (0 : ℂ)) s = 0 := by simp [fourierOsc]
+  have hzero : fourierOsc (0 : ℝ → ℂ) s = 0 := by simp [fourierOsc]
   have h := norm_fourierOsc_sub_le hg (integrable_zero ℝ ℂ volume) s
-  simpa [hzero] using h
+  simpa only [hzero, sub_zero, Pi.sub_apply, Pi.zero_apply] using! h
 
 /-- The pointwise identity behind the autocorrelation: shifting the argument of the phase kernel
 by `h` and multiplying by the conjugate at the base point leaves the phase

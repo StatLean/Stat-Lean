@@ -60,10 +60,10 @@ theorem tendstoInMeasure_of_tendsto_mean_of_tendsto_variance
       h_var.div_const _
     rw [zero_div] at h1
     have h2 := (ENNReal.continuous_ofReal.tendsto 0).comp h1
-    simpa using h2
+    simpa using! h2
   -- Squeeze.
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_bound
-    (Eventually.of_forall (fun _ => zero_le _)) h_cheby
+    (Eventually.of_forall (fun _ => zero_le)) h_cheby
 
 /-- A constant sequence trivially converges in probability to its value. -/
 lemma tendstoInMeasure_const
@@ -146,7 +146,7 @@ lemma tendstoInMeasure_add
     simpa using this
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
     tendsto_const_nhds h_sum_tendsto
-    (Filter.Eventually.of_forall fun _ => zero_le _)
+    (Filter.Eventually.of_forall fun _ => zero_le)
     (Filter.Eventually.of_forall h_sub)
 
 end AsymptoticStatistics

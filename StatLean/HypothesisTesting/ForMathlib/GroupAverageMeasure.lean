@@ -170,7 +170,7 @@ theorem integral_groupAverage (μ : Measure 𝓧) {f : 𝓧 → ℝ}
     conv_rhs => rw [← hμ g]
     exact (integral_map (hmeas g).aemeasurable hae).symm
   have hsum : (∫ x, ∑ g : G, f (g • x) ∂μ) = ∑ g : G, ∫ x, f (g • x) ∂μ :=
-    integral_finset_sum Finset.univ fun g _ => (hmp g).integrable_comp_of_integrable hf
+    integral_finsetSum Finset.univ fun g _ => (hmp g).integrable_comp_of_integrable hf
   unfold groupAverage
   rw [integral_const_mul, hsum]
   simp only [hint]
@@ -229,7 +229,7 @@ theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
   -- Integrability of the average of the measurable representative.
   have hInt : Integrable (groupAverage G f₀) μ := by
     unfold groupAverage
-    exact (integrable_finset_sum Finset.univ
+    exact (integrable_finsetSum Finset.univ
       fun g _ => (hmp g).integrable_comp_of_integrable hf₀).const_mul _
   -- The average of the measurable representative is `m`-measurable (each `g • ·` is
   -- `m`-measurable by `hmeas`, so the summands are, and the average of them is).
@@ -261,7 +261,7 @@ theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
       conv_rhs => rw [← hμ g]
       exact (integral_map (hmeas g).aemeasurable hae).symm
     have hsum : (∫ x in s, ∑ g : G, f₀ (g • x) ∂μ) = ∑ g : G, ∫ x in s, f₀ (g • x) ∂μ :=
-      integral_finset_sum Finset.univ
+      integral_finsetSum Finset.univ
         fun g _ => ((hmp g).integrable_comp_of_integrable hf₀).integrableOn
     unfold groupAverage
     rw [integral_const_mul, hsum]

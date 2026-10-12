@@ -98,7 +98,7 @@ private lemma linearComb_isSubGaussian
     have h := (isSubGaussian_iff.mp (hw_sg i)).integrable
     simp only [hw_zero i, sub_zero] at h; exact h
   have hY_sg : ∀ i : Fin n, HasSubgaussianMGF (fun ω => a i * w i ω)
-      (⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      ((NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     intro i
     have hsg_scaled := isSubGaussian_const_mul (hw_sg i) (a i)
     have hmean : ∫ ω, a i * w i ω ∂μ = 0 := by
@@ -108,12 +108,12 @@ private lemma linearComb_isSubGaussian
   have hY_indep : iIndepFun (fun i ω => a i * w i ω) μ :=
     hw_indep.comp (fun i x => a i * x) (fun i => measurable_const.mul measurable_id)
   have hsum_mg : HasSubgaussianMGF (fun ω => ∑ i : Fin n, a i * w i ω)
-      (∑ i : Fin n, ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      (∑ i : Fin n, (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     have := HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i => ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2) (s := Finset.univ)
+      (c := fun i => (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2) (s := Finset.univ)
       (fun i _ => hY_sg i)
     simpa using this
-  have hproxy_le : (∑ i : Fin n, ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) ≤ p := by
+  have hproxy_le : (∑ i : Fin n, (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) ≤ p := by
     rw [← NNReal.coe_le_coe, NNReal.coe_sum]
     simp only [NNReal.coe_mul, NNReal.coe_mk]
     rw [← Finset.sum_mul]; exact hp
@@ -121,7 +121,7 @@ private lemma linearComb_isSubGaussian
     ⟨hsum_mg.integrable_exp_mul, fun t => (hsum_mg.mgf_le t).trans (by
       apply Real.exp_le_exp.mpr; gcongr)⟩
   have hsum_mean : ∫ ω, ∑ i : Fin n, a i * w i ω ∂μ = 0 := by
-    rw [integral_finset_sum Finset.univ (fun i _ => (hw_int i).const_mul (a i))]
+    rw [integral_finsetSum Finset.univ (fun i _ => (hw_int i).const_mul (a i))]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   unfold IsSubGaussian
   simp only [hsum_mean, sub_zero]
@@ -482,12 +482,12 @@ theorem lasso_support_recovery_subgaussian
   have hproj_center : ∀ j, ∫ ω, Yp j ω ∂μ = 0 := by
     intro j
     simp_rw [hproj_id j]
-    rw [integral_finset_sum Finset.univ (fun l _ => (hw_int l).const_mul _)]
+    rw [integral_finsetSum Finset.univ (fun l _ => (hw_int l).const_mul _)]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   have hgram_center : ∀ i, ∫ ω, Yg i ω ∂μ = 0 := by
     intro i
     simp_rw [hgram_id i]
-    rw [integral_finset_sum Finset.univ (fun l _ => (hw_int l).const_mul _)]
+    rw [integral_finsetSum Finset.univ (fun l _ => (hw_int l).const_mul _)]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   -- thresholds
   set t1 : ℝ := C * Real.sqrt σ2 * (Real.sqrt (2 * Real.log m1 / n) + δ) with ht1def

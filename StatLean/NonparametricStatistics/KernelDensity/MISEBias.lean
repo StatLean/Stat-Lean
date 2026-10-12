@@ -196,7 +196,7 @@ private lemma second_order_remainder {p w : ℝ → ℝ} (hp1 : Differentiable �
       intro s _
       have hin : HasDerivAt (fun s : ℝ => x + s) 1 s := by simpa using (hasDerivAt_id s).const_add x
       have hout : HasDerivAt p (deriv p (x + s)) (x + s) := (hp1 (x + s)).hasDerivAt
-      simpa using hout.comp s hin
+      simpa using! hout.comp s hin
     have hcont : Continuous (fun s : ℝ => deriv p (x + s)) := hdc.comp (by fun_prop)
     have := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv (hcont.intervalIntegrable 0 t)
     simp only [add_zero] at this
@@ -326,7 +326,7 @@ private lemma tendsto_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 :
   have htoReal : Filter.Tendsto (fun s => ((transModSq w s) ^ (1 / 2 : ℝ)).toReal)
       (nhds 0) (nhds (0 : ℝ)) := by
     have := (ENNReal.tendsto_toReal (by simp : (0 : ℝ≥0∞) ≠ ⊤)).comp hrpow
-    simpa using this
+    simpa using! this
   exact htoReal
 
 private lemma measurable_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) :
@@ -474,9 +474,9 @@ private lemma kmBias_eq {p K w : ℝ → ℝ}
   rw [kmBias, hsplit, hlow, hthirdval, add_sub_cancel_left]
 
 /-- `∫⁻ x ofReal(f x²) = (eLpNorm f 2)²`, the `ofReal`↔`eLpNorm` bridge for real `f`. -/
-private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} :
+private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} (hf : AEStronglyMeasurable f volume) :
     (∫⁻ x, ENNReal.ofReal ((f x) ^ 2)) = (eLpNorm f 2 volume) ^ (2 : ℝ) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hf]
   simp only [ENNReal.toReal_ofNat]
   rw [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one]
   refine lintegral_congr fun x => ?_
@@ -724,7 +724,7 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
           intro τ _
           have hderiv : HasDerivAt (fun s : ℝ => s - s ^ 2 / 2) (1 - 2 * τ ^ 1 / 2) τ :=
             (hasDerivAt_id τ).sub ((hasDerivAt_pow 2 τ).div_const 2)
-          convert hderiv using 1; ring
+          convert! hderiv using 1; ring
         rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd
           ((by fun_prop : Continuous (fun τ : ℝ => 1 - τ)).intervalIntegrable 0 1)]
         norm_num
@@ -796,7 +796,7 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
             * (∫⁻ x, ENNReal.ofReal
                 ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)) ^ (1 / 2 : ℝ)
           ≤ ENNReal.ofReal (|K u| * u ^ 2) * ENNReal.ofReal (gg u h) :=
-            mul_le_mul_left' (stepC_tau_bound hw_meas hw2 h u) _
+            mul_le_mul_right (stepC_tau_bound hw_meas hw2 h u) _
         _ = ENNReal.ofReal (|K u| * u ^ 2 * gg u h) := by
             rw [← ENNReal.ofReal_mul (by positivity)]
     -- Two-variable Minkowski over `(u, x)`.
@@ -832,7 +832,7 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
       have hb : ‖h ^ 2 * ∫ u, G u x‖ₑ ≤ ENNReal.ofReal (h ^ 2) * ∫⁻ u, ‖G u x‖ₑ := by
         rw [Real.enorm_eq_ofReal_abs, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ h ^ 2),
           ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ h ^ 2)]
-        refine mul_le_mul_left' ?_ _
+        refine mul_le_mul_right ?_ _
         rw [← Real.enorm_eq_ofReal_abs]
         exact enorm_integral_le_lintegral_enorm _
       calc ‖h ^ 2 * ∫ u, G u x‖ₑ ^ 2
@@ -847,7 +847,7 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
               _ = (ENNReal.ofReal (h ^ 2)) ^ 2 * ∫⁻ x, (∫⁻ u, ‖G u x‖ₑ) ^ 2 :=
                   lintegral_const_mul' _ _ (ENNReal.pow_ne_top ENNReal.ofReal_ne_top)
         _ ≤ (ENNReal.ofReal (h ^ 2)) ^ 2 * (ENNReal.ofReal (κ h)) ^ 2 :=
-            mul_le_mul_left' hRint2 _
+            mul_le_mul_right hRint2 _
         _ = ENNReal.ofReal ((h ^ 2 * κ h) ^ 2) := by
             rw [← mul_pow, ← ENNReal.ofReal_mul (by positivity),
               ← ENNReal.ofReal_pow (mul_nonneg (by positivity) hκnn)]
@@ -855,7 +855,10 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
     rw [eLpNorm_congr_ae hΔ]
     have heLp : eLpNorm (fun x => h ^ 2 * ∫ u, G u x) 2 volume
         = (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2)) ^ (1 / 2 : ℝ) := by
-      rw [lintegral_ofReal_sq_eq_eLpNorm_sq, ← ENNReal.rpow_mul,
+      rw [lintegral_ofReal_sq_eq_eLpNorm_sq (f := fun x => h ^ 2 * ∫ u, G u x) (by
+          simpa only [Function.uncurry_apply_pair] using!
+            (hGmeas.stronglyMeasurable.integral_prod_left'
+              (μ := volume)).aestronglyMeasurable.const_mul (h ^ 2)), ← ENNReal.rpow_mul,
         show (2 : ℝ) * (1 / 2) = 1 by norm_num, ENNReal.rpow_one]
     rw [heLp]
     calc (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2)) ^ (1 / 2 : ℝ)
@@ -878,7 +881,7 @@ private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 :
   -- `eLpNorm w 2 = ofReal (√ I)`.
   have hwnorm : eLpNorm w 2 volume = ENNReal.ofReal I.sqrt := by
     have h1 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = (eLpNorm w 2 volume) ^ (2 : ℝ) :=
-      lintegral_ofReal_sq_eq_eLpNorm_sq
+      lintegral_ofReal_sq_eq_eLpNorm_sq hw_meas.aestronglyMeasurable
     have h2 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = ENNReal.ofReal I :=
       (ofReal_integral_eq_lintegral_ofReal hw2.integrable_sq (ae_of_all _ fun x => sq_nonneg _)).symm
     have h3 : (eLpNorm w 2 volume) ^ (2 : ℝ) = ENNReal.ofReal I := by rw [← h1, h2]
@@ -955,14 +958,19 @@ private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
         = (fun x => kmSurr w K h x) + (fun x => kmBias p K h x - kmSurr w K h x) := by
       funext x; simp only [Pi.add_apply]; ring
     rw [hCdef, hsum]
-    exact eLpNorm_add_le hSurrmeas hΔmeas one_le_two
+    exact eLpNorm_add_le  one_le_two
   have hACB : A ≤ C + B := by
     have hsum : (fun x => kmSurr w K h x)
         = (fun x => kmBias p K h x) + (fun x => -(kmBias p K h x - kmSurr w K h x)) := by
       funext x; simp only [Pi.add_apply]; ring
     rw [hAdef, hsum]
-    have := eLpNorm_add_le hBiasmeas hΔmeas.neg (μ := volume) (p := 2) one_le_two
-    rwa [eLpNorm_neg] at this
+    have := eLpNorm_add_le (f := fun x => kmBias p K h x)
+        (g := fun x => -(kmBias p K h x - kmSurr w K h x)) (μ := volume) (p := 2) one_le_two
+    change _ ≤ eLpNorm (fun x => kmBias p K h x) 2 volume + eLpNorm
+        (fun x => kmBias p K h x - kmSurr w K h x) 2 volume
+    have heq : (fun x => -(kmBias p K h x - kmSurr w K h x)) =
+        -(fun x => kmBias p K h x - kmSurr w K h x) := rfl
+    simpa only [heq, eLpNorm_neg] using! this
   -- Pass to reals.
   set a : ℝ := A.toReal with hadef
   set b : ℝ := B.toReal with hbdef
@@ -1004,7 +1012,8 @@ private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
     constructor <;> nlinarith [h1, h2, h3, h4, hκev, hh4, mul_nonneg (hκnn h) hκpos]
   -- Conclude.
   have hCsq : (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2)) = ENNReal.ofReal (c ^ 2) := by
-    rw [lintegral_ofReal_sq_eq_eLpNorm_sq, ← hCdef, ← ENNReal.ofReal_toReal hCfin, ← hcdef,
+    rw [lintegral_ofReal_sq_eq_eLpNorm_sq hBiasmeas, ← hCdef, ← ENNReal.ofReal_toReal hCfin,
+      ← hcdef,
       ENNReal.ofReal_rpow_of_nonneg hcnn (by norm_num : (0:ℝ) ≤ 2)]
     norm_num
   rw [hCsq, hMh]

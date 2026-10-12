@@ -189,7 +189,7 @@ private lemma tvDist_eq_half_lintegral_aux (μ ν : Measure α)
         |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν)
       = ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν)
         + ∫⁻ x, (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x) ∂(μ + ν) := by
-    rw [← lintegral_add_left (hpm.sub hqm)]
+    erw [← lintegral_add_left (hpm.sub hqm)]
     refine lintegral_congr_ae ?_
     filter_upwards [μ.rnDeriv_lt_top (μ + ν), ν.rnDeriv_lt_top (μ + ν)] with x hpx hqx
     exact ofReal_abs_toReal_sub hpx.ne hqx.ne
@@ -199,8 +199,9 @@ private lemma tvDist_eq_half_lintegral_aux (μ ν : Measure α)
           + ∫⁻ x, ν.rnDeriv (μ + ν) x ∂(μ + ν)
         = ∫⁻ x, (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x) ∂(μ + ν)
           + ∫⁻ x, μ.rnDeriv (μ + ν) x ∂(μ + ν) := by
-      rw [← lintegral_add_left (hpm.sub hqm), ← lintegral_add_left (hqm.sub hpm)]
+      erw [← lintegral_add_left (hpm.sub hqm), ← lintegral_add_left (hqm.sub hpm)]
       refine lintegral_congr fun x => ?_
+      simp only [Pi.sub_apply]
       rw [tsub_add_eq_max, tsub_add_eq_max, max_comm]
     rw [hp1, hq1] at e1
     exact (ENNReal.add_left_inj ENNReal.one_ne_top).mp e1
@@ -259,10 +260,11 @@ private lemma one_sub_tvDist_eq_iInf_aux (μ ν : Measure α)
   refine le_antisymm ?_ ?_
   · refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hf0 => le_iInf fun hf1 =>
       le_iInf fun hfeas => ?_
-    rw [← lintegral_rnDeriv_mul hμξ hf0.aemeasurable,
+    erw [← lintegral_rnDeriv_mul hμξ hf0.aemeasurable,
         ← lintegral_rnDeriv_mul hνξ hf1.aemeasurable,
         ← lintegral_add_left (hpm.mul hf0)]
     refine lintegral_mono fun x => ?_
+    simp only [Pi.mul_apply]
     calc min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x)
         = min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) * 1 := (mul_one _).symm
       _ ≤ min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) * (f₀ x + f₁ x) := by

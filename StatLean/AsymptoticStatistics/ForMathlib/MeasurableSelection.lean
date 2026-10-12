@@ -381,7 +381,7 @@ private theorem cauchy_selector_inductive_step
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      rw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEq_set]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -493,7 +493,7 @@ private theorem cauchy_selector_inductive_step
   let N₀ : Set α := N ∪ E_star
   have hN₀_meas : MeasurableSet N₀ := hN_meas.union hE_star_meas
   have hN₀_null : m N₀ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₀ ≤ m N + m E_star := measure_union_le _ _
       _ = 0 + 0 := by rw [hN_null, hE_star_null]
       _ = 0 := by simp
@@ -1076,7 +1076,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      rw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEq_set]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -1179,7 +1179,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
   let N₀ : Set α := N ∪ E_star
   have hN₀_meas : MeasurableSet N₀ := hN_meas.union hE_star_meas
   have hN₀_null : m N₀ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₀ ≤ m N + m E_star := measure_union_le _ _
       _ = 0 + 0 := by rw [hN_null, hE_star_null]
       _ = 0 := by simp
@@ -1692,7 +1692,7 @@ private theorem aumann_suslin_scheme_cauchy
   set N₁ : Set α := N₀ ∪ E with hN₁_def
   have hN₁_meas : MeasurableSet N₁ := hN₀_meas.union hE_meas
   have hN₁_null : m N₁ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₁ ≤ m N₀ + m E := measure_union_le _ _
       _ = 0 + 0 := by rw [hN₀_null, hE_null]
       _ = 0 := by simp

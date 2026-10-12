@@ -637,7 +637,7 @@ theorem not_forall_markov_tfae :
           IsPairwiseMarkov (⊥ : SimpleGraph (Fin 1)) c].TFAE := by
   intro hcontra
   refine not_forall_pairwiseMarkov_implies_globalMarkov fun c hc hP => ?_
-  exact ((hcontra c hc).out 2 0).mp hP
+  exact ((hcontra c hc).out 3 1).mp hP
 
 /-! ### Theorem 3.7 over *all* blocks — deleted, and why
 

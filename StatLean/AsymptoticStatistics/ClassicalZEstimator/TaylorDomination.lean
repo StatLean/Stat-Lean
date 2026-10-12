@@ -446,7 +446,7 @@ theorem Psi_differentiable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
     have hint1 : Integrable (ψ θ' j) P := hψ_int θ' (hsub hθ') j
     have hint2 : Integrable (ψ θ j) P := hψ_int θ hθball j
     have hint3 : Integrable (fun x => ∑ i, psiDot ψ θ x j i * (θ' - θ) i) P :=
-      integrable_finset_sum _ fun i _ => (hVint θ j i).mul_const _
+      integrable_finsetSum _ fun i _ => (hVint θ j i).mul_const _
     have hint12 : Integrable (fun x => ψ θ' j x - ψ θ j x) P := hint1.sub hint2
     have hIall : Integrable (fun x => ψ θ' j x - ψ θ j x
         - ∑ i, psiDot ψ θ x j i * (θ' - θ) i) P := hint12.sub hint3
@@ -454,7 +454,7 @@ theorem Psi_differentiable {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
         = (∫ x, ψ θ' j x ∂P) - (∫ x, ψ θ j x ∂P)
           - ∑ i, Vmat P ψ θ j i * (θ' - θ) i := by
       rw [integral_sub hint12 hint3, integral_sub hint1 hint2,
-        integral_finset_sum _ fun i _ => (hVint θ j i).mul_const _]
+        integral_finsetSum _ fun i _ => (hVint θ j i).mul_const _]
       exact congrArg _ (Finset.sum_congr rfl fun i _ => integral_mul_const _ _)
     rw [← hsplit]
     calc |∫ x, (ψ θ' j x - ψ θ j x - ∑ i, psiDot ψ θ x j i * (θ' - θ) i) ∂P|
@@ -588,9 +588,9 @@ theorem PsiDot_nonsingular_nbhd {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P :
   -- Hence so is `det V`, a polynomial in the entries.
   have hdet_cont : ContinuousOn (fun θ => (Vmat P ψ θ).det) (Metric.closedBall θ₀ ρ) := by
     simp only [Matrix.det_apply']
-    refine continuousOn_finset_sum _ fun σ _ => ?_
+    refine continuousOn_finsetSum _ fun σ _ => ?_
     exact continuousOn_const.mul
-      (continuousOn_finset_prod _ fun i _ => hentry (σ i) i)
+      (continuousOn_finsetProd _ fun i _ => hentry (σ i) i)
   have hdet0 : (Vmat P ψ θ₀).det ≠ 0 := isUnit_iff_ne_zero.mp hV
   have hcontAt : ContinuousAt (fun θ => (Vmat P ψ θ).det) θ₀ :=
     hdet_cont.continuousAt (Metric.closedBall_mem_nhds θ₀ hρ)

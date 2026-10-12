@@ -239,7 +239,7 @@ lemma localAsymptoticRisk_ge_avg_lower_bound
         ≤ ∑ h ∈ I, (π h : ℝ≥0∞) * (⨆ h' ∈ I, x n h') := by
           apply Finset.sum_le_sum
           intro h hI
-          exact mul_le_mul_right (le_iSup₂_of_le h hI le_rfl) (π h : ℝ≥0∞)
+          exact mul_le_mul_right (le_iSup₂_of_le h hI (by exact le_rfl)) (π h : ℝ≥0∞)
       _ = (∑ h ∈ I, (π h : ℝ≥0∞)) * (⨆ h' ∈ I, x n h') := by
           rw [← Finset.sum_mul]
       _ ≤ 1 * (⨆ h' ∈ I, x n h') :=
@@ -664,8 +664,8 @@ private lemma avgRisk_gaussianShift_ge_bayesRiskAtTau
     have h_main : Measurable
         (fun p : Θ k × Θ k => ∫⁻ y, L (y - ψDot p.1) ∂(κ' p)) :=
       Measurable.lintegral_kernel_prod_right' (κ := κ') h_int_meas
-    -- `κ' p = κ p.2` by `Kernel.comap_apply`, definitionally — so `convert` closes.
-    convert h_main using 1
+    -- `κ' p = κ p.2` by `Kernel.comap_apply`, definitionally — so `convert!` closes.
+    convert! h_main using 1
   -- Outer chain: bayesRiskAtTau ≤ … = avgRisk.
   calc GaussianShiftMinimax.bayesRiskAtTau J ψDotMat L τ
       = ∫⁻ x, ∫⁻ _y : 𝓨 d, GaussianShiftMinimax.bayesRiskAtTau J ψDotMat L τ
@@ -791,7 +791,7 @@ private theorem lanIntegrand_measurable_in_h
         fun y : 𝓨 d => L (y - ψDot h)) := by
   -- The codomain `𝓨 d → ℝ≥0∞` is a Pi-type with the product measurable
   -- space: a map into it is measurable iff its evaluation at every `y` is.
-  refine measurable_pi_lambda _ ?_
+  refine Measurable.of_eval ?_
   intro y
   -- Per-`y`: `fun h => L (y - ψDot h)` is `L ∘ (y - ψDot ·)`, which is
   -- measurable since `L` is measurable and `(fun h => y - ψDot h)` is
@@ -1027,7 +1027,7 @@ theorem joint_tightness_T_score_under_P_theta0
     haveI : ∀ n, IsProbabilityMeasure
         ((AsymptoticRepresentation.productMeasure M μ θ₀ n).map (AsymptoticRepresentation.scoreSum ℓ
             n)) :=
-      fun n => MeasureTheory.Measure.isProbabilityMeasure_map (h_score_meas n).aemeasurable
+      fun n => (by infer_instance)
     -- multivariateGaussian is a probability measure (unconditional via IsGaussian).
     haveI : IsProbabilityMeasure (ProbabilityTheory.multivariateGaussian (0 : Θ k) J) :=
       inferInstance
@@ -1532,7 +1532,7 @@ theorem le_cam_3_per_rational_h_weak_conv
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk (hg_meas.comp measurable_snd)
   haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+    (by infer_instance)
   -- Main integral-comparison bound (full sequence) for the rescaled-shifted statistic
   -- `T'` (the bound is statistic-agnostic), then specialise to `φ_full`.
   obtain ⟨ρ_cmp, hρ_cmp_tendsto, hρ_cmp_bound⟩ :=
@@ -1735,7 +1735,7 @@ theorem representation_kernel_identifies_le_cam_3_limit
   haveI hL_h_prob : IsProbabilityMeasure
       (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
         (Real.exp (⟪h, p.2⟫ - c))))) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   -- Apply `gaussianShift_bind_eq_limit` to the tilted marginal, with its defining
   -- formula supplied by reflexivity.
   exact AsymptoticRepresentation.gaussianShift_bind_eq_limit J hJ gauss hGauss π h
@@ -1928,7 +1928,7 @@ theorem portmanteau_lsc_assembly_per_h
   haveI hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
     intro k_idx
     simp only [hμs_def]
-    exact Measure.isProbabilityMeasure_map (hg_meas k_idx).aemeasurable
+    exact (by infer_instance)
   -- `(multivariateGaussian h J⁻¹).bind κ` is a probability measure (Markov kernel
   -- composition with a probability measure).
   haveI h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
@@ -1949,7 +1949,7 @@ theorem portmanteau_lsc_assembly_per_h
   -- measure along a measurable map).
   haveI h_target_prob : IsProbabilityMeasure targetShift := by
     simp only [htargetShift_def]
-    exact Measure.isProbabilityMeasure_map h_shift_meas.aemeasurable
+    exact (by infer_instance)
   -- Step 1: extract the open-set Portmanteau inequality from `_h_wc_shifted`.
   -- Bridge `WeakConverges` to a `Tendsto` of `ProbabilityMeasure`s.
   let μsPM : ℕ → ProbabilityMeasure (𝓨 d) := fun k_idx => ⟨μs k_idx, inferInstance⟩
@@ -2158,7 +2158,7 @@ theorem lhs_bound_for_rational_h_via_joint_subseq
   haveI hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
     intro k_idx
     simp only [hμs_def]
-    exact Measure.isProbabilityMeasure_map (hg_meas k_idx).aemeasurable
+    exact (by infer_instance)
   haveI h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
   haveI h_bind_prob :
       IsProbabilityMeasure ((multivariateGaussian h J⁻¹).bind
@@ -2174,7 +2174,7 @@ theorem lhs_bound_for_rational_h_via_joint_subseq
     h_shift_cont.measurable
   haveI h_target_prob : IsProbabilityMeasure targetShift := by
     simp only [htargetShift_def]
-    exact Measure.isProbabilityMeasure_map h_shift_meas.aemeasurable
+    exact (by infer_instance)
   let μsPM : ℕ → ProbabilityMeasure (𝓨 d) := fun k_idx => ⟨μs k_idx, inferInstance⟩
   let targetShiftPM : ProbabilityMeasure (𝓨 d) := ⟨targetShift, inferInstance⟩
   have hμsPM_coe : ∀ k_idx, (μsPM k_idx : Measure (𝓨 d)) = μs k_idx := fun _ => rfl
@@ -2351,7 +2351,7 @@ theorem subseq_lan_per_h_LHS_bound_witness
     fun n => (h_T_n_meas n).prodMk (h_score_meas n)
   haveI hJointSeq_prob : ∀ n, IsProbabilityMeasure (jointSeq n) := by
     intro n
-    exact MeasureTheory.Measure.isProbabilityMeasure_map (h_pair_meas n).aemeasurable
+    exact (by infer_instance)
   haveI hJointPhi_prob : ∀ k_idx, IsProbabilityMeasure (jointSeq (φ k_idx)) :=
     fun k_idx => hJointSeq_prob (φ k_idx)
   -- Step 3: Apply Prokhorov on the φ-subseq joint to extract a sub-subseq + π.

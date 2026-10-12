@@ -114,7 +114,7 @@ theorem coeffEstimator_mean {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
         * trigBasis j (regularDesign n i)) P := by
     intro i; rw [hsplit i]; exact (integrable_const _).add ((hInt i).mul_const _)
   unfold coeffEstimator
-  rw [integral_const_mul, integral_finset_sum Finset.univ (fun i _ => hsum_int i)]
+  rw [integral_const_mul, integral_finsetSum Finset.univ (fun i _ => hsum_int i)]
   have hone : ∀ i : Fin n, ∫ ω, (seriesFun θ (regularDesign n i) + ξ i ω)
         * trigBasis j (regularDesign n i) ∂P
       = seriesFun θ (regularDesign n i) * trigBasis j (regularDesign n i) := by
@@ -156,7 +156,7 @@ theorem coeffEstimator_sq_error {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
   -- `Z` is square-integrable
   have hZmemLp : MemLp Z 2 P := by
     have hsum : MemLp (fun ω => ∑ i : Fin n, ξ i ω * trigBasis j (regularDesign n i)) 2 P := by
-      have h := memLp_finset_sum' (Finset.univ : Finset (Fin n))
+      have h := memLp_finsetSum' (Finset.univ : Finset (Fin n))
         (f := fun i ω => ξ i ω * trigBasis j (regularDesign n i))
         (fun i _ => (memξ i).mul_const _)
       have heq : (∑ i : Fin n, fun ω => ξ i ω * trigBasis j (regularDesign n i))
@@ -185,7 +185,7 @@ theorem coeffEstimator_sq_error {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
   -- mean of `Z` is zero
   have hZ0 : ∫ ω, Z ω ∂P = 0 := by
     simp only [hZ]
-    rw [integral_const_mul, integral_finset_sum Finset.univ
+    rw [integral_const_mul, integral_finsetSum Finset.univ
       (fun i _ => ((memξ i).mul_const _).integrable one_le_two)]
     have hz : ∀ i : Fin n, ∫ ω, ξ i ω * trigBasis j (regularDesign n i) ∂P = 0 := by
       intro i; rw [integral_mul_const, hξ0 i, zero_mul]
@@ -215,14 +215,14 @@ theorem coeffEstimator_sq_error {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
       rw [sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun k _ => by ring
     rw [integral_congr_ae (ae_of_all _ hexpand), integral_const_mul,
-      integral_finset_sum Finset.univ (fun i _ => integrable_finset_sum Finset.univ
+      integral_finsetSum Finset.univ (fun i _ => integrable_finsetSum Finset.univ
         (fun k _ => (hmulint i k).mul_const _))]
     have hrow : ∀ i : Fin n, ∫ ω, (∑ k : Fin n,
         (ξ i ω * ξ k ω) * (trigBasis j (regularDesign n i)
           * trigBasis j (regularDesign n k))) ∂P
         = σξ2 * (trigBasis j (regularDesign n i) * trigBasis j (regularDesign n i)) := by
       intro i
-      rw [integral_finset_sum Finset.univ (fun k _ => (hmulint i k).mul_const _),
+      rw [integral_finsetSum Finset.univ (fun k _ => (hmulint i k).mul_const _),
         Finset.sum_eq_single i]
       · rw [integral_mul_const, hMdiag i]
       · intro k _ hki

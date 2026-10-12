@@ -207,7 +207,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
   -- the tuple map and the rank-events
   set T : Ω → (Fin m → ℝ) := fun ω => fun l => S l ω with hTdef
   have hT : Measurable T := by
-    rw [hTdef]; exact measurable_pi_lambda _ (fun l => hmeas l)
+    rw [hTdef]; exact Measurable.of_eval (fun l => hmeas l)
   have hA : ∀ j : Fin m, MeasurableSet {t : Fin m → ℝ | rk t j ≤ k} := by
     intro j
     have he : {t : Fin m → ℝ | rk t j ≤ k} = (fun t => rk t j) ⁻¹' Set.Iic k := rfl
@@ -220,7 +220,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
     intro j; rw [hTdef]; rfl
   have hprecomp : ∀ σ : Equiv.Perm (Fin m),
       Measurable (fun t : Fin m → ℝ => (fun l => t (σ l))) :=
-    fun σ => measurable_pi_lambda _ (fun l => measurable_pi_apply (σ l))
+    fun σ => Measurable.of_eval (fun l => measurable_pi_apply (σ l))
   -- Step 1+2: all rank probabilities coincide (permutation invariance of the law)
   have heq : ∀ j : Fin m, μ {ω | rankOf S j ω ≤ k} = μ {ω | rankOf S i ω ≤ k} := by
     intro j
@@ -252,7 +252,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
         = ∑ j : Fin m, ∫⁻ ω, ({ω | rankOf S j ω ≤ k}).indicator (1 : Ω → ℝ≥0∞) ω ∂μ := by
           simp_rw [hstep]
       _ = ∫⁻ ω, ∑ j : Fin m, ({ω | rankOf S j ω ≤ k}).indicator (1 : Ω → ℝ≥0∞) ω ∂μ :=
-          (lintegral_finset_sum _ (fun j _ => measurable_one.indicator (hB j))).symm
+          (lintegral_finsetSum _ (fun j _ => measurable_one.indicator (hB j))).symm
       _ = ∫⁻ _ω, (k : ℝ≥0∞) ∂μ := by
           refine lintegral_congr_ae ?_
           filter_upwards [hdistinct] with ω hω

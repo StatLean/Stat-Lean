@@ -442,7 +442,7 @@ theorem isUMP_oneSided
   · obtain ⟨hα0, hα1⟩ := hmid
     -- Boundary constants from the `T`-marginal under `θ₀`.
     haveI : IsProbabilityMeasure ((P θ₀).map T) :=
-      Measure.isProbabilityMeasure_map hT.aemeasurable
+      (by infer_instance)
     obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants ((P θ₀).map T) hα0 hα1
     have hγ' : γ ∈ Set.Icc (0 : ℝ) 1 := ⟨hγ0, hγ1⟩
     set φ := oneSidedTest T C γ with hφdef
@@ -887,7 +887,7 @@ theorem essentiallyComplete_oneSidedTest
   obtain ⟨hα0, hα1⟩ := hψsize
   -- Match the size of `ψ` at the boundary with an honest one-sided test.
   haveI : IsProbabilityMeasure ((P θ₀).map T) :=
-    Measure.isProbabilityMeasure_map hT.aemeasurable
+    (by infer_instance)
   obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ :=
     exists_critical_constants ((P θ₀).map T) hα0 hα1
   have hγ' : γ ∈ Set.Icc (0 : ℝ) 1 := ⟨hγ0, hγ1⟩

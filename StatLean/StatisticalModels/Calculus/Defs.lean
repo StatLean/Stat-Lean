@@ -2,6 +2,7 @@ import Mathlib.Probability.Kernel.Composition.MeasureComp
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.ProductMeasure
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # The model calculus — operations on families of probability measures
@@ -9,7 +10,7 @@ import Mathlib.Probability.ProductMeasure
 The compositional operations that build structured statistical models from simpler ones, all
 defined on the bare carrier `P : Θ → Measure 𝓧` over an arbitrary parameter type `Θ`:
 
-* `pushforward P T` — the model for the statistic `T(X)`: `θ ↦ (P θ).map T`;
+* `pushforward P T` — the model for the statistic `T(X)`: `θ ↦ (P θ).map₀ T`;
 * `observe P κ` — **observation/coarsening** through a θ-free Markov kernel `κ : 𝓧 ⇝ 𝓨`
   (`θ ↦ κ ∘ₘ P θ`): the ignorable-mechanism case covering censoring readouts, missingness
   masks, measurement error and randomized coarsening;
@@ -35,10 +36,10 @@ no. 4, 2244–2253, §2.
 of the operations, probability-preservation instances, marginals) live in `Calculus.Compose`
 and `Calculus.Marginal`. The θ-free `observe` is the primary observation operation (its laws
 are hypothesis-free and it is the case in which identifiability and risk theorems live);
-`observe P κ = mix P (fun _ => κ)` definitionally, so nothing is lost. Everything is a thin
-wrapper over Mathlib: `Measure.map`, `Measure.bind` (`∘ₘ`), `Measure.compProd` (`⊗ₘ`),
-`Measure.pi`, `Measure.infinitePi` — no bespoke measure constructions, hence full
-interoperability with the rest of the library and with Mathlib's kernel algebra
+`observe P κ = mix P (fun _ => κ)` definitionally, so nothing is lost. Pushforward uses
+`Measure.map₀`, which is the zero measure along maps that are not a.e. measurable.
+The other operations wrap Mathlib's `Measure.bind` (`∘ₘ`), `Measure.compProd` (`⊗ₘ`),
+`Measure.pi` and `Measure.infinitePi`, interoperating with Mathlib's kernel algebra
 (`Model.KernelAgreement`).
 
 **Bibliographic comments.** Randomization/observation channels acting on statistical models go
@@ -55,10 +56,10 @@ namespace StatLean.StatisticalModels
 
 variable {Θ : Type*} {𝓧 𝓨 : Type*} [MeasurableSpace 𝓧] [MeasurableSpace 𝓨]
 
-/-- **Pushforward model**: the family of laws of the statistic `T` — `θ ↦ (P θ).map T`
+/-- **Pushforward model**: the family of laws of the statistic `T` — `θ ↦ (P θ).map₀ T`
 (the model for transformed/derived data; TPE2 §1.1, Davison §5 (verify §)). -/
 noncomputable def pushforward (P : Θ → Measure 𝓧) (T : 𝓧 → 𝓨) : Θ → Measure 𝓨 :=
-  fun θ => (P θ).map T
+  fun θ => (P θ).map₀ T
 
 /-- **Observation/coarsening by a θ-free Markov kernel** (the ignorable-mechanism case,
 Heitjan–Rubin §2): the observed-data model `θ ↦ κ ∘ₘ P θ`. Deterministic observation

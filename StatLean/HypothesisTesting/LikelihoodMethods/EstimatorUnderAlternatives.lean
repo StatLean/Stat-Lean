@@ -413,7 +413,7 @@ private lemma map_fst_withDensity_exp_tilt_graphJoint
   classical
   have hJsymm : Jᵀ = J := by
     have := hJ_psd.1
-    simpa [Matrix.conjTranspose, Matrix.transpose] using this
+    simpa [Matrix.conjTranspose, Matrix.transpose] using! this
   have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
     simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
   set c : ℝ := (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫ with hc
@@ -457,7 +457,7 @@ private lemma map_fst_withDensity_exp_tilt_graphJoint
   have hcov : J⁻¹ * J * (J⁻¹)ᴴ = J⁻¹ := by
     have hH' : (J⁻¹)ᴴ = J⁻¹ := by
       have : (J⁻¹)ᵀ = (Jᵀ)⁻¹ := Matrix.transpose_nonsing_inv J
-      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using
+      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using!
         congrArg id (this.trans (by rw [hJsymm]))
     rw [hinvmul, one_mul, hH']
   rw [hmean, hcov]
@@ -505,7 +505,7 @@ private lemma joint_weak_estimator_scoreSum
   have hF_meas : Measurable F := hF_cont.measurable
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+    (by infer_instance)
   have hX : WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)))
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) := by
@@ -574,7 +574,7 @@ private lemma joint_weak_estimator_logLikelihood
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+    (by infer_instance)
   set G : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) →
       EuclideanSpace ℝ (Fin k) × ℝ :=
     fun p => (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫) with hG
@@ -736,13 +736,13 @@ theorem weak_limit_estimator_under_fixed_local_alternative
   haveI hπ0 : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+    (by infer_instance)
   haveI hπ : IsProbabilityMeasure
       (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
           (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
         (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
           (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) :=
-    Measure.isProbabilityMeasure_map hG_meas.aemeasurable
+    (by infer_instance)
   -- The joint limit is carried by the graph of `J⁻¹`, so its second marginal is `N(0, J)`.
   have hmarg : ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map Prod.snd
@@ -1386,7 +1386,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
       rw [hρdef] at hθ
       linarith
     have := hρ hd
-    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply] using this
+    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply_apply] using this
   -- Eventually the whole picture sits inside the ball of radius `ρ`.
   have hsqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * (K + H)) atTop (𝓝 0) := by
     have h1' : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=

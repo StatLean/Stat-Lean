@@ -46,11 +46,14 @@ theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : Measur
     -- USER-INPUT: the statistic is square-integrable; Robert §6.3.4
     (hT : MemLp T 2 μ) (c : ℝ) :
     ∫⁻ x, sqLoss c ((μ[T | m]) x) ∂μ ≤ ∫⁻ x, sqLoss c (T x) ∂μ := by
+  letI : MeasurableSpace 𝓧 := m𝓧
   -- The quadratic risk about `c` is the square of the `L²` norm of `c - ·`.
-  have bridge : ∀ h : 𝓧 → ℝ,
+  have bridge : ∀ h : 𝓧 → ℝ, AEStronglyMeasurable h μ →
       ∫⁻ x, sqLoss c (h x) ∂μ = eLpNorm (fun x => c - h x) 2 μ ^ (2 : ℝ) := by
-    intro h
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num), ← ENNReal.rpow_mul,
+    intro h hh
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (p := 2) (by norm_num) (by norm_num)
+      (show AEStronglyMeasurable (fun x => c - h x) μ from
+        (aestronglyMeasurable_const (m := m𝓧) (b := c)).sub hh), ← ENNReal.rpow_mul,
       ENNReal.toReal_ofNat, show (1 / (2 : ℝ)) * 2 = 1 by norm_num, ENNReal.rpow_one]
     simp only [sqLoss]
     refine lintegral_congr fun x => ?_
@@ -68,9 +71,10 @@ theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : Measur
   have hle : eLpNorm (fun x => c - (μ[T | m]) x) 2 μ ≤ eLpNorm (fun x => c - T x) 2 μ :=
     calc eLpNorm (fun x => c - (μ[T | m]) x) 2 μ
         = eLpNorm (μ[(fun _ => c) - T | m]) 2 μ := (eLpNorm_congr_ae hsub).symm
-      _ ≤ eLpNorm ((fun _ => c) - T) 2 μ := eLpNorm_condExp_le
+      _ ≤ eLpNorm ((fun _ => c) - T) 2 μ := eLpNorm_condExp_le_eLpNorm _ (by norm_num)
       _ = eLpNorm (fun x => c - T x) 2 μ := rfl
-  rw [bridge (μ[T | m]), bridge T]
+  rw [bridge (μ[T | m]) (integrable_condExp (μ := μ) (f := T) (m := m)).aestronglyMeasurable,
+      bridge T hT.aestronglyMeasurable]
   exact ENNReal.rpow_le_rpow hle (by norm_num)
 
 end StatLean.Bayesian

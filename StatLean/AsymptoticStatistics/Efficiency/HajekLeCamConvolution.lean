@@ -115,7 +115,7 @@ theorem regularity_implies_8_2_hypothesis
     ∀ h : Θ k,
       WeakConverges
         (fun n : ℕ =>
-          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map₀
             (fun x => (Real.sqrt n) •
               (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h))))
         hReg.limitDist :=
@@ -206,7 +206,25 @@ theorem hajek_le_cam_convolution_theorem
           (ψDotMat * J⁻¹ * ψDotMat.transpose)) ∗ M_θ := by
   classical
   -- Step A: translate regularity → (8.2), then apply lower_bound_for_experiments to get κ.
-  have hT_weak := regularity_implies_8_2_hypothesis M μ θ₀ ψ T hReg
+  have hT_weak₀ := regularity_implies_8_2_hypothesis M μ θ₀ ψ T hReg
+  have hT_weak : ∀ h : Θ k, WeakConverges
+      (fun n : ℕ =>
+        (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+          (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h))))
+      hReg.limitDist := by
+    intro h
+    have hmaps :
+        (fun n : ℕ =>
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map₀
+            (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))) =
+        (fun n : ℕ =>
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+            (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))) :=
+      funext fun n => Measure.map₀_of_measurable
+        ((measurable_const (a := Real.sqrt n)).smul
+          ((hT_meas n).sub measurable_const))
+    rw [← hmaps]
+    exact hT_weak₀ h
   -- The constant family L_θh ≡ hReg.limitDist; instance provided by hReg.isProb.
   obtain ⟨κ, hκ_markov, hκ⟩ :=
     LowerBoundForExperiments.lower_bound_for_experiments M μ θ₀ ℓ hℓ hDQM J hJ_pd hJ_fisher ψ ψDot

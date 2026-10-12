@@ -330,7 +330,7 @@ theorem avg_measureReal_eq_integral_avg_indicator {𝓨 : Type*} [MeasurableSpac
     intro g
     rw [hind g]
     exact (integrable_const (1 : ℝ)).indicator (hset g)
-  rw [integral_const_mul, integral_finset_sum Finset.univ (fun g _ => hint g)]
+  rw [integral_const_mul, integral_finsetSum Finset.univ (fun g _ => hint g)]
   congr 1
   refine Finset.sum_congr rfl fun g _ => ?_
   rw [hind g, integral_indicator_one (hset g)]
@@ -1661,7 +1661,7 @@ theorem tendsto_perm_avg_lipschitz {N m : ℕ → ℕ}
     have := Filter.tendsto_atTop_add_const_right atTop (-1 : ℝ) hNlim
     simpa [sub_eq_add_neg] using this
   have hinvNm1 : Tendsto (fun k => ((N k : ℝ) - 1)⁻¹) atTop (𝓝 0) := by
-    simpa using hNm1.inv_tendsto_atTop
+    simpa using! hNm1.inv_tendsto_atTop
   refine tendsto_of_eventually_abs_sub_le (Cst := 100 * (L + 1)) (by positivity) ?_
   intro ε hε
   -- the truncation level and the limits attached to it

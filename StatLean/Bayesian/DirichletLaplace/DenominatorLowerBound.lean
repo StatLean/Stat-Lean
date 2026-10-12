@@ -114,7 +114,7 @@ lemma dlDenom_ge_jensen (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMea
   rw [dlNumer]
   -- edge case: prior gives zero mass to the ball
   rcases eq_or_ne (π B) 0 with hB0 | hB0
-  · rw [hB0, zero_mul]; exact zero_le _
+  · rw [hB0, zero_mul]; exact zero_le
   have hBtop : π B ≠ ∞ := measure_ne_top π B
   have hm_pos : 0 < π.real B := ENNReal.toReal_pos hB0 hBtop
   -- continuity of the ingredients
@@ -187,7 +187,7 @@ lemma dlDenom_ge_jensen (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMea
     rw [h, ENNReal.div_mul_cancel hB0 hBtop]
     simp_rw [hLR]
   rw [hkey, mul_comm (ENNReal.ofReal (⨍ θ in B, Real.exp (gx θ) ∂π)) (π B)]
-  apply mul_le_mul_left'
+  apply mul_le_mul_right
   apply ENNReal.ofReal_le_ofReal
   -- `A ≤ ⨍_B gx`, then Jensen `exp(⨍_B gx) ≤ ⨍_B exp gx`
   have hA : ⟪aveShift π θstar r, w⟫ - r ^ 2 / 2 ≤ ⨍ θ in B, gx θ ∂π := by
@@ -230,8 +230,8 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
   · have hEmp : E = ∅ := by
       ext y
       simp only [hE, hB0, mul_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
-      exact zero_le _
-    rw [hEmp, measure_empty]; exact zero_le _
+      exact zero_le
+    rw [hEmp, measure_empty]; exact zero_le
   have hBtop : π B ≠ ∞ := measure_ne_top π B
   -- Jensen ⟹ the event sits inside a Gaussian half-space
   set H := {y : EuclideanSpace ℝ ι | r ^ 2 / 2 ≤ ⟪-c, y - θstar⟫} with hH
@@ -258,7 +258,7 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
     calc (gaussShiftKernel ι θstar) E
         ≤ (gaussShiftKernel ι θstar) H := measure_mono hsub
       _ = 0 := by rw [hHempty, measure_empty]
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   · -- genuine Gaussian tail: variance `‖c‖² ≤ r²`
     have hcsq : ‖c‖ ^ 2 ≤ r ^ 2 := by nlinarith [norm_nonneg c, hnorm]
     have hcsq_pos : 0 < ‖c‖ ^ 2 := by positivity

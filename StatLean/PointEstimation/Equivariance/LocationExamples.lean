@@ -345,7 +345,7 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
       MemLp (fun x : Fin (m + 1) → ℝ => x i) 2 (Measure.pi fun _ => P₁) := by
     intro i
     have := hL2.comp_measurePreserving (measurePreserving_eval (fun _ => P₁) i)
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   have hint_i : ∀ i, Integrable (fun x : Fin (m + 1) → ℝ => x i)
       (Measure.pi fun _ => P₁) := fun i => (hL2i i).integrable one_le_two
   have hint_ij : ∀ i j, Integrable (fun x : Fin (m + 1) → ℝ => x i * x j)
@@ -372,19 +372,19 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
       rw [hpair, hEi i, hEi j, mul_zero]
   -- Second moment of the total: `∫ (∑ Xᵢ)² = m + 1`.
   have hSmemLp : MemLp (fun x : Fin (m + 1) → ℝ => ∑ i, x i) 2 (Measure.pi fun _ => P₁) :=
-    memLp_finset_sum _ fun i _ => hL2i i
+    memLp_finsetSum _ fun i _ => hL2i i
   have hSsq_int : Integrable (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
       (Measure.pi fun _ => P₁) := by
     have := hSmemLp.integrable_mul hSmemLp
-    simpa [Pi.mul_apply, pow_two] using this
+    simpa [Pi.mul_apply, pow_two] using! this
   have hSsq : ∫ x : Fin (m + 1) → ℝ, (∑ i, x i) ^ 2 ∂(Measure.pi fun _ => P₁) = N := by
     have hexpand : (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
         = fun x => ∑ i, ∑ j, x i * x j := by
       funext x; rw [pow_two, Fintype.sum_mul_sum]
-    rw [hexpand, integral_finset_sum _ fun i _ => integrable_finset_sum _ fun j _ => hint_ij i j]
+    rw [hexpand, integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hint_ij i j]
     have hinner : ∀ i, ∫ x : Fin (m + 1) → ℝ, ∑ j, x i * x j ∂(Measure.pi fun _ => P₁) = 1 := by
       intro i
-      rw [integral_finset_sum _ fun j _ => hint_ij i j]
+      rw [integral_finsetSum _ fun j _ => hint_ij i j]
       simp [hc i]
     simp only [hinner]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, hNdef]

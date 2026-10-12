@@ -71,6 +71,7 @@ private lemma qmdRem_memLp_eventually
     {μ : Measure Ω} [SigmaFinite μ] {curve : ℝ → Measure Ω} {g : Ω → ℝ}
     (hg_meas : Measurable g) (h_qmd : IsQMDLimit curve μ g) :
     ∀ᶠ t in 𝓝[≠] (0 : ℝ), MemLp (qmdRem curve μ g t) 2 μ := by
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).1 h_qmd
   have h_lt_one : ∀ᶠ t in 𝓝[≠] (0 : ℝ),
       eLpNorm (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t| < 1 :=
     h_qmd.eventually (Iio_mem_nhds (by norm_num : (0 : ℝ≥0∞) < 1))
@@ -86,17 +87,17 @@ private lemma qmdRem_memLp_eventually
       _ < 1 * ENNReal.ofReal |t| :=
           ENNReal.mul_lt_mul_left hofreal_ne_zero hofreal_ne_top htlt
       _ = ENNReal.ofReal |t| := one_mul _
-  exact ⟨(qmdRem_measurable hg_meas t).aestronglyMeasurable,
-    lt_trans h_eLp_lt ENNReal.ofReal_lt_top⟩
+  exact lt_trans h_eLp_lt ENNReal.ofReal_lt_top
 
 /-- The QMD ratio `‖r_t‖_{L²(μ)} / |t| → 0` in `ℝ` (the `.toReal` form of the
 `ℝ≥0∞`-form QMD limit). This is the differentiability *rate* used to control
 the second-order remainder in the pathwise derivative of the mean functional. -/
 private lemma qmdRem_norm_div_tendsto_zero
     {μ : Measure Ω} {curve : ℝ → Measure Ω} {g : Ω → ℝ}
-    (h_qmd : IsQMDLimit curve μ g) :
+    (hg : AEStronglyMeasurable g μ) (h_qmd : IsQMDLimit curve μ g) :
     Tendsto (fun t : ℝ => (eLpNorm (qmdRem curve μ g t) 2 μ).toReal / |t|)
       (𝓝[≠] 0) (𝓝 0) := by
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg).1 h_qmd
   have h_cts : ContinuousAt ENNReal.toReal (0 : ℝ≥0∞) :=
     ENNReal.continuousAt_toReal (by simp)
   have h_to_real := h_cts.tendsto.comp h_qmd
@@ -111,10 +112,10 @@ private lemma qmdRem_norm_div_tendsto_zero
 (from the QMD ratio `‖r_t‖/|t| → 0` times `|t| → 0`). -/
 private lemma qmdRem_norm_tendsto_zero
     {μ : Measure Ω} {curve : ℝ → Measure Ω} {g : Ω → ℝ}
-    (h_qmd : IsQMDLimit curve μ g) :
+    (hg : AEStronglyMeasurable g μ) (h_qmd : IsQMDLimit curve μ g) :
     Tendsto (fun t : ℝ => (eLpNorm (qmdRem curve μ g t) 2 μ).toReal)
       (𝓝[≠] 0) (𝓝 0) := by
-  have h_real := qmdRem_norm_div_tendsto_zero h_qmd
+  have h_real := qmdRem_norm_div_tendsto_zero hg h_qmd
   have h_abs : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
     have h : Tendsto (fun t : ℝ => |t|) (𝓝 (0 : ℝ)) (𝓝 0) := by
       simpa using (continuous_abs.tendsto (0 : ℝ))
@@ -157,7 +158,9 @@ theorem meanFunctional_isTVFrechetExpansion
   set r : ℝ → Ω → ℝ :=
     fun t => qmdRem γ.curve γ.dominating g t with hr_def
   -- The `ℝ≥0∞`-form QMD limit (matches the `qmd_limit` field definitionally).
-  have h_qmd : IsQMDLimit γ.curve γ.dominating g := γ.qmd_limit
+  have h_qmd : IsQMDLimit γ.curve γ.dominating g := by
+    apply (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).2
+    simpa only [qmdRem, g] using! γ.qmd_limit
   -- Pointwise unfolding of the remainder.
   have hr_pt : ∀ t ω, r t ω = s t ω - s 0 ω - (t / 2) * g ω * s 0 ω := fun t ω => rfl
   -- The uniform bound on `a`, with `0 ≤ C`.
@@ -169,7 +172,7 @@ theorem meanFunctional_isTVFrechetExpansion
       MemLp (fun ω => a ω * h ω) 2 γ.dominating := by
     intro h hh
     refine MemLp.mono' (hh.norm.const_mul C)
-      (ha_meas.aestronglyMeasurable.mul hh.1) ?_
+      (ha_meas.aestronglyMeasurable.mul hh.aestronglyMeasurable) ?_
     filter_upwards with ω
     rw [norm_mul]
     exact mul_le_mul_of_nonneg_right ((Real.norm_eq_abs _).le.trans (hC ω)) (norm_nonneg _)
@@ -236,9 +239,9 @@ theorem meanFunctional_isTVFrechetExpansion
   have hL2rate : Tendsto (fun t => (∫ ω, (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / |t|)
       (𝓝[≠] (0:ℝ)) (𝓝 0) := by
     have hq : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_tendsto_zero h_qmd
+        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
     have hqd : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal / |t|)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero h_qmd
+        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
     have habs : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
       have h : Tendsto (fun t : ℝ => |t|) (𝓝 (0:ℝ)) (𝓝 0) := by
         simpa using (continuous_abs.tendsto (0:ℝ))
@@ -321,7 +324,7 @@ theorem meanFunctional_isTVFrechetExpansion
   have hTermIII : Tendsto (fun t => 2 * (∫ ω, (a ω * s 0 ω) * r t ω ∂γ.dominating) / t)
       (𝓝[≠] (0:ℝ)) (𝓝 0) := by
     have hqd : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal / |t|)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero h_qmd
+        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
     refine squeeze_zero_norm' ?_
       (by simpa using hqd.const_mul (2 * Real.sqrt (∫ ω, (a ω * s 0 ω) ^ 2 ∂γ.dominating)))
     filter_upwards [qmdRem_memLp_eventually hg_meas h_qmd, self_mem_nhdsWithin] with t hr_memLp ht

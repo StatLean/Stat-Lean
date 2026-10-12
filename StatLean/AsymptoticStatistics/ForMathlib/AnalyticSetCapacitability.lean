@@ -91,7 +91,7 @@ private theorem analyticSet_innerApprox_of_isFiniteMeasure
         ENNReal.tendsto_inv_nat_nhds_zero
     have hle0 : m (A \ ⋃ i, K i) ≤ 0 :=
       ge_of_tendsto htend (Filter.Eventually.of_forall hbd)
-    exact le_antisymm hle0 (zero_le _)
+    exact le_antisymm hle0 (zero_le)
 
 /-- In a Polish space, every analytic set is null-measurable for every s-finite Borel
 measure.

@@ -330,7 +330,7 @@ theorem norm_gpEmbed_sub_le (s t : ↥F) :
         eLpNorm_toReal_eq_sqrt_integral_sq hYc]
   -- Step 2: rewrite the `L²` distance as `√(∫ Y² ∂P)`.
   have hdist : distL2 P (s : Ω → ℝ) (t : Ω → ℝ) = Real.sqrt (∫ x, Y x ^ 2 ∂P) := by
-    rw [distL2]
+    rw [distL2_eq_eLpNorm (hsLp.sub htLp).aestronglyMeasurable]
     have hYeq : (s : Ω → ℝ) - (t : Ω → ℝ) = Y := by funext x; rfl
     rw [hYeq, eLpNorm_toReal_eq_sqrt_integral_sq hYLp]
   rw [hnorm_centred, hdist]
@@ -362,7 +362,7 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
     ProbabilityTheory.HasSubgaussianMGF
       (fun ω => gpX hF_env hF_meas hH_inf hH_sep s ω
         - gpX hF_env hF_meas hH_inf hH_sep t ω)
-      ⟨(distL2 P (s : Ω → ℝ) (t : Ω → ℝ)) ^ 2, sq_nonneg _⟩ iidStdGaussian := by
+      (NNReal.mk ((distL2 P (s : Ω → ℝ) (t : Ω → ℝ)) ^ 2) (sq_nonneg _)) iidStdGaussian := by
   set b := gpBasis hF_env hF_meas hH_inf hH_sep with hb
   set h' := gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t with hh'
   -- Step 1: the increment agrees a.e. with the isonormal image of `h'`.
@@ -385,7 +385,7 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
       (gpX_measurable hF_env hF_meas hH_inf hH_sep t)
   have hlaw : iidStdGaussian.map (fun ω => gpX hF_env hF_meas hH_inf hH_sep s ω
         - gpX hF_env hF_meas hH_inf hH_sep t ω)
-      = gaussianReal 0 ⟨‖h'‖ ^ 2, sq_nonneg _⟩ := by
+      = gaussianReal 0 (NNReal.mk (‖h'‖ ^ 2) (sq_nonneg _)) := by
     rw [Measure.map_congr haeeq, isonormal_map_eq_gaussianReal b h']
   -- Step 4: sub-Gaussian with proxy `‖h'‖²`.
   have hSG := hasSubgaussianMGF_of_map_eq_gaussianReal hmeas_diff.aemeasurable hlaw
@@ -394,8 +394,8 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
   -- `‖h'‖² ≤ (distL2 P s t)²` (square both sides of `norm_gpEmbed_sub_le`).
   have hle : ‖h'‖ ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) := by
     rw [hh']; exact norm_gpEmbed_sub_le hF_env hF_meas s t
-  rw [← NNReal.coe_le_coe]
-  simp only [NNReal.coe_mk]
+  erw [← NNReal.coe_le_coe]
+  change ‖h'‖ ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
   exact pow_le_pow_left₀ (norm_nonneg _) hle 2
 
 /-- **`L²`-norm of the increment is bounded by the `L²` distance.** Since
@@ -470,7 +470,7 @@ theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
   -- Sub-Gaussian proxy: `dist s t = distL2 P s t` (defeq under the `letI`), and the
   -- chaining wants `⟨1² · dist s t², _⟩ = ⟨distL2 P s t², _⟩` (`1² · x = x`).
   refine (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy ?_
-  rw [← NNReal.coe_le_coe]
+  erw [← NNReal.coe_le_coe]
   simp only [NNReal.coe_mk, one_pow, one_mul]
   -- `dist s t = distL2 P ↑s ↑t` (defeq under the `@[reducible]` pseudometric `letI`).
   change distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
@@ -550,7 +550,7 @@ theorem gpSkeleton_spec (hF_meas : ∀ f ∈ F, Measurable f)
     (gpSkeletonNet hF_meas hF_ent hF_ne) hnet hmono
     (fun s t => (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy
       (by
-        rw [← NNReal.coe_le_coe]
+        erw [← NNReal.coe_le_coe]
         simp only [NNReal.coe_mk, one_pow, one_mul]
         change distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
         exact le_refl _)) hDud
@@ -671,7 +671,7 @@ theorem pathExtend_eq_on_skeleton {ω : ℕ → ℝ}
   have := @Dense.extend_of_ind ↥F ℝ inst.toUniformSpace _ _ _ _
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
     (uniformContinuous_restrict_of_good hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω) t
-  simpa [pathExtend, Set.restrict_apply] using this
+  simpa [pathExtend, Set.restrict_apply] using! this
 
 /-- On the good set, `pathExtend ω` is an `ℓ∞(F)` element: its range is bounded in
 `‖·‖` (`bddAbove_pathExtend_of_good`, since `‖·‖ = |·|` on ℝ), which is
@@ -757,13 +757,13 @@ theorem gpPath_aeeq_coord (f : ↥F) :
       rw [h0]
       exact (ENNReal.continuous_ofReal.tendsto 0).comp this
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdist0
-      (Filter.Eventually.of_forall (fun n => zero_le _))
+      (Filter.Eventually.of_forall (fun n => zero_le))
       (Filter.Eventually.of_forall (fun n =>
         eLpNorm_gpX_sub_le ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t n) f))
   have htim : TendstoInMeasure iidStdGaussian
       (fun n => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t n)) Filter.atTop
       (gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep f) :=
-    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) hae_meas hae_meas_f htendsto_eLp
+    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) htendsto_eLp
   obtain ⟨ns, hns_mono, hns_ae⟩ := htim.exists_seq_tendsto_ae
   -- The good event.
   have hgood := (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.2

@@ -350,7 +350,7 @@ theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
     rw [show gaussianVector (designMean A p.1) p.2.1
         = (Measure.pi fun i => gaussianReal ((designMean A p.1) i) p.2.1).map (WithLp.toLp 2)
         from rfl]
-    exact Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 _).aemeasurable
+    exact (by infer_instance)
   have hunit := isUnit_mulTranspose_of_rank hA
   have hunitdet : IsUnit (A * Aᵀ).det := by rw [← Matrix.isUnit_iff_isUnit_det]; exact hunit
   set M : Matrix (Fin n) (Fin s) ℝ := Aᵀ * (A * Aᵀ)⁻¹ with hMdef

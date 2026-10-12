@@ -186,7 +186,7 @@ lemma w_hX_meas (i : ℕ) : Measurable (wX i) := measurable_pi_apply i
 lemma w_hX_indep : ProbabilityTheory.iIndepFun wX wmu := by
   have h := ProbabilityTheory.iIndepFun_infinitePi
     (P := fun _ : ℕ => wP) (X := fun _ : ℕ => (id : ℝ → ℝ)) fun _ => measurable_id
-  simpa [wX, wmu] using h
+  simpa [wX, wmu] using! h
 
 lemma w_hX_law' (i : ℕ) : wmu.map (wX i) = wP :=
   Measure.infinitePi_map_eval (fun _ : ℕ => wP) i
@@ -258,7 +258,7 @@ lemma w_hm_meas (θ : E1) : Measurable (wm θ) := by
 lemma w_hgrad (θ : E1) (_hθ : θ ∈ (Set.univ : Set E1)) (x : ℝ) :
     HasFDerivAt (fun θ' : E1 => wm θ' x) (innerSL ℝ (psiVec wpsi θ x)) θ := by
   have hu : HasFDerivAt (fun θ' : E1 => x - L1 θ') (-L1) θ := by
-    simpa using (hasFDerivAt_const x θ).sub L1.hasFDerivAt
+    simpa using! (hasFDerivAt_const x θ).sub L1.hasFDerivAt
   have hfun : (fun θ' : E1 => wm θ' x)
       = (-(1 : ℝ) / 2) • fun θ' : E1 => (x - L1 θ') * (x - L1 θ') := by
     funext θ'; simp only [wm, L1_apply, Pi.smul_apply, smul_eq_mul]; ring

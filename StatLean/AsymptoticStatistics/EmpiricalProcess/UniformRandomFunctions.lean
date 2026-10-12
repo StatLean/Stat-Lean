@@ -200,7 +200,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont
     exact absurd hh₀ (not_lt.2 ((ENNReal.ofReal_le_ofReal_iff hε.le).1 hle))
   -- Squeeze `P*(exceedance) ≤ μ(S') → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le _)
+    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h) (ψ θ₀ h)|}
@@ -303,13 +303,13 @@ theorem modifiedRandomFunction_tail
   have hB0 : Tendsto (fun n => μ.outerMeasureStar (Bbad n)) atTop (𝓝 0) := by
     have hbad' : Tendsto (fun n => μ (Bbad n)) atTop (𝓝 0) := h_bad
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbad'
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n => outerMeasureStar_le_measure μ (Bbad n))
   have hsum : Tendsto (fun n => μ.outerMeasureStar (A' n) + μ.outerMeasureStar (Bbad n))
       atTop (𝓝 0) := by simpa using hA0.add hB0
   -- Final squeeze via subadditivity.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (modifiedRandomFunction ψ θ₀ δcls θ_hat X n ξ h) (ψ θ₀ h)|}
       ≤ μ.outerMeasureStar (A' n ∪ Bbad n) := outerMeasureStar_mono μ (hsub n)
@@ -403,13 +403,13 @@ theorem guardedRandomFunction_tail
   have hB0 : Tendsto (fun n => μ.outerMeasureStar (Bbad n)) atTop (𝓝 0) := by
     have hbad' : Tendsto (fun n => μ (Bbad n)) atTop (𝓝 0) := h_bad
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbad'
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n => outerMeasureStar_le_measure μ (Bbad n))
   have hsum : Tendsto (fun n => μ.outerMeasureStar (A' n) + μ.outerMeasureStar (Bbad n))
       atTop (𝓝 0) := by simpa using hA0.add hB0
   -- Final squeeze via subadditivity.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (guardedRandomFunction good fhat ψθ₀ n ξ h) (ψθ₀ h)|}
       ≤ μ.outerMeasureStar (A' n ∪ Bbad n) := outerMeasureStar_mono μ (hsub n)
@@ -462,7 +462,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont_metric
     exact absurd hh₀ (not_lt.2 ((ENNReal.ofReal_le_ofReal_iff hε.le).1 hle))
   -- Squeeze `P*(exceedance) ≤ μ(S') → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le _)
+    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (ψ (t_hat n (fun i : Fin n => X i.val ξ)) h) (ψ t₀ h)|}

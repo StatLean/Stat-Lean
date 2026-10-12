@@ -18,17 +18,16 @@ theorem populationSquareRadius_strictLocalizedDifferenceClass_le
   unfold populationSquareRadius
   refine iSup_le fun h => iSup_le fun hh => ?_
   rcases hh with ⟨f, hf, g, hg, heq, hr⟩
-  have hr_pos : 0 < r := ENNReal.ofReal_pos.mp ((zero_le _).trans_lt hr)
+  have hr_pos : 0 < r := ENNReal.ofReal_pos.mp ((zero_le).trans_lt hr)
   have hnorm_sq :
-      eLpNorm h 2 P ^ (2 : ℕ) =
+      eLpNorm' h 2 P ^ (2 : ℕ) =
         ∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P := by
     calc
-      eLpNorm h 2 P ^ (2 : ℕ) = eLpNorm h 2 P ^ (2 : ℝ) :=
+      eLpNorm' h 2 P ^ (2 : ℕ) = eLpNorm' h 2 P ^ (2 : ℝ) :=
         (ENNReal.rpow_natCast _ 2).symm
       _ = ∫⁻ x, ‖h x‖ₑ ^ (2 : ℝ) ∂P := by
-        simpa using eLpNorm_nnreal_pow_eq_lintegral
-          (f := h) (μ := P) (p := (2 : NNReal))
-          (show (2 : NNReal) ≠ 0 by norm_num)
+        rw [eLpNorm', ← ENNReal.rpow_mul]
+        norm_num
       _ = ∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P := by
         refine lintegral_congr fun x => ?_
         calc
@@ -39,7 +38,7 @@ theorem populationSquareRadius_strictLocalizedDifferenceClass_le
               ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
   calc
     (∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P) =
-        eLpNorm h 2 P ^ (2 : ℕ) := hnorm_sq.symm
+        eLpNorm' h 2 P ^ (2 : ℕ) := hnorm_sq.symm
     _ ≤ ENNReal.ofReal r ^ (2 : ℕ) := by gcongr
     _ = ENNReal.ofReal (r ^ 2) :=
       (ENNReal.ofReal_pow hr_pos.le 2).symm
@@ -142,7 +141,7 @@ theorem conditionalRademacherSup_strictLocalizedDifferenceClass_le_bookEntropy
       Set.mem_empty_iff_false, iff_false]
     rintro ⟨f, hf, g, hg, heq, hnorm⟩
     rw [ENNReal.ofReal_eq_zero.mpr hr_nonpos] at hnorm
-    exact (not_lt_of_ge (zero_le _)) hnorm
+    exact (not_lt_of_ge (zero_le)) hnorm
   rcases F.eq_empty_or_nonempty with hFempty | hFnonempty
   · rw [hGempty_of_Fempty hFempty]
     simp only [conditionalRademacherSup_empty, zero_le]

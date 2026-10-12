@@ -34,7 +34,7 @@ private lemma indicatorWidth_isEpsBracket
     (hstrict : (ENNReal.ofReal mesh) ^ (1 / p.toReal) < ENNReal.ofReal eps) :
     IsEpsBracket eps l u p P := by
   refine ⟨hlu, hl, hu, hlp, hup, ?_⟩
-  rw [hdiff, eLpNorm_indicator_const hs hp0 hpTop]
+  rw [hdiff, eLpNorm_indicator_const hs.nullMeasurableSet hp0 hpTop]
   simpa using (ENNReal.rpow_le_rpow hPs (by positivity)).trans_lt hstrict
 
 private theorem halfLine_gridCover
@@ -152,7 +152,7 @@ private theorem halfLine_gridCover
         · let R : ℕ → Prop := fun m ↦ ∃ hm : m < n + 1, t < q ⟨m, hm⟩
           have hex : ∃ m : ℕ, R m := by
             refine ⟨n, ⟨by omega, ?_⟩⟩
-            simpa using lt_of_le_of_ne (le_of_not_gt htl)
+            simpa using! lt_of_le_of_ne (le_of_not_gt htl)
               (fun h ↦ htq ⟨Fin.last n, h⟩)
           let m := Nat.find hex
           obtain ⟨hmn, hmqt⟩ := Nat.find_spec hex

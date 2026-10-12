@@ -295,7 +295,8 @@ theorem isCanonicalUT_cx (K : Set (ℝ × ℝ)) :
     rw [ae_dirac_eq]
     refine Filter.eventually_pure.mpr ?_
     simp
-  rw [hmap, cxν, withDensity_congr_ae hae, withDensity_one]
+  rw [Measure.map₀_of_aemeasurable (by fun_prop), hmap, cxν, withDensity_congr_ae hae,
+      withDensity_one]
 
 /-- **The conditional size of any test is its value at the single atom.** The disintegration
 identity `integral_eq_integral_condDistrib` computes the conditional size without identifying
@@ -1200,7 +1201,7 @@ variable {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → �
 private lemma isProbabilityMeasure_mapUT [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (p : ℝ × Ξ) :
     IsProbabilityMeasure ((P p).map fun x => (U x, T x)) :=
-  Measure.isProbabilityMeasure_map (hU.prodMk hT).aemeasurable
+  (by infer_instance)
 
 /-- **The normalizing constant is strictly positive on `Ω`.** If `C p ≤ 0` the canonical
 density vanishes identically and the law of `(U, T)` is the zero measure, which it is not. -/
@@ -1217,7 +1218,7 @@ private lemma canonicalUT_const_pos [OpensMeasurableSpace Ξ] [∀ p, IsProbabil
     linarith
   haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
   have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
-  rw [hUT p hp] at h1
+  rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable] at h1
   simp only [canExp_apply] at hdens
   rw [hdens, withDensity_zero] at h1
   simp at h1
@@ -1238,7 +1239,8 @@ private lemma integrable_canExp [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityM
   haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
   have hlin : ∫⁻ z, ENNReal.ofReal (C p * Real.exp (canExp p z)) ∂ν = 1 := by
     have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
-    rw [hUT p hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ] at h1
+    rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable, withDensity_apply _ MeasurableSet.univ,
+        setLIntegral_univ] at h1
     exact h1
   have hint : Integrable (fun z => C p * Real.exp (canExp p z)) ν :=
     (lintegral_ofReal_ne_top_iff_integrable hm.aestronglyMeasurable hnn).mp
@@ -1260,7 +1262,7 @@ private lemma integral_comp_UT_eq [OpensMeasurableSpace Ξ] [∀ p, IsProbabilit
   have hmap : ∫ x, g (U x, T x) ∂(P p)
       = ∫ z, g z ∂((P p).map fun x => (U x, T x)) :=
     (integral_map (hU.prodMk hT).aemeasurable hg.aestronglyMeasurable).symm
-  rw [hmap, hUT p hp]
+  rw [hmap, hUT.map_eq hp (hU.prodMk hT).aemeasurable]
   have hnn : ∀ z : ℝ × Ξ, 0 ≤ C p * Real.exp (canExp p z) := fun z => by
     have := canonicalUT_const_pos hU hT hUT hp
     positivity
@@ -1286,7 +1288,7 @@ private lemma integrable_comp_UT_iff [OpensMeasurableSpace Ξ] [∀ p, IsProbabi
   have hstep : Integrable (fun x => g (U x, T x)) (P p)
       ↔ Integrable g ((P p).map fun x => (U x, T x)) :=
     (integrable_map_measure hg.aestronglyMeasurable (hU.prodMk hT).aemeasurable).symm
-  rw [hstep, hUT p hp]
+  rw [hstep, hUT.map_eq hp (hU.prodMk hT).aemeasurable]
   simp only [← canExp_apply]
   rw [integrable_withDensity_iff_integrable_smul' hdm
     (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
@@ -1353,7 +1355,7 @@ private lemma mapUT_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P
     {p q : ℝ × Ξ} (hp : p ∈ Ω) (hq : q ∈ Ω) :
     (P p).map (fun x => (U x, T x)) ≪ (P q).map fun x => (U x, T x) := by
   have hCq := canonicalUT_const_pos hU hT hUT hq
-  rw [hUT p hp, hUT q hq]
+  rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable, hUT.map_eq hq (hU.prodMk hT).aemeasurable]
   simp only [← canExp_apply]
   refine (withDensity_absolutelyContinuous ν _).trans
     (withDensity_absolutelyContinuous' ?_ ?_)
@@ -1475,7 +1477,7 @@ private lemma exists_mem_fst_eq (hΩ : Convex ℝ Ω) {θ₀ : ℝ}
 /-- The law of `T` is a probability measure. -/
 private lemma isProbabilityMeasure_statLaw [∀ p, IsProbabilityMeasure (P p)]
     (hT : Measurable T) (p : ℝ × Ξ) : IsProbabilityMeasure ((P p).map T) :=
-  Measure.isProbabilityMeasure_map hT.aemeasurable
+  (by infer_instance)
 
 /-- The conditional power is a measurable function of the conditioning variable. -/
 private lemma measurable_condPower (hU : Measurable U) (hT : Measurable T)
@@ -1718,7 +1720,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
       Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => ⟪y, z⟫_ℝ := fun y =>
     (innerSL ℝ y).continuous.measurable
   haveI hμ₁prob : IsProbabilityMeasure ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map T) :=
-    Measure.isProbabilityMeasure_map hT.aemeasurable
+    (by infer_instance)
   set μ₁ : Measure Ξ := (P ((θ₀, ϑ₁) : ℝ × Ξ)).map T with hμ₁
   -- (1) Every boundary law of `T` is the `(ϑ − ϑ₁)`-exponential tilt of `μ₁`, so the vanishing
   -- hypothesis becomes the vanishing of a Laplace transform on the slice.
@@ -1732,7 +1734,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     have h1 : ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁
         = C ((θ₀, ϑ₁) : ℝ × Ξ) * ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
             Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z) ∂ν := by
-      rw [hμ₁, integral_map hT.aemeasurable
+      erw [hμ₁, integral_map hT.aemeasurable
         ((hf.mul ((hinnerm (ϑ - ϑ₁)).exp)).aestronglyMeasurable)]
       exact integral_comp_UT_eq hU hT hUT hϑ₁ hgm
     have h2 : ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
@@ -1762,7 +1764,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
   haveI : IsProbabilityMeasure μ₁ := hμ₁prob
   set ν' : Measure (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) := μ₁.map e with hν'
   haveI hν'prob : IsProbabilityMeasure ν' := by
-    rw [hν']; exact Measure.isProbabilityMeasure_map hemeas.aemeasurable
+    rw [hν']; exact (by infer_instance)
   set f' : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) → ℝ := fun y => f (e.symm y) with hf'def
   have hf'm : Measurable f' := hf.comp hesymm
   set S' : Set (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) :=
@@ -1840,7 +1842,7 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   refine complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hf
     (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), interior_subset hϑ, rfl⟩) p.2.1
   haveI : IsProbabilityMeasure ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
-    Measure.isProbabilityMeasure_map hT.aemeasurable
+    (by infer_instance)
   refine Integrable.mono' (integrable_const Cb) hf.aestronglyMeasurable
     (Filter.Eventually.of_forall fun t => ?_)
   rw [Real.norm_eq_abs]
@@ -3356,7 +3358,7 @@ private lemma integrable_condPower_of_integrable {P : ℝ × Ξ → Measure 𝓧
   have h : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1)) ((P p).map fun x => (T x, U x)) := by
     rw [integrable_map_measure hgm.aestronglyMeasurable (hT.prodMk hU).aemeasurable]
     exact hint
-  exact h.integral_condDistrib_map hU.aemeasurable
+  exact h.integral_condDistrib_map hT.aemeasurable hU.aemeasurable
 
 /-- **The point-null fibrewise engine, globalised.** The analogue of
 `integral_comp_sign_of_condZero_interval` for a *single* boundary surface: `g` is bounded,
@@ -4045,16 +4047,20 @@ theorem isCanonicalUT_reparam
     rw [← inner_exponent_reparam a p.1 p.2 z.1 z.2 ha₀]
   have hkey : (ν.map (statTransformUT a₀ a)).withDensity (fun z => ENNReal.ofReal (C p *
         Real.exp ((reparamUT a₀ a p).1 * z.1 + ⟪(reparamUT a₀ a p).2, z.2⟫_ℝ)))
-      = ((P p).map fun x => (U x, T x)).map (statTransformUT a₀ a) := by
+      = ((P p).map₀ fun x => (U x, T x)).map (statTransformUT a₀ a) := by
     rw [hUT p hp, ← map_withDensity_comp ν hS hD]
     congr 1
     congr 1
     funext z
     exact hdens z
+  change (P p).map₀ (fun x => (U x / a₀, T x - (U x / a₀) • a)) = _
   rw [hkey]
   -- move the shear past the statistic; both sides vanish if the statistic is not measurable
   by_cases hf : AEMeasurable (fun x => (U x, T x)) (P p)
-  · rw [AEMeasurable.map_map_of_aemeasurable hS.aemeasurable hf]
+  · rw [Measure.map₀_of_aemeasurable hf,
+      Measure.map₀_of_aemeasurable (show AEMeasurable
+        (fun x => (U x / a₀, T x - (U x / a₀) • a)) (P p) from hS.comp_aemeasurable hf),
+      AEMeasurable.map_map_of_aemeasurable hS.aemeasurable hf]
     rfl
   · have hf' : ¬ AEMeasurable (fun x => (U x / a₀, T x - (U x / a₀) • a)) (P p) := by
       intro hc
@@ -4065,7 +4071,7 @@ theorem isCanonicalUT_reparam
       have := hS'.comp_aemeasurable hc
       rw [hcomp] at this
       exact hf this
-    rw [Measure.map_of_not_aemeasurable hf, Measure.map_of_not_aemeasurable hf']
+    rw [Measure.map₀_of_not_aemeasurable hf, Measure.map₀_of_not_aemeasurable hf']
     simp
 
 end StatLean.HypothesisTesting

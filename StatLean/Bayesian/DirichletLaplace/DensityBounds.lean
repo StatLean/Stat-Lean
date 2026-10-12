@@ -145,7 +145,7 @@ lemma dlDensity_le
       (isUnit_iff_ne_zero.mpr (dlNormConst_pos ha).ne') _).mp h
   have hg : IntegrableOn (fun y => y ^ (1 - a - 1) * Real.exp (-(δ * y))) (Set.Ioi 0) := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (s := 1 - a - 1) (p := 1) (b := δ)
-      (by linarith) le_rfl hδ
+      (by linarith) (by norm_num) hδ
     simp only [Real.rpow_one, neg_mul] at h
     exact h
   have hJbigint : IntegrableOn (fun ψ => ψ ^ (a - 2) * Real.exp (-δ / ψ)) (Set.Ioi 0) := by
@@ -431,13 +431,15 @@ lemma dlMarginal_abs_gt_le
         refine Real.log_le_log (by positivity) ?_
         rw [div_le_div_iff₀ h4δ hδ]; linarith
       · rw [Set.Ioc_eq_empty (by linarith), Measure.restrict_empty, lintegral_zero_measure]
-        exact zero_le _
+        exact zero_le
     -- far part `Ioi 1`: `≤ ofReal 2`
     have hfar : ∫⁻ ψ in Set.Ioi 1, ENNReal.ofReal (G ψ) ∂volume ≤ ENNReal.ofReal 2 := by
       have hint_exp : IntegrableOn (fun ψ => Real.exp (-ψ / 2)) (Set.Ioi (1 : ℝ)) := by
         have h := integrableOn_exp_mul_Ioi (show (-1 / 2 : ℝ) < 0 by norm_num) 1
         refine h.congr_fun (fun ψ _ => ?_) measurableSet_Ioi
-        rw [show -1 / 2 * ψ = -ψ / 2 by ring]
+        change Real.exp (-1 / 2 * ψ) = Real.exp (-ψ / 2)
+        congr 1
+        ring
       have hval : ∫ ψ in Set.Ioi (1 : ℝ), Real.exp (-ψ / 2) = 2 * Real.exp (-1 / 2) := by
         rw [show (fun ψ : ℝ => Real.exp (-ψ / 2)) = (fun ψ => Real.exp (-1 / 2 * ψ)) by
           funext ψ; rw [show -ψ / 2 = -1 / 2 * ψ by ring]]

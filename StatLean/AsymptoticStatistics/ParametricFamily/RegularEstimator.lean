@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
@@ -97,7 +98,7 @@ structure RegularEstimatorSequence
   tendsto : ∀ h : AsymptoticRepresentation.Θ k,
     WeakConverges
       (fun n : ℕ =>
-        (AsymptoticRepresentation.productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+        (AsymptoticRepresentation.productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map₀
           (fun x => (Real.sqrt n) •
             (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h))))
       limitDist

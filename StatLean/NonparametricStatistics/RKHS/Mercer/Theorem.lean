@@ -272,7 +272,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
   have := (Sum.inl_injective (β := w)).hasSum_iff (f := fun i => ⟪vAll i, g⟫_𝕜 • T (vAll i))
     (a := T g) hvan
   rw [← this] at hTsum
-  convert hTsum using 2 with n
+  convert! hTsum using 2 with n
   have h1 : vAll (Sum.inl n) = v n := rfl
   rw [Function.comp_apply, h1, heig n, smul_comm]
 
@@ -326,7 +326,7 @@ private theorem coeFn_finset_sum_smul' {ι : Type*} (s : Finset ι) (c : ι → 
       =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | empty => simpa using! Lp.coeFn_zero 𝕜 2 μ
   | insert a t ha ih =>
       rw [Finset.sum_insert ha]
       filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
@@ -342,7 +342,7 @@ private noncomputable def residualSymbol (d : MercerEigensystem μ K hKc) (s : F
 
 private theorem continuous_residualSymbol (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     Continuous fun p : X × X => residualSymbol d s p.1 p.2 :=
-  hKc.sub (continuous_finset_sum s fun n _ =>
+  hKc.sub (continuous_finsetSum s fun n _ =>
     continuous_const.mul (((d.eigfun n).continuous.comp continuous_fst).mul
       (RCLike.continuous_conj.comp ((d.eigfun n).continuous.comp continuous_snd))))
 
@@ -649,7 +649,7 @@ private theorem continuous_eig_tsum (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
     Continuous fun y => ∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) :=
   (tendstoUniformly_eig hK d x).continuous
     (Filter.Eventually.frequently (Filter.Eventually.of_forall fun t =>
-      continuous_finset_sum t fun n _ =>
+      continuous_finsetSum t fun n _ =>
         continuous_const.mul (continuous_const.mul
           (RCLike.continuous_conj.comp' (d.eigfun n).continuous))))
 
@@ -831,7 +831,7 @@ private theorem tendstoUniformly_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpe
       (fun s : Finset d.ι => fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2)
       (fun x => RCLike.re (K x x)) Filter.atTop := by
   refine Monotone.tendstoUniformly_of_forall_tendsto ?_ ?_ ?_ ?_
-  · exact fun s => continuous_finset_sum s fun n _ =>
+  · exact fun s => continuous_finsetSum s fun n _ =>
       continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
   · exact fun s t hst x => Finset.sum_le_sum_of_subset_of_nonneg hst
       fun n _ _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
@@ -865,15 +865,16 @@ private theorem integral_normSq_eigfun (d : MercerEigensystem μ K hKc) (n : d.�
 /-- The truncated eigenvalue sum is the integral of the truncated diagonal expansion. -/
 private theorem sum_eigval_eq_integral (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     (∑ n ∈ s, d.eigval n) = ∫ x, ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 ∂μ := by
-  rw [integral_finset_sum s fun n _ =>
+  erw [integral_finsetSum s fun n _ =>
     (integrable_of_cont' (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
   refine Finset.sum_congr rfl fun n _ => ?_
+  simp only [Pi.pow_apply]
   rw [integral_const_mul, integral_normSq_eigfun d n, mul_one]
 
 /-- Continuity of the truncated diagonal expansion. -/
 private theorem continuous_diag_partial (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
-  continuous_finset_sum s fun n _ =>
+  continuous_finsetSum s fun n _ =>
     continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
 
 end Trace

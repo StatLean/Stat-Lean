@@ -211,6 +211,7 @@ theorem rademacherAverage_eq_rademacherSum
   intro i _
   ring
 
+set_option backward.isDefEq.respectTransparency false in
 theorem rademacherAverage_proxy_eq_empiricalL2Seminorm_sq
     {Ω : Type*} (n : ℕ) (X : Fin n → Ω)
     (f : Ω → ℝ) :
@@ -253,7 +254,7 @@ theorem rademacherAverage_proxy_eq_empiricalL2Seminorm_sq
       change NNReal.toRealHom
         (∑ i, (⟨((Real.sqrt n)⁻¹ * f (X i)) ^ 2,
           sq_nonneg ((Real.sqrt n)⁻¹ * f (X i))⟩ : ℝ≥0)) = _
-      rw [map_sum]
+      erw [map_sum]
       rfl
     _ = empiricalL2Seminorm n X f ^ 2 := hreal
     _ = (↑(⟨empiricalL2Seminorm n X f ^ 2,
@@ -323,6 +324,7 @@ theorem measurable_rademacherSup
     conditionalRademacherSup F 0 X = 0 := by
   simp [conditionalRademacherSup]
 
+set_option backward.isDefEq.respectTransparency false in
 theorem integral_iSup_abs_rademacherAverage_le
     {Ω ι : Type*} [Fintype ι] [Nonempty ι]
     (n : ℕ) (X : Fin n → Ω) (u : ι → Ω → ℝ)
@@ -332,7 +334,7 @@ theorem integral_iSup_abs_rademacherAverage_le
         ∂rademacherCube n ≤
       Real.sqrt
         (2 * ρ ^ 2 * Real.log (2 * (Fintype.card ι : ℝ))) := by
-  let c : ℝ≥0 := ⟨ρ ^ 2, sq_nonneg ρ⟩
+  let c : ℝ≥0 := NNReal.mk (ρ ^ 2) (sq_nonneg ρ)
   have hc : 0 < c := by
     rw [← NNReal.coe_pos]
     exact pow_pos hρ 2
@@ -341,10 +343,11 @@ theorem integral_iSup_abs_rademacherAverage_le
         (fun ε : Fin n → Bool => rademacherAverage n X ε (u i)) c
         (rademacherCube n) := by
     apply (rademacherAverage_hasSubgaussianMGF n X (u i)).mono_proxy
-    rw [← NNReal.coe_le_coe]
+    erw [← NNReal.coe_le_coe]
     change empiricalL2Seminorm n X (u i) ^ 2 ≤ ρ ^ 2
     exact pow_le_pow_left₀ (empiricalL2Seminorm_nonneg n X (u i)) (hu i) 2
-  simpa [c] using
+  simpa only [c, NNReal.coe_mk, ← Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2),
+    ← Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * ρ ^ 2)] using
     (expectation_iSup_abs_le_of_subgaussian (μ := rademacherCube n) hc hZ)
 
 theorem lintegral_iSup_ofReal_abs_rademacherAverage_le
@@ -371,6 +374,7 @@ theorem lintegral_iSup_ofReal_abs_rademacherAverage_le
   exact ENNReal.ofReal_le_ofReal
     (integral_iSup_abs_rademacherAverage_le n X u ρ hρ hu)
 
+set_option backward.isDefEq.respectTransparency false in
 theorem lintegral_iSup_ofReal_abs_rademacherIncrement_le
     {Ω ι : Type*} [Fintype ι] [Nonempty ι]
     (n : ℕ) (X : Fin n → Ω)
@@ -473,7 +477,7 @@ theorem empiricalL2Seminorm_eq_euclideanNorm
         change _ = NNReal.toRealHom
           (∑ i, (⟨((Real.sqrt n)⁻¹ * f (X i)) ^ 2,
             sq_nonneg ((Real.sqrt n)⁻¹ * f (X i))⟩ : ℝ≥0))
-        rw [map_sum]
+        erw [map_sum]
         rfl
       _ = NNReal.toReal
           (⟨empiricalL2Seminorm n X f ^ 2,

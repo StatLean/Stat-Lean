@@ -108,10 +108,15 @@ lemma cardNet {F : Set (Ω → ℝ)} {P : Measure Ω} {ε : ℝ}
         rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ u i x - l i x)]
         rw [abs_sub_le_iff]
         constructor <;> linarith
-      have h_eLp_le : eLpNorm ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P
-          ≤ eLpNorm (fun y => u i y - l i y) 2 P := eLpNorm_mono h_ptwise
-      have h_size : eLpNorm (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε := (hbr i).size_lt
-      have h_lt : eLpNorm ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P < ENNReal.ofReal ε :=
+      have h_eLp_le : eLpNorm' ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P
+          ≤ eLpNorm' (fun y => u i y - l i y) 2 P :=
+        eLpNorm'_mono_ae (by norm_num) (Filter.Eventually.of_forall h_ptwise)
+      have h_size : eLpNorm' (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε := by
+        have hwidth : AEStronglyMeasurable (fun y => u i y - l i y) P :=
+          ((hbr i).measurable_upper.sub (hbr i).measurable_lower).aestronglyMeasurable
+        simpa only [eLpNorm_eq_eLpNorm' (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+          (by norm_num : (2 : ℝ≥0∞) ≠ ∞) hwidth, ENNReal.toReal_ofNat] using (hbr i).size_lt
+      have h_lt : eLpNorm' ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P < ENNReal.ofReal ε :=
         lt_of_le_of_lt h_eLp_le h_size
       exact ENNReal.toReal_lt_of_lt_ofReal h_lt
   · -- Cardinality bound: `S.card ≤ (filter Q univ).card ≤ k = bracketingNumber`.

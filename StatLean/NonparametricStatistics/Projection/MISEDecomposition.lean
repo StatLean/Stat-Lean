@@ -203,7 +203,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
         ((∑ j ∈ Finset.Icc 1 N, c j * trigBasis j x) - seriesFun θ x) ^ 2
       = (∑ j ∈ Finset.Icc 1 N, (c j - θ j) ^ 2) + tailEnergy θ N := by
   have hcS : Continuous (fun x => ∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) :=
-    continuous_finset_sum _ (fun j _ => continuous_const.mul (continuous_trigBasis j))
+    continuous_finsetSum _ (fun j _ => continuous_const.mul (continuous_trigBasis j))
   have hcg : Continuous (gTail θ N) := continuous_gTail hθ1 N
   have hDrw : ∀ x, (∑ j ∈ Finset.Icc 1 N, c j * trigBasis j x) - seriesFun θ x
       = (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) - gTail θ N x := by
@@ -241,11 +241,11 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
     have hInt2 : ∀ j, Integrable (fun x => ∑ k ∈ Finset.Icc 1 N,
         ((c j - θ j) * (c k - θ k)) * (trigBasis j x * trigBasis k x))
         (volume.restrict (Set.Icc (0:ℝ) 1)) :=
-      fun j => integrable_finset_sum _ (fun k _ => hInt1 j k)
+      fun j => integrable_finsetSum _ (fun k _ => hInt1 j k)
     rw [integral_congr_ae (ae_of_all _ he),
-      integral_finset_sum (Finset.Icc 1 N) (fun j _ => hInt2 j)]
+      integral_finsetSum (Finset.Icc 1 N) (fun j _ => hInt2 j)]
     apply Finset.sum_congr rfl; intro j hj
-    rw [integral_finset_sum (Finset.Icc 1 N) (fun k _ => hInt1 j k)]
+    rw [integral_finsetSum (Finset.Icc 1 N) (fun k _ => hInt1 j k)]
     rw [Finset.sum_congr rfl (fun k hk => by rw [integral_const_mul,
       trigBasis_orthonormal_Icc (Finset.mem_Icc.mp hj).1 (Finset.mem_Icc.mp hk).1])]
     rw [Finset.sum_eq_single j (fun k _ hkj => by rw [if_neg (Ne.symm hkj), mul_zero])
@@ -262,7 +262,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
         (volume.restrict (Set.Icc (0:ℝ) 1)) := fun j =>
       (continuous_const.mul ((continuous_trigBasis j).mul hcg)).integrableOn_Icc
     rw [integral_congr_ae (ae_of_all _ he),
-      integral_finset_sum (Finset.Icc 1 N) (fun j _ => hIntg j)]
+      integral_finsetSum (Finset.Icc 1 N) (fun j _ => hIntg j)]
     apply Finset.sum_eq_zero; intro j hj
     rw [integral_const_mul, integral_trigBasis_mul_gTail hθ1 N j (Finset.mem_Icc.mp hj).1,
       if_neg (by have := (Finset.mem_Icc.mp hj).2; omega), mul_zero]
@@ -311,8 +311,8 @@ theorem proj_mise_decomposition {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
         projEstimator (fun i => seriesFun θ (regularDesign n i) + ξ i ω) N x - seriesFun θ x) := by
       refine Continuous.sub ?_ (continuous_seriesFun hθ1)
       unfold projEstimator
-      exact continuous_finset_sum _ (fun j _ => continuous_const.mul (continuous_trigBasis j))
-    rw [← ofReal_integral_eq_lintegral_ofReal ((hcD.pow 2).integrableOn_Icc)
+      exact continuous_finsetSum _ (fun j _ => continuous_const.mul (continuous_trigBasis j))
+    erw [← ofReal_integral_eq_lintegral_ofReal ((hcD.pow 2).integrableOn_Icc)
       (ae_of_all _ fun x => sq_nonneg _)]
     congr 1
     unfold projEstimator
@@ -339,7 +339,7 @@ theorem proj_mise_decomposition {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
     refine Measurable.const_mul (Finset.measurable_sum _ (fun i _ => ?_)) _
     exact (measurable_const.add (hξm i)).mul measurable_const
   rw [lintegral_add_right _ measurable_const,
-    lintegral_finset_sum _ (fun j _ => (hmeasa j).ennreal_ofReal), lintegral_const,
+    lintegral_finsetSum _ (fun j _ => (hmeasa j).ennreal_ofReal), lintegral_const,
     measure_univ, mul_one]
   -- apply the exact coefficient risk termwise
   have hcoeff : ∀ j ∈ Finset.Icc 1 N, ∫⁻ ω, ENNReal.ofReal

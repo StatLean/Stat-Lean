@@ -185,7 +185,7 @@ lemma differentiableQuadraticMean_restrictFamily {m : ℕ}
       funext u
       exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp only [hres u x])
     rw [hfun]
-    simpa [Function.comp] using hcomp.trans_isBigO hbig
+    simpa [Function.comp] using! hcomp.trans_isBigO hbig
 
 /-! ## Algebraic, measurability and tightness helpers -/
 
@@ -974,7 +974,7 @@ private lemma stdGaussian_map_of_coisometry
     (hφψ : ∀ y, φ (ψ y) = y) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖) :
     (ProbabilityTheory.stdGaussian E).map φ = ProbabilityTheory.stdGaussian F := by
   haveI : IsProbabilityMeasure ((ProbabilityTheory.stdGaussian E).map φ) :=
-    Measure.isProbabilityMeasure_map (by fun_prop)
+    (by infer_instance)
   apply Measure.ext_of_charFunDual
   ext L
   have hnorm : ‖L.comp φ‖ = ‖L‖ := by
@@ -1055,7 +1055,9 @@ private lemma multivariateGaussian_map_scoreDiff_eq_chiSquared {m p : ℕ}
               mulVecE JB⁻¹ (ContinuousLinearMap.adjoint B z)⟫)
       = MultipleTesting.chiSquared p := by
   classical
-  have hR_pd : (CFC.sqrt J).PosDef := hJ_pd.posDef_sqrt
+  have hR_pd : (CFC.sqrt J).PosDef := Matrix.IsStrictlyPositive.posDef
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hJ_pd.isStrictlyPositive).1)
   have hRdet : IsUnit (CFC.sqrt J).det := (Matrix.isUnit_iff_isUnit_det _).mp hR_pd.isUnit
   have hRR : CFC.sqrt J * CFC.sqrt J = J := CFC.sqrt_mul_sqrt_self J hJ_pd.posSemidef.nonneg
   set T : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
@@ -1368,7 +1370,7 @@ private lemma ae_forall_density_ne_zero
   have hSmeas : MeasurableSet S := (M.density_meas θ₀) (measurableSet_singleton 0)
   have hS0 : ν S = 0 := by
     rw [hν, MeasureTheory.withDensity_apply _ hSmeas]
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     refine le_of_eq ?_
     rw [MeasureTheory.setLIntegral_congr_fun hSmeas (g := fun _ => (0 : ℝ≥0∞))
       (fun x hx => by simp [Set.mem_setOf_eq.mp hx])]

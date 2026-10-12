@@ -351,7 +351,7 @@ theorem exists_geometric_bound_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin 
     intro z hz
     have hzn : ‖z‖ ≤ 1 := by
       have h1 : (‖z‖₊ : ENNReal) < r1 := by
-        simpa [Metric.eball, edist_eq_enorm_sub] using hz
+        simpa [Metric.eball, edist_eq_enorm_sub] using! hz
       have h2 : (‖z‖₊ : ENNReal) < 1 := lt_of_lt_of_le h1 hr1one
       have : ‖z‖₊ < 1 := by exact_mod_cast h2
       exact le_of_lt (by exact_mod_cast this)
@@ -444,7 +444,7 @@ private lemma eLpNorm_noise_eq [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε 
     rw [hsq] at this
     exact this.symm
   rw [Lp.norm_toLp] at hnorm
-  rw [← hnorm, ENNReal.ofReal_toReal (hε.memLp t).2.ne]
+  rw [← hnorm, ENNReal.ofReal_toReal (hε.memLp t).ne]
 
 /-- The `L²` norm of a finite noise combination. -/
 private lemma eLpNorm_noise_comb_le [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
@@ -454,8 +454,7 @@ private lemma eLpNorm_noise_comb_le [IsProbabilityMeasure μ] (hε : IsWhiteNois
   have hfun : (fun ω => ∑ i ∈ s, c i * ε (u i) ω) = ∑ i ∈ s, fun ω => c i * ε (u i) ω := by
     funext ω; simp
   rw [hfun]
-  refine (eLpNorm_sum_le (fun i _ => ((hε.measurable (u i)).const_mul (c i)).aestronglyMeasurable)
-    one_le_two).trans ?_
+  refine (eLpNorm_sum_le one_le_two).trans ?_
   have hterm : ∀ i, eLpNorm (fun ω => c i * ε (u i) ω) 2 μ
       = ENNReal.ofReal |c i| * ENNReal.ofReal (Real.sqrt σ2) := by
     intro i
@@ -480,7 +479,7 @@ private lemma cov_noise_lin_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ}
   rw [hcov]
   -- the partial sums pair to zero
   have hmemP : ∀ N : ℕ, MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ :=
-    fun N => memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _
+    fun N => memLp_finsetSum _ fun j _ => (hε.memLp _).const_mul _
   have hzero : ∀ N : ℕ,
       ∫ ω, ε u ω * (∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) ∂μ = 0 := by
     intro N
@@ -490,7 +489,7 @@ private lemma cov_noise_lin_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ}
     have hint : ∀ j : ℕ, Integrable (fun ω => ψ j * (ε u ω * ε (0 - (j : ℕ)) ω)) μ := fun j =>
       ((hε.memLp u).integrable_mul (hε.memLp (0 - (j : ℕ)))).const_mul (ψ j)
     simp_rw [hexp]
-    rw [integral_finset_sum _ fun j _ => hint j]
+    rw [integral_finsetSum _ fun j _ => hint j]
     refine Finset.sum_eq_zero fun j _ => ?_
     rw [integral_const_mul, integral_noise_mul_eq_zero hε (by omega), mul_zero]
   -- the pairing with the defect tends to zero
@@ -516,7 +515,9 @@ private lemma cov_noise_lin_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ}
   have hlim : Tendsto (fun N : ℕ => (eLpNorm (ε u) 2 μ).toReal
       * (eLpNorm (fun ω => X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ).toReal)
       atTop (𝓝 0) := by
-    have h := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hX 0)
+    have h := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp
+      (hX.tendsto_eLpNorm (fun t => (hmX t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) 0)
     simpa using h.const_mul ((eLpNorm (ε u) 2 μ).toReal)
   have habs : |∫ ω, ε u ω * X 0 ω ∂μ| ≤ 0 := by
     refine le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hbd
@@ -613,8 +614,8 @@ private lemma conv_range {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (m 
 private lemma chunk (F : ℕ → ℝ) (N k : ℕ) :
     ∑ l ∈ Finset.range N, F l - ∑ l ∈ Finset.range (N - k), F l
       = ∑ l ∈ Finset.Ico (N - k) N, F l := by
-  rw [Finset.range_eq_Ico,
-    ← Finset.sum_Ico_consecutive F (Nat.zero_le (N - k)) (Nat.sub_le N k)]
+  simp only [Finset.range_eq_Ico]
+  rw [← Finset.sum_Ico_consecutive F (Nat.zero_le (N - k)) (Nat.sub_le N k)]
   ring
 
 omit [MeasurableSpace Ω] in
@@ -664,11 +665,11 @@ private lemma eLpNorm_const_mul_sum_le {ι : Type*} (s : Finset ι) (c : ι → 
   have hfun : (fun ω => ∑ i ∈ s, c i * f i ω) = ∑ i ∈ s, fun ω => c i * f i ω := by
     funext ω; simp
   rw [hfun]
-  refine (eLpNorm_sum_le (fun i hi => ((hf i hi).const_mul (c i))) one_le_two).trans
+  refine (eLpNorm_sum_le one_le_two).trans
     (Finset.sum_le_sum fun i _ => ?_)
   have hsm : (fun ω => c i * f i ω) = c i • f i := rfl
   rw [hsm, eLpNorm_const_smul]
-  exact mul_le_mul_right' (le_of_eq (by simp [Real.enorm_eq_ofReal_abs])) _
+  exact mul_le_mul_left (le_of_eq (by simp [Real.enorm_eq_ofReal_abs])) _
 
 /-- Two `L²`-limits of the same sequence agree a.e. -/
 private lemma ae_eq_of_tendsto {f g : Ω → ℝ} {F : ℕ → Ω → ℝ}
@@ -683,7 +684,7 @@ private lemma ae_eq_of_tendsto {f g : Ω → ℝ} {F : ℕ → Ω → ℝ}
     have hfun : (fun ω => f ω - g ω)
         = (fun ω => f ω - F N ω) + (fun ω => F N ω - g ω) := by funext ω; simp
     rw [hfun]
-    exact eLpNorm_add_le (hfm.sub (hFm N)) ((hFm N).sub hgm) one_le_two
+    exact eLpNorm_add_le  one_le_two
   have hlim : Tendsto (fun N => eLpNorm (fun ω => f ω - F N ω) 2 μ
       + eLpNorm (fun ω => F N ω - g ω) 2 μ) atTop (𝓝 0) := by
     have hcomm : ∀ N, eLpNorm (fun ω => F N ω - g ω) 2 μ
@@ -693,8 +694,8 @@ private lemma ae_eq_of_tendsto {f g : Ω → ℝ} {F : ℕ → Ω → ℝ}
     simp only [hcomm]
     simpa using hf.add hg
   have hzero : eLpNorm (fun ω => f ω - g ω) 2 μ = 0 :=
-    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hle)) (zero_le _)
-  have hae := (eLpNorm_eq_zero_iff (hfm.sub hgm) (by norm_num)).1 hzero
+    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hle)) (zero_le)
+  have hae := (eLpNorm_eq_zero_iff (by norm_num)).1 hzero
   filter_upwards [hae] with ω hω
   have : f ω - g ω = 0 := hω
   linarith
@@ -725,7 +726,7 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
   intro t
   have hmemPS : ∀ (c : ℤ) (N : ℕ),
       MemLp (fun ω => ∑ l ∈ Finset.range N, armaPsi b a l * ε (c - (l : ℕ)) ω) 2 μ :=
-    fun c N => memLp_finset_sum _ fun l _ => (hε.memLp _).const_mul _
+    fun c N => memLp_finsetSum _ fun l _ => (hε.memLp _).const_mul _
   -- the tail of the coefficient series
   obtain ⟨Tail, hTail⟩ : ∃ T : ℕ → ℝ, T = fun N => ∑ l ∈ Finset.Ico (N - p) N, |armaPsi b a l| :=
     ⟨_, rfl⟩
@@ -758,8 +759,7 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
             ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω := by
       funext ω; simp
     rw [hfun]
-    refine (eLpNorm_sum_le (fun k _ => (memLp_finset_sum _ fun l _ =>
-      (hε.memLp _).const_mul _).aestronglyMeasurable) one_le_two).trans ?_
+    refine (eLpNorm_sum_le one_le_two).trans ?_
     have hk : ∀ k ∈ Finset.range (p + 1),
         eLpNorm (fun ω => ∑ l ∈ Finset.Ico (N - k) N,
           ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω) 2 μ
@@ -769,7 +769,7 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
       refine (eLpNorm_noise_comb_le hε (Finset.Ico (N - k) N)
         (fun l => (arPoly b).coeff k * armaPsi b a l)
         (fun l => t - (k : ℕ) - (l : ℕ))).trans ?_
-      refine mul_le_mul_right' (ENNReal.ofReal_le_ofReal ?_) _
+      refine mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _
       have hs : ∑ l ∈ Finset.Ico (N - k) N, |(arPoly b).coeff k * armaPsi b a l|
           = |(arPoly b).coeff k| * ∑ l ∈ Finset.Ico (N - k) N, |armaPsi b a l| := by
         rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun l _ => abs_mul _ _
@@ -855,10 +855,12 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
         eLpNorm (fun ω => X (t - 1 - (i : ℕ)) ω
           - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ)
         atTop (𝓝 0) := by
-      have := tendsto_finset_sum (Finset.univ : Finset (Fin p))
+      have := tendsto_finsetSum (Finset.univ : Finset (Fin p))
         (fun (i : Fin p) (_ : i ∈ Finset.univ) =>
           ENNReal.Tendsto.const_mul (a := ENNReal.ofReal |b i|)
-            (hXlin (t - 1 - (i : ℕ))) (Or.inr ENNReal.ofReal_ne_top))
+            (hXlin.tendsto_eLpNorm (fun t => (hXm t).aestronglyMeasurable)
+              (fun t => (hε.memLp t).aestronglyMeasurable) (t - 1 - (i : ℕ)))
+            (Or.inr ENNReal.ofReal_ne_top))
       simpa using this
     have h2 : Tendsto (fun N => ENNReal.ofReal (Cb * Tail N) * ENNReal.ofReal (Real.sqrt σ2))
         atTop (𝓝 0) := by
@@ -873,12 +875,14 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
   -- the RHS is in `L²`
   have hmemR : MemLp (fun ω => (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω) + ε t ω
       + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω) 2 μ :=
-    ((memLp_finset_sum _ fun i _ => (hmX _).const_mul _).add (hε.memLp t)).add
-      (memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _)
+    ((memLp_finsetSum _ fun i _ => (hmX _).const_mul _).add (hε.memLp t)).add
+      (memLp_finsetSum _ fun j _ => (hε.memLp _).const_mul _)
   refine ae_eq_of_tendsto (hmX t).aestronglyMeasurable hmemR.aestronglyMeasurable
-    (fun N => (hmemPS t N).aestronglyMeasurable) (hXlin t) ?_
+    (fun N => (hmemPS t N).aestronglyMeasurable)
+        (hXlin.tendsto_eLpNorm (fun t => (hXm t).aestronglyMeasurable)
+      (fun t => (hε.memLp t).aestronglyMeasurable) t) ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hD0
-    (Eventually.of_forall fun N => zero_le _) ?_
+    (Eventually.of_forall fun N => zero_le) ?_
   filter_upwards [eventually_ge_atTop (q + 1)] with N hN
   have hfeq : (fun ω => ((∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω) + ε t ω
         + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω)
@@ -889,17 +893,7 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
             ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω) :=
     funext (hpt N hN)
   rw [hfeq, hD]
-  refine (eLpNorm_sub_le ?_ ?_ one_le_two).trans (add_le_add (hAbd N) (hdiffbd N))
-  · have hm : MemLp (fun ω => ∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
-        - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω)) 2 μ := by
-      refine memLp_finset_sum _ fun i _ => ?_
-      have h1 : MemLp (fun ω => X (t - 1 - (i : ℕ)) ω
-          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ :=
-        (hmX _).sub (hmemPS (t - 1 - (i : ℕ)) N)
-      exact h1.const_mul _
-    exact hm.aestronglyMeasurable
-  · exact (memLp_finset_sum _ fun k _ =>
-      memLp_finset_sum _ fun l _ => (hε.memLp _).const_mul _).aestronglyMeasurable
+  exact (eLpNorm_sub_le one_le_two).trans (add_le_add (hAbd N) (hdiffbd N))
 
 
 /-- **Yule–Walker recurrences** (FY §2.2.1, eq. (2.21)): for a causal stationary ARMA
@@ -920,9 +914,9 @@ theorem IsARMA.acvf_yule_walker [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p
   have hcovε : ∀ u : ℤ, 0 < u → cov[ε u, X 0; μ] = 0 :=
     fun u hu => cov_noise_lin_eq_zero hcausal h.whiteNoise hmX hu
   have hmem1 : MemLp (fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω) 2 μ :=
-    memLp_finset_sum _ fun i _ => (hmX _).const_mul _
+    memLp_finsetSum _ fun i _ => (hmX _).const_mul _
   have hmem3 : MemLp (fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω) 2 μ :=
-    memLp_finset_sum _ fun j _ => (hmε _).const_mul _
+    memLp_finsetSum _ fun j _ => (hmε _).const_mul _
   have hstep : cov[X k, X 0; μ]
       = cov[fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω, X 0; μ] + cov[ε k, X 0; μ]
         + cov[fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω, X 0; μ] := by
@@ -1202,7 +1196,7 @@ private lemma integral_lin_mul_noise [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
   classical
   set R : ℝ := if s ≤ t then σ2 * ψ (t - s).toNat else 0 with hR
   have hmemP : ∀ N : ℕ, MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ :=
-    fun N => memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _
+    fun N => memLp_finsetSum _ fun j _ => (hε.memLp _).const_mul _
   -- the partial sums pair to `R` exactly, as soon as the window reaches the lag
   have hpsum : ∀ N : ℕ, (t - s).toNat < N →
       ∫ ω, (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) * ε s ω ∂μ = R := by
@@ -1213,7 +1207,7 @@ private lemma integral_lin_mul_noise [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
     have hint : ∀ j : ℕ, Integrable (fun ω => ψ j * (ε (t - (j : ℕ)) ω * ε s ω)) μ := fun j =>
       ((hε.memLp _).integrable_mul (hε.memLp s)).const_mul _
     simp_rw [hexp]
-    rw [integral_finset_sum _ fun j _ => hint j]
+    rw [integral_finsetSum _ fun j _ => hint j]
     have hterm : ∀ j : ℕ, ∫ ω, ψ j * (ε (t - (j : ℕ)) ω * ε s ω) ∂μ
         = if t - (j : ℤ) = s then σ2 * ψ j else 0 := by
       intro j
@@ -1249,7 +1243,9 @@ private lemma integral_lin_mul_noise [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
   have hlim : Tendsto (fun N : ℕ =>
       (eLpNorm (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ).toReal
         * (eLpNorm (ε s) 2 μ).toReal) atTop (𝓝 0) := by
-    have hc := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hlin t)
+    have hc := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp
+      (hlin.tendsto_eLpNorm (fun t => (hmX t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) t)
     simpa using hc.mul_const ((eLpNorm (ε s) 2 μ).toReal)
   have habs : |∫ ω, X t ω * ε s ω ∂μ - R| ≤ 0 := by
     refine le_of_tendsto_of_tendsto tendsto_const_nhds hlim ?_
@@ -1317,13 +1313,13 @@ private lemma conv_of_causal [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p �
     have hI3 : ∀ j : Fin q, Integrable (fun ω => a j * (ε (0 - 1 - (j : ℕ)) ω * ε s ω)) μ :=
       fun j => ((hε.memLp _).integrable_mul (hε.memLp s)).const_mul _
     have hS1 : Integrable (fun ω => ∑ i : Fin p, b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) μ :=
-      integrable_finset_sum _ fun i _ => hI1 i
+      integrable_finsetSum _ fun i _ => hI1 i
     have hS3 : Integrable (fun ω => ∑ j : Fin q, a j * (ε (0 - 1 - (j : ℕ)) ω * ε s ω)) μ :=
-      integrable_finset_sum _ fun j _ => hI3 j
+      integrable_finsetSum _ fun j _ => hI3 j
     have hS12 : Integrable (fun ω =>
         (∑ i : Fin p, b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) + ε 0 ω * ε s ω) μ := hS1.add hI2
     rw [integral_add hS12 hS3, integral_add hS1 hI2,
-      integral_finset_sum _ fun i _ => hI1 i, integral_finset_sum _ fun j _ => hI3 j]
+      integral_finsetSum _ fun i _ => hI1 i, integral_finsetSum _ fun j _ => hI3 j]
     simp_rw [integral_const_mul]
   -- ## Divide by `σ² > 0`
   rw [hleft] at hexpand
@@ -1503,20 +1499,21 @@ theorem arma_stationary_unique_debt [IsProbabilityMeasure μ] {p q : ℕ}
     have hnorm : ‖u s‖ = (eLpNorm (fun ω => X s ω - X' s ω) 2 μ).toReal := by
       rw [hudef, Lp.norm_toLp]
       congr 1
-      refine eLpNorm_congr_norm_ae (Eventually.of_forall fun ω => ?_)
+      have hd := (hstat.memLp s).aestronglyMeasurable.sub (hstat'.memLp s).aestronglyMeasurable
+      refine eLpNorm_congr_norm_ae (Complex.continuous_ofReal.comp_aestronglyMeasurable hd) hd
+          (Eventually.of_forall fun ω => ?_)
       rw [Complex.norm_real]
     have hsub : eLpNorm (fun ω => X s ω - X' s ω) 2 μ
         ≤ eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ :=
-      eLpNorm_sub_le (hstat.memLp s).aestronglyMeasurable
-        (hstat'.memLp s).aestronglyMeasurable one_le_two
+      eLpNorm_sub_le one_le_two
     have hfin : eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ ≠ ⊤ :=
-      ENNReal.add_ne_top.2 ⟨(hstat.memLp s).2.ne, (hstat'.memLp s).2.ne⟩
+      ENNReal.add_ne_top.2 ⟨(hstat.memLp s).ne, (hstat'.memLp s).ne⟩
     rw [hnorm]
     calc (eLpNorm (fun ω => X s ω - X' s ω) 2 μ).toReal
         ≤ (eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ).toReal :=
           ENNReal.toReal_mono hfin hsub
       _ = (eLpNorm (X s) 2 μ).toReal + (eLpNorm (X' s) 2 μ).toReal :=
-          ENNReal.toReal_add (hstat.memLp s).2.ne (hstat'.memLp s).2.ne
+          ENNReal.toReal_add (hstat.memLp s).ne (hstat'.memLp s).ne
       _ = ‖(hstat.memLp s).toLp (X s)‖ + ‖(hstat'.memLp s).toLp (X' s)‖ := by
           rw [Lp.norm_toLp, Lp.norm_toLp]
       _ = ‖(hstat.memLp 0).toLp (X 0)‖ + ‖(hstat'.memLp 0).toLp (X' 0)‖ := by
@@ -1559,7 +1556,7 @@ theorem arma_stationary_unique_debt [IsProbabilityMeasure μ] {p q : ℕ}
         =ᵐ[μ] fun ω => ∑ k ∈ Finset.range (p + 1), B.coeff k * (u (s - (k : ℕ)) : Ω → ℂ) ω := by
     intro s
     induction (p + 1) with
-    | zero => simpa using Lp.coeFn_zero (E := ℂ) (p := 2) (μ := μ)
+    | zero => simpa using! Lp.coeFn_zero (E := ℂ) (p := 2) (μ := μ)
     | succ m ihm =>
         rw [Finset.sum_range_succ]
         filter_upwards [Lp.coeFn_add (∑ k ∈ Finset.range m, B.coeff k • u (s - (k : ℕ)))

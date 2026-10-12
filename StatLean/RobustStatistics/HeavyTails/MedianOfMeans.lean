@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.RobustStatistics.HeavyTails.EmpiricalMeanBaseline
 import StatLean.RobustStatistics.LocationScale.Median
 import StatLean.RobustStatistics.LocationScale.Mean
@@ -69,12 +70,12 @@ independent under the pushforward `μ.map Y`, then `f ∘ Y` is independent unde
 private lemma iIndepFun_comp_left {Ω' : Type*} [MeasurableSpace Ω'] {ι : Type*} [Fintype ι]
     {Y : Ξ → Ω'} (hY : Measurable Y) {f : ι → Ω' → ℝ} (hf : ∀ i, Measurable (f i))
     (h : iIndepFun f (μprob.map Y)) : iIndepFun (fun i ξ => f i (Y ξ)) μprob := by
-  haveI : IsProbabilityMeasure (μprob.map Y) := Measure.isProbabilityMeasure_map hY.aemeasurable
+  haveI : IsProbabilityMeasure (μprob.map Y) := (by infer_instance)
   rw [iIndepFun_iff_map_fun_eq_pi_map (f := fun i ξ => f i (Y ξ))
     fun i => ((hf i).comp hY).aemeasurable]
   rw [iIndepFun_iff_map_fun_eq_pi_map fun i => (hf i).aemeasurable] at h
   have h1 : (fun ξ i => f i (Y ξ)) = (fun ω i => f i ω) ∘ Y := rfl
-  rw [h1, ← Measure.map_map (measurable_pi_lambda _ fun i => hf i) hY, h]
+  rw [h1, ← Measure.map_map (Measurable.of_eval fun i => hf i) hY, h]
   congr 1
   funext i
   rw [Measure.map_map (hf i) hY]
@@ -87,9 +88,9 @@ private lemma pi_map_curry {k m : ℕ} (ν : Fin k × Fin m → Measure ℝ)
     (Measure.pi ν).map (fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) => v (j, i))
       = Measure.pi fun j => Measure.pi fun i => ν (j, i) := by
   have hU : Measurable fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2 :=
-    measurable_pi_lambda _ fun q => (measurable_pi_apply q.2).comp (measurable_pi_apply q.1)
+    Measurable.of_eval fun q => (measurable_pi_apply q.2).comp (measurable_pi_apply q.1)
   have hC : Measurable fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) => v (j, i) :=
-    measurable_pi_lambda _ fun j => measurable_pi_lambda _ fun i => measurable_pi_apply _
+    Measurable.of_eval fun j => Measurable.of_eval fun i => measurable_pi_apply _
   -- the uncurry map pushes the iterated product forward to the product over pairs
   have hA : (Measure.pi fun j => Measure.pi fun i => ν (j, i)).map
       (fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2) = Measure.pi ν := by
@@ -178,11 +179,11 @@ theorem iIndepFun_blockMean {k m : ℕ} {X : Fin k → Fin m → Ξ → ℝ}
     iIndepFun (fun j ξ => sampleMean (fun i => X j i ξ)) μprob := by
   classical
   haveI hνblock : ∀ (j : Fin k) (i : Fin m), IsProbabilityMeasure (μprob.map (X j i)) :=
-    fun j i => Measure.isProbabilityMeasure_map (hX_meas j i).aemeasurable
+    fun j i => (by infer_instance)
   haveI hνprob : ∀ q : Fin k × Fin m, IsProbabilityMeasure (μprob.map (X q.1 q.2)) :=
     fun q => hνblock q.1 q.2
   have hYmeas : Measurable fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ :=
-    measurable_pi_lambda _ fun q => hX_meas q.1 q.2
+    Measurable.of_eval fun q => hX_meas q.1 q.2
   -- Step 1: joint independence says the joint law is the product law.
   have hlaw : μprob.map (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ)
       = Measure.pi fun (q : Fin k × Fin m) => μprob.map (X q.1 q.2) :=
@@ -198,14 +199,14 @@ theorem iIndepFun_blockMean {k m : ℕ} {X : Fin k → Fin m → Ξ → ℝ}
       iIndepFun_pi (X := fun (_ : Fin k) (w : Fin m → ℝ) => sampleMean w)
         fun _ => measurable_sampleMean.aemeasurable
     refine iIndepFun_comp_left (Y := fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) =>
-      v (j, i)) (measurable_pi_lambda _ fun j => measurable_pi_lambda _ fun i =>
+      v (j, i)) (Measurable.of_eval fun j => Measurable.of_eval fun i =>
         measurable_pi_apply _) (fun j => measurable_sampleMean.comp (measurable_pi_apply j)) ?_
     rw [pi_map_curry]
     exact hpi
   -- Step 3: transport the product-law statement back along the joint law.
   exact iIndepFun_comp_left hYmeas
     (fun j => measurable_sampleMean.comp
-      (measurable_pi_lambda _ fun i => measurable_pi_apply _))
+      (Measurable.of_eval fun i => measurable_pi_apply _))
     (by rw [hlaw]; exact hblocks)
 
 /-- **Median-of-means is sub-Gaussian, exponential form** (`LM Theorem 2`, first
@@ -245,7 +246,7 @@ theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
   have hZmeas : ∀ j, Measurable (Z j) := by
     intro j
     simp only [hZ]
-    exact measurable_sampleMean.comp (measurable_pi_lambda _ fun i => hX_meas j i)
+    exact measurable_sampleMean.comp (Measurable.of_eval fun i => hX_meas j i)
   have hZindep : iIndepFun Z μprob := by
     simp only [hZ]
     exact iIndepFun_blockMean hX_meas hX_indep

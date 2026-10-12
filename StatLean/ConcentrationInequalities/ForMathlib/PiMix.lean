@@ -55,11 +55,11 @@ abbrev mixAt (S : Finset ι) (x z : Π j, 𝓧 j) : Π j, 𝓧 j :=
 /-- Mixing is jointly measurable. -/
 theorem measurable_mixAt (S : Finset ι) :
     Measurable (fun p : (Π j, 𝓧 j) × (Π j, 𝓧 j) => mixAt S p.1 p.2) := by
-  refine measurable_pi_lambda _ fun j => ?_
+  refine Measurable.of_eval fun j => ?_
   by_cases h : j ∈ S
-  · simpa only [mixAt, Finset.piecewise, h, if_true] using
+  · simpa only [mixAt, Finset.piecewise, h, ite_true, Function.comp_def] using
       (measurable_pi_apply j).comp measurable_snd
-  · simpa only [mixAt, Finset.piecewise, h, if_false] using
+  · simpa only [mixAt, Finset.piecewise, h, ite_false, Function.comp_def] using
       (measurable_pi_apply j).comp measurable_fst
 
 omit [∀ i, MeasurableSpace (𝓧 i)] in
@@ -78,14 +78,14 @@ private theorem preimage_mixAt (S : Finset ι) (s : ∀ j, Set (𝓧 j)) :
     refine ⟨fun j => ?_, fun j => ?_⟩
     · by_cases hj : j ∈ S
       · simp [hj]
-      · have hx := h j; simp only [hj, if_false] at hx; simpa [hj]
+      · have hx := h j; simp only [hj, ite_false] at hx; simpa [hj]
     · by_cases hj : j ∈ S
-      · have hz := h j; simp only [hj, if_true] at hz; simpa [hj]
+      · have hz := h j; simp only [hj, ite_true] at hz; simpa [hj]
       · simp [hj]
   · rintro ⟨hx, hz⟩ j
     by_cases hj : j ∈ S
-    · have := hz j; simp only [hj, if_true] at this ⊢; exact this
-    · have := hx j; simp only [hj, if_false] at this ⊢; exact this
+    · have := hz j; simp only [hj, ite_true] at this ⊢; exact this
+    · have := hx j; simp only [hj, ite_false] at this ⊢; exact this
 
 variable [Fintype ι] (μ : ∀ i, Measure (𝓧 i)) [∀ i, IsProbabilityMeasure (μ i)]
 

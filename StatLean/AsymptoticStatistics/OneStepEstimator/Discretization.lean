@@ -191,7 +191,7 @@ theorem pointwiseLinearization_at_discretized
   have hsum : Tendsto (fun n => ∑ d ∈ codes,
       μ.real {ξ | ε ≤ ‖oneStepResidual Ψ θ0 V0 n ξ (point n d)‖})
       atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum codes (fun d _hd => hcode d ε hε)
+    simpa using tendsto_finsetSum codes (fun d _hd => hcode d ε hε)
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hsum (η / 2) (by positivity)
   refine ⟨max N 1, fun n hn => ?_⟩
   have hnN : N ≤ n := (le_max_left N 1).trans hn

@@ -71,7 +71,7 @@ private def bvmBlockProj (n kb : ℕ) : (Fin n → 𝓧) → (Fin (n / kb) → (
 
 private lemma measurable_bvmBlockProj (n kb : ℕ) :
     Measurable (bvmBlockProj (𝓧 := 𝓧) n kb) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- Within-block index arithmetic: `(j * kb + i) / kb = j` and `(j * kb + i) % kb = i`. -/
 private lemma bvm_divMod {kb : ℕ} (hkb : 0 < kb) (j i : ℕ) (hi : i < kb) :
@@ -345,7 +345,7 @@ theorem exists_boosted_tests
     intro nn
     unfold bvmBlockAvg
     exact measurable_const.mul (Finset.measurable_sum _ fun j _ =>
-      (hφt_meas kb).comp (measurable_pi_lambda _ fun _ => measurable_pi_apply _))
+      (hφt_meas kb).comp (Measurable.of_eval fun _ => measurable_pi_apply _))
   have hSmeas : ∀ nn, MeasurableSet {ω : Fin nn → 𝓧 | 1 / 2 ≤ bvmBlockAvg kb (φt kb) nn ω} :=
     fun nn => measurableSet_le measurable_const (hBAmeas nn)
   -- the boosted test: reject when at least half of the blocks reject
@@ -405,11 +405,12 @@ theorem exists_boosted_tests
       rw [hsplit θ₀ kb]; linarith
     have h := blockAvg_le_half_tail
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) hkb1
-      (measurable_const.sub (hφt_meas kb))
+      (show Measurable (fun ζ : Fin kb → 𝓧 => 1 - φt kb ζ) from by
+        simpa only [Pi.sub_apply] using! measurable_const.sub (hφt_meas kb))
       (fun ζ => ⟨by linarith [(hφt01 kb ζ).2], by linarith [(hφt01 kb ζ).1]⟩) hmean hnn
     refine le_trans (measureReal_mono (fun ω hω => ?_) (measure_ne_top _ _)) h
     simp only [Set.mem_setOf_eq] at hω ⊢
-    rw [bvmBlockAvg_one_sub _ hm]
+    erw [bvmBlockAvg_one_sub _ hm]
     linarith
   -- type-II bound on the far range (lower tail for `φt kb`)
   have htII_bd : ∀ nn, kb ≤ nn → ∀ θ, ε ≤ ‖θ - θ₀‖ →

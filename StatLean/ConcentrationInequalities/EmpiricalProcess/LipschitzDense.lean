@@ -314,7 +314,7 @@ theorem iSup_abs_empiricalProcess_lip_smul {L : ℝ≥0}
       LipschitzWith (‖s‖₊ * c) (fun x => s * g x) := by
     intro s c g hg
     have h := (lipschitzWith_smul (β := ℝ) s).comp hg
-    simpa [Function.comp, smul_eq_mul] using h
+    simpa [Function.comp, smul_eq_mul] using! h
   have hLnn : ‖(L : ℝ)‖₊ = L := by
     rw [Real.nnnorm_of_nonneg hLpos.le]; rfl
   -- Bijection between the 1-Lipschitz and L-Lipschitz subtypes via `g ↦ L•g`.

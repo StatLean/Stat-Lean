@@ -272,7 +272,7 @@ theorem norm_condexp_exp_sub_one_sub_le {m mΩ : MeasurableSpace Ω} {μ : Measu
   have hWint : Integrable W μ := hZint.sub hPint
   -- (iii) conditional Jensen for the modulus + conditional monotonicity
   have hJensen : ∀ᵐ ω ∂μ, ‖μ[W | m] ω‖ ≤ μ[g | m] ω := by
-    have h1 := _root_.AEStronglyMeasurable.norm_condExp_le (m := m) hWint.aestronglyMeasurable
+    have h1 := norm_condExp_le (m := m) (μ := μ) (f := W)
     have h2 := condExp_mono (m := m) hWint.norm hgint (ae_of_all _ hWbound)
     filter_upwards [h1, h2] with ω hh1 hh2 using hh1.trans hh2
   -- (iv) the conditional expectation of the majorant
@@ -424,7 +424,7 @@ private lemma abs_prod_sub_prod_le {ι : Type*} [DecidableEq ι] (s : Finset ι)
     rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha]
     have hfs : |∏ i ∈ s, f i| ≤ 1 := by
       rw [Finset.abs_prod]
-      exact Finset.prod_le_one (fun i _ => abs_nonneg _) fun i _ => hf i
+      exact Finset.prod_le_one₀ (fun i _ => abs_nonneg _) fun i _ => hf i
     have hkey : f a * (∏ i ∈ s, f i) - g a * ∏ i ∈ s, g i
         = (f a - g a) * (∏ i ∈ s, f i) + g a * ((∏ i ∈ s, f i) - ∏ i ∈ s, g i) := by ring
     rw [hkey]
@@ -486,7 +486,7 @@ private lemma abs_prod_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
     have h2 := Real.add_one_le_exp (u ^ 2 / 2 * v i)
     linarith
   calc ∏ i, |1 - u ^ 2 / 2 * v i| ≤ ∏ i, Real.exp (u ^ 2 / 2 * v i) :=
-        Finset.prod_le_prod (fun i _ => abs_nonneg _) hstep
+        Finset.prod_le_prod₀ (fun i _ => abs_nonneg _) hstep
     _ = Real.exp (∑ i, u ^ 2 / 2 * v i) := (Real.exp_sum _ _).symm
     _ = Real.exp (u ^ 2 / 2 * ∑ i, v i) := by rw [Finset.mul_sum]
     _ ≤ Real.exp (u ^ 2 * c / 2) := by
@@ -582,7 +582,7 @@ private lemma prod_inv_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
   have hu : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
   calc ∏ i ∈ s, (1 - u ^ 2 / 2 * v i)⁻¹
       ≤ ∏ i ∈ s, Real.exp (2 * (u ^ 2 / 2 * v i)) :=
-        Finset.prod_le_prod (fun i _ => inv_nonneg.2 (by linarith [ha0 i, hvd i]))
+        Finset.prod_le_prod₀ (fun i _ => inv_nonneg.2 (by linarith [ha0 i, hvd i]))
           (fun i _ => inv_one_sub_le_exp_two_mul (ha0 i) (hvd i))
     _ = Real.exp (∑ i ∈ s, 2 * (u ^ 2 / 2 * v i)) := (Real.exp_sum _ _).symm
     _ ≤ Real.exp (u ^ 2 * c) := by
@@ -654,7 +654,7 @@ theorem norm_integral_mul_cexp_sub_taylor_le [IsProbabilityMeasure μ]
     have h1 : Integrable
         (fun ω => ((μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ) : ℂ)) μ := by
       simpa using Complex.ofRealCLM.integrable_comp hvint
-    simpa using (integrable_const (1 : ℂ)).sub (h1.const_mul ((u : ℂ) ^ 2 / 2))
+    simpa using! (integrable_const (1 : ℂ)).sub (h1.const_mul ((u : ℂ) ^ 2 / 2))
   have hCEint : Integrable (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
       | F n i.castSucc]) μ := integrable_condExp
   -- the tower step
@@ -1418,7 +1418,7 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
     filter_upwards [hae] with ω hω
     obtain ⟨hfac, -⟩ := hω
     rw [hΨ ω, Finset.abs_prod]
-    refine Finset.prod_le_one (fun i _ => abs_nonneg _) fun i _ => ?_
+    refine Finset.prod_le_one₀ (fun i _ => abs_nonneg _) fun i _ => ?_
     rw [abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
       1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
     have := mul_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2) (hfac i).1

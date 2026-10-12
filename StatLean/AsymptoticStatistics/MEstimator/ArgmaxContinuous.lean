@@ -83,7 +83,7 @@ theorem exists_large_closedBall_localization
   obtain ⟨C, hCcompact, hCsample⟩ := htight ε hε
   let ν : Measure (EuclideanSpace ℝ (Fin d)) := μlim.map hhat
   letI : IsProbabilityMeasure ν :=
-    Measure.isProbabilityMeasure_map hhmeas.aemeasurable
+    (by infer_instance)
   have hνtight : IsTightMeasureSet ({ν} : Set (Measure (EuclideanSpace ℝ (Fin d)))) :=
     isTightMeasureSet_singleton
   obtain ⟨L, hLcompact, hLmass⟩ :=

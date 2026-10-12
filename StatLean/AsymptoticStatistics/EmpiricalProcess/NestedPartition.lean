@@ -341,7 +341,7 @@ lemma buildCell_cover {q : ℕ} (_hq : q₀ ≤ q) {f : Ω → ℝ} (hf : f ∈ 
   -- its `equivFin` image is the desired index.
   set t : AchievedTuple cov q₀ q := ⟨assignTuple cov q₀ q hf, f, hf, rfl⟩ with ht
   refine ⟨Fintype.equivFin (AchievedTuple cov q₀ q) t, ?_⟩
-  rw [mem_buildCell]
+  erw [mem_buildCell]
   refine ⟨hf, ?_⟩
   -- decode (equivFin t) = t
   show assignTuple cov q₀ q hf = (decode cov (q₀ := q₀) q
@@ -478,7 +478,8 @@ lemma buildΔ_L2_le {q : ℕ} (hq : q₀ ≤ q) (i : Fin (buildNq cov (q₀ := q
   have hbound : eLpNorm (buildΔ cov hq i) 2 P
       ≤ eLpNorm (fun x => (cov q).ub (topIdx cov hq i) x
           - (cov q).lb (topIdx cov hq i) x) 2 P := by
-    refine eLpNorm_mono_ae_real (Filter.Eventually.of_forall (fun x => ?_))
+    refine eLpNorm_mono_ae_real (buildΔ_meas cov hq i).aestronglyMeasurable
+        (Filter.Eventually.of_forall (fun x => ?_))
     have hle_top : buildΔ cov hq i x
         ≤ cellWidth cov i ⟨q, Finset.mem_Icc.mpr ⟨hq, le_rfl⟩⟩ x :=
       Finset.inf'_le _ (Finset.mem_univ _)
@@ -878,7 +879,9 @@ lemma isEpsBracket_clamp {ε : ℝ} {l u : Ω → ℝ} (hM : 0 ≤ M)
     clampFn_measurable h.measurable_lower, clampFn_measurable h.measurable_upper,
     clampFn_memLp hM h.memLp_lower, clampFn_memLp hM h.memLp_upper, ?_⟩
   refine lt_of_le_of_lt ?_ h.size_lt
-  refine eLpNorm_mono_ae_real (Filter.Eventually.of_forall (fun x => ?_))
+  refine eLpNorm_mono_ae_real ((clampFn_measurable h.measurable_upper).sub
+    (clampFn_measurable h.measurable_lower)).aestronglyMeasurable
+        (Filter.Eventually.of_forall (fun x => ?_))
   -- `0 ≤ clampFn M u x − clampFn M l x ≤ u x − l x`.
   have hbr : l x ≤ u x := h.isBracket x
   change |clampReal M (u x) - clampReal M (l x)| ≤ u x - l x

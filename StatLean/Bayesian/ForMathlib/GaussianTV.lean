@@ -119,7 +119,9 @@ theorem klDiv_multivariateGaussian_same_cov
   classical
   have hSinv : S⁻¹.PosDef := hS.inv
   set W : Matrix ι ι ℝ := CFC.sqrt S⁻¹ with hWdef
-  have hW : W.PosDef := hSinv.posDef_sqrt
+  have hW : W.PosDef :=
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hSinv.isStrictlyPositive).1).posDef
   have hWW : W * W = S⁻¹ := CFC.sqrt_mul_sqrt_self _ hSinv.posSemidef.nonneg
   have hdetS : IsUnit S.det := (Matrix.isUnit_iff_isUnit_det _).mp hS.isUnit
   have hdetW : IsUnit W.det := (Matrix.isUnit_iff_isUnit_det _).mp hW.isUnit

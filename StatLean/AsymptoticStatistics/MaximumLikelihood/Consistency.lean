@@ -461,7 +461,7 @@ theorem stabilized_empirical_nearmax_ae_of_mle
         (∏ i : Fin n, (M.density η (x i) + M.density θ₀ (x i)) / 2) *
           (∏ i : Fin n, (M.density η (x i) + M.density θ₀ (x i)) / 2) := by
     rw [← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
-    apply Finset.prod_le_prod
+    apply Finset.prod_le_prod₀
     · intro i _
       exact mul_nonneg (M.density_nonneg η (x i)) (M.density_nonneg θ₀ (x i))
     · intro i _
@@ -579,7 +579,7 @@ theorem mle_consistentInProb_of_kl_identifiable
   unfold TendstoInProbZero
   intro ε hε
   have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hcons ε hε)
-  simpa only [θhatΩ, measureReal_def, ENNReal.toReal_zero, dist_eq_norm] using h
+  simpa only [θhatΩ, measureReal_def, ENNReal.toReal_zero, dist_eq_norm] using! h
 
 /-- Convert the explicit metric consistency conclusion of Theorem 5.7 to the
 project's varying-base `TendstoInProbZero` form used by Theorem 5.23.
@@ -597,6 +597,6 @@ theorem tendstoInProbZero_sub_of_t4_consistency
   unfold TendstoInProbZero
   intro epsilon hepsilon
   have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hcons epsilon hepsilon)
-  simpa only [measureReal_def, ENNReal.toReal_zero, dist_eq_norm] using h
+  simpa only [measureReal_def, ENNReal.toReal_zero, dist_eq_norm] using! h
 
 end AsymptoticStatistics.MaximumLikelihood

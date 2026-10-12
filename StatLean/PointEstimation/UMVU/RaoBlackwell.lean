@@ -87,7 +87,9 @@ private lemma rbEstimator_integral_eq (P : Θ → Measure 𝓧) [∀ θ, IsProba
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) {δ : 𝓧 → ℝ}
     (hδm : Measurable δ) (hδi : ∀ θ, Integrable δ (P θ)) (θ : Θ) :
     ∫ x, rbEstimator Q δ (T x) ∂ P θ = ∫ x, δ x ∂ P θ := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := (P θ).isProbabilityMeasure_map hT.aemeasurable
+  haveI : IsProbabilityMeasure (statLaw P T θ) := by
+    rw [statLaw_eq_map P T θ hT.aemeasurable]
+    infer_instance
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hδsnd : Measurable (fun z : S × 𝓧 => δ z.2) := hδm.comp measurable_snd
   have hrb : StronglyMeasurable (rbEstimator Q δ) :=
@@ -96,8 +98,9 @@ private lemma rbEstimator_integral_eq (P : Θ → Measure 𝓧) [∀ θ, IsProba
     rw [← hgraph θ, integrable_map_measure hδsnd.aestronglyMeasurable hgm.aemeasurable]
     exact hδi θ
   calc ∫ x, rbEstimator Q δ (T x) ∂ P θ
-      = ∫ t, rbEstimator Q δ t ∂ (statLaw P T θ) :=
-        (integral_map hT.aemeasurable hrb.aestronglyMeasurable).symm
+      = ∫ t, rbEstimator Q δ t ∂ (statLaw P T θ) := by
+        rw [statLaw_eq_map P T θ hT.aemeasurable]
+        exact (integral_map hT.aemeasurable hrb.aestronglyMeasurable).symm
     _ = ∫ z, δ z.2 ∂ (statLaw P T θ ⊗ₘ Q) := (Measure.integral_compProd hInt).symm
     _ = ∫ z, δ z.2 ∂ ((P θ).map (fun x => (T x, x))) := by rw [hgraph θ]
     _ = ∫ x, δ x ∂ P θ := integral_map hgm.aemeasurable hδsnd.aestronglyMeasurable
@@ -113,7 +116,9 @@ private lemma rbEstimator_lintegral_ofReal_le (P : Θ → Measure 𝓧)
     (hφi : Integrable (fun x => φ (δ x)) (P θ)) :
     ∫⁻ x, ENNReal.ofReal (φ (rbEstimator Q δ (T x))) ∂ P θ
       ≤ ∫⁻ x, ENNReal.ofReal (φ (δ x)) ∂ P θ := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := (P θ).isProbabilityMeasure_map hT.aemeasurable
+  haveI : IsProbabilityMeasure (statLaw P T θ) := by
+    rw [statLaw_eq_map P T θ hT.aemeasurable]
+    infer_instance
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hδsnd : Measurable (fun z : S × 𝓧 => δ z.2) := hδm.comp measurable_snd
   have hφδ : Measurable (fun z : S × 𝓧 => φ (δ z.2)) := hcont.measurable.comp hδsnd
@@ -132,8 +137,9 @@ private lemma rbEstimator_lintegral_ofReal_le (P : Θ → Measure 𝓧)
     ((Measure.integrable_compProd_iff hφInt.aestronglyMeasurable).mp hφInt).1
   -- rewrite both sides as integrals over the law of the statistic
   have hlhs : ∫⁻ x, ENNReal.ofReal (φ (rbEstimator Q δ (T x))) ∂ P θ
-      = ∫⁻ t, ENNReal.ofReal (φ (rbEstimator Q δ t)) ∂ (statLaw P T θ) :=
-    (lintegral_map ((hcont.measurable.comp hrb.measurable).ennreal_ofReal) hT (μ := P θ)).symm
+      = ∫⁻ t, ENNReal.ofReal (φ (rbEstimator Q δ t)) ∂ (statLaw P T θ) := by
+    rw [statLaw_eq_map P T θ hT.aemeasurable]
+    exact (lintegral_map ((hcont.measurable.comp hrb.measurable).ennreal_ofReal) hT (μ := P θ)).symm
   have hrhs : ∫⁻ x, ENNReal.ofReal (φ (δ x)) ∂ P θ
       = ∫⁻ t, ∫⁻ x, ENNReal.ofReal (φ (δ x)) ∂ Q t ∂ (statLaw P T θ) := by
     have e : ∫⁻ z, ENNReal.ofReal (φ (δ z.2)) ∂ ((P θ).map (fun x => (T x, x)))

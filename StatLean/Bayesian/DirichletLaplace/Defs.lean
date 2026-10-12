@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.Distributions.Gaussian.Basic
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gamma
@@ -120,7 +121,7 @@ lemma measurable_dlSuppCount (δ : ℝ) :
   simp only [dlSuppCount, Finset.card_filter]
   refine Finset.measurable_sum _ (fun j _ => ?_)
   refine Measurable.ite (measurableSet_lt measurable_const ?_) measurable_const measurable_const
-  exact (measurable_pi_apply j).comp (EuclideanSpace.measurableEquiv ι).measurable |>.abs
+  exact (EuclideanSpace.proj j).continuous.measurable.abs
 
 /-! ### The normal-means model -/
 

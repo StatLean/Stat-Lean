@@ -988,8 +988,10 @@ private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
   have hgcdOn : ContDiffOn ℝ 3 g (Set.Icc 0 1) := hgcd.contDiffOn
   -- 1-D Lagrange remainder of order 2 on `[0,1]` (so the remainder is `g'''(x')/6`).
   obtain ⟨x', _hx', heq⟩ :=
-    taylor_mean_remainder_lagrange_iteratedDeriv (n := 2) (by norm_num : (0 : ℝ) < 1)
-      (by exact_mod_cast hgcdOn)
+    taylor_mean_remainder_lagrange_iteratedDeriv (n := 2)
+      (by norm_num : (0 : ℝ) ≠ 1)
+      (by simpa [Set.uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1)] using! hgcdOn)
+  rw [Set.uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1)] at heq
   -- Convert `iteratedDerivWithin k g (Icc 0 1) 0` to the multilinear derivative of `f` at `x`.
   have hud : UniqueDiffOn ℝ (Set.Icc (0 : ℝ) 1) := uniqueDiffOn_Icc (by norm_num)
   have hmem : (0 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := by constructor <;> norm_num
@@ -1758,7 +1760,6 @@ private lemma charFun_map_const_smul_sum {k n : ℕ}
     (fun (_ : Fin n) (x : EuclideanSpace ℝ (Fin k)) =>
       Complex.exp ((⟪x, c • t⟫_ℝ : ℂ) * Complex.I))) ?_
   rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, charFun_apply]
-  rfl
 
 /-- **Gaussian stability of the normalized sum.** For `n ≥ 1`, pushing the `n`-fold product of
 `N(0, I_k)` forward under `y ↦ n^{-1/2} ∑ᵢ yᵢ` gives back `N(0, I_k)`. -/
@@ -1771,7 +1772,7 @@ private lemma map_normalized_sum_stdGaussian {k n : ℕ} (hn : 0 < n) :
   haveI : IsProbabilityMeasure ((Measure.pi fun _ : Fin n =>
       stdGaussian (EuclideanSpace ℝ (Fin k))).map
         fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) :=
-    Measure.isProbabilityMeasure_map (by fun_prop)
+    (by infer_instance)
   refine Measure.ext_of_charFun ?_
   funext t
   rw [charFun_map_const_smul_sum, charFun_stdGaussian, charFun_stdGaussian,
@@ -1916,7 +1917,7 @@ private lemma integral_bilin_eq_basis_sum {ν : Measure (EuclideanSpace ℝ (Fin
       from rfl, (B.toMultilinearMap).map_smul_univ, Fin.prod_univ_two,
       ContinuousMultilinearMap.coe_coe, smul_eq_mul]
   simp_rw [hexp]
-  rw [integral_finset_sum _ fun r _ => (integrable_inner_mul_inner h2 _ _).mul_const _]
+  rw [integral_finsetSum _ fun r _ => (integrable_inner_mul_inner h2 _ _).mul_const _]
   exact Finset.sum_congr rfl fun r _ => by rw [integral_mul_const, hcov]
 
 /-- **One step of the Lindeberg swap.** For a fixed shift `v` and scale `c ≥ 0`, replacing a
@@ -2399,7 +2400,7 @@ private lemma integral_normSq_eq_dim {k : ℕ} {ν : Measure (EuclideanSpace ℝ
       (Finset.mem_univ i)
   calc (∫ y, ‖y‖ ^ 2 ∂ν) = ∫ y, ∑ i, y i ^ 2 ∂ν := by
         exact integral_congr_ae (ae_of_all _ fun y => hnormsq y)
-    _ = ∑ i, ∫ y, y i ^ 2 ∂ν := integral_finset_sum _ fun i _ => hcomp i
+    _ = ∑ i, ∫ y, y i ^ 2 ∂ν := integral_finsetSum _ fun i _ => hcomp i
     _ = ∑ _i : Fin k, (1 : ℝ) := by
         refine Finset.sum_congr rfl fun i _ => ?_
         have hone : ⟪(EuclideanSpace.single i (1 : ℝ)),
@@ -2464,8 +2465,9 @@ private lemma integrable_pow_gammaMeasure' {a r : ℝ} (ha : 0 < a) (hr : 0 < r)
   have hmodel : IntegrableOn (fun x => x ^ (a + (n : ℝ) - 1) * Real.exp (-(r * x)))
       (Set.Ioi (0 : ℝ)) volume := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a + (n : ℝ) - 1) (b := r)
-      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) le_rfl hr
+      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) (by norm_num) hr
     refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
+    change x ^ (a + (n : ℝ) - 1) * Real.exp (-r * x ^ (1 : ℝ)) = _
     rw [Real.rpow_one, neg_mul]
   have hIoi : IntegrableOn (fun x => x ^ n * gammaPDFReal a r x) (Set.Ioi (0 : ℝ)) volume := by
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
@@ -2668,7 +2670,7 @@ private lemma berryEsseen_ball_of_swap {k n : ℕ} (hk : 0 < k)
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hμdef]; exact (by infer_instance)
   -- measurability of the balls, and the two sandwich steps
   have hballmeas : ∀ a : ℝ, MeasurableSet {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} :=
     fun a => measurableSet_le (by fun_prop) measurable_const
@@ -3036,7 +3038,7 @@ theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -3154,7 +3156,7 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -3238,13 +3240,13 @@ private lemma abs_exp_sub_taylor_two_le (x : ℝ) :
       have hsub : HasDerivAt (fun u : ℝ => x - u) (-1) u := by
         simpa using (hasDerivAt_id u).const_sub x
       have hsq : HasDerivAt (fun u : ℝ => (x - u) ^ 2) (2 * (x - u) * (-1)) u := by
-        simpa using hsub.pow 2
+        simpa using! hsub.pow 2
       have := ((hsq.div_const 2).add hsub).add_const (1 : ℝ)
-      convert this using 1
+      convert! this using 1
       ring
     have h2 : HasDerivAt (fun u : ℝ => Real.exp u) (Real.exp u) u := Real.hasDerivAt_exp u
     have := h1.mul h2
-    convert this using 1
+    convert! this using 1
     ring
   have hint : ∫ u in (0 : ℝ)..x, (x - u) ^ 2 / 2 * Real.exp u = G x - G 0 :=
     intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hderiv u)
@@ -4758,7 +4760,7 @@ private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
       have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
       rw [abs_div, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
       linarith)
-    hS (fun z hz => by dsimp only; rw [hoff z hz]; ring) hw
+    hS (fun z hz => by rw [hoff z hz]; ring) hw
   have hscale : (∫ z, (G z - a) * vecTiltRemainder w z
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
       = 2 * ∫ z, ((G z - a) / 2) * vecTiltRemainder w z
@@ -5536,10 +5538,10 @@ private lemma map_stdGaussian_pair_smul_add (σ c : ℝ) :
           fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z := by
   haveI hL : IsProbabilityMeasure ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
       (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) :=
-    Measure.isProbabilityMeasure_map (by fun_prop)
+    (by infer_instance)
   haveI hR : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
       fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) :=
-    Measure.isProbabilityMeasure_map (by fun_prop)
+    (by infer_instance)
   -- `charFun_apply` is definitional, so both unfoldings below are `rfl`; going through them
   -- keeps every integral in one and the same notation for `rw`.
   have hunfold : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) (s : EuclideanSpace ℝ (Fin k)),
@@ -6131,7 +6133,7 @@ private lemma integral_conv_smul_gaussian (α : Measure (EuclideanSpace ℝ (Fin
   set Gs : Measure (EuclideanSpace ℝ (Fin k)) :=
     (stdGaussian (EuclideanSpace ℝ (Fin k))).map fun z => t • z with hGs
   haveI : IsProbabilityMeasure Gs := by
-    rw [hGs]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hGs]; exact (by infer_instance)
   have hint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
       g (p.1 + p.2)) (α.prod Gs) := by
     refine (integrable_const M).mono' ?_ (Filter.Eventually.of_forall fun p => ?_)
@@ -6802,7 +6804,7 @@ theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
@@ -6922,7 +6924,7 @@ theorem berryEsseen_convex_improved {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -7503,7 +7505,6 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
   · intro x hx
     have hxi : (0 : ℝ) < x⁻¹ := by positivity
     have hl : 0 ≤ Real.log (1 + x⁻¹) := Real.log_nonneg (by linarith)
-    simp only
     linarith
   · intro x y hx hxy
     have hy : 0 < y := lt_of_lt_of_le hx hxy
@@ -7511,7 +7512,6 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
     have hinv : y⁻¹ ≤ x⁻¹ := by rw [inv_le_inv₀ hy hx]; exact hxy
     have h1 : (0 : ℝ) < 1 + y⁻¹ := by linarith
     have := Real.log_le_log h1 (by linarith : (1 : ℝ) + y⁻¹ ≤ 1 + x⁻¹)
-    simp only
     linarith
 
 /-- **The `3/2`-power forcing factor (wave 39).** `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`,
@@ -8043,7 +8043,7 @@ noncomputable def sumLaw (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) :
 instance isProbabilityMeasure_sumLaw (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
     [IsProbabilityMeasure ν] : IsProbabilityMeasure (sumLaw n ν) := by
   rw [sumLaw]
-  exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  exact (by infer_instance)
 
 /-- **The `j`-th hybrid law of the telescope**: the law of
 
@@ -8066,7 +8066,7 @@ instance isProbabilityMeasure_hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpac
   haveI : ∀ i : Fin n, IsProbabilityMeasure
       (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
     intro i; split <;> infer_instance
-  exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  exact (by infer_instance)
 
 /-- **The hybrid law IS the telescope's `j`-th test measure** (wave 36).
 
@@ -8303,10 +8303,10 @@ private lemma map_sum_pi_dirac_drop {n j : ℕ} (hj : j ≤ n)
   haveI : IsProbabilityMeasure (((Measure.pi fun i : Fin n =>
       if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν).map
       fun y => ∑ i, y i)) :=
-    Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    (by infer_instance)
   haveI : IsProbabilityMeasure (((Measure.pi fun _ : Fin (n - j) =>
       ν).map fun y => ∑ i, y i)) :=
-    Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    (by infer_instance)
   refine Measure.ext_of_charFun ?_
   funext t
   rw [charFun_map_sum_pi, charFun_map_sum_pi]
@@ -8957,7 +8957,7 @@ private lemma wideShell_le_of_deconvolution {B : Set (EuclideanSpace ℝ (Fin k)
     (τ (Metric.thickening s B \ erosion s B)).toReal ≤ (8 * Ck * s + W) / q := by
   haveI : IsProbabilityMeasure μ := by
     rw [hμ]
-    exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+    exact (by infer_instance)
   have hSm : MeasurableSet (Metric.thickening (s + t) B \ erosion (s + t) B) :=
     Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion _ B).measurableSet
   have hsub : (Metric.thickening s B \ erosion s B)
@@ -11547,17 +11547,17 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
     set A : Measure (EuclideanSpace ℝ (Fin k)) := R.map (fun y => c • ∑ l, y l) with hAdef
     haveI hAp : IsProbabilityMeasure A := by
       rw [hAdef]
-      exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+      exact (by infer_instance)
     set Gs : Measure (EuclideanSpace ℝ (Fin k)) :=
       (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => sg j • z) with hGsdef
     haveI hGsp : IsProbabilityMeasure Gs := by
       rw [hGsdef]
-      exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+      exact (by infer_instance)
     haveI hτp : IsProbabilityMeasure (A ∗ Gs) := inferInstance
     set η : Measure (EuclideanSpace ℝ (Fin k)) := ν.map (fun u => c • u) with hηdef
     haveI hηp : IsProbabilityMeasure η := by
       rw [hηdef]
-      exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+      exact (by infer_instance)
     have hμeq : hybridLaw (m + 1) j ν = (((A ∗ Gs).prod η).map fun p => p.1 + p.2) := by
       rw [← conv_eq_map_add, hAdef, hGsdef, hηdef, hsgval j]
       exact hybridLaw_conv_head hj ν (fun i => by rw [hκdef])
@@ -11748,12 +11748,12 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
     set A : Measure (EuclideanSpace ℝ (Fin k)) := R.map (fun y => c • ∑ l, y l) with hAdef
     haveI hAp : IsProbabilityMeasure A := by
       rw [hAdef]
-      exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+      exact (by infer_instance)
     set Gs' : Measure (EuclideanSpace ℝ (Fin k)) :=
       (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => sg (j + 1) • z) with hGs'def
     haveI hGs'p : IsProbabilityMeasure Gs' := by
       rw [hGs'def]
-      exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+      exact (by infer_instance)
     have hμeq : hybridLaw (m + 1) (j + 1) ν = ((A.prod Gs').map fun p => p.1 + p.2) := by
       rw [← conv_eq_map_add, hAdef, hGs'def, hsgval (j + 1)]
       exact hybridLaw_conv_tail hj ν (fun i => by rw [hκdef])

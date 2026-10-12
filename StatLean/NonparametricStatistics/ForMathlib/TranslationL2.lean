@@ -93,9 +93,9 @@ private lemma tendsto_eLpNorm_translate_sub {φ : ℝ → ℝ} (hφc : Continuou
           have := hR hmem; rw [mem_closedBall, Real.dist_eq, sub_zero] at this; linarith
         rw [Set.indicator_of_notMem hx, hout, hx0]; simp
     calc eLpNorm (fun x => φ (x + t) - φ x) 2 volume
-        ≤ eLpNorm (K'.indicator (fun _ => C)) 2 volume := eLpNorm_mono hpt
+        ≤ eLpNorm (K'.indicator (fun _ => C)) 2 volume := eLpNorm_mono (by fun_prop) hpt
       _ = ‖C‖ₑ * volume K' ^ (1 / (2 : ℝ≥0∞).toReal) :=
-          eLpNorm_indicator_const hK'meas (by norm_num) (by norm_num)
+          eLpNorm_indicator_const hK'meas.nullMeasurableSet (by norm_num) (by norm_num)
       _ = ENNReal.ofReal C * V := by
           rw [Real.enorm_eq_ofReal_abs, abs_of_nonneg hC0.le]; norm_num [hVdef]
       _ ≤ η := by
@@ -142,7 +142,7 @@ theorem tendsto_lintegral_sq_sub_translate {f : ℝ → ℝ}
     have hAeq : eLpNorm (fun x => f (x + t) - φ (x + t)) 2 volume = eLpNorm (f - φ) 2 volume := by
       have := eLpNorm_comp_measurePreserving (g := f - φ) (p := (2 : ℝ≥0∞))
         (haf.sub haφ) (measurePreserving_add_right volume t)
-      simpa [Function.comp, Pi.sub_apply] using this
+      simpa [Function.comp, Pi.sub_apply] using! this
     have hCeq : eLpNorm (fun x => φ x - f x) 2 volume = eLpNorm (f - φ) 2 volume :=
       eLpNorm_sub_comm φ f 2 volume
     rw [hsum]
@@ -150,11 +150,11 @@ theorem tendsto_lintegral_sq_sub_translate {f : ℝ → ℝ}
             + ((fun x => φ (x + t) - φ x) + (fun x => φ x - f x))) 2 volume
         ≤ eLpNorm (fun x => f (x + t) - φ (x + t)) 2 volume
             + eLpNorm ((fun x => φ (x + t) - φ x) + (fun x => φ x - f x)) 2 volume :=
-          eLpNorm_add_le hA (hB.add hC) one_le_two
+          eLpNorm_add_le  one_le_two
       _ ≤ eLpNorm (fun x => f (x + t) - φ (x + t)) 2 volume
             + (eLpNorm (fun x => φ (x + t) - φ x) 2 volume
               + eLpNorm (fun x => φ x - f x) 2 volume) :=
-          add_le_add (le_refl _) (eLpNorm_add_le hB hC one_le_two)
+          add_le_add (le_refl _) (eLpNorm_add_le  one_le_two)
       _ = eLpNorm (f - φ) 2 volume
             + (eLpNorm (fun x => φ (x + t) - φ x) 2 volume + eLpNorm (f - φ) 2 volume) := by
           rw [hAeq, hCeq]
@@ -164,7 +164,9 @@ theorem tendsto_lintegral_sq_sub_translate {f : ℝ → ℝ}
   have hEq : ∀ t : ℝ, (∫⁻ x, ENNReal.ofReal ((f (x + t) - f x) ^ 2))
       = (eLpNorm (fun x => f (x + t) - f x) 2 volume) ^ (2 : ℝ) := by
     intro t
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (p := 2) (by norm_num) (by norm_num)
+      (show AEStronglyMeasurable (fun x => f (x + t) - f x) volume from
+        ((hf.comp (measurable_id.add_const t)).sub hf).aestronglyMeasurable)]
     simp only [ENNReal.toReal_ofNat]
     rw [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one]
     exact lintegral_congr fun x => (enorm_rpow_two _).symm

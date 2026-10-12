@@ -76,7 +76,8 @@ theorem risk_smul {P : Θ → Measure 𝓧} {L : Θ → D → ℝ≥0∞} {δ : 
     risk P L δ (g • θ) = risk P L δ θ := by
   unfold risk crossRisk
   have hgm : Measurable (fun x => L (g • θ) (δ x)) := (hLmeas (g • θ)).comp hδ
-  rw [← hP g θ, lintegral_map hgm (measurable_const_smul g)]
+  rw [← hP.map_eq g θ (measurable_const_smul g).aemeasurable, lintegral_map hgm
+      (measurable_const_smul g)]
   refine lintegral_congr fun x => ?_
   rw [hδeq g x, hL g θ (δ x)]
 

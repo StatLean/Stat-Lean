@@ -10,6 +10,8 @@ import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresen
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.WeightedScoreEmpiricalLinearization
 import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 
+set_option backward.isDefEq.respectTransparency false
+
 /-!
 # One-step estimator semiparametric efficiency (vector θ)
 
@@ -149,7 +151,7 @@ private theorem IsRootNBoundedSeq.tendsto
   have hinv : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * max C 0) atTop (𝓝 0) := by
     have hsqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa only [zero_mul] using hsqrt.inv_tendsto_atTop.mul_const (max C 0)
+    simpa only [zero_mul] using! hsqrt.inv_tendsto_atTop.mul_const (max C 0)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hinv
     (Filter.Eventually.of_forall fun _ => norm_nonneg _) ?_
   filter_upwards [hC, Filter.eventually_ge_atTop 1] with n hn hn1
@@ -184,7 +186,7 @@ private theorem dqm_sqrtDensity_l2_tendsto_of_tendsto
   have hdelta_sq : Tendsto (fun n => ‖delta n‖ ^ 2) atTop (𝓝 0) := by
     simpa using hdelta.norm.pow 2
   have hr : Tendsto (fun n => ∫ x, (r n x) ^ 2 ∂μ) atTop (𝓝 0) := by
-    simpa only [r] using
+    simpa only [r] using!
       (hDQM.isLittleO.comp_tendsto hdelta).trans_tendsto hdelta_sq
   have hfisher := (dqm_fisher_cont M μ theta0 ℓ
     (hPDF.density_integrable theta0) hDQM
@@ -279,7 +281,7 @@ private theorem Vhat_coordinate_measurable
   intro n j l
   let trunc : (ℕ → Ω) → (Fin n → Ω) := fun omega i => omega i.val
   have htrunc : Measurable trunc :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    Measurable.of_eval fun i => measurable_pi_apply i.val
   have hrange : (Set.range (preliminary n)).Countable := by
     by_cases hn : n = 0
     · subst n
@@ -310,7 +312,7 @@ private theorem Vhat_coordinate_measurable
         EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ).measurable.comp hi).mul
       ((PiLp.proj (p := 2) (β := fun _ : Fin k => ℝ) l :
         EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ).measurable.comp hi)
-  simpa only [trunc, Matrix.neg_apply] using (hfin.comp htrunc).neg
+  simpa only [trunc, Matrix.neg_apply] using! (hfin.comp htrunc).neg
 
 private theorem matrix_nonsing_inv_neg {k : ℕ} (A : Matrix (Fin k) (Fin k) ℝ) :
     (-A)⁻¹ = -A⁻¹ := by
@@ -616,12 +618,12 @@ theorem oneStep2555_empInfoConsistency_vec
           (fun x => ‖ℓ x‖ ^ 2 * (ENNReal.ofReal (M.density θ₀ x)).toReal) μ := by
         rw [← integrable_withDensity_iff (M.density_meas θ₀).ennreal_ofReal (by simp)]
         exact (memLp_two_iff_integrable_sq_norm hℓ_model.aestronglyMeasurable).mp hℓ_model
-      rw [memLp_two_iff_integrable_sq_norm
+      erw [memLp_two_iff_integrable_sq_norm
         ((M.sqrtDensity_meas θ₀).smul hℓ_meas).aestronglyMeasurable]
       convert hi using 1
       funext x
       rw [ENNReal.toReal_ofReal (M.density_nonneg θ₀ x), ← M.sqrtDensity_sq θ₀ x]
-      simp only [norm_smul, Real.norm_eq_abs, mul_pow]
+      simp only [Pi.smul_apply', norm_smul, Real.norm_eq_abs, mul_pow]
       rw [sq_abs]
       ring
     have hg_memLp (n : ℕ) : MemLp (g n) 2 μ := by
@@ -634,13 +636,13 @@ theorem oneStep2555_empInfoConsistency_vec
           (M.density_meas (thetaSeq n)).ennreal_ofReal (by simp)]
         exact (memLp_two_iff_integrable_sq_norm hbase_model.aestronglyMeasurable).mp
           hbase_model
-      rw [memLp_two_iff_integrable_sq_norm
+      erw [memLp_two_iff_integrable_sq_norm
         ((M.sqrtDensity_meas (thetaSeq n)).smul (hbase_meas n)).aestronglyMeasurable]
       convert hi using 1
       funext x
       rw [ENNReal.toReal_ofReal (M.density_nonneg (thetaSeq n) x),
         ← M.sqrtDensity_sq (thetaSeq n) x]
-      simp only [norm_smul, Real.norm_eq_abs, mul_pow]
+      simp only [Pi.smul_apply', norm_smul, Real.norm_eq_abs, mul_pow]
       rw [sq_abs]
       ring
     have henergy_eq (n : ℕ) :
@@ -699,10 +701,12 @@ theorem oneStep2555_empInfoConsistency_vec
       (by simpa only [modelMeasure] using hP)
       (fun n => by rfl) ℓ base hℓ_meas hbase_meas hℓ_memLp hbase_memLp
       (by simpa only [ParametricFamily.sqrtDensity] using hDensityHell)
-      (by simpa only [weightedScore, base, ℓ] using hcondition2556 thetaSeq htheta)
+      (by simpa only [weightedScore, base, ℓ] using! hcondition2556 thetaSeq htheta)
     have hsumQ := TendstoInProbZero.add hsplitQ hempQ
     letI : MeasurableSpace (Matrix (Fin d) (Fin d) ℝ) := MeasurableSpace.pi
     haveI : BorelSpace (Matrix (Fin d) (Fin d) ℝ) := Pi.borelSpace
+    haveI : MeasurableSub₂ (Matrix (Fin d) (Fin d) ℝ) :=
+      (inferInstance : MeasurableSub₂ (Fin d → Fin d → ℝ))
     have hsplit_meas (n : ℕ) : Measurable (fun X : Fin n → Ω =>
         splitGram splitSide half n X) := by
       unfold splitGram
@@ -716,7 +720,7 @@ theorem oneStep2555_empInfoConsistency_vec
       convert hsumQ using 1
       funext n X
       abel
-    simpa only [R, half, splitGram, empInfo, indexedSplitScore, hgram] using hsumP
+    simpa only [R, half, splitGram, empInfo, indexedSplitScore, hgram] using! hsumP
   · exact hpreliminary_rootN
   · exact hpreliminary_grid
 
@@ -945,7 +949,7 @@ theorem oneStep2556_deterministicLinearization_vec
       exact (Finset.measurable_sum (Finset.univ : Finset (Fin n)) fun i _ =>
         (hjoint0 n (splitSide n i)).comp
           (measurable_id.prodMk (measurable_pi_apply i))).const_smul ((n : ℝ)⁻¹)
-    simpa only [Zfin, scoreMean, indexedSplitScore, splitMean, half, half0] using
+    simpa only [Zfin, scoreMean, indexedSplitScore, splitMean, half, half0] using!
       ((hmoving.sub hfixed).const_smul (Real.sqrt n : ℝ)).add measurable_const
   intro ε hε
   have hfin := hZfin ε hε
@@ -955,7 +959,7 @@ theorem oneStep2556_deterministicLinearization_vec
       measurableSet_le measurable_const (hZfin_meas n).norm
     have hbridge := pi_real_eq_infinitePi_real_of_truncate P n hset
     simpa only [Zfin, oneStepResidual, scoreMean, indexedSplitScore,
-      map_neg, ContinuousLinearMap.neg_apply, sub_neg_eq_add] using hbridge
+      map_neg, ContinuousLinearMap.neg_apply, sub_neg_eq_add] using! hbridge
 
 /-- **Native vector vdV 25.57 asymptotic linearity.**  The Ch5 discretized
 one-step expansion is first applied on `ℕ → Ω` under `infinitePi`; the
@@ -1069,17 +1073,17 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
           ring
       _ = ∑ i, ∑ j, (u.ofLp i * v.ofLp j) *
           ∫ x, (ℓ x).ofLp i * (ℓ x).ofLp j ∂P := by
-        rw [integral_finset_sum]
+        rw [integral_finsetSum]
         · apply Finset.sum_congr rfl
           intro i _
-          rw [integral_finset_sum]
+          rw [integral_finsetSum]
           · apply Finset.sum_congr rfl
             intro j _
             rw [integral_const_mul]
           · intro j _
             exact ((hcoord i).integrable_mul (hcoord j)).const_mul _
         · intro i _
-          exact integrable_finset_sum _ fun j _ =>
+          exact integrable_finsetSum _ fun j _ =>
             ((hcoord i).integrable_mul (hcoord j)).const_mul _
       _ = ∑ i, u.ofLp i * ∑ j,
           (∫ x, (ℓ x).ofLp i * (ℓ x).ofLp j ∂P) * v.ofLp j := by
@@ -1210,7 +1214,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
             scoreHalf n X (splitSide n i) θ₀ (X i)) :=
           (hhalf_meas n (splitSide n i) θ₀).comp
             (measurable_id.prodMk (measurable_pi_apply i))
-        simpa only [Function.comp_apply, smul_smul] using
+        simpa only [Function.comp_apply, smul_smul] using!
           (((Finset.measurable_sum (Finset.univ : Finset (Fin n)) fun i _ =>
           hscore i).const_smul ((n : ℝ)⁻¹)).sub
           ((Finset.measurable_sum (Finset.univ : Finset (Fin n)) fun i _ =>
@@ -1220,23 +1224,23 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
           (scoreMean (indexedSplitScore splitSide scoreHalf) n X θ₀ -
             empMean (fun _ => ℓ) n X)‖} :=
         measurableSet_le measurable_const hfin_meas.norm
-      simpa only [Ψ, trunc, μinf] using pi_real_eq_infinitePi_real_of_truncate P n hset
+      simpa only [Ψ, trunc, μinf] using! pi_real_eq_infinitePi_real_of_truncate P n hset
   have hΨ0_meas (n : ℕ) : Measurable (fun omega => Real.sqrt n • Ψ n omega θ₀) := by
     have htrunc : Measurable (trunc n) := by
-      exact measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+      exact Measurable.of_eval fun i => measurable_pi_apply i.val
     have hfin : Measurable (fun X : Fin n → Ω =>
         Real.sqrt n • scoreMean (indexedSplitScore splitSide scoreHalf) n X θ₀) := by
       unfold scoreMean indexedSplitScore
       fun_prop
-    simpa only [Ψ] using hfin.comp htrunc
+    simpa only [Ψ] using! hfin.comp htrunc
   have hleading_meas (n : ℕ) : Measurable
       (fun omega => Real.sqrt n • empMean (fun _ => ℓ) n (trunc n omega)) := by
     have htrunc : Measurable (trunc n) :=
-      measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+      Measurable.of_eval fun i => measurable_pi_apply i.val
     have hfin : Measurable (fun X : Fin n → Ω =>
         Real.sqrt n • empMean (fun _ => ℓ) n X) := by
       unfold empMean
-      simpa only [Function.comp_apply, smul_smul] using
+      simpa only [Function.comp_apply, smul_smul] using!
         (Finset.measurable_sum (Finset.univ : Finset (Fin n)) fun i _ =>
           hℓ_meas.comp (measurable_pi_apply i)).const_smul
             (Real.sqrt n * (n : ℝ)⁻¹)
@@ -1274,9 +1278,9 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
     exact Filter.Eventually.of_forall fun n => by
       have hstat_meas : Measurable (fun X : Fin n → Ω =>
           empInfo (indexedSplitScore splitSide scoreHalf) n X (preliminary n X) - I) := by
-        apply measurable_pi_lambda _
+        apply Measurable.of_eval
         intro i
-        apply measurable_pi_lambda _
+        apply Measurable.of_eval
         intro j
         have hrange : (Set.range (preliminary n)).Countable := by
           by_cases hn : n = 0
@@ -1309,7 +1313,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
               EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ).measurable.comp hq).mul
             ((PiLp.proj (p := 2) (β := fun _ : Fin d => ℝ) j :
               EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ).measurable.comp hq)
-        simpa only [Matrix.sub_apply] using hcoord.sub measurable_const
+        simpa only [Matrix.sub_apply] using! hcoord.sub measurable_const
       have hset : MeasurableSet {X : Fin n → Ω | ε ≤
           ‖empInfo (indexedSplitScore splitSide scoreHalf) n X (preliminary n X) - I‖} :=
         measurableSet_le measurable_const hstat_meas.norm
@@ -1320,7 +1324,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
               (preliminary n X) - I‖} =
             μinf.real {omega | ε ≤ ‖empInfo (indexedSplitScore splitSide scoreHalf) n
               (trunc n omega) (pre n omega) - I‖} := by
-                simpa only [trunc, pre, μinf] using hbridge
+                simpa only [trunc, pre, μinf] using! hbridge
         _ = μinf.real {omega | ε ≤ ‖Vhat n omega - V0‖} := by
           congr 1
           ext omega
@@ -1343,7 +1347,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
     rw [← show (Measure.pi (fun _ : Fin n => P)).real
         {X | M0 < ‖Real.sqrt n • (preliminary n X - θ₀)‖} =
         μinf.real {omega | M0 < ‖Real.sqrt n • (pre n omega - θ₀)‖} by
-      simpa only [pre, trunc, μinf] using hbridge]
+      simpa only [pre, trunc, μinf] using! hbridge]
     exact hM0 n
   have h47 : ∀ thetaSeq : ℕ → EuclideanSpace ℝ (Fin d),
       IsRootNBoundedSeq thetaSeq θ₀ → TendstoInProbZero (fun _ : ℕ => μinf)
@@ -1477,7 +1481,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
       let A : (Fin n → Ω) → Matrix (Fin d) (Fin d) ℝ := fun X =>
         empInfo (indexedSplitScore splitSide scoreHalf) n X (preliminary n X)
       have hA : Measurable A :=
-        measurable_pi_lambda _ fun j => measurable_pi_lambda _ fun k => hinfo_coord j k
+        Measurable.of_eval fun j => Measurable.of_eval fun k => hinfo_coord j k
       have hAinv_coord : ∀ j k, Measurable (fun X => (A X)⁻¹ j k) := by
         intro j k
         rw [show (fun X => (A X)⁻¹ j k) = fun X =>
@@ -1521,7 +1525,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
         (Real.sqrt n)⁻¹ • ∑ i, tupleEval P
           (@candidateVecEIF Ω _ P _ Θ _ _ _ d S_θ T_nuis proj e) (X i)‖} :=
       measurableSet_le measurable_const hres_meas.norm
-    simpa only [μinf, trunc, Set.mem_setOf_eq] using
+    simpa only [μinf, trunc, Set.mem_setOf_eq] using!
       (pi_real_eq_infinitePi_real_of_truncate P n hset).symm
 
 /-- **Semiparametric efficiency in vdV Theorem 25.57 (vector form).**
@@ -1587,7 +1591,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_fin_one
   have hAL := oneStep_asymptoticallyLinear_2557_native_vec h hDQM
   intro ε hε
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hAL ε hε)
-  · exact Filter.Eventually.of_forall fun _ => zero_le _
+  · exact Filter.Eventually.of_forall fun _ => zero_le
   · exact Filter.Eventually.of_forall fun n => measure_mono (fun X hX => by
     simp only [Set.mem_setOf_eq] at hX ⊢
     have hcoord :

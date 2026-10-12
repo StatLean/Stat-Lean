@@ -182,7 +182,7 @@ private theorem tail_one_sided_le {Z : Ω → ℝ} {c : ℝ≥0} {a σsq : ℝ}
         rw [he]
         exact (measure_mono_null (fun ω hω => hω) (ae_iff.mp hZ0))
       exact measure_mono_null hsub2 (by simp [measure_union_null hZnull hnull0])
-    rw [hnull]; exact zero_le _
+    rw [hnull]; exact zero_le
   · -- Positive proxy: Chernoff + exp-monotonicity in the denominator.
     have hσpos : 0 < σsq := lt_of_lt_of_le hcpos hcle
     have hsub : {ω | a < Z ω} ⊆ {ω | a ≤ Z ω} := by
@@ -383,7 +383,7 @@ theorem summable_bigOsc
       rw [zpow_neg, ← inv_zpow, zpow_natCast]; norm_num
     · have hzero : ∀ j : ℕ, μ (bigOsc X net j ((2 : ℝ) ^ (-(j : ℤ)))) = 0 := by
         intro j
-        refine le_antisymm ?_ (zero_le _)
+        refine le_antisymm ?_ (zero_le)
         have hpair : ∀ p ∈ closePairs net j,
             μ {ω | (2 : ℝ) ^ (-(j : ℤ)) < |X p.2 ω - X p.1 ω|} = 0 := by
           intro p _
@@ -453,7 +453,7 @@ theorem summable_bigOsc
         have hempty : closePairs net j = ∅ := Finset.card_eq_zero.mp h0
         have : bigOsc X net j (a j) = ∅ := by
           rw [bigOsc, hempty]; simp
-        rw [this, measure_empty]; exact zero_le _
+        rw [this, measure_empty]; exact zero_le
       · have hcardpos : (0 : ℝ) < (closePairs net j).card := by exact_mod_cast hpos
         have hbound := measure_bigOsc_le hK net hSG j (a := a j) (hapos j).le
         have hexparg : -(a j) ^ 2 / (2 * Dj j) = -(Lj j + Mj j) := by

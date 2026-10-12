@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 
 /-!
@@ -63,7 +64,7 @@ private theorem outerMeasureStar_eq_measure_all
         · rw [Set.indicator_of_mem hξ]
           exact hξ
         · rw [Set.indicator_of_notMem hξ]
-          exact zero_le _
+          exact zero_le
 
 /-- Deterministic shell geometry used in the nuisance peeling
 argument. -/

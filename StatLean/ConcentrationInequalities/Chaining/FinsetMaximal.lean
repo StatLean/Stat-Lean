@@ -164,7 +164,7 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     AEMeasurable.biSup (↑s) s.countable_toSet
       (fun i hi => (hint i (Finset.mem_coe.mp hi)).aemeasurable)
   refine MeasureTheory.Integrable.mono' (g := fun ω => ∑ i ∈ s, |X i ω|)
-    (MeasureTheory.integrable_finset_sum s (fun i hi => (hint i hi).abs))
+    (MeasureTheory.integrable_finsetSum s (fun i hi => (hint i hi).abs))
     hmeas.aestronglyMeasurable ?_
   filter_upwards with ω
   rw [Real.norm_eq_abs]
@@ -180,7 +180,6 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     linarith
   · -- upper bound: `⨆ ≤ ∑`
     refine Real.iSup_le (fun i => ?_) (Finset.sum_nonneg (fun _ _ => abs_nonneg _))
-    dsimp only
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
       exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)

@@ -86,7 +86,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     (hP : ∀ i, P i = μ.withDensity (p i)) :
     IsMinimalSufficient P (likelihoodRatioVec p) := by
   have hLRVm : Measurable (likelihoodRatioVec p) :=
-    measurable_pi_lambda _ fun i => (hp i.succ).div (hp 0)
+    Measurable.of_eval fun i => (hp i.succ).div (hp 0)
   -- sufficiency: the densities factor through the ratio vector with carrier `p 0`
   have hgm : ∀ i : Fin (k + 1),
       Measurable (fun v : Fin k → ℝ≥0∞ => (Fin.cons (1 : ℝ≥0∞) v : Fin (k + 1) → ℝ≥0∞) i) := by
@@ -109,7 +109,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
   rintro S' _ U hU hUsuf
   obtain ⟨g', h', hg'm, _, hfacU⟩ := isFactorizedDensity_of_isSufficient P μ p hp hP hU hUsuf
   refine ⟨fun s i' => g' i'.succ s / g' 0 s,
-    measurable_pi_lambda _ fun i' => (hg'm i'.succ).div (hg'm 0), fun i => ?_⟩
+    Measurable.of_eval fun i' => (hg'm i'.succ).div (hg'm 0), fun i => ?_⟩
   have hac : P i ≪ μ := (hP i) ▸ withDensity_absolutelyContinuous μ (p i)
   refine hac.ae_eq ?_
   have hcomp : ∀ᵐ x ∂μ, ∀ i',

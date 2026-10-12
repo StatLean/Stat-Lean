@@ -222,7 +222,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
       rw [klDiv_eq_lintegral_klFun_of_ac (hAC k),
         ← lintegral_rnDeriv_mul (hkξ k) (by fun_prop)]
     rw [Finset.sum_congr rfl (fun k _ => hRHS k),
-      ← lintegral_finset_sum _ (fun k _ => by fun_prop),
+      ← lintegral_finsetSum _ (fun k _ => by fun_prop),
       ← lintegral_const_mul _ (Finset.measurable_sum _ (fun k _ => by fun_prop))]
     refine lintegral_mono_ae ?_
     filter_upwards [hsum_ae, hchain_ae, hktop_ae,
@@ -255,7 +255,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
     obtain ⟨k₀, hk₀⟩ := hAC
     have htop : klDiv (Q j) (Q k₀) = ⊤ := klDiv_of_not_ac hk₀
     have hle : klDiv (Q j) (Q k₀) ≤ ∑ k, klDiv (Q j) (Q k) :=
-      Finset.single_le_sum (f := fun k => klDiv (Q j) (Q k)) (fun i _ => zero_le _)
+      Finset.single_le_sum (f := fun k => klDiv (Q j) (Q k)) (fun i _ => zero_le)
         (Finset.mem_univ k₀)
     have hsum : ∑ k, klDiv (Q j) (Q k) = ⊤ := top_le_iff.mp (htop ▸ hle)
     rw [hsum, ENNReal.mul_top (ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M))]

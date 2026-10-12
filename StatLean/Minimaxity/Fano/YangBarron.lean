@@ -177,7 +177,7 @@ private lemma yang_barron_sum_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) 
   -- the uniform cover mixture `G = (1/N) Σₖ γ k`, a probability measure.
   set G : Measure 𝓧 := (N : ℝ≥0∞)⁻¹ • ∑ k, γ k with hG_def
   have hGsum_univ : (∑ k, γ k) Set.univ = (N : ℝ≥0∞) := by
-    rw [Measure.coe_finset_sum]; simp [measure_univ, Finset.card_univ]
+    rw [Measure.coe_finsetSum]; simp [measure_univ, Finset.card_univ]
   haveI hGprob : IsProbabilityMeasure G := by
     refine ⟨?_⟩
     rw [hG_def, Measure.smul_apply, smul_eq_mul, hGsum_univ,

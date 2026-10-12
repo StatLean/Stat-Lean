@@ -236,14 +236,14 @@ private theorem lpTrimComapToMapTrim_aux_comp_apply
         (lpTrimComapToMapTrim_aux
           (α' := α') (β' := β') (m0 := m0) (mβ := mβ)
           (μ' := μ') (f' := f') hf' u) = u := by
-    simpa [pull, lpTrimComapToMapTrim_pull] using hpull
+    simpa [pull, lpTrimComapToMapTrim_pull] using! hpull
   have htrim :
       (u : α' → ℝ) =ᵐ[μ'.trim hf'.comap_le]
         (fun a =>
           (lpTrimComapToMapTrim_aux
             (α' := α') (β' := β') (m0 := m0) (mβ := mβ)
             (μ' := μ') (f' := f') hf' u) (f' a)) := by
-    simpa [hpull', Function.comp] using
+    simpa [hpull', Function.comp] using!
       (Lp.coeFn_compMeasurePreserving
         (lpTrimComapToMapTrim_aux
           (α' := α') (β' := β') (m0 := m0) (mβ := mβ)
@@ -280,7 +280,7 @@ theorem doobL2Equiv_comp_apply
     lpTrimComapToLpMap_e2_coeFn hf _
   -- `t = lpMeasToLpTrimLie … g`, whose coercion is `g` `μ`-a.e.
   have ht_ae : (t : α → ℝ) =ᵐ[μ] ((g : Lp ℝ 2 μ) : α → ℝ) := by
-    simpa [ht_def] using lpMeasToLpTrim_ae_eq hf.comap_le g
+    simpa [ht_def] using! lpMeasToLpTrim_ae_eq hf.comap_le g
   -- Assemble: `doobL2Equiv hf g = e2 (e1 t)` definitionally.
   have hstep : (fun a => (doobL2Equiv hf g : Lp ℝ 2 (μ.map f)) (f a))
       = (fun a => (lpTrimComapToLpMap_e1 hf t) (f a)) := by

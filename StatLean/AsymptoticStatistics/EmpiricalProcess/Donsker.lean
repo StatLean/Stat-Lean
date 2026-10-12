@@ -147,7 +147,7 @@ lemma marginalCLT_fdd_of_iid
     rw [(_hX_id j).map_eq, _hX_law]
   -- `P` is a probability measure (pushforward of `μ` by the measurable `X 0`).
   haveI hP_prob : IsProbabilityMeasure P := by
-    rw [← _hX_law]; exact Measure.isProbabilityMeasure_map (_hX_meas 0).aemeasurable
+    rw [← _hX_law]; exact (by infer_instance)
   -- Measurable representatives `f' i =ᵐ[P] f i` of the L²(P) tuple entries.
   set f' : Fin k → (Ω → ℝ) := fun i => (_hf_memLp i).aestronglyMeasurable.mk (f i) with hf'_def
   have hf'_meas : ∀ i, Measurable (f' i) := fun i =>
@@ -230,7 +230,7 @@ lemma marginalCLT_fdd_of_iid
     -- `gt` and `gt²` are integrable under `P`.
     have hgt_int : Integrable gt P := by
       rw [hgt_def]
-      exact integrable_finset_sum _ (fun i _ => (hf'_int i).const_mul _)
+      exact integrable_finsetSum _ (fun i _ => (hf'_int i).const_mul _)
     have hgt_sq_int : Integrable (fun x => gt x ^ 2) P := by
       have hexpand : (fun x => gt x ^ 2)
           = fun x => ∑ i, ∑ j, (t i * t j) * (f' i x * f' j x) := by
@@ -240,7 +240,7 @@ lemma marginalCLT_fdd_of_iid
         refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
         ring
       rw [hexpand]
-      exact integrable_finset_sum _ (fun i _ => integrable_finset_sum _
+      exact integrable_finsetSum _ (fun i _ => integrable_finsetSum _
         (fun j _ => ((hf'_mul_int i j).const_mul _)))
     have hgt_memLp : MemLp gt 2 P :=
       (memLp_two_iff_integrable_sq hgt_meas.aestronglyMeasurable).mpr hgt_sq_int
@@ -262,7 +262,7 @@ lemma marginalCLT_fdd_of_iid
     -- Expand the two integrals over `P`.
     have hmean_exp : ∫ x, gt x ∂P = ∑ i, t i * ∫ x, f' i x ∂P := by
       rw [hgt_def]
-      rw [integral_finset_sum _ (fun i _ => (hf'_int i).const_mul _)]
+      rw [integral_finsetSum _ (fun i _ => (hf'_int i).const_mul _)]
       exact Finset.sum_congr rfl (fun i _ => integral_const_mul _ _)
     have hsq_exp : ∫ x, gt x ^ 2 ∂P
         = ∑ i, ∑ j, (t i * t j) * ∫ x, f' i x * f' j x ∂P := by
@@ -274,10 +274,10 @@ lemma marginalCLT_fdd_of_iid
         refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
         ring
       rw [hexpand,
-        integral_finset_sum _ (fun i _ => integrable_finset_sum _
+        integral_finsetSum _ (fun i _ => integrable_finsetSum _
           (fun j _ => (hf'_mul_int i j).const_mul _))]
       refine Finset.sum_congr rfl (fun i _ => ?_)
-      rw [integral_finset_sum _ (fun j _ => (hf'_mul_int i j).const_mul _)]
+      rw [integral_finsetSum _ (fun j _ => (hf'_mul_int i j).const_mul _)]
       exact Finset.sum_congr rfl (fun j _ => integral_const_mul _ _)
     -- Assemble: `Var = E[Z²] − (E Z)²`.
     rw [variance_eq_sub hZ_memLp]
@@ -488,15 +488,15 @@ theorem distL2_ge_imp_integral_ge {P : Measure Ω} [IsProbabilityMeasure P]
   have hpos : 0 < distL2 P f g := lt_of_lt_of_le hδ hge
   have hne_top : eLpNorm (f - g) 2 P ≠ ⊤ := by
     intro htop
-    rw [distL2, htop, ENNReal.toReal_top] at hpos
+    rw [distL2_eq_eLpNorm (hf.sub hg), htop, ENNReal.toReal_top] at hpos
     exact lt_irrefl 0 hpos
   have hmeas : AEStronglyMeasurable (f - g) P := hf.sub hg
-  have hmemLp : MemLp (f - g) 2 P := ⟨hmeas, lt_of_le_of_ne le_top hne_top⟩
+  have hmemLp : MemLp (f - g) 2 P := lt_of_le_of_ne le_top hne_top
   -- `distL2² = ((∫ ‖(f-g)‖²)^(2⁻¹))² = ∫ ‖(f-g) x‖² = ∫ (f x - g x)²`.
   have hint_nonneg : (0 : ℝ) ≤ ∫ x, ‖(f - g) x‖ ^ (2 : ℝ≥0∞).toReal ∂P :=
     integral_nonneg (fun x => by positivity)
   have hsq : distL2 P f g ^ 2 = ∫ x, (f x - g x) ^ 2 ∂P := by
-    rw [distL2, hmemLp.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num),
+    rw [distL2_eq_eLpNorm hmeas, hmemLp.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num),
       ENNReal.toReal_ofReal (Real.rpow_nonneg hint_nonneg _)]
     rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul hint_nonneg]
     simp only [ENNReal.toReal_ofNat, Nat.cast_ofNat]
@@ -783,9 +783,9 @@ theorem le_distL2_of_integral_sq_ge {P : Measure Ω} {f g : Ω → ℝ}
     intro x; rw [ENNReal.toReal_ofNat, ← ENNReal.rpow_natCast _ 2, Nat.cast_ofNat]
   -- `distL2² = L.toReal`.
   have hdist_sq : distL2 P f g ^ 2 = L.toReal := by
-    rw [distL2, eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+    rw [distL2, eLpNorm'_eq_lintegral_enorm]
     rw [← ENNReal.toReal_rpow, ← Real.rpow_natCast _ 2, ← Real.rpow_mul ENNReal.toReal_nonneg]
-    rw [show ((1 : ℝ) / (2 : ℝ≥0∞).toReal) * ((2 : ℕ) : ℝ) = 1 by norm_num, Real.rpow_one]
+    rw [show ((1 : ℝ) / 2) * ((2 : ℕ) : ℝ) = 1 by norm_num, Real.rpow_one]
     rw [hL]; congr 1; exact lintegral_congr hpow
   -- `∫ (f − g)² ≤ L.toReal` (Jensen, no measurability needed).
   have hbound : ∫ x, (f x - g x) ^ 2 ∂P ≤ L.toReal := by

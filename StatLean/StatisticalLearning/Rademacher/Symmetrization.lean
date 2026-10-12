@@ -376,7 +376,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
       = ∫ w, ((2 ^ n : ℝ)⁻¹ * ∑ σ : Fin n → Bool,
           sSup ((fun k => (n : ℝ)⁻¹ *
             ∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))) '' K)) ∂(μ.prod μ) := by
-    rw [integral_const_mul, integral_finset_sum _ fun σ _ => hKσint σ,
+    rw [integral_const_mul, integral_finsetSum _ fun σ _ => hKσint σ,
       Finset.sum_congr rfl fun σ (_ : σ ∈ Finset.univ) => (hstepC σ).symm,
       Finset.sum_const, Finset.card_univ]
     have hcard : (Fintype.card (Fin n → Bool) : ℝ) = 2 ^ n := by simp
@@ -446,7 +446,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
       (2 ^ n : ℝ)⁻¹ * ∑ σ : Fin n → Bool,
         sSup ((fun k => (n : ℝ)⁻¹ *
           ∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))) '' K)) (μ.prod μ) :=
-    (integrable_finset_sum _ fun σ _ => hKσint σ).const_mul _
+    (integrable_finsetSum _ fun σ _ => hKσint σ).const_mul _
   have hmarg : ∫ w : Sample Z n × Sample Z n,
       (empRad F K w.2 + empRad F K w.1) ∂(μ.prod μ) = 2 * ∫ s, empRad F K s ∂μ := by
     rw [integral_prod _ hRadint2]

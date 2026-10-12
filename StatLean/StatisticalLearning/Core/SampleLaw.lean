@@ -74,7 +74,7 @@ theorem integral_empRisk {ℓ : H → Z → ℝ} {h : H}
     (measurePreserving_eval_sampleLaw (D := D) (n := n) i).integrable_comp_of_integrable hint
   have hsum : ∫ s : Sample Z n, ∑ i, ℓ h (s i) ∂(sampleLaw D n)
       = ∑ i : Fin n, ∫ s : Sample Z n, ℓ h (s i) ∂(sampleLaw D n) :=
-    integral_finset_sum _ fun i _ => hslot_int i
+    integral_finsetSum _ fun i _ => hslot_int i
   have hconst : ∫ s : Sample Z n, (n : ℝ)⁻¹ * ∑ i, ℓ h (s i) ∂(sampleLaw D n)
       = (n : ℝ)⁻¹ * ∫ s : Sample Z n, ∑ i, ℓ h (s i) ∂(sampleLaw D n) :=
     integral_const_mul _ _

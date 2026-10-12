@@ -110,7 +110,7 @@ theorem mle_asymptotic_normality_of_consistent
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
       (fun θ => M.logDensity θ)
       (MEstimator.mdotProbabilityDerivative (fun i x => ℓ x i) θ₀) θ₀ := by
-    simpa only [MEstimator.mdotProbabilityDerivative, psiVec_score_eq] using hdiff₀
+    simpa only [MEstimator.mdotProbabilityDerivative, psiVec_score_eq] using! hdiff₀
   have hLip₀ : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ x,
       |M.logDensity θ x - M.logDensity θ₀ x| ≤
         ‖menv x‖ * ‖θ - θ₀‖ := by

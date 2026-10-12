@@ -19,7 +19,7 @@
       <img src="https://img.shields.io/badge/Lean-4-blue?logo=lambda&logoColor=white" alt="Lean 4" />
     </a>
     <a href="https://leanprover-community.github.io/mathlib4_docs/">
-      <img src="https://img.shields.io/badge/Mathlib-v4.29.1-brightgreen" alt="Mathlib v4.29.1" />
+      <img src="https://img.shields.io/badge/Mathlib-v4.34.1-brightgreen" alt="Mathlib v4.34.1" />
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License" />

@@ -65,11 +65,11 @@ private lemma mul_log_div_hasDerivAt {c : ℝ} (hc : c ≠ 0) {y : ℝ} (hy : y 
   have hgy : HasDerivAt (fun a => a / c) (1 / c) y := (hasDerivAt_id y).div_const c
   have hlog : HasDerivAt (fun a => Real.log (a / c)) y⁻¹ y := by
     have h := (Real.hasDerivAt_log (div_ne_zero hy hc)).comp y hgy
-    convert h using 1
-    field_simp
+    convert! h using 1
+    try field_simp
   have hp := (hasDerivAt_id y).mul hlog
-  convert hp using 1
-  simp only [id_eq, one_mul]
+  convert! hp using 1
+  try simp only [id_eq, one_mul]
   rw [mul_inv_cancel₀ hy]
 
 /-- **Scalar Bernoulli–Pinsker inequality** (Wainwright Exercise 15.6, pointwise step):
@@ -98,16 +98,16 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
     have hsne : (1 - x) ≠ 0 := by linarith
     have t1 := mul_log_div_hasDerivAt hb0' hxne
     have hsub : HasDerivAt (fun a => (1:ℝ) - a) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+      simpa using! (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
     have t2base := mul_log_div_hasDerivAt hb1' hsne
     have t2 := t2base.comp x hsub
     have t3 : HasDerivAt (fun a => 2 * (a - b) ^ 2) (4 * (x - b)) x := by
       have h := ((hasDerivAt_id x).sub_const b).pow 2
       have h2 := h.const_mul (2 : ℝ)
-      convert h2 using 1
-      simp only [id_eq]; ring
+      convert! h2 using 1
+      try simp only [id_eq]; ring
     have hsum := (t1.add t2).sub t3
-    convert hsum using 1
+    convert! hsum using 1
     ring
   -- G'(x) = H x on (0,1)
   have hG' : ∀ x ∈ Ioo (0:ℝ) 1, HasDerivAt G (H x) x := by
@@ -118,20 +118,20 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
     have hgx : HasDerivAt (fun a => a / b) (1 / b) x := (hasDerivAt_id x).div_const b
     have hl1 : HasDerivAt (fun a => Real.log (a / b)) x⁻¹ x := by
       have h := (Real.hasDerivAt_log (div_ne_zero hxne hb0')).comp x hgx
-      convert h using 1; field_simp
+      convert! h using 1; try field_simp
     have hsub : HasDerivAt (fun a => (1:ℝ) - a) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+      simpa using! (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
     have hgs : HasDerivAt (fun a => a / (1 - b)) (1 / (1 - b)) (1 - x) :=
       (hasDerivAt_id (1 - x)).div_const (1 - b)
     have hl2base : HasDerivAt (fun u => Real.log (u / (1 - b))) (1 - x)⁻¹ (1 - x) := by
       have h := (Real.hasDerivAt_log (div_ne_zero hsne hb1')).comp (1 - x) hgs
-      convert h using 1; field_simp
+      convert! h using 1; try field_simp
     have hl2 := hl2base.comp x hsub
     have t3 : HasDerivAt (fun a => 4 * (a - b)) (4 : ℝ) x := by
       have h := ((hasDerivAt_id x).sub_const b).const_mul (4 : ℝ)
-      convert h using 1; ring
+      convert! h using 1; ring
     have hsum := (hl1.sub hl2).sub t3
-    convert hsum using 1
+    convert! hsum using 1
     ring
   -- H x ≥ 0 on (0,1), since 1/(x(1−x)) ≥ 4
   have hH_nonneg : ∀ x ∈ Ioo (0:ℝ) 1, 0 ≤ H x := by
@@ -203,17 +203,17 @@ private lemma two_sq_le_neg_log_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) 
     intro x hx
     have hx1 : (1 - x) ≠ 0 := by have := hx.2; linarith
     have h1 : HasDerivAt (fun y => (1:ℝ) - y) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+      simpa using! (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
     have hlog : HasDerivAt (fun y => -Real.log (1 - y)) ((1 - x)⁻¹) x := by
       have h := (Real.hasDerivAt_log hx1).comp x h1
       have h2 := h.neg
-      convert h2 using 1; field_simp
+      convert! h2 using 1; try field_simp
     have hsq : HasDerivAt (fun y => 2 * y ^ 2) (4 * x) x := by
       have h := (hasDerivAt_id x).pow 2
       have h2 := h.const_mul (2 : ℝ)
-      convert h2 using 1; simp only [id_eq]; ring
+      convert! h2 using 1; try simp only [id_eq]; ring
     have hsum := hlog.sub hsq
-    convert hsum using 1
+    convert! hsum using 1
   have hH0 : H 0 = 0 := by simp [hH]
   have hmono : MonotoneOn H (Set.Icc 0 c) := by
     apply monotoneOn_of_deriv_nonneg (convex_Icc 0 c)
@@ -436,8 +436,8 @@ private lemma klDiv_ge_two_mul_tvDist_sq (μ ν : Measure α)
     rw [Measure.map_apply hfm (measurableSet_singleton true), hpre]
   have htv_tr : (tvDist μ ν).toReal = (μ A).toReal - (ν A).toReal := by
     rw [tvDist_eq_measure_sub μ ν, ENNReal.toReal_sub_of_le hνμA (measure_ne_top μ A)]
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  haveI : IsProbabilityMeasure (ν.map f) := (by infer_instance)
+  haveI : IsProbabilityMeasure (μ.map f) := (by infer_instance)
   calc ENNReal.ofReal (2 * (tvDist μ ν).toReal ^ 2)
       = ENNReal.ofReal (2 * (((ν.map f) {true}).toReal - ((μ.map f) {true}).toReal) ^ 2) := by
         rw [htv_tr, hPt, hQt]; congr 1; ring

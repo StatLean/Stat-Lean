@@ -346,7 +346,7 @@ private lemma sqHellinger_withDensity_eq (ρ : Measure ℝ) [SigmaFinite ρ]
   have hne0 : ∀ᵐ x ∂ρ, (F + G) x ≠ 0 := by
     refine Filter.Eventually.of_forall (fun x => ?_)
     simp only [Pi.add_apply, hFdef, hGdef]
-    exact (add_pos_of_pos_of_nonneg (ENNReal.ofReal_pos.mpr (hfpos x)) (zero_le _)).ne'
+    exact (add_pos_of_pos_of_nonneg (ENNReal.ofReal_pos.mpr (hfpos x)) (zero_le)).ne'
   have hnetop : ∀ᵐ x ∂ρ, (F + G) x ≠ ⊤ := by
     refine Filter.Eventually.of_forall (fun x => ?_)
     simp only [Pi.add_apply, hFdef, hGdef]

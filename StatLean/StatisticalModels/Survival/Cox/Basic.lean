@@ -71,9 +71,10 @@ theorem coxSurvival_mem_Ioc (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure �
 
 /-- The **canonical Cox law**: the Stieltjes measure of `1 − coxSurvival` (`Cox72 §2`).
 The monotone/right-continuous Stieltjes structure is built from `antitone_coxSurvival` +
-continuity of `t ↦ Λ₀ (Ioc 0 t)` (which needs `[NoAtoms Λ₀]` and local finiteness `hfin`). -/
+continuity of `t ↦ Λ₀ (Ioc 0 t)` (which needs `[NullSingletonClass Λ₀]` and local
+finiteness `hfin`). -/
 noncomputable def coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] :
     StieltjesFunction ℝ where
   toFun t := 1 - coxSurvival β Λ₀ z t
   mono' _ _ hst := by
@@ -102,18 +103,18 @@ noncomputable def coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
 
 @[simp]
 theorem coxSF_apply (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] (t : ℝ) :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] (t : ℝ) :
     coxSF β Λ₀ z hfin t = 1 - coxSurvival β Λ₀ z t := rfl
 
 /-- The canonical Cox event-time law. -/
 noncomputable def coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] :
     Measure ℝ :=
   (coxSF β Λ₀ z hfin).measure
 
 /-- `coxSF` vanishes identically on the non-positive axis, hence tends to `0` at `-∞`. -/
 private theorem tendsto_coxSF_atBot (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] :
     Tendsto (coxSF β Λ₀ z hfin) atBot (𝓝 0) := by
   refine Tendsto.congr' ?_ tendsto_const_nhds
   filter_upwards [eventually_le_atBot (0 : ℝ)] with t ht
@@ -122,7 +123,7 @@ private theorem tendsto_coxSF_atBot (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : M
 
 /-- The Cox law puts no mass strictly below the origin. -/
 private theorem coxMeasure_Iio_zero (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] :
     coxMeasure β Λ₀ z hfin (Iio 0) = 0 := by
   have hle : coxMeasure β Λ₀ z hfin (Iio 0) ≤ (coxSF β Λ₀ z hfin).measure (Iic 0) :=
     measure_mono Iio_subset_Iic_self
@@ -134,7 +135,7 @@ private theorem coxMeasure_Iio_zero (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : M
 
 /-- Left-continuity of the baseline cumulative hazard, along `x − 1/(n+1)`: an atomless
 baseline puts no mass on `{x}`, so `Λ₀(0, ·]` has no jump there. -/
-private theorem tendsto_baselineMeasure_left (Λ₀ : Measure ℝ) [NoAtoms Λ₀] (x : ℝ) :
+private theorem tendsto_baselineMeasure_left (Λ₀ : Measure ℝ) [NullSingletonClass Λ₀] (x : ℝ) :
     Tendsto (fun n : ℕ => Λ₀ (Ioc 0 (x - 1 / (n + 1)))) atTop (𝓝 (Λ₀ (Ioc 0 x))) := by
   have hmono : Monotone fun n : ℕ => Ioc (0 : ℝ) (x - 1 / (n + 1)) := by
     intro m n hmn
@@ -161,7 +162,7 @@ private theorem tendsto_baselineMeasure_left (Λ₀ : Measure ℝ) [NoAtoms Λ�
 
 /-- The Cox distribution function is left-continuous: its left limit is its value. -/
 private theorem leftLim_coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] (x : ℝ) :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] (x : ℝ) :
     Function.leftLim (coxSF β Λ₀ z hfin) x = coxSF β Λ₀ z hfin x := by
   have hG : Tendsto (fun n : ℕ => (Λ₀ (Ioc 0 (x - 1 / (n + 1)))).toReal) atTop
       (𝓝 ((Λ₀ (Ioc 0 x)).toReal)) :=
@@ -178,14 +179,14 @@ private theorem leftLim_coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure
 
 /-- The canonical Cox law is atomless (its distribution function is left-continuous). -/
 private theorem coxMeasure_singleton (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] (x : ℝ) :
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] (x : ℝ) :
     coxMeasure β Λ₀ z hfin {x} = 0 := by
   rw [coxMeasure, (coxSF β Λ₀ z hfin).measure_singleton x, leftLim_coxSF, sub_self,
     ENNReal.ofReal_zero]
 
 /-- Under a diverging total baseline hazard the Cox distribution function increases to one. -/
 private theorem tendsto_coxSF_atTop (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀]
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
     Tendsto (coxSF β Λ₀ z hfin) atTop (𝓝 1) := by
   -- the real-valued baseline hazard diverges, so the survival function collapses to `0`
@@ -199,7 +200,7 @@ private theorem tendsto_coxSF_atTop (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : M
   have hS : Tendsto (coxSurvival β Λ₀ z) atTop (𝓝 0) :=
     Real.tendsto_exp_atBot.comp
       (tendsto_neg_atTop_atBot.comp (Filter.Tendsto.const_mul_atTop (Real.exp_pos _) hG))
-  simpa using hS.const_sub (1 : ℝ)
+  simpa using! hS.const_sub (1 : ℝ)
 
 /-- The Cox law is a (possibly defective) event-time law: mass on `[0, ∞)`, total at most
 one; it is a probability law **iff** the total baseline hazard diverges (else the defect is
@@ -209,7 +210,7 @@ theorem isSubEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : 
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀] :
     IsSubEventTimeLaw (coxMeasure β Λ₀ z hfin) := by
   refine ⟨?_, coxMeasure_Iio_zero β Λ₀ z hfin⟩
   have hle : ∀ t, coxSF β Λ₀ z hfin t ≤ 1 := fun t => by
@@ -229,7 +230,7 @@ theorem isEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Mea
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
     IsEventTimeLaw (coxMeasure β Λ₀ z hfin) := by
@@ -252,11 +253,11 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
     cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
-  haveI : NoAtoms (coxMeasure β Λ₀ z hfin) := ⟨coxMeasure_singleton β Λ₀ z hfin⟩
+  haveI : NullSingletonClass (coxMeasure β Λ₀ z hfin) := ⟨coxMeasure_singleton β Λ₀ z hfin⟩
   have hev : IsEventTimeLaw (coxMeasure β Λ₀ z hfin) :=
     isEventTimeLaw_coxMeasure β Λ₀ z hΛ0 hfin htot
   haveI := hev.1
@@ -335,7 +336,7 @@ theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NullSingletonClass Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass) — REQUIRED: without it the
     -- statement is false, machine-checked in `not_forall_cumHazard_coxMeasure` below (the
     -- cure defect inflates the hazard denominator); ABGK §II.1, Cox72 §2
@@ -370,7 +371,7 @@ theorem cumHazard_smul (μ : Measure ℝ) {k : ℝ≥0∞} (hk0 : k ≠ 0) (hkto
 /-- **Cure-defect witness baseline**: uniform hazard on `(0, 1]`, total hazard `1 < ∞`. -/
 noncomputable def cureBaseline : Measure ℝ := volume.restrict (Ioc 0 1)
 
-instance : NoAtoms cureBaseline := ⟨fun x => by
+instance : NullSingletonClass cureBaseline := ⟨fun x => by
   rw [cureBaseline, Measure.restrict_apply (measurableSet_singleton x)]
   exact measure_mono_null inter_subset_left (measure_singleton x)⟩
 
@@ -437,7 +438,7 @@ mechanism: the constructed law is defective, so the hazard denominator is `S(t) 
 rather than `S(t)`, which strictly inflates the cumulative hazard. -/
 theorem not_forall_cumHazard_coxMeasure :
     ¬ ∀ (p : ℕ) (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ) (z : EuclideanSpace ℝ (Fin p))
-        (inst : NoAtoms Λ₀) (_ : Λ₀ (Iic 0) = 0) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤),
+        (inst : NullSingletonClass Λ₀) (_ : Λ₀ (Iic 0) = 0) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤),
         cumHazard (@coxMeasure p β Λ₀ z hfin inst)
           = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
   intro hcon
@@ -457,7 +458,7 @@ theorem not_forall_cumHazard_coxMeasure :
   have hmtop : cureCoxMeasure 0 univ ≠ ⊤ := by rw [hm]; exact ENNReal.ofReal_ne_top
   haveI hprob : IsProbabilityMeasure ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨by
     rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hm0 hmtop]⟩
-  haveI hna : NoAtoms ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨fun x => by
+  haveI hna : NullSingletonClass ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨fun x => by
     rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_singleton, mul_zero]⟩
   have hev : IsEventTimeLaw ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨hprob, by
     rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_Iio_zero, mul_zero]⟩

@@ -358,22 +358,19 @@ theorem linearization_distL2_tendstoZero
     -- `‖Gsqrt n‖_{L²} → 0` by dominated convergence in `L²`.
     have hb_tendsto : Tendsto (fun n => (eLpNorm (Gsqrt n) 2 P).toReal) atTop (𝓝 0) := by
       have hUI : UnifIntegrable (fun n => Gsqrt n) 2 P := by
-        intro ε₀ hε₀
-        obtain ⟨δ, hδpos, hδ⟩ := hD_memLp.eLpNorm_indicator_le one_le_two (by norm_num) hε₀
-        refine ⟨δ, hδpos, fun n s hs hμs => le_trans ?_ (hδ s hs hμs)⟩
-        refine eLpNorm_mono_real (fun ω => ?_)
-        by_cases hω : ω ∈ s
-        · simp only [Set.indicator_of_mem hω]
-          rw [Real.norm_eq_abs, abs_of_nonneg (hG_nonneg n ω)]
-          exact hG_le_D n ω
-        · simp only [Set.indicator_of_notMem hω, norm_zero, le_refl]
+        apply (unifIntegrable_const one_le_two (by norm_num) hD_memLp).ae_mono hG_aesm
+        intro n
+        filter_upwards [] with ω
+        apply enorm_le_iff_norm_le.mpr
+        simpa only [Real.norm_eq_abs, abs_of_nonneg (hG_nonneg n ω),
+          abs_of_nonneg (hD_nonneg ω)] using hG_le_D n ω
       have hLp : Tendsto (fun n => eLpNorm (Gsqrt n) 2 P) atTop (𝓝 0) := by
         have h := tendsto_Lp_finite_of_tendsto_ae (μ := P) (p := 2) one_le_two (by norm_num)
           (f := fun n => Gsqrt n) (g := 0) hG_aesm MemLp.zero hUI
           (by filter_upwards [hCoreB] with ω hω using by simpa using hω)
         simpa using h
       have h := (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ∞)).comp hLp
-      simpa using h
+      simpa using! h
     -- `distL2 (fhat n h) (ψθ₀ h) ≤ ‖Gsqrt n‖_{L²}`, uniformly over the ball (for `n ≥ N₀`).
     have hdistL2_le : ∀ (n : ℕ), N₀ ≤ n → ∀ (h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}),
         distL2 P (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h.1) ω - m θ₀ ω))
@@ -381,9 +378,11 @@ theorem linearization_distL2_tendstoZero
           ≤ (eLpNorm (Gsqrt n) 2 P).toReal := by
       intro n hn h
       rw [distL2]
-      apply ENNReal.toReal_mono (hG_memLp n).2.ne
-      refine eLpNorm_mono_real (fun ω => ?_)
-      rw [Pi.sub_apply, Real.norm_eq_abs]
+      apply ENNReal.toReal_mono (hG_memLp n).ne
+      rw [eLpNorm_two_eq_eLpNorm' (hG_aesm n)]
+      apply eLpNorm'_mono_ae (by norm_num)
+      filter_upwards [] with ω
+      rw [Pi.sub_apply, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (hG_nonneg n ω)]
       exact hCoreC n hn ω h
     -- Eventually the exceedance set is empty.
     have hbε : ∀ᶠ n in atTop, (eLpNorm (Gsqrt n) 2 P).toReal < ε :=
@@ -603,7 +602,7 @@ fixed direction `h` with the vector empirical process
 of the pointwise readout `ω ↦ ⟪h, psiVec (fun _ => mdot) θ₀ ω⟫`. Both sides equal
 `∑ i, h i · 𝔾ₙ(mdot i)`: the LHS by `PiLp.inner_apply`, the RHS by pushing the finite
 inner-product sum through the linearity of `empiricalProcess`
-(`empiricalProcess_finset_sum` + `empiricalProcess_smul`). This rewrites
+(`empiricalProcess_finsetSum` + `empiricalProcess_smul`). This rewrites
 `⟪hₙ, 𝔾ₙṁ⟫` as the empirical process of a member of the linearized class. -/
 theorem empiricalProcess_inner_empiricalProcessVec
     {d n : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
@@ -632,7 +631,7 @@ theorem empiricalProcess_inner_empiricalProcessVec
   -- Push the sum through the empirical process by linearity.
   have hRHS : empiricalProcess P n Xs (fun ω => ∑ i, h i * mdot i ω)
       = ∑ i, h i * empiricalProcess P n Xs (mdot i) := by
-    have h1 := empiricalProcess_finset_sum P n Xs Finset.univ (fun i ω => h i * mdot i ω)
+    have h1 := empiricalProcess_finsetSum P n Xs Finset.univ (fun i ω => h i * mdot i ω)
       (fun i _ => (hmdot_int i).const_mul (h i))
     simp only at h1
     rw [h1]
@@ -703,7 +702,7 @@ theorem linearization_marginal_tendstoInProbZero
       atTop (𝓝 0) := by
     have hC1 := linearization_distL2_tendstoZero P m mdot θ₀ ‖h‖ hm_meas hmdot_meas hmdot_L2
       menv hmenv ρ hρ hLip hderiv μ
-    rw [NormedAddCommGroup.tendsto_nhds_zero]
+    rw [NormedAddGroup.tendsto_nhds_zero]
     intro δ hδ
     have hsup := hC1 (δ / 2) (by positivity)
     filter_upwards [Filter.Tendsto.eventually_lt_const (show (0 : ℝ≥0∞) < 1 by norm_num) hsup]
@@ -1558,7 +1557,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_atRate
     rw [← empiricalProcess_inner_empiricalProcessVec P mdot θ₀
       (fun i : Fin n ↦ X i.val ξ) v.1
       (fun i ↦ (hscore.eval_piLp i).integrable one_le_two)] at hkey
-    simpa only [linResidAt, Pi.sub_apply, R] using hkey
+    simpa only [linResidAt, Pi.sub_apply, R] using! hkey
   let u : ℕ → ℝ≥0∞ := fun n ↦ μ.outerMeasureStar
     {ξ | ∃ h : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}, ε < |R n ξ h.1|}
   suffices hlimsup : ∀ η : ℝ, 0 < η → limsup u atTop ≤ ENNReal.ofReal η by
@@ -1607,9 +1606,9 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_atRate
       (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|})) atTop (𝓝 0) := by
     have hsum0 : Tendsto (fun n ↦ ∑ x ∈ T,
         μ {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) atTop (𝓝 0) := by
-      simpa using tendsto_finset_sum T (fun x hx ↦ hmar_each x (hxM x hx))
+      simpa using tendsto_finsetSum T (fun x hx ↦ hmar_each x (hxM x hx))
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum0
-      (Eventually.of_forall fun _ ↦ zero_le _) (Eventually.of_forall fun n ↦ ?_)
+      (Eventually.of_forall fun _ ↦ zero_le) (Eventually.of_forall fun n ↦ ?_)
     calc
       μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) ≤
           μ (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤ |R n ξ x|}) :=
@@ -1776,10 +1775,10 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
         |empiricalProcess P n (fun i : Fin n => X i.val ξ)
           (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • x) ω - m θ₀ ω)
             - ⟪x, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)|}) atTop (𝓝 0) := by
-      have hts := tendsto_finset_sum T (fun x _ => hmar_each x)
+      have hts := tendsto_finsetSum T (fun x _ => hmar_each x)
       simpa using hts
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum0
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     calc μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤
           |empiricalProcess P n (fun i : Fin n => X i.val ξ)
             (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • x) ω - m θ₀ ω)
@@ -2009,10 +2008,10 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_of_distL2
         |empiricalProcess P n (fun i : Fin n => X i.val ξ)
           (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • x) ω - m θ₀ ω)
             - ⟪x, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫)|}) atTop (𝓝 0) := by
-      have hts := tendsto_finset_sum T (fun x _ => hmar_each x)
+      have hts := tendsto_finsetSum T (fun x _ => hmar_each x)
       simpa using hts
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum0
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     calc μ.outerMeasureStar (⋃ x ∈ T, {ξ : Ξ | ε / 2 ≤
           |empiricalProcess P n (fun i : Fin n => X i.val ξ)
             (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • x) ω - m θ₀ ω)
@@ -2220,7 +2219,7 @@ theorem mEstimator_linearization_equicontinuity
       - ⟪h, empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
             (fun i : Fin n => X i.val ξ)⟫)
     hₙ hₙ_meas (fun M hM => ?_) hₙ_bdd
-  simpa only [scaledIncrementAt] using
+  simpa only [scaledIncrementAt] using!
     (linearizationSup_tendstoZeroInOuterProbSup_atRate
       P m mdot θ₀ hm_meas menv hmenv hmenv_meas ρ hρ hLip hderiv
       μ X hX_meas hX_indep hX_id hX_law (fun n ↦ Real.sqrt n)

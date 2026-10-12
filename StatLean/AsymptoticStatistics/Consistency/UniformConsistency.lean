@@ -82,7 +82,7 @@ theorem mEstimator_consistent
       _ ≤ |2 * U n ω + R n ω| := le_abs_self _
   -- Squeeze `0 ≤ P{ε ≤ dist} ≤ P{η ≤ ‖2Uₙ+Rₙ‖} → 0`.
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hthresh
-    (Eventually.of_forall fun _ => zero_le _)
+    (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall fun n => measure_mono (hsubset n))
 
 /-- **van der Vaart, Theorem 5.7 with almost-everywhere exact near-maximality.**
@@ -128,7 +128,7 @@ theorem mEstimator_consistent_ae_nearmax
         linarith [hsep_ineq, hd0.1, hdhat.2, hnearω]
       _ ≤ |2 * U n ω| := le_abs_self _
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hthresh
-    (Eventually.of_forall fun _ => zero_le _)
+    (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall fun n => measure_mono_ae (hsubset n))
 
 /-- **van der Vaart, Theorem 5.9 (consistency of Z-estimators).**

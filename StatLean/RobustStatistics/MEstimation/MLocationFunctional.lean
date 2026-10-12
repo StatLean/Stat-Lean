@@ -174,7 +174,7 @@ theorem tendsto_mLocationScore_atTop {ψ : ℝ → ℝ} {P : Measure ℝ} [IsPro
       constructor <;> linarith⟩)
     hbd
     (Eventually.of_forall fun x => hbot.comp (tendsto_const_sub_atTop_atBot x))
-  simpa [mLocationScore] using hlim
+  simpa [mLocationScore] using! hlim
 
 /-- The population score inherits the limit of `ψ` at `+∞` as `θ → -∞`.
 
@@ -205,7 +205,7 @@ theorem tendsto_mLocationScore_atBot {ψ : ℝ → ℝ} {P : Measure ℝ} [IsPro
       constructor <;> linarith⟩)
     hbd
     (Eventually.of_forall fun x => htop.comp (tendsto_const_sub_atBot_atTop x))
-  simpa [mLocationScore] using hlim
+  simpa [mLocationScore] using! hlim
 
 /-- **Existence of a population root** (`MMY` Theorem 10.4 route): a continuous monotone
 score with limits `-k₁ < 0 < k₂` produces a continuous population score crossing zero, so

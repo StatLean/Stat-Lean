@@ -244,13 +244,13 @@ theorem levyMpass
     (_hSigma : Tendsto (fun m => ((sigma_sq_m m : ℝ≥0) : ℝ)) atTop
         (𝓝 (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2))) :
     let sigma_sq : ℝ≥0 :=
-      ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
+      (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
     ∃ M : Measure ℝ, IsProbabilityMeasure M ∧
       _L = MeasureTheory.Measure.conv
               (ProbabilityTheory.gaussianReal 0 sigma_sq) M := by
   -- Local notation for the Gaussian factor at variance `v`.
   set sigmaNN : ℝ≥0 :=
-    ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ with hsigmaNN
+    (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) with hsigmaNN
   set sigmaR : ℝ := ((sigmaNN : ℝ≥0) : ℝ) with hsigmaR
   have hsigmaR_eq : sigmaR = ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 := by
     simp [hsigmaR, hsigmaNN]
@@ -766,7 +766,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
       (fun n : ℕ =>
         (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
             (AsymptoticStatistics.ParametricFamily.paramSubmodel g_P hg h_orth)
-            P ((Real.sqrt n)⁻¹ • h) (n := n)).map
+            P ((Real.sqrt n)⁻¹ • h) (n := n)).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X -
@@ -787,7 +787,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
           (MeasureTheory.Measure.pi
               (fun _ : Fin n =>
                 (paramSubmodelQMDPath g_P hg h h_small).curve
-                  ((Real.sqrt n)⁻¹))).map
+                  ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X -
@@ -805,7 +805,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
         (MeasureTheory.Measure.pi
             (fun _ : Fin n =>
               (paramSubmodelQMDPath g_P hg h h_small).curve
-                ((Real.sqrt n)⁻¹))).map
+                ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X -
@@ -813,7 +813,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
                     ((Real.sqrt n)⁻¹))))
           = (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
               (AsymptoticStatistics.ParametricFamily.paramSubmodel g_P hg h_orth)
-              P ((Real.sqrt n)⁻¹ • h) (n := n)).map
+              P ((Real.sqrt n)⁻¹ • h) (n := n)).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X -
@@ -1208,7 +1208,7 @@ theorem tangent_bounded_orthonormal_approx
     set g0 : Fin m → ↥(L2ZeroMean P) := fun i => g_P i.castSucc with hg0_def
     have hg0_orth : Orthonormal ℝ (fun i : Fin m => (g0 i : ↥(L2ZeroMean P))) := by
       have := h_orth.comp (fun i : Fin m => i.castSucc) (Fin.castSucc_injective m)
-      simpa [g0, Function.comp] using this
+      simpa [g0, Function.comp] using! this
     have hg0_in_T : ∀ i, (g0 i : ↥(L2ZeroMean P)) ∈ tangentSpace T_set := by
       intro i; exact h_in_T i.castSucc
     have hm1_pos : 0 < ((m : ℝ) + 1) := by positivity
@@ -1653,7 +1653,7 @@ private lemma unperturbed_CLT
     (hReg : AsymptoticStatistics.LowerBounds.RegularEstimator.IsRegularEstimator
               P T_set ψ hψ hEIF T_n L) :
     WeakConverges
-      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map₀
         (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)))
       L :=
   AsymptoticStatistics.LowerBounds.RegularEstimator.weak_limit_under_P_of_regular
@@ -1744,10 +1744,19 @@ private theorem w2c_LAN_pushforward_steps_2_to_6
                   ψ ((AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P
                       hg h).curve
                       ((Real.sqrt n)⁻¹)))))
-        L :=
-    IsRegularEstimator.shift hReg (linPerturbScore g_P h) hLin_in_T
+        L := by
+    have hweak := IsRegularEstimator.shift hReg (linPerturbScore g_P h) hLin_in_T
       (AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h)
-          hScore_eq
+      hScore_eq
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n =>
+        (AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h).curve
+          ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ
+        ((AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h).curve
+          ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((_hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Eventually-in-`n`, the curve equals the paramSubmodel density form.
   have h_curve_eq_eventually :=
     LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH_curve_eq_paramSubmodel_density
@@ -1827,6 +1836,10 @@ theorem productMeasure_paramSubmodel_pushforward_all_h_weakConverges
   -- Step 1 (unperturbed CLT) feeds the LAN-route Steps 2–6 per fixed `h`.
   intro h
   have hStep1 := unperturbed_CLT T_set hψ hEIF T_n hReg
+  rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+    (fun n => Measure.pi (fun _ : Fin n => P))
+    (fun n X => Real.sqrt n * (T_n n X - ψ P))
+    (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hStep1
   exact w2c_LAN_pushforward_steps_2_to_6 T_set hψ hEIF T_n hT_meas hReg
     g_P hg h_orth h_in_T hStep1 h
 
@@ -1996,7 +2009,7 @@ noncomputable def paramSubmodel_RegularEstimatorSequence
         (fun n : ℕ =>
           (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
               (paramSubmodel g_P hg h_orth) P
-              ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n).map
+              ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n •
                 (T_n_lifted T_n n X

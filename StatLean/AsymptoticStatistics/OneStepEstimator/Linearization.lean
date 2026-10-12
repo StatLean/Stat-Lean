@@ -213,7 +213,7 @@ theorem uniformLinearization_at_preliminary
       rw [if_pos hlocal]
       simpa only [D, abs_norm] using hz
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hfull ε hε)
-      (Filter.Eventually.of_forall fun _ => zero_le _)
+      (Filter.Eventually.of_forall fun _ => zero_le)
       (Filter.Eventually.of_forall fun n =>
         EmpiricalProcess.outerMeasureStar_mono μ (hsub n))
   have hcollapse := EmpiricalProcess.tendstoInProbZero_of_ball_outerProbSup

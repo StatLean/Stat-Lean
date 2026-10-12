@@ -132,9 +132,10 @@ private lemma isCompleteFamily_of_signed {V : Type*} [NormedAddCommGroup V]
         simp only [smul_eq_mul]; field_simp
       have hI0 : ∫ x, f (E.stat x) * Real.exp ⟪t, E.stat x⟫_ℝ ∂E.base = 0 := by
         rw [hbridge, h0, mul_zero]
-      rw [hνdef,
+      erw [hνdef,
         integral_map E.stat_meas.aemeasurable
-          (hf_meas.mul (by fun_prop)).aestronglyMeasurable]
+          (hf_meas.mul (show Measurable (fun y : V => Real.exp ⟪t, y⟫_ℝ)
+              by fun_prop)).aestronglyMeasurable]
       exact hI0
     have hfν : f =ᵐ[ν] 0 := hsigned ‹SigmaFinite ν› hf_meas hInt hZero
     have habs : (E.P (θ : V)).map E.stat ≪ ν := by

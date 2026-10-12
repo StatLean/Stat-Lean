@@ -285,11 +285,23 @@ theorem properSubmodelLogLikelihood_zero
 
 omit [IsProbabilityMeasure P] [NormedAddCommGroup Theta]
     [InnerProductSpace Real Theta] [CompleteSpace Theta] proj h in
-/-- The public lintegral spelling agrees with Mathlib's extended seminorm. -/
-theorem extendedL2Norm_eq_eLpNorm2577
+/-- The literal extended norm agrees with the raw integral seminorm for every
+function, with no measurability assumption. -/
+theorem extendedL2Norm_eq_rawELpNorm2577
     {E : Type*} [NormedAddCommGroup E] (mu : Measure Omega) (f : Omega -> E) :
+    extendedL2Norm2577 mu f = eLpNorm' f 2 mu :=
+  rfl
+
+omit [IsProbabilityMeasure P] [NormedAddCommGroup Theta]
+    [InnerProductSpace Real Theta] [CompleteSpace Theta] proj h in
+/-- For an a.e. strongly measurable function, the literal extended norm also
+agrees with `eLpNorm`. The identity for arbitrary functions is
+`extendedL2Norm_eq_rawELpNorm2577`. -/
+theorem extendedL2Norm_eq_eLpNorm2577
+    {E : Type*} [NormedAddCommGroup E] (mu : Measure Omega) (f : Omega -> E)
+    (hf : AEStronglyMeasurable f mu) :
     extendedL2Norm2577 mu f = eLpNorm f 2 mu := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hf]
   norm_num [extendedL2Norm2577]
 
 omit [IsProbabilityMeasure P] [NormedAddCommGroup Theta]
@@ -300,7 +312,7 @@ theorem sqrt_integral_norm_sq_eq_extendedL2Norm2577
     {E : Type*} [NormedAddCommGroup E] {mu : Measure Omega} {f : Omega -> E}
     (hf : MemLp f 2 mu) :
     Real.sqrt (∫ omega, ‖f omega‖ ^ 2 ∂mu) = (extendedL2Norm2577 mu f).toReal := by
-  rw [extendedL2Norm_eq_eLpNorm2577]
+  rw [extendedL2Norm_eq_eLpNorm2577 _ _ hf.aestronglyMeasurable]
   rw [hf.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num)]
   norm_num
   have hnonneg : 0 <= ∫ omega, ‖f omega‖ ^ 2 ∂mu :=
@@ -435,7 +447,7 @@ theorem localizedScore_measurable (n : Nat) : Measurable (fun p :
   have hset : MeasurableSet {p : (Fin n -> Omega) × Omega |
       fittedScoreGood2577_vec M modelLaw nuisancePath estimator
         nuisanceEstimator F n p.1} := by
-    convert (h.fitted_score_bad_measurable n).compl.preimage measurable_fst using 1
+    convert! (h.fitted_score_bad_measurable n).compl.preimage measurable_fst using 1
     ext p
     simp
   have hz : Measurable (fun _ : (Fin n -> Omega) × Omega =>
@@ -515,7 +527,7 @@ theorem fittedScore_stationary (n : Nat) (X : Fin n -> Omega) :
         exact h.proper_score_hasDeriv
           (estimator n X) (nuisanceEstimator n X) j (X i) hpos_base)
     dsimp only [f]
-    convert hs using 1
+    convert! hs using 1
     funext t
     simp only [Finset.sum_apply]
   rw [← hderiv.deriv]
@@ -616,7 +628,7 @@ theorem localized_score_l2_truth : TendstoInProbZero
       (Measure.pi (fun _ : Fin n => P)).real {X |
         ¬ fittedScoreGood2577_vec M modelLaw nuisancePath estimator
           nuisanceEstimator F n X}) atTop (nhds 0) := by
-    simpa using htailR.add h.localized_bad_measure_tendsto
+    simpa using! htailR.add h.localized_bad_measure_tendsto
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
     (Filter.Eventually.of_forall fun _ => measureReal_nonneg)
     (Filter.Eventually.of_forall fun n => ?_)
@@ -658,7 +670,7 @@ theorem localized_score_l2_truth : TendstoInProbZero
                 fittedProperSubmodelScore2577_vec M modelLaw nuisancePath estimator
                     nuisanceEstimator n X omega -
                   properSubmodelScore2577_vec M modelLaw nuisancePath theta0 eta0 omega) ≠ ∞ := by
-              rw [extendedL2Norm_eq_eLpNorm2577]
+              rw [extendedL2Norm_eq_eLpNorm2577 _ _ hmem.aestronglyMeasurable]
               exact hmem.eLpNorm_lt_top.ne
             have hX' : epsilon <= Real.sqrt (∫ omega,
                 ‖fittedProperSubmodelScore2577_vec M modelLaw nuisancePath estimator
@@ -711,7 +723,7 @@ theorem localized_score_energy_moving_tight : IsBoundedInProb
     have hfinite : extendedL2Norm2577 (M.curve (estimator n X - theta0))
         (localizedFittedScore2577_vec M modelLaw nuisancePath estimator
           nuisanceEstimator F n X) ≠ ∞ := by
-      rw [extendedL2Norm_eq_eLpNorm2577]
+      rw [extendedL2Norm_eq_eLpNorm2577 _ _ hmem.aestronglyMeasurable]
       exact hmem.eLpNorm_lt_top.ne
     have hX' : R < (extendedL2Norm2577 (M.curve (estimator n X - theta0))
         (localizedFittedScore2577_vec M modelLaw nuisancePath estimator
@@ -1006,7 +1018,7 @@ theorem asympLinear_2577 : AsymptoticallyLinearAt_vec estimator P
     (fun j => (efficientScoreTuple_memLp (S_theta := S_theta)
       (T_nuis := T_nuis) (proj := proj) (e := e)).eval_piLp j)
     h.estimator_measurable h.normalized_master_identity h.moving_bias_localization_transfer
-  simpa [score0, candidateVecEIF, efficientInformation2577_vec] using hAL
+  simpa [score0, candidateVecEIF, efficientInformation2577_vec] using! hAL
 
 end ApproxLeastFavorable2577NativeHyp_vec
 

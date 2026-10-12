@@ -340,8 +340,8 @@ theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n)
     (ENNReal.ofReal (Real.sqrt (2048⁻¹ *
       min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1)))
     c (n : ℝ) hΦ hsep (by positivity) h35a h35b
-  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal (Real.sqrt (2048⁻¹ *
-        min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1)))
+  have hΦδ : (ENNReal.ofReal (Real.sqrt (2048⁻¹ *
+        min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1))) ^ 2
       = ENNReal.ofReal (2048⁻¹ *
         min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1) := by
     change (ENNReal.ofReal (Real.sqrt (2048⁻¹ *

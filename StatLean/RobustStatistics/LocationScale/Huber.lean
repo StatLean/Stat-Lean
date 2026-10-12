@@ -273,7 +273,7 @@ the existence of Huber M-estimates). -/
 theorem huberRho_tendsto_cocompact {c : ℝ} (hc : 0 < c) :
     Tendsto (huberRho c) (cocompact ℝ) atTop := by
   have habs : Tendsto (fun u : ℝ => |u|) (cocompact ℝ) atTop := by
-    simpa only [Real.norm_eq_abs] using (tendsto_norm_cocompact_atTop (E := ℝ))
+    simpa only [Real.norm_eq_abs] using! (tendsto_norm_cocompact_atTop (E := ℝ))
   have h1 : Tendsto (fun u : ℝ => c * |u| + -(c ^ 2 / 2)) (cocompact ℝ) atTop :=
     tendsto_atTop_add_const_right _ _ ((tendsto_const_mul_atTop_of_pos hc).2 habs)
   refine tendsto_atTop_mono (fun u => ?_) h1

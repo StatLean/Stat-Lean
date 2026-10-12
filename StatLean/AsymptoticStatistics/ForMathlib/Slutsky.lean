@@ -51,9 +51,9 @@ theorem WeakConverges.slutsky_of_tendstoInMeasure_dist
     WeakConverges (fun n => (P n).map (Y n)) ν := by
   classical
   haveI h_prob_X : ∀ n, IsProbabilityMeasure ((P n).map (X n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hX_meas n)
+    (by infer_instance)
   haveI h_prob_Y : ∀ n, IsProbabilityMeasure ((P n).map (Y n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hY_meas n)
+    (by infer_instance)
   -- Package the pushforwards as `ProbabilityMeasure` so we can apply the Lipschitz
   -- characterisation of weak convergence. Use local `let`-bindings to keep the
   -- subtype folded under `rw [tendsto_iff_forall_lipschitz_integral_tendsto]`.

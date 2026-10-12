@@ -112,7 +112,7 @@ private lemma dlSuppCount_le_card_add_projS {ι : Type*} [Fintype ι] (δ : ℝ)
   rw [hBeq]
   -- `|supp_δ θ| = |{large}∩S₀| + |{large}\S₀| ≤ |S₀| + |{large}\S₀|`.
   unfold dlSuppCount
-  have hsplit := Finset.filter_card_add_filter_neg_card_eq_card
+  have hsplit := Finset.card_filter_add_card_filter_not
     (s := Finset.univ.filter (fun j : ι => δ < |θ j|)) (p := fun j => j ∈ S₀)
   have hle : ((Finset.univ.filter (fun j : ι => δ < |θ j|)).filter (fun j => j ∈ S₀)).card
       ≤ S₀.card := by
@@ -182,7 +182,7 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
   have hmproj : Measurable (projS (ι := ι) Sᶜ) := by
     unfold projS
     exact (WithLp.measurable_toLp _ _).comp
-      (measurable_pi_lambda _ fun i =>
+      (Measurable.of_eval fun i =>
         (measurable_pi_apply (i : ι)).comp (WithLp.measurable_ofLp 2 _))
   -- Assemble.
   rw [lintegral_posterior_eq_lintegral_ratio θ₀ π hCmeas]
@@ -408,7 +408,7 @@ theorem dl_theorem34_beta {β : ℝ}
     exact (Real.one_lt_rpow_iff_of_pos hnpos).mpr
       (Or.inl ⟨by exact_mod_cast hn2, by positivity⟩)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun _ => (0 : ℝ≥0∞)) (h := B)
-    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le _) ?hle
+    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le) ?hle
   case hle =>
     filter_upwards [hδ, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos]
       with n hδn hn4 hsvge hw2n hcvn hapos
@@ -765,7 +765,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
   have hlogtend : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
     Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun _ => (0 : ℝ≥0∞)) (h := B)
-    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le _) ?hle
+    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le) ?hle
   case hle =>
     filter_upwards [hδ, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos]
       with n hδn hn4 hsvge hw2n hcvn hapos

@@ -101,7 +101,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
     rw [hν]
     have he : (fun x => ∑' i, c i * p (θs i) x) = ∑' i, fun x => c i * p (θs i) x := by
       ext x; rw [ENNReal.tsum_apply]
-    rw [hkdef, he, withDensity_tsum (fun i => measurable_const.mul (hp (θs i)))]
+    erw [hkdef, he, withDensity_tsum (fun i => measurable_const.mul (hp (θs i)))]
     refine congrArg Measure.sum (funext fun i => ?_)
     rw [hP (θs i), ← withDensity_smul (c i) (hp (θs i))]
     congr 1

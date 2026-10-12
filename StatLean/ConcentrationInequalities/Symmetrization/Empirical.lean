@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.ConcentrationInequalities.Symmetrization.Symmetrization
 import StatLean.ConcentrationInequalities.Symmetrization.GaussianMax
 import StatLean.ConcentrationInequalities.ForMathlib.IndepTransport
@@ -95,7 +96,7 @@ theorem empirical_symmetrization {α : Type*} [MeasurableSpace α] {ι : Type*}
     exact hX_indep.comp (fun (_ : Fin n) (a : α) (k : ι) => (n : ℝ)⁻¹ * F k a)
       (fun _ => by rw [measurable_pi_iff]; intro k; exact measurable_const.mul (hF_meas k))
   haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (Z i)) :=
-    fun i => Measure.isProbabilityMeasure_map (hZ_meas i).aemeasurable
+    fun i => (by infer_instance)
   -- Boundedness ⇒ integrability of the class members and of `Zᵢ`.
   have hFX_int : ∀ i k, Integrable (fun ω => F k (X i ω)) μ := by
     intro i k
@@ -440,7 +441,6 @@ theorem empirical_symmetrization_countable {α : Type*} [MeasurableSpace α]
     (F := fun ω => ⨆ k, |(n : ℝ)⁻¹ * (∑ i, F k (X i ω)) - ∫ x, F k x ∂P|)
     hnetL_int hL_int (Filter.Eventually.of_forall hnetL_mono)
     (Filter.Eventually.of_forall (fun ω => by
-      dsimp only
       rw [hsupL ω]; exact tendsto_atTop_ciSup (hnetL_mono ω) (hbddNetL ω)))
   exact le_of_tendsto hlim (Filter.Eventually.of_forall key)
 

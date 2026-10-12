@@ -69,7 +69,7 @@ private lemma covariance_congr_ae {Y Y' Z Z' : Ω → ℝ} (hY : Y =ᵐ[μ] Y') 
 /-- Square-integrability of a linear combination of the prediction window. -/
 private lemma memLp_predWindow (hstat : IsStationary X μ) {k : ℕ} (φ : Fin k → ℝ) :
     MemLp (fun ω => ∑ j, φ j * X ((k : ℤ) - (j : ℕ)) ω) 2 μ :=
-  memLp_finset_sum _ fun (j : Fin k) _ => (hstat.memLp ((k : ℤ) - (j : ℕ))).const_mul (φ j)
+  memLp_finsetSum _ fun (j : Fin k) _ => (hstat.memLp ((k : ℤ) - (j : ℕ))).const_mul (φ j)
 
 /-- Square-integrability of the prediction error. -/
 private lemma memLp_predError (hstat : IsStationary X μ) {k : ℕ} (φ : Fin k → ℝ) :
@@ -89,7 +89,7 @@ private lemma integral_predError_eq_zero [IsProbabilityMeasure μ] (hstat : IsSt
   have hterm : ∀ j : Fin k, ∫ ω, φ j * X ((k : ℤ) - (j : ℕ)) ω ∂μ = 0 := fun j => by
     rw [integral_const_mul, integral_eq_zero_of_zero_mean hstat hmean, mul_zero]
   rw [integral_sub (hint _) ((memLp_predWindow hstat φ).integrable one_le_two),
-    integral_finset_sum _ (fun (j : Fin k) _ => (hint ((k : ℤ) - (j : ℕ))).const_mul (φ j)),
+    integral_finsetSum _ (fun (j : Fin k) _ => (hint ((k : ℤ) - (j : ℕ))).const_mul (φ j)),
     integral_eq_zero_of_zero_mean hstat hmean]
   simp [hterm]
 

@@ -129,8 +129,8 @@ omit [IsProbabilityMeasure P] in
 `Lp.coeFn_add` / `Lp.coeFn_zero` for the measure-`Lp` but no finite-sum version
 (the `lp`-space `coeFn_sum` is the sequence-space analogue); this is the
 `Finset.induction` lift. Mirrors
-`ForMathlib.Probability.IsonormalProcess.coeFn_lp_finset_sum`. -/
-private lemma Lp_coeFn_finset_sum {ι : Type*} (s : Finset ι) (f : ι → Lp ℝ 2 P) :
+`ForMathlib.Probability.IsonormalProcess.coeFn_lp_finsetSum`. -/
+private lemma Lp_coeFn_finsetSum {ι : Type*} (s : Finset ι) (f : ι → Lp ℝ 2 P) :
     (⇑(∑ k ∈ s, f k) : Ω → ℝ) =ᵐ[P] fun x => ∑ k ∈ s, (f k : Ω → ℝ) x := by
   classical
   induction s using Finset.induction with
@@ -255,7 +255,7 @@ private lemma centered_iid_sum_bddAbove
   have h_sum_mLp :
       MemLp (fun X : Fin n → Ω => ∑ i : Fin n, g (X i)) 2
         (Measure.pi (fun _ : Fin n => P)) :=
-    memLp_finset_sum (Finset.univ : Finset (Fin n)) (fun i _ => h_truth_mp i)
+    memLp_finsetSum (Finset.univ : Finset (Fin n)) (fun i _ => h_truth_mp i)
   have h_Z_mLp :
       MemLp (fun X : Fin n → Ω =>
         (Real.sqrt n)⁻¹ * ∑ i : Fin n, g (X i)) 2
@@ -273,7 +273,7 @@ private lemma centered_iid_sum_bddAbove
     have h_int_sum :
         ∫ X : Fin n → Ω, (∑ i : Fin n, g (X i))
           ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
-      rw [MeasureTheory.integral_finset_sum (Finset.univ : Finset (Fin n))
+      rw [MeasureTheory.integral_finsetSum (Finset.univ : Finset (Fin n))
             (fun i _ => (h_truth_mp i).integrable (by norm_num : (1:ℝ≥0∞) ≤ 2))]
       exact Finset.sum_eq_zero (fun i _ => h_int_truth_pi i)
     rw [MeasureTheory.integral_const_mul, h_int_sum, mul_zero]
@@ -394,7 +394,7 @@ private lemma zEstimatorVec_step3_taylor
   intro ε hε
   have h_taylor := h.matrix_taylor (ε ^ 2) (by positivity)
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_taylor
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · filter_upwards [eventually_ge_atTop 1] with n hn
     apply measure_mono
     intro X hX
@@ -690,7 +690,7 @@ private lemma frobenius_oP
             + empJacobian score_l_dot X) p.1 p.2|})
         atTop (𝓝 0) := by
       rw [show (0 : ℝ≥0∞) = ∑ _p : Fin d × Fin d, (0 : ℝ≥0∞) by simp]
-      refine tendsto_finset_sum _ (fun p _ => ?_)
+      refine tendsto_finsetSum _ (fun p _ => ?_)
       have hfun : (fun n : ℕ => (Measure.pi (fun _ : Fin n => P))
             {X : Fin n → Ω | δ / d ≤ |(efficientInformationMatrix S_θ T_nuis e
               + empJacobian score_l_dot X) p.1 p.2|})
@@ -703,7 +703,7 @@ private lemma frobenius_oP
       exact zEstimatorVec_step4_lln h p.1 p.2 (δ / d) (by positivity)
     -- Squeeze.
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup
-    · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+    · exact Filter.Eventually.of_forall (fun _ => zero_le)
     · refine Filter.Eventually.of_forall (fun n => ?_)
       refine le_trans (measure_mono ?_) (measure_iUnion_fintype_le _
         (fun p : Fin d × Fin d => {X : Fin n → Ω |
@@ -1030,7 +1030,7 @@ theorem zEstimatorVec_master_identity
     have := (hcross.add hstep3).add hscore
     simpa using this
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · filter_upwards [eventually_ge_atTop 1] with n hn1
     have hincl : {X : Fin n → Ω |
           ε ≤ ‖Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d)
@@ -1161,7 +1161,7 @@ theorem zEstimatorVec_linear_representation
       - (Real.sqrt n)⁻¹ • (∑ i, tupleEval P
           (fun j => efficientScore S_θ T_nuis (e j)) (X i)))]
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h3
-    (Eventually.of_forall fun n => zero_le _)
+    (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => measure_mono (hsub n))
 
 /-! ### Sample-level influence bridge -/
@@ -1192,9 +1192,9 @@ theorem native_influence_eq_candidateVecEIF
         = ∑ k, (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
               • ((efficientScore S_θ T_nuis (e k) : ↥(L2ZeroMean P)) : Lp ℝ 2 P) := by
       rw [candidateVecEIF]
-      simp only [AddSubmonoidClass.coe_finset_sum, Submodule.coe_smul]
+      simp only [AddSubmonoidClass.coe_finsetSum, Submodule.coe_smul]
     rw [hce]
-    refine (Lp_coeFn_finset_sum Finset.univ
+    refine (Lp_coeFn_finsetSum Finset.univ
       (fun k => (efficientInformationMatrix S_θ T_nuis e)⁻¹ j k
         • ((efficientScore S_θ T_nuis (e k) : ↥(L2ZeroMean P)) : Lp ℝ 2 P))).trans ?_
     -- Per-`k` `Lp.coeFn_smul` (coeFn commutes with the scalar smul, a.e.), driven by the

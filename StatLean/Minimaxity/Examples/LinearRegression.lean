@@ -244,7 +244,7 @@ theorem linear_regression_minimax_rate {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) 
   haveI := hMne
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
     (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) c (n : ℝ) hΦ hsep (by positivity) h35a h35b
-  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n))))
+  have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ^ 2
       = ENNReal.ofReal ((v : ℝ) * r / (1280 * n)) := by
     change (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ^ 2 = _
     rw [← ENNReal.ofReal_pow hx0, Real.sq_sqrt (by positivity)]

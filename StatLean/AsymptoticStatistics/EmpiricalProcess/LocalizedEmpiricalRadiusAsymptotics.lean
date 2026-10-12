@@ -45,7 +45,7 @@ theorem lintegral_localized_empiricalSquareRadius_tendsto_zero
   have ha_pos : ∀ n, 0 < a n := fun n => Real.sqrt_pos.2 (hεpos n)
   have ha_anti : Antitone a := fun _ _ hnm => Real.sqrt_le_sqrt (hεanti hnm)
   have ha_zero : Tendsto a atTop (𝓝 0) := by
-    simpa only [a, Real.sqrt_zero] using (Real.continuous_sqrt.tendsto 0).comp hεzero
+    simpa only [a, Real.sqrt_zero] using! (Real.continuous_sqrt.tendsto 0).comp hεzero
   have hJzero : Tendsto J atTop (𝓝 0) := hJ a ha_pos ha_anti ha_zero
   have hMtop : M < ⊤ := by
     exact ENNReal.mul_lt_top (by norm_num) (ENNReal.rpow_lt_top_of_nonneg (by positivity) hBtop.ne)
@@ -55,7 +55,7 @@ theorem lintegral_localized_empiricalSquareRadius_tendsto_zero
   have hnorm : ∀ n, eLpNorm (fun x => 2 * Φ n x) 2 P ≤ M := by
     intro n
     have hbase : eLpNorm (Φ n) 2 P ≤ B ^ (1 / 2 : ℝ) := by
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0) (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)]
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0) (by norm_num : (2 : ℝ≥0∞) ≠ ⊤) (hΦmeas n).aestronglyMeasurable]
       norm_num only [ENNReal.toReal_ofNat]
       have hint : (∫⁻ x, ‖Φ n x‖ₑ ^ (2 : ℝ) ∂P) = ∫⁻ x, ENNReal.ofReal ((Φ n x) ^ 2) ∂P := by
         refine lintegral_congr fun x => ?_
@@ -177,9 +177,9 @@ theorem lintegral_localized_empiricalSquareRadius_tendsto_zero
         exact add_le_add (add_le_add le_rfl
           ((mul_le_mul_right hI _).trans hscaled)) le_rfl
   have heps_enn : Tendsto (fun n => ENNReal.ofReal (ε n)) atTop (𝓝 0) := by
-    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using ENNReal.continuous_ofReal.continuousAt.tendsto.comp hεzero
+    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using! ENNReal.continuous_ofReal.continuousAt.tendsto.comp hεzero
   have ha_enn : Tendsto (fun n => ENNReal.ofReal (a n)) atTop (𝓝 0) := by
-    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using ENNReal.continuous_ofReal.continuousAt.tendsto.comp ha_zero
+    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using! ENNReal.continuous_ofReal.continuousAt.tendsto.comp ha_zero
   have hentropy_term : Tendsto (fun n =>
       C * (ENNReal.ofReal (ε n) + ENNReal.ofReal (a n))) atTop (𝓝 0) := by
     simpa only [zero_add, add_zero, mul_zero] using
@@ -196,7 +196,7 @@ theorem lintegral_localized_empiricalSquareRadius_tendsto_zero
     by simpa using (heps_enn.add hentropy_term).add htail4
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
     tendsto_const_nhds hbound_zero
-    (Eventually.of_forall fun _ => zero_le _) hupper
+    (Eventually.of_forall fun _ => zero_le) hupper
 
 theorem weightedEmpiricalRelativeRadius_sq_le_empiricalSquareRadius
     {Ω : Type*} [MeasurableSpace Ω]
@@ -255,12 +255,12 @@ theorem lintegral_localized_weightedRelativeRadius_tendsto_zero
       empiricalSquareRadius (strictLocalizedDifferenceClass (F n) P (r n)) n X
       ∂Measure.pi (fun _ : Fin n => P)
   have hW_meas (n : ℕ) : Measurable (W n) := by
-    apply Measurable.mul
-    · exact (measurable_empiricalL2Seminorm
-        (fun x => 2 * Φ n x) (measurable_const.mul (hΦmeas n)) n).ennreal_ofReal
-    · exact (measurable_empiricalRelativeRadiusReal_strictLocalizedDifferenceClass
-        (hDense n) (hF_meas n) (hΦ n)
-        (hLin.envelope_memLp_two hΦmeas n) (hΦmeas n) (r n) n).ennreal_ofReal
+    simpa only [W, Pi.mul_apply] using!
+      (measurable_empiricalL2Seminorm
+        (fun x => 2 * Φ n x) (measurable_const.mul (hΦmeas n)) n).ennreal_ofReal.mul
+        (measurable_empiricalRelativeRadiusReal_strictLocalizedDifferenceClass
+          (hDense n) (hF_meas n) (hΦ n)
+          (hLin.envelope_memLp_two hΦmeas n) (hΦmeas n) (r n) n).ennreal_ofReal
   have hupper (n : ℕ) : (∫⁻ X, W n X ∂Measure.pi (fun _ : Fin n => P)) ≤
       (S n) ^ (1 / 2 : ℝ) := by
     calc
@@ -279,10 +279,10 @@ theorem lintegral_localized_weightedRelativeRadius_tendsto_zero
           (weightedEmpiricalRelativeRadius_sq_le_empiricalSquareRadius
             (strictLocalizedDifferenceClass (F n) P (r n)) (fun x => 2 * Φ n x) n X)
   have hsqrt : Tendsto (fun n => (S n) ^ (1 / 2 : ℝ)) atTop (𝓝 0) := by
-    simpa [S] using
+    simpa [S] using!
       (ENNReal.continuous_rpow_const (y := (1 / 2 : ℝ))).tendsto 0 |>.comp hSquare
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    tendsto_const_nhds hsqrt (Eventually.of_forall fun _ => zero_le _)
+    tendsto_const_nhds hsqrt (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall hupper)
 
 theorem random_radius_book_entropy_tendsto_zero
@@ -329,7 +329,8 @@ theorem random_radius_book_entropy_tendsto_zero
     rw [show (fun x => 2 * Φ n x) = (2 : ℝ) • Φ n by ext; simp,
       eLpNorm_const_smul]
     have hbase : eLpNorm (Φ n) 2 P ≤ B ^ (1 / 2 : ℝ) := by
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+          (hΦmeas n).aestronglyMeasurable]
       norm_num only [ENNReal.toReal_ofNat]
       rw [show (∫⁻ x, ‖Φ n x‖ₑ ^ (2 : ℝ) ∂P) =
           ∫⁻ x, ENNReal.ofReal ((Φ n x) ^ 2) ∂P by
@@ -366,7 +367,7 @@ theorem random_radius_book_entropy_tendsto_zero
         rw [ENNReal.ofReal_div_of_pos (ha n), ← mul_div_assoc]
       exact add_le_add le_rfl <| by
         rw [← mul_assoc]
-        exact mul_le_mul_of_nonneg_right hratio (zero_le _)
+        exact mul_le_mul_of_nonneg_right hratio (zero_le)
     calc
       _ ≤ ∫⁻ X, D n X * J n + (R n X / ENNReal.ofReal (a n)) * J n
           ∂Measure.pi (fun _ : Fin n => P) := lintegral_mono hp
@@ -386,5 +387,5 @@ theorem random_radius_book_entropy_tendsto_zero
     (Or.inr ENNReal.zero_ne_top)).add (ENNReal.Tendsto.mul_const hJzero (Or.inr hCtop.ne))
   simpa only [D] using tendsto_of_tendsto_of_tendsto_of_le_of_le'
     tendsto_const_nhds (by simpa [add_comm] using hz)
-    (Eventually.of_forall fun _ => zero_le _) hupper
+    (Eventually.of_forall fun _ => zero_le) hupper
 end AsymptoticStatistics.EmpiricalProcess

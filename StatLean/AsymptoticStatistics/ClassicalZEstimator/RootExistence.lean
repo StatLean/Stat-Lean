@@ -352,7 +352,7 @@ theorem finite_empiricalAvg_bad_prob_tendsto_zero {Ω : Type*} [MeasurableSpace 
   have hsum : Tendsto (fun n => ∑ a : ι, μ.real {ξ |
       ε ≤ |empiricalAvg (g a) n (fun i : Fin n => X i.val ξ) - ∫ x, g a x ∂P|})
       atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum (Finset.univ : Finset ι) fun a _ => hone a
+    simpa using tendsto_finsetSum (Finset.univ : Finset ι) fun a _ => hone a
   refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_) hsum
   have hset : {ξ | ∃ a : ι,
       ε ≤ |empiricalAvg (g a) n (fun i : Fin n => X i.val ξ) - ∫ x, g a x ∂P|}
@@ -669,20 +669,18 @@ theorem classical_zEstimator_root_exists_consistent
         exact measurableSet_lt
           ((hemp_meas n (fun x => psiDot ψ θ₀ x j i) (hpsiDot_meas j i)).sub
             measurable_const).abs measurable_const
-      convert hI using 1
+      refine hI.congr ?_
       ext ξ
-      change (∀ j i : Fin k, |empiricalAvg (fun x => psiDot ψ θ₀ x j i) n
-        (fun l : Fin n => X l.val ξ) - Vmat P ψ θ₀ j i| < epsOf r) ↔ _
       simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      rfl
     · have hI : MeasurableSet (⋂ j : Fin k, {ξ : Ξ |
           |empiricalAvg (ψ θ₀ j) n (fun l : Fin n => X l.val ξ)| < epsOf r}) := by
         refine MeasurableSet.iInter fun j => ?_
         exact measurableSet_lt (hemp_meas n (ψ θ₀ j) (hψ_meas θ₀ j)).abs measurable_const
-      convert hI using 1
+      refine hI.congr ?_
       ext ξ
-      change (∀ j : Fin k,
-        |empiricalAvg (ψ θ₀ j) n (fun l : Fin n => X l.val ξ)| < epsOf r) ↔ _
       simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      rfl
   have hbad : ∀ r : ℝ, 0 < r → Tendsto (fun n => μ.real (Bad n r)) atTop (𝓝 0) := by
     intro r hr
     exact empirical_goodEvent_prob_tendsto_one P ψ θ₀ ψddot hψddot_meas hψddot_int

@@ -358,9 +358,9 @@ theorem alternative_positiveRectangle_compl_le
               rw [Set.mem_compl_iff, commonPositiveSet, Set.mem_setOf_eq, not_and] at hx
               have hqz : q x = 0 := le_antisymm (not_lt.mp (hx hp)) (hq0 x)
               rw [hqz, ENNReal.ofReal_zero]
-              exact zero_le _
+              exact zero_le
           · rw [Set.indicator_of_notMem hx]
-            exact zero_le _
+            exact zero_le
         refine hle.trans_eq ?_
         rw [withDensity_apply _ hP0]
         change (∫⁻ x in {x | p x = 0}, ENNReal.ofReal (q x) ∂mu) = _
@@ -446,11 +446,11 @@ theorem finiteProduct_expLog_comparison
   letI : IsProbabilityMeasure P := hPprob
   letI : IsProbabilityMeasure Q := hQprob
   have hTfinite : IsFiniteMeasure T := by
-    simpa only [T, Function.comp_apply] using
+    simpa only [T, Function.comp_apply] using!
       isFiniteMeasure_withDensity_ofReal hfint.hasFiniteIntegral
   letI : IsFiniteMeasure T := hTfinite
   have hrestrict : Q.restrict G = T.restrict G := by
-    simpa only [Q, T, P, G, f, Function.comp_apply] using
+    simpa only [Q, T, P, G, f, Function.comp_apply] using!
       positiveRectangle_restrict_eq mu p q N hpm hqm hp0 hq0 hpi hqi
   have hTuniv : T.real Set.univ =
       (1 - (∫ x in {x | p x = 0}, q x ∂mu) +
@@ -460,7 +460,7 @@ theorem finiteProduct_expLog_comparison
       _ = ∫ x, f x ∂P := by
         simp only [T, P]
         simpa only [Function.comp_apply, ENNReal.toReal_ofReal (hf0 _), smul_eq_mul,
-          mul_one] using
+          mul_one] using!
           (integral_withDensity_eq_integral_toReal_smul hfmeas.ennreal_ofReal
             (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)
             (fun _ => (1 : ℝ)))
@@ -509,7 +509,7 @@ theorem finiteProduct_expLog_comparison
         calc
           ∫ _x in A, (1 : ℝ) ∂P.withDensity (ENNReal.ofReal ∘ f) =
               ∫ x in A, (ENNReal.ofReal (f x)).toReal • (1 : ℝ) ∂P := by
-            simpa only [Function.comp_apply] using
+            simpa only [Function.comp_apply] using!
               (setIntegral_withDensity_eq_setIntegral_toReal_smul
                 hfmeas.ennreal_ofReal
                 (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)

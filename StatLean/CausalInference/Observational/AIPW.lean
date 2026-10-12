@@ -237,7 +237,7 @@ private lemma integral_cond_cell_aug [IsProbabilityMeasure μ] {f : Ω → ℝ}
       = (g x * (w x)⁻¹) * ∫ ω, ind (Z ω) ∂(μ[|cell X x]) := integral_const_mul _ _
   rw [hcongr, e1, e2, e3, e4, integral_ind_mul_cond_cell hZ hX hf x,
     integral_ind_cond_cell hZ hX x]
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, one_mul]
+  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
   ring
 
 /-- The cell-wise mean of a general augmented control integrand. -/
@@ -279,7 +279,7 @@ private lemma integral_cond_cell_augControl [IsProbabilityMeasure μ] {f : Ω �
       = (g x * (1 - w x)⁻¹) * ∫ ω, (1 - ind (Z ω)) ∂(μ[|cell X x]) := integral_const_mul _ _
   rw [hcongr, e1, e2, e3, e4, integral_one_sub_ind_mul_cond_cell hZ hX hf hcell,
     integral_one_sub_ind_cond_cell hZ hX hcell]
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, one_mul]
+  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
   ring
 
 /-- The treated arm regression function of the observed outcome is that of `y1`. -/

@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.HypothesisTesting.Randomization.Defs
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
@@ -102,7 +103,7 @@ quadratic-form applications. -/
 noncomputable def randPairLaw {E : Type*} [MeasurableSpace E] (T : 𝓧 → E)
     (P : Measure 𝓧) : Measure (E × E) :=
   ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ •
-    ∑ g : G, ∑ g' : G, P.map (fun x => (T (g • x), T (g' • x)))
+    ∑ g : G, ∑ g' : G, P.map₀ (fun x => (T (g • x), T (g' • x)))
 
 /-- The **quantile of the randomization distribution**,
 $\hat r(p \mid x) = \inf\{t : \hat R(t \mid x) \ge p\}$ — the data-dependent critical value
@@ -145,7 +146,7 @@ private lemma tendsto_real_of_weakConverges_of_null_frontier {E : Type*}
   have key := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hpm
     (E := s) (by simpa [pμ] using hs)
   have := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
-  simpa [Measure.real, pn, pμ] using this
+  simpa [Measure.real, pn, pμ] using! this
 
 /-! ### Moment identities linking `randDist` to `randPairLaw` -/
 
@@ -156,7 +157,7 @@ variable (G : Type*) [Group G] [Fintype G] {𝓧 : Type*} [MeasurableSpace 𝓧]
 /-- **First-moment identity.** The mean of the randomization distribution at `t` is the mass
 that `randPairLaw` puts on `Iic t ×ˢ univ`:
 `∫ R̂(·,t) dP = randPairLaw(Iic t ×ˢ univ)`. Measurability of the statistic and of the
-action is genuinely required: `Measure.map` of a non-measurable map is the zero measure,
+action is genuinely required: `Measure.map₀` of a non-a.e.-measurable map is the zero measure,
 so the two sides would otherwise use different junk conventions. -/
 lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMeasure P]
     (T : 𝓧 → ℝ) (t : ℝ) (hT : Measurable T)
@@ -184,7 +185,7 @@ lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMea
   have hLHS : ∫ x, randDist G T x t ∂P
       = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x : 𝓧 | T (g • x) ≤ t} := by
     simp only [randDist]
-    rw [integral_const_mul, integral_finset_sum]
+    rw [integral_const_mul, integral_finsetSum]
     · simp_rw [hint]
     · intro g _
       rw [hind g]
@@ -211,6 +212,7 @@ lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMea
   have hval : (randPairLaw G T P) (Set.Iic t ×ˢ Set.univ)
       = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ≤ t} := by
     rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp only [Measure.map₀_of_measurable (hpair _ _)]
     simp_rw [hstep]
     rw [← Finset.mul_sum, ← mul_assoc, hcc]
   have hRHS : (randPairLaw G T P).real (Set.Iic t ×ˢ Set.univ)
@@ -263,9 +265,9 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
     simp_rw [hpt]
     rw [integral_const_mul]
     congr 1
-    rw [integral_finset_sum _ (fun g _ => integrable_finset_sum _ fun g' _ => hintg' g g')]
+    rw [integral_finsetSum _ (fun g _ => integrable_finsetSum _ fun g' _ => hintg' g g')]
     refine Finset.sum_congr rfl fun g _ => ?_
-    rw [integral_finset_sum _ (fun g' _ => hintg' g g')]
+    rw [integral_finsetSum _ (fun g' _ => hintg' g g')]
     exact Finset.sum_congr rfl fun g' _ => hintprod g g'
   have hmeasS : MeasurableSet (Set.Iic t ×ˢ Set.Iic t) :=
     measurableSet_Iic.prod measurableSet_Iic
@@ -277,6 +279,7 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ t ∧ T (g' • x) ≤ t} := by
     rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp only [Measure.map₀_of_measurable (hpair _ _)]
     congr 1
     refine Finset.sum_congr rfl fun g _ => ?_
     rw [Measure.finset_sum_apply]
@@ -347,9 +350,9 @@ lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilit
     simp_rw [hpt]
     rw [integral_const_mul]
     congr 1
-    rw [integral_finset_sum _ (fun g _ => integrable_finset_sum _ fun g' _ => hintg' g g')]
+    rw [integral_finsetSum _ (fun g _ => integrable_finsetSum _ fun g' _ => hintg' g g')]
     refine Finset.sum_congr rfl fun g _ => ?_
-    rw [integral_finset_sum _ (fun g' _ => hintg' g g')]
+    rw [integral_finsetSum _ (fun g' _ => hintg' g g')]
     exact Finset.sum_congr rfl fun g' _ => hintprod g g'
   have hmeasS : MeasurableSet (Set.Iic s ×ˢ Set.Iic t) :=
     measurableSet_Iic.prod measurableSet_Iic
@@ -361,6 +364,7 @@ lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilit
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
     rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp only [Measure.map₀_of_measurable (hpair _ _)]
     congr 1
     refine Finset.sum_congr rfl fun g _ => ?_
     rw [Measure.finset_sum_apply]
@@ -394,7 +398,8 @@ lemma randPairLaw_map {E F : Type*} [MeasurableSpace E] [MeasurableSpace F] (P :
     fun g g' => (hψ.comp (hT.comp (hsmul g))).prodMk (hψ.comp (hT.comp (hsmul g')))
   ext s hs
   rw [Measure.map_apply hψψ hs]
-  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply,
+    Measure.map₀_of_measurable (hpair _ _), Measure.map₀_of_measurable (hpairψ _ _)]
   congr 1
   refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
   rw [Measure.map_apply (hpairψ g g') hs, Measure.map_apply (hpair g g') (hψψ hs)]
@@ -435,6 +440,7 @@ lemma real_randPairLaw_prod_univ {E : Type*} [MeasurableSpace E] (P : Measure �
   have hval : (randPairLaw G T P) (S ×ˢ (Set.univ : Set E))
       = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ∈ S} := by
     rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp only [Measure.map₀_of_measurable (hpair _ _)]
     simp_rw [hstep]
     rw [← Finset.mul_sum, ← mul_assoc, hcc]
   rw [Measure.real, hval, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast,
@@ -455,6 +461,7 @@ lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Meas
     (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
   constructor
   rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  simp only [Measure.map₀_of_measurable (hpair _ _)]
   have hstep : ∀ g : G, (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) Set.univ
       = (Fintype.card G : ℝ≥0∞) := by
     intro g
@@ -554,7 +561,7 @@ private lemma randDist_tendstoInProb_cdf_aux (P : ∀ n, Measure (𝓧 n))
   -- `t` is not an atom of `R` (continuity of the c.d.f.).
   have hatom : R {t} = 0 := by
     have hll : Function.leftLim (⇑(cdf R)) t = cdf R t :=
-      leftLim_eq_of_tendsto (nhdsLT_neBot t).ne (ht.tendsto.mono_left nhdsWithin_le_nhds)
+      leftLim_eq_of_tendsto (ht.tendsto.mono_left nhdsWithin_le_nhds)
     have h1 := (cdf R).measure_singleton t
     rw [measure_cdf] at h1
     rw [h1, hll, sub_self, ENNReal.ofReal_zero]
@@ -625,7 +632,7 @@ private lemma randDist_tendstoInProb_cdf_aux (P : ∀ n, Measure (𝓧 n))
     intro n
     simp only [randDist]
     refine Integrable.const_mul ?_ _
-    refine integrable_finset_sum _ (fun g _ => ?_)
+    refine integrable_finsetSum _ (fun g _ => ?_)
     rw [hind_eq n g]
     exact (integrable_const (1 : ℝ)).indicator (hmset n g)
   have hint_f2 : ∀ n, Integrable (fun x => (randDist (G n) (T n) x t) ^ 2) (P n) := by
@@ -886,7 +893,7 @@ theorem weakConverges_randPairLaw_of_randDist_tendstoInProb (P : ∀ n, Measure 
     [IsProbabilityMeasure R]
     -- LEAN-ONLY (regularity amendment): the statistic and the action are measurable. The
     -- frozen signature omitted these, but the proof passes through the moment identities
-    -- `integral_randDist_..._randPairLaw`, which need them: `Measure.map` of a non-measurable
+    -- `integral_randDist_..._randPairLaw`, which need them: `Measure.map₀` of a non-a.e.-measurable
     -- map is the zero measure, so without them `randPairLaw` degenerates and cannot converge
     -- to a probability law at all, while the hypothesis `h` — a statement about the
     -- (always well-defined) group average `randDist` — can still hold. The forward engines

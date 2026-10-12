@@ -454,7 +454,7 @@ private lemma oneDimQmd_limit_aux :
   filter_upwards [h_self_ne, h_memLp_ev] with t ht_ne h_memLp_t
   have h_eLp_ne_top :
       eLpNorm (oneDimQmdResidual (linPerturbScore g_P h)
-        (unboundedOneDimCurve g_P h_orth h) t) 2 P ≠ ⊤ := h_memLp_t.2.ne
+        (unboundedOneDimCurve g_P h_orth h) t) 2 P ≠ ⊤ := h_memLp_t.ne
   have h_abs_pos : 0 < |t| := abs_pos.mpr ht_ne
   -- ofReal((eLpNorm).toReal / |t|) = ofReal((eLpNorm).toReal) / ofReal |t|
   --                                = eLpNorm / ofReal |t|.

@@ -90,7 +90,7 @@ theorem IsErgodicWithRate.tendsto_tvDist {κ : Kernel S S} {F : Measure S} {ρ :
     (h : IsErgodicWithRate κ F ρ) (x : S) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n) x) F) atTop (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h.tendsto x)
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   have h1 : (1 : ℝ≥0∞) ≤ ρ⁻¹ ^ n :=
     one_le_pow_of_one_le' (ENNReal.one_le_inv.mpr h.rho_le_one) n
   calc tvDist ((κ ^ n) x) F = 1 * tvDist ((κ ^ n) x) F := (one_mul _).symm
@@ -142,7 +142,7 @@ private theorem measure_le_of_tvDist_eq_zero {μ ν : Measure S} (h : tvDist μ 
   have h1 : μ s - ν s ≤ tvDist μ ν :=
     le_iSup₂ (f := fun t (_ : MeasurableSet t) => μ t - ν t) s hs
   rw [h] at h1
-  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le _))
+  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le))
 
 -- `tvDist` separates probability measures (apply the previous lemma in both directions,
 -- using symmetry of `tvDist` on probability measures).
@@ -180,7 +180,7 @@ theorem IsErgodicKernel.invariant {κ : Kernel S S} [IsMarkovKernel κ] {F : Mea
       (fun n : ℕ => tvDist ((κ ^ (n + 1)) x) F + tvDist ((κ ^ n) x) F) atTop (𝓝 0) := by
     simpa using (hdt.comp (tendsto_add_atTop_nat 1)).add hdt
   have h0 : tvDist F (F.bind κ) = 0 :=
-    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall key)) (zero_le _)
+    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall key)) (zero_le)
   exact (eq_of_tvDist_eq_zero h0).symm
 
 -- `∫⁻ a − ∫⁻ b ≤ ∫⁻ (a − b)` in `ℝ≥0∞` (truncated subtraction), for measurable `b`. The
@@ -221,7 +221,7 @@ theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
     · haveI := isMarkovKernel_pow κ n
       exact (hGle n y).trans (tvDist_le_one _ _)
     · exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-        (hF.tendsto_tvDist y) (Eventually.of_forall fun n => zero_le _)
+        (hF.tendsto_tvDist y) (Eventually.of_forall fun n => zero_le)
         (Eventually.of_forall fun n => hGle n y)
   refine le_antisymm ?_ ?_
   · have hb : ∀ n : ℕ, ξ s - F s ≤ ∫⁻ y, (((κ ^ n) y) s - F s) ∂ξ := by
@@ -232,7 +232,7 @@ theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
     have hlim := hDCT (fun n y => ((κ ^ n) y) s - F s) (fun n => (hmeas n).sub measurable_const)
       (fun n y => le_iSup₂ (f := fun t (_ : MeasurableSet t) => ((κ ^ n) y) t - F t) s hs)
     exact tsub_eq_zero_iff_le.1
-      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le _))
+      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le))
   · have hb : ∀ n : ℕ, F s - ξ s ≤ ∫⁻ y, (F s - ((κ ^ n) y) s) ∂ξ := by
       intro n
       have h := lintegral_sub_le_lintegral_sub (μ := ξ)
@@ -244,7 +244,7 @@ theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
         rw [tvDist_comm]
         exact le_iSup₂ (f := fun t (_ : MeasurableSet t) => F t - ((κ ^ n) y) t) s hs)
     exact tsub_eq_zero_iff_le.1
-      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le _))
+      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le))
 
 /-- Transition kernel of the **vectorized nonlinear autoregression** (FY eqs.
 (2.7)–(2.8)): from state `x = (X_{t-1}, …, X_{t-p-1})` draw `ε ∼ ν` and move to
@@ -263,8 +263,8 @@ theorem isMarkovKernel_nlARKernel {p : ℕ} {f : (Fin (p + 1) → ℝ) → ℝ}
       (Fin.cons (f xe.1 + xe.2) (fun i => xe.1 i.castSucc) : Fin (p + 1) → ℝ) := by
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
-    · simpa using (hf.comp measurable_fst).add measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+    · simpa using! (hf.comp measurable_fst).add measurable_snd
+    · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
   exact Kernel.IsMarkovKernel.map _ hmeas
 
 -- **FY Theorem 2.4(ii)** (`nlARKernel_geometricallyErgodic`) used to be stated here as a

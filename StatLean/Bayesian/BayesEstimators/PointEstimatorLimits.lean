@@ -144,7 +144,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
       hGmeas.indicator (measurableSet_lt measurable_const (by fun_prop))
     have hbound : ∀ j : ℕ, ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G
         ≤ᵐ[multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹] G := fun _ =>
-      Eventually.of_forall fun z => Set.indicator_le_self' (fun _ _ => zero_le _) z
+      Eventually.of_forall fun z => Set.indicator_le_self' (fun _ _ => zero_le) z
     have hlim : ∀ᵐ z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹),
         Tendsto (fun j : ℕ => ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z)
           atTop (𝓝 0) := by
@@ -165,7 +165,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
   rw [bpeGaussCriterion]
   refine le_trans (lintegral_mono fun z => ?_) hj
   by_cases hz : ‖u - z‖ ≤ max r₁ (max 1 (R + j + 1))
-  · rw [hw0 _ hz]; exact zero_le _
+  · rw [hw0 _ hz]; exact zero_le
   · rw [not_le] at hz
     have h1 : ‖u - z‖ ≤ R + ‖z‖ := le_trans (norm_sub_le u z) (by linarith)
     have hj1 : R + (j : ℝ) + 1 ≤ max r₁ (max 1 (R + j + 1)) :=
@@ -245,7 +245,7 @@ theorem bpe_tight
       ext ω
       simp [EuclideanSpace.norm_eq]
     rw [hempty, measure_empty]
-    exact zero_le _
+    exact zero_le
   obtain ⟨i⟩ := hk
   -- (1) the separation gap `η` at the scale `a`, in the additive form of vdV p. 148
   obtain ⟨a, ha, c, hcle, hclt⟩ := hsep.strict
@@ -337,7 +337,7 @@ theorem bpe_tight
     rw [hℓ' h]
     split_ifs
     · exact le_rfl
-    · exact zero_le _
+    · exact zero_le
   have hℓ'0 : ∀ x : EuclideanSpace ℝ (Fin k), ‖x‖ ≤ ρ → ℓ' x = 0 := by
     intro x hx; rw [hℓ' x, if_neg (not_lt.2 hx)]
   -- (7) the uniform majorant for the truncated loss

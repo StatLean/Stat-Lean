@@ -282,7 +282,7 @@ theorem fullClamped_chain_head_dyadic_bound :
       have hπ_F : B.π q₀ i ∈ truncateClass F t :=
         B.cell_subset (le_refl q₀) i (B.π_mem (le_refl q₀) i)
       have hπ_memLp : MemLp (B.π q₀ i) 2 P := by
-        refine ⟨(B.π_meas (le_refl q₀) i).aestronglyMeasurable, ?_⟩
+        refine ?_
         exact lt_trans (D.truncated_L2 _ hπ_F) ENNReal.ofReal_lt_top
       have hπ_sq_le : ∫ ω, (B.π q₀ i ω) ^ 2 ∂P ≤ δ ^ 2 := by
         have hnn : 0 ≤ ∫ ω, (B.π q₀ i ω) ^ 2 ∂P :=
@@ -544,7 +544,7 @@ theorem fullClamped_chain_A_dyadic_bound :
       · -- hg_var : `∫ (g i)² ≤ (2·ε)²`.
         intro i
         have hjump_memLp : MemLp (B.jump hm i) 2 P := by
-          refine ⟨(B.jump_measurable hπ_meas hm i).aestronglyMeasurable, ?_⟩
+          refine ?_
           exact lt_of_le_of_lt (B.jump_L2_le hm i) ENNReal.ofReal_lt_top
         -- `∫ (jump)² ≤ (δ·(1/2)^{m-q₀})²` from `‖jump‖_{P,2} ≤ δ·(1/2)^{m-q₀}`.
         have hjump_sq_le :
@@ -946,7 +946,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
           simp_rw [hpt]
           rw [lintegral_zero]
         rw [hzero]
-        exact zero_le _
+        exact zero_le
     -- =====================================================================
     -- STEP 2 — Sum the per-level bounds and reindex.
     -- =====================================================================
@@ -1144,7 +1144,7 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
             rw [← ENNReal.ofReal_mul (by positivity)]
             exact ENNReal.ofReal_le_ofReal hΔ_le
           · rw [Set.indicator_of_notMem hx, mul_zero, ENNReal.ofReal_zero]
-            exact zero_le _
+            exact zero_le
         have hΔ_memLp : MemLp (B.Δ Q i) 2 P := B.Δ_memLp hQ i
         have hΔsq_int : Integrable (fun x => (B.Δ Q i x) ^ 2) P :=
           hΔ_memLp.integrable_sq
@@ -1162,7 +1162,7 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
                   * ∫⁻ x, ENNReal.ofReal
                       (1 / (Real.sqrt (n + 1 : ℕ) * chainThreshold B δ Q))
                         * ENNReal.ofReal ((B.Δ Q i x) ^ 2) ∂P :=
-                mul_le_mul_of_nonneg_left (lintegral_mono hpt) (zero_le _)
+                mul_le_mul_of_nonneg_left (lintegral_mono hpt) (zero_le)
           _ = 4 * ENNReal.ofReal (Real.sqrt (n + 1 : ℕ))
                 * (ENNReal.ofReal
                     (1 / (Real.sqrt (n + 1 : ℕ) * chainThreshold B δ Q))
@@ -1270,7 +1270,7 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
         have h0mem : (0 : ℕ) ∈ Finset.Icc 0 (q + 1) :=
           Finset.mem_Icc.mpr ⟨le_rfl, by omega⟩
         refine le_trans ?_
-          (Finset.single_le_sum (f := a) (fun k _ => zero_le _) h0mem)
+          (Finset.single_le_sum (f := a) (fun k _ => zero_le) h0mem)
         rw [ha_def]
         simp only [pow_zero, one_mul]
         exact sqrt_log_two_le_entropyIntegrand hF_ne δ
@@ -1295,7 +1295,7 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
                     * ENNReal.ofReal (Real.sqrt (Real.log 2)) :=
                       (ENNReal.inv_mul_cancel hsqrtlog2_ne ENNReal.ofReal_ne_top).symm
             _ ≤ (ENNReal.ofReal (Real.sqrt (Real.log 2)))⁻¹ * Sum :=
-                  mul_le_mul_of_nonneg_left hone_le_sum (zero_le _)
+                  mul_le_mul_of_nonneg_left hone_le_sum (zero_le)
         · refine le_trans ?_ hcover_sum
           rw [← ENNReal.ofReal_sum_of_nonneg (fun _ _ => Real.sqrt_nonneg _)]
           exact ENNReal.ofReal_le_ofReal hsalvage
@@ -1307,7 +1307,7 @@ theorem fullClamped_chain_Bmean_dyadic_bound :
                 ring
         _ ≤ ENNReal.ofReal (4 * ((1/2 : ℝ)^q * δ))
               * (ENNReal.ofReal (1 + 1 / Real.sqrt (Real.log 2)) * Sum) :=
-                mul_le_mul_of_nonneg_left hE_le (zero_le _)
+                mul_le_mul_of_nonneg_left hE_le (zero_le)
         _ = ENNReal.ofReal K₀
               * (ENNReal.ofReal ((1/2 : ℝ)^q * δ) * Sum) := by
                 rw [hK₀_def,
@@ -1384,7 +1384,7 @@ theorem fullClamped_factorEight_dyadic_le_target (hδ : 0 < δ) :
             * entropyIntegrand (8 * ((1 / 2 : ℝ) ^ k * δ)) F P
           ≤ 8 * ENNReal.ofReal ((1 / 2 : ℝ) ^ k * δ)
             * entropyIntegrand ((1 / 2 : ℝ) ^ k * δ) F P := by
-              exact mul_le_mul_of_nonneg_left hentropy' (zero_le _)
+              exact mul_le_mul_of_nonneg_left hentropy' (zero_le)
       _ = 8 * (ENNReal.ofReal ((1 / 2 : ℝ) ^ k * δ)
             * entropyIntegrand ((1 / 2 : ℝ) ^ k * δ) F P) := by ring
   calc
@@ -1654,17 +1654,17 @@ private theorem fullClamped_Gn_telescope_link_bound
     rw [hfun]
     -- integrability of the two finite sums
     have hJsum_int : Integrable (fun x => ∑ k ∈ Finset.range K, linkJ k x) P :=
-      integrable_finset_sum _ (fun k _ => hlinkJ_int k)
+      integrable_finsetSum _ (fun k _ => hlinkJ_int k)
     have hBsum_int : Integrable (fun x => ∑ k ∈ Finset.range K, linkB (k+1) x) P :=
-      integrable_finset_sum _ (fun k _ => hlinkB_int (k+1))
+      integrable_finsetSum _ (fun k _ => hlinkB_int (k+1))
     simp only [hgn_def]
     rw [empiricalProcess_add P n Y (Rrem K)
         (fun x => (∑ k ∈ Finset.range K, linkJ k x) + (∑ k ∈ Finset.range K, linkB (k+1) x))
         (hRrem_int K) (hJsum_int.add hBsum_int)]
     rw [empiricalProcess_add P n Y (fun x => ∑ k ∈ Finset.range K, linkJ k x)
         (fun x => ∑ k ∈ Finset.range K, linkB (k+1) x) hJsum_int hBsum_int]
-    rw [empiricalProcess_finset_sum P n Y (Finset.range K) linkJ (fun k _ => hlinkJ_int k)]
-    rw [empiricalProcess_finset_sum P n Y (Finset.range K) (fun k => linkB (k+1))
+    rw [empiricalProcess_finsetSum P n Y (Finset.range K) linkJ (fun k _ => hlinkJ_int k)]
+    rw [empiricalProcess_finsetSum P n Y (Finset.range K) (fun k => linkB (k+1))
         (fun k _ => hlinkB_int (k+1))]
     ring
   -- ===== Remainder bound: `|gn (Rrem K)| ≤ 2·n·(1/2)^K·δ → 0`. =====
@@ -1742,7 +1742,7 @@ private theorem fullClamped_Gn_telescope_link_bound
       simpa using this
     -- ℝ≥0∞ squeeze: `0 ≤ ofReal|gn(Rrem K)| ≤ ofReal(2 n (1/2)^K δ) → 0`.
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
-      tendsto_const_nhds hbd (Filter.Eventually.of_forall (fun K => zero_le _))
+      tendsto_const_nhds hbd (Filter.Eventually.of_forall (fun K => zero_le))
       (Filter.Eventually.of_forall (fun K => ?_))
     exact ENNReal.ofReal_le_ofReal (hgnR_bd K)
   -- ===== Per-`K` ENNReal triangle bound, then pass to the limit. =====
@@ -1864,14 +1864,12 @@ theorem fullClamped_chain_supNorm_le_pointwise
   obtain ⟨i₀, hi₀⟩ := B.cover (Nat.zero_le 0) f hf
   have hf_int : Integrable f P := by
     refine (MemLp.integrable one_le_two ?_)
-    exact ⟨(D.base.truncated_measurable f hf).aestronglyMeasurable,
-      lt_trans (D.base.truncated_L2 f hf) ENNReal.ofReal_lt_top⟩
+    exact lt_trans (D.base.truncated_L2 f hf) ENNReal.ofReal_lt_top
   have hπ_mem : B.π 0 i₀ ∈ truncateClass F t :=
     B.cell_subset (Nat.zero_le 0) i₀ (B.π_mem (Nat.zero_le 0) i₀)
   have hπ_int : Integrable (B.π 0 i₀) P := by
     refine (MemLp.integrable one_le_two ?_)
-    exact ⟨(B.π_meas (Nat.zero_le 0) i₀).aestronglyMeasurable,
-      lt_trans (D.base.truncated_L2 _ hπ_mem) ENNReal.ofReal_lt_top⟩
+    exact lt_trans (D.base.truncated_L2 _ hπ_mem) ENNReal.ofReal_lt_top
   have hrep : truncRep B (fun _ => t) (8 * δ) n 0 i₀ = B.π 0 i₀ := by
     funext x
     simp only [truncRep]
@@ -2107,7 +2105,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
     have hH8' : levelRepSup B μ X (fun _ => t) (8 * δ) n 0 ≤
         ENNReal.ofReal cH * S8 := by
       refine hH8.trans ?_
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       rw [hS8_def]
       simpa only [pow_zero, one_mul] using (ENNReal.le_tsum
         (f := fun q : ℕ => ENNReal.ofReal ((1 / 2 : ℝ)^q * (8 * δ)) *
@@ -2140,12 +2138,12 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
               (3 * (ENNReal.ofReal cB * S8) + ENNReal.ofReal cM * S8) +
               ENNReal.ofReal cA * S8 := by
             exact add_le_add (add_le_add hH8' (add_le_add
-              (mul_le_mul_of_nonneg_left hB8 (zero_le _)) hM8)) hA8
+              (mul_le_mul_of_nonneg_left hB8 (zero_le)) hM8)) hA8
       _ = (ENNReal.ofReal cH + 3 * ENNReal.ofReal cB +
             ENNReal.ofReal cA + ENNReal.ofReal cM) * S8 := by ring
       _ ≤ (ENNReal.ofReal cH + 3 * ENNReal.ofReal cB +
             ENNReal.ofReal cA + ENNReal.ofReal cM) * (15 * S) := by
-          exact mul_le_mul_of_nonneg_left hscale (zero_le _)
+          exact mul_le_mul_of_nonneg_left hscale (zero_le)
       _ = ENNReal.ofReal c * S := by rw [hc_ofReal]; ring
 
 /-- The full-class dyadic series is bounded by the bracketing entropy integral

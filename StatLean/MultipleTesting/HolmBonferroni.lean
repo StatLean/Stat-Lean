@@ -123,6 +123,7 @@ private lemma holmCount_cond {N : ℕ} {α : ℝ} (hα : 0 < α) (p : Fin N → 
 
 /-! ### Main theorems -/
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Deterministic crux (Holm 1979): if the Holm procedure rejects any true null, then some true
 null has p-value `≤ α/N₀`, where `N₀ = |H₀|`. -/
 theorem holm_rejects_true_null_imp {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (H₀ : Finset (Fin N))
@@ -214,7 +215,8 @@ theorem holm_rejects_true_null_imp {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     have hcard_eq : (Finset.univ.filter (fun i : Fin N => orderStat v i < v j₀)).card = i₀ := by
       rw [hi₀_def]
       exact Finset.card_equiv (Tuple.sort v) fun i => by
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, orderStat]
+        erw [Finset.mem_filter, Finset.mem_filter]
+        simp only [Finset.mem_univ, true_and, orderStat]
     -- Chain: i₀ = ↑⟨i₀,_⟩ < #{...} = i₀, so i₀ < i₀, contradiction.
     have : i₀ < i₀ :=
       calc i₀ = ↑(⟨i₀, hi₀_lt_N⟩ : Fin N) := rfl

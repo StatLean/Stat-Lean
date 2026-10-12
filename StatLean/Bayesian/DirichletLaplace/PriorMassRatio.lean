@@ -392,7 +392,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
             prod_dlDensity_le ha ha2 hδ hδ1 (S := Finset.univ) (fun i _ => hu' i)
         _ = ENNReal.ofReal ((17 * a * δ ^ (a - 1)) ^ d) := by rw [Finset.card_univ, hcardK]
     refine le_trans (dlPrior_le_of_subset ha hA_meas hdens) ?_
-    refine mul_le_mul_left' ?_ _
+    refine mul_le_mul_right ?_ _
     calc volume (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))
             ∩ {u | ∀ i, δ < |u i|})
         ≤ volume (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))) :=
@@ -542,7 +542,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
             + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r + 2 * (n : ℝ) * w))
           * ENNReal.ofReal CLr * ENNReal.ofReal ((r / Real.sqrt 2) ^ d)
           * ENNReal.ofReal (Real.exp (-2 * (n : ℝ) * w))) * Vol1 :=
-        mul_le_mul_right' hC Vol1
+        mul_le_mul_left hC Vol1
     _ = ENNReal.ofReal (Real.exp ((d : ℝ) * Real.log (20000 * (j : ℝ))
             + (d : ℝ) * Real.log (1 / δ) + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt ‖θ₀‖
             + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r + 2 * (n : ℝ) * w))

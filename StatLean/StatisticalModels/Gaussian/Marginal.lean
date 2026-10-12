@@ -69,7 +69,7 @@ theorem multivariateGaussian_map_blockFst
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         ⇑(blockFst (ι₁ := ι₁) (ι₂ := ι₂))) :=
-    Measure.isProbabilityMeasure_map blockFst.continuous.measurable.aemeasurable
+    (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
   have hL : charFun ((multivariateGaussian (blockPair m₁ m₂)
         (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map ⇑(blockFst (ι₁ := ι₁) (ι₂ := ι₂))) t
@@ -102,7 +102,7 @@ theorem multivariateGaussian_map_blockSnd
   haveI : IsProbabilityMeasure
       ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         ⇑(blockSnd (ι₁ := ι₁) (ι₂ := ι₂))) :=
-    Measure.isProbabilityMeasure_map blockSnd.continuous.measurable.aemeasurable
+    (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
   have hL : charFun ((multivariateGaussian (blockPair m₁ m₂)
         (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map ⇑(blockSnd (ι₁ := ι₁) (ι₂ := ι₂))) t
@@ -147,7 +147,7 @@ theorem multivariateGaussian_fromBlocks_prod
           ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm := by
     haveI : IsProbabilityMeasure (((multivariateGaussian m₁ S₁₁).prod
         (multivariateGaussian m₂ S₂₂)).map ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) :=
-      Measure.isProbabilityMeasure_map hmeas.aemeasurable
+      (by infer_instance)
     refine Measure.ext_of_charFun (funext fun t => ?_)
     have hsplit : ∀ p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂,
         Complex.exp (↑⟪(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm p, t⟫_ℝ * Complex.I)

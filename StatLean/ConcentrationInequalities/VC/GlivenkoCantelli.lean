@@ -159,7 +159,7 @@ lemma empFrac_iic_rightContinuous {n : ℕ} (x : Fin n → ℝ) :
   have hsum : ContinuousWithinAt
       (fun s => ∑ i, (Set.Iic s).indicator (fun _ => (1 : ℝ)) (x i))
       (Set.Ici t) t :=
-    tendsto_finset_sum Finset.univ (fun i _ => hterm i)
+    tendsto_finsetSum Finset.univ (fun i _ => hterm i)
   have heq : (fun s => empFrac x (Set.Iic s))
       = fun s => (n : ℝ)⁻¹ * ∑ i, (Set.Iic s).indicator (fun _ => (1 : ℝ)) (x i) :=
     rfl

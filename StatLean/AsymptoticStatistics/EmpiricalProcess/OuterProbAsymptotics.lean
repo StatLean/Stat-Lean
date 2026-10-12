@@ -123,7 +123,7 @@ theorem oP_sup_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have := (h₁ (ε / 2) (by linarith)).add (h₂ (ε / 2) (by linarith))
     simpa using this
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall hb)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall hb)
 
 /-- **`o_P` monotonicity (sup form).** A pointwise-dominated family inherits the
 `→ₚ 0` of its dominator: if `|g| ≤ |g'|` everywhere and `g' →ₚ 0`, then `g →ₚ 0`.
@@ -144,7 +144,7 @@ theorem oP_sup_mono {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     obtain ⟨h, hh⟩ := hξ
     exact ⟨h, lt_of_lt_of_le hh (hle n ξ h)⟩
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h' ε hε)
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall hb)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall hb)
 
 /-- **`O_P(1) + o_P(1) = O_P(1)` (sup form).** A bounded-in-probability family
 plus an `o_P(1)` family stays bounded in probability.
@@ -351,7 +351,7 @@ theorem isBoundedInOuterProbSup_of_tendstoZero {Ξ H : Type*} [MeasurableSpace �
   have hlim : limsup (fun n => μ.outerMeasureStar {ξ | ∃ hh, (1 : ℝ) < |g n ξ hh|}) atTop = 0 :=
     (h 1 one_pos).limsup_eq
   rw [hlim]
-  exact zero_le _
+  exact zero_le
 
 /-- `O_P(1)` in the `ℓ∞(H)` sup norm is closed under pointwise
 negation. -/
@@ -387,13 +387,13 @@ theorem tendstoZeroInOuterProbSup_of_eq_off_vanishing {Ξ H : Type*}
     · exact Or.inl ⟨h, by rwa [heq n ξ hb h] at hh⟩
   have hbadstar : Tendsto (fun n => μ.outerMeasureStar (bad n)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbad
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n => outerMeasureStar_le_measure_aux μ (bad n))
   have hsum : Tendsto (fun n => μ.outerMeasureStar {ξ | ∃ h, ε < |g' n ξ h|}
       + μ.outerMeasureStar (bad n)) atTop (𝓝 0) := by
     simpa using (hg' ε hε).add hbadstar
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar {ξ | ∃ h, ε < |g n ξ h|}
       ≤ μ.outerMeasureStar ({ξ | ∃ h, ε < |g' n ξ h|} ∪ bad n) :=
         outerMeasureStar_mono μ (hsub n)
@@ -465,7 +465,7 @@ theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have := (h₁ (ε / 2) (by linarith)).add (h₂ (ε / 2) (by linarith))
     simpa using this
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall hb)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall hb)
 
 /-- **A family dominated by the weight is `O_P(w)`.** If `|g n ξ h| ≤ w n ξ` for
 all `n ξ h`, then `g = O_P(w)` uniformly over `H` (the `M = 1` weighted exceedance
@@ -486,10 +486,10 @@ theorem isBoundedInOuterProbSupWt_of_le_wt {Ξ H : Type*} [MeasurableSpace Ξ]
       rw [one_mul]
       exact not_lt.mpr (h_dom n ξ h)
     rw [hempty]
-    exact le_antisymm (le_trans (outerMeasureStar_le_measure_aux μ ∅) (by simp)) (zero_le _)
+    exact le_antisymm (le_trans (outerMeasureStar_le_measure_aux μ ∅) (by simp)) (zero_le)
   simp only [hz]
   rw [limsup_const]
-  exact zero_le _
+  exact zero_le
 
 /-- **Weighted `o_P` from coefficient × rate domination.** If `coeff_n →ₚ 0`
 (scalar), the rate `r_n = O_P(w_n)`, and `|g n ξ h| ≤ coeff n ξ · r n ξ` for all

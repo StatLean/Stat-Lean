@@ -235,7 +235,7 @@ theorem wald_avoids_compact_disjoint
     linarith
   have hsum : Tendsto (fun n => ∑ i ∈ t, ℙ {ω | ((a₀ - 3 * δ : ℝ) : EReal) ≤
       extendedEmpiricalAvg (g i) n (fun j : Fin n => Xs j.val ω)}) atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum t (fun i hi => hu i hi)
+    simpa using tendsto_finsetSum t (fun i hi => hu i hi)
   have hbound (n : ℕ) : ℙ {ω | θhat n ω ∈ B} ≤
       (∑ i ∈ t, ℙ {ω | ((a₀ - 3 * δ : ℝ) : EReal) ≤
         extendedEmpiricalAvg (g i) n (fun j : Fin n => Xs j.val ω)}) + ℙ (L n) + ℙ (D n) :=
@@ -246,6 +246,6 @@ theorem wald_avoids_compact_disjoint
             (fun j : Fin n => Xs j.val ω)})) _) le_rfl
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa [L, D] using (hsum.add hzero).add hrem)
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall hbound)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall hbound)
 
 end AsymptoticStatistics.Consistency

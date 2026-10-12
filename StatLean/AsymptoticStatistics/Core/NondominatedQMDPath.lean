@@ -72,8 +72,8 @@ theorem exists_nondominatedQMDPath_of_bare_qmd
       by_cases hz : P.rnDeriv ν ω = 0
       · simp [residualAgainst, hz]
       · simp [residualAgainst, hω hz]
-    change eLpNorm (residualAgainst P (curve t) ν g t) 2 ν / ENNReal.ofReal t = _
-    rw [eLpNorm_congr_ae hae]
+    change eLpNorm' (residualAgainst P (curve t) ν g t) 2 ν / ENNReal.ofReal t = _
+    rw [eLpNorm'_congr_ae hae]
   exact ⟨{
     curve := curve
     curve_at_zero := hzero
@@ -95,6 +95,8 @@ noncomputable def toNondominatedQMDPath
   curve_isProbability := fun t _ => γ.curve_isProbability t
   score := γ.score
   qmd_limit := by
+    apply (isRightQMD_iff_eLpNorm γ.curve (fun t _ => γ.curve_isProbability t)
+      (Lp.aestronglyMeasurable γ.score.val)).2
     have hfilter : nhdsWithin (0 : ℝ) (Set.Ioi 0) ≤ 𝓝[≠] (0 : ℝ) := by
       apply nhdsWithin_mono
       intro t ht

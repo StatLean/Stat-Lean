@@ -323,7 +323,7 @@ private lemma moderate_zone_bound {c : ℝ} {n : ℕ}
     ring_nf
     exact le_rfl
   · rw [Set.indicator_of_notMem hθ]
-    exact zero_le _
+    exact zero_le
 
 /-- **The Step-A tail split** (vdV p. 142, final display of the concentration step): for every
 exponent `c > 0` and every `Mₙ → ∞`,
@@ -379,7 +379,7 @@ theorem prior_tail_split
     rw [add_zero] at h3
     exact h3
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound0
-    (Eventually.of_forall fun n => zero_le _) ?_
+    (Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   have hs : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR

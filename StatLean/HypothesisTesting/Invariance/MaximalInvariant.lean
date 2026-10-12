@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.HypothesisTesting.Invariance.Defs
 
 /-!
@@ -96,7 +97,7 @@ variable {Θ 𝓧 : Type*} [MeasurableSpace 𝓧] {P : Θ → Measure 𝓧}
 member of the family forward along `g` lands on the member indexed by `gbar θ`, i.e.
 `P_θ(g⁻¹A) = P_{gbarθ}(A)` for all measurable `A`. -/
 def InducesOn (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) (gbar : Θ → Θ) : Prop :=
-  ∀ θ, (P θ).map ⇑g = P (gbar θ)
+  ∀ θ, (P θ).map₀ ⇑g = P (gbar θ)
 
 /-- **Family-preserving transformation**: a bimeasurable bijection of the sample space
 admitting an induced parameter map that carries the parameter space *onto* itself.
@@ -111,7 +112,7 @@ def PreservesFamily (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) : Prop :=
 /-- The identity transformation preserves the family, with induced map the identity. -/
 theorem inducesOn_one : InducesOn P (1 : Equiv.Perm 𝓧) id := by
   intro θ
-  simp only [Equiv.Perm.coe_one, Measure.map_id, id_eq]
+  simp only [Equiv.Perm.coe_one, Measure.map₀_id, id_eq]
 
 /-- The identity transformation is family-preserving. -/
 theorem preservesFamily_one : PreservesFamily P (1 : Equiv.Perm 𝓧) := by
@@ -134,9 +135,14 @@ theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {gbar gbar' : Θ → Θ}
     -- on a non-standard-Borel space where `⇑g'` is non-measurable but `⇑g' ∘ ⇑g` is not.
     (hg' : Measurable ⇑g') :
     InducesOn P (g' * g) (gbar' ∘ gbar) := by
+  have hmap : ∀ θ, (P θ).map ⇑g = P (gbar θ) := by
+    simpa only [InducesOn, Measure.map₀_of_measurable hg] using h
+  have hmap' : ∀ θ, (P θ).map ⇑g' = P (gbar' θ) := by
+    simpa only [InducesOn, Measure.map₀_of_measurable hg'] using h'
   intro θ
-  rw [Equiv.Perm.coe_mul, ← Measure.map_map hg' hg, h θ]
-  exact h' (gbar θ)
+  rw [Equiv.Perm.coe_mul, Measure.map₀_of_measurable (hg'.comp hg),
+    ← Measure.map_map hg' hg, hmap θ]
+  exact hmap' (gbar θ)
 
 /-- Family-preserving transformations are closed under composition. -/
 theorem PreservesFamily.mul {g g' : Equiv.Perm 𝓧}
@@ -151,9 +157,14 @@ theorem PreservesFamily.mul {g g' : Equiv.Perm 𝓧}
       rw [Function.comp_apply, Equiv.symm_apply_eq, Equiv.Perm.coe_mul, Function.comp_apply,
         Equiv.apply_symm_apply, Equiv.apply_symm_apply]
     rw [hsymm]; exact hgm'.comp hg'm'
-  · intro θ
-    rw [Equiv.Perm.coe_mul, ← Measure.map_map hg'm hgm, hind θ]
-    exact hind' (gbar θ)
+  · have hmap : ∀ θ, (P θ).map ⇑g = P (gbar θ) := by
+      simpa only [InducesOn, Measure.map₀_of_measurable hgm] using hind
+    have hmap' : ∀ θ, (P θ).map ⇑g' = P (gbar' θ) := by
+      simpa only [InducesOn, Measure.map₀_of_measurable hg'm] using hind'
+    intro θ
+    rw [Equiv.Perm.coe_mul, Measure.map₀_of_measurable (hg'm.comp hgm),
+      ← Measure.map_map hg'm hgm, hmap θ]
+    exact hmap' (gbar θ)
 
 /-- **Identifiability makes the induced map injective.** If distinct parameters index
 distinct distributions, an induced parameter map is one-to-one. -/
@@ -167,7 +178,9 @@ theorem InducesOn.bar_injective {g : Equiv.Perm 𝓧} {gbar : Θ → Θ}
     Function.Injective gbar := by
   intro θ₁ θ₂ hθ
   apply hP
-  have e1 : (P θ₁).map ⇑g = (P θ₂).map ⇑g := by rw [h θ₁, h θ₂, hθ]
+  have hmap : ∀ θ, (P θ).map ⇑g = P (gbar θ) := by
+    simpa only [InducesOn, Measure.map₀_of_measurable hg] using h
+  have e1 : (P θ₁).map ⇑g = (P θ₂).map ⇑g := by rw [hmap θ₁, hmap θ₂, hθ]
   have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) e1
   simpa only [Measure.map_map hg' hg, Equiv.symm_comp_self, Measure.map_id] using e2
 
@@ -184,10 +197,12 @@ theorem InducesOn.inv {g : Equiv.Perm 𝓧} {gbar : Equiv.Perm Θ}
     InducesOn P g⁻¹ ⇑gbar⁻¹ := by
   intro θ
   have hkey : (P (⇑gbar⁻¹ θ)).map ⇑g = P θ := by
-    rw [h (⇑gbar⁻¹ θ)]; congr 1
+    rw [← Measure.map₀_of_measurable hgf, h (⇑gbar⁻¹ θ)]; congr 1
     rw [← Equiv.Perm.mul_apply, mul_inv_cancel, Equiv.Perm.one_apply]
   have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) hkey
   simp only [Measure.map_map hg hgf, Equiv.symm_comp_self, Measure.map_id] at e2
+  change (P θ).map₀ ⇑g.symm = _
+  rw [Measure.map₀_of_measurable hg]
   exact e2.symm
 
 /-- Family-preserving transformations are closed under inversion, given identifiability
@@ -204,9 +219,12 @@ theorem PreservesFamily.inv {g : Equiv.Perm 𝓧}
   have hcoe : ∀ φ, e φ = gbar φ := fun φ => Equiv.ofBijective_apply _ _ _
   refine ⟨hgm', hgm, ⇑e.symm, e.symm.surjective, fun θ => ?_⟩
   have hkey : (P (e.symm θ)).map ⇑g = P θ := by
-    rw [hind (e.symm θ), ← hcoe, Equiv.apply_symm_apply]
+    rw [← Measure.map₀_of_measurable hgm, hind (e.symm θ), ← hcoe,
+      Equiv.apply_symm_apply]
   have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) hkey
   simp only [Measure.map_map hgm' hgm, Equiv.symm_comp_self, Measure.map_id] at e2
+  change (P θ).map₀ ⇑g.symm = _
+  rw [Measure.map₀_of_measurable hgm']
   exact e2.symm
 
 /-- **The family-preserving transformations form a group.** For an identifiable model,
@@ -397,7 +415,7 @@ theorem map_maximalInvariant_eq_of_orbit [MeasurableSMul G 𝓧] {P : Θ → Mea
   -- supplies `Measurable (g • ·)`; `M ∘ (g • ·) = M` is `hMinv`.
   obtain ⟨g, hg⟩ := hv_max θ₁ θ₂ hθ
   have hgmeas : Measurable (fun x : 𝓧 => g • x) := measurable_const_smul g
-  rw [hg, ← hP g θ₁, Measure.map_map hMmeas hgmeas]
+  rw [hg, ← hP.map_eq g θ₁ (measurable_const_smul g).aemeasurable, Measure.map_map hMmeas hgmeas]
   congr 1
   exact funext fun x => (hMinv g x).symm
 

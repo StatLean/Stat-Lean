@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.ForMathlib.L2
 import Mathlib.MeasureTheory.Function.L2Space
@@ -44,8 +45,27 @@ noncomputable def qmdRem (curve : ℝ → Measure Ω) (μ : Measure Ω)
 as `t → 0` along `𝓝[≠] 0`. We give it a name to avoid repeating the
 nine-line spelling at every call site. -/
 def IsQMDLimit (curve : ℝ → Measure Ω) (μ : Measure Ω) (g : Ω → ℝ) : Prop :=
-  Tendsto (fun t : ℝ => eLpNorm (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
+  Tendsto (fun t : ℝ => eLpNorm' (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
     (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞))
+
+/-- For an a.e. strongly measurable score, the QMD limit can be stated with `eLpNorm`. -/
+lemma isQMDLimit_iff_eLpNorm {curve : ℝ → Measure Ω} {μ : Measure Ω} {g : Ω → ℝ}
+    (hg : AEStronglyMeasurable g μ) :
+    IsQMDLimit curve μ g ↔
+      Tendsto (fun t : ℝ => eLpNorm (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
+        (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+  unfold IsQMDLimit
+  apply tendsto_congr
+  intro t
+  have hp := ((Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have ht := ((Measure.measurable_rnDeriv (curve t) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have hr : AEStronglyMeasurable (qmdRem curve μ g t) μ := by
+    simpa only [qmdRem, Pi.sub_apply, Pi.mul_apply] using!
+      (ht.sub hp).sub ((hg.const_mul (t / 2)).mul hp)
+  rw [eLpNorm_two_eq_eLpNorm' hr]
+
 
 /-- Probability constraint ⇒ `‖√p_t‖_{L²(μ)} = 1` (more precisely the
 squared `L²` norm equals 1). Companion to
@@ -95,6 +115,7 @@ private lemma integral_qmdRem_mul_sqrt_p0_isLittleO
         |∫ ω, qmdRem curve μ g t ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal ∂μ|
           / |t|)
       (𝓝[≠] 0) (𝓝 0) := by
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).1 h_qmd
   haveI : IsProbabilityMeasure (curve 0) := h_prob 0
   -- L²(μ)-membership of `√p_0`, with squared L²-norm = 1.
   have hp0_memLp : MemLp (fun ω => Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
@@ -148,7 +169,7 @@ private lemma integral_qmdRem_mul_sqrt_p0_isLittleO
         ((Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt))).sub
         ((measurable_const.mul hg_meas).mul
           (Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt)
-    exact ⟨hr_meas.aestronglyMeasurable, lt_trans h_eLp_lt ENNReal.ofReal_lt_top⟩
+    exact lt_trans h_eLp_lt ENNReal.ofReal_lt_top
   -- The pointwise bound `|∫ r_t · √p_0| ≤ (eLpNorm r_t).toReal`.
   have h_bound : ∀ᶠ t in 𝓝[≠] (0 : ℝ),
       |∫ ω, qmdRem curve μ g t ω
@@ -221,6 +242,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
     {g : Ω → ℝ} (hg_meas : Measurable g)
     (h_qmd : IsQMDLimit curve μ g) :
     MemLp (fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ := by
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).1 h_qmd
   set f : Ω → ℝ := fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal
     with hf_def
   -- Measurability ingredients (reused throughout).
@@ -268,7 +290,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
       (((measurable_const.mul hg_meas).mul (h_pt_meas 0)))
   -- And in L²(μ), since its eLpNorm is finite.
   have hr_memLp : MemLp (qmdRem curve μ g t) 2 μ :=
-    ⟨hr_meas.aestronglyMeasurable, lt_trans ht_lt ENNReal.ofReal_lt_top⟩
+    lt_trans ht_lt ENNReal.ofReal_lt_top
   -- Pointwise: `(t/2) • f = (√p_t - √p_0) - r_t`.
   have h_tf_eq :
       (fun ω => (t / 2) * f ω)

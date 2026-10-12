@@ -126,7 +126,7 @@ theorem changingLocalOscillation_tendsto_zero
           (strictLocalizedDifferenceClass_subset_differenceClass
             (Set.range (f n)) P (Real.sqrt (ε n)))
       have hΨmeas : Measurable Ψ := measurable_const.mul (hΦmeas n)
-      have hYmeas : Measurable Y := measurable_pi_lambda _ fun i => hX_meas i.val
+      have hYmeas : Measurable Y := Measurable.of_eval fun i => hX_meas i.val
       have hYmap : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
         AsymptoticStatistics.map_fin_restrict_eq_pi_of_iid
           P μ X hX_meas hX_iindep hX_idem hX_law n
@@ -182,6 +182,6 @@ theorem changingLocalOscillation_tendsto_zero
       simpa only [mul_zero] using
         ENNReal.Tendsto.const_mul hRzero (Or.inr hCtop.ne)
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
-      tendsto_const_nhds hCR (Eventually.of_forall fun _ => zero_le _) hupper
+      tendsto_const_nhds hCR (Eventually.of_forall fun _ => zero_le) hupper
 
 end AsymptoticStatistics.EmpiricalProcess

@@ -163,14 +163,14 @@ theorem stein_identity (E : ExpFamily ℝ ℝ) (densityH g : ℝ → ℝ) (η : 
       have := (((hTdiff x).hasDerivAt.const_mul η).exp)
       simpa only [hinner] using this
     have hGx := (hu.mul hv).mul hw
-    convert hGx using 1
+    convert! hGx using 1
     rcases eq_or_ne (densityH x) 0 with hx | hx
     · have hmin : deriv densityH x = 0 := by
         have hlm : IsLocalMin densityH x :=
           Filter.Eventually.of_forall fun y => by rw [hx]; exact hH0 y
         exact hlm.deriv_eq_zero
-      simp only [hSdef, Pi.mul_apply, hx, hmin]; ring
-    · simp only [hSdef, Pi.mul_apply]; field_simp; ring
+      try simp only [hSdef, Pi.mul_apply, hx, hmin]; ring
+    · try simp only [hSdef, Pi.mul_apply]; field_simp; ring
   -- `S = G'` integrates to zero on the line
   have hboundary : ∫ x, S x = 0 :=
     integral_eq_zero_of_hasDerivAt_of_tendsto_zero hderivG (hGL.add hGR) hBot hTop

@@ -141,7 +141,7 @@ theorem frechet_remainder_pair_sup_bound
       + μ {ξ | δ / 2 < dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀}) atTop (𝓝 0) := by
     simpa using (h_consist_θ (δ / 2) (half_pos hδ)).add (h_consist_η (δ / 2) (half_pos hδ))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   -- `μ*(Eₙ) ≤ μ*(A ∪ B) ≤ μ*(A) + μ*(B) ≤ μ(A) + μ(B)`.
   refine (outerMeasureStar_mono μ ?_).trans
     ((outerMeasureStar_union_le μ _ _).trans
@@ -213,7 +213,7 @@ theorem matrix_bddbelow_near
       (fun η : H => ∑ j, ∑ i, |(V η) j i - (V η₀) j i|) η₀ := by
     have hg : Continuous
         (fun M : Matrix (Fin k) (Fin k) ℝ => ∑ j, ∑ i, |M j i - (V η₀) j i|) := by
-      refine continuous_finset_sum _ (fun j _ => continuous_finset_sum _ (fun i _ => ?_))
+      refine continuous_finsetSum _ (fun j _ => continuous_finsetSum _ (fun i _ => ?_))
       exact ((continuous_id.matrix_elem j i).sub continuous_const).abs
     exact hg.continuousAt.comp hV_cont
   -- Extract `δV` from continuity with tolerance `c₀/2`.
@@ -230,7 +230,7 @@ theorem matrix_bddbelow_near
   rcases Nat.eq_zero_or_pos k with hk0 | hk
   · -- `k = 0`: `‖b‖ = 0`, so the LHS is `0`.
     have hb : ‖b‖ = 0 := by rw [EuclideanSpace.norm_eq]; subst hk0; simp
-    rw [hb, mul_zero, ENNReal.ofReal_zero]; exact zero_le _
+    rw [hb, mul_zero, ENNReal.ofReal_zero]; exact zero_le
   · haveI : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
     -- Coordinate formula for `Vlin`.
     have hVlin_coord : ∀ (M : Matrix (Fin k) (Fin k) ℝ) (j : Fin k),
@@ -337,7 +337,7 @@ theorem vSwap_oPWt
     have hg : Continuous
         (fun M : Matrix (Fin k) (Fin k) ℝ => ∑ j, ∑ i, |(V η₀ - M) j i|) := by
       simp only [Matrix.sub_apply]
-      refine continuous_finset_sum _ (fun j _ => continuous_finset_sum _ (fun i _ => ?_))
+      refine continuous_finsetSum _ (fun j _ => continuous_finsetSum _ (fun i _ => ?_))
       exact (continuous_const.sub (continuous_id.matrix_elem j i)).abs
     exact hg.continuousAt.comp hV_cont
   rw [Metric.continuousAt_iff] at hF_cont
@@ -349,7 +349,7 @@ theorem vSwap_oPWt
     obtain ⟨δ, hδ_pos, hδ⟩ := hF_cont ε hε
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       (h_consist_η (δ / 2) (half_pos hδ_pos))
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine (outerMeasureStar_mono μ ?_).trans (outerMeasureStar_le_measure μ _)
     -- `{ε < coeff} ⊆ {δ/2 < dist(η̂ₙ, η₀)}`.
     intro ξ hξ
@@ -528,7 +528,7 @@ theorem tendstoZeroInOuterProbSupWt_of_tendstoZeroInOuterProbSup
     TendstoZeroInOuterProbSupWt μ w g := by
   intro ε hε
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h ε hε)
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   refine outerMeasureStar_mono μ fun ξ hξ => ?_
   obtain ⟨h', hh'⟩ := hξ
   exact ⟨h', lt_of_le_of_lt (le_mul_of_one_le_right hε.le (hw n ξ)) hh'⟩
@@ -658,7 +658,7 @@ theorem nuisance_weighted_core
         + μ {ξ | ε < dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀}) atTop (𝓝 0) := by
       simpa using (h_consist_θ ε hε).add (h_consist_η ε hε)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro ξ hξ
     simp only [Set.mem_setOf_eq, Prod.dist_eq, lt_max_iff, dist_eq_norm] at hξ
@@ -704,7 +704,7 @@ theorem nuisance_weighted_core
       simpa using (h_consist_θ (δcls / 2) (half_pos hδcls)).add
         (h_consist_η (δcls / 2) (half_pos hδcls))
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro ξ hξ
     simp only [Set.mem_setOf_eq, not_and_or, not_lt] at hξ
@@ -760,7 +760,7 @@ theorem nuisance_weighted_core
       {ξ | δV ≤ dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀}) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       (h_consist_η (δV / 2) (half_pos hδV_pos))
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (outerMeasureStar_le_measure μ _) (measure_mono ?_)
     intro ξ hξ
     simp only [Set.mem_setOf_eq] at hξ ⊢
@@ -830,7 +830,11 @@ theorem nuisance_weighted_core
     rw [hVAS]
     refine le_trans (ENNReal.ofReal_le_ofReal (abs_sub _ _)) ?_
     rw [ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
-    exact add_le_add (le_iSup (α := ℝ≥0∞) _ j) (le_iSup (α := ℝ≥0∞) _ j)
+    apply add_le_add
+    · apply le_iSup_of_le j
+      exact le_rfl
+    · apply le_iSup_of_le j
+      exact le_rfl
   -- `Afam = O_P(wDrift)`: `O_P(1)` bulk plus the weight-dominated drift.
   have h_tight := pair_h_tight P ψ θ₀ η₀ μ X hX_meas hX_indep hX_id hX_law
     (fun j => hψ_meas θ₀ η₀ j) hψ_L2 hPθ₀_zero
@@ -995,7 +999,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin
       ((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) : EuclideanSpace ℝ (Fin k))‖})
       atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h ε' hε'_pos)
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n =>
         (measure_le_outerMeasureStar μ _).trans (outerMeasureStar_mono μ (hTS n)))
   simp only [measureReal_def]

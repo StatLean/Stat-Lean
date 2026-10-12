@@ -172,12 +172,12 @@ private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ�
       rw [hs, if_pos (Finset.mem_of_mem_erase hj), if_neg (Finset.ne_of_mem_erase hj)]
     rw [hsj, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton false),
       ENNReal.ofReal_sub _ (prob j).coe_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal]
-    simp
+    simp [PMF.bernoulli_apply]
   have htrue : (PMF.bernoulli (prob i') (h1 i')).toMeasure ({true} : Set Bool)
       = ENNReal.ofReal ((prob i' : ℝ)) := by
     rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton true),
       ENNReal.ofReal_coe_nnreal]
-    simp
+    simp [PMF.bernoulli_apply]
   have hnn : ∀ j ∈ R.erase i', (0 : ℝ) ≤ 1 - (prob j : ℝ) := fun j _ => by
     have : ((prob j : ℝ)) ≤ 1 := by exact_mod_cast h1 j
     linarith

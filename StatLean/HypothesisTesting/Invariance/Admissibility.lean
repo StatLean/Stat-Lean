@@ -328,7 +328,7 @@ private theorem acceptance_subset_of_power_le_const
           ≤ K * ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
       have h := hpow η (hlamΘ n)
       rw [hexpand A hAmeas, hexpand A₀ hA₀meas, ← mul_assoc] at h
-      exact (ENNReal.mul_le_mul_right hκ0 ENNReal.ofReal_ne_top).mp h
+      exact (ENNReal.mul_le_mul_iff_left hκ0 ENNReal.ofReal_ne_top).mp h
     -- upper bound on the `A₀` side
     have hupper :
         (∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
@@ -344,7 +344,7 @@ private theorem acceptance_subset_of_power_le_const
           rw [hemp] at hmem
           exact hmem
         rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
-        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+        exact mul_le_mul_right (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
           (mul_le_mul_of_nonneg_left hle hlam0))) _
       calc ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base
           ≤ ∫⁻ x in E.stat ⁻¹' A₀, F x * ENNReal.ofReal (Real.exp (lam n * c)) ∂E.base :=
@@ -362,7 +362,7 @@ private theorem acceptance_subset_of_power_le_const
         intro x hx
         have hgt : c + δ < ⟪a, E.stat x⟫_ℝ := hx.2
         rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
-        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+        exact mul_le_mul_right (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
           (mul_le_mul_of_nonneg_left hgt.le hlam0))) _
       calc m * ENNReal.ofReal (Real.exp (lam n * (c + δ)))
           = ∫⁻ x in W, F x * ENNReal.ofReal (Real.exp (lam n * (c + δ))) ∂E.base := by
@@ -378,8 +378,8 @@ private theorem acceptance_subset_of_power_le_const
       refine le_trans (le_of_eq ?_) (le_trans hlower (le_trans hIle ?_))
       · rw [mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
         ring_nf
-      · rw [mul_assoc]; exact mul_le_mul_left' hupper K
-    refine (ENNReal.mul_le_mul_right ?_ ENNReal.ofReal_ne_top).mp hchain
+      · rw [mul_assoc]; exact mul_le_mul_right hupper K
+    refine (ENNReal.mul_le_mul_iff_left ?_ ENNReal.ofReal_ne_top).mp hchain
     simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
     exact Real.exp_pos _
   -- **Step 6.** But the chosen index makes the left-hand side strictly bigger.
@@ -467,7 +467,7 @@ private theorem power_eq_indicator_of_dominating
     intro η hη
     haveI : IsProbabilityMeasure (E.P η) :=
       MeasureTheory.isProbabilityMeasure_tilted hη
-    exact Measure.isProbabilityMeasure_map E.stat_meas.aemeasurable
+    exact (by unfold statScaleFamily; infer_instance)
   have hIntg : ∀ f : EuclideanSpace ℝ (Fin s) → ℝ, Measurable f →
       (∀ t, f t ∈ Set.Icc (0 : ℝ) 1) → ∀ η ∈ E.natSet,
       Integrable f (statScaleFamily E η) := by
@@ -519,7 +519,7 @@ private theorem power_eq_indicator_of_dominating
       rfl
     have hstep4 : ∫ t, ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂Q = (Q A₀ᶜ).toReal := by
       have := integral_indicator_one (μ := Q) hA₀meas.compl
-      simpa [measureReal_def] using this
+      simpa [measureReal_def] using! this
     have hstep5 : 1 - power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η
         = (Q A₀).toReal := by
       have hc : (Q A₀ᶜ).toReal = 1 - (Q A₀).toReal := by

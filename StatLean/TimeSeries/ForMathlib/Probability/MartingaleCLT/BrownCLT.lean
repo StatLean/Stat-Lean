@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.CondCharFun
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Indicator
 import Mathlib.Probability.Distributions.Gaussian.Real
@@ -128,7 +129,7 @@ private lemma integrable_sq_of_mds (h : IsMDSArray k X F μ) (n : ℕ) (i : Fin 
     Integrable (fun ω => X n i ω ^ 2) μ := (h.memLp n i).integrable_sq
 
 private lemma integrable_mdsCondVariance : Integrable (mdsCondVariance k X F μ n) μ :=
-  integrable_finset_sum _ fun _ _ => integrable_condExp
+  integrable_finsetSum _ fun _ _ => integrable_condExp
 
 /-- The stopping set: the conditional variance accumulated **up to and including** `i` has
 not yet exceeded the level `c`, **and** the `i`-th conditional variance itself has not
@@ -255,7 +256,7 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
     ae_of_all _ fun ω => Set.indicator_nonneg (fun _ _ => sq_nonneg _) ω
   set Z : ℕ → Ω → ℝ := fun n ω => ∑ i, μ[Y n i | F n i.castSucc] ω with hZdef
   have hZint : ∀ n, Integrable (Z n) μ := fun n =>
-    integrable_finset_sum _ fun _ _ => integrable_condExp
+    integrable_finsetSum _ fun _ _ => integrable_condExp
   have hZnn : ∀ n, 0 ≤ᵐ[μ] Z n := fun n => by
     have hall : ∀ᵐ ω ∂μ, ∀ i : Fin (k n), 0 ≤ μ[Y n i | F n i.castSucc] ω :=
       ae_all_iff.2 fun i => condExp_nonneg (hYnn n i)
@@ -264,7 +265,7 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
   have hZmean : ∀ n, ∫ ω, Z n ω ∂μ = ∑ i, ∫ ω in {ω | ε ≤ |X n i ω|}, X n i ω ^ 2 ∂μ := by
     intro n
     rw [hZdef]
-    rw [integral_finset_sum _ fun (i : Fin (k n)) _ =>
+    rw [integral_finsetSum _ fun (i : Fin (k n)) _ =>
       (integrable_condExp : Integrable (μ[Y n i | F n i.castSucc]) μ)]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_condExp (h.le_ambient n i.castSucc), hYdef, integral_indicator (hmeasS n i)]
@@ -603,7 +604,7 @@ theorem mds_clt [IsProbabilityMeasure μ]
     intro n
     have e0 : ∫ ω, mdsCondVariance k X' F μ n ω ∂μ = ∑ i, ∫ ω, cvar k X' F μ n i ω ∂μ := by
       simp only [mdsCondVariance_eq_sum_cvar]
-      exact integral_finset_sum _ fun i _ => integrable_condExp
+      exact integral_finsetSum _ fun i _ => integrable_condExp
     rw [e0]
     exact Finset.sum_congr rfl fun i _ =>
       (integral_condExp (h'.le_ambient n i.castSucc)).symm

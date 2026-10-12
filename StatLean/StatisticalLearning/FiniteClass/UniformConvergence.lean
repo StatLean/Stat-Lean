@@ -79,7 +79,7 @@ theorem measure_empRisk_deviation_le {h : H} {ε : ℝ}
   have hindep : iIndepFun (fun (i : Fin n) (s : Sample Z n) => ℓ h (s i) - r) μ := by
     have := (iIndepFun_eval_sampleLaw (D := D) (n := n)).comp
       (fun _ : Fin n => fun z : Z => ℓ h z - r) (fun _ => hmeas.sub_const r)
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   -- one-sided Hoeffding tail, for any independent sub-Gaussian family
   have key : ∀ Y : Fin n → Sample Z n → ℝ, iIndepFun Y μ →
       (∀ i, HasSubgaussianMGF (Y i) (4⁻¹ : ℝ≥0) μ) →

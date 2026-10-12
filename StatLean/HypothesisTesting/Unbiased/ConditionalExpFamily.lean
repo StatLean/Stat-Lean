@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.HypothesisTesting.ForMathlib.CondDistribTilt
 import Mathlib.Probability.Kernel.CondDistrib
@@ -88,8 +89,17 @@ Edge behaviour: the condition is imposed only for parameters in `Ω`; members of
 `Ω` are unconstrained. -/
 def IsCanonicalUT (P : ℝ × Ξ → Measure 𝓧) (Ω : Set (ℝ × Ξ)) (U : 𝓧 → ℝ) (T : 𝓧 → Ξ)
     (ν : Measure (ℝ × Ξ)) (C : ℝ × Ξ → ℝ) : Prop :=
-  ∀ p ∈ Ω, (P p).map (fun x => (U x, T x))
+  ∀ p ∈ Ω, (P p).map₀ (fun x => (U x, T x))
     = ν.withDensity fun z => ENNReal.ofReal (C p * Real.exp (p.1 * z.1 + ⟪p.2, z.2⟫_ℝ))
+
+/-- The canonical joint-law identity for an a.e. measurable statistic. -/
+theorem IsCanonicalUT.map_eq {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    (hUT : IsCanonicalUT P Ω U T ν C) {p : ℝ × Ξ} (hp : p ∈ Ω)
+    (h : AEMeasurable (fun x => (U x, T x)) (P p)) :
+    (P p).map (fun x => (U x, T x)) =
+      ν.withDensity fun z => ENNReal.ofReal (C p * Real.exp (p.1 * z.1 + ⟪p.2, z.2⟫_ℝ)) := by
+  simpa only [Measure.map₀_of_aemeasurable h] using hUT p hp
 
 /-- Measurability of the canonical exponential density `z ↦ C·exp(θ z.1 + ⟪ϑ, z.2⟫)` on the
 product `ℝ × Ξ`. This is the one place where the Borel-compatibility of the σ-algebra of the
@@ -149,7 +159,7 @@ theorem condDistrib_expFamily_of_isCanonicalUT
   · exact ⟨fun _ => 0, fun _ _ => 0, fun p hp => absurd (hΩ ▸ hp) (Set.notMem_empty p)⟩
   have hUTm : Measurable fun x => (U x, T x) := hU.prodMk hT
   haveI hQprob : ∀ q, IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := fun _ =>
-    Measure.isProbabilityMeasure_map hUTm.aemeasurable
+    (by infer_instance)
   -- the normalizing constants are strictly positive on `Ω`: a nonpositive one would make the
   -- density vanish identically and the joint law the zero measure
   have hCpos : ∀ q ∈ Ω, 0 < C q := by
@@ -159,7 +169,7 @@ theorem condDistrib_expFamily_of_isCanonicalUT
     exfalso
     have hle : C q ≤ 0 := not_lt.mp hpos
     have hzero : ((P q).map fun x => (U x, T x)) = 0 := by
-      rw [hUT q hq]
+      rw [hUT.map_eq hq hUTm.aemeasurable]
       have hd0 : (fun z : ℝ × Ξ =>
           ENNReal.ofReal (C q * Real.exp (q.1 * z.1 + ⟪q.2, z.2⟫_ℝ))) = 0 := by
         funext z
@@ -209,7 +219,7 @@ theorem condDistrib_expFamily_of_isCanonicalUT
   have hprodm : Measurable fun z : ℝ × Ξ => g z.1 * k z.2 :=
     (hg.comp measurable_fst).mul (hk.comp measurable_snd)
   have hfac : ((P p).map fun x => (U x, T x)) = Q₀.withDensity fun z => g z.1 * k z.2 := by
-    rw [hUT p hp, hQ₀, hUT p₀ hp₀,
+    rw [hUT.map_eq hp hUTm.aemeasurable, hQ₀, hUT.map_eq hp₀ hUTm.aemeasurable,
       ← withDensity_mul _ (measurable_canonicalDensity _ _ _) hprodm]
     congr 1
     funext z
@@ -285,7 +295,7 @@ theorem condDistrib_eq_of_fst_eq
   classical
   have hUTm : Measurable fun x => (U x, T x) := hU.prodMk hT
   haveI hQprob : ∀ r, IsProbabilityMeasure ((P r).map fun x => (U x, T x)) := fun _ =>
-    Measure.isProbabilityMeasure_map hUTm.aemeasurable
+    (by infer_instance)
   have hCpos : ∀ r ∈ Ω, 0 < C r := by
     intro r hr
     by_cases hpos : 0 < C r
@@ -293,7 +303,7 @@ theorem condDistrib_eq_of_fst_eq
     exfalso
     have hle : C r ≤ 0 := not_lt.mp hpos
     have hzero : ((P r).map fun x => (U x, T x)) = 0 := by
-      rw [hUT r hr]
+      rw [hUT.map_eq hr hUTm.aemeasurable]
       have hd0 : (fun z : ℝ × Ξ =>
           ENNReal.ofReal (C r * Real.exp (r.1 * z.1 + ⟪r.2, z.2⟫_ℝ))) = 0 := by
         funext z
@@ -336,7 +346,7 @@ theorem condDistrib_eq_of_fst_eq
   have hfac : ((P p).map fun x => (U x, T x))
       = ((P q).map fun x => (U x, T x)).withDensity fun z =>
           (1 : ℝ → ℝ≥0∞) z.1 * ENNReal.ofReal (C p / C q * Real.exp ⟪p.2 - q.2, z.2⟫_ℝ) := by
-    rw [hUT p hp, hUT q hq,
+    rw [hUT.map_eq hp hUTm.aemeasurable, hUT.map_eq hq hUTm.aemeasurable,
       ← withDensity_mul _ (measurable_canonicalDensity _ _ _) hprodm]
     congr 1
     funext z
@@ -382,7 +392,7 @@ theorem integral_eq_integral_condDistrib
     hφ.comp (measurable_snd.prodMk measurable_fst)
   -- disintegrate the joint law of `(T, U)` along `T`
   have hmap : (P p).map (fun x => (T x, U x)) = (P p).map T ⊗ₘ condDistrib U T (P p) :=
-    (compProd_map_condDistrib hU.aemeasurable).symm
+    (compProd_map_condDistrib hT.aemeasurable hU.aemeasurable).symm
   have hint' : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1))
       ((P p).map (fun x => (T x, U x))) := by
     rw [integrable_map_measure hgm.aestronglyMeasurable hfm.aemeasurable]; exact hint

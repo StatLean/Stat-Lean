@@ -90,9 +90,9 @@ theorem exists_stationary_subgradient (dr : DecomposableReg E) (L : E → ℝ)
     have hcomp : HasDerivAt (fun s : ℝ => L (θhat + s • w)) ((fderiv ℝ L θhat) w) 0 := by
       have hfd : HasFDerivAt L (fderiv ℝ L θhat) (θhat + (0 : ℝ) • w) := by
         simpa using (hdiff θhat).hasFDerivAt
-      simpa using hfd.comp_hasDerivAt 0 hφ
+      simpa using! hfd.comp_hasDerivAt 0 hφ
     have hval : (fderiv ℝ L θhat) w = ⟪g, w⟫_ℝ := by
-      rw [hg_def]; exact (inner_gradient_left (hdiff θhat)).symm
+      rw [hg_def]; exact inner_gradient_left.symm
     rw [hval] at hcomp
     -- Optimality + convexity of `Φ`: the slope is `≥ −λ(Φy − Φθ̂)` for `s ∈ (0,1]`.
     have hslope_lb : ∀ s : ℝ, 0 < s → s ≤ 1 →

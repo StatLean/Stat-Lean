@@ -126,7 +126,7 @@ lemma tendsto_transformedEmpProcess_of_tendsto
   -- the finite empirical-average sum converges by continuity of finite sums
   have hsum : Tendsto (fun m => ∑ i, (φ m (Y i) - a (Y i)) * b (Y i)) atTop
       (𝓝 (∑ i, (f (Y i) - a (Y i)) * b (Y i))) :=
-    tendsto_finset_sum Finset.univ
+    tendsto_finsetSum Finset.univ
       (fun i _ => ((hφ_lim (Y i)).sub tendsto_const_nhds).mul tendsto_const_nhds)
   exact (tendsto_const_nhds.mul
     (((tendsto_const_nhds.mul hsum)).sub hint))

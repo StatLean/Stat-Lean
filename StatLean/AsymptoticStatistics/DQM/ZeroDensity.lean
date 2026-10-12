@@ -80,7 +80,7 @@ lemma dqm_zeroDensity_localScale_tendsto
   have hinvSqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) := by
     have hsqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa using hsqrt.inv_tendsto_atTop
+    simpa using! hsqrt.inv_tendsto_atTop
   have hθn : Tendsto θn atTop (𝓝 θ₀) := by
     simpa only [θn, zero_smul, add_zero] using
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => θ₀) atTop (𝓝 θ₀)).add
@@ -90,7 +90,7 @@ lemma dqm_zeroDensity_localScale_tendsto
         (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)).real
           {x | M.density (θn n) x = 0}) =o[atTop]
         (fun n => ‖θn n - θ₀‖ ^ 2) := by
-    simpa only [Function.comp_apply] using
+    simpa only [Function.comp_apply] using!
       (dqm_zeroDensity_mass_isLittleO M μ θ₀ ℓ hPDF hDQM).comp_tendsto hθn
   have hmul :
       (fun n : ℕ =>

@@ -1,5 +1,6 @@
 import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.ForMathlib.QMDAnalytic
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import Mathlib.Probability.Kernel.Basic
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.L2Space
@@ -73,11 +74,13 @@ structure ConditionalQMDPath (Q : Measure 𝓨) [IsProbabilityMeasure Q]
     `‖√pₜ − √p₀ − (t/2)·score·√p₀‖_{L²(Q ⊗ ν)} / |t| → 0`
   as `t → 0` along `𝓝[≠] 0`. The `ℝ≥0∞`-quotient form (rather than a
   `.toReal²/t²` form) genuinely forces square-integrability of the residual for
-  small `t`; see `Core.QMDPath.QMDPath.qmd_limit` for the rationale. -/
+  small `t`; see `Core.QMDPath.QMDPath.qmd_limit` for the rationale. The condition
+  uses `eLpNorm₀`, which is defined for arbitrary joint density functions; consumers stated
+  with `eLpNorm` obtain the required measurability from their CAR hypotheses. -/
   qmd_limit :
     Tendsto
       (fun t : ℝ =>
-        eLpNorm (fun p : 𝓨 × 𝓓 =>
+        eLpNorm₀ (fun p : 𝓨 × 𝓓 =>
           Real.sqrt ((curve t p.1).rnDeriv ν p.2).toReal
             - Real.sqrt ((curve 0 p.1).rnDeriv ν p.2).toReal
             - (t / 2) * score p.1 p.2

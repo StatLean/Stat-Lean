@@ -436,10 +436,9 @@ theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1
   · -- `t < θ`: take the slope `α` on `{xᵢ ≥ θ}` and `α - 1` on `{xᵢ < θ}`; at most `r`
     -- observations lie strictly below `θ`, so the slope sum is `αn - #{xᵢ < θ} > 0`
     refine main t (fun i => if θ ≤ x i then α else α - 1)
-      (fun i => by dsimp only; split_ifs <;> linarith)
-      (fun i => by dsimp only; split_ifs <;> linarith) (fun i => ?_) ?_
-    · dsimp only
-      by_cases h : θ ≤ x i
+      (fun i => by split_ifs <;> linarith)
+      (fun i => by split_ifs <;> linarith) (fun i => ?_) ?_
+    · by_cases h : θ ≤ x i
       · rw [if_pos h, checkLoss_of_nonneg (by linarith)]
       · have h' : x i < θ := lt_of_not_ge h
         rw [if_neg h, checkLoss_of_nonpos (by linarith)]
@@ -462,10 +461,9 @@ theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1
   · -- `θ < t`: take the slope `α` on `{xᵢ > θ}` and `α - 1` on `{xᵢ ≤ θ}`; at least
     -- `r + 1` observations lie at or below `θ`, so the slope sum is `αn - #{xᵢ ≤ θ} ≤ 0`
     refine main t (fun i => if θ < x i then α else α - 1)
-      (fun i => by dsimp only; split_ifs <;> linarith)
-      (fun i => by dsimp only; split_ifs <;> linarith) (fun i => ?_) ?_
-    · dsimp only
-      by_cases h : θ < x i
+      (fun i => by split_ifs <;> linarith)
+      (fun i => by split_ifs <;> linarith) (fun i => ?_) ?_
+    · by_cases h : θ < x i
       · rw [if_pos h, checkLoss_of_nonneg (by linarith)]
       · have h' : x i ≤ θ := le_of_not_gt h
         rw [if_neg h, checkLoss_of_nonpos (by linarith)]

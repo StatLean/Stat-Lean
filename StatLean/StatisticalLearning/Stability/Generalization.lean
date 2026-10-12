@@ -57,7 +57,7 @@ theorem integral_risk_sub_empRisk_eq_stabilityGap (A : Sample Z n → H)
     hint₁.integral_prod_left
   have hemp : Integrable (fun s => empRisk ℓ s (A s)) (sampleLaw D n) := by
     simp only [empRisk]
-    exact (integrable_finset_sum _ fun i _ => hint₃ i).const_mul _
+    exact (integrable_finsetSum _ fun i _ => hint₃ i).const_mul _
   -- the two coordinate-wise identities
   have hcoord : ∀ i : Fin n,
       ∫ p : Sample Z n × Z, ℓ (A p.1) (p.1 i) ∂((sampleLaw D n).prod D) =
@@ -129,7 +129,7 @@ theorem integral_risk_le_bestRisk_add_of_stable_of_aerm
     hint₁.integral_prod_left
   have hemp : Integrable (fun s => empRisk ℓ s (A s)) (sampleLaw D n) := by
     simp only [empRisk]
-    exact (integrable_finset_sum _ fun i _ => hint₃ i).const_mul _
+    exact (integrable_finsetSum _ fun i _ => hint₃ i).const_mul _
   have h132 := integral_risk_sub_empRisk_eq_stabilityGap A hint₁ hint₂ hint₃ hn
   rw [integral_sub hrisk hemp] at h132
   -- against every competitor in the class

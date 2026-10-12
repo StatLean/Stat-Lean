@@ -252,7 +252,7 @@ theorem mle_asymptotic_normality_on
     intro ε hε
     have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hcons ε hε)
     simpa only [measureReal_def, ENNReal.toReal_zero, θhatΞ, Subtype.dist_eq,
-      dist_eq_norm] using h
+      dist_eq_norm] using! h
   exact mle_asymptotic_normality_on_of_consistent M μ θ₀ hθ₀int hPDF
     θ_hat ν X ℓ hℓ hDQM menv hmenv hmenv_meas ρ hρ hLip hI hX_meas
     hX_indep hX_id hX_law hθhat_meas hConsistent hMLE

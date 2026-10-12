@@ -167,8 +167,7 @@ Gaussian (hence probability) measure under a continuous map. -/
 instance isProbabilityMeasure_noncentralChiSquared (k : ℕ) (l : ℝ≥0) :
     IsProbabilityMeasure (noncentralChiSquared k l) := by
   rw [noncentralChiSquared]
-  exact Measure.isProbabilityMeasure_map
-    (by fun_prop : Measurable fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2).aemeasurable
+  exact (by infer_instance)
 
 /-- **Direction invariance.** Any Gaussian mean vector whose norm is `√l` yields the same
 squared-norm law, so the noncentrality parameter `l = ‖μ‖²` is a complete invariant. Follows
@@ -233,7 +232,8 @@ theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
   set B : Matrix (Fin k) (Fin k) ℝ := CFC.sqrt S with hB_def
   have hB_sa : IsSelfAdjoint B := by rw [hB_def]; exact (CFC.sqrt_nonneg S).isSelfAdjoint
   have hBB : B * B = S := by rw [hB_def]; exact CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
-  have hB_unit : IsUnit B := by rw [hB_def]; exact hS.posDef_sqrt.isUnit
+  have hB_unit : IsUnit B := by
+    rw [hB_def]; exact (CFC.isUnit_sqrt_iff_isStrictlyPositive.mpr hS.isStrictlyPositive)
   have hBdet : IsUnit B.det := (Matrix.isUnit_iff_isUnit_det B).mp hB_unit
   have hBl : B⁻¹ * B = 1 := Matrix.nonsing_inv_mul B hBdet
   have hBr : B * B⁻¹ = 1 := Matrix.mul_nonsing_inv B hBdet
@@ -438,7 +438,7 @@ private lemma gaussianPDF_pi_log_concave_gen {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t 
   simp only [hcoord]
   rw [← ENNReal.prod_rpow_of_nonneg ht0,
     ← ENNReal.prod_rpow_of_nonneg (by linarith : (0 : ℝ) ≤ 1 - t), ← Finset.prod_mul_distrib]
-  exact Finset.prod_le_prod' fun i _ => gaussianPDF_log_concave_gen ht0 ht1 (u i) (v i)
+  exact Finset.prod_le_prod fun i _ => gaussianPDF_log_concave_gen ht0 ht1 (u i) (v i)
 
 /-- **Generalised (unequal-weight) PL–Anderson on `Measure.pi (gaussianReal 0 1)`.**
 If the `t`-weighted Minkowski combination of `A` and `B` lands in `K`, and `A`, `B` have the
@@ -471,9 +471,9 @@ private lemma pl_anderson_pi_gen {A B K : Set (ι → ℝ)}
           Set.indicator_of_mem (hmean u hu v hv), hρ_def]
         exact gaussianPDF_pi_log_concave_gen ht0.le ht1.le u v
       · rw [Set.indicator_of_notMem hv, ENNReal.zero_rpow_of_pos (by linarith), mul_zero]
-        exact zero_le _
+        exact zero_le
     · rw [Set.indicator_of_notMem hu, ENNReal.zero_rpow_of_pos ht0, zero_mul]
-      exact zero_le _
+      exact zero_le
   rw [← hν_set A hA, ← hν_set B hB, ← hν_set K hK, hsymm,
     ← ENNReal.rpow_add_of_nonneg _ _ ht0.le (by linarith : (0 : ℝ) ≤ 1 - t),
     show t + (1 - t) = (1 : ℝ) from by ring, ENNReal.rpow_one] at hPL
@@ -590,9 +590,9 @@ private lemma stdGaussian_normSq_le_antitone {k : ℕ} (t : ℝ) {l₁ l₂ : �
     (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₂ + x‖ ^ 2 ≤ t}
       ≤ (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₁ + x‖ ^ 2 ≤ t} := by
   obtain ⟨hCmeas, hCconv, hCsymm⟩ := normSq_le_isConvexSymm (ι := Fin k) t
-  rcases eq_or_lt_of_le (zero_le l₂) with hl2 | hl2
+  rcases eq_or_lt_of_le (zero_le (a := l₂)) with hl2 | hl2
   · -- degenerate case `l₂ = 0`, hence `l₁ = 0`
-    have hl1 : l₁ = 0 := le_antisymm (hl2 ▸ h) (zero_le _)
+    have hl1 : l₁ = 0 := le_antisymm (hl2 ▸ h) (zero_le)
     rw [hl1, ← hl2]
   · have hs2 : 0 < Real.sqrt (l₂ : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hl2)
     set c : ℝ := Real.sqrt (l₁ : ℝ) / Real.sqrt (l₂ : ℝ) with hc_def
@@ -676,7 +676,7 @@ private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [Measur
       hx2.sub (memLp_const (1 : ℝ))
     rw [← hZlaw 0] at hg
     have := (memLp_map_measure_iff hg.aestronglyMeasurable (hZmeas 0).aemeasurable).mp hg
-    simpa [hY, Function.comp] using this
+    simpa [hY, Function.comp] using! this
   -- integrability of `Y 0` and of a single square
   have hiY0 : Integrable (Y 0) P₀ := hL2.integrable one_le_two
   have hi2 : Integrable (fun ω => (Z 0 ω) ^ 2) P₀ := by
@@ -817,7 +817,7 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
     (hz : (gaussianReal 0 1) (Set.Ioi z) = ENNReal.ofReal α) :
     Tendsto (fun k : ℕ => (c k - k) / Real.sqrt (2 * k)) atTop (𝓝 z) := by
   classical
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   set S : ℕ → ℝ := fun k => (c k - (k : ℝ)) / Real.sqrt (2 * (k : ℝ)) with hS
   -- standardised `χ²_{n+1}` pushforwards (indexed so the d.o.f. is positive)
   set μ' : ℕ → Measure ℝ := fun n => (StatLean.MultipleTesting.chiSquared (n + 1)).map
@@ -825,7 +825,7 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
   have hμ'prob : ∀ n, IsProbabilityMeasure (μ' n) := by
     intro n
     haveI : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact (by infer_instance)
   set μs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨μ' n, hμ'prob n⟩ with hμs
   set ν' : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, by infer_instance⟩ with hν'
   -- weak convergence, as `ProbabilityMeasure` convergence (via target `A`, reindexed by `+1`)
@@ -931,7 +931,7 @@ private lemma map_noncentral_sumSq_eq {k : ℕ} {Ω₀ : Type*} [MeasurableSpace
         = (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
             ∘ (fun ω (i : Fin k) => Z (i : ℕ) ω) := rfl
     rw [hcomp, ← Measure.map_map (by fun_prop)
-        (measurable_pi_lambda _ (fun i => hZmeas _)), ← map_pi_eq_stdGaussian]
+        (Measurable.of_eval (fun i => hZmeas _)), ← map_pi_eq_stdGaussian]
     congr 1
     rw [(iIndepFun_iff_map_fun_eq_pi_map
         (f := fun i : Fin k => Z (i : ℕ)) (fun i => (hZmeas (i : ℕ)).aemeasurable)).1

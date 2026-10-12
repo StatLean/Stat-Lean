@@ -39,12 +39,12 @@ theorem IsStrictlyStationary.identDistrib (h : IsStrictlyStationary X μ)
     (hmeas : ∀ t, Measurable (X t)) (s t : ℤ) :
     IdentDistrib (X s) (X t) μ μ := by
   -- The `n = 1` instance of the definition, pushed forward along evaluation at `0`.
-  have key := h 1 (fun _ => s) (t - s)
+  have key := h.map_eq hmeas 1 (fun _ => s) (t - s)
   have hst : s + (t - s) = t := by ring
   simp only [hst] at key
   have he : Measurable fun f : Fin 1 → ℝ => f 0 := measurable_pi_apply 0
-  have hFt : Measurable fun ω (_ : Fin 1) => X t ω := measurable_pi_lambda _ fun _ => hmeas t
-  have hFs : Measurable fun ω (_ : Fin 1) => X s ω := measurable_pi_lambda _ fun _ => hmeas s
+  have hFt : Measurable fun ω (_ : Fin 1) => X t ω := Measurable.of_eval fun _ => hmeas t
+  have hFs : Measurable fun ω (_ : Fin 1) => X s ω := Measurable.of_eval fun _ => hmeas s
   have hmap : μ.map (X t) = μ.map (X s) := by
     have := congrArg (fun ν : Measure (Fin 1 → ℝ) => ν.map fun f : Fin 1 → ℝ => f 0) key
     simpa [Measure.map_map he hFt, Measure.map_map he hFs, Function.comp_def] using this
@@ -57,8 +57,8 @@ theorem IsStrictlyStationary.shift (h : IsStrictlyStationary X μ) (k : ℤ) :
   have key := h n (fun i => t i + k) k'
   -- `shift X k t = X (t + k)` is definitional, so the goal is the `h`-instance at the
   -- shifted tuple `t + k` up to reassociating the two displacements.
-  change (μ.map fun ω (i : Fin n) => X (t i + k' + k) ω)
-      = μ.map fun ω (i : Fin n) => X (t i + k) ω
+  change (μ.map₀ fun ω (i : Fin n) => X (t i + k' + k) ω)
+      = μ.map₀ fun ω (i : Fin n) => X (t i + k) ω
   have e : (fun ω (i : Fin n) => X (t i + k' + k) ω)
       = fun ω (i : Fin n) => X (t i + k + k') ω := by
     funext ω i
@@ -77,8 +77,8 @@ private lemma integral_mul_of_map_pair_eq {Y Z : Fin 2 → Ω → ℝ}
     ∫ ω, Y 0 ω * Y 1 ω ∂μ = ∫ ω, Z 0 ω * Z 1 ω ∂μ := by
   have hg : Measurable fun p : Fin 2 → ℝ => p 0 * p 1 :=
     (measurable_pi_apply 0).mul (measurable_pi_apply 1)
-  have hFY : Measurable fun ω (i : Fin 2) => Y i ω := measurable_pi_lambda _ hY
-  have hFZ : Measurable fun ω (i : Fin 2) => Z i ω := measurable_pi_lambda _ hZ
+  have hFY : Measurable fun ω (i : Fin 2) => Y i ω := Measurable.of_eval hY
+  have hFZ : Measurable fun ω (i : Fin 2) => Z i ω := Measurable.of_eval hZ
   have eY := integral_map (μ := μ) (φ := fun ω (i : Fin 2) => Y i ω)
     (f := fun p : Fin 2 → ℝ => p 0 * p 1) hFY.aemeasurable hg.aestronglyMeasurable
   have eZ := integral_map (μ := μ) (φ := fun ω (i : Fin 2) => Z i ω)
@@ -103,7 +103,7 @@ theorem IsStrictlyStationary.isStationary [IsProbabilityMeasure μ]
   have hprod : ∫ ω, X (t + k) ω * X t ω ∂μ = ∫ ω, X k ω * X 0 ω ∂μ := by
     have hpair := integral_mul_of_map_pair_eq (μ := μ)
       (Y := fun i => X (![k, 0] i + t)) (Z := fun i => X (![k, 0] i))
-      (fun _ => hmeas _) (fun _ => hmeas _) (h 2 ![k, 0] t)
+      (fun _ => hmeas _) (fun _ => hmeas _) (h.map_eq hmeas 2 ![k, 0] t)
     simpa [add_comm k t] using hpair
   rw [covariance_eq_sub (hmem (t + k)) (hmem t), covariance_eq_sub (hmem k) (hmem 0)]
   simp only [Pi.mul_apply]
@@ -116,7 +116,7 @@ private lemma map_select_comp {n N : ℕ} (F : Ω → Fin N → ℝ) (hF : Measu
     (σ : Fin n → Fin N) :
     (μ.map F).map (fun p : Fin N → ℝ => fun i : Fin n => p (σ i))
       = μ.map fun ω (i : Fin n) => F ω (σ i) :=
-  Measure.map_map (measurable_pi_lambda _ fun i => measurable_pi_apply (σ i)) hF
+  Measure.map_map (Measurable.of_eval fun i => measurable_pi_apply (σ i)) hF
 
 /-- The general-tuple formulation of strict stationarity coincides with FY Definition
 2.2's consecutive-window form `(X_1, …, X_n) ≐ (X_{1+k}, …, X_{n+k})`. -/
@@ -129,8 +129,10 @@ theorem isStrictlyStationary_iff_window
           = μ.map fun ω (i : Fin n) => X ((i : ℕ) + 1) ω := by
   constructor
   · intro hs n k
-    exact hs n (fun i : Fin n => (i : ℕ) + 1) k
+    exact hs.map_eq hmeas n (fun i : Fin n => (i : ℕ) + 1) k
   · intro hw n t k
+    rw [Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i + k)),
+      Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i))]
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · congr 1
       funext ω i
@@ -151,7 +153,7 @@ theorem isStrictlyStationary_iff_window
       have := hlo i
       omega
     have hW : ∀ c : ℤ, Measurable fun ω (j : Fin N) => X ((j : ℕ) + 1 + c) ω :=
-      fun c => measurable_pi_lambda _ fun _ => hmeas _
+      fun c => Measurable.of_eval fun _ => hmeas _
     -- The `c`-shifted tuple is the `(lo − 1 + c)`-shifted window, selected by `σ`.
     have step : ∀ c : ℤ, (μ.map fun ω (i : Fin n) => X (t i + c) ω)
         = (μ.map fun ω (j : Fin N) => X ((j : ℕ) + 1 + (lo - 1 + c)) ω).map

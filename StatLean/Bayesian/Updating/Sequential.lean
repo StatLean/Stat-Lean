@@ -103,8 +103,9 @@ theorem posterior_prod_ae_eq_sequential
       = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π
     rw [hgp₁, lintegral_withDensity_eq_lintegral_mul _ (ha.div_const _) hb]
     simp only [Pi.mul_apply]
-    rw [← lintegral_const_mul _ ((ha.div_const _).mul hb)]
+    erw [← lintegral_const_mul _ ((ha.div_const _).mul hb)]
     refine lintegral_congr fun θ => ?_
+    simp only [Pi.mul_apply]
     rw [← mul_assoc, ENNReal.mul_div_cancel hm0 hmtop]
   -- Assemble: two-stage density equals the joint density.
   rw [generalizedPosterior_def]

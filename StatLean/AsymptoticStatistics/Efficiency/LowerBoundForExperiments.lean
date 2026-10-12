@@ -365,7 +365,7 @@ theorem lower_bound_for_experiments
   haveI hLprime_prob : ∀ h, IsProbabilityMeasure (Lprime h) := fun h => by
     have h_add_meas : Measurable (fun y : 𝓨 d => y + ψDot h) :=
       (continuous_id.add continuous_const).measurable
-    exact Measure.isProbabilityMeasure_map h_add_meas.aemeasurable
+    exact (by infer_instance)
   -- Step 1: pre-standardise via the Slutsky bridge.
   have hT'_weak : ∀ h : Θ k, WeakConverges
       (fun n : ℕ =>

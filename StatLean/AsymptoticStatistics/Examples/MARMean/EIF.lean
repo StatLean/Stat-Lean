@@ -638,7 +638,7 @@ theorem fairMAR_bounded_headline_inputs :
   let obs : Bool → MARObs Unit := fun b ↦ ⟨(), b, 0⟩
   have hobs : Measurable obs := by
     have hsource : Measurable (fun b : Bool ↦ (((), (0 : ℝ)), b)) := by fun_prop
-    simpa [obs, marObsMap] using (measurable_marObsMap (X := Unit)).comp hsource
+    simpa [obs, marObsMap] using! (measurable_marObsMap (X := Unit)).comp hsource
   have htuple : Measurable (fun o : MARObs Unit ↦ (o.x, o.r, o.ry)) :=
     Measurable.of_comap_le le_rfl
   have hx : Measurable (fun o : MARObs Unit ↦ o.x) := measurable_fst.comp htuple

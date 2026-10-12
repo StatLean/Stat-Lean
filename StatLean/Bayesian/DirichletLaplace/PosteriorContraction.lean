@@ -128,7 +128,7 @@ private lemma measurableSet_dlSupp_eq {ι : Type*} [Fintype ι] (δ : ℝ) (S : 
   rw [hpre]
   refine MeasurableSet.iInter fun i => ?_
   have hmi : Measurable (fun θ : EuclideanSpace ℝ ι => |θ i|) :=
-    ((measurable_pi_apply i).comp (EuclideanSpace.measurableEquiv ι).measurable).abs
+    ((EuclideanSpace.proj i).continuous.measurable).abs
   by_cases hi : i ∈ S
   · simp only [hi, if_true]; exact measurableSet_lt measurable_const hmi
   · simp only [hi, if_false]
@@ -295,9 +295,9 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGsplit : ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
         + ∫⁻ y in G, dlNumer θ₀ π U y / dlDenom θ₀ π y ∂μ := by
-    rw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
+    erw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
     refine lintegral_mono fun y => ?_
-    rw [← ENNReal.add_div]
+    rw [Pi.div_apply, ← ENNReal.add_div]
     exact ENNReal.div_le_div_right (hnumer_le y) _
   -- Term (ii): the compressibility bound.
   have hii : ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
@@ -358,7 +358,7 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
           · simp only [hj, if_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finset_sum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.ennreal_tsum fun j => by
         by_cases hj : J₀ ≤ j
         · simp only [hj, if_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
@@ -528,9 +528,9 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGsplit : ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
         + ∫⁻ y in G, dlNumer θ₀ π U y / dlDenom θ₀ π y ∂μ := by
-    rw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
+    erw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
     refine lintegral_mono fun y => ?_
-    rw [← ENNReal.add_div]
+    rw [Pi.div_apply, ← ENNReal.add_div]
     exact ENNReal.div_le_div_right (hnumer_le y) _
   -- Term (ii): compressibility left ABSTRACT — truncated at the backwards-bridge (D13).
   have hii : ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
@@ -581,7 +581,7 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
           · simp only [hj, if_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finset_sum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.ennreal_tsum fun j => by
         by_cases hj : J₀ ≤ j
         · simp only [hj, if_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
@@ -884,7 +884,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       ≤ dlPrior a ι (Metric.closedBall θ₀ r) := by
     refine le_trans ?_ (le_trans (le_of_eq hbox_eq.symm) (measure_mono hbox_sub))
     rw [Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun j _ => (Real.exp_pos _).le)]
-    exact Finset.prod_le_prod' (fun j _ => hcoord j)
+    exact Finset.prod_le_prod (fun j _ => hcoord j)
   refine le_trans (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)) hprod
   -- `∑ⱼ gexp(θ₀ⱼ) ≥ LBexp`.
   rw [show (∑ j, gexp (θ₀ j))
@@ -1035,7 +1035,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
         + (rr n) ^ 2 - dlLBexp av rr θ₀ n))) atTop (𝓝 0) := by
     simpa using hUI.add hUII
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
-    (Eventually.of_forall fun n => zero_le _) ?_
+    (Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hstruct] with n hn
   obtain ⟨hn1, havp, hav1, hrrp, hthr, hδp, hζ2⟩ := hn
   have hδboxpos : 0 < dlBoxS rr n := by rw [dlBoxS]; exact lt_min hδp (by norm_num)
@@ -1115,7 +1115,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
           = ENNReal.ofReal (Real.exp (-(rr n) ^ 2)) * ENNReal.ofReal (Real.exp (dlLBexp av rr θ₀ n)) := by
             rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]; congr 2; ring
         _ ≤ ENNReal.ofReal (Real.exp (-(rr n) ^ 2)) * dlPrior (av n) (Fin n)
-              (Metric.closedBall (θ₀ n) (rr n)) := mul_le_mul_left' hballge _
+              (Metric.closedBall (θ₀ n) (rr n)) := mul_le_mul_right hballge _
     have hdbar_inv : (dbarVal (av n) (rr n) (θ₀ n))⁻¹
         ≤ ENNReal.ofReal (Real.exp ((rr n) ^ 2 - dlLBexp av rr θ₀ n)) := by
       refine le_trans (ENNReal.inv_le_inv.mpr hdbar_ge) (le_of_eq ?_)
@@ -1137,7 +1137,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
                 * (E j / dbarVal (av n) (rr n) (θ₀ n)) := by
               rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun S _ => (mul_div_assoc _ _ _)
           _ ≤ 1 * (E j / dbarVal (av n) (rr n) (θ₀ n)) :=
-              mul_le_mul_right' (sum_dlPrior_dlShell_le_one _ _ _ _ _ _) _
+              mul_le_mul_left (sum_dlPrior_dlShell_le_one _ _ _ _ _ _) _
           _ = E j / dbarVal (av n) (rr n) (θ₀ n) := one_mul _
       · simp only [hj, if_false, Finset.sum_const_zero, le_refl]
     calc (∑' j : ℕ, ∑ S ∈ filt, if J₀ ≤ j then
@@ -2004,7 +2004,7 @@ theorem dl_theorem31 {β : ℝ}
     simpa only [add_zero, zero_add] using h
   -- Squeeze the posterior mass between `0` and the engine RHS.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hRHS
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hδwin, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos] with
     n hδn hn4 hsvge hw2n hcvn hapos
   obtain ⟨hδlb, hδub⟩ := hδn
@@ -2144,7 +2144,7 @@ theorem dl_theorem31_ball {β : ℝ}
           rw [lintegral_one, measure_univ]
   rw [hcongr]
   have := ((ENNReal.continuous_sub_left ENNReal.one_ne_top).continuousAt (x := 0)).tendsto.comp hlim
-  simpa using this
+  simpa using! this
 
 /-- **BPPD Theorem 3.1, paper rate** (D1 recovery). Under the polynomial-sparsity regime
 `qₙ ≤ n^{1−c}` (so `log(n/qₙ) ≍ log n`), the posterior contracts at the paper's minimax rate
@@ -2175,7 +2175,7 @@ theorem dl_theorem31_paper_rate {β : ℝ}
   -- Under `qₙ ≤ n^{1−c}`, the paper radius dominates the `√(qₙ log n)` radius, so its exceedance
   -- set is contained in the latter's and the posterior mass is monotone.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (tendsto_const_nhds (x := (0 : ℝ≥0∞))) hlim
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hqpoly, eventually_ge_atTop 2] with n hqp hn2
   -- Radius domination `M' √(qₙ log n) ≤ (M'/√c) √(qₙ log(n/qₙ))`.
   have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.one_le_of_lt hn2
@@ -2309,7 +2309,7 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
         {θ | (Kf n : ℝ) < (dlSuppCount (δv n) θ : ℝ)}
       ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h34
-      (Filter.Eventually.of_forall fun n => zero_le _) (Filter.Eventually.of_forall fun n => ?_)
+      (Filter.Eventually.of_forall fun n => zero_le) (Filter.Eventually.of_forall fun n => ?_)
     refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
     simp only [Set.mem_setOf_eq] at hθ ⊢
     exact lt_of_le_of_lt (hA'q_le n) hθ
@@ -2354,7 +2354,7 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   have hRHS := (hterm34.add hf2).add hshell
   simp only [add_zero] at hRHS
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hRHS
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hδwin, eventually_ge_atTop 4] with n hδn hn4
   obtain ⟨hδlb, hδub⟩ := hδn
   have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)

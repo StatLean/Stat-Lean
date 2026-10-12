@@ -23,7 +23,7 @@ theorem setLIntegral_Ioc_le_initial_add_ratio_mul_initial_of_antitone
       _ ≤ (∫⁻ ε in Set.Ioc 0 a, g ε ∂volume) +
           ENNReal.ofReal (t / a) *
             (∫⁻ ε in Set.Ioc 0 a, g ε ∂volume) :=
-        le_add_of_nonneg_right (zero_le _)
+        le_add_of_nonneg_right (zero_le)
   · have hat : a < t := lt_of_not_ge hta
     have ht0 : 0 ≤ t := (ha.trans hat).le
     have hlower :

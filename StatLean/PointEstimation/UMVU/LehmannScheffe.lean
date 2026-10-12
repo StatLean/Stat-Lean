@@ -230,7 +230,7 @@ theorem condExp_comap_eq_rbEstimator (P : Θ → Measure 𝓧) [∀ θ, IsProbab
       (fun x => rbEstimator Q δ (T x)) := hrb.comp_measurable hTcomap
   have hrbInt : Integrable (fun x => rbEstimator Q δ (T x)) (P θ) := by
     have hstat := integrable_rbEstimator_statLaw P hT hgraph hδm hδi θ
-    rw [statLaw] at hstat
+    rw [statLaw, Measure.map₀_of_measurable hT] at hstat
     exact (integrable_map_measure hrb.aestronglyMeasurable hT.aemeasurable).mp hstat
   refine (ae_eq_condExp_of_forall_setIntegral_eq hm (hδi θ)
     (fun s _ _ => hrbInt.integrableOn) (fun s hs _ => ?_) hrbT.aestronglyMeasurable).symm
@@ -254,7 +254,7 @@ theorem condExp_comap_eq_rbEstimator (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     have := integral_map (φ := T) (μ := P θ) hT.aemeasurable
       (f := fun t => w t * rbEstimator Q δ t)
       ((hwm.stronglyMeasurable.mul hrb).aestronglyMeasurable)
-    rw [statLaw, this]
+    rw [statLaw, Measure.map₀_of_measurable hT, this]
   -- the right-hand side is the same, computed through the graph disintegration
   have hprodm : Measurable (fun z : S × 𝓧 => w z.1 * δ z.2) := (hwm.comp measurable_fst).mul hδsnd
   have hprodInt : Integrable (fun z : S × 𝓧 => w z.1 * δ z.2) (statLaw P T θ ⊗ₘ Q) :=
@@ -296,9 +296,11 @@ theorem unique_unbiased_function_of_complete (P : Θ → Measure 𝓧)
     intro θ'
     rw [integral_sub (hi₁ θ') (hi₂ θ')]
     have e1 : ∫ s, η₁ s ∂(statLaw P T θ') = g θ' := by
-      rw [statLaw, integral_map hT.aemeasurable hη₁.aestronglyMeasurable]; exact hu₁ θ'
+      rw [statLaw, Measure.map₀_of_measurable hT,
+          integral_map hT.aemeasurable hη₁.aestronglyMeasurable]; exact hu₁ θ'
     have e2 : ∫ s, η₂ s ∂(statLaw P T θ') = g θ' := by
-      rw [statLaw, integral_map hT.aemeasurable hη₂.aestronglyMeasurable]; exact hu₂ θ'
+      rw [statLaw, Measure.map₀_of_measurable hT,
+          integral_map hT.aemeasurable hη₂.aestronglyMeasurable]; exact hu₂ θ'
     rw [e1, e2, sub_self]
   have hfz := hcomp (fun s => η₁ s - η₂ s) (hη₁.sub hη₂)
     (fun θ' => (hi₁ θ').sub (hi₂ θ')) hz θ
@@ -344,7 +346,9 @@ private lemma variance_rbEstimator_le_of_complete (P : Θ → Measure 𝓧)
       (isUnbiased_rbEstimator P g hT hgraph hδm hδi hδu)
       (isUnbiased_rbEstimator P g hT hgraph hδ'm hδ'i hδ'u) θ
   have hEq : (fun x => rbEstimator Q δ (T x)) =ᵐ[P θ] fun x => rbEstimator Q δ' (T x) :=
-    ae_eq_comp hT.aemeasurable huniq
+    (by
+      rw [statLaw_eq_map P T θ hT.aemeasurable] at huniq
+      exact ae_eq_comp hT.aemeasurable huniq)
   rw [variance_congr hEq]
   -- Rao–Blackwellization of the competitor does not increase its variance
   exact variance_rbEstimator_le P hT hgraph hδ'm hδ'2 θ
@@ -395,6 +399,7 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
   · -- square-integrability of the Rao–Blackwellized estimator, transported to the data scale
     intro θ
     have hstat := memLp_two_rbEstimator_statLaw P hT hgraph hδm hδ2 θ
+    rw [statLaw_eq_map P T θ hT.aemeasurable] at hstat
     exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
   · -- minimality against every square-integrable unbiased competitor
     intro δ' hδ'u hδ'2 θ
@@ -463,7 +468,9 @@ theorem risk_le_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProb
       (isUnbiased_rbEstimator P g hT hgraph hδm hδi hδu)
       (isUnbiased_rbEstimator P g hT hgraph hδ'm hδ'i hδ'u) θ
   have hEq : (fun x => rbEstimator Q δ (T x)) =ᵐ[P θ] fun x => rbEstimator Q δ' (T x) :=
-    ae_eq_comp hT.aemeasurable huniq
+    (by
+      rw [statLaw_eq_map P T θ hT.aemeasurable] at huniq
+      exact ae_eq_comp hT.aemeasurable huniq)
   have hriskeq : risk P (fun θ' d => ENNReal.ofReal (ρ θ' d))
         (fun x => rbEstimator Q δ (T x)) θ
       = risk P (fun θ' d => ENNReal.ofReal (ρ θ' d)) (fun x => rbEstimator Q δ' (T x)) θ := by
@@ -549,10 +556,12 @@ theorem isUMVU_of_fullRank_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpa
     fun θ => (hP θ) ▸ withDensity_absolutelyContinuous E.base (p θ)
   -- the θ-free reconstruction kernel, from sufficiency and domination by `E.base`
   obtain ⟨Q, hQm, hgraph⟩ :=
-    hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base hdomE hsuf
+    (hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base hdomE hsuf).exists_map
+      E.stat_meas
   haveI := hQm
   -- completeness of the natural statistic, transported from the `Ξ`-indexed subfamily
   have hcomp : IsCompleteStat P E.stat := by
+    simp only [IsCompleteStat, Measure.map₀_of_measurable E.stat_meas]
     have hcompΞ := isCompleteStat_of_interior_nonempty E Ξ hΞnat hint
     obtain ⟨ξ₀, hξ₀int⟩ := hint
     have hξ₀ : ξ₀ ∈ Ξ := interior_subset hξ₀int

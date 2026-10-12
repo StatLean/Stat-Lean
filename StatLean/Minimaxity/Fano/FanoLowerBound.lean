@@ -146,7 +146,7 @@ private lemma mutualInformation_toReal_eq {M : ℕ} [NeZero M] (Q : Kernel (Fin 
     intro hcon; exact hI (by rw [mutualInformation, hcon, ENNReal.mul_top hMinv_ne])
   have hfin : ∀ j, klDiv (Q j) (mixture Q) ≠ ⊤ := fun j hcon =>
     hsum_ne (top_le_iff.mp (hcon ▸ Finset.single_le_sum
-      (f := fun k => klDiv (Q k) (mixture Q)) (fun i _ => zero_le _) (Finset.mem_univ j)))
+      (f := fun k => klDiv (Q k) (mixture Q)) (fun i _ => zero_le) (Finset.mem_univ j)))
   have hint : ∀ j, Integrable (llr (Q j) (mixture Q)) (Q j) := fun j =>
     (klDiv_ne_top_iff.mp (hfin j)).2
   -- per-component integrability of `rⱼ log rⱼ` against the mixture
@@ -207,11 +207,11 @@ private lemma mutualInformation_toReal_eq {M : ℕ} [NeZero M] (Q : Kernel (Fin 
     have hg_int : Integrable (fun z => (M : ℝ)⁻¹ * ∑ j,
         (((Q j).rnDeriv (mixture Q) z).toReal * Real.log ((Q j).rnDeriv (mixture Q) z).toReal))
         (mixture Q) :=
-      (integrable_finset_sum Finset.univ (fun j _ => hintμ j)).const_mul _
+      (integrable_finsetSum Finset.univ (fun j _ => hintμ j)).const_mul _
     have hconst : ∫ _z, Real.log (M : ℝ) ∂(mixture Q) = Real.log (M : ℝ) := by
       simp
     rw [condEntropy, integral_congr_ae hpt, integral_sub (integrable_const _) hg_int, hconst,
-      integral_const_mul, integral_finset_sum _ (fun j _ => hintμ j),
+      integral_const_mul, integral_finsetSum _ (fun j _ => hintμ j),
       Finset.sum_congr rfl (fun j _ => (hklj j).symm)]
   rw [hMItoReal, hcond]; ring
 
@@ -325,7 +325,7 @@ private lemma map_error_pointwise {M : ℕ} (hM : 0 < M)
   have hsup : (⨆ j, (p j).toReal) = (p js).toReal :=
     le_antisymm (ciSup_le hjs) (le_ciSup hbdd js)
   have hpjs1 : p js ≤ 1 :=
-    (Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ js)).trans hp_sum.le
+    (Finset.single_le_sum (f := p) (fun i _ => zero_le) (Finset.mem_univ js)).trans hp_sum.le
   have hpj_le : ∀ j, p j ≤ p js := fun j =>
     (ENNReal.toReal_le_toReal (hp_top j) (hp_top js)).mp (hjs j)
   have hLHS : ENNReal.ofReal (1 - ⨆ j, (p j).toReal) = 1 - p js := by
@@ -494,7 +494,7 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
       _ = ∑ j, ∫⁻ z, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹ ∂(mixture Q) := by
           simp_rw [step]
       _ = ∫⁻ z, ∑ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹ ∂(mixture Q) :=
-          (lintegral_finset_sum _ (fun j _ => (hmeas j).mul_const _)).symm
+          (lintegral_finsetSum _ (fun j _ => (hmeas j).mul_const _)).symm
   -- `ENNReal.ofReal (∫ e) ≤ ⨅κ avgRisk = multiwayTestingError Q`
   have hkey : ENNReal.ofReal
       (∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ∂(mixture Q))
@@ -764,7 +764,7 @@ theorem minimax_fano_lower_bound [PseudoEMetricSpace Ω] [OpensMeasurableSpace �
   calc Φ δ * (1 - (mutualInformation (P.comap θfam hθ) + ENNReal.ofReal (Real.log 2))
                   / ENNReal.ofReal (Real.log (M : ℝ)))
       ≤ Φ δ * multiwayTestingError (P.comap θfam hθ) :=
-        mul_le_mul_left' (fano_inequality (P.comap θfam hθ) hM) _
+        mul_le_mul_right (fano_inequality (P.comap θfam hθ) hM) _
     _ ≤ minimaxRiskDist Φ g P := minimax_ge_testing_error Φ g P θfam hθ δ hΦ hsep
 
 end StatLean.Minimaxity

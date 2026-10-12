@@ -46,7 +46,7 @@ private noncomputable def linfEvalCLM {T : Type*} (t : T) : LinfT T →L[ℝ] �
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
     1 fun x => by
-      simpa using lp.norm_apply_le_norm ENNReal.top_ne_zero x t
+      simpa using! lp.norm_apply_le_norm ENNReal.top_ne_zero x t
 
 /-- **Constitutive (vdV Theorem 18.14):** restrict a bounded path to a finite ordered family of
 coordinates. This also covers the zero-dimensional coordinate space. -/

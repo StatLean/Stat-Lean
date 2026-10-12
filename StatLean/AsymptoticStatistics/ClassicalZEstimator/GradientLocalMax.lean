@@ -663,10 +663,10 @@ theorem population_taylor2_m {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Me
   set R : Ω → ℝ := fun x => m θ x - m θ₀ x - L x with hR
   -- Integrability of the linear-plus-quadratic part.
   have hLint : Integrable L P := by
-    refine Integrable.add (integrable_finset_sum _ fun j _ => (hψint j).mul_const _) ?_
+    refine Integrable.add (integrable_finsetSum _ fun j _ => (hψint j).mul_const _) ?_
     refine Integrable.const_mul ?_ _
-    exact integrable_finset_sum _ fun j _ =>
-      ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _
+    exact integrable_finsetSum _ fun j _ =>
+      ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _
   -- Integrability of the remainder, from the cubic bound.
   have hgint : Integrable (fun x => (k : ℝ) / 2 * ψddot x * ‖v‖ ^ 3) P :=
     (hψddot_int.const_mul _).mul_const _
@@ -692,19 +692,19 @@ theorem population_taylor2_m {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Me
   have hLval : ∫ x, L x ∂P = (∑ j, (∫ x, ψ θ₀ j x ∂P) * v j)
       + 1 / 2 * ∑ j, (∑ i, Vmat P ψ θ₀ j i * v i) * v j := by
     rw [hL]
-    rw [integral_add (integrable_finset_sum _ fun j _ => (hψint j).mul_const _)
-      (Integrable.const_mul (integrable_finset_sum _ fun j _ =>
-        ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _) _)]
+    rw [integral_add (integrable_finsetSum _ fun j _ => (hψint j).mul_const _)
+      (Integrable.const_mul (integrable_finsetSum _ fun j _ =>
+        ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _) _)]
     congr 1
-    · rw [integral_finset_sum _ fun j _ => (hψint j).mul_const _]
+    · rw [integral_finsetSum _ fun j _ => (hψint j).mul_const _]
       exact Finset.sum_congr rfl fun j _ => integral_mul_const _ _
     · rw [integral_const_mul,
-        integral_finset_sum _ fun j _ =>
-          ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _]
+        integral_finsetSum _ fun j _ =>
+          ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _]
       congr 1
       refine Finset.sum_congr rfl fun j _ => ?_
       rw [integral_mul_const,
-        integral_finset_sum _ fun i _ => (hVint j i).mul_const _]
+        integral_finsetSum _ fun i _ => (hVint j i).mul_const _]
       congr 1
       exact Finset.sum_congr rfl fun i _ => by
         rw [integral_mul_const]; rfl
@@ -818,7 +818,7 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
   have hMsum : Tendsto (fun n => ∑ p : Fin k × Fin k, μ.real
       {ξ | ζ / 2 ≤ ‖empiricalAvg (fun x => psiDot ψ θ₀ x p.1 p.2) n
         (fun i : Fin n => X i.val ξ) - Vmat P ψ θ₀ p.1 p.2‖}) atTop (𝓝 0) := by
-    have h := tendsto_finset_sum (Finset.univ : Finset (Fin k × Fin k))
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin k × Fin k))
       (fun p _ => hD p.1 p.2 (ζ / 2) (by positivity))
     simpa using h
   obtain ⟨N₄, hN₄⟩ := Metric.tendsto_atTop.mp hMsum (η / 4) (by positivity)

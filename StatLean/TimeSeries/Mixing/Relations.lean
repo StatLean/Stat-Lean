@@ -628,16 +628,16 @@ theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpac
   have hgL : MemLp g 2 μ := MemLp.indicator hBm (memLp_const 1)
   have hfint : ∫ ω, f ω ∂μ = (μ A).toReal := by
     rw [hfdef]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hAm
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) hAm
   have hgint : ∫ ω, g ω ∂μ = (μ B).toReal := by
     rw [hgdef]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hBm
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) hBm
   have hmulint : ∫ ω, f ω * g ω ∂μ = (μ (A ∩ B)).toReal := by
     have he : (fun ω => f ω * g ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
       funext ω
       simpa [hfdef, hgdef] using (Set.inter_indicator_mul (fun _ => (1:ℝ)) (fun _ => (1:ℝ)) ω).symm
     rw [he]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) (hAm.inter hBm)
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) (hAm.inter hBm)
   have hcov : cov[f, g; μ] = (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by
     rw [covariance_eq_sub hfL hgL]
     have : μ[f * g] = ∫ ω, f ω * g ω ∂μ := by simp [Pi.mul_apply]
@@ -934,7 +934,7 @@ private lemma integral_finiteRange {mΩ : MeasurableSpace Ω} {μ : Measure Ω} 
   have hfun : (fun ω => F (f ω))
       = fun ω => ∑ y ∈ hfin.toFinset, (f ⁻¹' {y}).indicator (fun _ => F y) ω :=
     funext fun ω => finiteRange_pointwise hfin F ω
-  have hsum := integral_finset_sum (μ := μ) hfin.toFinset
+  have hsum := integral_finsetSum (μ := μ) hfin.toFinset
       (f := fun (y : ℝ) (ω : Ω) => (f ⁻¹' {y}).indicator (fun _ => F y) ω)
       (fun y _ => (integrable_const (F y)).indicator (hmeas y))
   rw [hfun, hsum]
@@ -954,14 +954,14 @@ private lemma integral_finiteRange_mul {mΩ : MeasurableSpace Ω} {μ : Measure 
       = fun ω => ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
           ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω :=
     funext fun ω => finiteRange_pointwise_mul hff hgf F G ω
-  have hsum := integral_finset_sum (μ := μ) hff.toFinset
+  have hsum := integral_finsetSum (μ := μ) hff.toFinset
       (f := fun (y : ℝ) (ω : Ω) => ∑ z ∈ hgf.toFinset,
         ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
-      (fun y _ => integrable_finset_sum _ (fun z _ =>
+      (fun y _ => integrable_finsetSum _ (fun z _ =>
         (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z))))
   rw [hfun, hsum]
   refine Finset.sum_congr rfl fun y _ => ?_
-  have hsum2 := integral_finset_sum (μ := μ) hgf.toFinset
+  have hsum2 := integral_finsetSum (μ := μ) hgf.toFinset
       (f := fun (z : ℝ) (ω : Ω) => ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
       (fun z _ => (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z)))
   rw [hsum2]
@@ -1297,11 +1297,11 @@ private lemma map_finsetTuple_shift {X : ℤ → Ω → ℝ} (hstat : IsStrictly
   set e : s ≃ Fin s.card := s.equivFin with he
   set t : Fin s.card → ℤ := fun j => ((e.symm j : s) : ℤ) with ht
   set Φ : (Fin s.card → ℝ) → (∀ _ : s, ℝ) := fun p i => p (e i) with hΦdef
-  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i => measurable_pi_apply (e i)
+  have hΦ : Measurable Φ := Measurable.of_eval fun i => measurable_pi_apply (e i)
   have hte : ∀ i : s, t (e i) = (i : ℤ) := by
     intro i; simp [ht]
   have hcomp : ∀ c : ℤ, Measurable fun ω (j : Fin s.card) => X (t j + c) ω :=
-    fun c => measurable_pi_lambda _ fun j => hmeas _
+    fun c => Measurable.of_eval fun j => hmeas _
   have hpush : ∀ c : ℤ,
       (μ.map fun ω (j : Fin s.card) => X (t j + c) ω).map Φ
         = μ.map fun ω (i : s) => X ((i : ℤ) + c) ω := by
@@ -1314,7 +1314,8 @@ private lemma map_finsetTuple_shift {X : ℤ → Ω → ℝ} (hstat : IsStrictly
       = μ.map fun ω (j : Fin s.card) => X (t j) ω := by simp
   calc (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
       = (μ.map fun ω (j : Fin s.card) => X (t j + k) ω).map Φ := (hpush k).symm
-    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by rw [hstat s.card t k]
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by
+      rw [hstat.map_eq hmeas s.card t k]
     _ = (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω).map Φ := by rw [h0]
     _ = μ.map fun ω (i : s) => X ((i : ℤ) + 0) ω := hpush 0
     _ = μ.map fun ω (i : s) => X (i : ℤ) ω := by simp
@@ -1324,17 +1325,17 @@ private lemma map_path_shift {X : ℤ → Ω → ℝ} [IsProbabilityMeasure μ]
     (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t)) (k : ℤ) :
     (μ.map fun ω (u : ℤ) => X (u + k) ω) = μ.map fun ω (u : ℤ) => X u ω := by
   have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω :=
-    measurable_pi_lambda _ fun _ => hmeas _
-  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+    Measurable.of_eval fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   refine ext_of_generate_finite (measurableCylinders fun _ : ℤ => ℝ)
     generateFrom_measurableCylinders.symm isPiSystem_measurableCylinders ?_ ?_
   · intro C hC
     obtain ⟨s, S, hSm, rfl⟩ := (mem_measurableCylinders C).mp hC
     have hcyl : MeasurableSet (cylinder s S) := MeasurableSet.cylinder (α := fun _ : ℤ => ℝ) s hSm
     have hT : Measurable fun ω (i : s) => X ((i : ℤ) + k) ω :=
-      measurable_pi_lambda _ fun _ => hmeas _
+      Measurable.of_eval fun _ => hmeas _
     have hU : Measurable fun ω (i : s) => X (i : ℤ) ω :=
-      measurable_pi_lambda _ fun _ => hmeas _
+      Measurable.of_eval fun _ => hmeas _
     have eT : (μ.map fun ω (u : ℤ) => X (u + k) ω) (cylinder s S)
         = (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω) S := by
       rw [Measure.map_apply hTm hcyl, Measure.map_apply hT hSm]
@@ -1383,8 +1384,8 @@ theorem IsStrictlyStationary.alphaMixCoeff_shift [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
     (hmeas : ∀ t, Measurable (X t)) (k : ℤ) (n : ℕ) :
     alphaMixCoeff μ (sigmaLE X k) (sigmaGE X (k + n)) = alphaCoeff X μ n := by
-  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω := measurable_pi_lambda _ fun _ => hmeas _
-  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω := Measurable.of_eval fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   obtain ⟨ν, hν⟩ : ∃ ν : Measure (ℤ → ℝ), (μ.map fun ω (u : ℤ) => X u ω) = ν := ⟨_, rfl⟩
   have hνT : (μ.map fun ω (u : ℤ) => X (u + k) ω) = ν := by
     rw [← hν]; exact map_path_shift hstat hmeas k
@@ -1694,7 +1695,7 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
         have hp : Tendsto (fun m : ℕ => γ ^ m * V x₀ + K / (1 - γ)) atTop
             (𝓝 (0 * V x₀ + K / (1 - γ))) :=
           ((tendsto_pow_atTop_nhds_zero_of_lt_one hγ0.le hγ1).mul_const _).add_const _
-        simpa using (ENNReal.continuous_ofReal.tendsto _).comp hp
+        simpa using! (ENNReal.continuous_ofReal.tendsto _).comp hp
       have h2 : Tendsto (fun m : ℕ =>
           (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π) atTop (𝓝 0) := by
         simpa using ENNReal.Tendsto.const_mul htv (Or.inr (by simp))

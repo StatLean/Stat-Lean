@@ -142,7 +142,7 @@ theorem minimax_local_packing [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
   have hfano := minimax_fano_lower_bound Φ g P θfam hθ δ hM2 hΦ hsep
   refine le_trans ?_ hfano
   rw [mul_comm (2 : ℝ≥0∞)⁻¹ (Φ δ)]
-  refine mul_le_mul_left' ?_ _
+  refine mul_le_mul_right ?_ _
   calc (2 : ℝ≥0∞)⁻¹ = 1 - 2⁻¹ := (ENNReal.one_sub_inv_two).symm
     _ ≤ 1 - (mutualInformation Q + ENNReal.ofReal (Real.log 2))
           / ENNReal.ofReal (Real.log (M : ℝ)) := tsub_le_tsub_left hfrac 1

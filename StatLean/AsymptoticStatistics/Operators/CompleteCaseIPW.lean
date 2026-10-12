@@ -124,7 +124,7 @@ theorem qScoreLiftRaw_analytic
     ⟨measurable_fst, Measure.fst_compProd Q r⟩
   have hs_mem : MemLp (((s : Lp ℝ 2 Q) : 𝓨 → ℝ)) 2 Q := Lp.memLp _
   constructor
-  · simpa only [qScoreLiftRaw, Function.comp_apply] using
+  · simpa only [qScoreLiftRaw, Function.comp_apply] using!
       hs_mem.comp_measurePreserving hfst
   · have hs_zero : ∫ y, ((s : Lp ℝ 2 Q) : 𝓨 → ℝ) y ∂Q = 0 :=
       (mem_L2ZeroMean_iff Q (s : Lp ℝ 2 Q)).mp s.2
@@ -408,7 +408,7 @@ theorem inner_completeCaseIPW_informationLoss_qScoreLift
     (qScoreLiftRaw_analytic Q r s).1
   have hprod_int : Integrable
       (fun p => qScoreLiftRaw Q s p * ipwFullRaw Q r cc χ p) (Q ⊗ₘ r) := by
-    simpa only [Pi.mul_apply] using hscore_mem.integrable_mul hfull_mem
+    simpa only [Pi.mul_apply] using! hscore_mem.integrable_mul hfull_mem
   have hfibre : ∀ᵐ y ∂Q,
       ∫ δ, qScoreLiftRaw Q s (y, δ) * ipwFullRaw Q r cc χ (y, δ) ∂(r y) =
         ((s : Lp ℝ 2 Q) : 𝓨 → ℝ) y * ((χ : Lp ℝ 2 Q) : 𝓨 → ℝ) y := by

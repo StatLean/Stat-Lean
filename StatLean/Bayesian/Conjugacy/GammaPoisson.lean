@@ -55,7 +55,9 @@ instance : IsMarkovKernel poissonKernel := by
     lintegral_count]
   simp only [poissonDensity]
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ => poissonPMFReal_nonneg)
-      (poissonPMFRealSum _).summable, (poissonPMFRealSum _).tsum_eq, ENNReal.ofReal_one]
+      (poissonPMFRealSum _).summable,
+    show (∑' n, poissonPMFReal θ.toNNReal n) = 1 from (poissonPMFRealSum _).tsum_eq,
+    ENNReal.ofReal_one]
 
 /-- Pointwise pdf algebra: Gamma pdf times an iid Poisson likelihood is an explicit constant times
 the updated Gamma pdf; both sides vanish on `θ ≤ 0`. -/
@@ -141,7 +143,6 @@ theorem gamma_poisson_posterior_ae {a r : ℝ}
       (add_pos_of_pos_of_nonneg hr (Nat.cast_nonneg n)))
     ?_
   intro y
-  dsimp only
   have hprior : Measurable (gammaPDF a r) := (measurable_gammaPDFReal a r).ennreal_ofReal
   have hprod : Measurable (fun θ => ∏ i, poissonDensity θ (y i)) :=
     Finset.measurable_prod _ (fun i _ => hunc.comp (measurable_id.prodMk measurable_const))

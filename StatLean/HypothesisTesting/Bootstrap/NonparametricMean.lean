@@ -139,7 +139,7 @@ private lemma isProbabilityMeasure_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : 
     IsProbabilityMeasure (empiricalMeasure x) := by
   refine ⟨?_⟩
   unfold empiricalMeasure
-  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+  simp only [Measure.smul_apply, Measure.coe_finsetSum, Finset.sum_apply, measure_univ,
     Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
   rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
 
@@ -153,7 +153,7 @@ private lemma isCDF_meanRootCDF (F : Measure ℝ) (n : ℕ)
   haveI : IsProbabilityMeasure
       ((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F))) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+    (by infer_instance)
   have heq : meanRootCDF F n = fun x =>
       (((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)))
@@ -176,7 +176,7 @@ private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
       ((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ =>
           Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y))) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+    (by infer_instance)
   have heq : studentizedRootCDF F n = fun x =>
       (((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ =>
@@ -670,7 +670,7 @@ private lemma tendstoInMeasure_rowMean_of_uniform {Pr : Measure Ω} [IsProbabili
         = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr := by
       rw [hAdef]
       simp only []
-      rw [integral_const_mul, integral_finset_sum _ fun i _ => hmini i]
+      rw [integral_const_mul, integral_finsetSum _ fun i _ => hmini i]
     have hper : ∀ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr
         = s n - ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
       intro i
@@ -757,14 +757,14 @@ private lemma tendstoInMeasure_rowMean_of_uniform {Pr : Measure Ω} [IsProbabili
       fun i => hexiG n (i : ℕ)
     have hBint : Integrable (B n) Pr := by
       have hb : Integrable (fun ω => (n : ℝ)⁻¹ * ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0) Pr :=
-        (integrable_finset_sum _ fun i _ => hexi i).const_mul _
+        (integrable_finsetSum _ fun i _ => hexi i).const_mul _
       exact hb
     have hBle : ∫ ω, B n ω ∂Pr ≤ ρ := by
       have hBeq : ∫ ω, B n ω ∂Pr
           = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
         rw [hBdef]
         simp only []
-        rw [integral_const_mul, integral_finset_sum _ fun i _ => hexi i]
+        rw [integral_const_mul, integral_finsetSum _ fun i _ => hexi i]
       have hsum_le : ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ (n : ℝ) * ρ := by
         calc ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ∑ _i : Fin n, ρ :=
               Finset.sum_le_sum fun i _ => hMbound n (i : ℕ) i.isLt
@@ -961,7 +961,7 @@ theorem tendsto_meanRootLaw
     have hRmeas : ∀ n, Measurable (R n) := by intro n; simp only [hRdef]; fun_prop
     have hsumL2 : ∀ n : ℕ, MemLp (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n)) 2 P := by
       intro n
-      have h := memLp_finset_sum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
+      have h := memLp_finsetSum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
       rw [← hfun n] at h
       exact h
     have hRL2 : ∀ n, MemLp (R n) 2 P := by
@@ -972,7 +972,7 @@ theorem tendsto_meanRootLaw
       intro n
       simp only [hRdef]
       rw [integral_const_mul,
-        integral_finset_sum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
+        integral_finsetSum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
       simp [hZint n]
     have hRvar : ∀ n : ℕ, 0 < n → Var[R n; P] = v n := by
       intro n hn
@@ -1010,9 +1010,9 @@ theorem tendsto_meanRootLaw
           rw [← hσzero] at h2
           simpa using h2
         have := (ENNReal.continuous_ofReal.tendsto 0).comp h1
-        simpa using this
+        simpa using! this
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hto
-        (fun n => zero_le _) hcheb
+        (fun n => zero_le) hcheb
     -- convergence in probability implies convergence in distribution
     have hdist := hRmeasure.tendstoInDistribution (fun n => (hRmeas n).aemeasurable)
     have hint := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hdist.tendsto f
@@ -1200,7 +1200,7 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
   haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (F' n) n) := by
     intro n
     haveI := hpi n
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact (by unfold meanRootLaw; infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨meanRootLaw (F' n) n, hroot n⟩ with hρs
   set ρ : ProbabilityMeasure ℝ :=
     ⟨gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q]), inferInstance⟩ with hρ
@@ -1208,8 +1208,8 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
     ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 huni
   -- the nondegenerate normal limit has no atoms, so the portmanteau theorem applies at `Iic x`
   have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
-  haveI : NoAtoms (gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) :=
-    noAtoms_gaussianReal hvne
+  haveI : NullSingletonClass (gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) :=
+    nullSingletonClass_gaussianReal hvne
   have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
     rw [hρ]; simp [frontier_Iic]
   have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
@@ -1415,7 +1415,7 @@ private lemma meanRootCDF_eq_law_of_root [IsProbabilityMeasure Pr] [IsProbabilit
     meanRootCDF Q n x
       = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
   have hφmeas : Measurable (fun ω (i : Fin n) => X i ω) :=
-    measurable_pi_lambda _ (fun i => hmeas i)
+    Measurable.of_eval (fun i => hmeas i)
   have hmap : Pr.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => Q) := by
     have h := (iIndepFun_iff_map_fun_eq_pi_map (μ := Pr) (f := fun i : Fin n => X (i : ℕ))
       (fun i => (hmeas (i : ℕ)).aemeasurable)).1 (hindep.precomp Fin.val_injective)
@@ -1441,7 +1441,7 @@ private lemma pi_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
   have hL : (((n : ℝ≥0∞) ^ n)⁻¹ • ∑ j : Fin n → Fin n,
         Measure.dirac (fun i => x (j i))) (Set.pi Set.univ s)
       = ((n : ℝ≥0∞) ^ n)⁻¹ * ((Fintype.piFinset T).card : ℝ≥0∞) := by
-    simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+    simp only [Measure.smul_apply, Measure.coe_finsetSum, Finset.sum_apply, smul_eq_mul]
     congr 1
     have hstep : ∀ j : Fin n → Fin n,
         (Measure.dirac (fun i => x (j i))) (Set.pi Set.univ s)
@@ -1458,7 +1458,7 @@ private lemma pi_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
       = (n : ℝ≥0∞)⁻¹ * (((T i).card : ℕ) : ℝ≥0∞) := by
     intro i
     unfold empiricalMeasure
-    simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+    simp only [Measure.smul_apply, Measure.coe_finsetSum, Finset.sum_apply, smul_eq_mul]
     congr 1
     have hstep : ∀ a : Fin n, (Measure.dirac (x a)) (s i)
         = if x a ∈ s i then (1 : ℝ≥0∞) else 0 := by
@@ -1486,7 +1486,7 @@ private lemma meanRootCDF_empiricalMeasure_eq {n : ℕ} (hn : 0 < n) (x : Fin n 
     fun_prop
   unfold meanRootCDF
   rw [pi_empiricalMeasure hn x]
-  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+  simp only [Measure.smul_apply, Measure.coe_finsetSum, Finset.sum_apply, smul_eq_mul]
   congr 2
   refine Finset.sum_congr rfl (fun j _ => ?_)
   rw [Measure.dirac_apply' _ hA, Set.indicator_apply]
@@ -1660,7 +1660,7 @@ private lemma tendstoInMeasure_comp₂_of_continuousAt {μ : Measure Ω}
     have := (hA δ hδ).add (hB δ hδ)
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun n => zero_le _) fun n => ?_
+    (fun n => zero_le) fun n => ?_
   exact (measure_mono (hsub n)).trans (measure_union_le _ _)
 
 /-- **Shifting a null sequence by a converging sequence of constants.** -/
@@ -1681,7 +1681,7 @@ private lemma tendstoInMeasure_add_tendsto {μ : Measure Ω} {A : ℕ → Ω →
       rw [this]; exact norm_add_le _ _
     linarith
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (hA (ε / 2) (by positivity)) (Eventually.of_forall fun n => zero_le _) ?_
+    (hA (ε / 2) (by positivity)) (Eventually.of_forall fun n => zero_le) ?_
   exact hev.mono fun n hn => measure_mono hn
 
 /-- **Convergence of the studentized sampling distribution along the class.**
@@ -1846,7 +1846,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
   have hsumL2 : ∀ n : ℕ,
       MemLp (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n))) 2 P := by
     intro n
-    have h := memLp_finset_sum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
+    have h := memLp_finsetSum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
     rw [← hfun n] at h
     exact h
   set D : ℕ → Ω₀ → ℝ :=
@@ -1857,7 +1857,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     intro n
     simp only [hDdef]
     rw [integral_const_mul,
-      integral_finset_sum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
+      integral_finsetSum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
     simp [hZint n]
   have hDvar : ∀ n : ℕ, 0 < n → Var[D n; P] = Var[fun t : ℝ => t; G n] / n := by
     intro n hn
@@ -1888,14 +1888,14 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     have hto : Tendsto
         (fun n : ℕ => ENNReal.ofReal (Var[fun t : ℝ => t; G n] / n / r ^ 2)) atTop (𝓝 0) := by
       have h1 : Tendsto (fun n : ℕ => Var[fun t : ℝ => t; G n] / n / r ^ 2) atTop (𝓝 0) := by
-        have h0 := hGvar.mul tendsto_inverse_atTop_nhds_zero_nat
+        have h0 := hGvar.mul tendsto_inv_atTop_nhds_zero_nat
         rw [mul_zero] at h0
         have h2 := h0.div_const (r ^ 2)
         simpa [div_eq_mul_inv] using h2
       have := (ENNReal.continuous_ofReal.tendsto 0).comp h1
-      simpa using this
+      simpa using! this
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hto
-      (Eventually.of_forall fun n => zero_le _) hcheb
+      (Eventually.of_forall fun n => zero_le) hcheb
   have hAmeq : ∀ n : ℕ, 0 < n → ∀ ω, Am n ω = D n ω + ∫ t, t ∂(G n) := by
     intro n hn ω
     have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
@@ -1932,7 +1932,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
   have hRdist : TendstoInDistribution R atTop (id : ℝ → ℝ) (fun _ => P)
       (gaussianReal 0 (Real.toNNReal σ2)) := by
     refine ⟨fun n => (hRmeas n).aemeasurable, measurable_id.aemeasurable, ?_⟩
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
     have h := tendsto_meanRootLaw hG2 hQ2 hGweak hGmean hGvar f
     simp only [ProbabilityMeasure.coe_mk, Measure.map_id]
@@ -1970,7 +1970,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
       simp only [sub_self, norm_zero] at hω
       linarith
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hVn
-      (fun n => zero_le _) fun n => measure_mono (hsub n)
+      (fun n => zero_le) fun n => measure_mono (hsub n)
   have hWdist := tendstoInDistribution_of_tendstoInMeasure_sub
     (X := fun n ω => gtr (R n ω, V n ω)) W (fun z : ℝ => gtr (id z, σ2)) hXdist hWsub
     (fun n => (hWmeas n).aemeasurable)
@@ -1981,7 +1981,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
       funext z
       simp only [hgtrdef, id_eq, max_eq_left (by linarith : σ2 / 2 ≤ σ2), hσdef]
     rw [hfun, gaussianReal_map_div_const σ]
-    have h1 : (⟨σ ^ 2, sq_nonneg σ⟩ : ℝ≥0) = Real.toNNReal σ2 := by
+    have h1 : NNReal.mk (σ ^ 2) (sq_nonneg σ) = Real.toNNReal σ2 := by
       refine NNReal.eq ?_
       simp [Real.coe_toNNReal σ2 hQvar.le, hσsq]
     rw [h1, div_self hvne]
@@ -1989,7 +1989,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     simp
   -- portmanteau at `Iic x`
   haveI hWmap : ∀ n, IsProbabilityMeasure (P.map (W n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hWmeas n).aemeasurable
+    (by infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨P.map (W n), hWmap n⟩ with hρs
   set ρ : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, inferInstance⟩ with hρ
   have hconv : Tendsto ρs atTop (𝓝 ρ) := by
@@ -1998,7 +1998,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     have h := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hWdist.tendsto f
     simp only [ProbabilityMeasure.coe_mk, hlimmeas] at h
     simpa only [hρs, hρ, ProbabilityMeasure.coe_mk] using h
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
     rw [hρ]; simp [frontier_Iic]
   have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront

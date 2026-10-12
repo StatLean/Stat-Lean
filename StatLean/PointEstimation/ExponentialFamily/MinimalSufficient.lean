@@ -219,7 +219,7 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
       (Real.measurable_log.comp (hg'meas (θi 0)).ennreal_toReal)
   set H : S' → V := fun u => Ψ (fun i => φ i u) with hHdef
   have hHmeas : Measurable H :=
-    hΨcont.measurable.comp (measurable_pi_lambda _ fun i => hφmeas i)
+    hΨcont.measurable.comp (Measurable.of_eval fun i => hφmeas i)
   -- core: `φ i (U x) = ⟨d i, T x⟩` a.e. under the reference measure
   have hphi : ∀ i, ∀ᵐ x ∂E.base, φ i (U x) = ⟪d i, E.stat x⟫_ℝ := by
     intro i

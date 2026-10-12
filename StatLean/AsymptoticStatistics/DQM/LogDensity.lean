@@ -59,7 +59,7 @@ private lemma log_sq_ratio_sub_linear_le_sq {a b : ℝ}
                 exact add_le_add le_rfl (by
                   simpa only [mul_one] using mul_le_mul_of_nonneg_left hR hcoef)
       _ ≤ (2 * (a / b - 1)) ^ 2 := by nlinarith [sq_nonneg (2 * (a / b - 1))]
-  convert hbound using 1
+  convert! hbound using 1
   all_goals ring_nf
 
 /-- The elementary L²-to-probability implication in the exact integral form
@@ -256,7 +256,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
     rw [tendsto_nhdsWithin_iff]
     refine ⟨?_, ?_⟩
     · have ht : Tendsto (fun θ : Θ => θ - θ₀) (𝓝 θ₀) (𝓝 0) := by
-        simpa using
+        simpa using!
           (continuous_id.sub (continuous_const : Continuous (fun _ : Θ => θ₀))).tendsto θ₀
       exact ht.mono_left nhdsWithin_le_nhds
     filter_upwards [self_mem_nhdsWithin] with θ hθ
@@ -289,7 +289,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
           _ = ε / 2 := by field_simp [norm_ne_zero_iff.mpr hh0]
           _ < ε := half_lt_self hε
       · exact mul_nonneg (sq_nonneg _) (integral_nonneg fun _ => sq_nonneg _)
-    convert hzero.comp hshift using 1
+    convert! hzero.comp hshift using 1
     funext θ
     simp only [s, r, Function.comp_apply]
     congr 2
@@ -395,7 +395,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
     · exact hscore_int.const_mul 2
   have hs_zero : Tendsto s (𝓝[≠] θ₀) (𝓝 0) := by
     have ht : Tendsto (fun θ : Θ => ‖θ - θ₀‖) (𝓝 θ₀) (𝓝 0) := by
-      simpa using (continuous_norm.comp
+      simpa using! (continuous_norm.comp
         (continuous_id.sub (continuous_const : Continuous (fun _ : Θ => θ₀)))).tendsto θ₀
     exact ht.mono_left nhdsWithin_le_nhds
   have hres_zero : Tendsto (fun θ => ∫ x, r θ x ^ 2 ∂μ) (𝓝[≠] θ₀) (𝓝 0) := by
@@ -469,7 +469,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
       have hne : θ ≠ θ₀ := by simpa [Set.mem_compl_iff] using hθ
       exact norm_ne_zero_iff.mpr (sub_ne_zero.mpr hne)
     have hqg_meas_mu : AEStronglyMeasurable (qg θ) μ := by
-      simpa only [qg, div_eq_mul_inv] using
+      simpa only [qg, div_eq_mul_inv] using!
         ((hrem.aestronglyMeasurable.const_mul (2 * (s θ)⁻¹)).mul
           (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable)
     have hqg_meas_P : AEStronglyMeasurable (qg θ) P₀ :=
@@ -586,7 +586,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
         (𝓝[≠] θ₀) (𝓝 0) := by
       simpa [hbase_zero] using hWbad.add hVbad
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
-      (Eventually.of_forall fun _ => zero_le _) ?_
+      (Eventually.of_forall fun _ => zero_le) ?_
     filter_upwards [self_mem_nhdsWithin] with θ hθ
     have hs_pos : 0 < s θ := by
       have hne : θ ≠ θ₀ := by simpa [Set.mem_compl_iff] using hθ

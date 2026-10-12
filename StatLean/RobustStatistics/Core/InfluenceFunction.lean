@@ -53,7 +53,7 @@ theorem hasInfluenceAt_iff_hasDerivWithinAt {T : Measure Ω → ℝ} {P : Measur
     HasInfluenceAt T P x v ↔
       HasDerivWithinAt (fun t : ℝ => T (contaminate P (Measure.dirac x) t)) v
         (Set.Ici 0) 0 := by
-  rw [hasDerivWithinAt_iff_tendsto_slope, Set.Ici_diff_left]
+  rw [hasDerivWithinAt_iff_tendsto_slope, Set.Ici_sdiff_left]
   have hslope : slope (fun t : ℝ => T (contaminate P (Measure.dirac x) t)) 0 =
       fun t : ℝ => (T (contaminate P (Measure.dirac x) t) - T P) / t := by
     funext t

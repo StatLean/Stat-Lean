@@ -323,7 +323,8 @@ private lemma bounded_tsum_pow_half_sum_Icc_succ_le (a : ℕ → ℝ≥0∞) :
       refine add_le_add (AsymptoticStatistics.ForMathlib.ENNReal.tsum_pow_half_sum_Icc_le 0 a) ?_
       have hreidx : (∑' q : ℕ, (2⁻¹ : ℝ≥0∞) ^ (q + 1) * a (q + 1)) ≤
           ∑' p : ℕ, (2⁻¹ : ℝ≥0∞) ^ p * a p :=
-        ENNReal.tsum_comp_le_tsum_of_injective (fun _ _ h => by simpa using h) _
+        ENNReal.tsum_comp_le_tsum_of_injective (f := fun q : ℕ => q + 1)
+          (fun _ _ h => Nat.add_right_cancel h) (fun p : ℕ => (2⁻¹ : ℝ≥0∞)^p * a p)
       have hhalf : (2 : ℝ≥0∞) * 2⁻¹ = 1 := ENNReal.mul_inv_cancel (by norm_num) (by norm_num)
       calc
         (∑' q : ℕ, (2⁻¹ : ℝ≥0∞) ^ q * a (q + 1)) =
@@ -444,7 +445,7 @@ theorem bounded_entropy_budget :
         calc
           _ ≤ a 0 := by simpa [a, boundedDyadicScale] using
             sqrt_log_two_le_entropyIntegrand (P := P) hF_ne δ
-          _ ≤ S := Finset.single_le_sum (f := a) (fun _ _ => zero_le _) h0
+          _ ≤ S := Finset.single_le_sum (f := a) (fun _ _ => zero_le) h0
       have hc0_ne : ENNReal.ofReal (Real.sqrt (Real.log 2)) ≠ 0 := by
         simpa only [ne_eq, ENNReal.ofReal_eq_zero, not_le] using hs_pos
       have hone : (1 : ℝ≥0∞) ≤
@@ -453,7 +454,7 @@ theorem bounded_entropy_budget :
           (1 : ℝ≥0∞) = (ENNReal.ofReal (Real.sqrt (Real.log 2)))⁻¹ *
               ENNReal.ofReal (Real.sqrt (Real.log 2)) :=
             (ENNReal.inv_mul_cancel hc0_ne ENNReal.ofReal_ne_top).symm
-          _ ≤ _ := mul_le_mul_of_nonneg_left hc0_le (zero_le _)
+          _ ≤ _ := mul_le_mul_of_nonneg_left hc0_le (zero_le)
       have hK : ENNReal.ofReal K * S =
           (ENNReal.ofReal (Real.sqrt (Real.log 2)))⁻¹ * S + S := by
         dsimp [K]
@@ -496,7 +497,7 @@ theorem bounded_entropy_budget :
           _ = ENNReal.ofReal K * ∑ q ∈ Finset.range (D.L + 1),
                 ENNReal.ofReal (boundedDyadicScale δ q) *
                   (∑ p ∈ Finset.Icc 0 (q + 1), a p) := by rw [Finset.mul_sum]
-          _ ≤ _ := mul_le_mul_of_nonneg_left (ENNReal.sum_le_tsum _) (zero_le _)
+          _ ≤ _ := mul_le_mul_of_nonneg_left (ENNReal.sum_le_tsum _) (zero_le)
       _ = ENNReal.ofReal K * ∑' q : ℕ, (2⁻¹ : ℝ≥0∞) ^ q *
             (∑ p ∈ Finset.Icc 0 (q + 1), ENNReal.ofReal δ * a p) := by
         congr 1
@@ -775,7 +776,7 @@ private lemma bounded_chain_positive_sum_integrable_and_le_majorants
           · by_cases hx : boundedChainB D.partition n (0 + q) (cellChain D.partition hf q) x <;> simp [hx]
       _ = _ := mul_one _
   have ht_int : ∀ q ∈ Finset.Icc 1 D.L, Integrable (fun x => aLink q x + bLink q x) P := fun q hq => (ha_int q (Finset.mem_Icc.mp hq).1).add (hb_int q)
-  have hpos_int : Integrable (fun x => ∑ q ∈ Finset.Icc 1 D.L, (aLink q x + bLink q x)) P := integrable_finset_sum _ ht_int
+  have hpos_int : Integrable (fun x => ∑ q ∈ Finset.Icc 1 D.L, (aLink q x + bLink q x)) P := integrable_finsetSum _ ht_int
   have hg_nn : ∀ q x, 0 ≤ boundedBposOsc D.partition n (0 + q) (cellChain D.partition hf q) x := by
     intro q x
     exact mul_nonneg (hΔ_nn (0 + q) _ x) (by
@@ -864,7 +865,7 @@ private lemma bounded_chain_positive_sum_integrable_and_le_majorants
             dsimp only [Y]
             exact Finset.sum_congr rfl (fun k _ => by rw [show 0 + k = k by omega])
   refine ⟨hpos_int, ?_⟩
-  rw [empiricalProcess_finset_sum P n Y (Finset.Icc 1 D.L) (fun q x => aLink q x + bLink q x) ht_int]
+  rw [empiricalProcess_finsetSum P n Y (Finset.Icc 1 D.L) (fun q x => aLink q x + bLink q x) ht_int]
   calc
     ENNReal.ofReal |∑ q ∈ Finset.Icc 1 D.L, empiricalProcess P n Y (fun x => aLink q x + bLink q x)| ≤
         ∑ q ∈ Finset.Icc 1 D.L, ENNReal.ofReal |empiricalProcess P n Y (fun x => aLink q x + bLink q x)| := htri _ _
@@ -1121,8 +1122,8 @@ theorem bounded_chain_head_B0_bound :
     have hsqrt_le : Real.sqrt (∫ x, (g x) ^ 2 ∂P) ≤ δ := by
       rw [hsqrt]; exact (ENNReal.toReal_mono ENNReal.ofReal_ne_top hgL2).trans_eq (ENNReal.toReal_ofReal hδ.le)
     nlinarith [Real.sq_sqrt hnn, Real.sqrt_nonneg (∫ x, (g x) ^ 2 ∂P)]
-  have hπmem (i : Fin (D.partition.Nq 0)) : MemLp (D.partition.π 0 i) 2 P := ⟨(D.partition.π_meas
-    (le_rfl : 0 ≤ 0) i).aestronglyMeasurable, (hF_L2 _ (hπF i)).trans ENNReal.ofReal_lt_top⟩
+  have hπmem (i : Fin (D.partition.Nq 0)) : MemLp (D.partition.π 0 i) 2 P :=
+      (hF_L2 _ (hπF i)).trans ENNReal.ofReal_lt_top
   have hπsq (i : Fin (D.partition.Nq 0)) : ∫ x, (D.partition.π 0 i x) ^ 2 ∂P ≤ δ ^ 2 :=
     sq_integral_le _ (hπmem i) (hF_L2 _ (hπF i)).le
   let g₀ : Fin (D.partition.Nq 0) → Ω → ℝ := fun i => boundedB0Osc D.partition n i
@@ -1178,7 +1179,7 @@ theorem bounded_chain_head_B0_bound :
           (1 + boundedPartitionWeight D.partition (q + 1))) := by
         have hzero := Finset.single_le_sum (s := Finset.range (D.L + 1)) (f := fun q =>
           ENNReal.ofReal (boundedDyadicScale δ q * (1 + boundedPartitionWeight D.partition (q + 1))))
-          (fun q _ => zero_le _) (by simp : 0 ∈ Finset.range (D.L + 1))
+          (fun q _ => zero_le) (by simp : 0 ∈ Finset.range (D.L + 1))
         simpa only [boundedDyadicScale, pow_zero, one_mul, zero_add, w₁] using hzero
       _ ≤ ENNReal.ofReal cE * J := by simpa only [J] using hsum
   have hmean : ENNReal.ofReal (Real.sqrt n) * (⨆ i : Fin (D.partition.Nq 0), ∫⁻ x,
@@ -1247,8 +1248,8 @@ theorem bounded_chain_head_B0_bound :
     rw [MeasureTheory.lintegral_add_right' _ measurable_const.aemeasurable,
       MeasureTheory.lintegral_const_mul' _ _ (by norm_num : (3 : ℝ≥0∞) ≠ ⊤),
       MeasureTheory.lintegral_const, measure_univ, mul_one]
-    refine add_le_add (mul_le_mul_of_nonneg_left (hAInt.trans ?_) (zero_le _))
-      (by simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hmean (zero_le (4 : ℝ≥0∞)))
+    refine add_le_add (mul_le_mul_of_nonneg_left (hAInt.trans ?_) (zero_le))
+      (by simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hmean (zero_le (a := (4 : ℝ≥0∞))))
     rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_add (by positivity) (by positivity),
       show 2 * M * Real.log (1 + (D.partition.Nq 0 : ℝ)) / Real.sqrt n =
         2 * (M * Real.log (1 + (D.partition.Nq 0 : ℝ)) / Real.sqrt n) by ring,
@@ -1365,8 +1366,7 @@ theorem bounded_chain_A_Bpos_bound :
     · simp [boundedAJump, hx]; exact div_nonneg (mul_nonneg (Real.sqrt_nonneg _) (hs q)) (by linarith [hw (q + 1)])
   have hAvar (q : ℕ) (i : Fin (D.partition.Nq (q + 1))) : ∫ x, (boundedAJump D.partition n q i x) ^ 2 ∂P ≤ (s q) ^ 2 := by
     have hj : MemLp (D.partition.jump (Nat.zero_le q) i) 2 P :=
-      ⟨(D.partition.jump_measurable D.partition.π_meas (Nat.zero_le q) i).aestronglyMeasurable,
-        lt_of_le_of_lt (D.partition.jump_L2_le (Nat.zero_le q) i) ENNReal.ofReal_lt_top⟩
+      lt_of_le_of_lt (D.partition.jump_L2_le (Nat.zero_le q) i) ENNReal.ofReal_lt_top
     refine (integral_mono_of_nonneg (Filter.Eventually.of_forall (fun x => sq_nonneg _))
       hj.integrable_sq ?_).trans (sq_le _ hj _ (hs q) (by simpa only [s, boundedDyadicScale, Nat.sub_zero, mul_comm] using D.partition.jump_L2_le (Nat.zero_le q) i))
     filter_upwards [] with x
@@ -1449,17 +1449,17 @@ theorem bounded_chain_A_Bpos_bound :
     unfold boundedChainAMajorant; exact Finset.measurable_sum _ (fun q _ => Measurable.iSup (fun i =>
       bounded_measurable_ofReal_abs_empiricalProcess (P := P) hX_meas n (hAmeas q i)))
   have hA : outerExpectation μ (boundedChainAMajorant D X) ≤ 192 * S := by
-    rw [outerExpectation_eq_lintegral hAMeas]; unfold boundedChainAMajorant; rw [MeasureTheory.lintegral_finset_sum (Finset.range D.L)]
+    rw [outerExpectation_eq_lintegral hAMeas]; unfold boundedChainAMajorant; rw [MeasureTheory.lintegral_finsetSum (Finset.range D.L)]
     · calc
         _ ≤ ∑ q ∈ Finset.range D.L, 192 * ENNReal.ofReal (T q) := Finset.sum_le_sum (fun q _ => hAlevel q)
         _ = 192 * ∑ q ∈ Finset.range D.L, ENNReal.ofReal (T q) := by rw [Finset.mul_sum]
-        _ ≤ 192 * S := mul_le_mul_of_nonneg_left hArange (zero_le _)
+        _ ≤ 192 * S := mul_le_mul_of_nonneg_left hArange (zero_le)
     · intro q _; exact Measurable.iSup (fun i => bounded_measurable_ofReal_abs_empiricalProcess (P := P) hX_meas n (hAmeas q i))
   have hBMeas : Measurable (boundedChainBposMajorant D X) := by
     unfold boundedChainBposMajorant; exact Finset.measurable_sum _ (fun q _ => (measurable_const.mul (Measurable.iSup (fun i =>
       bounded_measurable_ofReal_abs_empiricalProcess (P := P) hX_meas n (hBmeas q i)))).add measurable_const)
   have hB : outerExpectation μ (boundedChainBposMajorant D X) ≤ 580 * S := by
-    rw [outerExpectation_eq_lintegral hBMeas]; unfold boundedChainBposMajorant; rw [MeasureTheory.lintegral_finset_sum (Finset.Icc 1 D.L)]
+    rw [outerExpectation_eq_lintegral hBMeas]; unfold boundedChainBposMajorant; rw [MeasureTheory.lintegral_finsetSum (Finset.Icc 1 D.L)]
     · calc
         _ ≤ ∑ q ∈ Finset.Icc 1 D.L,
             (3 * (192 * ENNReal.ofReal (T (q - 1))) + 4 * ENNReal.ofReal (T q)) := by
@@ -1468,7 +1468,7 @@ theorem bounded_chain_A_Bpos_bound :
           rw [MeasureTheory.lintegral_add_right' _ measurable_const.aemeasurable,
             MeasureTheory.lintegral_const_mul' _ _ (by norm_num : (3 : ℝ≥0∞) ≠ ⊤),
             MeasureTheory.lintegral_const, measure_univ, mul_one]
-          exact add_le_add (mul_le_mul_of_nonneg_left (hBlevel k) (zero_le _)) (by simpa only [mul_assoc] using mul_le_mul_of_nonneg_left (hBmean (k + 1)) (zero_le (4 : ℝ≥0∞)))
+          exact add_le_add (mul_le_mul_of_nonneg_left (hBlevel k) (zero_le)) (by simpa only [mul_assoc] using mul_le_mul_of_nonneg_left (hBmean (k + 1)) (zero_le (a := (4 : ℝ≥0∞))))
         _ = ∑ q ∈ Finset.range D.L,
             (3 * (192 * ENNReal.ofReal (T q)) + 4 * ENNReal.ofReal (T (q + 1))) := by
           rw [show Finset.Icc 1 D.L = (Finset.range D.L).image (fun q => q + 1) by
@@ -1480,7 +1480,7 @@ theorem bounded_chain_A_Bpos_bound :
         _ = 576 * (∑ q ∈ Finset.range D.L, ENNReal.ofReal (T q)) +
             4 * (∑ q ∈ Finset.range D.L, ENNReal.ofReal (T (q + 1))) := by
           rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum, ← Finset.mul_sum]; ring
-        _ ≤ 576 * S + 4 * S := add_le_add (mul_le_mul_of_nonneg_left hArange (zero_le _)) (mul_le_mul_of_nonneg_left hshift (zero_le _))
+        _ ≤ 576 * S + 4 * S := add_le_add (mul_le_mul_of_nonneg_left hArange (zero_le)) (mul_le_mul_of_nonneg_left hshift (zero_le))
         _ = 580 * S := by ring
     · intro q _; exact (measurable_const.mul (Measurable.iSup (fun i => bounded_measurable_ofReal_abs_empiricalProcess (P := P) hX_meas n (hBmeas q i)))).add measurable_const
   have hc : (772 : ℝ≥0∞) * ENNReal.ofReal cE ≤ ENNReal.ofReal (1000 * (1 + cE)) := by
@@ -1627,9 +1627,9 @@ theorem bounded_chain_remainder_bound
     calc
       _ ≤ 3 * ENNReal.ofReal (2 * (n : ℝ) * r) +
           4 * ENNReal.ofReal ((n : ℝ) * r) :=
-        add_le_add (mul_le_mul_of_nonneg_left hsup (zero_le _))
+        add_le_add (mul_le_mul_of_nonneg_left hsup (zero_le))
           (by simpa only [mul_assoc] using
-            mul_le_mul_of_nonneg_left hmean (zero_le (4 : ℝ≥0∞)))
+            mul_le_mul_of_nonneg_left hmean (zero_le (a := (4 : ℝ≥0∞))))
       _ = 5 * ENNReal.ofReal (2 * (n : ℝ) * r) := by
         rw [show 2 * (n : ℝ) * r = 2 * ((n : ℝ) * r) by ring,
           ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
@@ -1712,7 +1712,7 @@ theorem bracketingMaximal_of_boundedChainingData :
     calc
       J = J * 1 := (mul_one J).symm
       _ ≤ J * (1 + J * m) :=
-        mul_le_mul_right (le_add_of_nonneg_right (zero_le _)) J
+        mul_le_mul_right (le_add_of_nonneg_right (zero_le)) J
   have hCof : ENNReal.ofReal (cHB + cAB + 5) =
       ENNReal.ofReal cHB + ENNReal.ofReal cAB + 5 := by
     rw [ENNReal.ofReal_add (by positivity) (by norm_num),
@@ -1732,8 +1732,8 @@ theorem bracketingMaximal_of_boundedChainingData :
       add_le_add (add_le_add hHB' hAB') hR'
     _ ≤ (ENNReal.ofReal cHB * T + ENNReal.ofReal cAB * T) + 5 * T :=
       add_le_add (add_le_add le_rfl
-        (mul_le_mul_of_nonneg_left hJT (zero_le _)))
-        (mul_le_mul_of_nonneg_left hJT (zero_le _))
+        (mul_le_mul_of_nonneg_left hJT (zero_le)))
+        (mul_le_mul_of_nonneg_left hJT (zero_le))
     _ = ENNReal.ofReal (cHB + cAB + 5) * T := by
       rw [hCof]
       ring

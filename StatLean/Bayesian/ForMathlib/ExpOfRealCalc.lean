@@ -137,7 +137,7 @@ theorem tsum_ofReal_exp_neg_sq_le (c K : ℝ) (M : ℕ)
     _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
           * (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹ := by
         rw [ENNReal.tsum_geometric]
-    _ ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) * 2 := mul_le_mul_left' hinv _
+    _ ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) * 2 := mul_le_mul_right hinv _
     _ = 2 * ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) := mul_comm _ _
 
 /-- **Series endgame.** If the real exponent diverges (`εₙ → ∞`) then
@@ -150,6 +150,6 @@ theorem tendsto_ofReal_exp_neg {ε : ℕ → ℝ}
   have hreal : Filter.Tendsto (fun n => Real.exp (-(ε n))) Filter.atTop (nhds (0 : ℝ)) :=
     Real.tendsto_exp_atBot.comp (Filter.tendsto_neg_atBot_iff.mpr h)
   have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hreal
-  simpa [ENNReal.ofReal_zero, Function.comp] using this
+  simpa [ENNReal.ofReal_zero, Function.comp] using! this
 
 end StatLean.Bayesian

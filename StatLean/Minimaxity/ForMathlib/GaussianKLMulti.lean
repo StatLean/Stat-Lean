@@ -81,8 +81,8 @@ lemma klDiv_map_eq_of_comp {α β : Type*} [MeasurableSpace α] [MeasurableSpace
     {f : α → β} {g : β → α} (hf : Measurable f) (hg : Measurable g) (hgf : g ∘ f = id)
     (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     klDiv (μ.map f) (ν.map f) = klDiv μ ν := by
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  haveI : IsProbabilityMeasure (μ.map f) := (by infer_instance)
+  haveI : IsProbabilityMeasure (ν.map f) := (by infer_instance)
   refine le_antisymm (klDiv_map_le hf μ ν) ?_
   have h := klDiv_map_le hg (μ.map f) (ν.map f)
   rwa [Measure.map_map hg hf, Measure.map_map hg hf, hgf, Measure.map_id, Measure.map_id] at h

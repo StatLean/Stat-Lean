@@ -242,7 +242,7 @@ theorem minimax_functional_modulus
   -- is over a nonempty index — this is what powers the lsc interchange below.
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   have hself : sqHellinger (P i₀) (P i₀) = 0 := by simp [sqHellinger]
-  have hdiag : sqHellinger (P i₀) (P i₀) ≤ ε ^ 2 := by rw [hself]; exact zero_le _
+  have hdiag : sqHellinger (P i₀) (P i₀) ≤ ε ^ 2 := by rw [hself]; exact zero_le
   -- Distribute `2⁻¹` through the modulus supremum.
   have hM : 2⁻¹ * hellingerModulus θfunc P ε
       = ⨆ i, ⨆ j, ⨆ (_ : sqHellinger (P i) (P j) ≤ ε ^ 2),
@@ -256,7 +256,7 @@ theorem minimax_functional_modulus
     exact map_biSup_le_of_lsc hΦlsc _ _ hdiag
   calc 4⁻¹ * Φ (2⁻¹ * hellingerModulus θfunc P ε)
       ≤ 4⁻¹ * ⨆ i, ⨆ j, ⨆ (_ : sqHellinger (P i) (P j) ≤ ε ^ 2),
-          Φ (2⁻¹ * ENNReal.ofReal |θfunc i - θfunc j|) := mul_le_mul_left' hinter _
+          Φ (2⁻¹ * ENNReal.ofReal |θfunc i - θfunc j|) := mul_le_mul_right hinter _
     _ = ⨆ i, ⨆ j, ⨆ (_ : sqHellinger (P i) (P j) ≤ ε ^ 2),
           4⁻¹ * Φ (2⁻¹ * ENNReal.ofReal |θfunc i - θfunc j|) := by
         simp only [ENNReal.mul_iSup]

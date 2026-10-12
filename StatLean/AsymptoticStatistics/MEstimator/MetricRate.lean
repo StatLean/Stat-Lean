@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 
 /-!
@@ -235,7 +236,7 @@ theorem metricRate_shell_tail
         _ = ENNReal.ofReal (C * Real.rpow δ β / t) := (ENNReal.ofReal_div_of_pos ht).symm
         _ ≤ ENNReal.ofReal (2 * u ^ (J + k)) := ENNReal.ofReal_le_ofReal (by simpa [j] using hratio)
     · rw [Set.not_nonempty_iff_eq_empty] at hne
-      rw [hne, outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]; exact zero_le _
+      rw [hne, outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]; exact zero_le
   calc μ.outerMeasureStar A
       ≤ μ.outerMeasureStar (A ∩ Good) + μ.outerMeasureStar D + μ.outerMeasureStar B := by
         have hsub : A ⊆ (A ∩ Good) ∪ D ∪ B := by

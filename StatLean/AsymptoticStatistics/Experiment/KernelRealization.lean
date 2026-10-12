@@ -311,7 +311,7 @@ lemma parametric_leftInverse_measurable {α : Type*} [MeasurableSpace α]
       measurable_snd measurableSet_Ioo
     have h_le : MeasurableSet {p : α × ℝ | p.2 ≤ F p.1 y} :=
       measurableSet_le measurable_snd ((hF_meas y).comp measurable_fst)
-    convert h_Ioo.inter h_le using 1
+    convert! h_Ioo.inter h_le using 1
   · split_ifs
     · exact (measurable_snd measurableSet_Ioo).compl
     · exact MeasurableSet.empty
@@ -407,11 +407,11 @@ lemma hasUniformRealization_1d {α : Type*} [MeasurableSpace α]
     · -- tendsto atTop 1
       have h_ennreal : Tendsto (fun q : ℚ => (κ a) (Set.Iic (q : ℝ))) atTop (𝓝 1) :=
         h_meas_Iic_atTop.comp h_cast_atTop
-      simpa using (ENNReal.tendsto_toReal (by norm_num : (1 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
+      simpa using! (ENNReal.tendsto_toReal (by norm_num : (1 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
     · -- tendsto atBot 0
       have h_ennreal : Tendsto (fun q : ℚ => (κ a) (Set.Iic (q : ℝ))) atBot (𝓝 0) :=
         h_meas_Iic_atBot.comp h_cast_atBot
-      simpa using (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
+      simpa using! (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
     · -- iInf right-continuity: ⨅ r : Ioi t, f a r = f a t.
       intro t
       -- Step A: the intersection of `Iic r` for rationals r > t equals `Iic t` (in ℝ).
@@ -531,7 +531,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
       have h_u₀ : Measurable fun p : α × (Fin (n + 1) → ℝ) => p.2 0 :=
         (measurable_pi_apply 0).comp measurable_snd
       have h_tail : Measurable fun p : α × (Fin (n + 1) → ℝ) => Fin.tail p.2 :=
-        measurable_pi_lambda _ fun i =>
+        Measurable.of_eval fun i =>
           (measurable_pi_apply (Fin.succ i)).comp measurable_snd
       have h_x₀ : Measurable fun p : α × (Fin (n + 1) → ℝ) => T₁ (p.1, p.2 0) :=
         hT₁_meas.comp (measurable_fst.prodMk h_u₀)
@@ -543,7 +543,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
           (T₁ (p.1, p.2 0),
             T_rest ((p.1, T₁ (p.1, p.2 0)), Fin.tail p.2)) :=
         h_x₀.prodMk h_rest
-      convert e.symm.measurable.comp h_pair using 1
+      convert! e.symm.measurable.comp h_pair using 1
       funext p
       simp only [Function.comp, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
         Fin.insertNthEquiv_zero, Equiv.coe_fn_mk, Fin.consEquiv]
@@ -604,7 +604,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
             Fin (n + 1) → ℝ)) := by
         have h_u₀ : Measurable fun U : Fin (n + 1) → ℝ => U 0 := measurable_pi_apply 0
         have h_tail : Measurable fun U : Fin (n + 1) → ℝ => Fin.tail U :=
-          measurable_pi_lambda _ fun i => measurable_pi_apply (Fin.succ i)
+          Measurable.of_eval fun i => measurable_pi_apply (Fin.succ i)
         have h_x₀ : Measurable fun U : Fin (n + 1) → ℝ => T₁ (a, U 0) :=
           h_T₁_sec.comp h_u₀
         have h_rest_val : Measurable fun U : Fin (n + 1) → ℝ =>
@@ -613,7 +613,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
         have h_pair : Measurable fun U : Fin (n + 1) → ℝ =>
             (T₁ (a, U 0), T_rest ((a, T₁ (a, U 0)), Fin.tail U)) :=
           h_x₀.prodMk h_rest_val
-        convert e.symm.measurable.comp h_pair using 1
+        convert! e.symm.measurable.comp h_pair using 1
         funext U
         simp only [Function.comp, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
           Fin.insertNthEquiv_zero, Equiv.coe_fn_mk, Fin.consEquiv]
@@ -924,7 +924,7 @@ lemma kernel_realization_of_joint_distribution
   have hΔU_indep : IndepFun Δ U P := by
     have := IndepFun.comp hU_indep (φ := Prod.snd) (ψ := id) measurable_snd measurable_id
     -- `(Prod.snd ∘ fun ω => (S ω, Δ ω)) = Δ`, `id ∘ U = U`.
-    simpa using this
+    simpa using! this
   -- Step 4.  Joint law of `(Δ, U)` factors as `P_Δ × P_U`.
   have hΔU_law : P.map (fun ω => (Δ ω, U ω)) = (P.map Δ).prod (P.map U) :=
     (indepFun_iff_map_prod_eq_prod_map_map hΔ.aemeasurable hU.aemeasurable).mp hΔU_indep
@@ -946,15 +946,15 @@ lemma kernel_realization_of_joint_distribution
     rw [Measure.map_map measurable_swap (hΔ.prodMk hS)]
     rfl
   have hcompProd : (P.map Δ) ⊗ₘ κ = P.map (fun ω => (Δ ω, S ω)) := by
-    simpa [hκ_def] using compProd_map_condDistrib (X := Δ) (Y := S) hS.aemeasurable
+    simpa [hκ_def] using compProd_map_condDistrib (X := Δ) (Y := S) hΔ.aemeasurable hS.aemeasurable
   rw [hLHS_eq, hSwap_eq, ← hcompProd]
   -- Step 6.  Show `((P.map Δ).prod (P.map U)).map g = ((P.map Δ) ⊗ₘ κ).map Prod.swap`.
   -- Both sides are probability measures; check equality on rectangles via `Measure.ext_prod`.
-  haveI : IsProbabilityMeasure (P.map Δ) := Measure.isProbabilityMeasure_map hΔ.aemeasurable
-  haveI : IsProbabilityMeasure (P.map U) := Measure.isProbabilityMeasure_map hU.aemeasurable
+  haveI : IsProbabilityMeasure (P.map Δ) := (by infer_instance)
+  haveI : IsProbabilityMeasure (P.map U) := (by infer_instance)
   haveI : IsProbabilityMeasure ((P.map Δ).prod (P.map U)) := inferInstance
   haveI : IsProbabilityMeasure (((P.map Δ).prod (P.map U)).map g) :=
-    Measure.isProbabilityMeasure_map hg_meas.aemeasurable
+    (by infer_instance)
   refine Measure.ext_prod (μ := ((P.map Δ).prod (P.map U)).map g)
     (ν := ((P.map Δ) ⊗ₘ κ).map Prod.swap) ?_
   intro A B hA hB

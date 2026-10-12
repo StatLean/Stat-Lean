@@ -132,6 +132,6 @@ theorem sum_integral_loss_at_coord_eq_integral_empRisk (ℓ : H → Z → ℝ)
       (n : ℝ)⁻¹ * ∫ s, ∑ i : Fin n, ℓ (A s) (s i) ∂(sampleLaw D n) := by
     simp only [empRisk]
     exact integral_const_mul _ _
-  rw [h1, integral_finset_sum _ fun i _ => hint i]
+  rw [h1, integral_finsetSum _ fun i _ => hint i]
 
 end StatLean.StatisticalLearning

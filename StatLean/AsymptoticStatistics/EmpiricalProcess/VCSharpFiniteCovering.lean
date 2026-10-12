@@ -39,7 +39,7 @@ private theorem vcIndexLE_pullbackSetFamily
     intro i hi j hj hij
     by_contra hne
     have hsingle : ({i} : Finset β) ⊆ s := by
-      simpa only [Finset.singleton_subset_iff] using hi
+      simpa only [Finset.singleton_subset_iff] using! hi
     obtain ⟨B, ⟨A, hA, rfl⟩, hB⟩ := hsh {i} hsingle
     have hii : i ∈ x ⁻¹' A := (hB i hi).mp (by simp)
     have hji : j ∉ x ⁻¹' A := by
@@ -88,7 +88,7 @@ private instance : IsProbabilityMeasure symmetricUnitInterval := by
   change ((2 : ℝ≥0∞)⁻¹ • volume.restrict (Set.Icc (-1 : ℝ) 1)) Set.univ = 1
   rw [Measure.smul_apply, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter,
     Real.volume_Icc]
-  convert ENNReal.inv_mul_cancel (a := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) using 1
+  convert! ENNReal.inv_mul_cancel (a := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) using 1
   norm_num
 
 private theorem symmetricUnitInterval_Iio_symmDiff
@@ -278,7 +278,7 @@ private theorem finite_lp_packing_of_integral_separation
       ENNReal.ofReal (H x) ^ r * (ENNReal.ofReal |N f x - N g x| / 2) ∂Q
     have hNdistm : Measurable fun x ↦ ENNReal.ofReal |N f x - N g x| :=
       (by
-        simpa only [Real.norm_eq_abs] using
+        simpa only [Real.norm_eq_abs] using!
           (((hNm f hf).sub (hNm g hg)).norm.ennreal_ofReal))
     have hJm : Measurable fun x ↦
         ENNReal.ofReal (H x) ^ r * (ENNReal.ofReal |N f x - N g x| / 2) :=
@@ -421,7 +421,7 @@ private theorem finite_measure_packing
     intro n
     have hφ : Measurable ((S i.1 ∆ S j.1).indicator (fun _ ↦ (1 : ℝ))) :=
       measurable_const.indicator ((hSm i.1 i.2).symmDiff (hSm j.1 j.2))
-    simpa only [Y, Function.comp_apply] using
+    simpa only [Y, Function.comp_apply] using!
       ((hXlaw n).identDistrib (hXlaw 0)).comp hφ
   have hYmean (i j : ↥I) : R[Y i j 0] = (P (S i.1 ∆ S j.1)).toReal := by
     have hφ : AEStronglyMeasurable
@@ -431,7 +431,7 @@ private theorem finite_measure_packing
     rw [show Y i j 0 =
         ((S i.1 ∆ S j.1).indicator (fun _ ↦ (1 : ℝ))) ∘ X 0 by rfl,
       (hXlaw 0).integral_comp hφ]
-    simpa only [measureReal_def] using
+    simpa only [measureReal_def] using!
       (integral_indicator_one (μ := P)
         ((hSm i.1 i.2).symmDiff (hSm j.1 j.2)))
   have hae : ∀ᵐ ξ ∂R, ∀ i j : ↥I,

@@ -126,7 +126,7 @@ theorem isKernelFun_iff_posSemidef_toCLMMatrix (K : X → X → 𝕜) :
       ((toCLMMatrix 𝕜 K).IsHermitian ∧ ∀ vv : X →₀ 𝕜,
         0 ≤ RCLike.re (vv.sum fun x w => vv.sum fun x' w' =>
           ⟪toCLMMatrix 𝕜 K x' x w, w'⟫_𝕜)) :=
-    (RKHS.posSemidef_tfae (K := toCLMMatrix 𝕜 K)).out 0 2
+    (RKHS.posSemidef_tfae (K := toCLMMatrix 𝕜 K)).out 1 3
   rw [tfae]
   constructor
   · -- kernel function ⇒ positive semidefinite operator matrix

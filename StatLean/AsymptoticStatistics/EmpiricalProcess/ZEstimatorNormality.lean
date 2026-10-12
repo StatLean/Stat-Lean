@@ -132,7 +132,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin
   have hμ_tendsto : Tendsto (fun n => μ {ξ | ε ≤ ‖((WithLp.equiv 2 (Fin k → ℝ)).symm
       (g n ξ) : EuclideanSpace ℝ (Fin k))‖}) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h ε' hε'_pos)
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n =>
         (measure_le_outerMeasureStar μ _).trans (outerMeasureStar_mono μ (hTS n)))
   simp only [measureReal_def]
@@ -157,7 +157,7 @@ theorem matrix_bddbelow_of_isUnit_det {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ)
     refine ⟨1, one_pos, fun b => ?_⟩
     have hb : ‖b‖ = 0 := by rw [EuclideanSpace.norm_eq]; subst hk0; simp
     rw [hb, mul_zero, ENNReal.ofReal_zero]
-    exact zero_le _
+    exact zero_le
   · haveI : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
     set S := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V⁻¹ with hS
     set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V with hT
@@ -250,11 +250,11 @@ theorem psiCov_posSemidef {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measu
               exact Finset.sum_congr rfl
                 (fun i _ => Finset.sum_congr rfl (fun j _ => by ring))
           _ = ∑ i, ∫ ω, ∑ j, (x i * x j) * (ψ θ₀ i ω * ψ θ₀ j ω) ∂P :=
-              integral_finset_sum _ (fun i _ => integrable_finset_sum _
+              integral_finsetSum _ (fun i _ => integrable_finsetSum _
                 (fun j _ => (hψ_mul_int i j).const_mul _))
           _ = ∑ i, ∑ j, (x i * x j) * ∫ ω, ψ θ₀ i ω * ψ θ₀ j ω ∂P := by
               refine Finset.sum_congr rfl (fun i _ => ?_)
-              rw [integral_finset_sum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
+              rw [integral_finsetSum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
               exact Finset.sum_congr rfl (fun j _ => integral_const_mul _ _)
       rw [hrhs, hint]
     rw [hquad]
@@ -289,10 +289,10 @@ theorem psiCov_variance_eq {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
     ring
   rw [hinner_eq]
   have hgt_memLp : MemLp (fun ω => ∑ i, t i * ψ θ₀ i ω) 2 P :=
-    memLp_finset_sum Finset.univ (fun i _ => (hψi i).const_mul (t i))
+    memLp_finsetSum Finset.univ (fun i _ => (hψi i).const_mul (t i))
   -- Mean is zero, second moment is the quadratic form.
   have hmean : ∫ ω, (∑ i, t i * ψ θ₀ i ω) ∂P = 0 := by
-    rw [integral_finset_sum _ (fun i _ => (hψ_int i).const_mul (t i))]
+    rw [integral_finsetSum _ (fun i _ => (hψ_int i).const_mul (t i))]
     refine Finset.sum_eq_zero (fun i _ => ?_)
     rw [integral_const_mul, hPθ₀_zero i, mul_zero]
   have hsq : ∫ ω, (∑ i, t i * ψ θ₀ i ω) ^ 2 ∂P
@@ -304,11 +304,11 @@ theorem psiCov_variance_eq {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
           rw [sq, Finset.sum_mul_sum]
           exact Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => by ring))
       _ = ∑ i, ∫ ω, ∑ j, (t i * t j) * (ψ θ₀ i ω * ψ θ₀ j ω) ∂P :=
-          integral_finset_sum _ (fun i _ => integrable_finset_sum _
+          integral_finsetSum _ (fun i _ => integrable_finsetSum _
             (fun j _ => (hψ_mul_int i j).const_mul _))
       _ = ∑ i, ∑ j, (t i * t j) * ∫ ω, ψ θ₀ i ω * ψ θ₀ j ω ∂P := by
           refine Finset.sum_congr rfl (fun i _ => ?_)
-          rw [integral_finset_sum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
+          rw [integral_finsetSum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
           exact Finset.sum_congr rfl (fun j _ => integral_const_mul _ _)
   have hrhs : t ⬝ᵥ (psiCov P ψ θ₀) *ᵥ t
       = ∑ i, ∑ j, (t i * t j) * ∫ ω, ψ θ₀ i ω * ψ θ₀ j ω ∂P := by
@@ -526,7 +526,7 @@ theorem empiricalProcessVec_weakConverges
             continuous_const.inner continuous_id).comp_aestronglyMeasurable
               hψ_L2.aestronglyMeasurable)).trans ?_
       simp only [hinner]
-      rw [integral_finset_sum _ (fun i _ => (hψ_int i).const_mul (u i))]
+      rw [integral_finsetSum _ (fun i _ => (hψ_int i).const_mul (u i))]
       refine Finset.sum_eq_zero (fun i _ => ?_)
       rw [integral_const_mul, hPθ₀_zero i, mul_zero])
     (psiCov P ψ θ₀) (psiCov_posSemidef P ψ θ₀ hψ_L2)
@@ -555,10 +555,10 @@ theorem empiricalProcessVec_weakConverges
         exact Finset.sum_congr rfl
           (fun i _ => Finset.sum_congr rfl (fun j _ => by ring))
       rw [hintegrand,
-        integral_finset_sum _ (fun i _ => integrable_finset_sum _
+        integral_finsetSum _ (fun i _ => integrable_finsetSum _
           (fun j _ => (hψ_mul_int i j).const_mul _))]
       refine Finset.sum_congr rfl (fun i _ => ?_)
-      rw [integral_finset_sum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
+      rw [integral_finsetSum _ (fun j _ => (hψ_mul_int i j).const_mul _)]
       exact Finset.sum_congr rfl (fun j _ => integral_const_mul _ _))
     hY0_L2
   -- Identify the CLT statistic with `empiricalProcessVec` (uses `Pψ_{θ₀} = 0`).
@@ -868,7 +868,7 @@ theorem zEstimator_asymptotic_normality
             (Finset.mem_univ j)
         calc |ψ θ j x| ≤ |ψ θ₀ j x| + m x * ‖θ - θ₀‖ := h1
           _ ≤ (∑ j', |ψ θ₀ j' x|) + δcls * ‖m x‖ := by linarith [h2, h3]
-      · exact (integrable_finset_sum _
+      · exact (integrable_finsetSum _
           (fun j _ => ((hψ0_L2 j).integrable (by norm_num)).abs)).add
           ((hm.integrable (by norm_num)).norm.const_mul δcls)
     · -- h_equicont : vdV Ex 19.7 Lipschitz ⇒ Donsker.
@@ -889,7 +889,7 @@ theorem zEstimator_asymptotic_normality
           ≤ ENNReal.ofReal ‖θ - θ₀‖ * eLpNorm m 2 P := by
         have hmono : eLpNorm ((ψ θ h) - (ψ θ₀ h)) 2 P
             ≤ eLpNorm (fun x => ‖θ - θ₀‖ * ‖m x‖) 2 P := by
-          refine eLpNorm_mono_ae_real (Filter.Eventually.of_forall (fun x => ?_))
+          refine eLpNorm_mono_ae_real (by fun_prop) (Filter.Eventually.of_forall (fun x => ?_))
           rw [Pi.sub_apply, Real.norm_eq_abs]
           calc |ψ θ h x - ψ θ₀ h x|
               ≤ m x * ‖θ - θ₀‖ :=
@@ -901,14 +901,16 @@ theorem zEstimator_asymptotic_normality
             = ENNReal.ofReal ‖θ - θ₀‖ * eLpNorm m 2 P := by
           have hfe : (fun x => ‖θ - θ₀‖ * ‖m x‖) = ‖θ - θ₀‖ • (fun x => ‖m x‖) := by
             funext x; rw [Pi.smul_apply, smul_eq_mul]
-          rw [hfe, eLpNorm_const_smul, eLpNorm_norm, Real.enorm_eq_ofReal (norm_nonneg _)]
+          rw [hfe, eLpNorm_const_smul, eLpNorm_norm _ hm.aestronglyMeasurable, Real.enorm_eq_ofReal
+              (norm_nonneg _)]
         rwa [hsmul] at hmono
       have hdistbd : distL2 P (ψ θ h) (ψ θ₀ h) ≤ ‖θ - θ₀‖ * M := by
-        rw [distL2]
+        rw [distL2_eq_eLpNorm ((hψ_meas θ h).aestronglyMeasurable.sub
+            (hψθ₀_meas h).aestronglyMeasurable)]
         calc (eLpNorm ((ψ θ h) - (ψ θ₀ h)) 2 P).toReal
             ≤ (ENNReal.ofReal ‖θ - θ₀‖ * eLpNorm m 2 P).toReal :=
               ENNReal.toReal_mono
-                (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hm.2.ne) hstepA
+                (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hm.ne) hstepA
           _ = ‖θ - θ₀‖ * M := by
               rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (norm_nonneg _), hMdef]
       have h2 : ‖θ - θ₀‖ * M ≤ (ε / (M + 1)) * M :=

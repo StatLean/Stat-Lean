@@ -118,7 +118,7 @@ private lemma eps_inner_integrable
   have hsum : (fun ω => ⟪w, ε ω⟫_ℝ) = (fun ω => ∑ i, w i * (ε ω) i) :=
     funext fun ω => inner_eq_sum w (ε ω)
   rw [hsum]
-  apply integrable_finset_sum
+  apply integrable_finsetSum
   intro i _
   exact ((eps_coord_hasSubG hε_meanz hε_subG i).integrable).const_mul (w i)
 
@@ -133,7 +133,7 @@ private lemma eps_inner_mean0
   calc ∫ ω, ⟪w, ε ω⟫_ℝ ∂μ
       = ∫ ω, ∑ i, w i * (ε ω) i ∂μ := by simp_rw [inner_eq_sum]
     _ = ∑ i, ∫ ω, w i * (ε ω) i ∂μ :=
-          integral_finset_sum _ (fun i _ => (hcoord_int i).const_mul _)
+          integral_finsetSum _ (fun i _ => (hcoord_int i).const_mul _)
     _ = ∑ i, w i * ∫ ω, (ε ω) i ∂μ := by simp_rw [integral_const_mul]
     _ = 0 := by simp [hε_meanz]
 
@@ -166,7 +166,8 @@ private lemma eps_inner_subGaussian
   simp only [eps_inner_mean0 hε_meanz hε_subG w, sub_zero]
   convert hfinal using 2
   apply NNReal.coe_injective
-  simp only [NNReal.coe_sum, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_mk, coe_nnnorm]
+  rw [NNReal.coe_mul, NNReal.coe_pow, coe_nnnorm, NNReal.coe_sum]
+  change (σ2 : ℝ) * ‖w‖ ^ 2 = ∑ i : Fin n, (w i) ^ 2 * (σ2 : ℝ)
   rw [← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq w]
   ring
 

@@ -22,8 +22,8 @@ theorem exists_pos_antitone_scale_tendsto_zero_div
   let a : ℕ → ℝ := fun n => sSup (r '' Set.Ici n)
   have hq : Tendsto q atTop (𝓝 0) := by
     have htoReal : Tendsto (fun n => (b n).toReal) atTop (𝓝 0) := by
-      simpa using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hb
-    simpa [q] using Real.continuous_sqrt.continuousAt.tendsto.comp htoReal
+      simpa using! (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hb
+    simpa [q] using! Real.continuous_sqrt.continuousAt.tendsto.comp htoReal
   have hr : Tendsto r atTop (𝓝 0) := by
     simpa [r] using hq.add
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
@@ -76,10 +76,10 @@ theorem exists_pos_antitone_scale_tendsto_zero_div
         rw [div_le_iff₀ (ha_pos n)]
         simpa [pow_two] using mul_le_mul_of_nonneg_left (hq_le_a n) hq0
   have hofReal_q : Tendsto (fun n => ENNReal.ofReal (q n)) atTop (𝓝 0) := by
-    simpa using (ENNReal.continuous_ofReal.tendsto 0).comp hq
+    simpa using! (ENNReal.continuous_ofReal.tendsto 0).comp hq
   refine ⟨a, ha_pos, ha_antitone, ha_tendsto, ?_⟩
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    tendsto_const_nhds hofReal_q (Eventually.of_forall fun _ => zero_le _) hratio_le
+    tendsto_const_nhds hofReal_q (Eventually.of_forall fun _ => zero_le) hratio_le
 
 theorem exists_pos_antitone_scale_tendsto_zero_diagonal
     (T : ℕ → ℝ → ℝ≥0∞)
@@ -138,16 +138,16 @@ theorem exists_pos_antitone_scale_tendsto_zero_diagonal
     have hM_spec : N' (M n) ≤ n := by
       dsimp [M]
       exact Nat.findGreatest_spec (P := fun m => N' m ≤ n) (m := 0)
-        (zero_le n) hn
+        (zero_le (a := n)) hn
     have hNM : N (M n) ≤ n :=
       (by simp [N'] : N (M n) ≤ N' (M n)).trans hM_spec
     simpa [ε] using hN (M n) n hNM
   have hofReal_ε :
       Tendsto (fun n => ENNReal.ofReal (ε n)) atTop (𝓝 0) := by
-    simpa using (ENNReal.continuous_ofReal.tendsto 0).comp hε_tendsto
+    simpa using! (ENNReal.continuous_ofReal.tendsto 0).comp hε_tendsto
   refine ⟨ε, hε_pos, hε_antitone, hε_tendsto, ?_⟩
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    tendsto_const_nhds hofReal_ε (Eventually.of_forall fun _ => zero_le _) hdiag
+    tendsto_const_nhds hofReal_ε (Eventually.of_forall fun _ => zero_le) hdiag
 
 theorem randomRadiusEntropy_lintegral_tendsto_zero_of_scale
     {Ξ : Type*} [MeasurableSpace Ξ]
@@ -224,7 +224,7 @@ theorem randomRadiusEntropy_lintegral_tendsto_zero_of_scale
         (Or.inr ENNReal.zero_ne_top)
     simpa using hJC.add hJS
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    tendsto_const_nhds hupper (Eventually.of_forall fun _ => zero_le _) hbound
+    tendsto_const_nhds hupper (Eventually.of_forall fun _ => zero_le) hbound
 
 theorem randomRadiusEntropy_lintegral_tendsto_zero
     {Ξ : Type*} [MeasurableSpace Ξ]

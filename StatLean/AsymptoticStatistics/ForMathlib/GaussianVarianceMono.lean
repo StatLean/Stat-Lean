@@ -76,7 +76,7 @@ theorem gaussianReal_lintegral_monotone_in_var_of_bowlShaped
           lintegral_mono fun u => hℓ.le_at_zero u
   · -- Non-degenerate: v₁ > 0, set c := √(v₂/v₁) ≥ 1.
     have hv₁_pos : (0 : ℝ≥0) < v₁ :=
-      lt_of_le_of_ne (zero_le v₁) (Ne.symm hv₁)
+      lt_of_le_of_ne (zero_le (a := v₁)) (Ne.symm hv₁)
     have hv₁_pos_real : (0 : ℝ) < (v₁ : ℝ) := by exact_mod_cast hv₁_pos
     have hv₂_nn_real : (0 : ℝ) ≤ (v₂ : ℝ) := NNReal.coe_nonneg _
     have h_ratio_nn : (0 : ℝ) ≤ (v₂ : ℝ) / (v₁ : ℝ) :=

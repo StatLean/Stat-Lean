@@ -62,8 +62,8 @@ theorem klDiv_map_le {f : α → β} (hf : Measurable f) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     klDiv (μ.map f) (ν.map f) ≤ klDiv μ ν := by
   have hm : MeasurableSpace.comap f mβ ≤ mα := hf.comap_le
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  haveI : IsProbabilityMeasure (μ.map f) := (by infer_instance)
+  haveI : IsProbabilityMeasure (ν.map f) := (by infer_instance)
   haveI : IsFiniteMeasure (ν.trim hm) := isFiniteMeasure_trim hm
   by_cases hμν : μ ≪ ν
   · have hmap_ac : μ.map f ≪ ν.map f := hμν.map hf

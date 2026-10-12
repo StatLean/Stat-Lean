@@ -283,10 +283,10 @@ private lemma downCompressedVertex_injOn
         simpa only [downCompressedVertex, if_neg hAe, if_neg hBe] using hAB
       have haA : a ∈ A := by
         by_contra ha
-        exact hAe (by simpa only [Finset.erase_eq_of_notMem ha] using hA)
+        exact hAe (by simpa only [Finset.erase_eq_of_notMem ha] using! hA)
       have haB : a ∈ B := by
         by_contra ha
-        exact hBe (by simpa only [Finset.erase_eq_of_notMem ha] using hB)
+        exact hBe (by simpa only [Finset.erase_eq_of_notMem ha] using! hB)
       rw [← Finset.insert_erase haA, ← Finset.insert_erase haB, hEq]
 
 private lemma finiteFamilyMass_compression_lt
@@ -317,14 +317,14 @@ private lemma setFamilyShatters_finsetSetFamily_iff
     refine ⟨u, hu, ?_⟩
     ext x
     by_cases hx : x ∈ s
-    · simpa only [Finset.mem_inter, hx, true_and] using (hA x hx).symm
+    · simpa only [Finset.mem_inter, hx, true_and] using! (hA x hx).symm
     · have hxt : x ∉ t := fun hxt ↦ hx (ht hxt)
       simp only [Finset.mem_inter, hx, false_and, hxt]
   · intro h t ht
     obtain ⟨u, hu, hut⟩ := h ht
     refine ⟨(u : Set α), ⟨u, hu, rfl⟩, fun x hx ↦ ?_⟩
     have := Finset.ext_iff.mp hut x
-    simpa only [Finset.mem_inter, hx, true_and] using this.symm
+    simpa only [Finset.mem_inter, hx, true_and] using! this.symm
 
 private lemma vcIndexLE_downCompression
     (𝒜 : Finset (Finset α)) (a : α) (V : ℕ)
@@ -1574,6 +1574,7 @@ section FinitePackingBound
 
 local instance : DecidableEq α := Classical.decEq α
 
+set_option backward.isDefEq.respectTransparency.types false in
 private lemma restrictionFamily_eq_finiteTrace
     (P : Finset (Finset α)) (t : Finset α) :
     restrictionFamily P t = finiteTrace (finsetSetFamily P) t := by

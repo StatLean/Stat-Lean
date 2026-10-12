@@ -488,12 +488,14 @@ theorem randTest_exact_level (P : Measure 𝓧) [IsProbabilityMeasure P] (T : �
         = fun _ => (Fintype.card G : ℝ) * α :=
       funext fun x => sum_randTest_orbit T hα₀ hα₁ x
     rw [heq, integral_const]; simp
-  rw [integral_finset_sum _ fun g _ => hintg g] at hconst
+  rw [integral_finsetSum _ fun g _ => hintg g] at hconst
   have htrans : ∀ g : G, ∫ x, randTest G T α (g • x) ∂P = ∫ x, randTest G T α x ∂P := by
     intro g
     have h := integral_map (μ := P) (φ := fun x => g • x) (f := randTest G T α)
       (hsmul g).aemeasurable hmt.aestronglyMeasurable
-    rw [hrand g] at h
+    have hinv : P.map (fun x => g • x) = P := by
+      simpa only [Measure.map₀_of_measurable (hsmul g)] using hrand g
+    rw [hinv] at h
     exact h.symm
   simp_rw [htrans, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hconst
   unfold powerAgainst
@@ -585,16 +587,18 @@ theorem superUniform_randPValue (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     (integrable_const (1 : ℝ)).mono' (hf_meas.comp (hsmul g)).aestronglyMeasurable
       (ae_of_all P fun x => hbound_f (g • x))
   have hsum_int : Integrable (fun x => ∑ g : G, f (g • x)) P :=
-    integrable_finset_sum _ fun g _ => hfg_int g
+    integrable_finsetSum _ fun g _ => hfg_int g
   have htrans : ∀ g : G, ∫ x, f (g • x) ∂P = ∫ x, f x ∂P := by
     intro g
     have h := integral_map (μ := P) (φ := fun x => g • x) (f := f)
       (hsmul g).aemeasurable hf_meas.aestronglyMeasurable
-    rw [hrand g] at h; exact h.symm
+    have hinv : P.map (fun x => g • x) = P := by
+      simpa only [Measure.map₀_of_measurable (hsmul g)] using hrand g
+    rw [hinv] at h; exact h.symm
   have hcard_mul : ∑ g : G, ∫ x, f (g • x) ∂P = (Fintype.card G : ℝ) * ∫ x, f x ∂P := by
     simp_rw [htrans, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   have hle : (Fintype.card G : ℝ) * ∫ x, f x ∂P ≤ (Fintype.card G : ℝ) * t := by
-    rw [← hcard_mul, ← integral_finset_sum _ fun g _ => hfg_int g]
+    rw [← hcard_mul, ← integral_finsetSum _ fun g _ => hfg_int g]
     calc ∫ x, (∑ g : G, f (g • x)) ∂P
         ≤ ∫ _ : 𝓧, (Fintype.card G : ℝ) * t ∂P :=
           integral_mono_ae hsum_int (integrable_const _) (ae_of_all P hptwise)

@@ -769,7 +769,7 @@ private theorem paramSubmodel_scoreSum_weakly_converges_under_P
   have hℓ_meas : Measurable (g_P_total g_P) := by
     -- `g_P_total g_P ω = WithLp.toLp 2 (fun i => gMk g_P i ω)`.
     have h_pi : Measurable (fun ω : Ω => fun i : Fin m => gMk g_P i ω) := by
-      refine measurable_pi_lambda _ ?_
+      refine Measurable.of_eval ?_
       intro i
       exact gMk_meas g_P i
     -- `WithLp.toLp 2` is the (linear, hence continuous) inverse of `WithLp.equiv 2 _`,
@@ -889,8 +889,13 @@ theorem joint_convergence_of_regular
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X - ψ ((constP_QMDPath P).curve ((Real.sqrt n)⁻¹)))))
-        L :=
-    hReg.weak_limit_at_zero (constP_QMDPath P) constP_QMDPath_score h_zero_in
+        L := by
+    have hweak := hReg.weak_limit_at_zero (constP_QMDPath P) constP_QMDPath_score h_zero_in
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ ((constP_QMDPath P).curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Replace `(constP_QMDPath P).curve t` by `P`.
   have h_first_weak :
       WeakConverges
@@ -946,7 +951,7 @@ theorem joint_convergence_of_regular
   -- Reusable measurability witness for `g_P_total g_P`.
   have h_g_P_total_meas : Measurable (g_P_total g_P) := by
     have h_pi : Measurable (fun ω : Ω => fun i : Fin m => gMk g_P i ω) := by
-      refine measurable_pi_lambda _ ?_
+      refine Measurable.of_eval ?_
       intro i
       exact gMk_meas g_P i
     exact (WithLp.measurable_toLp 2 (Fin m → ℝ)).comp h_pi
@@ -967,11 +972,11 @@ theorem joint_convergence_of_regular
   haveI hPiP : ∀ n, IsProbabilityMeasure (Measure.pi (fun _ : Fin n => P)) := fun _ =>
     inferInstance
   haveI h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n =>
-    Measure.isProbabilityMeasure_map (h_joint_meas n).aemeasurable
+    (by infer_instance)
   haveI h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n =>
-    Measure.isProbabilityMeasure_map (hT_recentered_meas n).aemeasurable
+    (by infer_instance)
   haveI h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
-    Measure.isProbabilityMeasure_map (hΔ_meas n).aemeasurable
+    (by infer_instance)
   -- Tightness of marginal sequences.
   have hT_tight : IsTightMeasureSet (Set.range Tseq) :=
     Prohorov.weakConverges_range_tight Tseq L h_first_weak
@@ -1064,7 +1069,7 @@ lemma weak_limit_under_P_of_regular
     (L : Measure ℝ) [IsProbabilityMeasure L]
     (hReg : IsRegularEstimator P T_set ψ hψ hEIF T_n L) :
     WeakConverges
-      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map₀
         (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)))
       L := by
   classical
@@ -1074,7 +1079,7 @@ lemma weak_limit_under_P_of_regular
       WeakConverges
         (fun n : ℕ =>
           (Measure.pi
-              (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹))).map
+              (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X - ψ ((constP_QMDPath P).curve ((Real.sqrt n)⁻¹)))))
@@ -1082,11 +1087,11 @@ lemma weak_limit_under_P_of_regular
     hReg.weak_limit_at_zero (constP_QMDPath P) constP_QMDPath_score h_zero_in
   intro f
   have h_curve_eq : ∀ n : ℕ,
-      (Measure.pi (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹))).map
+      (Measure.pi (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X - ψ ((constP_QMDPath P).curve ((Real.sqrt n)⁻¹))))
-        = (Measure.pi (fun _ : Fin n => P)).map
+        = (Measure.pi (fun _ : Fin n => P)).map₀
           (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)) := by
     intro n
     have h_eq : (fun _ : Fin n => (constP_QMDPath P).curve ((Real.sqrt n)⁻¹))
@@ -1197,8 +1202,13 @@ theorem hajek_convolution_theorem
       WeakConverges
         (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
           (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)))
-        L :=
-    weak_limit_under_P_of_regular T_set ψ hψ hEIF T_n L hReg
+        L := by
+    have hweak := weak_limit_under_P_of_regular T_set ψ hψ hEIF T_n L hReg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => P))
+      (fun n X => Real.sqrt n * (T_n n X - ψ P))
+      (fun n => Measurable.const_mul ((_hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Step 2: extract `M` from the char-fn factorisation via the
   -- `convolution_extraction_from_charFn` brick.
   refine ⟨M, ‹IsProbabilityMeasure M›, ?_⟩
@@ -1282,8 +1292,13 @@ theorem hajek_convolution_theorem_basis
       WeakConverges
         (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
           (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)))
-        L :=
-    weak_limit_under_P_of_regular T_set ψ hψ hEIF T_n L hReg
+        L := by
+    have hweak := weak_limit_under_P_of_regular T_set ψ hψ hEIF T_n L hReg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => P))
+      (fun n X => Real.sqrt n * (T_n n X - ψ P))
+      (fun n => Measurable.const_mul ((_hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Step 2: discharge via `convolution_extraction_from_charFn`.
   refine ⟨M_m, ‹IsProbabilityMeasure M_m›, ?_⟩
   exact AsymptoticStatistics.ForMathlib.CharFnConvolution.convolution_extraction_from_charFn

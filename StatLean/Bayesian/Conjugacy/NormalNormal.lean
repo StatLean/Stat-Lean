@@ -183,7 +183,7 @@ private theorem pdf_prod_ennreal {m₀ : ℝ} {t₀ v : ℝ≥0} (ht₀ : t₀ �
     ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _),
     ← ENNReal.ofReal_mul hcnn, pdf_prod_real ht₀ hv x θ]
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 4000000 in
 /-- **Normal-Normal posterior, known variance** (Gelman §2.5): iid Gaussian
 observations update `𝒩(m₀, t₀)` to `𝒩(postMean, postVar)`, predictive-a.e. -/
 theorem normal_normal_posterior_ae {m₀ : ℝ} {t₀ v : ℝ≥0}
@@ -209,7 +209,6 @@ theorem normal_normal_posterior_ae {m₀ : ℝ} {t₀ v : ℝ≥0}
     (fun _ => inferInstance)
     ?_
   intro x
-  dsimp only
   have hprior : Measurable (gaussianPDF m₀ t₀) := measurable_gaussianPDF m₀ t₀
   have hprod : Measurable (fun θ => ∏ i, gaussianPDF θ v (x i)) :=
     Finset.measurable_prod _ (fun i _ =>

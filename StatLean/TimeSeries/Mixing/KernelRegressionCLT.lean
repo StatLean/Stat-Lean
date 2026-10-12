@@ -686,14 +686,13 @@ theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
     (t : ℤ) :
     μ.map (fun ω => (X t ω, e t ω)) = μ.map (fun ω => (X 0 ω, e 0 ω)) := by
   have hmΦ : ∀ s : ℤ, Measurable (fun ω (i : Fin 1) => (X (s + (i : ℕ)) ω, e (s + (i : ℕ)) ω)) :=
-    fun s => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun s => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hmΨ : Measurable (fun ω (i : Fin 1) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hev : Measurable (fun z : Fin 1 → ℝ × ℝ => z 0) := measurable_pi_apply 0
   have h := congrArg (fun ν : Measure (Fin 1 → ℝ × ℝ) => ν.map (fun z => z 0)) (hstat 1 t)
-  simp only at h
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
-  simpa [Function.comp] using h
+  simpa [Function.comp] using! h
 
 /-- Transport of a one-time integral: `E[F(X_t, e_t)] = E[F(X_0, e_0)]`. Used to move the
 error moments off the time index — in particular `E e_t² = E e_0²`, which is what turns
@@ -724,16 +723,15 @@ theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
       = μ.map (fun ω => ((X 0 ω, e 0 ω), (X (d : ℤ) ω, e (d : ℤ) ω))) := by
   have hmΦ : ∀ s : ℤ,
       Measurable (fun ω (i : Fin (d + 1)) => (X (s + (i : ℕ)) ω, e (s + (i : ℕ)) ω)) :=
-    fun s => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun s => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hmΨ : Measurable (fun ω (i : Fin (d + 1)) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hev : Measurable
       (fun z : Fin (d + 1) → ℝ × ℝ => (z 0, z (Fin.last d))) :=
     (measurable_pi_apply _).prodMk (measurable_pi_apply _)
   have h := congrArg
     (fun ν : Measure (Fin (d + 1) → ℝ × ℝ) => ν.map (fun z => (z 0, z (Fin.last d))))
     (hstat (d + 1) t)
-  simp only at h
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
   simpa [Function.comp_def, Fin.val_last] using h
 
@@ -788,8 +786,9 @@ theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
     (t : ℤ) {F : ℝ × ℝ → ℝ} (hF : Measurable F) {q : ℝ≥0∞}
     (h0 : MemLp (fun ω => F (X 0 ω, e 0 ω)) q μ) :
     MemLp (fun ω => F (X t ω, e t ω)) q μ :=
-  ⟨(hF.comp ((hmeasX t).prodMk (hmeasE t))).aestronglyMeasurable, by
-    rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0.2⟩
+  by
+    change eLpNorm (fun ω => F (X t ω, e t ω)) q μ < ∞
+    rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0
 
 /-- One-time marginal of `X` alone: `X_t ~ X_0`. -/
 theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
@@ -802,7 +801,6 @@ theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
   have hp0 : Measurable (fun ω => (X 0 ω, e 0 ω)) := (hmeasX 0).prodMk (hmeasE 0)
   have h := congrArg (fun ν : Measure (ℝ × ℝ) => ν.map Prod.fst)
     (map_pair_eq_of_stat hmeasX hmeasE hstat t)
-  simp only at h
   rwa [Measure.map_map measurable_fst hpt, Measure.map_map measurable_fst hp0] at h
 
 /-- An a.e. property of `X_0` is an a.e. property of `X_t`. -/
@@ -1821,11 +1819,11 @@ theorem var_localized_sum [IsProbabilityMeasure μ]
         = ∑ s ∈ Finset.range n, ∫ ω, (∑ t ∈ Finset.range n,
             (e ((s : ℤ) + 1) ω * W ((X ((s : ℤ) + 1) ω - x) / h n)) *
               (e ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n))) ∂μ :=
-      integral_finset_sum _ (fun s _ =>
-        integrable_finset_sum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1)))
+      integral_finsetSum _ (fun s _ =>
+        integrable_finsetSum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1)))
     rw [h1]
     refine Finset.sum_congr rfl fun s _ => ?_
-    exact integral_finset_sum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1))
+    exact integral_finsetSum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1))
   -- the δ-th moment input (2.74), in eLpNorm form, at every time
   have hK0 : (0 : ℝ) ≤ K := by
     have h1 : (0 : ℝ) ≤ ∫ ω, |e 0 ω * W ((X 0 ω - x) / h 0)| ^ δ ∂μ :=
@@ -2603,9 +2601,9 @@ theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
         = ∑ s ∈ I n, ∑ t ∈ I n, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
     exact Finset.sum_congr rfl fun s _ =>
-      integral_finset_sum _ (fun t _ => hint n _ _)
+      integral_finsetSum _ (fun t _ => hint n _ _)
   -- diagonal
   have hdiag : ∀ n : ℕ, |Gz n 0| ≤ (4 * L ^ 2) * ((Cp * ∫ v, W v ^ 2) * h n) := by
     intro n
@@ -3488,7 +3486,7 @@ private theorem residual_basic [IsProbabilityMeasure μ]
     rw [← mul_sub, ← Finset.sum_sub_distrib, Finset.sum_congr rfl hω]
   have hMemSum : MemLp (fun ω => (Real.sqrt ((n : ℝ) * h n))⁻¹ *
       ∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω) 2 μ :=
-    (memLp_finset_sum (f := fun t : ℕ => R ((t : ℤ) + 1)) (Finset.range n)
+    (memLp_finsetSum (f := fun t : ℕ => R ((t : ℤ) + 1)) (Finset.range n)
       (fun t _ => hMemR2 ((t : ℤ) + 1))).const_mul _
   have hMem2 : MemLp (fun ω => locSum X e W x h n ω - locTruncSum X e μ W x h L n ω) 2 μ :=
     MemLp.ae_eq hdiff.symm hMemSum
@@ -3513,7 +3511,7 @@ private theorem residual_basic [IsProbabilityMeasure μ]
         (Eventually.of_forall fun ω => ?_)
       simp only [Real.norm_eq_abs, abs_abs]
       exact habsr (e 0 ω)
-    simpa only [hqdef] using hres1i.add (integrable_const c)
+    simpa only [hqdef] using! hres1i.add (integrable_const c)
   have hqintt : ∀ t : ℤ, Integrable (fun ω => q (e t ω)) μ := by
     intro t
     have h0 : MemLp (fun ω => (fun z : ℝ × ℝ => q z.2) (X 0 ω, e 0 ω)) 1 μ :=
@@ -3558,15 +3556,15 @@ private theorem residual_basic [IsProbabilityMeasure μ]
     rw [hω, abs_mul, abs_of_nonneg hsq0]
   rw [hfinal]
   have hsumi : Integrable (fun ω => ∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω) μ :=
-    integrable_finset_sum _ fun t _ => hRi _
+    integrable_finsetSum _ fun t _ => hRi _
   have habsi : Integrable (fun ω => ∑ t ∈ Finset.range n, |R ((t : ℤ) + 1) ω|) μ :=
-    integrable_finset_sum _ fun t _ => (hRi _).abs
+    integrable_finsetSum _ fun t _ => (hRi _).abs
   have hb1 : ∫ ω, |∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω| ∂μ
       ≤ ∑ t ∈ Finset.range n, ∫ ω, |R ((t : ℤ) + 1) ω| ∂μ := by
     have h1 : ∫ ω, |∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω| ∂μ
         ≤ ∫ ω, ∑ t ∈ Finset.range n, |R ((t : ℤ) + 1) ω| ∂μ :=
       integral_mono hsumi.abs habsi fun ω => Finset.abs_sum_le_sum_abs _ _
-    rwa [integral_finset_sum _ (fun t _ => (hRi _).abs)] at h1
+    rwa [integral_finsetSum _ (fun t _ => (hRi _).abs)] at h1
   have hb2 : ∑ t ∈ Finset.range n, ∫ ω, |R ((t : ℤ) + 1) ω| ∂μ
       ≤ (n : ℝ) * (CW * ((Eδ + M) * L ^ (1 - δ))) := by
     have := Finset.sum_le_card_nsmul (Finset.range n)
@@ -3839,8 +3837,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
             R ((s : ℤ) + 1) ω * R ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq2, hCrdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hintR _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hintR _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hintR _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hintR _ _)
   -- conversion of the goal
   have hsqinv : ((Real.sqrt ((n : ℝ) * h n))⁻¹) ^ 2 = ((n : ℝ) * h n)⁻¹ := by
     rw [inv_pow, Real.sq_sqrt (mul_nonneg (Nat.cast_nonneg n) (hh0 n).le)]
@@ -5448,8 +5446,8 @@ private theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
         = ∑ s ∈ I n, ∑ t ∈ I n, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hint n _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hint n _ _)
   have hsumrep : ∀ n : ℕ,
       ∫ ω, (∑ t ∈ I n, truncErr X e μ L ((t : ℤ) + 1) ω *
           W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ
@@ -5542,7 +5540,7 @@ private theorem map_tuple_shift {X e : ℤ → Ω → ℝ}
   classical
   have hwin : ∀ (m : ℕ) (b : ℤ),
       Measurable (fun ω (i : Fin m) => (X (b + (i : ℕ)) ω, e (b + (i : ℕ)) ω)) :=
-    fun m b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun m b => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   set M : ℕ := Finset.univ.sup (fun i : Fin n => (t i).natAbs) with hM
   have hMle : ∀ i : Fin n, (t i).natAbs ≤ M := fun i =>
     Finset.le_sup (f := fun i : Fin n => (t i).natAbs) (Finset.mem_univ i)
@@ -5550,7 +5548,7 @@ private theorem map_tuple_shift {X e : ℤ → Ω → ℝ}
     intro i; have := hMle i; omega
   set j : Fin n → Fin (2 * M + 1) := fun i => ⟨(t i + (M : ℤ)).toNat, hj i⟩ with hjdef
   set proj : (Fin (2 * M + 1) → ℝ × ℝ) → (Fin n → ℝ × ℝ) := fun z i => z (j i) with hprojdef
-  have hprojm : Measurable proj := measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hprojm : Measurable proj := Measurable.of_eval fun i => measurable_pi_apply _
   have hcomp : ∀ b : ℤ, (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω))
       = proj ∘ (fun ω (i : Fin (2 * M + 1)) =>
           (X ((b - (M : ℤ)) + (i : ℕ)) ω, e ((b - (M : ℤ)) + (i : ℕ)) ω)) := by
@@ -5577,20 +5575,22 @@ private theorem isStrictlyStationary_pairCode {X e : ℤ → Ω → ℝ}
     IsStrictlyStationary (fun t ω => pairCode (X t ω, e t ω)) μ := by
   intro n t k
   have hm : ∀ b : ℤ, Measurable (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω)) :=
-    fun b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun b => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hm0 : Measurable (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hcode : Measurable (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i)) :=
-    measurable_pi_lambda _ fun i => pairCode.measurable.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => pairCode.measurable.comp (measurable_pi_apply i)
   have e1 : (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
       = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
         ∘ (fun ω (i : Fin n) => (X (t i + k) ω, e (t i + k) ω)) := rfl
   have e2 : (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
       = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
         ∘ (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) := rfl
-  show μ.map (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
-      = μ.map (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
-  rw [e1, e2, ← Measure.map_map hcode (hm k), ← Measure.map_map hcode hm0,
+  change μ.map₀ (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
+      = μ.map₀ (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
+  rw [e1, e2, Measure.map₀_of_measurable (hcode.comp (hm k)),
+    Measure.map₀_of_measurable (hcode.comp hm0),
+    ← Measure.map_map hcode (hm k), ← Measure.map_map hcode hm0,
     map_tuple_shift hmeasX hmeasE hstat n t k]
 
 /-- **Shift lemma for the pair series.** Under fdd stationarity the α-coefficient between
@@ -5979,8 +5979,8 @@ private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
         = ∑ s ∈ Bl n i, ∑ t ∈ Bl n i, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hint n _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hint n _ _)
   have hsumrep : ∀ n i : ℕ,
       ∫ ω, (∑ t ∈ Bl n i, truncErr X e μ L ((t : ℤ) + 1) ω *
           W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ
@@ -6101,7 +6101,7 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
     · exact measurable_const
   set P : ℕ × ℕ → Measure ℝ := fun z => μ.map (Yt z) with hPdef
   haveI hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
-    Measure.isProbabilityMeasure_map (hYtm z).aemeasurable
+    (by infer_instance)
   set ν : Measure (ℕ × ℕ → ℝ) := Measure.infinitePi P with hνdef
   haveI : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
   set Z : (n : ℕ) → Fin (k n) → (ℕ × ℕ → ℝ) → ℝ := fun n i z => z (n, (i : ℕ)) with hZdef
@@ -6520,7 +6520,7 @@ private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     intro n i
     rw [hVdef]
     simp only
-    rw [integral_const_mul, integral_finset_sum _ (fun t _ => hζint n t)]
+    rw [integral_const_mul, integral_finsetSum _ (fun t _ => hζint n t)]
     simp only [hζmean n]
     simp
   have hVb : ∀ n i : ℕ, ∀ᵐ ω ∂μ, |V n i ω| ≤ bn n := by

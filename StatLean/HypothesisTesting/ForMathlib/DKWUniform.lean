@@ -363,7 +363,7 @@ private lemma measurableSet_dkwPass (a : ℝ) (j : ℕ) :
   · exact measurableSet_le measurable_const (measurable_dkwWalk σ j).abs
 
 private lemma dkwPass_disjoint (a : ℝ) :
-    (Finset.range (n + 1) : Finset ℕ).toSet.PairwiseDisjoint (dkwPass σ a) := by
+    (↑(Finset.range (n + 1)) : Set ℕ).PairwiseDisjoint (dkwPass σ a) := by
   intro j _ j' _ hne
   refine Set.disjoint_left.mpr fun s hs hs' => ?_
   rcases lt_or_gt_of_ne hne with h | h
@@ -388,7 +388,7 @@ private lemma signVec_dkwPass_le (a : ℝ) (ha : 0 < a) (j : ℕ) :
   classical
   set R : (Fin n → ℝ) → (Fin n → ℝ) := fun s i => dkwSign σ j i * s i with hR
   have hRmeas : Measurable R :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).const_mul _
+    Measurable.of_eval fun i => (measurable_pi_apply i).const_mul _
   have hmap : (signVec n).map R = signVec n := signVec_map_mul_pm (dkwSign_pm σ j)
   set B : Set (Fin n → ℝ) := {s | a ≤ |dkwWalk σ s n|} with hB
   have hBmeas : MeasurableSet B := measurableSet_le measurable_const (measurable_dkwWalk σ n).abs
@@ -431,7 +431,7 @@ private lemma dkw_levy {a : ℝ} (ha : 0 < a) :
   classical
   set B : Set (Fin n → ℝ) := {s | a ≤ |dkwWalk σ s n|} with hB
   have hBmeas : MeasurableSet B := measurableSet_le measurable_const (measurable_dkwWalk σ n).abs
-  have hdisj : (Finset.range (n + 1) : Finset ℕ).toSet.PairwiseDisjoint
+  have hdisj : (↑(Finset.range (n + 1)) : Set ℕ).PairwiseDisjoint
       (fun j => dkwPass σ a j ∩ B) := fun j hj j' hj' hne =>
     Disjoint.mono Set.inter_subset_left Set.inter_subset_left
       (dkwPass_disjoint σ a hj hj' hne)
@@ -448,7 +448,7 @@ private lemma dkw_levy {a : ℝ} (ha : 0 < a) :
         rw [measure_biUnion_finset hdisj
           (fun j _ => (measurableSet_dkwPass σ a j).inter hBmeas)]
     _ ≤ 2 * signVec n B := by
-        refine mul_le_mul_left' (measure_mono ?_) 2
+        refine mul_le_mul_right (measure_mono ?_) 2
         exact Set.iUnion₂_subset fun j _ => Set.inter_subset_right
 
 end Levy
@@ -557,11 +557,11 @@ private lemma integral_dkwWalk_sq_full :
     simp only [dkwWalk, dkwPre_full]
     rw [sq, Finset.sum_mul_sum]
   rw [hW]
-  rw [integral_finset_sum _ (fun i _ =>
-    integrable_finset_sum _ (fun j _ => integrable_coord_mul i j))]
+  rw [integral_finsetSum _ (fun i _ =>
+    integrable_finsetSum _ (fun j _ => integrable_coord_mul i j))]
   have hrow : ∀ i : Fin n, ∫ s : Fin n → ℝ, ∑ j, s i * s j ∂signVec n = 1 := by
     intro i
-    rw [integral_finset_sum _ (fun j _ => integrable_coord_mul i j)]
+    rw [integral_finsetSum _ (fun j _ => integrable_coord_mul i j)]
     rw [Finset.sum_eq_single i (fun j _ hji => integral_coord_cross (Ne.symm hji))
       (fun h => absurd (Finset.mem_univ i) h)]
     exact integral_coord_sq i
@@ -813,7 +813,7 @@ theorem integral_ksDist_le {n : ℕ}
       have hempRC : Tendsto (fun t => empCDF X ω t) (nhdsWithin s (Set.Ioi s))
           (nhds (empCDF X ω s)) := by
         simp only [empCDF]
-        exact (tendsto_finset_sum Finset.univ
+        exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (X i ω) s).const_mul _
       have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
         ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
@@ -963,7 +963,7 @@ theorem ksDist_concentration {n : ℕ}
       have hempRC : Tendsto (fun t => dkwEmp x t) (nhdsWithin s (Set.Ioi s))
           (nhds (dkwEmp x s)) := by
         simp only [dkwEmp]
-        exact (tendsto_finset_sum Finset.univ
+        exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (x i) s).const_mul _
       have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
         ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
@@ -1027,10 +1027,10 @@ theorem ksDist_concentration {n : ℕ}
   -- transfer to the standard-Borel product space `(Fin n → ℝ, Q)`, `Q = P.map (Xᵢ)ᵢ`
   set μi : Fin n → Measure ℝ := fun i => P.map (X i) with hμi
   haveI hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
-    rw [hμi]; exact Measure.isProbabilityMeasure_map (hmeas i).aemeasurable
+    rw [hμi]; exact (by infer_instance)
   set Q : Measure (Fin n → ℝ) := Measure.pi μi with hQ
   have hmeasAV : Measurable (StatLean.ConcentrationInequalities.allVars X) :=
-    measurable_pi_lambda _ fun i => hmeas i
+    Measurable.of_eval fun i => hmeas i
   have hQeq : P.map (StatLean.ConcentrationInequalities.allVars X) = Q :=
     (iIndepFun_iff_map_fun_eq_pi_map fun i => (hmeas i).aemeasurable).1 hindep
   set Y : ∀ _ : Fin n, (Fin n → ℝ) → ℝ := fun i x => x i with hY_def
@@ -1076,7 +1076,7 @@ theorem ksDist_concentration {n : ℕ}
         - ∫ x', dkwF μ (StatLean.ConcentrationInequalities.allVars Y x') ∂Q}
       = P {ω | t ≤ ksDist X μ ω - mP} := by
     simp only [hAVYx]
-    rw [hint_eq, ← hQeq,
+    erw [hint_eq, ← hQeq,
       Measure.map_apply hmeasAV (measurableSet_le measurable_const (hf.sub measurable_const))]
     rfl
   have hbound : Q {x | t ≤ dkwF μ (StatLean.ConcentrationInequalities.allVars Y x)

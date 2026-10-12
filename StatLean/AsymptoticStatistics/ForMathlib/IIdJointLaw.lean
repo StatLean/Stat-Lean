@@ -59,7 +59,7 @@ theorem map_ghost_fin_restrict_eq_pi_prod_of_iid
       (Measure.pi (fun _ : Fin n => P)).prod
         (Measure.pi (fun _ : Fin n => P)) := by
   let Y : Ξ → (Fin n → Ω) := fun ξ i => X i.val ξ
-  have hY_meas : Measurable Y := measurable_pi_lambda _ fun i => hX_meas i.val
+  have hY_meas : Measurable Y := Measurable.of_eval fun i => hX_meas i.val
   have hY_law : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
     map_fin_restrict_eq_pi_of_iid P μ X hX_meas hX_iindep hX_idem hX_law n
   rw [← hY_law, Measure.map_prod_map μ μ hY_meas hY_meas]
@@ -103,13 +103,13 @@ theorem pi_const_eq_infinitePiNat_map
   set ψ : (↥(Finset.range n) → 𝓧) → (Fin n → 𝓧) := fun f i =>
     f ((rangeEquivFin n).symm i) with hψ_def
   have hψ_meas : Measurable ψ := by
-    refine measurable_pi_lambda _ (fun i => ?_)
+    refine Measurable.of_eval (fun i => ?_)
     exact measurable_pi_apply _
   have h_factor : φ = ψ ∘ (Finset.range n).restrict := by
     funext ω i; rfl
   have h_restrict_meas :
       Measurable ((Finset.range n).restrict : (ℕ → 𝓧) → (↥(Finset.range n) → 𝓧)) := by
-    refine measurable_pi_lambda _ (fun _ => ?_)
+    refine Measurable.of_eval (fun _ => ?_)
     exact measurable_pi_apply _
   -- `ψ` is a measurable isomorphism — `MeasurableEquiv.piCongrLeft` along `rangeEquivFin n`.
   -- Use `Measure.pi_map_piCongrLeft` (or measurePreserving) to transport via it.
@@ -148,7 +148,7 @@ theorem pi_const_eq_infinitePi_map
   set ψ : (↥(Finset.range n) → 𝓧) → (Fin n → 𝓧) := fun f i =>
     f ((rangeEquivFin n).symm i) with hψ_def
   have hψ_meas : Measurable ψ := by
-    refine measurable_pi_lambda _ (fun i => ?_)
+    refine Measurable.of_eval (fun i => ?_)
     exact measurable_pi_apply _
   have h_factor :
       (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)
@@ -156,7 +156,7 @@ theorem pi_const_eq_infinitePi_map
     funext ω i; rfl
   have h_restrict_meas :
       Measurable ((Finset.range n).restrict : (ℕ → 𝓧) → (↥(Finset.range n) → 𝓧)) := by
-    refine measurable_pi_lambda _ (fun _ => ?_)
+    refine Measurable.of_eval (fun _ => ?_)
     exact measurable_pi_apply _
   have h_step1 : (Measure.infinitePi (fun _ : ℕ => ν)).map
         (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)
@@ -215,7 +215,7 @@ lemma pi_meas_eq_infinitePi_meas_of_truncate
   rw [pi_const_eq_infinitePi_map ν n]
   rw [Measure.map_apply (f := fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) ?_ hs]
   · rfl
-  · refine measurable_pi_lambda _ (fun _ => ?_)
+  · refine Measurable.of_eval (fun _ => ?_)
     exact measurable_pi_apply _
 
 /-- Real-valued (i.e. ENNReal-`toReal`) variant of the measure-on-set bridge. -/

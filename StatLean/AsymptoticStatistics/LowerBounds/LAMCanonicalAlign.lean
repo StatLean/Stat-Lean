@@ -258,7 +258,7 @@ theorem canonicalPath_curve_eq_unbounded_withDensity
   · -- `g ≠ 0` branch: 1-dim `oneDimPath` with seed `(1/‖G‖)•G`, direction `single 0 ‖G‖`.
     simp only [hg, dif_neg, not_false_eq_true]
     -- The `oneDimPath`'s curve is `withDensity (ofReal ∘ density (t • single 0 ‖G‖))`.
-    rw [unboundedParamSubmodel_oneDimPath_curve]
+    erw [unboundedParamSubmodel_oneDimPath_curve]
     -- Align via `withDensity_congr_ae` on the a.e.-equal densities.
     refine withDensity_congr_ae ?_
     -- Build the seed's orthonormality witness (the one `canonicalPath` uses).

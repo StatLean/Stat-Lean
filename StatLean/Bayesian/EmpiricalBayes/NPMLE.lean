@@ -62,8 +62,8 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
   -- Real objective on weight vectors: `Ψ w = ∏ⱼ ∑_θ (p θ xⱼ).toReal · w θ`.
   set Ψ : (Θ → ℝ) → ℝ := fun w => ∏ j, ∑ θ, (p θ (x j)).toReal * w θ with hΨ
   have hcont : Continuous Ψ :=
-    continuous_finset_prod _ fun j _ =>
-      continuous_finset_sum _ fun θ _ => continuous_const.mul (continuous_apply θ)
+    continuous_finsetProd _ fun j _ =>
+      continuous_finsetSum _ fun θ _ => continuous_const.mul (continuous_apply θ)
   have hne : (stdSimplex ℝ Θ).Nonempty := by
     refine ⟨fun θ => if θ = Classical.arbitrary Θ then 1 else 0, fun θ => ?_, ?_⟩
     · by_cases h : θ = Classical.arbitrary Θ <;> simp [h]

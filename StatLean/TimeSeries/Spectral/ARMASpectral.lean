@@ -112,7 +112,7 @@ theorem isFilteredBy_of_ae_eq_polySum {X Y : ℤ → Ω → ℝ} {P : Polynomial
     IsFilteredBy X Y (polyFilterCoeffs P) μ := by
   intro t
   have key : ∀ N : ℕ, P.natDegree ≤ N →
-      (0 : ℝ≥0∞) = eLpNorm (fun ω => X t ω -
+      (0 : ℝ≥0∞) = eLpNorm' (fun ω => X t ω -
         ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), polyFilterCoeffs P k * Y (t - k) ω) 2 μ := by
     intro N hN
     have hsub : polyFilterSupport P ⊆ Finset.Icc (-(N : ℤ)) (N : ℤ) := by
@@ -132,7 +132,7 @@ theorem isFilteredBy_of_ae_eq_polySum {X Y : ℤ → Ω → ℝ} {P : Polynomial
       refine Finset.sum_congr rfl fun i _ => ?_
       simp only [Function.Embedding.coeFn_mk]
       rw [polyFilterCoeffs, if_pos (Int.natCast_nonneg i), Int.toNat_natCast]
-    rw [eLpNorm_congr_ae hae, eLpNorm_zero]
+    rw [eLpNorm'_congr_ae hae, eLpNorm'_zero (by norm_num)]
   refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
   filter_upwards [eventually_ge_atTop P.natDegree] with N hN using key N hN
 

@@ -127,7 +127,7 @@ theorem dlPrior_count_ge_le {a δ z c : ℝ}
   have hsub : {θ : EuclideanSpace ℝ ι | k ≤ dlSuppCount δ θ}
       ⊆ {θ | C ^ k ≤ C ^ dlSuppCount δ θ} := fun θ hθ => pow_le_pow_right' hC1 hθ
   have step1 : C ^ k * M ≤ ((1 - ζ) + ζ * C) ^ Fintype.card ι := by
-    refine (mul_le_mul_left' (measure_mono hsub) (C ^ k)).trans ?_
+    refine (mul_le_mul_right (measure_mono hsub) (C ^ k)).trans ?_
     exact hmark.trans_eq (dlPrior_count_mgf C)
   -- The MGF factor is bounded by `exp(z (c-1))`.
   have hfactoreq : (1 - ζ) + ζ * C = ENNReal.ofReal ((1 - ζ.toReal) + ζ.toReal * c) := by

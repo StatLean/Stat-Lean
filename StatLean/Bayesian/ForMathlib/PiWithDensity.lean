@@ -40,6 +40,7 @@ namespace StatLean.Bayesian
 
 variable {𝓧 : Type*} [m𝓧 : MeasurableSpace 𝓧]
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Heterogeneous Tonelli for coordinate products (private engine; the homogeneous
 `lintegral_pi_prod` and the box computation in `pi_withDensity` both consume it). Mirrors the
 Bochner `integral_fin_nat_prod_eq_prod`, peeling one coordinate with `piFinSuccAbove`. -/

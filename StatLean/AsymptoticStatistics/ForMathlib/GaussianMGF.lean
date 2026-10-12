@@ -50,7 +50,7 @@ lemma integral_exp_mul_gaussianReal (μ : ℝ) (v : NNReal) (t : ℝ) :
       = Real.exp (μ * t + (v : ℝ) * t ^ 2 / 2) := by
   have hmap : Measure.map (id : ℝ → ℝ) (gaussianReal μ v) = gaussianReal μ v := by
     simp [Measure.map_id]
-  have := mgf_gaussianReal hmap t
+  have := mgf_gaussianReal ⟨aemeasurable_id, hmap⟩ t
   simpa [mgf, id] using this
 
 /-- **Standard Gaussian moment-generating function** on a Euclidean space.
@@ -636,7 +636,7 @@ theorem multivariateGaussian_map_inner_eq_gaussianReal
   haveI : IsProbabilityMeasure
       (Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫)
         (multivariateGaussian 0 J)) :=
-    Measure.isProbabilityMeasure_map hL_meas.aemeasurable
+    (by infer_instance)
   -- Nonneg quadratic form.
   have h_quad_nn : 0 ≤ h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
     have := hJ.re_dotProduct_nonneg (x := (h.ofLp : Fin k → ℝ))

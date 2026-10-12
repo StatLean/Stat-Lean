@@ -209,8 +209,8 @@ private lemma tendstoInProb_twoSampleScale (PY PZ : Measure ℝ) [IsProbabilityM
     ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
       {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleScale (m k) (n k) x - s|}) atTop (𝓝 0) := by
   classical
-  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
-  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using! hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using! hZL2.integrable (by norm_num)
   have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
   have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
   -- The four block averages.
@@ -396,10 +396,10 @@ private lemma integrable_sum_coords (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabi
     funext x; exact Fin.sum_univ_add (f := fun l => g (x l))
   rw [hsplit]
   refine Integrable.add ?_ ?_
-  · refine integrable_finset_sum _ fun i _ => ?_
+  · refine integrable_finsetSum _ fun i _ => ?_
     exact ((measurePreserving_evalY m n PY PZ i).integrable_comp
       hgm.aestronglyMeasurable).mpr hY
-  · refine integrable_finset_sum _ fun j _ => ?_
+  · refine integrable_finsetSum _ fun j _ => ?_
     exact ((measurePreserving_evalZ m n PY PZ j).integrable_comp
       hgm.aestronglyMeasurable).mpr hZ
 
@@ -435,9 +435,9 @@ private lemma integral_sum_coords (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabili
     conv_rhs => rw [← hmap]
     rw [integral_map (measurable_pi_apply _).aemeasurable
       (by rw [hmap]; exact hgm.aestronglyMeasurable)]
-  rw [hsplit, integral_add (integrable_finset_sum _ fun i _ => hintY i)
-    (integrable_finset_sum _ fun j _ => hintZ j),
-    integral_finset_sum _ (fun i _ => hintY i), integral_finset_sum _ (fun j _ => hintZ j),
+  rw [hsplit, integral_add (integrable_finsetSum _ fun i _ => hintY i)
+    (integrable_finsetSum _ fun j _ => hintZ j),
+    integral_finsetSum _ (fun i _ => hintY i), integral_finsetSum _ (fun j _ => hintZ j),
     Finset.sum_congr rfl (fun i _ => hvalY i), Finset.sum_congr rfl (fun j _ => hvalZ j),
     Finset.sum_const, Finset.sum_const, Finset.card_univ, Finset.card_univ,
     Fintype.card_fin, Fintype.card_fin, nsmul_eq_mul, nsmul_eq_mul]
@@ -503,7 +503,7 @@ private lemma perm_avg_block_sub_pooled_le (m n : ℕ) (PY PZ : Measure ℝ)
         (if ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i)))
             - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)| then (1 : ℝ) else 0))
       (twoSampleLaw m n PY PZ) :=
-    (integrable_finset_sum _ fun σ _ => hintind σ).const_mul _
+    (integrable_finsetSum _ fun σ _ => hintind σ).const_mul _
   have hS := integrable_sum_coords m n PY PZ (fun t => f t ^ 2) hfsqm hY hZ
   have hintR : Integrable (fun x : Fin (m + n) → ℝ =>
       ε⁻¹ ^ 2 * ((p : ℝ)⁻¹ * (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l) ^ 2)))
@@ -785,7 +785,7 @@ private lemma perm_avg_blockAvg_tail_le (m n : ℕ) (PY PZ : Measure ℝ)
         (twoSampleLaw m n PY PZ) := by
     intro σ
     simp only [perm_smul_apply]
-    exact (integrable_finset_sum _ fun i _ =>
+    exact (integrable_finsetSum _ fun i _ =>
       integrable_coord m n PY PZ h hhm hY hZ (σ⁻¹ (a i))).const_mul _
   have hAnn : ∀ (σ : Equiv.Perm (Fin (m + n))) (x : Fin (m + n) → ℝ),
       0 ≤ (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i)) :=
@@ -811,7 +811,7 @@ private lemma perm_avg_blockAvg_tail_le (m n : ℕ) (PY PZ : Measure ℝ)
         ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)
         = ∫ x, (∑ σ : Equiv.Perm (Fin (m + n)),
             (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ) :=
-      (integral_finset_sum _ fun σ _ => hAint σ).symm
+      (integral_finsetSum _ fun σ _ => hAint σ).symm
     have hpt : ∀ x : Fin (m + n) → ℝ,
         (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
           ∑ σ : Equiv.Perm (Fin (m + n)), (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))
@@ -1128,8 +1128,8 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
   --     limit `v̄ = (λ varY + varZ)/(1 + λ)` for BOTH blocks and `τ² = (1 + λ) v̄`.
   classical
   have hne : (1 : ℝ) + lam ≠ 0 := by positivity
-  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
-  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using! hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using! hZL2.integrable (by norm_num)
   have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
   have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
   -- (i) the four randomized block averages
@@ -1222,12 +1222,12 @@ private lemma measurable_perm_smul' (N : ℕ) (σ : Equiv.Perm (Fin N)) :
   have hfun : (fun x : Fin N → ℝ => σ • x) = fun x i => x (σ⁻¹ i) := by
     ext x i; exact perm_smul_apply σ x i
   rw [hfun]
-  exact measurable_pi_lambda _ fun i => measurable_pi_apply _
+  exact Measurable.of_eval fun i => measurable_pi_apply _
 
 /-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. (A local copy: the
 `TwoSamplePermutation` and `SignChange` versions are `private` to those modules.) -/
 private lemma continuousAt_cdf_of_noAtoms' (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NoAtoms ν] (t : ℝ) : ContinuousAt (cdf ν) t := by
+    [NullSingletonClass ν] (t : ℝ) : ContinuousAt (cdf ν) t := by
   have hmono : Monotone (cdf ν) := monotone_cdf ν
   rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
   have hright : Function.rightLim (cdf ν) t = cdf ν t :=
@@ -1277,7 +1277,7 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
   have hτpos : 0 < τ := Real.sqrt_pos.2 hposτ
   have hτne : τ ≠ 0 := hτpos.ne'
   have hτ : τ ^ 2 = lam * varY + varZ := Real.sq_sqrt hposτ.le
-  set R : Measure ℝ := gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩ with hRdef
+  set R : Measure ℝ := gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ)) with hRdef
   -- The affine image of the permutation limit is the standard normal.
   have hmapR : R.map (fun u : ℝ => τ⁻¹ * u + 0) = gaussianReal 0 1 := by
     have hfun : (fun u : ℝ => τ⁻¹ * u + 0) = (τ⁻¹ * ·) := by funext u; rw [add_zero]
@@ -1287,7 +1287,7 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
     · refine NNReal.coe_injective ?_
       simp only [NNReal.coe_mul, NNReal.coe_one, NNReal.coe_mk]
       field_simp
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hcont : ContinuousAt (cdf (R.map (fun u : ℝ => τ⁻¹ * u + 0))) t := by
     rw [hmapR]; exact continuousAt_cdf_of_noAtoms' _ t
   -- The three measurability side conditions, and the two convergence inputs.
@@ -1372,9 +1372,9 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
     fun_prop
   haveI hprobT : ∀ k, IsProbabilityMeasure
       ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
-    Measure.isProbabilityMeasure_map (hTmeas k).aemeasurable
+    (by infer_instance)
   -- Dividing the numerator's Gaussian limit by `s` gives the standard normal.
-  have hgauss : (gaussianReal 0 ⟨s ^ 2, sq_nonneg s⟩).map (fun y : ℝ => y / s)
+  have hgauss : (gaussianReal 0 (NNReal.mk (s ^ 2) (sq_nonneg s))).map (fun y : ℝ => y / s)
       = gaussianReal 0 1 := by
     have hfun : (fun y : ℝ => y / s) = fun y : ℝ => y * s⁻¹ := by
       funext y; rw [div_eq_mul_inv]
@@ -1596,8 +1596,8 @@ private lemma randCritValue_le_iff_le_randDist (T : 𝓧 → ℝ) {α : ℝ}
   have hiff : ∀ a b : ℝ, (a / (Fintype.card G : ℝ) ≤ (Fintype.card G : ℝ)⁻¹ * b) ↔ a ≤ b := by
     intro a b
     rw [div_eq_inv_mul]
-    exact ⟨fun h => le_of_mul_le_mul_left h (by positivity),
-      fun h => mul_le_mul_of_nonneg_left h (by positivity)⟩
+    exact ⟨fun h => le_of_mul_le_mul_left h (by positivity), fun h => mul_le_mul_of_nonneg_left h
+        (by positivity)⟩
   rw [randCritValue, orbitOrderStat, dif_pos hk, hcount, hiff,
     orderStat_le_iff_card_lt' (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩ z, ← hcf,
     Nat.cast_le]
@@ -1755,7 +1755,7 @@ private lemma tendsto_measureReal_of_weakConverges {νs : ℕ → Measure ℝ} {
   have key := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hpm
     (E := s) (by simpa [pμ] using hs)
   have h2 := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
-  simpa [Measure.real, pn, pμ] using h2
+  simpa [Measure.real, pn, pμ] using! h2
 
 /-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (a local copy of
 the `SignChange` helper). -/
@@ -1780,7 +1780,7 @@ private lemma strictMono_cdf_gaussianReal' {v : ℝ≥0} (hv : v ≠ 0) :
 
 /-- Every level in `(0,1)` is attained by the c.d.f. of an atomless law (a local copy of the
 `SignChange` helper). -/
-private lemma exists_cdf_eq' (ν : Measure ℝ) [IsProbabilityMeasure ν] [NoAtoms ν]
+private lemma exists_cdf_eq' (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν]
     {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) : ∃ q, cdf ν q = p := by
   have hcont : Continuous (cdf ν) :=
     continuous_iff_continuousAt.mpr (fun x => continuousAt_cdf_of_noAtoms' ν x)
@@ -1837,7 +1837,7 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     fun_prop
   have hsmul : ∀ (k : ℕ) (g : Equiv.Perm (Fin (m k + n k))),
       Measurable (fun x : Fin (m k + n k) → ℝ => g • x) := fun _ g => measurable_perm_smul' _ g
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   -- (i) the studentized randomization distribution converges in probability to `Φ`
   have hrd : ∀ z : ℝ, TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
@@ -1849,7 +1849,7 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos
   haveI hprob : ∀ k, IsProbabilityMeasure ((twoSampleLaw (m k) (n k) PY PZ).map
       (studentizedTwoSample (m k) (n k))) := fun k =>
-    Measure.isProbabilityMeasure_map (hSmeas k).aemeasurable
+    (by infer_instance)
   -- (iii) the critical fraction `k/M` converges to `1 − α` (`M = N!  → ∞`)
   have hcardNat : Tendsto (fun k => Fintype.card (Equiv.Perm (Fin (m k + n k)))) atTop atTop := by
     refine tendsto_atTop_mono (fun k => ?_) hm

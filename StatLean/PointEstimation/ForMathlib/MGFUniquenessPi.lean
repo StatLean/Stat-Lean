@@ -161,9 +161,9 @@ theorem ext_of_integral_exp_inner_eqOn
         rw [hStopen.interior_eq]; exact ⟨0, h0St⟩
       have hmemS : ∀ r ∈ St, t₀ + r • t ∈ S := fun r hr => interior_subset hr
       haveI : IsProbabilityMeasure ((μ.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
-        Measure.isProbabilityMeasure_map hgmeas.aemeasurable
+        (by infer_instance)
       haveI : IsProbabilityMeasure ((ν.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
-        Measure.isProbabilityMeasure_map hgmeas.aemeasurable
+        (by infer_instance)
       -- integrability of the pushforward Laplace transforms
       have hPint : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin s))),
           (∀ a, t₀ + a ∈ S → Integrable (fun x => Real.exp ⟪a, x⟫_ℝ) (ρ.tilted φ)) →

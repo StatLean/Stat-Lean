@@ -93,7 +93,7 @@ module docstring.
 a genuine `SimpleGraph`; `0` and `2` are the only non-adjacent distinct pair. -/
 def chainGraph : SimpleGraph (Fin 3) where
   Adj i j := (i : ℕ) + 1 = (j : ℕ) ∨ (j : ℕ) + 1 = (i : ℕ)
-  symm _ _ h := h.symm
+  symm.symm _ _ h := h.symm
   loopless := ⟨by decide⟩
 
 instance : DecidableRel chainGraph.Adj := fun i j =>

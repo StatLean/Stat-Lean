@@ -235,7 +235,8 @@ private lemma lintegral_ball_affine (θ₀ : EuclideanSpace ℝ (Fin k)) {a : �
     have h2 : T = (fun y : EuclideanSpace ℝ (Fin k) => θ₀ + y)
         ∘ (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) := rfl
     rw [h2, ← Measure.map_map (measurable_const_add θ₀) (measurable_const_smul a), h1,
-      Measure.map_smul, Measure.IsAddLeftInvariant.map_add_left_eq_self
+      Measure.map_smul _ (measurable_const_add _).aemeasurable,
+      Measure.IsAddLeftInvariant.map_add_left_eq_self
         (μ := (volume : Measure (EuclideanSpace ℝ (Fin k)))) θ₀]
     rw [hfr, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (a ^ k)⁻¹)]
   have hball : MeasurableSet (Metric.ball θ₀ (a * u)) := measurableSet_ball
@@ -435,14 +436,14 @@ theorem mutuallyContiguous_mixture_base
         = ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := by
       rw [hQ, mul_comm, ← mul_assoc, ENNReal.mul_inv_cancel hπB0 hπBT, one_mul]
     constructor
-    · refine (ENNReal.mul_le_mul_right hz0 hzT).mp ?_
+    · refine (ENNReal.mul_le_mul_iff_left hz0 hzT).mp ?_
       calc bvmMixture κ π θ₀ u n A
               * (cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
               * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
           = bvmMixture κ π θ₀ u n A * (cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
               * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))) := by ring
         _ ≤ bvmMixture κ π θ₀ u n A * π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) :=
-            mul_le_mul_left' hπBlo _
+            mul_le_mul_right hπBlo _
         _ = ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := hQmul
         _ ≤ Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
               * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
@@ -450,7 +451,7 @@ theorem mutuallyContiguous_mixture_base
         _ = Cb * (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
                   productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume)
               * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) := by ring
-    · refine (ENNReal.mul_le_mul_right hz0 hzT).mp ?_
+    · refine (ENNReal.mul_le_mul_iff_left hz0 hzT).mp ?_
       calc cb * (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
                   productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume)
               * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
@@ -461,7 +462,7 @@ theorem mutuallyContiguous_mixture_base
         _ = bvmMixture κ π θ₀ u n A * π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) := hQmul.symm
         _ ≤ bvmMixture κ π θ₀ u n A * (Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
               * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))) :=
-            mul_le_mul_left' hπBup _
+            mul_le_mul_right hπBup _
         _ = bvmMixture κ π θ₀ u n A
               * (Cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
               * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) := by ring
@@ -493,7 +494,7 @@ theorem mutuallyContiguous_mixture_base
     have hεpos : 0 < ε * (cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)) :=
       pos_iff_ne_zero.mpr (mul_ne_zero hε.ne' hcv0)
     filter_upwards [hcore, (ENNReal.tendsto_nhds_zero.mp hCK) _ hεpos] with n hn hCKn
-    exact (ENNReal.mul_le_mul_right hcv0 hcvT).mp
+    exact (ENNReal.mul_le_mul_iff_left hcv0 hcvT).mp
       (((hn (A n) (hA_meas n)).1).trans hCKn)
   · -- `P_{n,U} ⊲ P^n_{θ₀}`: an `L¹` subsequence extraction plus per-`h` contiguity.
     intro A hA_meas hA_tendsto
@@ -507,7 +508,7 @@ theorem mutuallyContiguous_mixture_base
       intro ε hε
       have hεpos : 0 < cb * ε := pos_iff_ne_zero.mpr (mul_ne_zero hcb0.ne' hε.ne')
       filter_upwards [hcore, (ENNReal.tendsto_nhds_zero.mp hQ0) _ hεpos] with n hn hQn
-      exact (ENNReal.mul_le_mul_left hcb0.ne' hcbT).mp
+      exact (ENNReal.mul_le_mul_iff_right hcb0.ne' hcbT).mp
         (((hn (A n) (hA_meas n)).2).trans hQn)
     -- Suppose the base masses do not vanish; extract a bad subsequence.
     by_contra hcon
@@ -556,7 +557,7 @@ theorem mutuallyContiguous_mixture_base
         have := ENNReal.Tendsto.const_mul hKφ (Or.inr (ENNReal.inv_ne_top.mpr hδ.ne'))
         simpa using this
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hdivz
-        (fun _ => zero_le _) hbound
+        (fun _ => zero_le) hbound
     obtain ⟨ms, hms, hae⟩ := hTIM.exists_seq_tendsto_ae
     -- A good local direction `hh₀` inside `U`.
     obtain ⟨hh₀, -, hgood⟩ : ∃ hh₀, hh₀ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u ∧
@@ -565,7 +566,7 @@ theorem mutuallyContiguous_mixture_base
       by_contra hno
       push_neg at hno
       rw [MeasureTheory.ae_iff] at hae
-      refine hvU0 (le_antisymm ?_ (zero_le _))
+      refine hvU0 (le_antisymm ?_ (zero_le))
       calc volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)
           = (volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
               (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) :=

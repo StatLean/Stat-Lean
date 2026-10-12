@@ -454,7 +454,7 @@ private lemma exists_isometry_apply_single (hk : 0 < k) {u : EuclideanSpace ℝ 
   have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin k)) = Fintype.card (Fin k) := by simp
   have horth : Orthonormal ℝ (({i} : Set (Fin k)).restrict (fun _ : Fin k => u)) := by
     constructor
-    · intro x; simpa using hu
+    · intro x; simpa using! hu
     · intro x y hxy
       exact absurd (Subtype.ext (x.2.trans y.2.symm)) hxy
   obtain ⟨b, hb⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
@@ -583,7 +583,7 @@ private lemma integral_normSq_gaussian (k : ℕ) :
       = ∫ z, ∑ i, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
         integral_congr_ae (ae_of_all _ fun z => hnormsq z)
     _ = ∑ i, ∫ z, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
-        integral_finset_sum _ fun i _ => hint i
+        integral_finsetSum _ fun i _ => hint i
     _ = (k : ℝ) := by rw [Finset.sum_congr rfl fun i _ => hcoord i]; simp
 
 private lemma integrable_norm_gaussian (k : ℕ) :
@@ -703,7 +703,7 @@ private lemma gaussian_le_of_gaussian_shift_cover (hk : 0 < k)
                 gaussian_map_inner_unit hk hu]
           _ ≤ γ (Prod.mk x ⁻¹' A) := measure_mono hsub
       · rw [Set.indicator_of_notMem hx]
-        exact zero_le _
+        exact zero_le
     calc c₀ * γ S = ∫⁻ x, S.indicator (fun _ => c₀) x ∂γ := by
           rw [lintegral_indicator hSm, setLIntegral_const]
       _ ≤ ∫⁻ x, γ (Prod.mk x ⁻¹' A) ∂γ := lintegral_mono hpt
@@ -797,7 +797,7 @@ theorem gaussian_diff_interior_eq_zero (hk : 0 < k)
     have hzero := hdist _ hmem
     rw [dist_self] at hzero
     exact absurd hzero (not_le.2 (div_pos hc hkr))
-  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) (zero_le _)
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) (zero_le)
   have hεr : (0 : ℝ) < (ε : ℝ) := by exact_mod_cast hε
   have hcpos : 0 < (ε : ℝ) * Real.sqrt (2 * π) / (4 * k) := by positivity
   have hval : 4 * (k : ℝ) * ((ε : ℝ) * Real.sqrt (2 * π) / (4 * k)) / Real.sqrt (2 * π)

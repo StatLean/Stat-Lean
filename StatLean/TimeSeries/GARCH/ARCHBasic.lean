@@ -130,7 +130,7 @@ private lemma integrable_archVol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
       = fun ω => c0 + ∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2 :=
     funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg t ω
   rw [hvolsq]
-  exact (integrable_const c0).add (integrable_finset_sum _ fun i _ =>
+  exact (integrable_const c0).add (integrable_finsetSum _ fun i _ =>
     ((hL2 _).integrable_sq).const_mul _)
 
 omit [MeasurableSpace Ω] in
@@ -181,16 +181,22 @@ private lemma strictlyStationary_sq {X : ℤ → Ω → ℝ} (hstat : IsStrictly
     (hm : ∀ t, Measurable (X t)) : IsStrictlyStationary (fun t ω => X t ω ^ 2) μ := by
   intro n tt k
   have hsq : Measurable fun q : Fin n → ℝ => fun i => q i ^ 2 :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).pow_const 2
+    Measurable.of_eval fun i => (measurable_pi_apply i).pow_const 2
   have e : ∀ c : ℤ, (μ.map fun ω (i : Fin n) => X (tt i + c) ω ^ 2)
       = (μ.map fun ω (i : Fin n) => X (tt i + c) ω).map fun q i => q i ^ 2 := fun c => by
-    rw [Measure.map_map hsq (measurable_pi_lambda _ fun i => hm (tt i + c))]
+    rw [Measure.map_map hsq (Measurable.of_eval fun i => hm (tt i + c))]
     rfl
   have e0 : (μ.map fun ω (i : Fin n) => X (tt i) ω ^ 2)
       = (μ.map fun ω (i : Fin n) => X (tt i) ω).map fun q i => q i ^ 2 := by
-    rw [Measure.map_map hsq (measurable_pi_lambda _ fun i => hm (tt i))]
+    rw [Measure.map_map hsq (Measurable.of_eval fun i => hm (tt i))]
     rfl
-  rw [e k, e0, hstat n tt k]
+  rw [Measure.map₀_of_measurable
+      (show Measurable (fun ω (i : Fin n) => X (tt i + k) ω ^ 2) from
+        Measurable.of_eval fun i => (hm (tt i + k)).pow_const 2),
+    Measure.map₀_of_measurable
+      (show Measurable (fun ω (i : Fin n) => X (tt i) ω ^ 2) from
+        Measurable.of_eval fun i => (hm (tt i)).pow_const 2),
+    e k, e0, hstat.map_eq hm n tt k]
 
 /-- **`E X_t² = E σ_t²`**: the innovation is independent of the volatility and has unit
 second moment. -/
@@ -341,7 +347,7 @@ private lemma archSq_eq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → �
     rw [← ENNReal.finsetSum_iSup_of_monotone
       (f := fun (i : Fin p) (n : ℕ) => ENNReal.ofReal (b i)
         * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
-      (fun i m n hmn => mul_le_mul_left' (archIter_monotone c0 b _ hmn) _)]
+      (fun i m n hmn => mul_le_mul_right (archIter_monotone c0 b _ hmn) _)]
     exact Finset.sum_congr rfl fun i _ => by rw [archSq, ENNReal.mul_iSup]
   rw [h1]
   simp only [archIter_succ]
@@ -356,9 +362,12 @@ private lemma measurable_archIter (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (n : 
   | succ n ih =>
     change Measurable fun q : ℤ → ℝ => ENNReal.ofReal (q 0 ^ 2) * (ENNReal.ofReal c0
       + ∑ i : Fin p, ENNReal.ofReal (b i) * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
-    refine (((measurable_pi_apply 0).pow_const 2).ennreal_ofReal).mul
-      (measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_))
-    exact ih.comp (measurable_pi_lambda _ fun s => measurable_pi_apply _)
+    simpa only [Pi.mul_apply, Pi.add_apply] using!
+      (((measurable_pi_apply 0).pow_const 2).ennreal_ofReal).mul
+        ((measurable_const : Measurable (fun _ : ℤ → ℝ => ENNReal.ofReal c0)).add
+          (Finset.measurable_sum Finset.univ fun i _ =>
+            (measurable_const : Measurable (fun _ : ℤ → ℝ => ENNReal.ofReal (b i))).mul
+              (ih.comp (Measurable.of_eval fun s => measurable_pi_apply _))))
 
 private lemma measurable_archSq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
     Measurable (archSq c0 b) := by
@@ -368,14 +377,14 @@ private lemma measurable_archSq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
 private lemma measurable_archRho (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
     Measurable (archRho c0 b) :=
   measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul
-    ((measurable_archSq c0 b).comp (measurable_pi_lambda _ fun s => measurable_pi_apply _)))
+    ((measurable_archSq c0 b).comp (Measurable.of_eval fun s => measurable_pi_apply _)))
 
 private lemma measurable_archXFun (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
     Measurable (archXFun c0 b) :=
   ((measurable_archRho c0 b).ennreal_toReal.sqrt).mul (measurable_pi_apply 0)
 
 private lemma measurable_noisePath {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t)) (t : ℤ) :
-    Measurable (noisePath ε t) := measurable_pi_lambda _ fun s => hm (s + t)
+    Measurable (noisePath ε t) := Measurable.of_eval fun s => hm (s + t)
 
 private lemma measurable_archX {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ} {ε : ℤ → Ω → ℝ}
     (hm : ∀ t, Measurable (ε t)) (t : ℤ) : Measurable (archX c0 b ε t) :=
@@ -414,7 +423,7 @@ private lemma indep_eps_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurabl
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance)
     (fun s => (hm s).comap_le) hi hdisj
-  simpa using this
+  simpa using! this
 
 omit [MeasurableSpace Ω] in
 /-- Each iterate, read at time `t`, is a function of `σ(ε_s : s ≤ t)`. -/
@@ -426,10 +435,14 @@ private lemma measurable_archIter_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → �
   | succ n ih =>
     intro t
     simp only [archIter_succ, noisePath_zero, noisePath_shift]
-    refine (((measurable_self_sigmaLE (X := ε) t).pow_const 2).ennreal_ofReal).mul
-      (measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_))
-    exact (ih (t - 1 - (i : ℕ))).mono
-      (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl
+    simpa only [Pi.mul_apply, Pi.add_apply] using!
+      (((measurable_self_sigmaLE (X := ε) t).pow_const 2).ennreal_ofReal).mul
+        ((measurable_const : Measurable[sigmaLE ε t] (fun _ : Ω => ENNReal.ofReal c0)).add
+          (Finset.measurable_sum Finset.univ fun i _ =>
+            (measurable_const : Measurable[sigmaLE ε t]
+              (fun _ : Ω => ENNReal.ofReal (b i))).mul
+                ((ih (t - 1 - (i : ℕ))).mono
+                  (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl)))
 
 omit [MeasurableSpace Ω] in
 private lemma measurable_archSq_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
@@ -442,9 +455,12 @@ private lemma measurable_archSq_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ)
 private lemma measurable_archRho_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
     (t : ℤ) : Measurable[sigmaLE ε t] fun ω => archRho c0 b (noisePath ε t ω) := by
   simp only [archRho, noisePath_shift]
-  refine measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_)
-  exact (measurable_archSq_sigmaLE c0 b (t - 1 - (i : ℕ))).mono
-    (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl
+  simpa only [Pi.mul_apply, Pi.add_apply] using!
+    (measurable_const : Measurable[sigmaLE ε t] (fun _ : Ω => ENNReal.ofReal c0)).add
+      (Finset.measurable_sum Finset.univ fun i _ =>
+        (measurable_const : Measurable[sigmaLE ε t] (fun _ : Ω => ENNReal.ofReal (b i))).mul
+          ((measurable_archSq_sigmaLE c0 b (t - 1 - (i : ℕ))).mono
+            (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl))
 
 private lemma measurable_archX_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
     (t : ℤ) : Measurable[sigmaLE ε t] (archX c0 b ε t) := by
@@ -485,9 +501,13 @@ private lemma lintegral_archIter_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
     have hpast : Measurable[sigmaLT ε t] fun ω => ENNReal.ofReal c0
         + ∑ i : Fin p, ENNReal.ofReal (b i)
             * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) := by
-      refine measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_)
-      exact (measurable_archIter_sigmaLE c0 b n (t - 1 - (i : ℕ))).mono
-        (sigmaLE_le_sigmaLT (sub_one_sub_lt t (i : ℕ))) le_rfl
+      simpa only [Pi.mul_apply, Pi.add_apply] using!
+        (measurable_const : Measurable[sigmaLT ε t] (fun _ : Ω => ENNReal.ofReal c0)).add
+          (Finset.measurable_sum Finset.univ fun i _ =>
+            (measurable_const : Measurable[sigmaLT ε t]
+              (fun _ : Ω => ENNReal.ofReal (b i))).mul
+                ((measurable_archIter_sigmaLE c0 b n (t - 1 - (i : ℕ))).mono
+                  (sigmaLE_le_sigmaLT (sub_one_sub_lt t (i : ℕ))) le_rfl))
     have hsplit : ∫⁻ ω, archIter c0 b (n + 1) (noisePath ε t ω) ∂μ
         = (∫⁻ ω, ENNReal.ofReal (ε t ω ^ 2) ∂μ)
           * ∫⁻ ω, (ENNReal.ofReal c0 + ∑ i : Fin p, ENNReal.ofReal (b i)
@@ -504,13 +524,13 @@ private lemma lintegral_archIter_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
             * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω)) ∂μ
           = ∑ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
             * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ :=
-        lintegral_finset_sum _ fun i _ => measurable_const.mul (hmeas (t - 1 - (i : ℕ)))
+        lintegral_finsetSum _ fun i _ => measurable_const.mul (hmeas (t - 1 - (i : ℕ)))
       rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one, hfs]
       have hb' : ∀ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
             * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ
           ≤ ENNReal.ofReal (b i) * ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := fun i => by
         rw [lintegral_const_mul _ (hmeas (t - 1 - (i : ℕ)))]
-        exact mul_le_mul_left' (ih (t - 1 - (i : ℕ))) _
+        exact mul_le_mul_right (ih (t - 1 - (i : ℕ))) _
       calc ENNReal.ofReal c0 + ∑ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
               * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ
           ≤ ENNReal.ofReal c0
@@ -615,10 +635,10 @@ theorem exists_stationary_arch [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
         Ψ = fun q i => archXFun c0 b fun s => q (s + tt i) := ⟨_, rfl⟩
     have hΨm : Measurable Ψ := by
       rw [hΨ]
-      exact measurable_pi_lambda _ fun i => (measurable_archXFun c0 b).comp
-        (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+      exact Measurable.of_eval fun i => (measurable_archXFun c0 b).comp
+        (Measurable.of_eval fun s => measurable_pi_apply (s + tt i))
     have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ε (s + c) ω :=
-      fun c => measurable_pi_lambda _ fun s => hε.measurable (s + c)
+      fun c => Measurable.of_eval fun s => hε.measurable (s + c)
     have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => archX c0 b ε (tt i + c) ω)
         = Ψ ∘ fun ω (s : ℤ) => ε (s + c) ω := by
       intro c
@@ -627,8 +647,10 @@ theorem exists_stationary_arch [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
       rfl
     have h0 : (fun ω (i : Fin n) => archX c0 b ε (tt i) ω)
         = Ψ ∘ fun ω (s : ℤ) => ε s ω := by simpa using hfac 0
-    rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
-      ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hε.measurable s),
+    rw [hfac k, h0, Measure.map₀_of_measurable (hΨm.comp (hmb k)),
+      Measure.map₀_of_measurable (hΨm.comp (Measurable.of_eval fun s => hε.measurable s)),
+      ← Measure.map_map hΨm (hmb k),
+      ← Measure.map_map hΨm (Measurable.of_eval fun s : ℤ => hε.measurable s),
       map_noisePath_shift hε.measurable hε.iIndep hε.identDistrib k]
   · intro t
     refine (memLp_two_iff_integrable_sq
@@ -689,8 +711,8 @@ theorem IsARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
       rw [integral_const_mul, hstatsq]
     have hc : ∫ _ω : Ω, c0 ∂μ = c0 := by simp
     rw [hvolsq, integral_add (integrable_const c0)
-      (integrable_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
-      integral_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
+      (integrable_finsetSum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
+      integral_finsetSum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
       Finset.sum_mul]
     exact congrArg _ (Finset.sum_congr rfl fun i _ => hterm i)
   have hne : (1 : ℝ) - ∑ i, b i ≠ 0 := by linarith
@@ -761,8 +783,8 @@ theorem IsARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
       rw [integral_const_mul, hstatsq]
     have hc : ∫ _ω : Ω, c0 ∂μ = c0 := by simp
     rw [hvolsq, integral_add (integrable_const c0)
-      (integrable_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
-      integral_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
+      (integrable_finsetSum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
+      integral_finsetSum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
       Finset.sum_mul]
     exact congrArg _ (Finset.sum_congr rfl fun i _ => hterm i)
   -- the fixed-point equation `m = c₀ + (Σ_j b_j) m`, with `m ≥ 0`
@@ -873,7 +895,7 @@ private lemma sq_le_archSq_add_archWin [IsProbabilityMeasure μ] {c0 : ℝ} {p :
   filter_upwards [ae_all_iff.2 fun s : ℤ => ofReal_sq_recurrence h s] with ω hrec
   intro n
   induction n with
-  | zero => intro j; simpa using le_add_self
+  | zero => intro j; simpa using! le_add_self
   | succ n ih =>
     intro j
     match j with
@@ -898,7 +920,7 @@ private lemma sq_le_archSq_add_archWin [IsProbabilityMeasure μ] {c0 : ℝ} {p :
                 (fun s ω => ENNReal.ofReal (X s ω ^ 2)) u ω n (i : ℕ) := by
         intro i
         rw [← mul_add]
-        exact mul_le_mul_left' (ih (i : ℕ)) _
+        exact mul_le_mul_right (ih (i : ℕ)) _
       calc ENNReal.ofReal (ε (u + (n : ℤ) + 1) ω ^ 2)
             * (ENNReal.ofReal c0 + ∑ i : Fin p, ENNReal.ofReal (b i)
                 * ENNReal.ofReal (X (u + (n : ℕ) - (i : ℕ)) ω ^ 2))
@@ -1028,7 +1050,7 @@ private lemma lintegral_archWin_one_succ [IsProbabilityMeasure μ] {p : ℕ} {b 
         * archWin b ε (archOne Ω) u ω n (i : ℕ)) ∂μ)
       = ∑ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
           * archWin b ε (archOne Ω) u ω n (i : ℕ) ∂μ :=
-    lintegral_finset_sum (f := fun (i : Fin p) ω => ENNReal.ofReal (b i)
+    lintegral_finsetSum (f := fun (i : Fin p) ω => ENNReal.ofReal (b i)
       * archWin b ε (archOne Ω) u ω n (i : ℕ)) _ fun i _ => measurable_const.mul (hmi i)
   rw [hsplit, lintegral_ofReal_sq_eps hε, one_mul, hsum2]
   exact Finset.sum_congr rfl fun i _ => lintegral_const_mul _ (hmi i)
@@ -1063,7 +1085,7 @@ private lemma lintegral_archWin_one_le_one [IsProbabilityMeasure μ] {p : ℕ} {
           * (if (i : ℕ) ≤ n then ∫⁻ ω, archWin b ε (archOne Ω) u ω (n - (i : ℕ)) 0 ∂μ else 1)
           ≤ ENNReal.ofReal (b i) := by
         intro i
-        refine le_trans (mul_le_mul_left' ?_ _) (le_of_eq (mul_one _))
+        refine le_trans (mul_le_mul_right ?_ _) (le_of_eq (mul_one _))
         by_cases hi : (i : ℕ) ≤ n
         · rw [if_pos hi]
           exact ih (n - (i : ℕ)) (by omega)
@@ -1096,10 +1118,11 @@ private lemma lintegral_archWin_one_le_pow [IsProbabilityMeasure μ] {p : ℕ} {
         have hi : (i : ℕ) ≤ m := by omega
         have hlt : k * p < m - (i : ℕ) := by rw [hK]; omega
         rw [if_pos hi]
-        exact mul_le_mul_left' (ih _ hlt) _
+        exact mul_le_mul_right (ih _ hlt) _
       refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
       rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg fun i _ => hb i, pow_succ']
 
+set_option maxHeartbeats 800000 in
 /-- **Giraitis–Kokoszka–Leipus 2000 / Brandt (1986)** (*not* proved in FY §4.2.1): under
 `Σ_j b_j < 1` a **strictly stationary** ARCH(p) solution automatically has a finite second
 moment. See the section header for the route. -/
@@ -1180,14 +1203,14 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
                 (∑ j ∈ Finset.range (p + 1), ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
                 (fun m' hm' => Finset.single_le_sum
                   (f := fun j : ℕ => ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
-                  (fun j _ => zero_le _) (Finset.mem_range.2 (by omega))) n 0 (Nat.zero_le p)
+                  (fun j _ => zero_le) (Finset.mem_range.2 (by omega))) n 0 (Nat.zero_le p)
               refine ENNReal.div_le_of_le_mul ?_
               calc δ ≤ archWin b ε (fun s ω => ENNReal.ofReal (X s ω ^ 2)) u ω n 0 := hlt.le
                 _ ≤ (∑ j ∈ Finset.range (p + 1), ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
                     * archWin b ε (archOne Ω) u ω n 0 := hcmp
                 _ ≤ archWin b ε (archOne Ω) u ω n 0 * C := by
                     rw [mul_comm]
-                    exact mul_le_mul_left' hc _
+                    exact mul_le_mul_right hc _
           rw [Set.setOf_or] at hincl
           refine le_trans (measure_mono_ae hincl) (le_trans (measure_union_le _ _) ?_)
           refine add_le_add ?_ ?_
@@ -1239,7 +1262,7 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
           simpa [div_eq_mul_inv] using this
         simpa using Tendsto.const_add _ hdiv
       -- let the truncation level tend to infinity
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       refine ge_of_tendsto' (x := atTop) (f := fun m : ℕ => ((p : ℝ≥0∞) + 1)
         * μ {ω | ((m : ℝ) + 1) < X 0 ω ^ 2}) ?_ hbound
       have hanti : Antitone fun m : ℕ => {ω | ((m : ℝ) + 1) < X 0 ω ^ 2} := by
@@ -1420,7 +1443,7 @@ theorem IsARCH.kurtosis_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : F
         = fun ω => c0 + ∑ i, b i * X (0 - 1 - (i : ℕ)) ω ^ 2 :=
       funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg 0 ω
     rw [he]
-    exact (memLp_const c0).add (memLp_finset_sum _ fun i _ =>
+    exact (memLp_const c0).add (memLp_finsetSum _ fun i _ =>
       (memLp_sq_of_memLp_four (h.measurableX _) (hL4 _)).const_mul _)
   have hvol4 : Integrable (fun ω => archVol c0 b X 0 ω ^ 4) μ := by
     have h4 := (memLp_two_iff_integrable_sq
@@ -1623,7 +1646,7 @@ private lemma integral_pow_four_gaussianReal :
       ((1 + t ^ 2) * Real.exp (t ^ 2 / 2)) t := by
     intro t
     have := (hasDerivAt_id t).mul (hg t)
-    convert this using 1
+    convert! this using 1
     simp only [id_eq]
     ring
   have hg2 : ∀ t : ℝ, HasDerivAt (fun t : ℝ => (1 + t ^ 2) * Real.exp (t ^ 2 / 2))
@@ -1632,7 +1655,7 @@ private lemma integral_pow_four_gaussianReal :
     have hp : HasDerivAt (fun t : ℝ => 1 + t ^ 2) (2 * t) t := by
       simpa using (hasDerivAt_pow 2 t).const_add 1
     have := hp.mul (hg t)
-    convert this using 1
+    convert! this using 1
     ring
   have hg3 : ∀ t : ℝ, HasDerivAt (fun t : ℝ => (3 * t + t ^ 3) * Real.exp (t ^ 2 / 2))
       ((3 + 6 * t ^ 2 + t ^ 4) * Real.exp (t ^ 2 / 2)) t := by
@@ -1643,7 +1666,7 @@ private lemma integral_pow_four_gaussianReal :
       simpa using hasDerivAt_pow 3 t
     have hp : HasDerivAt (fun t : ℝ => 3 * t + t ^ 3) (3 + 3 * t ^ 2) t := h1.add h2
     have := hp.mul (hg t)
-    convert this using 1
+    convert! this using 1
     ring
   have d1 : iteratedDeriv 1 (fun t : ℝ => Real.exp (t ^ 2 / 2))
       = fun t : ℝ => t * Real.exp (t ^ 2 / 2) := by

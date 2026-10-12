@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import StatLean.PointEstimation.InformationInequality.CramerRao
 import StatLean.PointEstimation.InformationInequality.Additivity
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -167,7 +168,7 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     have hgabsL2 : MemLp (fun x => |g x|) 2 (M.toMeasure μ θ) := by
       simpa [Real.norm_eq_abs] using hg2.norm
     have hmul : Integrable (fun x => |g x| * b x) (M.toMeasure μ θ) :=
-      memLp_one_iff_integrable.mp (hb2.mul' hgabsL2)
+      memLp_one_iff_integrable.mp (hgabsL2.mul' hb2)
     have h := (integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)).1 hmul
     refine h.congr (Filter.Eventually.of_forall fun x => ?_)
@@ -452,7 +453,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       DifferentiableAt ℝ (fun t => (piFamily M n).density t x) θ := by
     intro x _
     simp only [piFamily]
-    exact DifferentiableAt.fun_finset_prod (fun i _ => hdiff_all (x i))
+    exact DifferentiableAt.fun_finsetProd (fun i _ => hdiff_all (x i))
   have hmeas_pi : AEStronglyMeasurable (score (piFamily M n) θ)
       (Measure.pi fun _ : Fin n => μ) :=
     (measurable_score_of_regular (piFamily M n) hsupp_pi θ hdiff_pi).aestronglyMeasurable
@@ -464,7 +465,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
             else M.density θ (x k)) := by
       intro x
       simp only [piFamily]
-      rw [deriv_fun_finset_prod (fun i _ => hdiff_all (x i))]
+      rw [deriv_fun_finsetProd (fun i _ => hdiff_all (x i))]
       refine Finset.sum_congr rfl (fun i _ => ?_)
       rw [smul_eq_mul, ← Finset.mul_prod_erase Finset.univ
           (fun k => if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k))
@@ -481,7 +482,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       · simp only [hk, if_pos]; exact hderiv_int
       · simp only [if_neg hk]; exact hpdf.density_integrable θ
     rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
-      integral_finset_sum Finset.univ (fun i _ => hint_i i)]
+      integral_finsetSum Finset.univ (fun i _ => hint_i i)]
     refine Finset.sum_eq_zero (fun i _ => ?_)
     rw [integral_fintype_prod_eq_prod (fun k a =>
       if k = i then deriv (fun t => M.density t a) θ else M.density θ a)]

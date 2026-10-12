@@ -246,9 +246,9 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
   have hEm : MeasurableSet {x : Fin n → ℝ | t < |μhat x - p * -c|} :=
     measurableSet_lt measurable_const (habs _)
   have hFp : Measurable fun w : Fin n → ℝ × ℝ => fun i => (w i).1 :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).fst
+    Measurable.of_eval fun i => (measurable_pi_apply i).fst
   have hFm : Measurable fun w : Fin n → ℝ × ℝ => fun i => (w i).2 :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).snd
+    Measurable.of_eval fun i => (measurable_pi_apply i).snd
   -- the product pushforwards of the coupling are the two product laws
   have hmapP : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).1) = Measure.pi fun _ : Fin n => twoPointPM c p := by

@@ -218,7 +218,7 @@ theorem conditionalProjectedRademacherSup_le_entropy_sum
               n X := by
         rw [MeasureTheory.lintegral_add_left
           (measurable_rademacherSup (B.net 0 : Set (Ω → ℝ)) n X)]
-        rw [MeasureTheory.lintegral_finset_sum (Finset.range L)
+        rw [MeasureTheory.lintegral_finsetSum (Finset.range L)
           (fun q _ => measurable_rademacherSup
             (empiricalClosePairDifferences n X
               (B.net (q + 1)) (B.net q)

@@ -341,7 +341,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
       refine ⟨K, _hK, ?_⟩
       rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
       letI : IsProbabilityMeasure ((joint n).map Prod.snd) :=
-        Measure.isProbabilityMeasure_map measurable_snd.aemeasurable
+        (by infer_instance)
       rw [(prob_compl_eq_zero_iff _hK.measurableSet).2 (hsndK n)]
       exact bot_le
     have hjointTight : IsTightMeasureSet (Set.range joint) :=
@@ -372,14 +372,14 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     have hrhoSndK : rho.snd K = 1 := by
       let Pn : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) :=
         fun k => ⟨(joint (ns k)).map Prod.snd,
-          Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+          (by infer_instance)⟩
       let P : ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) :=
         ⟨rho.map Prod.snd,
-          Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+          (by infer_instance)⟩
       have hsndWeak := hrhoWeak.map continuous_snd measurable_snd
       have htend : Tendsto Pn atTop (nhds P) := by
         apply ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr
-        simpa [Pn, P] using hsndWeak
+        simpa [Pn, P] using! hsndWeak
       have hclosed :=
         ProbabilityMeasure.limsup_measure_closed_le_of_tendsto htend _hK.isClosed
       have hlimsup : limsup (fun k => ((Pn k : ProbabilityMeasure
@@ -401,7 +401,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     · intro i
       have hi := weakConverges_bind_of_compProd (μ i) nu (hmuNu i)
         (fun k => etaN (ns k)) eta hjointLimit
-      convert hi using 1
+      convert! hi using 1
       funext k
       dsimp [etaN]
       exact Measure.map_comp (μ i) (κn (ns k)).1 hprofile
@@ -566,7 +566,7 @@ theorem actionKernel_approx_of_lossProfileKernel {m d r : ℕ}
         ≤ ∫ _ : EuclideanSpace ℝ (Fin r), ε / 2 ∂ρ := by
       have hdiff : ∀ᵐ z ∂ρ,
           ‖z j - (ℓ (round z - center j)).toReal‖ ≤ ε / 2 := by
-        simpa [profile, Real.norm_eq_abs] using hcoord_i
+        simpa [profile, Real.norm_eq_abs] using! hcoord_i
       exact norm_integral_le_of_norm_le (integrable_const (ε / 2)) hdiff
     _ = ε / 2 := by simp
     _ < ε := by linarith

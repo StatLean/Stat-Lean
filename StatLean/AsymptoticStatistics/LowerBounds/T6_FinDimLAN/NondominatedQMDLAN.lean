@@ -61,7 +61,7 @@ private theorem baseline_actualResidual_sq_le
       (Measure.measurable_rnDeriv P μ) (Measure.rnDeriv_lt_top P μ)
       (g := fun ω => (γ.score : Ω → ℝ) ω ^ 2)
     rw [← hP] at hi
-    convert hi.mp hsquare using 1
+    convert! hi.mp hsquare using 1
     funext ω
     rw [mul_pow, Real.sq_sqrt ENNReal.toReal_nonneg]
   have hr : MemLp r 2 μ := by
@@ -78,7 +78,7 @@ private theorem baseline_actualResidual_sq_le
   have hchain : ∀ᵐ ω ∂μ, p ω ≠ 0 → L ω * p ω = q ω := by
     have h' : L * p =ᵐ[μ.withDensity (P.rnDeriv μ)] q := by
       simpa only [hP_eq] using hchainP
-    simpa only [p] using
+    simpa only [p] using!
       (ae_withDensity_iff (Measure.measurable_rnDeriv P μ)).mp h'
   have hLfinP : ∀ᵐ ω ∂P, L ω ≠ ⊤ := by
     simpa only [L] using Measure.rnDeriv_ne_top (γ.curve t) P
@@ -141,7 +141,7 @@ private theorem baseline_actualResidual_memLp
       (Measure.measurable_rnDeriv
         (γ.curve t) P).ennreal_toReal.sqrt.aestronglyMeasurable
     rw [memLp_two_iff_integrable_sq hmeas]
-    convert Measure.integrable_toReal_rnDeriv (μ := γ.curve t) (ν := P) using 1
+    convert! Measure.integrable_toReal_rnDeriv (μ := γ.curve t) (ν := P) using 1
     funext ω
     exact Real.sq_sqrt ENNReal.toReal_nonneg
   have hone : MemLp (fun _ : Ω => (1 : ℝ)) 2 P := memLp_const 1
@@ -159,11 +159,13 @@ private theorem baseline_actualResidual_sq_isLittleO
         - t * (γ.score : Ω → ℝ) ω) ^ 2 ∂P)
       =o[nhdsWithin 0 (Set.Ioi 0)] (fun t => t ^ 2) := by
   let l := nhdsWithin (0 : ℝ) (Set.Ioi 0)
+  have hqmd := (isRightQMD_iff_eLpNorm γ.curve γ.curve_isProbability
+    (Lp.aestronglyMeasurable γ.score.val)).1 γ.qmd_limit
   have hqmd_real : Tendsto (fun t : ℝ =>
       (eLpNorm (γ.comparisonResidual t) 2
         (canonicalDominator P (γ.curve t)) / ENNReal.ofReal t).toReal)
       l (nhds 0) :=
-    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp γ.qmd_limit
+    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hqmd
   rw [Asymptotics.isLittleO_iff]
   intro c hc
   have hqmd_bound : ∀ᶠ t : ℝ in l,
@@ -181,7 +183,7 @@ private theorem baseline_actualResidual_sq_isLittleO
   have hqmd_lt : ∀ᶠ t : ℝ in l,
       eLpNorm (γ.comparisonResidual t) 2
         (canonicalDominator P (γ.curve t)) / ENNReal.ofReal t < 1 :=
-    γ.qmd_limit.eventually (Iio_mem_nhds (by norm_num : (0 : ℝ≥0∞) < 1))
+    hqmd.eventually (Iio_mem_nhds (by norm_num : (0 : ℝ≥0∞) < 1))
   filter_upwards [self_mem_nhdsWithin, hqmd_bound, hqmd_lt] with t ht hbound hlt
   have htpos : 0 < t := ht
   have hnorm_fin : eLpNorm (γ.comparisonResidual t) 2
@@ -293,7 +295,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
           rw [inv_pow, ← div_eq_mul_inv, Real.sq_sqrt hnpos.le, div_self hnpos.ne',
             mul_one]
     have hDsqO : (fun n => ∫ ω, D n ω ^ 2 ∂P) =o[atTop] fun n => u n ^ 2 := by
-      simpa only [Function.comp_apply, D, W] using
+      simpa only [Function.comp_apply, D, W] using!
         (baseline_actualResidual_sq_isLittleO γ).comp_tendsto hu_right
     have hDscaled : Tendsto (fun n : ℕ => (n : ℝ) * ∫ ω, D n ω ^ 2 ∂P)
         atTop (nhds 0) := by
@@ -311,7 +313,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
       have hD := baseline_actualResidual_memLp γ (u n) hu_nn
       have hg := (Lp.memLp (γ.score : Lp ℝ 2 P)).const_mul (u n)
       have hsum := hD.add hg
-      convert hsum using 1
+      convert! hsum using 1
       funext ω
       simp only [Pi.add_apply]
       ring
@@ -371,7 +373,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
       have hsing_real : Tendsto
           (fun n : ℕ => (n : ℝ) * (γ.singularMass (u n)).toReal) atTop (nhds 0) := by
         have := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hsing
-        convert this using 1
+        convert! this using 1
         · funext n
           simp only [Function.comp_apply, ENNReal.toReal_mul, ENNReal.toReal_natCast, u]
       have hidentity : ∀ n : ℕ,
@@ -420,7 +422,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
                 (Measure.integral_toReal_rnDeriv' (μ := γ.curve (u n)) (ν := P))]
             ring
       have hmain := (hnsqW.const_mul (-(1 / 4 : ℝ))).sub hsing_real
-      convert hmain using 1
+      convert! hmain using 1
       · funext n
         rw [hidentity]
         ring
@@ -438,7 +440,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
           (hD_mem n).comp_measurePreserving (measurePreserving_eval _ i)
         have hsum : MemLp (fun X : Fin n → Ω => ∑ i : Fin n, D n (X i)) 2
             (Measure.pi (fun _ : Fin n => P)) := by
-          simpa only using MeasureTheory.memLp_finset_sum Finset.univ fun i _ => hcoord i
+          simpa only using MeasureTheory.memLp_finsetSum Finset.univ fun i _ => hcoord i
         exact hsum.sub (memLp_const _)
       have hmean : ∀ n, ∫ X, A n X ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
         intro n
@@ -452,8 +454,8 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
           MeasureTheory.integral_comp_eval (μ := fun _ : Fin n => P) (i := i)
             (hD_mem n).aestronglyMeasurable
         dsimp only [A]
-        rw [integral_sub (integrable_finset_sum Finset.univ fun i _ => hcoordint i)
-          (integrable_const _), integral_finset_sum _ fun i _ => hcoordint i]
+        rw [integral_sub (integrable_finsetSum Finset.univ fun i _ => hcoordint i)
+          (integrable_const _), integral_finsetSum _ fun i _ => hcoordint i]
         simp_rw [hcoordval]
         simp [integral_const]
       have hvarle : ∀ n, variance (A n) (Measure.pi (fun _ : Fin n => P)) ≤
@@ -482,7 +484,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
             (fun n : ℕ => ((n : ℝ) * ∫ ω, D n ω ^ 2 ∂P) / ε ^ 2)
             atTop (nhds 0) := by simpa using hr
         have hc := (ENNReal.continuous_ofReal.tendsto 0).comp hr'
-        simpa using hc
+        simpa using! hc
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
         tendsto_const_nhds hbound (Filter.Eventually.of_forall fun _ => bot_le) ?_
       filter_upwards with n
@@ -535,7 +537,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
         simpa only [F] using hFsq
       have hFroot : Tendsto (fun n => Real.sqrt (∫ ω, F n ω ^ 2 ∂P))
           atTop (nhds 0) := by
-        simpa only [Real.sqrt_zero] using (Real.continuous_sqrt.tendsto 0).comp hFsqF
+        simpa only [Real.sqrt_zero] using! (Real.continuous_sqrt.tendsto 0).comp hFsqF
       have hGbd : ∀ᶠ n : ℕ in atTop, ∫ ω, G n ω ^ 2 ∂P ≤ 2 + 8 * a ^ 2 * I := by
         have hev := hFsqF.eventually (Iio_mem_nhds (show (0 : ℝ) < 1 by norm_num))
         filter_upwards [hev] with n hn
@@ -591,7 +593,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
       (n : ℝ)⁻¹ * ∑ i : Fin n, Δ n (X i)
     have hEint : ∀ n, Integrable (E n) (Measure.pi (fun _ : Fin n => P)) := by
       intro n
-      exact (integrable_finset_sum Finset.univ fun i _ =>
+      exact (integrable_finsetSum Finset.univ fun i _ =>
         MeasureTheory.integrable_comp_eval (hΔint n)).const_mul _
     have hEabs : ∀ n, ∫ X, |E n X| ∂(Measure.pi (fun _ : Fin n => P)) ≤
         ∫ ω, |Δ n ω| ∂P := by
@@ -610,7 +612,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
             (inv_nonneg.mpr hnR.le)
         have hsumabs : Integrable (fun X : Fin n → Ω =>
             ∑ i : Fin n, |Δ n (X i)|) (Measure.pi (fun _ : Fin n => P)) :=
-          integrable_finset_sum Finset.univ fun i _ =>
+          integrable_finsetSum Finset.univ fun i _ =>
             MeasureTheory.integrable_comp_eval (μ := fun _ : Fin n => P) (i := i)
               (hΔint n).abs
         calc
@@ -626,7 +628,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
                   ∂(Measure.pi (fun _ : Fin n => P)) =
                   ∑ i : Fin n, ∫ X : Fin n → Ω, |Δ n (X i)|
                     ∂(Measure.pi (fun _ : Fin n => P)) :=
-                integral_finset_sum Finset.univ fun i _ =>
+                integral_finsetSum Finset.univ fun i _ =>
                   MeasureTheory.integrable_comp_eval (μ := fun _ : Fin n => P) (i := i)
                     (hΔint n).abs
               _ = ∑ i : Fin n, ∫ ω, |Δ n ω| ∂P := by
@@ -646,7 +648,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
         have hr : Tendsto (fun n : ℕ => (∫ ω, |Δ n ω| ∂P) / ε)
             atTop (nhds 0) := by
           simpa only [Δ, zero_div] using hL1.div_const ε
-        simpa using (ENNReal.continuous_ofReal.tendsto 0).comp hr
+        simpa using! (ENNReal.continuous_ofReal.tendsto 0).comp hr
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
         (Filter.Eventually.of_forall fun _ => bot_le) ?_
       filter_upwards with n
@@ -741,7 +743,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
     have hI_nonneg : 0 ≤ I := integral_nonneg fun _ => sq_nonneg _
     have hDsq0 : Tendsto (fun n => ∫ ω, D n ω ^ 2 ∂P) atTop (nhds 0) := by
       have hu2 : Tendsto (fun n => u n ^ 2) atTop (nhds 0) := by
-        convert hu_zero.pow 2 using 1
+        convert! hu_zero.pow 2 using 1
         norm_num
       exact hDsqO.isBigO.trans_tendsto hu2
     have hWsq0 : Tendsto (fun n => ∫ ω, W n ω ^ 2 ∂P) atTop (nhds 0) := by
@@ -811,7 +813,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
       intro δ hδ
       have hsingle : Tendsto (fun n : ℕ => ENNReal.ofReal
           ((n : ℝ) * P.real {ω | δ ≤ |W n ω|})) atTop (nhds 0) := by
-        simpa only [Function.comp_apply, ENNReal.ofReal_zero] using
+        simpa only [Function.comp_apply, ENNReal.ofReal_zero] using!
           (ENNReal.continuous_ofReal.tendsto 0).comp (htailScaled δ hδ)
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
         tendsto_const_nhds hsingle (Filter.Eventually.of_forall fun _ => bot_le) ?_
@@ -997,7 +999,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
       rw [Finset.sum_sub_distrib, hscaled]
     have hmeanDet : Tendsto (fun n : ℕ =>
         (n : ℝ) * ∫ ω, W n ω ∂P + a ^ 2 / 4 * I) atTop (nhds 0) := by
-      convert hmeanW.add_const (a ^ 2 / 4 * I) using 1
+      convert! hmeanW.add_const (a ^ 2 / 4 * I) using 1
       ring_nf
     have hnormI : I = ‖γ.score‖ ^ 2 := integral_score_sq_eq_norm_sq γ
     let Z : ∀ n : ℕ, (Fin n → Ω) → ℝ := fun n X =>
@@ -1347,7 +1349,7 @@ theorem qmd_score_mean_integrable_and_lan_nondominated
   let Y : ∀ n : ℕ, Ω' → (Fin n → Ω) := fun n ω i => X i.val ω
   have hYmeas : ∀ n, Measurable (Y n) := by
     intro n
-    exact measurable_pi_lambda _ fun i => hX_meas i.val
+    exact Measurable.of_eval fun i => hX_meas i.val
   have hjoint : ∀ n, Measure.map (Y n) P' =
       Measure.pi (fun _ : Fin n => P) := by
     intro n
@@ -1378,7 +1380,7 @@ theorem qmd_score_mean_integrable_and_lan_nondominated
   rw [MeasureTheory.tendstoInMeasure_iff_norm]
   intro ε hε
   have hp := hsumLAN ε hε
-  convert hp using 1
+  convert! hp using 1
   funext n
   have hset : MeasurableSet {Z : Fin n → Ω | ε ≤ |S n Z|} :=
     measurableSet_le measurable_const (hSmeas n).abs

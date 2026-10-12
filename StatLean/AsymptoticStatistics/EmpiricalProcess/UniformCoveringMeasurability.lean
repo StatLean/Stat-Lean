@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.PointwiseDense
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 import Mathlib.MeasureTheory.Measure.Prod
@@ -49,7 +50,7 @@ theorem ghostDifferenceSup_eq_of_pointwiseDense
   apply supNormOver_eq_of_pointwiseDense hsub hApprox
   intro f _ φ hφ
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     (hφ (x i)).sub (hφ (y i))
 
 theorem rademacherSup_eq_of_pointwiseDense
@@ -63,7 +64,7 @@ theorem rademacherSup_eq_of_pointwiseDense
   apply supNormOver_eq_of_pointwiseDense hsub hApprox
   intro f _ φ hφ
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     tendsto_const_nhds.mul (hφ (x i))
 
 theorem measurable_empiricalProcessSup_dense
@@ -200,7 +201,7 @@ theorem tendsto_empiricalL2Seminorm_of_pointwise
   unfold empiricalL2Seminorm empiricalAvg
   apply Real.continuous_sqrt.continuousAt.tendsto.comp
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     ((continuous_abs.tendsto _).comp (hφ (X i))).pow 2
 
 theorem empiricalRelativeRadius_eq_of_pointwiseDense

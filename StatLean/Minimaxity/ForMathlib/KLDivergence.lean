@@ -256,8 +256,8 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
       fun j => klDiv_eq_lintegral_klFun_of_ac (hAC j)
     rw [Finset.sum_congr rfl (fun j _ => hLHS j),
       Finset.sum_congr rfl (fun j _ => hRHS j),
-      ← lintegral_finset_sum _ (fun j _ => by fun_prop),
-      ← lintegral_finset_sum _ (fun j _ => by fun_prop)]
+      ← lintegral_finsetSum _ (fun j _ => by fun_prop),
+      ← lintegral_finsetSum _ (fun j _ => by fun_prop)]
     refine lintegral_mono_ae ?_
     filter_upwards [hsum_ae, hchain_ae, hPktop,
       Measure.rnDeriv_ne_top ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) Q] with x hsum hchain hktop hWtop
@@ -291,7 +291,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     obtain ⟨j₀, hj₀⟩ := hAC
     have htop : klDiv (P j₀) Q = ⊤ := klDiv_of_not_ac hj₀
     have hle : klDiv (P j₀) Q ≤ ∑ j, klDiv (P j) Q :=
-      Finset.single_le_sum (f := fun j => klDiv (P j) Q) (fun i _ => zero_le _)
+      Finset.single_le_sum (f := fun j => klDiv (P j) Q) (fun i _ => zero_le)
         (Finset.mem_univ j₀)
     have hsum : ∑ j, klDiv (P j) Q = ⊤ := top_le_iff.mp (htop ▸ hle)
     rw [hsum]

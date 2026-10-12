@@ -556,12 +556,12 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
     have h := hgLq.integrable_norm_rpow (by simp [hq0]) (by simp)
     simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hq0.le] using h
   have hA : A = (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) := by
-    rw [hAdef, toReal_eLpNorm hfLp.aestronglyMeasurable,
+    rw [hAdef, toReal_eLpNorm,
       lpNorm_eq_integral_norm_rpow_toReal (by simp [hp0]) (by simp) hfLp.aestronglyMeasurable,
       ENNReal.toReal_ofReal hp0.le]
     simp [Real.norm_eq_abs, one_div]
   have hB : B = (∫ ω, |g ω| ^ q ∂μ) ^ (1 / q) := by
-    rw [hBdef, toReal_eLpNorm hgLq.aestronglyMeasurable,
+    rw [hBdef, toReal_eLpNorm,
       lpNorm_eq_integral_norm_rpow_toReal (by simp [hq0]) (by simp) hgLq.aestronglyMeasurable,
       ENNReal.toReal_ofReal hq0.le]
     simp [Real.norm_eq_abs, one_div]
@@ -585,7 +585,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   rcases eq_or_lt_of_le hA0 with hA0' | hApos
   · have hfae : f =ᵐ[μ] 0 := by
       have hpne : ENNReal.ofReal p ≠ 0 := by simp [hp0]
-      refine (eLpNorm_eq_zero_iff hfLp.aestronglyMeasurable hpne).mp ?_
+      refine (eLpNorm_eq_zero_iff hpne).mp ?_
       have := hfLp.eLpNorm_ne_top
       rcases (ENNReal.toReal_eq_zero_iff _).mp hA0'.symm with h | h
       · exact h
@@ -601,7 +601,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   rcases eq_or_lt_of_le hB0 with hB0' | hBpos
   · have hgae : g =ᵐ[μ] 0 := by
       have hqne : ENNReal.ofReal q ≠ 0 := by simp [hq0]
-      refine (eLpNorm_eq_zero_iff hgLq.aestronglyMeasurable hqne).mp ?_
+      refine (eLpNorm_eq_zero_iff hqne).mp ?_
       have := hgLq.eLpNorm_ne_top
       rcases (ENNReal.toReal_eq_zero_iff _).mp hB0'.symm with h | h
       · exact h
@@ -696,7 +696,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
       hf''int.mul_bdd hg'm.aestronglyMeasurable hg'n
     have hfg''int : Integrable (fun ω => f ω * (g ω - g' ω)) μ := by
       have h : ∀ ω, f ω * (g ω - g' ω) = f ω * g ω - f ω * g' ω := by intro ω; ring
-      simpa [h] using hfgint.sub hfg'int
+      simpa [h] using! hfgint.sub hfg'int
     -- the three-term decomposition
     have e1 : (∫ ω, f ω * g' ω ∂μ) + (∫ ω, f ω * (g ω - g' ω) ∂μ) = ∫ ω, f ω * g ω ∂μ := by
       rw [← integral_add hfg'int hfg''int]
@@ -922,7 +922,7 @@ theorem norm_integral_prod_sub_prod_integral_le_of_pos {k : ℕ}
     intro n
     filter_upwards [hbdd'] with ω hω
     rw [norm_prod]
-    exact Finset.prod_le_one (fun i _ => norm_nonneg _) (fun i _ => hω i)
+    exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) (fun i _ => hω i)
   have hint : ∀ l : Fin k, ‖∫ ω, ξ l ω ∂μ‖ ≤ 1 := by
     intro l
     have h := norm_integral_le_of_norm_le_const (μ := μ) (hbdd l)
@@ -1872,15 +1872,15 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
             * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω ∂μ := by
     rw [integral_congr_ae (ae_of_all _ fun ω =>
       sum_pow_four_expand (Finset.range n) fun t : ℕ => X ((t : ℤ) + 1) ω)]
-    rw [integral_finset_sum _ fun a _ => integrable_finset_sum _ fun b _ =>
-      integrable_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun a _ => integrable_finsetSum _ fun b _ =>
+      integrable_finsetSum _ fun c _ => integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun a _ => ?_
-    rw [integral_finset_sum _ fun b _ => integrable_finset_sum _ fun c _ =>
-      integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun b _ => integrable_finsetSum _ fun c _ =>
+      integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun b _ => ?_
-    rw [integral_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun c _ => integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun c _ => ?_
-    exact integral_finset_sum _ fun d _ => hint a b c d
+    exact integral_finsetSum _ fun d _ => hint a b c d
   rw [hexp]
   refine le_trans ?_ (hD n)
   refine Finset.sum_le_sum fun a _ => Finset.sum_le_sum fun b _ =>

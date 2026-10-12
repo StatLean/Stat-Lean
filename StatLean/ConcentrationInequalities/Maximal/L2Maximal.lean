@@ -97,7 +97,7 @@ private lemma isSubGaussian_inner_of_norm_le
     IsSubGaussian (fun ω => inner ℝ v (X ω)) σ2 μ := by
   apply isSubGaussian_mono (hX v)
   nth_rewrite 2 [← mul_one σ2]
-  apply mul_le_mul_of_nonneg_left _ (zero_le _)
+  apply mul_le_mul_of_nonneg_left _ (zero_le)
   have h_nnnorm_le : (‖v‖₊ : ℝ) ≤ 1 := by exact_mod_cast hv
   have h_sq_le : (‖v‖₊ : ℝ) ^ 2 ≤ 1 := by
     nlinarith [NNReal.coe_nonneg ‖v‖₊, sq_nonneg (1 - (‖v‖₊ : ℝ))]
@@ -119,7 +119,7 @@ private lemma integrable_iSup_fin
     Integrable (fun ω => ⨆ j, f j ω) μ := by
   haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖f j ω‖)
-  · exact integrable_finset_sum _ (fun j _ => (hf j).norm)
+  · exact integrable_finsetSum _ (fun j _ => (hf j).norm)
   · exact (AEMeasurable.iSup (fun j =>
         (hf j).aestronglyMeasurable.aemeasurable)).aestronglyMeasurable
   · filter_upwards with ω
@@ -524,10 +524,10 @@ theorem l2_max_tail
             simp only [ht0] at hω
             exact hω
       _ = 0 := hme
-      _ ≤ ENNReal.ofReal δ := zero_le _
+      _ ≤ ENNReal.ofReal δ := zero_le
   · -- σ² > 0: use tail_max_le + l2_tail_numerical
     have hσ_pos : 0 < (σ2 : ℝ) :=
-      NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le σ2) (Ne.symm hσ0))
+      NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le (a := σ2)) (Ne.symm hσ0))
     set t := 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
              2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))
     have h_subset : {ω | t < ‖X ω‖} ⊆ {ω | t / 2 < ⨆ j, Y j ω} := by

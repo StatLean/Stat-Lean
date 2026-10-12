@@ -127,7 +127,7 @@ theorem integral_abs_le_of_subGaussianNorm_le
   have hδpos : 0 < δ := Real.toNNReal_pos.mpr hδ
   have hK : (0 : ℝ≥0) < L + δ := hδpos.trans_le le_add_self
   have hYK : subGaussianNorm Y μ ≤ ((L + δ : ℝ≥0) : ℝ≥0∞) :=
-    hY.trans (by exact_mod_cast le_add_of_nonneg_right (zero_le δ))
+    hY.trans (by exact_mod_cast le_add_of_nonneg_right (zero_le (a := δ)))
   have hbd := key (L + δ) hK hYK
   have hval : Real.sqrt Real.pi * ((L + δ : ℝ≥0) : ℝ) = c := by
     have hcoe : (δ : ℝ) = (c - Real.sqrt Real.pi * L) / Real.sqrt Real.pi := by
@@ -294,7 +294,7 @@ lemma integrable_biSup_abs {ι : Type*}
     exact lt_of_le_of_lt hlint ENNReal.ofReal_lt_top
   -- The finite max is dominated by the (integrable) sum of the `|Y i|`.
   have hsum : MeasureTheory.Integrable (fun ω => ∑ i ∈ s, |Y i ω|) μ :=
-    MeasureTheory.integrable_finset_sum s hYint
+    MeasureTheory.integrable_finsetSum s hYint
   have hmeas : AEMeasurable (fun ω => ⨆ i ∈ s, |Y i ω|) μ :=
     AEMeasurable.biSup (↑s) s.finite_toSet.countable
       fun i hi => (hm i (Finset.mem_coe.mp hi)).abs

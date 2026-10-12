@@ -108,7 +108,7 @@ theorem exists_riskRand_eq_of_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsPr
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] :
     ∃ κ' : Kernel S D, IsMarkovKernel κ' ∧
       ∀ θ, riskRand (statLaw P T) L κ' θ = riskRand P L κ θ := by
-  obtain ⟨Q, hQ, hgraph⟩ := hsuf
+  obtain ⟨Q, hQ, hgraph⟩ := hsuf.exists_map hT
   haveI := hQ
   exact ⟨κ ∘ₖ Q, inferInstance, fun θ => riskRand_comp_eq_riskRand P L hT hL hgraph κ θ⟩
 

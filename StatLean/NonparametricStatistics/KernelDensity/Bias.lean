@@ -60,7 +60,7 @@ theorem integrable_kernel_mul_holder {β L : ℝ} (hβ : 0 < β) (hL : 0 ≤ L)
         |iteratedDeriv j f x₀| / (Nat.factorial j : ℝ) * h ^ j * (|u| ^ j * |K u|))
       + (L / (Nat.factorial (holderIndex β) : ℝ) * h ^ β) * (|u| ^ β * |K u|)) := by
     apply Integrable.add
-    · apply integrable_finset_sum
+    · apply integrable_finsetSum
       intro j hj
       have hjℓ : j ≤ holderIndex β := Finset.mem_range_succ_iff.mp hj
       have hjint : Integrable (fun u => |u| ^ j * |K u|) := by
@@ -121,7 +121,7 @@ theorem abs_integral_kernel_taylor_le {β L : ℝ}
         = fun u => ∑ j ∈ Finset.range (holderIndex β + 1),
           K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
       funext u; rw [Finset.mul_sum]
-    rw [hfun]; exact integrable_finset_sum _ hpolyint
+    rw [hfun]; exact integrable_finsetSum _ hpolyint
   have hKT : (∫ u, K u * ∑ j ∈ Finset.range (holderIndex β + 1),
       iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) = f x₀ := by
     have hfun : (fun u => K u * ∑ j ∈ Finset.range (holderIndex β + 1),
@@ -129,7 +129,7 @@ theorem abs_integral_kernel_taylor_le {β L : ℝ}
         = fun u => ∑ j ∈ Finset.range (holderIndex β + 1),
           K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
       funext u; rw [Finset.mul_sum]
-    rw [hfun, integral_finset_sum _ hpolyint]
+    rw [hfun, integral_finsetSum _ hpolyint]
     have hterm : ∀ j ∈ Finset.range (holderIndex β + 1),
         (∫ u, K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)))
           = iteratedDeriv j f x₀ * h ^ j / (Nat.factorial j : ℝ) * (∫ u, u ^ j * K u) := by

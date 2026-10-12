@@ -189,7 +189,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
     calc μ {ω | thr < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}
         ≤ μ {ω | ¬ (∀ t ∈ T, ∀ s ∈ T, |X t ω - X s ω| = 0)} := measure_mono hnull
       _ = 0 := ae_iff.mp hall
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hDeq | hDpos
   · -- diam T = 0
     apply trivial_case
@@ -203,7 +203,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
     intro s hs t ht
     have hK0 : K = 0 := by rw [← NNReal.coe_eq_zero]; exact hKeq.symm
     have hnorm : subGaussianNorm (fun ω => X t ω - X s ω) μ = 0 := by
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       have h := hinc s hs t ht
       rw [hK0] at h; simpa using h
     exact ae_eq_zero_of_subGaussianNorm_eq_zero ((hmeas t ht).sub (hmeas s hs)) hnorm
@@ -338,7 +338,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
         rw [hcontra, abs_zero] at hω
         exact absurd hω (not_lt.mpr hτpos.le)
       rw [measure_mono_null hsub (ae_iff.mp hae2)]
-      exact zero_le _
+      exact zero_le
     · -- dist > 0: apply the B1 pair-tail bound and inflate the radius.
       have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
       have hK' : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
@@ -738,7 +738,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     calc μ {ω | thr < M ω}
         ≤ μ {ω | ¬ (∀ p ∈ F ×ˢ F, |X p.1 ω - X p.2 ω| = 0)} := measure_mono hnull
       _ = 0 := ae_iff.mp hall
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hDeq | hDpos
   · apply trivial_case
     intro s hs t ht
@@ -750,7 +750,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     intro s hs t ht
     have hK0 : K = 0 := by rw [← NNReal.coe_eq_zero]; exact hKeq.symm
     have hnorm : subGaussianNorm (fun ω => X t ω - X s ω) μ = 0 := by
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       have h := hinc s hs t ht
       rw [hK0] at h; simpa using h
     exact ae_eq_zero_of_subGaussianNorm_eq_zero ((hmeas t ht).sub (hmeas s hs)) hnorm
@@ -871,7 +871,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         rw [hcontra, abs_zero] at hω
         exact absurd hω (not_lt.mpr hτpos.le)
       rw [measure_mono_null hsub (ae_iff.mp hae2)]
-      exact zero_le _
+      exact zero_le
     · have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
       have hK' : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
       have htail := hinc.measure_abs_sub_ge_le (hmeas p.2 hp2) (hmeas p.1 hp1) hp2 hp1 hK' hτ0

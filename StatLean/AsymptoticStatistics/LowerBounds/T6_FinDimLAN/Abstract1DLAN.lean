@@ -319,7 +319,6 @@ private lemma integral_qmdResidual_sq_eq_eLpNorm_toReal_sq
   have h_int_nn : 0 ≤ ∫ ω, qmdResidual γ t ω ^ 2 ∂γ.dominating :=
     integral_nonneg fun _ => sq_nonneg _
   have := congrArg (fun x => x ^ 2) h_sqrt
-  simp only at this
   rw [Real.sq_sqrt h_int_nn] at this
   exact this
 

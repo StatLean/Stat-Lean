@@ -311,7 +311,7 @@ private theorem localizedModulus_aemeasurable
     have hsum : ContinuousOn (fun θ : EuclideanSpace ℝ (Fin d) =>
         ∑ i : Fin n, (m θ (X i.val ξ) - m θ₀ (X i.val ξ)))
         (Metric.closedBall θ₀ ρ) :=
-      continuousOn_finset_sum Finset.univ
+      continuousOn_finsetSum Finset.univ
         (fun i _ => (hm_cont (X i.val ξ)).sub continuousOn_const)
     exact (ContinuousOn.sub (hsum.const_mul ((n : ℝ)⁻¹)) hB_cont).const_mul (Real.sqrt n)
   -- Measurability of each fixed-`θ` slice `ξ ↦ ofReal|𝔾ₙ(m_θ − m_{θ₀})|`.
@@ -381,7 +381,7 @@ private theorem localizedModulus_aemeasurable
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
         = fun _ => (0 : ℝ≥0∞) := by
       funext ξ
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       simp only [supNormOver]
       refine iSup₂_le (fun f hf => ?_)
       obtain ⟨θ, hθ, -⟩ := hf
@@ -648,7 +648,7 @@ private theorem sqrtn_rate_shell_bound
       · -- Empty shell: measure zero.
         rw [Set.not_nonempty_iff_eq_empty] at hne
         rw [hne, measure_empty]
-        exact zero_le _
+        exact zero_le
     -- Geometric summability facts.
     have hbound_nonneg : ∀ k : ℕ, (0 : ℝ) ≤ (4 * C₂ / C₁) * ((1 : ℝ) / 2) ^ (J + k) :=
       fun k => by positivity
@@ -1152,17 +1152,17 @@ theorem mEstimator_sqrtn_rate
         exact (this (by simpa [θloc, Metric.mem_closedBall, hp'] using hξ)).elim
     have hBreal : Tendsto (fun n => μ.real (B n)) atTop (nhds 0) := by
       have hs := (hConsistent (k * ε) (mul_pos hk hε)).comp (tendsto_add_atTop_nat 1)
-      simpa [B, raw] using hs
+      simpa [B, raw] using! hs
     have hBmeasure : Tendsto (fun n => μ (B n)) atTop (nhds 0) := by
       have hofReal := (ENNReal.continuous_ofReal.tendsto 0).comp hBreal
-      convert hofReal using 1
+      convert! hofReal using 1
       · funext n
         simp only [Function.comp_apply]
         rw [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top μ _)]
       · simp
     change Tendsto (fun n => μ.outerMeasureStar (A n)) atTop (nhds 0)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hBmeasure
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     rw [outerMeasureStar_eq_measure (measurableSet_lt measurable_const (hlocal_meas n).abs)]
     exact measure_mono (hAB n)
   have houter := mEstimator_rate_of_convergence_outer P μ mloc θ₀loc hmloc_meas
@@ -1199,7 +1199,7 @@ theorem mEstimator_sqrtn_rate
         μ.real {ξ | ρloc ≤ ‖raw n ξ - θ₀‖} < η / 2 := by
       have hs := (hConsistent ρloc hρloc).comp (tendsto_add_atTop_nat 1)
       have hs' : Tendsto (fun n => μ.real {ξ | ρloc ≤ ‖raw n ξ - θ₀‖}) atTop
-          (nhds 0) := by simpa [raw] using hs
+          (nhds 0) := by simpa [raw] using! hs
       exact hs'.eventually (Iio_mem_nhds (by positivity))
     obtain ⟨N, hN⟩ := eventually_atTop.mp (hM_event.and hbad_event)
     refine ⟨k * M, N, fun n hn => ?_⟩

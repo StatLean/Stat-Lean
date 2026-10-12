@@ -384,7 +384,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
       have h0 : ENNReal.ofReal (((0 : ℕ) : ℝ) * α / N) = 0 := by
         rw [show (((0 : ℕ) : ℝ) * α / N) = 0 from by norm_num, ENNReal.ofReal_zero]
       rw [h0] at hle
-      exact le_antisymm hle (zero_le _)
+      exact le_antisymm hle (zero_le)
     simp only [hFdef, hμ, ENNReal.toReal_zero]
   have hFle : ∀ k, F k ≤ (α / N) * k := by
     intro k
@@ -424,7 +424,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
   -- ===== Step B: integrate Step A =====
   have hintegrable_sum : Integrable (fun ω => ∑ k ∈ Finset.Icc 1 N,
       (1 / (k : ℝ)) * (a k ω * b k ω)) μ :=
-    integrable_finset_sum _ (fun k _ => (hint_amb k k).const_mul _)
+    integrable_finsetSum _ (fun k _ => (hint_amb k k).const_mul _)
   have hLHS_int : Integrable (fun ω => (if i ∈ bhRejects α p ω then (1 : ℝ) else 0)
       / max (R ω : ℝ) 1) μ := by
     apply integrable_of_bdd (C := 1)
@@ -443,7 +443,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         ≤ ∫ ω, ∑ k ∈ Finset.Icc 1 N, (1 / (k : ℝ)) * (a k ω * b k ω) ∂μ :=
           integral_mono hLHS_int hintegrable_sum stepA
       _ = ∑ k ∈ Finset.Icc 1 N, ∫ ω, (1 / (k : ℝ)) * (a k ω * b k ω) ∂μ :=
-          integral_finset_sum _ (fun k _ => (hint_amb k k).const_mul _)
+          integral_finsetSum _ (fun k _ => (hint_amb k k).const_mul _)
       _ = ∑ k ∈ Finset.Icc 1 N, (1 / (k : ℝ)) * ∫ ω, a k ω * b k ω ∂μ := by
           apply Finset.sum_congr rfl; intro k _; rw [integral_const_mul]
   -- ===== Step C: bands swap =====
@@ -461,8 +461,8 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         have := Finset.sum_range_sub (fun m => a m ω) k; linarith [this]
       rw [htel, add_mul, Finset.sum_mul]
     rw [hpt, integral_add (hint_amb 0 k)
-        (integrable_finset_sum _ (fun m _ => hint_diff_b m k)),
-      integral_finset_sum _ (fun m _ => hint_diff_b m k)]
+        (integrable_finsetSum _ (fun m _ => hint_diff_b m k)),
+      integral_finsetSum _ (fun m _ => hint_diff_b m k)]
   -- the j = 0 band has zero measure (F 0 = 0)
   have hz : ∀ k, ∫ ω, a 0 ω * b k ω ∂μ = 0 := by
     intro k
@@ -478,7 +478,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
     have hrw : ∑ k ∈ Finset.Icc (m + 1) N, e m k
         = ∫ ω, (a (m + 1) ω - a m ω) * ∑ k ∈ Finset.Icc (m + 1) N, b k ω ∂μ := by
       rw [he_def]
-      rw [← integral_finset_sum _ (fun k _ => hint_diff_b m k)]
+      rw [← integral_finsetSum _ (fun k _ => hint_diff_b m k)]
       apply integral_congr_ae; filter_upwards with ω; rw [Finset.mul_sum]
     rw [hrw]
     have hbound_int : Integrable
@@ -582,7 +582,7 @@ theorem benjamini_hochberg_dependent_fdr_le {N : ℕ} (hN : 0 < N) (α : ℝ) (h
     FDR H₀ (bhRejects α p) μ ≤ (H₀.card : ℝ) / N * α * (harmonic N : ℝ) := by
   simp only [FDR]
   simp_rw [fun ω => fdp_eq_sum_div_dep α H₀ p ω]
-  rw [integral_finset_sum H₀ (fun i _ => integrable_summand_dep α μ p hmeas i)]
+  rw [integral_finsetSum H₀ (fun i _ => integrable_summand_dep α μ p hmeas i)]
   calc ∑ i ∈ H₀, ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
           max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ
       ≤ ∑ _i ∈ H₀, α / N * (harmonic N : ℝ) := by

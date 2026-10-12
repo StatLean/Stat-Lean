@@ -78,10 +78,10 @@ private theorem integral_avg_delete_pair {W : Type*} [MeasurableSpace W]
   have hn : ((N : ℝ) + 1) ≠ 0 := by positivity
   have hm₀ : ∀ i : Fin (N + 1),
       Measurable (fun x : Fin (N + 1) → W => (x i, x ∘ i.succAbove)) := fun i =>
-    (measurable_pi_apply i).prodMk (measurable_pi_lambda _ fun _ => measurable_pi_apply _)
+    (measurable_pi_apply i).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
   have hm : ∀ i : Fin (N + 1),
       Measurable (fun x : Fin (N + 1) → W => (jackknifeDelete i x, x i)) := fun i =>
-    (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk (measurable_pi_apply i)
+    (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk (measurable_pi_apply i)
   -- the deleted block and the held-out block are independent, in that order
   have hmap : ∀ i : Fin (N + 1),
       (Measure.pi fun _ : Fin (N + 1) => Q).map (fun x => (jackknifeDelete i x, x i))
@@ -110,7 +110,7 @@ private theorem integral_avg_delete_pair {W : Type*} [MeasurableSpace W]
         (by rw [hmap i]; exact hF.aestronglyMeasurable)
     rw [← h₁]
     exact integral_prod _ hF
-  rw [integral_const_mul, integral_finset_sum _ fun i _ => hFi i]
+  rw [integral_const_mul, integral_finsetSum _ fun i _ => hFi i]
   simp only [hEach, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
   push_cast
   field_simp

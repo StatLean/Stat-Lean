@@ -2,6 +2,8 @@ import StatLean.Bayesian.Conjugacy.Defs
 import StatLean.Bayesian.Conjugacy.Criterion
 import Mathlib.Probability.Distributions.Beta
 
+set_option maxHeartbeats 1000000
+
 /-!
 # Beta-Binomial conjugacy
 

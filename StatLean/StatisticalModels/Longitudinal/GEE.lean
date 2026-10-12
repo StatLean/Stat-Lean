@@ -151,7 +151,7 @@ theorem gee_unbiased (Q : Measure (LongitudinalRecord p m)) [IsProbabilityMeasur
       = ∫ r, ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q := by
         simp_rw [hsum]
     _ = ∑ j, ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q :=
-        integral_finset_sum _ fun j _ => hint j
+        integral_finsetSum _ fun j _ => hint j
     _ = 0 := by simp [hterm]
 
 /-- **L1', the bounded-weights corollary** (hypotheses in the books' phrasing: bounded
@@ -193,7 +193,7 @@ theorem gee_unbiased_of_bounded (Q : Measure (LongitudinalRecord p m))
       = ∫ r, ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q := by
         simp_rw [hsum]
     _ = ∑ j, ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q :=
-        integral_finset_sum _ fun j _ => hint j
+        integral_finsetSum _ fun j _ => hint j
     _ = 0 := by simp [hterm]
 
 end StatLean.StatisticalModels.Longitudinal

@@ -240,7 +240,7 @@ theorem marginal_coord_tight (h_clt : IsMarginalCLT F P)
       (multivariateGaussian 0 (marginalCovMatrix P ![(f : Ω → ℝ)])) :=
     hcomp.aemeasurable_limit
   have hν_prob : IsProbabilityMeasure ν := by
-    rw [hν]; exact Measure.isProbabilityMeasure_map hLY_aem
+    rw [hν]; exact (by infer_instance)
   -- Tail of `ν` vanishes: the closed tails `{x | (m:ℝ) ≤ |x|}` decrease to `∅`.
   set C : ℕ → Set ℝ := fun m => {x : ℝ | (m : ℝ) ≤ |x|} with hC
   have hC_closed : ∀ m, IsClosed (C m) := fun m =>
@@ -348,7 +348,7 @@ theorem marginal_sup_bound_of_clt (h_clt : IsMarginalCLT F P)
           simp only [hempty]
           rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
       _ = 0 := limsup_const 0
-      _ ≤ ENNReal.ofReal ε := zero_le _
+      _ ≤ ENNReal.ofReal ε := zero_le
   -- Per-coordinate threshold for `δ := ε / |S|`.
   set δ : ℝ := ε / (S.card + 1) with hδ_def
   have hδ : 0 < δ := by positivity

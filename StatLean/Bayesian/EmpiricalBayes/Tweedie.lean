@@ -232,8 +232,8 @@ private theorem hasDerivAt_score_gaussianMarginalPDF (G : Measure ℝ) [IsFinite
       ((hasDerivAt_const y θ).sub (hasDerivAt_id y)).div_const _
     have hw := hasDerivAt_gaussianPDFReal θ v hv y
     have hmul := hu.mul hw
-    convert hmul using 1
-    field_simp
+    convert! hmul using 1
+    try field_simp
     ring
   have main := hasDerivAt_integral_of_dominated_loc_of_deriv_le (𝕜 := ℝ)
     (F := fun y θ => (θ - y) / (v : ℝ) * gaussianPDFReal θ v y)

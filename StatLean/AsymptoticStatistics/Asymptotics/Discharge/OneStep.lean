@@ -223,15 +223,15 @@ private lemma score_sum_bddAbove_in_prob
       _ = 0 := h_mean
   have h_S_mean : ∫ ω, S ω ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
     rw [hS_def]
-    rw [integral_finset_sum _ (fun i _ => h_each_int i)]
+    rw [integral_finsetSum _ (fun i _ => h_each_int i)]
     simp [h_each_mean]
   have h_S_memLp : MemLp S 2 (Measure.pi (fun _ : Fin n => P)) := by
     change MemLp (fun ω : Fin n → Ω => ∑ i : Fin n, scoreEff (ω i))
         2 (Measure.pi (fun _ : Fin n => P))
-    exact memLp_finset_sum Finset.univ (fun i _ => h_each_memLp i)
+    exact memLp_finsetSum Finset.univ (fun i _ => h_each_memLp i)
   by_cases hn : n = 0
   · subst hn
-    refine le_trans (le_of_eq ?_) (zero_le _)
+    refine le_trans (le_of_eq ?_) (zero_le)
     convert measure_empty (μ := Measure.pi (fun _ : Fin 0 => P))
     ext X
     simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
@@ -337,7 +337,7 @@ private lemma info_mul_inv_oP
   have h2 := h_info (δ * Ĩ / 2) (by positivity)
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
   · simpa using h1.add h2
-  · exact Filter.Eventually.of_forall fun _ => zero_le _
+  · exact Filter.Eventually.of_forall fun _ => zero_le
   · exact Filter.Eventually.of_forall fun n => h_meas n
 
 /-- **Info convergence implies `(Î_n⁻¹ − Ĩ⁻¹) →_P 0`.**
@@ -414,7 +414,7 @@ private lemma info_inv_diff_oP
   have h2 := h_info (δ * Ĩ ^ 2 / 4) (by positivity)
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
   · simpa using h1.add h2
-  · exact Filter.Eventually.of_forall fun _ => zero_le _
+  · exact Filter.Eventually.of_forall fun _ => zero_le
   · exact Filter.Eventually.of_forall fun n => h_meas n
 
 /-- **Error A → 0 in Pⁿ-probability.**
@@ -926,7 +926,7 @@ private lemma taylor_remainder_root_n_oP
   have h_sq := h_taylor (ε ^ 2) (by positivity)
   -- Set inclusion: {ε ≤ √n·|(1/n)Σ r|} ⊆ {ε² ≤ Σ r²}
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sq
-    (Filter.Eventually.of_forall fun _ => zero_le _)
+    (Filter.Eventually.of_forall fun _ => zero_le)
   refine Filter.Eventually.of_forall fun n => measure_mono ?_
   intro X hX
   simp only [Set.mem_setOf_eq] at hX ⊢
@@ -1336,7 +1336,7 @@ theorem OneStepTaylorHyp.info_consistency
     intro ε' hε'
     have h_taylor := hpf.score_l2_taylor ε' hε'
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_taylor
-      (Filter.Eventually.of_forall fun _ => zero_le _)
+      (Filter.Eventually.of_forall fun _ => zero_le)
     refine Filter.Eventually.of_forall fun n => measure_mono ?_
     intro X hX
     simp only [Set.mem_setOf_eq] at hX ⊢

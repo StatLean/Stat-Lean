@@ -92,7 +92,7 @@ theorem lintegral_withDensity_prod
     ∫⁻ z, f z ∂((ν.prod volume).withDensity p)
       = ∫⁻ t, (∫⁻ y, f (t, y) * p (t, y) ∂volume) ∂ν := by
   rw [lintegral_withDensity_eq_lintegral_mul (ν.prod volume) hp hf]
-  simp only [Pi.mul_apply]
+  simp only [Pi.mul_apply, Pi.inv_apply]
   rw [lintegral_prod (fun z => p z * f z) (hp.mul hf).aemeasurable]
   refine lintegral_congr fun t => lintegral_congr fun y => ?_
   rw [mul_comm]
@@ -166,9 +166,10 @@ theorem condDistrib_withDensity_prod_ae_eq
     have hker : ∀ t : S, ∫⁻ y, f (t, y) ∂(κ t)
         = (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := by
       intro t
-      rw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
+      erw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
           ← lintegral_const_mul _ ((hpt t).mul (hft t))]
-      exact lintegral_congr fun y => by rw [hq_def, mul_assoc]
+      exact lintegral_congr fun y => by
+        simp only [Pi.mul_apply, Pi.inv_apply]; rw [hq_def, mul_assoc]
     -- Right side: unfold the composition-product and the marginal density.
     have hJ : Measurable fun t => ∫⁻ y, p (t, y) * f (t, y) ∂volume :=
       (hp.mul hf).lintegral_prod_right'
@@ -177,14 +178,14 @@ theorem condDistrib_withDensity_prod_ae_eq
       rw [hmap, Measure.lintegral_compProd hf]
       have hcong : (fun t => ∫⁻ y, f (t, y) ∂(κ t))
           = fun t => (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := funext hker
-      rw [hcong, lintegral_withDensity_eq_lintegral_mul ν hg ((hg.inv).mul hJ)]
-      simp only [Pi.mul_apply]
+      erw [hcong, lintegral_withDensity_eq_lintegral_mul ν hg ((hg.inv).mul hJ)]
+      simp only [Pi.mul_apply, Pi.inv_apply]
     rw [hL, hR]
     refine lintegral_congr_ae ?_
     filter_upwards [hp_ne_top, hp_ne_zero] with t htop hzero
     rw [← mul_assoc, ENNReal.mul_inv_cancel hzero htop, one_mul]
   -- Conclude by a.e. uniqueness of the disintegration, then rewrite each fibre.
-  have hae := condDistrib_ae_eq_of_measure_eq_compProd (μ := ρ) Prod.fst
+  have hae := condDistrib_ae_eq_of_measure_eq_compProd (μ := ρ) measurable_fst.aemeasurable
     measurable_snd.aemeasurable (κ := κ) hcompProd
   filter_upwards [hae] with t ht
   rw [ht, hκ_apply t]

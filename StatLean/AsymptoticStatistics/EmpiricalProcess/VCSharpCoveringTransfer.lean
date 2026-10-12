@@ -40,7 +40,7 @@ theorem outerLpNorm_eq_eLpNorm_of_aemeasurable
       _ = ∫⁻ x, ENNReal.ofReal |f x| ^ r ∂Q :=
         lintegral_congr_ae hpow.ae_eq_mk.symm
   rw [outerLpNorm, houter,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top]
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top hf.aestronglyMeasurable]
   simp only [ENNReal.toReal_ofReal hr.le, one_div, Real.enorm_eq_ofReal_abs]
 
 /-- A uniform bound on finite separated subsets produces a finite closed
@@ -152,7 +152,7 @@ theorem exists_universalVCAdmissibleStrictTwoRadiusCoverConstant :
   letI : Fact (1 ≤ p) := ⟨hp⟩
   have hfmem (f : Ω → ℝ) (hf : f ∈ F) : MemLp f p Q := by
     have hfm := hVC.1 f hf
-    refine ⟨hfm.aestronglyMeasurable, ?_⟩
+    change eLpNorm f p Q < ∞
     rw [← outerLpNorm_eq_eLpNorm_of_aemeasurable hr₀ hfm.aemeasurable]
     refine (show outerLpNorm Q f r ≤ outerLpNorm Q G r from ?_).trans_lt hQ.2.2
     unfold outerLpNorm

@@ -139,7 +139,7 @@ private lemma measurable_perm_smul (N : ℕ) (σ : Equiv.Perm (Fin N)) :
   have hfun : (fun x : Fin N → ℝ => σ • x) = fun x i => x (σ⁻¹ i) := by
     ext x i; exact perm_smul_apply σ x i
   rw [hfun]
-  exact measurable_pi_lambda _ fun i => measurable_pi_apply _
+  exact Measurable.of_eval fun i => measurable_pi_apply _
 
 /-- The pooled two-sample law is a probability measure. -/
 instance isProbabilityMeasure_twoSampleLaw (m n : ℕ) (PY PZ : Measure ℝ)
@@ -262,7 +262,7 @@ private lemma randDist_twoSampleMeanDiff_eq (m n : ℕ) (hm : 0 < m) (hn : 0 < n
 
 /-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. -/
 private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    [NoAtoms μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
+    [NullSingletonClass μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
   have hmono : Monotone (cdf μ) := monotone_cdf μ
   rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
   have hright : Function.rightLim (cdf μ) t = cdf μ t :=
@@ -277,8 +277,8 @@ private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasu
 
 /-- Gaussian scaling of the c.d.f.: `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` for `τ > 0`. -/
 private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
-    cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t = cdf (gaussianReal 0 1) (t / τ) := by
-  have hmap : gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)
+    cdf (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))) t = cdf (gaussianReal 0 1) (t / τ) := by
+  have hmap : gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)
       = (gaussianReal 0 1).map (fun x => τ * x) := by
     rw [gaussianReal_map_const_mul]
     congr 1
@@ -553,7 +553,7 @@ lemma tendsto_pi_real_lln {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     fun i => measurePreserving_eval_infinitePi (μ := fun _ : ℕ => P) i
   have hY0_int : Integrable (Y 0) μ_inf := by
     have := (hMP 0).integrable_comp hf'_meas.aestronglyMeasurable
-    simpa [Y, Function.eval] using this.mpr hf'_int
+    simpa [Y, Function.eval] using! this.mpr hf'_int
   have h_iIndep : ProbabilityTheory.iIndepFun Y μ_inf := by
     simpa [Y, Function.eval] using
       (ProbabilityTheory.iIndepFun_infinitePi (Ω := fun _ : ℕ => Ω)
@@ -662,7 +662,7 @@ lemma tendsto_pi_real_lln {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     intro n; rw [Measure.real, h_set_eq n]
   simp_rw [hreal]
   have := (ENNReal.tendsto_toReal (by simp)).comp h_inf
-  simpa using this
+  simpa using! this
 
 /-! ### Shared bricks: the pooled empirical average
 
@@ -792,7 +792,7 @@ lemma map_projY (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
     · simpa only [Fin.addCases_left] using (inferInstance : IsProbabilityMeasure PY)
     · simpa only [Fin.addCases_right] using (inferInstance : IsProbabilityMeasure PZ)
   have hmeas : Measurable (fun x : Fin (m + n) → ℝ => fun i : Fin m => x (Fin.castAdd n i)) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply _
+    Measurable.of_eval fun i => measurable_pi_apply _
   refine (Measure.pi_eq (μ := fun _ : Fin m => PY) (fun s hs => ?_)).symm
   rw [Measure.map_apply hmeas (MeasurableSet.univ_pi hs)]
   have hpre : (fun x : Fin (m + n) → ℝ => fun i : Fin m => x (Fin.castAdd n i)) ⁻¹'
@@ -829,7 +829,7 @@ lemma map_projZ (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
     · simpa only [Fin.addCases_left] using (inferInstance : IsProbabilityMeasure PY)
     · simpa only [Fin.addCases_right] using (inferInstance : IsProbabilityMeasure PZ)
   have hmeas : Measurable (fun x : Fin (m + n) → ℝ => fun j : Fin n => x (Fin.natAdd m j)) :=
-    measurable_pi_lambda _ fun j => measurable_pi_apply _
+    Measurable.of_eval fun j => measurable_pi_apply _
   refine (Measure.pi_eq (μ := fun _ : Fin n => PZ) (fun s hs => ?_)).symm
   rw [Measure.map_apply hmeas (MeasurableSet.univ_pi hs)]
   have hpre : (fun x : Fin (m + n) → ℝ => fun j : Fin n => x (Fin.natAdd m j)) ⁻¹'
@@ -862,7 +862,7 @@ lemma tendsto_lln_blockY (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
   refine hbase.congr fun k => ?_
   have hmeas : Measurable
       (fun x : Fin (m k + n k) → ℝ => fun i : Fin (m k) => x (Fin.castAdd (n k) i)) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply _
+    Measurable.of_eval fun i => measurable_pi_apply _
   have hms : MeasurableSet {y : Fin (m k) → ℝ |
       ε ≤ |((m k : ℝ))⁻¹ * (∑ i : Fin (m k), f (y i)) - ∫ t, f t ∂PY|} := by
     refine measurableSet_le measurable_const ((Measurable.sub ?_ measurable_const).abs)
@@ -888,7 +888,7 @@ lemma tendsto_lln_blockZ (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
   refine hbase.congr fun k => ?_
   have hmeas : Measurable
       (fun x : Fin (m k + n k) → ℝ => fun j : Fin (n k) => x (Fin.natAdd (m k) j)) :=
-    measurable_pi_lambda _ fun j => measurable_pi_apply _
+    Measurable.of_eval fun j => measurable_pi_apply _
   have hms : MeasurableSet {y : Fin (n k) → ℝ |
       ε ≤ |((n k : ℝ))⁻¹ * (∑ j : Fin (n k), f (y j)) - ∫ t, f t ∂PZ|} := by
     refine measurableSet_le measurable_const ((Measurable.sub ?_ measurable_const).abs)
@@ -980,7 +980,7 @@ lemma tendstoInProb_pooledAvg (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
 lemma var_eq_second_sub_sq {Q : Measure ℝ} [IsProbabilityMeasure Q] {μ v : ℝ}
     (hQ2 : MemLp id 2 Q) (hmeanQ : ∫ t, t ∂Q = μ) (hvarQ : ∫ t, (t - μ) ^ 2 ∂Q = v) :
     (∫ t, t ^ 2 ∂Q) + -(μ ^ 2) = v := by
-  have hid : Integrable (fun t : ℝ => t) Q := by simpa using hQ2.integrable (by norm_num)
+  have hid : Integrable (fun t : ℝ => t) Q := by simpa using! hQ2.integrable (by norm_num)
   have hsq : Integrable (fun t : ℝ => t ^ 2) Q := by simpa using hQ2.integrable_sq
   have hlin : Integrable (fun t : ℝ => 2 * μ * t) Q := hid.const_mul _
   have h1 : Integrable (fun t : ℝ => t ^ 2 - 2 * μ * t) Q := hsq.sub hlin
@@ -1305,8 +1305,8 @@ private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabili
         {x | η ≤ lindebergDefect (m k) (n k) v x}) atTop (𝓝 0)) := by
   classical
   have hne : (1 : ℝ) + lam ≠ 0 := by positivity
-  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
-  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using! hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using! hZL2.integrable (by norm_num)
   have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
   have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
   have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.mpr hvpos
@@ -1560,7 +1560,7 @@ private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
     TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (twoSampleMeanDiff (m k) (n k)) x t)
-      (cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t) := by
+      (cdf (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))) t) := by
   classical
   have h1lam : (0 : ℝ) < 1 + lam := by linarith
   have hnum : (0 : ℝ) < lam * varY + varZ := by positivity
@@ -1676,8 +1676,8 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
     WeakConverges
       (fun k => randPairLaw (Equiv.Perm (Fin (m k + n k)))
         (twoSampleMeanDiff (m k) (n k)) (twoSampleLaw (m k) (n k) PY PZ))
-      ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
-        (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+      ((gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))).prod
+        (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ)))) := by
   -- The asymptotic independence of the two permutations is not proved here: the converse
   -- engine `weakConverges_randPairLaw_of_randDist_tendstoInProb` derives the product limit
   -- from the scalar convergence in probability of `randDist` alone. So the whole statement
@@ -1686,7 +1686,7 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
     (G := fun k => Equiv.Perm (Fin (m k + n k)))
     (fun k => twoSampleLaw (m k) (n k) PY PZ)
     (fun k => twoSampleMeanDiff (m k) (n k))
-    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))
     (fun k => measurable_twoSampleMeanDiff (m k) (n k))
     (fun k g => measurable_perm_smul _ g)
     (fun u _ => randDist_twoSample_tendstoInProb_core PY PZ m n hm hn hratio hlam hYL2 hZL2
@@ -1717,14 +1717,15 @@ theorem randDist_twoSample_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityMea
   -- Gaussian c.d.f. with `continuousAt_cdf_of_noAtoms`, then rescale via `cdf_gaussianReal_scale`.
   have hjoint := weakConverges_randPairLaw_twoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
     hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
-  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+  have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NoAtoms (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) := noAtoms_gaussianReal hvne
-  have hcont : ContinuousAt (cdf (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))) t :=
+  haveI : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
+      nullSingletonClass_gaussianReal hvne
+  have hcont : ContinuousAt (cdf (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))) t :=
     continuousAt_cdf_of_noAtoms _ t
   have hmain := randDist_tendstoInProb_cdf (G := fun k => Equiv.Perm (Fin (m k + n k)))
     (fun k => twoSampleLaw (m k) (n k) PY PZ) (fun k => twoSampleMeanDiff (m k) (n k))
-    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))
     (fun k => measurable_twoSampleMeanDiff (m k) (n k))
     (fun k g => measurable_perm_smul _ g) hjoint hcont
   rwa [cdf_gaussianReal_scale hτpos t] at hmain
@@ -1991,7 +1992,7 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
     (hspos : 0 < s) (hs : s ^ 2 = varY + lam * varZ) :
     WeakConverges
       (fun k => (twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k)))
-      (gaussianReal 0 ⟨s ^ 2, sq_nonneg s⟩) := by
+      (gaussianReal 0 (NNReal.mk (s ^ 2) (sq_nonneg s))) := by
   -- Reduce to characteristic functions, factorize exactly at each finite `k` into the two
   -- per-block powers, recentre both populations at the common mean `μ` (the phase factors
   -- cancel because `mα + nβ = 0`), and apply the varying-exponent power limit to each block.
@@ -1999,11 +2000,11 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   set QY := PY.map (fun y : ℝ => y + (-μ)) with hQYdef
   set QZ := PZ.map (fun y : ℝ => y + (-μ)) with hQZdef
   haveI : IsProbabilityMeasure QY := by
-    rw [hQYdef]; exact Measure.isProbabilityMeasure_map (by fun_prop)
+    rw [hQYdef]; exact (by infer_instance)
   haveI : IsProbabilityMeasure QZ := by
-    rw [hQZdef]; exact Measure.isProbabilityMeasure_map (by fun_prop)
-  have hIY : Integrable (fun y : ℝ => y) PY := by simpa using hYL2.integrable (by norm_num)
-  have hIZ : Integrable (fun y : ℝ => y) PZ := by simpa using hZL2.integrable (by norm_num)
+    rw [hQZdef]; exact (by infer_instance)
+  have hIY : Integrable (fun y : ℝ => y) PY := by simpa using! hYL2.integrable (by norm_num)
+  have hIZ : Integrable (fun y : ℝ => y) PZ := by simpa using! hZL2.integrable (by norm_num)
   -- The centred laws have mean `0` and the two population variances.
   have hQY0 : ∫ y, y ∂QY = 0 := by
     rw [hQYdef, integral_map (by fun_prop) (by fun_prop),
@@ -2050,7 +2051,7 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   have hnR : Tendsto (fun k => (n k : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp hn
   haveI hprob : ∀ k, IsProbabilityMeasure
       ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
-    Measure.isProbabilityMeasure_map (measurable_twoSampleMeanDiff _ _).aemeasurable
+    (by infer_instance)
   refine weakConverges_of_tendsto_charFun (fun t => ?_)
   -- The two exponent-times-argument-squared limits: `m α² t² → t²` and `n β² t² → λ t²`.
   have hsY : Tendsto (fun k => (m k : ℝ) * (Real.sqrt (m k) * (m k : ℝ)⁻¹ * t) ^ 2) atTop
@@ -2080,7 +2081,7 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   have hZ := tendsto_charFun_pow hQZ0 hQZ2 hvarZpos hnR hsZ
   have hprod := hY.mul hZ
   -- The limit is the characteristic function of `N(0, s²)`.
-  have htarget : charFun (gaussianReal 0 (⟨s ^ 2, sq_nonneg s⟩ : ℝ≥0)) t
+  have htarget : charFun (gaussianReal 0 ((NNReal.mk (s ^ 2) (sq_nonneg s)) : ℝ≥0)) t
       = Complex.exp (-((varY * t ^ 2 : ℝ) : ℂ) / 2) *
         Complex.exp (-((varZ * (lam * t ^ 2) : ℝ) : ℂ) / 2) := by
     have hsC : ((s : ℂ)) ^ 2 = (varY : ℂ) + (lam : ℂ) * (varZ : ℂ) := by

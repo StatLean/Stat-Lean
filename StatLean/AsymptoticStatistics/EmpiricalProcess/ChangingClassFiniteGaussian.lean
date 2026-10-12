@@ -32,8 +32,7 @@ instance instIsProbabilityMeasureFiniteGaussianProjectionLaw {T : Type*}
     (C : T → T → ℝ) (a : FiniteApproximation T) :
     IsProbabilityMeasure (finiteGaussianProjectionLaw C a) := by
   unfold finiteGaussianProjectionLaw
-  exact Measure.isProbabilityMeasure_map
-    (finiteReconstruction a).continuous.measurable.aemeasurable
+  exact (by infer_instance)
 
 /-- A finite-partition Gaussian approximation is tight, with no countability
 assumption on the target index type. Tightness is transported from the
@@ -72,7 +71,7 @@ theorem finiteProjection_tendstoInDistribution
   · simpa [FiniteApproximation.project, Function.comp_def] using
       (finiteReconstruction a).continuous.measurable.comp_aemeasurable
         (hcoord.forall_aemeasurable n)
-  · convert hmap.tendsto using 1 with n
+  · convert! hmap.tendsto using 1 with n
     congr 1
     apply Subtype.ext
     simp [finiteGaussianProjectionLaw]

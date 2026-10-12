@@ -215,10 +215,16 @@ theorem isLocEquivariant_iff_exists_diffs_rep {δ₀ : (Fin (m + 1) → ℝ) →
   constructor
   · rintro ⟨v, hv⟩
     refine ⟨fun y => - v y, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x = δ₀ x - -v (diffs x)
+    linarith
   · rintro ⟨v, hv⟩
     refine ⟨fun y => - v y, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x - δ₀ x = -v (diffs x)
+    linarith
 
 /-- Measurable version of the representation of the equivariant class: measurable
 equivariant estimators correspond to measurable functions of the differences. -/
@@ -238,7 +244,10 @@ theorem isLocEquivariant_iff_exists_diffs_rep_measurable {δ₀ : (Fin (m + 1) �
     obtain ⟨v, hvm, hv⟩ :=
       (isLocInvariant_iff_factors_diffs_measurable _).mp ⟨hδm.sub h₀meas, hinv⟩
     refine ⟨fun y => - v y, hvm.neg, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x = δ₀ x - -v (diffs x)
+    linarith
   · rintro ⟨v, hvm, hv⟩
     have heq : IsLocEquivariant δ :=
       (isLocEquivariant_iff_exists_diffs_rep h₀ δ).mpr ⟨v, hv⟩

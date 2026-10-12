@@ -34,8 +34,8 @@ theorem measurable_signedGhostSwap
     {Ω : Type*} [MeasurableSpace Ω] (n : ℕ) :
     Measurable (signedGhostSwap (Ω := Ω) n) := by
   unfold signedGhostSwap
-  refine ((measurable_pi_lambda _ fun i => ?_).prodMk
-    (measurable_pi_lambda _ fun i => ?_)).prodMk measurable_snd
+  refine ((Measurable.of_eval fun i => ?_).prodMk
+    (Measurable.of_eval fun i => ?_)).prodMk measurable_snd
   · have hε : Measurable (fun z :
         ((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool) => z.2 i) :=
       (measurable_pi_apply i).comp measurable_snd
@@ -84,7 +84,7 @@ theorem measurePreserving_signedGhostSwap
     by_cases h : ε i
     · simpa [swapAt, h] using
         (Measure.measurePreserving_swap (μ := P) (ν := P))
-    · simpa [swapAt, h] using (MeasurePreserving.id (P.prod P))
+    · simpa [swapAt, h] using! (MeasurePreserving.id (P.prod P))
   have hswapSamples (ε : Fin n → Bool) :
       MeasurePreserving (swapSamples ε) (μn.prod μn) (μn.prod μn) := by
     exact he.comp ((hswapPi ε).comp (he.symm e))
@@ -110,7 +110,7 @@ theorem measurePreserving_signedGhostSwap
     · exact ae_of_all _ fun ε => (hswapSamples ε).map_eq
   have hconj := Measure.measurePreserving_swap.comp
     (hskew.comp Measure.measurePreserving_swap)
-  convert hconj using 1
+  convert! hconj using 1
   funext z
   ext i <;> simp [signedGhostSwap, swapSamples, swapPi, swapAt, e,
     MeasurableEquiv.arrowProdEquivProdArrow, Equiv.arrowProdEquivProdArrow] <;>
@@ -159,7 +159,7 @@ theorem integral_ghostDifference_eq_empiricalProcess
   have hcomp (i : Fin n) : Integrable (fun y : Fin n → Ω => f (y i))
       (Measure.pi fun _ : Fin n => P) :=
     integrable_comp_eval hf
-  rw [integral_const_mul, integral_finset_sum Finset.univ]
+  rw [integral_const_mul, integral_finsetSum Finset.univ]
   · simp_rw [integral_sub (integrable_const _) (hcomp _), integral_const,
       probReal_univ, one_smul]
     simp_rw [integral_comp_eval (μ := fun _ : Fin n => P) hf.aestronglyMeasurable]
@@ -193,7 +193,8 @@ theorem rawEmpiricalProcessSup_le_ghostLIntegral
   refine (enorm_integral_le_lintegral_enorm _).trans ?_
   refine lintegral_mono fun y => ?_
   rw [Real.enorm_eq_ofReal_abs]
-  exact le_supNormOver hfF
+  simpa only [ghostDifferenceSup] using! (le_supNormOver
+      (z := fun f => (Real.sqrt n)⁻¹ * ∑ i, (f (x i) - f (y i))) hfF)
 
 theorem ghostDifferenceSup_signedGhostSwap
     {Ω : Type*} (F : Set (Ω → ℝ)) (n : ℕ)
@@ -391,7 +392,7 @@ theorem outer_symmetrization_empiricalProcess
   let cond : (Fin n → Ω) → ℝ≥0∞ := fun x =>
     conditionalRademacherSup F n x
   have hY_meas : Measurable Y :=
-    measurable_pi_lambda _ fun i => hX_meas i.val
+    Measurable.of_eval fun i => hX_meas i.val
   have hY_map : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
     AsymptoticStatistics.map_fin_restrict_eq_pi_of_iid
       P μ X hX_meas hX_iindep hX_idem hX_law n
@@ -400,7 +401,7 @@ theorem outer_symmetrization_empiricalProcess
   have hcond_meas : Measurable cond :=
     measurable_conditionalRademacherSup_dense P F hDense hF_meas n
   have hrawY_meas : Measurable (fun ξ => raw (Y ξ)) := by
-    simpa only [Function.comp_apply] using hraw_meas.comp hY_meas
+    simpa only [Function.comp_apply] using! hraw_meas.comp hY_meas
   change MeasureTheory.outerExpectation μ (fun ξ => raw (Y ξ)) ≤
     2 * ∫⁻ ξ, cond (Y ξ) ∂μ
   rw [MeasureTheory.outerExpectation_eq_lintegral hrawY_meas]

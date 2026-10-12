@@ -104,7 +104,7 @@ theorem iidSeqKernel_map_restrict (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n :
     Kernel.map (iidSeqKernel κ) (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)
       = iidKernel κ n := by
   have hmeas : Measurable (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) :=
-    measurable_pi_lambda _ (fun i => measurable_pi_apply i.val)
+    Measurable.of_eval (fun i => measurable_pi_apply i.val)
   ext θ s hs
   rw [Kernel.map_apply _ hmeas, iidSeqKernel_apply, iidKernel_apply,
     ← AsymptoticStatistics.pi_const_eq_infinitePi_map (κ θ) n]

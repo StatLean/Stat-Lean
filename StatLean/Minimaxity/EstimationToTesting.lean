@@ -144,7 +144,7 @@ private lemma mul_multiwayTestingError_le
           _ ≤ edist (g (θfam j)) y + edist (g (θfam (T y))) y := htri
           _ ≤ edist (g (θfam j)) y + edist (g (θfam j)) y := by gcongr
           _ = 2 * edist (g (θfam j)) y := (two_mul _).symm
-      exact (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+      exact (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
   -- Reduce the minimax risk to a per-estimator bound.
   rw [multiwayTestingError, minimaxRisk]
   refine le_iInf₂ fun κ hκ => ?_

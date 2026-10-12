@@ -84,7 +84,7 @@ theorem randomIndex_empiricalScoreReplacement_oP
   let μ : Measure (ℕ → Omega) := Measure.infinitePi (fun _ : ℕ => P)
   let trunc (n : ℕ) (ξ : ℕ → Omega) : Fin n → Omega := fun i => ξ i.val
   have htrunc : ∀ n, Measurable (trunc n) := fun n =>
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hXmeas : ∀ i : ℕ, Measurable (fun ξ : ℕ → Omega => ξ i) := fun _ =>
     measurable_pi_apply _
   have hXindep : ProbabilityTheory.iIndepFun
@@ -132,7 +132,7 @@ theorem randomIndex_empiricalScoreReplacement_oP
       (Ξ := ℕ → Omega) μ fhat (fun _ _ => score0) hfhat_meas
       (fun _ => h.score0_meas.comp measurable_snd) hl2int (by simpa using hl2) hδ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hm
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     exact (outerMeasureStar_mono μ fun (ξ : ℕ → Omega) hx =>
       show δ ≤ distL2 P (fhat n ξ) score0 from hx.le).trans
       (AsymptoticStatistics.outerMeasureStar_le_measure μ _)
@@ -244,7 +244,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_wpa
   let trunc (n : Nat) (xi : Nat -> Omega) : Fin n -> Omega := fun i => xi i.val
   let fhat (n : Nat) (xi : Nat -> Omega) := scoreHat n (trunc n xi)
   have htrunc : forall n, Measurable (trunc n) := fun n =>
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hXmeas : forall i : Nat, Measurable (fun xi : Nat -> Omega => xi i) :=
     fun _ => measurable_pi_apply _
   have hXindep : ProbabilityTheory.iIndepFun
@@ -470,7 +470,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_wpa_vec
     have hsum : Tendsto (fun n => ∑ j : Fin d,
         (Measure.pi (fun _ : Fin n => P)).real {X | epsilon / d <= ‖Z n X j‖})
         atTop (nhds 0) := by
-      simpa using tendsto_finset_sum (Finset.univ : Finset (Fin d))
+      simpa using tendsto_finsetSum (Finset.univ : Finset (Fin d))
         (fun j _ => hcoord j (epsilon / d) hlevel)
     refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) hsum
     refine (measureReal_mono (fun X hX => ?_)).trans (measureReal_iUnion_fintype_le _)
@@ -546,7 +546,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_vec
     have hsum : Tendsto (fun n => ∑ j : Fin d,
         (Measure.pi (fun _ : Fin n => P)).real {X | ε / d ≤ ‖Z n X j‖})
         atTop (nhds 0) := by
-      simpa using tendsto_finset_sum (Finset.univ : Finset (Fin d))
+      simpa using tendsto_finsetSum (Finset.univ : Finset (Fin d))
         (fun j _ => hcoord j (ε / d) hlevel)
     refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) hsum
     refine (measureReal_mono (fun X hX => ?_)).trans (measureReal_iUnion_fintype_le _)

@@ -372,7 +372,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       apply Finset.sum_le_sum; intro j _
       apply Finset.sum_le_sum; intro k _
       exact hbound_term j k
-    refine le_trans (mul_le_mul_left' hsumle _) ?_
+    refine le_trans (mul_le_mul_right hsumle _) ?_
     rw [Finset.sum_const, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       nsmul_eq_mul]
     have hMne0 : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)

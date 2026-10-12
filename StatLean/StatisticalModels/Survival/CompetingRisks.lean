@@ -205,12 +205,12 @@ theorem causeSubLaw_eq_withDensity (P : Measure (ℝ × Option (Fin k))) [IsFini
   -- The at-risk denominator is `causeSubLaw`-a.e. nonzero (hygiene lemma via domination).
   have hnull : causeSubLaw P j {t : ℝ | observedTimeLawCR P (Ici t) = 0} = 0 :=
     le_antisymm ((causeSubLaw_le P j (hm (measurableSet_singleton 0))).trans_eq
-      (measure_survivalLeft_zero _)) (zero_le _)
+      (measure_survivalLeft_zero _)) (zero_le)
   have hae : ∀ᵐ t ∂causeSubLaw P j, observedTimeLawCR P (Ici t) ≠ 0 := by
     rw [ae_iff]
     simpa using hnull
   -- Merge the two `withDensity` layers; the merged density is a.e. `1`.
-  rw [causeSpecificCumHazard, ← withDensity_mul _ hm.inv hm]
+  erw [causeSpecificCumHazard, ← withDensity_mul _ hm.inv hm]
   refine (Eq.trans (withDensity_congr_ae ?_) withDensity_one).symm
   filter_upwards [hae] with t ht
   simpa using ENNReal.inv_mul_cancel ht (measure_ne_top _ _)

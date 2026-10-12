@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyBracketingTransfer
 import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure
 import StatLean.AsymptoticStatistics.EmpiricalProcess.GlivenkoCantelli
@@ -150,7 +151,7 @@ private theorem outerLpNorm_eq_eLpNorm_of_aemeasurable
   have hpow : AEMeasurable (fun x => ENNReal.ofReal |f x| ^ r) Q := by
     fun_prop
   rw [outerLpNorm, outerExpectation_eq_lintegral_of_aemeasurable Q _ hpow,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top]
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top hf.aestronglyMeasurable]
   simp only [ENNReal.toReal_ofReal hr.le, one_div, Real.enorm_eq_ofReal_abs]
 
 private theorem outerLpNorm_mono_abs
@@ -182,14 +183,14 @@ private theorem outerLpNorm_localized_le_conditionOn
     outerLpNorm_eq_eLpNorm_of_aemeasurable R f r hr hf.aemeasurable]
   change eLpNorm (A.indicator f) p Q ≤ eLpNorm f p R
   rw [eLpNorm_indicator_eq_eLpNorm_restrict hA, hQR,
-    eLpNorm_smul_measure_of_ne_top hp_top]
+    eLpNorm_smul_measure_of_ne_top hp_top f (Q A) hf.aestronglyMeasurable]
   have hQAone : Q A ≤ 1 := by
     simpa only [measure_univ] using
       measure_mono (μ := Q) (Set.subset_univ A : A ⊆ Set.univ)
   have hexp : 0 ≤ (1 / p).toReal := ENNReal.toReal_nonneg
   have hfac : Q A ^ (1 / p).toReal ≤ 1 := by
     simpa only [ENNReal.one_rpow] using ENNReal.rpow_le_rpow hQAone hexp
-  exact mul_le_of_le_one_left (zero_le _) hfac
+  exact mul_le_of_le_one_left (zero_le) hfac
 
 /-! ### Symmetrization ingredients -/
 
@@ -351,7 +352,8 @@ theorem exists_localizedPooledClassNet
         rw [eLpNorm_indicator_eq_eLpNorm_restrict hA,
           Measure.restrict_eq_zero.mpr hzero]
         rw [eLpNorm_eq_lintegral_rpow_enorm_toReal
-          (ENNReal.ofReal_pos.mpr hrpos).ne' ENNReal.ofReal_ne_top]
+          (ENNReal.ofReal_pos.mpr hrpos).ne' ENNReal.ofReal_ne_top
+              (aestronglyMeasurable_zero_measure _)]
         simpa only [Pi.sub_apply, lintegral_zero_measure, one_div,
           ENNReal.toReal_ofReal hrpos.le,
           ENNReal.zero_rpow_of_pos (inv_pos.mpr hrpos), ENNReal.ofReal_pos] using hρ
@@ -422,15 +424,14 @@ theorem exists_localizedPooledClassNet
                   (hEnv.2 f₀ hf₀ x).trans_eq (abs_of_nonneg (hEnv.1 x)).symm
               · exact bot_le
             change outerLpNorm R (fun x => f x - f₀ x) r = 0
-            rw [outerLpNorm_eq_eLpNorm_of_aemeasurable R _ r hrpos
+            erw [outerLpNorm_eq_eLpNorm_of_aemeasurable R _ r hrpos
               ((hFmeas f hf).sub (hFmeas f₀ hf₀)).aemeasurable]
             rw [outerLpNorm_eq_eLpNorm_of_aemeasurable R f r hrpos
               (hFmeas f hf).aemeasurable] at hfzero
             rw [outerLpNorm_eq_eLpNorm_of_aemeasurable R f₀ r hrpos
               (hFmeas f₀ hf₀).aemeasurable] at hf₀zero
             apply le_antisymm
-            · refine (eLpNorm_sub_le (hFmeas f hf).aestronglyMeasurable
-                (hFmeas f₀ hf₀).aestronglyMeasurable ?_).trans ?_
+            · refine (eLpNorm_sub_le ?_).trans ?_
               · exact ENNReal.one_le_ofReal.mpr hr
               · rw [hfzero, hf₀zero, add_zero]
             · exact bot_le
@@ -517,11 +518,10 @@ theorem exists_localizedPooledClassNet
                 simp only [Pi.sub_apply]
                 ring
               rw [hid]
-              exact eLpNorm_sub_le hfg_meas.aestronglyMeasurable
-                hrg_meas.aestronglyMeasurable (ENNReal.one_le_ofReal.mpr hr)
+              exact eLpNorm_sub_le (ENNReal.one_le_ofReal.mpr hr)
             have hRlt : outerLpNorm R (f - rep g) r < ENNReal.ofReal ρ := by
               change outerLpNorm R (fun x => f x - rep g x) r < ENNReal.ofReal ρ
-              rw [outerLpNorm_eq_eLpNorm_of_aemeasurable R _ r hrpos
+              erw [outerLpNorm_eq_eLpNorm_of_aemeasurable R _ r hrpos
                 ((hFmeas f hf).sub (hFmeas (rep g) (hrep g hgGood).1)).aemeasurable]
               refine htri.trans_lt ((ENNReal.add_lt_add hfg hrep').trans_le ?_)
               calc
@@ -760,7 +760,8 @@ theorem empirical_ghost_symmetrization_outer
     rw [sub_zero, sub_zero, hid] at htri
     linarith
   exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by positivity : 0 ≤ ε / 2)).mpr hdiff |>.trans_le
-    (le_supNormOver hf)
+    (le_supNormOver (z := fun f => empiricalAvg f n (fun i => X i.val ξ) - empiricalAvg f n
+        (fun i => X i.val ξ')) hf)
 
 omit [MeasurableSpace Ω] in
 private theorem supNormOver_pairSum_eq_skeleton
@@ -777,7 +778,7 @@ private theorem supNormOver_pairSum_eq_skeleton
         (fun k => (n : ℝ)⁻¹ * ∑ i, a i * (g k (z i) - g k (z' i)))
         atTop (𝓝 ((n : ℝ)⁻¹ * ∑ i, a i * (f (z i) - f (z' i)))) := by
       apply tendsto_const_nhds.mul
-      apply tendsto_finset_sum
+      apply tendsto_finsetSum
       intro i _
       exact tendsto_const_nhds.mul ((hglim (z i)).sub (hglim (z' i)))
     apply le_of_tendsto'
@@ -903,7 +904,7 @@ private theorem map_pairedFiniteSample_eq_pi_prod_map
         (μ.map (X i.val)).prod (μ.map (X i.val))) := by
   let S : Ξ → Fin n → Ω := fun ξ i => X i.val ξ
   let q : Fin n → Measure Ω := fun i => μ.map (X i.val)
-  have hSmeas : Measurable S := measurable_pi_lambda _ fun i => hXmeas i.val
+  have hSmeas : Measurable S := Measurable.of_eval fun i => hXmeas i.val
   have hSmap : μ.map S = Measure.pi q := by
     exact (ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map
       (fun i : Fin n => (hXmeas i.val).aemeasurable)).mp
@@ -931,7 +932,7 @@ private theorem measurePreserving_swapFinitePairs
     (fun i => (q i).prod (q i)) (fun i => (q i).prod (q i))
     (f := fun i z => if σ i then z else z.swap) fun i => by
       by_cases hi : σ i = true
-      · simpa [hi] using
+      · simpa [hi] using!
           (MeasurePreserving.id (μ := (q i).prod (q i)))
       · have hi' : σ i = false := Bool.eq_false_of_not_eq_true hi
         simpa [hi'] using
@@ -1102,7 +1103,7 @@ theorem ghostSwap_rademacher_outer_le
         lintegral_congr htail
       _ = ∑ σ : Fin n → Bool,
           ∫⁻ ξ, (A σ).indicator (fun _ => c) ξ ∂(μ.prod μ) := by
-        rw [lintegral_finset_sum]
+        rw [lintegral_finsetSum]
         intro σ _
         exact measurable_const.indicator (hAmeas σ)
       _ = ∑ σ : Fin n → Bool, c * (μ.prod μ) (A σ) := by
@@ -1292,7 +1293,7 @@ private theorem fairBoolSign_hasSubgaussianMGF :
     (measurable_of_finite fairBoolSign).aemeasurable
   have hbound : ∀ᵐ b ∂fairBoolMeasure, fairBoolSign b ∈ Set.Icc (-1 : ℝ) 1 :=
     Filter.Eventually.of_forall fun b => by cases b <;> simp [fairBoolSign]
-  convert ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
+  convert! ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
     (X := fairBoolSign) (μ := fairBoolMeasure) hmeas hbound integral_fairBoolSign using 1
   norm_num
 
@@ -1319,11 +1320,12 @@ private theorem fairBoolCube_eq_uniform (N : ℕ) :
     Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single', Finset.mem_univ, if_true]
   exact ENNReal.inv_pow.symm
 
+set_option backward.isDefEq.respectTransparency false in
 private theorem rademacherPartialSum_hasSubgaussianMGF
     {N : ℕ} (a : Fin N → ℝ) :
     ProbabilityTheory.HasSubgaussianMGF
       (fun σ : Fin N → Bool => rademacherPartialSum a σ N)
-      (∑ i, ⟨(a i) ^ 2, sq_nonneg (a i)⟩)
+      (∑ i, (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))))
       (PMF.uniformOfFintype (Fin N → Bool)).toMeasure := by
   have hindep : ProbabilityTheory.iIndepFun
       (fun i (σ : Fin N → Bool) => a i * fairBoolSign (σ i))
@@ -1336,13 +1338,13 @@ private theorem rademacherPartialSum_hasSubgaussianMGF
       (fun i b => a i * fairBoolSign b) (fun _ => measurable_of_finite _)
   have hcoord (i : Fin N) : ProbabilityTheory.HasSubgaussianMGF
       (fun σ : Fin N → Bool => a i * fairBoolSign (σ i))
-      ⟨(a i) ^ 2, sq_nonneg (a i)⟩ (fairBoolCube N) := by
+      (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))) (fairBoolCube N) := by
     have hmapped : ProbabilityTheory.HasSubgaussianMGF
-        (fun b => a i * fairBoolSign b) ⟨(a i) ^ 2, sq_nonneg (a i)⟩
+        (fun b => a i * fairBoolSign b) (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i)))
         ((fairBoolCube N).map fun σ => σ i) := by
       rw [fairBoolCube,
         (measurePreserving_eval (fun _ : Fin N => fairBoolMeasure) i).map_eq]
-      simpa using fairBoolSign_hasSubgaussianMGF.const_mul (a i)
+      simpa only [mul_one] using! fairBoolSign_hasSubgaussianMGF.const_mul (a i)
     simpa [Function.comp_def] using ProbabilityTheory.HasSubgaussianMGF.of_map
       (μ := fairBoolCube N) (Y := fun σ : Fin N → Bool => σ i)
       (X := fun b => a i * fairBoolSign b)
@@ -1373,7 +1375,7 @@ private theorem rademacherPartialSum_neg
 private theorem uniform_abs_max_partial_tail
     {N : ℕ} (a : Fin N → ℝ) (t : ℝ) (v : ℝ≥0)
     (ht : 0 ≤ t)
-    (hv : (∑ i, (⟨(a i) ^ 2, sq_nonneg (a i)⟩ : ℝ≥0)) ≤ v) :
+    (hv : (∑ i, ((NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))) : ℝ≥0)) ≤ v) :
     let ν := (PMF.uniformOfFintype (Fin N → Bool)).toMeasure
     ν {σ | ∃ j, j ≤ N ∧ t ≤ |rademacherPartialSum a σ j|} ≤
       4 * ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (v : ℝ)))) := by
@@ -1398,7 +1400,7 @@ private theorem uniform_abs_max_partial_tail
   have hsubGpos := hasSubgaussianMGF_mono_proxy
     (rademacherPartialSum_hasSubgaussianMGF a) hv
   have hvneg : (∑ i,
-      (⟨((-a) i) ^ 2, sq_nonneg ((-a) i)⟩ : ℝ≥0)) ≤ v := by
+      ((NNReal.mk (((-a) i) ^ 2) (sq_nonneg ((-a) i))) : ℝ≥0)) ≤ v := by
     simpa using hv
   have hsubGneg := hasSubgaussianMGF_mono_proxy
     (rademacherPartialSum_hasSubgaussianMGF (-a)) hvneg
@@ -1440,7 +1442,7 @@ private theorem pooled_close_sample_sum
           zero_lt_one hfg.aemeasurable
       _ ≤ eLpNorm (f - g) (ENNReal.ofReal r) Q :=
         eLpNorm_le_eLpNorm_of_exponent_le
-          (by simpa using ENNReal.ofReal_le_ofReal hr) hfg.aestronglyMeasurable
+          (by simpa using ENNReal.ofReal_le_ofReal hr)
       _ = outerLpNorm Q (f - g) r := by
         symm
         exact outerLpNorm_eq_eLpNorm_of_aemeasurable Q (f - g) r
@@ -1474,7 +1476,7 @@ private theorem pooled_close_sample_sum
       _ = outerLpNorm Q (f - g) 1 := by
         rw [show outerLpNorm Q (f - g) 1 = eLpNorm (f - g) 1 Q by
           simpa using outerLpNorm_eq_eLpNorm_of_aemeasurable Q (f - g) 1
-            zero_lt_one hfg.aemeasurable, eLpNorm_one_eq_lintegral_enorm]
+            zero_lt_one hfg.aemeasurable, eLpNorm_one_eq_lintegral_enorm hfg.aestronglyMeasurable]
         congr 1
         funext x
         exact (Real.enorm_eq_ofReal_abs _).symm
@@ -1555,7 +1557,7 @@ theorem conditionalRademacher_finitePooledNet_blockMaxTail
     have hfull' : ∑ i : Fin (2 * m),
         (|(f - g) (z i)| + |(f - g) (z' i)|) <
           (3 / 8 : ℝ) * m * ε := by
-      convert hfull using 1
+      convert! hfull using 1
       ring
     let I := Finset.univ.filter (fun i : Fin (2 * m) => i.val < j)
     have herrSum :
@@ -1617,7 +1619,7 @@ theorem conditionalRademacher_finitePooledNet_blockMaxTail
     refine ⟨⟨g, hgT⟩, ?_⟩
     exact ⟨j, (Finset.mem_Icc.mp hj).2,
       le_of_lt (by simpa [C, rademacherPartialSum, I] using hraw)⟩
-  let v : ℝ≥0 := ⟨8 * (m : ℝ) * M ^ 2, by positivity⟩
+  let v : ℝ≥0 := (NNReal.mk (8 * (m : ℝ) * M ^ 2) (by positivity))
   have hsquares (g : T) :
       (∑ i, (⟨(g.1 (z i) - g.1 (z' i)) ^ 2,
         sq_nonneg (g.1 (z i) - g.1 (z' i))⟩ : ℝ≥0)) ≤ v := by
@@ -1625,7 +1627,7 @@ theorem conditionalRademacher_finitePooledNet_blockMaxTail
     have hsumle : (∑ i, (⟨(g.1 (z i) - g.1 (z' i)) ^ 2,
         sq_nonneg (g.1 (z i) - g.1 (z' i))⟩ : ℝ≥0)) ≤
         ∑ _i : Fin (2 * m),
-          (⟨(2 * M) ^ 2, sq_nonneg (2 * M)⟩ : ℝ≥0) := by
+          ((NNReal.mk ((2 * M) ^ 2) (sq_nonneg (2 * M))) : ℝ≥0) := by
       apply Finset.sum_le_sum
       intro i _
       have ha : |g.1 (z i) - g.1 (z' i)| ≤ 2 * M := by
@@ -1640,7 +1642,7 @@ theorem conditionalRademacher_finitePooledNet_blockMaxTail
       change (g.1 (z i) - g.1 (z' i)) ^ 2 ≤ (2 * M) ^ 2
       nlinarith [sq_abs (g.1 (z i) - g.1 (z' i))]
     have heq : (∑ _i : Fin (2 * m),
-        (⟨(2 * M) ^ 2, sq_nonneg (2 * M)⟩ : ℝ≥0)) = v := by
+        ((NNReal.mk ((2 * M) ^ 2) (sq_nonneg (2 * M))) : ℝ≥0)) = v := by
       apply Subtype.ext
       simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
         nsmul_eq_mul]
@@ -1806,7 +1808,7 @@ private theorem paired_swap_outer_le_uniform_average
             (A σ).indicator (fun _ => c) ξ ∂(μ.prod μ) := lintegral_congr htail
       _ = ∑ σ : Fin n → Bool,
           ∫⁻ ξ, (A σ).indicator (fun _ => c) ξ ∂(μ.prod μ) := by
-        rw [lintegral_finset_sum]
+        rw [lintegral_finsetSum]
         intro σ _
         exact measurable_const.indicator (hAmeas σ)
       _ = ∑ σ : Fin n → Bool, c * (μ.prod μ) (A σ) := by
@@ -1848,7 +1850,7 @@ private def pairedGhostBlockBad (E : Set (Ω → ℝ)) (m : ℕ) (ε : ℝ) :
 private theorem measurable_prefixFinitePairs
     (m n : ℕ) (hn : n ≤ 2 * m) :
     Measurable (prefixFinitePairs (Ω := Ω) m n hn) := by
-  exact measurable_pi_lambda _ fun i => measurable_pi_apply (Fin.castLE hn i)
+  exact Measurable.of_eval fun i => measurable_pi_apply (Fin.castLE hn i)
 
 private theorem measurableSet_pairedGhostBlockBad
     (E : Set (Ω → ℝ)) (m : ℕ) (ε : ℝ)
@@ -1876,13 +1878,13 @@ private theorem pairedGhostBlockBad_pairedFiniteSample
     obtain ⟨n, hdev⟩ := hξ
     refine ⟨n.1, n.2, ?_⟩
     rw [← pairedGhostDeviation_pairedFiniteSample E X n ξ]
-    convert hdev using 1
+    simpa [prefixFinitePairs, pairedFiniteSample] using! hdev
   · rintro ⟨n, hnmem, hdev⟩
     change pairedFiniteSample X (2 * m) ξ ∈ pairedGhostBlockBad E m ε
     rw [pairedGhostBlockBad, Set.mem_iUnion]
     refine ⟨⟨n, hnmem⟩, ?_⟩
     rw [← pairedGhostDeviation_pairedFiniteSample E X n ξ] at hdev
-    convert hdev using 1
+    simpa [prefixFinitePairs, pairedFiniteSample] using! hdev
 
 omit [MeasurableSpace Ω] in
 private theorem pairedGhostBlockBad_swap
@@ -2022,7 +2024,8 @@ private theorem empirical_ghostBlock_symmetrization_outer
     rw [hghost]
     nlinarith
   exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by positivity)).mpr hdiff |>.trans_le
-    (le_supNormOver hf)
+    (le_supNormOver (z := fun f => empiricalAvg f n (fun i => X i.val ξ) - empiricalAvg f n
+        (fun i => X i.val ξ')) hf)
 
 private theorem ennrealSummable_of_tsum_lt_top {a : ℕ → ℝ≥0∞}
     (h : ∑' k, a k < ⊤) : Summable a := by
@@ -2166,7 +2169,7 @@ private theorem localizedUniformCover_block_tsum_lt_top
                 (fun i => (pairedFiniteSample X (2 * m) ξ i).1)
                 (fun i => (pairedFiniteSample X (2 * m) ξ i).2))
               1 ((ε / 2) / 16) T := by
-            convert hT using 1
+            convert! hT using 1
             ring
           calc
             (PMF.uniformOfFintype (Fin (2 * m) → Bool)).toMeasure
@@ -2560,7 +2563,7 @@ private theorem slln_ae_via_iid_real_joint
     exact integral_map (hXmeas 0).aemeasurable hgmap.aestronglyMeasurable
   filter_upwards [ProbabilityTheory.strong_law_ae_real Y hYint hYindep hYid] with ξ hξ
   rw [hint]
-  convert hξ using 1
+  convert! hξ using 1
   ext n
   unfold empiricalAvg Y
   rw [div_eq_mul_inv, mul_comm]
@@ -2688,8 +2691,9 @@ private theorem gcDeviation_le_localized_add_tail
           ENNReal.ofReal (empiricalAvg t n (fun i : Fin n => X i.val ξ)) +
             ENNReal.ofReal (∫ x, t x ∂P) := by
       gcongr
-      exact le_supNormOver (show fA ∈ localizedClass F (lpLocalization V 1 M) from
-        ⟨f, hf, rfl⟩)
+      simpa only [gcDeviation] using! le_supNormOver
+        (z := fun f => empiricalAvg f n (fun i => X i.val ξ) - ∫ x, f x ∂P)
+        (show fA ∈ localizedClass F (lpLocalization V 1 M) from ⟨f, hf, rfl⟩)
     _ = _ := by rfl
 
 /-- **Theorem 19.13 core.** Uniform finite `L¹` covering and finite
@@ -2745,6 +2749,11 @@ theorem uniformCovering_gc_iid_core
     have hη : 0 < η := by dsimp [η]; positivity
     obtain ⟨M, hM, hMtail⟩ :=
       tailReal_small V H P hVmeas hVint hHV η hη
+    have hMtail' : eLpNorm (tailReal V H M) 1 P < ENNReal.ofReal η := by
+      have hm : AEStronglyMeasurable (tailReal V H M) P :=
+        (hHmeas.indicator (measurableSet_Ioi.preimage hVmeas)).aestronglyMeasurable
+      simpa only [eLpNorm_eq_eLpNorm' one_ne_zero ENNReal.coe_ne_top hm,
+        ENNReal.toReal_one] using hMtail
     let j : ℕ := ⌈M⌉₊
     let N : ℕ := j + 1
     have hMN : M ≤ (N : ℝ) := by
@@ -2753,8 +2762,10 @@ theorem uniformCovering_gc_iid_core
         _ ≤ (N : ℕ) := by simp [N]
     have htailMono : eLpNorm (tailReal V H N) 1 P ≤
         eLpNorm (tailReal V H M) 1 P := by
-      apply eLpNorm_mono
+      apply eLpNorm_mono ((hHmeas.indicator
+          (measurableSet_Ioi.preimage hVmeas)).aestronglyMeasurable)
       intro x
+      change ‖tailReal V H N x‖ ≤ ‖tailReal V H M x‖
       by_cases hxN : ENNReal.ofReal (N : ℝ) < V x
       · have hxM : ENNReal.ofReal M < V x :=
           lt_of_le_of_lt (ENNReal.ofReal_le_ofReal hMN) hxN
@@ -2765,9 +2776,9 @@ theorem uniformCovering_gc_iid_core
       · have hxN' : x ∉ {x | ENNReal.ofReal (N : ℝ) < V x} := hxN
         unfold tailReal
         rw [Set.indicator_of_notMem hxN']
-        simpa only [norm_zero] using (norm_nonneg (tailReal V H M x))
+        simpa only [norm_zero] using! (norm_nonneg (tailReal V H M x))
     have hNtail : eLpNorm (tailReal V H N) 1 P < ENNReal.ofReal η :=
-      htailMono.trans_lt hMtail
+      htailMono.trans_lt hMtail'
     have htmeas : Measurable (tailReal V H N) :=
       hHmeas.indicator (measurableSet_Ioi.preimage hVmeas)
     have ht0 : ∀ x, 0 ≤ tailReal V H N x := by
@@ -2785,7 +2796,7 @@ theorem uniformCovering_gc_iid_core
     have hintN : ∫ x, tailReal V H N x ∂P < η := by
       have heq : ENNReal.ofReal (∫ x, tailReal V H N x ∂P) =
           eLpNorm (tailReal V H N) 1 P := by
-        rw [eLpNorm_one_eq_lintegral_enorm,
+        rw [eLpNorm_one_eq_lintegral_enorm htmeas.aestronglyMeasurable,
           ofReal_integral_eq_lintegral_ofReal htint (Eventually.of_forall ht0)]
         apply lintegral_congr
         intro x

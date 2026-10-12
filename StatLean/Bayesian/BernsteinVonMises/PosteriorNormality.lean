@@ -91,7 +91,7 @@ private lemma tvDist_cond_lt {α : Type*} [MeasurableSpace α] (ν : Measure α)
         _ < 1 / 2 + 1 / 2 := ENNReal.add_lt_add_of_le_of_lt (by norm_num) hcon h1
         _ = 1 := ENNReal.add_halves 1
     exact absurd hlt (lt_irrefl 1)
-  have hCne : ν C ≠ 0 := ne_of_gt (lt_of_le_of_lt (zero_le _) hC2)
+  have hCne : ν C ≠ 0 := ne_of_gt (lt_of_le_of_lt (zero_le) hC2)
   refine lt_of_le_of_lt (tvDist_cond_le ν hC) ?_
   rw [ENNReal.div_lt_iff (Or.inl hCne) (Or.inl (measure_ne_top ν C))]
   refine lt_of_lt_of_le h2 ?_
@@ -141,7 +141,7 @@ theorem scoreSum_uniformly_tight
   set ν : ℕ → Measure (EuclideanSpace ℝ (Fin k)) :=
     fun n => (productMeasure M μ θ₀ n).map (scoreSum sc n) with hνdef
   haveI hνprob : ∀ n, IsProbabilityMeasure (ν n) := fun n => by
-    rw [hνdef]; exact Measure.isProbabilityMeasure_map (hscm n).aemeasurable
+    rw [hνdef]; exact (by infer_instance)
   haveI : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
   have hweak : AsymptoticStatistics.WeakConverges ν
@@ -241,7 +241,7 @@ theorem bernstein_von_mises
     hπ hMseq_tendsto hc hφ
   have hzero : Tendsto (fun n => ENNReal.ofReal (1 / Mseq n)) atTop (𝓝 0) := by
     have h0 : Tendsto (fun n => 1 / Mseq n) atTop (𝓝 (0 : ℝ)) := by
-      simpa [one_div] using tendsto_inv_atTop_zero.comp hMseq_tendsto
+      simpa [one_div] using! tendsto_inv_atTop_zero.comp hMseq_tendsto
     simpa using ENNReal.tendsto_ofReal h0
   intro δ hδ
   set δ₁ : ℝ≥0∞ := min δ 1 with hδ₁def

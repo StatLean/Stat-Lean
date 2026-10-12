@@ -119,7 +119,7 @@ instance (m n : ℕ) : IsFiniteKernel (multinomialKernel m n) := by
         Kernel.withDensity_apply' _ (measurable_uncurry_multinomialWeight m n),
         Kernel.const_apply, Measure.restrict_univ, lintegral_count]
       simp only [hz, tsum_zero]
-    exact this ▸ zero_le 1
+    exact this ▸ zero_le (a := 1)
 
 /-- Pointwise value on singletons: the pmf formula. -/
 theorem multinomialKernel_apply_singleton (m n : ℕ) (q : Fin m → ℝ) (v : Fin m → ℕ) :

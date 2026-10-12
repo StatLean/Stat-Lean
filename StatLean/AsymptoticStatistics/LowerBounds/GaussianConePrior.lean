@@ -74,7 +74,7 @@ def IsTranslatedIsotropicGaussian
         ⟪(u : EuclideanSpace ℝ (Fin m)), x⟫_ℝ) ν =
         gaussianReal
           ⟪(u : EuclideanSpace ℝ (Fin m)), (h0 : EuclideanSpace ℝ (Fin m))⟫_ℝ
-          ⟨c ^ 2 * ‖u‖ ^ 2, mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩
+          (NNReal.mk (c ^ 2 * ‖u‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
 
 private noncomputable def intrinsicTranslatedGaussian
     (C : Set (EuclideanSpace ℝ (Fin m)))
@@ -99,7 +99,7 @@ private theorem intrinsicTranslatedGaussian_spec
   letI hmeas : MeasurableSpace ↥S := borel ↥S
   letI hborel : BorelSpace ↥S := ⟨rfl⟩
   letI hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ hmeas hborel
+    inferInstance
   letI hstdgauss : IsGaussian (stdGaussian ↥S) :=
     @isGaussian_stdGaussian _ _ _ _ hmeas hborel
   let affineInclusion : ↥S → EuclideanSpace ℝ (Fin m) :=
@@ -110,7 +110,7 @@ private theorem intrinsicTranslatedGaussian_spec
     (stdGaussian ↥S).map affineInclusion
   change IsTranslatedIsotropicGaussian C ν h0 c
   haveI hνprob : IsProbabilityMeasure ν := by
-    exact Measure.isProbabilityMeasure_map haffine_meas.aemeasurable
+    exact (by infer_instance)
   refine ⟨inferInstance, ?_, ?_⟩
   · have hSclosed : IsClosed (S : Set (EuclideanSpace ℝ (Fin m))) :=
       S.closed_of_finiteDimensional
@@ -136,12 +136,13 @@ private theorem intrinsicTranslatedGaussian_spec
         (@variance_dual_stdGaussian _ _ _ _ hmeas hborel
           (innerSL ℝ u))
     have hbase : (stdGaussian ↥S).map L =
-        gaussianReal 0 ⟨‖u‖ ^ 2, sq_nonneg _⟩ := by
+        gaussianReal 0 (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _)) := by
       rw [IsGaussian.map_eq_gaussianReal L]
       rw [hmean, hvar]
       congr 2
       ext
-      simp
+      change (‖u‖ ^ 2).toNNReal.toReal = ‖u‖ ^ 2
+      exact Real.coe_toNNReal _ (sq_nonneg _)
     have hcomp : (fun z : ↥S =>
         ⟪(u : EuclideanSpace ℝ (Fin m)), affineInclusion z⟫_ℝ) = q ∘ L := by
       funext z
@@ -165,7 +166,7 @@ private theorem intrinsicTranslatedGaussian_spec
           congr 1]
     rw [← Measure.map_map hq_meas hL_meas, hbase]
     simp only [q]
-    change (gaussianReal 0 ⟨‖u‖ ^ 2, sq_nonneg _⟩).map
+    change (gaussianReal 0 (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _))).map
         ((fun x : ℝ => x + ⟪(u : EuclideanSpace ℝ (Fin m)),
           (h0 : EuclideanSpace ℝ (Fin m))⟫_ℝ) ∘ fun x : ℝ => c * x) = _
     rw [← Measure.map_map (by fun_prop : Measurable fun x : ℝ =>
@@ -235,7 +236,7 @@ private theorem isTranslatedIsotropicGaussian_unique
             ⟪(us : EuclideanSpace ℝ (Fin m)), x⟫_ℝ) ν := by
         apply Measure.map_congr
         filter_upwards [hνS] with x hx
-        simpa only [InnerProductSpace.toDualMap_apply_apply] using
+        simpa only [InnerProductSpace.toDualMap_apply_apply] using!
           (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hν.2.2 us
   have hμmap : Measure.map (InnerProductSpace.toDualMap ℝ _ u) μ =
@@ -248,7 +249,7 @@ private theorem isTranslatedIsotropicGaussian_unique
             ⟪(us : EuclideanSpace ℝ (Fin m)), x⟫_ℝ) μ := by
         apply Measure.map_congr
         filter_upwards [hμS] with x hx
-        simpa only [InnerProductSpace.toDualMap_apply_apply] using
+        simpa only [InnerProductSpace.toDualMap_apply_apply] using!
           (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hμ.2.2 us
   calc
@@ -301,7 +302,7 @@ theorem restrictedTranslatedGaussianPrior_spec
   letI hmeas : MeasurableSpace ↥S := borel ↥S
   letI hborel : BorelSpace ↥S := ⟨rfl⟩
   letI hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ hmeas hborel
+    inferInstance
   letI hrealOpen : Measure.IsOpenPosMeasure (gaussianReal 0 1) :=
     (gaussianReal_absolutelyContinuous' 0 one_ne_zero).isOpenPosMeasure
   letI hpiOpen : Measure.IsOpenPosMeasure

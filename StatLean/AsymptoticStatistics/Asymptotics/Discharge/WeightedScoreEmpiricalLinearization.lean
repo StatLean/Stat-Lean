@@ -44,7 +44,7 @@ private theorem rootNBounded_tendsto_parameter
   have hinv : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * max C 0) atTop (nhds 0) := by
     have hsqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa only [zero_mul] using hsqrt.inv_tendsto_atTop.mul_const (max C 0)
+    simpa only [zero_mul] using! hsqrt.inv_tendsto_atTop.mul_const (max C 0)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hinv
     (Eventually.of_forall fun _ => norm_nonneg _) ?_
   filter_upwards [hC, eventually_ge_atTop 1] with n hn hn1
@@ -97,7 +97,7 @@ private theorem dqm_score_memLp_modelMeasure
     integrable_withDensity_iff (M.density_meas theta0).ennreal_ofReal (by simp)]
   have hi := dqm_norm_sq_score_integrable M mu theta0 ell
     (hPDF.density_integrable theta0) hDQM (fun _ _ => hPDF.density_integrable _)
-  convert hi using 1
+  convert! hi using 1
   funext x
   rw [ENNReal.toReal_ofReal (M.density_nonneg theta0 x)]
 
@@ -192,13 +192,13 @@ private theorem dqm_deficit_mass_scaled_of_rootNBounded
     M.sqrtDensity t x - M.sqrtDensity theta0 x -
       (1 / 2 : ℝ) * inner ℝ (t - theta0) (ell x) * M.sqrtDensity theta0 x
   have hshift : Tendsto delta (nhds theta0) (nhds 0) := by
-    simpa [delta] using (continuous_id.sub
+    simpa [delta] using! (continuous_id.sub
       (continuous_const : Continuous
         (fun _ : EuclideanSpace ℝ (Fin d) => theta0))).tendsto theta0
   have hrO : (fun t => ∫ x, r t x ^ 2 ∂mu) =o[nhds theta0]
       (fun t => ‖t - theta0‖ ^ 2) := by
     have hraw := hDQM.isLittleO.comp_tendsto hshift
-    convert hraw using 1; funext t
+    convert! hraw using 1; funext t
     · apply integral_congr_ae
       exact Eventually.of_forall fun x => by
         simp only [r, delta]
@@ -290,7 +290,7 @@ private theorem dqm_good_complement_base_mass_scaled_of_rootNBounded
     filter_upwards [htheta.eventually hlinear.1] with n hn
     have hz : MemLp (fun x => inner ℝ (theta n - theta0) (ell x)) 2 P0 :=
       hellMem.continuousLinearMap_comp (innerSL ℝ (theta n - theta0))
-    convert hn.add hz using 1
+    convert! hn.add hz using 1
     funext x
     change W n x = (W n x - inner ℝ (theta n - theta0) (ell x)) +
       inner ℝ (theta n - theta0) (ell x)
@@ -324,7 +324,7 @@ private theorem dqm_good_complement_base_mass_scaled_of_rootNBounded
   have hmass : P0.real (T n) ≤ ∫ x in T n, W n x ^ 2 ∂P0 := by
     rw [show P0.real (T n) = ∫ _x in T n, (1 : ℝ) ∂P0 by simp]
     exact setIntegral_mono_on (integrable_const (c := (1 : ℝ))).integrableOn
-      hsquare.integrableOn hTmeas (fun x hx => by simpa only [hT] using hx)
+      hsquare.integrableOn hTmeas (fun x hx => by simpa only [hT] using! hx)
   calc
     (n : ℝ) * P0.real (G n)ᶜ = (n : ℝ) * P0.real (T n) := by
       congr 1
@@ -392,7 +392,7 @@ private theorem dqm_good_complement_mass_scaled_of_rootNBounded
     have hz : MemLp (fun x => inner ℝ (theta n - theta0) (ell x)) 2
         (modelMeasure M mu theta0) :=
       hellMem.continuousLinearMap_comp (innerSL ℝ (theta n - theta0))
-    convert hn.add hz using 1
+    convert! hn.add hz using 1
     funext x
     change W n x = (W n x - inner ℝ (theta n - theta0) (ell x)) +
       inner ℝ (theta n - theta0) (ell x)
@@ -436,7 +436,7 @@ private theorem dqm_good_complement_mass_scaled_of_rootNBounded
       have hi' := hn.integrable_sq
       rw [modelMeasure, integrable_withDensity_iff
         (M.density_meas theta0).ennreal_ofReal (by simp)] at hi'
-      convert hi' using 1
+      convert! hi' using 1
       funext x
       rw [ENNReal.toReal_ofReal (M.density_nonneg theta0 x)]
       ring
@@ -509,15 +509,16 @@ private theorem memLp_sqrt_density_smul'
   have hi' : Integrable
       (fun x => ‖f x‖ ^ 2 * (ENNReal.ofReal (q x)).toReal) mu := by
     rw [← integrable_withDensity_iff hq_meas.ennreal_ofReal (by simp), ← hQ]
-    convert (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf using 1
+    convert! (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf using 1
   have hi : Integrable (fun x => ‖f x‖ ^ 2 * q x) mu := by
-    convert hi' using 1
+    convert! hi' using 1
     funext x
     rw [ENNReal.toReal_ofReal (hq_nonneg x)]
-  rw [memLp_two_iff_integrable_sq_norm
+  erw [memLp_two_iff_integrable_sq_norm
     (hq_meas.sqrt.smul hf_meas).aestronglyMeasurable]
-  convert hi using 1
+  convert! hi using 1
   funext x
+  change ‖Real.sqrt (q x) • f x‖ ^ 2 = ‖f x‖ ^ 2 * q x
   rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow,
     Real.sq_sqrt (hq_nonneg x)]
   ring
@@ -588,7 +589,7 @@ private theorem TendstoInProbZero.euclidean_of_coordinate
       exact le_rfl)
   have hsum := TendstoInProbZero.finset_sum (Finset.univ : Finset (Fin d))
     (fun j _ => hsingle j)
-  convert hsum using 1
+  convert! hsum using 1
   funext n x
   ext j
   simp
@@ -675,7 +676,7 @@ private theorem integral_tail_of_vanishing_error_add_envelope
       have ht := hinv.mul hr0
       have ht' : Tendsto (fun n => (A n / 2)⁻¹ * ∫ x, r n x ∂P)
           atTop (nhds 0) := by simpa only [zero_mul] using ht
-      simpa only [zero_mul, Function.comp_apply, ENNReal.ofReal_zero] using
+      simpa only [zero_mul, Function.comp_apply, ENNReal.ofReal_zero] using!
         (ENNReal.continuous_ofReal.tendsto 0).comp ht'
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
       (Eventually.of_forall fun _ => bot_le) ?_
@@ -699,7 +700,7 @@ private theorem integral_tail_of_vanishing_error_add_envelope
       have ht : Tendsto (fun n => (A n / 2)⁻¹ * ∫ x, g0 x ∂P)
           atTop (nhds 0) := by
         simpa only [zero_mul] using hinv.mul_const (∫ x, g0 x ∂P)
-      simpa only [Function.comp_apply, ENNReal.ofReal_zero] using
+      simpa only [Function.comp_apply, ENNReal.ofReal_zero] using!
         (ENNReal.continuous_ofReal.tendsto 0).comp ht
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
       (Eventually.of_forall fun _ => bot_le) ?_
@@ -816,7 +817,7 @@ private theorem dqm_ratio_row_centered_tendstoInProbZero
   have hlinear := dqm_sqrtDensityRatio_l2_linearization M mu theta0 ell hPDF hDQM
   have hqMem : ∀ᶠ n in atTop, MemLp (q n) 2 P0 := by
     filter_upwards [htheta.eventually hlinear.1] with n hn
-    convert hn.const_mul (Real.sqrt n) using 1
+    convert! hn.const_mul (Real.sqrt n) using 1
     funext x
     simp only [q, V, u, real_inner_smul_left]
     ring
@@ -850,7 +851,7 @@ private theorem dqm_ratio_row_centered_tendstoInProbZero
     have hinnerMem : MemLp (fun x => inner ℝ (u n) (ell x)) 2 P0 :=
       hellMem.continuousLinearMap_comp (innerSL ℝ (u n))
     have hV : MemLp (V n) 2 P0 := by
-      convert hn.add hinnerMem using 1
+      convert! hn.add hinnerMem using 1
       funext x
       change V n x = q n x + inner ℝ (u n) (ell x)
       simp only [q]
@@ -1084,7 +1085,7 @@ private theorem dqm_ratio_row_centered_tendstoInProbZero
       have hg0nonneg : 0 ≤ ∫ x, g0 x ∂P0 := integral_nonneg fun x => by
         exact mul_nonneg (le_max_right C 0) (sq_nonneg ‖ell x‖)
       linarith) hfirst htail
-  convert htri using 1
+  convert! htri using 1
   funext n X
   simp only [empMean, PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]
   rw [MeasureTheory.eval_integral_piLp (fun k => hYjInt n k) j,
@@ -1127,7 +1128,7 @@ private theorem centered_empMean_tendstoInProbZero_of_l2
         ∑ i, centered i ∘ Function.eval i by
       ext X
       simp [Function.comp_apply]]
-    exact memLp_finset_sum' Finset.univ (fun i _ =>
+    exact memLp_finsetSum' Finset.univ (fun i _ =>
       (hc i).comp_measurePreserving (measurePreserving_eval (fun _ : Fin n => P n) i))
   have hmean : ∫ X, S X ∂(Measure.pi (fun _ : Fin n => P n)) = 0 := by
     rw [integral_const_mul]
@@ -1141,7 +1142,7 @@ private theorem centered_empMean_tendstoInProbZero_of_l2
         (Measure.pi (fun _ : Fin n => P n)) := fun i =>
       ((hc i).comp_measurePreserving
         (measurePreserving_eval (fun _ : Fin n => P n) i)).integrable one_le_two
-    rw [integral_finset_sum _ (fun i _ => hint i)]
+    rw [integral_finsetSum _ (fun i _ => hint i)]
     simp only [heval, Finset.sum_const_zero, mul_zero]
   have hvar : ProbabilityTheory.variance S
       (Measure.pi (fun _ : Fin n => P n)) ≤ ∫ x, ‖f n x‖ ^ 2 ∂(P n) := by
@@ -1324,7 +1325,7 @@ private theorem tendsto_euclidean_zero_of_coordinate
   rw [tendsto_zero_iff_norm_tendsto_zero]
   have hsum : Tendsto (fun n => ∑ j, |z n j|) atTop (nhds 0) := by
     simpa using
-      tendsto_finset_sum Finset.univ (fun j _ => (hz j).abs)
+      tendsto_finsetSum Finset.univ (fun j _ => (hz j).abs)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
     (Eventually.of_forall fun _ => norm_nonneg _) ?_
   exact Eventually.of_forall fun n => by
@@ -1432,12 +1433,12 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
     let e : ℕ → Omega → EuclideanSpace ℝ (Fin d) := fun n x =>
       M.sqrtDensity (θn n) x • fn n x - M.sqrtDensity θ0 x • ℓ x
     have hgMem (n : ℕ) : MemLp (fun x => M.sqrtDensity (θn n) x • fn n x) 2 μ := by
-      simpa only [Pn, modelMeasure] using memLp_sqrt_density_smul' μ (Pn n)
+      simpa only [Pn, modelMeasure] using! memLp_sqrt_density_smul' μ (Pn n)
         (M.density (θn n)) (M.density_meas (θn n)) (M.density_nonneg (θn n))
         rfl (fn n) (hfn_meas n) (hfn_memLp n)
     have hg0Mem : MemLp (fun x => M.sqrtDensity θ0 x • ℓ x) 2 μ := by
       have hℓMem := dqm_score_memLp_modelMeasure M μ θ0 ℓ hℓ hPDF hDQM
-      simpa only [P0, modelMeasure] using memLp_sqrt_density_smul' μ P0
+      simpa only [P0, modelMeasure] using! memLp_sqrt_density_smul' μ P0
         (M.density θ0) (M.density_meas θ0) (M.density_nonneg θ0)
         rfl ℓ hℓ hℓMem
     have heMem (n : ℕ) : MemLp (e n) 2 μ := (hgMem n).sub hg0Mem
@@ -1480,7 +1481,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
         (M.density_meas (θn n)).ennreal_ofReal (by simp)]
       have heInt := (memLp_two_iff_integrable_sq_norm
         (heMem n).aestronglyMeasurable).mp (heMem n) |>.indicator (hG n)
-      convert heInt using 1
+      convert! heInt using 1
       funext x
       rw [ENNReal.toReal_ofReal (M.density_nonneg (θn n) x)]
       exact congrFun (hRweightedEq n) x
@@ -1503,16 +1504,16 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
     let g : ℕ → Omega → EuclideanSpace ℝ (Fin d) := fun n x =>
       M.sqrtDensity (θn n) x • fn n x
     have hgMem (n : ℕ) : MemLp (g n) 2 μ := by
-      simpa only [Pn, g, modelMeasure] using memLp_sqrt_density_smul' μ (Pn n)
+      simpa only [Pn, g, modelMeasure] using! memLp_sqrt_density_smul' μ (Pn n)
         (M.density (θn n)) (M.density_meas (θn n)) (M.density_nonneg (θn n))
         rfl (fn n) (hfn_meas n) (hfn_memLp n)
     have hg0Mem : MemLp g0 2 μ := by
       have hℓMem := dqm_score_memLp_modelMeasure M μ θ0 ℓ hℓ hPDF hDQM
-      simpa only [P0, g0, modelMeasure] using memLp_sqrt_density_smul' μ P0
+      simpa only [P0, g0, modelMeasure] using! memLp_sqrt_density_smul' μ P0
         (M.density θ0) (M.density_meas θ0) (M.density_nonneg θ0)
         rfl ℓ hℓ hℓMem
     have heMem (n : ℕ) : MemLp (e n) 2 μ := by
-      simpa only [e, g, g0] using (hgMem n).sub hg0Mem
+      simpa only [e, g, g0] using! (hgMem n).sub hg0Mem
     let B0 := ∫ x, ‖g0 x‖ ^ 2 ∂μ
     let C := 2 + 2 * B0
     have hB0 : 0 ≤ B0 := integral_nonneg fun _ => sq_nonneg _
@@ -1595,7 +1596,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
     have hlinear := dqm_sqrtDensityRatio_l2_linearization M μ θ0 ℓ hPDF hDQM
     have hqMem : ∀ᶠ n in atTop, MemLp (q n) 2 P0 := by
       filter_upwards [htheta.eventually hlinear.1] with n hn
-      convert hn.const_mul (Real.sqrt n) using 1
+      convert! hn.const_mul (Real.sqrt n) using 1
       funext x
       simp only [q, V, u, W, real_inner_smul_left]
       ring
@@ -1605,7 +1606,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
     have hWMem : ∀ᶠ n in atTop, MemLp (W n) 2 P0 := by
       filter_upwards [htheta.eventually hlinear.1] with n hn
       have hz := hℓMem.continuousLinearMap_comp (innerSL ℝ (θn n - θ0))
-      convert hn.add hz using 1
+      convert! hn.add hz using 1
       funext x
       change W n x = (W n x - inner ℝ (θn n - θ0) (ℓ x)) +
         inner ℝ (θn n - θ0) (ℓ x)
@@ -1615,11 +1616,11 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
       have hs0 : Tendsto (fun t : EuclideanSpace ℝ (Fin d) => s t ^ 2)
           (nhds θ0) (nhds 0) := by
         have hs : Tendsto s (nhds θ0) (nhds 0) := by
-          convert (continuous_norm.comp (continuous_id.sub
+          convert! (continuous_norm.comp (continuous_id.sub
             (continuous_const : Continuous
               (fun _ : EuclideanSpace ℝ (Fin d) => θ0)))).tendsto θ0 using 1;
             simp
-        convert hs.pow 2 using 1; norm_num
+        convert! hs.pow 2 using 1; norm_num
       have hrem : Tendsto (fun t => (∫ x, M.sqrtDensityRatio θ0 t x ^ 2 ∂P0) -
           fisherInformation M μ θ0 ℓ (t - θ0) (t - θ0)) (nhds θ0) (nhds 0) := by
         apply (show (fun t => (∫ x, M.sqrtDensityRatio θ0 t x ^ 2 ∂P0) -
@@ -1629,19 +1630,19 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
             dqm_sqrtDensityRatio_sq_expansion M μ θ0 ℓ hPDF hDQM).trans_tendsto hs0
       have hshift : Tendsto (fun t : EuclideanSpace ℝ (Fin d) => t - θ0)
           (nhds θ0) (nhds 0) := by
-        simpa using (continuous_id.sub
+        simpa using! (continuous_id.sub
           (continuous_const : Continuous
             (fun _ : EuclideanSpace ℝ (Fin d) => θ0))).tendsto θ0
       have hfish : Tendsto
           (fun t => fisherInformation M μ θ0 ℓ (t - θ0) (t - θ0))
           (nhds θ0) (nhds 0) := by
-        simpa [fisherInformation, pow_two] using
+        simpa [fisherInformation, pow_two] using!
           (dqm_fisher_cont M μ θ0 ℓ (hPDF.density_integrable θ0) hDQM
             (fun _ _ => hPDF.density_integrable _)).comp hshift
       have hall : Tendsto (fun t => ∫ x, M.sqrtDensityRatio θ0 t x ^ 2 ∂P0)
           (nhds θ0) (nhds 0) := by
         simpa only [sub_add_cancel, zero_add] using hrem.add hfish
-      simpa only [W] using hall.comp htheta
+      simpa only [W] using! hall.comp htheta
     have hWmeasure : TendstoInMeasure P0 W atTop (fun _ => 0) := by
       rw [tendstoInMeasure_iff_norm]
       intro delta hdelta
@@ -1669,7 +1670,6 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
           (((M.sqrtDensityRatio_measurable θ0 (θn (ns (ms k)))).abs.mul
             (hℓ.norm.pow_const 2)).indicator (hG (ns (ms k)))).aestronglyMeasurable
       · exact Eventually.of_forall fun k => Eventually.of_forall fun x => by
-          dsimp only
           by_cases hx : x ∈ G (ns (ms k))
           · rw [Set.indicator_of_mem hx]
             simp only [Real.norm_eq_abs, abs_mul, abs_abs, abs_pow, abs_norm]
@@ -1841,7 +1841,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
                 simpa only [Real.norm_eq_abs, abs_abs] using hdom x hx
           refine (setIntegral_mono_on hleft hB (hG n) hdom).trans ?_
           have hqInt : IntegrableOn (fun x => |q n x * ℓ x j|) (G n) P0 := by
-            simpa only [Real.norm_eq_abs] using
+            simpa only [Real.norm_eq_abs] using!
               (hqm.integrable_mul (hℓMem.eval_piLp j)).norm.integrableOn
           have hCInt : IntegrableOn
               (fun x => max Cu 0 * (|W n x| * ‖ℓ x‖ ^ 2)) (G n) P0 :=
@@ -1855,7 +1855,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
             _ ≤ (∫ x, |q n x * ℓ x j| ∂P0) +
                 ∫ x in G n, max Cu 0 * (|W n x| * ‖ℓ x‖ ^ 2) ∂P0 :=
               add_le_add (setIntegral_le_integral
-                (by simpa only [Real.norm_eq_abs] using
+                (by simpa only [Real.norm_eq_abs] using!
                   (hqm.integrable_mul (hℓMem.eval_piLp j)).norm)
                 (Eventually.of_forall fun _ => abs_nonneg _)) le_rfl
     -- The population Gram action is the integrated score outer product.
@@ -1865,7 +1865,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
         Matrix.toEuclideanCLM_toLp]
       simp only [Matrix.mulVec, dotProduct, populationGram, PiLp.inner_apply]
       simp_rw [Finset.sum_mul]
-      rw [integral_finset_sum]
+      rw [integral_finsetSum]
       · apply Finset.sum_congr rfl
         intro k _
         rw [mul_comm, ← integral_const_mul]
@@ -1874,7 +1874,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
         change u n k * (ℓ x j * ℓ x k) = (ℓ x k * u n k) * ℓ x j
         ring
       · intro k _
-        convert ((hℓMem.eval_piLp k).integrable_mul
+        convert! ((hℓMem.eval_piLp k).integrable_mul
           (hℓMem.eval_piLp j) |>.const_mul (u n k)) using 1
         funext x
         change (ℓ x k * u n k) * ℓ x j = u n k * (ℓ x k * ℓ x j)
@@ -1924,7 +1924,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
         simp only [P0, modelMeasure] at hh
         rw [integrable_withDensity_iff
           (M.density_meas θ0).ennreal_ofReal (by simp)] at hh
-        convert hh using 1
+        convert! hh using 1
         funext x
         rw [ENNReal.toReal_ofReal (M.density_nonneg θ0 x)]
         simp only [Pi.mul_apply, Real.norm_eq_abs, abs_mul]
@@ -2008,13 +2008,13 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
           (1 / 4 : ℝ) * ∫ x in G n, V n x * W n x * ℓ x j ∂P0 := by
       have hVmem : MemLp (V n) 2 P0 := by
         have hi := hℓMem.continuousLinearMap_comp (innerSL ℝ (u n))
-        convert hqm.add hi using 1
+        convert! hqm.add hi using 1
         funext x
         change V n x = (V n x - inner ℝ (u n) (ℓ x)) + inner ℝ (u n) (ℓ x)
         ring
       have hVj := hVmem.integrable_mul (hℓMem.eval_piLp j)
       have hVj' : Integrable (fun x => V n x * ℓ x j) P0 := by
-        simpa only [Pi.mul_apply] using hVj
+        simpa only [Pi.mul_apply] using! hVj
       have hscaled : Integrable (fun x => Real.sqrt n * ℓ x j) P0 :=
         ((hℓMem.eval_piLp j).integrable one_le_two).const_mul _
       have hVWj : IntegrableOn (fun x => V n x * W n x * ℓ x j) (G n) P0 := by
@@ -2132,9 +2132,9 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
         (hℓMem.eval_piLp j)
       have hinnerj' : Integrable
           (fun x => inner ℝ (u n) (ℓ x) * ℓ x j) P0 := by
-        simpa only [Pi.mul_apply] using hinnerj
+        simpa only [Pi.mul_apply] using! hinnerj
       have hVmem' : MemLp (V n) 2 P0 := by
-        convert hqm.add (hℓMem.continuousLinearMap_comp (innerSL ℝ (u n))) using 1
+        convert! hqm.add (hℓMem.continuousLinearMap_comp (innerSL ℝ (u n))) using 1
         funext x
         change V n x = (V n x - inner ℝ (u n) (ℓ x)) + inner ℝ (u n) (ℓ x)
         ring
@@ -2145,7 +2145,7 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
             ∫ x in G n, inner ℝ (u n) (ℓ x) * ℓ x j ∂P0 := by
         have hi := integral_sub (μ := P0.restrict (G n))
           hVell.integrableOn hinnerj.integrableOn
-        convert hi using 1; apply integral_congr_ae;
+        convert! hi using 1; apply integral_congr_ae;
           exact ae_restrict_of_forall_mem (hG n) fun x _ => by
             simp only [Pi.mul_apply, innerSL_apply_apply]
             ring

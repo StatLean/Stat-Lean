@@ -94,7 +94,7 @@ theorem empiricalProcess_chebyshev_tail
       simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
         empiricalProcess_zero, abs_zero]
       exact hM
-    rw [hset, measure_empty]; exact zero_le _
+    rw [hset, measure_empty]; exact zero_le
   -- `n > 0`: `EP = (√n)⁻¹ · ∑ᵢ g(Xᵢ)`, mean `0`, variance `V`; apply Chebyshev.
   · have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
       Real.mul_self_sqrt (by positivity)
@@ -114,7 +114,7 @@ theorem empiricalProcess_chebyshev_tail
         Finset.sum_congr rfl (fun i _ => hgXi_var i.val)]
       simp [Finset.sum_const, Finset.card_univ]
     have hY_memLp : MemLp Y 2 μ := by
-      rw [hY_eq]; exact memLp_finset_sum' _ (fun i _ => hY_L2 i)
+      rw [hY_eq]; exact memLp_finsetSum' _ (fun i _ => hY_L2 i)
     have hEP_eq : (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)
         = fun ξ => (Real.sqrt n)⁻¹ * Y ξ := by
       funext ξ
@@ -138,7 +138,7 @@ theorem empiricalProcess_chebyshev_tail
       have hY_int : ∫ ξ, Y ξ ∂μ = 0 := by
         rw [hY_eq]
         simp_rw [Finset.sum_apply]
-        rw [integral_finset_sum _ (fun i _ => (hY_L2 i).integrable one_le_two)]
+        rw [integral_finsetSum _ (fun i _ => (hY_L2 i).integrable one_le_two)]
         simp only [Function.comp_apply, hgX_mean, Finset.sum_const_zero]
       rw [hY_int, mul_zero]
     have hEP_var : ProbabilityTheory.variance

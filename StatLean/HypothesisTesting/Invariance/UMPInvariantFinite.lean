@@ -137,7 +137,7 @@ private theorem integral_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧] {μ
   have hcov : ∀ g : G, ∫ x, q (g • x) ∂μ = ∫ x, q x ∂μ := fun g =>
     integral_smul_invariant g hqm (hμ g)
   unfold orbitAverage
-  rw [integral_const_mul, integral_finset_sum _ (fun g _ => hint g),
+  rw [integral_const_mul, integral_finsetSum _ (fun g _ => hint g),
     Finset.sum_congr rfl (fun g _ => hcov g), Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hcard, one_mul]
 
@@ -173,7 +173,7 @@ theorem orbitAverage_eq_avg_translated_density [Fintype G] [MeasurableSMul G �
     intro g
     have hmeq : (μ.withDensity fun x => ENNReal.ofReal (p (g • θ) x))
         = μ.withDensity fun x => ENNReal.ofReal (p θ (g⁻¹ • x)) := by
-      rw [← hdens (g • θ), ← hP g θ, hdens θ]
+      rw [← hdens (g • θ), ← hP.map_eq g θ (measurable_const_smul g).aemeasurable, hdens θ]
       exact map_smul_withDensity g (hpmeas θ).ennreal_ofReal (hμ g)
     have hae := (withDensity_eq_iff_of_sigmaFinite
       (hpmeas (g • θ)).ennreal_ofReal.aemeasurable
@@ -223,7 +223,7 @@ private theorem hasDensity_orbitAverage [Fintype G] [MeasurableSMul G 𝓧] {P :
     rwa [ENNReal.toReal_ofReal hnn, ENNReal.toReal_one] at this
   have horbint : Integrable (orbitAverage G (p θ)) μ := by
     unfold orbitAverage
-    refine Integrable.const_mul (integrable_finset_sum _ (fun g _ => ?_)) _
+    refine Integrable.const_mul (integrable_finsetSum _ (fun g _ => ?_)) _
     exact (⟨measurable_const_smul g, hμinv g⟩ :
       MeasurePreserving _ μ μ).integrable_comp_of_integrable hintp
   have horb1 : ∫ x, orbitAverage G (p θ) x ∂μ = 1 := by
@@ -284,7 +284,7 @@ private theorem powerAgainst_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧]
   unfold powerAgainst
   rw [power_withDensity_eq horbmeas horbnn χ, hpw,
     integral_congr_ae (Filter.Eventually.of_forall hpt), integral_const_mul,
-    integral_finset_sum _ (fun g _ => hint g), Finset.sum_congr rfl (fun g _ => key g),
+    integral_finsetSum _ (fun g _ => hint g), Finset.sum_congr rfl (fun g _ => key g),
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hcard, one_mul]
 
 /-- **From most-powerful for the orbit-averaged model to UMP invariant.** If `φ` is an
@@ -308,7 +308,8 @@ private theorem isUMPInvariant_of_mostPowerful [Fintype G] [MeasurableSMul G �
       ∀ (h : G) (θ : Θ), power P ψ (h • θ) = power P ψ θ := by
     intro ψ hψc hψinv h θ
     unfold power
-    rw [← hP h θ, integral_map (measurable_const_smul h).aemeasurable hψc.1.aestronglyMeasurable]
+    rw [← hP.map_eq h θ (measurable_const_smul h).aemeasurable, integral_map
+        (measurable_const_smul h).aemeasurable hψc.1.aestronglyMeasurable]
     exact integral_congr_ae (Filter.Eventually.of_forall fun x => hψinv h x)
   refine ⟨hφ, hφinv, ?_, ?_⟩
   · intro θ hθ

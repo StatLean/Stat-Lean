@@ -73,7 +73,7 @@ lemma iid_lln_in_prob_l1
   -- `eval 0` is measure-preserving.
   have hY0_int : Integrable (Y 0) μ_inf := by
     have := (hMP 0).integrable_comp hf'_meas.aestronglyMeasurable
-    simpa [Y, Function.eval] using this.mpr hf'_int
+    simpa [Y, Function.eval] using! this.mpr hf'_int
   -- Pairwise independence of the `Y i`'s.
   have h_iIndep : ProbabilityTheory.iIndepFun Y μ_inf := by
     simpa [Y, Function.eval] using

@@ -37,15 +37,10 @@ theorem tendsto_eLpNorm_sub_zero_of_pointwise_of_memLp_dominator
     hΨ.of_le hv_meas (Eventually.of_forall hv_dom)
   have hΨ_ui : UnifIntegrable (fun _ : ℕ => Ψ) 2 P :=
     unifIntegrable_const (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) hΨ
-  have hu_ui : UnifIntegrable u 2 P := by
-    intro ε hε
-    obtain ⟨δ, hδ, hbound⟩ := hΨ_ui hε
-    refine ⟨δ, hδ, fun m s hs hPs => ?_⟩
-    refine (eLpNorm_mono (fun x => ?_)).trans (hbound m s hs hPs)
-    by_cases hx : x ∈ s
-    · simpa [Set.indicator_of_mem hx] using hu_dom m x
-    · simp [Set.indicator_of_notMem hx]
-  simpa only [Pi.sub_apply] using
+  have hu_ui : UnifIntegrable u 2 P :=
+    hΨ_ui.ae_mono hu_meas (fun m => Eventually.of_forall fun x => by
+      simpa only [enorm_le_iff_norm_le] using hu_dom m x)
+  simpa only [Pi.sub_apply] using!
     tendsto_Lp_finite_of_tendsto_ae (p := (2 : ℝ≥0∞))
       (by norm_num) (by norm_num) hu_meas hv_mem hu_ui
       (Eventually.of_forall huv)

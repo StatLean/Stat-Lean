@@ -345,7 +345,7 @@ private theorem integral_sq_norm_eq_trace {ι : Type*} [Fintype ι]
     simpa using h
   calc ∫ x, ‖x‖ ^ 2 ∂μ = ∫ x, ∑ i, (x i) ^ 2 ∂μ := by
         simp_rw [EuclideanSpace.real_norm_sq_eq]
-    _ = ∑ i, ∫ x, (x i) ^ 2 ∂μ := integral_finset_sum _ fun i _ => (hev i).integrable_sq
+    _ = ∑ i, ∫ x, (x i) ^ 2 ∂μ := integral_finsetSum _ fun i _ => (hev i).integrable_sq
     _ = (covMatrix μ).trace := by
         rw [Matrix.trace]
         refine Finset.sum_congr rfl fun i _ => ?_
@@ -477,7 +477,7 @@ private theorem blupRisk_eq_trace (D : LMMDesign n p q)
   haveI : IsProbabilityMeasure ((G.prod R).map fun be =>
       Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
         + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) :=
-    Measure.isProbabilityMeasure_map hmT.aemeasurable
+    (by infer_instance)
   rw [blupRisk]
   simp_rw [hfun]
   rw [← integral_map hmT.aemeasurable hae, integral_sq_norm_eq_trace _ hL2map hmean,

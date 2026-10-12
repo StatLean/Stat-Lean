@@ -76,7 +76,7 @@ theorem exists_qmdPath_of_bare_qmd
                   Real.sqrt ((curve 0).rnDeriv μ ω).toReal)
             2 μ / ENNReal.ofReal |t|)
         (nhdsWithin (0 : ℝ) {0}ᶜ) (nhds (0 : ℝ≥0∞)) := by
-    convert h_qmd using 1
+    convert! h_qmd using 1
     funext t
     congr 1
     apply eLpNorm_congr_ae
@@ -152,6 +152,10 @@ theorem qmd_score_mean_integrable_and_lan
   classical
   obtain ⟨γ, hγ_curve, hγ_dom, hg_score⟩ :=
     exists_qmdPath_of_bare_qmd P μ curve h_prob h_zero h_ac g hg_meas h_qmd
+  have h_qmd : AsymptoticStatistics.ForMathlib.QMDAnalytic.IsQMDLimit curve μ g := by
+    apply (AsymptoticStatistics.ForMathlib.QMDAnalytic.isQMDLimit_iff_eLpNorm
+      hg_meas.aestronglyMeasurable).2
+    simpa only [AsymptoticStatistics.ForMathlib.QMDAnalytic.qmdRem] using! h_qmd
   have h_g_sqrt :
       MemLp (fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
     AsymptoticStatistics.ForMathlib.QMDAnalytic.memLp_two_score_mul_sqrt_of_qmd
@@ -198,7 +202,7 @@ theorem qmd_score_mean_integrable_and_lan
           (fun a : ℝ => (Pi.single (0 : Fin 1) a : Fin 1 → ℝ)) := by
         refine continuous_pi (fun j => ?_)
         fin_cases j
-        simpa using (continuous_id : Continuous (id : ℝ → ℝ))
+        simpa using! (continuous_id : Continuous (id : ℝ → ℝ))
       have h_eq : (fun a : ℝ => EuclideanSpace.single (0 : Fin 1) a) =
           (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 1 => ℝ)).symm ∘
             (fun a : ℝ => (Pi.single (0 : Fin 1) a : Fin 1 → ℝ)) := by

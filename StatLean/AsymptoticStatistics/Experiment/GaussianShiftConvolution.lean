@@ -901,7 +901,7 @@ theorem T_minus_AH_law_eq_L_under_prior
     -- `this : Measurable (fun p => K_T p (Prod.mk p ⁻¹' s_set))`.
     -- This is defeq to the goal: unfolding `K_T = T.comap Prod.snd` gives
     -- `(T p.2) (Prod.mk p ⁻¹' …)`, which simp-reduces to the goal.
-    convert this using 1
+    convert! this using 1
   rw [lintegral_map h_intgr_meas (shiftCLM k).continuous.measurable]
   -- Now integrate over `πτ.prod ν_J`. Use Fubini.
   have hF_meas : Measurable (fun a : EuclideanSpace ℝ (Fin k) ×
@@ -948,8 +948,7 @@ theorem hatL_eq_hatG_mul_hatW
   -- probability with a Markov kernel.
   haveI h_joint_prob : IsProbabilityMeasure (jointHXY J τ T) := by
     unfold jointHXY
-    refine Measure.isProbabilityMeasure_map ?_
-    fun_prop
+    infer_instance
   -- Marginal measurabilities (needed for `isProbabilityMeasure_map`).
   have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) => posteriorMean J τ x) :=
     (matrixToEuclideanCLMRect (posteriorCov J τ * J)).continuous.measurable
@@ -971,10 +970,10 @@ theorem hatL_eq_hatG_mul_hatW
       (measurable_fst.comp measurable_snd)))
   haveI : IsProbabilityMeasure (G_Lambda_law J τ A T) := by
     unfold G_Lambda_law
-    exact Measure.isProbabilityMeasure_map hG_meas.aemeasurable
+    exact (by infer_instance)
   haveI : IsProbabilityMeasure (W_Lambda_law J τ A T) := by
     unfold W_Lambda_law
-    exact Measure.isProbabilityMeasure_map hW_meas.aemeasurable
+    exact (by infer_instance)
   -- Step 1: rewrite `nullDist` as the sum-pushforward of joint_GW_law.
   have h_eq1 : hT_equiv.nullDist
       = (joint_GW_law J τ A T).map (fun p => p.1 + p.2) := by
@@ -1133,8 +1132,7 @@ theorem W_Lambda_weak_limit_via_Levy
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := inferInstance
     haveI : IsProbabilityMeasure (jointHXY J (τ n) T) := by
       unfold jointHXY
-      refine Measure.isProbabilityMeasure_map ?_
-      fun_prop
+      infer_instance
     have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
         posteriorMean J (τ n) x) :=
       (matrixToEuclideanCLMRect (posteriorCov J (τ n) * J)).continuous.measurable
@@ -1149,7 +1147,7 @@ theorem W_Lambda_weak_limit_via_Levy
       (measurable_snd.comp measurable_snd).sub (hAμ.comp (hμ.comp
         (measurable_fst.comp measurable_snd)))
     unfold W_Lambda_law
-    exact Measure.isProbabilityMeasure_map hW_meas.aemeasurable
+    exact (by infer_instance)
   let μW : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin d)) := fun n =>
     ⟨W_Lambda_law J (τ n) A T, h_W_prob n⟩
   have h_pointwise : ∀ t,
@@ -1161,7 +1159,7 @@ theorem W_Lambda_weak_limit_via_Levy
       h_f_W_cont.continuousAt h_pointwise
   have h_compact : IsCompact (closure (Set.range μW)) := by
     apply isCompact_closure_of_isTightMeasureSet
-    convert h_tight_range using 1
+    convert! h_tight_range using 1
     ext μ; constructor
     · rintro ⟨ν, hν_range, rfl⟩
       obtain ⟨n, hn⟩ := hν_range
@@ -1317,8 +1315,7 @@ theorem joint_GW_weak_indep_limit
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := inferInstance
     haveI : IsProbabilityMeasure (jointHXY J (τ_seq n) T) := by
       unfold jointHXY
-      refine Measure.isProbabilityMeasure_map ?_
-      fun_prop
+      infer_instance
     have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
         posteriorMean J (τ_seq n) x) :=
       (matrixToEuclideanCLMRect (posteriorCov J (τ_seq n) * J)).continuous.measurable
@@ -1334,7 +1331,7 @@ theorem joint_GW_weak_indep_limit
       (measurable_snd.comp measurable_snd).sub (hAμ.comp (hμ.comp
         (measurable_fst.comp measurable_snd)))
     unfold W_Lambda_law
-    exact Measure.isProbabilityMeasure_map hW_meas.aemeasurable
+    exact (by infer_instance)
   let μW : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin d)) := fun n =>
     ⟨W_Lambda_law J (τ_seq n) A T, h_W_prob_n n⟩
   let μG : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin d)) := fun n =>
@@ -1352,7 +1349,7 @@ theorem joint_GW_weak_indep_limit
   have h_μG_tend : Tendsto μG atTop (𝓝 G_PM) := by
     have h_seq := multivariateGaussian_weakly_tendsto_of_seq
       h_target_psd (Eventually.of_forall h_S_psd) h_S_lim
-    convert h_seq using 1
+    convert! h_seq using 1
   have h_joint_tend : Tendsto (fun n => (μG n).prod (μW n)) atTop
       (𝓝 (G_PM.prod W_PM)) :=
     AsymptoticStatistics.ForMathlib.tendsto_prod_of_tendsto h_μG_tend h_μW_tend
@@ -1368,7 +1365,7 @@ theorem joint_GW_weak_indep_limit
   have h_int_tend : Tendsto (fun n => ∫ p, f p ∂((μG n).prod (μW n) : Measure _))
       atTop (𝓝 (∫ p, f p ∂(G_PM.prod W_PM : Measure _))) := by
     have := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp h_joint_tend) fBC
-    simpa using this
+    simpa using! this
   have h_left_eq : ∀ n, ((μG n).prod (μW n) : Measure _)
       = joint_GW_law J (τ_seq n) A T := by
     intro n

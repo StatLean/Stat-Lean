@@ -313,7 +313,7 @@ private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [Measur
     with hTdef
   have hTmeas : ∀ n, Measurable (T n) := fun n => measurable_of_countable _
   have hZtuple : ∀ n : ℕ, Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
-    fun n => measurable_pi_lambda _ fun i => hZmeas (i : ℕ)
+    fun n => Measurable.of_eval fun i => hZmeas (i : ℕ)
   have hpi : ∀ n : ℕ, μ.map (fun ω (i : Fin n) => Z (i : ℕ) ω)
       = Measure.pi (fun _ : Fin n => P₀) := by
     intro n
@@ -375,8 +375,8 @@ private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [Measur
           (nhds (if i = i' then (1 : ℝ) else 0)) := tendsto_const_nhds
       have h2 := (h1.sub hc).abs
       simpa using h2
-    have := tendsto_finset_sum (Finset.univ : Finset (Fin k))
-      (fun i _ => tendsto_finset_sum (Finset.univ : Finset (Fin k))
+    have := tendsto_finsetSum (Finset.univ : Finset (Fin k))
+      (fun i _ => tendsto_finsetSum (Finset.univ : Finset (Fin k))
         (fun i' _ => hterm i i'))
     simpa [hTdef] using this
   have hSmeas : ∀ n : ℕ, Measurable (fun ω => T n (fun i => Z (i : ℕ) ω)) :=
@@ -405,7 +405,7 @@ private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [Measur
     rfl
   simp only [hmeq] at hkey
   have := (ENNReal.tendsto_toReal (by simp : (0 : ℝ≥0∞) ≠ ⊤)).comp hkey
-  simpa [hTdef] using this
+  simpa [hTdef] using! this
 
 
 /-! ### Bilinear bookkeeping -/
@@ -587,7 +587,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
   haveI hP₀prob : IsProbabilityMeasure P₀ :=
-    Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+    (by infer_instance)
   have hP₀sing : ∀ j, P₀ {j} = ENNReal.ofReal (π j) := by
     intro j
     have h := hcell 1 (0 : Fin (k + 1) → ℝ) (0 : Fin 1) j
@@ -767,7 +767,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     congr 1
     funext i
     haveI : IsProbabilityMeasure ((Q n (Φ η)).map (X n i)) :=
-      Measure.isProbabilityMeasure_map (hX n i).aemeasurable
+      (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [(htiltfacts n η hG).1 j,
       ← ENNReal.ofReal_toReal (measure_ne_top ((Q n (Φ η)).map (X n i)) {j})]
@@ -780,7 +780,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     rw [show (∫ ω, φ n ω ∂(Q n (Φ η))) = ∫ ω, ρ n (fun i => X n i ω) ∂(Q n (Φ η)) from
         integral_congr_ae (Filter.Eventually.of_forall fun ω => hρval n ω),
       ← hsample n η hG,
-      integral_map (measurable_pi_lambda _ (fun i => hX n i)).aemeasurable
+      integral_map (Measurable.of_eval (fun i => hX n i)).aemeasurable
         (hρmeas n).aestronglyMeasurable]
   have hΦ0 : Φ (0 : EuclideanSpace ℝ (Fin k)) = (0 : Fin (k + 1) → ℝ) := by
     funext j
@@ -1350,7 +1350,7 @@ private lemma covMatrix_map_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ
       = (∑ x, ρ.real {x} * (sc i x * sc j x))
         - (∑ x, ρ.real {x} * sc i x) * ∑ x, ρ.real {x} * sc j x := by
   haveI : IsProbabilityMeasure (ρ.map (psiVec sc)) :=
-    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+    (by infer_instance)
   rw [covMatrix, Matrix.of_apply,
     covariance_eq_sub (memLp_map_psiVec sc ρ
         (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop) 2)
@@ -1409,10 +1409,10 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
   -- the limit law and the drifting sequence of laws
   set Q : Measure (EuclideanSpace ℝ (Fin k)) := (ν 0).map (psiVec sc) with hQdef
   haveI hQprob : IsProbabilityMeasure Q :=
-    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+    (by infer_instance)
   set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => (ν n).map (psiVec sc) with hFdef
   haveI hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
-    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+    (by infer_instance)
   have hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q :=
     memLp_map_psiVec sc (ν 0) continuous_id' 2
   have hFclass : F ∈ meanVecSeqClass Q := by
@@ -1426,7 +1426,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
         rw [hFdef, integral_map_psiVec sc (ν n) f.continuous]
         exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]
       simp only [hQint, hFint]
-      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+      exact tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds
     · intro i
       have hQint : ∫ y, WithLp.ofLp y i ∂Q = ∑ x, π x * sc i x := by
         rw [hQdef, integral_map_psiVec sc (ν 0)
@@ -1438,7 +1438,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
           (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
         exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]; rfl
       simp only [hQint, hFint]
-      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+      exact tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds
     · intro i j
       have hQcov : covMatrix Q i j
           = (∑ x, π x * (sc i x * sc j x))
@@ -1456,9 +1456,9 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
         · exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
         · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
       simp only [hQcov, hFcov]
-      exact ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
-        ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
-          (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)))
+      exact ((tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
+        ((tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
+          (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds)))
   have hcovQ : covMatrix Q = 1 := by
     ext i j
     rw [hQdef, covMatrix_map_psiVec sc (ν 0) i j]
@@ -1504,7 +1504,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
   have hvlim : Tendsto v atTop (𝓝 v₀) := by
     rw [hvdef, hv₀def]
-    exact tendsto_finset_sum _ fun j _ => (hlim j).smul_const _
+    exact tendsto_finsetSum _ fun j _ => (hlim j).smul_const _
   -- ### the two pushforward identities
   set A : (n : ℕ) → Measure (Fin n → EuclideanSpace ℝ (Fin k)) :=
     fun n => Measure.pi fun _ : Fin n => F n with hAdef
@@ -1517,7 +1517,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
   have hYscont : ∀ n, Continuous (Ys n) := by
     intro n
     rw [hYsdef]
-    exact (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+    fun_prop
   have hXscont : ∀ n, Continuous (Xs n) := by
     intro n
     rw [hXsdef]
@@ -1545,7 +1545,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     intro n
     have hgmeas : Measurable
         (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) :=
-      measurable_pi_lambda _ fun i => (measurable_psiVec sc).comp (measurable_pi_apply i)
+      Measurable.of_eval fun i => (measurable_psiVec sc).comp (measurable_pi_apply i)
     have hcomp : mScoreVec sc
         = (Ys n) ∘ (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) := by
       funext d
@@ -1655,7 +1655,7 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
       ∫ d, mScoreVec sc d a ∂A = mDriftVec sc h a := by
     intro a
     have hsum : ∫ d, (∑ i, sc a (d i)) ∂A = (n : ℝ) * ∫ x, sc a x ∂ν := by
-      rw [integral_finset_sum _ (fun i _ => Integrable.of_finite)]
+      rw [integral_finsetSum _ (fun i _ => Integrable.of_finite)]
       rw [Finset.sum_congr rfl fun i _ => heval i (sc a)]
       simp [Finset.sum_const, nsmul_eq_mul]
     have : ∫ d, mScoreVec sc d a ∂A
@@ -1713,7 +1713,7 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
     fun d => ‖mScoreVec sc d - mDriftVec sc h‖ ^ 2 with hYdef
   have hYint : ∫ d, Y d ∂A ≤ ∑ a : Fin k, ∑ j, (sc a j) ^ 2 := by
     have hYeq : ∫ d, Y d ∂A = ∑ a : Fin k, ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
-      rw [← integral_finset_sum _ (fun a _ => Integrable.of_finite)]
+      rw [← integral_finsetSum _ (fun a _ => Integrable.of_finite)]
       refine integral_congr_ae (Filter.Eventually.of_forall fun d => ?_)
       rw [hYdef]
       simpa using EuclideanSpace.real_norm_sq_eq (mScoreVec sc d - mDriftVec sc h)
@@ -1789,7 +1789,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
   -- ### 0. the base cell law and the stage-`n` cell law under a local parameter
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
   haveI hP₀prob : IsProbabilityMeasure P₀ :=
-    Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+    (by infer_instance)
   have hP₀real : ∀ j, P₀.real {j} = π j := by
     intro j
     have h := hcell 1 (0 : Fin (k + 1) → ℝ) (0 : Fin 1) j
@@ -1800,7 +1800,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     intro n h
     by_cases hn : 0 < n
     · simp only [hcellνdef, dif_pos hn]
-      exact Measure.isProbabilityMeasure_map (hX n ⟨0, hn⟩).aemeasurable
+      exact (by infer_instance)
     · simp only [hcellνdef, dif_neg hn]
       infer_instance
   have hcellνreal : ∀ n h j, (cellν n h).real {j} = π j + h j / Real.sqrt (n : ℝ) := by
@@ -1814,7 +1814,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
   have hlawX : ∀ n h, ∀ i : Fin n, Measure.map (X n i) (Q n h) = cellν n h := by
     intro n h i
     haveI : IsProbabilityMeasure (Measure.map (X n i) (Q n h)) :=
-      Measure.isProbabilityMeasure_map (hX n i).aemeasurable
+      (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [← ENNReal.ofReal_toReal (measure_ne_top (Measure.map (X n i) (Q n h)) {j}),
       ← ENNReal.ofReal_toReal (measure_ne_top (cellν n h) {j}), hcell n h i j]
@@ -1898,7 +1898,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     have hZmeas : Measurable (mScoreVec sc : (Fin n → Fin (k + 1)) → _) :=
       measurable_of_countable _
     have hXtup : Measurable (fun ω (i : Fin n) => X n i ω) :=
-      measurable_pi_lambda _ fun i => hX n i
+      Measurable.of_eval fun i => hX n i
     have hmeas' : Measurable (fun ω => mScoreVec sc (fun i => X n i ω)) := hZmeas.comp hXtup
     have hcomp : (Measure.pi fun _ : Fin n => cellν n h).map (mScoreVec sc)
         = (Q n h).map (fun ω => mScoreVec sc (fun i => X n i ω)) := by
@@ -1933,7 +1933,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       (ν := fun n => cellν n (u n)) hcent hortho hu (fun n j => hcellνreal n (u n) j)
     haveI hprob : ∀ n : ℕ, IsProbabilityMeasure
         ((Measure.pi fun _ : Fin n => cellν n (u n)).map (mScoreVec sc)) := fun n =>
-      Measure.isProbabilityMeasure_map (measurable_of_countable _).aemeasurable
+      (by infer_instance)
     set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := fun n =>
       ⟨(Measure.pi fun _ : Fin n => cellν n (u n)).map (mScoreVec sc), hprob n⟩ with hμsdef
     set νl : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
@@ -2165,13 +2165,13 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       exact (hglt (ξ m)).le
     have hsum0 : ∑ j, h₀ j = 0 := by
       have h1 : Tendsto (fun m => ∑ j, g (σ m) j) atTop (nhds (∑ j, h₀ j)) :=
-        tendsto_finset_sum _ fun j _ => tendsto_pi_nhds.mp hξlim j
+        tendsto_finsetSum _ fun j _ => tendsto_pi_nhds.mp hξlim j
       exact tendsto_nhds_unique (h1.congr (fun m => (hgS (ξ m)).1)) tendsto_const_nhds
     have hncge : b ^ 2 ≤ multinomialNoncentrality π h₀ := by
       have hcont : Tendsto (fun m => multinomialNoncentrality π (g (σ m))) atTop
           (nhds (multinomialNoncentrality π h₀)) := by
         simp only [multinomialNoncentrality]
-        exact tendsto_finset_sum _ fun j _ =>
+        exact tendsto_finsetSum _ fun j _ =>
           ((tendsto_pi_nhds.mp hξlim j).pow 2).div_const (π j)
       exact ge_of_tendsto' hcont (fun m => (hgS (ξ m)).2.1)
     have hmono : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal
@@ -2325,7 +2325,7 @@ private lemma integral_stdGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin 
   have hstep : ∫ x, F (v + WithLp.toLp 2 x) ∂π₀
       = ∫ X, F (WithLp.toLp 2 X) ∂(Measure.pi fun i => gaussianReal (a i) 1) := by
     rw [← hshift, integral_map
-      (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i))).aemeasurable
+      (Measurable.of_eval (fun i => (measurable_pi_apply i).const_add (a i))).aemeasurable
       hmeasG.aestronglyMeasurable]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
     simp only []
@@ -2433,7 +2433,7 @@ private lemma stdGaussian_map_add_eq_withDensity {k : ℕ} (v : EuclideanSpace �
       = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
     rw [← hmapT, Measure.map_map (by fun_prop) hT,
       Measure.map_map hT
-        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+        (Measurable.of_eval (fun i => (measurable_pi_apply i).const_add (a i)))]
     congr 1
   rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift a, ← hπ₀,
     map_toLp_withDensity π₀ (by fun_prop), hmapT]
@@ -2501,7 +2501,7 @@ private lemma stdGaussian_ne_zero_ae {k : ℕ} (hk : 0 < k) :
       rfl
     · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
         Measure.pi_map_eval]
-      haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+      haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
       simp
   have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
     rw [ae_iff]
@@ -2587,7 +2587,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
       (LinearIsometryEquiv.neg ℝ :
         EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k))
     rw [hγ]
-    convert h0 using 2
+    convert! h0 using 2
   have hcosh : ∀ c : ℝ,
       (∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
         = ∫ y, Real.cosh (c * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ := by
@@ -2662,7 +2662,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
         exact hx
       · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
           Measure.pi_map_eval]
-        haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+        haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
         simp
     have hsub : {y : EuclideanSpace ℝ (Fin k) | t y = 0}
         ⊆ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} := by
@@ -2927,13 +2927,13 @@ private lemma ncChiSq_succ_Ioi {k : ℕ} (hk : 0 < k) (l : ℝ≥0) (c : ℝ) :
     noncentralChiSquared (k + 1) l (Set.Ioi c)
       = ∫⁻ x, StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c - x))
           ∂(noncentralChiSquared k l) := by
-  rw [ncChiSq_succ_eq_prod_map hk l,
+  erw [ncChiSq_succ_eq_prod_map hk l,
     Measure.map_apply (by fun_prop) measurableSet_Ioi,
     Measure.prod_apply ((measurable_fst.add measurable_snd) measurableSet_Ioi)]
   refine lintegral_congr fun x => ?_
   congr 1
   ext u
-  simp only [Set.mem_preimage, Set.mem_Ioi]
+  simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
   constructor <;> intro h <;> linarith
 
 
@@ -2975,7 +2975,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
       simp only [hQ]
       congr 1
       ext u
-      simp only [Set.mem_preimage, Set.mem_Ioi]
+      simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
       constructor <;> intro h <;> linarith
     rw [heq]
     exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
@@ -3003,7 +3003,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
       have hPx : P x = 1 := by rw [hP, Set.indicator_of_mem hx]; rfl
       rw [hPx, hd, one_mul, one_mul]
       have hQd : Q x * d ≤ d := by
-        calc Q x * d ≤ 1 * d := mul_le_mul_right' (hQle x) d
+        calc Q x * d ≤ 1 * d := mul_le_mul_left (hQle x) d
           _ = d := one_mul d
       calc Q x * (A + d) + A = (Q x * A + A) + Q x * d := by ring
         _ ≤ (Q x * A + A) + d := by gcongr
@@ -3013,11 +3013,11 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
         simpa using hx
       have hPx : P x = 0 := by rw [hP, Set.indicator_of_notMem hx]
       rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
-      exact mul_le_mul_left' hGA _
+      exact mul_le_mul_right hGA _
   -- integrate and cancel the common finite term
   have hmain : (∫⁻ x, Q x * G x ∂μ) + (∫⁻ x, P x ∂μ) * A
       ≤ (∫⁻ x, P x * G x ∂μ) + (∫⁻ x, Q x ∂μ) * A := by
-    rw [← lintegral_mul_const _ hPmeas, ← lintegral_mul_const _ hQmeas,
+    erw [← lintegral_mul_const _ hPmeas, ← lintegral_mul_const _ hQmeas,
       ← lintegral_add_left (hQmeas.mul hGmeas), ← lintegral_add_left (hPmeas.mul hGmeas)]
     exact lintegral_mono hpt
   rw [hlev1, hlev2] at hmain
@@ -3087,7 +3087,7 @@ private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α <
       rcases lt_or_eq_of_le (Set.mem_Iic.mp hx) with h | h
       · exact Or.inl h
       · exact Or.inr h
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc StatLean.MultipleTesting.chiSquared k (Set.Iic 0)
         ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0 ∪ {0}) := measure_mono hsub
       _ ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0)
@@ -3099,7 +3099,7 @@ private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α <
       rw [← measure_univ (μ := StatLean.MultipleTesting.chiSquared k),
         ← Set.compl_Iic, measure_compl measurableSet_Iic (measure_ne_top _ _)]
     have hle : StatLean.MultipleTesting.chiSquared k (Set.Iic c₀) = 0 :=
-      le_antisymm (hac ▸ measure_mono (Set.Iic_subset_Iic.mpr hcon)) (zero_le _)
+      le_antisymm (hac ▸ measure_mono (Set.Iic_subset_Iic.mpr hcon)) (zero_le)
     rw [hcompl, hle, tsub_zero]
   rw [hfull] at hc
   have : (1 : ℝ≥0∞) < 1 := by
@@ -3140,7 +3140,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
       simp only [hQ]
       congr 1
       ext u
-      simp only [Set.mem_preimage, Set.mem_Ioi]
+      simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
       constructor <;> intro h <;> linarith
     rw [heq]
     exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
@@ -3185,7 +3185,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
       rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
       calc Q x * G x + δ
           ≤ Q x * G (c₁ / 2) + Q x * dg :=
-            add_le_add (mul_le_mul_left' hGle _) (mul_le_mul_right' hQge dg)
+            add_le_add (mul_le_mul_right hGle _) (mul_le_mul_left hQge dg)
         _ = Q x * (G (c₁ / 2) + dg) := by ring
         _ = Q x * A := by rw [← hdg]
     · rw [Set.indicator_of_notMem hxI, add_zero]
@@ -3195,7 +3195,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
         have hPx : P x = 1 := by rw [hP, Set.indicator_of_mem hx]; rfl
         rw [hPx, hd, one_mul, one_mul]
         have hQd : Q x * d ≤ d := by
-          calc Q x * d ≤ 1 * d := mul_le_mul_right' (hQle x) d
+          calc Q x * d ≤ 1 * d := mul_le_mul_left (hQle x) d
             _ = d := one_mul d
         calc Q x * (A + d) + A = (Q x * A + A) + Q x * d := by ring
           _ ≤ (Q x * A + A) + d := by gcongr
@@ -3205,10 +3205,10 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
           simpa using hx
         have hPx : P x = 0 := by rw [hP, Set.indicator_of_notMem hx]
         rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
-        exact mul_le_mul_left' hGA _
+        exact mul_le_mul_right hGA _
   have hmain : ∫⁻ x, (Q x * G x + P x * A + I.indicator (fun _ => δ) x) ∂μ
       ≤ ∫⁻ x, (P x * G x + Q x * A) ∂μ := lintegral_mono hpt
-  rw [lintegral_add_left ((hQmeas.mul hGmeas).add (hPmeas.mul measurable_const)),
+  erw [lintegral_add_left ((hQmeas.mul hGmeas).add (hPmeas.mul measurable_const)),
     lintegral_add_left (hQmeas.mul hGmeas), lintegral_add_left (hPmeas.mul hGmeas),
     lintegral_indicator_const measurableSet_Ioo,
     lintegral_mul_const _ hPmeas, lintegral_mul_const _ hQmeas, hlev1, hlev2] at hmain
@@ -3321,7 +3321,7 @@ Squeeze between the open sets `(t + εₘ, ∞)` and the closed sets `[t − ε�
 `εₘ = 1/(m+1) ↓ 0`, using the open/closed portmanteau inequalities. -/
 private lemma tendsto_measure_Ioi_of_weakLimit
     {μs : ℕ → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ}
-    [NoAtoms (ν : Measure ℝ)]
+    [NullSingletonClass (ν : Measure ℝ)]
     (hconv : Tendsto μs atTop (𝓝 ν))
     {t : ℝ} {tk : ℕ → ℝ} (htk : Tendsto tk atTop (𝓝 t)) :
     Tendsto (fun k => (μs k : Measure ℝ) (Set.Ioi (tk k))) atTop
@@ -3406,7 +3406,7 @@ private lemma tendsto_measure_Ioi_of_weakLimit
 `N(0,1)(z, ∞) = α`. Atomless case of `exists_critical_constants`. -/
 private lemma exists_gaussian_upper_quantile {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
     ∃ z : ℝ, gaussianReal 0 1 (Set.Ioi z) = ENNReal.ofReal α := by
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   obtain ⟨C, γ, _, _, hCeq⟩ := exists_critical_constants (gaussianReal 0 1) hα hα1
   have hatom : (gaussianReal 0 1 {x : ℝ | x = C}).toReal = 0 := by
     have hsingle : {x : ℝ | x = C} = ({C} : Set ℝ) := by ext x; simp
@@ -3443,11 +3443,11 @@ private lemma noncentralTail_tendsto_aux {α cc z : ℝ} {c : ℕ → ℝ} {hseq
     have hmap : μ' k = (noncentralChiSquared k (l k)).map
         (fun x => (x - k) / Real.sqrt (2 * k)) := rfl
     rw [hmap]
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact (by infer_instance)
   set μs : ℕ → ProbabilityMeasure ℝ := fun k => ⟨μ' k, hμ'prob k⟩ with hμs
   set ν : ProbabilityMeasure ℝ := ⟨gaussianReal cc 1, by infer_instance⟩ with hν
-  haveI : NoAtoms (ν : Measure ℝ) := by
-    show NoAtoms (gaussianReal cc 1); exact noAtoms_gaussianReal one_ne_zero
+  haveI : NullSingletonClass (ν : Measure ℝ) := by
+    show NullSingletonClass (gaussianReal cc 1); exact nullSingletonClass_gaussianReal one_ne_zero
   have htend : Tendsto μs atTop (𝓝 ν) := by
     rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
@@ -3469,7 +3469,7 @@ private lemma noncentralTail_tendsto_aux {α cc z : ℝ} {c : ℕ → ℝ} {hseq
     rw [hmap, Measure.map_apply (by fun_prop) measurableSet_Ioi]
     congr 1
     ext x
-    simp only [Set.mem_preimage, Set.mem_Ioi]
+    simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
     rw [lt_div_iff₀ hskpos]
     have hval : tk k * Real.sqrt (2 * (k : ℝ)) = c k - k := by
       simp only [htk_def]; rw [div_mul_cancel₀ _ hskpos.ne']
@@ -3529,7 +3529,7 @@ theorem noncentralTail_tendsto_normal {α γ z : ℝ} {c : ℕ → ℝ} {hseq : 
     rw [← h1, Measure.map_apply (by fun_prop) measurableSet_Ioi]
     congr 1
     ext x
-    simp only [Set.mem_preimage, Set.mem_Ioi]
+    simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
     constructor <;> intro h <;> linarith
   rwa [htrans] at key
 

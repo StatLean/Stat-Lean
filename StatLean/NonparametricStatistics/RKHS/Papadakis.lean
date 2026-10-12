@@ -143,7 +143,7 @@ theorem isParsevalFrame_of_hasSum_scalarKernel {f : ι → H}
   have hbdd : ∀ (h : H) (s : Finset ι), ∑ i ∈ s, ‖⟪f i, h⟫_𝕜‖ ^ 2 ≤ ‖h‖ ^ 2 := by
     intro h s
     have hc : IsClosed {z : H | ∑ i ∈ s, ‖⟪f i, z⟫_𝕜‖ ^ 2 ≤ ‖z‖ ^ 2} := by
-      refine isClosed_le (continuous_finset_sum s fun i _ => ?_) (continuous_norm.pow 2)
+      refine isClosed_le (continuous_finsetSum s fun i _ => ?_) (continuous_norm.pow 2)
       exact ((innerSL 𝕜 (f i)).continuous.norm).pow 2
     have hsub : ((Submodule.span 𝕜 (Set.range (kernelFun (𝕜 := 𝕜) (X := X) H)) :
         Submodule 𝕜 H) : Set H) ⊆ {z : H | ∑ i ∈ s, ‖⟪f i, z⟫_𝕜‖ ^ 2 ≤ ‖z‖ ^ 2} :=

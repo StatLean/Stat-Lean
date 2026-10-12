@@ -42,7 +42,7 @@ w.r.t. `γ.dominating`. The downstream consumer typically picks QMD paths whose
          = (Measure.pi (fun _ => P)).withDensity L_n_g`
    via `Measure.pi_eq` (rectangle characterization). On a rectangle
    `univ.pi s` the RHS reduces, by `withDensity_apply` and a finite-
-   product Tonelli (helper `lintegral_pi_finset_prod`), to
+   product Tonelli (helper `lintegral_pi_finsetProd`), to
    `∏ⱼ ∫⁻ x in s_j, (γ.curve t).rnDeriv P x ∂P`, which equals
    `∏ⱼ (γ.curve t)(s_j)` by `setLIntegral_rnDeriv'` (using `hAC`).
 3. Apply `lintegral_withDensity_eq_lintegral_mul` to convert the
@@ -79,7 +79,7 @@ Proved by induction on `n` mirroring Mathlib's
 `MeasureTheory.integral_fin_nat_prod_eq_prod` (Bochner version) using
 `measurePreserving_piFinSuccAbove`, `MeasureTheory.lintegral_prod`, and
 `MeasureTheory.lintegral_lintegral_mul`. -/
-private lemma lintegral_pi_finset_prod :
+private lemma lintegral_pi_finsetProd :
     ∀ (n : ℕ) (μ : Fin n → Measure Ω) [∀ i, SigmaFinite (μ i)]
       (g : Fin n → Ω → ℝ≥0∞) (_ : ∀ i, Measurable (g i)),
       ∫⁻ X : Fin n → Ω, (∏ j : Fin n, g j (X j)) ∂Measure.pi μ
@@ -162,7 +162,7 @@ lemma pi_curve_eq_pi_withDensity {γ : QMDPath P} {t : ℝ}
                 ∂Measure.pi fun _ : Fin n => P
         from lintegral_congr h_ind_factor]
   -- Apply the finite-product Tonelli helper.
-  rw [lintegral_pi_finset_prod n (fun _ : Fin n => P)
+  rw [lintegral_pi_finsetProd n (fun _ : Fin n => P)
     (fun j => (s j).indicator ((γ.curve t).rnDeriv P))
     (fun j => hmeas_d.indicator (hs j))]
   -- Each factor: ∫⁻ x, (s j).indicator ((γ.curve t).rnDeriv P) x ∂P

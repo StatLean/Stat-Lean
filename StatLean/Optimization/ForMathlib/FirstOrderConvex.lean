@@ -91,7 +91,7 @@ theorem inner_gradient_le_sub_of_convexOn
   rw [hsl] at hslope
   -- Riesz bridge: `⟪∇f x, v⟫ = fderiv f x v`.
   have hinner : ⟪gradient f x, y - x⟫_ℝ = (fderiv ℝ f x) (y - x) :=
-    inner_gradient_left (hdiff x)
+    inner_gradient_left
   linarith
 
 end StatLean.Optimization

@@ -202,7 +202,7 @@ private lemma psi2_layer_cake_meas_bound
     have h_sup_zero : ∀ ω : Ξ, (⨆ i : ι, |_Z i ω|) = 0 := fun ω =>
       Real.iSup_of_isEmpty _
     simp_rw [h_sup_zero, ENNReal.ofReal_zero, MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- ===== Nonempty ι. =====
   -- Step 1: pointwise non-negativity of ⨆_i |Z_i ω|.
   have h_iSup_nn : ∀ ω, 0 ≤ ⨆ i : ι, |_Z i ω| := by
@@ -319,7 +319,7 @@ private lemma psi2_calculus_integral_bound
       simp [ENNReal.ofReal_zero]
     simp_rw [h_integrand]
     rw [MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- N ≥ 1, σ > 0: textbook split-at-crossover.
   have hNr_pos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   have hNr_ge_one : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
@@ -548,7 +548,7 @@ private lemma psi1_layer_cake_meas_bound
     have h_sup_zero : ∀ ω : Ξ, (⨆ i : ι, |_Z i ω|) = 0 := fun ω =>
       Real.iSup_of_isEmpty _
     simp_rw [h_sup_zero, ENNReal.ofReal_zero, MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- ===== Nonempty ι. =====
   -- Step 1: pointwise non-negativity of ⨆_i |Z_i ω|.
   have h_iSup_nn : ∀ ω, 0 ≤ ⨆ i : ι, |_Z i ω| := by
@@ -644,7 +644,7 @@ private lemma psi1_calculus_integral_bound
       simp [ENNReal.ofReal_zero]
     simp_rw [h_integrand]
     rw [MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- N ≥ 1 case: split Ioi 0 = Ioc 0 R ∪ Ioi R with R := ρ·log(1+2N).
   -- On (0, R]: integrand ≤ 1; contribution ≤ R.
   -- On (R, ∞): integrand ≤ 2Nr·exp(-t/ρ); tail integral ≤ ρ.
@@ -843,7 +843,7 @@ private lemma orlicz_bernstein_truncated_max_l1_bound
       · exact ciSup_const
       · rw [not_nonempty_iff] at hι; exact Real.iSup_of_isEmpty _
     simp_rw [h_iSup_zero, ENNReal.ofReal_zero, MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- σ_eff > 0: existing textbook argument.
   set T : ℝ := σ_eff ^ 2 / M_eff with hT_def
   have hT_nn : 0 ≤ T := div_nonneg (sq_nonneg _) _hM_pos.le
@@ -1090,7 +1090,7 @@ private lemma orlicz_bernstein_max_l1_bound
     have h_sup_zero : ∀ ω : Ξ, (⨆ i : ι, |Z i ω|) = 0 := fun ω =>
       Real.iSup_of_isEmpty _
     simp_rw [h_sup_zero, ENNReal.ofReal_zero, MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- ===== Main case split: M_eff > 0 vs M_eff = 0. =====
   by_cases hM_pos : 0 < M_eff
   · -- M_eff > 0: truncation argument.
@@ -1329,7 +1329,7 @@ private lemma finite_sup_bound_orlicz_core
       rw [h_sup, ENNReal.ofReal_zero]
     simp_rw [h_integrand_zero]
     rw [MeasureTheory.lintegral_zero]
-    exact zero_le _
+    exact zero_le
   -- Non-degenerate: at least one of σ > 0 or M > 0.
   have hσM_pos : 0 < σ ∨ 0 < M / Real.sqrt n := by
     push Not at h_degen

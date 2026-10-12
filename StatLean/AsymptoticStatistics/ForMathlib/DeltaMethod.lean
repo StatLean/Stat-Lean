@@ -170,7 +170,7 @@ theorem delta_method
     simpa only [hlaw] using hmap
   -- (5) Slutsky bridge: the target law differs from the linear law by the remainder
   haveI : IsProbabilityMeasure (ν.map φ') :=
-    Measure.isProbabilityMeasure_map φ'.continuous.measurable.aemeasurable
+    (by infer_instance)
   have hXmeas : ∀ k, AEMeasurable (fun ω => sqn k • φ' (T k ω - θ₀)) (P k) := fun k =>
     ((φ'.continuous.measurable.comp ((hT_meas k).sub measurable_const)).const_smul
       (sqn k)).aemeasurable

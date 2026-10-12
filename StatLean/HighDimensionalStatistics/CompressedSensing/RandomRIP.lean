@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.HighDimensionalStatistics.CompressedSensing.GaussianChiSquared
 import StatLean.HighDimensionalStatistics.CompressedSensing.Defs
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
@@ -411,13 +412,28 @@ theorem prob_rip_of_iid_gaussian
       rw [tsub_eq_zero_iff_le]
       calc (1 : ℝ≥0∞) = ENNReal.ofReal 1 := by simp
         _ ≤ ENNReal.ofReal ε := ENNReal.ofReal_le_ofReal hεbig
-    rw [ge_iff_le, h0]; exact zero_le _
+    rw [ge_iff_le, h0]; exact zero_le
   have hεlt : ε < 1 := not_le.mp hεbig
   -- a measurable representative `X'` of `X`, a.e. equal entrywise.
   set vn : ℝ≥0 := ⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ with hvn
   have hXae : ∀ i j, AEMeasurable (fun ω => X ω i j) μ := by
-    intro i j; apply AEMeasurable.of_map_ne_zero; rw [hlaw i j]
-    exact IsProbabilityMeasure.ne_zero _
+    intro i j
+    by_contra hnot
+    have hnpos : (0 : ℝ) < n := by
+      exact_mod_cast (lt_of_le_of_lt (Nat.zero_le i.val) i.isLt)
+    haveI : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
+      nullSingletonClass_gaussianReal (by
+        intro hzero
+        have hz := congrArg (fun v : ℝ≥0 => (v : ℝ)) hzero
+        exact (one_div_ne_zero hnpos.ne') hz)
+    have hd := Measure.map_of_not_aemeasurable_of_ne_zero hnot (IsProbabilityMeasure.ne_zero μ)
+    rw [hlaw i j] at hd
+    have hs := congrArg (fun ν : Measure ℝ => ν {Classical.ofNonempty}) hd
+    have hdval : (Measure.dirac (Classical.ofNonempty : ℝ)) {Classical.ofNonempty} = 1 := by simp
+    have hz : (gaussianReal (0 : ℝ) vn) {Classical.ofNonempty} = 0 := measure_singleton _
+    have hs' : (0 : ℝ≥0∞) = 1 := by simpa only [hz, hdval] using! hs
+    exact zero_ne_one hs'
+
   set X' : Ω → Matrix (Fin n) (Fin d) ℝ :=
     fun ω => Matrix.of (fun i j => (hXae i j).mk (fun ω' => X ω' i j) ω) with hX'def
   have hX'meas : ∀ i j, Measurable (fun ω => X' ω i j) :=

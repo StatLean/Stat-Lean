@@ -399,7 +399,7 @@ theorem tendstoInMeasure_quantile {Ω : Type*} [MeasurableSpace Ω] (μ : Measur
       rw [abs_of_nonpos (by linarith [e2] : Fhat n ω (q + e) - F (q + e) ≤ 0)]
       linarith
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using h1.add h2) (fun n => zero_le _) (fun n => ?_)
+    (by simpa using h1.add h2) (fun n => zero_le) (fun n => ?_)
   calc μ {ω | ε ≤ edist (quantile (Fhat n ω) p) q}
       ≤ μ ({ω | ENNReal.ofReal (p - F (q - e)) ≤ edist (Fhat n ω (q - e)) (F (q - e))} ∪
           {ω | ENNReal.ofReal (F (q + e) - p) ≤ edist (Fhat n ω (q + e)) (F (q + e))}) :=

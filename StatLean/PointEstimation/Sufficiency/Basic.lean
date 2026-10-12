@@ -65,7 +65,8 @@ theorem isProbabilityMeasure_statLaw (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     (hT : Measurable T) (θ : Θ) :
     IsProbabilityMeasure (statLaw P T θ) := by
   unfold statLaw
-  exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  rw [Measure.map₀_of_measurable hT]
+  exact (by infer_instance)
 
 /-- **Reconstruction from the statistic.** If the joint law of `(T(X), X)` disintegrates as
 `(law of T) ⊗ₘ Q`, then feeding the law of `T` through `Q` returns the law of `X`:
@@ -79,7 +80,8 @@ theorem statLaw_snd (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P �
     Q ∘ₘ (statLaw P T θ) = P θ := by
   haveI := isProbabilityMeasure_statLaw P hT θ
   have h := congrArg Measure.snd (hgraph θ)
-  rw [Measure.snd_compProd, Measure.snd_map_prodMk hT, Measure.map_id'] at h
+  rw [Measure.snd_compProd, Measure.snd_map_prodMk hT
+      (show Measurable (fun x : 𝓧 => x) from measurable_id), Measure.map_id'] at h
   exact h.symm
 
 /-- **Kernel form implies the per-event form.** A θ-free Markov disintegration of the graph
@@ -93,13 +95,13 @@ theorem isSufficient_of_hasSufficientKernel (P : Θ → Measure 𝓧)
     -- of sufficiency
     (h : HasSufficientKernel P T) :
     IsSufficient P T := by
-  obtain ⟨Q, hQ, hgraph⟩ := h
+  obtain ⟨Q, hQ, hgraph⟩ := h.exists_map hT
   haveI := hQ
   refine fun A hA => ⟨fun t => Q t A, Q.measurable_coe hA, fun t => prob_le_one, ?_⟩
   intro θ B hB
   haveI := isProbabilityMeasure_statLaw P hT θ
   have e := congrArg (· (B ×ˢ A)) (hgraph θ)
-  simp only [statLaw] at e
+  simp only [statLaw, Measure.map₀_of_measurable hT] at e
   rw [Measure.map_apply (hT.prodMk measurable_id') (hB.prod hA),
     Measure.compProd_apply_prod hB hA,
     setLIntegral_map hB (Q.measurable_coe hA) hT] at e

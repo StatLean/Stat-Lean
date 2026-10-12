@@ -92,7 +92,7 @@ private lemma y_mean (M : GLMExpFamily n d μ) (i : Fin n) :
   have hinner : HasDerivAt (fun s => M.ψ (η + s) - M.ψ η) (M.ψ' η) 0 := by
     have h1 : HasDerivAt (fun s => M.ψ (η + s)) (M.ψ' η) 0 := by
       have := (M.hψ' (η + 0)).comp 0 ((hasDerivAt_id 0).const_add η)
-      simpa using this
+      simpa using! this
     simpa using h1.sub_const (M.ψ η)
   have hderiv : HasDerivAt (fun s => Real.exp (M.ψ (η + s) - M.ψ η)) (M.ψ' η) 0 := by
     simpa using hinner.exp
@@ -103,7 +103,7 @@ private lemma y_mean (M : GLMExpFamily n d μ) (i : Fin n) :
 `mgf Vᵢⱼ μ t = exp(ψ(ηᵢ + (−t·xᵢⱼ)) − ψ(ηᵢ) − (−t·xᵢⱼ)·ψ'(ηᵢ)) ≤ exp(B²·xᵢⱼ²·t²/2)`. -/
 theorem score_term_hasSubgaussianMGF (M : GLMExpFamily n d μ) (i : Fin n) (j : Fin d) :
     HasSubgaussianMGF (fun ω => (M.ψ' (linPred M.X M.θstar i) - M.y i ω) * M.X i j)
-      ⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ μ := by
+      (NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) μ := by
   set η := linPred M.X M.θstar i with hη
   set a := M.X i j with ha
   refine ⟨?_, ?_⟩
@@ -123,7 +123,9 @@ theorem score_term_hasSubgaussianMGF (M : GLMExpFamily n d μ) (i : Fin n) (j : 
         funext ω; ring
       rw [hfun, mgf_const_add, mgf_const_mul, M.hmgf i, ← hη, ← Real.exp_add]
       congr 1; ring
-    rw [hmgfeq, NNReal.coe_mk]
+    rw [hmgfeq]
+    change Real.exp (M.ψ (η + (-a * t)) - M.ψ η - (-a * t) * M.ψ' η)
+      ≤ Real.exp ((M.B ^ 2 * a ^ 2) * t ^ 2 / 2)
     apply Real.exp_le_exp.mpr
     calc M.ψ (η + (-a * t)) - M.ψ η - (-a * t) * M.ψ' η
         ≤ M.B ^ 2 / 2 * (-a * t) ^ 2 :=
@@ -135,7 +137,7 @@ and the GLM exp-family with `0 ≤ ψ'' ≤ B²` (G2, in `M`), the score coordin
 `scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ` is sub-Gaussian with variance proxy `B²C²/n`. -/
 theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (C : ℝ) (hC : IsColumnNormalized M.X C) (hn : 0 < n) (j : Fin d) :
-    IsSubGaussian (scoreCoord M j) ⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ μ := by
+    IsSubGaussian (scoreCoord M j) (NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) μ := by
   set V : Fin n → Ω → ℝ :=
     fun i ω => (M.ψ' (linPred M.X M.θstar i) - M.y i ω) * M.X i j with hV
   -- Independence of the per-term family from `M.hindep`.
@@ -143,11 +145,11 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
     M.hindep.comp (fun i x => (M.ψ' (linPred M.X M.θstar i) - x) * M.X i j)
       (fun i => (measurable_const.sub measurable_id).mul measurable_const)
   -- Each per-term variable is sub-Gaussian with proxy `B²xᵢⱼ²`.
-  have hV_sg : ∀ i, HasSubgaussianMGF (V i) ⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ μ :=
+  have hV_sg : ∀ i, HasSubgaussianMGF (V i) (NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) μ :=
     fun i => score_term_hasSubgaussianMGF M i j
   -- Sum over the independent terms.
   have hsum : HasSubgaussianMGF (fun ω => ∑ i, V i ω)
-      (∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0)) μ :=
+      (∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0)) μ :=
     HasSubgaussianMGF.sum_of_iIndepFun hV_indep (fun i _ => hV_sg i)
   -- Rescale by `1/n`.
   have hscaled := hsum.const_mul (1 / (n : ℝ))
@@ -171,40 +173,41 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
       funext ω; simp only [scoreCoord, hV]
     simp only [hsc_eq]
     rw [integral_const_mul,
-        integral_finset_sum Finset.univ (fun i _ => (hV_sg i).integrable),
+        integral_finsetSum Finset.univ (fun i _ => (hV_sg i).integrable),
         Finset.sum_congr rfl (fun i _ => hVi i), Finset.sum_const_zero, mul_zero]
   -- Proxy monotonicity: the rescaled proxy `(1/n²)∑ᵢ B²xᵢⱼ²` is `≤ B²C²/n` by (G1).
   have hn_pos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hB2 : (0 : ℝ) ≤ M.B ^ 2 := sq_nonneg _
   -- Proxy bound in `ℝ≥0` (cast to `ℝ` and clear denominators).
-  have hproxy : (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩
-        * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
-      ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
+  have hproxy : ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity))
+        * ∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0))
+      ≤ ((NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) : ℝ≥0) := by
     -- Bound the sum by `B²·(n·C²)` entirely within `ℝ≥0` (cast termwise via the sum coercion).
     have hreal : ∑ i, M.B ^ 2 * M.X i j ^ 2 ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2) := by
       rw [← Finset.mul_sum]
       exact mul_le_mul_of_nonneg_left (hC j) hB2
-    have hsum_le : (∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
-        ≤ (⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ : ℝ≥0) := by
+    have hsum_le : (∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0))
+        ≤ ((NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity)) : ℝ≥0) := by
       apply NNReal.coe_le_coe.mp
-      rw [NNReal.coe_mk]
-      refine le_trans (le_of_eq ?_) hreal
-      refine (NNReal.coe_sum _ _).trans ?_
-      simp only [NNReal.coe_mk]
-    calc (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-            * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0)
-          ≤ (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-            * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ :=
-            mul_le_mul_of_nonneg_left hsum_le (zero_le _)
-      _ = ⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ := by
-            rw [show (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-                  * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩
-                = ⟨(1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2)), by positivity⟩ from rfl]
+      rw [NNReal.coe_sum]
+      change (∑ i, M.B ^ 2 * M.X i j ^ 2) ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2)
+      exact hreal
+    calc ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+            * ∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0)
+          ≤ ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+            * (NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity)) :=
+            mul_le_mul_of_nonneg_left hsum_le (zero_le)
+      _ = (NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) := by
+            rw [show ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+                  * (NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity))
+                = (NNReal.mk ((1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2))) (by positivity))
+                    from rfl]
             apply NNReal.coe_injective
-            simp only [NNReal.coe_mk]
+            change (1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2))
+              = M.B ^ 2 * C ^ 2 / n
             field_simp
   have hup : HasSubgaussianMGF (fun ω => (1 / (n : ℝ)) * ∑ i, V i ω)
-      (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) μ :=
+      ((NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) : ℝ≥0) μ :=
     ⟨hscaled.integrable_exp_mul, fun t => (hscaled.mgf_le t).trans
       (Real.exp_le_exp.mpr (by gcongr; exact_mod_cast hproxy))⟩
   -- Assemble: centered (mean zero) sub-Gaussian.

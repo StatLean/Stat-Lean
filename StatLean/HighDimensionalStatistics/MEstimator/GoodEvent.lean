@@ -99,7 +99,7 @@ private lemma y_mean (M : GLMExpFamily n d μ) (i : Fin n) :
   have hinner : HasDerivAt (fun s => M.ψ (η + s) - M.ψ η) (M.ψ' η) 0 := by
     have h1 : HasDerivAt (fun s => M.ψ (η + s)) (M.ψ' η) 0 := by
       have := (M.hψ' (η + 0)).comp 0 ((hasDerivAt_id 0).const_add η)
-      simpa using this
+      simpa using! this
     simpa using h1.sub_const (M.ψ η)
   have hderiv : HasDerivAt (fun s => Real.exp (M.ψ (η + s) - M.ψ η)) (M.ψ' η) 0 := by
     simpa using hinner.exp
@@ -131,7 +131,7 @@ private lemma scoreCoord_integral_zero (M : GLMExpFamily n d μ) [IsProbabilityM
     funext ω; simp only [scoreCoord, hV]
   simp only [hsc_eq]
   rw [integral_const_mul,
-      integral_finset_sum Finset.univ (fun i _ => (hV_sg i).integrable),
+      integral_finsetSum Finset.univ (fun i _ => (hV_sg i).integrable),
       Finset.sum_congr rfl (fun i _ => hVi i), Finset.sum_const_zero, mul_zero]
 
 /-- **Union-bound tail on `‖scoreVec‖∞`** (Wainwright Cor 9.26 proof). For each coordinate the score is
@@ -176,7 +176,7 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
         {ω | t < |scoreCoord M j ω - ∫ x, scoreCoord M j x ∂μ|} := by
       ext ω; simp only [Set.mem_setOf_eq, scoreVec_ofLp, hm, sub_zero]
     rw [hset]
-    simpa only [NNReal.coe_mk] using (hcol_sg j).measure_abs_sub_integral_lt_le ht
+    simpa only [NNReal.coe_mk] using! (hcol_sg j).measure_abs_sub_integral_lt_le ht
   -- ── Step 3: union bound over the d coordinates ────────────────────────────────
   calc μ {ω | t < linfNorm (scoreVec M ω)}
       ≤ μ (⋃ j : Fin d, {ω | t < |(scoreVec M ω).ofLp j|}) := measure_mono hincl

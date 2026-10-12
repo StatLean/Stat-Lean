@@ -90,9 +90,9 @@ lemma weakConverges_prod_of_tendsto_charFun {E : Type*} [NormedAddCommGroup E]
         (𝓝 (charFun ν₁ (WithLp.ofLp t).1 * charFun ν₂ (WithLp.ofLp t).2))) :
     WeakConverges μ (ν₁.prod ν₂) := by
   haveI : ∀ n, IsProbabilityMeasure ((μ n).map (WithLp.toLp (V := E × E) 2)) := fun n =>
-    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+    (by infer_instance)
   haveI : IsProbabilityMeasure ((ν₁.prod ν₂).map (WithLp.toLp (V := E × E) 2)) :=
-    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+    (by infer_instance)
   have hlim : WeakConverges (fun n => (μ n).map (WithLp.toLp 2))
       ((ν₁.prod ν₂).map (WithLp.toLp 2)) := by
     refine weakConverges_of_tendsto_charFun (fun t => ?_)
@@ -139,7 +139,7 @@ private lemma tendsto_charFun_of_weakConverges {H : Type*} [NormedAddCommGroup H
   set pn : ℕ → ProbabilityMeasure H := fun n => ⟨μ n, inferInstance⟩ with hpn
   set pν : ProbabilityMeasure H := ⟨ν, inferInstance⟩ with hpν
   have htend : Tendsto pn atTop (𝓝 pν) :=
-    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr (by simpa [pn, pν] using h)
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr (by simpa [pn, pν] using! h)
   simpa [pn, pν] using (ProbabilityMeasure.tendsto_iff_tendsto_charFun.mp htend) t
 
 /-! ### Integrating a bounded test function against `randPairLaw` -/
@@ -163,10 +163,11 @@ lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSp
     fun g g' => (hT g).prodMk (hT g')
   haveI hprob : ∀ g g' : G,
       IsProbabilityMeasure (P.map fun x : 𝓧 => (T (g • x), T (g' • x))) :=
-    fun g g' => Measure.isProbabilityMeasure_map (hpair g g').aemeasurable
+    fun g g' => (by infer_instance)
   rw [randPairLaw, integral_smul_measure,
     integral_finset_sum_measure (fun g _ => integrable_finset_sum_measure.2
       (fun g' _ => hint _ inferInstance))]
+  simp only [Measure.map₀_of_measurable (hpair _ _)]
   have hstep : ∀ g : G, ∫ z, F z ∂(∑ g' : G, P.map fun x : 𝓧 => (T (g • x), T (g' • x)))
       = ∑ g' : G, ∫ x, F (T (g • x), T (g' • x)) ∂P := by
     intro g
@@ -196,7 +197,15 @@ lemma randPairLaw_comp {𝓧 𝓨 Z : Type*} [MeasurableSpace 𝓧] [MeasurableS
   refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
   have h := Measure.map_map (μ := P) (g := fun y : 𝓨 => (T (g • y), T (g' • y))) (f := Φ)
     ((hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))) hΦ
-  rw [h]
+  have hpair : Measurable (fun y : 𝓨 => (T (g • y), T (g' • y))) :=
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hpairX : Measurable (fun x : 𝓧 => (T (Φ (g • x)), T (Φ (g' • x)))) := by
+    rw [show (fun x : 𝓧 => (T (Φ (g • x)), T (Φ (g' • x)))) =
+      (fun y : 𝓨 => (T (g • y), T (g' • y))) ∘ Φ by
+        funext x
+        simp only [Function.comp_apply, hequiv]]
+    exact hpair.comp hΦ
+  rw [Measure.map₀_of_measurable hpairX, Measure.map₀_of_measurable hpair, h]
   congr 1
   funext x
   simp only [Function.comp_apply, hequiv]
@@ -325,7 +334,7 @@ private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure 
   -- Measurability of the action and of the statistic.
   have hsmul : ∀ ε : Fin n → ℤˣ, Measurable fun x : Fin n → E => ε • x := by
     intro ε
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     simp only [signChange_smul_apply_vec]
     exact (measurable_pi_apply i).const_smul _
   have hTmeas : Measurable T :=
@@ -376,9 +385,9 @@ private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure 
     have h1 : (∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ, ∫ x, F (T (ε • x), T (ε' • x)) ∂πQ)
         = ∫ x, ∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ,
             ∏ i, signFactor n t (ε i) (ε' i) (x i) ∂πQ := by
-      rw [integral_finset_sum _ (fun ε _ => integrable_finset_sum _ fun ε' _ => hprodint ε ε')]
+      rw [integral_finsetSum _ (fun ε _ => integrable_finsetSum _ fun ε' _ => hprodint ε ε')]
       refine Finset.sum_congr rfl fun ε _ => ?_
-      rw [integral_finset_sum _ (fun ε' _ => hprodint ε ε')]
+      rw [integral_finsetSum _ (fun ε' _ => hprodint ε ε')]
       refine Finset.sum_congr rfl fun ε' _ => ?_
       exact integral_congr_ae (Filter.Eventually.of_forall fun x => hstep3 ε ε' x)
     rw [h1]
@@ -395,11 +404,11 @@ private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure 
     congr 1
     have hsw1 : ∫ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, signFactor n t s s' y) ∂Q
         = ∑ s : ℤˣ, ∫ y : E, (∑ s' : ℤˣ, signFactor n t s s' y) ∂Q :=
-      integral_finset_sum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signFactor n t s s' y)
-        Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hkint s s')
+      integral_finsetSum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signFactor n t s s' y)
+        Finset.univ (fun s _ => integrable_finsetSum Finset.univ fun s' _ => hkint s s')
     have hsw2 : ∀ s : ℤˣ, ∫ y : E, (∑ s' : ℤˣ, signFactor n t s s' y) ∂Q
         = ∑ s' : ℤˣ, ∫ y : E, signFactor n t s s' y ∂Q := fun s =>
-      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => signFactor n t s s' y)
+      integral_finsetSum (f := fun s' : ℤˣ => fun y : E => signFactor n t s s' y)
         Finset.univ (fun s' _ => hkint s s')
     exact hsw1.trans (Finset.sum_congr rfl fun s _ => hsw2 s)
   -- Step 5: identify the coordinate integrals as one-dimensional characteristic functions.
@@ -476,10 +485,10 @@ private lemma sum_integral_signDir (Q : Measure E) [IsProbabilityMeasure Q]
     (memLp_signDir Q hQ2 t s s').integrable (by norm_num)
   have h1 : ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, signDir t s s' y ∂Q
       = ∫ y, (∑ s : ℤˣ, ∑ s' : ℤˣ, signDir t s s' y) ∂Q := by
-    rw [integral_finset_sum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signDir t s s' y)
-      Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hint s s')]
+    rw [integral_finsetSum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signDir t s s' y)
+      Finset.univ (fun s _ => integrable_finsetSum Finset.univ fun s' _ => hint s s')]
     exact (Finset.sum_congr rfl fun s _ =>
-      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => signDir t s s' y)
+      integral_finsetSum (f := fun s' : ℤˣ => fun y : E => signDir t s s' y)
         Finset.univ (fun s' _ => hint s s')).symm
   rw [h1]
   have hzero : ∀ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, signDir t s s' y) = 0 := by
@@ -510,11 +519,11 @@ private lemma sum_integral_signDir_sq (Q : Measure E) [IsProbabilityMeasure Q]
     simpa using (memLp_inner_right Q hQ2 (WithLp.ofLp t).2).integrable_sq
   have h1 : ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, (signDir t s s' y) ^ 2 ∂Q
       = ∫ y, (∑ s : ℤˣ, ∑ s' : ℤˣ, (signDir t s s' y) ^ 2) ∂Q := by
-    rw [integral_finset_sum
+    rw [integral_finsetSum
       (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, (signDir t s s' y) ^ 2)
-      Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hint s s')]
+      Finset.univ (fun s _ => integrable_finsetSum Finset.univ fun s' _ => hint s s')]
     exact (Finset.sum_congr rfl fun s _ =>
-      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => (signDir t s s' y) ^ 2)
+      integral_finsetSum (f := fun s' : ℤˣ => fun y : E => (signDir t s s' y) ^ 2)
         Finset.univ (fun s' _ => hint s s')).symm
   rw [h1]
   have hpt : ∀ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, (signDir t s s' y) ^ 2)
@@ -555,7 +564,7 @@ theorem weakConverges_randPairLaw_signSum [FiniteDimensional ℝ E]
   -- Measurability of the action and of the statistic, so that `randPairLaw` is a probability.
   have hsmul : ∀ (n : ℕ) (ε : Fin n → ℤˣ), Measurable fun x : Fin n → E => ε • x := by
     intro n ε
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     simp only [signChange_smul_apply_vec]
     exact (measurable_pi_apply i).const_smul _
   have hTmeas : ∀ n : ℕ,
@@ -734,7 +743,7 @@ private lemma tendsto_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
             integral_const, integral_const_mul, integral_indicator_one hset]
           simp
   -- Conclude by making `δ` small.
-  rw [NormedAddCommGroup.tendsto_nhds_zero]
+  rw [NormedAddGroup.tendsto_nhds_zero]
   intro ε hε
   set δ : ℝ := ε / (2 * (c + 1)) with hδdef
   have hcpos : (0 : ℝ) < c + 1 := by linarith
@@ -832,7 +841,7 @@ private lemma tendsto_avg_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
       (le_of_lt (inv_pos.mpr (hcardpos n)))
     refine hmul.trans (le_of_eq ?_)
     field_simp
-  rw [NormedAddCommGroup.tendsto_nhds_zero]
+  rw [NormedAddGroup.tendsto_nhds_zero]
   intro ε hε
   set δ : ℝ := ε / (2 * (c + 1)) with hδdef
   have hcpos : (0 : ℝ) < c + 1 := by linarith
@@ -901,12 +910,12 @@ theorem weakConverges_randPairLaw_of_tendstoInProb_avg
   rw [weakConverges_map_toLp_iff] at hconv ⊢
   haveI hmT : ∀ n, IsProbabilityMeasure
       ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
-    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+    (by infer_instance)
   haveI hmL : ∀ n, IsProbabilityMeasure
       ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
-    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+    (by infer_instance)
   haveI hmν : IsProbabilityMeasure (ν.map (WithLp.toLp (V := E × E) 2)) :=
-    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+    (by infer_instance)
   refine weakConverges_of_tendsto_charFun (fun t => ?_)
   have hlim := tendsto_charFun_of_weakConverges hconv t
   -- The bounded test function on the product.
@@ -1153,7 +1162,7 @@ lemma exists_tight_bound_of_weakConverges {μ : ℕ → Measure ℝ}
   rw [hinter, measure_empty] at htend
   have htendR : Tendsto (fun k : ℕ => ν.real {y : ℝ | (k : ℝ) ≤ |y|}) atTop (𝓝 0) := by
     have := (ENNReal.tendsto_toReal (by simp)).comp htend
-    simpa [Measure.real, Function.comp] using this
+    simpa [Measure.real, Function.comp] using! this
   obtain ⟨k, hk⟩ :=
     (htendR.eventually (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))).exists
   -- A bounded continuous ramp squeezed between the two tail indicators.

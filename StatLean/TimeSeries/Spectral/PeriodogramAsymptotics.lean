@@ -545,7 +545,7 @@ private lemma tendsto_charFun_weighted_iid [IsProbabilityMeasure μ]
           (((hidentY ↑i).symm.memLp_snd hL2Y).integrable_sq).integrableOn
           (Eventually.of_forall fun ω => sq_nonneg _) (Eventually.of_forall fun ω hω => ?_)
         have h1 : ε ≤ |w n i| * |Y (↑i : ℕ) ω| := by
-          rw [← abs_mul]; simpa only [hXdef] using hω
+          rw [← abs_mul]; simpa only [hXdef] using! hω
         have h3 : ε ≤ (ε / K) * |Y (↑i : ℕ) ω| :=
           le_trans h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
         change (K : ℝ) ≤ |Y (↑i : ℕ) ω|
@@ -792,10 +792,10 @@ private lemma integral_sq_weighted_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {
           (w s * ε ((s : ℤ) + 1) ω) * (w t * ε ((t : ℤ) + 1) ω) := by
     intro ω; rw [sq, Finset.sum_mul_sum]
   rw [integral_congr_ae (Eventually.of_forall hexp),
-    integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint s t))]
+    integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint s t))]
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun s hs => ?_
-  rw [integral_finset_sum _ (fun t _ => hint s t),
+  rw [integral_finsetSum _ (fun t _ => hint s t),
     Finset.sum_congr rfl (fun t _ => hcross s t), Finset.sum_ite_eq, if_pos hs]
 
 /-- The second moment of the noise DFT ordinate is exactly `σ²` on the window
@@ -825,13 +825,13 @@ private lemma integral_normSq_dftSample_noise [IsProbabilityMeasure μ] {σ2 : �
       Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ := by
     have hm : MemLp (fun ω => ∑ t ∈ Finset.range T,
         Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) 2 μ :=
-      memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
+      memLp_finsetSum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
     exact hm.integrable_sq
   have hIs : Integrable (fun ω => (∑ t ∈ Finset.range T,
       Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ := by
     have hm : MemLp (fun ω => ∑ t ∈ Finset.range T,
         Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) 2 μ :=
-      memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
+      memLp_finsetSum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
     exact hm.integrable_sq
   rw [integral_add (hIc.const_mul _) (hIs.const_mul _), integral_const_mul, integral_const_mul,
     integral_sq_weighted_noise hε T (fun t => Real.cos (((t : ℝ) + 1) * fourierFreq T k)),
@@ -880,10 +880,10 @@ private lemma integrable_normSq_dftSample_noise [IsProbabilityMeasure μ] {σ2 :
     ring
   have hIc : Integrable (fun ω => (∑ t ∈ Finset.range T,
       Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ :=
-    (memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
+    (memLp_finsetSum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
   have hIs : Integrable (fun ω => (∑ t ∈ Finset.range T,
       Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ :=
-    (memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
+    (memLp_finsetSum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
   exact ((hIc.const_mul _).add (hIs.const_mul _)).congr
     (Filter.Eventually.of_forall fun ω => (hpt ω).symm)
 
@@ -954,10 +954,10 @@ private lemma integral_sq_weighted_noise_gen [IsProbabilityMeasure μ] {σ2 : �
       = ∑ s ∈ S, ∑ t ∈ S, (w s * ε s ω) * (w t * ε t ω) := by
     intro ω; rw [sq, Finset.sum_mul_sum]
   rw [integral_congr_ae (Eventually.of_forall hexp),
-    integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint s t)),
+    integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint s t)),
     Finset.mul_sum]
   refine Finset.sum_congr rfl fun s hs => ?_
-  rw [integral_finset_sum _ (fun t _ => hint s t),
+  rw [integral_finsetSum _ (fun t _ => hint s t),
     Finset.sum_congr rfl (fun t _ => hcross s t), Finset.sum_ite_eq, if_pos hs]
 
 /-- The complex form of the Gram identity. -/
@@ -979,9 +979,9 @@ private lemma integral_normSq_weighted_noise [IsProbabilityMeasure μ] {σ2 : �
     rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, hre ω, him ω]
     ring
   have hIre : Integrable (fun ω => (∑ s ∈ S, (c s).re * ε s ω) ^ 2) μ :=
-    (memLp_finset_sum _ (fun s _ => (hε.isWhiteNoise.memLp s).const_mul _)).integrable_sq
+    (memLp_finsetSum _ (fun s _ => (hε.isWhiteNoise.memLp s).const_mul _)).integrable_sq
   have hIim : Integrable (fun ω => (∑ s ∈ S, (c s).im * ε s ω) ^ 2) μ :=
-    (memLp_finset_sum _ (fun s _ => (hε.isWhiteNoise.memLp s).const_mul _)).integrable_sq
+    (memLp_finsetSum _ (fun s _ => (hε.isWhiteNoise.memLp s).const_mul _)).integrable_sq
   rw [integral_congr_ae (Eventually.of_forall hpt), integral_add hIre hIim,
     integral_sq_weighted_noise_gen hε S (fun s => (c s).re),
     integral_sq_weighted_noise_gen hε S (fun s => (c s).im), ← mul_add, ← Finset.sum_add_distrib]
@@ -1163,9 +1163,10 @@ private lemma fourier_eq_eePhase (T k : ℕ) (j : ℤ) :
 
 private lemma memLp_ofReal' {f : Ω → ℝ} (hf : MemLp f 2 μ) :
     MemLp (fun ω => (f ω : ℂ)) 2 μ := by
-  refine ⟨Complex.continuous_ofReal.comp_aestronglyMeasurable hf.1, ?_⟩
-  rw [eLpNorm_congr_norm_ae (g := f) (Eventually.of_forall fun ω => by simp)]
-  exact hf.2
+  change eLpNorm (fun ω => (f ω : ℂ)) 2 μ < ⊤
+  rw [eLpNorm_congr_norm_ae (g := f) (Complex.continuous_ofReal.comp_aestronglyMeasurable
+      hf.aestronglyMeasurable) hf.aestronglyMeasurable (Eventually.of_forall fun ω => by simp)]
+  exact hf
 
 private lemma toReal_eLpNorm_two_sq {f : Ω → ℂ} (hf : MemLp f 2 μ) :
     ((eLpNorm f 2 μ).toReal) ^ 2 = ∫ ω, ‖f ω‖ ^ 2 ∂μ := by
@@ -1182,11 +1183,13 @@ private lemma toReal_eLpNorm_two_sq {f : Ω → ℂ} (hf : MemLp f 2 μ) :
 private lemma memLp_of_isFilteredBy [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ → ℝ}
     {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t))
     (hfil : IsFilteredBy X ε a μ) (t : ℤ) : MemLp (X t) 2 μ := by
-  obtain ⟨N, hN⟩ := ((hfil t).eventually (gt_mem_nhds (show (0 : ENNReal) < 1 by norm_num))).exists
+  obtain ⟨N, hN⟩ := ((hfil.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+    (fun t => (hε.isWhiteNoise.memLp t).aestronglyMeasurable) t).eventually
+        (gt_mem_nhds (show (0 : ENNReal) < 1 by norm_num))).exists
   have htr : MemLp (truncFilter a ε N t) 2 μ :=
-    memLp_finset_sum _ (fun j _ => (hε.isWhiteNoise.memLp (t - j)).const_mul (a j))
+    memLp_finsetSum _ (fun j _ => (hε.isWhiteNoise.memLp (t - j)).const_mul (a j))
   have hdiff : MemLp (fun ω => X t ω - truncFilter a ε N t ω) 2 μ :=
-    ⟨(hmeas t).aestronglyMeasurable.sub htr.1, lt_of_lt_of_le hN (by norm_num)⟩
+    lt_of_lt_of_le hN (by norm_num)
   have hsum := hdiff.add htr
   have hfun : ((fun ω => X t ω - truncFilter a ε N t ω) + truncFilter a ε N t) = X t := by
     funext ω; simp
@@ -1199,13 +1202,13 @@ private lemma memLp_dftSample [IsProbabilityMeasure μ] {Z : ℤ → Ω → ℝ}
       ∑ t ∈ Finset.range T, (Z ((t : ℤ) + 1) ω : ℂ) * eePhase T k ((t : ℤ) + 1) :=
     funext fun ω => dftSample_eq_sum_range Z T k ω
   rw [hfun]
-  exact (memLp_finset_sum (Finset.range T)
+  exact (memLp_finsetSum (Finset.range T)
     (fun (t : ℕ) (_ : t ∈ Finset.range T) =>
       (memLp_ofReal' (hZ ((t : ℤ) + 1))).mul_const (eePhase T k ((t : ℤ) + 1)))).const_mul _
 
 private lemma memLp_winSum [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
     (hε : IsIIDNoise ε σ2 μ) (T k : ℕ) (j : ℤ) : MemLp (fun ω => winSum ε T k j ω) 2 μ :=
-  (memLp_finset_sum (Finset.Icc (1 - j) ((T : ℤ) - j))
+  (memLp_finsetSum (Finset.Icc (1 - j) ((T : ℤ) - j))
     (fun (s : ℤ) (_ : s ∈ Finset.Icc (1 - j) ((T : ℤ) - j)) =>
       (memLp_ofReal' (hε.isWhiteNoise.memLp s)).mul_const (eePhase T k s))).const_mul _
 
@@ -1273,11 +1276,11 @@ private lemma eLpNorm_two_le_of_integral_normSq_le {f : Ω → ℂ} (hf : MemLp 
   have h2 : ((eLpNorm f 2 μ).toReal) ^ 2 ≤ C ^ 2 := by rw [toReal_eLpNorm_two_sq hf]; exact h
   have h3 : (eLpNorm f 2 μ).toReal ≤ C := by
     nlinarith [ENNReal.toReal_nonneg (a := eLpNorm f 2 μ)]
-  exact (ENNReal.le_ofReal_iff_toReal_le hf.2.ne hC).2 h3
+  exact (ENNReal.le_ofReal_iff_toReal_le hf.ne hC).2 h3
 
 private lemma memLp_truncFilter [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
     (hε : IsIIDNoise ε σ2 μ) (a : ℤ → ℝ) (N : ℕ) (t : ℤ) : MemLp (truncFilter a ε N t) 2 μ :=
-  memLp_finset_sum (Finset.Icc (-(N : ℤ)) (N : ℤ))
+  memLp_finsetSum (Finset.Icc (-(N : ℤ)) (N : ℤ))
     (fun (j : ℤ) (_ : j ∈ Finset.Icc (-(N : ℤ)) (N : ℤ)) =>
       (hε.isWhiteNoise.memLp (t - j)).const_mul (a j))
 
@@ -1335,8 +1338,7 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
         ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun j _ => by ring
     rw [hrw]
-    refine le_trans (eLpNorm_sum_le (fun j _ =>
-      (((memLp_winSum hε T k j).sub (memLp_winSum hε T k 0)).const_mul _).1) one_le_two) ?_
+    refine le_trans (eLpNorm_sum_le one_le_two) ?_
     have hterm : ∀ j : ℤ,
         eLpNorm (fun ω => ((a j : ℂ) * eePhase T k j) *
             (winSum ε T k j ω - winSum ε T k 0 ω)) 2 μ
@@ -1363,7 +1365,7 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
           div_nonneg (by linarith) (by positivity)
         rw [mul_pow, Real.sq_sqrt hσ, edgeWeight, Real.sq_sqrt hwnn]
       rw [hnc, ENNReal.ofReal_mul (abs_nonneg _)]
-      exact mul_le_mul_left' hbound _
+      exact mul_le_mul_right hbound _
     refine le_trans (Finset.sum_le_sum (fun j _ => hterm j)) ?_
     rw [← ENNReal.ofReal_sum_of_nonneg (fun j _ => mul_nonneg (abs_nonneg _)
       (mul_nonneg (Real.sqrt_nonneg _) (edgeWeight_nonneg T j)))]
@@ -1393,24 +1395,25 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
           Finset.mul_sum, ← Finset.sum_sub_distrib]
         exact Finset.sum_congr rfl fun t _ => by push_cast; ring
       rw [hrw]
-      refine le_trans (eLpNorm_sum_le (fun t _ => ?_) one_le_two) (Finset.sum_le_sum fun t _ => ?_)
-      · exact (((memLp_ofReal' ((hXmem _).sub (memLp_truncFilter hε a N _))).const_mul _).mul_const
-          (eePhase T k ((t : ℤ) + 1))).1
-      · have hsmul : (fun ω => (((Real.sqrt T)⁻¹ : ℝ) : ℂ) *
+      refine le_trans (eLpNorm_sum_le one_le_two) (Finset.sum_le_sum fun t _ => ?_)
+      have hsmul : (fun ω => (((Real.sqrt T)⁻¹ : ℝ) : ℂ) *
             (((X ((t : ℤ) + 1) ω - truncFilter a ε N ((t : ℤ) + 1) ω : ℝ)) : ℂ) *
               eePhase T k ((t : ℤ) + 1))
             = ((((Real.sqrt T)⁻¹ : ℝ) : ℂ) * eePhase T k ((t : ℤ) + 1)) •
               (fun ω => (((X ((t : ℤ) + 1) ω - truncFilter a ε N ((t : ℤ) + 1) ω : ℝ)) : ℂ)) := by
           funext ω; simp [smul_eq_mul]; ring
-        rw [hsmul, eLpNorm_const_smul]
-        have hnc : ‖(((Real.sqrt T)⁻¹ : ℝ) : ℂ) * eePhase T k ((t : ℤ) + 1)‖ₑ
-            = ENNReal.ofReal ((Real.sqrt T)⁻¹) := by
-          rw [← ofReal_norm_eq_enorm, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-            norm_eePhase, mul_one, abs_of_nonneg (by positivity)]
-        rw [hnc]
-        refine mul_le_mul_left' (le_of_eq ?_) _
-        refine eLpNorm_congr_norm_ae (Eventually.of_forall fun ω => ?_)
-        rw [Complex.norm_real]
+      rw [hsmul, eLpNorm_const_smul]
+      have hnc : ‖(((Real.sqrt T)⁻¹ : ℝ) : ℂ) * eePhase T k ((t : ℤ) + 1)‖ₑ
+          = ENNReal.ofReal ((Real.sqrt T)⁻¹) := by
+        rw [← ofReal_norm_eq_enorm, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+          norm_eePhase, mul_one, abs_of_nonneg (by positivity)]
+      rw [hnc]
+      refine mul_le_mul_right (le_of_eq ?_) _
+      have hd := ((hXmem ((t : ℤ) + 1)).sub
+          (memLp_truncFilter hε a N ((t : ℤ) + 1))).aestronglyMeasurable
+      refine eLpNorm_congr_norm_ae (Complex.continuous_ofReal.comp_aestronglyMeasurable hd) hd
+          (Eventually.of_forall fun ω => ?_)
+      rw [Complex.norm_real]
     have hg : Tendsto (fun N : ℕ => ∑ t ∈ Finset.range T,
         ENNReal.ofReal ((Real.sqrt T)⁻¹) *
           eLpNorm (fun ω => X ((t : ℤ) + 1) ω - truncFilter a ε N ((t : ℤ) + 1) ω) 2 μ)
@@ -1419,13 +1422,15 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
           eLpNorm (fun ω => X ((t : ℤ) + 1) ω - truncFilter a ε N ((t : ℤ) + 1) ω) 2 μ)
           atTop (𝓝 0) := by
         intro t _
-        have := ENNReal.Tendsto.const_mul (hfil ((t : ℤ) + 1))
+        have := ENNReal.Tendsto.const_mul
+          (hfil.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+            (fun t => (hε.isWhiteNoise.memLp t).aestronglyMeasurable) ((t : ℤ) + 1))
           (Or.inr (by simp : ENNReal.ofReal ((Real.sqrt T)⁻¹) ≠ ⊤))
-        simpa using this
-      have := tendsto_finset_sum (Finset.range T) h0
+        simpa using! this
+      have := tendsto_finsetSum (Finset.range T) h0
       simpa using this
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hg
-      (fun N => zero_le _) hle
+      (fun N => zero_le) hle
   have hBN : Tendsto (fun N : ℕ => eLpNorm (fun ω =>
       ((∑ j ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), (a j : ℂ) * eePhase T k j)
         - transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π))) * dftSample ε T k ω) 2 μ)
@@ -1455,7 +1460,7 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
         simpa using h
       have h2 := ENNReal.tendsto_ofReal h1
       simpa only [ofReal_norm_eq_enorm, ENNReal.ofReal_zero] using h2
-    have := ENNReal.Tendsto.mul_const hn (Or.inr hmemDE.2.ne)
+    have := ENNReal.Tendsto.mul_const hn (Or.inr hmemDE.ne)
     simpa using this
   -- assembly
   have hlim : Tendsto (fun N : ℕ =>
@@ -1475,12 +1480,10 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
               * dftSample ε T k ω)) := by
     funext ω; simp; ring
   rw [hdec]
-  refine le_trans (eLpNorm_add_le (hmemDX.sub (hmemtr N)).1 ?_ one_le_two) ?_
-  · exact (((hmemDE.const_mul _)).add ((hmemtr N).sub (hmemDE.const_mul _))).1
-  · rw [add_assoc]
-    refine add_le_add le_rfl (le_trans (eLpNorm_add_le (hmemDE.const_mul _).1
-      ((hmemtr N).sub (hmemDE.const_mul _)).1 one_le_two) ?_)
-    exact add_le_add le_rfl (hFN N)
+  refine le_trans (eLpNorm_add_le one_le_two) ?_
+  rw [add_assoc]
+  refine add_le_add le_rfl (le_trans (eLpNorm_add_le one_le_two) ?_)
+  exact add_le_add le_rfl (hFN N)
 
 /-- **THE EDGE-EFFECT CORE (FY eq. (2.72)) — PROVED** (wave `ts/f3-spectral-garch-finale`,
 2026-08-09; it was the single open debt of this file, which is now `sorry`-free and
@@ -1559,7 +1562,7 @@ private lemma exists_dft_edge_L2_bound [IsProbabilityMeasure μ] {σ2 : ℝ} {a 
     have h1 : (eLpNorm (fun ω => dftSample X T k ω
         - transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π))
           * dftSample ε T k ω) 2 μ).toReal ≤ edgeEnv σ2 a T :=
-      (ENNReal.le_ofReal_iff_toReal_le hmemF.2.ne (edgeEnv_nonneg hσ.le a T)).1 hle
+      (ENNReal.le_ofReal_iff_toReal_le hmemF.ne (edgeEnv_nonneg hσ.le a T)).1 hle
     have h2 : (0 : ℝ) ≤ (eLpNorm (fun ω => dftSample X T k ω
         - transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π))
           * dftSample ε T k ω) 2 μ).toReal := ENNReal.toReal_nonneg
@@ -1607,7 +1610,7 @@ theorem periodogram_eq_scaled_chi2_approx [IsProbabilityMeasure μ] {σ2 : ℝ} 
     have h1 : Tendsto (fun T : ℕ => e T + 1 / ((T : ℝ) + 1)) atTop (𝓝 0) := by
       simpa using he0.add h2
     rw [hδdef]
-    simpa using (Real.continuous_sqrt.tendsto 0).comp h1
+    simpa using! (Real.continuous_sqrt.tendsto 0).comp h1
   refine ⟨fun T => δ T * (Ca ^ 2 * σ2) + e T + δ T, ?_, ?_⟩
   · have := ((hδ0.mul_const (Ca ^ 2 * σ2)).add he0).add hδ0
     simpa using this

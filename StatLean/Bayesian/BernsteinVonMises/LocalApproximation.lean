@@ -247,7 +247,7 @@ private lemma lintegral_preimage_bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin 
         ∘ (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) := by
       funext hh; simp [hT, bvmLocalUnscale, hadef]
     rw [h2, ← Measure.map_map (measurable_const_add θ₀) (measurable_const_smul a), h1,
-      Measure.map_smul, Measure.IsAddLeftInvariant.map_add_left_eq_self
+      Measure.map_smul _ (by fun_prop), Measure.IsAddLeftInvariant.map_add_left_eq_self
         (μ := (volume : Measure (EuclideanSpace ℝ (Fin k)))) θ₀]
     rw [hfr, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (a ^ k)⁻¹)]
   have hpre : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' D) := (measurable_bvmLocalScale θ₀ n) hD
@@ -295,10 +295,10 @@ private lemma lintegral_preimage_eq_jac_mul_bvmNumer
       restrict_withDensity hsm, Measure.restrict_restrict_of_subset hDsub]
   rw [hres, lintegral_withDensity_eq_lintegral_mul _ hFmeas hGmeas]
   simp only [Pi.mul_apply]
-  rw [lintegral_preimage_bvmLocalScale θ₀ hn1 hD (hFmeas.mul hGmeas)]
+  erw [lintegral_preimage_bvmLocalScale θ₀ hn1 hD (hFmeas.mul hGmeas)]
   congr 1
   refine lintegral_congr fun hh => ?_
-  simp only [bvmJointDens]
+  simp only [bvmJointDens, Pi.mul_apply]
   ring
 
 -- The scalar `q` (Jacobian) and the predictive normalizer `Z` cancel in the conditional ratio.
@@ -558,12 +558,13 @@ private lemma tvDist_normalize_le_double_lintegral_antisymm {α : Type*} [Measur
     intro x
     rw [ENNReal.mul_sub (fun _ _ => ENNReal.inv_ne_top.mpr hZ0), e1, e2]
   simp_rw [key]
-  rw [lintegral_const_mul _ ((hs.mul_const Zt).sub (ht.mul_const Zs))]
-  refine mul_le_mul_left' (lintegral_mono fun x => ?_) _
+  erw [lintegral_const_mul _ ((hs.mul_const Zt).sub (ht.mul_const Zs))]
+  refine mul_le_mul_right (lintegral_mono fun x => ?_) _
+  simp only [Pi.sub_apply]
   have h1 : s x * Zt = ∫⁻ g, s x * t g ∂base := by
     rw [hZt, lintegral_const_mul _ ht]
   have h2 : t x * Zs = ∫⁻ g, s g * t x ∂base := by
-    rw [hZs, lintegral_mul_const _ hs, mul_comm]
+    erw [hZs, lintegral_mul_const _ hs, mul_comm]
   rw [h1, h2]
   exact lintegral_sub_le _ _ (hs.mul_const (t x))
 
@@ -872,7 +873,7 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
     rw [hkey, div_eq_mul_inv]
     calc (t g)⁻¹ * (t g / Zt * (s h * t g - s g * t h))
         ≤ (t g)⁻¹ * (c * (s h * t g - s g * t h)) :=
-          mul_le_mul_left' (mul_le_mul_right' hcg _) _
+          mul_le_mul_right (mul_le_mul_left hcg _) _
       _ = c * ((s h * t g - s g * t h) * (t g)⁻¹) := by ring
   have hE1 : (Zs * Zt)⁻¹ * ∫⁻ h, ∫⁻ g, (s h * t g - s g * t h) ∂base ∂base
       = Zs⁻¹ * ∫⁻ h, Zt⁻¹ * ∫⁻ g, (s h * t g - s g * t h) ∂base ∂base := by
@@ -882,7 +883,7 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
       = c * (Zs⁻¹ * ∫⁻ h, ∫⁻ g, (s h * t g - s g * t h) / t g ∂base ∂base) := by
     rw [lintegral_const_mul' _ _ hcT]; ring
   rw [hE1, ← hE2]
-  exact mul_le_mul_left' (lintegral_mono hinner) _
+  exact mul_le_mul_right (lintegral_mono hinner) _
 
 -- LEAN-ONLY: the pointwise Step-B majorization. Where the Bayes formula holds, the local mass
 -- is nondegenerate and the score sum is bounded by `K`, the conditioned total-variation
@@ -1304,7 +1305,7 @@ private lemma lintegral_le_add_measure_gt {Ω : Type*} [MeasurableSpace Ω] (P :
               exact hω)
       _ = a * P {ω | a < Y ω}ᶜ := setLIntegral_const _ _
       _ ≤ a := by
-          calc a * P {ω | a < Y ω}ᶜ ≤ a * 1 := mul_le_mul_left' prob_le_one _
+          calc a * P {ω | a < Y ω}ᶜ ≤ a * 1 := mul_le_mul_right prob_le_one _
             _ = a := mul_one a
   calc ∫⁻ ω in {ω | a < Y ω}, Y ω ∂P + ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P
       ≤ P {ω | a < Y ω} + a := add_le_add h1 h2
@@ -1453,7 +1454,7 @@ private lemma lintegral_bvmPairDefect_tendsto
       intro x
       refine (hcontig h).1 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
       refine (hcontig x).2 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
-      simpa using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
+      simpa using! tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
         |>.congr fun n => (productMeasure_bvmBad_eq_zero hκ hM_joint
           (bvmLocalUnscale θ₀ n x) n).symm
     have hbad0 : Tendsto (fun n : ℕ => productMeasure M μ (bvmLocalUnscale θ₀ n h) n
@@ -1679,7 +1680,7 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
       lintegral_mono' (Measure.restrict_mono hsub le_rfl) le_rfl
     calc bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω
         ≤ bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n C ω :=
-          mul_le_mul_left' hmono _
+          mul_le_mul_right hmono _
       _ ≤ ∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume :=
           ennreal_inv_mul_mul_le _ _
   -- Step 2: Fubini.
@@ -1892,7 +1893,7 @@ private lemma bvmNumer_ne_top_and_tvDist_zero_ae
   have hcond : ((bvmLocalPosterior κ π θ₀ n ω)[|C]) = 0 := by
     rw [ProbabilityTheory.cond, Measure.restrict_eq_zero.mpr hpost, smul_zero]
   rw [hcond]
-  refine le_antisymm (iSup_le fun t => iSup_le fun _ => ?_) (zero_le _)
+  refine le_antisymm (iSup_le fun t => iSup_le fun _ => ?_) (zero_le)
   simp
 
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
@@ -2016,7 +2017,7 @@ theorem local_tv_tendsto
               * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
             ≤ (c₀ * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k))⁻¹
                 * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) :=
-              mul_le_mul_right' (ENNReal.inv_le_inv.mpr hc₀n) _
+              mul_le_mul_left (ENNReal.inv_le_inv.mpr hc₀n) _
           _ = c₀⁻¹ := by
               rw [ENNReal.mul_inv (Or.inl hc₀pos.ne') (Or.inr hq0), mul_assoc,
                 ENNReal.inv_mul_cancel hq0 hqT, mul_one]
@@ -2032,7 +2033,7 @@ theorem local_tv_tendsto
           * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ) with hIv
       calc cK * ((π (Metric.ball θ₀ (R / Real.sqrt n)))⁻¹
               * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) * Iv)
-          ≤ cK * (c₀⁻¹ * Iv) := mul_le_mul_left' (mul_le_mul_right' hratio _) _
+          ≤ cK * (c₀⁻¹ * Iv) := mul_le_mul_right (mul_le_mul_left hratio _) _
         _ = cK * c₀⁻¹ / min δ 1 * Iv * min δ 1 := by
             rw [div_eq_mul_inv,
               show cK * c₀⁻¹ * (min δ 1)⁻¹ * Iv * min δ 1

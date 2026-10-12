@@ -51,6 +51,7 @@ theorem pushforward_condProd_fst (P : Θ → Measure 𝓧) (K : Θ → Kernel �
     [∀ θ, SFinite (P θ)] [∀ θ, IsMarkovKernel (K θ)] :
     pushforward (condProd P K) Prod.fst = P := by
   funext θ
+  simp only [pushforward, Measure.map₀_of_measurable measurable_fst]
   exact Measure.fst_compProd (P θ) (K θ)
 
 /-- **Regression ↔ latent marginalization**: the response (second) marginal of the regression
@@ -61,6 +62,7 @@ theorem pushforward_condProd_snd (P : Θ → Measure 𝓧) (K : Θ → Kernel �
     [∀ θ, SFinite (P θ)] [∀ θ, IsSFiniteKernel (K θ)] :
     pushforward (condProd P K) Prod.snd = mix P K := by
   funext θ
+  simp only [pushforward, Measure.map₀_of_measurable measurable_snd]
   exact Measure.snd_compProd (P θ) (K θ)
 
 /-- A covariate-free (constant) response kernel makes the regression joint the independent
@@ -78,6 +80,7 @@ theorem pushforward_iid_eval (P : Θ → Measure 𝓧)
     [∀ θ, IsProbabilityMeasure (P θ)] {n : ℕ} (i : Fin n) :
     pushforward (iid P n) (Function.eval i) = P := by
   funext θ
+  simp only [pushforward, Measure.map₀_of_measurable (measurable_pi_apply i)]
   exact (measurePreserving_eval (fun _ : Fin n => P θ) i).map_eq
 
 -- **Batch-0 finding: the probability hypothesis is not decorative.** Mathlib's `Measure.pi`
@@ -95,8 +98,13 @@ theorem iid_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     (hT : Measurable T) [∀ θ, IsProbabilityMeasure (P θ)] (n : ℕ) :
     iid (pushforward P T) n = pushforward (iid P n) (fun x => T ∘ x) := by
   funext θ
-  have : IsProbabilityMeasure ((P θ).map T) := Measure.isProbabilityMeasure_map hT.aemeasurable
-  exact (Measure.pi_map_pi (fun _ : Fin n => hT.aemeasurable)).symm
+  have : IsProbabilityMeasure ((P θ).map T) := (by infer_instance)
+  have htuple : Measurable (fun x : Fin n → 𝓧 => T ∘ x) :=
+    Measurable.of_eval fun i => hT.comp (measurable_pi_apply i)
+  simp only [pushforward, iid, Measure.map₀_of_measurable hT,
+    Measure.map₀_of_measurable htuple]
+  exact (Measure.pi_map_pi (μ := fun _ : Fin n => P θ)
+    (fun _ : Fin n => hT.aemeasurable)).symm
 
 /-- Single-coordinate marginal of the infinite iid sequence model recovers the base model. -/
 theorem pushforward_iidSeq_eval (P : Θ → Measure 𝓧)
@@ -104,6 +112,7 @@ theorem pushforward_iidSeq_eval (P : Θ → Measure 𝓧)
     [∀ θ, IsProbabilityMeasure (P θ)] (i : ℕ) :
     pushforward (iidSeq P) (Function.eval i) = P := by
   funext θ
+  simp only [pushforward, Measure.map₀_of_measurable (measurable_pi_apply i)]
   exact Measure.infinitePi_map_eval (fun _ : ℕ => P θ) i
 
 /-- Finite windows of the infinite iid sequence model are the `n`-fold iid model. -/
@@ -114,6 +123,8 @@ theorem pushforward_iidSeq_window (P : Θ → Measure 𝓧)
   classical
   funext θ
   simp only [pushforward, iidSeq, iid]
+  rw [Measure.map₀_of_measurable (show Measurable (fun (x : ℕ → 𝓧) (i : Fin n) => x i) from
+    Measurable.of_eval fun i => measurable_pi_apply (i : ℕ))]
   refine (Measure.pi_eq fun s hs => ?_).symm
   have hpre : (fun (x : ℕ → 𝓧) (i : Fin n) => x i) ⁻¹' Set.univ.pi s
       = Set.pi ↑(Finset.range n) fun j => if h : j < n then s ⟨j, h⟩ else Set.univ := by

@@ -165,7 +165,7 @@ private lemma eq_uniformOfFinset_of_constant {α : Type*} [Fintype α]
     simpa [← mul_assoc, ENNReal.inv_mul_cancel hcard0 (ENNReal.natCast_ne_top _)]
       using h2
   ext a
-  rw [PMF.uniformOfFinset_apply]
+  erw [PMF.uniformOfFinset_apply]
   by_cases ha : a ∈ s
   · rw [if_pos ha, ← hval]
     exact hconst a ha a₀ ha₀

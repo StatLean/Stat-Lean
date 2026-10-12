@@ -294,9 +294,9 @@ private theorem jPos_add_le_of_add_eq {μ ν A B m : Measure S} [IsFiniteMeasure
     exact hsplit.symm
   -- on `D` the positive part is exactly the difference of the two masses
   have hjord : jPos μ ν (s ∩ D) + ν (s ∩ D) = μ (s ∩ D) := by
-    rw [jPos_apply _ _ hsD, ← hnuD, ← hmuD, ← lintegral_add_left (hfm.sub hgm)]
+    erw [jPos_apply _ _ hsD, ← hnuD, ← hmuD, ← lintegral_add_left (hfm.sub hgm)]
     refine setLIntegral_congr_fun hsD fun x hx => ?_
-    rw [tsub_add_eq_max, max_eq_left hx.2]
+    erw [Pi.sub_apply, tsub_add_eq_max, max_eq_left hx.2]
   -- the hypothesis `μ + B = ν + A`, read on `s ∩ D`
   have hkey : jPos μ ν (s ∩ D) + B (s ∩ D) = A (s ∩ D) := by
     have h1 : μ (s ∩ D) + B (s ∩ D) = ν (s ∩ D) + A (s ∩ D) := by
@@ -1029,7 +1029,7 @@ private theorem tv_le_of_zero {μ ν : Measure ℕ} (h : tvDist μ ν = 0) {s : 
   have h1 : μ s - ν s ≤ tvDist μ ν :=
     le_iSup₂ (f := fun t (_ : MeasurableSet t) => μ t - ν t) s hs
   rw [h] at h1
-  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le _))
+  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le))
 
 private theorem tNoErgodic : ¬ ∃ π : Measure ℕ, IsProbabilityMeasure π ∧
     Kernel.Invariant tK π ∧ IsGeometricallyErgodic tK π := by
@@ -1355,7 +1355,7 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       have h := ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (ENNReal.ofReal_lt_one.2 hαr)
       simpa using ENNReal.Tendsto.mul_const h (Or.inr hDne)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hmaj
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     calc (ENNReal.ofReal r)⁻¹ ^ n * tvDist ((κ ^ n) x) π
         ≤ (ENNReal.ofReal r)⁻¹ ^ n * (ENNReal.ofReal ᾱ ^ n * D) := by
           rw [← hDdef]; exact mul_le_mul_right (hbound x n) _
@@ -1545,7 +1545,7 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
   -- `P` is invariant: it is dominated by its own image, with the same total mass
   have hPQ : ∀ t, MeasurableSet t → t ⊆ E → P t ≤ (P.bind κ) t := by
     intro t ht htE
-    have hNt : N t = 0 := le_antisymm (hNE ▸ measure_mono htE) (zero_le _)
+    have hNt : N t = 0 := le_antisymm (hNE ▸ measure_mono htE) (zero_le)
     have e1 : π t + N t = π' t + P t := by
       have := congrArg (fun m => m t) hsum; simpa [Measure.add_apply] using this
     have e2 : π t + (N.bind κ) t = π' t + (P.bind κ) t := by
@@ -1567,13 +1567,13 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       have : (P.bind κ) E + (P.bind κ) Eᶜ ≤ (P.bind κ) E + 0 := by
         rw [h3, add_zero, h1]; exact h2
       exact (ENNReal.add_le_add_iff_left (measure_ne_top _ _)).1 this
-    exact le_antisymm h4 (zero_le _)
+    exact le_antisymm h4 (zero_le)
   have hPQ' : P ≤ P.bind κ := by
     refine Measure.le_iff.2 fun t ht => ?_
     have h1 : P t = P (t ∩ E) := by
       have := measure_inter_add_diff t hE (μ := P)
       have h0 : P (t \ E) = 0 := by
-        refine le_antisymm ?_ (zero_le _)
+        refine le_antisymm ?_ (zero_le)
         rw [Set.diff_eq]
         exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hPEc)
       rw [h0, add_zero] at this; exact this.symm
@@ -1591,8 +1591,8 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
   have hME : (N.bind κ) E = 0 := by
     have h1 : ∀ t, MeasurableSet t → t ⊆ Eᶜ → N t = (N.bind κ) t := by
       intro t ht htE
-      have hPt : P t = 0 := le_antisymm (hPEc ▸ measure_mono htE) (zero_le _)
-      have hQt : (P.bind κ) t = 0 := le_antisymm (hQEc ▸ measure_mono htE) (zero_le _)
+      have hPt : P t = 0 := le_antisymm (hPEc ▸ measure_mono htE) (zero_le)
+      have hQt : (P.bind κ) t = 0 := le_antisymm (hQEc ▸ measure_mono htE) (zero_le)
       have e1 : π t + N t = π' t + P t := by
         have := congrArg (fun m => m t) hsum; simpa [Measure.add_apply] using this
       have e2 : π t + (N.bind κ) t = π' t + (P.bind κ) t := by
@@ -1610,22 +1610,22 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     have : (N.bind κ) E ≤ 0 := by
       have h4 : (N.bind κ) E + N Set.univ ≤ 0 + N Set.univ := by rw [h3, zero_add]
       exact (ENNReal.add_le_add_iff_right (measure_ne_top N _)).1 h4
-    exact le_antisymm this (zero_le _)
+    exact le_antisymm this (zero_le)
   have hNinv : Kernel.Invariant κ N := by
     have hNQ : N ≤ N.bind κ := by
       refine Measure.le_iff.2 fun t ht => ?_
       have h1 : N t = N (t ∩ Eᶜ) := by
         have h := measure_inter_add_diff t hE.compl (μ := N)
         have h0 : N (t \ Eᶜ) = 0 := by
-          refine le_antisymm ?_ (zero_le _)
+          refine le_antisymm ?_ (zero_le)
           rw [Set.diff_eq, compl_compl]
           exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hNE)
         rw [h0, add_zero] at h; exact h.symm
       have h2 : N (t ∩ Eᶜ) ≤ (N.bind κ) (t ∩ Eᶜ) := by
         have hPt : P (t ∩ Eᶜ) = 0 :=
-          le_antisymm (hPEc ▸ measure_mono Set.inter_subset_right) (zero_le _)
+          le_antisymm (hPEc ▸ measure_mono Set.inter_subset_right) (zero_le)
         have hQt : (P.bind κ) (t ∩ Eᶜ) = 0 :=
-          le_antisymm (hQEc ▸ measure_mono Set.inter_subset_right) (zero_le _)
+          le_antisymm (hQEc ▸ measure_mono Set.inter_subset_right) (zero_le)
         have e1 : π (t ∩ Eᶜ) + N (t ∩ Eᶜ) = π' (t ∩ Eᶜ) + P (t ∩ Eᶜ) := by
           have := congrArg (fun m => m (t ∩ Eᶜ)) hsum; simpa [Measure.add_apply] using this
         have e2 : π (t ∩ Eᶜ) + (N.bind κ) (t ∩ Eᶜ) = π' (t ∩ Eᶜ) + (P.bind κ) (t ∩ Eᶜ) := by
@@ -1658,7 +1658,7 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     have hρEc : ρ Eᶜ = 0 := by
       have h := minorize_bind hmin P hE.compl
       rw [hPinv.def, hPEc] at h
-      have h0 : ENNReal.ofReal α * ρ Eᶜ * P {x | V x ≤ R} = 0 := le_antisymm h (zero_le _)
+      have h0 : ENNReal.ofReal α * ρ Eᶜ * P {x | V x ≤ R} = 0 := le_antisymm h (zero_le)
       rcases mul_eq_zero.1 h0 with h1 | h1
       · rcases mul_eq_zero.1 h1 with h2 | h2
         · exact absurd h2 (by simp [ENNReal.ofReal_eq_zero, not_le, hα0])
@@ -1667,7 +1667,7 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     have hρE : ρ E = 0 := by
       have h := minorize_bind hmin N hE
       rw [hNinv.def, hNE] at h
-      have h0 : ENNReal.ofReal α * ρ E * N {x | V x ≤ R} = 0 := le_antisymm h (zero_le _)
+      have h0 : ENNReal.ofReal α * ρ E * N {x | V x ≤ R} = 0 := le_antisymm h (zero_le)
       rcases mul_eq_zero.1 h0 with h1 | h1
       · rcases mul_eq_zero.1 h1 with h2 | h2
         · exact absurd h2 (by simp [ENNReal.ofReal_eq_zero, not_le, hα0])
@@ -1698,7 +1698,7 @@ theorem IsGeometricallyErgodic.of_pow {κ : Kernel S S} [IsMarkovKernel κ]
     have h := (hρ.tendsto x).comp hq
     simpa using ENNReal.Tendsto.const_mul h (Or.inr (by simp [hρ.rho_pos.ne']))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hmaj
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   set q := n / p with hqdef
   set r := n % p with hrdef
   have hnr : n = r + p * q := by rw [hrdef, hqdef, Nat.mod_add_div]
@@ -1749,7 +1749,7 @@ theorem measurable_shiftPush :
   rw [measurable_pi_iff]
   refine Fin.cases ?_ ?_
   · simpa [shiftPush] using measurable_snd
-  · exact fun i => by simpa [shiftPush] using (measurable_pi_apply i.castSucc).comp measurable_fst
+  · exact fun i => by simpa [shiftPush] using! (measurable_pi_apply i.castSucc).comp measurable_fst
 
 theorem nlARKernel_apply_eq {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f) (ν : Measure ℝ)
     [SFinite ν] (x : Fin (p + 1) → ℝ) :
@@ -1759,8 +1759,8 @@ theorem nlARKernel_apply_eq {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable
       (Fin.cons (f xe.1 + xe.2) (fun i => xe.1 i.castSucc) : Fin (p + 1) → ℝ) := by
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
-    · simpa using (hf.comp measurable_fst).add measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+    · simpa using! (hf.comp measurable_fst).add measurable_snd
+    · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
   rw [nlARKernel, Kernel.map_apply _ hmeas, Kernel.prod_apply]
   simp only [Kernel.id_apply, Kernel.const_apply]
   rw [Measure.dirac_prod, Measure.map_map hmeas measurable_prodMk_left]
@@ -1985,7 +1985,7 @@ theorem map_iterPush_succ (J : Set ℝ) (k : ℕ) (x : Fin (p + 1) → ℝ)
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
     · simpa using measurable_fst
-    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_snd
+    · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_snd
   have hmk : Measurable (iterPush (k + 1) x) := measurable_iterPush' _ x
   rw [← (measurePreserving_consBox J k).map_eq, Measure.map_map hmk hcons,
     Measure.map_apply (hmk.comp hcons) hA, Measure.prod_apply ((hmk.comp hcons) hA)]

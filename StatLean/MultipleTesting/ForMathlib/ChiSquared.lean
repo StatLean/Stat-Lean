@@ -128,8 +128,9 @@ private lemma integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 <
   have hmodel : IntegrableOn (fun x => x ^ (a - 1) * Real.exp (-((r - l) * x)))
       (Ioi (0 : ℝ)) volume := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a - 1) (b := r - l)
-      (by linarith) le_rfl (by linarith)
+      (by linarith) (by norm_num) (by linarith)
     refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
+    change x ^ (a - 1) * Real.exp (-(r - l) * x ^ (1 : ℝ)) = _
     rw [Real.rpow_one, neg_mul]
   have hIoi : IntegrableOn (fun x => Real.exp (l * x) * gammaPDFReal a r x) (Ioi 0) volume := by
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
@@ -243,7 +244,7 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
   have hWmeas : ∀ i, Measurable (W i) := fun i => (hmeas i).pow_const 2
   have hWindep : iIndepFun W μ := by
     have := hindep.comp (fun _ => fun x : ℝ => x ^ 2) (fun _ => by fun_prop)
-    simpa [Function.comp, hW] using this
+    simpa [Function.comp, hW] using! this
   have hSsum : S = ∑ i, W i := by
     funext ω; simp only [hS, hW, Finset.sum_apply]
   have hSmeas : Measurable S := by
@@ -288,7 +289,7 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     simpa only [id_eq] using integrable_exp_mul_chiSquared hn hl
   -- ASSEMBLE: equal char. functions ⇒ equal laws (imaginary axis lies in the MGF strip)
   haveI : IsProbabilityMeasure (Measure.map S μ) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+    (by infer_instance)
   refine MeasureTheory.Measure.ext_of_charFun (funext fun t => ?_)
   rw [← complexMGF_mul_I hSmeas.aemeasurable t, ← complexMGF_id_mul_I t]
   refine eqOn_complexMGF_of_mgf hA ?_

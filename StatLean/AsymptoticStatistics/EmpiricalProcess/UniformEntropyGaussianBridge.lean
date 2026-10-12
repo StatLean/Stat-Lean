@@ -28,10 +28,11 @@ private theorem outerLpNorm_eq_eLpNorm_of_measurable (Q : Measure Ω)
   have hpow : Measurable (fun x => ENNReal.ofReal |f x| ^ (2 : ℝ)) := by fun_prop
   have h : outerLpNorm Q f 2 = eLpNorm f (ENNReal.ofReal (2 : ℝ)) Q := by
     rw [outerLpNorm, outerExpectation_eq_lintegral hpow,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) ENNReal.ofReal_ne_top]
+      eLpNorm_eq_lintegral_rpow_enorm_toReal
+          (by norm_num) ENNReal.ofReal_ne_top hf.aestronglyMeasurable]
     simp only [ENNReal.toReal_ofReal (by norm_num : (0 : ℝ) ≤ 2), one_div,
       Real.enorm_eq_ofReal_abs]
-  convert h using 1
+  convert! h using 1
   all_goals norm_num
 
 private theorem outerLpNorm_mono_abs (Q : Measure Ω) (f g : Ω → ℝ)
@@ -79,10 +80,12 @@ private theorem uniformEntropy_exists_dudleyNet
             (hEnv.2 f₀ hf₀ x).trans (le_abs_self _))).trans_eq hc
         · exact bot_le
       have haf : (f : Ω → ℝ) =ᵐ[P] 0 :=
-        (eLpNorm_eq_zero_iff (hFmeas f f.2).aestronglyMeasurable (by norm_num)).mp hf0
+        (eLpNorm_eq_zero_iff (by norm_num)).mp hf0
       have haf₀ : f₀ =ᵐ[P] 0 :=
-        (eLpNorm_eq_zero_iff (hFmeas f₀ hf₀).aestronglyMeasurable (by norm_num)).mp hf₀0
-      rw [distL2, eLpNorm_eq_zero_of_ae_zero ((haf.sub haf₀).trans (by simp)),
+        (eLpNorm_eq_zero_iff (by norm_num)).mp hf₀0
+      rw [distL2, ← eLpNorm_two_eq_eLpNorm'
+        ((hFmeas f f.2).aestronglyMeasurable.sub (hFmeas f₀ hf₀).aestronglyMeasurable),
+        eLpNorm_eq_zero_of_ae_zero ((haf.sub haf₀).trans (by simp)),
         ENNReal.toReal_zero]
       positivity
     · have hs : Summable (fun j : ℕ => (1 / 2 : ℝ) ^ j * Real.sqrt (Real.log 2)) :=
@@ -114,12 +117,14 @@ private theorem uniformEntropy_exists_dudleyNet
       have hreal := ENNReal.toReal_strict_mono hrhs hfg
       rw [show outerLpNorm P ((f : Ω → ℝ) - (g : Ω → ℝ)) 2 =
           eLpNorm ((f : Ω → ℝ) - (g : Ω → ℝ)) 2 P by
-            simpa only [Pi.sub_apply] using
+            simpa only [Pi.sub_apply] using!
               outerLpNorm_eq_eLpNorm_of_measurable P _
                 ((hFmeas f f.2).sub (hFmeas g g.2)),
         ENNReal.toReal_mul,
         ENNReal.toReal_ofReal (by positivity)] at hreal
-      rw [distL2, zpow_neg, zpow_natCast]
+      rw [distL2, ← eLpNorm_two_eq_eLpNorm'
+        ((hFmeas f f.2).aestronglyMeasurable.sub (hFmeas g g.2).aestronglyMeasurable),
+        zpow_neg, zpow_natCast]
       calc
         (eLpNorm ((f : Ω → ℝ) - (g : Ω → ℝ)) 2 P).toReal
             < (1 / 2 : ℝ) ^ (j + J) * c.toReal := hreal
@@ -133,7 +138,7 @@ private theorem uniformEntropy_exists_dudleyNet
         _ = (2 ^ j : ℝ)⁻¹ := by simp
     · change Monotone (fun j => S.net P hQ (j + J))
       exact monotone_nat_of_le_succ (fun j => by
-        simpa only [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
+        simpa only [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using!
           S.nested P hQ (j + J))
     · have hs := S.entropySummable P hQ
       have htail : Summable (fun j : ℕ =>
@@ -303,6 +308,7 @@ private theorem ueNetApprox_stronglyMeasurable
 private def ueSkeleton {F : Set (Ω → ℝ)} (net : ℕ → Finset ↥F) : Set ↥F :=
   ⋃ j : ℕ, (↑(net j) : Set ↥F)
 
+set_option backward.isDefEq.respectTransparency false in
 private theorem ueSkeleton_spec
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
     {H : Ω → ℝ} (hHenv : EmpiricalProcess.IsEnvelope F H) (hH2 : MemLp H 2 P)
@@ -475,7 +481,7 @@ private theorem ueBridgePath_aeeq_coord
         gpX ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep f ω) 2
       (iidStdGaussian : Measure (ℕ → ℝ))) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hscale
-      (Filter.Eventually.of_forall (fun _ => zero_le _))
+      (Filter.Eventually.of_forall (fun _ => zero_le))
       (Filter.Eventually.of_forall (fun j => ?_))
     refine (eLpNorm_gpX_sub_le ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep
       (ueNetRep net hnet j f) f).trans ?_
@@ -485,10 +491,7 @@ private theorem ueBridgePath_aeeq_coord
   have htim : TendstoInMeasure (iidStdGaussian : Measure (ℕ → ℝ))
       (fun j => gpX ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep (ueNetRep net hnet j f)) atTop
       (gpX ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep f) :=
-    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num)
-      (fun j => (gpX_measurable ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep
-        (ueNetRep net hnet j f)).aestronglyMeasurable)
-      (gpX_measurable ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep f).aestronglyMeasurable help
+    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) help
   obtain ⟨ns, hns, hsub⟩ := htim.exists_seq_tendsto_ae
   filter_upwards [(ueSkeleton_spec hHenv hH2 hFmeas hHinf hHsep net hnet hmono
       hDudley).2.2, hsub] with ω hω hsubω
@@ -621,7 +624,7 @@ private theorem isTightMeasureSet_map_of_aestronglyMeasurable
   let Ys : Ξ → C := fun ξ => ⟨Y ξ, subset_closure (Set.mem_range_self ξ)⟩
   have hYs : StronglyMeasurable Ys := hY.measurable.subtype_mk.stronglyMeasurable
   letI : IsProbabilityMeasure (μ.map Ys) :=
-    Measure.isProbabilityMeasure_map hYs.aemeasurable
+    (by infer_instance)
   have hsrc : IsTightMeasureSet ({μ.map Ys} : Set (Measure C)) :=
     isTightMeasureSet_singleton
   have himg := hsrc.map (continuous_subtype_val : Continuous (fun z : C => (z : E)))
@@ -649,7 +652,7 @@ private theorem uniformEntropy_infinite_pBrownianBridge
   have hpath : AEStronglyMeasurable path (iidStdGaussian : Measure (ℕ → ℝ)) :=
     ueBridgePath_aestronglyMeasurable hHenv hH2 hFmeas hHinf hHsep net hnet hmono hDudley
   refine
-    { isProbabilityMeasure := Measure.isProbabilityMeasure_map hpath.aemeasurable
+    { isProbabilityMeasure := (by infer_instance)
       cov := ?_
       mean := ?_
       isGaussian_fdd := ?_
@@ -693,7 +696,7 @@ private theorem uniformEntropy_infinite_pBrownianBridge
     rw [hmap, isonormal_map_eq_gaussianReal, integral_id_gaussianReal]
   · intro m φ
     have hR : Measurable (fun z : LinfF F => (fun k => z (φ k))) :=
-      measurable_pi_lambda _ (fun k => (continuous_linfF_eval (φ k)).measurable)
+      Measurable.of_eval (fun k => (continuous_linfF_eval (φ k)).measurable)
     have hae : (fun ω => (fun k => path ω (φ k))) =ᵐ[
         (iidStdGaussian : Measure (ℕ → ℝ))]
         (fun ω => (fun k => isonormal
@@ -716,7 +719,7 @@ private theorem uniformEntropy_infinite_pBrownianBridge
       (isonormal_hasGaussianLaw_tuple
         (gpBasis ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep)
         (fun k => gpEmbed ⟨H, hHenv, hH2⟩ hFmeas (φ k))).congr hae.symm
-    refine ⟨?_⟩
+    refine ⟨hR.aemeasurable, ?_⟩
     rw [AEMeasurable.map_map_of_aemeasurable hR.aemeasurable hpath.aemeasurable]
     exact htuple.isGaussian_map
   · exact isTightMeasureSet_map_of_aestronglyMeasurable
@@ -1062,7 +1065,7 @@ private theorem weakConvergesOuter_ueFiniteProj
       (multivariateGaussian 0 (marginalCovMatrix P φ')) := by
     have hlim :
         (⟨(multivariateGaussian 0 (marginalCovMatrix P φ')).map Y,
-          Measure.isProbabilityMeasure_map htid.aemeasurable_limit⟩ :
+          (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin (Fintype.card ↥(net m))))) =
         ⟨multivariateGaussian 0 (marginalCovMatrix P φ'), inferInstance⟩ :=
       Subtype.ext hY.map_eq
@@ -1265,7 +1268,7 @@ private theorem ueLimit_proj_error
     have hsub : Tendsto (fun m => f (ueFiniteProj net hnet m z) - f z)
         atTop (nhds (0 : ℝ)) := by
       simpa using hf.sub (tendsto_const_nhds (x := f z))
-    simpa [Φ] using (continuous_abs.tendsto (0 : ℝ)).comp hsub
+    simpa [Φ] using! (continuous_abs.tendsto (0 : ℝ)).comp hsub
 
 private theorem ueEmpirical_readout_tail_outer
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
@@ -1387,7 +1390,7 @@ private theorem ueEmpirical_readout_tail_outer
             (ENNReal.ofReal (2 * ‖f‖)) ENNReal.ofReal_ne_top
             ({ξ | ε < ‖𝔾 n ξ - ueFiniteProj net hnet m (𝔾 n ξ)‖}.indicator
               (1 : Ξ → ℝ≥0∞))
-          simpa only [Pi.smul_apply, smul_eq_mul, S, Measure.outerMeasureStar] using hc
+          simpa only [Pi.smul_apply, smul_eq_mul, S, Measure.outerMeasureStar] using! hc
     change (outerExpectation μ (fun ξ => ENNReal.ofReal
       |f (𝔾 n ξ) - f (ueFiniteProj net hnet m (𝔾 n ξ))|)).toReal ≤ _
     have hfin : ENNReal.ofReal (Kr * ε) + ENNReal.ofReal (2 * ‖f‖) * S m n ≠ ⊤ := by
@@ -1455,9 +1458,9 @@ private theorem ueEmpirical_readout_tail_outer
       atTop (nhds (Kr * ε)) := by
     have hzero : Tendsto (fun m => (limsup (fun n => S m n) atTop).toReal)
         atTop (nhds 0) := by
-      simpa using (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp hS3'
+      simpa using! (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp hS3'
     have hh := (hψcont.tendsto 0).comp hzero
-    simpa [ψ] using hh
+    simpa [ψ] using! hh
   have hlt : Kr * ε < ε' := lt_trans hKε (by linarith)
   have hclose : ∀ᶠ m in atTop,
       ψ ((limsup (fun n => S m n) atTop).toReal) < ε' :=
@@ -1525,7 +1528,7 @@ private theorem ueWeakConvergesOuter_readout
         (f (ueFiniteProj net hnet m (𝔾 n ξ)) + ‖f‖))).toReal -
           ‖f‖ * (μ Set.univ).toReal) atTop (nhds (Lproj m))
     rw [← hmap]
-    convert hS2 using 2
+    convert! hS2 using 2
   · have hS4 := ueLimit_proj_error net hnet nu hnu f
     letI : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
     rw [tendsto_iff_dist_tendsto_zero]

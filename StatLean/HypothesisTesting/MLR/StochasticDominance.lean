@@ -282,7 +282,7 @@ theorem cdf_le_iff_exists_monotone_coupling
     -- `exists_monotone_coupling_of_cdf_le`.)
     haveI := isProbabilityMeasure_unitUniform
     refine ⟨(volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv,
-      Measure.isProbabilityMeasure_map measurable_unitParamInv.aemeasurable,
+      (by infer_instance),
       (fun v => quantile (⇑(cdf μ₀)) (unitParam v)),
       (fun v => quantile (⇑(cdf μ₁)) (unitParam v)),
       monotone_quantile_unitParam μ₀, monotone_quantile_unitParam μ₁, ?_,

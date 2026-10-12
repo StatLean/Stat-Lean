@@ -187,7 +187,7 @@ private lemma uniform01_section_mul (henv : ∀ y, p y ≤ c * q y) (hc0 : c ≠
     (hcT : c ≠ ∞) {y : 𝓧} (hy : q y ≠ ∞) :
     q y * uniform01 {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y} = c⁻¹ * p y := by
   rcases eq_or_ne (q y) 0 with h0 | h0
-  · have hp0 : p y = 0 := le_antisymm (by simpa [h0] using henv y) (zero_le _)
+  · have hp0 : p y = 0 := le_antisymm (by simpa [h0] using henv y) (zero_le)
     simp [h0, hp0]
   · have hA0 : c * q y ≠ 0 := mul_ne_zero hc0 h0
     have hAT : c * q y ≠ ∞ := ENNReal.mul_ne_top hcT hy
@@ -330,7 +330,7 @@ theorem rejectionSampling_conditionalLaw
     (ProbabilityTheory.cond ((ν.withDensity q).prod uniform01)
         (rejectionAccept p q c)).map Prod.fst
       = ν.withDensity p := by
-  rw [ProbabilityTheory.cond, Measure.map_smul,
+  rw [ProbabilityTheory.cond, Measure.map_smul _ measurable_fst.aemeasurable,
     rejectionSampling_restrict_map hp hq hq1 henv hc0 hcT,
     rejectionSampling_acceptProb hp hq hq1 hp1 henv hc0 hcT, smul_smul,
     inv_inv, ENNReal.mul_inv_cancel hc0 hcT, one_smul]

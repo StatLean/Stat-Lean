@@ -64,7 +64,7 @@ lemma measurable_bvmTruncScore
     (hsc : Measurable sc) (L : ℝ) :
     Measurable (bvmTruncScore sc L) := by
   unfold bvmTruncScore
-  refine (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ fun i => ?_)
+  refine (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval fun i => ?_)
   exact measurable_const.max
     (measurable_const.min (((measurable_pi_apply i).comp
       (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hsc))
@@ -750,8 +750,9 @@ theorem truncScore_separation
   have hintv : ∀ u : EuclideanSpace ℝ (Fin k),
       Integrable (fun x => ⟪u, sc x⟫ • bvmTruncScore sc L x) (bvmOneObs M μ θ₀) := by
     intro u
-    have hmeas : Measurable fun x => ⟪u, sc x⟫ • bvmTruncScore sc L x :=
-      (Measurable.const_inner (c := u) hsc).smul (measurable_bvmTruncScore hsc L)
+    have hmeas : Measurable fun x => ⟪u, sc x⟫ • bvmTruncScore sc L x := by
+      simpa only [Pi.smul_apply] using!
+        (Measurable.const_inner (𝕜 := ℝ) (c := u) hsc).smul (measurable_bvmTruncScore hsc L)
     have hb : Integrable (fun x => Real.sqrt k * L * (‖u‖ * (1 + ‖sc x‖ ^ 2)))
         (bvmOneObs M μ θ₀) :=
       (((integrable_const (1 : ℝ)).add hsq).const_mul ‖u‖).const_mul (Real.sqrt k * L)
@@ -779,7 +780,7 @@ theorem truncScore_separation
       Integrable (fun x => (⟪u, sc x⟫ : ℝ) ^ 2) (bvmOneObs M μ θ₀) := by
     intro u
     have hmeas : Measurable fun x => (⟪u, sc x⟫ : ℝ) ^ 2 :=
-      (Measurable.const_inner (c := u) hsc).pow_const 2
+      (Measurable.const_inner (𝕜 := ℝ) (c := u) hsc).pow_const 2
     refine (hsq.const_mul (‖u‖ ^ 2)).mono' hmeas.aestronglyMeasurable
       (Filter.Eventually.of_forall fun x => ?_)
     have h1 : |⟪u, sc x⟫| ≤ ‖u‖ * ‖sc x‖ := abs_real_inner_le_norm u (sc x)

@@ -136,7 +136,7 @@ theorem oneDim_continuous_zEstimator_consistent
       + P {ω | η ≤ ‖Ψn n ω (θ₀ + δ) - Ψ (θ₀ + δ)‖}) atTop (𝓝 0) := by
     simpa using T_lo.add T_hi
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
 
 /-- **`Θ = ℝ` specialization** of `oneDim_continuous_zEstimator_consistent`: interiority
 of `θ₀` is automatic (`Set.univ ∈ 𝓝 θ₀`), each `Ψn n ω` is continuous on all of `ℝ`,

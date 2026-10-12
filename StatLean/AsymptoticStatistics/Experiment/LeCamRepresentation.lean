@@ -162,7 +162,7 @@ theorem joint_weak_subsequence_kernel
   haveI h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n => inferInstance
   haveI h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n => inferInstance
   haveI h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
-    Measure.isProbabilityMeasure_map (hΔ_meas n).aemeasurable
+    (by infer_instance)
   -- First marginal of the joint kernel-bind equals `Tseq` (kernel-bind of `κ`).
   -- Proof: `(P^n).bind (κ_n ×ₖ det) = (κ_n ×ₖ det) ∘ₘ P^n`. Then
   -- `((κ_n ×ₖ det) ∘ₘ P^n).map Prod.fst = (Kernel.map (κ_n ×ₖ det) Prod.fst) ∘ₘ P^n`
@@ -496,8 +496,7 @@ theorem slutsky_bridge_of_lanResidual_kernel
       (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) *
         ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫)) with hν_def
   haveI hν_prob : IsProbabilityMeasure ν := by
-    refine Measure.isProbabilityMeasure_map ?_
-    fun_prop
+    infer_instance
   -- Measurability of the inner-product map `δ ↦ ⟨h, δ⟩`.
   have h_inner_meas : Measurable (fun v : AsymptoticRepresentation.Θ k => ⟪h, v⟫) :=
     (continuous_const.inner continuous_id).measurable
@@ -742,7 +741,7 @@ theorem limit_law_under_h_kernel
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk (hg_meas.comp measurable_snd)
   haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+    (by infer_instance)
   -- Measurability of `logLikelihood`.
   have hL_meas : ∀ n, Measurable (AsymptoticRepresentation.logLikelihood M θ₀ h n) :=
     fun n => AsymptoticRepresentation.logLikelihood_measurable M θ₀ h n
@@ -1600,7 +1599,7 @@ theorem LAN_representation_along_subseq
     measurable_fst.prodMk
       (((continuous_const.inner continuous_id).measurable.comp measurable_snd).sub_const _)
   haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+    (by infer_instance)
   -- UI of `exp(logLikelihood)` along φ (full sequence + StrictMono.id_le).
   -- Derive the contiguity-footing companions internally from `hDQM` + `hPDF`
   -- (replaces the exact change-of-measure identity that required common support).
@@ -1713,7 +1712,7 @@ theorem LAN_representation_along_subseq
   haveI hL_h_prob : IsProbabilityMeasure
       (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
         (Real.exp (⟪h, p.2⟫ - c))))) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   -- The Gaussian-shift bind equals the tilted-marginal target.
   have h_gauss_eq :
       Measure.map Prod.fst

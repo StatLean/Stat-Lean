@@ -67,9 +67,9 @@ theorem tightMeasure_eq_of_finiteCoordinate_laws
   letI : IsProbabilityMeasure ν := hνprob
   letI : IsProbabilityMeasure κ := hκprob
   letI : IsProbabilityMeasure ν0 :=
-    Measure.isProbabilityMeasure_map embed0.continuous.aemeasurable
+    (by infer_instance)
   letI : IsProbabilityMeasure κ0 :=
-    Measure.isProbabilityMeasure_map embed0.continuous.aemeasurable
+    (by infer_instance)
   have hν0tight : IsTightMeasureSet ({ν0} : Set (Measure (D × E0))) := by
     simpa only [ν0, Set.image_singleton] using hνtight.map embed0.continuous
   have hκ0tight : IsTightMeasureSet ({κ0} : Set (Measure (D × E0))) := by

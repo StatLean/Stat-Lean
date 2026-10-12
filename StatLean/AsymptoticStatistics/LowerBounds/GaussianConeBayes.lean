@@ -312,8 +312,8 @@ private theorem translatedGaussian_eq_multivariateGaussian_of_fullSpan
   rw [charFun_eq_charFunDual_toDualMap, charFunDual_eq_charFun_map_one,
     show ν.map (InnerProductSpace.toDualMap ℝ _ u) =
         gaussianReal (inner ℝ u (h0 : EuclideanSpace ℝ (Fin m)))
-          ⟨c ^ 2 * ‖us‖ ^ 2, mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩ by
-      simpa [ν, InnerProductSpace.toDualMap_apply_apply] using hmap,
+          (NNReal.mk (c ^ 2 * ‖us‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _))) by
+      simpa [ν, InnerProductSpace.toDualMap_apply_apply] using! hmap,
     charFun_gaussianReal, charFun_multivariateGaussian hcov]
   norm_num
   have hunorm : ‖(us : EuclideanSpace ℝ (Fin m))‖ = ‖u‖ := rfl
@@ -405,7 +405,7 @@ private theorem cone_ball_of_radius
       EuclideanSpace ℝ (Fin m))) (v : EuclideanSpace ℝ (Fin m)) < r
     have hyd : dist (y : EuclideanSpace ℝ (Fin m))
         ((t • v : ↥(effectiveSpan C)) : EuclideanSpace ℝ (Fin m)) < R := by
-      simpa only [Metric.mem_ball] using hy
+      simpa only [Metric.mem_ball] using! hy
     calc
       dist (t⁻¹ • (y : EuclideanSpace ℝ (Fin m)))
           (v : EuclideanSpace ℝ (Fin m)) =
@@ -424,7 +424,7 @@ private theorem cone_ball_of_radius
   have hsmall : ((t⁻¹ • y : ↥(effectiveSpan C)) :
       EuclideanSpace ℝ (Fin m)) ∈ C := hv hy'
   have hscaled := hcone _ hsmall t ht.le
-  simpa [smul_smul, ht.ne'] using hscaled
+  simpa [smul_smul, ht.ne'] using! hscaled
 
 private theorem multivariateGaussian_ball_compl_translate
     (h0 : EuclideanSpace ℝ (Fin m))
@@ -481,28 +481,28 @@ private theorem isTranslatedIsotropicGaussian_unique
       gaussianReal
         (@inner ℝ _ _ (us : EuclideanSpace ℝ (Fin m))
           (h0 : EuclideanSpace ℝ (Fin m)))
-        ⟨c ^ 2 * ‖us‖ ^ 2, mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩ := by
+        (NNReal.mk (c ^ 2 * ‖us‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _))) := by
     calc
       Measure.map (InnerProductSpace.toDualMap ℝ _ u) ν =
           Measure.map (fun x : EuclideanSpace ℝ (Fin m) =>
             @inner ℝ _ _ (us : EuclideanSpace ℝ (Fin m)) x) ν := by
         apply Measure.map_congr
         filter_upwards [hνS] with x hx
-        simpa only [InnerProductSpace.toDualMap_apply_apply] using
+        simpa only [InnerProductSpace.toDualMap_apply_apply] using!
           (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hν.2.2 us
   have hμmap : Measure.map (InnerProductSpace.toDualMap ℝ _ u) μ =
       gaussianReal
         (@inner ℝ _ _ (us : EuclideanSpace ℝ (Fin m))
           (h0 : EuclideanSpace ℝ (Fin m)))
-        ⟨c ^ 2 * ‖us‖ ^ 2, mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩ := by
+        (NNReal.mk (c ^ 2 * ‖us‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _))) := by
     calc
       Measure.map (InnerProductSpace.toDualMap ℝ _ u) μ =
           Measure.map (fun x : EuclideanSpace ℝ (Fin m) =>
             @inner ℝ _ _ (us : EuclideanSpace ℝ (Fin m)) x) μ := by
         apply Measure.map_congr
         filter_upwards [hμS] with x hx
-        simpa only [InnerProductSpace.toDualMap_apply_apply] using
+        simpa only [InnerProductSpace.toDualMap_apply_apply] using!
           (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hμ.2.2 us
   calc
@@ -515,7 +515,7 @@ private theorem isTranslatedIsotropicGaussian_unique
     _ = charFun (gaussianReal
         (@inner ℝ _ _ (us : EuclideanSpace ℝ (Fin m))
           (h0 : EuclideanSpace ℝ (Fin m)))
-        ⟨c ^ 2 * ‖us‖ ^ 2, mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩) 1 := by
+        (NNReal.mk (c ^ 2 * ‖us‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))) 1 := by
       rw [hνmap]
     _ = charFun (Measure.map
         (InnerProductSpace.toDualMap ℝ (EuclideanSpace ℝ (Fin m)) u) μ) 1 := by
@@ -547,7 +547,7 @@ private theorem intrinsicGaussian_spec
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
   letI : BorelSpace ↥S := hSborel
   letI : IsProbabilityMeasure (stdGaussian ↥S) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSborel
+    inferInstance
   letI : IsGaussian (stdGaussian ↥S) :=
     @isGaussian_stdGaussian _ _ _ _ _ hSborel
   let affineInclusion : ↥S → EuclideanSpace ℝ (Fin m) :=
@@ -557,7 +557,7 @@ private theorem intrinsicGaussian_spec
     (stdGaussian ↥S).map affineInclusion
   change IsTranslatedIsotropicGaussian C ν h0 c
   haveI : IsProbabilityMeasure ν :=
-    Measure.isProbabilityMeasure_map haffine.aemeasurable
+    (by infer_instance)
   refine ⟨inferInstance, ?_, ?_⟩
   · have hSclosed : IsClosed (S : Set (EuclideanSpace ℝ (Fin m))) :=
       S.closed_of_finiteDimensional
@@ -583,7 +583,7 @@ private theorem intrinsicGaussian_spec
       simpa only [L, innerSL_apply_norm] using
         (@variance_dual_stdGaussian _ _ _ _ _ hSborel (innerSL ℝ u))
     have hbase : (stdGaussian ↥S).map L =
-        gaussianReal 0 ⟨‖u‖ ^ 2, sq_nonneg _⟩ := by
+        gaussianReal 0 (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _)) := by
       rw [IsGaussian.map_eq_gaussianReal L, hmean, hvar]
       congr 2
       ext
@@ -612,7 +612,7 @@ private theorem intrinsicGaussian_spec
           congr 1]
     rw [← Measure.map_map hq hL, hbase]
     simp only [q]
-    change (gaussianReal 0 ⟨‖u‖ ^ 2, sq_nonneg _⟩).map
+    change (gaussianReal 0 (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _))).map
         ((fun x : ℝ => x + @inner ℝ _ _
           (u : EuclideanSpace ℝ (Fin m))
           (h0 : EuclideanSpace ℝ (Fin m))) ∘ fun x : ℝ => c * x) = _
@@ -784,7 +784,7 @@ private theorem effectiveScale_eq_opNorm
   · unfold effectiveScale
     apply csSup_le hRne
     rintro r ⟨x, hx, rfl⟩
-    simpa [Real.norm_eq_abs] using f.le_opNorm_of_le hx
+    simpa [Real.norm_eq_abs] using! f.le_opNorm_of_le hx
   · apply f.opNorm_le_bound
     · exact le_csSup hRbdd ⟨(0 : ↥(effectiveSpan C)), by simp, by simp⟩
     · intro x
@@ -857,7 +857,7 @@ private theorem scalarGaussian_lintegral_eq_fin1 {k : ℕ}
     (F : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ)
     (g : ℝ → ℝ≥0∞) (hg : Measurable g) :
     ∫⁻ u, g u ∂(gaussianReal 0
-        ⟨ContinuousLinearMap.opNorm F ^ 2, sq_nonneg _⟩) =
+        (NNReal.mk (ContinuousLinearMap.opNorm F ^ 2) (sq_nonneg _))) =
       ∫⁻ y : EuclideanSpace ℝ (Fin 1), g (y 0)
         ∂(multivariateGaussian 0 (scalarMatrix F * (scalarMatrix F).transpose)) := by
   let Q := scalarMatrix F * (scalarMatrix F).transpose
@@ -869,11 +869,11 @@ private theorem scalarGaussian_lintegral_eq_fin1 {k : ℕ}
   have hMP : MeasurePreserving
       (fun y : EuclideanSpace ℝ (Fin 1) => y 0)
       (multivariateGaussian 0 Q)
-      (gaussianReal 0 ⟨ContinuousLinearMap.opNorm F ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (ContinuousLinearMap.opNorm F ^ 2) (sq_nonneg _))) := by
     have hbase := measurePreserving_eval_multivariateGaussian
       (μ := (0 : EuclideanSpace ℝ (Fin 1))) (S := Q) hQpsd (i := (0 : Fin 1))
     have hvar : (Q 0 0).toNNReal =
-        ⟨ContinuousLinearMap.opNorm F ^ 2, sq_nonneg _⟩ := by
+        (NNReal.mk (ContinuousLinearMap.opNorm F ^ 2) (sq_nonneg _)) := by
       rw [hentry]
       apply NNReal.eq
       simp only [Real.coe_toNNReal _ (sq_nonneg _), NNReal.coe_mk]
@@ -941,9 +941,9 @@ private theorem multivariateGaussian_coordinate_prod
   letI : BorelSpace ↥S := hSborel
   letI : BorelSpace ↥Sᗮ := hSperpborel
   letI : IsProbabilityMeasure (stdGaussian ↥S) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSborel
+    inferInstance
   letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSperpborel
+    inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
   have he : Measurable e := by fun_prop
@@ -1013,7 +1013,7 @@ private theorem scalarCoordinateKernel_markov
   let hSperpborel : BorelSpace ↥Sᗮ := Subtype.borelSpace _
   letI : BorelSpace ↥Sᗮ := hSperpborel
   letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSperpborel
+    inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
   let η : Kernel (EuclideanSpace ℝ (Fin r)) ↥Sᗮ :=
@@ -1059,9 +1059,9 @@ private theorem scalarCoordinateKernel_bind
   letI : BorelSpace ↥S := hSborel
   letI : BorelSpace ↥Sᗮ := hSperpborel
   letI : IsProbabilityMeasure (stdGaussian ↥S) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSborel
+    inferInstance
   letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
-    @isProbabilityMeasure_stdGaussian _ _ _ _ _ hSperpborel
+    inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
   let μ := multivariateGaussian (e h) (1 : Matrix (Fin r) (Fin r) ℝ)
@@ -1226,7 +1226,7 @@ theorem exists_conePrior_bayes_lower_bound
       IsProbabilityMeasure (restrictedTranslatedGaussianPrior C h0 c) ∧
       restrictedTranslatedGaussianPrior C h0 c C = 1 ∧
       (∫⁻ u, ℓ u ∂(gaussianReal 0
-        ⟨effectiveScale C A ^ 2, sq_nonneg _⟩)) ≤
+        (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _)))) ≤
         measurableBayesRisk (restrictedTranslatedGaussianPrior C h0 c) A ℓ + ε := by
   let S := effectiveSpan C
   letI : FiniteDimensional ℝ ↥S :=
@@ -1239,7 +1239,7 @@ theorem exists_conePrior_bayes_lower_bound
   have hL_bowl : BowlShaped L := scalarLossFin1_bowl ℓ _hbowl
   have hL_lsc : LowerSemicontinuous L := scalarLossFin1_lsc ℓ _hlsc
   let target : ℝ≥0∞ := ∫⁻ u, ℓ u ∂(gaussianReal 0
-    ⟨effectiveScale C A ^ 2, sq_nonneg _⟩)
+    (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _)))
   let targetVec : ℝ≥0∞ :=
     ∫⁻ y, L y ∂(multivariateGaussian 0 (AF * AF.transpose))
   have htarget_eq : target = targetVec := by
@@ -1253,8 +1253,8 @@ theorem exists_conePrior_bayes_lower_bound
   have htarget_le : target ≤ B := by
     dsimp [target]
     calc
-      ∫⁻ u, ℓ u ∂(gaussianReal 0 ⟨effectiveScale C A ^ 2, sq_nonneg _⟩) ≤
-          ∫⁻ _u, B ∂(gaussianReal 0 ⟨effectiveScale C A ^ 2, sq_nonneg _⟩) :=
+      ∫⁻ u, ℓ u ∂(gaussianReal 0 (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _))) ≤
+          ∫⁻ _u, B ∂(gaussianReal 0 (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _))) :=
         lintegral_mono fun u => hB u
       _ = B := by simp
   have htarget_top : target ≠ ∞ := ne_of_lt (htarget_le.trans_lt hBtop)
@@ -1421,7 +1421,7 @@ theorem conePrior_bayes_lower_bound
       IsProbabilityMeasure (restrictedTranslatedGaussianPrior C h0 c) ∧
       restrictedTranslatedGaussianPrior C h0 c C = 1 ∧
       (∫⁻ u, ℓ u ∂(gaussianReal 0
-        ⟨effectiveScale C A ^ 2, sq_nonneg _⟩))
+        (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _))))
       ≤ measurableBayesRisk (restrictedTranslatedGaussianPrior C h0 c) A ℓ + ε := by
   exact exists_conePrior_bayes_lower_bound C _h0 _hconv _hcone A ℓ
     _hbowl _hlsc _hbdd ε _hε

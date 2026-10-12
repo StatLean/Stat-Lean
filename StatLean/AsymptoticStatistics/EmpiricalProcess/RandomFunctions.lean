@@ -441,7 +441,7 @@ theorem donsker_random_function_consistency
         (fun n => by simpa using h_l2_int n)
         (by simpa using h_l2_consistent) hδ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds htail
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     calc
       μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) f₀}
           ≤ μ.outerMeasureStar {ξ | δ ≤ distL2 P (f_hat n ξ) f₀} :=
@@ -514,10 +514,10 @@ theorem empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp
       (empiricalProcessMarginalGaussian P f) := by
     haveI : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f) := by
       rw [empiricalProcessMarginalGaussian]
-      exact Measure.isProbabilityMeasure_map L.continuous.measurable.aemeasurable
+      exact (by infer_instance)
     have hlim_eq :
         (⟨(ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P ![f])).map (L ∘ Y),
-            Measure.isProbabilityMeasure_map hscalar_tend.aemeasurable_limit⟩ :
+            (by infer_instance)⟩ :
               ProbabilityMeasure ℝ) =
           ⟨empiricalProcessMarginalGaussian P f, inferInstance⟩ :=
       Subtype.ext hlimit_map
@@ -584,8 +584,7 @@ theorem donsker_random_function_consistency_weakConvergesOuter
         (empiricalProcessMarginalGaussian P f₀) := by
   haveI : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f₀) := by
     unfold empiricalProcessMarginalGaussian
-    exact Measure.isProbabilityMeasure_map
-      (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)).continuous.measurable.aemeasurable
+    exact (by infer_instance)
   have hfixed := empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp P f₀
     hf₀_meas hf₀ μ X hX_meas hX_iindep hX_idem hX_law
   refine WeakConvergesOuter.slutsky_of_tendstoInOuterProbability_dist hfixed ?_

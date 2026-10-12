@@ -153,7 +153,7 @@ theorem isRegularEstimator_of_narrow_explicit
   have h_inv_to_zero : Tendsto t atTop (𝓝 0) := by
     have h_sqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa [ht_def] using h_sqrt.inv_tendsto_atTop
+    simpa [ht_def] using! h_sqrt.inv_tendsto_atTop
   have h_inv_ne : ∀ᶠ n : ℕ in atTop, t n ≠ 0 := by
     filter_upwards [Filter.eventually_ge_atTop 1] with n hn
     have hpos : (0 : ℝ) < Real.sqrt n :=
@@ -394,9 +394,26 @@ theorem isRegularEstimator_of_narrow
             Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))))
       L := by
   obtain ⟨h_score, h_regular⟩ := Classical.choose_spec h_narrow
+  have h_regular_map (g : ↥(L2ZeroMean P))
+      (hg : (g : ↥(L2ZeroMean P)) ∈ Submodule.span ℝ T_set.carrier) :
+      WeakConverges
+        (fun n : ℕ =>
+          (Measure.pi (fun _ : Fin n =>
+            ((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹))).map
+            (fun X : Fin n → Ω => Real.sqrt n *
+              (T_n n X - ψ (((Classical.choose h_narrow) g hg).curve
+                ((Real.sqrt n)⁻¹))))) L := by
+    have hweak := h_regular g hg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n =>
+        ((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ
+        (((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   exact isRegularEstimator_of_narrow_explicit
     (IF_eff := IF_eff) (hψ := hψ) (_hEIF := hEIF)
     (chosenFamily := Classical.choose h_narrow)
-    h_chosen_dom h_score h_regular hT_meas g hg γ hscore h_dom_γ
+    h_chosen_dom h_score h_regular_map hT_meas g hg γ hscore h_dom_γ
 
 end AsymptoticStatistics.LowerBounds.RegularEstimator

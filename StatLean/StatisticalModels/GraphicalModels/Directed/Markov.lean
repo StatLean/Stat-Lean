@@ -659,7 +659,7 @@ theorem directedMarkov_tfae (D : DAG V) [DecidableRel D.Adj]
   have hfin : ∀ y : V → α, p y ≠ ∞ := by
     intro y
     have hle : p y ≤ ∑ z : V → α, p z :=
-      Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ y)
+      Finset.single_le_sum (f := p) (fun i _ => zero_le) (Finset.mem_univ y)
     rw [hnorm] at hle
     exact ne_top_of_le_ne_top ENNReal.one_ne_top hle
   have hden0 : ∀ (C : Finset V) (x : V → α), blockMarginal C p x ≠ 0 :=

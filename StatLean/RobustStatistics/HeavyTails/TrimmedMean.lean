@@ -119,7 +119,7 @@ private theorem tail_tendsto_atBot (P : Measure ℝ) [IsProbabilityMeasure P] :
     (fun _ _ h _ hx => le_trans h hx)
   rw [hU, measure_univ] at h
   have := (ENNReal.tendsto_toReal (by simp)).comp h
-  simpa [Function.comp, measureReal_def] using this
+  simpa [Function.comp, measureReal_def] using! this
 
 /-- Right-tail mass tends to `0` at `+∞` (continuity from above: `⋂ M, [M, ∞) = ∅`). -/
 private theorem tail_tendsto_atTop (P : Measure ℝ) [IsProbabilityMeasure P] :
@@ -134,7 +134,7 @@ private theorem tail_tendsto_atTop (P : Measure ℝ) [IsProbabilityMeasure P] :
     (fun _ _ h _ hx => le_trans h hx) ⟨0, measure_ne_top P _⟩
   rw [hI, measure_empty] at h
   have := (ENNReal.tendsto_toReal (by simp)).comp h
-  simpa [Function.comp, measureReal_def] using this
+  simpa [Function.comp, measureReal_def] using! this
 
 /-- Left-continuity of the right-tail mass, in the only form used: if the level `1 − p` is
 attained strictly to the left of `Q`, it is attained at `Q`. -/
@@ -381,8 +381,8 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
       (X := fun i ξ => A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) (μ := μprob)
       (fun i => (hgm.comp (hY_meas i)))
       (hY_indep.comp (fun _ => fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x - q)
-        (fun _ => hgm)) hB hn (by rw [← NNReal.coe_pos]; norm_num)
-      (by rw [← NNReal.coe_pos]; simpa using hqq) hs
+        (fun _ => hgm)) hB hn (by change (0 : ℝ) < 1 / 3; norm_num)
+      (by change (0 : ℝ) < q * (1 - q); exact hqq) hs
     have hsub : {ξ : Ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
         ⊆ {ξ : Ξ | s < (∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)) / (n : ℝ)} := by
       intro ξ hξ
@@ -391,7 +391,7 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
       nlinarith [show (0:ℝ) < n by exact_mod_cast hn]
     refine le_trans (measure_mono hsub) (le_trans hbern (le_of_eq ?_))
     congr 2
-    simp only [NNReal.coe_mk]
+    simp only [NNReal.coe_mk, NNReal.toReal]
     ring
   have hden : 2 * (q * (1 - q) + t / 3) ≠ 0 := by positivity
   have hcont : ContinuousAt
@@ -1181,8 +1181,8 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
   have hbern := ConcentrationInequalities.bernstein_inequality
     (X := fun i ξ => g (X i ξ) - c) (μ := μprob) (fun i => (hgcm.comp (hX_meas i)))
     (hX_indep.comp (fun _ => fun x : ℝ => g x - c) (fun _ => hgcm)) hBc hn
-    (by rw [← NNReal.coe_pos, NNReal.coe_mk]; positivity)
-    (by rw [← NNReal.coe_pos]; simpa using hv) ht
+    (by erw [← NNReal.coe_pos]; change (0 : ℝ) < B / 3; positivity)
+    (by erw [← NNReal.coe_pos]; simpa using! hv) ht
   refine le_trans hbern (le_of_eq ?_)
   congr 2
 
@@ -1347,7 +1347,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
         zero_div, abs_zero] at hξ
       linarith
     rw [hbadnull]
-    exact zero_le _
+    exact zero_le
   · -- ### The Bernstein regime.
     have hBpos : 0 < β₀ - α₀ := by
       rcases eq_or_lt_of_le hab with hEq | hlt
@@ -1567,9 +1567,9 @@ private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a
       ≤ ENNReal.ofReal c := by
   classical
   have hYmeas : Measurable (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ)) :=
-    measurable_pi_lambda _ fun i => hZ_meas _
+    Measurable.of_eval fun i => hZ_meas _
   have hXmeas : Measurable (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)) :=
-    measurable_pi_lambda _ fun i => hZ_meas _
+    Measurable.of_eval fun i => hZ_meas _
   -- ### The two coordinate blocks are independent.
   have hdisj : Disjoint (Finset.univ.image (Sum.inr : Fin n → Fin n ⊕ Fin n))
       (Finset.univ.image (Sum.inl : Fin n → Fin n ⊕ Fin n)) := by
@@ -1583,10 +1583,10 @@ private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a
       (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)) μprob := by
     have hφ : Measurable (fun u : (Finset.univ.image (Sum.inr : Fin n → Fin n ⊕ Fin n))
         → ℝ => (fun i : Fin n => u ⟨Sum.inr i, by simp⟩ : Fin n → ℝ)) :=
-      measurable_pi_lambda _ fun i => measurable_pi_apply _
+      Measurable.of_eval fun i => measurable_pi_apply _
     have hψ : Measurable (fun u : (Finset.univ.image (Sum.inl : Fin n → Fin n ⊕ Fin n))
         → ℝ => (fun i : Fin n => u ⟨Sum.inl i, by simp⟩ : Fin n → ℝ)) :=
-      measurable_pi_lambda _ fun i => measurable_pi_apply _
+      Measurable.of_eval fun i => measurable_pi_apply _
     exact (hZ_indep.indepFun_finset _ _ hdisj hZ_meas).comp hφ hψ
   -- ### The deviation event is a measurable subset of the product.
   have hcoord1 : ∀ i : Fin n,
@@ -1643,7 +1643,7 @@ private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a
       positivity
   have hprob : IsProbabilityMeasure
       (μprob.map (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ))) :=
-    Measure.isProbabilityMeasure_map hYmeas.aemeasurable
+    (by infer_instance)
   calc ∫⁻ y, (μprob.map (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)))
           (Prod.mk y ⁻¹' {p : (Fin n → ℝ) × (Fin n → ℝ) |
             Good (orderStat p.1 a) (orderStat p.1 b)
@@ -1715,7 +1715,6 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
   have hbrack := orderStat_quantile_brackets (μprob := μprob) (P := P)
     (Y := fun i => Z (Sum.inr i)) (a := a) (b := b) hYm hYind hYlaw hatom hr1 hrn ha hb
   rw [hexp] at hbrack
-  simp only [] at hbrack
   have hoa : Measurable (fun ξ => orderStat (fun i => Z (Sum.inr i) ξ) a) :=
     measurable_orderStat hYm a
   have hob : Measurable (fun ξ => orderStat (fun i => Z (Sum.inr i) ξ) b) :=

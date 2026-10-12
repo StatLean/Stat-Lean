@@ -681,7 +681,7 @@ theorem weakConvergesOuter_of_lipschitz_readout {Ω D : Type*} [MeasurableSpace 
     simpa only [norm_neg] using hGm'_norm m
   have hGm_lip : ∀ m, ∃ K, LipschitzWith K (Gm m) := by
     intro m; obtain ⟨K, hK⟩ := hGm'_lip m
-    exact ⟨K, by simpa only [hGmdef] using hK.neg⟩
+    exact ⟨K, by simpa only [hGmdef] using! hK.neg⟩
   have hGm_tendsto : ∀ x, Tendsto (fun m => Gm m x) atTop (𝓝 (g x)) := by
     intro x
     have := (hGm'_tendsto x).neg

@@ -1,5 +1,5 @@
-import Mathlib.Combinatorics.SimpleGraph.Walks.Decomp
-import Mathlib.Combinatorics.SimpleGraph.Walks.Maps
+import Mathlib.Combinatorics.SimpleGraph.Walk.Decomp
+import Mathlib.Combinatorics.SimpleGraph.Walk.Maps
 import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 
 /-!
@@ -188,7 +188,9 @@ theorem separates_iff_not_reachable_deleteVerts (S A B : Finset V) :
   have hgraph : ((⊤ : G.Subgraph).deleteVerts (S : Set V)).coe
       = G.induce (((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts) := by
     ext u v
-    simp
+    have hu := u.property
+    have hv := v.property
+    simp_all
   constructor
   · intro h a b ha hb hreach
     obtain ⟨w'⟩ := hreach

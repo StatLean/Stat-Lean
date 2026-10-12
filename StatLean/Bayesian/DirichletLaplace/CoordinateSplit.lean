@@ -72,7 +72,7 @@ noncomputable def extendS (S : Set ι) [DecidablePred (· ∈ S)] :
 private lemma measurable_projS (S : Set ι) [DecidablePred (· ∈ S)] :
     Measurable (projS (ι := ι) S) :=
   (WithLp.measurable_toLp _ _).comp
-    (measurable_pi_lambda _ fun i => (measurable_pi_apply (i : ι)).comp (WithLp.measurable_ofLp 2 _))
+    (Measurable.of_eval fun i => (measurable_pi_apply (i : ι)).comp (WithLp.measurable_ofLp 2 _))
 
 /-- `projS S` respects subtraction (it is a linear coordinate restriction). -/
 private lemma projS_sub (S : Set ι) [DecidablePred (· ∈ S)] (a b : EuclideanSpace ℝ ι) :
@@ -113,7 +113,7 @@ the `S`-coordinates are jointly `dlPrior a {j // j ∈ S}`, independent of the r
 lemma dlPrior_map_projS (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] :
     (dlPrior a ι).map (projS S) = dlPrior a {j // j ∈ S} := by
   have hrestrict : Measurable (fun x : ι → ℝ => fun i : {j // j ∈ S} => x i.val) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply (i : ι)
+    Measurable.of_eval fun i => measurable_pi_apply (i : ι)
   rw [dlPrior, dlPrior, Measure.map_map (measurable_projS S) (WithLp.measurable_toLp _ _),
     show (projS S ∘ WithLp.toLp 2)
         = (WithLp.toLp 2) ∘ (fun x : ι → ℝ => fun i : {j // j ∈ S} => x i.val) from rfl,
@@ -399,7 +399,7 @@ private lemma stdGaussian_map_projS (S : Set ι) [DecidablePred (· ∈ S)] :
     (stdGaussian (EuclideanSpace ℝ ι)).map (projS S)
       = stdGaussian (EuclideanSpace ℝ {j // j ∈ S}) := by
   have hrestrict : Measurable (fun x : ι → ℝ => fun i : {j // j ∈ S} => x i.val) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply (i : ι)
+    Measurable.of_eval fun i => measurable_pi_apply (i : ι)
   rw [← map_pi_eq_stdGaussian (ι := ι),
     Measure.map_map (measurable_projS S) (WithLp.measurable_toLp _ _),
     show (projS S ∘ WithLp.toLp 2)

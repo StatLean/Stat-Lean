@@ -102,7 +102,7 @@ theorem multivariateGaussian_map_const_add [DecidableEq ι₁] (m : EuclideanSpa
     (hS : S.PosSemidef) (c : EuclideanSpace ℝ ι₁) :
     (multivariateGaussian m S).map (fun x => c + x) = multivariateGaussian (c + m) S := by
   haveI : IsProbabilityMeasure ((multivariateGaussian m S).map fun x => c + x) :=
-    Measure.isProbabilityMeasure_map (measurable_const_add c).aemeasurable
+    (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
   rw [show (fun x => c + x) = (c + ·) from rfl, charFun_map_const_add,
     charFun_multivariateGaussian hS, charFun_multivariateGaussian hS, ← Complex.exp_add]
@@ -126,7 +126,7 @@ theorem multivariateGaussian_map_affine [DecidableEq ι₁] [DecidableEq ι₂]
   have hb : Measurable fun y : EuclideanSpace ℝ ι₂ => y + b := measurable_id.add_const b
   haveI : IsProbabilityMeasure ((multivariateGaussian m S).map
       fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x + b) :=
-    Measure.isProbabilityMeasure_map (hlin.add_const b).aemeasurable
+    (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
   rw [show (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x + b)
       = (· + b) ∘ (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x) from rfl,

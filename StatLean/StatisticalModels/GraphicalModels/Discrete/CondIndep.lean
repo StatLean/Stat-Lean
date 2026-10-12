@@ -829,6 +829,9 @@ theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [Meas
     (hci : CondIndepCoords μ X A B C) :
     CondIndepMass (fun x => μ (X ⁻¹' {x})) A B C := by
   classical
+  change CondIndep μ (coords A X) (coords B X) (coords C X) at hci
+  rw [condIndep_iff_map ((measurable_coords C hX).prodMk
+    ((measurable_coords A hX).prodMk (measurable_coords B hX))).aemeasurable] at hci
   obtain ⟨κ, η, _, _, hdis⟩ := hci
   haveI : IsFiniteMeasure (μ.map (coords C X)) :=
     Measure.isFiniteMeasure_map μ (coords C X)
@@ -869,7 +872,7 @@ theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [Meas
           (({C.restrict x} : Set (↥C → α)) ×ˢ (s ×ˢ t)) := by
       ext ω
       simpa only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff,
-        and_assoc] using hiff ω
+        and_assoc] using! hiff ω
     rw [hbm E, hEq, ← Measure.map_apply hT ((measurableSet_singleton _).prod (hs.prod ht)),
       hdis, Measure.compProd_apply_prod (measurableSet_singleton _) (hs.prod ht),
       lintegral_singleton, Kernel.prod_apply_prod]

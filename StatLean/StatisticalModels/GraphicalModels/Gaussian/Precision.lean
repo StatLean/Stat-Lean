@@ -673,7 +673,8 @@ private theorem condIndep_blockProj_iff_precisionMatrix_eq_zero {kC kA kB : Type
   haveI : IsMarkovKernel (Kcond.map pJ) := Kernel.IsMarkovKernel.map _ hpJmeas
   haveI : IsMarkovKernel (Kcond.map Θ₂) := Kernel.IsMarkovKernel.map _ hΘ₂meas
   haveI : IsProbabilityMeasure ((multivariateGaussian m₁ T₁₁).map fC) :=
-    Measure.isProbabilityMeasure_map fC.measurable.aemeasurable
+    (by infer_instance)
+  rw [condIndep_iff_map (by fun_prop)]
   constructor
   · -- ⟹ : conditional independence forces the concentration entries to vanish
     rintro ⟨κ, η, hκ, hη, heq⟩
@@ -711,9 +712,9 @@ private theorem condIndep_blockProj_iff_precisionMatrix_eq_zero {kC kA kB : Type
         Measure.map_id] at hmapped
       exact hmapped
     haveI : IsProbabilityMeasure ((κ c).map fI.symm) :=
-      Measure.isProbabilityMeasure_map fI.symm.measurable.aemeasurable
+      (by infer_instance)
     haveI : IsProbabilityMeasure ((η c).map fJ.symm) :=
-      Measure.isProbabilityMeasure_map fJ.symm.measurable.aemeasurable
+      (by infer_instance)
     have hA : (κ c).map fI.symm = multivariateGaussian (blockFst nn) Q₁₁ := by
       have hfst : Measure.map Prod.fst (((κ c).map fI.symm).prod ((η c).map fJ.symm))
           = (κ c).map fI.symm := Measure.fst_prod

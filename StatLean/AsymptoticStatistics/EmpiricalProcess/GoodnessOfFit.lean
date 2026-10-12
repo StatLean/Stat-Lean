@@ -81,7 +81,7 @@ private theorem square_eval_le_add
   let x := z (halfLineIndex t)
   let y := w (halfLineIndex t)
   have hxy : |x - y| ≤ ‖z - w‖ := by
-    simpa only [x, y, Real.norm_eq_abs, lp.coeFn_sub] using
+    simpa only [x, y, Real.norm_eq_abs, lp.coeFn_sub] using!
       lp.norm_apply_le_norm ENNReal.top_ne_zero (z - w) (halfLineIndex t)
   have hx : |x| ≤ ‖z‖ := by
     simpa only [x, Real.norm_eq_abs] using
@@ -213,7 +213,7 @@ private theorem empiricalHalfLinePath_apply
     (n : ℕ) (X : Fin n → ℝ) (t : ℝ) :
     empiricalHalfLinePath P n X (halfLineIndex t) =
       Real.sqrt n * (empiricalCDF n X t - cdf P t) := by
-  simpa only [empiricalHalfLinePath, empiricalProcessLinf] using
+  simpa only [empiricalHalfLinePath, empiricalProcessLinf] using!
     empiricalProcess_halfLine_eq P n X t
 
 /-- Empirical-path identity for the scaled KS statistic. -/

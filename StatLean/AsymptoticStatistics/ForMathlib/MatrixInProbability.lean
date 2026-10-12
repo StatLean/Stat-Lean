@@ -53,7 +53,7 @@ theorem matrixInv_tendstoInProb_of_det_ne_zero
     exact (not_lt_of_ge hξ) hnorm
   have hVhat_coords : ∀ n, Measurable (fun ξ => Matrix.of.symm (Vhat n ξ)) := by
     intro n
-    exact measurable_pi_lambda _ fun i => measurable_pi_lambda _ fun j => hVhat_meas n i j
+    exact Measurable.of_eval fun i => Measurable.of_eval fun j => hVhat_meas n i j
   have hnorm_cont : Continuous (fun W : Fin k → Fin k → ℝ => ‖Matrix.of W - V0‖) := by
     apply Continuous.norm
     refine continuous_matrix fun i j => ?_

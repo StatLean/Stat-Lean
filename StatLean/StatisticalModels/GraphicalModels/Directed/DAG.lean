@@ -125,7 +125,7 @@ theorem IsAcyclicRel.mono {r p : V → V → Prop}
     -- instance we care about, §2.1.1, p. 7)
     (hle : ∀ a b : V, r a b → p a b) :
     IsAcyclicRel r :=
-  fun v hv => hp v (Relation.TransGen.mono hle hv)
+  fun v hv => hp v (Relation.TransGen.mono hle _ _ hv)
 
 /-- A **directed acyclic graph** on the vertex set `V` (Lauritzen §2.1.1, pp. 5–6, unnumbered):
 an edge relation with no directed cycles. Read `D.Adj u v` as the directed edge `u → v`, so that

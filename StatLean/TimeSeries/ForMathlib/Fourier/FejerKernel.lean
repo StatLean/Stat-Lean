@@ -210,7 +210,7 @@ private lemma integral_fejerSum_mul_exp (γ : ℤ → ℝ) (n : ℕ) (j : ℤ) :
     rw [← hexp]
     ring
   simp_rw [hint]
-  rw [intervalIntegral.integral_finset_sum
+  rw [intervalIntegral.integral_finsetSum
     (fun m _ => (Continuous.intervalIntegrable (by fun_prop) _ _))]
   refine Finset.sum_congr rfl fun m _ => ?_
   have hcm : ∀ (r : ℂ) (m' : ℤ),

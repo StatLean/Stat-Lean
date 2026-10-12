@@ -262,8 +262,7 @@ theorem expect_weight {n m : ℕ}
       obtain ⟨a, rfl⟩ : ∃ a, n = a + 1 := ⟨n - 1, by omega⟩
       obtain ⟨b, rfl⟩ : ∃ b, m = b + 1 := ⟨m - 1, by omega⟩
       simp only [Nat.add_sub_cancel]
-      have h := Nat.succ_mul_choose_eq a b
-      simp only [Nat.succ_eq_add_one] at h
+      have h := Nat.add_one_mul_choose_eq a b
       exact_mod_cast h
     rw [show (fun s : SubsetsOfCard n m => weight i s)
           = (fun s => (fun t => if i ∈ t then (1 : ℝ) else 0) s.val) from rfl,
@@ -310,9 +309,8 @@ theorem expect_weight_pair {n m : ℕ}
       obtain ⟨a, rfl⟩ : ∃ a, n = a + 2 := ⟨n - 2, by omega⟩
       obtain ⟨b, rfl⟩ : ∃ b, m = b + 2 := ⟨m - 2, by omega⟩
       simp only [Nat.add_sub_cancel]
-      have h1 := Nat.succ_mul_choose_eq (a + 1) (b + 1)
-      have h2 := Nat.succ_mul_choose_eq a b
-      simp only [Nat.succ_eq_add_one] at h1 h2
+      have h1 := Nat.add_one_mul_choose_eq (a + 1) (b + 1)
+      have h2 := Nat.add_one_mul_choose_eq a b
       have h1' : ((a + 2 : ℕ) : ℝ) * ((a + 1).choose (b + 1) : ℝ)
           = ((a + 2).choose (b + 2) : ℝ) * ((b + 2 : ℕ) : ℝ) := by exact_mod_cast h1
       have h2' : ((a + 1 : ℕ) : ℝ) * (a.choose b : ℝ)

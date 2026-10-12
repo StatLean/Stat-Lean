@@ -86,7 +86,7 @@ theorem map_add_grossErrorNbhd (P : Measure ℝ) (a ε : ℝ) :
   rintro R ⟨S, ⟨Q, hQ, rfl⟩, rfl⟩
   haveI := hQ
   have hmeas : Measurable (fun x : ℝ => x + a) := measurable_add_const a
-  exact ⟨Q.map (· + a), Measure.isProbabilityMeasure_map hmeas.aemeasurable,
+  exact ⟨Q.map (· + a), (by infer_instance),
     map_contaminate hmeas ε⟩
 
 end StatLean.RobustStatistics

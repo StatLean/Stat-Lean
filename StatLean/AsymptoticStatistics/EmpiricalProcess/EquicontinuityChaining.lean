@@ -174,7 +174,7 @@ private lemma equi_chain_mean_l2_to_prob_l2
       fun h => (ENNReal.ofReal_le_ofReal_iff (hψ_nonneg n ξ)).mp h⟩
   -- Squeeze: `μ {δ ≤ ψ n} = μ {ε ≤ ofReal (ψ n)} ≤ Markov-RHS → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_div_tendsto
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
   rw [h_set_eq n]
   exact h_markov n
 
