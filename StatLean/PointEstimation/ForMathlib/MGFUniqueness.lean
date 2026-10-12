@@ -122,7 +122,7 @@ private theorem eqOn_complexMGF_of_mgf_eqOn {Ω : Type*} [MeasurableSpace Ω]
         Complex.reLm).isPreconnected
   have h₀ : (s : ℂ) ∈
       {z : ℂ | z.re ∈ interior (integrableExpSet X μ) ∩ interior (integrableExpSet Y μ')} := by
-    simp only [Set.mem_setOf_eq, Complex.ofReal_re, Set.mem_inter_iff]
+    simp only [Set.mem_ofPred_eq, Complex.ofReal_re, Set.mem_inter_iff]
     exact ⟨hsX, hsY⟩
   refine hXan.eqOn_of_preconnected_of_frequently_eq hYan hpre h₀ ?_
   have hfreqR : ∃ᶠ (x : ℝ) in 𝓝[≠] s, complexMGF X μ ↑x = complexMGF Y μ' ↑x := by
@@ -222,7 +222,7 @@ theorem ext_of_integral_exp_eqOn
       have hmemU : (↑u * Complex.I) ∈ {z : ℂ | z.re ∈
           interior (integrableExpSet id (μ.tilted fun x => η₀ * x)) ∩
           interior (integrableExpSet id (ν.tilted fun x => η₀ * x))} := by
-        simp only [Set.mem_setOf_eq, Set.mem_inter_iff, Complex.mul_I_re,
+        simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Complex.mul_I_re,
           Complex.ofReal_im, neg_zero]
         exact ⟨h0μ, h0ν⟩
       rw [← complexMGF_id_mul_I, ← complexMGF_id_mul_I]

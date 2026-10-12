@@ -53,7 +53,7 @@ lemma log_one_add_eq_taylor {x : ℝ} (hx : -1 < x) :
     have h_unfold : logTaylorRemainder (2 * x) =
         4 * (Real.log (1 + x) - x + (2 * x) ^ 2 / 8) / (2 * x) ^ 2 := by
       unfold logTaylorRemainder
-      rw [if_neg h2x_ne]
+      rw [ite_eq_right h2x_ne]
       have h_div : (2 * x) / 2 = x := by ring
       rw [h_div]
     rw [h_unfold]
@@ -93,7 +93,7 @@ lemma log_div_nonneg_eq_sqrt_taylor {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     have hratio_zero : a / b = 0 := by rw [← hy_sq, hy_eq]; ring
     have hrem : logTaylorRemainder (-2) = 3 / 2 := by
       unfold logTaylorRemainder
-      rw [if_neg (by norm_num : (-2 : ℝ) ≠ 0)]
+      rw [ite_eq_right (by norm_num : (-2 : ℝ) ≠ 0)]
       norm_num [Real.log_zero]
     rw [hratio_zero, Real.log_zero, show Real.sqrt 0 = 0 by simp]
     norm_num [hrem]
@@ -150,7 +150,7 @@ lemma logTaylorRemainder_tendsto_zero :
   rw [h_lhs_eq] at h_mathlib
   -- Now bound |R u| = 4 * |log(1+u/2) - u/2 + u²/8| / u².
   unfold logTaylorRemainder
-  rw [if_neg hu0]
+  rw [ite_eq_right hu0]
   have hu_sq_pos : 0 < u ^ 2 := by positivity
   have hu_sq_abs : |u ^ 2| = u ^ 2 := abs_of_pos hu_sq_pos
   rw [abs_div, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 4), hu_sq_abs]

@@ -139,8 +139,8 @@ theorem klDiv_multivariateGaussian_same_cov
   have hcomp : ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) W⁻¹) ∘ ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) W)
       = id := by
     funext x
-    simp only [Function.comp_apply, id_eq, ← ContinuousLinearMap.mul_apply, ← map_mul,
-      Matrix.nonsing_inv_mul _ hdetW, map_one, ContinuousLinearMap.one_apply]
+    simp only [Function.comp_apply, id_eq, ← mul_apply_eq_comp, ← map_mul,
+      Matrix.nonsing_inv_mul _ hdetW, map_one, one_apply_eq_self]
   -- `‖W (a − b)‖² = ⟪a − b, S⁻¹ (a − b)⟫` by self-adjointness of `W` and `W * W = S⁻¹`.
   have hnorm : ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) W) a - (Matrix.toEuclideanCLM (𝕜 := ℝ) W) b‖ ^ 2
       = ⟪a - b, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) (a - b)⟫ := by

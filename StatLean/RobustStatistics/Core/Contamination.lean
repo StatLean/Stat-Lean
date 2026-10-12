@@ -1,4 +1,5 @@
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -139,7 +140,7 @@ witness). -/
 theorem grossErrorNbhd_zero (P : Measure Ω) [IsProbabilityMeasure P] :
     grossErrorNbhd P 0 = {P} := by
   ext R
-  simp only [grossErrorNbhd, Set.mem_setOf_eq, Set.mem_singleton_iff]
+  simp only [grossErrorNbhd, Set.mem_ofPred_eq, Set.mem_singleton_iff]
   constructor
   · rintro ⟨Q, -, rfl⟩
     exact contaminate_zero P Q

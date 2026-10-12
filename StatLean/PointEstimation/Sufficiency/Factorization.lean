@@ -94,9 +94,9 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   -- the mixture as a density over `μ`, and its statistic-side aggregate
   set G : S → ℝ≥0∞ := fun t => ∑' i, c i * g (θs i) t with hGdef
-  have hGm : Measurable G := Measurable.ennreal_tsum fun i => measurable_const.mul (hg (θs i))
+  have hGm : Measurable G := Measurable.tsum fun i => measurable_const.mul (hg (θs i))
   set k : 𝓧 → ℝ≥0∞ := fun x => ∑' i, c i * p (θs i) x with hkdef
-  have hkm : Measurable k := Measurable.ennreal_tsum fun i => measurable_const.mul (hp (θs i))
+  have hkm : Measurable k := Measurable.tsum fun i => measurable_const.mul (hp (θs i))
   have hνk : ν = μ.withDensity k := by
     rw [hν]
     have he : (fun x => ∑' i, c i * p (θs i) x) = ∑' i, fun x => c i * p (θs i) x := by
@@ -122,7 +122,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
   have hνE : ν {x | G (T x) = 0} = 0 := by
     rw [hνk, withDensity_apply k hEmeas, lintegral_congr_ae (ae_restrict_of_ae hkeq),
         setLIntegral_congr_fun hEmeas (g := 0) (fun x hx => by
-          simp only [Set.mem_setOf_eq] at hx; simp [hx])]
+          simp only [Set.mem_ofPred_eq] at hx; simp [hx])]
     simp
   -- for every member, `dPθ/dν` factors through `T`; then apply the criterion
   refine isSufficient_of_rnDeriv_comp P hT θs c ν hν hdomν (fun θ => ?_)

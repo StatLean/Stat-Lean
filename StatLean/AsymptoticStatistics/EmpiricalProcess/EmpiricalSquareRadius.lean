@@ -100,10 +100,10 @@ theorem lintegral_squareTailEnvelope_two_mul_eq
         A.indicator (fun y => 4 * ENNReal.ofReal (Φ y ^ 2)) x := by
     rw [squareTailEnvelope_two_mul_eq K hK Φ x]
     by_cases hx : K < 2 * |Φ x|
-    · rw [if_pos hx, Set.indicator_of_mem (show x ∈ A from hx)]
+    · rw [ite_eq_left hx, Set.indicator_of_mem (show x ∈ A from hx)]
       rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
       norm_num
-    · rw [if_neg hx, Set.indicator_of_notMem (show x ∉ A from hx)]
+    · rw [ite_eq_right hx, Set.indicator_of_notMem (show x ∉ A from hx)]
       simp
   calc
     (∫⁻ x, ENNReal.ofReal
@@ -126,7 +126,7 @@ theorem squareTail_le_squareTailEnvelope
   have hfΦ : |f x| ≤ Φ x := hΦ f hf x
   by_cases hKΦ : |K| < |Φ x|
   · rw [squareTailEnvelope]
-    simp only [if_pos hKΦ]
+    simp only [ite_eq_left hKΦ]
     refine (squareTail_le_sq K f x).trans ?_
     exact sq_le_sq.mpr (hfΦ.trans (le_abs_self _))
   · have hfk : |f x| ≤ |K| :=

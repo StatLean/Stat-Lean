@@ -251,7 +251,7 @@ theorem bernstein_von_mises_efficient_centering
         ∪ {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hdiff : ‖bvmEffScore J sc n ω - Real.sqrt n • (est n ω - θ₀)‖ < ε := by
       rw [← norm_neg, neg_sub]

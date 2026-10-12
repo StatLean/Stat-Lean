@@ -53,7 +53,7 @@ theorem measurable_pi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n 
       exact iht.const_sub 1
   | iUnion g hgd hgm ihg =>
       simp_rw [measure_iUnion hgd hgm]
-      exact Measurable.ennreal_tsum ihg
+      exact Measurable.tsum ihg
 
 /-- The **iid product kernel** `θ ↦ (κ θ)^{⊗ n}` on `Fin n → 𝓧`: the law of an iid sample of
 size `n` from the model `κ θ` (Gelman §1.3). -/

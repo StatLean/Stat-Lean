@@ -117,7 +117,7 @@ private lemma score_l_dot_avg_plus_info_oP
                    - ∫ ω, (score_l_dot : Ω → ℝ) ω ∂P|} := by
     intro n
     ext X
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [h_bartlett]
     constructor
     · intro h; convert h using 2; ring
@@ -586,8 +586,8 @@ private lemma step1_random_index_oP
     -- then the μ-condition with η = ε/2 holds at ξ).
     have h_incl : (fun ξ : ℕ → Ω => fun i : Fin n => ξ i.val) ⁻¹' S_pi ⊆ S_mu := by
       intro ξ hξ
-      simp only [Set.mem_preimage, hS_pi_def, Set.mem_setOf_eq] at hξ
-      simp only [hS_mu_def, Set.mem_setOf_eq]
+      simp only [Set.mem_preimage, hS_pi_def, Set.mem_ofPred_eq] at hξ
+      simp only [hS_mu_def, Set.mem_ofPred_eq]
       -- Unfold empiricalProcess.
       unfold EmpiricalProcess.empiricalProcess EmpiricalProcess.empiricalAvg
       -- Goal: ε/2 < |√n * ((1/n)·Σ (f_hat n ξ) (ξ i.val) - ∫f_hat n ξ ∂P)
@@ -767,7 +767,7 @@ private lemma step2_score_eq_to_no_bias
     refine Filter.Eventually.of_forall (fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro X hX
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
     -- Set up the four quantities A, B, C, D; show A + B = C - D, then
     -- triangle: |A + B| ≤ |C| + |D|; pair with `hX` (|A+B| ≥ ε) to get
     -- `|C| ≥ ε/2 ∨ |D| ≥ ε/2`.
@@ -870,7 +870,7 @@ lemma step3_taylor_remainder_oP
     filter_upwards [eventually_ge_atTop 1] with n hn
     apply measure_mono
     intro X hX
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     have h_n_pos : (0 : ℝ) < n := by exact_mod_cast hn
     set r_seq : Fin n → ℝ := fun i =>
       score_func_seq n X (X i)
@@ -965,7 +965,7 @@ private lemma score_truth_sum_bddAbove_in_prob
         M ≤ |(Real.sqrt (0 : ℕ))⁻¹ * (∑ i : Fin 0, score_truth (X i))|}
         = ∅ := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Nat.cast_zero, Real.sqrt_zero, inv_zero,
         mul_zero, abs_zero, Fin.sum_univ_zero]
       exact hM_pos
@@ -1124,13 +1124,13 @@ private lemma step5_finite_initial_segment_tightness
       exact measurableSet_le measurable_const hg_meas.abs
     have hs_anti : Antitone s := by
       intro k₁ k₂ hk X hX
-      simp only [s, Set.mem_setOf_eq] at hX ⊢
+      simp only [s, Set.mem_ofPred_eq] at hX ⊢
       have h_cast : (k₁ : ℝ) ≤ (k₂ : ℝ) := by exact_mod_cast hk
       linarith
     have hs_inter_empty : ⋂ k, s k = ∅ := by
       apply Set.eq_empty_iff_forall_notMem.mpr
       intro X hX
-      simp only [s, Set.mem_iInter, Set.mem_setOf_eq] at hX
+      simp only [s, Set.mem_iInter, Set.mem_ofPred_eq] at hX
       -- `|g X| < ⌈|g X|⌉ + 1`, but `(⌈|g X|⌉ + 1 : ℕ) ≤ |g X|`. Contradiction.
       have h_abs_nn : (0 : ℝ) ≤ |g X| := abs_nonneg _
       have h_lt : |g X| < (⌊|g X|⌋₊ + 1 : ℕ) := by
@@ -1162,7 +1162,7 @@ private lemma step5_finite_initial_segment_tightness
     exact_mod_cast Finset.le_sup (f := f) (Finset.mem_range.mpr hn)
   refine le_trans (measure_mono ?_) (hf n)
   intro X hX
-  simp only [Set.mem_setOf_eq] at hX ⊢
+  simp only [Set.mem_ofPred_eq] at hX ⊢
   exact h_le.trans hX
 
 /-- **Step 4 (LLN on `ℓ̇` + Bartlett identity).**
@@ -1328,7 +1328,7 @@ private lemma step5_sqrt_n_consistency
                 M_main * Ĩ / 6 ≤ |(Real.sqrt n)⁻¹ *
                   (∑ i : Fin n, score_func_seq n X (X i))|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcD, hcS⟩, hcR, hcLHS⟩ := hc
@@ -1499,7 +1499,7 @@ private lemma step5_sqrt_n_consistency
         ≤ ENNReal.ofReal (ε / 4) := by
       refine le_trans (measure_mono ?_) (hM_S n)
       intro X hX
-      simp only [Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_ofPred_eq] at hX ⊢
       exact le_trans hM_threshold hX
     -- Sum of four ENNReal.ofReal (ε/4) terms = ENNReal.ofReal ε.
     have hε4_nn : (0 : ℝ) ≤ ε / 4 := by linarith
@@ -1617,7 +1617,7 @@ private lemma step6_residual_oP
                 ε * Ĩ / 3 ≤ |(Real.sqrt n)⁻¹ *
                   (∑ i : Fin n, score_func_seq n X (X i))|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcΔ, hcD⟩, hcR, hcLHS⟩ := hc

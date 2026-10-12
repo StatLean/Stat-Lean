@@ -98,9 +98,9 @@ private lemma variance_inner_linear (a : EuclideanSpace ℝ (Fin n)) {σ2 : ℝ}
   rw [← real_inner_self_eq_norm_sq, real_inner_euclidean]
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl (fun i _ => ?_)
-  rw [Finset.sum_eq_single i (fun j _ hji => by rw [if_neg (fun h => hji h.symm), mul_zero])
+  rw [Finset.sum_eq_single i (fun j _ hji => by rw [ite_eq_right (fun h => hji h.symm), mul_zero])
         (fun h => absurd (Finset.mem_univ i) h)]
-  rw [if_pos rfl]; ring
+  rw [ite_eq_left rfl]; ring
 
 /-- A linear statistic `⟪a, ·⟫` is square-integrable under the moment assumptions. -/
 private lemma memLp_inner_linear (a : EuclideanSpace ℝ (Fin n))
@@ -195,7 +195,7 @@ theorem gauss_markov {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
         Finset.sum_empty]
     rw [hc0, hp0]
   · obtain ⟨i⟩ := he
-    have hii := hcov i i; rw [if_pos rfl] at hii
+    have hii := hcov i i; rw [ite_eq_left rfl] at hii
     have hσ : 0 ≤ σ2 := by
       rw [← hii, covariance_self (hL2 i).aemeasurable]; exact variance_nonneg _ _
     exact mul_le_mul_of_nonneg_left hgeom hσ

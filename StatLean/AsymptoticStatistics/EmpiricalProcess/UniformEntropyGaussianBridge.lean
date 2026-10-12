@@ -201,7 +201,7 @@ private theorem separableSpace_gpH_of_dudleyNet
         = ((gpEmbed hFenv hFmeas s - gpEmbed hFenv hFmeas t :
             ↥(gpH hFenv hFmeas)) : Lp ℝ 2 P) := by
       rw [Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed]
-    rw [hcoe, ← Submodule.coe_norm]
+    rw [hcoe, Submodule.norm_coe]
     exact norm_gpEmbed_sub_le hFenv hFmeas s t
   have hRtb : TotallyBounded R := by
     have hi := @TotallyBounded.image ↥F (Lp ℝ 2 P) inst.toUniformSpace _ _ _
@@ -893,7 +893,7 @@ private theorem pBrownianBridge_readout_eq_multivariateGaussian_ue
     have hcoord_mem : ∀ q : Fin k, MemLp (fun z : LinfF F => z (φ q)) 2 nu := by
       intro q
       rw [← hcoord q]
-      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitz.comp_memLp
+      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitzWith.comp_memLp
         (map_zero _) hRmem
     rw [hcoord i, hcoord j]
     rw [ProbabilityTheory.covariance_eq_sub (hcoord_mem i) (hcoord_mem j),
@@ -1199,7 +1199,7 @@ private theorem ueEmpirical_proj_error_outer
           ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ) -
             empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have hne : Nonempty ↥F := by
       by_contra hempty
       rw [not_nonempty_iff] at hempty

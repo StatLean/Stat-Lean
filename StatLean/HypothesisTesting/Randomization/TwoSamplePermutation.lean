@@ -387,8 +387,8 @@ private lemma tendsto_perm_cdf_blockSum_varying {N m : ℕ → ℕ}
     intro u v huv k σ
     have hs : (0 : ℝ) ≤ blockSumScale (N k) (m k) := Real.sqrt_nonneg _
     by_cases h : ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k)
-    · rw [if_pos h, if_pos (le_trans h (mul_le_mul_of_nonneg_right huv hs))]
-    · rw [if_neg h]
+    · rw [ite_eq_left h, ite_eq_left (le_trans h (mul_le_mul_of_nonneg_right huv hs))]
+    · rw [ite_eq_right h]
       split_ifs <;> norm_num
   have havg : ∀ (u v : ℝ), u ≤ v → ∀ k : ℕ,
       (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
@@ -478,7 +478,7 @@ private lemma tendstoInProb_of_deterministic {𝓧 : ℕ → Type*} [∀ k, Meas
     have hsub : {x : 𝓧 k | ε ≤ |F k x - L|}
         ⊆ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ A k x} ∪ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ B k x} := by
       intro x hx
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hx ⊢
       by_contra hno
       push Not at hno
       exact absurd (hempty x hx hno.1) (not_le.2 hno.2)
@@ -586,7 +586,7 @@ lemma tendsto_pi_real_lln {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   have h_ae_eq : ∀ᵐ ω ∂μ_inf, ∀ i : ℕ, f (ω i) = f' (ω i) := by
     rw [ae_all_iff]
     intro i
-    exact ((hMP i).quasiMeasurePreserving).ae_eq hff'
+    exact ((hMP i).quasiMeasurePreserving).ae_eq_comp hff'
   have h_target_ae : ∀ᵐ ω ∂μ_inf,
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) atTop (𝓝 (∫ ω, f ω ∂P)) := by
     filter_upwards [h_sllN, h_ae_eq] with ω h_lim h_eq_all
@@ -696,7 +696,7 @@ lemma tendstoInProb_comp {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (𝓧 n)
   obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp hφ ε hε
   refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_) (h ρ hρpos)
   refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
-  simp only [Set.mem_setOf_eq] at hx ⊢
+  simp only [Set.mem_ofPred_eq] at hx ⊢
   by_contra hcon
   push Not at hcon
   have hd : dist (f n x) a < ρ := by rwa [Real.dist_eq]
@@ -719,9 +719,9 @@ lemma tendstoInProb_add {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (𝓧 n)]
     have hincl : {x : 𝓧 n | ε ≤ |(f n x + g n x) - (a + b)|}
         ⊆ {x | ε / 2 ≤ |f n x - a|} ∪ {x | ε / 2 ≤ |g n x - b|} := by
       intro x hx
-      simp only [Set.mem_setOf_eq] at hx
+      simp only [Set.mem_ofPred_eq] at hx
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨h1, h2⟩ := hcon
       have htri := abs_add_le (f n x - a) (g n x - b)
       have heq : (f n x + g n x) - (a + b) = (f n x - a) + (g n x - b) := by ring
@@ -757,7 +757,7 @@ lemma tendstoInProb_const_mul {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (�
       ≤ (P n).real {x | ρ ≤ |f n x - a|} := by
     filter_upwards [hev1, hev2] with n hn1 hn2
     refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
-    simp only [Set.mem_setOf_eq] at hx ⊢
+    simp only [Set.mem_ofPred_eq] at hx ⊢
     by_contra hcon
     push Not at hcon
     have hsplit : c n * f n x - cl * a = c n * (f n x - a) + (c n - cl) * a := by ring
@@ -966,7 +966,7 @@ lemma tendstoInProb_pooledAvg (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
   have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
   congr 1
   ext x
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   have hid : (m k : ℝ) / ((m k + n k : ℕ) : ℝ) *
         ((m k : ℝ)⁻¹ * ∑ i : Fin (m k), f (x (Fin.castAdd (n k) i)))
       + (n k : ℝ) / ((m k + n k : ℕ) : ℝ) *
@@ -1041,7 +1041,7 @@ private lemma lindeberg_le_lindebergDefect {N : ℕ} (d : Fin N → ℝ) {R : �
       ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) := by
     intro l
     by_cases h : ε * R ≤ |d l|
-    · rw [if_pos h]
+    · rw [ite_eq_left h]
       have hge : min 1 ε ≤ min 1 (|d l| / R) := by
         refine le_min (min_le_left _ _) (le_trans (min_le_right _ _) ?_)
         rw [le_div_iff₀ hR]
@@ -1050,7 +1050,7 @@ private lemma lindeberg_le_lindebergDefect {N : ℕ} (d : Fin N → ℝ) {R : �
       calc d l ^ 2 = (min 1 ε)⁻¹ * (d l ^ 2 * min 1 ε) := by field_simp
         _ ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) :=
             mul_le_mul_of_nonneg_left this (by positivity)
-    · rw [if_neg h]
+    · rw [ite_eq_right h]
       have hnn : (0 : ℝ) ≤ min 1 (|d l| / R) := le_min zero_le_one (by positivity)
       positivity
   calc (N : ℝ)⁻¹ * ∑ l, (if ε * R ≤ |d l| then d l ^ 2 else 0)
@@ -1138,7 +1138,7 @@ private lemma tendsto_integral_tailSq {Q : Measure ℝ}
     filter_upwards [eventually_gt_atTop ⌈|t|⌉₊] with j hj
     have hlt : |t| < (j : ℝ) := lt_of_le_of_lt (Nat.le_ceil _) (by exact_mod_cast hj)
     unfold tailSq
-    rw [if_neg (not_le.mpr hlt)]
+    rw [ite_eq_right (not_le.mpr hlt)]
 
 /-! ### The two hypothesis functionals, rewritten -/
 
@@ -1198,7 +1198,7 @@ private lemma tailSq_lindeberg_bound {b r K : ℝ} (hr : 0 < r) (hK : 1 ≤ K) (
       ≤ (K + |b|) / r * (u - b) ^ 2 + 2 * (1 + b ^ 2) * tailSq K u := by
   have hbnn : (0 : ℝ) ≤ |b| := abs_nonneg b
   by_cases hge : K ≤ |u|
-  · have h1 : tailSq K u = u ^ 2 := by unfold tailSq; rw [if_pos hge]
+  · have h1 : tailSq K u = u ^ 2 := by unfold tailSq; rw [ite_eq_left hge]
     have hu2 : (1 : ℝ) ≤ u ^ 2 := by
       have h1u : (1 : ℝ) ≤ |u| := le_trans hK hge
       nlinarith [sq_abs u, abs_nonneg u]
@@ -1210,7 +1210,7 @@ private lemma tailSq_lindeberg_bound {b r K : ℝ} (hr : 0 < r) (hK : 1 ≤ K) (
       positivity
     rw [h1]
     nlinarith [mul_nonneg (sq_nonneg b) (by linarith : (0 : ℝ) ≤ u ^ 2 - 1)]
-  · have h0 : tailSq K u = 0 := by unfold tailSq; rw [if_neg hge]
+  · have h0 : tailSq K u = 0 := by unfold tailSq; rw [ite_eq_right hge]
     have hlt : |u| < K := not_le.mp hge
     have hnum : |u - b| ≤ K + |b| := by
       have := abs_sub b u
@@ -1350,7 +1350,7 @@ private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabili
     rw [hL2]
     congr 1
     ext x
-    simp only [Set.mem_setOf_eq, pooledVar_eq hmn x]
+    simp only [Set.mem_ofPred_eq, pooledVar_eq hmn x]
   refine ⟨?_, ?_⟩
   · -- **The normalization defect.** Divide the pooled variance by the deterministic `v̄`.
     intro η hη
@@ -1359,7 +1359,7 @@ private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabili
     refine hc.congr fun k => ?_
     congr 1
     ext x
-    simp only [Set.mem_setOf_eq, normDefect_eq hvpos x, inv_mul_cancel₀ hvpos.ne']
+    simp only [Set.mem_ofPred_eq, normDefect_eq hvpos x, inv_mul_cancel₀ hvpos.ne']
   · -- **The Lindeberg defect.**
     intro η hη
     set C : ℝ := 2 * v⁻¹ * (1 + (|μ| + 1) ^ 2) with hCdef
@@ -1439,9 +1439,9 @@ private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabili
             {x : Fin (m k + n k) → ℝ | ρ ≤ |((m k + n k : ℕ) : ℝ)⁻¹ *
               (∑ l, tailSq (K : ℝ) (x l)) - cK|} := by
         intro x hx
-        simp only [Set.mem_setOf_eq] at hx
+        simp only [Set.mem_ofPred_eq] at hx
         by_contra hcon
-        simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+        simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
         obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
         have hbabs : |pooledMean (m k) (n k) x| ≤ |μ| + 1 := by
           have := abs_sub_abs_le_abs_sub (pooledMean (m k) (n k) x) μ

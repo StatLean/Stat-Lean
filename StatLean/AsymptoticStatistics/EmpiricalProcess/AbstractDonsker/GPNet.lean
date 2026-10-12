@@ -167,7 +167,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
     fun j => bracketingNumber_lt_top_iff_HasFiniteBracketingCover.mpr (Hcov _ (hscale_pos j))
   let Nfun : ℕ → ℕ := fun j => (bracketingNumber ((1 / 2 : ℝ) ^ j) F 2 P).toNat
   have hN_eq : ∀ j : ℕ, (bracketingNumber ((1 / 2 : ℝ) ^ j) F 2 P) = (Nfun j : ℕ∞) :=
-    fun j => (ENat.coe_toNat (hbn_lt j).ne).symm
+    fun j => (ENat.natCast_toNat (hbn_lt j).ne).symm
   have hrawNet_card : ∀ j : ℕ, (rawNet j).card ≤ Nfun j := by
     intro j
     have h := (rawData j).2.2

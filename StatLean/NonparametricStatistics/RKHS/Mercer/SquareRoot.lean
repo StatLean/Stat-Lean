@@ -375,8 +375,8 @@ private theorem inner_toLp_star_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.I
     rw [inner_smul_right]
     by_cases hmn : m = n
     · subst hmn
-      rw [if_pos rfl, hself m, mul_one]
-    · rw [if_neg hmn, (orthonormal_toLp_star d).2 (Ne.symm hmn), mul_zero]
+      rw [ite_eq_left rfl, hself m, mul_one]
+    · rw [ite_eq_right hmn, (orthonormal_toLp_star d).2 (Ne.symm hmn), mul_zero]
   exact (hasSum_ite_eq n (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x)).congr_fun
     fun m => hfun m
 
@@ -943,8 +943,8 @@ theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hK
       rw [inner_smul_right, inner_smul_right]
       by_cases hmn : m = n
       · subst hmn
-        rw [if_pos rfl, hone m, mul_one]
-      · rw [if_neg hmn, d.orthonormal.2 (Ne.symm hmn), mul_zero, mul_zero]
+        rw [ite_eq_left rfl, hone m, mul_one]
+      · rw [ite_eq_right hmn, d.orthonormal.2 (Ne.symm hmn), mul_zero, mul_zero]
     exact h.unique hite
   have h2 : HasSum (fun n : d.ι => (d.eigval n : 𝕜) •
       (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
@@ -1165,9 +1165,9 @@ theorem exists_orthonormalBasis_sqrt_eigfun
       fun n => ?_
     by_cases hnj : n = j
     · subst hnj
-      rw [if_pos rfl, inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
+      rw [ite_eq_left rfl, inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
       norm_num
-    · rw [if_neg hnj, d.orthonormal.2 hnj, mul_zero]
+    · rw [ite_eq_right hnj, d.orthonormal.2 hnj, mul_zero]
   choose b hb1 hb2 using fun j => sqrtCLM_isometry_on_ker_orthogonal d hKH (hmem j)
   have hbcoe : ∀ j : d.ι, (b j : X → 𝕜)
       = fun x => ((Real.sqrt (d.eigval j) : ℝ) : 𝕜) * d.eigfun j x := by

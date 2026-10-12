@@ -231,14 +231,14 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     intro i j k
     by_cases hki : k = i
     · by_cases hkj : k = j
-      · simp only [if_pos hki, if_pos hkj]
+      · simp only [ite_eq_left hki, ite_eq_left hkj]
         exact hint.congr (Filter.Eventually.of_forall fun a => by ring)
-      · simp only [if_pos hki, if_neg hkj, mul_one]
+      · simp only [ite_eq_left hki, ite_eq_right hkj, mul_one]
         exact hint1
     · by_cases hkj : k = j
-      · simp only [if_neg hki, if_pos hkj, one_mul]
+      · simp only [ite_eq_right hki, ite_eq_left hkj, one_mul]
         exact hint1
-      · simp only [if_neg hki, if_neg hkj, one_mul, mul_one]
+      · simp only [ite_eq_right hki, ite_eq_right hkj, one_mul, mul_one]
         exact hM.density_integrable θ
   -- factorisation of the (i,j)-term integrand into a coordinatewise product
   have hpt : ∀ (i j : Fin n) (x : Fin n → 𝓧),
@@ -247,7 +247,7 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
             * M.density θ (x k) := by
     intro i j x
     rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, Finset.prod_ite_eq', Finset.prod_ite_eq',
-      if_pos (Finset.mem_univ i), if_pos (Finset.mem_univ j)]
+      ite_eq_left (Finset.mem_univ i), ite_eq_left (Finset.mem_univ j)]
   -- integrability of each base term over the product measure
   have hbase_int : ∀ i j : Fin n, Integrable
       (fun x => score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k))
@@ -270,16 +270,16 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
           (∫ a, (if k = i then score M θ a else 1) * (if k = i then score M θ a else 1)
             * M.density θ a ∂μ) = 1 := by
         intro k _ hk
-        simp only [if_neg hk, one_mul]
+        simp only [ite_eq_right hk, one_mul]
         exact hM.density_integral_eq_one θ
-      rw [if_pos rfl, Finset.prod_eq_single i hoff (fun h => absurd (Finset.mem_univ i) h)]
+      rw [ite_eq_left rfl, Finset.prod_eq_single i hoff (fun h => absurd (Finset.mem_univ i) h)]
       simp only [↓reduceIte]
       rw [fisherInfo]
       refine integral_congr_ae (Filter.Eventually.of_forall fun a => ?_)
       ring
-    · rw [if_neg hij]
+    · rw [ite_eq_right hij]
       refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
-      simp only [if_pos rfl, if_neg hij, mul_one]
+      simp only [ite_eq_left rfl, ite_eq_right hij, mul_one]
       exact hmean0
   -- integrability of the inner sum
   have hsum_int : ∀ i : Fin n, Integrable
@@ -296,7 +296,7 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     rw [integral_finsetSum Finset.univ (fun j _ => hbase_int i j)]
     exact Finset.sum_congr rfl (fun j _ => hterm i j)
   rw [Finset.sum_congr rfl (fun i _ => hinner i)]
-  simp only [Finset.sum_ite_eq, Finset.mem_univ, if_true]
+  simp only [Finset.sum_ite_eq, Finset.mem_univ, ite_true]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 end StatLean.PointEstimation

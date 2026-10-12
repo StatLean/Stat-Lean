@@ -407,10 +407,10 @@ theorem betaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
 private lemma toReal_inter_compl {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (A : Set Ω) {B : Set Ω} (hB : MeasurableSet B) :
     (μ (A ∩ Bᶜ)).toReal = (μ A).toReal - (μ (A ∩ B)).toReal := by
-  have h := measure_inter_add_diff (μ := μ) A hB
+  have h := measure_inter_add_sdiff (μ := μ) A hB
   have h2 : (μ (A ∩ B)).toReal + (μ (A \ B)).toReal = (μ A).toReal := by
     rw [← ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), h]
-  rw [Set.diff_eq] at h2
+  rw [Set.sdiff_eq] at h2
   linarith
 
 theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
@@ -808,12 +808,12 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
   have hrowCS : ∀ i ∈ S, ∑ j ∈ T, |b j| * |R i j - P i * Q j|
       ≤ Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)) := by
     intro i hi
-    have hCS := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul T
+    have hCS := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul T
       (r := fun j => |b j| * |R i j - P i * Q j|)
       (f := fun j => b j ^ 2 * |R i j - P i * Q j|)
       (g := fun j => |R i j - P i * Q j|)
       (fun j _ => mul_nonneg (sq_nonneg _) (abs_nonneg _)) (fun j _ => abs_nonneg _)
-      (fun j _ => by rw [mul_pow, sq_abs (b j)]; ring)
+      (fun j _ => le_of_eq <| by rw [mul_pow, sq_abs (b j)]; ring)
     have hnn : (0:ℝ) ≤ ∑ j ∈ T, |b j| * |R i j - P i * Q j| :=
       Finset.sum_nonneg fun j _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
     have h1 : ∑ j ∈ T, b j ^ 2 * |R i j - P i * Q j| ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
@@ -847,12 +847,12 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
       ring
     rw [hsp]; ring
   rw [Finset.sum_congr rfl hfac, ← Finset.mul_sum]
-  have hCS2 := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul S
+  have hCS2 := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul S
     (r := fun i => |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
     (f := fun i => a i ^ 2 * P i)
     (g := fun i => (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
     (fun i _ => mul_nonneg (sq_nonneg _) (hP i)) (fun i _ => hWnn i)
-    (fun i _ => by
+    (fun i _ => le_of_eq <| by
       rw [mul_pow, mul_pow, sq_abs (a i), Real.sq_sqrt (hP i), Real.sq_sqrt (hWnn i)])
   have hWsum : ∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) = 2 * ∑ j ∈ T, b j ^ 2 * Q j := by
     have e1 : ∀ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))

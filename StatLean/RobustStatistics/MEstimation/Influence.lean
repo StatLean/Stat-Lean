@@ -79,7 +79,7 @@ private theorem hasDerivWithinAt_id_mul {q : ℝ → ℝ} {s : Set ℝ}
     (hq : ContinuousWithinAt q s 0) :
     HasDerivWithinAt (fun t : ℝ => t * q t) (q 0) s 0 := by
   rw [hasDerivWithinAt_iff_tendsto_slope]
-  refine Filter.Tendsto.congr' ?_ (hq.mono_left (nhdsWithin_mono _ Set.diff_subset))
+  refine Filter.Tendsto.congr' ?_ (hq.mono_left (nhdsWithin_mono _ Set.sdiff_subset))
   filter_upwards [self_mem_nhdsWithin] with t ht
   have ht0 : t ≠ 0 := by simpa using ht.2
   rw [slope_def_field, sub_zero, zero_mul, sub_zero, mul_comm, mul_div_assoc, div_self ht0,
@@ -158,7 +158,7 @@ theorem mLocationRoot_influence_of_lipschitz {P : Measure ℝ} [IsProbabilityMea
   -- `t = 0` belongs to every `𝓝[Ici 0] 0`-set: the uncontaminated equation.
   have hzero : (∫ x, ψ (x - θ₀) ∂P) = 0 := by
     have h00 := mem_of_mem_nhdsWithin (Set.self_mem_Ici (a := (0 : ℝ))) hΦ0
-    simp only [Set.mem_setOf_eq, zero_mul, add_zero, hθ0] at h00
+    simp only [Set.mem_ofPred_eq, zero_mul, add_zero, hθ0] at h00
     exact h00
   -- Step 3: differentiate the two pieces within `Ici 0` at `0`.
   have hcomp : HasDerivWithinAt (fun t : ℝ => ∫ x, ψ (x - θ t) ∂P) (-A * d)

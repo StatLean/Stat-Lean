@@ -124,17 +124,17 @@ theorem isEquivariantConfidence_iff_acceptance_equivariant {A : Θ → Set 𝓧}
     · intro hy
       refine ⟨g⁻¹ • y, ?_, smul_inv_smul g y⟩
       have hx := Set.ext_iff.mp (hEq g (g⁻¹ • y)) (g • θ)
-      simp only [confidenceSet, smul_inv_smul, Set.mem_image, Set.mem_setOf_eq] at hx
+      simp only [confidenceSet, smul_inv_smul, Set.mem_image, Set.mem_ofPred_eq] at hx
       obtain ⟨θ', hθ', hθ'eq⟩ := hx.mpr hy
       rwa [hinj g θ' θ hθ'eq] at hθ'
     · rintro ⟨x, hx, rfl⟩
       have hx2 := Set.ext_iff.mp (hEq g x) (g • θ)
-      simp only [confidenceSet, Set.mem_image, Set.mem_setOf_eq] at hx2
+      simp only [confidenceSet, Set.mem_image, Set.mem_ofPred_eq] at hx2
       exact hx2.mp ⟨θ, hx, rfl⟩
   · -- equivariance of the acceptance regions ⇒ equivariance of the confidence family
     intro hA g x
     ext θ'
-    simp only [confidenceSet, Set.mem_image, Set.mem_setOf_eq]
+    simp only [confidenceSet, Set.mem_image, Set.mem_ofPred_eq]
     constructor
     · rintro ⟨θ, hθ, rfl⟩
       rw [hA g θ]; exact ⟨x, hθ, rfl⟩
@@ -167,7 +167,7 @@ theorem acceptance_invariant_of_equivariantConfidence {S : 𝓧 → Set Θ}
     · intro h; exact ⟨g⁻¹ • θ', h, smul_inv_smul _ _⟩
   have hgθ : g⁻¹ • θ = θ := inv_smul_eq_iff.mpr hg.symm
   ext y
-  simp only [Set.mem_image, Set.mem_setOf_eq]
+  simp only [Set.mem_image, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨x, hx, rfl⟩; rw [hmem g x θ, hgθ]; exact hx
   · intro hy

@@ -5,7 +5,8 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 -- Consumed only by the falsity witness for eq. (4.8) (`tarLS_clt_debt_false` below):
 -- the coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`, and `Matrix.PosDef.one`.
 import Mathlib.Probability.Independence.InfinitePi
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.ContinuousFunctionalCalculus
 
 /-!
 # TAR estimation with a known partition (FY §4.1.2, eqs. (4.4)–(4.8))
@@ -118,14 +119,14 @@ private noncomputable def tarFit {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (
   map_add' θ η := by
     funext t
     by_cases h : t ∈ tarRegimeIndices x A d P
-    · simp only [h, if_true, Prod.fst_add, Prod.snd_add, Pi.add_apply, add_mul,
+    · simp only [h, ite_true, Prod.fst_add, Prod.snd_add, Pi.add_apply, add_mul,
         Finset.sum_add_distrib]
       ring
     · simp [h]
   map_smul' c θ := by
     funext t
     by_cases h : t ∈ tarRegimeIndices x A d P
-    · simp only [h, if_true, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, smul_eq_mul,
+    · simp only [h, ite_true, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, smul_eq_mul,
         RingHom.id_apply, Pi.smul_apply]
       simp only [mul_add, Finset.mul_sum, mul_assoc]
     · simp [h]
@@ -134,12 +135,12 @@ private lemma tarFit_apply_of_mem {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) 
     (θ : ℝ × (Fin P → ℝ)) {t : Fin T} (ht : t ∈ tarRegimeIndices x A d P) :
     tarFit x A d θ t = θ.1 + ∑ j : Fin P, θ.2 j *
       x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩ :=
-  if_pos ht
+  ite_eq_left ht
 
 private lemma tarFit_apply_of_not_mem {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
     (θ : ℝ × (Fin P → ℝ)) {t : Fin T} (ht : t ∉ tarRegimeIndices x A d P) :
     tarFit x A d θ t = 0 :=
-  if_neg ht
+  ite_eq_right ht
 
 /-- The least-squares objective as a function of the fitted-value vector. -/
 private noncomputable def tarObj {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ)
@@ -175,7 +176,7 @@ theorem exists_tarLS_minimizer {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d 
   have h0C : (0 : Fin T → ℝ) ∈ C := by
     rw [hC]
     refine ⟨⟨0, map_zero _⟩, ?_⟩
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     exact le_rfl
   have hCclosed : IsClosed C := by
     rw [hC]
@@ -227,7 +228,7 @@ theorem exists_tarLS_minimizer {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d 
   · refine isMinOn_iff.mp hw0min _ ?_
     rw [hC]
     refine ⟨⟨(γ0, γ), rfl⟩, ?_⟩
-    simpa only [Set.mem_setOf_eq] using hcase
+    simpa only [Set.mem_ofPred_eq] using hcase
   · have hw0le : tarObj x A d P w0 ≤ tarObj x A d P 0 := hw0C.2
     exact le_trans hw0le (le_of_not_ge hcase)
 
@@ -520,7 +521,7 @@ private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
     have h0 : radLaw {x : ℝ | ¬ ‖x‖ ≤ 1} = 0 := by
       have hsub : {x : ℝ | ¬ ‖x‖ ≤ 1} ⊆ ({-1, 1} : Set ℝ)ᶜ := by
         intro x hx hmem
-        rcases hmem with h | h <;> (rw [Set.mem_setOf_eq] at hx; apply hx; rw [h]; simp)
+        rcases hmem with h | h <;> (rw [Set.mem_ofPred_eq] at hx; apply hx; rw [h]; simp)
       refine measure_mono_null hsub ?_
       simp only [radLaw, Measure.coe_add, Pi.add_apply, Measure.smul_apply, smul_eq_mul]
       rw [Measure.dirac_apply' _ (by measurability), Measure.dirac_apply' _ (by measurability)]
@@ -738,14 +739,14 @@ private lemma measurableSet_radRegime {T : ℕ} (t : Fin T) :
             ⁻¹' (radA 0) := by
       ext x
       simp only [tarRegimeIndices, Finset.mem_filter, Finset.mem_univ, true_and,
-        Set.mem_preimage, Set.mem_setOf_eq]
+        Set.mem_preimage, Set.mem_ofPred_eq]
       exact ⟨fun h => h.2.choose_spec, fun hx => ⟨ht, le_of_lt ht, hx⟩⟩
     rw [hset]
     exact (measurable_pi_apply _) (by simp [radA])
   · have hset : {x : Fin T → ℝ | t ∈ tarRegimeIndices x (radA 0) 1 1} = ∅ := by
       ext x
       simp only [tarRegimeIndices, Finset.mem_filter, Finset.mem_univ, true_and,
-        Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
+        Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_and]
       exact fun h => absurd h ht
     rw [hset]
     exact MeasurableSet.empty
@@ -1016,8 +1017,8 @@ theorem tarLS_normalEquations (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
         rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib]
         congr 1
         rw [Finset.sum_eq_single l]
-        · rw [if_pos rfl]
-        · intro j _ hj; rw [if_neg hj, zero_mul]
+        · rw [ite_eq_left rfl]
+        · intro j _ hj; rw [ite_eq_right hj, zero_mul]
         · intro h; exact absurd (Finset.mem_univ l) h
       rw [hsum, hr]
       ring_nf

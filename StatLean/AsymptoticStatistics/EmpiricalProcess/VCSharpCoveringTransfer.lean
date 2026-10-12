@@ -84,7 +84,7 @@ theorem finite_closedCover_of_finset_separated_card_le
         simpa only [hSfinite.coe_toFinset] using hSsep
     simpa only [Set.ncard_eq_toFinset_card S hSfinite] using hSbound
   have hpacking_top : Metric.packingNumber epsNN A ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENat.coe_ne_top N) hpacking
+    ne_top_of_le_ne_top (ENat.natCast_ne_top N) hpacking
   let Cset : Set X := Metric.maximalSeparatedSet epsNN A
   have hCfinite : Cset.Finite := by
     apply Set.encard_ne_top_iff.mp

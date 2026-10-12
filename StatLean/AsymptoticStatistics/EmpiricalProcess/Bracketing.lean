@@ -135,7 +135,7 @@ lemma bracketingNumber_lt_top_iff_HasFiniteBracketingCover
     rw [h_top] at hlt
     exact lt_irrefl _ hlt
   · rintro ⟨k, l, u, hbr, hcov⟩
-    refine lt_of_le_of_lt ?_ (ENat.coe_lt_top k)
+    refine lt_of_le_of_lt ?_ (ENat.natCast_lt_top k)
     refine iInf_le_of_le k ?_
     exact iInf_le_of_le ⟨l, u, hbr, hcov⟩ le_rfl
 

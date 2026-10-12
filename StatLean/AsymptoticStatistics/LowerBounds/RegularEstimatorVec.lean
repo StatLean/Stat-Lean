@@ -4,7 +4,8 @@ import StatLean.AsymptoticStatistics.Core.PathwiseVec
 import StatLean.AsymptoticStatistics.Core.EIFVec
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Group.Convolution
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Vector-valued regular-estimator predicate

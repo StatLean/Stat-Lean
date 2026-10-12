@@ -67,7 +67,7 @@ private theorem signVec_eq_sum_dirac (N : ℕ) :
   rw [Measure.sum_fintype]
   refine Measure.pi_eq ?_
   intro t _
-  rw [Measure.finset_sum_apply]
+  rw [Measure.finsetSum_apply]
   rw [Finset.prod_congr rfl (fun i (_ : i ∈ Finset.univ) => radLaw_apply_eq_sum_bool (t i)),
     Fintype.prod_sum]
   refine Finset.sum_congr rfl fun σ _ => ?_

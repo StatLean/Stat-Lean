@@ -92,10 +92,10 @@ private lemma expLogFactor_apply (p q : X → ℝ) (hp0 : ∀ x, 0 ≤ p x)
   unfold expLogFactor
   by_cases hpz : p x = 0
   · simp [hpz]
-  · rw [if_neg hpz]
+  · rw [ite_eq_right hpz]
     by_cases hqz : q x = 0
     · simp [hqz, Real.log_zero, Real.exp_zero]
-    · rw [if_neg hqz, Real.exp_log (div_pos (lt_of_le_of_ne (hq0 x) (Ne.symm hqz))
+    · rw [ite_eq_right hqz, Real.exp_log (div_pos (lt_of_le_of_ne (hq0 x) (Ne.symm hqz))
         (lt_of_le_of_ne (hp0 x) (Ne.symm hpz)))]
       field_simp
 
@@ -104,13 +104,13 @@ private lemma expLogFactor_le (p q : X → ℝ) (hp0 : ∀ x, 0 ≤ p x)
     (hq0 : ∀ x, 0 ≤ q x) (x : X) : expLogFactor p q x ≤ p x + q x := by
   rw [expLogFactor_apply p q hp0 hq0]
   by_cases hpz : p x = 0
-  · rw [if_pos hpz]
+  · rw [ite_eq_left hpz]
     exact add_nonneg (hp0 x) (hq0 x)
-  · rw [if_neg hpz]
+  · rw [ite_eq_right hpz]
     by_cases hqz : q x = 0
-    · rw [if_pos hqz]
+    · rw [ite_eq_left hqz]
       exact le_add_of_nonneg_right (hq0 x)
-    · rw [if_neg hqz]
+    · rw [ite_eq_right hqz]
       exact le_add_of_nonneg_left (hp0 x)
 
 private lemma expLogFactor_integrable (p q : X → ℝ) (mu : Measure X)
@@ -139,7 +139,7 @@ private lemma expLogFactor_integral_eq (p q : X → ℝ) (mu : Measure X)
       fun x => Q0.indicator p x - P0.indicator q x := by
     funext x
     rw [expLogFactor_apply p q hp0 hq0, Set.indicator_apply, Set.indicator_apply]
-    simp only [P0, Q0, Set.mem_setOf_eq]
+    simp only [P0, Q0, Set.mem_ofPred_eq]
     split_ifs <;> simp_all
   have key : (∫ x, expLogFactor p q x ∂mu) - ∫ x, q x ∂mu =
       (∫ x, Q0.indicator p x ∂mu) - ∫ x, P0.indicator q x ∂mu := by
@@ -280,7 +280,7 @@ theorem positiveRectangle_restrict_eq
     change ENNReal.ofReal (q x) = ENNReal.ofReal (expLogFactor p q x)
     rw [expLogFactor_apply p q hp0 hq0]
     obtain ⟨hp, hq⟩ := hx
-    rw [if_neg (ne_of_gt hp), if_neg (ne_of_gt hq)]
+    rw [ite_eq_right (ne_of_gt hp), ite_eq_right (ne_of_gt hq)]
   haveI : IsFiniteMeasure ((mu.withDensity (ENNReal.ofReal ∘ p)).withDensity e) := by
     rw [htilt]
     exact isFiniteMeasure_withDensity_ofReal
@@ -355,7 +355,7 @@ theorem alternative_positiveRectangle_compl_le
                 (show x ∈ {x | p x = 0} from hpz)]
               rfl
             · have hp : 0 < p x := lt_of_le_of_ne (hp0 x) (Ne.symm hpz)
-              rw [Set.mem_compl_iff, commonPositiveSet, Set.mem_setOf_eq, not_and] at hx
+              rw [Set.mem_compl_iff, commonPositiveSet, Set.mem_ofPred_eq, not_and] at hx
               have hqz : q x = 0 := le_antisymm (not_lt.mp (hx hp)) (hq0 x)
               rw [hqz, ENNReal.ofReal_zero]
               exact zero_le
@@ -471,9 +471,9 @@ theorem finiteProduct_expLog_comparison
     have := congrArg (fun nu : Measure (Fin N → X) => nu.real A) hrestrict
     simpa only [measureReal_restrict_apply hA] using this
   have hQsplit : Q.real (A ∩ G) + Q.real (A \ G) = Q.real A :=
-    measureReal_inter_add_diff hG
+    measureReal_inter_add_sdiff hG
   have hTsplit : T.real (A ∩ G) + T.real (A \ G) = T.real A :=
-    measureReal_inter_add_diff hG
+    measureReal_inter_add_sdiff hG
   have hQcomp : Q.real Gᶜ ≤
       (N : ℝ) * (∫ x in {x | p x = 0}, q x ∂mu) := by
     have h := alternative_positiveRectangle_compl_le
@@ -487,9 +487,9 @@ theorem finiteProduct_expLog_comparison
     · exact integral_nonneg_of_ae
         (ae_restrict_of_ae (Filter.Eventually.of_forall hq0))
   have hQdiff : Q.real (A \ G) ≤ Q.real Gᶜ :=
-    measureReal_mono (Set.diff_subset_compl A G)
+    measureReal_mono (Set.sdiff_subset_compl A G)
   have hTdiff : T.real (A \ G) ≤ T.real Gᶜ :=
-    measureReal_mono (Set.diff_subset_compl A G)
+    measureReal_mono (Set.sdiff_subset_compl A G)
   have hQG : Q.real G + Q.real Gᶜ = 1 := by
     simpa only [probReal_univ] using measureReal_add_measureReal_compl hG (μ := Q)
   have hTcomp : T.real Gᶜ ≤ Q.real Gᶜ + |T.real Set.univ - 1| := by

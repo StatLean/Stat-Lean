@@ -94,7 +94,7 @@ theorem TendstoInProbZero.isBoundedInProb
       exact lt_of_le_of_lt (by exact_mod_cast hab) hω
     have hiInter : (⋂ M, s M) = ∅ := by
       ext ω
-      simp only [hs_def, Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [hs_def, Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_forall, not_lt]
       obtain ⟨M, hM⟩ := exists_nat_gt ‖Z k ω‖
       exact ⟨M, hM.le⟩
@@ -198,7 +198,7 @@ theorem tendstoInProbZero_of_isBoundedInProb_smul
     have h2 : |sqn k| * ε ≤ |sqn k| * ‖Z k ω‖ := mul_le_mul_of_nonneg_left hω (abs_nonneg _)
     have h3 : ‖sqn k • Z k ω‖ = |sqn k| * ‖Z k ω‖ := by
       rw [norm_smul, Real.norm_eq_abs]
-    rw [Set.mem_setOf_eq, h3]
+    rw [Set.mem_ofPred_eq, h3]
     linarith [hN k hk]
   have hle : (P k).real {ω | ε ≤ ‖Z k ω‖} ≤ η / 2 :=
     le_trans (measureReal_mono hsub) (hM k)
@@ -222,7 +222,7 @@ theorem tendstoInProbZero_clm {Ξ : Type*} [MeasurableSpace Ξ]
   have hδ_pos : 0 < δ := div_pos hε hden
   have hsub : ∀ n, {ξ | ε ≤ ‖f (Z n ξ)‖} ⊆ {ξ | δ ≤ ‖Z n ξ‖} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have hbound : ‖f (Z n ξ)‖ ≤ ‖f‖ * ‖Z n ξ‖ := f.le_opNorm _
     rw [hδ_def, div_le_iff₀ hden]
     nlinarith [hbound, hξ, norm_nonneg (Z n ξ)]
@@ -264,7 +264,7 @@ theorem tendstoInProbZero_of_isBoundedInProb_mul {G : Type*} [NormedAddCommGroup
     by_cases hbig : M < ‖A k ω‖
     · exact Or.inl hbig
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq, norm_smul] at hω ⊢
+      simp only [Set.mem_ofPred_eq, norm_smul] at hω ⊢
       have h1 : ‖A k ω‖ ≤ M' := (not_lt.mp hbig).trans hMM'
       have h2 : ‖A k ω‖ * ‖Z k ω‖ ≤ M' * ‖Z k ω‖ :=
         mul_le_mul_of_nonneg_right h1 (norm_nonneg _)

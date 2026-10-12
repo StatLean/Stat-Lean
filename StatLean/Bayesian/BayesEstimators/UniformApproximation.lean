@@ -172,7 +172,7 @@ private lemma tendsto_prob_zero_add {Ω : ℕ → Type*} [∀ n, MeasurableSpace
       ⊆ {ω | δ / 2 ≤ a n ω} ∪ {ω | δ / 2 ≤ b n ω} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have hlt : a n ω + b n ω < δ / 2 + δ / 2 := ENNReal.add_lt_add hcon.1 hcon.2
     rw [ENNReal.add_halves] at hlt
     exact absurd hω (not_le.2 hlt)
@@ -201,7 +201,7 @@ private lemma tendsto_prob_zero_mul_of_tight {Ω : ℕ → Type*} [∀ n, Measur
   have hsub : {ω | δ ≤ D n ω * T n ω} ⊆ {ω | C < D n ω} ∪ {ω | δ / C ≤ T n ω} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hcon
     have h3 : D n ω * T n ω ≤ C * T n ω := by gcongr; exact hcon.1
     have h4 : T n ω * C < δ / C * C := ENNReal.mul_lt_mul_left hC0 hCtop hcon.2
     rw [ENNReal.div_mul_cancel hC0 hCtop] at h4
@@ -283,7 +283,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
       have hsub : P n {ω | δ ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
           ≤ P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω} :=
         measure_mono fun ω hω => by
-          simp only [Set.mem_setOf_eq] at hω ⊢
+          simp only [Set.mem_ofPred_eq] at hω ⊢
           exact (min_le_left δ 1).trans hω
       refine hsub.trans ?_
       calc P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
@@ -445,7 +445,7 @@ private lemma gaussTail_tendsto_prob
   filter_upwards [hKev, hE0.eventually (Iio_mem_nhds hδ)] with n h1 h2
   refine le_trans (measure_mono ?_) h1
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   by_contra hcon
   rw [not_lt] at hcon
   exact absurd hω (not_le.2 (lt_of_le_of_lt (hkey n ω hcon) h2))
@@ -473,7 +473,7 @@ private lemma tight_polyEnvelope
   · filter_upwards [hKev] with n hn
     refine le_trans (measure_mono ?_) hn
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     by_contra hcon
     rw [not_lt] at hcon
     have hΔ : ‖bvmEffScore J sc n ω‖ ≤ c * K :=

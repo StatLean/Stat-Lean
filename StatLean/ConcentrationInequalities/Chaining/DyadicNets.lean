@@ -202,7 +202,7 @@ lemma one_lt_coveringNumber_of_two_mul_lt_dist {T : Set E} {ε : ℝ} {a b : E}
     (h : 2 * ε < dist a b) :
     1 < coveringNumber T ε := by
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have hnetop : Metric.coveringNumber (Real.toNNReal ε) T ≠ ⊤ :=
     ne_top_of_le_ne_top (by norm_num) hle
   obtain ⟨C, hCsub, hCfin, hCcov, hCenc⟩ := Metric.exists_set_encard_eq_coveringNumber hnetop
@@ -304,7 +304,7 @@ lemma netProj_mem {N : Finset E}
     -- LEAN-ONLY: nonemptiness excludes the junk branch of `netProj`
     (hN : N.Nonempty) (x : E) :
     netProj N x ∈ N := by
-  simp only [netProj, dif_pos hN]
+  simp only [netProj, dite_eq_left hN]
   exact (N.exists_min_image (fun a => dist x a) hN).choose_spec.1
 
 /-- The projection beats any witness: if some net point is `ε`-close to `x`,
@@ -315,7 +315,7 @@ lemma dist_netProj_le {N : Finset E} {x : E} {ε : ℝ}
     dist x (netProj N x) ≤ ε := by
   obtain ⟨a, haN, ha⟩ := hx
   have hN : N.Nonempty := ⟨a, haN⟩
-  simp only [netProj, dif_pos hN]
+  simp only [netProj, dite_eq_left hN]
   exact le_trans ((N.exists_min_image (fun a => dist x a) hN).choose_spec.2 a haN) ha
 
 open Classical in

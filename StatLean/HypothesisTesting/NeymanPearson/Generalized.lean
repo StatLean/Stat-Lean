@@ -516,7 +516,7 @@ private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
     simp only [hinddef]
     split_ifs with hx
     · rw [one_mul]; nlinarith [(hφ.2 x).2]
-    · rw [zero_mul]; push_neg at hx; nlinarith [(hφ.2 x).1]
+    · rw [zero_mul]; push Not at hx; nlinarith [(hφ.2 x).1]
   have hnn : 0 ≤ᵐ[μ] fun x => ind x * G x - φ x * G x :=
     Filter.Eventually.of_forall fun x => sub_nonneg.mpr (hpt x)
   have hi1 : Integrable (fun x => ind x * G x) μ := integrable_crit_mul hGint hindc
@@ -528,13 +528,13 @@ private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
   constructor
   · filter_upwards [hae] with x hx hgt
     have hG : 0 < G x := by simp only [hGdef]; linarith
-    simp only [Pi.zero_apply, hinddef, if_pos hG, one_mul] at hx
+    simp only [Pi.zero_apply, hinddef, ite_eq_left hG, one_mul] at hx
     have hfac : G x * (1 - φ x) = 0 := by linear_combination hx
     have := (mul_eq_zero.mp hfac).resolve_left (ne_of_gt hG)
     linarith
   · filter_upwards [hae] with x hx hlt
     have hG : G x < 0 := by simp only [hGdef]; linarith
-    simp only [Pi.zero_apply, hinddef, if_neg (not_lt.mpr hG.le), zero_mul, zero_sub,
+    simp only [Pi.zero_apply, hinddef, ite_eq_right (not_lt.mpr hG.le), zero_mul, zero_sub,
       neg_eq_zero] at hx
     exact (mul_eq_zero.mp hx).resolve_right (ne_of_lt hG)
 
@@ -758,7 +758,7 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
       (continuous_apply (Fin.last m))
   have hUconv : Convex ℝ U := by
     rintro y₁ h₁ y₂ h₂ a b ha hb hab
-    simp only [hUdef, Set.mem_setOf_eq] at h₁ h₂ ⊢
+    simp only [hUdef, Set.mem_ofPred_eq] at h₁ h₂ ⊢
     have hproj : (fun i : Fin m => (a • y₁ + b • y₂) i.castSucc) - c
         = a • ((fun i : Fin m => y₁ i.castSucc) - c)
           + b • ((fun i : Fin m => y₂ i.castSucc) - c) := by
@@ -819,10 +819,10 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
       funext i
       have hne : (i.castSucc : Fin (m + 1)) ≠ Fin.last m := (Fin.castSucc_lt_last i).ne
       simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
-        hsbdef, if_neg hne, mul_zero, add_zero, hzc i, sub_self]
+        hsbdef, ite_eq_right hne, mul_zero, add_zero, hzc i, sub_self]
     have hlast : (z + δ • sb (Fin.last m)) (Fin.last m) = β + δ := by
       simp [hsbdef, hzlast]
-    simp only [hUdef, Set.mem_setOf_eq]
+    simp only [hUdef, Set.mem_ofPred_eq]
     rw [hproj, hlast, norm_zero, mul_zero, add_zero]
     linarith
   have hLray : ∀ δ : ℝ, L (z + δ • sb (Fin.last m)) = L z + δ * b := by
@@ -837,7 +837,7 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
   have hzeq : L z = u₀ := by
     refine le_antisymm ?_ hzu
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hδpos : 0 < (L z - u₀) / (-b) := div_pos (by linarith) (by linarith)
     have h1 := hUlt _ (hray _ hδpos)
     rw [hLray] at h1
@@ -868,7 +868,7 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
   simp only [hzdef, hzlast] at hge
   rw [integral_lagrangian hint _ hψ, integral_lagrangian hint _ hφ₀]
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   linarith [mul_lt_mul_of_neg_left hcon hbneg]
 
 /-- **Multipliers exist, and are forced (iv, second clause).** If the constraint vector is
@@ -1032,7 +1032,7 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
       α < powerAgainst (P (Fin.last m)) φ
   · exact Or.inr hR
   refine Or.inl ?_
-  push_neg at hR
+  push Not at hR
   have hint : ∀ i, Integrable (p i) μ := fun i => density_integrable (hp i)
   have hone : ∀ i, ∫ x, p i x ∂μ = 1 := fun i => density_integral_one (hp i)
   -- Perturbing the constant test `α` in a direction with vanishing first `m` moments cannot

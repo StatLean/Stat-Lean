@@ -48,7 +48,7 @@ private theorem TendstoInProbZero.add
   refine (measureReal_mono (fun x hx => ?_)).trans (measureReal_union_le _ _)
   change ε ≤ ‖Z n x + W n x‖ at hx
   by_contra hnot
-  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
   linarith [norm_add_le (Z n x) (W n x)]
 
 private theorem TendstoInProbZero.finset_sum
@@ -100,7 +100,7 @@ private theorem TendstoInProbZero.smul_const
   · subst v
     simp only [smul_zero]
     intro ε hε
-    simp only [norm_zero, not_le.mpr hε, Set.setOf_false, measureReal_empty]
+    simp only [norm_zero, not_le.mpr hε, Set.ofPred_false, measureReal_empty]
     exact tendsto_const_nhds
   · have hvpos : 0 < ‖v‖ := (norm_pos_iff.mpr hv)
     intro ε hε
@@ -333,8 +333,8 @@ private theorem splitBlock_centered_tail
             apply lintegral_mono
             intro V
             by_cases hV : energy V <= delta
-            · simpa only [Set.preimage_setOf_eq, and_iff_left hV] using hcond V hV
-            · simp only [Set.preimage_setOf_eq, hV, and_false, Set.setOf_false,
+            · simpa only [Set.preimage_ofPred_eq, and_iff_left hV] using hcond V hV
+            · simp only [Set.preimage_ofPred_eq, hV, and_false, Set.ofPred_false,
                 measure_empty]
               exact bot_le
       _ = ENNReal.ofReal (delta / epsilon ^ 2) := by simp [muT]
@@ -364,13 +364,13 @@ private theorem splitBlock_centered_tail
       {X | epsilon <= abs (a * ∑ i : {i : I // block i},
         (f X (X i.1) - ∫ x, f X x ∂P))} := by
     ext X
-    simp only [Set.mem_preimage, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
     rw [← hZ_combine (e X).1 (e X).2]
     simp only [combine, e.symm_apply_apply]
   have hbad_eq : e ⁻¹' {q | delta < energy q.2} =
       {X | delta < ∫ x, (f X x) ^ 2 ∂P} := by
     ext X
-    simp only [Set.mem_preimage, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
     rw [← henergy_combine (e X).1 (e X).2]
     simp only [combine, e.symm_apply_apply]
   have htarget_real : (Measure.pi (fun _ : I => P)).real
@@ -513,8 +513,8 @@ private theorem splitBlock_nonneg_tail
             apply lintegral_mono
             intro V
             by_cases hV : energy V <= delta
-            · simpa only [Set.preimage_setOf_eq, and_iff_left hV] using hcond V hV
-            · simp only [Set.preimage_setOf_eq, hV, and_false, Set.setOf_false,
+            · simpa only [Set.preimage_ofPred_eq, and_iff_left hV] using hcond V hV
+            · simp only [Set.preimage_ofPred_eq, hV, and_false, Set.ofPred_false,
                 measure_empty]
               exact bot_le
       _ = ENNReal.ofReal (delta / epsilon) := by simp [muT]
@@ -543,13 +543,13 @@ private theorem splitBlock_nonneg_tail
   have htarget_eq : e ⁻¹' {q | epsilon <= Z q} =
       {X | epsilon <= c * ∑ i : {i : I // block i}, f X (X i.1)} := by
     ext X
-    simp only [Set.mem_preimage, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
     rw [← hZ_combine (e X).1 (e X).2]
     simp only [combine, e.symm_apply_apply]
   have hbad_eq : e ⁻¹' {q | delta < energy q.2} =
       {X | delta < ∫ x, f X x ∂P} := by
     ext X
-    simp only [Set.mem_preimage, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
     rw [← henergy_combine (e X).1 (e X).2]
     simp only [combine, e.symm_apply_apply]
   have htarget_real : (Measure.pi (fun _ : I => P)).real
@@ -1691,7 +1691,7 @@ theorem rootNGrid_tendstoInProbZero_at_random
         _ = (k : ℝ) / Real.sqrt n ^ 2 := by simp [div_eq_mul_inv]
     have hp : point n z = rounded + (1 / Real.sqrt n) • offset := by
       ext j
-      simp only [point, if_neg hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
+      simp only [point, ite_eq_right hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
       change (((((Int.floor (Real.sqrt n * theta0 j) : ℤ) +
         z j (Finset.mem_univ j) : ℤ) : ℝ) / Real.sqrt n)) =
           ((Int.floor (Real.sqrt n * theta0 j) : ℤ) : ℝ) / Real.sqrt n +
@@ -1741,7 +1741,7 @@ theorem rootNGrid_tendstoInProbZero_at_random
           M w hw hlocal j
       have hp : point n z = preliminary n ξ := by
         ext j
-        simp only [point, if_neg hnpos.ne', z]
+        simp only [point, ite_eq_right hnpos.ne', z]
         change ((((Int.floor (Real.sqrt n * theta0 j) : ℤ) +
           (w j - Int.floor (Real.sqrt n * theta0 j)) : ℤ) : ℝ) / Real.sqrt n) =
             preliminary n ξ j

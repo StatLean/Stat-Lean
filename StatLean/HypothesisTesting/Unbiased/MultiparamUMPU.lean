@@ -324,17 +324,17 @@ theorem condSize_cx (K : Set (ℝ × ℝ)) (p : ℝ × ℝ) (ψ : ℝ × ℝ →
 /-- On the alternative set the competitor has power `1`. -/
 theorem power_cxψ_mem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∈ K) :
     power (cxP K) cxψ p = 1 := by
-  have hP : cxP K p = Measure.dirac true := by simp only [cxP, if_pos h]
+  have hP : cxP K p = Measure.dirac true := by simp only [cxP, ite_eq_left h]
   rw [power, hP, integral_dirac]
   simp [cxψ]
 
 /-- Off the alternative set the competitor has power `1/2`. -/
 theorem power_cxψ_notMem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∉ K) :
     power (cxP K) cxψ p = 1 / 2 := by
-  have hP : cxP K p = cxCoin := by simp only [cxP, if_neg h]
+  have hP : cxP K p = cxCoin := by simp only [cxP, ite_eq_right h]
   have hint : Integrable cxψ cxCoin := Integrable.of_finite
   rw [power, hP, integral_fintype hint]
-  simp only [Fintype.sum_bool, cxψ, if_true, if_false, smul_eq_mul, mul_one, mul_zero,
+  simp only [Fintype.sum_bool, cxψ, ite_true, ite_false, smul_eq_mul, mul_one, mul_zero,
     add_zero]
   rw [measureReal_def, cxCoin_true]
   norm_num
@@ -2036,11 +2036,11 @@ private lemma condOneSidedTest_mem_Icc {C₀ γ₀ : Ξ → ℝ}
 
 private lemma condOneSidedTest_eq_one {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : C₀ z.2 < z.1) :
     condOneSidedTest C₀ γ₀ z = 1 := by
-  simp only [condOneSidedTest, if_pos hz]
+  simp only [condOneSidedTest, ite_eq_left hz]
 
 private lemma condOneSidedTest_eq_zero {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : z.1 < C₀ z.2) :
     condOneSidedTest C₀ γ₀ z = 0 := by
-  simp only [condOneSidedTest, if_neg (not_lt.mpr hz.le), if_neg (ne_of_lt hz)]
+  simp only [condOneSidedTest, ite_eq_right (not_lt.mpr hz.le), ite_eq_right (ne_of_lt hz)]
 
 private lemma abs_le_one_of_mem_Icc {f : ℝ × Ξ → ℝ} (h : ∀ z, f z ∈ Set.Icc (0 : ℝ) 1)
     (z : ℝ × Ξ) : |f z| ≤ 1 :=
@@ -2090,17 +2090,18 @@ private lemma condInsideTest_mem_Icc {C₁ C₂ γ₁ γ₂ : Ξ → ℝ}
 
 private lemma condOutsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
-  simp only [condOutsideTest, if_pos hz]
+  simp only [condOutsideTest, ite_eq_left hz]
 
 private lemma condOutsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
   have hn : ¬ (z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) := by
     rintro (h | h) <;> linarith
-  simp only [condOutsideTest, if_neg hn, if_neg (ne_of_gt h1), if_neg (ne_of_lt h2)]
+  simp only [condOutsideTest, ite_eq_right hn, ite_eq_right (ne_of_gt h1),
+    ite_eq_right (ne_of_lt h2)]
 
 private lemma condInsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condInsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
-  simp only [condInsideTest, if_pos (And.intro h1 h2)]
+  simp only [condInsideTest, ite_eq_left (And.intro h1 h2)]
 
 private lemma condInsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC : ∀ t, C₁ t ≤ C₂ t)
     {z : ℝ × Ξ} (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condInsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
@@ -2111,7 +2112,7 @@ private lemma condInsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC : 
                                · exact ne_of_gt (by linarith)
   have h2 : z.1 ≠ C₂ z.2 := by rcases hz with h | h; · exact ne_of_lt (by linarith)
                                · exact ne_of_gt h
-  simp only [condInsideTest, if_neg hn, if_neg h1, if_neg h2]
+  simp only [condInsideTest, ite_eq_right hn, ite_eq_right h1, ite_eq_right h2]
 
 /-! ## The four UMP unbiased tests -/
 
@@ -3058,7 +3059,7 @@ private lemma integral_U_mul_eq_of_boundary_min {P : ℝ × Ξ → Measure 𝓧}
     have hC := canonicalUT_const_pos hU hT hUT hθ
     have h1 := hCD θ hθ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hpow : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω →
       ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ)) = N θ / D θ := by
@@ -3752,7 +3753,7 @@ private lemma cdf_sublevel_nonempty_bddBelow (μ : Measure ℝ) [IsProbabilityMe
   · obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp
       ((tendsto_cdf_atBot μ).eventually_lt_const (show (0 : ℝ) < 1 - α by linarith))
     refine ⟨b, fun y hy => ?_⟩
-    simp only [Set.mem_setOf_eq] at hy
+    simp only [Set.mem_ofPred_eq] at hy
     by_contra hcon
     exact absurd (hb y (not_le.mp hcon).le) (not_lt.mpr hy)
 
@@ -3839,17 +3840,17 @@ private lemma integral_condOneSidedTest (μ : Measure ℝ) [IsProbabilityMeasure
     by_cases h1 : C₀ t < u
     · have hm1 : u ∈ {x : ℝ | C₀ t < x} := h1
       have hn2 : u ∉ {x : ℝ | x = C₀ t} := by
-        simp only [Set.mem_setOf_eq]; linarith
-      rw [if_pos h1, Set.indicator_of_mem hm1, Set.indicator_of_notMem hn2]
+        simp only [Set.mem_ofPred_eq]; linarith
+      rw [ite_eq_left h1, Set.indicator_of_mem hm1, Set.indicator_of_notMem hn2]
       ring
     · have hn1 : u ∉ {x : ℝ | C₀ t < x} := h1
-      rw [if_neg h1, Set.indicator_of_notMem hn1]
+      rw [ite_eq_right h1, Set.indicator_of_notMem hn1]
       by_cases h2 : u = C₀ t
       · have hm2 : u ∈ {x : ℝ | x = C₀ t} := h2
-        rw [if_pos h2, Set.indicator_of_mem hm2]
+        rw [ite_eq_left h2, Set.indicator_of_mem hm2]
         ring
       · have hn2 : u ∉ {x : ℝ | x = C₀ t} := h2
-        rw [if_neg h2, Set.indicator_of_notMem hn2]
+        rw [ite_eq_right h2, Set.indicator_of_notMem hn2]
         ring
   rw [hfun, integral_add ((integrable_const (1 : ℝ)).indicator hs₁)
     (((integrable_const (1 : ℝ)).indicator hs₂).const_mul _), integral_const_mul,
@@ -3908,7 +3909,7 @@ theorem exists_measurable_conditional_constants
     refine measurable_of_Iic fun x => ?_
     have hset : (fun t => critC (κ t) α) ⁻¹' Set.Iic x = {t | 1 - α ≤ cdf (κ t) x} := by
       ext t
-      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
       exact critC_le_iff (κ t) hα₀ hα₁ x
     rw [hset]
     exact measurableSet_le measurable_const (measurable_cdf_kernel κ x)

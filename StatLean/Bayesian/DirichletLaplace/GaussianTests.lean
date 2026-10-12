@@ -89,7 +89,7 @@ lemma measure_dlTestSet_le (θ₀ φ : EuclideanSpace ℝ ι) {ρ : ℝ}
   -- Rewrite the acceptance region with the inner product in `stdGaussianShift`-order.
   have hset_eq : dlTestSet θ₀ φ ρ
       = {y : EuclideanSpace ℝ ι | ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 ≤ ⟪φ - θ₀, y - θ₀⟫} := by
-    unfold dlTestSet; ext y; simp only [Set.mem_setOf_eq]; rw [real_inner_comm]
+    unfold dlTestSet; ext y; simp only [Set.mem_ofPred_eq]; rw [real_inner_comm]
   rw [hset_eq]
   refine (stdGaussianShift_inner_ge_le θ₀ (φ - θ₀) _ ht).trans_eq ?_
   congr 2
@@ -136,8 +136,8 @@ lemma measure_compl_dlTestSet_le (θ₀ φ θ : EuclideanSpace ℝ ι) {ρ : ℝ
       ⊆ {y : EuclideanSpace ℝ ι |
           ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 ≤ ⟪-(φ - θ₀), y - θ⟫} := by
     intro y hy
-    simp only [dlTestSet, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hy
-    simp only [Set.mem_setOf_eq]
+    simp only [dlTestSet, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hy
+    simp only [Set.mem_ofPred_eq]
     rw [inner_neg_left, real_inner_comm]
     have hdecomp : ⟪y - θ₀, φ - θ₀⟫ = ⟪y - θ, φ - θ₀⟫ + ⟪θ - θ₀, φ - θ₀⟫ := by
       rw [← inner_add_left]; congr 1; abel

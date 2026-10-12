@@ -289,7 +289,7 @@ private theorem jPos_add_le_of_add_eq {μ ν A B m : Measure S} [IsFiniteMeasure
       rw [jPos_apply _ _ hsDc]
       refine setLIntegral_eq_zero hsDc fun x hx => ?_
       exact tsub_eq_zero_of_le (le_of_not_ge fun hc => hx.2 hc)
-    have hsplit := measure_inter_add_diff (μ := jPos μ ν) s hD
+    have hsplit := measure_inter_add_sdiff (μ := jPos μ ν) s hD
     rw [hz, add_zero] at hsplit
     exact hsplit.symm
   -- on `D` the positive part is exactly the difference of the two masses
@@ -307,11 +307,11 @@ private theorem jPos_add_le_of_add_eq {μ ν A B m : Measure S} [IsFiniteMeasure
     exact (ENNReal.add_right_inj (measure_ne_top ν _)).1 h3
   calc (jPos μ ν + m) s
       = jPos μ ν (s ∩ D) + (m (s ∩ D) + m (s \ D)) := by
-        rw [Measure.add_apply, hloc, measure_inter_add_diff (μ := m) s hD]
+        rw [Measure.add_apply, hloc, measure_inter_add_sdiff (μ := m) s hD]
     _ ≤ jPos μ ν (s ∩ D) + B (s ∩ D) + A (s \ D) := by
         rw [add_assoc]
         exact add_le_add le_rfl (add_le_add (hmB _) (hmA _))
-    _ = A s := by rw [hkey, measure_inter_add_diff (μ := A) s hD]
+    _ = A s := by rw [hkey, measure_inter_add_sdiff (μ := A) s hD]
 
 
 /-- **Lyapunov drift condition**: `∫ V d(κ x) ≤ γ V x + K` with a contraction factor
@@ -616,7 +616,7 @@ private theorem markov_level {V : S → ℝ} (hVm : Measurable V) (_hVnn : ∀ x
   have hVe : Measurable fun x => ENNReal.ofReal (V x) := ENNReal.measurable_ofReal.comp hVm
   have hsub : {x | V x ≤ R}ᶜ ⊆ {x | ENNReal.ofReal R ≤ ENNReal.ofReal (V x)} := by
     intro x hx
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
     exact ENNReal.ofReal_le_ofReal hx.le
   have hmk : ENNReal.ofReal R * ξ {x | V x ≤ R}ᶜ ≤ ∫⁻ x, ENNReal.ofReal (V x) ∂ξ :=
     le_trans (mul_le_mul_right (measure_mono hsub) _)
@@ -1236,7 +1236,7 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       Measure.sum f = (∑ n ∈ Finset.range N, f n) + Measure.sum fun k => f (k + N) := by
     intro f N
     ext s hs
-    rw [Measure.sum_apply _ hs, Measure.add_apply, Measure.finset_sum_apply,
+    rw [Measure.sum_apply _ hs, Measure.add_apply, Measure.finsetSum_apply,
       Measure.sum_apply _ hs]
     exact htsum (fun n => f n s) N
   -- the geometric bound on every tail mass
@@ -1273,7 +1273,7 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     refine Measure.le_iff.2 fun s hs => ?_
     rw [Measure.sum_apply _ hs, ENNReal.tsum_eq_iSup_nat]
     refine iSup_le fun N => ?_
-    rw [← Measure.finset_sum_apply]
+    rw [← Measure.finsetSum_apply]
     calc (∑ n ∈ Finset.range N, a n) s
         ≤ ((κ ^ N) x₀ + ∑ n ∈ Finset.range N, a n) s := by
           rw [Measure.add_apply]; exact le_add_self
@@ -1281,7 +1281,7 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       _ ≤ ((κ ^ 0) x₀ + Measure.sum b) s := by
           rw [Measure.add_apply, Measure.add_apply]
           refine add_le_add le_rfl ?_
-          rw [Measure.finset_sum_apply, Measure.sum_apply _ hs]
+          rw [Measure.finsetSum_apply, Measure.sum_apply _ hs]
           exact ENNReal.sum_le_tsum _
   haveI hAfinm : IsFiniteMeasure (Measure.sum a) := ⟨lt_top_iff_ne_top.2 hAfin⟩
   obtain ⟨π, hπdef⟩ : ∃ m : Measure S, m = ((κ ^ 0) x₀ + Measure.sum b) - Measure.sum a :=
@@ -1521,9 +1521,9 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     have h1 : π (t ∩ Eᶜ) + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ)) = π' (t ∩ Eᶜ) := add_tsub_cancel_of_le hb
     have h2 : π' (t ∩ E) + (π (t ∩ E) - π' (t ∩ E)) = π (t ∩ E) := add_tsub_cancel_of_le ha
     have hsπ : π t = π (t ∩ E) + π (t ∩ Eᶜ) := by
-      rw [← Set.diff_eq]; exact (measure_inter_add_diff t hE).symm
+      rw [← Set.sdiff_eq]; exact (measure_inter_add_sdiff t hE).symm
     have hsπ' : π' t = π' (t ∩ E) + π' (t ∩ Eᶜ) := by
-      rw [← Set.diff_eq]; exact (measure_inter_add_diff t hE).symm
+      rw [← Set.sdiff_eq]; exact (measure_inter_add_sdiff t hE).symm
     rw [Measure.add_apply, Measure.add_apply, hPapp t ht, hNapp t ht]
     calc π t + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ))
         = π (t ∩ E) + (π (t ∩ Eᶜ) + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ))) := by rw [hsπ, add_assoc]
@@ -1571,10 +1571,10 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
   have hPQ' : P ≤ P.bind κ := by
     refine Measure.le_iff.2 fun t ht => ?_
     have h1 : P t = P (t ∩ E) := by
-      have := measure_inter_add_diff t hE (μ := P)
+      have := measure_inter_add_sdiff t hE (μ := P)
       have h0 : P (t \ E) = 0 := by
         refine le_antisymm ?_ (zero_le)
-        rw [Set.diff_eq]
+        rw [Set.sdiff_eq]
         exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hPEc)
       rw [h0, add_zero] at this; exact this.symm
     have h2 : (P.bind κ) (t ∩ E) ≤ (P.bind κ) t := measure_mono Set.inter_subset_left
@@ -1615,10 +1615,10 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     have hNQ : N ≤ N.bind κ := by
       refine Measure.le_iff.2 fun t ht => ?_
       have h1 : N t = N (t ∩ Eᶜ) := by
-        have h := measure_inter_add_diff t hE.compl (μ := N)
+        have h := measure_inter_add_sdiff t hE.compl (μ := N)
         have h0 : N (t \ Eᶜ) = 0 := by
           refine le_antisymm ?_ (zero_le)
-          rw [Set.diff_eq, compl_compl]
+          rw [Set.sdiff_eq, compl_compl]
           exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hNE)
         rw [h0, add_zero] at h; exact h.symm
       have h2 : N (t ∩ Eᶜ) ≤ (N.bind κ) (t ∩ Eᶜ) := by

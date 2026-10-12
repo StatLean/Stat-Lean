@@ -144,7 +144,7 @@ theorem WeakConverges.slutsky_of_tendstoInMeasure_dist
               (fun ω hω => ?_)
             · refine nullMeasurableSet_lt ?_ (by fun_prop)
               exact (hX_meas n).dist (hY_meas n)
-            · simp only [Set.mem_setOf_eq] at hω
+            · simp only [Set.mem_ofPred_eq] at hω
               have h_le : dist (Y n ω) (X n ω) ≤ ε / 2 := by
                 rw [dist_comm]; exact hω.le
               have := hF_lip.dist_le_mul_of_le h_le

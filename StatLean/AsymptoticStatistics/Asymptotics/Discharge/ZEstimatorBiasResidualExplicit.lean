@@ -224,7 +224,7 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
                   (∑ i : Fin n, score_func_seq n X (X i))
                   - bias n X|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcΔ, hcD⟩, hcR, hcLHSb⟩ := hc

@@ -119,7 +119,7 @@ private lemma natFiltration_n_stronglyMeasurable
   letI : MeasurableSpace Ω := (natFiltration X hX) n
   suffices h : Measurable (f ∘ allVars X) from h.stronglyMeasurable
   apply hf.comp
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   -- X i is measurable w.r.t. (natFiltration X hX) n because
   -- comap (X i) inferInstance ≤ ⨆ j, comap (X j) inferInstance = (natFiltration X hX) n.
@@ -215,28 +215,28 @@ private def headSet (j : ℕ) : Finset (Fin n) := Finset.univ.filter (fun i => (
 private lemma measurable_projVars (X : ∀ i : Fin n, Ω → β i)
     (hX : ∀ i : Fin n, Measurable (X i)) (S : Finset (Fin n)) :
     Measurable (projVars X S) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   by_cases h : i ∈ S
-  · simp only [projVars, h, if_true]; exact hX i
-  · simp only [projVars, h, if_false]; exact measurable_const
+  · simp only [projVars, h, ite_true]; exact hX i
+  · simp only [projVars, h, ite_false]; exact measurable_const
 
 private lemma measurable_combineAt (S : Finset (Fin n)) :
     Measurable (fun p : (Π i : Fin n, β i) × (Π i : Fin n, β i) => combineAt S p.1 p.2) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   by_cases h : i ∈ S
-  · simp only [combineAt, h, if_true]; exact (measurable_pi_apply i).comp measurable_fst
-  · simp only [combineAt, h, if_false]; exact (measurable_pi_apply i).comp measurable_snd
+  · simp only [combineAt, h, ite_true]; exact (measurable_pi_apply i).comp measurable_fst
+  · simp only [combineAt, h, ite_false]; exact (measurable_pi_apply i).comp measurable_snd
 
 /-- On the `S`-block / `Sᶜ`-block decomposition, recombining reproduces `allVars X`. -/
 private lemma combineAt_projVars (X : ∀ i : Fin n, Ω → β i) (S : Finset (Fin n)) (ω : Ω) :
     combineAt S (projVars X S ω) (projVars X Sᶜ ω) = allVars X ω := by
   funext i
   by_cases h : i ∈ S
-  · simp only [combineAt, projVars, h, if_true, allVars]
+  · simp only [combineAt, projVars, h, ite_true, allVars]
   · have hc : i ∈ Sᶜ := Finset.mem_compl.mpr h
-    simp only [combineAt, projVars, h, if_false, hc, if_true, allVars]
+    simp only [combineAt, projVars, h, ite_false, hc, ite_true, allVars]
 
 /-- **Helper (STEP 1).** If `W` and `Z` are independent, the conditional distribution of `Z`
 given `W` is a.e. the constant kernel returning `Z`'s marginal law `μ.map Z`. -/
@@ -265,17 +265,17 @@ private lemma comap_projVars_headSet
     refine Measurable.of_eval (fun i => ?_)
     by_cases h : i ∈ headSet j
     · have hij : (i : ℕ) < j := by simpa [headSet, Finset.mem_filter] using h
-      simp only [projVars, h, if_true]
+      simp only [projVars, h, ite_true]
       exact measurable_iff_comap_le.mpr
         (le_iSup_of_le (⟨i, hij⟩ : {l : Fin n // (l : ℕ) < j}) le_rfl)
-    · simp only [projVars, h, if_false]; exact measurable_const
+    · simp only [projVars, h, ite_false]; exact measurable_const
   · -- `Fⱼ ≤ comap`: each generator `comap (X l)` (with `l < j`) factors through `projVars`.
     refine iSup_le ?_
     rintro ⟨l, hl⟩
     have hxl : X l = (fun w : Π i : Fin n, β i => w l) ∘ (projVars X (headSet j)) := by
       funext ω
       have hmem : l ∈ headSet j := by simp [headSet, Finset.mem_filter, hl]
-      simp only [Function.comp_apply, projVars, hmem, if_true]
+      simp only [Function.comp_apply, projVars, hmem, ite_true]
     calc MeasurableSpace.comap (X l) inferInstance
         = MeasurableSpace.comap (projVars X (headSet j))
             (MeasurableSpace.comap (fun w : Π i : Fin n, β i => w l) inferInstance) := by
@@ -297,13 +297,13 @@ private lemma indepFun_projVars (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : F
     intro T
     refine Measurable.of_eval (fun i => ?_)
     by_cases h : i ∈ T
-    · simp only [fill, h, dif_pos]; exact measurable_pi_apply _
-    · simp only [fill, h, dif_neg, not_false_iff]; exact measurable_const
+    · simp only [fill, h, dite_eq_left]; exact measurable_pi_apply _
+    · simp only [fill, h, dite_eq_right, not_false_iff]; exact measurable_const
   have hcomp : ∀ T, projVars X T = (fill T) ∘ (fun a (i : T) => X i a) := by
     intro T; funext ω i
     by_cases h : i ∈ T
-    · simp only [projVars, h, if_true, Function.comp, fill, dif_pos]
-    · simp only [projVars, h, if_false, Function.comp, fill, dif_neg, not_false_iff]
+    · simp only [projVars, h, ite_true, Function.comp, fill, dite_eq_left]
+    · simp only [projVars, h, ite_false, Function.comp, fill, dite_eq_right, not_false_iff]
   rw [hcomp S, hcomp Sᶜ]
   exact (hX_indep.indepFun_finset S Sᶜ disjoint_compl_right hX).comp (hfill S) (hfill Sᶜ)
 
@@ -362,8 +362,8 @@ private lemma measurable_combineAt_right (S : Finset (Fin n)) (w : Π i : Fin n,
     Measurable (fun v : Π i : Fin n, β i => combineAt S w v) := by
   refine Measurable.of_eval (fun i => ?_)
   by_cases h : i ∈ S
-  · simp only [combineAt, h, if_true]; exact measurable_const
-  · simp only [combineAt, h, if_false]; exact measurable_pi_apply i
+  · simp only [combineAt, h, ite_true]; exact measurable_const
+  · simp only [combineAt, h, ite_false]; exact measurable_pi_apply i
 
 /-- Updating coordinate `i₀ ∈ S` in the `S`-block commutes with recombining. -/
 private lemma combineAt_update (S : Finset (Fin n)) {i0 : Fin n} (hi0 : i0 ∈ S)
@@ -371,11 +371,11 @@ private lemma combineAt_update (S : Finset (Fin n)) {i0 : Fin n} (hi0 : i0 ∈ S
     combineAt S (Function.update w i0 y) v = Function.update (combineAt S w v) i0 y := by
   funext i
   by_cases hik : i = i0
-  · subst hik; simp only [combineAt, hi0, if_true, Function.update_self]
+  · subst hik; simp only [combineAt, hi0, ite_true, Function.update_self]
   · rw [Function.update_of_ne hik]
     by_cases h : i ∈ S
-    · simp only [combineAt, h, if_true, Function.update_of_ne hik]
-    · simp only [combineAt, h, if_false]
+    · simp only [combineAt, h, ite_true, Function.update_of_ne hik]
+    · simp only [combineAt, h, ite_false]
 
 /-- **Helper (oscillation).** `condMean` has oscillation `≤ b` in any single coordinate `i₀ ∈ S`,
 where `b` bounds the corresponding bounded difference of `f`. (If the integrals diverge, both
@@ -500,18 +500,18 @@ private lemma increment_bounded_of_bounded_differences
   have hWW' : ∀ ω, projVars X S ω = Function.update (projVars X Sp ω) i0 (X i0 ω) := by
     intro ω; funext i
     by_cases hii0 : i = i0
-    · subst hii0; simp only [projVars, Function.update_self, if_pos hi0S]
+    · subst hii0; simp only [projVars, Function.update_self, ite_eq_left hi0S]
     · rw [Function.update_of_ne hii0]
       have hval : (i : ℕ) ≠ k := fun h => hii0 (by rw [hi0_def]; exact Fin.ext h)
       by_cases hiS : i ∈ S
       · have hiSp : i ∈ Sp := by
           simp only [hS_def, headSet, Finset.mem_filter, Finset.mem_univ, true_and] at hiS
           simp only [hSp_def, headSet, Finset.mem_filter, Finset.mem_univ, true_and]; omega
-        simp only [projVars, if_pos hiS, if_pos hiSp]
+        simp only [projVars, ite_eq_left hiS, ite_eq_left hiSp]
       · have hiSp : i ∉ Sp := by
           simp only [hS_def, headSet, Finset.mem_filter, Finset.mem_univ, true_and] at hiS
           simp only [hSp_def, headSet, Finset.mem_filter, Finset.mem_univ, true_and]; omega
-        simp only [projVars, if_neg hiS, if_neg hiSp]
+        simp only [projVars, ite_eq_right hiS, ite_eq_right hiSp]
   -- The (<k)-block is `Fₖ`-measurable.
   have hW'meas : Measurable[(natFiltration X hX) k] (projVars X Sp) := by
     rw [measurable_iff_comap_le, hSp_def]; exact le_of_eq (comap_projVars_headSet X hX k)

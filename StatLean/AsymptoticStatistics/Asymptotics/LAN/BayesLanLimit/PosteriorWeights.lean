@@ -211,7 +211,7 @@ theorem posteriorWeights_weakly_converges_under_lan
                    - (⟪h₀, AsymptoticRepresentation.scoreSum ℓ n ω⟫ - (1/2 : ℝ) * ⟪h₀, Jh₀⟫)|} := by
       intro n
       ext ω
-      simp only [Set.mem_setOf_eq, Prod.dist_eq, dist_self, Real.dist_eq, hg_def, hc_def]
+      simp only [Set.mem_ofPred_eq, Prod.dist_eq, dist_self, Real.dist_eq, hg_def, hc_def]
       rw [max_eq_right (abs_nonneg _), abs_sub_comm]
     simp_rw [h_set_eq]
     exact h_lanRes ε hε
@@ -309,7 +309,7 @@ theorem posteriorWeights_weakly_converges_under_lan
                 - (⟪h₀, AsymptoticRepresentation.scoreSum ℓ n ω⟫ - (1/2 : ℝ) * ⟪h₀, Jh₀⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_v, hc_def]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_v, hc_def]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_lanRes ε hε

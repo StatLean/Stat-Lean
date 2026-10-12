@@ -372,7 +372,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
         ext ξ
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, _root_.edist_zero_right,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, hB_def, _root_.edist_zero_right,
           Real.enorm_eq_ofReal_abs]
         exact ENNReal.le_ofReal_iff_toReal_le hε_top (abs_nonneg _)
       calc μ {ξ : Ξ | ε ≤ edist (B n ξ) 0}
@@ -475,7 +475,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         · subst hn
           have hset_empty :
               {ξ : Ξ | M'' ≤ |(Real.sqrt (0 : ℕ))⁻¹ * ∑ i : Fin 0, ψ (X i.val ξ)|} = ∅ := by
-            ext ξ; simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+            ext ξ; simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
             intro h
             have : (Real.sqrt (0 : ℕ))⁻¹ * ∑ i : Fin 0, ψ (X i.val ξ) = 0 := by
               simp
@@ -589,10 +589,10 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
           by_contra hnot
           rw [Set.mem_union, not_or] at hnot
           obtain ⟨hnB, hnψ⟩ := hnot
-          simp only [Set.mem_setOf_eq] at hξ
-          simp only [Set.mem_setOf_eq, _root_.edist_zero_right,
+          simp only [Set.mem_ofPred_eq] at hξ
+          simp only [Set.mem_ofPred_eq, _root_.edist_zero_right,
             Real.enorm_eq_ofReal_abs, not_le] at hnB
-          simp only [Set.mem_setOf_eq, not_le] at hnψ
+          simp only [Set.mem_ofPred_eq, not_le] at hnψ
           -- From hnB (ENNReal.ofReal |B| < 1) extract |B n ξ| < 1.
           have hnB_real : |B n ξ| < 1 := by
             have h_lt : ENNReal.ofReal |B n ξ| < (1 : ℝ≥0∞) := hnB
@@ -649,7 +649,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
               ⊆ {ξ | M < |Real.sqrt n *
                     (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)|} := by
           intro ξ hξ
-          simp only [Set.mem_setOf_eq] at hξ ⊢
+          simp only [Set.mem_ofPred_eq] at hξ ⊢
           rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
           have h_md_pos : 0 < M / δ' := div_pos hM_pos hδ'_pos
           have h1 : M / δ' * δ' < Real.sqrt n * δ' :=
@@ -706,9 +706,9 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
         by_contra hnot
         rw [Set.mem_union, not_or] at hnot
         obtain ⟨h_not_t, h_not_c⟩ := hnot
-        simp only [htbad_def, Set.mem_setOf_eq, not_lt] at h_not_t
-        simp only [hcbad_def, Set.mem_setOf_eq, not_le] at h_not_c
-        simp only [hbad_def, Set.mem_setOf_eq] at hξ
+        simp only [htbad_def, Set.mem_ofPred_eq, not_lt] at h_not_t
+        simp only [hcbad_def, Set.mem_ofPred_eq, not_le] at h_not_c
+        simp only [hbad_def, Set.mem_ofPred_eq] at hξ
         have h_dist_eq : dist (A n ξ) (0 : ℝ) = |A n ξ| := by
           rw [Real.dist_eq, sub_zero]
         rw [h_dist_eq] at hξ
@@ -805,7 +805,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
                   |Real.sqrt n * (θ_hat n x - θ₀)
                     - (Real.sqrt n)⁻¹ * ∑ i : Fin n, ψ (x i)|} := by
         ext ξ
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, hB_def, _root_.edist_zero_right,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, hB_def, _root_.edist_zero_right,
           Real.enorm_eq_ofReal_abs]
         exact ENNReal.le_ofReal_iff_toReal_le hε_top (abs_nonneg _)
       calc μ {ξ : Ξ | ε ≤ edist (B n ξ) 0}

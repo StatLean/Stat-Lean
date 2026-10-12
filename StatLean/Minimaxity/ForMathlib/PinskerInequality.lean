@@ -385,7 +385,7 @@ private lemma tvDist_eq_measure_sub (μ ν : Measure α)
         Measure.setLIntegral_rnDeriv hνξ A]
   have hcompl : ∫⁻ x in Aᶜ, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = 0 := by
     refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-    rw [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+    rw [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
     exact tsub_eq_zero_of_le hx.le
   have hDA : ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = μ A - ν A := by
     rw [← lintegral_add_compl _ hAm, hcompl, add_zero, hAsub]

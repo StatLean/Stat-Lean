@@ -649,12 +649,12 @@ theorem canonicalPath_score
   unfold canonicalPath
   by_cases hg : g = 0
   · -- Zero branch: score = 0 = g.
-    simp only [hg, dif_pos]
+    simp only [hg, dite_eq_left]
     -- The body is `boundedDensityPath 0 ⟨0, …⟩`; its score is `0`.
     exact (AsymptoticStatistics.Core.MassMethod.boundedDensityPath_score
       (0 : ↥(L2ZeroMean P)) _)
   · -- Nonzero branch: score = linPerturbScore g_P h = ‖g‖ • ((1/‖g‖) • g) = g.
-    simp only [hg, dif_neg, not_false_eq_true]
+    simp only [hg, dite_eq_right, not_false_eq_true]
     erw [unboundedParamSubmodel_oneDimPath_score]
     -- Goal: `linPerturbScore (fun _ => (1/‖g‖) • g) (single 0 ‖g‖) = g`.
     unfold linPerturbScore
@@ -685,9 +685,9 @@ theorem canonicalPath_dominating
   classical
   unfold canonicalPath
   by_cases hg : g = 0
-  · simp only [hg, dif_pos]
+  · simp only [hg, dite_eq_left]
     rfl
-  · simp only [hg, dif_neg, not_false_eq_true]
+  · simp only [hg, dite_eq_right, not_false_eq_true]
     rfl
 
 /-- **Forward direction of the narrow/broad equivalence.**

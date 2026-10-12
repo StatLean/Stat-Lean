@@ -352,7 +352,8 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   have hcomp1 : (toEuclideanCLM (𝕜 := ℝ) (R * B)) ∘ (toEuclideanCLM (𝕜 := ℝ) R) = id := by
     funext x
     change toEuclideanCLM (𝕜 := ℝ) (R * B) (toEuclideanCLM (𝕜 := ℝ) R x) = x
-    rw [← ContinuousLinearMap.mul_apply, ← map_mul, hRBR, map_one, ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hRBR, map_one,
+        one_apply_eq_self]
   have hwhiten : klDiv (multivariateGaussian 0 A) (multivariateGaussian 0 B)
       = klDiv (multivariateGaussian 0 C)
           (multivariateGaussian 0 (1 : Matrix (Fin d) (Fin d) ℝ)) := by
@@ -366,7 +367,8 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   have hcomp2 : (toEuclideanCLM (𝕜 := ℝ) U) ∘ (toEuclideanCLM (𝕜 := ℝ) Uᵀ) = id := by
     funext x
     change toEuclideanCLM (𝕜 := ℝ) U (toEuclideanCLM (𝕜 := ℝ) Uᵀ x) = x
-    rw [← ContinuousLinearMap.mul_apply, ← map_mul, hUUt, map_one, ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hUUt, map_one,
+        one_apply_eq_self]
   have hdiagonalize : klDiv (multivariateGaussian 0 C) (multivariateGaussian 0 1)
       = klDiv (multivariateGaussian 0 (Matrix.diagonal Λ))
           (multivariateGaussian 0 (1 : Matrix (Fin d) (Fin d) ℝ)) := by

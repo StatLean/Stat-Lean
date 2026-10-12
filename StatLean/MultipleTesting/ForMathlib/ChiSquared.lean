@@ -136,7 +136,7 @@ private lemma integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 <
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
       (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
-    rw [gammaPDFReal, if_pos hx.le,
+    rw [gammaPDFReal, ite_eq_left hx.le,
       show -((r - l) * x) = l * x + -(r * x) from by ring, Real.exp_add]
     ring
   rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
@@ -145,11 +145,11 @@ private lemma integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 <
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [mem_setOf_eq, Classical.not_imp, mem_Iic] at hx
+  simp only [mem_ofPred_eq, Classical.not_imp, mem_Iic] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
   · exact absurd (show Real.exp (l * x) * gammaPDFReal a r x = 0 by
-      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+      rw [gammaPDFReal, ite_eq_right (not_le.mpr h), mul_zero]).symm hx2
   · exact h
 
 /-- **Non-integrability of `x ↦ exp(l·x)` under `Gamma(a,r)` for `r ≤ l`**: on `Ioi 1` the
@@ -183,7 +183,7 @@ private lemma not_integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr :
     have hxa : (0 : ℝ) ≤ x ^ (a - 1) := Real.rpow_nonneg hx0.le _
     have hexpge : (1 : ℝ) ≤ Real.exp ((l - r) * x) :=
       Real.one_le_exp (mul_nonneg (by linarith) hx0.le)
-    rw [gammaPDFReal, if_pos hx0.le, Real.norm_eq_abs, Real.norm_eq_abs,
+    rw [gammaPDFReal, ite_eq_left hx0.le, Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ C * x ^ (a - 1)),
       abs_of_nonneg (by positivity :
         (0 : ℝ) ≤ Real.exp (l * x) * (C * x ^ (a - 1) * Real.exp (-(r * x)))),
@@ -293,7 +293,7 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
   refine MeasureTheory.Measure.ext_of_charFun (funext fun t => ?_)
   rw [← complexMGF_mul_I hSmeas.aemeasurable t, ← complexMGF_id_mul_I t]
   refine eqOn_complexMGF_of_mgf hA ?_
-  rw [Set.mem_setOf_eq, show ((t : ℂ) * Complex.I).re = 0 from by simp]
+  rw [Set.mem_ofPred_eq, show ((t : ℂ) * Complex.I).re = 0 from by simp]
   exact hB
 
 end StatLean.MultipleTesting

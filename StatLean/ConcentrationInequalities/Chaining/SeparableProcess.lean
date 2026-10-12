@@ -158,13 +158,13 @@ lemma biSup_real_comp_eq_of_forall_mem_closure {α : Type*} {T C : Set α}
   have hTval : ∀ t, (⨆ (_ : t ∈ T), φ (x t)) = if t ∈ T then φ (x t) else 0 := by
     intro t
     by_cases ht : t ∈ T
-    · rw [if_pos ht]; exact ciSup_pos ht
-    · rw [if_neg ht]; simp [ht]
+    · rw [ite_eq_left ht]; exact ciSup_pos ht
+    · rw [ite_eq_right ht]; simp [ht]
   have hCval : ∀ t, (⨆ (_ : t ∈ C), φ (x t)) = if t ∈ C then φ (x t) else 0 := by
     intro t
     by_cases ht : t ∈ C
-    · rw [if_pos ht]; exact ciSup_pos ht
-    · rw [if_neg ht]; simp [ht]
+    · rw [ite_eq_left ht]; exact ciSup_pos ht
+    · rw [ite_eq_right ht]; simp [ht]
   have hTnn : ∀ t, 0 ≤ (⨆ (_ : t ∈ T), φ (x t)) := by
     intro t; rw [hTval]; split
     · exact hφ0 _
@@ -176,8 +176,8 @@ lemma biSup_real_comp_eq_of_forall_mem_closure {α : Type*} {T C : Set α}
   have hCT : ∀ t, (⨆ (_ : t ∈ C), φ (x t)) ≤ (⨆ (_ : t ∈ T), φ (x t)) := by
     intro t
     by_cases ht : t ∈ C
-    · rw [hCval, hTval, if_pos ht, if_pos (hsub ht)]
-    · rw [hCval, if_neg ht]; exact hTnn t
+    · rw [hCval, hTval, ite_eq_left ht, ite_eq_left (hsub ht)]
+    · rw [hCval, ite_eq_right ht]; exact hTnn t
   -- Any nonnegative bound on the `C`-values bounds the `T`-values: `{v | φ v ≤ M}`
   -- is closed and contains `x '' C`, hence its closure.
   have key : ∀ M : ℝ, (∀ s ∈ C, φ (x s) ≤ M) → ∀ t ∈ T, φ (x t) ≤ M := by
@@ -195,23 +195,23 @@ lemma biSup_real_comp_eq_of_forall_mem_closure {α : Type*} {T C : Set α}
       have hCM : ∀ s ∈ C, φ (x s) ≤ max M 0 := by
         intro s hs
         have hs' : (⨆ (_ : s ∈ C), φ (x s)) ≤ M := hM (Set.mem_range_self s)
-        rw [hCval, if_pos hs] at hs'
+        rw [hCval, ite_eq_left hs] at hs'
         exact hs'.trans (le_max_left _ _)
       change (⨆ (_ : t ∈ T), φ (x t)) ≤ max M 0
       rw [hTval]
       by_cases ht : t ∈ T
-      · rw [if_pos ht]; exact key _ hCM t ht
-      · rw [if_neg ht]; exact le_max_right _ _
+      · rw [ite_eq_left ht]; exact key _ hCM t ht
+      · rw [ite_eq_right ht]; exact le_max_right _ _
     refine le_antisymm ?_ ?_
     · refine Real.iSup_le (fun t => ?_) (Real.iSup_nonneg hCnn)
       change (⨆ (_ : t ∈ T), φ (x t)) ≤ ⨆ t, ⨆ (_ : t ∈ C), φ (x t)
       rw [hTval]
       by_cases ht : t ∈ T
-      · rw [if_pos ht]
+      · rw [ite_eq_left ht]
         refine key _ (fun s hs => ?_) t ht
         have hs' : (⨆ (_ : s ∈ C), φ (x s)) ≤ ⨆ t, ⨆ (_ : t ∈ C), φ (x t) := le_ciSup hb s
-        rwa [hCval, if_pos hs] at hs'
-      · rw [if_neg ht]; exact Real.iSup_nonneg hCnn
+        rwa [hCval, ite_eq_left hs] at hs'
+      · rw [ite_eq_right ht]; exact Real.iSup_nonneg hCnn
     · exact Real.iSup_le (fun t => (hCT t).trans (le_ciSup hbT t)) (Real.iSup_nonneg hTnn)
   · -- Unbounded case: the `T`-family is unbounded too, so both sides junk to `0`.
     have hbT : ¬ BddAbove (Set.range fun t => ⨆ (_ : t ∈ T), φ (x t)) := by

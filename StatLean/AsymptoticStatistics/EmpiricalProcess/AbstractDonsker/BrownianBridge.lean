@@ -269,18 +269,18 @@ theorem pBridge_ucPaths_measurableSet :
     intro ε δ
     have : Cl ε δ = ⋂ f : ↥F, ⋂ g : ↥F,
         {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε} := by
-      ext z; simp only [hCldef, Set.mem_setOf_eq, Set.mem_iInter]
+      ext z; simp only [hCldef, Set.mem_ofPred_eq, Set.mem_iInter]
     rw [this]
     refine isClosed_iInter (fun f => isClosed_iInter (fun g => ?_))
     by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ
     · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε}
           = {z : LinfF F | |z f - z g| ≤ ε} := by
-        ext z; simp only [Set.mem_setOf_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
+        ext z; simp only [Set.mem_ofPred_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
       rw [hset]
       exact isClosed_le (((hcont_eval f).sub (hcont_eval g)).abs) continuous_const
     · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε}
           = Set.univ := by
-        ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+        ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
         exact fun h => absurd h hfg
       rw [hset]; exact isClosed_univ
   have hCl_meas : ∀ ε δ : ℝ, MeasurableSet (Cl ε δ) := fun ε δ => (hCl_closed ε δ).measurableSet
@@ -290,7 +290,7 @@ theorem pBridge_ucPaths_measurableSet :
       = ⋂ ε : ℚ, {z : LinfF F | 0 < ε →
           ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)} := by
     ext z
-    simp only [Set.mem_setOf_eq, Set.mem_iInter, hCldef]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter, hCldef]
     constructor
     · -- real ⟹ ℚ⁺ (relaxed): for rational ε>0, find rational δ below a real witness.
       intro hP ε hε
@@ -310,12 +310,12 @@ theorem pBridge_ucPaths_measurableSet :
   by_cases hε : (0 : ℚ) < ε
   · have : {z : LinfF F | 0 < ε → ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)}
         = ⋃ δ : ℚ, ⋃ (_ : 0 < δ), Cl (ε : ℝ) (δ : ℝ) := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_iUnion, hε, forall_true_left,
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_iUnion, hε, forall_true_left,
         exists_prop]
     rw [this]
     exact MeasurableSet.iUnion (fun δ => MeasurableSet.iUnion (fun _ => hCl_meas _ _))
   · have : {z : LinfF F | 0 < ε → ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)} = Set.univ := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact fun h => absurd h hε
     rw [this]; exact MeasurableSet.univ
 

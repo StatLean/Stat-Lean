@@ -469,7 +469,7 @@ theorem baseZeroLikelihoodMass_isLittleO
     intro htop
     have hden_top : ENNReal.ofReal t ≠ ⊤ := ENNReal.ofReal_ne_top
     have hfalse : (⊤ : ℝ≥0∞) < 1 := by
-      simpa only [htop, ENNReal.top_div, if_neg hden_top] using hqmd_lt_t
+      simpa only [htop, ENNReal.top_div, ite_eq_right hden_top] using hqmd_lt_t
     exact (not_lt_of_ge le_top hfalse).elim
   have hmass_real : (γ.baseZeroLikelihoodMass t).toReal ≤
       (P {ω | 1 ≤ |t * g ω|}).toReal +

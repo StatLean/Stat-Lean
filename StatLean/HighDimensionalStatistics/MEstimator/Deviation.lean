@@ -182,7 +182,7 @@ theorem error_mem_cone (dr : DecomposableReg E) (L : E → ℝ)
   have hcost := cost_deviation_lower dr L hL hdiff θstar Δ lam hG
   -- Multiply the regularizer bound by `λ > 0` so it can combine linearly with optimality.
   have hlamreg := mul_le_mul_of_nonneg_left hreg (le_of_lt hlam)
-  simp only [errorCone, Set.mem_setOf_eq]
+  simp only [errorCone, Set.mem_ofPred_eq]
   nlinarith [hoptΔ, hcost, hlamreg, hlam]
 
 end StatLean.HighDimensionalStatistics.MEstimator

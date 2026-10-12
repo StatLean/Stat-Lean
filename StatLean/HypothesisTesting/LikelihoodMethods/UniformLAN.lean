@@ -291,7 +291,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
       = {ω : Fin n → 𝓧 |
           ENNReal.ofReal (K * n) ≤ ENNReal.ofReal (∑ i, G (ω i))} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ => hG0 _)).symm
   have hmarkov : ENNReal.ofReal (K * n)
         * (Measure.pi fun _ : Fin n => ν) {ω : Fin n → 𝓧 | K * n ≤ ∑ i, G (ω i)}
@@ -521,7 +521,7 @@ theorem sup_LAN_remainder_tendsto
         ∪ ⋃ y ∈ Ff, {ω : Fin n → 𝓧 | ε / 2 ≤ |lanRemainder M θ₀ ℓ J y n ω|} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, Set.mem_iUnion, not_or, not_exists,
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_iUnion, not_or, not_exists,
       not_le] at hcon
     obtain ⟨henvsmall, hnetsmall⟩ := hcon
     obtain ⟨h, hhc, hhε⟩ := hω

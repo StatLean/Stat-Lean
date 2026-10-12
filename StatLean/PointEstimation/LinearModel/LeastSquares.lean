@@ -264,7 +264,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     intro a b hh
     have ha := a.isLt
     have h2 : (Fin.castAdd m a).val = (Fin.natAdd s b).val := by rw [hh]
-    simp only [Fin.coe_castAdd, Fin.coe_natAdd] at h2
+    simp only [Fin.val_castAdd, Fin.val_natAdd] at h2
     omega
   have hgon : Orthonormal ℝ g := by
     rw [orthonormal_iff_ite]
@@ -273,20 +273,20 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
       refine Fin.addCases (fun j' => ?_) (fun j' => ?_) j
     · simp only [hgdef, Fin.append_left, ← Submodule.coe_inner]
       by_cases h : i' = j'
-      · subst h; rw [orthonormal_iff_ite.mp bW.orthonormal i' i', if_pos rfl, if_pos rfl]
-      · rw [orthonormal_iff_ite.mp bW.orthonormal i' j', if_neg h,
-          if_neg (fun hc => h (Fin.castAdd_injective _ _ hc))]
+      · subst h; rw [orthonormal_iff_ite.mp bW.orthonormal i' i', ite_eq_left rfl, ite_eq_left rfl]
+      · rw [orthonormal_iff_ite.mp bW.orthonormal i' j', ite_eq_right h,
+          ite_eq_right (fun hc => h (Fin.castAdd_injective _ _ hc))]
     · simp only [hgdef, Fin.append_left, Fin.append_right]
       rw [Submodule.inner_right_of_mem_orthogonal (SetLike.coe_mem (bW i'))
-            (SetLike.coe_mem (bP j')), if_neg (hne i' j')]
+            (SetLike.coe_mem (bP j')), ite_eq_right (hne i' j')]
     · simp only [hgdef, Fin.append_left, Fin.append_right]
       rw [Submodule.inner_left_of_mem_orthogonal (SetLike.coe_mem (bW j'))
-            (SetLike.coe_mem (bP i')), if_neg (hne j' i').symm]
+            (SetLike.coe_mem (bP i')), ite_eq_right (hne j' i').symm]
     · simp only [hgdef, Fin.append_right, ← Submodule.coe_inner]
       by_cases h : i' = j'
-      · subst h; rw [orthonormal_iff_ite.mp bP.orthonormal i' i', if_pos rfl, if_pos rfl]
-      · rw [orthonormal_iff_ite.mp bP.orthonormal i' j', if_neg h,
-          if_neg (fun hc => h (Fin.natAdd_injective _ _ hc))]
+      · subst h; rw [orthonormal_iff_ite.mp bP.orthonormal i' i', ite_eq_left rfl, ite_eq_left rfl]
+      · rw [orthonormal_iff_ite.mp bP.orthonormal i' j', ite_eq_right h,
+          ite_eq_right (fun hc => h (Fin.natAdd_injective _ _ hc))]
   haveI : Nonempty (Fin (s + m)) := ⟨⟨0, by omega⟩⟩
   have hcard : Fintype.card (Fin (s + m))
       = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
@@ -359,7 +359,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     intro γ hγ y
     have hproj : W.starProjection y
         = ∑ i, ⟪(bW i : EuclideanSpace ℝ (Fin n)), y⟫_ℝ • (bW i : EuclideanSpace ℝ (Fin n)) := by
-      rw [Submodule.starProjection_apply, bW.orthogonalProjection_apply_eq_sum y,
+      rw [Submodule.starProjection_apply, bW.orthogonalProjectionOnto_apply_eq_sum y,
         Submodule.coe_sum]
       exact Finset.sum_congr rfl (fun i _ => by rw [Submodule.coe_smul])
     rw [show lse W y = W.starProjection y from rfl, hproj, inner_sum]

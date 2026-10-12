@@ -9,7 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Data.Complex.BigOperators
+import Mathlib.Basic.Complex.BigOperators
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -76,7 +76,7 @@ lemma integrable_exp_smul_sum_abs
               push Not
               exact mul_neg_of_pos_of_neg hs_pos hx
             rw [this]
-            simp only [Bool.false_eq_true, if_false]
+            simp only [Bool.false_eq_true, ite_false]
             rw [abs_of_neg hx, abs_of_pos hs_pos]; ring
           · simp [← hs_zero]
       · push Not at hs
@@ -88,13 +88,13 @@ lemma integrable_exp_smul_sum_abs
               push Not
               exact mul_neg_of_neg_of_pos hs hx_pos
             rw [this]
-            simp only [Bool.false_eq_true, if_false]
+            simp only [Bool.false_eq_true, ite_false]
             rw [abs_of_nonneg hx, abs_of_neg hs]; ring
         · have : ε₀ i = true := by
             rw [hε₀_iff]
             exact (mul_pos_of_neg_of_neg hs hx).le
           rw [this]
-          simp only [if_true]
+          simp only [ite_true]
           rw [abs_of_neg hx, abs_of_neg hs]; ring
     have h_sum_eq :
         s * (∑ i, |X ω i|) = ∑ i, (if ε₀ i then |s| else -|s|) * X ω i := by
@@ -273,8 +273,8 @@ lemma mgfCoeffCMM_apply {m : ℕ} (X : Ω → Fin m → ℝ) (μ : Measure Ω) (
     mgfCoeffCMM X μ n v =
       (n.factorial : ℂ)⁻¹ * ∑ ι : Fin n → Fin m,
         mgfMomentCoeff X μ ι * ∏ j : Fin n, v j (ι j) := by
-  simp only [mgfCoeffCMM, ContinuousMultilinearMap.smul_apply,
-    ContinuousMultilinearMap.sum_apply, mgfMonomialCMM_apply, smul_eq_mul]
+  simp only [mgfCoeffCMM, smul_apply,
+    _root_.sum_apply, mgfMonomialCMM_apply, smul_eq_mul]
 
 /-! ### Diagonal evaluation -/
 

@@ -315,7 +315,7 @@ private theorem dqm_good_complement_base_mass_scaled_of_rootNBounded
       (memLp_two_iff_integrable_sq_norm hn.aestronglyMeasurable).mp hn
   have hT : T n = {x | (1 : ℝ) ≤ W n x ^ 2} := by
     ext x
-    simp only [T, Set.mem_setOf_eq]
+    simp only [T, Set.mem_ofPred_eq]
     exact (one_le_sq_iff_one_le_abs (W n x)).symm
   have hTmeas : MeasurableSet (T n) := by
     rw [hT]
@@ -478,7 +478,7 @@ private theorem dqm_good_complement_mass_scaled_of_rootNBounded
       · have ht : x ∈ T n := by
           change 1 ≤ |W n x|
           have hng := hg
-          simp only [G, Set.mem_setOf_eq, hp, true_and, not_lt] at hng
+          simp only [G, Set.mem_ofPred_eq, hp, true_and, not_lt] at hng
           exact hng
         rw [Set.indicator_of_mem (Set.mem_compl hg),
           Set.indicator_of_notMem hznot, Set.indicator_of_mem ht, zero_add]
@@ -551,7 +551,7 @@ private theorem TendstoInProbZero.add
   refine (measureReal_mono (fun x hx => ?_)).trans (measureReal_union_le _ _)
   change epsilon ≤ ‖Z n x + W n x‖ at hx
   by_contra hnot
-  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
   linarith [norm_add_le (Z n x) (W n x)]
 
 private theorem TendstoInProbZero.finset_sum
@@ -688,7 +688,7 @@ private theorem integral_tail_of_vanishing_error_add_envelope
     calc
       P.real (R n) ≤ P.real {x | A n / 2 ≤ r n x} :=
         measureReal_mono (fun _ hx => by
-          simpa only [Set.mem_setOf_eq] using hx.le) (measure_ne_top P _)
+          simpa only [Set.mem_ofPred_eq] using hx.le) (measure_ne_top P _)
       _ ≤ (A n / 2)⁻¹ * ∫ x, r n x ∂P := by
         rw [← div_eq_inv_mul]
         exact (le_div_iff₀ hn).2 (by simpa [mul_comm] using hm)
@@ -712,7 +712,7 @@ private theorem integral_tail_of_vanishing_error_add_envelope
     calc
       P.real (H n) ≤ P.real {x | A n / 2 ≤ g0 x} :=
         measureReal_mono (fun _ hx => by
-          simpa only [Set.mem_setOf_eq] using hx.le) (measure_ne_top P _)
+          simpa only [Set.mem_ofPred_eq] using hx.le) (measure_ne_top P _)
       _ ≤ (A n / 2)⁻¹ * ∫ x, g0 x ∂P := by
         rw [← div_eq_inv_mul]
         exact (le_div_iff₀ hn).2 (by simpa [mul_comm] using hm)
@@ -1246,7 +1246,7 @@ private theorem tendstoInProbZero_const
   refine ⟨N, fun n hn => ?_⟩
   have hempty : {x : S n | epsilon ≤ ‖z n‖} = ∅ := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+    simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
     exact not_le.mpr (hN n hn)
   rw [hempty, measureReal_empty, dist_self]
   exact heta

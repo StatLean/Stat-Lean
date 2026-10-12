@@ -534,7 +534,7 @@ private lemma cex_atRisk : atRisk cexData 1 = 2 := by
 set_option backward.isDefEq.respectTransparency.types false in
 private lemma cex_eventCount : eventCount cexData 1 = 1 := by
   rw [eventCount, show (univ.filter fun i => (cexData i).1 = (1 : ℝ) ∧ (cexData i).2 = true)
-    = {0} from by ext i; fin_cases i <;> simp [cexData, Set.mem_setOf_eq]]
+    = {0} from by ext i; fin_cases i <;> simp [cexData, Set.mem_ofPred_eq]]
   rfl
 
 private lemma cex_naJump : naJump cexData 1 = 1 / 2 := by
@@ -543,10 +543,10 @@ private lemma cex_naJump : naJump cexData 1 = 1 / 2 := by
 
 private lemma cex_prod_lt : ∏ u ∈ (eventTimes cexData).filter (· < 1), (1 - naJump cexData u)
     = 1 := by
-  rw [cex_eventTimes, Finset.filter_singleton, if_neg (lt_irrefl (1 : ℝ)), Finset.prod_empty]
+  rw [cex_eventTimes, Finset.filter_singleton, ite_eq_right (lt_irrefl (1 : ℝ)), Finset.prod_empty]
 
 private lemma cex_kaplanMeier : kaplanMeier cexData 1 = 1 / 2 := by
-  rw [kaplanMeier, cex_eventTimes, Finset.filter_singleton, if_pos le_rfl,
+  rw [kaplanMeier, cex_eventTimes, Finset.filter_singleton, ite_eq_left le_rfl,
     Finset.prod_singleton, cex_naJump]
   norm_num
 

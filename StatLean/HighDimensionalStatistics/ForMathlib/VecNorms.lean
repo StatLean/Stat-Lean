@@ -1,6 +1,6 @@
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
@@ -272,7 +272,7 @@ theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace 
         rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hcnn]]
   apply Real.sqrt_le_sqrt
   rw [← Finset.sum_subset (Finset.subset_univ S)
-      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+      (fun i _ hi => by simp only [restrict_ofLp_apply, ite_eq_right hi]; ring)]
   calc ∑ i ∈ S, ((restrict S x).ofLp i) ^ 2
       ≤ ∑ _i ∈ S, c ^ 2 := by
         refine Finset.sum_le_sum fun i _ => ?_
@@ -284,9 +284,9 @@ theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace 
 private lemma sum_sq_restrict (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     ∑ i, ((restrict S x).ofLp i) ^ 2 = ∑ i ∈ S, (x.ofLp i) ^ 2 := by
   rw [← Finset.sum_subset (Finset.subset_univ S)
-      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+      (fun i _ hi => by simp only [restrict_ofLp_apply, ite_eq_right hi]; ring)]
   refine Finset.sum_congr rfl fun i hi => ?_
-  rw [restrict_ofLp_apply, if_pos hi]
+  rw [restrict_ofLp_apply, ite_eq_left hi]
 
 /-- The ℓ² norm of a restriction is monotone in the index set: `S ⊆ T ⟹
 ‖x|_S‖₂ ≤ ‖x|_T‖₂`. -/

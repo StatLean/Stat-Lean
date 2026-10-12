@@ -213,8 +213,8 @@ theorem empiricalRelativeRadius_eq_of_pointwiseDense
     empiricalRelativeRadius F Φ n X = empiricalRelativeRadius F' Φ n X := by
   by_cases hzero : empiricalL2Seminorm n X Φ = 0
   · simp [empiricalRelativeRadius, hzero]
-  rw [empiricalRelativeRadius, if_neg hzero,
-    empiricalRelativeRadius, if_neg hzero]
+  rw [empiricalRelativeRadius, ite_eq_right hzero,
+    empiricalRelativeRadius, ite_eq_right hzero]
   apply le_antisymm
   · refine iSup₂_le fun f hf => ?_
     obtain ⟨φ, hφmem, hφlim⟩ := hApprox f hf

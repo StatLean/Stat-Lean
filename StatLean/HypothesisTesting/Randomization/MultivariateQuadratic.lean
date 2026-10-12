@@ -676,7 +676,7 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
     refine h.congr fun n => ?_
     congr 1
     ext x
-    simp only [Set.mem_setOf_eq, modifiedCovMatrix, Matrix.of_apply, hsecond j k]
+    simp only [Set.mem_ofPred_eq, modifiedCovMatrix, Matrix.of_apply, hsecond j k]
   have hllnsum : ∀ ρ : ℝ, 0 < ρ → Tendsto (fun n : ℕ => ∑ j : Fin p, ∑ k : Fin p,
       (Measure.pi fun _ : Fin n => P).real
         {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
@@ -728,9 +728,9 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
           ∪ {x : Fin n → EuclideanSpace ℝ (Fin p) |
               M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|} := by
     intro g x hx
-    simp only [Set.mem_setOf_eq, modifiedTSq_signChange hnpos g x, Real.norm_eq_abs] at hx
+    simp only [Set.mem_ofPred_eq, modifiedTSq_signChange hnpos g x, Real.norm_eq_abs] at hx
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_setOf_eq, not_or, not_exists,
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, not_or, not_exists,
       not_le, Prod.forall] at hcon
     obtain ⟨hc1, hc2⟩ := hcon
     have hentry : ∀ j k, |(modifiedCovMatrix x)⁻¹ j k - S⁻¹ j k| ≤ η := fun j k =>
@@ -1017,7 +1017,7 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
     refine h.congr fun n => ?_
     congr 1
     ext x
-    simp only [Set.mem_setOf_eq, modifiedCovMatrix, Matrix.of_apply, hsecond j k]
+    simp only [Set.mem_ofPred_eq, modifiedCovMatrix, Matrix.of_apply, hsecond j k]
   have hllnsum : ∀ ρ : ℝ, 0 < ρ → Tendsto (fun n : ℕ => ∑ j : Fin p, ∑ k : Fin p,
       (Measure.pi fun _ : Fin n => P).real
         {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
@@ -1091,9 +1091,9 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
           ∪ {x : Fin n → EuclideanSpace ℝ (Fin p) |
               M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|} := by
     intro g x hx
-    simp only [Set.mem_setOf_eq, hotellingTSq_eq hnpos0 (g • x), Real.norm_eq_abs] at hx
+    simp only [Set.mem_ofPred_eq, hotellingTSq_eq hnpos0 (g • x), Real.norm_eq_abs] at hx
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_setOf_eq, not_or, not_exists,
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, not_or, not_exists,
       not_le, Prod.forall] at hcon
     obtain ⟨hc1, hc2⟩ := hcon
     have hnv : ‖((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p))‖ ^ 2 < M := by

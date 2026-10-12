@@ -367,7 +367,7 @@ theorem maximal_inequality_bracketing
       exact hΦ_abs_meas measurableSet_Iic
     have hAB : Aᶜ = {x | δ * Real.sqrt n < |Φ x|} := by
       ext x
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, A, not_le]
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, A, not_le]
     have hΦ_indic_A : ∀ x, ENNReal.ofReal (|Φ x|) * A.indicator 1 x
         ≤ ENNReal.ofReal (δ * Real.sqrt n) * A.indicator 1 x := by
       intro x

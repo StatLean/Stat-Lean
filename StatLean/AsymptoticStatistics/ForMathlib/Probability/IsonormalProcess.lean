@@ -637,16 +637,16 @@ theorem hasGaussianLaw_of_l2_limit (b : HilbertBasis ℕ ℝ H) (h : H) :
       = Complex.exp (((- (‖h‖ ^ 2 * t ^ 2) / 2 : ℝ) : ℂ)) by
     refine ⟨hXmeas, isGaussian_iff_gaussian_charFun.mpr
       ⟨0, ‖h‖ ^ 2 • ContinuousLinearMap.mul ℝ ℝ, ⟨⟨fun x y => ?_⟩, ⟨fun x => ?_⟩⟩, ?_⟩⟩
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       ring
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       exact mul_nonneg (sq_nonneg _) (mul_self_nonneg x)
     · intro t
       rw [hCharX t]
       congr 1
-      simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
+      simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
         inner_zero_right]
       push_cast
       ring

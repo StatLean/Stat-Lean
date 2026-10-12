@@ -105,7 +105,7 @@ private lemma measurable_coord' {κ : Type*} [Fintype κ] (i : κ) :
 /-- The δ-support cylinder `{ u | ∀ i, δ < |uᵢ| }` is measurable. -/
 private lemma measurableSet_all_lt_abs {κ : Type*} [Fintype κ] (δ : ℝ) :
     MeasurableSet {u : EuclideanSpace ℝ κ | ∀ i, δ < |u i|} := by
-  rw [Set.setOf_forall]
+  rw [Set.ofPred_forall]
   exact MeasurableSet.iInter fun i =>
     measurableSet_lt measurable_const (measurable_coord' i).abs
 
@@ -495,7 +495,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
         refine le_trans (ENNReal.toReal_mono ?_ (measure_mono ?_)) hw
         · exact ne_top_of_le_ne_top ENNReal.one_ne_top prob_le_one
         · intro x hx
-          simp only [Set.mem_setOf_eq] at hx ⊢
+          simp only [Set.mem_ofPred_eq] at hx ⊢
           refine lt_of_le_of_lt (min_le_min ?_ le_rfl) hx
           exact div_le_div_of_nonneg_left (by positivity)
             (Real.sqrt_pos.mpr (by exact_mod_cast hKcpos))

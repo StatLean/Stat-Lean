@@ -5,7 +5,8 @@ import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Probability.Independence.InfinitePi
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.ContinuousFunctionalCalculus
 
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
@@ -779,7 +780,7 @@ private lemma tendsto_setIntegral_sq_tail [IsProbabilityMeasure μ] {ζ : Ω →
         Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω = 0 := by
       filter_upwards [hgo.eventually_gt_atTop (|ζ ω|)] with m hm
       refine Set.indicator_of_notMem ?_ _
-      simp only [Set.mem_setOf_eq, not_le]
+      simp only [Set.mem_ofPred_eq, not_le]
       exact hm
     exact Filter.Tendsto.congr' (Filter.EventuallyEq.symm hev) tendsto_const_nhds
   have := tendsto_integral_of_dominated_convergence (F := fun m : ℕ => Set.indicator

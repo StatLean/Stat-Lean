@@ -379,7 +379,7 @@ theorem levyMpass
     have hSet : ({((μ : MeasureTheory.ProbabilityMeasure ℝ) : MeasureTheory.Measure ℝ) |
                   μ ∈ Set.range MPM}) = Set.range M_m := by
       ext μ
-      simp only [Set.mem_setOf_eq, Set.mem_range]
+      simp only [Set.mem_ofPred_eq, Set.mem_range]
       constructor
       · rintro ⟨ν, ⟨m, rfl⟩, rfl⟩
         exact ⟨m, rfl⟩
@@ -1381,13 +1381,13 @@ theorem tangent_bounded_orthonormal_approx
           rw [inner_smul_right]
           by_cases hjk : k = j
           · subst hjk
-            rw [if_pos rfl]
+            rw [ite_eq_left rfl]
             have h_norm_sq : ⟪(e' k : ↥(L2ZeroMean P)),
                               (e' k : ↥(L2ZeroMean P))⟫_ℝ = 1 := by
               have := he'_orth.norm_eq_one k
               rw [@real_inner_self_eq_norm_sq, this]; ring
             rw [h_norm_sq, mul_one]
-          · rw [if_neg hjk]
+          · rw [ite_eq_right hjk]
             have h_zero : ⟪(e' j : ↥(L2ZeroMean P)),
                             (e' k : ↥(L2ZeroMean P))⟫_ℝ = 0 := by
               apply he'_orth.inner_eq_zero
@@ -1896,7 +1896,7 @@ private lemma single_eq_withLp_const_apply (r : ℝ) :
   -- Both sides are `WithLp.toLp 2 (fun _ : Fin 1 => r)` (the `Pi.single`
   -- on `Fin 1` collapses to the constant function on the single index).
   rw [show (fun _ : Fin 1 => r) = Pi.single 0 r from ?_]
-  · exact (EuclideanSpace.toLp_single (𝕜 := ℝ) 0 r).symm
+  · exact (PiLp.toLp_single (p := 2) (β := fun _ : Fin 1 => ℝ) 0 r).symm
   · funext i
     fin_cases i
     rfl

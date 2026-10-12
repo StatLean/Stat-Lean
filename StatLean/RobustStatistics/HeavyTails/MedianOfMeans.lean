@@ -280,9 +280,9 @@ theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
       funext ξ
       by_cases h : a ≤ |Z j ξ - μ₀|
       · have hmem : ξ ∈ {ξ | a ≤ |Z j ξ - μ₀|} := h
-        rw [hgapp, if_pos h, Set.indicator_of_mem hmem]
+        rw [hgapp, ite_eq_left h, Set.indicator_of_mem hmem]
       · have hmem : ξ ∉ {ξ | a ≤ |Z j ξ - μ₀|} := h
-        rw [hgapp, if_neg h, Set.indicator_of_notMem hmem]
+        rw [hgapp, ite_eq_right h, Set.indicator_of_notMem hmem]
     rw [heq, integral_indicator_const (1 : ℝ) hset, smul_eq_mul, mul_one]
   have hsubG : ∀ j, HasSubgaussianMGF
       (fun ξ => g (Z j ξ) - ∫ ξ', g (Z j ξ') ∂μprob) (1 / 4 : NNReal) μprob := by
@@ -305,7 +305,7 @@ theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
   have hsubset : {ξ | a < |(sampleMedian fun j => Z j ξ) - μ₀|} ⊆
       {ξ | (k : ℝ) / 4 ≤ ∑ j, (g (Z j ξ) - ∫ ξ', g (Z j ξ') ∂μprob)} := by
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     -- a strict majority of blocks inside the band would pin the median inside it
     have hmaj : ¬ k < 2 * (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card := fun hcon =>
       absurd (abs_sampleMedian_sub_le_of_majority hk (fun j => Z j ξ) hcon) (not_le.mpr hξ)
@@ -348,7 +348,7 @@ theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
       < |medianOfMeans (fun j i => X j i ξ) - μ₀|}
       = {ξ | a < |(sampleMedian fun j => Z j ξ) - μ₀|} := by
     ext ξ
-    simp only [Set.mem_setOf_eq, ha, hZ, medianOfMeans]
+    simp only [Set.mem_ofPred_eq, ha, hZ, medianOfMeans]
   rw [hsetEq]
   refine le_trans (measureReal_mono hsubset (measure_ne_top _ _)) (hhoef.trans (le_of_eq ?_))
   have hk' : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hk

@@ -47,15 +47,15 @@ omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 /-- On the treated arm the observed outcome is the treated potential outcome. -/
 theorem obs_eqOn_treated : Set.EqOn (obs Z y1 y0) y1 {ω | Z ω = true} := by
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω, if_true]
+  simp only [Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, ite_true]
 
 omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 /-- On the control arm the observed outcome is the control potential outcome. -/
 theorem obs_eqOn_control : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω, Bool.false_eq_true, if_false]
+  simp only [Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, Bool.false_eq_true, ite_false]
 
 /-! ### Private infrastructure
 

@@ -423,11 +423,11 @@ private lemma disjoint_signSet (f : Ω → ℝ) {u v : Bool} (huv : u ≠ v) :
   · exact absurd rfl huv
   · rw [signSet_false, signSet_true]
     refine Set.disjoint_left.mpr fun ω hω hω' => ?_
-    simp only [Set.mem_setOf_eq] at hω hω'
+    simp only [Set.mem_ofPred_eq] at hω hω'
     linarith
   · rw [signSet_true, signSet_false]
     refine Set.disjoint_left.mpr fun ω hω hω' => ?_
-    simp only [Set.mem_setOf_eq] at hω hω'
+    simp only [Set.mem_ofPred_eq] at hω hω'
     linarith
   · exact absurd rfl huv
 
@@ -1048,16 +1048,16 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
       have hf'm : ∀ s, Measurable (f' s) := by
         intro s
         by_cases hs : s = b
-        · simp only [hf', hs, if_pos rfl]; exact (hfm b).mul hgm
-        · simp only [hf', if_neg hs]; exact hfm s
+        · simp only [hf', hs, ite_eq_left rfl]; exact (hfm b).mul hgm
+        · simp only [hf', ite_eq_right hs]; exact hfm s
       have hf'b : ∀ s y, |f' s y| ≤ 1 := by
         intro s y
         by_cases hs : s = b
-        · simp only [hf', hs, if_pos rfl, abs_mul]
+        · simp only [hf', hs, ite_eq_left rfl, abs_mul]
           have h1 := hfb b y
           have h2 := hgb y
           nlinarith [abs_nonneg (f b y), abs_nonneg (g y)]
-        · simp only [hf', if_neg hs]; exact hfb s y
+        · simp only [hf', ite_eq_right hs]; exact hfb s y
       obtain ⟨G, hGm, hGb, hGe⟩ := ih f' hf'm hf'b
       refine ⟨G, hGm, hGb, ?_⟩
       set P : Ω → ℝ := fun ω => ∏ s ∈ S, f s (X (t + (s : ℤ)) ω) with hP
@@ -1095,9 +1095,9 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
         have herase : ∏ s ∈ S.erase b, f' s (X (t + (s : ℤ)) ω)
             = ∏ s ∈ S.erase b, f s (X (t + (s : ℤ)) ω) :=
           Finset.prod_congr rfl fun s hs => by
-            simp only [hf', if_neg (Finset.ne_of_mem_erase hs)]
+            simp only [hf', ite_eq_right (Finset.ne_of_mem_erase hs)]
         rw [herase]
-        simp only [hf', if_pos rfl]
+        simp only [hf', ite_eq_left rfl]
         ring
       have hY : (fun ω => ∏ s ∈ insert a S, f s (X (t + (s : ℤ)) ω)) = P * Q := by
         funext ω
@@ -1132,17 +1132,17 @@ private lemma isPiSystem_futureCyl (X : ℤ → Ω → E) (t : ℤ) : IsPiSystem
     · rintro ⟨h1, h2⟩ s hs
       refine ⟨?_, ?_⟩
       · by_cases h : s ∈ S₁
-        · simpa only [if_pos h] using h1 s h
+        · simpa only [ite_eq_left h] using h1 s h
         · simp [h]
       · by_cases h : s ∈ S₂
-        · simpa only [if_pos h] using h2 s h
+        · simpa only [ite_eq_left h] using h2 s h
         · simp [h]
     · intro h
       refine ⟨fun s hs => ?_, fun s hs => ?_⟩
       · have := (h s (Or.inl hs)).1
-        simpa only [if_pos hs] using this
+        simpa only [ite_eq_left hs] using this
       · have := (h s (Or.inr hs)).2
-        simpa only [if_pos hs] using this
+        simpa only [ite_eq_left hs] using this
 
 private lemma measurableSet_futureCyl {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
     {t : ℤ} {A : Set Ω} (hA : A ∈ futureCyl X t) : MeasurableSet A := by
@@ -1256,8 +1256,8 @@ private lemma setIntegral_condExp_indicator_all [IsProbabilityMeasure μ]
       simp [Measure.real]
     have hsplit := integral_add_compl hAm hhint
     have hmsplit : (μ (A ∩ D)).toReal + (μ (Aᶜ ∩ D)).toReal = (μ D).toReal := by
-      have h1 : μ (D ∩ A) + μ (D \ A) = μ D := measure_inter_add_diff D hAm
-      have h2 : D \ A = Aᶜ ∩ D := by ext ω; simp [Set.mem_diff, and_comm]
+      have h1 : μ (D ∩ A) + μ (D \ A) = μ D := measure_inter_add_sdiff D hAm
+      have h2 : D \ A = Aᶜ ∩ D := by ext ω; simp [Set.mem_sdiff, and_comm]
       rw [h2, Set.inter_comm D A] at h1
       rw [← ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), h1]
     rw [ih D hD, htot] at hsplit
@@ -1445,7 +1445,7 @@ private instance instCocnt : MeasurableSpace Cocnt where
   measurableSet_iUnion f hf := by
     by_cases h : ∀ i, (f i).Countable
     · exact Or.inl (Set.countable_iUnion h)
-    · push_neg at h
+    · push Not at h
       obtain ⟨i, hi⟩ := h
       rcases hf i with h' | h'
       · exact absurd h' hi
@@ -1476,19 +1476,19 @@ private noncomputable def cocnt : Measure Cocnt :=
       show (if (⋃ i, f i).Countable then (0 : ℝ≥0∞) else 1)
         = ∑' i, (if (f i).Countable then (0 : ℝ≥0∞) else 1)
       by_cases h : ∀ i, (f i).Countable
-      · rw [if_pos (Set.countable_iUnion h)]
-        have hz : ∀ i, (if (f i).Countable then (0 : ℝ≥0∞) else 1) = 0 := fun i => if_pos (h i)
+      · rw [ite_eq_left (Set.countable_iUnion h)]
+        have hz : ∀ i, (if (f i).Countable then (0 : ℝ≥0∞) else 1) = 0 := fun i => ite_eq_left (h i)
         simp [hz]
-      · push_neg at h
+      · push Not at h
         obtain ⟨i, hi⟩ := h
         have hci : (f i)ᶜ.Countable := (hf i).resolve_left hi
         have h1 : ¬ (⋃ j, f j).Countable := fun hc => hi (hc.mono (Set.subset_iUnion f i))
-        rw [if_neg h1]
+        rw [ite_eq_right h1]
         have hsingle : ∀ j, j ≠ i → (if (f j).Countable then (0 : ℝ≥0∞) else 1) = 0 := by
           intro j hj
           have hsub : f j ⊆ (f i)ᶜ := fun x hx => Set.disjoint_left.mp (hd hj) hx
-          exact if_pos (hci.mono hsub)
-        rw [tsum_eq_single i hsingle, if_neg hi])
+          exact ite_eq_left (hci.mono hsub)
+        rw [tsum_eq_single i hsingle, ite_eq_right hi])
 
 open Classical in
 private lemma cocnt_apply {A : Set Cocnt} (hA : MeasurableSet A) :
@@ -1497,11 +1497,11 @@ private lemma cocnt_apply {A : Set Cocnt} (hA : MeasurableSet A) :
 
 private lemma cocnt_of_countable {A : Set Cocnt} (hA : A.Countable) : cocnt A = 0 := by
   classical
-  rw [cocnt_apply (Or.inl hA), if_pos hA]
+  rw [cocnt_apply (Or.inl hA), ite_eq_left hA]
 
 private lemma cocnt_of_cocountable {A : Set Cocnt} (hA : Aᶜ.Countable) : cocnt A = 1 := by
   classical
-  rw [cocnt_apply (Or.inr hA), if_neg (not_countable_of_compl hA)]
+  rw [cocnt_apply (Or.inr hA), ite_eq_right (not_countable_of_compl hA)]
 
 private instance : IsProbabilityMeasure cocnt :=
   ⟨cocnt_of_cocountable (by simp)⟩
@@ -1529,7 +1529,7 @@ private lemma exists_big_cell {I : ℕ} {A : Fin I → Set Cocnt}
     ∃ i₀, (A i₀)ᶜ.Countable ∧ ∀ i, i ≠ i₀ → (A i).Countable := by
   by_cases h : ∀ i, (A i).Countable
   · exact absurd (hc ▸ Set.countable_iUnion h) not_countable_univ_cocnt
-  · push_neg at h
+  · push Not at h
     obtain ⟨i₀, hi₀⟩ := h
     have hci : (A i₀)ᶜ.Countable := (hA i₀).resolve_left hi₀
     refine ⟨i₀, hci, fun i hi => hci.mono fun x hx => ?_⟩
@@ -1555,7 +1555,7 @@ private lemma betaMixCoeff_cocnt_eq_zero :
         |(cocnt (A i ∩ B j)).toReal - (cocnt (A i)).toReal * (cocnt (B j)).toReal|}
       = {(0 : ℝ)} := by
     ext r
-    simp only [Set.mem_setOf_eq, Set.mem_singleton_iff]
+    simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
     constructor
     · rintro ⟨I, J, A, B, hA, hB, hdA, hdB, hcA, hcB, rfl⟩
       obtain ⟨i₀, hi₀, hiz⟩ := exists_big_cell hA hdA hcA
@@ -1970,7 +1970,7 @@ private lemma tvDist_eq_iSup_pdist (P Q : Measure E) [IsProbabilityMeasure P]
             rw [ENNReal.ofReal_add ENNReal.toReal_nonneg (pdist_nonneg P Q n),
               ENNReal.ofReal_toReal (measure_ne_top _ _)]
     have hsub : ∀ u v : Set E, u ⊆ v ∪ (u \ v) := fun u v =>
-      Set.diff_subset_iff.mp Set.Subset.rfl
+      Set.sdiff_subset_iff.mp Set.Subset.rfl
     calc P s ≤ P t + P (s \ t) :=
           (measure_mono (hsub s t)).trans (measure_union_le _ _)
       _ ≤ (Q t + ENNReal.ofReal (pdist P Q n)) + (ε : ℝ≥0∞) / 2 := add_le_add hPt hsd
@@ -2090,7 +2090,7 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
   have hW'm : ∀ j, MeasurableSet (W' j) := fun j => by
     rw [hW'def]
     exact (hWm j).diff (Finset.measurableSet_biUnion _ fun j' _ => hWm j')
-  have hW'sub : ∀ j, W' j ⊆ W j := fun j => by rw [hW'def]; exact Set.diff_subset
+  have hW'sub : ∀ j, W' j ⊆ W j := fun j => by rw [hW'def]; exact Set.sdiff_subset
   have hW'd : Pairwise fun j j' => Disjoint (W' j) (W' j') := by
     intro j j' hjj
     rcases lt_or_gt_of_ne hjj with hlt | hlt
@@ -2105,8 +2105,8 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
   have hW'pre : ∀ j, X (k + n) ⁻¹' (W' j) = Bset j := by
     intro j
     rw [hW'def]
-    simp only [Set.preimage_diff, Set.preimage_iUnion, hWpre]
-    refine Set.eq_of_subset_of_subset Set.diff_subset fun ω hω => ⟨hω, ?_⟩
+    simp only [Set.preimage_sdiff, Set.preimage_iUnion, hWpre]
+    refine Set.eq_of_subset_of_subset Set.sdiff_subset fun ω hω => ⟨hω, ?_⟩
     simp only [Set.mem_iUnion, not_exists]
     intro j' hj'
     have hne : j ≠ j' := fun hc => absurd (Finset.mem_filter.mp hj').2 (by rw [hc]; simp)
@@ -2343,14 +2343,14 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
     rw [hUdef] at hx
     have hj := Set.mem_iInter.mp hx j
     constructor
-    · intro h; rw [if_pos h] at hj; exact hj
-    · intro h; rw [if_neg (by simp [h])] at hj; exact hj
+    · intro h; rw [ite_eq_left h] at hj; exact hj
+    · intro h; rw [ite_eq_right (by simp [h])] at hj; exact hj
   have hUm : ∀ σ, MeasurableSet (U σ) := by
     intro σ; rw [hUdef]
     refine MeasurableSet.iInter fun j => ?_
     by_cases h : σ j = true
-    · rw [if_pos h]; exact measurableSet_le measurable_const (hφm j)
-    · rw [if_neg h]; exact measurableSet_lt (hφm j) measurable_const
+    · rw [ite_eq_left h]; exact measurableSet_le measurable_const (hφm j)
+    · rw [ite_eq_right h]; exact measurableSet_lt (hφm j) measurable_const
   have hUd : Pairwise fun σ σ' => Disjoint (U σ) (U σ') := by
     intro σ σ' hσ
     obtain ⟨j, hj⟩ := Function.ne_iff.mp hσ
@@ -2374,8 +2374,8 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
     rw [hUdef]
     refine Set.mem_iInter.mpr fun j => ?_
     by_cases h : 0 ≤ φ j x
-    · rw [if_pos (by simp [h])]; exact h
-    · rw [if_neg (by simp [h])]; exact not_le.mp h
+    · rw [ite_eq_left (by simp [h])]; exact h
+    · rw [ite_eq_right (by simp [h])]; exact not_le.mp h
   -- ## the past-side partition, indexed by `Fin`
   obtain ⟨eS⟩ : Nonempty (Fin (Fintype.card (Fin (cpF E m).card → Bool))
       ≃ (Fin (cpF E m).card → Bool)) := ⟨(Fintype.equivFin _).symm⟩

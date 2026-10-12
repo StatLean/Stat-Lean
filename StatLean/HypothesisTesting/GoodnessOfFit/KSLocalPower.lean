@@ -122,7 +122,7 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
     have hsubset : {ω | s < ksStat (X n) F₀ ω}
         ⊆ {ω | s - dseq n ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       have hEval := hEIcc ω
       have htri : supCDFDist (fun t => empCDF (X n) ω t) F₀
           ≤ supCDFDist (fun t => empCDF (X n) ω t) (F n) + supCDFDist (F n) F₀ :=

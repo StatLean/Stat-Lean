@@ -127,7 +127,7 @@ theorem nadarayaWatson_eq_kde_ratio {n : ℕ} (xdat ydat : Fin n → ℝ) {K : �
           rw [Finset.mul_sum]
           refine Finset.sum_congr rfl (fun i _ => ?_)
           field_simp
-  rw [nadarayaWatson, if_neg hS, hnum]
+  rw [nadarayaWatson, ite_eq_right hS, hnum]
   unfold kdeData
   rw [mul_div_mul_left _ _ hnh]
 

@@ -78,7 +78,7 @@ theorem gpEmbed_uniform_bound
           (eLpNorm_le_eLpNorm_of_exponent_le (by norm_num))
       _ = ‖hf.toLp (f : Ω → ℝ)‖ := (Lp.norm_toLp _ _).symm
       _ ≤ ‖hG.toLp G‖ := hf_norm
-  rw [Submodule.coe_norm, coe_gpEmbed, centredLp]
+  rw [← Submodule.norm_coe, coe_gpEmbed, centredLp]
   have hc : MemLp (fun _ : Ω => ∫ x, (f : Ω → ℝ) x ∂P) 2 P := memLp_const _
   have hc_norm : ‖hc.toLp (fun _ : Ω => ∫ x, (f : Ω → ℝ) x ∂P)‖
       = ‖∫ x, (f : Ω → ℝ) x ∂P‖ := by
@@ -494,7 +494,7 @@ private theorem pBrownianBridge_readout_covarianceBilin_aux
       rw [EuclideanSpace.coe_proj]
       rfl
     rw [heq]
-    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitz.comp_memLp (map_zero _) hMemLp_R
+    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitzWith.comp_memLp (map_zero _) hMemLp_R
   have hbasis : ∀ a : Fin k,
       (fun u : EuclideanSpace ℝ (Fin k) =>
         (inner ℝ ((EuclideanSpace.basisFun (Fin k) ℝ).toBasis a) u : ℝ))

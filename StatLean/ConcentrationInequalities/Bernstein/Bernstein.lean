@@ -415,7 +415,7 @@ theorem bernstein_inequality {n : ℕ} {X : Fin n → Ω → ℝ} {σ2 b : ℝ�
   -- ### Reduce the sample-mean event to the sum event and bridge to ENNReal.
   have hsub : {ω | t < (∑ i, X i ω) / (n : ℝ)} ⊆ {ω | (n : ℝ) * t ≤ (∑ i, X i) ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     rw [Finset.sum_apply]
     have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     rw [lt_div_iff₀ hnpos] at hω

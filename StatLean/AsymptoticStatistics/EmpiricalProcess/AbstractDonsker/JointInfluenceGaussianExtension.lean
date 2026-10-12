@@ -485,7 +485,7 @@ private noncomputable def influenceProjection
   letI : CompleteSpace (centeredClosure P hF_L2) := by
     change CompleteSpace (centeredSpan P hF_L2).topologicalClosure
     infer_instance
-  exact (centeredClosure P hF_L2).orthogonalProjection (ψ j : Lp ℝ 2 P)
+  exact (centeredClosure P hF_L2).orthogonalProjectionOnto (ψ j : Lp ℝ 2 P)
 
 private theorem inner_centered_projection
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P] {k : ℕ}
@@ -499,7 +499,7 @@ private theorem inner_centered_projection
   letI : CompleteSpace (centeredClosure P hF_L2) := by
     change CompleteSpace (centeredSpan P hF_L2).topologicalClosure
     infer_instance
-  exact (centeredClosure P hF_L2).inner_orthogonalProjection_eq_of_mem_left _ _
+  exact (centeredClosure P hF_L2).inner_orthogonalProjectionOnto_eq_of_mem_left _ _
 
 private noncomputable def bridgeInfluenceLp
     {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P] {k : ℕ}

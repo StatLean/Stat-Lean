@@ -840,7 +840,7 @@ private lemma twoSidedProc_glue (n : ℕ) :
       rw [twoSidedProc]
       have h1 : ((i : ℕ) + 1 : ℤ) ≠ 0 := by positivity
       have h2 : (0 : ℤ) < ((i : ℕ) + 1 : ℤ) := by positivity
-      rw [if_neg h1, if_pos h2]
+      rw [ite_eq_right h1, ite_eq_left h2]
       congr 1
   | succ m ih =>
     intro ω j
@@ -850,7 +850,7 @@ private lemma twoSidedProc_glue (n : ℕ) :
       rw [twoSidedProc]
       have h1 : ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) ≠ 0 := by simp; omega
       have h2 : ¬ (0 : ℤ) < ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) := by simp
-      rw [if_neg h1, if_neg h2]
+      rw [ite_eq_right h1, ite_eq_right h2]
       congr 1
     · rw [twoSidedGlue]
       simp only [Fin.cons_succ]

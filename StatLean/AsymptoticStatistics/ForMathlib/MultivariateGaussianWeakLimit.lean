@@ -274,7 +274,7 @@ lemma multivariateGaussian_zero_cov :
     multivariateGaussian (0 : EuclideanSpace ℝ ι) (0 : Matrix ι ι ℝ)
       = Measure.dirac (0 : EuclideanSpace ℝ ι) := by
   rw [multivariateGaussian, CFC.sqrt_zero, map_zero]
-  simp only [zero_add, ContinuousLinearMap.zero_apply]
+  simp only [zero_add, zero_apply]
   rw [Measure.map_const, measure_univ, one_smul]
 
 /-- **`multivariateGaussian 0 S` is supported on `range (toEuclideanCLM (sqrt S))`**.
@@ -735,7 +735,7 @@ private lemma _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
       -- coe_toEuclideanCLM_eq_toEuclideanLin]
       -- ↔ (T'' ∘L T''.adjoint).toLinearMap.IsSymmetric        [by hSS_toCLM]
       -- The last is direct from adjoint definition.
-      rw [Matrix.isHermitian_iff_isSymmetric, ← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
+      rw [← Matrix.isSymmetric_toEuclideanLin_iff, ← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
         hSS_toCLM]
       intro x y
       change inner ℝ (T'' (ContinuousLinearMap.adjoint T'' x)) y
@@ -895,7 +895,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
         multivariateGaussian (0 : EuclideanSpace ℝ ι) S (frontier C)
         = multivariateGaussian (0 : EuclideanSpace ℝ ι) S
             (frontier C ∩ (V : Set (EuclideanSpace ℝ ι))) := by
-      have h_decomp := MeasureTheory.measure_inter_add_diff
+      have h_decomp := MeasureTheory.measure_inter_add_sdiff
         (μ := multivariateGaussian (0 : EuclideanSpace ℝ ι) S)
         (frontier C) hV_meas
       rw [h_diff_zero, add_zero] at h_decomp

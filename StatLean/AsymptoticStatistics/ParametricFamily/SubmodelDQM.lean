@@ -442,10 +442,10 @@ private lemma integral_gMk_mul_gMk
         = if i = j then (1 : ℝ) else 0 := by
     by_cases hij : i = j
     · subst hij
-      rw [if_pos rfl]
+      rw [ite_eq_left rfl]
       have h_norm : ‖(g_P i : Lp ℝ 2 P)‖ = 1 := h_orth.norm_eq_one i
       rw [real_inner_self_eq_norm_mul_norm, h_norm]; norm_num
-    · rw [if_neg hij]
+    · rw [ite_eq_right hij]
       exact h_orth.inner_eq_zero hij
   -- Translate to integral via L².inner_def + RCLike.inner_apply.
   rw [MeasureTheory.L2.inner_def] at h_inner
@@ -561,7 +561,7 @@ theorem paramSubmodel_fisher_info :
         rw [integral_gMk_mul_gMk g_P h_orth i j]
         by_cases hij : i = j
         · subst hij; simp
-        · simp [if_neg hij]
+        · simp [ite_eq_right hij]
       rw [Finset.sum_congr rfl (fun j _ => h_each j)]
       -- ∑ j, if i = j then u i * v i else 0 = u i * v i.
       rw [Finset.sum_ite_eq_of_mem Finset.univ i (fun _ => u i * v i)
@@ -607,7 +607,7 @@ private lemma paramSubmodel_density_pos (η : EuclideanSpace ℝ (Fin m)) :
       refine Filter.Eventually.of_forall (fun ω => ?_)
       change 0 < submodelDensityNN g_P hg η ω
       unfold submodelDensityNN submodelDensity
-      rw [if_pos hη]
+      rw [ite_eq_left hη]
       have hempty : linPerturb g_P η ω = 0 := by
         unfold linPerturb
         subst hm0
@@ -621,7 +621,7 @@ private lemma paramSubmodel_density_pos (η : EuclideanSpace ℝ (Fin m)) :
       filter_upwards [h_bound] with ω hω
       change 0 < submodelDensityNN g_P hg η ω
       unfold submodelDensityNN submodelDensity
-      rw [if_pos hη]
+      rw [ite_eq_left hη]
       -- Strict bound: ‖η‖ * m * M < 1 (strictly less, by truncRadius_pos).
       have h_target : ‖η‖ * m * hg.uniformBound < 1 := by
         have htm_nn : 0 ≤ hg.uniformBound * m := mul_nonneg hM_nn hm_nn
@@ -651,7 +651,7 @@ private lemma paramSubmodel_density_pos (η : EuclideanSpace ℝ (Fin m)) :
     refine Filter.Eventually.of_forall (fun ω => ?_)
     change 0 < submodelDensityNN g_P hg η ω
     unfold submodelDensityNN submodelDensity
-    rw [if_neg hη]
+    rw [ite_eq_right hη]
     norm_num
 
 /-- **Mutual absolute continuity at `θ = 0`.**

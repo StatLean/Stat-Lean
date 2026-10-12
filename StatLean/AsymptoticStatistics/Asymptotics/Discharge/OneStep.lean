@@ -234,7 +234,7 @@ private lemma score_sum_bddAbove_in_prob
     refine le_trans (le_of_eq ?_) (zero_le)
     convert measure_empty (μ := Measure.pi (fun _ : Fin 0 => P))
     ext X
-    simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+    simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
     have h_sum_zero : ∑ i : Fin 0, scoreEff (X i) = 0 := by
       apply Finset.sum_of_isEmpty
     rw [h_sum_zero, mul_zero, abs_zero]
@@ -330,7 +330,7 @@ private lemma info_mul_inv_oP
     intro n
     apply (measure_mono _).trans (measure_union_le _ _)
     intro X hX
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     exact h_alg n X hX
   -- Both bounds → 0 by h_info; squeeze
   have h1 := h_info (Ĩ / 2) (by positivity)
@@ -408,7 +408,7 @@ private lemma info_inv_diff_oP
     intro n
     apply (measure_mono _).trans (measure_union_le _ _)
     intro X hX
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     exact h_alg n X hX
   have h1 := h_info (Ĩ / 2) (by positivity)
   have h2 := h_info (δ * Ĩ ^ 2 / 4) (by positivity)
@@ -475,7 +475,7 @@ private lemma error_A_tendsto_zero
         ⊆ {X | M ≤ abs ((Real.sqrt n)⁻¹ * ∑ i : Fin n, scoreEff (X i))} ∪
           {X | ε / M ≤ abs ((info_estimate_seq n X)⁻¹ - Ĩ⁻¹)} := by
       intro n X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq]
+      simp only [Set.mem_union, Set.mem_ofPred_eq]
       by_contra hc
       push Not at hc
       obtain ⟨h1, h2⟩ := hc
@@ -593,7 +593,7 @@ private lemma error_B_tendsto_zero
                 - (n : ℝ)⁻¹ * (∑ i : Fin n, scoreEff (X i))
                 + Ĩ * (preliminary n X - θ₀))} := by
       intro n X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨h1, h2⟩ := hc
@@ -699,7 +699,7 @@ private lemma error_C_tendsto_zero
         ⊆ {X | M ≤ abs (Real.sqrt n * (preliminary n X - θ₀))} ∪
           {X | ε / M ≤ abs (1 - (info_estimate_seq n X)⁻¹ * Ĩ)} := by
       intro n X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq]
+      simp only [Set.mem_union, Set.mem_ofPred_eq]
       by_contra hc
       push Not at hc
       obtain ⟨h1, h2⟩ := hc
@@ -813,7 +813,7 @@ private lemma score_l_dot_avg_plus_info_oP
                    - ∫ ω, (score_l_dot : Ω → ℝ) ω ∂P)} := by
     intro n
     ext X
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [h_bartlett]
     constructor
     · intro h; convert h using 2; ring
@@ -929,7 +929,7 @@ private lemma taylor_remainder_root_n_oP
     (Filter.Eventually.of_forall fun _ => zero_le)
   refine Filter.Eventually.of_forall fun n => measure_mono ?_
   intro X hX
-  simp only [Set.mem_setOf_eq] at hX ⊢
+  simp only [Set.mem_ofPred_eq] at hX ⊢
   -- Want: ε² ≤ Σ rᵢ², given ε ≤ √n · |(1/n)Σ rᵢ|
   -- Use Cauchy-Schwarz: (√n · (1/n)Σ rᵢ)² ≤ Σ rᵢ²
   have h_cs := sqrt_n_avg_sq_le_sum_sq (fun i =>
@@ -1029,7 +1029,7 @@ private lemma preliminary_diff_oP
   have h_incl : {X : Fin n → Ω | ε ≤ abs (preliminary n X - θ₀)}
       ⊆ {X : Fin n → Ω | M ≤ abs (Real.sqrt n * (preliminary n X - θ₀))} := by
     intro X hX
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
     have h_le : Real.sqrt n * ε ≤ Real.sqrt n * abs (preliminary n X - θ₀) :=
       mul_le_mul_of_nonneg_left hX (Real.sqrt_nonneg _)
@@ -1164,7 +1164,7 @@ theorem OneStepTaylorHyp.pfanzagl_display
                   - ((efficientScore S_θ T_nuis v : ↥(L2ZeroMean P)) : Lp ℝ 2 P) (X i)
                   - (preliminary n X - θ₀) * (score_l_dot : Ω → ℝ) (X i))))}) := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨h1, h2, h3⟩ := hc
@@ -1339,7 +1339,7 @@ theorem OneStepTaylorHyp.info_consistency
       (Filter.Eventually.of_forall fun _ => zero_le)
     refine Filter.Eventually.of_forall fun n => measure_mono ?_
     intro X hX
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     by_cases hn : n = 0
     · subst hn; simp only [Fin.sum_univ_zero, mul_zero] at hX; linarith
     have hn_ge : 1 ≤ (n : ℝ) := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn
@@ -1375,7 +1375,7 @@ theorem OneStepTaylorHyp.info_consistency
                 (X i)) ^ 2)
             - ∫ ω, (((efficientScore S_θ T_nuis v : ↥(L2ZeroMean P)) :
                 Lp ℝ 2 P) : Ω → ℝ) ω ^ 2 ∂P)} := by
-      intro n; ext X; simp only [Set.mem_setOf_eq]; rw [h_int]
+      intro n; ext X; simp only [Set.mem_ofPred_eq]; rw [h_int]
     simp_rw [h_set_eq]
     exact h_lln
   have h_T2_oP : ∀ ε > 0, Tendsto
@@ -1421,7 +1421,7 @@ theorem OneStepTaylorHyp.info_consistency
             ((efficientScore S_θ T_nuis v : ↥(L2ZeroMean P)) : Lp ℝ 2 P) (X i) *
               (score_l_dot : Ω → ℝ) (X i)) - Cint)} := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc'
       push Not at hc'
       obtain ⟨h1, h2⟩ := hc'
@@ -1503,7 +1503,7 @@ theorem OneStepTaylorHyp.info_consistency
           {X : Fin n → Ω | 1 ≤ abs ((n : ℝ)⁻¹ *
             (∑ i : Fin n, ((score_l_dot : Ω → ℝ) (X i)) ^ 2) - Cint)} := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc'
       push Not at hc'
       obtain ⟨h1, h2⟩ := hc'
@@ -1606,7 +1606,7 @@ theorem OneStepTaylorHyp.info_consistency
                   (X i)
                 - (preliminary n X - θ₀) * (score_l_dot : Ω → ℝ) (X i)) ^ 2} := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc'
       push Not at hc'
       obtain ⟨h1, h2⟩ := hc'
@@ -1715,7 +1715,7 @@ theorem OneStepTaylorHyp.info_consistency
                   (X i)
                 - (preliminary n X - θ₀) * (score_l_dot : Ω → ℝ) (X i)) ^ 2}) := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc'
       push Not at hc'
       obtain ⟨h1, h2, h3⟩ := hc'
@@ -1835,7 +1835,7 @@ theorem OneStepTaylorHyp.info_consistency
                     (X i)
                   - (preliminary n X - θ₀) * (score_l_dot : Ω → ℝ) (X i)) ^ 2)})))) := by
       intro X hX
-      simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨hT1, hT2, hT3, hT4, hT5, hT6⟩ := hc
@@ -2156,7 +2156,7 @@ theorem oneStep_asympLinear_of_taylor
           |(Real.sqrt n * (preliminary n X - θ₀))|
             * |1 - (info_estimate_seq n X)⁻¹ * Ĩ|}) := by
     intro X hX
-    simp only [Set.mem_union, Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_union, Set.mem_ofPred_eq] at hX ⊢
     by_contra hc'
     push Not at hc'
     obtain ⟨hA, hB, hC⟩ := hc'

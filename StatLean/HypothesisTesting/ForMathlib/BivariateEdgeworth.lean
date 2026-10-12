@@ -551,14 +551,14 @@ theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
         (∫ x, h i j x ∂F) = if j = i then mixCharFun (F.map Z) b c else charFun (F.map Z) c := by
       intro j
       by_cases hji : j = i
-      · simp only [hhdef, hji, if_pos rfl]
+      · simp only [hhdef, hji, ite_eq_left rfl]
         exact hA
-      · simp only [hhdef, if_neg hji]
+      · simp only [hhdef, ite_eq_right hji]
         exact hB
     simp_rw [hval]
-    rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), if_pos rfl]
+    rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), ite_eq_left rfl]
     congr 1
-    rw [Finset.prod_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+    rw [Finset.prod_congr rfl (fun j hj => ite_eq_right (Finset.ne_of_mem_erase hj)),
       Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ i)]
     simp
   rw [hstep2, hstep3]
@@ -2338,9 +2338,9 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
       r ^ T.card * ‖slotCharFun F Z b T c‖ ≤ (if T = ∅ then 1 else Q / (N : ℝ)) := by
     intro T
     rcases eq_or_ne T ∅ with rfl | hTne
-    · rw [if_pos rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
+    · rw [ite_eq_left rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
       exact norm_charFun_le_one c
-    rw [if_neg hTne]
+    rw [ite_eq_right hTne]
     have hpos : 1 ≤ T.card := Finset.card_pos.2 (Finset.nonempty_of_ne_empty hTne)
     rcases eq_or_lt_of_le hpos with h1 | h2
     · -- a single slot: the centring gives `‖slot‖ ≤ rQ`, and `r·rQ = Q/N`
@@ -2427,12 +2427,12 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
           = (if i ∈ Finset.image σ Finset.univ then Q / (N : ℝ) else 1) := by
       intro i
       by_cases hi : i ∈ Finset.image σ Finset.univ
-      · rw [if_pos hi, if_neg]
+      · rw [ite_eq_left hi, ite_eq_right]
         rw [Finset.mem_image] at hi
         obtain ⟨l, _, hl⟩ := hi
         exact Finset.nonempty_iff_ne_empty.1
           ⟨l, Finset.mem_filter.2 ⟨Finset.mem_univ _, hl⟩⟩
-      · rw [if_neg hi, if_pos]
+      · rw [ite_eq_right hi, ite_eq_left]
         rw [Finset.filter_eq_empty_iff]
         intro l _
         exact fun hl => hi (Finset.mem_image.2 ⟨l, Finset.mem_univ _, hl⟩)
@@ -2513,8 +2513,8 @@ theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityM
       r ^ T.card * ‖slotCharFun F Z b T c‖ ≤ (if T = ∅ then D else Q / (N : ℝ)) := by
     intro T
     rcases eq_or_ne T ∅ with rfl | hTne
-    · rw [if_pos rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
-    rw [if_neg hTne]
+    · rw [ite_eq_left rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
+    rw [ite_eq_right hTne]
     have hpos : 1 ≤ T.card := Finset.card_pos.2 (Finset.nonempty_of_ne_empty hTne)
     rcases eq_or_lt_of_le hpos with h1 | h2
     · obtain ⟨l, rfl⟩ := Finset.card_eq_one.1 h1.symm
@@ -2603,12 +2603,12 @@ theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityM
           = (if i ∈ Finset.image σ Finset.univ then Q / (N : ℝ) else D) := by
       intro i
       by_cases hi : i ∈ Finset.image σ Finset.univ
-      · rw [if_pos hi, if_neg]
+      · rw [ite_eq_left hi, ite_eq_right]
         rw [Finset.mem_image] at hi
         obtain ⟨l, _, hl⟩ := hi
         exact Finset.nonempty_iff_ne_empty.1
           ⟨l, Finset.mem_filter.2 ⟨Finset.mem_univ _, hl⟩⟩
-      · rw [if_neg hi, if_pos]
+      · rw [ite_eq_right hi, ite_eq_left]
         rw [Finset.filter_eq_empty_iff]
         intro l _
         exact fun hl => hi (Finset.mem_image.2 ⟨l, Finset.mem_univ _, hl⟩)

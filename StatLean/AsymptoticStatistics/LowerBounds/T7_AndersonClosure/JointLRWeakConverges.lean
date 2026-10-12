@@ -457,7 +457,7 @@ lemma jointDelta_weakConverges_under_pi
           rcases h_orth with ⟨h_norm, h_perp⟩
           by_cases hij : i = j
           · subst hij
-            rw [if_pos rfl]
+            rw [ite_eq_left rfl]
             -- Goal: `⟪(g_P i : Lp ℝ 2 P), (g_P i : Lp ℝ 2 P)⟫_ℝ = 1`.
             -- Bridge to submodule inner via `Submodule.coe_inner` (defeq), then
             -- `real_inner_self_eq_norm_sq` and `‖g_P i‖ = 1`.
@@ -471,7 +471,7 @@ lemma jointDelta_weakConverges_under_pi
             rw [h_step, h_norm i]
             norm_num
           · -- `i ≠ j`: orthogonality gives 0.
-            rw [if_neg hij]
+            rw [ite_eq_right hij]
             have h_perp_ij : (⟪(g_P i : ↥(L2ZeroMean P)), (g_P j : ↥(L2ZeroMean P))⟫_ℝ : ℝ) = 0 :=
               h_perp hij
             -- Same `Submodule.coe_inner` bridge.
@@ -485,7 +485,7 @@ lemma jointDelta_weakConverges_under_pi
         -- then `hvec i * (if i=j then ... else 0)` to `if i=j then hvec i * hvec j else 0`.
         simp_rw [mul_ite, mul_one, mul_zero]
         rw [Finset.sum_ite_eq (Finset.univ : Finset (Fin m)) i
-          (fun j => hvec i * hvec j), if_pos (Finset.mem_univ _)]
+          (fun j => hvec i * hvec j), ite_eq_left (Finset.mem_univ _)]
         ring
       rw [h_norm_sq, EuclideanSpace.real_norm_sq_eq]
     -- Now apply the per-direction CLT to `linComb g_P hvec`.
@@ -634,7 +634,7 @@ private lemma pi_tendsto_of_per_coord_pi_tendsto {m : ℕ}
             (fun i => r i n X)‖} : Set (Fin n → Ω)) = ∅ := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have h_norm_zero :
           ‖(EuclideanSpace.equiv (Fin 0) ℝ).symm (fun i : Fin 0 => r i n X)‖ = 0 := by
         rw [EuclideanSpace.norm_eq]
@@ -1242,7 +1242,7 @@ private lemma bridge_residue_to_witness_one
             ∀ j : Fin k,
               0 < (γ_g.curve ((Real.sqrt k)⁻¹)).rnDeriv γ_g.dominating (x j)
               ∧ (γ_g.curve ((Real.sqrt k)⁻¹)).rnDeriv γ_g.dominating (x j) < ⊤} := by
-        rw [Set.setOf_forall]
+        rw [Set.ofPred_forall]
         refine MeasurableSet.iInter fun j => ?_
         refine MeasurableSet.inter ?_ ?_
         · exact measurableSet_lt measurable_const
@@ -1262,7 +1262,7 @@ private lemma bridge_residue_to_witness_one
           {x : Fin k → Ω | ∀ j : Fin k,
             0 < P.rnDeriv γ_g.dominating (x j)
             ∧ P.rnDeriv γ_g.dominating (x j) < ⊤} := by
-        rw [Set.setOf_forall]
+        rw [Set.ofPred_forall]
         refine MeasurableSet.iInter fun j => ?_
         refine MeasurableSet.inter ?_ ?_
         · exact measurableSet_lt measurable_const
@@ -1444,7 +1444,7 @@ private lemma bridge_residue_to_witness_one
           = {ω : ℕ → Ω | ε ≤ |r k (fun j : Fin k => ω j.val)|} := by
       intro k
       ext ω
-      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero]
+      simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq, sub_zero]
       constructor
       · intro hle
         have habs_nn : (0 : ℝ) ≤ |r k (fun j => ω j.val)| := abs_nonneg _
@@ -1939,7 +1939,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
       have h_empty : ∀ n, {X : (n : ℕ) → (Fin n → Ω) | ε ≤ dist (R'_n n X) 0} = ∅ := by
         intro n
         ext X
-        simp only [hR'_def, h_r_zero n (X n), Set.mem_setOf_eq, dist_self,
+        simp only [hR'_def, h_r_zero n (X n), Set.mem_ofPred_eq, dist_self,
           Set.mem_empty_iff_false, iff_false, not_le]
         exact hε
       simp_rw [h_empty, measure_empty]
@@ -2443,10 +2443,10 @@ private lemma weakConverges_grid_product_pushforward
         {X : (n : ℕ) → (Fin n → Ω) | ε ≤ dist (R'_n n X) (0 : ι → ℝ)} ⊆
           ⋃ i : ι, {X | ε ≤ |R_n n (X n) i|} := by
       intro n X hX
-      simp only [Set.mem_setOf_eq, dist_zero_right] at hX
+      simp only [Set.mem_ofPred_eq, dist_zero_right] at hX
       -- `hX : ε ≤ ‖R'_n n X‖`. Use contrapositive of `pi_norm_lt_iff'`.
       by_contra h_neg
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at h_neg
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le] at h_neg
       -- Reduce `dist (R'_n n X) 0 < ε` to per-coord via `dist_pi_lt_iff`.
       have h_each : ∀ i, dist (R_n n (X n) i) (0 : ℝ) < ε := fun i => by
         rw [Real.dist_eq, sub_zero]; exact h_neg i

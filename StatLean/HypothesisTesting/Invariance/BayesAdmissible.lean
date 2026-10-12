@@ -145,7 +145,7 @@ private lemma bayes_mix_integrable {P : Θ → Measure 𝓧} [∀ θ, IsProbabil
   have hle : ∀ x, ‖mixtureDensity f Λ x‖ₑ ≤ ∫⁻ θ, ENNReal.ofReal (f θ x) ∂Λ := by
     intro x
     simp only [mixtureDensity]
-    rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs,
+    rw [← ofReal_norm, Real.norm_eq_abs,
       abs_of_nonneg (integral_nonneg fun θ => hfnonneg θ x),
       integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun θ => hfnonneg θ x)
         ((hjoint.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable)]
@@ -175,7 +175,7 @@ private lemma bayes_fubini_mix {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityM
     refine ⟨hjoint.aestronglyMeasurable, ?_⟩
     have henorm : (fun q : Θ × 𝓧 => ‖f q.1 q.2‖ₑ)
         = fun q => ENNReal.ofReal (f q.1 q.2) := by
-      funext q; rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs, abs_of_nonneg (hfnonneg _ _)]
+      funext q; rw [← ofReal_norm, Real.norm_eq_abs, abs_of_nonneg (hfnonneg _ _)]
     have : ∫⁻ q : Θ × 𝓧, ‖f q.1 q.2‖ₑ ∂(Λ.prod μ) = 1 := by
       rw [henorm, lintegral_prod _ (hjoint.ennreal_ofReal).aemeasurable]
       calc ∫⁻ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ ∂Λ
@@ -296,10 +296,11 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
         have hIpt : ∀ x, 0 ≤ (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) := by
           intro x
           by_cases hcond : k * mixtureDensity f Λ₀ x ≤ mixtureDensity f Λ₁ x
-          · have e0 : φ₀ x = 1 := by rw [hφ0def]; simp only [bayesTest, if_pos hcond]
+          · have e0 : φ₀ x = 1 := by rw [hφ0def]; simp only [bayesTest, ite_eq_left hcond]
             exact mul_nonneg (by rw [e0]; linarith [(hφ.2 x).2]) (by linarith)
-          · push_neg at hcond
-            have e0 : φ₀ x = 0 := by rw [hφ0def]; simp only [bayesTest, if_neg (not_le.mpr hcond)]
+          · push Not at hcond
+            have e0 : φ₀ x = 0 := by
+              rw [hφ0def]; simp only [bayesTest, ite_eq_right (not_le.mpr hcond)]
             have hg0 : φ₀ x - φ x ≤ 0 := by rw [e0]; linarith [(hφ.2 x).1]
             have hd0 : mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x ≤ 0 := by linarith
             exact mul_nonneg_iff.mpr (Or.inr ⟨hg0, hd0⟩)
@@ -350,7 +351,7 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
     · -- `k < 0`: the Bayes test rejects everywhere, so mutual a.c. forces `φ = 1`
       have hφ01 : ∀ x, φ₀ x = 1 := by
         intro x; simp only [hφ0def, bayesTest]
-        exact if_pos (le_trans (mul_nonpos_iff.mpr (Or.inr ⟨hk.le, hh0nn x⟩)) (hh1nn x))
+        exact ite_eq_left (le_trans (mul_nonpos_iff.mpr (Or.inr ⟨hk.le, hh0nn x⟩)) (hh1nn x))
       have hPunit : (P θ₁).real Set.univ = 1 := by
         show (P θ₁ Set.univ).toReal = 1; rw [measure_univ, ENNReal.toReal_one]
       have hp0 : power P φ₀ θ₁ = 1 := by

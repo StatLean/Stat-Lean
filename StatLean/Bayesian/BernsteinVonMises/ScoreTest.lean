@@ -611,7 +611,7 @@ private lemma scTail_tendsto (hPDF : IsPDFOf M μ) (hsc : Measurable sc)
     filter_upwards [Filter.eventually_ge_atTop N] with m hm
     have hcast : (N : ℝ) ≤ (m : ℝ) := Nat.cast_le.2 hm
     have hnot : x ∉ {x : 𝓧 | (m : ℝ) < ‖sc x‖} := by
-      simp only [Set.mem_setOf_eq, not_lt]
+      simp only [Set.mem_ofPred_eq, not_lt]
       linarith only [hN, hcast]
     exact (Set.indicator_of_notMem hnot _).symm
   have hmain := MeasureTheory.tendsto_integral_of_dominated_convergence
@@ -880,7 +880,7 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
   · subst hk0
     have hempty : {ω : Fin n → 𝓧 | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - ∫ x, f x ∂P‖} = ∅ := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have : ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - ∫ x, f x ∂P‖ = 0 := by
         rw [EuclideanSpace.norm_eq]; simp
       rw [this]; exact hs
@@ -935,7 +935,7 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
     -- some coordinate exceeds `t` in absolute value
     have hex : ∃ j : Fin k, t ≤ |((n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec) j| := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hne : (Finset.univ : Finset (Fin k)).Nonempty :=
         ⟨⟨0, hkpos⟩, Finset.mem_univ _⟩
       have hlt : ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec‖ ^ 2 < s ^ 2 := by
@@ -950,7 +950,7 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
       have hn0 : (0 : ℝ) ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec‖ := norm_nonneg _
       have := hω
       rw [hE] at this
-      simp only [Set.mem_setOf_eq] at this
+      simp only [Set.mem_ofPred_eq] at this
       nlinarith
     obtain ⟨j, hj⟩ := hex
     refine Set.mem_iUnion.2 ⟨j, ?_⟩
@@ -961,10 +961,10 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
         nsmul_eq_mul, ← hprojm j]
       field_simp
     rcases le_abs.1 hj with h | h
-    · exact Or.inl (by rw [hA]; simp only [Set.mem_setOf_eq, hsumA]; nlinarith)
+    · exact Or.inl (by rw [hA]; simp only [Set.mem_ofPred_eq, hsumA]; nlinarith)
     · refine Or.inr ?_
       rw [hB]
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       have hsumB : ∑ i, (-f (ω i) j - ∫ x, -f x j ∂P)
           = -((n : ℝ) * ((n : ℝ)⁻¹ * (∑ i, f (ω i) j) - mvec j)) := by
         rw [integral_neg, ← hsumA, ← Finset.sum_neg_distrib]
@@ -1279,8 +1279,8 @@ theorem exists_moderate_tests
           ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}ᶜ
         ⊆ {ω | c * ‖θ - θ₀‖ / 2 ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖} := by
       intro ω hω
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hω
+      simp only [Set.mem_ofPred_eq]
       have htri : ‖bvmTruncMean M μ sc L θ - bvmTruncMean M μ sc L θ₀‖
           ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖
             + ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖ := by

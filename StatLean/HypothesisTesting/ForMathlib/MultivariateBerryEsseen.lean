@@ -599,7 +599,7 @@ lemma multivariateGaussian_shell_eq_chiSquared (hk : 0 < k) {t ε : ℝ} (ht : 0
   have hset : {z : EuclideanSpace ℝ (Fin k) | t < ‖z‖ ∧ ‖z‖ ≤ t + ε}
       = (fun z => ‖z‖ ^ 2) ⁻¹' Set.Ioc (t ^ 2) ((t + ε) ^ 2) := by
     ext z
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_Ioc]
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_Ioc]
     have hz : 0 ≤ ‖z‖ := norm_nonneg z
     constructor
     · rintro ⟨h1, h2⟩
@@ -782,7 +782,7 @@ private lemma chiSquared_density_mul_sqrt_le :
     have hpdf : gammaPDFReal ((1 : ℝ) / 2) (1 / 2) x
         = ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.Gamma (1 / 2) * x ^ ((1 : ℝ) / 2 - 1)
           * Real.exp (-((1 / 2) * x)) := by
-      simp only [gammaPDFReal, if_pos hx.le]
+      simp only [gammaPDFReal, ite_eq_left hx.le]
     rw [hpdf, Real.Gamma_one_half_eq]
     have hsx : Real.sqrt x * x ^ ((1 : ℝ) / 2 - 1) = 1 := by
       rw [Real.sqrt_eq_rpow, ← Real.rpow_add hx]
@@ -818,7 +818,7 @@ private lemma chiSquared_density_mul_sqrt_le :
     have hGa : 0 < Real.Gamma a := Real.Gamma_pos_of_pos (by rw [hadef]; linarith)
     have hpdf : gammaPDFReal a (1 / 2) x
         = ((1 : ℝ) / 2) ^ a / Real.Gamma a * x ^ (a - 1) * Real.exp (-((1 / 2) * x)) := by
-      simp only [gammaPDFReal, if_pos hx.le]
+      simp only [gammaPDFReal, ite_eq_left hx.le]
     have hsx : Real.sqrt x * x ^ (a - 1) = x ^ p := by
       rw [Real.sqrt_eq_rpow, ← Real.rpow_add hx]
       congr 1
@@ -970,7 +970,7 @@ private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
   set L : ℝ →L[ℝ] E := (1 : ℝ →L[ℝ] ℝ).smulRight h with hLdef
   have hLapp : ∀ t : ℝ, L t = t • h := by
     intro t
-    simp only [hLdef, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.one_apply]
+    simp only [hLdef, ContinuousLinearMap.smulRight_apply, one_apply_eq_self]
   have hF : ContDiff ℝ 3 (fun w : E => f (x + w)) := hf.comp (contDiff_const.add contDiff_id)
   -- Core identity: `(d/ds)ᵐ g = iteratedFDeriv ℝ m f (x + s•h) (fun _ => h)` for `m ≤ 3`.
   have key : ∀ (m : ℕ), m ≤ 3 → ∀ s : ℝ,
@@ -1120,7 +1120,7 @@ private lemma norm_convolution_le_of_bounded (L : ℝ →L[ℝ] E' →L[ℝ] F) 
           (hint.comp_sub_left x) (Filter.Eventually.of_forall fun t => ?_)
         refine (L.le_opNorm₂ (ind t) (g (x - t))).trans ?_
         have h1 : ‖ind t‖ ≤ 1 := by rw [Real.norm_eq_abs]; exact hbd t
-        have h2 : ‖L‖ * ‖ind t‖ ≤ 1 := mul_le_one₀ hL (norm_nonneg _) h1
+        have h2 : ‖L‖ * ‖ind t‖ ≤ 1 := (mul_le_of_le_one_left (norm_nonneg _) hL).trans h1
         calc ‖L‖ * ‖ind t‖ * ‖g (x - t)‖ ≤ 1 * ‖g (x - t)‖ := by gcongr
           _ = ‖g (x - t)‖ := one_mul _
     _ = ∫ t, ‖g t‖ ∂μ := integral_sub_left_eq_self (fun t => ‖g t‖) μ x
@@ -1521,7 +1521,7 @@ private lemma exists_radialCutoff_bound :
 
 private lemma norm_iteratedFDeriv_id_one_le (x : E) :
     ‖iteratedFDeriv ℝ 1 (fun y : E => y) x‖ ≤ 1 := by
-  rw [norm_iteratedFDeriv_one, fderiv_id']
+  rw [norm_iteratedFDeriv_one, fderiv_fun_id]
   exact ContinuousLinearMap.norm_id_le
 
 private lemma norm_iteratedFDeriv_id_of_two_le {i : ℕ} (hi : 2 ≤ i) (x : E) :
@@ -1529,7 +1529,7 @@ private lemma norm_iteratedFDeriv_id_of_two_le {i : ℕ} (hi : 2 ≤ i) (x : E) 
   obtain ⟨m, rfl⟩ : ∃ m, i = m + 2 := ⟨i - 2, by omega⟩
   rw [← norm_iteratedFDeriv_fderiv]
   have h : (fderiv ℝ fun y : E => y) = fun _ : E => ContinuousLinearMap.id ℝ E := by
-    funext y; exact fderiv_id'
+    funext y; exact fderiv_fun_id
   rw [h, iteratedFDeriv_const_of_ne (by omega : m + 1 ≠ 0)]
   simp
 
@@ -2267,9 +2267,9 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
     set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
     have hival : (i : ℕ) = j := by rw [hidef]
     have hji : κ j i = ν := by
-      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; exact lt_irrefl j)]
+      rw [hκdef]; dsimp only; rw [ite_eq_right (by rw [hival]; exact lt_irrefl j)]
     have hji1 : κ (j + 1) i = γ := by
-      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; exact Nat.lt_succ_self j)]
+      rw [hκdef]; dsimp only; rw [ite_eq_left (by rw [hival]; exact Nat.lt_succ_self j)]
     have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
         = fun l : Fin m => κ j (i.succAbove l) := by
       funext l
@@ -2279,8 +2279,8 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
       rw [hκdef]
       dsimp only
       by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
-      · rw [if_pos hlt, if_pos (by omega)]
-      · rw [if_neg (by omega), if_neg hlt]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega)]
+      · rw [ite_eq_right (by omega), ite_eq_right hlt]
     have hpeel0 := integral_pi_sum_peel (κ j) i hgcont hgb
     have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i hgcont hgb
     rw [hji] at hpeel0
@@ -2336,7 +2336,7 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
   have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by
     funext i; rw [hκdef]; simp
   have hκN : κ (m + 1) = fun _ : Fin (m + 1) => γ := by
-    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+    funext i; rw [hκdef]; dsimp only; rw [ite_eq_left i.isLt]
   have hI0 : I 0 = ∫ x, f x ∂((Measure.pi fun _ : Fin (m + 1) => ν).map
       fun y => c • ∑ i, y i) := by
     rw [integral_map (by fun_prop) hf.continuous.aestronglyMeasurable, hIdef]
@@ -2473,7 +2473,7 @@ private lemma integrable_pow_gammaMeasure' {a r : ℝ} (ha : 0 < a) (hr : 0 < r)
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
       (fun x hx => ?_) measurableSet_Ioi
     rw [Set.mem_Ioi] at hx
-    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x n,
+    rw [gammaPDFReal, ite_eq_left hx.le, ← Real.rpow_natCast x n,
       show a + (n : ℝ) - 1 = (a - 1) + (n : ℝ) by ring, Real.rpow_add hx (a - 1) (n : ℝ)]
     ring
   rw [← integrableOn_univ, ← Set.Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
@@ -2482,11 +2482,11 @@ private lemma integrable_pow_gammaMeasure' {a r : ℝ} (ha : 0 < a) (hr : 0 < r)
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [Set.mem_setOf_eq, Classical.not_imp, Set.mem_Iic] at hx
+  simp only [Set.mem_ofPred_eq, Classical.not_imp, Set.mem_Iic] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
   · exact absurd (show x ^ n * gammaPDFReal a r x = 0 by
-      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+      rw [gammaPDFReal, ite_eq_right (not_le.mpr h), mul_zero]).symm hx2
   · exact h
 
 /-- Integrability of `x ↦ xⁿ` under `χ²_k`. -/
@@ -2508,7 +2508,7 @@ private lemma gaussian_origin_measure_zero {k : ℕ} (hk : 0 < k) :
     (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) {z | ‖z‖ ≤ 0} = 0 := by
   have hset : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ 0} = (fun z => ‖z‖ ^ 2) ⁻¹' {0} := by
     ext z
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
     constructor
     · intro h
       have hz : ‖z‖ = 0 := le_antisymm h (norm_nonneg z)
@@ -2746,7 +2746,7 @@ private lemma berryEsseen_ball_of_swap {k n : ℕ} (hk : 0 < k)
   · -- degenerate case: the ball is empty
     have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = ∅ := by
       ext z
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       exact lt_of_lt_of_le ht (sq_nonneg _)
     rw [hempty]
     simp only [measure_empty, ENNReal.toReal_zero, sub_zero, abs_zero]
@@ -2757,7 +2757,7 @@ private lemma berryEsseen_ball_of_swap {k n : ℕ} (hk : 0 < k)
     have hs0 : 0 ≤ s := Real.sqrt_nonneg t
     have hSset : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = {z | ‖z‖ ≤ s} := by
       ext z
-      simp only [Set.mem_setOf_eq, hsdef]
+      simp only [Set.mem_ofPred_eq, hsdef]
       constructor
       · intro h
         rw [← Real.sqrt_sq (norm_nonneg z)]
@@ -4356,11 +4356,11 @@ private lemma gaussianReal_abs_ge_le {s : ℝ} (hs : 0 ≤ s) :
     ring
   have hsub : {x : ℝ | s ≤ |x|} ⊆ {x : ℝ | s ≤ x} ∪ {x : ℝ | x ≤ -s} := by
     intro x hx
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩
-    · exact Or.inl (by simp only [Set.mem_setOf_eq]; linarith [hx, he.symm ▸ hx])
+    · exact Or.inl (by simp only [Set.mem_ofPred_eq]; linarith [hx, he.symm ▸ hx])
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [he] at hx
       linarith
   have hmono : (gaussianReal 0 1).real {x : ℝ | s ≤ |x|}
@@ -4431,7 +4431,7 @@ private lemma stdGaussian_norm_ge_le_exp (hk : 0 < k) {M : ℝ} (hM : 0 ≤ M) :
         = (fun z : EuclideanSpace ℝ (Fin k) => ⟪EuclideanSpace.single i (1 : ℝ), z⟫_ℝ) ⁻¹'
             {x : ℝ | s ≤ |x|} := by
       ext z
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, hinner z]
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, hinner z]
     have hmap := stdGaussian_map_inner_unit (EuclideanSpace.single i (1 : ℝ)) hnorm
     rw [hγ] at hmap
     have hval : (stdGaussian (EuclideanSpace ℝ (Fin k))) {z | s ≤ |z i|}
@@ -4443,9 +4443,9 @@ private lemma stdGaussian_norm_ge_le_exp (hk : 0 < k) {M : ℝ} (hM : 0 ≤ M) :
   have hsub : {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}
       ⊆ ⋃ i : Fin k, {z : EuclideanSpace ℝ (Fin k) | s ≤ |z i|} := by
     intro z hz
-    simp only [Set.mem_setOf_eq] at hz
+    simp only [Set.mem_ofPred_eq] at hz
     by_contra hcon
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at hcon
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le] at hcon
     have hnormsq : ‖z‖ ^ 2 = ∑ i : Fin k, |z i| ^ 2 := by
       rw [EuclideanSpace.norm_eq, Real.sq_sqrt (by positivity)]
       exact Finset.sum_congr rfl fun i _ => by rw [Real.norm_eq_abs]
@@ -6058,7 +6058,7 @@ private lemma measure_pi_dirac_zero (N : ℕ) :
       fun i _ => h i
     rw [Measure.dirac_apply_of_mem hmem]
     exact (Finset.prod_eq_one fun i _ => Measure.dirac_apply_of_mem (h i)).symm
-  · push_neg at h
+  · push Not at h
     obtain ⟨i, hi⟩ := h
     have hnot : (fun _ : Fin N => (0 : EuclideanSpace ℝ (Fin k))) ∉ Set.univ.pi s := by
       intro hcon
@@ -6414,9 +6414,9 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
     have hival : ((i : Fin (m + 1)) : ℕ) = j := by rw [hidef]
     have hji : κ j i = ν := by
-      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; omega)]
+      rw [hκdef]; dsimp only; rw [ite_eq_right (by rw [hival]; omega)]
     have hji1 : κ (j + 1) i = Measure.dirac 0 := by
-      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; omega)]
+      rw [hκdef]; dsimp only; rw [ite_eq_left (by rw [hival]; omega)]
     have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
         = fun l : Fin m => κ j (i.succAbove l) := by
       funext l
@@ -6426,8 +6426,8 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
       rw [hκdef]
       dsimp only
       by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
-      · rw [if_pos hlt, if_pos (by omega)]
-      · rw [if_neg (by omega), if_neg hlt]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega)]
+      · rw [ite_eq_right (by omega), ite_eq_right hlt]
     have hpeel0 := integral_pi_sum_peel (κ j) i (hGcont j) (hGb j)
     have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i (hGcont (j + 1)) (hGb (j + 1))
     rw [hji] at hpeel0
@@ -6601,12 +6601,12 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     refine Finset.sum_congr rfl fun j hj => ?_
     rw [hTdef]
     dsimp only
-    rw [if_pos (Finset.mem_range.1 hj)]
+    rw [ite_eq_left (Finset.mem_range.1 hj)]
   -- ### the two endpoints
   have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by
     funext i; rw [hκdef]; simp
   have hκN : κ (m + 1) = fun _ : Fin (m + 1) => Measure.dirac 0 := by
-    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+    funext i; rw [hκdef]; dsimp only; rw [ite_eq_left i.isLt]
   have hG0 : ∀ w : EuclideanSpace ℝ (Fin k), G 0 w = f (c • w) := by
     intro w
     simp only [hGdef, hΦdef, hs0, zero_smul, add_zero]
@@ -7703,7 +7703,7 @@ lemma convexDiscrepancy_le_one [IsProbabilityMeasure μ] [IsProbabilityMeasure �
 private lemma measureReal_sdiff (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ]
     {s t : Set (EuclideanSpace ℝ (Fin k))} (hts : t ⊆ s) (htm : MeasurableSet t) :
     (μ (s \ t)).toReal = (μ s).toReal - (μ t).toReal := by
-  rw [measure_diff hts htm.nullMeasurableSet (measure_ne_top _ _),
+  rw [measure_sdiff hts htm.nullMeasurableSet (measure_ne_top _ _),
     ENNReal.toReal_sub_of_le (measure_mono hts) (measure_ne_top _ _)]
 
 /-- **The `2Δ` brick.** The discrepancy on a *difference of two convex sets* is at most `2Δ`:
@@ -7864,7 +7864,7 @@ theorem measureReal_shell_preimage_aff_le (hk : 0 < k)
   have hB'c : Convex ℝ B' := convex_preimage_aff hBc
   have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B)
       = Metric.thickening (ε / r) B' \ interior B' := by
-    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_interior hr a B]
+    rw [Set.preimage_sdiff, preimage_aff_thickening hr a B hε, preimage_aff_interior hr a B]
   rw [hset]
   exact measureReal_shell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
 
@@ -7922,7 +7922,7 @@ lemma preimage_aff_erosion {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k
   have hint : (fun x => r • x + a) ⁻¹' (interior B)
       = interior ((fun x => r • x + a) ⁻¹' B) := preimage_aff_interior hr a B
   ext x
-  simp only [Set.mem_preimage, erosion, Set.mem_setOf_eq]
+  simp only [Set.mem_preimage, erosion, Set.mem_ofPred_eq]
   rw [← hint]
   constructor
   · intro hsub y hy
@@ -8014,7 +8014,7 @@ theorem measureReal_wideShell_preimage_aff_le (hk : 0 < k)
   have hB'c : Convex ℝ B' := convex_preimage_aff hBc
   have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B)
       = Metric.thickening (ε / r) B' \ erosion (ε / r) B' := by
-    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_erosion hr a B hε]
+    rw [Set.preimage_sdiff, preimage_aff_thickening hr a B hε, preimage_aff_erosion hr a B hε]
   rw [hset]
   exact measureReal_wideShell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
 
@@ -8154,7 +8154,7 @@ theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
     abs_integral_le_one (hF.comp (continuous_const.add (continuous_const_smul s)))
       (fun z => hFb _)
   have hν : κ (⟨j, hj⟩ : Fin (m + 1)) = ν := by
-    rw [hκdef]; dsimp only; rw [if_neg (by omega)]
+    rw [hκdef]; dsimp only; rw [ite_eq_right (by omega)]
   rw [integral_hybridLaw_eq ν hF hFb, ← hκdef]
   have h := integral_pi_sum_peel κ (⟨j, hj⟩ : Fin (m + 1)) hgcont hgb
   rw [hν] at h
@@ -8215,7 +8215,7 @@ theorem hybridLaw_conv_head {m j : ℕ} (hj : j < m + 1)
   have hκeq : κ = fun i : Fin (m + 1) =>
       if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν := funext hκ
   have hν : κ (⟨j, hj⟩ : Fin (m + 1)) = ν := by
-    rw [hκ]; exact if_neg (lt_irrefl j)
+    rw [hκ]; exact ite_eq_right (lt_irrefl j)
   rw [hybridLaw_eq_map_add, ← hκeq, ← conv_eq_map_add,
     map_pi_sum_smul_peel κ (⟨j, hj⟩ : Fin (m + 1)) (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹, hν,
     conv_reassoc]
@@ -8253,10 +8253,10 @@ theorem hybridLaw_conv_tail {m j : ℕ} (hj : j < m + 1)
     rw [hκ'def, hκ]
     dsimp only
     by_cases hlt : (((⟨j, hj⟩ : Fin (m + 1)).succAbove l : Fin (m + 1)) : ℕ) < j
-    · rw [if_pos (by omega), if_pos hlt]
-    · rw [if_neg (by omega), if_neg hlt]
+    · rw [ite_eq_left (by omega), ite_eq_left hlt]
+    · rw [ite_eq_right (by omega), ite_eq_right hlt]
   have hdir : κ' (⟨j, hj⟩ : Fin (m + 1)) = Measure.dirac 0 := by
-    rw [hκ'def]; dsimp only; exact if_pos (Nat.lt_succ_self j)
+    rw [hκ'def]; dsimp only; exact ite_eq_left (Nat.lt_succ_self j)
   have hmd : (Measure.dirac (0 : EuclideanSpace ℝ (Fin k))).map
       (fun u => (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • u)
       = Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) := by simp
@@ -8325,9 +8325,9 @@ private lemma map_sum_pi_dirac_drop {n j : ℕ} (hj : j ≤ n)
     Fintype.card_fin,
     Fin.prod_univ_eq_prod_range (fun i : ℕ => if i < j then (1 : ℂ) else charFun ν t) n,
     ← Finset.prod_range_mul_prod_Ico _ hj,
-    Finset.prod_congr rfl (fun i hi => if_pos (Finset.mem_range.mp hi)), Finset.prod_const_one,
+    Finset.prod_congr rfl (fun i hi => ite_eq_left (Finset.mem_range.mp hi)), Finset.prod_const_one,
     one_mul,
-    Finset.prod_congr rfl (fun i hi => if_neg (not_lt.mpr (Finset.mem_Ico.mp hi).1)),
+    Finset.prod_congr rfl (fun i hi => ite_eq_right (not_lt.mpr (Finset.mem_Ico.mp hi).1)),
     Finset.prod_const, Nat.card_Ico]
 
 /-- **The non-Gaussian coordinate of the hybrid law is a scaled sum law.** With `m = n − j`
@@ -8625,7 +8625,7 @@ private lemma const_on_closedBall_of_notMem_wideShell {B : Set (EuclideanSpace �
     {a : EuclideanSpace ℝ (Fin k)}
     (ha : a ∉ Metric.thickening (ε + s) B \ erosion s B) :
     ∃ C : ℝ, ∀ y ∈ Metric.closedBall a s, f y = C := by
-  simp only [Set.mem_diff, not_and, not_not] at ha
+  simp only [Set.mem_sdiff, not_and, not_not] at ha
   by_cases hth : a ∈ Metric.thickening (ε + s) B
   · have h : a ∈ erosion s B := ha hth
     exact ⟨1, fun y hy => hone y (interior_subset (h hy))⟩
@@ -8804,7 +8804,7 @@ private lemma erosion_eq_ofReal_lt_infEdist {s : ℝ} (hs : 0 ≤ s)
     erosion s B
       = {x | ENNReal.ofReal s < Metric.infEDist x (interior B)ᶜ} := by
   ext x
-  simp only [erosion, Set.mem_setOf_eq]
+  simp only [erosion, Set.mem_ofPred_eq]
   constructor
   · intro hx
     rcases Set.eq_empty_or_nonempty ((interior B)ᶜ) with hK | hK
@@ -8814,7 +8814,7 @@ private lemma erosion_eq_ofReal_lt_infEdist {s : ℝ} (hs : 0 ≤ s)
         (isOpen_interior.isClosed_compl).exists_infDist_eq_dist hK x
       have hxy : s < dist x y := by
         by_contra h
-        push_neg at h
+        push Not at h
         exact hyK (hx (Metric.mem_closedBall.2 (by rwa [dist_comm])))
       refine lt_of_lt_of_le
         ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs).2 hxy) ?_
@@ -8851,7 +8851,7 @@ private lemma measurableSet_wideShell_prod {B : Set (EuclideanSpace ℝ (Fin k))
       = {p | Metric.infEDist p.1 B < ENNReal.ofReal (g p.2)}
         ∩ {p | ENNReal.ofReal (g p.2) < Metric.infEDist p.1 (interior B)ᶜ}ᶜ := by
     ext p
-    simp only [Set.mem_setOf_eq, Set.mem_diff, Set.mem_inter_iff, Set.mem_compl_iff,
+    simp only [Set.mem_ofPred_eq, Set.mem_sdiff, Set.mem_inter_iff, Set.mem_compl_iff,
       Metric.mem_thickening_iff_infEDist_lt]
     rw [erosion_eq_ofReal_lt_infEdist (hg0 p.2) B]
     rfl
@@ -9032,7 +9032,7 @@ private lemma measureReal_closedBall_ge_of_normSq
 because the thickening grows and the erosion shrinks. -/
 private lemma wideShell_mono {B : Set (EuclideanSpace ℝ (Fin k))} {s t : ℝ} (hst : s ≤ t) :
     Metric.thickening s B \ erosion s B ⊆ Metric.thickening t B \ erosion t B :=
-  Set.diff_subset_diff (Metric.thickening_mono hst B)
+  Set.sdiff_subset_sdiff (Metric.thickening_mono hst B)
     (fun _ hx _ hy => hx (Metric.closedBall_subset_closedBall hst hy))
 
 /-- **Deconvolution of a two-sided-shell bound, in the UNIFORM form the two per-step bricks
@@ -9115,7 +9115,7 @@ private lemma integral_abs_remainder_split_le
   -- the erosion is antitone in the width
   have heros : ∀ {s t : ℝ}, s ≤ t → erosion t B ⊆ erosion s B := by
     intro s t hst x hx
-    simp only [erosion, Set.mem_setOf_eq] at hx ⊢
+    simp only [erosion, Set.mem_ofPred_eq] at hx ⊢
     exact (Metric.closedBall_subset_closedBall hst).trans hx
   -- the integrand
   have hglob : ∀ (a w : EuclideanSpace ℝ (Fin k)),
@@ -9180,7 +9180,7 @@ private lemma integral_abs_remainder_split_le
             _ = ε := hcR
         have hsub : Metric.thickening (ε + c * ‖u‖) B \ erosion (c * ‖u‖) B
             ⊆ Metric.thickening (2 * ε) B \ erosion (2 * ε) B :=
-          Set.diff_subset_diff (Metric.thickening_mono (by linarith) B)
+          Set.sdiff_subset_sdiff (Metric.thickening_mono (by linarith) B)
             (heros (by linarith))
         have h := abs_taylor_remainder_localised_le hone hsupp hglob a (c • u) hw
         refine h.trans ?_
@@ -9236,7 +9236,7 @@ private lemma integral_abs_remainder_split_le
               a ∈ Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B}
             (fun _ => (1 : ℝ)) := by
         funext u
-        simp only [Set.indicator_apply, Set.mem_setOf_eq]
+        simp only [Set.indicator_apply, Set.mem_ofPred_eq]
       rw [hrw]
       exact measurable_const.indicator hsec
     have hlowint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
@@ -9277,7 +9277,7 @@ private lemma integral_abs_remainder_split_le
     have hsub : Metric.thickening (ε + ‖c • u‖) B \ erosion ‖c • u‖ B
         ⊆ Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B := by
       rw [hnw]
-      exact Set.diff_subset_diff (Metric.thickening_mono (by linarith) B)
+      exact Set.sdiff_subset_sdiff (Metric.thickening_mono (by linarith) B)
         (heros (by linarith))
     have h := abs_taylor_remainder_localised_lower_le hone hsupp hfb a (c • u) hw
     refine h.trans ?_
@@ -9338,7 +9338,7 @@ private lemma integral_far_shell_le
             p.1 ∈ Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B}
           (fun _ => (1 : ℝ)) := by
       funext p
-      simp only [Set.indicator_apply, Set.mem_setOf_eq]
+      simp only [Set.indicator_apply, Set.mem_ofPred_eq]
     rw [hrw]
     exact measurable_const.indicator hSm
   -- the dominating function
@@ -9798,7 +9798,7 @@ private lemma abs_integral_shift_vecTiltRemainder_localised_le
   have hGc : Continuous (fun z : EuclideanSpace ℝ (Fin k) => F (v + σ • z)) := by fun_prop
   have hCt0 : 0 < Ct := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have h1 : 2 * Ck * Ct ≤ 0 := by nlinarith [hCk, hcon]
     linarith [le_sqrt_tiltSqConst, hCw]
   have hfar : ∀ a : ℝ, |a| ≤ 1 →
@@ -9904,7 +9904,7 @@ private lemma abs_integral_shift_vecTiltRemainder_localised_le
         have h1 : σ ≤ σ * (gaussianTailRadius k σ + ‖w‖) := by
           nlinarith [norm_nonneg w, hσ.le]
         linarith
-      exact Set.diff_subset_diff (Metric.thickening_mono hle B) (heros (by linarith))
+      exact Set.sdiff_subset_sdiff (Metric.thickening_mono hle B) (heros (by linarith))
     have hvnot : v ∉ Metric.thickening (ε + σ * (gaussianTailRadius k σ + ‖w‖)) B
         \ erosion (σ * (gaussianTailRadius k σ + ‖w‖)) B := fun hmem => hv (hsub hmem)
     obtain ⟨a, hCa⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp hvnot
@@ -10036,7 +10036,7 @@ private lemma integral_localised_shell_le
             p.1 ∈ Metric.thickening (2 * (σ * (R + lam * ‖p.2‖))) B
               \ erosion (2 * (σ * (R + lam * ‖p.2‖))) B} (fun _ => (1 : ℝ)) := by
       funext p
-      simp only [Set.indicator_apply, Set.mem_setOf_eq]
+      simp only [Set.indicator_apply, Set.mem_ofPred_eq]
     rw [hrw]
     exact measurable_const.indicator hSm
   -- the dominating function: the quadratic branch of the `min`
@@ -10418,7 +10418,7 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
               p.1 ∈ Metric.thickening (2 * (σ * (R + c / σ * ‖p.2‖))) B
                 \ erosion (2 * (σ * (R + c / σ * ‖p.2‖))) B}) (fun _ => (1 : ℝ)) := by
       funext y
-      simp only [Set.indicator_apply, Set.mem_preimage, Set.mem_setOf_eq]
+      simp only [Set.indicator_apply, Set.mem_preimage, Set.mem_ofPred_eq]
     rw [hrw]
     exact measurable_const.indicator (hSm.preimage (by fun_prop))
   have hmin0 : ∀ y : EuclideanSpace ℝ (Fin k),
@@ -11420,9 +11420,9 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
     set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
     have hival : ((i : Fin (m + 1)) : ℕ) = j := by rw [hidef]
     have hji : κ j i = ν := by
-      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; omega)]
+      rw [hκdef]; dsimp only; rw [ite_eq_right (by rw [hival]; omega)]
     have hji1 : κ (j + 1) i = Measure.dirac 0 := by
-      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; omega)]
+      rw [hκdef]; dsimp only; rw [ite_eq_left (by rw [hival]; omega)]
     have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
         = fun l : Fin m => κ j (i.succAbove l) := by
       funext l
@@ -11431,8 +11431,8 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
         exact Fin.succAbove_ne i l (Fin.ext (by rw [h, hival]))
       rw [hκdef]; dsimp only
       by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
-      · rw [if_pos hlt, if_pos (by omega)]
-      · rw [if_neg (by omega), if_neg hlt]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega)]
+      · rw [ite_eq_right (by omega), ite_eq_right hlt]
     have hpeel0 := integral_pi_sum_peel (κ j) i (hGcont j) (hGb j)
     have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i (hGcont (j + 1)) (hGb (j + 1))
     rw [hji] at hpeel0
@@ -11875,11 +11875,11 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
   have hTsum : ∑ j ∈ Finset.range (m + 1), |I j - I (j + 1)|
       = ∑ j ∈ Finset.range (m + 1), T j := by
     refine Finset.sum_congr rfl fun j hj => ?_
-    rw [hTdef]; dsimp only; rw [if_pos (Finset.mem_range.1 hj)]
+    rw [hTdef]; dsimp only; rw [ite_eq_left (Finset.mem_range.1 hj)]
   -- ### the two endpoints
   have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by funext i; rw [hκdef]; simp
   have hκN : κ (m + 1) = fun _ : Fin (m + 1) => Measure.dirac 0 := by
-    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+    funext i; rw [hκdef]; dsimp only; rw [ite_eq_left i.isLt]
   have hG0 : ∀ w : EuclideanSpace ℝ (Fin k), G 0 w = f (c • w) := by
     intro w
     simp only [hGdef, hΦdef, hsg0, zero_smul, add_zero]

@@ -596,7 +596,7 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
   intro ξ hξ
   refine hBAD ξ fun hmaj => ?_
   have h := hgood ξ hmaj
-  simp only [Set.mem_setOf_eq] at hξ
+  simp only [Set.mem_ofPred_eq] at hξ
   linarith
 
 

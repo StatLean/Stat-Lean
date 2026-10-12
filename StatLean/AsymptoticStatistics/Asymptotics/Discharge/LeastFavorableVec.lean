@@ -550,7 +550,7 @@ theorem localizedScore_equation : TendstoInProbZero
         nuisanceEstimator F n X (X i)) := by
   intro epsilon hepsilon
   simp only [h.localizedScore_stationary, smul_zero, norm_zero,
-    not_le.mpr hepsilon, Set.setOf_false, measureReal_empty]
+    not_le.mpr hepsilon, Set.ofPred_false, measureReal_empty]
   exact tendsto_const_nhds
 
 /-- The DQM/ordinary-score identity and efficient-score orthogonality yield

@@ -354,19 +354,19 @@ private lemma sqHellinger_unit_shift (θ : ℝ) (hθ0 : 0 ≤ θ) (hθ1 : θ ≤
   set B : Set ℝ := Set.Icc θ (θ + 1) with hB
   have hABset : A \ B = Set.Ico 0 θ := by
     rw [hA, hB]; ext x
-    simp only [Set.mem_diff, Set.mem_Icc, Set.mem_Ico, not_and, not_le]
+    simp only [Set.mem_sdiff, Set.mem_Icc, Set.mem_Ico, not_and, not_le]
     constructor
     · rintro ⟨⟨hx0, hx1⟩, h⟩
       refine ⟨hx0, ?_⟩
       by_contra hxθ
-      push_neg at hxθ
+      push Not at hxθ
       have := h hxθ; linarith
     · rintro ⟨hx0, hxθ⟩
       refine ⟨⟨hx0, by linarith⟩, ?_⟩
       intro hθx; linarith
   have hBAset : B \ A = Set.Ioc 1 (θ + 1) := by
     rw [hA, hB]; ext x
-    simp only [Set.mem_diff, Set.mem_Icc, Set.mem_Ioc, not_and, not_le]
+    simp only [Set.mem_sdiff, Set.mem_Icc, Set.mem_Ioc, not_and, not_le]
     constructor
     · rintro ⟨⟨hθx, hx1⟩, h⟩
       have hx0 : (0 : ℝ) ≤ x := by linarith
@@ -384,7 +384,7 @@ private lemma sqHellinger_unit_shift (θ : ℝ) (hθ0 : 0 ≤ θ) (hθ1 : θ ≤
     filter_upwards [hrnμ, hrnν] with x hx hy
     rw [hx, hy]
     by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;>
-      simp [Set.indicator_apply, Set.mem_diff, hxA, hxB]
+      simp [Set.indicator_apply, Set.mem_sdiff, hxA, hxB]
   rw [lintegral_congr_ae hpt]
   have hAmeas : MeasurableSet (A \ B) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
   have hBmeas : MeasurableSet (B \ A) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc

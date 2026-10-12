@@ -159,7 +159,7 @@ theorem locEquivariant_not_resists (hT : PointEstimation.IsLocEquivariant T)
           (Finset.Ico m n).card :=
         Finset.card_le_card_of_injOn (fun i : Fin n => (i : ℕ))
           (fun i hi => by
-            simp only [Finset.coe_filter, Set.mem_setOf_eq, Finset.mem_univ, true_and] at hi
+            simp only [Finset.coe_filter, Set.mem_ofPred_eq, Finset.mem_univ, true_and] at hi
             simp [hi, i.isLt])
           (fun i _ j _ h => Fin.val_injective h)
       simp only [Nat.card_Ico] at hinj
@@ -174,7 +174,7 @@ theorem locEquivariant_not_resists (hT : PointEstimation.IsLocEquivariant T)
           (Finset.range m).card :=
         Finset.card_le_card_of_injOn (fun i : Fin n => (i : ℕ))
           (fun i hi => by
-            simp only [Finset.coe_filter, Set.mem_setOf_eq, Finset.mem_univ, true_and] at hi
+            simp only [Finset.coe_filter, Set.mem_ofPred_eq, Finset.mem_univ, true_and] at hi
             simp [hi])
           (fun i _ j _ h => Fin.val_injective h)
       simpa using hinj

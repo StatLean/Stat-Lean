@@ -210,7 +210,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
     -- it does, all with the same propensity score.
     obtain ⟨x₀, hx₀F, hx₀⟩ : ∃ x ∈ Finset.univ.filter fun x => s x = k, μ (cell X x) ≠ 0 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       refine h0 ?_
       rw [subclass_eq_biUnion, measure_biUnion_finset (cell_pairwiseDisjoint X _)
         (fun x _ => hcm x)]
@@ -284,8 +284,8 @@ theorem subclassEstimand_propensity_eq_ate [IsProbabilityMeasure μ] [DecidableE
     rw [Real.norm_eq_abs]
     simp only [obs]
     by_cases hz : Z ω = true
-    · rw [if_pos hz]; linarith [abs_nonneg (y0 ω)]
-    · rw [if_neg hz]; linarith [abs_nonneg (y1 ω)]
+    · rw [ite_eq_left hz]; linarith [abs_nonneg (y0 ω)]
+    · rw [ite_eq_right hz]; linarith [abs_nonneg (y1 ω)]
   -- Each subclass contributes the cell-weighted contrast over the cells it contains.
   have hkey : ∀ k : 𝒦, (μ (subclass X s k)).toReal
       * (∫ ω, obs Z y1 y0 ω ∂(μ[|{ω | Z ω = true} ∩ subclass X s k])

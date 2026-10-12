@@ -377,7 +377,7 @@ theorem informationLoss_completeCaseIPWFull
             Lp ℝ 2 ((Q ⊗ₘ r).map M)) := by
     rw [← doobSymm_completeCaseIPW_eq_full hM Q r cc χ ε hε hπ]
     unfold condExpL2
-    exact Submodule.orthogonalProjection_mem_subspace_eq_self _
+    exact Submodule.orthogonalProjectionOnto_mem_subspace_eq_self _
   apply Subtype.ext
   change (informationLossOperator hM (Q ⊗ₘ r)
       (completeCaseIPWFull hM Q r cc χ ε hε hπ) :

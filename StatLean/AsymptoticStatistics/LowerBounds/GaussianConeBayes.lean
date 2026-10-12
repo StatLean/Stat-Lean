@@ -472,7 +472,7 @@ private theorem isTranslatedIsotropicGaussian_unique
     S.closed_of_finiteDimensional.measurableSet
   apply Measure.ext_of_charFun
   ext u
-  let us : ↥S := S.orthogonalProjection u
+  let us : ↥S := S.orthogonalProjectionOnto u
   have hνS : ∀ᵐ x ∂ν, x ∈ S :=
     (mem_ae_iff_prob_eq_one hSmeas).2 hν.2.1
   have hμS : ∀ᵐ x ∂μ, x ∈ S :=
@@ -489,7 +489,7 @@ private theorem isTranslatedIsotropicGaussian_unique
         apply Measure.map_congr
         filter_upwards [hνS] with x hx
         simpa only [InnerProductSpace.toDualMap_apply_apply] using!
-          (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
+          (S.inner_orthogonalProjectionOnto_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hν.2.2 us
   have hμmap : Measure.map (InnerProductSpace.toDualMap ℝ _ u) μ =
       gaussianReal
@@ -503,7 +503,7 @@ private theorem isTranslatedIsotropicGaussian_unique
         apply Measure.map_congr
         filter_upwards [hμS] with x hx
         simpa only [InnerProductSpace.toDualMap_apply_apply] using!
-          (S.inner_orthogonalProjection_eq_of_mem_right ⟨x, hx⟩ u).symm
+          (S.inner_orthogonalProjectionOnto_eq_of_mem_right ⟨x, hx⟩ u).symm
       _ = _ := hμ.2.2 us
   calc
     charFun ν u = charFunDual ν

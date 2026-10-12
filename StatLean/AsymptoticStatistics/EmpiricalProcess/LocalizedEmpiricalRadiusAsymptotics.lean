@@ -111,7 +111,7 @@ theorem lintegral_localized_empiricalSquareRadius_tendsto_zero
     have htail_set : {x | 2 * ε n * Real.sqrt n < 2 * |Φ n x|} =
         {x | ε n * Real.sqrt n < |Φ n x|} := by
       ext x
-      simp only [Set.mem_setOf_eq]; constructor <;> intro hx <;> linarith
+      simp only [Set.mem_ofPred_eq]; constructor <;> intro hx <;> linarith
     have hscaled :
         (ENNReal.ofReal (16 * ε n) *
             (78 * ENNReal.ofReal (Real.sqrt 2))) *

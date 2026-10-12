@@ -333,8 +333,8 @@ lemma rademacher_process_expectation_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
           have hcovU' : coveringNumber T ε ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℕ∞) := by
             rw [Nat.cast_add, Nat.cast_one]; exact hcovU
           have htoNat : (coveringNumber T ε).toNat ≤ ⌊(2 / ε) ^ (21 * d)⌋₊ + 1 := by
-            have h := ENat.toNat_le_toNat hcovU' (ENat.coe_ne_top _)
-            rwa [ENat.toNat_coe] at h
+            have h := ENat.toNat_le_toNat hcovU' (ENat.natCast_ne_top _)
+            rwa [ENat.toNat_natCast] at h
           have hreal : ((coveringNumber T ε).toNat : ℝ) ≤ (2 / ε) ^ (21 * d) + 1 := by
             calc ((coveringNumber T ε).toNat : ℝ)
                 ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℝ) := by exact_mod_cast htoNat

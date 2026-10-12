@@ -382,7 +382,7 @@ theorem nonnegativeTiltSupply_of_regular
       have hset : {X | ε ≤ dist (Xshift k X) (Youter k X)} =
           (∅ : Set (Fin (χ k) → Ω)) := by
         ext X
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
           Real.dist_eq]
         rw [show Xshift k X - Youter k X = d - Real.sqrt (χ k) *
             (ψ (γ.curve ((Real.sqrt (χ k))⁻¹)) - ψ P) by
@@ -982,7 +982,7 @@ theorem residual_secondMoment_bound_of_finset_extension
   have hset : {q : ℝ × ℝ | ε ^ 2 ≤ (q.1 - q.2) ^ 2} =
       {q | ε ≤ |q.1 - q.2|} := by
     ext q
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     simpa [sq_abs] using (sq_le_sq₀ hε.le (abs_nonneg (q.1 - q.2)))
   rw [hset] at hm
   have hd2 : 0 < ε ^ 2 := sq_pos_of_pos hε
@@ -1200,7 +1200,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
       hn.trans (by exact_mod_cast Nat.lt_succ_self n)
     have hinv : (((n + 1 : ℕ) : ℝ)⁻¹ < |q.1 - q.2|) :=
       (inv_lt_comm₀ habs (by positivity)).mp hn'
-    exact Set.mem_iUnion.2 ⟨n, by simpa only [tail, Set.mem_setOf_eq] using hinv.le⟩
+    exact Set.mem_iUnion.2 ⟨n, by simpa only [tail, Set.mem_ofPred_eq] using hinv.le⟩
   have hbadNull : π bad = 0 := by
     apply le_antisymm
     · exact (measure_mono hbadSub).trans_eq
@@ -1209,7 +1209,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
   have hresAE : (fun q : ℝ × ℝ => q.1 - q.2) =ᵐ[π] fun _ => 0 := by
     have hgood : ∀ᵐ q ∂π, q ∉ bad := compl_mem_ae_iff.2 hbadNull
     filter_upwards [hgood] with q hq
-    simpa only [bad, Set.mem_setOf_eq, not_not] using hq
+    simpa only [bad, Set.mem_ofPred_eq, not_not] using hq
   calc
     π.map (fun q : ℝ × ℝ => q.1 - q.2) = π.map (fun _ => 0) :=
       Measure.map_congr hresAE

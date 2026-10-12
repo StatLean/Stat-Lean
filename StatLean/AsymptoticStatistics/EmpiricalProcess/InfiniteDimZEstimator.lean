@@ -142,7 +142,7 @@ theorem frechet_remainder_sup_bound
   refine le_trans (outerMeasureStar_mono μ ?_) (outerMeasureStar_le_measure μ _)
   -- Inclusion `Eₙ ⊆ {δ/2 < ‖θ̂ₙ − θ₀‖}`.
   intro ξ hξ
-  simp only [Set.mem_setOf_eq] at hξ ⊢
+  simp only [Set.mem_ofPred_eq] at hξ ⊢
   by_contra hcon
   rw [not_lt] at hcon
   obtain ⟨h, hh⟩ := hξ
@@ -228,7 +228,7 @@ theorem infinite_dim_z_estimator
       (h_consist (δcls / 2) (half_pos hyp.hδcls))
       (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine measure_mono fun ξ hξ => ?_
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     linarith [half_lt_self hyp.hδcls]
   have h_tail := modifiedRandomFunction_tail P ψ θ₀ δcls θ_hat μ X h_sup h_bad
   have h_mem := modifiedRandomFunction_mem ψ θ₀ δcls θ_hat X 𝓕 hyp.hclass_mem hθ₀_mem
@@ -241,7 +241,7 @@ theorem infinite_dim_z_estimator
         - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)) := by
     refine tendstoZeroInOuterProbSup_of_eq_off_vanishing Rmod_oP h_bad ?_
     intro n ξ hb hh
-    simp only [Set.mem_setOf_eq, not_le] at hb
+    simp only [Set.mem_ofPred_eq, not_le] at hb
     rw [modifiedRandomFunction_eq_on_good ψ θ₀ δcls θ_hat X n ξ hh hb]
   -- ============ STEP 1b: the Fréchet remainder `Sfam` is o_P (rate bootstrap). ============
   have hS := frechet_remainder_sup_bound P ψ θ₀ V hyp.hPθ₀_zero hyp.frechet μ θ_hat X h_consist

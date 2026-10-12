@@ -258,7 +258,7 @@ theorem ψ_param_unb_pointwise_shift
     rw [ψ_param_unb_coord_zero_smul g_P h_orth ψ (Real.sqrt n)⁻¹ h,
       ψ_param_unb_at_zero g_P h_orth ψ]
     rw [PiLp.single_apply, PiLp.single_apply]
-    simp only [if_true, smul_eq_mul]
+    simp only [ite_true, smul_eq_mul]
     ring
   -- The derivative value as `single 0 ⟪IF_eff, g⟫`.
   have h_deriv_vec :
@@ -268,7 +268,7 @@ theorem ψ_param_unb_pointwise_shift
     have hi : i = (0 : Fin 1) := Fin.eq_zero i
     subst hi
     rw [ψDot_proj_clm_coord_zero_eq_inner g_P IF_eff h, PiLp.single_apply]
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     -- `linPerturbScore g_P h = ∑ⱼ hⱼ gⱼ = g` (definitional).
     rw [show (linPerturbScore g_P h : ↥(L2ZeroMean P)) = g from by rw [hg_def]; rfl]
   rw [h_deriv_vec]

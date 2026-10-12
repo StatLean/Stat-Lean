@@ -87,10 +87,10 @@ theorem dlPrior_count_mgf {a δ : ℝ} (c : ℝ≥0∞) :
   rw [lintegral_pi_prod_fintype (dlMarginal a) (fun _ => hif)]
   have hc_s : ∫⁻ y in {x : ℝ | δ < |x|}, (if δ < |y| then c else 1) ∂(dlMarginal a) = c * ζ := by
     rw [setLIntegral_congr_fun hs (g := fun _ => c) (fun y hy => by
-      simp only [Set.mem_setOf_eq] at hy; simp [hy]), setLIntegral_const]
+      simp only [Set.mem_ofPred_eq] at hy; simp [hy]), setLIntegral_const]
   have hc_sc : ∫⁻ y in {x : ℝ | δ < |x|}ᶜ, (if δ < |y| then c else 1) ∂(dlMarginal a) = 1 - ζ := by
     rw [setLIntegral_congr_fun hs.compl (g := fun _ => 1) (fun y hy => by
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq] at hy; simp [hy]),
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq] at hy; simp [hy]),
       setLIntegral_const, one_mul, prob_compl_eq_one_sub hs]
   have hfactor : ∫⁻ y, (if δ < |y| then c else 1) ∂(dlMarginal a) = (1 - ζ) + ζ * c := by
     rw [← lintegral_add_compl (fun y => if δ < |y| then c else 1) hs, hc_s, hc_sc, add_comm,
@@ -173,12 +173,12 @@ theorem dlPrior_box_ge {a s : ℝ} :
     (dlMarginal a {x : ℝ | |x| ≤ s}) ^ Fintype.card ι
       ≤ dlPrior a ι {θ | ∀ j, |θ j| ≤ s} := by
   have hB : MeasurableSet {θ : EuclideanSpace ℝ ι | ∀ j, |θ j| ≤ s} := by
-    rw [Set.setOf_forall]
+    rw [Set.ofPred_forall]
     exact MeasurableSet.iInter fun j =>
       measurableSet_le ((measurable_eucl_coord j).abs) measurable_const
   have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹' {θ | ∀ j, |θ j| ≤ s}
       = Set.univ.pi (fun _ => {y : ℝ | |y| ≤ s}) := by
-    ext x; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+    ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
   have hcalc : dlPrior a ι {θ | ∀ j, |θ j| ≤ s}
       = (dlMarginal a {x : ℝ | |x| ≤ s}) ^ Fintype.card ι := by
     rw [dlPrior, Measure.map_apply measurable_toLp hB, hpre,

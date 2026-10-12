@@ -124,7 +124,7 @@ private noncomputable def meanVar (v : ℝ≥0) : ℝ≥0 := v / ((m : ℝ≥0) 
 
 private lemma meanVar_ne_zero {v : ℝ≥0} (hv : v ≠ 0) : meanVar (m := m) v ≠ 0 := by
   rw [meanVar, ne_eq, div_eq_zero_iff]
-  push_neg
+  push Not
   exact ⟨hv, by positivity⟩
 
 private lemma coe_meanVar (v : ℝ≥0) : (meanVar (m := m) v : ℝ) = (v : ℝ) / ((m : ℝ) + 1) := by
@@ -364,8 +364,8 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
           = fun x => (fun t : ℝ => t ^ 2) (x i) := by funext x; ring
       have hev := integral_comp_eval (μ := fun _ : Fin (m + 1) => P₁) (i := i)
         (f := fun t : ℝ => t ^ 2) (by fun_prop)
-      rw [if_pos rfl, heq, hev]; exact hvar
-    · rw [if_neg hij]
+      rw [ite_eq_left rfl, heq, hev]; exact hvar
+    · rw [ite_eq_right hij]
       have hpair := (hindep.indepFun hij).integral_fun_mul_eq_mul_integral
         (measurable_pi_apply i).aestronglyMeasurable
         (measurable_pi_apply j).aestronglyMeasurable

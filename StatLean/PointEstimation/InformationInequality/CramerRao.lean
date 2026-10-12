@@ -72,7 +72,7 @@ private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X 
     (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
   have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
   have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
-  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.mul' hY)
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.fun_mul hY)
   have hquad : ∀ t : ℝ,
       0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
     intro t
@@ -111,7 +111,7 @@ private theorem cramer_rao_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure �
     rw [integral_toMeasure_eq M μ θ (score M θ)]; exact hmean0
   have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two
   have hδscore : Integrable (fun x => δ x * score M θ x) (M.toMeasure μ θ) :=
-    memLp_one_iff_integrable.mp (hδ2.mul' hscoreL2)
+    memLp_one_iff_integrable.mp (hδ2.fun_mul hscoreL2)
   have hg'core : ∫ x, δ x * score M θ x ∂(M.toMeasure μ θ) = g' := by
     rw [integral_toMeasure_eq M μ θ (fun x => δ x * score M θ x), hswap]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)

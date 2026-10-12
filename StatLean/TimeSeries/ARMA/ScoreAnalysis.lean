@@ -139,10 +139,10 @@ then `D·b = 0` gives `d = 0`. Without `hbdeg` the argument breaks exactly at th
 count, and the counterexample recorded at `hannanVarZ_posDef` is available. -/
 
 private lemma hannanCoeffArPolyZero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
-  simp [arPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [arPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 private lemma hannanCoeffMaPolyZero {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 private lemma hannanArPolyNeZero {p : ℕ} (b : Fin p → ℝ) : arPoly b ≠ 0 := by
   intro h
@@ -190,10 +190,10 @@ lemma tsum_hannanShiftSeq_mul (ψ φ : ℕ → ℝ) (d e : ℕ) :
   congr 1
   rw [hannanShiftSeq]
   by_cases h : e ≤ j + d
-  · rw [if_pos h, dif_pos (by omega)]
+  · rw [ite_eq_left h, dite_eq_left (by omega)]
     congr 1
     omega
-  · rw [if_neg h, dif_neg (by omega)]
+  · rw [ite_eq_right h, dite_eq_right (by omega)]
 
 /-- Absolute summability is preserved by shifting. -/
 lemma summable_abs_hannanShiftSeq {ψ : ℕ → ℝ} (hψ : Summable fun n => |ψ n|) (d : ℕ) :
@@ -539,14 +539,14 @@ private lemma maCrossACVF_delta_right (ψ : ℕ → ℝ) (φ : ℕ → ℝ)
     refine tsum_eq_single m ?_ |>.trans ?_
     · intro j hj
       by_cases h : 0 ≤ (j : ℤ) + -(m : ℤ)
-      · rw [dif_pos h, hφ]
-        rw [if_neg (by omega), mul_zero]
-      · rw [dif_neg h, mul_zero]
-    · rw [dif_pos (by omega), hφ]
+      · rw [dite_eq_left h, hφ]
+        rw [ite_eq_right (by omega), mul_zero]
+      · rw [dite_eq_right h, mul_zero]
+    · rw [dite_eq_left (by omega), hφ]
       simp
   · rw [maCrossACVF]
     refine (tsum_congr fun j => ?_).trans tsum_zero
-    rw [dif_pos (by omega), hφ, if_neg (by omega), mul_zero]
+    rw [dite_eq_left (by omega), hφ, ite_eq_right (by omega), mul_zero]
 
 /-- Pairing `δ₀` with a filter on the left: the mirror statement. -/
 private lemma maCrossACVF_delta_left (ψ : ℕ → ℝ) (φ : ℕ → ℝ)
@@ -556,14 +556,14 @@ private lemma maCrossACVF_delta_left (ψ : ℕ → ℝ) (φ : ℕ → ℝ)
   · rw [maCrossACVF]
     refine tsum_eq_single 0 ?_ |>.trans ?_
     · intro j hj
-      rw [hφ, if_neg hj, zero_mul]
-    · rw [dif_pos (by omega), hφ]
+      rw [hφ, ite_eq_right hj, zero_mul]
+    · rw [dite_eq_left (by omega), hφ]
       simp
   · rw [maCrossACVF]
     refine (tsum_congr fun j => ?_).trans tsum_zero
     by_cases h : 0 ≤ (j : ℤ) + -((m : ℤ) + 1)
-    · rw [hφ, if_neg (by omega), zero_mul]
-    · rw [dif_neg h, mul_zero]
+    · rw [hφ, ite_eq_right (by omega), zero_mul]
+    · rw [dite_eq_right h, mul_zero]
 
 /-- **FINDING 26.** The forward Gram `hannanVarZ` — the matrix the frozen Hannan
 statements use — and the backward Gram `hannanVarZBack` — the covariance of the score
@@ -783,10 +783,10 @@ private lemma eq_zero_of_hannanVec_combo {p q : ℕ} {b : Fin p → ℝ} {a : Fi
   cases s with
   | inl i =>
     have hcoeff : (hannanPolyC0 x).coeff (p - 1 - (i : ℕ)) = x (Sum.inl i) := by
-      rw [hannanPolyC0, Polynomial.finset_sum_coeff, Finset.sum_eq_single i]
-      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      rw [hannanPolyC0, Polynomial.finsetSum_coeff, Finset.sum_eq_single i]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_left rfl, mul_one]
       · intro i' _ hne'
-        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right, mul_zero]
         have h1 := i.isLt
         have h2 := i'.isLt
         have h3 : (i : ℕ) ≠ (i' : ℕ) := fun h => hne' (Fin.ext h.symm)
@@ -796,10 +796,10 @@ private lemma eq_zero_of_hannanVec_combo {p q : ℕ} {b : Fin p → ℝ} {a : Fi
     simpa using hcoeff.symm
   | inr j =>
     have hcoeff : (hannanPolyD0 x).coeff (q - 1 - (j : ℕ)) = x (Sum.inr j) := by
-      rw [hannanPolyD0, Polynomial.finset_sum_coeff, Finset.sum_eq_single j]
-      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      rw [hannanPolyD0, Polynomial.finsetSum_coeff, Finset.sum_eq_single j]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_left rfl, mul_one]
       · intro j' _ hne'
-        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right, mul_zero]
         have h1 := j.isLt
         have h2 := j'.isLt
         have h3 : (j : ℕ) ≠ (j' : ℕ) := fun h => hne' (Fin.ext h.symm)
@@ -1038,20 +1038,20 @@ private lemma eq_zero_of_hannanVecBack_combo {p q : ℕ} {b : Fin p → ℝ} {a 
   cases s with
   | inl i =>
     have hcoeff : (hannanPolyC0Back x).coeff (i : ℕ) = x (Sum.inl i) := by
-      rw [hannanPolyC0Back, Polynomial.finset_sum_coeff, Finset.sum_eq_single i]
-      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      rw [hannanPolyC0Back, Polynomial.finsetSum_coeff, Finset.sum_eq_single i]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_left rfl, mul_one]
       · intro i' _ hne'
-        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right, mul_zero]
         exact fun h => hne' (Fin.ext h.symm)
       · intro h; exact absurd (Finset.mem_univ i) h
     rw [hC0] at hcoeff
     simpa using hcoeff.symm
   | inr j =>
     have hcoeff : (hannanPolyD0Back x).coeff (j : ℕ) = x (Sum.inr j) := by
-      rw [hannanPolyD0Back, Polynomial.finset_sum_coeff, Finset.sum_eq_single j]
-      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      rw [hannanPolyD0Back, Polynomial.finsetSum_coeff, Finset.sum_eq_single j]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_left rfl, mul_one]
       · intro j' _ hne'
-        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right, mul_zero]
         exact fun h => hne' (Fin.ext h.symm)
       · intro h; exact absurd (Finset.mem_univ j) h
     rw [hD0] at hcoeff
@@ -1265,11 +1265,11 @@ section ResidualId
 
 /-- The constant coefficient of the AR polynomial is `1`. -/
 private lemma coeff_zero_arPoly {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 /-- The constant coefficient of the MA polynomial is `1`. -/
 private lemma coeff_zero_maPoly {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 /-- **`π ∗ ψ = δ₀`**: the inversion coefficients (`b/a`) and the transfer coefficients
 (`a/b`) are mutually inverse power series, so their convolution is the unit. -/
@@ -1502,8 +1502,6 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
     rw [hdiff]
     refine (eLpNorm_noise_comb_le hεWN D (fun x => π x.1 * ψc x.2)
       (fun x => t - (x.1 : ℕ) - (x.2 : ℕ))).trans ?_
-    -- (`mul_le_mul_left` is deprecated upstream; the ENNReal `gcongr` route needs the
-    -- same side goal, so keep the explicit form)
     exact mul_le_mul_left (ENNReal.ofReal_le_ofReal hmass) _
   -- the tail mass vanishes
   have hTriTendsto : Tendsto (fun N => ∑ x ∈ Tri N, |π x.1| * |ψc x.2|)
@@ -1666,7 +1664,7 @@ private lemma condExp_noise_mul_eq_zero [IsProbabilityMeasure μ] {ε : ℤ → 
       ≤ eLpNorm (ε t) 2 μ * eLpNorm (fun ω => W ω - WN N ω) 2 μ := by
     intro N
     rw [eLpNorm_congr_ae (hsplit N)]
-    refine (eLpNorm_one_condExp_le_eLpNorm _).trans ?_
+    refine (eLpNorm_condExp_le_eLpNorm _ le_rfl).trans ?_
     have hsmul : (ε t * (W - WN N)) = (ε t) • (fun ω => W ω - WN N ω) := by
       funext ω
       simp [smul_eq_mul]

@@ -132,7 +132,7 @@ theorem lintegral_sq_le_lintegral_sq_div {f p : 𝓧 → ℝ≥0∞}
       rw [ae_iff]
       refine Eq.trans (congrArg ν ?_) hE
       ext z
-      simp only [Set.mem_setOf_eq, Classical.not_imp]
+      simp only [Set.mem_ofPred_eq, Classical.not_imp]
     -- The pointwise Cauchy–Schwarz splitting `f = (f²/p)^{1/2} · p^{1/2}`.
     have key : ∀ᵐ z ∂ν,
         f z = (f z ^ 2 / p z) ^ ((2 : ℝ)⁻¹) * (p z) ^ ((2 : ℝ)⁻¹) := by
@@ -158,7 +158,7 @@ theorem lintegral_sq_le_lintegral_sq_div {f p : 𝓧 → ℝ≥0∞}
     have : ∫⁻ z, f z ^ 2 / p z ∂ν = ∞ := by
       refine lintegral_eq_top_of_measure_eq_top_ne_zero hmeas.aemeasurable fun h => hE ?_
       refine measure_mono_null (fun z hz => ?_) h
-      simp only [Set.mem_setOf_eq] at hz ⊢
+      simp only [Set.mem_ofPred_eq] at hz ⊢
       rw [hz.1, ENNReal.div_zero (pow_ne_zero 2 hz.2)]
     rw [this]
     exact le_top
@@ -192,7 +192,7 @@ theorem lintegral_sq_div_optimalImportance {f : 𝓧 → ℝ≥0∞}
       refine lintegral_eq_top_of_measure_eq_top_ne_zero hmeas.aemeasurable fun h => hne ?_
       rw [Filter.EventuallyEq, ae_iff]
       refine measure_mono_null (fun z hz => ?_) h
-      simp only [Set.mem_setOf_eq, Pi.zero_apply] at hz ⊢
+      simp only [Set.mem_ofPred_eq, Pi.zero_apply] at hz ⊢
       rw [hcT, ENNReal.div_top, ENNReal.div_zero (pow_ne_zero 2 hz)]
     rw [hLHS, hcT]
     simp

@@ -256,7 +256,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
   set M := T.card with hM_def
   have hlogM : (m : ℝ) / 10 ≤ Real.log M := hTlog
   have hM2 : 2 ≤ M := by
-    by_contra h; push_neg at h
+    by_contra h; push Not at h
     have hM1 : (M : ℝ) ≤ 1 := by exact_mod_cast (by omega : M ≤ 1)
     have hnp : (0 : ℝ) ≤ M := by positivity
     have := Real.log_nonpos hnp hM1

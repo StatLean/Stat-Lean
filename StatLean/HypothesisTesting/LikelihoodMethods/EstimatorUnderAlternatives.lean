@@ -236,7 +236,7 @@ lemma exists_radius_eventually_measureReal_norm_le
     exact this.trans hx
   have hinter : (⋂ j : ℕ, {x : E | (j : ℝ) ≤ ‖x‖}) = ∅ := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_forall,
       not_le]
     exact exists_nat_gt ‖x‖
   have htend : Tendsto (fun j : ℕ => ν {x : E | (j : ℝ) ≤ ‖x‖}) atTop (𝓝 0) := by
@@ -273,7 +273,7 @@ lemma exists_radius_eventually_measureReal_norm_le
       intro ω
       by_cases hω : ω ∈ {ω : Ω n | c + 1 ≤ ‖V n ω‖}
       · have h1 : (1 : ℝ) ≤ ‖V n ω‖ - c := by
-          have := hω; simp only [Set.mem_setOf_eq] at this; linarith
+          have := hω; simp only [Set.mem_ofPred_eq] at this; linarith
         rw [Set.indicator_of_mem hω, hgval, min_eq_left h1]
         simp
       · rw [Set.indicator_of_notMem hω, hgval]
@@ -293,7 +293,7 @@ lemma exists_radius_eventually_measureReal_norm_le
       · rw [Set.indicator_of_mem hx, hgval]
         exact max_le zero_le_one (min_le_left _ _)
       · have hx' : ‖x‖ - c < 0 := by
-          simp only [Set.mem_setOf_eq, not_le] at hx; rw [hc]; linarith
+          simp only [Set.mem_ofPred_eq, not_le] at hx; rw [hc]; linarith
         rw [Set.indicator_of_notMem hx, hgval]
         exact max_le le_rfl ((min_le_right _ _).trans hx'.le)
     have hgint : Integrable (fun x => g x) ν :=
@@ -532,7 +532,7 @@ private lemma joint_weak_estimator_scoreSum
   refine Filter.Tendsto.congr (fun n => ?_) (hlin ε hε)
   congr 1
   ext ω
-  simp only [Set.mem_setOf_eq, hF, hd]
+  simp only [Set.mem_ofPred_eq, hF, hd]
 
 /-- **Joint limit of the recentred estimator and the log-likelihood ratio, under `P^n_{θ₀}`.**
 
@@ -1406,7 +1406,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
       ⊆ {ω : Fin n → 𝓧 | K ≤ ‖Real.sqrt n • (est n ω - localAlt θ₀ h_n n)‖} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_setOf_eq, not_le] at hcon
+    simp only [Set.mem_ofPred_eq, not_le] at hcon
     -- Both `θ̂ₙ` and `θₙ` are within `ρ` of `θ₀`.
     have hU : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + H := by
       have hsplit : Real.sqrt n • (est n ω - θ₀)

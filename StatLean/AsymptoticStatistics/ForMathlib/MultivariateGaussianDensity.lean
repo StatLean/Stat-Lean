@@ -452,7 +452,7 @@ theorem gaussian_loss_convolution_lt_top
     refine lintegral_mono fun z => (hpoly _).trans ?_
     rw [ENNReal.ofReal_add zero_le_one (Real.rpow_nonneg (norm_nonneg _) p),
       ENNReal.ofReal_one, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp,
-      ofReal_norm_eq_enorm]
+      ofReal_norm]
   refine lt_of_le_of_lt hmono ?_
   have hfin : ∫⁻ z, ‖u - z‖ₑ ^ p ∂ν ≠ ∞ := by
     rcases eq_or_lt_of_le hp with hp0 | hppos
@@ -466,7 +466,8 @@ theorem gaussian_loss_convolution_lt_top
           IsGaussian.memLp_id ν (ENNReal.ofReal p) ENNReal.ofReal_ne_top
         exact h1.sub h2
       have hlt := hmem.eLpNorm_lt_top
-      rw [eLpNorm_eq_lintegral_rpow_enorm hq0 ENNReal.ofReal_ne_top hmem.aestronglyMeasurable,
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 ENNReal.ofReal_ne_top
+          hmem.aestronglyMeasurable,
         ENNReal.toReal_ofReal hp] at hlt
       intro hcon
       rw [hcon, ENNReal.top_rpow_of_pos (by positivity)] at hlt
@@ -523,7 +524,7 @@ private lemma poly_gaussian_quarter_lintegral_ne_top {S : Matrix ι ι ℝ} (hS 
         = Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4) := by
     intro y
     congr 1
-    rw [hinv, map_smul, ContinuousLinearMap.smul_apply, real_inner_smul_right]
+    rw [hinv, map_smul, _root_.smul_apply, real_inner_smul_right]
     ring
   obtain ⟨c₂, hc₂pos, hc₂top, hc₂⟩ := multivariateGaussian_eq_smul_withDensity hS₂
   have hfin := gaussian_loss_convolution_lt_top ((2 : ℝ) • S)

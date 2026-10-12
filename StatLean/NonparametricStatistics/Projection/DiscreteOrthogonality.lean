@@ -40,13 +40,13 @@ private lemma trigBasis_even {q : ℕ} (hq : 1 ≤ q) (x : ℝ) :
     trigBasis (2 * q) x = Real.sqrt 2 * Real.cos (2 * Real.pi * (q : ℝ) * x) := by
   have h2 : (2 * q) / 2 = q := by omega
   unfold trigBasis
-  rw [if_neg (by omega), if_neg (by omega), if_pos (by omega), h2]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega), h2]
 
 private lemma trigBasis_odd {q : ℕ} (hq : 1 ≤ q) (x : ℝ) :
     trigBasis (2 * q + 1) x = Real.sqrt 2 * Real.sin (2 * Real.pi * (q : ℝ) * x) := by
   have h2 : (2 * q + 1) / 2 = q := by omega
   unfold trigBasis
-  rw [if_neg (by omega), if_neg (by omega), if_neg (by omega), h2]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), h2]
 
 private lemma trig_index_cases {j : ℕ} (hj : 1 ≤ j) :
     j = 1 ∨ (∃ p, 1 ≤ p ∧ j = 2 * p) ∨ (∃ p, 1 ≤ p ∧ j = 2 * p + 1) := by
@@ -84,8 +84,8 @@ private lemma sum_cosZ (n : ℕ) (c : ℤ) :
             = -(2 * Real.pi * (c.natAbs : ℝ) * (↑s + 1) / n) from by ring, Real.cos_neg]
   rw [Finset.sum_congr rfl (fun s _ => hcos s)]
   by_cases hdvd : (n : ℤ) ∣ c
-  · rw [if_pos hdvd]; exact sum_cos_two_pi_mul_div_of_dvd (Int.dvd_natAbs.mpr hdvd)
-  · rw [if_neg hdvd]
+  · rw [ite_eq_left hdvd]; exact sum_cos_two_pi_mul_div_of_dvd (Int.dvd_natAbs.mpr hdvd)
+  · rw [ite_eq_right hdvd]
     exact sum_cos_two_pi_mul_div_eq_zero (fun h => hdvd (Int.dvd_natAbs.mp h))
 
 /-- Discrete sine sum at an integer frequency: always `0`. -/
@@ -129,7 +129,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
     rcases trig_index_cases hk with hk1 | ⟨q, hq, hkq⟩ | ⟨q, hq, hkq⟩
   -- j = 1, k = 1
   · subst hj1; subst hk1
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     have hterm : ∀ s : ℕ,
         trigBasis 1 (((s : ℝ) + 1) / n) * trigBasis 1 (((s : ℝ) + 1) / n) = (1 : ℝ) := by
       intro s; rw [trigBasis_one]; ring
@@ -137,7 +137,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
         nsmul_eq_mul, mul_one, inv_mul_cancel₀ hn0]
   -- j = 1, k = 2q
   · subst hj1; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ, trigBasis 1 (((s : ℝ) + 1) / n) * trigBasis (2 * q) (((s : ℝ) + 1) / n)
         = Real.sqrt 2 * Real.cos (2 * Real.pi * ((q : ℤ) : ℝ) * (↑s + 1) / n) := by
       intro s
@@ -145,10 +145,10 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
           show 2 * Real.pi * ((q : ℤ) : ℝ) * ((s : ℝ) + 1) / n
             = 2 * Real.pi * (q : ℝ) * (((s : ℝ) + 1) / n) from by push_cast; ring]
     rw [Finset.sum_congr rfl (fun s _ => hterm s), ← Finset.mul_sum, sum_cosZ,
-        if_neg (not_dvd_of_abs_lt (by omega) (by omega) (by omega)), mul_zero, mul_zero]
+        ite_eq_right (not_dvd_of_abs_lt (by omega) (by omega) (by omega)), mul_zero, mul_zero]
   -- j = 1, k = 2q+1
   · subst hj1; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ, trigBasis 1 (((s : ℝ) + 1) / n)
         * trigBasis (2 * q + 1) (((s : ℝ) + 1) / n)
         = Real.sqrt 2 * Real.sin (2 * Real.pi * ((q : ℤ) : ℝ) * (↑s + 1) / n) := by
@@ -159,7 +159,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
     rw [Finset.sum_congr rfl (fun s _ => hterm s), ← Finset.mul_sum, sum_sinZ, mul_zero, mul_zero]
   -- j = 2p, k = 1
   · subst hjp; subst hk1
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ, trigBasis (2 * p) (((s : ℝ) + 1) / n) * trigBasis 1 (((s : ℝ) + 1) / n)
         = Real.sqrt 2 * Real.cos (2 * Real.pi * ((p : ℤ) : ℝ) * (↑s + 1) / n) := by
       intro s
@@ -167,7 +167,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
           show 2 * Real.pi * ((p : ℤ) : ℝ) * ((s : ℝ) + 1) / n
             = 2 * Real.pi * (p : ℝ) * (((s : ℝ) + 1) / n) from by push_cast; ring]
     rw [Finset.sum_congr rfl (fun s _ => hterm s), ← Finset.mul_sum, sum_cosZ,
-        if_neg (not_dvd_of_abs_lt (by omega) (by omega) (by omega)), mul_zero, mul_zero]
+        ite_eq_right (not_dvd_of_abs_lt (by omega) (by omega) (by omega)), mul_zero, mul_zero]
   -- j = 2p, k = 2q
   · subst hjp; subst hkq
     have hterm : ∀ s : ℕ, trigBasis (2 * p) (((s : ℝ) + 1) / n)
@@ -192,15 +192,15 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
       ring
     have hsum : ¬ (n : ℤ) ∣ ((p : ℤ) + q) := not_dvd_of_abs_lt (by omega) (by omega) (by omega)
     rw [Finset.sum_congr rfl (fun s _ => hterm s), Finset.sum_add_distrib, sum_cosZ, sum_cosZ,
-        if_neg hsum, add_zero]
+        ite_eq_right hsum, add_zero]
     rcases eq_or_ne p q with h | h
     · subst h
-      rw [if_pos (by simp), if_pos (by omega), inv_mul_cancel₀ hn0]
+      rw [ite_eq_left (by simp), ite_eq_left (by omega), inv_mul_cancel₀ hn0]
     · have hdiff : ¬ (n : ℤ) ∣ ((p : ℤ) - q) := not_dvd_of_abs_lt (by omega) (by omega) (by omega)
-      rw [if_neg hdiff, if_neg (by omega), mul_zero]
+      rw [ite_eq_right hdiff, ite_eq_right (by omega), mul_zero]
   -- j = 2p, k = 2q+1
   · subst hjp; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ,
         trigBasis (2 * p) (((s : ℝ) + 1) / n) * trigBasis (2 * q + 1) (((s : ℝ) + 1) / n)
         = Real.sin (2 * Real.pi * ((p + q : ℤ) : ℝ) * (↑s + 1) / n)
@@ -225,7 +225,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
         sub_zero, mul_zero]
   -- j = 2p+1, k = 1
   · subst hjp; subst hk1
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ, trigBasis (2 * p + 1) (((s : ℝ) + 1) / n)
         * trigBasis 1 (((s : ℝ) + 1) / n)
         = Real.sqrt 2 * Real.sin (2 * Real.pi * ((p : ℤ) : ℝ) * (↑s + 1) / n) := by
@@ -236,7 +236,7 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
     rw [Finset.sum_congr rfl (fun s _ => hterm s), ← Finset.mul_sum, sum_sinZ, mul_zero, mul_zero]
   -- j = 2p+1, k = 2q
   · subst hjp; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hterm : ∀ s : ℕ,
         trigBasis (2 * p + 1) (((s : ℝ) + 1) / n) * trigBasis (2 * q) (((s : ℝ) + 1) / n)
         = Real.sin (2 * Real.pi * ((p + q : ℤ) : ℝ) * (↑s + 1) / n)
@@ -283,11 +283,11 @@ theorem trigBasis_discrete_orthonormal {n j k : ℕ}
       ring
     have hsum : ¬ (n : ℤ) ∣ ((p : ℤ) + q) := not_dvd_of_abs_lt (by omega) (by omega) (by omega)
     rw [Finset.sum_congr rfl (fun s _ => hterm s), Finset.sum_sub_distrib, sum_cosZ, sum_cosZ,
-        if_neg hsum, sub_zero]
+        ite_eq_right hsum, sub_zero]
     rcases eq_or_ne p q with h | h
     · subst h
-      rw [if_pos (by simp), if_pos (by omega), inv_mul_cancel₀ hn0]
+      rw [ite_eq_left (by simp), ite_eq_left (by omega), inv_mul_cancel₀ hn0]
     · have hdiff : ¬ (n : ℤ) ∣ ((p : ℤ) - q) := not_dvd_of_abs_lt (by omega) (by omega) (by omega)
-      rw [if_neg hdiff, if_neg (by omega), mul_zero]
+      rw [ite_eq_right hdiff, ite_eq_right (by omega), mul_zero]
 
 end StatLean.NonparametricStatistics

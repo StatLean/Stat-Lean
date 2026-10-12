@@ -100,7 +100,7 @@ theorem isTightMeasureSet_probabilityMeasure_coercion
   have h_set_eq : {x | ∃ μ ∈ Set.range PM_m, (μ : MeasureTheory.Measure E) = x} =
       Set.range (fun m => (PM_m m : MeasureTheory.Measure E)) := by
     ext x
-    simp only [Set.mem_setOf, Set.mem_range]
+    simp only [Set.mem_ofPred, Set.mem_range]
     constructor
     · intro ⟨μ, ⟨m, hm⟩, hx⟩
       exact ⟨m, hm ▸ hx⟩

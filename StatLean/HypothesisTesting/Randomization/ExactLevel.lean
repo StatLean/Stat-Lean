@@ -106,10 +106,10 @@ private lemma orbitOrderStat_smul (T : 𝓧 → ℝ) (g : G) (x : 𝓧) (j : ℕ
     orbitOrderStat G T (g • x) j = orbitOrderStat G T x j := by
   unfold orbitOrderStat
   by_cases h : j - 1 < Fintype.card G
-  · rw [dif_pos h, dif_pos h, orbitValues_smul T g x]
+  · rw [dite_eq_left h, dite_eq_left h, orbitValues_smul T g x]
     exact congrFun (Tuple.comp_perm_comp_sort_eq_comp_sort (f := orbitValues G T x)
       (σ := (Fintype.equivFin G).symm.trans ((Equiv.mulRight g).trans (Fintype.equivFin G)))) _
-  · rw [dif_neg h, dif_neg h]
+  · rw [dite_eq_right h, dite_eq_right h]
 
 /-- Reindexing a filtered count over `G` by right multiplication leaves the count unchanged. -/
 private lemma card_filter_mulRight (q : G → Prop) [DecidablePred q] (g : G) :
@@ -171,7 +171,7 @@ private lemma randCritValue_mem_orbit (T : 𝓧 → ℝ) (α : ℝ) (x : 𝓧)
     ∃ g : G, T (g • x) = randCritValue G T α x := by
   refine ⟨(Fintype.equivFin G).symm
     (Tuple.sort (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩), ?_⟩
-  rw [randCritValue, orbitOrderStat, dif_pos hk]
+  rw [randCritValue, orbitOrderStat, dite_eq_left hk]
   rfl
 
 /-- The number of orbit values `≤ a` equals the number of sorted values `≤ a`, via the sort
@@ -243,7 +243,7 @@ theorem randTest_mem_Icc (T : 𝓧 → ℝ) {α : ℝ}
       _ = Fintype.card G := mul_one _
   have hvdef : randCritValue G T α x
       = orderStat (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩ := by
-    rw [randCritValue, orbitOrderStat, dif_pos hk]
+    rw [randCritValue, orbitOrderStat, dite_eq_left hk]
   -- `M⁺ ≤ ⌊|G|α⌋`.
   have hMplus : randPlusCount G T α x ≤ ⌊(Fintype.card G : ℝ) * α⌋₊ := by
     have e1 : randPlusCount G T α x
@@ -313,7 +313,7 @@ theorem randTest_mem_Icc (T : 𝓧 → ℝ) {α : ℝ}
     have e6 : (Finset.univ.filter fun i : Fin (Fintype.card G) =>
             orbitValues G T x i < randCritValue G T α x).card ≤ randCritIndex G α - 1 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have := (orderStat_lt_iff_card_lt (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩
         (randCritValue G T α x)).mpr hcon
       rw [← hvdef] at this
@@ -392,7 +392,7 @@ private lemma measurable_orderStat_eval {d : ℕ} (n : ℕ) (h : n < d) :
   have hset : (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) ⁻¹' Set.Iic a
       = {m | n < ((Finset.univ : Finset (Fin d)).filter (fun k => m k ≤ a)).card} := by
     ext m
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
     exact orderStat_le_iff_card_lt m ⟨n, h⟩ a
   rw [hset]
   apply measurableSet_lt measurable_const
@@ -407,12 +407,12 @@ private lemma measurable_randCritValue (T : 𝓧 → ℝ) (α : ℝ) (hT : Measu
     Measurable (fun x => randCritValue G T α x) := by
   unfold randCritValue orbitOrderStat
   by_cases hk : randCritIndex G α - 1 < Fintype.card G
-  · simp only [dif_pos hk]
+  · simp only [dite_eq_left hk]
     have hov : Measurable (fun x : 𝓧 => (orbitValues G T x : Fin (Fintype.card G) → ℝ)) := by
       rw [measurable_pi_iff]
       exact fun i => hT.comp (hsmul ((Fintype.equivFin G).symm i))
     exact (measurable_orderStat_eval (randCritIndex G α - 1) hk).comp hov
-  · simp only [dif_neg hk]; exact measurable_const
+  · simp only [dite_eq_right hk]; exact measurable_const
 
 /-- `M⁺(·)`, cast to `ℝ`, is a measurable function of the data. -/
 private lemma measurable_randPlusCount (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
@@ -551,7 +551,7 @@ theorem superUniform_randPValue (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
   have hptwise : ∀ x, (∑ g : G, f (g • x)) ≤ (Fintype.card G : ℝ) * t := by
     intro x
     have hfg : ∀ g : G, f (g • x) = if randPValue G T (g • x) ≤ t then (1 : ℝ) else 0 := by
-      intro g; rw [hf, Set.indicator_apply]; simp only [hE, Set.mem_setOf_eq]
+      intro g; rw [hf, Set.indicator_apply]; simp only [hE, Set.mem_ofPred_eq]
     simp_rw [hfg]
     rw [Finset.sum_boole]
     rcases (Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t).eq_empty_or_nonempty

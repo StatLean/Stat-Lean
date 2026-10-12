@@ -68,7 +68,7 @@ private lemma tendstoInProbZero_comp_zero
     intro n omega homega
     by_contra hnot
     have hsmall := hball (by simpa [Metric.mem_ball, dist_zero_right] using not_le.mp hnot)
-    simp only [Set.mem_setOf_eq, dist_zero_right] at hsmall homega
+    simp only [Set.mem_ofPred_eq, dist_zero_right] at hsmall homega
     exact (not_lt_of_ge homega) hsmall
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (hZ delta hdelta) (Eventually.of_forall fun _ => measureReal_nonneg)
@@ -89,8 +89,8 @@ private lemma tendstoInProbZero_add
         {omega | epsilon / 2 ≤ ‖W n omega‖} := by
     intro n omega homega
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
-    simp only [Set.mem_setOf_eq] at homega
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+    simp only [Set.mem_ofPred_eq] at homega
     exact (not_lt_of_ge homega) <|
       lt_of_le_of_lt (norm_add_le (Z n omega) (W n omega)) (by linarith)
   have hsum := (hZ (epsilon / 2) (half_pos hepsilon)).add
@@ -143,7 +143,7 @@ private lemma isBoundedInProb_add
       {omega | MZ < ‖Z n omega‖} ∪ {omega | MW < ‖W n omega‖} := by
     intro omega homega
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_lt] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_lt] at hnot
     have hZle : ‖Z n omega‖ ≤ max MZ 0 := hnot.1.trans (le_max_left _ _)
     have hWle : ‖W n omega‖ ≤ max MW 0 := hnot.2.trans (le_max_left _ _)
     exact (not_lt_of_ge ((norm_add_le _ _).trans (add_le_add hZle hWle))) homega
@@ -173,7 +173,7 @@ private lemma isBoundedInProb_const_smul
     obtain ⟨M, hM⟩ := hZ epsilon hepsilon
     refine ⟨|c| * M, fun n => ?_⟩
     refine (measureReal_mono fun omega homega => ?_).trans (hM n)
-    simp only [Set.mem_setOf_eq, norm_smul, Real.norm_eq_abs] at homega ⊢
+    simp only [Set.mem_ofPred_eq, norm_smul, Real.norm_eq_abs] at homega ⊢
     nlinarith [abs_pos.mpr hc]
 
 /-- An `o_P(1)` approximation plus an arbitrarily small deterministic multiple
@@ -229,7 +229,7 @@ private lemma tendstoInProbZero_of_fixed_truncation
           {omega | epsilon / 3 ≤ ‖Cf n omega‖} := by
     intro omega homega
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
     have hBle : ‖Bf n omega‖ ≤ M' :=
       (not_lt.mp hnot.1.2).trans (le_max_left _ _)
     have htail' : |c m| * ‖Bf n omega‖ < epsilon / 3 :=
@@ -1614,7 +1614,7 @@ theorem qmdModel_scoreCrossTransport_oP_of_2576
       by_cases homega : omega ∈ S
       · simp [gSmall, gTail, Set.indicator_of_mem homega]
       · have hle : ‖g omega‖ ≤ (m : ℝ) := by
-          simpa only [S, Set.mem_setOf_eq, not_lt] using homega
+          simpa only [S, Set.mem_ofPred_eq, not_lt] using homega
         simpa [gSmall, gTail, Set.indicator_of_notMem homega] using hle
     have hu : ‖u n X‖ ≤ 1 := by
       by_cases hdelta : delta n X = 0

@@ -144,7 +144,7 @@ theorem empiricalPsiDdot_OP {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
   have hsub : {ξ | M < ‖empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)‖}
       ⊆ {ξ | M ≤ |empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)|} := by
     intro ξ hξ
-    simp only [Set.mem_setOf_eq, Real.norm_eq_abs] at hξ ⊢
+    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs] at hξ ⊢
     exact hξ.le
   have hkey : M * μ.real {ξ | M < ‖empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)‖} ≤ C :=
     calc M * μ.real {ξ | M < ‖empiricalAvg ψddot n (fun i : Fin n => X i.val ξ)‖}
@@ -175,7 +175,7 @@ private lemma euclideanCLM_lower_bound {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ
     rw [hS, hT, ← map_mul, Matrix.nonsing_inv_mul V hV, map_one]
   have hST : ∀ x : EuclideanSpace ℝ (Fin k), S (T x) = x := by
     intro x
-    rw [← ContinuousLinearMap.mul_apply, hInv, ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, hInv, one_apply_eq_self]
   refine ⟨1 / (‖S‖ + 1), by positivity, fun x => ?_⟩
   have h1 : ‖x‖ ≤ ‖S‖ * ‖T x‖ := by
     conv_lhs => rw [← hST x]
@@ -449,8 +449,8 @@ theorem classical_linear_representation
       Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)
         (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)⁻¹ y) = y := by
     intro y
-    rw [← ContinuousLinearMap.mul_apply, ← map_mul, Matrix.mul_nonsing_inv _ hV, map_one,
-      ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, Matrix.mul_nonsing_inv _ hV, map_one,
+      one_apply_eq_self]
   -- Measurability of the Jacobian entries and the pointwise Taylor bound.
   have hVmeas := psiDot_measurable ψ θ₀ Θ hΘ_open hθ₀ hψ_meas hC2
   have hbound := pointwise_taylor_bound ψ θ₀ Θ ψddot hρ hΘ_open hball hC2 hdom
@@ -529,10 +529,10 @@ theorem classical_linear_representation
             (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))‖ < ε := by
     intro ξ h1 h2 h3 h4 h5
     rw [hS1] at h1; rw [hS2] at h2; rw [hS3] at h3; rw [hS4] at h4; rw [hS5] at h5
-    simp only [Set.mem_setOf_eq, not_lt, Real.norm_eq_abs] at h1
-    simp only [Set.mem_setOf_eq, not_lt] at h2
-    simp only [Set.mem_setOf_eq, not_le] at h3
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le, Real.norm_eq_abs] at h4
+    simp only [Set.mem_ofPred_eq, not_lt, Real.norm_eq_abs] at h1
+    simp only [Set.mem_ofPred_eq, not_lt] at h2
+    simp only [Set.mem_ofPred_eq, not_le] at h3
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le, Real.norm_eq_abs] at h4
     simp only [Set.mem_compl_iff, not_not] at h5
     -- `θ̂ₙ` lies in the ball where the Taylor bound is valid.
     have hδρ : δ ≤ ρ := min_le_left _ _
@@ -810,7 +810,7 @@ theorem classical_zEstimator_normality
               (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))‖} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, dist_eq_norm, map_neg, ContinuousLinearMap.neg_apply]
+    simp only [Set.mem_ofPred_eq, dist_eq_norm, map_neg, neg_apply]
     rw [show -Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)⁻¹
           (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))
         - Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)
@@ -885,7 +885,7 @@ theorem classical_zEstimator_normality_outer
               (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))‖} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, dist_eq_norm, map_neg, ContinuousLinearMap.neg_apply]
+    simp only [Set.mem_ofPred_eq, dist_eq_norm, map_neg, neg_apply]
     rw [show -Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)⁻¹
           (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ))
         - Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)

@@ -78,7 +78,7 @@ private lemma restrict_idem (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)
 /-- `x|_T` is `m`-sparse whenever `T` has at most `m` coordinates. -/
 private lemma isSparse_restrict {T : Finset (Fin d)} {m : ℕ} (h : T.card ≤ m)
     (x : EuclideanSpace ℝ (Fin d)) : IsSparse m (restrict T x) :=
-  ⟨T, h, fun i hi => by rw [restrict_ofLp_apply, if_neg hi]⟩
+  ⟨T, h, fun i hi => by rw [restrict_ofLp_apply, ite_eq_right hi]⟩
 
 /-- The first `N` shelling blocks cover the complement `Sᶜ` (when `N·k ≥ |Sᶜ|`). -/
 private lemma blocks_biUnion_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d))
@@ -97,7 +97,7 @@ private lemma blocks_biUnion_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ 
     obtain ⟨m, hm⟩ := mem_orderedBlocks_of_notMem S x hk hiS
     have hmlt : m < N := by
       by_contra hge
-      push_neg at hge
+      push Not at hge
       have hempty : orderedBlocks S x k m = ∅ :=
         orderedBlocks_eq_empty S x hk (le_trans hN (Nat.mul_le_mul_right k hge))
       rw [hempty] at hm
@@ -126,17 +126,17 @@ private lemma restrict_head_add_tail (S : Finset (Fin d)) (x : EuclideanSpace �
   simp only [WithLp.ofLp_add, Pi.add_apply, WithLp.ofLp_sum, Finset.sum_apply,
     restrict_ofLp_apply]
   by_cases hiS : i ∈ S
-  · rw [if_pos (Finset.mem_union_left _ hiS)]
-    rw [Finset.sum_eq_zero (fun j _ => if_neg (fun hcon =>
+  · rw [ite_eq_left (Finset.mem_union_left _ hiS)]
+    rw [Finset.sum_eq_zero (fun j _ => ite_eq_right (fun hcon =>
       absurd hiS (Finset.mem_compl.mp (orderedBlocks_subset_compl S x k (j + 1) hcon))))]
     rw [add_zero]
   · by_cases hiB0 : i ∈ orderedBlocks S x k 0
-    · rw [if_pos (Finset.mem_union_right _ hiB0)]
-      rw [Finset.sum_eq_zero (fun j _ => if_neg (fun hcon =>
+    · rw [ite_eq_left (Finset.mem_union_right _ hiB0)]
+      rw [Finset.sum_eq_zero (fun j _ => ite_eq_right (fun hcon =>
         Finset.disjoint_left.mp
           (orderedBlocks_disjoint S x k (by omega : (0 : ℕ) ≠ j + 1)) hiB0 hcon))]
       rw [add_zero]
-    · rw [if_neg (by rw [Finset.mem_union]; push_neg; exact ⟨hiS, hiB0⟩)]
+    · rw [ite_eq_right (by rw [Finset.mem_union]; push Not; exact ⟨hiS, hiB0⟩)]
       obtain ⟨m, hm⟩ := mem_orderedBlocks_of_notMem S x hk hiS
       have hm1 : 1 ≤ m := by
         rcases Nat.eq_zero_or_pos m with h0 | hpos
@@ -144,17 +144,17 @@ private lemma restrict_head_add_tail (S : Finset (Fin d)) (x : EuclideanSpace �
         · exact hpos
       have hmlt : m < N := by
         by_contra hge
-        push_neg at hge
+        push Not at hge
         have hempty : orderedBlocks S x k m = ∅ :=
           orderedBlocks_eq_empty S x hk (le_trans hN (Nat.mul_le_mul_right k hge))
         rw [hempty] at hm
         exact absurd hm (Finset.notMem_empty i)
       obtain ⟨j₀, rfl⟩ : ∃ j₀, m = j₀ + 1 := ⟨m - 1, by omega⟩
       rw [Finset.sum_eq_single_of_mem j₀ (Finset.mem_range.mpr (by omega))
-        (fun j _ hjne => if_neg (fun hcon =>
+        (fun j _ hjne => ite_eq_right (fun hcon =>
           Finset.disjoint_left.mp
             (orderedBlocks_disjoint S x k (by omega : j + 1 ≠ j₀ + 1)) hcon hm))]
-      rw [if_pos hm, zero_add]
+      rw [ite_eq_left hm, zero_add]
 
 /-! ## The null-space-property core -/
 
@@ -177,7 +177,7 @@ private lemma rip_cone_trivial
   refine ⟨?_, ?_⟩
   · -- `0` lies in the intersection.
     refine Set.mem_inter ?_ ?_
-    · simp only [reCone, Set.mem_setOf_eq]
+    · simp only [reCone, Set.mem_ofPred_eq]
       simp [l1Norm_restrict_eq_sum]
     · rw [SetLike.mem_coe, LinearMap.mem_ker, map_zero]
   · intro Δ hΔ

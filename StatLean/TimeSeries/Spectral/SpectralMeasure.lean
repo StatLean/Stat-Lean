@@ -94,9 +94,9 @@ private lemma measureFourierCoeff_haarAddCircle (k : ℤ) :
   rcases eq_or_ne k 0 with rfl | hk
   · have h1 : ∀ z : AddCircle (2 * π), fourier (T := 2 * π) 0 z = (1 : ℂ) := fun _ =>
       fourier_zero
-    rw [if_pos rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
+    rw [ite_eq_left rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
     simp
-  · rw [if_neg hk]
+  · rw [ite_eq_right hk]
     exact MeasureTheory.integral_eq_zero_of_add_right_eq_neg
       (μ := (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
       (g := ((2 * π / 2 / k : ℝ) : AddCircle (2 * π)))
@@ -127,7 +127,7 @@ private lemma negInvariant_haarAddCircle :
     measureFourierCoeff_haarAddCircle]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · rw [if_neg (neg_ne_zero.mpr hm), if_neg hm]
+  · rw [ite_eq_right (neg_ne_zero.mpr hm), ite_eq_right hm]
 
 /-- The spectral measure of white noise is the uniform measure of total mass `σ²`
 (FY §2.3.2: constant spectral density `σ²/2π`): `F = σ² • (normalized Haar)`. -/
@@ -142,7 +142,7 @@ theorem isSpectralMeasure_whiteNoise [IsProbabilityMeasure μ] {ε : ℤ → Ω 
   · rw [measureFourierCoeff_smul', measureFourierCoeff_haarAddCircle,
       ENNReal.toReal_ofReal hσ, hε.acvf_eq k]
     rcases eq_or_ne k 0 with rfl | hk
-    · rw [if_pos rfl, if_pos rfl, mul_one]
-    · rw [if_neg hk, if_neg hk, mul_zero, Complex.ofReal_zero]
+    · rw [ite_eq_left rfl, ite_eq_left rfl, mul_one]
+    · rw [ite_eq_right hk, ite_eq_right hk, mul_zero, Complex.ofReal_zero]
 
 end StatLean.TimeSeries

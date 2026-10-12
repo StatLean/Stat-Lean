@@ -424,7 +424,7 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
     exact hω.trans (hshift_mono hdk _)
   have hSint : (⋂ k, S k) = {ω | (pairLim ω).2 ≤ (pairLim ω).1} := by
     ext ω
-    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro h
       have hdlim : Tendsto d atTop (𝓝 0) := by

@@ -665,7 +665,7 @@ theorem localized_absoluteCover
       calc
         Q A ≤ Q Set.univ := measure_mono (Set.subset_univ A)
         _ = 1 := measure_univ
-    have hKcoe : K = (K.toNat : ℕ∞) := (ENat.coe_toNat hKtop.ne).symm
+    have hKcoe : K = (K.toNat : ℕ∞) := (ENat.natCast_toNat hKtop.ne).symm
     have hNcoe : K < (N : ℕ∞) := by
       rw [hKcoe]
       exact_mod_cast Nat.lt_succ_self K.toNat
@@ -714,7 +714,7 @@ theorem localized_absoluteCover
       obtain ⟨hTcover, hTcard⟩ := hT
       let S : Finset (Ω → ℝ) := T.image (localizedFunction A)
       refine ⟨S, ?_, ?_⟩
-      · exact (Finset.card_image_le.trans (ENat.coe_lt_coe.mp hTcard).le)
+      · exact (Finset.card_image_le.trans (ENat.natCast_lt_natCast.mp hTcard).le)
       · constructor
         · intro g hgS
           rw [Finset.mem_image] at hgS
@@ -751,7 +751,7 @@ private theorem empiricalFiniteLaw_isProbabilityMeasure
     IsProbabilityMeasure (empiricalFiniteLaw S) := by
   refine ⟨?_⟩
   rw [empiricalFiniteLaw, Measure.smul_apply]
-  rw [smul_eq_mul, Measure.finset_sum_apply]
+  rw [smul_eq_mul, Measure.finsetSum_apply]
   change (S.card : ℝ≥0∞)⁻¹ *
     (∑ x : S, (Measure.dirac (x : Ω)) Set.univ) = 1
   simp only [Measure.dirac_apply_of_mem (Set.mem_univ _), Finset.sum_const,
@@ -767,7 +767,7 @@ private theorem empiricalFiniteLaw_outerExpectation_lower
   unfold outerExpectation
   refine le_iInf fun U ↦ ?_
   rw [empiricalFiniteLaw, lintegral_smul_measure, smul_eq_mul,
-    lintegral_finset_sum_measure]
+    lintegral_finsetSum_measure]
   simp_rw [lintegral_dirac' _ U.2.1]
   apply mul_le_mul_right
   apply Finset.sum_le_sum
@@ -804,7 +804,7 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
   have hε : 0 < ε := div_pos hγ (by norm_num)
   obtain ⟨N, hN⟩ := hcover ε hε
   let m : ℕ := 8 * (N + 1)
-  have hm_top : (m : ℕ∞) < ⊤ := ENat.coe_lt_top m
+  have hm_top : (m : ℕ∞) < ⊤ := ENat.natCast_lt_top m
   unfold gammaDimension at hdimtop
   obtain ⟨S, hSlarge⟩ := iSup_eq_top.mp hdimtop (m : ℕ∞) hm_top
   have hSshat : GammaShatters E γ S := by
@@ -1196,7 +1196,7 @@ private theorem exists_dualCube_of_weaklyDense
         rw [vhDualCell_succ]
         have hs := hsplit (fun i ↦ label i.castSucc)
         by_cases hl : label (Fin.last n) = true
-        · simp only [hl, if_true]
+        · simp only [hl, ite_true]
           simpa [C] using hs.2
         · have hl' : label (Fin.last n) = false := Bool.eq_false_of_not_eq_true hl
           simp only [hl']
@@ -1284,9 +1284,9 @@ private theorem not_weaklyDense_of_gammaDimension
     unfold gammaDimension
     exact le_iSup_of_le S (by simp [hSshat])
   have heq : (ENat.toNat (gammaDimension E γ) : ℕ∞) = gammaDimension E γ :=
-    ENat.coe_toNat hdim.ne
+    ENat.natCast_toNat hdim.ne
   rw [hScard, ← heq] at hle
-  exact Nat.not_succ_le_self _ (ENat.coe_le_coe.mp hle)
+  exact Nat.not_succ_le_self _ (ENat.natCast_le_natCast.mp hle)
 
 /-- A uniform positive lower bound on all essential finite-partition
 boundaries yields a weakly dense measurable support.  Banach--Alaoglu is
@@ -1771,7 +1771,7 @@ private theorem activePattern_width_le_global
   have hs : s.Nonempty :=
     activeLevels_nonempty_of_not_exceptional P I f B δ K hδ hK hfB x hx
   rw [vhPatternUpper_apply, vhPatternLower_apply]
-  rw [dif_pos hs, dif_pos hs]
+  rw [dite_eq_left hs, dite_eq_left hs]
   have hminlevel : s.min' hs ∈ vhGridLevels B δ K :=
     (Finset.mem_filter.mp (Finset.min'_mem _ _)).1
   have hmaxlevel : s.max' hs ∈ vhGridLevels B δ K :=
@@ -1801,7 +1801,7 @@ private theorem activePattern_width_le_off_boundary
   have hs : s.Nonempty :=
     activeLevels_nonempty_of_not_exceptional P I f B δ K hδ hK hfB x hxN
   rw [vhPatternUpper_apply, vhPatternLower_apply]
-  rw [dif_pos hs, dif_pos hs]
+  rw [dite_eq_left hs, dite_eq_left hs]
   by_contra hnot
   have hwide : 2 * γ + 3 * δ < s.max' hs + δ - s.min' hs := lt_of_not_ge hnot
   have hsep : s.min' hs + δ + 2 * γ < s.max' hs := by linarith
@@ -1901,13 +1901,13 @@ private theorem activePattern_corrected_isEpsBracket
   have hlmeas : Measurable l := measurable_vhCorrectedLower N hNmeas I B patt
   have humeas : Measurable u := measurable_vhCorrectedUpper N hNmeas I B δ patt
   have hwidth_global (x : Ω) (hx : x ∉ N) : u x - l x ≤ C := by
-    simp only [l, u, vhCorrectedLower, vhCorrectedUpper, hx, if_false]
+    simp only [l, u, vhCorrectedLower, vhCorrectedUpper, hx, ite_false]
     exact activePattern_width_le_global P I f B δ K hδ hK hfB x
       (fun hxe ↦ hx (hexc hxe))
   have hlbound : ∀ x, |l x| ≤ B + C := by
     intro x
     by_cases hx : x ∈ N
-    · simp only [l, vhCorrectedLower, hx, if_true, abs_neg]
+    · simp only [l, vhCorrectedLower, hx, ite_true, abs_neg]
       rw [abs_of_nonneg hB]
       linarith
     · have ho := hout x hx
@@ -1923,7 +1923,7 @@ private theorem activePattern_corrected_isEpsBracket
   have hubound : ∀ x, |u x| ≤ B + C := by
     intro x
     by_cases hx : x ∈ N
-    · simp only [u, vhCorrectedUpper, hx, if_true]
+    · simp only [u, vhCorrectedUpper, hx, ite_true]
       rw [abs_of_nonneg hB]
       linarith
     · have ho := hout x hx
@@ -2092,10 +2092,10 @@ theorem finiteBracketing_of_gammaDimension
       change L (e.symm (e q)).1 x ≤ f x ∧ f x ≤ U (e.symm (e q)).1 x
       rw [heinv]
       by_cases hx : x ∈ N
-      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, if_true]
+      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, ite_true]
         exact ⟨(abs_le.mp (hbdd₀ f (hE₀sub hf) x)).1,
           (abs_le.mp (hbdd₀ f (hE₀sub hf) x)).2⟩
-      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, if_false]
+      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, ite_false]
         rw [hpatt]
         apply activePattern_contains_of_not_exceptional P I f B₀ δ K hδ hK
           (hbdd₀ f (hE₀sub hf)) x
@@ -2133,7 +2133,7 @@ theorem tailReal_small
     exact lt_of_le_of_lt (by exact_mod_cast hnm) hx
   have hs_inter : ⋂ n, s n = {x | V x = ⊤} := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro hx
       apply top_unique

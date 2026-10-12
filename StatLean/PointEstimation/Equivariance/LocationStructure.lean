@@ -91,7 +91,7 @@ private lemma eq_snoc_diffs_add (x : Fin (m + 1) → ℝ) :
 /-- Appending a zero last coordinate is a measurable map. -/
 private lemma measurable_snoc_zero :
     Measurable (fun y : Fin m → ℝ => (Fin.snoc y (0 : ℝ) : Fin (m + 1) → ℝ)) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro j
   induction j using Fin.lastCases with
   | last => simp only [Fin.snoc_last]; exact measurable_const
@@ -99,7 +99,7 @@ private lemma measurable_snoc_zero :
 
 /-- The difference statistic is measurable. -/
 theorem measurable_diffs : Measurable (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   exact (measurable_pi_apply i.castSucc).sub (measurable_pi_apply (Fin.last m))
 

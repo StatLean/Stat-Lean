@@ -436,7 +436,7 @@ theorem nuisanceRate_shell_tail
   have hsub := outerMeasureStar_mono μ hcover
   rw [show {ξ | (2 : ℝ) ^ J * (δn n + (dH (ηhat n ξ) η₀ : ℝ)) <
       |(dΘ n (θhat n ξ) θ₀ : ℝ)|} = A by
-    ext ξ; simp only [Set.mem_setOf_eq, A, abs_of_nonneg (NNReal.coe_nonneg _)]]
+    ext ξ; simp only [Set.mem_ofPred_eq, A, abs_of_nonneg (NNReal.coe_nonneg _)]]
   calc
     μ.outerMeasureStar A ≤ μ.outerMeasureStar (Sᶜ ∪ (B ∪ ⋃ k, Sh (J + k))) := hsub
     _ ≤ μ.outerMeasureStar Sᶜ + (μ.outerMeasureStar B +

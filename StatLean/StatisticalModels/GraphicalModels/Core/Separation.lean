@@ -167,7 +167,7 @@ theorem separates_iff_forall_path (S A B : Finset V) :
   refine ⟨fun h a ha b hb p => h a ha b hb (p : G.Walk a b), fun h a ha b hb w => ?_⟩
   -- a walk contains a path with the same endpoints and a smaller support
   obtain ⟨s, hsS, hsw⟩ := h a ha b hb ⟨w.bypass, w.bypass_isPath⟩
-  exact ⟨s, hsS, w.support_bypass_subset hsw⟩
+  exact ⟨s, hsS, w.support_bypass_subset_support hsw⟩
 
 /-- **Bridge to Mathlib's vertex deletion.** `S` separates `A` from `B` exactly when no
 vertex of `A` is reachable from a vertex of `B` in `G` with the vertices of `S` removed.

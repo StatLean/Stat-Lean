@@ -117,7 +117,7 @@ lemma separableSpace_gpH_of_entropyIntegral
         = ((gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t :
             ↥(gpH hF_env hF_meas)) : Lp ℝ 2 P) := by
       rw [Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed]
-    rw [hcoe, ← Submodule.coe_norm]
+    rw [hcoe, Submodule.norm_coe]
     -- `dist s t = distL2 P s t` under the pseudometric.
     change ‖gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t‖ ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ)
     exact norm_gpEmbed_sub_le hF_env hF_meas s t

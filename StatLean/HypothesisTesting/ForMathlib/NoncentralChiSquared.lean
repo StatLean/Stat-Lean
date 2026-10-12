@@ -113,7 +113,7 @@ private lemma multivariateGaussian_one_eq_map_add {k : ℕ}
     multivariateGaussian v 1
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- The mean vector vanishes when the noncentrality parameter is `0`. -/
 @[simp] private lemma noncentralMean_zero {k : ℕ} : noncentralMean k (0 : ℝ≥0) = 0 := by
@@ -130,7 +130,7 @@ private lemma noncentralMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
         (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
       intro i
       by_cases hi : i = 0
-      · simp only [noncentralMean, hi, Fin.val_zero, if_pos, if_true]
+      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left, ite_true]
         rw [Real.sq_sqrt l.coe_nonneg]
       · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
         simp [noncentralMean, hi, hi']
@@ -323,7 +323,7 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
     by_cases ht : (0 : ℝ) ≤ t
     · have hset : C = Metric.closedBall (0 : E) (Real.sqrt t) := by
         ext z
-        simp only [hC, Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        simp only [hC, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
         constructor
         · intro h
           rw [← Real.sqrt_sq (norm_nonneg z)]
@@ -336,7 +336,7 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
     · have ht' : t < 0 := not_le.mp ht
       have hset : C = (∅ : Set E) := by
         ext z
-        simp only [hC, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        simp only [hC, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
         exact lt_of_lt_of_le ht' (sq_nonneg _)
       rw [hset]; exact convex_empty
   have hCsymm : ∀ z ∈ C, -z ∈ C := by
@@ -353,7 +353,7 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
       (noncentralMean k l)
     rwa [show {x : E | x + noncentralMean k l ∈ C}
         = {x : E | noncentralMean k l + x ∈ C} from by
-      ext x; simp only [Set.mem_setOf_eq]; rw [add_comm]] at hand
+      ext x; simp only [Set.mem_ofPred_eq]; rw [add_comm]] at hand
   have hCeq : {x : E | (0 : E) + x ∈ C} = {x : E | ‖(0 : E) + x‖ ^ 2 ≤ t} := rfl
   have hBeq : {x : E | noncentralMean k l + x ∈ C}
       = {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := rfl
@@ -506,7 +506,7 @@ private lemma pi_gaussian_shift_antitone {C : Set (ι → ℝ)} (hC : Measurable
   · -- reflection symmetry: `{x | x − y ∈ C} = (fun x => −x) ⁻¹' {x | x + y ∈ C}`
     have hpre : {x : ι → ℝ | x + -y ∈ C} = (fun x : ι → ℝ => -x) ⁻¹' {x | x + y ∈ C} := by
       ext x
-      simp only [Set.mem_setOf_eq, Set.mem_preimage]
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage]
       constructor
       · intro hx
         have := hCsymm _ hx
@@ -562,7 +562,7 @@ private lemma normSq_le_isConvexSymm {ι : Type*} [Fintype ι] (t : ℝ) :
   · have hset : {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t}
         = Metric.closedBall (0 : EuclideanSpace ℝ ι) (Real.sqrt t) := by
       ext z
-      simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+      simp only [Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
       constructor
       · intro h
         rw [← Real.sqrt_sq (norm_nonneg z)]
@@ -574,7 +574,7 @@ private lemma normSq_le_isConvexSymm {ι : Type*} [Fintype ι] (t : ℝ) :
     rw [hset]; exact convex_closedBall _ _
   · have hset : {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t} = (∅ : Set (EuclideanSpace ℝ ι)) := by
       ext z
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       exact lt_of_lt_of_le (not_le.mp ht) (sq_nonneg _)
     rw [hset]; exact convex_empty
 
@@ -612,7 +612,7 @@ private lemma stdGaussian_normSq_le_antitone {k : ℕ} (t : ℝ) {l₁ l₂ : �
     have hcomm : ∀ l : ℝ≥0,
         {x : EuclideanSpace ℝ (Fin k) | x + noncentralMean k l ∈ {z | ‖z‖ ^ 2 ≤ t}}
           = {x : EuclideanSpace ℝ (Fin k) | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := by
-      intro l; ext x; simp only [Set.mem_setOf_eq]; rw [add_comm]
+      intro l; ext x; simp only [Set.mem_ofPred_eq]; rw [add_comm]
     rwa [hcomm l₂, hcomm l₁] at hkey
 
 /-- **The upper tail increases with the noncentrality parameter.** The noncentral
@@ -670,7 +670,7 @@ private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [Measur
     have h4 : MemLp (fun x : ℝ => x) 4 (gaussianReal 0 1) :=
       memLp_id_gaussianReal' (4 : ℝ≥0∞) (by simp)
     have hx2 : MemLp (fun x : ℝ => x ^ 2) 2 (gaussianReal 0 1) := by
-      have hmul : MemLp (fun x : ℝ => x * x) 2 (gaussianReal 0 1) := h4.mul' h4
+      have hmul : MemLp (fun x : ℝ => x * x) 2 (gaussianReal 0 1) := h4.fun_mul h4
       simpa [pow_two] using hmul
     have hg : MemLp (fun x : ℝ => x ^ 2 - 1) 2 (gaussianReal 0 1) :=
       hx2.sub (memLp_const (1 : ℝ))
@@ -893,7 +893,7 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
       rw [← hz]; exact hstrict z (z + ε) (by linarith)
     filter_upwards [(hconv (z + ε)).eventually_lt_const hlt] with n hn
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have := measure_mono (μ := μ' n) (Set.Ioi_subset_Ioi hcon)
     rw [hquant n] at this
     exact absurd (this.trans_lt hn) (lt_irrefl _)
@@ -902,7 +902,7 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
       rw [← hz]; exact hstrict (z - ε) z (by linarith)
     filter_upwards [(hconv (z - ε)).eventually_const_lt hgt] with n hn
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have := measure_mono (μ := μ' n) (Set.Ioi_subset_Ioi hcon)
     rw [hquant n] at this
     exact absurd (hn.trans_le this) (lt_irrefl _)
@@ -1025,7 +1025,7 @@ theorem weakConverges_noncentralChiSquared_standardized {l : ℕ → ℝ≥0} {c
         = 2 * Real.sqrt ((l (n + 1) : ℝ)) * Z 0 ω + (l (n + 1) : ℝ) := by
       rw [← Finset.sum_sub_distrib, Finset.sum_eq_single (0 : Fin (n + 1))]
       · have h0 : ((0 : Fin (n + 1)) : ℕ) = 0 := rfl
-        simp only [h0, if_pos]
+        simp only [h0, ite_eq_left]
         have hsq : (Real.sqrt ((l (n + 1) : ℝ))) ^ 2 = (l (n + 1) : ℝ) :=
           Real.sq_sqrt (l (n + 1)).coe_nonneg
         nlinarith [hsq]

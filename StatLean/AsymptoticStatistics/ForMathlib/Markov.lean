@@ -67,10 +67,10 @@ lemma setIntegral_union_le_add_of_nonneg
     (hf_A : IntegrableOn f A μ) (hf_B : IntegrableOn f B μ) :
     ∫ x in A ∪ B, f x ∂μ ≤ ∫ x in A, f x ∂μ + ∫ x in B, f x ∂μ := by
   have hBdiffA_meas : MeasurableSet (B \ A) := hB_meas.diff hA_meas
-  have hBdiffA_sub : B \ A ⊆ B := Set.diff_subset
+  have hBdiffA_sub : B \ A ⊆ B := Set.sdiff_subset
   have h_union_eq : A ∪ B = A ∪ (B \ A) := by
     ext x
-    simp only [Set.mem_union, Set.mem_diff]
+    simp only [Set.mem_union, Set.mem_sdiff]
     tauto
   have h_disj : Disjoint A (B \ A) := by
     rw [Set.disjoint_left]

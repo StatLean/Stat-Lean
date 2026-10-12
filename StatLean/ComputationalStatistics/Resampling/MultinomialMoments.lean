@@ -150,7 +150,7 @@ theorem variance_categoricalCount
         = q j - q j * q j := by
     intro i
     rw [Finset.sum_eq_single i (fun b _ hb => cov_coord_ne hq0 hq1 (Ne.symm hb) j j)
-      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j j, if_pos rfl]
+      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j j, ite_eq_left rfl]
   rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]
   ring
@@ -179,7 +179,7 @@ theorem covariance_categoricalCount
         = -(q j * q k) := by
     intro i
     rw [Finset.sum_eq_single i (fun b _ hb => cov_coord_ne hq0 hq1 (Ne.symm hb) j k)
-      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j k, if_neg hjk,
+      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j k, ite_eq_right hjk,
       zero_sub]
   rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]

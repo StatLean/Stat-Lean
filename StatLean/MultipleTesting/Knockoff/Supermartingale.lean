@@ -334,8 +334,8 @@ private lemma measurable_cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)
   · exact measurable_pi_iff.mpr fun j => (hWmeas j).abs
   · refine measurable_pi_iff.mpr fun j => ?_
     by_cases hj : j ∈ H₀
-    · simp only [hj, if_true]; exact measurable_const
-    · simp only [hj, if_false]
+    · simp only [hj, ite_true]; exact measurable_const
+    · simp only [hj, ite_false]
       exact Measurable.ite (measurableSet_le measurable_const (hWmeas j))
         measurable_const measurable_const
   · by_cases h : n < d
@@ -364,10 +364,10 @@ lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
   have hg : Measurable (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
       if n < d then x.2.2.1 / (1 + x.2.2.2) else 0) := by
     by_cases h : n < d
-    · simp only [h, if_true]
+    · simp only [h, ite_true]
       exact (measurable_fst.comp (measurable_snd.comp measurable_snd)).div
         (measurable_const.add (measurable_snd.comp (measurable_snd.comp measurable_snd)))
-    · simp only [h, if_false]; exact measurable_const
+    · simp only [h, ite_false]; exact measurable_const
   have heq : Yproc W H₀ n = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
       if n < d then x.2.2.1 / (1 + x.2.2.2) else 0) ∘ (cproc W H₀ n) := by
     funext ω
@@ -605,7 +605,7 @@ private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
       rw [hVp']; unfold Vplus; rw [Finset.card_erase_of_mem hmemP]
     have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
       rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
-    unfold Yproc; rw [dif_pos h1, hA', hB', Nat.cast_sub hA1]; push_cast; ring
+    unfold Yproc; rw [dite_eq_left h1, hA', hB', Nat.cast_sub hA1]; push_cast; ring
   · by_cases hM : cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0
     · -- negative null: A' = A, B' = B - 1
       have hmemM : cIdx W n h ω ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := hmemSm.mpr hM
@@ -617,7 +617,7 @@ private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
       have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
         rw [hVm']; unfold Vminus; rw [Finset.card_erase_of_mem hmemM]
-      unfold Yproc; rw [dif_pos h1, hA', hB', Nat.cast_sub hB1]; push_cast; ring
+      unfold Yproc; rw [dite_eq_left h1, hA', hB', Nat.cast_sub hB1]; push_cast; ring
     · -- cn ∉ H₀ or W cn = 0: counts unchanged
       have hnotSp : cIdx W n h ω ∉ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSp]; exact hP
       have hnotSm : cIdx W n h ω ∉ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSm]; exact hM
@@ -625,7 +625,7 @@ private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
       have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
         rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
-      unfold Yproc; rw [dif_pos h1, hA', hB']; ring
+      unfold Yproc; rw [dite_eq_left h1, hA', hB']; ring
 
 /-! ### Helpers for the exchangeable disintegration (`count_condExp`) -/
 
@@ -651,7 +651,7 @@ private lemma measurable_orderStat_eval (n : ℕ) (h : n < d) :
   have hset : (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) ⁻¹' Set.Iic a
       = {m | n < ((Finset.univ : Finset (Fin d)).filter (fun k => m k ≤ a)).card} := by
     ext m
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
     exact orderStat_le_iff_card_lt m ⟨n, h⟩ a
   rw [hset]
   apply measurableSet_lt measurable_const
@@ -676,8 +676,8 @@ private lemma aesm_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
   filter_upwards [hmag] with ω hω
   have hiff := cIdx_eq_iff W n h ω hω j
   by_cases hc : cIdx W n h ω = j
-  · rw [if_pos hc, if_pos (hiff.mp hc)]
-  · rw [if_neg hc, if_neg (fun hh => hc (hiff.mpr hh))]
+  · rw [ite_eq_left hc, ite_eq_left (hiff.mp hc)]
+  · rw [ite_eq_right hc, ite_eq_right (fun hh => hc (hiff.mpr hh))]
 
 /-- `𝒢rev n`-a.e.-strong-measurability of `𝟙(cIdx = j)`: the proxy `𝟙(θ_n = |W j|)` factors through
 the magnitude component of `cproc n`, hence is `𝒢rev n`-measurable. -/
@@ -699,8 +699,8 @@ private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
   have hiff := cIdx_eq_iff W n h ω hω j
   simp only [Function.comp_apply, cproc]
   by_cases hc : cIdx W n h ω = j
-  · erw [if_pos hc, if_pos]; exact hiff.mp hc
-  · erw [if_neg hc, if_neg]; exact fun hh => hc (hiff.mpr hh)
+  · erw [ite_eq_left hc, ite_eq_left]; exact hiff.mp hc
+  · erw [ite_eq_right hc, ite_eq_right]; exact fun hh => hc (hiff.mpr hh)
 
 /-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
 `sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
@@ -716,16 +716,16 @@ private lemma null_ne_zero (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (measurableSet_singleton 1) (measurableSet_singleton 0)
   have hpre1 : (fun ω => sgnReal W j ω) ⁻¹' {1} = {ω | 0 ≤ W j ω} := by
     ext ω
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq]
     constructor
-    · intro hs; by_contra hh; rw [sgnReal, if_neg hh] at hs; norm_num at hs
-    · intro hh; rw [sgnReal, if_pos hh]
+    · intro hs; by_contra hh; rw [sgnReal, ite_eq_right hh] at hs; norm_num at hs
+    · intro hh; rw [sgnReal, ite_eq_left hh]
   have hpre0 : (fun ω => |W j ω|) ⁻¹' {0} = {ω | W j ω = 0} := by
-    ext ω; simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_setOf_eq, abs_eq_zero]
+    ext ω; simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq, abs_eq_zero]
   have hinter : (fun ω => sgnReal W j ω) ⁻¹' {1} ∩ (fun ω => |W j ω|) ⁻¹' {0}
       = {ω | W j ω = 0} := by
     rw [hpre1, hpre0]; ext ω
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
     exact ⟨fun hpair => hpair.2, fun h0 => ⟨le_of_eq h0.symm, h0⟩⟩
   rw [hinter, hpre1, hpre0, hW.signs_fair j hj] at hkey
   have hfin : μ {ω | W j ω = 0} ≠ ⊤ := measure_ne_top μ _
@@ -764,11 +764,11 @@ private lemma dPlus_eq_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
       unfold Vplus; exact Finset.card_pos.mpr ⟨_, hmemP⟩
     have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
       rw [hVp']; unfold Vplus; rw [Finset.card_erase_of_mem hmemP]
-    rw [if_pos hP, hA', Nat.cast_sub hA1]; push_cast; ring
+    rw [ite_eq_left hP, hA', Nat.cast_sub hA1]; push_cast; ring
   · have hnotSp : cIdx W n h ω ∉ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSp]; exact hP
     have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
       rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
-    rw [if_neg hP, hA']; ring
+    rw [ite_eq_right hP, hA']; ring
 
 omit mΩ in
 /-- **Negative increment is a sign indicator.** The `V₋` mirror of `dPlus_eq_indicator`. -/
@@ -792,11 +792,11 @@ private lemma dMinus_eq_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
       unfold Vminus; exact Finset.card_pos.mpr ⟨_, hmemM⟩
     have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
       rw [hVm']; unfold Vminus; rw [Finset.card_erase_of_mem hmemM]
-    rw [if_pos hM, hB', Nat.cast_sub hB1]; push_cast; ring
+    rw [ite_eq_left hM, hB', Nat.cast_sub hB1]; push_cast; ring
   · have hnotSm : cIdx W n h ω ∉ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSm]; exact hM
     have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
       rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
-    rw [if_neg hM, hB']; ring
+    rw [ite_eq_right hM, hB']; ring
 
 /-- Integrability of the `{0,1}`-bounded selector products used in the disintegration. -/
 private lemma integrable_sel_mul (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
@@ -920,10 +920,10 @@ private lemma measurableSet'_mem_aboveNulls (W : Fin d → Ω → ℝ) (H₀ : F
     MeasurableSet[𝒢rev W H₀ hWmeas n] {ω | l ∈ aboveNulls W H₀ n h ω} := by
   by_cases hl : l ∈ H₀
   · have hset : {ω | l ∈ aboveNulls W H₀ n h ω} = {ω | θ W ⟨n, h⟩ ω ≤ |W l ω|} := by
-      ext ω; rw [Set.mem_setOf_eq, mem_aboveNulls]; simp [hl]
+      ext ω; rw [Set.mem_ofPred_eq, mem_aboveNulls]; simp [hl]
     rw [hset]; exact measurableSet'_theta_le W H₀ hWmeas n h l
   · have hset : {ω | l ∈ aboveNulls W H₀ n h ω} = (∅ : Set Ω) := by
-      ext ω; rw [Set.mem_setOf_eq, mem_aboveNulls]; simp [hl]
+      ext ω; rw [Set.mem_ofPred_eq, mem_aboveNulls]; simp [hl]
     rw [hset]; exact @MeasurableSet.empty Ω (𝒢rev W H₀ hWmeas n)
 
 private lemma measurableSet'_aboveNulls_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
@@ -932,7 +932,7 @@ private lemma measurableSet'_aboveNulls_eq (W : Fin d → Ω → ℝ) (H₀ : Fi
   have hset : {ω | aboveNulls W H₀ n h ω = T}
       = ⋂ l, {ω | (l ∈ aboveNulls W H₀ n h ω) ↔ (l ∈ T)} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter, Finset.ext_iff]
   rw [hset]
   apply MeasurableSet.iInter
   intro l
@@ -943,7 +943,7 @@ private lemma measurableSet'_aboveNulls_eq (W : Fin d → Ω → ℝ) (H₀ : Fi
     rw [this]; exact measurableSet'_mem_aboveNulls W H₀ hWmeas n h l
   · have : {ω | (l ∈ aboveNulls W H₀ n h ω) ↔ (l ∈ T)}
         = {ω | l ∈ aboveNulls W H₀ n h ω}ᶜ := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, hlT, iff_false]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, hlT, iff_false]
     rw [this]; exact (measurableSet'_mem_aboveNulls W H₀ hWmeas n h l).compl
 
 /-! ### Null-sign Bool vector and outer data (for the exchangeable swap) -/
@@ -971,7 +971,7 @@ private lemma nsign_eq_comp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
   unfold nsign sgnReal
   by_cases h : 0 ≤ W (m : Fin d) ω
   · simp [h]
-  · simp only [h, if_false]; norm_num
+  · simp only [h, ite_false]; norm_num
 
 /-- The outer data the count filtration conditions on: magnitudes together with non-null signs
 (padded `0` on the nulls). This is exactly `(cproc · ).1` × `(cproc ·).2.1` and the right component
@@ -985,8 +985,8 @@ private lemma measurable_outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
   refine Measurable.prodMk (measurable_pi_iff.mpr fun i => (hWmeas i).abs)
     (measurable_pi_iff.mpr fun i => ?_)
   by_cases hi : i ∈ H₀
-  · simp only [hi, if_true]; exact measurable_const
-  · simp only [hi, if_false]
+  · simp only [hi, ite_true]; exact measurable_const
+  · simp only [hi, ite_false]
     exact Measurable.ite (measurableSet_le measurable_const (hWmeas i))
       measurable_const measurable_const
 
@@ -1006,7 +1006,7 @@ private lemma fair_nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (m : {x // x ∈ H₀}) : μ {ω | nsign W H₀ m ω = true} = 1 / 2 := by
   have hset : {ω | nsign W H₀ m ω = true} = {ω | 0 ≤ W (m : Fin d) ω} := by
-    ext ω; rw [Set.mem_setOf_eq, Set.mem_setOf_eq, nsign_true_iff]
+    ext ω; rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, nsign_true_iff]
   rw [hset]; exact hW.signs_fair (m : Fin d) m.2
 
 private lemma indep_nsign_outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
@@ -1150,8 +1150,8 @@ private lemma reconCproc_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (
   simp only [reconCproc]
   rw [cproc]
   refine Prod.ext rfl (Prod.ext rfl (Prod.ext ?_ ?_))
-  · simp only; rw [dif_pos hkd]; exact hVp
-  · simp only; rw [dif_pos hkd]; exact hVm
+  · simp only; rw [dite_eq_left hkd]; exact hVp
+  · simp only; rw [dite_eq_left hkd]; exact hVm
 
 /-- A subcount over a `swap i₀ j₀`-stable finset is invariant under precomposing the sample by
 `swap i₀ j₀` (relabelling two present coordinates leaves the count unchanged). -/
@@ -1285,7 +1285,7 @@ private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Fins
       intro ω hωF
       have hlm := hFl hωF
       have hjm := hFj hωF
-      rw [Set.mem_setOf_eq, mem_aboveNulls] at hlm hjm
+      rw [Set.mem_ofPred_eq, mem_aboveNulls] at hlm hjm
       exact ⟨hlm.2, hjm.2⟩
     have hFeq : F ∩ M ⁻¹' {p | orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l
         ∧ orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 j} = F := Set.inter_eq_left.mpr hFC0
@@ -1331,7 +1331,7 @@ private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
       exact ⟨fun hlt => le_of_lt hlt, fun hle => lt_of_le_of_ne hle (Ne.symm hω)⟩
     calc μ (F ∩ {ω | 0 < W c ω})
         = μ (F ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
-          measure_congr (Filter.EventuallyEq.inter (Filter.EventuallyEq.refl _ F) h0)
+          measure_congr (Filter.EventuallyEqSet.inter (Filter.EventuallyEq.refl _ F) h0)
       _ = μ ((fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C
             ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
           measure_congr (hFC.inter (Filter.EventuallyEq.refl _ _))
@@ -1347,7 +1347,7 @@ private lemma setIntegral_ite_mul_ite (μ : Measure Ω) (s : Set Ω) (P Q : Ω �
       = ({ω | P ω} ∩ {ω | Q ω}).indicator (fun _ => (1 : ℝ)) := by
     funext ω; rw [Set.indicator_apply]
     by_cases hP' : P ω <;> by_cases hQ' : Q ω <;>
-      simp [hP', hQ', Set.mem_inter_iff, Set.mem_setOf_eq]
+      simp [hP', hQ', Set.mem_inter_iff, Set.mem_ofPred_eq]
   rw [hrw, setIntegral_indicator (hP.inter hQ), setIntegral_const, smul_eq_mul, mul_one,
     ← Set.inter_assoc]
   rfl
@@ -1427,7 +1427,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
       (measurable_fst.comp (measurable_snd.comp measurable_snd)).comp hcproc.measurable
     have h2 : (fun ω => (cproc W H₀ n ω).2.2.1)
         = (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
-      funext ω; dsimp only [cproc]; rw [dif_pos h]
+      funext ω; dsimp only [cproc]; rw [dite_eq_left h]
     rwa [h2] at h1
   have hBm : Measurable[𝒢rev W H₀ hW.meas n]
       (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
@@ -1435,7 +1435,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
       (measurable_snd.comp (measurable_snd.comp measurable_snd)).comp hcproc.measurable
     have h2 : (fun ω => (cproc W H₀ n ω).2.2.2)
         = (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
-      funext ω; dsimp only [cproc]; rw [dif_pos h]
+      funext ω; dsimp only [cproc]; rw [dite_eq_left h]
     rwa [h2] at h1
   have hg_aesm' : AEStronglyMeasurable[𝒢rev W H₀ hW.meas n] g μ := by
     rw [hgdef]
@@ -1484,10 +1484,10 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
       calc (∑ T ∈ H₀.powerset, ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω)
           = ∑ T ∈ H₀.powerset, (if aboveNulls W H₀ n h ω = T then φ ω else 0) := by
             apply Finset.sum_congr rfl; intro T _
-            simp only [Set.indicator_apply, Set.mem_setOf_eq]
+            simp only [Set.indicator_apply, Set.mem_ofPred_eq]
         _ = φ ω := by
             rw [Finset.sum_ite_eq H₀.powerset (aboveNulls W H₀ n h ω) (fun _ => φ ω)]
-            exact if_pos (Finset.mem_powerset.mpr (aboveNulls_subset W H₀ n h ω))
+            exact ite_eq_left (Finset.mem_powerset.mpr (aboveNulls_subset W H₀ n h ω))
     calc ∫ ω in s, φ ω ∂μ
         = ∫ ω in s, ∑ T ∈ H₀.powerset,
             ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω ∂μ :=
@@ -1518,12 +1518,12 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
         ⊆ {ω | j ∈ aboveNulls W H₀ n h ω} := by
       intro ω hωF
       have hAT : aboveNulls W H₀ n h ω = T := hωF.1.2
-      rw [Set.mem_setOf_eq, hAT]; exact hjT
+      rw [Set.mem_ofPred_eq, hAT]; exact hjT
     have hFl : ∀ l ∈ T, ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|})
         ⊆ {ω | l ∈ aboveNulls W H₀ n h ω} := by
       intro l hl ω hωF
       have hAT : aboveNulls W H₀ n h ω = T := hωF.1.2
-      rw [Set.mem_setOf_eq, hAT]; exact hl
+      rw [Set.mem_ofPred_eq, hAT]; exact hl
     -- f-side: `∫ = μ(F ∩ {0 < W j})`
     have hfside : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, f ω ∂μ
         = (μ ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}
@@ -1536,8 +1536,8 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
         filter_upwards [hmag] with ω hω _
         rw [hfdef]; dsimp only; congr 1
         by_cases hc : cIdx W n h ω = j
-        · rw [if_pos hc, if_pos ((cIdx_eq_iff W n h ω hω j).mp hc)]
-        · rw [if_neg hc, if_neg (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
+        · rw [ite_eq_left hc, ite_eq_left ((cIdx_eq_iff W n h ω hω j).mp hc)]
+        · rw [ite_eq_right hc, ite_eq_right (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
       rw [hfeq, setIntegral_ite_mul_ite μ _ _ _ hcevamb
         (measurableSet_lt measurable_const (hW.meas j))]
     -- g-side: `∫ = (∑_{l∈T} μ(F ∩ {0 < W l}))/|T|`
@@ -1555,8 +1555,8 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
         have hcidxeq : (if cIdx W n h ω = j then (1 : ℝ) else 0)
             = (if θ W ⟨n, h⟩ ω = |W j ω| then (1 : ℝ) else 0) := by
           by_cases hc : cIdx W n h ω = j
-          · rw [if_pos hc, if_pos ((cIdx_eq_iff W n h ω hω j).mp hc)]
-          · rw [if_neg hc, if_neg (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
+          · rw [ite_eq_left hc, ite_eq_left ((cIdx_eq_iff W n h ω hω j).mp hc)]
+          · rw [ite_eq_right hc, ite_eq_right (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
         have hVp : (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
             = ((T.filter (fun l => 0 < W l ω)).card : ℝ) := by
           rw [Vplus_eq_aboveNulls_filter, hAT]
@@ -1594,7 +1594,7 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
         ω ∈ s ∩ {ω | aboveNulls W H₀ n h ω = T} → (if cIdx W n h ω = j then (1 : ℝ) else 0) = 0 := by
       filter_upwards [hmag] with ω hω hωsT
       have hAT : aboveNulls W H₀ n h ω = T := hωsT.2
-      rw [if_neg]; intro hc
+      rw [ite_eq_right]; intro hc
       have he : θ W ⟨n, h⟩ ω = |W j ω| := (cIdx_eq_iff W n h ω hω j).mp hc
       have hjmem : j ∈ aboveNulls W H₀ n h ω :=
         (mem_aboveNulls W H₀ n h ω j).mpr ⟨hj, le_of_eq he⟩
@@ -1679,10 +1679,10 @@ private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
           have : 1 ≤ Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := Finset.card_pos.mpr ⟨j, hmemP⟩
           exact_mod_cast this
         have := (Nat.cast_nonneg (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0:ℝ) ≤ _); linarith
-    simp only [if_pos hc, one_mul]
+    simp only [ite_eq_left hc, one_mul]
     rw [sub_eq_iff_eq_add, ← add_div, eq_div_iff hAB.ne', one_mul]
     ring
-  · rw [if_neg hc]; ring
+  · rw [ite_eq_right hc]; ring
 
 /-- **Exchangeable conditional expectation of the positive-null removal** (`count_condExp`, the
 crux, Lu-BDA §21.3). The increment `ΔV₊ = V₊(θ_n) − V₊(θ_{n+1})` is the indicator that the rank-`n`
@@ -1841,7 +1841,7 @@ lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
       have he : (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
           = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ => x.2.2.1) ∘ (cproc W H₀ n) := by
-        funext ω; simp only [Function.comp_apply, cproc]; rw [dif_pos h]
+        funext ω; simp only [Function.comp_apply, cproc]; rw [dite_eq_left h]
       rw [he]
       exact ((measurable_fst.comp (measurable_snd.comp measurable_snd)).comp
         hcproc.measurable).stronglyMeasurable
@@ -1849,7 +1849,7 @@ lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
       have he : (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
           = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ => x.2.2.2) ∘ (cproc W H₀ n) := by
-        funext ω; simp only [Function.comp_apply, cproc]; rw [dif_pos h]
+        funext ω; simp only [Function.comp_apply, cproc]; rw [dite_eq_left h]
       rw [he]
       exact ((measurable_snd.comp (measurable_snd.comp measurable_snd)).comp
         hcproc.measurable).stronglyMeasurable
@@ -1973,15 +1973,15 @@ lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     refine hce.trans_le ?_
     filter_upwards [hmag] with ω hω
     rw [show Yproc W H₀ n ω = (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
-        / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) from by simp only [Yproc]; rw [dif_pos h]]
+        / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) from by simp only [Yproc]; rw [dite_eq_left h]]
     by_cases hcase : cIdx W n h ω ∈ H₀
-    · simp only [hcZero, hcP, hcM, hgP, hgM, if_pos hcase, one_mul]
+    · simp only [hcZero, hcP, hcM, hgP, hgM, ite_eq_left hcase, one_mul]
       exact step_ratio_le'' (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω) (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω)
-    · simp only [hcZero, hgP, hgM, if_neg hcase, zero_mul, mul_zero, add_zero, le_refl]
+    · simp only [hcZero, hgP, hgM, ite_eq_right hcase, zero_mul, mul_zero, add_zero, le_refl]
   · -- Boundary: `n+1 ≥ d`, so `Yproc (n+1) = 0` and `μ[0|𝒢rev n] = 0 ≤ Yproc n`.
     have hz : μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] = (0 : Ω → ℝ) := by
       have h0 : Yproc W H₀ (n + 1) = (0 : Ω → ℝ) := by
-        funext ω; simp only [Yproc, Pi.zero_apply]; rw [dif_neg h1]
+        funext ω; simp only [Yproc, Pi.zero_apply]; rw [dite_eq_right h1]
       rw [h0, condExp_zero]
     rw [hz]
     exact ae_of_all _ fun ω => Yproc_nonneg W H₀ n ω
@@ -2085,7 +2085,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
   have hGmeas : Measurable G := by
     simp only [G]
     by_cases h : n < d
-    · simp only [h, if_true]
+    · simp only [h, ite_true]
       apply Measurable.div
       · apply Measurable.add
         · apply Measurable.add (measurable_snd.comp (measurable_snd.comp measurable_snd))
@@ -2100,14 +2100,14 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
             (measurable_fst.comp measurable_snd)) measurable_const).inter
             (measurableSet_eq_fun ((measurable_pi_apply j).comp measurable_fst)
               measurable_const).compl)
-    · simp only [h, if_false]; exact measurable_const
+    · simp only [h, ite_false]; exact measurable_const
   -- The process value equals `G (cproc n)`.
   have hval : (fun ω => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
       = G ∘ cproc W H₀ n := by
     funext ω
     simp only [Function.comp_apply, G, cproc]
     by_cases h : n < d
-    · simp only [h, ↓reduceDIte, if_true]
+    · simp only [h, ↓reduceDIte, ite_true]
       have hrankθ : ∀ j, θ W ⟨n, h⟩ ω ≤ |W j ω| ↔ n < rank (fun j => |W j ω|) j := by
         intro j; exact orderStat_le_iff_card_lt _ ⟨n, h⟩ _
       have hpos : ∀ j ∈ H₀ᶜ, (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
@@ -2115,12 +2115,13 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
             (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = 1 ∧ |W j ω| ≠ 0) := by
         intro j hj
         rw [Finset.mem_compl] at hj
-        rw [hrankθ j, if_neg hj]
+        rw [hrankθ j, ite_eq_right hj]
         refine and_congr_right (fun _ => ?_)
         constructor
-        · intro hp; exact ⟨if_pos hp.le, by positivity⟩
+        · intro hp; exact ⟨ite_eq_left hp.le, by positivity⟩
         · rintro ⟨hs, hne⟩
-          have h0 : 0 ≤ W j ω := by by_contra hc; rw [sgnReal, if_neg hc] at hs; norm_num at hs
+          have h0 : 0 ≤ W j ω := by
+            by_contra hc; rw [sgnReal, ite_eq_right hc] at hs; norm_num at hs
           rcases lt_or_eq_of_le h0 with hlt | heq
           · exact hlt
           · exact absurd (by rw [← heq]; simp) hne
@@ -2128,16 +2129,16 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
           (n < rank (fun j => |W j ω|) j ∧ (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = -1) := by
         intro j hj
         rw [Finset.mem_compl] at hj
-        rw [hrankθ j, if_neg hj, sgnReal]
+        rw [hrankθ j, ite_eq_right hj, sgnReal]
         refine and_congr_right (fun _ => ?_)
         constructor
-        · intro hlt; rw [if_neg (not_le.mpr hlt)]
-        · intro hs; by_contra hc; rw [if_pos (not_lt.mp hc)] at hs; norm_num at hs
+        · intro hlt; rw [ite_eq_right (not_le.mpr hlt)]
+        · intro hs; by_contra hc; rw [ite_eq_left (not_lt.mp hc)] at hs; norm_num at hs
       rw [FDPhat, Splus_card_decomp W H₀ _ ω, Sminus_card_decomp W H₀ _ ω,
         Finset.filter_congr hpos, Finset.filter_congr hneg]
       push_cast
       ring
-    · simp only [h, ↓reduceDIte, if_false]
+    · simp only [h, ↓reduceDIte, ite_false]
   have hsm := hGmeas.comp hc.measurable
   rw [← hval] at hsm
   exact hsm
@@ -2209,8 +2210,8 @@ private lemma ratio_eq_Yproc_hittingIdx
     rw [hcands]; rfl
   -- `P` evaluated on the two branches of its dependent `if`.
   have hPval : ∀ (n : ℕ) (h : n < d), P n ω = FDPhat W (θ W ⟨n, h⟩ ω) ω := fun n h => by
-    simp only [hP_def]; exact dif_pos h
-  have hPd : P d ω = α - 1 := by simp only [hP_def]; exact dif_neg (lt_irrefl d)
+    simp only [hP_def]; exact dite_eq_left h
+  have hPd : P d ω = α - 1 := by simp only [hP_def]; exact dite_eq_right (lt_irrefl d)
   -- There is always a hit (at `n = d`, where `P d ω = α - 1 ≤ α`); hence `k ≤ d` and `P k ω ≤ α`.
   have hExists : ∃ j ∈ Set.Icc (0 : ℕ) d, P j ω ∈ Set.Iic α := by
     refine ⟨d, Set.mem_Icc.mpr ⟨Nat.zero_le d, le_refl d⟩, ?_⟩
@@ -2246,10 +2247,10 @@ private lemma ratio_eq_Yproc_hittingIdx
     have h2 : θ W ⟨k, hk_lt⟩ ω ≤ cands.min' hne := by
       rw [← hθm₁']; exact orderStat_monotone (fun i => |W i ω|) hfin_le
     have key : cands.min' hne = θ W ⟨k, hk_lt⟩ ω := le_antisymm h1 h2
-    rw [htStar_eq, dif_pos hne, key]
+    rw [htStar_eq, dite_eq_left hne, key]
     have hRHS : Yproc W H₀ k ω =
         (Vplus W H₀ (θ W ⟨k, hk_lt⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨k, hk_lt⟩ ω) ω : ℝ)) := by
-      unfold Yproc; rw [dif_pos hk_lt]
+      unfold Yproc; rw [dite_eq_left hk_lt]
     rw [hRHS]
   · -- Degenerate: no candidate, `tStar = 1 + ∑|W|` exceeds every magnitude, `k = d`, both sides 0.
     have hk_eq_d : k = d := by
@@ -2280,7 +2281,7 @@ private lemma ratio_eq_Yproc_hittingIdx
     have hVminus0 : Vminus W H₀ (1 + ∑ j, |W j ω|) ω = 0 := by
       unfold Vminus; rw [hSminus_empty, Finset.empty_inter, Finset.card_empty]
     have hYd : Yproc W H₀ d ω = 0 := by simp [Yproc]
-    rw [htStar_eq, dif_neg hne, hk_eq_d, hYd, hVplus0, hVminus0]
+    rw [htStar_eq, dite_eq_right hne, hk_eq_d, hYd, hVplus0, hVminus0]
     norm_num
 
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio

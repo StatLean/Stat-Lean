@@ -99,7 +99,7 @@ private theorem sum_multinomial_update (v : Fin m → ℕ) (N : ℕ) (hv : ∑ j
     intro j _
     by_cases hj : v j = 0
     · simp [hj]
-    rw [if_neg hj]
+    rw [ite_eq_right hj]
     -- the sum of the decremented vector is `N`
     have hsplit : ∑ i ∈ Finset.univ \ {j}, v i + ∑ i ∈ ({j} : Finset (Fin m)), v i
         = ∑ i, v i := Finset.sum_sdiff (Finset.subset_univ _)
@@ -161,11 +161,11 @@ private theorem card_counts_fiber_first (v : Fin m → ℕ) {j : Fin m} (hj : v 
     rw [hcount, hzero] at hk
     by_cases hkj : k = j
     · subst hkj
-      rw [if_pos rfl] at hk
+      rw [ite_eq_left rfl] at hk
       rw [Function.update_self]
       omega
     · rw [Function.update_of_ne hkj]
-      rw [if_neg (fun h => hkj h.symm)] at hk
+      rw [ite_eq_right (fun h => hkj h.symm)] at hk
       omega
   · intro b hb
     simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_univ, true_and] at hb
@@ -177,9 +177,9 @@ private theorem card_counts_fiber_first (v : Fin m → ℕ) {j : Fin m} (hj : v 
     rw [hk, hb]
     by_cases hkj : k = j
     · subst hkj
-      rw [Function.update_self, if_pos rfl]
+      rw [Function.update_self, ite_eq_left rfl]
       omega
-    · rw [Function.update_of_ne hkj, if_neg (fun h => hkj h.symm)]
+    · rw [Function.update_of_ne hkj, ite_eq_right (fun h => hkj h.symm)]
       omega
   · intro a ha
     simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_univ, true_and] at ha
@@ -215,14 +215,14 @@ private theorem card_counts_fiber :
             else Nat.multinomial Finset.univ (Function.update v j (v j - 1)) := by
       intro j _
       by_cases hj : v j = 0
-      · rw [if_pos hj, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+      · rw [ite_eq_left hj, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
         intro a ha
         simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
         intro hzero
         have hk := categoricalCounts_succ a j
-        rw [ha, hzero, if_pos rfl, hj] at hk
+        rw [ha, hzero, ite_eq_left rfl, hj] at hk
         omega
-      · rw [if_neg hj, card_counts_fiber_first v hj]
+      · rw [ite_eq_right hj, card_counts_fiber_first v hj]
         refine ih _ ?_
         rw [Finset.sum_update_of_mem (Finset.mem_univ j)]
         have hsplit : ∑ i ∈ Finset.univ \ {j}, v i + ∑ i ∈ ({j} : Finset (Fin m)), v i
@@ -295,17 +295,17 @@ theorem map_categoricalCounts_pi {q : Fin m → ℝ}
       Finset.sum_filter]
     refine Finset.sum_congr rfl fun a _ => ?_
     by_cases ha : categoricalCounts a = v
-    · rw [if_pos ha, Set.indicator_of_mem (by simpa using ha),
+    · rw [ite_eq_left ha, Set.indicator_of_mem (by simpa using ha),
         pi_categorical_apply_singleton, prod_eval_eq_prod_pow, ha]
-    · rw [if_neg ha, Set.indicator_of_notMem (by simpa using ha)]
+    · rw [ite_eq_right ha, Set.indicator_of_notMem (by simpa using ha)]
   rw [hfiber, Finset.sum_const, StatLean.Bayesian.multinomialWeight]
   by_cases hvn : ∑ j, v j = n
-  · rw [if_pos ⟨hq0, hq1, hvn⟩, card_counts_fiber n v hvn]
+  · rw [ite_eq_left ⟨hq0, hq1, hvn⟩, card_counts_fiber n v hvn]
     rw [ENNReal.ofReal_mul (Nat.cast_nonneg _),
       ENNReal.ofReal_prod_of_nonneg fun j _ => pow_nonneg (hq0 j) (v j),
       ENNReal.ofReal_natCast, nsmul_eq_mul]
     exact congrArg _ (Finset.prod_congr rfl fun j _ => (ENNReal.ofReal_pow (hq0 j) (v j)).symm)
-  · rw [if_neg (fun h => hvn h.2.2)]
+  · rw [ite_eq_right (fun h => hvn h.2.2)]
     have hempty : (Finset.univ.filter fun a : Fin n → Fin m => categoricalCounts a = v)
         = ∅ := by
       refine Finset.filter_eq_empty_iff.mpr fun a _ hav => hvn ?_

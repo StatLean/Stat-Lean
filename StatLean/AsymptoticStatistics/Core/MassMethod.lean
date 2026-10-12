@@ -374,7 +374,7 @@ noncomputable def boundedDensityPath
         linarith
       change (if |(0 : ℝ)| < δ then P.withDensity
              (fun ω => ENNReal.ofReal (f 0 ω)) else P) = P
-      rw [abs_zero, if_pos hδ_pos]
+      rw [abs_zero, ite_eq_left hδ_pos]
       -- f 0 ω = 1 + 0 * g_ω = 1, ENNReal.ofReal 1 = 1
       have h_const :
           (fun ω => ENNReal.ofReal (f 0 ω)) = (fun _ => (1 : ℝ≥0∞)) := by
@@ -388,7 +388,7 @@ noncomputable def boundedDensityPath
       by_cases h : |t| < δ
       · -- For |t| < δ: density 1+t·g is a.e. ≥ 0 (since g ≥ -1 and |t·g| ≤ |t|·M < 1)
         -- and integrates to 1.
-        simp only [curve, h, if_true]
+        simp only [curve, h, ite_true]
         -- Goal: IsProbabilityMeasure (P.withDensity (fun ω => ENNReal.ofReal (f t ω)))
         refine ⟨?_⟩
         -- Standing facts about M and δ.
@@ -464,14 +464,14 @@ noncomputable def boundedDensityPath
         rw [← ofReal_integral_eq_lintegral_ofReal h_f_int h_f_nn,
             h_integral_f, ENNReal.ofReal_one]
       · -- For |t| ≥ δ: curve = P.
-        simp only [curve, h, if_false]; infer_instance
+        simp only [curve, h, ite_false]; infer_instance
     dominating := P
     dominating_sigmaFinite := inferInstance
     curve_absContinuous := fun t => by
       by_cases h : |t| < δ
-      · simp only [curve, h, if_true]
+      · simp only [curve, h, ite_true]
         exact MeasureTheory.withDensity_absolutelyContinuous _ _
-      · simp only [curve, h, if_false]
+      · simp only [curve, h, ite_false]
         exact Measure.AbsolutelyContinuous.refl P
     score := g
     qmd_limit := by
@@ -562,10 +562,10 @@ noncomputable def boundedDensityPath
         --   and (curve 0).rnDeriv P =ᵐ[P] 1.
         have h_curve_t_eq :
             (curve t) = P.withDensity (fun ω => ENNReal.ofReal (f t ω)) := by
-          simp only [curve, ht_abs, if_true]
+          simp only [curve, ht_abs, ite_true]
         have h_curve_0_eq : (curve 0) = P := by
           have h0_lt : |(0 : ℝ)| < δ := by rw [abs_zero]; exact hδ_pos
-          simp only [curve, h0_lt, if_true]
+          simp only [curve, h0_lt, ite_true]
           have h_const :
               (fun ω => ENNReal.ofReal (f 0 ω)) = (fun _ => (1 : ℝ≥0∞)) := by
             funext ω
@@ -820,7 +820,7 @@ theorem boundedDensityPath_curve_eq_withDensity
             P.withDensity (fun ω => ENNReal.ofReal
               (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
           else P) = _
-  rw [if_pos ht]
+  rw [ite_eq_left ht]
 
 /-- Radon–Nikodym derivative of `(boundedDensityPath g hg).curve t`
 w.r.t. `P` for `|t| < truncRadius`: a.e. equals
@@ -1029,7 +1029,7 @@ theorem boundedDensityPath_curve_rnDeriv_pos_finite_ae
                 P.withDensity (fun ω => ENNReal.ofReal
                   (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
               else P) = P
-      rw [if_neg ht]
+      rw [ite_eq_right ht]
     rw [h_curve_P]
     filter_upwards [P.rnDeriv_self] with ω hω
     rw [hω]
@@ -1094,7 +1094,7 @@ theorem boundedDensityPath_curve_eq_mixture_eventually
             P.withDensity (fun ω => ENNReal.ofReal
               (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
           else P) = _
-    rw [if_pos ht_abs]
+    rw [ite_eq_left ht_abs]
   rw [h_curve_t]
   -- Pointwise mixture decomposition (a.e. via g ≥ -1).
   have h_g_ge : ∀ᵐ ω ∂P, -1 ≤ ((g : Lp ℝ 2 P) : Ω → ℝ) ω := hg.2
@@ -2493,7 +2493,7 @@ theorem vonMises_imp_TVFrechetMixture
               P.withDensity (fun ω => ENNReal.ofReal
                 (1 + t * ((g_L20 : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = _
-      rw [if_pos ht_abs]
+      rw [ite_eq_left ht_abs]
     -- Now `ht_curve` says `curve t = (1-t)P + t·Q_target`; compose with
     -- `hQ_target_eq_Q` to get `(1-t)P + t·Q`.
     rw [← h_curve_eq, ht_curve, ← hQ_target_def, hQ_target_eq_Q]

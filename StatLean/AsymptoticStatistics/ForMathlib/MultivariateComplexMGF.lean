@@ -4,7 +4,7 @@ import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Normed.Group.Real
-import Mathlib.Data.Complex.BigOperators
+import Mathlib.Basic.Complex.BigOperators
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGFCoeff
 

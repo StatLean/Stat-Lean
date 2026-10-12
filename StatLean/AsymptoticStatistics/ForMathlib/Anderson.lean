@@ -105,7 +105,7 @@ lemma lintegral_mono_of_meas_lt_le
           have h_set_eq : {x : E | t < (L x ⊓ (n : ℝ≥0∞)).toReal}
               = {x | ENNReal.ofReal t < L x} := by
             ext x
-            simp only [Set.mem_setOf_eq]
+            simp only [Set.mem_ofPred_eq]
             rw [← ENNReal.ofReal_lt_iff_lt_toReal ht_pos.le (hF_fin n x)]
             refine ⟨fun h => lt_of_lt_of_le h inf_le_left, fun h => lt_inf_iff.mpr ⟨h, ?_⟩⟩
             rw [show ((n : ℕ) : ℝ≥0∞) = ENNReal.ofReal n from
@@ -117,7 +117,7 @@ lemma lintegral_mono_of_meas_lt_le
           have htn' : (n : ℝ) ≤ t := not_lt.mp htn
           have h_empty : {x : E | t < (L x ⊓ (n : ℝ≥0∞)).toReal} = ∅ := by
             ext x
-            simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+            simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
             calc (L x ⊓ (n : ℝ≥0∞)).toReal
                 ≤ ((n : ℝ≥0∞)).toReal :=
                   ENNReal.toReal_mono (ENNReal.natCast_ne_top n) (hF_bdd n x)
@@ -857,7 +857,7 @@ theorem anderson_lemma_loss
   have hC_conv : Convex ℝ {x | L x ≤ c} := hL.convex_sublevel c
   have hC_symm : ∀ x ∈ {x : EuclideanSpace ℝ ι | L x ≤ c}, -x ∈ {x | L x ≤ c} := by
     intro x hx
-    simp only [Set.mem_setOf_eq, hL.symm] at hx ⊢
+    simp only [Set.mem_ofPred_eq, hL.symm] at hx ⊢
     exact hx
   -- Pass to complements: `ν Aᶜ = 1 - ν A`, then apply monotonicity.
   -- `(·+y) ⁻¹' {L ≤ c} = {x | x+y ∈ {L ≤ c}}` by `rfl`; phrase `h_and` in

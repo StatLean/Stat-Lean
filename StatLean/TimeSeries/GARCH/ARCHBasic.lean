@@ -792,7 +792,7 @@ theorem IsARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
   have hm0 : 0 ≤ ∫ ω, X t ω ^ 2 ∂μ :=
     integral_nonneg fun ω => sq_nonneg _
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   nlinarith [hkey, hm0, hcon, hc0]
 
 /-! ### `L²` of an arbitrary strictly stationary solution (Bollerslev/Brandt)
@@ -1087,9 +1087,9 @@ private lemma lintegral_archWin_one_le_one [IsProbabilityMeasure μ] {p : ℕ} {
         intro i
         refine le_trans (mul_le_mul_right ?_ _) (le_of_eq (mul_one _))
         by_cases hi : (i : ℕ) ≤ n
-        · rw [if_pos hi]
+        · rw [ite_eq_left hi]
           exact ih (n - (i : ℕ)) (by omega)
-        · rw [if_neg hi]
+        · rw [ite_eq_right hi]
       refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
       rw [← ENNReal.ofReal_sum_of_nonneg fun i _ => hb i]
       exact ENNReal.ofReal_le_one.2 (le_of_lt hsum)
@@ -1117,7 +1117,7 @@ private lemma lintegral_archWin_one_le_pow [IsProbabilityMeasure μ] {p : ℕ} {
         have hip := i.isLt
         have hi : (i : ℕ) ≤ m := by omega
         have hlt : k * p < m - (i : ℕ) := by rw [hK]; omega
-        rw [if_pos hi]
+        rw [ite_eq_left hi]
         exact mul_le_mul_right (ih _ hlt) _
       refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
       rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg fun i _ => hb i, pow_succ']
@@ -1198,7 +1198,7 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
                 ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2)
             · exact Or.inl hc
             · refine Or.inr ?_
-              push_neg at hc
+              push Not at hc
               have hcmp := archWin_le_const_mul b ε (fun s ω => ENNReal.ofReal (X s ω ^ 2)) u ω
                 (∑ j ∈ Finset.range (p + 1), ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
                 (fun m' hm' => Finset.single_le_sum
@@ -1211,7 +1211,7 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
                 _ ≤ archWin b ε (archOne Ω) u ω n 0 * C := by
                     rw [mul_comm]
                     exact mul_le_mul_right hc _
-          rw [Set.setOf_or] at hincl
+          rw [Set.ofPred_or] at hincl
           refine le_trans (measure_mono_ae hincl) (le_trans (measure_union_le _ _) ?_)
           refine add_le_add ?_ ?_
           · -- the union bound on the boundary window
@@ -1222,7 +1222,7 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
                     < ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2)} := by
               intro ω hω
               by_contra hcon
-              simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_lt] at hcon
+              simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_lt] at hcon
               have hle : (∑ j ∈ Finset.range (p + 1), ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
                   ≤ C := by
                 calc (∑ j ∈ Finset.range (p + 1), ENNReal.ofReal (X (u - (j : ℕ)) ω ^ 2))
@@ -1267,7 +1267,7 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
         * μ {ω | ((m : ℝ) + 1) < X 0 ω ^ 2}) ?_ hbound
       have hanti : Antitone fun m : ℕ => {ω | ((m : ℝ) + 1) < X 0 ω ^ 2} := by
         intro a c hac ω hω
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         have : ((a : ℝ) + 1) ≤ ((c : ℝ) + 1) := by
           have : (a : ℝ) ≤ (c : ℝ) := Nat.cast_le.2 hac
           linarith
@@ -1276,8 +1276,8 @@ private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ
         (measurableSet_lt measurable_const ((h.measurableX 0).pow_const 2)).nullMeasurableSet
       have hempty : (⋂ m : ℕ, {ω | ((m : ℝ) + 1) < X 0 ω ^ 2}) = ∅ := by
         ext ω
-        simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
-          not_lt]
+        simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
+          not_forall, not_lt]
         obtain ⟨m, hm⟩ := exists_nat_gt (X 0 ω ^ 2)
         exact ⟨m, by linarith⟩
       have htend := tendsto_measure_iInter_atTop (μ := μ) hmeas hanti ⟨0, measure_ne_top _ _⟩

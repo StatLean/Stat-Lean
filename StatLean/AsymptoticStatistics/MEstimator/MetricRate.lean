@@ -108,7 +108,7 @@ theorem metricRate_shell_tail
   have hcover : A ∩ Good ⊆ ⋃ k ∈ Finset.range L, Sh k ∩ Good := by
     rintro ξ ⟨hξA, hξG⟩
     have hvtop : s * dist (θhat n ξ) θ₀ < q ^ L := by
-      have hd : dist (θhat n ξ) θ₀ < ρ / 2 := by simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hξG; exact hξG.1
+      have hd : dist (θhat n ξ) θ₀ < ρ / 2 := by simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hξG; exact hξG.1
       exact (mul_lt_mul_of_pos_left hd hs0).trans hL
     have hex : ∃ k : ℕ, s * dist (θhat n ξ) θ₀ < q ^ (J + k + 1) := by
       obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (s * dist (θhat n ξ) θ₀) hq1; exact ⟨k, hk.trans_le (pow_le_pow_right₀ hq1.le (by omega))⟩
@@ -125,7 +125,7 @@ theorem metricRate_shell_tail
     · obtain ⟨ξ₀, hξ₀S, hξ₀G⟩ := hne
       let j := J + k; let δ : ℝ := a * q ^ j / s; have hδpos : 0 < δ := by dsimp [δ]; positivity
       have hδρ : δ < ρ := by
-        have hd : dist (θhat n ξ₀) θ₀ < ρ / 2 := by simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hξ₀G; exact hξ₀G.1
+        have hd : dist (θhat n ξ₀) θ₀ < ρ / 2 := by simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hξ₀G; exact hξ₀G.1
         have hlo := hξ₀S.1
         have : q ^ j / s ≤ dist (θhat n ξ₀) θ₀ := (div_le_iff₀ hs0).2 (by simpa [j, mul_comm] using hlo)
         have hbase : q ^ j / s < ρ / 2 := this.trans_lt hd
@@ -149,7 +149,7 @@ theorem metricRate_shell_tail
           ENNReal.ofReal |empiricalProcess P (n + 1) (fun i : Fin (n + 1) => X i.val ξ) (fun ω => m θ.1 ω - m θ₀ ω)|} := by
         rintro ξ ⟨hξS, hξG⟩
         change q ^ (J + k) ≤ s * dist (θhat n ξ) θ₀ ∧ s * dist (θhat n ξ) θ₀ < q ^ (J + k + 1) at hξS
-        simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hξG
+        simp only [Good, D, B, Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hξG
         have hdlo : δ / 2 < dist (θhat n ξ) θ₀ := by
           rw [div_lt_iff₀ (by positivity : (0 : ℝ) < 2)]; change a * q ^ j / s < dist (θhat n ξ) θ₀ * 2
           rw [div_lt_iff₀ hs0]; have := hξS.1; nlinarith [pow_pos hq0 j]
@@ -309,7 +309,7 @@ theorem mEstimator_rate_of_convergence_outer
     hα hβα hC hρ hm_int hcurv hmod hNearMax hR_nonneg hR hcons η hη
   refine ⟨M, N, fun n hn => ?_⟩
   have heq : {ξ | M < |rateScale α β n * dist (θhat n ξ) θ₀|} = {ξ | M < rateScale α β n * dist (θhat n ξ) θ₀} := by
-    ext ξ; simp only [Set.mem_setOf_eq]
+    ext ξ; simp only [Set.mem_ofPred_eq]
     have hp : 0 ≤ rateScale α β n * dist (θhat n ξ) θ₀ := mul_nonneg (Real.rpow_nonneg (by positivity) _) dist_nonneg
     constructor <;> intro h <;> simpa only [abs_of_nonneg hp] using h
   rw [heq]; exact hMN n hn

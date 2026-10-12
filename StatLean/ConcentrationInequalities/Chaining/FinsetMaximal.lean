@@ -205,10 +205,10 @@ theorem tail_max_finset_le {ι : Type*} {s : Finset ι}
   -- `0` never exceeds `t ≥ 0`, so it drops out of the event)
   have hsub : {ω | t < ⨆ i ∈ s, X i ω} ⊆ ⋃ i ∈ s, {ω | t < X i ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hle : (⨆ i ∈ s, X i ω) ≤ t := by
       refine Real.iSup_le (fun i => ?_) ht
       by_cases hi : i ∈ s

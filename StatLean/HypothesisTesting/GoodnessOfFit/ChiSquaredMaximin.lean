@@ -393,7 +393,7 @@ private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [Measur
       = {ω | ε ≤ T n (fun i => Z (i : ℕ) ω)} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero,
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq, sub_zero,
       abs_of_nonneg (hTnn n _)]
     exact ENNReal.ofReal_le_ofReal_iff (hTnn n _)
   simp only [hsets] at hkey
@@ -690,10 +690,10 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       else Measure.pi (fun _ : Fin n => P₀) with hQCdef
   have hQCgood : ∀ n η, Good n η → QC n η = Measure.pi (fun _ : Fin n => tilt n η) := by
     intro n η hG
-    simp only [hQCdef, if_pos hG]
+    simp only [hQCdef, ite_eq_left hG]
   have hQCbad : ∀ n η, ¬ Good n η → QC n η = Measure.pi (fun _ : Fin n => P₀) := by
     intro n η hG
-    simp only [hQCdef, if_neg hG]
+    simp only [hQCdef, ite_eq_right hG]
   have hQCprob : ∀ n η, IsProbabilityMeasure (QC n η) := by
     intro n η
     by_cases hG : Good n η
@@ -736,12 +736,12 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       rw [pi_withDensity_exp (n := n) (P₀ := P₀) hu, hQC0 n]
       congr 1
       funext d
-      simp only [hLCdef, if_pos hG]
+      simp only [hLCdef, ite_eq_left hG]
     · rw [hQCbad n η hG, hQC0 n]
       have hone : (fun d : Fin n → Fin (k + 1) => ENNReal.ofReal (Real.exp (LC n η d)))
           = fun _ => 1 := by
         funext d
-        simp only [hLCdef, if_neg hG]
+        simp only [hLCdef, ite_eq_right hG]
         simp
       rw [hone]
       exact withDensity_one.symm
@@ -915,9 +915,9 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       have hspos : 0 < Real.sqrt (n : ℝ) := lt_of_lt_of_le h2bM hbr
       have hG : Good n η := hGoodBig n η hη hbr
       have hDCval : DC n d = 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) + b ^ 2 / 2 * Tstat n d := by
-        simp only [hDCdef, if_pos hbr]
+        simp only [hDCdef, ite_eq_left hbr]
       have hLCval : LC n η d = ∑ l, Real.log (1 + uloc n η (d l)) := by
-        simp only [hLCdef, if_pos hG]
+        simp only [hLCdef, ite_eq_left hG]
       rw [hDCval, hLCval, hZinner n η d]
       -- the second-order expansion
       have hsum1 : (∑ l, (Real.log (1 + uloc n η (d l))
@@ -1016,7 +1016,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
         nlinarith
       linarith
     · have hDCval : DC n d = (n : ℝ) + b * M * Real.sqrt (n : ℝ) + b ^ 2 / 2 := by
-        simp only [hDCdef, if_neg hbr]
+        simp only [hDCdef, ite_eq_right hbr]
       rw [hDCval, hZinner n η d]
       have hZbd : |(∑ l, uloc n η (d l)) - b ^ 2 / 2|
           ≤ b * M * Real.sqrt (n : ℝ) + b ^ 2 / 2 := by
@@ -1031,7 +1031,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
         linarith
       by_cases hG : Good n η
       · have hLCval : LC n η d = ∑ l, Real.log (1 + uloc n η (d l)) := by
-          simp only [hLCdef, if_pos hG]
+          simp only [hLCdef, ite_eq_left hG]
         rw [hLCval]
         have hLbd : |∑ l, Real.log (1 + uloc n η (d l))| ≤ (n : ℝ) := by
           refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
@@ -1048,7 +1048,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
           exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
         linarith
       · have hLCval : LC n η d = 0 := by
-          simp only [hLCdef, if_neg hG]
+          simp only [hLCdef, ite_eq_right hG]
         rw [hLCval, zero_sub, abs_neg]
         have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
         linarith
@@ -1071,8 +1071,8 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     rw [hQC0 n]
     refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono ?_)
     intro d hd
-    simp only [Set.mem_setOf_eq] at hd ⊢
-    simp only [hDCdef, if_pos hn2] at hd
+    simp only [Set.mem_ofPred_eq] at hd ⊢
+    simp only [hDCdef, ite_eq_left hn2] at hd
     have hT : Tstat n d = ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, sc i (d l) * sc i' (d l))
         - (if i = i' then 1 else 0)| := by
       simp only [hTstatdef]
@@ -1088,7 +1088,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     exact ⟨le_of_eq (hη : ‖η‖ = b).symm, hGoodBig n η hη hn⟩
   obtain ⟨η₀, hη₀⟩ : ∃ η : EuclideanSpace ℝ (Fin k), ‖η‖ = b := by
     refine ⟨b • EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ), ?_⟩
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, EuclideanSpace.norm_single, norm_one,
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, PiLp.norm_single, norm_one,
       mul_one]
   -- ### 9. the transfer lemma
   have hmain := asymptotic_maximin_upper_bound (Ω := fun n => (Fin n → Fin (k + 1)))
@@ -1379,7 +1379,7 @@ private lemma mvGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
     (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map (fun z => v + z)
       = multivariateGaussian v 1 := by
   rw [multivariateGaussian_zero_one, multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-! ### The drifting local limit law -/
 
@@ -1572,7 +1572,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     filter_upwards [hdistlim.eventually (gt_mem_nhds hε)] with n hn
     have hset : {y : Fin n → EuclideanSpace ℝ (Fin k) | ε ≤ dist (Xs n y) (Ys n y)} = ∅ := by
       ext y
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have hd : dist (Xs n y) (Ys n y) = ‖v₀ - v n‖ := by
         rw [dist_eq_norm]
         simp only [hXsdef]
@@ -1722,7 +1722,7 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
   have hset : {d : Fin n → Fin (k + 1) | t ≤ ‖mScoreVec sc d - mDriftVec sc h‖}
       = {d | t ^ 2 ≤ Y d} := by
     ext d
-    simp only [Set.mem_setOf_eq, hYdef]
+    simp only [Set.mem_ofPred_eq, hYdef]
     have hnn : (0 : ℝ) ≤ ‖mScoreVec sc d - mDriftVec sc h‖ := norm_nonneg _
     constructor
     · intro hr; nlinarith
@@ -1799,14 +1799,14 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
   haveI hcellνprob : ∀ n h, IsProbabilityMeasure (cellν n h) := by
     intro n h
     by_cases hn : 0 < n
-    · simp only [hcellνdef, dif_pos hn]
+    · simp only [hcellνdef, dite_eq_left hn]
       exact (by infer_instance)
-    · simp only [hcellνdef, dif_neg hn]
+    · simp only [hcellνdef, dite_eq_right hn]
       infer_instance
   have hcellνreal : ∀ n h j, (cellν n h).real {j} = π j + h j / Real.sqrt (n : ℝ) := by
     intro n h j
     by_cases hn : 0 < n
-    · simp only [hcellνdef, dif_pos hn, MeasureTheory.Measure.real]
+    · simp only [hcellνdef, dite_eq_left hn, MeasureTheory.Measure.real]
       exact hcell n h ⟨0, hn⟩ j
     · have hn0 : n = 0 := Nat.eq_zero_of_not_pos hn
       subst hn0
@@ -1837,7 +1837,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     · have hball : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
           = Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) (Real.sqrt c) := by
         ext z
-        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        simp only [Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
         constructor
         · intro hzz
           rw [← Real.sqrt_sq (norm_nonneg z)]
@@ -1849,7 +1849,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       exact convex_closedBall _ _
     · have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} = (∅ : Set _) := by
         ext z
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
         exact lt_of_lt_of_le hc0 (sq_nonneg _)
       rw [hempty]
       exact convex_empty
@@ -1858,7 +1858,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     intro v
     have hcompl : Reg = {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}ᶜ := by
       ext z
-      simp only [hRegdef, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      simp only [hRegdef, Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     have hconv2 : Convex ℝ
         ((fun x => v + x) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) := by
       intro x hx y hy a₁ b₁ ha hb hab
@@ -1911,13 +1911,13 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
         pearsonQ_eq_normSq hπpos hπsum hcent hpars hn (X n) ω
       by_cases hcc : c < pearsonQ π (X n) ω
       · have hmem : ω ∈ (fun ω => mScoreVec sc (fun i => X n i ω)) ⁻¹' Reg := by
-          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hQeq]
+          simp only [Set.mem_preimage, hRegdef, Set.mem_ofPred_eq, ← hQeq]
           exact hcc
-        rw [Set.indicator_of_mem hmem, Pi.one_apply, if_pos hcc]
+        rw [Set.indicator_of_mem hmem, Pi.one_apply, ite_eq_left hcc]
       · have hmem : ω ∉ (fun ω => mScoreVec sc (fun i => X n i ω)) ⁻¹' Reg := by
-          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hQeq]
+          simp only [Set.mem_preimage, hRegdef, Set.mem_ofPred_eq, ← hQeq]
           exact hcc
-        rw [Set.indicator_of_notMem hmem, if_neg hcc]
+        rw [Set.indicator_of_notMem hmem, ite_eq_right hcc]
     simp only [hpwfdef, power, hpre]
     rw [integral_indicator_one (hmeas' hRegmeas), hcomp,
       Measure.map_apply hmeas' hRegmeas]
@@ -2037,11 +2037,11 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       have hsub : ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg)ᶜ
           ⊆ {d | t ≤ ‖mScoreVec sc d - mDriftVec sc hh‖} := by
         intro d hd
-        simp only [Set.mem_compl_iff, Set.mem_preimage, hRegdef, Set.mem_setOf_eq,
+        simp only [Set.mem_compl_iff, Set.mem_preimage, hRegdef, Set.mem_ofPred_eq,
           not_lt] at hd
-        simp only [Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq]
         by_contra hlt
-        push_neg at hlt
+        push Not at hlt
         have h1 : ‖mDriftVec sc hh‖ - ‖mScoreVec sc d‖
             ≤ ‖mDriftVec sc hh - mScoreVec sc d‖ := norm_sub_norm_le _ _
         rw [norm_sub_rev] at h1
@@ -2101,7 +2101,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     have hgbnd : ∀ m, ‖mDriftVec sc (g (φ m))‖ < R := by
       intro m
       by_contra hle
-      push_neg at hle
+      push Not at hle
       have hu := huniform (φ m) (g (φ m)) (hφ m).2.2.1 hle
       have hc3 := (hφ m).2.2.2
       linarith [hglt m]
@@ -2133,7 +2133,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
     have hwσ : ∀ m, w (σ m) = g (σ m) := by
       intro m
-      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+      simp only [hwdef, ite_eq_left (Set.mem_range.mpr ⟨m, rfl⟩)]
     have hwlim : Tendsto w atTop (nhds h₀) := by
       rw [Metric.tendsto_atTop]
       intro ε hε
@@ -2149,7 +2149,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
         rw [hwσ m]
         simpa only [Function.comp_apply, hσdef] using hM m hmM
       · rw [hwdef]
-        simp only [if_neg hmem, dist_self]
+        simp only [ite_eq_right hmem, dist_self]
         exact hε
     have hlimit := (hdrift w h₀ (fun j => tendsto_pi_nhds.mp hwlim j)).comp hσmono.tendsto_atTop
     have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by
@@ -2454,7 +2454,7 @@ private lemma ncMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
         (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
       intro i
       by_cases hi : i = 0
-      · simp only [noncentralMean, hi, Fin.val_zero, if_pos, if_true]
+      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left, ite_true]
         rw [Real.sq_sqrt l.coe_nonneg]
       · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
         simp [noncentralMean, hi, hi']
@@ -2467,7 +2467,7 @@ private lemma mvGaussian_one_eq_map {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
     multivariateGaussian v 1
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- The noncentral chi-squared law as the squared-norm image of a shifted standard Gaussian. -/
 private lemma ncChiSq_eq_map {k : ℕ} (l : ℝ≥0) :
@@ -2648,10 +2648,10 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
           (measurableSet_eq_fun (by fun_prop) measurable_const)]
       refine measure_mono_null (t := (fun x : Fin k → ℝ => x (0 : Fin k)) ⁻¹' {0}) ?_ ?_
       · intro x hx
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_singleton_iff] at hx ⊢
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_singleton_iff] at hx ⊢
         have hxe : ⟪(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k)), e⟫_ℝ = x 0 := by
           rw [inner_eucl_sum, hedef]
-          simp only [EuclideanSpace.single_apply]
+          simp only [PiLp.single_apply]
           rw [Finset.sum_eq_single (0 : Fin k)]
           · simp
           · intro b _ hb
@@ -2667,7 +2667,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     have hsub : {y : EuclideanSpace ℝ (Fin k) | t y = 0}
         ⊆ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} := by
       intro y hy
-      simp only [Set.mem_setOf_eq, htdef] at hy ⊢
+      simp only [Set.mem_ofPred_eq, htdef] at hy ⊢
       rcases eq_or_ne y 0 with rfl | hy0
       · simp
       · have h0 : (‖y‖ : ℝ)⁻¹ ≠ 0 := by
@@ -3052,7 +3052,7 @@ private lemma chiSq_Ioo_pos {k : ℕ} (hk : 0 < k) {a b : ℝ} (ha : 0 < a) (hab
     filter_upwards [hae] with x hx hmem
     exact (hpdfpos x hmem).ne' (hx hmem)
   have h3 := ae_iff.mp h2
-  simp only [not_not, Set.setOf_mem_eq, Real.volume_Ioo, ENNReal.ofReal_eq_zero] at h3
+  simp only [not_not, Set.ofPred_mem_eq, Real.volume_Ioo, ENNReal.ofReal_eq_zero] at h3
   linarith
 
 /-- The `χ²₁` upper tail is positive at every threshold. -/
@@ -3073,7 +3073,7 @@ private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α <
     0 < c₀ := by
   haveI : NeZero k := ⟨hk.ne'⟩
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hac : StatLean.MultipleTesting.chiSquared k (Set.Iic 0) = 0 := by
     have hIio : StatLean.MultipleTesting.chiSquared k (Set.Iio 0) = 0 := by
       rw [StatLean.MultipleTesting.chiSquared, gammaMeasure,
@@ -3376,7 +3376,7 @@ private lemma tendsto_measure_Ioi_of_weakLimit
       constructor
       · intro hx
         by_contra h
-        push_neg at h
+        push Not at h
         obtain ⟨m, hm⟩ := exists_nat_one_div_lt (show (0 : ℝ) < t - x by linarith)
         have := hx m
         linarith

@@ -378,9 +378,9 @@ private lemma scoreLaw_facts {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasu
     rw [integral_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
-      (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
+      (fun j _ hji => by rw [ite_eq_right (Ne.symm hji), mul_zero])
       (fun hi => absurd (Finset.mem_univ i) hi)]
-    rw [if_pos rfl, mul_one]
+    rw [ite_eq_left rfl, mul_one]
   · rw [integrable_map_measure ((by fun_prop : Continuous
       fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3)).aestronglyMeasurable hgmeas.aemeasurable]
     exact hcubeint
@@ -476,7 +476,7 @@ private lemma gaussian_ball_eq_chiSquared {k : ℕ} (hk : 0 < k) (t : ℝ) :
   rw [← htarget, Measure.map_apply hq_cont.measurable measurableSet_Iic]
   congr 1
   ext z
-  simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq, hqval]
+  simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq, hqval]
 
 /-- The distribution function of the standardised chi-squared law. -/
 private lemma chiSquared_standardized_Iic {k : ℕ} (hk : 0 < k) (x : ℝ) :
@@ -546,7 +546,7 @@ private lemma cdf_close {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure 
           ⁻¹' Set.Iic x
         = (scoreVecK ψ X) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} := by
       ext ω
-      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq, div_le_iff₀ hsk,
+      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq, div_le_iff₀ hsk,
         ← smoothStat_eq_norm_sq]
       rw [ht]
       constructor <;> intro hh <;> linarith
@@ -648,11 +648,11 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
     else (chiSquared k).map (fun s => (s - (k : ℝ)) / Real.sqrt (2 * (k : ℝ))) with hρ
   have hρeq : ∀ k : ℕ, 0 < k →
       ρ k = (chiSquared k).map (fun s => (s - (k : ℝ)) / Real.sqrt (2 * (k : ℝ))) := by
-    intro k hk; simp only [hρ, if_neg hk.ne']
+    intro k hk; simp only [hρ, ite_eq_right hk.ne']
   have hρprob : ∀ k, IsProbabilityMeasure (ρ k) := by
     intro k
     rcases Nat.eq_zero_or_pos k with rfl | hk
-    · simp only [hρ, if_pos rfl]; infer_instance
+    · simp only [hρ, ite_eq_left rfl]; infer_instance
     · haveI : NeZero k := ⟨hk.ne'⟩
       rw [hρeq k hk]
       exact (by infer_instance)

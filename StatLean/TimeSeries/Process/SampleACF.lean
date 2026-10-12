@@ -98,7 +98,7 @@ private lemma sampleACVF_eq_raw {T : ℕ} (x : Fin T → ℝ) (k : ℕ) :
 /-- `padData` is supported in the data window `[0, T)`. -/
 private lemma padData_eq_zero {T : ℕ} (x : Fin T → ℝ) {s : ℤ}
     (hs : s ∉ Finset.Ico (0 : ℤ) (T : ℤ)) : padData x s = 0 := by
-  rw [padData, dif_neg]
+  rw [padData, dite_eq_right]
   simp only [Finset.mem_Ico, not_and, not_lt] at hs
   rintro ⟨h1, h2⟩
   have := hs h1
@@ -108,19 +108,19 @@ private lemma padData_of_nonneg {T : ℕ} (x : Fin T → ℝ) {s : ℤ} (hs : 0 
     padData x s = padNat x s.toNat := by
   rw [padData, padNat]
   by_cases h : s.toNat < T
-  · rw [dif_pos ⟨hs, h⟩, dif_pos h]
-  · rw [dif_neg (fun hc => h hc.2), dif_neg h]
+  · rw [dite_eq_left ⟨hs, h⟩, dite_eq_left h]
+  · rw [dite_eq_right (fun hc => h hc.2), dite_eq_right h]
 
 private lemma rawACVF_eq_range {T : ℕ} (x : Fin T → ℝ) (m : ℕ) :
     rawACVF x m = ∑ n ∈ Finset.range T, padNat x n * padNat x (n + m) := by
   rw [rawACVF, ← Fin.sum_univ_eq_sum_range (fun n => padNat x n * padNat x (n + m)) T]
   refine Finset.sum_congr rfl fun i _ => ?_
   have h1 : padNat x (i : ℕ) = x i - sampleMean x := by
-    rw [padNat, dif_pos i.isLt]
+    rw [padNat, dite_eq_left i.isLt]
   rw [h1, padNat]
   by_cases h2 : (i : ℕ) + m < T
-  · rw [dif_pos h2, dif_pos h2]
-  · rw [dif_neg h2, dif_neg h2, mul_zero]
+  · rw [dite_eq_left h2, dite_eq_left h2]
+  · rw [dite_eq_right h2, dite_eq_right h2, mul_zero]
 
 /-- At a nonnegative lag the window sum over `[0, T)` is the raw sample ACVF. -/
 private lemma sum_padData_ico {T : ℕ} (x : Fin T → ℝ) (m : ℕ) :
@@ -293,10 +293,10 @@ private lemma cov_noise_comb [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [covariance_const_mul_left, covariance_const_mul_right]
   by_cases hij : u i = v j
-  · rw [if_pos hij, hij, covariance_self (hw.memLp (v j)).aestronglyMeasurable.aemeasurable,
+  · rw [ite_eq_left hij, hij, covariance_self (hw.memLp (v j)).aestronglyMeasurable.aemeasurable,
       hw.variance_eq]
     ring
-  · rw [if_neg hij, hw.uncorrelated _ _ hij]
+  · rw [ite_eq_right hij, hw.uncorrelated _ _ hij]
     ring
 
 /-- The general two-time MA(q) covariance: a finite sum over the coinciding lag pairs. -/
@@ -535,14 +535,14 @@ private lemma tendsto_charFun_weighted_iid' [IsProbabilityMeasure μ]
     simp only [htaildef]
     have hanti : Antitone fun K : ℕ => {ω | (K : ℝ) ≤ |Y 0 ω|} := by
       intro a b hab ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       exact le_trans (by exact_mod_cast hab) hω
     have hint : ∃ K : ℕ, IntegrableOn (fun ω => (Y 0 ω) ^ 2) {ω | (K : ℝ) ≤ |Y 0 ω|} μ :=
       ⟨0, hsq0.integrableOn⟩
     have hlim := tendsto_setIntegral_of_antitone (fun K => hsmK 0 K) hanti hint
     have hempty : ⋂ K : ℕ, {ω | (K : ℝ) ≤ |Y 0 ω|} = ∅ := by
       ext ω
-      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_forall, not_le]
       obtain ⟨K, hK⟩ := exists_nat_gt |Y 0 ω|
       exact ⟨K, hK⟩
@@ -743,7 +743,7 @@ private lemma tendsto_charFun_truncSum [IsProbabilityMeasure μ] {a : ℤ → �
     rw [winCoef, hAN]
     refine Finset.sum_congr rfl fun k hk => ?_
     simp only [Finset.mem_Icc] at hk
-    exact if_pos ⟨by omega, by omega⟩
+    exact ite_eq_left ⟨by omega, by omega⟩
   have hbdd : ∀ T n : ℕ, (winCoef a T N n) ^ 2 ≤ AA ^ 2 := by
     intro T n
     have h1 : |winCoef a T N n| ≤ AA := by rw [hAA]; exact abs_winCoef_le a T N n
@@ -1036,14 +1036,14 @@ private lemma integral_abs_defect_le [IsProbabilityMeasure μ] {a : ℤ → ℝ}
       intro t
       have hstep := Finset.sum_subset hsub (f := fun k =>
         if k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) then a k * ε ((t : ℤ) + 1 - k) ω else 0)
-        (fun k _ hk => if_neg hk)
+        (fun k _ hk => ite_eq_right hk)
       rw [← Finset.sum_sub_distrib,
         Finset.sum_congr rfl (fun k _ => (show
           a k * ε ((t : ℤ) + 1 - k) ω - bco k * ε ((t : ℤ) + 1 - k) ω
             = if k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) then a k * ε ((t : ℤ) + 1 - k) ω else 0 from by
           simp only [hbco]
           by_cases hk : k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) <;> simp [hk])), ← hstep]
-      exact Finset.sum_congr rfl fun k hk => if_pos hk
+      exact Finset.sum_congr rfl fun k hk => ite_eq_left hk
     have hA : ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m)
           - ∑ t ∈ Finset.range T, ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε ((t : ℤ) + 1 - k) ω
         = ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
@@ -1064,11 +1064,11 @@ private lemma integral_abs_defect_le [IsProbabilityMeasure μ] {a : ℤ → ℝ}
       rw [← Finset.sum_subset hsub (fun k hk hk' => by
         simp only [Finset.mem_sdiff, not_and, not_not] at hk'
         rw [hbco]
-        simp only [if_pos (hk' hk), abs_zero])]
+        simp only [ite_eq_left (hk' hk), abs_zero])]
       refine Finset.sum_congr rfl fun k hk => ?_
       simp only [Finset.mem_sdiff] at hk
       rw [hbco]
-      simp only [if_neg hk.2]
+      simp only [ite_eq_right hk.2]
     rw [heq]
     exact hB M hNM
   -- the tail piece is `L²`-small, uniformly in `T`
@@ -1591,7 +1591,7 @@ private lemma holderTriple_four_four_two : ENNReal.HolderTriple 4 4 2 :=
 private lemma memLp_two_mul_of_memLp_four {f g : Ω → ℝ} (hf : MemLp f 4 μ) (hg : MemLp g 4 μ) :
     MemLp (fun ω => f ω * g ω) 2 μ := by
   haveI := holderTriple_four_four_two
-  exact hf.mul' (r := 2) hg
+  exact hf.fun_mul (r := 2) hg
 
 private lemma integrable_mul_of_memLp_two {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun ω => f ω * g ω) μ :=
@@ -1628,9 +1628,9 @@ private lemma integral_noise_mul_noise [IsProbabilityMeasure μ] (hε : IsIIDNoi
     ∫ ω, ε i ω * ε j ω ∂μ = if i = j then σ2 else 0 := by
   by_cases h : i = j
   · subst h
-    rw [if_pos rfl, ← hε.integral_sq' i]
+    rw [ite_eq_left rfl, ← hε.integral_sq' i]
     exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     have hind : IndepFun (ε i) (ε j) μ := hε.iIndep.indepFun h
     rw [hind.integral_fun_mul_eq_mul_integral (hε.measurable i).aestronglyMeasurable
       (hε.measurable j).aestronglyMeasurable, hε.integral_zero' i, zero_mul]
@@ -1662,7 +1662,7 @@ private lemma integral_noiseComb_mul [IsProbabilityMeasure μ] (hε : IsIIDNoise
     rw [integral_finsetSum s (fun j _ => hI i j)]
     simp only [integral_const_mul, integral_noise_mul_noise hε]
     simp only [mul_ite, mul_zero]
-    rw [Finset.sum_ite_eq s i (fun j => c i * d j * σ2), if_pos hi]
+    rw [Finset.sum_ite_eq s i (fun j => c i * d j * σ2), ite_eq_left hi]
     ring
   rw [Finset.sum_congr rfl hstep, ← Finset.mul_sum]
 
@@ -2541,14 +2541,14 @@ private lemma tendsto_cesaro_kernel {K : ℤ → ℝ} (hK : Summable fun k : ℤ
       ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, K ((s : ℤ) - (t : ℤ)) = ∑' k : ℤ, g n k := by
     intro n
     have hz : ∑' k : ℤ, g n k = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), g n k :=
-      tsum_eq_sum fun k hk => by simp only [hgdef, if_neg hk]
+      tsum_eq_sum fun k hk => by simp only [hgdef, ite_eq_right hk]
     rw [sum_sub_double_eq K n, hz]
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp
     · rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun k hk => ?_
       have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-      simp only [hgdef, if_pos hk]
+      simp only [hgdef, ite_eq_left hk]
       field_simp
   have hdom : Tendsto (fun n : ℕ => ∑' k : ℤ, g n k) atTop (𝓝 (∑' k : ℤ, K k)) := by
     refine tendsto_tsum_of_dominated_convergence hK (fun k => ?_) (Eventually.of_forall ?_)
@@ -2558,14 +2558,14 @@ private lemma tendsto_cesaro_kernel {K : ℤ → ℝ} (hK : Summable fun k : ℤ
           simp only [Finset.mem_Ioo]
           have : (k.natAbs : ℤ) + 1 ≤ (n : ℤ) := by exact_mod_cast hn
           omega
-        simp only [hgdef, if_pos hmem]
+        simp only [hgdef, ite_eq_left hmem]
       refine Tendsto.congr' (hk.mono fun n h => h.symm) ?_
       have h1 : Tendsto (fun n : ℕ => (1 : ℝ) - |(k : ℝ)| / (n : ℝ)) atTop (𝓝 1) := by
         simpa using tendsto_const_nhds.sub (tendsto_const_div_atTop_nhds_zero_nat |(k : ℝ)|)
       simpa using h1.mul_const (K k)
     · intro n k
       by_cases hk : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ)
-      · simp only [hgdef, if_pos hk, Real.norm_eq_abs, abs_mul]
+      · simp only [hgdef, ite_eq_left hk, Real.norm_eq_abs, abs_mul]
         refine mul_le_of_le_one_left (abs_nonneg _) ?_
         simp only [Finset.mem_Ioo] at hk
         have hklt : |(k : ℝ)| < (n : ℝ) := by
@@ -2576,7 +2576,7 @@ private lemma tendsto_cesaro_kernel {K : ℤ → ℝ} (hK : Summable fun k : ℤ
         have hd1 : |(k : ℝ)| / (n : ℝ) < 1 := (div_lt_one hnpos).mpr hklt
         rw [abs_le]
         constructor <;> linarith
-      · simp only [hgdef, if_neg hk, norm_zero]
+      · simp only [hgdef, ite_eq_right hk, norm_zero]
         exact abs_nonneg _
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
 

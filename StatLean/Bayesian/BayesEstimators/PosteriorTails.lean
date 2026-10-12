@@ -67,7 +67,7 @@ private theorem lintegral_tail_bvmLocalPosterior {n : ℕ} (hn : 1 ≤ n) (ω : 
     ext θ
     simp only [Set.mem_preimage, Set.mem_compl_iff, Metric.mem_ball, dist_zero_right, not_lt,
       bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hpos.le, tailSet,
-      Set.mem_setOf_eq, div_le_iff₀ hpos]
+      Set.mem_ofPred_eq, div_le_iff₀ hpos]
     constructor <;> intro h <;> linarith
   rw [lintegral_indicator (measurableSet_tailSet θ₀ R n)]
   simp only [bvmLocalPosterior, Kernel.map_apply _ hg]

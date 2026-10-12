@@ -347,7 +347,7 @@ theorem exists_fullClampedNestedPartition
     bracketingNumber_lt_top_iff_HasFiniteBracketingCover.mpr hcovδ
   set N : ℕ := (bracketingNumber δ F 2 P).toNat with hN_def
   have hN_eq : (N : ℕ∞) = bracketingNumber δ F 2 P := by
-    rw [hN_def, ENat.coe_toNat hN_lt.ne]
+    rw [hN_def, ENat.natCast_toNat hN_lt.ne]
   have hN_one : 1 ≤ N := by
     have h := one_le_bracketingNumber_of_nonempty (P := P) hF_ne δ
     rw [← hN_eq] at h
@@ -585,7 +585,7 @@ theorem bracketingMaximal_full :
       (hasFiniteBracketingCover_of_entropyIntegral_lt_top_at hJ hδ le_rfl)
   have htReg : 0 ≤ tReg := by
     dsimp only [tReg]
-    rw [← ENat.coe_toNat hN_lt.ne, bracketingBookCutoff_coe]
+    rw [← ENat.natCast_toNat hN_lt.ne, bracketingBookCutoff_coe]
     positivity
   obtain ⟨D⟩ := exists_fullClampedNestedPartition
     hJ hF_ne hF_meas hF_L2 hΦ_env hδ n
@@ -712,7 +712,7 @@ theorem bracketingMaximal_integrableEnvelope :
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) =
           fun _ : Ξ => 0 := by
         funext ξ
-        simp only [supNormOver, truncateClass, Set.mem_setOf_eq, empiricalProcess,
+        simp only [supNormOver, truncateClass, Set.mem_ofPred_eq, empiricalProcess,
           empiricalAvg, abs_mul, abs_nonneg, ENNReal.ofReal_mul, iSup_exists,
           iSup_eq_zero, mul_eq_zero, ENNReal.ofReal_eq_zero, abs_nonpos_iff,
           Nat.cast_nonneg, Real.sqrt_eq_zero, Nat.cast_eq_zero, and_imp]

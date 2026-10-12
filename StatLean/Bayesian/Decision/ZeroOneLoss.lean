@@ -120,7 +120,7 @@ theorem measurable_fintypeArgmax [Fintype Θ] [Nonempty Θ] [DiscreteMeasurableS
           Fintype.equivFin Θ a ≤ Fintype.equivFin Θ a'}) := by
     ext x
     simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_inter_iff, Set.mem_iInter,
-      Set.mem_setOf_eq]
+      Set.mem_ofPred_eq]
     rw [fintypeArgmax_eq_iff]
   rw [hset]
   refine MeasurableSet.inter ?_ ?_
@@ -129,12 +129,12 @@ theorem measurable_fintypeArgmax [Fintype Θ] [Nonempty Θ] [DiscreteMeasurableS
     by_cases h : Fintype.equivFin Θ a ≤ Fintype.equivFin Θ a'
     · have hset' : {x | (∀ b, g x b ≤ g x a') →
           Fintype.equivFin Θ a ≤ Fintype.equivFin Θ a'} = Set.univ := by
-        ext x; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]; exact fun _ => h
+        ext x; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]; exact fun _ => h
       rw [hset']; exact MeasurableSet.univ
     · have hset' : {x | (∀ b, g x b ≤ g x a') →
           Fintype.equivFin Θ a ≤ Fintype.equivFin Θ a'} = (⋂ b, {x | g x b ≤ g x a'})ᶜ := by
         ext x
-        simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_iInter]
+        simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, Set.mem_iInter]
         exact ⟨fun himp hall => h (himp hall), fun hnot hall => absurd hall hnot⟩
       rw [hset']
       exact (MeasurableSet.iInter fun b => measurableSet_le (hg b) (hg a')).compl

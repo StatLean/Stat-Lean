@@ -64,13 +64,13 @@ private lemma trigBasis_even {q : ℕ} (hq : 1 ≤ q) (x : ℝ) :
     trigBasis (2 * q) x = Real.sqrt 2 * Real.cos (2 * Real.pi * (q : ℝ) * x) := by
   have h2 : (2 * q) / 2 = q := by omega
   unfold trigBasis
-  rw [if_neg (by omega), if_neg (by omega), if_pos (by omega), h2]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega), h2]
 
 private lemma trigBasis_odd {q : ℕ} (hq : 1 ≤ q) (x : ℝ) :
     trigBasis (2 * q + 1) x = Real.sqrt 2 * Real.sin (2 * Real.pi * (q : ℝ) * x) := by
   have h2 : (2 * q + 1) / 2 = q := by omega
   unfold trigBasis
-  rw [if_neg (by omega), if_neg (by omega), if_neg (by omega), h2]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), h2]
 
 private lemma trig_index_cases {j : ℕ} (hj : 1 ≤ j) :
     j = 1 ∨ (∃ p, 1 ≤ p ∧ j = 2 * p) ∨ (∃ p, 1 ≤ p ∧ j = 2 * p + 1) := by
@@ -86,7 +86,7 @@ private lemma intCosZ (c : ℤ) :
     ∫ x in (0 : ℝ)..1, Real.cos (2 * Real.pi * (c : ℝ) * x) = if c = 0 then 1 else 0 := by
   by_cases hc : c = 0
   · subst hc; simp
-  · rw [if_neg hc]
+  · rw [ite_eq_right hc]
     have hA : (2 * Real.pi * (c : ℝ)) ≠ 0 := by
       simp only [ne_eq, mul_eq_zero, not_or]
       exact ⟨⟨two_ne_zero, Real.pi_ne_zero⟩, Int.cast_ne_zero.mpr hc⟩
@@ -139,10 +139,10 @@ private lemma intCosCosZ (p q : ℤ) (hpq : p + q ≠ 0) :
     rw [e1, e2, Real.cos_sub, Real.cos_add]; ring
   rw [intervalIntegral.integral_congr (fun x _ => key x), intervalIntegral.integral_div,
       intervalIntegral.integral_add (cos_intervalIntegrable _) (cos_intervalIntegrable _),
-      intCosZ, intCosZ, if_neg hpq]
+      intCosZ, intCosZ, ite_eq_right hpq]
   by_cases hpeq : p = q
-  · rw [if_pos hpeq, if_pos (sub_eq_zero.mpr hpeq)]; norm_num
-  · rw [if_neg hpeq, if_neg (sub_ne_zero.mpr hpeq)]; norm_num
+  · rw [ite_eq_left hpeq, ite_eq_left (sub_eq_zero.mpr hpeq)]; norm_num
+  · rw [ite_eq_right hpeq, ite_eq_right (sub_ne_zero.mpr hpeq)]; norm_num
 
 private lemma intSinSinZ (p q : ℤ) (hpq : p + q ≠ 0) :
     ∫ x in (0 : ℝ)..1, Real.sin (2 * Real.pi * (p : ℝ) * x) * Real.sin (2 * Real.pi * (q : ℝ) * x)
@@ -158,10 +158,10 @@ private lemma intSinSinZ (p q : ℤ) (hpq : p + q ≠ 0) :
     rw [e1, e2, Real.cos_sub, Real.cos_add]; ring
   rw [intervalIntegral.integral_congr (fun x _ => key x), intervalIntegral.integral_div,
       intervalIntegral.integral_sub (cos_intervalIntegrable _) (cos_intervalIntegrable _),
-      intCosZ, intCosZ, if_neg hpq]
+      intCosZ, intCosZ, ite_eq_right hpq]
   by_cases hpeq : p = q
-  · rw [if_pos hpeq, if_pos (sub_eq_zero.mpr hpeq)]; norm_num
-  · rw [if_neg hpeq, if_neg (sub_ne_zero.mpr hpeq)]; norm_num
+  · rw [ite_eq_left hpeq, ite_eq_left (sub_eq_zero.mpr hpeq)]; norm_num
+  · rw [ite_eq_right hpeq, ite_eq_right (sub_ne_zero.mpr hpeq)]; norm_num
 
 private lemma intCosSinZ (p q : ℤ) :
     ∫ x in (0 : ℝ)..1, Real.cos (2 * Real.pi * (p : ℝ) * x) * Real.sin (2 * Real.pi * (q : ℝ) * x)
@@ -202,7 +202,7 @@ private lemma intSinCosZ (p q : ℤ) :
 private lemma intCosN {q : ℕ} (hq : q ≠ 0) :
     ∫ x in (0 : ℝ)..1, Real.cos (2 * Real.pi * (q : ℝ) * x) = 0 := by
   have h := intCosZ (q : ℤ)
-  rw [if_neg (by exact_mod_cast hq)] at h
+  rw [ite_eq_right (by exact_mod_cast hq)] at h
   simpa using h
 
 private lemma intSinN (q : ℕ) :
@@ -240,13 +240,13 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
     rcases trig_index_cases hk with hk1 | ⟨q, hq, hkq⟩ | ⟨q, hq, hkq⟩
   -- j = 1, k = 1
   · subst hj1; subst hk1
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     have hfun : ∀ x, trigBasis 1 x * trigBasis 1 x = (1 : ℝ) := by
       intro x; rw [trigBasis_one]; ring
     rw [intervalIntegral.integral_congr (fun x _ => hfun x)]; simp
   -- j = 1, k = 2q
   · subst hj1; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis 1 x * trigBasis (2 * q) x
         = Real.sqrt 2 * Real.cos (2 * Real.pi * (q : ℝ) * x) := by
       intro x; rw [trigBasis_one, trigBasis_even hq, one_mul]
@@ -254,7 +254,7 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
         intCosN (by omega), mul_zero]
   -- j = 1, k = 2q+1
   · subst hj1; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis 1 x * trigBasis (2 * q + 1) x
         = Real.sqrt 2 * Real.sin (2 * Real.pi * (q : ℝ) * x) := by
       intro x; rw [trigBasis_one, trigBasis_odd hq, one_mul]
@@ -262,7 +262,7 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
         intSinN, mul_zero]
   -- j = 2p, k = 1
   · subst hjp; subst hk1
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis (2 * p) x * trigBasis 1 x
         = Real.sqrt 2 * Real.cos (2 * Real.pi * (p : ℝ) * x) := by
       intro x; rw [trigBasis_even hp, trigBasis_one, mul_one]
@@ -282,11 +282,11 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
     rw [intervalIntegral.integral_congr (fun x _ => hfun x), intervalIntegral.integral_const_mul,
         intCosCos hp hq]
     rcases eq_or_ne p q with h | h
-    · subst h; rw [if_pos rfl, if_pos rfl]; norm_num
-    · rw [if_neg h, if_neg (by omega), mul_zero]
+    · subst h; rw [ite_eq_left rfl, ite_eq_left rfl]; norm_num
+    · rw [ite_eq_right h, ite_eq_right (by omega), mul_zero]
   -- j = 2p, k = 2q+1
   · subst hjp; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis (2 * p) x * trigBasis (2 * q + 1) x
         = 2 * (Real.cos (2 * Real.pi * (p : ℝ) * x) * Real.sin (2 * Real.pi * (q : ℝ) * x)) := by
       intro x
@@ -300,7 +300,7 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
         intCosSin, mul_zero]
   -- j = 2p+1, k = 1
   · subst hjp; subst hk1
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis (2 * p + 1) x * trigBasis 1 x
         = Real.sqrt 2 * Real.sin (2 * Real.pi * (p : ℝ) * x) := by
       intro x; rw [trigBasis_odd hp, trigBasis_one, mul_one]
@@ -308,7 +308,7 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
         intSinN, mul_zero]
   -- j = 2p+1, k = 2q
   · subst hjp; subst hkq
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
     have hfun : ∀ x, trigBasis (2 * p + 1) x * trigBasis (2 * q) x
         = 2 * (Real.sin (2 * Real.pi * (p : ℝ) * x) * Real.cos (2 * Real.pi * (q : ℝ) * x)) := by
       intro x
@@ -334,7 +334,7 @@ theorem trigBasis_orthonormal {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
     rw [intervalIntegral.integral_congr (fun x _ => hfun x), intervalIntegral.integral_const_mul,
         intSinSin hp hq]
     rcases eq_or_ne p q with h | h
-    · subst h; rw [if_pos rfl, if_pos rfl]; norm_num
-    · rw [if_neg h, if_neg (by omega), mul_zero]
+    · subst h; rw [ite_eq_left rfl, ite_eq_left rfl]; norm_num
+    · rw [ite_eq_right h, ite_eq_right (by omega), mul_zero]
 
 end StatLean.NonparametricStatistics

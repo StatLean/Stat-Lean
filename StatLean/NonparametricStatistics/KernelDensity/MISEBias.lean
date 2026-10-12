@@ -81,21 +81,21 @@ private lemma triangle_double_integral_nonneg {f : ℝ → ℝ} (hfm : Measurabl
       ← MeasureTheory.integral_indicator measurableSet_Ioc,
       ← MeasureTheory.integral_indicator measurableSet_Ioc]
     refine integral_congr_ae (ae_of_all _ fun r => ?_)
-    simp only [hFdef, Set.indicator_apply, Set.mem_Ioc, Set.mem_setOf_eq]
+    simp only [hFdef, Set.indicator_apply, Set.mem_Ioc, Set.mem_ofPred_eq]
     by_cases h1 : 0 < r ∧ r ≤ s
     · have h2 : 0 < r ∧ r ≤ t := ⟨h1.1, h1.2.trans hs.2⟩
-      rw [if_pos h1, if_pos h2, if_pos h1.2]
+      rw [ite_eq_left h1, ite_eq_left h2, ite_eq_left h1.2]
     · by_cases h2 : 0 < r ∧ r ≤ t
       · have hrs : ¬ r ≤ s := by
           rcases not_and_or.1 h1 with h | h; exacts [absurd h2.1 h, h]
-        rw [if_neg h1, if_pos h2, if_neg hrs]
-      · rw [if_neg h1, if_neg h2]
+        rw [ite_eq_right h1, ite_eq_left h2, ite_eq_right hrs]
+      · rw [ite_eq_right h1, ite_eq_right h2]
   -- Outer-`s` integral of `F s r` for fixed `r ∈ Ioc 0 t`.
   have houter : ∀ r ∈ Set.Ioc (0 : ℝ) t, (∫ s in Set.Ioc (0:ℝ) t, F s r) = (t - r) * f r := by
     intro r hr
     have hFr : (fun s => F s r) = (Set.Ici r).indicator (fun _ => f r) := by
       funext s
-      simp only [hFdef, Set.indicator_apply, Set.mem_setOf_eq, Set.mem_Ici]
+      simp only [hFdef, Set.indicator_apply, Set.mem_ofPred_eq, Set.mem_Ici]
     have hint_eq : Set.Ioc (0:ℝ) t ∩ Set.Ici r = Set.Icc r t := by
       ext s
       simp only [Set.mem_inter_iff, Set.mem_Ioc, Set.mem_Ici, Set.mem_Icc]

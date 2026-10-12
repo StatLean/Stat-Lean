@@ -64,8 +64,8 @@ private lemma lpWeight_measurable_in_t {n : ℕ} (xdat : Fin n → ℝ) {K : ℝ
     refine measurable_det_of_entries (fun x y => ?_)
     simp only [Matrix.updateRow_apply]
     by_cases hx : x = b
-    · simp only [hx, if_true]; exact measurable_const
-    · simp only [hx, if_false]; exact hM x y
+    · simp only [hx, ite_true]; exact measurable_const
+    · simp only [hx, ite_false]; exact hM x y
   have hMinv : ∀ b, Measurable (fun t => (lpMatrix xdat K h ℓ t)⁻¹ 0 b) := by
     intro b
     simp_rw [Matrix.inv_def, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv']

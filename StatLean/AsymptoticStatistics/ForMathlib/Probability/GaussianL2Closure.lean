@@ -45,16 +45,16 @@ theorem hasGaussianLaw_of_centered_tendsto_L2
     refine ⟨hZmeas, isGaussian_iff_gaussian_charFun.mpr
       ⟨0, ‖Z‖ ^ 2 • ContinuousLinearMap.mul ℝ ℝ,
         ⟨⟨fun x y => ?_⟩, ⟨fun x => ?_⟩⟩, ?_⟩⟩
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       ring
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       exact mul_nonneg (sq_nonneg _) (mul_self_nonneg x)
     · intro t
       rw [hChar t]
       congr 1
-      simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
+      simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
         inner_zero_right]
       push_cast
       ring

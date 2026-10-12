@@ -166,7 +166,7 @@ theorem pointwiseLinearization_at_discretized
       (rootNGridRound_spec n hnpos θ0).2
     have hpoint : point n d = rounded + (1 / Real.sqrt n) • offset := by
       ext j
-      simp only [point, if_neg hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
+      simp only [point, ite_eq_right hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
       change (((((Int.floor (Real.sqrt n * θ0 j) : ℤ) +
         d j (Finset.mem_univ j) : ℤ) : ℝ) / Real.sqrt n)) =
           ((Int.floor (Real.sqrt n * θ0 j) : ℤ) : ℝ) / Real.sqrt n +
@@ -216,7 +216,7 @@ theorem pointwiseLinearization_at_discretized
         exact gridCode_mem_Icc hnpos θ0 (pre n ξ) M hM_nonneg z hz hin' j
       have hpoint : point n d = pre n ξ := by
         ext j
-        simp only [point, if_neg hnpos.ne', d]
+        simp only [point, ite_eq_right hnpos.ne', d]
         change ((((Int.floor (Real.sqrt n * θ0 j) : ℤ) +
           (z j - Int.floor (Real.sqrt n * θ0 j)) : ℤ) : ℝ) / Real.sqrt n) = pre n ξ j
         rw [hz j]; congr 1; push_cast; ring

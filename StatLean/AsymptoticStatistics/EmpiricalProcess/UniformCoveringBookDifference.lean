@@ -173,7 +173,7 @@ theorem allProbabilityNormalizedL2CoveringNumber_differenceClass_le_sq
           allProbabilityNormalizedL2CoveringNumber Q
               (differenceClass F) (fun x => 2 * Φ x) ε ≤
             (T.card : ℕ∞) := by
-        rw [allProbabilityNormalizedL2CoveringNumber, if_neg htwoΦ]
+        rw [allProbabilityNormalizedL2CoveringNumber, ite_eq_right htwoΦ]
         exact iInf_le_of_le T
           (iInf_le_of_le ⟨hT_center, hT_cover⟩ le_rfl)
       calc
@@ -214,7 +214,7 @@ theorem allProbabilityNormalizedL2CoveringNumber_mono_class
   by_cases hΦ : eLpNorm' Φ 2 (Q : Measure Ω) = 0
   · simp [allProbabilityNormalizedL2CoveringNumber, hΦ]
   unfold allProbabilityNormalizedL2CoveringNumber
-  rw [if_neg hΦ, if_neg hΦ]
+  rw [ite_eq_right hΦ, ite_eq_right hΦ]
   refine iInf_mono fun S => iInf_mono' fun hSG => ?_
   exact ⟨⟨hSG.1, fun f hf => hSG.2 f (hFG hf)⟩, le_rfl⟩
 

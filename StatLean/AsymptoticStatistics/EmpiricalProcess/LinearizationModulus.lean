@@ -631,7 +631,7 @@ theorem shell_localizedDiff_bracketingNumber_freeS {d : ℕ}
       calc bracketingNumber (t / 2) F 2 P
           ≤ bracketingNumber (t / 2) Fc 2 P := bracketingNumber_mono_class hFsub
         _ ≤ (Na : ℕ∞) := hNa_le
-        _ < ⊤ := ENat.coe_lt_top Na
+        _ < ⊤ := ENat.natCast_lt_top Na
     calc bracketingNumber t (localizedDifferenceClass F P s) 2 P
         ≤ bracketingNumber t (differenceClass F) 2 P :=
           bracketingNumber_mono_class localizedDifferenceClass_subset
@@ -711,7 +711,7 @@ theorem envelopeTail_vanishes {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
           filter_upwards [hsn.eventually_gt_atTop (|Φ ω|)] with n hn
           simp only [hG]
           have hnot : ω ∉ {x | Real.sqrt n * a < |Φ x|} := by
-            simp only [Set.mem_setOf_eq]; linarith
+            simp only [Set.mem_ofPred_eq]; linarith
           rw [Set.indicator_of_notMem hnot, mul_zero]
         exact tendsto_const_nhds.congr' hev.symm
     simpa using hlim
@@ -2424,15 +2424,15 @@ theorem linearization_distL2_tendstoZero_atRate
   have hf_aesm : ∀ n, AEStronglyMeasurable (f n) P := by
     intro n
     by_cases hn : Good n
-    · simpa only [f, if_pos hn] using hresid_aesm n
-    · simp only [f, if_neg hn]
+    · simpa only [f, ite_eq_left hn] using hresid_aesm n
+    · simp only [f, ite_eq_right hn]
       exact aestronglyMeasurable_const
   have hf_le_D : ∀ n ω, ‖f n ω‖ ≤ D ω := by
     intro n ω
     by_cases hn : Good n
-    · simp only [f, if_pos hn, Real.norm_eq_abs]
+    · simp only [f, ite_eq_left hn, Real.norm_eq_abs]
       exact hresid_le n hn ω
-    · simp only [f, if_neg hn, norm_zero]
+    · simp only [f, ite_eq_right hn, norm_zero]
       exact hD_nonneg ω
   have hf_tendsto_ae : ∀ᵐ ω ∂P, Tendsto (fun n => f n ω) atTop (𝓝 0) := by
     filter_upwards [hderiv] with ω hω
@@ -2463,7 +2463,7 @@ theorem linearization_distL2_tendstoZero_atRate
       simpa [linResidAt, scaledIncrementAt, Function.comp_def, smul_eq_mul] using hslope
     refine hresid.congr' ?_
     filter_upwards [hGood] with n hn
-    simp only [f, if_pos hn]
+    simp only [f, ite_eq_left hn]
   have hUI : UnifIntegrable f 2 P := by
     apply (unifIntegrable_const one_le_two (by norm_num) hD_memLp).ae_mono hf_aesm
     intro n
@@ -2483,7 +2483,7 @@ theorem linearization_distL2_tendstoZero_atRate
   apply congrArg ENNReal.toReal
   apply congrArg (fun g : Ω → ℝ => eLpNorm' g 2 P)
   funext ω
-  simp only [f, if_pos hn, linResidAt, Pi.sub_apply]
+  simp only [f, ite_eq_left hn, linResidAt, Pi.sub_apply]
 
 /-- For every fixed direction, the empirical process of the arbitrary-rate linearization
 residual converges to zero in probability.  The local rate guards and residual `L²`

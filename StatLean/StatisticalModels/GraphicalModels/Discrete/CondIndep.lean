@@ -3,8 +3,8 @@ import StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid
 import Mathlib.Data.Finset.Update
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Logic.Function.DependsOn
-import Mathlib.Data.ENNReal.Operations
-import Mathlib.Data.ENNReal.Inv
+import Mathlib.Basic.ENNReal.Operations
+import Mathlib.Basic.ENNReal.Inv
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
@@ -224,11 +224,11 @@ theorem blockMarginal_eq_sum_updateFinset (p : (V → α) → ℝ≥0∞) (S T :
     constructor
     · intro hy
       refine ⟨fun i hi => ?_, fun i => ?_⟩
-      · simpa [dif_neg (Finset.disjoint_right.mp hTS hi)] using hy i (Or.inl hi)
-      · simpa [dif_pos i.2] using hy (i : V) (Or.inr i.2)
+      · simpa [dite_eq_right (Finset.disjoint_right.mp hTS hi)] using hy i (Or.inl hi)
+      · simpa [dite_eq_left i.2] using hy (i : V) (Or.inr i.2)
     · rintro ⟨h1, h2⟩ i (hi | hi)
-      · simpa [dif_neg (Finset.disjoint_right.mp hTS hi)] using h1 i hi
-      · simpa [dif_pos hi] using h2 ⟨i, hi⟩
+      · simpa [dite_eq_right (Finset.disjoint_right.mp hTS hi)] using h1 i hi
+      · simpa [dite_eq_left hi] using h2 ⟨i, hi⟩
   rw [blockMarginal,
     ← Finset.sum_fiberwise (agreeOn S x) (fun y : V → α => fun i : ↥T => y (i : V)) p]
   exact Finset.sum_congr rfl fun b _ => by rw [blockMarginal, key b]
@@ -318,7 +318,7 @@ theorem CondIndepMass.decomposition {p : (V → α) → ℝ≥0∞} {A B C D : F
     intro E b hTE
     refine dependsOn_blockMarginal E p fun i hi => ?_
     have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
-    simp [Function.updateFinset, dif_neg hiT]
+    simp [Function.updateFinset, dite_eq_right hiT]
   have e1 := blockMarginal_eq_sum_updateFinset p (A ∪ B ∪ C) T x hTW
   have e2 := blockMarginal_eq_sum_updateFinset p (B ∪ C) T x hTBC
   rw [hU] at e1
@@ -451,7 +451,7 @@ private theorem condIndepMass_of_factorization {p : (V → α) → ℝ≥0∞} {
     intro f E T hf hTE y b
     refine hf fun i hi => ?_
     have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
-    simp [Function.updateFinset, dif_neg hiT]
+    simp [Function.updateFinset, dite_eq_right hiT]
   -- `k` sees the `B`-update but not the `A`-update underneath it.
   have hk2 : ∀ (a : ↥A → α) (b : ↥B → α),
       k (Function.updateFinset (π := fun _ => α)
@@ -461,9 +461,9 @@ private theorem condIndepMass_of_factorization {p : (V → α) → ℝ≥0∞} {
     refine hk fun i hi => ?_
     simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi
     by_cases hiB : i ∈ B
-    · simp [Function.updateFinset, dif_pos hiB]
+    · simp [Function.updateFinset, dite_eq_left hiB]
     · have hiA : i ∉ A := Finset.disjoint_right.mp hAC (by tauto)
-      simp [Function.updateFinset, dif_neg hiB, dif_neg hiA]
+      simp [Function.updateFinset, dite_eq_right hiB, dite_eq_right hiA]
   -- Marginal on `A ∪ C`: sum the factorisation over `B`.
   have eAC : blockMarginal (A ∪ C) p x
       = h x * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
@@ -496,11 +496,11 @@ private def substOn (x₀ : V → α) (E : Finset V) (z : V → α) : V → α :
 
 omit [Fintype V] [Fintype α] [DecidableEq α] in
 private theorem substOn_of_mem {x₀ : V → α} {E : Finset V} {z : V → α} {i : V} (hi : i ∈ E) :
-    substOn x₀ E z i = x₀ i := if_pos hi
+    substOn x₀ E z i = x₀ i := ite_eq_left hi
 
 omit [Fintype V] [Fintype α] [DecidableEq α] in
 private theorem substOn_of_notMem {x₀ : V → α} {E : Finset V} {z : V → α} {i : V} (hi : i ∉ E) :
-    substOn x₀ E z i = z i := if_neg hi
+    substOn x₀ E z i = z i := ite_eq_right hi
 
 /-- The `ℝ≥0∞` half of the four-point identity: four evaluations of (3.2) at configurations
 that pair up in the two blocks give `g₁·g₄ = g₂·g₃` after cancelling `m²`. -/
@@ -871,7 +871,7 @@ theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [Meas
         = (fun ω => (coords C X ω, (coords A X ω, coords B X ω))) ⁻¹'
           (({C.restrict x} : Set (↥C → α)) ×ˢ (s ×ˢ t)) := by
       ext ω
-      simpa only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff,
+      simpa only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff,
         and_assoc] using! hiff ω
     rw [hbm E, hEq, ← Measure.map_apply hT ((measurableSet_singleton _).prod (hs.prod ht)),
       hdis, Measure.compProd_apply_prod (measurableSet_singleton _) (hs.prod ht),

@@ -147,7 +147,7 @@ theorem laplaceMeasure_abs_gt {b δ : ℝ}
     measurableSet_lt measurable_const continuous_abs.measurable
   have hset : {x : ℝ | δ < |x|} = Set.Iio (-δ) ∪ Set.Ioi δ := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Iio, Set.mem_Ioi, lt_abs]
+    simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iio, Set.mem_Ioi, lt_abs]
     constructor
     · rintro (h | h)
       · exact Or.inr h

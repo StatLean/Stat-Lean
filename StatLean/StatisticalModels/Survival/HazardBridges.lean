@@ -90,7 +90,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSin
   rcases eq_empty_or_nonempty A with hAe | hAne
   · have hu' : u ≤ 0 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       obtain ⟨x, hx⟩ :=
         ((ProbabilityTheory.tendsto_cdf_atBot μ).eventually (eventually_lt_nhds hcon)).exists
       have hxA : x ∈ A := (hmemA x).2 hx.le
@@ -102,7 +102,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSin
   have hbdd : BddAbove A := by
     refine ⟨x₀, fun x hx => ?_⟩
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact absurd ((hmemA x).1 hx) (not_le.2 (hx₀.trans_le (hmono hcon.le)))
   set a := sSup A with hadef
   have hIio : Iio a ⊆ A := by
@@ -122,7 +122,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSin
         Ioi_subset_Ici_self) ?_
       filter_upwards [self_mem_nhdsWithin] with x hx
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd (le_csSup hbdd ((hmemA x).2 hcon.le)) (not_le.2 hx)
   rw [hAmeas, ← ProbabilityTheory.ofReal_cdf μ a, hcdfa]
 

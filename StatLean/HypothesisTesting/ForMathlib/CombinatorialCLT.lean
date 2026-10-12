@@ -218,8 +218,8 @@ theorem avg_perm_blockSum_sq {N m : ℕ}
     rw [Finset.sum_comm, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hij : i = j
-    · subst hij; rw [if_pos rfl]; exact hdiag i
-    · rw [if_neg hij]; exact hoff i j hij
+    · subst hij; rw [ite_eq_left rfl]; exact hdiag i
+    · rw [ite_eq_right hij]; exact hoff i j hij
   rw [hswap, hexch]
   -- the closed form of the double sum
   set A : ℝ := (N : ℝ)⁻¹ * S₂ with hA
@@ -231,7 +231,7 @@ theorem avg_perm_blockSum_sq {N m : ℕ}
       intro j; by_cases h : i = j <;> simp [h]
     rw [Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_add_distrib, Finset.sum_const,
       Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
-      Finset.sum_ite_eq Finset.univ i (fun _ => A - B), if_pos (Finset.mem_univ i)]
+      Finset.sum_ite_eq Finset.univ i (fun _ => A - B), ite_eq_left (Finset.mem_univ i)]
   have hcount : (∑ i : Fin m, ∑ j : Fin m, (if i = j then A else B))
       = (m : ℝ) * A + ((m : ℝ) * (m : ℝ) - (m : ℝ)) * B := by
     rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
@@ -1144,7 +1144,7 @@ private lemma abs_truncKeep_le {N : ℕ} {τ : ℝ} (hτ : 0 ≤ τ) (d : Fin N 
   simp only [truncKeep]
   by_cases hl : τ ≤ |d l|
   · simp [hl, hτ]
-  · rw [if_neg hl]; exact le_of_not_ge hl
+  · rw [ite_eq_right hl]; exact le_of_not_ge hl
 
 private lemma truncLoss_nonneg {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : 0 ≤ truncLoss τ d :=
   Finset.sum_nonneg fun _ _ => sq_nonneg _
@@ -1170,9 +1170,9 @@ private lemma abs_sum_truncDisc_le {N : ℕ} {τ : ℝ} (hτ : 0 < τ) (d : Fin 
     intro l
     simp only [truncDisc]
     by_cases hl : τ ≤ |d l|
-    · rw [if_pos hl, le_div_iff₀ hτ, ← sq_abs (d l)]
+    · rw [ite_eq_left hl, le_div_iff₀ hτ, ← sq_abs (d l)]
       nlinarith [hl, abs_nonneg (d l)]
-    · rw [if_neg hl]
+    · rw [ite_eq_right hl]
       simp
   calc |∑ l, truncDisc τ d l| ≤ ∑ l, |truncDisc τ d l| := Finset.abs_sum_le_sum_abs _ _
     _ ≤ ∑ l, truncDisc τ d l ^ 2 / τ := Finset.sum_le_sum fun l _ => hpt l
@@ -1851,8 +1851,8 @@ theorem tendsto_perm_cdf_blockSum {N m : ℕ → ℕ}
     constructor
     · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => ?_) hcinv
       by_cases hσ : ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k)
-      · rw [if_pos hσ]; exact ramp_le_one _ _ _
-      · rw [if_neg hσ]
+      · rw [ite_eq_left hσ]; exact ramp_le_one _ _ _
+      · rw [ite_eq_right hσ]
         refine le_of_eq (ramp_eq_zero_of_le hε ?_)
         have hnot : ¬ ((blockSumScale (N k) (m k))⁻¹ * (∑ i, d k (σ (a k i))) ≤ t) :=
           fun hcon => hσ ((hiff σ).2 hcon)
@@ -1860,8 +1860,8 @@ theorem tendsto_perm_cdf_blockSum {N m : ℕ → ℕ}
         linarith
     · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => ?_) hcinv
       by_cases hσ : ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k)
-      · rw [if_pos hσ, ramp_eq_one_of_le hε ((hiff σ).1 hσ)]
-      · rw [if_neg hσ]; exact ramp_nonneg _ _ _
+      · rw [ite_eq_left hσ, ramp_eq_one_of_le hε ((hiff σ).1 hσ)]
+      · rw [ite_eq_right hσ]; exact ramp_nonneg _ _ _
   -- close the squeeze
   filter_upwards [hsq, Metric.tendsto_nhds.1 hU ε hε, Metric.tendsto_nhds.1 hL ε hε]
     with k hk hUk hLk

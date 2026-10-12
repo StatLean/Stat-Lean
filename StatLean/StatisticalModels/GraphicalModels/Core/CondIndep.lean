@@ -502,7 +502,7 @@ theorem not_sfinite_mu : ¬ SFinite mu := by
   have hcount := Measure.countable_meas_pos_of_disjoint_iUnion (μ := mu) hmble hdisj
   have huniv : {x : ℝ | 0 < mu (fst' ⁻¹' {x})} = Set.univ := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true, pos_iff_ne_zero]
+    simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true, pos_iff_ne_zero]
     exact mu_ne_zero (hmble x) ⟨pt x true, rfl⟩
   rw [huniv] at hcount
   exact (not_countable_iff.2 inferInstance) (Set.countable_univ_iff.1 hcount)

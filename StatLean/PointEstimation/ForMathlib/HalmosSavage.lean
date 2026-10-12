@@ -97,7 +97,7 @@ theorem exists_equivalent_countable_mixture {Θ 𝓧 : Type*} [MeasurableSpace �
       conv_lhs => rw [← Measure.withDensity_rnDeriv_eq (P θ) ν₀ (hPν₀ θ), withDensity_apply _ hA]
     have hset : {x : 𝓧 | ¬(x ∈ A → (P θ).rnDeriv ν₀ x = 0)} = A ∩ supp θ := by
       rw [hsupp]; ext x
-      simp only [Set.mem_setOf_eq, Classical.not_imp, Set.mem_inter_iff, ne_eq]
+      simp only [Set.mem_ofPred_eq, Classical.not_imp, Set.mem_inter_iff, ne_eq]
     rw [hPA, setLIntegral_eq_zero_iff hA (Measure.measurable_rnDeriv _ _), ae_iff]
     exact iff_of_eq (by rw [hset])
   -- Maximise the `ν₀`-measure of the support-union over countable subfamilies.
@@ -147,7 +147,7 @@ theorem exists_equivalent_countable_mixture {Θ 𝓧 : Type*} [MeasurableSpace �
     have hge : ν₀ U ≤ ν₀ (supp θ ∪ U) := measure_mono Set.subset_union_right
     have heq : ν₀ (supp θ ∪ U) = ν₀ U := le_antisymm hle1 hge
     have hkey : ν₀ (supp θ ∪ U) = ν₀ U + ν₀ (supp θ \ U) := by
-      rw [Set.union_comm (supp θ) U, ← Set.union_diff_self,
+      rw [Set.union_comm (supp θ) U, ← Set.union_sdiff_self,
           measure_union disjoint_sdiff_self_right ((hsupp_meas θ).diff hU_meas)]
     have hcancel : ν₀ U + 0 = ν₀ U + ν₀ (supp θ \ U) := by
       rw [add_zero]; exact heq.symm.trans hkey

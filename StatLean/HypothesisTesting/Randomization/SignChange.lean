@@ -406,7 +406,7 @@ private lemma pi_symmetrize_eq (P : Measure ℝ) [IsProbabilityMeasure P] (n : �
       = ((2 : ℝ≥0∞) ^ n)⁻¹ •
         ∑ σ : Fin n → ℤˣ, (Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x) := by
   refine Measure.pi_eq (fun s hs => ?_)
-  rw [Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   have hterm : ∀ σ : Fin n → ℤˣ,
       ((Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x)) (Set.pi Set.univ s)
         = ∏ i, P ((fun xi : ℝ => ((σ i : ℤ) : ℝ) * xi) ⁻¹' s i) := by
@@ -447,7 +447,7 @@ private lemma pi_symmetrize_apply_invariant (P : Measure ℝ) [IsProbabilityMeas
     (S : Set (Fin n → ℝ)) (hS : MeasurableSet S)
     (hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S) :
     Measure.pi (fun _ : Fin n => symmetrize P) S = Measure.pi (fun _ : Fin n => P) S := by
-  rw [pi_symmetrize_eq P n, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [pi_symmetrize_eq P n, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   have hmap : ∀ σ : Fin n → ℤˣ,
       ((Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x)) S
         = Measure.pi (fun _ : Fin n => P) S := by
@@ -506,7 +506,7 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     measurableSet_le measurable_const ((hg.sub measurable_const).abs)
   have hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S := by
     intro σ; ext x
-    simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randDist_smul_invariant]
+    simp only [hS, Set.mem_preimage, Set.mem_ofPred_eq, randDist_smul_invariant]
   rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
 /-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (its density is
@@ -550,7 +550,7 @@ private lemma randQuantile_smul_invariant {G 𝓧 : Type*} [Group G] [Fintype G]
     randQuantile G T p (σ • x) = randQuantile G T p x := by
   unfold randQuantile
   congr 1; ext t
-  simp only [Set.mem_setOf_eq, randDist_smul_invariant]
+  simp only [Set.mem_ofPred_eq, randDist_smul_invariant]
 
 /-- The randomization quantile is a measurable function of the data: its strict sublevel set
 is a countable union (over rational thresholds) of `randDist` sublevel sets. -/
@@ -565,17 +565,17 @@ private lemma measurable_randQuantile {G 𝓧 : Type*} [Group G] [Fintype G]
     have hone : randDist G T x
         (Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x))) = 1 := by
       unfold randDist
-      rw [Finset.sum_congr rfl (fun g _ => if_pos
+      rw [Finset.sum_congr rfl (fun g _ => ite_eq_left
         (Finset.le_sup' (fun g : G => T (g • x)) (Finset.mem_univ g))),
         Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
         inv_mul_cancel₀ (by exact_mod_cast Fintype.card_ne_zero)]
-    rw [Set.mem_setOf_eq, hone]; exact hp1
+    rw [Set.mem_ofPred_eq, hone]; exact hp1
   apply measurable_of_Iio
   intro r
   have hset : (fun x => randQuantile G T p x) ⁻¹' Set.Iio r
       = ⋃ s : {s : ℚ // (s : ℝ) < r}, {x | p ≤ randDist G T x (s : ℝ)} := by
     ext x
-    simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_iUnion, Set.mem_setOf_eq, Subtype.exists]
+    simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_iUnion, Set.mem_ofPred_eq, Subtype.exists]
     constructor
     · intro hlt
       obtain ⟨t, ht_mem, ht_lt⟩ :=
@@ -670,7 +670,7 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     measurableSet_le measurable_const ((hgq.sub measurable_const).abs)
   have hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S := by
     intro σ; ext x
-    simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randQuantile_smul_invariant]
+    simp only [hS, Set.mem_preimage, Set.mem_ofPred_eq, randQuantile_smul_invariant]
   rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
 end StatLean.HypothesisTesting

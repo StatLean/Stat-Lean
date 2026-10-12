@@ -208,7 +208,7 @@ private lemma centerHalfGeometricCLM_eq_starProjection
 private lemma compressedDenseMap_eq_projection
     (f : ↥(L2ZeroMean halfGeometricP)) :
     compressedDenseMap f =
-      (L2ZeroMean halfGeometricP).orthogonalProjection
+      (L2ZeroMean halfGeometricP).orthogonalProjectionOnto
         (multiplyDenseCLM (f : Lp ℝ 2 halfGeometricP)) := by
   apply Subtype.ext
   exact centerHalfGeometricCLM_eq_starProjection _
@@ -234,8 +234,8 @@ private lemma compressedDenseMap_symmetric
     (f g : ↥(L2ZeroMean halfGeometricP)) :
     ⟪compressedDenseMap f, g⟫_ℝ = ⟪f, compressedDenseMap g⟫_ℝ := by
   rw [compressedDenseMap_eq_projection, compressedDenseMap_eq_projection,
-    Submodule.inner_orthogonalProjection_eq_of_mem_right,
-    Submodule.inner_orthogonalProjection_eq_of_mem_left]
+    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right,
+    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
   exact multiplyDenseCLM_symmetric _ _
 
 private lemma denseMultiplier_sq (n : ℕ) :
@@ -665,7 +665,7 @@ private lemma densePsi_denseChart
     densePsi (denseChart f) = ⟪denseQ, f⟫_ℝ := by
   let hrep : ∃ g : ↥(L2ZeroMean halfGeometricP),
       DenseChartGood g ∧ denseChart f = denseChart g := ⟨f, hf, rfl⟩
-  rw [densePsi, dif_pos hrep]
+  rw [densePsi, dite_eq_left hrep]
   have hchosen := Classical.choose_spec hrep
   have huniq : Classical.choose hrep = f :=
     (denseChart_injective_on_good hchosen.1 hf hchosen.2.symm)

@@ -230,7 +230,7 @@ it carries `J * J⁻¹ = 1` to the identity operator. -/
 private lemma mulVecE_mulVecE_inv (J : Matrix (Fin k) (Fin k) ℝ) (hdet : IsUnit J.det)
     (z : EuclideanSpace ℝ (Fin k)) : mulVecE J (mulVecE J⁻¹ z) = z := by
   rw [mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM,
-    ← ContinuousLinearMap.mul_apply, ← map_mul, Matrix.mul_nonsing_inv J hdet, map_one]
+    ← mul_apply_eq_comp, ← map_mul, Matrix.mul_nonsing_inv J hdet, map_one]
   rfl
 
 omit [MeasurableSpace 𝓧] in
@@ -432,7 +432,7 @@ private lemma wald_sub_score_tendstoInMeasure
             ∪ {ω : Fin n → 𝓧 | K ≤ ‖mulVecE J⁻¹ (scoreSum ℓ n ω)‖} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hkey : |waldStatistic J θ₀ est n ω - scoreStatistic J ℓ n ω| < ε := by
       rw [waldStatistic_eq_quadratic J θ₀ est n ω, scoreStatistic_eq_quadratic J hdet ℓ n ω]
@@ -634,7 +634,7 @@ private lemma logLR_sub_score_tendstoInMeasure
               ‖h‖ ≤ K + 1 ∧ ε / 4 ≤ |lanRemainder M θ₀ ℓ J h n ω|}) := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_exists, not_and, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_exists, not_and, not_le] at hcon
     obtain ⟨hVsmall, hgapsmall, hlanSmall⟩ := hcon
     -- `ĥₙ` lies in the ball of radius `K + 1`.
     have hball : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + 1 := by
@@ -850,7 +850,7 @@ theorem wald_tendsto_chiSquared
           {ω : Fin n → 𝓧 |
             ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖}) := by
       funext n; congr 1; ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [dist_eq_norm, norm_sub_rev]
     rw [hset]; exact hlin ε hε
   -- Continuous mapping: `Wₙ = ⟪Uₙ, J Uₙ⟫`, and `N(0, J⁻¹)` pushes to `χ²ₖ`.
@@ -943,7 +943,7 @@ theorem logLR_tendsto_chiSquared
         {ω : Fin n → 𝓧 |
           ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|}) := by
     funext n; congr 1; ext ω
-    simp only [Set.mem_setOf_eq, Real.dist_eq, abs_sub_comm]
+    simp only [Set.mem_ofPred_eq, Real.dist_eq, abs_sub_comm]
   rw [hset]; exact h
 
 /-! ### The affine composite null: the rank-`p` Gaussian geometry -/
@@ -953,7 +953,7 @@ omit [MeasurableSpace 𝓧] in
 private lemma mulVecE_comp (A A' : Matrix (Fin k) (Fin k) ℝ)
     (z : EuclideanSpace ℝ (Fin k)) : mulVecE A (mulVecE A' z) = mulVecE (A * A') z := by
   rw [mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM,
-    ← ContinuousLinearMap.mul_apply, ← map_mul]
+    ← mul_apply_eq_comp, ← map_mul]
 
 omit [MeasurableSpace 𝓧] in
 /-- The identity matrix acts as the identity. -/
@@ -1001,10 +1001,10 @@ private lemma stdGaussian_map_normSq_starProjection {p : ℕ} (hp : 0 < p)
   let b : OrthonormalBasis (Fin p) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr hV)
   let e : V ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin p) := b.repr
   let φ : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin p) :=
-    (e.toLinearIsometry.toContinuousLinearMap).comp V.orthogonalProjection
+    (e.toLinearIsometry.toContinuousLinearMap).comp V.orthogonalProjectionOnto
   let ψ : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     V.subtypeL.comp (e.symm.toLinearIsometry.toContinuousLinearMap)
-  have hφapp : ∀ w, φ w = e (V.orthogonalProjection w) := fun _ => rfl
+  have hφapp : ∀ w, φ w = e (V.orthogonalProjectionOnto w) := fun _ => rfl
   have hψapp : ∀ y, ψ y = ((e.symm y : V) : EuclideanSpace ℝ (Fin k)) := fun _ => rfl
   have hnormφ : ∀ w, ‖φ w‖ = ‖V.starProjection w‖ := by
     intro w
@@ -1016,7 +1016,7 @@ private lemma stdGaussian_map_normSq_starProjection {p : ℕ} (hp : 0 < p)
     exact (Submodule.norm_coe (e.symm y)).trans (e.symm.norm_map y)
   have hφψ : ∀ y, φ (ψ y) = y := by
     intro y
-    rw [hφapp, hψapp, Submodule.orthogonalProjection_mem_subspace_eq_self,
+    rw [hφapp, hψapp, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self,
       LinearIsometryEquiv.apply_symm_apply]
   have hφle : ∀ w, ‖φ w‖ ≤ ‖w‖ := by
     intro w
@@ -1373,7 +1373,7 @@ private lemma ae_forall_density_ne_zero
     refine le_antisymm ?_ (zero_le)
     refine le_of_eq ?_
     rw [MeasureTheory.setLIntegral_congr_fun hSmeas (g := fun _ => (0 : ℝ≥0∞))
-      (fun x hx => by simp [Set.mem_setOf_eq.mp hx])]
+      (fun x hx => by simp [Set.mem_ofPred_eq.mp hx])]
     simp
   rw [MeasureTheory.ae_all_iff]
   intro i
@@ -1381,7 +1381,7 @@ private lemma ae_forall_density_ne_zero
   have hset : {ω : Fin n → 𝓧 | ¬ M.density θ₀ (ω i) ≠ 0}
       = Set.univ.pi (fun j => if j = i then S else Set.univ) := by
     ext ω
-    simp only [Set.mem_setOf_eq, not_not, Set.mem_univ_pi]
+    simp only [Set.mem_ofPred_eq, not_not, Set.mem_univ_pi]
     constructor
     · intro h j
       by_cases hj : j = i
@@ -1566,9 +1566,9 @@ private lemma tendstoInMeasure_of_split {m : ℕ}
     intro ω hω
     by_cases hg : ω ∈ G
     · have hsplit := logLRStatistic_affine_split M a B β₀ θ₀ hθ₀ hsupp est est₀ n ω hg
-      simp only [Set.mem_setOf_eq, hsplit] at hω
+      simp only [Set.mem_ofPred_eq, hsplit] at hω
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_compl_iff, hA1, hA2, Set.mem_setOf_eq, not_or,
+      simp only [Set.mem_union, Set.mem_compl_iff, hA1, hA2, Set.mem_ofPred_eq, not_or,
         not_le] at hcon
       obtain ⟨⟨hc1, hc2⟩, -⟩ := hcon
       have : |logLRStatistic M est (fun _ _ => θ₀) n ω
@@ -1794,7 +1794,7 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
         {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
           - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|}) := by
     funext n; congr 1; ext ω
-    simp only [Set.mem_setOf_eq, Real.dist_eq, abs_sub_comm]
+    simp only [Set.mem_ofPred_eq, Real.dist_eq, abs_sub_comm]
   rw [hset]; exact h
 
 end StatLean.HypothesisTesting

@@ -329,7 +329,7 @@ variable {X : ℤ → Ω → ℝ}
 /-- The `k ≤ 1` branch of `pacf`. -/
 private lemma pacf_of_le_one (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : k ≤ 1) :
     pacf X μ k = acf X μ 1 := by
-  rw [pacf, if_pos hk]
+  rw [pacf, ite_eq_left hk]
 
 /-- The `k ≥ 2` branch of `pacf`, with the window spelled out. -/
 private lemma pacf_of_two_le (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : 2 ≤ k) :
@@ -341,7 +341,7 @@ private lemma pacf_of_two_le (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ
             (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ) *
           Real.sqrt (variance (linRegResidual X μ ((k : ℤ) + 1)
             (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ)) := by
-  rw [pacf, if_neg (by omega : ¬ (k ≤ 1))]
+  rw [pacf, ite_eq_right (by omega : ¬ (k ≤ 1))]
 
 /-- **Two-moment time reversibility** at the coefficient level (FY §2.7.2): regressing
 `X_{m+2}` on `(X_2, …, X_{m+1})` gives the *reversed* coefficient vector of the regression
@@ -844,10 +844,10 @@ theorem pacf_eq_zero_of_isAR [IsProbabilityMeasure μ] {p : ℕ} {b : Fin p → 
         (fun x hx => Finset.mem_range.2 ((Finset.mem_range.1 hx).trans hk))
         fun j hj hjn => ?_).symm
       rw [Finset.mem_range] at hjn
-      rw [dif_neg hjn, zero_mul]
+      rw [dite_eq_right hjn, zero_mul]
     rw [hg, hres, ← Fin.sum_univ_eq_sum_range
       (fun j => (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω) p]
-    exact Finset.sum_congr rfl fun i _ => by rw [dif_pos i.isLt]
+    exact Finset.sum_congr rfl fun i _ => by rw [dite_eq_left i.isLt]
   -- the candidate's prediction error is the innovation
   have hresid : (fun ω => X (k : ℤ) ω - ∑ j, c j * X (v j) ω) =ᵐ[μ] ε (k : ℤ) := by
     filter_upwards [h.recurrence (k : ℤ)] with ω hω
@@ -874,6 +874,6 @@ theorem pacf_eq_zero_of_isAR [IsProbabilityMeasure μ] {p : ℕ} {b : Fin p → 
     linarith [hexp, hkey]
   rw [hbeq]
   simp only [hc]
-  exact dif_neg (by omega)
+  exact dite_eq_right (by omega)
 
 end StatLean.TimeSeries

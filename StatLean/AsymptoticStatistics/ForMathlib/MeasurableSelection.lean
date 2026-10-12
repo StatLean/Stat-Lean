@@ -159,7 +159,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
       have hset_eq : {x : α | φ x ≤ (q : ℝ≥0∞)}
           = ⋂ n : ℕ, {x : α | φ x < (q : ℝ≥0∞) + ((n + 1 : ℕ) : ℝ≥0∞)⁻¹} := by
         ext x
-        simp only [Set.mem_setOf_eq, Set.mem_iInter]
+        simp only [Set.mem_ofPred_eq, Set.mem_iInter]
         refine ⟨?_, ?_⟩
         · intro hx n
           have hpos : (0 : ℝ≥0∞) < ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
@@ -203,7 +203,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
       hU_eq.inter hV_eq
     have hempty : (Sp ∩ Sq : Set α) = (∅ : Set α) := by
       ext x
-      simp only [Sp, Sq, Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Sp, Sq, Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_and, not_lt]
       intro hxp
       -- hxp : φ x < p; goal: φ x ≤ q.
@@ -381,7 +381,7 @@ private theorem cauchy_selector_inductive_step
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      erw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEqSet_iff]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -1076,7 +1076,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      erw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEqSet_iff]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -1679,7 +1679,7 @@ private theorem aumann_suslin_scheme_cauchy
     have hf : Measurable (fun x : α => (t x).1) := measurable_fst.comp ht_meas
     have hne : MeasurableSet {x : α | (t x).1 ≠ x} := by
       have : {x : α | (t x).1 ≠ x} = {x : α | (t x).1 = x}ᶜ := by
-        ext x; simp [Set.mem_compl_iff, Set.mem_setOf_eq, Ne]
+        ext x; simp [Set.mem_compl_iff, Set.mem_ofPred_eq, Ne]
       rw [this]
       exact (measurableSet_eq_fun hf measurable_id).compl
     exact hne
@@ -1687,7 +1687,7 @@ private theorem aumann_suslin_scheme_cauchy
     rw [Filter.eventually_iff, MeasureTheory.mem_ae_iff] at h_proj_ae
     -- `{x | (t x).1 = x}ᶜ` has m-measure 0; this is exactly `E`.
     have : E = {x : α | (t x).1 = x}ᶜ := by
-      ext x; simp [E, Set.mem_compl_iff, Set.mem_setOf_eq, Ne]
+      ext x; simp [E, Set.mem_compl_iff, Set.mem_ofPred_eq, Ne]
     rw [this]; exact h_proj_ae
   set N₁ : Set α := N₀ ∪ E with hN₁_def
   have hN₁_meas : MeasurableSet N₁ := hN₀_meas.union hE_meas

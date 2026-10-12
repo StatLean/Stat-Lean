@@ -264,7 +264,7 @@ theorem residual_tail_le
     rw [hLdef]; push_cast [Real.coe_toNNReal ε hε.le]; ring
   have hset : {ω | δ < F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)}
       = {ω | δ < ⨆ i ∈ F, |X i ω - X (netProj N i) ω|} := by
-    ext ω; simp only [Set.mem_setOf_eq]; rw [hpt ω]
+    ext ω; simp only [Set.mem_ofPred_eq]; rw [hpt ω]
   calc μ {ω | δ < F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)}
       = μ {ω | δ < ⨆ i ∈ F, |X i ω - X (netProj N i) ω|} := by rw [hset]
     _ ≤ ENNReal.ofReal (2 * (F.card : ℝ) * Real.exp (-δ ^ 2 / (L : ℝ) ^ 2)) :=

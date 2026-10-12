@@ -67,9 +67,9 @@ theorem measurable_simplexExtend {k : ℕ} : Measurable (simplexExtend (k := k))
     exact measurable_pi_apply j
 
 theorem measurableSet_simplexCorner (k : ℕ) : MeasurableSet (simplexCorner k) := by
-  rw [simplexCorner, Set.setOf_and]
+  rw [simplexCorner, Set.ofPred_and]
   refine MeasurableSet.inter ?_ ?_
-  · rw [Set.setOf_forall]
+  · rw [Set.ofPred_forall]
     exact MeasurableSet.iInter fun i =>
       measurableSet_lt measurable_const (measurable_pi_apply i)
   · exact measurableSet_lt
@@ -154,7 +154,7 @@ theorem dirichletZ_pos {k : ℕ} {α : Fin (k + 1) → ℝ}
       · rw [simplexExtend, Fin.snoc_last]; linarith [hcorner.2]
       · intro j; rw [simplexExtend, Fin.snoc_castSucc]; exact hcorner.1 j
     have : dirichletWeight α θ ≠ 0 := by
-      rw [dirichletWeight, if_pos hcorner, ne_eq, ENNReal.ofReal_eq_zero, not_le]
+      rw [dirichletWeight, ite_eq_left hcorner, ne_eq, ENNReal.ofReal_eq_zero, not_le]
       exact Finset.prod_pos fun i _ => Real.rpow_pos_of_pos (hpos i) _
     exact this
   rw [dirichletZ, lintegral_pos_iff_support (measurable_dirichletWeight α)]
@@ -194,7 +194,7 @@ private theorem dirichletWeight_cons_smul {k : ℕ} (α : Fin (k + 2) → ℝ)
         · intro j; rw [hφ, Fin.cons_succ, Pi.smul_apply, smul_eq_mul]
           exact mul_pos h1t (hηpos j)
       · rw [hsumφ]; nlinarith [hηsum, h1t]
-    rw [dirichletWeight, if_pos hφcorner, dirichletWeight, if_pos ⟨hηpos, hηsum⟩,
+    rw [dirichletWeight, ite_eq_left hφcorner, dirichletWeight, ite_eq_left ⟨hηpos, hηsum⟩,
       ← ENNReal.ofReal_mul (by positivity)]
     congr 1
     -- Real product identity.
@@ -255,7 +255,7 @@ private theorem dirichletWeight_cons_smul {k : ℕ} (α : Fin (k + 2) → ℝ)
         have : η j = ((1 - t) * η j) / (1 - t) := by field_simp
         rw [this]; exact div_pos hj h1t
       · rw [hsumφ] at hsum; nlinarith [hsum, h1t]
-    rw [dirichletWeight, if_neg hφoff, dirichletWeight, if_neg hcorner, mul_zero]
+    rw [dirichletWeight, ite_eq_right hφoff, dirichletWeight, ite_eq_right hcorner, mul_zero]
 
 open Classical in
 /-- Off the interval `(0, 1)` the first coordinate forces the point out of the corner, so the
@@ -263,7 +263,7 @@ Dirichlet weight vanishes. -/
 private theorem dirichletWeight_cons_eq_zero {k : ℕ} (α : Fin (k + 2) → ℝ)
     {t : ℝ} (ht : t ≤ 0 ∨ 1 ≤ t) (ζ : Fin k → ℝ) :
     dirichletWeight α (Fin.cons t ζ) = 0 := by
-  rw [dirichletWeight, if_neg]
+  rw [dirichletWeight, ite_eq_right]
   rintro ⟨hpos, hsum⟩
   rcases ht with h | h
   · have h0 := hpos 0; rw [Fin.cons_zero] at h0; linarith
@@ -337,7 +337,7 @@ theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}
       have hmem : θ ∈ simplexCorner 0 := ⟨fun i => i.elim0, by simp⟩
       have h0 : simplexExtend θ (0 : Fin 1) = 1 := by
         rw [simplexExtend, show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]; simp
-      rw [dirichletWeight, if_pos hmem, Fin.prod_univ_one, h0]
+      rw [dirichletWeight, ite_eq_left hmem, Fin.prod_univ_one, h0]
       simp
     rw [dirichletZ]
     simp only [hw, lintegral_one, Fin.prod_univ_succ, Fin.sum_univ_succ, Finset.univ_eq_empty,

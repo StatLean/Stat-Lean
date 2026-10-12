@@ -262,7 +262,7 @@ private theorem finite_lp_packing_of_integral_separation
         exact le_antisymm ((hAH f hf p.1).trans_eq hx) (abs_nonneg _)
       simp [normalizedBy, hx, hfx]
     · have hHx : 0 < H p.1 := lt_of_le_of_ne (hH₀ p.1) (Ne.symm hx)
-      simp only [normalizedBy, hx, if_false]
+      simp only [normalizedBy, hx, ite_false]
       simpa only [mul_comm] using (lt_div_iff₀ hHx)
   have hVCpull : VCIndexLE
       (pullbackSetFamily φ (strictSubgraphFamily F)) V :=
@@ -327,7 +327,7 @@ private theorem finite_lp_packing_of_integral_separation
           ENNReal.rpow_le_self_of_le_one huhalf hr
         have hdreal : |f x - g x| = H x * |N f x - N g x| := by
           change |f x - g x| = H x * |normalizedBy H f x - normalizedBy H g x|
-          rw [normalizedBy_sub x, if_neg hx,
+          rw [normalizedBy_sub x, ite_eq_right hx,
             abs_div, abs_of_nonneg (hH₀ x)]
           exact (mul_div_cancel₀ _ hx).symm
         have hdu : ENNReal.ofReal |f x - g x| = ENNReal.ofReal (H x) * u := by

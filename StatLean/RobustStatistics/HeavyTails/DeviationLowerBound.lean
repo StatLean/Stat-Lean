@@ -106,7 +106,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     ext w; simp [Set.mem_pi]
   have hcc : ((c, -c) : ℝ × ℝ) ∉ {q : ℝ × ℝ | q.1 = q.2} := by
     intro h
-    simp only [Set.mem_setOf_eq] at h
+    simp only [Set.mem_ofPred_eq] at h
     exact hc (by linarith)
   have hν : twoPointCoupling c p {q : ℝ × ℝ | q.1 = q.2} = ENNReal.ofReal (1 - p) := by
     rw [twoPointCoupling, contaminate_apply, Measure.dirac_apply' _ hD,
@@ -278,7 +278,7 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
     by_contra hcon
     rw [Set.mem_union, not_or] at hcon
     obtain ⟨h1, h2⟩ := hcon
-    simp only [Set.mem_preimage, Set.mem_setOf_eq, not_lt] at h1 h2
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, not_lt] at h1 h2
     have hxy : (fun i => (w i).1) = fun i => (w i).2 := funext fun i => hw i
     rw [hxy] at h1
     have h1' := abs_le.mp h1

@@ -80,7 +80,7 @@ theorem shellSet_eq_paramClass {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d)) (δ : ℝ) :
     shellSet m θ₀ δ = paramClass (shellPsi m θ₀) (Metric.ball θ₀ δ) := by
   ext g
-  simp only [shellSet, paramClass, Set.mem_setOf_eq]
+  simp only [shellSet, paramClass, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨θ, hθ, rfl⟩
     exact ⟨θ, by rw [Metric.mem_ball, dist_eq_norm]; exact hθ, ⟨0, hd⟩, rfl⟩
@@ -398,7 +398,7 @@ theorem shell_localizedDiff_bracketingNumber_le {d : ℕ}
       calc bracketingNumber (t / 2) F 2 P
           ≤ bracketingNumber (t / 2) Fc 2 P := bracketingNumber_mono_class hFsub
         _ ≤ (Na : ℕ∞) := hNa_le
-        _ < ⊤ := ENat.coe_lt_top Na
+        _ < ⊤ := ENat.natCast_lt_top Na
     calc bracketingNumber t (localizedDifferenceClass F P δq) 2 P
         ≤ bracketingNumber t (differenceClass F) 2 P :=
           bracketingNumber_mono_class localizedDifferenceClass_subset

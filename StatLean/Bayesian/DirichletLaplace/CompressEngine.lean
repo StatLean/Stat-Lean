@@ -181,7 +181,7 @@ theorem compress_ratio_le_explicit {a δ r : ℝ}
       ≤ ENNReal.ofReal (Real.exp (m * z * (c - 1) - (k : ℝ) * Real.log c)) := by
     refine (measure_mono ?_).trans (dlPrior_count_ge_le hc k hz)
     intro θ hθ
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact le_of_lt (by exact_mod_cast hθ)
   -- Denominator: small-ball lower bound (C5, deviation D7).
   have hball : ENNReal.ofReal (Real.exp (-2 * m * w))

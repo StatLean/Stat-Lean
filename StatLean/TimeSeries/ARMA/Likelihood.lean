@@ -243,7 +243,7 @@ private lemma armaACVF_eq_tsum_psiKer {p q : ℕ} {b : Fin p → ℝ} (a : Fin q
     refine tsum_congr fun j => ?_
     have h1 : psiKer b a (j + u) u = armaPsi b a j := by simp [psiKer]
     have h2 : psiKer b a (j + u) v = armaPsi b a (j + (u - v)) := by
-      rw [psiKer, if_pos (by omega)]
+      rw [psiKer, ite_eq_left (by omega)]
       congr 1
       omega
     rw [h1, h2]

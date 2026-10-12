@@ -1,5 +1,5 @@
-import Mathlib.Data.Complex.Basic
-import Mathlib.Data.Complex.BigOperators
+import Mathlib.Basic.Complex.Basic
+import Mathlib.Basic.Complex.BigOperators
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.Linarith
 

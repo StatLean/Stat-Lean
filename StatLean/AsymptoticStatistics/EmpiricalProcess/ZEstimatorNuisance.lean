@@ -149,7 +149,7 @@ theorem frechet_remainder_pair_sup_bound
   -- Inclusion `Eₙ ⊆ {δ/2 < ‖θ̂ₙ−θ₀‖} ∪ {δ/2 < dist(η̂ₙ,η₀)}`.
   intro ξ hξ
   obtain ⟨j, hj⟩ := hξ
-  simp only [Set.mem_union, Set.mem_setOf_eq]
+  simp only [Set.mem_union, Set.mem_ofPred_eq]
   by_contra hcon
   rw [not_or, not_lt, not_lt] at hcon
   obtain ⟨hnA, hnB⟩ := hcon
@@ -353,9 +353,9 @@ theorem vSwap_oPWt
     refine (outerMeasureStar_mono μ ?_).trans (outerMeasureStar_le_measure μ _)
     -- `{ε < coeff} ⊆ {δ/2 < dist(η̂ₙ, η₀)}`.
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hd : dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀ < δ :=
       lt_of_le_of_lt hcon (by linarith)
     have hFsmall := hδ hd
@@ -476,7 +476,7 @@ theorem pair_h_tight
       ⊆ {ξ | MM < ‖empiricalProcessVec P (fun θ h => ψ θ η₀ h) θ₀ n
         (fun i : Fin n => X i.val ξ)‖} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     obtain ⟨h, hh⟩ := hξ
     have hcoord : empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ η₀ h)
         = (empiricalProcessVec P (fun θ h => ψ θ η₀ h) θ₀ n
@@ -661,8 +661,8 @@ theorem nuisance_weighted_core
       (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro ξ hξ
-    simp only [Set.mem_setOf_eq, Prod.dist_eq, lt_max_iff, dist_eq_norm] at hξ
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq, Prod.dist_eq, lt_max_iff, dist_eq_norm] at hξ
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     exact hξ
   -- Uniform `L²`-continuity of the plug-in pair `(θ̂ₙ, η̂ₙ)`.
   have h_sup : TendstoZeroInOuterProbSup μ (fun n ξ (j : Fin k) =>
@@ -707,8 +707,8 @@ theorem nuisance_weighted_core
       (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro ξ hξ
-    simp only [Set.mem_setOf_eq, not_and_or, not_lt] at hξ
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq, not_and_or, not_lt] at hξ
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     rcases hξ with h1 | h2
     · exact Or.inl (by linarith [half_lt_self hδcls])
     · exact Or.inr (by linarith [half_lt_self hδcls])
@@ -751,7 +751,7 @@ theorem nuisance_weighted_core
     intro n ξ hb j
     have hg : ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < δcls
         ∧ dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀ < δcls := by
-      simpa only [Set.mem_setOf_eq, not_not] using hb
+      simpa only [Set.mem_ofPred_eq, not_not] using hb
     rw [guardedRandomFunction_eq_on_good _ _ _ n ξ j hg]
   -- Combine the Fréchet remainder with the weighted rate bootstrap.
   have hS := frechet_remainder_pair_sup_bound P ψ θ₀ η₀ V hfrechet_unif μ θ_hat eta_hat X
@@ -763,7 +763,7 @@ theorem nuisance_weighted_core
       (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (outerMeasureStar_le_measure μ _) (measure_mono ?_)
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     linarith [half_lt_self hδV_pos]
   -- Lower bound on `Vfam` off the guard event.
   have hlb : ∀ (n : ℕ) (ξ : Ξ),
@@ -773,7 +773,7 @@ theorem nuisance_weighted_core
             Vlin (V (eta_hat n (fun i : Fin n => X i.val ξ)))
               (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) j| := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq, not_le] at hξ
+    simp only [Set.mem_ofPred_eq, not_le] at hξ
     have hkey := hV_bd (eta_hat n (fun i : Fin n => X i.val ξ)) hξ
       (Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))
     have hnorm : ‖Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)‖
@@ -949,7 +949,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin
           EuclideanSpace ℝ (Fin k))‖}
         ⊆ {ξ | ∃ j, ε' * w n ξ < |g n ξ j|} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have hw1 : (1 : ℝ) ≤ w n ξ := hw n ξ
     have hwpos : (0 : ℝ) < w n ξ := lt_of_lt_of_le one_pos hw1
     -- Unscale: `ε ≤ w⁻¹‖v‖` becomes `ε · w ≤ ‖v‖`.
@@ -964,7 +964,7 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSupWt_fin
         field_simp
       rwa [hid] at hmul
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hnorm_sq :
         ‖((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) : EuclideanSpace ℝ (Fin k))‖ ^ 2
           = ∑ i, |g n ξ i| ^ 2 := by
@@ -1099,8 +1099,8 @@ theorem zEstimator_nuisance_linear_representation
             (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (V η₀) w)
         = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (V η₀)⁻¹
             * Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (V η₀)) w := by
-          rw [ContinuousLinearMap.mul_apply]
-      _ = w := by rw [hInv, ContinuousLinearMap.one_apply]
+          rw [mul_apply_eq_comp]
+      _ = w := by rw [hInv, one_apply_eq_self]
   -- Pointwise identification of the collapsed vector with the target.
   have hpt : ∀ (n : ℕ) (ξ : Ξ),
       (1 + Real.sqrt n * ‖driftVec P ψ θ₀ (eta_hat n (fun i : Fin n => X i.val ξ))‖)⁻¹ •

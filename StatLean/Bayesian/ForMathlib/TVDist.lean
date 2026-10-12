@@ -122,7 +122,7 @@ private lemma tvDist_withDensity_eq' (base : Measure α) {p q : α → ℝ≥0�
       ne_top_of_le_ne_top hqfin (lintegral_mono' Measure.restrict_le_self le_rfl)
     have hcompl : ∫⁻ x in Aᶜ, (p x - q x) ∂base = 0 := by
       refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-      simp only [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      simp only [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact tsub_eq_zero_of_le hx.le
     have hle : q ≤ᵐ[base.restrict A] p := ae_restrict_of_forall_mem hAm (fun x hx => hx)
     have key : ∫⁻ x, (p x - q x) ∂base

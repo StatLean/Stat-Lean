@@ -124,13 +124,13 @@ private lemma sigmaFinite_of_integrable_pos {μ : Measure 𝓧} {f : 𝓧 → �
   refine ⟨⟨⟨fun n => {x | (1 : ℝ) / (n + 1) < f x}, fun _ => trivial, fun n => ?_, ?_⟩⟩⟩
   · exact hf.measure_gt_lt_top (by positivity)
   · ext x
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact exists_nat_one_div_lt (hpos x)
 
 /-- The natural parameter set of a one-parameter family, spelled with multiplication. -/
 private lemma integrable_exp_of_mem_natSet (E : ExpFamily 𝓧 ℝ) {θ : ℝ} (hθ : θ ∈ E.natSet) :
     Integrable (fun x => Real.exp (θ * E.stat x)) E.base := by
-  simpa only [ExpFamily.natSet, Set.mem_setOf_eq, inner_real] using hθ
+  simpa only [ExpFamily.natSet, Set.mem_ofPred_eq, inner_real] using hθ
 
 /-- **Tilted representation.** Every integral against the canonical member `P_θ` is the
 ratio of the two exponential integrals against the reference measure. No integrability
@@ -610,7 +610,7 @@ private lemma unbiased_side_conditions (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
     intro v
     ext w
     simp only [innerSL_apply_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.one_apply, smul_eq_mul, inner_real]
+      one_apply_eq_self, smul_eq_mul, inner_real]
     ring
   -- `|ψ| ≤ 1` puts the natural set inside the `ψ`-weighted one
   have hwsub : E.natSet ⊆ E.weightedNatSet ψ := by

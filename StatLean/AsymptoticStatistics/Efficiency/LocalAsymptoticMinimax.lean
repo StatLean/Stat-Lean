@@ -314,7 +314,7 @@ lemma avgRisk_lan_discretePrior_eq_sum
           ∫⁻ ω, L ((Real.sqrt n) • (T n ω - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))
                 ∂(AsymptoticRepresentation.productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n) := by
   unfold avgRisk discretePrior
-  rw [MeasureTheory.lintegral_finset_sum_measure]
+  rw [MeasureTheory.lintegral_finsetSum_measure]
   refine Finset.sum_congr rfl fun h hI => ?_
   rw [MeasureTheory.lintegral_smul_measure, MeasureTheory.lintegral_dirac' h h_meas_int]
   rw [smul_eq_mul]
@@ -1434,7 +1434,7 @@ theorem le_cam_3_per_rational_h_weak_conv
                       (J.mulVec ((WithLp.equiv 2 _) h))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε

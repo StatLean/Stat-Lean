@@ -116,7 +116,7 @@ private lemma acProductLikelihood_toReal_zero_mass_le
         ((γ.curve t).rnDeriv P (X i)).toReal ≠ 0 := by
       intro i hi
       exact hall i trivial
-        (by simpa only [Z, Set.mem_preimage, Set.mem_setOf_eq] using hi)
+        (by simpa only [Z, Set.mem_preimage, Set.mem_ofPred_eq] using hi)
     have hprod : (γ.acProductLikelihood t n X).toReal ≠ 0 := by
       rw [ENNReal.toReal_ne_zero]
       constructor
@@ -201,7 +201,7 @@ private lemma integral_exp_actualLogLikelihood_sub_likelihood
     funext X
     by_cases hzero : (γ.acProductLikelihood t n X).toReal = 0
     · simp [Z, hzero, actualLogLikelihood, t]
-    · simp only [Z, Set.indicator_of_notMem, Set.mem_setOf_eq, hzero, not_false_eq_true]
+    · simp only [Z, Set.indicator_of_notMem, Set.mem_ofPred_eq, hzero, not_false_eq_true]
       rw [show actualLogLikelihood γ a n X =
           Real.log (γ.acProductLikelihood t n X).toReal by rfl,
         Real.exp_log (lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hzero))]
@@ -422,7 +422,7 @@ private lemma actualLog_integral_comparison_bound
     funext X
     by_cases hzero : (L X).toReal = 0
     · simp [Z, hzero, actualLogLikelihood, L, t]
-    · simp only [Z, Set.indicator_of_notMem, Set.mem_setOf_eq, hzero, not_false_eq_true]
+    · simp only [Z, Set.indicator_of_notMem, Set.mem_ofPred_eq, hzero, not_false_eq_true]
       rw [show actualLogLikelihood γ a n X = Real.log (L X).toReal by rfl,
         Real.exp_log (lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hzero))]
       ring_nf
@@ -861,7 +861,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
             (a ^ 2 / 2) * ‖γ.score‖ ^ 2)|} := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Real.dist_eq, normalizedScoreSum,
+      simp only [Set.mem_ofPred_eq, Real.dist_eq, normalizedScoreSum,
         actualLogLikelihood, c]
       rw [abs_sub_comm]
       ring_nf
@@ -968,7 +968,7 @@ theorem qmd_lecamThird_along_subseq
             (a ^ 2 / 2) * ‖γ.score‖ ^ 2)|} := by
       intro k
       ext X
-      simp only [Set.mem_setOf_eq, dist_prod_same_left, Real.dist_eq,
+      simp only [Set.mem_ofPred_eq, dist_prod_same_left, Real.dist_eq,
         normalizedScoreSum, actualLogLikelihood, c]
       rw [abs_sub_comm]
       ring_nf

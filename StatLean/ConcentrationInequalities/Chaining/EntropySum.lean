@@ -334,7 +334,7 @@ lemma diam_mul_sqrt_log_two_le_four_mul_dudleySum {T : Set E}
     obtain ⟨a, ha, b, hb, hab⟩ :
         ∃ a ∈ T, ∃ b ∈ T, 2 * e < dist a b := by
       by_contra h_all
-      push_neg at h_all
+      push Not at h_all
       exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
     -- Hence `𝒩(T, e) ≥ 2`, giving `sqrtLogCov T e ≥ √(log 2)`.
     have hcov : 1 < coveringNumber T e :=
@@ -562,7 +562,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
     obtain ⟨a, ha, b, hb, hab⟩ :
         ∃ a ∈ T, ∃ b ∈ T, 2 * e < dist a b := by
       by_contra h_all
-      push_neg at h_all
+      push Not at h_all
       exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
     have hcov1 : 1 < coveringNumber T e :=
       one_lt_coveringNumber_of_two_mul_lt_dist he_pos.le ha hb hab

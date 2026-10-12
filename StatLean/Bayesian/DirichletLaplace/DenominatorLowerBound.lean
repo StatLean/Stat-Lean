@@ -229,7 +229,7 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
   rcases eq_or_ne (π B) 0 with hB0 | hB0
   · have hEmp : E = ∅ := by
       ext y
-      simp only [hE, hB0, mul_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      simp only [hE, hB0, mul_zero, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
       exact zero_le
     rw [hEmp, measure_empty]; exact zero_le
   have hBtop : π B ≠ ∞ := measure_ne_top π B
@@ -237,7 +237,7 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
   set H := {y : EuclideanSpace ℝ ι | r ^ 2 / 2 ≤ ⟪-c, y - θstar⟫} with hH
   have hsub : E ⊆ H := by
     intro y hy
-    simp only [hE, Set.mem_setOf_eq] at hy
+    simp only [hE, Set.mem_ofPred_eq] at hy
     have hjen := dlDenom_ge_jensen π θstar y hr
     have hlt : π B * ENNReal.ofReal (Real.exp (⟪c, y - θstar⟫ - r ^ 2 / 2))
         < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π B := lt_of_le_of_lt hjen hy
@@ -245,14 +245,14 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
     have hlt2 := (ENNReal.mul_lt_mul_iff_right hB0 hBtop).mp hlt
     rw [ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos _)] at hlt2
     have hlt3 := Real.exp_lt_exp.mp hlt2
-    simp only [hH, Set.mem_setOf_eq, inner_neg_left]
+    simp only [hH, Set.mem_ofPred_eq, inner_neg_left]
     linarith
   -- degenerate direction: the half-space is empty (`r²/2 ≤ 0` is false)
   rcases eq_or_ne c 0 with hc0 | hc0
   · have hrp : (0 : ℝ) < r ^ 2 / 2 := by have := pow_pos hr 2; linarith
     have hHempty : H = ∅ := by
       ext y
-      simp only [hH, hc0, neg_zero, inner_zero_left, Set.mem_setOf_eq,
+      simp only [hH, hc0, neg_zero, inner_zero_left, Set.mem_ofPred_eq,
         Set.mem_empty_iff_false, iff_false, not_le]
       linarith
     calc (gaussShiftKernel ι θstar) E

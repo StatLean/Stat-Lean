@@ -66,7 +66,7 @@ theorem vec_slutsky_recentering
   -- For this `n`, the set is empty.
   have h_set_empty : {ω : Ω n | ε ≤ dist (Xn n ω + cn n) (Xn n ω)} = ∅ := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+    simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
     have h_dist : dist (Xn n ω + cn n) (Xn n ω) = ‖cn n‖ := dist_self_add_left _ _
     rw [h_dist]
     exact hn

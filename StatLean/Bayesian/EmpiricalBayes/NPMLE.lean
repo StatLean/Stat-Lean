@@ -74,7 +74,7 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
   -- The maximizing measure `Ghat = ∑_θ ofReal (w θ) • δ_θ`.
   set Ghat : Measure Θ := ∑ θ, ENNReal.ofReal (w θ) • Measure.dirac θ with hGhat
   have hGuniv : Ghat Set.univ = 1 := by
-    rw [hGhat, Measure.finset_sum_apply]
+    rw [hGhat, Measure.finsetSum_apply]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg (fun θ _ => hwnn θ), hwsum, ENNReal.ofReal_one]
   have hGprob : IsProbabilityMeasure Ghat := ⟨hGuniv⟩
@@ -83,7 +83,7 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
     intro H j; simp only [mixtureDensity, predictiveDensity]; exact lintegral_fintype _
   have hGhatmix : ∀ j, mixtureDensity p Ghat (x j) = ∑ θ, ENNReal.ofReal (w θ) * p θ (x j) := by
     intro j; simp only [mixtureDensity, predictiveDensity, hGhat]
-    rw [lintegral_finset_sum_measure]
+    rw [lintegral_finsetSum_measure]
     exact Finset.sum_congr rfl fun θ _ => by rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
   -- `(∏ⱼ f_Ghat(xⱼ)).toReal = Ψ w`.
   have hprodGhat : (∏ j, mixtureDensity p Ghat (x j)).toReal = Ψ w := by
@@ -188,7 +188,7 @@ theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
   set S : Finset Θ := Finset.image θpt Finset.univ with hS
   -- `Ĝ'` is a probability measure
   have hĜ'univ : Ĝ' Set.univ = 1 := by
-    rw [hĜ', Measure.finset_sum_apply]
+    rw [hĜ', Measure.finsetSum_apply]
     simp only [Measure.smul_apply, MeasureTheory.measure_univ, smul_eq_mul, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg (fun i _ => (hwtpos i).le), hwtsum, ENNReal.ofReal_one]
   have hĜ'prob : IsProbabilityMeasure Ĝ' := ⟨hĜ'univ⟩
@@ -196,7 +196,7 @@ theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
   have hĜ'mix : ∀ j, mixtureDensity p Ĝ' (x j) = ∑ i, ENNReal.ofReal (wt i) * p (θpt i) (x j) := by
     intro j
     simp only [mixtureDensity, predictiveDensity, hĜ']
-    rw [lintegral_finset_sum_measure]
+    rw [lintegral_finsetSum_measure]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
   have hĜ'fin : ∀ j, mixtureDensity p Ĝ' (x j) ≠ ∞ := by
@@ -227,7 +227,7 @@ theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
     rw [hprodeq]
     exact hĜmax G hG
   · -- `Ĝ'` is supported on `S`
-    rw [hĜ', Measure.finset_sum_apply]
+    rw [hĜ', Measure.finsetSum_apply]
     refine Finset.sum_eq_zero fun i _ => ?_
     rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ (by measurability)]
     have : θpt i ∈ (↑S : Set Θ) := by

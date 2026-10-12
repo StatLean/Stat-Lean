@@ -112,7 +112,7 @@ private lemma projS_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
   funext i
   rw [projS_ofLp']
   unfold extendS
-  rw [WithLp.ofLp_toLp, dif_pos i.property]
+  rw [WithLp.ofLp_toLp, dite_eq_left i.property]
 
 /-- The complementary block of `extendS S u` is zero. -/
 private lemma projS_compl_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
@@ -123,7 +123,7 @@ private lemma projS_compl_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
   rw [projS_ofLp']
   unfold extendS
   have hi : (i : ι) ∉ S := by have hp := i.property; rwa [Set.mem_compl_iff] at hp
-  rw [WithLp.ofLp_toLp, dif_neg hi]
+  rw [WithLp.ofLp_toLp, dite_eq_right hi]
   simp
 
 /-- If every coordinate of `θ` inside `T` is `≤ δ` in modulus, then the `T`-block has norm
@@ -334,23 +334,23 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       have hset : {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
           = ⋂ i, {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S} := by
         ext θ
-        simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
+        simp only [Set.mem_ofPred_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
           Finset.mem_univ, true_and]
       rw [hset]
       refine MeasurableSet.iInter (fun i => ?_)
       by_cases hiS : i ∈ S
       · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
             = {θ : EuclideanSpace ℝ ι | δ < |θ i|} := by
-          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_true]
+          ext θ; simp only [Set.mem_ofPred_eq, hiS, iff_true]
         rw [hrw]; exact measurableSet_lt measurable_const (hcoord i).abs
       · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
             = {θ : EuclideanSpace ℝ ι | ¬ (δ < |θ i|)} := by
-          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_false]
+          ext θ; simp only [Set.mem_ofPred_eq, hiS, iff_false]
         rw [hrw]; exact (measurableSet_lt measurable_const (hcoord i).abs).compl
     have hinter : (dlShell θ₀ S j r δ)
         = {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
           ∩ {θ | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} ∩ {θ | ‖θ - θ₀‖ < 2 * ((j : ℝ) + 1) * r} := by
-      ext θ; simp only [dlShell, Set.mem_setOf_eq, Set.mem_inter_iff]; tauto
+      ext θ; simp only [dlShell, Set.mem_ofPred_eq, Set.mem_inter_iff]; tauto
     rw [hinter]; exact (h1.inter h2).inter h3
   -- Enumeration of the net and the covering pieces.
   set enum : Fin net.card → EuclideanSpace ℝ ι :=
@@ -361,9 +361,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     intro k
     by_cases hk : k < net.card
     · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
-        simp only [hBdef, dif_pos hk]]
+        simp only [hBdef, dite_eq_left hk]]
       exact measurableSet_closedBall.inter hshell_meas
-    · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+    · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dite_eq_right hk]]
       exact MeasurableSet.empty
   -- Disjointified pieces.
   set P : ℕ → Set (EuclideanSpace ℝ ι) := disjointed B with hPdef
@@ -374,7 +374,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   have hP_union : (⋃ k, P k) = ⋃ k, B k := iUnion_disjointed
   have hPk_empty : ∀ k, net.card ≤ k → P k = ∅ := by
     intro k hk
-    have hBk : B k = ∅ := by simp only [hBdef, dif_neg (not_lt.mpr hk)]
+    have hBk : B k = ∅ := by simp only [hBdef, dite_eq_right (not_lt.mpr hk)]
     exact Set.eq_empty_of_subset_empty (hBk ▸ hP_sub k)
   -- `⋃ k, B k = shell` (the cover, intersected with the shell).
   have hBunion : (⋃ k, B k) = shell := by
@@ -382,9 +382,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     · refine Set.iUnion_subset (fun k => ?_)
       by_cases hk : k < net.card
       · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
-          simp only [hBdef, dif_pos hk]]
+          simp only [hBdef, dite_eq_left hk]]
         exact Set.inter_subset_right
-      · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+      · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dite_eq_right hk]]
         exact Set.empty_subset _
     · intro x hx
       obtain ⟨ψ, hψ, hxψ⟩ := Set.mem_iUnion₂.mp (hcover hx)
@@ -393,7 +393,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       refine Set.mem_iUnion.mpr ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), ?_⟩
       have hBk : B (net.equivFin ⟨ψ, hψ⟩ : ℕ)
           = Metric.closedBall (enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩) ρ ∩ shell := by
-        simp only [hBdef, dif_pos hlt]
+        simp only [hBdef, dite_eq_left hlt]
       have henumeq : enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ = ψ := by
         have hfe : (⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ : Fin net.card) = net.equivFin ⟨ψ, hψ⟩ :=
           Fin.ext rfl
@@ -460,7 +460,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     · -- Nonempty piece: test the true parameter against the net point `enum ⟨k, _⟩`.
       have hk_lt : k < net.card := Finset.mem_range.mp hk
       have hBk : B k = Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := by
-        simp only [hBdef, dif_pos hk_lt]
+        simp only [hBdef, dite_eq_left hk_lt]
       obtain ⟨θs, hθs⟩ := Set.nonempty_iff_ne_empty.mpr hPk
       have hθsB : θs ∈ Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := hBk ▸ hP_sub k hθs
       have hθs_ball : ‖θs - enum ⟨k, hk_lt⟩‖ ≤ ρ := by

@@ -77,7 +77,7 @@ theorem integral_exp_sq_le_of_tail {Ω : Type*} [MeasurableSpace Ω]
     have hsub : {a | t ≤ Real.exp (2 * ((n : ℝ) - 1) * Y a ^ 2)} ⊆
         {a | Real.sqrt (Real.log t / (2 * ((n : ℝ) - 1))) ≤ |Y a|} := by
       intro a ha
-      simp only [Set.mem_setOf_eq] at ha ⊢
+      simp only [Set.mem_ofPred_eq] at ha ⊢
       have hlog : Real.log t ≤ 2 * ((n : ℝ) - 1) * Y a ^ 2 := by
         have := Real.log_le_log htpos ha
         rwa [Real.log_exp] at this
@@ -251,7 +251,7 @@ theorem pac_bayes (D : Measure Z) [IsProbabilityMeasure D]
     have hset : {s : Sample Z n | x < |pbDev D F s k|}
         = {s : Sample Z n | x < |empRisk F s k - risk D F k|} := by
       ext s
-      simp only [Set.mem_setOf_eq, pbDev]
+      simp only [Set.mem_ofPred_eq, pbDev]
       rw [abs_sub_comm]
     rw [hset]
     exact measure_empRisk_deviation_le (hrange k) (hmeas k) hn1' hx
@@ -315,7 +315,7 @@ theorem pac_bayes (D : Measure Z) [IsProbabilityMeasure D]
             Real.sqrt (((klDiv Q P).toReal + Real.log (2 * n / δ)) /
               (2 * (n - 1 : ℝ)))} := by
     intro s hs
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hs
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hs
     intro Q hQ hQP hQkl
     haveI := hQ
     -- integrability of the bounded functionals

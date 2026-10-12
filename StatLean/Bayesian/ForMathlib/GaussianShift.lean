@@ -163,7 +163,7 @@ theorem stdGaussianShift_inner_ge_le (θ' c : EuclideanSpace ℝ ι) (t : ℝ)
           Measure.map_apply hmeas_inner hIci]
         congr 1
         ext x
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, add_sub_cancel_right]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, add_sub_cancel_right]
     _ = gaussianReal 0 (‖c‖₊ ^ 2) {z : ℝ | t ≤ z} := by rw [stdGaussian_map_inner]
     _ ≤ _ := by
         have hcoe : ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) = ‖c‖ ^ 2 := by push_cast; ring

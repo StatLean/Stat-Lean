@@ -4,7 +4,8 @@ import StatLean.AsymptoticStatistics.LowerBounds.LAMSemiparametricBridge
 import StatLean.AsymptoticStatistics.Efficiency.HajekLeCamConvolution
 import StatLean.AsymptoticStatistics.ParametricFamily.RegularEstimator
 import Mathlib.MeasureTheory.Group.Convolution
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Semiparametric Convolution Theorem (unbounded densities, scalar form)
@@ -238,7 +239,7 @@ lemma ψ_proj_coord_zero_smul
       = ψ_P + t * ⟪(IF_eff : ↥(L2ZeroMean P)), linPerturbScore g_P h⟫_ℝ := by
   unfold ψ_proj
   rw [PiLp.single_apply]
-  simp only [if_true]
+  simp only [ite_true]
   congr 1
   -- ⟪IF_eff, linPerturbScore g_P (t • h)⟫ = t · ⟪IF_eff, linPerturbScore g_P h⟫
   -- Because linPerturbScore is linear in h.
@@ -711,7 +712,7 @@ noncomputable def unboundedParamSubmodel_RegularEstimatorSequence
         have hmT : Measurable (T_param_of T_n n) := by
           unfold T_param_of
           exact (WithLp.measurable_toLp 2 (Fin 1 → ℝ)).comp
-            (measurable_pi_lambda fun _ => hT_meas n)
+            (Measurable.of_eval fun _ => hT_meas n)
         exact (measurable_const_smul (Real.sqrt n)).comp
           (hmT.sub measurable_const))]
     exact ht

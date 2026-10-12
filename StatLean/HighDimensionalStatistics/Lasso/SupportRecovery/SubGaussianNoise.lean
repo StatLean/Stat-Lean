@@ -141,7 +141,7 @@ private lemma tail_max_abs_le'
   have hbdd : ∀ ω, BddAbove (Set.range (fun j => |X j ω|)) := fun ω => Finite.bddAbove_range _
   have heq : {ω | t < ⨆ j, |X j ω|} = ⋃ j, {ω | t < |X j ω|} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     exact ⟨fun h => (lt_ciSup_iff (hbdd ω)).mp h,
            fun ⟨j, hj⟩ => lt_of_lt_of_le hj (le_ciSup (hbdd ω) j)⟩
   rw [heq]
@@ -516,7 +516,7 @@ theorem lasso_support_recovery_subgaussian
     have hsub1 : {ω | lam ≥ (2 / (1 - α)) * projNoiseLinf X S (noiseVec ω)}ᶜ
         ⊆ {ω | t1 < ⨆ j, |Yp j ω|} := by
       intro ω hω
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, ge_iff_le, not_le] at hω
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, ge_iff_le, not_le] at hω
       have h2a : 0 < 2 / (1 - α) := by positivity
       rw [hlam_t1] at hω
       exact lt_of_mul_lt_mul_left hω h2a.le
@@ -540,7 +540,7 @@ theorem lasso_support_recovery_subgaussian
       ≤ ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * δ ^ 2 / 2)) := by
     have hsub2 : {ω | (⨆ i, |Yg i ω|) ≤ t'}ᶜ ⊆ {ω | t' < ⨆ i, |Yg i ω|} := by
       intro ω hω
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hω
       exact hω
     refine le_trans (measure_mono hsub2) ?_
     have hbound := tail_max_abs_le' (μ := μ) (σ2 := p2) (X := Yg) hgram_center hgram_sg htpnn

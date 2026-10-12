@@ -159,7 +159,7 @@ theorem snapPath_step_le (m : ℕ) [NeZero m] {f : C(unitInterval, ℝ)}
       rw [show ((gridKnot m i.succ : unitInterval) : ℝ) = (i.succ : ℝ) / m from rfl,
         show ((gridKnot m i.castSucc : unitInterval) : ℝ) = (i.castSucc : ℝ) / m from rfl]
       have ha : ((i.succ : Fin (m + 1)) : ℝ) = (i : ℝ) + 1 := by simp [Fin.val_succ]
-      have hb : ((i.castSucc : Fin (m + 1)) : ℝ) = (i : ℝ) := by simp [Fin.coe_castSucc]
+      have hb : ((i.castSucc : Fin (m + 1)) : ℝ) = (i : ℝ) := by simp [Fin.val_castSucc]
       rw [ha, hb, abs_of_nonneg hpos]; ring
     rwa [hrhs] at h
   have habs : |(m : ℝ) * ya - (m : ℝ) * yb| ≤ 1 := by
@@ -196,12 +196,12 @@ private lemma gridPath_succ (m : ℕ) (k₀ : Fin (m + 1)) (step : Fin m → Fin
   rw [add_assoc]
   congr 1
   have hnotmem : i ∉ Finset.univ.filter (fun x : Fin m => (x : ℕ) < (i.castSucc : ℕ)) := by
-    simp [Fin.coe_castSucc]
+    simp [Fin.val_castSucc]
   have hins : Finset.univ.filter (fun x : Fin m => (x : ℕ) < (i.succ : ℕ))
       = insert i (Finset.univ.filter (fun x : Fin m => (x : ℕ) < (i.castSucc : ℕ))) := by
     ext x
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-      Fin.val_succ, Fin.coe_castSucc]
+      Fin.val_succ, Fin.val_castSucc]
     constructor
     · intro hx
       rcases Nat.lt_succ_iff_lt_or_eq.mp hx with h | h

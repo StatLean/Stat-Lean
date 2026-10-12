@@ -150,7 +150,7 @@ theorem hasLaw_sum_mul_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measu
     have hsumeq : (∑ j ∈ s, Y j) = fun ω => ∑ j ∈ s, Y j ω := by
       funext ω; rw [Finset.sum_apply]
     have hstep : IndepFun (Y i) (fun ω => ∑ j ∈ s, Y j ω) P := by
-      rw [← hsumeq]; exact (hYindep.indepFun_finset_sum_of_notMem hYmeas hi).symm
+      rw [← hsumeq]; exact (hYindep.indepFun_finsetSum_of_notMem hYmeas hi).symm
     have hsum : HasLaw (fun ω => Y i ω + ∑ j ∈ s, Y j ω)
         ((gaussianReal 0 (((c i) ^ 2).toNNReal * v)) ∗
           gaussianReal 0 ((∑ j ∈ s, (c j) ^ 2 : ℝ).toNNReal * v)) P :=

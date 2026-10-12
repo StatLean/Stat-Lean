@@ -400,18 +400,18 @@ theorem Contiguous.comp_subseq
   have hB_at : ∀ n, B (φ n) = A n := by
     intro n
     have hex : ∃ k, φ k = φ n := ⟨n, rfl⟩
-    rw [hB_def, dif_pos hex, transportSet_comp hφ.injective]
+    rw [hB_def, dite_eq_left hex, transportSet_comp hφ.injective]
   have hB_meas : ∀ m, MeasurableSet (B m) := by
     intro m
     rw [hB_def]
     by_cases h : ∃ n, φ n = m
-    · rw [dif_pos h]
+    · rw [dite_eq_left h]
       exact measurableSet_transportSet _ (hA_meas _)
-    · rw [dif_neg h]
+    · rw [dite_eq_right h]
       exact MeasurableSet.empty
   have hB_empty : ∀ m, (¬ ∃ n, φ n = m) → B m = ∅ := by
     intro m h
-    rw [hB_def, dif_neg h]
+    rw [hB_def, dite_eq_right h]
   have hP_tendsto : Tendsto (fun m => (P m) (B m)) atTop (𝓝 0) := by
     rw [ENNReal.tendsto_nhds_zero]
     intro ε hε
@@ -2164,7 +2164,7 @@ theorem contiguous_iff_tendsto_zero_statistics
     have h_event : ∀ n, {ω | (1 / 2 : ℝ) ≤ |T n ω|} = A n := by
       intro n
       ext ω
-      simp only [Set.mem_setOf_eq, hT_def]
+      simp only [Set.mem_ofPred_eq, hT_def]
       by_cases hω : ω ∈ A n
       · rw [Set.indicator_of_mem hω, abs_one]
         simp only [hω, iff_true]; norm_num
@@ -2178,7 +2178,7 @@ theorem contiguous_iff_tendsto_zero_statistics
       -- `{ω | ε ≤ |T n ω|} ⊆ A n` for any `ε > 0`.
       have h_sub : ∀ n, {ω | ε ≤ |T n ω|} ⊆ A n := by
         intro n ω hω
-        simp only [Set.mem_setOf_eq, hT_def] at hω
+        simp only [Set.mem_ofPred_eq, hT_def] at hω
         by_contra hωA
         rw [Set.indicator_of_notMem hωA] at hω
         simp only [abs_zero] at hω
@@ -2284,7 +2284,7 @@ theorem contiguous_imp_limit_pos
     have h_each : ∀ k, ((μ' k : Measure ℝ)) {x : ℝ | x < 0} = 0 := by
       intro k
       have h_pre : r k ⁻¹' {x : ℝ | x < 0} = (∅ : Set (Ω (φ k))) := by
-        ext ω; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        ext ω; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
           not_lt]
         exact hr_nonneg k ω
       rw [hμ'_apply k h_neg_open.measurableSet, h_pre, measure_empty]
@@ -2307,7 +2307,7 @@ theorem contiguous_imp_limit_pos
       set G : Set ℝ := {x : ℝ | x < 1 / (m + 1 : ℝ)} with hG_def
       have hG_open : IsOpen G := isOpen_lt continuous_id continuous_const
       have h_subset : {x : ℝ | x ≤ 0} ⊆ G := by
-        intro x hx; simp only [hG_def, Set.mem_setOf_eq]; exact lt_of_le_of_lt hx hc_pos
+        intro x hx; simp only [hG_def, Set.mem_ofPred_eq]; exact lt_of_le_of_lt hx hc_pos
       have h_portmanteau :=
         MeasureTheory.ProbabilityMeasure.le_liminf_measure_open_of_tendsto h_tendsto hG_open
       rw [hU'_coe] at h_portmanteau
@@ -2378,15 +2378,15 @@ theorem contiguous_imp_limit_pos
       intro i
       simp only [hA_def]
       by_cases h : ∃ k, φ k = i
-      · rw [dif_pos h]
+      · rw [dite_eq_left h]
         exact measurableSet_lt
           (((P i).measurable_rnDeriv (Q i)).ennreal_toReal) measurable_const
-      · rw [dif_neg h]; exact MeasurableSet.empty
+      · rw [dite_eq_right h]; exact MeasurableSet.empty
     -- At `i = φ k`, `A (φ k) = {ω | r k ω < c k}` (uses injectivity of `φ`).
     have hA_at_φ : ∀ k, A (φ k) = {ω | r k ω < c k} := by
       intro k
       have h_ex : ∃ j, φ j = φ k := ⟨k, rfl⟩
-      simp only [hA_def, dif_pos h_ex]
+      simp only [hA_def, dite_eq_left h_ex]
       have h_choose : Classical.choose h_ex = k :=
         hφ.injective (Classical.choose_spec h_ex)
       rw [h_choose]
@@ -2415,14 +2415,14 @@ theorem contiguous_imp_limit_pos
         -- `φ K ≤ φ k ⟹ K ≤ k` (φ mono).
         have hKk : K ≤ k := by
           by_contra hlt
-          push_neg at hlt
+          push Not at hlt
           exact absurd (hφ hlt) (not_lt.mpr hi)
         rw [hA_at_φ k]
         calc (P (φ k)) {ω | r k ω < c k}
             ≤ ENNReal.ofReal (c k) := h_crux k (c k) (hc_pos k)
           _ ≤ ENNReal.ofReal ε' := ENNReal.ofReal_le_ofReal (hK k hKk).le
           _ ≤ ε := hε'_le
-      · have hAi : A i = ∅ := by simp only [hA_def, dif_neg h_ex]
+      · have hAi : A i = ∅ := by simp only [hA_def, dite_eq_right h_ex]
         rw [hAi, measure_empty]; exact zero_le (a := ε)
     -- Contiguity ⟹ `Q i (A i) → 0`.
     have hQ_tendsto : Tendsto (fun i => (Q i) (A i)) atTop (𝓝 0) :=
@@ -2549,7 +2549,7 @@ theorem mean_one_imp_contiguous
   obtain ⟨δ, hδ_pos, hψ_freq⟩ :
       ∃ δ : ℝ≥0∞, 0 < δ ∧ ∃ᶠ n in atTop, δ ≤ (Q n) (A n) := by
     by_contra h_all
-    push_neg at h_all
+    push Not at h_all
     -- `∀ δ > 0, ∀ᶠ n, Q n (A n) < δ`, i.e. `Q n (A n) → 0`.
     apply h_not
     rw [ENNReal.tendsto_atTop_zero]
@@ -2610,9 +2610,9 @@ theorem mean_one_imp_contiguous
       have h_sub : (q (ψ m)) ⁻¹' {x : ℝ | r < ‖x‖}
           ⊆ {ω | ENNReal.ofReal r ≤ (Q (ψ m)).rnDeriv (P (ψ m)) ω} := by
         intro ω hω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Real.norm_eq_abs,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Real.norm_eq_abs,
           abs_of_nonneg (hq_nonneg (ψ m) ω)] at hω
-        simp only [Set.mem_setOf_eq, hq_def] at hω ⊢
+        simp only [Set.mem_ofPred_eq, hq_def] at hω ⊢
         -- `r < (rnDeriv ω).toReal` with `r > 0` forces `rnDeriv ω ≠ ∞`.
         have h_ne_top : (Q (ψ m)).rnDeriv (P (ψ m)) ω ≠ ∞ := by
           intro h_top; rw [h_top, ENNReal.toReal_top] at hω; linarith
@@ -2647,7 +2647,7 @@ theorem mean_one_imp_contiguous
         (measurableSet_lt measurable_const measurable_norm)]
       have h_empty : (s (ψ m)) ⁻¹' {x : ℝ | r < ‖x‖} = (∅ : Set (Ω (ψ m))) := by
         ext ω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         rcases hs01 (ψ m) ω with h | h <;> rw [h] <;> simp only [Real.norm_eq_abs] <;>
           [(rw [abs_zero]; linarith); (rw [abs_one]; exact hr)]
       rw [h_empty, measure_empty]
@@ -2791,7 +2791,7 @@ theorem mean_one_imp_contiguous
       rw [hcoe, Measure.map_apply (hq_meas (χ k)) h_neg_open.measurableSet]
       convert! measure_empty (μ := P (χ k))
       ext ω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
       exact hq_nonneg (χ k) ω
     simp only [h_each, Filter.liminf_const] at h_le
     exact le_antisymm h_le (zero_le)
@@ -3097,7 +3097,7 @@ theorem limit_pos_imp_mean_one
     rw [hLW_def, Measure.map_apply (hW_meas k) hSmeas]
     have : (∀ᵐ ω ∂(μ k), ω ∉ W k ⁻¹' {x : ℝ | x < 0 ∨ 2 < x}) := by
       filter_upwards [hW_le2 k] with ω hω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, not_or, not_lt]
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, not_or, not_lt]
       exact ⟨hW_nonneg k ω, hω⟩
     rw [ae_iff] at this
     simpa only [not_not] using! this
@@ -3126,9 +3126,9 @@ theorem limit_pos_imp_mean_one
       have h_sub : (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) ⁻¹' {x : ℝ | r < ‖x‖}
           ⊆ {ω | ENNReal.ofReal r ≤ (P (φ k)).rnDeriv (Q (φ k)) ω} := by
         intro ω hω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Real.norm_eq_abs,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Real.norm_eq_abs,
           abs_of_nonneg ENNReal.toReal_nonneg] at hω
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         have h_ne_top : (P (φ k)).rnDeriv (Q (φ k)) ω ≠ ∞ := by
           intro h_top; rw [h_top, ENNReal.toReal_top] at hω; linarith
         rw [← ENNReal.ofReal_toReal h_ne_top]
@@ -3163,7 +3163,7 @@ theorem limit_pos_imp_mean_one
       refine le_of_eq ?_
       refine measure_mono_null ?_ (hLW_supp (σ₁ k))
       intro x hx
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs] at hx ⊢
+      simp only [Set.mem_ofPred_eq, Real.norm_eq_abs] at hx ⊢
       rcases lt_or_ge x 0 with hx0 | hx0
       · left; rw [abs_of_neg hx0] at hx; linarith
       · right; rw [abs_of_nonneg hx0] at hx; linarith
@@ -3227,7 +3227,7 @@ theorem limit_pos_imp_mean_one
       have : (fun ω => ((Q (φ (ρ j))).rnDeriv (P (φ (ρ j))) ω).toReal) ⁻¹' {x : ℝ | x < 0}
           = (∅ : Set (Ω (φ (ρ j)))) := by
         ext ω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         exact ENNReal.toReal_nonneg
       rw [this, measure_empty]
     simp only [h_each, Filter.liminf_const] at h_le
@@ -3378,7 +3378,7 @@ theorem limit_pos_imp_mean_one
       exact this
     refine measure_mono_null ?_ h1
     intro x hx; simp only [Set.mem_singleton_iff] at hx
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt, hx, le_refl]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, hx, le_refl]
   -- `f_m(x) = max 0 (1 - (m+1)|x|)`, bounded continuous in `[0,1]`, `↓ 1_{x=0}`.
   set fB : ℕ → (ℝ →ᵇ ℝ) := fun m => BoundedContinuousFunction.ofNormedAddCommGroup
     (fun x => max 0 (1 - (m + 1 : ℝ) * |x|))

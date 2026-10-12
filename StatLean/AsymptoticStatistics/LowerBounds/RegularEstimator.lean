@@ -3,7 +3,8 @@ import StatLean.AsymptoticStatistics.Core.Pathwise
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
 import Mathlib.MeasureTheory.Group.Convolution
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Hájek-style regular-estimator predicate (semiparametric)
@@ -460,7 +461,7 @@ theorem IsRegularEstimator.hajek_shift_form [IsProbabilityMeasure L]
           {ω : Fin n → Ω | ε ≤ dist (Xshift n ω) (Yfun n ω)} = (∅ : Set _) := by
       filter_upwards [hev] with n hn
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       rw [h_dist_const]
       exact hn
     -- A set being empty makes its real-valued measure `0`.

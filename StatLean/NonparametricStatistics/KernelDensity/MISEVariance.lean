@@ -3,7 +3,7 @@ import StatLean.NonparametricStatistics.ForMathlib.MinkowskiIntegral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.MeasureTheory.Group.LIntegral
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Exact asymptotics of the integrated variance

@@ -1,5 +1,5 @@
 import Mathlib.Data.Fin.Tuple.Sort
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 
 /-!
 # Order statistics of a finite real tuple — `ForMathlib` layer

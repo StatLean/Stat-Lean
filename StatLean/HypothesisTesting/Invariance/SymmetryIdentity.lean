@@ -116,10 +116,10 @@ theorem measurable_signFlip {N : ℕ} (ε : Fin N → Bool) :
   refine measurable_pi_iff.mpr fun i => ?_
   by_cases h : ε i = true
   · have : (fun z : Fin N → ℝ => signFlip ε z i) = fun z => -(z i) := by
-      funext z; simp only [signFlip, if_pos h]
+      funext z; simp only [signFlip, ite_eq_left h]
     rw [this]; exact (measurable_pi_apply i).neg
   · have : (fun z : Fin N → ℝ => signFlip ε z i) = fun z => z i := by
-      funext z; simp only [signFlip, if_neg h]
+      funext z; simp only [signFlip, ite_eq_right h]
     rw [this]; exact measurable_pi_apply i
 
 /-- The **sign-average** of a test: its mean over the `2^N` coordinatewise sign changes. It is
@@ -205,13 +205,13 @@ private lemma pi_symmetrize_eq {N : ℕ} (ν : Fin N → Measure ℝ)
       refine forall_congr' fun i => ?_
       cases hε : ε i <;> simp [hε]
     rw [Measure.map_apply (measurable_signFlip ε) hpi, hpre, Measure.pi_pi]
-  rw [Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply,
+  rw [Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply,
     Finset.sum_congr rfl fun ε _ => hstep ε]
   have hsym : ∀ i, symmetrize (ν i) (s i)
       = ∑ b : Bool, (2 : ℝ≥0∞)⁻¹ * (ν i) (if b then (fun t : ℝ => -t) ⁻¹' (s i) else s i) := by
     intro i
     have h1 : (if (true : Bool) then (fun t : ℝ => -t) ⁻¹' (s i) else s i)
-        = (fun t : ℝ => -t) ⁻¹' (s i) := if_pos rfl
+        = (fun t : ℝ => -t) ⁻¹' (s i) := ite_eq_left rfl
     have h2 : (if (false : Bool) then (fun t : ℝ => -t) ⁻¹' (s i) else s i) = s i := by simp
     rw [symmetrize_apply (ν i) (hs i), Fintype.sum_bool, h1, h2]
     ring
@@ -245,7 +245,7 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
     unfold signAverage
     rw [integral_const_mul, integral_finsetSum _ fun ε _ => hintcomp ε]
   rw [pi_symmetrize_eq ν, integral_smul_measure,
-    integral_finset_sum_measure (fun ε _ => hintmap ε),
+    integral_finsetSum_measure (fun ε _ => hintmap ε),
     Finset.sum_congr rfl fun ε _ => heach ε, hRHS]
   have hcard : (Fintype.card (Fin N → Bool) : ℝ) = 2 ^ N := by
     simp [Fintype.card_fun]
@@ -387,7 +387,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
       have hnull' : volume (Set.univ.pi s) = 0 := by
         rw [volume_pi, Measure.pi_pi]; exact hzero
       rw [setLIntegral_measure_zero _ _ hnull', hzero, mul_zero]
-    · push_neg at h0
+    · push Not at h0
       have hprodne : (∏ i, volume (s i)) ≠ ⊤ :=
         (ENNReal.prod_lt_top fun i _ => lt_of_le_of_ne le_top (h1 i)).ne
       have hvol : volume (Set.univ.pi s) = ∏ i, volume (s i) := by

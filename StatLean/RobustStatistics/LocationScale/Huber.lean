@@ -49,12 +49,12 @@ noncomputable def huberPsi (c u : ℝ) : ℝ :=
 /-- On the central region the Huber loss is the (half) squared loss. -/
 theorem huberRho_of_abs_le {c u : ℝ} (h : |u| ≤ c) : huberRho c u = u ^ 2 / 2 := by
   unfold huberRho
-  rw [if_pos h]
+  rw [ite_eq_left h]
 
 /-- Outside the central region the Huber loss is linear in `|u|`. -/
 theorem huberRho_of_lt_abs {c u : ℝ} (h : c < |u|) : huberRho c u = c * |u| - c ^ 2 / 2 := by
   unfold huberRho
-  rw [if_neg (not_le.mpr h)]
+  rw [ite_eq_right (not_le.mpr h)]
 
 /-- On the central region the Huber score is the identity. -/
 theorem huberPsi_of_abs_le {c u : ℝ} (hc : 0 ≤ c) (h : |u| ≤ c) : huberPsi c u = u := by

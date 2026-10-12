@@ -300,7 +300,7 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
   have hset : u ⁻¹' Set.Iic r
       = ⋂ (q : ℚ) (_ : r < (q : ℝ)), {ω | u ω ≤ (q : ℝ)} := by
     ext ω
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro h q _; exact le_trans h (le_of_lt ‹r < (q : ℝ)›)
     · intro h
@@ -314,15 +314,15 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
       = ((M ⁻¹' {⊤}) ∩ {ω | (0 : ℝ) ≤ (q : ℝ)}) ∪
         ((M ⁻¹' Set.Iio ⊤) ∩ {ω | (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω}) := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
+    simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
       Set.mem_singleton_iff, Set.mem_Iio]
     rw [hchar ω q]
   rw [hqset]
   refine MeasurableSet.union (MeasurableSet.inter ?_ ?_) (MeasurableSet.inter ?_ ?_)
   · exact hM_meas (measurableSet_singleton ⊤)
   · by_cases h : (0 : ℝ) ≤ (q : ℝ)
-    · simp only [h, Set.setOf_true]; exact MeasurableSet.univ
-    · simp only [h, Set.setOf_false]; exact MeasurableSet.empty
+    · simp only [h, Set.ofPred_true]; exact MeasurableSet.univ
+    · simp only [h, Set.ofPred_false]; exact MeasurableSet.empty
   · exact hM_meas measurableSet_Iio
   · exact measurableSet_eq_fun (hLq_meas q) hM_meas
 
@@ -554,7 +554,7 @@ private theorem iInf_Iic_eq_iInf_rat_min_of_convex {g : ℝ → ℝ≥0∞}
     · -- `g r = ⊤`: forces `q < 0`, `r = q`, and `g` is `⊤` on all of `Iic q`
       have hqneg : (q : ℝ) < 0 := by
         by_contra hq
-        push_neg at hq
+        push Not at hq
         exact hrtop (by rw [hr, min_eq_left hq]; exact h0)
       have hrq' : r = (q : ℝ) := by rw [hr, min_eq_right hqneg.le]
       have hgw : g w = ⊤ := by
@@ -618,7 +618,7 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
     intro ω
     have hset : S ω = {v | f ω v ≤ M ω} := by
       ext v
-      simp only [hSdef, Set.mem_setOf_eq]
+      simp only [hSdef, Set.mem_ofPred_eq]
       exact ⟨fun h => h.le, fun h => le_antisymm h (hMle ω v)⟩
     rw [hset]
     exact (hlsc ω).isClosed_preimage (M ω)
@@ -687,7 +687,7 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
   have hset : u ⁻¹' Set.Iic r
       = ⋂ (q : ℚ) (_ : r < (q : ℝ)), {ω | u ω ≤ (q : ℝ)} := by
     ext ω
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro h q _; exact le_trans h (le_of_lt ‹r < (q : ℝ)›)
     · intro h
@@ -701,15 +701,15 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
       = ((M ⁻¹' {⊤}) ∩ {ω | (0 : ℝ) ≤ (q : ℝ)}) ∪
         ((M ⁻¹' Set.Iio ⊤) ∩ {ω | (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω}) := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
+    simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
       Set.mem_singleton_iff, Set.mem_Iio]
     rw [hchar ω q]
   rw [hqset]
   refine MeasurableSet.union (MeasurableSet.inter ?_ ?_) (MeasurableSet.inter ?_ ?_)
   · exact hM_meas (measurableSet_singleton ⊤)
   · by_cases h : (0 : ℝ) ≤ (q : ℝ)
-    · simp only [h, Set.setOf_true]; exact MeasurableSet.univ
-    · simp only [h, Set.setOf_false]; exact MeasurableSet.empty
+    · simp only [h, Set.ofPred_true]; exact MeasurableSet.univ
+    · simp only [h, Set.ofPred_false]; exact MeasurableSet.empty
   · exact hM_meas measurableSet_Iio
   · exact measurableSet_eq_fun (hLq_meas q) hM_meas
 
@@ -771,25 +771,25 @@ theorem exists_measurable_argmin_of_convex {Ω : Type*} [MeasurableSpace Ω]
       (continuous_ofReal_sq.measurable.comp measurable_snd) hf
   have hlsc' : ∀ ω, LowerSemicontinuous (f' ω) := by
     intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
-    · rw [if_pos h]; exact continuous_ofReal_sq.lowerSemicontinuous
-    · rw [if_neg h]; exact hlsc ω
+    · rw [ite_eq_left h]; exact continuous_ofReal_sq.lowerSemicontinuous
+    · rw [ite_eq_right h]; exact hlsc ω
   have hconv' : ∀ ω, ConvexOn ℝ≥0 Set.univ (f' ω) := by
     intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
-    · rw [if_pos h]; exact convexOn_ofReal_sq
-    · rw [if_neg h]; exact hconv ω
+    · rw [ite_eq_left h]; exact convexOn_ofReal_sq
+    · rw [ite_eq_right h]; exact hconv ω
   have hcoer' : ∀ ω, Tendsto (f' ω) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)) := by
     intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
-    · rw [if_pos h]; exact tendsto_ofReal_sq_cocompact
-    · rw [if_neg h]; exact hcoer ω
+    · rw [ite_eq_left h]; exact tendsto_ofReal_sq_cocompact
+    · rw [ite_eq_right h]; exact hcoer ω
   have hf'0 : ∀ ω, f' ω 0 < ⊤ := by
     intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
-    · rw [if_pos h]; simp
-    · rw [if_neg h]; exact lt_top_iff_ne_top.mpr h
+    · rw [ite_eq_left h]; simp
+    · rw [ite_eq_right h]; exact lt_top_iff_ne_top.mpr h
   obtain ⟨u, hu_meas, hu_min⟩ :=
     exists_measurable_argmin_of_convex_of_finite hf'meas hlsc' hconv' hcoer' hf'0
   refine ⟨u, hu_meas, ?_⟩
   filter_upwards [h0] with ω hω
-  have heq : f' ω = f ω := by simp only [hf'def, if_neg (lt_top_iff_ne_top.mp hω)]
+  have heq : f' ω = f ω := by simp only [hf'def, ite_eq_right (lt_top_iff_ne_top.mp hω)]
   have := hu_min ω
   rw [heq] at this
   exact this

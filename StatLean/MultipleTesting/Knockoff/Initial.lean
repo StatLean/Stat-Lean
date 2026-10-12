@@ -237,17 +237,17 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
     intro i
     have hsgn1 : ∀ ω, sgnReal W (i : Fin d) ω = 1 ↔ 0 ≤ W (i : Fin d) ω := by
       intro ω; unfold sgnReal; constructor
-      · intro h; by_contra hc; rw [if_neg hc] at h; norm_num at h
-      · intro h; rw [if_pos h]
+      · intro h; by_contra hc; rw [ite_eq_right hc] at h; norm_num at h
+      · intro h; rw [ite_eq_left h]
     have hsgnneg : ∀ ω, sgnReal W (i : Fin d) ω = -1 ↔ W (i : Fin d) ω < 0 := by
       intro ω; unfold sgnReal; constructor
-      · intro h; by_contra hc; rw [if_pos (not_lt.mp hc)] at h; norm_num at h
-      · intro h; rw [if_neg (not_le.mpr h)]
+      · intro h; by_contra hc; rw [ite_eq_left (not_lt.mp hc)] at h; norm_num at h
+      · intro h; rw [ite_eq_right (not_le.mpr h)]
     have hge : {ω | (0 : ℝ) ≤ W (i : Fin d) ω} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
       exact (hsgn1 ω).symm
     have hlt : {ω | W (i : Fin d) ω < 0} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {-1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
       exact (hsgnneg ω).symm
     have h12 : (1 : ℝ≥0∞) - 1 / 2 = 1 / 2 := by
       calc (1 : ℝ≥0∞) - 1 / 2 = (1 / 2 + 1 / 2) - 1 / 2 := by rw [ENNReal.add_halves]
@@ -255,7 +255,7 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
     split_ifs with h
     · rw [← hlt]
       have hcompl : {ω | W (i : Fin d) ω < 0} = {ω | (0 : ℝ) ≤ W (i : Fin d) ω}ᶜ := by
-        ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+        ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
       rw [hcompl, prob_compl_eq_one_sub
         (measurableSet_le measurable_const (hW.meas (i : Fin d))), hW.signs_fair _ i.2, h12]
     · rw [← hge]; exact hW.signs_fair _ i.2
@@ -282,30 +282,30 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
       · rintro ⟨hjH, hjlt⟩
         by_contra hjT
         have := h j hjH
-        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal] at this
-        rw [if_neg (not_le.mpr hjlt)] at this; norm_num at this
+        simp only [hjT, ite_false, Set.mem_singleton_iff, sgnReal] at this
+        rw [ite_eq_right (not_le.mpr hjlt)] at this; norm_num at this
       · intro hjT
         have hjH := hT hjT
         refine ⟨hjH, ?_⟩
         have := h j hjH
-        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal] at this
+        simp only [hjT, ite_true, Set.mem_singleton_iff, sgnReal] at this
         by_contra hjnlt
-        rw [if_pos (not_lt.mp hjnlt)] at this; norm_num at this
+        rw [ite_eq_left (not_lt.mp hjnlt)] at this; norm_num at this
     · intro hfilt j hjH
       by_cases hjT : j ∈ T
       · have hjlt : W j ω < 0 := by
           have : j ∈ H₀.filter (fun j => W j ω < 0) := hfilt ▸ hjT
           exact (Finset.mem_filter.mp this).2
-        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal, if_neg (not_le.mpr hjlt)]
+        simp only [hjT, ite_true, Set.mem_singleton_iff, sgnReal, ite_eq_right (not_le.mpr hjlt)]
       · have hjnlt : ¬ W j ω < 0 := by
           intro hlt
           exact hjT (hfilt ▸ Finset.mem_filter.mpr ⟨hjH, hlt⟩)
-        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal, if_pos (not_lt.mp hjnlt)]
+        simp only [hjT, ite_false, Set.mem_singleton_iff, sgnReal, ite_eq_left (not_lt.mp hjnlt)]
   -- decompose the event as a disjoint union of cells over T ∈ powersetCard m H₀
   have hdecomp : {ω | Vminus W H₀ 0 ω = m} =
       ⋃ T ∈ H₀.powersetCard m, signCell W H₀ T := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_powersetCard, exists_prop]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_powersetCard, exists_prop]
     rw [Vminus0_eq_filter_card]
     constructor
     · intro hcard
@@ -403,7 +403,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     have h1 : (fun ω => (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0)) =
         Set.indicator {ω | Vminus W H₀ 0 ω = m} (fun _ => 1) := by
       funext ω; by_cases h : Vminus W H₀ 0 ω = m <;>
-        simp [Set.indicator_apply, Set.mem_setOf_eq, h]
+        simp [Set.indicator_apply, Set.mem_ofPred_eq, h]
     have hms : MeasurableSet {ω | Vminus W H₀ 0 ω = m} := hmVm (measurableSet_singleton m)
     rw [h1, integral_indicator_const (1 : ℝ) hms, smul_eq_mul, mul_one]
     rfl
@@ -416,9 +416,9 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
               g m * (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0) := by
           funext ω
           rw [Finset.sum_eq_single (Vminus W H₀ 0 ω)
-            (fun m _ hm => by rw [if_neg (fun h => hm h.symm), mul_zero])
+            (fun m _ hm => by rw [ite_eq_right (fun h => hm h.symm), mul_zero])
             (fun hc => absurd (Finset.mem_range.mpr (Nat.lt_succ_of_le (hVm_le ω))) hc),
-            if_pos rfl, mul_one]
+            ite_eq_left rfl, mul_one]
         rw [hpart, integral_finsetSum _ (fun m _ => by
           apply Integrable.const_mul
           apply Integrable.mono' (integrable_const (1 : ℝ))

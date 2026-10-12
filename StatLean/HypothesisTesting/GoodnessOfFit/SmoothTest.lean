@@ -269,9 +269,9 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
     rw [integral_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
-      (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
+      (fun j _ hji => by rw [ite_eq_right (Ne.symm hji), mul_zero])
       (fun h => absurd (Finset.mem_univ i) h)]
-    rw [if_pos rfl, mul_one]
+    rw [ite_eq_left rfl, mul_one]
   -- the score vector is square-integrable
   have h_L2 : MemLp (Y 0) 2 P₀c := by
     have hg_L2 : MemLp g 2 P₀ := by
@@ -540,11 +540,11 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
         refine Finset.sum_congr rfl fun j hj => ?_
         have hjs : j ∉ s := (Finset.mem_sdiff.mp hj).2
         show (if j ∈ s then t else -t) * ψ j x = -(t * ψ j x)
-        rw [if_neg hjs]; ring
+        rw [ite_eq_right hjs]; ring
       have h2 : ∑ j ∈ s, (Θ s) j * ψ j x = ∑ j ∈ s, t * ψ j x := by
         refine Finset.sum_congr rfl fun j hj => ?_
         show (if j ∈ s then t else -t) * ψ j x = t * ψ j x
-        rw [if_pos hj]
+        rw [ite_eq_left hj]
       rw [h1, h2, add_comm]
     calc Real.exp (t * ∑ j, |ψ j x|) = ∏ j, Real.exp (t * |ψ j x|) := hprod
       _ ≤ ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x))) := hle
@@ -661,9 +661,9 @@ private lemma logPartition_quadratic_bound {k : ℕ} {P₀ : Measure 𝓧} [IsPr
     rw [integral_finsetSum _ fun j _ => (hψψint i j).const_mul _]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
-      (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
+      (fun j _ hji => by rw [ite_eq_right (Ne.symm hji), mul_zero])
       (fun hi => absurd (Finset.mem_univ i) hi)]
-    rw [if_pos rfl, mul_one, sq]
+    rw [ite_eq_left rfl, mul_one, sq]
   -- the pointwise third-order bound
   have hzbd : ∀ x, |z x| ≤ ‖θ‖ * W x := by
     intro x
@@ -781,7 +781,7 @@ private lemma mvGaussian_zero_one_eq_stdGaussian {k : ℕ} :
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (1 : Matrix (Fin k) (Fin k) ℝ)
       = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply, zero_add]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self, zero_add]
   exact Measure.map_id
 
 /-- The stage-`n` law of the score vector is the standardised product law. -/
@@ -1137,10 +1137,10 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     rw [hgoal, abs_neg]
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn
-      simp only [Nat.cast_zero, zero_mul, zero_sub, abs_neg, if_true]
+      simp only [Nat.cast_zero, zero_mul, zero_sub, abs_neg, ite_true]
       rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ b ^ 2 / 2)]
       nlinarith [sq_nonneg b]
-    · rw [if_neg hn.ne']
+    · rw [ite_eq_right hn.ne']
       have hCstbd' : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ‖ ≤ b →
           |A θ - ‖θ‖ ^ 2 / 2| ≤ Cst * ‖θ‖ ^ 3 := hCstbd
       set t : ℝ := Real.sqrt (n : ℝ) with htdef
@@ -1176,8 +1176,8 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
       filter_upwards [hsmall, eventually_gt_atTop 0] with n hn hn0
       have hset : {d : Fin n → 𝓧 | ε ≤ DC n d} = (∅ : Set (Fin n → 𝓧)) := by
         ext d
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, hDCval,
-          if_neg hn0.ne']
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le, hDCval,
+          ite_eq_right hn0.ne']
         exact hn
       rw [hset]
       simp
@@ -1343,7 +1343,7 @@ private lemma mvGaussian_one_eq_map_add (v : EuclideanSpace ℝ (Fin k)) :
     multivariateGaussian v 1
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- If tilting `μ` by `exp f` produces a probability measure, then `exp f` is `μ`-integrable
 with integral one.  Used both for the exact normalisation of the product likelihood ratio and
@@ -1361,7 +1361,7 @@ private lemma integrable_exp_of_withDensity_isProbability {α : Type*} [Measurab
   have heq : ∫⁻ x, ‖Real.exp (f x)‖ₑ ∂μ = 1 := by
     rw [← hone]
     refine lintegral_congr fun x => ?_
-    rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le]
+    rw [← ofReal_norm, Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le]
   have hint : Integrable (fun x => Real.exp (f x)) μ := by
     refine ⟨hmeas, ?_⟩
     change ∫⁻ x, ‖Real.exp (f x)‖ₑ ∂μ < ⊤
@@ -1410,11 +1410,11 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
   have hνtail : Tendsto (fun m : ℕ => ν.real {z : E | (m : ℝ) ≤ ‖z‖}) atTop (𝓝 0) := by
     have hanti : Antitone (fun m : ℕ => {z : E | (m : ℝ) ≤ ‖z‖}) := by
       intro m m' hmm z hz
-      simp only [Set.mem_setOf_eq] at hz ⊢
+      simp only [Set.mem_ofPred_eq] at hz ⊢
       exact le_trans (by exact_mod_cast hmm) hz
     have hinter : (⋂ m : ℕ, {z : E | (m : ℝ) ≤ ‖z‖}) = (∅ : Set E) := by
       ext z
-      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
       intro hz
       obtain ⟨m, hm⟩ := exists_nat_gt ‖z‖
       exact absurd (hz m) (not_le.mpr hm)
@@ -1457,7 +1457,7 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
       exact min_le_left _ _
     · rw [Set.indicator_of_notMem hz, normCutoff_apply]
       have hz' : ‖z‖ - r ≤ 0 := by
-        simp only [Set.mem_setOf_eq, not_le] at hz
+        simp only [Set.mem_ofPred_eq, not_le] at hz
         linarith
       rw [max_eq_left hz']
       simp
@@ -1478,7 +1478,7 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
   filter_upwards [hev1, hev2] with n hn1 hn2
   have hsub : {z : E | ε ≤ cs n * ‖z‖} ⊆ {z : E | r + 1 ≤ ‖z‖} := by
     intro z hz
-    simp only [Set.mem_setOf_eq] at hz ⊢
+    simp only [Set.mem_ofPred_eq] at hz ⊢
     by_contra hcon
     rw [not_le] at hcon
     have : cs n * ‖z‖ ≤ cs n * (r + 1) :=
@@ -1839,7 +1839,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
         have hsub : {d : Fin n → 𝓧 | ε ≤ dist (gmap (T n d)) (T n d, L n d)}
             ⊆ (T n) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖} := by
           intro d hd
-          simp only [Set.mem_setOf_eq, Set.mem_preimage] at hd ⊢
+          simp only [Set.mem_ofPred_eq, Set.mem_preimage] at hd ⊢
           have hdd : dist (gmap (T n d)) (T n d, L n d)
               = |⟪h₀, T n d⟫_ℝ - ‖h₀‖ ^ 2 / 2 - L n d| := by
             simp only [hgmap, Prod.dist_eq, dist_self, Real.dist_eq]
@@ -1968,19 +1968,19 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
     have hZmeas : Measurable (scoreVec ψ (X n)) := measurable_scoreVec hψmeas (hX n)
     have hpre : {ω | c < smoothStat ψ (X n) ω} = (scoreVec ψ (X n)) ⁻¹' Reg := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, hRegdef, hSnorm n ω]
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, hRegdef, hSnorm n ω]
     have hind : (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0)
         = Set.indicator ((scoreVec ψ (X n)) ⁻¹' Reg) 1 := by
       funext ω
       by_cases hc : c < smoothStat ψ (X n) ω
       · have hc' : ω ∈ (scoreVec ψ (X n)) ⁻¹' Reg := by
-          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          simp only [Set.mem_preimage, hRegdef, Set.mem_ofPred_eq, ← hSnorm n ω]
           exact hc
-        rw [Set.indicator_of_mem hc', Pi.one_apply, if_pos hc]
+        rw [Set.indicator_of_mem hc', Pi.one_apply, ite_eq_left hc]
       · have hc' : ω ∉ (scoreVec ψ (X n)) ⁻¹' Reg := by
-          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          simp only [Set.mem_preimage, hRegdef, Set.mem_ofPred_eq, ← hSnorm n ω]
           exact hc
-        rw [Set.indicator_of_notMem hc', if_neg hc]
+        rw [Set.indicator_of_notMem hc', ite_eq_right hc]
     simp only [power, hind]
     rw [integral_indicator_one (hZmeas hRegmeas), Measure.map_apply hZmeas hRegmeas]
     rfl
@@ -1999,7 +1999,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
     · have hball : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
           = Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) (Real.sqrt c) := by
         ext z
-        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        simp only [Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
         constructor
         · intro hzz
           rw [← Real.sqrt_sq (norm_nonneg z)]
@@ -2011,7 +2011,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
       exact convex_closedBall _ _
     · have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} = (∅ : Set _) := by
         ext z
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
         exact lt_of_lt_of_le hc0 (sq_nonneg _)
       rw [hempty]
       exact convex_empty
@@ -2020,7 +2020,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
     intro v
     have hcompl : Reg = {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}ᶜ := by
       ext z
-      simp only [hRegdef, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      simp only [hRegdef, Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     have hconv2 : Convex ℝ
         ((fun x => v + x) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) := by
       intro x hx y hy a₁ b₁ ha hb hab
@@ -2083,7 +2083,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
     exact ⟨0, fun x hx => by obtain ⟨h, _, rfl⟩ := hx; exact hpwnn n h⟩
   obtain ⟨h₁, hh₁⟩ : ∃ h : EuclideanSpace ℝ (Fin k), ‖h‖ = b := by
     refine ⟨b • EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ), ?_⟩
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, EuclideanSpace.norm_single, norm_one,
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, PiLp.norm_single, norm_one,
       mul_one]
   have hh₁mem : h₁ ∈ Shell := ⟨le_of_eq hh₁.symm, by rw [hh₁]; exact hbB.le⟩
   have hne : ∀ n, (pwf n '' Shell).Nonempty := fun n => ⟨pwf n h₁, ⟨h₁, hh₁mem, rfl⟩⟩
@@ -2122,7 +2122,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
       fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
     have hwσ : ∀ m, w (σ m) = g (σ m) := by
       intro m
-      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+      simp only [hwdef, ite_eq_left (Set.mem_range.mpr ⟨m, rfl⟩)]
     have hwlim : Tendsto w atTop (nhds h₀) := by
       rw [Metric.tendsto_atTop]
       intro ε hε
@@ -2138,7 +2138,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
         rw [hwσ m]
         simpa only [Function.comp_apply, hσdef] using hM m hmM
       · rw [hwdef]
-        simp only [if_neg hmem, dist_self]
+        simp only [ite_eq_right hmem, dist_self]
         exact hε
     have hlimit := (hdrift w h₀ hwlim).comp hσmono.tendsto_atTop
     have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by

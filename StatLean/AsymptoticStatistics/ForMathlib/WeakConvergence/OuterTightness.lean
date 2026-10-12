@@ -158,7 +158,7 @@ theorem limsup_outerMeasureStar_preimage_isClosed_le {Ω D : Type*}
     limsup (fun n => (μ n).outerMeasureStar (Xn n ⁻¹' C)) atTop ≤ νD C := by
   -- The bounded continuous approximating sequence `gₖ ↓ 1_C`, coerced to `ℝ`.
   set g : ℕ → (D →ᵇ ℝ) := fun k =>
-    (hC.apprSeq k).comp _ NNReal.isometry_coe.lipschitz with hg
+    (hC.apprSeq k).comp _ NNReal.isometry_coe.lipschitzWith with hg
   have hg_apply : ∀ k x, g k x = (hC.apprSeq k x : ℝ) := fun k x => rfl
   have hg_nonneg : ∀ k x, (0 : ℝ) ≤ g k x := fun k x => by
     rw [hg_apply]; positivity
@@ -284,12 +284,12 @@ theorem limsup_outerMeasureStar_preimage_isClosed_le_of_lipschitz {Ω D : Type*}
     tendsto_one_div_add_atTop_nhds_zero_nat
   -- The bounded-Lipschitz approximating sequence `gₖ ↓ 1_C`, coerced to `ℝ`.
   set g : ℕ → (D →ᵇ ℝ) := fun k =>
-    (thickenedIndicator (hδ_pos k) C).comp _ NNReal.isometry_coe.lipschitz with hg
+    (thickenedIndicator (hδ_pos k) C).comp _ NNReal.isometry_coe.lipschitzWith with hg
   have hg_apply : ∀ k x, g k x = (thickenedIndicator (hδ_pos k) C x : ℝ) := fun k x => rfl
   -- Each `g k` is bounded Lipschitz.
   have hg_lip : ∀ k, ∃ K, LipschitzWith K (g k) := fun k =>
     ⟨1 * (1 / (k + 1 : ℝ)).toNNReal⁻¹,
-      NNReal.isometry_coe.lipschitz.comp (lipschitzWith_thickenedIndicator (hδ_pos k) C)⟩
+      NNReal.isometry_coe.lipschitzWith.comp (lipschitzWith_thickenedIndicator (hδ_pos k) C)⟩
   have hg_nonneg : ∀ k x, (0 : ℝ) ≤ g k x := fun k x => by
     rw [hg_apply]; positivity
   have hg_le_one : ∀ k x, g k x ≤ 1 := fun k x => by

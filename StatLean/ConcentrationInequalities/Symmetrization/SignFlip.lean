@@ -108,7 +108,7 @@ theorem integral_flip_diff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
   set σ : Fin N → Bool := fun i => if c i = 1 then true else false with hσdef
   have hσtrue : ∀ i, c i = 1 → σ i = true := fun i h => by simp [hσdef, h]
   have hσfalse : ∀ i, c i = -1 → σ i = false := fun i h => by
-    simp only [hσdef]; rw [if_neg (by rw [h]; norm_num)]
+    simp only [hσdef]; rw [ite_eq_right (by rw [h]; norm_num)]
   have hF := measurePreserving_condSwap ν σ
   set F := (fun w : (Fin N → E) × (Fin N → E) =>
       (fun i => if σ i then w.1 i else w.2 i, fun i => if σ i then w.2 i else w.1 i))

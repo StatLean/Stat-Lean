@@ -247,9 +247,9 @@ private theorem sum_abs_le_of_card_le (y : Fin n → ℝ) {m t : ℝ} (hmt : m <
       |y i - m| - |y i - t| ≤ (if y i ≤ m then -(t - m) else t - m) := by
     intro i
     by_cases hi : y i ≤ m
-    · rw [if_pos hi, abs_of_nonpos (by linarith), abs_of_nonpos (by linarith)]
+    · rw [ite_eq_left hi, abs_of_nonpos (by linarith), abs_of_nonpos (by linarith)]
       linarith
-    · rw [if_neg hi]
+    · rw [ite_eq_right hi]
       have h1 := abs_sub_abs_le_abs_sub (y i - m) (y i - t)
       have h2 : |y i - m - (y i - t)| = t - m := by
         rw [show y i - m - (y i - t) = t - m by ring, abs_of_pos (by linarith)]

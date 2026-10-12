@@ -190,7 +190,7 @@ private theorem baseline_actualResidual_sq_isLittleO
       (canonicalDominator P (γ.curve t)) ≠ ⊤ := by
     intro htop
     have hfalse : (⊤ : ℝ≥0∞) < 1 := by
-      simpa only [htop, ENNReal.top_div, if_neg ENNReal.ofReal_ne_top] using hlt
+      simpa only [htop, ENNReal.top_div, ite_eq_right ENNReal.ofReal_ne_top] using hlt
     exact (not_lt_of_ge le_top hfalse).elim
   have hquot_eq :
       (eLpNorm (γ.comparisonResidual t) 2
@@ -725,10 +725,10 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
         rw [not_or] at hnot
         have h1 : |(n : ℝ)⁻¹ * ∑ i : Fin n,
             a ^ 2 * (γ.score : Ω → ℝ) (X i) ^ 2 - a ^ 2 * I| < δ := by
-          simpa only [Set.mem_setOf_eq, not_le] using hnot.1
+          simpa only [Set.mem_ofPred_eq, not_le] using hnot.1
         have h2 : |E n X| < δ := by
-          simpa only [Set.mem_setOf_eq, not_le] using hnot.2
-        rw [Set.mem_setOf_eq, hdecomp X] at hX
+          simpa only [Set.mem_ofPred_eq, not_le] using hnot.2
+        rw [Set.mem_ofPred_eq, hdecomp X] at hX
         have ht := abs_add_le
           ((n : ℝ)⁻¹ * ∑ i : Fin n,
             a ^ 2 * (γ.score : Ω → ℝ) (X i) ^ 2 - a ^ 2 * I) (E n X)
@@ -878,10 +878,10 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
           have hi : ¬ X ∈ {X : Fin n → Ω | η / 2 ≤ |W n (X i)|} := by
             intro hi
             exact hnot.1 (Set.mem_biUnion (Finset.mem_univ i) hi)
-          simpa only [Set.mem_setOf_eq, not_le] using hi
+          simpa only [Set.mem_ofPred_eq, not_le] using hi
         have hBlt : ∑ i : Fin n, W n (X i) ^ 2 < Mbd := by
           have hb' : |∑ i : Fin n, W n (X i) ^ 2 - a ^ 2 * I| < 1 := by
-            simpa only [Set.mem_setOf_eq, not_le] using hnot.2
+            simpa only [Set.mem_ofPred_eq, not_le] using hnot.2
           have hab := abs_lt.mp hb'
           dsimp only [Mbd]
           linarith [hab.2]
@@ -1065,7 +1065,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
         rw [show {X : Fin n → Ω |
             δ ≤ |(n : ℝ) * ∫ ω, W n ω ∂P + a ^ 2 / 4 * I|} = ∅ by
           ext X
-          simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false]
+          simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false]
           simpa only [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs, iff_false] using
             (not_le.mpr hn), measure_empty]
       exact (tendsto_congr' heq).mpr tendsto_const_nhds
@@ -1112,14 +1112,14 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
         simp only [Set.mem_union, not_or] at hnot
         obtain ⟨hz, hA', hD', hB', hC'⟩ := hnot
         have hdec := hdecomp n X hz
-        have ha' : |A n X| < δ := by simpa only [EA, Set.mem_setOf_eq, not_le] using hA'
+        have ha' : |A n X| < δ := by simpa only [EA, Set.mem_ofPred_eq, not_le] using hA'
         have hd' : |(n : ℝ) * ∫ ω, W n ω ∂P + a ^ 2 / 4 * I| < δ := by
-          simpa only [ED, Set.mem_setOf_eq, not_le] using hD'
+          simpa only [ED, Set.mem_ofPred_eq, not_le] using hD'
         have hb' : |∑ i : Fin n, W n (X i) ^ 2 - a ^ 2 * I| < 4 * δ := by
-          simpa only [EB, Set.mem_setOf_eq, not_le] using hB'
+          simpa only [EB, Set.mem_ofPred_eq, not_le] using hB'
         have hc' : |∑ i : Fin n, W n (X i) ^ 2 * R (W n (X i))| < 2 * δ := by
-          simpa only [EC, Set.mem_setOf_eq, not_le] using hC'
-        rw [Set.mem_setOf_eq, hdec] at hX
+          simpa only [EC, Set.mem_ofPred_eq, not_le] using hC'
+        rw [Set.mem_ofPred_eq, hdec] at hX
         have htri1 := abs_add_le (A n X)
           ((n : ℝ) * ∫ ω, W n ω ∂P + a ^ 2 / 4 * I)
         have htri2 := abs_add_le
@@ -1403,7 +1403,7 @@ theorem qmd_score_mean_integrable_and_lan_nondominated
         P' ((Y n) ⁻¹' {Z : Fin n → Ω | ε ≤ |S n Z|}) := by
       congr 1
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, sub_zero, Real.norm_eq_abs]
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, sub_zero, Real.norm_eq_abs]
       rw [hstat]
     _ = Measure.map (Y n) P' {Z : Fin n → Ω | ε ≤ |S n Z|} := by
       rw [Measure.map_apply (hYmeas n) hset]

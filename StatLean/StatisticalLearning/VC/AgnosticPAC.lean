@@ -259,7 +259,7 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
     intro c g G hG
     have hEq : {s : Sample (X × Bool) n | ∀ h ∈ 𝓗, g h - G h s ≤ c}
         = ⋂ h ∈ 𝓗, {s : Sample (X × Bool) n | g h - G h s ≤ c} := by
-      ext s; simp only [Set.mem_setOf_eq, Set.mem_iInter]
+      ext s; simp only [Set.mem_ofPred_eq, Set.mem_iInter]
     rw [hEq]
     exact MeasurableSet.biInter hc fun h hh =>
       measurableSet_le (measurable_const.sub (hG h hh)) measurable_const
@@ -599,7 +599,7 @@ theorem vc_isAgnosticPACLearnerWith (𝓗 : Set (X → Bool))
     have hall : {s : Sample (X × Bool) m |
         risk D zeroOneLoss (A m s) ≤ bestRisk D 𝓗 zeroOneLoss + ε} = Set.univ := by
       ext s
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       have hmem := (hA m s).1
       have h1 : risk D zeroOneLoss (A m s) ≤ 1 :=
         (risk_mem_Icc (fun z => ⟨zeroOneLoss_nonneg _ z, zeroOneLoss_le_one _ z⟩)

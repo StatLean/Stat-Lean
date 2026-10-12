@@ -84,7 +84,7 @@ theorem vcDim_iicClass : vcDim iicClass = 1 := by
   · rw [vcDim_le_iff]
     intro Λ hΛ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have h2 : 2 ≤ Λ.card := by
       have : (1 : ℕ) < Λ.card := by exact_mod_cast hcon
       omega
@@ -142,9 +142,9 @@ lemma empFrac_iic_rightContinuous {n : ℕ} (x : Fin n → ℝ) :
       refine (continuousWithinAt_const :
         ContinuousWithinAt (fun _ : ℝ => (1 : ℝ)) (Set.Ici t) t).congr ?_ ?_
       · intro s hs
-        rw [Set.indicator_apply, if_pos]
+        rw [Set.indicator_apply, ite_eq_left]
         rw [Set.mem_Iic]; exact le_trans hxi hs
-      · rw [Set.indicator_apply, if_pos]
+      · rw [Set.indicator_apply, ite_eq_left]
         rw [Set.mem_Iic]; exact hxi
     · -- `t < x i`: constantly `0` on `[t, x i)`.
       have hlt : t < x i := not_le.mp hxi
@@ -152,9 +152,9 @@ lemma empFrac_iic_rightContinuous {n : ℕ} (x : Fin n → ℝ) :
         ContinuousWithinAt (fun _ : ℝ => (0 : ℝ)) (Set.Ici t) t).congr_of_eventuallyEq
         ?_ ?_
       · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds hlt)] with s hs
-        rw [Set.indicator_apply, if_neg]
+        rw [Set.indicator_apply, ite_eq_right]
         rw [Set.mem_Iic]; exact not_le.mpr hs
-      · rw [Set.indicator_apply, if_neg]
+      · rw [Set.indicator_apply, ite_eq_right]
         rw [Set.mem_Iic]; exact not_le.mpr hlt
   have hsum : ContinuousWithinAt
       (fun s => ∑ i, (Set.Iic s).indicator (fun _ => (1 : ℝ)) (x i))

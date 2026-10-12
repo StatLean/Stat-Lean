@@ -71,7 +71,7 @@ lemma uniformBound_nonneg (hg : IsBoundedMixtureScores g_P) :
   classical
   unfold uniformBound
   by_cases h : (Finset.univ : Finset (Fin m)).Nonempty
-  · rw [dif_pos h]
+  · rw [dite_eq_left h]
     obtain ⟨i, hi_mem⟩ := h
     -- max 0 (Classical.choose (hg i)) ≤ sup' …
     have hi : (fun j : Fin m => max 0 (Classical.choose (hg j))) i ≤
@@ -85,7 +85,7 @@ lemma uniformBound_nonneg (hg : IsBoundedMixtureScores g_P) :
     change 0 ≤ Finset.univ.sup' (⟨i, hi_mem⟩ : (Finset.univ : Finset (Fin m)).Nonempty)
         (fun j : Fin m => max 0 (Classical.choose (hg j)))
     exact (le_max_left _ _).trans hi
-  · rw [dif_neg h]
+  · rw [dite_eq_right h]
 
 /-- Each component is a.e. bounded by the uniform bound. -/
 lemma ae_abs_le_uniformBound (hg : IsBoundedMixtureScores g_P) (i : Fin m) :
@@ -107,7 +107,7 @@ lemma ae_abs_le_uniformBound (hg : IsBoundedMixtureScores g_P) (i : Fin m) :
   have h3 : hg.uniformBound =
       Finset.univ.sup' ⟨i, Finset.mem_univ i⟩
         (fun j : Fin m => max 0 (Classical.choose (hg j))) := by
-    unfold uniformBound; rw [dif_pos hne]
+    unfold uniformBound; rw [dite_eq_left hne]
   rw [h3]
   exact hω.trans (h1.trans h2)
 
@@ -363,11 +363,11 @@ lemma submodelDensity_meas
   by_cases hθ : ‖θ‖ < truncRadius g_P hg
   · -- Show the function equals `fun ω => 1 + linPerturb g_P θ ω`.
     have h_eq : submodelDensity g_P hg θ = fun ω => 1 + linPerturb g_P θ ω := by
-      funext ω; unfold submodelDensity; rw [if_pos hθ]
+      funext ω; unfold submodelDensity; rw [ite_eq_left hθ]
     rw [h_eq]
     exact (measurable_const).add (linPerturb_meas g_P θ)
   · have h_eq : submodelDensity g_P hg θ = fun _ => (1 : ℝ) := by
-      funext ω; unfold submodelDensity; rw [if_neg hθ]
+      funext ω; unfold submodelDensity; rw [ite_eq_right hθ]
     rw [h_eq]
     exact measurable_const
 
@@ -402,13 +402,13 @@ lemma submodelDensityNN_ae_eq
     filter_upwards [h_nn] with ω hω
     change max 0 (submodelDensity g_P hg θ ω) = submodelDensity g_P hg θ ω
     have h_eq : submodelDensity g_P hg θ ω = 1 + linPerturb g_P θ ω := by
-      unfold submodelDensity; rw [if_pos hθ]
+      unfold submodelDensity; rw [ite_eq_left hθ]
     rw [h_eq]; exact max_eq_right hω
   · -- For ‖θ‖ ≥ δ: submodelDensity = 1 ≥ 0 pointwise.
     refine Filter.Eventually.of_forall (fun ω => ?_)
     change max 0 (submodelDensity g_P hg θ ω) = submodelDensity g_P hg θ ω
     have h_eq : submodelDensity g_P hg θ ω = 1 := by
-      unfold submodelDensity; rw [if_neg hθ]
+      unfold submodelDensity; rw [ite_eq_right hθ]
     rw [h_eq]; norm_num
 
 /-- ∫ submodelDensity θ ∂P = 1 a.e. for `‖θ‖ < truncRadius`. Mean-zero of
@@ -419,13 +419,13 @@ lemma integral_submodelDensity_eq_one
   classical
   by_cases hθ : ‖θ‖ < truncRadius g_P hg
   · have h_eq : ∀ ω, submodelDensity g_P hg θ ω = 1 + linPerturb g_P θ ω := by
-      intro ω; unfold submodelDensity; rw [if_pos hθ]
+      intro ω; unfold submodelDensity; rw [ite_eq_left hθ]
     simp_rw [h_eq]
     rw [integral_add (integrable_const _) (linPerturb_integrable g_P θ)]
     rw [integral_const, integral_linPerturb_eq_zero g_P θ]
     simp
   · have h_eq : ∀ ω, submodelDensity g_P hg θ ω = 1 := by
-      intro ω; unfold submodelDensity; rw [if_neg hθ]
+      intro ω; unfold submodelDensity; rw [ite_eq_right hθ]
     simp_rw [h_eq]
     simp
 
@@ -435,11 +435,11 @@ lemma submodelDensity_integrable
   classical
   by_cases hθ : ‖θ‖ < truncRadius g_P hg
   · have h_eq : submodelDensity g_P hg θ = fun ω => 1 + linPerturb g_P θ ω := by
-      funext ω; unfold submodelDensity; rw [if_pos hθ]
+      funext ω; unfold submodelDensity; rw [ite_eq_left hθ]
     rw [h_eq]
     exact (integrable_const _).add (linPerturb_integrable g_P θ)
   · have h_eq : submodelDensity g_P hg θ = fun _ => (1 : ℝ) := by
-      funext ω; unfold submodelDensity; rw [if_neg hθ]
+      funext ω; unfold submodelDensity; rw [ite_eq_right hθ]
     rw [h_eq]
     exact integrable_const _
 
@@ -508,7 +508,7 @@ theorem paramSubmodel_density_at_zero
     simp [zero_mul]
   have h_sd : submodelDensity g_P hg (0 : EuclideanSpace ℝ (Fin m)) ω = 1 := by
     unfold submodelDensity
-    rw [if_pos h0, h_lin0]; norm_num
+    rw [ite_eq_left h0, h_lin0]; norm_num
   change submodelDensityNN g_P hg (0 : EuclideanSpace ℝ (Fin m)) ω = 1
   unfold submodelDensityNN
   rw [h_sd]; norm_num
@@ -532,7 +532,7 @@ theorem paramSubmodel_score_at_zero
   change submodelDensityNN g_P hg θ ω = 1 + linPerturb g_P θ ω
   rw [hω]
   unfold submodelDensity
-  rw [if_pos hθ]
+  rw [ite_eq_left hθ]
 
 /-- **Joint measurability of the parametric-submodel density.**
 

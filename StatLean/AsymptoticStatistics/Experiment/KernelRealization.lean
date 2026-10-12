@@ -5,7 +5,8 @@ import Mathlib.Probability.Independence.Basic
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Measure.Stieltjes
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal
 import Mathlib.MeasureTheory.Function.Floor
 
@@ -165,17 +166,17 @@ lemma leftInverse_measurable (F : StieltjesFunction ℝ)
       · rcases le_or_gt u 0 with hu0 | hu0
         · -- u ≤ 0: leftInverse u = 0, so 0 ≤ y.
           rw [leftInverse_of_nonpos F hF_atBot hu0] at h_li_le
-          left; right; rw [if_pos h_li_le]; left; exact hu0
+          left; right; rw [ite_eq_left h_li_le]; left; exact hu0
         · -- 0 < u < 1: Galois iff.
           left; left
           exact ⟨⟨hu0, hu1⟩,
             (leftInverse_le_iff F hF_atBot hF_atTop hu0 hu1).mp h_li_le⟩
       · -- u = 1.
         subst hu1
-        right; rw [if_pos h_li_le]; rfl
+        right; rw [ite_eq_left h_li_le]; rfl
       · -- u > 1: leftInverse u = 0, so 0 ≤ y.
         rw [leftInverse_of_one_lt F hF_atTop hu1] at h_li_le
-        left; right; rw [if_pos h_li_le]; right; exact hu1
+        left; right; rw [ite_eq_left h_li_le]; right; exact hu1
     · rintro ((h_gal | h_outside) | h_one)
       · obtain ⟨⟨hu0, hu1⟩, h_fy⟩ := h_gal
         exact (leftInverse_le_iff F hF_atBot hF_atTop hu0 hu1).mpr h_fy
@@ -288,21 +289,21 @@ lemma parametric_leftInverse_measurable {α : Type*} [MeasurableSpace α]
       = {p : α × ℝ | p.2 ∈ Set.Ioo (0 : ℝ) 1 ∧ p.2 ≤ F p.1 y}
         ∪ (if (0 : ℝ) ≤ y then {p : α × ℝ | p.2 ∉ Set.Ioo (0 : ℝ) 1} else ∅) := by
     ext ⟨a, u⟩
-    simp only [Set.mem_setOf_eq, Set.mem_union]
+    simp only [Set.mem_ofPred_eq, Set.mem_union]
     constructor
     · intro h
       by_cases hu : u ∈ Set.Ioo (0 : ℝ) 1
-      · rw [if_pos hu] at h
+      · rw [ite_eq_left hu] at h
         obtain ⟨hu0, hu1⟩ := hu
         exact Or.inl ⟨⟨hu0, hu1⟩,
           (leftInverse_le_iff (F a) (hF_atBot a) (hF_atTop a) hu0 hu1).mp h⟩
-      · rw [if_neg hu] at h
-        exact Or.inr (by rw [if_pos h]; exact hu)
+      · rw [ite_eq_right hu] at h
+        exact Or.inr (by rw [ite_eq_left h]; exact hu)
     · rintro (⟨⟨hu0, hu1⟩, h_fy⟩ | h_out)
-      · rw [if_pos ⟨hu0, hu1⟩]
+      · rw [ite_eq_left ⟨hu0, hu1⟩]
         exact (leftInverse_le_iff (F a) (hF_atBot a) (hF_atTop a) hu0 hu1).mpr h_fy
       · split_ifs at h_out with h_0y
-        · rw [if_neg h_out]; exact h_0y
+        · rw [ite_eq_right h_out]; exact h_0y
         · exact absurd h_out (Set.notMem_empty _)
   rw [h_eq]
   refine MeasurableSet.union ?_ ?_
@@ -345,7 +346,7 @@ lemma hasUniformRealization_1d_of_stieltjes {α : Type*} [MeasurableSpace α]
           =ᵐ[volume.restrict (Set.Ioo (0 : ℝ) 1)] (F a).leftInverse := by
       refine (ae_restrict_iff' measurableSet_Ioo).mpr (ae_of_all _ ?_)
       intro u hu
-      exact if_pos hu
+      exact ite_eq_left hu
     rw [Measure.map_congr h_ae_eq]
     exact leftInverse_map_uniform (F a) (hF_atBot a) (hF_atTop a)
 
@@ -724,9 +725,9 @@ def deinterleave : (ℕ → Bool) ≃ᵐ (ℕ → Bool) × (ℕ → Bool) where
     change Measurable (fun p : (ℕ → Bool) × (ℕ → Bool) =>
       if n % 2 = 0 then p.1 (n / 2) else p.2 (n / 2))
     by_cases h : n % 2 = 0
-    · simp_rw [if_pos h]
+    · simp_rw [ite_eq_left h]
       exact (measurable_pi_apply (n / 2)).comp measurable_fst
-    · simp_rw [if_neg h]
+    · simp_rw [ite_eq_right h]
       exact (measurable_pi_apply (n / 2)).comp measurable_snd
 
 /-! ### Halmos / Lebesgue–Bernoulli isomorphism

@@ -146,7 +146,7 @@ theorem mle_asymptotic_normality_of_consistent
     convert hTaylor₀ using 1
     funext θ
     rw [fisherInformation_eq_inner_fisherInformationMatrix M μ θ₀ ℓ hFisher]
-    simp only [map_neg, ContinuousLinearMap.neg_apply, inner_neg_right]
+    simp only [map_neg, neg_apply, inner_neg_right]
     ring
   obtain ⟨c, hc, hVsymm, _, hVneg⟩ :=
     neg_posDef_as_mEstimator_curvature (I := fisherInformationMatrix M μ θ₀ ℓ) hI
@@ -175,7 +175,7 @@ theorem mle_asymptotic_normality_of_consistent
     simpa using
       Matrix.inv_smul' (fisherInformationMatrix M μ θ₀ ℓ) (-1 : ℝˣ) hIdet
   refine ⟨?_, ?_⟩
-  · simpa only [hInvNeg, map_neg, ContinuousLinearMap.neg_apply, sub_eq_add_neg] using hT8.1
+  · simpa only [hInvNeg, map_neg, neg_apply, sub_eq_add_neg] using hT8.1
   · rw [psiCov_score_eq_fisherInformationMatrix M μ θ₀ ℓ,
       mEstimator_fisher_covariance_collapse
         (fisherInformationMatrix M μ θ₀ ℓ) hI] at hT8

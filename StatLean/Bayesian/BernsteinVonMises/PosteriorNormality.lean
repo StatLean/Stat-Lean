@@ -282,7 +282,7 @@ theorem bernstein_von_mises
   have hincl : {ω : Fin n → 𝓧 | δ ≤ bvmTV κ π θ₀ J sc n ω} ⊆ SA ∪ SB ∪ SD := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, not_or, hSAdef, hSBdef, hSDdef, Set.mem_setOf_eq,
+    simp only [Set.mem_union, not_or, hSAdef, hSBdef, hSDdef, Set.mem_ofPred_eq,
       not_le] at hcon
     obtain ⟨⟨hA, hB⟩, hD⟩ := hcon
     haveI := hGprob ω
@@ -321,8 +321,8 @@ theorem bernstein_von_mises
   have hSA : productMeasure M μ θ₀ n SA ≤ η / 3 := by
     refine le_trans (measure_mono ?_) h1
     intro ω hω
-    rw [hSAdef, Set.mem_setOf_eq] at hω
-    simp only [Set.mem_setOf_eq]
+    rw [hSAdef, Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_ofPred_eq]
     refine le_trans hω ?_
     rw [← bvmLocalPosterior_compl_ball h5 ω (Mseq n)]
     exact measure_mono (Set.compl_subset_compl.2 Metric.ball_subset_closedBall)
@@ -331,8 +331,8 @@ theorem bernstein_von_mises
   have hSD : productMeasure M μ θ₀ n SD ≤ η / 3 := by
     refine le_trans (measure_mono ?_) h6
     intro ω hω
-    rw [hSDdef, Set.mem_setOf_eq] at hω
-    simp only [Set.mem_setOf_eq]
+    rw [hSDdef, Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_ofPred_eq]
     by_contra hcon
     push Not at hcon
     have hnorm : ‖bvmEffScore J sc n ω‖ ≤ ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹‖ * K := by
@@ -434,7 +434,7 @@ theorem bernstein_von_mises_lintegral
         unfold bvmGaussian; infer_instance
       exact le_trans (Minimaxity.tvDist_le_one _ _) le_add_self
     · rw [Set.indicator_of_notMem hω, add_zero]
-      rw [hSdef, Set.mem_setOf_eq, not_le] at hω
+      rw [hSdef, Set.mem_ofPred_eq, not_le] at hω
       exact hω.le
   calc ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n)
       ≤ ∫⁻ ω, (η / 2 + S.indicator (1 : (Fin n → 𝓧) → ℝ≥0∞) ω)

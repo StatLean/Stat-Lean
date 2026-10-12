@@ -613,7 +613,7 @@ private lemma canonicalDensity_pos (θ : CanonicalParam s)
     (Y : EuclideanSpace ℝ (Fin (s + m))) : 0 < canonicalDensity (m := m) θ Y := by
   unfold canonicalDensity
   rw [pos_iff_ne_zero, ne_eq, Finset.prod_eq_zero_iff]
-  push_neg
+  push Not
   intro i _
   rw [gaussianPDF]
   exact (ENNReal.ofReal_pos.2 (gaussianPDFReal_pos _ _ _ (ne_of_gt θ.2.2))).ne'

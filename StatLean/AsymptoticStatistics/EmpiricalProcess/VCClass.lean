@@ -3,7 +3,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Data.Finset.Preimage
 import Mathlib.Data.Nat.Choose.Bounds
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!

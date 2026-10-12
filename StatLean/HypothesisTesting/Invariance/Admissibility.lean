@@ -176,7 +176,7 @@ private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpac
       A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ ∧ ρ (A ∩ {t | c < ⟪a, t⟫_ℝ}) ≠ 0 := by
   classical
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   refine hpos ?_
   -- a separating open half-space at every point off `A₀`
   have hsep : ∀ p : {q : EuclideanSpace ℝ (Fin s) // q ∉ A₀},
@@ -186,10 +186,10 @@ private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpac
     obtain ⟨f, u, hf, hup⟩ := geometric_hahn_banach_closed_point hA₀convex hA₀closed hp
     refine ⟨(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin s))).symm f, u, ?_, ?_⟩
     · ext y
-      simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_and, not_lt, InnerProductSpace.toDual_symm_apply]
       exact fun hy => (hf y hy).le
-    · simpa only [Set.mem_setOf_eq, InnerProductSpace.toDual_symm_apply] using hup
+    · simpa only [Set.mem_ofPred_eq, InnerProductSpace.toDual_symm_apply] using hup
   choose a c hemp hmem using hsep
   have hopen : ∀ p, IsOpen {t : EuclideanSpace ℝ (Fin s) | c p < ⟪a p, t⟫_ℝ} := fun p =>
     isOpen_lt continuous_const (continuous_const.inner continuous_id)
@@ -233,7 +233,7 @@ private theorem acceptance_subset_of_power_le_const
   have hunion : A ∩ {t | c < ⟪a, t⟫_ℝ}
       = ⋃ k : ℕ, A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ} := by
     ext t
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_iUnion]
     refine ⟨fun ⟨ht, hlt⟩ => ?_, fun ⟨k, ht, hlt⟩ => ?_⟩
     · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
       exact ⟨k, ht, by linarith⟩
@@ -242,7 +242,7 @@ private theorem acceptance_subset_of_power_le_const
   obtain ⟨k, hk⟩ : ∃ k : ℕ,
       statScaleBase E (A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ}) ≠ 0 := by
     by_contra hall
-    push_neg at hall
+    push Not at hall
     exact hmass (by rw [hunion]; exact measure_iUnion_null hall)
   set δ : ℝ := 1 / ((k : ℝ) + 1) with hδdef
   have hδpos : (0:ℝ) < δ := by rw [hδdef]; positivity
@@ -279,7 +279,7 @@ private theorem acceptance_subset_of_power_le_const
     rw [ae_iff] at h1
     have h3 : {x : 𝓧 | ¬ F x = 0} = Set.univ := by
       ext x
-      simp only [hFdef, Set.mem_setOf_eq, Set.mem_univ, iff_true, ENNReal.ofReal_eq_zero, not_le]
+      simp only [hFdef, Set.mem_ofPred_eq, Set.mem_univ, iff_true, ENNReal.ofReal_eq_zero, not_le]
       exact Real.exp_pos _
     rw [h3, Measure.restrict_apply_univ] at h1
     exact hWpos h1
@@ -339,7 +339,7 @@ private theorem acceptance_subset_of_power_le_const
         intro x hx
         have hle : ⟪a, E.stat x⟫_ℝ ≤ c := by
           by_contra hgt
-          push_neg at hgt
+          push Not at hgt
           have hmem : E.stat x ∈ A₀ ∩ {t | c < ⟪a, t⟫_ℝ} := ⟨hx, hgt⟩
           rw [hemp] at hmem
           exact hmem
@@ -547,7 +547,7 @@ private theorem power_eq_indicator_of_dominating
     have hun : {t | φ t < 1} \ A₀
         = ⋃ k : ℕ, ({t | φ t < 1 - 1 / ((k : ℝ) + 2)} \ A₀) := by
       ext t
-      simp only [Set.mem_diff, Set.mem_setOf_eq, Set.mem_iUnion]
+      simp only [Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_iUnion]
       refine ⟨fun ⟨hlt, hA⟩ => ?_, fun ⟨k, hlt, hA⟩ => ?_⟩
       · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
         have hmono : 1 / ((k : ℝ) + 2) < 1 / ((k : ℝ) + 1) := by
@@ -568,7 +568,7 @@ private theorem power_eq_indicator_of_dominating
   have hge : (A₀ᶜ.indicator fun _ => (1 : ℝ)) ≤ᵐ[statScaleBase E] φ := by
     have hsub : {t | ¬ ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t ≤ φ t)} ⊆ {t | φ t < 1} \ A₀ := by
       intro t ht
-      simp only [Set.mem_setOf_eq, not_le] at ht
+      simp only [Set.mem_ofPred_eq, not_le] at ht
       by_cases hA : t ∈ A₀
       · rw [Set.indicator_of_notMem (by simpa using hA)] at ht
         exact absurd ht (not_lt.mpr (hφ.2 t).1)

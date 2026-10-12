@@ -83,7 +83,7 @@ private lemma gammaExp_ennreal {a δ ψ : ℝ} (ha : 0 < a) (hψ : 0 < ψ) :
       = ENNReal.ofReal ((2⁻¹ : ℝ) ^ a / Real.Gamma a
           * (ψ ^ (a - 1) * Real.exp (-ψ / 2) * Real.exp (-δ / ψ))) := by
   rw [gammaPDF, ← ENNReal.ofReal_mul (gammaPDFReal_nonneg ha (by norm_num) ψ),
-    gammaPDFReal, if_pos hψ.le]
+    gammaPDFReal, ite_eq_left hψ.le]
   congr 1
   rw [show -(2⁻¹ * ψ) = -ψ / 2 by ring]; ring
 

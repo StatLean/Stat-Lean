@@ -86,15 +86,15 @@ private theorem carKernel_apply_true (Q : Measure (𝓧 × ℝ)) [IsFiniteMeasur
     {o : 𝓧 × Bool × ℝ} (ho : o.2.1 = true) {A : Set (𝓧 × ℝ × Bool)} (hA : MeasurableSet A) :
     carKernel Q o A = A.indicator 1 (o.1, o.2.2, true) := by
   rw [carKernel, Kernel.piecewise_apply',
-    if_pos (show o ∈ {o : 𝓧 × Bool × ℝ | o.2.1 = true} from ho),
+    ite_eq_left (show o ∈ {o : 𝓧 × Bool × ℝ | o.2.1 = true} from ho),
     Kernel.deterministic_apply' _ _ hA]
   rfl
 
 private theorem carKernel_apply_false (Q : Measure (𝓧 × ℝ)) [IsFiniteMeasure Q]
     {o : 𝓧 × Bool × ℝ} (ho : o.2.1 = false) {A : Set (𝓧 × ℝ × Bool)} (hA : MeasurableSet A) :
     carKernel Q o A = Q.condKernel o.1 {y | (o.1, y, false) ∈ A} := by
-  have hne : o ∉ {o : 𝓧 × Bool × ℝ | o.2.1 = true} := by simp [Set.mem_setOf_eq, ho]
-  rw [carKernel, Kernel.piecewise_apply', if_neg hne,
+  have hne : o ∉ {o : 𝓧 × Bool × ℝ | o.2.1 = true} := by simp [Set.mem_ofPred_eq, ho]
+  rw [carKernel, Kernel.piecewise_apply', ite_eq_right hne,
     Kernel.map_apply' _ measurable_recFalse _ hA,
     Kernel.compProd_apply (measurable_recFalse hA)]
   rw [Kernel.lintegral_deterministic']
@@ -216,7 +216,7 @@ theorem isCoarseningAtRandom_of_isMAR [MeasurableSingletonClass 𝓧]
     change ∀ᵐ o ∂(observedLaw Q ρ), _
     refine ae_iff.mpr (measure_mono_null (fun o ho => ?_) hN)
     obtain ⟨x, r, y⟩ := o
-    simp only [Set.mem_setOf_eq] at ho ⊢
+    simp only [Set.mem_ofPred_eq] at ho ⊢
     by_contra hcon
     push Not at hcon
     refine ho ?_

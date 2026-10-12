@@ -162,7 +162,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
     with hBdef
   have hBmono : Monotone B := by
     intro a b hab ω hω
-    simp only [hBdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hBdef, Set.mem_ofPred_eq] at hω ⊢
     refine lt_of_lt_of_le hω (Finset.sup'_le (hSne a) _ fun i hi => ?_)
     exact Finset.le_sup' (fun i => f i ω) (hSmono a b hab hi)
   have hincl : {ω | ∃ i ∈ C, thr < f i ω} ⊆ ⋃ n, B n := by
@@ -171,7 +171,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
     rw [he] at hiC
     obtain ⟨k, hk⟩ := hiC
     refine Set.mem_iUnion.mpr ⟨k, ?_⟩
-    simp only [hBdef, Set.mem_setOf_eq]
+    simp only [hBdef, Set.mem_ofPred_eq]
     have hiS : i ∈ S k :=
       Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr (Nat.lt_succ_self k), hk⟩
     exact lt_of_lt_of_le hlt (Finset.le_sup' (fun i => f i ω) hiS)
@@ -220,7 +220,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
     ((hSne n).product (hSne n)) fun p => f p.1 p.2 ω} with hBdef
   have hBmono : Monotone B := by
     intro a b hab ω hω
-    simp only [hBdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hBdef, Set.mem_ofPred_eq] at hω ⊢
     refine lt_of_lt_of_le hω
       (Finset.sup'_le ((hSne a).product (hSne a)) _ fun p hp => ?_)
     obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
@@ -233,7 +233,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
     obtain ⟨k, hk⟩ := hiC
     obtain ⟨l, hl⟩ := hjC
     refine Set.mem_iUnion.mpr ⟨max k l, ?_⟩
-    simp only [hBdef, Set.mem_setOf_eq]
+    simp only [hBdef, Set.mem_ofPred_eq]
     have hiS : i ∈ S (max k l) := Finset.mem_image.mpr
       ⟨k, Finset.mem_range.mpr (Nat.lt_succ_of_le (le_max_left k l)), hk⟩
     have hjS : j ∈ S (max k l) := Finset.mem_image.mpr
@@ -262,7 +262,7 @@ lemma lintegral_biSup_finset_ofReal_eq {ι : Type*} {F : Finset ι}
   have hpt : ∀ ω, (⨆ i ∈ F, ENNReal.ofReal (f i ω))
       = ENNReal.ofReal (F.sup' hFne fun i => f i ω) := by
     intro ω
-    rw [Finset.comp_sup'_eq_sup'_comp hFne ENNReal.ofReal
+    rw [Finset.apply_sup'_eq_sup'_comp hFne ENNReal.ofReal
         (fun x y => ENNReal.ofReal_max x y),
       Finset.sup'_eq_sup, Finset.sup_eq_iSup]
     rfl

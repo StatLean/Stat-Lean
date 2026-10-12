@@ -105,7 +105,7 @@ private lemma rejectionAccept_unit_top_eq_zero :
         = Set.Iic (0 : ℝ) := by
     intro y
     ext u
-    simp only [Set.mem_preimage, rejectionAccept, Set.mem_setOf_eq, one_mul, Set.mem_Iic]
+    simp only [Set.mem_preimage, rejectionAccept, Set.mem_ofPred_eq, one_mul, Set.mem_Iic]
     rcases le_or_gt u 0 with hu | hu
     · simp [ENNReal.ofReal_eq_zero.mpr hu, hu]
     · have hne : ENNReal.ofReal u ≠ 0 := by
@@ -204,7 +204,7 @@ private lemma uniform01_section_mul (henv : ∀ y, p y ≤ c * q y) (hc0 : c ≠
     -- the section is `Iic r`
     have hsec : {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y} = Set.Iic r := by
       ext u
-      simp only [Set.mem_setOf_eq, Set.mem_Iic]
+      simp only [Set.mem_ofPred_eq, Set.mem_Iic]
       constructor
       · intro hu
         rcases le_or_gt u 0 with hu0 | hu0

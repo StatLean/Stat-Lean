@@ -77,7 +77,7 @@ private lemma card_filter_sub_le {d : ℕ} (u w : EuclideanSpace ℝ (Fin d)) :
     rw [Finset.mem_filter] at hi ⊢
     refine ⟨hi.1, ?_⟩
     by_contra hc
-    push_neg at hc
+    push Not at hc
     apply hi.2
     rw [PiLp.sub_apply, hc.1, hc.2, sub_zero]
   calc (Finset.univ.filter fun i => (u - w) i ≠ 0).card

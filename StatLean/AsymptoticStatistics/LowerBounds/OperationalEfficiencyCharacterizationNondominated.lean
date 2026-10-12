@@ -108,7 +108,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     have hset : {X | ε ≤ dist (Xinner n X) (Xouter n X)} =
         (∅ : Set (Fin n → Ω)) := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Real.dist_eq]
       rw [show Xinner n X - Xouter n X =
           -Real.sqrt n * (ψ (γ.curve ((Real.sqrt n)⁻¹)) - ψ P) by
@@ -237,7 +237,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
         {X | ε ≤ |residual n X|} := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Real.dist_eq]
+      simp only [Set.mem_ofPred_eq, Real.dist_eq]
       rw [show score0 n X - temp n X = -residual n X by
         simp only [score0, temp, residual]
         ring, abs_neg]
@@ -299,7 +299,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
     have hset : {X | ε ≤ dist (temp n X) (localEst n X)} =
         (∅ : Set (Fin n → Ω)) := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Real.dist_eq]
       rw [show temp n X - localEst n X =
           Real.sqrt n * (ψ (γ.curve ((Real.sqrt n)⁻¹)) - ψ P) - c by
@@ -455,7 +455,7 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
   let tail : Set ℝ := {x | ε ≤ |x|}
   have htailClosed : IsClosed tail := isClosed_Ici.preimage continuous_abs
   have hzeroTail : (0 : ℝ) ∉ tail := by
-    simpa only [tail, Set.mem_setOf_eq, abs_zero] using (not_le.mpr hε)
+    simpa only [tail, Set.mem_ofPred_eq, abs_zero] using (not_le.mpr hε)
   have hzeroFrontier : (0 : ℝ) ∉ frontier tail := by
     intro hz
     apply hzeroTail

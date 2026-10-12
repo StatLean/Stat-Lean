@@ -212,7 +212,7 @@ theorem psiDot_symm_of_grad {k : ℕ} {Ω : Type*}
     intro θ'
     ext w
     rw [hf'_def]
-    simp only [innerSL_apply_apply, ContinuousLinearMap.sum_apply, ContinuousLinearMap.smul_apply,
+    simp only [innerSL_apply_apply, sum_apply, smul_apply,
       smul_eq_mul]
     rw [real_inner_euclid]
     refine Finset.sum_congr rfl fun h _ => ?_
@@ -237,8 +237,8 @@ theorem psiDot_symm_of_grad {k : ℕ} {Ω : Type*}
       F v w = ∑ h : Fin k, (fderiv ℝ (fun θ' => ψ θ' h x) θ v) * w h := by
     intro v w
     rw [hF_def]
-    simp only [ContinuousLinearMap.sum_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.smul_apply, smul_eq_mul, innerSL_apply_apply]
+    simp only [sum_apply, ContinuousLinearMap.smulRight_apply,
+      smul_apply, smul_eq_mul, innerSL_apply_apply]
     refine Finset.sum_congr rfl fun h _ => ?_
     rw [real_inner_euclid]
     simp [EuclideanSpace.single, PiLp.single_apply, Finset.sum_ite_eq']
@@ -835,9 +835,9 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
               (fun i : Fin n => X i.val ξ)) x⟫ ≤ - (c / 2) * ‖x‖ ^ 2 := by
     intro ξ h1 h3 h4 x
     rw [hS1] at h1; rw [hS3] at h3; rw [hS4] at h4
-    simp only [Set.mem_setOf_eq, not_lt, Real.norm_eq_abs] at h1
-    simp only [Set.mem_setOf_eq, not_le] at h3
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le, Real.norm_eq_abs] at h4
+    simp only [Set.mem_ofPred_eq, not_lt, Real.norm_eq_abs] at h1
+    simp only [Set.mem_ofPred_eq, not_le] at h3
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le, Real.norm_eq_abs] at h4
     set t : EuclideanSpace ℝ (Fin k) := θ_hat n (fun i : Fin n => X i.val ξ) with ht_def
     set Xs : Fin n → Ω := fun i : Fin n => X i.val ξ with hXs_def
     have hδρ : δ ≤ ρ := min_le_left _ _
@@ -958,7 +958,7 @@ theorem empirical_hessian_negdef_wp1 {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
   refine tendstoInnerProbOne_of_good μ (fun _ => Set.univ) _ _ ?_ ?_ hbad
   · intro n ξ hξ
     have hnot := hξ.2
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_not] at hnot
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_not] at hnot
     intro x hx
     have hxpos : (0 : ℝ) < ‖x‖ := norm_pos_iff.mpr hx
     have hsq : (0 : ℝ) < ‖x‖ ^ 2 := pow_pos hxpos 2
@@ -1110,10 +1110,10 @@ theorem classical_zEstimator_localmax_roots
   obtain ⟨hrootξ, hbadξ⟩ := hξ
   rw [hA_def] at hrootξ
   rw [hB_def] at hbadξ
-  simp only [Set.mem_compl_iff, Set.mem_union, not_or, Set.mem_setOf_eq, not_not,
+  simp only [Set.mem_compl_iff, Set.mem_union, not_or, Set.mem_ofPred_eq, not_not,
     not_le] at hbadξ
   obtain ⟨hneg, htb⟩ := hbadξ
-  simp only [Set.mem_setOf_eq] at hrootξ
+  simp only [Set.mem_ofPred_eq] at hrootξ
   set t : EuclideanSpace ℝ (Fin k) := θ_hat n (fun i : Fin n => X i.val ξ) with ht_def
   set Xs : Fin n → Ω := fun i : Fin n => X i.val ξ with hXs_def
   have htmem : t ∈ Metric.closedBall θ₀ (ρ / 4) :=

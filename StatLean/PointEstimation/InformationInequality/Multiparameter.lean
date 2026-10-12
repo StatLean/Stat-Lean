@@ -79,7 +79,7 @@ private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X 
     (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
   have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
   have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
-  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.mul' hY)
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.fun_mul hY)
   have hquad : ∀ t : ℝ,
       0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
     intro t

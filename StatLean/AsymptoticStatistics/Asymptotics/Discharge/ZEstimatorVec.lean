@@ -136,7 +136,7 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
                 - (Real.sqrt n)⁻¹ • (∑ i, tupleEval P φ (X i))‖} = ∅ := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have : ‖Real.sqrt n • (T_n n X - c)
               - (Real.sqrt n)⁻¹ • (∑ i, tupleEval P φ (X i))‖ = 0 := by
         rw [EuclideanSpace.norm_eq]
@@ -163,8 +163,8 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
     · refine Filter.Eventually.of_forall (fun n => ?_)
       refine le_trans (measure_mono ?_) (measure_iUnion_fintype_le _ _)
       intro X hX
-      simp only [Set.mem_setOf_eq] at hX
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq] at hX
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
       by_contra hc
       push Not at hc
       -- All coordinates < ε/√d ⇒ norm < ε ⇒ contradiction with hX.

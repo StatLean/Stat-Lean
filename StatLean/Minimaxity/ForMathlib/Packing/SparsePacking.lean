@@ -112,7 +112,7 @@ private theorem half_le_norm_sparseVec_sub (d s : ℕ) (hs : 0 < s) (S S' : Fins
     intro i
     rw [hχ]; simp only [Finset.mem_inter]
     by_cases h1 : i ∈ S <;> by_cases h2 : i ∈ S' <;>
-      simp only [h1, h2, if_true, if_false, and_true, and_false] <;> ring
+      simp only [h1, h2, ite_true, ite_false, and_true, and_false] <;> ring
   -- Sum the per-coordinate squared norms.
   have hsumeq : ∑ i, ‖(sparseVec d s S - sparseVec d s S') i‖ ^ 2
       = (s : ℝ)⁻¹ * (2 * s - 2 * ((S ∩ S').card : ℝ)) := by

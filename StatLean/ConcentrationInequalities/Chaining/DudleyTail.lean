@@ -175,7 +175,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
     have hnull : {ω | thr < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}
         ⊆ {ω | ¬ (∀ t ∈ T, ∀ s ∈ T, |X t ω - X s ω| = 0)} := by
       intro ω hω hcontra
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       have hthr0 : (0 : ℝ) ≤ thr := by
         rw [hthr]
         exact mul_nonneg (NNReal.coe_nonneg K)
@@ -334,7 +334,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
         filter_upwards [haez] with ω hω; exact hω
       have hsub : {ω | τ j < |X p.1 ω - X p.2 ω|} ⊆ {ω | X p.1 ω - X p.2 ω ≠ 0} := by
         intro ω hω hcontra
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         rw [hcontra, abs_zero] at hω
         exact absurd hω (not_lt.mpr hτpos.le)
       rw [measure_mono_null hsub (ae_iff.mp hae2)]
@@ -344,7 +344,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
       have hK' : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
       have htail := hinc.measure_abs_sub_ge_le (hmeas p.2 hp2) (hmeas p.1 hp1) hp2 hp1 hK' hτ0
       have hsub01 : {ω | τ j < |X p.1 ω - X p.2 ω|} ⊆ {ω | τ j ≤ |X p.1 ω - X p.2 ω|} :=
-        Set.setOf_subset_setOf.mpr (fun ω h => le_of_lt h)
+        Set.ofPred_subset_ofPred.mpr (fun ω h => le_of_lt h)
       refine le_trans (measure_mono hsub01) (le_trans htail ?_)
       apply ENNReal.ofReal_le_ofReal
       apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
@@ -412,7 +412,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
     have hsub : {ω | τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω|}
         ⊆ ⋃ p ∈ CP j, {ω | τ j < |X p.1 ω - X p.2 ω|} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       rw [biSup_finset_eq_sup' (hCPne j) (fun p => |X p.1 ω - X p.2 ω|)
         (fun _ _ => abs_nonneg _), Finset.lt_sup'_iff] at hω
       obtain ⟨p, hp, hlt⟩ := hω
@@ -573,8 +573,8 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
     by_cases hb : ω ∈ bad
     · exact Set.mem_union_left _ hb
     · right
-      simp only [hbaddef, Set.mem_setOf_eq, not_not] at hb
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [hbaddef, Set.mem_ofPred_eq, not_not] at hb
+      simp only [Set.mem_ofPred_eq] at hω
       have hsumlt : ∑ j ∈ Finset.range n, τ j
           < ∑ j ∈ Finset.range n, ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
         have hchain : thr < 2 * ∑ j ∈ Finset.range n, ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
@@ -584,7 +584,7 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
         linarith [hthrsum]
       have hex : ∃ j ∈ Finset.range n, τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         exact absurd (Finset.sum_le_sum (fun j hj => hcon j hj)) (not_le.mpr hsumlt)
       obtain ⟨j, hj, hlt⟩ := hex
       exact Set.mem_biUnion hj hlt
@@ -638,7 +638,7 @@ theorem dudley_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   -- Reduce to the three-term core by absorbing the bare diameter into the integral.
   refine le_trans (measure_mono ?_) (dudley_tail_three_term_of_finite hfin hne hmeas hinc hu)
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   refine lt_of_le_of_lt ?_ hω
   have hInt0 : 0 ≤ dudleyIntegral T D := dudleyIntegral_nonneg T D
   have hDs : dudleySum T ≤ 2 * dudleyIntegral T D :=
@@ -730,7 +730,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hnull : {ω | thr < M ω}
         ⊆ {ω | ¬ (∀ p ∈ F ×ˢ F, |X p.1 ω - X p.2 ω| = 0)} := by
       intro ω hω hcontra
-      simp only [Set.mem_setOf_eq, hMdef] at hω
+      simp only [Set.mem_ofPred_eq, hMdef] at hω
       have hM0 : M ω ≤ 0 :=
         Finset.sup'_le (hFne.product hFne) _ (fun p hp => (hcontra p hp).le)
       simp only [hMdef] at hM0
@@ -867,7 +867,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         filter_upwards [haez] with ω hω; exact hω
       have hsub : {ω | τ j < |X p.1 ω - X p.2 ω|} ⊆ {ω | X p.1 ω - X p.2 ω ≠ 0} := by
         intro ω hω hcontra
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         rw [hcontra, abs_zero] at hω
         exact absurd hω (not_lt.mpr hτpos.le)
       rw [measure_mono_null hsub (ae_iff.mp hae2)]
@@ -876,7 +876,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       have hK' : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
       have htail := hinc.measure_abs_sub_ge_le (hmeas p.2 hp2) (hmeas p.1 hp1) hp2 hp1 hK' hτ0
       have hsub01 : {ω | τ j < |X p.1 ω - X p.2 ω|} ⊆ {ω | τ j ≤ |X p.1 ω - X p.2 ω|} :=
-        Set.setOf_subset_setOf.mpr (fun ω h => le_of_lt h)
+        Set.ofPred_subset_ofPred.mpr (fun ω h => le_of_lt h)
       refine le_trans (measure_mono hsub01) (le_trans htail ?_)
       apply ENNReal.ofReal_le_ofReal
       apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
@@ -942,7 +942,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hsub : {ω | τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω|}
         ⊆ ⋃ p ∈ CP j, {ω | τ j < |X p.1 ω - X p.2 ω|} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       rw [biSup_finset_eq_sup' (hCPne j) (fun p => |X p.1 ω - X p.2 ω|)
         (fun _ _ => abs_nonneg _), Finset.lt_sup'_iff] at hω
       obtain ⟨p, hp, hlt⟩ := hω
@@ -1133,14 +1133,14 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         ⊆ (⋃ j ∈ Finset.range n, {ω | τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω|})
           ∪ {ω | δ < resid ω} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       by_cases hres : δ < resid ω
       · exact Set.mem_union_right _ hres
       · left
-        push_neg at hres
+        push Not at hres
         have hlevbad : ∃ j ∈ Finset.range n, τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
           by_contra hcon
-          push_neg at hcon
+          push Not at hcon
           have hsumle : ∑ j ∈ Finset.range n, ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω|
               ≤ ∑ j ∈ Finset.range n, τ j := Finset.sum_le_sum (fun j hj => hcon j hj)
           have hchain : M ω ≤ thr + 2 * δ := by
@@ -1220,14 +1220,14 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   set A : ℕ → Set Ω := fun m => {ω | thr + 2 * (1 / (m + 1 : ℝ)) < M ω} with hAdef
   have hAmono : Monotone A := by
     intro a b hab ω hω
-    simp only [hAdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hAdef, Set.mem_ofPred_eq] at hω ⊢
     have hle : (1 / (b + 1 : ℝ)) ≤ (1 / (a + 1 : ℝ)) := by
       apply one_div_le_one_div_of_le (by positivity)
       exact_mod_cast Nat.add_le_add_right hab 1
     linarith
   have hUnion : {ω | thr < M ω} = ⋃ m, A m := by
     ext ω
-    simp only [hAdef, Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [hAdef, Set.mem_ofPred_eq, Set.mem_iUnion]
     constructor
     · intro hlt
       obtain ⟨m, hm⟩ := exists_nat_one_div_lt (show 0 < (M ω - thr) / 2 by linarith)
@@ -1278,7 +1278,7 @@ theorem dudley_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   refine le_trans (measure_mono ?_)
     (dudley_tail_three_term hcov hne hmeas hinc hS hu hF hFne)
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   refine lt_of_le_of_lt ?_ hω
   have hInt0 : 0 ≤ L := ENNReal.toReal_nonneg
   have hdnn : 0 ≤ Metric.diam T := Metric.diam_nonneg
@@ -1374,7 +1374,7 @@ theorem dudley_tail_three_term_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T
     (fun p => |X p.1 ω - X p.2 ω|)} with hBdef
   have hBmono : Monotone B := by
     intro a b hab ω hω
-    simp only [hBdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hBdef, Set.mem_ofPred_eq] at hω ⊢
     refine lt_of_lt_of_le hω (Finset.sup'_le ((hSne a).product (hSne a)) _ (fun p hp => ?_))
     obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
     exact Finset.le_sup' (fun p => |X p.1 ω - X p.2 ω|)
@@ -1382,10 +1382,10 @@ theorem dudley_tail_three_term_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T
   -- Every over-threshold point of the full oscillation is caught by some window.
   have hincl : {ω | thr < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|} ⊆ ⋃ n, B n := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     have hforward : ∃ t ∈ T, ∃ s ∈ T, thr < |X t ω - X s ω| := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hG0 : (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|) ≤ thr :=
         Real.iSup_le (fun t => Real.iSup_le (fun ht => Real.iSup_le (fun s =>
           Real.iSup_le (fun hs => hcon t ht s hs) hthr0) hthr0) hthr0) hthr0
@@ -1395,7 +1395,7 @@ theorem dudley_tail_three_term_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T
     obtain ⟨i, hi⟩ := htT
     obtain ⟨j, hj⟩ := hsT
     refine Set.mem_iUnion.mpr ⟨max i j, ?_⟩
-    simp only [hBdef, Set.mem_setOf_eq]
+    simp only [hBdef, Set.mem_ofPred_eq]
     have hti : t ∈ S (max i j) :=
       Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (Nat.lt_succ_of_le (le_max_left i j)), hi⟩
     have hsj : s ∈ S (max i j) :=

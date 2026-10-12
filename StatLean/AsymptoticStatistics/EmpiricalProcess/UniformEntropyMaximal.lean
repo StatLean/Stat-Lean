@@ -172,7 +172,7 @@ theorem l2CoveringNumber_centeredLipschitz_le
       exact ⟨c, by rw [← dist_eq_norm]; exact Metric.mem_closedBall.mp hc_ball, rfl⟩
     · -- Every `g ∈ F_full` is within `distL2 < s` of some net point.
       intro g hg
-      rw [hFdef, Set.mem_setOf_eq] at hg
+      rw [hFdef, Set.mem_ofPred_eq] at hg
       obtain ⟨θ, hθ, rfl⟩ := hg
       have hθΘ : θ ∈ Metric.closedBall θ₀ 1 := by
         rw [Metric.mem_closedBall, dist_eq_norm]; exact hθ
@@ -294,7 +294,7 @@ theorem l2CoveringNumber_shell_le
         _ = δ := mul_one δ
     · -- Coverage: every `g ∈ Mδ` is within `distL2 < s` of a dilated net point.
       intro g hg
-      rw [hMδdef, Set.mem_setOf_eq] at hg
+      rw [hMδdef, Set.mem_ofPred_eq] at hg
       obtain ⟨θ, hθ, rfl⟩ := hg
       set u : EuclideanSpace ℝ (Fin d) := θ₀ + δ⁻¹ • (θ - θ₀) with hudef
       have hu_norm : ‖u - θ₀‖ ≤ 1 := by
@@ -1002,7 +1002,7 @@ private lemma l2CoveringNumber_exists_min_net {P : Measure Ω} {F : Set (Ω → 
       refine le_antisymm le_top (le_iInf fun S => le_iInf fun hS => ?_)
       exact absurd ⟨S, hS⟩ hcon
     rw [htop] at hle
-    exact absurd (top_le_iff.mp hle) (ENat.coe_ne_top N)
+    exact absurd (top_le_iff.mp hle) (ENat.natCast_ne_top N)
   -- The set of admissible-net cardinalities.
   set A : Set ℕ := {k | ∃ S : Finset (Ω → ℝ),
       (↑S ⊆ F ∧ ∀ f ∈ F, ∃ g ∈ S, distL2 P f g < s) ∧ S.card = k} with hA
@@ -1183,7 +1183,7 @@ private lemma uniformL2CoveringNumber_truncate_shell_le
     by_cases hΦzero : Q.l2Seminorm (fun x => δ * |menv x|) = 0
     · rw [normalizedL2CoveringNumber_of_l2Seminorm_eq_zero Q _ _ ε hΦzero]
       exact_mod_cast Finset.one_le_card.mpr hSimg_nonempty
-    · simp only [normalizedL2CoveringNumber, if_neg hΦzero]
+    · simp only [normalizedL2CoveringNumber, ite_eq_right hΦzero]
       refine iInf_le_of_le Simg (iInf_le_of_le ?_ le_rfl)
       rintro f ⟨g, ⟨θ, hθ, rfl⟩, rfl⟩
       let u : EuclideanSpace ℝ (Fin d) := θ₀ + δ⁻¹ • (θ - θ₀)

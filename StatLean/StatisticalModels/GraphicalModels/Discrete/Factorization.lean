@@ -438,7 +438,7 @@ private theorem sum_powerset_moebius {W : Type*} (F : Finset W → ℝ) (s : Fin
     · have hne : s \ b ≠ ∅ := by
         rw [Ne, Finset.sdiff_eq_empty_iff_subset]
         exact fun hsb => h (Finset.Subset.antisymm hb hsb)
-      rw [if_neg hne, if_neg h, zero_mul]
+      rw [ite_eq_right hne, ite_eq_right h, zero_mul]
   have H2 : (∑ b ∈ s.powerset, ∑ a ∈ s.powerset,
         if b ⊆ a then (-1 : ℝ) ^ (a.card + b.card) * F b else 0)
       = ∑ b ∈ s.powerset, if b = s then F s else 0 :=
@@ -452,10 +452,10 @@ private def hcSub {W β : Type*} [DecidableEq W] (xs : W → β) (b : Finset W) 
   fun v => if v ∈ b then x v else xs v
 
 private theorem hcSub_of_mem {W β : Type*} [DecidableEq W] (xs : W → β) (b : Finset W)
-    (x : W → β) {v : W} (h : v ∈ b) : hcSub xs b x v = x v := if_pos h
+    (x : W → β) {v : W} (h : v ∈ b) : hcSub xs b x v = x v := ite_eq_left h
 
 private theorem hcSub_of_notMem {W β : Type*} [DecidableEq W] (xs : W → β) (b : Finset W)
-    (x : W → β) {v : W} (h : v ∉ b) : hcSub xs b x v = xs v := if_neg h
+    (x : W → β) {v : W} (h : v ∉ b) : hcSub xs b x v = xs v := ite_eq_right h
 
 /-- Lauritzen's `H_b(x) = log f(x^b)` — the logarithm of the mass at the configuration that
 agrees with `x` on `b` and with the reference configuration off `b`.
@@ -537,13 +537,13 @@ private theorem crossRatio_of_condIndepMass {p : (V → α) → ℝ≥0∞}
   -- membership in the three conditioning blocks, spelled as coordinate constraints
   have hmemC : ∀ v : V, v ∈ ((Finset.univ \ {i, j} : Finset V) : Set V) → v ≠ i ∧ v ≠ j := by
     intro v hv
-    simpa only [Finset.coe_sdiff, Set.mem_diff, Finset.coe_insert, Finset.coe_singleton,
+    simpa only [Finset.coe_sdiff, Set.mem_sdiff, Finset.coe_insert, Finset.coe_singleton,
       Set.mem_insert_iff, Set.mem_singleton_iff, not_or, Finset.coe_univ, Set.mem_univ,
       true_and] using hv
   have hmemA : ∀ v : V, v ∈ (({i} ∪ (Finset.univ \ {i, j}) : Finset V) : Set V) → v ≠ j := by
     intro v hv
     simp only [Finset.coe_union, Set.mem_union, Finset.coe_singleton, Set.mem_singleton_iff,
-      Finset.coe_sdiff, Set.mem_diff, Finset.coe_insert, Set.mem_insert_iff, not_or,
+      Finset.coe_sdiff, Set.mem_sdiff, Finset.coe_insert, Set.mem_insert_iff, not_or,
       Finset.coe_univ, Set.mem_univ, true_and] at hv
     rcases hv with rfl | hv
     · exact hij
@@ -551,7 +551,7 @@ private theorem crossRatio_of_condIndepMass {p : (V → α) → ℝ≥0∞}
   have hmemB : ∀ v : V, v ∈ (({j} ∪ (Finset.univ \ {i, j}) : Finset V) : Set V) → v ≠ i := by
     intro v hv
     simp only [Finset.coe_union, Set.mem_union, Finset.coe_singleton, Set.mem_singleton_iff,
-      Finset.coe_sdiff, Set.mem_diff, Finset.coe_insert, Set.mem_insert_iff, not_or,
+      Finset.coe_sdiff, Set.mem_sdiff, Finset.coe_insert, Set.mem_insert_iff, not_or,
       Finset.coe_univ, Set.mem_univ, true_and] at hv
     rcases hv with rfl | hv
     · exact hij.symm

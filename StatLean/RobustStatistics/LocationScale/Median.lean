@@ -43,7 +43,7 @@ noncomputable def sampleMedian (x : Fin n → ℝ) : ℝ :=
 /-- Unfolding lemma for nonempty samples. -/
 theorem sampleMedian_eq_orderStat (hn : n ≠ 0) (x : Fin n → ℝ) :
     sampleMedian x = orderStat x ⟨(n - 1) / 2, by omega⟩ := by
-  rw [sampleMedian, dif_neg hn]
+  rw [sampleMedian, dite_eq_right hn]
 
 /-- For odd `n = 2k+1` the median is the `(k+1)`-th smallest observation (index `k`,
 `0`-indexed). -/

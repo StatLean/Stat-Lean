@@ -566,7 +566,7 @@ theorem uniformDudleySchedule_nonempty
     have hN_eq : ∀ j : ℕ,
         uniformLpCoveringNumber F G 2 ((1 / 2 : ℝ) ^ (j + 1)) =
           (Nfun j : ℕ∞) :=
-      fun j => (ENat.coe_toNat (hN_lt j).ne).symm
+      fun j => (ENat.natCast_toNat (hN_lt j).ne).symm
     have hraw_card : ∀ j : ℕ, (rawNet Q hQ j).card ≤ Nfun j := by
       intro j
       have h : ((rawNet Q hQ j).card : ℕ∞) ≤ (Nfun j : ℕ∞) :=
@@ -800,7 +800,7 @@ private theorem chainingFairBoolCube_eq_uniform (n : ℕ) :
   simp only [Set.indicator_singleton, PMF.uniformOfFintype_apply,
     Fintype.card_pi, Fintype.card_bool, Finset.prod_const, Finset.card_univ,
     Fintype.card_fin, Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single',
-    Finset.mem_univ, if_true]
+    Finset.mem_univ, ite_true]
   exact ENNReal.inv_pow.symm
 
 set_option backward.isDefEq.respectTransparency false in
@@ -1060,7 +1060,7 @@ private theorem sampleL2Seminorm_le_outerLpNorm_empirical
         (fun x => ENNReal.ofReal |f x| ^ (2 : ℝ)) := by
     unfold outerExpectation
     refine le_iInf fun U => ?_
-    rw [empiricalMeasure, lintegral_smul_measure, lintegral_finset_sum_measure]
+    rw [empiricalMeasure, lintegral_smul_measure, lintegral_finsetSum_measure]
     simp_rw [lintegral_dirac' _ U.2.1]
     rw [smul_eq_mul, ← ENNReal.ofReal_natCast n,
       ← ENNReal.ofReal_inv_of_pos (by exact_mod_cast hnpos)]
@@ -1651,7 +1651,7 @@ private theorem empirical_outerLpNorm_lt_top_of_majorant
   have hncast : (0 : ℝ≥0∞) < n := by exact_mod_cast hnpos
   have hVemp : (∫⁻ x, V x ∂empiricalMeasure n z) < ⊤ := by
     simp only [empiricalMeasure, lintegral_smul_measure,
-      lintegral_finset_sum_measure, lintegral_dirac' _ hVmeas, smul_eq_mul]
+      lintegral_finsetSum_measure, lintegral_dirac' _ hVmeas, smul_eq_mul]
     exact ENNReal.mul_lt_top (ENNReal.inv_lt_top.2 hncast)
       (ENNReal.sum_lt_top.2 fun i _ => hVz i)
   have houter : outerExpectation (empiricalMeasure n z)
@@ -2741,12 +2741,12 @@ private theorem scaled_signedGhostDeviation_le_localOscillations
       conditionalRademacherIncrement z σ g| ≤
       conditionalRademacherLocalOscillation F z r σ := by
     exact le_iSup_of_le (⟨f, hF₀sub hf⟩ : ↥F)
-      (le_iSup_of_le (⟨g, hF₀sub hg⟩ : ↥F) (by rw [if_pos hzclose]))
+      (le_iSup_of_le (⟨g, hF₀sub hg⟩ : ↥F) (by rw [ite_eq_left hzclose]))
   have hz'le : ENNReal.ofReal |conditionalRademacherIncrement z' σ f -
       conditionalRademacherIncrement z' σ g| ≤
       conditionalRademacherLocalOscillation F z' r' σ := by
     exact le_iSup_of_le (⟨f, hF₀sub hf⟩ : ↥F)
-      (le_iSup_of_le (⟨g, hF₀sub hg⟩ : ↥F) (by rw [if_pos hz'close]))
+      (le_iSup_of_le (⟨g, hF₀sub hg⟩ : ↥F) (by rw [ite_eq_left hz'close]))
   rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
   have habs : Real.sqrt n * |(n : ℝ)⁻¹ * ∑ i,
       (if σ i then (1 : ℝ) else -1) * (h (z i) - h (z' i))| =
@@ -2857,7 +2857,7 @@ private theorem conditionalRademacherGlobalOscillation_le_four_local
   intro f
   apply iSup_mono
   intro g
-  rw [if_pos]
+  rw [ite_eq_left]
   rw [hLreal]
   calc
     sampleL2Seminorm z ((f : Ω → ℝ) - (g : Ω → ℝ)) ≤
@@ -3065,7 +3065,7 @@ private theorem outerLpNorm_empirical_le_majorantRMS
       outerExpectation_eq_lintegral hVmeas
     _ = (n : ℝ≥0∞)⁻¹ * ∑ i : Fin n, V (X i.val ξ) := by
       simp [empiricalMeasure, lintegral_smul_measure,
-        lintegral_finset_sum_measure, lintegral_dirac' _ hVmeas, smul_eq_mul]
+        lintegral_finsetSum_measure, lintegral_dirac' _ hVmeas, smul_eq_mul]
 
 private theorem lintegral_empiricalMajorantRMS_sq
     {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
@@ -3258,9 +3258,9 @@ private theorem dudleyScheduleTail_eq_tsum_nat_add
       apply tsum_congr
       intro j
       by_cases hj : J ≤ j
-      · rw [if_pos hj, Set.indicator_of_mem]
+      · rw [ite_eq_left hj, Set.indicator_of_mem]
         exact hj
-      · rw [if_neg hj, Set.indicator_of_notMem]
+      · rw [ite_eq_right hj, Set.indicator_of_notMem]
         exact hj
     _ = ∑' j : {j : ℕ // J ≤ j}, a j := (tsum_subtype (Set.Ici J) a).symm
     _ = ∑' k : ℕ, a (natTailEquiv J k) :=
@@ -3305,7 +3305,7 @@ private theorem uniformDudleyLedgerTerm_summable
   have hN_eq : ∀ j : ℕ,
       uniformLpCoveringNumber F G 2 ((1 / 2 : ℝ) ^ (j + 1)) =
         (Nfun j : ℕ∞) :=
-    fun j => (ENat.coe_toNat (hN_lt j).ne).symm
+    fun j => (ENat.natCast_toNat (hN_lt j).ne).symm
   have hsum1 : Summable (fun j : ℕ =>
       (1 / 2 : ℝ) ^ j * Real.sqrt (Real.log (2 * (j + 1)))) := by
     have hcmp : ∀ j : ℕ,
@@ -3389,7 +3389,7 @@ private theorem dudleyScheduleTerm_le_uniformLedger
   have hN_eq : ∀ k : ℕ,
       uniformLpCoveringNumber F G 2 ((1 / 2 : ℝ) ^ (k + 1)) =
         (Nfun k : ℕ∞) :=
-    fun k => (ENat.coe_toNat (hN_lt k).ne).symm
+    fun k => (ENat.natCast_toNat (hN_lt k).ne).symm
   have hN_antitone : ∀ {i k : ℕ}, i ≤ k → Nfun i ≤ Nfun k := by
     intro i k hik
     have hscale : (1 / 2 : ℝ) ^ (k + 1) ≤ (1 / 2 : ℝ) ^ (i + 1) :=
@@ -4520,7 +4520,7 @@ private theorem empiricalProcessLocalModulus_le_skeleton
   apply iSup_le
   intro g
   by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ
-  · rw [if_pos hfg]
+  · rw [ite_eq_left hfg]
     obtain ⟨f₀, hf₀mem, hf₀lim⟩ := hF₀dense f f.property
     obtain ⟨g₀, hg₀mem, hg₀lim⟩ := hF₀dense g g.property
     have hdf := tendsto_distL2_of_pointwise_under_envelope
@@ -4602,7 +4602,7 @@ private theorem empiricalProcessLocalModulus_le_skeleton
     rw [← hlin]
     simpa only [skeletonLocalProcessModulus]
         using! (le_supNormOver (z := fun f => empiricalProcess P n (fun i => X i.val ξ) f) hh)
-  · rw [if_neg hfg]
+  · rw [ite_eq_right hfg]
     exact bot_le
 
 /-- If the countable skeleton has zero `L²(P)` diameter, every one of its
@@ -5079,7 +5079,7 @@ theorem uniformEntropy_outer_local_modulus
       filter_upwards [Ioo_mem_nhdsGT haJ] with δ hδ
       change (⨅ J : ℕ, if δ < a J then R J else ⊤) ≤ ε
       refine (iInf_le_of_le J ?_).trans hRJ.le
-      rw [if_pos hδ.2]
+      rw [ite_eq_left hδ.2]
     refine ⟨ψ, hψ, ?_⟩
     intro Ξ _ μ _ X hXmeas hXiindep hXid hXlaw δ hδ
     have hXlawAll : ∀ i, μ.map (X i) = P :=
@@ -5108,9 +5108,9 @@ theorem uniformEntropy_outer_local_modulus
     apply le_iInf
     intro J
     by_cases hj : δ < a J
-    · rw [if_pos hj]
+    · rw [ite_eq_left hj]
       exact hmain J hj
-    · rw [if_neg hj]
+    · rw [ite_eq_right hj]
       exact le_top
   · have hzero : ∀ f ∈ F₀, ∀ g ∈ F₀, distL2 P f g = 0 := by
       intro f hf g hg
@@ -5184,7 +5184,7 @@ theorem uniformEntropy_asymptoticallyEquicontinuous
           M n ξ := by
         unfold M empiricalProcessLocalModulus
         refine le_iSup_of_le s (le_iSup_of_le t ?_)
-        rw [if_pos hst]
+        rw [ite_eq_left hst]
       exact (ENNReal.ofReal_le_ofReal hosc.le).trans hterm
     exact (outerMeasureStar_mono μ hsub).trans
       (outerExpectation_markov (ENNReal.ofReal ε) hεE_ne hεE_top)

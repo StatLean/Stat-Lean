@@ -168,7 +168,7 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     have hgabsL2 : MemLp (fun x => |g x|) 2 (M.toMeasure μ θ) := by
       simpa [Real.norm_eq_abs] using hg2.norm
     have hmul : Integrable (fun x => |g x| * b x) (M.toMeasure μ θ) :=
-      memLp_one_iff_integrable.mp (hgabsL2.mul' hb2)
+      memLp_one_iff_integrable.mp (hgabsL2.fun_mul hb2)
     have h := (integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)).1 hmul
     refine h.congr (Filter.Eventually.of_forall fun x => ?_)
@@ -469,8 +469,8 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       refine Finset.sum_congr rfl (fun i _ => ?_)
       rw [smul_eq_mul, ← Finset.mul_prod_erase Finset.univ
           (fun k => if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k))
-          (Finset.mem_univ i), if_pos rfl,
-        Finset.prod_congr rfl (fun k hk => if_neg (Finset.ne_of_mem_erase hk))]
+          (Finset.mem_univ i), ite_eq_left rfl,
+        Finset.prod_congr rfl (fun k hk => ite_eq_right (Finset.ne_of_mem_erase hk))]
       ring
     have hint_i : ∀ i : Fin n, Integrable (fun x : Fin n → 𝓧 =>
         ∏ k, (if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k)))
@@ -479,8 +479,8 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       refine Integrable.fintype_prod (f := fun k a =>
         if k = i then deriv (fun t => M.density t a) θ else M.density θ a) (fun k => ?_)
       by_cases hk : k = i
-      · simp only [hk, if_pos]; exact hderiv_int
-      · simp only [if_neg hk]; exact hpdf.density_integrable θ
+      · simp only [hk, ite_eq_left]; exact hderiv_int
+      · simp only [ite_eq_right hk]; exact hpdf.density_integrable θ
     rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
       integral_finsetSum Finset.univ (fun i _ => hint_i i)]
     refine Finset.sum_eq_zero (fun i _ => ?_)

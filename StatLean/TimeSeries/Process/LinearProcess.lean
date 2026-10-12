@@ -106,15 +106,15 @@ private lemma integral_noise_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise �
   rw [← h]
   by_cases hab : a = b
   · subst hab
-    rw [if_pos rfl, covariance_self (hε.memLp a).aestronglyMeasurable.aemeasurable,
+    rw [ite_eq_left rfl, covariance_self (hε.memLp a).aestronglyMeasurable.aemeasurable,
       hε.variance_eq a]
-  · rw [if_neg hab, hε.uncorrelated a b hab]
+  · rw [ite_eq_right hab, hε.uncorrelated a b hab]
 
 /-- The `L²` norm of the noise is `√σ²` at every time. -/
 private lemma norm_toLp_noise [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ) (a : ℤ) :
     ‖(hε.memLp a).toLp (ε a)‖ = Real.sqrt σ2 := by
   have h : ‖(hε.memLp a).toLp (ε a)‖ ^ 2 = σ2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_toLp, integral_noise_mul hε a a, if_pos rfl]
+    rw [← real_inner_self_eq_norm_sq, inner_toLp, integral_noise_mul hε a a, ite_eq_left rfl]
   have h2 := Real.sqrt_sq (norm_nonneg ((hε.memLp a).toLp (ε a)))
   rw [h] at h2
   exact h2.symm
@@ -178,14 +178,14 @@ private lemma integral_psum_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε
     rw [integral_finsetSum _ fun j _ => hint _ _ _ _]
     simp_rw [hterm]
     by_cases him : m ≤ i
-    · rw [if_pos him]
+    · rw [ite_eq_left him]
       rw [Finset.sum_eq_single (i - m) (fun j _ hjne => ?_) (fun hnot => ?_)]
-      · rw [if_pos (by omega)]
-      · rw [if_neg (fun h => hjne (by omega)), mul_zero]
+      · rw [ite_eq_left (by omega)]
+      · rw [ite_eq_right (fun h => hjne (by omega)), mul_zero]
       · exact absurd (Finset.mem_range.2 (by omega)) hnot
-    · rw [if_neg him]
+    · rw [ite_eq_right him]
       refine Finset.sum_eq_zero fun j _ => ?_
-      rw [if_neg (fun h => him (by omega)), mul_zero]
+      rw [ite_eq_right (fun h => him (by omega)), mul_zero]
   rw [Finset.sum_congr rfl hstep]
   have hsub : ∑ i ∈ Finset.Ico m N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0)
       = ∑ i ∈ Finset.range N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0) :=
@@ -193,8 +193,8 @@ private lemma integral_psum_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε
       (fun x hx hxn => by
         rw [Finset.mem_range] at hx
         rw [Finset.mem_Ico] at hxn
-        rw [if_neg (by omega)])
-  rw [← hsub, Finset.sum_congr rfl (fun i hi => if_pos (Finset.mem_Ico.1 hi).1),
+        rw [ite_eq_right (by omega)])
+  rw [← hsub, Finset.sum_congr rfl (fun i hi => ite_eq_left (Finset.mem_Ico.1 hi).1),
     Finset.sum_Ico_eq_sum_range, Finset.mul_sum]
   exact Finset.sum_congr rfl fun l _ => by rw [Nat.add_sub_cancel_left]; ring
 
@@ -601,7 +601,7 @@ theorem IsLinearProcessOf.ae_tendsto [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
   -- hence it converges absolutely almost everywhere
   have hfin : ∀ᵐ ω ∂μ, (∑' j : ℕ, ‖ψ j * ε (t - (j : ℕ)) ω‖ₑ) ≠ ∞ := by
     refine (ae_lt_top' ?_ ?_).mono fun ω hω => hω.ne
-    · exact AEMeasurable.ennreal_tsum fun j =>
+    · exact AEMeasurable.tsum fun j =>
         ((hε.measurable (t - (j : ℕ))).const_mul (ψ j)).enorm.aemeasurable
     · rw [hlint]
       exact ENNReal.mul_ne_top hcoef hC

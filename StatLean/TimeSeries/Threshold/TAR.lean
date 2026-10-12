@@ -72,7 +72,7 @@ private lemma setarPartition_eq_iInter {k : ℕ} (r : Fin k → ℝ) (i : Fin (k
       (⋂ j : Fin k, {x : ℝ | (j : ℕ) < (i : ℕ) → r j < x}) ∩
         ⋂ j : Fin k, {x : ℝ | (i : ℕ) ≤ (j : ℕ) → x ≤ r j} := by
   ext x
-  simp only [setarPartition, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+  simp only [setarPartition, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
 
 -- The **regime index of a point**: the number of thresholds strictly below `x`. Under
 -- `StrictMono r` the set `{j | r j < x}` is a down-closed initial segment of `Fin k`, so
@@ -89,13 +89,13 @@ private lemma mem_setarPartition_setarIndex {k : ℕ} {r : Fin k → ℝ} (hr : 
   refine ⟨fun j hj => ?_, fun j hj => ?_⟩
   · -- `j` is below the count, so `r j < x`: otherwise `{j' | r j' < x} ⊆ Iio j`.
     by_contra hx
-    push_neg at hx
+    push Not at hx
     have hsub : (Finset.univ.filter fun j' : Fin k => r j' < x) ⊆ Finset.Iio j := by
       intro j' hj'
       simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj'
       simp only [Finset.mem_Iio]
       by_contra hle
-      push_neg at hle
+      push Not at hle
       exact absurd (lt_of_lt_of_le (lt_of_lt_of_le hj' hx) (hr.monotone hle)) (lt_irrefl _)
     have hcard := Finset.card_le_card hsub
     rw [Fin.card_Iio] at hcard
@@ -103,7 +103,7 @@ private lemma mem_setarPartition_setarIndex {k : ℕ} {r : Fin k → ℝ} (hr : 
     omega
   · -- `j` is at or above the count, so `x ≤ r j`: otherwise `Iic j ⊆ {j' | r j' < x}`.
     by_contra hx
-    push_neg at hx
+    push Not at hx
     have hsub : Finset.Iic j ⊆ Finset.univ.filter fun j' : Fin k => r j' < x := by
       intro j' hj'
       simp only [Finset.mem_Iic] at hj'
@@ -194,11 +194,11 @@ private lemma sum_indicator_of_partition {k : ℕ} {A : Fin k → Set ℝ}
     (g : Fin k → ℝ) : ∑ i, (A i).indicator (fun _ => g i) y = g i0 := by
   classical
   have hone : (A i0).indicator (fun _ => g i0) y = g i0 := by
-    simp only [Set.indicator_apply, if_pos hy]
+    simp only [Set.indicator_apply, ite_eq_left hy]
   rw [← hone]
   refine Finset.sum_eq_single_of_mem i0 (Finset.mem_univ i0) fun i _ hne => ?_
   have hnot : y ∉ A i := fun hmem => Set.disjoint_left.mp (hdisj hne) hmem hy
-  simp only [Set.indicator_apply, if_neg hnot]
+  simp only [Set.indicator_apply, ite_eq_right hnot]
 
 -- Adding a constant to every branch of a partition indicator sum adds it once.
 private lemma sum_indicator_add_const {k : ℕ} {A : Fin k → Set ℝ}
@@ -465,7 +465,7 @@ private lemma nlAR_pair_shift {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ} (hf 
     Measure.map_apply hm (measurable_prodMk_left hA.compl)]
   convert! measure_empty (μ := ν)
   ext e
-  simp only [Set.mem_preimage, Set.mem_compl_iff, shiftSet, Set.mem_setOf_eq,
+  simp only [Set.mem_preimage, Set.mem_compl_iff, shiftSet, Set.mem_ofPred_eq,
     Set.mem_empty_iff_false, iff_false, not_not]
   intro j
   simp
@@ -965,7 +965,7 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
     (fun i => b0 i + ∑ j : Fin P, b i j * X' (t - 1 - (j : ℕ)) ω) (σ0 * ε' t ω)
     (X' (t - (d : ℤ)) ω)]
   rw [tarStateDrift, ← hthr]
-  simp only [Fin.coe_castSucc]
+  simp only [Fin.val_castSucc]
 
 /-- **FY eq. (4.2)** (the canonical toy SETAR): `X_t = −0.7 X_{t−1} + ε_t` when
 `X_{t−1} ≤ r` and `X_t = 0.7 X_{t−1} + ε_t` when `X_{t−1} > r` satisfies the two
@@ -998,28 +998,28 @@ theorem exists_stationary_toy_setar [IsProbabilityMeasure μ] (r : ℝ)
     (d := 1) ?_ ?_ ?_ one_pos ?_ le_rfl le_rfl hν hν2 hνmean
   · intro i
     by_cases h : i = 0
-    · rw [if_pos h]; exact measurableSet_Iic
-    · rw [if_neg h]; exact measurableSet_Ioi
+    · rw [ite_eq_left h]; exact measurableSet_Iic
+    · rw [ite_eq_right h]; exact measurableSet_Ioi
   · intro i j hij
     by_cases hi : i = 0
     · have hj : j ≠ 0 := fun h => hij (hi.trans h.symm)
-      rw [if_pos hi, if_neg hj]
+      rw [ite_eq_left hi, ite_eq_right hj]
       exact hd01
     · have hj : j = 0 := by
         by_contra hj0
         exact hij ((hfin i hi).trans (hfin j hj0).symm)
-      rw [if_neg hi, if_pos hj]
+      rw [ite_eq_right hi, ite_eq_left hj]
       exact hd01.symm
   · ext x
     simp only [Set.mem_iUnion, Set.mem_univ, iff_true]
     rcases le_or_gt x r with h | h
-    · exact ⟨0, by rw [if_pos rfl]; exact h⟩
-    · exact ⟨1, by rw [if_neg (by decide : ¬((1 : Fin 2) = 0))]; exact h⟩
+    · exact ⟨0, by rw [ite_eq_left rfl]; exact h⟩
+    · exact ⟨1, by rw [ite_eq_right (by decide : ¬((1 : Fin 2) = 0))]; exact h⟩
   · intro i
     by_cases h : i = 0
-    · rw [Fin.sum_univ_one, if_pos h]
+    · rw [Fin.sum_univ_one, ite_eq_left h]
       norm_num
-    · rw [Fin.sum_univ_one, if_neg h]
+    · rw [Fin.sum_univ_one, ite_eq_right h]
       norm_num
 
 end StatLean.TimeSeries

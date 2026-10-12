@@ -202,9 +202,9 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
             ∪ {x : 𝓧 n | M ≤ |T n (g • x)|})
           ∪ {x : 𝓧 n | δ / 2 ≤ |B n (g • x) - b|} := by
       intro g x hx
-      simp only [Set.mem_setOf_eq] at hx
+      simp only [Set.mem_ofPred_eq] at hx
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨⟨hc1, hc2⟩, hc3⟩ := hcon
       have hval : S n (g • x) - L n (g • x)
           = (A n (g • x) - a) * T n (g • x) + (B n (g • x) - b) := by

@@ -104,14 +104,14 @@ private lemma measurableSet_dlSupp_eq {ι : Type*} [Fintype ι] (δ : ℝ) (S : 
       = ⋂ i : ι, (if i ∈ S then {θ : EuclideanSpace ℝ ι | δ < |θ i|}
           else {θ : EuclideanSpace ℝ ι | ¬ δ < |θ i|}) := by
     ext θ
-    simp only [Set.mem_setOf_eq, Set.mem_iInter]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
     constructor
     · intro hS i
       by_cases hi : i ∈ S
-      · simp only [hi, if_true, Set.mem_setOf_eq]
+      · simp only [hi, ite_true, Set.mem_ofPred_eq]
         have : i ∈ Finset.univ.filter fun i => δ < |θ i| := by rw [hS]; exact hi
         simpa [Finset.mem_filter] using this
-      · simp only [hi, if_false, Set.mem_setOf_eq]
+      · simp only [hi, ite_false, Set.mem_ofPred_eq]
         intro hlt
         have : i ∈ Finset.univ.filter fun i => δ < |θ i| := by
           simp [Finset.mem_filter, hlt]
@@ -121,17 +121,17 @@ private lemma measurableSet_dlSupp_eq {ι : Type*} [Fintype ι] (δ : ℝ) (S : 
       simp only [Finset.mem_filter, Finset.mem_univ, true_and]
       have hi := h i
       by_cases hiS : i ∈ S
-      · simp only [hiS, if_true, Set.mem_setOf_eq] at hi
+      · simp only [hiS, ite_true, Set.mem_ofPred_eq] at hi
         simp [hiS, hi]
-      · simp only [hiS, if_false, Set.mem_setOf_eq] at hi
+      · simp only [hiS, ite_false, Set.mem_ofPred_eq] at hi
         simp [hiS, hi]
   rw [hpre]
   refine MeasurableSet.iInter fun i => ?_
   have hmi : Measurable (fun θ : EuclideanSpace ℝ ι => |θ i|) :=
     ((EuclideanSpace.proj i).continuous.measurable).abs
   by_cases hi : i ∈ S
-  · simp only [hi, if_true]; exact measurableSet_lt measurable_const hmi
-  · simp only [hi, if_false]
+  · simp only [hi, ite_true]; exact measurableSet_lt measurable_const hmi
+  · simp only [hi, ite_false]
     exact (measurableSet_lt measurable_const hmi).compl
 
 /-- The shell `dlShell θ₀ S j r δ` is measurable. -/
@@ -225,11 +225,11 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   -- The geometric decomposition `C ⊆ Cbad ∪ U`.
   have hdecomp : C ⊆ Cbad ∪ U := by
     intro θ hθ
-    rw [hCdef, Set.mem_setOf_eq] at hθ
+    rw [hCdef, Set.mem_ofPred_eq] at hθ
     by_cases hbad : θ ∈ Cbad
     · exact Or.inl hbad
     · refine Or.inr ?_
-      rw [hCbaddef, Set.mem_setOf_eq, not_lt] at hbad
+      rw [hCbaddef, Set.mem_ofPred_eq, not_lt] at hbad
       set S := Finset.univ.filter fun i => δ < |θ i| with hSdef
       have hScard : S.card ≤ K := by
         have : (dlSuppCount δ θ : ℝ) ≤ (K : ℝ) := hbad
@@ -255,7 +255,7 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
       refine ⟨j, ?_⟩
       rw [Set.mem_iUnion]
       refine ⟨hJ0j, ?_⟩
-      rw [dlShell, Set.mem_setOf_eq]
+      rw [dlShell, Set.mem_ofPred_eq]
       refine ⟨hSdef.symm, ?_, ?_⟩
       · calc 2 * (j : ℝ) * r = (j : ℝ) * (2 * r) := by ring
           _ ≤ (‖θ - θ₀‖ / (2 * r)) * (2 * r) := by
@@ -271,7 +271,7 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGc : Gᶜ = {y | dlDenom θ₀ π y
       < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π (Metric.closedBall θ₀ r)} := by
     rw [hGdef]; ext y
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le, hdbardef, dbarVal, hπ]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le, hdbardef, dbarVal, hπ]
   -- Term (i): the denominator event.
   have hi : ∫⁻ y in Gᶜ, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ENNReal.ofReal (Real.exp (- r ^ 2 / 8)) := by
@@ -313,8 +313,8 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
               {θ | ((S₀.card : ℝ) + (k : ℝ)) < (dlSuppCount δ θ : ℝ)} ∂μ := by
           rw [hμ]
           refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-          rw [hCbaddef, Set.mem_setOf_eq] at hθ
-          rw [Set.mem_setOf_eq]; linarith [hk, hθ]
+          rw [hCbaddef, Set.mem_ofPred_eq] at hθ
+          rw [Set.mem_ofPred_eq]; linarith [hk, hθ]
       _ ≤ _ := (dl_compress_reduction ha θ₀ S₀ hθ₀ k).trans
           (compress_ratio_le_explicit ha hr k z hz w hw hw2 c hc)
   -- Term (iii): the shell double series.
@@ -334,10 +334,10 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
         refine le_trans (measure_biUnion_finset_le 𝒮 _) (Finset.sum_le_sum fun S _ => ?_)
         refine le_trans (measure_iUnion_le _) (ENNReal.tsum_le_tsum fun j => ?_)
         by_cases hj : J₀ ≤ j
-        · rw [if_pos hj]
+        · rw [ite_eq_left hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = dlShell θ₀ S j r δ := by simp [hj]
           rw [this, ← hν_eq y (measurableSet_dlShell θ₀ S j r δ)]
-        · rw [if_neg hj]
+        · rw [ite_eq_right hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = ∅ := by simp [hj]
           rw [this, measure_empty]
       calc dlNumer θ₀ π U y / dlDenom θ₀ π y
@@ -352,29 +352,29 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
             by_cases hj : J₀ ≤ j <;> simp [hj, div_eq_mul_inv]
     refine le_trans (setLIntegral_mono ?_ fun y _ => hUsub y) ?_
     · exact Finset.measurable_sum _ fun S _ =>
-        Measurable.ennreal_tsum fun j => by
+        Measurable.tsum fun j => by
           by_cases hj : J₀ ≤ j
-          · simp only [hj, if_true]
+          · simp only [hj, ite_true]
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-          · simp only [hj, if_false]; exact measurable_const
+          · simp only [hj, ite_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finsetSum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-        · simp only [hj, if_false]; exact measurable_const]
+        · simp only [hj, ite_false]; exact measurable_const]
     refine Finset.sum_le_sum fun S _ => ?_
     rw [lintegral_tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact ((measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)).aemeasurable
-        · simp only [hj, if_false]; exact aemeasurable_const]
+        · simp only [hj, ite_false]; exact aemeasurable_const]
     refine ENNReal.tsum_le_tsum fun j => ?_
     by_cases hj : J₀ ≤ j
-    · simp only [if_pos hj]
+    · simp only [ite_eq_left hj]
       have hj2 : 2 ≤ j := le_trans hJ2 hj
       exact shell_ratio_le θ₀ S hj2 ha hr hδnet dbar hdbarpos
-    · simp only [if_neg hj]
+    · simp only [ite_eq_right hj]
       simp
   -- Assemble the three pieces `(i) + (ii) + (iii)`.
   have hfinal := add_le_add (add_le_add hi hii) hiii
@@ -458,11 +458,11 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   -- The geometric decomposition `C ⊆ Cbad ∪ U`.
   have hdecomp : C ⊆ Cbad ∪ U := by
     intro θ hθ
-    rw [hCdef, Set.mem_setOf_eq] at hθ
+    rw [hCdef, Set.mem_ofPred_eq] at hθ
     by_cases hbad : θ ∈ Cbad
     · exact Or.inl hbad
     · refine Or.inr ?_
-      rw [hCbaddef, Set.mem_setOf_eq, not_lt] at hbad
+      rw [hCbaddef, Set.mem_ofPred_eq, not_lt] at hbad
       set S := Finset.univ.filter fun i => δ < |θ i| with hSdef
       have hScard : S.card ≤ K := by
         have : (dlSuppCount δ θ : ℝ) ≤ (K : ℝ) := hbad
@@ -488,7 +488,7 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
       refine ⟨j, ?_⟩
       rw [Set.mem_iUnion]
       refine ⟨hJ0j, ?_⟩
-      rw [dlShell, Set.mem_setOf_eq]
+      rw [dlShell, Set.mem_ofPred_eq]
       refine ⟨hSdef.symm, ?_, ?_⟩
       · calc 2 * (j : ℝ) * r = (j : ℝ) * (2 * r) := by ring
           _ ≤ (‖θ - θ₀‖ / (2 * r)) * (2 * r) := by
@@ -504,7 +504,7 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGc : Gᶜ = {y | dlDenom θ₀ π y
       < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π (Metric.closedBall θ₀ r)} := by
     rw [hGdef]; ext y
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le, hdbardef, dbarVal, hπ]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le, hdbardef, dbarVal, hπ]
   -- Term (i): the denominator event.
   have hi : ∫⁻ y in Gᶜ, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ENNReal.ofReal (Real.exp (- r ^ 2 / 8)) := by
@@ -557,10 +557,10 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
         refine le_trans (measure_biUnion_finset_le 𝒮 _) (Finset.sum_le_sum fun S _ => ?_)
         refine le_trans (measure_iUnion_le _) (ENNReal.tsum_le_tsum fun j => ?_)
         by_cases hj : J₀ ≤ j
-        · rw [if_pos hj]
+        · rw [ite_eq_left hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = dlShell θ₀ S j r δ := by simp [hj]
           rw [this, ← hν_eq y (measurableSet_dlShell θ₀ S j r δ)]
-        · rw [if_neg hj]
+        · rw [ite_eq_right hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = ∅ := by simp [hj]
           rw [this, measure_empty]
       calc dlNumer θ₀ π U y / dlDenom θ₀ π y
@@ -575,29 +575,29 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
             by_cases hj : J₀ ≤ j <;> simp [hj, div_eq_mul_inv]
     refine le_trans (setLIntegral_mono ?_ fun y _ => hUsub y) ?_
     · exact Finset.measurable_sum _ fun S _ =>
-        Measurable.ennreal_tsum fun j => by
+        Measurable.tsum fun j => by
           by_cases hj : J₀ ≤ j
-          · simp only [hj, if_true]
+          · simp only [hj, ite_true]
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-          · simp only [hj, if_false]; exact measurable_const
+          · simp only [hj, ite_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finsetSum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-        · simp only [hj, if_false]; exact measurable_const]
+        · simp only [hj, ite_false]; exact measurable_const]
     refine Finset.sum_le_sum fun S _ => ?_
     rw [lintegral_tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact ((measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)).aemeasurable
-        · simp only [hj, if_false]; exact aemeasurable_const]
+        · simp only [hj, ite_false]; exact aemeasurable_const]
     refine ENNReal.tsum_le_tsum fun j => ?_
     by_cases hj : J₀ ≤ j
-    · simp only [if_pos hj]
+    · simp only [ite_eq_left hj]
       have hj2 : 2 ≤ j := le_trans hJ2 hj
       exact shell_ratio_le θ₀ S hj2 ha hr hδnet dbar hdbarpos
-    · simp only [if_neg hj]
+    · simp only [ite_eq_right hj]
       simp
   -- Assemble the three pieces: `(posterior_Cbad) + (i) + (iii)` in the composed ordering.
   calc ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
@@ -644,7 +644,7 @@ private lemma dlMarginal_abs_sub_le_pos {a : ℝ} (ha : 0 < a) (c s : ℝ) (hs :
     0 < dlMarginal a {x : ℝ | |x - c| ≤ s} := by
   have hset : {x : ℝ | |x - c| ≤ s} = Set.Icc (c - s) (c + s) := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_Icc, abs_le]
+    simp only [Set.mem_ofPred_eq, Set.mem_Icc, abs_le]
     constructor
     · rintro ⟨h1, h2⟩; constructor <;> linarith
     · rintro ⟨h1, h2⟩; constructor <;> linarith
@@ -660,7 +660,7 @@ private lemma dlMarginal_abs_sub_le_pos {a : ℝ} (ha : 0 < a) (c s : ℝ) (hs :
     simp only [Function.mem_support, ne_eq]
     exact ne_of_gt (dlDensity_pos ha (by simpa using hx0))
   refine lt_of_lt_of_le ?_ (measure_mono hsub)
-  rw [measure_diff_null (measure_singleton 0), hset, Real.volume_Icc]
+  rw [measure_sdiff_null (measure_singleton 0), hset, Real.volume_Icc]
   simp only [ENNReal.ofReal_pos]
   linarith
 
@@ -679,7 +679,7 @@ private lemma tsum_ite_ge_shift {g : ℕ → ℝ≥0∞} (J₀ : ℕ) :
   calc ∑' j : ℕ, (if J₀ ≤ j then g j else 0)
       = ∑' j : ℕ, ({n : ℕ | J₀ ≤ n}.indicator g) j := by
         refine tsum_congr fun j => ?_
-        rw [Set.indicator_apply]; simp only [Set.mem_setOf_eq]
+        rw [Set.indicator_apply]; simp only [Set.mem_ofPred_eq]
     _ = ∑' x : {n : ℕ // J₀ ≤ n}, g x := (tsum_subtype {n : ℕ | J₀ ≤ n} g).symm
     _ = ∑' j : ℕ, g (J₀ + j) :=
         (Equiv.tsum_eq
@@ -750,7 +750,7 @@ private lemma dlMarginal_abs_sub_le_ge {a : ℝ} (ha : 0 < a) (ha1 : a ≤ 1) (c
     ENNReal.ofReal (2 * s * ((a / 64) * Real.exp (-3 - (7 / 2) * Real.sqrt (|c| + s))))
       ≤ dlMarginal a {x : ℝ | |x - c| ≤ s} := by
   have hset : {x : ℝ | |x - c| ≤ s} = Set.Icc (c - s) (c + s) := by
-    ext x; simp only [Set.mem_setOf_eq, Set.mem_Icc, abs_le]
+    ext x; simp only [Set.mem_ofPred_eq, Set.mem_Icc, abs_le]
     constructor
     · rintro ⟨h1, h2⟩; constructor <;> linarith
     · rintro ⟨h1, h2⟩; constructor <;> linarith
@@ -762,7 +762,7 @@ private lemma dlMarginal_abs_sub_le_ge {a : ℝ} (ha : 0 < a) (ha1 : a ≤ 1) (c
     have hxle : |x| ≤ |c| + s := by
       calc |x| = |c + (x - c)| := by ring_nf
         _ ≤ |c| + |x - c| := abs_add_le _ _
-        _ ≤ |c| + s := by have := hx; simp only [Set.mem_setOf_eq] at this; linarith
+        _ ≤ |c| + s := by have := hx; simp only [Set.mem_ofPred_eq] at this; linarith
     have hanti : dlDensity a (|c| + s) ≤ dlDensity a x :=
       dlDensity_anti (by rw [abs_of_nonneg (add_nonneg (abs_nonneg c) hs.le)]; exact hxle)
     refine le_trans ?_ hanti
@@ -830,7 +830,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       _ ≤ r := hs_le
   -- The box mass factorizes into per-coordinate marginals.
   have hbox_meas : MeasurableSet {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
-    rw [Set.setOf_forall]
+    rw [Set.ofPred_forall]
     refine MeasurableSet.iInter fun j => measurableSet_le ?_ measurable_const
     exact (((measurable_pi_apply j).comp
       (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable).sub measurable_const).abs
@@ -838,7 +838,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       = ∏ j, dlMarginal a {x : ℝ | |x - θ₀ j| ≤ s} := by
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s} = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   -- Per-coordinate lower bound `exp(gexp (θ₀ j)) ≤ marginal`.
   set gexp : ℝ → ℝ := fun c =>
@@ -847,7 +847,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       ≤ dlMarginal a {x : ℝ | |x - θ₀ j| ≤ s} := by
     intro j
     by_cases hj : θ₀ j = 0
-    · simp only [hgexp, hj, if_true]
+    · simp only [hgexp, hj, ite_true]
       have hcompl : dlMarginal a {x : ℝ | |x| ≤ s} = 1 - dlMarginal a {x : ℝ | s < |x|} := by
         rw [show {x : ℝ | |x| ≤ s} = {x : ℝ | s < |x|}ᶜ by ext x; simp [not_lt],
           prob_compl_eq_one_sub (measurableSet_lt measurable_const continuous_abs.measurable)]
@@ -869,7 +869,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
           _ ≤ 1 - dlMarginal a {x : ℝ | s < |x|} := by
               rw [hs_def] at hζ ⊢; exact tsub_le_tsub_left hζ 1
       simpa using hstep
-    · simp only [hgexp, hj, if_false]
+    · simp only [hgexp, hj, ite_false]
       have hpos : (0 : ℝ) < 2 * s * (a / 64) := by positivity
       have heq : Real.exp (Real.log (2 * s * (a / 64)) - 3 - 7 / 2 * Real.sqrt (|θ₀ j| + s))
           = 2 * s * ((a / 64) * Real.exp (-3 - 7 / 2 * Real.sqrt (|θ₀ j| + s))) := by
@@ -894,14 +894,14 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
   have hzero_sum : ∑ j ∈ Finset.univ.filter (fun j => θ₀ j = 0), gexp (θ₀ j)
       = ((Finset.univ.filter (fun j => θ₀ j = 0)).card : ℝ) * (-2 * ζ) := by
     rw [Finset.sum_congr rfl (fun j hj => by
-        simp only [hgexp]; rw [if_pos (Finset.mem_filter.mp hj).2]),
+        simp only [hgexp]; rw [ite_eq_left (Finset.mem_filter.mp hj).2]),
       Finset.sum_const, nsmul_eq_mul]
   have hsupp_sum : ∑ j ∈ Finset.univ.filter (fun j => θ₀ j ≠ 0), gexp (θ₀ j)
       = ((Finset.univ.filter (fun j => θ₀ j ≠ 0)).card : ℝ) * (Real.log (2 * s * (a / 64)) - 3)
         - 7 / 2 * (∑ j ∈ Finset.univ.filter (fun j => θ₀ j ≠ 0), Real.sqrt (|θ₀ j| + s)) := by
     rw [Finset.sum_congr rfl (fun j hj => show gexp (θ₀ j)
           = (Real.log (2 * s * (a / 64)) - 3) - 7 / 2 * Real.sqrt (|θ₀ j| + s) by
-        simp only [hgexp]; rw [if_neg (Finset.mem_filter.mp hj).2]),
+        simp only [hgexp]; rw [ite_eq_right (Finset.mem_filter.mp hj).2]),
       Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum]
   rw [hzero_sum, hsupp_sum]
   have hcardle : ((Finset.univ.filter (fun j => θ₀ j = 0)).card : ℝ) ≤ m := by
@@ -1130,7 +1130,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
         ≤ (if J₀ ≤ j then E j / dbarVal (av n) (rr n) (θ₀ n) else 0) := by
       intro j
       by_cases hj : J₀ ≤ j
-      · simp only [hj, if_true]
+      · simp only [hj, ite_true]
         calc (∑ S ∈ filt, (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
               / dbarVal (av n) (rr n) (θ₀ n))
             = (∑ S ∈ filt, (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)))
@@ -1139,7 +1139,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
           _ ≤ 1 * (E j / dbarVal (av n) (rr n) (θ₀ n)) :=
               mul_le_mul_left (sum_dlPrior_dlShell_le_one _ _ _ _ _ _) _
           _ = E j / dbarVal (av n) (rr n) (θ₀ n) := one_mul _
-      · simp only [hj, if_false, Finset.sum_const_zero, le_refl]
+      · simp only [hj, ite_false, Finset.sum_const_zero, le_refl]
     calc (∑' j : ℕ, ∑ S ∈ filt, if J₀ ≤ j then
             (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
               / dbarVal (av n) (rr n) (θ₀ n) else 0)
@@ -1630,7 +1630,7 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
       _ = r := hsr
   -- The box mass factorizes into positive one-dimensional masses.
   have hbox_meas : MeasurableSet {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
-    rw [Set.setOf_forall]
+    rw [Set.ofPred_forall]
     refine MeasurableSet.iInter fun j => measurableSet_le ?_ measurable_const
     exact (((measurable_pi_apply j).comp
       (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable).sub measurable_const).abs
@@ -1639,7 +1639,7 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s}
         = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   have hbox_pos : 0 < dlPrior a ι {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
     rw [hbox_eq, pos_iff_ne_zero, Finset.prod_ne_zero_iff]
@@ -1716,7 +1716,7 @@ theorem dl_theorem31 {β : ℝ}
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
@@ -2124,7 +2124,7 @@ theorem dl_theorem31_ball {β : ℝ}
       Kernel.measurable_coe κ hcompl_meas
     have hball_eq : {θ : EuclideanSpace ℝ (Fin n) | ‖θ - θ₀ n‖ ≤ r}
         = {θ : EuclideanSpace ℝ (Fin n) | r < ‖θ - θ₀ n‖}ᶜ := by
-      ext θ; simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt]
+      ext θ; simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt]
     have hpt : ∀ y, κ y {θ : EuclideanSpace ℝ (Fin n) | ‖θ - θ₀ n‖ ≤ r}
         = 1 - κ y {θ : EuclideanSpace ℝ (Fin n) | r < ‖θ - θ₀ n‖} := by
       intro y
@@ -2208,7 +2208,7 @@ theorem dl_theorem31_paper_rate {β : ℝ}
           mul_le_mul_of_nonneg_left hsqrt hM'pos.le
   -- Set inclusion + monotone posterior mass.
   refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-  simp only [Set.mem_setOf_eq] at hθ ⊢
+  simp only [Set.mem_ofPred_eq] at hθ ⊢
   exact lt_of_le_of_lt hrad hθ
 
 /-- **BPPD Theorem 3.1, `1/n`-regime companion.** Same conclusion (rate `M√(qₙ log n)`) at scale
@@ -2311,7 +2311,7 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h34
       (Filter.Eventually.of_forall fun n => zero_le) (Filter.Eventually.of_forall fun n => ?_)
     refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact lt_of_le_of_lt (hA'q_le n) hθ
   -- 4. Shell double series limit at the generic scale window `avₙ = 1/n`.
   have hav : ∀ᶠ (n : ℕ) in atTop, 0 < (n : ℝ)⁻¹ ∧ (n : ℝ)⁻¹ ≤ 1 / 2 ∧ (n : ℝ) * (n : ℝ)⁻¹ ≤ 1 := by

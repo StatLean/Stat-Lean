@@ -644,7 +644,7 @@ theorem halfLine_brownianBridge_measure_unique
           rfl
         rw [heq]
         exact ((EuclideanSpace.proj i) :
-          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitz.comp_memLp
+          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitzWith.comp_memLp
             (map_zero _) hmemRν
       have hmemcoordκ : ∀ i : Fin m,
           MemLp (fun z : LinfF halfLineIndicatorClass ↦ z (a i)) 2 κ := by
@@ -656,7 +656,7 @@ theorem halfLine_brownianBridge_measure_unique
           rfl
         rw [heq]
         exact ((EuclideanSpace.proj i) :
-          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitz.comp_memLp
+          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitzWith.comp_memLp
             (map_zero _) hmemRκ
       have hbasis : ∀ i : Fin m,
           (fun u : EuclideanSpace ℝ (Fin m) ↦

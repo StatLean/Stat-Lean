@@ -1072,7 +1072,7 @@ theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure
       rw [sampleVariance_eq_sub hn m y, hsum, e1, e2]
       field_simp
       ring
-    simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
+    simp only [Set.mem_preimage, hR, Set.mem_ofPred_eq, h0, h1, hrad]
   rw [studentizedRootCDF, ← hm, hset, vecRootLaw_eq_map F (measurable_studentPair F),
     Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
 
@@ -1659,7 +1659,7 @@ theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : 
     exact absurd hω (not_le.2 hω')
   have hunion : {ω | T ω ≤ a} ∪ {ω | a < T ω ∧ T ω ≤ b} = {ω | T ω ≤ b} := by
     ext ω
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     constructor
     · rintro (h | ⟨-, h⟩)
       · linarith
@@ -2265,7 +2265,7 @@ theorem measure_pi_inter_coord_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMea
       = e ⁻¹' ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') := by
     ext ω
     simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true,
-      Set.mem_setOf_eq, hB'def, MeasurableEquiv.symm_apply_apply]
+      Set.mem_ofPred_eq, hB'def, MeasurableEquiv.symm_apply_apply]
     exact Iff.rfl
   have hmeas' : MeasurableSet ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') :=
     (hA₀.prod MeasurableSet.univ).inter hB'm
@@ -2300,8 +2300,8 @@ lemma subset_union_large_summand {n : ℕ} (Y : ℝ → ℝ) (lam τ : ℝ) :
       intro i
       exact not_lt.1 fun h => hbig ⟨i, h⟩
     have hsum : (∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)) = ∑ i, Y (ω i) :=
-      Finset.sum_congr rfl fun i _ => if_pos (hall i)
-    rw [Set.mem_setOf_eq, hsum]
+      Finset.sum_congr rfl fun i _ => ite_eq_left (hall i)
+    rw [Set.mem_ofPred_eq, hsum]
     exact hω
 
 /-- **The conditional window estimate from a one-large-summand decomposition.**
@@ -2515,13 +2515,13 @@ theorem measure_pi_abs_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMea
     refine le_trans (le_of_eq ?_) h2
     congr 2
     ext ω
-    simp only [Set.mem_setOf_eq, hneg ω]
+    simp only [Set.mem_ofPred_eq, hneg ω]
   have hsub : {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}
       ⊆ {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}
         ∪ {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)} := by
     intro ω hω
     have hω' : lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)| := hω
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     rcases abs_cases (∑ i, (Y (ω i) - ∫ y, Y y ∂μ)) with ⟨he, _⟩ | ⟨he, _⟩
     · exact Or.inl (by rw [← he]; exact hω')
     · exact Or.inr (by rw [← he]; exact hω')
@@ -2552,8 +2552,8 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
   have hWbdd : ∀ y, |W y| ≤ τ := by
     intro y
     by_cases h : |Y y| ≤ τ
-    · rw [hW]; simp only [if_pos h]; exact h
-    · rw [hW]; simp only [if_neg h, abs_zero]; exact hτ
+    · rw [hW]; simp only [ite_eq_left h]; exact h
+    · rw [hW]; simp only [ite_eq_right h, abs_zero]; exact hτ
   set m : ℝ := ∫ y, W y ∂μ with hm
   have hsub : {ω : Fin n → ℝ | lam < |∑ i, W (ω i)|}
       ⊆ {ω : Fin n → ℝ | lam / 2 ≤ |∑ i, (W (ω i) - m)|} := by
@@ -2567,7 +2567,7 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
       rw [hsplit]
       refine (abs_add_le _ _).trans ?_
       rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ))]
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     linarith [hmean, h1, hω']
   have hmono := ENNReal.toReal_mono (measure_ne_top _ _)
     (measure_mono (μ := Measure.pi fun _ : Fin n => μ) hsub)
@@ -2771,7 +2771,7 @@ lemma measure_abs_sub_le_of_affine {Ω : Type*} [MeasurableSpace Ω] (P : Measur
       ring
     have habs : |a + s * S ω - x| = s * |S ω - (x - a) / s| := by
       rw [hid, abs_mul, abs_of_pos hs]
-    simp only [Set.mem_setOf_eq, habs, ← le_div_iff₀' hs]
+    simp only [Set.mem_ofPred_eq, habs, ← le_div_iff₀' hs]
   rw [hset]
   refine (hwin ((x - a) / s) (w / s) (by positivity)).trans (le_of_eq ?_)
   field_simp
@@ -2825,7 +2825,7 @@ theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
         |(Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
           + s * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) - x| ≤ w} := by
     ext z
-    simp only [Set.mem_setOf_eq, root_insertNth_eq Z hn i y z]
+    simp only [Set.mem_ofPred_eq, root_insertNth_eq Z hn i y z]
     exact Iff.rfl
   rw [hset]
   refine (measure_abs_sub_le_of_affine (P := Measure.pi fun _ : Fin n => μ)
@@ -2967,7 +2967,7 @@ lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM
       ⊆ {ω : Ω | M < |u ω|} ∪ {ω : Ω | M < |v ω|} := by
   intro ω hω
   by_contra hcon
-  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_lt] at hcon
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_lt] at hcon
   have hbr := taylor3_bracket_le hM hcon.1 hcon.2
   have hmul : r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
       + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) ≤ r ^ 3 * (73 / 8 * M ^ 7) :=
@@ -3616,7 +3616,7 @@ theorem measure_abs_surrogate_window_le
     by_cases hv : L < |V ω - v₀|
     · exact Or.inr hv
     · refine Or.inl ?_
-      push_neg at hv
+      push Not at hv
       obtain ⟨m, hmb, hm⟩ := exists_surrogate_centre r (V ω) x
       have hkey := abs_sub_frozen_centre_le_of_surrogate_window (v₀ := v₀) (w := w)
         (u := U ω) hm hmb hm₀ hω
@@ -3805,8 +3805,8 @@ theorem measure_abs_surrogate_window_slab_le
     by_cases hv : L < |V ω - v₀|
     · exact Or.inr hv
     · refine Or.inl ?_
-      simp only [Set.mem_setOf_eq]
-      push_neg at hv
+      simp only [Set.mem_ofPred_eq]
+      push Not at hv
       obtain ⟨m, -, hm⟩ := exists_surrogate_centre r (V ω) x
       have hVeq : v₀ + (V ω - v₀) = V ω := by ring
       have hm' : (m - m * (v₀ + (V ω - v₀)) * r / 2 + m ^ 3 * r ^ 2 / 2
@@ -4067,7 +4067,7 @@ theorem measure_pi_vecRoot_slab_le_of_win {n : ℕ} (μ : Measure ℝ) [IsProbab
       = {z : Fin n → ℝ |
           |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - c'| ≤ w'} := by
     ext z
-    simp only [Set.mem_setOf_eq, vecRoot_slab_eq]
+    simp only [Set.mem_ofPred_eq, vecRoot_slab_eq]
   rw [hset]
   exact hwin κ' c' w' hκ hw'
 
@@ -4334,7 +4334,7 @@ theorem measure_pi_abs_slab_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
               * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j)
             - c'| ≤ w'} := by
     ext z
-    simp only [Set.mem_setOf_eq, hkey z]
+    simp only [Set.mem_ofPred_eq, hkey z]
   rw [hset]
   exact measure_pi_abs_root_insertNth_le (Z := slabRoot Z σ κ') μ hA hn i
     (fun u w hw => hwin κ' u w hκ hw) y c' hw'
@@ -4404,7 +4404,7 @@ theorem not_ae_quadratic_eq_const_of_ac {F : Measure ℝ} [IsProbabilityMeasure 
         · exact absurd hb h
       refine Set.Finite.subset (Set.finite_singleton (c / a)) ?_
       intro y hy
-      simp only [Set.mem_setOf_eq, hb] at hy
+      simp only [Set.mem_ofPred_eq, hb] at hy
       simp only [Set.mem_singleton_iff]
       field_simp
       linarith
@@ -4412,7 +4412,7 @@ theorem not_ae_quadratic_eq_const_of_ac {F : Measure ℝ} [IsProbabilityMeasure 
       refine Set.Finite.subset
         ((Set.finite_singleton (-(a / (2 * b)) - s)).insert (-(a / (2 * b)) + s)) ?_
       intro y hy
-      simp only [Set.mem_setOf_eq] at hy
+      simp only [Set.mem_ofPred_eq] at hy
       have hd : (a / (2 * b)) ^ 2 + c / b = (y + a / (2 * b)) ^ 2 := by
         have hc' : c = a * y + b * y ^ 2 := hy.symm
         rw [hc']
@@ -5270,12 +5270,12 @@ theorem exists_measurable_charFun_map_eq_one :
         * ((if 0 < w 0 then (1 : ℝ) else 0 : ℝ) : ℂ) * Complex.I) = 1 := by
     intro w
     by_cases hw : 0 < w 0
-    · rw [if_pos hw]
+    · rw [ite_eq_left hw]
       have hcast : ((2 * Real.pi : ℝ) : ℂ) * ((1 : ℝ) : ℂ) * Complex.I
           = 2 * (Real.pi : ℂ) * Complex.I := by push_cast; ring
       rw [hcast]
       exact Complex.exp_two_pi_mul_I
-    · rw [if_neg hw]
+    · rw [ite_eq_right hw]
       simp
   simp_rw [hpt]
   simp
@@ -5671,11 +5671,11 @@ theorem deltaSurrogate_slope_ge (x : ℝ) : (5 : ℝ) / 6 ≤ 1 - x / 2 + 3 * x 
 
 private lemma coordDir_add_apply_zero (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 0 = w 0 + t := by
-  simp [coordDir, EuclideanSpace.single_apply]
+  simp [coordDir, PiLp.single_apply]
 
 private lemma coordDir_add_apply_one (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 1 = w 1 := by
-  simp [coordDir, EuclideanSpace.single_apply]
+  simp [coordDir, PiLp.single_apply]
 
 /-- **The cut-off-free integrated form of `deltaSurrogate_slope_ge`.** Moving the argument by
 `t ≥ 0` along the first coordinate increases the surrogate by at least `5t/(6σ)` — at every `w`,
@@ -6239,7 +6239,7 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
   have hcoord : ∀ (w : E₂) (i : Fin 2), |w i| ≤ ‖w‖ := by
     intro w i
     have hnorm : ‖coordDir i‖ = 1 := by
-      rw [coordDir, EuclideanSpace.norm_single]
+      rw [coordDir, PiLp.norm_single]
       simp
     have h := abs_real_inner_le_norm w (coordDir i)
     rwa [inner_coordDir, hnorm, mul_one] at h
@@ -6321,21 +6321,21 @@ lemma measurable_truncAt (m τ : ℝ) : Measurable (truncAt m τ) := by
 lemma abs_truncAt_sub_le {m τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) : |truncAt m τ x - m| ≤ τ := by
   rw [truncAt]
   by_cases h : |x - m| ≤ τ
-  · rwa [if_pos h]
-  · rw [if_neg h, sub_self, abs_zero]; exact hτ
+  · rwa [ite_eq_left h]
+  · rw [ite_eq_right h, sub_self, abs_zero]; exact hτ
 
 /-- The set on which the truncation moves the observation is exactly the tail `{τ < |x − m|}`. -/
 lemma truncAt_ne_setOf {m τ : ℝ} (hτ : 0 ≤ τ) :
     {x : ℝ | truncAt m τ x ≠ x} = {x : ℝ | τ < |x - m|} := by
   ext x
-  simp only [Set.mem_setOf_eq, truncAt]
+  simp only [Set.mem_ofPred_eq, truncAt]
   constructor
   · intro hx
     by_contra hle
     rw [not_lt] at hle
-    exact hx (if_pos hle)
+    exact hx (ite_eq_left hle)
   · intro hx hEq
-    rw [if_neg (not_le.2 hx)] at hEq
+    rw [ite_eq_right (not_le.2 hx)] at hEq
     rw [← hEq, sub_self, abs_zero] at hx
     linarith
 
@@ -7870,7 +7870,7 @@ theorem exists_bound_integral_norm_fourier_schwartz :
     rw [h, SchwartzMap.norm_toLp_one, SchwartzMap.fourierTransformCLM_apply]
     rfl
   have h2 := hC f
-  simp only [Seminorm.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul] at h2
+  simp only [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul] at h2
   rw [h1] at h2
   exact h2
 
@@ -8772,7 +8772,7 @@ theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
       have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
       have hε0 : 0 < ε := by
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         nlinarith
       have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
       -- the inductive hypothesis, available at order `N`
@@ -9007,7 +9007,7 @@ theorem exists_bound_iterate_ibpStep (N : ℕ) :
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
   induction k with
@@ -9083,7 +9083,7 @@ theorem norm_integral_expPhase_le_graded (N : ℕ) :
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
   have hout : ∀ x : ℝ, x ∉ Set.Icc (-A) A → f x = 0 := by
@@ -9425,10 +9425,10 @@ cut-off and the actual surrogate, priced at the ledger`s gain. -/
 noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
 
 @[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
-  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 @[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
-  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 /-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
 full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
@@ -9721,7 +9721,7 @@ lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.
 
 lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
   ext i
-  fin_cases i <;> simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  fin_cases i <;> simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 
 /-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
@@ -11787,9 +11787,9 @@ lemma abs_sub_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h)]
+  · simp only [truncAt, ite_eq_right (not_le.2 h)]
     rw [le_div_iff₀ (by positivity), ha]
     nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 3, hτ]
 
@@ -11799,9 +11799,9 @@ lemma abs_sq_sub_sq_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h), sub_self]
+  · simp only [truncAt, ite_eq_right (not_le.2 h), sub_self]
     rw [show ((0 : ℝ) ^ 2) = 0 by ring, sub_zero, abs_of_nonneg (by positivity),
       le_div_iff₀ (by positivity)]
     nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 2, hτ, sq_abs (x - m)]
@@ -12610,11 +12610,11 @@ theorem exists_studentized_middle_range_bound
   -- the Cramér base is nonnegative
   have hc0 : 0 ≤ c := by
     by_contra hneg
-    push_neg at hneg
+    push Not at hneg
     have hm0 : 0 < 2 * Nc + 1 := by omega
     have hmc : Nc ≤ 2 * Nc + 1 := by omega
     have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
-      rw [coordDir, EuclideanSpace.norm_single]; simp
+      rw [coordDir, PiLp.norm_single]; simp
     have hnt : ‖(ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)‖
         = ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ) := by
       rw [norm_smul, Real.norm_eq_abs, hcd, mul_one,
@@ -14060,7 +14060,7 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
   have hA : (0 : ℝ) < (2 * Real.pi * c) ^ 3 := by positivity
   by_cases hK0 : 0 < K
   case neg =>
-    push_neg at hK0
+    push Not at hK0
     have h1 := hK 1 (by norm_num)
     have hEnn : (0 : ℝ) ≤ windowEnvelope (c * Real.sqrt (1 : ℕ)) :=
       windowEnvelope_nonneg _
@@ -14112,7 +14112,7 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
   obtain ⟨n, hn⟩ := exists_nat_gt (K * D / (2 * Real.pi * c) ^ 3)
   have hn1 : 0 < n := by
     by_contra h
-    push_neg at h
+    push Not at h
     interval_cases n
     · simp at hn
       nlinarith [hn, div_pos (mul_pos hK0 hD0) hA]
@@ -15842,7 +15842,7 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
     exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hwnn ξ)
   have hcover : {ξ : ℝ | |ξ| ≤ ρ} ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
     ext ξ
-    simp only [Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact le_total |ξ| ρ
   have hInt : Integrable
       (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2))) := by
@@ -15854,7 +15854,7 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
     Filter.Eventually.of_forall fun ξ => mul_nonneg (hg0 ξ) (hwnn ξ)
   have hcompl : {ξ : ℝ | |ξ| ≤ ρ}ᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
     intro ξ hξ
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hξ
     exact hξ.le
   have hb2 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
   have hb3 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
@@ -15909,7 +15909,7 @@ half is the positive half reflected (`intervalIntegral.integral_comp_neg`), so t
 private lemma annulus_eq {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
     {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} = Set.Icc (-ρ) (-ρ₁) ∪ Set.Icc ρ₁ ρ := by
   ext ξ
-  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Icc]
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Icc]
   rcases le_or_gt 0 ξ with h | h
   · rw [abs_of_nonneg h]
     constructor
@@ -16146,7 +16146,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
     exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hWnn ξ)
   have hcover : P ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
     ext ξ
-    simp only [hPdef, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [hPdef, Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact le_total |ξ| ρ
   have hInt : Integrable (fun ξ : ℝ => g ξ * W ξ) := by
     rw [← integrableOn_univ, ← hcover]
@@ -16154,7 +16154,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
   refine ⟨hInt, ?_⟩
   have hAint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) A := hPint.mono_set hAP
   have hDint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) (P \ A) :=
-    hPint.mono_set Set.diff_subset
+    hPint.mono_set Set.sdiff_subset
   have hAdom : IntegrableOn (fun ξ : ℝ => Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) A :=
     (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hAtop)
   have hbA : (∫ ξ in A, g ξ * W ξ) ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi := by
@@ -16198,13 +16198,13 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
       Filter.Eventually.of_forall hfnn
     have hcompl : Pᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
       intro ξ hξ
-      simp only [hPdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+      simp only [hPdef, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hξ
       exact hξ.le
     have h1 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
     have h2 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
     exact le_trans h1 h2
   have hdecomp : (∫ ξ in A, g ξ * W ξ) + (∫ ξ in P \ A, g ξ * W ξ) = ∫ ξ in P, g ξ * W ξ := by
-    have h := MeasureTheory.integral_inter_add_diff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
+    have h := MeasureTheory.integral_inter_add_sdiff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
       hAm hPint
     rwa [Set.inter_eq_right.2 hAP] at h
   have hfull := integral_add_compl hPm hInt
@@ -17025,7 +17025,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
   rw [meanRootCDF, hpi, Measure.map_apply hmeas hset]
   congr 2
   ext z
-  simp only [Set.mem_preimage, Set.mem_setOf_eq, hmean', sub_zero, hscale]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, hmean', sub_zero, hscale]
 
 /-- **The moments of the root's summand, read under `F`.** For a centred summand the three
 hypotheses `edgeworth_mean_uniform_of_bounds` places on `centredLaw G` are hypotheses on `f`
@@ -17323,7 +17323,7 @@ theorem vecRootLaw_pairAt_region_eq (F : Measure ℝ) [IsProbabilityMeasure F] {
     Measure.map_apply (measurable_vecRoot hZ' n) hR']
   congr 1
   ext y
-  simp only [Set.mem_preimage, Set.mem_setOf_eq]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq]
   rw [pairAt_root_radicand hn c v (fun j => T (y j)),
     pairAt_root_radicand hn c' v' (fun j => T (y j)),
     pairAt_root_zero hn c v (fun j => T (y j)),
@@ -18176,7 +18176,7 @@ lemma second_coord_ninth_moment_threshold (q : ℕ) :
   constructor
   · intro h
     by_contra hc
-    push_neg at hc
+    push Not at hc
     interval_cases q <;> norm_num at h
   · intro h
     have : (6 : ℝ) ≤ (q : ℝ) := by exact_mod_cast h
@@ -18225,9 +18225,9 @@ lemma abs_cube_sub_cube_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 8 = |x - m| ^ 8 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h), sub_self]
+  · simp only [truncAt, ite_eq_right (not_le.2 h), sub_self]
     rw [show ((0 : ℝ) ^ 3) = 0 by ring, sub_zero, le_div_iff₀ (by positivity), ha]
     have h5 : τ ^ 5 ≤ |x - m| ^ 5 := pow_le_pow_left₀ hτ.le h.le 5
     have h3 : (0 : ℝ) ≤ |x - m| ^ 3 := by positivity
@@ -18832,7 +18832,7 @@ lemma centringAdj_centringAdj (δ : ℝ) (t : E₂) : centringAdj (-δ) (centrin
 /-- **The change of centring distorts no radius by more than `1 + 2|δ|`.** -/
 lemma norm_centringAdj_le (δ : ℝ) (t : E₂) : ‖centringAdj δ t‖ ≤ (1 + 2 * |δ|) * ‖t‖ := by
   have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
-    rw [coordDir, EuclideanSpace.norm_single]
+    rw [coordDir, PiLp.norm_single]
     simp
   rw [centringAdj_eq_add]
   refine (norm_add_le _ _).trans ?_
@@ -19035,9 +19035,9 @@ private lemma abs_cdfPseudoInverse_sub_le {f : ℝ → ℝ} (hmono : Monotone f)
   set b := x + d
   have hlb : a ∈ lowerBounds {y : ℝ | p ≤ f y} := by
     intro y hy
-    simp only [Set.mem_setOf_eq] at hy
+    simp only [Set.mem_ofPred_eq] at hy
     by_contra h
-    push_neg at h
+    push Not at h
     exact absurd (hmono h.le) (not_le.mpr (lt_of_lt_of_le ha hy))
   have hmem : b ∈ {y : ℝ | p ≤ f y} := hb
   have h1 : a ≤ cdfPseudoInverse f p := le_csInf ⟨b, hmem⟩ hlb
@@ -19090,13 +19090,13 @@ private lemma exists_bound_stdNormalQuantile {ε : ℝ} (hε : 0 < ε) (hε' : �
   set z := stdNormalQuantile p with hzdef
   have hlo : b₁ < z := by
     by_contra h
-    push_neg at h
+    push Not at h
     have := isCDF_stdNormalCDF.mono h
     rw [hz] at this
     linarith [hp.1]
   have hhi : z < b₂ := by
     by_contra h
-    push_neg at h
+    push Not at h
     have := isCDF_stdNormalCDF.mono h
     rw [hz] at this
     linarith [hp.2]

@@ -146,7 +146,7 @@ theorem reg_le_dual_of_mem (dr : DecomposableReg E) (θstar : E)
     Submodule.starProjection_orthogonal_apply_eq_zero hmem
   have hcone : dr.Φ ((dr.Mbar)ᗮ.starProjection Δ) ≤ 3 * dr.Φ (dr.Mbar.starProjection Δ) := by
     have h := hΔ
-    simp only [errorCone, Set.mem_setOf_eq, hθ0, map_zero] at h
+    simp only [errorCone, Set.mem_ofPred_eq, hθ0, map_zero] at h
     linarith
   -- eq 9.45: `Φ(Δ) ≤ 4Φ(Δ_{M̄}) ≤ 4Ψ‖Δ‖`.
   have hsplit : dr.Mbar.starProjection Δ + (dr.Mbar)ᗮ.starProjection Δ = Δ :=

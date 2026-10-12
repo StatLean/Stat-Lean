@@ -1,5 +1,9 @@
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import Mathlib.Analysis.Seminorm
+import Mathlib.Algebra.Order.Algebra
+import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Data.EReal.Operations
+import Mathlib.Topology.Algebra.InfiniteSum.Order
+import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.Gradient.Basic
 
 /-!

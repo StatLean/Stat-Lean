@@ -69,7 +69,7 @@ noncomputable def dlMarginal (a : ℝ) : Measure ℝ :=
 
 /-- On `0 < a`, `dlMarginal a` unfolds to the mixture `bind`. -/
 lemma dlMarginal_eq_bind {a : ℝ} (ha : 0 < a) :
-    dlMarginal a = (gammaMeasure a 2⁻¹).bind laplaceMeasure := if_pos ha
+    dlMarginal a = (gammaMeasure a 2⁻¹).bind laplaceMeasure := ite_eq_left ha
 
 /-- `dlMarginal a` is a probability measure for every `a` (dirac branch trivial; mixture branch uses
 the Laplace probability-mass identity and the positivity of the Gamma support). -/

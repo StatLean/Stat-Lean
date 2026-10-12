@@ -137,7 +137,7 @@ theorem weak_limit_scoreSum_under_local_alternatives
         ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖} = ∅ := by
       intro n
       ext ω
-      simp only [hid n ω, sub_self, norm_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false,
+      simp only [hid n ω, sub_self, norm_zero, Set.mem_ofPred_eq, Set.mem_empty_iff_false,
         iff_false, not_le]
       exact hε
     simp only [hempty, measureReal_empty]
@@ -176,7 +176,8 @@ theorem weak_limit_scoreSum_under_local_alternatives
     funext ω
     have hinv : Matrix.toEuclideanCLM (𝕜 := ℝ) J
         (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ (scoreSum ℓ n ω)) = scoreSum ℓ n ω := by
-      rw [← ContinuousLinearMap.mul_apply, ← map_mul, Matrix.mul_nonsing_inv J hJ_inv, map_one]
+      rw [← mul_apply_eq_comp, ← map_mul, Matrix.mul_nonsing_inv J hJ_inv,
+          map_one]
       rfl
     exact hinv
   rw [hcomp] at hmap

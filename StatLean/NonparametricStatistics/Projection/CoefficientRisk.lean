@@ -204,7 +204,7 @@ theorem coeffEstimator_sq_error {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
   have hphi : ∑ i : Fin n,
       trigBasis j (regularDesign n i) * trigBasis j (regularDesign n i) = (n : ℝ) := by
     have hd := trigBasis_discrete_orthonormal hj hj' hj hj'
-    rw [if_pos rfl, inv_mul_eq_div, div_eq_one_iff_eq hn0] at hd
+    rw [ite_eq_left rfl, inv_mul_eq_div, div_eq_one_iff_eq hn0] at hd
     exact hd
   have hZ2val : ∫ ω, Z ω ^ 2 ∂P = σξ2 / n := by
     have hexpand : ∀ ω, Z ω ^ 2 = (n : ℝ)⁻¹ ^ 2 * ∑ i : Fin n, ∑ k : Fin n,

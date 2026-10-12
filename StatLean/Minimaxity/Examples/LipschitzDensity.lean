@@ -135,25 +135,27 @@ private lemma hatφ_eq_ite (δ : ℝ) (hδ : 0 ≤ δ) (z : ℝ) :
     hatφ δ z = if z ≤ δ then tent δ z else -tent δ (z - 2 * δ) := by
   unfold hatφ
   rcases le_or_gt z δ with hz | hz
-  · rw [if_pos hz,
+  · rw [ite_eq_left hz,
       show tent δ (z - 2 * δ) = 0 from tent_eq_zero δ
         (by rw [abs_of_nonpos (by linarith : z - 2 * δ ≤ 0)]; linarith), sub_zero]
-  · rw [if_neg (not_le.mpr hz),
+  · rw [ite_eq_right (not_le.mpr hz),
       show tent δ z = 0 from tent_eq_zero δ
         (by rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ z)]; linarith), zero_sub]
 
 private lemma hatφ_abs_le (δ : ℝ) (hδ : 0 ≤ δ) (x : ℝ) : |hatφ δ x| ≤ δ := by
   rw [hatφ_eq_ite δ hδ x]
   rcases le_or_gt x δ with hx | hx
-  · rw [if_pos hx, abs_of_nonneg (tent_nonneg δ x)]; exact tent_le δ hδ x
-  · rw [if_neg (not_le.mpr hx), abs_neg, abs_of_nonneg (tent_nonneg δ _)]; exact tent_le δ hδ _
+  · rw [ite_eq_left hx, abs_of_nonneg (tent_nonneg δ x)]; exact tent_le δ hδ x
+  · rw [ite_eq_right (not_le.mpr hx), abs_neg, abs_of_nonneg (tent_nonneg δ _)]
+    exact tent_le δ hδ _
 
 private lemma hatφ_eq_zero_of_lt (δ : ℝ) (hδ : 0 ≤ δ) {x : ℝ} (hx : x < -δ ∨ 3 * δ < x) :
     hatφ δ x = 0 := by
   rw [hatφ_eq_ite δ hδ x]
   rcases hx with hx | hx
-  · rw [if_pos (by linarith), tent_eq_zero δ (by rw [abs_of_neg (by linarith : x < 0)]; linarith)]
-  · rw [if_neg (by linarith),
+  · rw [ite_eq_left (by linarith), tent_eq_zero δ
+      (by rw [abs_of_neg (by linarith : x < 0)]; linarith)]
+  · rw [ite_eq_right (by linarith),
       tent_eq_zero δ (by rw [abs_of_pos (by linarith : (0:ℝ) < x - 2 * δ)]; linarith), neg_zero]
 
 private lemma hatφ_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) : LipschitzWith 1 (hatφ δ) := by
@@ -163,9 +165,9 @@ private lemma hatφ_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) : LipschitzWith 1 (hat
     intro a b
     rw [hatφ_eq_ite δ hδ a, hatφ_eq_ite δ hδ b]
     rcases le_or_gt a δ with ha | ha <;> rcases le_or_gt b δ with hb | hb
-    · rw [if_pos ha, if_pos hb]
+    · rw [ite_eq_left ha, ite_eq_left hb]
       exact le_trans (le_abs_self _) (tent_dist_le δ a b)
-    · rw [if_pos ha, if_neg (not_le.mpr hb)]
+    · rw [ite_eq_left ha, ite_eq_right (not_le.mpr hb)]
       have t1 : tent δ a ≤ δ - a := by
         calc tent δ a = tent δ a - tent δ δ := by rw [hδδ, sub_zero]
           _ ≤ |tent δ a - tent δ δ| := le_abs_self _
@@ -177,10 +179,10 @@ private lemma hatφ_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) : LipschitzWith 1 (hat
           _ ≤ |(b - 2 * δ) - (-δ)| := tent_dist_le δ (b - 2 * δ) (-δ)
           _ = b - δ := by rw [abs_of_nonneg (by linarith)]; ring
       rw [abs_of_nonpos (by linarith : a - b ≤ 0)]; linarith
-    · rw [if_neg (not_le.mpr ha), if_pos hb]
+    · rw [ite_eq_right (not_le.mpr ha), ite_eq_left hb]
       have := tent_nonneg δ (a - 2 * δ); have := tent_nonneg δ b; have := abs_nonneg (a - b)
       linarith
-    · rw [if_neg (not_le.mpr ha), if_neg (not_le.mpr hb)]
+    · rw [ite_eq_right (not_le.mpr ha), ite_eq_right (not_le.mpr hb)]
       calc -tent δ (a - 2 * δ) - -tent δ (b - 2 * δ)
           ≤ |tent δ (b - 2 * δ) - tent δ (a - 2 * δ)| := by
             rw [show -tent δ (a - 2 * δ) - -tent δ (b - 2 * δ)

@@ -317,14 +317,14 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
   have hdiff : ∀ a b : ℝ, Iic b \ Iic a = Ioc a b := by
     intro a b
     ext x
-    simp only [mem_diff, mem_Iic, mem_Ioc, not_le]
+    simp only [Set.mem_sdiff, mem_Iic, mem_Ioc, not_le]
     exact and_comm
   refine Measure.ext_of_Ioc' _ _ (fun a b hab => ?_) (fun a b hab => ?_)
-  · rw [← hdiff a b, measure_diff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinC a)]
+  · rw [← hdiff a b, measure_sdiff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinC a)]
     exact ne_top_of_le_ne_top (hfinC b) tsub_le_self
   · rw [← hdiff a b,
-      measure_diff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinC a),
-      measure_diff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinB a),
+      measure_sdiff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinC a),
+      measure_sdiff (Iic_subset_Iic.2 hab.le) nullMeasurableSet_Iic (hfinB a),
       hkey a, hkey b]
 
 /-- **S5.2, the realization theorem** (`Cox72 §2`; ABGK §III.1.2): the constructed Cox law

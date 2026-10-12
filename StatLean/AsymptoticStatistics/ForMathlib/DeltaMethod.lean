@@ -83,9 +83,9 @@ theorem delta_method_remainder
     · exact Or.inl hd
     · refine Or.inr ?_
       show M < ‖sqn k • (T k ω - θ₀)‖
-      push_neg at hd
+      push Not at hd
       by_contra hM'
-      push_neg at hM'
+      push Not at hM'
       have hxδ : dist (T k ω) θ₀ < δ := by rwa [dist_eq_norm]
       have hR : ‖φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀)‖ ≤ (ε / (2 * M)) * ‖T k ω - θ₀‖ :=
         hδ hxδ
@@ -185,7 +185,7 @@ theorem delta_method
         = {ω | ε ≤ ‖sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))‖} := by
       intro k
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       have hdiff : sqn k • φ' (T k ω - θ₀) - sqn k • (φ (T k ω) - φ θ₀)
           = -(sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))) := by
         rw [← smul_sub, ← smul_neg]; congr 1; abel

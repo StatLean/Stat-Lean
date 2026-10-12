@@ -67,18 +67,18 @@ theorem isClosed_goodModulusSet (P : Measure Ω) (F : Set (Ω → ℝ)) (δ c : 
   have : goodModulusSet P F δ c
       = ⋂ f : ↥F, ⋂ g : ↥F,
         {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c} := by
-    ext z; simp only [goodModulusSet, Set.mem_setOf_eq, Set.mem_iInter]
+    ext z; simp only [goodModulusSet, Set.mem_ofPred_eq, Set.mem_iInter]
   rw [this]
   refine isClosed_iInter (fun f => isClosed_iInter (fun g => ?_))
   by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ
   · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c}
         = {z : LinfF F | |z f - z g| ≤ c} := by
-      ext z; simp only [Set.mem_setOf_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
+      ext z; simp only [Set.mem_ofPred_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
     rw [hset]
     exact isClosed_le (((hcont f).sub (hcont g)).abs) continuous_const
   · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c}
         = Set.univ := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact fun h => absurd h hfg
     rw [hset]; exact isClosed_univ
 
@@ -176,7 +176,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ) (hosc : η < |z f - z g|) :
     z ∈ (Metric.thickening (η / 4) (goodModulusSet P F δ (η / 2)))ᶜ := by
   rw [Set.mem_compl_iff, Metric.mem_thickening_iff]
-  push_neg
+  push Not
   intro w hw
   -- `w ∈ goodModulusSet` ⟹ `|w f − w g| ≤ η/2`; coordinate sup-norm bound.
   have hwmod : |w f - w g| ≤ η / 2 := hw f g hfg
@@ -191,7 +191,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     exact abs_sub _ _
   -- if `dist z w < η/4`, i.e. `‖z − w‖ < η/4`, then `|z f − z g| < η`, contradiction.
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   rw [dist_eq_norm] at hlt
   have hfinal : |z f - z g| < η := by
     have h2 : ‖z - w‖ < η / 4 := hlt

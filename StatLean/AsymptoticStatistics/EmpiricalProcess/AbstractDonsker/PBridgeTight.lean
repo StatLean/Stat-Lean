@@ -77,7 +77,7 @@ theorem isClosed_modulusBall (P : Measure Ω) (F : Set (Ω → ℝ)) (M : ℝ) (
   -- The bound part: `⋂_f {z | |z f| ≤ M}`.
   have hbound : IsClosed {z : LinfF F | ∀ f, |z f| ≤ M} := by
     have : {z : LinfF F | ∀ f, |z f| ≤ M} = ⋂ f : ↥F, {z : LinfF F | |z f| ≤ M} := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_iInter]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_iInter]
     rw [this]
     exact isClosed_iInter (fun f => isClosed_le (hcont f).abs continuous_const)
   -- The modulus part: `⋂_k ⋂_f ⋂_g {z | distL2 f g ≤ δ k → |z f − z g| ≤ a k}`.
@@ -87,26 +87,26 @@ theorem isClosed_modulusBall (P : Measure Ω) (F : Set (Ω → ℝ)) (M : ℝ) (
         distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k → |z f - z g| ≤ a k}
         = ⋂ k : ℕ, ⋂ f : ↥F, ⋂ g : ↥F,
           {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k → |z f - z g| ≤ a k} := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_iInter]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_iInter]
     rw [this]
     refine isClosed_iInter (fun k => isClosed_iInter (fun f => isClosed_iInter (fun g => ?_)))
     by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k
     · have hset : {z : LinfF F |
           distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k → |z f - z g| ≤ a k}
           = {z : LinfF F | |z f - z g| ≤ a k} := by
-        ext z; simp only [Set.mem_setOf_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
+        ext z; simp only [Set.mem_ofPred_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
       rw [hset]
       exact isClosed_le (((hcont f).sub (hcont g)).abs) continuous_const
     · have hset : {z : LinfF F |
           distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k → |z f - z g| ≤ a k}
           = Set.univ := by
-        ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+        ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
         exact fun h => absurd h hfg
       rw [hset]; exact isClosed_univ
   have : modulusBall P F M δ a
       = {z : LinfF F | ∀ f, |z f| ≤ M} ∩ {z : LinfF F | ∀ (k : ℕ) (f g : ↥F),
         distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ k → |z f - z g| ≤ a k} := by
-    ext z; simp only [modulusBall, Set.mem_setOf_eq, Set.mem_inter_iff]
+    ext z; simp only [modulusBall, Set.mem_ofPred_eq, Set.mem_inter_iff]
   rw [this]
   exact hbound.inter hmod
 
@@ -180,9 +180,9 @@ theorem totallyBounded_modulusBall {F : Set (Ω → ℝ)} {P : Measure Ω}
     have hgt : good t := ⟨z, hz, htz⟩
     -- The chosen representative `rep t`.
     have hreptz : Φ (rep t) ∈ Metric.ball t (ε / 5) := by
-      simp only [rep, dif_pos hgt]; exact hgt.choose_spec.2
+      simp only [rep, dite_eq_left hgt]; exact hgt.choose_spec.2
     have hrep_mb : rep t ∈ modulusBall P F M δ a := by
-      simp only [rep, dif_pos hgt]; exact hgt.choose_spec.1
+      simp only [rep, dite_eq_left hgt]; exact hgt.choose_spec.1
     -- `rep t` is in the net image.
     refine Set.mem_iUnion₂.2 ⟨rep t, ⟨t, ⟨htT, hgt⟩, rfl⟩, ?_⟩
     -- `dist z (rep t) < ε`: coordinate match (`≤ ε/3` on net) + equicontinuity.
@@ -427,13 +427,13 @@ theorem exists_bound_mass {ε : ℝ≥0∞} (hε : 0 < ε) :
     exact hmeas.aemeasurable.nullMeasurableSet_preimage measurableSet_Ioi
   have hanti : Antitone E := by
     intro m n hmn ω hω
-    simp only [hE, Set.mem_setOf_eq] at hω ⊢
+    simp only [hE, Set.mem_ofPred_eq] at hω ⊢
     exact lt_of_le_of_lt (by exact_mod_cast hmn) hω
   -- `⋂ₙ Eₙ` is a.e.-null: a.e. `‖g ω‖` is finite, so eventually `n ≥ ‖g ω‖`.
   have hInter_null : iidStdGaussian (⋂ n, E n) = 0 := by
     refine measure_mono_null ?_ (measure_empty (μ := iidStdGaussian))
     intro ω hω
-    simp only [Set.mem_iInter, hE, Set.mem_setOf_eq] at hω
+    simp only [Set.mem_iInter, hE, Set.mem_ofPred_eq] at hω
     obtain ⟨n, hn⟩ := exists_nat_gt ‖g ω‖
     exact absurd (hω n) (not_lt.mpr hn.le)
   -- Continuity of measure: `μ (Eₙ) → μ (⋂ Eₙ) = 0`.
@@ -567,7 +567,7 @@ theorem pBridge_tight :
     have hgω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω := by
       by_contra h; exact hng h
     have hboundω : ‖gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω‖ ≤ M := by
-      rw [hboundE, Set.mem_setOf_eq, not_lt] at hnb; exact hnb
+      rw [hboundE, Set.mem_ofPred_eq, not_lt] at hnb; exact hnb
     have hMω : ∀ f, |gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f| ≤ M :=
       fun f => forall_abs_le_of_norm_le hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hboundω f
     have havoidω : ∀ m ≥ J, ω ∉ GaussianChaining.bigOsc

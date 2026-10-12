@@ -324,10 +324,10 @@ theorem mse_ols_expectation_le
         = ∑ k : Fin r, ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), x⟫_ℝ ^ 2 := by
     intro x
     rw [Submodule.starProjection_apply, Submodule.norm_coe,
-        ← b.sum_sq_inner_right (C.orthogonalProjection x)]
+        ← b.sum_sq_inner_right (C.orthogonalProjectionOnto x)]
     refine Finset.sum_congr rfl fun k _ => ?_
     congr 1
-    exact Submodule.inner_orthogonalProjection_eq_of_mem_left (b k) x
+    exact Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left (b k) x
   -- Step 5: Each inner product ⟪(b k : E), ε⟫ is sub-Gaussian with proxy σ².
   have hinner_subG : ∀ k : Fin r,
       HasSubgaussianMGF (fun ω => ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ) σ2 μ := by

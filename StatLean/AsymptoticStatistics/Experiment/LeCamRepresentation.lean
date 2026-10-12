@@ -571,7 +571,7 @@ theorem slutsky_bridge_of_lanResidual_kernel
           ×ˢ Set.univ := by
     intro n
     ext ⟨ω, y⟩
-    simp only [Set.mem_setOf_eq, hX_def, hY_def, Prod.dist_eq, dist_self, Real.dist_eq,
+    simp only [Set.mem_ofPred_eq, hX_def, hY_def, Prod.dist_eq, dist_self, Real.dist_eq,
       Set.mem_prod, Set.mem_univ, and_true]
     rw [max_eq_right (abs_nonneg _), abs_sub_comm]
   -- The cylinder mass under compProd equals `(P^{φ n}) S × κ_{φ n}.univ = (P^{φ n}) S`.
@@ -1355,7 +1355,7 @@ theorem LAN_representation_kernel
                       (J.mulVec ((WithLp.equiv 2 _) h'))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε
@@ -1558,7 +1558,7 @@ theorem LAN_representation_along_subseq
                       (J.mulVec ((WithLp.equiv 2 _) h'))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε

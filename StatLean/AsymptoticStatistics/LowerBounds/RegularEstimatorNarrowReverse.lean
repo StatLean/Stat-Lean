@@ -250,7 +250,7 @@ theorem isRegularEstimator_of_narrow_explicit
           {ω : Fin n → Ω | ε ≤ dist (Fγ₀ n ω) (Fγ n ω)} = (∅ : Set _) := by
       filter_upwards [hev] with n hn
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       rw [h_dist_const]
       exact hn
     have h_real_zero :

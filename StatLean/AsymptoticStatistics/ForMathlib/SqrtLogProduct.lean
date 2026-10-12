@@ -193,8 +193,8 @@ private lemma tsum_half_pow_indicator_le {q₀ p : ℕ} :
     apply ENNReal.tsum_le_tsum
     intro q
     by_cases hmem : p ∈ Finset.Icc q₀ q
-    · rw [if_pos hmem, if_pos (Finset.mem_Icc.mp hmem).2]
-    · rw [if_neg hmem]; positivity
+    · rw [ite_eq_left hmem, ite_eq_left (Finset.mem_Icc.mp hmem).2]
+    · rw [ite_eq_right hmem]; positivity
   refine hdrop.trans ?_
   -- Reindex `q = p + j`: `∑_{q ≥ p} (2⁻¹)^q = ∑_j (2⁻¹)^{p + j}`.
   have hinj : Function.Injective (fun j : ℕ => p + j) := fun a b h => by
@@ -205,12 +205,12 @@ private lemma tsum_half_pow_indicator_le {q₀ p : ℕ} :
     simp only [Function.mem_support, ne_eq] at hq
     by_cases hpq : p ≤ q
     · exact ⟨q - p, Nat.add_sub_cancel' hpq⟩
-    · rw [if_neg hpq] at hq; exact absurd rfl hq
+    · rw [ite_eq_right hpq] at hq; exact absurd rfl hq
   have hreindex : (∑' q : ℕ, if p ≤ q then (2⁻¹ : ℝ≥0∞) ^ q else 0)
       = ∑' j : ℕ, (2⁻¹ : ℝ≥0∞) ^ (p + j) := by
     rw [← hinj.tsum_eq hsupp]
     refine tsum_congr fun j => ?_
-    rw [if_pos (Nat.le_add_right p j)]
+    rw [ite_eq_left (Nat.le_add_right p j)]
   rw [hreindex]
   -- `∑_j (2⁻¹)^{p+j} = (2⁻¹)^p · ∑_j (2⁻¹)^j = (2⁻¹)^p · 2`.
   simp_rw [pow_add]
@@ -237,8 +237,8 @@ theorem ENNReal.tsum_pow_half_sum_Icc_le (q₀ : ℕ) (a : ℕ → ℝ≥0∞) :
     refine tsum_congr fun p => ?_
     rw [Set.indicator_apply]
     by_cases hp : p ∈ (Finset.Icc q₀ q : Set ℕ)
-    · rw [if_pos hp, if_pos (by simpa using hp)]
-    · rw [if_neg hp, if_neg (by simpa using hp), zero_mul]
+    · rw [ite_eq_left hp, ite_eq_left (by simpa using hp)]
+    · rw [ite_eq_right hp, ite_eq_right (by simpa using hp), zero_mul]
   simp_rw [hterm]
   -- Swap the order of summation.
   rw [ENNReal.tsum_comm]

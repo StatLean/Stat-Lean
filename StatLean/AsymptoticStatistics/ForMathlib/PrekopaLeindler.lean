@@ -77,7 +77,7 @@ private theorem prekopaLeindler_1d_levelInclusion
   obtain ⟨x, hx, rfl⟩ := hu
   obtain ⟨y, hy, rfl⟩ := hv
   -- `hx : α < f x`, `hy : α < g y`. Goal: `α < h (t * x + (1 - t) * y)`.
-  simp only [smul_eq_mul, Set.mem_setOf_eq] at hx hy ⊢
+  simp only [smul_eq_mul, Set.mem_ofPred_eq] at hx hy ⊢
   -- Step 1: `α = α ^ t * α ^ (1 - t)` (using `α ∈ (0, ∞)`).
   have h_alpha_split : α = α ^ t * α ^ (1 - t) := by
     rw [← ENNReal.rpow_add t (1 - t) hα_pos.ne' hα_top]
@@ -461,7 +461,7 @@ private theorem lintegral_eq_lintegral_meas_lt_ennreal
         = volume {x | ENNReal.ofReal α < fN n x}
     congr 1
     ext x
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     refine ⟨fun h => ?_, fun h => ?_⟩
     · have := (ENNReal.ofReal_lt_ofReal_iff_of_nonneg hα_nn).mpr h
       rwa [ENNReal.ofReal_toReal (hfN_lt_top n x)] at this
@@ -480,7 +480,7 @@ private theorem lintegral_eq_lintegral_meas_lt_ennreal
         = {x | ENNReal.ofReal α < f x} := by
     intro α
     ext x
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     refine ⟨fun ⟨n, hn⟩ => lt_of_lt_of_le hn (le_trans inf_le_left le_rfl), ?_⟩
     intro hx
     rw [← hfN_iSup_eq x] at hx

@@ -263,7 +263,7 @@ private lemma map_sum_gaussianReal {μ : Measure Ω} [IsProbabilityMeasure μ]
     simp [Measure.map_const, measure_univ, gaussianReal_zero_var]
   | insert a s ha ih =>
     have hindepF : IndepFun (Y a) (∑ i ∈ s, Y i) μ :=
-      (hindep.indepFun_finset_sum_of_notMem hmeas ha).symm
+      (hindep.indepFun_finsetSum_of_notMem hmeas ha).symm
     have ih' : Measure.map (∑ i ∈ s, Y i) μ
         = gaussianReal (∑ i ∈ s, m i) (∑ i ∈ s, v i) := by
       rw [show (∑ i ∈ s, Y i) = (fun ω => ∑ i ∈ s, Y i ω) from
@@ -290,7 +290,7 @@ private lemma map_uncurry_pi_pi (ν : α → β → Measure γ) [∀ a b, IsProb
       = Measure.pi (fun p : α × β => ν p.1 p.2) := by
   classical
   have hmu : Measurable (fun (g : α → β → γ) (p : α × β) => g p.1 p.2) := by
-    apply measurable_pi_lambda; intro p
+    apply Measurable.of_eval; intro p
     exact (measurable_pi_apply p.2).comp (measurable_pi_apply p.1)
   refine (Measure.pi_eq fun s hs => ?_).symm
   rw [Measure.map_apply hmu (MeasurableSet.univ_pi hs)]
@@ -311,10 +311,10 @@ private lemma map_curry_pi_pi (ν : α → β → Measure γ) [∀ a b, IsProbab
       = Measure.pi (fun a => Measure.pi (fun b => ν a b)) := by
   classical
   have hmu : Measurable (fun (g : α → β → γ) (p : α × β) => g p.1 p.2) := by
-    apply measurable_pi_lambda; intro p
+    apply Measurable.of_eval; intro p
     exact (measurable_pi_apply p.2).comp (measurable_pi_apply p.1)
   have hmc : Measurable (fun (h : α × β → γ) (a : α) (b : β) => h (a, b)) := by
-    apply measurable_pi_lambda; intro a; apply measurable_pi_lambda; intro b
+    apply Measurable.of_eval; intro a; apply Measurable.of_eval; intro b
     exact measurable_pi_apply (a, b)
   rw [← map_uncurry_pi_pi ν, Measure.map_map hmc hmu,
     show ((fun (h : α × β → γ) a b => h (a, b)) ∘ (fun (g : α → β → γ) (p : α × β) => g p.1 p.2))
@@ -351,7 +351,7 @@ private lemma iIndepFun_rows {μ : Measure Ω} [IsProbabilityMeasure μ]
   have hentAE : AEMeasurable (fun ω => fun p : α × β => Y p.1 p.2 ω) μ :=
     AEMeasurable.of_eval (fun p : α × β => hY p.1 p.2)
   have hmc : Measurable (fun (h : α × β → γ) (a : α) (b : β) => h (a, b)) := by
-    apply measurable_pi_lambda; intro a; apply measurable_pi_lambda; intro b
+    apply Measurable.of_eval; intro a; apply Measurable.of_eval; intro b
     exact measurable_pi_apply (a, b)
   rw [show (fun ω => fun a b => Y a b ω)
         = (fun (h : α × β → γ) a b => h (a, b)) ∘ (fun ω => fun p : α × β => Y p.1 p.2 ω)
@@ -557,13 +557,13 @@ theorem gaussian_quadratic_form_tail
     -- assemble
     have hgoal_set : {ω | δ < |‖designMap (X' ω) β‖ ^ 2 / ‖β‖ ^ 2 - 1|}
         = {ω | δ < |(1 / (n : ℝ)) * ∑ i, Z i ω|} := by
-      ext ω; simp only [Set.mem_setOf_eq, hQS ω]
+      ext ω; simp only [Set.mem_ofPred_eq, hQS ω]
     rw [hgoal_set]
     have hsubset : {ω | δ < |(1 / (n : ℝ)) * ∑ i, Z i ω|}
         ⊆ {ω | δ < (1 / (n : ℝ)) * ∑ i, Z i ω - 0}
           ∪ {ω | δ < (1 / (n : ℝ)) * ∑ i, -(Z i ω) - 0} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq, sub_zero, Set.mem_union] at hω ⊢
+      simp only [Set.mem_ofPred_eq, sub_zero, Set.mem_union] at hω ⊢
       rcases le_or_gt 0 ((1 / (n : ℝ)) * ∑ i, Z i ω) with hpos | hneg
       · left; rwa [abs_of_nonneg hpos] at hω
       · right

@@ -680,7 +680,7 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
     have heq : (fun z : LinfF F => z (ψ i)) = (EuclideanSpace.proj (𝕜 := ℝ) i) ∘ R := by
       funext z; rw [EuclideanSpace.coe_proj]; rfl
     rw [heq]
-    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitz.comp_memLp (map_zero _) hMemLp_R
+    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitzWith.comp_memLp (map_zero _) hMemLp_R
   -- `⟪basisFun a, u⟫ = u a` for the Euclidean basis.
   have hbasis : ∀ (a : Fin k),
       (fun u : EuclideanSpace ℝ (Fin k) =>
@@ -1237,7 +1237,7 @@ theorem empirical_proj_error_outer (h_eq : IsAsymptoticallyEquicontinuous F P)
             ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
                   - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     -- supNorm > ε ⟹ ∃ coordinate `t : ↥F` with `ε < |(𝔾ₙ − πₘ𝔾ₙ) t|`.
     -- `↥F` must be nonempty: otherwise the difference is `0` and `ε < 0` is absurd.
     have hne : Nonempty ↥F := by
@@ -1454,13 +1454,13 @@ theorem outerReadout_le_of_modulus {Ξ D : Type*} [MeasurableSpace Ξ]
       · -- Good event: `ind = 0`, use the modulus bound.
         have hind0 : ind ξ = 0 := by
           rw [hind, Set.indicator_of_notMem]
-          rw [hbadSet]; simp only [Set.mem_setOf_eq, not_lt]; exact hg
+          rw [hbadSet]; simp only [Set.mem_ofPred_eq, not_lt]; exact hg
         rw [hind0]; simp only [ENNReal.toReal_zero, mul_zero, add_zero]
         have := hmod ξ hg; linarith
       · -- Bad event: `ind = 1`, slack `≥ 2‖f‖ ≥ f(Xξ) − f(Yξ)`.
         have hind1 : ind ξ = 1 := by
           rw [hind, Set.indicator_of_mem]
-          rw [hbadSet]; simp only [Set.mem_setOf_eq]; exact lt_of_not_ge hg
+          rw [hbadSet]; simp only [Set.mem_ofPred_eq]; exact lt_of_not_ge hg
         rw [hind1]; simp only [ENNReal.toReal_one, mul_one]
         have hfX := (abs_le.1 (f.norm_coe_le_norm (X ξ))).2
         have hfY := (abs_le.1 (f.norm_coe_le_norm (Y ξ))).1
@@ -1552,7 +1552,7 @@ theorem abs_outerReadout_diff_le {Ξ D : Type*} [MeasurableSpace Ξ]
             ({ξ | δ < dist (X ξ) (Y ξ)}.indicator (fun _ => (1 : ℝ≥0∞)))).toReal := by
   -- The bad event is symmetric in `X, Y` (`dist_comm`).
   have hsymm : {ξ | δ < dist (Y ξ) (X ξ)} = {ξ | δ < dist (X ξ) (Y ξ)} := by
-    ext ξ; simp only [Set.mem_setOf_eq, dist_comm]
+    ext ξ; simp only [Set.mem_ofPred_eq, dist_comm]
   rw [abs_sub_le_iff]
   constructor
   · -- `EX.toReal − EY.toReal ≤ η + 2‖f‖·I.toReal`.
@@ -1835,7 +1835,7 @@ theorem empirical_readout_tail_outer
       by_cases hcase : ε < ‖a - b‖
       · -- On the bad event: indicator = 1, bound by the `2‖f‖` term.
         have hmem : ξ ∈ {ξ | ε < ‖𝔾 n ξ - finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ)‖} := by
-          rw [Set.mem_setOf_eq, ← ha, ← hb]; exact hcase
+          rw [Set.mem_ofPred_eq, ← ha, ← hb]; exact hcase
         rw [Set.indicator_of_mem hmem]
         calc ENNReal.ofReal |f a - f b| ≤ ENNReal.ofReal (2 * ‖f‖) :=
               ENNReal.ofReal_le_ofReal h2f

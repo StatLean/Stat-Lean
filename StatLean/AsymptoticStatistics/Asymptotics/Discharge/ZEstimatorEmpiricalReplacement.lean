@@ -365,7 +365,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_wpa
                         score0 (xi i.val))) -
                   Real.sqrt n *
                     (∫ x, (scoreHat n (fun i : Fin n => xi i.val) x - score0 x) ∂P)| := by
-              simpa only [Set.mem_setOf_eq, trunc, Real.norm_eq_abs] using hxi
+              simpa only [Set.mem_ofPred_eq, trunc, Real.norm_eq_abs] using hxi
             exact (half_lt_self hepsilon).trans_le hxi'
           · exact Or.inr hmem)
     _ <= mu.real {xi | epsilon / 2 <
@@ -462,7 +462,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_wpa_vec
   · intro epsilon hepsilon
     have hz : forall n (X : Fin n -> Omega), Z n X = 0 :=
       fun _ _ => Subsingleton.elim _ _
-    simp only [hz, norm_zero, not_le.mpr hepsilon, Set.setOf_false, measureReal_empty]
+    simp only [hz, norm_zero, not_le.mpr hepsilon, Set.ofPred_false, measureReal_empty]
     exact tendsto_const_nhds
   · intro epsilon hepsilon
     have hdR : (0 : Real) < d := by exact_mod_cast hd
@@ -474,7 +474,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_wpa_vec
         (fun j _ => hcoord j (epsilon / d) hlevel)
     refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) hsum
     refine (measureReal_mono (fun X hX => ?_)).trans (measureReal_iUnion_fintype_le _)
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     by_contra hall
     push Not at hall
     have hnorm : ‖Z n X‖ < epsilon := by
@@ -538,7 +538,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_vec
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · intro ε hε
     have hz : ∀ n (X : Fin n → Omega), Z n X = 0 := fun _ _ => Subsingleton.elim _ _
-    simp only [hz, norm_zero, not_le.mpr hε, Set.setOf_false, measureReal_empty]
+    simp only [hz, norm_zero, not_le.mpr hε, Set.ofPred_false, measureReal_empty]
     exact tendsto_const_nhds
   · intro ε hε
     have hdR : (0 : ℝ) < d := by exact_mod_cast hd
@@ -550,7 +550,7 @@ theorem randomIndex_empiricalScoreReplacement_oP_vec
         (fun j _ => hcoord j (ε / d) hlevel)
     refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) hsum
     refine (measureReal_mono (fun X hX => ?_)).trans (measureReal_iUnion_fintype_le _)
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     by_contra hall
     push Not at hall
     have hnorm : ‖Z n X‖ < ε := by

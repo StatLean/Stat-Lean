@@ -120,7 +120,7 @@ noncomputable def marMeanCoarseningCandidate
     rw [integral_fintype Integrable.of_finite]
     rw [Fintype.sum_bool]
     simp only [Function.comp_apply, Measure.real, marMean_coarseningScore, marObsMap,
-      ind_false, ind_true, if_true, MARResponseKernel.false_mass hπr y,
+      ind_false, ind_true, ite_true, MARResponseKernel.false_mass hπr y,
       hπr y, smul_eq_mul]
     by_cases hπ : π y.1 = 0
     · simp [hπ]
@@ -196,10 +196,10 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
       cases δ
       · simp only [marObsMap, marMean_coarseningScore, ind_false, c]
         field_simp [hπ y.1]
-        simp only [Bool.false_eq_true, if_false]
+        simp only [Bool.false_eq_true, ite_false]
         ring
-      · simp only [marObsMap, if_true, marMean_coarseningScore, ind_true, c] at ⊢ hy
-        simp only [Bool.false_eq_true, if_false] at ⊢ hy
+      · simp only [marObsMap, ite_true, marMean_coarseningScore, ind_true, c] at ⊢ hy
+        simp only [Bool.false_eq_true, ite_false] at ⊢ hy
         field_simp [hπ y.1]
         linear_combination -hy
     have hfst : MeasurePreserving (Prod.fst : (X × ℝ) × Bool → X × ℝ)
@@ -350,7 +350,7 @@ theorem concreteCoarseningScores_eq_marMeanCoarseningSpace
           _ = 0 := by
             rw [integral_fintype Integrable.of_finite, Fintype.sum_bool]
             simp only [Measure.real, smul_eq_mul, marObsMap, marMean_coarseningScore,
-              ind_true, ind_false, if_true]
+              ind_true, ind_false, ite_true]
             rw [hπr y, hπr.false_mass y]
             field_simp [hπ y.1]
             ring

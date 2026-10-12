@@ -82,14 +82,14 @@ theorem lintegral_ratio_split (θ₀ : EuclideanSpace ℝ ι) (π : Measure (Euc
   set P₀ := gaussShiftKernel ι θ₀
   set S := {y : EuclideanSpace ℝ ι | dlDenom θ₀ π y < dbar} with hSdef
   have hScompl : Sᶜ = {y : EuclideanSpace ℝ ι | dbar ≤ dlDenom θ₀ π y} := by
-    ext y; simp only [hSdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_lt]
+    ext y; simp only [hSdef, Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt]
   -- `P₀ ≤ P₀.restrict S + P₀.restrict Sᶜ` by subadditivity (no measurability of `S` needed).
   have hStepA : P₀ ≤ P₀.restrict S + P₀.restrict Sᶜ := by
     rw [Measure.le_iff]
     intro t ht
     rw [Measure.add_apply, Measure.restrict_apply ht, Measure.restrict_apply ht]
-    have h := measure_le_inter_add_diff P₀ t S
-    rwa [Set.diff_eq] at h
+    have h := measure_le_inter_add_sdiff P₀ t S
+    rwa [Set.sdiff_eq] at h
   calc ∫⁻ y, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂P₀
       ≤ ∫⁻ y, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂(P₀.restrict S + P₀.restrict Sᶜ) :=
         lintegral_mono' hStepA (le_refl _)

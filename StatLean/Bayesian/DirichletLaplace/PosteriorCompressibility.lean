@@ -168,7 +168,7 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
   have hsub : {θ : EuclideanSpace ℝ ι | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)}
       ⊆ projS Sᶜ ⁻¹' {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} := by
     intro θ hθ
-    simp only [Set.mem_preimage, Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq] at hθ ⊢
     have hcount := dlSuppCount_le_card_add_projS δ S₀ θ
     have : ((S₀.card : ℝ) + k) < (S₀.card : ℝ) + (dlSuppCount δ (projS Sᶜ θ) : ℝ) :=
       lt_of_lt_of_le hθ (by exact_mod_cast hcount)
@@ -245,7 +245,7 @@ private lemma dl_thm34_reduce_explicit_event {n : ℕ} {a δ r : ℝ}
       ≤ ∫⁻ y, ((gaussShiftKernel (Fin n))†(dlPrior a (Fin n))) y
           {θ | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)} ∂(gaussShiftKernel (Fin n) θ₀) := by
     refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact lt_of_le_of_lt hk hθ
   refine hmono.trans ((dl_compress_reduction ha θ₀ S₀ hθ₀ k).trans ?_)
   convert compress_ratio_le_explicit ha hr k z hz w hw hw2 c hc using 2 <;>
@@ -321,7 +321,7 @@ theorem dl_theorem34_beta {β : ℝ}
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
@@ -698,7 +698,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex

@@ -40,7 +40,7 @@ lemma l2_markov_tail_tendsto
     (Eventually.of_forall fun _ => sq_nonneg _) hwm.integrable_sq (delta ^ 2)
   have hset : {x | delta ^ 2 ≤ W t x ^ 2} = {x | delta ≤ |W t x|} := by
     ext x
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     simpa [sq_abs] using (sq_le_sq₀ hdelta.le (abs_nonneg (W t x)))
   rw [hset] at hm
   have hreal : P.real {x | delta ≤ |W t x|} ≤

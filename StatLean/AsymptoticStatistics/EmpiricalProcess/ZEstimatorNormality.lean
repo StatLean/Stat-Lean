@@ -103,9 +103,9 @@ theorem tendstoInProbZero_of_tendstoZeroInOuterProbSup_fin
           EuclideanSpace ℝ (Fin k))‖}
         ⊆ {ξ | ∃ j, ε' < |g n ξ j|} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hnorm_sq :
         ‖((WithLp.equiv 2 (Fin k → ℝ)).symm (g n ξ) : EuclideanSpace ℝ (Fin k))‖ ^ 2
           = ∑ i, |g n ξ i| ^ 2 := by
@@ -166,7 +166,7 @@ theorem matrix_bddbelow_of_isUnit_det {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ)
       rw [hS, hT, ← map_mul, Matrix.nonsing_inv_mul V hV, map_one]
     have hST : ∀ b : EuclideanSpace ℝ (Fin k), S (T b) = b := by
       intro b
-      rw [← ContinuousLinearMap.mul_apply, hInv, ContinuousLinearMap.one_apply]
+      rw [← mul_apply_eq_comp, hInv, one_apply_eq_self]
     set sk : ℝ := Real.sqrt k with hsk
     have hsk_nonneg : 0 ≤ sk := Real.sqrt_nonneg _
     have hsk_sq : sk ^ 2 = (k : ℝ) := Real.sq_sqrt (Nat.cast_nonneg k)
@@ -410,8 +410,8 @@ theorem zEstimator_linear_representation
             (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V w)
         = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V⁻¹
             * Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V) w := by
-          rw [ContinuousLinearMap.mul_apply]
-      _ = w := by rw [hInv, ContinuousLinearMap.one_apply]
+          rw [mul_apply_eq_comp]
+      _ = w := by rw [hInv, one_apply_eq_self]
   -- Pointwise identification of the collapsed vector with the target.
   have hpt : ∀ (n : ℕ) (ξ : Ξ),
       Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)
@@ -712,7 +712,7 @@ theorem zEstimator_asymptotic_normality_core
     set e := empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ω) with he
     set b := Real.sqrt (n : ℝ) • (θ_hat n (fun i : Fin n => X i.val ω) - θ₀) with hb
     have hgapply : g e = -(Matrix.toEuclideanCLM (𝕜 := ℝ) V⁻¹ e) := by
-      rw [hg_def, map_neg, ContinuousLinearMap.neg_apply]
+      rw [hg_def, map_neg, neg_apply]
     rw [dist_eq_norm, hgapply,
       show -(Matrix.toEuclideanCLM (𝕜 := ℝ) V⁻¹ e) - b
           = -(b + Matrix.toEuclideanCLM (𝕜 := ℝ) V⁻¹ e) from by abel,
@@ -736,7 +736,7 @@ theorem zEstimator_asymptotic_normality_core
               + Matrix.toEuclideanCLM (𝕜 := ℝ) V⁻¹
                   (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ω))‖} := by
         ext ω
-        simp only [Set.mem_setOf_eq, hpt n ω]
+        simp only [Set.mem_ofPred_eq, hpt n ω]
       rw [hset]
     rw [hfam]
     exact hA ε hε
@@ -956,7 +956,7 @@ theorem zEstimator_asymptotic_normality
           |empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)|}
         ⊆ {ξ | MM < ‖empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)‖} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       obtain ⟨h, hh⟩ := hξ
       have hcoord : empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)
           = (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)) h := rfl

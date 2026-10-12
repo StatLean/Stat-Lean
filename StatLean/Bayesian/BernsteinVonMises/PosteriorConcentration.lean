@@ -62,7 +62,7 @@ theorem bvmLocalPosterior_compl_ball [IsFiniteMeasure π] {n : ℕ}
   congr 1
   ext θ
   simp only [Set.mem_preimage, Set.mem_compl_iff, Metric.mem_ball, dist_zero_right, not_lt,
-    Set.mem_setOf_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+    Set.mem_ofPred_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
   rw [div_le_iff₀ hsq, mul_comm]
 
 /-- Fubini through the posterior disintegration `(κₙ ∘ₘ π) ⊗ₘ κₙ†π = (π ⊗ₘ κₙ).map swap`: the
@@ -276,7 +276,7 @@ theorem posterior_mass_compl_ball_tendsto
             {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω)} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have hone : ENNReal.ofReal (φ n ω) + ENNReal.ofReal (1 - φ n ω) = 1 := by
       rw [← ENNReal.ofReal_add (hφ.mem_Icc n ω).1
         (by linarith [(hφ.mem_Icc n ω).2])]

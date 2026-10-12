@@ -284,7 +284,7 @@ lemma n_hgrad (θ : E1)
       hg.comp_hasFDerivAt θ L1.hasFDerivAt
   refine hnm.congr_fderiv ?_
   ext v
-  simp only [ContinuousLinearMap.coe_smul', Pi.smul_apply, smul_eq_mul, L1_apply,
+  simp only [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, L1_apply,
     innerSL_E1]
   rfl
 

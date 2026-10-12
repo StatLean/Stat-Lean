@@ -214,9 +214,9 @@ theorem medianMinimaxPlus_eq_contaminate {f₀ : ℝ → ℝ} {bε ε : ℝ}
       = fun x => (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε x := by
     funext x
     by_cases h : x ≤ bε
-    · rw [if_pos h, minimaxWitnessDensity, if_neg (not_lt.2 h)]
+    · rw [ite_eq_left h, minimaxWitnessDensity, ite_eq_right (not_lt.2 h)]
       ring
-    · rw [if_neg h, minimaxWitnessDensity, if_pos (not_le.1 h)]
+    · rw [ite_eq_right h, minimaxWitnessDensity, ite_eq_left (not_le.1 h)]
       field_simp
       ring
   rw [hfun]
@@ -234,16 +234,16 @@ private theorem minimaxWitness_reflect_shift {f₀ : ℝ → ℝ} {bε ε : ℝ}
   have hne : ε ≠ 0 := hε.ne'
   rw [minimaxWitnessDensity]
   by_cases h : bε < -x
-  · rw [if_pos h, if_pos (by linarith : x + 2 * bε ≤ bε),
+  · rw [ite_eq_left h, ite_eq_left (by linarith : x + 2 * bε ≤ bε),
       show (-x - 2 * bε) = -(x + 2 * bε) from by ring, hsym (x + 2 * bε), hsym x]
     field_simp
     ring
-  · rw [if_neg h, mul_zero, add_zero]
+  · rw [ite_eq_right h, mul_zero, add_zero]
     rw [not_lt] at h
     by_cases h2 : x + 2 * bε ≤ bε
-    · rw [if_pos h2, show x = -bε from by linarith, show -bε + 2 * bε = bε from by ring,
+    · rw [ite_eq_left h2, show x = -bε from by linarith, show -bε + 2 * bε = bε from by ring,
         hsym bε]
-    · rw [if_neg h2]
+    · rw [ite_eq_right h2]
 
 /-- **`F₋` is also an `ε`-contamination of `F₀`** (`MMY §3.8.5`, "define
 `F₋(x) = F₊(x + 2b_ε)`, which also belongs to `F(F₀, ε)` by the same argument"): the

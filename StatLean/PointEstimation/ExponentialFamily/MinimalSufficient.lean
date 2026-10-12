@@ -101,7 +101,7 @@ theorem fullRank_exists_affineSpan [FiniteDimensional ℝ V] (E : ExpFamily 𝓧
   -- extract an affinely independent spanning subset of `Ξ'`
   obtain ⟨t, hts, htspan, htind⟩ := exists_affineIndependent ℝ V Ξ'
   rw [hspanΞ] at htspan
-  haveI : Finite t := finite_of_fin_dim_affineIndependent ℝ htind
+  haveI : Finite t := (finiteDimensional_iff_finite ℝ htind).mp inferInstance
   haveI : Fintype t := Fintype.ofFinite t
   have htspan' : affineSpan ℝ (Set.range (Subtype.val : t → V)) = (⊤ : AffineSubspace ℝ V) := by
     rwa [Subtype.range_coe]

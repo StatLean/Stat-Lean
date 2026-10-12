@@ -132,7 +132,7 @@ p-value is strictly positive on the support. -/
 theorem fisherPValue_pos (D : Design n) (g : Assignment n → ℝ) {z : Assignment n}
     (hz : z ∈ D.support) :
     0 < fisherPValue D g z :=
-  prob_pos_of_mem D hz (Set.mem_setOf_eq ▸ le_refl (g z))
+  prob_pos_of_mem D hz (Set.mem_ofPred_eq ▸ le_refl (g z))
 
 /-- Monotonicity: a larger statistic value gives a smaller p-value. -/
 theorem fisherPValue_antitone (D : Design n) (g : Assignment n → ℝ) {z z' : Assignment n}

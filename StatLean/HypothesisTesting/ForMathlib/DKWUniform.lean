@@ -196,9 +196,9 @@ private lemma dkw_rightCont_step (a s : ℝ) :
       =ᶠ[nhdsWithin s (Set.Ioi s)] (fun t => if a ≤ t then (1 : ℝ) else 0) := by
     by_cases h : a ≤ s
     · filter_upwards [self_mem_nhdsWithin] with t ht
-      rw [if_pos h, if_pos (h.trans ht.le)]
+      rw [ite_eq_left h, ite_eq_left (h.trans ht.le)]
     · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.mp h))] with t ht
-      rw [if_neg h, if_neg (not_le.mpr ht)]
+      rw [ite_eq_right h, ite_eq_right (not_le.mpr ht)]
   exact Filter.Tendsto.congr' hl tendsto_const_nhds
 
 /-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over
@@ -403,7 +403,7 @@ private lemma signVec_dkwPass_le (a : ℝ) (ha : 0 < a) (j : ℕ) :
     intro s hs
     by_cases hb : a ≤ |dkwWalk σ s n|
     · exact Or.inl ⟨hs, hb⟩
-    · push_neg at hb
+    · push Not at hb
       refine Or.inr ⟨⟨fun l hl => ?_, ?_⟩, ?_⟩
       · change |dkwWalk σ (fun i => dkwSign σ j i * s i) l| < a
         rw [dkwWalk_refl_le σ s (le_of_lt hl)]; exact hs.1 l hl
@@ -841,7 +841,7 @@ theorem integral_ksDist_le {n : ℕ}
           _ ≤ ∑ _i : Fin n, (1 : ℝ) := by
               refine Finset.sum_le_sum fun i _ => ?_
               rw [abs_mul]
-              exact mul_le_one₀ (hp i) (abs_nonneg _) (hFbdd q _)
+              exact (mul_le_of_le_one_left (abs_nonneg _) (hp i)).trans (hFbdd q _)
           _ = (n : ℝ) := by simp
       have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
       rw [inv_mul_le_iff₀ hn0]
@@ -990,10 +990,10 @@ theorem ksDist_concentration {n : ℕ}
           Function.update_self]
       have hind : |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)| ≤ 1 := by
         by_cases hy : y ≤ t <;> by_cases hxk : x k ≤ t
-        · rw [if_pos hy, if_pos hxk]; norm_num
-        · rw [if_pos hy, if_neg hxk]; norm_num
-        · rw [if_neg hy, if_pos hxk]; norm_num
-        · rw [if_neg hy, if_neg hxk]; norm_num
+        · rw [ite_eq_left hy, ite_eq_left hxk]; norm_num
+        · rw [ite_eq_left hy, ite_eq_right hxk]; norm_num
+        · rw [ite_eq_right hy, ite_eq_left hxk]; norm_num
+        · rw [ite_eq_right hy, ite_eq_right hxk]; norm_num
       simp only [dkwEmp]
       rw [← mul_sub, hsum, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
       calc (n : ℝ)⁻¹ * |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)|
@@ -1089,7 +1089,7 @@ theorem ksDist_concentration {n : ℕ}
   have hfinal : {ω | d ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - mP)}
       = {ω | t ≤ ksDist X μ ω - mP} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [ht_def, div_le_iff₀' hsqrt_pos]
   rw [hfinal]
   exact hbound
@@ -1129,7 +1129,7 @@ theorem dkw_uniform {n : ℕ}
         ≤ 1 := (measure_mono (Set.subset_univ _)).trans_eq measure_univ
       _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 16)) := by
           rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hbig
-  · push_neg at hbig
+  · push Not at hbig
     -- `4 e^{-d²/16} < 1` forces `d > 4`
     have hexp14 : Real.exp (-(d ^ 2) / 16) < 1 / 4 := by
       nlinarith [Real.exp_pos (-(d ^ 2) / 16)]
@@ -1152,7 +1152,7 @@ theorem dkw_uniform {n : ℕ}
     have hsub : {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
         ⊆ {ω | d - 4 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       rw [mul_sub]
       linarith
     have hconc := ksDist_concentration hn μ X hmeas hindep hd4

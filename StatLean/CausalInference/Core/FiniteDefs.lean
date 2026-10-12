@@ -1,6 +1,6 @@
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Notation.Indicator
 

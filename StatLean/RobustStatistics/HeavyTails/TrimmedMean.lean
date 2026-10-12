@@ -113,7 +113,7 @@ private theorem tail_tendsto_atBot (P : Measure ℝ) [IsProbabilityMeasure P] :
     Tendsto (fun M : ℝ => P.real {x | M ≤ x}) atBot (𝓝 1) := by
   have hU : (⋃ M : ℝ, {x : ℝ | M ≤ x}) = Set.univ := by
     ext x
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact ⟨x, le_rfl⟩
   have h := tendsto_measure_iUnion_atBot (μ := P) (s := fun M : ℝ => {x : ℝ | M ≤ x})
     (fun _ _ h _ hx => le_trans h hx)
@@ -126,7 +126,7 @@ private theorem tail_tendsto_atTop (P : Measure ℝ) [IsProbabilityMeasure P] :
     Tendsto (fun M : ℝ => P.real {x | M ≤ x}) atTop (𝓝 0) := by
   have hI : (⋂ M : ℝ, {x : ℝ | M ≤ x}) = (∅ : Set ℝ) := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
       not_forall, not_le]
     exact ⟨x + 1, by linarith⟩
   have h := tendsto_measure_iInter_atTop (μ := P) (s := fun M : ℝ => {x : ℝ | M ≤ x})
@@ -142,14 +142,14 @@ private theorem tail_le_of_forall_lt (P : Measure ℝ) [IsProbabilityMeasure P] 
     (h : ∀ M, M < Q → c ≤ P.real {x | M ≤ x}) : c ≤ P.real {x | Q ≤ x} := by
   have hanti : Antitone (fun k : ℕ => {x : ℝ | Q - 1 / (k + 1) ≤ x}) := by
     intro k l hkl x hx
-    simp only [Set.mem_setOf_eq] at hx ⊢
+    simp only [Set.mem_ofPred_eq] at hx ⊢
     have h1 : (1 : ℝ) / (l + 1) ≤ 1 / (k + 1) := by
       apply one_div_le_one_div_of_le (by positivity)
       exact_mod_cast Nat.succ_le_succ hkl
     linarith
   have hI : (⋂ k : ℕ, {x : ℝ | Q - 1 / (k + 1) ≤ x}) = {x : ℝ | Q ≤ x} := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro hx
       refine not_lt.1 fun hlt => ?_
@@ -202,14 +202,14 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
     -- `(Q, ∞)` is the increasing union of the `[Q + 1/(k+1), ∞)`; the atom at `Q` is null.
     have hmono : Monotone (fun k : ℕ => {x : ℝ | quantile P p + 1 / (k + 1) ≤ x}) := by
       intro k l hkl x hx
-      simp only [Set.mem_setOf_eq] at hx ⊢
+      simp only [Set.mem_ofPred_eq] at hx ⊢
       have h1 : (1:ℝ) / (l + 1) ≤ 1 / (k + 1) :=
         one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.succ_le_succ hkl)
       linarith
     have hU : (⋃ k : ℕ, {x : ℝ | quantile P p + 1 / (k + 1) ≤ x})
         = {x : ℝ | quantile P p < x} := by
       ext x
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
       constructor
       · rintro ⟨k, hk⟩
         have hpos : (0:ℝ) < 1 / (k + 1) := by positivity
@@ -236,7 +236,7 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
       refine ENNReal.toReal_mono (measure_ne_top P _) ?_
       calc P {x : ℝ | quantile P p ≤ x} ≤ P ({quantile P p} ∪ {x : ℝ | quantile P p < x}) := by
             refine measure_mono fun x hx => ?_
-            rcases eq_or_lt_of_le (Set.mem_setOf_eq ▸ hx) with h | h
+            rcases eq_or_lt_of_le (Set.mem_ofPred_eq ▸ hx) with h | h
             · exact Or.inl h.symm
             · exact Or.inr h
         _ ≤ P {quantile P p} + P {x : ℝ | quantile P p < x} := measure_union_le _ _
@@ -386,7 +386,7 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
     have hsub : {ξ : Ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
         ⊆ {ξ : Ξ | s < (∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)) / (n : ℝ)} := by
       intro ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       rw [hsum ξ, lt_div_iff₀ (by exact_mod_cast hn)]
       nlinarith [show (0:ℝ) < n by exact_mod_cast hn]
     refine le_trans (measure_mono hsub) (le_trans hbern (le_of_eq ?_))
@@ -434,8 +434,8 @@ private theorem sum_indicator_lt_eq_card {m : ℕ} (v : Fin m → ℝ) (c : ℝ)
   push_cast
   refine Finset.sum_congr rfl fun j _ => ?_
   by_cases hj : v j < c
-  · rw [Set.indicator_of_mem (show v j ∈ {x : ℝ | x < c} from hj), if_pos hj]
-  · rw [Set.indicator_of_notMem (show v j ∉ {x : ℝ | x < c} from hj), if_neg hj]
+  · rw [Set.indicator_of_mem (show v j ∈ {x : ℝ | x < c} from hj), ite_eq_left hj]
+  · rw [Set.indicator_of_notMem (show v j ∉ {x : ℝ | x < c} from hj), ite_eq_right hj]
 
 open Finset in
 /-- The indicator sum of an upper half-line is the corresponding count. -/
@@ -446,8 +446,8 @@ private theorem sum_indicator_gt_eq_card {m : ℕ} (v : Fin m → ℝ) (c : ℝ)
   push_cast
   refine Finset.sum_congr rfl fun j _ => ?_
   by_cases hj : c < v j
-  · rw [Set.indicator_of_mem (show v j ∈ {x : ℝ | c < x} from hj), if_pos hj]
-  · rw [Set.indicator_of_notMem (show v j ∉ {x : ℝ | c < x} from hj), if_neg hj]
+  · rw [Set.indicator_of_mem (show v j ∈ {x : ℝ | c < x} from hj), ite_eq_left hj]
+  · rw [Set.indicator_of_notMem (show v j ∉ {x : ℝ | c < x} from hj), ite_eq_right hj]
 
 /-- Mass strictly below a level, from the right-tail mass. -/
 private theorem measureReal_lt_eq (P : Measure ℝ) [IsProbabilityMeasure P] (c : ℝ) :
@@ -462,7 +462,7 @@ private theorem measureReal_gt_eq (P : Measure ℝ) [IsProbabilityMeasure P]
     P.real {x : ℝ | c < x} = P.real {x : ℝ | c ≤ x} := by
   have h : {x : ℝ | c ≤ x} = {c} ∪ {x : ℝ | c < x} := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_singleton_iff]
+    simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_singleton_iff]
     exact ⟨fun hx => (eq_or_lt_of_le hx).imp Eq.symm id, fun hx => by
       rcases hx with hx | hx
       · exact le_of_eq hx.symm
@@ -623,7 +623,7 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
   -- ### A bracket fails only if one of the four counts deviates.
   refine one_sub_four_le_measureReal (Real.exp_pos _).le ?_ hE1 hE2 hE3 hE4
   intro ξ hξ
-  simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_and_or] at hξ
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_and_or] at hξ
   have hrn' : r ≤ n := by omega
   have hcast : ((n - r : ℕ) : ℝ) = (n:ℝ) - r := by
     push_cast [Nat.cast_sub hrn']
@@ -640,7 +640,7 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
     have hcount' : (r:ℝ) ≤ ((Finset.univ.filter fun j =>
         Y j ξ < quantile P ((r:ℝ) / (2 * n))).card : ℝ) := by exact_mod_cast hcount
     have hval : (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n = (r:ℝ) := by field_simp; ring
-    simp only [Set.mem_setOf_eq, sum_indicator_lt_eq_card]
+    simp only [Set.mem_ofPred_eq, sum_indicator_lt_eq_card]
     linarith
   · refine Or.inl (Or.inl (Or.inr ?_))
     have hc : ¬ ((a:ℕ) + 1 ≤ (Finset.univ.filter fun j =>
@@ -653,7 +653,7 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
         quantile P (2 * (r:ℝ) / n) < Y j ξ).card : ℝ) := by
       rw [← hcast]; exact_mod_cast hcount
     have hval : (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n = (n:ℝ) - r := by field_simp; ring
-    simp only [Set.mem_setOf_eq, sum_indicator_gt_eq_card]
+    simp only [Set.mem_ofPred_eq, sum_indicator_gt_eq_card]
     linarith
   · refine Or.inl (Or.inr ?_)
     have hc : ¬ (n - (b:ℕ) ≤ (Finset.univ.filter fun j =>
@@ -667,7 +667,7 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
         Y j ξ < quantile P (1 - 2 * (r:ℝ) / n)).card : ℝ) := by
       rw [← hcast]; exact_mod_cast hcount
     have hval : (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n = (n:ℝ) - r := by field_simp; ring
-    simp only [Set.mem_setOf_eq, sum_indicator_lt_eq_card]
+    simp only [Set.mem_ofPred_eq, sum_indicator_lt_eq_card]
     linarith
   · refine Or.inr ?_
     have hc : ¬ ((b:ℕ) + 1 ≤ (Finset.univ.filter fun j =>
@@ -680,7 +680,7 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
     have hcount' : (r:ℝ) ≤ ((Finset.univ.filter fun j =>
         quantile P (1 - (r:ℝ) / (2 * n)) < Y j ξ).card : ℝ) := by exact_mod_cast hcount
     have hval : (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n = (r:ℝ) := by field_simp; ring
-    simp only [Set.mem_setOf_eq, sum_indicator_gt_eq_card]
+    simp only [Set.mem_ofPred_eq, sum_indicator_gt_eq_card]
     linarith
 
 /-! ### The truncation bias
@@ -861,7 +861,7 @@ private theorem quantile_mono (P : Measure ℝ) [IsProbabilityMeasure P] {p p' :
   refine csSup_le_csSup (quantile_set_nonempty_bddAbove P (by linarith) hp').2
     (quantile_set_nonempty_bddAbove P hp (by linarith)).1 ?_
   intro M hM
-  simp only [Set.mem_setOf_eq] at hM ⊢
+  simp only [Set.mem_ofPred_eq] at hM ⊢
   linarith
 
 /-- **The sharp truncation-bias bound** (`LM Theorem 6` proof, the Cauchy–Schwarz display,
@@ -936,7 +936,7 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
         _ = σ2 := hvar
     · have hsub : {x : ℝ | 0 < x - β}
           ⊆ {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := fun x hx => by
-        simp only [Set.mem_setOf_eq] at hx ⊢
+        simp only [Set.mem_ofPred_eq] at hx ⊢
         linarith
       calc P.real {x : ℝ | 0 < x - β}
           ≤ P.real {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := measureReal_mono hsub
@@ -953,7 +953,7 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
         _ = σ2 := hvar
     · have hsub : {x : ℝ | 0 < α - x} ⊆ {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} :=
         fun x hx => by
-          simp only [Set.mem_setOf_eq] at hx ⊢
+          simp only [Set.mem_ofPred_eq] at hx ⊢
           linarith
       calc P.real {x : ℝ | 0 < α - x}
           ≤ P.real {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} := measureReal_mono hsub
@@ -1046,7 +1046,7 @@ private theorem quantile_upper_le {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmea
     linarith
   · have hsub : {x : ℝ | M ≤ x} ⊆ {x : ℝ | (M - μ₀) ≤ |x - μ₀|} := by
       intro x hx
-      simp only [Set.mem_setOf_eq] at hx ⊢
+      simp only [Set.mem_ofPred_eq] at hx ⊢
       exact le_trans (by linarith) (le_abs_self (x - μ₀))
     have hcheb := chebyshev_tail hL2 hmean hvar (show (0:ℝ) < M - μ₀ by linarith)
     have hmono : P.real {x : ℝ | M ≤ x} ≤ P.real {x : ℝ | M - μ₀ ≤ |x - μ₀|} :=
@@ -1073,7 +1073,7 @@ private theorem le_quantile_lower {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmea
   have hsub : {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x}ᶜ
       ⊆ {x : ℝ | Real.sqrt (σ2 / p) ≤ |x - μ₀|} := by
     intro x hx
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx ⊢
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx ⊢
     rw [abs_sub_comm]
     exact le_trans (by linarith) (le_abs_self (μ₀ - x))
   have hcompl : P.real {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x}ᶜ
@@ -1342,7 +1342,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
           - ∫ x, truncate α₀ β₀ x ∂P|} = 0 := by
       refine measure_mono_null ?_ (ae_iff.1 hallae)
       intro ξ hξ hcon
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       rw [hmeaneq ξ, Finset.sum_congr rfl (fun i _ => hcon i), Finset.sum_const, smul_zero,
         zero_div, abs_zero] at hξ
       linarith
@@ -1488,7 +1488,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
             < (∑ i, ((fun x => -truncate α₀ β₀ x) (X i ξ)
                 - -∫ y, truncate α₀ β₀ y ∂P)) / n} := by
       intro ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       rw [hmeaneq ξ] at hξ
       have hsum : (∑ i, ((fun x => -truncate α₀ β₀ x) (X i ξ)
             - -∫ y, truncate α₀ β₀ y ∂P))
@@ -1498,7 +1498,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
       rcases lt_abs.1 hξ with h | h
       · exact Or.inl h
       · refine Or.inr ?_
-        simp only [Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq]
         rw [hsum, neg_div]
         exact h
     refine le_trans (le_trans (measure_mono hsub) (measure_union_le _ _)) ?_
@@ -1524,7 +1524,7 @@ private theorem measurable_orderStat {m : ℕ} {W : Fin m → Ξ → ℝ}
   have hset : (fun ξ => orderStat (fun i => W i ξ) k) ⁻¹' Set.Iic t
       = (fun ξ => (univ.filter fun j => W j ξ ≤ t).card) ⁻¹' {c : ℕ | (k:ℕ) + 1 ≤ c} := by
     ext ξ
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
     constructor
     · intro h
       refine le_trans (card_le_orderStat_le (fun i => W i ξ) k) (Finset.card_le_card ?_)
@@ -1636,7 +1636,7 @@ private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a
             Good (orderStat p.1 a) (orderStat p.1 b)
               ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|})) = ∅ := by
         ext ξ
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
           not_and]
         exact fun hcon => absurd hcon hg
       rw [hempty, measure_empty]
@@ -1784,7 +1784,7 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
       hgood.1 hgood.2.1 hgood.2.2.1 hgood.2.2.2
     refine le_trans (measure_mono ?_) hconc
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have htri := abs_sub_le (sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)))
       (∫ x, truncate α₀ β₀ x ∂P) μ₀
     linarith

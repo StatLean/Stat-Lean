@@ -81,7 +81,7 @@ density bounds. -/
 private lemma gammaLaplaceReal_eq {a x ψ : ℝ} (hψ : 0 < ψ) :
     gammaPDFReal a 2⁻¹ ψ * laplacePDFReal ψ x
       = dlNormConst a * ψ ^ (a - 2) * Real.exp (-ψ / 2 - |x| / ψ) := by
-  rw [gammaPDFReal, if_pos hψ.le, laplacePDFReal, dlNormConst]
+  rw [gammaPDFReal, ite_eq_left hψ.le, laplacePDFReal, dlNormConst]
   have hE : Real.exp (-(2⁻¹ * ψ)) * Real.exp (-|x| / ψ)
       = Real.exp (-ψ / 2 - |x| / ψ) := by rw [← Real.exp_add]; ring_nf
   have hpow : (1 / 2 : ℝ) ^ (a + 1) = (1 / 2 : ℝ) ^ a * (1 / 2) := by

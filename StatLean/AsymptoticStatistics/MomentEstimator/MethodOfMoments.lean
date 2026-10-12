@@ -466,9 +466,9 @@ theorem method_of_moments_normality {d : ℕ}
     have hsub : ∀ n, {ξ | empiricalMoment f n X ξ ∉ U}
         ⊆ {ξ | ε ≤ ‖empiricalMoment f n X ξ - μ_vec‖} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       exact hξ (hball (by simpa [Metric.mem_ball, dist_eq_norm] using hlt))
     exact squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg)
       (Eventually.of_forall fun n => measureReal_mono (hsub n)) (hcons ε hε)
@@ -524,7 +524,7 @@ theorem method_of_moments_normality {d : ℕ}
       intro ξ hξ
       by_cases hmem : empiricalMoment f n X ξ ∈ U
       · left
-        simp only [Set.mem_setOf_eq] at hξ ⊢
+        simp only [Set.mem_ofPred_eq] at hξ ⊢
         have hWZ : Wn n ξ - Zn n ξ = -(Real.sqrt n •
             (φ (empiricalMoment f n X ξ) - φ μ_vec
               - (↑e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d))
@@ -548,14 +548,14 @@ theorem method_of_moments_normality {d : ℕ}
     refine (hDist ε hε).congr fun n => ?_
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [dist_eq_norm, norm_sub_rev]
   refine ⟨θhat, hθhat_meas, ?_, ?_, ?_⟩
   · -- existence w.p. → 1
     have hsub_ex : ∀ n, {ξ | empiricalMoment f n X ξ ∈ U}
         ⊆ {ξ | e (θhat n ξ) = empiricalMoment f n X ξ} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       rw [hθhat_eq n ξ hξ]; exact hrinv _ hξ
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' hmassU tendsto_const_nhds
       (Eventually.of_forall fun n => measureReal_mono (hsub_ex n))

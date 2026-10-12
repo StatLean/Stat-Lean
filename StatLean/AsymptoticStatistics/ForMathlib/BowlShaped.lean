@@ -102,13 +102,13 @@ lemma truncate (h : BowlShaped L) (M : ℝ≥0∞) :
     by_cases hMc : M ≤ c
     · have hsub : {x | L x ⊓ M ≤ c} = Set.univ := by
         ext x
-        simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true, inf_le_iff]
+        simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true, inf_le_iff]
         exact Or.inr hMc
       rw [hsub]
       exact convex_univ
     · have hsub : {x | L x ⊓ M ≤ c} = {x | L x ≤ c} := by
         ext x
-        simp only [Set.mem_setOf_eq, inf_le_iff]
+        simp only [Set.mem_ofPred_eq, inf_le_iff]
         exact ⟨fun h' => h'.resolve_right hMc, Or.inl⟩
       rw [hsub]
       exact h.convex_sublevel c
@@ -147,7 +147,7 @@ lemma indicator_compl_of_convexSymm
         refine ⟨fun hx_le => ?_, fun hxC => ?_⟩
         · by_contra hxC
           have hxCc : x ∈ Cᶜ := hxC
-          rw [Set.mem_setOf_eq, Set.indicator_of_mem hxCc] at hx_le
+          rw [Set.mem_ofPred_eq, Set.indicator_of_mem hxCc] at hx_le
           exact hc (top_unique hx_le)
         · have hxCc : x ∉ Cᶜ := fun h => h hxC
           change Cᶜ.indicator (fun _ : E => (∞ : ℝ≥0∞)) x ≤ c
@@ -191,7 +191,7 @@ lemma norm_pow {E : Type*}
                Real.rpow_one] at h'
       have hsub : {x : E | ENNReal.ofReal (‖x‖ ^ p) ≤ c} = Metric.closedBall (0 : E) r := by
         ext x
-        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right,
+        simp only [Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right,
                    ENNReal.ofReal_le_iff_le_toReal hc]
         exact h_iff (‖x‖) (norm_nonneg _)
       rw [hsub]; exact convex_closedBall _ _
@@ -292,7 +292,7 @@ lemma lowerSemicontinuous_lscEnvelope [TopologicalSpace E] (L : E → ℝ≥0∞
   obtain ⟨U, hU_mem, hU_le⟩ := Filter.eventually_iff_exists_mem.mp hc
   rw [mem_nhds_iff] at hU_mem
   obtain ⟨V, hVU, hV_open, hxV⟩ := hU_mem
-  rw [Set.mem_setOf_eq, Filter.eventually_iff_exists_mem]
+  rw [Set.mem_ofPred_eq, Filter.eventually_iff_exists_mem]
   refine ⟨V, hV_open.mem_nhds hxV, fun y hyV => ?_⟩
   change c ≤ lscEnvelope L y
   unfold lscEnvelope

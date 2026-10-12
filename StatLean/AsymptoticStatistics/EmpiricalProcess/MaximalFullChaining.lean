@@ -432,7 +432,7 @@ theorem fullClamped_chain_A_dyadic_bound :
             = ⋂ (p : ℕ) (hp₀ : q₀ ≤ p) (hpq : p ≤ m),
                 {x | B.Δ p (B.ancestor (le_trans hp₀ hpq) (B.parent hm i) p hp₀ hpq) x
                     ≤ Real.sqrt (n + 1 : ℕ) * chainThreshold B δ p} := by
-          ext x; simp only [chainA, Set.mem_setOf_eq, Set.mem_iInter]
+          ext x; simp only [chainA, Set.mem_ofPred_eq, Set.mem_iInter]
         rw [hset]
         refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hp₀ =>
           MeasurableSet.iInter (fun hpq => ?_)))
@@ -718,7 +718,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
                           ≤ Real.sqrt (n + 1 : ℕ) * chainThreshold B δ p})
                   ∩ {x | Real.sqrt (n + 1 : ℕ) * chainThreshold B δ (m + 1) < B.Δ (m + 1) i x}) := by
             ext x
-            simp only [chainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+            simp only [chainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
           rw [hset]
           refine MeasurableSet.inter (MeasurableSet.const _) ?_
           refine MeasurableSet.inter ?_ (measurableSet_lt measurable_const (B.Δ_meas hq0_le i))
@@ -823,7 +823,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
             refine Finset.sum_congr rfl (fun p hp => ?_)
             obtain ⟨hpq0, _⟩ := Finset.mem_Icc.mp hp
             rw [hb_def]
-            simp only [if_pos hpq0]
+            simp only [ite_eq_left hpq0]
           calc ENNReal.ofReal (K * (2 : ℝ) ^ (q₀ + 1)) * (2⁻¹ : ℝ≥0∞) ^ (m + 1)
                   * ENNReal.ofReal δ
                   * ∑ p ∈ Finset.Icc q₀ (m + 1),
@@ -937,7 +937,7 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
               funext x
               simp only [truncOsc]
               rw [Set.indicator_of_notMem, mul_zero]
-              simp only [Set.mem_setOf_eq, chainB]
+              simp only [Set.mem_ofPred_eq, chainB]
               exact fun h => hq0q h.1
             rw [hfun]
             have : empiricalProcess P (n + 1) (fun k : Fin (n + 1) => X k.val ξ) (fun _ => (0 : ℝ)) = 0 := by
@@ -980,13 +980,13 @@ theorem fullClamped_chain_Bseries_dyadic_bound :
               by_cases hpq0 : q₀ ≤ p
               · exact ⟨p - q₀, Nat.add_sub_cancel' hpq0⟩
               · exfalso; apply hp
-                rw [hb_def]; simp only [if_neg hpq0, mul_zero]
+                rw [hb_def]; simp only [ite_eq_right hpq0, mul_zero]
             rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
             refine tsum_congr fun j => ?_
             -- term `j`: `(2⁻¹)^{q₀+j} · b(q₀+j) = (2⁻¹)^{q₀}·(2⁻¹)^j·ofReal δ·integrand`.
             have hbj : b (q₀ + j)
                 = ENNReal.ofReal δ * entropyIntegrand ((1/2 : ℝ) ^ j * δ) F P := by
-              rw [hb_def]; simp only [if_pos (Nat.le_add_right q₀ j), Nat.add_sub_cancel_left]
+              rw [hb_def]; simp only [ite_eq_left (Nat.le_add_right q₀ j), Nat.add_sub_cancel_left]
             rw [hbj, pow_add, hofpow j]
             rw [show ((1/2 : ℝ) ^ j * δ) = (1/2 : ℝ) ^ j * δ from rfl,
               ENNReal.ofReal_mul (by positivity)]
@@ -1488,7 +1488,7 @@ private theorem fullClamped_Gn_telescope_link_bound
         {x | B.Δ p (B.ancestor (le_trans hp₀ hpq) (c k) p hp₀ hpq) x
             ≤ Real.sqrt n * chainThreshold B δ p} := by
       ext x
-      simp only [hAs_def, chainA, Set.mem_setOf_eq, Set.mem_iInter]
+      simp only [hAs_def, chainA, Set.mem_ofPred_eq, Set.mem_iInter]
     rw [hset]
     refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hp₀ =>
       MeasurableSet.iInter (fun hpq => ?_)))
@@ -1504,7 +1504,7 @@ private theorem fullClamped_Gn_telescope_link_bound
           ∩ {x | Real.sqrt n * chainThreshold B δ (q₀ + k)
               < B.Δ (q₀ + k) (c k) x}) := by
       ext x
-      simp only [hBs_def, chainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+      simp only [hBs_def, chainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
     rw [hset]
     refine MeasurableSet.inter (MeasurableSet.const _) ?_
     refine MeasurableSet.inter ?_
@@ -1560,12 +1560,12 @@ private theorem fullClamped_Gn_telescope_link_bound
   -- `x ∈ As k ↔ ∀ j ≤ k, small j x`.
   have hAs_iff : ∀ k x, x ∈ As k ↔ ∀ j ≤ k, small j x := by
     intro k x
-    simp only [hAs_def, hc_def, Set.mem_setOf_eq]
+    simp only [hAs_def, hc_def, Set.mem_ofPred_eq]
     rw [chainA_chain_iff B hf δ n k x]
   -- `x ∈ Bs (k+1) ↔ (∀ j ≤ k, small j x) ∧ ¬ small (k+1) x`.
   have hBs_iff : ∀ k x, x ∈ Bs (k+1) ↔ (∀ j ≤ k, small j x) ∧ ¬ small (k+1) x := by
     intro k x
-    simp only [hBs_def, hc_def, Set.mem_setOf_eq]
+    simp only [hBs_def, hc_def, Set.mem_ofPred_eq]
     rw [chainB_chain_iff B hf δ n (k+1) x]
     constructor
     · rintro ⟨_, hsm, hcr⟩
@@ -1593,7 +1593,7 @@ private theorem fullClamped_Gn_telescope_link_bound
         have hA0 : x ∈ As 0 := (hAs_iff 0 x).mpr (fun j hj => by
           have : j = 0 := Nat.le_zero.mp hj
           subst this; exact hsmall0 x)
-        simp only [hRrem_def, hindA, if_pos hA0, mul_one]
+        simp only [hRrem_def, hindA, ite_eq_left hA0, mul_one]
     | succ K ih =>
         -- Reduce to `Rrem (K+1) + linkJ K + linkB (K+1) = Rrem K`, then use `ih`.
         rw [Finset.sum_range_succ, Finset.sum_range_succ]
@@ -1614,20 +1614,22 @@ private theorem fullClamped_Gn_telescope_link_bound
                 · subst h; exact hsk1)
               have hBk1 : x ∉ Bs (K+1) := by
                 rw [hBK1]; rintro ⟨_, hcr⟩; exact hcr hsk1
-              simp only [if_pos hAk, if_pos hAk1, if_neg hBk1, mul_one, mul_zero, add_zero]
+              simp only [ite_eq_left hAk, ite_eq_left hAk1, ite_eq_right hBk1, mul_one, mul_zero,
+                  add_zero]
               ring
             · -- crosses at K+1: As(K+1) fails, Bs(K+1) holds
               have hAk1 : x ∉ As (K+1) := by
                 rw [hAK1]; intro h; exact hsk1 (h (K+1) le_rfl)
               have hBk1 : x ∈ Bs (K+1) := hBK1.mpr ⟨hsmK, hsk1⟩
-              simp only [if_pos hAk, if_neg hAk1, if_pos hBk1, mul_one, mul_zero, zero_add]
+              simp only [ite_eq_left hAk, ite_eq_right hAk1, ite_eq_left hBk1, mul_one, mul_zero,
+                  zero_add]
               ring
           · -- chain already crossed before K: all three indicators are 0
             have hAk1 : x ∉ As (K+1) := by
               rw [hAK1]; intro h; exact hAk (hAK.mpr (fun j hj => h j (by omega)))
             have hBk1 : x ∉ Bs (K+1) := by
               rw [hBK1]; rintro ⟨hsm, _⟩; exact hAk (hAK.mpr hsm)
-            simp only [if_neg hAk, if_neg hAk1, if_neg hBk1, mul_zero, add_zero]
+            simp only [ite_eq_right hAk, ite_eq_right hAk1, ite_eq_right hBk1, mul_zero, add_zero]
         -- Combine the split sums via `hstep` and the inductive hypothesis.
         rw [ih]
         -- rearrange so `hstep` applies
@@ -1975,7 +1977,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
             {x | B.Δ p (B.ancestor (le_trans hp₀ hpq) i p hp₀ hpq) x ≤
               Real.sqrt n * chainThreshold B (8 * δ) p} := by
         ext x
-        simp only [chainA, Set.mem_setOf_eq, Set.mem_iInter]
+        simp only [chainA, Set.mem_ofPred_eq, Set.mem_iInter]
       rw [hset]
       refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hp₀ =>
         MeasurableSet.iInter (fun hpq => ?_)))
@@ -1989,7 +1991,7 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
                   (le_of_lt hpq)) x ≤ Real.sqrt n * chainThreshold B (8 * δ) p}) ∩
             {x | Real.sqrt n * chainThreshold B (8 * δ) q < B.Δ q i x}) := by
         ext x
-        simp only [chainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+        simp only [chainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
       rw [hset]
       refine MeasurableSet.inter (MeasurableSet.const _) ?_
       refine MeasurableSet.inter ?_
@@ -2034,8 +2036,8 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
         (measurable_const.indicator (hchainB_meas (0 + q) i))
     have hMaj_meas : Measurable Maj := by
       rw [hMaj_def]
-      exact (hhead_meas.add (Measurable.ennreal_tsum hoscDom_meas)).add
-        (Measurable.ennreal_tsum hjump_meas)
+      exact (hhead_meas.add (Measurable.tsum hoscDom_meas)).add
+        (Measurable.tsum hjump_meas)
     -- `head` is `levelRepSup`: head visibility makes truncation inert.
     have hrep : ∀ i : Fin (B.Nq 0),
         truncRep B (fun _ => t) (8 * δ) n 0 i = B.π 0 i := by
@@ -2077,9 +2079,9 @@ theorem fullClamped_chain_measurableMajorant_dyadic_bound :
       rw [lintegral_const, measure_univ, mul_one]
       rfl
     have hosc_sum_meas : Measurable (fun ξ => ∑' q, oscDom q ξ) :=
-      Measurable.ennreal_tsum hoscDom_meas
+      Measurable.tsum hoscDom_meas
     have hjump_sum_meas : Measurable (fun ξ => ∑' q, jump q ξ) :=
-      Measurable.ennreal_tsum hjump_meas
+      Measurable.tsum hjump_meas
     have hMaj_split : ∫⁻ ξ, Maj ξ ∂μ =
         (∫⁻ ξ, head ξ ∂μ) + (∑' q, ∫⁻ ξ, oscDom q ξ ∂μ) +
           (∑' q, ∫⁻ ξ, jump q ξ ∂μ) := by

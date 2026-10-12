@@ -157,7 +157,7 @@ theorem isCompactOperator_mercerCLM_finiteRank {ι : Type*} (s : Finset ι)
           (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i))) : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ)) h
         = ∑ i ∈ s, (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i), h⟫_𝕜) •
             ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i) := by
-      rw [ContinuousLinearMap.sum_apply]
+      rw [sum_apply]
       exact Finset.sum_congr rfl fun i _ => rfl
     refine Lp.ext ?_
     rw [hRHS]
@@ -182,7 +182,7 @@ private theorem mercerCLM_sub {K₁ K₂ : X → X → 𝕜}
   filter_upwards [Lp.coeFn_sub (mercerCLM μ h₁ g) (mercerCLM μ h₂ g),
     mercerCLM_coeFn_ae h₁ g, mercerCLM_coeFn_ae h₂ g,
     mercerCLM_coeFn_ae (K := fun x y => K₁ x y - K₂ x y) h₁₂ g] with x hx hx1 hx2 hx3
-  rw [ContinuousLinearMap.sub_apply, hx, hx3]
+  rw [sub_apply, hx, hx3]
   simp only [Pi.sub_apply, hx1, hx2]
   have i1 : Integrable (fun y => K₁ x y * (g : X → 𝕜) y) μ :=
     (isL2Symbol_of_continuous h₁ x).integrable_mul (Lp.memLp _)

@@ -248,7 +248,7 @@ theorem ae_pooledEmpiricalLaw_admissibleOrZero
     rw [show Q = pooledEmpiricalLaw P n
       (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) by rfl]
     simp only [pooledEmpiricalLaw, lintegral_smul_measure, lintegral_add_measure,
-      empiricalMeasure, lintegral_finset_sum_measure, lintegral_dirac' _ hVmeas,
+      empiricalMeasure, lintegral_finsetSum_measure, lintegral_dirac' _ hVmeas,
       smul_eq_mul]
     exact ENNReal.mul_lt_top (by norm_num) <|
       ENNReal.add_lt_top.2 ⟨ENNReal.add_lt_top.2 ⟨hVint,
@@ -455,7 +455,7 @@ theorem exists_localizedPooledClassNet
           dsimp [K]
           unfold uniformLpCoveringNumber
           exact le_iSup_of_le R (le_iSup_of_le hRadm le_rfl)
-        have hKcoe : K = (K.toNat : ℕ∞) := (ENat.coe_toNat hKtop.ne).symm
+        have hKcoe : K = (K.toNat : ℕ∞) := (ENat.natCast_toNat hKtop.ne).symm
         have hNcoe : K < (N : ℕ∞) := by
           rw [hKcoe]
           exact_mod_cast Nat.lt_succ_self K.toNat
@@ -474,7 +474,7 @@ theorem exists_localizedPooledClassNet
         have hrep (g : Ω → ℝ) (hg : Good g) :
             rep g ∈ F ∧ outerLpNorm R (rep g - g) r <
               ENNReal.ofReal η * outerLpNorm R G r := by
-          simpa only [rep, dif_pos hg] using Classical.choose_spec hg
+          simpa only [rep, dite_eq_left hg] using Classical.choose_spec hg
         let S' : Finset (Ω → ℝ) := S.filter Good
         let T : Finset (Ω → ℝ) := S'.image (fun g => localizedFunction A (rep g))
         refine ⟨T, ?_, ?_⟩
@@ -659,7 +659,7 @@ private theorem bounded_iid_empirical_close_half
       Real.sqrt (n : ℝ) * δ ≤
         |empiricalProcess P n (fun i : Fin n => X i.val ξ) f|} := by
     ext ξ
-    simp only [bad, Set.mem_setOf_eq, empiricalProcess, abs_mul,
+    simp only [bad, Set.mem_ofPred_eq, empiricalProcess, abs_mul,
       abs_of_pos hsqrtn]
     constructor <;> intro h <;> nlinarith [abs_nonneg
       (empiricalAvg f n (fun i : Fin n => X i.val ξ) - ∫ x, f x ∂P)]
@@ -700,7 +700,7 @@ private theorem bounded_iid_empirical_close_half
   have hgood_eq : {ξ |
       |empiricalAvg f n (fun i : Fin n => X i.val ξ) - ∫ x, f x ∂P| < ε / 2} = badᶜ := by
     ext ξ
-    simp only [bad, δ, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    simp only [bad, δ, Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
   have hbadtop : μ bad ≠ ⊤ :=
     ne_of_lt (hbad.trans_lt (by norm_num : (2 : ℝ≥0∞)⁻¹ < ⊤))
   rw [hgood_eq, measure_compl hbad_meas hbadtop, measure_univ]
@@ -732,7 +732,7 @@ theorem empirical_ghost_symmetrization_outer
   refine ⟨N, fun n hn => outerMeasureStar_le_two_prod_of_sections μ
     (gcBad E P X n ε) (ghostBad E X n (ε / 2)) ?_⟩
   intro ξ hξ
-  rw [gcBad, Set.mem_setOf_eq, gcDeviation, supNormOver] at hξ
+  rw [gcBad, Set.mem_ofPred_eq, gcDeviation, supNormOver] at hξ
   rw [lt_iSup_iff] at hξ
   obtain ⟨f, hξ⟩ := hξ
   rw [lt_iSup_iff] at hξ
@@ -742,7 +742,7 @@ theorem empirical_ghost_symmetrization_outer
     (ENNReal.ofReal_lt_ofReal_iff_of_nonneg hε.le).mp hξf
   refine (hclose n hn f hf).trans (measure_mono ?_)
   intro ξ' hξ'
-  simp only [Set.mem_setOf_eq] at hξ'
+  simp only [Set.mem_ofPred_eq] at hξ'
   change ENNReal.ofReal (ε / 2) < ghostDeviation E X n ξ ξ'
   rw [ghostDeviation]
   have hdiff : ε / 2 <
@@ -889,7 +889,7 @@ private theorem measurable_pairedFiniteSample
     {Ξ : Type*} [MeasurableSpace Ξ] (X : ℕ → Ξ → Ω) (n : ℕ)
     (hXmeas : ∀ i, Measurable (X i)) :
     Measurable (pairedFiniteSample X n) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   exact ((hXmeas i.val).comp measurable_fst).prodMk
     ((hXmeas i.val).comp measurable_snd)
@@ -1194,7 +1194,7 @@ private theorem firstRademacherCrossing_reflect
       exact hspec
     have h' : HasRademacherCrossing a t (reflectAfterFirstCrossing a t σ) :=
       ⟨Nat.find h, hspec'⟩
-    rw [firstRademacherCrossing, dif_pos h', hτ]
+    rw [firstRademacherCrossing, dite_eq_left h', hτ]
     symm
     apply Nat.find_congr (q := fun j => j ≤ N ∧
       t ≤ rademacherPartialSum a (reflectAfterFirstCrossing a t σ) j)
@@ -1317,7 +1317,7 @@ private theorem fairBoolCube_eq_uniform (N : ℕ) :
   simp_rw [hpoint]
   simp only [Set.indicator_singleton, PMF.uniformOfFintype_apply, Fintype.card_pi,
     Fintype.card_bool, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single', Finset.mem_univ, if_true]
+    Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single', Finset.mem_univ, ite_true]
   exact ENNReal.inv_pow.symm
 
 set_option backward.isDefEq.respectTransparency false in
@@ -1467,7 +1467,7 @@ private theorem pooled_close_sample_sum
           ∫⁻ x, ENNReal.ofReal |(f - g) x| ∂Q := by
         dsimp [S, Q]
         simp only [pooledEmpiricalLaw, lintegral_smul_measure,
-          lintegral_add_measure, empiricalMeasure, lintegral_finset_sum_measure,
+          lintegral_add_measure, empiricalMeasure, lintegral_finsetSum_measure,
           smul_eq_mul]
         rw [hdiracSum z, hdiracSum z']
         rw [Finset.sum_add_distrib]
@@ -2006,7 +2006,7 @@ private theorem empirical_ghostBlock_symmetrization_outer
   refine (hclose n (hmN.trans (Finset.mem_Icc.mp hnmem).1) f hf).trans
     (measure_mono ?_)
   intro ξ' hξ'
-  simp only [Set.mem_setOf_eq] at hξ' ⊢
+  simp only [Set.mem_ofPred_eq] at hξ' ⊢
   refine ⟨n, hnmem, ?_⟩
   change ENNReal.ofReal (ε / 2) < ghostDeviation E X n ξ ξ'
   rw [ghostDeviation]

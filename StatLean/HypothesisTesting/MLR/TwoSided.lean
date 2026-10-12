@@ -129,16 +129,16 @@ private lemma twoSidedTest_eq_val (T : 𝓧 → ℝ) (C₁ C₂ γ₁ γ₂ : �
     twoSidedTest T C₁ C₂ γ₁ γ₂ x = twoSidedVal C₁ C₂ γ₁ γ₂ (T x) := by
   unfold twoSidedTest twoSidedVal
   by_cases h1 : T x = C₁
-  · rw [if_pos h1, if_pos h1]
-  · rw [if_neg h1, if_neg h1]
+  · rw [ite_eq_left h1, ite_eq_left h1]
+  · rw [ite_eq_right h1, ite_eq_right h1]
     by_cases h2 : T x = C₂
-    · rw [if_pos h2, if_pos h2]
-    · rw [if_neg h2, if_neg h2]
+    · rw [ite_eq_left h2, ite_eq_left h2]
+    · rw [ite_eq_right h2, ite_eq_right h2]
       by_cases h3 : C₁ < T x
-      · rw [if_pos h3]; by_cases h4 : T x < C₂
-        · rw [if_pos ⟨h3, h4⟩, if_pos h4]
-        · rw [if_neg (fun h => h4 h.2), if_neg h4]
-      · rw [if_neg h3, if_neg (fun h => h3 h.1)]
+      · rw [ite_eq_left h3]; by_cases h4 : T x < C₂
+        · rw [ite_eq_left ⟨h3, h4⟩, ite_eq_left h4]
+        · rw [ite_eq_right (fun h => h4 h.2), ite_eq_right h4]
+      · rw [ite_eq_right h3, ite_eq_right (fun h => h3 h.1)]
 
 /-- With `γᵢ ∈ [0,1]` and `C₁ < C₂`, the scalar value lies in `[0,1]`. -/
 private lemma twoSidedVal_mem_Icc {C₁ C₂ γ₁ γ₂ : ℝ}
@@ -170,7 +170,7 @@ private lemma twoSidedVal_sub_sep {C₁ C₂ C₁' C₂' γ₁ γ₂ γ₁' γ�
   obtain ⟨hγ₁0, hγ₁1⟩ := hγ₁; obtain ⟨hγ₂0, hγ₂1⟩ := hγ₂
   obtain ⟨hγ₁'0, hγ₁'1⟩ := hγ₁'; obtain ⟨hγ₂'0, hγ₂'1⟩ := hγ₂'
   by_contra hst
-  push_neg at hst
+  push Not at hst
   -- `s ≤ t`; derive a contradiction with `D s > 0`, `D t < 0`.
   unfold twoSidedVal at hs ht
   rcases hright with hr | ⟨hrEq, hrγ⟩
@@ -249,7 +249,7 @@ private lemma ae_eq_zero_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → �
   by_cases hneg : ∃ x, D x < 0
   swap
   · -- `D ≥ 0` everywhere: a nonnegative integrand with zero integral.
-    push_neg at hneg
+    push Not at hneg
     have hnn : 0 ≤ᵐ[μ] fun x => D x * p₁ x :=
       Filter.Eventually.of_forall fun x => mul_nonneg (hneg x) (hp₁ x).le
     filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hnn hint₁).mp h₁] with x hx
@@ -258,7 +258,7 @@ private lemma ae_eq_zero_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → �
   by_cases hpos : ∃ y, 0 < D y
   swap
   · -- `D ≤ 0` everywhere: the same, applied to `−D·p₁`.
-    push_neg at hpos
+    push Not at hpos
     have hnn : 0 ≤ᵐ[μ] fun x => -(D x * p₁ x) :=
       Filter.Eventually.of_forall fun x => by
         change (0 : ℝ) ≤ -(D x * p₁ x)
@@ -311,7 +311,7 @@ private lemma ae_eq_zero_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → �
     · exact Or.inr (by linarith)
   by_cases hexc : ∃ x, D x ≠ 0 ∧ p₂ x = k * p₁ x
   swap
-  · push_neg at hexc
+  · push Not at hexc
     filter_upwards [hdisj] with x hx
     simp only [Pi.zero_apply]
     rcases hx with h | h
@@ -437,11 +437,11 @@ private lemma integral_pos_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → 
     exact hcancel x hx
   obtain ⟨x₀, hx₀⟩ : ∃ x, D x < 0 := by
     by_contra hc
-    push_neg at hc
+    push Not at hc
     exact hnegex (Filter.Eventually.of_forall hc)
   obtain ⟨y₀, hy₀⟩ : ∃ y, 0 < D y := by
     by_contra hc
-    push_neg at hc
+    push Not at hc
     exact hposex (Filter.Eventually.of_forall hc)
   -- The separating ratio constant.
   have hratio : ∀ x y, D x < 0 → 0 < D y → p₂ x / p₁ x < p₂ y / p₁ y := by
@@ -488,23 +488,23 @@ private lemma integral_pos_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → 
       · exact Or.inr (by linarith)
     obtain ⟨x, hxD, hxr⟩ : ∃ x, D x < 0 ∧ p₂ x = k * p₁ x := by
       by_contra hc
-      push_neg at hc
+      push Not at hc
       refine hnegex ?_
       filter_upwards [hdisj] with x hx
       rcases hx with h | h
       · exact le_of_eq h.symm
       · by_contra hlt0
-        push_neg at hlt0
+        push Not at hlt0
         exact absurd h (hc x hlt0)
     obtain ⟨y, hyD, hyr⟩ : ∃ y, 0 < D y ∧ p₂ y = k * p₁ y := by
       by_contra hc
-      push_neg at hc
+      push Not at hc
       refine hposex ?_
       filter_upwards [hdisj] with x hx
       rcases hx with h | h
       · exact le_of_eq h
       · by_contra hlt0
-        push_neg at hlt0
+        push Not at hlt0
         exact absurd h (hc x hlt0)
     have hcmp := hstrict x y (hsep x y hxD hyD)
     rw [hxr, hyr] at hcmp
@@ -622,13 +622,13 @@ private lemma sign_of_strictConvexOn_two_zeros {g : ℝ → ℝ}
     rw [h1, h2] at hlt
     have ha : 0 < (C₂ - C₁) / (C₂ - t) := div_pos (by linarith) (by linarith)
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   · have hlt := hkey C₁ C₂ t hC ht
     rw [h1, h2] at hlt
     have hb : 0 < (C₂ - C₁) / (t - C₁) := div_pos (by linarith) (by linarith)
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
 
 /-- **Two exponentials crossing a constant twice.** For exponents `b₁ < b₂` of the same
@@ -942,15 +942,15 @@ theorem power_min_twoSided
     rw [hφdef]
     unfold twoSidedTest
     rcases hx with h | h
-    · rw [if_neg (ne_of_lt h), if_neg (ne_of_lt (by linarith)),
-        if_neg (by rintro ⟨h1, -⟩; linarith)]
-    · rw [if_neg (ne_of_gt (by linarith)), if_neg (ne_of_gt h),
-        if_neg (by rintro ⟨-, h2⟩; linarith)]
+    · rw [ite_eq_right (ne_of_lt h), ite_eq_right (ne_of_lt (by linarith)),
+        ite_eq_right (by rintro ⟨h1, -⟩; linarith)]
+    · rw [ite_eq_right (ne_of_gt (by linarith)), ite_eq_right (ne_of_gt h),
+        ite_eq_right (by rintro ⟨-, h2⟩; linarith)]
   have hφ1 : ∀ x : 𝓧, C₁ < E.stat x → E.stat x < C₂ → φ x = 1 := by
     intro x h1 h2
     rw [hφdef]
     unfold twoSidedTest
-    rw [if_neg (ne_of_gt h1), if_neg (ne_of_lt h2), if_pos ⟨h1, h2⟩]
+    rw [ite_eq_right (ne_of_gt h1), ite_eq_right (ne_of_lt h2), ite_eq_left ⟨h1, h2⟩]
   -- The data of the two-constraint problem.
   set f : Fin 3 → 𝓧 → ℝ := ![p θ₁, p θ₂, p θ] with hfdef
   have hf0 : f (Fin.castSucc (0 : Fin 2)) = p θ₁ := rfl
@@ -1158,15 +1158,15 @@ private lemma isUMP_twoSided_of_constants
       rw [hφdef]
       unfold twoSidedTest
       rcases hx with h | h
-      · rw [if_neg (ne_of_lt h), if_neg (ne_of_lt (by linarith)),
-          if_neg (by rintro ⟨h1, -⟩; linarith)]
-      · rw [if_neg (ne_of_gt (by linarith)), if_neg (ne_of_gt h),
-          if_neg (by rintro ⟨-, h2⟩; linarith)]
+      · rw [ite_eq_right (ne_of_lt h), ite_eq_right (ne_of_lt (by linarith)),
+          ite_eq_right (by rintro ⟨h1, -⟩; linarith)]
+      · rw [ite_eq_right (ne_of_gt (by linarith)), ite_eq_right (ne_of_gt h),
+          ite_eq_right (by rintro ⟨-, h2⟩; linarith)]
     have hφ1 : ∀ x : 𝓧, C₁ < E.stat x → E.stat x < C₂ → φ x = 1 := by
       intro x h1 h2
       rw [hφdef]
       unfold twoSidedTest
-      rw [if_neg (ne_of_gt h1), if_neg (ne_of_lt h2), if_pos ⟨h1, h2⟩]
+      rw [ite_eq_right (ne_of_gt h1), ite_eq_right (ne_of_lt h2), ite_eq_left ⟨h1, h2⟩]
     set f : Fin 3 → 𝓧 → ℝ := ![p θ₁, p θ₂, p ϑ] with hfdef
     have hflast : f (Fin.last 2) = p ϑ := rfl
     have hfmeas : ∀ i, Measurable (f i) := by
@@ -1317,7 +1317,7 @@ private lemma cdf_level_nonempty_bddBelow (ν : Measure ℝ) [IsProbabilityMeasu
     exact ⟨y, hy.le⟩
   · obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp ((tendsto_cdf_atBot ν).eventually_lt_const hp0)
     refine ⟨b, fun y hy => ?_⟩
-    simp only [Set.mem_setOf_eq] at hy
+    simp only [Set.mem_ofPred_eq] at hy
     by_contra hcon
     exact absurd (hb y (not_le.mp hcon).le) (not_lt.mpr hy)
 
@@ -1389,13 +1389,13 @@ private lemma quantile_preimage_Iic_ae (ν : Measure ℝ) [IsProbabilityMeasure 
       exact ⟨(quantile_le_iff hmono hrc hne hbdd).mpr hle, hu⟩
   have hcong : ((quantile (⇑(cdf ν)) ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1 : Set ℝ)
       =ᵐ[MeasureTheory.volume] (Set.Ioo (0 : ℝ) 1 ∩ Set.Iic (cdf ν x) : Set ℝ) := by
-    refine (Filter.EventuallyEq.inter (ae_eq_refl _) hIccIoo).trans ?_
+    refine (Filter.EventuallyEqSet.inter (ae_eq_refl _) hIccIoo).trans ?_
     rw [hstep]
   refine hcong.trans ?_
   rw [ae_eq_set]
   constructor
   · convert measure_empty (μ := MeasureTheory.volume)
-    rw [Set.diff_eq_empty]
+    rw [Set.sdiff_eq_empty]
     rintro u ⟨⟨h0, -⟩, hle⟩
     exact ⟨h0, hle⟩
   · refine measure_mono_null ?_ (Real.volume_singleton (a := 1))
@@ -1797,7 +1797,7 @@ private lemma exists_cdf_mem_Ioo (ν : Measure ℝ) [IsProbabilityMeasure ν] {�
     (hα0 : 0 < α) (hα1 : α < 1) (hatom : ∀ t : ℝ, (ν {t}).toReal < α) :
     ∃ c : ℝ, cdf ν c ∈ Set.Ioo (0 : ℝ) 1 := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hdich : ∀ c : ℝ, cdf ν c = 0 ∨ cdf ν c = 1 := by
     intro c
     have h := hcon c
@@ -1973,36 +1973,36 @@ private lemma exists_twoSided_constants_window (ν : Measure ℝ) [IsProbability
   have hkey₁ : γ₁ * (ν {C₁}).toReal = F C₁ - s := by
     rw [hγ₁]
     by_cases h : (ν {C₁}).toReal = 0
-    · rw [if_pos h, zero_mul]
+    · rw [ite_eq_left h, zero_mul]
       rw [hm₁] at h
       have : L₁ = F C₁ := by linarith
       linarith [hL₁, hA₁, this]
-    · rw [if_neg h, div_mul_cancel₀ _ h]
+    · rw [ite_eq_right h, div_mul_cancel₀ _ h]
   have hkey₂ : γ₂ * (ν {C₂}).toReal = s + α - L₂ := by
     rw [hγ₂]
     by_cases h : (ν {C₂}).toReal = 0
-    · rw [if_pos h, zero_mul]
+    · rw [ite_eq_left h, zero_mul]
       rw [hm₂] at h
       have : L₂ = F C₂ := by linarith
       linarith [hL₂, hA₂, this]
-    · rw [if_neg h, div_mul_cancel₀ _ h]
+    · rw [ite_eq_right h, div_mul_cancel₀ _ h]
   have hγ₁mem : γ₁ ∈ Set.Icc (0 : ℝ) 1 := by
     rw [hγ₁]
     by_cases h : (ν {C₁}).toReal = 0
-    · rw [if_pos h]; exact ⟨le_rfl, zero_le_one⟩
+    · rw [ite_eq_left h]; exact ⟨le_rfl, zero_le_one⟩
     · have hpos : 0 < (ν {C₁}).toReal :=
         lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm h)
-      rw [if_neg h]
+      rw [ite_eq_right h]
       refine ⟨div_nonneg (by linarith) hpos.le, ?_⟩
       rw [div_le_one hpos, hm₁]
       linarith
   have hγ₂mem : γ₂ ∈ Set.Icc (0 : ℝ) 1 := by
     rw [hγ₂]
     by_cases h : (ν {C₂}).toReal = 0
-    · rw [if_pos h]; exact ⟨le_rfl, zero_le_one⟩
+    · rw [ite_eq_left h]; exact ⟨le_rfl, zero_le_one⟩
     · have hpos : 0 < (ν {C₂}).toReal :=
         lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm h)
-      rw [if_neg h]
+      rw [ite_eq_right h]
       refine ⟨div_nonneg (by linarith) hpos.le, ?_⟩
       rw [div_le_one hpos, hm₂]
       linarith

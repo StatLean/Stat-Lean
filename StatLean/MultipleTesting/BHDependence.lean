@@ -93,7 +93,7 @@ private lemma bhCountD_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → 
     (m : ℕ) (hm : bhKmaxD α p ω < m) (hm' : m ≤ N) :
     bhCountD α p m ω < m := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hmem : m ∈ (Finset.range (N + 1)).filter (fun k => k ≤ bhCountD α p k ω) := by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
@@ -170,7 +170,7 @@ private lemma bhKmaxD_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω
     intro m hm
     simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
     omega
 
@@ -182,7 +182,7 @@ private lemma measurable_bhKmaxD {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     have heq : {ω | bhKmaxD α p ω ≤ k} =
         ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCountD α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter₂, Finset.mem_coe]
       exact bhKmaxD_le_iff α p ω
     rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
@@ -192,13 +192,13 @@ private lemma measurable_bhKmaxD {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
   change MeasurableSet {ω | bhKmaxD α p ω = k}
   rw [show {ω | bhKmaxD α p ω = k} =
       {ω | bhKmaxD α p ω ≤ k} ∩ {ω | k ≤ bhKmaxD α p ω} from by
-    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]; exact le_antisymm_iff]
   apply MeasurableSet.inter (hmeas_le k)
   cases k with
   | zero => simp
   | succ k =>
     rw [show {ω | k + 1 ≤ bhKmaxD α p ω} = ({ω | bhKmaxD α p ω ≤ k})ᶜ from by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]; omega]
     exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
@@ -343,14 +343,14 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         apply mul_le_mul_of_nonneg_right _ (div_nonneg hα.le (Nat.cast_nonneg N))
         push_cast; linarith
       have hthis : p i ω ≤ ((m + 1 : ℕ) : ℝ) * α / N := le_trans h hthr
-      rw [if_pos h, if_pos hthis]
-    · simp only [if_neg h]; split_ifs <;> norm_num
+      rw [ite_eq_left h, ite_eq_left hthis]
+    · simp only [ite_eq_right h]; split_ifs <;> norm_num
   -- ∫ a k = F k
   have hintegral_a : ∀ k, ∫ ω, a k ω ∂μ = F k := by
     intro k
     rw [hFdef]
     have hset : (fun ω => a k ω) = Set.indicator {ω | p i ω ≤ (k : ℝ) * α / N} 1 := by
-      funext ω; simp only [a, Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+      funext ω; simp only [a, Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
     rw [hset, integral_indicator_one (measurableSet_le (hmeas i) measurable_const)]
     rfl
   -- integrability building blocks
@@ -413,13 +413,13 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         change (bhRejects α p ω).card ≤ N
         exact (Finset.card_le_univ _).trans_eq (by simp [Fintype.card_fin])
       have h1leR : (1 : ℝ) ≤ (R ω : ℝ) := by exact_mod_cast hR1
-      rw [if_pos hi', max_eq_left h1leR]
+      rw [ite_eq_left hi', max_eq_left h1leR]
       have hpi : p i ω ≤ (R ω : ℝ) * α / N := bh_mem_imp_leD hN α hα p i ω hi'
       have hterm : (1 / (R ω : ℝ)) * (a (R ω) ω * b (R ω) ω) = 1 / (R ω : ℝ) := by
-        simp only [a, b, if_pos hpi, if_pos rfl, mul_one]
+        simp only [a, b, ite_eq_left hpi, ite_eq_left rfl, mul_one]
       rw [← hterm]
       exact Finset.single_le_sum hnn (Finset.mem_Icc.mpr ⟨hR1, hRN⟩)
-    · rw [if_neg hi', zero_div]
+    · rw [ite_eq_right hi', zero_div]
       exact Finset.sum_nonneg hnn
   -- ===== Step B: integrate Step A =====
   have hintegrable_sum : Integrable (fun ω => ∑ k ∈ Finset.Icc 1 N,

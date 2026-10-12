@@ -237,7 +237,7 @@ theorem norm_condexp_exp_sub_one_sub_le {m mΩ : MeasurableSpace Ω} {μ : Measu
       nlinarith [h2]
     · have hi : S.indicator (fun _ => (1 : ℝ)) ω = 0 := Set.indicator_of_notMem hcase _
       have hlt : |X ω| < ε := by
-        simpa [hSdef, Set.mem_setOf_eq, not_le] using hcase
+        simpa [hSdef, Set.mem_ofPred_eq, not_le] using hcase
       have h2 : ‖W ω‖ ≤ |u * X ω| ^ 3 / 6 := h.trans (min_le_left _ _)
       have habs : |u * X ω| ^ 3 = |u| ^ 3 * (|X ω| * X ω ^ 2) := by
         rw [abs_mul, mul_pow, show |X ω| ^ 3 = |X ω| * |X ω| ^ 2 by ring, sq_abs]
@@ -961,7 +961,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
           = ((∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ) + ((∫ ω, P m ω ∂μ) - 1) := by ring
       rw [hsplit]
       refine (norm_add_le _ _).trans ?_
-      rw [dif_pos hm']
+      rw [dite_eq_left hm']
       linarith
   -- (6) identify the endpoint
   have hend : ∀ ω, P (k n) ω = Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
@@ -987,7 +987,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
         + |u| ^ 3 * ε * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 ∂μ) else 0)) (k n)]
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [dif_pos i.isLt]
+  rw [dite_eq_left i.isLt]
   simp only [Fin.eta]
   ring
 

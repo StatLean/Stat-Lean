@@ -100,7 +100,7 @@ theorem tail_max_le
   -- Step 1: Rewrite `{ω | t < ⨆ j, X j ω}` as the union `⋃ j, {ω | t < X j ω}`.
   have heq : {ω | t < ⨆ j, X j ω} = ⋃ j, {ω | t < X j ω} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     exact ⟨fun h => (lt_ciSup_iff (hbdd ω)).mp h,
            fun ⟨j, hj⟩ => lt_of_lt_of_le hj (le_ciSup (hbdd ω) j)⟩
   rw [heq]

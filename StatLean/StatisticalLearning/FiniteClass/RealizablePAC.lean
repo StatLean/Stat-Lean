@@ -89,7 +89,7 @@ theorem finiteClass_realizable_uniform (𝓗 : Finset (X → Bool)) {ε δ : ℝ
       = ⋃ h ∈ 𝓗.filter (fun h => ε < errProb D f h),
           {s : Sample X n | ∀ i, h (s i) = f (s i)} := by
     ext s
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_filter, exists_prop]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_filter, exists_prop]
     constructor
     · rintro ⟨h, hh, hc, hb⟩; exact ⟨h, ⟨hh, hb⟩, hc⟩
     · rintro ⟨h, ⟨hh, hb⟩, hc⟩; exact ⟨h, hh, hc, hb⟩
@@ -155,7 +155,7 @@ theorem finiteClass_isPACLearnerWith (𝓗 : Finset (X → Bool))
     have hsub : {s : Sample X n | ∀ i, g₀ (s i) = f (s i)}ᶜ ⊆
         ⋃ i : Fin n, (fun s : Sample X n => s i) ⁻¹' {x | g₀ x ≠ f x} := by
       intro s hsc
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_forall] at hsc
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall] at hsc
       obtain ⟨i, hi⟩ := hsc
       exact Set.mem_iUnion.mpr ⟨i, hi⟩
     refine measure_mono_null hsub (measure_iUnion_null fun i => ?_)

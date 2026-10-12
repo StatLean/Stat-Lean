@@ -120,7 +120,7 @@ private lemma bhCount_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     (m : ℕ) (hm : bhKmax α p ω < m) (hm' : m ≤ N) :
     bhCount α p m ω < m := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hmem : m ∈ (Finset.range (N + 1)).filter (fun k => k ≤ bhCount α p k ω) := by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
@@ -258,7 +258,7 @@ private lemma bhKmax_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω 
     intro m hm
     simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
     omega
 
@@ -270,7 +270,7 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     have heq : {ω | bhKmax α p ω ≤ k} =
         ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter₂, Finset.mem_coe]
       exact bhKmax_le_iff α p ω
     rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
@@ -280,13 +280,13 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
   change MeasurableSet {ω | bhKmax α p ω = k}
   rw [show {ω | bhKmax α p ω = k} =
       {ω | bhKmax α p ω ≤ k} ∩ {ω | k ≤ bhKmax α p ω} from by
-    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]; exact le_antisymm_iff]
   apply MeasurableSet.inter (hmeas_le k)
   cases k with
   | zero => simp
   | succ k =>
     rw [show {ω | k + 1 ≤ bhKmax α p ω} = ({ω | bhKmax α p ω ≤ k})ᶜ from by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]; omega]
     exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
@@ -397,8 +397,8 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   have hrecon_meas : Measurable recon :=
     Measurable.of_eval (fun j => by
       by_cases h : j ∈ (({i} : Finset (Fin N))ᶜ)
-      · simp only [recon, dif_pos h]; exact measurable_pi_apply _
-      · simp only [recon, dif_neg h]; exact measurable_const)
+      · simp only [recon, dite_eq_left h]; exact measurable_pi_apply _
+      · simp only [recon, dite_eq_right h]; exact measurable_const)
   have hpi_eq : (fun ω => p i ω) =
       (fun v : ↥({i} : Finset (Fin N)) → ℝ => v ⟨i, Finset.mem_singleton_self i⟩) ∘
         (fun ω (j : ↥({i} : Finset (Fin N))) => p ↑j ω) := rfl
@@ -414,15 +414,15 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     · subst h; simp [recon, Function.update_self]
     · have hjc : j ∈ (({i} : Finset (Fin N))ᶜ) := by
         simp only [Finset.mem_compl, Finset.mem_singleton]; exact h
-      simp only [Function.update_of_ne h, recon, dif_pos hjc]
+      simp only [Function.update_of_ne h, recon, dite_eq_left hjc]
   have hpiZ : IndepFun (fun ω => p i ω) Z μ := by
     rw [hpi_eq, hZ_eq]
     exact hXY.comp (measurable_pi_apply _) ((measurable_bhNumRejPt α).comp hrecon_meas)
   have e1 : {ω | p i ω ≤ t} = (fun ω => p i ω) ⁻¹' Set.Iic t := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_Iic]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_Iic]
   have e2 : {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k} =
       Z ⁻¹' {k} := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
   rw [e1, e2]
   exact hpiZ.measure_inter_preimage_eq_mul (Set.Iic t) {k} measurableSet_Iic
     (measurableSet_singleton k)
@@ -478,25 +478,25 @@ private lemma bh_summand_eq_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     have hRloo : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
         numRejections (bhRejects α p) ω :=
       bh_count_eq_leaveOneOut hN α hα p i (numRejections (bhRejects α p) ω) ω hi rfl
-    rw [if_pos hi, max_eq_left h1leR,
+    rw [ite_eq_left hi, max_eq_left h1leR,
       Finset.sum_eq_single (numRejections (bhRejects α p) ω)]
-    · rw [if_pos hpi, if_pos hRloo, mul_one, mul_one]
+    · rw [ite_eq_left hpi, ite_eq_left hRloo, mul_one, mul_one]
     · intro k _ hk_ne
       have hz : (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k
           then (1 : ℝ) else 0) = 0 := by
-        rw [hRloo]; exact if_neg (fun h => hk_ne h.symm)
+        rw [hRloo]; exact ite_eq_right (fun h => hk_ne h.symm)
       rw [hz, mul_zero, mul_zero]
     · intro h_not
       exact absurd (Finset.mem_Icc.mpr ⟨hR1, hRN⟩) h_not
   · -- Not rejected: LHS = 0, and every summand vanishes by the converse crux.
-    rw [if_neg hi, zero_div]
+    rw [ite_eq_right hi, zero_div]
     refine (Finset.sum_eq_zero ?_).symm
     intro k _
     by_cases hpik : p i ω ≤ (k : ℝ) * α / N
     · by_cases hRk : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k
       · exact absurd (bh_loo_le_imp_mem hN α hα p i ω (by rw [hRk]; exact hpik)) hi
-      · rw [if_neg hRk, mul_zero, mul_zero]
-    · rw [if_neg hpik, zero_mul, mul_zero]
+      · rw [ite_eq_right hRk, mul_zero, mul_zero]
+    · rw [ite_eq_right hpik, zero_mul, mul_zero]
 
 /-! ## Per-null contribution identity -/
 
@@ -573,7 +573,7 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
-        simp [Set.mem_inter_iff, Set.mem_setOf_eq, hA, hB]
+        simp [Set.mem_inter_iff, Set.mem_ofPred_eq, hA, hB]
     rw [integral_const_mul, hprod_eq, integral_indicator_one (hAmeas.inter hBmeas)]
     have hAeq : (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal = (k : ℝ) * α / N := by
       rw [hi ((k : ℝ) * α / N) htk hk_le1, ENNReal.toReal_ofReal htk]
@@ -595,14 +595,14 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
       intro a _ b _ hab
       apply Set.disjoint_left.mpr
       intro ω ha hb
-      simp only [Set.mem_setOf_eq] at ha hb
+      simp only [Set.mem_ofPred_eq] at ha hb
       exact hab (ha.symm.trans hb)
     rw [← ENNReal.toReal_sum (fun k _ => measure_ne_top μ _),
       ← measure_biUnion_finset hdisj (fun k _ => hLOO_meas (measurableSet_singleton k))]
     have hcover : (⋃ k ∈ Finset.Icc 1 N,
         {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}) = Set.univ := by
       ext ω
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       refine ⟨numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω, ?_, rfl⟩
       rw [Finset.mem_Icc]
       refine ⟨numRej_loo_ge_one α hα p i ω, ?_⟩

@@ -149,7 +149,7 @@ private lemma l1_single_perturb (θ : EuclideanSpace ℝ (Fin d)) (j : Fin d) (t
 private lemma small_pos_imp_nonneg (b K : ℝ) {δ : ℝ} (hδ : 0 < δ)
     (H : ∀ t, 0 < t → t < δ → 0 ≤ t * b + t ^ 2 * K) : 0 ≤ b := by
   by_contra hb
-  push_neg at hb
+  push Not at hb
   have hden : 0 < |K| + 1 := by positivity
   have ht0 : 0 < min (δ / 2) ((-b) / (|K| + 1)) :=
     lt_min (by linarith) (div_pos (by linarith) hden)
@@ -275,7 +275,7 @@ theorem lasso_minimizer_exists (X : Matrix (Fin n) (Fin d) ℝ)
       (Metric.isBounded_closedBall (x := (0 : EuclideanSpace ℝ (Fin d)))
         (r := lassoObjective X Y lam 0 / lam))
     intro β hβ
-    simp only [Set.mem_setOf_eq] at hβ
+    simp only [Set.mem_ofPred_eq] at hβ
     rw [Metric.mem_closedBall, dist_zero_right]
     have hq : 0 ≤ (1 / (2 * (n : ℝ))) * ‖Y - designMap X β‖ ^ 2 := by positivity
     have h1 : lam * l1Norm β ≤ lassoObjective X Y lam 0 := by
@@ -384,8 +384,8 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
   · intro i
     simp only [WithLp.ofLp_toLp]
     refine ⟨?_, ?_, ?_⟩
-    · intro hpos; rw [if_pos hpos]
-    · intro hneg; rw [if_neg (by linarith), if_pos hneg]
+    · intro hpos; rw [ite_eq_left hpos]
+    · intro hneg; rw [ite_eq_right (by linarith), ite_eq_left hneg]
     split_ifs with h1 h2
     · norm_num
     · norm_num
@@ -406,10 +406,10 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
     simp only [WithLp.ofLp_add, WithLp.ofLp_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
       WithLp.ofLp_zero, Pi.zero_apply, WithLp.ofLp_toLp]
     by_cases hpos : 0 < θhat.ofLp j
-    · rw [if_pos hpos, (hP j).1 hpos]; ring
+    · rw [ite_eq_left hpos, (hP j).1 hpos]; ring
     · by_cases hneg : θhat.ofLp j < 0
-      · rw [if_neg hpos, if_pos hneg, (hP j).2.1 hneg]; ring
-      · rw [if_neg hpos, if_neg hneg]
+      · rw [ite_eq_right hpos, ite_eq_left hneg, (hP j).2.1 hneg]; ring
+      · rw [ite_eq_right hpos, ite_eq_right hneg]
         have hzero : θhat.ofLp j = 0 := le_antisymm (not_lt.mp hpos) (not_lt.mp hneg)
         have hP0 := (hP j).2.2 hzero
         rcases eq_or_ne lam 0 with hl | hl
@@ -597,7 +597,7 @@ theorem pdw_unique (X : Matrix (Fin n) (Fin d) ℝ)
   have h8 : (0 : ℝ) < 1 / (8 * (n : ℝ)) := by positivity
   have hbound : (1 / (8 * (n : ℝ))) * ‖designMap X Δ‖ ^ 2 ≤ 0 := by nlinarith [hmid, hmin, hobj]
   have hsq0 : ‖designMap X Δ‖ ^ 2 ≤ 0 := by
-    by_contra h; push_neg at h; nlinarith [mul_pos h8 h, hbound]
+    by_contra h; push Not at h; nlinarith [mul_pos h8 h, hbound]
   have hsqz : ‖designMap X Δ‖ ^ 2 = 0 := le_antisymm hsq0 (sq_nonneg _)
   have hXΔ_zero : designMap X Δ = 0 :=
     norm_eq_zero.mp ((pow_eq_zero_iff (by norm_num : 2 ≠ 0)).mp hsqz)

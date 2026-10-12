@@ -58,7 +58,7 @@ private lemma card_fiber_sub (n a b : ℕ) (m : ℤ) (hab : a = 0 ∨ b = 0)
   rw [show n - (a + b) = #(Finset.range (n - (a + b))) from (Finset.card_range _).symm]
   refine Finset.card_nbij' (fun p => p.1 - a) (fun i => (i + a, i + b)) ?_ ?_ ?_ ?_ <;>
     intro p hp <;>
-    simp only [Finset.coe_filter, Set.mem_setOf_eq, Finset.mem_product,
+    simp only [Finset.coe_filter, Set.mem_ofPred_eq, Finset.mem_product,
       Finset.mem_range, Finset.coe_range, Set.mem_Iio, Prod.ext_iff] at hp ⊢ <;>
     omega
 
@@ -228,8 +228,8 @@ private lemma integral_fejerSum_mul_exp (γ : ℤ → ℝ) (n : ℕ) (j : ℤ) :
         intervalIntegral.integral_const, smul_eq_mul]
       push_cast
       ring
-    rw [if_pos rfl, hconst]
-  · rw [if_neg h,
+    rw [ite_eq_left rfl, hconst]
+  · rw [ite_eq_right h,
       integral_exp_int_mul_I_eq_zero (sub_ne_zero.mpr fun hc => h hc.symm), mul_zero]
 
 /-- Trigonometric moments of the Fejér sum, in-range case (FY eq. (2.71)):
@@ -243,11 +243,11 @@ theorem integral_fejerSum_mul_exp_of_lt (γ : ℤ → ℝ) {n : ℕ} {j : ℤ} (
   have hnC : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
   have hπC : ((π : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
   rw [integral_fejerSum_mul_exp, Finset.sum_eq_single j]
-  · rw [if_pos rfl]
+  · rw [ite_eq_left rfl]
     push_cast
     field_simp
   · intro m _ hm
-    rw [if_neg hm]
+    rw [ite_eq_right hm]
   · intro hmem
     exact absurd (Finset.mem_Icc.mpr ⟨by omega, by omega⟩) hmem
 
@@ -262,6 +262,6 @@ theorem integral_fejerSum_mul_exp_of_le (γ : ℤ → ℝ) {n : ℕ} {j : ℤ}
   simp only [Finset.mem_Icc] at hm
   have hne : m ≠ j := by
     rcases abs_cases j with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hj <;> omega
-  rw [if_neg hne]
+  rw [ite_eq_right hne]
 
 end StatLean.TimeSeries

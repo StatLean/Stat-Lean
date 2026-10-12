@@ -444,7 +444,7 @@ private lemma tendsto_prod_charFun_lindeberg
           ≤ ∫ ω in {ω | ε < |X n i ω|}ᶜ, ε ^ 2 ∂P := by
             refine setIntegral_mono_on ((hI2 n i).integrableOn) integrableOn_const hsm.compl
               (fun ω hω => ?_)
-            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+            simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
             rw [← sq_abs (X n i ω)]
             exact pow_le_pow_left₀ (abs_nonneg _) hω 2
         _ ≤ ∫ _ω, ε ^ 2 ∂P :=
@@ -673,7 +673,7 @@ theorem lindeberg_clt_of_bounded {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) 
       refine Finset.sum_eq_zero fun i _ => ?_
       have hempty : {ω | ε < |X n i ω|} = (∅ : Set Ω) := by
         ext ω
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         exact le_trans (hbdd n i ω) hn.le
       rw [hempty]; simp
     exact tendsto_const_nhds.congr' (key.mono fun n hn => hn.symm)
@@ -777,14 +777,14 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
       measurableSet_lt measurable_const (hmeas 0).abs
     have hanti : Antitone fun K : ℕ => {ω | (K : ℝ) < |Y 0 ω|} := by
       intro a b hab ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       exact lt_of_le_of_lt (by exact_mod_cast hab) hω
     have hint : ∃ K : ℕ, IntegrableOn (fun ω => (Y 0 ω) ^ 2) {ω | (K : ℝ) < |Y 0 ω|} P :=
       ⟨0, hsq0.integrableOn⟩
     have hlim := tendsto_setIntegral_of_antitone hsm hanti hint
     have hempty : ⋂ K : ℕ, {ω | (K : ℝ) < |Y 0 ω|} = ∅ := by
       ext ω
-      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_forall, not_lt]
       obtain ⟨K, hK⟩ := exists_nat_gt |Y 0 ω|
       exact ⟨K, hK.le⟩
@@ -855,7 +855,7 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
           lt_of_lt_of_le h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
         show (K : ℝ) < |Y (↑i : ℕ) ω|
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         have hle : (ε / K) * |Y (↑i : ℕ) ω| ≤ (ε / K) * K :=
           mul_le_mul_of_nonneg_left hcon (by positivity)
         rw [div_mul_cancel₀ ε (ne_of_gt hKpos)] at hle
@@ -1101,7 +1101,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
     by_cases h2 : ε / 3 ≤ W ω
     · exact Or.inr h2
     exfalso
-    push_neg at h1 h2
+    push Not at h1 h2
     have hgap : |(n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω| ≤ W ω := by
       have hrw : (n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω
           = (n : ℝ)⁻¹ * ∑ i, (Yn i ω - Z i ω) := by
@@ -1256,7 +1256,7 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
         = {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Y n i ω - ∫ y, y ∂ν|} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq]
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq]
     exact ENNReal.le_ofReal_iff_toReal_le hetop (abs_nonneg _)
   simp only [hset]
   rw [ENNReal.tendsto_nhds_zero]

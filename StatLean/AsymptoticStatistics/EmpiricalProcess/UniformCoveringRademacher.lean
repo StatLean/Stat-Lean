@@ -130,7 +130,7 @@ theorem empiricalRelativeRadius_le_one_of_isEnvelope
     empiricalRelativeRadius F Φ n X ≤ 1 := by
   by_cases hzero : empiricalL2Seminorm n X Φ = 0
   · simp [empiricalRelativeRadius, hzero]
-  · rw [empiricalRelativeRadius, if_neg hzero]
+  · rw [empiricalRelativeRadius, ite_eq_right hzero]
     refine iSup_le fun f => iSup_le fun hf => ?_
     rw [ENNReal.ofReal_le_one]
     apply (div_le_one ?_).2
@@ -645,7 +645,7 @@ theorem empiricalL2Seminorm_le_relativeRadiusReal_mul
     have hratio : ENNReal.ofReal
           (empiricalL2Seminorm n X f / empiricalL2Seminorm n X Φ) ≤
         empiricalRelativeRadius F Φ n X := by
-      rw [empiricalRelativeRadius, if_neg hzero]
+      rw [empiricalRelativeRadius, ite_eq_right hzero]
       exact le_iSup_of_le f (le_iSup_of_le hf le_rfl)
     rw [← ofReal_empiricalRelativeRadiusReal_of_isEnvelope F Φ n X hΦ] at hratio
     have hratio_real :
@@ -668,7 +668,7 @@ theorem ofReal_empiricalL2Seminorm_mul_relativeRadiusReal_le_supNormOver
     · simp [empiricalRelativeRadiusReal, htop]
     · rw [empiricalRelativeRadiusReal,
         ENNReal.ofReal_toReal htop,
-        empiricalRelativeRadius, if_neg hD]
+        empiricalRelativeRadius, ite_eq_right hD]
       unfold supNormOver
       rw [ENNReal.mul_iSup]
       refine iSup_le fun f => ?_
@@ -1030,17 +1030,17 @@ theorem finiteEmpiricalDyadicNets_nonempty
     net_used := ?_
     card_le := ?_ }⟩
   · intro q hq f
-    simp only [net', proj', dif_pos hq]
+    simp only [net', proj', dite_eq_left hq]
     exact hproj_mem ⟨q, hq⟩ f
   · intro q hq f
-    simp only [proj', dif_pos hq]
+    simp only [proj', dite_eq_left hq]
     exact hproj_dist ⟨q, hq⟩ f
   · intro q hq g hg
-    simp only [net', dif_pos hq] at hg
+    simp only [net', dite_eq_left hq] at hg
     obtain ⟨f, hf, hfg⟩ := hused ⟨q, hq⟩ g hg
     exact ⟨⟨f, hf⟩, hfg⟩
   · intro q hq
-    simp only [net', dif_pos hq]
+    simp only [net', dite_eq_left hq]
     exact hcard ⟨q, hq⟩
 
 namespace FiniteEmpiricalDyadicNets

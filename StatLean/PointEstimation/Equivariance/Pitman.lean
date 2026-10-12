@@ -106,7 +106,7 @@ private lemma measurable_pShear :
 
 private lemma measurable_pUnshear :
     Measurable (pUnshear : (Fin m → ℝ) × ℝ → Fin (m + 1) → ℝ) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro j
   induction j using Fin.lastCases with
   | last =>

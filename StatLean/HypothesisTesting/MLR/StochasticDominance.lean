@@ -131,9 +131,9 @@ private lemma bddBelow_setOf_le_cdf (μ : Measure ℝ) [IsProbabilityMeasure μ]
     (ha : 0 < a) : BddBelow {x : ℝ | a ≤ cdf μ x} := by
   obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually_lt_const ha)
   refine ⟨b, fun y hy => ?_⟩
-  simp only [Set.mem_setOf_eq] at hy
+  simp only [Set.mem_ofPred_eq] at hy
   by_contra hc
-  push_neg at hc
+  push Not at hc
   exact absurd (hb y hc.le) (not_lt.mpr hy)
 
 /-- Below level `1` the sublevel set of a distribution function is nonempty, so the

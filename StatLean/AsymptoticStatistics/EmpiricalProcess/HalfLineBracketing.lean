@@ -72,7 +72,7 @@ private theorem halfLine_gridCover
       simp [heps]
     · dsimp [lo, hi]
       by_cases hjump : q j.castSucc < q j.succ
-      · simp only [if_pos hjump]
+      · simp only [ite_eq_left hjump]
         apply indicatorWidth_isEpsBracket (p := p) (eps := eps) (mesh := mesh)
           (s := Set.Ioo (q j.castSucc) (q j.succ)) P hp0 hpTop
           (measurable_halfLineIndicator _) (measurable_openHalfLineIndicator _)
@@ -94,7 +94,7 @@ private theorem halfLine_gridCover
             · simp [halfLineIndicator, openHalfLineIndicator, Set.mem_Ioo, hxj, hxjs]
         · exact (hgap j).trans (ENNReal.ofReal_le_ofReal hgridmesh)
         · exact hstrict
-      · simp only [if_neg hjump]
+      · simp only [ite_eq_right hjump]
         refine ⟨fun x ↦ le_rfl, measurable_halfLineIndicator _,
           measurable_halfLineIndicator _, halfLineIndicator_memLp P _ _,
           halfLineIndicator_memLp P _ _, ?_⟩

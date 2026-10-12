@@ -223,7 +223,7 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
               | exact hdK | exact hbox.1 z | exact hUk' | exact hUj' | exact hUk
               | exact hdUk | exact hdUj
         _ = (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by ring
-    · push_neg at hboth
+    · push Not at hboth
       have hK1 : K z = 0 := hbox.2 z hboth.1
       have hK2 : K z' = 0 := hbox.2 z' hboth.2
       simp only [hK1, hK2, zero_mul, mul_zero, sub_zero, abs_zero]

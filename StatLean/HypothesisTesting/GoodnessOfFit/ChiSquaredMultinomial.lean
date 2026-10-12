@@ -209,8 +209,8 @@ private lemma reducedCovInv_mulVec {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin
         = (if i = j then (π i.castSucc)⁻¹ * z j else 0) + (π (Fin.last k))⁻¹ * z j := by
     intro j
     by_cases hij : i = j
-    · simp only [if_pos hij, add_mul]
-    · simp only [if_neg hij, zero_add, add_mul]
+    · simp only [ite_eq_left hij, add_mul]
+    · simp only [ite_eq_right hij, zero_add, add_mul]
   rw [Finset.sum_congr rfl (fun j _ => h j), Finset.sum_add_distrib,
     Finset.sum_ite_eq Finset.univ i (fun j => (π i.castSucc)⁻¹ * z j), ← Finset.mul_sum]
   simp
@@ -250,7 +250,7 @@ private lemma reducedCov_mul_inv {k : ℕ} {π : Fin (k + 1) → ℝ}
     Finset.sum_ite_eq Finset.univ i (fun j => if j = l then (1 : ℝ) else 0),
     Finset.sum_ite_eq Finset.univ i (fun _ => π i.castSucc * (π (Fin.last k))⁻¹),
     Finset.sum_ite_eq' Finset.univ l (fun _ => π i.castSucc)]
-  simp only [Finset.mem_univ, if_true]
+  simp only [Finset.mem_univ, ite_true]
   have hD : (∑ j : Fin k, π i.castSucc * π j.castSucc * (π (Fin.last k))⁻¹)
       = π i.castSucc * (π (Fin.last k))⁻¹ * ∑ j : Fin k, π j.castSucc := by
     rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun j _ => by ring)
@@ -377,13 +377,13 @@ private lemma sum_pi_ite_ite {k : ℕ} (π : Fin (k + 1) → ℝ) (i j : Fin k) 
       = if i = j then π i.castSucc else 0 := by
   by_cases hij : i = j
   · subst hij
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     have hx : ∀ x : Fin (k + 1),
         π x * ((if x = i.castSucc then (1 : ℝ) else 0) * (if x = i.castSucc then 1 else 0))
           = π x * (if x = i.castSucc then 1 else 0) := by
       intro x; by_cases hx : x = i.castSucc <;> simp [hx]
     simp_rw [hx]; exact sum_pi_ite_castSucc π i
-  · rw [if_neg hij]
+  · rw [ite_eq_right hij]
     refine Finset.sum_eq_zero (fun x _ => ?_)
     by_cases hxi : x = i.castSucc
     · by_cases hxj : x = j.castSucc
@@ -812,8 +812,8 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
   set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) :=
     fun n => if n = 0 then Q else (μ n).map (centredIndicator π) with hF
   have hFeq : ∀ n : ℕ, 0 < n → F n = (μ n).map (centredIndicator π) := by
-    intro n hn; simp only [hF, if_neg hn.ne']
-  have hF0 : F 0 = Q := by simp only [hF, if_pos rfl]
+    intro n hn; simp only [hF, ite_eq_right hn.ne']
+  have hF0 : F 0 = Q := by simp only [hF, ite_eq_left rfl]
   have hFprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (F n) := by
     intro n hn
     haveI := hμprob n hn
@@ -1361,7 +1361,7 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
   have hAmem : ∀ u : Fin k → ℝ, u ∈ A ↔ ∑ i, (m i + u i) ^ 2 ≤ t := fun u => Iff.rfl
   have hBmem : ∀ u : Fin k → ℝ, u ∈ B ↔ ∑ i, u i ^ 2 ≤ t := by
     intro u
-    simp only [hB, piBall, Set.mem_setOf_eq, zero_add]
+    simp only [hB, piBall, Set.mem_ofPred_eq, zero_add]
   -- the reflection of the first coordinate across the perpendicular bisector
   set σ : (Fin k → ℝ) → (Fin k → ℝ) :=
     fun u i => if i = i₀ then -a - u i else u i with hσ
@@ -1371,14 +1371,14 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
     intro u
     refine Finset.sum_congr rfl fun i _ => ?_
     by_cases hi : i = i₀
-    · subst hi; rw [hσapp, if_pos rfl, hmi₀]; ring
-    · rw [hσapp, if_neg hi, hmne i hi, zero_add]
+    · subst hi; rw [hσapp, ite_eq_left rfl, hmi₀]; ring
+    · rw [hσapp, ite_eq_right hi, hmne i hi, zero_add]
   have hq₂ : ∀ u : Fin k → ℝ, ∑ i, (m i + σ u i) ^ 2 = ∑ i, u i ^ 2 := by
     intro u
     refine Finset.sum_congr rfl fun i _ => ?_
     by_cases hi : i = i₀
-    · subst hi; rw [hσapp, if_pos rfl, hmi₀]; ring
-    · rw [hσapp, if_neg hi, hmne i hi, zero_add]
+    · subst hi; rw [hσapp, ite_eq_left rfl, hmi₀]; ring
+    · rw [hσapp, ite_eq_right hi, hmne i hi, zero_add]
   have hpreB : σ ⁻¹' B = A := by
     ext u; simp only [Set.mem_preimage, hBmem, hAmem, hq₁]
   have hpreA : σ ⁻¹' A = B := by
@@ -1417,13 +1417,13 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
     set u₀ : Fin k → ℝ := fun i => if i = i₀ then -(a + s) else 0 with hu₀
     have hsum₁ : ∑ i, (m i + u₀ i) ^ 2 = s ^ 2 := by
       rw [Finset.sum_eq_single i₀]
-      · simp only [hu₀, if_pos rfl, hmi₀]; ring
-      · intro i _ hi; simp only [hu₀, if_neg hi, hmne i hi, add_zero]; ring
+      · simp only [hu₀, ite_eq_left rfl, hmi₀]; ring
+      · intro i _ hi; simp only [hu₀, ite_eq_right hi, hmne i hi, add_zero]; ring
       · intro h; exact absurd (Finset.mem_univ i₀) h
     have hsum₂ : ∑ i, u₀ i ^ 2 = (a + s) ^ 2 := by
       rw [Finset.sum_eq_single i₀]
-      · simp only [hu₀, if_pos rfl]; ring
-      · intro i _ hi; simp only [hu₀, if_neg hi]; ring
+      · simp only [hu₀, ite_eq_left rfl]; ring
+      · intro i _ hi; simp only [hu₀, ite_eq_right hi]; ring
       · intro h; exact absurd (Finset.mem_univ i₀) h
     have hcont₁ : Continuous fun u : Fin k → ℝ => ∑ i, (m i + u i) ^ 2 := by fun_prop
     have hcont₂ : Continuous fun u : Fin k → ℝ => ∑ i, u i ^ 2 := by fun_prop
@@ -1456,7 +1456,7 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
       (measurable_piGaussDensity k).indicator hBA
     have hcomp := hσmp.lintegral_comp hind
     have hpre : σ ⁻¹' (B \ A) = A \ B := by
-      rw [Set.preimage_diff, hpreB, hpreA]
+      rw [Set.preimage_sdiff, hpreB, hpreA]
     rw [piGauss_apply hBA, ← lintegral_indicator hBA, ← hcomp, ← lintegral_indicator hSmeas]
     refine lintegral_congr fun x => ?_
     by_cases hx : x ∈ A \ B
@@ -1476,8 +1476,8 @@ private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a
       have h2 : t < ∑ i, x i ^ 2 := not_le.mp fun hcon => hx.2 ((hBmem x).mpr hcon)
       linarith
   -- assemble
-  have hsplitA : ν (A ∩ B) + ν (A \ B) = ν A := measure_inter_add_diff A hBmeas
-  have hsplitB : ν (B ∩ A) + ν (B \ A) = ν B := measure_inter_add_diff B hAmeas
+  have hsplitA : ν (A ∩ B) + ν (A \ B) = ν A := measure_inter_add_sdiff A hBmeas
+  have hsplitB : ν (B ∩ A) + ν (B \ A) = ν B := measure_inter_add_sdiff B hAmeas
   rw [Set.inter_comm B A] at hsplitB
   rw [← hsplitA, ← hsplitB]
   refine ENNReal.add_lt_add_left (measure_ne_top ν (A ∩ B)) ?_
@@ -1534,7 +1534,7 @@ private lemma stdGaussian_ball_eq {k : ℕ} (m : Fin k → ℝ) (t : ℝ) :
   rw [← map_pi_eq_stdGaussian, Measure.map_apply (measurable_toLp_pi k) hset]
   congr 1
   ext u
-  simp only [Set.mem_preimage, Set.mem_setOf_eq, piBall,
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, piBall,
     EuclideanSpace.real_norm_sq_eq]
   rfl
 
@@ -1549,14 +1549,14 @@ private lemma stdGaussian_sphere_eq {k : ℕ} (m : Fin k → ℝ) (t : ℝ) :
   rw [← map_pi_eq_stdGaussian, Measure.map_apply (measurable_toLp_pi k) hset]
   congr 1
   ext u
-  simp only [Set.mem_preimage, Set.mem_setOf_eq, EuclideanSpace.real_norm_sq_eq]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, EuclideanSpace.real_norm_sq_eq]
   rfl
 
 private lemma multivariateGaussian_one_eq_map_add' {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
     multivariateGaussian v (1 : Matrix (Fin k) (Fin k) ℝ)
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- The `Iic`-mass of `noncentralChiSquared` in the product picture. -/
 private lemma noncentralChiSquared_Iic_eq {k : ℕ} (l : ℝ≥0) (t : ℝ) :
@@ -1589,7 +1589,7 @@ private lemma noncentralChiSquared_singleton {k : ℕ} {t : ℝ} (ht : 0 < t) (l
         = (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) ⁻¹'
             (Metric.sphere (-(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))) (Real.sqrt t)) := by
       ext u
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, Metric.mem_sphere, dist_eq_norm,
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Metric.mem_sphere, dist_eq_norm,
         sub_neg_eq_add]
       constructor
       · intro h

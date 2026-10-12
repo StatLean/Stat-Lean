@@ -139,7 +139,7 @@ theorem asymptoticallyLinearAt_coordinate
   · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · refine Filter.Eventually.of_forall (fun n => measure_mono ?_)
     intro X hX
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     rw [← vec_residual_coord P φ c n X i] at hX
     exact hX.trans (by
       rw [← Real.norm_eq_abs]
@@ -227,7 +227,7 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
             - (Real.sqrt n)⁻¹ • (∑ i, tupleEval P φ (X i))‖} = ∅ := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have hz : ‖Real.sqrt n • (T_n n X - c)
           - (Real.sqrt n)⁻¹ • (∑ i, tupleEval P φ (X i))‖ = 0 := by
         rw [EuclideanSpace.norm_eq]
@@ -251,8 +251,8 @@ theorem asymptoticallyLinearAt_vec_of_forall_coord
     · refine Filter.Eventually.of_forall (fun n =>
         le_trans (measure_mono ?_) (measure_iUnion_fintype_le _ _))
       intro X hX
-      simp only [Set.mem_setOf_eq] at hX
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq] at hX
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
       by_contra hc
       push Not at hc
       have hall : ∀ i,
@@ -596,7 +596,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
                 (Real.sqrt n)⁻¹ • (∑ j, tupleEval P φ (X j))⟫_ℝ|} = ∅ := by
         intro n
         ext X
-        simp only [Set.mem_setOf_eq, inner_zero_left, abs_zero,
+        simp only [Set.mem_ofPred_eq, inner_zero_left, abs_zero,
           Set.mem_empty_iff_false, iff_false, not_le]
         exact hε
       simp only [hset, measure_empty]
@@ -607,7 +607,7 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
       · exact Filter.Eventually.of_forall (fun _ => zero_le)
       · refine Filter.Eventually.of_forall (fun n => measure_mono ?_)
         intro X hX
-        simp only [Set.mem_setOf_eq] at hX ⊢
+        simp only [Set.mem_ofPred_eq] at hX ⊢
         have hbound := abs_real_inner_le_norm u
           (Real.sqrt n • (T_n n X - ψ P) -
             (Real.sqrt n)⁻¹ • (∑ j, tupleEval P φ (X j)))

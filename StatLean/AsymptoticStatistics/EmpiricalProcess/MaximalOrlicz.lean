@@ -238,7 +238,7 @@ private lemma psi2_layer_cake_meas_bound
   have h_set_eq : {ω | t < ⨆ i : ι, |_Z i ω|}
       = ⋃ i : ι, {ω | t < |_Z i ω|} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     constructor
     · intro hlt
       -- Contrapositive of ciSup_le.
@@ -583,7 +583,7 @@ private lemma psi1_layer_cake_meas_bound
   have h_set_eq : {ω | t < ⨆ i : ι, |_Z i ω|}
       = ⋃ i : ι, {ω | t < |_Z i ω|} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     constructor
     · intro hlt
       by_contra hne
@@ -858,13 +858,13 @@ private lemma orlicz_bernstein_truncated_max_l1_bound
     have h_set_abs_eq :
         {ω | t < |min (|_Z i ω|) T|} = {ω | t < min (|_Z i ω|) T} := by
       ext ω
-      simp only [Set.mem_setOf_eq, abs_of_nonneg (h_min_nn ω)]
+      simp only [Set.mem_ofPred_eq, abs_of_nonneg (h_min_nn ω)]
     rw [h_set_abs_eq]
     by_cases ht_T : t < T
     · -- {t < min(|Z i|, T)} = {t < |Z i|}
       have h_set_eq : {ω | t < min (|_Z i ω|) T} = {ω | t < |_Z i ω|} := by
         ext ω
-        simp only [Set.mem_setOf_eq, lt_min_iff]
+        simp only [Set.mem_ofPred_eq, lt_min_iff]
         exact ⟨fun h => h.1, fun h => ⟨h, ht_T⟩⟩
       rw [h_set_eq]
       refine (_h_tail i t ht).trans ?_
@@ -904,7 +904,7 @@ private lemma orlicz_bernstein_truncated_max_l1_bound
       have ht_T_ge : T ≤ t := not_lt.mp ht_T
       have h_empty : {ω | t < min (|_Z i ω|) T} = ∅ := by
         ext ω
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         exact (min_le_right _ _).trans ht_T_ge
       rw [h_empty]; simp
   -- Apply Pisier ψ₂ with σ_eff' := 2 σ_eff (positive since σ_eff > 0).
@@ -973,13 +973,13 @@ private lemma orlicz_bernstein_residual_max_l1_bound
     have h_set_abs_eq :
         {ω | t < |max 0 (|_Z i ω| - T)|} = {ω | t < max 0 (|_Z i ω| - T)} := by
       ext ω
-      simp only [Set.mem_setOf_eq, abs_of_nonneg (h_max_nn ω)]
+      simp only [Set.mem_ofPred_eq, abs_of_nonneg (h_max_nn ω)]
     rw [h_set_abs_eq]
     -- {t < max 0 (|Z|-T)} = {T+t < |Z|} (since t > 0, the `t < 0` disjunct is vacuous).
     have h_set_eq :
         {ω | t < max 0 (|_Z i ω| - T)} = {ω | T + t < |_Z i ω|} := by
       ext ω
-      simp only [Set.mem_setOf_eq, lt_max_iff]
+      simp only [Set.mem_ofPred_eq, lt_max_iff]
       constructor
       · rintro (h | h) <;> linarith
       · intro h; right; linarith

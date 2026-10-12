@@ -486,9 +486,9 @@ theorem bvmLogRatio_tendsto
   have hincl : {ω : Fin n → 𝓧 | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}
       ⊆ {ω : Fin n → 𝓧 | ε / 3 ≤ |res g n ω|} ∪ {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hp : |Real.log (f (bvmLocalUnscale θ₀ n g))
         - Real.log (f (bvmLocalUnscale θ₀ n h))| < ε / 3 := by
@@ -1301,7 +1301,7 @@ private lemma lintegral_le_add_measure_gt {Ω : Type*} [MeasurableSpace Ω] (P :
     calc ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P ≤ ∫⁻ _ in {ω | a < Y ω}ᶜ, a ∂P :=
           setLIntegral_mono_ae measurable_const.aemeasurable
             (Filter.Eventually.of_forall fun ω hω => by
-              simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+              simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
               exact hω)
       _ = a * P {ω | a < Y ω}ᶜ := setLIntegral_const _ _
       _ ≤ a := by
@@ -1344,7 +1344,7 @@ private lemma productMeasure_bvmBad_eq_zero
     exact iidKernel_withDensity hdens_meas hκ n θ
   rw [hPθ, withDensity_apply _ hS]
   refine setLIntegral_eq_zero hS fun ω hω => ?_
-  simp only [Set.mem_setOf_eq, not_forall, not_lt] at hω
+  simp only [Set.mem_ofPred_eq, not_forall, not_lt] at hω
   obtain ⟨i, hi⟩ := hω
   exact Finset.prod_eq_zero (Finset.mem_univ i) (ENNReal.ofReal_eq_zero.mpr hi)
 
@@ -1528,8 +1528,8 @@ private lemma lintegral_bvmPairDefect_tendsto
             ω ∉ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)} ∧
             ω ∉ {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|} :=
           ⟨hcon.1, hcon.2.1, hcon.2.2.1, hcon.2.2.2⟩
-        simp only [Set.mem_setOf_eq, not_not] at hc0 hcg hch
-        simp only [Set.mem_setOf_eq, not_le] at hclr
+        simp only [Set.mem_ofPred_eq, not_not] at hc0 hcg hch
+        simp only [Set.mem_ofPred_eq, not_le] at hclr
         have hexp : ρ n ω
             = ENNReal.ofReal (Real.exp (bvmLogRatio M f θ₀ J sc n g h ω)) :=
           bvmPairRatio_eq_exp_bvmLogRatio hfg hfh hc0 hcg hch
@@ -1810,7 +1810,7 @@ private lemma exists_scoreSum_bound
       = ((productMeasure M μ θ₀ n).map (scoreSum sc n))
           {x : EuclideanSpace ℝ (Fin k) | max r 1 < ‖x‖} := by
         rw [Measure.map_apply (hscmeas n) (measurableSet_lt measurable_const measurable_norm),
-          Set.preimage_setOf_eq]
+          Set.preimage_ofPred_eq]
     _ ≤ ((productMeasure M μ θ₀ n).map (scoreSum sc n)) Kcᶜ := measure_mono hsub
     _ ≤ ε := hKle _ ⟨n, rfl⟩
 

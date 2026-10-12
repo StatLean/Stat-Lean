@@ -74,7 +74,7 @@ so `0` lies in its interior — the hypothesis needed for `deriv_mgf_zero` / int
 private lemma y_integrableExpSet_univ (M : GLMExpFamily n d μ) (i : Fin n) :
     integrableExpSet (M.y i) μ = Set.univ := by
   ext t
-  simp only [integrableExpSet, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
   exact y_exp_integrable M i t
 
 /-- The mean function identity `E[yᵢ] = ψ'(ηᵢ)`. The mean is the derivative of the MGF at `0`

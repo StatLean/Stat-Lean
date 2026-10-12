@@ -98,11 +98,11 @@ theorem isBayesEstimator_bayesTest [StandardBorelSpace Θ] [Nonempty Θ]
   have hbt : bayesTest κ π Θ₀ a₀ a₁ x
       = if a₁ * (κ†π) x Θ₀ᶜ ≤ a₀ * (κ†π) x Θ₀ then true else false := rfl
   by_cases hc : a₁ * (κ†π) x Θ₀ᶜ ≤ a₀ * (κ†π) x Θ₀
-  · rw [hbt, if_pos hc, lintegral_hypLoss_true hΘ₀]
+  · rw [hbt, ite_eq_left hc, lintegral_hypLoss_true hΘ₀]
     cases y with
     | true => exact le_of_eq (lintegral_hypLoss_true hΘ₀ a₀ a₁ _).symm
     | false => rw [lintegral_hypLoss_false hΘ₀]; exact hc
-  · rw [hbt, if_neg hc, lintegral_hypLoss_false hΘ₀]
+  · rw [hbt, ite_eq_right hc, lintegral_hypLoss_false hΘ₀]
     cases y with
     | true => rw [lintegral_hypLoss_true hΘ₀]; exact (not_le.mp hc).le
     | false => exact le_of_eq (lintegral_hypLoss_false hΘ₀ a₀ a₁ _).symm

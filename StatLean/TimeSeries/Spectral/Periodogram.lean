@@ -59,7 +59,7 @@ private noncomputable def centered {T : ℕ} (x : Fin T → ℝ) (n : ℕ) : ℝ
 
 private lemma centered_of_le {T : ℕ} {x : Fin T → ℝ} {n : ℕ} (hn : T ≤ n) :
     centered x n = 0 := by
-  rw [centered, dif_neg (by omega)]
+  rw [centered, dite_eq_right (by omega)]
 
 /-- The sample autocovariance in terms of the extended centred data: the `dite` guard of
 `sampleACVF` is exactly the vanishing of `centered` past the window. -/
@@ -69,10 +69,10 @@ private lemma sampleACVF_eq_centered {T : ℕ} (x : Fin T → ℝ) (τ : ℕ) :
     (fun n => centered x n * centered x (n + τ)) T]
   congr 1
   refine Finset.sum_congr rfl fun t _ => ?_
-  simp only [centered, t.isLt, dif_pos, Fin.eta]
+  simp only [centered, t.isLt, dite_eq_left, Fin.eta]
   by_cases h : (t : ℕ) + τ < T
-  · rw [dif_pos h, dif_pos h]
-  · rw [dif_neg h, dif_neg h, mul_zero]
+  · rw [dite_eq_left h, dite_eq_left h]
+  · rw [dite_eq_right h, dite_eq_right h, mul_zero]
 
 /-- `e^{imω}`. -/
 private noncomputable def expω (ω : ℝ) (m : ℤ) : ℂ :=
@@ -183,7 +183,7 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
           - (sampleMean x : ℂ) *
             Complex.exp (-(Complex.I * (((t : ℕ) + 1 : ℕ) : ℂ) * (ω : ℂ))) := by
     intro t
-    simp only [hcdef, centered, t.isLt, dif_pos, Fin.eta]
+    simp only [hcdef, centered, t.isLt, dite_eq_left, Fin.eta]
     push_cast
     ring
   have hdftFin : dft x k = ((Real.sqrt T)⁻¹ : ℝ) * ∑ t : Fin T,
@@ -227,10 +227,10 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
         + (if b < a then c a * c b * expω ω ((b : ℤ) - (a : ℤ)) else 0) := by
     intro a b
     rcases lt_trichotomy a b with h | h | h
-    · rw [if_neg h.ne, if_pos h, if_neg (by omega)]; ring
-    · subst h; rw [if_pos rfl, if_neg (lt_irrefl a)]
+    · rw [ite_eq_right h.ne, ite_eq_left h, ite_eq_right (by omega)]; ring
+    · subst h; rw [ite_eq_left rfl, ite_eq_right (lt_irrefl a)]
       simp [expω_zero]
-    · rw [if_neg (by omega), if_neg (by omega), if_pos h]; ring
+    · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left h]; ring
   have hgroup : ∑ a ∈ Finset.range T, ∑ b ∈ Finset.range T,
         c a * c b * expω ω ((b : ℤ) - (a : ℤ))
       = (∑ a ∈ Finset.range T, c a * c a)
@@ -250,7 +250,7 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
     have hd : ∑ a ∈ Finset.range T, (∑ b ∈ Finset.range T, if a = b then c a * c a else 0)
         = ∑ a ∈ Finset.range T, c a * c a := by
       refine Finset.sum_congr rfl fun a ha => ?_
-      rw [Finset.sum_ite_eq (Finset.range T) a (fun _ => c a * c a), if_pos ha]
+      rw [Finset.sum_ite_eq (Finset.range T) a (fun _ => c a * c a), ite_eq_left ha]
     -- the strict upper triangle
     have hu : ∑ a ∈ Finset.range T,
           (∑ b ∈ Finset.range T, if a < b then c a * c b * expω ω ((b : ℤ) - (a : ℤ)) else 0)
@@ -259,10 +259,10 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
       rw [← sum_strict_upper c hc (fun τ => expω ω (τ : ℤ))]
       refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
       by_cases h : a < b
-      · rw [if_pos h, if_pos h]
+      · rw [ite_eq_left h, ite_eq_left h]
         have hcast : ((b - a : ℕ) : ℤ) = (b : ℤ) - (a : ℤ) := by omega
         rw [hcast]
-      · rw [if_neg h, if_neg h]
+      · rw [ite_eq_right h, ite_eq_right h]
     -- the strict lower triangle
     have hl : ∑ a ∈ Finset.range T,
           (∑ b ∈ Finset.range T, if b < a then c a * c b * expω ω ((b : ℤ) - (a : ℤ)) else 0)
@@ -271,12 +271,12 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
       rw [Finset.sum_comm, ← sum_strict_upper c hc (fun τ => expω ω (-(τ : ℤ)))]
       refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
       by_cases h : a < b
-      · rw [if_pos h, if_pos h]
+      · rw [ite_eq_left h, ite_eq_left h]
         have hcast : ((b - a : ℕ) : ℤ) = (b : ℤ) - (a : ℤ) := by omega
         have hneg : -((b : ℤ) - (a : ℤ)) = (a : ℤ) - (b : ℤ) := by ring
         rw [hcast, hneg]
         ring
-      · rw [if_neg h, if_neg h]
+      · rw [ite_eq_right h, ite_eq_right h]
     rw [hd, hu, hl, add_assoc, ← Finset.sum_add_distrib]
     congr 1
     refine Finset.sum_congr rfl fun τ _ => ?_

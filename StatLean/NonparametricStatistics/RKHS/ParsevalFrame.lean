@@ -90,7 +90,7 @@ theorem HilbertBasis.isParsevalFrame [CompleteSpace E] (e : HilbertBasis ι 𝕜
 of a Hilbert basis of `E` onto a closed subspace `M` is a Parseval frame for `M`. -/
 theorem isParsevalFrame_orthogonalProjection [CompleteSpace E]
     (e : HilbertBasis ι 𝕜 E) (M : Submodule 𝕜 E) [CompleteSpace M] :
-    IsParsevalFrame 𝕜 fun i => M.orthogonalProjection (e i) := by
+    IsParsevalFrame 𝕜 fun i => M.orthogonalProjectionOnto (e i) := by
   intro h
   have := HilbertBasis.isParsevalFrame (𝕜 := 𝕜) e (h : E)
   simpa using this

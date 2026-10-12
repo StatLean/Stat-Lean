@@ -410,14 +410,14 @@ private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ �
       = ∑' k : ℤ, g n k := by
     intro n
     have hz : ∑' k : ℤ, g n k = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), g n k :=
-      tsum_eq_sum fun k hk => by simp only [hgdef, if_neg hk]
+      tsum_eq_sum fun k hk => by simp only [hgdef, ite_eq_right hk]
     rw [hvar n, hz]
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp
     · rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun k hk => ?_
       have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-      simp only [hgdef, if_pos hk]
+      simp only [hgdef, ite_eq_left hk]
       field_simp
   -- (d) Tannery / dominated convergence for series: the Fejér weights tend to `1`
   have hdom : Tendsto (fun n : ℕ => ∑' k : ℤ, g n k) atTop (𝓝 (∑' k : ℤ, acvf X μ k)) := by
@@ -428,14 +428,14 @@ private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ �
           simp only [Finset.mem_Ioo]
           have : (k.natAbs : ℤ) + 1 ≤ (n : ℤ) := by exact_mod_cast hn
           omega
-        simp only [hgdef, if_pos hmem]
+        simp only [hgdef, ite_eq_left hmem]
       refine Tendsto.congr' (hk.mono fun n h => h.symm) ?_
       have h1 : Tendsto (fun n : ℕ => (1 : ℝ) - |(k : ℝ)| / (n : ℝ)) atTop (𝓝 1) := by
         simpa using tendsto_const_nhds.sub (tendsto_const_div_atTop_nhds_zero_nat |(k : ℝ)|)
       simpa using h1.mul_const (acvf X μ k)
     · intro n k
       by_cases hk : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ)
-      · simp only [hgdef, if_pos hk, Real.norm_eq_abs, abs_mul]
+      · simp only [hgdef, ite_eq_left hk, Real.norm_eq_abs, abs_mul]
         refine mul_le_of_le_one_left (abs_nonneg _) ?_
         simp only [Finset.mem_Ioo] at hk
         have hklt : |(k : ℝ)| < (n : ℝ) := by
@@ -446,7 +446,7 @@ private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ �
         have hd1 : |(k : ℝ)| / (n : ℝ) < 1 := (div_lt_one hnpos).mpr hklt
         rw [abs_le]
         constructor <;> linarith
-      · simp only [hgdef, if_neg hk, norm_zero]
+      · simp only [hgdef, ite_eq_right hk, norm_zero]
         exact abs_nonneg _
   rw [← hσeq]
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
@@ -1336,7 +1336,7 @@ private lemma norm_integral_remainder_le [IsProbabilityMeasure μ] {B : Ω → �
       refine setIntegral_mono_on hg.integrableOn ((hB2.const_mul _).integrableOn) hSm.compl ?_
       intro ω hω
       have hlt : |B ω| < T := by
-        simp only [hSdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
+        simp only [hSdef, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hω
         exact hω
       have h1 := (norm_expI_taylor (v * B ω)).1
       have habs : |v * B ω| ^ 3 = |v| ^ 3 * |B ω| ^ 3 := by
@@ -3379,7 +3379,7 @@ private lemma exists_tail_threshold [IsProbabilityMeasure μ] {X : ℤ → Ω �
       have hset : {ω | 2 * (j : ℝ) ≤ (m : ℝ)⁻¹ * (S m ω) ^ 2}
           = {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2} := by
         ext ω
-        simp only [Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq]
         constructor
         · intro h
           have h2 := mul_le_mul_of_nonneg_right h hmpos.le
@@ -3545,7 +3545,7 @@ private theorem lindeberg_blocks_debt [IsProbabilityMeasure μ] {X : ℤ → Ω 
   have hsetEq : {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|}
       = {ω | ε ^ 2 * (n : ℝ) ≤ (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     constructor
     · intro h
       have h1 : (ε * Real.sqrt n) ^ 2
@@ -4711,18 +4711,18 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
     have hple : ∀ i ∈ s, i ≤ p := by
       intro i hi
       have hne : s.Nonempty := ⟨i, hi⟩
-      rw [hp, dif_pos hne]
+      rw [hp, dite_eq_left hne]
       exact Finset.le_max' s i hi
     have hqle : ∀ i ∈ s, q ≤ i := by
       intro i hi
       have hne : s.Nonempty := ⟨i, hi⟩
-      rw [hq, dif_pos hne]
+      rw [hq, dite_eq_left hne]
       exact Finset.min'_le s i hi
     have hqp : q ≤ p := by
       by_cases hne : s.Nonempty
       · obtain ⟨i, hi⟩ := hne
         exact le_trans (hqle i hi) (hple i hi)
-      · rw [hp, hq, dif_neg hne, dif_neg hne]
+      · rw [hp, hq, dite_eq_right hne, dite_eq_right hne]
     set n : ℕ := (p - q + (m : ℤ)).toNat with hndef
     have hn : (n : ℤ) = p - q + (m : ℤ) := Int.toNat_of_nonneg (by omega)
     have hci : ∀ i ∈ s, p + (m : ℤ) ≤ (i : ℤ) + (n : ℤ) := by

@@ -82,10 +82,10 @@ conventions of `arPoly`/`maPoly` differ by exactly the sign of the coefficients)
 (geometric decay in particular) applies verbatim to `π`. -/
 
 private lemma coeff_arPoly_zero' {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
-  simp [arPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [arPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 private lemma coeff_maPoly_zero' {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 /-- The AR polynomial of the negated coefficients is the MA polynomial. -/
 private lemma arPoly_neg {q : ℕ} (a : Fin q → ℝ) : arPoly (fun j => -a j) = maPoly a := by
@@ -150,14 +150,14 @@ private lemma hasSum_polyEval_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial 
     have hzero : ∀ x ∉ Set.range (fun n : ℕ => k + n),
         (if k ≤ x then P.coeff k * c (x - k) else 0) * z ^ x = 0 := by
       intro x hx
-      rw [if_neg, zero_mul]
+      rw [ite_eq_right, zero_mul]
       intro hkx
       exact hx ⟨x - k, by show k + (x - k) = x; omega⟩
     refine (hg.hasSum_iff hzero).1 ?_
     have heq : ((fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m) ∘
         fun n : ℕ => k + n) = fun n => P.coeff k * z ^ k * (c n * z ^ n) := by
       funext n
-      simp only [Function.comp_apply, if_pos (Nat.le_add_right k n), Nat.add_sub_cancel_left,
+      simp only [Function.comp_apply, ite_eq_left (Nat.le_add_right k n), Nat.add_sub_cancel_left,
         pow_add]
       ring
     rw [heq]
@@ -189,10 +189,10 @@ private lemma hasSum_polyEval_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial 
         intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
       rw [← Finset.sum_subset hsub (fun k _ hk => by
         simp only [Finset.mem_range, not_lt] at hk
-        rw [if_neg (by omega)])]
+        rw [ite_eq_right (by omega)])]
       exact Finset.sum_congr rfl fun k hk => by
         simp only [Finset.mem_range] at hk
-        rw [if_pos (by omega)]
+        rw [ite_eq_left (by omega)]
     rw [e1, e2]
   rwa [hfun] at hsum
 
@@ -395,7 +395,7 @@ private lemma exists_radius_nonvanishing {ι : Type*} [TopologicalSpace ι] {K :
         refine hne w0.1 hw0mem.1.1 w0.2.1 (by
           simpa [Metric.mem_closedBall, dist_zero_right] using hw0mem.1.2.1) ?_
         have := hw0mem.2
-        simp only [Set.mem_setOf_eq] at this
+        simp only [Set.mem_ofPred_eq] at this
         rwa [← h, Complex.ofReal_one, one_mul] at this
     refine ⟨min ((1 + w0.2.2) / 2) 2, ?_, min_le_right _ _, fun x hx z hz => ?_⟩
     · exact lt_min (by linarith) (by norm_num)
@@ -637,8 +637,8 @@ private lemma armaContrastVar_eq_one_iff_coeff {p q : ℕ} {b0 b : Fin p → ℝ
     have h : ∀ n : ℕ, contrastCoeff b0 a0 b a n ^ 2 = if n = 0 then 1 else 0 := by
       intro n
       rcases eq_or_ne n 0 with rfl | hn
-      · rw [contrastCoeff_zero, if_pos rfl, one_pow]
-      · rw [hzero n hn, if_neg hn]
+      · rw [contrastCoeff_zero, ite_eq_left rfl, one_pow]
+      · rw [hzero n hn, ite_eq_right hn]
         ring
     rw [tsum_congr h]
     exact tsum_ite_eq (0 : ℕ) (fun _ : ℕ => (1 : ℝ))
@@ -666,11 +666,11 @@ private lemma armaContrastVar_eq_one_iff_transfer {p q : ℕ} {b0 b : Fin p → 
     · intro h n
       rw [← contrastCoeff_eq_coeff, PowerSeries.coeff_one]
       rcases eq_or_ne n 0 with rfl | hn
-      · rw [contrastCoeff_zero, if_pos rfl]
-      · rw [h n hn, if_neg hn]
+      · rw [contrastCoeff_zero, ite_eq_left rfl]
+      · rw [h n hn, ite_eq_right hn]
     · intro h n hn
       have := h n
-      rw [← contrastCoeff_eq_coeff, PowerSeries.coeff_one, if_neg hn] at this
+      rw [← contrastCoeff_eq_coeff, PowerSeries.coeff_one, ite_eq_right hn] at this
       exact this
   rw [hcoeff]
   constructor
@@ -845,7 +845,7 @@ parameter vectors, provided *both* pairs are coprime. -/
 private lemma coeff_arPoly' {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeff_arPoly_succ' {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
@@ -969,7 +969,7 @@ private lemma maPoly_conv_armaPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → 
 private lemma coeff_maPoly' {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
     (maPoly a).coeff m
       = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+  simp [maPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
 
 private lemma continuous_coeff_maPoly {q : ℕ} (m : ℕ) :
     Continuous fun a : Fin q → ℝ => (maPoly a).coeff m := by
@@ -1092,11 +1092,11 @@ private lemma exists_contrast_gap {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q �
           (hcopK ba0 hba0.1)).1 h1.symm
         have hzero : ba0 = (b0, a0) := Prod.ext hb ha
         have hd := hba0.2
-        rw [Set.mem_setOf_eq, hzero, dist_self] at hd
+        rw [Set.mem_ofPred_eq, hzero, dist_self] at hd
         linarith
     refine ⟨armaContrastVar b0 a0 ba0.1 ba0.2 - 1, by linarith, fun ba hba hd => ?_⟩
     have hle := hmin (Set.mem_inter hba hd)
-    simp only [Set.mem_setOf_eq] at hle
+    simp only [Set.mem_ofPred_eq] at hle
     linarith
 
 
@@ -1132,11 +1132,11 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
     rw [Real.norm_eq_abs, abs_abs]
     linarith
   haveI : CompactSpace ↥(K ×ˢ K) := isCompact_iff_compactSpace.1 (hK.prod hK)
-  obtain ⟨F, hF⟩ : ∃ F : ↥(K ×ˢ K) → ℝ, F = (K ×ˢ K).restrict
+  obtain ⟨F, hF⟩ : ∃ F : ↥(K ×ˢ K) → ℝ, F = (K ×ˢ K).domRestrict
       (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) × ((Fin p → ℝ) × (Fin q → ℝ)) =>
         ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) := ⟨_, rfl⟩
   have hFc : Continuous F := by
-    rw [hF]; exact continuousOn_iff_continuous_restrict.1 hFcont
+    rw [hF]; exact continuousOn_iff_continuous_domRestrict.1 hFcont
   have hdc : Continuous fun s : ↥(K ×ˢ K) => dist s.1.1 s.1.2 :=
     (continuous_fst.comp continuous_subtype_val).dist
       (continuous_snd.comp continuous_subtype_val)
@@ -1145,7 +1145,7 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
   · refine ⟨1, one_pos, fun ba hba ba' hba' _ => ?_⟩
     by_contra hcon
     have : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
-      simpa [hF, Set.restrict_apply] using! not_lt.1 hcon
+      simpa [hF, Set.domRestrict_apply] using! not_lt.1 hcon
     rw [hemp] at this
     exact this
   · obtain ⟨s0, hs0, hmin⟩ := hAcl.isCompact.exists_isMinOn hAne hdc.continuousOn
@@ -1160,14 +1160,14 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
           rw [heq]
           simp
         have := hs0
-        simp only [Set.mem_setOf_eq, hzero] at this
+        simp only [Set.mem_ofPred_eq, hzero] at this
         linarith
     refine ⟨dist s0.1.1 s0.1.2, hpos, fun ba hba ba' hba' hd => ?_⟩
     by_contra hcon
     have hmemA : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
-      simpa [hF, Set.restrict_apply] using! not_lt.1 hcon
+      simpa [hF, Set.domRestrict_apply] using! not_lt.1 hcon
     have hge := hmin hmemA
-    simp only [Set.mem_setOf_eq] at hge
+    simp only [Set.mem_ofPred_eq] at hge
     linarith
 
 /-! ### From the modulus to a Lipschitz bound
@@ -1251,7 +1251,7 @@ private lemma armaPi_series_sub {p q : ℕ} (b b' : Fin p → ℝ) (a a' : Fin q
 private lemma constantCoeff_maPoly_ne {q : ℕ} (a : Fin q → ℝ) :
     PowerSeries.constantCoeff (R := ℝ) ((maPoly a : Polynomial ℝ) : PowerSeries ℝ) ≠ 0 := by
   rw [← PowerSeries.coeff_zero_eq_constantCoeff, Polynomial.coeff_coe]
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 private lemma coeff_inv_maPoly (p : ℕ) {q : ℕ} (a : Fin q → ℝ) (n : ℕ) :
     PowerSeries.coeff n ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
@@ -1327,7 +1327,7 @@ private lemma l1_maPoly_sub {q : ℕ} (a a' : Fin q → ℝ) :
     rw [hcoeff n]
     refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun j _ => ?_)
     by_cases h : n = (j : ℕ) + 1
-    · simp only [h, if_pos]
+    · simp only [h, ite_eq_left]
       rw [abs_sub_comm]
     · simp [h, abs_nonneg]
   have hzero : ∀ n ∉ Finset.range (q + 1),
@@ -1661,7 +1661,7 @@ private lemma uSeq_eq_of_lt (b : Fin p → ℝ) (a : Fin q → ℝ) {T i m : ℕ
       = ∑ k ∈ Finset.range (m + 1), piK b a i k * armaPsi b a (m - k) := by
     refine Finset.sum_congr rfl fun k hk => ?_
     rw [Finset.mem_range] at hk
-    rw [psiK, if_pos (by omega)]
+    rw [psiK, ite_eq_left (by omega)]
   rw [hrestrict, hpsi]
   by_cases him : i ≤ m
   · have hzero : ∑ k ∈ Finset.Ico 0 i, piK b a i k * armaPsi b a (m - k) = 0 :=
@@ -1677,15 +1677,15 @@ private lemma uSeq_eq_of_lt (b : Fin p → ℝ) (a : Fin q → ℝ) {T i m : ℕ
         = ∑ d ∈ Finset.range ((m - i) + 1), armaPi b a d * armaPsi b a ((m - i) - d) := by
       rw [Finset.sum_Ico_eq_sum_range, show m + 1 - i = (m - i) + 1 by omega]
       refine Finset.sum_congr rfl fun d hd => ?_
-      rw [piK, if_pos (Nat.le_add_right _ _)]
+      rw [piK, ite_eq_left (Nat.le_add_right _ _)]
       congr 2 <;> omega
     rw [hsplit, hshift, armaPi_conv_armaPsi]
     by_cases h : i = m
-    · rw [if_pos (by omega), if_pos h]
-    · rw [if_neg (by omega), if_neg h]
+    · rw [ite_eq_left (by omega), ite_eq_left h]
+    · rw [ite_eq_right (by omega), ite_eq_right h]
   · rw [Finset.sum_eq_zero fun k hk => by
       rw [Finset.mem_range] at hk
-      rw [piK_eq_zero b a (by omega), zero_mul], if_neg (by omega)]
+      rw [piK_eq_zero b a (by omega), zero_mul], ite_eq_right (by omega)]
 
 /-- **Above the horizon**: the geometric estimate `|u_i(m)| ≤ C²(T − i) r^{m−i}`, whose
 `(T − i)` factor (rather than `T`) is what keeps the trace bounded. -/
@@ -1707,7 +1707,7 @@ private lemma abs_uSeq_le {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r)
     intro k hk
     rw [Finset.mem_Ico] at hk
     have hkm : k ≤ m := by omega
-    rw [piK, if_pos hk.1, psiK, if_pos hkm, abs_mul]
+    rw [piK, ite_eq_left hk.1, psiK, ite_eq_left hkm, abs_mul]
     calc |armaPi b a (k - i)| * |armaPsi b a (m - k)|
         ≤ (C * r ^ (k - i)) * (C * r ^ (m - k)) :=
           mul_le_mul (hπ _) (hψ _) (abs_nonneg _) (by positivity)
@@ -1771,7 +1771,7 @@ private lemma armaACVF_eq_tsum_psiK (a : Fin q → ℝ) (hb : NoRootClosedDisc b
     refine tsum_congr fun j => ?_
     have h1 : psiK b a (j + u) u = armaPsi b a j := by simp [psiK]
     have h2 : psiK b a (j + u) v = armaPsi b a (j + (u - v)) := by
-      rw [psiK, if_pos (by omega)]
+      rw [psiK, ite_eq_left (by omega)]
       congr 1
       omega
     rw [h1, h2]
@@ -1822,7 +1822,7 @@ private noncomputable def gramTail (b : Fin p → ℝ) (a : Fin q → ℝ) (T : 
   Matrix.of fun i j => ∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)
 
 private lemma det_piMat (b : Fin p → ℝ) (a : Fin q → ℝ) (T : ℕ) : (piMat b a T).det = 1 := by
-  rw [Matrix.det_of_upperTriangular]
+  rw [Matrix.det_of_isUpperTriangular]
   · simp [piMat, piK_self]
   · intro i j hij
     exact piK_eq_zero b a hij
@@ -1863,12 +1863,12 @@ private lemma piMat_mul_toeplitz_mul_transpose (hB : ARMAInvertibleParams b a) (
       rw [Finset.mem_range] at hm
       rw [uSeq_eq_of_lt b a hm, uSeq_eq_of_lt b a hm]
     rw [Finset.sum_congr rfl hterm, Finset.sum_eq_single (i : ℕ)]
-    · rw [if_pos rfl, one_mul, Matrix.one_apply]
+    · rw [ite_eq_left rfl, one_mul, Matrix.one_apply]
       by_cases h : i = j
-      · rw [if_pos h, if_pos (by rw [h])]
-      · rw [if_neg h, if_neg (by simpa [Fin.ext_iff, eq_comm] using h)]
+      · rw [ite_eq_left h, ite_eq_left (by rw [h])]
+      · rw [ite_eq_right h, ite_eq_right (by simpa [Fin.ext_iff, eq_comm] using h)]
     · intro m _ hm
-      rw [if_neg (Ne.symm hm), zero_mul]
+      rw [ite_eq_right (Ne.symm hm), zero_mul]
     · intro h
       exact absurd (Finset.mem_range.2 i.isLt) h
   rw [hhead]
@@ -2404,9 +2404,9 @@ private lemma abs_mulVec_piMat_le {C r : ℝ}
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun k _ => ?_)
   rw [abs_mul]
   by_cases hik : (i : ℕ) ≤ (k : ℕ)
-  · rw [if_pos hik, piK, if_pos hik]
+  · rw [ite_eq_left hik, piK, ite_eq_left hik]
     exact mul_le_mul_of_nonneg_right (hπ _) (abs_nonneg _)
-  · rw [if_neg hik, piK, if_neg hik, abs_zero, zero_mul]
+  · rw [ite_eq_right hik, piK, ite_eq_right hik, abs_zero, zero_mul]
 
 /-- The Gram weight `h_i = (T − i) r^{T−i}` has bounded total mass, uniformly in `T`. -/
 private lemma sum_weight_le {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) (T : ℕ) :
@@ -2574,7 +2574,7 @@ private lemma sum_abs_piK_row {T : ℕ} (hπ : Summable fun n => |armaPi b a n|)
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
     exact piK_eq_zero b a hk
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-    rw [piK, if_pos hk]
+    rw [piK, ite_eq_left hk]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
     have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
     exact Fin.ext (by omega)
@@ -2588,7 +2588,7 @@ private lemma sum_abs_piK_col {T : ℕ} (hπ : Summable fun n => |armaPi b a n|)
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hj
     exact piK_eq_zero b a hj
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
-    rw [piK, if_pos hj]
+    rw [piK, ite_eq_left hj]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
     have hjk' : (l : ℕ) - (j : ℕ) = (l : ℕ) - (k : ℕ) := hjk
     exact Fin.ext (by omega)
@@ -2615,9 +2615,9 @@ private lemma sum_geomCoeff_le {C r : ℝ} (hC : 0 ≤ C) (hr0 : 0 ≤ r) (hr1 :
     (Finset.univ.filter fun k : Fin T => (i : ℕ) ≤ (k : ℕ)) (fun k hk => ?_)
     (fun k hk => ?_) (fun k hk l hl hkl => ?_)
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-    rw [if_pos hk, abs_of_nonneg (by positivity)]
+    rw [ite_eq_left hk, abs_of_nonneg (by positivity)]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
     have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
     exact Fin.ext (by omega)
@@ -2729,7 +2729,7 @@ private lemma sum_abs_piK_sub_row {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : F
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
     rw [piK_eq_zero b1 a1 hk, piK_eq_zero b2 a2 hk, sub_zero]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-    rw [piK, if_pos hk, piK, if_pos hk]
+    rw [piK, ite_eq_left hk, piK, ite_eq_left hk]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
     have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
     exact Fin.ext (by omega)
@@ -2747,7 +2747,7 @@ private lemma sum_abs_piK_sub_col {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : F
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hj
     rw [piK_eq_zero b1 a1 hj, piK_eq_zero b2 a2 hj, sub_zero]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
-    rw [piK, if_pos hj, piK, if_pos hj]
+    rw [piK, ite_eq_left hj, piK, ite_eq_left hj]
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
     have hjk' : (l : ℕ) - (j : ℕ) = (l : ℕ) - (k : ℕ) := hjk
     exact Fin.ext (by omega)
@@ -3251,9 +3251,9 @@ private lemma integral_noise_mul' [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : �
   rw [← h]
   by_cases hab : α = β
   · subst hab
-    rw [if_pos rfl, covariance_self (hε.memLp α).aestronglyMeasurable.aemeasurable,
+    rw [ite_eq_left rfl, covariance_self (hε.memLp α).aestronglyMeasurable.aemeasurable,
       hε.variance_eq α]
-  · rw [if_neg hab, hε.uncorrelated α β hab]
+  · rw [ite_eq_right hab, hε.uncorrelated α β hab]
 
 /-- **The window form of the second moment**: `E[(z_i^{(m)})²] = σ² Σ_{x,y} 1{x₁−x₂ =
 y₁−y₂} π ψ π ψ`. The constraint is on the *difference* of the two block coordinates,
@@ -3293,10 +3293,10 @@ private lemma integral_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε :
     simp only [ht]
     omega
   by_cases h : ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) = ((y.1 : ℕ) : ℤ) - ((y.2 : ℕ) : ℤ)
-  · rw [if_pos (hiff.2 h), if_pos h]
+  · rw [ite_eq_left (hiff.2 h), ite_eq_left h]
     simp only [hc]
     ring
-  · rw [if_neg (fun hh => h (hiff.1 hh)), if_neg h]
+  · rw [ite_eq_right (fun hh => h (hiff.1 hh)), ite_eq_right h]
     ring
 
 /-- **The combinatorial Parseval identity**, the step that replaces a Fourier argument:
@@ -3320,9 +3320,9 @@ private lemma sum_pairs_swap (π ψ : ℕ → ℝ) (m : ℕ) :
   rintro ⟨⟨d, n⟩, ⟨d', n'⟩⟩
   simp only [Equiv.coe_fn_mk]
   by_cases h : ((d : ℕ) : ℤ) - ((n : ℕ) : ℤ) = ((d' : ℕ) : ℤ) - ((n' : ℕ) : ℤ)
-  · rw [if_pos h, if_pos (by omega : (d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ))]
+  · rw [ite_eq_left h, ite_eq_left (by omega : (d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ))]
     ring
-  · rw [if_neg h, if_neg (by omega : ¬((d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ)))]
+  · rw [ite_eq_right h, ite_eq_right (by omega : ¬((d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ)))]
 
 /-- The sum-constrained pairing collapses fibrewise into `Σ_r (c_r^{(m)})²`. -/
 private lemma sum_sq_cTrunc (π ψ : ℕ → ℝ) (m : ℕ) :
@@ -3348,17 +3348,17 @@ private lemma sum_sq_cTrunc (π ψ : ℕ → ℝ) (m : ℕ) :
     simp only [Finset.mem_range]
     omega
   by_cases h : (x.1 : ℕ) + (x.2 : ℕ) = (y.1 : ℕ) + (y.2 : ℕ)
-  · rw [if_pos h, Finset.sum_eq_single ((x.1 : ℕ) + (x.2 : ℕ))]
-    · rw [if_pos rfl, if_pos h.symm]
+  · rw [ite_eq_left h, Finset.sum_eq_single ((x.1 : ℕ) + (x.2 : ℕ))]
+    · rw [ite_eq_left rfl, ite_eq_left h.symm]
     · intro r _ hr
-      rw [if_neg (Ne.symm hr), zero_mul]
+      rw [ite_eq_right (Ne.symm hr), zero_mul]
     · intro hnot
       exact absurd hx hnot
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     refine Finset.sum_eq_zero fun r _ => ?_
     by_cases h1 : (x.1 : ℕ) + (x.2 : ℕ) = r
-    · rw [if_neg (by omega : ¬((y.1 : ℕ) + (y.2 : ℕ) = r)), mul_zero]
-    · rw [if_neg h1, zero_mul]
+    · rw [ite_eq_right (by omega : ¬((y.1 : ℕ) + (y.2 : ℕ) = r)), mul_zero]
+    · rw [ite_eq_right h1, zero_mul]
 
 /-- **The second moment of the truncated residual**: `E[(z_i^{(m)})²] = σ² Σ_r
 (c_r^{(m)})²`, the same at every `i`. -/
@@ -3380,16 +3380,16 @@ private lemma sum_ite_add_eq (π ψ : ℕ → ℝ) (m r d : ℕ) :
     ∑ n ∈ Finset.range m, (if d + n = r then π d * ψ n else 0)
       = if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0 := by
   by_cases h : d ≤ r ∧ r - d < m
-  · rw [if_pos h, Finset.sum_eq_single (r - d)]
-    · rw [if_pos (by omega)]
+  · rw [ite_eq_left h, Finset.sum_eq_single (r - d)]
+    · rw [ite_eq_left (by omega)]
     · intro n _ hn
-      rw [if_neg (by omega)]
+      rw [ite_eq_right (by omega)]
     · intro hnot
       exact absurd (Finset.mem_range.2 h.2) hnot
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     refine Finset.sum_eq_zero fun n hn => ?_
     rw [Finset.mem_range] at hn
-    rcases not_and_or.1 h with h1 | h1 <;> exact if_neg (by omega)
+    rcases not_and_or.1 h with h1 | h1 <;> exact ite_eq_right (by omega)
 
 private lemma cTrunc_eq_sum_range (π ψ : ℕ → ℝ) (m r : ℕ) :
     cTrunc π ψ m r
@@ -3410,11 +3410,11 @@ private lemma cTrunc_eq_of_lt (π ψ : ℕ → ℝ) {m r : ℕ} (hr : r < m) :
       (if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0) = 0 := by
     intro d hd hd'
     simp only [Finset.mem_range] at hd hd'
-    rw [if_neg (by omega)]
+    rw [ite_eq_right (by omega)]
   rw [← Finset.sum_subset hsub hz]
   refine Finset.sum_congr rfl fun d hd => ?_
   rw [Finset.mem_range] at hd
-  rw [if_pos (⟨by omega, by omega⟩ : d ≤ r ∧ r - d < m)]
+  rw [ite_eq_left (⟨by omega, by omega⟩ : d ≤ r ∧ r - d < m)]
 
 private lemma abs_cTrunc_le (π ψ : ℕ → ℝ) (m r : ℕ) :
     |cTrunc π ψ m r| ≤ ∑ d ∈ Finset.range (r + 1), |π d| * |ψ (r - d)| := by
@@ -3425,14 +3425,14 @@ private lemma abs_cTrunc_le (π ψ : ℕ → ℝ) (m r : ℕ) :
         ≤ if d ∈ Finset.range (r + 1) then |π d| * |ψ (r - d)| else 0 := by
     intro d _
     by_cases hdr : d ∈ Finset.range (r + 1)
-    · rw [if_pos hdr]
+    · rw [ite_eq_left hdr]
       by_cases hcond : d ≤ r ∧ r - d < m
-      · rw [if_pos hcond, abs_mul]
-      · rw [if_neg hcond, abs_zero]
+      · rw [ite_eq_left hcond, abs_mul]
+      · rw [ite_eq_right hcond, abs_zero]
         positivity
-    · rw [if_neg hdr]
+    · rw [ite_eq_right hdr]
       rw [Finset.mem_range] at hdr
-      rw [if_neg (by omega), abs_zero]
+      rw [ite_eq_right (by omega), abs_zero]
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) (le_trans (Finset.sum_le_sum hstep) ?_)
   rw [Finset.sum_ite_mem]
   exact Finset.sum_le_sum_of_subset_of_nonneg Finset.inter_subset_right
@@ -3791,7 +3791,7 @@ lemma l2n_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
   have h : ∫ ω, ε t ω ^ 2 ∂μ = σ2 := by
     have h1 : ∫ ω, ε t ω ^ 2 ∂μ = ∫ ω, ε t ω * ε t ω ∂μ :=
       integral_congr_ae (Filter.Eventually.of_forall fun ω => sq (ε t ω))
-    rw [h1, integral_noise_mul' hε, if_pos rfl]
+    rw [h1, integral_noise_mul' hε, ite_eq_left rfl]
   rw [l2n, h]
 
 private lemma l2n_linearProcess_eq [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
@@ -3983,7 +3983,7 @@ private lemma gramTail_uniform_tendstoInProb [IsProbabilityMeasure μ] {p q : �
           (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}
       ⊆ {ω | η ≤ (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * (W T ω) ^ 2)} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     obtain ⟨ba, hba, hle⟩ := hω
     refine le_trans hle (mul_le_mul_of_nonneg_left ?_ (by positivity))
     have hdom := quadForm_gramTail_le_env (b := ba.1) (a := ba.2) hC hr0 hr1
@@ -4197,11 +4197,11 @@ private lemma tail_min_le {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (K
     (∑' k : ℕ, |π (k + min K m)|)
       ≤ (∑' k : ℕ, |π (k + m)|) + (if K < m then ∑' n : ℕ, |π n| else 0) := by
   by_cases hKm : K < m
-  · rw [if_pos hKm, min_eq_left (le_of_lt hKm)]
+  · rw [ite_eq_left hKm, min_eq_left (le_of_lt hKm)]
     have h1 := tail_le_tsum hπ K
     have h2 : (0 : ℝ) ≤ ∑' k : ℕ, |π (k + m)| := tsum_nonneg fun k => abs_nonneg _
     linarith
-  · rw [if_neg hKm, min_eq_right (by omega), add_zero]
+  · rw [ite_eq_right hKm, min_eq_right (by omega), add_zero]
 
 /-- The edge correction is supported on the last `m` indices. -/
 private lemma sum_edge_le (T m : ℕ) {c : ℝ} (hc : 0 ≤ c) :
@@ -4318,8 +4318,8 @@ private lemma integral_defect_le [IsProbabilityMeasure μ] {ψ π : ℕ → ℝ}
     congr 1
     refine Finset.sum_congr rfl fun i _ => ?_
     by_cases hi : T - i < m
-    · rw [if_pos hi, if_pos hi]
-    · rw [if_neg hi, if_neg hi, zero_mul]
+    · rw [ite_eq_left hi, ite_eq_left hi]
+    · rw [ite_eq_right hi, ite_eq_right hi, zero_mul]
   rw [hsplit]
   have hedge := sum_edge_le T m (c := (∑' n : ℕ, |π n|) * c0) (by positivity)
   linarith
@@ -4426,7 +4426,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         Finset.sum_Ico_eq_sum_range, icoResid, ← Finset.range_eq_Ico]
       refine Finset.sum_congr rfl fun d _ => ?_
       have hp : piK b a (i : ℕ) ((i : ℕ) + d) = armaPi b a d := by
-        rw [piK, if_pos (Nat.le_add_right _ _)]
+        rw [piK, ite_eq_left (Nat.le_add_right _ _)]
         congr 1
         omega
       have hx : ((((i : ℕ) + d : ℕ)) : ℤ) + 1 = ((i : ℕ) : ℤ) + 1 + (d : ℕ) := by
@@ -4484,7 +4484,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
             |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
               - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       refine le_trans hω ?_
       rw [← mul_sub, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹),
         ← Finset.sum_sub_distrib]
@@ -4538,7 +4538,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
             blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|} := by
       intro T
       ext ω
-      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq,
+      simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq,
         ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)]
     have hz2 : Tendsto (fun T : ℕ => (μ {ω | ENNReal.ofReal (η' / 3) ≤
         edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
@@ -4565,7 +4565,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
           icoResid (armaPi b a) X 0 (T - i) i ω ^ 2 - σ2 * armaContrastVar b0 a0 b a|} := by
     intro T
     ext ω
-    simp only [Set.mem_setOf_eq, hquad T ω]
+    simp only [Set.mem_ofPred_eq, hquad T ω]
   simp only [hgoalset]
   refine Metric.tendsto_atTop.2 fun ζ hζ => ?_
   obtain ⟨m, hm1, hmb, hmM⟩ : ∃ m : ℕ, 0 < m ∧ 3 / η' * (rho m * G) < ζ / 3 ∧
@@ -4602,7 +4602,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         ∪ {ω | η' / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
               blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     by_contra hcon
     push Not at hcon
     obtain ⟨h1, h2⟩ := hcon
@@ -4749,7 +4749,7 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
               (gramTail b a T *ᵥ
                 (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     by_contra hcon
     push Not at hcon
     obtain ⟨h1, h2⟩ := hcon
@@ -4837,16 +4837,16 @@ private lemma cTrunc_deltaFilter (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m) (r : �
   rw [Finset.sum_eq_single (⟨0, hm⟩ : Fin m)]
   · have hd : deltaFilter ((⟨0, hm⟩ : Fin m) : ℕ) = 1 := by simp [deltaFilter]
     by_cases hr : r < m
-    · rw [if_pos hr, Finset.sum_eq_single (⟨r, hr⟩ : Fin m)]
+    · rw [ite_eq_left hr, Finset.sum_eq_single (⟨r, hr⟩ : Fin m)]
       · simp [hd]
       · intro n _ hn
         have : (n : ℕ) ≠ r := fun hc => hn (Fin.ext hc)
         simp [this]
       · intro hc
         exact absurd (Finset.mem_univ _) hc
-    · rw [if_neg hr]
+    · rw [ite_eq_right hr]
       refine Finset.sum_eq_zero fun n _ => ?_
-      refine if_neg ?_
+      refine ite_eq_right ?_
       have hnlt := n.isLt
       simp only [Fin.val_mk, zero_add]
       omega
@@ -4870,10 +4870,10 @@ private lemma sum_sq_cTrunc_deltaFilter (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m)
   have h2 : ∑ r ∈ (Finset.range (2 * m)).filter (fun r => ¬ r < m),
       (if r < m then c r else 0) ^ 2 = 0 :=
     Finset.sum_eq_zero fun r hr => by
-      rw [if_neg (Finset.mem_filter.1 hr).2]
+      rw [ite_eq_right (Finset.mem_filter.1 hr).2]
       ring
   rw [h1, h2, add_zero]
-  exact Finset.sum_congr rfl fun r hr => by rw [if_pos (Finset.mem_range.1 hr)]
+  exact Finset.sum_congr rfl fun r hr => by rw [ite_eq_left (Finset.mem_range.1 hr)]
 
 /-- **The second-moment LLN for a linear process** (the one-filter form of
 `armaResidualSS_tendstoInProb`): for i.i.d. noise and any absolutely summable `c`,
@@ -4989,7 +4989,7 @@ theorem linearProcess_avgSq_tendstoInProb [IsProbabilityMeasure μ] {c : ℕ →
         ⊆ {ω | η / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
             |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       refine le_trans hω ?_
       rw [← mul_sub, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹),
         ← Finset.sum_sub_distrib]
@@ -5038,7 +5038,7 @@ theorem linearProcess_avgSq_tendstoInProb [IsProbabilityMeasure μ] {c : ℕ →
             blockResid deltaFilter c ε m i ω ^ 2 - Mm m|} := by
       intro T
       ext ω
-      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq,
+      simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq,
         ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)]
     have hz2 : Tendsto (fun T : ℕ => (μ {ω | ENNReal.ofReal (η / 3) ≤
         edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
@@ -5082,9 +5082,9 @@ theorem linearProcess_avgSq_tendstoInProb [IsProbabilityMeasure μ] {c : ℕ →
         ∪ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
               blockResid deltaFilter c ε m i ω ^ 2 - Mm m|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨h1, h2⟩ := hcon
     have h3 := abs_lt.1 hmM
     have h4 := abs_lt.1 h1
@@ -5150,13 +5150,13 @@ private lemma piMat_zero_fun {p q : ℕ} (T : ℕ) :
   rw [piK, Matrix.one_apply]
   by_cases hij : i = j
   · subst hij
-    rw [if_pos le_rfl, if_pos rfl, armaPi_zero_fun, if_pos (by omega)]
+    rw [ite_eq_left le_rfl, ite_eq_left rfl, armaPi_zero_fun, ite_eq_left (by omega)]
   · by_cases hle : (i : ℕ) ≤ (j : ℕ)
     · have hne : (j : ℕ) - (i : ℕ) ≠ 0 := by
         have : (i : ℕ) ≠ (j : ℕ) := fun hc => hij (Fin.ext hc)
         omega
-      rw [if_pos hle, if_neg hij, armaPi_zero_fun, if_neg hne]
-    · rw [if_neg hle, if_neg hij]
+      rw [ite_eq_left hle, ite_eq_right hij, armaPi_zero_fun, ite_eq_right hne]
+    · rw [ite_eq_right hle, ite_eq_right hij]
 
 open Matrix in
 /-- **`T⁻¹‖x‖²` is bounded in probability by a deterministic constant.** -/
@@ -5179,7 +5179,7 @@ lemma normSq_bounded_inProb [IsProbabilityMeasure μ] {p q : ℕ}
   refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hlim
   filter_upwards with T
   refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   have hq : ((piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T *ᵥ
         fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
       (piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T *ᵥ
@@ -5274,10 +5274,10 @@ theorem armaProfileS_locallyEquicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
                 (gramTail ba.1 ba.2 T *ᵥ
                   (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     obtain ⟨ba, hba, hd, hbig⟩ := hω
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨hE1, hE2⟩ := hcon
     have hQ0 : (0 : ℝ) ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2 :=
       mul_nonneg hTnn (Finset.sum_nonneg fun k _ => sq_nonneg _)
@@ -5392,7 +5392,7 @@ theorem criterion_tendsto_contrast [IsProbabilityMeasure μ] {p q : ℕ}
     (armaProfileS_tendstoInProb h hiid hσ hB0 hB hcausal hmeas hη)
   filter_upwards [hLsmall] with T hT
   refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   by_contra hcon
   push Not at hcon
   have h1 := hlog _ hcon
@@ -5645,13 +5645,13 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
                 (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
               - σ2 * armaContrastVar b0 a0 ba.1 ba.2|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     by_contra hcon
     simp only [Set.mem_union, not_or] at hcon
     obtain ⟨⟨⟨hn1, hn2⟩, hn3⟩, hn4⟩ := hcon
-    simp only [Set.mem_setOf_eq, not_le] at hn1 hn2
-    simp only [Set.mem_setOf_eq, not_exists, not_and, not_le] at hn3
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at hn4
+    simp only [Set.mem_ofPred_eq, not_le] at hn1 hn2
+    simp only [Set.mem_ofPred_eq, not_exists, not_and, not_le] at hn3
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le] at hn4
     -- the estimate is in the far set, hence in some cover ball
     have hθK : θ T ω ∈ K := (hargmin T ω).1
     obtain ⟨bj, hbjs, hmem⟩ := Set.mem_iUnion₂.1 (hscov ⟨hθK, hω⟩)

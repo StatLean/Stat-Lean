@@ -194,7 +194,7 @@ theorem integral_iSup_rademacherSum_update_comp_le
     cases hε : ε k
     · simpa [rademacherSign, hε, mul_comm, mul_left_comm, mul_assoc] using
         iSup_add_comp_add_iSup_sub_comp_le c x ψ L hψ
-    · simp only [rademacherSign, if_true, mul_neg, mul_one]
+    · simp only [rademacherSign, ite_true, mul_neg, mul_one]
       simp only [sub_eq_add_neg, neg_neg]
       rw [add_comm (⨆ j, c j + -ψ (x j)),
         add_comm (⨆ j, c j + -(L * x j))]

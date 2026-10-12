@@ -143,7 +143,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
         MemLp (fun w => jointEval w (a q)) 2 κ := by
       intro q
       rw [← hcoord q]
-      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitz.comp_memLp
+      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitzWith.comp_memLp
         (map_zero _) hRmem
     rw [hcoord i, hcoord j]
     rw [ProbabilityTheory.covariance_eq_sub (hcoord_mem i) (hcoord_mem j),

@@ -107,7 +107,7 @@ theorem law_of_large_numbers_in_probability
   have hf_ae : ∀ (n : ℕ), AEStronglyMeasurable
       (fun ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) P := fun (n : ℕ) =>
     ((Finset.aestronglyMeasurable_sum (Finset.range n) (fun i _ => hX_ae i)).congr
-        (Filter.Eventually.of_forall fun ω => Finset.sum_apply ω _ X)).const_smul' _
+        (Filter.Eventually.of_forall fun ω => Finset.sum_apply ω _ X)).fun_const_smul _
   exact MeasureTheory.tendstoInMeasure_of_tendsto_ae hf_ae hae
 
 /-- **Central Limit Theorem** (Lu BDA §4.1).

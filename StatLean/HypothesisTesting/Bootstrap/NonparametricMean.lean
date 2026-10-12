@@ -195,13 +195,13 @@ private lemma integrable_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ
   · subst hn; simp [empiricalMeasure]
   · unfold empiricalMeasure
     refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
-    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+    exact integrable_finsetSum_measure.2 (fun i _ => integrable_dirac (by simp))
 
 /-- The integral of a function against an empirical measure is the sample average of its values. -/
 private lemma integral_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ → ℝ) :
     ∫ t, f t ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, f (x i) := by
   unfold empiricalMeasure
-  rw [integral_smul_measure, integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+  rw [integral_smul_measure, integral_finsetSum_measure (fun i _ => integrable_dirac (by simp))]
   simp only [integral_dirac]
   rw [ENNReal.toReal_inv, ENNReal.toReal_natCast, smul_eq_mul]
 
@@ -269,7 +269,7 @@ private lemma isCDF_Jmean (n : ℕ) (F : Measure ℝ) : IsCDF (Jmean n F) := by
 private lemma Jmean_eq_meanRootCDF (n : ℕ) (F : Measure ℝ)
     [h : IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
     Jmean n F = meanRootCDF F n := by
-  unfold Jmean; rw [if_pos h]
+  unfold Jmean; rw [ite_eq_left h]
 
 /-! ## Uniform square-integrability along a weakly convergent sequence -/
 
@@ -445,7 +445,7 @@ private lemma tendsto_setIntegral_sq_tail
         refine setIntegral_mono_on ((hint n (a n)).integrableOn)
           ((hdint.const_mul (4 / 3)).integrableOn) hmeasT ?_
         intro t ht
-        simp only [Set.mem_setOf_eq] at ht
+        simp only [Set.mem_ofPred_eq] at ht
         have hsq4 : 4 * M ^ 2 ≤ (t - a n) ^ 2 := by
           nlinarith [sq_abs (t - a n), abs_nonneg (t - a n)]
         have hmin : min ((t - a n) ^ 2) (M ^ 2) = M ^ 2 := by
@@ -810,7 +810,7 @@ private lemma tendstoInMeasure_rowMean_of_uniform {Pr : Measure Ω} [IsProbabili
       ⊆ {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω} := by
     intro x hx
     by_contra hcon
-    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hxx : ε ≤ |(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c| := by
       simpa [Real.norm_eq_abs] using hx
@@ -1088,7 +1088,7 @@ theorem tendsto_meanRootLaw
       have hpre : {ω | ε < |X n i ω|}
           = (Y (n, (i : ℕ))) ⁻¹' {t : ℝ | ε * σ * Real.sqrt n < |t - m n|} := by
         ext ω
-        simp only [Set.mem_setOf_eq, Set.mem_preimage, hXdef]
+        simp only [Set.mem_ofPred_eq, Set.mem_preimage, hXdef]
         exact hiff _
       rw [hpre, ← setIntegral_map hSmeas
         (f := fun t : ℝ => (c n * (t - m n)) ^ 2) (by fun_prop) (hYmeas _).aemeasurable,
@@ -1165,17 +1165,17 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
   -- Replace the unconstrained `n = 0` entry of the sequence by `Q`.
   set F' : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hF'def
   have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
-    intro n hn; simp only [hF'def, if_neg hn.ne']
+    intro n hn; simp only [hF'def, ite_eq_right hn.ne']
   haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hF'def, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · subst hn; simpa only [hF'def, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
     · rw [hF'eq n hn]; exact hF.1 n hn
   obtain ⟨-, hF2, hFcdf, hFmean, hFvar⟩ := hF
   have hF'2 : ∀ n, MemLp (fun t : ℝ => t) 2 (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hF'def, if_pos rfl] using hQ2
+    · subst hn; simpa only [hF'def, ite_eq_left rfl] using hQ2
     · rw [hF'eq n hn]; exact hF2 n
   have hF'cdf : ∀ y : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) y →
       Tendsto (fun n => ((F' n) (Set.Iic y)).toReal) atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
@@ -1490,7 +1490,7 @@ private lemma meanRootCDF_empiricalMeasure_eq {n : ℕ} (hn : 0 < n) (x : Fin n 
   congr 2
   refine Finset.sum_congr rfl (fun j _ => ?_)
   rw [Measure.dirac_apply' _ hA, Set.indicator_apply]
-  simp only [Set.mem_setOf_eq, hmean, Pi.one_apply]
+  simp only [Set.mem_ofPred_eq, hmean, Pi.one_apply]
 
 /-- Measurability of the bootstrap sampling distribution function in the sample. -/
 private lemma measurable_meanRootCDF_empirical (hmeas : ∀ i, Measurable (X i))
@@ -1607,7 +1607,7 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
         ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) (1 - α)} := by
     ext ω
     haveI := isProbabilityMeasure_pi_empirical n X ω
-    rw [Set.mem_setOf_eq, Set.mem_setOf_eq, Jmean_eq_meanRootCDF]
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Jmean_eq_meanRootCDF]
   rw [hset]
 
 /-! ## The studentized root and the bootstrap-t -/
@@ -1648,7 +1648,7 @@ private lemma tendstoInMeasure_comp₂_of_continuousAt {μ : Measure Ω}
       ⊆ {ω | δ ≤ ‖A n ω - a‖} ∪ {ω | δ ≤ ‖B n ω - b‖} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have hd : dist ((A n ω, B n ω) : ℝ × ℝ) (a, b) < δ := by
       rw [Prod.dist_eq]
       exact max_lt (by rw [dist_eq_norm]; exact hcon.1) (by rw [dist_eq_norm]; exact hcon.2)
@@ -1673,7 +1673,7 @@ private lemma tendstoInMeasure_add_tendsto {μ : Measure Ω} {A : ℕ → Ω →
       {ω | ε ≤ ‖A n ω + c n - a‖} ⊆ {ω | ε / 2 ≤ ‖A n ω - 0‖} := by
     filter_upwards [hc.eventually (Metric.ball_mem_nhds a (show (0 : ℝ) < ε / 2 by positivity))]
       with n hn ω hω
-    simp only [Set.mem_setOf_eq, sub_zero] at hω ⊢
+    simp only [Set.mem_ofPred_eq, sub_zero] at hω ⊢
     have hcn : ‖c n - a‖ < ε / 2 := by
       rw [← dist_eq_norm]; exact hn
     have htri : ‖A n ω + c n - a‖ ≤ ‖A n ω‖ + ‖c n - a‖ := by
@@ -1701,17 +1701,17 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
   -- Replace the unconstrained `n = 0` entry of the sequence by `Q`.
   set G : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hGdef
   have hGeq : ∀ n : ℕ, 0 < n → G n = F n := by
-    intro n hn; simp only [hGdef, if_neg hn.ne']
+    intro n hn; simp only [hGdef, ite_eq_right hn.ne']
   haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hGdef, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · subst hn; simpa only [hGdef, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
     · rw [hGeq n hn]; exact hF.1 n hn
   obtain ⟨-, hF2, hFcdf, hFmean, hFvar⟩ := hF
   have hG2 : ∀ n, MemLp (fun t : ℝ => t) 2 (G n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hGdef, if_pos rfl] using hQ2
+    · subst hn; simpa only [hGdef, ite_eq_left rfl] using hQ2
     · rw [hGeq n hn]; exact hF2 n
   have hGcdf : ∀ y : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) y →
       Tendsto (fun n => ((G n) (Set.Iic y)).toReal) atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
@@ -1830,7 +1830,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     refine (hraw ε hε).congr fun n => ?_
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq, hBmdef, Fin.sum_univ_eq_sum_range fun i => (Y (n, i) ω) ^ 2]
+    simp only [Set.mem_ofPred_eq, hBmdef, Fin.sum_univ_eq_sum_range fun i => (Y (n, i) ω) ^ 2]
   -- the sample mean converges in probability, by Chebyshev on the centred row average
   have hZL2 : ∀ (n : ℕ) (i : Fin n),
       MemLp (fun ω => Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)) 2 P := fun n i =>
@@ -1913,7 +1913,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     filter_upwards [eventually_gt_atTop 0] with n hn
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq, hAmeq n hn ω]
+    simp only [Set.mem_ofPred_eq, hAmeq n hn ω]
   -- the sample variance converges in probability to the limiting variance
   have hVprob : TendstoInMeasure P V atTop (fun _ => σ2) := by
     have hg : ContinuousAt (fun p : ℝ × ℝ => p.1 - p.2 ^ 2)
@@ -1957,9 +1957,9 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
         {ω | ε ≤ ‖(W - fun n ω => gtr (R n ω, V n ω)) n ω - (0 : Ω₀ → ℝ) ω‖}
           ⊆ {ω | σ2 / 2 ≤ ‖V n ω - σ2‖} := by
       intro n ω hω
-      simp only [Pi.sub_apply, Pi.zero_apply, sub_zero, Set.mem_setOf_eq] at hω ⊢
+      simp only [Pi.sub_apply, Pi.zero_apply, sub_zero, Set.mem_ofPred_eq] at hω ⊢
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hV2 : σ2 / 2 ≤ V n ω := by
         rw [Real.norm_eq_abs] at hcon
         have hab := abs_lt.1 hcon
@@ -2017,7 +2017,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
         {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(G n)) /
           Real.sqrt (sampleVariance y) ≤ x} = W n ⁻¹' Set.Iic x := by
       ext ω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_Iic, hWdef, hRdef, hVdef, hAmdef,
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_Iic, hWdef, hRdef, hVdef, hAmdef,
         hBmdef, sampleVariance_eq]
     have h1' : ((ρs n : Measure ℝ) (Set.Iic x)) = P (W n ⁻¹' Set.Iic x) := by
       simp only [hρs, ProbabilityMeasure.coe_mk]

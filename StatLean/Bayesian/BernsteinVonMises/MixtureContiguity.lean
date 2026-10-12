@@ -172,7 +172,7 @@ theorem logLikelihood_weakConverges
     have hhalf : (v : ℝ) / 2
         = (1 / 2 : ℝ) * ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫ := by
       rw [← hv]; ring
-    simp only [Set.mem_setOf_eq, Real.dist_eq, hhalf]
+    simp only [Set.mem_ofPred_eq, Real.dist_eq, hhalf]
     rw [abs_sub_comm]
   exact (h_lanRes ε hε).congr fun n =>
     congrArg (productMeasure M μ θ₀ n).real (h_set_eq n).symm
@@ -513,7 +513,7 @@ theorem mutuallyContiguous_mixture_base
     -- Suppose the base masses do not vanish; extract a bad subsequence.
     by_contra hcon
     rw [ENNReal.tendsto_nhds_zero] at hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨ε, hε, hfreq⟩ := hcon
     obtain ⟨φ, hφ, hφlt⟩ := Filter.extraction_of_frequently_atTop hfreq
     -- Along `φ`, the localized average still vanishes; pass to a.e. convergence.
@@ -545,7 +545,7 @@ theorem mutuallyContiguous_mixture_base
               = productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh) (φ i) (A (φ i)) := by
             rw [edist_dist, Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg,
               ENNReal.ofReal_toReal (measure_ne_top _ _)]
-          simp only [Set.mem_setOf_eq, hedist]
+          simp only [Set.mem_ofPred_eq, hedist]
         rw [hset]
         exact meas_ge_le_lintegral_div
           (hKmeas (φ i) (A (φ i)) (hA_meas _)).aemeasurable hδ.ne' hδT
@@ -564,7 +564,7 @@ theorem mutuallyContiguous_mixture_base
         Tendsto (fun i : ℕ => (productMeasure M μ (θ₀ + (Real.sqrt (φ (ms i)))⁻¹ • hh₀)
           (φ (ms i)) (A (φ (ms i)))).toReal) atTop (𝓝 0) := by
       by_contra hno
-      push_neg at hno
+      push Not at hno
       rw [MeasureTheory.ae_iff] at hae
       refine hvU0 (le_antisymm ?_ (zero_le))
       calc volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)

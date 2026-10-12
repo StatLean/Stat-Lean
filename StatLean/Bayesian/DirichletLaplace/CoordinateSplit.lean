@@ -169,14 +169,14 @@ private lemma lintegral_dlPrior_split (a : ℝ) (S : Set ι)
         = WithLp.toLp 2 xS := by
     intro xS xSc; unfold projS; congr 1; funext i
     change (Equiv.piEquivPiSubtypeProd (· ∈ S) (fun _ : ι => ℝ)).symm (xS, xSc) (i : ι) = xS i
-    rw [Equiv.piEquivPiSubtypeProd_symm_apply]; exact dif_pos i.property
+    rw [Equiv.piEquivPiSubtypeProd_symm_apply]; exact dite_eq_left i.property
   have hSc : ∀ (xS : {j // j ∈ S} → ℝ) (xSc : {i // ¬ (i ∈ S)} → ℝ),
       projS Sᶜ (WithLp.toLp 2
           ((Equiv.piEquivPiSubtypeProd (· ∈ S) (fun _ : ι => ℝ)).symm (xS, xSc)))
         = WithLp.toLp 2 xSc := by
     intro xS xSc; unfold projS; congr 1; funext i
     change (Equiv.piEquivPiSubtypeProd (· ∈ S) (fun _ : ι => ℝ)).symm (xS, xSc) (i : ι) = xSc i
-    rw [Equiv.piEquivPiSubtypeProd_symm_apply]; exact dif_neg i.property
+    rw [Equiv.piEquivPiSubtypeProd_symm_apply]; exact dite_eq_right i.property
   have hFStoLp : Measurable (fun x : {j // j ∈ S} → ℝ => FS (WithLp.toLp 2 x)) :=
     hFS.comp (WithLp.measurable_toLp _ _)
   have hFSctoLp : Measurable (fun x : {i // i ∉ S} → ℝ => FSc (WithLp.toLp 2 x)) :=

@@ -58,7 +58,7 @@ theorem abs_ipwIntegrand_comp_le (ρ' : Kernel 𝓧 Bool) {δ : ℝ}
       rw [h0, abs_zero]
       exact div_nonneg (abs_nonneg _) hδ.le
   | true =>
-      simp only [ipwIntegrand, missingObserve, ind, hr, if_true, one_mul, abs_div,
+      simp only [ipwIntegrand, missingObserve, ind, hr, ite_true, one_mul, abs_div,
         abs_of_pos hπ]
       gcongr
       exact hpos p.1

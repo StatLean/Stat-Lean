@@ -80,7 +80,7 @@ private noncomputable def sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace �
 private lemma sobolevCoeff_val (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin k)) (i : Fin k) :
     sobolevCoeff k ρ w i.val = ρ * w i := by
   simp only [sobolevCoeff]
-  rw [dif_pos i.isLt]
+  rw [dite_eq_left i.isLt]
 
 /-- The coercion of `sobolevEmb` to a sequence is exactly `sobolevCoeff`. -/
 private lemma coeFn_sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin k)) :
@@ -90,7 +90,7 @@ private lemma coeFn_sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin
   split_ifs with hj
   · rfl
   · have hjk : ¬ (j < k) := by rwa [Finset.mem_range] at hj
-    simp only [sobolevCoeff, dif_neg hjk]
+    simp only [sobolevCoeff, dite_eq_right hjk]
 
 /-- The embedding is linear in `w` (here: respects subtraction). -/
 private lemma sobolevEmb_sub (k : ℕ) (ρ : ℝ) (u v : EuclideanSpace ℝ (Fin k)) :
@@ -149,7 +149,7 @@ private lemma sobolevEmb_mem (k : ℕ) (hk : 0 < k) (ρ α : ℝ) (hα0 : 0 ≤ 
     intro j hj
     rw [Finset.mem_range, not_lt] at hj
     have : sobolevCoeff k ρ w j = 0 := by
-      simp only [sobolevCoeff]; rw [dif_neg (Nat.not_lt.mpr hj)]
+      simp only [sobolevCoeff]; rw [dite_eq_right (Nat.not_lt.mpr hj)]
     rw [this]; ring
   rw [tsum_eq_sum hzero]
   have hbound : ∑ j ∈ Finset.range k, ((j : ℝ) + 1) ^ (2 * α) * (sobolevCoeff k ρ w j) ^ 2

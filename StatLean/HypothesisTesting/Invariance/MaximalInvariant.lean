@@ -259,7 +259,7 @@ theorem isInvariantTest_iff_factors {G : Type*} [Group G] [MulAction G 𝓧] {M 
     refine ⟨fun i => if hx : ∃ x, M x = i then φ (Classical.choose hx) else 0, fun x => ?_⟩
     have hx : ∃ x', M x' = M x := ⟨x, rfl⟩
     obtain ⟨g, hg⟩ := hM.2 (Classical.choose hx) x (Classical.choose_spec hx)
-    simp only [dif_pos hx]
+    simp only [dite_eq_left hx]
     exact (congrArg φ hg).trans (hInv g (Classical.choose hx))
   · rintro ⟨h, hφ⟩
     intro g x

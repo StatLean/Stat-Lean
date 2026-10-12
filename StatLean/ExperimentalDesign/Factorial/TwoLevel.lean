@@ -137,9 +137,9 @@ private lemma character_eq_prod_univ (S : Finset ι) (x : ι → Bool) :
   unfold character
   calc ∏ j ∈ S, levelSign (x j)
       = ∏ j ∈ S, (if j ∈ S then levelSign (x j) else 1) :=
-        Finset.prod_congr rfl fun j hj => (if_pos hj).symm
+        Finset.prod_congr rfl fun j hj => (ite_eq_left hj).symm
     _ = ∏ j, (if j ∈ S then levelSign (x j) else 1) :=
-        Finset.prod_subset (Finset.subset_univ S) fun j _ hj => if_neg hj
+        Finset.prod_subset (Finset.subset_univ S) fun j _ hj => ite_eq_right hj
 
 /-- A nonempty-set character sums to zero over the treatment combinations. -/
 theorem sum_character_eq_zero {S : Finset ι}
@@ -155,7 +155,7 @@ theorem sum_character_eq_zero {S : Finset ι}
     _ = 0 := by
         obtain ⟨j₀, hj₀⟩ := hS
         refine Finset.prod_eq_zero (Finset.mem_univ j₀) ?_
-        simp only [if_pos hj₀]
+        simp only [ite_eq_left hj₀]
         norm_num [Fintype.sum_bool, levelSign]
 
 /-- **Character orthogonality** (`Mead §13.1`, orthogonality of the rows of the
@@ -167,7 +167,7 @@ theorem sum_character_mul (S T : Finset ι) :
   simp only [character_mul]
   by_cases hST : S = T
   · subst hST
-    rw [if_pos rfl, symmDiff_self]
+    rw [ite_eq_left rfl, symmDiff_self]
     calc ∑ x : ι → Bool, character (⊥ : Finset ι) x
         = ∑ _x : ι → Bool, (1 : ℝ) :=
           Finset.sum_congr rfl fun x _ => character_empty x
@@ -177,7 +177,7 @@ theorem sum_character_mul (S T : Finset ι) :
           rw [Fintype.card_fun, Fintype.card_bool]
           push_cast
           ring
-  · rw [if_neg hST]
+  · rw [ite_eq_right hST]
     refine sum_character_eq_zero ?_
     rw [Finset.nonempty_iff_ne_empty]
     intro h
@@ -208,16 +208,16 @@ private lemma sum_character_point (z x : ι → Bool) :
   rw [h1, key]
   by_cases hzx : z = x
   · subst hzx
-    rw [if_pos rfl]
+    rw [ite_eq_left rfl]
     calc ∏ j, (levelSign (z j) * levelSign (z j) + 1)
         = ∏ _j : ι, (2 : ℝ) :=
           Finset.prod_congr rfl fun j _ => by rw [levelSign_mul_self]; norm_num
       _ = (2 : ℝ) ^ Fintype.card ι := by
           rw [Finset.prod_const, Finset.card_univ]
-  · rw [if_neg hzx]
+  · rw [ite_eq_right hzx]
     obtain ⟨j₀, hj₀⟩ : ∃ j, z j ≠ x j := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact hzx (funext h)
     refine Finset.prod_eq_zero (Finset.mem_univ j₀) ?_
     revert hj₀
@@ -260,7 +260,7 @@ theorem factorialExpansion (y : (ι → Bool) → ℝ) (x : ι → Bool) :
               Finset.sum_congr rfl fun z _ => by split <;> simp
           _ = y x * (2 : ℝ) ^ Fintype.card ι := by
               rw [Finset.sum_ite_eq' Finset.univ x
-                (fun z => y z * (2 : ℝ) ^ Fintype.card ι), if_pos (Finset.mem_univ x)]
+                (fun z => y z * (2 : ℝ) ^ Fintype.card ι), ite_eq_left (Finset.mem_univ x)]
     _ = y x := by
         field_simp
 
@@ -287,7 +287,7 @@ theorem factorialCoeff_eq_of_expansion (y : (ι → Bool) → ℝ) (c : Finset �
           Finset.sum_congr rfl fun T _ => by split <;> simp
       _ = c S * (2 : ℝ) ^ Fintype.card ι := by
           rw [Finset.sum_ite_eq' Finset.univ S
-            (fun T => c T * (2 : ℝ) ^ Fintype.card ι), if_pos (Finset.mem_univ S)]
+            (fun T => c T * (2 : ℝ) ^ Fintype.card ι), ite_eq_left (Finset.mem_univ S)]
   unfold factorialCoeff
   rw [key]
   field_simp

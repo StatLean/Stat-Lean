@@ -107,7 +107,7 @@ private lemma holmCount_le_N {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω
 private lemma holmCount_cond {N : ℕ} {α : ℝ} (hα : 0 < α) (p : Fin N → Ω → ℝ) (ω : Ω) :
     ∀ i : Fin N, (i : ℕ) < holmCount α p ω →
       orderStat (fun j => p j ω) i ≤ α / ((N : ℝ) - (i : ℝ)) := by
-  simp only [holmCount, if_pos hα]
+  simp only [holmCount, ite_eq_left hα]
   set s := (Finset.range (N + 1)).filter
       (fun k : ℕ => ∀ i : Fin N, (i : ℕ) < k →
         orderStat (fun j => p j ω) i ≤ α / ((N : ℝ) - (i : ℝ))) with hs_def
@@ -131,9 +131,9 @@ theorem holm_rejects_true_null_imp {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     ∃ j ∈ H₀, p j ω ≤ α / (H₀.card : ℝ) := by
   -- Step 0: derive α > 0, because for α ≤ 0 holmCount = 0 so holmRejects = ∅ and hne is false.
   have hα : 0 < α := by
-    by_contra h; push_neg at h
+    by_contra h; push Not at h
     have hempty : holmRejects α p ω = ∅ := by
-      simp only [holmRejects, holmCount, if_neg (not_lt.mpr h)]
+      simp only [holmRejects, holmCount, ite_eq_right (not_lt.mpr h)]
       ext j; simp [Nat.not_lt_zero]
     rw [hempty, Finset.empty_inter] at hne
     exact Finset.not_nonempty_empty hne
@@ -258,7 +258,7 @@ theorem holm_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Meas
       ≤ μ (⋃ j ∈ H₀, {ω | p j ω ≤ α / (H₀.card : ℝ)}) := by
           apply measure_mono
           intro ω hω
-          obtain ⟨j, hjH₀, hjp⟩ := holm_rejects_true_null_imp α p H₀ ω (Set.mem_setOf.mp hω)
+          obtain ⟨j, hjH₀, hjp⟩ := holm_rejects_true_null_imp α p H₀ ω (Set.mem_ofPred.mp hω)
           exact Set.mem_biUnion hjH₀ hjp
     _ ≤ ∑ j ∈ H₀, μ {ω | p j ω ≤ α / (H₀.card : ℝ)} :=
           measure_biUnion_finset_le H₀ _
@@ -292,7 +292,7 @@ theorem bonferroni_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ 
       ≤ μ (⋃ j ∈ H₀, {ω | p j ω ≤ α / (N : ℝ)}) := by
           apply measure_mono
           intro ω hω
-          simp only [Set.mem_setOf_eq] at hω
+          simp only [Set.mem_ofPred_eq] at hω
           obtain ⟨j, hj⟩ := hω
           obtain ⟨hj_bon, hj_H₀⟩ := Finset.mem_inter.mp hj
           rw [bonferroniRejects, Finset.mem_filter] at hj_bon

@@ -83,7 +83,7 @@ private lemma y_exp_integrable (M : GLMExpFamily n d μ) (i : Fin n) (s : ℝ) :
 private lemma y_integrableExpSet_univ (M : GLMExpFamily n d μ) (i : Fin n) :
     integrableExpSet (M.y i) μ = Set.univ := by
   ext t
-  simp only [integrableExpSet, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
   exact y_exp_integrable M i t
 
 /-- The mean function identity `E[yᵢ] = ψ'(ηᵢ)`. -/
@@ -152,8 +152,8 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
       {ω | t < linfNorm (scoreVec M ω)} ⊆
       ⋃ j : Fin d, {ω | t < |(scoreVec M ω).ofLp j|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     unfold linfNorm at hω
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · have hval : ⨆ j : Fin d, |(scoreVec M ω).ofLp j| = 0 := by
@@ -174,7 +174,7 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     have hm : ∫ x, scoreCoord M j x ∂μ = 0 := scoreCoord_integral_zero M j
     have hset : {ω | t < |(scoreVec M ω).ofLp j|} =
         {ω | t < |scoreCoord M j ω - ∫ x, scoreCoord M j x ∂μ|} := by
-      ext ω; simp only [Set.mem_setOf_eq, scoreVec_ofLp, hm, sub_zero]
+      ext ω; simp only [Set.mem_ofPred_eq, scoreVec_ofLp, hm, sub_zero]
     rw [hset]
     simpa only [NNReal.coe_mk] using! (hcol_sg j).measure_abs_sub_integral_lt_le ht
   -- ── Step 3: union bound over the d coordinates ────────────────────────────────
@@ -277,7 +277,7 @@ theorem good_event_highProb (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
   set G := {ω | linfNorm (scoreVec M ω) ≤ lam / 2} with hGdef
   have hGc_eq : Gᶜ = {ω | lam / 2 < linfNorm (scoreVec M ω)} := by
     ext ω
-    simp only [hGdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le]
+    simp only [hGdef, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le]
   have hPGc_le : μ Gᶜ ≤ ENNReal.ofReal (2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) := by
     rw [hGc_eq]
     calc μ {ω | lam / 2 < linfNorm (scoreVec M ω)}

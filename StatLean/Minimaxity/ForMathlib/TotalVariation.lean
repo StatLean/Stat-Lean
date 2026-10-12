@@ -160,7 +160,7 @@ private lemma tvDist_eq_lintegral_tsub (μ ν : Measure α)
       rw [Measure.setLIntegral_rnDeriv hνξ A]; exact measure_ne_top ν A
     have hcompl : ∫⁻ x in Aᶜ, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = 0 := by
       refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-      rw [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      rw [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact tsub_eq_zero_of_le hx.le
     have hDA : ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν)
         = ∫⁻ x in A, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
@@ -290,7 +290,7 @@ private lemma one_sub_tvDist_eq_iInf_aux (μ ν : Measure α)
     have hνB : ν Bᶜ = ∫⁻ x in Bᶜ, min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
       rw [← Measure.setLIntegral_rnDeriv hνξ Bᶜ]
       refine setLIntegral_congr_fun hBm.compl (fun x hx => ?_)
-      rw [hB, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      rw [hB, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact (min_eq_right hx.le).symm
     rw [hμB, hνB]
     exact le_of_eq (lintegral_add_compl _ hBm)

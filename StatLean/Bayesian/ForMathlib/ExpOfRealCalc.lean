@@ -82,7 +82,7 @@ theorem tsum_ofReal_exp_neg_sq_le (c K : ℝ) (M : ℕ)
   -- `K > 0` from the gap hypothesis `1 ≤ c(2M+1)K` (`c(2M+1) > 0`).
   have hK : 0 < K := by
     by_contra hle
-    push_neg at hle
+    push Not at hle
     nlinarith [h, mul_nonneg (mul_pos hc (by positivity : (0:ℝ) < 2 * (M:ℝ) + 1)).le
       (neg_nonneg.mpr hle)]
   have hcK : 0 ≤ c * K := (mul_pos hc hK).le

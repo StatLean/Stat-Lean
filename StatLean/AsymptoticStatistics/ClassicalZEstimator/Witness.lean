@@ -244,7 +244,7 @@ lemma w_hcons :
         = {ξ : ℕ → ℝ | ε ≤ ‖(empiricalAvg id n fun i : Fin n => wX i.val ξ) - 0‖} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, sub_zero, norm_E1, wthetahat_apply, Real.norm_eq_abs]
+    simp only [Set.mem_ofPred_eq, sub_zero, norm_E1, wthetahat_apply, Real.norm_eq_abs]
   simp only [hset]
   exact hlln ε hε
 
@@ -267,8 +267,8 @@ lemma w_hgrad (θ : E1) (_hθ : θ ∈ (Set.univ : Set E1)) (x : ℝ) :
       ((x - L1 θ) • (-L1) + (x - L1 θ) • (-L1)) θ := hu.mul hu
   refine (h1.const_smul (-(1 : ℝ) / 2)).congr_fderiv ?_
   ext v
-  simp only [ContinuousLinearMap.coe_smul', Pi.smul_apply,
-    ContinuousLinearMap.add_apply, ContinuousLinearMap.neg_apply, smul_eq_mul,
+  simp only [FunLike.coe_smul, Pi.smul_apply,
+    add_apply, neg_apply, smul_eq_mul,
     innerSL_E1, psiVec_witness_apply, L1_apply]
   ring
 

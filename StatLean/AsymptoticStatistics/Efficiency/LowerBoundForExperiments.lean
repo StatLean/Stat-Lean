@@ -254,7 +254,7 @@ theorem S_n_weak_conv_under_shifted
           = (∅ : Set (Fin n → 𝓧)) := by
       filter_upwards [h_norm_small] with n hn
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       calc dist (Real.sqrt n • (T n ω - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))
               (Real.sqrt n • (T n ω - ψ θ₀) - ψDot h)
           = ‖Real.sqrt n • (ψ (θ₀ + (Real.sqrt n)⁻¹ • h) - ψ θ₀) - ψDot h‖ :=

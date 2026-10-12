@@ -100,12 +100,12 @@ theorem StronglyConvexWith.quadratic_growth {f : W → ℝ} {u : W}
       nlinarith [h, hmin]
     have h4 : lam / 2 * (1 - t) * ‖w - u‖ ^ 2 - (f w - f u) ≤ 0 := by
       by_contra hcc
-      push_neg at hcc
+      push Not at hcc
       nlinarith [hkey, ht0, hcc]
     nlinarith [h4]
   -- let `t ↓ 0`
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   set C := lam / 2 * ‖w - u‖ ^ 2 with hCdef
   have hCpos : 0 < C := by rw [hCdef]; positivity
   set M := f w - f u with hMdef

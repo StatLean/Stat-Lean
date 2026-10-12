@@ -211,7 +211,7 @@ theorem finiteClass_hasUniformConvergenceWith (𝓗 : Finset H)
   have hcompl : {s : Sample Z n | UniformDeviationLE D (↑𝓗 : Set H) ℓ s ε}ᶜ ⊆
       {s : Sample Z n | ∃ h ∈ 𝓗, ε < |empRisk ℓ s h - risk D ℓ h|} := by
     intro s hs
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, UniformDeviationLE, not_forall,
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, UniformDeviationLE, not_forall,
       Finset.mem_coe, not_le] at hs
     obtain ⟨h, hh, hlt⟩ := hs
     exact ⟨h, hh, hlt⟩

@@ -176,9 +176,9 @@ private lemma integral_trigBasis_mul_gTail {θ : ℕ → ℝ} (hθ1 : Summable f
   rw [tsum_congr hom]
   split_ifs with hle
   · obtain ⟨m₀, hm₀⟩ := Nat.exists_eq_add_of_le hle
-    rw [tsum_eq_single m₀ (fun m hm => by rw [if_neg (by omega), mul_zero])]
-    rw [if_pos (by omega), mul_one]; congr 1; omega
-  · rw [tsum_congr (fun m => by rw [if_neg (by omega), mul_zero]), tsum_zero]
+    rw [tsum_eq_single m₀ (fun m hm => by rw [ite_eq_right (by omega), mul_zero])]
+    rw [ite_eq_left (by omega), mul_one]; congr 1; omega
+  · rw [tsum_congr (fun m => by rw [ite_eq_right (by omega), mul_zero]), tsum_zero]
 
 /-- The tail's squared `L²`-norm equals the tail energy `ρ_N`. -/
 private lemma integral_gTail_sq {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|) (N : ℕ) :
@@ -191,7 +191,7 @@ private lemma integral_gTail_sq {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ
   have h2 : (∑' m, θ (m + (N + 1)) * ∫ x in Set.Icc (0:ℝ) 1,
       trigBasis (m + (N + 1)) x * gTail θ N x) = ∑' m, θ (m + (N + 1)) * θ (m + (N + 1)) := by
     refine tsum_congr fun m => ?_
-    rw [integral_trigBasis_mul_gTail hθ1 N (m + (N + 1)) (by omega), if_pos (by omega)]
+    rw [integral_trigBasis_mul_gTail hθ1 N (m + (N + 1)) (by omega), ite_eq_left (by omega)]
   rw [h2]
   unfold tailEnergy
   exact tsum_congr fun m => by rw [← sq, add_comm m (N + 1)]
@@ -248,8 +248,8 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
     rw [integral_finsetSum (Finset.Icc 1 N) (fun k _ => hInt1 j k)]
     rw [Finset.sum_congr rfl (fun k hk => by rw [integral_const_mul,
       trigBasis_orthonormal_Icc (Finset.mem_Icc.mp hj).1 (Finset.mem_Icc.mp hk).1])]
-    rw [Finset.sum_eq_single j (fun k _ hkj => by rw [if_neg (Ne.symm hkj), mul_zero])
-      (fun hjj => absurd hj hjj), if_pos rfl]
+    rw [Finset.sum_eq_single j (fun k _ hkj => by rw [ite_eq_right (Ne.symm hkj), mul_zero])
+      (fun hjj => absurd hj hjj), ite_eq_left rfl]
     ring
   have hSg : ∫ x in Set.Icc (0:ℝ) 1,
       (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) * gTail θ N x = 0 := by
@@ -265,7 +265,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
       integral_finsetSum (Finset.Icc 1 N) (fun j _ => hIntg j)]
     apply Finset.sum_eq_zero; intro j hj
     rw [integral_const_mul, integral_trigBasis_mul_gTail hθ1 N j (Finset.mem_Icc.mp hj).1,
-      if_neg (by have := (Finset.mem_Icc.mp hj).2; omega), mul_zero]
+      ite_eq_right (by have := (Finset.mem_Icc.mp hj).2; omega), mul_zero]
   have iAB : Integrable (fun x => (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2
       - 2 * ((∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) * gTail θ N x))
       (volume.restrict (Set.Icc (0:ℝ) 1)) := iS2.sub iSg

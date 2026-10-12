@@ -73,13 +73,13 @@ theorem vcSubgraph_isPGlivenkoCantelli
   by_cases hε₁ : ε < 1
   · obtain ⟨N, hN, _⟩ :=
       hcover Ω ‹MeasurableSpace Ω› F G V 1 ε hVC hEnv (by norm_num) hε hε₁
-    exact lt_of_le_of_lt hN (ENat.coe_lt_top N)
+    exact lt_of_le_of_lt hN (ENat.natCast_lt_top N)
   · obtain ⟨N, hN, _⟩ :=
       hcover Ω ‹MeasurableSpace Ω› F G V 1 (1 / 2) hVC hEnv
         (by norm_num) (by norm_num) (by norm_num)
     refine lt_of_le_of_lt
       ((uniformLpCoveringNumber_antitone_eps (by linarith)).trans hN) ?_
-    exact ENat.coe_lt_top N
+    exact ENat.natCast_lt_top N
 
 /-- A pointwise-measurable VC-subgraph class with square-integrable envelope
 carries the complete `P`-Donsker process data. -/

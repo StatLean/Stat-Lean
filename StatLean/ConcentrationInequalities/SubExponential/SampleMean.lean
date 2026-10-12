@@ -222,7 +222,7 @@ theorem measure_sampleMean_lt_le_quadratic
   -- Rewrite event
   have hset_eq : {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀} =
       {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
-    Set.ext (fun ω => by simp only [Set.mem_setOf_eq, halg ω])
+    Set.ext (fun ω => by simp only [Set.mem_ofPred_eq, halg ω])
   rw [hset_eq]
   -- Chernoff parameter: λ = n·t/α² (optimal; lies in [0, n/α] since t ≤ α)
   set lam := (n : ℝ) * t / (α : ℝ) ^ 2 with hlam_def
@@ -261,7 +261,7 @@ theorem measure_sampleMean_lt_le_quadratic
   -- Lift from μ.real to μ via strict ⊆ and ENNReal bridge
   have hsub : {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ⊆ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} := by
-    intro ω hω; exact (Set.mem_setOf_eq.mp hω).le
+    intro ω hω; exact (Set.mem_ofPred_eq.mp hω).le
   calc μ {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ≤ μ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
         measure_mono hsub
@@ -311,7 +311,7 @@ theorem measure_sampleMean_lt_le_linear
     field_simp
   have hset_eq : {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀} =
       {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
-    Set.ext (fun ω => by simp only [Set.mem_setOf_eq, halg ω])
+    Set.ext (fun ω => by simp only [Set.mem_ofPred_eq, halg ω])
   rw [hset_eq]
   -- Chernoff parameter: λ = n/α (clamped at the boundary of the valid range)
   set lam := (n : ℝ) / (α : ℝ) with hlam_def
@@ -358,7 +358,7 @@ theorem measure_sampleMean_lt_le_linear
   -- ENNReal bridge
   have hsub : {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ⊆ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} := by
-    intro ω hω; exact (Set.mem_setOf_eq.mp hω).le
+    intro ω hω; exact (Set.mem_ofPred_eq.mp hω).le
   calc μ {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ≤ μ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
         measure_mono hsub

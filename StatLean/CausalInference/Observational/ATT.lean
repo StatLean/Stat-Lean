@@ -514,7 +514,7 @@ private lemma measureReal_cell_inter_control [IsFiniteMeasure μ] (hZ : Measurab
   have hsplit : μ (cell X x ∩ treatedEvent Z) + μ (cell X x ∩ {ω | Z ω = false})
       = μ (cell X x) := by
     rw [hdiff]
-    exact measure_inter_add_diff _ hTm
+    exact measure_inter_add_sdiff _ hTm
   have h2 : (μ (cell X x ∩ treatedEvent Z)).toReal
       + (μ (cell X x ∩ {ω | Z ω = false})).toReal = (μ (cell X x)).toReal := by
     rw [← ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _), hsplit]

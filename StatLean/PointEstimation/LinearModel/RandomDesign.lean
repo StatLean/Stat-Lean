@@ -332,9 +332,9 @@ private lemma covariance_coord_gaussianVector {N : ℕ} (ξ : EuclideanSpace ℝ
   by_cases hab : a = b
   · subst hab
     have hmp := measurePreserving_eval (fun i => gaussianReal (ξ i) σ2) a
-    rw [if_pos rfl, covariance_self hmp.measurable.aemeasurable,
+    rw [ite_eq_left rfl, covariance_self hmp.measurable.aemeasurable,
         ← variance_id_map hmp.measurable.aemeasurable, hmp.map_eq, variance_id_gaussianReal]
-  · rw [if_neg hab]
+  · rw [ite_eq_right hab]
     have hindep : IndepFun (Function.eval a) (Function.eval b) μ :=
       (iIndepFun_pi fun _ => aemeasurable_id).indepFun hab
     exact hindep.covariance_eq_zero (hcoord a) (hcoord b)
@@ -396,8 +396,8 @@ theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
       = M l i * M l j * (p.2.1 : ℝ) := by
     intro l
     rw [Finset.sum_eq_single l]
-    · rw [if_pos rfl]
-    · intro l' _ hl'; rw [if_neg (fun h => hl' h.symm), mul_zero]
+    · rw [ite_eq_left rfl]
+    · intro l' _ hl'; rw [ite_eq_right (fun h => hl' h.symm), mul_zero]
     · intro h; exact absurd (Finset.mem_univ l) h
   rw [Finset.sum_congr rfl (fun l _ => hcollapse l)]
   rw [show (∑ l, M l i * M l j * (p.2.1 : ℝ)) = (∑ l, M l i * M l j) * (p.2.1 : ℝ) from by

@@ -411,9 +411,9 @@ private theorem parameterCorrection_fdd_gaussian_on_joint
   filter_upwards [] with w
   funext i
   simp only [Function.comp_apply, parameterFiniteCorrectionCLM,
-    ContinuousLinearMap.pi_apply, ContinuousLinearMap.sub_apply,
-    ContinuousLinearMap.proj_apply, ContinuousLinearMap.sum_apply,
-    ContinuousLinearMap.smul_apply, smul_eq_mul]
+    ContinuousLinearMap.pi_apply, sub_apply,
+    ContinuousLinearMap.proj_apply, sum_apply,
+    smul_apply, smul_eq_mul]
   change jointEval w (parameterFiniteIndices a (Fin.castAdd k i)) -
       ∑ j : Fin k, (D (euclideanBasisVector j)) (a i) *
         jointEval w (parameterFiniteIndices a (Fin.natAdd m j)) =

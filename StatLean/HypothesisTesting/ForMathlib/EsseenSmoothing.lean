@@ -1362,7 +1362,7 @@ private lemma integral_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
 private lemma tail_eq_union (ρ : ℝ) :
     {ξ : ℝ | ρ ≤ |ξ|} = Set.Iic (-ρ) ∪ Set.Ici ρ := by
   ext ξ
-  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici, le_abs']
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici, le_abs']
 
 private lemma measurableSet_tail (ρ : ℝ) : MeasurableSet {ξ : ℝ | ρ ≤ |ξ|} := by
   rw [tail_eq_union]

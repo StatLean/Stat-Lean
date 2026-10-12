@@ -380,7 +380,7 @@ private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSA
   have hmem : ∀ ω ∈ {ω | ε ≤ |truncArray k X F μ c d n i ω|}, ω ∈ truncSet k X F μ c d n i := by
     intro ω hω
     by_contra hA
-    rw [Set.mem_setOf_eq, show truncArray k X F μ c d n i ω = 0 from
+    rw [Set.mem_ofPred_eq, show truncArray k X F μ c d n i ω = 0 from
       Set.indicator_of_notMem hA _] at hω
     simp only [abs_zero] at hω
     linarith
@@ -392,9 +392,9 @@ private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSA
         Set.indicator_of_mem (hmem ω hω) _]
   rw [heq]
   refine setIntegral_mono_set (integrable_sq_of_mds h n i).integrableOn
-    (ae_of_all _ fun ω => sq_nonneg _) (HasSubset.Subset.eventuallyLE fun ω hω => ?_)
+    (ae_of_all _ fun ω => sq_nonneg _) (LE.le.eventuallySubset fun ω hω => ?_)
   have := hmem ω hω
-  rw [Set.mem_setOf_eq, show truncArray k X F μ c d n i ω = X n i ω from
+  rw [Set.mem_ofPred_eq, show truncArray k X F μ c d n i ω = X n i ω from
     Set.indicator_of_mem this _] at hω
   exact hω
 
@@ -449,7 +449,7 @@ private lemma tendsto_measure_truncArray_var [IsProbabilityMeasure μ] (h : IsMD
         rw [abs_of_nonneg (by linarith)]
         linarith
     · refine Set.mem_union_right _ (Set.mem_union_right _ ?_)
-      push_neg at hdle
+      push Not at hdle
       obtain ⟨i, hi⟩ := hdle
       exact ⟨i, hi.le⟩
   refine le_trans (ENNReal.toReal_mono ?_ hsub) (le_of_eq ?_)
@@ -819,7 +819,7 @@ theorem mds_clt_sequence [IsProbabilityMeasure μ]
         = {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|} := by
       intro i
       ext ω
-      simp only [Set.mem_setOf_eq, hXdef, abs_div, abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
+      simp only [Set.mem_ofPred_eq, hXdef, abs_div, abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
       rw [le_div_iff₀ hsqrt]
     have hterm : ∀ i : Fin n, ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ
         = ((n : ℝ))⁻¹ * ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|}, ξ (i : ℕ) ω ^ 2 ∂μ := by

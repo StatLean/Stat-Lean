@@ -176,8 +176,8 @@ private lemma linfNorm_noise_tail
       {ω | t < linfNorm (designMap Xᵀ (noiseVec ω))} ⊆
       ⋃ j : Fin d, {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     unfold linfNorm at hω
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · -- d = 0: linfNorm = sSup ∅ = 0, contradicts ht
@@ -208,7 +208,7 @@ private lemma linfNorm_noise_tail
       simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
     have hset : {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} =
         {ω | t < |∑ i : Fin n, X i j * ε i ω - ∫ x, (∑ i, X i j * ε i x) ∂μ|} := by
-      congr 1; ext ω; simp only [Set.mem_setOf_eq, hcoord ω j, hm, sub_zero]
+      congr 1; ext ω; simp only [Set.mem_ofPred_eq, hcoord ω j, hm, sub_zero]
     rw [hset]
     exact (hcol_sg j).measure_abs_sub_integral_lt_le ht
   -- ── Step 4: union bound over d columns ───────────────────────────────────────
@@ -309,7 +309,7 @@ theorem lasso_random_rate
     -- Unfold G (a let-binding from `set`) via Iff.rfl, then simplify
     have hG_mem : ω ∈ G ↔ lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) :=
       Iff.rfl
-    simp only [Set.mem_compl_iff, hG_mem, Set.mem_setOf_eq, ge_iff_le, not_le]
+    simp only [Set.mem_compl_iff, hG_mem, Set.mem_ofPred_eq, ge_iff_le, not_le]
     -- Unfold t_star (also a let-binding) via rfl
     rw [show t_star = (n : ℝ) * lam / 2 from rfl]
     constructor
@@ -325,7 +325,7 @@ theorem lasso_random_rate
       -- contradicting hmul.
       have hmul : (n : ℝ) * lam < 2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by linarith
       by_contra hle
-      push_neg at hle
+      push Not at hle
       have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hn_pos)
       have heq : (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) * (n : ℝ) =
                  2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by field_simp
@@ -337,7 +337,7 @@ theorem lasso_random_rate
     -- contradicting d ≥ 1.
     have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast hd
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hδ_pos)
     have heq : (2 * (d : ℝ) / δ) * δ = 2 * d := by field_simp [ne_of_gt hδ_pos]
     nlinarith
@@ -366,7 +366,7 @@ theorem lasso_random_rate
         linarith [show Real.log (2 * ↑d / δ) * (2 * ((n : ℝ) * ↑σ2)) =
                   2 * (σ2 : ℝ) * ↑n * Real.log (2 * ↑d / δ) from by ring]
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       have hstep := mul_lt_mul_of_pos_right hlt hpos
       have heq : t_star ^ 2 / (2 * ((n : ℝ) * ↑σ2)) * (2 * ((n : ℝ) * ↑σ2)) = t_star ^ 2 := by
         field_simp [ne_of_gt hpos]

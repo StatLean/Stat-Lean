@@ -333,7 +333,7 @@ theorem hasFDerivAt_integral_exp_inner
     rw [ContinuousLinearMap.integral_apply hFη_int, innerSL_apply_apply,
       real_inner_comm, ← integral_inner hgT_int v]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    simp only [ContinuousLinearMap.smul_apply, innerSL_apply_apply, real_inner_smul_right,
+    simp only [smul_apply, innerSL_apply_apply, real_inner_smul_right,
       real_inner_comm (E.stat x) v, smul_eq_mul]
   rw [hcomm] at key
   exact key
@@ -397,10 +397,10 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hsub : {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} ⊆
         integrableExpSet Y (μof w) := by
       intro t ht
-      simp only [Set.mem_setOf_eq] at ht
+      simp only [Set.mem_ofPred_eq] at ht
       have htmem : η + t • u ∈ E.weightedNatSet f := interior_subset ht
       have hint : Integrable (fun x => |f x| * Real.exp ⟪η + t • u, E.stat x⟫_ℝ) E.base := htmem
-      simp only [integrableExpSet, Set.mem_setOf_eq, hμof]
+      simp only [integrableExpSet, Set.mem_ofPred_eq, hμof]
       rw [integrable_withDensity_iff (hdmeas w hw).ennreal_ofReal
         (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
       refine hint.mono' (((hYmeas.const_mul t).exp.aestronglyMeasurable).mul
@@ -416,7 +416,7 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
       isOpen_interior.preimage hcont
     have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
-      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+      simp only [Set.mem_ofPred_eq, zero_smul, add_zero]; exact hη
     exact interior_maximal hsub hUopen h0U
   -- (c) the `n`-th derivative of the mgf at `0` is the `n`-th `Y`-moment of `μof w`
   have hiter : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
@@ -470,7 +470,7 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
       isOpen_interior.preimage hcont
     have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
-      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+      simp only [Set.mem_ofPred_eq, zero_smul, add_zero]; exact hη
     filter_upwards [hUopen.mem_nhds h0U] with t ht
     rw [Pi.sub_apply, hmgf _ hfp hfp_nn t, hmgf _ hfm hfm_nn t,
       ← integral_sub (hintw _ hfp hfp_nn hfp_le t ht) (hintw _ hfm hfm_nn hfm_le t ht)]
@@ -539,7 +539,7 @@ theorem analyticAt_integral_exp_mul (E : ExpFamily 𝓧 ℝ) {f : 𝓧 → ℝ}
       E.weightedNatSet f ⊆ integrableExpSet E.stat (E.base.withDensity
         fun x => ENNReal.ofReal (w x)) := by
     intro w hw hwnn hwle ζ hζ
-    simp only [integrableExpSet, Set.mem_setOf_eq]
+    simp only [integrableExpSet, Set.mem_ofPred_eq]
     rw [integrable_withDensity_iff hw.ennreal_ofReal
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
     refine ((hintw w hw hwnn hwle ζ hζ).congr (Filter.Eventually.of_forall fun x => ?_))
@@ -751,7 +751,7 @@ theorem analyticOnNhd_integral_exp_inner
   intro y hy
   have hyc : ‖y‖ < c := by
     have h := Metric.mem_eball.mp hy
-    rw [edist_zero_right, ← ofReal_norm_eq_enorm] at h
+    rw [edist_zero_right, ← ofReal_norm] at h
     exact (ENNReal.ofReal_lt_ofReal_iff hc).mp h
   -- the termwise integrands
   set F : ℕ → 𝓧 → ℝ :=

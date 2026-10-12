@@ -679,7 +679,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
       simp only [hΦ]
       rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
         Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _),
-        Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal
+        Finset.apply_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal
           (fun x y => ENNReal.ofReal_max x y)]
       rfl
     -- Bridge the `↑(S n)`-biSup Bochner integrand to the `Finset.sup'` carrier

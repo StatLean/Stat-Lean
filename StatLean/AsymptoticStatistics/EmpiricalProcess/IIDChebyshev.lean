@@ -91,7 +91,7 @@ theorem empiricalProcess_chebyshev_tail
   · subst hn
     have hset : {ξ : Ξ | M ≤ |empiricalProcess P 0 (fun i : Fin 0 => X i.val ξ) f|} = ∅ := by
       ext ξ
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         empiricalProcess_zero, abs_zero]
       exact hM
     rw [hset, measure_empty]; exact zero_le

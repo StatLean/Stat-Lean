@@ -74,7 +74,7 @@ section Coeff
 private lemma coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
@@ -84,7 +84,7 @@ private lemma coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff
 private lemma coeff_maPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
     (maPoly a).coeff m
       = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeff_maPoly_zero {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
@@ -141,14 +141,14 @@ private lemma hasSum_poly_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial ℂ)
     have hzero : ∀ x ∉ Set.range (fun n : ℕ => k + n),
         (if k ≤ x then P.coeff k * c (x - k) else 0) * z ^ x = 0 := by
       intro x hx
-      rw [if_neg, zero_mul]
+      rw [ite_eq_right, zero_mul]
       intro hkx
       exact hx ⟨x - k, by show k + (x - k) = x; omega⟩
     refine (hg.hasSum_iff hzero).1 ?_
     have heq : ((fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m) ∘
         fun n : ℕ => k + n) = fun n => P.coeff k * z ^ k * (c n * z ^ n) := by
       funext n
-      simp only [Function.comp_apply, if_pos (Nat.le_add_right k n), Nat.add_sub_cancel_left,
+      simp only [Function.comp_apply, ite_eq_left (Nat.le_add_right k n), Nat.add_sub_cancel_left,
         pow_add]
       ring
     rw [heq]
@@ -180,10 +180,10 @@ private lemma hasSum_poly_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial ℂ)
         intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
       rw [← Finset.sum_subset hsub (fun k _ hk => by
         simp only [Finset.mem_range, not_lt] at hk
-        rw [if_neg (by omega)])]
+        rw [ite_eq_right (by omega)])]
       exact Finset.sum_congr rfl fun k hk => by
         simp only [Finset.mem_range] at hk
-        rw [if_pos (by omega)]
+        rw [ite_eq_left (by omega)]
     rw [e1, e2]
   rwa [hfun] at hsum
 
@@ -543,8 +543,8 @@ private lemma coeff_maPoly_succ {q : ℕ} (a : Fin q → ℝ) (j : Fin q) :
 
 private lemma coeff_maPoly_eq_zero {q : ℕ} (a : Fin q → ℝ) {m : ℕ} (hm : q < m) :
     (maPoly a).coeff m = 0 := by
-  rw [coeff_maPoly, if_neg (by omega), zero_add]
-  exact Finset.sum_eq_zero fun j _ => if_neg (by have := j.isLt; omega)
+  rw [coeff_maPoly, ite_eq_right (by omega), zero_add]
+  exact Finset.sum_eq_zero fun j _ => ite_eq_right (by have := j.isLt; omega)
 
 /-- The AR polynomial as a lag operator on an arbitrary sequence. -/
 private lemma arPoly_apply {p : ℕ} (b : Fin p → ℝ) (G : ℕ → ℝ) :
@@ -585,8 +585,8 @@ private lemma conv_range {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (m 
   obtain ⟨N, hNp, hNm⟩ : ∃ N : ℕ, p ≤ N ∧ m ≤ N := ⟨max p m, le_max_left _ _, le_max_right _ _⟩
   have hcz : ∀ k, p < k → (arPoly b).coeff k = 0 := by
     intro k hk
-    rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
-    exact Finset.sum_eq_zero fun i _ => if_neg (by have := i.isLt; omega)
+    rw [coeff_arPoly, ite_eq_right (by omega), zero_sub, neg_eq_zero]
+    exact Finset.sum_eq_zero fun i _ => ite_eq_right (by have := i.isLt; omega)
   have e1 : ∑ k ∈ Finset.range (p + 1),
         (if k ≤ m then (arPoly b).coeff k * armaPsi b a (m - k) else 0)
       = ∑ k ∈ Finset.range (N + 1),
@@ -604,10 +604,10 @@ private lemma conv_range {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (m 
       intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
     rw [← Finset.sum_subset hsub (fun k _ hk => by
       simp only [Finset.mem_range, not_lt] at hk
-      rw [if_neg (by omega)])]
+      rw [ite_eq_right (by omega)])]
     exact Finset.sum_congr rfl fun k hk => by
       simp only [Finset.mem_range] at hk
-      rw [if_pos (by omega)]
+      rw [ite_eq_left (by omega)]
   rw [e1, ← e2, arPoly_conv_armaPsi]
 
 /-- A range sum minus its head is the tail chunk. -/
@@ -1174,14 +1174,14 @@ private lemma integral_noise_mul_eq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : 
     (hε : IsWhiteNoise ε σ2 μ) (u v : ℤ) :
     ∫ ω, ε u ω * ε v ω ∂μ = if u = v then σ2 else 0 := by
   rcases eq_or_ne u v with rfl | huv
-  · rw [if_pos rfl]
+  · rw [ite_eq_left rfl]
     have h := covariance_eq_sub (hε.memLp u) (hε.memLp u)
     rw [hε.integral_eq_zero u, zero_mul, sub_zero,
       covariance_self (hε.memLp u).aestronglyMeasurable.aemeasurable, hε.variance_eq u] at h
     have h2 : μ[ε u * ε u] = ∫ ω, ε u ω * ε u ω ∂μ := by simp [Pi.mul_apply]
     rw [h2] at h
     exact h.symm
-  · rw [if_neg huv]
+  · rw [ite_eq_right huv]
     exact integral_noise_mul_eq_zero hε huv
 
 /-- **The cross moment of a causal linear process with its noise**: `E[X_t ε_s] = σ² ψ_{t−s}`
@@ -1213,16 +1213,16 @@ private lemma integral_lin_mul_noise [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
       intro j
       rw [integral_const_mul, integral_noise_mul_eq hε]
       by_cases hj : t - (j : ℤ) = s
-      · rw [if_pos hj, if_pos hj]; ring
-      · rw [if_neg hj, if_neg hj]; ring
+      · rw [ite_eq_left hj, ite_eq_left hj]; ring
+      · rw [ite_eq_right hj, ite_eq_right hj]; ring
     simp_rw [hterm]
     by_cases hst : s ≤ t
-    · rw [hR, if_pos hst]
-      refine Finset.sum_eq_single (t - s).toNat (fun j _ hj => if_neg (by omega))
+    · rw [hR, ite_eq_left hst]
+      refine Finset.sum_eq_single (t - s).toNat (fun j _ hj => ite_eq_right (by omega))
         (fun hnot => absurd (Finset.mem_range.2 hN) hnot) |>.trans ?_
-      exact if_pos (by omega)
-    · rw [hR, if_neg hst]
-      exact Finset.sum_eq_zero fun j _ => if_neg (by omega)
+      exact ite_eq_left (by omega)
+    · rw [hR, ite_eq_right hst]
+      exact Finset.sum_eq_zero fun j _ => ite_eq_right (by omega)
   -- the residual pairing is bounded by the `L²` defect
   have hsplit : ∀ N : ℕ, (t - s).toNat < N →
       ∫ ω, X t ω * ε s ω ∂μ - R
@@ -1270,7 +1270,7 @@ private lemma conv_of_causal [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p �
   set s : ℤ := -(n : ℤ) with hs
   -- ## The stochastic identity, paired with `ε_{−n}`
   have hleft : ∫ ω, X 0 ω * ε s ω ∂μ = σ2 * ψ n := by
-    rw [integral_lin_mul_noise hlin hε hmX 0 s, if_pos (by omega)]
+    rw [integral_lin_mul_noise hlin hε hmX 0 s, ite_eq_left (by omega)]
     congr 2
     omega
   have hXi : ∀ i : Fin p, ∫ ω, X (0 - 1 - (i : ℕ)) ω * ε s ω ∂μ
@@ -1278,22 +1278,22 @@ private lemma conv_of_causal [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p �
     intro i
     rw [integral_lin_mul_noise hlin hε hmX _ s]
     by_cases hi : (i : ℕ) + 1 ≤ n
-    · rw [if_pos (by omega), if_pos hi]
+    · rw [ite_eq_left (by omega), ite_eq_left hi]
       congr 2
       omega
-    · rw [if_neg (by omega), if_neg hi]
+    · rw [ite_eq_right (by omega), ite_eq_right hi]
   have hε0 : ∫ ω, ε 0 ω * ε s ω ∂μ = if n = 0 then σ2 else 0 := by
     rw [integral_noise_mul_eq hε]
     by_cases hn : n = 0
-    · rw [if_pos (by omega), if_pos hn]
-    · rw [if_neg (by omega), if_neg hn]
+    · rw [ite_eq_left (by omega), ite_eq_left hn]
+    · rw [ite_eq_right (by omega), ite_eq_right hn]
   have hεj : ∀ j : Fin q, ∫ ω, ε (0 - 1 - (j : ℕ)) ω * ε s ω ∂μ
       = if n = (j : ℕ) + 1 then σ2 else 0 := by
     intro j
     rw [integral_noise_mul_eq hε]
     by_cases hj : n = (j : ℕ) + 1
-    · rw [if_pos (by omega), if_pos hj]
-    · rw [if_neg (by omega), if_neg hj]
+    · rw [ite_eq_left (by omega), ite_eq_left hj]
+    · rw [ite_eq_right (by omega), ite_eq_right hj]
   -- expand the recurrence under the integral sign
   have hint1 : Integrable (fun ω => X 0 ω * ε s ω) μ := (hmX 0).integrable_mul (hε.memLp s)
   have hexpand : ∫ ω, X 0 ω * ε s ω ∂μ
@@ -1351,17 +1351,17 @@ private lemma conv_of_causal [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p �
       · exact Finset.sum_congr rfl fun i _ => by split_ifs <;> ring
     rw [Finset.sum_congr rfl hexp, Finset.sum_sub_distrib, Finset.sum_comm]
     congr 1
-    · rw [Finset.sum_eq_single 0 (fun k _ hk => if_neg hk)
-        (fun hnot => absurd (Finset.mem_range.2 (Nat.succ_pos n)) hnot), if_pos rfl]
+    · rw [Finset.sum_eq_single 0 (fun k _ hk => ite_eq_right hk)
+        (fun hnot => absurd (Finset.mem_range.2 (Nat.succ_pos n)) hnot), ite_eq_left rfl]
       rfl
     · refine Finset.sum_congr rfl fun i _ => ?_
       rw [Finset.sum_ite_eq' (Finset.range (n + 1)) ((i : ℕ) + 1)
         (fun k => b i * ψ (n - k))]
       by_cases hi : (i : ℕ) + 1 ≤ n
-      · rw [if_pos (Finset.mem_range.2 (by omega)), if_pos hi]
+      · rw [ite_eq_left (Finset.mem_range.2 (by omega)), ite_eq_left hi]
         congr 2
         omega
-      · rw [if_neg (by simp only [Finset.mem_range]; omega), if_neg hi]
+      · rw [ite_eq_right (by simp only [Finset.mem_range]; omega), ite_eq_right hi]
   have hMA : (maPoly a).coeff n
       = (if n = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if n = (j : ℕ) + 1 then a j else 0 :=
     coeff_maPoly a n
@@ -1524,21 +1524,21 @@ theorem arma_stationary_unique_debt [IsProbabilityMeasure μ] {p q : ℕ}
     intro k; rw [hBdef, Polynomial.coeff_map]; simp
   have hcz : ∀ k, p < k → (arPoly b).coeff k = 0 := by
     intro k hk
-    rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, if_neg (by omega),
-      Polynomial.finset_sum_coeff]
+    rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, ite_eq_right (by omega),
+      Polynomial.finsetSum_coeff]
     have : ∀ i : Fin p, (Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1)).coeff k = 0 := by
       intro i
-      rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg (by have := i.isLt; omega),
+      rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right (by have := i.isLt; omega),
         mul_zero]
     simp [this]
   have hB0 : B.coeff 0 = 1 := by
     rw [hBc 0]
     have : (arPoly b).coeff 0 = 1 := by
-      rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, if_pos rfl,
-        Polynomial.finset_sum_coeff]
+      rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, ite_eq_left rfl,
+        Polynomial.finsetSum_coeff]
       have : ∀ i : Fin p, (Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1)).coeff 0 = 0 := by
         intro i
-        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg (by omega), mul_zero]
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right (by omega), mul_zero]
       simp [this]
     rw [this]; norm_num
   have hBdeg : B.natDegree ≤ p := by

@@ -165,13 +165,13 @@ lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSp
       IsProbabilityMeasure (P.map fun x : 𝓧 => (T (g • x), T (g' • x))) :=
     fun g g' => (by infer_instance)
   rw [randPairLaw, integral_smul_measure,
-    integral_finset_sum_measure (fun g _ => integrable_finset_sum_measure.2
+    integral_finsetSum_measure (fun g _ => integrable_finsetSum_measure.2
       (fun g' _ => hint _ inferInstance))]
   simp only [Measure.map₀_of_measurable (hpair _ _)]
   have hstep : ∀ g : G, ∫ z, F z ∂(∑ g' : G, P.map fun x : 𝓧 => (T (g • x), T (g' • x)))
       = ∑ g' : G, ∫ x, F (T (g • x), T (g' • x)) ∂P := by
     intro g
-    rw [integral_finset_sum_measure (fun g' _ => hint _ inferInstance)]
+    rw [integral_finsetSum_measure (fun g' _ => hint _ inferInstance)]
     refine Finset.sum_congr rfl fun g' _ => ?_
     rw [integral_map (hpair g g').aemeasurable hF.aestronglyMeasurable]
   simp_rw [hstep]
@@ -725,7 +725,7 @@ private lemma tendsto_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
         rw [hval]
         have h2' : min 2 (c * D n x) ≤ 2 := min_le_left _ _
         nlinarith [mul_nonneg hc hδ.le]
-      · push_neg at hx
+      · push Not at hx
         have hind : (0 : ℝ) ≤ Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x :=
           Set.indicator_nonneg (fun _ _ => zero_le_one) x
         have h2' : min 2 (c * D n x) ≤ c * D n x := min_le_right _ _
@@ -1149,11 +1149,11 @@ lemma exists_tight_bound_of_weakConverges {μ : ℕ → Measure ℝ}
   -- The tails shrink to the empty set, so some integer threshold already works for `ν`.
   have hanti : Antitone fun k : ℕ => {y : ℝ | (k : ℝ) ≤ |y|} := by
     intro i j hij y hy
-    simp only [Set.mem_setOf_eq] at hy ⊢
+    simp only [Set.mem_ofPred_eq] at hy ⊢
     exact le_trans (by exact_mod_cast hij) hy
   have hinter : (⋂ k : ℕ, {y : ℝ | (k : ℝ) ≤ |y|}) = ∅ := by
     ext y
-    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_forall,
       not_le]
     obtain ⟨k, hk⟩ := exists_nat_gt |y|
     exact ⟨k, hk⟩

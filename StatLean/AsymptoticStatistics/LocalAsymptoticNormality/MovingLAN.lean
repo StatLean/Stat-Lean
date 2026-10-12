@@ -74,7 +74,7 @@ theorem movingLogLikelihood_weaklyConverges
   have hFull_m (n : ℕ) : hFull (m n) = Real.sqrt (m n) • (θ n - θ₀) := by
     let hr : ∃ q, m q = m n := ⟨n, rfl⟩
     rw [show hFull (m n) = if _hr : ∃ q, m q = m n then
-      Real.sqrt (m n) • (θ (Nat.find _hr) - θ₀) else h from rfl, dif_pos hr]
+      Real.sqrt (m n) • (θ (Nat.find _hr) - θ₀) else h from rfl, dite_eq_left hr]
     rw [hm.injective (Nat.find_spec hr)]
   have hFull_tendsto : Tendsto hFull atTop (nhds h) := by
     rw [Filter.tendsto_atTop'] at hθ ⊢
@@ -226,7 +226,7 @@ theorem movingLogLikelihood_weaklyConverges
         simp [smul_smul, hsqrt]
       apply congrArg Pinf
       ext ω
-      simp only [Set.mem_setOf_eq, sub_zero, Real.dist_eq, Real.norm_eq_abs,
+      simp only [Set.mem_ofPred_eq, sub_zero, Real.dist_eq, Real.norm_eq_abs,
         A, B, S, X, hparam]
       have hnonneg : 0 ≤ fisherInformation M μ θ₀ ℓ h h := by
         apply integral_nonneg

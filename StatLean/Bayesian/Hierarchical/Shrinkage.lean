@@ -328,7 +328,7 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
       refine hcont.congr_fun (fun t ht => ?_) measurableSet_Ioc
       have ht1 : t ≤ 1 := ht.2
       have ht0 : t ≠ 0 := ne_of_gt ht.1
-      simp only [hF, smul_eq_mul, if_pos ht1]
+      simp only [hF, smul_eq_mul, ite_eq_left ht1]
       rw [show p - 1 = (p - 3) + 2 by omega, pow_add]
       field_simp
     · -- On `Ioi 1` the integrand vanishes.
@@ -352,7 +352,7 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
         ⁻¹' {x : Fin p → ℝ | ∑ i, (x i) ^ 2 ≤ 1})
       = Metric.closedBall 0 1 := by
     ext y
-    simp only [Set.mem_preimage, Set.mem_setOf_eq, Metric.mem_closedBall, dist_eq_norm, sub_zero]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_eq_norm, sub_zero]
     change (∑ i, (y.ofLp i) ^ 2) ≤ 1 ↔ ‖y‖ ≤ 1
     rw [← EuclideanSpace.real_norm_sq_eq]
     constructor
@@ -411,7 +411,7 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
       _ = M := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, hM]
   -- Split `univ` into ball and tail.
   have huniv : (Set.univ : Set (Fin p → ℝ)) = {x | S x ≤ 1} ∪ {x | 1 ≤ S x} := by
-    ext x; simp only [Set.mem_univ, Set.mem_union, Set.mem_setOf_eq, true_iff]
+    ext x; simp only [Set.mem_univ, Set.mem_union, Set.mem_ofPred_eq, true_iff]
     exact le_total (S x) 1
   rw [← integrableOn_univ, huniv, integrableOn_union]
   refine ⟨?_, ?_⟩
@@ -562,7 +562,7 @@ private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
     have hmpk : MeasurePreserving (Function.eval k) νr (μ (i.succAbove k)) := by
       rw [hνr]; exact measurePreserving_eval (μ := fun j => μ (i.succAbove j)) k
     have hatom : ∀ᵐ y ∂(μ (i.succAbove k)), y ≠ 0 := by
-      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+      simpa only [ae_iff, not_ne_iff, Set.ofPred_eq_eq_singleton] using
         measure_singleton (μ := μ (i.succAbove k)) 0
     have hbk : ∀ᵐ b ∂νr, (b k) ≠ 0 :=
       ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)
@@ -743,7 +743,7 @@ theorem jamesStein_dominates_mle {p : ℕ}
     have hmpk : MeasurePreserving (Function.eval k) M (gaussianReal (θ k) σ2) := by
       rw [hM]; exact measurePreserving_eval (μ := fun i => gaussianReal (θ i) σ2) k
     have hatom : ∀ᵐ y ∂(gaussianReal (θ k) σ2), y ≠ 0 := by
-      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+      simpa only [ae_iff, not_ne_iff, Set.ofPred_eq_eq_singleton] using
         measure_singleton (μ := gaussianReal (θ k) σ2) 0
     filter_upwards [ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)] with x hx
     exact lt_of_lt_of_le (by positivity : (0 : ℝ) < (x k) ^ 2) (coord_sq_le_sum x k)
@@ -758,7 +758,7 @@ theorem jamesStein_dominates_mle {p : ℕ}
         rw [Pi.zero_apply, one_div, inv_eq_zero] at hx0
         linarith
       rw [ae_iff] at hbad
-      simp only [not_false_iff, Set.setOf_true, measure_univ] at hbad
+      simp only [not_false_iff, Set.ofPred_true, measure_univ] at hbad
       exact one_ne_zero hbad
   have hcoef : 0 < ((p : ℝ) - 2) ^ 2 * (σ2 : ℝ) ^ 2 := by
     have hp2 : (0 : ℝ) < (p : ℝ) - 2 := by

@@ -151,13 +151,13 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
   have hS₀meas : MeasurableSet S₀ := measurableSet_lt hd₁meas hd₀meas
   have hS₁meas : MeasurableSet S₁ := measurableSet_le hd₀meas hd₁meas
   have hSunion : S₀ ∪ S₁ = Set.univ := by
-    ext y; simp only [hS₀def, hS₁def, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    ext y; simp only [hS₀def, hS₁def, Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact lt_or_ge (d₁ y) (d₀ y)
   have hSdisj : Disjoint S₀ S₁ := by
     rw [Set.disjoint_left]
     intro y hy0 hy1
-    rw [hS₀def, Set.mem_setOf_eq] at hy0
-    rw [hS₁def, Set.mem_setOf_eq] at hy1
+    rw [hS₀def, Set.mem_ofPred_eq] at hy0
+    rw [hS₁def, Set.mem_ofPred_eq] at hy1
     exact absurd hy1 (not_le.mpr hy0)
   -- Separation of each decision region from the *opposite* class.
   have hsep₀ : ∀ i₀ y, y ∈ S₀ → δ ≤ edist (g (a₀ i₀)) y := by

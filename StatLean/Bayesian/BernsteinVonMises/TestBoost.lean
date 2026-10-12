@@ -177,7 +177,7 @@ private lemma hoeffding_avg_le {Ω : Type*} [MeasurableSpace Ω] (ν : Measure �
   have hsubset : {ω | ((m : ℝ))⁻¹ * ∑ j, Y j ω ≤ 1 / 2}
       ⊆ {ω | (m : ℝ) / 4 ≤ ∑ j ∈ Finset.univ, X j ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hXj : ∀ j : Fin m, X j ω = (∫ ω', Y j ω' ∂ν) - Y j ω := by
       intro j; rw [hX]; simp only [hcval j]; ring
     have hXsum : ∑ j ∈ Finset.univ, X j ω
@@ -270,7 +270,7 @@ theorem blockAvg_typeII_tail
     hkb hg_meas hg01 hpow hn
   refine le_trans ?_ h
   refine measureReal_mono (fun ω hω => ?_) (measure_ne_top _ _)
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   exact le_of_lt hω
 
 /-- Reflecting the one-block statistic reflects the block average: `avg(1 − g) = 1 − avg g`. -/
@@ -361,10 +361,10 @@ theorem exists_boosted_tests
         (1 : (Fin nn → 𝓧) → ℝ) ω)
         = Set.indicator {ω | bvmBlockAvg kb (φt kb) nn ω < 1 / 2} 1 := by
       funext ω
-      simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+      simp only [Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
       by_cases h : 1 / 2 ≤ bvmBlockAvg kb (φt kb) nn ω
-      · rw [if_pos h, if_neg (not_lt.mpr h)]; norm_num
-      · rw [if_neg h, if_pos (not_le.mp h)]; norm_num
+      · rw [ite_eq_left h, ite_eq_right (not_lt.mpr h)]; norm_num
+      · rw [ite_eq_right h, ite_eq_left (not_le.mp h)]; norm_num
     rw [hfun]
     exact integral_indicator_one (measurableSet_lt (hBAmeas nn) measurable_const)
   -- `⌊n/kb⌋ ≥ n/(2 kb)`, so the block-count rate dominates the linear rate `c n`
@@ -409,7 +409,7 @@ theorem exists_boosted_tests
         simpa only [Pi.sub_apply] using! measurable_const.sub (hφt_meas kb))
       (fun ζ => ⟨by linarith [(hφt01 kb ζ).2], by linarith [(hφt01 kb ζ).1]⟩) hmean hnn
     refine le_trans (measureReal_mono (fun ω hω => ?_) (measure_ne_top _ _)) h
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     erw [bvmBlockAvg_one_sub _ hm]
     linarith
   -- type-II bound on the far range (lower tail for `φt kb`)

@@ -416,7 +416,7 @@ theorem empirical_goodEvent_prob_tendsto_one {k : ℕ} {Ω : Type*} [MeasurableS
   refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_) hbad
   refine measureReal_mono ?_ (by finiteness)
   intro ξ hξ
-  simp only [Set.mem_setOf_eq, not_and_or, not_lt, not_forall] at hξ
+  simp only [Set.mem_ofPred_eq, not_and_or, not_lt, not_forall] at hξ
   rcases hξ with h | h | h
   · exact ⟨.inl (), h⟩
   · obtain ⟨j, i, hji⟩ := h
@@ -545,7 +545,7 @@ theorem classical_zEstimator_root_exists_consistent
     (‖(V'.symm : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k))‖₊ : ℝ) with hNv
   have hNv0 : 0 < Nv := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hz : Nv = 0 := le_antisymm hcon (by rw [hNv]; positivity)
     set v : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ) with hv
     have hvn : ‖v‖ = 1 := by rw [hv, PiLp.norm_single]; simp
@@ -671,7 +671,7 @@ theorem classical_zEstimator_root_exists_consistent
             measurable_const).abs measurable_const
       refine hI.congr ?_
       ext ξ
-      simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq]
       rfl
     · have hI : MeasurableSet (⋂ j : Fin k, {ξ : Ξ |
           |empiricalAvg (ψ θ₀ j) n (fun l : Fin n => X l.val ξ)| < epsOf r}) := by
@@ -679,7 +679,7 @@ theorem classical_zEstimator_root_exists_consistent
         exact measurableSet_lt (hemp_meas n (ψ θ₀ j) (hψ_meas θ₀ j)).abs measurable_const
       refine hI.congr ?_
       ext ξ
-      simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq]
       rfl
   have hbad : ∀ r : ℝ, 0 < r → Tendsto (fun n => μ.real (Bad n r)) atTop (𝓝 0) := by
     intro r hr
@@ -692,7 +692,7 @@ theorem classical_zEstimator_root_exists_consistent
         empiricalAvg (ψ θ j) n (fun i : Fin n => X i.val ξ) = 0 := by
     intro r hr hrr₀ n ξ hξ
     rw [hBadDef] at hξ
-    simp only [Set.mem_setOf_eq, not_not] at hξ
+    simp only [Set.mem_ofPred_eq, not_not] at hξ
     exact hcore r hr hrr₀ n _ hξ.1 hξ.2.1 hξ.2.2
   -- The measurable complement of a vanishing bad event is an inner witness of probability one.
   have hinner_one : ∀ (S : ℕ → Set Ξ) (r : ℕ → ℝ),
@@ -739,7 +739,7 @@ theorem classical_zEstimator_root_exists_consistent
         ∧ ∀ j : Fin k, empiricalAvg (ψ (θhat n Xs) j) n Xs = 0 := by
     intro n Xs h
     rw [hθhat]
-    simp only [dif_pos h]
+    simp only [dite_eq_left h]
     exact h.choose_spec
   refine ⟨θhat, ?_, ?_⟩
   · refine hinner_one _ rseq (fun n ξ hξ => ?_) hbaddiag
@@ -760,7 +760,7 @@ theorem classical_zEstimator_root_exists_consistent
     obtain ⟨hmem, -⟩ :=
       hθhat_spec n _ (hroot_of_notBad (rseq n) (hrseq_pos n) (hrseq_le n) n ξ hcon)
     rw [Metric.mem_closedBall, dist_eq_norm] at hmem
-    simp only [Set.mem_setOf_eq] at hξ
+    simp only [Set.mem_ofPred_eq] at hξ
     linarith
 
 /-- **Outer-measure form of classical Z-estimator root existence and consistency.**

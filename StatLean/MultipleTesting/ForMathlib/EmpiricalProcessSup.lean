@@ -137,7 +137,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
       exact le_antisymm (le_trans h1 h2) (zero_le)
     have hsub : {ω | k ≤ countLE p s ω} ⊆ ⋃ j, {ω | p j ω ≤ s} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       have hpos : 0 < countLE p s ω := by omega
       rw [countLE] at hpos
       obtain ⟨j, hj⟩ := Finset.card_pos.mp hpos
@@ -185,7 +185,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
               = Set.indicator {ω | p i ω ≤ s} (fun _ => (1 : ℝ)) from ?_]
         · rw [MeasureTheory.integral_indicator hA, MeasureTheory.setIntegral_const,
             smul_eq_mul, mul_one, measureReal_def]
-        · funext ω; rw [Set.indicator_apply]; simp [Set.mem_setOf_eq]
+        · funext ω; rw [Set.indicator_apply]; simp [Set.mem_ofPred_eq]
       rw [hind]
       exact ENNReal.toReal_le_of_le_ofReal hs0 (hnull i s hs0)
     have hEbound : ∑ i : Fin n, E i ≤ (k : ℝ) - (n : ℝ) * u := by
@@ -197,7 +197,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
     -- The count event sits inside the centered-sum tail event.
     have hsubset : {ω | k ≤ countLE p s ω} ⊆ {ω | (n : ℝ) * u ≤ ∑ i : Fin n, X i ω} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       have hsumX : ∑ i : Fin n, X i ω = (countLE p s ω : ℝ) - ∑ i : Fin n, E i := by
         simp only [hXdef]
         rw [Finset.sum_sub_distrib]
@@ -263,14 +263,14 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
   have hsubU : {ω | u ≤ ksPlus p ω}
       ⊆ ⋃ i : Fin n, {ω | u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i} := by
     intro ω hω
-    rw [Set.mem_setOf_eq] at hω
+    rw [Set.mem_ofPred_eq] at hω
     have hmem := Set.Nonempty.csSup_mem
       (Set.range_nonempty
         (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i))
       (Set.finite_range _)
     obtain ⟨i, hi⟩ := hmem
     refine Set.mem_iUnion.mpr ⟨i, ?_⟩
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hksup : ksPlus p ω
         = sSup (Set.range
             (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i)) := rfl
@@ -287,7 +287,7 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
     have hset : {ω | u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i}
         = {ω | (i : ℕ) + 1 ≤ countLE p (((i : ℕ) + 1 : ℕ) / (n : ℝ) - u) ω} := by
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       have hcast : (((i : ℕ) + 1 : ℕ) : ℝ) = ((i : ℕ) + 1 : ℝ) := by push_cast; ring
       rw [hcast]
       constructor

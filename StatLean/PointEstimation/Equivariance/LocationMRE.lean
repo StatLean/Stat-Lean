@@ -129,7 +129,7 @@ lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
     Filter.Tendsto ρ Filter.atTop Filter.atTop := by
   obtain ⟨a, b, hab, hlt⟩ : ∃ a b : ℝ, a < b ∧ ρ a < ρ b := by
     rw [Antitone] at hna
-    push_neg at hna
+    push Not at hna
     obtain ⟨a, b, hab, hlt⟩ := hna
     exact ⟨a, b, lt_of_le_of_ne hab (by rintro rfl; exact lt_irrefl _ hlt), hlt⟩
   set s₀ : ℝ := (ρ b - ρ a) / (b - a) with hs₀
@@ -621,7 +621,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
   have hfae : AEMeasurable f (volume : Measure (Fin 1 → ℝ)) := by
     have h1 : ContinuousOn f {x | ContinuousAt f x} := fun x hx => hx.continuousWithinAt
     have h2 := h1.aemeasurable (μ := (volume : Measure (Fin 1 → ℝ)))
-      (IsGδ.setOf_continuousAt f).measurableSet
+      (IsGδ.setOfPred_continuousAt f).measurableSet
     have h3 : (volume : Measure (Fin 1 → ℝ)).restrict {x | ContinuousAt f x} = volume :=
       Measure.restrict_eq_self_of_ae_mem hcont
     rwa [h3] at h2

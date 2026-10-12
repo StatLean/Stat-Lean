@@ -299,10 +299,10 @@ theorem linearization_distL2_tendstoZero
     have hG_aesm : ∀ n, AEStronglyMeasurable (Gsqrt n) P := by
       intro n
       by_cases hn : N₀ ≤ n
-      · simp only [hGdef, if_pos hn]
+      · simp only [hGdef, ite_eq_left hn]
         exact (AEMeasurable.iSup (fun j => measurable_abs.comp_aemeasurable
           (hlinResid_aesm n (qseq j).1).aemeasurable)).aestronglyMeasurable
-      · simp only [hGdef, if_neg hn]; exact aestronglyMeasurable_const
+      · simp only [hGdef, ite_eq_right hn]; exact aestronglyMeasurable_const
     have hG_memLp : ∀ n, MemLp (Gsqrt n) 2 P := by
       intro n
       refine MemLp.mono' hD_memLp (hG_aesm n) ?_
@@ -314,7 +314,7 @@ theorem linearization_distL2_tendstoZero
         |linResid m mdot θ₀ n ω h.1| ≤ Gsqrt n ω := by
       intro n hn ω h
       have hGeq : Gsqrt n ω = ⨆ j : ℕ, |linResid m mdot θ₀ n ω (qseq j).1| := by
-        simp only [hGdef, if_pos hn]
+        simp only [hGdef, ite_eq_left hn]
       rw [hGeq]
       have hcont_on : ContinuousOn (fun v => linResid m mdot θ₀ n ω v)
           (Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) M) :=
@@ -343,7 +343,7 @@ theorem linearization_distL2_tendstoZero
       have hnN₀ : N₀ ≤ n := le_trans (le_max_right _ _) hn
       rw [Real.dist_eq, sub_zero, abs_of_nonneg (hG_nonneg n ω)]
       have hGeq : Gsqrt n ω = ⨆ j : ℕ, |linResid m mdot θ₀ n ω (qseq j).1| := by
-        simp only [hGdef, if_pos hnN₀]
+        simp only [hGdef, ite_eq_left hnN₀]
       rw [hGeq]
       have hbound_j : ∀ j, |linResid m mdot θ₀ n ω (qseq j).1| ≤ (ε'' / (M + 1)) * M := by
         intro j
@@ -465,12 +465,12 @@ theorem tendstoZeroInOuterProbScalar_of_ball_outerProbSup
       outerMeasureStar_mono μ ?_) isCobounded_le_of_bot
       (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)) hM₀
     intro ξ hξ
-    simp only [hB, Set.mem_setOf_eq] at hξ ⊢
+    simp only [hB, Set.mem_ofPred_eq] at hξ ⊢
     exact (lt_of_le_of_lt hM₀M hξ).trans_le (le_abs_self _)
   have hsplit : ∀ n, {ξ | ε < |D n ξ (hₙ n ξ)|} ⊆ A n ∪ B n := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ
-    simp only [Set.mem_union, hA, hB, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hξ
+    simp only [Set.mem_union, hA, hB, Set.mem_ofPred_eq]
     by_cases hle : ‖hₙ n ξ‖ ≤ M
     · exact Or.inl ⟨⟨hₙ n ξ, hle⟩, hξ⟩
     · exact Or.inr (not_le.mp hle)
@@ -541,7 +541,7 @@ theorem tendstoInProbZero_of_ball_outerProbSup
       have hsub : B n ⊆ {ξ | M₀ < ‖hₙ n ξ‖} := by
         simp only [hB]
         intro ξ hξ
-        simp only [Set.mem_setOf_eq] at hξ ⊢
+        simp only [Set.mem_ofPred_eq] at hξ ⊢
         exact lt_of_le_of_lt hM₀M hξ
       exact le_trans (measureReal_mono hsub (measure_ne_top μ _)) (hM₀ n)
     have hBη : ∀ n, μ (B n) ≤ ENNReal.ofReal η := by
@@ -552,9 +552,9 @@ theorem tendstoInProbZero_of_ball_outerProbSup
     -- oscillation event (when `hₙ` is inside the ball) and the escape event.
     have hsplit : ∀ n, {ξ | ε ≤ ‖D n ξ (hₙ n ξ)‖} ⊆ A n ∪ B n := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       rw [Real.norm_eq_abs] at hξ
-      simp only [Set.mem_union, hA, hB, Set.mem_setOf_eq]
+      simp only [Set.mem_union, hA, hB, Set.mem_ofPred_eq]
       by_cases hle : ‖hₙ n ξ‖ ≤ M
       · refine Or.inl ⟨⟨hₙ n ξ, hle⟩, ?_⟩
         show ε / 2 < |D n ξ (hₙ n ξ)|
@@ -713,7 +713,7 @@ theorem linearization_marginal_tendstoInProbZero
       unfold distL2; exact ENNReal.toReal_nonneg
     rw [Real.norm_eq_abs, abs_of_nonneg hd_nonneg]
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     refine absurd hn (not_lt.mpr (le_trans ?_
       (outerMeasureStar_mono μ (Set.univ_subset_iff.mpr ?_))))
     · have hle := measure_le_outerMeasureStar μ (Set.univ : Set Ξ)
@@ -957,11 +957,11 @@ theorem linearTerm_modulus_tendstoZero
           θ₀ n (fun i : Fin n => X i.val ξ)‖}
         ⊆ ⋃ i : Fin d, {ξ | t ≤ |empiricalProcess P n (fun i : Fin n => X i.val ξ) (mdot i)|} := by
       intro ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       rw [Set.mem_iUnion]
       by_contra hc
-      push_neg at hc
-      simp only [Set.mem_setOf_eq, not_le] at hc
+      push Not at hc
+      simp only [Set.mem_ofPred_eq, not_le] at hc
       have hle1 := hnorm_le (empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot)
         θ₀ n (fun i : Fin n => X i.val ξ))
       have hle2 : ∑ i : Fin d, |(empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot)
@@ -998,7 +998,7 @@ theorem linearTerm_modulus_tendstoZero
             (fun i : Fin n => X i.val ξ)‖} := by
     intro ξ hξ
     obtain ⟨h₁, h₂, hnorm, hip⟩ := hξ
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hcs : |(⟪h₁.1 - h₂.1, empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot)
           θ₀ n (fun i : Fin n => X i.val ξ)⟫ : ℝ)|
         ≤ ‖h₁.1 - h₂.1‖ * ‖empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot)
@@ -1273,7 +1273,7 @@ theorem linearizationResidual_pairModulus_tendstoZero
       exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
     by_cases hA : ε / 2 < |E₁ - E₂|
     · exact Or.inl ⟨h₁, h₂, lt_of_lt_of_le hnorm (min_le_left δ₁ δ₂), hA⟩
-    · push_neg at hA
+    · push Not at hA
       refine Or.inr ⟨h₁, h₂, lt_of_lt_of_le hnorm (min_le_right δ₁ δ₂), ?_⟩
       linarith [htri, hA]
   -- `P*`-subadditivity, then combine the two moduli via `limsup`-subadditivity.
@@ -1594,7 +1594,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_atRate
       filter_upwards [hpid] with n hn
       congr 1
       ext ξ
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [hn ξ ⟨x, hx⟩]
     have h1 : Tendsto (fun n ↦ ENNReal.ofReal
         (μ.real {ξ : Ξ | ε / 2 ≤ |R n ξ x|})) atTop (𝓝 0) := by
@@ -1720,7 +1720,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
     filter_upwards [eventually_ge_atTop N₀] with n hn
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     refine exists_congr (fun hh => ?_)
     rw [hpid n hn ξ hh]
   set u : ℕ → ℝ≥0∞ := fun n => μ.outerMeasureStar {ξ : Ξ |
@@ -1833,7 +1833,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup
       linarith [hh, hle]
     by_cases hx_case : ε / 2 ≤ |B|
     · exact Or.inl (Set.mem_iUnion₂.mpr ⟨x, (Set.Finite.mem_toFinset ht_fin).mpr hx_t, hx_case⟩)
-    · push_neg at hx_case
+    · push Not at hx_case
       have hosc : ε / 2 < |A - B| := by linarith [htri, hx_case]
       exact Or.inr ⟨h, ⟨x, hx_M⟩, hx_ball, hosc⟩
   -- `P*`-subadditivity, then `limsup`-add with the vanishing marginal envelope.
@@ -1957,7 +1957,7 @@ theorem linearizationSup_tendstoZeroInOuterProbSup_of_distL2
     filter_upwards [eventually_ge_atTop N₀] with n hn
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     refine exists_congr (fun hh => ?_)
     rw [hpid n hn ξ hh]
   set u : ℕ → ℝ≥0∞ := fun n => μ.outerMeasureStar {ξ : Ξ |

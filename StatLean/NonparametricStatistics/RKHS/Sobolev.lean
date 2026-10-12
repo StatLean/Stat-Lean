@@ -354,8 +354,8 @@ theorem sobolevH01_scalarKernel (x y : unitInterval01) :
 theorem min_sub_mul_eq_ite (x y : ℝ) :
     min x y - x * y = if x ≤ y then (1 - y) * x else (1 - x) * y := by
   rcases le_or_gt x y with h | h
-  · rw [if_pos h, min_eq_left h]; ring
-  · rw [if_neg (not_le.mpr h), min_eq_right h.le]; ring
+  · rw [ite_eq_left h, min_eq_left h]; ring
+  · rw [ite_eq_right (not_le.mpr h), min_eq_right h.le]; ring
 
 /-- The exact norm of evaluation on the Sobolev space: `‖E_x‖² = ‖k_x‖² = x(1−x)`. -/
 theorem sobolevH01_norm_kernelFun_sq (x : unitInterval01) :

@@ -126,7 +126,7 @@ private theorem TendstoInProbZero.add
       {x | ε / 2 ≤ ‖Z n x‖} ∪ {x | ε / 2 ≤ ‖W n x‖} := by
     intro x hx
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
     exact (not_lt_of_ge hx) <| (norm_add_le _ _).trans_lt (by linarith [hnot.1, hnot.2])
   have hsum := (hZ (ε / 2) (half_pos hε)).add (hW (ε / 2) (half_pos hε))
   refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_) (by simpa using hsum)
@@ -959,7 +959,7 @@ theorem oneStep2556_deterministicLinearization_vec
       measurableSet_le measurable_const (hZfin_meas n).norm
     have hbridge := pi_real_eq_infinitePi_real_of_truncate P n hset
     simpa only [Zfin, oneStepResidual, scoreMean, indexedSplitScore,
-      map_neg, ContinuousLinearMap.neg_apply, sub_neg_eq_add] using! hbridge
+      map_neg, neg_apply, sub_neg_eq_add] using! hbridge
 
 /-- **Native vector vdV 25.57 asymptotic linearity.**  The Ch5 discretized
 one-step expansion is first applied on `ℕ → Ω` under `infinitePi`; the
@@ -1328,7 +1328,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
         _ = μinf.real {omega | ε ≤ ‖Vhat n omega - V0‖} := by
           congr 1
           ext omega
-          simp only [Set.mem_setOf_eq, Vhat, V0]
+          simp only [Set.mem_ofPred_eq, Vhat, V0]
           rw [show -empInfo (indexedSplitScore splitSide scoreHalf) n (trunc n omega)
               (pre n omega) - -I = -(empInfo (indexedSplitScore splitSide scoreHalf) n
                 (trunc n omega) (pre n omega) - I) by module, norm_neg]
@@ -1387,7 +1387,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
     rw [hupdate]
     simp only [V0, Linv, map_sub, map_smul]
     rw [matrix_nonsing_inv_neg I]
-    simp only [map_neg, ContinuousLinearMap.neg_apply]
+    simp only [map_neg, neg_apply]
     module
   have hnativeInf : TendstoInProbZero (fun _ : ℕ => μinf)
       (fun n omega => Real.sqrt n • (estimator n (trunc n omega) - θ₀) -
@@ -1525,7 +1525,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
         (Real.sqrt n)⁻¹ • ∑ i, tupleEval P
           (@candidateVecEIF Ω _ P _ Θ _ _ _ d S_θ T_nuis proj e) (X i)‖} :=
       measurableSet_le measurable_const hres_meas.norm
-    simpa only [μinf, trunc, Set.mem_setOf_eq] using!
+    simpa only [μinf, trunc, Set.mem_ofPred_eq] using!
       (pi_real_eq_infinitePi_real_of_truncate P n hset).symm
 
 /-- **Semiparametric efficiency in vdV Theorem 25.57 (vector form).**
@@ -1593,7 +1593,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_fin_one
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hAL ε hε)
   · exact Filter.Eventually.of_forall fun _ => zero_le
   · exact Filter.Eventually.of_forall fun n => measure_mono (fun X hX => by
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     have hcoord :
         Real.sqrt n * (estimator n X 0 - θ₀ 0) -
             (Real.sqrt n)⁻¹ *

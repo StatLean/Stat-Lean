@@ -201,7 +201,7 @@ lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMea
       (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) (Set.Iic t ×ˢ Set.univ)
         = (Fintype.card G : ℝ≥0∞) * P {x : 𝓧 | T (g • x) ≤ t} := by
     intro g
-    rw [Measure.finset_sum_apply,
+    rw [Measure.finsetSum_apply,
       Finset.sum_congr rfl (fun g' _ => by
         rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']),
       Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
@@ -211,7 +211,7 @@ lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMea
       ENNReal.inv_mul_cancel hcardℝ hcardtop, mul_one]
   have hval : (randPairLaw G T P) (Set.Iic t ×ˢ Set.univ)
       = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ≤ t} := by
-    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
     simp only [Measure.map₀_of_measurable (hpair _ _)]
     simp_rw [hstep]
     rw [← Finset.mul_sum, ← mul_assoc, hcc]
@@ -242,7 +242,7 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
       (fun x => (if T (g • x) ≤ t then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0))
         = Set.indicator {x | T (g • x) ≤ t ∧ T (g' • x) ≤ t} 1 := by
     intro g g'; funext x
-    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+    simp only [Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
     split_ifs <;> simp_all
   have hintg' : ∀ g g' : G, Integrable (fun x =>
       (if T (g • x) ≤ t then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0)) P := by
@@ -278,11 +278,11 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
   have hval : (randPairLaw G T P) (Set.Iic t ×ˢ Set.Iic t)
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ t ∧ T (g' • x) ≤ t} := by
-    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
     simp only [Measure.map₀_of_measurable (hpair _ _)]
     congr 1
     refine Finset.sum_congr rfl fun g _ => ?_
-    rw [Measure.finset_sum_apply]
+    rw [Measure.finsetSum_apply]
     exact Finset.sum_congr rfl fun g' _ => by rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']
   have hRHS : (randPairLaw G T P).real (Set.Iic t ×ˢ Set.Iic t)
       = (Fintype.card G : ℝ)⁻¹ ^ 2 *
@@ -321,7 +321,7 @@ lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilit
       (fun x => (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0))
         = Set.indicator {x | T (g • x) ≤ s ∧ T (g' • x) ≤ t} 1 := by
     intro g g'; funext x
-    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+    simp only [Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
     split_ifs <;> simp_all
   have hintg' : ∀ g g' : G, Integrable (fun x =>
       (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0)) P := by
@@ -363,11 +363,11 @@ lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilit
   have hval : (randPairLaw G T P) (Set.Iic s ×ˢ Set.Iic t)
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
-    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
     simp only [Measure.map₀_of_measurable (hpair _ _)]
     congr 1
     refine Finset.sum_congr rfl fun g _ => ?_
-    rw [Measure.finset_sum_apply]
+    rw [Measure.finsetSum_apply]
     exact Finset.sum_congr rfl fun g' _ => by rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']
   have hRHS : (randPairLaw G T P).real (Set.Iic s ×ˢ Set.Iic t)
       = (Fintype.card G : ℝ)⁻¹ ^ 2 *
@@ -398,7 +398,7 @@ lemma randPairLaw_map {E F : Type*} [MeasurableSpace E] [MeasurableSpace F] (P :
     fun g g' => (hψ.comp (hT.comp (hsmul g))).prodMk (hψ.comp (hT.comp (hsmul g')))
   ext s hs
   rw [Measure.map_apply hψψ hs]
-  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply,
+  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply,
     Measure.map₀_of_measurable (hpair _ _), Measure.map₀_of_measurable (hpairψ _ _)]
   congr 1
   refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
@@ -429,7 +429,7 @@ lemma real_randPairLaw_prod_univ {E : Type*} [MeasurableSpace E] (P : Measure �
       (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) (S ×ˢ (Set.univ : Set E))
         = (Fintype.card G : ℝ≥0∞) * P {x : 𝓧 | T (g • x) ∈ S} := by
     intro g
-    rw [Measure.finset_sum_apply,
+    rw [Measure.finsetSum_apply,
       Finset.sum_congr rfl (fun g' _ => by
         rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']),
       Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
@@ -439,7 +439,7 @@ lemma real_randPairLaw_prod_univ {E : Type*} [MeasurableSpace E] (P : Measure �
       ENNReal.inv_mul_cancel hcardℝ hcardtop, mul_one]
   have hval : (randPairLaw G T P) (S ×ˢ (Set.univ : Set E))
       = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ∈ S} := by
-    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
     simp only [Measure.map₀_of_measurable (hpair _ _)]
     simp_rw [hstep]
     rw [← Finset.mul_sum, ← mul_assoc, hcc]
@@ -460,12 +460,12 @@ lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Meas
   have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
     (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
   constructor
-  rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   simp only [Measure.map₀_of_measurable (hpair _ _)]
   have hstep : ∀ g : G, (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) Set.univ
       = (Fintype.card G : ℝ≥0∞) := by
     intro g
-    rw [Measure.finset_sum_apply,
+    rw [Measure.finsetSum_apply,
       Finset.sum_congr rfl (fun g' _ => by
         rw [Measure.map_apply (hpair g g') MeasurableSet.univ, Set.preimage_univ, measure_univ]),
       Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
@@ -520,14 +520,14 @@ whenever `0 < p`: for `t` below every orbit value `R̂(t ∣ x) = 0 < p`. -/
 lemma bddBelow_randDist_sublevel (T : 𝓧 → ℝ) (x : 𝓧) {p : ℝ} (hp : 0 < p) :
     BddBelow {t : ℝ | p ≤ randDist G T x t} := by
   refine ⟨⨅ g : G, T (g • x), fun t ht => ?_⟩
-  simp only [Set.mem_setOf_eq] at ht
+  simp only [Set.mem_ofPred_eq] at ht
   have hex : ∃ g : G, T (g • x) ≤ t := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hz : randDist G T x t = 0 := by
       rw [randDist]
       have : ∀ g : G, (if T (g • x) ≤ t then (1 : ℝ) else 0) = 0 := fun g =>
-        if_neg (not_le.mpr (hcon g))
+        ite_eq_right (not_le.mpr (hcon g))
       simp [this]
     rw [hz] at ht; linarith
   obtain ⟨g, hg⟩ := hex
@@ -695,7 +695,7 @@ private lemma randDist_tendstoInProb_cdf_aux (P : ∀ n, Measure (𝓧 n))
     have hset : {x | ε ≤ |randDist (G n) (T n) x t - c|}
         = {x | ε ^ 2 ≤ (randDist (G n) (T n) x t - c) ^ 2} := by
       ext x
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       constructor
       · intro h; nlinarith [abs_nonneg (randDist (G n) (T n) x t - c),
           sq_abs (randDist (G n) (T n) x t - c)]
@@ -758,7 +758,7 @@ private lemma randQuantile_tendstoInProb_aux (P : ∀ n, Measure (𝓧 n))
   have hCP : ∀ {a b : ℝ}, a < b → ∃ x ∈ Set.Ioo a b, ContinuousAt (cdf R) x := by
     intro a b hab
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hsub : Set.Ioo a b ⊆ {x | ¬ ContinuousAt (cdf R) x} := fun x hx => hcon x hx
     have hz : volume (Set.Ioo a b) = 0 := measure_mono_null hsub (hcountable.measure_zero volume)
     rw [Real.volume_Ioo] at hz
@@ -778,11 +778,11 @@ private lemma randQuantile_tendstoInProb_aux (P : ∀ n, Measure (𝓧 n))
       {x | p - cdf R a ≤ |randDist (G n) (T n) x a - cdf R a|} ∪
       {x | cdf R b - p ≤ |randDist (G n) (T n) x b - cdf R b|} := by
     intro n x hx
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     by_contra hnot
     rw [Set.mem_union, not_or] at hnot
     obtain ⟨hna, hnb⟩ := hnot
-    simp only [Set.mem_setOf_eq, not_le] at hna hnb
+    simp only [Set.mem_ofPred_eq, not_le] at hna hnb
     have hrda : randDist (G n) (T n) x a < p := by
       have := (abs_lt.mp hna).2; linarith
     have hrdb : p ≤ randDist (G n) (T n) x b := by
@@ -791,9 +791,9 @@ private lemma randQuantile_tendstoInProb_aux (P : ∀ n, Measure (𝓧 n))
       csInf_le (bddBelow_randDist_sublevel (G n) (T n) x hp0) hrdb
     have hlo' : a ≤ randQuantile (G n) (T n) p x := by
       refine le_csInf ⟨b, hrdb⟩ (fun s hs => ?_)
-      simp only [Set.mem_setOf_eq] at hs
+      simp only [Set.mem_ofPred_eq] at hs
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd (le_trans hs (randDist_mono (G n) (T n) x hcon.le)) (not_le.mpr hrda)
     have hcontra : |randQuantile (G n) (T n) p x - q| < ε := by
       rw [abs_lt]
@@ -841,7 +841,7 @@ private lemma exists_continuousAt_cdf_Ioo (R : Measure ℝ) [IsProbabilityMeasur
   have hcountable : Set.Countable {x | ¬ ContinuousAt (cdf R) x} :=
     (monotone_cdf (μ := R)).countable_not_continuousAt
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hsub : Set.Ioo a b ⊆ {x | ¬ ContinuousAt (cdf R) x} := fun x hx => hcon x hx
   have hz : volume (Set.Ioo a b) = 0 := measure_mono_null hsub (hcountable.measure_zero volume)
   rw [Real.volume_Ioo] at hz
@@ -866,7 +866,7 @@ private lemma measureReal_Ioc_prod_Ioc (μ : Measure (ℝ × ℝ)) [IsFiniteMeas
   have hbox : (Set.Ioc a b ×ˢ Set.Ioc c d : Set (ℝ × ℝ))
       = (Set.Iic b ×ˢ Set.Iic d) \ ((Set.Iic a ×ˢ Set.Iic d) ∪ (Set.Iic b ×ˢ Set.Iic c)) := by
     ext z
-    simp only [Set.mem_prod, Set.mem_Ioc, Set.mem_Iic, Set.mem_diff, Set.mem_union, not_or,
+    simp only [Set.mem_prod, Set.mem_Ioc, Set.mem_Iic, Set.mem_sdiff, Set.mem_union, not_or,
       not_and, not_le]
     constructor
     · rintro ⟨⟨ha1, hb1⟩, hc1, hd1⟩
@@ -882,7 +882,7 @@ private lemma measureReal_Ioc_prod_Ioc (μ : Measure (ℝ × ℝ)) [IsFiniteMeas
   have hu := measureReal_union_add_inter (μ := μ) (s := (Set.Iic a ×ˢ Set.Iic d : Set (ℝ × ℝ)))
     (t := (Set.Iic b ×ˢ Set.Iic c : Set (ℝ × ℝ))) mBC
   rw [hinter] at hu
-  rw [hbox, measureReal_diff hsub (mAD.union mBC)]
+  rw [hbox, measureReal_sdiff hsub (mAD.union mBC)]
   linarith
 
 /-- **Converse.** If the randomization distribution converges in probability to some

@@ -101,7 +101,7 @@ private lemma exists_measurable_nearestPoint
   -- The minimizer-witness set is a finite intersection of measurable `≤`-sets.
   have hpmeas : ∀ n, MeasurableSet {y | p y n} := by
     intro n
-    simp only [hp, Set.setOf_forall]
+    simp only [hp, Set.ofPred_forall]
     exact MeasurableSet.iInter fun j => measurableSet_le (hmeas _) (hmeas j)
   refine ⟨fun y => Fin.ofNat M (Nat.find (hex y)), ?_, fun y ℓ => Nat.find_spec (hex y) ℓ⟩
   exact (measurable_from_nat (f := Fin.ofNat M)).comp (measurable_find hex hpmeas)
@@ -130,7 +130,7 @@ private lemma mul_multiwayTestingError_le
     unfold distortionLoss zeroOneLoss
     by_cases hjy : j = T y
     · simp [hjy]
-    · rw [if_neg hjy, mul_one]
+    · rw [ite_eq_right hjy, mul_one]
       apply hΦ
       have hsep' := hsep j (T y) hjy
       have htri : edist (g (θfam j)) (g (θfam (T y)))

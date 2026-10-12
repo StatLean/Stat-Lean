@@ -162,15 +162,15 @@ private lemma oneSidedTest_mono {T : 𝓧 → ℝ} {C γ : ℝ} (hγ : γ ∈ Se
     {x y : 𝓧} (hxy : T x ≤ T y) : oneSidedTest T C γ x ≤ oneSidedTest T C γ y := by
   unfold oneSidedTest
   by_cases hbx : C < T x
-  · rw [if_pos hbx, if_pos (lt_of_lt_of_le hbx hxy)]
-  · rw [if_neg hbx]
+  · rw [ite_eq_left hbx, ite_eq_left (lt_of_lt_of_le hbx hxy)]
+  · rw [ite_eq_right hbx]
     by_cases hex : T x = C
-    · rw [if_pos hex]
+    · rw [ite_eq_left hex]
       have hyC : C ≤ T y := hex ▸ hxy
       by_cases hby : C < T y
-      · rw [if_pos hby]; exact hγ.2
-      · rw [if_neg hby, if_pos (le_antisymm (not_lt.mp hby) hyC)]
-    · rw [if_neg hex]
+      · rw [ite_eq_left hby]; exact hγ.2
+      · rw [ite_eq_right hby, ite_eq_left (le_antisymm (not_lt.mp hby) hyC)]
+    · rw [ite_eq_right hex]
       split_ifs
       · exact zero_le_one
       · exact hγ.1
@@ -192,14 +192,14 @@ private lemma power_oneSidedTest_eq {P : ℝ → Measure 𝓧} [∀ θ, IsProbab
     by_cases hR : x ∈ R
     · have hxR : C < T x := hR
       have hnB : x ∉ B := fun he => absurd (he : T x = C) (ne_of_gt hxR)
-      rw [Set.indicator_of_mem hR, Set.indicator_of_notMem hnB, if_pos hxR]; simp
+      rw [Set.indicator_of_mem hR, Set.indicator_of_notMem hnB, ite_eq_left hxR]; simp
     · have hxR : ¬ C < T x := hR
-      rw [Set.indicator_of_notMem hR, if_neg hxR]
+      rw [Set.indicator_of_notMem hR, ite_eq_right hxR]
       by_cases hB : x ∈ B
       · have hxB : T x = C := hB
-        rw [Set.indicator_of_mem hB, if_pos hxB]; simp
+        rw [Set.indicator_of_mem hB, ite_eq_left hxB]; simp
       · have hxB : ¬ T x = C := hB
-        rw [Set.indicator_of_notMem hB, if_neg hxB]; simp
+        rw [Set.indicator_of_notMem hB, ite_eq_right hxB]; simp
   have hR1 : Integrable (R.indicator (1 : 𝓧 → ℝ)) (P θ) :=
     (show Integrable (1 : 𝓧 → ℝ) (P θ) from integrable_const 1).indicator hRmeas
   have hB1 : Integrable (fun x => γ * B.indicator (1 : 𝓧 → ℝ) x) (P θ) :=
@@ -280,24 +280,24 @@ private lemma hasNPShape_oneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : k * p θ x < p θ' x := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : C < T x := by
       by_contra hcon
       exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
     show oneSidedTest T C γ x = 1
-    unfold oneSidedTest; rw [if_pos hTC]
+    unfold oneSidedTest; rw [ite_eq_left hTC]
   · refine Filter.Eventually.of_forall fun x hx => ?_
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : p θ' x < k * p θ x := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : T x < C := by
       by_contra hcon
       exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
     show oneSidedTest T C γ x = 0
-    unfold oneSidedTest; rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]
+    unfold oneSidedTest; rw [ite_eq_right (not_lt.mpr hTC.le), ite_eq_right (ne_of_lt hTC)]
 
 /-- **The one-sided test is most powerful** for `P θ` against `P θ'` (`θ < θ'`) at its own
 size, provided the `θ`-density is positive somewhere above the threshold. -/
@@ -317,19 +317,19 @@ private lemma exists_pos_density_of_power_pos {μ : Measure 𝓧} {P : ℝ → M
     {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ} {θ : ℝ}
     (hpow : 0 < power P (oneSidedTest T C γ) θ) : ∃ z, C ≤ T z ∧ 0 < p θ z := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   -- `p θ = 0` on `{T ≥ C}`, hence both the tail and the atom carry no `P θ`-mass.
   obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
   have hnull : (P θ) {x | C ≤ T x} = 0 := by
     rw [hPeq, withDensity_apply _ (measurableSet_le measurable_const hT)]
     refine setLIntegral_eq_zero (measurableSet_le measurable_const hT) fun x hx => ?_
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     have : p θ x ≤ 0 := hcon x hx
     simp [le_antisymm this (hnn x)]
   have hRle : (P θ) {x | C < T x} = 0 :=
-    measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_lt hx) hnull
+    measure_mono_null (Set.ofPred_subset_ofPred.2 fun x hx => le_of_lt hx) hnull
   have hBle : (P θ) {x | T x = C} = 0 :=
-    measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_eq hx.symm) hnull
+    measure_mono_null (Set.ofPred_subset_ofPred.2 fun x hx => le_of_eq hx.symm) hnull
   rw [power_oneSidedTest_eq hT C γ θ, hRle, hBle] at hpow
   simp at hpow
 
@@ -539,11 +539,11 @@ theorem power_strictMono_oneSided
   have hφ0 : ∀ x, T x < C → φ x = 0 := by
     intro x hx
     rw [hφdef]; unfold oneSidedTest
-    rw [if_neg (not_lt.mpr hx.le), if_neg (ne_of_lt hx)]
+    rw [ite_eq_right (not_lt.mpr hx.le), ite_eq_right (ne_of_lt hx)]
   have hφ1 : ∀ x, C < T x → φ x = 1 := by
     intro x hx
     rw [hφdef]; unfold oneSidedTest
-    rw [if_pos hx]
+    rw [ite_eq_left hx]
   have hEq : ∀ x, T x = C → p θ' x = k * p θ x := fun x hx =>
     le_antisymm (hkle x hx.le) (hkge x hx.ge)
   -- Integrability bookkeeping.
@@ -604,7 +604,7 @@ theorem power_strictMono_oneSided
   · -- `k = 1`: equality would force `p_θ = p_{θ'}` a.e., contradicting `hdist`.
     subst hk
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hz1 : ∫ x, (φ x * p θ' x - 1 * (φ x * p θ x)) ∂μ = 0 := by rw [e1]; linarith
     have hz2 : ∫ x, ((1 * p θ x - p θ' x) - (1 * (φ x * p θ x) - φ x * p θ' x)) ∂μ = 0 := by
       rw [e2, honeθ, honeθ']; linarith
@@ -732,24 +732,24 @@ private lemma hasNPShape_coOneSided {μ : Measure 𝓧} {P : ℝ → Measure �
   · refine Filter.Eventually.of_forall fun x hx => ?_
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : k * p θ' x < p θ x := by
-      by_contra hcon; push_neg at hcon
+      by_contra hcon; push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : T x < C := by
       by_contra hcon
       exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
     show 1 - oneSidedTest T C γ x = 1
     unfold oneSidedTest
-    rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]; ring
+    rw [ite_eq_right (not_lt.mpr hTC.le), ite_eq_right (ne_of_lt hTC)]; ring
   · refine Filter.Eventually.of_forall fun x hx => ?_
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : p θ x < k * p θ' x := by
-      by_contra hcon; push_neg at hcon
+      by_contra hcon; push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : C < T x := by
       by_contra hcon
       exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
     show 1 - oneSidedTest T C γ x = 0
-    unfold oneSidedTest; rw [if_pos hTC]; ring
+    unfold oneSidedTest; rw [ite_eq_left hTC]; ring
 
 /-- If the co-test `1 − φ` has positive power at `θ`, some point at or below the threshold
 has positive `θ`-density. -/
@@ -758,12 +758,12 @@ private lemma exists_pos_density_below_of_coPower_pos {μ : Measure 𝓧} {P : �
     {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ} {θ : ℝ}
     (hpow : power P (oneSidedTest T C γ) θ < 1) : ∃ z, T z ≤ C ∧ 0 < p θ z := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
   have hnull : (P θ) {x | T x ≤ C} = 0 := by
     rw [hPeq, withDensity_apply _ (measurableSet_le hT measurable_const)]
     refine setLIntegral_eq_zero (measurableSet_le hT measurable_const) fun x hx => ?_
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     simp [le_antisymm (hcon x hx) (hnn x)]
   -- Off `{T ≤ C}`, i.e. on `{C < T}`, the one-sided test is `1`, so its power is `1`.
   have hone : power P (oneSidedTest T C γ) θ = 1 := by
@@ -773,7 +773,7 @@ private lemma exists_pos_density_below_of_coPower_pos {μ : Measure 𝓧} {P : �
         ext x; simp [not_le]
       rw [hcompl, prob_compl_eq_one_sub (measurableSet_le hT measurable_const), hnull, tsub_zero]
     have hBle : (P θ) {x | T x = C} = 0 :=
-      measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_eq hx) hnull
+      measure_mono_null (Set.ofPred_subset_ofPred.2 fun x hx => le_of_eq hx) hnull
     rw [hRfull, hBle]; simp
   rw [hone] at hpow; exact absurd hpow (lt_irrefl 1)
 

@@ -117,7 +117,7 @@ lemma exists_measurable_surrogate_of_measurableSet
     · exact hf₀_F
   · intro ξ hξ
     change (if fhat ξ ∈ F then fhat ξ else f₀) = fhat ξ
-    rw [if_pos hξ]
+    rw [ite_eq_left hξ]
 
 /-- **Measurable surrogate construction — closure-predicate flavour.**
 
@@ -268,7 +268,7 @@ theorem vw_random_function_lp_locus_measurable
   have h_set_eq :
       {ξ | MemLp (fhat ξ) 2 P} = ψ ⁻¹' {a : ℝ≥0∞ | a < ∞} := by
     ext ξ
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, ψ]
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, ψ]
     refine ⟨fun hξ => ?_, fun hξ => ?_⟩
     · have h_sq := eLpNorm_nnreal_pow_eq_lintegral (f := fhat ξ) (μ := P)
         (p := (2 : ℝ≥0)) (by norm_num) (h_ae_sm ξ)
@@ -380,7 +380,7 @@ theorem vw_random_function_lp_lift_inner_measurable
   classical
   haveI : SecondCountableTopology (Lp ℝ 2 P) := vw_polish_l2_space P
   refine ⟨fun ξ => if h : MemLp (fhat ξ) 2 P then MemLp.toLp (fhat ξ) h else 0,
-    ?_, fun ξ h => dif_pos h⟩
+    ?_, fun ξ h => dite_eq_left h⟩
   -- Measurability via pointwise distance criterion.
   apply measurable_of_pointwise_dist_measurable
   intro g
@@ -414,7 +414,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       rw [Set.piecewise_eq_of_mem _ _ _ hξ_mem]
       have h_Φ : (if h : MemLp (fhat ξ) 2 P
             then MemLp.toLp (fhat ξ) h else (0 : Lp ℝ 2 P))
-          = MemLp.toLp (fhat ξ) hξ := dif_pos hξ
+          = MemLp.toLp (fhat ξ) hξ := dite_eq_left hξ
       rw [h_Φ, Lp.dist_def]
       have h_eLpNorm_ae : eLpNorm (⇑(MemLp.toLp (fhat ξ) hξ) - ⇑g) 2 P
           = eLpNorm (fhat ξ - ⇑g) 2 P := by
@@ -440,7 +440,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       rw [Set.piecewise_eq_of_notMem _ _ _ hξ_nmem]
       have h_Φ : (if h : MemLp (fhat ξ) 2 P
             then MemLp.toLp (fhat ξ) h else (0 : Lp ℝ 2 P))
-          = 0 := dif_neg hξ
+          = 0 := dite_eq_right hξ
       rw [h_Φ, dist_zero_left]
   rw [h_dist_eq]
   exact Measurable.piecewise h_locus_meas h_locus_branch h_complement_branch

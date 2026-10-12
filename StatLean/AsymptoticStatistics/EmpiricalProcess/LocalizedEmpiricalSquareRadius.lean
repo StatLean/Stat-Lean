@@ -137,7 +137,7 @@ theorem conditionalRademacherSup_strictLocalizedDifferenceClass_le_bookEntropy
       strictLocalizedDifferenceClass F P r = ∅ := by
     have hr_nonpos : r ≤ 0 := le_of_not_gt hr
     ext h
-    simp only [strictLocalizedDifferenceClass, Set.mem_setOf_eq,
+    simp only [strictLocalizedDifferenceClass, Set.mem_ofPred_eq,
       Set.mem_empty_iff_false, iff_false]
     rintro ⟨f, hf, g, hg, heq, hnorm⟩
     rw [ENNReal.ofReal_eq_zero.mpr hr_nonpos] at hnorm

@@ -118,7 +118,7 @@ private lemma trimmedSet_eq_biUnion [DecidableEq 𝒳] (μ : Measure Ω) (Z : Ω
       = ⋃ x ∈ Finset.univ.filter fun x =>
             η ≤ propensity μ Z X x ∧ propensity μ Z X x ≤ 1 - η, cell X x := by
   ext ω
-  simp only [trimmedSet, Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_univ,
+  simp only [trimmedSet, Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_univ,
     true_and, cell, Set.mem_preimage, Set.mem_singleton_iff, exists_prop]
   exact ⟨fun h => ⟨X ω, h, rfl⟩, fun ⟨_, hx, hxe⟩ => hxe ▸ hx⟩
 

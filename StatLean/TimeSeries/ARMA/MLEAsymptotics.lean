@@ -240,7 +240,7 @@ private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p 
   refine (armaProfileS_tendstoInProb h hiid hσ hB0 hB0 hcausal hmeas hη).congr fun T => ?_
   congr 1
   refine congrArg _ (Set.ext fun ω => ?_)
-  simp only [Set.mem_setOf_eq, armaContrastVar_self, mul_one, div_eq_inv_mul]
+  simp only [Set.mem_ofPred_eq, armaContrastVar_self, mul_one, div_eq_inv_mul]
 
 /-- **Local stochastic equicontinuity of the profiled sum of squares — PROVED**
 (2026-08-09, wave `ts/s1b-arma-finish`): the oscillation of `θ ↦ T⁻¹ S_T(θ)` over a small
@@ -379,14 +379,14 @@ theorem hannan_sigma2_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     simpa using htruth.add (hcons.add hequi)
   refine squeeze_zero (fun T => ENNReal.toReal_nonneg) (fun T => ?_) hg
   refine toReal_measure_le_of_subset_union₃ (fun ω hω => ?_)
-  simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+  simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
   by_cases hB : δ / 2 ≤ |armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T - σ2|
   · exact Or.inl hB
   refine Or.inr ?_
-  push_neg at hB
+  push Not at hB
   by_cases hC : ρ ≤ dist (θ T ω) (b0, a0)
   · exact Or.inl hC
-  push_neg at hC
+  push Not at hC
   refine Or.inr ⟨θ T ω, (hargmin T ω).1, hC, ?_⟩
   have habs := abs_sub_abs_le_abs_sub
     (armaProfileS (θ T ω).1 (θ T ω).2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T - σ2)
@@ -458,9 +458,9 @@ private lemma measurable_sampleACVF {T : ℕ} {X : ℤ → Ω → ℝ} (hmeas : 
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using! ((hmeas _).sub hmean).mul ((hmeas _).sub hmean)
+    simpa [dite_eq_left hlt'] using! ((hmeas _).sub hmean).mul ((hmeas _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
-    simp [dif_neg hlt']
+    simp [dite_eq_right hlt']
 
 end PACF
 
@@ -606,7 +606,7 @@ private theorem ls_yw_mle_equivalent_debt_false
       Real.sqrt T * dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1)} = Set.univ := by
     intro T hT
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     have hd : (1 : ℝ) ≤ dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1) := by
       have := dist_le_pi_dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1) 0
       rw [Real.dist_eq] at this

@@ -113,7 +113,7 @@ private lemma marginFeasible_eq_iInter {x : Fin n → E} {lab : Fin n → ℝ}
       ⋂ (i : Fin n) (j : Fin n) (_ : lab i < 0) (_ : 0 < lab j),
         {v : E | ⟪x i, v⟫ - 1 / lab i ≤ ⟪x j, v⟫ - 1 / lab j} := by
   ext v
-  simp only [Set.mem_iInter, Set.mem_setOf_eq]
+  simp only [Set.mem_iInter, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨c, hc⟩ i j hi hj
     exact le_trans (bound_le_of_neg hi (hc i)) (le_bound_of_pos hj (hc j))
@@ -283,7 +283,7 @@ private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
       exact Metric.infDist_zero_of_mem (Set.mem_univ _)
     · have hset : hyperplane (0 : E) c = ∅ := by
         ext y
-        simp only [hyperplane, Set.mem_setOf_eq, inner_zero_right,
+        simp only [hyperplane, Set.mem_ofPred_eq, inner_zero_right,
           Set.mem_empty_iff_false, iff_false]
         exact fun h => hc h.symm
       rw [hset, Metric.infDist_empty]

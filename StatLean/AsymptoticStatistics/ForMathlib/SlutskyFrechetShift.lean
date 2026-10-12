@@ -133,7 +133,7 @@ theorem WeakConverges.slutsky_shift_of_tendsto
           = (∅ : Set (Ω k)) := by
       filter_upwards [h_norm_small] with k hk
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       calc dist (sqn k • (T k ω - ψ θ₀) - ψDot h)
             (sqn k • (T k ω - ψ (θ₀ + (sqn k)⁻¹ • h)))
           = ‖sqn k • (ψ (θ₀ + (sqn k)⁻¹ • h) - ψ θ₀) - ψDot h‖ :=

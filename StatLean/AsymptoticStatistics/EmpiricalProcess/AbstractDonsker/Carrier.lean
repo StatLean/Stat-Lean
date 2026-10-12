@@ -170,9 +170,9 @@ lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
   · -- `S ⊆ F`: every representative lies in `F`.
     intro g hg
     simp only [Finset.coe_image, Finset.coe_filter, Finset.mem_univ,
-      true_and, Set.mem_image, Set.mem_setOf_eq] at hg
+      true_and, Set.mem_image, Set.mem_ofPred_eq] at hg
     obtain ⟨i, hi, rfl⟩ := hg
-    simp only [rep, dif_pos hi]
+    simp only [rep, dite_eq_left hi]
     exact (hrep i hi).choose_spec.1
   · -- ε-net bound.
     intro f hf
@@ -187,7 +187,7 @@ lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
     · -- `distL2 P f (rep i) < ε`.
       -- `rep i` lies in the same bracket `i`.
       have hrep_spec : ∀ x, l i x ≤ rep i x ∧ rep i x ≤ u i x := by
-        simp only [rep, dif_pos hQi]
+        simp only [rep, dite_eq_left hQi]
         exact (hrep i hQi).choose_spec.2
       -- Pointwise: `|f x - rep i x| ≤ u i x - l i x`.
       have h_ptwise : ∀ x, ‖(f - rep i) x‖ ≤ ‖(fun y => u i y - l i y) x‖ := by

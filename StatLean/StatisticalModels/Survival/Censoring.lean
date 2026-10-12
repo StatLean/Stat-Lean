@@ -128,7 +128,7 @@ theorem uncensoredSubLaw_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasu
   have hpre : censorObserve ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × Bool | p.2 = true})
       = Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2} := by
     ext p
-    simp only [censorObserve, mem_preimage, mem_inter_iff, mem_setOf_eq, decide_eq_true_eq]
+    simp only [censorObserve, mem_preimage, mem_inter_iff, mem_ofPred_eq, decide_eq_true_eq]
     constructor
     · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2] at h1, h2⟩
     · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2], h2⟩

@@ -1769,12 +1769,12 @@ lemma sum_W_sq_tendsto_to_Pg_sq
           ⊆ {ω | δ ≤ ‖(∑ i ∈ Finset.range n, g (X i ω) ^ 2) / (n : ℝ) - Pg_sq‖}
             ∪ {ω | δ ≤ ‖(∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ) - (0 : ℝ)‖} := by
       intro ω hω
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, h_SAB n ω] at hω
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, h_SAB n ω] at hω
       by_contra h
       rw [Set.mem_union, not_or] at h
       obtain ⟨hA', hB'⟩ := h
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at hA'
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at hB'
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at hA'
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at hB'
       have hdecomp :
           ((∑ i ∈ Finset.range n, g (X i ω) ^ 2) / (n : ℝ)
             + (∑ i ∈ Finset.range n, Δ n (X i ω)) / (n : ℝ)) - Pg_sq
@@ -1920,7 +1920,7 @@ lemma max_abs_W_tendsto_zero
       by_contra h_not
       push Not at h_not
       obtain ⟨h_notg, h_notΔ⟩ := h_not
-      simp only [Set.mem_setOf_eq, not_lt] at h_notg h_notΔ
+      simp only [Set.mem_ofPred_eq, not_lt] at h_notg h_notΔ
       have h3 : (n : ℝ) * (W n y) ^ 2 - g y ^ 2 ≤ (n : ℝ) * ε ^ 2 / 2 :=
         (le_abs_self _).trans h_notΔ
       have h4 : (n : ℝ) * (W n y) ^ 2 ≤ (n : ℝ) * ε ^ 2 := by linarith
@@ -2240,7 +2240,7 @@ theorem LAN_expansion_iii
           ⊆ (⋃ i ∈ Finset.range n, {ω | γ / 2 < |W n (X i ω)|})
             ∪ {ω | 1 ≤ ‖(∑ i ∈ Finset.range n, W n (X i ω) ^ 2) - I‖} := by
       intro n ω hω
-      rw [Set.mem_setOf_eq, sub_zero, Real.norm_eq_abs] at hω
+      rw [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs] at hω
       by_contra h
       rw [Set.mem_union, not_or] at h
       obtain ⟨h_not_max, h_not_B⟩ := h
@@ -2251,7 +2251,7 @@ theorem LAN_expansion_iii
         push Not at h_gt
         exact h_not_max (Set.mem_biUnion hi h_gt)
       -- `h_not_B` gives `|B_n ω - I| < 1`, so `B_n ω < Mbd`.
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at h_not_B
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at h_not_B
       have hB_sum_nn : 0 ≤ ∑ i ∈ Finset.range n, W n (X i ω) ^ 2 :=
         Finset.sum_nonneg fun i _ => sq_nonneg _
       have hB_lt : (∑ i ∈ Finset.range n, W n (X i ω) ^ 2) < Mbd := by

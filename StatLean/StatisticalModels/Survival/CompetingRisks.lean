@@ -167,7 +167,7 @@ theorem sum_causeSpecificCumHazard (P : Measure (ℝ × Option (Fin k))) [IsFini
         (Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 = some j})
         = Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 ≠ none} := by
       ext p
-      simp only [mem_iUnion, Finset.mem_univ, iUnion_true, mem_inter_iff, mem_setOf_eq,
+      simp only [mem_iUnion, Finset.mem_univ, iUnion_true, mem_inter_iff, mem_ofPred_eq,
         Set.mem_preimage]
       exact ⟨fun ⟨j, h1, h2⟩ => ⟨h1, by simp [h2]⟩,
         fun ⟨h1, h2⟩ => by obtain ⟨j, hj⟩ := Option.ne_none_iff_exists'.1 h2; exact ⟨j, h1, hj⟩⟩
@@ -177,7 +177,7 @@ theorem sum_causeSpecificCumHazard (P : Measure (ℝ × Option (Fin k))) [IsFini
       refine Set.disjoint_left.2 fun p hp hq => hij ?_
       have : (some i : Option (Fin k)) = some j := hp.2 ▸ hq.2
       exact Option.some_injective _ this
-    rw [Measure.finset_sum_apply, allCauseSubLaw, Measure.map_apply measurable_fst hA,
+    rw [Measure.finsetSum_apply, allCauseSubLaw, Measure.map_apply measurable_fst hA,
       Measure.restrict_apply hAm, ← hunion, measure_biUnion_finset hdisj fun j _ => hSm j]
     exact Finset.sum_congr rfl fun j _ => by
       rw [causeSubLaw, Measure.map_apply measurable_fst hA, Measure.restrict_apply hAm]

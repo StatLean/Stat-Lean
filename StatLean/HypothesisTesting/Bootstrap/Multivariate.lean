@@ -245,7 +245,7 @@ private lemma volume_seminorm_level_eq_zero {k : ℕ} {g : EuclideanSpace ℝ (F
   rcases lt_or_ge x 0 with hx | hx
   · have hempty : {y : EuclideanSpace ℝ (Fin k) | g y = x} = ∅ := by
       ext y
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
       intro h
       exact absurd (h ▸ hnn y) (not_le.mpr hx)
     rw [hempty, measure_empty]
@@ -254,8 +254,8 @@ private lemma volume_seminorm_level_eq_zero {k : ℕ} {g : EuclideanSpace ℝ (F
       simpa using h
     refine measure_mono_null ?_ (Convex.addHaar_frontier _ hconv)
     intro y hy
-    simp only [Set.mem_setOf_eq] at hy
-    refine ⟨subset_closure (by simp only [Set.mem_setOf_eq, hy]; exact le_rfl), ?_⟩
+    simp only [Set.mem_ofPred_eq] at hy
+    refine ⟨subset_closure (by simp only [Set.mem_ofPred_eq, hy]; exact le_rfl), ?_⟩
     intro hmem
     obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hmem)
     have hune' : ‖u‖ ≠ 0 := hunorm.ne'
@@ -425,7 +425,7 @@ private lemma integrable_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGr
   · subst hn; simp [empiricalMeasure]
   · unfold empiricalMeasure
     refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
-    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+    exact integrable_finsetSum_measure.2 (fun i _ => integrable_dirac (by simp))
 
 /-- The integral against an empirical measure is the sample average. -/
 private lemma integral_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGroup E]
@@ -434,7 +434,7 @@ private lemma integral_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGrou
     ∫ y, f y ∂(empiricalMeasure x) = (n : ℝ)⁻¹ • ∑ i, f (x i) := by
   unfold empiricalMeasure
   rw [integral_smul_measure,
-    integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+    integral_finsetSum_measure (fun i _ => integrable_dirac (by simp))]
   simp only [integral_dirac]
   rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
@@ -765,17 +765,17 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
   -- probability measure; the conclusion only sees the tail.
   set F' : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => if n = 0 then Q else F n with hF'def
   have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
-    intro n hn; simp only [hF'def, if_neg hn.ne']
+    intro n hn; simp only [hF'def, ite_eq_right hn.ne']
   haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hF'def, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · subst hn; simpa only [hF'def, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
     · rw [hF'eq n hn]; exact hF.1 n hn
   obtain ⟨-, hF2, hFweak, hFmean, hFcov⟩ := hF
   have hF'2 : ∀ n, MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
-    · subst hn; simpa only [hF'def, if_pos rfl] using hQ2
+    · subst hn; simpa only [hF'def, ite_eq_left rfl] using hQ2
     · rw [hF'eq n hn]; exact hF2 n
   have hF'weak : ∀ g : EuclideanSpace ℝ (Fin k) →ᵇ ℝ,
       Tendsto (fun n => ∫ y, g y ∂(F' n)) atTop (𝓝 (∫ y, g y ∂Q)) := by
@@ -1309,13 +1309,13 @@ private lemma integrable_empiricalMeasure' {n : ℕ} {E : Type*} [NormedAddCommG
   · subst hn; simp [empiricalMeasure]
   · unfold empiricalMeasure
     refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
-    exact integrable_finset_sum_measure.2 fun i _ => integrable_dirac' hg (by simp)
+    exact integrable_finsetSum_measure.2 fun i _ => integrable_dirac' hg (by simp)
 
 private lemma integral_empiricalMeasure' {n : ℕ} (x : Fin n → 𝓢) {g : 𝓢 → ℝ}
     (hg : Measurable g) :
     ∫ s, g s ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, g (x i) := by
   unfold empiricalMeasure
-  rw [integral_smul_measure, integral_finset_sum_measure
+  rw [integral_smul_measure, integral_finsetSum_measure
     (fun i _ => integrable_dirac' hg.stronglyMeasurable (by simp))]
   simp only [integral_dirac' _ _ hg.stronglyMeasurable]
   rw [ENNReal.toReal_inv, ENNReal.toReal_natCast, smul_eq_mul]
@@ -2224,7 +2224,7 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
         {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ Real.sqrt n * s}
         = {w : Fin n → 𝓢 | nrm (f (meanStatistic h w) - f θ) ≤ s} := by
       ext w
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, hnrm_smul,
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, hnrm_smul,
         abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
       constructor
       · intro hle; exact le_of_mul_le_mul_left hle hsqn
@@ -2249,7 +2249,7 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
         = {w : Fin n → 𝓢 | nrm (f (meanStatistic h w) -
           f (meanStatistic h fun i : Fin n => X i ω)) ≤ s} := by
       ext w
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, hnrm_smul,
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, hnrm_smul,
         abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
       constructor
       · intro hle; exact le_of_mul_le_mul_left hle hsqn

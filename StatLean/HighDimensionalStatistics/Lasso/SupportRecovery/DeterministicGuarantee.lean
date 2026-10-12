@@ -159,7 +159,7 @@ theorem lasso_support_recovery_no_false_exclusion (X : Matrix (Fin n) (Fin d) �
   -- |β̂ᵢ − θ*ᵢ| ≤ ‖(β̂ − θ*)|_S‖_∞ ≤ B
   have hcoord : |(βhat - θstar).ofLp i| ≤ supportRecoveryBound X S w lam := by
     have h1 := abs_le_linfNorm (restrict S (βhat - θstar)) i
-    rw [restrict_ofLp_apply, if_pos hiS] at h1
+    rw [restrict_ofLp_apply, ite_eq_left hiS] at h1
     exact h1.trans hlinf
   intro hzero
   -- with β̂ᵢ = 0, |β̂ᵢ − θ*ᵢ| = |θ*ᵢ| > B, contradiction

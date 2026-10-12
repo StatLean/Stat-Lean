@@ -935,7 +935,7 @@ theorem lanResidual_tendsto_productMeasure
                      - (⟪h, scoreSum ℓ n ω'⟫ - (1/2 : ℝ) * J_term)|} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, sub_zero, Real.norm_eq_abs]
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, sub_zero, Real.norm_eq_abs]
     rw [h_factor n ω]
   -- Rewrite `P {...}` as `(P.map restrictN n) {...}` via Measure.map_apply, then
   -- identify `P.map restrictN n` with `productMeasure M μ θ₀ n`.
@@ -1097,10 +1097,10 @@ private lemma expLogFactor_apply
   set p' := M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x with hp'
   by_cases hp₀z : p₀ = 0
   · simp [hp₀z]
-  · rw [if_neg hp₀z]
+  · rw [ite_eq_right hp₀z]
     by_cases hp'z : p' = 0
     · simp [hp'z, Real.log_zero, Real.exp_zero, mul_one]
-    · rw [if_neg hp'z]
+    · rw [ite_eq_right hp'z]
       have hp₀pos : 0 < p₀ := lt_of_le_of_ne (M.density_nonneg _ _) (Ne.symm hp₀z)
       have hp'pos : 0 < p' := lt_of_le_of_ne (M.density_nonneg _ _) (Ne.symm hp'z)
       rw [Real.exp_log (div_pos hp'pos hp₀pos)]
@@ -1113,13 +1113,13 @@ private lemma expLogFactor_le
       ≤ M.density θ₀ x + M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x := by
   rw [expLogFactor_apply]
   by_cases hp₀z : M.density θ₀ x = 0
-  · simp only [if_pos hp₀z]
+  · simp only [ite_eq_left hp₀z]
     exact add_nonneg (M.density_nonneg _ _) (M.density_nonneg _ _)
-  · rw [if_neg hp₀z]
+  · rw [ite_eq_right hp₀z]
     by_cases hp'z : M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x = 0
-    · simp only [if_pos hp'z]
+    · simp only [ite_eq_left hp'z]
       exact le_add_of_nonneg_right (M.density_nonneg _ _)
-    · rw [if_neg hp'z]
+    · rw [ite_eq_right hp'z]
       exact le_add_of_nonneg_left (M.density_nonneg _ _)
 
 /-- `expLogFactor` is `μ`-integrable, dominated by the two integrable densities. -/
@@ -1163,7 +1163,7 @@ private lemma expLogFactor_integral_eq
                  - S₀.indicator (M.density (θ₀ + (Real.sqrt n)⁻¹ • h)) x := by
     funext x
     rw [expLogFactor_apply, Set.indicator_apply, Set.indicator_apply]
-    simp only [hS₀def, hS'def, Set.mem_setOf_eq]
+    simp only [hS₀def, hS'def, Set.mem_ofPred_eq]
     split_ifs <;> simp_all
   have hint_indic₀ : Integrable (S'.indicator (M.density θ₀)) μ := hint.indicator hS'_meas
   have hint_indic' : Integrable (S₀.indicator (M.density (θ₀ + (Real.sqrt n)⁻¹ • h))) μ :=
@@ -1317,7 +1317,7 @@ private lemma restrict_good_eq
     -- on `good`, `expLogFactor = p'`.
     rw [expLogFactor_apply]
     obtain ⟨hp₀, hp'⟩ := hx
-    rw [if_neg (ne_of_gt hp₀), if_neg (ne_of_gt hp')]
+    rw [ite_eq_right (ne_of_gt hp₀), ite_eq_right (ne_of_gt hp')]
   -- Lift to the product via `restrict_pi_pi`, using the `R_n` pi-form for the RHS.
   haveI : IsFiniteMeasure
       ((μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)).withDensity
@@ -1362,7 +1362,7 @@ private lemma factor_goodCompl_le
       · -- `p₀ > 0` and `x ∉ good` force `p' = 0`.
         have hp₀ : 0 < M.density θ₀ x :=
           lt_of_le_of_ne (M.density_nonneg _ _) (Ne.symm hx₀)
-        rw [Set.mem_compl_iff, goodSet, Set.mem_setOf_eq, not_and] at hx
+        rw [Set.mem_compl_iff, goodSet, Set.mem_ofPred_eq, not_and] at hx
         have hp' : M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x = 0 :=
           le_antisymm (not_lt.mp (hx hp₀)) (M.density_nonneg _ _)
         rw [hp', ENNReal.ofReal_zero]; exact zero_le
@@ -2398,7 +2398,7 @@ theorem LAN_representation_of_gaussianShift
                       (J.mulVec ((WithLp.equiv 2 _) h'))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε

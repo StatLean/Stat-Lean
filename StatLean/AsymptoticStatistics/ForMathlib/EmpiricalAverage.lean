@@ -1,5 +1,5 @@
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 
 /-!
 # Empirical averages of finite samples

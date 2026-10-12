@@ -1381,7 +1381,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- Two carrier points at positive distance (from `diam T > 0`).
     obtain ⟨a, haT, b, hbT, hab⟩ : ∃ a ∈ T, ∃ b ∈ T, 0 < dist a b := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact absurd (Metric.diam_le_of_forall_dist_le le_rfl (fun x hx y hy => h x hx y hy))
         (not_le.mpr hDpos)
     -- A level `J` beyond which every net has ≥ 2 points (`2·ε_j < dist a b`).
@@ -1409,7 +1409,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         · have hjG : j ∈ G := by
             rw [hGdef, Finset.mem_filter]; exact ⟨Finset.mem_range.mpr (by omega), hj1⟩
           exact absurd (G.le_max' j hjG) (by omega)
-        · push_neg at hjJ
+        · push Not at hjJ
           have h2 := hJ j (le_of_lt hjJ)
           rw [hj1] at h2; exact lt_irrefl 1 h2
       have hpos : 1 ≤ (N j).card := (hN j).2.1.card_pos

@@ -72,7 +72,7 @@ private theorem integrable_empiricalMeasure [NeZero n] {f : 𝓧 → ℝ}
     (hf : StronglyMeasurable f) : Integrable f (empiricalMeasure x) := by
   rw [empiricalMeasure]
   refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr ?_)
-  · exact integrable_finset_sum_measure.mpr fun i _ => integrable_dirac' hf (by simp)
+  · exact integrable_finsetSum_measure.mpr fun i _ => integrable_dirac' hf (by simp)
   · exact Nat.cast_ne_zero.mpr (NeZero.ne n)
 
 /-- Square-integrability against the empirical measure, likewise free. -/

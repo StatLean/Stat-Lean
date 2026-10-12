@@ -57,11 +57,11 @@ standardization really removes the scale of the data. -/
 private lemma coeff_arPoly_aux {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then 1 else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow]
 
 private lemma coeff_maPoly_zero_aux {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 /-- `π₀ = 1`: the AR(∞) inversion is normalized, since `b(0) = a(0) = 1`. -/
 private lemma armaPi_zero {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) : armaPi b a 0 = 1 := by
@@ -215,7 +215,7 @@ private lemma tendsto_charFun_of_tendstoInProb_sub₂ [IsProbabilityMeasure μ]
       by_cases hω : ω ∈ {ω | δ ≤ |Z T ω - Y T ω|}
       · rw [Set.indicator_of_mem hω]
         exact le_trans (min_le_right _ (2 : ℝ)) (by simp; linarith)
-      · simp only [Set.mem_setOf_eq, not_le] at hω
+      · simp only [Set.mem_ofPred_eq, not_le] at hω
         have h1 : |u * Z T ω - u * Y T ω| ≤ |u| * δ := by
           rw [show u * Z T ω - u * Y T ω = u * (Z T ω - Y T ω) by ring, abs_mul]
           exact mul_le_mul_of_nonneg_left hω.le (abs_nonneg _)
@@ -261,9 +261,9 @@ private lemma measurable_sampleACVF₂ {T : ℕ} {Z : ℤ → Ω → ℝ} (hZ : 
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using! ((hZ _).sub hmean).mul ((hZ _).sub hmean)
+    simpa [dite_eq_left hlt'] using! ((hZ _).sub hmean).mul ((hZ _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
-    simp [dif_neg hlt']
+    simp [dite_eq_right hlt']
 
 /-- The sample autocorrelation of an observation window is measurable. -/
 private lemma measurable_sampleACF₂ {T : ℕ} {Z : ℤ → Ω → ℝ} (hZ : ∀ t, Measurable (Z t))
@@ -509,8 +509,8 @@ private lemma lindeberg_acfProd [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε 
       intro n
       filter_upwards with ω
       by_cases hc : η * Real.sqrt n ≤ |acfProd ε k 0 ω|
-      · rw [if_pos hc, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-      · rw [if_neg hc]
+      · rw [ite_eq_left hc, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+      · rw [ite_eq_right hc]
         simpa using sq_nonneg (acfProd ε k 0 ω)
     have hlim : ∀ᵐ ω ∂μ, Tendsto
         (fun n : ℕ => (if η * Real.sqrt n ≤ |acfProd ε k 0 ω| then acfProd ε k 0 ω ^ 2 else 0))
@@ -521,7 +521,7 @@ private lemma lindeberg_acfProd [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε 
           (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
       refine Tendsto.congr' ?_ tendsto_const_nhds (f₁ := fun _ : ℕ => (0 : ℝ))
       filter_upwards [hgo.eventually_gt_atTop (|acfProd ε k 0 ω|)] with n hn
-      rw [if_neg (not_le.2 hn)]
+      rw [ite_eq_right (not_le.2 hn)]
     simpa using tendsto_integral_of_dominated_convergence
       (fun ω => acfProd ε k 0 ω ^ 2) hmeas hsq hbnd hlim
   -- the average is that single term
@@ -735,14 +735,14 @@ private theorem crossSum_clt [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2
         intro i
         rw [eventually_imp_distrib_left]
         exact fun _ => condExp_acfProd_sq hiid hk i
-      rw [Filter.eventuallyEq_set]
+      rw [Filter.eventuallyEqSet_iff]
       filter_upwards [hall] with ω hω
       have hsum : ∑ i ∈ Finset.range n,
           μ[fun ω' => acfProd ε k i ω' ^ 2 | sigmaLT ε ((i : ℤ) + 1 + (k : ℤ))] ω
             = σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl hω
-      simp only [Set.mem_setOf_eq, hsum]
+      simp only [Set.mem_ofPred_eq, hsum]
       have hfac : (n : ℝ)⁻¹ * (σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2) - σ2 * σ2
           = σ2 * ((n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 - σ2) := by
         ring
@@ -800,8 +800,8 @@ private lemma sampleACVF_decomp (k T : ℕ) (hkT : k ≤ T) (ω : Ω) :
           (ε (((t : ℕ) : ℤ) + 1) ω - c) * (ε ((((t : ℕ) + k : ℕ) : ℤ) + 1) ω - c) else 0) := by
     intro t
     by_cases h : (t : ℕ) + k < T
-    · rw [dif_pos h, if_pos h]
-    · rw [dif_neg h, if_neg h]
+    · rw [dite_eq_left h, ite_eq_left h]
+    · rw [dite_eq_right h, ite_eq_right h]
   rw [Finset.sum_congr rfl fun t _ => hpt t,
     Fin.sum_univ_eq_sum_range (fun i => if i + k < T then
       (ε ((i : ℤ) + 1) ω - c) * (ε (((i + k : ℕ) : ℤ) + 1) ω - c) else 0) T]
@@ -1218,7 +1218,7 @@ private lemma tendstoInProb_ratio [IsProbabilityMeasure μ] {A Δ D : ℕ → Ω
       ⊆ {ω | lam ≤ |A T ω|} ∪ {ω | η ≤ |D T ω - σ2|} ∪ {ω | δ' ≤ |Δ T ω|} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨⟨hA', hD'⟩, hΔ'⟩ := hcon
     have hDpos : 0 < D T ω := by
       have : |D T ω - σ2| < σ2 / 2 := lt_of_lt_of_le hD' hη1
@@ -1348,9 +1348,9 @@ private lemma tendstoInProb_sampleACVF_zero [IsProbabilityMeasure μ] (hiid : Is
           ∪ {ω | η / 2 ≤ ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2} := by
       intro ω hω
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨h1, h2⟩ := hcon
-      rw [Set.mem_setOf_eq, sampleACVF_zero_eq T hT ω] at hω
+      rw [Set.mem_ofPred_eq, sampleACVF_zero_eq T hT ω] at hω
       have h3 : |(T : ℝ)⁻¹ * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω ^ 2)
           - ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2 - σ2|
           ≤ |(T : ℝ)⁻¹ * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω ^ 2) - σ2|
@@ -1537,12 +1537,12 @@ private lemma maPolyConvPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (
 private lemma coeffMaPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
     (maPoly a).coeff m
       = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+  simp [maPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
 
 private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow]
 
 private lemma continuousCoeffMaPoly {q : ℕ} (m : ℕ) :
@@ -1593,9 +1593,9 @@ private lemma measurable_sampleACVF_win {T : ℕ} {y : Ω → Fin T → ℝ}
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using! ((hy t).sub hmean).mul ((hy _).sub hmean)
+    simpa [dite_eq_left hlt'] using! ((hy t).sub hmean).mul ((hy _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
-    simp [dif_neg hlt']
+    simp [dite_eq_right hlt']
 
 private lemma measurable_sampleACF_win {T : ℕ} {y : Ω → Fin T → ℝ}
     (hy : ∀ t, Measurable fun ω => y ω t) (m : ℕ) :
@@ -1849,12 +1849,12 @@ private lemma sum_sq_truncConv_le {π : ℕ → ℝ} (hπ : Summable fun n => |�
   have hpt : ∀ t : ℕ, (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
       ≤ P * ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2 := by
     intro t
-    have hcs := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul (Finset.range (t + 1))
+    have hcs := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul (Finset.range (t + 1))
       (r := fun j => |π j| * |xx (t - j)|) (f := fun j => |π j|)
       (g := fun j => |π j| * xx (t - j) ^ 2)
       (fun j _ => abs_nonneg _)
       (fun j _ => mul_nonneg (abs_nonneg _) (sq_nonneg _))
-      (fun j _ => by
+      (fun j _ => le_of_eq <| by
         rw [mul_pow, sq_abs (xx (t - j))]
         ring)
     have habs : |∑ j ∈ Finset.range (t + 1), π j * xx (t - j)|
@@ -2736,7 +2736,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
             |sampleACVF (fun t : Fin T => Y t ω) k
               - sampleACVF (fun t : Fin T => Z t ω) k|} := by
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [div_le_iff₀ hsq, mul_comm]
     have hmk := toReal_measure_sampleACVF_sub_le (μ := μ) k Y Z hYmem hZmem
       (BY := Real.sqrt σ2 + S) (BZ := Real.sqrt σ2) hBY hBZ (by linarith) hsqrtσ
@@ -2905,7 +2905,7 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
           ∪ {ω | η ≤ Real.sqrt T * dist (θ T ω) (b0, a0)} := by
     intro T hT ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨⟨hρ', hM'⟩, hη'⟩ := hcon
     have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
     have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
@@ -3033,7 +3033,7 @@ private lemma tendstoInProb_of_le_add [IsFiniteMeasure μ] {f g F : ℕ → Ω �
       ⊆ {ω | δ / 2 ≤ |f T ω|} ∪ {ω | δ / 2 ≤ |g T ω|} := by
     intro T ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have := hle T ω
     have hω' : δ ≤ |F T ω| := hω
@@ -3098,7 +3098,7 @@ private lemma tendstoInProb_residACVF_transfer [IsProbabilityMeasure μ]
       congr 1
       congr 1
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
     (fun δ' hδ' => by
       have hR := tendstoInProb_residACVF_sub hB0 hcausal hiid hσ hmeas k hδ'
@@ -3106,7 +3106,7 @@ private lemma tendstoInProb_residACVF_transfer [IsProbabilityMeasure μ]
       congr 1
       congr 1
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
     hδ
 
@@ -3340,7 +3340,7 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
         refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hbig
         filter_upwards [eventually_ge_atTop 1] with T hT
         refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
           rw [show (1:ℝ) = Real.sqrt 1 by simp]
           exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
@@ -3375,7 +3375,7 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
     congr 1
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hpt : (A T ω + (Real.sqrt T * sampleACVF (fun t : Fin T =>
             sampleResiduals (θ T ω).1 (θ T ω).2
               (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω))
@@ -3408,7 +3408,7 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
     congr 1
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hpt : (A T ω + (Real.sqrt T *
             sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω))
           / sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - A T ω / σ2

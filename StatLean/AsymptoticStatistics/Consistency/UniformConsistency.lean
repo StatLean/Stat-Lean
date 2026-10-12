@@ -71,8 +71,8 @@ theorem mEstimator_consistent
   have hsubset : ∀ n, {ω | ε ≤ dist (θhat n ω) θ₀}
       ⊆ {ω | η ≤ ‖(2 * U n ω + R n ω) - 0‖} := by
     intro n ω hω
-    rw [Set.mem_setOf_eq] at hω
-    rw [Set.mem_setOf_eq, Real.norm_eq_abs, sub_zero]
+    rw [Set.mem_ofPred_eq] at hω
+    rw [Set.mem_ofPred_eq, Real.norm_eq_abs, sub_zero]
     have hsep_ineq := hsepη (θhat n ω) hω
     have hd0 := abs_le.mp (hU_dom n ω θ₀)
     have hdhat := abs_le.mp (hU_dom n ω (θhat n ω))

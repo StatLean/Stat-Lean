@@ -221,7 +221,7 @@ private lemma boundedChainB_measurableSet
                   ≤ Real.sqrt n * boundedCrossingThreshold B p}) ∩
           {x | Real.sqrt n * boundedCrossingThreshold B q < B.Δ q i x}) := by
     ext x
-    simp only [boundedChainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+    simp only [boundedChainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
   rw [hset]
   refine MeasurableSet.inter (MeasurableSet.const _) ?_
   refine MeasurableSet.inter ?_
@@ -239,7 +239,7 @@ private lemma boundedChainA_measurableSet
             (B.ancestor (Nat.zero_le q) i p (Nat.zero_le p) hpq) x
               ≤ Real.sqrt n * boundedCrossingThreshold B p} := by
     ext x
-    simp only [boundedChainA, Set.mem_setOf_eq, Set.mem_iInter]
+    simp only [boundedChainA, Set.mem_ofPred_eq, Set.mem_iInter]
   rw [hset]
   refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hpq => ?_))
   exact measurableSet_le (B.Δ_meas (Nat.zero_le p) _) measurable_const

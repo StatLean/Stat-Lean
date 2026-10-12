@@ -220,11 +220,11 @@ theorem bernstein_subexponential
   have hsub : {ω | t ≤ |∑ i, X i ω|}
       ⊆ {ω | t ≤ ∑ i, X i ω} ∪ {ω | t ≤ ∑ i, -(X i ω)} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     rcases le_abs.mp hω with h | h
     · exact Or.inl h
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq, Finset.sum_neg_distrib]
+      simp only [Set.mem_ofPred_eq, Finset.sum_neg_distrib]
       exact h
   calc μ {ω | t ≤ |∑ i, X i ω|}
       ≤ μ ({ω | t ≤ ∑ i, X i ω} ∪ {ω | t ≤ ∑ i, -(X i ω)}) := measure_mono hsub

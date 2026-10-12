@@ -126,7 +126,7 @@ private lemma scaleSect_scaleZ (x : Fin (m + 1) → ℝ) (hx : x (Fin.last m) �
 /-- The section is measurable. -/
 private lemma measurable_scaleSect :
     Measurable (scaleSect : (Fin m → ℝ) × ℝ → (Fin (m + 1) → ℝ)) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro j
   induction j using Fin.lastCases with
   | last => simp only [scaleSect, Fin.snoc_last]; exact measurable_snd
@@ -138,7 +138,7 @@ private lemma measurable_scaleSect :
 theorem measurable_scaleZ :
     Measurable (scaleZ : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) := by
   apply Measurable.prodMk
-  · apply measurable_pi_lambda
+  · apply Measurable.of_eval
     intro i
     exact (measurable_pi_apply i.castSucc).div (measurable_pi_apply (Fin.last m))
   · exact (measurable_pi_apply (Fin.last m)).div

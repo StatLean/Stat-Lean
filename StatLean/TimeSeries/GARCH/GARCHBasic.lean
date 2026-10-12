@@ -202,13 +202,13 @@ coefficients (FY p. 148: "the recursion has nonnegative solutions like (2.20)").
 private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeffGarchNum {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) : Polynomial ℝ).coeff m
       = ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite]
+  simp [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite]
 
 private lemma constantCoeffArPoly_ne_zero {p : ℕ} (b : Fin p → ℝ) :
     PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
@@ -260,17 +260,17 @@ private lemma garchInfCoeffs_rec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → 
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hj : (j : ℕ) < n
-    · rw [if_pos hj]
+    · rw [ite_eq_left hj]
       rw [Finset.sum_eq_single ((j : ℕ))]
-      · rw [if_pos rfl]
+      · rw [ite_eq_left rfl]
       · intro k _ hkj
-        rw [if_neg (by omega)]
+        rw [ite_eq_right (by omega)]
       · intro hmem
         exact absurd (Finset.mem_range.2 hj) hmem
-    · rw [if_neg hj, mul_zero]
+    · rw [ite_eq_right hj, mul_zero]
       refine Finset.sum_eq_zero fun k hk => ?_
       rw [Finset.mem_range] at hk
-      rw [if_neg (by omega)]
+      rw [ite_eq_right (by omega)]
   linarith [hconv, hswap]
 
 theorem garchInfCoeffs_nonneg {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
@@ -307,10 +307,10 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
       rw [Finset.sum_range_succ, ihN]
       by_cases hjN : j < N
       · have h1 : N + 1 - (j + 1) = (N - (j + 1)) + 1 := by omega
-        rw [if_pos hjN, h1, Finset.sum_range_succ]
+        rw [ite_eq_left hjN, h1, Finset.sum_range_succ]
       · have h1 : N + 1 - (j + 1) = 0 := by omega
         have h2 : N - (j + 1) = 0 := by omega
-        rw [if_neg hjN, h1, h2]
+        rw [ite_eq_right hjN, h1, h2]
         simp
   -- the recursion, summed over `range N`
   have hpart : ∀ N : ℕ, (∑ n ∈ Finset.range N, garchInfCoeffs b a n)
@@ -323,16 +323,16 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     · rw [Finset.sum_comm]
       refine Finset.sum_congr rfl fun i _ => ?_
       by_cases hi : (i : ℕ) + 1 < N
-      · rw [if_pos hi, Finset.sum_eq_single ((i : ℕ) + 1)]
-        · rw [if_pos rfl]
+      · rw [ite_eq_left hi, Finset.sum_eq_single ((i : ℕ) + 1)]
+        · rw [ite_eq_left rfl]
         · intro n _ hn
-          rw [if_neg hn]
+          rw [ite_eq_right hn]
         · intro hmem
           exact absurd (Finset.mem_range.2 hi) hmem
-      · rw [if_neg hi]
+      · rw [ite_eq_right hi]
         refine Finset.sum_eq_zero fun n hn => ?_
         rw [Finset.mem_range] at hn
-        rw [if_neg (by omega)]
+        rw [ite_eq_right (by omega)]
     · rw [Finset.sum_comm]
       refine Finset.sum_congr rfl fun j _ => ?_
       rw [← Finset.mul_sum, hshift]
@@ -374,7 +374,7 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     filter_upwards [Filter.eventually_ge_atTop (p + 1)] with N hN
     refine (Finset.sum_congr rfl fun i _ => ?_).symm
     have := i.isLt
-    rw [if_pos (by omega)]
+    rw [ite_eq_left (by omega)]
   have hRlim : Filter.Tendsto (fun N : ℕ => (∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0)
       + ∑ j : Fin q, a j * ∑ m ∈ Finset.range (N - ((j : ℕ) + 1)), garchInfCoeffs b a m)
       Filter.atTop (nhds ((∑ i, b i) + ∑ j : Fin q, a j * ∑' n, garchInfCoeffs b a n)) :=
@@ -421,19 +421,19 @@ private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         = ∑ i : Fin p, if m = (i : ℕ) then b i else 0 := by
       refine Finset.sum_congr rfl fun i _ => ?_
       by_cases h : m = (i : ℕ)
-      · rw [if_pos (by omega), if_pos h]
-      · rw [if_neg (by omega), if_neg h]
+      · rw [ite_eq_left (by omega), ite_eq_left h]
+      · rw [ite_eq_right (by omega), ite_eq_right h]
     have h2 : (∑ j : Fin q, a j * (if (j : ℕ) < m + 1 then d (m + 1 - ((j : ℕ) + 1)) else 0))
         = ∑ j : Fin q, (if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0) := by
       refine Finset.sum_congr rfl fun j _ => ?_
       rcases lt_trichotomy ((j : ℕ)) m with h | h | h
-      · rw [if_pos (by omega), if_pos h]
+      · rw [ite_eq_left (by omega), ite_eq_left h]
         congr 2
         omega
-      · rw [if_pos (by omega), if_neg (by omega)]
+      · rw [ite_eq_left (by omega), ite_eq_right (by omega)]
         have : m + 1 - ((j : ℕ) + 1) = 0 := by omega
         rw [this, hd0, mul_zero]
-      · rw [if_neg (by omega), if_neg (by omega), mul_zero]
+      · rw [ite_eq_right (by omega), ite_eq_right (by omega), mul_zero]
     have hs1 : (0 : ℝ) ≤ ∑ i : Fin p, if m = (i : ℕ) then b i else 0 :=
       Finset.sum_nonneg fun i _ => by split; exacts [hb i, le_rfl]
     have hs2 : (0 : ℝ) ≤ ∑ j : Fin q, if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0 :=
@@ -477,14 +477,14 @@ private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         intro m hm
         have hlt : (j : ℕ) < m := by
           by_contra hnl
-          exact hm (by simp only [if_neg hnl, zero_mul])
+          exact hm (by simp only [ite_eq_right hnl, zero_mul])
         exact ⟨m - ((j : ℕ) + 1), by show (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
       rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
       refine tsum_congr fun k => ?_
       have hidx : (-1 - (((j : ℕ) + 1 + k : ℕ) : ℤ))
           = -1 - (k : ℤ) - 1 - ((j : ℕ) : ℤ) := by push_cast; ring
       have hsub : (j : ℕ) + 1 + k - (j : ℕ) = k + 1 := by omega
-      rw [if_pos (by omega), hsub, hidx, ENNReal.ofReal_mul (ha j), mul_assoc]
+      rw [ite_eq_left (by omega), hsub, hidx, ENNReal.ofReal_mul (ha j), mul_assoc]
   rw [hseries]
   have hRHS : (∑ j : Fin q, ENNReal.ofReal (a j)
         * (ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
@@ -692,14 +692,14 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     have heq : X s = fun ω => Φ fun u => if u + s < t then ε (u + s) ω else 0 := by
       funext ω
       simp only [hXdef]
-      exact hΦcaus _ _ fun u hu => (if_pos (by omega)).symm
+      exact hΦcaus _ _ fun u hu => (ite_eq_left (by omega)).symm
     have hcoord : ∀ u : ℤ,
         Measurable[sigmaLT ε t] fun ω => if u + s < t then ε (u + s) ω else 0 := by
       intro u
       by_cases hu : u + s < t
-      · simp only [if_pos hu]
+      · simp only [ite_eq_left hu]
         exact measurable_of_lt_sigmaLT hu
-      · simp only [if_neg hu]
+      · simp only [ite_eq_right hu]
         exact measurable_const
     have hms : Measurable[sigmaLT ε t] (X s) := by
       rw [heq]
@@ -893,7 +893,7 @@ private lemma sum_range_pad_two {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → �
     have hzero : ∀ x ∈ Finset.range (max p q), x ∉ Finset.range m →
         (if hi : x < m then f ⟨x, hi⟩ else 0) * g x = 0 := by
       intro x _ hx
-      rw [dif_neg (by simpa using hx)]
+      rw [dite_eq_right (by simpa using hx)]
       ring
     rw [← Finset.sum_subset hsub hzero]
     rw [← Fin.sum_univ_eq_sum_range (fun i => (if hi : i < m then f ⟨i, hi⟩ else 0) * g i) m]
@@ -978,7 +978,7 @@ theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (garch_integral_vol_sq h hL2 t).2.symm.trans hfix0
   have hm0 : 0 ≤ ∫ ω, X t ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   nlinarith [hfix, hm0, hcon, hc0]
 
 /-! ### Fourth-moment bricks for the GARCH(1,1) squared-process ACF

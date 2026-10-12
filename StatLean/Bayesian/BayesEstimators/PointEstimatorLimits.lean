@@ -153,7 +153,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
           ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z = 0 := by
         filter_upwards [eventually_ge_atTop ⌈‖z‖⌉₊] with j hj
         refine Set.indicator_of_notMem ?_ _
-        simp only [Set.mem_setOf_eq, not_lt]
+        simp only [Set.mem_ofPred_eq, not_lt]
         exact le_trans (Nat.le_ceil _) (Nat.cast_le.2 hj)
       exact Tendsto.congr' (hev.mono fun j hj => hj.symm) tendsto_const_nhds
     have h := tendsto_lintegral_of_dominated_convergence G hmeas hbound hGfin hlim
@@ -339,7 +339,7 @@ theorem bpe_tight
     · exact le_rfl
     · exact zero_le
   have hℓ'0 : ∀ x : EuclideanSpace ℝ (Fin k), ‖x‖ ≤ ρ → ℓ' x = 0 := by
-    intro x hx; rw [hℓ' x, if_neg (not_lt.2 hx)]
+    intro x hx; rw [hℓ' x, ite_eq_right (not_lt.2 hx)]
   -- (7) the uniform majorant for the truncated loss
   obtain ⟨Mn, -, hMntend, hMnapprox⟩ :=
     posteriorRisk_shifted_majorant hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ hℓ'meas hp
@@ -357,9 +357,9 @@ theorem bpe_tight
         ({ω | p₀ ≤ bvmTV κ π θ₀ J sc n ω} ∪ {ω | γ ≤ Mn n ω}) := by
     intro ω hω
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hnot
     obtain ⟨hb1, hb2, hb3⟩ := hnot
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     set τ : EuclideanSpace ℝ (Fin k) := Real.sqrt n • (T n ω - θ₀) with hτdef
     set Δ : EuclideanSpace ℝ (Fin k) := bvmEffScore J sc n ω with hΔdef
     set Post : Measure (EuclideanSpace ℝ (Fin k)) := bvmLocalPosterior κ π θ₀ n ω with hPostdef
@@ -609,9 +609,9 @@ theorem bayes_estimator_asymptotics
         ({ω | K₂ < ‖scoreSum sc n ω‖} ∪ {ω | γ ≤ Mn n ω}) := by
     intro ω hω
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hnot
     obtain ⟨hb1, hb2, hb3⟩ := hnot
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     set Rn : EuclideanSpace ℝ (Fin k) :=
       Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω with hRn
     have hΔnorm : ‖bvmEffScore J sc n ω‖ ≤ ‖A‖ * K₂ := by
@@ -755,7 +755,7 @@ theorem bayes_estimator_weakConverges
   refine hkey.congr fun n => ?_
   congr 1
   ext ω
-  simp only [Set.mem_setOf_eq, dist_eq_norm]
+  simp only [Set.mem_ofPred_eq, dist_eq_norm]
   rw [show u₀ + bvmEffScore J sc n ω - Real.sqrt n • (T n ω - θ₀)
       = -(Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀) by abel, norm_neg]
 

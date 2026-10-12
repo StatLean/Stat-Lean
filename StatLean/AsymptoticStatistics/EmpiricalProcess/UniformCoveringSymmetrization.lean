@@ -89,7 +89,7 @@ theorem measurePreserving_signedGhostSwap
       MeasurePreserving (swapSamples ε) (μn.prod μn) (μn.prod μn) := by
     exact he.comp ((hswapPi ε).comp (he.symm e))
   have hswapPi_meas : Measurable (Function.uncurry swapPi) := by
-    apply measurable_pi_lambda
+    apply Measurable.of_eval
     intro i
     have hε : Measurable (fun p : (Fin n → Bool) × (Fin n → Ω × Ω) => p.1 i) :=
       (measurable_pi_apply i).comp measurable_fst

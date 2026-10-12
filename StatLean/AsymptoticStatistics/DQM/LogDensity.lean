@@ -83,7 +83,7 @@ private lemma tendstoInMeasure_zero_of_integral_sq
     (Eventually.of_forall fun _ => sq_nonneg _) hi.integrable_sq (ε ^ 2)
   have hset : {ω | ε ≤ ‖f i ω - 0‖} = {ω | ε ^ 2 ≤ (f i ω) ^ 2} := by
     ext ω
-    simp only [Set.mem_setOf_eq, sub_zero, Real.norm_eq_abs]
+    simp only [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs]
     constructor
     · intro h
       have hs := (sq_le_sq₀ hε.le (abs_nonneg _)).2 h
@@ -596,7 +596,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
           {x | Real.sqrt ε ≤ ‖V θ x - 0‖} := by
       intro x hx
       by_contra hxn
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, sub_zero] at hxn
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, sub_zero] at hxn
       obtain ⟨⟨hb0, hWsmall⟩, hVsmall⟩ := hxn
       have hbpos : 0 < M.sqrtDensity θ₀ x :=
         lt_of_le_of_ne (M.sqrtDensity_nonneg θ₀ x) (Ne.symm hb0)
@@ -620,7 +620,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
         dsimp [W]
         field_simp [hbpos.ne']
       have hlogbd := log_sq_ratio_sub_linear_le_sq ha hbpos (hWform ▸ hR)
-      simp only [Set.mem_setOf_eq, u, ParametricFamily.logDensity, sub_zero,
+      simp only [Set.mem_ofPred_eq, u, ParametricFamily.logDensity, sub_zero,
         Real.norm_eq_abs] at hx
       rw [← M.sqrtDensity_sq θ x, ← M.sqrtDensity_sq θ₀ x] at hx
       rw [hWform] at hx

@@ -126,7 +126,7 @@ private lemma cb_exists_threshold {P : ℝ → Measure 𝓧} [∀ θ, IsProbabil
   -- Upward: the sets exhaust `𝓧`, so `F` exceeds `β` somewhere.
   have hunion : (⋃ n : ℕ, {y : 𝓧 | T y ≤ (n : ℝ)}) = Set.univ := by
     ext y
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     obtain ⟨n, hn⟩ := exists_nat_ge (T y)
     exact ⟨n, hn⟩
   have hmonoU : Monotone fun n : ℕ => {y : 𝓧 | T y ≤ (n : ℝ)} := by
@@ -135,7 +135,7 @@ private lemma cb_exists_threshold {P : ℝ → Measure 𝓧} [∀ θ, IsProbabil
     exact le_trans hy' (Nat.cast_le.mpr hmn)
   have hFsup : ∃ b : ℝ, β < F b := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hle : ∀ n : ℕ, P θ {y : 𝓧 | T y ≤ (n : ℝ)} ≤ ENNReal.ofReal β := by
       intro n
       calc P θ {y : 𝓧 | T y ≤ (n : ℝ)}
@@ -150,17 +150,17 @@ private lemma cb_exists_threshold {P : ℝ → Measure 𝓧} [∀ θ, IsProbabil
   -- Downward: the sets shrink to `∅`, so `F` falls below `β` somewhere.
   have hinter : (⋂ n : ℕ, {y : 𝓧 | T y ≤ -(n : ℝ)}) = (∅ : Set 𝓧) := by
     ext y
-    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
     intro h
     obtain ⟨n, hn⟩ := exists_nat_gt (-(T y))
-    exact absurd (h n) (by push_neg; linarith)
+    exact absurd (h n) (by push Not; linarith)
   have hantiI : Antitone fun n : ℕ => {y : 𝓧 | T y ≤ -(n : ℝ)} := by
     intro m n hmn y hy
     have hy' : T y ≤ -(n : ℝ) := hy
     exact le_trans hy' (neg_le_neg (Nat.cast_le.mpr hmn))
   have hFinf : ∃ a : ℝ, F a ≤ β := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hge : ∀ n : ℕ, ENNReal.ofReal β ≤ P θ {y : 𝓧 | T y ≤ -(n : ℝ)} := by
       intro n
       calc ENNReal.ofReal β ≤ ENNReal.ofReal (F (-(n : ℝ))) :=
@@ -181,7 +181,7 @@ private lemma cb_exists_threshold {P : ℝ → Measure 𝓧} [∀ θ, IsProbabil
   have hSbdd : BddAbove S := by
     refine ⟨b, fun t ht => ?_⟩
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact absurd (le_trans (hFmono hcon.le) ht) (not_le.mpr hb)
   have hSclosed : IsClosed S := isClosed_le hcont continuous_const
   set C := sSup S with hCdef
@@ -211,10 +211,10 @@ omit [MeasurableSpace 𝓧] in
 private lemma cb_oneSidedTest_zero {T : 𝓧 → ℝ} (C : ℝ) :
     oneSidedTest T C 0 = Set.indicator {x : 𝓧 | C < T x} (1 : 𝓧 → ℝ) := by
   funext x
-  simp only [oneSidedTest, Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+  simp only [oneSidedTest, Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
   by_cases h : C < T x
-  · rw [if_pos h, if_pos h]
-  · rw [if_neg h, if_neg h]
+  · rw [ite_eq_left h, ite_eq_left h]
+  · rw [ite_eq_right h, ite_eq_right h]
     split_ifs <;> rfl
 
 /-- The acceptance test of the lower ray `{T ≤ C}` *is* the non-randomized one-sided test. -/
@@ -309,24 +309,24 @@ private lemma cb_hasNPShape {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : 
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : k * p θ x < p θ' x := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : C < T x := by
       by_contra hcon
       exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
     change oneSidedTest T C 0 x = 1
-    unfold oneSidedTest; rw [if_pos hTC]
+    unfold oneSidedTest; rw [ite_eq_left hTC]
   · refine Filter.Eventually.of_forall fun x hx => ?_
     rw [← ENNReal.ofReal_mul hk0] at hx
     have hlt' : p θ' x < k * p θ x := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
     have hTC : T x < C := by
       by_contra hcon
       exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
     change oneSidedTest T C 0 x = 0
-    unfold oneSidedTest; rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]
+    unfold oneSidedTest; rw [ite_eq_right (not_lt.mpr hTC.le), ite_eq_right (ne_of_lt hTC)]
 
 /-- The non-randomized one-sided test is a critical function. -/
 private lemma cb_isCriticalFn {T : 𝓧 → ℝ} (hT : Measurable T) (C : ℝ) :
@@ -350,16 +350,16 @@ private lemma cb_exists_pos_density {μ : Measure 𝓧} {P : ℝ → Measure �
     {T : 𝓧 → ℝ} (hT : Measurable T) {C θ : ℝ}
     (hpow : 0 < power P (oneSidedTest T C 0) θ) : ∃ z, C ≤ T z ∧ 0 < p θ z := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
   have hnull : (P θ) {x | C ≤ T x} = 0 := by
     rw [hPeq, withDensity_apply _ (measurableSet_le measurable_const hT)]
     refine setLIntegral_eq_zero (measurableSet_le measurable_const hT) fun x hx => ?_
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     have hle : p θ x ≤ 0 := hcon x hx
     simp [le_antisymm hle (hnn x)]
   have hRle : (P θ) {x | C < T x} = 0 :=
-    measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_lt hx) hnull
+    measure_mono_null (Set.ofPred_subset_ofPred.2 fun x hx => le_of_lt hx) hnull
   rw [power] at hpow
   rw [cb_oneSidedTest_zero,
     integral_indicator_one (measurableSet_lt measurable_const hT), measureReal_def, hRle] at hpow
@@ -459,7 +459,7 @@ theorem exists_uma_lowerBound
   have hAeq : ∀ θ₀ : ℝ, {x : 𝓧 | θlow x ≤ θ₀} = {x : 𝓧 | T x ≤ C θ₀} := by
     intro θ₀
     ext x
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     constructor
     · intro hx
       rw [← hCiff θ₀ (T x)]
@@ -469,7 +469,7 @@ theorem exists_uma_lowerBound
       exact hmono
     · intro hx
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have h1 : (P θ₀ {y | T y ≤ T x}).toReal ≤ 1 - α := (hCiff θ₀ (T x)).mpr hx
       have h2 : (P (θlow x) {y | T y ≤ T x}).toReal ≤ (P θ₀ {y | T y ≤ T x}).toReal :=
         cdf_antitone μ P p hp T hT hMLR (T x) hcon.le
@@ -508,7 +508,7 @@ theorem exists_uma_lowerBound
       = fun x => Set.Ici (θlow x) := by
     funext x
     ext θ₀
-    simp only [confidenceSet, Set.mem_setOf_eq, Set.mem_Ici]
+    simp only [confidenceSet, Set.mem_ofPred_eq, Set.mem_Ici]
     constructor
     · intro h
       have : x ∈ {x : 𝓧 | θlow x ≤ θ₀} := by rw [hAeq θ₀]; exact h

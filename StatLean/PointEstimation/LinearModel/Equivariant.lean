@@ -117,9 +117,9 @@ private lemma measurable_canonicalReflect :
     Measurable (canonicalReflect (s := s) (m := m)) := by
   refine (WithLp.measurable_toLp 2 _).comp (Measurable.of_eval (fun k => ?_))
   by_cases h : (k : ℕ) < s
-  · simp only [h, if_true]
+  · simp only [h, ite_true]
     exact ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _)).neg
-  · simp only [h, if_false]
+  · simp only [h, ite_false]
     exact (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _)
 
 /-- The reflection is a translation of the signal block by `-2 Y_head`. -/
@@ -130,7 +130,7 @@ private lemma canonicalReflect_eq (y : EuclideanSpace ℝ (Fin (s + m))) :
   · show (if ((Fin.castAdd m a : Fin (s + m)) : ℕ) < s then -(y (Fin.castAdd m a))
           else y (Fin.castAdd m a))
         = y (Fin.castAdd m a) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
-    rw [if_pos (by simpa using a.isLt)]
+    rw [ite_eq_left (by simpa using a.isLt)]
     rw [show (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
           = Fin.append (fun i => -2 * canonicalHead y i) (0 : Fin m → ℝ) (Fin.castAdd m a) from rfl,
         Fin.append_left]
@@ -139,7 +139,7 @@ private lemma canonicalReflect_eq (y : EuclideanSpace ℝ (Fin (s + m))) :
   · show (if ((Fin.natAdd s b : Fin (s + m)) : ℕ) < s then -(y (Fin.natAdd s b))
           else y (Fin.natAdd s b))
         = y (Fin.natAdd s b) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.natAdd s b)
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     rw [show (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.natAdd s b)
           = Fin.append (fun i => -2 * canonicalHead y i) (0 : Fin m → ℝ) (Fin.natAdd s b) from rfl,
         Fin.append_right, Pi.zero_apply, add_zero]
@@ -153,13 +153,13 @@ private lemma canonicalModel_zero_map_reflect (σ2 : PosVar) :
     WithLp.measurable_toLp 2 _
   set f : Fin (s + m) → ℝ → ℝ := fun k t => if (k : ℕ) < s then -t else t with hf
   have hmeas_f : ∀ k, Measurable (f k) := by
-    intro k; by_cases h : (k : ℕ) < s <;> simp only [hf, h, if_true, if_false] <;> fun_prop
+    intro k; by_cases h : (k : ℕ) < s <;> simp only [hf, h, ite_true, ite_false] <;> fun_prop
   have hcoord : ∀ k, (gaussianReal (0 : ℝ) σ2.1).map (f k) = gaussianReal 0 σ2.1 := by
     intro k
     by_cases h : (k : ℕ) < s
-    · have hfk : f k = (fun t => -t) := by funext t; simp only [hf, h, if_true]
+    · have hfk : f k = (fun t => -t) := by funext t; simp only [hf, h, ite_true]
       rw [hfk, gaussianReal_map_neg, neg_zero]
-    · have hfk : f k = fun t => t := by funext t; simp only [hf, h, if_false]
+    · have hfk : f k = fun t => t := by funext t; simp only [hf, h, ite_false]
       rw [hfk, Measure.map_id']
   haveI hsf : ∀ k, SigmaFinite ((gaussianReal (0 : ℝ) σ2.1).map (f k)) := by
     intro k; rw [hcoord k]; infer_instance
@@ -354,7 +354,7 @@ private lemma integrable_pow_chiSquared {m : ℕ} (hm : 0 < m) (k : ℕ) :
     refine IntegrableOn.congr_fun (hmodel.const_mul ((1 / 2) ^ a / Real.Gamma a))
       (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
-    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x k,
+    rw [gammaPDFReal, ite_eq_left hx.le, ← Real.rpow_natCast x k,
         show a + (k : ℝ) - 1 = (a - 1) + (k : ℝ) by ring, Real.rpow_add hx (a - 1) (k : ℝ)]
     ring
   rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
@@ -363,11 +363,11 @@ private lemma integrable_pow_chiSquared {m : ℕ} (hm : 0 < m) (k : ℕ) :
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [mem_setOf_eq, Classical.not_imp, mem_Iic] at hx
+  simp only [mem_ofPred_eq, Classical.not_imp, mem_Iic] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
   · exact absurd (show x ^ k * gammaPDFReal a (1 / 2) x = 0 by
-      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+      rw [gammaPDFReal, ite_eq_right (not_le.mpr h), mul_zero]).symm hx2
   · exact h
 
 /-- The multiplier at `r = 1`: `E[V] = m` and `E[V²] = m(m + 2)` give
@@ -805,7 +805,7 @@ private lemma chiSquared_moment_pos {m : ℕ} (hm : 0 < m) {k : ℕ} (hk : 0 < k
   have hsupp : (Function.support fun w : Fin m → ℝ => sqSum w ^ k)
       = {w : Fin m → ℝ | sqSum w = 0}ᶜ := by
     ext w
-    simp only [Function.mem_support, Set.mem_compl_iff, Set.mem_setOf_eq]
+    simp only [Function.mem_support, Set.mem_compl_iff, Set.mem_ofPred_eq]
     exact ⟨fun h hc => h (by rw [hc, zero_pow hk.ne']), fun h hc =>
       h ((pow_eq_zero_iff hk.ne').mp hc)⟩
   rw [hsupp, prob_compl_eq_one_sub hZ, hnull, tsub_zero]

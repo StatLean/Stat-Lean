@@ -275,7 +275,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
       rw [Measure.smul_apply]
       rw [ENNReal.smul_def, smul_eq_mul]
       have hsum : (∑ i, μ i) Set.univ = (r : ℝ≥0∞) := by
-        rw [Measure.finset_sum_apply]
+        rw [Measure.finsetSum_apply]
         simp only [measure_univ, Finset.sum_const, Finset.card_univ,
           nsmul_eq_mul, mul_one, Fintype.card_fin]
       rw [hsum]
@@ -435,12 +435,12 @@ private theorem exists_measurable_rounding_of_finite_cover
       intro z hz
       by_cases hzy : z ∈ Metric.ball y e
       · change dist z (profile (if z ∈ Metric.ball y e then ay else q z)) < e
-        rw [if_pos hzy, hay]
+        rw [ite_eq_left hzy, hay]
         exact hzy
       · have hz' : z ∈ ⋃ x ∈ s, Metric.ball x e := by
           simpa [hzy] using hz
         change dist z (profile (if z ∈ Metric.ball y e then ay else q z)) < e
-        rw [if_neg hzy]
+        rw [ite_eq_right hzy]
         exact hqRound z hz'
 
 /-- A compact profile-valued Markov kernel supported on the closure of genuine

@@ -169,7 +169,7 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
     refine measure_mono_null (t := {y : E | y = 0}) ?_ ?_
     · intro y hy
       by_contra hy0
-      simp only [Set.mem_setOf_eq] at hy0
+      simp only [Set.mem_ofPred_eq] at hy0
       have hn : 0 < ‖y‖ := norm_pos_iff.mpr hy0
       refine hy ?_
       simp only [hp, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hb]
@@ -177,7 +177,7 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
       exact (abs_of_nonneg (norm_nonneg y)).symm
     · have := stdGaussian_ae_ne_zero (k := k) hk
       rw [ae_iff] at this
-      simpa [hγ, Set.compl_setOf] using this
+      simpa [hγ, Set.compl_ofPred] using this
   · intro e
     have hemeas : Measurable (⇑e) := e.continuous.measurable
     have hcomm : (⇑e) ∘ p = p ∘ (⇑e) := by
@@ -373,7 +373,7 @@ private lemma sphereAverage_radial {k : ℕ} {b : ℝ}
       exact mul_le_mul_of_nonneg_right hr.le (abs_nonneg _)
     have hsupp : {h : E | ⟪h, u⟫_ℝ ≠ 0} ⊆ Function.support F := by
       intro h hh
-      simp only [Set.mem_setOf_eq] at hh
+      simp only [Set.mem_ofPred_eq] at hh
       have hlt : Real.cosh (r₁ * ⟪h, u⟫_ℝ) < Real.cosh (r₂ * ⟪h, u⟫_ℝ) := by
         refine Real.cosh_lt_cosh.mpr ?_
         rw [abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
@@ -578,7 +578,7 @@ private lemma mvGaussian_one_eq_map_add' (v : EuclideanSpace ℝ (Fin k)) :
     multivariateGaussian v 1
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- The chi-squared rejection region is measurable. -/
 private lemma measurableSet_normSq_gt (c : ℝ) :
@@ -823,10 +823,10 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     rw [hγ, stdGaussian_normSq_tail hk c]; exact hc
   have hc0 : 0 ≤ c := by
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have huniv : {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} = Set.univ := by
       ext x
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact lt_of_lt_of_le hlt (sq_nonneg _)
     rw [huniv, measure_univ] at hcA
     have : α = 1 := ENNReal.ofReal_eq_one.mp hcA.symm
@@ -847,7 +847,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     · intro hlt
       have hn : Real.sqrt c < ‖x‖ := by
         by_contra hle
-        push_neg at hle
+        push Not at hle
         exact absurd (hgmono.monotoneOn (Set.mem_Ici.mpr (norm_nonneg x)) hsqcm hle)
           (not_le.mpr hlt)
       nlinarith [Real.sqrt_nonneg c, norm_nonneg x]
@@ -1068,7 +1068,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
         {ω | δ ≤ D n ω} ∪ {ω | M ≤ R n ω} := by
       intro ω hω
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨hD, hR⟩ := hcon
       have hexpD : Real.exp (D n ω) ≤ Real.exp δ := Real.exp_le_exp.mpr hD.le
       have hRnn' : 0 ≤ R n ω := hRnn n ω
@@ -1211,7 +1211,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
           (show x ∉ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} from hx), hξdef]
         have hle : G x ≤ t := by
           by_contra hcon
-          push_neg at hcon
+          push Not at hcon
           exact hx ((hthr x).mp hcon)
         simp [max_eq_left (hGnn x), min_eq_left hle]
     have h1 : (1 : ℝ) - ∫ x, ξ (G x) ∂γ = ∫ x, (G x - ξ (G x)) ∂γ := by

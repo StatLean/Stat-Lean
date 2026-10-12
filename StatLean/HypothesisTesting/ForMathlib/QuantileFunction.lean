@@ -142,15 +142,15 @@ theorem exists_critical_constants (P : Measure ℝ) [IsProbabilityMeasure P] {α
       ((tendsto_cdf_atBot P).eventually_lt_const (show (0 : ℝ) < 1 - α by linarith))
     refine ⟨b, fun y hy => ?_⟩
     by_contra h
-    push_neg at h
-    simp only [Set.mem_setOf_eq] at hy
+    push Not at h
+    simp only [Set.mem_ofPred_eq] at hy
     exact absurd (hb y h.le) (not_lt.mpr hy)
   set C := quantile F (1 - α) with hCdef
   have hA : 1 - α ≤ F C := (quantile_le_iff hmono hrc hne hbdd).mp le_rfl
   have hB : ∀ y, y < C → F y < 1 - α := by
     intro y hy
     by_contra h
-    push_neg at h
+    push Not at h
     exact absurd ((quantile_le_iff hmono hrc hne hbdd).mpr h) (not_le.mpr hy)
   set L := Function.leftLim F C with hLdef
   have hLle : L ≤ F C := Monotone.leftLim_le hmono le_rfl
@@ -200,8 +200,8 @@ theorem map_quantile_uniform (P : Measure ℝ) [IsProbabilityMeasure P] (F : ℝ
     intro a ha
     obtain ⟨b, hb⟩ := eventually_atBot.mp ((tendsto_cdf_atBot P).eventually_lt_const ha)
     refine ⟨b, fun y hy => ?_⟩
-    simp only [Set.mem_setOf_eq] at hy
-    by_contra hc; push_neg at hc
+    simp only [Set.mem_ofPred_eq] at hy
+    by_contra hc; push Not at hc
     exact absurd (hb y hc.le) (not_lt.mpr hy)
   have hne : ∀ a : ℝ, a < 1 → {x : ℝ | a ≤ cdf P x}.Nonempty := by
     intro a ha
@@ -237,7 +237,7 @@ theorem map_quantile_uniform (P : Measure ℝ) [IsProbabilityMeasure P] (F : ℝ
       exact ⟨(quantile_le_iff hmono hrc (hne u hu.2) (hbdd u hu.1)).mpr hle, hu⟩
   have hcong : ((quantile ⇑(cdf P) ⁻¹' Set.Iic t) ∩ Set.Icc (0 : ℝ) 1 : Set ℝ)
       =ᵐ[volume] (Set.Ioo 0 1 ∩ Set.Iic a : Set ℝ) := by
-    refine (Filter.EventuallyEq.inter (ae_eq_refl _) hIccIoo).trans ?_
+    refine (Filter.EventuallyEqSet.inter (ae_eq_refl _) hIccIoo).trans ?_
     rw [hstep]
   rw [measure_congr hcong]
   -- The interval `Ioo 0 1 ∩ Iic a` has the same volume as `Ioc 0 a`, namely `ofReal a`.
@@ -245,7 +245,7 @@ theorem map_quantile_uniform (P : Measure ℝ) [IsProbabilityMeasure P] (F : ℝ
     rw [ae_eq_set]
     refine ⟨?_, ?_⟩
     · convert measure_empty (μ := volume)
-      rw [Set.diff_eq_empty]
+      rw [Set.sdiff_eq_empty]
       rintro u ⟨⟨h0, _⟩, hle⟩
       exact ⟨h0, hle⟩
     · refine measure_mono_null ?_ (Real.volume_singleton (a := 1))
@@ -304,9 +304,9 @@ theorem tendsto_quantile_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ}
   have hup : p < Fn n (q + e) := hN₂ n (le_of_max_le_right hn)
   have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fn n x} := by
     intro x hx
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     by_contra h
-    push_neg at h
+    push Not at h
     have := (hmono n) h.le
     linarith
   have hmemup : (q + e) ∈ {x : ℝ | p ≤ Fn n x} := hup.le
@@ -363,37 +363,37 @@ theorem tendstoInMeasure_quantile {Ω : Type*} [MeasurableSpace Ω] (μ : Measur
       {ω | ENNReal.ofReal (p - F (q - e)) ≤ edist (Fhat n ω (q - e)) (F (q - e))} ∪
       {ω | ENNReal.ofReal (F (q + e) - p) ≤ edist (Fhat n ω (q + e)) (F (q + e))} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     have hgt : e < |quantile (Fhat n ω) p - q| := by
       by_contra hle'
-      push_neg at hle'
+      push Not at hle'
       have hd : edist (quantile (Fhat n ω) p) q ≤ ENNReal.ofReal e := by
         rw [edist_dist, Real.dist_eq]; exact ENNReal.ofReal_le_ofReal hle'
       exact absurd (le_trans hω hd) (not_le.mpr heε)
     by_cases hleft : p ≤ Fhat n ω (q - e)
     · refine Or.inl ?_
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [edist_dist, Real.dist_eq]
       apply ENNReal.ofReal_le_ofReal
       rw [abs_of_nonneg (by linarith [e1] : (0 : ℝ) ≤ Fhat n ω (q - e) - F (q - e))]
       linarith
-    · push_neg at hleft
+    · push Not at hleft
       refine Or.inr ?_
       have hR : Fhat n ω (q + e) ≤ p := by
         by_contra hnot
-        push_neg at hnot
+        push Not at hnot
         have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fhat n ω x} := by
           intro x hx
-          simp only [Set.mem_setOf_eq] at hx
+          simp only [Set.mem_ofPred_eq] at hx
           by_contra hc
-          push_neg at hc
+          push Not at hc
           exact absurd hx (not_le.mpr (lt_of_le_of_lt ((hmono n ω) hc.le) hleft))
         have hmem : (q + e) ∈ {x : ℝ | p ≤ Fhat n ω x} := hnot.le
         have hle1 : q - e ≤ quantile (Fhat n ω) p := le_csInf ⟨q + e, hmem⟩ hlb
         have hle2 : quantile (Fhat n ω) p ≤ q + e := csInf_le ⟨q - e, hlb⟩ hmem
         have : |quantile (Fhat n ω) p - q| ≤ e := abs_le.mpr ⟨by linarith, by linarith⟩
         exact absurd this (not_le.mpr hgt)
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [edist_dist, Real.dist_eq]
       apply ENNReal.ofReal_le_ofReal
       rw [abs_of_nonpos (by linarith [e2] : Fhat n ω (q + e) - F (q + e) ≤ 0)]

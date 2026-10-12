@@ -514,7 +514,7 @@ theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
     (hgc : ContinuousAt g x)
     (hae : ∀ᵐ v ∂(MeasureTheory.volume : Measure ℝ), 0 ≤ g v) : 0 ≤ g x := by
   by_contra hx
-  push_neg at hx
+  push Not at hx
   have hlt : ∀ᶠ v in 𝓝 x, g v < 0 := hgc (Iio_mem_nhds hx)
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 hlt
   have hsub : Metric.ball x ε ⊆ {v : ℝ | 0 ≤ g v}ᶜ := fun v hv => not_le.2 (hball v hv)
@@ -6109,7 +6109,7 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
   have hYteq : ∀ (n : ℕ) (i : Fin (k n)), Yt (n, (i : ℕ)) = Y n i := by
     intro n i
     simp only [hYtdef]
-    rw [dif_pos i.2]
+    rw [dite_eq_left i.2]
   have hlaw : ∀ (n : ℕ) (i : Fin (k n)), ν.map (Z n i) = μ.map (Y n i) := by
     intro n i
     have h1 : ν.map (fun z : ℕ × ℕ → ℝ => z (n, (i : ℕ))) = P (n, (i : ℕ)) := by
@@ -6889,7 +6889,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
         hB0 hC2gen hlam hα hWm hWb hW1 hW2 hh0 hh hL mL sL hmLm hsLm (hmLv L hL) (hsLv L hL)
         (hσLc L hL) (hσLb L hL) hpc hpx hnh u
       rw [hvTdef]
-      simpa only [if_pos hL] using hpos
+      simpa only [ite_eq_left hL] using hpos
     · -- degenerate truncation levels: the statistic vanishes
       have hclampconst : ∀ z : ℝ, clampAt L z = -L := by
         intro z
@@ -6925,7 +6925,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
         intro n
         rw [Measure.map_congr (hzero n)]
         simp
-      have hvT0 : vT L = 0 := by rw [hvTdef]; simp only [if_neg (not_lt.2 hL)]
+      have hvT0 : vT L = 0 := by rw [hvTdef]; simp only [ite_eq_right (not_lt.2 hL)]
       rw [hvT0]
       have hgauss : charFun (gaussianReal 0 (Real.toNNReal (0 : ℝ))) u
           = charFun (Measure.dirac (0 : ℝ)) u := by
@@ -6950,7 +6950,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
       refine hbase.congr' ?_
       filter_upwards [eventually_gt_atTop (0 : ℝ)] with L hL
       rw [hvTdef]
-      simp only [if_pos hL]
+      simp only [ite_eq_left hL]
     exact (hcont.tendsto _).comp hvTlim
 
 end Ledger

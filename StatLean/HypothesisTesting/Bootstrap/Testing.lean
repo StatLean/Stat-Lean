@@ -178,7 +178,7 @@ theorem tendsto_bootstrapTest_level [IsProbabilityMeasure Pr]
       = 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal := by
     intro n
     have hset : {ω | qn n ω < T n ω} = {ω | T n ω ≤ qn n ω}ᶜ := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     rw [hset, measure_compl (hmeasS n) (measure_ne_top _ _),
       ENNReal.toReal_sub_of_le (measure_mono (Set.subset_univ _)) (measure_ne_top _ _),
       measure_univ, ENNReal.toReal_one]
@@ -220,7 +220,7 @@ theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure Pr]
     refine ⟨N, fun n hn => ?_⟩
     have hsub : {ω | T n ω ≤ qn n ω} ⊆ {ω | T n ω ≤ M} ∪ {ω | M < qn n ω} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
       rcases le_or_gt (qn n ω) M with h | h
       · exact Or.inl (le_trans hω h)
       · exact Or.inr h
@@ -243,7 +243,7 @@ theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure Pr]
       = 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal := by
     intro n
     have hset : {ω | qn n ω < T n ω} = {ω | T n ω ≤ qn n ω}ᶜ := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
     rw [hset, measure_compl (hmeasS n) (measure_ne_top _ _),
       ENNReal.toReal_sub_of_le (measure_mono (Set.subset_univ _)) (measure_ne_top _ _),
       measure_univ, ENNReal.toReal_one]

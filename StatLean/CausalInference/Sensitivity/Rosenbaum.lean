@@ -208,8 +208,8 @@ theorem biasedTail_mono_single {π π' : Fin m → ℝ} {q : Fin m → ℝ} {t :
   have hBA : B ≤ A := by
     rw [hA, hB]
     by_cases h1 : t ≤ signScore q (rbSplit j (false, r))
-    · rw [if_pos h1, if_pos (h1.trans hmono)]
-    · rw [if_neg h1]
+    · rw [ite_eq_left h1, ite_eq_left (h1.trans hmono)]
+    · rw [ite_eq_right h1]
       split_ifs <;> norm_num
   have hB0 : 0 ≤ B := by rw [hB]; split_ifs <;> norm_num
   nlinarith [mul_nonneg (sub_nonneg.2 hle) (sub_nonneg.2 hBA)]

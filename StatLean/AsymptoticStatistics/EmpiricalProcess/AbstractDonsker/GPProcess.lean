@@ -325,7 +325,7 @@ theorem norm_gpEmbed_sub_le (s t : ↥F) :
   -- Step 1: rewrite the embedding norm as `√(∫ (Y − c)² ∂P)`.
   have hnorm_centred : ‖gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t‖
       = Real.sqrt (∫ x, (Y x - c) ^ 2 ∂P) := by
-    rw [Submodule.coe_norm, Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed,
+    rw [← Submodule.norm_coe, Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed,
         Lp.norm_def, MeasureTheory.eLpNorm_congr_ae hcoe,
         eLpNorm_toReal_eq_sqrt_integral_sq hYc]
   -- Step 2: rewrite the `L²` distance as `√(∫ Y² ∂P)`.
@@ -582,7 +582,7 @@ def pathExtend (ω : ℕ → ℝ) : ↥F → ℝ :=
     @Dense.extend ↥F ℝ inst.toUniformSpace.toTopologicalSpace _
       (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
       (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).domRestrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω))
 
 /-- On the good set, the restriction of the skeleton path to `T₀` is uniformly
@@ -592,7 +592,7 @@ theorem uniformContinuous_restrict_of_good {ω : ℕ → ℝ}
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @UniformContinuous _ ℝ
       (@instUniformSpaceSubtype ↥F _ inst.toUniformSpace) _
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).domRestrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)) := by
   letI inst := distL2PseudoMetric hG_env hG hF_meas
   exact (@uniformContinuousOn_iff_restrict ↥F ℝ inst.toUniformSpace _ _ _).mp hω.2
@@ -671,7 +671,7 @@ theorem pathExtend_eq_on_skeleton {ω : ℕ → ℝ}
   have := @Dense.extend_of_ind ↥F ℝ inst.toUniformSpace _ _ _ _
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
     (uniformContinuous_restrict_of_good hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω) t
-  simpa [pathExtend, Set.restrict_apply] using! this
+  simpa [pathExtend, Set.domRestrict_apply] using! this
 
 /-- On the good set, `pathExtend ω` is an `ℓ∞(F)` element: its range is bounded in
 `‖·‖` (`bddAbove_pathExtend_of_good`, since `‖·‖ = |·|` on ℝ), which is
@@ -702,7 +702,7 @@ theorem gpPath_apply_of_good {ω : ℕ → ℝ}
     gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f
       = pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f := by
   classical
-  rw [gpPath, dif_pos hω]
+  rw [gpPath, dite_eq_left hω]
 
 /-- **Coordinate a.e.-agreement of `gpPath` with `gpX`.** For each fixed `f ∈ F`,
 the `f`-coordinate of the path `gpPath ω` agrees almost surely with `gpX f ω`.

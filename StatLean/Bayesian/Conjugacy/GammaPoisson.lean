@@ -55,8 +55,8 @@ instance : IsMarkovKernel poissonKernel := by
     lintegral_count]
   simp only [poissonDensity]
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ => poissonPMFReal_nonneg)
-      (poissonPMFRealSum _).summable,
-    show (∑' n, poissonPMFReal θ.toNNReal n) = 1 from (poissonPMFRealSum _).tsum_eq,
+      (hasSum_one_poissonMeasure _).summable,
+    show (∑' n, poissonPMFReal θ.toNNReal n) = 1 from (hasSum_one_poissonMeasure _).tsum_eq,
     ENNReal.ofReal_one]
 
 /-- Pointwise pdf algebra: Gamma pdf times an iid Poisson likelihood is an explicit constant times
@@ -85,7 +85,7 @@ theorem gammaPDF_mul_prod_poissonDensity {a r : ℝ}
       div_nonneg (mul_nonneg (Real.rpow_nonneg hr.le a) hGaS.le)
         (mul_nonneg (mul_nonneg hGa.le hrn.le) hfac.le)
     have hga0 : 0 ≤ gammaPDFReal a r θ := by
-      rw [gammaPDFReal, if_pos hθ0]
+      rw [gammaPDFReal, ite_eq_left hθ0]
       exact mul_nonneg (mul_nonneg (div_nonneg (Real.rpow_nonneg hr.le a) hGa.le)
         (Real.rpow_nonneg hθ0 _)) (Real.exp_pos _).le
     have hθtoN : ((θ.toNNReal : ℝ)) = θ := Real.coe_toNNReal θ hθ0
@@ -109,7 +109,7 @@ theorem gammaPDF_mul_prod_poissonDensity {a r : ℝ}
     rw [← ENNReal.ofReal_prod_of_nonneg (fun i _ => poissonPMFReal_nonneg),
       ← ENNReal.ofReal_mul hga0, ← ENNReal.ofReal_mul hC]
     congr 1
-    simp only [gammaPDFReal, if_pos hθ0, poissonPMFReal, hθtoN]
+    simp only [gammaPDFReal, ite_eq_left hθ0, poissonPMFReal, hθtoN]
     rw [Finset.prod_div_distrib, Finset.prod_mul_distrib, Finset.prod_const,
       Finset.card_univ, Fintype.card_fin, Finset.prod_pow_eq_pow_sum, ← hpow, ← hexp]
     field_simp

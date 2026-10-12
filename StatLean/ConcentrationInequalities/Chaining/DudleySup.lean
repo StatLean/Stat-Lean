@@ -132,7 +132,7 @@ theorem dudley_inequality_anchored {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
   -- lattice map on `ℝ`).
   have hpt : ∀ ω, F.sup' hFne (fun t => X t ω - X t₀ ω)
       = F.sup' hFne (fun t => X t ω) - X t₀ ω := fun ω =>
-    (Finset.comp_sup'_eq_sup'_comp hFne (f := fun t => X t ω) (fun v => v - X t₀ ω)
+    (Finset.apply_sup'_eq_sup'_comp hFne (f := fun t => X t ω) (fun v => v - X t₀ ω)
       (fun x y => (max_sub_sub_right x y (X t₀ ω)).symm)).symm
   have hInt : ∫ ω, F.sup' hFne (fun t => X t ω - X t₀ ω) ∂μ
       = ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ := by

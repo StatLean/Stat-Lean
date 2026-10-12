@@ -304,14 +304,14 @@ theorem predMSE_isMinOn_iff_yuleWalker [IsProbabilityMeasure μ]
         = t * cov[fun ω => X ((k : ℤ) + 1) ω - ∑ i, φ i * X ((k : ℤ) - (i : ℕ)) ω,
             X ((k : ℤ) - (i : ℕ)); μ] := by
       simp only [add_sub_cancel_left, ite_mul, zero_mul, Finset.sum_ite_eq',
-        Finset.mem_univ, if_true]
+        Finset.mem_univ, ite_true]
     have hvar : variance (fun ω => ∑ j, ((φ j + if j = i then t else 0) - φ j)
           * X ((k : ℤ) - (j : ℕ)) ω) μ = t ^ 2 * acvf X μ 0 := by
       have hfun : (fun ω => ∑ j, ((φ j + if j = i then t else 0) - φ j)
             * X ((k : ℤ) - (j : ℕ)) ω) = fun ω => t * X ((k : ℤ) - (i : ℕ)) ω := by
         funext ω
         simp only [add_sub_cancel_left, ite_mul, zero_mul, Finset.sum_ite_eq',
-          Finset.mem_univ, if_true]
+          Finset.mem_univ, ite_true]
       rw [hfun, variance_const_mul, ← hstat.acvf_zero_eq_variance]
     rw [hsum, hvar] at h
     linarith

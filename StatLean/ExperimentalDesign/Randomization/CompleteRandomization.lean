@@ -110,7 +110,7 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
       · intro i hi
         by_cases hiW : i ∈ W
         · simp [hiW]
-        · simp only [hiW, if_false]
+        · simp only [hiW, ite_false]
           exact Finset.mem_insert_of_mem (hf'mem i (Finset.mem_sdiff.mpr ⟨hi, hiW⟩))
       · intro t ht
         rcases Finset.mem_insert.mp ht with heq | hts'
@@ -121,10 +121,10 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
             constructor
             · rintro ⟨hiV, hi⟩
               by_contra hiW
-              rw [if_neg hiW] at hi
+              rw [ite_eq_right hiW] at hi
               exact ht₀ (hi ▸ hf'mem i (Finset.mem_sdiff.mpr ⟨hiV, hiW⟩))
             · intro hiW
-              exact ⟨hWV hiW, by rw [if_pos hiW]⟩
+              exact ⟨hWV hiW, by rw [ite_eq_left hiW]⟩
           rw [hfil, hWcard]
         · have hne : t ≠ t₀ := fun h => ht₀ (h ▸ hts')
           have hfil : (V.filter fun i => (if i ∈ W then t₀ else f' i) = t)
@@ -134,12 +134,12 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
             constructor
             · rintro ⟨hiV, hi⟩
               by_cases hiW : i ∈ W
-              · rw [if_pos hiW] at hi
+              · rw [ite_eq_left hiW] at hi
                 exact absurd hi.symm hne
-              · rw [if_neg hiW] at hi
+              · rw [ite_eq_right hiW] at hi
                 exact ⟨⟨hiV, hiW⟩, hi⟩
             · rintro ⟨⟨hiV, hiW⟩, hi⟩
-              exact ⟨hiV, by rw [if_neg hiW]; exact hi⟩
+              exact ⟨hiV, by rw [ite_eq_right hiW]; exact hi⟩
           rw [hfil]
           exact hf'card t hts'
 
@@ -255,7 +255,7 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
   rw [PMF.map_apply, tsum_eq_single (fun i => b (σ.symm i))]
   · have hb : (fun i => (fun k => b (σ.symm k)) (σ i)) = b := by
       funext i; simp
-    rw [if_pos hb.symm]
+    rw [ite_eq_left hb.symm]
     simp only [completeRandomization]
     by_cases hmem : b ∈ validAllocations (U := U) r
     · rw [PMF.uniformOfFinset_apply_of_mem _ hmem,
@@ -265,7 +265,7 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
         PMF.uniformOfFinset_apply_of_notMem _
           (fun h => hmem ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mp h))]
   · intro a ha
-    refine if_neg fun h => ha ?_
+    refine ite_eq_right fun h => ha ?_
     subst h
     funext i
     simp

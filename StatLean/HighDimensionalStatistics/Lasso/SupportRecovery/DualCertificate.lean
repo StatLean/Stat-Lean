@@ -162,8 +162,8 @@ private lemma zeroOff_designMap_eq (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset 
   simp only [Matrix.mulVec, dotProduct, zeroOffCols, Matrix.of_apply]
   refine Finset.sum_congr rfl fun j _ => ?_
   by_cases hj : j ∈ S
-  · rw [if_pos hj]
-  · rw [if_neg hj, hθ j hj]; ring
+  · rw [ite_eq_left hj]
+  · rw [ite_eq_right hj, hθ j hj]; ring
 
 /-- For `i ∈ S`, the zeroed transpose acts like `Xᵀ`. -/
 private lemma zeroOff_transpose_coord (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
@@ -172,7 +172,7 @@ private lemma zeroOff_transpose_coord (X : Matrix (Fin n) (Fin d) ℝ) (S : Fins
   rw [designMap_ofLp, designMap_ofLp]
   simp only [Matrix.mulVec, dotProduct, Matrix.transpose_apply, zeroOffCols, Matrix.of_apply]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [if_pos hi]
+  rw [ite_eq_left hi]
 
 /-- **PDW oracle support** (Wainwright §7.5.2, step 1): every minimizer of the `X'`-Lasso
 objective is supported on `S`. -/
@@ -188,8 +188,8 @@ private lemma minimizer_supported (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (
     simp only [Matrix.mulVec, dotProduct, zeroOffCols, Matrix.of_apply, restrict_ofLp_apply]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hj : j ∈ S
-    · rw [if_pos hj, if_pos hj]
-    · rw [if_neg hj]; ring
+    · rw [ite_eq_left hj, ite_eq_left hj]
+    · rw [ite_eq_right hj]; ring
   have hle := hopt (restrict S θhat)
   unfold lassoObjective at hle
   rw [hdm] at hle
@@ -404,7 +404,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
     intro k
     rw [restrict_ofLp_apply]
     by_cases hk : k ∈ S
-    · rw [if_pos hk]
+    · rw [ite_eq_left hk]
       have hkeq : (θhat - θstar).ofLp k = θhat.ofLp k - θstar.ofLp k := by
         simp
       rw [hkeq]
@@ -458,7 +458,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
         _ ≤ A + B := by
             rw [abs_mul, abs_of_pos (by positivity : (0:ℝ) < lam * (n:ℝ))]
             exact add_le_add hA1 hB1
-    · rw [if_neg hk, abs_zero]; linarith [hAnn, hBnn]
+    · rw [ite_eq_right hk, abs_zero]; linarith [hAnn, hBnn]
   -- Step 6 (7.53): the ẑ_{Sᶜ} block decomposition ẑ_j = μ_j + V_j.
   have zSc_eq : ∀ j ∉ S, zhat.ofLp j
       = ((Xsub X S)ᵀ *ᵥ (col X j).ofLp)

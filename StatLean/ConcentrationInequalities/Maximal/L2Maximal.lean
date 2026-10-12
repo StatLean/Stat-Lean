@@ -157,7 +157,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
     [DecidableEq (EuclideanSpace ℝ (Fin d))] : L2NetData d := by
   let ε' : ℝ≥0 := Real.toNNReal (1 / 2)
   have hcov_ne_top : Metric.coveringNumber ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENat.coe_ne_top _)
+    ne_top_of_le_ne_top (ENat.natCast_ne_top _)
       (coveringNumber_closedBall_le (d := d) (ε := 1 / 2) (by norm_num) (by norm_num))
   let N := Metric.minimalCover ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1)
   have hN_cov : Metric.IsCover ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) N :=
@@ -181,7 +181,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
     calc edist x v ≤ (ε' : ℝ≥0∞) := hv_edist
       _ = ENNReal.ofReal (1 / 2) := by simp [ε', ENNReal.ofReal, Real.toNNReal]
   have hF_card_le : F.card ≤ 5 ^ d := by
-    apply ENat.coe_le_coe.mp
+    apply ENat.natCast_le_natCast.mp
     calc (F.card : ℕ∞)
         = N.encard := hN_fin.encard_eq_coe_toFinset_card.symm
       _ = Metric.coveringNumber ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) :=
@@ -510,7 +510,7 @@ theorem l2_max_tail
     have hme : μ {ω | (0 : ℝ) < ‖X ω‖} = 0 := by
       apply measure_mono_null _ (ae_iff.mp hsupr0)
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       intro heq
       have h := hdiscr ω
       rw [heq, mul_zero] at h
@@ -520,7 +520,7 @@ theorem l2_max_tail
         ≤ μ {ω | (0 : ℝ) < ‖X ω‖} := by
             apply measure_mono
             intro ω hω
-            simp only [Set.mem_setOf_eq] at hω ⊢
+            simp only [Set.mem_ofPred_eq] at hω ⊢
             simp only [ht0] at hω
             exact hω
       _ = 0 := hme
@@ -531,7 +531,7 @@ theorem l2_max_tail
     set t := 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
              2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))
     have h_subset : {ω | t < ‖X ω‖} ⊆ {ω | t / 2 < ⨆ j, Y j ω} := by
-      intro ω hω; simp only [Set.mem_setOf_eq] at hω ⊢; linarith [hdiscr ω]
+      intro ω hω; simp only [Set.mem_ofPred_eq] at hω ⊢; linarith [hdiscr ω]
     calc μ {ω | t < ‖X ω‖}
         ≤ μ {ω | t / 2 < ⨆ j, Y j ω} := measure_mono h_subset
       _ ≤ ENNReal.ofReal ((k : ℝ) * Real.exp (-(t / 2) ^ 2 / (2 * ↑σ2))) :=

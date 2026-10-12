@@ -878,7 +878,7 @@ lemma isAsymptoticallyEquicontinuous_union {F G : Set (Ω → ℝ)} {P : Measure
   -- cross-pair, so `Aev n ⊆ AF n ∪ AG n`.
   have hsubset : ∀ n, Aev n ⊆ AF n ∪ AG n := by
     intro n ξ hξ
-    simp only [hAev, Set.mem_setOf_eq] at hξ
+    simp only [hAev, Set.mem_ofPred_eq] at hξ
     obtain ⟨s, t, hst_close, hst_osc⟩ := hξ
     -- `s`, `t` lie in `F ∪ G`.
     have hs : (s : Ω → ℝ) ∈ F ∪ G := s.2
@@ -895,11 +895,11 @@ lemma isAsymptoticallyEquicontinuous_union {F G : Set (Ω → ℝ)} {P : Measure
     -- Lift the close pair into the appropriate single-class event.
     rcases hnot_cross with ⟨hsF, htF⟩ | ⟨hsG, htG⟩
     · refine Or.inl ?_
-      simp only [hAF, Set.mem_setOf_eq]
+      simp only [hAF, Set.mem_ofPred_eq]
       exact ⟨⟨(s : Ω → ℝ), hsF⟩, ⟨(t : Ω → ℝ), htF⟩,
         lt_of_lt_of_le hst_close hδ_le_F, hst_osc⟩
     · refine Or.inr ?_
-      simp only [hAG, Set.mem_setOf_eq]
+      simp only [hAG, Set.mem_ofPred_eq]
       exact ⟨⟨(s : Ω → ℝ), hsG⟩, ⟨(t : Ω → ℝ), htG⟩,
         lt_of_lt_of_le hst_close hδ_le_G, hst_osc⟩
   -- Make the giant empirical-process payload opaque for the `limsup` arithmetic.

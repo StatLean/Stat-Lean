@@ -169,7 +169,7 @@ private lemma equi_chain_mean_l2_to_prob_l2
       {ξ | δ ≤ ψ n ξ} = {ξ | ε ≤ ENNReal.ofReal (ψ n ξ)} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, hε_def]
+    simp only [Set.mem_ofPred_eq, hε_def]
     exact ⟨fun h => ENNReal.ofReal_le_ofReal h,
       fun h => (ENNReal.ofReal_le_ofReal_iff (hψ_nonneg n ξ)).mp h⟩
   -- Squeeze: `μ {δ ≤ ψ n} = μ {ε ≤ ofReal (ψ n)} ≤ Markov-RHS → 0`.
@@ -411,7 +411,7 @@ private lemma equi_chain_assembly_given_chain_sequence
         (badEvent n \ l2Event ((δ q₀) ^ 2) n)
           ∪ (badEvent n ∩ l2Event ((δ q₀) ^ 2) n) := by
     ext ξ
-    simp only [Set.mem_union, Set.mem_diff, Set.mem_inter_iff]
+    simp only [Set.mem_union, Set.mem_sdiff, Set.mem_inter_iff]
     constructor
     · intro h
       by_cases hL : ξ ∈ l2Event ((δ q₀) ^ 2) n

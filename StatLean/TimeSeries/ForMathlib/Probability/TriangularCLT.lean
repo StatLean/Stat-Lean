@@ -396,7 +396,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
           ≤ ∫ ω in {ω | ε < |X n i ω|}ᶜ, ε ^ 2 ∂μ := by
             refine setIntegral_mono_on ((hI2 n i).integrableOn) integrableOn_const hsm.compl
               (fun ω hω => ?_)
-            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+            simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
             rw [← sq_abs (X n i ω)]
             exact pow_le_pow_left₀ (abs_nonneg _) hω 2
         _ ≤ ∫ _ω, ε ^ 2 ∂μ :=

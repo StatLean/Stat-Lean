@@ -252,12 +252,12 @@ lemma Acoef_apply (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_f
 lemma Acoef_of_pos (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : 0 < qtilde hM γ 0 ω) :
     Acoef hM γ t ω = cross hM γ t ω / Real.sqrt (qtilde hM γ 0 ω) := by
-  rw [Acoef_apply, if_pos h]
+  rw [Acoef_apply, ite_eq_left h]
 
 lemma Acoef_of_zero (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : ¬ 0 < qtilde hM γ 0 ω) :
     Acoef hM γ t ω = 0 := by
-  rw [Acoef_apply, if_neg h]
+  rw [Acoef_apply, ite_eq_right h]
 
 lemma rho_apply (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full) :
     rho hM γ t ω
@@ -270,12 +270,12 @@ lemma rho_of_pos (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_fu
     (h : 0 < Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) :
     rho hM γ t ω = (Real.sqrt (qtilde hM γ t ω) - Acoef hM γ t ω)
       / (Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) := by
-  rw [rho_apply, if_pos h]
+  rw [rho_apply, ite_eq_left h]
 
 lemma rho_of_zero (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : ¬ 0 < Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) :
     rho hM γ t ω = 0 := by
-  rw [rho_apply, if_neg h]
+  rw [rho_apply, ite_eq_right h]
 
 /-! ## Auxiliary lemmas -/
 
@@ -1083,7 +1083,7 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     funext ω
     change xi γ t ω ^ 2 - xi γ 0 ω ^ 2 = (xi γ t ω - xi γ 0 ω) * (xi γ t ω + xi γ 0 ω)
     ring
-  refine le_trans (eLpNorm_one_condExp_le_eLpNorm _) ?_
+  refine le_trans (eLpNorm_condExp_le_eLpNorm _ le_rfl) ?_
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
     (hξt.sub hξ0).aestronglyMeasurable (hξt.add hξ0).aestronglyMeasurable) ?_
@@ -1118,7 +1118,7 @@ private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     funext ω
     change xi γ t ω * xi γ 0 ω - xi γ 0 ω ^ 2 = (xi γ t ω - xi γ 0 ω) * xi γ 0 ω
     ring
-  refine le_trans (eLpNorm_one_condExp_le_eLpNorm _) ?_
+  refine le_trans (eLpNorm_condExp_le_eLpNorm _ le_rfl) ?_
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
     (hξt.sub hξ0).aestronglyMeasurable hξ0.aestronglyMeasurable) ?_

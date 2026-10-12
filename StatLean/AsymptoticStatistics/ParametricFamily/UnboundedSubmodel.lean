@@ -1835,10 +1835,10 @@ theorem unboundedParamSubmodel_fisher_info
             = if i = j then (1 : ℝ) else 0 := by
         by_cases hij : i = j
         · subst hij
-          rw [if_pos rfl]
+          rw [ite_eq_left rfl]
           have h_norm : ‖(g_P i : Lp ℝ 2 P)‖ = 1 := h_orth.norm_eq_one i
           rw [real_inner_self_eq_norm_mul_norm, h_norm]; norm_num
-        · rw [if_neg hij]
+        · rw [ite_eq_right hij]
           exact h_orth.inner_eq_zero hij
       rw [MeasureTheory.L2.inner_def] at h_inner
       have h_int_eq :
@@ -1879,7 +1879,7 @@ theorem unboundedParamSubmodel_fisher_info
         rw [h_int_gMk i j]
         by_cases hij : i = j
         · subst hij; simp
-        · simp [if_neg hij]
+        · simp [ite_eq_right hij]
       rw [Finset.sum_congr rfl (fun j _ => h_each j)]
       rw [Finset.sum_ite_eq_of_mem Finset.univ i (fun _ => u i * v i)
             (Finset.mem_univ i)]

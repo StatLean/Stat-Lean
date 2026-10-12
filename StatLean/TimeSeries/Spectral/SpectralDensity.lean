@@ -143,8 +143,8 @@ private lemma tsum_nonneg_of_fejer {a : ℤ → ℝ} (hsum : Summable fun m => |
             (1 - |(m : ℝ)| / (n : ℝ)) * a m := by
     intro n
     rw [tsum_eq_sum (s := Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1))
-      fun b hb => if_neg fun h => hb ((hiff n b).mp h)]
-    exact Finset.sum_congr rfl fun m hm => if_pos ((hiff n m).mpr hm)
+      fun b hb => ite_eq_right fun h => hb ((hiff n b).mp h)]
+    exact Finset.sum_congr rfl fun m hm => ite_eq_left ((hiff n m).mpr hm)
   have hlim : Tendsto (fun n : ℕ => ∑' m : ℤ,
       (if |m| < (n : ℤ) then (1 - |(m : ℝ)| / (n : ℝ)) * a m else 0)) atTop
       (nhds (∑' m : ℤ, a m)) := by
@@ -154,7 +154,7 @@ private lemma tsum_nonneg_of_fejer {a : ℤ → ℝ} (hsum : Summable fun m => |
             (if |m| < (n : ℤ) then (1 - |(m : ℝ)| / (n : ℝ)) * a m else 0))
           =ᶠ[atTop] fun n : ℕ => (1 - |(m : ℝ)| / (n : ℝ)) * a m := by
         filter_upwards [eventually_ge_atTop (|m|.toNat + 1)] with n hn
-        refine if_pos ?_
+        refine ite_eq_left ?_
         have htn : (|m|.toNat : ℤ) = |m| := Int.toNat_of_nonneg (abs_nonneg m)
         omega
       refine Tendsto.congr' hev.symm ?_
@@ -228,9 +228,9 @@ private lemma integral_fourier_haar (k : ℤ) :
   rcases eq_or_ne k 0 with rfl | hk
   · have h1 : ∀ z : AddCircle (2 * π), fourier (T := 2 * π) 0 z = (1 : ℂ) := fun _ =>
       fourier_zero
-    rw [if_pos rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
+    rw [ite_eq_left rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
     simp
-  · rw [if_neg hk]
+  · rw [ite_eq_right hk]
     exact MeasureTheory.integral_eq_zero_of_add_right_eq_neg
       (μ := (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
       (g := ((2 * π / 2 / k : ℝ) : AddCircle (2 * π)))
@@ -377,8 +377,8 @@ theorem isSpectralMeasure_withDensity [IsProbabilityMeasure μ] {X : ℤ → Ω 
     have hsingle : (∑' j : ℤ, (acvf X μ j : ℂ) * (if j + k = 0 then (1 : ℂ) else 0))
         = (acvf X μ (-k) : ℂ) := by
       rw [tsum_eq_single (-k)
-        (fun j hj => by rw [if_neg (fun h => hj (by omega)), mul_zero]),
-        if_pos (by ring), mul_one]
+        (fun j hj => by rw [ite_eq_right (fun h => hj (by omega)), mul_zero]),
+        ite_eq_left (by ring), mul_one]
     have hcmul : ∫ z : AddCircle (2 * π), (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' j : ℤ,
           ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle
         = (((2 * π)⁻¹ : ℝ) : ℂ) * ∫ z : AddCircle (2 * π), ∑' j : ℤ,

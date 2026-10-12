@@ -131,13 +131,13 @@ theorem pushforward_iidSeq_window (P : Θ → Measure 𝓧)
     ext x
     simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Finset.coe_range,
       Set.mem_Iio]
-    refine ⟨fun h j hj => by rw [dif_pos hj]; exact h ⟨j, hj⟩, fun h i => ?_⟩
+    refine ⟨fun h j hj => by rw [dite_eq_left hj]; exact h ⟨j, hj⟩, fun h i => ?_⟩
     have := h i.1 i.2
-    rwa [dif_pos i.2, Fin.eta] at this
+    rwa [dite_eq_left i.2, Fin.eta] at this
   rw [Measure.map_apply (by fun_prop) (MeasurableSet.univ_pi hs), hpre,
     Measure.infinitePi_pi _ (fun j _ => by split_ifs with h; exacts [hs _, .univ]),
     ← Fin.prod_univ_eq_prod_range]
-  exact Finset.prod_congr rfl fun i _ => by rw [dif_pos i.2, Fin.eta]
+  exact Finset.prod_congr rfl fun i _ => by rw [dite_eq_left i.2, Fin.eta]
 
 /-- iid replication is the constant case of independent replication (definitional). -/
 theorem iid_indepProd (P : Θ → Measure 𝓧) (n : ℕ) :

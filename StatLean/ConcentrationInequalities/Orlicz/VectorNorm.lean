@@ -85,10 +85,10 @@ theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
     funext ω
     rw [PiLp.inner_apply, Finset.sum_eq_single i]
     · show (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
-      simp [EuclideanSpace.single_apply]
+      simp [PiLp.single_apply]
     · intro j _ hj
       show (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
-      simp [EuclideanSpace.single_apply, if_neg hj]
+      simp [PiLp.single_apply, ite_eq_right hj]
     · intro hi; exact absurd (Finset.mem_univ i) hi
   rwa [hfun] at h
 

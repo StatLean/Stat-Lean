@@ -319,8 +319,8 @@ theorem avg_perm_blockAvg_sq_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
     rw [Finset.sum_comm, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hij : i = j
-    · subst hij; rw [if_pos rfl]; exact hdiag i
-    · rw [if_neg hij]; exact hoff i j hij
+    · subst hij; rw [ite_eq_left rfl]; exact hdiag i
+    · rw [ite_eq_right hij]; exact hoff i j hij
   have hkey : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
       ∑ σ : Equiv.Perm (Fin N), ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2
       = ((m : ℝ)⁻¹) ^ 2 * (∑ i : Fin m, ∑ j : Fin m,
@@ -338,7 +338,7 @@ theorem avg_perm_blockAvg_sq_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
       intro j; by_cases h : i = j <;> simp [h]
     rw [Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_add_distrib, Finset.sum_const,
       Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
-      Finset.sum_ite_eq Finset.univ i (fun _ => A - B), if_pos (Finset.mem_univ i)]
+      Finset.sum_ite_eq Finset.univ i (fun _ => A - B), ite_eq_left (Finset.mem_univ i)]
   have hcount : (∑ i : Fin m, ∑ j : Fin m, (if i = j then A else B))
       = (m : ℝ) * A + ((m : ℝ) * (m : ℝ) - (m : ℝ)) * B := by
     rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
@@ -383,7 +383,7 @@ theorem perm_avg_indicator_blockAvg_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
         ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2 := by
     intro σ
     by_cases hσ : ε ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))|
-    · rw [if_pos hσ]
+    · rw [ite_eq_left hσ]
       have habs : ε ^ 2 ≤ ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2 := by
         have h1 : ε ^ 2 ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))| ^ 2 := by
           have := mul_le_mul hσ hσ hε.le (abs_nonneg _)
@@ -392,7 +392,7 @@ theorem perm_avg_indicator_blockAvg_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
         rwa [sq_abs] at h1
       have hmul := mul_le_mul_of_nonneg_left habs (by positivity : (0 : ℝ) ≤ ε⁻¹ ^ 2)
       linarith
-    · rw [if_neg hσ]
+    · rw [ite_eq_right hσ]
       positivity
   calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
         ∑ σ : Equiv.Perm (Fin N),

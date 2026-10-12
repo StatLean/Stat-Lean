@@ -169,7 +169,7 @@ private lemma map_iSup_le_of_lsc {κ : Type*} [Nonempty κ] {Φ : ℝ≥0∞ →
     (hlsc : LowerSemicontinuous Φ) (g : κ → ℝ≥0∞) :
     Φ (⨆ i, g i) ≤ ⨆ i, Φ (g i) := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hopen : IsOpen (Φ ⁻¹' Set.Ioi (⨆ i, Φ (g i))) :=
     (lowerSemicontinuous_iff_isOpen_preimage.mp hlsc) _
   have hmem : (⨆ i, g i) ∈ Φ ⁻¹' Set.Ioi (⨆ i, Φ (g i)) := hcon

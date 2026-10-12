@@ -450,7 +450,7 @@ theorem prob_rip_of_iid_gaussian
     filter_upwards [hall] with ω hω; ext i j; exact hω i j
   have hRIPeq : μ {ω | IsRIP (X ω) (3 * s) δ} = μ {ω | IsRIP (X' ω) (3 * s) δ} := by
     apply measure_congr
-    rw [Filter.eventuallyEq_set]
+    rw [Filter.eventuallyEqSet_iff]
     filter_upwards [hae_mat] with ω hω
     show IsRIP (X ω) (3 * s) δ ↔ IsRIP (X' ω) (3 * s) δ
     rw [hω]

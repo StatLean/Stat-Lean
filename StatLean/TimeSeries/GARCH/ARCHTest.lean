@@ -468,7 +468,7 @@ theorem mem_interior_archAdmissible {p T : ℕ} {κ c : ℝ} (hc : κ < c) (x : 
     exact (hθ t ht).le
   · exact isOpen_biInter_finset fun t _ =>
       isOpen_lt continuous_const (continuous_truncVol x t)
-  · simp only [Set.mem_iInter, Set.mem_setOf_eq]
+  · simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     intro t _
     rw [truncVol_const]
     exact hc

@@ -392,7 +392,7 @@ theorem paramSubmodelQMDPath_curve_eq_paramSubmodel_density
             then P.withDensity (fun ω => ENNReal.ofReal
               (1 + s * ((g_total : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = _
-    rw [if_pos hs_lt_δbd]
+    rw [ite_eq_left hs_lt_δbd]
   rw [h_LHS]
   -- RHS:
   -- (paramSubmodel g_P hg h_orth).density (s • h) ω
@@ -415,7 +415,7 @@ theorem paramSubmodelQMDPath_curve_eq_paramSubmodel_density
   -- this branch).
   have h_sd_pt : ∀ ω, submodelDensity g_P hg (s • h) ω
       = 1 + linPerturb g_P (s • h) ω := by
-    intro ω; unfold submodelDensity; rw [if_pos h_norm_sh]
+    intro ω; unfold submodelDensity; rw [ite_eq_left h_norm_sh]
   -- linPerturb g_P (s • h) ω = s * linPerturb g_P h ω.
   have h_linPerturb_smul : ∀ ω,
       linPerturb g_P (s • h) ω = s * linPerturb g_P h ω := by
@@ -564,7 +564,7 @@ theorem paramSubmodelQMDPathAllH_curve_eq_paramSubmodel_density
             then P.withDensity (fun ω => ENNReal.ofReal
               (1 + s * ((g_total : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = _
-    rw [if_pos hs_lt_δbd]
+    rw [ite_eq_left hs_lt_δbd]
   rw [h_LHS]
   have h_norm_sh : ‖s • h‖ < δ_ps := by
     rw [norm_smul, Real.norm_eq_abs]
@@ -577,7 +577,7 @@ theorem paramSubmodelQMDPathAllH_curve_eq_paramSubmodel_density
     linarith
   have h_sd_pt : ∀ ω, submodelDensity g_P hg (s • h) ω
       = 1 + linPerturb g_P (s • h) ω := by
-    intro ω; unfold submodelDensity; rw [if_pos h_norm_sh]
+    intro ω; unfold submodelDensity; rw [ite_eq_left h_norm_sh]
   have h_linPerturb_smul : ∀ ω,
       linPerturb g_P (s • h) ω = s * linPerturb g_P h ω := by
     intro ω
@@ -668,7 +668,7 @@ private lemma constP_QMDPath_curve_eq (t : ℝ) : (constP_QMDPath P).curve t = P
               (fun ω => ENNReal.ofReal
                 (1 + t * (((0 : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = P
-    rw [if_pos h]
+    rw [ite_eq_left h]
     have h_zero_ae : (((0 : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ) =ᵐ[P] (fun _ => 0) :=
       Lp.coeFn_zero _ _ _
     have h_density_one_ae :
@@ -683,7 +683,7 @@ private lemma constP_QMDPath_curve_eq (t : ℝ) : (constP_QMDPath P).curve t = P
               (fun ω => ENNReal.ofReal
                 (1 + t * (((0 : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = P
-    rw [if_neg h]
+    rw [ite_eq_right h]
 
 /-- **`P`-AE positive-and-finite Radon-Nikodym derivative**, valid for
 all `t : ℝ`, for the constant-`P` QMDPath.

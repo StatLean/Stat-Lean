@@ -1,6 +1,6 @@
 import StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision
 import Mathlib.Analysis.Matrix.PosDef
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Partial correlations — the scaled concentration matrix

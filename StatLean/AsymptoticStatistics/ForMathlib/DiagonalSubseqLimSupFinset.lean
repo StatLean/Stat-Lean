@@ -91,7 +91,7 @@ lemma exists_strictMono_tendsto_liminf_ennreal (u : ℕ → ℝ≥0∞) :
     rw [mapClusterPt_iff_frequently]
     intro s hs
     exact frequently_mem_nhds_liminf_ennreal u hs
-  exact TopologicalSpace.FirstCountableTopology.tendsto_subseq hCluster
+  exact MapClusterPt.tendsto_subseq hCluster
 
 /-! ### Main theorem: diagonal Cantor extraction on a monotone finset chain -/
 
@@ -240,18 +240,18 @@ theorem diagonal_subseq_attaining_lim_sup_finset
     intro k
     induction k with
     | zero =>
-      simp only [if_true]
+      simp only [ite_true]
       rw [hm_zero]
       exact Classical.choose_spec (hAux 0 0)
     | succ k _ih =>
-      simp only [Nat.succ_ne_zero, if_false, Nat.succ_sub_one]
+      simp only [Nat.succ_ne_zero, ite_false, Nat.succ_sub_one]
       rw [hm_succ]
       exact Classical.choose_spec (hAux (k + 1) (ψ k (m k)))
   let φ : ℕ → ℕ := fun k => ψ k (m k)
   have hφ_mono : StrictMono φ := by
     refine strictMono_nat_of_lt_succ (fun k => ?_)
     have hspec := (hm_spec (k + 1)).1
-    simp only [Nat.succ_ne_zero, if_false, Nat.succ_sub_one] at hspec
+    simp only [Nat.succ_ne_zero, ite_false, Nat.succ_sub_one] at hspec
     exact hspec
   refine ⟨φ, hφ_mono, ?_⟩
   change Filter.Tendsto (fun k => b k (φ k)) Filter.atTop (𝓝 R)

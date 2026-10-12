@@ -112,7 +112,7 @@ theorem oP_sup_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : ε < |g₁ n ξ h| + |g₂ n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : ε / 2 < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 < |g₁ n ξ h|}
@@ -166,7 +166,7 @@ theorem OP_add_oP_sup {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have htri : M + 1 < |a n ξ h| + |s n ξ h| := lt_of_lt_of_le hh (abs_add_le _ _)
     by_cases h1 : M < |a n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, M + 1 < |a n ξ h + s n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, M < |a n ξ h|}
@@ -230,11 +230,11 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
     have hsub : ∀ n, {ξ | 2 * M₀ / c < |r n ξ|}
         ⊆ {ξ | ∃ h, M₀ < |Afam n ξ h|} ∪ {ξ | ∃ h, c / 2 * r n ξ < |Sfam n ξ h|} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       by_contra hcon
       rw [Set.mem_union, not_or] at hcon
       obtain ⟨hA', hS'⟩ := hcon
-      simp only [Set.mem_setOf_eq, not_exists, not_lt] at hA' hS'
+      simp only [Set.mem_ofPred_eq, not_exists, not_lt] at hA' hS'
       have hAsup : (⨆ h, ENNReal.ofReal |Afam n ξ h|) ≤ ENNReal.ofReal M₀ :=
         iSup_le fun h => ENNReal.ofReal_le_ofReal (hA' h)
       have hSsup : (⨆ h, ENNReal.ofReal |Sfam n ξ h|) ≤ ENNReal.ofReal (c / 2 * r n ξ) :=
@@ -278,7 +278,7 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
       outerMeasureStar_mono μ ?_) isCobounded_le_of_bot
       (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)) hMr
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     exact lt_of_le_of_lt hMM₀ hξ
   have hM₀1 : (0 : ℝ) < M₀ + 1 := by linarith
   set ε' : ℝ := ε / (M₀ + 1) with hε'def
@@ -289,10 +289,10 @@ theorem rate_bootstrap_oP {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
     obtain ⟨h, hh⟩ := hξ
     by_cases hr : M₀ < r n ξ
     · left
-      simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
+      simp only [Set.mem_ofPred_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push_neg at hr
+      push Not at hr
       refine ⟨h, ?_⟩
       have h1 : ε' * r n ξ ≤ ε' * M₀ := mul_le_mul_of_nonneg_left hr hε'0.le
       have h2 : ε' * M₀ < ε := by
@@ -454,7 +454,7 @@ theorem oP_supWt_add {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ}
     have hww : ε * w n ξ = ε / 2 * w n ξ + ε / 2 * w n ξ := by ring
     by_cases h1 : ε / 2 * w n ξ < |g₁ n ξ h|
     · exact Or.inl ⟨h, h1⟩
-    · push_neg at h1
+    · push Not at h1
       exact Or.inr ⟨h, by linarith⟩
   have hb : ∀ n, μ.outerMeasureStar {ξ | ∃ h, ε * w n ξ < |g₁ n ξ h + g₂ n ξ h|}
       ≤ μ.outerMeasureStar {ξ | ∃ h, ε / 2 * w n ξ < |g₁ n ξ h|}
@@ -481,7 +481,7 @@ theorem isBoundedInOuterProbSupWt_of_le_wt {Ξ H : Type*} [MeasurableSpace Ξ]
     intro n
     have hempty : {ξ | ∃ h, (1 : ℝ) * w n ξ < |g n ξ h|} = (∅ : Set Ξ) := by
       ext ξ
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_exists]
       intro h
       rw [one_mul]
       exact not_lt.mpr (h_dom n ξ h)
@@ -519,7 +519,7 @@ theorem oPWt_of_coeff_mul_rate {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure
       outerMeasureStar_mono μ ?_) isCobounded_le_of_bot
       (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)) hM
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have hwpos : 0 ≤ w n ξ := le_trans zero_le_one (hw n ξ)
     have hle : M * w n ξ ≤ M₀ * w n ξ := mul_le_mul_of_nonneg_right hMM₀ hwpos
     linarith
@@ -531,7 +531,7 @@ theorem oPWt_of_coeff_mul_rate {Ξ H : Type*} [MeasurableSpace Ξ] {μ : Measure
     by_contra hcon
     rw [Set.mem_union, not_or] at hcon
     obtain ⟨hr', hc'⟩ := hcon
-    simp only [Set.mem_setOf_eq, not_lt] at hr' hc'
+    simp only [Set.mem_ofPred_eq, not_lt] at hr' hc'
     rw [abs_of_nonneg (hr_nonneg n ξ)] at hr'
     rw [abs_of_nonneg (hcoeff_nonneg n ξ)] at hc'
     have step1 : coeff n ξ * r n ξ ≤ (ε / M₀) * r n ξ :=
@@ -609,11 +609,11 @@ theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure �
         ⊆ {ξ | ∃ h, M₀ * w n ξ < |Afam n ξ h|}
           ∪ (bad n ∪ {ξ | ∃ h, c / 2 * r n ξ < |Sfam n ξ h|}) := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_ofPred_eq] at hξ
       by_contra hcon
       rw [Set.mem_union, not_or, Set.mem_union, not_or] at hcon
       obtain ⟨hA', hbad', hS'⟩ := hcon
-      simp only [Set.mem_setOf_eq, not_exists, not_lt] at hA' hS'
+      simp only [Set.mem_ofPred_eq, not_exists, not_lt] at hA' hS'
       have hAsup : (⨆ h, ENNReal.ofReal |Afam n ξ h|) ≤ ENNReal.ofReal (M₀ * w n ξ) :=
         iSup_le fun h => ENNReal.ofReal_le_ofReal (hA' h)
       have hSsup : (⨆ h, ENNReal.ofReal |Sfam n ξ h|) ≤ ENNReal.ofReal (c / 2 * r n ξ) :=
@@ -668,7 +668,7 @@ theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure �
       outerMeasureStar_mono μ ?_) isCobounded_le_of_bot
       (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)) hMr
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     have hwpos : 0 ≤ w n ξ := le_trans zero_le_one (hw n ξ)
     have hle : M * w n ξ ≤ M₀ * w n ξ := mul_le_mul_of_nonneg_right hMM₀ hwpos
     linarith
@@ -681,10 +681,10 @@ theorem rate_bootstrap_oP_wt {Ξ H : Type*} [MeasurableSpace Ξ] (μ : Measure �
     obtain ⟨h, hh⟩ := hξ
     by_cases hr : M₀ * w n ξ < r n ξ
     · left
-      simp only [Set.mem_setOf_eq, abs_of_nonneg (hr_nonneg n ξ)]
+      simp only [Set.mem_ofPred_eq, abs_of_nonneg (hr_nonneg n ξ)]
       exact hr
     · right
-      push_neg at hr
+      push Not at hr
       refine ⟨h, ?_⟩
       have hwpos : 0 < w n ξ := lt_of_lt_of_le one_pos (hw n ξ)
       have h1 : ε' * r n ξ ≤ ε' * (M₀ * w n ξ) := mul_le_mul_of_nonneg_left hr hε'0.le

@@ -139,7 +139,7 @@ theorem coveringNumber_lipschitzUnitClass_toNat_le {ε : ℝ}
     rw [Set.encard_coe_eq_coe_finsetCard] at this
     exact this
   have htoNat : (coveringNumber lipschitzUnitClass ε).toNat ≤ (lipschitzNet m).card :=
-    ENat.toNat_le_of_le_coe hcov
+    ENat.toNat_le_of_le_natCast hcov
   calc (((coveringNumber lipschitzUnitClass ε).toNat : ℕ) : ℝ)
       ≤ ((lipschitzNet m).card : ℝ) := by exact_mod_cast htoNat
     _ ≤ Real.exp (12 / ε) := card_lipschitzNet_le_exp hε₀ hε₁ hm₁ hm₂
@@ -163,7 +163,7 @@ theorem coveringNumber_lipschitzUnitClass_ne_top {ε : ℝ}
     have := hcover.coveringNumber_le_encard (lipschitzNet_subset m)
     rw [Set.encard_coe_eq_coe_finsetCard] at this
     exact this
-  exact ne_top_of_le_ne_top (ENat.coe_ne_top _) hcov
+  exact ne_top_of_le_ne_top (ENat.natCast_ne_top _) hcov
 
 /-- Above the diameter the covering number collapses: `N(𝓕, L∞, ε) = 1` for
 `ε ≥ 1` (HDP §8.1 Remark 8.1.7; the entropy integral is capped at

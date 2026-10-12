@@ -56,7 +56,7 @@ theorem measurable_diagKernel_coe (κ : Kernel α β) [IsMarkovKernel κ] (J : �
       exact iht.const_sub 1
   | iUnion g hgd hgm ihg =>
       simp_rw [measure_iUnion hgd hgm]
-      exact Measurable.ennreal_tsum ihg
+      exact Measurable.tsum ihg
 
 /-- The **diagonal product kernel** `θ ↦ ⊗ⱼ κ(θⱼ)` on `Fin J → β`: `J` independent observations,
 the `j`-th from `κ(θ_j)` (Robert §10.2.5). -/

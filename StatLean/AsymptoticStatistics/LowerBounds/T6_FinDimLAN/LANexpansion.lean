@@ -362,7 +362,7 @@ theorem lanExpansion1D_to_PnProb_bridge
           ((fun _ => (0 : ℝ)) x)}
           = {x | ε ≤ edist (F n x) ((fun _ => (0 : ℝ)) x)} := by
       intro n; ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [hF_eq n ω]
     have h_meas_pt : (fun n =>
         P' {x | ε ≤ edist
@@ -403,7 +403,7 @@ theorem lanExpansion1D_to_PnProb_bridge
         = {ω : ℕ → Ω | ε ≤ |F n ω|} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero]
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq, sub_zero]
     constructor
     · intro hle
       have habs_nn : (0 : ℝ) ≤ |F n ω| := abs_nonneg _
