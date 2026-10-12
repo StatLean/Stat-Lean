@@ -295,9 +295,9 @@ theorem mse_ols_expectation_le
     ∫ ω, mse X (βhat ω) βstar ∂μ ≤ ↑σ2 * ↑(designRank X) / ↑n := by
   -- Setup: column space C = range(X), finite-dimensional ⟹ complete ⟹ has orthogonal projection.
   let C := columnSpace X
-  haveI hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
-  haveI hC_complete : CompleteSpace ↥C := inferInstance
-  haveI hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
+  have hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
+  have hC_complete : CompleteSpace ↥C := inferInstance
+  have hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
   let r := Module.finrank ℝ ↥C
   -- Standard ONB for C, indexed by Fin r.
   let b : OrthonormalBasis (Fin r) ℝ ↥C := stdOrthonormalBasis ℝ ↥C

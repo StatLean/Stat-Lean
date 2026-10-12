@@ -177,7 +177,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
     have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
     have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
       ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
-    haveI : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+    have : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
     -- absolute continuity of each component (and of `Q j`) w.r.t. the mixture
     have hjξ : Q j ≪ mixture Q := by
       rw [mixture_eq_inv_smul_sum]

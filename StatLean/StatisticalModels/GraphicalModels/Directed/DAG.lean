@@ -471,7 +471,7 @@ its descendants. -/
 theorem exists_linearOrder_extending (D : DAG V) :
     ∃ s : V → V → Prop, IsLinearOrder V s ∧
       ∀ ⦃u v : V⦄, Relation.ReflTransGen D.Adj u v → s u v := by
-  haveI := D.isPartialOrder_reflTransGen
+  have := D.isPartialOrder_reflTransGen
   obtain ⟨s, hs, hle⟩ := extend_partialOrder (Relation.ReflTransGen D.Adj)
   exact ⟨s, hs, fun _ _ h => hle _ _ h⟩
 
@@ -485,7 +485,7 @@ theorem exists_topologicalOrder [Fintype V] (D : DAG V) :
     ∃ f : V ≃ Fin (Fintype.card V), ∀ ⦃u v : V⦄, Relation.TransGen D.Adj u v → f u < f v := by
   classical
   obtain ⟨s, hs, hle⟩ := D.exists_linearOrder_extending
-  letI : LinearOrder V :=
+  let : LinearOrder V :=
     { le := s
       le_refl := hs.1.1.1.1
       le_trans := hs.1.1.2.1

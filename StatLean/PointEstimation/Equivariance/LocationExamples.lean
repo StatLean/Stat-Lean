@@ -71,7 +71,7 @@ private lemma measurable_sampleMean :
 private lemma isLocEquivariant_sampleMean :
     IsLocEquivariant (fun x : Fin (m + 1) → ℝ => (∑ i, x i) / ((m : ℝ) + 1)) := by
   intro a x
-  show (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) / ((m : ℝ) + 1)
+  change (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) / ((m : ℝ) + 1)
     = (∑ i, x i) / ((m : ℝ) + 1) + a
   have hsum : (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) = (∑ i, x i) + ((m : ℝ) + 1) * a := by
     simp only [Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one,
@@ -93,7 +93,7 @@ private noncomputable def gaussDensity (v : ℝ≥0) (x : Fin (m + 1) → ℝ) :
   ∏ i, gaussianPDFReal 0 v (x i)
 
 private lemma gaussDensity_nonneg {v : ℝ≥0} (x : Fin (m + 1) → ℝ) : 0 ≤ gaussDensity v x :=
-  Finset.prod_nonneg fun i _ => gaussianPDFReal_nonneg _ _ _
+  Finset.prod_nonneg fun _ _ => gaussianPDFReal_nonneg _ _ _
 
 private lemma measurable_gaussDensity (v : ℝ≥0) :
     Measurable (gaussDensity (m := m) v) := by
@@ -106,13 +106,13 @@ Gaussian measure. -/
 private lemma locationBase_gaussDensity {v : ℝ≥0} (hv : v ≠ 0) :
     locationBase (gaussDensity (m := m) v)
       = Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v := by
-  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 v)) := by
+  have : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 v)) := by
     rw [← gaussianReal_of_var_ne_zero 0 hv]; infer_instance
   have h_each : (fun _ : Fin (m + 1) => gaussianReal 0 v)
       = fun _ : Fin (m + 1) => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
     funext _; exact gaussianReal_of_var_ne_zero 0 hv
   rw [h_each, ← MeasureTheory.pi_withDensity_prod (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
-  show (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ENNReal.ofReal (gaussDensity v x))
+  change (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ENNReal.ofReal (gaussDensity v x))
     = (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ∏ i, gaussianPDF 0 v (x i))
   refine withDensity_congr_ae (ae_of_all _ fun x => ?_)
   simp only [gaussDensity]
@@ -270,7 +270,7 @@ theorem isLocMRE_mean_gaussian (f : (Fin (m + 1) → ℝ) → ℝ)
   have hbase : locationBase f = locationBase (gaussDensity (m := m) v) :=
     hf.trans (locationBase_gaussDensity hv).symm
   rw [isLocMRE_congr_locationBase hbase]
-  haveI : IsProbabilityMeasure (locationBase (gaussDensity (m := m) v)) := by
+  have : IsProbabilityMeasure (locationBase (gaussDensity (m := m) v)) := by
     rw [locationBase_gaussDensity hv]; infer_instance
   -- The three slice side conditions and the finite reference risk.
   have hslice : ∀ x : Fin (m + 1) → ℝ,

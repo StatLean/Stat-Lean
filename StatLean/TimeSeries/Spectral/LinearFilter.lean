@@ -393,10 +393,10 @@ private def shearEquiv : ℤ × ℤ × ℤ ≃ ℤ × ℤ × ℤ where
   toFun q := (q.1 - q.2.1 + q.2.2, q.2.1, q.2.2)
   invFun q := (q.1 + q.2.1 - q.2.2, q.2.1, q.2.2)
   left_inv q := by
-    show (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2, q.2.1, q.2.2) = q
+    change (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2, q.2.1, q.2.2) = q
     rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
   right_inv q := by
-    show (q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2, q.2.1, q.2.2) = q
+    change (q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2, q.2.1, q.2.2) = q
     rw [show q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2 = q.1 by ring]
 
 /-- The `ℓ¹ ∗ ℓ¹ ∗ ℓ¹` majorant of the output ACVF, summable on `ℤ × (ℤ × ℤ)`. -/
@@ -411,7 +411,7 @@ private lemma summable_convMajorant {Y : ℤ → Ω → ℝ} {φ : ℤ → ℝ}
       hYsum.mul_of_nonneg hφ2 (fun i => abs_nonneg _) (fun p => by positivity)
     exact h1.congr fun q => mul_comm _ _
   refine (Equiv.summable_iff shearEquiv).mp (hbase.congr fun q => ?_)
-  show |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1|
+  change |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1|
       = |φ q.2.1| * |φ q.2.2| * |acvf Y μ (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2)|
   rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
 
@@ -496,10 +496,10 @@ private def convEquiv : ℤ × ℤ × ℤ ≃ (ℤ × ℤ) × ℤ where
   toFun r := ((r.2.1, r.2.2), r.1 + r.2.1 - r.2.2)
   invFun q := (q.2 - q.1.1 + q.1.2, q.1.1, q.1.2)
   left_inv r := by
-    show (r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2, r.2.1, r.2.2) = r
+    change (r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2, r.2.1, r.2.2) = r
     rw [show r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2 = r.1 by ring]
   right_inv q := by
-    show ((q.1.1, q.1.2), q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2) = q
+    change ((q.1.1, q.1.2), q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2) = q
     rw [show q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2 = q.2 by ring]
 
 end Aux3

@@ -176,7 +176,7 @@ private lemma bh_loo_le_imp_mem {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   -- r = bhCount α q (bhKmax α q ω) ω (the rejection count is the count at the threshold index).
   have hrK : r = bhCount α q (bhKmax α q ω) ω := by
     rw [hr]
-    show (bhRejects α q ω).card = bhCount α q (bhKmax α q ω) ω
+    change (bhRejects α q ω).card = bhCount α q (bhKmax α q ω) ω
     rw [bhRejects_eq_filter]; rfl
   -- bhKmax ≤ r.
   have hKr : bhKmax α q ω ≤ r := by

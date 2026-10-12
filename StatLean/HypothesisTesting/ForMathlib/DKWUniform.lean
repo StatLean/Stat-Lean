@@ -469,7 +469,7 @@ private lemma dkwWalk_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) (j : 
     _ = ((dkwPre σ j).card : ℝ) := by simp
     _ ≤ (n : ℝ) := by
         have := Finset.card_le_univ (dkwPre σ j)
-        simp only [Finset.card_univ, Fintype.card_fin] at this
+        simp only [Fintype.card_fin] at this
         exact_mod_cast this
 
 private lemma dkwMax_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) :
@@ -787,7 +787,7 @@ theorem integral_ksDist_le {n : ℕ}
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 4 / Real.sqrt n := by
   classical
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   set F : ℚ → ℝ → ℝ := fun q x => if x ≤ (q : ℝ) then (1 : ℝ) else 0 with hFdef
   have hFmeas : ∀ q, Measurable (F q) := fun q =>
     Measurable.ite (measurableSet_le measurable_id measurable_const)
@@ -1026,7 +1026,7 @@ theorem ksDist_concentration {n : ℕ}
     exact ⟨by linarith [hle1], by linarith [hle2]⟩
   -- transfer to the standard-Borel product space `(Fin n → ℝ, Q)`, `Q = P.map (Xᵢ)ᵢ`
   set μi : Fin n → Measure ℝ := fun i => P.map (X i) with hμi
-  haveI hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
+  have hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
     rw [hμi]; exact (by infer_instance)
   set Q : Measure (Fin n → ℝ) := Measure.pi μi with hQ
   have hmeasAV : Measurable (StatLean.ConcentrationInequalities.allVars X) :=

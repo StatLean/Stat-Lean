@@ -810,7 +810,7 @@ theorem derived_convolution_decomp_unbounded
       (fun h => ψDot_proj_clm_apply g_P IF_eff h)
       (T_param_of T_n) hT_param_meas hReg_param
       (unboundedParamSubmodel_isPDFOf g_P h_orth)
-  haveI := hM_θ_prob
+  have := hM_θ_prob
   -- hConv : hReg_param.limitDist = N(0, ψDotMat * I⁻¹ * ψDotMatᵀ) ∗ M_θ
   -- where hReg_param.limitDist = L.map (single 0).
   -- ===== Step 4: scalar collapse via pr0. =====

@@ -89,7 +89,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
   have hdomμ : ∀ θ, P θ ≪ μ := fun θ => (hP θ) ▸ withDensity_absolutelyContinuous μ (p θ)
   obtain ⟨θs, c, ν, hν, hcpos, hcsum, hdomν, -⟩ :=
     exists_equivalent_countable_mixture P μ hdomμ
-  haveI : IsProbabilityMeasure ν := ⟨by
+  have : IsProbabilityMeasure ν := ⟨by
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   -- the mixture as a density over `μ`, and its statistic-side aggregate
@@ -137,7 +137,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
     rw [hνk, ← withDensity_mul μ hkm hg'T, hP θ]
     refine withDensity_congr_ae ?_
     filter_upwards [hkeq, hkfin, hpθE, hfac θ] with x hkx hkfx hpz hpfac
-    show p θ x = k x * (g θ (T x) / G (T x))
+    change p θ x = k x * (g θ (T x) / G (T x))
     rw [hkx]
     rcases eq_or_ne (G (T x)) 0 with hb0 | hb0
     · rw [hpz hb0, hb0]; simp
@@ -173,7 +173,7 @@ theorem isFactorizedDensity_of_isSufficient (P : Θ → Measure 𝓧)
   have hdomμ : ∀ θ, P θ ≪ μ := fun θ => (hP θ) ▸ withDensity_absolutelyContinuous μ (p θ)
   obtain ⟨θs, c, ν, hν, -, hcsum, hdomν, -⟩ :=
     exists_equivalent_countable_mixture P μ hdomμ
-  haveI : IsProbabilityMeasure ν := ⟨by
+  have : IsProbabilityMeasure ν := ⟨by
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   have hνμ : ν ≪ μ := by

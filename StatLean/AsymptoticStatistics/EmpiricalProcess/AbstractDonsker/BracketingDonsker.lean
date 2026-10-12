@@ -101,7 +101,7 @@ lemma separableSpace_gpH_of_entropyIntegral
   set R : Set (Lp ℝ 2 P) := Set.range (fun f : ↥F => centredLp hF_env hF_meas f) with hR
   -- STEP 1: `R` is totally bounded in `L²(P)`, by Lipschitz image of totally-bounded `↥F`.
   obtain ⟨G, hG_env, hG⟩ := id hF_env
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   have hFtb : @TotallyBounded ↥F inst.toUniformSpace Set.univ :=
     totallyBounded_F hG_env hG hF_meas h_int
   -- `centredLp` is `1`-Lipschitz: `‖centredLp s − centredLp t‖ ≤ dist s t = distL2 P s t`.

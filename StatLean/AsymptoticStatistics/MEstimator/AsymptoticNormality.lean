@@ -377,7 +377,7 @@ theorem mEstimator_hB_boundedInProb
     exact Measure.map_map
       (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) (-V⁻¹)).continuous.measurable (hG_meas n)
   rw [hfun] at hmap
-  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
+  have : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
       ((-V⁻¹) * psiCov P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ * (-V⁻¹)ᴴ)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   have hfG_meas : ∀ n, Measurable (fun ξ : Ξ =>
@@ -1070,7 +1070,7 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
       exact Finset.measurable_sum _ (fun i _ => (hmdot_meas j).comp (hX_meas i.val))
     simpa only [G] using!
       (MeasurableEquiv.toLp 2 (Fin d → ℝ)).measurable.comp (measurable_pi_iff.mpr hcoord)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
         (psiCov P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _

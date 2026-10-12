@@ -163,7 +163,7 @@ private theorem weakConverges_finiteScore_under_pi {r : ℕ}
   let Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P)
   let Y : ℕ → (ℕ → Ω) → EuclideanSpace ℝ (Fin r) :=
     fun i X => finiteScoreAtom v (X i)
-  haveI : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
+  have : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
   have hYmeas : ∀ i, Measurable (Y i) := fun i =>
     (measurable_finiteScoreAtom v).comp (measurable_pi_apply i)
   have hiid : iIndepFun Y Pinf := by
@@ -431,21 +431,21 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
     rw [← MeasureTheory.ofReal_integral_eq_lintegral_ofReal hraw_int
       (Filter.Eventually.of_forall (fun q => (Real.exp_pos _).le))]
     rw [hraw_integral, ENNReal.ofReal_one]
-  haveI htilt_prob : IsProbabilityMeasure
+  have htilt_prob : IsProbabilityMeasure
       (π.withDensity (fun q => ENNReal.ofReal (Real.exp
         (a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)))) := ⟨hmass⟩
-  haveI hνprob : IsProbabilityMeasure ν := by
+  have hνprob : IsProbabilityMeasure ν := by
     dsimp only [ν]
     exact (by infer_instance)
-  letI : ∀ m, IsProbabilityMeasure
+  let : ∀ m, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin (χ m) =>
         γ.curve (a * (Real.sqrt (χ m))⁻¹))) := fun m => by
-    letI : IsProbabilityMeasure
+    let : IsProbabilityMeasure
         (γ.curve (a * (Real.sqrt (χ m))⁻¹)) :=
       γ.curve_isProbability _
         (mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _)))
     infer_instance
-  letI : ∀ m, IsProbabilityMeasure
+  let : ∀ m, IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin (χ m) =>
         γ.curve (a * (Real.sqrt (χ m))⁻¹))).map (Y (χ m))) := fun m =>
     (by infer_instance)
@@ -461,7 +461,7 @@ private theorem qmd_lecamThird_euclidean_along_subseq {k : ℕ}
   have hproj_meas : Measurable proj := hproj_cont.measurable
   have hpairMap_cont : Continuous pairMap := by fun_prop
   have hpairMap_meas : Measurable pairMap := hpairMap_cont.measurable
-  letI : IsProbabilityMeasure (π.map pairMap) :=
+  let : IsProbabilityMeasure (π.map pairMap) :=
     (by infer_instance)
   have hπlam0 := hπ.map hpairMap_cont hpairMap_meas
   have hπlam : WeakConverges
@@ -543,7 +543,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
   have hjointMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
       (score (χ k) X, profile (action (χ k) X))) := fun k =>
     (hscore (χ k)).prodMk (hprofile.comp (haction (χ k)))
-  letI : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
+  let : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
     (by infer_instance)
   have hfst (k : ℕ) : (joint k).map Prod.fst =
       (Measure.pi (fun _ : Fin (χ k) => P)).map (score (χ k)) := by
@@ -560,7 +560,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
       (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map (score (χ k)))
       (multivariateGaussian 0 (Matrix.gram ℝ v)) := by
     simpa only [score] using (weakConverges_finiteScore_under_pi v).comp hχ
-  letI : ∀ k, IsProbabilityMeasure
+  let : ∀ k, IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin (χ k) => P)).map (score (χ k))) := fun k =>
     (by infer_instance)
   have hfstTight : IsTightMeasureSet
@@ -598,7 +598,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
     intro e he
     refine ⟨closure (Set.range profile), hprofileCompact, ?_⟩
     rintro _ ⟨_, ⟨k, rfl⟩, rfl⟩
-    letI : IsProbabilityMeasure ((joint k).map Prod.snd) :=
+    let : IsProbabilityMeasure ((joint k).map Prod.snd) :=
       (by infer_instance)
     rw [(prob_compl_eq_zero_iff isClosed_closure.measurableSet).2 (hsndSupport k)]
     exact bot_le
@@ -606,7 +606,7 @@ private theorem finiteScoreProfile_joint_subsequence {r d : ℕ}
     Prohorov.tight_prod_of_tight_marginals _ hfstTight hsndTight
   obtain ⟨τ, hτ, π, hπprob, hπweak⟩ :=
     Prohorov.extract_weak_subseq joint hjointTight
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   have hfstWeak : WeakConverges
       (fun k => (joint (τ k)).map Prod.fst)
       (multivariateGaussian 0 (Matrix.gram ℝ v)) := by
@@ -695,7 +695,7 @@ private theorem finiteScoreProfile_selected_tilt {r : ℕ}
       ((PiLp.continuous_apply (p := 2) (β := fun _ : Fin r => ℝ) j).comp
         continuous_fst)
   have hpairMap_meas : Measurable pairMap := hpairMap_cont.measurable
-  letI : IsProbabilityMeasure (π.map pairMap) :=
+  let : IsProbabilityMeasure (π.map pairMap) :=
     (by infer_instance)
   have hπpair0 := hπ.map hpairMap_cont hpairMap_meas
   have hπpair : WeakConverges
@@ -820,7 +820,7 @@ private theorem secondKernelOfJoint_tilt_eq_gaussian_bind {r s : ℕ}
       π Prod.swap hswapMeas _ (hf.comp measurable_snd)]
     rw [Measure.map_map measurable_fst hswapMeas]
     rfl
-  haveI : IsFiniteMeasure swapπ := by dsimp only [swapπ]; infer_instance
+  have : IsFiniteMeasure swapπ := by dsimp only [swapπ]; infer_instance
   let κ : Kernel (EuclideanSpace ℝ (Fin r)) (EuclideanSpace ℝ (Fin s)) :=
     ProbabilityTheory.condDistrib Prod.fst Prod.snd swapπ
   have hbridge := AsymptoticStatistics.Measure.withDensity_bind_condDistrib
@@ -845,7 +845,7 @@ private theorem exists_nondominatedEIFVec {d : ℕ}
     ∃ φ : Fin d → ↥(L2ZeroMean P),
       IsEfficientInfluenceFunction_vec hpd.derivative φ := by
   classical
-  haveI : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hclosed : IsClosed
       (tangentSpace C : Set ↥(L2ZeroMean P)) := by
@@ -857,7 +857,7 @@ private theorem exists_nondominatedEIFVec {d : ℕ}
     @IsClosed.completeSpace_coe _ _ hcompleteL2 _ hclosed
   let hIP : InnerProductSpace ℝ ↥(tangentSpace C) :=
     Submodule.innerProductSpace (tangentSpace C)
-  letI : InnerProductSpace ℝ ↥(tangentSpace C) := hIP
+  let : InnerProductSpace ℝ ↥(tangentSpace C) := hIP
   let di : Fin d → (↥(tangentSpace C) →L[ℝ] ℝ) := fun i =>
     EuclideanSpace.proj i ∘L hpd.derivative
   let q : Fin d → ↥(tangentSpace C) := fun i =>
@@ -1060,7 +1060,7 @@ private theorem rawGaussian_bind_eifKernel {r d : ℕ}
     EuclideanSpace.finAddEquivProd (𝕜 := ℝ)
   let π : Measure (EuclideanSpace ℝ (Fin r) × EuclideanSpace ℝ (Fin d)) :=
     (multivariateGaussian 0 G).map split
-  letI : IsProbabilityMeasure π := by
+  let : IsProbabilityMeasure π := by
     dsimp only [π]
     exact (by infer_instance)
   have hjoint := jointGramGaussian_fst_and_tilt_snd v φ j
@@ -1119,7 +1119,7 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
     let κ0Kernel : Kernel (EuclideanSpace ℝ (Fin 0))
         (EuclideanSpace ℝ (Fin d)) :=
       Kernel.deterministic (fun _ => 0) measurable_const
-    letI : IsMarkovKernel κ0Kernel := by dsimp only [κ0Kernel]; infer_instance
+    let : IsMarkovKernel κ0Kernel := by dsimp only [κ0Kernel]; infer_instance
     let κ0 : MarkovDecision (EuclideanSpace ℝ (Fin 0))
         (EuclideanSpace ℝ (Fin d)) := ⟨κ0Kernel, inferInstance⟩
     refine (iInf_le (fun κ : MarkovDecision (EuclideanSpace ℝ (Fin 0))
@@ -1132,7 +1132,7 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
     simp
   have hcard : 0 < I.card :=
     Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hI)
-  letI : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
+  let : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
   let v : Fin I.card → ↥(L2ZeroMean P) := fun j =>
     (((I.equivFin).symm j).1 : ↥(L2ZeroMean P))
   let G : Matrix (Fin (I.card + d)) (Fin (I.card + d)) ℝ :=
@@ -1142,13 +1142,13 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
     EuclideanSpace.finAddEquivProd (𝕜 := ℝ)
   let π : Measure (EuclideanSpace ℝ (Fin I.card) ×
       EuclideanSpace ℝ (Fin d)) := (multivariateGaussian 0 G).map split
-  letI : IsProbabilityMeasure π := by
+  let : IsProbabilityMeasure π := by
     dsimp only [π]
     exact (by infer_instance)
   have hκMarkov : IsMarkovKernel (secondKernelOfJoint π) := by
     change IsMarkovKernel
       (ProbabilityTheory.condDistrib Prod.fst Prod.snd (π.map Prod.swap))
-    letI : IsFiniteMeasure (π.map Prod.swap) :=
+    let : IsFiniteMeasure (π.map Prod.swap) :=
       Measure.isFiniteMeasure_map π Prod.swap
     infer_instance
   let κ : MarkovDecision (EuclideanSpace ℝ (Fin I.card))
@@ -1429,7 +1429,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
             ∂((multivariateGaussian (finiteCarrierScoreMean C I g)
               (finiteCarrierScoreCovariance C I)).bind κ.1) := by
   classical
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hmem : ∀ i : Fin d, φ i ∈ tangentSpace C := fun i => (_hEIF i).2
   have hseq : ∀ i : Fin d,
@@ -1480,7 +1480,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
     intro i
     refine squeeze_zero (fun _ => norm_nonneg _) ?_ (hVctend i)
     intro m
-    haveI := hVproj m
+    have := hVproj m
     have hpc : pc i m ∈ V m := hVcle i m (hVcproj i m).1
     rw [norm_sub_rev (p m i), norm_sub_rev (pc i m)]
     rw [show p m i = (V m).starProjection (φ i) from rfl,
@@ -1496,13 +1496,13 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
     ⟪φ i, ((b m j : V m) : ↥(L2ZeroMean P))⟫_ℝ
   have hp_mem : ∀ m i, p m i ∈ V m := by
     intro m i
-    haveI := hVproj m
+    have := hVproj m
     exact (V m).starProjection_apply_mem (φ i)
   have hSigmaEntry : ∀ m i i',
       (A m * (A m).transpose) i i' = ⟪p m i, p m i'⟫_ℝ := by
     intro m i i'
-    haveI := hVfd m
-    haveI := hVproj m
+    have := hVfd m
+    have := hVproj m
     rw [Matrix.mul_apply]
     have hswap : ∀ i0 k,
         ⟪φ i0, ((b m k : V m) : ↥(L2ZeroMean P))⟫_ℝ =
@@ -1517,7 +1517,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
       rw [inner_sub_left (𝕜 := ℝ) (φ i0) (p m i0)
         ((b m k : V m) : ↥(L2ZeroMean P))] at hz'
       exact sub_eq_zero.mp hz'
-    simp only [A, Matrix.transpose_apply]
+    simp only [A]
     simp_rw [hswap]
     let qi : V m := ⟨p m i, hp_mem m i⟩
     let qj : V m := ⟨p m i', hp_mem m i'⟩
@@ -1563,7 +1563,7 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
               ∂((multivariateGaussian (finiteCarrierScoreMean C I g)
                 (finiteCarrierScoreCovariance C I)).bind κ.1) := by
     intro m
-    haveI := hVfd m
+    have := hVfd m
     let e : ↥(V m) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (r m)) := (b m).repr
     let scoreOf : EuclideanSpace ℝ (Fin (r m)) →ₗ[ℝ] ↥(L2ZeroMean P) :=
       (V m).subtype.comp e.symm.toLinearEquiv.toLinearMap
@@ -1750,10 +1750,10 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
           EuclideanSpace ℝ (Fin I.card) := matrixToEuclideanCLMRect B
       have hfB : Measurable fB :=
         (matrixToEuclideanCLMRect B).continuous.measurable
-      letI : IsMarkovKernel κraw.1 := κraw.2
+      let : IsMarkovKernel κraw.1 := κraw.2
       let κstdKernel : Kernel (EuclideanSpace ℝ (Fin (r m)))
           (EuclideanSpace ℝ (Fin d)) := κraw.1.comap fB hfB
-      letI : IsMarkovKernel κstdKernel :=
+      let : IsMarkovKernel κstdKernel :=
         Kernel.IsMarkovKernel.comap κraw.1 hfB
       let κstd : MarkovDecision (EuclideanSpace ℝ (Fin (r m)))
           (EuclideanSpace ℝ (Fin d)) := ⟨κstdKernel, inferInstance⟩
@@ -1836,7 +1836,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
     let κ0Kernel : Kernel (EuclideanSpace ℝ (Fin 0))
         (EuclideanSpace ℝ (Fin d)) :=
       Kernel.deterministic (fun _ => 0) measurable_const
-    letI : IsMarkovKernel κ0Kernel := by dsimp only [κ0Kernel]; infer_instance
+    let : IsMarkovKernel κ0Kernel := by dsimp only [κ0Kernel]; infer_instance
     let κ0 : MarkovDecision (EuclideanSpace ℝ (Fin 0))
         (EuclideanSpace ℝ (Fin d)) := ⟨κ0Kernel, inferInstance⟩
     calc
@@ -1868,7 +1868,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
                 (C.selectedPath g).curve ((Real.sqrt n)⁻¹))) atTop := by
         simp only [Finset.sup_empty, Filter.liminf_const, ENNReal.bot_eq_zero]
   have hcard : 0 < I.card := Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hI)
-  letI : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
+  let : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
   let v : Fin I.card → ↥(L2ZeroMean P) := fun j =>
     (((I.equivFin).symm j).1 : ↥(L2ZeroMean P))
   let center : Fin I.card → EuclideanSpace ℝ (Fin d) := fun j =>
@@ -1893,7 +1893,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   obtain ⟨τ, hτ, π, hπprob, hπweak, hπfst, hπsupp⟩ :=
     finiteScoreProfile_joint_subsequence v action haction center ℓ
       hfinite hbdd huc χ hχ
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   let η : ℕ → ℕ := χ ∘ τ
   have hη : StrictMono η := hχ.comp hτ
   have hηlim : Tendsto (u ∘ η) atTop (nhds (liminf u atTop)) := by
@@ -1901,7 +1901,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   have hκProfileMarkov : IsMarkovKernel (secondKernelOfJoint π) := by
     change IsMarkovKernel
       (ProbabilityTheory.condDistrib Prod.fst Prod.snd (π.map Prod.swap))
-    letI : IsFiniteMeasure (π.map Prod.swap) := Measure.isFiniteMeasure_map π Prod.swap
+    let : IsFiniteMeasure (π.map Prod.swap) := Measure.isFiniteMeasure_map π Prod.swap
     infer_instance
   let κProfile : MarkovDecision (EuclideanSpace ℝ (Fin I.card))
       (EuclideanSpace ℝ (Fin I.card)) := ⟨secondKernelOfJoint π, hκProfileMarkov⟩
@@ -1916,9 +1916,9 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   let alt : (j : Fin I.card) → (n : ℕ) → Measure (Fin n → Ω) := fun j n =>
     letI := hcurveProb j n
     Measure.pi (fun _ : Fin n => (γ j).curve ((Real.sqrt n)⁻¹))
-  letI hAltProb (j : Fin I.card) (n : ℕ) : IsProbabilityMeasure (alt j n) := by
+  let hAltProb (j : Fin I.card) (n : ℕ) : IsProbabilityMeasure (alt j n) := by
     dsimp only [alt]
-    letI := hcurveProb j n
+    let := hcurveProb j n
     infer_instance
   have hcov : Matrix.gram ℝ v = finiteCarrierScoreCovariance C I := rfl
   have hγscore (j : Fin I.card) : (γ j).score = v j := by
@@ -1926,7 +1926,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   have hμprob (j : Fin I.card) : IsProbabilityMeasure (μ j) := by
     dsimp only [μ]
     infer_instance
-  letI hμprobI (j : Fin I.card) : IsProbabilityMeasure (μ j) := hμprob j
+  let hμprobI (j : Fin I.card) : IsProbabilityMeasure (μ j) := hμprob j
   have hAltWeak (j : Fin I.card) : WeakConverges
       (fun k => (alt j (η k)).map (profile (η k)))
       ((μ j).bind κProfile.1) := by
@@ -1937,7 +1937,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
     rw [heq] at ht
     simpa only [alt, μ, κProfile, γ, hcov,
       finiteCarrierScoreMean_selected_eq I j] using ht
-  letI hProfileLawProb (j : Fin I.card) (k : ℕ) :
+  let hProfileLawProb (j : Fin I.card) (k : ℕ) :
       IsProbabilityMeasure ((alt j (η k)).map (profile (η k))) :=
     (by infer_instance)
   have hpreSupp (j : Fin I.card) (k : ℕ) :
@@ -1980,7 +1980,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
       selectedPath_center_tendsto C hpd ((I.equivFin).symm j)
   let actionLaw : Fin I.card → ℕ → Measure (EuclideanSpace ℝ (Fin d)) := fun j k =>
     (alt j (η k)).map (action (η k))
-  letI hActionLawProb (j : Fin I.card) (k : ℕ) :
+  let hActionLawProb (j : Fin I.card) (k : ℕ) :
       IsProbabilityMeasure (actionLaw j k) := by
     dsimp only [actionLaw]
     exact (by infer_instance)
@@ -2061,7 +2061,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   obtain ⟨κ, hκ⟩ :=
     Experiment.FiniteRiskCompactification.actionKernel_approx_of_lossProfileKernel
       μ hμprob center ℓ hfinite hbdd huc κProfile hlimitSupp ε.toReal hεreal
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   refine (iInf_le (fun κ : MarkovDecision (EuclideanSpace ℝ (Fin I.card))
       (EuclideanSpace ℝ (Fin d)) =>
         ⨆ g ∈ I, ∫⁻ a, ℓ (a -
@@ -2105,7 +2105,7 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
     have habs := hround
     rw [abs_le] at habs
     linarith
-  letI : IsProbabilityMeasure ((μ j).bind κ.1) := by
+  let : IsProbabilityMeasure ((μ j).bind κ.1) := by
     refine isProbabilityMeasure_bind κ.1.measurable.aemeasurable ?_
     exact Filter.Eventually.of_forall fun _ => inferInstance
   have hriskEq :

@@ -88,7 +88,7 @@ theorem iidKernel_withDensity {κ : Kernel Θ 𝓧} [IsMarkovKernel κ] {ν : Me
     iidKernel κ n θ
       = (Measure.pi fun _ : Fin n => ν).withDensity fun x => ∏ i, p θ (x i) := by
   have hpθ : Measurable (p θ) := hp.comp (measurable_const.prodMk measurable_id)
-  haveI : SigmaFinite (ν.withDensity (p θ)) := by rw [← hκ θ]; infer_instance
+  have : SigmaFinite (ν.withDensity (p θ)) := by rw [← hκ θ]; infer_instance
   rw [iidKernel_apply]
   simp_rw [hκ θ]
   exact pi_withDensity ν (fun _ => hpθ)

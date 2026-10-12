@@ -178,7 +178,7 @@ theorem lintegral_le_lintegral_add_tvDist (μ ν : Measure α)
   have hνξ : ν ≪ μ + ν := rfl.absolutelyContinuous.add_right' _
   obtain ⟨ξ, hξ⟩ : ∃ ξ : Measure α, ξ = μ + ν := ⟨_, rfl⟩
   rw [← hξ] at hμξ hνξ
-  haveI : IsFiniteMeasure ξ := by rw [hξ]; infer_instance
+  have : IsFiniteMeasure ξ := by rw [hξ]; infer_instance
   set p := μ.rnDeriv ξ with hpdef
   set q := ν.rnDeriv ξ with hqdef
   have hpm : Measurable p := Measure.measurable_rnDeriv _ _
@@ -271,12 +271,12 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     simp only [div_eq_mul_inv]
     rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hZ0), ← hZeq]
     exact ENNReal.mul_inv_cancel hZ0 hZT
-  haveI hPprob : IsProbabilityMeasure (base.withDensity p) :=
+  have hPprob : IsProbabilityMeasure (base.withDensity p) :=
     ⟨by
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
       simp only [hpdef]
       exact hmass s hs Zs hZs0 hsT hZsdef⟩
-  haveI hQprob : IsProbabilityMeasure (base.withDensity q) :=
+  have hQprob : IsProbabilityMeasure (base.withDensity q) :=
     ⟨by
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
       simp only [hqdef]
@@ -292,7 +292,7 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     refine lintegral_congr_ae ?_
     filter_upwards [hs_pos, hs_fin] with x hx1 hx2
     obtain ⟨hp0, hpT⟩ := hpne x hx1.ne' hx2
-    show p x * (1 - q x / p x) = p x - q x
+    change p x * (1 - q x / p x) = p x - q x
     rw [ENNReal.mul_sub (fun _ _ => hpT), mul_one,
       ENNReal.mul_div_cancel' (fun h => absurd h hp0) (fun h => absurd h hpT)]
   -- Step 2: the inner integral of the pair ratio is `q h / p h`.
@@ -303,7 +303,7 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     have hpt : ∀ᵐ g ∂base,
         (q * fun g => (s g * t h) / (s h * t g)) g = (t h / (Zt * s h)) * s g := by
       filter_upwards [ht_pos, ht_fin] with g hg1 hg2
-      show q g * ((s g * t h) / (s h * t g)) = (t h / (Zt * s h)) * s g
+      change q g * ((s g * t h) / (s h * t g)) = (t h / (Zt * s h)) * s g
       simp only [hqdef]
       exact ennreal_pair_ratio Zt (s h) (t g) (s g) (t h) hh0 hhT hg1.ne' hg2 hZt0 htT
     rw [lintegral_congr_ae hpt, lintegral_const_mul _ hs, ← hZsdef]

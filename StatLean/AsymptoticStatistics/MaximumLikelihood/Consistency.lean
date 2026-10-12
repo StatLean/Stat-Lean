@@ -121,13 +121,13 @@ theorem stabilized_populationCriterion_eq_klObjective
   have hfq_int : Integrable (fun x =>
       (M.density theta x + M.density theta0 x) / 2) mu := by
     fun_prop
-  letI : IsFiniteMeasure P0 := isFiniteMeasure_withDensity (by
+  let : IsFiniteMeasure P0 := isFiniteMeasure_withDensity (by
     rw [← ofReal_integral_eq_lintegral_ofReal hf0_int]
     · exact ENNReal.ofReal_ne_top
     · filter_upwards with x
       exact div_nonneg
         (add_nonneg (M.density_nonneg theta0 x) (M.density_nonneg theta0 x)) (by norm_num))
-  letI : IsFiniteMeasure Q := isFiniteMeasure_withDensity (by
+  let : IsFiniteMeasure Q := isFiniteMeasure_withDensity (by
     rw [← ofReal_integral_eq_lintegral_ofReal hfq_int]
     · exact ENNReal.ofReal_ne_top
     · filter_upwards with x

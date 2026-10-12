@@ -292,7 +292,7 @@ theorem randTest_mem_Icc (T : 𝓧 → ℝ) {α : ℝ}
       exact absurd hg1.2 (lt_irrefl _)
     have esum : randPlusCount G T α x + randZeroCount G T α x
         = (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x)).card := by
-      show (Finset.univ.filter fun g : G => randCritValue G T α x < T (g • x)).card
+      change (Finset.univ.filter fun g : G => randCritValue G T α x < T (g • x)).card
           + (Finset.univ.filter fun g : G => T (g • x) = randCritValue G T α x).card
         = (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x)).card
       rw [← Finset.card_union_of_disjoint hdisj, ← hunion]
@@ -376,7 +376,7 @@ theorem sum_randTest_orbit (T : 𝓧 → ℝ) {α : ℝ}
       ← Finset.mul_sum, Finset.sum_boole]
     rfl
   rw [Finset.sum_congr rfl fun g _ => key g, Finset.sum_add_distrib, Finset.sum_boole, hsum2]
-  show (randPlusCount G T α x : ℝ) + randGamma G T α x * (randZeroCount G T α x : ℝ)
+  change (randPlusCount G T α x : ℝ) + randGamma G T α x * (randZeroCount G T α x : ℝ)
     = (Fintype.card G : ℝ) * α
   unfold randGamma
   rw [div_mul_cancel₀ _ hM0']
@@ -556,7 +556,7 @@ theorem superUniform_randPValue (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     rw [Finset.sum_boole]
     rcases (Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t).eq_empty_or_nonempty
       with h0 | hne
-    · rw [h0]; simp; positivity
+    · rw [h0]; simp only [Finset.card_empty, CharP.cast_eq_zero, ge_iff_le]; positivity
     · obtain ⟨g0, hg0A, hg0min⟩ :=
         Finset.exists_min_image _ (fun g => T (g • x)) hne
       have hsub : (Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t)

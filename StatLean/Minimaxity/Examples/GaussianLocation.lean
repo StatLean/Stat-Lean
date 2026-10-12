@@ -121,7 +121,6 @@ theorem gaussian_location_minimax_rate (n : ℕ) (hn : 1 ≤ n) (v : ℝ≥0) (h
   have htv := gaussian_two_point_tvDist_le n hn v hv P hP
   have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2
       = ENNReal.ofReal ((v : ℝ) / (4 * n)) := by
-    change (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2 = _
     rw [← ENNReal.ofReal_pow (by positivity)]
     congr 1
     rw [div_pow, Real.sq_sqrt (by positivity)]

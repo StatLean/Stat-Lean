@@ -101,7 +101,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
       gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
         (goodModulusSet P F δ c)ᶜ ≤ ENNReal.ofReal η := by
   classical
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
@@ -156,7 +156,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
     rw [measure_compl (isClosed_goodModulusSet P F _ c).measurableSet (measure_ne_top _ _),
       measure_univ]
   -- The goal's set is `(goodModulusSet … ((k+1)⁻¹) c)ᶜ`, which is `(S k)ᶜ` by definition.
-  show ν (S k)ᶜ ≤ ENNReal.ofReal η
+  change ν (S k)ᶜ ≤ ENNReal.ofReal η
   rw [hScompl]
   -- `1 − ν (S k) ≤ 1 − (1 − η) = η` (since `η ≤ 1` after capping; if `η > 1` the bound is trivial).
   rcases le_or_gt 1 (ENNReal.ofReal η) with hle | hlt
@@ -242,7 +242,7 @@ theorem outerMeasure_modulusComplement_le
           atTop
         ≤ ENNReal.ofReal η := by
   intro ε η hε hη
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
@@ -325,7 +325,7 @@ theorem empiricalProcess_asymptoticallyTight
         (memℓp_empiricalProcess
           ⟨G, hG_env, hG.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
           (fun i : Fin n => X i.val ξ))) := by
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
   exact AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter

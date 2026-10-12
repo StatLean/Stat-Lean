@@ -55,9 +55,9 @@ noncomputable def comparisonResidual
 private theorem comparisonResidual_aestronglyMeasurable
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
     AEStronglyMeasurable (γ.comparisonResidual t) (canonicalDominator P (γ.curve t)) := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let μ := canonicalDominator P (γ.curve t)
-  letI : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
+  let : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
   have hPμ : P ≪ μ := (Measure.le_add_right le_rfl).absolutelyContinuous
   have hw := (AsymptoticStatistics.ForMathlib.RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff
     hPμ (γ.score : Ω → ℝ)).2 (Lp.aestronglyMeasurable γ.score.val)
@@ -77,7 +77,7 @@ sigma-finiteness instances. -/
 theorem curve_eq_singularPart_add_acPart
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
     γ.curve t = γ.singularPart t + γ.acPart t := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   exact Measure.haveLebesgueDecomposition_add (γ.curve t) P
 
 /-- Singular mass is bounded by the squared canonical QMD residual norm.
@@ -89,9 +89,9 @@ theorem singularMass_le_residual_sq
     γ.singularMass t ≤
       eLpNorm (γ.comparisonResidual t) 2
         (canonicalDominator P (γ.curve t)) ^ 2 := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let μ := canonicalDominator P (γ.curve t)
-  letI : SigmaFinite μ := by
+  let : SigmaFinite μ := by
     dsimp only [μ, canonicalDominator]
     infer_instance
   let hsing := Measure.mutuallySingular_singularPart (γ.curve t) P
@@ -305,7 +305,7 @@ theorem baseZeroLikelihoodMass_isLittleO
           4 * eLpNorm (γ.comparisonResidual t) 2
             (canonicalDominator P (γ.curve t)) ^ 2 := by
     intro t ht
-    letI : IsProbabilityMeasure (γ.curve t) :=
+    let : IsProbabilityMeasure (γ.curve t) :=
       γ.curve_isProbability t ht.le
     let μ := canonicalDominator P (γ.curve t)
     let p : Ω → ℝ≥0∞ := P.rnDeriv μ
@@ -314,7 +314,7 @@ theorem baseZeroLikelihoodMass_isLittleO
     let Z : Set Ω := {ω | (qP ω).toReal = 0}
     let B : Set Ω := {ω | 1 ≤ |t * g ω|}
     let A : Set Ω := Z \ B
-    letI : SigmaFinite μ := by
+    let : SigmaFinite μ := by
       dsimp only [μ, canonicalDominator]
       infer_instance
     have hPμ : P ≪ μ := by
@@ -606,7 +606,7 @@ theorem pi_acPart_eq_withDensity_acProductLikelihood
     Measure.pi (fun _ : Fin n => γ.acPart t) =
       (Measure.pi (fun _ : Fin n => P)).withDensity
         (γ.acProductLikelihood t n) := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   simpa only [acPart, acProductLikelihood] using!
     (MeasureTheory.pi_withDensity_prod (fun _ : Fin n =>
       Measure.measurable_rnDeriv (γ.curve t) P)).symm
@@ -623,7 +623,7 @@ theorem integrable_acProductLikelihood_and_integral
       ∫ X, (γ.acProductLikelihood t n X).toReal
           ∂(Measure.pi (fun _ : Fin n => P)) =
         (1 - (γ.singularMass t).toReal) ^ n := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   have h_one : Integrable (fun ω => ((γ.curve t).rnDeriv P ω).toReal) P := by
     simpa only [integrableOn_univ] using
       (Measure.integrableOn_toReal_rnDeriv
@@ -675,7 +675,7 @@ theorem product_integral_comparison
   intro n
   have hut : 0 ≤ u n :=
     mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _))
-  letI : IsProbabilityMeasure (γ.curve (u n)) :=
+  let : IsProbabilityMeasure (γ.curve (u n)) :=
     γ.curve_isProbability (u n) hut
   let Q : Measure Ω := γ.curve (u n)
   let A : Measure Ω := γ.acPart (u n)
@@ -686,7 +686,7 @@ theorem product_integral_comparison
   have hAQ : A ≤ Q := by
     simpa only [A, Q, acPart] using
       Measure.withDensity_rnDeriv_le (γ.curve (u n)) P
-  letI : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
+  let : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
   have hAac : A ≪ Q := hAQ.absolutelyContinuous
   have hρν : ρ ≤ ν := by
     let D : (Fin n → Ω) → ℝ≥0∞ :=
@@ -719,7 +719,7 @@ theorem product_integral_comparison
   have hνprob : IsProbabilityMeasure ν := by
     dsimp only [ν, Q]
     infer_instance
-  letI : IsProbabilityMeasure ν := hνprob
+  let : IsProbabilityMeasure ν := hνprob
   have hfν : Integrable (f n) ν := by
     refine Integrable.of_bound (hf_meas n).aestronglyMeasurable C ?_
     exact Filter.Eventually.of_forall fun X => by

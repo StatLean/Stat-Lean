@@ -117,7 +117,7 @@ theorem S_n_weak_conv_under_shifted
   -- Notation: each `P n` is the per-`n` product measure at the LAN-perturbed point.
   let P : ∀ n : ℕ, Measure (Fin n → 𝓧) := fun n =>
     productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
-  haveI hP_prob : ∀ n, IsProbabilityMeasure (P n) := fun n =>
+  have hP_prob : ∀ n, IsProbabilityMeasure (P n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF _ _
   -- Sqrt n along ℕ tends to ∞.
   have h_sqn_atTop : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop := by
@@ -362,7 +362,7 @@ theorem lower_bound_for_experiments
   set Lprime : Θ k → Measure (𝓨 d) := fun h =>
     (L_θh h).map (fun y : 𝓨 d => y + ψDot h) with hLprime_def
   -- Each `Lprime h` is a probability measure (pushforward of one).
-  haveI hLprime_prob : ∀ h, IsProbabilityMeasure (Lprime h) := fun h => by
+  have hLprime_prob : ∀ h, IsProbabilityMeasure (Lprime h) := fun h => by
     have h_add_meas : Measurable (fun y : 𝓨 d => y + ψDot h) :=
       (continuous_id.add continuous_const).measurable
     exact (by infer_instance)

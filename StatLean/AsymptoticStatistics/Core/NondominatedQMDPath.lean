@@ -56,8 +56,8 @@ theorem exists_nondominatedQMDPath_of_bare_qmd
     apply hqmd.congr'
     filter_upwards [self_mem_nhdsWithin] with t ht
     let ν := canonicalDominator P (curve t)
-    letI : IsProbabilityMeasure (curve t) := hprob t ht.le
-    letI : IsFiniteMeasure ν := by
+    let : IsProbabilityMeasure (curve t) := hprob t ht.le
+    let : IsFiniteMeasure ν := by
       dsimp [ν, canonicalDominator]
       infer_instance
     have hPν : P ≪ ν :=
@@ -104,8 +104,8 @@ noncomputable def toNondominatedQMDPath
     have hlegacy := γ.qmd_limit.mono_left hfilter
     apply hlegacy.congr'
     filter_upwards [self_mem_nhdsWithin] with t ht
-    haveI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-    letI : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+    have : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+    let : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
     have hnorm := eLpNorm_residualAgainst_change_dominator
       (γ.curve 0) (γ.curve t) γ.dominating
       (γ.curve_absContinuous 0) (γ.curve_absContinuous t)

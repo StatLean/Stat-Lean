@@ -911,7 +911,7 @@ theorem tendstoInDistribution_triangular_iid_lindeberg
   have hS : S.PosSemidef :=
     posSemidef_of_tendsto_centeredCovMatrix hg_memLp hcov
   let νn : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => μ.map (W n)
-  haveI hνn_prob : ∀ n, IsProbabilityMeasure (νn n) := fun n =>
+  have hνn_prob : ∀ n, IsProbabilityMeasure (νn n) := fun n =>
     (by infer_instance)
   have hweak : AsymptoticStatistics.WeakConverges νn
       (multivariateGaussian 0 S) := by

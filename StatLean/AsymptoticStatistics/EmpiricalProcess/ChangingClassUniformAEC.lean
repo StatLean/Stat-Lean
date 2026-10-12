@@ -41,7 +41,7 @@ theorem changingLocalOscillation_tendsto_zero
       atTop (𝓝 0) := by
   classical
   rcases isEmpty_or_nonempty T with hT | hT
-  · letI : IsEmpty T := hT
+  · let : IsEmpty T := hT
     have hempty (n : ℕ) : changingLocalDifferenceClass f n (δ n) = ∅ := by
       ext g
       constructor
@@ -60,7 +60,7 @@ theorem changingLocalOscillation_tendsto_zero
       simp
     rw [hz]
     exact tendsto_const_nhds
-  · letI : Nonempty T := hT
+  · let : Nonempty T := hT
     have hFmeas : ∀ n g, g ∈ Set.range (f n) → Measurable g := by
       rintro n g ⟨t, rfl⟩
       exact hf n t

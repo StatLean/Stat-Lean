@@ -104,7 +104,7 @@ theorem mLocationRoot_abs_le_maxBias {ψ : ℝ → ℝ} {P : Measure ℝ}
     ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → ∀ θ : ℝ,
       IsMLocationRoot ψ (contaminate P Q ε) θ → |θ| ≤ bε := by
   intro Q hQ θ hθ
-  haveI := hQ
+  have := hQ
   have hψmeas : Measurable ψ := hψm.measurable
   have hbd : ∃ C, ∀ u, |ψ u| ≤ C := ⟨k, hψb⟩
   have hintP : Integrable (fun x => ψ (x - θ)) P := integrable_psi_sub hψmeas hbd θ
@@ -187,7 +187,7 @@ theorem maxBias_attained {ψ : ℝ → ℝ} {P : Measure ℝ}
   obtain ⟨R, hR⟩ := eventually_atTop.1 (htop.eventually_const_lt hMk)
   refine ⟨R + bε, ?_⟩
   -- A root exists for the point-mass contaminated model.
-  haveI : IsProbabilityMeasure (contaminate P (Measure.dirac (R + bε)) ε) :=
+  have : IsProbabilityMeasure (contaminate P (Measure.dirac (R + bε)) ε) :=
     isProbabilityMeasure_contaminate P _ hε0.le hε1
   obtain ⟨θ, hθ⟩ := exists_isMLocationRoot (P := contaminate P (Measure.dirac (R + bε)) ε)
     hψc hψm hbot htop hk hk

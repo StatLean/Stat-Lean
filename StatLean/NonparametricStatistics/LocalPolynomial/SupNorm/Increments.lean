@@ -46,7 +46,6 @@ private lemma lpBasis_normSq_le_two {ℓ : ℕ} {z : ℝ} (hz : |z| ≤ 2) :
       calc (z ^ (k : ℕ)) ^ 2 ≤ (2 ^ (k : ℕ)) ^ 2 := this
         _ = (4 : ℝ) ^ (k : ℕ) := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
         _ ≤ (4 : ℝ) ^ ℓ := pow_le_pow_right₀ (by norm_num) (Nat.lt_succ_iff.mp k.isLt)
-
     have hfac : (1 : ℝ) ≤ (Nat.factorial (k : ℕ) : ℝ) := by
       exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
     rw [div_le_iff₀ (by positivity)]
@@ -55,7 +54,7 @@ private lemma lpBasis_normSq_le_two {ℓ : ℕ} {z : ℝ} (hz : |z| ≤ 2) :
   calc ∑ k, (lpBasis ℓ z k) ^ 2
       ≤ ∑ _k : Fin (ℓ + 1), (4 : ℝ) ^ ℓ := Finset.sum_le_sum (fun k _ => hterm k)
     _ = ((ℓ : ℝ) + 1) * 4 ^ ℓ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; push_cast; ring
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; ring
 
 /-- Per-coordinate Lipschitz bound of the basis difference on `|z|,|z'| ≤ 2`:
 `|z^k - z'^k| ≤ k·2^(k-1)·|z - z'|`, hence `≤ 2^ℓ·|z-z'|`. -/
@@ -78,7 +77,7 @@ private lemma abs_pow_sub_le {z z' : ℝ} (hz : |z| ≤ 2) (hz' : |z'| ≤ 2) (k
       _ ≤ ((m : ℝ) + 1) * 2 ^ (m + 1) * |z - z'| := by
           have := abs_nonneg (z - z'); rw [pow_succ]; nlinarith [this,
             pow_nonneg (show (0:ℝ) ≤ 2 by norm_num) m]
-      _ = ((m : ℕ) + 1 : ℝ) * 2 ^ (m + 1) * |z - z'| := by push_cast; ring
+      _ = ((m : ℕ) + 1 : ℝ) * 2 ^ (m + 1) * |z - z'| := by ring
       _ = (↑(m + 1) : ℝ) * 2 ^ (m + 1) * |z - z'| := by push_cast; ring
 
 /-- ℓ¹→ℓ² helper: from `∑_k (v k)² ≤ M²` and `M ≥ 0`, `|v 0| ≤ M`. -/
@@ -140,7 +139,7 @@ private lemma lpMatrix_apply {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) 
     lpMatrix xdat K h ℓ t k j = ((n : ℝ) * h)⁻¹ * ∑ i, K ((xdat i - t) / h)
       * (lpBasis ℓ ((xdat i - t) / h) k * lpBasis ℓ ((xdat i - t) / h) j) := by
   simp only [lpMatrix, Matrix.smul_apply, Matrix.sum_apply, Matrix.vecMulVec_apply,
-    smul_eq_mul, Finset.mul_sum, mul_assoc]
+    smul_eq_mul, Finset.mul_sum]
 
 /-- Per-summand triple-telescope Lipschitz bound with the union-window indicator. -/
 private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ}
@@ -220,13 +219,12 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
               + Kmax * B * (B * (|t-t'|/h)) := by
             have hnn : (0:ℝ) ≤ |t-t'|/h := div_nonneg (abs_nonneg _) hh.le
             gcongr <;> first
-              | exact hdK | exact hbox.1 z | exact hUk' | exact hUj' | exact hUk
-              | exact hdUk | exact hdUj
+              | exact hdK | exact hbox.1 z
         _ = (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by ring
     · push Not at hboth
       have hK1 : K z = 0 := hbox.2 z hboth.1
       have hK2 : K z' = 0 := hbox.2 z' hboth.2
-      simp only [hK1, hK2, zero_mul, mul_zero, sub_zero, abs_zero]
+      simp only [hK1, hK2, zero_mul, sub_zero, abs_zero]
       positivity
   · -- summand = 0 since both K vanish (x_i not in window)
     rw [Set.indicator_of_notMem hact, mul_zero]
@@ -248,13 +246,13 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
       constructor <;> nlinarith [hb.1, hb.2, hd'.1, hd'.2, hh]
     have hK1 : K z = 0 := hbox.2 z hz1
     have hK2 : K z' = 0 := hbox.2 z' hz'1
-    simp only [hK1, hK2, zero_mul, mul_zero, sub_zero, abs_zero, le_refl]
+    simp only [hK1, hK2, zero_mul, sub_zero, abs_zero, le_refl]
 
 /-- The inverse of the (symmetric) local design matrix is symmetric. -/
 private lemma lpMatrix_inv_isSymm {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)
     (t : ℝ) : (lpMatrix xdat K h ℓ t)⁻¹.IsSymm := by
   have hs : (lpMatrix xdat K h ℓ t)ᵀ = lpMatrix xdat K h ℓ t := lpMatrix_isSymm xdat K h ℓ t
-  show ((lpMatrix xdat K h ℓ t)⁻¹)ᵀ = (lpMatrix xdat K h ℓ t)⁻¹
+  change ((lpMatrix xdat K h ℓ t)⁻¹)ᵀ = (lpMatrix xdat K h ℓ t)⁻¹
   rw [Matrix.transpose_nonsing_inv, hs]
 
 /-- The `0`-th coordinate of `B⁻¹ U` is the dot product with the `0`-th column of `B⁻¹`. -/
@@ -273,7 +271,7 @@ private lemma lpMatrix_inv_mulVec_zero {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ
     intro k
     have hc : (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
         = (lpMatrix xdat K h ℓ t)⁻¹ k 0 := by
-      simp [Matrix.mulVec, dotProduct, Pi.single_apply, Finset.sum_ite_eq]
+      simp [Matrix.mulVec, dotProduct, Pi.single_apply]
     rw [hc, hsymm k]
   simp_rw [hR]
   simp only [Matrix.mulVec, dotProduct]
@@ -470,7 +468,7 @@ private lemma lp_gdiff_absSum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → �
           refine Finset.sum_le_sum (fun k _ => ?_)
           rw [← sq_abs (w k)]; exact pow_le_pow_left₀ (abs_nonneg _) (hbnd k) 2
       _ = ((ℓ : ℝ) + 1) * (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 := by
-          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; push_cast; ring
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; ring
   have hΔ : ∀ k, (Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k = (Bt⁻¹.mulVec w) k := by
     intro k; have := congrFun hres k; rwa [Pi.sub_apply] at this
   set S := ∑ k, |(Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k| with hSdef
@@ -772,7 +770,7 @@ theorem lp_weight_lipschitz_sum {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK
           mul_le_mul_of_nonneg_left (add_le_add hTI hTII) (by positivity)
       _ = (CI + CII) * (|t - t'| / h) := by
           rw [hCIdef, hCIIdef, mul_add, add_mul]
-          congr 1 <;> field_simp
+          field_simp
       _ ≤ (2 * lpWeightConst Kmax lam0 a₀ + CI + CII + 1) * |t - t'| / h ^ 3 := by
           rw [le_div_iff₀ (by positivity : (0 : ℝ) < h ^ 3)]
           have hexp : (CI + CII) * (|t - t'| / h) * h ^ 3 = (CI + CII) * |t - t'| * h ^ 2 := by

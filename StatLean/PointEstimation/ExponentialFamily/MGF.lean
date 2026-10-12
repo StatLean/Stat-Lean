@@ -113,7 +113,7 @@ theorem integral_exp_inner_P (E : ExpFamily 𝓧 V) {η u : V}
     (hηu : η + u ∈ E.natSet) :
     ∫ x, Real.exp ⟪u, E.stat x⟫_ℝ ∂(E.P η)
       = Real.exp (E.logPartition (η + u) - E.logPartition η) := by
-  haveI : NeZero E.base := ⟨hbase⟩
+  have : NeZero E.base := ⟨hbase⟩
   have hηu_pos : 0 < ∫ x, Real.exp ⟪η + u, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hηu
   have hη_pos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hη
   rw [show E.P η = E.base.tilted (fun x => ⟪η, E.stat x⟫_ℝ) from rfl, integral_exp_tilted]

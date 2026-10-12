@@ -178,8 +178,8 @@ theorem condExp_orbit_eq_orbitAverage (P : Measure 𝓧) [IsProbabilityMeasure P
     condExp (invariantSigmaAlgebra G) P f =ᵐ[P] orbitAverage G f := by
   have hcard : 0 < Fintype.card G := Fintype.card_pos
   have hcardR : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast hcard.ne'
-  haveI : SigmaFinite (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) := by
-    haveI : IsFiniteMeasure (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) :=
+  have : SigmaFinite (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) := by
+    have : IsFiniteMeasure (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) :=
       isFiniteMeasure_trim _
     infer_instance
   have hfint : Integrable f P := (integrable_const C).mono' hf.aestronglyMeasurable

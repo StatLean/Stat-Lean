@@ -262,7 +262,7 @@ theorem condDistrib_fst_withDensity_tilt (ρ P : Measure (𝓤 × 𝓣)) [IsFini
   set κρ := condDistrib Prod.fst Prod.snd ρ with hκρ
   set cand : Kernel 𝓣 𝓤 := Kernel.withDensity κρ (fun t u => (condTiltNormalizer ρ g t)⁻¹ * g u)
     with hcand
-  haveI hcandFin : IsFiniteKernel cand := by
+  have hcandFin : IsFiniteKernel cand := by
     refine ⟨⟨1, ENNReal.one_lt_top, fun t => ?_⟩⟩
     rw [hcand, Kernel.withDensity_apply' _ hd, Measure.restrict_univ, lintegral_const_mul _ hg]
     exact condTilt_inv_mul_le_one _
@@ -303,7 +303,7 @@ theorem condDistrib_fst_withDensity_tilt (ρ P : Measure (𝓤 × 𝓣)) [IsFini
     refine lintegral_congr_ae ?_
     filter_upwards [hfin_ae] with t htfin
     exact condTilt_integrand_eq (κρ t) hg (hF.comp measurable_prodMk_left) (k t) htfin
-  haveI : IsFiniteMeasure (P.map fun a => (Prod.snd a, Prod.fst a)) := by
+  have : IsFiniteMeasure (P.map fun a => (Prod.snd a, Prod.fst a)) := by
     rw [hcompProd]; infer_instance
   have hκeq : (P.map fun a => (Prod.snd a, Prod.fst a))
       = (P.map fun a => (Prod.snd a, Prod.fst a)).fst ⊗ₘ cand := by

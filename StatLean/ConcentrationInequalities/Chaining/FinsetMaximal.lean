@@ -69,7 +69,7 @@ lemma biSup_finset_eq_sup'_of_sup'_nonneg {ι : Type*} {s : Finset ι}
     intro i
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]; exact Finset.le_sup' f hi
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]; exact h0
   have hbdd : BddAbove (Set.range (fun i => ⨆ (_ : i ∈ s), f i)) :=
     ⟨s.sup' hs f, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
@@ -110,7 +110,7 @@ lemma le_biSup_finset {ι : Type*} {s : Finset ι} (f : ι → ℝ) {i : ι}
     dsimp only
     by_cases hj : j ∈ s
     · rw [ciSup_pos hj]; exact le_max_of_le_left (Finset.le_sup' f hj)
-    · haveI : IsEmpty (j ∈ s) := ⟨hj⟩
+    · have : IsEmpty (j ∈ s) := ⟨hj⟩
       rw [Real.iSup_of_isEmpty]; exact le_max_right _ _
   exact le_ciSup_of_le hbdd i (le_of_eq (ciSup_pos (f := fun _ => f i) hi).symm)
 
@@ -157,7 +157,7 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
       exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)
   have hmeas : AEMeasurable (fun ω => ⨆ i ∈ s, X i ω) μ :=
@@ -183,7 +183,7 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
       exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)
 
@@ -213,7 +213,7 @@ theorem tail_max_finset_le {ι : Type*} {s : Finset ι}
       refine Real.iSup_le (fun i => ?_) ht
       by_cases hi : i ∈ s
       · rw [ciSup_pos hi]; exact hcon i hi
-      · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+      · have : IsEmpty (i ∈ s) := ⟨hi⟩
         rw [Real.iSup_of_isEmpty]; exact ht
     exact absurd hω (not_lt.mpr hle)
   calc μ {ω | t < ⨆ i ∈ s, X i ω}
@@ -257,7 +257,7 @@ theorem expectation_max_finset_le {ι : Type*}
   classical
   -- Reindex `s` to `Fin s.card` via `s.equivFin` and transport the proven
   -- `Fin`-indexed `expectation_max_le`.
-  haveI : NeZero s.card := ⟨hs.card_pos.ne'⟩
+  have : NeZero s.card := ⟨hs.card_pos.ne'⟩
   set e := s.equivFin with he
   set Y : Fin s.card → Ω → ℝ := fun j ω => X ((e.symm j : ι)) ω with hY
   have hcenterY : ∀ j, ∫ ω, Y j ω ∂μ = 0 := fun j => hcenter _ (e.symm j).2

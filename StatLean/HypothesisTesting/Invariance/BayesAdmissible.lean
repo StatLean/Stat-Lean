@@ -140,7 +140,7 @@ private lemma bayes_mix_integrable {P : Θ → Measure 𝓧} [∀ θ, IsProbabil
     have h2 : (P θ) Set.univ = 1 := measure_univ
     rwa [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
   refine ⟨mixtureDensity_aestronglyMeasurable hjoint, ?_⟩
-  show ∫⁻ x, ‖mixtureDensity f Λ x‖ₑ ∂μ < ∞
+  change ∫⁻ x, ‖mixtureDensity f Λ x‖ₑ ∂μ < ∞
   refine lt_of_le_of_lt ?_ ENNReal.one_lt_top
   have hle : ∀ x, ‖mixtureDensity f Λ x‖ₑ ≤ ∫⁻ θ, ENNReal.ofReal (f θ x) ∂Λ := by
     intro x
@@ -181,7 +181,7 @@ private lemma bayes_fubini_mix {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityM
       calc ∫⁻ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ ∂Λ
           = ∫⁻ _θ, 1 ∂Λ := by exact lintegral_congr fun θ => hmass θ
         _ = 1 := by rw [lintegral_const, one_mul, measure_univ]
-    show ∫⁻ q : Θ × 𝓧, ‖f q.1 q.2‖ₑ ∂(Λ.prod μ) < ∞
+    change ∫⁻ q : Θ × 𝓧, ‖f q.1 q.2‖ₑ ∂(Λ.prod μ) < ∞
     rw [this]; exact ENNReal.one_lt_top
   -- dominate `g·f` by `f`
   have hFInt : Integrable (Function.uncurry fun θ x => g x * f θ x) (Λ.prod μ) := by
@@ -259,7 +259,7 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
   have hh0nn : ∀ x, 0 ≤ mixtureDensity f Λ₀ x := fun x => integral_nonneg fun θ => hfnonneg θ x
   have hh1nn : ∀ x, 0 ≤ mixtureDensity f Λ₁ x := fun x => integral_nonneg fun θ => hfnonneg θ x
   have hφ0meas : Measurable φ₀ := by
-    simp only [hφ0def, bayesTest]
+    simp only [hφ0def]
     exact Measurable.ite (measurableSet_le (measurable_const.mul hh0meas) hh1meas)
       measurable_const measurable_const
   have hφ0mem : ∀ x, φ₀ x ∈ Set.Icc (0 : ℝ) 1 := by
@@ -353,7 +353,7 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
         intro x; simp only [hφ0def, bayesTest]
         exact ite_eq_left (le_trans (mul_nonpos_iff.mpr (Or.inr ⟨hk.le, hh0nn x⟩)) (hh1nn x))
       have hPunit : (P θ₁).real Set.univ = 1 := by
-        show (P θ₁ Set.univ).toReal = 1; rw [measure_univ, ENNReal.toReal_one]
+        change (P θ₁ Set.univ).toReal = 1; rw [measure_univ, ENNReal.toReal_one]
       have hp0 : power P φ₀ θ₁ = 1 := by
         simp only [power]; simp_rw [hφ01]
         rw [integral_const, hPunit, smul_eq_mul, mul_one]
@@ -370,7 +370,7 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
       have hae01 := (integral_eq_zero_iff_of_nonneg
         (fun x => sub_nonneg.mpr (hφ.2 x).2) ((integrable_const 1).sub (hφint θ₁))).mp hzero
       filter_upwards [hae01] with x hx
-      simp only [Pi.sub_apply, Pi.one_apply, Pi.zero_apply, sub_eq_zero] at hx
+      simp only [Pi.zero_apply, sub_eq_zero] at hx
       rw [hφ01 x]; exact hx.symm
   intro θ
   simp only [power]
@@ -549,7 +549,7 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
   have hkey : ∀ B : Set ℝ, MeasurableSet B →
       ∫⁻ ζ, gaussianReal ζ σ2 B ∂(gaussianReal 0 (M2 - σ2)) = gaussianReal 0 M2 B := by
     intro B hB
-    haveI hmark := StatLean.Bayesian.isMarkovKernel_gaussKernel hσ
+    have hmark := StatLean.Bayesian.isMarkovKernel_gaussKernel hσ
     have key : StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)
         = gaussianReal 0 M2 := by
       rw [StatLean.Bayesian.comp_gaussKernel_gaussianReal hσ, tsub_add_cancel_of_le hσM.le]

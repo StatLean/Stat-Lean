@@ -274,9 +274,9 @@ theorem bayes_risk_lower_bound
     intro k h
     -- `submodelAt (γ h) k = (γ h).curve ((√k)⁻¹)` is a probability
     -- measure; the `Measure.pi` over `Fin k` then is too.
-    haveI hPM_curve : IsProbabilityMeasure (submodelAt (γ h) k) :=
+    have hPM_curve : IsProbabilityMeasure (submodelAt (γ h) k) :=
       (γ h).curve_isProbability _
-    haveI hPM_pi : IsProbabilityMeasure
+    have hPM_pi : IsProbabilityMeasure
         (MeasureTheory.Measure.pi
           (fun _ : Fin k => submodelAt (γ h) k)) := by
       infer_instance

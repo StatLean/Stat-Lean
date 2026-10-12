@@ -575,7 +575,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   have hgLp' : MemLp g (ENNReal.ofReal p') μ :=
     hgLq.mono_exponent (ENNReal.ofReal_le_ofReal hp'q.le)
   have hfgint : Integrable (fun ω => f ω * g ω) μ := by
-    haveI : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
+    have : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
       constructor
       simpa using hconjp.inv_add_inv_ennreal
     exact hfLp.integrable_mul hgLp'
@@ -1294,7 +1294,7 @@ private theorem tuple4_comp_perm_invariant {Gt : (Fin 4 → ℕ) → ℝ}
   | mul x y hx hy ihx ihy =>
       intro f
       have hcomp : f ∘ (x * y) = (f ∘ x) ∘ y := by
-        funext a; simp [Equiv.Perm.mul_apply]
+        funext a; simp
       rw [hcomp, ihy (f ∘ x), ihx f]
 
 private theorem tuple4_swap_invariant {G : ℕ → ℕ → ℕ → ℕ → ℝ}
@@ -1513,7 +1513,7 @@ private theorem mixing_max_le_indicators {A : ℕ → ℝ} (hA0 : ∀ m, 0 ≤ A
         + (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3 := by
   rcases le_total g1 g2 with h12 | h12 <;> rcases le_total g2 g3 with h23 | h23 <;>
     rcases le_total g1 g3 with h13 | h13 <;>
-    simp_all [max_def] <;>
+    simp_all <;>
     split_ifs <;> linarith [hA0 g1, hA0 g2, hA0 g3]
 
 private theorem sum_triple_indicator_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hA0 : ∀ m, 0 ≤ A m)

@@ -103,7 +103,7 @@ private theorem cramer_rao_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure �
     (hswap : g' = ∫ x, δ x * deriv (fun t => M.density t x) θ ∂μ)
     (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0) :
     g' ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
   set m := ∫ x, δ x ∂(M.toMeasure μ θ) with hm
   have hXL2 : MemLp (fun x => δ x - m) 2 (M.toMeasure μ θ) := hδ2.sub (memLp_const m)

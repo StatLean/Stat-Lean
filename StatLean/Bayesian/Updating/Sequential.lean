@@ -65,8 +65,8 @@ theorem posterior_prod_ae_eq_sequential
     have h₂ : Measurable (p₂ θ) := hp₂.comp (measurable_const.prodMk measurable_id)
     rw [Kernel.prod_apply, hκ₁, hκ₂, prod_withDensity₀ h₁.aemeasurable h₂.aemeasurable]
   -- (ii) Batch-1 dominated Bayes for the pair.
-  haveI : IsMarkovKernel (κ₁ ×ₖ κ₂) := inferInstance
-  haveI : SFinite (ν₁.prod ν₂) := inferInstance
+  have : IsMarkovKernel (κ₁ ×ₖ κ₂) := inferInstance
+  have : SFinite (ν₁.prod ν₂) := inferInstance
   have hbayes := posterior_eq_withDensity_likelihood_div_predictive
     (π := π) (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ
   -- (iii) The first-coordinate predictive `m₁` is nondegenerate `(κ₁ ×ₖ κ₂) ∘ₘ π`-a.e.
@@ -99,7 +99,7 @@ theorem posterior_prod_ae_eq_sequential
   have hprod : predictiveDensity p₁ π q.1
         * predictiveDensity p₂ (generalizedPosterior p₁ π q.1) q.2
       = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π := by
-    show predictiveDensity p₁ π q.1 * (∫⁻ θ, p₂ θ q.2 ∂(generalizedPosterior p₁ π q.1))
+    change predictiveDensity p₁ π q.1 * (∫⁻ θ, p₂ θ q.2 ∂(generalizedPosterior p₁ π q.1))
       = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π
     rw [hgp₁, lintegral_withDensity_eq_lintegral_mul _ (ha.div_const _) hb]
     simp only [Pi.mul_apply]
@@ -143,7 +143,7 @@ theorem posterior_comap_map_ae_eq_map_posterior
     {π : Measure Θ} [IsFiniteMeasure π] (κ : Kernel Θ 𝓧) [IsFiniteKernel κ] (φ : Θ ≃ᵐ Θ') :
     ∀ᵐ x ∂(κ ∘ₘ π),
       ((κ.comap φ.symm φ.symm.measurable)†(π.map φ)) x = ((κ†π) x).map φ := by
-  haveI : IsFiniteMeasure (π.map φ) := Measure.isFiniteMeasure_map π φ
+  have : IsFiniteMeasure (π.map φ) := Measure.isFiniteMeasure_map π φ
   have hmapφid : Measurable (Prod.map (φ : Θ → Θ') (id : 𝓧 → 𝓧)) :=
     φ.measurable.prodMap measurable_id
   have hmapidφ : Measurable (Prod.map (id : 𝓧 → 𝓧) (φ : Θ → Θ')) :=

@@ -118,7 +118,7 @@ theorem integral_indepFun_eq_integral_prod {μ : Measure Ω} [IsProbabilityMeasu
     -- LEAN-ONLY: integrand measurability w.r.t. the pushforward product
     (hG : AEStronglyMeasurable G ((μ.map A).prod ρ)) :
     ∫ ω, G (A ω, B ω) ∂μ = ∫ p, G (A p.1, p.2) ∂(μ.prod ρ) := by
-  haveI : IsProbabilityMeasure ρ := hBlaw ▸ (by infer_instance)
+  have : IsProbabilityMeasure ρ := hBlaw ▸ (by infer_instance)
   have hφ : AEMeasurable (fun ω => (A ω, B ω)) μ := hA.aemeasurable.prodMk hB.aemeasurable
   have hmapφ : μ.map (fun ω => (A ω, B ω)) = (μ.map A).prod ρ := by
     rw [(indepFun_iff_map_prod_eq_prod_map_map hA.aemeasurable hB.aemeasurable).mp hAB, hBlaw]

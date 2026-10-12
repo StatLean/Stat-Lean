@@ -58,7 +58,7 @@ private theorem bayesRiskAtTau_le_averageKernelVec {d : ℕ}
     bayesRiskAtTau (1 : Matrix (Fin m) (Fin m) ℝ) A ℓ τ ≤
       ∫⁻ h, gaussianShiftKernelRiskVec A ℓ κ h
         ∂(multivariateGaussian 0 ((τ ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ))) := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   let ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin d) := matrixActionVec A
   have hψmeas : Measurable ψ := by
     exact (matrixToEuclideanCLMRect A).continuous.measurable
@@ -119,17 +119,17 @@ private theorem bayesRiskAtTau_le_averageKernelVec {d : ℕ}
         EuclideanSpace ℝ (Fin m) := Prod.snd
     let κ' : Kernel (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m))
         (EuclideanSpace ℝ (Fin d)) := κ.1.comap snd measurable_snd
-    letI : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 measurable_snd
+    let : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 measurable_snd
     have hm : Measurable (fun p : (EuclideanSpace ℝ (Fin m) ×
         EuclideanSpace ℝ (Fin m)) × EuclideanSpace ℝ (Fin d) =>
         ℓ (p.2 - ψ p.1.1)) := by
       exact hℓ.measurable.comp (measurable_snd.sub (hψmeas.comp measurable_fst.fst))
     have H := Measurable.lintegral_kernel_prod_right' (κ := κ') hm
     exact H
-  haveI hπX : IsProbabilityMeasure πX := by
+  have hπX : IsProbabilityMeasure πX := by
     unfold πX marginalGaussianShift
     infer_instance
-  haveI hπτ : IsProbabilityMeasure πτ := by
+  have hπτ : IsProbabilityMeasure πτ := by
     unfold πτ
     infer_instance
   calc
@@ -174,7 +174,7 @@ private theorem gaussianShiftKernelRiskVec_measurable {d : ℕ}
     (κ : MarkovDecision (EuclideanSpace ℝ (Fin m))
       (EuclideanSpace ℝ (Fin d))) :
     Measurable (gaussianShiftKernelRiskVec A ℓ κ) := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   let shiftObs : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) →
       EuclideanSpace ℝ (Fin m) := fun p => p.1 +
         Matrix.toEuclideanCLM (𝕜 := ℝ)
@@ -182,7 +182,7 @@ private theorem gaussianShiftKernelRiskVec_measurable {d : ℕ}
   have hshift : Measurable shiftObs := by fun_prop
   let κ' : Kernel (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m))
       (EuclideanSpace ℝ (Fin d)) := κ.1.comap shiftObs hshift
-  letI : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 hshift
+  let : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 hshift
   have hjoint : Measurable (fun p : (EuclideanSpace ℝ (Fin m) ×
       EuclideanSpace ℝ (Fin m)) × EuclideanSpace ℝ (Fin d) =>
       ℓ (p.2 - matrixActionVec A p.1.1)) := by
@@ -226,7 +226,7 @@ private theorem bayesRiskAtTau_le_averageKernelVec_translated {d : ℕ}
     bayesRiskAtTau (1 : Matrix (Fin m) (Fin m) ℝ) A ℓ τ ≤
       ∫⁻ h, gaussianShiftKernelRiskVec A ℓ κ h
         ∂(multivariateGaussian h0 ((τ ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ))) := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   let Ah0 : EuclideanSpace ℝ (Fin d) := matrixActionVec A h0
   let shiftData : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m) := fun x => h0 + x
   let shiftAction : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d) :=
@@ -235,7 +235,7 @@ private theorem bayesRiskAtTau_le_averageKernelVec_translated {d : ℕ}
   have hAction : Measurable shiftAction := by fun_prop
   let κ' : Kernel (EuclideanSpace ℝ (Fin m)) (EuclideanSpace ℝ (Fin d)) :=
     (κ.1.comap shiftData hData).map shiftAction
-  letI : IsMarkovKernel κ' := by
+  let : IsMarkovKernel κ' := by
     exact Kernel.IsMarkovKernel.map _ hAction
   let κM : MarkovDecision (EuclideanSpace ℝ (Fin m))
       (EuclideanSpace ℝ (Fin d)) := ⟨κ', inferInstance⟩
@@ -302,7 +302,7 @@ private theorem translatedGaussian_eq_multivariateGaussian_of_fullSpan
         ((c ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ)) := by
   have hs := translatedGaussianOnEffectiveSpan_spec C h0 c hc
   let ν := translatedGaussianOnEffectiveSpan C h0 c
-  haveI : IsProbabilityMeasure ν := hs.1
+  have : IsProbabilityMeasure ν := hs.1
   have hcov : ((c ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ)).PosSemidef :=
     Matrix.PosDef.one.posSemidef.smul (sq_nonneg c)
   apply Measure.ext_of_charFun
@@ -352,7 +352,7 @@ private theorem gaussianShiftKernelRiskVec_le {d : ℕ}
       (EuclideanSpace ℝ (Fin d)))
     (B : ℝ≥0∞) (hB : ∀ x, ℓ x ≤ B) (h : EuclideanSpace ℝ (Fin m)) :
     gaussianShiftKernelRiskVec A ℓ κ h ≤ B := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   unfold gaussianShiftKernelRiskVec
   calc
     ∫⁻ a, ℓ (a - matrixActionVec A h) ∂((multivariateGaussian h 1).bind κ.1)
@@ -464,10 +464,10 @@ private theorem isTranslatedIsotropicGaussian_unique
     (hν : IsTranslatedIsotropicGaussian C ν h0 c)
     (hμ : IsTranslatedIsotropicGaussian C μ h0 c) : ν = μ := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
-  letI : IsProbabilityMeasure ν := hν.1
-  letI : IsProbabilityMeasure μ := hμ.1
+  let : IsProbabilityMeasure ν := hν.1
+  let : IsProbabilityMeasure μ := hμ.1
   have hSmeas : MeasurableSet (S : Set (EuclideanSpace ℝ (Fin m))) :=
     S.closed_of_finiteDimensional.measurableSet
   apply Measure.ext_of_charFun
@@ -542,13 +542,13 @@ private theorem intrinsicGaussian_spec
     (h0 : ↥(effectiveSpan C)) (c : ℝ) :
     IsTranslatedIsotropicGaussian C (intrinsicGaussian C h0 c) h0 c := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
-  letI : BorelSpace ↥S := hSborel
-  letI : IsProbabilityMeasure (stdGaussian ↥S) :=
+  let : BorelSpace ↥S := hSborel
+  let : IsProbabilityMeasure (stdGaussian ↥S) :=
     inferInstance
-  letI : IsGaussian (stdGaussian ↥S) :=
+  let : IsGaussian (stdGaussian ↥S) :=
     @isGaussian_stdGaussian _ _ _ _ _ hSborel
   let affineInclusion : ↥S → EuclideanSpace ℝ (Fin m) :=
     fun z => ((h0 + c • z : ↥S) : EuclideanSpace ℝ (Fin m))
@@ -556,7 +556,7 @@ private theorem intrinsicGaussian_spec
   let ν : Measure (EuclideanSpace ℝ (Fin m)) :=
     (stdGaussian ↥S).map affineInclusion
   change IsTranslatedIsotropicGaussian C ν h0 c
-  haveI : IsProbabilityMeasure ν :=
+  have : IsProbabilityMeasure ν :=
     (by infer_instance)
   refine ⟨inferInstance, ?_, ?_⟩
   · have hSclosed : IsClosed (S : Set (EuclideanSpace ℝ (Fin m))) :=
@@ -637,10 +637,10 @@ private theorem translatedGaussian_map_add
   rw [translatedGaussian_eq_intrinsicGaussian C h0 c hc,
     translatedGaussian_eq_intrinsicGaussian C 0 c hc]
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
-  letI : BorelSpace ↥S := hSborel
+  let : BorelSpace ↥S := hSborel
   simp only [intrinsicGaussian]
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
@@ -672,10 +672,10 @@ private theorem intrinsicGaussian_eq_coordinate
           EuclideanSpace ℝ (Fin m))) := by
   dsimp only
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
-  letI : BorelSpace ↥S := hSborel
+  let : BorelSpace ↥S := hSborel
   let r := Module.finrank ℝ ↥S
   let b := stdOrthonormalBasis ℝ ↥S
   let e := b.repr
@@ -729,16 +729,16 @@ private theorem stdGaussian_eq_map_orthogonal_sum
         (fun p => (p.1 : E) + (p.2 : E)) = stdGaussian E := by
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
   let hSperpborel : BorelSpace ↥Sᗮ := Subtype.borelSpace _
-  letI := hSborel
-  letI := hSperpborel
-  letI : SecondCountableTopology ↥S :=
+  let := hSborel
+  let := hSperpborel
+  let : SecondCountableTopology ↥S :=
     Topology.IsInducing.subtypeVal.secondCountableTopology
-  letI : SecondCountableTopology ↥Sᗮ :=
+  let : SecondCountableTopology ↥Sᗮ :=
     Topology.IsInducing.subtypeVal.secondCountableTopology
   let hsecond : SecondCountableTopologyEither ↥S ↥Sᗮ := inferInstance
   let hWithBorel : BorelSpace (WithLp 2 (↥S × ↥Sᗮ)) :=
     @WithLp.borelSpace 2 ↥S _ ↥Sᗮ _ _ _ hSborel hSperpborel hsecond
-  letI := hWithBorel
+  let := hWithBorel
   let e := S.orthogonalDecomposition
   have hsum : (fun p : ↥S × ↥Sᗮ => (p.1 : E) + (p.2 : E)) =
       (fun z : WithLp 2 (↥S × ↥Sᗮ) => e.symm z) ∘ WithLp.toLp 2 := by
@@ -767,10 +767,10 @@ private theorem effectiveScale_eq_opNorm
     (C : Set (EuclideanSpace ℝ (Fin m)))
     (A : EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ) :
     effectiveScale C A = ContinuousLinearMap.opNorm (effectiveA C A) := by
-  letI : FiniteDimensional ℝ ↥(effectiveSpan C) :=
+  let : FiniteDimensional ℝ ↥(effectiveSpan C) :=
     FiniteDimensional.of_injective (effectiveSpan C).subtype
       (effectiveSpan C).injective_subtype
-  letI : Norm (↥(effectiveSpan C) →L[ℝ] ℝ) :=
+  let : Norm (↥(effectiveSpan C) →L[ℝ] ℝ) :=
     ContinuousLinearMap.hasOpNorm
   let f := effectiveA C A
   let R : Set ℝ := {r | ∃ x : ↥(effectiveSpan C), ‖x‖ ≤ 1 ∧ r = |f x|}
@@ -844,7 +844,7 @@ private theorem scalarMatrix_mul_transpose_apply
     {k : ℕ} (F : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :
     (scalarMatrix F * (scalarMatrix F).transpose) 0 0 =
       ContinuousLinearMap.opNorm F ^ 2 := by
-  letI : Norm (EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :=
+  let : Norm (EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :=
     ContinuousLinearMap.hasOpNorm
   change (scalarMatrix F * (scalarMatrix F).transpose) 0 0 = ‖F‖ ^ 2
   rw [Matrix.mul_apply, OrthonormalBasis.norm_dual
@@ -896,14 +896,14 @@ private theorem coordinateFunctional_opNorm
     ContinuousLinearMap.opNorm (coordinateFunctional C A) =
       ContinuousLinearMap.opNorm (effectiveA C A) := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
   let f := effectiveA C A
   let g := coordinateFunctional C A
-  letI : Norm (↥S →L[ℝ] ℝ) := ContinuousLinearMap.hasOpNorm
-  letI : Norm (EuclideanSpace ℝ (Fin r) →L[ℝ] ℝ) :=
+  let : Norm (↥S →L[ℝ] ℝ) := ContinuousLinearMap.hasOpNorm
+  let : Norm (EuclideanSpace ℝ (Fin r) →L[ℝ] ℝ) :=
     ContinuousLinearMap.hasOpNorm
   change ‖g‖ = ‖f‖
   apply le_antisymm
@@ -934,15 +934,15 @@ private theorem multivariateGaussian_coordinate_prod
         (1 : Matrix (Fin m) (Fin m) ℝ) := by
   dsimp only
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
   let hSperpborel : BorelSpace ↥Sᗮ := Subtype.borelSpace _
-  letI : BorelSpace ↥S := hSborel
-  letI : BorelSpace ↥Sᗮ := hSperpborel
-  letI : IsProbabilityMeasure (stdGaussian ↥S) :=
+  let : BorelSpace ↥S := hSborel
+  let : BorelSpace ↥Sᗮ := hSperpborel
+  let : IsProbabilityMeasure (stdGaussian ↥S) :=
     inferInstance
-  letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
+  let : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
     inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
@@ -1008,11 +1008,11 @@ private theorem scalarCoordinateKernel_markov
     (T : {f : EuclideanSpace ℝ (Fin m) → ℝ // Measurable f}) :
     IsMarkovKernel (scalarCoordinateKernel C T) := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSperpborel : BorelSpace ↥Sᗮ := Subtype.borelSpace _
-  letI : BorelSpace ↥Sᗮ := hSperpborel
-  letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
+  let : BorelSpace ↥Sᗮ := hSperpborel
+  let : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
     inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
@@ -1032,8 +1032,8 @@ private theorem scalarCoordinateKernel_markov
       (ContinuousLinearMap.single ℝ (fun _ : Fin 1 => ℝ) 0)).continuous.measurable
   have hact : Measurable act := hsingle.comp (T.2.comp hobs)
   change IsMarkovKernel ((Kernel.id ×ₖ η).map act)
-  letI : IsMarkovKernel η := inferInstance
-  letI : IsMarkovKernel (Kernel.id ×ₖ η) := inferInstance
+  let : IsMarkovKernel η := inferInstance
+  let : IsMarkovKernel (Kernel.id ×ₖ η) := inferInstance
   exact Kernel.IsMarkovKernel.map _ hact
 
 set_option maxHeartbeats 800000 in
@@ -1052,15 +1052,15 @@ private theorem scalarCoordinateKernel_bind
         (fun x => EuclideanSpace.single (0 : Fin 1) (T.1 x)) := by
   dsimp only
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hSborel : BorelSpace ↥S := Subtype.borelSpace _
   let hSperpborel : BorelSpace ↥Sᗮ := Subtype.borelSpace _
-  letI : BorelSpace ↥S := hSborel
-  letI : BorelSpace ↥Sᗮ := hSperpborel
-  letI : IsProbabilityMeasure (stdGaussian ↥S) :=
+  let : BorelSpace ↥S := hSborel
+  let : BorelSpace ↥Sᗮ := hSperpborel
+  let : IsProbabilityMeasure (stdGaussian ↥S) :=
     inferInstance
-  letI : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
+  let : IsProbabilityMeasure (stdGaussian ↥Sᗮ) :=
     inferInstance
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
@@ -1124,7 +1124,7 @@ private theorem coordinateFunctional_repr
     coordinateFunctional C A
         ((stdOrthonormalBasis ℝ ↥(effectiveSpan C)).repr h) = A h := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   change effectiveA C A
       ((stdOrthonormalBasis ℝ ↥S).repr.symm
@@ -1152,7 +1152,7 @@ private theorem gaussianShiftKernelRiskVec_coordinate
           (1 : Matrix (Fin m) (Fin m) ℝ)) := by
   dsimp only
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let r := Module.finrank ℝ ↥S
   let e := (stdOrthonormalBasis ℝ ↥S).repr
@@ -1229,7 +1229,7 @@ theorem exists_conePrior_bayes_lower_bound
         (NNReal.mk (effectiveScale C A ^ 2) (sq_nonneg _)))) ≤
         measurableBayesRisk (restrictedTranslatedGaussianPrior C h0 c) A ℓ + ε := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let r := Module.finrank ℝ ↥S
   let eS := (stdOrthonormalBasis ℝ ↥S).repr
@@ -1292,7 +1292,7 @@ theorem exists_conePrior_bayes_lower_bound
   let P₀ : Measure (EuclideanSpace ℝ (Fin m)) :=
     translatedGaussianOnEffectiveSpan C 0 τ
   have hP₀spec := translatedGaussianOnEffectiveSpan_spec C 0 τ hτ
-  letI : IsProbabilityMeasure P₀ := hP₀spec.1
+  let : IsProbabilityMeasure P₀ := hP₀spec.1
   rcases exists_ball_compl_measure_lt P₀ δ hδ with ⟨n, hn⟩
   rcases exists_effectiveInteriorBall C _hzero _hconv with ⟨v, rv, hrv, hv⟩
   let R : ℝ := (n : ℝ) + 1
@@ -1301,7 +1301,7 @@ theorem exists_conePrior_bayes_lower_bound
   let ν : Measure (EuclideanSpace ℝ (Fin m)) :=
     translatedGaussianOnEffectiveSpan C h₀ τ
   have hνspec := translatedGaussianOnEffectiveSpan_spec C h₀ τ hτ
-  letI : IsProbabilityMeasure ν := hνspec.1
+  let : IsProbabilityMeasure ν := hνspec.1
   have hSmeas : MeasurableSet (S : Set (EuclideanSpace ℝ (Fin m))) :=
     S.closed_of_finiteDimensional.measurableSet
   have hνS : ∀ᵐ x ∂ν, x ∈ S :=
@@ -1499,7 +1499,7 @@ theorem exists_conePrior_bayes_lower_bound_vec {d : ℕ}
   rcases ENNReal.exists_pos_mul_lt hBtop.ne he.ne' with ⟨δ, hδ, hδB⟩
   let P₀ : Measure (EuclideanSpace ℝ (Fin m)) :=
     multivariateGaussian 0 ((τ ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ))
-  haveI : IsProbabilityMeasure P₀ := by
+  have : IsProbabilityMeasure P₀ := by
     dsimp [P₀]
     infer_instance
   rcases exists_ball_compl_measure_lt P₀ δ hδ with ⟨n, hn⟩
@@ -1521,7 +1521,7 @@ theorem exists_conePrior_bayes_lower_bound_vec {d : ℕ}
   have hνeq : ν = multivariateGaussian (h₀ : EuclideanSpace ℝ (Fin m))
       ((τ ^ 2) • (1 : Matrix (Fin m) (Fin m) ℝ)) := by
     exact translatedGaussian_eq_multivariateGaussian_of_fullSpan C heff h₀ τ hτ
-  haveI : IsProbabilityMeasure ν := by
+  have : IsProbabilityMeasure ν := by
     rw [hνeq]
     infer_instance
   have htail : ν (toMeasurable ν C)ᶜ < δ := by

@@ -171,7 +171,7 @@ private theorem outerLpNorm_localized_le_conditionOn
     outerLpNorm Q (localizedFunction A f) r ≤ outerLpNorm (conditionOn Q A) f r := by
   let R : Measure Ω := conditionOn Q A
   have hRprob : IsProbabilityMeasure R := conditionOn_isProbabilityMeasure Q A hA hQA
-  letI : IsProbabilityMeasure R := hRprob
+  let : IsProbabilityMeasure R := hRprob
   let p : ℝ≥0∞ := ENNReal.ofReal r
   have hp_top : p ≠ ⊤ := ENNReal.ofReal_ne_top
   have hQR : Q.restrict A = Q A • R := by
@@ -241,7 +241,7 @@ theorem ae_pooledEmpiricalLaw_admissibleOrZero
     (fun i => X i.val ξ.1) (fun i => X i.val ξ.2)
   have hQprob : IsProbabilityMeasure Q :=
     pooledEmpiricalLaw_isProbabilityMeasure P n _ _
-  letI : IsProbabilityMeasure Q := hQprob
+  let : IsProbabilityMeasure Q := hQprob
   have hnpos : 0 < n := Nat.pos_of_ne_zero (NeZero.ne n)
   have hncast : (0 : ℝ≥0∞) < n := by exact_mod_cast hnpos
   have hVQ : (∫⁻ x, V x ∂Q) < ⊤ := by
@@ -308,7 +308,7 @@ theorem exists_localizedPooledClassNet
     intro n _ P _ z z'
     let Q : Measure Ω := pooledEmpiricalLaw P n z z'
     have hQprob : IsProbabilityMeasure Q := pooledEmpiricalLaw_isProbabilityMeasure P n z z'
-    letI : IsProbabilityMeasure Q := hQprob
+    let : IsProbabilityMeasure Q := hQprob
     have hloc_meas : ∀ f ∈ localizedClass F A, Measurable f := by
       rintro _ ⟨f, hf, rfl⟩
       exact measurable_localizedFunction A f hA (hFmeas f hf)
@@ -363,7 +363,7 @@ theorem exists_localizedPooledClassNet
     · have hQApos : 0 < Q A := pos_iff_ne_zero.mpr hQA
       let R : Measure Ω := conditionOn Q A
       have hRprob : IsProbabilityMeasure R := conditionOn_isProbabilityMeasure Q A hA hQApos
-      letI : IsProbabilityMeasure R := hRprob
+      let : IsProbabilityMeasure R := hRprob
       have hRA : ∀ᵐ x ∂R, x ∈ A := by
         change ∀ᵐ x ∂(Q A)⁻¹ • Q.restrict A, x ∈ A
         exact Measure.ae_smul_measure
@@ -808,7 +808,7 @@ private theorem measurable_ghostDeviation
     Measurable (fun ξ : Ξ × Ξ => ghostDeviation E X n ξ.1 ξ.2) := by
   classical
   obtain ⟨E₀, hE₀count, hE₀sub, hE₀dense⟩ := hPM
-  letI : Countable E₀ := hE₀count
+  let : Countable E₀ := hE₀count
   have heq (ξ : Ξ × Ξ) :
       ghostDeviation E X n ξ.1 ξ.2 =
         supNormOver E₀ (fun f =>
@@ -850,7 +850,7 @@ private theorem measurable_signedGhostDeviation
       (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) σ) := by
   classical
   obtain ⟨E₀, hE₀count, hE₀sub, hE₀dense⟩ := hPM
-  letI : Countable E₀ := hE₀count
+  let : Countable E₀ := hE₀count
   have heq (ξ : Ξ × Ξ) :
       signedGhostDeviation E n (fun i => X i.val ξ.1)
           (fun i => X i.val ξ.2) σ =
@@ -945,7 +945,7 @@ private theorem measurable_pairGhostDeviation
     Measurable (pairedGhostDeviation E n) := by
   classical
   obtain ⟨E₀, hE₀count, hE₀sub, hE₀dense⟩ := hPM
-  letI : Countable E₀ := hE₀count
+  let : Countable E₀ := hE₀count
   unfold pairedGhostDeviation
   have heq (z : Fin n → Ω × Ω) :
       supNormOver E (fun f : Ω → ℝ => (n : ℝ)⁻¹ * Finset.univ.sum
@@ -1014,7 +1014,7 @@ theorem ghostSwap_rademacher_outer_le
         (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) ε) := by
   classical
   let q : Fin n → Measure Ω := fun i => μ.map (X i.val)
-  letI (i : Fin n) : IsProbabilityMeasure (q i) := by
+  let (i : Fin n) : IsProbabilityMeasure (q i) := by
     refine ⟨?_⟩
     dsimp [q]
     rw [Measure.map_apply (hXmeas i.val) MeasurableSet.univ]
@@ -1432,8 +1432,8 @@ private theorem pooled_close_sample_sum
     ∑ i : Fin (2 * m),
       (|(f - g) (z i)| + |(f - g) (z' i)|) < 6 * m * ρ := by
   let Q := pooledEmpiricalLaw P (2 * m) z z'
-  haveI : NeZero (2 * m) := ⟨by positivity⟩
-  letI : IsProbabilityMeasure Q := pooledEmpiricalLaw_isProbabilityMeasure P _ z z'
+  have : NeZero (2 * m) := ⟨by positivity⟩
+  let : IsProbabilityMeasure Q := pooledEmpiricalLaw_isProbabilityMeasure P _ z z'
   have hfg : Measurable (f - g) := hf.sub hg
   have hL1 : outerLpNorm Q (f - g) 1 < ENNReal.ofReal ρ := by
     calc
@@ -1751,7 +1751,7 @@ private theorem paired_swap_outer_le_uniform_average
           {σ | swapFinitePairs σ (pairedFiniteSample X n ξ) ∈ D}) := by
   classical
   let q : Fin n → Measure Ω := fun i => μ.map (X i.val)
-  letI (i : Fin n) : IsProbabilityMeasure (q i) := by
+  let (i : Fin n) : IsProbabilityMeasure (q i) := by
     refine ⟨?_⟩
     dsimp [q]
     rw [Measure.map_apply (hXmeas i.val) MeasurableSet.univ]

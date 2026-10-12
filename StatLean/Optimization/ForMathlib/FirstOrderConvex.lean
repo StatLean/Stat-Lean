@@ -85,7 +85,7 @@ theorem inner_gradient_le_sub_of_convexOn
     hφconv.le_slope_of_hasDerivAt (Set.mem_univ 0) (Set.mem_univ 1) zero_lt_one hφderiv
   have hsl : slope (f ∘ ⇑L) 0 1 = f y - f x := by
     rw [slope_def_field]
-    show ((f ∘ ⇑L) 1 - (f ∘ ⇑L) 0) / (1 - 0) = f y - f x
+    change ((f ∘ ⇑L) 1 - (f ∘ ⇑L) 0) / (1 - 0) = f y - f x
     rw [Function.comp_apply, Function.comp_apply, hL0, hL1]
     norm_num
   rw [hsl] at hslope

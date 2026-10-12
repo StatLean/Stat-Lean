@@ -157,11 +157,11 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     unfold linfNorm at hω
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · have hval : ⨆ j : Fin d, |(scoreVec M ω).ofLp j| = 0 := by
-        haveI := hd0
+        have := hd0
         change sSup (Set.range (fun j : Fin d => |(scoreVec M ω).ofLp j|)) = 0
         rw [Set.range_eq_empty_iff.mpr hd0, Real.sSup_empty]
       exact absurd (hval ▸ hω) (not_lt.mpr ht)
-    · haveI := hne
+    · have := hne
       exact (lt_ciSup_iff (Set.finite_range _).bddAbove).mp hω
   -- ── Step 2: per-coordinate sub-Gaussian tail bound ────────────────────────────
   have hcol_sg : ∀ j : Fin d,
@@ -188,7 +188,7 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
           rw [Finset.sum_const, Finset.card_fin, nsmul_eq_mul,
               ← ENNReal.ofReal_natCast (n := d),
               ← ENNReal.ofReal_mul (by positivity)]
-          congr 1; push_cast; ring
+          congr 1; ring
 
 /-- **High-probability good event** (Wainwright Cor 9.26). With `λ = 4BC{√(log d/n) + δ}` (or larger),
 `P(‖scoreVec‖∞ ≤ λ/2) ≥ 1 − 2·exp(−2nδ²)`. Setting `t = λ/2` in `score_linfNorm_tail`, the bound

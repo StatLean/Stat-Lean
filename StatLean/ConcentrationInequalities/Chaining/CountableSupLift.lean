@@ -284,7 +284,7 @@ private lemma biSup_nonneg_of_mem {ι : Type*} {C : Set ι} {h : ι → ℝ}
     refine le_ciSup_of_le hbdd i₀ ?_
     by_cases hi : i₀ ∈ C
     · rw [ciSup_pos hi]; exact h0 _ hi
-    · haveI : IsEmpty (i₀ ∈ C) := ⟨hi⟩
+    · have : IsEmpty (i₀ ∈ C) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
   · rw [Real.iSup_of_not_bddAbove hbdd]
 
@@ -313,7 +313,7 @@ lemma toReal_biSup_ofReal {ι : Type*} {C : Set ι} {h : ι → ℝ}
     intro i
     by_cases hi : i ∈ C
     · rw [ciSup_pos hi]; exact hmem i hi
-    · haveI : IsEmpty (i ∈ C) := ⟨hi⟩
+    · have : IsEmpty (i ∈ C) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]; exact ENNReal.toReal_nonneg
   have hbdd : BddAbove (Set.range fun i => ⨆ (_ : i ∈ C), h i) :=
     ⟨(⨆ i ∈ C, ENNReal.ofReal (h i)).toReal, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
@@ -344,7 +344,7 @@ lemma exists_lt_of_lt_biSup_real {ι : Type*} {S : Set ι} {h : ι → ℝ} {c :
   by_cases hiS : i ∈ S
   · rw [ciSup_pos hiS] at hi
     exact ⟨i, hiS, hi⟩
-  · haveI : IsEmpty (i ∈ S) := ⟨hiS⟩
+  · have : IsEmpty (i ∈ S) := ⟨hiS⟩
     rw [Real.iSup_of_isEmpty] at hi
     linarith
 

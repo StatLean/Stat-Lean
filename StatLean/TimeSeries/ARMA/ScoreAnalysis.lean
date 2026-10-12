@@ -96,7 +96,7 @@ theorem summable_abs_armaPi {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
 `E[(Σᵢ ψᵢ ε_{s−i})(Σⱼ φⱼ ε_{t−j})]` at lag `k = t − s` is `Σⱼ ψⱼ φ_{j+k}` (terms with
 negative index vanish). -/
 noncomputable def maCrossACVF (ψ φ : ℕ → ℝ) (k : ℤ) : ℝ :=
-  ∑' j : ℕ, ψ j * (if h : 0 ≤ (j : ℤ) + k then φ ((j : ℤ) + k).toNat else 0)
+  ∑' j : ℕ, ψ j * (if _ : 0 ≤ (j : ℤ) + k then φ ((j : ℤ) + k).toNat else 0)
 
 /-- **FY eq. (3.14)**: the covariance matrix of the auxiliary vector
 `Z = (U_{t−1..t−p}, V_{t−1..t−q})`, `b(B)U = ε`, `a(B)V = ε`, common `WN(0,1)`.
@@ -1507,8 +1507,7 @@ theorem isARMAResidualOf_eq_noise [IsProbabilityMeasure μ] {p q : ℕ}
   have hTriTendsto : Tendsto (fun N => ∑ x ∈ Tri N, |π x.1| * |ψc x.2|)
       atTop (𝓝 (∑' x : ℕ × ℕ, |π x.1| * |ψc x.2|)) := by
     refine hF.hasSum.comp (tendsto_atTop_finset_of_monotone ?_ ?_)
-    · intro m n hmn
-      intro x hx
+    · intro m n hmn x hx
       rw [hTriMem] at hx ⊢
       omega
     · intro x

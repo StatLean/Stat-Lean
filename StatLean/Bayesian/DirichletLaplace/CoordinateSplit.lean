@@ -328,7 +328,7 @@ lemma dlNumer_cylinder (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] [Decida
   · rw [dlNumer, ← lintegral_indicator hA]
     apply lintegral_congr
     intro ξ
-    by_cases hξ : ξ ∈ A <;> simp [Set.indicator_apply, hξ]
+    by_cases hξ : ξ ∈ A <;> simp [hξ]
   · rw [dlDenom, dlNumer, Measure.restrict_univ]
 
 /-- **Tensorization / posterior-ratio reduction to the `Sᶜ`-sub-model** (BPPD eq. (26)).
@@ -388,7 +388,7 @@ lemma dlRatio_cylinder (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] [Decida
     · rw [dlNumer, ← lintegral_indicator hB]
       apply lintegral_congr
       intro ζ
-      by_cases hζ : ζ ∈ B <;> simp [Set.indicator_apply, hζ]
+      by_cases hζ : ζ ∈ B <;> simp [hζ]
   obtain ⟨hX0, hXtop⟩ := dlDenom_pos_lt_top a (projS S θ₀) (projS S y)
   rw [hnum, hden, ENNReal.mul_div_mul_left _ _ hX0.ne' hXtop.ne]
 

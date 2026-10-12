@@ -58,7 +58,7 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
     (p : Θ → 𝓧 → ℝ≥0∞) (x : Fin n → 𝓧) (hpfin : ∀ θ i, p θ (x i) ≠ ∞) :
     ∃ Ghat, IsNPMLE p x Ghat := by
   classical
-  letI : Fintype Θ := Fintype.ofFinite Θ
+  let : Fintype Θ := Fintype.ofFinite Θ
   -- Real objective on weight vectors: `Ψ w = ∏ⱼ ∑_θ (p θ xⱼ).toReal · w θ`.
   set Ψ : (Θ → ℝ) → ℝ := fun w => ∏ j, ∑ θ, (p θ (x j)).toReal * w θ with hΨ
   have hcont : Continuous Ψ :=
@@ -134,7 +134,7 @@ theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
     ∃ (Ghat : Measure Θ) (S : Finset Θ),
       IsNPMLE p x Ghat ∧ Ghat ((↑S : Set Θ)ᶜ) = 0 ∧ S.card ≤ n + 1 := by
   classical
-  letI : Fintype Θ := Fintype.ofFinite Θ
+  let : Fintype Θ := Fintype.ofFinite Θ
   obtain ⟨Ĝ, hĜprob, hĜmax⟩ := NPMLE_exists_of_finite p x hpfin
   -- the `n`-dimensional likelihood curve `w θ = (p(θ,x₀),…,p(θ,xₙ₋₁))` in `ℝⁿ`
   set w : Θ → (Fin n → ℝ) := fun θ i => (p θ (x i)).toReal with hw

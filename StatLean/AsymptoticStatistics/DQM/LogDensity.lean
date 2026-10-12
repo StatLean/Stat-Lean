@@ -250,7 +250,7 @@ theorem dqm_logDensity_differentiableInProbabilityAt
     2 * (M.sqrtDensity θ x - M.sqrtDensity θ₀ x) / M.sqrtDensity θ₀ x
   let z : Θ → 𝓧 → ℝ := fun θ x => ⟪θ - θ₀, ℓ x⟫
   let s : Θ → ℝ := fun θ => ‖θ - θ₀‖
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hpdf.density_integrable θ₀).hasFiniteIntegral
   have hshift : Tendsto (fun θ : Θ => θ - θ₀) (𝓝[≠] θ₀) (𝓝[≠] (0 : Θ)) := by
     rw [tendsto_nhdsWithin_iff]

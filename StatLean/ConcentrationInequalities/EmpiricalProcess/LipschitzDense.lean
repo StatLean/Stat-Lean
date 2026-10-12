@@ -98,8 +98,7 @@ theorem lipschitzNetUnion_subset (m : ℕ) :
 /-- The exhaustion is monotone (LEAN-ONLY; `biUnion` over a growing range). -/
 theorem lipschitzNetUnion_mono : Monotone lipschitzNetUnion := by
   classical
-  intro a b hab
-  intro x hx
+  intro a b hab x hx
   rw [lipschitzNetUnion, Finset.mem_biUnion] at hx ⊢
   obtain ⟨j, hj, hx⟩ := hx
   rw [Finset.mem_range] at hj
@@ -145,7 +144,7 @@ theorem iSup_abs_empiricalProcess_eq_iSup_netUnion [IsProbabilityMeasure P]
         |empiricalProcess P n X (⇑(f : C(unitInterval, ℝ))) ω|)
       = ⨆ m : ℕ, (lipschitzNetUnion m).sup' (lipschitzNetUnion_nonempty m)
           (fun g => |empiricalProcess P n X ⇑g ω|) := by
-  haveI : Nonempty (lipschitzUnitClass) := ⟨⟨0, zero_mem_lipschitzUnitClass⟩⟩
+  have : Nonempty (lipschitzUnitClass) := ⟨⟨0, zero_mem_lipschitzUnitClass⟩⟩
   set T : ℕ → ℝ := fun m => (lipschitzNetUnion m).sup' (lipschitzNetUnion_nonempty m)
       (fun g => |empiricalProcess P n X ⇑g ω|) with hT
   -- Each finite maximum is bounded above by `2` (all members are in `𝓕`).
@@ -220,9 +219,9 @@ theorem iSup_abs_empiricalProcess_lipOne_eq [IsProbabilityMeasure P]
         |empiricalProcess P n X (↑f) ω|)
       = ⨆ f : lipschitzUnitClass,
           |empiricalProcess P n X (⇑(f : C(unitInterval, ℝ))) ω| := by
-  haveI : Nonempty {f : unitInterval → ℝ // LipschitzWith 1 f} :=
+  have : Nonempty {f : unitInterval → ℝ // LipschitzWith 1 f} :=
     ⟨⟨fun _ => 0, (LipschitzWith.const (0 : ℝ)).weaken (by norm_num)⟩⟩
-  haveI : Nonempty (lipschitzUnitClass) :=
+  have : Nonempty (lipschitzUnitClass) :=
     ⟨⟨0, zero_mem_lipschitzUnitClass⟩⟩
   -- For a 1-Lipschitz `f`, subtracting its (attained) min gives a class member
   -- with the same empirical process value.
@@ -373,7 +372,7 @@ theorem iSup_abs_empiricalProcess_lipZero_eq [IsProbabilityMeasure P]
       rw [Real.dist_eq, abs_eq_zero, sub_eq_zero] at hz
       exact hz
     rw [hconst, empiricalProcess_const, abs_zero]
-  haveI : Nonempty {f : unitInterval → ℝ // LipschitzWith 0 f} :=
+  have : Nonempty {f : unitInterval → ℝ // LipschitzWith 0 f} :=
     ⟨⟨fun _ => 0, (LipschitzWith.const (0 : ℝ))⟩⟩
   rw [iSup_congr key]
   exact ciSup_const

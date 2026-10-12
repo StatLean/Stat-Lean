@@ -491,7 +491,7 @@ theorem symmetrization_upper {μ : Measure Ω} [IsProbabilityMeasure μ]
     (hX_indep : iIndepFun X μ) :
     ∫ ω, ‖∑ i, X i ω‖ ∂μ
       ≤ 2 * ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) := by
-  haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
+  have hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
     fun i => (by infer_instance)
   have hν_int : ∀ i, Integrable id (μ.map (X i)) := fun i =>
     (integrable_map_measure aestronglyMeasurable_id (hX_meas i).aemeasurable).mpr
@@ -545,7 +545,7 @@ theorem symmetrization_lower {μ : Measure Ω} [IsProbabilityMeasure μ]
     (hX_indep : iIndepFun X μ) :
     ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N))
       ≤ 2 * ∫ ω, ‖∑ i, X i ω‖ ∂μ := by
-  haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
+  have hνp : ∀ i, IsProbabilityMeasure (μ.map (X i)) :=
     fun i => (by infer_instance)
   have hν_int : ∀ i, Integrable id (μ.map (X i)) := fun i =>
     (integrable_map_measure aestronglyMeasurable_id (hX_meas i).aemeasurable).mpr

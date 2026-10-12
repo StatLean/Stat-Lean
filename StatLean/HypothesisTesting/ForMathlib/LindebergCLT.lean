@@ -303,7 +303,7 @@ private lemma tendsto_prod_charFun_lindeberg
   rcases eq_or_ne t 0 with rfl | ht
   · have hone : ∀ n i, charFun (P.map (X n i)) 0 = 1 := by
       intro n i
-      haveI : IsProbabilityMeasure (P.map (X n i)) :=
+      have : IsProbabilityMeasure (P.map (X n i)) :=
         (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 1) 0 = 1 := by
@@ -360,7 +360,7 @@ private lemma tendsto_prod_charFun_lindeberg
       rw [charFun_apply_real, integral_map (hmeas n i).aemeasurable
         (Continuous.aestronglyMeasurable (by fun_prop))]
       refine integral_congr_ae (ae_of_all _ fun x => ?_)
-      congr 1; push_cast; ring
+      push_cast; ring
     -- The real (variance) part and the vanishing imaginary part.
     have hRp : ∫ ω, (1 - t ^ 2 * (X n i ω) ^ 2 / 2 : ℝ) ∂P = 1 - t ^ 2 * Var[X n i; P] / 2 := by
       rw [integral_sub (integrable_const 1) (((hI2 n i).const_mul (t ^ 2)).div_const 2),
@@ -853,7 +853,7 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
           rw [← abs_mul]; simpa only [hXdef] using! hω
         have h3 : ε < (ε / K) * |Y (↑i : ℕ) ω| :=
           lt_of_lt_of_le h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
-        show (K : ℝ) < |Y (↑i : ℕ) ω|
+        change (K : ℝ) < |Y (↑i : ℕ) ω|
         by_contra hcon
         push Not at hcon
         have hle : (ε / K) * |Y (↑i : ℕ) ω| ≤ (ε / K) * K :=

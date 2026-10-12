@@ -179,7 +179,7 @@ private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p :
     by_cases hji : j = i
     · subst hji
       -- (0 : Ω → ℝ) i_val ω = 0 ≤ m*α/N; and i = i, so i ∈ insert i (filter)
-      simp [Function.update_self, Pi.zero_apply, hpos]
+      simp [Function.update_self, hpos]
     · simp only [Function.update_of_ne hji, or_iff_right hji]
   rw [hset_eq, Finset.card_insert_of_notMem hi_not_mem]
 
@@ -630,7 +630,7 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
-        simp [Set.indicator_apply, Set.mem_inter_iff, Set.mem_ofPred_eq, hA, hB]
+        simp [Set.mem_inter_iff, Set.mem_ofPred_eq, hA, hB]
     rw [integral_const_mul, hprod_eq, integral_indicator_one (hAmeas.inter hBmeas)]
     have hAle : (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal ≤ (k : ℝ) * α / N := by
       calc (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal

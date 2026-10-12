@@ -117,7 +117,7 @@ private lemma integrable_iSup_fin
     {d : ℕ} [NeZero d] {μ : Measure Ω}
     {f : Fin d → Ω → ℝ} (hf : ∀ j, Integrable (f j) μ) :
     Integrable (fun ω => ⨆ j, f j ω) μ := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖f j ω‖)
   · exact integrable_finsetSum _ (fun j _ => (hf j).norm)
   · exact (AEMeasurable.iSup (fun j =>
@@ -224,14 +224,14 @@ theorem l2_max_expectation
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
     (hX_int : Integrable X μ) :
     ∫ ω, ‖X ω‖ ∂μ ≤ 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) := by
-  haveI : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
+  have : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
   -- *** Step 1: Construct 1/2-net ***
   let net := buildL2Net d
   let F := net.F
   let k := F.card
   have hk_pos : 0 < k := Finset.card_pos.mpr net.hF_nonempty
-  haveI hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
+  have hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
   -- *** Step 2: Enumerate net as Fin k → E ***
   let e : Fin k → EuclideanSpace ℝ (Fin d) := fun j => (F.equivFin.symm j : F).val
   have he_norm : ∀ j, ‖e j‖ ≤ 1 := fun j =>
@@ -437,14 +437,14 @@ theorem l2_max_tail
     μ {ω | 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
            2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ)) < ‖X ω‖}
       ≤ ENNReal.ofReal δ := by
-  haveI : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
+  have : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
   -- *** Step 1: Build net ***
   let net := buildL2Net d
   let F := net.F
   let k := F.card
   have hk_pos : 0 < k := Finset.card_pos.mpr net.hF_nonempty
-  haveI hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
+  have hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
   let e : Fin k → EuclideanSpace ℝ (Fin d) := fun j => (F.equivFin.symm j : F).val
   have he_norm : ∀ j, ‖e j‖ ≤ 1 := fun j =>
     net.hF_norm (e j) (F.equivFin.symm j).prop

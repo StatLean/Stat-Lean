@@ -803,8 +803,6 @@ theorem mds_clt_sequence [IsProbabilityMeasure μ]
     congr 1
     refine measure_congr ?_
     filter_upwards [hVar n] with ω hω
-    change (δ ≤ |(n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, μ[fun ω' => ξ i ω' ^ 2 | G i] ω) - σ2|)
-      = (δ ≤ |mdsCondVariance (fun n => n) X F μ n ω - σ2|)
     rw [hω]
   -- the Lindeberg sets match on the nose: `{|ξᵢ/√n| ≥ ε} = {|ξᵢ| ≥ ε√n}`
   have hlind' : ∀ ε : ℝ, 0 < ε →

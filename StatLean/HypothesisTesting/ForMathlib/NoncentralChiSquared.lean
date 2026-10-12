@@ -123,17 +123,17 @@ private lemma multivariateGaussian_one_eq_map_add {k : ℕ}
 /-- The mean vector has the prescribed length `√l` (when there is at least one coordinate). -/
 private lemma noncentralMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     ‖noncentralMean k l‖ = Real.sqrt (l : ℝ) := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have h2 : ‖noncentralMean k l‖ ^ 2 = (l : ℝ) := by
     rw [EuclideanSpace.real_norm_sq_eq]
     have hval : ∀ i : Fin k,
         (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
       intro i
       by_cases hi : i = 0
-      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left, ite_true]
+      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left]
         rw [Real.sq_sqrt l.coe_nonneg]
       · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
-        simp [noncentralMean, hi, hi']
+        simp [noncentralMean, hi]
     simp_rw [hval]
     simp [Finset.sum_ite_eq']
   rw [← h2, Real.sqrt_sq (norm_nonneg _)]
@@ -196,7 +196,7 @@ theorem noncentralChiSquared_zero {k : ℕ}
     -- USER-INPUT: at least one degree of freedom (`chiSquared 0` is degenerate).
     (hk : 0 < k) :
     noncentralChiSquared k 0 = StatLean.MultipleTesting.chiSquared k := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   rw [noncentralChiSquared, noncentralMean_zero, multivariateGaussian_zero_one,
     ← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop)]
   have hfun : ((fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2) ∘ (WithLp.toLp 2))
@@ -240,7 +240,7 @@ theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
   set A : Matrix (Fin k) (Fin k) ℝ := B⁻¹ with hA_def
   -- `A` is self-adjoint.
   have hA_sa : IsSelfAdjoint A := by
-    show star A = A
+    change star A = A
     rw [hA_def, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_nonsing_inv,
       ← Matrix.star_eq_conjTranspose, hB_sa]
   have hAH : Aᴴ = A := by rw [← Matrix.star_eq_conjTranspose]; exact hA_sa
@@ -260,7 +260,7 @@ theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
     intro z
     rw [sq, ← real_inner_self_eq_norm_mul_norm, Matrix.inner_toEuclideanCLM,
       Matrix.inner_toEuclideanCLM]
-    show (A *ᵥ z) ⬝ᵥ (A *ᵥ z) = z ⬝ᵥ S⁻¹ *ᵥ z
+    change (A *ᵥ z) ⬝ᵥ (A *ᵥ z) = z ⬝ᵥ S⁻¹ *ᵥ z
     rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, Matrix.mulVec_mulVec, hAt, hAA,
       dotProduct_comm]
   -- Assemble via the whitening pushforward and the squared-norm law of `N(Aμ, I)`.
@@ -622,7 +622,7 @@ and complementation of the closed ball) to the scaled Anderson shrink monotonici
 theorem noncentralChiSquared_tail_mono (k : ℕ) (t : ℝ) :
     Monotone fun l : ℝ≥0 => (noncentralChiSquared k l) (Set.Ioi t) := by
   intro l₁ l₂ h
-  show (noncentralChiSquared k l₁) (Set.Ioi t) ≤ (noncentralChiSquared k l₂) (Set.Ioi t)
+  change (noncentralChiSquared k l₁) (Set.Ioi t) ≤ (noncentralChiSquared k l₂) (Set.Ioi t)
   rw [noncentralChiSquared_Ioi_eq, noncentralChiSquared_Ioi_eq]
   set E := EuclideanSpace ℝ (Fin k)
   have hmeas : ∀ l : ℝ≥0, MeasurableSet {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := by
@@ -663,7 +663,7 @@ private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [Measur
     simpa [Fin.sum_univ_one] using h
   -- `L²`-membership of the increments (Gaussian fourth moment is finite)
   have hL2 : MemLp (Y 0) 2 P₀ := by
-    haveI : ENNReal.HolderTriple (4 : ℝ≥0∞) 4 2 := ⟨by
+    have : ENNReal.HolderTriple (4 : ℝ≥0∞) 4 2 := ⟨by
       rw [← two_mul, show (4 : ℝ≥0∞) = 2 * 2 from by norm_num,
         ENNReal.mul_inv (by norm_num) (by norm_num), ← mul_assoc,
         ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]⟩
@@ -745,7 +745,7 @@ private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [Measur
       = (∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ) := by
     simp only [one_mul, hY]
     rw [Finset.sum_sub_distrib]; simp
-  show (Real.sqrt 2 * Real.sqrt (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2))⁻¹
+  change (Real.sqrt 2 * Real.sqrt (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2))⁻¹
         * ∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω
       = ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
         / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))
@@ -785,8 +785,8 @@ theorem weakConverges_chiSquared_standardized :
   -- canonical i.i.d. `N(0,1)` sequence
   obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
     ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀ := hP₀prob
   have hclt' := tendstoInDistribution_central_standardized Z hZmeas
     (fun i => (hZlaw i).map_eq) hZindep
   -- the `TendstoInDistribution → WeakConverges` bridge
@@ -817,14 +817,14 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
     (hz : (gaussianReal 0 1) (Set.Ioi z) = ENNReal.ofReal α) :
     Tendsto (fun k : ℕ => (c k - k) / Real.sqrt (2 * k)) atTop (𝓝 z) := by
   classical
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   set S : ℕ → ℝ := fun k => (c k - (k : ℝ)) / Real.sqrt (2 * (k : ℝ)) with hS
   -- standardised `χ²_{n+1}` pushforwards (indexed so the d.o.f. is positive)
   set μ' : ℕ → Measure ℝ := fun n => (StatLean.MultipleTesting.chiSquared (n + 1)).map
     (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) with hμ'
   have hμ'prob : ∀ n, IsProbabilityMeasure (μ' n) := by
     intro n
-    haveI : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
+    have : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
     exact (by infer_instance)
   set μs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨μ' n, hμ'prob n⟩ with hμs
   set ν' : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, by infer_instance⟩ with hν'
@@ -965,8 +965,8 @@ theorem weakConverges_noncentralChiSquared_standardized {l : ℕ → ℝ≥0} {c
   classical
   obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
     ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀ := hP₀prob
   have hZlaw' : ∀ i, Measure.map (Z i) P₀ = gaussianReal 0 1 := fun i => (hZlaw i).map_eq
   -- central standardised statistic ⟹ N(0,1), then shifted by the drift `c` ⟹ N(c,1)
   have hcentral := tendstoInDistribution_central_standardized Z hZmeas hZlaw' hZindep
@@ -1041,7 +1041,7 @@ theorem weakConverges_noncentralChiSquared_standardized {l : ℕ → ℝ≥0} {c
       (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
         / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))) atTop 0 := by
     refine tendstoInMeasure_of_tendsto_ae (fun n => ?_) (Filter.Eventually.of_forall ?_)
-    · simp only [Pi.sub_apply, Function.comp_apply]
+    · simp only [Pi.sub_apply]
       exact ((hYmeas n).sub (by fun_prop)).aestronglyMeasurable
     · intro ω
       have hlim0 : Tendsto (fun n : ℕ =>

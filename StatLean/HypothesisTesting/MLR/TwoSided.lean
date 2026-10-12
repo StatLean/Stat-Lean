@@ -102,7 +102,7 @@ version is `private` to that file). -/
 private lemma ts_real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
   have h1 : ⟪(1 : ℝ), b⟫_ℝ = b := by
     have h := real_inner_smul_right (1 : ℝ) 1 b
-    simpa [real_inner_self_eq_norm_mul_norm] using h
+    simp
   have h2 := real_inner_smul_left (1 : ℝ) b a
   simpa [h1] using h2
 
@@ -177,18 +177,16 @@ private lemma twoSidedVal_sub_sep {C₁ C₂ C₁' C₂' γ₁ γ₂ γ₁' γ�
   · split_ifs at hs ht <;>
       first
         | linarith
-        | (exfalso; subst_vars; simp_all <;>
+        | (exfalso; subst_vars; simp_all only [sub_pos, sub_zero, sub_neg, zero_sub,
+              Left.neg_neg_iff, not_lt, Std.le_refl, not_false_eq_true, not_true_eq_false] <;>
             exact absurd (le_antisymm hst (by assumption : t ≤ s)) (by assumption : ¬ s = t))
-        | (exfalso; subst_vars; linarith)
-        | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
   · subst hrEq
     split_ifs at hs ht <;>
       first
         | linarith
-        | (exfalso; subst_vars; simp_all <;>
+        | (exfalso; subst_vars; simp_all only [sub_pos, sub_zero, sub_neg, zero_sub,
+              Left.neg_neg_iff, not_lt, Std.le_refl, not_false_eq_true, not_true_eq_false] <;>
             exact absurd (le_antisymm hst (by assumption : t ≤ s)) (by assumption : ¬ s = t))
-        | (exfalso; subst_vars; linarith)
-        | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
 
 /-- Widening the rejection interval on the right can only raise the test: with a common left
 boundary and `C₂ < C₂'`, the value is pointwise nondecreasing. -/
@@ -2128,7 +2126,7 @@ theorem isUMP_twoSided
       refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
       simp only [hpdef, ts_real_inner_mul]
     set ν : Measure ℝ := (P θ₁).map E.stat with hνdef
-    haveI hνprob : IsProbabilityMeasure ν := by
+    have hνprob : IsProbabilityMeasure ν := by
       rw [hνdef]; exact (by infer_instance)
     set r : ℝ → ℝ := fun t => Real.exp ((ηmap θ₂ - ηmap θ₁) * t
       - (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ₁))) with hrdef

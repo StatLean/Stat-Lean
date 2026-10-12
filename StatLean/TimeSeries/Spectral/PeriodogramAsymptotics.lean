@@ -1069,7 +1069,7 @@ private lemma integral_normSq_winSum_sub_le [IsProbabilityMeasure μ] {σ2 : ℝ
     simp only [norm_mul, mul_pow, norm_eePhase, mul_one, hs]
     congr 1
     by_cases h1 : s ∈ Wj <;> by_cases h2 : s ∈ W0 <;>
-      simp [h1, h2, Finset.mem_inter] <;> norm_num
+      simp [h1, h2, Finset.mem_inter]; norm_num
   rw [Finset.sum_congr rfl (fun s _ => hnormc s), ← Finset.mul_sum]
   have hsum1 : ∑ s ∈ S, (if s ∈ Wj then (1 : ℝ) else 0) = (Wj.card : ℝ) := by
     rw [← Finset.sum_subset hWjS (fun x _ hx => by simp [hx])]
@@ -1156,7 +1156,7 @@ private lemma fourier_eq_eePhase (T k : ℕ) (j : ℤ) :
   rw [fourier_coe_apply, eePhase]
   congr 1
   have hπ : (π : ℂ) ≠ 0 := by
-    simpa using (Complex.ofReal_ne_zero.2 Real.pi_ne_zero)
+    simp
   field_simp
   push_cast
   ring

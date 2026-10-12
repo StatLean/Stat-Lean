@@ -101,7 +101,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   -- Chernoff parameter: λ = t / α²  (the unconstrained optimizer)
   set s := t / (α : ℝ) ^ 2 with hs_def
   have hs_nn : 0 ≤ s := div_nonneg ht (sq_nonneg _)
@@ -168,7 +168,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_linear
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t / (2 * (α : ℝ)))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   have ht : 0 ≤ t := le_trans hα.le htα
   -- Chernoff parameter: λ = 1/α  (clamped at the boundary of the valid range)
   set s := 1 / (α : ℝ) with hs_def

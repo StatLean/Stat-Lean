@@ -114,7 +114,7 @@ private lemma inner_L2_eq_integral (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
 /-- The pointwise product of two `L²` functions is integrable. -/
 private lemma integrable_L2_mul (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
     Integrable (fun x => f x * g x) μ :=
-  (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun x => real_inner_eq_mul _ _)
+  (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun _ => real_inner_eq_mul _ _)
 
 /-- Pairing an `L²` function against the indicator of a measurable set is its set-integral. -/
 private lemma inner_indicator_eq_setIntegral (μ : Measure 𝓧) [IsFiniteMeasure μ]

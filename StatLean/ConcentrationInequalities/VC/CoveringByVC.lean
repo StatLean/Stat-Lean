@@ -254,7 +254,7 @@ theorem sepFamily_card_le_of_vcDim_le {μ : Measure Ω}
         hdR]
     linarith [hstep1, hbig]
   have hdn : d ≤ n := by exact_mod_cast hdn_real
-  haveI : NeZero n := ⟨by omega⟩
+  have : NeZero n := ⟨by omega⟩
   -- Canonical i.i.d. witness on `ℕ → Ω` (product measure is a probability
   -- measure automatically).
   set X : ℕ → (ℕ → Ω) → Ω := fun i ω => ω i with hXdef
@@ -478,7 +478,7 @@ theorem coveringNumber_empProj_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
     (hε : 0 < ε) (hε1 : ε < 1) :
     coveringNumber (empProj x '' C) ε ≤ (⌊(2 / ε) ^ (21 * d)⌋₊ : ℕ∞) := by
   classical
-  haveI : IsProbabilityMeasure ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)) :=
+  have : IsProbabilityMeasure ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)) :=
     isProbabilityMeasure_avg_dirac x
   obtain ⟨N, hNC, hNcard, hNnet⟩ :=
     exists_L2_net_of_vcDim_le hCmeas hd hd1 hε hε1

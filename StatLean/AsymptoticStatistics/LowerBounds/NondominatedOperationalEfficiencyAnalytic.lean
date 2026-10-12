@@ -42,7 +42,7 @@ theorem proj_seq_to_eif_nd
       (∀ m, p m ∈ V m ∧ IF_eff - p m ∈ (V m)ᗮ) ∧
       Tendsto (fun m => ‖p m - IF_eff‖) atTop (nhds 0) := by
   classical
-  haveI : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
+  have : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
     L2ZeroMean_isClosed P
   have h_clos : IF_eff ∈ closure
       ((Submodule.span ℝ C.carrier : Submodule ℝ ↥(L2ZeroMean P)) :
@@ -85,7 +85,7 @@ theorem proj_seq_to_eif_nd
     exact ⟨m, by omega, hx⟩
   have hV_findim : ∀ m, FiniteDimensional ℝ (V m) := fun m =>
     @FiniteDimensional.span_finset ℝ ↥(L2ZeroMean P) _ _ _ (S m)
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hV_complete : ∀ m, CompleteSpace (V m) := fun m =>
     haveI := hV_findim m
@@ -107,7 +107,7 @@ theorem proj_seq_to_eif_nd
     (V m).starProjection IF_eff
   have h_proj_bound : ∀ m, ‖IF_eff - p m‖ ≤ ‖IF_eff - a m‖ := by
     intro m
-    haveI := hV_proj m
+    have := hV_proj m
     rw [show p m = (V m).starProjection IF_eff from rfl,
       Submodule.starProjection_minimal IF_eff]
     refine ciInf_le ⟨0, ?_⟩ (⟨a m, ha_in_V m⟩ : V m)
@@ -117,7 +117,7 @@ theorem proj_seq_to_eif_nd
   · intro m
     exact ⟨S m, hS_sub m, rfl⟩
   · intro m
-    haveI := hV_proj m
+    have := hV_proj m
     exact ⟨(V m).starProjection_apply_mem IF_eff,
       (V m).sub_starProjection_mem_orthogonal IF_eff⟩
   · have h_bound : ∀ m, ‖p m - IF_eff‖ ≤ 1 / (m + 1 : ℝ) := by
@@ -177,7 +177,7 @@ theorem nonnegativeTiltSupply_of_regular
       (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))
       ⟪φ, (g : ↥(L2ZeroMean P))⟫_ℝ := by
   classical
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   have hπsnd : π.map Prod.snd =
       gaussianReal 0 (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) := by
     have hscore := qmd_local_score_clt (C.selectedPath g) 0 le_rfl
@@ -216,7 +216,7 @@ theorem nonnegativeTiltSupply_of_regular
     let scaleSnd : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, a * q.2)
     have hscaleCont : Continuous scaleSnd := by fun_prop
     have hscaleMeas : Measurable scaleSnd := hscaleCont.measurable
-    haveI : IsProbabilityMeasure (π.map scaleSnd) :=
+    have : IsProbabilityMeasure (π.map scaleSnd) :=
       (by infer_instance)
     have hγscore : γ.score = a • (g : ↥(L2ZeroMean P)) := by
       simpa only [γ, ga] using C.selectedPath_score ga
@@ -330,8 +330,8 @@ theorem nonnegativeTiltSupply_of_regular
     let Xshift : ∀ k, (Fin (χ k) → Ω) → ℝ := fun k X => Xinner k X + d
     let Youter : ∀ k, (Fin (χ k) → Ω) → ℝ := fun k =>
       centeredEstimator T_n (ψ P) (χ k)
-    haveI : ∀ k, IsProbabilityMeasure (Q k) := fun k => by
-      letI : IsProbabilityMeasure (γ.curve ((Real.sqrt (χ k))⁻¹)) :=
+    have : ∀ k, IsProbabilityMeasure (Q k) := fun k => by
+      let : IsProbabilityMeasure (γ.curve ((Real.sqrt (χ k))⁻¹)) :=
         γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
       infer_instance
     have hXinnerMeas : ∀ k, Measurable (Xinner k) := fun k =>
@@ -430,7 +430,7 @@ theorem nonnegativeTiltSupply_of_regular
       congr 1
     let tiltDensity : (ℝ × ℝ) → ℝ≥0∞ := fun q => ENNReal.ofReal
       (Real.exp (a * q.2 - (a ^ 2 / 2) * (vg : ℝ)))
-    haveI hTiltFinite : IsFiniteMeasure (π.withDensity tiltDensity) :=
+    have hTiltFinite : IsFiniteMeasure (π.withDensity tiltDensity) :=
       isFiniteMeasure_withDensity_ofReal hTiltInt.hasFiniteIntegral
     have htarget :
         (((π.map scaleSnd).withDensity (fun q => ENNReal.ofReal
@@ -477,7 +477,7 @@ theorem cross_integral_eq_of_tiltSupply
     (H : NonnegativeTiltSupply π v s c) :
     Integrable (fun q : ℝ × ℝ => q.1 * q.2) π ∧
       ∫ q : ℝ × ℝ, q.1 * q.2 ∂π = c := by
-  letI : IsProbabilityMeasure π := H.isProbability
+  let : IsProbabilityMeasure π := H.isProbability
   exact AsymptoticStatistics.ForMathlib.GaussianTiltRigidity.covariance_eq_of_nonneg_gaussian_tilts
     π v s c H.snd_law H.tilted_fst_law
 
@@ -603,7 +603,7 @@ theorem residual_secondMoment_bound_of_finset_extension
       exact hX i trivial
     rw [hsum, mul_zero]
   let π0 : Measure (ℝ × ℝ) := π.map setSndZero
-  haveI hπ0prob : IsProbabilityMeasure π0 :=
+  have hπ0prob : IsProbabilityMeasure π0 :=
     (by infer_instance)
   have hbase0 : AsymptoticStatistics.WeakConverges
       (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
@@ -648,7 +648,7 @@ theorem residual_secondMoment_bound_of_finset_extension
     have hprojGCont : Continuous projG := by fun_prop
     have hprojGMeas : Measurable projG := hprojGCont.measurable
     let πg : Measure (ℝ × ℝ) := ρ.map projG
-    haveI hπgprob : IsProbabilityMeasure πg :=
+    have hπgprob : IsProbabilityMeasure πg :=
       (by infer_instance)
     have hbaseg : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
@@ -1062,11 +1062,11 @@ theorem residual_subseq_limit_eq_dirac_of_regular
           normalizedScoreSum φ (χ k) X),
           fun g : ↥S => normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X)) :=
       fun k => (hpairMeas k).prodMk (hvecMeas k)
-    haveI hpairProb : ∀ k, IsProbabilityMeasure (pairSeq k) := fun k =>
+    have hpairProb : ∀ k, IsProbabilityMeasure (pairSeq k) := fun k =>
       (by infer_instance)
-    haveI hvecProb : ∀ k, IsProbabilityMeasure (vecSeq k) := fun k =>
+    have hvecProb : ∀ k, IsProbabilityMeasure (vecSeq k) := fun k =>
       (by infer_instance)
-    haveI hjointProb : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
+    have hjointProb : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
       (by infer_instance)
     have hpairTight : IsTightMeasureSet (Set.range pairSeq) :=
       Prohorov.weakConverges_range_tight pairSeq π (by simpa only [pairSeq] using hπ)
@@ -1074,7 +1074,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
     let coordSeq : ↥S → ℕ → Measure ℝ := fun g k =>
       (Measure.pi (fun _ : Fin (χ k) => P)).map
         (normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k))
-    haveI hcoordProb : ∀ (g : ↥S) k, IsProbabilityMeasure (coordSeq g k) := fun g k =>
+    have hcoordProb : ∀ (g : ↥S) k, IsProbabilityMeasure (coordSeq g k) := fun g k =>
       (by infer_instance)
     have hcoordTight : ∀ g : ↥S, IsTightMeasureSet (Set.range (coordSeq g)) := by
       intro g
@@ -1168,7 +1168,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
         (hfstImage ▸ hpairTight) (hsndImage ▸ hvecTight)
     obtain ⟨σ, hσ, ρ, hρprob, hρweak⟩ :=
       Prohorov.extract_weak_subseq joint hjointTight
-    letI : IsProbabilityMeasure ρ := hρprob
+    let : IsProbabilityMeasure ρ := hρprob
     have hbound := residual_secondMoment_bound_of_finset_extension C hpd hEIF hT hreg
       S hS (p m) hpS (χ ∘ σ) (hχ.comp hσ) π (hπ.comp hσ) ρ
       (by simpa only [joint, Function.comp_apply] using! hρweak)

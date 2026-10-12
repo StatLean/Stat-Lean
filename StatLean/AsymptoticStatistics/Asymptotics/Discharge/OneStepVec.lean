@@ -411,7 +411,7 @@ theorem oneStep2555_empiricalReplacement_vec
     (fun n : ℕ => Measure.pi (fun _ : Fin n => P)) R preliminary θ₀
   · intro thetaSeq htheta
     let Pθ : ℕ → Measure Ω := fun n => modelMeasure M μ (thetaSeq n)
-    haveI : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
+    have : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
       refine ⟨?_⟩
       dsimp only [Pθ, modelMeasure]
       rw [MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
@@ -558,7 +558,7 @@ theorem oneStep2555_empInfoConsistency_vec
     (fun n : ℕ => Measure.pi (fun _ : Fin n => P)) R preliminary θ₀
   · intro thetaSeq htheta
     let Pθ : ℕ → Measure Ω := fun n => modelMeasure M μ (thetaSeq n)
-    haveI : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
+    have : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
       refine ⟨?_⟩
       dsimp only [Pθ, modelMeasure]
       rw [MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
@@ -703,9 +703,9 @@ theorem oneStep2555_empInfoConsistency_vec
       (by simpa only [ParametricFamily.sqrtDensity] using hDensityHell)
       (by simpa only [weightedScore, base, ℓ] using! hcondition2556 thetaSeq htheta)
     have hsumQ := TendstoInProbZero.add hsplitQ hempQ
-    letI : MeasurableSpace (Matrix (Fin d) (Fin d) ℝ) := MeasurableSpace.pi
-    haveI : BorelSpace (Matrix (Fin d) (Fin d) ℝ) := Pi.borelSpace
-    haveI : MeasurableSub₂ (Matrix (Fin d) (Fin d) ℝ) :=
+    let : MeasurableSpace (Matrix (Fin d) (Fin d) ℝ) := MeasurableSpace.pi
+    have : BorelSpace (Matrix (Fin d) (Fin d) ℝ) := Pi.borelSpace
+    have : MeasurableSub₂ (Matrix (Fin d) (Fin d) ℝ) :=
       (inferInstance : MeasurableSub₂ (Fin d → Fin d → ℝ))
     have hsplit_meas (n : ℕ) : Measurable (fun X : Fin n → Ω =>
         splitGram splitSide half n X) := by
@@ -778,7 +778,7 @@ theorem oneStep2556_deterministicLinearization_vec
       ((@efficientScore Ω _ P _ Θ _ _ _ S_θ T_nuis proj (e j) :
         ↥(L2ZeroMean P)) : Lp ℝ 2 P)).measurable
   let Pθ : ℕ → Measure Ω := fun n => modelMeasure M μ (thetaSeq n)
-  haveI : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
+  have : ∀ n, IsProbabilityMeasure (Pθ n) := fun n => by
     refine ⟨?_⟩
     dsimp only [Pθ, modelMeasure]
     rw [MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
@@ -1005,7 +1005,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
   let Vhat : ℕ → (ℕ → Ω) → Matrix (Fin d) (Fin d) ℝ := fun n omega =>
     -empInfo (indexedSplitScore splitSide scoreHalf) n (trunc n omega) (pre n omega)
   let V0 : Matrix (Fin d) (Fin d) ℝ := -I
-  haveI : IsProbabilityMeasure μinf := by simp only [μinf]; infer_instance
+  have : IsProbabilityMeasure μinf := by simp only [μinf]; infer_instance
   have hℓ_meas : Measurable ℓ := by
     apply (WithLp.measurable_toLp 2 (Fin d → ℝ)).comp
     rw [measurable_pi_iff]
@@ -1095,7 +1095,7 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
         ring
   let ν : Measure (EuclideanSpace ℝ (Fin d)) :=
     ProbabilityTheory.multivariateGaussian 0 I
-  haveI : IsProbabilityMeasure ν := by
+  have : IsProbabilityMeasure ν := by
     simp only [ν]
     infer_instance
   have hscoreWeak := AsymptoticRepresentation.scoreSum_weakly_converges
@@ -1262,8 +1262,8 @@ theorem oneStep_asymptoticallyLinear_2557_native_vec
   have hV0 : V0.det ≠ 0 := by
     simp only [V0, I, Matrix.det_neg]
     exact mul_ne_zero (pow_ne_zero _ (by norm_num)) (ne_of_gt hPD.det_pos)
-  letI : MeasurableSpace (Matrix (Fin d) (Fin d) ℝ) := MeasurableSpace.pi
-  haveI : BorelSpace (Matrix (Fin d) (Fin d) ℝ) := Pi.borelSpace
+  let : MeasurableSpace (Matrix (Fin d) (Fin d) ℝ) := MeasurableSpace.pi
+  have : BorelSpace (Matrix (Fin d) (Fin d) ℝ) := Pi.borelSpace
   have hVhat_meas : ∀ n i j, Measurable (fun omega => Vhat n omega i j) := by
     intro n i j
     simpa only [Vhat, pre, trunc] using
@@ -1552,7 +1552,7 @@ theorem oneStep_semiparametricallyEfficient_2557_native_vec
           (g : ↥(L2ZeroMean P))⟫_ℝ)
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)} (h_ψ : ψ P = θ₀) :
     SemiparametricallyEfficientAt_vec estimator ψ P T := by
-  letI : T_nuis.HasOrthogonalProjection := proj
+  let : T_nuis.HasOrthogonalProjection := proj
   have hEIF : IsEfficientInfluenceFunction_vec Dψ
       (@candidateVecEIF Ω _ P _ Θ _ _ _ d S_θ T_nuis proj e) := by
     intro j

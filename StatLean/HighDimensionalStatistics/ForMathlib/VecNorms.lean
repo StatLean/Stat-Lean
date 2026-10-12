@@ -61,7 +61,7 @@ lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
   · obtain ⟨i⟩ := h
     exact (abs_nonneg _).trans (abs_le_linfNorm x i)
   · rw [not_nonempty_iff] at h
-    haveI : IsEmpty (Fin d) := h
+    have : IsEmpty (Fin d) := h
     have heq : linfNorm x = 0 := by
       change sSup (Set.range (fun i : Fin d => |x.ofLp i|)) = 0
       rw [Set.range_eq_empty_iff.mpr ‹_›, Real.sSup_empty]

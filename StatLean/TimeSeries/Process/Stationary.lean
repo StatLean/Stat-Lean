@@ -137,7 +137,7 @@ theorem isStrictlyStationary_iff_window
     · congr 1
       funext ω i
       exact i.elim0
-    haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+    have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
     -- A window `[lo, hi]` containing the range of `t`; the tuple is the sub-tuple of that
     -- window selected by `σ i = t i − lo`, and the same `σ` selects `t + k` out of the
     -- window shifted by `k`.

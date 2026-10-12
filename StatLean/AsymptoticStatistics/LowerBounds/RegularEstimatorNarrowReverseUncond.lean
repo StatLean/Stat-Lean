@@ -89,14 +89,14 @@ theorem isRegularEstimator_of_narrow_explicit_common
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ.curve (t n)) with hPn_def
   set Pn₀ : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ₀.curve (t n)) with hPn₀_def
-  haveI hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
+  have hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
       γ.curve_isProbability _
     rw [hPn_def]; infer_instance
-  haveI hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
+  have hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
       γ₀.curve_isProbability _
     rw [hPn₀_def]; infer_instance
   set Fγ : ∀ n, (Fin n → Ω) → ℝ :=
@@ -224,7 +224,7 @@ theorem isRegularEstimator_of_narrow_explicit_common
       (hDist := h_dist_to_zero)
   -- Step (A): common-dominator Hellinger-LAN locality + integral-bound wrapper.
   set ξ : Measure Ω := γ.dominating + γ₀.dominating with hξ_def
-  haveI hξ_sf : SigmaFinite ξ := by rw [hξ_def]; infer_instance
+  have hξ_sf : SigmaFinite ξ := by rw [hξ_def]; infer_instance
   have h_γ_ξ : γ.dominating ≪ ξ :=
     Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
   have h_γ₀_ξ : γ₀.dominating ≪ ξ :=
@@ -243,8 +243,8 @@ theorem isRegularEstimator_of_narrow_explicit_common
     (γ.curve_absContinuous (t n)).trans h_γ_ξ
   have h_γ₀_dom_ξ : ∀ n, γ₀.curve (t n) ≪ ξ := fun n =>
     (γ₀.curve_absContinuous (t n)).trans h_γ₀_ξ
-  haveI : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
-  haveI : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
   intro f
   have h_push_eq_γ : ∀ n,
       ∫ y, f y ∂((Pn n).map (Fγ n)) = ∫ X, f (Fγ n X) ∂(Pn n) := fun n =>

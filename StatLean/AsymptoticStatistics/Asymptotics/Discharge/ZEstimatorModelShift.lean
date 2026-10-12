@@ -804,7 +804,7 @@ theorem qmdPath_modelShift_normalized_oP
   let K0 : Omega → ℝ := fun omega => g omega * s 0 omega
   have hs : ∀ delta, MemLp (s delta) 2 gamma.dominating := by
     intro delta
-    letI := gamma.curve_isProbability delta
+    let := gamma.curve_isProbability delta
     exact AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
       (gamma.curve_absContinuous delta)
   have hPac : P ≪ gamma.dominating := by
@@ -868,7 +868,7 @@ theorem qmdPath_modelShift_normalized_oP
         ∫ omega, W n X omega * r (estimator n X - theta0) omega ∂gamma.dominating +
           ((estimator n X - theta0) / 2) *
             ∫ omega, K n X omega * K0 omega ∂gamma.dominating := by
-      letI := gamma.curve_isProbability (estimator n X - theta0)
+      let := gamma.curve_isProbability (estimator n X - theta0)
       have hi_delta := (integrable_toReal_rnDeriv_mul_iff
         (gamma.curve_absContinuous (estimator n X - theta0))).2
           (h.scoreHat_integrable_moving n X)
@@ -1055,7 +1055,7 @@ theorem qmdModel_hellinger_continuous
   let r : EuclideanSpace ℝ (Fin d) → Omega → ℝ := fun delta omega =>
     s delta omega - s 0 omega - (1 / 2 : ℝ) * ⟪delta, g omega⟫_ℝ * s 0 omega
   have hs : ∀ delta, MemLp (s delta) 2 M.dominating := fun delta => by
-    letI := M.curve_isProbability delta
+    let := M.curve_isProbability delta
     simpa [s] using
       AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
         (M.curve_absContinuous delta)
@@ -1569,7 +1569,7 @@ theorem qmdModel_scoreCrossTransport_oP_of_2576
   have hPac : P ≪ M.dominating := by
     simpa only [← M.curve_at_zero] using M.curve_absContinuous 0
   have hs : ∀ dlt, MemLp (s dlt) 2 M.dominating := fun dlt => by
-    letI := M.curve_isProbability dlt
+    let := M.curve_isProbability dlt
     simpa [s] using
       AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
         (M.curve_absContinuous dlt)
@@ -1629,7 +1629,7 @@ theorem qmdModel_scoreCrossTransport_oP_of_2576
         memLp_sqrt_rnDeriv_smul_of_memLp hPac (h.scoreHat_memLp_truth n X)
     have hsz : MemLp (fun omega => s (delta n X) omega • scoreHat n X omega)
         2 M.dominating := by
-      letI := M.curve_isProbability (delta n X)
+      let := M.curve_isProbability (delta n X)
       simpa [s] using memLp_sqrt_rnDeriv_smul_of_memLp
         (M.curve_absContinuous (delta n X)) (h.scoreHat_memLp_moving n X)
     have htg : MemLp (fun omega => s 0 omega • g omega) 2 M.dominating := by
@@ -1677,7 +1677,7 @@ theorem qmdModel_scoreCrossTransport_oP_of_2576
     have hsEnergy : (∫ omega,
         ‖s (delta n X) omega • scoreHat n X omega‖ ^ 2 ∂M.dominating) =
         ∫ omega, ‖scoreHat n X omega‖ ^ 2 ∂(M.curve (delta n X)) := by
-      letI := M.curve_isProbability (delta n X)
+      let := M.curve_isProbability (delta n X)
       simpa [s] using integral_norm_sqrt_rnDeriv_smul_sq
         (M.curve_absContinuous (delta n X)) (h.scoreHat_memLp_moving n X)
     have htailEnergy : (∫ omega, ‖s 0 omega • gTail omega‖ ^ 2
@@ -1743,7 +1743,7 @@ private lemma firstOrder2576_weightedScore_tight
       memLp_sqrt_rnDeriv_smul_of_memLp hPac (h.scoreHat_memLp_truth n X)
   have hs : MemLp (fun omega =>
       s (estimator n X - theta0) omega • scoreHat n X omega) 2 M.dominating := by
-    letI := M.curve_isProbability (estimator n X - theta0)
+    let := M.curve_isProbability (estimator n X - theta0)
     simpa [s] using memLp_sqrt_rnDeriv_smul_of_memLp
       (M.curve_absContinuous (estimator n X - theta0))
       (h.scoreHat_memLp_moving n X)
@@ -1753,7 +1753,7 @@ private lemma firstOrder2576_weightedScore_tight
         ∂M.dominating) =
       ∫ omega, ‖scoreHat n X omega‖ ^ 2
         ∂(M.curve (estimator n X - theta0)) := by
-    letI := M.curve_isProbability (estimator n X - theta0)
+    let := M.curve_isProbability (estimator n X - theta0)
     simpa [s] using integral_norm_sqrt_rnDeriv_smul_sq
       (M.curve_absContinuous (estimator n X - theta0))
       (h.scoreHat_memLp_moving n X)
@@ -1806,7 +1806,7 @@ theorem qmdModel_modelShift_normalized_oP_of_2576
   let Cross : ∀ n, (Fin n → Omega) → EuclideanSpace ℝ (Fin d) := fun n X =>
     ∫ omega, (⟪u n X, g omega⟫_ℝ * s 0 omega) • K n X omega ∂M.dominating
   have hs : ∀ delta, MemLp (s delta) 2 M.dominating := fun delta => by
-    letI := M.curve_isProbability delta
+    let := M.curve_isProbability delta
     simpa [s] using
       AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
         (M.curve_absContinuous delta)
@@ -1867,7 +1867,7 @@ theorem qmdModel_modelShift_normalized_oP_of_2576
         memLp_sqrt_rnDeriv_smul_of_memLp hPac (h.scoreHat_memLp_truth n X)
     have hsHat : MemLp (fun omega => s delta omega • scoreHat n X omega)
         2 M.dominating := by
-      letI := M.curve_isProbability delta
+      let := M.curve_isProbability delta
       simpa [s] using memLp_sqrt_rnDeriv_smul_of_memLp
         (M.curve_absContinuous delta) (h.scoreHat_memLp_moving n X)
     have hWmem : MemLp (W n X) 2 M.dominating := by
@@ -1886,7 +1886,7 @@ theorem qmdModel_modelShift_normalized_oP_of_2576
         ∫ omega, r delta omega • W n X omega ∂M.dominating +
           (1 / 2 : ℝ) • ∫ omega, fdelta omega • K n X omega ∂M.dominating := by
       rw [qmdCrossMoment_apply M score0 h.score0_memLp delta]
-      letI := M.curve_isProbability delta
+      let := M.curve_isProbability delta
       have hi_delta := (integrable_rnDeriv_smul_iff
         (M.curve_absContinuous delta)).2 ((h.scoreHat_memLp_moving n X).integrable one_le_two)
       have hi_zero := (integrable_rnDeriv_smul_iff hPac).2
@@ -2018,7 +2018,7 @@ theorem qmdModel_modelShift_normalized_oP
     fun n X omega => W n X omega - (2 : ℝ) • (s 0 omega • score0 omega)
   let G0 : Omega → ℝ := fun omega => ‖g omega‖ * s 0 omega
   have hs : ∀ delta, MemLp (s delta) 2 M.dominating := fun delta => by
-    letI := M.curve_isProbability delta
+    let := M.curve_isProbability delta
     simpa [s] using
       AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
         (M.curve_absContinuous delta)
@@ -2091,7 +2091,7 @@ theorem qmdModel_modelShift_normalized_oP
         ∫ omega, r delta omega • W n X omega ∂M.dominating +
           (1 / 2 : ℝ) • ∫ omega, fdelta omega • K n X omega ∂M.dominating := by
       rw [qmdCrossMoment_apply M score0 h.score0_memLp delta]
-      letI := M.curve_isProbability delta
+      let := M.curve_isProbability delta
       have hi_delta := (integrable_rnDeriv_smul_iff
         (M.curve_absContinuous delta)).2 (h.scoreHat_integrable_moving n X)
       have hi_zero := (integrable_rnDeriv_smul_iff hPac).2

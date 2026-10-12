@@ -948,7 +948,7 @@ theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
         - Complex.exp (-(n : ℂ) * v * (((√n)⁻¹ * t : ℝ) : ℂ) ^ 2 / 2)‖
       ≤ n * ((∫ x, |x| ^ 3 ∂(P.map (X 0))) * |(√n)⁻¹ * t| ^ 3 / 6
         + (v * ((√n)⁻¹ * t) ^ 2 / 2) ^ 2 / 2) := by
-  haveI : IsProbabilityMeasure (P.map (X 0)) :=
+  have : IsProbabilityMeasure (P.map (X 0)) :=
     (by infer_instance)
   rw [charFun_inv_sqrt_mul_sum hindep hident]
   exact norm_charFun_pow_sub_gaussian_le (P.map (X 0)) hv hint1 hint2 hint3 hmean hvar _ n

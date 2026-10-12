@@ -171,7 +171,7 @@ theorem generic_chaining_abs_countable_subset {X : E → Ω → ℝ} {K : ℝ≥
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ 20 * K * gammaTwo T := by
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ :=
     ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T

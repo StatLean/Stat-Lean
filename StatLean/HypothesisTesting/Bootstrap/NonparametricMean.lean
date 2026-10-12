@@ -150,7 +150,7 @@ private lemma isCDF_meanRootCDF (F : Measure ℝ) (n : ℕ)
     IsCDF (meanRootCDF F n) := by
   have hSmeas : Measurable (fun y : Fin n → ℝ =>
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)) := by fun_prop
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F))) :=
     (by infer_instance)
@@ -172,7 +172,7 @@ private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
   have hSmeas : Measurable (fun y : Fin n → ℝ =>
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y)) := by
     unfold sampleVariance; fun_prop
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((Measure.pi fun _ : Fin n => F).map
         (fun y : Fin n → ℝ =>
           Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y))) :=
@@ -218,20 +218,20 @@ private lemma isFiniteMeasure_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
   · subst hn
     simp only [empiricalMeasure, Finset.univ_eq_empty, Finset.sum_empty, smul_zero]
     infer_instance
-  · haveI := isProbabilityMeasure_empiricalMeasure hn x; infer_instance
+  · have := isProbabilityMeasure_empiricalMeasure hn x; infer_instance
 
 /-- The empirical distribution function is the sample average of the half-line indicators. -/
 private lemma empiricalMeasure_Iic_toReal {n : ℕ} (x : Fin n → ℝ) (y : ℝ) :
     ((empiricalMeasure x) (Set.Iic y)).toReal
       = (n : ℝ)⁻¹ * ∑ i, Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (x i) := by
-  haveI := isFiniteMeasure_empiricalMeasure x
+  have := isFiniteMeasure_empiricalMeasure x
   rw [← measureReal_def, ← integral_indicator_one (μ := empiricalMeasure x) measurableSet_Iic,
     integral_empiricalMeasure x (Set.indicator (Set.Iic y) (1 : ℝ → ℝ))]
 
 /-- The `n`-fold product of a probability law is a probability measure. -/
 private lemma isProbabilityMeasure_pi_const (n : ℕ) (F : Measure ℝ) [IsProbabilityMeasure F] :
     IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) := by
-  haveI : ∀ _ : Fin n, IsProbabilityMeasure F := fun _ => ‹_›
+  have : ∀ _ : Fin n, IsProbabilityMeasure F := fun _ => ‹_›
   infer_instance
 
 /-- The `n`-fold product of the empirical measure of a sample is a probability measure (for the
@@ -243,7 +243,7 @@ private lemma isProbabilityMeasure_pi_empirical (n : ℕ) (X : ℕ → Ω → �
   · subst hn
     rw [Measure.pi_of_empty]
     infer_instance
-  · haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+  · have := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
     exact isProbabilityMeasure_pi_const n _
 
 /-- The constant sequence at a square-integrable probability law belongs to its own mean class. -/
@@ -263,7 +263,7 @@ private noncomputable def Jmean (n : ℕ) (F : Measure ℝ) : ℝ → ℝ :=
 private lemma isCDF_Jmean (n : ℕ) (F : Measure ℝ) : IsCDF (Jmean n F) := by
   unfold Jmean
   split_ifs with h
-  · haveI := h; exact isCDF_meanRootCDF F n
+  · have := h; exact isCDF_meanRootCDF F n
   · exact isCDF_stdNormalCDF
 
 private lemma Jmean_eq_meanRootCDF (n : ℕ) (F : Measure ℝ)
@@ -522,7 +522,7 @@ private lemma exists_uniform_sq_trunc {F : ℕ → Measure ℝ} {Q : Measure ℝ
   have hvanish : ∀ (μ : Measure ℝ), IsProbabilityMeasure μ → MemLp (fun t : ℝ => t) 2 μ →
       Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop (𝓝 0) := by
     intro μ hμ hμ2
-    haveI := hμ
+    have := hμ
     have hsqint : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
     have hDCT : Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop
         (𝓝 (∫ _t : ℝ, (0 : ℝ) ∂μ)) := by
@@ -883,8 +883,8 @@ theorem tendsto_meanRootLaw
   obtain ⟨Ω, mΩ, P, Y, hYmeas, hYlaw, hYindep, hPprob⟩ :=
     ProbabilityTheory.exists_hasLaw_indepFun (ι := ℕ × ℕ) (fun _ : ℕ × ℕ => ℝ)
       (fun p : ℕ × ℕ => G p.1)
-  letI : MeasurableSpace Ω := mΩ
-  haveI : IsProbabilityMeasure P := hPprob
+  let : MeasurableSpace Ω := mΩ
+  have : IsProbabilityMeasure P := hPprob
   -- moments of the coordinates
   have hYint : ∀ p : ℕ × ℕ, ∫ ω, Y p ω ∂P = m p.1 := fun p =>
     (hYlaw p).integral_comp (f := fun t : ℝ => t) (by fun_prop)
@@ -1166,7 +1166,7 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
   set F' : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hF'def
   have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
     intro n hn; simp only [hF'def, ite_eq_right hn.ne']
-  haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
+  have hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; simpa only [hF'def, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
@@ -1195,11 +1195,11 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
   -- distribution-function convergence upgrades to weak convergence, then the array CLT applies
   have hF'weak := tendsto_integral_of_tendsto_cdf hF'prob hF'cdf
   have huni := tendsto_meanRootLaw hF'2 hQ2 hF'weak hF'mean hF'var
-  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := fun n =>
+  have hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := fun n =>
     isProbabilityMeasure_pi_const n (F' n)
-  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (F' n) n) := by
+  have hroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (F' n) n) := by
     intro n
-    haveI := hpi n
+    have := hpi n
     exact (by unfold meanRootLaw; infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨meanRootLaw (F' n) n, hroot n⟩ with hρs
   set ρ : ProbabilityMeasure ℝ :=
@@ -1208,15 +1208,15 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
     ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 huni
   -- the nondegenerate normal limit has no atoms, so the portmanteau theorem applies at `Iic x`
   have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
-  haveI : NullSingletonClass (gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) :=
+  have : NullSingletonClass (gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) :=
     nullSingletonClass_gaussianReal hvne
   have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
-    rw [hρ]; simp [frontier_Iic]
+    rw [hρ]; simp
   have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
   have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
   have hL : ∀ n : ℕ, ((ρs n : Measure ℝ) (Set.Iic x)).toReal = meanRootCDF (F' n) n x := by
     intro n
-    haveI := hpi n
+    have := hpi n
     exact (meanRootCDF_eq (F' n) n x).symm
   have hR : ((ρ : Measure ℝ) (Set.Iic x)).toReal
       = normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x := rfl
@@ -1324,7 +1324,7 @@ theorem empirical_mem_meanSeqClass [IsProbabilityMeasure Pr] [IsProbabilityMeasu
     obtain ⟨N1, hN1⟩ := hc1 (ε / 3) (by positivity)
     obtain ⟨N2, hN2⟩ := hc2 (ε / 3) (by positivity)
     refine ⟨max N1 N2, fun n hn => ?_⟩
-    haveI := isFiniteMeasure_empiricalMeasure (fun i : Fin n => X i ω)
+    have := isFiniteMeasure_empiricalMeasure (fun i : Fin n => X i ω)
     have hmono : ∀ a b : ℝ, a ≤ b →
         ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic a)).toReal
           ≤ ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic b)).toReal := fun a b hab =>
@@ -1355,7 +1355,7 @@ theorem empirical_mem_meanSeqClass [IsProbabilityMeasure Pr] [IsProbabilityMeasu
             - (∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω)) ^ 2
           = Var[fun t : ℝ => t; empiricalMeasure fun i : Fin n => X i ω] := by
       filter_upwards [eventually_gt_atTop 0] with n hn
-      haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+      have := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
       exact (variance_eq_sub (memLp_id_empiricalMeasure _)).symm
     refine Tendsto.congr' hcongr ?_
     have h1 : Tendsto (fun n => ∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω)) atTop
@@ -1384,12 +1384,12 @@ theorem bootstrap_mean_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasur
   have hcont : Continuous Jlim := continuous_normalCDF 0 hvne
   have hcdflim : IsCDF Jlim := isCDF_normalCDF 0 _
   have hQcdf : ∀ n, IsCDF (meanRootCDF Q n) := fun n => by
-    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_meanRootCDF Q n
+    have := isProbabilityMeasure_pi_const n Q; exact isCDF_meanRootCDF Q n
   have hQconv : ∀ x, Tendsto (fun n => meanRootCDF Q n x) atTop (𝓝 (Jlim x)) := fun x =>
     mean_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
   filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
   have hEcdf : ∀ n, IsCDF (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) := fun n => by
-    haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_meanRootCDF _ n
+    have := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_meanRootCDF _ n
   have hEconv : ∀ x, Tendsto
       (fun n => meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop (𝓝 (Jlim x)) :=
     fun x => mean_root_cdf_tendsto hQ2 hQvar hω x
@@ -1433,7 +1433,7 @@ private lemma pi_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
     (Measure.pi fun _ : Fin n => empiricalMeasure x)
       = ((n : ℝ≥0∞) ^ n)⁻¹ • ∑ j : Fin n → Fin n, Measure.dirac (fun i => x (j i)) := by
   classical
-  haveI := isProbabilityMeasure_empiricalMeasure hn x
+  have := isProbabilityMeasure_empiricalMeasure hn x
   refine Measure.pi_eq (fun s hs => ?_)
   have hbox : MeasurableSet (Set.pi Set.univ s) := MeasurableSet.univ_pi hs
   set T : Fin n → Finset (Fin n) := fun i => Finset.univ.filter (fun a => x a ∈ s i) with hT
@@ -1538,7 +1538,7 @@ private lemma measurable_bootstrapCriticalValue (hmeas : ∀ i, Measurable (X i)
   have hJ : ∀ ω : Ω, Jmean n (empiricalMeasure fun i : Fin n => X i ω) t
       = meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n t := by
     intro ω
-    haveI := isProbabilityMeasure_pi_empirical n X ω
+    have := isProbabilityMeasure_pi_empirical n X ω
     rw [Jmean_eq_meanRootCDF]
   simp only [hJ]
   exact measurable_meanRootCDF_empirical hmeas n t
@@ -1572,11 +1572,11 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
       intro n
       rcases Nat.eq_zero_or_pos n with hn | hn
       · subst hn
-        haveI : IsProbabilityMeasure (Measure.pi fun _ : Fin 0 => G 0) := by
+        have : IsProbabilityMeasure (Measure.pi fun _ : Fin 0 => G 0) := by
           rw [Measure.pi_of_empty]; infer_instance
         rw [Jmean_eq_meanRootCDF]
-      · haveI := hG.1 n hn
-        haveI := isProbabilityMeasure_pi_const n (G n)
+      · have := hG.1 n hn
+        have := isProbabilityMeasure_pi_const n (G n)
         rw [Jmean_eq_meanRootCDF]
     simp_rw [hagree]
     exact mean_root_cdf_tendsto hQ2 hQvar hG x
@@ -1584,7 +1584,7 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
   have hJP : ∀ (n : ℕ) (x : ℝ), Jmean n Q x
       = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
     intro n x
-    haveI := isProbabilityMeasure_pi_const n Q
+    have := isProbabilityMeasure_pi_const n Q
     rw [Jmean_eq_meanRootCDF, meanRootCDF_eq_law_of_root hmeas hindep hlaw hident]
   have hRmeas : ∀ n : ℕ, Measurable fun ω : Ω =>
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) := by
@@ -1606,7 +1606,7 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
       = {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
         ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) (1 - α)} := by
     ext ω
-    haveI := isProbabilityMeasure_pi_empirical n X ω
+    have := isProbabilityMeasure_pi_empirical n X ω
     rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Jmean_eq_meanRootCDF]
   rw [hset]
 
@@ -1702,7 +1702,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
   set G : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hGdef
   have hGeq : ∀ n : ℕ, 0 < n → G n = F n := by
     intro n hn; simp only [hGdef, ite_eq_right hn.ne']
-  haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := by
+  have hGprob : ∀ n, IsProbabilityMeasure (G n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; simpa only [hGdef, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
@@ -1760,8 +1760,8 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
   obtain ⟨Ω₀, mΩ₀, P, Y, hYmeas, hYlaw, hYindep, hPprob⟩ :=
     ProbabilityTheory.exists_hasLaw_indepFun (ι := ℕ × ℕ) (fun _ : ℕ × ℕ => ℝ)
       (fun p : ℕ × ℕ => G p.1)
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P := hPprob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P := hPprob
   have hinj : ∀ n : ℕ, Function.Injective (fun i : Fin n => ((n, (i : ℕ)) : ℕ × ℕ)) := by
     intro n a b hab
     exact Fin.val_injective (congrArg Prod.snd hab)
@@ -1902,7 +1902,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     have hs : ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n))
         = (∑ i : Fin n, Y (n, (i : ℕ)) ω) - (n : ℝ) * ∫ t, t ∂(G n) := by
       rw [Finset.sum_sub_distrib]
-      simp [Finset.card_univ, mul_comm]
+      simp [Finset.card_univ]
     simp only [hAmdef, hDdef, hs]
     rw [mul_sub, ← mul_assoc, inv_mul_cancel₀ hnR, one_mul]
     ring
@@ -1988,7 +1988,7 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     congr 1
     simp
   -- portmanteau at `Iic x`
-  haveI hWmap : ∀ n, IsProbabilityMeasure (P.map (W n)) := fun n =>
+  have hWmap : ∀ n, IsProbabilityMeasure (P.map (W n)) := fun n =>
     (by infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨P.map (W n), hWmap n⟩ with hρs
   set ρ : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, inferInstance⟩ with hρ
@@ -1998,9 +1998,9 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     have h := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hWdist.tendsto f
     simp only [ProbabilityMeasure.coe_mk, hlimmeas] at h
     simpa only [hρs, hρ, ProbabilityMeasure.coe_mk] using h
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
-    rw [hρ]; simp [frontier_Iic]
+    rw [hρ]; simp
   have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
   have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
   have hL : ∀ n : ℕ, ((ρs n : Measure ℝ) (Set.Iic x)).toReal = studentizedRootCDF (G n) n x := by
@@ -2049,12 +2049,12 @@ theorem bootstrap_t_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q
   have hcont : Continuous stdNormalCDF := continuous_stdNormalCDF
   have hcdflim : IsCDF stdNormalCDF := isCDF_stdNormalCDF
   have hQcdf : ∀ n, IsCDF (studentizedRootCDF Q n) := fun n => by
-    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_studentizedRootCDF Q n
+    have := isProbabilityMeasure_pi_const n Q; exact isCDF_studentizedRootCDF Q n
   have hQconv : ∀ x, Tendsto (fun n => studentizedRootCDF Q n x) atTop (𝓝 (stdNormalCDF x)) :=
     fun x => studentized_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
   filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
   have hEcdf : ∀ n, IsCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) :=
-    fun n => by haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_studentizedRootCDF _ n
+    fun n => by have := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_studentizedRootCDF _ n
   have hEconv : ∀ x, Tendsto
       (fun n => studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop
       (𝓝 (stdNormalCDF x)) := fun x => studentized_root_cdf_tendsto hQ2 hQvar hω x

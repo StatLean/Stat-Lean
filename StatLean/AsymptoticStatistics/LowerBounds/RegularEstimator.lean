@@ -310,9 +310,9 @@ theorem IsRegularEstimator.hajek_shift_form [IsProbabilityMeasure L]
   set Pn : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => MeasureTheory.Measure.pi
       (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)) with hPn_def
-  haveI hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
+  have hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
+    have : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
       fun _ => curve.curve_isProbability _
     rw [hPn_def]
     infer_instance
@@ -427,7 +427,7 @@ theorem IsRegularEstimator.hajek_shift_form [IsProbabilityMeasure L]
     congr 1
     funext y; exact add_comm c y
   -- Step 6: apply Slutsky to absorb the vanishing deterministic shift.
-  haveI : IsProbabilityMeasure (L.map (fun y : ℝ => y + c)) :=
+  have : IsProbabilityMeasure (L.map (fun y : ℝ => y + c)) :=
     (by infer_instance)
   have h_distance_to_zero :
       ∀ ε > 0,

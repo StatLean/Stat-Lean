@@ -245,7 +245,7 @@ theorem posterior_mass_compl_ball_tendsto
   have hI1 : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
       = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
     intro n
-    haveI : IsProbabilityMeasure (productMeasure M μ θ₀ n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ₀ n) := by
       rw [hPeq θ₀ n]; infer_instance
     exact lintegral_ofReal_eq_ofReal_integral _ (hφ.measurable n)
       (fun ω => (hφ.mem_Icc n ω).1) (fun ω => (hφ.mem_Icc n ω).2)
@@ -255,7 +255,7 @@ theorem posterior_mass_compl_ball_tendsto
       ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(iidKernel κ n θ)
         ≤ ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) := by
     intro n hn θ hθ
-    haveI : IsProbabilityMeasure (productMeasure M μ θ n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ n) := by
       rw [hPeq θ n]; infer_instance
     rw [← hPeq θ n, lintegral_ofReal_eq_ofReal_integral _
       ((hφ.measurable n).const_sub 1)

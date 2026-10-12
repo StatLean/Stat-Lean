@@ -300,7 +300,7 @@ theorem levyMpass
   --   `charFun L t = charFun (gaussianReal 0 (sigma_sq_m m)) t * charFun (M_m m) t`.
   -- So `charFun (M_m m) t = charFun L t / charFun (gaussianReal 0 (sigma_sq_m m)) t`.
   -- Continuity of the closed-form Gaussian char-fn in `v` plus `_hSigma` gives the limit.
-  haveI : ∀ m, IsProbabilityMeasure (M_m m) := _hM_prob
+  have : ∀ m, IsProbabilityMeasure (M_m m) := _hM_prob
   have hCharFn_conv : ∀ m (t : ℝ),
       MeasureTheory.charFun _L t =
         MeasureTheory.charFun
@@ -417,9 +417,6 @@ theorem levyMpass
   -- Step 8: assemble the convolution identity via the existing helper.
   refine ⟨(M : MeasureTheory.Measure ℝ), inferInstance, ?_⟩
   -- The let-bound `sigma_sq` in the conclusion is definitionally `sigmaNN`.
-  change _L = MeasureTheory.Measure.conv
-              (ProbabilityTheory.gaussianReal 0 sigmaNN)
-              ((M : MeasureTheory.Measure ℝ))
   -- Apply the char-fn factorisation extractor.
   refine
     AsymptoticStatistics.ForMathlib.CharFnConvolution.convolution_extraction_from_charFn

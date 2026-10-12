@@ -75,7 +75,7 @@ theorem nestedPValue_nonneg {R : ℝ → Set 𝓧}
     (x : 𝓧) :
     0 ≤ nestedPValue R x := by
   rcases Set.eq_empty_or_nonempty {α : ℝ | x ∈ R α} with h | h
-  · show 0 ≤ sInf {α : ℝ | x ∈ R α}
+  · change 0 ≤ sInf {α : ℝ | x ∈ R α}
     rw [h, Real.sInf_empty]
   · apply le_csInf h
     intro α hα

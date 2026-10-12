@@ -83,7 +83,7 @@ theorem dlPrior_eq_withDensity {a : ℝ}
     (ha : 0 < a) :
     dlPrior a ι
       = (volume : Measure (EuclideanSpace ℝ ι)).withDensity (fun θ => ∏ j, dlDensity a (θ j)) := by
-  haveI hsf : SigmaFinite ((volume : Measure ℝ).withDensity (dlDensity a)) := by
+  have hsf : SigmaFinite ((volume : Measure ℝ).withDensity (dlDensity a)) := by
     rw [← dlMarginal_eq_withDensity ha]; infer_instance
   have hemb : MeasurableEmbedding (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) :=
     (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding

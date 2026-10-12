@@ -389,7 +389,7 @@ theorem convexLinear_rawMovingBias_zero
       (M_hat n X) (γ.curve (estimator n X - θ₀)) (S_hat n X) v (scoreHat n X)) :
     ∀ n X, rawMovingBias γ estimator θ₀ scoreHat n X = 0 := by
   intro n X
-  letI : IsProbabilityMeasure (γ.curve (estimator n X - θ₀)) :=
+  let : IsProbabilityMeasure (γ.curve (estimator n X - θ₀)) :=
     γ.curve_isProbability _
   unfold rawMovingBias
   rw [ConvexLinearEfficientScoreWitness.integral_eq_zero (hConvex n X), mul_zero]
@@ -413,7 +413,7 @@ theorem convexLinear_rawMovingBias_zero_vec
       (C_hat n X) (M.curve (estimator n X - θ₀)) (S_hat n X) e (scoreHat n X)) :
     ∀ n X, rawMovingBias_vec M estimator θ₀ scoreHat n X = 0 := by
   intro n X
-  letI : IsProbabilityMeasure (M.curve (estimator n X - θ₀)) :=
+  let : IsProbabilityMeasure (M.curve (estimator n X - θ₀)) :=
     M.curve_isProbability _
   unfold rawMovingBias_vec
   rw [ConvexLinearEfficientScoresWitness.integral_eq_zero (hConvex n X), smul_zero]

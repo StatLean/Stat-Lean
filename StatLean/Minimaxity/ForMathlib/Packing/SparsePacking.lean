@@ -557,7 +557,7 @@ private theorem sparse_packing (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d) :
       positivity
     have hsupp : (Finset.univ.filter fun i => (sparseVec d s S) i ≠ 0) = S := by
       ext i
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, sparseVec_apply]
+      simp only [sparseVec_apply]
       by_cases h : i ∈ S <;> simp [h, hane]
     rw [hsupp]; exact le_of_eq (hcard S hS)
   · -- Separation, transported from the support-overlap bound.

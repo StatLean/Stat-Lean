@@ -85,7 +85,7 @@ theorem meanVecFunctional_affineEquivariant :
     IsAffineEquivariantLocation (meanVecFunctional (d := d))
       {P | IsProbabilityMeasure P ∧ ∀ i, Integrable (fun x => x i) P} := by
   rintro P ⟨hP, hint⟩ A _ b
-  haveI : IsProbabilityMeasure P := hP
+  have : IsProbabilityMeasure P := hP
   funext i
   have hmap : meanVecFunctional (P.map fun x => A.mulVec x + b) i
       = ∫ x, (A.mulVec x + b) i ∂P :=
@@ -138,7 +138,7 @@ theorem covMatrixFunctional_affineEquivariant :
     IsAffineEquivariantScatter (covMatrixFunctional (d := d))
       {P | IsProbabilityMeasure P ∧ ∀ i, MemLp (fun x => x i) 2 P} := by
   rintro P ⟨hP, h2⟩ A hA b
-  haveI : IsProbabilityMeasure P := hP
+  have : IsProbabilityMeasure P := hP
   have hint : ∀ i, Integrable (fun x : Fin d → ℝ => x i) P :=
     fun i => (h2 i).integrable (by norm_num)
   -- the centring of the image is the image of the centring, by the location result

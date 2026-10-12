@@ -1304,8 +1304,8 @@ theorem archInf_condexp_strict_past [IsProbabilityMeasure μ] {a : ℝ} {bc : �
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     μ[Y t | sigmaLT Y t] =ᵐ[μ] fun ω => a + ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := by
   have hFle := sigmaLT_le h.measurableY t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hrec := archInf_rec_drift hsum h hint hstat t
   have hprodint : Integrable (fun ω => archInfDrift a bc Y t ω * ξ t ω) μ :=
@@ -1335,8 +1335,8 @@ theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     μ[fun ω => Y t ω - archInfDrift a bc Y t ω | sigmaLT Y t] =ᵐ[μ] 0 := by
   have hFle := sigmaLT_le h.measurableY t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hdae := archInfDrift_ae_eq hsum h hint hstat t
   have hdint : Integrable (archInfDrift a bc Y t) μ := by

@@ -84,7 +84,7 @@ private lemma integrable_normX (μ : Measure Ω) [IsProbabilityMeasure μ]
     refine integrable_finsetSum _ (fun i _ => ?_)
     exact (hX_int i).op_fst_snd (op := fun (a : E) (r : ℝ) => r • a)
       (continuous_snd.smul continuous_fst)
-      ⟨1, fun a r => le_of_eq (by show ‖r • a‖ = 1 * ‖a‖ * ‖r‖; rw [norm_smul]; ring)⟩
+      ⟨1, fun a r => le_of_eq (by change ‖r • a‖ = 1 * ‖a‖ * ‖r‖; rw [norm_smul]; ring)⟩
       (hcoef i)
   exact hsum.norm
 
@@ -191,7 +191,7 @@ private lemma upper_inner (x : Fin N → E) :
 
 /-- The Pi sup-norm is invariant under coordinatewise absolute value. -/
 private lemma norm_abs_pi [NeZero N] (g : Fin N → ℝ) : ‖(fun i => |g i|)‖ = ‖g‖ := by
-  haveI : Nonempty (Fin N) := ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne N)⟩⟩
+  have : Nonempty (Fin N) := ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne N)⟩⟩
   rw [pi_norm_eq_ciSup_abs, pi_norm_eq_ciSup_abs]
   simp [abs_abs]
 
@@ -328,7 +328,7 @@ theorem gaussian_symmetrization_lower {μ : Measure Ω} [IsProbabilityMeasure μ
   rcases eq_or_ne N 0 with hN0 | hN0
   · subst hN0
     simp
-  haveI : NeZero N := ⟨hN0⟩
+  have : NeZero N := ⟨hN0⟩
   have hIS := integrable_normX (X := X) μ
     (ρ := signVec N) (fun i => integrable_eval_signVec i) hX_int
   have hIG := integrable_normX (X := X) μ

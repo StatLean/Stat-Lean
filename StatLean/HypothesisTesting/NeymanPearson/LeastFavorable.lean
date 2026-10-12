@@ -447,7 +447,7 @@ theorem isMostPowerful_composite_of_npShape
   have hsize' : powerAgainst (mixtureMeasure μ f Λ) φ = α :=
     lf_bridge_eq (P := P) hf hjoint Λ hΛ hφ hsize
   -- Hence `φ` is most powerful for the mixed problem by the fundamental lemma.
-  haveI : IsProbabilityMeasure (mixtureMeasure μ f Λ) :=
+  have : IsProbabilityMeasure (mixtureMeasure μ f Λ) :=
     lf_isProbabilityMeasure_mixture (P := P) hf hjoint Λ
   have hMP : IsMostPowerful (mixtureMeasure μ f Λ) G α φ :=
     isMostPowerful_of_npShape μ (mixtureMeasure μ f Λ) G h₀ hg hφ hsize' hshape

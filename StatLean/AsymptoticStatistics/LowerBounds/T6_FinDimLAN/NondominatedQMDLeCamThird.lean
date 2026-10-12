@@ -281,7 +281,7 @@ private lemma actualLog_integral_comparison_bound
   classical
   let t := a * (Real.sqrt n)⁻¹
   have ht : 0 ≤ t := mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _))
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let Q : Measure Ω := γ.curve t
   let A : Measure Ω := γ.acPart t
   let ν : Measure (Fin n → Ω) := Measure.pi (fun _ : Fin n => Q)
@@ -292,7 +292,7 @@ private lemma actualLog_integral_comparison_bound
   have hAQ : A ≤ Q := by
     simpa only [A, Q, acPart] using
       Measure.withDensity_rnDeriv_le (γ.curve t) P
-  letI : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
+  let : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
   have hAac : A ≪ Q := hAQ.absolutelyContinuous
   have hρν : ρ ≤ ν := by
     let D : (Fin n → Ω) → ℝ≥0∞ :=
@@ -629,7 +629,7 @@ theorem weakConverges_scorePair_under_pi
   let Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P)
   let Y : ℕ → (ℕ → Ω) → EuclideanSpace ℝ (Fin 2) :=
     fun i X => scoreVector v (X i)
-  haveI : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
+  have : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
   have hYmeas : ∀ i, Measurable (Y i) := fun i =>
     (measurable_scoreVector v).comp (measurable_pi_apply i)
   have hiid : iIndepFun Y Pinf := by
@@ -828,7 +828,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
   let vScore : NNReal := (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))
   let vLog : NNReal := (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
   have haff : Measurable (fun x : ℝ => a * x - c) := by fun_prop
-  letI : IsProbabilityMeasure
+  let : IsProbabilityMeasure
       ((gaussianReal 0 vScore).map (fun x : ℝ => a * x - c)) :=
     (by infer_instance)
   have hscore := weakConverges_normalizedScore_under_pi γ
@@ -915,7 +915,7 @@ theorem qmd_lecamThird_along_subseq
   let tiltMap : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, a * q.2 - c)
   have htilt_cont : Continuous tiltMap := by fun_prop
   have htilt : Measurable tiltMap := htilt_cont.measurable
-  haveI : IsProbabilityMeasure (π.map tiltMap) :=
+  have : IsProbabilityMeasure (π.map tiltMap) :=
     (by infer_instance)
   have hpairMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
       (Y (χ k) X, normalizedScoreSum γ.score (χ k) X)) := fun k =>
@@ -1021,10 +1021,10 @@ theorem qmd_lecamThird_along_subseq
       ∫ X, Real.exp (actualLogLikelihood γ a (χ k) X)
         ∂(Measure.pi (fun _ : Fin (χ k) => P))) atTop (nhds 1) :=
     (integral_exp_actualLogLikelihood_tendsto_one γ a ha).comp hχ.tendsto_atTop
-  letI : ∀ k, IsProbabilityMeasure
+  let : ∀ k, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin (χ k) => γ.curve (a * (Real.sqrt (χ k))⁻¹))) :=
     fun k => by
-      letI : IsProbabilityMeasure (γ.curve (a * (Real.sqrt (χ k))⁻¹)) :=
+      let : IsProbabilityMeasure (γ.curve (a * (Real.sqrt (χ k))⁻¹)) :=
         γ.curve_isProbability _
           (mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _)))
       infer_instance
@@ -1081,7 +1081,7 @@ theorem qmd_local_score_clt
         γ.curve (a * (Real.sqrt n)⁻¹))).map (normalizedScoreSum u n))
       (gaussianReal (a * ⟪u, γ.score⟫_ℝ)
         (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _))) := by
-  letI : IsProbabilityMeasure (scorePairGaussian γ u) := by
+  let : IsProbabilityMeasure (scorePairGaussian γ u) := by
     unfold scorePairGaussian
     exact (by infer_instance)
   have h := qmd_lecamThird_along_subseq γ a ha
@@ -1103,10 +1103,10 @@ theorem qmd_local_contiguous
       (fun n => Measure.pi (fun _ : Fin n =>
         γ.curve (a * (Real.sqrt n)⁻¹))) := by
   let vLog : NNReal := (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
-  letI : ∀ n, IsProbabilityMeasure
+  let : ∀ n, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin n => γ.curve (a * (Real.sqrt n)⁻¹))) :=
     fun n => by
-      letI : IsProbabilityMeasure (γ.curve (a * (Real.sqrt n)⁻¹)) :=
+      let : IsProbabilityMeasure (γ.curve (a * (Real.sqrt n)⁻¹)) :=
         γ.curve_isProbability _
           (mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _)))
       infer_instance

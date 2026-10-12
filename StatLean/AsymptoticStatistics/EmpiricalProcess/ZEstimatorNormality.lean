@@ -158,7 +158,7 @@ theorem matrix_bddbelow_of_isUnit_det {k : ℕ} (V : Matrix (Fin k) (Fin k) ℝ)
     have hb : ‖b‖ = 0 := by rw [EuclideanSpace.norm_eq]; subst hk0; simp
     rw [hb, mul_zero, ENNReal.ofReal_zero]
     exact zero_le
-  · haveI : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
+  · have : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
     set S := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V⁻¹ with hS
     set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V with hT
     -- `S ∘ T = id`, so `‖b‖ ≤ ‖S‖ · ‖T b‖`.
@@ -921,7 +921,7 @@ theorem zEstimator_asymptotic_normality
       linarith [hdistbd, h2, h3]
   -- The vector empirical process converges weakly, hence is marginally `O_P(1)`;
   -- this yields the marginal tightness `h_tight` required by the core.
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (psiCov P ψ θ₀)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   have hC := empiricalProcessVec_weakConverges P ψ θ₀ μ X hX_meas hX_indep hX_id hX_law

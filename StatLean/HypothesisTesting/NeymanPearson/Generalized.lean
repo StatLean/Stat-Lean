@@ -141,7 +141,7 @@ private lemma exists_l2_reduction {n : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
   have hwmeas : Measurable w := hSmeas.add hhmeas
   have hwint : Integrable w μ := hSint.add hhint
   set ν : Measure 𝓧 := μ.withDensity (fun x => ENNReal.ofReal (w x)) with hν
-  haveI : IsFiniteMeasure ν := by rw [hν]; exact isFiniteMeasure_withDensity_ofReal hwint.2
+  have : IsFiniteMeasure ν := by rw [hν]; exact isFiniteMeasure_withDensity_ofReal hwint.2
   have hμν : μ ≪ ν := by
     rw [hν]
     exact withDensity_absolutelyContinuous' hwmeas.ennreal_ofReal.aemeasurable
@@ -242,7 +242,7 @@ theorem exists_test_max_integral_of_constraints {m : ℕ}
         ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ := by
   classical
   obtain ⟨ν, g, hνfin, hμν, hred⟩ := exists_l2_reduction μ f hmeas hint
-  haveI := hνfin
+  have := hνfin
   -- A critical function meeting the side conditions is a member of the constrained class.
   have hmemb : ∀ (φ : 𝓧 → ℝ) (hφ : IsCriticalFn φ),
       (∀ i, ∫ x, φ x * f i.castSucc x ∂μ = c i) →
@@ -552,7 +552,7 @@ private lemma isClosed_momentSet {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
     IsClosed (momentSet μ f) := by
   classical
   obtain ⟨ν, gL, hνfin, hμν, hred⟩ := exists_l2_reduction μ f hmeas hint
-  haveI := hνfin
+  have := hνfin
   -- Restate the reduction in weak-dual form.
   have reduction : ∀ (φ : 𝓧 → ℝ) (φ' : Lp ℝ 2 ν), ⇑φ' =ᵐ[ν] φ → ∀ i,
       toWeakDualL2 ν φ' (gL i) = ∫ x, φ x * f i x ∂μ := by
@@ -865,7 +865,7 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
     rw [e1, e2, hzeq]
     exact hMge _ hyM
   rw [hsplit, hsplit] at hge
-  simp only [hzdef, hzlast] at hge
+  simp only [hzdef] at hge
   rw [integral_lagrangian hint _ hψ, integral_lagrangian hint _ hφ₀]
   by_contra hcon
   push Not at hcon

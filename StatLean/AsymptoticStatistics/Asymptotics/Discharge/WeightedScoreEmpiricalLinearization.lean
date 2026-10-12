@@ -109,7 +109,7 @@ private theorem dqm_score_integral_modelMeasure_eq_zero
     (hell : Measurable ell) (hPDF : IsPDFOf M mu)
     (hDQM : DifferentiableQuadraticMean M mu theta0 ell) :
     (∫ x, ell x ∂(modelMeasure M mu theta0)) = 0 := by
-  letI := modelMeasure_isProbabilityMeasure M mu hPDF theta0
+  let := modelMeasure_isProbabilityMeasure M mu hPDF theta0
   have hmem := dqm_score_memLp_modelMeasure M mu theta0 ell hell hPDF hDQM
   apply PiLp.ext
   intro j
@@ -249,8 +249,8 @@ private theorem dqm_sqrtDensityRatio_tail_sq_scaled_of_rootNBounded
       ∫ x in {x | (1 : ℝ) ≤ |M.sqrtDensityRatio theta0 (theta n) x|},
         M.sqrtDensityRatio theta0 (theta n) x ^ 2
         ∂(modelMeasure M mu theta0)) atTop (nhds 0) := by
-  letI := modelMeasure_isProbabilityMeasure M mu hPDF theta0
-  letI : IsFiniteMeasure
+  let := modelMeasure_isProbabilityMeasure M mu hPDF theta0
+  let : IsFiniteMeasure
       (mu.withDensity fun x => ENNReal.ofReal (M.density theta0 x)) :=
     isFiniteMeasure_withDensity_ofReal
       (hPDF.density_integrable theta0).hasFiniteIntegral
@@ -281,7 +281,7 @@ private theorem dqm_good_complement_base_mass_scaled_of_rootNBounded
   let W := fun n => M.sqrtDensityRatio theta0 (theta n)
   let G := fun n => {x | 0 < M.density theta0 x ∧ |W n x| < 1}
   let T := fun n => {x | (1 : ℝ) ≤ |W n x|}
-  letI : IsProbabilityMeasure P0 := modelMeasure_isProbabilityMeasure M mu hPDF theta0
+  let : IsProbabilityMeasure P0 := modelMeasure_isProbabilityMeasure M mu hPDF theta0
   have htheta := rootNBounded_tendsto_parameter hroot
   have hellMem := dqm_score_memLp_modelMeasure M mu theta0 ell
     hell hPDF hDQM
@@ -409,7 +409,7 @@ private theorem dqm_good_complement_mass_scaled_of_rootNBounded
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
     (Eventually.of_forall fun n => mul_nonneg (Nat.cast_nonneg _) measureReal_nonneg) ?_
   filter_upwards [hWmem] with n hn
-  letI := modelMeasure_isProbabilityMeasure M mu hPDF (theta n)
+  let := modelMeasure_isProbabilityMeasure M mu hPDF (theta n)
   have hmass : (modelMeasure M mu (theta n)).real (G n)ᶜ ≤
       (∫ x in Z, M.density (theta n) x ∂mu) +
         (9 / 4 : ℝ) * ∫ x in T n, W n x ^ 2
@@ -786,8 +786,8 @@ private theorem dqm_ratio_row_centered_tendstoInProbZero
   let G : ℕ → Set Omega := fun n => {x | 0 < M.density theta0 x ∧ |W n x| < 1}
   let Y : ℕ → Omega → EuclideanSpace ℝ (Fin d) := fun n x => (G n).indicator (fun x =>
     (-Real.sqrt n * W n x / (2 + W n x)) • ell x) x
-  letI (n : ℕ) := modelMeasure_isProbabilityMeasure M mu hPDF (theta n)
-  letI := modelMeasure_isProbabilityMeasure M mu hPDF theta0
+  let (n : ℕ) := modelMeasure_isProbabilityMeasure M mu hPDF (theta n)
+  let := modelMeasure_isProbabilityMeasure M mu hPDF theta0
   have hG (n : ℕ) : MeasurableSet (G n) :=
     (measurableSet_lt measurable_const (M.density_meas theta0)).inter
       (measurableSet_lt (continuous_abs.measurable.comp
@@ -1405,8 +1405,8 @@ theorem weightedScore_centeredEmpMean_linearization_of_dqm_rootNBounded
   let H : ∀ n, (Fin n → Omega) → EuclideanSpace ℝ (Fin d) := fun n X =>
     Real.sqrt n • (empMean R n X - ∫ x, R n x ∂(Pn n)) +
       (empMean Y n X - ∫ x, Y n x ∂(Pn n)) + D n
-  letI (n : ℕ) := modelMeasure_isProbabilityMeasure M μ hPDF (θn n)
-  letI := modelMeasure_isProbabilityMeasure M μ hPDF θ0
+  let (n : ℕ) := modelMeasure_isProbabilityMeasure M μ hPDF (θn n)
+  let := modelMeasure_isProbabilityMeasure M μ hPDF θ0
   have hG (n : ℕ) : MeasurableSet (G n) :=
     (measurableSet_lt measurable_const (M.density_meas θ0)).inter
       (measurableSet_lt (continuous_abs.measurable.comp

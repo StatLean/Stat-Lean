@@ -155,7 +155,7 @@ private lemma isMarkovKernel_bvmGaussKernel (J : Matrix (Fin k) (Fin k) ℝ)
 /-- Measurability of the Bernstein–von Mises deviation in the sample. -/
 private lemma measurable_bvmTV (hsc : Measurable sc) (n : ℕ) :
     Measurable fun ω : Fin n → 𝓧 => bvmTV κ π θ₀ J sc n ω := by
-  haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+  have := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
   exact measurable_tvDist_kernel (bvmLocalPosterior κ π θ₀ n) (bvmGaussKernel J hsc n)
 
 /-! ### Convergence in probability: sums, tight multiples, and rate extraction -/
@@ -512,7 +512,7 @@ private lemma bpe_two_sided
                 + ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
                     ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω))) := by
   classical
-  haveI hGprob : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+  have hGprob : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
     change IsProbabilityMeasure (multivariateGaussian _ _)
     infer_instance
   set Δ := bvmEffScore J sc n ω with hΔ
@@ -653,7 +653,7 @@ theorem posteriorRisk_shifted_majorant
           bpeGaussCriterion J ℓ τ
             ≤ bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω + Mn n ω := by
   classical
-  haveI hPn : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hPn : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   have hrpow : Continuous fun t : ℝ => t ^ p :=
@@ -666,7 +666,7 @@ theorem posteriorRisk_shifted_majorant
     fun n => measurable_bvmTV hsc n
   have htvle : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmTV κ π θ₀ J sc n ω ≤ 1 := by
     intro n ω
-    haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+    have : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
       change IsProbabilityMeasure (multivariateGaussian _ _)
       infer_instance
     exact tvDist_le_one _ _
@@ -713,7 +713,7 @@ theorem posteriorRisk_shifted_majorant
     have h4 : Measurable fun ω : Fin n → 𝓧 =>
         ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
           ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω) := by
-      haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+      have := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
       exact Measurable.setLIntegral_kernel (κ := bvmGaussKernel J hsc n) hWmeas
         Metric.isOpen_ball.measurableSet.compl
     exact h1.mul (((htvmeas n).const_mul _).add (h3.add h4))

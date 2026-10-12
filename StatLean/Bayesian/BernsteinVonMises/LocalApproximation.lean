@@ -435,7 +435,7 @@ theorem bvmLogRatio_tendsto
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}) atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   -- The LAN residual at an arbitrary fixed local parameter.
@@ -536,10 +536,10 @@ private lemma tvDist_normalize_le_double_lintegral_antisymm {α : Type*} [Measur
     simp only [div_eq_mul_inv]
     rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr h0), ← hZ]
     exact ENNReal.mul_inv_cancel h0 hT
-  haveI : IsProbabilityMeasure (base.withDensity fun x => s x / Zs) := ⟨by
+  have : IsProbabilityMeasure (base.withDensity fun x => s x / Zs) := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact hmass s Zs hZs hs0 hsT⟩
-  haveI : IsProbabilityMeasure (base.withDensity fun x => t x / Zt) := ⟨by
+  have : IsProbabilityMeasure (base.withDensity fun x => t x / Zt) := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact hmass t Zt hZt ht0 htT⟩
   rw [tvDist_withDensity_eq base hpm hqm]
@@ -1274,7 +1274,7 @@ private lemma lintegral_bvmPairDefect_le
     {n : ℕ} (h g : EuclideanSpace ℝ (Fin k)) :
     ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
       ≤ ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h)) := by
-  haveI : IsProbabilityMeasure (productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
+  have : IsProbabilityMeasure (productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF _ n
   calc ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
@@ -1408,7 +1408,7 @@ private lemma lintegral_bvmPairDefect_tendsto
     Tendsto (fun n => ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω
         ∂(Measure.pi fun _ : Fin n => μ)) atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ n
@@ -1668,7 +1668,7 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
   have hVfin : lamC Set.univ ≠ ∞ := by
     rw [hlamC, Measure.restrict_apply_univ]
     exact measure_closedBall_lt_top.ne
-  haveI : IsFiniteMeasure lamC := ⟨lt_of_le_of_ne le_top hVfin⟩
+  have : IsFiniteMeasure lamC := ⟨lt_of_le_of_ne le_top hVfin⟩
   have hsub : Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u ⊆ C :=
     Metric.ball_subset_closedBall.trans (Metric.closedBall_subset_closedBall hu)
   -- Step 1: bound the integrand by the unnormalized double integral.
@@ -1777,7 +1777,7 @@ private lemma exists_scoreSum_bound
     ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ,
       productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖} ≤ ε := by
   classical
-  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   have hscmeas : ∀ n : ℕ, Measurable (scoreSum sc n) := by
@@ -1786,10 +1786,10 @@ private lemma exists_scoreSum_bound
       Finset.measurable_sum Finset.univ fun i _ => hsc.comp (measurable_pi_apply i)
     unfold scoreSum
     exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
-  haveI hmapProb : ∀ n : ℕ,
+  have hmapProb : ∀ n : ℕ,
       IsProbabilityMeasure ((productMeasure M μ θ₀ n).map (scoreSum sc n)) := fun n => ⟨by
     rw [Measure.map_apply (hscmeas n) MeasurableSet.univ, Set.preimage_univ, measure_univ]⟩
-  haveI hGprob : IsProbabilityMeasure
+  have hGprob : IsProbabilityMeasure
       (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
   have hwc := AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges
     M μ θ₀ sc hsc (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)

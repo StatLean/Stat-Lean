@@ -257,10 +257,10 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
     cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
-  haveI : NullSingletonClass (coxMeasure β Λ₀ z hfin) := ⟨coxMeasure_singleton β Λ₀ z hfin⟩
+  have : NullSingletonClass (coxMeasure β Λ₀ z hfin) := ⟨coxMeasure_singleton β Λ₀ z hfin⟩
   have hev : IsEventTimeLaw (coxMeasure β Λ₀ z hfin) :=
     isEventTimeLaw_coxMeasure β Λ₀ z hΛ0 hfin htot
-  haveI := hev.1
+  have := hev.1
   -- the survival function of the constructed law is the Cox survival function
   have hsurv : ∀ t, survivalReal (coxMeasure β Λ₀ z hfin) t = coxSurvival β Λ₀ z t := by
     intro t
@@ -456,9 +456,9 @@ theorem not_forall_cumHazard_coxMeasure :
   have hm0 : cureCoxMeasure 0 univ ≠ 0 := by
     rw [hm, ne_eq, ENNReal.ofReal_eq_zero, not_le]; linarith
   have hmtop : cureCoxMeasure 0 univ ≠ ⊤ := by rw [hm]; exact ENNReal.ofReal_ne_top
-  haveI hprob : IsProbabilityMeasure ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨by
+  have hprob : IsProbabilityMeasure ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨by
     rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hm0 hmtop]⟩
-  haveI hna : NullSingletonClass ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨fun x => by
+  have hna : NullSingletonClass ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨fun x => by
     rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_singleton, mul_zero]⟩
   have hev : IsEventTimeLaw ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨hprob, by
     rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_Iio_zero, mul_zero]⟩

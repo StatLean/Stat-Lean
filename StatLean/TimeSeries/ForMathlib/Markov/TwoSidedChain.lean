@@ -130,7 +130,7 @@ theorem isProbabilityMeasure_chainWindowLaw
     unfold chainWindowLaw
     infer_instance
   | succ k ih =>
-    haveI := ih
+    have := ih
     unfold chainWindowLaw
     infer_instance
 
@@ -187,7 +187,7 @@ private theorem chainWindowLaw_eq_compProd (k : ℕ) :
     refine Fin.cases ?_ (fun j => j.elim0) i
     simp
   | succ k ih =>
-    haveI := isProbabilityMeasure_chainWindowLaw κ π k
+    have := isProbabilityMeasure_chainWindowLaw κ π k
     set η : Kernel (S × (Fin k → S)) S :=
       κ.comap (fun p : S × (Fin k → S) => (Fin.cons p.1 p.2 : Fin (k + 1) → S) (Fin.last k))
         (measurable_consLast k) with hη
@@ -420,7 +420,7 @@ private noncomputable def trajLaw (κ : Kernel S S) [IsMarkovKernel κ] (π : Me
 private theorem trajMeasure_map_window (π : Measure S) [IsProbabilityMeasure π] (n : ℕ) :
     (trajLaw κ π).map (fun ω (i : Fin (n + 1)) => ω (i : ℕ))
       = chainWindowLaw κ π n := by
-  haveI hprob : IsProbabilityMeasure (trajLaw κ π) := by rw [trajLaw]; infer_instance
+  have hprob : IsProbabilityMeasure (trajLaw κ π) := by rw [trajLaw]; infer_instance
   induction n with
   | zero =>
     have h1 : (trajLaw κ π).map (frestrictLe 0)
@@ -453,12 +453,12 @@ private theorem trajMeasure_map_window (π : Measure S) [IsProbabilityMeasure π
     have hih : ((trajLaw κ π).map (frestrictLe n)).map (iicToFin n)
         = chainWindowLaw κ π n := by
       rw [Measure.map_map (measurable_iicToFin n) (measurable_frestrictLe n)]; exact ih
-    haveI : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
+    have : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
       (by infer_instance)
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
       Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
-    haveI : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
+    have : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
       (by infer_instance)
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
@@ -545,7 +545,7 @@ private lemma measurable_finInit (N : ℕ) :
 /-- Dropping the last coordinate of a window law. -/
 private theorem chainWindowLaw_map_init (N : ℕ) :
     (chainWindowLaw κ π (N + 1)).map Fin.init = chainWindowLaw κ π N := by
-  haveI := isProbabilityMeasure_chainWindowLaw κ π N
+  have := isProbabilityMeasure_chainWindowLaw κ π N
   rw [show chainWindowLaw κ π (N + 1) = ((chainWindowLaw κ π N) ⊗ₘ
       (κ.comap (fun w : Fin (N + 1) → S => w (Fin.last N)) (measurable_pi_apply _))).map
       (fun wx => (Fin.snoc wx.1 wx.2 : Fin (N + 1 + 1) → S)) from rfl,
@@ -910,7 +910,7 @@ theorem exists_twoSided_stationary_chain
     MeasureTheory.measurable_embeddingReal S
   set μ0 : Measure (S × ((ℕ → S) × (ℕ → S))) :=
     π ⊗ₘ ((trajKernel κ) ×ₖ (trajKernel (reverseKernel κ π))) with hμ0
-  haveI : IsProbabilityMeasure μ0 := by rw [hμ0]; infer_instance
+  have : IsProbabilityMeasure μ0 := by rw [hμ0]; infer_instance
   have hEnc : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
       fun t : ℤ => MeasureTheory.embeddingReal S (twoSidedProc ω t) :=
     Measurable.of_eval fun t => hemeas.comp (measurable_twoSidedProc t)

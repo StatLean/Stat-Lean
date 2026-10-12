@@ -138,7 +138,7 @@ theorem finiteClass_isPACLearnerWith (𝓗 : Finset (X → Bool))
       (fun ε δ => ⌈Real.log (𝓗.card / δ) / ε⌉₊) := by
   classical
   intro D hD f hreal ε δ hε hδ hδ1 n hn
-  haveI := hD
+  have := hD
   have hN1 : (1 : ℝ) ≤ (𝓗.card : ℝ) := by exact_mod_cast Finset.card_pos.mpr h𝓗
   have hlogpos : 0 < Real.log ((𝓗.card : ℝ) / δ) := by
     refine Real.log_pos ?_

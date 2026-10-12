@@ -455,7 +455,7 @@ private theorem power_eq_indicator_of_dominating
   by_cases hb : E.base = 0
   · intro _ _
     simp [power, statScaleFamily, ExpFamily.P, hb, MeasureTheory.tilted_zero_measure]
-  haveI : NeZero E.base := ⟨hb⟩
+  have : NeZero E.base := ⟨hb⟩
   have hφ₀meas : Measurable (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
     measurable_const.indicator hA₀meas.compl
   have hφ₀b : ∀ t, (A₀ᶜ.indicator fun _ => (1 : ℝ)) t ∈ Set.Icc (0 : ℝ) 1 := by
@@ -465,14 +465,14 @@ private theorem power_eq_indicator_of_dominating
     · rw [Set.indicator_of_notMem h]; norm_num
   have hprob : ∀ η ∈ E.natSet, IsProbabilityMeasure (statScaleFamily E η) := by
     intro η hη
-    haveI : IsProbabilityMeasure (E.P η) :=
+    have : IsProbabilityMeasure (E.P η) :=
       MeasureTheory.isProbabilityMeasure_tilted hη
     exact (by unfold statScaleFamily; infer_instance)
   have hIntg : ∀ f : EuclideanSpace ℝ (Fin s) → ℝ, Measurable f →
       (∀ t, f t ∈ Set.Icc (0 : ℝ) 1) → ∀ η ∈ E.natSet,
       Integrable f (statScaleFamily E η) := by
     intro f hf hbd η hη
-    haveI := hprob η hη
+    have := hprob η hη
     exact (integrable_const (1 : ℝ)).mono' hf.aestronglyMeasurable
       (ae_of_all _ fun t => by
         rw [Real.norm_eq_abs, abs_le]; exact ⟨by linarith [(hbd t).1], (hbd t).2⟩)
@@ -491,7 +491,7 @@ private theorem power_eq_indicator_of_dominating
       (measurableSet_lt hφ.1 measurable_const) hray (ENNReal.ofReal ε⁻¹)
       ENNReal.ofReal_ne_top ?_
     intro η hη
-    haveI := hprob η (hΘ' hη)
+    have := hprob η (hΘ' hη)
     set Q : Measure (EuclideanSpace ℝ (Fin s)) := statScaleFamily E η with hQdef
     set Aε : Set (EuclideanSpace ℝ (Fin s)) := {t | φ t < 1 - ε} with hAεdef
     have hAεmeas : MeasurableSet Aε := measurableSet_lt hφ.1 measurable_const
@@ -583,7 +583,7 @@ private theorem power_eq_indicator_of_dominating
     exact integral_mono_ae (hIntg _ hφ₀meas hφ₀b η hη) (hIntg φ hφ.1 hφ.2 η hη)
       (hge.filter_mono (hac η).ae_le)
   -- **Step C.** On the null class the two-sided domination forces `φ = φ₀` a.e.
-  haveI := hprob θH hθHnat
+  have := hprob θH hθHnat
   have hint0 : ∫ t, (φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂(statScaleFamily E θH) = 0 := by
     rw [integral_sub (hIntg φ hφ.1 hφ.2 θH hθHnat) (hIntg _ hφ₀meas hφ₀b θH hθHnat)]
     have := le_antisymm h2 (hpowge θH hθHnat)
@@ -675,7 +675,7 @@ theorem isAlphaAdmissible_of_size_attained (E : ExpFamily 𝓧 (EuclideanSpace �
         ⟨hφ.1.comp E.stat_meas, fun x => hφ.2 _⟩
   -- the level bound passes from `Θ_H` to the finite point `θ₀` by continuity
   have hθ₀le : power (statScaleFamily E) φ θ₀ ≤ α := by
-    haveI : (nhdsWithin θ₀ Θ_H).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hθ₀closure
+    have : (nhdsWithin θ₀ Θ_H).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hθ₀closure
     exact le_of_tendsto ((hcont θ₀ hθ₀nat).mono hΘHint)
       (Filter.eventually_of_mem self_mem_nhdsWithin hlevelφ)
   exact power_eq_indicator_of_dominating E hΘ' hA₀closed hA₀convex hA₀meas hray hφ h1

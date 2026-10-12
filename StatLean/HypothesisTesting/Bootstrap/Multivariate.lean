@@ -398,9 +398,9 @@ private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k
     Continuous (normLimitCDF S nrm) := by
   have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
   set ρ := (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S).map nrm with hρdef
-  haveI : IsProbabilityMeasure ρ :=
+  have : IsProbabilityMeasure ρ :=
     (by infer_instance)
-  haveI : NullSingletonClass ρ := by
+  have : NullSingletonClass ρ := by
     refine ⟨fun x => ?_⟩
     rw [hρdef, Measure.map_apply hnrm_cont.measurable (measurableSet_singleton x)]
     exact measure_multivariateGaussian_norm_level hpsd hSne hnrm_add hnrm_smul hnrm_def x
@@ -692,7 +692,7 @@ private theorem empirical_mem_meanVecSeqClass {Q : Measure (EuclideanSpace ℝ (
             * ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, WithLp.ofLp (X jj ω) j)
           = covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j := by
       filter_upwards [eventually_gt_atTop 0] with n hn
-      haveI := hprob n hn
+      have := hprob n hn
       rw [show covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j
         = cov[fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i,
               fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j;
@@ -766,7 +766,7 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
   set F' : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => if n = 0 then Q else F n with hF'def
   have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
     intro n hn; simp only [hF'def, ite_eq_right hn.ne']
-  haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
+  have hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; simpa only [hF'def, ite_eq_left rfl] using ‹IsProbabilityMeasure Q›
@@ -796,18 +796,15 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
     filter_upwards [eventually_gt_atTop 0] with n hn
     rw [hF'eq n hn]
   -- the root laws are probability measures
-  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := by
+  have hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (F' n) := fun _ => hF'prob n
+    have : ∀ _ : Fin n, IsProbabilityMeasure (F' n) := fun _ => hF'prob n
     infer_instance
-  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F' n) n) := by
+  have hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F' n) n) := by
     intro n
-    haveI := hpi n
-    exact (by
-      first
-      | (unfold meanVecRootLaw; infer_instance)
-      | (unfold meanRootLaw; infer_instance)
-      | infer_instance)
+    have := hpi n
+    unfold meanVecRootLaw
+    infer_instance
   -- Cramér–Wold, direction by direction, through the characteristic functions
   set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
     fun n => ⟨meanVecRootLaw (F' n) n, hroot n⟩ with hμs
@@ -820,21 +817,18 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
       (innerSL ℝ t).continuous
     set G : ℕ → Measure ℝ := fun n => (F' n).map (fun z => inner ℝ t z) with hG
     set Q₁ : Measure ℝ := Q.map (fun z => inner ℝ t z) with hQ₁
-    haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := fun n =>
+    have hGprob : ∀ n, IsProbabilityMeasure (G n) := fun n =>
       (by infer_instance)
-    haveI hQ₁prob : IsProbabilityMeasure Q₁ := (by infer_instance)
-    haveI hGpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => G n) := by
+    have hQ₁prob : IsProbabilityMeasure Q₁ := (by infer_instance)
+    have hGpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => G n) := by
       intro n
-      haveI : ∀ _ : Fin n, IsProbabilityMeasure (G n) := fun _ => hGprob n
+      have : ∀ _ : Fin n, IsProbabilityMeasure (G n) := fun _ => hGprob n
       infer_instance
-    haveI hGroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (G n) n) := by
+    have hGroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (G n) n) := by
       intro n
-      haveI := hGpi n
-      exact (by
-        first
-        | (unfold meanVecRootLaw; infer_instance)
-        | (unfold meanRootLaw; infer_instance)
-        | infer_instance)
+      have := hGpi n
+      unfold meanRootLaw
+      infer_instance
     -- square-integrability of the projections
     have hproj2 : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))),
         MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
@@ -871,7 +865,7 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
         fun i => (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).integral_comp_comm hint
       rw [integral_map hLc.aemeasurable (by fun_prop), hcomm]
       simp only [hcoordint]
-      simp [PiLp.inner_apply, real_inner_eq_re_inner, mul_comm]
+      simp [PiLp.inner_apply, mul_comm]
     have hGmean : Tendsto (fun n => ∫ s, s ∂(G n)) atTop (𝓝 (∫ s, s ∂Q₁)) := by
       simp only [hG, hQ₁, hprojmean _ (hF'2 _), hprojmean _ hQ2]
       exact tendsto_finsetSum _ fun i _ => (hF'mean i).const_mul _
@@ -901,7 +895,7 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
         charFun μ t = charFun (μ.map (fun z => inner ℝ t z)) 1 := by
       intro μ
       have h1 : ∀ a : ℝ, (inner ℝ a (1 : ℝ) : ℝ) = a := fun a => by
-        simp [real_inner_eq_re_inner]
+        simp
       rw [charFun_apply, charFun_apply, integral_map hLc.aemeasurable (by fun_prop)]
       simp only [h1]
       simp_rw [real_inner_comm t]
@@ -1005,21 +999,18 @@ theorem norm_root_cdf_tendsto [IsProbabilityMeasure Q]
   have hpsd := posSemidef_covMatrix hQ2
   have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
   -- all the laws in sight are probability measures (`n = 0` gives the Dirac at the empty tuple)
-  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F n) := by
+  have hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F n) := by
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; rw [Measure.pi_of_empty]; infer_instance
-    · haveI := hF.1 n hn
-      haveI : ∀ _ : Fin n, IsProbabilityMeasure (F n) := fun _ => ‹_›
+    · have := hF.1 n hn
+      have : ∀ _ : Fin n, IsProbabilityMeasure (F n) := fun _ => ‹_›
       infer_instance
-  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F n) n) := by
+  have hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F n) n) := by
     intro n
-    haveI := hpi n
-    exact (by
-      first
-      | (unfold meanVecRootLaw; infer_instance)
-      | (unfold meanRootLaw; infer_instance)
-      | infer_instance)
+    have := hpi n
+    unfold meanVecRootLaw
+    infer_instance
   -- weak convergence of the root laws, packaged as `ProbabilityMeasure` convergence
   set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
     ⟨multivariateGaussian 0 (covMatrix Q), inferInstance⟩ with hν
@@ -1078,7 +1069,7 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
   have hcont : Continuous Jlim :=
     continuous_normLimitCDF hQ2 hnrm_add hnrm_smul hnrm_def hS
   have hJcdf : IsCDF Jlim := by
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)).map nrm) :=
       (by infer_instance)
     have heq : Jlim = fun x =>
@@ -1094,10 +1085,10 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
       IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) →
       IsCDF (normMeanRootCDF F nrm n) := by
     intro F n hpi
-    haveI := hpi
-    haveI : IsProbabilityMeasure (meanVecRootLaw F n) :=
+    have := hpi
+    have : IsProbabilityMeasure (meanVecRootLaw F n) :=
       (by unfold meanVecRootLaw; infer_instance)
-    haveI : IsProbabilityMeasure ((meanVecRootLaw F n).map nrm) :=
+    have : IsProbabilityMeasure ((meanVecRootLaw F n).map nrm) :=
       (by infer_instance)
     have heq : normMeanRootCDF F nrm n
         = fun x => (((meanVecRootLaw F n).map nrm) (Set.Iic x)).toReal := by
@@ -1108,7 +1099,7 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
     exact isCDF_toReal_measure_Iic _
   have hpiQ : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => Q) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure Q := fun _ => ‹_›
+    have : ∀ _ : Fin n, IsProbabilityMeasure Q := fun _ => ‹_›
     infer_instance
   have hconstmem : (fun _ : ℕ => Q) ∈ meanVecSeqClass Q :=
     ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ => tendsto_const_nhds,
@@ -1121,8 +1112,8 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; rw [Measure.pi_of_empty]; infer_instance
-    · haveI := hω.1 n hn
-      haveI : ∀ _ : Fin n, IsProbabilityMeasure (empiricalMeasure fun i : Fin n => X i ω) :=
+    · have := hω.1 n hn
+      have : ∀ _ : Fin n, IsProbabilityMeasure (empiricalMeasure fun i : Fin n => X i ω) :=
         fun _ => ‹_›
       infer_instance
   have hEconv : ∀ x, Tendsto
@@ -1360,7 +1351,7 @@ private lemma map_multivariateGaussian_deriv (hpsd : covH.PosSemidef)
   have hpsd' : (D * covH * D.transpose).PosSemidef := by
     have hc := hpsd.conjTranspose_mul_mul_same (B := D.transpose)
     simpa [Matrix.conjTranspose_transpose] using hc
-  haveI : IsProbabilityMeasure ((multivariateGaussian
+  have : IsProbabilityMeasure ((multivariateGaussian
       (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) :=
     (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
@@ -1479,11 +1470,11 @@ private theorem tendsto_integral_map_deltaMap {θ : EuclideanSpace ℝ (Fin p)}
     Tendsto (fun n : ℕ => ∫ y, φ y ∂((ν n).map (deltaMap f (c n) n))) atTop
       (𝓝 (∫ y, φ y ∂(Gp.map Df))) := by
   classical
-  haveI := hGp
-  haveI hνi : ∀ n, IsProbabilityMeasure (ν n) := hνprob
-  haveI hmapprob : ∀ n : ℕ, IsProbabilityMeasure ((ν n).map (deltaMap f (c n) n)) := fun n =>
+  have := hGp
+  have hνi : ∀ n, IsProbabilityMeasure (ν n) := hνprob
+  have hmapprob : ∀ n : ℕ, IsProbabilityMeasure ((ν n).map (deltaMap f (c n) n)) := fun n =>
     (by infer_instance)
-  haveI hDprob : IsProbabilityMeasure (Gp.map Df) :=
+  have hDprob : IsProbabilityMeasure (Gp.map Df) :=
     (by infer_instance)
   set Ps : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin q)) :=
     fun n => ⟨(ν n).map (deltaMap f (c n) n), hmapprob n⟩ with hPs
@@ -1671,17 +1662,14 @@ private lemma tendsto_smooth_root_of_class {θ : EuclideanSpace ℝ (Fin p)}
   classical
   have hνprob : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw ((E n).map (hVec h)) n) := by
     intro n
-    haveI hpi : IsProbabilityMeasure (Measure.pi fun _ : Fin n => (E n).map (hVec h)) := by
+    have hpi : IsProbabilityMeasure (Measure.pi fun _ : Fin n => (E n).map (hVec h)) := by
       rcases Nat.eq_zero_or_pos n with hn | hn
       · subst hn; rw [Measure.pi_of_empty]; infer_instance
-      · haveI := hEclass.1 n hn
-        haveI : ∀ _ : Fin n, IsProbabilityMeasure ((E n).map (hVec h)) := fun _ => ‹_›
+      · have := hEclass.1 n hn
+        have : ∀ _ : Fin n, IsProbabilityMeasure ((E n).map (hVec h)) := fun _ => ‹_›
         infer_instance
-    exact (by
-      first
-      | (unfold meanVecRootLaw; infer_instance)
-      | (unfold meanRootLaw; infer_instance)
-      | infer_instance)
+    unfold meanVecRootLaw
+    infer_instance
   have hν : ∀ ψ : EuclideanSpace ℝ (Fin p) →ᵇ ℝ,
       Tendsto (fun n => ∫ z, ψ z ∂(meanVecRootLaw ((E n).map (hVec h)) n)) atTop
         (𝓝 (∫ z, ψ z ∂(multivariateGaussian 0 (covMatrix H)))) :=
@@ -1692,7 +1680,7 @@ private lemma tendsto_smooth_root_of_class {θ : EuclideanSpace ℝ (Fin p)}
     hfmeas hf hf_nhds hf_cont hνprob inferInstance hν hc φ
   refine hmain.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with n hn
-  haveI := hEprob n hn
+  have := hEprob n hn
   have hsq : Real.sqrt n ≠ 0 := Real.sqrt_ne_zero'.2 (by exact_mod_cast hn)
   have hmroot : Measurable fun w : Fin n → 𝓢 => Real.sqrt n • (meanStatistic h w - c n) := by
     have hms : Measurable (meanStatistic h (n := n)) := measurable_meanStatistic hhmeas
@@ -1754,7 +1742,7 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
   classical
   -- (1) transport the problem to the mean-vector theory of this file
   set θ : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 fun j => ∫ s, h j s ∂P with hθdef
-  haveI hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
+  have hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
   have hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) :=
     memLp_id_map_hVec hhmeas hh2
   have hcovEq : covMatrix (P.map (hVec h)) = covH := by
@@ -1766,12 +1754,9 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
       fun _ => tendsto_const_nhds, fun _ _ => tendsto_const_nhds⟩
   have hνprob : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (P.map (hVec h)) n) := by
     intro n
-    haveI : IsProbabilityMeasure (Measure.pi fun _ : Fin n => P.map (hVec h)) := inferInstance
-    exact (by
-      first
-      | (unfold meanVecRootLaw; infer_instance)
-      | (unfold meanRootLaw; infer_instance)
-      | infer_instance)
+    have : IsProbabilityMeasure (Measure.pi fun _ : Fin n => P.map (hVec h)) := inferInstance
+    unfold meanVecRootLaw
+    infer_instance
   have hν : ∀ ψ : EuclideanSpace ℝ (Fin p) →ᵇ ℝ,
       Tendsto (fun n => ∫ z, ψ z ∂(meanVecRootLaw (P.map (hVec h)) n)) atTop
         (𝓝 (∫ z, ψ z ∂(multivariateGaussian 0 covH))) := by
@@ -1851,7 +1836,7 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
   classical
   set θ : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 fun j => ∫ s, h j s ∂P with hθdef
-  haveI hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
+  have hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
   have hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) :=
     memLp_id_map_hVec hhmeas hh2
   have hhVmeas : Measurable (hVec h) := measurable_hVec hhmeas
@@ -1949,8 +1934,8 @@ private lemma tendsto_measure_norm_le_of_weak {S : Matrix (Fin q) (Fin q) ℝ}
 private lemma isCDF_measure_norm_le {μ : Measure (EuclideanSpace ℝ (Fin q))}
     (hμ : IsProbabilityMeasure μ) (hnrm_cont : Continuous nrm) :
     IsCDF fun t => (μ {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ t}).toReal := by
-  haveI := hμ
-  haveI : IsProbabilityMeasure (μ.map nrm) :=
+  have := hμ
+  have : IsProbabilityMeasure (μ.map nrm) :=
     (by infer_instance)
   have heq : (fun t => (μ {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ t}).toReal)
       = fun t => ((μ.map nrm) (Set.Iic t)).toReal := by
@@ -2036,7 +2021,7 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
       atTop (𝓝 0) := by
   classical
   set θ : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 fun j => ∫ s, h j s ∂P with hθdef
-  haveI hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
+  have hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
   have hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) :=
     memLp_id_map_hVec hhmeas hh2
   have hhVmeas : Measurable (hVec h) := measurable_hVec hhmeas
@@ -2058,7 +2043,7 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
   have hcontJ : Continuous (normLimitCDF (D * covH * D.transpose) nrm) :=
     continuous_normLimitCDF_of_posSemidef hpsdS hSne hnrm_add hnrm_smul hnrm_def
   have hJcdf : IsCDF (normLimitCDF (D * covH * D.transpose) nrm) := by
-    haveI : IsProbabilityMeasure ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin q))
+    have : IsProbabilityMeasure ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin q))
         (D * covH * D.transpose)).map nrm) :=
       (by infer_instance)
     have heq : normLimitCDF (D * covH * D.transpose) nrm = fun x =>
@@ -2160,8 +2145,8 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
     intro n
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn; rw [Measure.pi_of_empty]; infer_instance
-    · haveI := isProbabilityMeasure_empiricalMeasure' hn fun i : Fin n => X i ω
-      haveI : ∀ _ : Fin n,
+    · have := isProbabilityMeasure_empiricalMeasure' hn fun i : Fin n => X i ω
+      have : ∀ _ : Fin n,
           IsProbabilityMeasure (empiricalMeasure fun i : Fin n => X i ω) := fun _ => ‹_›
       infer_instance
   have hlamprob : ∀ n : ℕ, IsProbabilityMeasure ((Measure.pi fun _ : Fin n =>
@@ -2169,12 +2154,8 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
       fun w => Real.sqrt n • (f (meanStatistic h w) -
         f (meanStatistic h fun i : Fin n => X i ω))) := by
     intro n
-    haveI := hpiE n
-    exact (by
-      first
-      | (unfold meanVecRootLaw; infer_instance)
-      | (unfold meanRootLaw; infer_instance)
-      | infer_instance)
+    have := hpiE n
+    infer_instance
   have hGconv : ∀ t : ℝ, Tendsto (fun n : ℕ =>
       (((Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω).map
         fun w => Real.sqrt n • (f (meanStatistic h w) -

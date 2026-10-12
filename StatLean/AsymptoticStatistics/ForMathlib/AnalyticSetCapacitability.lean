@@ -108,7 +108,7 @@ theorem AnalyticSet.nullMeasurableSet
   have hcomp : ∀ i : ℕ, ∃ B : Set β,
       B ⊆ A ∧ MeasurableSet B ∧ (sfiniteSeq m i) (A \ B) = 0 := by
     intro i
-    haveI : IsFiniteMeasure (sfiniteSeq m i) := isFiniteMeasure_sfiniteSeq i
+    have : IsFiniteMeasure (sfiniteSeq m i) := isFiniteMeasure_sfiniteSeq i
     exact analyticSet_innerApprox_of_isFiniteMeasure hA (sfiniteSeq m i)
   choose B hBA hBmeas hμ using hcomp
   set Buniv : Set β := ⋃ i, B i with hBuniv_def

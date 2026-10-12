@@ -115,7 +115,7 @@ lemma exists_finset_net_closedBall {E : Type*} [NormedAddCommGroup E] [InnerProd
       rw [hxx, dist_self]; exact hε.le
     · rw [hn0, pow_zero]; simp
   · -- Nontrivial space: transport the unit-ball net through the orthonormal isometry.
-    haveI : NeZero (Module.finrank ℝ E) := ⟨hnpos.ne'⟩
+    have : NeZero (Module.finrank ℝ E) := ⟨hnpos.ne'⟩
     set e := (stdOrthonormalBasis ℝ E).repr with he
     have hεR' : ε / R < 1 := (div_lt_one hR).mpr hεR
     have hεR0 : 0 < ε / R := div_pos hε hR

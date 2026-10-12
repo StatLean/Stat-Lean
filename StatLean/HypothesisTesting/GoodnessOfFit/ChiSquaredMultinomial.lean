@@ -210,7 +210,7 @@ private lemma reducedCovInv_mulVec {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin
     intro j
     by_cases hij : i = j
     · simp only [ite_eq_left hij, add_mul]
-    · simp only [ite_eq_right hij, zero_add, add_mul]
+    · simp only [ite_eq_right hij, zero_add]
   rw [Finset.sum_congr rfl (fun j _ => h j), Finset.sum_add_distrib,
     Finset.sum_ite_eq Finset.univ i (fun j => (π i.castSucc)⁻¹ * z j), ← Finset.mul_sum]
   simp
@@ -454,15 +454,15 @@ private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) �
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)) := by
   classical
   -- `μ` is the common observation law, a probability measure.
-  haveI hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
-  haveI hμprob : IsProbabilityMeasure μ := by
+  have hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
+  have hμprob : IsProbabilityMeasure μ := by
     rw [← hlaw 1 0]
     exact (by infer_instance)
   -- the canonical i.i.d. model `(Ω₀, P₀, Z)` with marginal law `μ`
   obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
     ProbabilityTheory.exists_iid ℕ μ
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀ := hP₀prob
   -- centred per-observation indicator map `g` and per-observation vectors `Y`
   set g : Fin (k + 1) → EuclideanSpace ℝ (Fin k) := fun x => indicatorVec x - piVec π with hg
   have hgmeas : Measurable g := (measurable_of_finite indicatorVec).sub measurable_const
@@ -508,7 +508,7 @@ private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) �
       refine Finset.sum_congr rfl (fun i _ => ?_)
       rw [Finset.mul_sum]
       refine Finset.sum_congr rfl (fun j _ => ?_)
-      show u i * (reducedCov π i j * v j) = (u i * v j) * reducedCov π i j
+      change u i * (reducedCov π i j * v j) = (u i * v j) * reducedCov π i j
       ring
     have hint : (∫ ω, ⟪u, Y 0 ω⟫ * ⟪v, Y 0 ω⟫ ∂P₀) = ∑ x, π x * (⟪u, g x⟫ * ⟪v, g x⟫) :=
       hkey (fun x => ⟪u, g x⟫ * ⟪v, g x⟫)
@@ -727,7 +727,7 @@ private lemma covMatrix_map_centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ
             * WithLp.ofLp (centredIndicator π x) j))
         - (∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) i)
           * ∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) j := by
-  haveI : IsProbabilityMeasure (ρ.map (centredIndicator π)) :=
+  have : IsProbabilityMeasure (ρ.map (centredIndicator π)) :=
     (by infer_instance)
   rw [covMatrix, Matrix.of_apply,
     covariance_eq_sub (memLp_map_centredIndicator π ρ
@@ -783,10 +783,10 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
     WeakConverges (fun n => (P n).map (reducedCount π (X n)))
       (multivariateGaussian (WithLp.toLp 2 (fun i => h i.castSucc)) (reducedCov π)) := by
   classical
-  haveI hcellprob : IsProbabilityMeasure (cellMeasure π) :=
+  have hcellprob : IsProbabilityMeasure (cellMeasure π) :=
     isProbabilityMeasure_cellMeasure hπpos hπsum
   set Q : Measure (EuclideanSpace ℝ (Fin k)) := (cellMeasure π).map (centredIndicator π) with hQ
-  haveI hQprob : IsProbabilityMeasure Q :=
+  have hQprob : IsProbabilityMeasure Q :=
     (by infer_instance)
   set hred : EuclideanSpace ℝ (Fin k) := WithLp.toLp 2 (fun i : Fin k => h i.castSucc) with hhred
   -- the stage-`n` cell weights and their limit
@@ -816,7 +816,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
   have hF0 : F 0 = Q := by simp only [hF, ite_eq_left rfl]
   have hFprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (F n) := by
     intro n hn
-    haveI := hμprob n hn
+    have := hμprob n hn
     rw [hFeq n hn]
     exact (by infer_instance)
   -- the class conditions
@@ -827,7 +827,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       · subst hn
         rw [hF0, hQ]
         exact memLp_map_centredIndicator π (cellMeasure π) continuous_id' 2
-      · haveI := hμprob n hn
+      · have := hμprob n hn
         rw [hFeq n hn]
         exact memLp_map_centredIndicator π (μ n) continuous_id' 2
     · intro f
@@ -837,7 +837,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       rw [hQint]
       refine Tendsto.congr' ?_ (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
       filter_upwards [eventually_gt_atTop 0] with n hn
-      haveI := hμprob n hn
+      have := hμprob n hn
       rw [hFeq n hn, integral_map_centredIndicator π (μ n) f.continuous]
       exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x, smul_eq_mul]
     · intro i
@@ -849,7 +849,7 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       rw [hQint]
       refine Tendsto.congr' ?_ (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
       filter_upwards [eventually_gt_atTop 0] with n hn
-      haveI := hμprob n hn
+      have := hμprob n hn
       rw [hFeq n hn, integral_map_centredIndicator π (μ n)
         (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
       exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x, smul_eq_mul]
@@ -869,8 +869,8 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
           ((tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
             (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds))))
       filter_upwards [eventually_gt_atTop 0] with n hn
-      haveI := hμprob n hn
-      haveI := hFprob n hn
+      have := hμprob n hn
+      have := hFprob n hn
       rw [hFeq n hn, covMatrix_map_centredIndicator π (μ n) i j]
       congr 1
       · exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x]
@@ -913,8 +913,8 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
       (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => hred + z)
         = (P n).map (reducedCount π (X n)) := by
     intro n hn
-    haveI := hμprob n hn
-    haveI hFnprob : IsProbabilityMeasure ((μ n).map (centredIndicator π)) :=
+    have := hμprob n hn
+    have hFnprob : IsProbabilityMeasure ((μ n).map (centredIndicator π)) :=
       (by infer_instance)
     have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
@@ -1107,8 +1107,8 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
     Tendsto (fun n => ((P n) {ω | c < pearsonQ π (X n) ω}).toReal) atTop (nhds 1) := by
   classical
   -- `μ` is the common (alternative) observation law, a probability measure.
-  haveI hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
-  haveI hμprob : IsProbabilityMeasure μ := by
+  have hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
+  have hμprob : IsProbabilityMeasure μ := by
     rw [← hlaw 1 0]
     exact (by infer_instance)
   -- an offending cell `j₀` and the positive discrepancy `d = |p j₀ − π j₀|`
@@ -1119,8 +1119,8 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
   -- the canonical i.i.d. model `(Ω₀, P₀, Z)` with marginal law `μ`
   obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
     ProbabilityTheory.exists_iid ℕ μ
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀ := hP₀prob
   -- `Qz n` is Pearson's statistic on the canonical sample of size `n`
   set Qz : ℕ → Ω₀ → ℝ := fun n ω => pearsonQ π (fun (i : Fin n) => Z (i : ℕ)) ω with hQz
   -- law transfer: the event probability is the same on `P n` and on the canonical model
@@ -1506,7 +1506,7 @@ private lemma piGauss_piBall_pos {k : ℕ} (m : Fin k → ℝ) {t : ℝ} (ht : 0
 
 private lemma piGauss_singleton_zero {k : ℕ} (hk : 0 < k) :
     (Measure.pi fun _ : Fin k => gaussianReal 0 1) {(0 : Fin k → ℝ)} = 0 := by
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hset : ({0} : Set (Fin k → ℝ)) = Set.pi Set.univ fun _ : Fin k => ({0} : Set ℝ) := by
     ext u; simp [funext_iff]
   rw [hset, Measure.pi_pi]
@@ -1737,7 +1737,7 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
   refine ⟨?_, ?_, ?_⟩
   · -- (1) the limiting power, by the constant-threshold portmanteau step
     have hweak := pearsonQ_weakConverges_noncentral hk hπpos hπsum hhsum hX hindep hlaw hcell
-    haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Measure.map (pearsonQ π (X n)) (P n)) :=
+    have hprob : ∀ n : ℕ, IsProbabilityMeasure (Measure.map (pearsonQ π (X n)) (P n)) :=
       fun n => (by infer_instance)
     set μs : ℕ → ProbabilityMeasure ℝ :=
       fun n => ⟨Measure.map (pearsonQ π (X n)) (P n), hprob n⟩ with hμs

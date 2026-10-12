@@ -147,7 +147,7 @@ theorem integral_id_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
 /-- **Variance of `Gamma(a, r)`**: `E[(X − a/r)²] = a/r²` (`0 < a`, `0 < r`). -/
 theorem variance_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
     ∫ x, (x - a / r) ^ 2 ∂(gammaMeasure a r) = a / r ^ 2 := by
-  haveI := isProbabilityMeasure_gammaMeasure ha hr
+  have := isProbabilityMeasure_gammaMeasure ha hr
   have hG : Real.Gamma a ≠ 0 := (Real.Gamma_pos_of_pos ha).ne'
   have hint1 : Integrable (fun x : ℝ => x) (gammaMeasure a r) := by
     have := integrable_pow_gammaMeasure ha hr 1

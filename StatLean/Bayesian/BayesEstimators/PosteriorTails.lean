@@ -451,7 +451,7 @@ private theorem tail_mixture_bound
   have hgmeas : Measurable g := (measurable_const.sub hφmeas).ennreal_ofReal
   have hφint : ∀ θ' : EuclideanSpace ℝ (Fin k), Integrable φn (productMeasure M μ θ' n) := by
     intro θ'
-    haveI : IsProbabilityMeasure (productMeasure M μ θ' n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ' n) := by
       rw [productMeasure_eq_iidKernel_apply hκ θ' n]; infer_instance
     refine (integrable_const (1 : ℝ)).mono' hφmeas.aestronglyMeasurable ?_
     filter_upwards with ω
@@ -514,7 +514,7 @@ private theorem tail_mixture_bound
           ≤ ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) := by
         have hpm : productMeasure M μ θ n = iidKernel κ n θ :=
           productMeasure_eq_iidKernel_apply hκ θ n
-        haveI : IsProbabilityMeasure (productMeasure M μ θ n) := by
+        have : IsProbabilityMeasure (productMeasure M μ θ n) := by
           rw [hpm]; infer_instance
         have hnn : 0 ≤ᵐ[productMeasure M μ θ n] fun ω => 1 - φn ω := by
           filter_upwards with ω
@@ -620,7 +620,7 @@ theorem posterior_tail_lintegral_tendsto
   have hφint : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       Integrable (φ n) (productMeasure M μ θ n) := by
     intro θ n
-    haveI := hprob θ n
+    have := hprob θ n
     refine (integrable_const (1 : ℝ)).mono' (hφ.measurable n).aestronglyMeasurable ?_
     filter_upwards with ω
     have h := hφ.mem_Icc n ω
@@ -632,7 +632,7 @@ theorem posterior_tail_lintegral_tendsto
       ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(productMeasure M μ θ n)
         = ENNReal.ofReal (∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n)) := by
     intro θ n
-    haveI := hprob θ n
+    have := hprob θ n
     refine (ofReal_integral_eq_lintegral_ofReal
       ((integrable_const (1 : ℝ)).sub (hφint θ n)) ?_).symm
     filter_upwards with ω
@@ -641,7 +641,7 @@ theorem posterior_tail_lintegral_tendsto
   have hlintφ : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
       = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
     intro n
-    haveI := hprob θ₀ n
+    have := hprob θ₀ n
     refine (ofReal_integral_eq_lintegral_ofReal (hφint θ₀ n) ?_).symm
     filter_upwards with ω
     exact (hφ.mem_Icc n ω).1
@@ -731,7 +731,7 @@ theorem posterior_tail_lintegral_tendsto
                 Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π)) atTop (𝓝 0) := by
         have hC : (ENNReal.ofReal ((2 : ℝ)⁻¹))⁻¹ * δ⁻¹ * c₁⁻¹ ≠ ∞ := by
           refine ENNReal.mul_ne_top (ENNReal.mul_ne_top ?_ ?_) ?_
-          · simpa [ENNReal.inv_ne_top] using hhalf
+          · simp
           · simpa [ENNReal.inv_ne_top] using hδ.ne'
           · simpa [ENNReal.inv_ne_top] using hc₁.ne'
         simpa using ENNReal.Tendsto.const_mul

@@ -204,7 +204,7 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
     {e : ℤ → Ω' → ℝ} (hem : ∀ s : ℤ, Measurable[m] (e s)) (t : ℤ) :
     Measurable[m] fun ω =>
       limUnder atTop (fun N => ∑ j ∈ Finset.range N, a1 ^ j * e (t - (j : ℕ)) ω) := by
-  letI := m
+  let := m
   exact (MeasureTheory.StronglyMeasurable.limUnder (l := atTop)
     (fun _N => (Finset.measurable_sum _ fun _j _ =>
       (hem _).const_mul _).stronglyMeasurable)).measurable
@@ -213,7 +213,7 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
 private lemma comap_window_le_of_measurable {Ω' : Type*} (m : MeasurableSpace Ω')
     {κ : Type*} (F : κ → Ω' → ℝ) (hF : ∀ j, Measurable[m] (F j)) :
     MeasurableSpace.comap (fun ω (j : κ) => F j ω) inferInstance ≤ m := by
-  letI := m
+  let := m
   exact measurable_iff_comap_le.1 (Measurable.of_eval fun j => hF j)
 
 /-- **FY eq. (4.60)**: the causal latent chain is strictly stationary. The centred chain
@@ -281,7 +281,7 @@ private lemma indep_noise_latent_window [IsProbabilityMeasure μ] {g : ℝ → �
     {ι κ : Type*} [Finite κ] (u : ι → ℤ) (w : κ → ℤ) :
     IndepFun (fun ω (i : ι) => ε (u i) ω) (fun ω (j : κ) => h (w j) ω) μ := by
   classical
-  haveI : Countable κ := Finite.to_countable
+  have : Countable κ := Finite.to_countable
   have hψ : Summable fun j : ℕ => |a1 ^ j| := by
     simpa [abs_pow] using summable_geometric_of_lt_one (abs_nonneg a1) ha1
   have hYm : ∀ t : ℤ, Measurable fun ω => h t ω - a0 / (1 - a1) :=
@@ -562,7 +562,7 @@ private lemma noise_ne_zero_ae [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a
   have hmε : Measurable (ε t) := hSV.iidNoise.measurable t
   have hmap : μ.map (ε t) = gaussianReal 0 1 := by
     rw [(hSV.iidNoise.identDistrib t 0).map_eq, hgauss]
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal (by norm_num)
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal (by norm_num)
   have h0 : (μ.map (ε t)) {(0 : ℝ)} = 0 := by rw [hmap]; exact measure_singleton 0
   rwa [Measure.map_apply hmε (measurableSet_singleton 0)] at h0
 

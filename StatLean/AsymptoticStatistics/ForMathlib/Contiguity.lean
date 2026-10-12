@@ -257,7 +257,7 @@ theorem Measure.withDensity_bind_condDistrib
       (π.withDensity (fun p => f p.2)).map Prod.fst := by
   set κ := ProbabilityTheory.condDistrib (Prod.fst : α × β → α) Prod.snd π with hκ_def
   set ν := π.map Prod.snd with hν_def
-  haveI : MeasureTheory.IsFiniteMeasure ν := by
+  have : MeasureTheory.IsFiniteMeasure ν := by
     rw [hν_def]; exact MeasureTheory.Measure.isFiniteMeasure_map _ _
   refine MeasureTheory.Measure.ext (fun s hs => ?_)
   -- Measurability utilities.
@@ -2573,13 +2573,12 @@ theorem mean_one_imp_contiguous
     intro n ω; rcases hs01 n ω with h | h
     · rw [h]
     · rw [h]; exact zero_le_one
-
   -- Joint map `ω ↦ (q (ψ m) ω, s (ψ m) ω)` and its pushforward under `P (ψ m)`.
   set pair : ∀ m, Ω (ψ m) → ℝ × ℝ := fun m ω => (q (ψ m) ω, s (ψ m) ω) with hpair_def
   have hpair_meas : ∀ m, Measurable (pair m) := fun m =>
     (hq_meas (ψ m)).prodMk (hs_meas (ψ m))
   set J : ℕ → Measure (ℝ × ℝ) := fun m => (P (ψ m)).map (pair m) with hJ_def
-  haveI hJ_prob : ∀ m, IsProbabilityMeasure (J m) := fun m =>
+  have hJ_prob : ∀ m, IsProbabilityMeasure (J m) := fun m =>
     (by infer_instance)
   -- ── Tightness of the joint laws (via tight marginals). ──────────────────────────────────
   -- First marginal: law of `q (ψ m)` under `P (ψ m)`.
@@ -2673,7 +2672,7 @@ theorem mean_one_imp_contiguous
   have hχ_mono : StrictMono χ := hψ_mono.comp hφ_mono
   -- ── First marginal weak-limit: feed `hV` to get its mean is 1. ──────────────────────────
   set V : Measure ℝ := Jlim.map Prod.fst with hV_def
-  haveI hV_prob : IsProbabilityMeasure V := by
+  have hV_prob : IsProbabilityMeasure V := by
     rw [hV_def]; exact (by infer_instance)
   -- `(J (φ k)).map fst ⇝ V` (continuous mapping on the joint convergence).
   have hfst_conv : WeakConverges (fun k => (J (φ k)).map Prod.fst) V :=
@@ -2705,13 +2704,13 @@ theorem mean_one_imp_contiguous
             have : ω ∉ (A (χ k))ᶜ := fun hc => hc hω
             simp only [hs_def, Set.indicator_of_notMem this]
           rw [hs0, Set.indicator_of_mem hω]
-          show g 0 = g 1 + (g 0 - g 1) * 1
+          change g 0 = g 1 + (g 0 - g 1) * 1
           ring
         · have hs1 : s (χ k) ω = 1 := by
             have : ω ∈ (A (χ k))ᶜ := hω
             simp only [hs_def, Set.indicator_of_mem this]
           rw [hs1, Set.indicator_of_notMem hω]
-          show g 1 = g 1 + (g 0 - g 1) * 0
+          change g 1 = g 1 + (g 0 - g 1) * 0
           ring
       rw [h_pt]
       rw [MeasureTheory.integral_add (integrable_const _)
@@ -2775,7 +2774,7 @@ theorem mean_one_imp_contiguous
   have hV_supp : V {x : ℝ | x < 0} = 0 := by
     have h_neg_open : IsOpen {x : ℝ | x < 0} := isOpen_lt continuous_id continuous_const
     -- Bundle the first-marginal laws as probability measures.
-    haveI hfst_prob : ∀ k, IsProbabilityMeasure
+    have hfst_prob : ∀ k, IsProbabilityMeasure
         ((P (χ k)).map (fun ω => ((Q (χ k)).rnDeriv (P (χ k)) ω).toReal)) :=
       fun k => (by infer_instance)
     set PM : ℕ → ProbabilityMeasure ℝ := fun k =>
@@ -2914,9 +2913,9 @@ private lemma mixture_rnDeriv_facts {α : Type*} [MeasurableSpace α]
     simp only [Measure.coe_add, Measure.coe_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
       measure_univ, mul_one]
     rw [hc_eq, ← two_mul, ENNReal.mul_inv_cancel (by norm_num) (by norm_num)]
-  haveI hcP_fin : IsFiniteMeasure (c • P) := by
+  have hcP_fin : IsFiniteMeasure (c • P) := by
     constructor; rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]; exact hc_ne_top.lt_top
-  haveI hcQ_fin : IsFiniteMeasure (c • Q) := by
+  have hcQ_fin : IsFiniteMeasure (c • Q) := by
     constructor; rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]; exact hc_ne_top.lt_top
   -- Linearity of the RN derivative: `dμ/dμ = c·dP/dμ + c·dQ/dμ`, and `dμ/dμ = 1` μ-a.e.
   have h_lin : μ.rnDeriv μ =ᵐ[μ] fun x => c * P.rnDeriv μ x + c * Q.rnDeriv μ x := by
@@ -3084,13 +3083,13 @@ theorem limit_pos_imp_mean_one
   have hW_nonneg : ∀ k ω, 0 ≤ W k ω := fun k ω => ENNReal.toReal_nonneg
   -- Law of `W k` under `μ k`, a probability measure on `ℝ` supported in `[0,2]`.
   set LW : ℕ → Measure ℝ := fun k => (μ k).map (W k) with hLW_def
-  haveI hLW_prob : ∀ k, IsProbabilityMeasure (LW k) := fun k => by
-    haveI := hμ_prob k
+  have hLW_prob : ∀ k, IsProbabilityMeasure (LW k) := fun k => by
+    have := hμ_prob k
     exact (by infer_instance)
   -- `LW k` is supported in `[0,2]`.
   have hLW_supp : ∀ k, (LW k) {x : ℝ | x < 0 ∨ 2 < x} = 0 := by
     intro k
-    haveI := hμ_prob k
+    have := hμ_prob k
     have hSmeas : MeasurableSet {x : ℝ | x < 0 ∨ 2 < x} :=
       (measurableSet_lt measurable_id measurable_const).union
         (measurableSet_lt measurable_const measurable_id)
@@ -3106,7 +3105,7 @@ theorem limit_pos_imp_mean_one
     fun k => (Q (φ k)).map (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) with hLdPdQ_def
   have hdPdQ_meas : ∀ k, Measurable (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) :=
     fun k => ((P (φ k)).measurable_rnDeriv (Q (φ k))).ennreal_toReal
-  haveI hLdPdQ_prob : ∀ k, IsProbabilityMeasure (LdPdQ k) := fun k =>
+  have hLdPdQ_prob : ∀ k, IsProbabilityMeasure (LdPdQ k) := fun k =>
     (by infer_instance)
   -- `∫⁻ dP/dQ dQ ≤ 1` (it is `P_a(univ) ≤ 1`).
   have hdPdQ_total : ∀ k, ∫⁻ ω, (P (φ k)).rnDeriv (Q (φ k)) ω ∂(Q (φ k)) ≤ 1 := by
@@ -3151,7 +3150,7 @@ theorem limit_pos_imp_mean_one
     filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with r hr using h_bound r hr
   obtain ⟨σ₁, hσ₁_mono, U, hU_prob, hU_conv⟩ := extract_weak_subseq_local LdPdQ h_tight_LdPdQ
   -- ══ Extraction 2: weak limit `LW_lim` of the bounded `LW ∘ σ₁` (compact support tight). ══
-  haveI hLWσ₁_prob : ∀ k, IsProbabilityMeasure ((LW ∘ σ₁) k) := fun k => hLW_prob (σ₁ k)
+  have hLWσ₁_prob : ∀ k, IsProbabilityMeasure ((LW ∘ σ₁) k) := fun k => hLW_prob (σ₁ k)
   have h_tight_LW : IsTightMeasureSet (Set.range (LW ∘ σ₁)) := by
     refine MeasureTheory.isTightMeasureSet_of_tendsto_measure_norm_gt ?_
     -- For `r ≥ 2`, `{|x| > r}` has zero `LW`-mass (support ⊆ [0,2]).
@@ -3198,7 +3197,7 @@ theorem limit_pos_imp_mean_one
     fun k => (P (φ k)).map (fun ω => ((Q (φ k)).rnDeriv (P (φ k)) ω).toReal) with hLdQdP_def
   have hdQdP_meas : ∀ k, Measurable (fun ω => ((Q (φ k)).rnDeriv (P (φ k)) ω).toReal) :=
     fun k => ((Q (φ k)).measurable_rnDeriv (P (φ k))).ennreal_toReal
-  haveI hLdQdP_prob : ∀ k, IsProbabilityMeasure (LdQdP k) := fun k =>
+  have hLdQdP_prob : ∀ k, IsProbabilityMeasure (LdQdP k) := fun k =>
     (by infer_instance)
   have hV_conv : WeakConverges (fun j => LdQdP (ρ j)) V := by
     intro f; exact (hVconv f).comp hρ_mono.tendsto_atTop
@@ -3260,7 +3259,7 @@ theorem limit_pos_imp_mean_one
     -- Each `∫ clampBdd ∂LW (ρ j) = 1` exactly.
     have hC_each : ∀ j, ∫ w, clampBdd w ∂(LW (ρ j)) = 1 := by
       intro j
-      haveI := hμ_prob (ρ j)
+      have := hμ_prob (ρ j)
       -- Push to `μ (ρ j)` via `integral_map`, then `clampBdd (W) = W` `μ`-a.e.
       rw [hLW_def, MeasureTheory.integral_map (hW_meas (ρ j)).aemeasurable
         clampBdd.continuous.aestronglyMeasurable]
@@ -3309,7 +3308,7 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → w * g ((2 - w) / w) = cc w) →
       ∀ j, ∫ x, g x ∂(LdQdP (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    haveI := hμ_prob (ρ j)
+    have := hμ_prob (ρ j)
     -- LHS = `∫ g((dQ/dP).toReal) ∂P(φ(ρj))`.
     rw [hLdQdP_def, MeasureTheory.integral_map (hdQdP_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
@@ -3331,7 +3330,7 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → (2 - w) * g (w / (2 - w)) = cc w) →
       ∀ j, ∫ x, g x ∂(LdPdQ (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    haveI := hμ_prob (ρ j)
+    have := hμ_prob (ρ j)
     rw [hLdPdQ_def, MeasureTheory.integral_map (hdPdQ_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
     -- bridge with `R = Q, S = P`: `= ∫ v·g((2-v)/v) ∂(μ(ρj).map ((Q.rnDeriv μ).toReal))`.

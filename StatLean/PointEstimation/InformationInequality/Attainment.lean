@@ -95,7 +95,7 @@ theorem cramer_rao_attained_of_affine (M : ParametricFamily 𝓧 ℝ) (μ : Meas
     (haffine : ∀ᵐ x ∂(M.toMeasure μ θ), δ x = a * score M θ x + b) :
     variance δ (M.toMeasure μ θ)
       = (∫ x, δ x * score M θ x * M.density θ x ∂μ) ^ 2 / fisherInfo M μ θ := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
   -- positivity of the information makes the second moment of the score genuinely integrable
   have hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ := by
@@ -168,7 +168,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
     (hattain : variance δ (M.toMeasure μ θ) = g' ^ 2 / fisherInfo M μ θ) :
     ∀ᵐ x ∂(M.toMeasure μ θ), score M θ x
       = fisherInfo M μ θ / g' * (δ x - ∫ y, δ y ∂(M.toMeasure μ θ)) := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
   have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
   have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two

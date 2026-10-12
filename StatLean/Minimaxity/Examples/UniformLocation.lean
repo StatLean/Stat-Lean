@@ -240,7 +240,7 @@ private theorem pi_absCont_add' (n : ℕ) (μ ν : Measure α)
   have hμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
   set ξ : Measure α := μ + ν with hξ
   have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
-  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
+  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
     intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
   have hpiμ : (Measure.pi fun _ : Fin n => μ)
       = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
@@ -264,9 +264,9 @@ private theorem sqHellinger_pi_factor' (n : ℕ) (μ ν : Measure α)
   set ξ : Measure α := μ + ν with hξ
   have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
   have hfν : Measurable (ν.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
-  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
+  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
     intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
-  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (ν.rnDeriv ξ)) := by
+  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (ν.rnDeriv ξ)) := by
     intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hν]; infer_instance
   have hpiμ : (Measure.pi fun _ : Fin n => μ)
       = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
@@ -384,7 +384,7 @@ private lemma sqHellinger_unit_shift (θ : ℝ) (hθ0 : 0 ≤ θ) (hθ1 : θ ≤
     filter_upwards [hrnμ, hrnν] with x hx hy
     rw [hx, hy]
     by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;>
-      simp [Set.indicator_apply, Set.mem_sdiff, hxA, hxB]
+      simp [Set.mem_sdiff, hxA, hxB]
   rw [lintegral_congr_ae hpt]
   have hAmeas : MeasurableSet (A \ B) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
   have hBmeas : MeasurableSet (B \ A) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
@@ -414,10 +414,10 @@ private lemma uniform_two_point_tvDist_bound (n : ℕ) (hn : 2 ≤ n)
   have hθ1 : θ ≤ 1 := by rw [hθdef]; exact inv_le_one_of_one_le₀ hn1
   set μ : Measure ℝ := volume.restrict (Set.Icc (0 : ℝ) 1) with hμdef
   set ν : Measure ℝ := volume.restrict (Set.Icc θ (θ + 1)) with hνdef
-  haveI hμprob : IsProbabilityMeasure μ := by
+  have hμprob : IsProbabilityMeasure μ := by
     rw [hμdef]; refine ⟨?_⟩
     rw [Measure.restrict_apply_univ, Real.volume_Icc]; norm_num
-  haveI hνprob : IsProbabilityMeasure ν := by
+  have hνprob : IsProbabilityMeasure ν := by
     rw [hνdef]; refine ⟨?_⟩
     rw [Measure.restrict_apply_univ, Real.volume_Icc, show θ + 1 - θ = 1 by ring]; norm_num
   have hP0 : P 0 = Measure.pi fun _ : Fin n => μ := by
@@ -533,7 +533,6 @@ theorem uniform_location_minimax_rate (n : ℕ) (hn : 2 ≤ n)
   have hcrux := uniform_two_point_tvDist_bound n hn P hP
   have hΦδ : (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) ^ 2
       = ENNReal.ofReal (((n : ℝ)⁻¹ / 2) ^ 2) := by
-    change (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) ^ 2 = _
     rw [← ENNReal.ofReal_pow (by positivity)]
   refine le_trans ?_ (minimax_two_point (fun x : ℝ≥0∞ => x ^ 2) id P 0
     ((n : ℝ)⁻¹) (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) hΦ hsep)

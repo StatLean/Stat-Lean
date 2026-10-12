@@ -177,7 +177,7 @@ theorem levyMpass_vec
   have hf_cont0 : ContinuousAt f 0 := hf_cont.continuousAt
   
   -- Step 2: Per-m equation and convergence.
-  haveI : ∀ m, IsProbabilityMeasure (M_m m) := fun m => inferInstance
+  have : ∀ m, IsProbabilityMeasure (M_m m) := fun m => inferInstance
   
   have hCharFn_conv : ∀ m (t : EuclideanSpace ℝ (Fin k)),
       charFun L t =

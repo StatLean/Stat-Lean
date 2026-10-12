@@ -921,7 +921,7 @@ theorem joint_convergence_of_regular
   set ν2 : Measure (EuclideanSpace ℝ (Fin m)) :=
     ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin m))
       (1 : Matrix (Fin m) (Fin m) ℝ) with hν2_def
-  haveI : IsProbabilityMeasure ν2 := by
+  have : IsProbabilityMeasure ν2 := by
     rw [hν2_def]; infer_instance
   have h_second_weak :
       WeakConverges
@@ -969,13 +969,13 @@ theorem joint_convergence_of_regular
          AsymptoticStatistics.AsymptoticRepresentation.scoreSum
            (g_P_total g_P) n X)) := fun n =>
     (hT_recentered_meas n).prodMk (hΔ_meas n)
-  haveI hPiP : ∀ n, IsProbabilityMeasure (Measure.pi (fun _ : Fin n => P)) := fun _ =>
+  have hPiP : ∀ n, IsProbabilityMeasure (Measure.pi (fun _ : Fin n => P)) := fun _ =>
     inferInstance
-  haveI h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n =>
+  have h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n =>
     (by infer_instance)
-  haveI h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n =>
+  have h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n =>
     (by infer_instance)
-  haveI h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
+  have h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
     (by infer_instance)
   -- Tightness of marginal sequences.
   have hT_tight : IsTightMeasureSet (Set.range Tseq) :=

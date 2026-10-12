@@ -448,7 +448,7 @@ theorem exists_localizingMajorants
     exact lt_irrefl _ houter
   obtain ⟨U, hUint⟩ := hU_exists
   obtain ⟨F₀, hF₀_countable, hF₀_sub, hF₀_dense⟩ := hPM
-  letI : Countable (↥F₀) := hF₀_countable
+  let : Countable (↥F₀) := hF₀_countable
   let W : Ω → ℝ≥0∞ := fun x ↦ ⨆ f : ↥F₀, ENNReal.ofReal |(f : Ω → ℝ) x|
   have hWmeas : Measurable W := by
     apply Measurable.iSup
@@ -604,7 +604,7 @@ theorem localized_absoluteCover
   let N : ℕ := K.toNat + 1
   refine ⟨N, ?_⟩
   intro Q hQ
-  letI : IsProbabilityMeasure Q := hQ
+  let : IsProbabilityMeasure Q := hQ
   by_cases hQA0 : Q A = 0
   · refine ⟨{0}, by simp [N], ?_⟩
     constructor
@@ -631,7 +631,7 @@ theorem localized_absoluteCover
     have hQAtop : Q A ≠ ⊤ := measure_ne_top Q A
     let R : Measure Ω := conditionOn Q A
     have hRprob : IsProbabilityMeasure R := conditionOn_isProbabilityMeasure Q A hA hQApos
-    letI : IsProbabilityMeasure R := hRprob
+    let : IsProbabilityMeasure R := hRprob
     have hRA : ∀ᵐ x ∂R, x ∈ A := by
       change ∀ᵐ x ∂(Q A)⁻¹ • Q.restrict A, x ∈ A
       exact Measure.ae_smul_measure
@@ -835,7 +835,7 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
   have hQprob : IsProbabilityMeasure Q :=
     empiricalFiniteLaw_isProbabilityMeasure S hSnonempty
   obtain ⟨T, hTcard, hTcover⟩ := hN Q hQprob
-  letI : IsProbabilityMeasure Q := hQprob
+  let : IsProbabilityMeasure Q := hQprob
   have hone : outerLpNorm Q (fun _ ↦ (1 : ℝ)) 1 = 1 := by
     simp [outerLpNorm, outerExpectation_const]
   have hcenter (a : C) : ∃ g ∈ T,
@@ -1315,7 +1315,7 @@ private theorem exists_weaklyDense_of_boundary_lower
     rw [norm_indicatorConstLp (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num)]
     norm_num only [norm_one, one_mul, ENNReal.toReal_ofNat]
     rw [← Real.sqrt_eq_rpow]
-    simpa using Real.sqrt_le_sqrt (hmeasure I)
+    simp
   let wI : J → WeakDual ℝ (Ω →₂[P] ℝ) := fun I ↦
     StrongDual.toWeakDual (InnerProductSpace.toDual ℝ (Ω →₂[P] ℝ) (v I))
   have hwball (I : J) : wI I ∈
@@ -2026,7 +2026,7 @@ theorem finiteBracketing_of_gammaDimension
   have hc : 0 < c := by dsimp [c]; positivity
   obtain ⟨I, hI⟩ := exists_partition_boundaries_lt E E₀ P hE₀sub hEmeas
     γ c hγ hc (hdim γ hγ) T
-  letI : Countable (↑E₀) := hE₀count
+  let : Countable (↑E₀) := hE₀count
   let N : Set Ω := ⋃ f : ↑E₀, vhExceptional P I f.1 δ levels
   have hNmeas : MeasurableSet N := by
     apply MeasurableSet.iUnion
@@ -2062,7 +2062,7 @@ theorem finiteBracketing_of_gammaDimension
   let U : Pattern → Ω → ℝ := fun patt ↦
     vhCorrectedUpper N I B₀ δ (patternFinset patt)
   let Good := {patt : Pattern // IsEpsBracket ε (L patt) (U patt) 1 P}
-  letI : Fintype Good := Fintype.ofFinite Good
+  let : Fintype Good := Fintype.ofFinite Good
   let e : Good ≃ Fin (Fintype.card Good) := Fintype.equivFin Good
   have hcover₀ : HasFiniteBracketingCover E₀ ε 1 P := by
     refine ⟨Fintype.card Good, fun i ↦ L (e.symm i).1,

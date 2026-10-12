@@ -312,9 +312,9 @@ theorem isRegularEstimator_vec_implies_broad
   have hF_vec_meas : ∀ n, Measurable (fun X : Fin n → Ω =>
       Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))) := fun n =>
     by fun_prop
-  haveI hμ_prob : ∀ n, IsProbabilityMeasure (μ_vec n) := by
+  have hμ_prob : ∀ n, IsProbabilityMeasure (μ_vec n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
+    have : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
       fun _ => curve.curve_isProbability _
     rw [hμ_vec]
     exact (by infer_instance)

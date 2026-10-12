@@ -149,7 +149,7 @@ private lemma map_signVec_prod_pi {N : ℕ} {ν : Fin N → Measure ℝ}
       ((Measure.pi fun _ : Fin N => radLaw).prod (Measure.pi ν)) :=
     measurePreserving_arrowProdEquivProdArrow ℝ ℝ (Fin N) (fun _ => radLaw) ν
   have hsymm := (MeasurePreserving.symm e hmp).map_eq
-  haveI : ∀ i, SigmaFinite ((radLaw.prod (ν i)).map f) := fun i => by
+  have : ∀ i, SigmaFinite ((radLaw.prod (ν i)).map f) := fun i => by
     rw [hfν i]; infer_instance
   have hfam : Measurable (fun w : Fin N → ℝ × ℝ => fun i => f (w i)) :=
     Measurable.of_eval (fun i => hf.comp (measurable_pi_apply i))

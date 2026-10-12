@@ -210,7 +210,7 @@ spaces where this is automatic). -/
 theorem vw_polish_l2_space (P : Measure Ω) [IsProbabilityMeasure P]
     [MeasurableSpace.CountablyGenerated Ω] :
     SecondCountableTopology (Lp ℝ 2 P) := by
-  haveI : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
+  have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
   exact inferInstance
 
 /-- **Closed L²-subset is Borel.**
@@ -378,7 +378,7 @@ theorem vw_random_function_lp_lift_inner_measurable
     ∃ Φ : Ξ → Lp ℝ 2 P, Measurable Φ ∧
       ∀ ξ (h : MemLp (fhat ξ) 2 P), Φ ξ = MemLp.toLp (fhat ξ) h := by
   classical
-  haveI : SecondCountableTopology (Lp ℝ 2 P) := vw_polish_l2_space P
+  have : SecondCountableTopology (Lp ℝ 2 P) := vw_polish_l2_space P
   refine ⟨fun ξ => if h : MemLp (fhat ξ) 2 P then MemLp.toLp (fhat ξ) h else 0,
     ?_, fun ξ h => dite_eq_left h⟩
   -- Measurability via pointwise distance criterion.
@@ -633,8 +633,8 @@ theorem vw_l2_class_event_measurable
     (h_meas : Measurable (Function.uncurry fhat)) :
     MeasurableSet {ξ | ∃ f ∈ F, ∀ᵐ x ∂P, fhat ξ x = f x} := by
   -- Equip `Lp ℝ 2 P` with the Borel σ-algebra (Polish via `vw_polish_l2_space`).
-  letI : MeasurableSpace (Lp ℝ 2 P) := borel (Lp ℝ 2 P)
-  haveI : BorelSpace (Lp ℝ 2 P) := ⟨rfl⟩
+  let : MeasurableSpace (Lp ℝ 2 P) := borel (Lp ℝ 2 P)
+  have : BorelSpace (Lp ℝ 2 P) := ⟨rfl⟩
   -- from the jointly measurable random function, with the L²-locus
   -- `S ⊆ Ξ` measurable and `Φ ξ = MemLp.toLp (fhat ξ) h` on `S`.
   obtain ⟨Φ, S, hΦ_meas, hS_meas, hS_iff, hΦ_eq⟩ :=

@@ -145,7 +145,7 @@ private theorem covMatrix_map_wsum_add (A : Fin N' → Matrix ι₃ ι₁ ℝ) (
       = ∑ k, A k * covMatrix (μs k) * (A k)ᵀ := by
   have hmeasG : Measurable fun x : Fin N' → EuclideanSpace ℝ ι₁ =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k) := (continuous_wsum A).measurable
-  haveI hprob : IsProbabilityMeasure ((Measure.pi μs).map fun x =>
+  have hprob : IsProbabilityMeasure ((Measure.pi μs).map fun x =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) :=
     (by infer_instance)
   have hL2ν : MemLp id 2 ((Measure.pi μs).map fun x =>

@@ -119,10 +119,10 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
   -- the (possibly uncountable) class of functional values is *continuous*, hence measurable.
   set m₀ : Measure 𝓧 := P.comap a₀ ha₀ ∘ₘ π₀ with hm₀
   set m₁ : Measure 𝓧 := P.comap a₁ ha₁ ∘ₘ π₁ with hm₁
-  haveI : IsMarkovKernel (P.comap a₀ ha₀) := Kernel.IsMarkovKernel.comap P ha₀
-  haveI : IsMarkovKernel (P.comap a₁ ha₁) := Kernel.IsMarkovKernel.comap P ha₁
-  haveI : IsProbabilityMeasure m₀ := by rw [hm₀]; infer_instance
-  haveI : IsProbabilityMeasure m₁ := by rw [hm₁]; infer_instance
+  have : IsMarkovKernel (P.comap a₀ ha₀) := Kernel.IsMarkovKernel.comap P ha₀
+  have : IsMarkovKernel (P.comap a₁ ha₁) := Kernel.IsMarkovKernel.comap P ha₁
+  have : IsProbabilityMeasure m₀ := by rw [hm₀]; infer_instance
+  have : IsProbabilityMeasure m₁ := by rw [hm₁]; infer_instance
   -- The two classes of functional values and their (continuous, hence measurable) distance fields.
   set C₀ : Set Ω := Set.range (fun i₀ => g (a₀ i₀)) with hC₀
   set C₁ : Set Ω := Set.range (fun i₁ => g (a₁ i₁)) with hC₁
@@ -185,7 +185,7 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
   -- Reduce the minimax risk to a per-estimator bound.
   unfold minimaxRiskDist minimaxRisk
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   set R : Θ → ℝ≥0∞ := fun θ => ∫⁻ y, distortionLoss Φ g θ y ∂((κ ∘ₖ P) θ) with hR
   -- The averaged risks over each subfamily are each at most the supremum.
   have hsup₀ : ∫⁻ i₀, R (a₀ i₀) ∂π₀ ≤ ⨆ θ, R θ := by

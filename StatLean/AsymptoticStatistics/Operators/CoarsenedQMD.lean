@@ -68,7 +68,7 @@ noncomputable def QMDPath.coarsenWithMappedSigmaFinite {M : Ω_full → Ω_obs}
   { curve := fun t => (γ.curve t).map M
     curve_at_zero := by simp only [γ.curve_at_zero]
     curve_isProbability := fun t => by
-      haveI := γ.curve_isProbability t
+      have := γ.curve_isProbability t
       exact (by infer_instance)
     dominating := γ.dominating.map M
     curve_absContinuous := fun t => (γ.curve_absContinuous t).map hM

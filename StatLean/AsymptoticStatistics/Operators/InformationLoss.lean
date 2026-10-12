@@ -221,7 +221,7 @@ theorem informationLossRaw_mem_L2ZeroMean
     (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
     {x : Lp ℝ 2 P_full} (hx : x ∈ L2ZeroMean P_full) :
     informationLossRaw hM P_full x ∈ L2ZeroMean (P_full.map M) := by
-  haveI : IsProbabilityMeasure (P_full.map M) :=
+  have : IsProbabilityMeasure (P_full.map M) :=
     (by infer_instance)
   rw [mem_L2ZeroMean_iff, integral_informationLossRaw hM P_full x,
     ← mem_L2ZeroMean_iff]

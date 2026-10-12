@@ -70,7 +70,7 @@ theorem measure_sum_ge_le_of_subExponentialNorm_le
     μ {ω | t ≤ ∑ i, X i ω} ≤
       ENNReal.ofReal (Real.exp (-(min (t ^ 2 / (16 * ∑ i, (K i : ℝ) ^ 2))
         (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ))))))  := by
-  haveI : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
   -- Abbreviations for the two scale aggregates appearing in the exponent.
   set sumK2 : ℝ := ∑ i, (K i : ℝ) ^ 2 with hsumK2def
   set maxK : ℝ := ((Finset.univ.sup K : ℝ≥0) : ℝ) with hmaxKdef

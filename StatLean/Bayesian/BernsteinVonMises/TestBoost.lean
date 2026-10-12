@@ -257,13 +257,13 @@ theorem blockAvg_typeII_tail
     (hn : kb ≤ n) :
     (productMeasure M μ θ n).real {ω | bvmBlockAvg kb g n ω < 1 / 2}
       ≤ Real.exp (-(↑(n / kb) : ℝ) / 8) := by
-  haveI hP : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
+  have hP : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
     refine ⟨?_⟩
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
         (Filter.Eventually.of_forall (M.density_nonneg θ)),
       hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
-  haveI : IsProbabilityMeasure (productMeasure M μ θ n) :=
+  have : IsProbabilityMeasure (productMeasure M μ θ n) :=
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ n
   have h := blockAvg_le_half_tail (μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
@@ -303,7 +303,7 @@ theorem exists_boosted_tests
         ∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n) ≤ Real.exp (-c * n) := by
   classical
   obtain ⟨φt, hφt_meas, hφt01, hφt_size, hφt_pow⟩ := hTests ε hε
-  haveI hPfac : ∀ θ : EuclideanSpace ℝ (Fin k),
+  have hPfac : ∀ θ : EuclideanSpace ℝ (Fin k),
       IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
     intro θ
     refine ⟨?_⟩
@@ -311,7 +311,7 @@ theorem exists_boosted_tests
       ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
         (Filter.Eventually.of_forall (M.density_nonneg θ)),
       hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
-  haveI hPM : ∀ (θ : EuclideanSpace ℝ (Fin k)) (nn : ℕ),
+  have hPM : ∀ (θ : EuclideanSpace ℝ (Fin k)) (nn : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ nn) := fun θ nn =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ nn

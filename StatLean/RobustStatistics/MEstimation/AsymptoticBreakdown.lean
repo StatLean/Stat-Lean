@@ -118,7 +118,7 @@ theorem mLocationRoot_bounded_of_contamination {P : Measure ℝ} [IsProbabilityM
   obtain ⟨Blo, hBlo⟩ := eventually_atBot.1
     (hBt.eventually_const_lt (by linarith : ε * k₁ < (1 - ε) * k₂))
   refine ⟨|Bhi| + |Blo|, fun Q hQ θ hroot => ?_⟩
-  haveI := hQ
+  have := hQ
   have hiQ : Integrable (fun x => ψ (x - θ)) Q :=
     integrable_psi_sub hψm.measurable ⟨k₁ + k₂, hCb⟩ θ
   -- split the contaminated estimating equation (MMY §3.8.3.1)

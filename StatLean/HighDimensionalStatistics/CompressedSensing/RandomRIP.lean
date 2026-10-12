@@ -421,7 +421,7 @@ theorem prob_rip_of_iid_gaussian
     by_contra hnot
     have hnpos : (0 : ℝ) < n := by
       exact_mod_cast (lt_of_le_of_lt (Nat.zero_le i.val) i.isLt)
-    haveI : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
+    have : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
       nullSingletonClass_gaussianReal (by
         intro hzero
         have hz := congrArg (fun v : ℝ≥0 => (v : ℝ)) hzero
@@ -433,7 +433,6 @@ theorem prob_rip_of_iid_gaussian
     have hz : (gaussianReal (0 : ℝ) vn) {Classical.ofNonempty} = 0 := measure_singleton _
     have hs' : (0 : ℝ≥0∞) = 1 := by simpa only [hz, hdval] using! hs
     exact zero_ne_one hs'
-
   set X' : Ω → Matrix (Fin n) (Fin d) ℝ :=
     fun ω => Matrix.of (fun i j => (hXae i j).mk (fun ω' => X ω' i j) ω) with hX'def
   have hX'meas : ∀ i j, Measurable (fun ω => X' ω i j) :=
@@ -494,7 +493,7 @@ theorem prob_rip_of_iid_gaussian
   -- main case: `d ≥ 1`, `s ≥ 1`, `ε < 1`.
   set m := min (3 * s) d with hm
   have hmpos : 0 < m := lt_min (by omega) hdpos
-  haveI : NeZero m := ⟨hmpos.ne'⟩
+  have : NeZero m := ⟨hmpos.ne'⟩
   have hm3s : m ≤ 3 * s := min_le_left _ _
   have hmd : m ≤ d := min_le_right _ _
   obtain ⟨N₀, hN₀ball, hN₀cover, hN₀card⟩ := exists_quarter_net m

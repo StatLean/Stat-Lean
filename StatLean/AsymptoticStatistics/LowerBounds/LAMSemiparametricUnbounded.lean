@@ -304,8 +304,8 @@ private theorem basis_at_proj_m_pos_unbounded_vec
             * (ψDotMat_vec g_P IF_eff).transpose) i i'
           = ⟪(p m i : ↥(L2ZeroMean P)), (p m i' : ↥(L2ZeroMean P))⟫_ℝ) := by
   classical
-  haveI := hV_findim m
-  haveI := hV_proj m
+  have := hV_findim m
+  have := hV_proj m
   -- Carrier as a submodule.
   let carrier_sub : Submodule ℝ ↥(L2ZeroMean P) :=
     { carrier := T_set.carrier
@@ -473,7 +473,7 @@ private theorem sigma_m_basis_family_tendsto_gramMatrix_vec
           * (ψDotMat_vec (g_P_m m) IF_eff).transpose)
         atTop (𝓝 (Matrix.gram ℝ IF_eff)) := by
   classical
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   -- Per-component projection sequences.
   have h_mem : ∀ i : Fin d, (IF_eff i : ↥(L2ZeroMean P)) ∈ tangentSpace T_set :=
@@ -533,7 +533,7 @@ private theorem sigma_m_basis_family_tendsto_gramMatrix_vec
     intro i
     refine squeeze_zero (fun _ => norm_nonneg _) ?_ (hpc_tendsto i)
     intro m
-    haveI := hV_proj m
+    have := hV_proj m
     have hpc_in_V : pc i m ∈ V m := hVc_le_V i m (hpc_proj i m).1
     have h_norm_swap : ‖(p m i : ↥(L2ZeroMean P)) - IF_eff i‖
         = ‖IF_eff i - p m i‖ := norm_sub_rev _ _
@@ -1024,7 +1024,7 @@ theorem lam_semiparametric_unbounded
     · -- Zero-variance branch.
       have hv_zero : v_inf = 0 := le_antisymm (not_lt.mp h_pos) (zero_le)
       have h_bess0 : ((0 : ℝ≥0) : ℝ) ≤ ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 := by
-        simpa using sq_nonneg ‖(IF_eff : ↥(L2ZeroMean P))‖
+        simp
       have h_IF_norm_sq_zero : ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 = 0 := by
         have h_v_inf_real : (v_inf : ℝ) = 0 := by rw [hv_zero]; rfl
         exact h_v_inf_real

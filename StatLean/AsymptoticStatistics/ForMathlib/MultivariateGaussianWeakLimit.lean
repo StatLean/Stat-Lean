@@ -90,7 +90,7 @@ lemma multivariateGaussian_weakly_tendsto_of_psd_perturb
     Tendsto (fun ε : ℝ => multivariateGaussianPM (0 : EuclideanSpace ℝ ι)
         (S + ε • (1 : Matrix ι ι ℝ)))
       (𝓝[>] 0) (𝓝 (multivariateGaussianPM 0 S)) := by
-  haveI : (𝓝[>] (0 : ℝ)).IsCountablyGenerated :=
+  have : (𝓝[>] (0 : ℝ)).IsCountablyGenerated :=
     TopologicalSpace.isCountablyGenerated_nhdsWithin 0 _
   rw [Filter.tendsto_iff_seq_tendsto]
   intro ε_seq h_ε_seq
@@ -366,9 +366,9 @@ lemma multivariateGaussian_absolutelyContinuous_volume_of_posDef
     rw [zero_add]
     rfl
   -- Step 3: Pushforward of Haar volume under CLE is Haar (= scalar multiple).
-  haveI h_map_haar : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).IsAddHaarMeasure :=
+  have h_map_haar : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).IsAddHaarMeasure :=
     ContinuousLinearEquiv.isAddHaarMeasure_map T_cle (volume : Measure (EuclideanSpace ℝ ι))
-  haveI : SigmaFinite ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle) :=
+  have : SigmaFinite ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle) :=
     MeasureTheory.Measure.IsAddHaarMeasure.sigmaFinite _
   -- Step 4: Two Haar measures on the same group are mutually AC.
   have h_volmap_ac : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).AbsolutelyContinuous
@@ -778,7 +778,7 @@ private lemma _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
             ContinuousLinearMap.adjoint_inner_right T'' _ _
         _ = inner ℝ x_lp (T'' (ContinuousLinearMap.adjoint T'' x_lp)) := real_inner_comm _ _
   -- Identify μ' := stdGaussian.map T'' = multivariateGaussian 0 SS via IsGaussian.ext
-  haveI hμ'_gauss : IsGaussian ((stdGaussian (EuclideanSpace ℝ ι)).map T'') :=
+  have hμ'_gauss : IsGaussian ((stdGaussian (EuclideanSpace ℝ ι)).map T'') :=
     isGaussian_map T''
   have hμ'_eq_mvg :
       (stdGaussian (EuclideanSpace ℝ ι)).map T'' = multivariateGaussian 0 SS := by

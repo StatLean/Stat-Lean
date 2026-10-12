@@ -106,7 +106,7 @@ private lemma integrable_rbEstimator_statLaw (P : Θ → Measure 𝓧)
     [IsMarkovKernel Q] (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q)
     {δ : 𝓧 → ℝ} (hδm : Measurable δ) (hδi : ∀ θ, Integrable δ (P θ)) (θ : Θ) :
     Integrable (rbEstimator Q δ) (statLaw P T θ) := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
+  have : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hδsnd : Measurable (fun z : S × 𝓧 => δ z.2) := hδm.comp measurable_snd
   have hrb : StronglyMeasurable (rbEstimator Q δ) :=
@@ -127,7 +127,7 @@ private lemma memLp_two_rbEstimator_statLaw (P : Θ → Measure 𝓧)
     [IsMarkovKernel Q] (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q)
     {δ : 𝓧 → ℝ} (hδm : Measurable δ) (hδ2 : MemEstL2 P δ) (θ : Θ) :
     MemLp (rbEstimator Q δ) 2 (statLaw P T θ) := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
+  have : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hδsnd : Measurable (fun z : S × 𝓧 => δ z.2) := hδm.comp measurable_snd
   have hsqm : Measurable (fun z : S × 𝓧 => (δ z.2) ^ 2) := hδsnd.pow_const 2
@@ -212,10 +212,10 @@ theorem condExp_comap_eq_rbEstimator (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- LEAN-ONLY: integrability under every member
     (hδi : ∀ θ, Integrable δ (P θ)) (θ : Θ) :
     (P θ)[δ|MeasurableSpace.comap T inferInstance] =ᵐ[P θ] fun x => rbEstimator Q δ (T x) := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
+  have : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
   have hm : MeasurableSpace.comap T inferInstance ≤ (inferInstance : MeasurableSpace 𝓧) :=
     hT.comap_le
-  haveI : IsFiniteMeasure ((P θ).trim hm) := isFiniteMeasure_trim hm
+  have : IsFiniteMeasure ((P θ).trim hm) := isFiniteMeasure_trim hm
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hδsnd : Measurable (fun z : S × 𝓧 => δ z.2) := hδm.comp measurable_snd
   have hrb : StronglyMeasurable (rbEstimator Q δ) :=
@@ -403,7 +403,7 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
     exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
   · -- minimality against every square-integrable unbiased competitor
     intro δ' hδ'u hδ'2 θ
-    haveI : Nonempty Θ := ⟨θ⟩
+    have : Nonempty Θ := ⟨θ⟩
     -- an equivalent countable mixture of members of the family: it dominates *every* member,
     -- so a version of the competitor under the mixture is a version under every member
     obtain ⟨θs, c, ν, hνdef, -, -, hdomν, -⟩ := exists_equivalent_countable_mixture P μ hdom
@@ -558,7 +558,7 @@ theorem isUMVU_of_fullRank_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpa
   obtain ⟨Q, hQm, hgraph⟩ :=
     (hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base hdomE hsuf).exists_map
       E.stat_meas
-  haveI := hQm
+  have := hQm
   -- completeness of the natural statistic, transported from the `Ξ`-indexed subfamily
   have hcomp : IsCompleteStat P E.stat := by
     simp only [IsCompleteStat, Measure.map₀_of_measurable E.stat_meas]

@@ -178,7 +178,7 @@ private lemma tsum_nonneg_of_fejer {a : ℤ → ℝ} (hsum : Summable fun m => |
         have hge : (0 : ℝ) ≤ |(m : ℝ)| / (n : ℝ) := div_nonneg (abs_nonneg _) hn0.le
         rw [abs_le]
         constructor <;> linarith
-      · simpa using abs_nonneg (a m)
+      · simp
   refine ge_of_tendsto hlim ?_
   filter_upwards [eventually_gt_atTop 0] with n hn
   rw [hfeq n]
@@ -308,7 +308,7 @@ theorem isSpectralMeasure_withDensity [IsProbabilityMeasure μ] {X : ℤ → Ω 
     rw [Real.norm_eq_abs] at h
     exact le_trans (le_abs_self _) h
   -- finiteness: a bounded density against a finite measure
-  haveI hfin : IsFiniteMeasure
+  have hfin : IsFiniteMeasure
       ((ENNReal.ofReal (2 * π) •
           (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
         fun l => ENNReal.ofReal (spectralDensityOf X μ l)) := by
@@ -403,7 +403,7 @@ theorem isSpectralMeasure_withDensity [IsProbabilityMeasure μ] {X : ℤ → Ω 
         (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
     exact Eq.trans (integral_congr_ae (Filter.Eventually.of_forall hpt)) hmain
   refine ⟨hfin, ?_, hcoef⟩
-  haveI : IsFiniteMeasure
+  have : IsFiniteMeasure
       (((ENNReal.ofReal (2 * π) •
           (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
         fun l => ENNReal.ofReal (spectralDensityOf X μ l)).map (fun z => -z)) :=

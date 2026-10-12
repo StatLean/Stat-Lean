@@ -240,7 +240,7 @@ theorem min_norm_marginFeasible_mem_span [CompleteSpace E] {x : Fin n → E}
     (hw : w ∈ marginFeasible x lab)
     (hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖) :
     w ∈ Submodule.span ℝ (Set.range x) := by
-  haveI : FiniteDimensional ℝ (Submodule.span ℝ (Set.range x)) :=
+  have : FiniteDimensional ℝ (Submodule.span ℝ (Set.range x)) :=
     FiniteDimensional.span_of_finite ℝ (Set.finite_range x)
   set M : Submodule ℝ E := Submodule.span ℝ (Set.range x) with hM
   have hxM : ∀ i, x i ∈ M := fun i => Submodule.subset_span ⟨i, rfl⟩
@@ -264,7 +264,7 @@ both cases every data point is at `Metric.infDist` zero from it.
 
 private lemma le_dataMargin {x : Fin n → E} (hn : 0 < n) {v : E} {c a : ℝ}
     (h : ∀ i, a ≤ Metric.infDist (x i) (hyperplane v c)) : a ≤ dataMargin x v c := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
   exact le_ciInf h
 
 private lemma dataMargin_le (x : Fin n → E) (v : E) (c : ℝ) (i : Fin n) :
@@ -273,7 +273,7 @@ private lemma dataMargin_le (x : Fin n → E) (v : E) (c : ℝ) (i : Fin n) :
 
 private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
     dataMargin x (0 : E) c = 0 := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
   have hzero : ∀ i, Metric.infDist (x i) (hyperplane (0 : E) c) = 0 := by
     intro i
     by_cases hc : c = 0

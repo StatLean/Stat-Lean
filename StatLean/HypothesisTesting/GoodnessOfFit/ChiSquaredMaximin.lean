@@ -157,7 +157,7 @@ private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
       (∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
         ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * ψ i j)) ^ 2) := by
   classical
-  haveI : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 1))) = k + 1) :=
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 1))) = k + 1) :=
     ⟨finrank_euclideanSpace_fin⟩
   set w : EuclideanSpace ℝ (Fin (k + 1)) := WithLp.toLp 2 (fun j => Real.sqrt (π j)) with hwdef
   have hwapp : ∀ j, w j = Real.sqrt (π j) := fun j => rfl
@@ -306,8 +306,8 @@ private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [Measur
   classical
   obtain ⟨Ω₀, mΩ₀, μ, Z, hZmeas, hZlaw, hZindep, hμprob⟩ :=
     ProbabilityTheory.exists_iid ℕ P₀
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure μ := hμprob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure μ := hμprob
   set T : (n : ℕ) → (Fin n → 𝓨) → ℝ := fun n d =>
     ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, ψ i (d l) * ψ i' (d l)) - (if i = i' then 1 else 0)|
     with hTdef
@@ -581,12 +581,12 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   --     `S n` infimum by `csInf_le_csInf` and the two `limsup`s compare by
   --     `Filter.limsup_le_limsup`, both sequences lying in `[0,1]`.
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   -- ### 0. the whitened score system and the base cell law
   obtain ⟨sc, hcent, hortho, -⟩ := exists_multinomial_scores hπpos hπsum
   have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
-  haveI hP₀prob : IsProbabilityMeasure P₀ :=
+  have hP₀prob : IsProbabilityMeasure P₀ :=
     (by infer_instance)
   have hP₀sing : ∀ j, P₀ {j} = ENNReal.ofReal (π j) := by
     intro j
@@ -677,7 +677,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
         ring
       rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.sum_div, hΦsum, zero_div]
     rw [h1, hπsum, h2, add_zero]
-  haveI htiltfin : ∀ n η, IsFiniteMeasure (tilt n η) := by
+  have htiltfin : ∀ n η, IsFiniteMeasure (tilt n η) := by
     intro n η
     refine ⟨?_⟩
     rw [htiltdef]
@@ -698,11 +698,11 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     intro n η
     by_cases hG : Good n η
     · rw [hQCgood n η hG]
-      haveI := (htiltfacts n η hG).2
+      have := (htiltfacts n η hG).2
       infer_instance
     · rw [hQCbad n η hG]
       infer_instance
-  haveI := hQCprob
+  have := hQCprob
   have hGood0 : ∀ n, Good n (0 : EuclideanSpace ℝ (Fin k)) := by
     intro n j
     simp [hulocdef]
@@ -728,7 +728,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     by_cases hG : Good n η
     · have hu : Measurable (fun x : Fin (k + 1) => Real.log (1 + uloc n η x)) :=
         measurable_of_countable _
-      haveI : IsProbabilityMeasure
+      have : IsProbabilityMeasure
           (P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + uloc n η x)))) :=
         (htiltfacts n η hG).2
       rw [hQCgood n η hG, htiltdef]
@@ -766,7 +766,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       hQCgood n η hG]
     congr 1
     funext i
-    haveI : IsProbabilityMeasure ((Q n (Φ η)).map (X n i)) :=
+    have : IsProbabilityMeasure ((Q n (Φ η)).map (X n i)) :=
       (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [(htiltfacts n η hG).1 j,
@@ -1138,7 +1138,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   · refine ⟨1, Filter.eventually_map.mpr ?_⟩
     have hρpow1 : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)), power (QC n) (ρ n) η ≤ 1 := by
       intro n η
-      haveI := hQCprob n η
+      have := hQCprob n η
       have hbdd1 : ∀ d : Fin n → Fin (k + 1), ‖ρ n d‖ ≤ 1 := by
         intro d
         rw [Real.norm_eq_abs, abs_of_nonneg ((hρcrit n).2 d).1]
@@ -1349,7 +1349,7 @@ private lemma covMatrix_map_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ
     covMatrix (ρ.map (psiVec sc)) i j
       = (∑ x, ρ.real {x} * (sc i x * sc j x))
         - (∑ x, ρ.real {x} * sc i x) * ∑ x, ρ.real {x} * sc j x := by
-  haveI : IsProbabilityMeasure (ρ.map (psiVec sc)) :=
+  have : IsProbabilityMeasure (ρ.map (psiVec sc)) :=
     (by infer_instance)
   rw [covMatrix, Matrix.of_apply,
     covariance_eq_sub (memLp_map_psiVec sc ρ
@@ -1408,10 +1408,10 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     simpa only [hwdef, add_zero] using tendsto_const_nhds.add hz
   -- the limit law and the drifting sequence of laws
   set Q : Measure (EuclideanSpace ℝ (Fin k)) := (ν 0).map (psiVec sc) with hQdef
-  haveI hQprob : IsProbabilityMeasure Q :=
+  have hQprob : IsProbabilityMeasure Q :=
     (by infer_instance)
   set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => (ν n).map (psiVec sc) with hFdef
-  haveI hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
+  have hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
     (by infer_instance)
   have hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q :=
     memLp_map_psiVec sc (ν 0) continuous_id' 2
@@ -1508,7 +1508,7 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
   -- ### the two pushforward identities
   set A : (n : ℕ) → Measure (Fin n → EuclideanSpace ℝ (Fin k)) :=
     fun n => Measure.pi fun _ : Fin n => F n with hAdef
-  haveI hAprob : ∀ n, IsProbabilityMeasure (A n) := fun n => by
+  have hAprob : ∀ n, IsProbabilityMeasure (A n) := fun n => by
     rw [hAdef]; infer_instance
   set Ys : (n : ℕ) → (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
     fun n y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hYsdef
@@ -1619,7 +1619,7 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
   have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
   have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
   set A : Measure (Fin n → Fin (k + 1)) := Measure.pi fun _ : Fin n => ν with hAdef
-  haveI hAprob : IsProbabilityMeasure A := by rw [hAdef]; infer_instance
+  have hAprob : IsProbabilityMeasure A := by rw [hAdef]; infer_instance
   -- integrals of one coordinate
   have heval : ∀ (i : Fin n) (f : Fin (k + 1) → ℝ), ∫ d, f (d i) ∂A = ∫ x, f x ∂ν := by
     intro i f
@@ -1780,7 +1780,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
         '' multinomialShell π b n)) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   obtain ⟨sc, hcent, hortho, hpars⟩ := exists_multinomial_scores hπpos hπsum
   have hπle : ∀ j, π j ≤ 1 := by
     intro j
@@ -1788,7 +1788,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     exact Finset.single_le_sum (f := π) (fun i _ => (hπpos i).le) (Finset.mem_univ j)
   -- ### 0. the base cell law and the stage-`n` cell law under a local parameter
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
-  haveI hP₀prob : IsProbabilityMeasure P₀ :=
+  have hP₀prob : IsProbabilityMeasure P₀ :=
     (by infer_instance)
   have hP₀real : ∀ j, P₀.real {j} = π j := by
     intro j
@@ -1796,7 +1796,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     simpa [MeasureTheory.Measure.real] using h
   set cellν : ℕ → (Fin (k + 1) → ℝ) → Measure (Fin (k + 1)) :=
     fun n h => if hn : 0 < n then Measure.map (X n ⟨0, hn⟩) (Q n h) else P₀ with hcellνdef
-  haveI hcellνprob : ∀ n h, IsProbabilityMeasure (cellν n h) := by
+  have hcellνprob : ∀ n h, IsProbabilityMeasure (cellν n h) := by
     intro n h
     by_cases hn : 0 < n
     · simp only [hcellνdef, dite_eq_left hn]
@@ -1813,7 +1813,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       simp [hcellνdef, hP₀real j]
   have hlawX : ∀ n h, ∀ i : Fin n, Measure.map (X n i) (Q n h) = cellν n h := by
     intro n h i
-    haveI : IsProbabilityMeasure (Measure.map (X n i) (Q n h)) :=
+    have : IsProbabilityMeasure (Measure.map (X n i) (Q n h)) :=
       (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [← ENNReal.ofReal_toReal (measure_ne_top (Measure.map (X n i) (Q n h)) {j}),
@@ -1931,7 +1931,7 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     intro u h₀ hu
     have hweak := mScoreVec_weakConverges_drift (π := π) (sc := sc) (hs := u) (h₀ := h₀)
       (ν := fun n => cellν n (u n)) hcent hortho hu (fun n j => hcellνreal n (u n) j)
-    haveI hprob : ∀ n : ℕ, IsProbabilityMeasure
+    have hprob : ∀ n : ℕ, IsProbabilityMeasure
         ((Measure.pi fun _ : Fin n => cellν n (u n)).map (mScoreVec sc)) := fun n =>
       (by infer_instance)
     set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := fun n =>
@@ -2309,7 +2309,7 @@ private lemma integral_stdGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin 
     · exact (hF.mul (by fun_prop)).aestronglyMeasurable
   -- the shifted product Gaussian
   have hshift : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
-    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+    have : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
       intro i
       rw [gaussianReal_map_const_add]
       infer_instance
@@ -2363,7 +2363,7 @@ private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : �
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift (a i)
-  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+  have : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
     intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
@@ -2418,7 +2418,7 @@ private lemma stdGaussian_map_add_eq_withDensity {k : ℕ} (v : EuclideanSpace �
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
   have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
-    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+    have : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
       intro i
       rw [gaussianReal_map_const_add]
       infer_instance
@@ -2447,17 +2447,17 @@ private lemma stdGaussian_map_add_eq_withDensity {k : ℕ} (v : EuclideanSpace �
 /-- The mean vector has length `√l`. -/
 private lemma ncMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     ‖noncentralMean k l‖ = Real.sqrt (l : ℝ) := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have h2 : ‖noncentralMean k l‖ ^ 2 = (l : ℝ) := by
     rw [EuclideanSpace.real_norm_sq_eq]
     have hval : ∀ i : Fin k,
         (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
       intro i
       by_cases hi : i = 0
-      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left, ite_true]
+      · simp only [noncentralMean, hi, Fin.val_zero, ite_eq_left]
         rw [Real.sq_sqrt l.coe_nonneg]
       · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
-        simp [noncentralMean, hi, hi']
+        simp [noncentralMean, hi]
     simp_rw [hval]
     simp [Finset.sum_ite_eq']
   rw [← h2, Real.sqrt_sq (norm_nonneg _)]
@@ -2490,7 +2490,7 @@ private lemma chiSq_eq_map {k : ℕ} (hk : 0 < k) :
 /-- For `k ≥ 1` the standard Gaussian puts no mass at the origin. -/
 private lemma stdGaussian_ne_zero_ae {k : ℕ} (hk : 0 < k) :
     ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ≠ 0 := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have hzero : (stdGaussian (EuclideanSpace ℝ (Fin k))) {0} = 0 := by
     rw [← map_pi_eq_stdGaussian,
       Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ)) (measurableSet_singleton _)]
@@ -2501,7 +2501,7 @@ private lemma stdGaussian_ne_zero_ae {k : ℕ} (hk : 0 < k) :
       rfl
     · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
         Measure.pi_map_eval]
-      haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+      have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
       simp
   have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
     rw [ae_iff]
@@ -2530,7 +2530,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
           = ∫⁻ x, f x * ENNReal.ofReal (g x)
               ∂(StatLean.MultipleTesting.chiSquared k) := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   set s : ℝ := Real.sqrt (l : ℝ) with hsdef
   have hs0 : 0 ≤ s := Real.sqrt_nonneg _
@@ -2662,7 +2662,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
         exact hx
       · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
           Measure.pi_map_eval]
-        haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+        have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
         simp
     have hsub : {y : EuclideanSpace ℝ (Fin k) | t y = 0}
         ⊆ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} := by
@@ -2709,10 +2709,10 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
         have h1 : 0 < F y := hFpos y hty
         rw [show F y = (0 : EuclideanSpace ℝ (Fin k) → ℝ) y from hy] at h1
         exact lt_irrefl 0 h1
-      haveI : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
+      have : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
       have hz : γ Set.univ = 0 := by
         have h2 := ae_iff.mp hfalse
-        simpa using h2
+        simp at h2
       rw [measure_univ] at hz
       exact one_ne_zero hz
     have hposint : 0 < ∫ y, F y ∂γ := by
@@ -2777,7 +2777,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hs0, hyy, mul_one, hνnorm]
   have haverage : J ν = ∫⁻ y, J (s • (‖y‖⁻¹ • y)) ∂γ := by
     rw [lintegral_congr_ae hdir, lintegral_const]
-    haveI : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
+    have : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
     rw [measure_univ, mul_one]
   -- the inner average is a function of `‖z‖` alone
   have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
@@ -2869,7 +2869,7 @@ private lemma ncChiSq_succ_eq_prod_map {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
       = ((noncentralChiSquared k l).prod (StatLean.MultipleTesting.chiSquared 1)).map
           (fun q : ℝ × ℝ => q.1 + q.2) := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   set m : Fin k → ℝ := fun j => (noncentralMean k l) j with hm
   have hmnorm : ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ) :=
     ncMean_norm hk l
@@ -2898,7 +2898,7 @@ private lemma ncChiSq_succ_eq_prod_map {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv,
       Equiv.coe_fn_mk, Fin.insertNth_zero]
     rw [Fin.sum_univ_succ]
-    simp only [Fin.cons_zero, Fin.cons_succ, zero_add, hQk, Fin.zero_succAbove, cast_eq]
+    simp only [Fin.cons_zero, Fin.cons_succ, zero_add, hQk, cast_eq]
     ring
   have hsplit : noncentralChiSquared (k + 1) l
       = ((gaussianReal 0 1).prod (Measure.pi fun _ : Fin k => gaussianReal 0 1)).map
@@ -2933,7 +2933,7 @@ private lemma ncChiSq_succ_Ioi {k : ℕ} (hk : 0 < k) (l : ℝ≥0) (c : ℝ) :
   refine lintegral_congr fun x => ?_
   congr 1
   ext u
-  simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
+  simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply]
   constructor <;> intro h <;> linarith
 
 
@@ -2955,7 +2955,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
       = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi c₂)) :
     noncentralChiSquared (k + 1) l (Set.Ioi c₂) ≤ noncentralChiSquared k l (Set.Ioi c₁) := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
   set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
   set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
@@ -2975,7 +2975,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
       simp only [hQ]
       congr 1
       ext u
-      simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
+      simp only [Set.mem_preimage, Set.mem_Ioi]
       constructor <;> intro h <;> linarith
     rw [heq]
     exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
@@ -3021,7 +3021,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
       ← lintegral_add_left (hQmeas.mul hGmeas), ← lintegral_add_left (hPmeas.mul hGmeas)]
     exact lintegral_mono hpt
   rw [hlev1, hlev2] at hmain
-  haveI : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
+  have : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
   have hfin : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A ≠ ⊤ := by
     refine ENNReal.mul_ne_top (measure_ne_top _ _) ?_
     rw [hA, hG]
@@ -3071,7 +3071,7 @@ positive whenever `α < 1`. -/
 private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α < 1)
     (hc : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀) = ENNReal.ofReal α) :
     0 < c₀ := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   by_contra hcon
   push Not at hcon
   have hac : StatLean.MultipleTesting.chiSquared k (Set.Iic 0) = 0 := by
@@ -3120,7 +3120,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
       = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi c₂)) :
     noncentralChiSquared (k + 1) l (Set.Ioi c₂) < noncentralChiSquared k l (Set.Ioi c₁) := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
   set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
   set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
@@ -3140,7 +3140,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
       simp only [hQ]
       congr 1
       ext u
-      simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
+      simp only [Set.mem_preimage, Set.mem_Ioi]
       constructor <;> intro h <;> linarith
     rw [heq]
     exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
@@ -3212,7 +3212,7 @@ private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 
     lintegral_add_left (hQmeas.mul hGmeas), lintegral_add_left (hPmeas.mul hGmeas),
     lintegral_indicator_const measurableSet_Ioo,
     lintegral_mul_const _ hPmeas, lintegral_mul_const _ hQmeas, hlev1, hlev2] at hmain
-  haveI : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
+  have : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
   have hfin : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A ≠ ⊤ :=
     ENNReal.mul_ne_top (measure_ne_top _ _) (by rw [hA, hG]; exact ENNReal.ofReal_ne_top)
   have hrearr : ((∫⁻ x, Q x * G x ∂μ) + δ * μ I)
@@ -3406,7 +3406,7 @@ private lemma tendsto_measure_Ioi_of_weakLimit
 `N(0,1)(z, ∞) = α`. Atomless case of `exists_critical_constants`. -/
 private lemma exists_gaussian_upper_quantile {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
     ∃ z : ℝ, gaussianReal 0 1 (Set.Ioi z) = ENNReal.ofReal α := by
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   obtain ⟨C, γ, _, _, hCeq⟩ := exists_critical_constants (gaussianReal 0 1) hα hα1
   have hatom : (gaussianReal 0 1 {x : ℝ | x = C}).toReal = 0 := by
     have hsingle : {x : ℝ | x = C} = ({C} : Set ℝ) := by ext x; simp
@@ -3446,8 +3446,8 @@ private lemma noncentralTail_tendsto_aux {α cc z : ℝ} {c : ℕ → ℝ} {hseq
     exact (by infer_instance)
   set μs : ℕ → ProbabilityMeasure ℝ := fun k => ⟨μ' k, hμ'prob k⟩ with hμs
   set ν : ProbabilityMeasure ℝ := ⟨gaussianReal cc 1, by infer_instance⟩ with hν
-  haveI : NullSingletonClass (ν : Measure ℝ) := by
-    show NullSingletonClass (gaussianReal cc 1); exact nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (ν : Measure ℝ) := by
+    change NullSingletonClass (gaussianReal cc 1); exact nullSingletonClass_gaussianReal one_ne_zero
   have htend : Tendsto μs atTop (𝓝 ν) := by
     rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
@@ -3469,12 +3469,12 @@ private lemma noncentralTail_tendsto_aux {α cc z : ℝ} {c : ℕ → ℝ} {hseq
     rw [hmap, Measure.map_apply (by fun_prop) measurableSet_Ioi]
     congr 1
     ext x
-    simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
+    simp only [Set.mem_preimage, Set.mem_Ioi]
     rw [lt_div_iff₀ hskpos]
     have hval : tk k * Real.sqrt (2 * (k : ℝ)) = c k - k := by
       simp only [htk_def]; rw [div_mul_cancel₀ _ hskpos.ne']
     rw [hval]; constructor <;> intro h <;> linarith
-  show ((μs k : Measure ℝ) (Set.Ioi (tk k))).toReal
+  change ((μs k : Measure ℝ) (Set.Ioi (tk k))).toReal
       = ((noncentralChiSquared k ((hseq k) ^ 2).toNNReal) (Set.Ioi (c k))).toReal
   rw [hcoe, hpre, hldef]
 
@@ -3529,7 +3529,7 @@ theorem noncentralTail_tendsto_normal {α γ z : ℝ} {c : ℕ → ℝ} {hseq : 
     rw [← h1, Measure.map_apply (by fun_prop) measurableSet_Ioi]
     congr 1
     ext x
-    simp only [Set.mem_preimage, Set.mem_Ioi, Pi.add_apply, Prod.fst, Prod.snd]
+    simp only [Set.mem_preimage, Set.mem_Ioi]
     constructor <;> intro h <;> linarith
   rwa [htrans] at key
 

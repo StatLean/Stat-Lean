@@ -97,7 +97,7 @@ theorem logLikelihood_weakConverges
     WeakConverges (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n))
       (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v) := by
   classical
-  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+  have hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ n
   have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
@@ -198,7 +198,7 @@ theorem mutuallyContiguous_local_alternative
       (fun n => productMeasure M μ θ₀ n)
       (fun n => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n) := by
   classical
-  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+  have hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ n
   have hv_nn : 0 ≤ h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
@@ -318,7 +318,7 @@ theorem mutuallyContiguous_mixture_base
       (fun n => productMeasure M μ θ₀ n)
       (fun n => bvmMixture κ π θ₀ u n) := by
   classical
-  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+  have hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ n
   obtain ⟨D₁, hD₁pos, -, Cb, hCbT, hUp⟩ := prior_smallBall_upper hπ
@@ -620,6 +620,6 @@ theorem measure_tendsto_zero_of_predictive_null
     bvmMixture_absolutelyContinuous (θ₀ := θ₀) (π := π) (κ := κ) 1 n (hN n)
   refine (mutuallyContiguous_mixture_base hPDF hsc hDQM hJ_pd hJ hκ hπ
     (u := 1) one_pos).2 N hN_meas ?_
-  simpa [hmix] using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := atTop (α := ℕ))
+  simp [hmix]
 
 end StatLean.Bayesian

@@ -116,7 +116,7 @@ theorem coveringNumber_ne_top_of_totallyBounded {T : Set E}
   rcases T.eq_empty_or_nonempty with rfl | hTne
   · simp [coveringNumber]
   obtain ⟨x₀, hx₀⟩ := hTne
-  haveI : Nonempty E := ⟨x₀⟩
+  have : Nonempty E := ⟨x₀⟩
   -- External `ε/2`-cover from total boundedness.
   obtain ⟨t, htfin, htcov⟩ := (Metric.totallyBounded_iff.mp hTB) (ε / 2) (by linarith)
   -- Center-swap: for each center `y` whose ball meets `T`, pick an internal
@@ -366,12 +366,12 @@ lemma biSup_sum_le_sum_biSup {T : Set E}
       ≤ ∑ i ∈ Finset.range n, ⨆ t ∈ T, g i t := by
   classical
   obtain ⟨t₀, ht₀⟩ := hne
-  haveI : Nonempty E := ⟨t₀⟩
+  have : Nonempty E := ⟨t₀⟩
   -- The value `⨆ (_ : t ∈ T), h t` is `h t` when `t ∈ T` and `0` (via `sSup ∅`) otherwise.
   have inner_pos : ∀ (h : E → ℝ) {t : E}, t ∈ T → (⨆ _ : t ∈ T, h t) = h t := by
-    intro h t ht; haveI : Nonempty (t ∈ T) := ⟨ht⟩; exact ciSup_const
+    intro h t ht; have : Nonempty (t ∈ T) := ⟨ht⟩; exact ciSup_const
   have inner_neg : ∀ (h : E → ℝ) {t : E}, t ∉ T → (⨆ _ : t ∈ T, h t) = 0 := by
-    intro h t ht; haveI : IsEmpty (t ∈ T) := ⟨ht⟩; exact Real.iSup_of_isEmpty _
+    intro h t ht; have : IsEmpty (t ∈ T) := ⟨ht⟩; exact Real.iSup_of_isEmpty _
   -- Each per-level `biSup` is bounded above (its range lies in a finite set).
   have hbdd : ∀ h : E → ℝ, BddAbove (Set.range fun s => ⨆ _ : s ∈ T, h s) := by
     intro h

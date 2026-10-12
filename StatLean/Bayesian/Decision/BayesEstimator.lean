@@ -124,7 +124,7 @@ theorem lintegral_iInf_posteriorRisk_le_bayesRisk [StandardBorelSpace Θ] [Nonem
     (∫⁻ x, ⨅ y, ∫⁻ θ, ℓ θ y ∂(P†π) x ∂(P ∘ₘ π)) ≤ bayesRisk ℓ P π := by
   rw [bayesRisk]
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   rw [avgRisk_eq_lintegral_lintegral_posteriorRisk ℓ hℓ P π κ]
   refine lintegral_mono fun x => ?_
   exact iInf_le_lintegral _

@@ -108,7 +108,7 @@ lemma signChange_smul_apply {n : ℕ} (ε : Fin n → ℤˣ) (x : Fin n → ℝ)
 
 /-- The sign-change group has `2ⁿ` elements. -/
 lemma card_signChangeGroup (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ n := by
-  simp [Fintype.card_fun, Fintype.card_units_int]
+  simp [Fintype.card_units_int]
 
 /-- The sign-change action of a fixed group element is measurable: componentwise it is
 multiplication by the constant `±1`. (Unlike the abstract action of `Randomization/Asymptotics`,
@@ -199,7 +199,7 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
   classical
   -- The linear part of the statistic, and the law of the influence function.
   set Q : Measure ℝ := P.map ψ with hQdef
-  haveI hQprob : IsProbabilityMeasure Q := (by infer_instance)
+  have hQprob : IsProbabilityMeasure Q := (by infer_instance)
   have hQ2 : MemLp id 2 Q := by
     rw [hQdef, memLp_map_measure_iff aestronglyMeasurable_id hψmeas.aemeasurable]
     simpa using hψL2
@@ -280,7 +280,7 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
       have hpt : ∀ y : ℝ, ⟪y, v⟫ ^ 2 = v ^ 2 * y ^ 2 := by
         intro y
         have : ⟪y, v⟫ = v * y := by
-          simp [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+          simp [RCLike.inner_apply]
         rw [this]; ring
       calc ∫ y, ⟪y, v⟫ ^ 2 ∂Q = ∫ y, v ^ 2 * y ^ 2 ∂Q :=
             integral_congr_ae (Filter.Eventually.of_forall hpt)
@@ -344,7 +344,7 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
   have hjoint := weakConverges_randPairLaw_signChange P ψ T hsymm hodd hψmeas hψL2 hτpos hτ hT hlin
   have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
+  have : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
       nullSingletonClass_gaussianReal hvne
   have hcont : ContinuousAt (cdf (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))) t :=
     continuousAt_cdf_of_noAtoms _ t
@@ -558,7 +558,7 @@ private lemma measurable_randQuantile {G 𝓧 : Type*} [Group G] [Fintype G]
     [MeasurableSpace 𝓧] [MulAction G 𝓧] {T : 𝓧 → ℝ} (hT : Measurable T)
     (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1) :
     Measurable (fun x => randQuantile G T p x) := by
-  haveI : Nonempty G := ⟨1⟩
+  have : Nonempty G := ⟨1⟩
   have hne : ∀ x : 𝓧, ({t : ℝ | p ≤ randDist G T x t}).Nonempty := by
     intro x
     refine ⟨Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x)), ?_⟩
@@ -626,7 +626,7 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
   set R := gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) with hRdef
   have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NullSingletonClass R := nullSingletonClass_gaussianReal hvne
+  have : NullSingletonClass R := nullSingletonClass_gaussianReal hvne
   have hp0 : (0 : ℝ) < 1 - α := by linarith
   have hp1 : (1 : ℝ) - α < 1 := by linarith
   have hSM : StrictMono (cdf R) := strictMono_cdf_gaussianReal hvne

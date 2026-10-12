@@ -988,7 +988,7 @@ theorem abs_avg_blockSum_sub_stdGaussianExpect_le {N m : ℕ} (hN : 2 ≤ N) (hm
     linarith
   have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
   have hlam : (0 : ℝ) < (N : ℝ) / ((m : ℝ) * ((N : ℝ) - m)) := by positivity
-  haveI : Nonempty (SwapIndex a) := by
+  have : Nonempty (SwapIndex a) := by
     have h1 : a ⟨0, hm⟩ ∈ blockSet a := by
       rw [blockSet]; exact Finset.mem_image_of_mem a (Finset.mem_univ _)
     have hcard : 0 < ((blockSet a)ᶜ).card := by

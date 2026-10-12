@@ -84,10 +84,10 @@ theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
   have hfun : (fun ω => ⟪X ω, EuclideanSpace.single i (1 : ℝ)⟫) = (fun ω => X ω i) := by
     funext ω
     rw [PiLp.inner_apply, Finset.sum_eq_single i]
-    · show (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
-      simp [PiLp.single_apply]
+    · change (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
+      simp
     · intro j _ hj
-      show (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
+      change (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
       simp [PiLp.single_apply, ite_eq_right hj]
     · intro hi; exact absurd (Finset.mem_univ i) hi
   rwa [hfun] at h
@@ -108,7 +108,7 @@ theorem isSubGaussianVec_of_coords {n : ℕ}
     funext ω
     rw [PiLp.inner_apply]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    change v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
     simp
   rw [hinner]
   -- Each weighted coordinate has finite ψ₂ norm; the finset triangle bound is finite.
@@ -157,7 +157,7 @@ theorem subGaussianVecNorm_le_of_indep
     funext ω
     rw [PiLp.inner_apply]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    change v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
     simp
   rw [hinner]
   -- the `∑ (v i)² = ‖v‖² = 1` identity, over `ℝ`

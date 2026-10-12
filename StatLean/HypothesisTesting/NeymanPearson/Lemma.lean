@@ -218,7 +218,7 @@ private lemma np_fundamental_top (μ : Measure 𝓧) [SigmaFinite μ]
   have hp1i : Integrable p₁ μ := hasDensity_integrable h₁
   have hφp0z : (fun x => φ x * p₀ x) =ᵐ[μ] 0 := by
     filter_upwards [hsp0] with x hx0
-    show φ x * p₀ x = 0
+    change φ x * p₀ x = 0
     rcases eq_or_lt_of_le (hp0nn x) with h | h
     · rw [← h, mul_zero]
     · have hc2 : ENNReal.ofReal (p₁ x) < ⊤ * ENNReal.ofReal (p₀ x) := by
@@ -237,7 +237,7 @@ private lemma np_fundamental_top (μ : Measure 𝓧) [SigmaFinite μ]
     exact (integral_eq_zero_iff_of_nonneg_ae hψp0nn hψp0i).mp heq0
   have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * p₁ x := by
     filter_upwards [hsp1, hsp0, hψp0z] with x hx1 hx0 hxψ0
-    show 0 ≤ (φ x - ψ x) * p₁ x
+    change 0 ≤ (φ x - ψ x) * p₁ x
     rcases eq_or_lt_of_le (hp0nn x) with hp0 | hp0
     · rcases eq_or_lt_of_le (hp1nn x) with hp1 | hp1
       · rw [← hp1]; simp
@@ -501,7 +501,7 @@ private lemma powerAgainst_npTest_eq {p₀ p₁ : 𝓧 → ℝ} {P₀ : Measure 
   have hsplit : npTest p₀ p₁ C γ = fun x =>
       R.indicator (1 : 𝓧 → ℝ) x + γ * B.indicator (1 : 𝓧 → ℝ) x := by
     funext x
-    show (if C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) then (1 : ℝ)
+    change (if C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) then (1 : ℝ)
       else if ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x) then γ else 0) = _
     by_cases hR : x ∈ R
     · have hxR : C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) := hR
@@ -583,7 +583,7 @@ theorem exists_mostPowerful
   have hrmeas : Measurable fun x => p₁ x / p₀ x := h₁.1.div h₀.1
   have hrnn : ∀ x, 0 ≤ p₁ x / p₀ x := fun x => div_nonneg (h₁.2.1 x) (h₀.2.1 x)
   set Q : Measure ℝ := P₀.map (fun x => p₁ x / p₀ x) with hQ
-  haveI hQprob : IsProbabilityMeasure Q := (by infer_instance)
+  have hQprob : IsProbabilityMeasure Q := (by infer_instance)
   obtain ⟨c, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants Q hα0' hα1'
   have hsr : MeasurableSet {x : ℝ | c < x} := measurableSet_Ioi
   have hse : MeasurableSet {x : ℝ | x = c} := by

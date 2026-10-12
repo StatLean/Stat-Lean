@@ -215,7 +215,7 @@ private lemma le_biSup_mem {E : Type*} {T : Set E} (hfin : T.Finite)
     by_cases ht : t ∈ T
     · rw [ciSup_pos ht]
       exact le_trans (hM (Set.mem_image_of_mem g ht)) (le_max_left _ _)
-    · haveI : IsEmpty (t ∈ T) := ⟨ht⟩
+    · have : IsEmpty (t ∈ T) := ⟨ht⟩
       rw [Real.iSup_of_isEmpty]
       exact le_max_right _ _
   exact le_ciSup_of_le hbdd v (le_of_eq (ciSup_pos (f := fun _ : v ∈ T => g v) hv).symm)
@@ -502,8 +502,8 @@ lemma symmetrization_adapter {Ξ : Type*} [MeasurableSpace Ξ]
           |(n : ℝ)⁻¹ * ∑ i : Fin n,
             p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|)
         ∂(P.prod (signVec n)) := by
-  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
-  haveI : Nonempty {S // S ∈ F} := ⟨⟨hFne.choose, hFne.choose_spec⟩⟩
+  have : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  have : Nonempty {S // S ∈ F} := ⟨⟨hFne.choose, hFne.choose_spec⟩⟩
   have key := empirical_symmetrization (α := Ω) (ι := {S // S ∈ F})
       (μ := P) (P := μ) (n := n)
       (X := fun (i : Fin n) (ξ : Ξ) => X i ξ)
@@ -590,7 +590,7 @@ theorem vc_lln_finset {Ξ : Type*} [MeasurableSpace Ξ]
     ∫ ξ, F.sup' hFne (fun S =>
         |empFrac (fun i : Fin n => X i ξ) S - μ.real S|) ∂P
       ≤ 5400 * Real.sqrt d / Real.sqrt n := by
-  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  have : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
   refine (symmetrization_adapter hXmeas hindep hlaw F hFne hFmeas hn).trans ?_
   set g : Ξ × (Fin n → ℝ) → ℝ := fun p => F.sup' hFne (fun S =>
       |(n : ℝ)⁻¹ * ∑ i : Fin n,

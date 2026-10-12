@@ -143,7 +143,7 @@ theorem WeakConverges.slutsky_shift_of_tendsto
     filter_upwards [h_set_empty] with k hk
     rw [hk]
     simp
-  haveI : IsProbabilityMeasure (ν.map (fun y : E => y - ψDot h)) :=
+  have : IsProbabilityMeasure (ν.map (fun y : E => y - ψDot h)) :=
     (by infer_instance)
   exact WeakConverges.slutsky_of_tendstoInMeasure_dist
     (P := P)

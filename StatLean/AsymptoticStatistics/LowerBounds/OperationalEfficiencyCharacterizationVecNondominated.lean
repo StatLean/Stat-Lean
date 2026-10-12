@@ -288,15 +288,15 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
   let F : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d) := fun n X =>
     Real.sqrt n •
       (T_n n X - ψ ((C.selectedPath z).curve ((Real.sqrt n)⁻¹)))
-  haveI hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
-    letI : IsProbabilityMeasure
+  have hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
+    let : IsProbabilityMeasure
         ((C.selectedPath z).curve ((Real.sqrt n)⁻¹)) :=
       (C.selectedPath z).curve_isProbability _
         (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hFmeas : ∀ n, Measurable (F n) := fun n =>
     by fun_prop
-  haveI hpushProb : ∀ n, IsProbabilityMeasure ((Q n).map (F n)) := fun n =>
+  have hpushProb : ∀ n, IsProbabilityMeasure ((Q n).map (F n)) := fun n =>
     (by infer_instance)
   have hlocal : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (F n)) L := by
@@ -309,7 +309,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
       simpa only [BoundedContinuousFunction.const_apply', integral_const,
         smul_eq_mul, mul_one, probReal_univ] using h
     exact (tendsto_nhds_unique tendsto_const_nhds h').symm
-  letI : IsProbabilityMeasure L :=
+  let : IsProbabilityMeasure L :=
     MeasureTheory.isProbabilityMeasure_iff_real.mpr hLreal
   let μ : ℕ → Measure (EuclideanSpace ℝ (Fin d)) := fun n =>
     (Measure.pi (fun _ : Fin n => P)).map
@@ -317,7 +317,7 @@ theorem hasLimitDistributionAtVec_of_isRegularAtNDVec
   have hμmeas : ∀ n, Measurable
       (fun X : Fin n → Ω => Real.sqrt n • (T_n n X - ψ P)) := fun n =>
     by fun_prop
-  haveI hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
+  have hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
     simp only [μ]
     exact (by infer_instance)
   refine cramerWold_weakConverges_euclidean μ L ?_
@@ -434,8 +434,8 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
       Real.sqrt n •
         (T_n n X - ψ ((C.selectedPath g).curve ((Real.sqrt n)⁻¹)))) := fun n =>
     by fun_prop
-  haveI hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
-    letI : IsProbabilityMeasure
+  have hμprob : ∀ n, IsProbabilityMeasure (μ n) := fun n => by
+    let : IsProbabilityMeasure
         ((C.selectedPath g).curve ((Real.sqrt n)⁻¹)) :=
       (C.selectedPath g).curve_isProbability _
         (inv_nonneg.mpr (Real.sqrt_nonneg _))
@@ -579,11 +579,6 @@ theorem regularVec_of_asymptoticallyLinearAtVecND
       intro n
       apply measure_congr
       filter_upwards [hres n] with X hX
-      change (ε ≤
-        |Real.sqrt n * (Tu n X - ψu P) - (Real.sqrt n)⁻¹ *
-          (∑ j, ((φu : ↥(L2ZeroMean P)) : Lp ℝ 2 P) (X j))|) =
-        (ε ≤ |⟪u, Real.sqrt n • (T_n n X - ψ P) -
-          (Real.sqrt n)⁻¹ • (∑ j, tupleEval P φ (X j))⟫_ℝ|)
       rw [hX]
     simp_rw [hmeasure]
     by_cases hu : ‖u‖ = 0

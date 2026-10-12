@@ -268,7 +268,7 @@ private lemma locObj_tendsto_top (μ : Measure 𝓧) [IsProbabilityMeasure μ] {
     · refine Filter.Tendsto.mono_right ?_ le_sup_left
       exact (Filter.tendsto_atBot_add_const_left atTop c
         Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
-  haveI : (cocompact ℝ).IsCountablyGenerated := by
+  have : (cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   rw [ENNReal.tendsto_nhds_top_iff_nnreal]
   intro N
@@ -407,7 +407,7 @@ private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) 
       hcoer hfin0
   refine ⟨vStar, hvStar_meas, ?_⟩
   filter_upwards [hvStar_min] with z hz w
-  show fObj z (vStar z) ≤ fObj z w
+  change fObj z (vStar z) ≤ fObj z w
   rw [hz]; exact iInf_le _ w
 
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
@@ -604,7 +604,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     · refine Filter.Tendsto.mono_right ?_ le_sup_left
       exact (Filter.tendsto_atBot_add_const_left atTop c
         Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
-  haveI : (cocompact ℝ).IsCountablyGenerated := by
+  have : (cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   have hGtend : Tendsto G (cocompact ℝ) (𝓝 (ENNReal.ofReal M)) := by
     have key := tendsto_lintegral_filter_of_dominated_convergence
@@ -634,7 +634,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
       fun x => ENNReal.ofReal (g x) := by
     unfold locationBase
     refine withDensity_congr_ae (hfg.mono fun x hx => ?_)
-    show ENNReal.ofReal (f x) = ENNReal.ofReal (g x)
+    change ENNReal.ofReal (f x) = ENNReal.ofReal (g x)
     rw [hx]
   have hmass1 : ∫⁻ x, ENNReal.ofReal (g x) ∂(volume : Measure (Fin 1 → ℝ)) = 1 := by
     have h := measure_univ (μ := locationBase f)
@@ -710,7 +710,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
   -- (7) assemble
   refine ⟨fun x => x 0 - c₁, hπ.sub_const c₁, ?_, ?_⟩
   · intro a x
-    show (x + a • (1 : Fin 1 → ℝ)) 0 - c₁ = (x 0 - c₁) + a
+    change (x + a • (1 : Fin 1 → ℝ)) 0 - c₁ = (x 0 - c₁) + a
     simp only [Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
     ring
   · intro δ' _ hδ'eq
@@ -725,7 +725,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     have hrisk : locRisk f ρ δ' = G c := by
       unfold locRisk
       exact lintegral_congr fun x => by rw [hrep x]
-    show G c₁ ≤ locRisk f ρ δ'
+    change G c₁ ≤ locRisk f ρ δ'
     rw [hrisk]
     exact hc₁ _
 

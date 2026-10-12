@@ -77,7 +77,7 @@ private lemma cell_pairwiseDisjoint (X : Ω → 𝒳) (F : Finset 𝒳) :
 private lemma armCell_pairwiseDisjoint (Z : Ω → Bool) (X : Ω → 𝒳) (z : Bool) (F : Finset 𝒳) :
     (F : Set 𝒳).PairwiseDisjoint (armCell Z X z) := by
   intro a _ b _ hab
-  simp only [Function.onFun, Set.disjoint_left, armCell, cell, Set.mem_inter_iff,
+  simp only [Function.onFun, Set.disjoint_left, armCell, Set.mem_inter_iff,
     Set.mem_preimage, Set.mem_singleton_iff]
   rintro ω ⟨-, ha⟩ ⟨-, hb⟩
   exact hab (ha.symm.trans hb)
@@ -199,7 +199,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
     have hsub : ∀ x ∈ Finset.univ.filter fun x => s x = k, cell X x ⊆ subclass X s k := by
       intro x hx ω hω
       have hXω : X ω = x := hω
-      show s (X ω) = k
+      change s (X ω) = k
       rw [hXω]
       exact (Finset.mem_filter.mp hx).2
     rw [h0, ENNReal.toReal_zero, zero_mul]
@@ -231,7 +231,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
       cases z with
       | true =>
           refine ⟨propensity μ Z X x₀, he0.1, fun x hx => ?_⟩
-          show propensity μ Z X x = propensity μ Z X x₀
+          change propensity μ Z X x = propensity μ Z X x₀
           exact hprop x hx
       | false =>
           refine ⟨1 - propensity μ Z X x₀, by linarith [he0.2], fun x hx => ?_⟩

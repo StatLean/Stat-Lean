@@ -212,7 +212,7 @@ private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q 
     rw [armaPi_conv_armaPsi]
     split_ifs <;> norm_num
   rw [armaContrastVar, tsum_congr hterm]
-  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
+  simp
 
 /-- **The quadratic-form LLN at the truth**: `T⁻¹ xᵀ Γ_T(θ₀)⁻¹ x →p σ²`.
 

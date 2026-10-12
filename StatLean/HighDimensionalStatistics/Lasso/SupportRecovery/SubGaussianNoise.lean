@@ -287,7 +287,7 @@ theorem lasso_support_recovery_subgaussian
           Real.sqrt σ2 / Real.sqrt cmin * (Real.sqrt (2 * Real.log (S.card) / n) + δ)
           + matLinftyNorm (gramInvNorm X S) * lam} := by
   classical
-  haveI : IsProbabilityMeasure μ := hw_indep.isProbabilityMeasure
+  have : IsProbabilityMeasure μ := hw_indep.isProbabilityMeasure
   have hn_pos : (0 : ℝ) < n := by exact_mod_cast hn
   have hne : (n : ℝ) ≠ 0 := hn_pos.ne'
   have hcoer : ∀ v : EuclideanSpace ℝ {x // x ∈ S},
@@ -295,9 +295,9 @@ theorem lasso_support_recovery_subgaussian
   have hw_int : ∀ i, Integrable (w i) μ := fun i => by
     have h := (isSubGaussian_iff.mp (hw_sg i)).integrable
     simp only [hw_zero i, sub_zero] at h; exact h
-  haveI : Nonempty {x // x ∈ S} := by
+  have : Nonempty {x // x ∈ S} := by
     obtain ⟨a, ha⟩ := Finset.card_pos.mp hs; exact ⟨⟨a, ha⟩⟩
-  haveI : Nonempty {x // x ∈ Sᶜ} := by
+  have : Nonempty {x // x ∈ Sᶜ} := by
     have hcpos : 0 < Sᶜ.card := by rw [Finset.card_compl, Fintype.card_fin]; omega
     obtain ⟨a, ha⟩ := Finset.card_pos.mp hcpos; exact ⟨⟨a, ha⟩⟩
   set noiseVec : Ω → EuclideanSpace ℝ (Fin n) := fun ω => WithLp.toLp 2 (fun i => w i ω)

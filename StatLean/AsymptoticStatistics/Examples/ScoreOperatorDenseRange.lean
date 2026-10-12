@@ -799,7 +799,7 @@ theorem exists_denseRangeScoreWitness :
     @ScoreOperator.mk ℕ inferInstance ↥(L2ZeroMean halfGeometricP)
       inferInstance inferInstance halfGeometricL2ZeroMean_complete
       halfGeometricP halfGeometricP_isProbability Amap
-  letI : CompleteSpace ↥(L2ZeroMean halfGeometricP) :=
+  let : CompleteSpace ↥(L2ZeroMean halfGeometricP) :=
     (L2ZeroMean_isClosed halfGeometricP).isComplete.completeSpace_coe
   let hg : ∀ f : ↥(L2ZeroMean halfGeometricP),
       IsEssBoundedMixtureScore (Amap f) :=
@@ -1289,7 +1289,7 @@ private noncomputable def gaussianLocationPath (b : ℝ) : QMDPath standardGauss
 private lemma gaussian_sum_law (n : ℕ) (μ : ℝ) :
     (Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
         (fun X => ∑ i, X i) = gaussianReal (n * μ) n := by
-  letI : IsProbabilityMeasure
+  let : IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
         (fun X => ∑ i, X i)) :=
     (by infer_instance)
@@ -1368,9 +1368,9 @@ structure RawRegularityWitness where
 discharges satisfiability of the raw regularity predicate. -/
 theorem exists_rawRegularityWitness :
     Nonempty RawRegularityWitness := by
-  letI : IsClosed (L2ZeroMean standardGaussian : Set (Lp ℝ 2 standardGaussian)) :=
+  let : IsClosed (L2ZeroMean standardGaussian : Set (Lp ℝ 2 standardGaussian)) :=
     L2ZeroMean_isClosed standardGaussian
-  letI : CompleteSpace ↥(L2ZeroMean standardGaussian) := inferInstance
+  let : CompleteSpace ↥(L2ZeroMean standardGaussian) := inferInstance
   let Amap : ℝ →L[ℝ] ↥(L2ZeroMean standardGaussian) :=
     ContinuousLinearMap.toSpanSingleton ℝ gaussianLocationScore
   let A : ScoreOperator ℝ standardGaussian := ⟨Amap⟩

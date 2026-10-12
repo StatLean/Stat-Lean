@@ -94,7 +94,7 @@ theorem iInf_eq_iInf_rat_of_continuous
     (hg : Continuous g) :
     (⨅ x : ℝ, g x) = ⨅ q : ℚ, g (q : ℝ) := by
   refine le_antisymm (le_iInf fun q => iInf_le _ _) (le_iInf fun x => ?_)
-  haveI hnb : (𝓝[Set.range ((↑) : ℚ → ℝ)] x).NeBot :=
+  have hnb : (𝓝[Set.range ((↑) : ℚ → ℝ)] x).NeBot :=
     mem_closure_iff_nhdsWithin_neBot.mp (Rat.denseRange_cast x)
   have htend : Tendsto g (𝓝[Set.range ((↑) : ℚ → ℝ)] x) (𝓝 (g x)) :=
     (hg.tendsto x).mono_left nhdsWithin_le_nhds
@@ -266,10 +266,10 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
       have hSuniv : S ω = Set.univ := by
         ext v
         refine ⟨fun _ => Set.mem_univ _, fun _ => ?_⟩
-        show f ω v = M ω
+        change f ω v = M ω
         exact le_antisymm (by rw [hMtop]; exact le_top) (iInf_le _ v)
       have hu0 : u ω = 0 := by
-        show sInf (S ω) = 0
+        change sInf (S ω) = 0
         rw [hSuniv]
         exact Real.sInf_of_not_bddBelow
           (not_bddBelow_iff.mpr fun x => ⟨x - 1, Set.mem_univ _, by linarith⟩)
@@ -290,7 +290,7 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
       · rintro (⟨hcontra, _⟩ | ⟨_, hbi⟩)
         · exact absurd hcontra hMtop
         · obtain ⟨w, hwq, hfw⟩ := exists_argmin_Iic (hcont ω) (hcoer ω) (q : ℝ)
-          have hwS : w ∈ S ω := by show f ω w = M ω; rw [hfw, hbi]
+          have hwS : w ∈ S ω := by change f ω w = M ω; rw [hfw, hbi]
           exact le_trans (csInf_le (hbddS ω hlt) hwS) hwq
   -- measurability of the selection
   refine ⟨u, ?_, fun ω => (hattain ω)⟩
@@ -412,7 +412,7 @@ private theorem convex_iInf_le_aux {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ�
     refine hconv.trans_eq ?_
     simp only [hB, hα, hβ, ENNReal.smul_def, smul_eq_mul]
     rfl
-  haveI hne : (𝓝[Set.Ioo (min r w) (max r w) ∩ Set.range ((↑) : ℚ → ℝ)] w).NeBot := by
+  have hne : (𝓝[Set.Ioo (min r w) (max r w) ∩ Set.range ((↑) : ℚ → ℝ)] w).NeBot := by
     apply mem_closure_iff_nhdsWithin_neBot.mp
     have hlt : min r w < max r w := min_lt_max.mpr (Ne.symm hwr)
     have hdense := Rat.denseRange_cast.open_subset_closure_inter
@@ -655,10 +655,10 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
     · have hSuniv : S ω = Set.univ := by
         ext v
         refine ⟨fun _ => Set.mem_univ _, fun _ => ?_⟩
-        show f ω v = M ω
+        change f ω v = M ω
         exact le_antisymm (by rw [hMtop]; exact le_top) (hMle ω v)
       have hu0 : u ω = 0 := by
-        show sInf (S ω) = 0
+        change sInf (S ω) = 0
         rw [hSuniv]
         exact Real.sInf_of_not_bddBelow
           (not_bddBelow_iff.mpr fun x => ⟨x - 1, Set.mem_univ _, by linarith⟩)
@@ -679,7 +679,7 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
       · rintro (⟨hcontra, _⟩ | ⟨_, hbi⟩)
         · exact absurd hcontra hMtop
         · obtain ⟨w, hwq, hfw⟩ := exists_argmin_Iic_lsc (hlsc ω) (hcoer ω) (q : ℝ)
-          have hwS : w ∈ S ω := by show f ω w = M ω; rw [hfw, hbi]
+          have hwS : w ∈ S ω := by change f ω w = M ω; rw [hfw, hbi]
           exact le_trans (csInf_le (hbddS ω hlt) hwS) hwq
   refine ⟨u, ?_, fun ω => (hattain ω)⟩
   apply measurable_of_Iic

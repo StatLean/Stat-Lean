@@ -1729,7 +1729,7 @@ theorem sqrtScaled_shell_modulus_bound
               shellPsi (scaledIncrement m θ₀ n) 0 θ ⟨0, hd⟩
                 = fun ω => scaledIncrement m θ₀ n θ ω := by
             intro θ; funext ω
-            simp only [shellPsi, scaledIncrement_apply_zero, Pi.zero_apply, sub_zero]
+            simp only [shellPsi, scaledIncrement_apply_zero, sub_zero]
           -- `Cn ⊆ localizedDifferenceClass F_n P s`.
           have hCn_loc : Cn ⊆ localizedDifferenceClass
               (paramClass (shellPsi (scaledIncrement m θ₀ n) 0) (Metric.ball 0 R)) P s := by

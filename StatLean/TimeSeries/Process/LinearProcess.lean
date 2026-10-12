@@ -538,9 +538,9 @@ theorem IsLinearProcessOf.isStrictlyStationary [IsProbabilityMeasure μ] {ψ : �
   have hXm : ∀ c : ℤ, Measurable fun ω (i : Fin n) => X (t i + c) ω :=
     fun c => Measurable.of_eval fun i => hmeas _
   obtain ⟨ns, hns⟩ := exists_subseq_window hX hε.measurable hmeas t k
-  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + k) ω) :=
+  have : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + k) ω) :=
     (by infer_instance)
-  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + 0) ω) :=
+  have : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + 0) ω) :=
     (by infer_instance)
   have hgoal : (μ.map fun ω (i : Fin n) => X (t i + k) ω)
       = μ.map fun ω (i : Fin n) => X (t i + 0) ω := by

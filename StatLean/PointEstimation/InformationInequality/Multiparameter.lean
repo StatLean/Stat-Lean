@@ -216,7 +216,7 @@ theorem multiparameter_cramer_rao {s : ℕ} (M : ParametricFamily 𝓧 (Euclidea
     -- USER-INPUT: those derivatives are obtained by differentiating under the integral sign
     (hswap : ∀ i, α i = ∫ x, δ x * scoreVec M θ x i * M.density θ x ∂μ) :
     α ⬝ᵥ ((infoMatrix M μ θ)⁻¹ *ᵥ α) ≤ variance δ (M.toMeasure μ θ) := by
-  haveI hP : IsProbabilityMeasure (M.toMeasure μ θ) := by
+  have hP : IsProbabilityMeasure (M.toMeasure μ θ) := by
     refine ⟨?_⟩
     rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
       withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,

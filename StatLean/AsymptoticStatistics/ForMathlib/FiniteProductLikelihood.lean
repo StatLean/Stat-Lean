@@ -61,7 +61,7 @@ theorem productMeasureOfDensity_isProbabilityMeasure
     (hp1 : ∫ x, p x ∂(mu) = 1) :
     IsProbabilityMeasure (productMeasureOfDensity mu p N) := by
   have hpE : Measurable (ENNReal.ofReal ∘ p) := hpm.ennreal_ofReal
-  letI : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) := by
+  let : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) := by
     refine ⟨?_⟩
     rw [← lintegral_one,
       lintegral_withDensity_eq_lintegral_mul _ hpE measurable_const]
@@ -158,7 +158,7 @@ private lemma expLogLikelihood_lintegral_eq (mu : Measure X) (p q : X → ℝ) (
   let e : X → ℝ≥0∞ := fun x => ENNReal.ofReal (Real.exp (Real.log (q x / p x)))
   have he : Measurable e := ((hqm.div hpm).log.exp).ennreal_ofReal
   have hpE : Measurable (ENNReal.ofReal ∘ p) := hpm.ennreal_ofReal
-  letI : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) := by
+  let : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) := by
     refine ⟨?_⟩
     rw [← lintegral_one, lintegral_withDensity_eq_lintegral_mul _ hpE measurable_const]
     simp only [Pi.mul_apply, mul_one, Function.comp_apply]
@@ -256,9 +256,9 @@ theorem positiveRectangle_restrict_eq
   have hG : MeasurableSet (commonPositiveSet p q) := by
     exact (measurableSet_lt measurable_const hpm).inter
       (measurableSet_lt measurable_const hqm)
-  letI : IsFiniteMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) :=
+  let : IsFiniteMeasure (mu.withDensity (ENNReal.ofReal ∘ p)) :=
     isFiniteMeasure_withDensity_ofReal hpi.hasFiniteIntegral
-  letI : IsFiniteMeasure (mu.withDensity (ENNReal.ofReal ∘ q)) :=
+  let : IsFiniteMeasure (mu.withDensity (ENNReal.ofReal ∘ q)) :=
     isFiniteMeasure_withDensity_ofReal hqi.hasFiniteIntegral
   have htilt :
       (mu.withDensity (ENNReal.ofReal ∘ p)).withDensity e =
@@ -281,7 +281,7 @@ theorem positiveRectangle_restrict_eq
     rw [expLogFactor_apply p q hp0 hq0]
     obtain ⟨hp, hq⟩ := hx
     rw [ite_eq_right (ne_of_gt hp), ite_eq_right (ne_of_gt hq)]
-  haveI : IsFiniteMeasure ((mu.withDensity (ENNReal.ofReal ∘ p)).withDensity e) := by
+  have : IsFiniteMeasure ((mu.withDensity (ENNReal.ofReal ∘ p)).withDensity e) := by
     rw [htilt]
     exact isFiniteMeasure_withDensity_ofReal
       (expLogFactor_integrable p q mu hpm hqm hp0 hq0 hpi hqi).hasFiniteIntegral
@@ -329,7 +329,7 @@ theorem alternative_positiveRectangle_compl_le
         exact (measurableSet_lt measurable_const hpm).inter
           (measurableSet_lt measurable_const hqm)
       have hP0 : MeasurableSet {x | p x = 0} := hpm (measurableSet_singleton 0)
-      letI : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ q)) := by
+      let : IsProbabilityMeasure (mu.withDensity (ENNReal.ofReal ∘ q)) := by
         refine ⟨?_⟩
         rw [← lintegral_one,
           lintegral_withDensity_eq_lintegral_mul _ hqE measurable_const]
@@ -443,12 +443,12 @@ theorem finiteProduct_expLog_comparison
     simpa only [P] using productMeasureOfDensity_isProbabilityMeasure mu p N hpm hp0 hpi hp1
   have hQprob : IsProbabilityMeasure Q := by
     simpa only [Q] using productMeasureOfDensity_isProbabilityMeasure mu q N hqm hq0 hqi hq1
-  letI : IsProbabilityMeasure P := hPprob
-  letI : IsProbabilityMeasure Q := hQprob
+  let : IsProbabilityMeasure P := hPprob
+  let : IsProbabilityMeasure Q := hQprob
   have hTfinite : IsFiniteMeasure T := by
     simpa only [T, Function.comp_apply] using!
       isFiniteMeasure_withDensity_ofReal hfint.hasFiniteIntegral
-  letI : IsFiniteMeasure T := hTfinite
+  let : IsFiniteMeasure T := hTfinite
   have hrestrict : Q.restrict G = T.restrict G := by
     simpa only [Q, T, P, G, f, Function.comp_apply] using!
       positiveRectangle_restrict_eq mu p q N hpm hqm hp0 hq0 hpi hqi

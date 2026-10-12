@@ -259,7 +259,7 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
     {u : ℝ} (hu : 0 ≤ u) :
     μ {ω | u ≤ ksPlus p ω} ≤ ENNReal.ofReal ((n : ℝ) * Real.exp (-2 * n * u ^ 2)) := by
   -- Step 1: the sup event lies in the union of the per-order-statistic events.
-  haveI hne : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  have hne : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
   have hsubU : {ω | u ≤ ksPlus p ω}
       ⊆ ⋃ i : Fin n, {ω | u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i} := by
     intro ω hω

@@ -100,9 +100,9 @@ theorem infinite_of_not_finiteDimensional (h : ¬ FiniteDimensional ℝ H)
   intro hfin
   apply h
   -- `Finite s ⟹ range b finite ⟹ span (range b) finite-dim and closed ⟹ = ⊤`
-  haveI : Finite s := hfin
+  have : Finite s := hfin
   have hrangefin : (Set.range b).Finite := Set.finite_range b
-  haveI : FiniteDimensional ℝ ↥(Submodule.span ℝ (Set.range b)) :=
+  have : FiniteDimensional ℝ ↥(Submodule.span ℝ (Set.range b)) :=
     FiniteDimensional.span_of_finite ℝ hrangefin
   have hclosed : (Submodule.span ℝ (Set.range b)).topologicalClosure
       = Submodule.span ℝ (Set.range b) :=
@@ -110,7 +110,7 @@ theorem infinite_of_not_finiteDimensional (h : ¬ FiniteDimensional ℝ H)
   have htop : Submodule.span ℝ (Set.range b) = ⊤ := by
     rw [← hclosed, b.dense_span]
   -- `H` is the finite-dimensional span
-  haveI : FiniteDimensional ℝ ↥(⊤ : Submodule ℝ H) := htop ▸ inferInstance
+  have : FiniteDimensional ℝ ↥(⊤ : Submodule ℝ H) := htop ▸ inferInstance
   exact Module.Finite.equiv (Submodule.topEquiv (R := ℝ) (M := H))
 
 /-- **A separable infinite-dimensional real Hilbert space admits a `ℕ`-indexed
@@ -128,8 +128,8 @@ theorem exists_hilbertBasis_nat [CompleteSpace H] [TopologicalSpace.SeparableSpa
     (hH : ¬ FiniteDimensional ℝ H) : Nonempty (HilbertBasis ℕ ℝ H) := by
   classical
   obtain ⟨s, b, hb⟩ := exists_hilbertBasis ℝ H
-  haveI : Countable s := countable_of_separable_index b
-  haveI : Infinite s := infinite_of_not_finiteDimensional hH b
+  have : Countable s := countable_of_separable_index b
+  have : Infinite s := infinite_of_not_finiteDimensional hH b
   -- reindex `s ≃ ℕ`
   obtain ⟨e0⟩ : Nonempty (s ≃ ℕ) := nonempty_equiv_of_countable
   let e : ℕ ≃ s := e0.symm

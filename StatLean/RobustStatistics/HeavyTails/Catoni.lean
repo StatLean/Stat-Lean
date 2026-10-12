@@ -170,7 +170,7 @@ def IsCatoniEstimate {n : ℕ} (α : ℝ) (x : Fin n → ℝ) (yhat : ℝ) : Pro
 observation), being a sum of strictly decreasing terms. -/
 theorem catoniR_strictAnti {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
     (x : Fin n → ℝ) : StrictAnti (catoniR α x) := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   intro a b hab
   refine Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun i _ => ?_
   exact catoniPsi_strictMono (mul_lt_mul_of_pos_left (by linarith) hα)
@@ -186,7 +186,7 @@ is a continuous strictly decreasing bijection-onto-a-neighborhood-of-0 (it inher
 `±∞` limits of `ψ`), so it has exactly one root. -/
 theorem existsUnique_isCatoniEstimate {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
     (x : Fin n → ℝ) : ∃! yhat, IsCatoniEstimate α x yhat := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   -- A bracket built from the extreme observations: below `min xᵢ` every score is `> 0`,
   -- above `max xᵢ` every score is `< 0`. (Cheaper than transporting the `±∞` limits.)
   obtain ⟨i₀, hi₀⟩ := Finite.exists_min x

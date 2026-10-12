@@ -125,14 +125,14 @@ theorem totallyBounded_modulusBall {F : Set (Ω → ℝ)} {P : Measure Ω}
   by_cases hne : Nonempty ↥F
   swap
   · -- Empty index: `ℓ∞(∅)` is a subsingleton; a singleton net `{0}` covers everything.
-    haveI hempty : IsEmpty ↥F := not_nonempty_iff.1 hne
-    haveI hsub : Subsingleton (LinfF F) :=
+    have hempty : IsEmpty ↥F := not_nonempty_iff.1 hne
+    have hsub : Subsingleton (LinfF F) :=
       ⟨fun f g => lp.ext (Subsingleton.elim _ _)⟩
     refine Metric.totallyBounded_iff.2 (fun ε hε => ?_)
     refine ⟨{(0 : LinfF F)}, Set.finite_singleton _, fun z _ => ?_⟩
     refine Set.mem_iUnion₂.2 ⟨(0 : LinfF F), rfl, ?_⟩
     rw [Metric.mem_ball, Subsingleton.elim z (0 : LinfF F), dist_self]; exact hε
-  haveI : Nonempty ↥F := hne
+  have : Nonempty ↥F := hne
   rw [Metric.totallyBounded_iff]
   intro ε hε
   -- Choose `k` with `a k < ε/5`.
@@ -147,7 +147,7 @@ theorem totallyBounded_modulusBall {F : Set (Ω → ℝ)} {P : Measure Ω}
   -- Lift each net point to the subtype `↥F`.
   -- Index type for `S`.
   let ι := {x : Ω → ℝ // x ∈ S}
-  haveI : Fintype ι := FinsetCoe.fintype S
+  have : Fintype ι := FinsetCoe.fintype S
   -- The coordinate-evaluation tuple of a path `z` over the net `S`.
   let Φ : LinfF F → (ι → ℝ) := fun z i => z ⟨(i : Ω → ℝ), hS_sub i.2⟩
   -- The compact box `[-M, M]^ι` in `ι → ℝ`.
@@ -317,13 +317,13 @@ theorem gpPath_mem_modulusBall_of_avoid
       ∈ modulusBall P F M (fun k => (2 : ℝ) ^ (-((J + k : ℕ) : ℤ)))
           (fun k => a (J + k) + 2 * ∑' i : ℕ, a (J + k + i)) := by
   classical
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   set X := gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep with hXdef
   set pe := pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω with hpedef
   -- First-countability + Fréchet-Urysohn of the `distL2` pseudometric on `↥F`.
-  haveI hfc : @FirstCountableTopology ↥F inst.toUniformSpace.toTopologicalSpace :=
+  have hfc : @FirstCountableTopology ↥F inst.toUniformSpace.toTopologicalSpace :=
     @UniformSpace.firstCountableTopology ↥F inst.toUniformSpace inferInstance
-  haveI hfu : @FrechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace :=
+  have hfu : @FrechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace :=
     @FirstCountableTopology.frechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace hfc
   -- `pe` is (uniformly) continuous on `↥F` (good set).
   have huc := uniformContinuous_pathExtend_of_good hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω
@@ -480,7 +480,7 @@ theorem pBridge_tight :
       ({gpBridgeMeasure hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne} :
         Set (Measure (LinfF F))) := by
   classical
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- The Dudley dyadic net of `(↥F, distL2 P)` — *the same net the skeleton uses*
   -- (`gpSkeletonNet`), so `gpSkeleton = ⋃ j, net j` holds definitionally.
   set net : ℕ → Finset ↥F := gpSkeletonNet hF_meas hF_ent hF_ne with hnetdef

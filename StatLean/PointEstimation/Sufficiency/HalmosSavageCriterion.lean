@@ -88,10 +88,10 @@ theorem rnDeriv_comp_of_isSufficient (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     ∀ θ, ∃ g : S → ℝ≥0∞, Measurable g ∧ (P θ).rnDeriv ν =ᵐ[ν] fun x => g (T x) := by
-  haveI : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
+  have : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
   intro θ
   set gmap := (P θ).map T with hgmap
-  haveI : IsProbabilityMeasure gmap := (by infer_instance)
+  have : IsProbabilityMeasure gmap := (by infer_instance)
   have hac : gmap ≪ ν.map T := (hdom θ).map hT
   have hPmapwd : (ν.map T).withDensity (gmap.rnDeriv (ν.map T)) = gmap :=
     Measure.withDensity_rnDeriv_eq gmap (ν.map T) hac
@@ -148,7 +148,7 @@ theorem isSufficient_of_rnDeriv_comp (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- USER-INPUT: the densities factor through `T`
     (hfac : ∀ θ, ∃ g : S → ℝ≥0∞, Measurable g ∧ (P θ).rnDeriv ν =ᵐ[ν] fun x => g (T x)) :
     IsSufficient P T := by
-  haveI : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
+  have : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
   intro A hA
   have hmaple : (ν.restrict A).map T ≤ ν.map T :=
     Measure.map_mono Measure.restrict_le_self hT

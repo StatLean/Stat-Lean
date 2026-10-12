@@ -385,7 +385,7 @@ theorem mem_range_adjoint_of_differentiable
   have hL2 : CompleteSpace ↥(L2ZeroMean P) :=
     (AsymptoticStatistics.Core.Hilbert.L2ZeroMean_isClosed P).completeSpace_coe
   -- Closed range ⟹ the score-range subspace is complete, so Riesz applies.
-  haveI hcomplete : CompleteSpace ↥(A.toCLM.range) :=
+  have hcomplete : CompleteSpace ↥(A.toCLM.range) :=
     completeSpace_coe_iff_isComplete.mpr h_closed.isComplete
   obtain ⟨dψ, h_dψ⟩ := h_diff
   -- Riesz representer `y₀ ∈ range A` of the continuous functional `dψ`.

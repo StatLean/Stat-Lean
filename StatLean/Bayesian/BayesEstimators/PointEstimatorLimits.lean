@@ -234,12 +234,12 @@ theorem bpe_tight
   -- rules out
   -- `‖√n(Tₙ − θ₀)‖ ≥ K := max (5a) (3ρ)`.
   classical
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   intro ε hε
   rcases isEmpty_or_nonempty (Fin k) with hk | hk
   · -- degenerate parameter space: the standardized estimator is identically `0`
-    haveI := hk
+    have := hk
     refine ⟨1, one_pos, Filter.Eventually.of_forall fun n => ?_⟩
     have hempty : {ω : Fin n → 𝓧 | (1 : ℝ) ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} = ∅ := by
       ext ω
@@ -363,14 +363,14 @@ theorem bpe_tight
     set τ : EuclideanSpace ℝ (Fin k) := Real.sqrt n • (T n ω - θ₀) with hτdef
     set Δ : EuclideanSpace ℝ (Fin k) := bvmEffScore J sc n ω with hΔdef
     set Post : Measure (EuclideanSpace ℝ (Fin k)) := bvmLocalPosterior κ π θ₀ n ω with hPostdef
-    haveI hPostP : IsProbabilityMeasure Post := by rw [hPostdef]; infer_instance
+    have hPostP : IsProbabilityMeasure Post := by rw [hPostdef]; infer_instance
     have hΔC : ‖Δ‖ ≤ C := by
       rw [hΔdef, hAeq n ω, hCdef]
       exact (A.le_opNorm _).trans (mul_le_mul_of_nonneg_left hb1 (norm_nonneg A))
     have hτpos : 0 < ‖τ‖ := lt_of_lt_of_le hKpos hω
     -- the posterior mass of the small ball is bounded below
     have hPostB : p₀ ≤ Post Bs := by
-      haveI hGP : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+      have hGP : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
         change IsProbabilityMeasure (multivariateGaussian _ _); infer_instance
       have hGB : q₀ ≤ bvmGaussian J sc n ω Bs := hc₀ Δ hΔC Bs Set.Subset.rfl hBmeas
       have htvc : tvDist (bvmGaussian J sc n ω) Post = bvmTV κ π θ₀ J sc n ω :=
@@ -556,7 +556,7 @@ theorem bayes_estimator_asymptotics
         atTop (𝓝 0) := by
   classical
   intro ε hε
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hAdef
@@ -702,9 +702,9 @@ theorem bayes_estimator_weakConverges
         (fun ω => Real.sqrt n • (T n ω - θ₀)))
       (multivariateGaussian u₀ J⁻¹) := by
   classical
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
-  haveI hGprob : IsProbabilityMeasure (multivariateGaussian u₀ J⁻¹) := inferInstance
+  have hGprob : IsProbabilityMeasure (multivariateGaussian u₀ J⁻¹) := inferInstance
   -- measurability of the score sums and of the estimators
   have hscsum : ∀ n : ℕ, Measurable (scoreSum sc n) := by
     intro n

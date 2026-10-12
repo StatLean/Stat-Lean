@@ -82,7 +82,7 @@ theorem posterior_ae_eq_of_withDensity_eq_smul
   filter_upwards [posterior_eq_withDensity_likelihood_div_predictive hp hκ,
     predictiveDensity_pos_ae hp hκ, predictiveDensity_lt_top_ae_comp hp hκ]
     with x hx hpos htop
-  haveI := hρ x
+  have := hρ x
   have hm : predictiveDensity p π x = c x := by
     have hu := congrArg (fun μ => μ Set.univ) (h x)
     simp only [withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,

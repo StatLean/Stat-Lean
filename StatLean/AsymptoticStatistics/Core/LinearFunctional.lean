@@ -165,7 +165,7 @@ theorem meanFunctional_isTVFrechetExpansion
   have hr_pt : ∀ t ω, r t ω = s t ω - s 0 ω - (t / 2) * g ω * s 0 ω := fun t ω => rfl
   -- The uniform bound on `a`, with `0 ≤ C`.
   obtain ⟨C, hC⟩ := ha_bdd
-  haveI hΩ : Nonempty Ω := MeasureTheory.nonempty_of_isProbabilityMeasure P
+  have hΩ : Nonempty Ω := MeasureTheory.nonempty_of_isProbabilityMeasure P
   have hC_nn : 0 ≤ C := le_trans (abs_nonneg (a (Classical.arbitrary Ω))) (hC _)
   -- Bounded-times-L² is L² (the dominating measure need not be finite).
   have memLp_bdd : ∀ {h : Ω → ℝ}, MemLp h 2 γ.dominating →
@@ -177,7 +177,7 @@ theorem meanFunctional_isTVFrechetExpansion
     rw [norm_mul]
     exact mul_le_mul_of_nonneg_right ((Real.norm_eq_abs _).le.trans (hC ω)) (norm_nonneg _)
   -- Standing L² memberships.
-  haveI : IsProbabilityMeasure (γ.curve 0) := h_prob 0
+  have : IsProbabilityMeasure (γ.curve 0) := h_prob 0
   have hs0 : MemLp (s 0) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac 0)
   have hgs0 : MemLp (fun ω => g ω * s 0 ω) 2 γ.dominating :=
@@ -202,7 +202,7 @@ theorem meanFunctional_isTVFrechetExpansion
   -- === Square-root density memberships (all t) ===
   have hst : ∀ t, MemLp (s t) 2 γ.dominating := by
     intro t
-    haveI := h_prob t
+    have := h_prob t
     exact AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac t)
   have hdiff : ∀ t, MemLp (fun ω => s t ω - s 0 ω) 2 γ.dominating := fun t => (hst t).sub hs0
   -- Pointwise `(s t ω)² = (rnDeriv).toReal`, used in the bridges.
@@ -211,7 +211,7 @@ theorem meanFunctional_isTVFrechetExpansion
   -- === RN-derivative bridges: ∫ φ dQ = ∫ φ · (√ dQ/dμ)² dμ ===
   have hbridge : ∀ t, ∫ ω, a ω ∂γ.curve t = ∫ ω, a ω * s t ω ^ 2 ∂γ.dominating := by
     intro t
-    haveI := h_prob t
+    have := h_prob t
     rw [AsymptoticStatistics.ForMathlib.RnDerivSqrt.integral_eq_integral_mul_rnDeriv_of_ac
         (h_ac t) a]
     refine integral_congr_ae (Filter.Eventually.of_forall (fun ω => ?_))

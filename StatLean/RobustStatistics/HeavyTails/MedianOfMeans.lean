@@ -70,7 +70,7 @@ independent under the pushforward `μ.map Y`, then `f ∘ Y` is independent unde
 private lemma iIndepFun_comp_left {Ω' : Type*} [MeasurableSpace Ω'] {ι : Type*} [Fintype ι]
     {Y : Ξ → Ω'} (hY : Measurable Y) {f : ι → Ω' → ℝ} (hf : ∀ i, Measurable (f i))
     (h : iIndepFun f (μprob.map Y)) : iIndepFun (fun i ξ => f i (Y ξ)) μprob := by
-  haveI : IsProbabilityMeasure (μprob.map Y) := (by infer_instance)
+  have : IsProbabilityMeasure (μprob.map Y) := (by infer_instance)
   rw [iIndepFun_iff_map_fun_eq_pi_map (f := fun i ξ => f i (Y ξ))
     fun i => ((hf i).comp hY).aemeasurable]
   rw [iIndepFun_iff_map_fun_eq_pi_map fun i => (hf i).aemeasurable] at h
@@ -178,9 +178,9 @@ theorem iIndepFun_blockMean {k m : ℕ} {X : Fin k → Fin m → Ξ → ℝ}
     (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob) :
     iIndepFun (fun j ξ => sampleMean (fun i => X j i ξ)) μprob := by
   classical
-  haveI hνblock : ∀ (j : Fin k) (i : Fin m), IsProbabilityMeasure (μprob.map (X j i)) :=
+  have hνblock : ∀ (j : Fin k) (i : Fin m), IsProbabilityMeasure (μprob.map (X j i)) :=
     fun j i => (by infer_instance)
-  haveI hνprob : ∀ q : Fin k × Fin m, IsProbabilityMeasure (μprob.map (X q.1 q.2)) :=
+  have hνprob : ∀ q : Fin k × Fin m, IsProbabilityMeasure (μprob.map (X q.1 q.2)) :=
     fun q => hνblock q.1 q.2
   have hYmeas : Measurable fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ :=
     Measurable.of_eval fun q => hX_meas q.1 q.2

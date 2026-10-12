@@ -398,7 +398,7 @@ theorem rademacherSup_coe_finset
       ENNReal.ofReal
         (⨆ f : {f // f ∈ S},
           |rademacherAverage n X ε f|) := by
-  letI : Nonempty {f // f ∈ S} := hS.coe_sort
+  let : Nonempty {f // f ∈ S} := hS.coe_sort
   unfold rademacherSup supNormOver
   apply le_antisymm
   · refine iSup_le fun f => iSup_le fun hf => ?_
@@ -425,7 +425,7 @@ theorem conditionalRademacherSup_finset_le
   rcases S.eq_empty_or_nonempty with rfl | hS
   · simp
   · unfold conditionalRademacherSup
-    letI : Nonempty {f // f ∈ S} := hS.coe_sort
+    let : Nonempty {f // f ∈ S} := hS.coe_sort
     rw [show (fun ε => rademacherSup (S : Set (Ω → ℝ)) n X ε) =
         fun ε => ENNReal.ofReal
           (⨆ f : {f // f ∈ S}, |rademacherAverage n X ε f|) by

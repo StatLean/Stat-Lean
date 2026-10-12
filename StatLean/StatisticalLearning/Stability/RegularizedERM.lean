@@ -52,7 +52,7 @@ theorem stronglyConvexWith_smul_norm_sq (hlam : 0 ≤ lam) :
     have ha' : a = 1 - b := by linarith
     rw [ha']
     ring
-  show lam * ‖a • w + b • u‖ ^ 2 ≤
+  change lam * ‖a • w + b • u‖ ^ 2 ≤
     a * (lam * ‖w‖ ^ 2) + b * (lam * ‖u‖ ^ 2) - 2 * lam / 2 * (a * b) * ‖w - u‖ ^ 2
   rw [hid]
   have hring : lam * (a * ‖w‖ ^ 2 + b * ‖u‖ ^ 2 - a * b * ‖w - u‖ ^ 2)
@@ -71,7 +71,7 @@ theorem StronglyConvexWith.add_convexOn {f g : W → ℝ}
   have h1 := hf w u a b ha hb hab
   have h2 := hg.2 (Set.mem_univ w) (Set.mem_univ u) ha hb hab
   simp only [smul_eq_mul] at h2
-  show f (a • w + b • u) + g (a • w + b • u) ≤
+  change f (a • w + b • u) + g (a • w + b • u) ≤
     a * (f w + g w) + b * (f u + g u) - lam / 2 * (a * b) * ‖w - u‖ ^ 2
   nlinarith [h1, h2]
 
@@ -148,7 +148,7 @@ theorem stronglyConvexWith_rlmObjective {s : Sample Z n}
   -- the Tikhonov term is `2λ`-strongly convex
   have hquad := stronglyConvexWith_smul_norm_sq (W := W) hlam.le w u a b ha hb hab
   dsimp only at hquad
-  show empRisk ℓ s (a • w + b • u) + lam * ‖a • w + b • u‖ ^ 2 ≤
+  change empRisk ℓ s (a • w + b • u) + lam * ‖a • w + b • u‖ ^ 2 ≤
     a * (empRisk ℓ s w + lam * ‖w‖ ^ 2) + b * (empRisk ℓ s u + lam * ‖u‖ ^ 2) -
       2 * lam / 2 * (a * b) * ‖w - u‖ ^ 2
   nlinarith [hsum, hquad]

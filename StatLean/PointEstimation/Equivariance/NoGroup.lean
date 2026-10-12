@@ -190,7 +190,7 @@ private theorem powerSeriesFamily_invariant_affine_core {a : ℕ → ℝ≥0∞}
     -- turn the real identity into the integer closed form
     have hαr : (g k : ℝ) - (g 0 : ℝ) = ((g 1 : ℝ) - (g 0 : ℝ)) * (k : ℝ) := by linarith
     have : ((g k : ℤ) : ℝ) = (((g 0 : ℤ) + (k : ℤ) * e : ℤ) : ℝ) := by
-      push_cast [hedef]; push_cast at hαr; linarith
+      push_cast [hedef]; linarith
     exact_mod_cast this
   -- conclude the constant increment
   refine ⟨e, fun k => ?_⟩

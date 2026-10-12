@@ -47,7 +47,7 @@ private theorem lpTrimComapToMapTrim_hfmp
       (μ'.trim hf'.comap_le)
       (@Measure.map α' β' (MeasurableSpace.comap f' mβ) mβ f'
         (μ'.trim hf'.comap_le)) := by
-  letI : MeasurableSpace α' := MeasurableSpace.comap f' mβ
+  let : MeasurableSpace α' := MeasurableSpace.comap f' mβ
   exact (comap_measurable (f := f')).measurePreserving (μ'.trim hf'.comap_le)
 
 /-- *Trim-side pullback isometry*, given by `Lp.compMeasurePreservingₗᵢ`
@@ -84,7 +84,7 @@ private theorem lpTrimComapToMapTrim_surj
     Function.Surjective (lpTrimComapToMapTrim_pull (m0 := m0) (mβ := mβ)
       (μ' := μ') (f' := f') hf') := by
   intro u
-  haveI : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
+  have : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
   let m : MeasurableSpace α' := MeasurableSpace.comap f' mβ
   let μtrim : @Measure α' m := μ'.trim hf'.comap_le
   let ν : @Measure β' mβ := @Measure.map α' β' m mβ f' μtrim
@@ -218,7 +218,7 @@ private theorem lpTrimComapToMapTrim_aux_comp_apply
         (α' := α') (β' := β') (m0 := m0) (mβ := mβ)
         (μ' := μ') (f' := f') hf' u) (f' a))
       =ᵐ[μ'] u := by
-  haveI : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
+  have : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
   set pull := lpTrimComapToMapTrim_pull (m0 := m0) (mβ := mβ)
     (μ' := μ') (f' := f') hf' with hpull_def
   set hfmp := lpTrimComapToMapTrim_hfmp (m0 := m0) (mβ := mβ)
@@ -263,7 +263,7 @@ theorem doobL2Equiv_comp_apply
     (g : lpMeas ℝ ℝ (MeasurableSpace.comap f ‹MeasurableSpace β›) 2 μ) :
     (fun a => (doobL2Equiv hf g : Lp ℝ 2 (μ.map f)) (f a))
       =ᵐ[μ] ((g : Lp ℝ 2 μ) : α → ℝ) := by
-  haveI : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
+  have : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
   -- Name the intermediate trim-side element.
   set t : Lp ℝ 2 (μ.trim hf.comap_le) :=
     lpMeasToLpTrimLie ℝ ℝ 2 μ hf.comap_le g with ht_def

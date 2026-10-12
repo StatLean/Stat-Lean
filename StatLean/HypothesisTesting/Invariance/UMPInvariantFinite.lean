@@ -129,7 +129,7 @@ private theorem integral_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧] {μ
     {q : 𝓧 → ℝ} (hqm : Measurable q) (hqi : Integrable q μ)
     (hμ : ∀ g : G, μ.map (fun x => g • x) = μ) :
     ∫ x, orbitAverage G q x ∂μ = ∫ x, q x ∂μ := by
-  haveI : Nonempty G := ⟨1⟩
+  have : Nonempty G := ⟨1⟩
   have hcard : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hint : ∀ g : G, Integrable (fun x => q (g • x)) μ := fun g =>
     (⟨measurable_const_smul g, hμ g⟩ :
@@ -244,7 +244,7 @@ private theorem powerAgainst_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧]
     {χ : 𝓧 → ℝ} (hχc : IsCriticalFn χ) (hχinv : IsInvariantTest G χ) (θ : Θ) :
     powerAgainst (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ) x)) χ
         = power P χ θ := by
-  haveI : Nonempty G := ⟨1⟩
+  have : Nonempty G := ⟨1⟩
   have hcard : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have horbnn : ∀ x, 0 ≤ orbitAverage G (p θ) x := by
     intro x; unfold orbitAverage
@@ -368,7 +368,7 @@ theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] [MeasurableSMul G 𝓧]
     IsUMPInvariant G P Θ₀ Θ₁ α φ := by
   obtain ⟨hd0, hQ0⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₀
   obtain ⟨hd1, hQ1⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₁
-  haveI := hQ0; haveI := hQ1
+  have := hQ0; have := hQ1
   have hshape : HasNPShape μ (orbitAverage G (p θ₀)) (orbitAverage G (p θ₁))
       (ENNReal.ofReal k) φ := by
     refine ⟨Filter.Eventually.of_forall (fun x hlt => hrej x ?_),
@@ -416,7 +416,7 @@ theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] [MeasurableSMul G
   obtain ⟨θ₁, hθ₁⟩ := hne₁
   obtain ⟨hd0, hQ0⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₀
   obtain ⟨hd1, hQ1⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₁
-  haveI := hQ0; haveI := hQ1
+  have := hQ0; have := hQ1
   obtain ⟨C, γ, _, _, hMP⟩ := exists_mostPowerful μ
     (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x))
     (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₁) x))

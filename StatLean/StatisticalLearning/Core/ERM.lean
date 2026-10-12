@@ -96,7 +96,7 @@ theorem isAgnosticPACLearnerWith_of_hasUniformConvergenceWith
     (hpos : ∀ h z, 0 ≤ ℓ h z) :
     IsAgnosticPACLearnerWith 𝓗 ℓ A (fun ε δ => mUC (ε / 2) δ) := by
   intro D hD ε δ hε hδ hδ1 m hm
-  haveI := hD
+  have := hD
   -- the risk image is bounded below by `0`, so the `sInf` is genuine
   have hbdd : BddBelow (risk D ℓ '' 𝓗) := by
     refine ⟨0, ?_⟩

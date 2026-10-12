@@ -962,7 +962,6 @@ theorem chain_head_dyadic_bound
       B.cell_subset (le_refl q₀) i (B.π_mem (le_refl q₀) i)
     -- `π_{q₀} i ∈ MemLp 2 P` from its finite eLpNorm and measurability.
     have hπ_memLp : MemLp (B.π q₀ i) 2 P := by
-
       exact lt_of_le_of_lt (hF_L2 _ hπ_F) ENNReal.ofReal_lt_top
     -- `∫ (π_{q₀} i)² ≤ δ²` from `‖π_{q₀} i‖_{P,2} ≤ δ`.  Bridge `∫ f²` and the
     -- `eLpNorm` via `MemLp.eLpNorm_eq_integral_rpow_norm` (inlined: no cross-import
@@ -1747,7 +1746,6 @@ theorem chain_A_dyadic_bound
     · -- hg_var : `∫ (g i)² ≤ (2·ε)²`.
       intro i
       have hjump_memLp : MemLp (B.jump hm i) 2 P := by
-
         exact lt_of_le_of_lt (B.jump_L2_le hm i) ENNReal.ofReal_lt_top
       -- `∫ (jump)² ≤ (C·(1/2)^{m-q₀})²` from `‖jump‖_{P,2} ≤ C·(1/2)^{m-q₀}`.
       have hjump_sq_le :
@@ -4832,7 +4830,7 @@ lemma localized_supNorm_lift
   have hdom : ∀ g ∈ 𝒢, ∀ x, |g x| ≤ Ψ x := by
     rintro g ⟨h, hhG, rfl⟩ x
     have hhΦ : |h x| ≤ Φ x := hΦ_envG h hhG x
-    show |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
+    change |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
     by_cases hx : x ∈ {y | Mc < |Φ y|}
     · -- on `{Mc < |Φ|}`: `|h − clamp h| ≤ |h| ≤ |Φ| = |Φ|·1`
       rw [Set.indicator_of_mem hx]

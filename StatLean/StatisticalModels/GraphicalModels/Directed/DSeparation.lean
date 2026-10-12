@@ -805,14 +805,14 @@ theorem dSeparated_self_left
     -- assuming `A`, `B`, `S` disjoint, so this is a Lean-side completion of the definition
     (hAS : A ⊆ S) :
     DSeparated r S A B :=
-  fun a ha _ _ c => c.blocked_of_start_mem (hAS ha)
+  fun _ ha _ _ c => c.blocked_of_start_mem (hAS ha)
 
 /-- **Degenerate case**: dual of `dSeparated_self_left`, via the last vertex of the chain. -/
 theorem dSeparated_self_right
     -- USER-INPUT: the second block sits inside the separator; see `dSeparated_self_left`
     (hBS : B ⊆ S) :
     DSeparated r S A B :=
-  fun _ _ b hb c => c.blocked_of_end_mem (hBS hb)
+  fun _ _ _ hb c => c.blocked_of_end_mem (hBS hb)
 
 /-- **Adjacent vertices are never d-separated.** The one-arrow chain `a → b` has two vertices,
 both ends, hence both non-colliders; if neither lies in `S` the chain is active. The directed

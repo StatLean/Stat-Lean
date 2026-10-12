@@ -883,7 +883,7 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
       have hfun : (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω)
           = ∑ i : Fin n, (fun ω => c i * psi i ((k : ℤ) + 1) ω) := by
         funext ω; simp
-      show μ[fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0
+      change μ[fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0
       rw [hfun]
       refine (condExp_finsetSum (fun i _ => hint i) _).trans ?_
       have hz : ∀ i : Fin n,

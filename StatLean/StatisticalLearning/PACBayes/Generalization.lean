@@ -317,7 +317,7 @@ theorem pac_bayes (D : Measure Z) [IsProbabilityMeasure D]
     intro s hs
     simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hs
     intro Q hQ hQP hQkl
-    haveI := hQ
+    have := hQ
     -- integrability of the bounded functionals
     have hdevQ : Integrable (fun k => pbDev D F s k) Q :=
       (integrable_const (1 : ℝ)).mono' Measurable.of_discrete.aestronglyMeasurable

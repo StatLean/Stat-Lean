@@ -139,7 +139,7 @@ for the MH kernel. -/
 theorem invariant_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel S S)
     [IsMarkovKernel q] :
     Kernel.Invariant (mhKernel π q) π := by
-  haveI := isMarkovKernel_mhKernel π q
+  have := isMarkovKernel_mhKernel π q
   exact (isReversible_mhKernel π q).invariant
 
 end StatLean.Bayesian

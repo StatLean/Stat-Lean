@@ -186,7 +186,7 @@ theorem gauss_markov {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
   have hgeom : ‖W.starProjection γ‖ ^ 2 ≤ ‖c‖ ^ 2 := by
     rw [hdecomp]; nlinarith [sq_nonneg ‖Wᗮ.starProjection c‖]
   rcases isEmpty_or_nonempty (Fin n) with he | he
-  · haveI := he
+  · have := he
     have hc0 : ‖c‖ ^ 2 = 0 := by
       rw [← real_inner_self_eq_norm_sq, real_inner_euclidean, Finset.univ_eq_empty,
         Finset.sum_empty]
@@ -244,7 +244,7 @@ theorem isSubspaceEquivariant_inner_iff (W : Submodule ℝ (EuclideanSpace ℝ (
     have hb0 := h b hb 0
     simpa using hb0
   · intro h b hb y
-    show ⟪c, y + b⟫_ℝ = ⟪c, y⟫_ℝ + ⟪γ, b⟫_ℝ
+    change ⟪c, y + b⟫_ℝ = ⟪c, y⟫_ℝ + ⟪γ, b⟫_ℝ
     rw [inner_add_right, h b hb]
 
 /-- Under squared error, the least-squares functional is minimum risk equivariant among the

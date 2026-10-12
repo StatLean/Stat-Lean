@@ -68,7 +68,7 @@ open Classical in
 falls in regime `i` (FY §4.1.2). -/
 noncomputable def tarRegimeIndices {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
     Finset (Fin T) :=
-  Finset.univ.filter fun t : Fin T => P < (t : ℕ) ∧ ∃ h : d ≤ (t : ℕ),
+  Finset.univ.filter fun t : Fin T => P < (t : ℕ) ∧ ∃ _ : d ≤ (t : ℕ),
     x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ∈ A
 
 /-- The regime-`i` sample size `T_i` (FY §4.1.2). -/

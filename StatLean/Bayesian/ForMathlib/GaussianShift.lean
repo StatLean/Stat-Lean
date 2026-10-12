@@ -88,7 +88,7 @@ theorem stdGaussian_map_inner (c : EuclideanSpace ℝ ι) :
       = gaussianReal 0 (‖c‖₊ ^ 2) := by
   have hL_meas : Measurable (fun y : EuclideanSpace ℝ ι => ⟪c, y⟫) :=
     (continuous_const.inner continuous_id).measurable
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((stdGaussian (EuclideanSpace ℝ ι)).map (fun y => ⟪c, y⟫)) :=
     (by infer_instance)
   apply MeasureTheory.Measure.ext_of_charFun

@@ -161,7 +161,7 @@ theorem weakConverges_scoreSumScalar_under_pi
   classical
   -- Set up the iid Kolmogorov extension and the per-coordinate sequence.
   set Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hPinf_def
-  haveI hPinf_prob : IsProbabilityMeasure Pinf := by
+  have hPinf_prob : IsProbabilityMeasure Pinf := by
     rw [hPinf_def]; infer_instance
   -- iid + ident under `Pinf` for `Yseq g`.
   have h_eval_iid : ProbabilityTheory.iIndepFun
@@ -245,7 +245,7 @@ theorem weakConverges_scoreSumScalar_under_pi
     rw [h_int_pushforward]
     exact integral_g_sq_eq_norm_sq g
   -- Witness for the Gaussian limit law.
-  haveI hG_prob : IsProbabilityMeasure
+  have hG_prob : IsProbabilityMeasure
       (gaussianReal 0 (‖(g : Lp ℝ 2 P)‖ ^ 2).toNNReal) := inferInstance
   have hY_id : @HasLaw ℝ ℝ _ _ id
       (gaussianReal 0 (‖(g : Lp ℝ 2 P)‖ ^ 2).toNNReal)

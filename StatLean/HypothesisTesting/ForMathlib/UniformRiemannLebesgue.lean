@@ -565,7 +565,7 @@ theorem tendsto_integral_norm_fourierOsc_autoCorr {f : ℝ → ℂ} (hf : Integr
     (hfm : StronglyMeasurable f) :
     Filter.Tendsto (fun t₁ : ℝ => ∫ h : ℝ, ‖fourierOsc (autoCorr f h) (2 * t₁ * h)‖)
       (Filter.cocompact ℝ) (𝓝 0) := by
-  haveI : (Filter.cocompact ℝ).IsCountablyGenerated := by
+  have : (Filter.cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   have hAint := integrable_uncurry_autoCorr hf hfm
   obtain ⟨hslice, hbound⟩ := (integrable_prod_iff' (hAint.aestronglyMeasurable)).1 hAint

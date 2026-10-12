@@ -1696,7 +1696,7 @@ theorem gateaux_representer_eq_pathwise_derivative
             h_int_h_zero]
         simp
       rw [h_int_eq, ENNReal.ofReal_one]
-    haveI : IsProbabilityMeasure Q := hQ_prob
+    have : IsProbabilityMeasure Q := hQ_prob
     -- (3d) Q ≪ P from withDensity_absolutelyContinuous.
     have hQ_ac : Q ≪ P := by
       rw [hQ_def]; exact MeasureTheory.withDensity_absolutelyContinuous _ _
@@ -2287,7 +2287,7 @@ theorem vonMises_pointMass_derivative
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
     -- IsProbabilityMeasure Q_t.
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Measure.dirac x) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     -- Integrability of f against Q_t.
@@ -2534,7 +2534,7 @@ theorem vonMises_imp_TVFrechetMixture
     obtain ⟨ht_pos, ht_lt_one⟩ := ht
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Q) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     have h_smul_P_int : Integrable f (ENNReal.ofReal (1 - t) • P) :=
@@ -2672,7 +2672,7 @@ theorem R_decay_of_1d_deriv
     obtain ⟨ht_pos, ht_lt_one⟩ := ht
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • M) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     have h_smul_P_int : Integrable ϕ (ENNReal.ofReal (1 - t) • P) :=
@@ -2973,7 +2973,7 @@ theorem eif_via_Point_mass_Frechet
       rw [hcomm, ha, mul_one]
     rw [h_int_eq] at h_inner
     exact h_inner
-  haveI hM_prob : IsProbabilityMeasure M := by
+  have hM_prob : IsProbabilityMeasure M := by
     refine ⟨?_⟩
     rw [hM_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [← ofReal_integral_eq_lintegral_ofReal h_one_plus_g_int h_one_plus_g_nn]

@@ -89,9 +89,9 @@ lemma weakConverges_prod_of_tendsto_charFun {E : Type*} [NormedAddCommGroup E]
       Tendsto (fun n => charFun ((μ n).map (WithLp.toLp 2)) t) atTop
         (𝓝 (charFun ν₁ (WithLp.ofLp t).1 * charFun ν₂ (WithLp.ofLp t).2))) :
     WeakConverges μ (ν₁.prod ν₂) := by
-  haveI : ∀ n, IsProbabilityMeasure ((μ n).map (WithLp.toLp (V := E × E) 2)) := fun n =>
+  have : ∀ n, IsProbabilityMeasure ((μ n).map (WithLp.toLp (V := E × E) 2)) := fun n =>
     (by infer_instance)
-  haveI : IsProbabilityMeasure ((ν₁.prod ν₂).map (WithLp.toLp (V := E × E) 2)) :=
+  have : IsProbabilityMeasure ((ν₁.prod ν₂).map (WithLp.toLp (V := E × E) 2)) :=
     (by infer_instance)
   have hlim : WeakConverges (fun n => (μ n).map (WithLp.toLp 2))
       ((ν₁.prod ν₂).map (WithLp.toLp 2)) := by
@@ -161,7 +161,7 @@ lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSp
       (Filter.Eventually.of_forall hFb)
   have hpair : ∀ g g' : G, Measurable fun x : 𝓧 => (T (g • x), T (g' • x)) :=
     fun g g' => (hT g).prodMk (hT g')
-  haveI hprob : ∀ g g' : G,
+  have hprob : ∀ g g' : G,
       IsProbabilityMeasure (P.map fun x : 𝓧 => (T (g • x), T (g' • x))) :=
     fun g g' => (by infer_instance)
   rw [randPairLaw, integral_smul_measure,
@@ -222,7 +222,7 @@ lemma signChange_smul_apply_vec {V : Type*} [AddCommGroup V] [Module ℝ V] {n :
 
 /-- The sign-change group on `n` coordinates has `2ⁿ` elements. -/
 private lemma card_signPattern (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ n := by
-  simp [Fintype.card_fun, Fintype.card_units_int]
+  simp [Fintype.card_units_int]
 
 /-- A double sum over the two-element group `ℤˣ`, written out. -/
 private lemma sum_units_int {M : Type*} [AddCommMonoid M] (f : ℤˣ → ℤˣ → M) :
@@ -570,7 +570,7 @@ theorem weakConverges_randPairLaw_signSum [FiniteDimensional ℝ E]
   have hTmeas : ∀ n : ℕ,
       Measurable fun x : Fin n → E => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i := fun n =>
     (Finset.measurable_sum _ fun i _ => measurable_pi_apply i).const_smul _
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (randPairLaw (Fin n → ℤˣ)
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (randPairLaw (Fin n → ℤˣ)
       (fun x : Fin n → E => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
       (Measure.pi fun _ : Fin n => Q)) := fun n =>
     isProbabilityMeasure_randPairLaw _ _ _ (hTmeas n) (hsmul n)
@@ -903,18 +903,18 @@ theorem weakConverges_randPairLaw_of_tendstoInProb_avg
     (hconv : WeakConverges (fun n => randPairLaw (G n) (L n) (P n)) ν) :
     WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) ν := by
   classical
-  haveI hpT : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+  have hpT : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
     isProbabilityMeasure_randPairLaw _ _ _ (hT n) (hsmul n)
-  haveI hpL : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (L n) (P n)) := fun n =>
+  have hpL : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (L n) (P n)) := fun n =>
     isProbabilityMeasure_randPairLaw _ _ _ (hL n) (hsmul n)
   rw [weakConverges_map_toLp_iff] at hconv ⊢
-  haveI hmT : ∀ n, IsProbabilityMeasure
+  have hmT : ∀ n, IsProbabilityMeasure
       ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
     (by infer_instance)
-  haveI hmL : ∀ n, IsProbabilityMeasure
+  have hmL : ∀ n, IsProbabilityMeasure
       ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
     (by infer_instance)
-  haveI hmν : IsProbabilityMeasure (ν.map (WithLp.toLp (V := E × E) 2)) :=
+  have hmν : IsProbabilityMeasure (ν.map (WithLp.toLp (V := E × E) 2)) :=
     (by infer_instance)
   refine weakConverges_of_tendsto_charFun (fun t => ?_)
   have hlim := tendsto_charFun_of_weakConverges hconv t

@@ -833,7 +833,7 @@ theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [Meas
   rw [condIndep_iff_map ((measurable_coords C hX).prodMk
     ((measurable_coords A hX).prodMk (measurable_coords B hX))).aemeasurable] at hci
   obtain ⟨κ, η, _, _, hdis⟩ := hci
-  haveI : IsFiniteMeasure (μ.map (coords C X)) :=
+  have : IsFiniteMeasure (μ.map (coords C X)) :=
     Measure.isFiniteMeasure_map μ (coords C X)
   intro x
   -- The mass of a `Finset` of configurations is the measure of the corresponding fibre.

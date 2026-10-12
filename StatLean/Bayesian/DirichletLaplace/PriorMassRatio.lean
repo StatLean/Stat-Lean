@@ -306,10 +306,10 @@ theorem dlBetaRatio_le {a δ : ℝ}
   -- bounds deliver, keeping the shape; report the final exponent for the `PosteriorContraction` summation.
   -- Pin a single `DecidablePred` instance for `↑S`/`(↑S)ᶜ` so every `{j // j ∈ ↑S}` shares one
   -- `Fintype`/`Subtype.fintype` instance (avoids a `Fintype`-diamond in `projS`/`dlPrior`).
-  letI instS : DecidablePred (· ∈ (↑S : Set ι)) := Classical.decPred _
-  letI instSc : DecidablePred (· ∈ ((↑S : Set ι)ᶜ)) := Classical.decPred _
-  letI : Fintype {j // j ∈ (↑S : Set ι)} := Subtype.fintype _
-  letI : Fintype {j // j ∈ ((↑S : Set ι)ᶜ)} := Subtype.fintype _
+  let instS : DecidablePred (· ∈ (↑S : Set ι)) := Classical.decPred _
+  let instSc : DecidablePred (· ∈ ((↑S : Set ι)ᶜ)) := Classical.decPred _
+  let : Fintype {j // j ∈ (↑S : Set ι)} := Subtype.fintype _
+  let : Fintype {j // j ∈ ((↑S : Set ι)ᶜ)} := Subtype.fintype _
   set d : ℕ := S.card with hddef
   set n : ℕ := Fintype.card ι with hndef
   -- The `S`-subtype `K` and its complement `Kc`, with cardinality/finrank bookkeeping.
@@ -475,7 +475,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
       ≤ (dlPrior a {j // j ∈ ((↑S : Set ι)ᶜ)}) (Metric.closedBall
           (0 : EuclideanSpace ℝ {j // j ∈ ((↑S : Set ι)ᶜ)}) (r / Real.sqrt 2)) := by
     rcases Nat.eq_zero_or_pos (Fintype.card {j // j ∈ ((↑S : Set ι)ᶜ)}) with hKc0 | hKcpos
-    · haveI : IsEmpty {j // j ∈ ((↑S : Set ι)ᶜ)} := Fintype.card_eq_zero_iff.mp hKc0
+    · have : IsEmpty {j // j ∈ ((↑S : Set ι)ᶜ)} := Fintype.card_eq_zero_iff.mp hKc0
       have hball_univ : Metric.closedBall (0 : EuclideanSpace ℝ {j // j ∈ ((↑S : Set ι)ᶜ)})
           (r / Real.sqrt 2) = Set.univ := by
         ext x

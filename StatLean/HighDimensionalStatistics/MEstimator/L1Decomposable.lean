@@ -89,8 +89,8 @@ private lemma linfNorm_le_of_forall {v : EuclideanSpace ℝ (Fin d)} {c : ℝ} (
     (h : ∀ i, |v.ofLp i| ≤ c) : linfNorm v ≤ c := by
   unfold linfNorm
   rcases isEmpty_or_nonempty (Fin d) with he | hne
-  · haveI := he; rw [Real.iSup_of_isEmpty]; exact hc
-  · haveI := hne; exact ciSup_le h
+  · have := he; rw [Real.iSup_of_isEmpty]; exact hc
+  · have := hne; exact ciSup_le h
 
 /-- ℓ∞ as a seminorm on `EuclideanSpace ℝ (Fin d)`. -/
 noncomputable def linfSeminorm (d : ℕ) : Seminorm ℝ (EuclideanSpace ℝ (Fin d)) where

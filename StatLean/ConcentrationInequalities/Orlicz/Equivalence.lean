@@ -93,7 +93,7 @@ theorem measure_abs_ge_le_of_hasSubgaussianMGF {X : Ω → ℝ} {μ : Measure Ω
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |X ω|}
       ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by
-  haveI hfin : IsFiniteMeasure μ := by
+  have hfin : IsFiniteMeasure μ := by
     have hi := h.integrable_exp_mul 0
     simp only [zero_mul, Real.exp_zero] at hi
     exact (integrable_const_iff.mp hi).resolve_left one_ne_zero

@@ -95,7 +95,7 @@ theorem empirical_symmetrization {α : Type*} [MeasurableSpace α] {ι : Type*}
     rw [hZ]
     exact hX_indep.comp (fun (_ : Fin n) (a : α) (k : ι) => (n : ℝ)⁻¹ * F k a)
       (fun _ => by rw [measurable_pi_iff]; intro k; exact measurable_const.mul (hF_meas k))
-  haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (Z i)) :=
+  have hνp : ∀ i, IsProbabilityMeasure (μ.map (Z i)) :=
     fun i => (by infer_instance)
   -- Boundedness ⇒ integrability of the class members and of `Zᵢ`.
   have hFX_int : ∀ i k, Integrable (fun ω => F k (X i ω)) μ := by
@@ -190,7 +190,7 @@ exhaustion machinery. -/
 private lemma biSup_coe_finset_eq_sup' {ι : Type*} {s : Finset ι} (hne : s.Nonempty)
     (f : ι → ℝ) :
     (⨆ (k : {x // x ∈ s}), f k.val) = s.sup' hne f := by
-  haveI : Nonempty {x // x ∈ s} := ⟨⟨hne.choose, hne.choose_spec⟩⟩
+  have : Nonempty {x // x ∈ s} := ⟨⟨hne.choose, hne.choose_spec⟩⟩
   have hbdd : BddAbove (Set.range fun k : {x // x ∈ s} => f k.val) := by
     refine ⟨s.sup' hne f, ?_⟩
     rintro y ⟨⟨x, hx⟩, rfl⟩
@@ -413,7 +413,7 @@ theorem empirical_symmetrization_countable {α : Type*} [MeasurableSpace α]
   have hfin_step : ∀ m,
       ∫ ω, netL m ω ∂μ ≤ 2 * ∫ p, netR m p ∂(μ.prod (signVec n)) := by
     intro m
-    haveI : Nonempty {x // x ∈ Fm m} := ⟨⟨(hFm_ne m).choose, (hFm_ne m).choose_spec⟩⟩
+    have : Nonempty {x // x ∈ Fm m} := ⟨⟨(hFm_ne m).choose, (hFm_ne m).choose_spec⟩⟩
     have hcore := empirical_symmetrization (μ := μ) (P := P) (n := n) (X := X)
       (ι := {x // x ∈ Fm m}) hX_meas hX_indep hX_law
       (F := fun k : {x // x ∈ Fm m} => F k.val)

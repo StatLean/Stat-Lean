@@ -55,7 +55,7 @@ theorem doob_consistency [MetricSpace Θ] [PolishSpace Θ] [BorelSpace Θ] [None
   classical
   obtain ⟨g, hgmeas, hg⟩ := exists_measurable_retraction K hK_inj π
   obtain ⟨D, hDcount, hDdense⟩ := TopologicalSpace.exists_countable_dense Θ
-  haveI : Countable ↥D := hDcount.to_subtype
+  have : Countable ↥D := hDcount.to_subtype
   -- Lévy upward convergence for the countable family of balls with centres in `D` and
   -- rational radii
   have hball : ∀ p : ↥D × ℚ, ∀ᵐ ω ∂(doobJoint K π),

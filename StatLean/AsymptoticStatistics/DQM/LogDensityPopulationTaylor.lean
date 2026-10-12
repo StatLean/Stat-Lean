@@ -76,7 +76,7 @@ theorem dqm_logDensity_populationTaylor
   let s : EuclideanSpace ℝ (Fin k) → ℝ := fun θ => ‖θ - θ₀‖
   let I : EuclideanSpace ℝ (Fin k) → ℝ := fun θ =>
     fisherInformation M μ θ₀ ℓ (θ - θ₀) (θ - θ₀)
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   have hlinear := dqm_sqrtDensityRatio_l2_linearization M μ θ₀ ℓ hPDF hDQM
   let z : EuclideanSpace ℝ (Fin k) → 𝓧 → ℝ := fun θ x => ⟪θ - θ₀, ℓ x⟫

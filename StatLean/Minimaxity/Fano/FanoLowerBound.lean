@@ -130,7 +130,7 @@ private lemma mutualInformation_toReal_eq {M : ℕ} [NeZero M] (Q : Kernel (Fin 
     [IsMarkovKernel Q] (hI : mutualInformation Q ≠ ⊤) :
     (mutualInformation Q).toReal = Real.log (M : ℝ) - condEntropy Q := by
   classical
-  haveI hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+  have hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
   have hMr : (M : ℝ) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMtop : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top M
@@ -157,7 +157,7 @@ private lemma mutualInformation_toReal_eq {M : ℕ} [NeZero M] (Q : Kernel (Fin 
   have hklj : ∀ j, (klDiv (Q j) (mixture Q)).toReal = ∫ z, ((Q j).rnDeriv (mixture Q) z).toReal *
       Real.log ((Q j).rnDeriv (mixture Q) z).toReal ∂(mixture Q) := by
     intro j
-    haveI : IsProbabilityMeasure (Q j) := inferInstance
+    have : IsProbabilityMeasure (Q j) := inferInstance
     rw [toReal_klDiv_of_measure_eq (hac j) (by rw [measure_univ, measure_univ]),
       ← integral_rnDeriv_smul (hac j)]
     refine integral_congr_ae (Filter.Eventually.of_forall (fun z => ?_))
@@ -265,7 +265,7 @@ private lemma discrete_fano_pointwise {M : ℕ} (hM : 2 ≤ M) (p : Fin M → �
     (hp0 : ∀ j, 0 ≤ p j) (hp1 : ∑ j, p j = 1) :
     ∑ j, Real.negMulLog (p j) ≤ Real.log 2 + (1 - ⨆ j, p j) * Real.log (M : ℝ) := by
   classical
-  haveI : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
+  have : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
   obtain ⟨js, hjs⟩ := Finite.exists_max p
   have hbdd : BddAbove (Set.range p) := Set.Finite.bddAbove (Set.finite_range p)
   have hsup : (⨆ j, p j) = p js := le_antisymm (ciSup_le hjs) (le_ciSup hbdd js)
@@ -318,7 +318,7 @@ private lemma map_error_pointwise {M : ℕ} (hM : 0 < M)
     (p b : Fin M → ℝ≥0∞) (hp_top : ∀ j, p j ≠ ⊤) (hp_sum : ∑ j, p j = 1)
     (hb_le : ∀ j, b j ≤ 1) (hb_sum : ∑ j, b j = 1) :
     ENNReal.ofReal (1 - ⨆ j, (p j).toReal) ≤ ∑ j, p j * (1 - b j) := by
-  haveI : Nonempty (Fin M) := ⟨⟨0, hM⟩⟩
+  have : Nonempty (Fin M) := ⟨⟨0, hM⟩⟩
   obtain ⟨js, hjs⟩ := Finite.exists_max (fun j => (p j).toReal)
   have hbdd : BddAbove (Set.range fun j => (p j).toReal) :=
     Set.Finite.bddAbove (Set.finite_range _)
@@ -361,12 +361,12 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
     ∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ∂(mixture Q)
       ≤ (multiwayTestingError Q).toReal := by
   classical
-  haveI hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+  have hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
   have hMr : (M : ℝ) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMtop : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top M
   have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.mpr hMtop
-  haveI : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
+  have : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
   -- each component is absolutely continuous w.r.t. the mixture
   have hac : ∀ j, Q j ≪ mixture Q := fun j => by
     rw [mixture_eq_inv_smul_sum]
@@ -440,7 +440,7 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
     refine (bayesRisk_le_avgRisk (zeroOneLoss M) Q
       (Kernel.const 𝓧 (Measure.dirac (Classical.arbitrary (Fin M)))) (uniformPrior M)).trans ?_
     set κ0 := Kernel.const 𝓧 (Measure.dirac (Classical.arbitrary (Fin M))) with hκ0
-    haveI : IsMarkovKernel (κ0 ∘ₖ Q) := by infer_instance
+    have : IsMarkovKernel (κ0 ∘ₖ Q) := by infer_instance
     rw [avgRisk]
     calc ∫⁻ j, ∫⁻ y, zeroOneLoss M j y ∂((κ0 ∘ₖ Q) j) ∂(uniformPrior M)
         ≤ ∫⁻ _j, 1 ∂(uniformPrior M) := by
@@ -458,7 +458,7 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
         = ∫⁻ z, ∑ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹
             ∂(mixture Q) := by
     intro κ hκ
-    haveI := hκ
+    have := hκ
     have hmeas : ∀ j, Measurable fun z => (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ :=
       fun j => (Measure.measurable_rnDeriv (Q j) (mixture Q)).mul
         (Kernel.measurable_coe κ (measurableSet_singleton j).compl)
@@ -502,11 +502,11 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
     rw [ofReal_integral_eq_lintegral_ofReal h_ebar_int h_ebar_nonneg, multiwayTestingError,
       bayesRisk]
     refine le_iInf₂ (fun κ hκ => ?_)
-    haveI := hκ
+    have := hκ
     rw [havg κ hκ]
     refine lintegral_mono_ae ?_
     filter_upwards [hsum_ennreal, htop] with z hz hzt
-    haveI : IsProbabilityMeasure (κ z) := inferInstance
+    have : IsProbabilityMeasure (κ z) := inferInstance
     have hp_top : ∀ j, (M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z ≠ ⊤ :=
       fun j => ENNReal.mul_ne_top (ENNReal.inv_ne_top.mpr hMne) (hzt j)
     have hp_sum : ∑ j, (M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z = 1 := by
@@ -549,7 +549,7 @@ private lemma condEntropy_le_fano {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧)
     (hM : 2 ≤ M) (hq : multiwayTestingError Q ≠ ⊤) :
     condEntropy Q ≤ Real.log 2 + (multiwayTestingError Q).toReal * Real.log (M : ℝ) := by
   classical
-  haveI hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+  have hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
   have hMr : (M : ℝ) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
   have hMtop : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top M

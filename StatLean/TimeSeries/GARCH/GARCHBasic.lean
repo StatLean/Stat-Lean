@@ -87,8 +87,8 @@ private lemma garch_condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
   have hFle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
     iSup₂_le fun s _ => (h.measurableX s).comap_le
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   -- `E ε_t² = 1`
   have hEeps : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := iidNoise_integral_sq h.iid t
@@ -127,8 +127,8 @@ private lemma garch_condexp_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
     μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hEeps0 : (∫ ω, ε t ω ∂μ) = 0 :=
     (h.iid.identDistrib t 0).integral_eq.trans h.iid.integral_eq_zero
@@ -157,8 +157,8 @@ private lemma garch_integral_mul_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) {s t : ℤ} (hst : s < t) :
     (∫ ω, X s ω * X t ω ∂μ) = 0 := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hmulint : Integrable (fun ω => X s ω * X t ω) μ :=
     MemLp.integrable_mul (p := 2) (q := 2) (hL2 s) (hL2 t)
@@ -182,8 +182,8 @@ private lemma garch_integral_vol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : 
     Integrable (fun ω => σvol t ω ^ 2) μ ∧
       (∫ ω, σvol t ω ^ 2 ∂μ) = ∫ ω, X t ω ^ 2 ∂μ := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hce := garch_condexp_sq h hL2 t
   exact ⟨integrable_condExp.congr hce, by rw [← integral_congr_ae hce, integral_condExp hFle]⟩
@@ -478,7 +478,7 @@ private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         have hlt : (j : ℕ) < m := by
           by_contra hnl
           exact hm (by simp only [ite_eq_right hnl, zero_mul])
-        exact ⟨m - ((j : ℕ) + 1), by show (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
+        exact ⟨m - ((j : ℕ) + 1), by change (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
       rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
       refine tsum_congr fun k => ?_
       have hidx : (-1 - (((j : ℕ) + 1 + k : ℕ) : ℤ))
@@ -787,8 +787,8 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     (∫ ω, X t ω ∂μ) = 0 ∧
       variance (X t) μ = c0 / (1 - (∑ i, b i) - ∑ j, a j) := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   -- (i) `E X_t = E σ_t · E ε_t = 0`, via the conditional expectation given the strict past
   have hcondX : μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := garch_condexp_zero h hL2 t
@@ -1063,13 +1063,13 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
     fun t => iSup₂_le fun s _ => (hmX s).comap_le
   have hSF : ∀ t : ℤ, SigmaFinite (μ.trim (hFle t)) := by
     intro t
-    haveI : IsFiniteMeasure (μ.trim (hFle t)) := MeasureTheory.isFiniteMeasure_trim (hFle t)
+    have : IsFiniteMeasure (μ.trim (hFle t)) := MeasureTheory.isFiniteMeasure_trim (hFle t)
     infer_instance
   have hcond : ∀ t : ℤ, μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 :=
     fun t => h.condexp_sq hL2 t
   have hV2 : ∀ t : ℤ, MemLp (fun ω => σvol t ω ^ 2) 2 μ := by
     intro t
-    haveI := hSF t
+    have := hSF t
     exact ((hY2 t).condExp (by norm_num)).ae_eq (hcond t)
   have hVint : ∀ t : ℤ, Integrable (fun ω => σvol t ω ^ 2) μ :=
     fun t => (hV2 t).integrable one_le_two
@@ -1095,7 +1095,7 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
       _ = w := hwdef
   have hEV : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 ∂μ = m := by
     intro t
-    haveI := hSF t
+    have := hSF t
     rw [← integral_congr_ae (hcond t), integral_condExp (hFle t), hEY t]
   ---------------------------------------------------------------- the (1,1) recursion
   have hrec : ∀ t : ℤ, (fun ω => σvol t ω ^ 2) =ᵐ[μ]

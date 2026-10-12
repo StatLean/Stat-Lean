@@ -92,7 +92,7 @@ theorem lintegral_withDensity_prod
     ∫⁻ z, f z ∂((ν.prod volume).withDensity p)
       = ∫⁻ t, (∫⁻ y, f (t, y) * p (t, y) ∂volume) ∂ν := by
   rw [lintegral_withDensity_eq_lintegral_mul (ν.prod volume) hp hf]
-  simp only [Pi.mul_apply, Pi.inv_apply]
+  simp only [Pi.mul_apply]
   rw [lintegral_prod (fun z => p z * f z) (hp.mul hf).aemeasurable]
   refine lintegral_congr fun t => lintegral_congr fun y => ?_
   rw [mul_comm]
@@ -146,11 +146,11 @@ theorem condDistrib_withDensity_prod_ae_eq
     rw [hκ_apply t, Measure.smul_apply, withDensity_apply _ MeasurableSet.univ,
         Measure.restrict_univ, smul_eq_mul]
     exact ENNReal.inv_mul_le_one _
-  haveI := hκ_fin
+  have := hκ_fin
   -- The first marginal has the slice-mass density.
   have hmap : ρ.map Prod.fst = ν.withDensity g := by
     rw [hρ]; exact map_fst_withDensity_prod hp
-  haveI : SFinite (ν.withDensity g) := by rw [← hmap]; infer_instance
+  have : SFinite (ν.withDensity g) := by rw [← hmap]; infer_instance
   -- The defining composition-product identity for the candidate.
   have hcompProd : ρ.map (fun x => (Prod.fst x, Prod.snd x)) = ρ.map Prod.fst ⊗ₘ κ := by
     have hid : (fun x : S × ℝ => (Prod.fst x, Prod.snd x)) = id := by funext x; rfl
@@ -169,7 +169,7 @@ theorem condDistrib_withDensity_prod_ae_eq
       erw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
           ← lintegral_const_mul _ ((hpt t).mul (hft t))]
       exact lintegral_congr fun y => by
-        simp only [Pi.mul_apply, Pi.inv_apply]; rw [hq_def, mul_assoc]
+        simp only [Pi.mul_apply]; rw [hq_def, mul_assoc]
     -- Right side: unfold the composition-product and the marginal density.
     have hJ : Measurable fun t => ∫⁻ y, p (t, y) * f (t, y) ∂volume :=
       (hp.mul hf).lintegral_prod_right'

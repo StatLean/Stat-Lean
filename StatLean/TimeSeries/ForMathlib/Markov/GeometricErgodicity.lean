@@ -112,7 +112,7 @@ private theorem isMarkovKernel_pow (κ : Kernel S S) [IsMarkovKernel κ] :
     ∀ n : ℕ, IsMarkovKernel (κ ^ n)
   | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
   | n + 1 => by
-      haveI := isMarkovKernel_pow κ n
+      have := isMarkovKernel_pow κ n
       rw [pow_succ]
       exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
 
@@ -165,8 +165,8 @@ theorem IsErgodicKernel.invariant {κ : Kernel S S} [IsMarkovKernel κ] {F : Mea
   have key : ∀ n : ℕ,
       tvDist F (F.bind κ) ≤ tvDist ((κ ^ (n + 1)) x) F + tvDist ((κ ^ n) x) F := by
     intro n
-    haveI := isMarkovKernel_pow κ n
-    haveI := isMarkovKernel_pow κ (n + 1)
+    have := isMarkovKernel_pow κ n
+    have := isMarkovKernel_pow κ (n + 1)
     -- one more step of the chain is one more kernel average, which contracts `tvDist`
     have hstep : tvDist ((κ ^ (n + 1)) x) (F.bind κ) ≤ tvDist ((κ ^ n) x) F := by
       rw [pow_succ_apply]
@@ -218,7 +218,7 @@ theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
       (fun _ => 1) hGm (fun n => Eventually.of_forall fun y => ?_)
       (by simp) (Eventually.of_forall fun y => ?_)
     · simpa using this
-    · haveI := isMarkovKernel_pow κ n
+    · have := isMarkovKernel_pow κ n
       exact (hGle n y).trans (tvDist_le_one _ _)
     · exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
         (hF.tendsto_tvDist y) (Eventually.of_forall fun n => zero_le)
@@ -240,7 +240,7 @@ theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
       rwa [hcst, ← hstep n] at h
     have hlim := hDCT (fun n y => F s - ((κ ^ n) y) s) (fun n => measurable_const.sub (hmeas n))
       (fun n y => by
-        haveI := isMarkovKernel_pow κ n
+        have := isMarkovKernel_pow κ n
         rw [tvDist_comm]
         exact le_iSup₂ (f := fun t (_ : MeasurableSet t) => F t - ((κ ^ n) y) t) s hs)
     exact tsub_eq_zero_iff_le.1

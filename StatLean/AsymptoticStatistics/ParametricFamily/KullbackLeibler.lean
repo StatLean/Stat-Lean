@@ -52,9 +52,9 @@ theorem kl_uniquely_maximized_at_truth
     (theta : Theta) (htheta : theta ≠ theta0) :
     -subprobKLDivergence P theta0 theta <
       -subprobKLDivergence P theta0 theta0 := by
-  letI : IsFiniteMeasure (P theta0) :=
+  let : IsFiniteMeasure (P theta0) :=
     ⟨by rw [hP0]; exact ENNReal.one_lt_top⟩
-  letI : IsFiniteMeasure (P theta) :=
+  let : IsFiniteMeasure (P theta) :=
     ⟨(hsub theta).trans_lt ENNReal.one_lt_top⟩
   have hmeasure_ne : P theta0 ≠ P theta := by
     intro hmeasure

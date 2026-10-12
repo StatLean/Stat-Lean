@@ -135,7 +135,6 @@ lemma mem_localizedDifferenceClass_of_integral_sq {F : Set (Ω → ℝ)} {P : Me
     (fun x => f x - g x) ∈ localizedDifferenceClass F P δq := by
   refine mem_localizedDifferenceClass hf hg ?_
   have hnorm := eLpNorm_two_eq_eLpNorm' hmem.aestronglyMeasurable
-  norm_num only [ENNReal.toReal_ofNat] at hnorm
   rw [← hnorm]
   -- Bridge `∫(f−g)² < δq²` to `eLpNorm (f−g) 2 P ≤ ofReal δq`.
   -- `(eLpNorm (f−g) 2 P).toReal = √(∫(f−g)²) ≤ √(δq²) = δq`, then back to `ℝ≥0∞`.

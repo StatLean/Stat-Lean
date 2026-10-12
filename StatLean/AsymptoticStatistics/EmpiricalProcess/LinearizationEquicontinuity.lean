@@ -262,7 +262,7 @@ theorem linearization_distL2_tendstoZero
       M * (‖menv ω‖ + ‖psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω‖) with hDdef
     have hD_memLp : MemLp D 2 P := (hmenv.norm.add hpv_L2.norm).const_mul M
     have hD_nonneg : ∀ ω, 0 ≤ D ω := fun ω => by rw [hDdef]; exact mul_nonneg hM (by positivity)
-    haveI : Nonempty {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M} := ⟨⟨0, by simpa using hM⟩⟩
+    have : Nonempty {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M} := ⟨⟨0, by simpa using hM⟩⟩
     obtain ⟨qseq, hqseq⟩ :=
       TopologicalSpace.exists_dense_seq {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M}
     -- Zero the dominating sup below `N₀` (where the local `hLip` bound is unavailable);
@@ -557,7 +557,7 @@ theorem tendstoInProbZero_of_ball_outerProbSup
       simp only [Set.mem_union, hA, hB, Set.mem_ofPred_eq]
       by_cases hle : ‖hₙ n ξ‖ ≤ M
       · refine Or.inl ⟨⟨hₙ n ξ, hle⟩, ?_⟩
-        show ε / 2 < |D n ξ (hₙ n ξ)|
+        change ε / 2 < |D n ξ (hₙ n ξ)|
         linarith [half_lt_self hε]
       · exact Or.inr (not_le.mp hle)
     -- Pointwise `ℝ≥0∞` bound via `P*`-subadditivity (measure `≤ P*`, then union).

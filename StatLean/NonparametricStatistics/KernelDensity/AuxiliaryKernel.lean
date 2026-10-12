@@ -119,7 +119,7 @@ theorem exists_bounded_kernel_of_order (ℓ : ℕ) :
     ∃ (K : ℝ → ℝ) (Kmax : ℝ), 0 < Kmax ∧ IsKernelOfOrder K ℓ ∧
       (∀ u, |K u| ≤ Kmax) ∧ ∀ u, u ∉ Set.Icc (-1 : ℝ) 1 → K u = 0 := by
   set d := ℓ / 2 + 1 with hd_def
-  haveI : NeZero d := ⟨by omega⟩
+  have : NeZero d := ⟨by omega⟩
   have hdpos : (0 : ℝ) < (d : ℝ) := by exact_mod_cast (by omega : 0 < d)
   set a : Fin d → ℝ := fun r => (((r : ℕ) : ℝ) + 1) / (d : ℝ) with ha_def
   have ha_pos : ∀ r, 0 < a r := fun r => div_pos (by positivity) hdpos

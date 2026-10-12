@@ -457,9 +457,6 @@ private lemma zEstimatorVec_Sn_OP1
           tupleEval P (fun j => efficientScore S_θ T_nuis (e j)) (X i))) j
         = (Real.sqrt n)⁻¹ * (∑ i : Fin n, g j (X i)) := by
     intro n X j
-    change ((Real.sqrt n)⁻¹ • (∑ i : Fin n,
-          tupleEval P (fun j => efficientScore S_θ T_nuis (e j)) (X i))).ofLp j
-        = (Real.sqrt n)⁻¹ * (∑ i : Fin n, g j (X i))
     rw [WithLp.ofLp_smul, Pi.smul_apply, smul_eq_mul, WithLp.ofLp_sum,
       Finset.sum_apply]
     rfl
@@ -673,7 +670,7 @@ private lemma frobenius_oP
     simp only [hemp, measure_empty]; exact tendsto_const_nhds
   · have hdpos : 0 < d := Nat.pos_of_ne_zero hd0
     have hdR_ne : (d : ℝ) ≠ 0 := by exact_mod_cast hd0
-    haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp hdpos
+    have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp hdpos
     -- Per-entry set equality: `(Ĩ + D̂ₙ)_{jk} = n⁻¹·Σ ℓ̇_{jk} + Ĩ_{jk}` (as sets).
     have hset : ∀ (p : Fin d × Fin d) (n : ℕ),
         {X : Fin n → Ω | δ / d ≤ |(efficientInformationMatrix S_θ T_nuis e

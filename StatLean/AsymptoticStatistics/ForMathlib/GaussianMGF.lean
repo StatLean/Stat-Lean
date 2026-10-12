@@ -451,7 +451,7 @@ lemma pi_gaussianReal_withDensity_exp_shift {ι : Type*} [Fintype ι] (a : ι �
   have h1d : ∀ i, (gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - a i ^ 2 / 2)))
         = gaussianReal (a i) 1 := fun i => gaussianReal_withDensity_exp_shift (a i)
-  haveI : ∀ i, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+  have : ∀ i, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - a i ^ 2 / 2)))) := by
     intro i; rw [h1d i]; infer_instance
   -- Factor the product density: `exp(∑ aᵢyᵢ - ∑ aᵢ²/2) = ∏ exp(aᵢyᵢ - aᵢ²/2)`.
@@ -491,7 +491,7 @@ theorem stdGaussian_withDensity_exp_shift {ι : Type*} [Fintype ι]
       = (stdGaussian (EuclideanSpace ℝ ι)).map (fun y => y + a) := by
   classical
   -- Each 1D shift is a probability measure; promote for `pi_map_pi`'s SigmaFinite instance.
-  haveI : ∀ i,
+  have : ∀ i,
       IsProbabilityMeasure ((gaussianReal 0 1).map (fun x : ℝ => x + a.ofLp i)) := by
     intro i; rw [gaussianReal_map_add_const]; infer_instance
   -- Pull both sides back to `pi` via `map_pi_eq_stdGaussian`.
@@ -631,9 +631,9 @@ theorem multivariateGaussian_map_inner_eq_gaussianReal
   classical
   have hL_meas : Measurable (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫) :=
     (continuous_const.inner continuous_id).measurable
-  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
+  have : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫)
         (multivariateGaussian 0 J)) :=
     (by infer_instance)

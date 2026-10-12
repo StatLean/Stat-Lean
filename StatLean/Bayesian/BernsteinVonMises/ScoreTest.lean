@@ -121,7 +121,7 @@ private lemma coord_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : �
       ≤ Real.exp (-(n : ℝ) * t ^ 2 / (2 * L ^ 2)) := by
   classical
   set Pn : Measure (Fin n → 𝓧) := Measure.pi fun _ : Fin n => P with hPn
-  haveI : IsProbabilityMeasure Pn := by rw [hPn]; infer_instance
+  have : IsProbabilityMeasure Pn := by rw [hPn]; infer_instance
   set c : NNReal := (‖L - (-L)‖₊ / 2) ^ 2 with hc
   have hcval : ((c : NNReal) : ℝ) = L ^ 2 := by
     rw [hc]; push_cast
@@ -585,7 +585,7 @@ private lemma sq_score_integrable (hPDF : IsPDFOf M μ)
 private lemma scTail_tendsto (hPDF : IsPDFOf M μ) (hsc : Measurable sc)
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) :
     Tendsto (fun n : ℕ => scTail M μ θ₀ sc n) atTop (𝓝 0) := by
-  haveI := bvmOneObs_isProbabilityMeasure hPDF θ₀
+  have := bvmOneObs_isProbabilityMeasure hPDF θ₀
   have hsq : Integrable (fun x => ‖sc x‖ ^ 2) (bvmOneObs M μ θ₀) :=
     sq_score_integrable hPDF hDQM
   have hmeasS : ∀ m : ℕ, MeasurableSet {x : 𝓧 | (m : ℝ) < ‖sc x‖} :=
@@ -731,7 +731,7 @@ theorem truncScore_separation
     have h0 : ‖θ - θ₀‖ = 0 := by rw [EuclideanSpace.norm_eq]; simp
     rw [h0, mul_zero]
     exact norm_nonneg _
-  haveI : IsProbabilityMeasure (bvmOneObs M μ θ₀) := bvmOneObs_isProbabilityMeasure hPDF θ₀
+  have : IsProbabilityMeasure (bvmOneObs M μ θ₀) := bvmOneObs_isProbabilityMeasure hPDF θ₀
   have hsq : Integrable (fun x => ‖sc x‖ ^ 2) (bvmOneObs M μ θ₀) :=
     sq_score_integrable hPDF hDQM
   -- the smallest "eigenvalue" of the Fisher form
@@ -874,7 +874,7 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
       ≤ 2 * k * Real.exp (-(n : ℝ) * s ^ 2 / (2 * k * L ^ 2)) := by
   classical
   set Pn : Measure (Fin n → 𝓧) := Measure.pi fun _ : Fin n => P with hPn
-  haveI : IsProbabilityMeasure Pn := by rw [hPn]; infer_instance
+  have : IsProbabilityMeasure Pn := by rw [hPn]; infer_instance
   have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   rcases Nat.eq_zero_or_pos k with hk0 | hkpos
   · subst hk0
@@ -1024,7 +1024,7 @@ theorem truncScore_empirical_dev_tail
         {ω | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, bvmTruncScore sc L (ω i)
           - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)‖}
       ≤ 2 * k * Real.exp (-(n : ℝ) * s ^ 2 / (2 * k * L ^ 2)) := by
-  haveI : IsProbabilityMeasure (bvmOneObs M μ θ) := bvmOneObs_isProbabilityMeasure hPDF θ
+  have : IsProbabilityMeasure (bvmOneObs M μ θ) := bvmOneObs_isProbabilityMeasure hPDF θ
   have hfb : ∀ (x : 𝓧) (j : Fin k), bvmTruncScore sc L x j ∈ Set.Icc (-L) L := by
     intro x j
     have hval : bvmTruncScore sc L x j
@@ -1257,7 +1257,7 @@ theorem exists_moderate_tests
       simpa using Filter.Tendsto.const_mul (2 * (k : ℝ)) hex0
   · -- Type II error on the moderate range
     intro n hn θ hθlow hθhigh
-    haveI : IsProbabilityMeasure (productMeasure M μ θ n) :=
+    have : IsProbabilityMeasure (productMeasure M μ θ n) :=
       AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
         M μ hPDF θ n
     have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn

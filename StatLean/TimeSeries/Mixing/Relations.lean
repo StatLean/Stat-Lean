@@ -1554,7 +1554,7 @@ theorem alphaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure �
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
       ∀ n : ℕ, alphaCoeff X μ n ≤ C * r ^ n := by
   obtain ⟨k, V, κ, hκ, hVm, hmarg, hmarkov, hXV, A, ρ, hA0, hAint, hρ0, hρ1, henv⟩ := hchain
-  haveI := hκ
+  have := hκ
   obtain ⟨I, hIdef⟩ : ∃ t : ℝ, t = ∫ x, A x ∂(μ.map (V 0)) := ⟨_, rfl⟩
   have hI0 : 0 ≤ I := hIdef ▸ integral_nonneg hA0
   obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = max ρ (1 / 2) := ⟨_, rfl⟩
@@ -1564,7 +1564,7 @@ theorem alphaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure �
   refine ⟨max (I / r) 1, le_trans zero_le_one (le_max_right _ _), r, hr0.le, hr1, fun n => ?_⟩
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · refine le_trans alphaMixCoeff_le_one ?_
-    simpa using le_max_right (I / r) 1
+    simp
   · have hstep := alphaCoeff_le_of_state_envelope hVm hXV hmarg hmarkov hA0 hAint hρ0 henv hn
     rw [← hIdef] at hstep
     refine hstep.trans (le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left (I / r) 1)
@@ -1589,7 +1589,7 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
       ∀ n : ℕ, betaCoeff X μ n ≤ C * r ^ n := by
   obtain ⟨k, V, κ, hκ, hVm, hmarg, hmarkov, hXV, A, ρ, hA0, hAint, hρ0, hρ1, henv⟩ := hchain
-  haveI := hκ
+  have := hκ
   obtain ⟨I, hIdef⟩ : ∃ t : ℝ, t = ∫ x, A x ∂(μ.map (V 0)) := ⟨_, rfl⟩
   have hI0 : 0 ≤ I := hIdef ▸ integral_nonneg hA0
   obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = max ρ (1 / 2) := ⟨_, rfl⟩
@@ -1602,7 +1602,7 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
       (hXV s).mono (hVm (s + 1)).comap_le le_rfl
     refine le_trans (betaMixCoeff_le_one (mΩ := (inferInstance : MeasurableSpace Ω))
       (iSup₂_le fun s _ => (hXm s).comap_le) (iSup₂_le fun s _ => (hXm s).comap_le)) ?_
-    simpa using le_max_right (I / r) 1
+    simp
   · have hstep := betaCoeff_le_of_state_envelope hVm hXV hmarg hmarkov hA0 hAint hρ0 henv hn
     rw [← hIdef] at hstep
     refine hstep.trans (le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left (I / r) 1)
@@ -1657,7 +1657,7 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
   have hK : (0:ℝ) ≤ K := hdrift.K_nonneg
   have hprob : ∀ (m : ℕ), IsProbabilityMeasure ((κ ^ m) x₀) := by
     intro m
-    haveI : ProbabilityTheory.IsMarkovKernel (κ ^ m) := by
+    have : ProbabilityTheory.IsMarkovKernel (κ ^ m) := by
       induction m with
       | zero =>
           rw [pow_zero]
@@ -1678,7 +1678,7 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
         ≤ ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ))
           + (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π := by
       intro m
-      haveI := hprob m
+      have := hprob m
       have htransfer := StatLean.Bayesian.lintegral_le_lintegral_add_tvDist
         π ((κ ^ m) x₀) (hWm n) (B := (n : ENNReal)) (fun _ => min_le_right _ _)
       have hdrm : ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂((κ ^ m) x₀)
@@ -1758,9 +1758,9 @@ theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpa
       ∃ (A : S → ℝ) (r : ℝ), (∀ x, 0 ≤ A x) ∧ Integrable A π ∧ 0 ≤ r ∧ r < 1 ∧
         ∀ (x : S) (m : ℕ),
           StatLean.Minimaxity.tvDist ((κ ^ m) x) π ≤ ENNReal.ofReal (A x * r ^ m) := by
-  haveI := hmin.isProbability
+  have := hmin.isProbability
   -- the state space is nonempty: it carries the minorizing probability measure
-  haveI hne : Nonempty S := by
+  have hne : Nonempty S := by
     rcases isEmpty_or_nonempty S with h | h
     · exact absurd (measure_univ (μ := ν))
         (by rw [Set.univ_eq_empty_iff.2 h, measure_empty]; exact zero_ne_one)
@@ -1768,7 +1768,7 @@ theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpa
   obtain ⟨x₀⟩ := id hne
   obtain ⟨π, hπprob, hinv, hge, b, c, r, hb0, hc0, hr0, hr1, henv⟩ :=
     harris_theorem_envelope hdrift hmin hR
-  haveI := hπprob
+  have := hπprob
   obtain ⟨ρ, _, herg⟩ := hge
   have hVint : Integrable V π := integrable_lyap_of_isErgodicWithRate hdrift herg x₀
   refine ⟨π, hπprob, hinv, fun x => c + b * V x, r, fun x =>

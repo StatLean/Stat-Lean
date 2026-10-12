@@ -120,7 +120,7 @@ lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω)
   by_cases h : 0 < d
   · simp only [h, ↓reduceDIte]
     -- Key: θ₀ = global min magnitude ≤ |W j ω| for all j, so Vplus/Vminus agree at θ₀ and 0.
-    haveI hNZ : NeZero d := ⟨h.ne'⟩
+    have hNZ : NeZero d := ⟨h.ne'⟩
     have hmin : ∀ j : Fin d, θ W ⟨0, h⟩ ω ≤ |W j ω| := by
       intro j
       let v := fun i : Fin d => |W i ω|
@@ -1277,7 +1277,6 @@ private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Fins
     have hrec : F =ᵐ[μ] (fun ω => reconCproc H₀ n h (M ω)) ⁻¹' B := by
       rw [← hBpre]
       filter_upwards [hN] with ω hω
-      change (ω ∈ cprocLE ⁻¹' B) = (ω ∈ (fun ω => reconCproc H₀ n h (M ω)) ⁻¹' B)
       simp only [Set.mem_preimage]
       rw [show cprocLE ω = reconCproc H₀ n h (M ω) from (reconCproc_eq W H₀ n h ω hω).symm]
     have hFC0 : F ⊆ M ⁻¹' {p | orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l
@@ -2306,7 +2305,7 @@ theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ ≤ 1 := by
-  haveI : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
+  have : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
   have h_ratio_eq :
       ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ =
       ∫ ω, stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω ∂μ :=

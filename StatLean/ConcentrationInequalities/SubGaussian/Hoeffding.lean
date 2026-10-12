@@ -90,7 +90,7 @@ theorem isSubGaussian_const_mul {X : Ω → ℝ} {σ2 : ℝ≥0} {μ : Measure �
               (⟨c ^ 2, sq_nonneg c⟩ * σ2) μ :=
     (h : HasSubgaussianMGF (fun ω => X ω - ∫ x, X x ∂μ) σ2 μ).const_mul c
   -- The centered engine of `c · X` is the same function (pull `c` through `∫`).
-  show HasSubgaussianMGF (fun ω => c * X ω - ∫ x, c * X x ∂μ)
+  change HasSubgaussianMGF (fun ω => c * X ω - ∫ x, c * X x ∂μ)
         (⟨c ^ 2, sq_nonneg c⟩ * σ2) μ
   have heq : (fun ω => c * X ω - ∫ x, c * X x ∂μ) =
               (fun ω => c * (X ω - ∫ x, X x ∂μ)) := by

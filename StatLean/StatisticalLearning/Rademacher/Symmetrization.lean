@@ -145,7 +145,7 @@ private lemma sum_bool_flip {n : ℕ} (g : (Fin n → Bool) → ℝ) :
 private lemma measurable_sSup_image {X : Type*} [MeasurableSpace X] {K : Set ι}
     (hKc : K.Countable) {g : ι → X → ℝ} (hg : ∀ k, Measurable (g k)) :
     Measurable fun x => sSup ((fun k => g k x) '' K) := by
-  haveI := hKc.to_subtype
+  have := hKc.to_subtype
   have h : (fun x => sSup ((fun k => g k x) '' K)) = fun x => ⨆ k : K, g k x := by
     funext x; exact sSup_image_eq_iSup _ _
   rw [h]

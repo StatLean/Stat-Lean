@@ -249,8 +249,6 @@ theorem iid_extendedEmpiricalAvg_tendsto_finite
           simp_rw [hx]
         rcases h with h | h
         · left
-          change ((-a + ε : ℝ) : EReal) ≤ extendedEmpiricalAvg (-f') n
-            (fun i : Fin n => Xs i.val ω)
           rw [hnegAvg, havg]
           rw [show -a + ε = -(a - ε) by ring, EReal.coe_neg]
           exact EReal.neg_le_neg_iff.mpr h.le

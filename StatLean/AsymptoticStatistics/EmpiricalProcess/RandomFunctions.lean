@@ -512,7 +512,7 @@ theorem empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp
   have hweak : WeakConverges
       (fun n => μ.map (fun ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
       (empiricalProcessMarginalGaussian P f) := by
-    haveI : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f) := by
+    have : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f) := by
       rw [empiricalProcessMarginalGaussian]
       exact (by infer_instance)
     have hlim_eq :
@@ -582,7 +582,7 @@ theorem donsker_random_function_consistency_weakConvergesOuter
     : WeakConvergesOuter (fun _ => μ)
         (fun n ξ => empiricalProcess P n (fun i : Fin n => X i.val ξ) (f_hat n ξ))
         (empiricalProcessMarginalGaussian P f₀) := by
-  haveI : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f₀) := by
+  have : IsProbabilityMeasure (empiricalProcessMarginalGaussian P f₀) := by
     unfold empiricalProcessMarginalGaussian
     exact (by infer_instance)
   have hfixed := empiricalProcess_weakConvergesOuter_marginalGaussian_of_memLp P f₀

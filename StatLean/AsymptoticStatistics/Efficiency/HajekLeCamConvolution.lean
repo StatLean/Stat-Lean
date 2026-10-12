@@ -231,7 +231,7 @@ theorem hajek_le_cam_convolution_theorem
         hψ_diff
       T hT_meas (L_θh := fun _ => hReg.limitDist) hT_weak hPDF
   -- Step B: build the IsEquivariantInLaw witness.
-  haveI := hκ_markov
+  have := hκ_markov
   have hEquiv :=
     randomized_kernel_is_equivariant_in_law (k := k) (d := d)
       J hJ_pd ψDot ψDotMat h_ψDot_mat (L_θ := hReg.limitDist) κ hκ
@@ -289,8 +289,8 @@ theorem cov_psd_from_conv_decomp
   classical
   -- Abbreviation: G is the multivariate Gaussian; haveI's for instance lookup.
   set G : Measure (𝓨 d) := ProbabilityTheory.multivariateGaussian (0 : 𝓨 d) V with hG_def
-  haveI : IsProbabilityMeasure G := inferInstance
-  haveI : IsGaussian G := inferInstance
+  have : IsProbabilityMeasure G := inferInstance
+  have : IsGaussian G := inferInstance
   -- Inner-product bridge: `⟪u_lift x, w_lift⟫ = x ⬝ᵥ w` over ℝ, where
   -- `u_lift x := (WithLp.equiv 2 _).symm x`.
   have inner_bridge : ∀ x w : Fin d → ℝ,
@@ -349,7 +349,6 @@ theorem cov_psd_from_conv_decomp
     exact hRHS_eq
   have hSigma_Herm : Sigma.IsHermitian := by
     refine Matrix.IsHermitian.ext (fun i j => ?_)
-    change star (Sigma j i) = Sigma i j
     rw [star_trivial, hSigma_symm]
   -- Step 2: the variance identity at u_x := (WithLp.equiv 2 _).symm x.
   -- Convolution: L = (G.prod N).map (fun p => p.1 + p.2).
@@ -536,8 +535,8 @@ theorem cov_psd_of_regular_estimator
   obtain ⟨M_θ, hM_prob, hM_conv⟩ :=
     hajek_le_cam_convolution_theorem (k := k) (d := d) M μ θ₀ ℓ hℓ hDQM J hJ_pd
       hJ_fisher ψ ψDot hψ_diff ψDotMat h_ψDot_mat T hT_meas hReg hPDF
-  haveI := hM_prob
-  haveI := hReg.isProb
+  have := hM_prob
+  have := hReg.isProb
   -- Step 2: ψDotMat * J⁻¹ * ψDotMatᵀ is PSD.
   have hV_psd : (ψDotMat * J⁻¹ * ψDotMat.transpose).PosSemidef := by
     -- (B * A * Bᵀ).PosSemidef for A = J⁻¹ PSD, B = ψDotMat.

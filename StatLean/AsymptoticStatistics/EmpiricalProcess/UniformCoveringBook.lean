@@ -396,7 +396,7 @@ theorem empiricalRadius_head_le_two_mul_bookEntropyIntegral
     intro hn
     subst n
     exact hθzero (empiricalRelativeRadiusReal_zero F Φ x)
-  letI : NeZero n := ⟨hn⟩
+  let : NeZero n := ⟨hn⟩
   have hD : D ≠ 0 := by
     intro hD
     exact hθzero

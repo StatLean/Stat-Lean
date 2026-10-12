@@ -330,9 +330,6 @@ theorem nuisanceRate_shell_tail
     have hratio : Real.rpow 2 (((j + 1 : ℕ) : ℝ) * β) /
         ((1 / 2 : ℝ) * ((2 : ℝ) ^ j) ^ 2) = Cβ * q ^ j := by
       dsimp [Cβ, q]
-      change ((2 : ℝ) ^ (((j + 1 : ℕ) : ℝ) * β)) /
-          ((1 / 2 : ℝ) * ((2 : ℝ) ^ j) ^ 2) =
-        (2 * (2 : ℝ) ^ β) * (((2 : ℝ) ^ (β - 2)) ^ j)
       rw [show (((j + 1 : ℕ) : ℝ) * β) = β + (j : ℝ) * β by push_cast; ring,
         Real.rpow_add (x := (2 : ℝ)) (by norm_num)]
       have hj2 : ((2 : ℝ) ^ j) ^ 2 = Real.rpow 2 ((j : ℝ) * 2) := by

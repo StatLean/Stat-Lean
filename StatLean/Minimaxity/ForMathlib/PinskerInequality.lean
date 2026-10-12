@@ -436,8 +436,8 @@ private lemma klDiv_ge_two_mul_tvDist_sq (μ ν : Measure α)
     rw [Measure.map_apply hfm (measurableSet_singleton true), hpre]
   have htv_tr : (tvDist μ ν).toReal = (μ A).toReal - (ν A).toReal := by
     rw [tvDist_eq_measure_sub μ ν, ENNReal.toReal_sub_of_le hνμA (measure_ne_top μ A)]
-  haveI : IsProbabilityMeasure (ν.map f) := (by infer_instance)
-  haveI : IsProbabilityMeasure (μ.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (ν.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (μ.map f) := (by infer_instance)
   calc ENNReal.ofReal (2 * (tvDist μ ν).toReal ^ 2)
       = ENNReal.ofReal (2 * (((ν.map f) {true}).toReal - ((μ.map f) {true}).toReal) ^ 2) := by
         rw [htv_tr, hPt, hQt]; congr 1; ring

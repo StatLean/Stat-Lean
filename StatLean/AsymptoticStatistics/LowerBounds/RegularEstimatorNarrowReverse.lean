@@ -127,14 +127,14 @@ theorem isRegularEstimator_of_narrow_explicit
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ.curve (t n)) with hPn_def
   set Pn₀ : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ₀.curve (t n)) with hPn₀_def
-  haveI hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
+  have hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
       γ.curve_isProbability _
     rw [hPn_def]; infer_instance
-  haveI hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
+  have hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
       γ₀.curve_isProbability _
     rw [hPn₀_def]; infer_instance
   set Fγ : ∀ n, (Fin n → Ω) → ℝ :=
@@ -311,8 +311,8 @@ theorem isRegularEstimator_of_narrow_explicit
     have := γ.curve_absContinuous (t n); rwa [h_dom_γ] at this
   have h_γ₀_dom_P : ∀ n, γ₀.curve (t n) ≪ P := fun n => by
     have := γ₀.curve_absContinuous (t n); rwa [h_γ₀_dom] at this
-  haveI : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
-  haveI : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
   intro f
   have h_push_eq_γ : ∀ n,
       ∫ y, f y ∂((Pn n).map (Fγ n)) = ∫ X, f (Fγ n X) ∂(Pn n) := fun n =>

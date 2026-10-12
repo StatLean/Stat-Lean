@@ -266,7 +266,7 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
   have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
   have hcard : 0 < Fintype.card U := lt_of_lt_of_le (Nat.pos_of_ne_zero hn0) hn
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
-  haveI : Nonempty U := Fintype.card_pos_iff.1 hcard
+  have : Nonempty U := Fintype.card_pos_iff.1 hcard
   rcases le_or_gt (Fintype.card U) 1 with hN1 | hN2
   · -- Degenerate population: `N = 1` forces `n = 1`, the sample is deterministic.
     have hNeq : Fintype.card U = 1 := le_antisymm hN1 hcard

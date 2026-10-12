@@ -42,8 +42,8 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))
   let Xouter : ∀ n, (Fin n → Ω) → ℝ := fun n =>
     centeredEstimator T_n (ψ P) n
-  haveI hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
-    letI : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
+  have hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
+    let : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
       γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hXinnerMeas : ∀ n, Measurable (Xinner n) := fun n =>
@@ -58,7 +58,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     have hmaps : ∀ n, (Q n).map₀ (Xinner n) = (Q n).map (Xinner n) :=
       fun n => Measure.map₀_of_measurable (hXinnerMeas n)
     simpa only [hmaps] using hraw
-  haveI hlocalProb : ∀ n, IsProbabilityMeasure ((Q n).map (Xinner n)) := fun n =>
+  have hlocalProb : ∀ n, IsProbabilityMeasure ((Q n).map (Xinner n)) := fun n =>
     (by infer_instance)
   have hLreal : L.real Set.univ = 1 := by
     have h := hlocal (BoundedContinuousFunction.const ℝ (1 : ℝ))
@@ -67,7 +67,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
       simpa only [BoundedContinuousFunction.const_apply', integral_const, smul_eq_mul,
         mul_one, probReal_univ] using h
     exact (tendsto_nhds_unique tendsto_const_nhds h').symm
-  letI : IsProbabilityMeasure L :=
+  let : IsProbabilityMeasure L :=
     MeasureTheory.isProbabilityMeasure_iff_real.mpr hLreal
   have htzero : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (nhds 0) :=
     (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop).inv_tendsto_atTop
@@ -174,8 +174,8 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
   let temp : ∀ n, (Fin n → Ω) → ℝ := fun n X => base n X - c
   let localEst : ∀ n, (Fin n → Ω) → ℝ := fun n X =>
     Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))
-  haveI hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
-    letI : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
+  have hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
+    let : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
       γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hscoreMeas : ∀ n, Measurable (score n) := by
@@ -353,11 +353,11 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
     (hestMeas n).prodMk (hscoreMeas n)
   have hresMeas : ∀ n, Measurable (fun X => est n X - score n X) := fun n =>
     (hestMeas n).sub (hscoreMeas n)
-  haveI hestProb : ∀ n, IsProbabilityMeasure (estLaw n) := fun n =>
+  have hestProb : ∀ n, IsProbabilityMeasure (estLaw n) := fun n =>
     (by infer_instance)
-  haveI hscoreProb : ∀ n, IsProbabilityMeasure (scoreLaw n) := fun n =>
+  have hscoreProb : ∀ n, IsProbabilityMeasure (scoreLaw n) := fun n =>
     (by infer_instance)
-  haveI hjointProb : ∀ n, IsProbabilityMeasure (jointLaw n) := fun n =>
+  have hjointProb : ∀ n, IsProbabilityMeasure (jointLaw n) := fun n =>
     (by infer_instance)
   have hestWeak : AsymptoticStatistics.WeakConverges estLaw
       (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
@@ -418,7 +418,7 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
       exact ⟨χ k, rfl⟩)
   obtain ⟨σ, hσ, π, hπprob, hπweak⟩ :=
     Prohorov.extract_weak_subseq (fun k => jointLaw (χ k)) hsubTight
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   have hπweak' : AsymptoticStatistics.WeakConverges
       (fun k => (baseMeasure (χ (σ k))).map
         (fun X => (est (χ (σ k)) X, score (χ (σ k)) X))) π := by
@@ -445,7 +445,7 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
   let resLaw : ℕ → Measure ℝ := fun k =>
     (baseMeasure (χ (σ k))).map
       (fun X => est (χ (σ k)) X - score (χ (σ k)) X)
-  haveI hresProb : ∀ k, IsProbabilityMeasure (resLaw k) := fun k =>
+  have hresProb : ∀ k, IsProbabilityMeasure (resLaw k) := fun k =>
     (by infer_instance)
   let pres : ℕ → ProbabilityMeasure ℝ := fun k => ⟨resLaw k, inferInstance⟩
   let pzero : ProbabilityMeasure ℝ := ⟨Measure.dirac 0, inferInstance⟩

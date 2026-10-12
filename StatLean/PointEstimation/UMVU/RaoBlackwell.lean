@@ -87,7 +87,7 @@ private lemma rbEstimator_integral_eq (P : Θ → Measure 𝓧) [∀ θ, IsProba
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) {δ : 𝓧 → ℝ}
     (hδm : Measurable δ) (hδi : ∀ θ, Integrable δ (P θ)) (θ : Θ) :
     ∫ x, rbEstimator Q δ (T x) ∂ P θ = ∫ x, δ x ∂ P θ := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := by
+  have : IsProbabilityMeasure (statLaw P T θ) := by
     rw [statLaw_eq_map P T θ hT.aemeasurable]
     infer_instance
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
@@ -116,7 +116,7 @@ private lemma rbEstimator_lintegral_ofReal_le (P : Θ → Measure 𝓧)
     (hφi : Integrable (fun x => φ (δ x)) (P θ)) :
     ∫⁻ x, ENNReal.ofReal (φ (rbEstimator Q δ (T x))) ∂ P θ
       ≤ ∫⁻ x, ENNReal.ofReal (φ (δ x)) ∂ P θ := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := by
+  have : IsProbabilityMeasure (statLaw P T θ) := by
     rw [statLaw_eq_map P T θ hT.aemeasurable]
     infer_instance
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id

@@ -742,7 +742,7 @@ private theorem crossSum_clt [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2
             = σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl hω
-      simp only [Set.mem_ofPred_eq, hsum]
+      simp only [hsum]
       have hfac : (n : ℝ)⁻¹ * (σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2) - σ2 * σ2
           = σ2 * ((n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 - σ2) := by
         ring
@@ -983,7 +983,7 @@ variable {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
 
 private lemma memLp_noiseFinsetSum (hiid : IsIIDNoise ε σ2 μ) (s : Finset ℕ) :
     MemLp (fun ω => ∑ i ∈ s, ε ((i : ℤ) + 1) ω) 2 μ :=
-  memLp_finsetSum s fun i _ => memLp_noise hiid _
+  memLp_finsetSum s fun _ _ => memLp_noise hiid _
 
 /-- `E[(Σ_{i ∈ s} ε_{i+1})²] = #s · σ²`. -/
 private lemma integral_noiseFinsetSum_sq [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2 μ)
@@ -2148,7 +2148,7 @@ private lemma sampleResiduals_eq_noise_add {T : ℕ} (t : Fin T) (ω : Ω) :
       have : ((((t : ℕ) - j : ℕ)) : ℤ) = ((t : ℕ) : ℤ) - (j : ℤ) := by
         push_cast [Nat.cast_sub hjt]
         ring
-      rw [this]; push_cast; ring
+      rw [this]; ring
     rw [hidx, mul_assoc]
   rw [hexpand]
   have hswap := sum_triangle_swap
@@ -2514,7 +2514,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
     rcases Nat.eq_zero_or_pos T with hT | hT
     · subst hT
       simp only [Nat.cast_zero, inv_zero, zero_mul, mul_zero] at hsplit
-      simp [hsplit] at *
+      simp at *
       linarith
     · have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
       have : (T : ℝ) * ((T : ℝ)⁻¹ * Δ) = Δ := by field_simp

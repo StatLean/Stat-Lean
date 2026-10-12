@@ -176,7 +176,7 @@ theorem finiteClass_hasUniformConvergenceWith (𝓗 : Finset H)
     HasUniformConvergenceWith (↑𝓗 : Set H) ℓ
       (fun ε δ => ⌈Real.log (2 * 𝓗.card / δ) / (2 * ε ^ 2)⌉₊) := by
   intro D hD ε δ hε hδ hδ1 n hn
-  haveI := hD
+  have := hD
   have hN1 : (1 : ℝ) ≤ (𝓗.card : ℝ) := by
     exact_mod_cast Finset.card_pos.mpr h𝓗
   have hlogpos : 0 < Real.log (2 * 𝓗.card / δ) := by

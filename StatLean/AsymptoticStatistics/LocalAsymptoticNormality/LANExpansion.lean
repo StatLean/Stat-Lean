@@ -405,7 +405,8 @@ lemma variance_tendsto_zero
     by_cases hp_zero : p = 0
     · -- p = 0: LHS = 0, RHS ≥ 0.
       rw [hp_zero]
-      simp
+      simp only [div_zero, Real.sqrt_zero, zero_sub, mul_neg, mul_one, mul_zero, one_div,
+        Nat.ofNat_pos, mul_nonneg_iff_of_pos_left, ge_iff_le]
       positivity
     -- p > 0: show equality.
     have hp_pos : 0 < p := lt_of_le_of_ne hp_nn (Ne.symm hp_zero)

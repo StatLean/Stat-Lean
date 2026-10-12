@@ -111,7 +111,7 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     (hδ2 : MemLp δ 2 (M.toMeasure μ θ)) :
     HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ)
       (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   obtain ⟨ε, hε, b, hb2, hbound⟩ := hreg
   have htoM : M.toMeasure μ θ
       = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) := rfl
@@ -290,7 +290,7 @@ theorem integral_score_eq_zero_of_density_regular (M : ParametricFamily 𝓧 ℝ
     -- USER-INPUT: the dominated-difference-quotient condition at `θ`
     (hreg : HasDominatedDifferenceQuotient M μ θ) :
     ∫ x, score M θ x * M.density θ x ∂μ = 0 := by
-  haveI := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hd := diff_under_integral_of_density_regular M μ hpdf hsupp θ hdiff hreg
     (fun _ => 1) (memLp_const 1)
   have hconst : (fun t => ∫ x, (1 : ℝ) * M.density t x ∂μ) = fun _ => (1 : ℝ) := by
@@ -329,7 +329,7 @@ private lemma measurable_score_of_regular (M : ParametricFamily 𝓧 ℝ)
         simp only [slope_def_field, sub_self, zero_div, deriv_const']
         exact tendsto_const_nhds
       · exact (hdiff x hpos).hasDerivAt.tendsto_slope.comp ha_tendsto
-  show Measurable (fun x => deriv (fun t => M.density t x) θ / M.density θ x)
+  change Measurable (fun x => deriv (fun t => M.density t x) θ / M.density θ x)
   exact hderiv_meas.div (M.density_meas θ)
 
 /-- **The information inequality under family-side regularity.** If the family has a common
@@ -437,7 +437,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
   -- the product family is a probability-density family
   have hpdf_pi : IsPDFOf (piFamily M n) (Measure.pi fun _ : Fin n => μ) := by
     refine ⟨fun t => ?_, fun t => ?_⟩
-    · show ∫ x, ∏ i, M.density t (x i) ∂(Measure.pi fun _ : Fin n => μ) = 1
+    · change ∫ x, ∏ i, M.density t (x i) ∂(Measure.pi fun _ : Fin n => μ) = 1
       rw [integral_fintype_prod_eq_prod (fun _ a => M.density t a)]
       simp [hpdf.density_integral_eq_one t]
     · exact Integrable.fintype_prod (fun _ => hpdf.density_integrable t)

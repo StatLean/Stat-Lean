@@ -348,7 +348,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
   have hmVp : Measurable (fun ω => Vplus W H₀ 0 ω) := measurable_Vplus0 W H₀ hW.meas
   have hVm_le : ∀ ω, Vminus W H₀ 0 ω ≤ N₀ := fun ω => Vminus0_le W H₀ ω
   have hVp_le : ∀ ω, Vplus W H₀ 0 ω ≤ N₀ := fun ω => by
-    show (Splus W 0 ω ∩ H₀).card ≤ H₀.card
+    change (Splus W 0 ω ∩ H₀).card ≤ H₀.card
     exact Finset.card_le_card Finset.inter_subset_right
   -- Step 1: pointwise `V₊/(1+V₋) ≤ g(V₋)` (since `V₊ ≤ N₀ − V₋`).
   have hpt : ∀ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ≤ g (Vminus W H₀ 0 ω) := by
@@ -403,7 +403,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     have h1 : (fun ω => (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0)) =
         Set.indicator {ω | Vminus W H₀ 0 ω = m} (fun _ => 1) := by
       funext ω; by_cases h : Vminus W H₀ 0 ω = m <;>
-        simp [Set.indicator_apply, Set.mem_ofPred_eq, h]
+        simp [Set.mem_ofPred_eq, h]
     have hms : MeasurableSet {ω | Vminus W H₀ 0 ω = m} := hmVm (measurableSet_singleton m)
     rw [h1, integral_indicator_const (1 : ℝ) hms, smul_eq_mul, mul_one]
     rfl

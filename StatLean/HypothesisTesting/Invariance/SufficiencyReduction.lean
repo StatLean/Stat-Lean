@@ -112,7 +112,7 @@ private theorem integral_condStat_smul_eq {Θ' 𝓧' 𝓣' : Type*}
     (hker : (P θ).map (fun x => (T x, x)) = statLaw P T θ ⊗ₘ Q)
     {w : 𝓣' → ℝ} (hw : Measurable w) {C : ℝ} (hwb : ∀ t, |w t| ≤ C) :
     ∫ t, w t * (∫ x, φ x ∂(Q t)) ∂(statLaw P T θ) = ∫ x, w (T x) * φ x ∂(P θ) := by
-  haveI : IsProbabilityMeasure (statLaw P T θ) := by
+  have : IsProbabilityMeasure (statLaw P T θ) := by
     rw [statLaw, Measure.map₀_of_measurable hTmeas]; infer_instance
   have hFmeas : Measurable (fun p : 𝓣' × 𝓧' => w p.1 * φ p.2) :=
     (hw.comp measurable_fst).mul (hφmeas.comp measurable_snd)
@@ -240,7 +240,7 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
     (g : G') (θ : Θ') {B : Set 𝓣'} (hB : MeasurableSet B) :
     ∫ t in B, (∫ x, φ x ∂(Q (g • t))) ∂(statLaw P T θ) = ∫ x in T ⁻¹' B, φ x ∂(P θ) := by
   classical
-  haveI hprob : ∀ θ', IsProbabilityMeasure (statLaw P T θ') := fun θ' =>
+  have hprob : ∀ θ', IsProbabilityMeasure (statLaw P T θ') := fun θ' =>
     (by rw [statLaw_eq_map P T _ hTmeas.aemeasurable]; infer_instance)
   have hφb : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφIcc x).1], (hφIcc x).2⟩
@@ -339,7 +339,7 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
       rw [abs_le]; constructor <;> nlinarith [h1.1, h1.2, h2.1, h2.2]
     have hfint : ∀ θ', ∫ t, (ψ (m t) - ψ t) ∂(statLaw P T θ') = 0 := by
       intro θ'
-      haveI : IsFiniteMeasure (statLaw P T θ') := by unfold statLaw; infer_instance
+      have : IsFiniteMeasure (statLaw P T θ') := by unfold statLaw; infer_instance
       have haem : AEMeasurable (fun t => g • t) (statLaw P T θ') :=
         hm_meas.aemeasurable.congr (hm_ae θ').symm
       have hInt1 : Integrable (fun t => ψ (m t)) (statLaw P T θ') :=
@@ -398,7 +398,7 @@ theorem isUMP_of_isUMPAlmostInvariant_sufficient [MulAction G 𝓣] [MulAction G
         (∀ θ θ' : Θ, v θ = v θ' → power P φ θ = power P φ θ') →
         ∀ θ ∈ Θ₁, power P φ θ ≤ power P (fun x => ψ₀ (T x)) θ := by
   obtain ⟨Q, hQmark, hker⟩ := hsuf.exists_map hTmeas
-  haveI := hQmark
+  have := hQmark
   refine ⟨⟨hψ₀.1.1.comp hTmeas, fun x => hψ₀.1.2 (T x)⟩, ?_⟩
   intro φ hφcrit hφlevel hφv θ hθ
   have hφabs : ∀ x, |φ x| ≤ 1 := fun x => by
@@ -451,14 +451,14 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
     ∃ ψ : 𝓣 → ℝ, IsCriticalFn ψ ∧ (∀ θ, IsAlmostInvariant G (statLaw P T θ) ψ) ∧
       ∀ θ, power (statLaw P T) ψ θ = power P φ θ := by
   obtain ⟨Q, hQmark, hker⟩ := hsuf.exists_map hTmeas
-  haveI := hQmark
+  have := hQmark
   have hφabs : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφ.2 x).1], (hφ.2 x).2⟩
   refine ⟨fun t => ∫ x, φ x ∂(Q t),
     ⟨measurable_condStat Q hφ.1, condStat_mem_Icc Q hφ.2⟩, ?_, ?_⟩
   · -- Almost invariance of `E[φ|T]`, via the equivariant set-integral pull-out.
     intro θ g
-    haveI : IsProbabilityMeasure (statLaw P T θ) :=
+    have : IsProbabilityMeasure (statLaw P T θ) :=
       (by rw [statLaw_eq_map P T _ hTmeas.aemeasurable]; infer_instance)
     have hψ_meas := measurable_condStat Q hφ.1
     have haeT : AEMeasurable (fun t => g • t) (statLaw P T θ) := by

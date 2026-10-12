@@ -182,11 +182,11 @@ private lemma linfNorm_noise_tail
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · -- d = 0: linfNorm = sSup ∅ = 0, contradicts ht
       have hval : ⨆ j : Fin d, |(designMap Xᵀ (noiseVec ω)).ofLp j| = 0 := by
-        haveI := hd0
+        have := hd0
         change sSup (Set.range (fun j : Fin d => |(designMap Xᵀ (noiseVec ω)).ofLp j|)) = 0
         rw [Set.range_eq_empty_iff.mpr hd0, Real.sSup_empty]
       exact absurd (hval ▸ hω) (not_lt.mpr ht)
-    · haveI := hne
+    · have := hne
       exact (lt_ciSup_iff (Set.finite_range _).bddAbove).mp hω
   -- ── Step 2: per-column coordinate = column inner product ──────────────────────
   have hcoord : ∀ ω j, (designMap Xᵀ (noiseVec ω)).ofLp j = ∑ i, X i j * ε i ω := by
@@ -208,7 +208,7 @@ private lemma linfNorm_noise_tail
       simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
     have hset : {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} =
         {ω | t < |∑ i : Fin n, X i j * ε i ω - ∫ x, (∑ i, X i j * ε i x) ∂μ|} := by
-      congr 1; ext ω; simp only [Set.mem_ofPred_eq, hcoord ω j, hm, sub_zero]
+      congr 1; ext ω; simp only [hcoord ω j, hm, sub_zero]
     rw [hset]
     exact (hcol_sg j).measure_abs_sub_integral_lt_le ht
   -- ── Step 4: union bound over d columns ───────────────────────────────────────
@@ -225,7 +225,7 @@ private lemma linfNorm_noise_tail
           rw [Finset.sum_const, Finset.card_fin, nsmul_eq_mul,
               ← ENNReal.ofReal_natCast (n := d),
               ← ENNReal.ofReal_mul (by positivity)]
-          congr 1; push_cast; ring
+          congr 1; ring
 
 /-! ## Main theorem: Lasso rate under sub-Gaussian noise (Corollary 10.1) -/
 
@@ -293,7 +293,7 @@ theorem lasso_random_rate
   -- ── Setup ──────────────────────────────────────────────────────────────────────
   set noiseVec := fun ω => WithLp.toLp (p := 2) (fun i : Fin n => ε i ω)
   set G := {ω | lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω))}
-  haveI : IsProbabilityMeasure μ := hε_indep.isProbabilityMeasure
+  have : IsProbabilityMeasure μ := hε_indep.isProbabilityMeasure
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
   -- ── Step 1: On G, lasso_l2_rate gives the bound ───────────────────────────────
   have hG_sub : G ⊆ {ω | ‖βhat ω - βstar‖ ≤ (3 / κ) * Real.sqrt (S.card : ℝ) * lam} := by

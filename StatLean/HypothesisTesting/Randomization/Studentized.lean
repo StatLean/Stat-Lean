@@ -364,7 +364,7 @@ private lemma measurePreserving_evalY (m n : ℕ) (PY PZ : Measure ℝ) [IsProba
     [IsProbabilityMeasure PZ] (i : Fin m) :
     MeasurePreserving (fun x : Fin (m + n) → ℝ => x (Fin.castAdd n i))
       (twoSampleLaw m n PY PZ) PY := by
-  haveI := isProbabilityMeasure_addCases' m n PY PZ
+  have := isProbabilityMeasure_addCases' m n PY PZ
   have h := MeasureTheory.measurePreserving_eval
     (μ := Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
     (Fin.castAdd n i)
@@ -377,7 +377,7 @@ private lemma measurePreserving_evalZ (m n : ℕ) (PY PZ : Measure ℝ) [IsProba
     [IsProbabilityMeasure PZ] (j : Fin n) :
     MeasurePreserving (fun x : Fin (m + n) → ℝ => x (Fin.natAdd m j))
       (twoSampleLaw m n PY PZ) PZ := by
-  haveI := isProbabilityMeasure_addCases' m n PY PZ
+  have := isProbabilityMeasure_addCases' m n PY PZ
   have h := MeasureTheory.measurePreserving_eval
     (μ := Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
     (Fin.natAdd m j)
@@ -1287,7 +1287,7 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
     · refine NNReal.coe_injective ?_
       simp only [NNReal.coe_mul, NNReal.coe_one, NNReal.coe_mk]
       field_simp
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have hcont : ContinuousAt (cdf (R.map (fun u : ℝ => τ⁻¹ * u + 0))) t := by
     rw [hmapR]; exact continuousAt_cdf_of_noAtoms' _ t
   -- The three measurability side conditions, and the two convergence inputs.
@@ -1370,7 +1370,7 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
     unfold studentizedTwoSample twoSampleScale twoSampleVarY twoSampleVarZ
       twoSampleMeanY twoSampleMeanZ twoSampleMeanDiff
     fun_prop
-  haveI hprobT : ∀ k, IsProbabilityMeasure
+  have hprobT : ∀ k, IsProbabilityMeasure
       ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
     (by infer_instance)
   -- Dividing the numerator's Gaussian limit by `s` gives the standard normal.
@@ -1837,7 +1837,7 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     fun_prop
   have hsmul : ∀ (k : ℕ) (g : Equiv.Perm (Fin (m k + n k))),
       Measurable (fun x : Fin (m k + n k) → ℝ => g • x) := fun _ g => measurable_perm_smul' _ g
-  haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   -- (i) the studentized randomization distribution converges in probability to `Φ`
   have hrd : ∀ z : ℝ, TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
@@ -1847,7 +1847,7 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
   -- (ii) the unconditional law converges weakly to `N(0,1)`
   have hlaw := weakConverges_studentizedTwoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
     hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos
-  haveI hprob : ∀ k, IsProbabilityMeasure ((twoSampleLaw (m k) (n k) PY PZ).map
+  have hprob : ∀ k, IsProbabilityMeasure ((twoSampleLaw (m k) (n k) PY PZ).map
       (studentizedTwoSample (m k) (n k))) := fun k =>
     (by infer_instance)
   -- (iii) the critical fraction `k/M` converges to `1 − α` (`M = N!  → ∞`)

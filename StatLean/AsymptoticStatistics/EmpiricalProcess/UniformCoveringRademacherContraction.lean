@@ -25,10 +25,10 @@ theorem integral_iSup_abs_rademacherAverage_clippedSquare_le
   classical
   cases isEmpty_or_nonempty ι with
   | inl hι =>
-      letI : IsEmpty ι := hι
+      let : IsEmpty ι := hι
       simp
   | inr hι =>
-      letI : Nonempty ι := hι
+      let : Nonempty ι := hι
       cases n with
       | zero => simp
       | succ m =>
@@ -128,10 +128,10 @@ theorem rademacherSup_range_eq_ofReal_iSup
   classical
   cases isEmpty_or_nonempty ι with
   | inl hι =>
-      letI : IsEmpty ι := hι
+      let : IsEmpty ι := hι
       simp [rademacherSup, supNormOver]
   | inr hι =>
-      letI : Nonempty ι := hι
+      let : Nonempty ι := hι
       unfold rademacherSup supNormOver
       apply le_antisymm
       · refine iSup_le fun f => iSup_le fun hf => ?_

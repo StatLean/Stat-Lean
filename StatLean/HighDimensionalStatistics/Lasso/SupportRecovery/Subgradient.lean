@@ -80,16 +80,16 @@ private lemma inner_eq_sum (x y : EuclideanSpace ℝ (Fin d)) :
 private lemma coord_eq_inner_single (v : EuclideanSpace ℝ (Fin d)) (j : Fin d) :
     ⟪v, EuclideanSpace.single j (1 : ℝ)⟫_ℝ = v.ofLp j := by
   rw [inner_eq_sum, Finset.sum_eq_single j]
-  · simp [EuclideanSpace.single, PiLp.single_apply]
+  · simp [EuclideanSpace.single]
   · intro i _ hij
-    simp [EuclideanSpace.single, PiLp.single_apply, hij]
+    simp [EuclideanSpace.single, hij]
   · intro h; exact absurd (Finset.mem_univ j) h
 
 /-- If every coordinate is `≤ 1` in absolute value then `‖z‖_∞ ≤ 1`. -/
 private lemma linfNorm_le_one_of_forall {z : EuclideanSpace ℝ (Fin d)}
     (h : ∀ i, |z.ofLp i| ≤ 1) : linfNorm z ≤ 1 := by
   rcases isEmpty_or_nonempty (Fin d) with he | hne
-  · haveI := he
+  · have := he
     simp only [linfNorm, Real.iSup_of_isEmpty]
     norm_num
   · exact ciSup_le h
@@ -382,7 +382,7 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
   refine ⟨WithLp.toLp 2 (fun j => if 0 < θhat.ofLp j then (1 : ℝ)
       else if θhat.ofLp j < 0 then -1 else -(grad.ofLp j) / lam), ?_, ?_⟩
   · intro i
-    simp only [WithLp.ofLp_toLp]
+    simp only
     refine ⟨?_, ?_, ?_⟩
     · intro hpos; rw [ite_eq_left hpos]
     · intro hneg; rw [ite_eq_right (by linarith), ite_eq_left hneg]
@@ -400,11 +400,11 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
           · exact absurd h hl
           · exact h
         rw [abs_of_pos hlpos]; exact hP0
-  · show grad + lam • _ = 0
+  · change grad + lam • _ = 0
     apply WithLp.ofLp_injective 2
     funext j
     simp only [WithLp.ofLp_add, WithLp.ofLp_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
-      WithLp.ofLp_zero, Pi.zero_apply, WithLp.ofLp_toLp]
+      WithLp.ofLp_zero, Pi.zero_apply]
     by_cases hpos : 0 < θhat.ofLp j
     · rw [ite_eq_left hpos, (hP j).1 hpos]; ring
     · by_cases hneg : θhat.ofLp j < 0

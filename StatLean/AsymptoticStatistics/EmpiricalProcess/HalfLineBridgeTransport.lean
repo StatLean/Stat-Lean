@@ -80,7 +80,7 @@ theorem probabilityIntegralTransform
       P ((cdf P) ⁻¹' Set.Iic u) = P (Set.Iic (sSup A)) := by rw [← hAeq]
       _ = ENNReal.ofReal (cdf P (sSup A)) := (ofReal_cdf P _).symm
       _ = ENNReal.ofReal u := by rw [hFu]
-  letI : IsProbabilityMeasure (P.map (cdf P)) :=
+  let : IsProbabilityMeasure (P.map (cdf P)) :=
     (by infer_instance)
   apply Measure.ext_of_Iic
   intro u
@@ -395,7 +395,7 @@ private theorem ksFunctional_cdfPullback_eq_of_uniform_uc
       rw [hdist]
       exact hδ)
     exact (lt_irrefl _ hlt)
-  letI : Nonempty ↑halfLineIndicatorClass := ⟨halfLineIndex 0⟩
+  let : Nonempty ↑halfLineIndicatorClass := ⟨halfLineIndex 0⟩
   unfold ksFunctional
   apply le_antisymm
   · rw [lp.norm_eq_ciSup]
@@ -459,7 +459,7 @@ theorem isPBrownianBridge_map_cdfPullback
       (νU.map (cdfPullbackCLM P)) := by
   have _hPIT := probabilityIntegralTransform P hF
   let T := cdfPullbackCLM P
-  letI : IsProbabilityMeasure νU := hνU.isProbabilityMeasure
+  let : IsProbabilityMeasure νU := hνU.isProbabilityMeasure
   refine
     { isProbabilityMeasure :=
         (by infer_instance)
@@ -552,8 +552,8 @@ theorem halfLine_brownianBridge_measure_unique
     (hκ : IsPBrownianBridge halfLineIndicatorClass P κ) :
     ν = κ := by
   classical
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   apply tightMeasure_eq_of_finiteCoordinate_laws (halfLineEvalCLM)
   · intro x y hxy
     ext i
@@ -583,10 +583,10 @@ theorem halfLine_brownianBridge_measure_unique
       funext z
       rw [hR_apply]
       rfl
-    haveI hνpi_gauss : IsGaussian
+    have hνpi_gauss : IsGaussian
         (ν.map (fun z : LinfF halfLineIndicatorClass ↦ fun i ↦ z (a i))) :=
       hνpi.isGaussian_map
-    haveI hκpi_gauss : IsGaussian
+    have hκpi_gauss : IsGaussian
         (κ.map (fun z : LinfF halfLineIndicatorClass ↦ fun i ↦ z (a i))) :=
       hκpi.isGaussian_map
     have hνR_gauss : IsGaussian (ν.map R) := by
@@ -601,8 +601,8 @@ theorem halfLine_brownianBridge_measure_unique
       rw [← AEMeasurable.map_map_of_aemeasurable
         L.continuous.measurable.aemeasurable hκpi.aemeasurable]
       exact isGaussian_map_equiv L
-    letI : IsGaussian (ν.map R) := hνR_gauss
-    letI : IsGaussian (κ.map R) := hκR_gauss
+    let : IsGaussian (ν.map R) := hνR_gauss
+    let : IsGaussian (κ.map R) := hκR_gauss
     apply IsGaussian.ext
     · have hνint : Integrable R ν :=
         (integrable_map_measure aestronglyMeasurable_id

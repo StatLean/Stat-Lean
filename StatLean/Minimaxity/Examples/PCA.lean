@@ -166,13 +166,13 @@ private lemma klDiv_pca_pair {n d : ℕ} (ua ub : Fin d → ℝ)
           (Measure.pi fun _ : Fin n =>
             multivariateGaussian 0 (1 + ν • Matrix.vecMulVec ub ub))
       = ENNReal.ofReal ((n : ℝ) * (2⁻¹ * (ν ^ 2 * (1 - (ua ⬝ᵥ ub) ^ 2) / (1 + ν)))) := by
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (1 + ν • Matrix.vecMulVec ua ua)) := by
-    haveI := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
+    have := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
       (S := 1 + ν • Matrix.vecMulVec ua ua); infer_instance
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (1 + ν • Matrix.vecMulVec ub ub)) := by
-    haveI := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
+    have := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
       (S := 1 + ν • Matrix.vecMulVec ub ub); infer_instance
   rw [klDiv_pi_eq_nsmul, klDiv_spiked ua ub hua hub hν, nsmul_eq_mul,
     ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg n)]
@@ -262,7 +262,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
     have := Real.log_nonpos hnp hM1
     have hmge : (39 : ℝ) ≤ m := by exact_mod_cast hm
     linarith [hlogM, this]
-  haveI : NeZero M := ⟨by omega⟩
+  have : NeZero M := ⟨by omega⟩
   -- index the packing
   set e := T.equivFin with he_def
   set pv : Fin M → EuclideanSpace ℝ (Fin m) := fun a => (e.symm a : EuclideanSpace ℝ (Fin m))
@@ -315,7 +315,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       _ ≤ Real.sqrt (‖θvec j - θvec k‖ ^ 2) := Real.sqrt_le_sqrt hsq
       _ = ‖θvec j - θvec k‖ := Real.sqrt_sq (norm_nonneg _)
   -- the comap kernel and its mutual information
-  haveI : IsMarkovKernel (P.comap θfam hθmeas) := Kernel.IsMarkovKernel.comap P hθmeas
+  have : IsMarkovKernel (P.comap θfam hθmeas) := Kernel.IsMarkovKernel.comap P hθmeas
   set Qc := P.comap θfam hθmeas with hQc_def
   set ua : Fin M → (Fin (m + 1) → ℝ) :=
     fun a => ((θfam a : EuclideanSpace ℝ (Fin (m + 1))) : Fin (m + 1) → ℝ) with hua_def
@@ -328,7 +328,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
   have hrho : ∀ j k, ua j ⬝ᵥ ua k
       = (1 - δsq) + δsq * ((pv j : Fin m → ℝ) ⬝ᵥ (pv k : Fin m → ℝ)) := by
     intro j k
-    show ((θvec j : Fin (m + 1) → ℝ)) ⬝ᵥ (θvec k : Fin (m + 1) → ℝ) = _
+    change ((θvec j : Fin (m + 1) → ℝ)) ⬝ᵥ (θvec k : Fin (m + 1) → ℝ) = _
     rw [hcoe j, hcoe k, tilt_dot, hs2, hδ0sq]
   have hQc_eq : ∀ a, Qc a = Measure.pi (fun _ : Fin n =>
       multivariateGaussian 0 (1 + ν • Matrix.vecMulVec (ua a) (ua a))) := by
@@ -420,7 +420,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from by simp [ENNReal.ofReal_ofNat],
         ← ENNReal.ofReal_mul (by norm_num)]
       congr 1; ring
-    show 2 * ENNReal.ofReal (δ0 / 4) ≤ edist (Subtype.val (θfam j)) (Subtype.val (θfam k))
+    change 2 * ENNReal.ofReal (δ0 / 4) ≤ edist (Subtype.val (θfam j)) (Subtype.val (θfam k))
     rw [this, edist_dist, dist_eq_norm]
     exact ENNReal.ofReal_le_ofReal (hsep_norm j k hjk)
   · -- the squared-separation × bracket bound
@@ -472,7 +472,7 @@ theorem pca_minimax_rate {n d : ℕ} (hn : 1 ≤ n)
     ENNReal.ofReal (2048⁻¹ * min ((1 + ν) / ν ^ 2 * (d / n)) 1)
       ≤ minimaxRiskDist (· ^ 2) (Subtype.val) P := by
   obtain ⟨M, hMne, θfam, hθ, δ, hM, hsep, hbound⟩ := pca_fano_config hn hd0 ν hν P hP
-  haveI := hMne
+  have := hMne
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
   have key := minimax_fano_lower_bound (fun x : ℝ≥0∞ => x ^ 2) (Subtype.val) P θfam hθ δ hM hΦ hsep
   exact le_trans hbound key

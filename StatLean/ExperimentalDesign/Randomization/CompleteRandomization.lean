@@ -149,14 +149,14 @@ theorem validAllocations_nonempty (r : T → ℕ)
     (hr : ∑ t, r t = Fintype.card U) :
     (validAllocations (U := U) r).Nonempty := by
   rcases isEmpty_or_nonempty T with hT | hT
-  · haveI := hT
+  · have := hT
     have hU : Fintype.card U = 0 := by
       rw [← hr]; simp
-    haveI : IsEmpty U := Fintype.card_eq_zero_iff.mp hU
+    have : IsEmpty U := Fintype.card_eq_zero_iff.mp hU
     refine ⟨fun i => isEmptyElim i, ?_⟩
     rw [mem_validAllocations]
     exact fun t => isEmptyElim t
-  · haveI := hT
+  · have := hT
     obtain ⟨f, -, hf⟩ :=
       exists_allocation_aux (U := U) r Finset.univ Finset.univ
         (by rw [Finset.card_univ]; exact hr)
@@ -325,7 +325,7 @@ theorem expect_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfExpect (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) / (Fintype.card U : ℝ) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hK := card_validAllocations_ne_zero (U := U) r hr
   have key := card_mul_sum_armIndicator r t i
@@ -382,7 +382,7 @@ theorem expect_armIndicator_pair_same (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator t j a)
       = (r t : ℝ) * ((r t : ℝ) - 1)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
@@ -419,7 +419,7 @@ theorem expect_armIndicator_pair_distinct (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator s j a)
       = (r t : ℝ) * (r s : ℝ)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
@@ -450,7 +450,7 @@ theorem var_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfVar (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)) / (Fintype.card U : ℝ) ^ 2 := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hsq : (fun a => armIndicator t i a ^ 2) = armIndicator t i := by
     funext a
@@ -468,7 +468,7 @@ theorem cov_armIndicator_of_ne (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U
     pmfCov (completeRandomization r hr) (armIndicator t i) (armIndicator t j)
       = -((r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)))
           / ((Fintype.card U : ℝ) ^ 2 * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by

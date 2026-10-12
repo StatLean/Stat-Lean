@@ -167,7 +167,7 @@ private lemma exists_smul_volume_map_toEuclideanCLM {Q : Matrix ι ι ℝ} (hQ :
     (MulEquiv.isUnit_map (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := ι))).mpr hQ.isUnit
   let T : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι := ContinuousLinearEquiv.ofUnit hUnit.unit
   have hTeq : ⇑T = ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) Q) := rfl
-  haveI hHaar : ((volume : Measure (EuclideanSpace ℝ ι)).map T).IsAddHaarMeasure :=
+  have hHaar : ((volume : Measure (EuclideanSpace ℝ ι)).map T).IsAddHaarMeasure :=
     ContinuousLinearEquiv.isAddHaarMeasure_map T (volume : Measure (EuclideanSpace ℝ ι))
   refine ⟨(Measure.addHaarScalarFactor ((volume : Measure (EuclideanSpace ℝ ι)).map T)
       (volume : Measure (EuclideanSpace ℝ ι)) : ℝ≥0∞), ?_, ENNReal.coe_ne_top, ?_⟩

@@ -36,7 +36,7 @@ theorem vcSubgraph_uniformLpCoveringNumber_twoRadius_le :
   obtain ⟨K, hK, hcover⟩ := exists_universalVCAdmissibleStrictTwoRadiusCoverConstant
   refine ⟨K, hK, ?_⟩
   intro Ω mΩ F G V r ε hVC hG hr hε₀ hε₁
-  letI : MeasurableSpace Ω := mΩ
+  let : MeasurableSpace Ω := mΩ
   let B : ℝ := K * V * (16 * Real.exp 1) ^ V *
     (1 / ε) ^ (r * (V - 1 : ℕ))
   let N : ℕ := ⌊B⌋₊

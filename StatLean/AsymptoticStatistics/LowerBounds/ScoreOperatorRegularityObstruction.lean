@@ -191,15 +191,15 @@ private theorem weakConverges_sameScore_commonDom
     fun n => Measure.pi (fun _ : Fin n => γ.curve (t n)) with hPn_def
   set Pn₀ : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => Measure.pi (fun _ : Fin n => γ₀.curve (t n)) with hPn₀_def
-  haveI hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
+  have hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
       γ.curve_isProbability _
     rw [hPn_def]
     infer_instance
-  haveI hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
+  have hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
       γ₀.curve_isProbability _
     rw [hPn₀_def]
     infer_instance
@@ -296,7 +296,7 @@ private theorem weakConverges_sameScore_commonDom
       (hY_meas := fun n => (hFγ_meas n).aemeasurable)
       (hX := h_C) (hDist := h_dist_to_zero)
   set ξ : Measure Ω := γ.dominating + γ₀.dominating with hξ_def
-  haveI hξ_sf : SigmaFinite ξ := by rw [hξ_def]; infer_instance
+  have hξ_sf : SigmaFinite ξ := by rw [hξ_def]; infer_instance
   have h_γ_ξ : γ.dominating ≪ ξ :=
     Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
   have h_γ₀_ξ : γ₀.dominating ≪ ξ :=
@@ -316,9 +316,9 @@ private theorem weakConverges_sameScore_commonDom
     (γ.curve_absContinuous (t n)).trans h_γ_ξ
   have h_γ₀_dom_ξ : ∀ n, γ₀.curve (t n) ≪ ξ := fun n =>
     (γ₀.curve_absContinuous (t n)).trans h_γ₀_ξ
-  haveI : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n =>
+  have : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n =>
     γ.curve_isProbability _
-  haveI : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n =>
+  have : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n =>
     γ₀.curve_isProbability _
   intro f
   have h_push_eq_γ : ∀ n,
@@ -387,7 +387,7 @@ private theorem continuous_single_zero :
 private theorem qmdPath_withDensity_eq_curve (γ : QMDPath P) (t : ℝ) :
     γ.dominating.withDensity (fun x => ENNReal.ofReal
       ((γ.curve t).rnDeriv γ.dominating x).toReal) = γ.curve t := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
   rw [show γ.dominating.withDensity (fun x => ENNReal.ofReal
       ((γ.curve t).rnDeriv γ.dominating x).toReal) =
       γ.dominating.withDensity ((γ.curve t).rnDeriv γ.dominating) by
@@ -401,13 +401,13 @@ private theorem qmdPath_isPDFOf (γ : QMDPath P) :
       (AsymptoticStatistics.LowerBounds.T6_FinDimLAN.QMDPath.to1DParametricFamily γ)
       γ.dominating where
   density_integral_eq_one θ := by
-    haveI : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability _
+    have : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability _
     have h := Measure.integral_toReal_rnDeriv (γ.curve_absContinuous (θ 0))
     change ∫ x, ((γ.curve (θ 0)).rnDeriv γ.dominating x).toReal ∂γ.dominating = 1
     rw [h]
     simp [Measure.real]
   density_integrable θ := by
-    letI : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability _
+    let : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability _
     exact Measure.integrable_toReal_rnDeriv
 
 private theorem reparam_derivative_quotient
@@ -564,7 +564,7 @@ theorem rawRegularity_oneDim_convolution
     intro n
     exact continuous_single_zero.measurable.comp (hraw.estimator_meas n)
   have hψ₁_meas_single := continuous_single_zero.measurable
-  letI : IsProbabilityMeasure hraw.limitLaw := hraw.limit_isProbability
+  let : IsProbabilityMeasure hraw.limitLaw := hraw.limit_isProbability
   let hReg : AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence
       M γ.dominating 0 ψ₁ T₁ := by
     refine
@@ -722,14 +722,14 @@ theorem rawRegularity_oneDim_convolution
       (AsymptoticStatistics.LowerBounds.T6_FinDimLAN.QMDPath.dqm γ)
       (1 : Matrix (Fin 1) (Fin 1) ℝ) Matrix.PosDef.one hJ_fisher
       ψ₁ ψDot hψ_diff D hψDot_mat T₁ hT₁_meas hReg (qmdPath_isPDFOf γ)
-  haveI : IsProbabilityMeasure Mθ := hMθ
+  have : IsProbabilityMeasure Mθ := hMθ
   let C : Matrix (Fin 1) (Fin 1) ℝ := D *
     (1 : Matrix (Fin 1) (Fin 1) ℝ)⁻¹ * D.transpose
   have hCentry : C 0 0 = d ^ 2 := by
     dsimp only [C]
     rw [inv_one, Matrix.mul_one]
     erw [Matrix.mul_apply]
-    simp only [Fin.sum_univ_one, Matrix.transpose_apply, D, pow_two]
+    simp only [Fin.sum_univ_one, D, pow_two]
     rfl
   have hCpsd : C.PosSemidef := by
     have h := Matrix.PosSemidef.mul_mul_conjTranspose_same
@@ -758,7 +758,7 @@ theorem rawRegularity_oneDim_convolution
     apply NNReal.coe_injective
     simp only [NNReal.coe_mk, Fin.isValue, PiLp.ofLp_single, Matrix.mulVec_single,
       MulOpposite.op_one, one_smul, single_dotProduct, Matrix.col_apply,
-      one_mul, NNReal.val_eq_coe, Real.coe_toNNReal']
+      one_mul, Real.coe_toNNReal']
     rw [hCentry, max_eq_left (sq_nonneg d)]
   refine ⟨Mθ.map pr0, (by infer_instance), ?_⟩
   have hlimit : hReg.limitDist = hraw.limitLaw.map (EuclideanSpace.single 0 :
@@ -825,7 +825,7 @@ theorem rawRegularity_kernel_derivative_zero
   have hSmeas : ∀ n, Measurable (S_n n) := fun n =>
     (_hraw.estimator_meas n).sub measurable_const
   let zeroψ : Measure Ω → ℝ := fun _ => 0
-  letI : IsProbabilityMeasure _hraw.limitLaw := _hraw.limit_isProbability
+  let : IsProbabilityMeasure _hraw.limitLaw := _hraw.limit_isProbability
   have hsource : AsymptoticStatistics.WeakConverges
       (fun n : ℕ =>
         (Measure.pi (fun _ : Fin n => γ.curve ((Real.sqrt n)⁻¹))).map
@@ -888,17 +888,17 @@ theorem rawRegularity_kernel_derivative_zero
   have hFmeas : ∀ n, Measurable (fun X : Fin n → Ω => Real.sqrt n *
       (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))) := fun n =>
     Measurable.const_mul ((_hraw.estimator_meas n).sub measurable_const) _
-  haveI hμprob : ∀ n, IsProbabilityMeasure (μn n) := by
+  have hμprob : ∀ n, IsProbabilityMeasure (μn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve ((Real.sqrt n)⁻¹)) :=
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve ((Real.sqrt n)⁻¹)) :=
       fun _ => γ₀.curve_isProbability _
     exact (by infer_instance)
   have hνmeas : ∀ n, Measurable (fun X : Fin n → Ω => Real.sqrt n *
       (T_n n X - ψ (γ₀.curve ((Real.sqrt n)⁻¹)))) := fun n =>
     Measurable.const_mul ((_hraw.estimator_meas n).sub measurable_const) _
-  haveI hνprob : ∀ n, IsProbabilityMeasure (νn n) := by
+  have hνprob : ∀ n, IsProbabilityMeasure (νn n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve ((Real.sqrt n)⁻¹)) :=
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve ((Real.sqrt n)⁻¹)) :=
       fun _ => γ₀.curve_isProbability _
     exact (by infer_instance)
   let μp : ℕ → ProbabilityMeasure ℝ := fun n => ⟨μn n, hμprob n⟩
@@ -985,7 +985,7 @@ theorem rawRegularity_uniform_derivative_bound
     (hraw : RawRegularity A chiTilde ψ paths T_n) :
     ∃ C : ℝ, 0 ≤ C ∧
       ∀ b : H, |⟪chiTilde, b⟫_ℝ| ≤ C * ‖A.toCLM b‖ := by
-  letI : IsProbabilityMeasure hraw.limitLaw := hraw.limit_isProbability
+  let : IsProbabilityMeasure hraw.limitLaw := hraw.limit_isProbability
   obtain ⟨δ, hδ, hnonzero⟩ := charFun_nonzero_near_zero hraw.limitLaw
   let t : ℝ := δ / 2
   have ht : 0 < t := by simp [t, hδ]
@@ -1005,7 +1005,7 @@ theorem rawRegularity_uniform_derivative_bound
     intro c hc
     obtain ⟨N, hNprob, hconv⟩ :=
       rawRegularity_oneDim_convolution A chiTilde ψ paths T_n hraw c hc
-    letI : IsProbabilityMeasure N := hNprob
+    let : IsProbabilityMeasure N := hNprob
     have hv : 0 ≤ ⟪chiTilde, c⟫_ℝ ^ 2 := sq_nonneg _
     let v : NNReal := NNReal.mk ((⟪chiTilde, c⟫_ℝ) ^ 2) hv
     have hcf := congrArg (fun μ : Measure ℝ => charFun μ t) hconv

@@ -201,7 +201,7 @@ theorem CondIndep.comp_of_sfinite {α' β' : Type*} [MeasurableSpace α'] [Measu
     -- USER-INPUT: the conditional independence to be transformed; Lauritzen §3.1 (C2)
     (hci : CondIndep μ f g h) :
     CondIndep μ (φ ∘ f) (ψ ∘ g) h := by
-  haveI : SFinite (μ.map₀ h) := by
+  have : SFinite (μ.map₀ h) := by
     by_cases hh : AEMeasurable h μ
     · rw [Measure.map₀_of_aemeasurable hh]; infer_instance
     · rw [Measure.map₀_of_not_aemeasurable hh]; infer_instance

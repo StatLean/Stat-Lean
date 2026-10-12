@@ -73,7 +73,7 @@ theorem shatters_halfSpaceClass_simplex (m : ℕ) :
     intro i j
     refine (EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ)
       (EuclideanSpace.single j (1 : ℝ))).trans ?_
-    simp [PiLp.single_apply, eq_comm]
+    simp [PiLp.single_apply]
   -- Inner product of `a` with a basis vector recovers the coefficient.
   have hval : ∀ j : Fin m,
       (inner ℝ a (EuclideanSpace.single j (1 : ℝ)) : ℝ) = c j := by

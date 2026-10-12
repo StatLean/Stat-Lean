@@ -1017,7 +1017,7 @@ theorem range_integralOp_sqrtSymbol_eq
     funext x z
     rw [hKH, rangeSpace_scalarKernel]
     exact boxProd_sqrtSymbol d hK x z
-  letI := rangeSpaceRKHS μ (sqrtSymbol d) hS
+  let := rangeSpaceRKHS μ (sqrtSymbol d) hS
   rw [range_integralOp_eq_range_coe (sqrtSymbol d) hS]
   exact @range_coe_eq_of_scalarKernel_eq 𝕜 _ X (rangeSpaceCarrier μ (sqrtSymbol d) hS) _ _
     (rangeSpaceCompleteSpace μ (sqrtSymbol d) hS) H _ _ _
@@ -1296,7 +1296,7 @@ theorem range_mercerCLM_subset
   -- `f := ∫ y, g y • kernelFun H y ∂μ : H` satisfies
   -- `f x = ⟪kernelFun H x, f⟫ = ∫ y, g y * K x y ∂μ = integralOp μ K g x`
   -- by `inner_kernelFun` and `integral_inner`.
-  haveI : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
+  have : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
   have hKsc : Continuous fun p : X × X => scalarKernel H p.1 p.2 := by
     simp only [hKH]; exact hKc
   have hkf : Continuous fun y : X => kernelFun (𝕜 := 𝕜) H y := continuous_kernelFun H hKsc

@@ -383,7 +383,7 @@ theorem semiparametric_convolution_theorem_clause_b
   obtain ⟨V, p, hV_le, _hV_inc, hV_findim, hV_span,
             hp_proj, h_p_tendsto⟩ :=
     AsymptoticStatistics.LowerBounds.ProjSeqToEif.proj_seq_to_eif T_set h_mem
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have h_p_norm_sq_tendsto :
       Tendsto (fun m : ℕ => ‖p m‖ ^ 2) atTop
@@ -406,7 +406,7 @@ theorem semiparametric_convolution_theorem_clause_b
             (⟪(IF_eff : ↥(L2ZeroMean P)),
               (g_P_m i : ↥(L2ZeroMean P))⟫_ℝ) ^ 2 := by
     intro m
-    haveI := hV_findim m
+    have := hV_findim m
     let b : OrthonormalBasis (Fin (Module.finrank ℝ ↥(V m))) ℝ ↥(V m) :=
       stdOrthonormalBasis ℝ ↥(V m)
     let g_P : Fin (Module.finrank ℝ ↥(V m)) → ↥(L2ZeroMean P) :=

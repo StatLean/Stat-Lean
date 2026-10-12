@@ -200,7 +200,7 @@ theorem causeSubLaw_eq_withDensity (P : Measure (ℝ × Option (Fin k))) [IsFini
       = (causeSpecificCumHazard P j).withDensity fun t => observedTimeLawCR P (Ici t) := by
   have hm : Measurable fun t : ℝ => observedTimeLawCR P (Ici t) :=
     Antitone.measurable fun _ _ hab => measure_mono (Ici_subset_Ici.2 hab)
-  haveI : IsFiniteMeasure (observedTimeLawCR P) :=
+  have : IsFiniteMeasure (observedTimeLawCR P) :=
     Measure.isFiniteMeasure_map P Prod.fst
   -- The at-risk denominator is `causeSubLaw`-a.e. nonzero (hygiene lemma via domination).
   have hnull : causeSubLaw P j {t : ℝ | observedTimeLawCR P (Ici t) = 0} = 0 :=
@@ -265,7 +265,7 @@ theorem graySubCumHazard_le (P : Measure (ℝ × Option (Fin k))) [IsProbability
     -- LEAN-ONLY: measurability of the event; standard regularity
     (j : Fin k) {A : Set ℝ} (hA : MeasurableSet A) :
     graySubCumHazard P j A ≤ causeSpecificCumHazard P j A := by
-  haveI : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst
+  have : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst
   have huniv : observedTimeLawCR P univ = P univ := by
     rw [observedTimeLawCR, Measure.map_apply measurable_fst MeasurableSet.univ, preimage_univ]
   rw [graySubCumHazard, causeSpecificCumHazard, withDensity_apply _ hA, withDensity_apply _ hA]

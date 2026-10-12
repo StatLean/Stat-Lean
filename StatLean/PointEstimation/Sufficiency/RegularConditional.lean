@@ -107,17 +107,17 @@ theorem hasSufficientKernel_of_isSufficient_dominated [StandardBorelSpace 𝓧] 
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
   rcases isEmpty_or_nonempty Θ with hΘ | hΘ
-  · haveI : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
+  · have : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
       Measure.dirac.isProbabilityMeasure
     exact ⟨Kernel.const S (Measure.dirac (Classical.arbitrary 𝓧)), inferInstance,
       fun θ => (hΘ.false θ).elim⟩
   obtain ⟨θs, c, ν, hν, hcpos, hcsum, hdomν, -⟩ :=
     exists_equivalent_countable_mixture P μ hdom
-  haveI : IsProbabilityMeasure ν := ⟨by
+  have : IsProbabilityMeasure ν := ⟨by
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   have he : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id
-  haveI : IsProbabilityMeasure (ν.map fun x => (T x, x)) :=
+  have : IsProbabilityMeasure (ν.map fun x => (T x, x)) :=
     (by infer_instance)
   have hρfst : (ν.map fun x => (T x, x)).fst = ν.map T :=
     Measure.fst_map_prodMk hT measurable_id
@@ -176,7 +176,7 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
   rcases isEmpty_or_nonempty Θ with hΘ | hΘ
-  · haveI : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
+  · have : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
       Measure.dirac.isProbabilityMeasure
     exact ⟨Kernel.const S (Measure.dirac (Classical.arbitrary 𝓧)), inferInstance,
       fun θ => (hΘ.false θ).elim⟩
@@ -190,9 +190,9 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
   choose k hkm hk1 hk using fun q : ℚ => hsuf (hA q)
   -- the graph law of `(T, e)`, a measure on `S × ℝ`
   set ρ : Θ → Measure (S × ℝ) := fun θ => (P θ).map fun x => (T x, e x) with hρdef
-  haveI hρprob : ∀ θ, IsProbabilityMeasure (ρ θ) :=
+  have hρprob : ∀ θ, IsProbabilityMeasure (ρ θ) :=
     fun θ => (by infer_instance)
-  haveI hνprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+  have hνprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
     rw [statLaw_eq_map P T θ hT.aemeasurable]; infer_instance
   have hρfst : ∀ θ, (ρ θ).fst = statLaw P T θ :=
     fun θ => by
@@ -264,7 +264,7 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
       (Kernel.const Unit (statLaw P T θ)) :=
     fun θ => isCondKernelCDF_stieltjesOfMeasurableRat (hrat θ)
   set η : Kernel (Unit × S) ℝ := (hCDF (Classical.arbitrary Θ)).toKernel F with hηdef
-  haveI : IsMarkovKernel η := instIsMarkovKernel_toKernel
+  have : IsMarkovKernel η := instIsMarkovKernel_toKernel
   have hcp : ∀ θ, (Kernel.const Unit (statLaw P T θ)) ⊗ₖ η = Kernel.const Unit (ρ θ) := by
     intro θ
     have h := compProd_toKernel (hCDF θ)

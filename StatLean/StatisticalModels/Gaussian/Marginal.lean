@@ -66,7 +66,7 @@ theorem multivariateGaussian_map_blockFst
   have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inl Sum.inl = S₁₁ := by
     ext i j; simp
   have hS₁₁ : S₁₁.PosSemidef := hsub ▸ hJ.submatrix (Sum.inl : ι₁ → ι₁ ⊕ ι₂)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         ⇑(blockFst (ι₁ := ι₁) (ι₂ := ι₂))) :=
     (by infer_instance)
@@ -99,7 +99,7 @@ theorem multivariateGaussian_map_blockSnd
   have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inr Sum.inr = S₂₂ := by
     ext i j; simp
   have hS₂₂ : S₂₂.PosSemidef := hsub ▸ hJ.submatrix (Sum.inr : ι₂ → ι₁ ⊕ ι₂)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         ⇑(blockSnd (ι₁ := ι₁) (ι₂ := ι₂))) :=
     (by infer_instance)
@@ -145,7 +145,7 @@ theorem multivariateGaussian_fromBlocks_prod
   have key : multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ 0 0 S₂₂)
       = ((multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂)).map
           ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm := by
-    haveI : IsProbabilityMeasure (((multivariateGaussian m₁ S₁₁).prod
+    have : IsProbabilityMeasure (((multivariateGaussian m₁ S₁₁).prod
         (multivariateGaussian m₂ S₂₂)).map ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) :=
       (by infer_instance)
     refine Measure.ext_of_charFun (funext fun t => ?_)

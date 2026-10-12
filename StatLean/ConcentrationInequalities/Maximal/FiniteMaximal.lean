@@ -93,7 +93,7 @@ theorem tail_max_le
     μ {ω | t < ⨆ j, X j ω}
       ≤ ENNReal.ofReal ((d : ℝ) * Real.exp (-t ^ 2 / (2 * ↑σ2))) := by
   -- `Fin d` is nonempty since d ≥ 1.
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   -- The range of `j ↦ X j ω` is finite hence bounded above, for every fixed `ω`.
   have hbdd : ∀ ω, BddAbove (Set.range (fun j => X j ω)) := fun ω =>
     Finite.bddAbove_range _
@@ -128,7 +128,7 @@ private lemma integrable_ciSup_fin
     {d : ℕ} [NeZero d] {μ : Measure Ω}
     {X : Fin d → Ω → ℝ} (hX : ∀ j, Integrable (X j) μ) :
     Integrable (fun ω => ⨆ j, X j ω) μ := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖X j ω‖)
   · exact integrable_finsetSum _ (fun j _ => (hX j).norm)
   · exact (AEMeasurable.iSup
@@ -153,7 +153,7 @@ The max is achieved at some `j₀`, and one term in the sum equals it while all 
 private lemma exp_mul_ciSup_le_sum_exp
     {d : ℕ} [NeZero d] {lam : ℝ} (hlam : 0 < lam) (f : Fin d → ℝ) :
     Real.exp (lam * ⨆ j, f j) ≤ ∑ j : Fin d, Real.exp (lam * f j) := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   obtain ⟨j0, _, hj0⟩ := Finset.exists_max_image Finset.univ f ⟨0, Finset.mem_univ _⟩
   have hmax : ⨆ j, f j = f j0 := le_antisymm
     (ciSup_le fun j => hj0 j (Finset.mem_univ j))
@@ -198,7 +198,7 @@ theorem expectation_max_le
   · have hX0 : ∀ j, X j =ᵐ[μ] 0 := fun j =>
       HasSubgaussianMGF.ae_eq_zero_of_hasSubgaussianMGF_zero (hσ0 ▸ hsg j)
     have hsupr0 : (fun ω => ⨆ j : Fin d, X j ω) =ᵐ[μ] fun _ => (0 : ℝ) := by
-      haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+      have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
       have hall : ∀ᵐ ω ∂μ, ∀ j : Fin d, X j ω = 0 := ae_all_iff.mpr hX0
       filter_upwards [hall] with ω hω
       simp_rw [hω]

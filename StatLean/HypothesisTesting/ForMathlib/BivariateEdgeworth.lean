@@ -351,7 +351,7 @@ theorem norm_charFun_vecRootLaw_sub_edgeworth_le (F : Measure ℝ) [IsProbabilit
                 + ((∫ x, ⟪x, t⟫ ^ 4 ∂(F.map Z))
                     * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹| ^ 4 / 24
                   + (v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 2) ^ 2 / 2))) := by
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   set s : ℝ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ with hs
   have hne : ((m : ℝ) + 2) ≠ 0 := by positivity
   have hN : (0 : ℝ) < ((m + 2 : ℕ) : ℝ) := by push_cast; positivity
@@ -696,7 +696,7 @@ theorem norm_mixCharFun_vecRootLaw_sub_le (F : Measure ℝ) [IsProbabilityMeasur
             * charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m‖
       ≤ 3 / (2 * Real.sqrt ((m + 1 : ℕ) : ℝ))
           * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) := by
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
   have hsq : (0 : ℝ) < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.2 hNpos
   set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
@@ -1336,7 +1336,7 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbability
               * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2))‖
       ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
   have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
   have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -1605,7 +1605,7 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProb
       ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a
         * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - 2) := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
   have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
   have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -1950,7 +1950,7 @@ theorem norm_charFun_pow_sub_charFun_vecRootLaw_le (F : Measure ℝ) [IsProbabil
     ‖charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m
         - charFun (vecRootLaw F Z (m + 1)) a‖
       ≤ 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1)) := by
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
   set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
   set c : E := r • a with hcdef
@@ -2024,7 +2024,7 @@ theorem norm_mixCharFun_vecRootLaw_sub_charFun_le (F : Measure ℝ) [IsProbabili
             * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)
           + 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1))
               * |∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)| := by
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   set κ : ℝ := ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκdef
   set c : E := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a with hcdef
   have h1 := norm_mixCharFun_vecRootLaw_sub_le F hZ m hb hba hba2 hmeanb
@@ -2318,7 +2318,7 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
         ≤ Q * Real.sqrt (N : ℝ) ^ (T.card - 2)) :
     ‖multiCharFun (vecRootLaw F Z N) b a‖ ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
   have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
@@ -2491,7 +2491,7 @@ theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityM
       ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k
         * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - k) := by
   classical
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
   have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
   have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by

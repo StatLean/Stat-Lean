@@ -78,7 +78,7 @@ theorem coveringNumber_le_of_bounded_euclidean {k : ℕ}
           rw [Subsingleton.elim x x₀]; exact Metric.mem_ball_self hε⟩
       · simp
   · -- k ≥ 1: volume-packing count of a maximal (ε/2)-separated set.
-    haveI : Nonempty (Fin k) := ⟨⟨0, hk1⟩⟩
+    have : Nonempty (Fin k) := ⟨⟨0, hk1⟩⟩
     -- The Euclidean ball-volume constant `cst = √π^k / Γ(k/2+1)`.
     set cst : ℝ≥0∞ := ENNReal.ofReal (Real.sqrt Real.pi ^ k / Real.Gamma ((k : ℝ) / 2 + 1))
       with hcst

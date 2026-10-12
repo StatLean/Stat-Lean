@@ -177,9 +177,9 @@ theorem ext_of_integral_exp_eqOn
       exact lt_irrefl 0 hpos
     have hμint : Integrable (fun x => Real.exp (η₀ * x)) μ := hμ η₀ hη₀S
     have hνint : Integrable (fun x => Real.exp (η₀ * x)) ν := hν η₀ hη₀S
-    haveI hpμ : IsProbabilityMeasure (μ.tilted fun x => η₀ * x) :=
+    have hpμ : IsProbabilityMeasure (μ.tilted fun x => η₀ * x) :=
       isProbabilityMeasure_tilted hμint
-    haveI hpν : IsProbabilityMeasure (ν.tilted fun x => η₀ * x) :=
+    have hpν : IsProbabilityMeasure (ν.tilted fun x => η₀ * x) :=
       isProbabilityMeasure_tilted hνint
     set S' : Set ℝ := (fun t => η₀ + t) ⁻¹' interior S with hS'def
     have hS'open : IsOpen S' := isOpen_interior.preimage (by fun_prop)
@@ -286,9 +286,9 @@ theorem ae_eq_zero_of_integral_exp_smul_eq_zero
     fun x => ENNReal.ofReal (max (-(f x * Real.exp (η₀ * x))) 0) with hDn
   have hDpmeas : Measurable Dp := by rw [hDp]; fun_prop
   have hDnmeas : Measurable Dn := by rw [hDn]; fun_prop
-  haveI hfinp : IsFiniteMeasure (ν.withDensity Dp) :=
+  have hfinp : IsFiniteMeasure (ν.withDensity Dp) :=
     isFiniteMeasure_withDensity_ofReal hF.pos_part.2
-  haveI hfinn : IsFiniteMeasure (ν.withDensity Dn) :=
+  have hfinn : IsFiniteMeasure (ν.withDensity Dn) :=
     isFiniteMeasure_withDensity_ofReal hF.neg_part.2
   set S' : Set ℝ := (fun t => η₀ + t) ⁻¹' interior S with hS'def
   have hS'open : IsOpen S' := isOpen_interior.preimage (by fun_prop)

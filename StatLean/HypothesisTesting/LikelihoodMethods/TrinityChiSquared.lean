@@ -923,7 +923,7 @@ theorem logLR_tendsto_chiSquared
       (fun n => (productMeasure M μ θ₀ n).map (logLRStatistic M est (fun _ _ => θ₀) n))
       (MultipleTesting.chiSquared k) := by
   -- Rao score statistic converges to `χ²ₖ`; the LR statistic differs from it by `o_P(1)`.
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have hscore := score_tendsto_chiSquared M μ hPDF hk θ₀ ℓ hℓ hDQM J hJ_pd hJ
   refine WeakConverges.slutsky_of_tendstoInMeasure_dist
     (X := fun n => scoreStatistic J ℓ n)
@@ -973,7 +973,7 @@ private lemma stdGaussian_map_of_coisometry
     (φ : E →L[ℝ] F) (ψ : F →L[ℝ] E) (hψ : ∀ y, ‖ψ y‖ = ‖y‖)
     (hφψ : ∀ y, φ (ψ y) = y) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖) :
     (ProbabilityTheory.stdGaussian E).map φ = ProbabilityTheory.stdGaussian F := by
-  haveI : IsProbabilityMeasure ((ProbabilityTheory.stdGaussian E).map φ) :=
+  have : IsProbabilityMeasure ((ProbabilityTheory.stdGaussian E).map φ) :=
     (by infer_instance)
   apply Measure.ext_of_charFunDual
   ext L
@@ -997,7 +997,7 @@ private lemma stdGaussian_map_normSq_starProjection {p : ℕ} (hp : 0 < p)
     (ProbabilityTheory.stdGaussian (EuclideanSpace ℝ (Fin k))).map
         (fun w => ‖V.starProjection w‖ ^ 2) = MultipleTesting.chiSquared p := by
   classical
-  haveI : NeZero p := ⟨hp.ne'⟩
+  have : NeZero p := ⟨hp.ne'⟩
   let b : OrthonormalBasis (Fin p) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr hV)
   let e : V ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin p) := b.repr
   let φ : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin p) :=
@@ -1768,7 +1768,7 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
         (logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n))
       (MultipleTesting.chiSquared p) := by
   -- Score-difference surrogate converges to `χ²ₚ`; the affine LR differs from it by `o_P(1)`.
-  haveI : NeZero p := ⟨hp.ne'⟩
+  have : NeZero p := ⟨hp.ne'⟩
   have hℓB' : Measurable ℓB := by
     rw [hℓB]; exact (ContinuousLinearMap.adjoint B).continuous.measurable.comp hℓ
   have hscorediff := affineScoreDiff_tendsto_chiSquared M μ hPDF hdim hp a B hB β₀ θ₀ hθ₀

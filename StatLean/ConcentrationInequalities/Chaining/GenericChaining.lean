@@ -99,7 +99,7 @@ private lemma biSup_le_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
   refine Real.iSup_le (fun s => ?_) hc
   by_cases hs : s ∈ T
   · rw [ciSup_pos hs]; exact h s hs
-  · haveI : IsEmpty (s ∈ T) := ⟨hs⟩
+  · have : IsEmpty (s ∈ T) := ⟨hs⟩
     rw [Real.iSup_of_isEmpty]; exact hc
 
 /-- Exponential geometric tail `∑_{k<n} exp(-(k+1)) ≤ 1`, via `exp(-1) ≤ 1/2`. -/
@@ -766,7 +766,7 @@ theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
       linarith
     rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
   refine le_trans (ENNReal.ofReal_le_ofReal hred) ?_
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T
       = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by
@@ -1254,7 +1254,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hδnn : ∀ m, 0 ≤ δ m := fun m => (hδpos m).le
     have hεanti : Antitone ε := by
       intro a b hab
-      show (G + 1) * r ^ b ≤ (G + 1) * r ^ a
+      change (G + 1) * r ^ b ≤ (G + 1) * r ^ a
       exact mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hr0.le hr1.le hab)
         (by linarith [hG0])
     have hδanti : Antitone δ := fun a b hab => Real.sqrt_le_sqrt (hεanti hab)
@@ -1270,7 +1270,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hxeq : ∀ m, -(δ m) ^ 2 / ((K : ℝ) * ε m) ^ 2 = -(1 / ((K : ℝ) ^ 2 * ε m)) := by
       intro m
       have hδsq : (δ m) ^ 2 = ε m := by
-        show Real.sqrt (ε m) ^ 2 = ε m
+        change Real.sqrt (ε m) ^ 2 = ε m
         exact Real.sq_sqrt (hεpos m).le
       have hpos : (δ m) ^ 2 / ((K : ℝ) * ε m) ^ 2 = 1 / ((K : ℝ) ^ 2 * ε m) := by
         rw [hδsq, mul_pow]
@@ -1574,7 +1574,7 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       linarith
     rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
   refine le_trans (ENNReal.ofReal_le_ofReal hred) ?_
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T
       = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by

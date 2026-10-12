@@ -50,9 +50,9 @@ theorem WeakConverges.slutsky_of_tendstoInMeasure_dist
         Tendsto (fun n => (P n).real {ω | ε ≤ dist (X n ω) (Y n ω)}) atTop (𝓝 0)) :
     WeakConverges (fun n => (P n).map (Y n)) ν := by
   classical
-  haveI h_prob_X : ∀ n, IsProbabilityMeasure ((P n).map (X n)) := fun n =>
+  have h_prob_X : ∀ n, IsProbabilityMeasure ((P n).map (X n)) := fun n =>
     (by infer_instance)
-  haveI h_prob_Y : ∀ n, IsProbabilityMeasure ((P n).map (Y n)) := fun n =>
+  have h_prob_Y : ∀ n, IsProbabilityMeasure ((P n).map (Y n)) := fun n =>
     (by infer_instance)
   -- Package the pushforwards as `ProbabilityMeasure` so we can apply the Lipschitz
   -- characterisation of weak convergence. Use local `let`-bindings to keep the

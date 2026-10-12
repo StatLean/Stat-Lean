@@ -320,7 +320,7 @@ private lemma nlAR_compProd_innov {α : Type*} [MeasurableSpace α] {P : ℕ}
     (μ : Measure α) [IsProbabilityMeasure μ] {g : α → (Fin (P + 1) → ℝ)} (hg : Measurable g) :
     (μ ⊗ₘ ((nlARKernel f ν).comap g hg)).map (fun p => (p.1, p.2 0 - f (g p.1)))
       = μ.prod ν := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   have hΦ : Measurable fun p : α × (Fin (P + 1) → ℝ) => (p.1, p.2 0 - f (g p.1)) :=
     measurable_fst.prodMk (((measurable_pi_apply 0).comp measurable_snd).sub
       (hf.comp (hg.comp measurable_fst)))
@@ -349,8 +349,8 @@ private lemma chainWindowLaw_map_init_innov {P : ℕ} {f : (Fin (P + 1) → ℝ)
         (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
           (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)))
       = (chainWindowLaw (nlARKernel f ν) F k).prod ν := by
-  haveI := isMarkovKernel_nlARKernel hf ν
-  haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+  have := isMarkovKernel_nlARKernel hf ν
+  have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
   have hsnoc : Measurable fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
       (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) := by
     rw [measurable_pi_iff]
@@ -387,10 +387,10 @@ private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → 
     (chainWindowLaw (nlARKernel f ν) F k).map
         (fun w (i : Fin k) => w i.succ 0 - f (w i.castSucc))
       = Measure.pi (fun _ : Fin k => ν) := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   induction k with
   | zero =>
-    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
+    have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
     have hconst : (fun (w : Fin 1 → (Fin (P + 1) → ℝ)) (i : Fin 0) =>
         w i.succ 0 - f (w i.castSucc)) = fun _ => (fun i : Fin 0 => (0 : ℝ)) := by
       funext w
@@ -399,7 +399,7 @@ private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → 
     rw [hconst, Measure.map_const, measure_univ, one_smul,
       Measure.pi_of_empty (fun _ : Fin 0 => ν) (fun _ : Fin 0 => (0 : ℝ))]
   | succ k ih =>
-    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+    have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
     have hinnovk : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
         fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
       Measurable.of_eval fun _ =>
@@ -450,7 +450,7 @@ private lemma nlAR_pair_shift {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ} (hf 
     {ν : Measure ℝ} [IsProbabilityMeasure ν] (F : Measure (Fin (P + 1) → ℝ))
     [IsProbabilityMeasure F] :
     (F ⊗ₘ nlARKernel f ν) (shiftSet P)ᶜ = 0 := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   have hA : MeasurableSet (shiftSet P) := measurableSet_shiftSet P
   rw [Measure.compProd_apply hA.compl]
   refine lintegral_eq_zero_of_ae_eq_zero ?_
@@ -539,7 +539,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
         (∀ t : ℤ, X' t =ᵐ[μ']
           fun ω => f (fun j : Fin (P + 1) => X' (t - 1 - (j : ℕ)) ω) + σ0 * ε' t ω) ∧
         IsStrictlyStationary X' μ' := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   obtain ⟨Ω', mΩ', μ', Y, hprob, hYmeas, hwin⟩ :=
     exists_twoSided_stationary_chain (nlARKernel f ν) F hinv
   have hX'meas : ∀ t : ℤ, Measurable fun ω => Y t ω 0 :=
@@ -595,7 +595,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     have := key (j : ℕ) j.isLt t
     simpa using this
   -- ### the innovations
-  haveI := hprob
+  have := hprob
   have hσ0 : σ0 ≠ 0 := ne_of_gt hσ
   have hZmeas : ∀ t : ℤ, Measurable fun ω => Y t ω 0 - f (Y (t - 1) ω) :=
     fun t => (hX'meas t).sub (hf.comp (hYmeas _))
@@ -696,7 +696,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
         have h1 := hN i i.2
         have hi : -(N : ℤ) + ((((i : ℤ) + (N : ℤ)).toNat : ℕ) : ℤ) = (i : ℤ) := by omega
         rw [hi]
-      show iIndepFun (fun (i : ↥s) (ω : Ω') =>
+      change iIndepFun (fun (i : ↥s) (ω : Ω') =>
         (Y (i : ℤ) ω 0 - f (Y ((i : ℤ) - 1) ω)) / σ0) μ'
       rw [← heq]
       exact hres
@@ -746,7 +746,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
       refine iSup₂_le fun s hs => ?_
       have hslt : s < t := hs
       obtain ⟨j, hj⟩ : ∃ j : ℕ, t - 1 - (j : ℤ) = s := ⟨(t - 1 - s).toNat, by omega⟩
-      show MeasurableSpace.comap (fun ω : Ω' => Y s ω 0) inferInstance ≤ ⨆ j : ℕ, m j
+      change MeasurableSpace.comap (fun ω : Ω' => Y s ω 0) inferInstance ≤ ⨆ j : ℕ, m j
       refine le_trans ?_ (le_iSup m j)
       have hcomp : (fun ω : Ω' => Y s ω 0)
           = (fun w : Fin (j + 1) → (Fin (P + 1) → ℝ) => w 0 0) ∘
@@ -894,7 +894,7 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
     · have h0 : (0 : ℝ) ∈ ⋃ i : Fin 0, A i := by rw [hcov]; exact Set.mem_univ _
       simp at h0
     · exact h
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hkpos
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hkpos
   -- the uniform contraction rate and the intercept mass
   obtain ⟨lam, hlam⟩ : ∃ lam : ℝ, lam = Finset.univ.sup' Finset.univ_nonempty
       fun i : Fin k => ∑ j, |b i j| := ⟨_, rfl⟩
@@ -933,8 +933,8 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
       ProbabilityTheory.integral_id_gaussianReal
       hlam0 hlam1 hcst0
       (tarStateDrift_bound hdisj hcov d hlamle hcstle)
-  haveI := hFprob
-  haveI := isMarkovKernel_nlARKernel
+  have := hFprob
+  have := isMarkovKernel_nlARKernel
     (measurable_tarStateDrift b0 b hA d) (ProbabilityTheory.gaussianReal 0 v)
   -- the attracting law is invariant, and the brick turns it into a two-sided process
   have hinv : (nlARKernel (tarStateDrift b0 b A d)

@@ -134,7 +134,7 @@ theorem holm_rejects_true_null_imp {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     by_contra h; push Not at h
     have hempty : holmRejects α p ω = ∅ := by
       simp only [holmRejects, holmCount, ite_eq_right (not_lt.mpr h)]
-      ext j; simp [Nat.not_lt_zero]
+      ext j; simp
     rw [hempty, Finset.empty_inter] at hne
     exact Finset.not_nonempty_empty hne
   -- Step 1: pick j₀ ∈ holmRejects ∩ H₀ with minimum p-value.
@@ -306,7 +306,6 @@ theorem bonferroni_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ 
           rw [Finset.sum_const, ← ENNReal.ofReal_nsmul]
           congr 1
           rw [nsmul_eq_mul]
-          push_cast
           ring
 
 end StatLean.MultipleTesting

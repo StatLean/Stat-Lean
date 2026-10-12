@@ -129,7 +129,7 @@ theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     (hK : (godambeInfo D Covs).PosDef) (hB : IsUnit (geeBread D V).det) :
     ((geeBread D V)⁻¹ * geeMeat D V Covs * (geeBread D V)⁻¹
       - (godambeInfo D Covs)⁻¹).PosSemidef := by
-  haveI : Invertible (godambeInfo D Covs) :=
+  have : Invertible (godambeInfo D Covs) :=
     Matrix.invertibleOfIsUnitDet _ (isUnit_iff_ne_zero.mpr hK.det_pos.ne')
   have hBt : (geeBread D V)ᵀ = geeBread D V := geeBread_transpose' D V hVsymm
   have hBinvT : ((geeBread D V)⁻¹)ᵀ = (geeBread D V)⁻¹ := by

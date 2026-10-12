@@ -420,7 +420,7 @@ theorem var_linear {n m : ℕ}
     intro p q
     have hg : ∀ i j : Fin n, c i * c j * ((if i = j then p else q) - p ^ 2)
         = c i * c j * (q - p ^ 2) + (if i = j then c i * c j * (p - q) else 0) := by
-      intro i j; by_cases h : i = j <;> simp [h] <;> ring
+      intro i j; by_cases h : i = j <;> simp [h]; ring
     have hA : ∑ i, ∑ j, c i * c j * (q - p ^ 2) = (q - p ^ 2) * (∑ i, c i) ^ 2 := by
       rw [pow_two (∑ i, c i), Finset.sum_mul_sum, Finset.mul_sum]
       refine Finset.sum_congr rfl fun i _ => ?_

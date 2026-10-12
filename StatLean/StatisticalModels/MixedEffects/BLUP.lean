@@ -474,7 +474,7 @@ private theorem blupRisk_eq_trace (D : LMMDesign n p q)
   have hneg : (-A) * covMatrix R * (-A)ᵀ = A * covMatrix R * Aᵀ := by
     simp only [Matrix.transpose_neg, Matrix.mul_neg, Matrix.neg_mul]
     exact neg_neg _
-  haveI : IsProbabilityMeasure ((G.prod R).map fun be =>
+  have : IsProbabilityMeasure ((G.prod R).map fun be =>
       Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
         + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) :=
     (by infer_instance)

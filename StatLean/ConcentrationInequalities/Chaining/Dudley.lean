@@ -320,7 +320,7 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
       by_cases hu : u ∈ Set.Ioc (0:ℝ) (D / 2)
       · have h2u : 2 * u ∈ Set.Ioc (0:ℝ) D := ⟨by linarith [hu.1], by linarith [hu.2]⟩
         rw [Set.indicator_of_mem h2u, Set.indicator_of_mem hu]
-        show g (2 * u / 2) = g u
+        change g (2 * u / 2) = g u
         congr 1; ring
       · have h2u : 2 * u ∉ Set.Ioc (0:ℝ) D := by
           intro hmem; exact hu ⟨by linarith [hmem.1], by linarith [hmem.2]⟩
@@ -631,7 +631,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
     rintro x ⟨k, rfl⟩
     refine Set.mem_iUnion.2 ⟨k + 1, ?_⟩
     rw [hS, Finset.coe_insert, Set.mem_insert_iff, Finset.coe_image]
-    exact Or.inr ⟨k, by simp [Finset.mem_range], rfl⟩
+    exact Or.inr ⟨k, by simp, rfl⟩
   -- `↑(S n)`-biSup as a `Finset.sup'` (real and `ℝ≥0∞`).
   have Ssup : ∀ (h : E → ℝ) (n : ℕ), (∀ t ∈ S n, 0 ≤ h t) →
       (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n h0 => by

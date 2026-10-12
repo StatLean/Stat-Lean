@@ -153,11 +153,11 @@ theorem lintegral_ratio_on_event_le_test' (θ₀ : EuclideanSpace ℝ ι)
     by_cases hyA : y ∈ A
     · have hval : A.indicator (fun _ => (1 : ℝ≥0∞)) y
           + Aᶜ.indicator (fun y => dlNumer θ₀ π C y / dbar) y = 1 := by
-        simp [Set.indicator_apply, Set.mem_compl_iff, hyA]
+        simp [Set.mem_compl_iff, hyA]
       rw [hval]; exact dlRatio_le_one θ₀ π C y
     · have hval : A.indicator (fun _ => (1 : ℝ≥0∞)) y
           + Aᶜ.indicator (fun y => dlNumer θ₀ π C y / dbar) y = dlNumer θ₀ π C y / dbar := by
-        simp [Set.indicator_apply, Set.mem_compl_iff, hyA]
+        simp [Set.mem_compl_iff, hyA]
       rw [hval]; exact ENNReal.div_le_div (le_refl _) hy
   calc ∫⁻ y in {y | dbar ≤ dlDenom θ₀ π y}, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂P₀
       ≤ ∫⁻ y in {y | dbar ≤ dlDenom θ₀ π y},

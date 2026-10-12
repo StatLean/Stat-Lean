@@ -361,13 +361,13 @@ theorem exists_stationary_of_isPosSemidefSeq (γ : ℤ → ℝ)
         have h := (measureFourierCoeff_zero F).symm.trans (hFcoef 0)
         have h2 : (F Set.univ).toReal = γ 0 := by exact_mod_cast h
         rw [← h2, ENNReal.ofReal_toReal (measure_ne_top _ _)]
-      haveI hprob : IsProbabilityMeasure ((ENNReal.ofReal (γ 0))⁻¹ • F) :=
+      have hprob : IsProbabilityMeasure ((ENNReal.ofReal (γ 0))⁻¹ • F) :=
         ⟨by rw [Measure.smul_apply, smul_eq_mul, hmass, ENNReal.inv_mul_cancel hne htop]⟩
       refine ⟨(ENNReal.ofReal (γ 0))⁻¹ • F, hprob, Real.sqrt (γ 0), fun k => ?_⟩
       rw [mfc_smul, hFcoef k, ENNReal.toReal_inv, ENNReal.toReal_ofReal h0.le,
         Real.sq_sqrt h0.le, ← Complex.ofReal_mul, Complex.ofReal_re]
       field_simp
-  haveI := hP
+  have := hP
   exact ⟨AddCircle (2 * π) × (ℝ × ℝ), inferInstance, P.prod rpAmp, rpProc c, inferInstance,
     fun t => (rp_continuous c t).measurable, rp_isStationary P c,
     funext fun k => (rp_acvf P c k).trans (hc k)⟩
@@ -435,9 +435,9 @@ private theorem map_tuple_eq_of_acvf [IsProbabilityMeasure μ] {X : ℤ → Ω �
     {n : ℕ} (τ σ : Fin n → ℤ)
     (hacvf : ∀ i j, acvf X μ (τ i - τ j) = acvf X μ (σ i - σ j)) :
     (μ.map fun ω (i : Fin n) => X (τ i) ω) = μ.map fun ω (i : Fin n) => X (σ i) ω := by
-  haveI hgτ : IsGaussian (μ.map fun ω (i : Fin n) => X (τ i) ω) :=
+  have hgτ : IsGaussian (μ.map fun ω (i : Fin n) => X (τ i) ω) :=
     (hasGaussianLaw_tuple hG τ).isGaussian_map
-  haveI hgσ : IsGaussian (μ.map fun ω (i : Fin n) => X (σ i) ω) :=
+  have hgσ : IsGaussian (μ.map fun ω (i : Fin n) => X (σ i) ω) :=
     (hasGaussianLaw_tuple hG σ).isGaussian_map
   have hmτ : Measurable fun ω (i : Fin n) => X (τ i) ω :=
     Measurable.of_eval fun i => hmeas _
@@ -511,11 +511,11 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
     (hYm : ∀ N, AEStronglyMeasurable (Y N) μ) (hZm : AEStronglyMeasurable Z μ)
     (hconv : Tendsto (fun N => eLpNorm (Y N - Z) 2 μ) atTop (𝓝 0)) :
     IsGaussian (μ.map Z) := by
-  haveI : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
   -- `L²` membership
   have hYL2 : ∀ N, MemLp (Y N) 2 μ := by
     intro N
-    haveI := hYg N
+    have := hYg N
     have h := IsGaussian.memLp_two_id (μ := μ.map (Y N))
     rw [memLp_map_measure_iff aestronglyMeasurable_id (hYm N).aemeasurable] at h
     simpa [Function.comp_def] using h
@@ -562,7 +562,7 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
   have hchar : ∀ N, charFun (μ.map (Y N)) u
       = Complex.exp (u * (∫ ω, Y N ω ∂μ) * Complex.I - Var[Y N; μ] * u ^ 2 / 2) := by
     intro N
-    haveI := hYg N
+    have := hYg N
     rw [(hYg N).eq_gaussianReal, charFun_gaussianReal, integral_map (hYm N).aemeasurable
       aestronglyMeasurable_id, variance_map aemeasurable_id (hYm N).aemeasurable]
     simp [Real.coe_toNNReal _ (variance_nonneg _ _)]
@@ -1616,7 +1616,7 @@ theorem wold_gaussian_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     have hlaw : ∀ t : ℤ, μ.map ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)
         = gaussianReal 0 (wsig x).toNNReal := by
       intro t
-      haveI hgt : IsGaussian (μ.map ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) :=
+      have hgt : IsGaussian (μ.map ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) :=
         isGaussian_of_mem_gspan hG hx (hεg t)
       have hmm : (μ.map ((winn x t : Lp ℝ 2 μ) : Ω → ℝ))[id] = 0 := by
         rw [integral_map (hεm t).aemeasurable aestronglyMeasurable_id]

@@ -94,10 +94,8 @@ private lemma card_fiber_perm_apply (u l l' : α) :
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hσ ⊢
     simp [hσ, Equiv.swap_apply_right]
   · intro σ _
-    change Equiv.swap l l' * (Equiv.swap l l' * σ) = σ
     rw [← mul_assoc, Equiv.swap_mul_self, one_mul]
   · intro σ _
-    change Equiv.swap l l' * (Equiv.swap l l' * σ) = σ
     rw [← mul_assoc, Equiv.swap_mul_self, one_mul]
 
 /-- **The one-coordinate marginal of a uniform random permutation is uniform.** -/
@@ -172,10 +170,8 @@ private lemma card_fiber_perm_apply_pair (u v : α) {l l' p p' : α}
     · simp only [Equiv.Perm.coe_mul, Function.comp_apply, hσ.2, ← hρ2]
       simp
   · intro σ _
-    change ρ⁻¹ * (ρ * σ) = σ
     rw [← mul_assoc, inv_mul_cancel, one_mul]
   · intro σ _
-    change ρ * (ρ⁻¹ * σ) = σ
     rw [← mul_assoc, mul_inv_cancel, one_mul]
 
 /-- **The two-coordinate marginal of a uniform random permutation is uniform on the ordered

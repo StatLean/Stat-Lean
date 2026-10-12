@@ -717,7 +717,6 @@ theorem classical_zEstimator_root_exists_consistent
     AsymptoticStatistics.exists_seq_tendsto_zero_of_forall_tendsto
       (fun n r => 1 - μ.real (Bad n (min r r₀)))
       (fun n r => by
-        change (1 : ℝ) - μ.real (Bad n (min r r₀)) ≤ 1
         linarith [measureReal_nonneg (μ := μ) (s := Bad n (min r r₀))])
       (fun r hr => by simpa using tendsto_const_nhds.sub (hbad (min r r₀) (lt_min hr hr₀0)))
   set rseq : ℕ → ℝ := fun n => min (δ' n) r₀ with hrseq

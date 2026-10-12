@@ -70,8 +70,8 @@ theorem bayesian_isSufficient_of_hasSufficientKernel (K : Kernel Θ 𝓧) [IsMar
     (h : HasSufficientKernel (⇑K) T) :
     _root_.StatLean.Bayesian.IsSufficient K hT := by
   obtain ⟨Q, hQ, hgraph⟩ := h.exists_map hT
-  haveI := hQ
-  haveI : ∀ θ, IsProbabilityMeasure ((⇑K) θ) := fun θ => inferInstance
+  have := hQ
+  have : ∀ θ, IsProbabilityMeasure ((⇑K) θ) := fun θ => inferInstance
   refine ⟨Q, hQ, ?_⟩
   ext θ
   have hsk : StatLean.Bayesian.statKernel K hT θ = statLaw (⇑K) T θ := by

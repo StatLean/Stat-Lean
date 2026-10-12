@@ -228,7 +228,7 @@ private lemma score_mul_sqrt_aestronglyMeasurable_comap
       (fun p : 𝓨 × 𝓓 => γ.score p.1 p.2
         * Real.sqrt ((γ.curve 0 p.1).rnDeriv ν p.2).toReal) (Q.prod ν) := by
   classical
-  haveI : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
+  have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
   -- Keep the observed sub-σ-algebra `m = M⁻¹σ_𝓧` explicit so the ambient
   -- product σ-algebra remains available.
   have hm : MeasurableSpace.comap M ‹MeasurableSpace 𝓧›

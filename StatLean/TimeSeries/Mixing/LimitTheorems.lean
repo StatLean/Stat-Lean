@@ -341,7 +341,6 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
       ring
     rw [hL, ih]
     push_cast
-    push_cast at hR
     rw [hR]
 
 end Triangular
@@ -904,7 +903,7 @@ private lemma exists_adaptive_small {η : ℕ → ℝ} (hη0 : ∀ l, 0 ≤ η l
     intro m l hml
     rw [hθdef]
     refine le_csSup (hbddA m) ⟨l - m, ?_⟩
-    show η (l - m + m) = η l
+    change η (l - m + m) = η l
     rw [Nat.sub_add_cancel hml]
   have hθ0 : ∀ m, 0 ≤ θ m := fun m => le_trans (hη0 m) (hθge m m le_rfl)
   have hθlim : Tendsto θ atTop (𝓝 0) := by
@@ -1494,15 +1493,15 @@ private lemma norm_integral_remainder_cubic_le [IsProbabilityMeasure μ] {B : Ω
     have h := sq_integral_mul_le habs2 hsq2
     have e1 : ∫ ω, |B ω| * B ω ^ 2 ∂μ = ∫ ω, |B ω| ^ 3 ∂μ :=
       integral_congr_ae (Eventually.of_forall fun ω => by
-        show |B ω| * B ω ^ 2 = |B ω| ^ 3
+        change |B ω| * B ω ^ 2 = |B ω| ^ 3
         rw [← sq_abs (B ω)]; ring)
     have e2 : ∫ ω, |B ω| ^ 2 ∂μ = ∫ ω, B ω ^ 2 ∂μ :=
       integral_congr_ae (Eventually.of_forall fun ω => by
-        show |B ω| ^ 2 = B ω ^ 2
+        change |B ω| ^ 2 = B ω ^ 2
         rw [sq_abs])
     have e3 : ∫ ω, (B ω ^ 2) ^ 2 ∂μ = ∫ ω, B ω ^ 4 ∂μ :=
       integral_congr_ae (Eventually.of_forall fun ω => by
-        show (B ω ^ 2) ^ 2 = B ω ^ 4
+        change (B ω ^ 2) ^ 2 = B ω ^ 4
         ring)
     rw [e1, e2, e3] at h
     have hnn : (0 : ℝ) ≤ ∫ ω, |B ω| ^ 3 ∂μ :=
@@ -1914,7 +1913,7 @@ private theorem m4_tuple4_comp_perm_invariant {Gt : (Fin 4 → ℕ) → ℝ}
   | mul x y hx hy ihx ihy =>
       intro f
       have hcomp : f ∘ (x * y) = (f ∘ x) ∘ y := by
-        funext a; simp [Equiv.Perm.mul_apply]
+        funext a; simp
       rw [hcomp, ihy (f ∘ x), ihx f]
 
 private theorem m4_tuple4_swap_invariant {G : ℕ → ℕ → ℕ → ℕ → ℝ}
@@ -2030,7 +2029,7 @@ private theorem m4_max_le_indicators {A : ℕ → ℝ} (hA0 : ∀ m, 0 ≤ A m) 
         + (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3 := by
   rcases le_total g1 g2 with h12 | h12 <;> rcases le_total g2 g3 with h23 | h23 <;>
     rcases le_total g1 g3 with h13 | h13 <;>
-    simp_all [max_def] <;>
+    simp_all <;>
     split_ifs <;> linarith [hA0 g1, hA0 g2, hA0 g3]
 
 private theorem m4_sum_indicator_le_succ {n m : ℕ} :
@@ -3661,7 +3660,7 @@ private lemma isStrictlyStationary_comp (hmeas : ∀ t, Measurable (X t))
       Measurable.of_eval fun i => hg.comp (hmeas _)),
     Measure.map₀_of_measurable (show Measurable (fun ω (i : Fin n) => g (X (t i) ω)) from
       Measurable.of_eval fun i => hg.comp (hmeas _))]
-  show (μ.map fun ω (i : Fin n) => g (X (t i + k) ω))
+  change (μ.map fun ω (i : Fin n) => g (X (t i + k) ω))
       = μ.map fun ω (i : Fin n) => g (X (t i) ω)
   have e1 : (fun ω (i : Fin n) => g (X (t i + k) ω))
       = (fun (v : Fin n → ℝ) (i : Fin n) => g (v i)) ∘ fun ω (i : Fin n) => X (t i + k) ω := rfl
@@ -3712,7 +3711,7 @@ private lemma eLpNorm_two_eq_sqrt [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf
   rw [hf.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num)]
   have hint : (∫ ω, ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) ∂μ) = ∫ ω, f ω ^ 2 ∂μ := by
     refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
-    show ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) = f ω ^ 2
+    change ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) = f ω ^ 2
     have h2 : ((2 : ℝ≥0∞).toReal) = ((2 : ℕ) : ℝ) := by norm_num
     rw [h2, Real.rpow_natCast, Real.norm_eq_abs, sq_abs]
   rw [hint]
@@ -4229,7 +4228,7 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
         = ∫ ω, ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
             + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
       integral_congr_ae (Eventually.of_forall fun ω => by
-        show (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2
+        change (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2
             = ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
               + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
         rw [hsumsplit M n ω])
@@ -4250,7 +4249,7 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
         = ∫ ω, ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
             - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
       integral_congr_ae (Eventually.of_forall fun ω => by
-        show (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2
+        change (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2
             = ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
               - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
         rw [hsumsplit M n ω]; ring)
@@ -4635,7 +4634,7 @@ private lemma measurableSet_cylinder_Iic (s : Finset ℤ) (S : Set (∀ _ : s, �
     (hS : MeasurableSet S) (p : ℤ) (hp : ∀ i ∈ s, i ≤ p) :
     MeasurableSet[cylinderEvents (Set.Iic p)]
       (cylinder (α := fun _ : ℤ => ℝ) s S) := by
-  letI : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Iic p)
+  let : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Iic p)
   have hmap : Measurable fun (y : ℤ → ℝ) (i : s) => y (i : ℤ) :=
     measurable_pi_iff.2 fun i => measurable_cylinderEvent_apply (Set.mem_Iic.2 (hp i i.2))
   exact hmap hS
@@ -4651,7 +4650,7 @@ private lemma measurableSet_shift_cylinder_Ici (s : Finset ℤ) (S : Set (∀ _ 
       funext i; exact shiftPath_iterate k y _
     simp only [Set.mem_preimage, mem_cylinder, hfun]
   rw [heq]
-  letI : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Ici c)
+  let : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Ici c)
   have hmap : Measurable fun (y : ℤ → ℝ) (i : s) => y ((i : ℤ) + k) :=
     measurable_pi_iff.2 fun i => measurable_cylinderEvent_apply (Set.mem_Ici.2 (hc i i.2))
   exact hmap hS
@@ -4663,7 +4662,7 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
   classical
   have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   have hνeq : (μ.map fun ω (u : ℤ) => X u ω) = pathLaw X μ := rfl
-  haveI hνP : IsProbabilityMeasure (pathLaw X μ) := by
+  have hνP : IsProbabilityMeasure (pathLaw X μ) := by
     rw [← hνeq]; exact (by infer_instance)
   have hMP : MeasurePreserving shiftPath (pathLaw X μ) (pathLaw X μ) :=
     measurePreserving_shiftPath hmeas hstat
@@ -4691,7 +4690,7 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
   have ha0 : 0 ≤ a := measureReal_nonneg
   have ha1 : a ≤ 1 := by
     rw [hadef]
-    simpa using measureReal_mono (μ := pathLaw X μ) (Set.subset_univ A)
+    simp
   have hAn : ∀ n : ℕ, shiftPath^[n] ⁻¹' A = A := by
     intro n
     induction n with
@@ -4742,7 +4741,7 @@ private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω →
     set b : ℝ := (pathLaw X μ).real Cy with hbdef
     have hb0 : 0 ≤ b := measureReal_nonneg
     have hb1 : b ≤ 1 := by
-      rw [hbdef]; simpa using measureReal_mono (μ := pathLaw X μ) (Set.subset_univ Cy)
+      rw [hbdef]; simp
     have hCnval : (pathLaw X μ) Cn = (pathLaw X μ) Cy :=
       (hMP.iterate n).measure_preimage hCyM.nullMeasurableSet
     have hCnreal : (pathLaw X μ).real Cn = b := by rw [hbdef, measureReal_def, measureReal_def,
@@ -4900,7 +4899,7 @@ theorem slln_of_alphaMixing_debt [IsProbabilityMeasure μ]
       (𝓝 (∫ ω', X 0 ω' ∂μ)) := by
   have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   have hνeq : (μ.map fun ω (u : ℤ) => X u ω) = pathLaw X μ := rfl
-  haveI hνP : IsProbabilityMeasure (pathLaw X μ) := by
+  have hνP : IsProbabilityMeasure (pathLaw X μ) := by
     rw [← hνeq]; exact (by infer_instance)
   have herg : Ergodic shiftPath (pathLaw X μ) :=
     ⟨measurePreserving_shiftPath hmeas hstat, preErgodic_shiftPath hmeas hstat hmix⟩

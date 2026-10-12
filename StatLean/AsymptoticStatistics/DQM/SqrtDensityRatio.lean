@@ -107,7 +107,7 @@ lemma dqm_sqrtDensityRatio_l2_linearization
           ring
     exact hle.trans (by nlinarith)
   let P₀ : Measure 𝒳 := μ.withDensity fun x => ENNReal.ofReal (p x)
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   let qp : EuclideanSpace ℝ (Fin k) → 𝒳 → ℝ := fun θ x => W θ x - z θ x
   have hWmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (W θ) 2 P₀ := by
@@ -518,7 +518,7 @@ lemma dqm_sqrtDensityRatio_tail_controls
   let q : EuclideanSpace ℝ (Fin k) → 𝒳 → ℝ := fun θ x => W θ x - z θ x
   let s : EuclideanSpace ℝ (Fin k) → ℝ := fun θ => ‖θ - θ₀‖
   let g : 𝒳 → ℝ := fun x => ‖ℓ x‖ ^ 2
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   have hW_meas (θ : EuclideanSpace ℝ (Fin k)) : Measurable (W θ) := by
     exact (((M.density_meas θ).div (M.density_meas θ₀)).sqrt.sub_const 1).const_mul 2

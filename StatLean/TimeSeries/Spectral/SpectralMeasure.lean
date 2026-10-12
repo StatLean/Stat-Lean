@@ -64,8 +64,8 @@ theorem IsSpectralMeasure.unique {X : ℤ → Ω → ℝ}
     (hF : IsSpectralMeasure X μ F) (hG : IsSpectralMeasure X μ G) : F = G := by
   obtain ⟨hFfin, -, hFc⟩ := hF
   obtain ⟨hGfin, -, hGc⟩ := hG
-  haveI := hFfin
-  haveI := hGfin
+  have := hFfin
+  have := hGfin
   exact ext_of_measureFourierCoeff F G fun n => by rw [hFc n, hGc n]
 
 /-- The **mass identity** `F(circle) = γ(0)` (FY: `G(π) = γ(0) = Var X_t`). -/
@@ -73,7 +73,7 @@ theorem IsSpectralMeasure.mass {X : ℤ → Ω → ℝ} {F : Measure (AddCircle 
     (hF : IsSpectralMeasure X μ F) :
     F Set.univ = ENNReal.ofReal (acvf X μ 0) := by
   obtain ⟨hFfin, -, hFc⟩ := hF
-  haveI := hFfin
+  have := hFfin
   have h := hFc 0
   rw [measureFourierCoeff_zero] at h
   have hre : (F Set.univ).toReal = acvf X μ 0 := by exact_mod_cast h
@@ -119,7 +119,7 @@ private lemma measureFourierCoeff_map_neg' (F : Measure (AddCircle (2 * π)))
 `δ_{k0}`, which is even). -/
 private lemma negInvariant_haarAddCircle :
     NegInvariant (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))) := by
-  haveI : IsFiniteMeasure
+  have : IsFiniteMeasure
       ((AddCircle.haarAddCircle : Measure (AddCircle (2 * π))).map (fun z => -z)) :=
     Measure.isFiniteMeasure_map _ _
   refine ext_of_measureFourierCoeff _ _ fun m => ?_

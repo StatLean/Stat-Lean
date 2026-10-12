@@ -237,7 +237,7 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     (hindep : iIndepFun Z μ) :
     Measure.map (fun ω => ∑ i, (Z i ω) ^ 2) μ = chiSquared n := by
   classical
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   -- the statistic and the per-coordinate squared family
   set S : Ω → ℝ := fun ω => ∑ i, (Z i ω) ^ 2 with hS
   set W : Fin n → Ω → ℝ := fun i ω => (Z i ω) ^ 2 with hW
@@ -288,7 +288,7 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     change Integrable (fun x => Real.exp (l * id x)) (chiSquared n)
     simpa only [id_eq] using integrable_exp_mul_chiSquared hn hl
   -- ASSEMBLE: equal char. functions ⇒ equal laws (imaginary axis lies in the MGF strip)
-  haveI : IsProbabilityMeasure (Measure.map S μ) :=
+  have : IsProbabilityMeasure (Measure.map S μ) :=
     (by infer_instance)
   refine MeasureTheory.Measure.ext_of_charFun (funext fun t => ?_)
   rw [← complexMGF_mul_I hSmeas.aemeasurable t, ← complexMGF_id_mul_I t]

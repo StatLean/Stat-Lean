@@ -127,16 +127,16 @@ private lemma canonicalReflect_eq (y : EuclideanSpace ℝ (Fin (s + m))) :
     canonicalReflect y = y + canonicalMean (fun i => -2 * canonicalHead y i) := by
   ext k
   refine Fin.addCases (fun a => ?_) (fun b => ?_) k
-  · show (if ((Fin.castAdd m a : Fin (s + m)) : ℕ) < s then -(y (Fin.castAdd m a))
+  · change (if ((Fin.castAdd m a : Fin (s + m)) : ℕ) < s then -(y (Fin.castAdd m a))
           else y (Fin.castAdd m a))
         = y (Fin.castAdd m a) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
-    rw [ite_eq_left (by simpa using a.isLt)]
+    rw [ite_eq_left (by simp)]
     rw [show (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
           = Fin.append (fun i => -2 * canonicalHead y i) (0 : Fin m → ℝ) (Fin.castAdd m a) from rfl,
         Fin.append_left]
-    show -(y (Fin.castAdd m a)) = y (Fin.castAdd m a) + -2 * y (Fin.castAdd m a)
+    change -(y (Fin.castAdd m a)) = y (Fin.castAdd m a) + -2 * y (Fin.castAdd m a)
     ring
-  · show (if ((Fin.natAdd s b : Fin (s + m)) : ℕ) < s then -(y (Fin.natAdd s b))
+  · change (if ((Fin.natAdd s b : Fin (s + m)) : ℕ) < s then -(y (Fin.natAdd s b))
           else y (Fin.natAdd s b))
         = y (Fin.natAdd s b) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.natAdd s b)
     rw [ite_eq_right (by simp)]
@@ -161,21 +161,21 @@ private lemma canonicalModel_zero_map_reflect (σ2 : PosVar) :
       rw [hfk, gaussianReal_map_neg, neg_zero]
     · have hfk : f k = fun t => t := by funext t; simp only [hf, h, ite_false]
       rw [hfk, Measure.map_id']
-  haveI hsf : ∀ k, SigmaFinite ((gaussianReal (0 : ℝ) σ2.1).map (f k)) := by
+  have hsf : ∀ k, SigmaFinite ((gaussianReal (0 : ℝ) σ2.1).map (f k)) := by
     intro k; rw [hcoord k]; infer_instance
   have hfam : (fun i : Fin (s + m) => gaussianReal ((canonicalMean (0 : Fin s → ℝ)) i) σ2.1)
       = (fun _ => gaussianReal (0 : ℝ) σ2.1) := by
     funext i
     congr 1
     refine Fin.addCases (fun a => ?_) (fun b => ?_) i
-    · show (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a) = 0
+    · change (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a) = 0
       rw [Fin.append_left]; rfl
-    · show (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd s b) = 0
+    · change (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd s b) = 0
       rw [Fin.append_right]; rfl
   have hbase : canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), σ2)
       = (Measure.pi (fun _ : Fin (s + m) => gaussianReal (0 : ℝ) σ2.1)).map (WithLp.toLp 2) := by
     rw [canonicalModel]
-    show (Measure.pi
+    change (Measure.pi
           (fun i => gaussianReal ((canonicalMean (0 : Fin s → ℝ)) i) σ2.1)).map (WithLp.toLp 2)
         = (Measure.pi (fun _ => gaussianReal (0 : ℝ) σ2.1)).map (WithLp.toLp 2)
     rw [hfam]
@@ -185,7 +185,7 @@ private lemma canonicalModel_zero_map_reflect (σ2 : PosVar) :
         = (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
             ∘ (fun x k => f k (x k)) := by
     funext x
-    show canonicalReflect (WithLp.toLp 2 x) = WithLp.toLp 2 (fun k => f k (x k))
+    change canonicalReflect (WithLp.toLp 2 x) = WithLp.toLp 2 (fun k => f k (x k))
     rfl
   have hprod : Measurable (fun x : Fin (s + m) → ℝ => fun k => f k (x k)) :=
     Measurable.of_eval (fun k => (hmeas_f k).comp (measurable_pi_apply k))
@@ -224,7 +224,7 @@ theorem isCanonicalMRE_linear_combination
     rw [hsum, hcm]
   have hδ₀equiv : IsCanonicalEquivariant lam δ₀ := by
     intro a y
-    show ∑ i, lam i * canonicalHead (y + canonicalMean a) i
+    change ∑ i, lam i * canonicalHead (y + canonicalMean a) i
         = (∑ i, lam i * canonicalHead y i) + ∑ i, lam i * a i
     simp_rw [hHD, mul_add]
     rw [Finset.sum_add_distrib]
@@ -263,11 +263,11 @@ theorem isCanonicalMRE_linear_combination
     ENNReal.measurable_ofReal.comp (hρmeas.comp hδ'meas)
   -- write the risk of `δ'` two ways using the reflection symmetry of the base law
   have hJp : canonicalRisk σ2 ρ δ' = ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y + h y)) ∂M := by
-    show ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
+    change ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
     refine lintegral_congr (fun y => ?_)
     rw [hδ'eq y]
   have hJm : canonicalRisk σ2 ρ δ' = ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y - h y)) ∂M := by
-    show ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
+    change ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
     calc ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M
         = ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂(M.map canonicalReflect) := by
           rw [hM, canonicalModel_zero_map_reflect]
@@ -280,7 +280,7 @@ theorem isCanonicalMRE_linear_combination
   have hfinal : 2 * canonicalRisk σ2 ρ δ₀ ≤ 2 * canonicalRisk σ2 ρ δ' := by
     calc 2 * canonicalRisk σ2 ρ δ₀
         = ∫⁻ y, 2 * ENNReal.ofReal (ρ (δ₀ y)) ∂M := by
-          show 2 * ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y)) ∂M = _
+          change 2 * ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y)) ∂M = _
           rw [← lintegral_const_mul 2 hmeas0]
       _ ≤ ∫⁻ y, (ENNReal.ofReal (ρ (δ₀ y + h y)) + ENNReal.ofReal (ρ (δ₀ y - h y))) ∂M := by
           refine lintegral_mono (fun y => ?_)
@@ -376,7 +376,7 @@ theorem residualScaleConst_one
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     residualScaleConst m 1 = 1 / ((m : ℝ) + 2) := by
-  haveI : NeZero m := ⟨hm.ne'⟩
+  have : NeZero m := ⟨hm.ne'⟩
   have hmr : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
   have hI1 : ∫ v, v ^ 1 ∂(chiSquared m) = (m : ℝ) := by
     simp only [pow_one]; exact StatLean.MultipleTesting.integral_id_chiSquared hm
@@ -420,7 +420,7 @@ private lemma canonicalRSS_smul_add_canonicalMean (c : ℝ) (a : Fin s → ℝ)
   simp only [canonicalRSS, Finset.mul_sum]
   refine Finset.sum_congr rfl (fun j _ => ?_)
   have hmean : (canonicalMean a) (Fin.natAdd s j) = 0 := by
-    show (Fin.append a (0 : Fin m → ℝ)) (Fin.natAdd s j) = 0
+    change (Fin.append a (0 : Fin m → ℝ)) (Fin.natAdd s j) = 0
     rw [Fin.append_right]; rfl
   rw [PiLp.smul_apply, PiLp.add_apply, hmean, add_zero, smul_eq_mul, mul_pow]
 
@@ -447,7 +447,7 @@ private lemma piGauss_withDensity (N : ℕ) {v : ℝ≥0} (hv : v ≠ 0) :
   have h_each : (fun _ : Fin N => gaussianReal (0 : ℝ) v)
       = fun _ : Fin N => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
     funext _; exact gaussianReal_of_var_ne_zero 0 hv
-  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (0 : ℝ) v)) := by
+  have : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (0 : ℝ) v)) := by
     rw [← gaussianReal_of_var_ne_zero (0 : ℝ) hv]; infer_instance
   rw [piGauss, h_each, ← pi_withDensity_prod (fun _ : Fin N => measurable_gaussianPDF (0 : ℝ) v),
     ← volume_pi]
@@ -460,7 +460,7 @@ private lemma piGauss_map_smul (N : ℕ) (c : ℝ) :
       = gaussianReal 0 (NNReal.mk (c ^ 2) (sq_nonneg c)) := by
     intro _
     rw [gaussianReal_map_const_mul (c := c), mul_zero, mul_one]
-  haveI : ∀ _ : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun t : ℝ => c * t)) := by
+  have : ∀ _ : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun t : ℝ => c * t)) := by
     intro i; rw [hmap i]; infer_instance
   have hcast : (fun x : Fin N → ℝ => c • x) = fun (x : Fin N → ℝ) (i : Fin N) => c * x i := rfl
   rw [piGauss, piGauss, hcast, Measure.pi_map_pi hf]
@@ -592,12 +592,12 @@ private lemma lintegral_hom_mul_bounded {N : ℕ} {u : (Fin N → ℝ) → ℝ�
       ∫⁻ y, ψ y ∂ν₂ = C * ∫⁻ x, ψ (sqSum x) ∂μ := by
     intro ψ hψ
     rw [hν₂, lintegral_smul_measure, lintegral_map hψ measurable_sqSum, smul_eq_mul]
-  haveI hfin₁ : IsFiniteMeasure ν₁ := by
+  have hfin₁ : IsFiniteMeasure ν₁ := by
     constructor
     rw [hν₁, Measure.map_apply measurable_sqSum MeasurableSet.univ, Set.preimage_univ,
       withDensity_apply u MeasurableSet.univ, setLIntegral_univ]
     exact hCfin.lt_top
-  haveI hfin₂ : IsFiniteMeasure ν₂ := by
+  have hfin₂ : IsFiniteMeasure ν₂ := by
     constructor
     rw [hν₂, Measure.smul_apply, smul_eq_mul,
       Measure.map_apply measurable_sqSum MeasurableSet.univ, Set.preimage_univ,
@@ -796,7 +796,7 @@ private lemma chiSquared_moment_pos {m : ℕ} (hm : 0 < m) {k : ℕ} (hk : 0 < k
       exact sq_eq_zero_iff.mp h0
     refine measure_mono_null hsub ?_
     have hev : {w : Fin m → ℝ | w j₀ = 0} = (fun x : Fin m → ℝ => x j₀) ⁻¹' {(0 : ℝ)} := rfl
-    haveI : NullSingletonClass (gaussianReal (0 : ℝ) 1) :=
+    have : NullSingletonClass (gaussianReal (0 : ℝ) 1) :=
         nullSingletonClass_gaussianReal one_ne_zero
     have hmapev : Measure.map (fun x : Fin m → ℝ => x j₀) (piGauss m 1) = gaussianReal 0 1 :=
       (measurePreserving_eval (fun _ : Fin m => gaussianReal (0 : ℝ) 1) j₀).map_eq
@@ -1168,7 +1168,7 @@ theorem isCanonicalScaleMRE_residual_pow
   refine ⟨measurable_const.mul (measurable_canonicalRSS.pow_const r), ?_, ?_⟩
   · -- equivariance: `S²` scales by `c²`, so `(S²)^r` scales by `c^{2r}`
     intro c _ a y
-    show residualScaleConst m r * canonicalRSS (c • (y + canonicalMean a)) ^ r
+    change residualScaleConst m r * canonicalRSS (c • (y + canonicalMean a)) ^ r
         = c ^ (2 * r) * (residualScaleConst m r * canonicalRSS y ^ r)
     rw [canonicalRSS_smul_add_canonicalMean, mul_pow, ← pow_mul]
     ring
@@ -1241,10 +1241,10 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
       = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) := by
     ext k
     refine Fin.addCases (fun a => ?_) (fun b => ?_) k
-    · show (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a)
+    · change (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a)
           = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) (Fin.castAdd m a)
       rw [Fin.append_left]; rfl
-    · show (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd _ b)
+    · change (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd _ b)
           = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) (Fin.natAdd _ b)
       rw [Fin.append_right]; rfl
   have hbaseL : (gaussianVector (0 : EuclideanSpace ℝ (Fin n)) σ2.1).map L
@@ -1257,7 +1257,7 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
     intro f hf
     have hφ : Measurable (fun z => ENNReal.ofReal (ρ (f (L.symm z)))) :=
       ENNReal.measurable_ofReal.comp (hρmeas.comp (hf.comp hLsymm))
-    show ∫⁻ y, ENNReal.ofReal (ρ (f y)) ∂(gaussianVector (0 : EuclideanSpace ℝ (Fin n)) σ2.1)
+    change ∫⁻ y, ENNReal.ofReal (ρ (f y)) ∂(gaussianVector (0 : EuclideanSpace ℝ (Fin n)) σ2.1)
         = ∫⁻ z, ENNReal.ofReal (ρ (f (L.symm z)))
             ∂(canonicalModel (s := Module.finrank ℝ W) (m := m) (_, σ2))
     rw [← hbaseL, lintegral_map hφ hLmeas]
@@ -1267,7 +1267,7 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
   have hδL : (fun z => δ (L.symm z)) = fun z => ∑ i, lam i * canonicalHead z i := by
     funext z
     rw [hδdef]
-    show ⟪γ, lse W (L.symm z)⟫_ℝ = ∑ i, lam i * canonicalHead z i
+    change ⟪γ, lse W (L.symm z)⟫_ℝ = ∑ i, lam i * canonicalHead z i
     rw [hlse γ hγ (L.symm z), L.apply_symm_apply]
   have hδmeas : Measurable δ := by
     rw [hδdef]
@@ -1276,7 +1276,7 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
   · -- subspace-equivariance of `δ`
     intro b hb y
     rw [hδdef]
-    show ⟪γ, lse W (y + b)⟫_ℝ = ⟪γ, lse W y⟫_ℝ + ⟪γ, b⟫_ℝ
+    change ⟪γ, lse W (y + b)⟫_ℝ = ⟪γ, lse W y⟫_ℝ + ⟪γ, b⟫_ℝ
     rw [show lse W (y + b) = W.starProjection (y + b) from rfl,
       show lse W y = W.starProjection y from rfl, map_add,
       Submodule.starProjection_eq_self_iff.mpr hb, inner_add_right]
@@ -1287,7 +1287,7 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
     refine hmin (fun z => δ' (L.symm z)) (hδ'meas.comp hLsymm) ?_
     -- `δ' ∘ L⁻¹` is canonically equivariant with coefficient vector `lam`
     intro a z
-    show δ' (L.symm (z + canonicalMean a)) = δ' (L.symm z) + ∑ i, lam i * a i
+    change δ' (L.symm (z + canonicalMean a)) = δ' (L.symm z) + ∑ i, lam i * a i
     obtain ⟨x, hx⟩ := hsurj a
     change canonicalHead (L (x : EuclideanSpace ℝ (Fin n))) = a at hx
     have hLx : L (x : EuclideanSpace ℝ (Fin n)) = canonicalMean a := by

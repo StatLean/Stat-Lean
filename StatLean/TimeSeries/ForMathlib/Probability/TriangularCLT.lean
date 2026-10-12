@@ -264,7 +264,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
   rcases eq_or_ne t 0 with rfl | ht
   · have hone : ∀ n i, charFun (μ.map (X n i)) 0 = 1 := by
       intro n i
-      haveI : IsProbabilityMeasure (μ.map (X n i)) :=
+      have : IsProbabilityMeasure (μ.map (X n i)) :=
         (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 (Real.toNNReal σ2)) 0 = 1 := by

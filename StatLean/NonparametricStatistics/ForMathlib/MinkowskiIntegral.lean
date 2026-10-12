@@ -136,7 +136,7 @@ private lemma sq_lintegral_le_of_duality {β : Type*} [MeasurableSpace β]
   have ham2 : am ≤ R * am ^ (1 / 2 : ℝ) := hlow.trans hup
   have hsqrtle : am ^ (1 / 2 : ℝ) ≤ R := by
     by_cases h0 : am = 0
-    · simp [h0, ENNReal.zero_rpow_of_pos (show (0 : ℝ) < 1 / 2 by norm_num)]
+    · simp [h0]
     · set t := am ^ (1 / 2 : ℝ) with ht
       have htfin : t ≠ ⊤ := (ENNReal.rpow_lt_top_of_nonneg (by norm_num) hamfin).ne
       have htt : t * t = am := by

@@ -32,7 +32,7 @@ lemma dqm_zeroDensity_mass_isLittleO
   classical
   let P₀ := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)
   let W := fun θ : EuclideanSpace ℝ (Fin k) => M.sqrtDensityRatio θ₀ θ
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal
       (hPDF.density_integrable θ₀).hasFiniteIntegral
   have htail : (fun θ => P₀.real {x | 1 ≤ |W θ x|}) =o[𝓝 θ₀]

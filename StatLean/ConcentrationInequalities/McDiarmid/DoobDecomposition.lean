@@ -44,7 +44,7 @@ is supported on the diagonal, so `g ω = g ω'` a.e. -/
 private lemma condExpKernel_ae_eq_const_of_measurable (hm : m ≤ mΩ)
     {μ : Measure Ω} [IsFiniteMeasure μ] {g : Ω → α} (hg : Measurable[m] g) :
     ∀ᵐ ω' ∂(μ.trim hm), ∀ᵐ ω ∂(condExpKernel μ m ω'), g ω = g ω' := by
-  haveI : IsFiniteMeasure (μ.trim hm) := isFiniteMeasure_trim hm
+  have : IsFiniteMeasure (μ.trim hm) := isFiniteMeasure_trim hm
   have hcompProd :
       ∀ᵐ p ∂((μ.trim hm) ⊗ₘ condExpKernel μ m), g p.2 = g p.1 := by
     rw [compProd_trim_condExpKernel hm]
@@ -81,9 +81,9 @@ noncomputable def natFiltration
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i)) :
     Filtration ℕ mΩ where
   seq k := ⨆ j : {j : Fin n // (j : ℕ) < k}, MeasurableSpace.comap (X j.1) inferInstance
-  mono' {k l} hkl := iSup_le fun ⟨j, hj⟩ => le_iSup_of_le ⟨j, hj.trans_le hkl⟩ le_rfl
+  mono' {_ _} hkl := iSup_le fun ⟨j, hj⟩ => le_iSup_of_le ⟨j, hj.trans_le hkl⟩ le_rfl
   -- LEAN-ONLY: after destructuring {j : Fin n // j.val < k}, j : Fin n so hX j applies.
-  le' k := iSup_le fun ⟨j, _⟩ => measurable_iff_comap_le.mp (hX j)
+  le' _ := iSup_le fun ⟨j, _⟩ => measurable_iff_comap_le.mp (hX j)
 
 /-- Doob martingale Mₖ = E[f(X) | Fₖ]. -/
 noncomputable def doobMartingale
@@ -103,7 +103,7 @@ noncomputable def doobIncrement
 private lemma natFiltration_zero_eq_bot
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i)) :
     (natFiltration X hX) 0 = ⊥ := by
-  show (⨆ j : {j : Fin n // (j : ℕ) < 0},
+  change (⨆ j : {j : Fin n // (j : ℕ) < 0},
         MeasurableSpace.comap (X j.1) inferInstance) = ⊥
   exact le_antisymm
     (iSup_le (fun ⟨_, hj⟩ => absurd hj (Nat.not_lt_zero _)))
@@ -116,7 +116,7 @@ private lemma natFiltration_n_stronglyMeasurable
   -- Override the ambient MeasurableSpace Ω with (natFiltration X hX) n so that
   -- standard lemmas (measurable_pi_lambda, measurable_iff_comap_le) produce the
   -- correct domain sigma-algebra without explicit @ annotations.
-  letI : MeasurableSpace Ω := (natFiltration X hX) n
+  let : MeasurableSpace Ω := (natFiltration X hX) n
   suffices h : Measurable (f ∘ allVars X) from h.stronglyMeasurable
   apply hf.comp
   apply Measurable.of_eval
@@ -142,7 +142,7 @@ private lemma doobMartingale_n_eq_f
   simp only [doobMartingale]
   -- SigmaFinite (μ.trim hm) is derived from IsFiniteMeasure, which follows from
   -- IsProbabilityMeasure μ + isFiniteMeasure_trim.
-  haveI : IsFiniteMeasure (μ.trim ((natFiltration X hX).le n)) :=
+  have : IsFiniteMeasure (μ.trim ((natFiltration X hX).le n)) :=
     isFiniteMeasure_trim ((natFiltration X hX).le n)
   exact condExp_of_stronglyMeasurable ((natFiltration X hX).le n)
     (natFiltration_n_stronglyMeasurable X hX f hf) hf_int
@@ -247,7 +247,7 @@ private lemma condDistrib_eq_const_of_indepFun
     {W : α → γ} {Z : α → δ} (hW : Measurable W) (hZ : Measurable Z)
     (h : IndepFun W Z μ) :
     condDistrib Z W μ =ᵐ[μ.map W] Kernel.const γ (μ.map Z) := by
-  haveI : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
   have h2 : μ.map (fun a => (W a, Z a)) = (μ.map W) ⊗ₘ (Kernel.const γ (μ.map Z)) := by
     rw [(indepFun_iff_map_prod_eq_prod_map_map hW.aemeasurable hZ.aemeasurable).1 h,
         Measure.compProd_const]
@@ -260,7 +260,7 @@ private lemma comap_projVars_headSet
     MeasurableSpace.comap (projVars X (headSet j)) inferInstance = (natFiltration X hX) j := by
   apply le_antisymm
   · -- `comap ≤ Fⱼ`: `projVars X (headSet j)` is `Fⱼ`-measurable.
-    letI : MeasurableSpace Ω := (natFiltration X hX) j
+    let : MeasurableSpace Ω := (natFiltration X hX) j
     refine measurable_iff_comap_le.mp ?_
     refine Measurable.of_eval (fun i => ?_)
     by_cases h : i ∈ headSet j
@@ -389,7 +389,7 @@ private lemma condMean_update_le
     (S : Finset (Fin n)) (hi0 : i0 ∈ S) (w : Π i : Fin n, β i) (y : β i0) :
     |condMean X f μ S w - condMean X f μ S (Function.update w i0 y)| ≤ b := by
   classical
-  haveI : IsProbabilityMeasure (μ.map (projVars X Sᶜ)) :=
+  have : IsProbabilityMeasure (μ.map (projVars X Sᶜ)) :=
     (by infer_instance)
   have ha_meas : Measurable (fun v => f (combineAt S w v)) :=
     hf.comp (measurable_combineAt_right S w)
@@ -516,8 +516,8 @@ private lemma increment_bounded_of_bounded_differences
   have hW'meas : Measurable[(natFiltration X hX) k] (projVars X Sp) := by
     rw [measurable_iff_comap_le, hSp_def]; exact le_of_eq (comap_projVars_headSet X hX k)
   -- `MeasurableEq` on the (standard-Borel) product space, for the fiber-constancy of the past.
-  haveI hMEq : MeasurableEq (Π i : Fin n, β i) := by
-    letI := upgradeStandardBorel (Π i : Fin n, β i); infer_instance
+  have hMEq : MeasurableEq (Π i : Fin n, β i) := by
+    let := upgradeStandardBorel (Π i : Fin n, β i); infer_instance
   have hconst_W' := condExpKernel_ae_eq_const_of_measurable (μ := μ)
     ((natFiltration X hX).le k) hW'meas
   have hM0meas : Measurable[(natFiltration X hX) k] (doobMartingale X hX f μ k) := by

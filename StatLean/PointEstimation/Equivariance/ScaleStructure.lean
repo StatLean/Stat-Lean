@@ -96,11 +96,11 @@ private lemma scaleZ_smul {b : ℝ} (hb : 0 < b) (x : Fin (m + 1) → ℝ) :
   have h1 : ∀ i : Fin m, (b • x) i.castSucc / (b • x) (Fin.last m)
       = x i.castSucc / x (Fin.last m) := by
     intro i
-    show b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
+    change b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
     rw [mul_div_mul_left _ _ hb0]
   have h2 : (b • x) (Fin.last m) / |(b • x) (Fin.last m)|
       = x (Fin.last m) / |x (Fin.last m)| := by
-    show b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
+    change b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
     rw [abs_mul, abs_of_pos hb, mul_div_mul_left _ _ hb0]
   exact Prod.ext_iff.mpr ⟨funext h1, h2⟩
 
@@ -150,7 +150,7 @@ theorem IsScaleEquivariant.div_invariant {r : ℕ} {δ : (Fin n → ℝ) → ℝ
     {u : (Fin n → ℝ) → ℝ} (hδ : IsScaleEquivariant r δ) (hu : IsScaleInvariant u) :
     IsScaleEquivariant r fun x => δ x / u x := by
   intro b hb x
-  show δ (b • x) / u (b • x) = b ^ r * (δ x / u x)
+  change δ (b • x) / u (b • x) = b ^ r * (δ x / u x)
   rw [hδ hb x, hu hb x, mul_div_assoc]
 
 /-! ### Structure of the scale-equivariant class -/
@@ -172,7 +172,7 @@ theorem isScaleEquivariant_iff_div_invariant {r : ℕ} {δ₀ : (Fin n → ℝ) 
     refine ⟨fun x => δ₀ x / δ x, ?_, ?_⟩
     · intro b hb x
       have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
-      show δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
+      change δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
       rw [h₀ hb x, hδ hb x, mul_div_mul_left _ _ hbr]
     · intro x
       rw [div_div_eq_mul_div, mul_comm (δ₀ x) (δ x), mul_div_assoc,
@@ -193,7 +193,7 @@ theorem isScaleInvariant_iff_factors_scaleZ (u : (Fin (m + 1) → ℝ) → ℝ) 
   · intro hu
     refine ⟨fun p => u (scaleSect p), fun x hx => ?_⟩
     have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
-    show u x = u (scaleSect (scaleZ x))
+    change u x = u (scaleSect (scaleZ x))
     rw [scaleSect_scaleZ x hx]
     exact (hu hb x hx).symm
   · rintro ⟨w, hw⟩ b hb x hx
@@ -214,7 +214,7 @@ theorem isScaleInvariant_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) �
       ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
   refine ⟨fun p => u (scaleSect p), hum.comp measurable_scaleSect, fun x hx => ?_⟩
   have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
-  show u x = u (scaleSect (scaleZ x))
+  change u x = u (scaleSect (scaleZ x))
   rw [scaleSect_scaleZ x hx]
   exact (hu hb x hx).symm
 
@@ -269,7 +269,7 @@ theorem isScaleEquivariant_iff_div_scaleZ {r : ℕ} {δ₀ : (Fin (m + 1) → �
         (fun y => δ₀ y / δ y) (b • x) = (fun y => δ₀ y / δ y) x := by
       intro b hb x hx
       have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
-      show δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
+      change δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
       rw [h₀ hb x, hδ hb x hx, mul_div_mul_left _ _ hbr]
     obtain ⟨w, hw⟩ := (isScaleInvariant_iff_factors_scaleZ (fun y => δ₀ y / δ y)).mp hinv
     refine ⟨w, fun x hx => ?_⟩

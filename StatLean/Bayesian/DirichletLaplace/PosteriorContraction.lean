@@ -801,7 +801,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       rw [Finset.eq_empty_iff_forall_notMem]; exact fun j => (IsEmpty.false j).elim
     rw [huniv, measure_univ, hfilt]
     have hcard0 : Fintype.card ι = 0 := Fintype.card_eq_zero
-    simp [hcard0]
+    simp
   set m : ℝ := (Fintype.card ι : ℝ) with hm_def
   have hmpos : 0 < m := by rw [hm_def]; exact_mod_cast Fintype.card_pos
   set s : ℝ := min (r / Real.sqrt m) (1 / 2) with hs_def
@@ -838,7 +838,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       = ∏ j, dlMarginal a {x : ℝ | |x - θ₀ j| ≤ s} := by
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s} = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   -- Per-coordinate lower bound `exp(gexp (θ₀ j)) ≤ marginal`.
   set gexp : ℝ → ℝ := fun c =>
@@ -917,7 +917,7 @@ private lemma sum_dlPrior_dlShell_le_one {ι : Type*} [Fintype ι] (a : ℝ) (θ
     (j : ℕ) (r δ : ℝ) (𝒮 : Finset (Finset ι)) :
     ∑ S ∈ 𝒮, dlPrior a ι (dlShell θ₀ S j r δ) ≤ 1 := by
   classical
-  haveI : IsProbabilityMeasure (dlPrior a ι) := inferInstance
+  have : IsProbabilityMeasure (dlPrior a ι) := inferInstance
   have hdisj : (↑𝒮 : Set (Finset ι)).PairwiseDisjoint (fun S => dlShell θ₀ S j r δ) := by
     intro S _ S' _ hne
     refine Set.disjoint_left.mpr fun x hxS hxS' => ?_
@@ -1042,7 +1042,7 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
   have hδboxlt1 : dlBoxS rr n < 1 := lt_of_le_of_lt (min_le_right _ _) (by norm_num)
   set filt := (Finset.univ : Finset (Fin n)).powerset.filter (fun S => S.card ≤ Kf n) with hfilt
   set E : ℕ → ℝ≥0∞ := fun j => ENNReal.ofReal (Real.exp (-(j : ℝ) ^ 2 * (rr n) ^ 2 / 12)) with hE
-  show (∑ S ∈ filt, ∑' j : ℕ, if J₀ ≤ j then
+  change (∑ S ∈ filt, ∑' j : ℕ, if J₀ ≤ j then
         (33 : ℝ≥0∞) ^ S.card * E j
         + (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
             / dbarVal (av n) (rr n) (θ₀ n) else 0)
@@ -1639,7 +1639,7 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s}
         = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   have hbox_pos : 0 < dlPrior a ι {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
     rw [hbox_eq, pos_iff_ne_zero, Finset.prod_ne_zero_iff]
@@ -1700,10 +1700,10 @@ theorem dl_theorem31 {β : ℝ}
     exact Real.rpow_pos_of_pos (by exact_mod_cast hn) _
   have hmv_le : ∀ n, mv n ≤ (n : ℝ) := by
     intro n
-    letI := Classical.decEq (Fin n)
+    let := Classical.decEq (Fin n)
     have h : Fintype.card {i : Fin n // i ∉ S₀ n} ≤ n :=
       (Fintype.card_subtype_le _).trans_eq (Fintype.card_fin n)
-    show (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ) ≤ (n : ℝ)
+    change (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ) ≤ (n : ℝ)
     exact_mod_cast h
   have hqlt : ∀ᶠ n in atTop, (q n : ℝ) < n := by
     filter_upwards [hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1 by norm_num)),
@@ -1712,7 +1712,7 @@ theorem dl_theorem31 {β : ℝ}
     exact (div_lt_one hnpos).mp hlt
   have hmvpos : ∀ᶠ n in atTop, 0 < mv n := by
     filter_upwards [hqlt] with n hql
-    letI := Classical.decEq (Fin n)
+    let := Classical.decEq (Fin n)
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
@@ -1720,8 +1720,8 @@ theorem dl_theorem31 {β : ℝ}
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
-    haveI : Nonempty {i : Fin n // i ∉ S₀ n} := ⟨j, hj⟩
-    show (0 : ℝ) < (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ)
+    have : Nonempty {i : Fin n // i ∉ S₀ n} := ⟨j, hj⟩
+    change (0 : ℝ) < (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ)
     exact_mod_cast Fintype.card_pos
   -- `δ = rₙ/n` lies in the window `[n^{−2}, 1/2]` eventually.
   have hδwin : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δv n ∧ δv n ≤ 1/2 := by
@@ -1944,7 +1944,7 @@ theorem dl_theorem31 {β : ℝ}
       have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
         have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
       have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-      push_cast; nlinarith
+      nlinarith
     have hAm1 : A - 1 = 2 + 2 / β := by rw [hA_def]; ring
     have hkβ : 2 * (q n : ℝ) * β + 2 * (q n) - β ≤ (kv n : ℝ) * β := by
       have h := mul_le_mul_of_nonneg_right hklb hβ.le
@@ -2018,7 +2018,7 @@ theorem dl_theorem31 {β : ℝ}
     exact_mod_cast (by linarith : (2:ℝ) ≤ n)
   have ha_le1 : av n ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hn1R (by linarith)
   have ha_le2 : av n ≤ 1/2 := by
-    show (n:ℝ)^(-(1+β)) ≤ 1/2
+    change (n:ℝ)^(-(1+β)) ≤ 1/2
     rw [Real.rpow_neg hnpos.le, show (1:ℝ)/2 = (2:ℝ)⁻¹ by norm_num]
     apply inv_anti₀ (by norm_num)
     calc (2:ℝ) ≤ n := by exact_mod_cast hn2N
@@ -2076,7 +2076,7 @@ theorem dl_theorem31 {β : ℝ}
     have h3 : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
     nlinarith
   have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ (⌊A * (q n : ℝ)⌋₊ : ℝ) := by
-    rw [hkv, Nat.cast_sub hcard_le]; push_cast; linarith
+    rw [hkv, Nat.cast_sub hcard_le]; linarith
   have hbBpos : 0 < (dlPrior (av n) (Fin n)) (Metric.closedBall (θ₀ n) (rv n)) :=
     dlPrior_closedBall_pos hapos hr_pos (θ₀ n)
   have hJ₀ : (J₀ : ℝ) ≤ M / 2 := by rw [hM_def]; linarith

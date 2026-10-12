@@ -155,7 +155,7 @@ private theorem abs_lintegral_bind_shift_le {d : ℕ}
       (∫⁻ y, g y ∂((multivariateGaussian 0 1).bind κ.1)).toReal| ≤
       B.toReal * ∫ z, |gaussianLikelihood a z - 1|
         ∂stdGaussian (EuclideanSpace ℝ (Fin m)) := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   let H : EuclideanSpace ℝ (Fin m) → ℝ≥0∞ := fun z => ∫⁻ y, g y ∂(κ.1 z)
   have hHmeas : Measurable H := hg.lintegral_kernel
   have hHB : ∀ z, H z ≤ B := by
@@ -263,12 +263,12 @@ private theorem abs_lintegral_bind_two_shifts_le {d : ℕ}
       (∫⁻ y, g y ∂((multivariateGaussian k 1).bind κ.1)).toReal| ≤
       B.toReal * ∫ z, |gaussianLikelihood (h - k) z - 1|
         ∂stdGaussian (EuclideanSpace ℝ (Fin m)) := by
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   let shift : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m) := fun z => k + z
   have hshift : Measurable shift := by fun_prop
   let κ' : Kernel (EuclideanSpace ℝ (Fin m)) (EuclideanSpace ℝ (Fin d)) :=
     κ.1.comap shift hshift
-  letI : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 hshift
+  let : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ.1 hshift
   let κM : MarkovDecision (EuclideanSpace ℝ (Fin m))
       (EuclideanSpace ℝ (Fin d)) := ⟨κ', inferInstance⟩
   have heq (a : EuclideanSpace ℝ (Fin m)) :
@@ -476,7 +476,7 @@ theorem gaussianShiftRisk_uniformContinuous
       _ = tvmod (h - k) := by rw [← Real.sqrt_eq_rpow]
       _ < e := htvsmall
   have hsecond : |(∫⁻ y, gh y ∂μk).toReal - (∫⁻ y, gk y ∂μk).toReal| ≤ e := by
-    haveI : IsProbabilityMeasure μk := by dsimp [μk]; infer_instance
+    have : IsProbabilityMeasure μk := by dsimp [μk]; infer_instance
     have hghtop : ∀ᵐ y ∂μk, gh y < ∞ := Filter.Eventually.of_forall fun y =>
       lt_top_iff_ne_top.mpr (ne_of_lt ((hghB y).trans_lt hBtop))
     have hgktop : ∀ᵐ y ∂μk, gk y < ∞ := Filter.Eventually.of_forall fun y =>
@@ -602,7 +602,7 @@ theorem exists_finite_quantization
   have hcball : ∀ x : ↥t,
       c x ∈ Metric.ball (x : EuclideanSpace ℝ (Fin m)) (η / 2) := fun x =>
     (Classical.choose_spec (hcenter x x.property)).2
-  letI : Fintype ↥t := htfin.fintype
+  let : Fintype ↥t := htfin.fintype
   let I : Finset (EuclideanSpace ℝ (Fin m)) :=
     Set.Finite.toFinset (Set.finite_range c)
   have hIC : (I : Set _) ⊆ C := by
@@ -741,7 +741,7 @@ theorem gaussianShiftRisk_uniformContinuous_vec {d : ℕ}
   rcases Metric.isOpen_iff.mp htvopen 0 htvzero with ⟨δT, hδT, hballT⟩
   refine ⟨min δL δT, lt_min hδL hδT, ?_⟩
   intro κ h k hhk
-  letI : IsMarkovKernel κ.1 := κ.2
+  let : IsMarkovKernel κ.1 := κ.2
   have hdistL : dist (L h) (L k) < η := by
     calc
       dist (L h) (L k) ≤ ‖L‖ * dist h k := L.dist_le_opNorm h k
@@ -785,7 +785,7 @@ theorem gaussianShiftRisk_uniformContinuous_vec {d : ℕ}
       _ = tvmod (h - k) := by rw [← Real.sqrt_eq_rpow]
       _ < e := htvsmall
   have hsecond : |(∫⁻ y, gh y ∂μk).toReal - (∫⁻ y, gk y ∂μk).toReal| ≤ e := by
-    haveI : IsProbabilityMeasure μk := by dsimp [μk]; infer_instance
+    have : IsProbabilityMeasure μk := by dsimp [μk]; infer_instance
     have hghtop : ∀ᵐ y ∂μk, gh y < ∞ := Filter.Eventually.of_forall fun y =>
       lt_top_iff_ne_top.mpr (ne_of_lt ((hghB y).trans_lt hBtop))
     have hgktop : ∀ᵐ y ∂μk, gk y < ∞ := Filter.Eventually.of_forall fun y =>
@@ -912,7 +912,7 @@ theorem exists_finite_quantization_vec {d : ℕ}
     (Classical.choose_spec (hcenter x x.property)).1
   have hcball : ∀ x : ↥t, c x ∈ Metric.ball (x : EuclideanSpace ℝ (Fin m)) (η / 2) :=
     fun x => (Classical.choose_spec (hcenter x x.property)).2
-  letI : Fintype ↥t := htfin.fintype
+  let : Fintype ↥t := htfin.fintype
   let I : Finset (EuclideanSpace ℝ (Fin m)) := Set.Finite.toFinset (Set.finite_range c)
   have hIC : (I : Set _) ⊆ C := by
     intro z hz
@@ -950,7 +950,7 @@ theorem exists_finite_quantization_vec {d : ℕ}
         (⨆ h ∈ I, gaussianShiftKernelRiskVec A ℓ κ h) + ε) := by
       apply iInf_mono
       intro κ
-      letI : IsMarkovKernel κ.1 := κ.2
+      let : IsMarkovKernel κ.1 := κ.2
       let S : ℝ≥0∞ := ⨆ h ∈ I, gaussianShiftKernelRiskVec A ℓ κ h
       have hriskB : ∀ h, gaussianShiftKernelRiskVec A ℓ κ h ≤ B := by
         intro h

@@ -362,7 +362,7 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
     limsup (fun n => (μ n).outerMeasureStar
         {ω | (pairn n ω).2 ≤ (r n ω : EReal) + (pairn n ω).1}) atTop
       ≤ μlim {ω | (pairLim ω).2 ≤ (pairLim ω).1} := by
-  letI : MetricSpace EReal := TopologicalSpace.metrizableSpaceMetric EReal
+  let : MetricSpace EReal := TopologicalSpace.metrizableSpaceMetric EReal
   change WeakConvergesOuter μ pairn (μlim.map pairLim) at hpair
   have hshift_mono {a b : ℝ} (hab : a ≤ b) (x : EReal) :
       (a : EReal) + x ≤ (b : EReal) + x := by

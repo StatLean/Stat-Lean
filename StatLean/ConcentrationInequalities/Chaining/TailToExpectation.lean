@@ -153,8 +153,7 @@ theorem lintegral_ofReal_le_of_tail_le
             μ {ω | a < Z ω} ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
           intro u hu; simpa using htail u hu
         have h1 : Filter.Tendsto (fun u : ℝ => -u ^ 2) Filter.atTop Filter.atBot := by
-          simpa using Filter.Tendsto.const_mul_atTop_of_neg (show (-1 : ℝ) < 0 by norm_num)
-            (Filter.tendsto_pow_atTop (two_ne_zero))
+          simp
         have htends : Filter.Tendsto (fun u : ℝ => ENNReal.ofReal (2 * Real.exp (-u ^ 2)))
             Filter.atTop (nhds 0) := by
           rw [show (0 : ℝ≥0∞) = ENNReal.ofReal 0 by simp]

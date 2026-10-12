@@ -208,7 +208,7 @@ theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure Pr]
     Tendsto (fun n => (Pr {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
       atTop (𝓝 1) := by
   set qn : ℕ → Ω → ℝ := fun n ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α) with hqn
-  show Tendsto (fun n => (Pr {ω | qn n ω < T n ω}).toReal) atTop (𝓝 1)
+  change Tendsto (fun n => (Pr {ω | qn n ω < T n ω}).toReal) atTop (𝓝 1)
   have hmeasS : ∀ n, MeasurableSet {ω | T n ω ≤ qn n ω} :=
     fun n => measurableSet_le (hTmeas n) (hqmeas n)
   -- The acceptance probability vanishes: a divergent statistic overtakes a tight critical value.

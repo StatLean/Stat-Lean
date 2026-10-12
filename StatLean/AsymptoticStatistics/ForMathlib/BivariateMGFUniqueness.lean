@@ -264,9 +264,9 @@ theorem bivariate_mgf_uniqueness
     ν.map (WithLp.toLp 2 (V := ℝ × ℝ)) with hνL_def
   have h_meas_toLp : Measurable (WithLp.toLp 2 (V := ℝ × ℝ)) :=
     WithLp.measurable_toLp _ _
-  haveI : IsProbabilityMeasure μ_L :=
+  have : IsProbabilityMeasure μ_L :=
     (by infer_instance)
-  haveI : IsProbabilityMeasure ν_L :=
+  have : IsProbabilityMeasure ν_L :=
     (by infer_instance)
   -- Step 2: extend the real-axis identity to all complex `s` per fixed real `u`.
   have h_F_eq_C : ∀ (u : ℝ) (s : ℂ),

@@ -139,7 +139,7 @@ private lemma sum_klDiv_le_logdet {M d : ℕ} [NeZero M]
       ≤ ENNReal.ofReal
           (2⁻¹ * (Real.log covZ.det - (M : ℝ)⁻¹ * ∑ j, Real.log (S j).det)) := by
   classical
-  haveI : Nonempty (Fin M) := ⟨(0 : Fin M)⟩
+  have : Nonempty (Fin M) := ⟨(0 : Fin M)⟩
   have hMpos : (0 : ℝ) < (M : ℝ) := by exact_mod_cast NeZero.pos M
   have hM0 : (M : ℝ) ≠ 0 := hMpos.ne'
   have hMinv : (0 : ℝ) ≤ (M : ℝ)⁻¹ := by positivity

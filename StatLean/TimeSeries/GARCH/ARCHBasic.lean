@@ -376,8 +376,8 @@ private lemma measurable_archSq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
 
 private lemma measurable_archRho (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
     Measurable (archRho c0 b) :=
-  measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul
-    ((measurable_archSq c0 b).comp (Measurable.of_eval fun s => measurable_pi_apply _)))
+  measurable_const.add (Finset.measurable_sum _ fun _ _ => measurable_const.mul
+    ((measurable_archSq c0 b).comp (Measurable.of_eval fun _ => measurable_pi_apply _)))
 
 private lemma measurable_archXFun (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
     Measurable (archXFun c0 b) :=
@@ -908,7 +908,7 @@ private lemma sq_le_archSq_add_archWin [IsProbabilityMeasure μ] {c0 : ℝ} {p :
       have hidx : u + ((n : ℕ) + 1 : ℕ) - ((0 : ℕ) : ℤ) = u + (n : ℤ) + 1 := by
         push_cast; ring
       have hidx2 : ∀ i : Fin p, u + (n : ℤ) + 1 - 1 - (i : ℕ) = u + (n : ℕ) - (i : ℕ) := by
-        intro i; push_cast; ring
+        intro i; ring
       rw [hidx, archWin_succ_zero, hrec (u + (n : ℤ) + 1)]
       simp only [hidx2]
       rw [archSq_recurrence]
@@ -1000,7 +1000,7 @@ private lemma measurable_archWin_one {p : ℕ} {b : Fin p → ℝ} {ε : ℤ →
     ∀ n j : ℕ, Measurable[sigmaLE ε (u + n)] fun ω => archWin b ε (archOne Ω) u ω n j := by
   intro n
   induction n with
-  | zero => intro j; simpa [archWin_zero, archOne] using measurable_const
+  | zero => intro j; simp [archWin_zero, archOne]
   | succ n ih =>
     intro j
     have hmono : sigmaLE ε (u + (n : ℕ)) ≤ sigmaLE ε (u + ((n : ℕ) + 1 : ℕ)) := by
@@ -1028,7 +1028,6 @@ private lemma lintegral_archWin_one_succ [IsProbabilityMeasure μ] {p : ℕ} {b 
           * ∫⁻ ω, archWin b ε (archOne Ω) u ω n (i : ℕ) ∂μ := by
   have hle : sigmaLE ε (u + (n : ℕ)) ≤ sigmaLT ε (u + n + 1) := by
     refine sigmaLE_le_sigmaLT ?_
-    push_cast
     omega
   have hpast : Measurable[sigmaLT ε (u + n + 1)] fun ω =>
       ∑ i : Fin p, ENNReal.ofReal (b i) * archWin b ε (archOne Ω) u ω n (i : ℕ) :=

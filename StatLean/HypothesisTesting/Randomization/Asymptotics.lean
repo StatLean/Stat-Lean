@@ -274,7 +274,7 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
   have hpre : ∀ g g' : G,
       (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (Set.Iic t ×ˢ Set.Iic t)
         = {x : 𝓧 | T (g • x) ≤ t ∧ T (g' • x) ≤ t} := fun g g' => by
-    ext x; simp [Set.mem_prod, Set.mem_Iic]
+    ext x; simp [Set.mem_Iic]
   have hval : (randPairLaw G T P) (Set.Iic t ×ˢ Set.Iic t)
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ t ∧ T (g' • x) ≤ t} := by
@@ -359,7 +359,7 @@ lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilit
   have hpre : ∀ g g' : G,
       (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (Set.Iic s ×ˢ Set.Iic t)
         = {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := fun g g' => by
-    ext x; simp [Set.mem_prod, Set.mem_Iic]
+    ext x; simp [Set.mem_Iic]
   have hval : (randPairLaw G T P) (Set.Iic s ×ˢ Set.Iic t)
       = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
           ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
@@ -584,7 +584,7 @@ private lemma randDist_tendstoInProb_cdf_aux (P : ∀ n, Measure (𝓧 n))
     · exact Set.prod_mono (Set.subset_univ _) (Set.Subset.refl _)
     · exact Set.prod_mono (Set.Subset.refl _) (Set.subset_univ _)
   -- `randPairLaw` is a probability measure on each level.
-  haveI hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+  have hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
     isProbabilityMeasure_randPairLaw (G n) (P n) (T n) (hT n) (hsmul n)
   -- Portmanteau: the two rectangle masses converge.
   have hE1 : Tendsto (fun n => (randPairLaw (G n) (T n) (P n)).real (Set.Iic t ×ˢ Set.univ))
@@ -906,7 +906,7 @@ theorem weakConverges_randPairLaw_of_randDist_tendstoInProb (P : ∀ n, Measure 
       TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t)) :
     WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R) := by
   classical
-  haveI hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+  have hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
     isProbabilityMeasure_randPairLaw (G n) (P n) (T n) (hT n) (hsmul n)
   -- Step 1: convergence in probability of the random c.d.f. upgrades to `L¹` convergence,
   -- because the random c.d.f. is bounded by `1`.

@@ -80,7 +80,7 @@ theorem argmax_closed_limsup
       _ ≤ (r n ω : EReal) +
           ⨆ q : {q : D // q ∈ F ∩ p.1 ∩ Hn n}, (Mn n ω q : EReal) :=
         add_le_add_right hhat_le _
-  letI : IsProbabilityMeasure (μlim.map hhat) :=
+  let : IsProbabilityMeasure (μlim.map hhat) :=
     (by infer_instance)
   refine weakConvergesOuter_of_closedSet_limsup ?_
   intro F hF

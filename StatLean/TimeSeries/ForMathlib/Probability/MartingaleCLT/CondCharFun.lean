@@ -798,7 +798,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
   obtain ⟨S, hS⟩ : ∃ S : ℕ → Finset (Fin (k n)),
       ∀ m, S m = Finset.univ.filter (fun i : Fin (k n) => (i : ℕ) < m) := ⟨_, fun _ => rfl⟩
   have hS0 : S 0 = ∅ := by rw [hS]; ext j; simp
-  have hSfull : S (k n) = Finset.univ := by rw [hS]; ext j; simpa using j.isLt
+  have hSfull : S (k n) = Finset.univ := by rw [hS]; ext j; simp
   have hSins : ∀ (m : ℕ) (hm : m < k n),
       S (m + 1) = insert (⟨m, hm⟩ : Fin (k n)) (S m) := by
     intro m hm

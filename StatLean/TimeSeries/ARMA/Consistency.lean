@@ -152,7 +152,7 @@ private lemma hasSum_polyEval_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial 
       intro x hx
       rw [ite_eq_right, zero_mul]
       intro hkx
-      exact hx ⟨x - k, by show k + (x - k) = x; omega⟩
+      exact hx ⟨x - k, by change k + (x - k) = x; omega⟩
     refine (hg.hasSum_iff hzero).1 ?_
     have heq : ((fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m) ∘
         fun n : ℕ => k + n) = fun n => P.coeff k * z ^ k * (c n * z ^ n) := by
@@ -203,7 +203,7 @@ private lemma hasSum_polyEval (P : Polynomial ℂ) (z : ℂ) :
       (∑ n ∈ Finset.range (P.natDegree + 1), P.coeff n * z ^ n) :=
     hasSum_sum_of_ne_finset_zero (fun n hn => by
       simp only [Finset.mem_range, not_lt] at hn
-      show P.coeff n * z ^ n = 0
+      change P.coeff n * z ^ n = 0
       rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul])
   rwa [← Polynomial.eval_eq_sum_range] at h
 /-- **Quantitative Cauchy estimate for the ARMA transfer coefficients.** -/
@@ -1131,7 +1131,7 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
         ≤ |armaPi z.1.1 z.1.2 n| + |armaPi z.2.1 z.2.2 n| := abs_sub _ _
     rw [Real.norm_eq_abs, abs_abs]
     linarith
-  haveI : CompactSpace ↥(K ×ˢ K) := isCompact_iff_compactSpace.1 (hK.prod hK)
+  have : CompactSpace ↥(K ×ˢ K) := isCompact_iff_compactSpace.1 (hK.prod hK)
   obtain ⟨F, hF⟩ : ∃ F : ↥(K ×ˢ K) → ℝ, F = (K ×ˢ K).domRestrict
       (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) × ((Fin p → ℝ) × (Fin q → ℝ)) =>
         ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) := ⟨_, rfl⟩
@@ -1156,7 +1156,7 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
         have heq : s0.1.1 = s0.1.2 := dist_eq_zero.1 h.symm
         have hzero : F s0 = 0 := by
           rw [hF]
-          show ∑' n : ℕ, |armaPi s0.1.1.1 s0.1.1.2 n - armaPi s0.1.2.1 s0.1.2.2 n| = 0
+          change ∑' n : ℕ, |armaPi s0.1.1.1 s0.1.1.2 n - armaPi s0.1.2.1 s0.1.2.2 n| = 0
           rw [heq]
           simp
         have := hs0
@@ -2325,7 +2325,7 @@ private lemma abs_gramTail_entry_le {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (
             (C ^ 2 * ((T : ℝ) - (j : ℕ)) * (r ^ m * r ^ (T - (j : ℕ)))) :=
           mul_le_mul hbi hbj (abs_nonneg _) hnn
       _ = _ := by rw [hrm]; ring
-  show |∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| ≤ _
+  change |∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| ≤ _
   calc |∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)|
       ≤ ∑' m : ℕ, |uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| := by
         simpa [Real.norm_eq_abs] using
@@ -2772,7 +2772,7 @@ private lemma abs_residSS_sub_le {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : Fi
   have hid : ∀ i : Fin T, (piMat b1 a1 T *ᵥ x) i - (piMat b2 a2 T *ᵥ x) i
       = ∑ k : Fin T, (piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ)) * x k := by
     intro i
-    show (∑ k : Fin T, piK b1 a1 (i : ℕ) (k : ℕ) * x k)
+    change (∑ k : Fin T, piK b1 a1 (i : ℕ) (k : ℕ) * x k)
         - (∑ k : Fin T, piK b2 a2 (i : ℕ) (k : ℕ) * x k) = _
     rw [← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun k _ => by ring
@@ -2977,7 +2977,7 @@ private lemma gramTail_quadForm_tendstoInProb [IsProbabilityMeasure μ] {p q : �
         = ∑ k : Fin T, ∑ l : Fin T, (piK b a (i : ℕ) (k : ℕ) * piK b a (j : ℕ) (l : ℕ)) *
             (X (((k : ℕ) : ℤ) + 1) ω * X (((l : ℕ) : ℤ) + 1) ω) := by
       intro ω
-      show (∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * X (((k : ℕ) : ℤ) + 1) ω) *
+      change (∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * X (((k : ℕ) : ℤ) + 1) ω) *
           (∑ l : Fin T, piK b a (j : ℕ) (l : ℕ) * X (((l : ℕ) : ℤ) + 1) ω) = _
       rw [Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
@@ -3276,7 +3276,7 @@ private lemma integral_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε :
       = ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
           (c x * c y) * (ε (t x) ω * ε (t y) ω) := by
     intro ω
-    show (∑ x : Fin m × Fin m, c x * ε (t x) ω) ^ 2 = _
+    change (∑ x : Fin m × Fin m, c x * ε (t x) ω) ^ 2 = _
     rw [sq, Finset.sum_mul_sum]
     exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => by ring
   rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
@@ -3543,8 +3543,8 @@ private lemma inv_mul_le_inv_mul {c t x y : ℝ} (hc : 0 < c) (hct : c ≤ t) (h
   have ht : 0 < t := lt_of_lt_of_le hc hct
   have hpos : 0 < t * c := mul_pos ht hc
   refine le_of_mul_le_mul_right ?_ hpos
-  have e1 : t⁻¹ * x * (t * c) = x * c := by field_simp <;> ring
-  have e2 : c⁻¹ * y * (t * c) = y * t := by field_simp <;> ring
+  have e1 : t⁻¹ * x * (t * c) = x * c := by field_simp
+  have e2 : c⁻¹ * y * (t * c) = y * t := by field_simp
   rw [e1, e2]
   nlinarith
 
@@ -3573,7 +3573,7 @@ private lemma sum_range_mul_split {M : Type*} [AddCommMonoid M] {L : ℕ} (hL : 
       rw [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hx.1]
     have h2 : (x.1 + x.2 * L) / L = x.2 := by
       rw [Nat.add_mul_div_right _ _ hL, Nat.div_eq_of_lt hx.1, zero_add]
-    show ((x.1 + x.2 * L) % L, (x.1 + x.2 * L) / L) = x
+    change ((x.1 + x.2 * L) % L, (x.1 + x.2 * L) / L) = x
     rw [h1, h2]
   · intro i _
     exact Nat.mod_add_div' i L
@@ -3632,8 +3632,8 @@ private lemma tendsto_avg_of_tendsto_block {L : ℕ} (hL : 0 < L) {S : ℕ → �
       have h2 : (L : ℝ) ≠ 0 := ne_of_gt hLR
       have h3 : ((N : ℝ) + 1) ≠ 0 := by positivity
       simp only [hAdef, hcast, hcast']
-      field_simp <;> ring
-    show A N * ((N : ℝ) / ((N : ℝ) + 1)) ≤ (T : ℝ)⁻¹ * S T
+      field_simp
+    change A N * ((N : ℝ) / ((N : ℝ) + 1)) ≤ (T : ℝ)⁻¹ * S T
     rw [hrewrite]
     refine inv_mul_le_inv_mul (by exact_mod_cast hTpos) ?_ (hpos _) (hmono hlow)
     rw [hcast']
@@ -3655,8 +3655,8 @@ private lemma tendsto_avg_of_tendsto_block {L : ℕ} (hL : 0 < L) {S : ℕ → �
       have h2 : (L : ℝ) ≠ 0 := ne_of_gt hLR
       have h3 : ((N : ℝ) + 1) ≠ 0 := by positivity
       simp only [hAdef, hcast, hcast']
-      field_simp <;> ring
-    show (T : ℝ)⁻¹ * S T ≤ A (N + 1) * (((N : ℝ) + 1) / (N : ℝ))
+      field_simp
+    change (T : ℝ)⁻¹ * S T ≤ A (N + 1) * (((N : ℝ) + 1) / (N : ℝ))
     rw [hrewrite]
     refine inv_mul_le_inv_mul ?_ ?_ (hpos _) (hmono hhigh.le)
     · rw [hcast]; positivity
@@ -3746,7 +3746,7 @@ private lemma ae_tendsto_avg_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ}
   have hcast : ((N * (2 * m) : ℕ) : ℝ) = (N : ℝ) * ((2 * m : ℕ) : ℝ) := by push_cast; ring
   have hNne : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
   have hsplit := sum_range_mul_split hL N f
-  show ((2 * m : ℕ) : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 * m),
+  change ((2 * m : ℕ) : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 * m),
       (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, f (k + j * (2 * m))
     = ((N * (2 * m) : ℕ) : ℝ)⁻¹ * ∑ i ∈ Finset.range (N * (2 * m)), f i
   rw [hsplit, hcast, ← Finset.mul_sum, mul_inv]
@@ -3756,7 +3756,7 @@ lemma l2n_abs (f : Ω → ℝ) : l2n μ (fun ω => |f ω|) = l2n μ f := by
   simp only [l2n, sq_abs]
 
 private lemma l2n_neg (f : Ω → ℝ) : l2n μ (fun ω => -f ω) = l2n μ f := by
-  simp only [l2n, neg_pow, even_two.neg_pow]
+  simp only [l2n, even_two.neg_pow]
 
 private lemma l2n_sub_le_add {f g h : Ω → ℝ} (hfh : MemLp (fun ω => f ω - h ω) 2 μ)
     (hhg : MemLp (fun ω => h ω - g ω) 2 μ) :
@@ -4094,7 +4094,6 @@ private lemma blockResid_eq_sum (π ψ : ℕ → ℝ) (ε : ℤ → Ω → ℝ) 
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun n _ => ?_
   have harg : (1 : ℤ) + (d : ℤ) - (n : ℤ) + (i : ℤ) = (i : ℤ) + 1 + (d : ℕ) - (n : ℕ) := by
-    push_cast
     ring
   rw [harg]
   ring
@@ -4499,7 +4498,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
       have h1 := mul_le_mul_of_nonneg_left (hIle m T) (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)
       have h2 : (T : ℝ)⁻¹ * (((T : ℝ) * rho m + (m : ℝ) * (P * c0)) * G)
           = rho m * G + (m : ℝ) * (P * c0) * G / T := by
-        field_simp <;> ring
+        field_simp
       linarith [h1, h2.le, h2.ge]
     have hkey : η' / 3 * (μ {ω | η' / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
         |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
@@ -4803,7 +4802,7 @@ private lemma tsum_abs_deltaFilter : ∑' n : ℕ, |deltaFilter n| = 1 := by
     funext n
     by_cases hn : n = 0 <;> simp [deltaFilter, hn]
   rw [h]
-  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
+  simp
 
 omit [MeasurableSpace Ω] in
 /-- With `π = δ` the doubly truncated surrogate is the plain `m`-truncation of the
@@ -4848,7 +4847,7 @@ private lemma cTrunc_deltaFilter (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m) (r : �
       refine Finset.sum_eq_zero fun n _ => ?_
       refine ite_eq_right ?_
       have hnlt := n.isLt
-      simp only [Fin.val_mk, zero_add]
+      simp only [zero_add]
       omega
   · intro d _ hd
     refine Finset.sum_eq_zero fun n _ => ?_
@@ -5145,7 +5144,7 @@ open Matrix in
 private lemma piMat_zero_fun {p q : ℕ} (T : ℕ) :
     piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T = 1 := by
   ext i j
-  show piK (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) (i : ℕ) (j : ℕ)
+  change piK (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) (i : ℕ) (j : ℕ)
       = (1 : Matrix (Fin T) (Fin T) ℝ) i j
   rw [piK, Matrix.one_apply]
   by_cases hij : i = j
@@ -5422,7 +5421,7 @@ private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q 
     rw [armaPi_conv_armaPsi]
     split_ifs <;> norm_num
   rw [armaContrastVar, tsum_congr hterm]
-  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
+  simp
 
 /-- The arithmetic of the tolerance `e = σ² min(1, γ)/8`: three tolerances still fit
 strictly inside the contrast gap, even after the `exp(e')` slack. -/

@@ -243,7 +243,7 @@ private theorem finite_lp_packing_of_integral_separation
         simpa only [Function.comp_apply] using
           (lintegral_const_mul (μ := Q) I⁻¹ hHpowm)
       _ = 1 := by simpa only [I] using ENNReal.inv_mul_cancel hI₀' hItop'
-  letI : IsProbabilityMeasure QH := hQH
+  let : IsProbabilityMeasure QH := hQH
   let N (f : Ω → ℝ) : Ω → ℝ := normalizedBy H f
   let φ : Ω × ℝ → Ω × ℝ := fun p ↦
     (p.1, if H p.1 = 0 then p.2 else H p.1 * p.2)
@@ -400,8 +400,8 @@ private theorem finite_measure_packing
         δ ^ (-((V - 1 : ℕ) : ℝ)) := by
   classical
   obtain ⟨Ξ, mΞ, R, X, hXm, hXlaw, hXind, hR⟩ := exists_iid ℕ P
-  letI : MeasurableSpace Ξ := mΞ
-  letI : IsProbabilityMeasure R := hR
+  let : MeasurableSpace Ξ := mΞ
+  let : IsProbabilityMeasure R := hR
   let Y (i j : ↥I) (n : ℕ) (ξ : Ξ) : ℝ :=
     (S i.1 ∆ S j.1).indicator 1 (X n ξ)
   have hYm (i j : ↥I) (n : ℕ) : Measurable (Y i j n) := by
@@ -538,8 +538,8 @@ theorem exists_universalVCFiniteLpPackingConstant :
     ∃ K₀ : ℝ, 0 < K₀ ∧ IsUniversalVCFiniteLpPackingConstant.{u} K₀ := by
   refine ⟨1, one_pos, ?_⟩
   intro Ω mΩ F G V Q A r η hVC hG hQ hGfin hA hr hη₀ hη₁ hsep
-  letI : MeasurableSpace Ω := mΩ
-  letI : IsProbabilityMeasure Q := hQ
+  let : MeasurableSpace Ω := mΩ
+  let : IsProbabilityMeasure Q := hQ
   classical
   have hr₀ : 0 < r := lt_of_lt_of_le zero_lt_one hr
   by_cases hsmall : A.card ≤ 1

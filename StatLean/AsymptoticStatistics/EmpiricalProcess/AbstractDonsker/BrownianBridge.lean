@@ -329,7 +329,7 @@ theorem pBridge_ucPaths :
     ∀ᵐ z ∂(gpBridgeMeasure hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne),
       ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
         ∀ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| < ε := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- The ε-δ predicate holds a.e. of `gpPath ω` (on the good event).
   have hae_omega : ∀ᵐ ω ∂iidStdGaussian,
       ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ f g : ↥F,

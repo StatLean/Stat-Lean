@@ -101,8 +101,8 @@ theorem fullRank_exists_affineSpan [FiniteDimensional ℝ V] (E : ExpFamily 𝓧
   -- extract an affinely independent spanning subset of `Ξ'`
   obtain ⟨t, hts, htspan, htind⟩ := exists_affineIndependent ℝ V Ξ'
   rw [hspanΞ] at htspan
-  haveI : Finite t := (finiteDimensional_iff_finite ℝ htind).mp inferInstance
-  haveI : Fintype t := Fintype.ofFinite t
+  have : Finite t := (finiteDimensional_iff_finite ℝ htind).mp inferInstance
+  have : Fintype t := Fintype.ofFinite t
   have htspan' : affineSpan ℝ (Set.range (Subtype.val : t → V)) = (⊤ : AffineSubspace ℝ V) := by
     rwa [Subtype.range_coe]
   have hcard : Fintype.card t = Module.finrank ℝ V + 1 :=
@@ -170,7 +170,7 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
     IsMinimalSufficient (fun θ : Ξ' => E.P (θ : V)) E.stat := by
   classical
   set P : Ξ' → Measure 𝓧 := fun θ => E.P (θ : V) with hPdef
-  haveI hProb : ∀ θ : Ξ', IsProbabilityMeasure (P θ) :=
+  have hProb : ∀ θ : Ξ', IsProbabilityMeasure (P θ) :=
     fun θ => isProbabilityMeasure_P E hbase (hΞ θ.2)
   -- the density `dP_θ/dν = exp(⟨θ, T⟩ - A(θ))`
   set p : Ξ' → 𝓧 → ℝ≥0∞ :=
@@ -265,7 +265,7 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
   have hbaseAE : (fun x => H (U x)) =ᵐ[E.base] E.stat := by
     have hall : ∀ᵐ x ∂E.base, ∀ i, φ i (U x) = ⟪d i, E.stat x⟫_ℝ := (ae_all_iff).2 hphi
     filter_upwards [hall] with x hx
-    show Ψ (fun i => φ i (U x)) = E.stat x
+    change Ψ (fun i => φ i (U x)) = E.stat x
     rw [show (fun i => φ i (U x)) = fun i => ⟪d i, E.stat x⟫_ℝ from funext hx]
     exact hΨv (E.stat x)
   refine ⟨H, hHmeas, fun θ => ?_⟩

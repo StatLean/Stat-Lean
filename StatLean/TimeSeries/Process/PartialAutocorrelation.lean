@@ -400,7 +400,7 @@ private lemma pacf_eq_cov_div_variance [IsProbabilityMeasure μ] (hstat : IsStat
           (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ := by
   rcases eq_or_lt_of_le hk with h1 | h2
   · -- `k = 1`: the window is empty and both residuals are the raw variables
-    haveI : IsEmpty (Fin (k - 1)) := by
+    have : IsEmpty (Fin (k - 1)) := by
       rw [show k - 1 = 0 by omega]; infer_instance
     have hres : ∀ t : ℤ,
         linRegResidual X μ t (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2) = X t := by

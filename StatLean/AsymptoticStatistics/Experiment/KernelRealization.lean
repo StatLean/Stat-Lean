@@ -93,7 +93,7 @@ lemma leftInverse_le_iff (F : StieltjesFunction ℝ)
     obtain ⟨y, hy_mem, hy_lt⟩ :=
       exists_lt_of_csInf_lt hS_ne (lt_of_le_of_lt h hr)
     exact hy_mem.trans (F.mono hy_lt.le)
-  haveI : Nonempty (Set.Ioi x) := ⟨⟨x + 1, show x < x + 1 by linarith⟩⟩
+  have : Nonempty (Set.Ioi x) := ⟨⟨x + 1, show x < x + 1 by linarith⟩⟩
   calc u ≤ ⨅ r : Set.Ioi x, F r := le_ciInf (fun r => h_all_gt r.1 r.2)
     _ = F x := F.iInf_Ioi_eq x
 
@@ -210,8 +210,8 @@ lemma leftInverse_map_uniform (F : StieltjesFunction ℝ)
     le_of_tendsto hF_atBot ((eventually_le_atBot x).mono fun z hz => F.mono hz)
   have hF_le_one : ∀ x, F x ≤ 1 := fun x =>
     ge_of_tendsto hF_atTop ((eventually_ge_atTop x).mono fun z hz => F.mono hz)
-  haveI : IsProbabilityMeasure F.measure := F.isProbabilityMeasure hF_atBot hF_atTop
-  haveI : IsFiniteMeasure ((volume.restrict (Set.Ioo (0 : ℝ) 1)).map F.leftInverse) := by
+  have : IsProbabilityMeasure F.measure := F.isProbabilityMeasure hF_atBot hF_atTop
+  have : IsFiniteMeasure ((volume.restrict (Set.Ioo (0 : ℝ) 1)).map F.leftInverse) := by
     refine ⟨?_⟩
     rw [Measure.map_apply h_meas MeasurableSet.univ, Set.preimage_univ,
       Measure.restrict_apply MeasurableSet.univ, Set.univ_inter, Real.volume_Ioo, sub_zero]
@@ -516,7 +516,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
       MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0
     -- Map κ through e; first marginal; conditional kernel for the rest.
     let κ' : Kernel α (ℝ × (Fin n → ℝ)) := κ.map e
-    haveI : IsMarkovKernel κ' := Kernel.IsMarkovKernel.map κ e.measurable
+    have : IsMarkovKernel κ' := Kernel.IsMarkovKernel.map κ e.measurable
     let κ₀ : Kernel α ℝ := κ'.fst
     let κ_rest : Kernel (α × ℝ) (Fin n → ℝ) := κ'.condKernel
     -- Recursive realizations.
@@ -917,7 +917,7 @@ lemma kernel_realization_of_joint_distribution
       P.map (fun ω => (T (Δ ω, U ω), Δ ω)) = P.map (fun ω => (S ω, Δ ω)) := by
   -- Step 1.  The conditional distribution `κ := condDistrib S Δ P`, a Markov kernel.
   set κ : Kernel (Fin k → ℝ) (Fin d → ℝ) := condDistrib S Δ P with hκ_def
-  haveI : IsMarkovKernel κ := by rw [hκ_def]; infer_instance
+  have : IsMarkovKernel κ := by rw [hκ_def]; infer_instance
   -- Step 2.  Step 4 — pull a measurable realization `T` of `κ` from `(Uniform[0,1])^d`.
   obtain ⟨T, hT_meas, hT_law⟩ := hasUniformRealization κ
   refine ⟨T, hT_meas, ?_⟩
@@ -951,10 +951,10 @@ lemma kernel_realization_of_joint_distribution
   rw [hLHS_eq, hSwap_eq, ← hcompProd]
   -- Step 6.  Show `((P.map Δ).prod (P.map U)).map g = ((P.map Δ) ⊗ₘ κ).map Prod.swap`.
   -- Both sides are probability measures; check equality on rectangles via `Measure.ext_prod`.
-  haveI : IsProbabilityMeasure (P.map Δ) := (by infer_instance)
-  haveI : IsProbabilityMeasure (P.map U) := (by infer_instance)
-  haveI : IsProbabilityMeasure ((P.map Δ).prod (P.map U)) := inferInstance
-  haveI : IsProbabilityMeasure (((P.map Δ).prod (P.map U)).map g) :=
+  have : IsProbabilityMeasure (P.map Δ) := (by infer_instance)
+  have : IsProbabilityMeasure (P.map U) := (by infer_instance)
+  have : IsProbabilityMeasure ((P.map Δ).prod (P.map U)) := inferInstance
+  have : IsProbabilityMeasure (((P.map Δ).prod (P.map U)).map g) :=
     (by infer_instance)
   refine Measure.ext_prod (μ := ((P.map Δ).prod (P.map U)).map g)
     (ν := ((P.map Δ) ⊗ₘ κ).map Prod.swap) ?_

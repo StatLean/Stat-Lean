@@ -975,7 +975,7 @@ theorem exists_truncErr_repr [IsProbabilityMeasure μ]
   have hS : MeasurableSet {v : ℝ | |m v| ≤ L} := measurableSet_le hm.abs measurable_const
   filter_upwards [hrep t, ae_comp_X_of_stat hmeasX hmeasE hstat t hS hle0] with ω h1 h2
   have h2' : |m (X t ω)| ≤ L := h2
-  show clampAt L (e t ω) - _ = _
+  change clampAt L (e t ω) - _ = _
   rw [h1]
   have hcl : clampAt L (m (X t ω)) = m (X t ω) := by
     unfold clampAt
@@ -5521,7 +5521,7 @@ private theorem comap_pairCode {X e : ℤ → Ω → ℝ} (t : ℤ) :
     ext z
     simp
   rw [h1, h2]
-  show MeasurableSpace.comap (fun ω => (X t ω, e t ω))
+  change MeasurableSpace.comap (fun ω => (X t ω, e t ω))
       (MeasurableSpace.comap Prod.fst inferInstance ⊔
         MeasurableSpace.comap Prod.snd inferInstance) = _
   rw [MeasurableSpace.comap_sup, MeasurableSpace.comap_comp, MeasurableSpace.comap_comp]
@@ -5620,7 +5620,7 @@ private theorem pairAlphaCoeff_shift [IsProbabilityMeasure μ]
   have hsh := (isStrictlyStationary_pairCode hmeasX hmeasE hstat).alphaMixCoeff_shift hZm k d
   rw [hLE k, hGE (k + (d : ℤ))] at hsh
   rw [hsh]
-  show alphaMixCoeff μ (sigmaLE (fun t ω => pairCode (X t ω, e t ω)) 0)
+  change alphaMixCoeff μ (sigmaLE (fun t ω => pairCode (X t ω, e t ω)) 0)
       (sigmaGE (fun t ω => pairCode (X t ω, e t ω)) (d : ℤ)) = _
   rw [hLE 0, hGE (d : ℤ)]
   rfl
@@ -5905,7 +5905,7 @@ private theorem tendsto_bigBlockIdx_card {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n
   have hcast : (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ)
       = (n : ℝ) - ((bigBlockIdx h δ lam n).card : ℝ) := by
     rw [hcard, Nat.cast_sub hle]
-  show 1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
+  change 1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
       = ((bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
   rw [hcast]
   field_simp
@@ -6100,10 +6100,10 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
     · exact hmeas _ _
     · exact measurable_const
   set P : ℕ × ℕ → Measure ℝ := fun z => μ.map (Yt z) with hPdef
-  haveI hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
+  have hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
     (by infer_instance)
   set ν : Measure (ℕ × ℕ → ℝ) := Measure.infinitePi P with hνdef
-  haveI : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
+  have : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
   set Z : (n : ℕ) → Fin (k n) → (ℕ × ℕ → ℝ) → ℝ := fun n i z => z (n, (i : ℕ)) with hZdef
   have hZm : ∀ (n : ℕ) (i : Fin (k n)), Measurable (Z n i) := fun n i => measurable_pi_apply _
   have hYteq : ∀ (n : ℕ) (i : Fin (k n)), Yt (n, (i : ℕ)) = Y n i := by
@@ -6671,7 +6671,7 @@ private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     refine this.trans (le_of_eq ?_)
     congr 1
     refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
-    show |locTruncSum X e μ W x h L n ω
+    change |locTruncSum X e μ W x h L n ω
         - (∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)| = |D n ω|
     rw [hDrep n ω]
   -- combine

@@ -127,7 +127,7 @@ theorem lecam_third_covariance_bound
     ext i j
     simp [B, Matrix.conjTranspose_apply, Matrix.of_apply]
   -- Identity matrix `D = I_m` is positive definite and invertible.
-  letI : Invertible (1 : Matrix (Fin m) (Fin m) ℝ) := invertibleOne
+  let : Invertible (1 : Matrix (Fin m) (Fin m) ℝ) := invertibleOne
   have hD : (1 : Matrix (Fin m) (Fin m) ℝ).PosDef := Matrix.PosDef.one
   -- Apply `Matrix.PosDef.fromBlocks₂₂` to the (now-discharged) PSD
   -- block matrix to get PSD of the Schur complement `A - B * 1⁻¹ * Bᴴ`.

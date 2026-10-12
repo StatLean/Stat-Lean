@@ -122,7 +122,7 @@ private lemma mul_multiwayTestingError_le
     Φ δ * multiwayTestingError (P.comap θfam hθ)
       ≤ minimaxRisk (fun j => distortionLoss Φ g (θfam j)) (P.comap θfam hθ) := by
   set Q := P.comap θfam hθ with hQ
-  haveI : IsMarkovKernel Q := Kernel.IsMarkovKernel.comap P hθ
+  have : IsMarkovKernel Q := Kernel.IsMarkovKernel.comap P hθ
   -- Pointwise geometric bound: `Φ(δ)·𝟙[T y ≠ j] ≤ Φ(ρ(g(θfam j), y))`.
   have hpt : ∀ (j : Fin M) (y : Ω),
       Φ δ * zeroOneLoss M j (T y) ≤ distortionLoss Φ g (θfam j) y := by
@@ -148,9 +148,9 @@ private lemma mul_multiwayTestingError_le
   -- Reduce the minimax risk to a per-estimator bound.
   rw [multiwayTestingError, minimaxRisk]
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   -- The post-composed test `ψ = T ∘ κ`.
-  haveI : IsMarkovKernel (Kernel.deterministic T hT) := Kernel.isMarkovKernel_deterministic hT
+  have : IsMarkovKernel (Kernel.deterministic T hT) := Kernel.isMarkovKernel_deterministic hT
   set ψ : Kernel 𝓧 (Fin M) := (Kernel.deterministic T hT).comp κ with hψ
   have hψcomp : ψ ∘ₖ Q = (κ ∘ₖ Q).map T := by
     rw [hψ, Kernel.comp_assoc, Kernel.deterministic_comp_eq_map]

@@ -742,7 +742,7 @@ private lemma eq_map_sum_sq_gaussian_of_charFun {p : ℕ} (chiSq : Measure ℝ)
     chiSq = (Measure.pi fun _ : Fin p => gaussianReal 0 1).map
       (fun x : Fin p → ℝ => ∑ i, x i ^ 2) := by
   have hφ : Measurable fun x : Fin p → ℝ => ∑ i, x i ^ 2 := by fun_prop
-  haveI : IsProbabilityMeasure ((Measure.pi fun _ : Fin p => gaussianReal 0 1).map
+  have : IsProbabilityMeasure ((Measure.pi fun _ : Fin p => gaussianReal 0 1).map
       (fun x : Fin p → ℝ => ∑ i, x i ^ 2)) := (by infer_instance)
   exact Measure.ext_of_charFun (funext fun u => by
     rw [hchi u, charFun_map_sum_sq_gaussian])

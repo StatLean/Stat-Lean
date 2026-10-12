@@ -174,7 +174,7 @@ private lemma hasDerivAt_logPartition_dir {s : ℕ}
     (hb : E.base ≠ 0) (hη : η ∈ interior E.natSet) (i : Fin s) :
     HasDerivAt (fun t : ℝ => E.logPartition (η + t • EuclideanSpace.single i 1))
       (∫ x, E.stat x i ∂(E.P η)) 0 := by
-  haveI hPprob : IsProbabilityMeasure (E.P η) :=
+  have hPprob : IsProbabilityMeasure (E.P η) :=
     E.isProbabilityMeasure_P hb (interior_subset hη)
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp isOpen_interior η hη
   -- membership of the line in the natural parameter set, for small increments

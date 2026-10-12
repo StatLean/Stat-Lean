@@ -209,8 +209,8 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
   -- the canonical i.i.d. model `(Ω₀, P₀c, Z)` with marginal law `P₀`
   obtain ⟨Ω₀, mΩ₀, P₀c, Z, hZmeas, hZlaw, hZindep, hP₀cprob⟩ :=
     ProbabilityTheory.exists_iid ℕ P₀
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀c := hP₀cprob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀c := hP₀cprob
   -- per-observation score map `g` and per-observation vectors `Y`
   set g : 𝓧 → EuclideanSpace ℝ (Fin k) := fun x => psiVec ψ x with hg
   have hgmeas : Measurable g :=
@@ -253,7 +253,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
       funext x
       rw [inner_euclidean_sum, inner_euclidean_sum, Finset.sum_mul_sum]
       refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
-      show (u i * ψ i x) * (v j * ψ j x) = (u i * v j) * (ψ i x * ψ j x)
+      change (u i * ψ i x) * (v j * ψ j x) = (u i * v j) * (ψ i x * ψ j x)
       ring
     have hFint : Integrable (fun x => ⟪u, g x⟫_ℝ * ⟪v, g x⟫_ℝ) P₀ := by
       rw [hpt]
@@ -539,11 +539,11 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
           = ∑ j ∈ (Finset.univ : Finset (Fin k)) \ s, -(t * ψ j x) := by
         refine Finset.sum_congr rfl fun j hj => ?_
         have hjs : j ∉ s := (Finset.mem_sdiff.mp hj).2
-        show (if j ∈ s then t else -t) * ψ j x = -(t * ψ j x)
+        change (if j ∈ s then t else -t) * ψ j x = -(t * ψ j x)
         rw [ite_eq_right hjs]; ring
       have h2 : ∑ j ∈ s, (Θ s) j * ψ j x = ∑ j ∈ s, t * ψ j x := by
         refine Finset.sum_congr rfl fun j hj => ?_
-        show (if j ∈ s then t else -t) * ψ j x = t * ψ j x
+        change (if j ∈ s then t else -t) * ψ j x = t * ψ j x
         rw [ite_eq_left hj]
       rw [h1, h2, add_comm]
     calc Real.exp (t * ∑ j, |ψ j x|) = ∏ j, Real.exp (t * |ψ j x|) := hprod
@@ -822,8 +822,8 @@ lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
   classical
   obtain ⟨Ω₀, mΩ₀, P₀c, Z, hZmeas, hZlaw, hZindep, hP₀cprob⟩ :=
     ProbabilityTheory.exists_iid ℕ P₀
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀c := hP₀cprob
+  let : MeasurableSpace Ω₀ := mΩ₀
+  have : IsProbabilityMeasure P₀c := hP₀cprob
   have hbrick := scoreVec_weakConverges_gaussian (P₀ := P₀) (ψ := ψ)
     (P := fun _ : ℕ => P₀c) (X := fun n (i : Fin n) ω => Z (i : ℕ) ω)
     hψmeas hortho hcentred
@@ -843,7 +843,7 @@ lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
 private lemma smoothModel_base {k : ℕ} (P₀ : Measure 𝓧) (ψ : Fin k → 𝓧 → ℝ)
     (hψ : Measurable fun x => (WithLp.toLp 2 fun j => ψ j x : EuclideanSpace ℝ (Fin k))) :
     (smoothModel P₀ ψ hψ).base = P₀ := by
-  show P₀.withDensity (fun _ => 1) = P₀
+  change P₀.withDensity (fun _ => 1) = P₀
   simp
 
 private lemma smoothModel_P_eq {k : ℕ} (P₀ : Measure 𝓧) (ψ : Fin k → 𝓧 → ℝ)
@@ -999,7 +999,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     rw [hs] at h1
     rw [← h1]
     exact (by infer_instance)
-  haveI hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
+  have hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
   have hEint : ∀ θ, Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀ := by
     intro θ
     refine integrable_exp_of_isProbabilityMeasure_tilted (P₀ := P₀) ?_
@@ -1049,7 +1049,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
   set QC : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Fin n → 𝓧) :=
     fun n h => Measure.pi (fun _ : Fin n =>
       (smoothModel P₀ ψ hψ).P ((Real.sqrt (n : ℝ))⁻¹ • h)) with hQCdef
-  haveI : ∀ n h, IsProbabilityMeasure (QC n h) := by
+  have : ∀ n h, IsProbabilityMeasure (QC n h) := by
     intro n h
     rw [hQCdef]
     infer_instance
@@ -1194,7 +1194,7 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     have hu : Measurable (fun x => ⟪(Real.sqrt (n : ℝ))⁻¹ • h, psiVec ψ x⟫_ℝ
         - A ((Real.sqrt (n : ℝ))⁻¹ • h)) :=
       ((continuous_const.inner continuous_id).measurable.comp hgmeas).sub measurable_const
-    haveI hpm : IsProbabilityMeasure (P₀.withDensity (fun x => ENNReal.ofReal
+    have hpm : IsProbabilityMeasure (P₀.withDensity (fun x => ENNReal.ofReal
         (Real.exp (⟪(Real.sqrt (n : ℝ))⁻¹ • h, psiVec ψ x⟫_ℝ
           - A ((Real.sqrt (n : ℝ))⁻¹ • h))))) := by
       rw [← hEdens ((Real.sqrt (n : ℝ))⁻¹ • h)]
@@ -1262,7 +1262,7 @@ private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : �
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift (a i)
-  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+  have : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
     intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
@@ -1316,7 +1316,7 @@ private lemma stdGaussian_map_add_eq_withDensity (v : EuclideanSpace ℝ (Fin k)
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
   have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
-    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+    have : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
       intro i
       rw [gaussianReal_map_const_add]
       infer_instance
@@ -1436,7 +1436,7 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
   have hlow : ∀ (ρ : Measure E), IsProbabilityMeasure ρ →
       ρ.real {z : E | r + 1 ≤ ‖z‖} ≤ ∫ z, normCutoff (E := E) r z ∂ρ := by
     intro ρ hρ
-    haveI := hρ
+    have := hρ
     rw [← integral_indicator_one (hmeasset (r + 1))]
     refine integral_mono ((integrable_const (1 : ℝ)).indicator (hmeasset (r + 1)))
       ((normCutoff (E := E) r).integrable ρ) (fun z => ?_)
@@ -1535,7 +1535,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     rw [hs] at h1
     rw [← h1]
     exact (by infer_instance)
-  haveI hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
+  have hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
   have hEint : ∀ θ, Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀ := by
     intro θ
     refine integrable_exp_of_isProbabilityMeasure_tilted (P₀ := P₀) ?_
@@ -1553,11 +1553,11 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
   -- ### The canonical null and alternative experiments
   set θs : ℕ → EuclideanSpace ℝ (Fin k) := fun n => (Real.sqrt (n : ℝ))⁻¹ • u n with hθs
   set PN : (n : ℕ) → Measure (Fin n → 𝓧) := fun n => Measure.pi (fun _ : Fin n => P₀) with hPN
-  haveI hPNprob : ∀ n, IsProbabilityMeasure (PN n) := by
+  have hPNprob : ∀ n, IsProbabilityMeasure (PN n) := by
     intro n; rw [hPN]; infer_instance
   set QN : (n : ℕ) → Measure (Fin n → 𝓧) :=
     fun n => Measure.pi (fun _ : Fin n => (smoothModel P₀ ψ hψ).P (θs n)) with hQN
-  haveI hQNprob : ∀ n, IsProbabilityMeasure (QN n) := by
+  have hQNprob : ∀ n, IsProbabilityMeasure (QN n) := by
     intro n; rw [hQN]; infer_instance
   set T : (n : ℕ) → (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
     fun n d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) with hT
@@ -1584,7 +1584,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     intro t n
     have hum : Measurable (fun x => ⟪t • θs n, psiVec ψ x⟫_ℝ - A (t • θs n)) :=
       ((hinnermeas (t • θs n)).comp hgmeas).sub measurable_const
-    haveI hpm : IsProbabilityMeasure (P₀.withDensity (fun x =>
+    have hpm : IsProbabilityMeasure (P₀.withDensity (fun x =>
         ENNReal.ofReal (Real.exp (⟪t • θs n, psiVec ψ x⟫_ℝ - A (t • θs n))))) := by
       rw [← hEdens (t • θs n)]; exact hEprob _
     have hsumid : ∀ d : Fin n → 𝓧,
@@ -1622,7 +1622,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
     simpa only [hPN, hT] using
       pi_scoreLaw_weakConverges (P₀ := P₀) (ψ := ψ) hψmeas hortho hcentred
-  haveI hmuprob : ∀ n, IsProbabilityMeasure ((PN n).map (T n)) :=
+  have hmuprob : ∀ n, IsProbabilityMeasure ((PN n).map (T n)) :=
     fun n => (by infer_instance)
   -- ### The log-partition drift `n·A(t θₙ) → t²‖h₀‖²/2`
   obtain ⟨Mb, hMbmem⟩ := hu.norm.bddAbove_range
@@ -1804,7 +1804,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
     exact continuous_id.prodMk ((continuous_const.inner continuous_id).sub continuous_const)
   set π : Measure (EuclideanSpace ℝ (Fin k) × ℝ) :=
     (stdGaussian (EuclideanSpace ℝ (Fin k))).map gmap with hπ
-  haveI hπprob : IsProbabilityMeasure π := by
+  have hπprob : IsProbabilityMeasure π := by
     rw [hπ]; exact (by infer_instance)
   have hjoint : WeakConverges (fun n => (PN n).map (fun d => (T n d, L n d))) π := by
     refine AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
@@ -1871,7 +1871,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
               simp only [Pi.mul_apply]
       · exact htail
   -- ### The tilted limit is the Cameron–Martin shift
-  haveI hCMprob : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
+  have hCMprob : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
       (fun z => ENNReal.ofReal (Real.exp (⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)))) := by
     rw [← stdGaussian_map_add_eq_withDensity h₀]
     exact (by infer_instance)
@@ -2053,7 +2053,7 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
         (nhds ((noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal)) := by
     intro v h₀ hv
     have hweak := scoreVec_weakConverges_drift hψ hortho hcentred hX hindep hlaw hv
-    haveI hprob : ∀ n, IsProbabilityMeasure ((Q n (v n)).map (scoreVec ψ (X n))) := fun n =>
+    have hprob : ∀ n, IsProbabilityMeasure ((Q n (v n)).map (scoreVec ψ (X n))) := fun n =>
       (by infer_instance)
     set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
       fun n => ⟨(Q n (v n)).map (scoreVec ψ (X n)), hprob n⟩ with hμs

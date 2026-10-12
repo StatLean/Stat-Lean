@@ -110,8 +110,8 @@ theorem ext_of_integral_exp_inner_eqOn
       exact lt_irrefl 0 hpos
     have hμint : Integrable (fun x => Real.exp (φ x)) μ := hμ t₀ ht₀S
     have hνint : Integrable (fun x => Real.exp (φ x)) ν := hν t₀ ht₀S
-    haveI hpμ : IsProbabilityMeasure (μ.tilted φ) := isProbabilityMeasure_tilted hμint
-    haveI hpν : IsProbabilityMeasure (ν.tilted φ) := isProbabilityMeasure_tilted hνint
+    have hpμ : IsProbabilityMeasure (μ.tilted φ) := isProbabilityMeasure_tilted hμint
+    have hpν : IsProbabilityMeasure (ν.tilted φ) := isProbabilityMeasure_tilted hνint
     have hZ : (∫ x, Real.exp (φ x) ∂μ) = ∫ x, Real.exp (φ x) ∂ν := h t₀ ht₀S
     -- Tilted Laplace transforms agree on the recentered box.
     have htrans' : ∀ a, t₀ + a ∈ S →
@@ -160,9 +160,9 @@ theorem ext_of_integral_exp_inner_eqOn
       have hStint : (interior St).Nonempty := by
         rw [hStopen.interior_eq]; exact ⟨0, h0St⟩
       have hmemS : ∀ r ∈ St, t₀ + r • t ∈ S := fun r hr => interior_subset hr
-      haveI : IsProbabilityMeasure ((μ.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
+      have : IsProbabilityMeasure ((μ.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
         (by infer_instance)
-      haveI : IsProbabilityMeasure ((ν.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
+      have : IsProbabilityMeasure ((ν.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
         (by infer_instance)
       -- integrability of the pushforward Laplace transforms
       have hPint : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin s))),
@@ -261,9 +261,9 @@ theorem ae_eq_zero_of_integral_exp_inner_eq_zero
     fun x => ENNReal.ofReal (max (-(f x * Real.exp ⟪η₀, x⟫_ℝ)) 0) with hDn
   have hDpmeas : Measurable Dp := by rw [hDp]; fun_prop
   have hDnmeas : Measurable Dn := by rw [hDn]; fun_prop
-  haveI hfinp : IsFiniteMeasure (ν.withDensity Dp) :=
+  have hfinp : IsFiniteMeasure (ν.withDensity Dp) :=
     isFiniteMeasure_withDensity_ofReal hF.pos_part.2
-  haveI hfinn : IsFiniteMeasure (ν.withDensity Dn) :=
+  have hfinn : IsFiniteMeasure (ν.withDensity Dn) :=
     isFiniteMeasure_withDensity_ofReal hF.neg_part.2
   set S' : Set (EuclideanSpace ℝ (Fin s)) := (fun t => η₀ + t) ⁻¹' interior S with hS'def
   have hS'open : IsOpen S' := isOpen_interior.preimage (by fun_prop)

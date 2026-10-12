@@ -116,7 +116,7 @@ theorem posteriorWeights_weakly_converges_under_lan
         ((WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h₀))) J) := by
   classical
   -- Per-θ probability-measure typeclass for `productMeasure`.
-  haveI hProb : ∀ θ : Θ k, ∀ n : ℕ,
+  have hProb : ∀ θ : Θ k, ∀ n : ℕ,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Unpack `hPDF` into the per-parameter integrability/normalisation pair.
@@ -152,7 +152,7 @@ theorem posteriorWeights_weakly_converges_under_lan
   have hdiag_meas : Measurable diag := hdiag_cont.measurable
   -- The joint limit `π = (multivariateGaussian 0 J).map diag`.
   set π : Measure (Θ k × ℝ) := (multivariateGaussian (0 : Θ k) J).map diag with hπ_def
-  haveI hπ_prob : IsProbabilityMeasure π := by
+  have hπ_prob : IsProbabilityMeasure π := by
     refine (by infer_instance)
   -- Joint weak convergence of `(Δ_n, g(Δ_n))` under `P_n` to `π`.
   have h_joint_lin :
@@ -328,13 +328,13 @@ theorem posteriorWeights_weakly_converges_under_lan
   -- Recast `π` through the diagonal trick: build `π_E : Measure (Θ k × Θ k)` whose
   -- second marginal is `mvG 0 J`, then push along the affine tilt to recover `π`.
   -- This unlocks `integrable_exp_tilt` / `integral_exp_tilt_eq_one` from `GaussianMGF`.
-  haveI hMvG_prob : IsProbabilityMeasure (multivariateGaussian (0 : Θ k) J) :=
+  have hMvG_prob : IsProbabilityMeasure (multivariateGaussian (0 : Θ k) J) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   set diagE : Θ k → Θ k × Θ k := fun δ => (δ, δ) with hdiagE_def
   have hdiagE_meas : Measurable diagE := measurable_id.prodMk measurable_id
   set π_E : Measure (Θ k × Θ k) :=
     (multivariateGaussian (0 : Θ k) J).map diagE with hπE_def
-  haveI hπE_prob : IsProbabilityMeasure π_E :=
+  have hπE_prob : IsProbabilityMeasure π_E :=
     (by infer_instance)
   have hπE_snd : π_E.map Prod.snd = multivariateGaussian (0 : Θ k) J := by
     rw [hπE_def, Measure.map_map measurable_snd hdiagE_meas]

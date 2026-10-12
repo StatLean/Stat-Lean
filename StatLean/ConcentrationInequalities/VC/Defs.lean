@@ -109,7 +109,7 @@ lemma exists_finset_coe_of_subset_coe {Λ : Finset Ω} {s : Set Ω}
   classical
   refine ⟨Λ.filter (· ∈ s), Finset.filter_subset _ _, ?_⟩
   ext x
-  simp only [Finset.coe_filter, Set.mem_ofPred_eq, Finset.mem_coe]
+  simp only [Finset.coe_filter, Set.mem_ofPred_eq]
   exact ⟨fun hx => hx.2, fun hx => ⟨h hx, hx⟩⟩
 
 open Classical in

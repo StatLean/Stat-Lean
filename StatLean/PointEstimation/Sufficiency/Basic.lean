@@ -78,7 +78,7 @@ theorem statLaw_snd (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     Q ∘ₘ (statLaw P T θ) = P θ := by
-  haveI := isProbabilityMeasure_statLaw P hT θ
+  have := isProbabilityMeasure_statLaw P hT θ
   have h := congrArg Measure.snd (hgraph θ)
   rw [Measure.snd_compProd, Measure.snd_map_prodMk hT
       (show Measurable (fun x : 𝓧 => x) from measurable_id), Measure.map_id'] at h
@@ -96,10 +96,10 @@ theorem isSufficient_of_hasSufficientKernel (P : Θ → Measure 𝓧)
     (h : HasSufficientKernel P T) :
     IsSufficient P T := by
   obtain ⟨Q, hQ, hgraph⟩ := h.exists_map hT
-  haveI := hQ
+  have := hQ
   refine fun A hA => ⟨fun t => Q t A, Q.measurable_coe hA, fun t => prob_le_one, ?_⟩
   intro θ B hB
-  haveI := isProbabilityMeasure_statLaw P hT θ
+  have := isProbabilityMeasure_statLaw P hT θ
   have e := congrArg (· (B ×ˢ A)) (hgraph θ)
   simp only [statLaw, Measure.map₀_of_measurable hT] at e
   rw [Measure.map_apply (hT.prodMk measurable_id') (hB.prod hA),
@@ -121,8 +121,8 @@ theorem hasSufficientKernel_fiber [StandardBorelSpace S] (P : Θ → Measure �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     ∀ᵐ t ∂(statLaw P T θ), Q t {x | T x = t} = 1 := by
-  haveI := isProbabilityMeasure_statLaw P hT θ
-  letI := upgradeStandardBorel S
+  have := isProbabilityMeasure_statLaw P hT θ
+  let := upgradeStandardBorel S
   have hG : MeasurableSet {p : S × 𝓧 | T p.2 = p.1} :=
     measurableSet_eq_fun (hT.comp measurable_snd) measurable_fst
   have hone : ∫⁻ t, Q t {x | T x = t} ∂(statLaw P T θ) = 1 := by

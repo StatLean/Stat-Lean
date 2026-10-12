@@ -122,7 +122,7 @@ lemma dlMarginal_eq_withDensity
     -- USER-INPUT: nondegenerate DL shape parameter; BPPD §3.1
     (ha : 0 < a) :
     dlMarginal a = volume.withDensity (dlDensity a) := by
-  haveI : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
+  have : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
     isProbabilityMeasure_gammaMeasure ha (by norm_num)
   rw [dlMarginal_eq_bind ha]
   unfold laplaceMeasure

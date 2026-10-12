@@ -89,7 +89,7 @@ private lemma lintegral_pi_finsetProd :
   | zero =>
     intro μ _ g _hg
     -- `Fin 0 → Ω` is a singleton; `pi (Fin 0) μ` is a probability measure on it.
-    haveI : IsProbabilityMeasure (Measure.pi μ) := ⟨by simp⟩
+    have : IsProbabilityMeasure (Measure.pi μ) := ⟨by simp⟩
     simp only [Finset.univ_eq_empty, Finset.prod_empty, lintegral_const, measure_univ,
       mul_one]
   | succ n IH =>
@@ -128,7 +128,7 @@ lemma pi_curve_eq_pi_withDensity {γ : QMDPath P} {t : ℝ}
       = (Measure.pi (fun _ : Fin n => P)).withDensity
           (fun X => ∏ j : Fin n, (γ.curve t).rnDeriv P (X j)) := by
   -- Local instance: `γ.curve t` is a probability measure.
-  haveI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
   have hmeas_d : Measurable ((γ.curve t).rnDeriv P) := Measure.measurable_rnDeriv _ _
   -- We use the rectangle characterization `Measure.pi_eq`.
   refine Measure.pi_eq (fun s hs => ?_)
@@ -200,7 +200,7 @@ lemma lintegral_pi_curve_eq_lintegral_pi_lr
           ∂(Measure.pi (fun _ : Fin n => γ.curve t))
         = ∫⁻ X : Fin n → Ω, f X * L_n_g X
             ∂(Measure.pi (fun _ : Fin n => P)) := by
-  haveI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
   refine ⟨fun X => ∏ j : Fin n, (γ.curve t).rnDeriv P (X j),
     Finset.measurable_prod _ (fun j _ =>
       (Measure.measurable_rnDeriv _ _).comp (measurable_pi_apply j)), ?_⟩

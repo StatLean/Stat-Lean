@@ -300,7 +300,7 @@ theorem tendsto_bootstrapTest_local_power
           {ω | cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) < Real.sqrt n * g (thHat n ω)}).toReal)
       atTop
       (𝓝 (1 - stdNormalCDF (stdNormalQuantile (1 - α) - sigma⁻¹ * ⟪gradg, hdir⟫))) := by
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Pn n (θ + (Real.sqrt n)⁻¹ • hdir)) :=
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (Pn n (θ + (Real.sqrt n)⁻¹ • hdir)) :=
     fun n => hPn n _
   have hvne : Real.toNNReal (sigma ^ 2) ≠ 0 :=
     (Real.toNNReal_pos.mpr (by positivity)).ne'

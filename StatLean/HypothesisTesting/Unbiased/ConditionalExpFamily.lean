@@ -158,7 +158,7 @@ theorem condDistrib_expFamily_of_isCanonicalUT
   rcases Set.eq_empty_or_nonempty Ω with hΩ | ⟨p₀, hp₀⟩
   · exact ⟨fun _ => 0, fun _ _ => 0, fun p hp => absurd (hΩ ▸ hp) (Set.notMem_empty p)⟩
   have hUTm : Measurable fun x => (U x, T x) := hU.prodMk hT
-  haveI hQprob : ∀ q, IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := fun _ =>
+  have hQprob : ∀ q, IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := fun _ =>
     (by infer_instance)
   -- the normalizing constants are strictly positive on `Ω`: a nonpositive one would make the
   -- density vanish identically and the joint law the zero measure
@@ -183,7 +183,7 @@ theorem condDistrib_expFamily_of_isCanonicalUT
   have hC₀ : (0 : ℝ) < C p₀ := hCpos p₀ hp₀
   -- the conditional law of the interest statistic under the reference parameter
   set Q₀ : Measure (ℝ × Ξ) := (P p₀).map fun x => (U x, T x) with hQ₀
-  haveI : IsProbabilityMeasure Q₀ := hQprob p₀
+  have : IsProbabilityMeasure Q₀ := hQprob p₀
   set κ₀ : Kernel Ξ ℝ := condDistrib Prod.fst Prod.snd Q₀ with hκ₀
   -- the conditional law computed from the joint law of `(U, T)` is the conditional law of `U`
   have hck : ∀ (ρ₁ ρ₂ : Measure (Ξ × ℝ)) [IsFiniteMeasure ρ₁] [IsFiniteMeasure ρ₂],
@@ -294,7 +294,7 @@ theorem condDistrib_eq_of_fst_eq
     ∀ᵐ t ∂((P p).map T), condDistrib U T (P p) t = condDistrib U T (P q) t := by
   classical
   have hUTm : Measurable fun x => (U x, T x) := hU.prodMk hT
-  haveI hQprob : ∀ r, IsProbabilityMeasure ((P r).map fun x => (U x, T x)) := fun _ =>
+  have hQprob : ∀ r, IsProbabilityMeasure ((P r).map fun x => (U x, T x)) := fun _ =>
     (by infer_instance)
   have hCpos : ∀ r ∈ Ω, 0 < C r := by
     intro r hr
@@ -315,7 +315,7 @@ theorem condDistrib_eq_of_fst_eq
     rw [hzero] at h1
     simp at h1
   have hCq : (0 : ℝ) < C q := hCpos q hq
-  haveI : IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := hQprob q
+  have : IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := hQprob q
   have hck : ∀ (ρ₁ ρ₂ : Measure (Ξ × ℝ)) [IsFiniteMeasure ρ₁] [IsFiniteMeasure ρ₂],
       ρ₁ = ρ₂ → ρ₁.condKernel = ρ₂.condKernel := by
     rintro ρ₁ ρ₂ _ _ rfl; rfl

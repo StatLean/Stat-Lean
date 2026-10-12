@@ -301,8 +301,8 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   classical
   obtain ⟨net, hcard, hcover⟩ := exists_shell_net θ₀ S hj hr hδ
   set π := dlPrior a ι with hπdef
-  haveI hπprob : IsProbabilityMeasure π := by rw [hπdef]; infer_instance
-  haveI : SFinite π := inferInstance
+  have hπprob : IsProbabilityMeasure π := by rw [hπdef]; infer_instance
+  have : SFinite π := inferInstance
   set shell := dlShell θ₀ S j r δ with hshelldef
   set ρ : ℝ := Real.sqrt 5 / 4 * ((j : ℝ) * r) with hρdef
   set b : ℝ≥0∞ := ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) with hbdef
@@ -313,7 +313,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     intro C
     have huc : Measurable (Function.uncurry (fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)) := by
       unfold Function.uncurry dlLR; fun_prop
-    show Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
+    change Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
     exact huc.lintegral_prod_right
   have hden_meas : Measurable (fun y => dlDenom θ₀ π y) := by
     have hEq : (fun y => dlDenom θ₀ π y) = (fun y => dlNumer θ₀ π Set.univ y) := by

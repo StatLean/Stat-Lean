@@ -1590,7 +1590,7 @@ private lemma holderTriple_four_four_two : ENNReal.HolderTriple 4 4 2 :=
 
 private lemma memLp_two_mul_of_memLp_four {f g : Ω → ℝ} (hf : MemLp f 4 μ) (hg : MemLp g 4 μ) :
     MemLp (fun ω => f ω * g ω) 2 μ := by
-  haveI := holderTriple_four_four_two
+  have := holderTriple_four_four_two
   exact hf.fun_mul (r := 2) hg
 
 private lemma integrable_mul_of_memLp_two {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
@@ -2525,7 +2525,6 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
       ring
     rw [hL, ih]
     push_cast
-    push_cast at hR
     rw [hR]
 
 /-- **Cesàro/Fejér limit at an absolutely summable kernel.** -/

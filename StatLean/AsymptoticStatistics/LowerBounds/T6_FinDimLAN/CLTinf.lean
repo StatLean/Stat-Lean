@@ -157,7 +157,7 @@ theorem cltInf_at_orthonormal_basis
   classical
   -- Set up the iid Kolmogorov extension and the vectorised score family.
   set Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hPinf_def
-  haveI hPinf_prob : IsProbabilityMeasure Pinf := by
+  have hPinf_prob : IsProbabilityMeasure Pinf := by
     rw [hPinf_def]; infer_instance
   set Y : ℕ → (ℕ → Ω) → EuclideanSpace ℝ (Fin m) := Xseq g_P with hY_def
   -- Measurability and atom identity.

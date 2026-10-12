@@ -190,7 +190,7 @@ private lemma map_biSup_le_of_lsc {κ : Type*} {Φ : ℝ≥0∞ → ℝ≥0∞}
     {i₀ j₀ : κ} (h₀ : p i₀ j₀) :
     Φ (⨆ i, ⨆ j, ⨆ (_ : p i j), v i j)
       ≤ ⨆ i, ⨆ j, ⨆ (_ : p i j), Φ (v i j) := by
-  haveI : Nonempty {q : κ × κ // p q.1 q.2} := ⟨⟨(i₀, j₀), h₀⟩⟩
+  have : Nonempty {q : κ × κ // p q.1 q.2} := ⟨⟨(i₀, j₀), h₀⟩⟩
   have hL : (⨆ i, ⨆ j, ⨆ (_ : p i j), v i j)
       = ⨆ q : {q : κ × κ // p q.1 q.2}, v q.1.1 q.1.2 := by
     apply le_antisymm

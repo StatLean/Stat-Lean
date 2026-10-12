@@ -44,8 +44,8 @@ theorem memLp_sqrt_rnDeriv (γ : AsymptoticStatistics.Core.QMDPath.QMDPath P)
     (t : ℝ) :
     MemLp (fun ω => Real.sqrt ((γ.curve t).rnDeriv γ.dominating ω).toReal)
       2 γ.dominating := by
-  haveI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI : SigmaFinite γ.dominating := γ.dominating_sigmaFinite
+  have : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have : SigmaFinite γ.dominating := γ.dominating_sigmaFinite
   exact AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
     (γ.curve_absContinuous t)
 
@@ -72,7 +72,7 @@ theorem memLp_score_term_at_zero (γ : AsymptoticStatistics.Core.QMDPath.QMDPath
         (γ.score : Ω → ℝ) ω
           * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal)
       2 γ.dominating := by
-  haveI : SigmaFinite γ.dominating := γ.dominating_sigmaFinite
+  have : SigmaFinite γ.dominating := γ.dominating_sigmaFinite
   -- `P ≪ γ.dominating` from `curve_at_zero` + `curve_absContinuous 0`.
   have hP_ac : P ≪ γ.dominating := by
     have h0 := γ.curve_absContinuous 0
@@ -442,7 +442,7 @@ theorem dqm (γ : AsymptoticStatistics.Core.QMDPath.QMDPath P) :
         rw [h_θ0_zero]
         simp [h_res_zero]
       rw [h_int_zero, h_norm_sq_zero]
-      simp [le_of_lt hε]
+      simp
     · -- θ ≠ 0 case: use h_ev_θ directly.
       have h_θ0_ne : θ 0 ≠ 0 := by
         intro h
@@ -483,7 +483,7 @@ private theorem isPDFOf
     AsymptoticStatistics.IsPDFOf
       (to1DParametricFamily γ) γ.dominating where
   density_integral_eq_one θ := by
-    haveI : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability (θ 0)
+    have : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability (θ 0)
     have h_ac : γ.curve (θ 0) ≪ γ.dominating := γ.curve_absContinuous (θ 0)
     have h_int :=
       MeasureTheory.Measure.integral_toReal_rnDeriv
@@ -494,7 +494,7 @@ private theorem isPDFOf
     change ∫ ω, ((γ.curve (θ 0)).rnDeriv γ.dominating ω).toReal ∂γ.dominating = 1
     rw [h_int, h_univ]
   density_integrable θ := by
-    haveI : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability (θ 0)
+    have : IsProbabilityMeasure (γ.curve (θ 0)) := γ.curve_isProbability (θ 0)
     have h_int :=
       MeasureTheory.Measure.integrable_toReal_rnDeriv
         (μ := γ.curve (θ 0)) (ν := γ.dominating)

@@ -82,7 +82,7 @@ theorem exists_large_closedBall_localization
       μlim {ω | hhat ω ∉ interior (Metric.closedBall 0 R)} < ENNReal.ofReal ε := by
   obtain ⟨C, hCcompact, hCsample⟩ := htight ε hε
   let ν : Measure (EuclideanSpace ℝ (Fin d)) := μlim.map hhat
-  letI : IsProbabilityMeasure ν :=
+  let : IsProbabilityMeasure ν :=
     (by infer_instance)
   have hνtight : IsTightMeasureSet ({ν} : Set (Measure (EuclideanSpace ℝ (Fin d)))) :=
     isTightMeasureSet_singleton

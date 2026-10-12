@@ -122,8 +122,8 @@ private lemma transpose_restrict (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (F
 /-- `0 ≤ ⨆ i, |f i|` over a finite index. -/
 private lemma ciSup_abs_nonneg {ι : Type*} [Finite ι] (f : ι → ℝ) : 0 ≤ ⨆ i, |f i| := by
   rcases isEmpty_or_nonempty ι with he | hne
-  · haveI := he; simp [Real.iSup_of_isEmpty]
-  · haveI := Fintype.ofFinite ι
+  · have := he; simp
+  · have := Fintype.ofFinite ι
     exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary ι) (abs_nonneg _)
 
 /-- The matrix ℓ∞ operator norm is nonnegative. -/
@@ -131,8 +131,8 @@ private lemma matLinftyNorm_nonneg {p q : Type*} [Finite p] [Fintype q] (A : Mat
     0 ≤ matLinftyNorm A := by
   unfold matLinftyNorm
   rcases isEmpty_or_nonempty p with he | hne
-  · haveI := he; simp [Real.iSup_of_isEmpty]
-  · haveI := Fintype.ofFinite p
+  · have := he; simp
+  · have := Fintype.ofFinite p
     exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary p)
       (Finset.sum_nonneg fun _ _ => abs_nonneg _)
 
@@ -140,7 +140,7 @@ private lemma matLinftyNorm_nonneg {p q : Type*} [Finite p] [Fintype q] (A : Mat
 private lemma linfNorm_le_of_forall {x : EuclideanSpace ℝ (Fin d)} {c : ℝ} (hc : 0 ≤ c)
     (h : ∀ i, |x.ofLp i| ≤ c) : linfNorm x ≤ c := by
   rcases isEmpty_or_nonempty (Fin d) with he | hne
-  · haveI := he; simp only [linfNorm, Real.iSup_of_isEmpty]; exact hc
+  · have := he; simp only [linfNorm, Real.iSup_of_isEmpty]; exact hc
   · exact ciSup_le h
 
 /-! ## The "zero off `S`" design `X'` (PDW oracle device) -/
@@ -415,7 +415,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
       have hA1 : |(gramInv X S *ᵥ ((Xsub X S)ᵀ *ᵥ w.ofLp)) (⟨k, hk⟩ : {x // x ∈ S})| ≤ A := by
         rw [hA, ← hfirst]
         exact le_ciSup_of_le (Finite.bddAbove_range _) (⟨k, hk⟩ : {x // x ∈ S}) le_rfl
-      haveI : Nonempty {x // x ∈ S} := ⟨⟨k, hk⟩⟩
+      have : Nonempty {x // x ∈ S} := ⟨⟨k, hk⟩⟩
       have hzSle1 : (⨆ i : {x // x ∈ S}, |zhat.ofLp i.val|) ≤ 1 :=
         ciSup_le (fun i => (hzS i.val i.2).2.2)
       have hsupB : (⨆ i : {x // x ∈ S},
@@ -524,7 +524,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
       |(1 / (lam * (n : ℝ))) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp))| ≤ (1 - α) / 2 := by
     intro j hj
     have hjc : j ∈ Sᶜ := Finset.mem_compl.mpr hj
-    haveI : Nonempty {x // x ∈ Sᶜ} := ⟨⟨j, hjc⟩⟩
+    have : Nonempty {x // x ∈ Sᶜ} := ⟨⟨j, hjc⟩⟩
     have hcoordeq : ((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
         (⟨j, hjc⟩ : {x // x ∈ Sᶜ})
         = (1 / (n : ℝ)) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp)) := by

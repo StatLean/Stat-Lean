@@ -134,7 +134,7 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     rw [hν'def, withDensity_apply_eq_zero hwm, hsupp, Set.univ_inter]
   have hν'univ : ν' Set.univ < 1 := by
     rw [hν'def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]; exact hwint
-  haveI : IsFiniteMeasure ν' := ⟨hν'univ.trans ENNReal.one_lt_top⟩
+  have : IsFiniteMeasure ν' := ⟨hν'univ.trans ENNReal.one_lt_top⟩
   have hν'ne : ν' Set.univ ≠ 0 := fun h =>
     hν0 (Measure.measure_univ_eq_zero.mp ((hnull _).mp h))
   set c : ℝ := (ν' Set.univ).toReal with hcdef

@@ -324,10 +324,10 @@ theorem G_Lambda_cond_X_eq_gaussian
   set ν_S : Measure (EuclideanSpace ℝ (Fin k)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (posteriorCov J τ) with hν_S_def
   set π_X : Measure (EuclideanSpace ℝ (Fin k)) := marginalGaussianShift J τ with hπ_X_def
-  haveI : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
-  haveI : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
-  haveI : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
-  haveI : IsProbabilityMeasure π_X := by
+  have : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
+  have : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
+  have : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
+  have : IsProbabilityMeasure π_X := by
     rw [hπ_X_def, marginalGaussianShift]; infer_instance
   have hAμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
       (WithLp.equiv 2 (Fin d → ℝ)).symm
@@ -354,8 +354,8 @@ theorem G_Lambda_cond_X_eq_gaussian
     (πτ.prod ν_J).map (shiftCLM k) with hμHX_def
   set K_T : Kernel (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
       (EuclideanSpace ℝ (Fin d)) := T.comap Prod.snd measurable_snd with hKT_def
-  haveI : SFinite μ_HX := by rw [hμHX_def]; infer_instance
-  haveI : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
+  have : SFinite μ_HX := by rw [hμHX_def]; infer_instance
+  have : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
   set rebracket : (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
       × EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)
         × EuclideanSpace ℝ (Fin d) :=
@@ -462,18 +462,18 @@ private lemma jointHXY_eq_reparam
   set ν_S : Measure (EuclideanSpace ℝ (Fin k)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (posteriorCov J τ) with hν_S_def
   set π_X : Measure (EuclideanSpace ℝ (Fin k)) := marginalGaussianShift J τ with hπ_X_def
-  haveI : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
-  haveI : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
-  haveI : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
-  haveI : IsProbabilityMeasure π_X := by
+  have : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
+  have : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
+  have : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
+  have : IsProbabilityMeasure π_X := by
     rw [hπ_X_def, marginalGaussianShift]; infer_instance
   set μ_HX : Measure (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) :=
     (πτ.prod ν_J).map (shiftCLM k) with hμHX_def
   set K_T : Kernel (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
       (EuclideanSpace ℝ (Fin d)) := T.comap Prod.snd measurable_snd with hKT_def
-  haveI : SFinite μ_HX := by rw [hμHX_def]; infer_instance
-  haveI : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
-  haveI : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
+  have : SFinite μ_HX := by rw [hμHX_def]; infer_instance
+  have : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
+  have : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
   -- Measurability bricks.
   have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) => posteriorMean J τ x) :=
     (matrixToEuclideanCLMRect (posteriorCov J τ * J)).continuous.measurable
@@ -624,10 +624,10 @@ theorem G_Lambda_indep_W_Lambda
   set ν_S : Measure (EuclideanSpace ℝ (Fin k)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (posteriorCov J τ) with hν_S_def
   set π_X : Measure (EuclideanSpace ℝ (Fin k)) := marginalGaussianShift J τ with hπ_X_def
-  haveI : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
-  haveI : IsProbabilityMeasure π_X := by
+  have : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
+  have : IsProbabilityMeasure π_X := by
     rw [hπ_X_def, marginalGaussianShift]; infer_instance
-  haveI : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
+  have : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
   -- Measurability.
   have hAμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
       (WithLp.equiv 2 (Fin d → ℝ)).symm
@@ -815,10 +815,10 @@ theorem T_minus_AH_law_eq_L_under_prior
   have hf_meas : Measurable f :=
     (measurable_snd.comp measurable_snd).sub (hAμ.comp measurable_fst)
   -- Instances for compProd / Fubini.
-  haveI : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
-  haveI : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
-  haveI : SFinite μ_HX := by rw [hμHX_def]; infer_instance
-  haveI : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
+  have : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
+  have : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
+  have : SFinite μ_HX := by rw [hμHX_def]; infer_instance
+  have : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
   -- Now compute the LHS of the goal via `compProd_apply` + Fubini.
   ext s' hs'
   -- Reduce per-`h` to `nullDist s'` via the equivariance hypothesis.
@@ -939,14 +939,14 @@ theorem hatL_eq_hatG_mul_hatW
     charFun hT_equiv.nullDist t
       = charFun (G_Lambda_law J τ A T) t * charFun (W_Lambda_law J τ A T) t := by
   -- Set up probability-measure instances for the marginals.
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k))
         ((τ^2) • (1 : Matrix (Fin k) (Fin k) ℝ))) := inferInstance
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := inferInstance
   -- `jointHXY` is a probability measure: pushforward of a compProd of a product
   -- probability with a Markov kernel.
-  haveI h_joint_prob : IsProbabilityMeasure (jointHXY J τ T) := by
+  have h_joint_prob : IsProbabilityMeasure (jointHXY J τ T) := by
     unfold jointHXY
     infer_instance
   -- Marginal measurabilities (needed for `isProbabilityMeasure_map`).
@@ -968,10 +968,10 @@ theorem hatL_eq_hatG_mul_hatW
           (A.mulVec ((WithLp.equiv 2 (Fin k → ℝ)) (posteriorMean J τ p.2.1)))) :=
     (measurable_snd.comp measurable_snd).sub (hAμ.comp (hμ.comp
       (measurable_fst.comp measurable_snd)))
-  haveI : IsProbabilityMeasure (G_Lambda_law J τ A T) := by
+  have : IsProbabilityMeasure (G_Lambda_law J τ A T) := by
     unfold G_Lambda_law
     exact (by infer_instance)
-  haveI : IsProbabilityMeasure (W_Lambda_law J τ A T) := by
+  have : IsProbabilityMeasure (W_Lambda_law J τ A T) := by
     unfold W_Lambda_law
     exact (by infer_instance)
   -- Step 1: rewrite `nullDist` as the sum-pushforward of joint_GW_law.
@@ -1075,7 +1075,7 @@ theorem W_Lambda_weak_limit_via_Levy
   set G_target : Measure (EuclideanSpace ℝ (Fin d)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (A * J⁻¹ * A.transpose)
     with hG_target_def
-  haveI hG_target_prob : IsProbabilityMeasure G_target := by
+  have hG_target_prob : IsProbabilityMeasure G_target := by
     rw [hG_target_def]; infer_instance
   have h_target_psd : (A * J⁻¹ * A.transpose).PosSemidef := by
     have := hJ.inv.posSemidef.mul_mul_conjTranspose_same A
@@ -1125,12 +1125,12 @@ theorem W_Lambda_weak_limit_via_Levy
     MeasureTheory.continuous_charFun.div MeasureTheory.continuous_charFun h_G_target_nonzero
   have h_W_prob : ∀ n, IsProbabilityMeasure (W_Lambda_law J (τ n) A T) := by
     intro n
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k))
           (((τ n)^2) • (1 : Matrix (Fin k) (Fin k) ℝ))) := inferInstance
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := inferInstance
-    haveI : IsProbabilityMeasure (jointHXY J (τ n) T) := by
+    have : IsProbabilityMeasure (jointHXY J (τ n) T) := by
       unfold jointHXY
       infer_instance
     have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
@@ -1219,7 +1219,7 @@ theorem joint_GW_weak_indep_limit
   set G_target : Measure (EuclideanSpace ℝ (Fin d)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (A * J⁻¹ * A.transpose)
     with hG_target_def
-  haveI hG_target_prob : IsProbabilityMeasure G_target := by
+  have hG_target_prob : IsProbabilityMeasure G_target := by
     rw [hG_target_def]; infer_instance
   have h_target_psd : (A * J⁻¹ * A.transpose).PosSemidef := by
     have := hJ.inv.posSemidef.mul_mul_conjTranspose_same A
@@ -1305,15 +1305,15 @@ theorem joint_GW_weak_indep_limit
     exact hW_charFun t
   refine ⟨W, hW_prob, ?_⟩
   intros f hf_cont hf_bdd
-  haveI : IsProbabilityMeasure W := hW_prob
+  have : IsProbabilityMeasure W := hW_prob
   have h_W_prob_n : ∀ n, IsProbabilityMeasure (W_Lambda_law J (τ_seq n) A T) := by
     intro n
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k))
           (((τ_seq n)^2) • (1 : Matrix (Fin k) (Fin k) ℝ))) := inferInstance
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := inferInstance
-    haveI : IsProbabilityMeasure (jointHXY J (τ_seq n) T) := by
+    have : IsProbabilityMeasure (jointHXY J (τ_seq n) T) := by
       unfold jointHXY
       infer_instance
     have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
@@ -1402,8 +1402,8 @@ theorem L_eq_G_plus_W
   set G_target : Measure (EuclideanSpace ℝ (Fin d)) :=
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (A * J⁻¹ * A.transpose)
     with hG_target_def
-  haveI : IsProbabilityMeasure G_target := by rw [hG_target_def]; infer_instance
-  haveI : IsProbabilityMeasure W := hW_prob
+  have : IsProbabilityMeasure G_target := by rw [hG_target_def]; infer_instance
+  have : IsProbabilityMeasure W := hW_prob
   refine MeasureTheory.Measure.ext_of_charFun ?_
   funext t
   rw [MeasureTheory.charFun_conv]
@@ -1439,7 +1439,7 @@ theorem equivariant_in_law_convolution_decomposition
         = (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
             (A * S * A.transpose)) ∗ M := by
   -- Apply `L_eq_G_plus_W` with `J := S⁻¹`. Then `J⁻¹ = (S⁻¹)⁻¹ = S` (PosDef invertibility).
-  haveI : Invertible S := hS_pd.isUnit.invertible
+  have : Invertible S := hS_pd.isUnit.invertible
   set J : Matrix (Fin k) (Fin k) ℝ := S⁻¹ with hJ_def
   have hJ_pd : J.PosDef := by rw [hJ_def]; exact hS_pd.inv
   have hJ_inv_eq : J⁻¹ = S := by

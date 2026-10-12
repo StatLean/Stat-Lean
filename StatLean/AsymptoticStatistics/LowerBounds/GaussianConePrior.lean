@@ -28,7 +28,7 @@ theorem exists_effectiveInteriorBall
     ∃ h0 : ↥(effectiveSpan C), ∃ r : ℝ, 0 < r ∧
       Metric.ball h0 r ⊆ coneInEffectiveSpan C := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let D : Set ↥S := coneInEffectiveSpan C
   have hC_sub : C ⊆ S := fun x hx => Submodule.subset_span hx
@@ -94,13 +94,13 @@ private theorem intrinsicTranslatedGaussian_spec
     IsTranslatedIsotropicGaussian C
       (intrinsicTranslatedGaussian C h0 c) h0 c := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
-  letI hmeas : MeasurableSpace ↥S := borel ↥S
-  letI hborel : BorelSpace ↥S := ⟨rfl⟩
-  letI hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
+  let hmeas : MeasurableSpace ↥S := borel ↥S
+  let hborel : BorelSpace ↥S := ⟨rfl⟩
+  let hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
     inferInstance
-  letI hstdgauss : IsGaussian (stdGaussian ↥S) :=
+  let hstdgauss : IsGaussian (stdGaussian ↥S) :=
     @isGaussian_stdGaussian _ _ _ _ hmeas hborel
   let affineInclusion : ↥S → EuclideanSpace ℝ (Fin m) :=
     fun z => ((h0 + c • z : ↥S) : EuclideanSpace ℝ (Fin m))
@@ -109,7 +109,7 @@ private theorem intrinsicTranslatedGaussian_spec
   let ν : Measure (EuclideanSpace ℝ (Fin m)) :=
     (stdGaussian ↥S).map affineInclusion
   change IsTranslatedIsotropicGaussian C ν h0 c
-  haveI hνprob : IsProbabilityMeasure ν := by
+  have hνprob : IsProbabilityMeasure ν := by
     exact (by infer_instance)
   refine ⟨inferInstance, ?_, ?_⟩
   · have hSclosed : IsClosed (S : Set (EuclideanSpace ℝ (Fin m))) :=
@@ -213,10 +213,10 @@ private theorem isTranslatedIsotropicGaussian_unique
     (hν : IsTranslatedIsotropicGaussian C ν h0 c)
     (hμ : IsTranslatedIsotropicGaussian C μ h0 c) : ν = μ := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
-  letI : IsProbabilityMeasure ν := hν.1
-  letI : IsProbabilityMeasure μ := hμ.1
+  let : IsProbabilityMeasure ν := hν.1
+  let : IsProbabilityMeasure μ := hμ.1
   have hSmeas : MeasurableSet (S : Set (EuclideanSpace ℝ (Fin m))) :=
     S.closed_of_finiteDimensional.measurableSet
   apply Measure.ext_of_charFun
@@ -297,15 +297,15 @@ theorem restrictedTranslatedGaussianPrior_spec
       IsProbabilityMeasure (restrictedTranslatedGaussianPrior C h0 c) ∧
       restrictedTranslatedGaussianPrior C h0 c C = 1 := by
   let S := effectiveSpan C
-  letI : FiniteDimensional ℝ ↥S :=
+  let : FiniteDimensional ℝ ↥S :=
     FiniteDimensional.of_injective S.subtype S.injective_subtype
-  letI hmeas : MeasurableSpace ↥S := borel ↥S
-  letI hborel : BorelSpace ↥S := ⟨rfl⟩
-  letI hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
+  let hmeas : MeasurableSpace ↥S := borel ↥S
+  let hborel : BorelSpace ↥S := ⟨rfl⟩
+  let hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
     inferInstance
-  letI hrealOpen : Measure.IsOpenPosMeasure (gaussianReal 0 1) :=
+  let hrealOpen : Measure.IsOpenPosMeasure (gaussianReal 0 1) :=
     (gaussianReal_absolutelyContinuous' 0 one_ne_zero).isOpenPosMeasure
-  letI hpiOpen : Measure.IsOpenPosMeasure
+  let hpiOpen : Measure.IsOpenPosMeasure
       (Measure.pi fun _ : Fin (Module.finrank ℝ ↥S) => gaussianReal 0 1) :=
     Measure.pi.isOpenPosMeasure _
   let synth : (Fin (Module.finrank ℝ ↥S) → ℝ) → ↥S :=
@@ -316,7 +316,7 @@ theorem restrictedTranslatedGaussianPrior_spec
     intro y
     refine ⟨fun i => (stdOrthonormalBasis ℝ ↥S).repr y i, ?_⟩
     exact (stdOrthonormalBasis ℝ ↥S).sum_repr y
-  letI hstdOpen : Measure.IsOpenPosMeasure (stdGaussian ↥S) := by
+  let hstdOpen : Measure.IsOpenPosMeasure (stdGaussian ↥S) := by
     rw [stdGaussian]
     exact hsynth_cont.isOpenPosMeasure_map hsynth_surj
   let affineInclusion : ↥S → EuclideanSpace ℝ (Fin m) :=
@@ -367,7 +367,7 @@ theorem restrictedTranslatedGaussianPrior_spec
       _ ≤ translatedGaussianOnEffectiveSpan C h0 c C := measure_mono hBsub
       _ = conePriorNormalizer C h0 c := rfl
   have hgauss := translatedGaussianOnEffectiveSpan_spec C h0 c _hc
-  letI htranslatedProb : IsProbabilityMeasure
+  let htranslatedProb : IsProbabilityMeasure
       (translatedGaussianOnEffectiveSpan C h0 c) := hgauss.1
   have hnormalizerFinite : conePriorNormalizer C h0 c < ∞ := by
     exact measure_lt_top _ _

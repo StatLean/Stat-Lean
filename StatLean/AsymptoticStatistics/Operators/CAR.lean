@@ -329,7 +329,7 @@ theorem coarseningScoreSpace_eq_observedTangent_orthogonal
     (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
     coarseningScoreSpace hM hπY P_full
       = (observedTangent hM P_full (nonparametricYTangent hπY P_full))ᗮ := by
-  haveI : IsProbabilityMeasure (P_full.map M) :=
+  have : IsProbabilityMeasure (P_full.map M) :=
     (by infer_instance)
   apply Submodule.ext
   intro b
@@ -449,9 +449,9 @@ theorem observedTangent_carScore_factors
            (b : Lp ℝ 2 (P_full.map M))⟫_ℝ = 0)
     ∧ (observedTangent hM P_full (nonparametricYTangent hπY P_full)
          ⊔ coarseningScoreSpace hM hπY P_full).topologicalClosure = ⊤ := by
-  haveI : IsProbabilityMeasure (P_full.map M) :=
+  have : IsProbabilityMeasure (P_full.map M) :=
     (by infer_instance)
-  haveI hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
+  have hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   refine ⟨inner_observedTangent_coarseningScore_eq_zero hM hπY P_full, ?_⟩
   -- Density: `closure (V ⊔ Vᗮ) = ⊤ ↔ (V ⊔ Vᗮ)ᗮ = ⊥`, and `(V ⊔ Vᗮ)ᗮ = Vᗮ ⊓ Vᗮᗮ = ⊥`.
@@ -479,9 +479,9 @@ theorem observedTangent_decomp
       ∃ b ∈ coarseningScoreSpace hM hπY P_full,
       g = p + b ∧
       ⟪(p : Lp ℝ 2 (P_full.map M)), (b : Lp ℝ 2 (P_full.map M))⟫_ℝ = 0 := by
-  haveI : IsProbabilityMeasure (P_full.map M) :=
+  have : IsProbabilityMeasure (P_full.map M) :=
     (by infer_instance)
-  haveI hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
+  have hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   -- `coarseningScoreSpace` is the kernel of a continuous linear map, hence closed,
   -- hence complete in the complete ambient. The submodule-subtype `CompleteSpace`
@@ -492,9 +492,9 @@ theorem observedTangent_decomp
       Set ↥(L2ZeroMean (P_full.map M))) := by
     rw [coarseningScoreSpace]
     exact ContinuousLinearMap.isClosed_ker _
-  haveI hcs_complete : CompleteSpace ↥(coarseningScoreSpace hM hπY P_full) :=
+  have hcs_complete : CompleteSpace ↥(coarseningScoreSpace hM hπY P_full) :=
     @IsClosed.completeSpace_coe _ _ hcsE _ hclosed
-  haveI hcsop : (coarseningScoreSpace hM hπY P_full).HasOrthogonalProjection :=
+  have hcsop : (coarseningScoreSpace hM hπY P_full).HasOrthogonalProjection :=
     @Submodule.HasOrthogonalProjection.ofCompleteSpace ℝ _ _ _ _
       (coarseningScoreSpace hM hπY P_full) hcs_complete
   refine ⟨g - @Submodule.starProjection ℝ _ _ _ _
@@ -585,7 +585,7 @@ theorem observedData_influence_subtract_proj
     AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction (P_full.map M)
       (T_main_obs ⊔ T_nuis_obs) dψ_obs
       (φ₀_obs - T_nuis_obs.starProjection φ₀_obs) := by
-  haveI hp : IsProbabilityMeasure (P_full.map M) :=
+  have hp : IsProbabilityMeasure (P_full.map M) :=
     (by infer_instance)
   exact @AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance
     _ _ (P_full.map M) hp T_main_obs T_nuis_obs _ dψ_obs φ₀_obs hOrth hMain hZero

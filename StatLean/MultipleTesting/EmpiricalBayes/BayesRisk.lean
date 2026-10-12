@@ -108,8 +108,7 @@ private lemma coord_facts (μ : Measure Ω) [IsProbabilityMeasure μ] {X : Ω �
     have h : ∫ y, y ^ 2 ∂(Measure.map X μ) = ∫ ω, (X ω) ^ 2 ∂μ :=
       integral_map hX.aemeasurable (f := fun y => y ^ 2) (by fun_prop)
     rw [← h, hlaw]
-    simp only [integral_sq_gaussianReal, NNReal.coe_mk, zero_pow (by norm_num : (2 : ℕ) ≠ 0),
-        zero_add]
+    simp only [integral_sq_gaussianReal, NNReal.coe_mk]
 
 /-- **Empirical-Bayes / Bayes risk of the Gaussian shrinkage estimator** (Candès, Lecture 15,
 §15.3.3, Proposition 1, STAT 300C). For a Gaussian prior `θᵢ ∼ N(0,τ²)` and independent noise

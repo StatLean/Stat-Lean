@@ -63,7 +63,7 @@ private theorem lintegral_hypLoss_true {Θ₀ : Set Θ} (hΘ₀ : MeasurableSet 
     ∫⁻ θ, hypLoss Θ₀ a₀ a₁ θ true ∂ρ = a₁ * ρ Θ₀ᶜ := by
   have h : (fun θ => hypLoss Θ₀ a₀ a₁ θ true) = Θ₀ᶜ.indicator (fun _ => a₁) := by
     funext θ
-    by_cases hθ : θ ∈ Θ₀ <;> simp [hypLoss, Set.indicator_apply, Set.mem_compl_iff, hθ]
+    by_cases hθ : θ ∈ Θ₀ <;> simp [hypLoss, Set.mem_compl_iff, hθ]
   rw [h, lintegral_indicator hΘ₀.compl, setLIntegral_const]
 
 /-- The posterior expected loss of rejecting `H₀` is `a₀·π(Θ₀|x)`. -/
@@ -72,7 +72,7 @@ private theorem lintegral_hypLoss_false {Θ₀ : Set Θ} (hΘ₀ : MeasurableSet
     ∫⁻ θ, hypLoss Θ₀ a₀ a₁ θ false ∂ρ = a₀ * ρ Θ₀ := by
   have h : (fun θ => hypLoss Θ₀ a₀ a₁ θ false) = Θ₀.indicator (fun _ => a₀) := by
     funext θ
-    by_cases hθ : θ ∈ Θ₀ <;> simp [hypLoss, Set.indicator_apply, hθ]
+    by_cases hθ : θ ∈ Θ₀ <;> simp [hypLoss, hθ]
   rw [h, lintegral_indicator hΘ₀, setLIntegral_const]
 
 /-- **The Bayes test is a Bayes estimator for the `a₀–a₁` loss** (Robert Proposition 5.2.2). -/

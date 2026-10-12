@@ -115,7 +115,7 @@ private theorem markov_pow (κ : Kernel S S) [IsMarkovKernel κ] :
     ∀ n : ℕ, IsMarkovKernel (κ ^ n)
   | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
   | n + 1 => by
-      haveI := markov_pow κ n
+      have := markov_pow κ n
       rw [pow_succ]
       exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
 
@@ -362,7 +362,7 @@ theorem HasLyapunovDrift.lintegral_pow_le {κ : Kernel S S} [IsMarkovKernel κ] 
       rw [h0, lintegral_dirac' _ hVm, pow_zero, one_mul]
       exact ENNReal.ofReal_le_ofReal (by linarith)
   | succ n ih =>
-      haveI := markov_pow κ n
+      have := markov_pow κ n
       have h0 : (κ ^ (n + 1)) x = ((κ ^ n) x).bind κ := by
         rw [pow_succ']; exact Kernel.comp_apply κ (κ ^ n) x
       rw [h0, Measure.lintegral_bind (Kernel.aemeasurable _) hVm.aemeasurable]
@@ -701,7 +701,7 @@ private theorem harris_contraction_aux {κ : Kernel S S} [IsMarkovKernel κ] {V 
     (hRpos : 0 < R) (hᾱ1 : 1 + β * K - α ≤ ᾱ) (hᾱ2 : γ + 2 * α / (β * R) ≤ ᾱ)
     (μ ν : Measure S) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     weightedTV β V (μ.bind κ) (ν.bind κ) ≤ ENNReal.ofReal ᾱ * weightedTV β V μ ν := by
-  haveI := hmin.isProbability
+  have := hmin.isProbability
   obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
   obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
   have hK := hdrift.K_nonneg
@@ -709,9 +709,9 @@ private theorem harris_contraction_aux {κ : Kernel S S} [IsMarkovKernel κ] {V 
   have hVm := hdrift.V_measurable
   have hwm : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
     ENNReal.measurable_ofReal.comp (measurable_const.add (measurable_const.mul hVm))
-  haveI : IsProbabilityMeasure (μ.bind κ) :=
+  have : IsProbabilityMeasure (μ.bind κ) :=
     ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
-  haveI : IsProbabilityMeasure (ν.bind κ) :=
+  have : IsProbabilityMeasure (ν.bind κ) :=
     ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
   obtain ⟨mL, hmL⟩ : ∃ t : ℝ≥0∞,
       t = min ((jPos μ ν) {x | V x ≤ R}) ((jPos ν μ) {x | V x ≤ R}) := ⟨_, rfl⟩
@@ -866,8 +866,8 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
         nlinarith
       linarith
   refine ⟨β, ᾱ, hβpos, hᾱpos, hᾱlt, fun μ ν hμ hν => ?_⟩
-  haveI := hμ
-  haveI := hν
+  have := hμ
+  have := hν
   exact harris_contraction_aux hdrift hmin hβpos hᾱpos hRpos hᾱ1 hᾱ2 μ ν
 
 -- ## REFUTATION of `harris_theorem` against the *old* Bochner drift (historical record)
@@ -1131,28 +1131,28 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       ∃ b c r : ℝ, 0 ≤ b ∧ 0 ≤ c ∧ 0 ≤ r ∧ r < 1 ∧
         ∀ (x : S) (n : ℕ),
           tvDist ((κ ^ n) x) π ≤ ENNReal.ofReal ((c + b * V x) * r ^ n) := by
-  haveI := hmin.isProbability
+  have := hmin.isProbability
   have hVnn := hdrift.V_nonneg
   have hVm := hdrift.V_measurable
   obtain ⟨β, ᾱ, hβpos, hᾱpos, hᾱlt, hcon⟩ := harris_contraction hdrift hmin hR
   have hwm : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
     ENNReal.measurable_ofReal.comp (measurable_const.add (measurable_const.mul hVm))
   -- the state space is nonempty: it carries the minorizing probability measure
-  haveI hne : Nonempty S := by
+  have hne : Nonempty S := by
     rcases isEmpty_or_nonempty S with h | h
     · exact absurd (measure_univ (μ := ρ))
         (by rw [Set.univ_eq_empty_iff.2 h, measure_empty]; exact zero_ne_one)
     · exact h
   obtain ⟨x₀⟩ := id hne
   have hprob : ∀ (n : ℕ) (x : S), IsProbabilityMeasure ((κ ^ n) x) := fun n x => by
-    haveI := markov_pow κ n; infer_instance
+    have := markov_pow κ n; infer_instance
   have h0 : ∀ x : S, (κ ^ 0) x = Measure.dirac x := fun x => by rw [pow_zero]; rfl
   have hstep : ∀ (n : ℕ) (x : S), (κ ^ (n + 1)) x = ((κ ^ n) x).bind κ :=
     fun n x => kpow_succ_apply κ n x
   -- ## Step 1: geometric decay along the chain, and between two chains
   obtain ⟨W, hWdef⟩ : ∃ t : ℝ≥0∞, weightedTV β V (Measure.dirac x₀) (κ x₀) = t := ⟨_, rfl⟩
   have hWne : W ≠ ⊤ := by
-    haveI := hprob 1 x₀
+    have := hprob 1 x₀
     rw [← hWdef]
     refine ne_top_of_le_ne_top ?_ (weightedTV_le_add (β := β) hVm (Measure.dirac x₀) (κ x₀))
     rw [lintegral_dirac' _ hwm]
@@ -1170,8 +1170,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     induction n with
     | zero => rw [h0 x, h0 y, pow_zero, one_mul]
     | succ n ih =>
-        haveI := hprob n x
-        haveI := hprob n y
+        have := hprob n x
+        have := hprob n y
         have h := hcon ((κ ^ n) x) ((κ ^ n) y) inferInstance inferInstance
         rw [← hstep n x, ← hstep n y] at h
         refine h.trans ?_
@@ -1188,8 +1188,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
         have e1 : (κ ^ (0 + 1)) x₀ = κ x₀ := by rw [zero_add, pow_one]
         rw [h0 x₀, e1, hWdef, pow_zero, one_mul]
     | succ n ih =>
-        haveI := hprob n x₀
-        haveI := hprob (n + 1) x₀
+        have := hprob n x₀
+        have := hprob (n + 1) x₀
         have h := hcon ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀) inferInstance inferInstance
         rw [← hstep n x₀, ← hstep (n + 1) x₀] at h
         refine h.trans ?_
@@ -1207,8 +1207,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     exact le_trans (jPos_univ_le_weightedTV hβpos.le hVm hVnn _ _) (hgeo n)
   have hmassb : ∀ n, (b n) Set.univ = (a n) Set.univ := by
     intro n
-    haveI := hprob n x₀
-    haveI := hprob (n + 1) x₀
+    have := hprob n x₀
+    have := hprob (n + 1) x₀
     rw [ha, hb]
     exact (jPos_mass_eq ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀)).symm
   have htel : ∀ N : ℕ, (κ ^ N) x₀ + ∑ n ∈ Finset.range N, a n
@@ -1217,8 +1217,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     induction N with
     | zero => simp
     | succ N ih =>
-        haveI := hprob N x₀
-        haveI := hprob (N + 1) x₀
+        have := hprob N x₀
+        have := hprob (N + 1) x₀
         have hj : (κ ^ N) x₀ + b N = (κ ^ (N + 1)) x₀ + a N := by
           rw [ha, hb]; exact add_jPos_comm _ _
         rw [Finset.sum_range_succ, Finset.sum_range_succ]
@@ -1283,7 +1283,7 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
           refine add_le_add le_rfl ?_
           rw [Measure.finsetSum_apply, Measure.sum_apply _ hs]
           exact ENNReal.sum_le_tsum _
-  haveI hAfinm : IsFiniteMeasure (Measure.sum a) := ⟨lt_top_iff_ne_top.2 hAfin⟩
+  have hAfinm : IsFiniteMeasure (Measure.sum a) := ⟨lt_top_iff_ne_top.2 hAfin⟩
   obtain ⟨π, hπdef⟩ : ∃ m : Measure S, m = ((κ ^ 0) x₀ + Measure.sum b) - Measure.sum a :=
     ⟨_, rfl⟩
   have hπapp : ∀ s, MeasurableSet s →
@@ -1291,8 +1291,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     intro s hs
     rw [hπdef, Measure.sub_apply hs hAle, tsub_add_cancel_of_le (Measure.le_iff'.1 hAle s),
       Measure.add_apply]
-  haveI hπprob : IsProbabilityMeasure π := by
-    haveI := hprob 0 x₀
+  have hπprob : IsProbabilityMeasure π := by
+    have := hprob 0 x₀
     refine ⟨?_⟩
     have h := hπapp Set.univ MeasurableSet.univ
     rw [hABuniv, show ((κ ^ 0) x₀) Set.univ = 1 from measure_univ,
@@ -1333,8 +1333,8 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
   have hbound : ∀ (x : S) (n : ℕ), tvDist ((κ ^ n) x) π
       ≤ ENNReal.ofReal ᾱ ^ n * (weightedTV β V (Measure.dirac x) (Measure.dirac x₀) + C) := by
     intro x n
-    haveI := hprob n x
-    haveI := hprob n x₀
+    have := hprob n x
+    have := hprob n x₀
     calc tvDist ((κ ^ n) x) π
         ≤ tvDist ((κ ^ n) x) ((κ ^ n) x₀) + tvDist ((κ ^ n) x₀) π := tvDist_triangle _ _ _
       _ ≤ ENNReal.ofReal ᾱ ^ n * weightedTV β V (Measure.dirac x) (Measure.dirac x₀)
@@ -1487,7 +1487,7 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     -- the constructed one; needed to compare in the weighted distance)
     (hV : Integrable V π) (hV' : Integrable V π') :
     π = π' := by
-  haveI := hmin.isProbability
+  have := hmin.isProbability
   obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
   -- Hahn: `π' ≤ π` on `E` and `π ≤ π'` off `E`
   obtain ⟨E, hE, hE1, hE2⟩ := hahn_decomposition π π'
@@ -1507,9 +1507,9 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     rw [hNdef, Measure.sub_apply ht hle2, Measure.restrict_apply ht, Measure.restrict_apply ht]
   have hPle : P ≤ π := by rw [hPdef]; exact le_trans Measure.sub_le Measure.restrict_le_self
   have hNle : N ≤ π' := by rw [hNdef]; exact le_trans Measure.sub_le Measure.restrict_le_self
-  haveI : IsFiniteMeasure P :=
+  have : IsFiniteMeasure P :=
     ⟨lt_of_le_of_lt (Measure.le_iff'.1 hPle Set.univ) (measure_lt_top π Set.univ)⟩
-  haveI : IsFiniteMeasure N :=
+  have : IsFiniteMeasure N :=
     ⟨lt_of_le_of_lt (Measure.le_iff'.1 hNle Set.univ) (measure_lt_top π' Set.univ)⟩
   have hPEc : P Eᶜ = 0 := by rw [hPapp _ hE.compl]; simp
   have hNE : N E = 0 := by rw [hNapp _ hE]; simp
@@ -1702,8 +1702,8 @@ theorem IsGeometricallyErgodic.of_pow {κ : Kernel S S} [IsMarkovKernel κ]
   set q := n / p with hqdef
   set r := n % p with hrdef
   have hnr : n = r + p * q := by rw [hrdef, hqdef, Nat.mod_add_div]
-  haveI := markov_pow κ (p * q)
-  haveI := markov_pow κ r
+  have := markov_pow κ (p * q)
+  have := markov_pow κ r
   -- Distance: the leftover `r = n % p` steps, applied *last*, can only contract (`π` is
   -- `κ^r`-invariant), so the `n`-step distance is at most the `pq`-step one.
   have hdist : tvDist ((κ ^ n) x) π ≤ tvDist (((κ ^ p) ^ q) x) π := by
@@ -2011,7 +2011,7 @@ theorem pow_ge_window {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
       ENNReal.ofReal δ ^ k *
           (Measure.map (iterPush k x) (Measure.pi fun _ : Fin k => volume.restrict J)) A
         ≤ ((nlARKernel f ν) ^ k) x A := by
-  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  have : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
   intro k
   induction k with
   | zero =>
@@ -2069,7 +2069,7 @@ theorem hasMinorization_nlAR_pow
     {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1) {R : ℝ} (hR0 : 0 < R) :
     ∃ (α : ℝ) (ρ : Measure (Fin (p + 1) → ℝ)),
       HasMinorization ((nlARKernel f ν) ^ (p + 1)) (lyapV θ) R α ρ := by
-  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  have : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
   -- the box the level set lives in
   obtain ⟨Rb, hRbdef⟩ : ∃ r : ℝ, r = R / θ ^ p := ⟨_, rfl⟩
   have hRb0 : 0 < Rb := hRbdef ▸ div_pos hR0 (pow_pos hθ0 p)
@@ -2224,7 +2224,7 @@ theorem nlARKernel_geometricallyErgodic
     (hbound : ∀ x, |f x| ≤ lam * (⨆ i, |x i|) + c) :
     ∃ F : Measure (Fin (p + 1) → ℝ), IsProbabilityMeasure F ∧
       IsGeometricallyErgodic (nlARKernel f ν) F := by
-  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  have : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
   -- the contraction factor, boosted away from `0` and taken to the `(p+1)`-st root
   obtain ⟨lam', hlam'def⟩ : ∃ t : ℝ, t = max lam (1 / 2) := ⟨_, rfl⟩
   have hlam'0 : 0 < lam' := hlam'def ▸ lt_of_lt_of_le (by norm_num) (le_max_right _ _)
@@ -2261,15 +2261,15 @@ theorem nlARKernel_geometricallyErgodic
   -- the minorization of the `(p+1)`-step kernel
   obtain ⟨α, ρ, hmin⟩ :=
     hasMinorization_nlAR_pow hf hg hgc hgpos hν hlam0 hc hbound hθ0 hθ1 hRpos
-  haveI := markov_pow (nlARKernel f ν) (p + 1)
+  have := markov_pow (nlARKernel f ν) (p + 1)
   obtain ⟨π, hπprob, hπinv, hπge⟩ := harris_theorem hdrP hmin hR
-  haveI := hπprob
+  have := hπprob
   -- `π` is invariant for the one-step kernel too
   have hξprob : IsProbabilityMeasure (π.bind (nlARKernel f ν)) := by
     refine ⟨?_⟩
     rw [Measure.bind_apply MeasurableSet.univ (Kernel.aemeasurable _)]
     simp
-  haveI := hξprob
+  have := hξprob
   have hξinv : Kernel.Invariant ((nlARKernel f ν) ^ (p + 1)) (π.bind (nlARKernel f ν)) := by
     change (π.bind (nlARKernel f ν)).bind ((nlARKernel f ν) ^ (p + 1)) = π.bind (nlARKernel f ν)
     have hcomm : ((nlARKernel f ν) ^ (p + 1)) ∘ₖ (nlARKernel f ν)

@@ -234,8 +234,8 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
           Real.sqrt (8 * d * Real.log (Real.exp 1 * n / d) / n) +
             Real.sqrt (2 * Real.log (4 / δ) / n)} := by
   classical
-  haveI : Countable ↥𝓗 := hc.to_subtype
-  haveI : Nonempty ↥𝓗 := h𝓗.to_subtype
+  have : Countable ↥𝓗 := hc.to_subtype
+  have : Nonempty ↥𝓗 := h𝓗.to_subtype
   have hn1 : 1 ≤ n := by omega
   have hδ2 : 0 < δ / 2 := by linarith
   have hδ2' : δ / 2 < 1 := by linarith
@@ -501,7 +501,7 @@ theorem vc_isAgnosticPACLearnerWith (𝓗 : Set (X → Bool))
               2 * Real.log (4 / δ))⌉₊ + d + 2) := by
   intro D hD ε δ hε hδ hδ1 m hm
   dsimp only at hm
-  haveI : IsProbabilityMeasure D := hD
+  have : IsProbabilityMeasure D := hD
   have hbddset : BddBelow (risk D zeroOneLoss '' 𝓗) := by
     refine ⟨0, ?_⟩
     rintro r ⟨h, -, rfl⟩

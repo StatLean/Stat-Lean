@@ -163,7 +163,7 @@ private theorem totallyBounded_F_of_dudleyNet
       distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < (2 : ℝ) ^ (-(j : ℤ))) :
     letI inst := distL2PseudoMetric hHenv hH2 hFmeas
     @TotallyBounded ↥F inst.toUniformSpace Set.univ := by
-  letI inst := distL2PseudoMetric hHenv hH2 hFmeas
+  let inst := distL2PseudoMetric hHenv hH2 hFmeas
   rw [@Metric.totallyBounded_iff ↥F inst]
   intro ε hε
   obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one hε (by norm_num : (1 / 2 : ℝ) < 1)
@@ -189,7 +189,7 @@ private theorem separableSpace_gpH_of_dudleyNet
     ⟨H, hHenv, hH2⟩
   set R : Set (Lp ℝ 2 P) :=
     Set.range (fun f : ↥F => centredLp hFenv hFmeas f)
-  letI inst := distL2PseudoMetric hHenv hH2 hFmeas
+  let inst := distL2PseudoMetric hHenv hH2 hFmeas
   have hFtb : @TotallyBounded ↥F inst.toUniformSpace Set.univ :=
     totallyBounded_F_of_dudleyNet hHenv hH2 hFmeas net hnet
   have hLip : @LipschitzWith ↥F (Lp ℝ 2 P) inst.toPseudoEMetricSpace _ 1
@@ -330,7 +330,7 @@ private theorem ueSkeleton_spec
         @UniformContinuousOn ↥F ℝ inst.toUniformSpace _
           (fun t => gpX ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep t ω)
           (ueSkeleton net)) := by
-  letI inst := distL2PseudoMetric hHenv hH2 hFmeas
+  let inst := distL2PseudoMetric hHenv hH2 hFmeas
   exact _root_.GaussianChaining.gaussianChaining_UC_iUnion
     (μ := (iidStdGaussian : Measure (ℕ → ℝ))) (K := 1)
     zero_le_one (gpX_measurable ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep)
@@ -372,7 +372,7 @@ private theorem ueNetApprox_cauchy_of_uc
         (fun t => gpX ⟨H, hHenv, hH2⟩ hFmeas hHinf hHsep t ω)
         (ueSkeleton net)) :
     CauchySeq (fun j => ueNetApprox hHenv hH2 hFmeas hHinf hHsep net hnet j ω) := by
-  letI inst := distL2PseudoMetric hHenv hH2 hFmeas
+  let inst := distL2PseudoMetric hHenv hH2 hFmeas
   rw [Metric.cauchySeq_iff]
   intro ε hε
   rw [Metric.uniformContinuousOn_iff] at huc
@@ -429,7 +429,7 @@ private theorem ueBridgePath_tendsto_of_uc
     Tendsto (fun j => ueNetApprox hHenv hH2 hFmeas hHinf hHsep net hnet j ω)
       atTop (𝓝 (ueBridgePath hHenv hH2 hFmeas hHinf hHsep net hnet ω)) :=
   by
-    letI : Nonempty (LinfF F) := ⟨0⟩
+    let : Nonempty (LinfF F) := ⟨0⟩
     simpa only [ueBridgePath] using
       (ueNetApprox_cauchy_of_uc hHenv hH2 hFmeas hHinf hHsep net hnet huc).tendsto_limUnder
 
@@ -520,7 +520,7 @@ private theorem ueBridgePath_uc_ae
       ∀ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ →
         |ueBridgePath hHenv hH2 hFmeas hHinf hHsep net hnet ω f -
           ueBridgePath hHenv hH2 hFmeas hHinf hHsep net hnet ω g| < ε := by
-  letI inst := distL2PseudoMetric hHenv hH2 hFmeas
+  let inst := distL2PseudoMetric hHenv hH2 hFmeas
   filter_upwards [(ueSkeleton_spec hHenv hH2 hFmeas hHinf hHsep net hnet hmono
     hDudley).2.2] with ω hω
   intro ε hε
@@ -619,11 +619,11 @@ private theorem isTightMeasureSet_map_of_aestronglyMeasurable
   have hY : StronglyMeasurable Y := hX.stronglyMeasurable_mk
   let C : Set E := closure (Set.range Y)
   have hCsep : TopologicalSpace.IsSeparable C := hY.isSeparable_range.closure
-  letI : SecondCountableTopology C := hCsep.secondCountableTopology
-  letI : CompleteSpace C := isClosed_closure.completeSpace_coe
+  let : SecondCountableTopology C := hCsep.secondCountableTopology
+  let : CompleteSpace C := isClosed_closure.completeSpace_coe
   let Ys : Ξ → C := fun ξ => ⟨Y ξ, subset_closure (Set.mem_range_self ξ)⟩
   have hYs : StronglyMeasurable Ys := hY.measurable.subtype_mk.stronglyMeasurable
-  letI : IsProbabilityMeasure (μ.map Ys) :=
+  let : IsProbabilityMeasure (μ.map Ys) :=
     (by infer_instance)
   have hsrc : IsTightMeasureSet ({μ.map Ys} : Set (Measure C)) :=
     isTightMeasureSet_singleton
@@ -824,8 +824,8 @@ private theorem pBrownianBridge_readout_eq_multivariateGaussian_ue
     have h := (hnu.isGaussian_fdd k φ).map_equiv L
     have hcomp : L ∘ (fun z : LinfF F => fun i => z (φ i)) = R := rfl
     rwa [hcomp] at h
-  haveI : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
-  haveI : ProbabilityTheory.IsGaussian (nu.map R) := hRgauss.isGaussian_map
+  have : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
+  have : ProbabilityTheory.IsGaussian (nu.map R) := hRgauss.isGaussian_map
   have hRmem : MemLp R 2 nu := hRgauss.memLp_two
   have hRmeas : Measurable R := by
     exact ((PiLp.continuous_toLp 2 _).comp
@@ -1240,7 +1240,7 @@ private theorem ueLimit_proj_error
     (f : BoundedContinuousFunction (LinfF F) ℝ) :
     Tendsto (fun m => ∫ z, |f (ueFiniteProj net hnet m z) - f z| ∂nu)
       atTop (nhds 0) := by
-  letI : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
+  let : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
   let Φ : ℕ → LinfF F → ℝ :=
     fun m z => |f (ueFiniteProj net hnet m z) - f z|
   have hzero : (0 : ℝ) = ∫ _ : LinfF F, (0 : ℝ) ∂nu := by simp
@@ -1295,7 +1295,7 @@ private theorem ueEmpirical_readout_tail_outer
               (memℓp_empiricalProcess
                 ⟨H, hHenv, hH2.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
                 (fun i : Fin n => X i.val ξ))))|)).toReal) atTop) atTop (nhds 0) := by
-  letI : Nonempty (LinfF F) := ⟨0⟩
+  let : Nonempty (LinfF F) := ⟨0⟩
   obtain ⟨K, hK⟩ := hflip
   let 𝔾 : ℕ → Ξ → LinfF F := fun n ξ =>
     empiricalProcessLinf (fun i : Fin n => X i.val ξ)
@@ -1496,7 +1496,7 @@ private theorem ueWeakConvergesOuter_readout
             ⟨H, hHenv, hH2.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
             (fun i : Fin n => X i.val ξ))) + ‖f‖))).toReal -
         ‖f‖ * (μ Set.univ).toReal) atTop (nhds (∫ y, f y ∂nu)) := by
-  letI : Nonempty (LinfF F) := ⟨0⟩
+  let : Nonempty (LinfF F) := ⟨0⟩
   let 𝔾 : ℕ → Ξ → LinfF F := fun n ξ =>
     empiricalProcessLinf (fun i : Fin n => X i.val ξ)
       (memℓp_empiricalProcess
@@ -1530,7 +1530,7 @@ private theorem ueWeakConvergesOuter_readout
     rw [← hmap]
     convert! hS2 using 2
   · have hS4 := ueLimit_proj_error net hnet nu hnu f
-    letI : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
+    let : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
     rw [tendsto_iff_dist_tendsto_zero]
     have hbound : ∀ m, dist (Lproj m) L ≤
         ∫ z, |f (ueFiniteProj net hnet m z) - f z| ∂nu := by
@@ -1611,7 +1611,7 @@ private theorem ueWeakConvergesOuter_withBridge
         (memℓp_empiricalProcess
           ⟨H, hHenv, hH2.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
           (fun i : Fin n => X i.val ξ))) nu := by
-  letI : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
+  let : IsProbabilityMeasure nu := hnu.isProbabilityMeasure
   exact weakConvergesOuter_of_lipschitz_readout
     (μ := fun _ => μ)
     (Xn := fun n ξ => empiricalProcessLinf (fun i : Fin n => X i.val ξ)
@@ -1656,7 +1656,7 @@ theorem uniformEntropy_exists_pBrownianBridge
   have hHsep : TopologicalSpace.SeparableSpace ↥(gpH ⟨H, hHenv, hH2⟩ hFmeas) :=
     separableSpace_gpH_of_dudleyNet hHenv hH2 hFmeas net hnet
   by_cases hfin : FiniteDimensional ℝ ↥(gpH ⟨H, hHenv, hH2⟩ hFmeas)
-  · letI : FiniteDimensional ℝ ↥(gpH ⟨H, hHenv, hH2⟩ hFmeas) := hfin
+  · let : FiniteDimensional ℝ ↥(gpH ⟨H, hHenv, hH2⟩ hFmeas) := hfin
     exact ⟨finiteGaussianPBridge hHenv hH2 hFmeas,
       isPBrownianBridge_finiteGaussianPBridge hHenv hH2 hFmeas⟩
   · exact ⟨(iidStdGaussian : Measure (ℕ → ℝ)).map

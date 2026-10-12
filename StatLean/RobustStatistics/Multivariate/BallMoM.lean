@@ -467,9 +467,6 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
         < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
       (((measurable_const.ite (hbad_meas j) measurable_const)).aemeasurable)
       (Filter.Eventually.of_forall fun ξ => by
-        change (if 2 * Real.sqrt (trSigma / m)
-            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
-          ∈ Set.Icc (0 : ℝ) 1
         rw [Set.mem_Icc]; split_ifs <;> norm_num)
     rw [hprox] at h
     exact h

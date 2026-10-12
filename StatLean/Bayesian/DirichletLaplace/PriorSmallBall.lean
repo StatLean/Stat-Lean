@@ -178,7 +178,7 @@ theorem dlPrior_box_ge {a s : ℝ} :
       measurableSet_le ((measurable_eucl_coord j).abs) measurable_const
   have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹' {θ | ∀ j, |θ j| ≤ s}
       = Set.univ.pi (fun _ => {y : ℝ | |y| ≤ s}) := by
-    ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+    ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi]
   have hcalc : dlPrior a ι {θ | ∀ j, |θ j| ≤ s}
       = (dlMarginal a {x : ℝ | |x| ≤ s}) ^ Fintype.card ι := by
     rw [dlPrior, Measure.map_apply measurable_toLp hB, hpre,
@@ -256,7 +256,7 @@ theorem dlPrior_ball_zero_ge {a r w : ℝ}
     have hexp : Real.exp (-2 * w) ≤ 1 - ζ.toReal := le_trans hinv hquad
     calc Real.exp (-2 * m * w)
         = Real.exp (-2 * w) ^ (Fintype.card ι) := by
-          rw [← Real.exp_nat_mul]; congr 1; rw [hm_def]; push_cast; ring
+          rw [← Real.exp_nat_mul]; congr 1; rw [hm_def]; ring
       _ ≤ (1 - ζ.toReal) ^ (Fintype.card ι) :=
           pow_le_pow_left₀ (Real.exp_nonneg _) hexp _
   exact hreal.trans (hbox_mass.trans (measure_mono hbox_sub))

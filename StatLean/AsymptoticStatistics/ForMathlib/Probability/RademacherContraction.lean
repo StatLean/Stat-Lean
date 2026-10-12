@@ -301,10 +301,10 @@ theorem integral_iSup_abs_rademacherSum_comp_le
   classical
   cases isEmpty_or_nonempty ι with
   | inl hι =>
-      letI : IsEmpty ι := hι
+      let : IsEmpty ι := hι
       simp
   | inr hι =>
-      letI : Nonempty ι := hι
+      let : Nonempty ι := hι
       cases n with
       | zero => simp [rademacherSum]
       | succ n =>

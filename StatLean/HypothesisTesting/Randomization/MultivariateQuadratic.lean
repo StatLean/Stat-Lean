@@ -216,7 +216,7 @@ theorem weakConverges_randPairLaw_signChange_sum
     intro y v
     rw [PiLp.inner_apply]
     exact Finset.sum_congr rfl fun j _ => by
-      simp [real_inner_eq_re_inner ℝ, RCLike.inner_apply, mul_comm]
+      simp [RCLike.inner_apply, mul_comm]
   have hmoment : ∀ v : EuclideanSpace ℝ (Fin p),
       ∫ y, ⟪y, v⟫ ^ 2 ∂P = v.ofLp ⬝ᵥ S *ᵥ v.ofLp := by
     intro v
@@ -603,13 +603,13 @@ private lemma weakConverges_randPairLaw_normSq
     randPairLaw_map (G := Fin n → ℤˣ) _ _ measurable_signSum
       (fun ε => measurable_signChange_smul_vec ε) hwm
   rw [← funext heq] at hmapped
-  haveI : ∀ n : ℕ, IsProbabilityMeasure
+  have : ∀ n : ℕ, IsProbabilityMeasure
       (randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) => w ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
         (Measure.pi fun _ : Fin n => P)) := fun n =>
     isProbabilityMeasure_randPairLaw (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
       (fun ε => measurable_signChange_smul_vec ε)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map w) :=
     (by infer_instance)
   simpa using hmapped.map continuous_fst measurable_fst
@@ -645,20 +645,20 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   have hbase := weakConverges_randPairLaw_signChange_sum P hpd hL2 hmean hsecond
   have hwm : Measurable fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2 :=
     (by fun_prop : Continuous fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2).measurable
-  haveI hprobW : ∀ n : ℕ, IsProbabilityMeasure
+  have hprobW : ∀ n : ℕ, IsProbabilityMeasure
       (randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)) := fun n =>
     isProbabilityMeasure_randPairLaw (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
       (fun ε => measurable_signChange_smul_vec ε)
-  haveI : ∀ n : ℕ, IsProbabilityMeasure
+  have : ∀ n : ℕ, IsProbabilityMeasure
       ((randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)).map Prod.fst) := fun n =>
     (by infer_instance)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2)) :=
     (by infer_instance)
@@ -988,20 +988,20 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
   have hconv := weakConverges_randPairLaw_quadFormInv P hpd hL2 hmean hsecond
   have hwm : Measurable fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2 :=
     (by fun_prop : Continuous fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2).measurable
-  haveI hprobW : ∀ n : ℕ, IsProbabilityMeasure
+  have hprobW : ∀ n : ℕ, IsProbabilityMeasure
       (randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)) := fun n =>
     isProbabilityMeasure_randPairLaw (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
       (fun ε => measurable_signChange_smul_vec ε)
-  haveI : ∀ n : ℕ, IsProbabilityMeasure
+  have : ∀ n : ℕ, IsProbabilityMeasure
       ((randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
           ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
         (Measure.pi fun _ : Fin n => P)).map Prod.fst) := fun n =>
     (by infer_instance)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2)) :=
     (by infer_instance)

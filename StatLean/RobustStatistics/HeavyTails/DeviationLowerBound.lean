@@ -97,7 +97,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     (Measure.pi fun _ : Fin n => twoPointCoupling c p).real
         {w | ∀ i, (w i).1 = (w i).2}
       = (1 - p) ^ n := by
-  haveI : IsProbabilityMeasure (twoPointCoupling c p) :=
+  have : IsProbabilityMeasure (twoPointCoupling c p) :=
     isProbabilityMeasure_contaminate _ _ hp0 hp1
   have hD : MeasurableSet {q : ℝ × ℝ | q.1 = q.2} :=
     measurableSet_eq_fun measurable_fst measurable_snd
@@ -227,11 +227,11 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
       exact mul_lt_mul_of_pos_left
         (Real.sqrt_lt_sqrt hMn.le hpsep) (Real.sqrt_pos.mpr hσ)
   -- the two witnesses and the coupling
-  haveI hPp : IsProbabilityMeasure (twoPointPM c p) :=
+  have hPp : IsProbabilityMeasure (twoPointPM c p) :=
     isProbabilityMeasure_twoPointPM hp0.le hp1.le
-  haveI hPm : IsProbabilityMeasure (twoPointPM (-c) p) :=
+  have hPm : IsProbabilityMeasure (twoPointPM (-c) p) :=
     isProbabilityMeasure_twoPointPM hp0.le hp1.le
-  haveI hν : IsProbabilityMeasure (twoPointCoupling c p) :=
+  have hν : IsProbabilityMeasure (twoPointCoupling c p) :=
     isProbabilityMeasure_contaminate _ _ hp0.le hp1.le
   obtain ⟨t, htdef⟩ : ∃ t : ℝ, t = Real.sqrt σ2 * Real.sqrt (M / (n : ℝ)) := ⟨_, rfl⟩
   rw [← htdef] at hcsep ⊢
@@ -252,14 +252,14 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
   -- the product pushforwards of the coupling are the two product laws
   have hmapP : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).1) = Measure.pi fun _ : Fin n => twoPointPM c p := by
-    haveI : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.fst : ℝ × ℝ → ℝ)) := by
+    have : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.fst : ℝ × ℝ → ℝ)) := by
       rw [twoPointCoupling_fst hp0.le hp1.le]; exact hPp
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.fst : ℝ × ℝ → ℝ))
       fun _ => measurable_fst.aemeasurable]
     simp only [twoPointCoupling_fst hp0.le hp1.le]
   have hmapM : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).2) = Measure.pi fun _ : Fin n => twoPointPM (-c) p := by
-    haveI : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.snd : ℝ × ℝ → ℝ)) := by
+    have : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.snd : ℝ × ℝ → ℝ)) := by
       rw [twoPointCoupling_snd hp0.le hp1.le]; exact hPm
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.snd : ℝ × ℝ → ℝ))
       fun _ => measurable_snd.aemeasurable]

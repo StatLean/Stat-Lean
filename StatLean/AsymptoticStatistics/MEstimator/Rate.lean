@@ -331,7 +331,7 @@ private theorem localizedModulus_aemeasurable
   refine Measurable.aemeasurable ?_
   by_cases hδ : 0 < δ
   · -- Nonempty `θ`-ball: reduce to a countable sup over a dense sequence.
-    haveI : Nonempty {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ} :=
+    have : Nonempty {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ} :=
       ⟨⟨θ₀, by simpa using hδ⟩⟩
     obtain ⟨q, hq⟩ := TopologicalSpace.exists_dense_seq
       {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ}

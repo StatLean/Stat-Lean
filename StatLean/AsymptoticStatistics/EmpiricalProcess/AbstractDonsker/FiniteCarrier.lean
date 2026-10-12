@@ -184,16 +184,16 @@ theorem isPBrownianBridge_finiteGaussianPBridge
       (gpH ⟨G, hG_env, hG⟩ hF_meas : Set (Lp ℝ 2 P)) := by
     rw [gpH]
     exact Submodule.isClosed_topologicalClosure _
-  letI hcomplete : CompleteSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) :=
+  let hcomplete : CompleteSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) :=
     hclosed.completeSpace_coe
-  letI hsecond : SecondCountableTopology ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) :=
+  let hsecond : SecondCountableTopology ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) :=
     inferInstance
-  letI hmeas : MeasurableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := borel _
-  letI hborel : BorelSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := ⟨rfl⟩
-  letI hstdprob : IsProbabilityMeasure
+  let hmeas : MeasurableSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := borel _
+  let hborel : BorelSpace ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := ⟨rfl⟩
+  let hstdprob : IsProbabilityMeasure
       (stdGaussian ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)) :=
     inferInstance
-  letI hstdgauss : ProbabilityTheory.IsGaussian
+  let hstdgauss : ProbabilityTheory.IsGaussian
       (stdGaussian ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)) :=
     @ProbabilityTheory.isGaussian_stdGaussian _ _ _ _ hmeas hborel
   have hT_meas : Measurable (finiteGpPathCLM hG_env hG hF_meas) :=
@@ -357,7 +357,7 @@ theorem exists_pBrownianBridge_all
     subst F
     exact ⟨Measure.dirac 0, emptyClass_pBrownianBridge P⟩
   by_cases hfin : FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas)
-  · letI : FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := hfin
+  · let : FiniteDimensional ℝ ↥(gpH ⟨G, hG_env, hG⟩ hF_meas) := hfin
     exact ⟨finiteGaussianPBridge hG_env hG hF_meas,
       isPBrownianBridge_finiteGaussianPBridge hG_env hG hF_meas⟩
   · exact exists_pBrownianBridge hG_env hG hF_meas hfin
@@ -387,7 +387,7 @@ private theorem pBrownianBridge_readout_isGaussian_aux
       (fun z : LinfF F => (WithLp.toLp 2 (fun j => z (ψ j)) :
         EuclideanSpace ℝ (Fin k))) =
         L ∘ (fun z : LinfF F => (fun j => z (ψ j))) := rfl
-  haveI : ProbabilityTheory.IsGaussian
+  have : ProbabilityTheory.IsGaussian
       (ν.map (fun z : LinfF F => (fun j => z (ψ j)))) := hpi.isGaussian_map
   rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
     (L.continuous.measurable.aemeasurable) hpi.aemeasurable]
@@ -414,7 +414,7 @@ private theorem pBrownianBridge_readout_mean_aux
   set R : LinfF F → EuclideanSpace ℝ (Fin k) :=
     fun z => (WithLp.toLp 2 (fun i => z (ψ i)) : EuclideanSpace ℝ (Fin k))
   rw [ProbabilityTheory.integral_id_multivariateGaussian']
-  haveI : ProbabilityTheory.IsGaussian (ν.map R) :=
+  have : ProbabilityTheory.IsGaussian (ν.map R) :=
     pBrownianBridge_readout_isGaussian_aux hG_env hG hF_meas hF_ent ν hν m
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
@@ -466,7 +466,7 @@ private theorem pBrownianBridge_readout_covarianceBilin_aux
   set S := marginalCovMatrix P (netPhi hG_env hG hF_meas hF_ent m)
   set R : LinfF F → EuclideanSpace ℝ (Fin k) :=
     fun z => (WithLp.toLp 2 (fun i => z (ψ i)) : EuclideanSpace ℝ (Fin k))
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
     apply (LipschitzWith.of_dist_le_mul (K := 1) ?_).continuous
@@ -480,7 +480,7 @@ private theorem pBrownianBridge_readout_covarianceBilin_aux
   have hR_meas : Measurable R :=
     ((PiLp.continuous_toLp 2 _).comp
       (continuous_pi (fun i => hcont_eval (ψ i)))).measurable
-  haveI : ProbabilityTheory.IsGaussian (ν.map R) :=
+  have : ProbabilityTheory.IsGaussian (ν.map R) :=
     pBrownianBridge_readout_isGaussian_aux hG_env hG hF_meas hF_ent ν hν m
   have hMemLp_map : MemLp id 2 (ν.map R) :=
     ProbabilityTheory.IsGaussian.memLp_two_id
@@ -559,9 +559,9 @@ theorem pBrownianBridge_readout_eq_multivariateGaussian
   set Rpi : LinfF F → (Fin k → ℝ) := fun z j => z (ψ j)
   have hS_psd : S.PosSemidef :=
     marginalCovMatrix_netPhi_posSemidef hG_env hG hF_meas hF_ent m
-  haveI : ProbabilityTheory.IsGaussian
+  have : ProbabilityTheory.IsGaussian
       (ProbabilityTheory.multivariateGaussian 0 S) := inferInstance
-  haveI : ProbabilityTheory.IsGaussian
+  have : ProbabilityTheory.IsGaussian
       (ν.map (fun z : LinfF F =>
         (WithLp.toLp 2 (Rpi z) : EuclideanSpace ℝ (Fin k)))) :=
     pBrownianBridge_readout_isGaussian_aux hG_env hG hF_meas hF_ent ν hν m
@@ -773,7 +773,7 @@ private theorem limit_proj_error_withBridge_aux
     Tendsto
       (fun m => ∫ z, |f (finiteNetProj hG_env hG hF_meas hF_ent m z) - f z| ∂ν)
       atTop (𝓝 0) := by
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
   set Φ : ℕ → LinfF F → ℝ :=
     fun m z => |f (finiteNetProj hG_env hG hF_meas hF_ent m z) - f z|
   have hzero : (0 : ℝ) = ∫ _ : LinfF F, (0 : ℝ) ∂ν := by simp
@@ -864,7 +864,7 @@ private theorem weakConvergesOuter_withBridge_readout_aux
     convert hS2 using 2
   case _limtail =>
     have hS4 := limit_proj_error_withBridge_aux hG_env hG hF_meas hF_ent ν hν f
-    letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+    let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
     rw [tendsto_iff_dist_tendsto_zero]
     have hbound : ∀ m, dist (Lproj m) L ≤
         ∫ z, |f (finiteNetProj hG_env hG hF_meas hF_ent m z) - f z| ∂ν := by
@@ -958,7 +958,7 @@ theorem weakConvergesOuter_of_marginalCLT_and_asymptoticallyEquicontinuous_withB
       (memℓp_empiricalProcess
         ⟨G, hG_env, hG.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
         (fun i : Fin n => X i.val ξ))
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
   exact weakConvergesOuter_of_lipschitz_readout
     (μ := fun _ => μ) (Xn := 𝔾) (νD := ν)
     (fun f hf_lip => weakConvergesOuter_withBridge_readout_aux

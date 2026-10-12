@@ -266,9 +266,9 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
   -- Per-level close pairs, radii, thresholds.
   set r : ℕ → ℝ := fun j => ε (j + 1) + ε j with hrdef
   have hrpos : ∀ j, 0 < r j := fun j => by
-    show 0 < ε (j + 1) + ε j; linarith [hεpos (j + 1), hεpos j]
+    change 0 < ε (j + 1) + ε j; linarith [hεpos (j + 1), hεpos j]
   have hr3 : ∀ j, r j = 3 * ε (j + 1) := fun j => by
-    show ε (j + 1) + ε j = 3 * ε (j + 1); rw [hεrec j]; ring
+    change ε (j + 1) + ε j = 3 * ε (j + 1); rw [hεrec j]; ring
   set CP : ℕ → Finset (E × E) := fun j => closePairs (N (j + 1)) (N j) (r j) with hCPdef
   have hCPne : ∀ j : ℕ, (CP j).Nonempty := fun j =>
     ⟨(netProj (N (j + 1)) hne.some, netProj (N j) hne.some),
@@ -800,9 +800,9 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   -- Per-level close pairs, radii, thresholds.
   set r : ℕ → ℝ := fun j => ε (j + 1) + ε j with hrdef
   have hrpos : ∀ j, 0 < r j := fun j => by
-    show 0 < ε (j + 1) + ε j; linarith [hεpos (j + 1), hεpos j]
+    change 0 < ε (j + 1) + ε j; linarith [hεpos (j + 1), hεpos j]
   have hr3 : ∀ j, r j = 3 * ε (j + 1) := fun j => by
-    show ε (j + 1) + ε j = 3 * ε (j + 1); rw [hεrec j]; ring
+    change ε (j + 1) + ε j = 3 * ε (j + 1); rw [hεrec j]; ring
   set CP : ℕ → Finset (E × E) := fun j => closePairs (N (j + 1)) (N j) (r j) with hCPdef
   have hCPne : ∀ j : ℕ, (CP j).Nonempty := fun j =>
     ⟨(netProj (N (j + 1)) hne.some, netProj (N j) hne.some),
@@ -1231,7 +1231,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     constructor
     · intro hlt
       obtain ⟨m, hm⟩ := exists_nat_one_div_lt (show 0 < (M ω - thr) / 2 by linarith)
-      exact ⟨m, by push_cast at hm ⊢; linarith⟩
+      exact ⟨m, by linarith⟩
     · rintro ⟨m, hm⟩
       have : (0 : ℝ) < 2 * (1 / (m + 1 : ℝ)) := by positivity
       linarith

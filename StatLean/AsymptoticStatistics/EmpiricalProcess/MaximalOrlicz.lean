@@ -233,7 +233,7 @@ private lemma psi2_layer_cake_meas_bound
   intro t ht
   -- ht : t ∈ Set.Ioi 0, i.e. 0 < t.
   rw [Set.mem_Ioi] at ht
-  haveI : Nonempty ι := hι
+  have : Nonempty ι := hι
   -- Set decomposition: {ω | t < ⨆_i |Z_i ω|} = ⋃ i, {ω | t < |Z_i ω|}.
   have h_set_eq : {ω | t < ⨆ i : ι, |_Z i ω|}
       = ⋃ i : ι, {ω | t < |_Z i ω|} := by
@@ -578,7 +578,7 @@ private lemma psi1_layer_cake_meas_bound
   refine Filter.Eventually.of_forall ?_
   intro t ht
   rw [Set.mem_Ioi] at ht
-  haveI : Nonempty ι := hι
+  have : Nonempty ι := hι
   -- Set decomposition: {ω | t < ⨆_i |Z_i ω|} = ⋃ i, {ω | t < |Z_i ω|}.
   have h_set_eq : {ω | t < ⨆ i : ι, |_Z i ω|}
       = ⋃ i : ι, {ω | t < |_Z i ω|} := by

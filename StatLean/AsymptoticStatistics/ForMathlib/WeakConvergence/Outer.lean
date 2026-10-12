@@ -136,7 +136,7 @@ theorem weakConvergesOuter_of_measurable {Ω D : Type*} [MeasurableSpace Ω]
         (Eventually.of_forall hg_nonneg)
         g.continuous.measurable.aestronglyMeasurable]
     -- `∫_D g = ∫_D f + ‖f‖ · (νₙ univ).toReal`.
-    haveI : IsProbabilityMeasure ((μ n).map (Xn n)) :=
+    have : IsProbabilityMeasure ((μ n).map (Xn n)) :=
       (by infer_instance)
     have hsplit : ∫ y, g y ∂((μ n).map (Xn n))
         = (∫ y, f y ∂((μ n).map (Xn n)))

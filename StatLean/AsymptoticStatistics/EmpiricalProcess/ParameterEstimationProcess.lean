@@ -536,7 +536,7 @@ private theorem jointEval_covariance_eq_jointCov
     {κ : Measure (LinfF F × EuclideanSpace ℝ (Fin k))}
     (hκ : IsJointBridgeInfluence F P ψ ν κ) (a b : Sum ↥F (Fin k)) :
     cov[fun w => jointEval w a, fun w => jointEval w b; κ] = jointCov P ψ a b := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   rw [covariance_eq_sub (jointEval_memLp_two ψ hκ a)
     (jointEval_memLp_two ψ hκ b), hκ.mean, hκ.mean, mul_zero, sub_zero]
   simp only [Pi.mul_apply]
@@ -560,7 +560,7 @@ private theorem parameterLinear_covariance_eq
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F) (f g : ↥F) :
     cov[parameterJointLinear D f, parameterJointLinear D g; κ] =
       cov[parameterPopulationLinear ψ D f, parameterPopulationLinear ψ D g; P] := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   let Jf : Sum Unit (Fin k) →
       (LinfF F × EuclideanSpace ℝ (Fin k) → ℝ) := fun q w =>
     parameterLinearWeight D f q * jointEval w (parameterLinearIndex f q)
@@ -619,7 +619,7 @@ private theorem parameterJointLinear_integral_zero
     (hκ : IsJointBridgeInfluence F P ψ ν κ)
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F) (f : ↥F) :
     ∫ w, parameterJointLinear D f w ∂κ = 0 := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   change (∫ w, ∑ q : Sum Unit (Fin k),
     parameterLinearWeight D f q * jointEval w (parameterLinearIndex f q) ∂κ) = 0
   rw [integral_finsetSum]
@@ -692,7 +692,7 @@ private theorem parameterCorrection_covariance_map
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F) (f g : ↥F) :
     ∫ z : LinfF F, z f * z g ∂(κ.map (parameterCorrectionCLM D)) =
       parameterLimitCov P ψ D f g := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   have hEval : AEStronglyMeasurable (fun z : LinfF F => z f * z g)
       (κ.map (parameterCorrectionCLM D)) :=
     ((linfEvalCLM F f).continuous.measurable.aestronglyMeasurable.mul
@@ -727,7 +727,7 @@ private theorem parameterCorrection_mean_map
     (hκ : IsJointBridgeInfluence F P ψ ν κ)
     (D : EuclideanSpace ℝ (Fin k) →L[ℝ] LinfF F) (f : ↥F) :
     ∫ z : LinfF F, z f ∂(κ.map (parameterCorrectionCLM D)) = 0 := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   have hEval : AEStronglyMeasurable (fun z : LinfF F => z f)
       (κ.map (parameterCorrectionCLM D)) :=
     (linfEvalCLM F f).continuous.measurable.aestronglyMeasurable
@@ -1045,8 +1045,8 @@ theorem empiricalProcess_parameter_estimation_finite
         (κ.map (parameterCorrectionCLM D)) := by
   obtain ⟨ν, κ, hν, hκ, hmem, hjoint⟩ :=
     h.donsker.jointInfluence_weakConvergesOuter ψ μ X hX_meas hX_indep hX_id hX_law
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
-  letI : IsProbabilityMeasure (κ.map (parameterCorrectionCLM D)) :=
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure (κ.map (parameterCorrectionCLM D)) :=
     (by infer_instance)
   have hmapped := hjoint.map (parameterCorrectionCLM D)
     (parameterCorrectionCLM D).continuous

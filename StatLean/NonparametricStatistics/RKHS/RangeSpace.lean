@@ -92,7 +92,7 @@ theorem rangeSpace_apply (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
     (f : rangeSpaceCarrier μ S hS) (x : X) :
     letI := rangeSpaceRKHS μ S hS
     f x = integralOp μ S (f : Lp 𝕜 2 μ) x := by
-  letI := rangeSpaceRKHS μ S hS
+  let := rangeSpaceRKHS μ S hS
   rw [integralOp_eq_inner S hS]
   rfl
 
@@ -141,7 +141,7 @@ private theorem integralOp_coe_eq_coe (S : X → Y → 𝕜) (hS : IsL2Symbol μ
     (f : rangeSpaceCarrier μ S hS) :
     letI := rangeSpaceRKHS μ S hS
     integralOp μ S (f : Lp 𝕜 2 μ) = (f : X → 𝕜) := by
-  letI := rangeSpaceRKHS μ S hS
+  let := rangeSpaceRKHS μ S hS
   funext x
   exact (rangeSpace_apply S hS f x).symm
 
@@ -171,8 +171,8 @@ theorem range_integralOp_eq_range_coe (S : X → Y → 𝕜) (hS : IsL2Symbol μ
     letI := rangeSpaceRKHS μ S hS
     Set.range (integralOp μ S)
       = Set.range fun f : rangeSpaceCarrier μ S hS => (f : X → 𝕜) := by
-  letI := rangeSpaceRKHS μ S hS
-  haveI : CompleteSpace (rangeSpaceCarrier μ S hS) := rangeSpaceCompleteSpace μ S hS
+  let := rangeSpaceRKHS μ S hS
+  have : CompleteSpace (rangeSpaceCarrier μ S hS) := rangeSpaceCompleteSpace μ S hS
   refine Set.Subset.antisymm ?_ ?_
   · rintro _ ⟨g, rfl⟩
     refine ⟨⟨(rangeSpaceCarrier μ S hS).starProjection g,
@@ -196,7 +196,7 @@ theorem rangeSpace_norm_eq_sInf (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
     (f : rangeSpaceCarrier μ S hS) :
     letI := rangeSpaceRKHS μ S hS
     ‖f‖ = sInf (norm '' {g : Lp 𝕜 2 μ | integralOp μ S g = (f : X → 𝕜)}) := by
-  letI := rangeSpaceRKHS μ S hS
+  let := rangeSpaceRKHS μ S hS
   set A := {g : Lp 𝕜 2 μ | integralOp μ S g = (f : X → 𝕜)} with hA
   have hfA : (f : Lp 𝕜 2 μ) ∈ A := integralOp_coe_eq_coe S hS f
   have hlb : ∀ g ∈ A, ‖(f : Lp 𝕜 2 μ)‖ ≤ ‖g‖ := by

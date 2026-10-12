@@ -83,7 +83,7 @@ theorem exists_equivalent_countable_mixture {Θ 𝓧 : Type*} [MeasurableSpace �
       ∀ A : Set 𝓧, (∀ θ, P θ A = 0) ↔ lam A = 0 := by
   -- Reduce to a finite reference measure equivalent to `μ`.
   obtain ⟨ν₀, hν₀fin, hμν₀, -⟩ := exists_isFiniteMeasure_absolutelyContinuous μ
-  haveI : IsFiniteMeasure ν₀ := hν₀fin
+  have : IsFiniteMeasure ν₀ := hν₀fin
   have hPν₀ : ∀ θ, P θ ≪ ν₀ := fun θ => (hdom θ).trans hμν₀
   -- The `ν₀`-support of each member, via its Radon–Nikodym derivative.
   set supp : Θ → Set 𝓧 := fun θ => {x | (P θ).rnDeriv ν₀ x ≠ 0} with hsupp

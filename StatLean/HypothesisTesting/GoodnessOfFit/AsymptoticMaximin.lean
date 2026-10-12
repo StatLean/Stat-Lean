@@ -130,7 +130,7 @@ variable {k : ℕ}
 /-- For `k ≥ 1` the standard Gaussian puts no mass at the origin. -/
 private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
     ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ≠ 0 := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have hzero : (stdGaussian (EuclideanSpace ℝ (Fin k))) {0} = 0 := by
     rw [← map_pi_eq_stdGaussian,
       Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ)) (measurableSet_singleton _)]
@@ -141,7 +141,7 @@ private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
       rfl
     · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
         Measure.pi_map_eval]
-      haveI : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
+      have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
       simp
   have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
     rw [ae_iff]
@@ -208,8 +208,8 @@ private lemma sphereAverage_radial {k : ℕ} {b : ℝ}
       ∀ x : EuclideanSpace ℝ (Fin k),
         (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ) = g ‖x‖ := by
   classical
-  haveI := hσ
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have := hσ
+  have : NeZero k := ⟨hk.ne'⟩
   set E := EuclideanSpace ℝ (Fin k)
   -- Radial invariance: the sphere average depends on `x` only through `‖x‖`.
   have hradial : ∀ x y : E, ‖x‖ = ‖y‖ →
@@ -497,7 +497,7 @@ private lemma pi_gaussianReal_withDensity_shift' {ι : Type*} [Fintype ι] (a : 
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift' (a i)
-  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+  have : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
     intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
@@ -551,7 +551,7 @@ private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
   have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
-    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+    have : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
       intro i
       rw [gaussianReal_map_const_add]
       infer_instance
@@ -628,7 +628,7 @@ private lemma setLIntegral_sphereAverage {b c : ℝ} {σ : Measure (EuclideanSpa
         (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
       = noncentralChiSquared k (b ^ 2).toNNReal (Set.Ioi c) := by
-  haveI := hσ
+  have := hσ
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   set A : Set (EuclideanSpace ℝ (Fin k)) := {x | c < ‖x‖ ^ 2} with hA
   have hAmeas : MeasurableSet A := measurableSet_normSq_gt c
@@ -659,7 +659,7 @@ private lemma lintegral_sphereAverage_eq_one {b : ℝ} {σ : Measure (EuclideanS
     (hσ : IsProbabilityMeasure σ) (hsphere : ∀ᵐ h ∂σ, ‖h‖ = b) :
     ∫⁻ x, (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) = 1 := by
-  haveI := hσ
+  have := hσ
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   have hjoint : AEMeasurable
       (Function.uncurry fun (x : EuclideanSpace ℝ (Fin k)) (h : EuclideanSpace ℝ (Fin k)) =>
@@ -777,10 +777,10 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   -- ### Step 0. The least-favourable mixing measure and its radial profile.
   obtain ⟨σ, hσ, hsphere, hrot⟩ := exists_sphere_mixing_measure hk hb
-  haveI := hσ
+  have := hσ
   obtain ⟨g, hgcont, hgmono, hgval⟩ := sphereAverage_radial hk hb hσ hsphere hrot
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   set G : EuclideanSpace ℝ (Fin k) → ℝ :=
@@ -1112,7 +1112,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
     linarith
   -- ### Step 6. The weak limit of the mixture ratio.
-  haveI hprobmap : IsProbabilityMeasure (γ.map G) :=
+  have hprobmap : IsProbabilityMeasure (γ.map G) :=
     (by infer_instance)
   have hGZlaw : WeakConverges (fun n => (Q n 0).map (fun ω => G (Z n ω))) (γ.map G) := by
     have h1 := hZ.map hGcont hGmeas

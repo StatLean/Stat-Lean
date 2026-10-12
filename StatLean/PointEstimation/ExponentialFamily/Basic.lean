@@ -107,7 +107,7 @@ theorem isProbabilityMeasure_P (E : ExpFamily 𝓧 V) {η : V}
     -- USER-INPUT: the natural parameter lies where the family is defined
     (hη : η ∈ E.natSet) :
     IsProbabilityMeasure (E.P η) := by
-  haveI : NeZero E.base := ⟨hbase⟩
+  have : NeZero E.base := ⟨hbase⟩
   exact isProbabilityMeasure_tilted hη
 
 /-- **Junk convention**: off the natural parameter set the member is the zero measure. -/
@@ -127,7 +127,7 @@ theorem P_eq_withDensity (E : ExpFamily 𝓧 V) {η : V}
   rcases eq_or_ne E.base 0 with hb | hb
   · rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, hb,
       tilted_zero_measure, withDensity_zero_left]
-  · haveI : NeZero E.base := ⟨hb⟩
+  · have : NeZero E.base := ⟨hb⟩
     have hpos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hη
     rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, Measure.tilted]
     refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
@@ -211,7 +211,7 @@ theorem pi_P_eq_pow_P (E : ExpFamily 𝓧 V)
   have hg : Measurable fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) :=
     (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
       measurable_const).exp.ennreal_ofReal
-  haveI : IsZeroOrProbabilityMeasure (E.base.withDensity
+  have : IsZeroOrProbabilityMeasure (E.base.withDensity
       fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) := by
     rw [← P_eq_withDensity E hη, show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl]
     infer_instance

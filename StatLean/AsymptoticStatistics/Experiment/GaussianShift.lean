@@ -196,8 +196,8 @@ theorem IsGaussianShift.eq_multivariateGaussian
     {C : Matrix (Fin k) (Fin k) ℝ} (hFamily : IsGaussianShift family C)
     (h : EuclideanSpace ℝ (Fin k)) :
     family h = ProbabilityTheory.multivariateGaussian h C := by
-  haveI : IsProbabilityMeasure (family h) := hFamily.isProb h
-  haveI : ProbabilityTheory.IsGaussian (family h) := hFamily.isGaussian h
+  have : IsProbabilityMeasure (family h) := hFamily.isProb h
+  have : ProbabilityTheory.IsGaussian (family h) := hFamily.isGaussian h
   have hCps : C.PosSemidef := hFamily.posDef.posSemidef
   have hInt : Integrable (fun x : EuclideanSpace ℝ (Fin k) => x) (family h) :=
     ProbabilityTheory.IsGaussian.integrable_id

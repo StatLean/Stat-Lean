@@ -91,7 +91,7 @@ variable {μ : Measure X} [IsFiniteMeasure μ]
 private theorem separableSpace_Lp (𝕜 : Type*) [RCLike 𝕜] {X : Type*} [MetricSpace X]
     [CompactSpace X] [MeasurableSpace X] [BorelSpace X] (μ : Measure X) [IsFiniteMeasure μ] :
     TopologicalSpace.SeparableSpace (Lp 𝕜 2 μ) := by
-  haveI : Fact ((2 : ℝ≥0∞) ≠ ⊤) := ⟨by norm_num⟩
+  have : Fact ((2 : ℝ≥0∞) ≠ ⊤) := ⟨by norm_num⟩
   infer_instance
 
 
@@ -126,7 +126,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
   have hTs : (T : E →ₗ[𝕜] E).IsSymmetric := hTp.isSymmetric
   set Pos : Type := {r : ℝ // 0 < r ∧ HasEigenvalue (T : E →ₗ[𝕜] E) ((r : ℝ) : 𝕜)} with hPos
   set W : Pos → Submodule 𝕜 E := fun p => eigenspace (T : E →ₗ[𝕜] E) (((p : ℝ) : 𝕜)) with hW
-  haveI hfd : ∀ p : Pos, FiniteDimensional 𝕜 (W p) := by
+  have hfd : ∀ p : Pos, FiniteDimensional 𝕜 (W p) := by
     intro p
     exact ContinuousLinearMap.finite_dimensional_eigenspace hTc _
       (RCLike.ofReal_ne_zero.mpr p.2.1.ne')
@@ -155,7 +155,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
     exact mem_eigenspace_iff.mp (b p i).2
   -- the kernel of `T` and a Hilbert basis of it
   obtain ⟨N, hN⟩ : ∃ N : Submodule 𝕜 E, N = LinearMap.ker (T : E →ₗ[𝕜] E) := ⟨_, rfl⟩
-  haveI hNc : CompleteSpace N := by rw [hN]; infer_instance
+  have hNc : CompleteSpace N := by rw [hN]; infer_instance
   obtain ⟨w, e, he⟩ := @exists_hilbertBasis 𝕜 _ N _ _ hNc
   set vAll : ι ⊕ w → E := Sum.elim v (fun k => ((e k : N) : E)) with hvAll
   -- membership facts
@@ -199,7 +199,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
         rintro _ ⟨k, rfl⟩
         have hz : ⟪((e k : N) : E), g⟫_𝕜 = 0 := hperp (Sum.inr k)
         simp only [SetLike.mem_coe, LinearMap.mem_ker]
-        show ⟪g, ((e k : N) : E)⟫_𝕜 = 0
+        change ⟪g, ((e k : N) : E)⟫_𝕜 = 0
         rw [← inner_conj_symm, hz, map_zero]
       intro y
       have h2 := hMle (e.dense_span.ge (Submodule.mem_top (x := y)))
@@ -283,7 +283,7 @@ theorem exists_mercerEigensystem {K : X → X → 𝕜} (hK : IsMercerKernel �
     -- USER-INPUT: the measure has full support
     [μ.IsOpenPosMeasure] :
     Nonempty (MercerEigensystem μ K hK.continuous) := by
-  haveI := separableSpace_Lp 𝕜 μ
+  have := separableSpace_Lp 𝕜 μ
   obtain ⟨ι, v, lam, hcount, hpos, hON, heig, hexp⟩ :=
     exists_eigen_data (mercerCLM μ hK.continuous) (isCompactOperator_mercerCLM hK)
       (isPositive_mercerCLM hK)
@@ -422,7 +422,7 @@ private theorem hasSum_re_quadratic (d : MercerEigensystem μ K hKc) (g : Lp �
   refine (((d.opExpansion g).mapL (innerSL 𝕜 g)).map
     (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
     fun n => ?_
-  show d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2
+  change d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2
       = RCLike.re ⟪g, (d.eigval n : 𝕜) •
           (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
             ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))⟫_𝕜
@@ -438,7 +438,7 @@ private theorem isPositive_residual (hK : IsMercerKernel 𝕜 K)
     fun a b => (isPositive_mercerCLM hK).1 a b
   constructor
   · intro h g
-    show ⟪mercerCLM μ (continuous_residualSymbol d s) h, g⟫_𝕜
+    change ⟪mercerCLM μ (continuous_residualSymbol d s) h, g⟫_𝕜
       = ⟪h, mercerCLM μ (continuous_residualSymbol d s) g⟫_𝕜
     rw [mercerCLM_residual, mercerCLM_residual, inner_sub_left, inner_sub_right, sum_inner,
       inner_sum, hTsym h g]
@@ -820,7 +820,7 @@ private theorem hasSum_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasur
   refine ((d.hasSum_kernel hK x x).map
     (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
     fun n => ?_
-  show d.eigval n * ‖d.eigfun n x‖ ^ 2
+  change d.eigval n * ‖d.eigfun n x‖ ^ 2
       = RCLike.re ((d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n x)))
   rw [RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
 

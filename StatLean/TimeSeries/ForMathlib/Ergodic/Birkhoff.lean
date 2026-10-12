@@ -295,7 +295,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
         {x | (m : ℝ) < birkhoffSum f h n x} := by
       ext x
       simp only [hmemB, Set.mem_iInter, Set.mem_iUnion, Set.mem_ofPred_eq,
-        Filter.frequently_atTop, ge_iff_le, exists_prop]
+        Filter.frequently_atTop, exists_prop]
       refine ⟨fun hx m N => hx (m : ℝ) N, fun hx M N => ?_⟩
       obtain ⟨m, hm⟩ := exists_nat_gt M
       obtain ⟨n, hn1, hn2⟩ := hx m N

@@ -103,7 +103,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     · intro i'
       filter_upwards [hpos 0, hfin 0] with x h0pos h0fin
       simp only [Fin.cons_succ]
-      show p i'.succ x = p i'.succ x / p 0 x * p 0 x
+      change p i'.succ x = p i'.succ x / p 0 x * p 0 x
       rw [ENNReal.div_mul_cancel h0pos.ne' h0fin]
   refine ⟨hLRVsuf, ?_⟩
   rintro S' _ U hU hUsuf
@@ -117,7 +117,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     rw [ae_all_iff]
     intro i'
     filter_upwards [hpos 0, hfin 0, hfacU i'.succ, hfacU 0] with x h0pos h0fin hfsucc hf0
-    show g' i'.succ (U x) / g' 0 (U x) = p i'.succ x / p 0 x
+    change g' i'.succ (U x) / g' 0 (U x) = p i'.succ x / p 0 x
     have hh'0 : h' x ≠ 0 := by
       intro he; rw [hf0, he, mul_zero] at h0pos; exact lt_irrefl _ h0pos
     have hh't : h' x ≠ ⊤ := by

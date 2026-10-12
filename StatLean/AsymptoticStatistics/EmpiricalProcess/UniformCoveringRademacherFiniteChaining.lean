@@ -547,7 +547,7 @@ theorem conditionalRademacherSup_le_uniformCoveringEntropyIntegral
     exact le_top
   · have hθpos : 0 < empiricalRelativeRadiusReal F Φ n X :=
       lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hθ)
-    letI : NeZero n := ⟨hn⟩
+    let : NeZero n := ⟨hn⟩
     have hU : ∀ q : ℕ,
         uniformL2CoveringNumber F Φ
           (empiricalDyadicRadius F Φ n X q) ≠ ⊤ := by

@@ -274,7 +274,7 @@ concrete coarsening examples. -/
 theorem closedObservedQTangent_eq_concreteOrthogonal :
     (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)).topologicalClosure
       = (concreteCoarseningScores Q r hM)ᗮ := by
-  letI hcsE : CompleteSpace ↥(L2ZeroMean ((Q ⊗ₘ r).map M)) :=
+  let hcsE : CompleteSpace ↥(L2ZeroMean ((Q ⊗ₘ r).map M)) :=
     (L2ZeroMean_isClosed ((Q ⊗ₘ r).map M)).completeSpace_coe
   rw [← coarseningScores_eq_concrete Q r hM, coarseningScores]
   exact (@Submodule.orthogonal_orthogonal_eq_closure ℝ _ _ _ _ _ hcsE).symm
@@ -454,7 +454,7 @@ theorem ipw_influence_characterization
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψ_obs φ_obs
       ↔ ∃ b ∈ concreteCoarseningScores Q r hM,
           φ_obs = informationLossOperator hM (Q ⊗ₘ r) φ_full + b := by
-  haveI hpm : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
+  have hpm : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
     (by infer_instance)
   -- Membership in the concrete score space is equivalent to membership in
   -- the orthogonal complement of the observed tangent.
@@ -606,7 +606,7 @@ theorem completeCaseIPW_influence_2541
       IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs
         (completeCaseIPW hM Q r cc χ ε hε hπ) := by
-  letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
+  let : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
     (by infer_instance)
   intro g
   obtain ⟨a, ha, hga⟩ :=
@@ -677,7 +677,7 @@ theorem completeCaseIPW_characterization_2541
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs φobs ↔
       ∃ b ∈ concreteCoarseningScores Q r hM,
         φobs = completeCaseIPW hM Q r cc χ ε hε hπ + b := by
-  letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
+  let : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
     (by infer_instance)
   have hbase := completeCaseIPW_influence_2541 Q r hM cc ε hε hπ
     dψQ χ hχ dψObs hDerivativeRestriction
@@ -756,7 +756,7 @@ theorem completeCaseIPW_subtract_projection_2542
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r) ⊔
           carNuisanceScores Q r hM ν) dψTotal
         (completeCaseIPWMinusCARProjection Q r hM ν cc χ ε hε hπ) := by
-  letI : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
+  let : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
     (by infer_instance)
   have hbase := completeCaseIPW_influence_2541 Q r hM cc ε hε hπ
     dψQ χ hχ dψObs hDerivativeRestriction

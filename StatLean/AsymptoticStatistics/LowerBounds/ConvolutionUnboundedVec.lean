@@ -499,7 +499,7 @@ private theorem productMeasure_unbounded_pushforward_vec_target
       h1.sub_const _
     exact h2.const_smul (Real.sqrt n)
   -- IsProbabilityMeasure instance for the product measure (needed by vec_slutsky_recentering).
-  haveI h_prod_isProb : ∀ n : ℕ, IsProbabilityMeasure
+  have h_prod_isProb : ∀ n : ℕ, IsProbabilityMeasure
       (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
         (unboundedParamSubmodel g_P h_orth) P ((Real.sqrt n)⁻¹ • h) n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
@@ -611,7 +611,7 @@ theorem derived_convolution_decomp_unbounded_vec
       (fun h => ψDot_proj_vec_clm_apply g_P IF_eff h)
       (T_param_of_vec T_n) hT_param_meas hReg_param
       (unboundedParamSubmodel_isPDFOf g_P h_orth)
-  haveI := hM_θ_prob
+  have := hM_θ_prob
   refine ⟨M_θ, hM_θ_prob, ?_⟩
   -- hReg_param.limitDist = L by construction.
   exact hConv

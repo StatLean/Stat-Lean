@@ -58,17 +58,17 @@ theorem tightMeasure_eq_of_finiteCoordinate_laws
   have hcoord_inj : Function.Injective coord := by
     intro x y hxy
     exact hsep x y fun i ↦ congrFun hxy i
-  letI : T2Space D := T2Space.of_injective_continuous hcoord_inj hcoord_cont
+  let : T2Space D := T2Space.of_injective_continuous hcoord_inj hcoord_cont
   let E0 := EuclideanSpace ℝ (Fin 0)
   let embed0 : D →L[ℝ] D × E0 := ContinuousLinearMap.inl ℝ D E0
   let fst0 : (D × E0) →L[ℝ] D := ContinuousLinearMap.fst ℝ D E0
   let ν0 : Measure (D × E0) := ν.map embed0
   let κ0 : Measure (D × E0) := κ.map embed0
-  letI : IsProbabilityMeasure ν := hνprob
-  letI : IsProbabilityMeasure κ := hκprob
-  letI : IsProbabilityMeasure ν0 :=
+  let : IsProbabilityMeasure ν := hνprob
+  let : IsProbabilityMeasure κ := hκprob
+  let : IsProbabilityMeasure ν0 :=
     (by infer_instance)
-  letI : IsProbabilityMeasure κ0 :=
+  let : IsProbabilityMeasure κ0 :=
     (by infer_instance)
   have hν0tight : IsTightMeasureSet ({ν0} : Set (Measure (D × E0))) := by
     simpa only [ν0, Set.image_singleton] using hνtight.map embed0.continuous

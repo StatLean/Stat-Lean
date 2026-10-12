@@ -120,7 +120,6 @@ private theorem softSublevelStep_lipschitz {E : Type*} [PseudoMetricSpace E]
         (thickenedIndicator hδ
           {z | L z ≤ (q : ℝ≥0∞)} x : ℝ)) by ring,
     abs_mul, abs_sub_comm]
-  norm_cast at hi
   calc
     |(q : ℝ)| *
         |↑((thickenedIndicator hδ {z | L z ≤ ↑q}) x) -

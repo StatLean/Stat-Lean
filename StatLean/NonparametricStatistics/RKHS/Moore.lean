@@ -228,7 +228,7 @@ theorem IsKernelFun.exists_rkhs {k : Type uK} [RCLike k] {Y : Type uX} {K : Y �
     (hK : IsKernelFun K) :
     ∃ (H : Type (max uK uX)) (_ : NormedAddCommGroup H) (_ : InnerProductSpace k H)
       (_ : CompleteSpace H) (_ : RKHS k H Y k), scalarKernel H = K := by
-  haveI : Fact (IsKernelFun K) := ⟨hK⟩
+  have : Fact (IsKernelFun K) := ⟨hK⟩
   exact ⟨OfScalarKernel k K, inferInstance, inferInstance, inferInstance, inferInstance,
     scalarKernel_ofScalarKernel K⟩
 

@@ -239,7 +239,7 @@ private lemma exists_ridge_min (x : Fin n → X) (L : (Fin n → 𝕜) → ℝ)
         ∈ Metric.closedBall (0 : dataSpan (H := H) x) R := by
       have hd : dist (⟨(dataSpan x).starProjection f, hPmem⟩ : dataSpan (H := H) x) 0
           = ‖(dataSpan x).starProjection f‖ := by
-        simp [Subtype.dist_eq]
+        simp
       rw [Metric.mem_closedBall, hd]
       exact le_of_lt (lt_of_le_of_lt hPnorm hfR)
     have h : J (z₀ : H) ≤ J ((dataSpan x).starProjection f) := hz₀min hmemball

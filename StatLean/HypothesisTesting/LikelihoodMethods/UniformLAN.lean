@@ -328,7 +328,7 @@ private lemma exists_threshold_envelope_sum
     ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ, 1 ≤ n →
       (productMeasure M μ θ₀ n).real {ω : Fin n → 𝓧 | K * n ≤ ∑ i, G (ω i)} ≤ α := by
   set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hνdef
-  haveI hνprob : IsProbabilityMeasure ν := by
+  have hνprob : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hνdef, MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← MeasureTheory.ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ₀)

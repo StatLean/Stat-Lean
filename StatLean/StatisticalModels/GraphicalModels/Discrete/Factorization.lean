@@ -421,7 +421,6 @@ private theorem sum_powerset_moebius {W : Type*} (F : Finset W → ℝ) (s : Fin
         exact Finset.sdiff_union_of_subset ha.2
       · intro t ht
         rw [Finset.mem_powerset] at ht
-        change (t ∪ b) \ b = t
         rw [Finset.union_sdiff_self,
           Finset.sdiff_eq_self_of_disjoint
             (Finset.disjoint_of_subset_left ht Finset.sdiff_disjoint)]

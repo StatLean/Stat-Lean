@@ -455,7 +455,7 @@ private lemma smul_tent_eq_max {w δ : ℝ} (hw : 0 ≤ w) (hδ : 0 < δ) (t : �
     · ring
     · field_simp
   · subst hw'
-    simp [max_eq_left (by simpa using abs_nonneg t : (0 : ℝ) - |t| ≤ 0)]
+    simp
 
 private lemma integrable_gTent' {w : ℝ} (hw : 0 ≤ w) (m : ℝ) : Integrable (gTent w m) := by
   rcases hw.lt_or_eq with h | h

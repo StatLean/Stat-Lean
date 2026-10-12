@@ -62,7 +62,7 @@ lemma measurable_dlNumer {ι : Type*} [Fintype ι] (θ₀ : EuclideanSpace ℝ �
   have huc : Measurable (Function.uncurry
       (fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)) := by
     unfold Function.uncurry dlLR; fun_prop
-  show Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
+  change Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
   exact huc.lintegral_prod_right
 
 /-- `dlDenom θ₀ π` is measurable in the data `y`. -/

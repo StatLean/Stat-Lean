@@ -26,9 +26,9 @@ private theorem baseline_actualResidual_sq_le
           - t * (γ.score : Ω → ℝ) ω) ^ 2 ∂P ≤
       4 * (eLpNorm (γ.comparisonResidual t) 2
         (canonicalDominator P (γ.curve t))).toReal ^ 2 := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let μ := canonicalDominator P (γ.curve t)
-  letI : SigmaFinite μ := by
+  let : SigmaFinite μ := by
     dsimp only [μ, canonicalDominator]
     infer_instance
   let p : Ω → ℝ≥0∞ := P.rnDeriv μ
@@ -133,7 +133,7 @@ private theorem baseline_actualResidual_memLp
     MemLp (fun ω =>
       2 * (Real.sqrt ((γ.curve t).rnDeriv P ω).toReal - 1)
         - t * (γ.score : Ω → ℝ) ω) 2 P := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   have hsqrt : MemLp
       (fun ω => Real.sqrt ((γ.curve t).rnDeriv P ω).toReal) 2 P := by
     have hmeas : AEStronglyMeasurable
@@ -380,7 +380,7 @@ theorem log_acProductLikelihood_lan_tendstoInMeasure
           ∫ ω, W n ω ∂P =
             -(1 / 4 : ℝ) * ∫ ω, W n ω ^ 2 ∂P - (γ.singularMass (u n)).toReal := by
         intro n
-        letI : IsProbabilityMeasure (γ.curve (u n)) := γ.curve_isProbability (u n)
+        let : IsProbabilityMeasure (γ.curve (u n)) := γ.curve_isProbability (u n)
           (mul_nonneg ha.le (inv_nonneg.mpr (Real.sqrt_nonneg _)))
         have hL_int : Integrable
             (fun ω => ((γ.curve (u n)).rnDeriv P ω).toReal) P :=

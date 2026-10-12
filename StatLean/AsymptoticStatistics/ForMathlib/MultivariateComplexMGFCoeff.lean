@@ -170,7 +170,7 @@ lemma integrable_pow_sum_abs
       (fun ω => (∑ i, |X ω i|) ^ n) μ := h_sum_meas.pow n
   by_cases hn : n = 0
   · subst hn
-    simpa using (integrable_const (1 : ℝ))
+    simp
   · have h_int_exp := integrable_exp_smul_sum_abs X hX h_mgf 1
     have h_const_mul :
         Integrable (fun ω => (n : ℝ) ^ n * Real.exp (∑ i, |X ω i|)) μ := by
@@ -593,7 +593,7 @@ lemma hasSum_mgfFormalSeries_diag {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Mea
       refine integral_mono ?_ hu_int (fun ω => ?_)
       · refine integrable_finsetSum _ (fun n _ => Integrable.div_const (h_u_pow_int n) _)
       · by_cases hN : N = 0
-        · subst hN; simp; exact (Real.exp_pos _).le
+        · subst hN; simp only [Finset.range_zero, sum_empty]; exact (Real.exp_pos _).le
         · exact Real.sum_le_exp_of_nonneg (hu_nn ω) N
   have h_norm_summable : Summable (fun n => ‖mgfCoeffCMM X μ n (fun _ => y)‖) :=
     Summable.of_nonneg_of_le (fun _ => norm_nonneg _) h_norm_bd h_summable_int_pow
@@ -808,7 +808,7 @@ lemma mgfFormalSeries_radius_top {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Meas
     · -- partial sum ≤ exp.
       by_cases hN : N = 0
       · subst hN
-        simp; exact (Real.exp_pos _).le
+        simp only [Finset.range_zero, sum_empty]; exact (Real.exp_pos _).le
       · refine Real.sum_le_exp_of_nonneg ?_ N
         positivity
 

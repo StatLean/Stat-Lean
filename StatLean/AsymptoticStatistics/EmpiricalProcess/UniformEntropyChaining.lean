@@ -67,7 +67,7 @@ theorem exists_measurable_l2_envelope
     exact (lt_irrefl _ houter).elim
   obtain ⟨U, hUint⟩ := hU_exists
   obtain ⟨F₀, hF₀_countable, hF₀_sub, hF₀_dense⟩ := hPM
-  letI : Countable (↥F₀) := hF₀_countable
+  let : Countable (↥F₀) := hF₀_countable
   let W : Ω → ℝ≥0∞ := fun x =>
     ⨆ f : ↥F₀, ENNReal.ofReal |(f : Ω → ℝ) x|
   have hWmeas : Measurable W := by
@@ -270,7 +270,7 @@ private theorem exists_minimal_strictFiniteLpCover
     ∃ S : Finset (Ω → ℝ), IsStrictFiniteLpCover F G Q r ε S ∧
       (S.card : ℕ∞) = finiteLpCoveringNumber F G Q r ε := by
   let C := {S : Finset (Ω → ℝ) // IsStrictFiniteLpCover F G Q r ε S}
-  haveI : Nonempty C := by
+  have : Nonempty C := by
     by_contra hnone
     have htop : finiteLpCoveringNumber F G Q r ε = ⊤ := by
       apply top_unique
@@ -960,7 +960,7 @@ private theorem conditionalRademacherIncrement_sub_hasSubgaussianMGF
   have hv : (∑ i, ((NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))) : NNReal) : ℝ) =
       sampleL2Seminorm z (f - g) ^ 2 := by
     rw [sampleL2Seminorm, Real.sq_sqrt hbase]
-    simp only [NNReal.coe_sum, NNReal.coe_mk, a, mul_pow]
+    simp only [NNReal.coe_mk, a, mul_pow]
     rw [← Finset.mul_sum]
     congr 1
     · rw [inv_pow, Real.sq_sqrt hnpos.le]
@@ -1010,7 +1010,7 @@ private theorem outerExpectation_iSup_abs_increment_le
     conditionalRademacherIncrement z σ p.1.1 -
       conditionalRademacherIncrement z σ p.1.2
   let c : NNReal := (NNReal.mk (ρ ^ 2) (sq_nonneg ρ))
-  letI : Nonempty ↥T := Set.nonempty_coe_sort.mpr (by simpa using hT)
+  let : Nonempty ↥T := Set.nonempty_coe_sort.mpr (by simpa using hT)
   have hZ : ∀ p : ↥T, ProbabilityTheory.HasSubgaussianMGF (Z p) c ν := by
     intro p
     have hbase := conditionalRademacherIncrement_sub_hasSubgaussianMGF
@@ -1646,7 +1646,7 @@ private theorem empirical_outerLpNorm_lt_top_of_majorant
     {n : ℕ} (hn : n ≠ 0) (z : Fin n → Ω)
     (hVz : ∀ i, V (z i) < ⊤) :
     outerLpNorm (empiricalMeasure n z) G 2 < ⊤ := by
-  letI : NeZero n := ⟨hn⟩
+  let : NeZero n := ⟨hn⟩
   have hnpos : 0 < n := Nat.pos_of_ne_zero hn
   have hncast : (0 : ℝ≥0∞) < n := by exact_mod_cast hnpos
   have hVemp : (∫⁻ x, V x ∂empiricalMeasure n z) < ⊤ := by
@@ -2081,7 +2081,7 @@ private theorem measurable_ghostDeviation_countable
     (X : ℕ → Ξ → Ω) (n : ℕ) (hEcount : E.Countable)
     (hEmeas : ∀ f ∈ E, Measurable f) (hXmeas : ∀ i, Measurable (X i)) :
     Measurable (fun ξ : Ξ × Ξ => ghostDeviation E X n ξ.1 ξ.2) := by
-  letI : Countable E := hEcount
+  let : Countable E := hEcount
   unfold ghostDeviation
   rw [show (fun ξ : Ξ × Ξ => supNormOver E (fun f =>
       empiricalAvg f n (fun i : Fin n => X i.val ξ.1) -
@@ -2107,7 +2107,7 @@ private theorem measurable_signedGhostDeviation_countable
     (hEmeas : ∀ f ∈ E, Measurable f) (hXmeas : ∀ i, Measurable (X i)) :
     Measurable (fun ξ : Ξ × Ξ => signedGhostDeviation E n
       (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) σ) := by
-  letI : Countable E := hEcount
+  let : Countable E := hEcount
   unfold signedGhostDeviation
   rw [show (fun ξ : Ξ × Ξ => supNormOver E (fun f =>
       (n : ℝ)⁻¹ * ∑ i, (if σ i then (1 : ℝ) else -1) *
@@ -2553,7 +2553,7 @@ private theorem measurable_skeletonLocalProcessModulus
     Measurable (skeletonLocalProcessModulus F₀ P X n δ) := by
   let E := skeletonLocalDifferenceClass F₀ P δ
   have hEcount : E.Countable := skeletonLocalDifferenceClass_countable hF₀count P δ
-  letI : Countable E := hEcount
+  let : Countable E := hEcount
   change Measurable (fun ξ => supNormOver (skeletonLocalDifferenceClass F₀ P δ)
     (empiricalProcess P n (fun i : Fin n => X i.val ξ)))
   rw [show (fun ξ => supNormOver (skeletonLocalDifferenceClass F₀ P δ)
@@ -2963,10 +2963,8 @@ private theorem eventuallyGood_indicator_lintegral_tendsto_zero
     · exact Eventually.of_forall fun n => hbmeas.indicator (hGoodMeas n).compl
     · exact Eventually.of_forall fun n => Eventually.of_forall fun ξ => by
         by_cases hξ : ξ ∈ (Good n)ᶜ
-        · change (Good n)ᶜ.indicator b ξ ≤ b ξ
-          rw [Set.indicator_of_mem hξ]
-        · change (Good n)ᶜ.indicator b ξ ≤ b ξ
-          rw [Set.indicator_of_notMem hξ]
+        · rw [Set.indicator_of_mem hξ]
+        · rw [Set.indicator_of_notMem hξ]
           exact bot_le
     · filter_upwards [hGood] with ξ hξ
       apply tendsto_const_nhds.congr'
@@ -2983,7 +2981,7 @@ private theorem measurable_gcDeviation_chaining
     (hXmeas : ∀ i, Measurable (X i)) :
     Measurable (gcDeviation E P X n) := by
   obtain ⟨E₀, hE₀count, hE₀sub, hE₀dense⟩ := hPM
-  letI : Countable E₀ := hE₀count
+  let : Countable E₀ := hE₀count
   have heq (ξ : Ξ) : gcDeviation E P X n ξ =
       supNormOver E₀ (fun f => empiricalAvg f n
         (fun i : Fin n => X i.val ξ) - ∫ x, f x ∂P) := by
@@ -3782,7 +3780,7 @@ private theorem scheduleVerticalMaximum_nonneg
     0 ≤ scheduleVerticalMaximum S z hQ j σ := by
   let U := scheduleSamplePairs (S.net (empiricalMeasure n z) hQ (j + 1)) z
     (2 * (1 / 2 : ℝ) ^ j * (outerLpNorm (empiricalMeasure n z) G 2).toReal)
-  letI : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
+  let : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
     simpa [U] using scheduleVerticalPairs_nonempty S hn z hQ hF j)
   unfold scheduleVerticalMaximum
   exact (abs_nonneg _).trans (le_ciSup (Finite.bddAbove_range fun p : ↥U =>
@@ -3800,7 +3798,7 @@ private theorem scheduleVerticalMaximum_le
   let L := (outerLpNorm (empiricalMeasure n z) G 2).toReal
   let ρ := 2 * (1 / 2 : ℝ) ^ j * L
   let U := scheduleSamplePairs (S.net (empiricalMeasure n z) hQ (j + 1)) z ρ
-  letI : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
+  let : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
     simpa [U, ρ, L] using scheduleVerticalPairs_nonempty S hn z hQ hF j)
   unfold scheduleVerticalMaximum
   apply ciSup_le
@@ -3962,7 +3960,7 @@ private theorem scheduleHorizontalMaximum_nonneg
   let U := scheduleSamplePairs (S.net (empiricalMeasure n z) hQ J) z
     (3 * (1 / 2 : ℝ) ^ J *
       (outerLpNorm (empiricalMeasure n z) G 2).toReal)
-  letI : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
+  let : Nonempty ↥U := Set.nonempty_coe_sort.mpr (by
     simpa [U] using scheduleHorizontalPairs_nonempty S z hQ hF J)
   unfold scheduleHorizontalMaximum
   exact (abs_nonneg _).trans (le_ciSup (Finite.bddAbove_range fun p : ↥U =>
@@ -4252,7 +4250,7 @@ theorem conditionalRademacher_chaining
   by_cases hzero : outerLpNorm (empiricalMeasure n z) G 2 = 0
   · exact Or.inl hzero
   right
-  letI : NeZero n := ⟨hn⟩
+  let : NeZero n := ⟨hn⟩
   have hpos : 0 < outerLpNorm (empiricalMeasure n z) G 2 :=
     bot_lt_iff_ne_bot.mpr hzero
   let hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z) :=
@@ -4620,7 +4618,7 @@ private theorem outerExpectation_skeletonLocal_eq_zero_of_distL2
     outerExpectation μ (skeletonLocalProcessModulus F₀ P X n δ) = 0 := by
   let E := skeletonLocalDifferenceClass F₀ P δ
   have hEcount : E.Countable := skeletonLocalDifferenceClass_countable hF₀count P δ
-  letI : Countable E := hEcount
+  let : Countable E := hEcount
   have hEzero (h : E) : (h.1 : Ω → ℝ) =ᵐ[P] 0 := by
     obtain ⟨f, hf, g, hg, -, hh⟩ := h.property
     have hfLp := classMember_memLp_of_l2Envelope hFmeas hHenv hHLp (hF₀sub hf)
@@ -5163,7 +5161,7 @@ theorem uniformEntropy_asymptoticallyEquicontinuous
     hψ (Iio_mem_nhds (ENNReal.ofReal_pos.mpr hηε))
   have hpositive : ∀ᶠ δ in 𝓝[>] (0 : ℝ), 0 < δ :=
     self_mem_nhdsWithin
-  haveI : (𝓝[>] (0 : ℝ)).NeBot := inferInstance
+  have : (𝓝[>] (0 : ℝ)).NeBot := inferInstance
   obtain ⟨δ, hδ, hψδ⟩ := (hpositive.and hsmall).exists
   refine ⟨δ, hδ, ?_⟩
   let M : ℕ → Ξ → ℝ≥0∞ := fun n => empiricalProcessLocalModulus F P X n δ

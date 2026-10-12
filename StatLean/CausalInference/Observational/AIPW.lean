@@ -207,7 +207,7 @@ private lemma integral_cond_cell_aug [IsProbabilityMeasure μ] {f : Ω → ℝ}
     (hcell : μ (cell X x) ≠ 0) :
     ∫ ω, (g (X ω) + ind (Z ω) * (f ω - g (X ω)) / w (X ω)) ∂(μ[|cell X x])
       = g x + propensity μ Z X x * (cellMean μ Z X f true x - g x) / w x := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
   have ht : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
   have hfc : Integrable f (μ[|cell X x]) := integrable_cond' hf
@@ -246,7 +246,7 @@ private lemma integral_cond_cell_augControl [IsProbabilityMeasure μ] {f : Ω �
     (hcell : μ (cell X x) ≠ 0) :
     ∫ ω, (g (X ω) + (1 - ind (Z ω)) * (f ω - g (X ω)) / (1 - w (X ω))) ∂(μ[|cell X x])
       = g x + (1 - propensity μ Z X x) * (cellMean μ Z X f false x - g x) / (1 - w x) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
   have hfl : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
   have hfc : Integrable f (μ[|cell X x]) := integrable_cond' hf

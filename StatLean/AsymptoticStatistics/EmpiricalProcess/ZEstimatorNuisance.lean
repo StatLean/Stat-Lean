@@ -231,7 +231,7 @@ theorem matrix_bddbelow_near
   · -- `k = 0`: `‖b‖ = 0`, so the LHS is `0`.
     have hb : ‖b‖ = 0 := by rw [EuclideanSpace.norm_eq]; subst hk0; simp
     rw [hb, mul_zero, ENNReal.ofReal_zero]; exact zero_le
-  · haveI : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
+  · have : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
     -- Coordinate formula for `Vlin`.
     have hVlin_coord : ∀ (M : Matrix (Fin k) (Fin k) ℝ) (j : Fin k),
         Vlin M b j = ∑ i, M j i * b i := fun M j => rfl
@@ -440,7 +440,7 @@ theorem pair_h_tight
     IsBoundedInOuterProbSup μ (fun n ξ h =>
       empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ η₀ h)) := by
   -- The `η₀`-slice vector empirical process converges weakly, hence is `O_P(1)`.
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k))
         (psiCov P (fun θ h => ψ θ η₀ h) θ₀)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _

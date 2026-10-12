@@ -267,7 +267,7 @@ theorem medianMinimaxMinus_mem_nbhd {f₀ : ℝ → ℝ} {bε ε : ℝ}
   have hgmMass : ∫ x, minimaxWitnessDensity f₀ bε ε (-x) = 1 := by
     rw [integral_neg_eq_self (minimaxWitnessDensity f₀ bε ε) volume]
     exact integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant
-  haveI : IsProbabilityMeasure (densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x)) :=
+  have : IsProbabilityMeasure (densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x)) :=
     isProbabilityMeasure_densityMeasure hgmI hgm0 hgmMass
   refine ⟨densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x), inferInstance, ?_⟩
   have key : (densityMeasure fun x => if x ≤ bε then (1 - ε) * f₀ x
@@ -308,7 +308,7 @@ theorem locationEquivariant_maxBias_ge_median {f₀ : ℝ → ℝ} {bε ε : ℝ
     (hD : densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x
         else (1 - ε) * f₀ (x - 2 * bε)) ∈ 𝒟) :
     ∃ F ∈ grossErrorNbhd (densityMeasure f₀) ε, bε ≤ |T F| := by
-  haveI hwit : IsProbabilityMeasure (densityMeasure (minimaxWitnessDensity f₀ bε ε)) :=
+  have hwit : IsProbabilityMeasure (densityMeasure (minimaxWitnessDensity f₀ bε ε)) :=
     isProbabilityMeasure_densityMeasure (integrable_minimaxWitnessDensity hint bε ε)
       (minimaxWitnessDensity_nonneg hsym huni hbε hε hε1)
       (integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant)

@@ -52,7 +52,7 @@ theorem lintegral_iSup_sq_le_log {Ω : Type*} [MeasurableSpace Ω] {P : Measure 
     ∫⁻ ω, ENNReal.ofReal (⨆ j, (η j ω) ^ 2) ∂P
       ≤ ENNReal.ofReal (Real.log (C₀ * M) / α₀) := by
   classical
-  haveI : Nonempty (Fin M) := Fin.pos_iff_nonempty.mp hM
+  have : Nonempty (Fin M) := Fin.pos_iff_nonempty.mp hM
   have hα' : 0 ≤ α₀⁻¹ := (inv_pos.mpr hα).le
   have hMpos : (0 : ℝ) < (M : ℝ) := by exact_mod_cast lt_of_lt_of_le Nat.zero_lt_one hM
   -- `C₀ ≥ 1` is derived: each `E[exp(α₀ η²)] ≥ E[1] = 1`.
@@ -162,7 +162,7 @@ theorem lintegral_iSup_normSq_gaussian_le {Ω : Type*} [MeasurableSpace Ω] {P :
     ∫⁻ ω, ENNReal.ofReal (⨆ j, ∑ k, (η j ω k) ^ 2) ∂P
       ≤ ENNReal.ofReal (4 * d * (vmax : ℝ) * Real.log (Real.sqrt 2 * M * d)) := by
   classical
-  haveI : Nonempty (Fin M) := Fin.pos_iff_nonempty.mp hM
+  have : Nonempty (Fin M) := Fin.pos_iff_nonempty.mp hM
   rcases (zero_le (a := vmax)).eq_or_lt with hvmax | hvmax
   · -- `vmax = 0`: every coordinate is a.e. `0`, so both sides vanish.
     have hvz : vmax = 0 := hvmax.symm

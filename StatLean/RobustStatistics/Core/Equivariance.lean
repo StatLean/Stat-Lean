@@ -84,7 +84,7 @@ theorem map_add_grossErrorNbhd (P : Measure ℝ) (a ε : ℝ) :
     (fun R : Measure ℝ => R.map (· + a)) '' grossErrorNbhd P ε ⊆
       grossErrorNbhd (P.map (· + a)) ε := by
   rintro R ⟨S, ⟨Q, hQ, rfl⟩, rfl⟩
-  haveI := hQ
+  have := hQ
   have hmeas : Measurable (fun x : ℝ => x + a) := measurable_add_const a
   exact ⟨Q.map (· + a), (by infer_instance),
     map_contaminate hmeas ε⟩

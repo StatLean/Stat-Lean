@@ -49,9 +49,9 @@ private theorem lintegral_pi_prod_hetero {n : ℕ} {α : Fin n → Type*}
     {f : (i : Fin n) → α i → ℝ≥0∞} (hf : ∀ i, Measurable (f i)) :
     ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi μ) = ∏ i, ∫⁻ y, f i y ∂(μ i) := by
   induction n with
-  | zero => haveI := hμ; simp [Measure.pi_empty_univ]
+  | zero => have := hμ; simp [Measure.pi_empty_univ]
   | succ n ih =>
-      haveI := hμ
+      have := hμ
       have hg : Measurable fun z : (j : Fin n) → α j.succ => ∏ i, f i.succ (z i) :=
         Finset.measurable_prod _ fun i _ => (hf i.succ).comp (measurable_pi_apply i)
       rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).lintegral_comp_emb

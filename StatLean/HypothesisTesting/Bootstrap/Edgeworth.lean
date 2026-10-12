@@ -1300,7 +1300,7 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair (F : Measure ℝ) [IsPr
     ∃ c : ℝ, c < 1 ∧ ∀ n : ℕ, 0 < n → ∀ t : EuclideanSpace ℝ (Fin 2),
       ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
         ‖charFun (vecRootLaw F (studentPair F) n) t‖ ≤ c ^ n := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
     (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
@@ -3757,7 +3757,7 @@ lemma abs_sub_affine_centre_le' {r x v₀ h m₀ m κ K L : ℝ}
   have e2 : h ^ 2 = |h| ^ 2 := (sq_abs h).symm
   rw [e1, e2]
   unfold surrogateDefect
-  gcongr <;> positivity
+  gcongr
 
 /-- **THE STRAIGHTENED SLICE BOUND.** The window mass of the surrogate, out of a
 **direction-uniform slab bound** for the pair `(U, V)` and a tail bound for `V`:
@@ -4166,7 +4166,7 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
     (hFac : F ≪ volume) {σ : ℝ} (hσ : 0 < σ) {ε : ℝ} (hε : 0 < ε) :
     ∃ c : ℝ, c < 1 ∧ ∀ κ s : ℝ, ε ≤ |s| →
       ‖charFun (F.map (slabRoot (studentPair F) σ κ)) s‖ ≤ c := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
     (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
@@ -4254,11 +4254,7 @@ lemma surrogateDefect_mono {r x v₀ v₁ K₀ K₁ L : ℝ} (hK : 0 ≤ K₀) (
   have hKL : (0 : ℝ) ≤ K₀ * L := mul_nonneg hK hL
   have hK1L : (0 : ℝ) ≤ K₁ * L := mul_nonneg hK1 hL
   unfold surrogateDefect
-  gcongr <;>
-    first
-      | assumption
-      | positivity
-      | nlinarith [hKL, hK1L, sq_nonneg r, abs_nonneg r, abs_nonneg x, abs_nonneg v₁]
+  gcongr
 
 /-- **The slice bound with the frozen value's contribution made uniform.** The slab bound is
 asked for on the larger slope range `|κ'| ≤ K̄` and the answer is expressed at the larger `v̄`, so
@@ -4578,7 +4574,7 @@ lemma surrogateRemPoly_le_of_abs_le (θ : ℝ) {u v A B : ℝ} (hu : |u| ≤ A) 
   have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg u
   have hv0 : (0 : ℝ) ≤ |v| := abs_nonneg v
   rw [surrogateRemPoly, surrogateRemPoly, abs_of_nonneg hA, abs_of_nonneg hB]
-  gcongr <;> first | assumption | positivity
+  gcongr
 
 /-! ### The envelope has to be graded in `r`, and that is what decides the truncation level
 
@@ -5206,7 +5202,6 @@ lemma charFun_map_deltaSurrogate (μ : Measure E₂) (σ r θ : ℝ) :
   rw [charFun_apply_real,
     integral_map (measurable_deltaSurrogate σ r).aemeasurable (by fun_prop)]
   refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
-  congr 1
   push_cast
   ring
 
@@ -5589,7 +5584,7 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le
     (hR : ε₀ * Real.sqrt (n : ℝ) ≤ ‖t₀‖ - R)
     (hcert : HasFourierCertificate (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
     ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   exact norm_charFun_map_deltaSurrogate_le_of_certificate _ σ r θ (pow_nonneg hc n) hcert
     (fun t ht => hcram t (le_trans hR ht))
 
@@ -5671,11 +5666,11 @@ theorem deltaSurrogate_slope_ge (x : ℝ) : (5 : ℝ) / 6 ≤ 1 - x / 2 + 3 * x 
 
 private lemma coordDir_add_apply_zero (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 0 = w 0 + t := by
-  simp [coordDir, PiLp.single_apply]
+  simp [coordDir]
 
 private lemma coordDir_add_apply_one (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 1 = w 1 := by
-  simp [coordDir, PiLp.single_apply]
+  simp [coordDir]
 
 /-- **The cut-off-free integrated form of `deltaSurrogate_slope_ge`.** Moving the argument by
 `t ≥ 0` along the first coordinate increases the surrogate by at least `5t/(6σ)` — at every `w`,
@@ -5967,7 +5962,7 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
     (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
     ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖
       ≤ Γ * max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   refine norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ ?_ hcert
     (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hB hcram hbulk ht)
   exact le_trans (by positivity) (le_max_left _ _)
@@ -6207,7 +6202,7 @@ theorem vecRootLaw_one {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ
   have hfun : (fun y : Fin 1 → ℝ => (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • ∑ i, Z (y i))
       = Z ∘ fun y : Fin 1 → ℝ => y 0 := by
     funext y
-    simp [Fin.sum_univ_one]
+    simp
   rw [vecRootLaw_eq_map F hZ, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
     (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => F) (0 : Fin 1)).map_eq]
 
@@ -6230,7 +6225,7 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
       Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) (vecRootLaw F Z n) ∧
       Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2))
         (vecRootLaw F Z n) := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   set R : ℝ := Real.sqrt (n : ℝ) * K with hRdef
   have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
   have hR0 : (0 : ℝ) ≤ R := by rw [hRdef]; positivity
@@ -6521,7 +6516,7 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
         ‖charFun (vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
           ≤ c ^ n := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
     (by infer_instance)
   obtain ⟨c₀, hc₀, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
@@ -7023,8 +7018,8 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
     (hwin2 : V * ε₁ ^ 2 ≤ 2) (hwin3 : R * ε₁ ≤ 3 * lam / 2)
     {n : ℕ} (hn : 0 < n) {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
     ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
-  haveI : IsProbabilityMeasure (F.map Z) := (by infer_instance)
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
   rcases eq_or_ne t 0 with rfl | htne
@@ -9198,7 +9193,7 @@ lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A)
       rw [iteratedDeriv_succ', iteratedDeriv_one, deriv_deriv_cubicPhase]
       have hd : (deriv fun x : ℝ => 6 * q * x) = fun _ : ℝ => 6 * q := by
         funext x
-        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+        simp
       rw [hd]
       have : |6 * q| = 6 * |q| := by rw [abs_mul]; norm_num
       rw [this]
@@ -9210,7 +9205,7 @@ lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A)
       have hd3 : deriv (deriv (deriv (cubicPhase p q))) = fun _ : ℝ => 6 * q := by
         rw [deriv_deriv_cubicPhase]
         funext x
-        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+        simp
       rw [hstep, hd3, iteratedDeriv_const_eq_zero (6 * q) (k + 1) (by omega)]
       have hnn : (0 : ℝ) ≤ 6 * |q| * (1 + A) := mul_nonneg (by positivity) (by linarith)
       simpa using hnn
@@ -9425,10 +9420,10 @@ cut-off and the actual surrogate, priced at the ledger`s gain. -/
 noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
 
 @[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
-  simp [fibreEmbed, coordDir, PiLp.single_apply]
+  simp [fibreEmbed, coordDir]
 
 @[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
-  simp [fibreEmbed, coordDir, PiLp.single_apply]
+  simp [fibreEmbed, coordDir]
 
 /-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
 full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
@@ -9445,7 +9440,7 @@ lemma norm_iteratedDeriv_comp_fibreEmbed_le {g : E₂ → ℝ} (hg : ContDiff �
       = (fun v : E₂ => g (v + c • coordDir 1))
         ∘ (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) := by
     funext u
-    simp [fibreEmbed, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply]
+    simp [fibreEmbed, ContinuousLinearMap.toSpanSingleton_apply]
   have hg' : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => g (v + c • coordDir 1) :=
     hg.comp (contDiff_id.add contDiff_const)
   rw [← Real.norm_eq_abs, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv, hcomp,
@@ -9721,7 +9716,7 @@ lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.
 
 lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
   ext i
-  fin_cases i <;> simp [fibreEmbed, coordDir, PiLp.single_apply]
+  fin_cases i <;> simp [fibreEmbed, coordDir]
 
 
 /-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
@@ -10328,7 +10323,7 @@ theorem integrable_norm_pow_four_vecRootLaw_truncAt (F : Measure ℝ) [IsProbabi
   have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
   set K : ℝ := τ + (τ ^ 2 + |Var[fun t : ℝ => t; F]|) with hKdef
   have hK : ∀ x, ‖Z x‖ ≤ K := fun x => norm_studentPair_truncAt_le F hτ0 x
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
   have hae := ae_norm_vecRootLaw_le F hZm hK n
   refine integrable_of_ae_abs_le (by fun_prop) (C := (Real.sqrt (n : ℝ) * K) ^ 4) ?_
   filter_upwards [hae] with w hw
@@ -12251,7 +12246,7 @@ theorem exists_measure_norm_gt_bulkRadius_le (F : Measure ℝ) [IsProbabilityMea
   refine ⟨2 * A, by positivity, ?_⟩
   intro n hn
   have hM : 0 < bulkRadius n := bulkRadius_pos hn
-  haveI : IsProbabilityMeasure (vecRootLaw F
+  have : IsProbabilityMeasure (vecRootLaw F
       (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) :=
     isProbabilityMeasure_vecRootLaw F
       ((measurable_studentPair F).comp (measurable_truncAt _ _)) n
@@ -12380,7 +12375,7 @@ theorem exists_fourierCertificate_deltaSurrogate
     set Z : ℝ → E₂ :=
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
-    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
     have hAmass := hA n hn θ
     have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
@@ -12503,7 +12498,7 @@ theorem exists_fourierCertificate_deltaSurrogate_exponent
     set Z : ℝ → E₂ :=
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
-    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
     have hAmass := hA n hn θ
     have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
@@ -14083,7 +14078,6 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
     have hcoef : (5 / (Real.pi ^ 2 * c ^ 2 * n / 2)) ^ 5
         = (10 / (Real.pi ^ 2 * c ^ 2)) ^ 5 * ((n : ℝ) ^ 5)⁻¹ := by
       rw [← inv_pow, ← mul_pow]
-      congr 1
       field_simp
       ring
     have hpoly : |c * Real.sqrt n| ^ 4 + |c * Real.sqrt n| ^ 8
@@ -14787,14 +14781,14 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = Real.pi / σ ^ 3 * |ξ| * (Real.sqrt (n : ℝ))⁻¹ := by
     have h : -(2 * Real.pi * ξ) * (Real.sqrt (n : ℝ))⁻¹ / (2 * σ ^ 3)
         = -((Real.pi / σ ^ 3 * (Real.sqrt (n : ℝ))⁻¹) * ξ) := by
-      field_simp <;> ring
+      field_simp
     rw [h, abs_neg, abs_mul, abs_of_nonneg (mul_nonneg hP₂ hr0.le)]
     ring
   have eabs₃a : |-(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)|
       = Real.pi / σ ^ 3 * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)
         = -((Real.pi / σ ^ 3 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
-      field_simp <;> ring
+      field_simp
     rw [h, abs_neg, abs_mul,
       abs_of_nonneg (mul_nonneg hP₂ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
     ring
@@ -14802,7 +14796,7 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = 3 * Real.pi / (4 * σ ^ 5) * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : 3 * -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 5)
         = -((3 * Real.pi / (4 * σ ^ 5) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
-      field_simp <;> ring
+      field_simp; ring
     rw [h, abs_neg, abs_mul,
       abs_of_nonneg (mul_nonneg hP₃b (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
     ring
@@ -14810,7 +14804,7 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = Real.pi ^ 2 / (2 * σ ^ 6) * |ξ| ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : (-(2 * Real.pi * ξ)) ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 6)
         = (Real.pi ^ 2 / (2 * σ ^ 6) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ ^ 2 := by
-      field_simp <;> ring
+      field_simp; ring
     rw [h, abs_mul,
       abs_of_nonneg (mul_nonneg hP₄ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2)),
       abs_of_nonneg (sq_nonneg ξ), sq_abs]
@@ -15678,7 +15672,7 @@ private lemma exists_window_bound_of_bounds {R B s₀ : ℝ} (hR : 0 ≤ R) (hB 
   obtain ⟨K, hK0, hK⟩ := exists_window_core_of_bounds hR hB hs₀
   refine ⟨K, hK0, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ n hn ξ hξ
-  haveI := hGp
+  have := hGp
   have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
   have hρ0 : (0 : ℝ) ≤ ∫ x, |x| ^ 3 ∂(centredLaw G) :=
     integral_nonneg fun x => by positivity
@@ -16685,7 +16679,7 @@ theorem edgeworth_mean_uniform_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (h
         have h3 : (0 : ℝ) ≤ 3 * (2 + 6 * Gs) := by positivity
         linarith, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn t
-  haveI := hGp
+  have := hGp
   have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
   have hgam : |skewness G| ≤ Gs := abs_skewness_le_of_bounds G hFvar hs₀ hRb hsσ
   have hgam0 : (0 : ℝ) ≤ |skewness G| := abs_nonneg _
@@ -16932,7 +16926,7 @@ theorem meanRootCDF_sub_le_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 
     exact mul_pos h1 h3
   refine ⟨Kb / s₀ + 2 * C₀, by positivity, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a b hab
-  haveI := hGp
+  have := hGp
   set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; G] with hσdef
   have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
   set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness G|) with hKdef
@@ -16999,7 +16993,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
     ((Measure.pi fun _ : Fin n => F)
         {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
       = meanRootCDF (F.map f) n x := by
-  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
@@ -17033,7 +17027,7 @@ under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integ
 lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
     (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17043,7 +17037,7 @@ lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f :
 lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
     Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17113,7 +17107,7 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   set f : ℝ → ℝ := slabRoot Z σ κ with hfdef
   have hfm : Measurable f := measurable_slabRoot hZ σ κ
   have hf0 : (∫ y, f y ∂F) = 0 := hmean κ hκ
-  haveI : IsProbabilityMeasure (F.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hvarG : Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := variance_map_eq F hfm hf0
   have hfl : s₀ ^ 2 ≤ ∫ y, f y ^ 2 ∂F := hfloor κ hκ
   have hvarpos : 0 < Var[fun t : ℝ => t; F.map f] := by
@@ -17453,7 +17447,7 @@ lemma integral_inner_studentPair_map_truncAt (F : Measure ℝ) [IsProbabilityMea
     (m : ℝ) {τ : ℝ} (hτ : 0 ≤ τ) (t : EuclideanSpace ℝ (Fin 2)) :
     ∫ w, (⟪w, t⟫ : ℝ)
         ∂((F.map (truncAt m τ)).map (studentPair (F.map (truncAt m τ)))) = 0 := by
-  haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
+  have : IsProbabilityMeasure (F.map (truncAt m τ)) :=
     (by infer_instance)
   exact integral_inner_studentPair _ (memLp_id_map_truncAt F m hτ 4) t
 
@@ -18323,7 +18317,7 @@ lemma variance_map_truncAt_eq (F : Measure ℝ) [IsProbabilityMeasure F] (m : �
     Var[fun t : ℝ => t; F.map (truncAt m τ)]
       = (∫ x, (truncAt m τ x - m) ^ 2 ∂F) - (∫ x, (truncAt m τ x - m) ∂F) ^ 2 := by
   have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
-  haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
+  have : IsProbabilityMeasure (F.map (truncAt m τ)) :=
     (by infer_instance)
   have hI1 : Integrable (fun x : ℝ => (truncAt m τ x - m) ^ 1) F :=
     integrable_truncAt_sub_pow F m hτ 1
@@ -18719,7 +18713,7 @@ lemma measurable_centringMap (δ : ℝ) : Measurable (centringMap δ) := by
 
 lemma centringMap_smul (δ r : ℝ) (w : E₂) : centringMap δ (r • w) = r • centringMap δ w := by
   ext i
-  fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+  fin_cases i <;> simp [centringMap_zero, centringMap_one]; ring
 
 lemma centringMap_sum {ι : Type*} (δ : ℝ) (s : Finset ι) (f : ι → E₂) :
     centringMap δ (∑ i ∈ s, f i) = ∑ i ∈ s, centringMap δ (f i) := by
@@ -18729,7 +18723,7 @@ lemma centringMap_sum {ι : Type*} (δ : ℝ) (s : Finset ι) (f : ι → E₂) 
   | insert a s ha ih =>
       rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
       ext i
-      fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+      fin_cases i <;> simp [centringMap_zero, centringMap_one]; ring
 
 /-- **The change of centring is an affine map of the pair, with unipotent linear part.**  This is
 `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` packaged as one identity of vectors. -/
@@ -18739,7 +18733,7 @@ lemma pairAt_eq_centringMap (c v c' v' x : ℝ) :
         + (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) := by
   ext i
   fin_cases i <;>
-    simp [pairAt_zero, pairAt_one, centringMap_zero, centringMap_one] <;> ring
+    simp [pairAt_zero, pairAt_one, centringMap_zero, centringMap_one]; ring
 
 private lemma inv_sqrt_mul_natCast (n : ℕ) :
     (Real.sqrt (n : ℝ))⁻¹ * (n : ℝ) = Real.sqrt (n : ℝ) := by
@@ -19051,7 +19045,7 @@ private lemma abs_cdfPseudoInverse_sub_le {f : ℝ → ℝ} (hmono : Monotone f)
 private lemma cdfPseudoInverse_mono_level {f : ℝ → ℝ} (hF : IsCDF f) {p q : ℝ} (hp : 0 < p)
     (hpq : p ≤ q) (hq : q < 1) : cdfPseudoInverse f p ≤ cdfPseudoInverse f q :=
   csInf_le_csInf (sublevel_bddBelow hF hp) (sublevel_nonempty hF hq)
-    (fun t ht => le_trans hpq ht)
+    (fun _ ht => le_trans hpq ht)
 
 /-- The studentized sampling distribution function is a distribution function. -/
 private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityMeasure P] (n : ℕ) :
@@ -19059,7 +19053,7 @@ private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityM
   have hSmeas : Measurable (fun y : Fin n → ℝ =>
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y)) := by
     unfold sampleVariance; fun_prop
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((Measure.pi fun _ : Fin n => P).map
         (fun y : Fin n → ℝ =>
           Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y))) :=

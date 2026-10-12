@@ -182,7 +182,7 @@ private lemma symmetrize_map_neg (ν : Measure ℝ) :
 private lemma symmetrize_singleton (ν : Measure ℝ) (hν : ∀ t : ℝ, ν {t} = 0) (t : ℝ) :
     symmetrize ν {t} = 0 := by
   have hpre : (fun u : ℝ => -u) ⁻¹' {t} = {-t} := by
-    ext u; simp [neg_eq_iff_eq_neg, eq_comm]
+    ext u; simp
   rw [symmetrize_apply ν (measurableSet_singleton t), hpre, hν, hν]
   simp
 
@@ -203,7 +203,7 @@ private lemma pi_symmetrize_eq {N : ℕ} (ν : Fin N → Measure ℝ)
       ext z
       simp only [Set.mem_preimage, Set.mem_univ_pi, signFlip]
       refine forall_congr' fun i => ?_
-      cases hε : ε i <;> simp [hε]
+      cases hε : ε i <;> simp
     rw [Measure.map_apply (measurable_signFlip ε) hpi, hpre, Measure.pi_pi]
   rw [Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply,
     Finset.sum_congr rfl fun ε _ => hstep ε]
@@ -229,7 +229,7 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
   classical
   have hintmap : ∀ ε : Fin N → Bool, Integrable φ ((Measure.pi ν).map (signFlip ε)) := by
     intro ε
-    haveI : IsProbabilityMeasure ((Measure.pi ν).map (signFlip ε)) :=
+    have : IsProbabilityMeasure ((Measure.pi ν).map (signFlip ε)) :=
       (by infer_instance)
     exact integrable_of_isCriticalFn hφ _
   have hintcomp : ∀ ε : Fin N → Bool,
@@ -248,7 +248,7 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
     integral_finsetSum_measure (fun ε _ => hintmap ε),
     Finset.sum_congr rfl fun ε _ => heach ε, hRHS]
   have hcard : (Fintype.card (Fin N → Bool) : ℝ) = 2 ^ N := by
-    simp [Fintype.card_fun]
+    simp
   rw [hcard, smul_eq_mul]
   congr 1
   rw [ENNReal.toReal_inv, ENNReal.toReal_pow]
@@ -279,7 +279,7 @@ private lemma pi_unifOn {N : ℕ} (s : Fin N → Set ℝ)
     (h0 : ∀ i, volume (s i) ≠ 0) (h1 : ∀ i, volume (s i) ≠ ⊤) :
     Measure.pi (fun i => unifOn (s i))
       = (∏ i, (volume (s i))⁻¹) • volume.restrict (Set.univ.pi s) := by
-  haveI : ∀ i, IsProbabilityMeasure (unifOn (s i)) := fun i =>
+  have : ∀ i, IsProbabilityMeasure (unifOn (s i)) := fun i =>
     isProbabilityMeasure_unifOn (h0 i) (h1 i)
   refine Measure.pi_eq fun t ht => ?_
   rw [Measure.smul_apply, smul_eq_mul,
@@ -299,7 +299,7 @@ private lemma setIntegral_signAverage {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
     (s : Fin N → Set ℝ)
     (h0 : ∀ i, volume (s i) ≠ 0) (h1 : ∀ i, volume (s i) ≠ ⊤) :
     ∫ z in Set.univ.pi s, signAverage φ z = α * (∏ i, volume (s i)).toReal := by
-  haveI hprob : ∀ i, IsProbabilityMeasure (unifOn (s i)) := fun i =>
+  have hprob : ∀ i, IsProbabilityMeasure (unifOn (s i)) := fun i =>
     isProbabilityMeasure_unifOn (h0 i) (h1 i)
   have hcal := hnull (fun i => symmetrize (unifOn (s i))) (fun i => inferInstance)
     (fun i t => symmetrize_singleton _ (unifOn_singleton (s i)) t)
@@ -339,7 +339,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
   have hIcctop : volume (Set.Icc (-(1 : ℝ)) 1) ≠ ⊤ := by
     rw [Real.volume_Icc]; exact ENNReal.ofReal_ne_top
   have hα0 : 0 ≤ α := by
-    haveI : IsProbabilityMeasure (unifOn (Set.Icc (-(1 : ℝ)) 1)) :=
+    have : IsProbabilityMeasure (unifOn (Set.Icc (-(1 : ℝ)) 1)) :=
       isProbabilityMeasure_unifOn hIcc0 hIcctop
     have h := hnull (fun _ => symmetrize (unifOn (Set.Icc (-(1 : ℝ)) 1)))
       (fun _ => inferInstance)
@@ -368,7 +368,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
       measureReal_def, huniv] at h
     simpa using h
   -- The main case. Fix a coordinate to carry the constant `α`.
-  haveI : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp hN
+  have : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp hN
   obtain ⟨i₀⟩ := (inferInstance : Nonempty (Fin N))
   set c : Fin N → ℝ≥0∞ := fun i => if i = i₀ then ENNReal.ofReal α else 1 with hcdef
   have hcprod : ∏ i, c i = ENNReal.ofReal α := by
@@ -392,7 +392,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
         (ENNReal.prod_lt_top fun i _ => lt_of_le_of_ne le_top (h1 i)).ne
       have hvol : volume (Set.univ.pi s) = ∏ i, volume (s i) := by
         rw [volume_pi, Measure.pi_pi]
-      haveI : IsFiniteMeasure (volume.restrict (Set.univ.pi s)) := by
+      have : IsFiniteMeasure (volume.restrict (Set.univ.pi s)) := by
         constructor
         rw [Measure.restrict_apply_univ, hvol]
         exact lt_of_le_of_ne le_top hprodne
@@ -412,7 +412,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
       (volume.withDensity fun z => ENNReal.ofReal (g z)).restrict (cube R)
         = ((ENNReal.ofReal α) • (volume : Measure (Fin N → ℝ))).restrict (cube R) := by
     intro R
-    haveI hfin : ∀ i : Fin N, IsFiniteMeasure
+    have hfin : ∀ i : Fin N, IsFiniteMeasure
         ((c i) • (volume.restrict (Set.Icc (-(R : ℝ)) R))) := by
       intro i
       constructor
@@ -448,7 +448,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
     have h1 := hmeasEq R
     rw [restrict_withDensity (hcubeMeas R), Measure.restrict_smul,
       ← withDensity_const] at h1
-    haveI : IsFiniteMeasure (volume.restrict (cube R)) := by
+    have : IsFiniteMeasure (volume.restrict (cube R)) := by
       constructor
       rw [Measure.restrict_apply_univ, hcube, volume_pi, Measure.pi_pi]
       exact ENNReal.prod_lt_top fun i _ => lt_of_le_of_ne le_top (hicc R)
@@ -532,7 +532,7 @@ theorem not_integral_eq_of_sign_invariant :
       ∫ z, Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ) z
         ∂(Measure.pi fun _ : Fin 1 => D) = 0 := by
     intro D hD hatom _
-    haveI := hD
+    have := hD
     have hzero : (Measure.pi fun _ : Fin 1 => D) {(0 : Fin 1 → ℝ)} = 0 := by
       rw [hsingleton, Measure.pi_pi]
       simp [hatom]

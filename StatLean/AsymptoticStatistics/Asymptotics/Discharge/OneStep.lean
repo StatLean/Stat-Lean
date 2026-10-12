@@ -182,7 +182,7 @@ private lemma score_sum_bddAbove_in_prob
     Real.sqrt_pos.mpr (by positivity)
   have hM_sq : Real.sqrt (Ĩ / ε + 1) ^ 2 = Ĩ / ε + 1 :=
     Real.sq_sqrt (by positivity)
-  haveI hPn_prob : IsProbabilityMeasure (Measure.pi (fun _ : Fin n => P)) := inferInstance
+  have hPn_prob : IsProbabilityMeasure (Measure.pi (fun _ : Fin n => P)) := inferInstance
   have h_each_memLp : ∀ i : Fin n,
       MemLp (fun ω : Fin n → Ω => scoreEff (ω i)) 2 (Measure.pi (fun _ : Fin n => P)) := by
     intro i
@@ -2082,7 +2082,6 @@ theorem oneStep_asympLinear_of_taylor
       {X : Fin n → Ω | ε ≤ |res_AL X|} =ᵐ[Measure.pi (fun _ : Fin n => P)]
       {X : Fin n → Ω | ε ≤ |res_pt X|} := by
     filter_upwards [h_ae_eq] with X hX
-    change (ε ≤ |res_AL X|) = (ε ≤ |res_pt X|)
     rw [hX]
   have h_meas_eq :
       (Measure.pi (fun _ : Fin n => P)) {X : Fin n → Ω | ε ≤ |res_AL X|}

@@ -118,7 +118,6 @@ theorem mEstimator_consistent_ae_nearmax
     filter_upwards [hnear n] with ω hnearω
     intro hω
     change ε ≤ dist (θhat n ω) θ₀ at hω
-    change η ≤ ‖(2 * U n ω) - 0‖
     rw [Real.norm_eq_abs, sub_zero]
     have hsep_ineq := hsepη (θhat n ω) hω
     have hd0 := abs_le.mp (hU_dom n ω θ₀)
@@ -176,7 +175,6 @@ theorem zEstimator_consistent
     linarith [hsepη θ hθ]
   · -- near-max slack: `−‖Ψₙθ₀‖ − ‖Ψₙθ̂ₙ‖ ≤ −‖Ψₙθ̂ₙ‖` since `‖Ψₙθ₀‖ ≥ 0`
     intro n ω
-    change -‖Ψn n ω θ₀‖ - ‖Ψn n ω (θhat n ω)‖ ≤ -‖Ψn n ω (θhat n ω)‖
     linarith [norm_nonneg (Ψn n ω θ₀)]
   · -- `Rₙ = ‖Ψₙ(θ̂ₙ)‖ →ₚ 0`
     exact hnear

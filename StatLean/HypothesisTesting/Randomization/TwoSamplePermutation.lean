@@ -146,7 +146,7 @@ instance isProbabilityMeasure_twoSampleLaw (m n : ℕ) (PY PZ : Measure ℝ)
     [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] :
     IsProbabilityMeasure (twoSampleLaw m n PY PZ) := by
   unfold twoSampleLaw
-  haveI : ∀ i, IsProbabilityMeasure
+  have : ∀ i : Fin (m + n), IsProbabilityMeasure
       (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i) := by
     intro i
     refine Fin.addCases (m := m) (n := n)
@@ -782,7 +782,7 @@ lemma map_projY (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
         (fun x : Fin (m + n) → ℝ => fun i : Fin m => x (Fin.castAdd n i))
       = Measure.pi (fun _ : Fin m => PY) := by
   classical
-  haveI hfam : ∀ i : Fin (m + n), IsProbabilityMeasure
+  have hfam : ∀ i : Fin (m + n), IsProbabilityMeasure
       (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i) := by
     intro i
     refine Fin.addCases (m := m) (n := n)
@@ -819,7 +819,7 @@ lemma map_projZ (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
         (fun x : Fin (m + n) → ℝ => fun j : Fin n => x (Fin.natAdd m j))
       = Measure.pi (fun _ : Fin n => PZ) := by
   classical
-  haveI hfam : ∀ i : Fin (m + n), IsProbabilityMeasure
+  have hfam : ∀ i : Fin (m + n), IsProbabilityMeasure
       (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i) := by
     intro i
     refine Fin.addCases (m := m) (n := n)
@@ -1719,7 +1719,7 @@ theorem randDist_twoSample_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityMea
     hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
   have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
+  have : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
       nullSingletonClass_gaussianReal hvne
   have hcont : ContinuousAt (cdf (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))) t :=
     continuousAt_cdf_of_noAtoms _ t
@@ -1959,7 +1959,7 @@ private lemma charFun_map_twoSampleMeanDiff (m n : ℕ) (PY PZ : Measure ℝ)
     charFun ((twoSampleLaw m n PY PZ).map (twoSampleMeanDiff m n)) t
       = charFun PY (Real.sqrt m * (m : ℝ)⁻¹ * t) ^ m
         * charFun PZ (-(Real.sqrt m * (n : ℝ)⁻¹) * t) ^ n := by
-  haveI hfam := isProbabilityMeasure_addCases m n PY PZ
+  have hfam := isProbabilityMeasure_addCases m n PY PZ
   have hsum : twoSampleMeanDiff m n = fun x => ∑ l, twoSampleCoef m n l * x l :=
     funext fun x => twoSampleMeanDiff_eq_sum m n x
   rw [twoSampleLaw, hsum, charFun_map_sum_pi, Fin.prod_univ_add]
@@ -1999,9 +1999,9 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   classical
   set QY := PY.map (fun y : ℝ => y + (-μ)) with hQYdef
   set QZ := PZ.map (fun y : ℝ => y + (-μ)) with hQZdef
-  haveI : IsProbabilityMeasure QY := by
+  have : IsProbabilityMeasure QY := by
     rw [hQYdef]; exact (by infer_instance)
-  haveI : IsProbabilityMeasure QZ := by
+  have : IsProbabilityMeasure QZ := by
     rw [hQZdef]; exact (by infer_instance)
   have hIY : Integrable (fun y : ℝ => y) PY := by simpa using! hYL2.integrable (by norm_num)
   have hIZ : Integrable (fun y : ℝ => y) PZ := by simpa using! hZL2.integrable (by norm_num)
@@ -2049,7 +2049,7 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
     rw [hz, Complex.exp_zero, mul_one]
   have hmR : Tendsto (fun k => (m k : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp hm
   have hnR : Tendsto (fun k => (n k : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp hn
-  haveI hprob : ∀ k, IsProbabilityMeasure
+  have hprob : ∀ k, IsProbabilityMeasure
       ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
     (by infer_instance)
   refine weakConverges_of_tendsto_charFun (fun t => ?_)

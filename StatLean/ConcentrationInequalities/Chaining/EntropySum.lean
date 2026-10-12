@@ -114,7 +114,7 @@ lemma summable_dudleySummand {T : Set E}
     apply summable_of_ne_finset_zero (s := Finset.range m)
     intro n hn
     rw [Finset.mem_range, not_lt] at hn
-    show dudleySummand T (-((n : ℤ) + 1)) = 0
+    change dudleySummand T (-((n : ℤ) + 1)) = 0
     unfold dudleySummand
     rw [neg_neg]
     have hdiam : Metric.diam T ≤ (2 : ℝ) ^ ((n : ℤ) + 1) :=
@@ -227,13 +227,13 @@ theorem sum_window_le_two_mul_dudleyIntegral {T : Set E}
     have hcle : ∀ x ∈ B k, sqrtLogCov T ((2 : ℝ) ^ (-k)) ≤ sqrtLogCov T x :=
       fun x hx => sqrtLogCov_anti hx.2 (hcov_fin x)
     have hmt : MeasureTheory.volume (B k) ≠ ∞ := by
-      show MeasureTheory.volume (Set.Ioc _ _) ≠ ∞
+      change MeasureTheory.volume (Set.Ioc _ _) ≠ ∞
       rw [Real.volume_Ioc]; exact ENNReal.ofReal_ne_top
     have hge := setIntegral_ge_of_const_le_real (μ := MeasureTheory.volume)
       (s := B k) (f := sqrtLogCov T) (c := sqrtLogCov T ((2 : ℝ) ^ (-k)))
       measurableSet_Ioc hmt hcle (hint_bk k hk)
     have hvol : MeasureTheory.volume.real (B k) = (2 : ℝ) ^ (-(k + 1)) := by
-      show MeasureTheory.volume.real (Set.Ioc _ _) = _
+      change MeasureTheory.volume.real (Set.Ioc _ _) = _
       rw [MeasureTheory.Measure.real, Real.volume_Ioc,
         ENNReal.toReal_ofReal
           (by rw [hkey k]; have := show (0:ℝ) < (2:ℝ) ^ (-(k + 1)) from by positivity;
@@ -477,7 +477,7 @@ lemma dudleyLSum_le_two_mul_dudleyLIntegral {T : Set E}
             * ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1))) := by
       rw [setLIntegral_const]
       congr 1
-      show MeasureTheory.volume (Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)))
+      change MeasureTheory.volume (Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)))
           = ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1)))
       rw [Real.volume_Ioc]; congr 1; rw [hkey k]; ring
     have hmono : ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))

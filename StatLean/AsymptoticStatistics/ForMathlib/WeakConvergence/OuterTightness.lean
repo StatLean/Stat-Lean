@@ -515,14 +515,14 @@ theorem exists_lipschitz_approx_le {D : Type*} [PseudoMetricSpace D]
   -- `-‖g‖ ≤ F m x`.
   have hFlb : ∀ (m : ℕ) (x : D), -‖g‖ ≤ F m x := by
     intro m x
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     refine le_ciInf (fun y => ?_)
     have : (0 : ℝ) ≤ (m : ℝ) * dist x y := by positivity
     linarith [hg_lb y]
   -- One-sided `m`-Lipschitz estimate: `F m x ≤ F m x' + m·dist x x'`.
   have hFstep : ∀ (m : ℕ) (x x' : D), F m x ≤ F m x' + (m : ℝ) * dist x x' := by
     intro m x x'
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     -- `F m x' + m·dist x x' = (⨅ y, g y + m·dist x' y) + m·dist x x'`; bound `F m x` below it
     -- term-by-term: `F m x ≤ g y + m·dist x y ≤ (g y + m·dist x' y) + m·dist x x'`.
     rw [show F m x' = ⨅ y, g y + (m : ℝ) * dist x' y from rfl]
@@ -565,7 +565,7 @@ theorem exists_lipschitz_approx_le {D : Type*} [PseudoMetricSpace D]
     intro m x; rw [hgm_apply]; exact hFle m x
   · -- Pointwise convergence `gm m x → g x`.
     intro x
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     rw [Metric.tendsto_atTop]
     intro ε hε
     -- Work with `ε/2`: continuity gives `δ > 0` with `|g y - g x| < ε/2` for `dist y x < δ`,

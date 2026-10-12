@@ -37,7 +37,7 @@ lemma pi_gaussianReal_eq_withDensity :
     exact gaussianReal_of_var_ne_zero 0 one_ne_zero
   -- Provide the `SigmaFinite` instance for the tilted measure (it equals
   -- `gaussianReal 0 1`, a probability measure).
-  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 1)) := by
+  have : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 1)) := by
     rw [← gaussianReal_of_var_ne_zero 0 one_ne_zero]
     infer_instance
   rw [h_each, ← MeasureTheory.pi_withDensity_prod

@@ -46,7 +46,7 @@ theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : Measur
     -- USER-INPUT: the statistic is square-integrable; Robert §6.3.4
     (hT : MemLp T 2 μ) (c : ℝ) :
     ∫⁻ x, sqLoss c ((μ[T | m]) x) ∂μ ≤ ∫⁻ x, sqLoss c (T x) ∂μ := by
-  letI : MeasurableSpace 𝓧 := m𝓧
+  let : MeasurableSpace 𝓧 := m𝓧
   -- The quadratic risk about `c` is the square of the `L²` norm of `c - ·`.
   have bridge : ∀ h : 𝓧 → ℝ, AEStronglyMeasurable h μ →
       ∫⁻ x, sqLoss c (h x) ∂μ = eLpNorm (fun x => c - h x) 2 μ ^ (2 : ℝ) := by

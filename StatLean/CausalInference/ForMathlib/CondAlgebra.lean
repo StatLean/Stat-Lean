@@ -137,7 +137,7 @@ theorem cond_treated_add_cond_control [MeasurableSingletonClass 𝒳] [IsFiniteM
     (hpos : μ (X ⁻¹' {x}) ≠ 0) :
     ((μ[|X ⁻¹' {x}]) {ω | Z ω = true}).toReal
         + ((μ[|X ⁻¹' {x}]) {ω | Z ω = false}).toReal = 1 := by
-  haveI : IsProbabilityMeasure (μ[|X ⁻¹' {x}]) := cond_isProbabilityMeasure hpos
+  have : IsProbabilityMeasure (μ[|X ⁻¹' {x}]) := cond_isProbabilityMeasure hpos
   have ht : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
   have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by
     ext ω; simp

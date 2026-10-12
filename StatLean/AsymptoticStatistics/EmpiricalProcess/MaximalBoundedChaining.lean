@@ -1380,7 +1380,6 @@ theorem bounded_chain_A_Bpos_bound :
           (boundedBposOsc D.partition n (q + 1) i)| ∂μ) ≤ 192 * ENNReal.ofReal (T q) := by
     refine finite_level q (fun i => boundedBposOsc D.partition n (q + 1) i) (hBmeas (q + 1)) ?_ ?_
     · intro i x
-      change |boundedBposOsc D.partition n (q + 1) i x| ≤ _
       by_cases hx : boundedChainB D.partition n (q + 1) i x
       · have hgate := hx.2.1 q (by omega)
         rw [D.partition.ancestor_succ_of_le (Nat.zero_le q) i q (Nat.zero_le q) le_rfl, D.partition.ancestor_self (Nat.zero_le q) (D.partition.parent (Nat.zero_le q) i)] at hgate

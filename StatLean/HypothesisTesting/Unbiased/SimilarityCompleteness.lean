@@ -91,8 +91,8 @@ theorem hasNeymanStructure_of_boundedlyComplete
     -- USER-INPUT: `φ` is similar of size `α` on the boundary set
     (hsim : IsSimilar P ω α φ) :
     ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ := by
-  haveI := hQ
-  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+  have := hQ
+  have hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
     rw [statLaw, Measure.map₀_of_measurable hT]; exact (by infer_instance)
   -- the conditional size `t ↦ ∫ φ dQ_t`, measurable and bounded by `1`
   have hcond_meas : Measurable (fun t => ∫ x, φ x ∂(Q t)) :=
@@ -176,8 +176,8 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
     (hall : ∀ φ : 𝓧 → ℝ, IsCriticalFn φ → IsSimilar P ω α φ →
       ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ) :
     IsBoundedlyCompleteFamily fun θ : ω => statLaw P T (θ : Θ) := by
-  haveI := hQ
-  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+  have := hQ
+  have hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
     rw [statLaw, Measure.map₀_of_measurable hT]; exact (by infer_instance)
   intro f hf hbd hzero θ
   obtain ⟨C₀, hC₀⟩ := hbd

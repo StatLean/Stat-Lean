@@ -404,8 +404,8 @@ private lemma lipDensity_sqHellinger_bound (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ 
         ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
           fun x => ENNReal.ofReal (lipDensity δ true x))
       ≤ ENNReal.ofReal (4 * δ ^ 3) := by
-  haveI := lipDensity_isProbabilityMeasure δ hδ hδ6 false
-  haveI := lipDensity_isProbabilityMeasure δ hδ hδ6 true
+  have := lipDensity_isProbabilityMeasure δ hδ hδ6 false
+  have := lipDensity_isProbabilityMeasure δ hδ hδ6 true
   rw [sqHellinger_withDensity_eq _ (lipDensity δ false) (lipDensity δ true)
       (lipDensity_measurable δ false) (lipDensity_measurable δ true)
       (lipDensity_pos δ hδ.le (by linarith) false) (lipDensity_pos δ hδ.le (by linarith) true)]
@@ -516,13 +516,13 @@ theorem lipschitz_density_pointwise_rate (n : ℕ) (hn : 1 ≤ n) :
   set P : Bool → Measure ℝ := fun i =>
     (volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
       fun x => ENNReal.ofReal (lipDensity δ i x) with hP
-  haveI hprob : ∀ i, IsProbabilityMeasure (P i) :=
+  have hprob : ∀ i, IsProbabilityMeasure (P i) :=
     fun i => lipDensity_isProbabilityMeasure δ hδpos hδ6 i
   set Pn : Kernel Bool (Fin n → ℝ) :=
     ⟨fun i => Measure.pi fun _ : Fin n => P i, measurable_of_countable _⟩ with hPn
-  haveI hmark : IsMarkovKernel Pn := by
+  have hmark : IsMarkovKernel Pn := by
     refine ⟨fun a => ?_⟩
-    show IsProbabilityMeasure (Measure.pi fun _ : Fin n => P a)
+    change IsProbabilityMeasure (Measure.pi fun _ : Fin n => P a)
     infer_instance
   refine ⟨Bool, inferInstance, inferInstance, lipDensity δ, hprob,
     fun i => lipDensity δ i 0, Pn, hmark, fun i => rfl, ?_, fun i => rfl, ?_⟩

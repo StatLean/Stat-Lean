@@ -82,7 +82,7 @@ theorem delta_method_remainder
     by_cases hd : δ ≤ ‖T k ω - θ₀‖
     · exact Or.inl hd
     · refine Or.inr ?_
-      show M < ‖sqn k • (T k ω - θ₀)‖
+      change M < ‖sqn k • (T k ω - θ₀)‖
       push Not at hd
       by_contra hM'
       push Not at hM'
@@ -169,7 +169,7 @@ theorem delta_method
     have hmap := h_wc.map φ'.continuous φ'.continuous.measurable
     simpa only [hlaw] using hmap
   -- (5) Slutsky bridge: the target law differs from the linear law by the remainder
-  haveI : IsProbabilityMeasure (ν.map φ') :=
+  have : IsProbabilityMeasure (ν.map φ') :=
     (by infer_instance)
   have hXmeas : ∀ k, AEMeasurable (fun ω => sqn k • φ' (T k ω - θ₀)) (P k) := fun k =>
     ((φ'.continuous.measurable.comp ((hT_meas k).sub measurable_const)).const_smul

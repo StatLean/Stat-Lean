@@ -391,7 +391,7 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
       nlinarith [show (0:ℝ) < n by exact_mod_cast hn]
     refine le_trans (measure_mono hsub) (le_trans hbern (le_of_eq ?_))
     congr 2
-    simp only [NNReal.coe_mk, NNReal.toReal]
+    simp only [NNReal.toReal]
     ring
   have hden : 2 * (q * (1 - q) + t / 3) ≠ 0 := by positivity
   have hcont : ContinuousAt

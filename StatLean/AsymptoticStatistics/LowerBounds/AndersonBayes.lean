@@ -360,7 +360,7 @@ theorem anderson_bayes_inequality_gaussian_shift
           exact anderson_lemma_loss h_Sy_psd hL (-lift_c)
       _ = ∫⁻ y, L (y + (-lift_c)) ∂N_y := rfl
   -- Step 5: Outer integral over x (marginalGaussianShift is a probability measure).
-  haveI hπX_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift
+  have hπX_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift
       (1 : Matrix (Fin m) (Fin m) ℝ) τ) := by
     unfold GaussianShiftMinimax.marginalGaussianShift; infer_instance
   calc ∫⁻ y, L y ∂N_y

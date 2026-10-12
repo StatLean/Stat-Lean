@@ -68,7 +68,7 @@ theorem productMeasure_isProbabilityMeasure
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (hPDF : IsPDFOf M μ) (θ : Θ k) (n : ℕ) :
     IsProbabilityMeasure (productMeasure M μ θ n) := by
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
     refine ⟨?_⟩
     rw [MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
@@ -186,12 +186,6 @@ theorem logLikelihood_is_log_ratio
       (μ.withDensity pEnn).withDensity fUnit
         = μ.withDensity (fun x => ENNReal.ofReal (M.density θ' x)) :=
     withDensity_density_eq_withDensity_mul_exp_log_ratio M μ θ₀ h n h_same_support
-  -- Register sigma-finiteness of the per-factor tilt (needed by
-  -- `pi_withDensity_prod`) using that it equals `μ.withDensity (ENNReal.ofReal ∘ p')`,
-  -- which is a finite measure by `hint_perturb`.
-  haveI : IsFiniteMeasure ((μ.withDensity pEnn).withDensity fUnit) := by
-    rw [h_factor]
-    exact isFiniteMeasure_withDensity_ofReal hint_perturb.hasFiniteIntegral
   -- Unfold `productMeasure` and invoke `pi_withDensity_prod` in reverse.
   change Measure.pi (fun _ : Fin n => _)
     = (Measure.pi (fun _ : Fin n => μ.withDensity pEnn)).withDensity
@@ -248,7 +242,7 @@ lemma scoreSum_pushforward_eq
           (fun ω : ℕ → 𝓧 => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, ℓ (ω i)) := by
   -- `ν := μ.withDensity (density θ₀)` is a probability measure (`h_one` + `hint`).
   set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν_def
-  haveI : IsProbabilityMeasure ν := by
+  have : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hν_def, MeasureTheory.withDensity_apply _ MeasurableSet.univ,
       Measure.restrict_univ,
@@ -339,7 +333,7 @@ theorem scoreSum_weakly_converges
   classical
   -- Setup ν := μ.withDensity (density θ₀).
   set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν_def
-  haveI hν_prob : IsProbabilityMeasure ν := by
+  have hν_prob : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hν_def, MeasureTheory.withDensity_apply _ MeasurableSet.univ,
       Measure.restrict_univ,
@@ -348,7 +342,7 @@ theorem scoreSum_weakly_converges
       h_one, ENNReal.ofReal_one]
   -- Kolmogorov extension P and coordinate projections Y.
   let P : Measure (ℕ → 𝓧) := Measure.infinitePi (fun _ : ℕ => ν)
-  haveI hP_prob : IsProbabilityMeasure P := inferInstance
+  have hP_prob : IsProbabilityMeasure P := inferInstance
   let Y : ℕ → (ℕ → 𝓧) → Θ k := fun i ω => ℓ (ω i)
   have hY_meas : ∀ i, Measurable (Y i) := fun i => hℓ.comp (measurable_pi_apply i)
   -- iid + ident for Y.
@@ -513,11 +507,11 @@ theorem joint_weak_subsequence
   set Δseq : ℕ → Measure (Θ k) := fun n => (productMeasure M μ θ₀ n).map (scoreSum ℓ n)
     with hΔseq_def
   -- The joint pushforward is a probability measure.
-  haveI h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n =>
+  have h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n =>
     (by infer_instance)
-  haveI h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n =>
+  have h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n =>
     (by infer_instance)
-  haveI h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
+  have h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
     (by infer_instance)
   -- Each marginal of joint equals the respective `T` / `Δ` pushforward.
   have h_marg_fst : ∀ n, (joint n).map Prod.fst = Tseq n := by
@@ -594,7 +588,7 @@ theorem joint_weak_conv_with_scoreSum
             (fun ω => (T (φ k) ω, scoreSum ℓ (φ k) ω))) π
       ∧ π.map Prod.snd = ProbabilityTheory.multivariateGaussian (0 : Θ k) J := by
   -- Derive probability-measure instance from `hPDF`.
-  haveI : ∀ n, IsProbabilityMeasure (productMeasure M μ θ₀ n) :=
+  have : ∀ n, IsProbabilityMeasure (productMeasure M μ θ₀ n) :=
     fun n => productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   -- Unpack `hPDF` to per-parameter regularity.
   have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
@@ -787,7 +781,7 @@ theorem slutsky_bridge_of_lanResidual
           (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) *
             ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫))) := by
   intro h_linear_joint
-  haveI : IsProbabilityMeasure (π.map (fun p : 𝓨 d × Θ k =>
+  have : IsProbabilityMeasure (π.map (fun p : 𝓨 d × Θ k =>
       (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) *
         ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫))) := by
     infer_instance
@@ -859,14 +853,14 @@ theorem lanResidual_tendsto_productMeasure
         atTop (𝓝 0) := by
   -- Abstract iid setup: Ω = ℕ → 𝓧, P = infinitePi (const ν), X i = coordinate i.
   set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν_def
-  haveI hν_prob : IsProbabilityMeasure ν := by
+  have hν_prob : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hν_def, MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← MeasureTheory.ofReal_integral_eq_lintegral_ofReal hint
         (Filter.Eventually.of_forall (M.density_nonneg θ₀)),
       h_one, ENNReal.ofReal_one]
   let P : Measure (ℕ → 𝓧) := Measure.infinitePi (fun _ : ℕ => ν)
-  haveI hP_prob : IsProbabilityMeasure P := inferInstance
+  have hP_prob : IsProbabilityMeasure P := inferInstance
   let X : ℕ → (ℕ → 𝓧) → 𝓧 := fun i ω => ω i
   have hX_meas : ∀ i, Measurable (X i) := fun i => measurable_pi_apply i
   -- Coordinate projections are jointly independent (hence pairwise).
@@ -1264,7 +1258,7 @@ private lemma withDensity_expLogLikelihood_eq_pi
     (M.density_meas θ₀).ennreal_ofReal
   have hE_meas : Measurable (expLogUnitE M θ₀ h n) := expLogUnitE_meas M θ₀ h n
   -- Each per-factor tilt is a finite (hence sigma-finite) measure.
-  haveI : IsFiniteMeasure
+  have : IsFiniteMeasure
       ((μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)).withDensity
         (expLogUnitE M θ₀ h n)) := by
     rw [factorTilt_eq]
@@ -1319,7 +1313,7 @@ private lemma restrict_good_eq
     obtain ⟨hp₀, hp'⟩ := hx
     rw [ite_eq_right (ne_of_gt hp₀), ite_eq_right (ne_of_gt hp')]
   -- Lift to the product via `restrict_pi_pi`, using the `R_n` pi-form for the RHS.
-  haveI : IsFiniteMeasure
+  have : IsFiniteMeasure
       ((μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)).withDensity
         (expLogUnitE M θ₀ h n)) := by
     rw [factorTilt_eq]
@@ -1392,7 +1386,7 @@ private lemma productMeasure_goodCompl_le
         (Set.univ.pi (fun _ : Fin n => goodSet M θ₀ h n))ᶜ
       ≤ (n : ℝ≥0∞) * (μ.withDensity fun x => ENNReal.ofReal
           (M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x)) (goodSet M θ₀ h n)ᶜ := by
-  haveI : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal
+  have : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal
       (M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x)) :=
     factor_isProbabilityMeasure M μ hPDF _
   have hgood_meas := goodSet_meas M θ₀ h n
@@ -1471,7 +1465,7 @@ theorem productMeasure_integral_comparison
     rw [hR, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       expLogLikelihood_lintegral_eq M μ θ₀ h n
         (hPDF.density_integrable _) (hPDF.density_integrable _)]
-  haveI hR_fin : ∀ n, IsFiniteMeasure (R n) := by
+  have hR_fin : ∀ n, IsFiniteMeasure (R n) := by
     intro n
     refine ⟨?_⟩
     rw [hR_univ n]; exact ENNReal.pow_lt_top ENNReal.ofReal_lt_top
@@ -1698,7 +1692,7 @@ theorem productMeasure_integral_comparison_boundedMeasurable
     rw [hR, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       expLogLikelihood_lintegral_eq M μ θ₀ h n
         (hPDF.density_integrable _) (hPDF.density_integrable _)]
-  haveI hR_fin : ∀ n, IsFiniteMeasure (R n) := by
+  have hR_fin : ∀ n, IsFiniteMeasure (R n) := by
     intro n
     refine ⟨?_⟩
     rw [hR_univ n]; exact ENNReal.pow_lt_top ENNReal.ofReal_lt_top
@@ -2006,7 +2000,7 @@ theorem limit_law_under_h
     (continuous_const.inner continuous_id).measurable.sub measurable_const
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk (hg_meas.comp measurable_snd)
-  haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
+  have h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
     (by infer_instance)
   -- Comparison companions, derived internally from `hDQM` + `hPDF` (the exact change-of-measure
   -- identity is replaced by DQM-derived asymptotic singular-mass control).
@@ -2228,7 +2222,7 @@ theorem LAN_representation_of_gaussianShift
     ∃ κ : Kernel (Θ k) (𝓨 d), IsMarkovKernel κ ∧
       ∀ h : Θ k, L h = (gauss h).bind κ := by
   -- Derive `IsProbabilityMeasure (productMeasure M μ θ n)` internally from `hPDF`.
-  haveI : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure (productMeasure M μ θ n) :=
+  have : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n => productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- At `h = 0`, `θ₀ + (√n)⁻¹ • 0 = θ₀`, so `_hT_weak 0` gives convergence under `P_θ₀^n`.
   have hT_weak_0 : WeakConverges

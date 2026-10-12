@@ -121,7 +121,7 @@ theorem coveringNumber_lipschitzUnitClass_toNat_le {ε : ℝ}
     (((coveringNumber lipschitzUnitClass ε).toNat : ℕ) : ℝ) ≤ Real.exp (12 / ε) := by
   set m := ⌈3 / ε⌉₊ with hm_def
   have hmpos : 0 < m := Nat.ceil_pos.mpr (by positivity)
-  haveI : NeZero m := ⟨hmpos.ne'⟩
+  have : NeZero m := ⟨hmpos.ne'⟩
   have hm₁ : 3 / ε ≤ (m : ℝ) := Nat.le_ceil _
   have hm₂ : (m : ℝ) ≤ 4 / ε := by
     have hlt : (m : ℝ) < 3 / ε + 1 := Nat.ceil_lt_add_one (by positivity)
@@ -154,7 +154,7 @@ theorem coveringNumber_lipschitzUnitClass_ne_top {ε : ℝ}
     coveringNumber lipschitzUnitClass ε ≠ ⊤ := by
   set m := ⌈3 / ε⌉₊ with hm_def
   have hmpos : 0 < m := Nat.ceil_pos.mpr (by positivity)
-  haveI : NeZero m := ⟨hmpos.ne'⟩
+  have : NeZero m := ⟨hmpos.ne'⟩
   have hm₁ : 3 / ε ≤ (m : ℝ) := Nat.le_ceil _
   have hcov : coveringNumber lipschitzUnitClass ε
       ≤ ((lipschitzNet m).card : ℕ∞) := by

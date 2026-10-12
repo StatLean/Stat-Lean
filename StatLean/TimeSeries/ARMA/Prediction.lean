@@ -444,7 +444,6 @@ theorem exists_yuleWalker_solution [IsProbabilityMeasure μ]
     (A := fun i j : Fin k => acvf X μ ((i : ℕ) - (j : ℕ) : ℤ))
     (c := fun i : Fin k => acvf X μ ((i : ℕ) + 1))
     (fun i j => by
-      change acvf X μ (((j : ℕ) : ℤ) - ((i : ℕ) : ℤ)) = acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ))
       rw [show (((j : ℕ) : ℤ) - ((i : ℕ) : ℤ)) = -(((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) from by ring,
         hstat.acvf_even]) hker
   exact ⟨b, fun i => by simpa [mul_comm] using hb i⟩

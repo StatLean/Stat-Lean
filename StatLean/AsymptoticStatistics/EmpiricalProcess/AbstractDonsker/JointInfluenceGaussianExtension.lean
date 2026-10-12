@@ -328,7 +328,7 @@ private theorem bridgeCombination_hasGaussianLaw
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν) (u : ↥F →₀ ℝ) :
     HasGaussianLaw (⇑(bridgeCombination hν u) : LinfF F → ℝ) ν := by
   classical
-  letI := hν.isProbabilityMeasure
+  let := hν.isProbabilityMeasure
   let e := Fintype.equivFin ↥u.support
   let a : Fin (Fintype.card ↥u.support) → ↥F := fun i => (e.symm i).1
   let L : (Fin (Fintype.card ↥u.support) → ℝ) →L[ℝ] ℝ :=
@@ -357,7 +357,7 @@ private theorem bridgeCombination_mean
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν) (u : ↥F →₀ ℝ) :
     ∫ z, (bridgeCombination hν u : LinfF F → ℝ) z ∂ν = 0 := by
   classical
-  letI := hν.isProbabilityMeasure
+  let := hν.isProbabilityMeasure
   rw [integral_congr_ae (bridgeCombination_ae_eq hν u)]
   simp only [Finsupp.sum]
   rw [integral_finsetSum _ (fun f _ =>
@@ -415,7 +415,7 @@ private theorem bridgeEmbedding_hasGaussianLaw
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν)
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (h : centeredClosure P hF_L2) :
     HasGaussianLaw (⇑(bridgeEmbedding hν hF_L2 h) : LinfF F → ℝ) ν := by
-  letI := hν.isProbabilityMeasure
+  let := hν.isProbabilityMeasure
   have hmem : h ∈ closure (Set.range (centeredCombinationClosure P hF_L2)) :=
     centeredCombinationClosure_denseRange hF_L2 h
   obtain ⟨y, hy_range, hy_tendsto⟩ := mem_closure_iff_seq_limit.mp hmem
@@ -457,7 +457,7 @@ private theorem bridgeEmbedding_mean
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν)
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (h : centeredClosure P hF_L2) :
     ∫ z, (bridgeEmbedding hν hF_L2 h : LinfF F → ℝ) z ∂ν = 0 := by
-  letI := hν.isProbabilityMeasure
+  let := hν.isProbabilityMeasure
   have hmem : h ∈ closure (Set.range (centeredCombinationClosure P hF_L2)) :=
     centeredCombinationClosure_denseRange hF_L2 h
   obtain ⟨y, hy_range, hy_tendsto⟩ := mem_closure_iff_seq_limit.mp hmem
@@ -496,7 +496,7 @@ private theorem inner_centered_projection
           (Submodule.subset_span (Set.mem_range_self f))⟩ : centeredClosure P hF_L2),
       influenceProjection hF_L2 ψ j⟫_ℝ =
       ⟪centeredClassLp P hF_L2 f, (ψ j : Lp ℝ 2 P)⟫_ℝ := by
-  letI : CompleteSpace (centeredClosure P hF_L2) := by
+  let : CompleteSpace (centeredClosure P hF_L2) := by
     change CompleteSpace (centeredSpan P hF_L2).topologicalClosure
     infer_instance
   exact (centeredClosure P hF_L2).inner_orthogonalProjectionOnto_eq_of_mem_left _ _
@@ -605,7 +605,7 @@ private theorem projection_residual_inner_decomp
         (influenceProjection hF_L2 ψ j : Lp ℝ 2 P)⟫_ℝ +
       ⟪influenceResidual hF_L2 ψ i, influenceResidual hF_L2 ψ j⟫_ℝ =
       ⟪(ψ i : Lp ℝ 2 P), (ψ j : Lp ℝ 2 P)⟫_ℝ := by
-  letI : CompleteSpace (centeredClosure P hF_L2) := by
+  let : CompleteSpace (centeredClosure P hF_L2) := by
     change CompleteSpace (centeredSpan P hF_L2).topologicalClosure
     infer_instance
   let K := centeredClosure P hF_L2
@@ -750,7 +750,7 @@ private theorem bridgeCoordinates_hasGaussianLaw
     (a : Fin m → Sum ↥F (Fin k)) :
     HasGaussianLaw
       (fun z : LinfF F => fun i => bridgeCoordinateFunction hν hF_L2 ψ (a i) z) ν := by
-  letI := hν.isProbabilityMeasure
+  let := hν.isProbabilityMeasure
   apply hasGaussianLaw_of_forall_dual ν _
   · exact measurable_pi_iff.mpr fun i => by
       cases a i with
@@ -795,7 +795,7 @@ private theorem bridgeCoordinates_hasGaussianLaw
       have hsingle : (Pi.single i v : Fin m → ℝ) =
           v • (Pi.single i (1 : ℝ) : Fin m → ℝ) := by
         ext j
-        by_cases hij : i = j <;> simp [Pi.single_apply, hij]
+        by_cases hij : i = j <;> simp [hij]
       rw [hsingle, map_smul]
       simp only [c, smul_eq_mul]
       ring
@@ -814,7 +814,7 @@ private theorem residualCoordinate_mean
   change ∫ r : EuclideanSpace ℝ (Fin k),
       (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin k => ℝ) j) (id r)
         ∂(residualLaw hF_L2 ψ) = 0
-  letI : IsGaussian (residualLaw hF_L2 ψ) := by
+  let : IsGaussian (residualLaw hF_L2 ψ) := by
     unfold residualLaw
     infer_instance
   rw [(PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin k => ℝ) j).integral_comp_comm
@@ -833,7 +833,7 @@ private theorem residualCoordinate_memLp
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P)) (j : Fin k) :
     MemLp (fun r : EuclideanSpace ℝ (Fin k) => r.ofLp j) 2
       (residualLaw hF_L2 ψ) := by
-  letI : IsGaussian (residualLaw hF_L2 ψ) := by
+  let : IsGaussian (residualLaw hF_L2 ψ) := by
     unfold residualLaw
     infer_instance
   simpa only [Function.comp_id] using!
@@ -845,10 +845,10 @@ private theorem residualCoordinate_secondMoment
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P)) (i j : Fin k) :
     ∫ r : EuclideanSpace ℝ (Fin k), r.ofLp i * r.ofLp j ∂(residualLaw hF_L2 ψ) =
       residualCovMatrix hF_L2 ψ i j := by
-  letI : IsGaussian (residualLaw hF_L2 ψ) := by
+  let : IsGaussian (residualLaw hF_L2 ψ) := by
     unfold residualLaw
     infer_instance
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     IsGaussian.toIsProbabilityMeasure _
   have hcov := covariance_eval_multivariateGaussian
     (μ := (0 : EuclideanSpace ℝ (Fin k)))
@@ -919,7 +919,7 @@ private theorem residualCoordinates_hasGaussianLaw
     (a : Fin m → Sum ↥F (Fin k)) :
     HasGaussianLaw (residualCoordinateCLM a)
       (residualLaw hF_L2 ψ) := by
-  letI : IsGaussian (residualLaw hF_L2 ψ) := by
+  let : IsGaussian (residualLaw hF_L2 ψ) := by
     unfold residualLaw
     infer_instance
   simpa only [Function.comp_id] using
@@ -943,8 +943,8 @@ private theorem bridgeResidualCoordinates_hasGaussianLaw
         (fun i => bridgeCoordinateFunction hν hF_L2 ψ (a i) zr.1) +
           residualCoordinateCLM a zr.2)
       (ν.prod (residualLaw hF_L2 ψ)) := by
-  letI := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   let B : LinfF F → (Fin m → ℝ) :=
     fun z i => bridgeCoordinateFunction hν hF_L2 ψ (a i) z
@@ -1027,8 +1027,8 @@ private theorem jointInfluenceLaw_firstMarginal
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν)
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P)) :
     (jointInfluenceLaw hν hF_L2 ψ).map Prod.fst = ν := by
-  letI := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   rw [jointInfluenceLaw,
     Measure.map_map measurable_fst
@@ -1067,11 +1067,11 @@ private theorem jointInfluenceLaw_mean
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P))
     (a : Sum ↥F (Fin k)) :
     ∫ w, jointEval w a ∂(jointInfluenceLaw hν hF_L2 ψ) = 0 := by
-  letI := hν.isProbabilityMeasure
-  letI : IsFiniteMeasure ν := IsZeroOrProbabilityMeasure.toIsFiniteMeasure ν
-  letI : SigmaFinite ν := IsFiniteMeasure.toSigmaFinite ν
-  letI : SFinite ν := by infer_instance
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsFiniteMeasure ν := IsZeroOrProbabilityMeasure.toIsFiniteMeasure ν
+  let : SigmaFinite ν := IsFiniteMeasure.toSigmaFinite ν
+  let : SFinite ν := by infer_instance
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   rw [jointInfluenceLaw, integral_map
     (jointExtensionMap_measurable hν hF_L2 ψ).aemeasurable
@@ -1114,11 +1114,11 @@ private theorem jointInfluenceLaw_covariance
     (a b : Sum ↥F (Fin k)) :
     ∫ w, jointEval w a * jointEval w b ∂(jointInfluenceLaw hν hF_L2 ψ) =
       jointCov P ψ a b := by
-  letI := hν.isProbabilityMeasure
-  letI : IsFiniteMeasure ν := IsZeroOrProbabilityMeasure.toIsFiniteMeasure ν
-  letI : SigmaFinite ν := IsFiniteMeasure.toSigmaFinite ν
-  letI : SFinite ν := by infer_instance
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsFiniteMeasure ν := IsZeroOrProbabilityMeasure.toIsFiniteMeasure ν
+  let : SigmaFinite ν := IsFiniteMeasure.toSigmaFinite ν
+  let : SFinite ν := by infer_instance
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   erw [jointInfluenceLaw, integral_map
     (jointExtensionMap_measurable hν hF_L2 ψ).aemeasurable
@@ -1325,10 +1325,10 @@ private theorem jointInfluenceLaw_tight
     IsTightMeasureSet
       ({jointInfluenceLaw hν hF_L2 ψ} :
         Set (Measure (LinfF F × EuclideanSpace ℝ (Fin k)))) := by
-  letI := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
-  letI : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
+  let : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
     (by unfold jointInfluenceLaw; infer_instance)
   apply AsymptoticStatistics.Prohorov.tight_prod_of_tight_marginals
   · have himage :
@@ -1339,7 +1339,7 @@ private theorem jointInfluenceLaw_tight
     rw [himage]
     exact hν.tight
   · rw [Set.image_singleton]
-    letI : IsProbabilityMeasure
+    let : IsProbabilityMeasure
         ((jointInfluenceLaw hν hF_L2 ψ).map Prod.snd) :=
       (by unfold jointInfluenceLaw; infer_instance)
     exact MeasureTheory.isTightMeasureSet_singleton
@@ -1354,10 +1354,10 @@ theorem exists_jointBridgeInfluence
     (ψ : Fin k → ↥(L2ZeroMean P)) :
     ∃ κ : Measure (LinfF F × EuclideanSpace ℝ (Fin k)),
       IsJointBridgeInfluence F P ψ ν κ := by
-  letI := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
+  let := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
-  letI : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
+  let : IsProbabilityMeasure (jointInfluenceLaw hν hF_L2 ψ) :=
     (by unfold jointInfluenceLaw; infer_instance)
   refine ⟨jointInfluenceLaw hν hF_L2 ψ, ?_⟩
   exact

@@ -112,7 +112,7 @@ private theorem integral_cond_armCell_eq [IsProbabilityMeasure μ] {y : Ω → �
     (hindep : IndepFun y Z (μ[|cell X x])) (hcell : μ (cell X x) ≠ 0)
     (hpos : (μ[|cell X x]) {ω | Z ω = z} ≠ 0) :
     ∫ ω, y ω ∂(μ[|armCell Z X z x]) = ∫ ω, y ω ∂(μ[|cell X x]) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hintc : Integrable y (μ[|cell X x]) :=
     hint.restrict.smul_measure (ENNReal.inv_ne_top.mpr hcell)
   rw [cond_armCell_eq' hZ z x hcell]
@@ -206,7 +206,7 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ] [MeasurableSingleto
     simp [ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm true),
       ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm false)]
   · -- Both arms are non-null by positivity, so each arm mean is the cell mean.
-    haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+    have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
     obtain ⟨hlt0, hlt1⟩ := hpos x hcell
     have hT : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := by
       have := (ENNReal.toReal_pos_iff.mp hlt0).1

@@ -334,7 +334,7 @@ theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n)
     mul_nonneg (by norm_num) (le_min ht0 (by norm_num))
   obtain ⟨M, hMne, θfam, hθ, c, hsep, h35a, h35b⟩ :=
     sparse_linreg_local_packing_data hn hs0 hds v hv γ hγ A hγbd P hP
-  haveI := hMne
+  have := hMne
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) Subtype.val P θfam hθ
     (ENNReal.ofReal (Real.sqrt (2048⁻¹ *
@@ -344,8 +344,6 @@ theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n)
         min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1))) ^ 2
       = ENNReal.ofReal (2048⁻¹ *
         min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1) := by
-    change (ENNReal.ofReal (Real.sqrt (2048⁻¹ *
-      min ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / ((γ : ℝ) ^ 2 * n)) 1))) ^ 2 = _
     rw [← ENNReal.ofReal_pow (Real.sqrt_nonneg _), Real.sq_sqrt hms]
   rw [hΦδ] at key
   refine le_trans ?_ key

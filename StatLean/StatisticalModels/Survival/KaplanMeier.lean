@@ -534,7 +534,7 @@ private lemma cex_atRisk : atRisk cexData 1 = 2 := by
 set_option backward.isDefEq.respectTransparency.types false in
 private lemma cex_eventCount : eventCount cexData 1 = 1 := by
   rw [eventCount, show (univ.filter fun i => (cexData i).1 = (1 : ℝ) ∧ (cexData i).2 = true)
-    = {0} from by ext i; fin_cases i <;> simp [cexData, Set.mem_ofPred_eq]]
+    = {0} from by ext i; fin_cases i <;> simp [cexData]]
   rfl
 
 private lemma cex_naJump : naJump cexData 1 = 1 / 2 := by

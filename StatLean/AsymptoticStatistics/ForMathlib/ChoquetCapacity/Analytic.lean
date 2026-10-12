@@ -136,9 +136,9 @@ private lemma iInter_closure_image_cyl_eq
     {α : Type*} [TopologicalSpace α] [PolishSpace α]
     {f : (ℕ → ℕ) → α} (hf : Continuous f) (N : ℕ → ℕ) :
     ⋂ n, closure (f '' Cyl N n) = f '' Bnd N := by
-  haveI : T2Space α := inferInstance
+  have : T2Space α := inferInstance
   apply Set.Subset.antisymm
-  · letI := TopologicalSpace.upgradeIsCompletelyMetrizable α
+  · let := TopologicalSpace.upgradeIsCompletelyMetrizable α
     intro y hy
     simp only [Set.mem_iInter] at hy
     have : ∀ n, ∃ g ∈ Cyl N n, dist (f g) y < 1 / (↑n + 1) := by

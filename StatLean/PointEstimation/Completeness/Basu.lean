@@ -84,7 +84,7 @@ theorem completeStat_boundedlyCompleteStat {P : Θ → Measure 𝓧} {T : 𝓧 �
     -- USER-INPUT: completeness of the statistic
     (h : IsCompleteStat P T) :
     IsBoundedlyCompleteStat P T := by
-  haveI : ∀ θ, IsProbabilityMeasure ((P θ).map T) :=
+  have : ∀ θ, IsProbabilityMeasure ((P θ).map T) :=
     fun θ => (by infer_instance)
   simpa only [IsBoundedlyCompleteStat, Measure.map₀_of_measurable hT] using
     (show IsCompleteFamily (fun θ => (P θ).map T) from by
@@ -113,7 +113,7 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
     simpa only [IsBoundedlyCompleteStat, Measure.map₀_of_measurable hT] using hcomp
   have hanc_map : ∀ θ θ', (P θ).map V = (P θ').map V := by
     simpa only [IsAncillary, Measure.map₀_of_measurable hV] using hanc
-  haveI := hQ
+  have := hQ
   have hsl : ∀ θ', IsProbabilityMeasure ((P θ').map T) :=
     fun θ' => (by infer_instance)
   intro θ
@@ -151,7 +151,7 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
   -- the test function `f - c` has identically zero mean
   have hzero' : ∀ θ', ∫ s, (f s - c) ∂((P θ').map T) = 0 := by
     intro θ'
-    haveI := hsl θ'
+    have := hsl θ'
     have hfint : Integrable f ((P θ').map T) :=
       ⟨hfmeas.aestronglyMeasurable,
         HasFiniteIntegral.of_bounded (C := 1)
@@ -176,7 +176,7 @@ theorem indepFun_of_boundedlyComplete_sufficient {P : Θ → Measure 𝓧} {T : 
   have hgm : Measurable (fun x : 𝓧 => (T x, x)) := hT.prodMk measurable_id
   have hpre : T ⁻¹' B ∩ V ⁻¹' A = (fun x => (T x, x)) ⁻¹' (B ×ˢ (V ⁻¹' A)) := by
     ext x; simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod]
-  haveI : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
+  have : IsProbabilityMeasure (statLaw P T θ) := isProbabilityMeasure_statLaw P hT θ
   have key : P θ (T ⁻¹' B ∩ V ⁻¹' A) = ∫⁻ t in B, Q t (V ⁻¹' A) ∂(statLaw P T θ) := by
     rw [hpre, ← Measure.map_apply hgm (hB.prod (hV hA)), hgraph θ,
       Measure.compProd_apply_prod hB (hV hA)]

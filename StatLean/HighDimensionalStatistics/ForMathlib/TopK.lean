@@ -211,10 +211,10 @@ lemma linfNorm_le_of_forall {x : EuclideanSpace ℝ (Fin d)} {c : ℝ} (hc : 0 �
     (h : ∀ i, |x.ofLp i| ≤ c) : linfNorm x ≤ c := by
   unfold linfNorm
   by_cases hd : Nonempty (Fin d)
-  · haveI := hd
+  · have := hd
     exact ciSup_le h
   · rw [not_nonempty_iff] at hd
-    haveI : IsEmpty (Fin d) := hd
+    have : IsEmpty (Fin d) := hd
     have heq : (⨆ i, |x.ofLp i|) = 0 := by
       change sSup (Set.range (fun i : Fin d => |x.ofLp i|)) = 0
       rw [Set.range_eq_empty_iff.mpr ‹IsEmpty (Fin d)›, Real.sSup_empty]

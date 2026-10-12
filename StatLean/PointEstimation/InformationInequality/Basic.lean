@@ -201,7 +201,7 @@ theorem fisherInfo_eq_variance_score (M : ParametricFamily 𝓧 ℝ) (μ : Measu
     -- the second moment of the score a genuine variance
     (hint : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ) :
     fisherInfo M μ θ = variance (score M θ) (M.toMeasure μ θ) := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hmean : ∫ x, score M θ x ∂(M.toMeasure μ θ) = 0 := by
     rw [integral_toMeasure_eq]
     exact integral_score_eq_zero M μ hpdf hsupp θ hswap

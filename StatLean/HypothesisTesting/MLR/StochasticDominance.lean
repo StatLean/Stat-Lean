@@ -280,7 +280,7 @@ theorem cdf_le_iff_exists_monotone_coupling
       exact hcdf x
     -- (The reparametrization is what buys the *global* `Monotone`; see the docstring of
     -- `exists_monotone_coupling_of_cdf_le`.)
-    haveI := isProbabilityMeasure_unitUniform
+    have := isProbabilityMeasure_unitUniform
     refine ⟨(volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv,
       (by infer_instance),
       (fun v => quantile (⇑(cdf μ₀)) (unitParam v)),
@@ -298,7 +298,7 @@ theorem cdf_le_iff_exists_monotone_coupling
       (nonempty_setOf_le_cdf μ₀ hp1) (bddBelow_setOf_le_cdf μ₀ hp0)).mpr
       (le_trans hq1 (hcdfc _))
   · rintro ⟨ν, hν, f₀, f₁, hf₀, hf₁, hle, hmap₀, hmap₁⟩
-    haveI := hν
+    have := hν
     exact cdf_le_of_monotone_coupling μ₀ μ₁ ν f₀ f₁ hf₀ hf₁ hle hmap₀ hmap₁
 
 end StatLean.HypothesisTesting

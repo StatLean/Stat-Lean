@@ -144,13 +144,13 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
   set φ : ℝ → ℝ := fun u => a * u + b with hφdef
   have hφmeas : Measurable φ := by fun_prop
   have hφcont : Continuous φ := by fun_prop
-  haveI : IsProbabilityMeasure (R.map φ) := (by infer_instance)
+  have : IsProbabilityMeasure (R.map φ) := (by infer_instance)
   -- `L` is the *deterministic* affine image, `S` the actual (randomly rescaled) statistic.
   set L : ∀ n, 𝓧 n → ℝ := fun n x => φ (T n x) with hLdef
   set S : ∀ n, 𝓧 n → ℝ := fun n x => A n x * T n x + B n x with hSdef
   have hLmeas : ∀ n, Measurable (L n) := fun n => hφmeas.comp (hTmeas n)
   have hSmeas : ∀ n, Measurable (S n) := fun n => ((hAmeas n).mul (hTmeas n)).add (hBmeas n)
-  haveI hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+  have hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
     isProbabilityMeasure_randPairLaw (G n) (P n) (T n) (hTmeas n) (hsmul n)
   -- Step 1: the deterministic affine image already has the affine-image randomized limit.
   have hconvL : WeakConverges (fun n => randPairLaw (G n) (L n) (P n))
@@ -169,7 +169,7 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
       (fun n => (randPairLaw (G n) (T n) (P n)).map Prod.fst) R := by
     have hmapped := hjoint.map (f := Prod.fst) continuous_fst measurable_fst
     simpa using hmapped
-  haveI : ∀ n, IsProbabilityMeasure ((randPairLaw (G n) (T n) (P n)).map Prod.fst) := fun n =>
+  have : ∀ n, IsProbabilityMeasure ((randPairLaw (G n) (T n) (P n)).map Prod.fst) := fun n =>
     (by infer_instance)
   have hrem : ∀ δ > (0 : ℝ), Tendsto (fun n => (Fintype.card (G n) : ℝ)⁻¹ *
       ∑ g : G n, (P n).real {x | δ ≤ ‖S n (g • x) - L n (g • x)‖}) atTop (𝓝 0) := by

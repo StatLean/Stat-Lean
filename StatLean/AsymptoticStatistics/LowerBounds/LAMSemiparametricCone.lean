@@ -37,11 +37,11 @@ theorem bounded_compact_action_product_tightness
     intro ε _hε
     refine ⟨K, _hK, ?_⟩
     rintro _ ⟨n, rfl⟩
-    letI : IsProbabilityMeasure (μn n) := _hprob n
+    let : IsProbabilityMeasure (μn n) := _hprob n
     rw [measure_compl _hK.measurableSet (measure_ne_top (μn n) K),
       measure_univ, _hsupp n]
     simp
-  letI (n : ℕ) : IsProbabilityMeasure (μn n) := _hprob n
+  let (n : ℕ) : IsProbabilityMeasure (μn n) := _hprob n
   obtain ⟨ns, hns, μ, hμ, hweak⟩ :=
     AsymptoticStatistics.Prohorov.extract_weak_subseq μn htight
   exact ⟨htight, μ, hμ, ns, hns, hweak⟩

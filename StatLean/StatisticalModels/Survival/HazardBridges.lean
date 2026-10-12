@@ -64,7 +64,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSin
     μ.map (fun t => ProbabilityTheory.cdf μ t) = volume.restrict (Ioc (0 : ℝ) 1) := by
   have hmono := ProbabilityTheory.monotone_cdf μ
   have hmeas : Measurable (fun t => ProbabilityTheory.cdf μ t) := hmono.measurable
-  haveI : IsProbabilityMeasure (μ.map (fun t => ProbabilityTheory.cdf μ t)) :=
+  have : IsProbabilityMeasure (μ.map (fun t => ProbabilityTheory.cdf μ t)) :=
     (by infer_instance)
   refine Measure.ext_of_Iic _ _ fun u => ?_
   have hRHS : (volume.restrict (Ioc (0 : ℝ) 1)) (Iic u) = ENNReal.ofReal (min u 1) := by
@@ -180,7 +180,7 @@ theorem cumHazard_Ioc_eq_neg_log (μ : Measure ℝ)
     -- USER-INPUT: inside the support (positive survival); ABGK §II.1
     (ht : survival μ t ≠ 0) :
     (cumHazard μ (Ioc 0 t)).toReal = -Real.log (survivalReal μ t) := by
-  haveI := hev.1
+  have := hev.1
   have hmono : Monotone (fun x => ProbabilityTheory.cdf μ x) := ProbabilityTheory.monotone_cdf μ
   have hFmeas : Measurable (fun x => ProbabilityTheory.cdf μ x) := hmono.measurable
   have hSR : survivalReal μ t = 1 - ProbabilityTheory.cdf μ t := survivalReal_eq_one_sub_cdf t
@@ -240,7 +240,7 @@ theorem survivalReal_eq_exp_neg_cumHazard (μ : Measure ℝ)
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     survivalReal μ t = Real.exp (-(cumHazard μ (Ioc 0 t)).toReal) := by
-  haveI := hev.1
+  have := hev.1
   have hpos : 0 < survivalReal μ t :=
     ENNReal.toReal_pos ht (measure_ne_top _ _)
   rw [cumHazard_Ioc_eq_neg_log μ hev ht, neg_neg, Real.exp_log hpos]
@@ -255,7 +255,7 @@ theorem cumHazard_Ioc_lt_top (μ : Measure ℝ)
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     cumHazard μ (Ioc 0 t) < ⊤ := by
-  haveI := hev.1
+  have := hev.1
   have hIci : μ (Ici t) ≠ 0 := fun h => ht (measure_mono_null Ioi_subset_Ici_self h)
   calc cumHazard μ (Ioc 0 t) ≤ cumHazard μ (Iic t) := measure_mono Ioc_subset_Iic_self
     _ ≤ (μ (Ici t))⁻¹ := cumHazard_Iic_le μ t
@@ -345,7 +345,7 @@ theorem survivalReal_eq_prod_one_sub_jump (μ : Measure ℝ)
     (hsupp : μ (Iic t \ (E.filter (· ≤ t) : Finset ℝ)) = 0) :
     survivalReal μ t = ∏ s ∈ E.filter (· ≤ t), (1 - (cumHazardJump μ s).toReal) := by
   classical
-  haveI := hev.1
+  have := hev.1
   set G := E.filter (· ≤ t) with hGdef
   set M := insert t (insert (0 : ℝ) G) with hMdef
   have hM : M.Nonempty := ⟨t, Finset.mem_insert_self _ _⟩

@@ -93,7 +93,7 @@ lemma step_ratio_le (a b : ℕ) :
     rcases Nat.eq_zero_or_pos a with ha | ha
     · subst ha; norm_num
     · have ha0 : (a : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr ha.ne'
-      simp only [Nat.cast_zero, add_zero, div_one, zero_div, zero_mul, mul_zero]
+      simp only [Nat.cast_zero, add_zero, div_one, zero_div, zero_mul]
       rw [div_self ha0, one_mul]
       linarith
   · -- b ≥ 1: equality (martingale).

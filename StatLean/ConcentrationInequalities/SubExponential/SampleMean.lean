@@ -87,8 +87,8 @@ private lemma mgf_sampleMean_le
     {lam : ℝ} (hlam_nn : 0 ≤ lam) (hlam_le : lam ≤ (n : ℝ) / (α : ℝ)) :
     mgf (fun ω => ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))) μ lam
       ≤ Real.exp (lam ^ 2 * (α : ℝ) ^ 2 / (2 * (n : ℝ))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   -- lam / n is in the valid sub-exponential range [0, 1/α]
   have h_lam_n_nn : 0 ≤ lam / (n : ℝ) := div_nonneg hlam_nn hn_pos.le
@@ -148,8 +148,8 @@ private lemma integrable_exp_sampleMean
     (hmeas : ∀ i, Measurable (X i))
     {lam : ℝ} (hlam_nn : 0 ≤ lam) (hlam_le : lam ≤ (n : ℝ) / (α : ℝ)) :
     Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   have h_lam_n_nn : 0 ≤ lam / (n : ℝ) := div_nonneg hlam_nn hn_pos.le
   have h_lam_n_le : lam / (n : ℝ) ≤ 1 / (α : ℝ) := by
@@ -207,8 +207,8 @@ theorem measure_sampleMean_lt_le_quadratic
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   -- Algebraic identity: (1/n) ∑ X i - μ₀ = ∑ (1/n) * (X i - μ₀)
   have halg : ∀ ω, (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀ =
@@ -296,8 +296,8 @@ theorem measure_sampleMean_lt_le_linear
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t / (2 * (α : ℝ)))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   have ht : 0 ≤ t := le_trans hα.le htα
   -- Algebraic identity

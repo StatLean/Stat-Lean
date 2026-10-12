@@ -381,7 +381,7 @@ theorem movingLaw_eq_fixedNuisance (n : Nat) (X : Fin n -> Omega) :
 theorem modelLaw_eq_withDensity (theta : EuclideanSpace Real (Fin d)) (eta : H) :
     M.dominating.withDensity ((modelLaw theta eta).rnDeriv M.dominating) =
       modelLaw theta eta := by
-  letI := h.modelLaw_isProbability theta eta
+  let := h.modelLaw_isProbability theta eta
   exact Measure.withDensity_rnDeriv_eq _ _ (h.modelLaw_absContinuous theta eta)
 
 /-- On the common good event, the class envelope gives `L²(P0)` membership. -/
@@ -465,7 +465,7 @@ theorem modelDensity_lintegral_eq_one
     (theta : EuclideanSpace Real (Fin d)) (eta : H) :
     ∫⁻ omega, ENNReal.ofReal (modelDensity2577_vec M modelLaw theta eta omega)
       ∂M.dominating = 1 := by
-  letI := h.modelLaw_isProbability theta eta
+  let := h.modelLaw_isProbability theta eta
   have hfin : ∀ᵐ omega ∂M.dominating,
       (modelLaw theta eta).rnDeriv M.dominating omega ≠ ∞ :=
     Measure.rnDeriv_ne_top _ _

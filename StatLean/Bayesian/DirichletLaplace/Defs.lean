@@ -77,7 +77,7 @@ instance isProbabilityMeasure_dlMarginal (a : ℝ) : IsProbabilityMeasure (dlMar
   rw [dlMarginal]
   split
   · rename_i ha
-    haveI : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
+    have : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
       isProbabilityMeasure_gammaMeasure ha (by norm_num)
     have hmeas : Measurable (fun b => laplaceMeasure b) :=
       Measure.measurable_of_measurable_coe _ (fun s hs => measurable_laplaceMeasure_apply hs)
@@ -90,7 +90,7 @@ instance isProbabilityMeasure_dlMarginal (a : ℝ) : IsProbabilityMeasure (dlMar
       exact gammaMeasure_Iic_eq_zero ha (by norm_num)
     have hae : (fun b => laplaceMeasure b Set.univ) =ᵐ[gammaMeasure a 2⁻¹] fun _ => 1 := by
       filter_upwards [hpos] with b hb
-      haveI := isProbabilityMeasure_laplaceMeasure hb
+      have := isProbabilityMeasure_laplaceMeasure hb
       exact measure_univ
     rw [lintegral_congr_ae hae, lintegral_one, measure_univ]
   · infer_instance
@@ -103,7 +103,7 @@ noncomputable def dlPrior (a : ℝ) (ι : Type*) [Fintype ι] : Measure (Euclide
 instance isProbabilityMeasure_dlPrior (a : ℝ) (ι : Type*) [Fintype ι] :
     IsProbabilityMeasure (dlPrior a ι) := by
   rw [dlPrior]
-  haveI : ∀ _i : ι, IsProbabilityMeasure (dlMarginal a) := fun _ => isProbabilityMeasure_dlMarginal a
+  have : ∀ _i : ι, IsProbabilityMeasure (dlMarginal a) := fun _ => isProbabilityMeasure_dlMarginal a
   refine ⟨?_⟩
   rw [Measure.map_apply (by fun_prop) MeasurableSet.univ, Set.preimage_univ, measure_univ]
 
@@ -135,7 +135,7 @@ noncomputable def gaussShiftKernel (ι : Type*) [Fintype ι] :
 instance isMarkovKernel_gaussShiftKernel (ι : Type*) [Fintype ι] :
     IsMarkovKernel (gaussShiftKernel ι) := by
   rw [gaussShiftKernel]
-  haveI : IsProbabilityMeasure (stdGaussian (EuclideanSpace ℝ ι)) := inferInstance
+  have : IsProbabilityMeasure (stdGaussian (EuclideanSpace ℝ ι)) := inferInstance
   exact Kernel.IsMarkovKernel.map _ (by fun_prop)
 
 /-- `gaussShiftKernel ι θ = N(θ, I) = stdGaussian shifted by θ`. -/

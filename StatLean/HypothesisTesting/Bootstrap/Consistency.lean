@@ -805,7 +805,7 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
       (fun _ => ∫ t, t ∂ν) := by
   -- the common law of the entries of row `n`
   set Gm : ℕ → Measure ℝ := fun n => Pr.map (Y n 0) with hGm
-  haveI hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
+  have hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
     (by infer_instance)
   -- every entry of a row carries the row law: they share a distribution function, and a finite
   -- measure on the line is determined by its values on the rays `Iic x`

@@ -103,8 +103,8 @@ lemma eLpNorm_qmd_residual_change_dom
         - Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal
         - (t / 2) * (γ.score : Ω → ℝ) ω
             * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal) 2 γ.dominating := by
-  haveI := γ.curve_isProbability t
-  haveI := γ.curve_isProbability 0
+  have := γ.curve_isProbability t
+  have := γ.curve_isProbability 0
   set ν : Measure Ω := γ.dominating with hν_def
   -- Score is measurable (its Lp representative is strongly measurable).
   have h_score_meas : Measurable (γ.score : Ω → ℝ) :=
@@ -333,8 +333,8 @@ theorem hellinger_locality_for_qmdpath_same_score_common_dom
   -- Tensorisation bound (ξ-generic).
   have h_bound : ∀ n : ℕ, Tgt n ≤ Real.sqrt n * PerSample n := by
     intro n
-    haveI := γ₁.curve_isProbability (t n)
-    haveI := γ₂.curve_isProbability (t n)
+    have := γ₁.curve_isProbability (t n)
+    have := γ₂.curve_isProbability (t n)
     have hac₁ : γ₁.curve (t n) ≪ ξ := (γ₁.curve_absContinuous (t n)).trans h₁
     have hac₂ : γ₂.curve (t n) ≪ ξ := (γ₂.curve_absContinuous (t n)).trans h₂
     exact hellinger_product_eLpNorm_le_sqrt_n_per_sample (ξ := ξ)

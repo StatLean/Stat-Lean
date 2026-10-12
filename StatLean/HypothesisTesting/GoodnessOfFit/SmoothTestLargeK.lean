@@ -200,7 +200,7 @@ private lemma weakConverges_of_tendsto_cdf {μs : ℕ → Measure ℝ} {ν : Mea
   have hdiff : ∀ (m : Measure ℝ), IsProbabilityMeasure m → ∀ a b : ℝ, a ≤ b →
       (m (Set.Ioc a b)).toReal = (m (Set.Iic b)).toReal - (m (Set.Iic a)).toReal := by
     intro m hm a b hab
-    haveI := hm
+    have := hm
     have hun : Set.Iic a ∪ Set.Ioc a b = Set.Iic b := Set.Iic_union_Ioc_eq_Iic hab
     have hsplit := measure_union (μ := m) (s₁ := Set.Iic a) (s₂ := Set.Ioc a b)
       (Set.Iic_disjoint_Ioc (le_refl a)) measurableSet_Ioc
@@ -401,7 +401,7 @@ private noncomputable def scoreVecK {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X
 private lemma smoothStat_eq_norm_sq {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧)
     (ω : Ω) : smoothStat ψ X ω = ‖scoreVecK ψ X ω‖ ^ 2 := by
   rw [scoreVecK, EuclideanSpace.norm_eq, Real.sq_sqrt (Finset.sum_nonneg fun j _ => sq_nonneg _)]
-  exact Finset.sum_congr rfl fun j _ => by simp [smoothStat, Real.norm_eq_abs, sq_abs]
+  exact Finset.sum_congr rfl fun j _ => by simp [Real.norm_eq_abs, sq_abs]
 
 private lemma scoreVecK_eq_smul_sum {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧)
     (ω : Ω) :
@@ -433,7 +433,7 @@ private lemma law_scoreVecK {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeas
           (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) := by
   classical
   have hgmeas : Measurable (psiVecK ψ) := measurable_psiVecK hψmeas
-  haveI : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
+  have : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
     (by infer_instance)
   set Ψ : (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
     fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hΨ
@@ -527,7 +527,7 @@ private lemma cdf_close {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure 
       ≤ C * ((Real.sqrt (k : ℝ) * ((k : ℝ) * B)) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
   classical
   have hgmeas : Measurable (psiVecK ψ) := measurable_psiVecK hψmeas
-  haveI hνprob : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
+  have hνprob : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
     (by infer_instance)
   obtain ⟨hmean, hcov, hβint, hβle⟩ :=
     scoreLaw_facts (B := B) hψmeas hortho hcentred hthirdint hthird
@@ -637,7 +637,7 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
         / Real.sqrt (2 * (kseq n : ℝ))) := fun n =>
     ((measurable_smoothStat (fun j => hψmeas (j : ℕ)) (hX n)).sub
       measurable_const).div measurable_const
-  haveI hμprob : ∀ n : ℕ, IsProbabilityMeasure ((P n).map fun ω =>
+  have hμprob : ∀ n : ℕ, IsProbabilityMeasure ((P n).map fun ω =>
       (smoothStat (fun j : Fin (kseq n) => ψ (j : ℕ)) (X n) ω - (kseq n : ℝ))
         / Real.sqrt (2 * (kseq n : ℝ))) := fun n =>
     (by infer_instance)
@@ -653,12 +653,12 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
     intro k
     rcases Nat.eq_zero_or_pos k with rfl | hk
     · simp only [hρ, ite_eq_left rfl]; infer_instance
-    · haveI : NeZero k := ⟨hk.ne'⟩
+    · have : NeZero k := ⟨hk.ne'⟩
       rw [hρeq k hk]
       exact (by infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun k => ⟨ρ k, hρprob k⟩ with hρs
   set ν' : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, inferInstance⟩ with hν'
-  haveI hnoatom : NullSingletonClass (ν' : Measure ℝ) := by
+  have hnoatom : NullSingletonClass (ν' : Measure ℝ) := by
     change NullSingletonClass (gaussianReal 0 1)
     exact nullSingletonClass_gaussianReal one_ne_zero
   have htend : Tendsto ρs atTop (𝓝 ν') := by

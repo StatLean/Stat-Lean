@@ -97,12 +97,12 @@ theorem quantile_le_iff {F : ℝ → ℝ} {p x : ℝ}
     (hbdd : BddBelow {y : ℝ | p ≤ F y}) :
     quantile F p ≤ x ↔ p ≤ F x := by
   have hc : p ≤ F (quantile F p) := by
-    show p ≤ F (sInf {y : ℝ | p ≤ F y})
+    change p ≤ F (sInf {y : ℝ | p ≤ F y})
     have hglb : IsGLB {y : ℝ | p ≤ F y} (sInf {y : ℝ | p ≤ F y}) :=
       Real.isGLB_sInf hne hbdd
     have hmem : sInf {y : ℝ | p ≤ F y} ∈ closure {y : ℝ | p ≤ F y} :=
       hglb.mem_closure hne
-    haveI hnb : (𝓝[{y : ℝ | p ≤ F y}] (sInf {y : ℝ | p ≤ F y})).NeBot :=
+    have hnb : (𝓝[{y : ℝ | p ≤ F y}] (sInf {y : ℝ | p ≤ F y})).NeBot :=
       mem_closure_iff_nhdsWithin_neBot.mp hmem
     have hsub : {y : ℝ | p ≤ F y} ⊆ Set.Ici (sInf {y : ℝ | p ≤ F y}) :=
       fun y hy => hglb.1 hy
@@ -214,7 +214,7 @@ theorem map_quantile_uniform (P : Measure ℝ) [IsProbabilityMeasure P] (F : ℝ
   have haem : AEMeasurable (quantile ⇑(cdf P)) (volume.restrict (Set.Icc (0 : ℝ) 1)) := by
     rw [Measure.restrict_congr_set hIccIoo]
     exact aemeasurable_restrict_of_monotoneOn measurableSet_Ioo hmonoOn
-  haveI : IsFiniteMeasure ((volume.restrict (Set.Icc (0 : ℝ) 1)).map (quantile ⇑(cdf P))) := by
+  have : IsFiniteMeasure ((volume.restrict (Set.Icc (0 : ℝ) 1)).map (quantile ⇑(cdf P))) := by
     constructor
     rw [Measure.map_apply_of_aemeasurable haem MeasurableSet.univ, Set.preimage_univ,
       Measure.restrict_apply_univ]

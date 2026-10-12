@@ -78,8 +78,8 @@ theorem exists_countable_measure_determining (𝓧 : Type*) [MeasurableSpace �
     · rintro _ ⟨n, rfl⟩
       exact hAmeas n
   refine ⟨A, hAmeas, fun P Q hP hQ hPQ => ?_⟩
-  haveI := hP
-  haveI := hQ
+  have := hP
+  have := hQ
   refine ext_of_generate_finite (Set.range A) hgen hpi ?_ (by simp)
   rintro _ ⟨n, rfl⟩
   exact hPQ n

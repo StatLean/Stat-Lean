@@ -466,7 +466,6 @@ theorem dl_theorem34_beta {β : ℝ}
     have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ A * q n := by
       rw [hkv, Nat.cast_sub hcard_le]
       have hfl := Nat.floor_le hAqn
-      push_cast
       linarith
     have hcvpos : (1 : ℝ) < cv n := hcvn
     exact dl_thm34_reduce_explicit_event hapos hr_pos (θ₀ n) (S₀ n) hsupp (kv n)
@@ -587,7 +586,7 @@ theorem dl_theorem34_beta {β : ℝ}
         have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
           have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
         have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-        push_cast; nlinarith
+        nlinarith
       have hAm1 : A - 1 = 2 + 2 / β := by rw [hA_def]; ring
       have hkβ : 2 * (q n : ℝ) * β + 2 * (q n) - β ≤ (kv n : ℝ) * β := by
         have h := mul_le_mul_of_nonneg_right hklb hβ.le
@@ -814,7 +813,6 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ A * q n := by
       rw [hkv, Nat.cast_sub hcard_le]
       have hfl := Nat.floor_le hAqn
-      push_cast
       linarith
     have hcvpos : (1 : ℝ) < cv n := hcvn
     exact dl_thm34_reduce_explicit_event hapos hr_pos (θ₀ n) (S₀ n) hsupp (kv n)
@@ -875,7 +873,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
             have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
               have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
             have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-            push_cast; nlinarith
+            nlinarith
           -- Assemble the linear lower bound (the `log n` terms cancel by choice of `A`).
           have he0 : (0:ℝ) ≤ Real.exp 1 - 1 := by have := Real.add_one_le_exp (1:ℝ); linarith
           have hA2 : (0:ℝ) ≤ A - 2 := by rw [hA_def]; linarith [hcoef]

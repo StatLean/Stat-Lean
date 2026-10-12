@@ -361,11 +361,11 @@ theorem informationLoss_completeCaseIPWFull
       (↑(lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2
         (Q ⊗ₘ r)) : Set (Lp ℝ 2 (Q ⊗ₘ r))) :=
     isClosed_aestronglyMeasurable hM.comap_le
-  haveI hlp_complete : CompleteSpace
+  have hlp_complete : CompleteSpace
       (lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2 (Q ⊗ₘ r)) :=
     @IsClosed.completeSpace_coe _ _ (inferInstance : CompleteSpace (Lp ℝ 2 (Q ⊗ₘ r)))
       _ hlp_closed
-  haveI hlp_projection :
+  have hlp_projection :
       (lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2
         (Q ⊗ₘ r)).HasOrthogonalProjection :=
     @Submodule.HasOrthogonalProjection.ofCompleteSpace ℝ _ _ _ _ _ hlp_complete

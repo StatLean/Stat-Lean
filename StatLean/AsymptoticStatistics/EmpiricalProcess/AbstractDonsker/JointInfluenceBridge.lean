@@ -61,7 +61,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
     κ.map (mixedEvalCLM (linfEvalCLM F) a) =
       multivariateGaussian 0
         (marginalCovMatrix P (fun i => jointIndexFunction ψ (a i))) := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   let R := mixedEvalCLM (linfEvalCLM F) a
   let φ : Fin m → Ω → ℝ := fun i => jointIndexFunction ψ (a i)
   have hφmem : ∀ i, MemLp (φ i) 2 P := by
@@ -75,7 +75,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
   have hS : (marginalCovMatrix P φ).PosSemidef :=
     marginalCovMatrix_posSemidef_of_memLp φ hφmem
   have hRgauss : HasGaussianLaw R κ := jointBridge_mixedEval_hasGaussianLaw ψ hκ a
-  haveI hmap_gauss : IsGaussian (κ.map R) := hRgauss.isGaussian_map
+  have hmap_gauss : IsGaussian (κ.map R) := hRgauss.isGaussian_map
   have hRmem : MemLp R 2 κ := hRgauss.memLp_two
   change κ.map R = multivariateGaussian 0 (marginalCovMatrix P φ)
   refine ProbabilityTheory.IsGaussian.ext ?_ ?_
@@ -391,8 +391,8 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
     hliteral (Ξ := Ξ) μ X hX_meas hX_indep hX_id hX_law
   obtain ⟨κ, hκ⟩ := exists_jointBridgeInfluence hν
     (fun f hf => hD.memLp hf) ψ
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   let Wn : ℕ → Ξ → LinfF F × EuclideanSpace ℝ (Fin k) := fun n ξ =>
     (empiricalProcessLinf (fun i : Fin n => X i.val ξ) (hmem n ξ),
       influenceEmpiricalVector P ψ n (fun i : Fin n => X i.val ξ))
@@ -405,7 +405,7 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
   have hinfluenceWCO := jointEmpirical_mixed_weakConvergesOuter
     hD.measurable (fun f hf => hD.memLp hf) ψ hκ μ X hX_meas hX_indep
       hX_id hX_law hmem k ainfluence
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (κ.map (mixedEvalCLM (linfEvalCLM F) ainfluence)) :=
     (by infer_instance)
   have hinfluenceTightMixed : IsAsymptoticallyTight (fun _ => μ)

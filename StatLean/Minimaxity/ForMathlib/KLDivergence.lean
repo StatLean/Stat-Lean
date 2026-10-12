@@ -81,8 +81,8 @@ private lemma klDiv_map_measurableEquiv (e : α ≃ᵐ γ) (μ ν : Measure α)
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     klDiv (μ.map e) (ν.map e) = klDiv μ ν := by
   have hf := e.measurableEmbedding
-  haveI : IsFiniteMeasure (μ.map e) := μ.isFiniteMeasure_map e
-  haveI : IsFiniteMeasure (ν.map e) := ν.isFiniteMeasure_map e
+  have : IsFiniteMeasure (μ.map e) := μ.isFiniteMeasure_map e
+  have : IsFiniteMeasure (ν.map e) := ν.isFiniteMeasure_map e
   by_cases hμν : μ ≪ ν
   · have hμν' : μ.map e ≪ ν.map e := hf.absolutelyContinuous_map hμν
     rw [klDiv_eq_lintegral_klFun_of_ac hμν', klDiv_eq_lintegral_klFun_of_ac hμν,
@@ -198,7 +198,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     ∑ j, klDiv (P j) ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) ≤ ∑ j, klDiv (P j) Q := by
   rcases eq_or_ne M 0 with rfl | hM0
   · simp
-  haveI : NeZero M := ⟨hM0⟩
+  have : NeZero M := ⟨hM0⟩
   by_cases hAC : ∀ j, P j ≪ Q
   · -- absolutely-continuous case: lift the pointwise compensation inequality to lintegrals,
     -- integrating both averages against the common reference `Q`.
@@ -206,7 +206,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
     have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
       ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
-    haveI hfin : IsFiniteMeasure ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) := by
+    have hfin : IsFiniteMeasure ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) := by
       constructor
       rw [Measure.smul_apply, smul_eq_mul]
       exact ENNReal.mul_lt_top (ENNReal.inv_ne_top.mpr hMne).lt_top (measure_lt_top _ _)

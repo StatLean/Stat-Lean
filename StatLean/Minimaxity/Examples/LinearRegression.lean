@@ -174,7 +174,7 @@ private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0)
   refine ⟨S.card, ⟨hMne⟩, fun j => θof (sfun j), measurable_of_finite _, c, ?_, ?_, ?_⟩
   · -- (separation) `IsSeparatedFamily`.
     intro j k hjk
-    show 2 * ENNReal.ofReal δr ≤ edist (g (θof (sfun j))) (g (θof (sfun k)))
+    change 2 * ENNReal.ofReal δr ≤ edist (g (θof (sfun j))) (g (θof (sfun k)))
     have h2δr : (2 : ℝ≥0∞) * ENNReal.ofReal δr = ENNReal.ofReal (2 * δr) := by
       rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
     rw [edist_dist, dist_eq_norm, h2δr]
@@ -241,12 +241,11 @@ theorem linear_regression_minimax_rate {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) 
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
   obtain ⟨M, hMne, θfam, hθ, c, hsep, h35a, h35b⟩ :=
     linreg_local_packing_data hn v hv r hr0 A g P hg hP hr
-  haveI := hMne
+  have := hMne
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
     (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) c (n : ℝ) hΦ hsep (by positivity) h35a h35b
   have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ^ 2
       = ENNReal.ofReal ((v : ℝ) * r / (1280 * n)) := by
-    change (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ^ 2 = _
     rw [← ENNReal.ofReal_pow hx0, Real.sq_sqrt (by positivity)]
   rw [hΦδ] at key
   refine le_trans ?_ key

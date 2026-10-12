@@ -67,9 +67,9 @@ lemma isRightQMD_iff_eLpNorm {P : Measure Ω} [IsProbabilityMeasure P]
   unfold IsRightQMD
   apply tendsto_congr'
   filter_upwards [self_mem_nhdsWithin] with t ht
-  letI : IsProbabilityMeasure (curve t) := hprob t ht.le
+  let : IsProbabilityMeasure (curve t) := hprob t ht.le
   let μ := canonicalDominator P (curve t)
-  letI : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
+  let : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
   have hPμ : P ≪ μ := (Measure.le_add_right le_rfl).absolutelyContinuous
   rw [← eLpNorm_two_eq_eLpNorm' (residualAgainst_aestronglyMeasurable hPμ hg t)]
 
@@ -121,7 +121,7 @@ theorem eLpNorm_residualAgainst_change_dominator
         2 (canonicalDominator P Q) =
       eLpNorm (residualAgainst P Q μ g t) 2 μ := by
   let ν := canonicalDominator P Q
-  letI : IsFiniteMeasure ν := by
+  let : IsFiniteMeasure ν := by
     dsimp [ν, canonicalDominator]
     infer_instance
   have hνμ : ν ≪ μ := Measure.AbsolutelyContinuous.add_left hP hQ
@@ -179,8 +179,8 @@ private lemma memLp_score_of_rightQMD
         _ = ENNReal.ofReal t := one_mul _
     exact hboth.exists
   let ν := canonicalDominator P (curve t)
-  letI : IsProbabilityMeasure (curve t) := hprob t ht.le
-  letI : IsFiniteMeasure ν := by
+  let : IsProbabilityMeasure (curve t) := hprob t ht.le
+  let : IsFiniteMeasure ν := by
     dsimp [ν, canonicalDominator]
     infer_instance
   have hPν : P ≪ ν :=
@@ -225,7 +225,7 @@ theorem rightQMD_score_in_L2ZeroMean
     (hzero : curve 0 = P) (g : Ω → ℝ) (hg : Measurable g)
     (hqmd : IsRightQMD P curve g) :
     ∃ g' : ↥(L2ZeroMean P), g =ᵐ[P] (g' : Ω → ℝ) := by
-  letI : IsProbabilityMeasure (curve 0) := hprob 0 le_rfl
+  let : IsProbabilityMeasure (curve 0) := hprob 0 le_rfl
   have hqmd0 : IsRightQMD (curve 0) curve g := by simpa [hzero] using hqmd
   have hgL20 : MemLp g 2 (curve 0) :=
     memLp_score_of_rightQMD (curve 0) curve hprob g hg hqmd0
@@ -269,8 +269,8 @@ theorem rightQMD_score_in_L2ZeroMean
       |I| / 2 ≤ t / 2 * (G / 2 + R t / t) ^ 2 + R t / t := by
     filter_upwards [self_mem_nhdsWithin, hsmall] with t ht hlt
     have htpos : 0 < t := ht
-    letI : IsProbabilityMeasure (curve t) := hprob t htpos.le
-    letI : IsFiniteMeasure (ν t) := by
+    let : IsProbabilityMeasure (curve t) := hprob t htpos.le
+    let : IsFiniteMeasure (ν t) := by
       dsimp [ν, canonicalDominator]
       infer_instance
     have hPν : P ≪ ν t :=

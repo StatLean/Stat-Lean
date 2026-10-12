@@ -127,7 +127,7 @@ theorem scoreSum_uniformly_tight
     ∃ K : ℝ, 0 < K ∧ ∀ᶠ n : ℕ in atTop,
       productMeasure M μ θ₀ n {ω | K < ‖scoreSum sc n ω‖} ≤ ε := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n =>
       AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
@@ -140,9 +140,9 @@ theorem scoreSum_uniformly_tight
       ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
   set ν : ℕ → Measure (EuclideanSpace ℝ (Fin k)) :=
     fun n => (productMeasure M μ θ₀ n).map (scoreSum sc n) with hνdef
-  haveI hνprob : ∀ n, IsProbabilityMeasure (ν n) := fun n => by
+  have hνprob : ∀ n, IsProbabilityMeasure (ν n) := fun n => by
     rw [hνdef]; exact (by infer_instance)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
   have hweak : AsymptoticStatistics.WeakConverges ν
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
@@ -198,7 +198,7 @@ theorem bernstein_von_mises
       Tendsto (fun n => productMeasure M μ θ₀ n
           {ω | δ ≤ bvmTV κ π θ₀ J sc n ω}) atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n =>
       AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
@@ -285,10 +285,10 @@ theorem bernstein_von_mises
     simp only [Set.mem_union, not_or, hSAdef, hSBdef, hSDdef, Set.mem_ofPred_eq,
       not_le] at hcon
     obtain ⟨⟨hA, hB⟩, hD⟩ := hcon
-    haveI := hGprob ω
-    haveI := ProbabilityTheory.cond_isProbabilityMeasure
+    have := hGprob ω
+    have := ProbabilityTheory.cond_isProbabilityMeasure
       (measure_ne_zero_of_compl_lt_half _ hCm (lt_of_lt_of_le hA (min_le_left _ _)))
-    haveI := ProbabilityTheory.cond_isProbabilityMeasure
+    have := ProbabilityTheory.cond_isProbabilityMeasure
       (measure_ne_zero_of_compl_lt_half _ hCm (lt_of_lt_of_le hD (min_le_left _ _)))
     have hT1 : tvDist (bvmLocalPosterior κ π θ₀ n ω)
         ((bvmLocalPosterior κ π θ₀ n ω)[|C]) < ε := tvDist_cond_lt _ hCm hA
@@ -410,7 +410,7 @@ theorem bernstein_von_mises_lintegral
     Tendsto (fun n => ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n))
       atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n =>
       AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
@@ -430,7 +430,7 @@ theorem bernstein_von_mises_lintegral
     intro ω
     by_cases hω : ω ∈ S
     · rw [Set.indicator_of_mem hω]
-      haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+      have : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
         unfold bvmGaussian; infer_instance
       exact le_trans (Minimaxity.tvDist_le_one _ _) le_add_self
     · rw [Set.indicator_of_notMem hω, add_zero]

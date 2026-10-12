@@ -360,7 +360,7 @@ private lemma iIndepFun_rows {μ : Measure Ω} [IsProbabilityMeasure μ]
     show (Measure.pi (fun a => μ.map (fun ω => fun b => Y a b ω)))
         = Measure.pi (fun a => Measure.pi (fun b => μ.map (Y a b)))
       from by congr 1; funext a; exact hrow a]
-  haveI : ∀ a b, IsProbabilityMeasure (μ.map (Y a b)) :=
+  have : ∀ a b, IsProbabilityMeasure (μ.map (Y a b)) :=
     fun a b => (by infer_instance)
   exact map_curry_pi_pi (fun a b => μ.map (Y a b))
 
@@ -412,7 +412,7 @@ theorem gaussian_quadratic_form_tail
     have hXae : ∀ i j, AEMeasurable (fun ω => X ω i j) μ := by
       intro i j
       by_contra hnot
-      haveI : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
+      have : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
         nullSingletonClass_gaussianReal (by
           change (NNReal.mk (1 / (n : ℝ)) _) ≠ 0
           intro hzero

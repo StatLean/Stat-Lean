@@ -69,7 +69,7 @@ theorem lp_weight_reproduce_monomial (hpd : (lpMatrix xdat K h ℓ t).PosDef)
     Matrix.nonsing_inv_mul _ hdet, Matrix.one_mulVec, hq, Pi.single_apply]
   by_cases hk0 : k = 0
   · subst hk0
-    simp [hκ, Fin.ext_iff]
+    simp [hκ]
   · have hne : ¬ ((0 : Fin (ℓ + 1)) = κ) := by
       rw [hκ, Fin.ext_iff]
       simpa using (Ne.symm hk0)

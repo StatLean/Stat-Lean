@@ -439,8 +439,7 @@ theorem pushforward_variance_eq_quadratic
                     * (y.ofLp j - ∫ z, z.ofLp j ∂L) ∂L
           rw [h_mean_coord i, h_mean_coord j]
     _ = dotProduct (star lam) (Sigma.mulVec lam) := by
-          simp only [dotProduct, Matrix.mulVec, Pi.star_apply, star_trivial, Finset.mul_sum,
-    Matrix.gram_apply]
+          simp only [dotProduct, Matrix.mulVec, Pi.star_apply, star_trivial, Finset.mul_sum]
           refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
           ring
 
@@ -492,7 +491,7 @@ theorem semiparametric_convolution_theorem_vec_clause_a
     have hf_memLp : MemLp (fun v : EuclideanSpace ℝ (Fin k) =>
         ⟪lam_lifted, v⟫_ℝ) 2 L :=
       MemLp.const_inner (𝕜 := ℝ) lam_lifted hL_memLp
-    haveI hL_lam_prob' :
+    have hL_lam_prob' :
         IsProbabilityMeasure (L.map (fun v : EuclideanSpace ℝ (Fin k) =>
           ⟪lam_lifted, v⟫_ℝ)) := hL_lam_prob
     have hL_lam_memLp : MemLp (id : ℝ → ℝ) 2
@@ -572,7 +571,7 @@ theorem semiparametric_convolution_theorem_vec_clause_b
   -- internal per-`m` Hájek decomposition via the formal equivalence (E4_vec).
   replace hReg := isRegularEstimator_vec_implies_broad hReg hT_meas
   -- Step 0: register useful instances.
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   -- Step 0a: per-`m` vec decomposition for any orthonormal basis in `tangentSpace T_set`.
   have hRegular_vec : ∀ {m : ℕ} (g_P : Fin m → ↥(L2ZeroMean P))
@@ -667,7 +666,7 @@ theorem semiparametric_convolution_theorem_vec_clause_b
     refine squeeze_zero (fun _ => norm_nonneg _) ?_ (hpc_tendsto i)
     intro m
     -- `p m i = V m.starProjection (IF_eff i)`; `pc i m ∈ V m`.
-    haveI := hV_proj m
+    have := hV_proj m
     have hpc_in_V : pc i m ∈ V m := by
       have hpc_in_Vc : pc i m ∈ Vc i m := (hpc_proj i m).1
       exact hVc_le_V i m hpc_in_Vc
@@ -695,8 +694,8 @@ theorem semiparametric_convolution_theorem_vec_clause_b
             (ψDotMat_vec g_P_m IF_eff).transpose) i j =
             ⟪(p m i : ↥(L2ZeroMean P)), p m j⟫_ℝ := by
     intro m
-    haveI := hV_findim m
-    haveI := hV_proj m
+    have := hV_findim m
+    have := hV_proj m
     let b : OrthonormalBasis (Fin (Module.finrank ℝ ↥(V m))) ℝ ↥(V m) :=
       stdOrthonormalBasis ℝ ↥(V m)
     let g_P_m : Fin (Module.finrank ℝ ↥(V m)) → ↥(L2ZeroMean P) :=
@@ -881,7 +880,7 @@ theorem semiparametric_convolution_theorem_vec_clause_b
     refine tendsto_pi_nhds.mpr (fun i => tendsto_pi_nhds.mpr (fun j => ?_))
     exact h_entry_tendsto i j
   -- Step 5: apply `levyMpass_vec` to get the final convolution decomposition.
-  haveI hM_prob_inst : ∀ m, IsProbabilityMeasure (M_m m) := hM_prob
+  have hM_prob_inst : ∀ m, IsProbabilityMeasure (M_m m) := hM_prob
   -- Rewrite `Measure.conv` notation to `∗` for `levyMpass_vec`.
   have hM_decomp' : ∀ m,
       L = (ProbabilityTheory.multivariateGaussian

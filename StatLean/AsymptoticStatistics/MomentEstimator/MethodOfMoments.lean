@@ -293,7 +293,7 @@ theorem empiricalMoment_weakConverges {d : ℕ} {Ω : Type*} [MeasurableSpace Ω
     rw [show (fun ξ => ⟪t, Y 0 ξ⟫) = (fun ω => ⟪t, f ω⟫) ∘ (X 0) from rfl, ← hvm]
     exact fCov_variance_eq P hf_L2 t
   have hS_pos : (fCov P f).PosSemidef := fCov_posSemidef P hf_L2
-  haveI : IsProbabilityMeasure (multivariateGaussian
+  have : IsProbabilityMeasure (multivariateGaussian
       (0 : EuclideanSpace ℝ (Fin d)) (fCov P f)) := inferInstance
   have hY_law : HasLaw (id : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d))
       (multivariateGaussian 0 (fCov P f)) (multivariateGaussian 0 (fCov P f)) := HasLaw.id
@@ -433,7 +433,7 @@ theorem method_of_moments_normality {d : ℕ}
   -- Measurability, the multivariate CLT, boundedness, and consistency.
   have hemp_meas : ∀ n, Measurable (empiricalMoment f n X) := by
     intro n
-    show Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
+    change Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
     exact (Finset.measurable_sum _ fun i _ => hf_meas.comp (hX_meas i)).const_smul ((n : ℝ)⁻¹)
   have hZmeas : ∀ n : ℕ, Measurable (fun ξ => Real.sqrt n • (empiricalMoment f n X ξ - μ_vec)) :=
     fun n => ((hemp_meas n).sub measurable_const).const_smul (Real.sqrt n)
@@ -529,8 +529,7 @@ theorem method_of_moments_normality {d : ℕ}
             (φ (empiricalMoment f n X ξ) - φ μ_vec
               - (↑e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d))
                   (empiricalMoment f n X ξ - μ_vec))) := by
-          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub,
-            smul_neg]
+          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub]
           abel
         rwa [dist_eq_norm, hWZ, norm_neg] at hξ
       · right; exact hmem

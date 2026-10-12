@@ -153,7 +153,7 @@ theorem grossErrorNbhd_mono (P : Measure Ω) [IsProbabilityMeasure P] {ε δ : �
     (h0 : 0 ≤ ε) (hεδ : ε ≤ δ) (hδ1 : δ ≤ 1) (hδ : 0 < δ) :
     grossErrorNbhd P ε ⊆ grossErrorNbhd P δ := by
   rintro R ⟨Q, hQ, rfl⟩
-  haveI := hQ
+  have := hQ
   have hr0 : 0 ≤ ε / δ := div_nonneg h0 hδ.le
   have hr1 : ε / δ ≤ 1 := (div_le_one hδ).mpr hεδ
   refine ⟨contaminate P Q (ε / δ), isProbabilityMeasure_contaminate P Q hr0 hr1, ?_⟩

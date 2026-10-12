@@ -65,7 +65,7 @@ private lemma triangle_double_integral_nonneg {f : ℝ → ℝ} (hfm : Measurabl
     (∫ s in (0 : ℝ)..t, ∫ r in (0 : ℝ)..s, f r) = ∫ r in (0 : ℝ)..t, (t - r) * f r := by
   have hfon : IntegrableOn f (Set.Ioc 0 t) volume := by
     have := hf 0 t; rwa [intervalIntegrable_iff_integrableOn_Ioc_of_le ht] at this
-  haveI : Fact (volume (Set.Ioc (0 : ℝ) t) < ⊤) := ⟨measure_Ioc_lt_top⟩
+  have : Fact (volume (Set.Ioc (0 : ℝ) t) < ⊤) := ⟨measure_Ioc_lt_top⟩
   set μ : Measure ℝ := volume.restrict (Set.Ioc (0 : ℝ) t) with hμdef
   set F : ℝ → ℝ → ℝ := fun s r => {p : ℝ × ℝ | p.2 ≤ p.1}.indicator (fun p => f p.2) (s, r)
     with hFdef
@@ -156,7 +156,7 @@ private lemma triangle_double_integral {f : ℝ → ℝ} (hfm : Measurable f)
       rw [hrefl (fun s => ∫ r in (0:ℝ)..s, g r)]
       rw [← intervalIntegral.integral_neg]
       refine intervalIntegral.integral_congr fun x _ => ?_
-      show (∫ r in (0:ℝ)..x, f r) = -(∫ r in (0:ℝ)..(-x), g r)
+      change (∫ r in (0:ℝ)..x, f r) = -(∫ r in (0:ℝ)..(-x), g r)
       rw [hinnref (-x), neg_neg, neg_neg]
     have hR : (∫ s in (0 : ℝ)..t, (t - s) * f s)
         = ∫ s in (0 : ℝ)..(-t), (-t - s) * g s := by
@@ -532,7 +532,7 @@ private lemma integrable_kernel_sq_taylor {p K w : ℝ → ℝ}
   have hfac : (fun u => K u * u ^ 2 * R u)
       = fun u => (h ^ 2)⁻¹ * (K u * (u ^ 2 * h ^ 2) * R u) := by
     funext u; field_simp
-  show Integrable (fun u => K u * u ^ 2 * R u)
+  change Integrable (fun u => K u * u ^ 2 * R u)
   rw [hfac]; exact hthird.const_mul _
 
 /-- **Step C**: the `L²(dx)` distance between the bias and its surrogate is `o(h²)`. There is a

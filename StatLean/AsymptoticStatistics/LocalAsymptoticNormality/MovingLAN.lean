@@ -88,13 +88,13 @@ theorem movingLogLikelihood_weaklyConverges
       simpa [Nat.find_spec hre] using hN (Nat.find hre) hNq
     · exact mem_of_mem_nhds hs
   set ν : Measure 𝒳 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν
-  haveI : IsProbabilityMeasure ν := by
+  have : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hν, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal hint
         (Filter.Eventually.of_forall (M.density_nonneg θ₀)), h_one, ENNReal.ofReal_one]
   let Pinf : Measure (ℕ → 𝒳) := Measure.infinitePi (fun _ : ℕ => ν)
-  haveI : IsProbabilityMeasure Pinf := inferInstance
+  have : IsProbabilityMeasure Pinf := inferInstance
   let X : ℕ → (ℕ → 𝒳) → 𝒳 := fun i ω => ω i
   have hXmeas : ∀ i, Measurable (X i) := fun i => measurable_pi_apply i
   have hXiid : iIndepFun X Pinf :=

@@ -143,7 +143,7 @@ private lemma hasSum_poly_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial ℂ)
       intro x hx
       rw [ite_eq_right, zero_mul]
       intro hkx
-      exact hx ⟨x - k, by show k + (x - k) = x; omega⟩
+      exact hx ⟨x - k, by change k + (x - k) = x; omega⟩
     refine (hg.hasSum_iff hzero).1 ?_
     have heq : ((fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m) ∘
         fun n : ℕ => k + n) = fun n => P.coeff k * z ^ k * (c n * z ^ n) := by
@@ -194,7 +194,7 @@ private lemma hasSum_poly (P : Polynomial ℂ) (z : ℂ) :
       (∑ n ∈ Finset.range (P.natDegree + 1), P.coeff n * z ^ n) :=
     hasSum_sum_of_ne_finset_zero (fun n hn => by
       simp only [Finset.mem_range, not_lt] at hn
-      show P.coeff n * z ^ n = 0
+      change P.coeff n * z ^ n = 0
       rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul])
   rwa [← Polynomial.eval_eq_sum_range] at h
 

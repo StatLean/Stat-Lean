@@ -279,7 +279,7 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       ring
     · rw [ite_eq_right hij]
       refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
-      simp only [ite_eq_left rfl, ite_eq_right hij, mul_one]
+      simp only [ite_eq_right hij, mul_one]
       exact hmean0
   -- integrability of the inner sum
   have hsum_int : ∀ i : Fin n, Integrable

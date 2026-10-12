@@ -289,8 +289,8 @@ theorem mse_ols_highProb_tail
       ≤ ENNReal.ofReal δ := by
   -- Setup: column space, completeness, orthogonal projection.
   let C := columnSpace X
-  haveI hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
-  haveI hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
+  have hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
+  have hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   -- Step 1–3: MSE = (1/n)‖P_C ε‖².
   have hmse_eq : ∀ ω, mse X (βhat ω) βstar = (1 / (n : ℝ)) * ‖C.starProjection (ε ω)‖ ^ 2 := by
@@ -331,7 +331,7 @@ theorem mse_ols_highProb_tail
       rw [hmse0 ω]; exact hbnd_nonneg
     rw [hempty]; simp
   · -- r > 0: encode projected noise as an r-dimensional sub-Gaussian vector.
-    haveI : NeZero R := ⟨hRpos.ne'⟩
+    have : NeZero R := ⟨hRpos.ne'⟩
     let b : OrthonormalBasis (Fin R) ℝ ↥C := stdOrthonormalBasis ℝ ↥C
     let Z : Ω → EuclideanSpace ℝ (Fin R) := fun ω => b.repr (C.orthogonalProjectionOnto (ε ω))
     have hZdef : ∀ ω, Z ω = b.repr (C.orthogonalProjectionOnto (ε ω)) := fun ω => rfl

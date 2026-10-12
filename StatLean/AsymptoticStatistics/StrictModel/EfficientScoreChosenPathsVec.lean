@@ -92,7 +92,7 @@ structure ChosenPathwiseDifferentiableAtVec
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
     (paths : VectorPaths25_26 Sθ ψ) :
     paths.nuisanceTangent.HasOrthogonalProjection := by
-  letI : CompleteSpace ↥(L2ZeroMean P) :=
+  let : CompleteSpace ↥(L2ZeroMean P) :=
     (L2ZeroMean_isClosed P).completeSpace_coe
   change ((Submodule.span ℝ paths.nuisanceSet).topologicalClosure).HasOrthogonalProjection
   exact @Submodule.HasOrthogonalProjection.ofCompleteSpace ℝ _ inferInstance
@@ -110,7 +110,7 @@ theorem efficientInformation_posDef_of_isUnit_det
     letI := nuisanceProjectionInstance paths
     (efficientInformationMatrix Sθ paths.nuisanceTangent
       (coordinateBasis (d := d))).PosDef := by
-  letI := nuisanceProjectionInstance paths
+  let := nuisanceProjectionInstance paths
   let I := efficientInformationMatrix Sθ paths.nuisanceTangent
     (coordinateBasis (d := d))
   have hpsd : I.PosSemidef := efficientInformationMatrix_posSemidef _ _ _
@@ -131,7 +131,7 @@ theorem chosenPathwise_and_eif_from_vectorPaths
       IsEfficientInfluenceFunction_vec hpd.derivative
         (candidateVecEIF Sθ paths.nuisanceTangent (coordinateBasis (d := d))) := by
   classical
-  letI := nuisanceProjectionInstance paths
+  let := nuisanceProjectionInstance paths
   let e := coordinateBasis (d := d)
   let I := efficientInformationMatrix Sθ paths.nuisanceTangent e
   let cand := candidateVecEIF Sθ paths.nuisanceTangent e

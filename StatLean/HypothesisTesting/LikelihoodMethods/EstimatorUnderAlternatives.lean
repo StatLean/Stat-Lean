@@ -503,7 +503,7 @@ private lemma joint_weak_estimator_scoreSum
   have hF_cont : Continuous F :=
     (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id
   have hF_meas : Measurable F := hF_cont.measurable
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) :=
     (by infer_instance)
   have hX : WeakConverges
@@ -571,7 +571,7 @@ private lemma joint_weak_estimator_logLikelihood
   have hF_meas : Measurable
       (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
     ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
     (by infer_instance)
@@ -733,11 +733,11 @@ theorem weak_limit_estimator_under_fixed_local_alternative
         (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) :=
     (continuous_fst.prodMk
       ((continuous_const.inner continuous_snd).sub continuous_const)).measurable
-  haveI hπ0 : IsProbabilityMeasure
+  have hπ0 : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
     (by infer_instance)
-  haveI hπ : IsProbabilityMeasure
+  have hπ : IsProbabilityMeasure
       (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
           (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
         (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
@@ -874,7 +874,7 @@ private lemma integral_close_varying_direction
     fun θ => μ.withDensity fun x => ENNReal.ofReal (M.density θ x) with hQdef
   have hQpi : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       productMeasure M μ θ n = Measure.pi fun _ : Fin n => Q θ := fun _ _ => rfl
-  haveI hQprob : ∀ θ : EuclideanSpace ℝ (Fin k), IsProbabilityMeasure (Q θ) := by
+  have hQprob : ∀ θ : EuclideanSpace ℝ (Fin k), IsProbabilityMeasure (Q θ) := by
     intro θ
     refine ⟨?_⟩
     rw [hQdef]

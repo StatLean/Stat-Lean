@@ -77,7 +77,7 @@ theorem survival_of_neg
     -- LEAN-ONLY: statement scoping (negative time); no scope change
     (h : IsEventTimeLaw μ) {t : ℝ} (ht : t < 0) :
     survival μ t = 1 := by
-  haveI := h.1
+  have := h.1
   have hIic : μ (Iic t) = 0 :=
     measure_mono_null (fun x hx => lt_of_le_of_lt hx ht) h.2
   have : μ (Iic t)ᶜ = 1 - μ (Iic t) := prob_compl_eq_one_sub measurableSet_Iic

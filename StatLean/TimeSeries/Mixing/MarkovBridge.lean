@@ -220,7 +220,7 @@ private lemma abs_integral_mul_le_setIntegral {m mΩ : MeasurableSpace Ω} {μ :
   have hsplit : ∫ ω, max (p ω) 0 ∂μ = ∫ ω, max (-p ω) 0 ∂μ := by
     have hd : ∫ ω, (max (p ω) 0 - max (-p ω) 0) ∂μ = ∫ ω, p ω ∂μ := by
       refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
-      show max (p ω) 0 - max (-p ω) 0 = p ω
+      change max (p ω) 0 - max (-p ω) 0 = p ω
       rcases le_total (p ω) 0 with hle | hle
       · rw [max_eq_right hle, max_eq_left (by linarith)]; ring
       · rw [max_eq_left hle, max_eq_right (by linarith)]; ring
@@ -380,7 +380,7 @@ private lemma sum_setIntegral_partition {𝒩 mΩ : MeasurableSpace Ω} {μ : Me
         (integral_finsetSum _ fun k _ => hf.indicator (hSmΩ k)).symm
     _ = ∫ ω, f ω ∂μ := by
         refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
-        show ∑ k, (S k).indicator f ω = f ω
+        change ∑ k, (S k).indicator f ω = f ω
         obtain ⟨k, hk⟩ : ∃ k, ω ∈ S k := by
           have hu : ω ∈ ⋃ k, S k := hSc ▸ Set.mem_univ ω
           simpa using hu
@@ -719,7 +719,7 @@ private lemma sum_measure_inter_partition {m mΩ : MeasurableSpace Ω} {μ : Mea
     exact Finset.sum_congr rfl fun j _ => (setIntegral_indicator_one (hm _ (hBm j))).symm
   rw [h1, integral_congr_ae
     (Filter.Eventually.of_forall fun ω => sum_indicator_partition hBd hBc ω), integral_const]
-  simp [Measure.real, Measure.restrict_apply_univ]
+  simp [Measure.real]
 
 private lemma beta_partition_sum_le_two {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
@@ -843,7 +843,7 @@ lemma sigmaLE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
     (iSup₂_le fun s hs => le_iSup₂_of_le (s - k) ?_ ?_)
   · exact Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)
   · exact Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)
-  · simpa using le_rfl
+  · simp
 
 /-- Shifting the process shifts the future σ-algebra. -/
 lemma sigmaGE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
@@ -852,7 +852,7 @@ lemma sigmaGE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
     (iSup₂_le fun s hs => le_iSup₂_of_le (s - k) ?_ ?_)
   · exact Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)
   · exact Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)
-  · simpa using le_rfl
+  · simp
 
 /-- The **Markov representation** hypothesis tying a process with values in a measurable
 space `E` to a kernel on `E`: the conditional law of `X_{t+n}` given the past through time
@@ -875,7 +875,7 @@ private theorem isMarkovKernel_pow' {S : Type*} [MeasurableSpace S] (κ : Kernel
     [IsMarkovKernel κ] : ∀ n : ℕ, IsMarkovKernel (κ ^ n)
   | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
   | n + 1 => by
-      haveI := isMarkovKernel_pow' κ n
+      have := isMarkovKernel_pow' κ n
       rw [pow_succ]
       exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
 
@@ -901,7 +901,7 @@ private lemma measurable_kernel_integral {κ : Kernel E E} (n : ℕ) {f : E → 
 
 private lemma abs_kernel_integral_le {κ : Kernel E E} [IsMarkovKernel κ] (n : ℕ) {f : E → ℝ}
     {M : ℝ} (hfb : ∀ y, |f y| ≤ M) (x : E) : |∫ y, f y ∂((κ ^ n) x)| ≤ M := by
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have h := norm_integral_le_of_norm_le_const (μ := (κ ^ n) x) (C := M)
     (Filter.Eventually.of_forall fun y => by rw [Real.norm_eq_abs]; exact hfb y)
   simpa [Measure.real, measure_univ] using h
@@ -914,13 +914,13 @@ private lemma markov_setIntegral_eq [IsProbabilityMeasure μ]
     (t : ℤ) (n : ℕ) {f : E → ℝ} (hf : Measurable f) {M : ℝ} (hfb : ∀ y, |f y| ≤ M)
     {A : Set Ω} (hA : MeasurableSet[sigmaLE' X t] A) :
     ∫ ω in A, (∫ y, f y ∂((κ ^ n) (X t ω))) ∂μ = ∫ ω in A, f (X (t + n) ω) ∂μ := by
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have hm := sigmaLE_le hmeas t
   have hAΩ : MeasurableSet A := hm _ hA
   set lam : Measure Ω := μ.restrict A with hlam
-  haveI : IsFiniteMeasure lam := by rw [hlam]; infer_instance
+  have : IsFiniteMeasure lam := by rw [hlam]; infer_instance
   set κ' : Kernel Ω E := (κ ^ n).comap (X t) (hmeas t) with hκ'
-  haveI : IsMarkovKernel κ' := by rw [hκ']; infer_instance
+  have : IsMarkovKernel κ' := by rw [hκ']; infer_instance
   -- (a) the one-event Markov identity, in `ℝ≥0∞`
   have hone : ∀ B : Set E, MeasurableSet B →
       lam (X (t + n) ⁻¹' B) = ∫⁻ ω, (κ' ω) B ∂lam := by
@@ -1614,7 +1614,7 @@ private lemma markov_Xw : IsMarkovOf Xw (Kernel.id : Kernel Cocnt Cocnt) cocnt :
     funext ω
     rw [kernelId_pow, Kernel.id_apply]
     by_cases hw : ω ∈ B <;>
-      simp [Xw, Measure.dirac_apply' _ hB, Set.indicator_apply, hw]
+      simp [Xw, Measure.dirac_apply' _ hB, hw]
   have hlhs : (fun ω => B.indicator (fun _ => (1 : ℝ)) (Xw (t + n) ω))
       = B.indicator (fun _ => (1 : ℝ)) := rfl
   have hsm : StronglyMeasurable[sigmaLE' Xw t] (B.indicator (fun _ => (1 : ℝ))) := by
@@ -1941,7 +1941,7 @@ private lemma tvDist_eq_iSup_pdist (P Q : Measure E) [IsProbabilityMeasure P]
     intro n; rw [← hLdef]; exact le_iSup (fun m => ENNReal.ofReal (pdist P Q m)) n
   rw [hLdef]
   refine le_antisymm (iSup_le fun s => iSup_le fun hs => ?_) ?_
-  · haveI : IsFiniteMeasure (P + Q) := inferInstance
+  · have : IsFiniteMeasure (P + Q) := inferInstance
     refine tsub_le_iff_left.mpr ?_
     refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
     obtain ⟨t, htC, ht⟩ := MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing
@@ -2060,9 +2060,9 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
         (MeasurableSpace.comap (X (k + n)) inferInstance)
       ≤ ∫ x, A x ∂(μ.map (X 0)) := by
   classical
-  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+  have hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
     (by infer_instance)
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have hkΩ : MeasurableSpace.comap (X k) inferInstance ≤ (inferInstance : MeasurableSpace Ω) :=
     (hmeas k).comap_le
   have hknΩ : MeasurableSpace.comap (X (k + n)) inferInstance
@@ -2231,7 +2231,7 @@ private lemma markov_cov_eq_setIntegral [IsProbabilityMeasure μ]
     (μ (S ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal
         - (μ S).toReal * (μ (X (k + (n : ℤ)) ⁻¹' W)).toReal
       = ∫ ω in S, ((((κ ^ n) (X k ω)) W).toReal - ((μ.map (X 0)) W).toReal) ∂μ := by
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have hm : sigmaLE' X k ≤ (inferInstance : MeasurableSpace Ω) :=
     iSup₂_le fun s _ => (hmeas s).comap_le
   have hSΩ : MeasurableSet S := hm _ hS
@@ -2292,9 +2292,9 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
       ≤ betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
           (MeasurableSpace.comap (X ((n : ℤ))) inferInstance) := by
   classical
-  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+  have hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
     (by infer_instance)
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have hzn : (0 : ℤ) + (n : ℤ) = (n : ℤ) := zero_add _
   -- ## the future-side partition, enumerated
   obtain ⟨eV⟩ : Nonempty (Fin (cpF E m).card ≃ {W // W ∈ cpF E m}) := ⟨(cpF E m).equivFin.symm⟩
@@ -2592,9 +2592,9 @@ private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityM
       = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
           ∂(μ.map (X 0))).toReal := by
   classical
-  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+  have hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
     (by infer_instance)
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   -- ## the partition surrogates, as functions of the starting state
   have hpdm : ∀ m, Measurable fun x => pdist ((κ ^ n) x) (μ.map (X 0)) m := by
     intro m
@@ -3038,7 +3038,7 @@ private theorem markovPow {S : Type*} [MeasurableSpace S] (κ : Kernel S S)
     [IsMarkovKernel κ] : ∀ n : ℕ, IsMarkovKernel (κ ^ n)
   | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
   | n + 1 => by
-      haveI := isMarkovKernel_pow' κ n
+      have := isMarkovKernel_pow' κ n
       rw [pow_succ]
       exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
 
@@ -3057,9 +3057,9 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
         (MeasurableSpace.comap (X (k + n)) inferInstance)
       ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
   classical
-  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+  have hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
     (by infer_instance)
-  haveI := isMarkovKernel_pow' κ n
+  have := isMarkovKernel_pow' κ n
   have hTot0 : (0:ℝ) ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
     mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
   have hAρ : Integrable (fun x => A x * ρ ^ n) (μ.map (X 0)) := hAint.mul_const _

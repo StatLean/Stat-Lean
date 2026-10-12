@@ -892,7 +892,7 @@ theorem prekopaLeindler.{u}
     -- through `(piCongrLeft (fun _ : α => ℝ) e.symm).symm : (α → ℝ) ≃ᵐ (β → ℝ)`,
     -- whose value `ψ.symm x b = x (e.symm b)` is `rfl`-apply.
     intro α β _Fβ e IH f g h hf hg hh s hs hs1 hle
-    letI : Fintype α := Fintype.ofEquiv β e.symm
+    let : Fintype α := Fintype.ofEquiv β e.symm
     set ψ : (β → ℝ) ≃ᵐ (α → ℝ) :=
       MeasurableEquiv.piCongrLeft (fun _ : α => ℝ) e.symm with hψ_def
     -- `ψ.symm` preserves affine combinations (componentwise).

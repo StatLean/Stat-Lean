@@ -51,7 +51,7 @@ theorem gaussianCone_minimax_bounded
     _hbowl _hlsc _hbdd e he with
     ⟨h₀, c, hc, hgauss, hz, hztop, hprob, hsupp, hbayes⟩
   let π := restrictedTranslatedGaussianPrior C h₀ c
-  letI : IsProbabilityMeasure π := hprob
+  let : IsProbabilityMeasure π := hprob
   rcases exists_finite_quantization C π hsupp A ℓ _hfinite _hbdd _huc e he with
     ⟨I, hIC, hquant⟩
   let J : {S : Finset (EuclideanSpace ℝ (Fin m)) // (S : Set _) ⊆ C} := ⟨I, hIC⟩
@@ -185,7 +185,7 @@ theorem gaussianCone_minimax_vec_bounded_fullSpan {d : ℕ}
     A ℓ _hbowl _hlsc _hbdd e he with
     ⟨h₀, c, hc, hgauss, hz, hztop, hprob, hsupp, hbayes⟩
   let π := restrictedTranslatedGaussianPrior C h₀ c
-  letI : IsProbabilityMeasure π := hprob
+  let : IsProbabilityMeasure π := hprob
   rcases exists_finite_quantization_vec C π hsupp A ℓ _hfinite _hbdd _huc e he with
     ⟨I, hIC, hquant⟩
   let J : {S : Finset (EuclideanSpace ℝ (Fin m)) // (S : Set _) ⊆ C} := ⟨I, hIC⟩

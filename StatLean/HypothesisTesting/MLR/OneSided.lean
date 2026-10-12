@@ -82,7 +82,7 @@ open StatLean.PointEstimation
 private lemma real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
   have h1 : ⟪(1 : ℝ), b⟫_ℝ = b := by
     have h := real_inner_smul_right (1 : ℝ) 1 b
-    simpa [real_inner_self_eq_norm_mul_norm] using h
+    simp
   have h2 := real_inner_smul_left (1 : ℝ) b a
   simpa [h1] using h2
 
@@ -188,7 +188,7 @@ private lemma power_oneSidedTest_eq {P : ℝ → Measure 𝓧} [∀ θ, IsProbab
   have hsplit : oneSidedTest T C γ = fun x =>
       R.indicator (1 : 𝓧 → ℝ) x + γ * B.indicator (1 : 𝓧 → ℝ) x := by
     funext x
-    show (if C < T x then (1 : ℝ) else if T x = C then γ else 0) = _
+    change (if C < T x then (1 : ℝ) else if T x = C then γ else 0) = _
     by_cases hR : x ∈ R
     · have hxR : C < T x := hR
       have hnB : x ∉ B := fun he => absurd (he : T x = C) (ne_of_gt hxR)
@@ -285,7 +285,7 @@ private lemma hasNPShape_oneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
     have hTC : C < T x := by
       by_contra hcon
       exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
-    show oneSidedTest T C γ x = 1
+    change oneSidedTest T C γ x = 1
     unfold oneSidedTest; rw [ite_eq_left hTC]
   · refine Filter.Eventually.of_forall fun x hx => ?_
     rw [← ENNReal.ofReal_mul hk0] at hx
@@ -296,7 +296,7 @@ private lemma hasNPShape_oneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
     have hTC : T x < C := by
       by_contra hcon
       exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
-    show oneSidedTest T C γ x = 0
+    change oneSidedTest T C γ x = 0
     unfold oneSidedTest; rw [ite_eq_right (not_lt.mpr hTC.le), ite_eq_right (ne_of_lt hTC)]
 
 /-- **The one-sided test is most powerful** for `P θ` against `P θ'` (`θ < θ'`) at its own
@@ -353,7 +353,7 @@ theorem integral_mono_of_hasMLR
     (hint : ∀ θ, Integrable ψ (P θ)) :
     Monotone fun θ => ∫ x, ψ x ∂(P θ) := by
   intro θ θ' hθθ'
-  show ∫ x, ψ x ∂(P θ) ≤ ∫ x, ψ x ∂(P θ')
+  change ∫ x, ψ x ∂(P θ) ≤ ∫ x, ψ x ∂(P θ')
   rcases eq_or_lt_of_le hθθ' with h | hlt
   · rw [h]
   -- `θ < θ'`: the double-integral correlation identity `2·(D_θ' − D_θ) = ∫∫ F ≥ 0`.
@@ -376,7 +376,7 @@ theorem integral_mono_of_hasMLR
       p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
         - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2 := by
     refine Filter.Eventually.of_forall (fun z => ?_)
-    show (0 : ℝ) ≤ p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
+    change (0 : ℝ) ≤ p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
         - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2
     have key : p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
         - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2
@@ -441,7 +441,7 @@ theorem isUMP_oneSided
   by_cases hmid : 0 < α ∧ α < 1
   · obtain ⟨hα0, hα1⟩ := hmid
     -- Boundary constants from the `T`-marginal under `θ₀`.
-    haveI : IsProbabilityMeasure ((P θ₀).map T) :=
+    have : IsProbabilityMeasure ((P θ₀).map T) :=
       (by infer_instance)
     obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants ((P θ₀).map T) hα0 hα1
     have hγ' : γ ∈ Set.Icc (0 : ℝ) 1 := ⟨hγ0, hγ1⟩
@@ -737,7 +737,7 @@ private lemma hasNPShape_coOneSided {μ : Measure 𝓧} {P : ℝ → Measure �
     have hTC : T x < C := by
       by_contra hcon
       exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
-    show 1 - oneSidedTest T C γ x = 1
+    change 1 - oneSidedTest T C γ x = 1
     unfold oneSidedTest
     rw [ite_eq_right (not_lt.mpr hTC.le), ite_eq_right (ne_of_lt hTC)]; ring
   · refine Filter.Eventually.of_forall fun x hx => ?_
@@ -748,7 +748,7 @@ private lemma hasNPShape_coOneSided {μ : Measure 𝓧} {P : ℝ → Measure �
     have hTC : C < T x := by
       by_contra hcon
       exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
-    show 1 - oneSidedTest T C γ x = 0
+    change 1 - oneSidedTest T C γ x = 0
     unfold oneSidedTest; rw [ite_eq_left hTC]; ring
 
 /-- If the co-test `1 − φ` has positive power at `θ`, some point at or below the threshold
@@ -886,7 +886,7 @@ theorem essentiallyComplete_oneSidedTest
   intro ψ hψ hψsize
   obtain ⟨hα0, hα1⟩ := hψsize
   -- Match the size of `ψ` at the boundary with an honest one-sided test.
-  haveI : IsProbabilityMeasure ((P θ₀).map T) :=
+  have : IsProbabilityMeasure ((P θ₀).map T) :=
     (by infer_instance)
   obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ :=
     exists_critical_constants ((P θ₀).map T) hα0 hα1

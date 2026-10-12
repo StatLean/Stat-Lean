@@ -146,7 +146,7 @@ lemma marginalCLT_fdd_of_iid
     intro j
     rw [(_hX_id j).map_eq, _hX_law]
   -- `P` is a probability measure (pushforward of `μ` by the measurable `X 0`).
-  haveI hP_prob : IsProbabilityMeasure P := by
+  have hP_prob : IsProbabilityMeasure P := by
     rw [← _hX_law]; exact (by infer_instance)
   -- Measurable representatives `f' i =ᵐ[P] f i` of the L²(P) tuple entries.
   set f' : Fin k → (Ω → ℝ) := fun i => (_hf_memLp i).aestronglyMeasurable.mk (f i) with hf'_def
@@ -460,7 +460,7 @@ theorem outerMeasureStar_mono {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ
   refine outerExpectation_mono fun ω => ?_
   by_cases hω : ω ∈ A
   · simp only [Set.indicator_of_mem hω, Set.indicator_of_mem (hAB hω), le_refl]
-  · simp only [Set.indicator_of_notMem hω, Pi.zero_apply, zero_le]
+  · simp only [Set.indicator_of_notMem hω, zero_le]
 
 /-- **`μ`-measure is dominated by the outer measure `P*`.** `μ A ≤ P*(A)`: every
 measurable majorant `U ≥ 1_A` has `μ A = ∫⁻ 1_A ≤ ∫⁻ U`, so `μ A` is below the

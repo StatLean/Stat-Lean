@@ -48,7 +48,7 @@ private theorem coe_snocEquivM_symm :
       fun x : Fin (n + 1) → Z => (fun j : Fin n => x j.castSucc, x (Fin.last n)) := by
   funext x
   simp [snocEquivM, MeasurableEquiv.piFinSuccAbove, MeasurableEquiv.prodComm,
-    Fin.snocEquiv, MeasurableEquiv.trans, MeasurableEquiv.symm, Equiv.symm_trans_apply,
+    Fin.snocEquiv, MeasurableEquiv.trans, MeasurableEquiv.symm,
     Fin.init_def]
 
 /-- LEAN-ONLY: `Fin.snoc` transports the joint law of `(S, z')` to the
