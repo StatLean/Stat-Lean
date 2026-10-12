@@ -830,6 +830,11 @@
     "html": "B. Efron and C. Morris, \"Data analysis using Stein's estimator and its generalizations,\" *Journal of the American Statistical Association* **70**(350), 1975, pp. 311–319."
   },
   {
+    "key": "efron-stein1981",
+    "sortKey": "Efron",
+    "html": "B. Efron and C. Stein, “The jackknife estimate of variance,” *The Annals of Statistics* **9**(3), 1981, pp. 586–596."
+  },
+  {
     "key": "efron-tibshirani-storey-tusher2001",
     "sortKey": "Efron",
     "html": "B. Efron, R. Tibshirani, J. D. Storey, and V. Tusher, \"Empirical Bayes analysis of a microarray experiment,\" *Journal of the American Statistical Association* **96**(456), 2001, pp. 1151–1160."
@@ -1995,6 +2000,11 @@
     "html": "G. Raskutti, M. J. Wainwright, and B. Yu, \"Minimax rates of estimation for high-dimensional linear regression over $\\ell_q$-balls,\" *IEEE Transactions on Information Theory* **57**(10), 2011, pp. 6976–6994."
   },
   {
+    "key": "rhee-talagrand1986",
+    "sortKey": "Rhee",
+    "html": "W. T. Rhee and M. Talagrand, \"Martingale inequalities and the jackknife estimate of variance,\" *Statistics & Probability Letters* **4**(1), 1986, pp. 5–6."
+  },
+  {
     "key": "rice1984",
     "sortKey": "Rice",
     "html": "J. Rice, \"Bandwidth choice for nonparametric regression,\" *The Annals of Statistics* **12**(4), 1984, pp. 1215–1230."
@@ -2228,6 +2238,11 @@
     "key": "spearman1904",
     "sortKey": "Spearman",
     "html": "C. Spearman, \"The proof and measurement of association between two things,\" *The American Journal of Psychology* **15**(1), 1904, pp. 72–101."
+  },
+  {
+    "key": "steele1986",
+    "sortKey": "Steele",
+    "html": "J. M. Steele, \"An Efron–Stein inequality for nonsymmetric statistics,\" *The Annals of Statistics* **14**(2), 1986, pp. 753–758."
   },
   {
     "key": "stein1956",

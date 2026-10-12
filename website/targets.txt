@@ -790,3 +790,6 @@ rb-deviation-lower	StatLean.RobustStatistics.mean_estimator_deviation_lower
 rb-ballmom	StatLean.RobustStatistics.ballMoM_deviation
 rb-trimmedmean-breakdown	StatLean.RobustStatistics.trimmedMean_breakdownCount
 rb-mad-dispersion	StatLean.RobustStatistics.sampleMAD_isDispersionEstimator
+conc-efron-stein	StatLean.ConcentrationInequalities.variance_le_efronSteinBound
+conc-efron-stein-indep	StatLean.ConcentrationInequalities.variance_le_efronSteinBound_of_iIndepFun
+conc-efron-stein-resample	StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum

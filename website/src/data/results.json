@@ -41406,5 +41406,175 @@
       "median absolute deviation",
       "dispersion estimator"
     ]
+  },
+  {
+    "id": "conc-efron-stein",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "variance_le_efronSteinBound",
+    "fullName": "StatLean.ConcentrationInequalities.variance_le_efronSteinBound",
+    "title": "The Efron–Stein Inequality",
+    "citation": "Boucheron, Lugosi & Massart (2013), Thm 3.1",
+    "shortRef": "Boucheron–Lugosi–Massart (2013), Thm 3.1",
+    "file": "StatLean/ConcentrationInequalities/EfronStein/Tensorization.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/EfronStein/Tensorization.html#StatLean.ConcentrationInequalities.variance_le_efronSteinBound",
+    "informal": "<p>Let <span data-link=\"h1\">$\\mu_1, \\dots, \\mu_n$ be probability measures</span>, and let $X = (X_1, \\dots, X_n)$ be the coordinate process under their product law, so the coordinates are independent but need not be identically distributed. Let $Z = f(X)$ for a <span data-link=\"h3\">measurable</span> function $f$ with a <span data-link=\"h2\">finite second moment</span>. Write $$\\mathbf{E}^{(i)} Z \\;=\\; \\int f(X_1, \\dots, x_i, \\dots, X_n) \\, d\\mu_i(x_i)$$ for the average of $Z$ over a fresh draw of the $i$-th coordinate, every other coordinate held fixed. Then $$\\operatorname{Var}(Z) \\;\\le\\; \\sum_{i=1}^{n} \\mathbb{E}\\bigl[(Z - \\mathbf{E}^{(i)} Z)^2\\bigr].$$</p>",
+    "summary": "The variance of a square-integrable function of independent coordinates is at most the sum, over coordinates, of the expected squared deviation from its average over a fresh draw of that coordinate.",
+    "leanSignature": "theorem variance_le_efronSteinBound\n    {ι : Type*} [Fintype ι] [DecidableEq ι] {𝓧 : ι → Type*}\n    [∀ i, MeasurableSpace (𝓧 i)] (μ : ∀ i, Measure (𝓧 i))\n    [∀ i, IsProbabilityMeasure (μ i)] {f : (Π j, 𝓧 j) → ℝ}\n    (hfm : Measurable f) (hf : MemLp f 2 (Measure.pi μ)) :\n    Var[f; Measure.pi μ] ≤ efronSteinBound μ f",
+    "formalizationNotes": "The independent coordinates are realized canonically as the coordinates of a finite product of probability spaces, so the leave-one-out conditional mean $\\mathbf{E}^{(i)}$ is a plain integral in one coordinate rather than a conditional expectation, and no filtration is needed. The formalization realizes the variance decomposition and Jensen step from the source as a recursion over finite blocks of coordinates: growing a block by one coordinate adds exactly the variance of the block average in that coordinate, and Jensen's inequality bounds that increment by the corresponding Efron–Stein summand. When the block is $\\{i+1,\\ldots,n\\}$, its block average is $\\mathbf{E}_i Z$, the conditional expectation of $Z$ given $X_1,\\ldots,X_i$, and the recursion step uses $\\mathbf{E}_i[\\mathbf{E}^{(i)}Z]=\\mathbf{E}_{i-1}Z$, equation (3.1) of the source. Independence enters through the product-law facts that redrawing one coordinate or a block of coordinates preserves the distribution, proved here directly from the product-measure construction.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure (μ i)",
+        "label": "Probability marginals",
+        "note": "Each $\\mu_i$ is a probability measure, so under their product law the coordinate process is independent, with marginals that need not be identical."
+      },
+      {
+        "id": "h2",
+        "leanToken": "MemLp f 2",
+        "label": "Square-integrable",
+        "note": "$f$ has a finite second moment under the product law."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Measurable f",
+        "label": "Measurable",
+        "note": "$f$ is measurable for the product $\\sigma$-algebra."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of Independence*, Oxford University Press, 2013.",
+      "pointer": "§3.1, Theorem 3.1",
+      "keys": [
+        "blm2013",
+        "efron-stein1981",
+        "rhee-talagrand1986",
+        "steele1986"
+      ],
+      "biblio": "The inequality takes its name from B. Efron and C. Stein, “The jackknife estimate of variance,” *The Annals of Statistics* **9**(3), 1981, pp. 586–596. The end-of-chapter notes state: \"While the original result of Efron and Stein had some extra conditions and came with a sub-optimal constant, Steele (1986) and Rhee and Talagrand (1986) obtained improved versions and the form presented in Theorem 3.1.\" For a symmetric statistic $S$ of i.i.d. observations, Theorem 1 of the 1981 paper gives an exact formula for the bias of the natural jackknife estimate of $\\operatorname{Var} S(X_1,\\ldots,X_{n-1})$. Theorem 2 drops symmetry and identical distribution in the paper's leave-one-out setting: for independent observations it proves $\\mathbb{E}\\sum_i(S_{(i)}-S_{(\\cdot)})^2 \\ge n^{-1}\\sum_i\\operatorname{Var}(S_{(i)}) \\ge \\frac{n}{n-1}\\operatorname{Var}(S_{(\\cdot)})$, where $S_{(i)}$ is the statistic computed with observation $i$ deleted and $S_{(\\cdot)}$ is the average of the $S_{(i)}$. The notes also state: \"The proof shown in Section 3.1 appears in Rhee and Talagrand (1986).\""
+    },
+    "keywords": [
+      "Efron–Stein inequality",
+      "tensorization of the variance",
+      "concentration inequality"
+    ]
+  },
+  {
+    "id": "conc-efron-stein-indep",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "variance_le_efronSteinBound_of_iIndepFun",
+    "fullName": "StatLean.ConcentrationInequalities.variance_le_efronSteinBound_of_iIndepFun",
+    "title": "Efron–Stein Inequality for Independent Random Variables",
+    "citation": "Boucheron, Lugosi & Massart (2013), Thm 3.1",
+    "shortRef": "Boucheron–Lugosi–Massart (2013), Thm 3.1",
+    "file": "StatLean/ConcentrationInequalities/EfronStein/IndepFun.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/EfronStein/IndepFun.html#StatLean.ConcentrationInequalities.variance_le_efronSteinBound_of_iIndepFun",
+    "informal": "<p>Let <span data-link=\"h1\">$(\\Omega, \\mathcal F, P)$ be a probability space</span>, and let $X_1, \\dots, X_n$ be <span data-link=\"h3\">independent</span> maps that are <span data-link=\"h2\">measurable almost everywhere under $P$</span>, with respective laws $\\mu_1, \\dots, \\mu_n$; they need not be identically distributed. For a <span data-link=\"h4\">measurable</span> function $f$, suppose $Z=f(X_1,\\dots,X_n)$ has a <span data-link=\"h5\">finite second moment</span>. For $x=(x_1,\\dots,x_n)$, write $$\\mathbf{E}^{(i)}f(x) \\;=\\; \\int f(x_1, \\dots, y_i, \\dots, x_n) \\, d\\mu_i(y_i).$$ Independence identifies the joint law of $X$ with $\\bigotimes_j \\mu_j$, and $$\\operatorname{Var}_P(Z) \\;\\le\\; \\sum_{i=1}^{n} \\mathbb{E}_{\\bigotimes_j \\mu_j}\\!\\left[(f(x)-\\mathbf{E}^{(i)}f(x))^2\\right].$$</p>",
+    "summary": "A square-integrable function of independent random variables on an arbitrary probability space satisfies the Efron–Stein variance bound computed from their marginal laws.",
+    "leanSignature": "theorem variance_le_efronSteinBound_of_iIndepFun\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    [IsProbabilityMeasure P]\n    {ι : Type*} [Fintype ι] [DecidableEq ι]\n    {𝓧 : ι → Type*} [∀ i, MeasurableSpace (𝓧 i)]\n    {X : (i : ι) → Ω → 𝓧 i}\n    (hX_meas : ∀ i, AEMeasurable (X i) P)\n    (hX_indep : iIndepFun X P)\n    {f : (Π i, 𝓧 i) → ℝ}\n    (hf_meas : Measurable f)\n    (hf : MemLp (fun ω => f (fun i => X i ω)) 2 P) :\n    Var[fun ω => f (fun i => X i ω); P]\n      ≤ efronSteinBound (fun i => P.map (X i)) f",
+    "formalizationNotes": "This is the abstract-probability-space interface to the canonical product-space theorem. Independence identifies the joint law of the family with the product of its marginal laws; square-integrability and variance are transported across that identity, after which `variance_le_efronSteinBound` applies. The right-hand side is therefore the same coordinate-resampling bound, expressed using the marginal laws $P \\circ X_i^{-1}$. No identical-distribution assumption is imposed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure P",
+        "label": "Probability space",
+        "note": "$P$ is a probability measure on the underlying sample space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hX_meas",
+        "label": "A.e.-measurable variables",
+        "note": "Every coordinate random variable $X_i$ is measurable almost everywhere under $P$."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hX_indep",
+        "label": "Independent variables",
+        "note": "The finite family $(X_i)_i$ is jointly independent under $P$."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hf_meas",
+        "label": "Measurable function",
+        "note": "$f$ is measurable on the product of the coordinate spaces."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hf : MemLp",
+        "label": "Square-integrable",
+        "note": "$f(X_1,\\dots,X_n)$ has a finite second moment under $P$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of Independence*, Oxford University Press, 2013.",
+      "pointer": "§3.1, Theorem 3.1",
+      "keys": [
+        "blm2013",
+        "efron-stein1981",
+        "rhee-talagrand1986",
+        "steele1986"
+      ],
+      "biblio": "The inequality takes its name from B. Efron and C. Stein, “The jackknife estimate of variance,” *The Annals of Statistics* **9**(3), 1981, pp. 586–596. The end-of-chapter notes state: \"While the original result of Efron and Stein had some extra conditions and came with a sub-optimal constant, Steele (1986) and Rhee and Talagrand (1986) obtained improved versions and the form presented in Theorem 3.1.\" For a symmetric statistic $S$ of i.i.d. observations, Theorem 1 of the 1981 paper gives an exact formula for the bias of the natural jackknife estimate of $\\operatorname{Var} S(X_1,\\ldots,X_{n-1})$. Theorem 2 drops symmetry and identical distribution in the paper's leave-one-out setting: for independent observations it proves $\\mathbb{E}\\sum_i(S_{(i)}-S_{(\\cdot)})^2 \\ge n^{-1}\\sum_i\\operatorname{Var}(S_{(i)}) \\ge \\frac{n}{n-1}\\operatorname{Var}(S_{(\\cdot)})$, where $S_{(i)}$ is the statistic computed with observation $i$ deleted and $S_{(\\cdot)}$ is the average of the $S_{(i)}$. The notes also state: \"The proof shown in Section 3.1 appears in Rhee and Talagrand (1986).\""
+    },
+    "keywords": [
+      "Efron–Stein inequality",
+      "concentration inequality"
+    ]
+  },
+  {
+    "id": "conc-efron-stein-resample",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "efronSteinBound_eq_half_sum",
+    "fullName": "StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum",
+    "title": "Resampled Form of the Efron–Stein Bound",
+    "citation": "Boucheron, Lugosi & Massart (2013), Thm 3.1",
+    "shortRef": "Boucheron–Lugosi–Massart (2013), Thm 3.1",
+    "file": "StatLean/ConcentrationInequalities/EfronStein/Defs.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/EfronStein/Defs.html#StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum",
+    "informal": "<p>Let <span data-link=\"h1\">$\\mu_1, \\dots, \\mu_n$ be probability measures</span>, and let $X = (X_1, \\dots, X_n)$ be the coordinate process under their product law, so the coordinates are independent but need not be identically distributed. Let $Z = f(X)$ for a <span data-link=\"h3\">measurable</span> function $f$ with a <span data-link=\"h2\">finite second moment</span>. Let $X_i'$ be an independent copy of $X_i$ and write $Z_i' = f(X_1, \\dots, X_i', \\dots, X_n)$ for the value of $f$ after the $i$-th coordinate is redrawn. Then the quantity $$v \\;=\\; \\sum_{i=1}^{n} \\mathbb{E}\\bigl[(Z - \\mathbf{E}^{(i)} Z)^2\\bigr], \\qquad \\mathbf{E}^{(i)} Z = \\int f(X_1, \\dots, x_i, \\dots, X_n) \\, d\\mu_i(x_i),$$ which bounds $\\operatorname{Var}(Z)$ in the Efron–Stein inequality, admits the resampled form $$v \\;=\\; \\tfrac12 \\sum_{i=1}^{n} \\mathbb{E}\\bigl[(Z - Z_i')^2\\bigr].$$</p>",
+    "summary": "The Efron–Stein bound equals one half of the sum, over coordinates, of the expected squared change in the statistic when that coordinate is redrawn from an independent copy.",
+    "leanSignature": "theorem efronSteinBound_eq_half_sum\n    {ι : Type*} [Fintype ι] [DecidableEq ι] {𝓧 : ι → Type*}\n    [∀ i, MeasurableSpace (𝓧 i)] (μ : ∀ i, Measure (𝓧 i))\n    [∀ i, IsProbabilityMeasure (μ i)] {f : (Π j, 𝓧 j) → ℝ}\n    (hfm : Measurable f) (hf : MemLp f 2 (Measure.pi μ)) :\n    efronSteinBound μ f\n      = (1 / 2) * ∑ i, ∫ x, ∫ y, (f x - f (Function.update x i y)) ^ 2 ∂(μ i)\n          ∂(Measure.pi μ)",
+    "formalizationNotes": "Stated on the canonical product of probability spaces, where $\\mathbf{E}^{(i)}$ is a plain integral in the $i$-th coordinate. The resampled copy is expressed by updating that coordinate rather than by introducing a second product space, so the identity is an iterated integral over the sample and one fresh coordinate. The proof combines two elementary facts: the variance of a square-integrable function equals half the averaged squared difference of two independent copies, and averaging over a fresh $i$-th coordinate leaves an expectation unchanged. The source states this chain inside the proof of Theorem 3.1, together with the one-sided and variational forms of $v$, which are not formalized here.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure (μ i)",
+        "label": "Probability marginals",
+        "note": "Each $\\mu_i$ is a probability measure, so under their product law the coordinate process is independent, with marginals that need not be identical."
+      },
+      {
+        "id": "h2",
+        "leanToken": "MemLp f 2",
+        "label": "Square-integrable",
+        "note": "$f$ has a finite second moment under the product law."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Measurable f",
+        "label": "Measurable",
+        "note": "$f$ is measurable for the product $\\sigma$-algebra."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of Independence*, Oxford University Press, 2013.",
+      "pointer": "§3.1, Theorem 3.1",
+      "keys": [
+        "blm2013",
+        "efron-stein1981",
+        "rhee-talagrand1986",
+        "steele1986"
+      ],
+      "biblio": "The inequality takes its name from B. Efron and C. Stein, “The jackknife estimate of variance,” *The Annals of Statistics* **9**(3), 1981, pp. 586–596. The end-of-chapter notes state: \"While the original result of Efron and Stein had some extra conditions and came with a sub-optimal constant, Steele (1986) and Rhee and Talagrand (1986) obtained improved versions and the form presented in Theorem 3.1.\" For a symmetric statistic $S$ of i.i.d. observations, Theorem 1 of the 1981 paper gives an exact formula for the bias of the natural jackknife estimate of $\\operatorname{Var} S(X_1,\\ldots,X_{n-1})$. Theorem 2 drops symmetry and identical distribution in the paper's leave-one-out setting: for independent observations it proves $\\mathbb{E}\\sum_i(S_{(i)}-S_{(\\cdot)})^2 \\ge n^{-1}\\sum_i\\operatorname{Var}(S_{(i)}) \\ge \\frac{n}{n-1}\\operatorname{Var}(S_{(\\cdot)})$, where $S_{(i)}$ is the statistic computed with observation $i$ deleted and $S_{(\\cdot)}$ is the average of the $S_{(i)}$. The notes also state: \"The proof shown in Section 3.1 appears in Rhee and Talagrand (1986).\""
+    },
+    "keywords": [
+      "Efron–Stein inequality",
+      "resampling",
+      "concentration inequality"
+    ]
   }
 ]
