@@ -53,6 +53,8 @@ proof-search failure.  The nesting-free telescope above avoids it entirely: keep
   independence is ever invoked (that is the point of the martingale method).
 -/
 
+set_option linter.style.longFile 1600
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

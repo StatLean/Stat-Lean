@@ -88,6 +88,8 @@ Processes* (1998), Thms 1.3–1.4. Hoeffding's covariance identity is from Hoeff
 (1940); its use here follows Doukhan (1994) §1.2.2.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 

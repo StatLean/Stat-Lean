@@ -30,6 +30,8 @@ Reference: vdV §25.5, thm:25.57 (vector form). Main declarations:
 `oneStep_asympLinear_native_vec`, `oneStep_semiparametricallyEfficient_native_vec`.
 -/
 
+set_option linter.style.longFile 1700
+
 set_option backward.isDefEq.respectTransparency false
 
 

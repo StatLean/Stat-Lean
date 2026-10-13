@@ -7,6 +7,8 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-! # Bayes bound for Gaussian shifts on an effective cone span -/
+
+set_option linter.style.longFile 1600
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal MatrixOrder RealInnerProductSpace
 namespace AsymptoticStatistics.LowerBounds.GaussianConeBayes

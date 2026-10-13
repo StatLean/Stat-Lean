@@ -43,6 +43,8 @@ proof; the martingale-difference score route is Hall–Heyde (1980) §6.2 and Ya
 Brockwell (2001, personal-communication route cited by FY).
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

@@ -486,6 +486,8 @@ now theorems.
 *Testing Statistical Hypotheses*, 4th ed., Springer, 2022, §16.4, Lemma 16.4.1.
 -/
 
+set_option linter.style.longFile 13000
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal BigOperators InnerProductSpace Real
 

@@ -37,6 +37,8 @@ The construction uses ONLY `g_P i ∈ ↥(L2ZeroMean P)`: no moment-strengthenin
 (L⁴, essential boundedness) is taken anywhere.
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal BigOperators
 

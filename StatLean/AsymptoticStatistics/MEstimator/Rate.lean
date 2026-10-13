@@ -27,6 +27,8 @@ Euclidean estimator.
 
 -/
 
+set_option linter.style.longFile 1600
+
 namespace AsymptoticStatistics.MEstimator
 
 open MeasureTheory Filter ProbabilityTheory EmpiricalProcess

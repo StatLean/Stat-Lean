@@ -51,6 +51,8 @@ applies to `scaledIncrement m θ₀ n` at radius `M` and scale `s`, uniformly in
 vdV §19.5, Lem 19.31 / Lem 19.34 / Thm 19.28.
 -/
 
+set_option linter.style.longFile 2700
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter

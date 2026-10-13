@@ -13,6 +13,8 @@ Reference: van der Vaart, *Asymptotic Statistics*, §19.2, Theorem 19.14,
 book p.274.
 -/
 
+set_option linter.style.longFile 1800
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory Filter ProbabilityTheory IsonormalProcess

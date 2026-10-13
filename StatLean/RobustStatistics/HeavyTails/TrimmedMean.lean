@@ -64,6 +64,8 @@ adversarially-contaminated optimality is Lugosi and Mendelson, "Robust multivari
 estimation: the optimality of trimmed mean," *Ann. Statist.* **49** (2021), 393–410.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory Filter Topology ProbabilityTheory
 
 namespace StatLean.RobustStatistics

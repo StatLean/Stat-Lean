@@ -8,6 +8,8 @@ This module contains the partition-level analytic argument of vdV Lemma 19.36,
 independent of the general bound in Lemma 19.34.
 -/
 
+set_option linter.style.longFile 1900
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal

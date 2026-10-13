@@ -28,6 +28,8 @@ Reference: van der Vaart §25.3.1 (Hájek's representation theorem) and §25.3.2
 (regular-estimator definition).
 -/
 
+set_option linter.style.longFile 1600
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal NNReal BigOperators
 

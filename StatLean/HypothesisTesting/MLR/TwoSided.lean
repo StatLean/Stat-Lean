@@ -90,6 +90,8 @@ procedures for distributions with monotone likelihood ratio," *Ann. Math. Statis
 (1956), 272–299).
 -/
 
+set_option linter.style.longFile 2500
+
 open MeasureTheory
 open scoped ENNReal InnerProductSpace
 

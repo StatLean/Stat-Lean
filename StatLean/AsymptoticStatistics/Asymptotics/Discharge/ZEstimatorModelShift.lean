@@ -25,6 +25,8 @@ Reference: vdV §25.8, equation (25.52), pp. 391--392, and Theorem 25.59,
 p. 395. The displayed correction is written in covariant coordinates.
 -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal Matrix.Norms.L2Operator
 

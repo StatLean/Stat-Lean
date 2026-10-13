@@ -82,6 +82,8 @@ double series via `dl_shellSum_reduction` — Type-I support-pattern count
 van der Vaart (*Ann. Statist.* 40 (2012), 2069–2101).
 -/
 
+set_option linter.style.longFile 2500
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ENNReal NNReal RealInnerProductSpace Topology Classical
 

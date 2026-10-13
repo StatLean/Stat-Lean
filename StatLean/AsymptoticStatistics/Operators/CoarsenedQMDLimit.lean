@@ -28,6 +28,8 @@ The definitions `pbar`, `xi`, `qtilde`, `cross`, `Cdom`, `Acoef`, and `rho`
 denote the quantities in this decomposition.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory Filter Topology
 open scoped ENNReal
 

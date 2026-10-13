@@ -182,6 +182,8 @@ estimation of regression functions for mixing processes* (Scand. J. Statist. 199
 Fan & Gijbels (1996) §6.5; the Bernstein-block scheme under (C3) follows Bosq (1998).
 -/
 
+set_option linter.style.longFile 7100
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 

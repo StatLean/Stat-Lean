@@ -53,6 +53,8 @@ Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6,
 p.286-288.
 -/
 
+set_option linter.style.longFile 5900
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter

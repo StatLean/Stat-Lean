@@ -92,6 +92,8 @@ P. W. Millar ("Confidence sets for a multivariate distribution," *Ann. Statist.*
 P. Hall, *The Bootstrap and Edgeworth Expansion*, Springer, 1992.
 -/
 
+set_option linter.style.longFile 2300
+
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal Topology BoundedContinuousFunction
 

@@ -68,6 +68,8 @@ property is what makes the indexed ratio a supermartingale. The reformulation as
 over all $d$ ordered magnitudes, used here, follows Candès's STAT 300C Lecture 11 presentation.
 -/
 
+set_option linter.style.longFile 2400
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal
 

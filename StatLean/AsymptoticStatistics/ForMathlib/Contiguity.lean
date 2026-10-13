@@ -25,6 +25,8 @@ Main declarations:
 * `weak_limit_under_Q_of_lecam_third` — Le Cam's third lemma (vdV Theorem 6.6).
 -/
 
+set_option linter.style.longFile 3800
+
 open MeasureTheory Filter Topology BoundedContinuousFunction
 open scoped ENNReal NNReal
 

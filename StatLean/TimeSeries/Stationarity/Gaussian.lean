@@ -51,6 +51,8 @@ processes", *Ann. of Math.* **41** (1940), 215–230). The Wold decomposition is
 *Grundbegriffe* (1933) plus classical multivariate normal theory.
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Real ENNReal Topology
 

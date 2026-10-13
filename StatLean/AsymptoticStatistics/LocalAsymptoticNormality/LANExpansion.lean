@@ -35,6 +35,8 @@ a Taylor expansion of `2 log(1 + W/2) = W - W²/4 + o_P(W²)` applied to
 pair for the i.i.d. sample `(W_i)`.
 -/
 
+set_option linter.style.longFile 2500
+
 open MeasureTheory ProbabilityTheory Asymptotics Filter Topology
 open scoped RealInnerProductSpace ENNReal NNReal
 

@@ -26,6 +26,8 @@ Pⁿ-probability.
 Reference: vdV §25.8 thm:25.57 + Taylor strong-regularity remark.
 -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped InnerProductSpace ENNReal Function
 

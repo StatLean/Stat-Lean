@@ -101,6 +101,8 @@ W. G. Cochran ("The χ² test of goodness of fit," *Ann. Math. Statist.* **23** 
 315–345).
 -/
 
+set_option linter.style.longFile 3600
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal BigOperators NNReal InnerProductSpace
 

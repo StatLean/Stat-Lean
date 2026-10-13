@@ -18,6 +18,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Junwei Lu, Claude Opus 4.7
 -/
 
+set_option linter.style.longFile 2800
+
 /-!
 # Joint LR weak convergence
 

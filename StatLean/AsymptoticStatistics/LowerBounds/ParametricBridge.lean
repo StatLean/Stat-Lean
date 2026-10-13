@@ -112,6 +112,8 @@ steps assembled in this file are a synthesis (vdV §25.3) of these
 sources rather than a single seminal result.
 -/
 
+set_option linter.style.longFile 2200
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal NNReal Matrix ProbabilityTheory
 

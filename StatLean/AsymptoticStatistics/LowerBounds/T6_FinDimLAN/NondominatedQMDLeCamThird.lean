@@ -9,6 +9,8 @@ import Mathlib.Probability.Independence.InfinitePi
 
 /-! # Le Cam theory for nondominated QMD paths -/
 
+set_option linter.style.longFile 1600
+
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal InnerProductSpace RealInnerProductSpace
 

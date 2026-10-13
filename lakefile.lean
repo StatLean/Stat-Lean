@@ -9,6 +9,8 @@ package "StatLean" where
     ⟨`relaxedAutoImplicit, false⟩,
     ⟨`maxSynthPendingDepth, .ofNat 3⟩,
     ⟨`weak.linter.mathlibStandardSet, true⟩,
+    ⟨`weak.linter.style.header, false⟩,
+    ⟨`weak.linter.style.longFile, .ofNat 1500⟩,
   ]
 
 -- doc-gen4 is only required in the `dev` environment so normal users of the

@@ -47,6 +47,8 @@ Prop 10.3.1–Thm 10.3.2; the χ²₂-limit picture of periodogram ordinates goe
 Fisher (1929) and Bartlett (1950).
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Real Topology
 

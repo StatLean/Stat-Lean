@@ -98,6 +98,8 @@ moments of the projected law.
 the expansion is obtained from the multivariate expansion of that mean).
 -/
 
+set_option linter.style.longFile 2700
+
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal Topology RealInnerProductSpace
 

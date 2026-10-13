@@ -100,6 +100,8 @@ the linear span, and Sheppard's bivariate orthant identity — both removed with
 served.
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

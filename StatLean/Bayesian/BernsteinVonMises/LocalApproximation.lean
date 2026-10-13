@@ -56,6 +56,8 @@ restricts to the good rectangle using the DQM singular-mass controls
 (`dqm_perturbation_excess/deficit_mass_tendsto`).
 -/
 
+set_option linter.style.longFile 2100
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean

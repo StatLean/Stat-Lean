@@ -13,6 +13,8 @@ weighted-score `L²` condition (25.56), these two terms cancel in probability al
 every deterministic root-`n` sequence.
 -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory Filter Topology
 open Asymptotics
 open scoped ENNReal Matrix.Norms.L2Operator

@@ -31,6 +31,8 @@ removing the `√log` and giving `E*‖𝔾ₙ‖ ≲ C_d·δq`.
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Thm 2.14.1, Cor 19.35.
 -/
 
+set_option linter.style.longFile 2000
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter

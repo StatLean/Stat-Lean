@@ -26,6 +26,8 @@ random `fhat`) from `IsAsymptoticallyEquicontinuous 𝓕 P` and the
 
 -/
 
+set_option linter.style.longFile 2300
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory Filter ProbabilityTheory

@@ -25,6 +25,8 @@ Aumann-style projection measurability; it does NOT depend on lower
 semicontinuity of `ℓ` in the second factor.
 -/
 
+set_option linter.style.longFile 2100
+
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal NNReal
 

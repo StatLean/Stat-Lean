@@ -63,6 +63,8 @@ partial-sum limit — definitionally `IsFilteredBy` (`Spectral/LinearFilter.lean
 this Process-layer file must not import.
 -/
 
+set_option linter.style.longFile 2800
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

@@ -40,6 +40,8 @@ heteroscedasticity with estimates of the variance of United Kingdom inflation*
 (1986) Thm 1; the Volterra route used here is Giraitis, Kokoszka & Leipus (2000).
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 

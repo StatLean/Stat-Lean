@@ -56,6 +56,8 @@ on the correction term suffices, and that follows from the entrywise rank-one do
 FY Theorem 3.2 cites both. (`Hannan 1973 / B&D §10.8`.)
 -/
 
+set_option linter.style.longFile 5900
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

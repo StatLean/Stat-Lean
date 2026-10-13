@@ -77,6 +77,8 @@ combining independent tests of significance," *Biometrika* **30** (1938), 134–
 modern treatment via the multivariate central limit theorem is standard.
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal BigOperators Matrix RealInnerProductSpace
 

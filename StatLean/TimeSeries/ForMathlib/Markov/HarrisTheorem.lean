@@ -102,6 +102,8 @@ minorization formulation is Meyn & Tweedie, *Markov Chains and Stochastic Stabil
 Hairer–Mattingly simplification, which needs no irreducibility theory.
 -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory ProbabilityTheory Filter StatLean.Minimaxity StatLean.Bayesian
 open scoped ProbabilityTheory Topology ENNReal
 

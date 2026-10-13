@@ -133,6 +133,8 @@ similar tests to tests with Neyman structure is due to E. L. Lehmann and H. Sche
 **15** (1955), 219–236).
 -/
 
+set_option linter.style.longFile 4100
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal InnerProductSpace
 

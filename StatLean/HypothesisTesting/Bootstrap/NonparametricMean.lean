@@ -91,6 +91,8 @@ J. P. Romano and M. Wolf, *Subsampling*, Springer, 1999. The superiority of the 
 1992.
 -/
 
+set_option linter.style.longFile 2100
+
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal Topology BoundedContinuousFunction
 

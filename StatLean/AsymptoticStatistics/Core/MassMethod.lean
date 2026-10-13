@@ -126,6 +126,8 @@ no original research paper states this exact equivalence under these
 hypotheses.
 -/
 
+set_option linter.style.longFile 3100
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal
 

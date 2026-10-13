@@ -77,6 +77,8 @@ Publ. Statist.* **3** (1960), 37–98; "On the assumptions used to prove asympto
 of maximum likelihood estimates," *Ann. Math. Statist.* **41** (1970), 802–828).
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open AsymptoticStatistics AsymptoticStatistics.AsymptoticRepresentation
 open scoped RealInnerProductSpace ENNReal Matrix BoundedContinuousFunction MatrixOrder

@@ -11,6 +11,8 @@ import Mathlib.Data.Fintype.EquivFin
 
 /-! # Finite-experiment minimax transfer for nondominated selected paths -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal InnerProductSpace
 

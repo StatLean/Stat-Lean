@@ -41,6 +41,8 @@ Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Theorem
 18.14 (book p.261), §19.2.
 -/
 
+set_option linter.style.longFile 2200
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory Filter Topology AsymptoticStatistics BoundedContinuousFunction

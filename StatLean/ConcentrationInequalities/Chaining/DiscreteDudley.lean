@@ -52,6 +52,8 @@ of compact subsets of Hilbert space and continuity of Gaussian processes,"
 sub-gaussian extension is folklore).
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal
 

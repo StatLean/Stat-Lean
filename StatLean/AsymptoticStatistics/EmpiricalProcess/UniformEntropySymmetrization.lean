@@ -26,6 +26,8 @@ Reference: van der Vaart, *Asymptotic Statistics*, §19.2, Theorem 19.13,
 p.274.
 -/
 
+set_option linter.style.longFile 3000
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory Filter ENNReal

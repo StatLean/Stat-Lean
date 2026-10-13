@@ -48,6 +48,8 @@ Proposition 2.2, pp. 40–41). (`FY §2.1.2 Thm 2.1, Def 2.3; §2.2.1 eq. (2.21)
 Yule–Walker equations: G. U. Yule (1927), G. T. Walker (1931).
 -/
 
+set_option linter.style.longFile 1700
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 

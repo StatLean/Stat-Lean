@@ -82,6 +82,8 @@ M. Dwass ("Modified randomization tests for nonparametric hypotheses," *Ann. Mat
 Statist.* **28** (1957), 181–187).
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal
 

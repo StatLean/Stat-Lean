@@ -224,6 +224,8 @@ expansions to improve accuracy, is due to R. Beran ("Bootstrap methods in statis
 *Jahresber. Deutsch. Math.-Verein.* **86** (1984), 14–30).
 -/
 
+set_option linter.style.longFile 19500
+
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal Topology RealInnerProductSpace FourierTransform
 

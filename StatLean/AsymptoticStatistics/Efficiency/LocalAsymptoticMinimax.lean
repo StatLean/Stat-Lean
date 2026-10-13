@@ -103,6 +103,8 @@ van der Vaart's Theorem 8.11 synthesizes Hájek's result within
 the LAN / convolution-theorem framework of Chapter 8.
 -/
 
+set_option linter.style.longFile 3400
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped RealInnerProductSpace ENNReal MatrixOrder
 

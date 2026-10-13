@@ -82,6 +82,8 @@ van der Vaart's Theorem 8.3 / Theorem 7.10 specialize Le Cam's asymptotic
 representation theorem to the locally asymptotically normal case.
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped RealInnerProductSpace ENNReal
 

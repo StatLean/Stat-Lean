@@ -31,6 +31,8 @@ Theorem 7.2 + Lemma 7.6 (DQM-Taylor). Main declarations:
 `zEstimator_asympLinear_of_taylor` and `toEfficientScoreEqAssumptions`.
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal Function
 

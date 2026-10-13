@@ -90,6 +90,8 @@ randomization tests of some nonparametric hypotheses," *Ann. Statist.* **17** (1
 robust permutation tests," *Ann. Statist.* **41** (2013), 484–507).
 -/
 
+set_option linter.style.longFile 2200
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal
 

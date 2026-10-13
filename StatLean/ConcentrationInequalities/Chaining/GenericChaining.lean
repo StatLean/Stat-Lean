@@ -47,6 +47,8 @@ matching lower bound (the majorizing measure theorem) is not formalized
 here.
 -/
 
+set_option linter.style.longFile 1700
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal BigOperators
 

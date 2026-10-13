@@ -114,6 +114,8 @@ exchangeable pairs (C. Stein, *Approximate Computation of Expectations*, IMS, 19
 through a coupling with the conditioned Bernoulli representation.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal
 

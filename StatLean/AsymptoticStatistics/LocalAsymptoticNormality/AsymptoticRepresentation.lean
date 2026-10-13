@@ -33,6 +33,8 @@ abstract Gaussian-shift family; `LAN_representation` specializes it to the canon
 multivariate Gaussian experiment.
 -/
 
+set_option linter.style.longFile 2600
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped RealInnerProductSpace ENNReal
 

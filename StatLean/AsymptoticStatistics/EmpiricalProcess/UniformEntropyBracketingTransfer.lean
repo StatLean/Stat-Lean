@@ -18,6 +18,8 @@ brackets back to the original class.
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, p.274.
 -/
 
+set_option linter.style.longFile 2400
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory

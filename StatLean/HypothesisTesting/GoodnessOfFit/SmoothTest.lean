@@ -83,6 +83,8 @@ choice of `k`, are surveyed in J. C. W. Rayner and D. J. Best, *Smooth Tests of 
 Fit*, Oxford University Press, 1989.
 -/
 
+set_option linter.style.longFile 2300
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal BigOperators InnerProductSpace
 

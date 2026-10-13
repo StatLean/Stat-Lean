@@ -28,6 +28,8 @@ the residual-ACF distribution correction is Box & Pierce (1970), refined by
 Ljung & Box (1978) — both cited by FY without statements.
 -/
 
+set_option linter.style.longFile 3500
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

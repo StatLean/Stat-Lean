@@ -13,6 +13,8 @@ Vaart Lemma 19.15.
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, pp.275--276.
 -/
 
+set_option linter.style.longFile 2100
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 noncomputable section

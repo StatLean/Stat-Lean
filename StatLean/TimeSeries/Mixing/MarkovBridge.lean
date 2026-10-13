@@ -107,6 +107,8 @@ and 4.2 (vol. 1); the geometric-ergodicity route to β-mixing is standard from
 Nummelin–Tuominen and Meyn–Tweedie ch. 16.
 -/
 
+set_option linter.style.longFile 3400
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 

@@ -41,6 +41,8 @@ stationarity criterion for GARCH(1,1) is D. B. Nelson, *Stationarity and persist
 the GARCH(1,1) model* (Econometric Theory 6 (1990), 318–334).
 -/
 
+set_option linter.style.longFile 2200
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 

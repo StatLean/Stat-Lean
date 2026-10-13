@@ -28,6 +28,8 @@ The per-level chaining lemmas in this file
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
 -/
 
+set_option linter.style.longFile 2500
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter

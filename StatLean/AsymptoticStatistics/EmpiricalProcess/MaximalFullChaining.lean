@@ -9,6 +9,8 @@ uses a clamped nested partition whose head and successive links satisfy a
 tail-free chaining bound.
 -/
 
+set_option linter.style.longFile 2300
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter

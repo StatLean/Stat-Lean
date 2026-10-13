@@ -15,6 +15,8 @@ split. The declarations make no reference to a numbered
 statistical theorem or to asymptotic linearity.
 -/
 
+set_option linter.style.longFile 3000
+
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal Matrix.Norms.L2Operator
 
