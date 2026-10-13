@@ -27,6 +27,9 @@
     {"id":"Measurable.fun_neg","label":"fun_neg","full":"Measurable.fun_neg","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousNeg.measurableNeg","label":"measurableNeg","full":"ContinuousNeg.measurableNeg","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
+    {"id":"MeasureTheory.isFiniteMeasure_withDensity_ofReal","label":"isFiniteMeasure_withDensity_ofReal","full":"MeasureTheory.isFiniteMeasure_withDensity_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral"},
+    {"id":"MeasureTheory.Integrable.pos_part","label":"pos_part","full":"MeasureTheory.Integrable.pos_part","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
+    {"id":"MeasureTheory.Integrable.neg_part","label":"neg_part","full":"MeasureTheory.Integrable.neg_part","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"IsOpen.preimage","label":"preimage","full":"IsOpen.preimage","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"Continuous.const_add","label":"const_add","full":"Continuous.const_add","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid.Defs"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
@@ -43,10 +46,7 @@
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"ENNReal.ofReal_max","label":"ofReal_max","full":"ENNReal.ofReal_max","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"ENNReal.ofReal_zero","label":"ofReal_zero","full":"ENNReal.ofReal_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
-    {"id":"sup_of_le_left","label":"sup_of_le_left","full":"sup_of_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice"},
-    {"id":"ENNReal.toReal_ofReal","label":"toReal_ofReal","full":"ENNReal.toReal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
-    {"id":"le_max_right","label":"le_max_right","full":"le_max_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
-    {"id":"max_mul_of_nonneg","label":"max_mul_of_nonneg","full":"max_mul_of_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"}
+    {"id":"sup_of_le_left","label":"sup_of_le_left","full":"sup_of_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.isCompleteStat_of_interior_nonempty","target":"StatLean.PointEstimation.ExpFamily"},
@@ -79,6 +79,9 @@
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"Measurable.fun_neg"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"ContinuousNeg.measurableNeg"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"IsTopologicalRing.toIsSemitopologicalRing"},
+    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"MeasureTheory.isFiniteMeasure_withDensity_ofReal"},
+    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"MeasureTheory.Integrable.pos_part"},
+    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"MeasureTheory.Integrable.neg_part"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"IsOpen.preimage"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"Continuous.const_add"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
@@ -95,9 +98,6 @@
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"Filter.Eventually.of_forall"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"ENNReal.ofReal_max"},
     {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"ENNReal.ofReal_zero"},
-    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"sup_of_le_left"},
-    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"ENNReal.toReal_ofReal"},
-    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"le_max_right"},
-    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"max_mul_of_nonneg"}
+    {"source":"StatLean.PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero","target":"sup_of_le_left"}
   ]
 }

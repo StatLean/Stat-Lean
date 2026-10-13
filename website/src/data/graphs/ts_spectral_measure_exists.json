@@ -42,11 +42,11 @@
     {"id":"AddCommMagma.to_isCommutative","label":"to_isCommutative","full":"AddCommMagma.to_isCommutative","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"AddSubgroup.isClosed_of_discreteTopology","label":"isClosed_of_discreteTopology","full":"AddSubgroup.isClosed_of_discreteTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.OpenSubgroup"},
     {"id":"T6Space.toT5Space","label":"toT5Space","full":"T6Space.toT5Space","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Separation.GDelta"},
-    {"id":"SeqCompactSpace.tendsto_subseq","label":"tendsto_subseq","full":"SeqCompactSpace.tendsto_subseq","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Sequences"},
     {"id":"compactSpace_iff_seqCompactSpace","label":"compactSpace_iff_seqCompactSpace","full":"compactSpace_iff_seqCompactSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Sequences"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
-    {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"}
+    {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
+    {"id":"AddCircle.compactSpace","label":"compactSpace","full":"AddCircle.compactSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Instances.AddCircle.Real"}
   ],
   "edges": [
     {"source":"StatLean.TimeSeries.exists_isSpectralMeasure","target":"StatLean.TimeSeries.IsStationary"},
@@ -94,10 +94,10 @@
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"AddCommMagma.to_isCommutative"},
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"AddSubgroup.isClosed_of_discreteTopology"},
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"T6Space.toT5Space"},
-    {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"SeqCompactSpace.tendsto_subseq"},
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"compactSpace_iff_seqCompactSpace"},
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
     {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"IsTopologicalRing.toIsSemitopologicalRing"},
-    {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"TopologicalSpace.t2Space_of_metrizableSpace"}
+    {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"TopologicalSpace.t2Space_of_metrizableSpace"},
+    {"source":"StatLean.TimeSeries.exists_measure_of_isPosSemidefSeq","target":"AddCircle.compactSpace"}
   ]
 }

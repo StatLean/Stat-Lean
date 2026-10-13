@@ -11,6 +11,7 @@
     {"id":"AsymptoticStatistics.Contiguity.MutuallyContiguous","label":"MutuallyContiguous","full":"AsymptoticStatistics.Contiguity.MutuallyContiguous","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"StatLean.Bayesian.bvmMixture","label":"bvmMixture","full":"StatLean.Bayesian.bvmMixture","kind":"repo","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.MixtureContiguity"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","label":"productMeasure_isProbabilityMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"FiniteDimensional.finiteDimensional_pi'","label":"finiteDimensional_pi'","full":"FiniteDimensional.finiteDimensional_pi'","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.FiniteDimensional.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
@@ -45,8 +46,7 @@
     {"id":"measurable_id'","label":"measurable_id'","full":"measurable_id'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"Filter.Tendsto.comp","label":"comp","full":"Filter.Tendsto.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
     {"id":"Real.tendsto_sqrt_atTop","label":"tendsto_sqrt_atTop","full":"Real.tendsto_sqrt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
-    {"id":"tendsto_natCast_atTop_atTop","label":"tendsto_natCast_atTop_atTop","full":"tendsto_natCast_atTop_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"},
-    {"id":"Filter.Tendsto.div_atTop","label":"div_atTop","full":"Filter.Tendsto.div_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Order.Field"}
+    {"id":"tendsto_natCast_atTop_atTop","label":"tendsto_natCast_atTop_atTop","full":"tendsto_natCast_atTop_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Archimedean"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"AsymptoticStatistics.ParametricFamily"},
@@ -58,6 +58,7 @@
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"AsymptoticStatistics.Contiguity.MutuallyContiguous"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"StatLean.Bayesian.bvmMixture"},
+    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"FiniteDimensional.finiteDimensional_pi'"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Finite.of_fintype"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"FiniteDimensional.rclike_to_real"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"measurable_id'"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Filter.Tendsto.comp"},
     {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Real.tendsto_sqrt_atTop"},
-    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"tendsto_natCast_atTop_atTop"},
-    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"Filter.Tendsto.div_atTop"}
+    {"source":"StatLean.Bayesian.mutuallyContiguous_mixture_base","target":"tendsto_natCast_atTop_atTop"}
   ]
 }

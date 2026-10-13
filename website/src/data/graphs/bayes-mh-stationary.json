@@ -3,8 +3,8 @@
   "nodes": [
     {"id":"StatLean.Bayesian.invariant_mhKernel","label":"invariant_mhKernel","full":"StatLean.Bayesian.invariant_mhKernel","kind":"root","decl":"thm","module":"StatLean.Bayesian.MCMC.MetropolisHastings"},
     {"id":"StatLean.Bayesian.mhKernel","label":"mhKernel","full":"StatLean.Bayesian.mhKernel","kind":"repo","decl":"def","module":"StatLean.Bayesian.MCMC.Defs"},
-    {"id":"ProbabilityTheory.Kernel.IsReversible.invariant","label":"invariant","full":"ProbabilityTheory.Kernel.IsReversible.invariant","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Invariance"},
     {"id":"StatLean.Bayesian.isMarkovKernel_mhKernel","label":"isMarkovKernel_mhKernel","full":"StatLean.Bayesian.isMarkovKernel_mhKernel","kind":"repo","decl":"thm","module":"StatLean.Bayesian.MCMC.MetropolisHastings"},
+    {"id":"ProbabilityTheory.Kernel.IsReversible.invariant","label":"invariant","full":"ProbabilityTheory.Kernel.IsReversible.invariant","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Invariance"},
     {"id":"StatLean.Bayesian.isReversible_mhKernel","label":"isReversible_mhKernel","full":"StatLean.Bayesian.isReversible_mhKernel","kind":"repo","decl":"thm","module":"StatLean.Bayesian.MCMC.MetropolisHastings"},
     {"id":"StatLean.Bayesian.mhAccept","label":"mhAccept","full":"StatLean.Bayesian.mhAccept","kind":"repo","decl":"def","module":"StatLean.Bayesian.MCMC.Defs"},
     {"id":"MeasureTheory.lintegral_mono","label":"lintegral_mono","full":"MeasureTheory.lintegral_mono","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
@@ -29,8 +29,8 @@
   ],
   "edges": [
     {"source":"StatLean.Bayesian.invariant_mhKernel","target":"StatLean.Bayesian.mhKernel"},
-    {"source":"StatLean.Bayesian.invariant_mhKernel","target":"ProbabilityTheory.Kernel.IsReversible.invariant"},
     {"source":"StatLean.Bayesian.invariant_mhKernel","target":"StatLean.Bayesian.isMarkovKernel_mhKernel"},
+    {"source":"StatLean.Bayesian.invariant_mhKernel","target":"ProbabilityTheory.Kernel.IsReversible.invariant"},
     {"source":"StatLean.Bayesian.invariant_mhKernel","target":"StatLean.Bayesian.isReversible_mhKernel"},
     {"source":"StatLean.Bayesian.mhKernel","target":"StatLean.Bayesian.mhAccept"},
     {"source":"StatLean.Bayesian.isMarkovKernel_mhKernel","target":"StatLean.Bayesian.mhKernel"},

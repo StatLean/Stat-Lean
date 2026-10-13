@@ -46,7 +46,7 @@
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_nonneg'","label":"cast_nonneg'","full":"Nat.cast_nonneg'","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Order.Basic"},
-    {"id":"StatLean.MultipleTesting.Yproc","label":"Yproc","full":"StatLean.MultipleTesting.Yproc","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.Knockoff.Supermartingale"}
+    {"id":"StatLean.MultipleTesting.𝒢rev","label":"𝒢rev","full":"StatLean.MultipleTesting.𝒢rev","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.Knockoff.Supermartingale"}
   ],
   "edges": [
     {"source":"StatLean.MultipleTesting.knockoff_fdr_le","target":"StatLean.MultipleTesting.KnockoffScore"},
@@ -115,7 +115,7 @@
     {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"StatLean.MultipleTesting.Vplus"},
     {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"StatLean.MultipleTesting.tStar"},
     {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"StatLean.MultipleTesting.Vminus"},
-    {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"StatLean.MultipleTesting.Yproc"},
+    {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"StatLean.MultipleTesting.𝒢rev"},
     {"source":"StatLean.MultipleTesting.knockoff_ratio_stopped_le_one","target":"Filter.Eventually.of_forall"}
   ]
 }

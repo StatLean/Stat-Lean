@@ -24,10 +24,14 @@
     {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"finrank_euclideanSpace_fin","label":"finrank_euclideanSpace_fin","full":"finrank_euclideanSpace_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
-    {"id":"MeasureTheory.Measure.addHaar_ball_of_pos","label":"addHaar_ball_of_pos","full":"MeasureTheory.Measure.addHaar_ball_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar"},
     {"id":"isAddHaarMeasure_basis_addHaar","label":"isAddHaarMeasure_basis_addHaar","full":"isAddHaarMeasure_basis_addHaar","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Haar.OfBasis"},
     {"id":"OrthonormalBasis.addHaar_eq_volume","label":"addHaar_eq_volume","full":"OrthonormalBasis.addHaar_eq_volume","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace"},
+    {"id":"FiniteDimensional.proper","label":"proper","full":"FiniteDimensional.proper","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.FiniteDimension"},
+    {"id":"locallyCompact_of_proper","label":"locallyCompact_of_proper","full":"locallyCompact_of_proper","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.ProperSpace"},
+    {"id":"isFiniteMeasureOnCompacts_of_isLocallyFiniteMeasure","label":"isFiniteMeasureOnCompacts_of_isLocallyFiniteMeasure","full":"isFiniteMeasureOnCompacts_of_isLocallyFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
+    {"id":"MeasureTheory.isLocallyFiniteMeasure_of_isFiniteMeasureOnCompacts","label":"isLocallyFiniteMeasure_of_isFiniteMeasureOnCompacts","full":"MeasureTheory.isLocallyFiniteMeasure_of_isFiniteMeasureOnCompacts","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
+    {"id":"finrank_euclideanSpace_fin","label":"finrank_euclideanSpace_fin","full":"finrank_euclideanSpace_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
+    {"id":"MeasureTheory.Measure.addHaar_ball_of_pos","label":"addHaar_ball_of_pos","full":"MeasureTheory.Measure.addHaar_ball_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar"},
     {"id":"half_pos","label":"half_pos","full":"half_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},
     {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
@@ -42,11 +46,7 @@
     {"id":"Set.mem_iUnion₂","label":"mem_iUnion₂","full":"Set.mem_iUnion₂","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Lattice.Indexed"},
     {"id":"Finset.mem_coe","label":"mem_coe","full":"Finset.mem_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Defs"},
     {"id":"Metric.mem_ball","label":"mem_ball","full":"Metric.mem_ball","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"Metric.mem_closedBall","label":"mem_closedBall","full":"Metric.mem_closedBall","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"dist_triangle","label":"dist_triangle","full":"dist_triangle","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"Metric.measure_ball_pos","label":"measure_ball_pos","full":"Metric.measure_ball_pos","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.OpenPos"},
-    {"id":"one_pos","label":"one_pos","full":"one_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.ZeroLEOne"},
-    {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"}
+    {"id":"Metric.mem_closedBall","label":"mem_closedBall","full":"Metric.mem_closedBall","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.coveringNumber_closedBall_le","target":"StatLean.ConcentrationInequalities.coveringNumber"},
@@ -72,10 +72,14 @@
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"FiniteDimensional.rclike_to_real"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"PiLp.borelSpace"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Real.borelSpace"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"finrank_euclideanSpace_fin"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"MeasureTheory.Measure.addHaar_ball_of_pos"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"isAddHaarMeasure_basis_addHaar"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"OrthonormalBasis.addHaar_eq_volume"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"FiniteDimensional.proper"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"locallyCompact_of_proper"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"isFiniteMeasureOnCompacts_of_isLocallyFiniteMeasure"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"MeasureTheory.isLocallyFiniteMeasure_of_isFiniteMeasureOnCompacts"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"finrank_euclideanSpace_fin"},
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"MeasureTheory.Measure.addHaar_ball_of_pos"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"half_pos"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"PosMulReflectLE.toPosMulReflectLT"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"PosMulStrictMono.toPosMulReflectLE"},
@@ -93,10 +97,6 @@
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Set.mem_iUnion₂"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Finset.mem_coe"},
     {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Metric.mem_ball"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Metric.mem_closedBall"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"dist_triangle"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Metric.measure_ball_pos"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"one_pos"},
-    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"NeZero.charZero_one"}
+    {"source":"StatLean.ConcentrationInequalities.card_le_of_isSeparated_ball","target":"Metric.mem_closedBall"}
   ]
 }

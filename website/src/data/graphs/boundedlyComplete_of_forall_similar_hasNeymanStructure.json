@@ -7,6 +7,8 @@
     {"id":"StatLean.HypothesisTesting.IsSimilar","label":"IsSimilar","full":"StatLean.HypothesisTesting.IsSimilar","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.HypothesisTesting.HasNeymanStructure","label":"HasNeymanStructure","full":"StatLean.HypothesisTesting.HasNeymanStructure","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","label":"IsBoundedlyCompleteFamily","full":"StatLean.PointEstimation.IsBoundedlyCompleteFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"MeasureTheory.Measure.map₀_of_measurable","label":"map₀_of_measurable","full":"MeasureTheory.Measure.map₀_of_measurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"one_pos","label":"one_pos","full":"one_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.ZeroLEOne"},
     {"id":"NeZero.charZero_one","label":"charZero_one","full":"NeZero.charZero_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
@@ -44,9 +46,7 @@
     {"id":"ne_of_gt","label":"ne_of_gt","full":"ne_of_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
-    {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
-    {"id":"abs_of_pos","label":"abs_of_pos","full":"abs_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
-    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"}
+    {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"StatLean.PointEstimation.statLaw"},
@@ -54,6 +54,8 @@
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"StatLean.HypothesisTesting.IsSimilar"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"StatLean.HypothesisTesting.HasNeymanStructure"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"StatLean.PointEstimation.IsBoundedlyCompleteFamily"},
+    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"MeasureTheory.Measure.map₀_of_measurable"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"lt_of_lt_of_le"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"one_pos"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"NeZero.charZero_one"},
@@ -91,8 +93,6 @@
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"ne_of_gt"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"one_ne_zero"},
     {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"NeZero.one"},
-    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_mul"},
-    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_of_pos"},
-    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"IsOrderedAddMonoid.toAddLeftMono"}
+    {"source":"StatLean.HypothesisTesting.boundedlyComplete_of_forall_similar_hasNeymanStructure","target":"abs_mul"}
   ]
 }

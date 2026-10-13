@@ -7,6 +7,7 @@
     {"id":"StatLean.HighDimensionalStatistics.IsLassoEstimator","label":"IsLassoEstimator","full":"StatLean.HighDimensionalStatistics.IsLassoEstimator","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.Lasso.Defs"},
     {"id":"StatLean.HighDimensionalStatistics.designMap","label":"designMap","full":"StatLean.HighDimensionalStatistics.designMap","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.LinearModel.Defs"},
     {"id":"StatLean.HighDimensionalStatistics.linfNorm","label":"linfNorm","full":"StatLean.HighDimensionalStatistics.linfNorm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
+    {"id":"ProbabilityTheory.iIndepFun.isProbabilityMeasure","label":"isProbabilityMeasure","full":"ProbabilityTheory.iIndepFun.isProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Independence.Basic"},
     {"id":"Nat.cast_pos","label":"cast_pos","full":"Nat.cast_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Order.Ring"},
     {"id":"StatLean.HighDimensionalStatistics.lasso_l2_rate","label":"lasso_l2_rate","full":"StatLean.HighDimensionalStatistics.lasso_l2_rate","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.Lasso.DeterministicRate"},
     {"id":"Set.ext","label":"ext","full":"Set.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Defs"},
@@ -45,8 +46,7 @@
     {"id":"IsRightCancelAdd.addRightReflectLE_of_addRightReflectLT","label":"addRightReflectLE_of_addRightReflectLT","full":"IsRightCancelAdd.addRightReflectLE_of_addRightReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
     {"id":"addRightReflectLE_of_addLeftReflectLE","label":"addRightReflectLE_of_addLeftReflectLE","full":"addRightReflectLE_of_addLeftReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
     {"id":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT","label":"addLeftReflectLE_of_addLeftReflectLT","full":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
-    {"id":"contravariant_lt_of_covariant_le","label":"contravariant_lt_of_covariant_le","full":"contravariant_lt_of_covariant_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
-    {"id":"neg_div","label":"neg_div","full":"neg_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Basic"}
+    {"id":"contravariant_lt_of_covariant_le","label":"contravariant_lt_of_covariant_le","full":"contravariant_lt_of_covariant_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"}
   ],
   "edges": [
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"StatLean.HighDimensionalStatistics.RestrictedEigenvalue"},
@@ -54,6 +54,7 @@
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"StatLean.HighDimensionalStatistics.IsLassoEstimator"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"StatLean.HighDimensionalStatistics.designMap"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"StatLean.HighDimensionalStatistics.linfNorm"},
+    {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"ProbabilityTheory.iIndepFun.isProbabilityMeasure"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"Nat.cast_pos"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"StatLean.HighDimensionalStatistics.lasso_l2_rate"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"Set.ext"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"IsRightCancelAdd.addRightReflectLE_of_addRightReflectLT"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"addRightReflectLE_of_addLeftReflectLE"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"contravariant_lt_of_covariant_le"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"neg_div"}
+    {"source":"StatLean.HighDimensionalStatistics.lasso_random_rate","target":"contravariant_lt_of_covariant_le"}
   ]
 }

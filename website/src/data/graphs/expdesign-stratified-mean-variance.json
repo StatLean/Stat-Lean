@@ -23,6 +23,7 @@
     {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
     {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"Fintype.card_pos_iff","label":"card_pos_iff","full":"Fintype.card_pos_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"le_or_gt","label":"le_or_gt","full":"le_or_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"Finset.eq_univ_of_card","label":"eq_univ_of_card","full":"Finset.eq_univ_of_card","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
@@ -45,8 +46,7 @@
     {"id":"StatLean.ExperimentalDesign.pairInclusionProb_self","label":"pairInclusionProb_self","full":"StatLean.ExperimentalDesign.pairInclusionProb_self","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.InclusionProbability"},
     {"id":"StatLean.ExperimentalDesign.srs_inclusionProb","label":"srs_inclusionProb","full":"StatLean.ExperimentalDesign.srs_inclusionProb","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
     {"id":"StatLean.ExperimentalDesign.srs_pairInclusionProb","label":"srs_pairInclusionProb","full":"StatLean.ExperimentalDesign.srs_pairInclusionProb","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
-    {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
-    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"}
+    {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.stratifiedSRS_mean_variance","target":"StatLean.ExperimentalDesign.Stratum"},
@@ -82,6 +82,7 @@
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"Nat.cast_ne_zero"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"lt_of_lt_of_le"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"LT.lt.ne'"},
+    {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"Fintype.card_pos_iff"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"le_or_gt"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"le_antisymm"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.populationMean"},
@@ -107,7 +108,6 @@
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.srs_inclusionProb"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.srs_pairInclusionProb"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"Finset.mul_sum"},
-    {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"mul_assoc"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.pmfVar_smul"}
   ]
 }

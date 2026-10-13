@@ -16,6 +16,9 @@
     {"id":"StatLean.Bayesian.bpeGaussCriterion","label":"bpeGaussCriterion","full":"StatLean.Bayesian.bpeGaussCriterion","kind":"repo","decl":"def","module":"StatLean.Bayesian.BayesEstimators.Defs"},
     {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","label":"productMeasure_isProbabilityMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
+    {"id":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure","label":"toIsProbabilityMeasure","full":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Basic"},
+    {"id":"ProbabilityTheory.isGaussian_multivariateGaussian","label":"isGaussian_multivariateGaussian","full":"ProbabilityTheory.isGaussian_multivariateGaussian","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Multivariate"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.Θ","label":"Θ","full":"AsymptoticStatistics.AsymptoticRepresentation.Θ","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","label":"scoreSum","full":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"Measurable.const_smul","label":"const_smul","full":"Measurable.const_smul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
@@ -43,10 +46,7 @@
     {"id":"ContinuousLinearMap.measurable","label":"measurable","full":"ContinuousLinearMap.measurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap"},
     {"id":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges","label":"scoreSum_weakly_converges","full":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"Matrix.PosDef.posSemidef","label":"posSemidef","full":"Matrix.PosDef.posSemidef","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
-    {"id":"MeasureTheory.Measure.map_map","label":"map_map","full":"MeasureTheory.Measure.map_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
-    {"id":"ContinuousAdd.measurableAdd","label":"measurableAdd","full":"ContinuousAdd.measurableAdd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"AsymptoticStatistics.multivariateGaussian_map_matrix_inv","label":"multivariateGaussian_map_matrix_inv","full":"AsymptoticStatistics.multivariateGaussian_map_matrix_inv","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianDensity"},
-    {"id":"AsymptoticStatistics.multivariateGaussian_map_const_add","label":"multivariateGaussian_map_const_add","full":"AsymptoticStatistics.multivariateGaussian_map_const_add","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianDensity"}
+    {"id":"MeasureTheory.Measure.map_map","label":"map_map","full":"MeasureTheory.Measure.map_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.ParametricFamily"},
@@ -63,6 +63,9 @@
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"StatLean.Bayesian.bpeGaussCriterion"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.WeakConverges"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure"},
+    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure"},
+    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"ProbabilityTheory.IsGaussian.toIsProbabilityMeasure"},
+    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"ProbabilityTheory.isGaussian_multivariateGaussian"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"Measurable.const_smul"},
@@ -90,9 +93,6 @@
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"ContinuousLinearMap.measurable"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges"},
     {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"Matrix.PosDef.posSemidef"},
-    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"MeasureTheory.Measure.map_map"},
-    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"ContinuousAdd.measurableAdd"},
-    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.multivariateGaussian_map_matrix_inv"},
-    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"AsymptoticStatistics.multivariateGaussian_map_const_add"}
+    {"source":"StatLean.Bayesian.bayes_estimator_weakConverges","target":"MeasureTheory.Measure.map_map"}
   ]
 }

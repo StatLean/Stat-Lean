@@ -46,7 +46,7 @@
     {"id":"div_eq_iff","label":"div_eq_iff","full":"div_eq_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Units.Basic"},
     {"id":"mul_lt_mul_of_pos_left","label":"mul_lt_mul_of_pos_left","full":"mul_lt_mul_of_pos_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"Real.sqrt_lt_sqrt","label":"sqrt_lt_sqrt","full":"Real.sqrt_lt_sqrt","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
-    {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+    {"id":"StatLean.RobustStatistics.twoPointPM","label":"twoPointPM","full":"StatLean.RobustStatistics.twoPointPM","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.HeavyTails.DeviationLowerBound"}
   ],
   "edges": [
     {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"lt_trans"},
@@ -93,6 +93,6 @@
     {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"div_eq_iff"},
     {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"mul_lt_mul_of_pos_left"},
     {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"Real.sqrt_lt_sqrt"},
-    {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"Measurable.comp"}
+    {"source":"StatLean.RobustStatistics.mean_estimator_deviation_lower","target":"StatLean.RobustStatistics.twoPointPM"}
   ]
 }

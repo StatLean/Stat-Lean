@@ -12,6 +12,7 @@
     {"id":"StatLean.HighDimensionalStatistics.restrict","label":"restrict","full":"StatLean.HighDimensionalStatistics.restrict","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
     {"id":"StatLean.HighDimensionalStatistics.matLinftyNorm","label":"matLinftyNorm","full":"StatLean.HighDimensionalStatistics.matLinftyNorm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.GramMatrix"},
     {"id":"StatLean.HighDimensionalStatistics.gramInvNorm","label":"gramInvNorm","full":"StatLean.HighDimensionalStatistics.gramInvNorm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Defs"},
+    {"id":"ProbabilityTheory.iIndepFun.isProbabilityMeasure","label":"isProbabilityMeasure","full":"ProbabilityTheory.iIndepFun.isProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Independence.Basic"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
@@ -20,6 +21,8 @@
     {"id":"StatLean.ConcentrationInequalities.isSubGaussian_iff","label":"isSubGaussian_iff","full":"StatLean.ConcentrationInequalities.isSubGaussian_iff","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Defs"},
     {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"Finset.card_pos","label":"card_pos","full":"Finset.card_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"},
+    {"id":"Finset.card_compl","label":"card_compl","full":"Finset.card_compl","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"WithLp.ofLp_toLp","label":"ofLp_toLp","full":"WithLp.ofLp_toLp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.WithLp"},
     {"id":"StatLean.HighDimensionalStatistics.col","label":"col","full":"StatLean.HighDimensionalStatistics.col","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.SupportSubmatrix"},
     {"id":"WithLp.ofLp_injective","label":"ofLp_injective","full":"WithLp.ofLp_injective","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.WithLp"},
@@ -43,10 +46,7 @@
     {"id":"pow_two","label":"pow_two","full":"pow_two","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
-    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
+    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"}
   ],
   "edges": [
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.HighDimensionalStatistics.LowerEigenvalue"},
@@ -59,6 +59,7 @@
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.HighDimensionalStatistics.restrict"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.HighDimensionalStatistics.matLinftyNorm"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.HighDimensionalStatistics.gramInvNorm"},
+    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"ProbabilityTheory.iIndepFun.isProbabilityMeasure"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"Nat.cast_zero"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"IsOrderedAddMonoid.toAddLeftMono"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"LT.lt.ne'"},
@@ -67,6 +68,8 @@
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.ConcentrationInequalities.isSubGaussian_iff"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"sub_zero"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"Finset.card_pos"},
+    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"Finset.card_compl"},
+    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"Fintype.card_fin"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"WithLp.ofLp_toLp"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"StatLean.HighDimensionalStatistics.col"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"WithLp.ofLp_injective"},
@@ -90,9 +93,6 @@
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"pow_two"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"mul_le_mul_of_nonneg_left"},
     {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"le_of_lt"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"div_pos"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"PosMulReflectLE.toPosMulReflectLT"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"PosMulStrictMono.toPosMulReflectLE"},
-    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"Nat.cast_one"}
+    {"source":"StatLean.HighDimensionalStatistics.lasso_support_recovery_subgaussian","target":"div_pos"}
   ]
 }

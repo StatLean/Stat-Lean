@@ -22,6 +22,7 @@
     {"id":"ContinuousAdd.measurableMul₂","label":"measurableMul₂","full":"ContinuousAdd.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"Measurable.mul","label":"mul","full":"Measurable.mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousMul.measurableMul₂","label":"measurableMul₂","full":"ContinuousMul.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw","label":"isProbabilityMeasure_randPairLaw","full":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Randomization.Asymptotics"},
     {"id":"AsymptoticStatistics.WeakConverges.map","label":"map","full":"AsymptoticStatistics.WeakConverges.map","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"Prod.opensMeasurableSpace","label":"opensMeasurableSpace","full":"Prod.opensMeasurableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
@@ -45,8 +46,7 @@
     {"id":"MeasureTheory.Measure.map_fst_prod","label":"map_fst_prod","full":"MeasureTheory.Measure.map_fst_prod","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
     {"id":"one_smul","label":"one_smul","full":"one_smul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
     {"id":"NormedAddGroup.tendsto_nhds_zero","label":"tendsto_nhds_zero","full":"NormedAddGroup.tendsto_nhds_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
-    {"id":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges","label":"exists_tight_bound_of_weakConverges","full":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Randomization.PairCLT"},
-    {"id":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw","label":"isProbabilityMeasure_randPairLaw","full":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Randomization.Asymptotics"}
+    {"id":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges","label":"exists_tight_bound_of_weakConverges","full":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Randomization.PairCLT"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"AsymptoticStatistics.WeakConverges"},
@@ -69,6 +69,7 @@
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"ContinuousAdd.measurableMul₂"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"Measurable.mul"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"ContinuousMul.measurableMul₂"},
+    {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"AsymptoticStatistics.WeakConverges.map"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"Prod.opensMeasurableSpace"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"BorelSpace.opensMeasurable"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"MeasureTheory.Measure.map_fst_prod"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"one_smul"},
     {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"NormedAddGroup.tendsto_nhds_zero"},
-    {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges"},
-    {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"StatLean.HypothesisTesting.isProbabilityMeasure_randPairLaw"}
+    {"source":"StatLean.HypothesisTesting.randDist_affine_tendstoInProb","target":"StatLean.HypothesisTesting.exists_tight_bound_of_weakConverges"}
   ]
 }

@@ -25,6 +25,7 @@
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","label":"isFiniteKernel","full":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","label":"IsZeroOrMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","label":"productMeasure_isProbabilityMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"Matrix.PosDef.inv","label":"inv","full":"Matrix.PosDef.inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
     {"id":"StatLean.Bayesian.bvmTV","label":"bvmTV","full":"StatLean.Bayesian.bvmTV","kind":"repo","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.Defs"},
     {"id":"StatLean.Bayesian.bernstein_von_mises","label":"bernstein_von_mises","full":"StatLean.Bayesian.bernstein_von_mises","kind":"repo","decl":"thm","module":"StatLean.Bayesian.BernsteinVonMises.PosteriorNormality"},
@@ -44,7 +45,6 @@
     {"id":"le_of_eq","label":"le_of_eq","full":"le_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
-    {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","label":"productMeasure_isProbabilityMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
     {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"}
   ],
@@ -72,6 +72,7 @@
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel"},
+    {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"Matrix.PosDef.inv"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"StatLean.Bayesian.bvmTV"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"StatLean.Bayesian.bernstein_von_mises"},
@@ -91,7 +92,6 @@
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"le_of_eq"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"ENNReal.ofReal_toReal"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"MeasureTheory.measure_ne_top"},
-    {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"ENNReal.ofReal_le_ofReal"},
     {"source":"StatLean.Bayesian.bernstein_von_mises_efficient_centering","target":"LT.lt.le"}
   ]

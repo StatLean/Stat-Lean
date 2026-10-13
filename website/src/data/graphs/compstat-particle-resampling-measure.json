@@ -28,8 +28,8 @@
     {"id":"MeasureTheory.Measure.finsetSum_apply","label":"finsetSum_apply","full":"MeasureTheory.Measure.finsetSum_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Module"},
     {"id":"smul_eq_mul","label":"smul_eq_mul","full":"smul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
     {"id":"MeasureTheory.Measure.dirac_apply'","label":"dirac_apply'","full":"MeasureTheory.Measure.dirac_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Dirac.Def"},
-    {"id":"StatLean.ComputationalStatistics.integral_avg_eval_pi","label":"integral_avg_eval_pi","full":"StatLean.ComputationalStatistics.integral_avg_eval_pi","kind":"repo","decl":"thm","module":"StatLean.ComputationalStatistics.ForMathlib.PiMoments"},
     {"id":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","label":"isProbabilityMeasure_categorical","full":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","kind":"repo","decl":"thm","module":"StatLean.ComputationalStatistics.Core.EmpiricalMeasure"},
+    {"id":"StatLean.ComputationalStatistics.integral_avg_eval_pi","label":"integral_avg_eval_pi","full":"StatLean.ComputationalStatistics.integral_avg_eval_pi","kind":"repo","decl":"thm","module":"StatLean.ComputationalStatistics.ForMathlib.PiMoments"},
     {"id":"MeasureTheory.Integrable.of_finite","label":"of_finite","full":"MeasureTheory.Integrable.of_finite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
@@ -41,12 +41,12 @@
     {"id":"MeasureTheory.integral_smul_measure","label":"integral_smul_measure","full":"MeasureTheory.integral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"ENNReal.toReal_ofReal","label":"toReal_ofReal","full":"ENNReal.toReal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.integral_dirac'","label":"integral_dirac'","full":"MeasureTheory.integral_dirac'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"StatLean.ComputationalStatistics.categorical_eq_weightedMeasure","label":"categorical_eq_weightedMeasure","full":"StatLean.ComputationalStatistics.categorical_eq_weightedMeasure","kind":"repo","decl":"thm","module":"StatLean.ComputationalStatistics.Core.Defs"},
+    {"id":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","label":"isProbabilityMeasure_weightedMeasure","full":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","kind":"repo","decl":"thm","module":"StatLean.ComputationalStatistics.Core.EmpiricalMeasure"},
     {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
     {"id":"MeasureTheory.integral_const_mul","label":"integral_const_mul","full":"MeasureTheory.integral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.integral_finsetSum","label":"integral_finsetSum","full":"MeasureTheory.integral_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
-    {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"}
+    {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"}
   ],
   "edges": [
     {"source":"StatLean.ComputationalStatistics.particleResampling_measure_unbiased","target":"StatLean.ComputationalStatistics.categorical"},
@@ -79,8 +79,8 @@
     {"source":"StatLean.ComputationalStatistics.empiricalMeasure_apply","target":"MeasureTheory.Measure.dirac_apply'"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"StatLean.ComputationalStatistics.categorical"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"StatLean.ComputationalStatistics.mcEstimate"},
-    {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"StatLean.ComputationalStatistics.integral_avg_eval_pi"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical"},
+    {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"StatLean.ComputationalStatistics.integral_avg_eval_pi"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"MeasureTheory.Integrable.of_finite"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"Finite.of_fintype"},
     {"source":"StatLean.ComputationalStatistics.particleResampling_unbiased","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
@@ -94,12 +94,14 @@
     {"source":"StatLean.ComputationalStatistics.integral_weightedMeasure","target":"MeasureTheory.integral_smul_measure"},
     {"source":"StatLean.ComputationalStatistics.integral_weightedMeasure","target":"ENNReal.toReal_ofReal"},
     {"source":"StatLean.ComputationalStatistics.integral_weightedMeasure","target":"MeasureTheory.integral_dirac'"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","target":"StatLean.ComputationalStatistics.categorical"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","target":"StatLean.ComputationalStatistics.weightedMeasure"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","target":"StatLean.ComputationalStatistics.categorical_eq_weightedMeasure"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_categorical","target":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure"},
     {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"Nat.cast_ne_zero"},
     {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"MeasureTheory.integral_const_mul"},
     {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"MeasureTheory.integral_finsetSum"},
     {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"Finset.sum_congr"},
-    {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"Finset.sum_const"},
-    {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"Fintype.card_fin"},
-    {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"nsmul_eq_mul"}
+    {"source":"StatLean.ComputationalStatistics.integral_avg_eval_pi","target":"Finset.sum_const"}
   ]
 }

@@ -46,7 +46,7 @@
     {"id":"aemeasurable_id","label":"aemeasurable_id","full":"aemeasurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"AsymptoticStatistics.LowerBounds.ConvolutionVec.eif_linear_combo_norm_sq","label":"eif_linear_combo_norm_sq","full":"AsymptoticStatistics.LowerBounds.ConvolutionVec.eif_linear_combo_norm_sq","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LowerBounds.ConvolutionVec"},
     {"id":"AsymptoticStatistics.LowerBounds.ConvolutionVec.pushforward_variance_eq_quadratic","label":"pushforward_variance_eq_quadratic","full":"AsymptoticStatistics.LowerBounds.ConvolutionVec.pushforward_variance_eq_quadratic","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.LowerBounds.ConvolutionVec"},
-    {"id":"AsymptoticStatistics.LowerBounds.ConvolutionUnboundedVec.ψDotMat_vec","label":"ψDotMat_vec","full":"AsymptoticStatistics.LowerBounds.ConvolutionUnboundedVec.ψDotMat_vec","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.LowerBounds.ConvolutionUnboundedVec"}
+    {"id":"AddSubgroup.isUniformAddGroup","label":"isUniformAddGroup","full":"AddSubgroup.isUniformAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.IsUniformGroup.Basic"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec","target":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec"},
@@ -149,7 +149,7 @@
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"fact_one_le_two_ennreal"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.RegularEstimatorVec.IsRegularEstimator_broad_vec"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.RegularEstimatorVec.isRegularEstimator_vec_implies_broad"},
-    {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.ConvolutionUnboundedVec.ψDotMat_vec"},
+    {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AddSubgroup.isUniformAddGroup"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"IsScalarTower.right"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"Matrix.isHermitian_gram"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.ConvolutionVec.eif_linear_combo_norm_sq"}
