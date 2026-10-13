@@ -1498,7 +1498,8 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbability
     linarith [hfin]
   have hNm1 : ‖((N : ℂ) - 1)‖ = (N : ℝ) - 1 := by
     have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
-    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)]
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (by linarith : (0 : ℝ) ≤ (N : ℝ) - 1)]
   have hT2 : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖
       ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
           + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
@@ -1508,8 +1509,8 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbability
     rw [heq, hmult]
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, hNm1, Complex.norm_real, Real.norm_eq_abs, abs_mul,
-      abs_of_nonneg (by positivity : (0:ℝ) ≤ r ^ 2)]
-    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ r ^ 2)]
+    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0 : ℝ) ≤ (N : ℝ) - 1)
     linarith
   -- assembly
   have hsplit : multiCharFun (vecRootLaw F Z N) b a
@@ -1768,7 +1769,8 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProb
     linarith [hfin]
   have hNm1 : ‖((N : ℂ) - 1)‖ = (N : ℝ) - 1 := by
     have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
-    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)]
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (by linarith : (0 : ℝ) ≤ (N : ℝ) - 1)]
   have hT2 : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖
       ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
           + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
@@ -1778,8 +1780,8 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProb
     rw [heq, hmult]
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, hNm1, Complex.norm_real, Real.norm_eq_abs, abs_mul,
-      abs_of_nonneg (by positivity : (0:ℝ) ≤ r ^ 2)]
-    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ r ^ 2)]
+    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0 : ℝ) ≤ (N : ℝ) - 1)
     linarith
   -- assembly
   have hsplit : multiCharFun (vecRootLaw F Z N) b a

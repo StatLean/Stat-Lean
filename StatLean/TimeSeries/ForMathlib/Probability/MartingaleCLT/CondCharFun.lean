@@ -88,15 +88,15 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   have hcont2 : Continuous (fun u : ℝ => (Complex.exp (I * ↑u) - 1 - I * ↑u) * I) := by fun_prop
   have hL0 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1‖ ≤ z := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
+    have hInt : (∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => he u)
         (hcontI.intervalIntegrable 0 z)]
       simp
     rw [← hInt]
-    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0:ℝ)) (b := z)
+    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := z)
       (C := 1) (f := fun u => Complex.exp (I * ↑u) * I)
       (fun u _ => by rw [norm_mul, Complex.norm_I, mul_one]; exact le_of_eq (hnorme u))
-    calc ‖∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
+    calc ‖∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
       _ = z := by rw [sub_zero, abs_of_nonneg hz, one_mul]
   have hd1 : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w)
       ((Complex.exp (I * ↑u) - 1) * I) u := by
@@ -106,12 +106,12 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     exact ((he u).sub (hasDerivAt_const u (1 : ℂ))).sub (hIu u)
   have hL1 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ z ^ 2 / 2 := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
+    have hInt : (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
         = Complex.exp (I * ↑z) - 1 - I * ↑z := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd1 u)
         (hcont1.intervalIntegrable 0 z)]
       simp
-    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0:ℝ)..z, u := by
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0 : ℝ)..z, u := by
       rw [← hInt]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         (continuous_id.intervalIntegrable 0 z)
@@ -135,7 +135,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       linear_combination (-(↑u : ℂ)) * hI2
     rw [heq]
     exact (hd1 u).add (hsq u)
-  have hA2z : ∀ z : ℝ, (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
+  have hA2z : ∀ z : ℝ, (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
       = Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2 := by
     intro z
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd2 u)
@@ -146,13 +146,13 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖ ≤ min (z ^ 3 / 6) (z ^ 2) := by
     intro z hz
     have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖
-        ≤ ∫ u in (0:ℝ)..z, u ^ 2 / 2 := by
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 2 / 2 := by
       rw [← hA2z z]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         ((by fun_prop : Continuous (fun u : ℝ => u ^ 2 / 2)).intervalIntegrable 0 z)
       rw [norm_mul, Complex.norm_I, mul_one]
       exact hL1 u hu.1.le
-    have hintval : (∫ u in (0:ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
       rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
     refine le_min (hb.trans (le_of_eq hintval)) ?_
     have h1 := hL1 z hz
@@ -169,7 +169,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   rw [hEq]
   rcases le_or_gt 0 y with hy | hy
   · rw [abs_of_nonneg hy]; exact key y hy
-  · have hz : (0:ℝ) ≤ -y := by linarith
+  · have hz : (0 : ℝ) ≤ -y := by linarith
     have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
       rw [← Complex.exp_conj]; congr 1
       simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
@@ -467,7 +467,7 @@ private lemma abs_exp_neg_sub_le {S L : ℝ} (hS : 0 ≤ S) (hL : 0 ≤ L) :
     linarith
   · have h1 := key L S hL hle
     have h2 : Real.exp (-S) ≤ Real.exp (-L) := Real.exp_le_exp.2 (by linarith)
-    rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ S - L), abs_of_nonpos (by linarith)]
+    rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ S - L), abs_of_nonpos (by linarith)]
     linarith
 
 /-- The Taylor product is uniformly bounded by `e^{u²c/2}` as soon as the conditional
@@ -491,7 +491,7 @@ private lemma abs_prod_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
     _ = Real.exp (u ^ 2 / 2 * ∑ i, v i) := by rw [Finset.mul_sum]
     _ ≤ Real.exp (u ^ 2 * c / 2) := by
         refine Real.exp_le_exp.2 ?_
-        have : (0:ℝ) ≤ u ^ 2 / 2 := by positivity
+        have : (0 : ℝ) ≤ u ^ 2 / 2 := by positivity
         nlinarith
 
 /-- **The pointwise product comparison**: on the event where every conditional variance is
@@ -503,11 +503,11 @@ private lemma abs_prod_one_sub_sub_exp_le {m : ℕ} {v : Fin m → ℝ} {u σ2 �
     (hsum : |(∑ i, v i) - σ2| ≤ β) :
     |(∏ i, (1 - u ^ 2 / 2 * v i)) - Real.exp (-(u ^ 2 * σ2 / 2))|
       ≤ u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) + u ^ 2 * β / 2 := by
-  have hu : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  have hu : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
   have ha0 : ∀ i, 0 ≤ u ^ 2 / 2 * v i := fun i => mul_nonneg (by positivity) (hv0 i)
   have hab : ∀ i, u ^ 2 / 2 * v i ≤ u ^ 2 * β / 2 := by
     intro i
-    have := mul_le_mul_of_nonneg_left (hvb i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    have := mul_le_mul_of_nonneg_left (hvb i) (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)
     linarith
   have hahalf : ∀ i, u ^ 2 / 2 * v i ≤ 1 / 2 := fun i => (hab i).trans (by linarith)
   -- (i) replace each factor by its exponential
@@ -546,12 +546,12 @@ private lemma abs_prod_one_sub_sub_exp_le {m : ℕ} {v : Fin m → ℝ} {u σ2 �
       ≤ u ^ 2 * β / 2 := by
     refine le_trans (abs_exp_neg_sub_le hS0 (by positivity)) ?_
     have he : u ^ 2 / 2 * (∑ i, v i) - u ^ 2 * σ2 / 2 = u ^ 2 / 2 * ((∑ i, v i) - σ2) := by ring
-    rw [he, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2)]
-    have := mul_le_mul_of_nonneg_left hsum (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    rw [he, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)]
+    have := mul_le_mul_of_nonneg_left hsum (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)
     linarith
   have hquad : ∑ i, (u ^ 2 / 2 * v i) ^ 2 ≤ u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) := by
     refine hsq.trans ?_
-    have h0 : (0:ℝ) ≤ u ^ 2 * β / 2 := by positivity
+    have h0 : (0 : ℝ) ≤ u ^ 2 * β / 2 := by positivity
     exact mul_le_mul_of_nonneg_left hSle h0
   calc |(∏ i, (1 - u ^ 2 / 2 * v i)) - Real.exp (-(u ^ 2 * σ2 / 2))|
       ≤ |(∏ i, (1 - u ^ 2 / 2 * v i)) - ∏ i, Real.exp (-(u ^ 2 / 2 * v i))|
@@ -564,7 +564,7 @@ private lemma abs_prod_one_sub_sub_exp_le {m : ℕ} {v : Fin m → ℝ} {u σ2 �
 /-- `(1 − a)⁻¹ ≤ e^{2a}` for `a ∈ [0, 1/2]`. -/
 private lemma inv_one_sub_le_exp_two_mul {a : ℝ} (ha : 0 ≤ a) (ha2 : a ≤ 1 / 2) :
     (1 - a)⁻¹ ≤ Real.exp (2 * a) := by
-  have hpos : (0:ℝ) < 1 - a := by linarith
+  have hpos : (0 : ℝ) < 1 - a := by linarith
   have hE : 1 + 2 * a ≤ Real.exp (2 * a) := by
     have := Real.add_one_le_exp (2 * a); linarith
   have h1 : 1 ≤ Real.exp (2 * a) * (1 - a) := by nlinarith
@@ -579,7 +579,7 @@ private lemma prod_inv_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
     (s : Finset (Fin m)) :
     ∏ i ∈ s, (1 - u ^ 2 / 2 * v i)⁻¹ ≤ Real.exp (u ^ 2 * c) := by
   have ha0 : ∀ i, 0 ≤ u ^ 2 / 2 * v i := fun i => mul_nonneg (by positivity) (hv0 i)
-  have hu : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  have hu : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
   calc ∏ i ∈ s, (1 - u ^ 2 / 2 * v i)⁻¹
       ≤ ∏ i ∈ s, Real.exp (2 * (u ^ 2 / 2 * v i)) :=
         Finset.prod_le_prod₀ (fun i _ => inv_nonneg.2 (by linarith [ha0 i, hvd i]))
@@ -779,7 +779,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
         * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
               (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
   classical
-  have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  have hu2 : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
   -- (0) pointwise control of the Taylor factors
   have hae : ∀ᵐ ω ∂μ, (∀ i : Fin (k n),
         0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω
@@ -792,7 +792,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
         μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d := ae_all_iff.2 hd
     filter_upwards [h1, h2, hc] with ω e1 e2 e3
     refine ⟨fun i => ⟨e1 i, ?_⟩, e3⟩
-    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)
     nlinarith [e1 i]
   -- (1) the cumulative index sets
   obtain ⟨S, hS⟩ : ∃ S : ℕ → Finset (Fin (k n)),
@@ -836,7 +836,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
       rw [norm_mul, Complex.norm_exp]
       have h1 : (I * ((u * X n j ω : ℝ) : ℂ)).re = 0 := by simp
       rw [h1, Real.exp_zero, one_mul, hψcast j ω, norm_inv, Complex.norm_real,
-        Real.norm_eq_abs, abs_of_pos (by linarith [(hfac j).2] : (0:ℝ) <
+        Real.norm_eq_abs, abs_of_pos (by linarith [(hfac j).2] : (0 : ℝ) <
           1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)]
     rw [Finset.prod_congr rfl hstep]
     exact prod_inv_one_sub_le_exp (fun j => (hfac j).1) (fun j => (hfac j).2) hsum (S m)
@@ -902,16 +902,16 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
       filter_upwards [hae, hnormP] with ω hω hnp
       obtain ⟨hfac, -⟩ := hω
       rw [hY ω, norm_mul, hψcast i ω, norm_inv, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+        abs_of_pos (by linarith [(hfac i).2] : (0 : ℝ) <
           1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
       have hinv : (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)⁻¹ ≤ 2 := by
         rw [inv_eq_one_div, div_le_iff₀ (by linarith [(hfac i).2])]
-        linarith [(hfac i).1, (hfac i).2, mul_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+        linarith [(hfac i).1, (hfac i).2, mul_nonneg (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)
           (hfac i).1]
-      have h0 : (0:ℝ) ≤ Real.exp (u ^ 2 * c) := (Real.exp_pos _).le
+      have h0 : (0 : ℝ) ≤ Real.exp (u ^ 2 * c) := (Real.exp_pos _).le
       have hPn := hnp m
       nlinarith [norm_nonneg (P m ω), inv_nonneg.2 (le_of_lt (by linarith [(hfac i).2] :
-        (0:ℝ) < 1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))]
+        (0 : ℝ) < 1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))]
     have hdiff : ∀ᵐ ω ∂μ, P (m + 1) ω - P m ω
         = Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
           - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) := by
@@ -1088,23 +1088,23 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
     intro η hη
     obtain ⟨M, hM0, hMdef⟩ : ∃ M : ℝ, 0 ≤ M ∧ M = u ^ 2 * u ^ 2 * (σ2 + 1) / 4 + u ^ 2 / 2 := by
       refine ⟨_, ?_, rfl⟩
-      have h1 : (0:ℝ) ≤ u ^ 2 * u ^ 2 * (σ2 + 1) :=
+      have h1 : (0 : ℝ) ≤ u ^ 2 * u ^ 2 * (σ2 + 1) :=
         mul_nonneg (mul_nonneg (sq_nonneg u) (sq_nonneg u)) (by linarith)
-      have h2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+      have h2 : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
       linarith
     obtain ⟨T, hT0, hTdef⟩ : ∃ T : ℝ, 0 < T ∧ T = Real.exp (u ^ 2 * c / 2) + 1 :=
       ⟨_, by positivity, rfl⟩
     obtain ⟨β, hβpos, hβ1, hβu, hβM⟩ : ∃ β : ℝ, 0 < β ∧ β ≤ 1 ∧ u ^ 2 * β ≤ 1
         ∧ M * β ≤ η / 4 := by
       refine ⟨min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))), ?_, min_le_left _ _, ?_, ?_⟩
-      · have h1 : (0:ℝ) < 1 / (u ^ 2 + 1) := by positivity
-        have h2 : (0:ℝ) < (η / 4) / (M + 1) := by
-          have : (0:ℝ) < M + 1 := by linarith
+      · have h1 : (0 : ℝ) < 1 / (u ^ 2 + 1) := by positivity
+        have h2 : (0 : ℝ) < (η / 4) / (M + 1) := by
+          have : (0 : ℝ) < M + 1 := by linarith
           positivity
         exact lt_min one_pos (lt_min h1 h2)
       · have hle : min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))) ≤ 1 / (u ^ 2 + 1) :=
           le_trans (min_le_right _ _) (min_le_left _ _)
-        have hu2 : (0:ℝ) < u ^ 2 + 1 := by positivity
+        have hu2 : (0 : ℝ) < u ^ 2 + 1 := by positivity
         have := mul_le_mul_of_nonneg_left hle (sq_nonneg u)
         rw [mul_one_div] at this
         have hdiv : u ^ 2 / (u ^ 2 + 1) ≤ 1 := by
@@ -1112,7 +1112,7 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
         linarith
       · have hle : min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))) ≤ (η / 4) / (M + 1) :=
           le_trans (min_le_right _ _) (min_le_right _ _)
-        have hM1 : (0:ℝ) < M + 1 := by linarith
+        have hM1 : (0 : ℝ) < M + 1 := by linarith
         have := mul_le_mul_of_nonneg_left hle hM0
         refine this.trans ?_
         rw [mul_div_assoc'] at *
@@ -1138,7 +1138,7 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
       rw [hEq]
       exact MeasurableSet.iUnion fun i => measurableSet_le measurable_const (hvmeas n i)
     have hmajor : ∀ᵐ ω ∂μ, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))|
-        ≤ M * β + T * Set.indicator A (fun _ => (1:ℝ)) ω := by
+        ≤ M * β + T * Set.indicator A (fun _ => (1 : ℝ)) ω := by
       filter_upwards [hv0 n, hpbdd n] with ω hnn hbd
       by_cases hωA : ω ∈ A
       · rw [Set.indicator_of_mem hωA]
@@ -1147,7 +1147,7 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
         have h2 : |Real.exp (-(u ^ 2 * σ2 / 2))| ≤ 1 := by
           rw [abs_of_pos (Real.exp_pos _)]
           exact Real.exp_le_one_iff.2 (by nlinarith [sq_nonneg u])
-        have h3 : (0:ℝ) ≤ M * β := mul_nonneg hM0 hβpos.le
+        have h3 : (0 : ℝ) ≤ M * β := mul_nonneg hM0 hβpos.le
         rw [hTdef]
         linarith
       · have hnotA : ω ∉ {ω | β ≤ |mdsCondVariance k X F μ n ω - σ2|}
@@ -1164,21 +1164,21 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
         rw [Set.indicator_of_notMem hωA, hp n ω]
         have hkey := abs_prod_one_sub_sub_exp_le hnn hvb hβpos.le hβu hσ hsum
         have hσβ : σ2 + β ≤ σ2 + 1 := by linarith
-        have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+        have hu2 : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
         have hbb : u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) + u ^ 2 * β / 2 ≤ M * β := by
           rw [hMdef]
           nlinarith [mul_nonneg hu2 hβpos.le, mul_nonneg (mul_nonneg hu2 hu2) hβpos.le]
-        have hT1 : (0:ℝ) ≤ T := hT0.le
+        have hT1 : (0 : ℝ) ≤ T := hT0.le
         linarith
     -- integrate the majorant
     have hint1 : Integrable (fun ω => |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))|) μ :=
       ((hpint n).sub (integrable_const _)).abs
     have hint2 : Integrable
-        (fun ω => M * β + T * Set.indicator A (fun _ => (1:ℝ)) ω) μ :=
-      (integrable_const _).add (((integrable_const (1:ℝ)).indicator hA).const_mul _)
+        (fun ω => M * β + T * Set.indicator A (fun _ => (1 : ℝ)) ω) μ :=
+      (integrable_const _).add (((integrable_const (1 : ℝ)).indicator hA).const_mul _)
     have hstep : ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ ≤ M * β + T * μ.real A := by
       refine le_trans (integral_mono_ae hint1 hint2 hmajor) (le_of_eq ?_)
-      rw [integral_add (integrable_const _) (((integrable_const (1:ℝ)).indicator hA).const_mul _),
+      rw [integral_add (integrable_const _) (((integrable_const (1 : ℝ)).indicator hA).const_mul _),
         integral_const, integral_const_mul, integral_indicator_const _ hA]
       simp
     have hAmeas : μ.real A ≤ (μ {ω | β ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal
@@ -1187,7 +1187,7 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
       refine le_trans (ENNReal.toReal_mono ?_ (measure_union_le _ _)) (le_of_eq ?_)
       · exact ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩
       · exact ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)
-    have hnn : (0:ℝ) ≤ ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ :=
+    have hnn : (0 : ℝ) ≤ ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ :=
       integral_nonneg fun ω => abs_nonneg _
     rw [Real.dist_eq, sub_zero, abs_of_nonneg hnn]
     have hfin : T * μ.real A ≤ T * (2 * θ) := by
@@ -1335,7 +1335,7 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
             * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
                   (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
   classical
-  have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  have hu2 : (0 : ℝ) ≤ u ^ 2 := sq_nonneg u
   set γ : ℝ := Real.exp (-(u ^ 2 * σ2 / 2)) with hγdef
   have hγ0 : 0 < γ := by rw [hγdef]; exact Real.exp_pos _
   have hγ1 : γ ≤ 1 := by
@@ -1353,7 +1353,7 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
         μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d := ae_all_iff.2 hd
     filter_upwards [h1, h2, hc] with ω e1 e2 e3
     refine ⟨fun i => ⟨e1 i, ?_⟩, e3⟩
-    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0 : ℝ) ≤ u ^ 2 / 2)
     nlinarith [e1 i]
   have hψcast : ∀ (i : Fin (k n)) (ω : Ω),
       (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)
@@ -1400,7 +1400,7 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
         = (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)⁻¹ := by
       intro i _
       rw [hψcast i ω, norm_inv, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+        abs_of_pos (by linarith [(hfac i).2] : (0 : ℝ) <
           1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
     rw [Finset.prod_congr rfl hstep]
     exact prod_inv_one_sub_le_exp (fun i => (hfac i).1) (fun i => (hfac i).2) hsum Finset.univ
@@ -1419,13 +1419,13 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
     obtain ⟨hfac, -⟩ := hω
     rw [hΨ ω, Finset.abs_prod]
     refine Finset.prod_le_one₀ (fun i _ => abs_nonneg _) fun i _ => ?_
-    rw [abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+    rw [abs_of_pos (by linarith [(hfac i).2] : (0 : ℝ) <
       1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
-    have := mul_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2) (hfac i).1
+    have := mul_nonneg (by positivity : (0 : ℝ) ≤ u ^ 2 / 2) (hfac i).1
     linarith
   -- (3) integrability
   have hEint : Integrable E μ :=
-    Integrable.mono' (integrable_const (1:ℝ)) hEmeas.aestronglyMeasurable
+    Integrable.mono' (integrable_const (1 : ℝ)) hEmeas.aestronglyMeasurable
       (ae_of_all _ fun ω => le_of_eq (hE1 ω))
   have hEQint : Integrable (fun ω => E ω * Q ω) μ := by
     refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c)))
@@ -1436,7 +1436,7 @@ theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
   have hΨγint : Integrable (fun ω => |Ψ ω - γ|) μ := by
     have hsubm : Measurable fun ω => Ψ ω - γ := hΨmeas.sub measurable_const
     have hmeas2 : Measurable fun ω => |Ψ ω - γ| := continuous_abs.measurable.comp hsubm
-    refine Integrable.mono' (integrable_const (2:ℝ)) hmeas2.aestronglyMeasurable ?_
+    refine Integrable.mono' (integrable_const (2 : ℝ)) hmeas2.aestronglyMeasurable ?_
     filter_upwards [hΨ1] with ω hω
     rw [Real.norm_eq_abs, abs_abs]
     have h1 : |Ψ ω - γ| ≤ |Ψ ω| + |γ| := abs_sub _ _

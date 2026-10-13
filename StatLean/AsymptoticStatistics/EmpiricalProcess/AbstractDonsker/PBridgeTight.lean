@@ -411,7 +411,8 @@ decrease (in `M` along ℕ) to the null set `⋂ₙ {ω | n < ‖gpPath ω‖}` 
 Hence for any `ε > 0` there is `M` with
 `iidStdGaussian {ω | M < ‖gpPath ω‖} ≤ ε`. -/
 theorem exists_bound_mass {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ M : ℝ, iidStdGaussian {ω | M < ‖gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω‖} ≤ ε := by
+    ∃ M : ℝ, iidStdGaussian {ω | M <
+        ‖gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω‖} ≤ ε := by
   classical
   set g := gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hg
   -- `‖g ·‖` is a.e.-strongly-measurable.
@@ -498,7 +499,8 @@ theorem pBridge_tight :
     exact le_refl _
   -- The chaining schedule `a` + level-mass summability.
   obtain ⟨a, ha_pos, ha_summable, ha_tsum⟩ :=
-    GaussianChaining.summable_bigOsc (μ := iidStdGaussian) (X := gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
+    GaussianChaining.summable_bigOsc (μ := iidStdGaussian) (X :=
+      gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
       (K := 1) zero_le_one net hSG hDud
   -- The deterministic modulus `η k = a (J + k) + 2 ∑' i, a (J + k + i)`; for any `J`
   -- it tends to `0` (shifted-tail summability), giving compactness of the ball.

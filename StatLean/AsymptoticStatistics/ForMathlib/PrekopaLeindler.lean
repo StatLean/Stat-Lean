@@ -653,9 +653,9 @@ private theorem prekopaLeindler_1d_arithBound
       lintegral_eq_lintegral_meas_lt_ennreal hg_meas,
       lintegral_eq_lintegral_meas_lt_ennreal hh_meas]
   -- Reshape to use volF/volG/volH names.
-  change ENNReal.ofReal t * (∫⁻ α in Ioi (0:ℝ), volF α)
-       + ENNReal.ofReal (1 - t) * (∫⁻ α in Ioi (0:ℝ), volG α)
-       ≤ ∫⁻ α in Ioi (0:ℝ), volH α
+  change ENNReal.ofReal t * (∫⁻ α in Ioi (0 : ℝ), volF α)
+       + ENNReal.ofReal (1 - t) * (∫⁻ α in Ioi (0 : ℝ), volG α)
+       ≤ ∫⁻ α in Ioi (0 : ℝ), volH α
   -- Pull constants inside.
   rw [← MeasureTheory.lintegral_const_mul _ hvolF_meas,
       ← MeasureTheory.lintegral_const_mul _ hvolG_meas]

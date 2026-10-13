@@ -632,7 +632,8 @@ theorem localizedChainBound_shell_MLower {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
   rcases Nat.eq_zero_or_pos n with hn0 | hn_pos
   · -- `n = 0`: the empirical process ≡ 0 ⟹ LHS integral = 0.
     subst hn0
-    have h_lhs : ∫⁻ ξ, supNormOver (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
+    have h_lhs : ∫⁻ ξ, supNormOver
+        (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
           (fun h => empiricalProcess P 0 (fun i : Fin 0 => X i.val ξ) h) ∂μ = 0 := by
       have h_sup0 : ∀ ξ : Ξ, supNormOver
           (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
@@ -695,7 +696,7 @@ theorem shellTail_fold {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
       have hΦabs : |shellDiffEnvelope menv δ ω| = 2 * δ * |menv ω| := by
         simp only [shellDiffEnvelope, Real.norm_eq_abs]
-        rw [abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * δ * |menv ω|)]
+        rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * δ * |menv ω|)]
       have hω' : Real.sqrt n * M < 2 * δ * |menv ω| := by
         rw [← hΦabs]; exact hω
       rw [hΦabs]
@@ -746,8 +747,8 @@ theorem shellTail_fold {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
         -- `4δ²/M·tr ≤ 4δ·tr/cM ≤ (4tr/cM + 1)·δ`.
         have h1 : 4 * δ ^ 2 / M * tr ≤ 4 * δ * tr / cM := by
           rw [div_mul_eq_mul_div, div_le_div_iff₀ hMpos hcM]
-          nlinarith [mul_nonneg (by linarith [hMlb] : (0:ℝ) ≤ M - cM * δ)
-            (mul_nonneg (mul_nonneg (by norm_num : (0:ℝ) ≤ 4) hδ.le) hTnn), hTnn, hδ.le]
+          nlinarith [mul_nonneg (by linarith [hMlb] : (0 : ℝ) ≤ M - cM * δ)
+            (mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hδ.le) hTnn), hTnn, hδ.le]
         have h2 : 4 * δ * tr / cM ≤ (4 * tr / cM + 1) * δ := by
           have hEq : (4 * tr / cM + 1) * δ = 4 * δ * tr / cM + δ := by ring
           rw [hEq]; linarith [hδ.le]
@@ -828,7 +829,7 @@ theorem lipschitzShellModulus_bound
     have hδρ : δ ≤ ρ := (lt_of_lt_of_le hδlt (min_le_right _ _)).le
     -- `δq ≤ 1/4`.
     have hδq_le : δ * s ≤ 1 / 4 := by
-      rw [lt_div_iff₀ (by positivity : (0:ℝ) < 4 * s)] at hδ4s
+      rw [lt_div_iff₀ (by positivity : (0 : ℝ) < 4 * s)] at hδ4s
       nlinarith [hδ4s, hs_pos, hδ.le]
     -- Localized chaining at scale `δ`.
     obtain ⟨M, hM_lb, hM_pos, hbound⟩ := hEng δ hδ hδρ hδq_le

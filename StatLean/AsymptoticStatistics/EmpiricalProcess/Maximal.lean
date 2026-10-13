@@ -1659,7 +1659,7 @@ private lemma exists_finite_bracketingNumber_of_integral_lt_top'
   push Not at h_no
   have h_int_top : bracketingEntropyIntegral 1 F P = ⊤ := by
     unfold bracketingEntropyIntegral
-    rw [setLIntegral_congr_fun (μ := volume) (s := Set.Ioc (0:ℝ) 1)
+    rw [setLIntegral_congr_fun (μ := volume) (s := Set.Ioc (0 : ℝ) 1)
         (g := fun _ => (⊤ : ℝ≥0∞)) measurableSet_Ioc (by
           intro ε hε
           have h_top : bracketingNumber ε F 2 P = ⊤ := top_unique (h_no ε hε)

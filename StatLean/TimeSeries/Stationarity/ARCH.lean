@@ -928,8 +928,8 @@ private lemma lintegral_sq_archLayer_le [IsProbabilityMeasure μ] {ξ : ℤ → 
           lintegral_sq_xi_mul hm hi (t - 1 - (j : ℕ))
             ((measurable_archLayer_sigmaLT bc k (t - 1 - (j : ℕ))).pow_const 2),
           lintegral_sq_ofReal_xi hid]
-      rw [hI, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
-        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
+      rw [hI, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ (1 : ℝ)/2),
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ (1 : ℝ)/2),
         ennreal_sq_rpow_half, hr]
       gcongr
       exact ih (t - 1 - (j : ℕ))

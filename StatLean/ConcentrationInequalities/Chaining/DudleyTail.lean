@@ -383,7 +383,8 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
       have hsb : Real.sqrt ((j : ℝ) + 1) ^ 2 = (j : ℝ) + 1 := Real.sq_sqrt (by positivity)
       rw [hSdef]
       nlinarith [ha, hb, hu, hsa, hsb, mul_nonneg ha hb, mul_nonneg ha hu, mul_nonneg hb hu]
-    have hexpM : Real.exp (-(2 * Real.log ((N (j + 1)).card : ℝ))) = (((N (j + 1)).card : ℝ) ^ 2)⁻¹ := by
+    have hexpM : Real.exp (-(2 * Real.log ((N (j + 1)).card : ℝ))) =
+        (((N (j + 1)).card : ℝ) ^ 2)⁻¹ := by
       rw [Real.exp_neg,
         show 2 * Real.log ((N (j + 1)).card : ℝ) = Real.log (((N (j + 1)).card : ℝ) ^ 2) by
           rw [Real.log_pow]; push_cast; ring,
@@ -426,7 +427,8 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
           rw [Finset.sum_const]
       _ ≤ ENNReal.ofReal (2 * Real.exp (-((j : ℝ) + 1)) * Real.exp (-u ^ 2)) := by
           rw [nsmul_eq_mul]
-          calc ((CP j).card : ℝ≥0∞) * ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2))
+          calc ((CP j).card : ℝ≥0∞) *
+                ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2))
               ≤ (((N (j + 1)).card ^ 2 : ℕ) : ℝ≥0∞)
                   * ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2)) := by
                 gcongr
@@ -503,11 +505,13 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
   have hSB : ∑ j ∈ Finset.range n, ε (j + 1) * Real.sqrt ((j : ℝ) + 1)
       ≤ 2 * Metric.diam T * Real.sqrt 2 := by
     calc ∑ j ∈ Finset.range n, ε (j + 1) * Real.sqrt ((j : ℝ) + 1)
-        ≤ ∑ j ∈ Finset.range n, (2 * Metric.diam T * (1 / 2) ^ (j + 1)) * Real.sqrt ((j : ℝ) + 1) := by
+        ≤ ∑ j ∈ Finset.range n, (2 * Metric.diam T * (1 / 2) ^ (j + 1)) *
+            Real.sqrt ((j : ℝ) + 1) := by
           apply Finset.sum_le_sum
           intro j _
           exact mul_le_mul_of_nonneg_right (hεbnd j) (Real.sqrt_nonneg _)
-      _ = 2 * Metric.diam T * ∑ j ∈ Finset.range n, (1 / 2) ^ (j + 1) * Real.sqrt ((j : ℝ) + 1) := by
+      _ = 2 * Metric.diam T * ∑ j ∈ Finset.range n, (1 / 2) ^ (j + 1) *
+          Real.sqrt ((j : ℝ) + 1) := by
           rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun j _ => by ring)
       _ ≤ 2 * Metric.diam T * Real.sqrt 2 :=
           mul_le_mul_of_nonneg_left (sum_half_succ_sqrt_le_sqrt_two n)
@@ -599,7 +603,8 @@ theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T
         measure_biUnion_finset_le _ _
     _ ≤ ∑ j ∈ Finset.range n, ENNReal.ofReal (2 * Real.exp (-((j : ℝ) + 1)) * Real.exp (-u ^ 2)) :=
         Finset.sum_le_sum (fun j _ => hlevel j)
-    _ = ENNReal.ofReal (∑ j ∈ Finset.range n, 2 * Real.exp (-((j : ℝ) + 1)) * Real.exp (-u ^ 2)) := by
+    _ = ENNReal.ofReal (∑ j ∈ Finset.range n,
+      2 * Real.exp (-((j : ℝ) + 1)) * Real.exp (-u ^ 2)) := by
         rw [ENNReal.ofReal_sum_of_nonneg (fun j _ => by positivity)]
     _ ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
         apply ENNReal.ofReal_le_ofReal
@@ -914,7 +919,8 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       have hsb : Real.sqrt ((j : ℝ) + 1) ^ 2 = (j : ℝ) + 1 := Real.sq_sqrt (by positivity)
       rw [hSdef]
       nlinarith [ha, hb, hu, hsa, hsb, mul_nonneg ha hb, mul_nonneg ha hu, mul_nonneg hb hu]
-    have hexpM : Real.exp (-(2 * Real.log ((N (j + 1)).card : ℝ))) = (((N (j + 1)).card : ℝ) ^ 2)⁻¹ := by
+    have hexpM : Real.exp (-(2 * Real.log ((N (j + 1)).card : ℝ))) =
+        (((N (j + 1)).card : ℝ) ^ 2)⁻¹ := by
       rw [Real.exp_neg,
         show 2 * Real.log ((N (j + 1)).card : ℝ) = Real.log (((N (j + 1)).card : ℝ) ^ 2) by
           rw [Real.log_pow]; push_cast; ring,
@@ -956,7 +962,8 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           rw [Finset.sum_const]
       _ ≤ ENNReal.ofReal (2 * Real.exp (-((j : ℝ) + 1)) * Real.exp (-u ^ 2)) := by
           rw [nsmul_eq_mul]
-          calc ((CP j).card : ℝ≥0∞) * ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2))
+          calc ((CP j).card : ℝ≥0∞) *
+                ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2))
               ≤ (((N (j + 1)).card ^ 2 : ℕ) : ℝ≥0∞)
                   * ENNReal.ofReal (2 * Real.exp (-(τ j) ^ 2 / ((K : ℝ) * r j) ^ 2)) := by
                 gcongr
@@ -1013,11 +1020,13 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       ≤ 2 * Metric.diam T * Real.sqrt 2 := by
     intro n
     calc ∑ j ∈ Finset.range n, ε (j + 1) * Real.sqrt ((j : ℝ) + 1)
-        ≤ ∑ j ∈ Finset.range n, (2 * Metric.diam T * (1 / 2) ^ (j + 1)) * Real.sqrt ((j : ℝ) + 1) := by
+        ≤ ∑ j ∈ Finset.range n, (2 * Metric.diam T * (1 / 2) ^ (j + 1)) *
+            Real.sqrt ((j : ℝ) + 1) := by
           apply Finset.sum_le_sum
           intro j _
           exact mul_le_mul_of_nonneg_right (hεbnd j) (Real.sqrt_nonneg _)
-      _ = 2 * Metric.diam T * ∑ j ∈ Finset.range n, (1 / 2) ^ (j + 1) * Real.sqrt ((j : ℝ) + 1) := by
+      _ = 2 * Metric.diam T * ∑ j ∈ Finset.range n, (1 / 2) ^ (j + 1) *
+          Real.sqrt ((j : ℝ) + 1) := by
           rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun j _ => by ring)
       _ ≤ 2 * Metric.diam T * Real.sqrt 2 :=
           mul_le_mul_of_nonneg_left (sum_half_succ_sqrt_le_sqrt_two n)

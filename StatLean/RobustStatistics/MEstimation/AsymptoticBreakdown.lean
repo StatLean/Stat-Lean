@@ -103,7 +103,7 @@ theorem mLocationRoot_bounded_of_contamination {P : Measure ℝ} [IsProbabilityM
   have hB : ε * k₁ < (1 - ε) * k₂ := by linarith [min_le_right k₁ k₂]
   have hε1 : ε < 1 := by
     by_contra hcon
-    have hcon' : (1:ℝ) ≤ ε := not_lt.mp hcon
+    have hcon' : (1 : ℝ) ≤ ε := not_lt.mp hcon
     have : k₁ + k₂ ≤ ε * (k₁ + k₂) := le_mul_of_one_le_left hsum.le hcon'
     nlinarith [min_le_left k₁ k₂]
   -- the ideal score and its limits
@@ -129,7 +129,7 @@ theorem mLocationRoot_bounded_of_contamination {P : Measure ℝ} [IsProbabilityM
   have hglow : -(ε * k₂) ≤ (1 - ε) * mLocationScore ψ P θ := by
     nlinarith [mul_nonneg hε0 (sub_nonneg.2 hQhigh)]
   have hghigh : (1 - ε) * mLocationScore ψ P θ ≤ ε * k₁ := by
-    nlinarith [mul_nonneg hε0 (by linarith : (0:ℝ) ≤ (∫ x, ψ (x - θ) ∂Q) + k₁)]
+    nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ (∫ x, ψ (x - θ) ∂Q) + k₁)]
   rw [abs_le]
   constructor
   · by_contra hcon
@@ -220,7 +220,7 @@ theorem mLocationRoot_bounded_of_odd {P : Measure ℝ} [IsProbabilityMeasure P]
       IsMLocationRoot ψ (contaminate P Q ε) θ → |θ| ≤ B := by
   refine mLocationRoot_bounded_of_contamination hψm hbot htop hk hk hε0 ?_
   have hkey : min k k / (k + k) = 1 / 2 := by
-    rw [min_self, div_eq_iff (ne_of_gt (by linarith : (0:ℝ) < k + k))]
+    rw [min_self, div_eq_iff (ne_of_gt (by linarith : (0 : ℝ) < k + k))]
     ring
   rw [hkey]
   exact hε

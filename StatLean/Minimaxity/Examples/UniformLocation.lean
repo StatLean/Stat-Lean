@@ -41,12 +41,14 @@ total-variation/Hellinger bound (Lemma 15.3).
 * The `Bridge` section reproduces the exact $n$-fold squared-Hellinger tensorization
   $H^2(\mathbb{P}^{\otimes n}\Vert\mathbb{Q}^{\otimes n}) = 2 - 2\rho^n$, which the public
   `HellingerDivergence`/`HellingerProduct` API exposes only in the lossy form
-  $H^2(\otimes n)\le n\,H^2$. The `private` helpers `sqHellWith'`, `sqHellinger_eq_ofReal_integral'`,
-  `sqHellWith_transfer'` (dominating-measure invariance), `pi_absCont_add'`, `sqHellinger_pi_factor'`
-  and `sqHellinger_pi_eq_ofReal_product_integral'` assemble the product factorization against
-  `Measure.pi (μ + ν)` and combine with the public `integral_product_residual_sq_eq`.
+  $H^2(\otimes n)\le n\,H^2$. The `private` helpers `sqHellWith'`,
+  `sqHellinger_eq_ofReal_integral'`, `sqHellWith_transfer'` (dominating-measure invariance),
+  `pi_absCont_add'`, `sqHellinger_pi_factor'` and `sqHellinger_pi_eq_ofReal_product_integral'`
+  assemble the product factorization against `Measure.pi (μ + ν)`
+  and combine with the public `integral_product_residual_sq_eq`.
 * `sqHellinger_unit_shift`: $H^2(\mathrm{Unif}[0,1]\Vert\mathrm{Unif}[\theta,\theta+1]) = 2\theta$,
-  obtained from the Lebesgue measure $2\theta$ of the symmetric difference of the two unit intervals.
+  obtained from the Lebesgue measure $2\theta$ of the
+  symmetric difference of the two unit intervals.
 * `uniform_two_point_tvDist_bound`: Le Cam's inequality (`lecam_tv_le_hellinger`) on the $n$-fold
   product with separation $\theta = 1/n$, giving $1 - \lVert\cdot\rVert_{\mathrm{TV}} \ge
   (1-1/\sqrt2)/16$.
@@ -337,8 +339,10 @@ private lemma sqHellinger_unit_shift (θ : ℝ) (hθ0 : 0 ≤ θ) (hθ1 : θ ≤
       = ENNReal.ofReal (2 * θ) := by
   set μ : Measure ℝ := volume.restrict (Set.Icc (0 : ℝ) 1) with hμdef
   set ν : Measure ℝ := volume.restrict (Set.Icc θ (θ + 1)) with hνdef
-  have hμv : μ ≪ volume := by rw [hμdef]; exact Measure.absolutelyContinuous_of_le Measure.restrict_le_self
-  have hνv : ν ≪ volume := by rw [hνdef]; exact Measure.absolutelyContinuous_of_le Measure.restrict_le_self
+  have hμv : μ ≪ volume := by
+    rw [hμdef]; exact Measure.absolutelyContinuous_of_le Measure.restrict_le_self
+  have hνv : ν ≪ volume := by
+    rw [hνdef]; exact Measure.absolutelyContinuous_of_le Measure.restrict_le_self
   have hμμν : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
   have hνμν : ν ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
   have hμνv : μ + ν ≪ volume := hμv.add_left hνv
@@ -386,8 +390,10 @@ private lemma sqHellinger_unit_shift (θ : ℝ) (hθ0 : 0 ≤ θ) (hθ1 : θ ≤
     by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;>
       simp [Set.mem_sdiff, hxA, hxB]
   rw [lintegral_congr_ae hpt]
-  have hAmeas : MeasurableSet (A \ B) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
-  have hBmeas : MeasurableSet (B \ A) := by rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
+  have hAmeas : MeasurableSet (A \ B) := by
+    rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
+  have hBmeas : MeasurableSet (B \ A) := by
+    rw [hA, hB]; exact measurableSet_Icc.diff measurableSet_Icc
   rw [lintegral_add_left (measurable_const.indicator hAmeas)]
   have hvolAB : ∫⁻ x, (A \ B).indicator (fun _ => (1 : ℝ≥0∞)) x ∂volume = volume (A \ B) := by
     rw [lintegral_indicator hAmeas]; simp
@@ -512,7 +518,8 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Exa
 -- two-point bound is vacuous); Wainwright Ex 15.5 is an n→∞ rate.
 theorem uniform_location_minimax_rate (n : ℕ) (hn : 2 ≤ n)
     (P : Kernel ℝ (Fin n → ℝ)) [IsMarkovKernel P]
-    -- USER-INPUT: `P θ` is the `n`-fold i.i.d. `Uniform[θ, θ+1]` product; Wainwright §15.2, Ex 15.5.
+    -- USER-INPUT: `P θ` is the `n`-fold i.i.d.
+    -- `Uniform[θ, θ+1]` product; Wainwright §15.2, Ex 15.5.
     (hP : ∀ θ : ℝ, P θ = Measure.pi fun _ : Fin n => volume.restrict (Set.Icc θ (θ + 1))) :
     ENNReal.ofReal ((1 - 1 / Real.sqrt 2) / 128 / (n : ℝ) ^ 2)
       ≤ minimaxRiskDist (· ^ 2) id P := by
@@ -528,7 +535,8 @@ theorem uniform_location_minimax_rate (n : ℕ) (hn : 2 ≤ n)
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
   have hsep : 2 * ENNReal.ofReal ((n : ℝ)⁻¹ / 2) ≤ edist (0 : ℝ) ((n : ℝ)⁻¹) := by
     rw [edist_dist, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg hθ₁0,
-        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by
+          simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
     apply le_of_eq; congr 1; ring
   have hcrux := uniform_two_point_tvDist_bound n hn P hP
   have hΦδ : (ENNReal.ofReal ((n : ℝ)⁻¹ / 2)) ^ 2
@@ -539,7 +547,8 @@ theorem uniform_location_minimax_rate (n : ℕ) (hn : 2 ≤ n)
   rw [hΦδ]
   have h2inv : (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal 2⁻¹ := by
     rw [ENNReal.ofReal_inv_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat]
-  have hcompute : ENNReal.ofReal (((n : ℝ)⁻¹ / 2) ^ 2) / 2 * ENNReal.ofReal ((1 - 1 / Real.sqrt 2) / 16)
+  have hcompute : ENNReal.ofReal (((n : ℝ)⁻¹ / 2) ^ 2) / 2 *
+      ENNReal.ofReal ((1 - 1 / Real.sqrt 2) / 16)
       = ENNReal.ofReal ((1 - 1 / Real.sqrt 2) / 128 / (n : ℝ) ^ 2) := by
     rw [div_eq_mul_inv, h2inv, ← ENNReal.ofReal_mul (by positivity),
         ← ENNReal.ofReal_mul (by positivity)]

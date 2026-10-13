@@ -7,14 +7,14 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 A Chapter-5 metric-entropy prerequisite for the Sobolev minimax example. Fix a smoothness index
 $\alpha > 1/2$ and consider the **Sobolev ellipsoid**
-$$\mathcal{E}_\alpha = \Bigl\{\, \theta \in \ell^2(\mathbb{N}) : \sum_{j} j^{2\alpha}\,\theta_j^2 \le 1 \,\Bigr\}.$$
-Its metric entropy — the logarithm of the smallest number of $\delta$-balls (in the $\ell^2$ norm)
-needed to cover it — obeys the Kolmogorov–Tikhomirov rate
-$$\log N(\delta;\, \mathcal{E}_\alpha,\, \lVert\cdot\rVert_2) \;\asymp\; \left(\tfrac{1}{\delta}\right)^{1/\alpha}.$$
-The minimax lower bounds use only the **packing (lower) direction**: for every
-$0 < \delta \le 1/2$ there is a constant $c > 0$ and a finite $\delta$-separated subset
-$T \subset \mathcal{E}_\alpha$ (every pair of distinct points at $\ell^2$-distance $\ge \delta$,
-every point in the ellipsoid) with
+$$\mathcal{E}_\alpha = \Bigl\{\, \theta \in \ell^2(\mathbb{N}) : \sum_{j} j^{2\alpha}\,\theta_j^2
+\le 1 \,\Bigr\}.$$ Its metric entropy — the logarithm of the smallest number of $\delta$-balls (in
+the $\ell^2$ norm) needed to cover it — obeys the Kolmogorov–Tikhomirov rate
+$$\log N(\delta;\, \mathcal{E}_\alpha,\, \lVert\cdot\rVert_2) \;\asymp\;
+\left(\tfrac{1}{\delta}\right)^{1/\alpha}.$$ The minimax lower bounds use only the **packing (lower)
+direction**: for every $0 < \delta \le 1/2$ there is a constant $c > 0$ and a finite
+$\delta$-separated subset $T \subset \mathcal{E}_\alpha$ (every pair of distinct points at
+$\ell^2$-distance $\ge \delta$, every point in the ellipsoid) with
 $$c\,\left(\tfrac{1}{\delta}\right)^{1/\alpha} \;\le\; \log |T|.$$
 
 Two deviations from the book statement are made explicit in the Lean formalization:

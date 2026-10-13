@@ -578,7 +578,7 @@ private theorem drift_weight {κ : Kernel S S} [IsMarkovKernel κ] {V : S → �
       ≤ ENNReal.ofReal (1 + β * K + β * γ * V x) := by
   have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
     ENNReal.measurable_ofReal.comp hdrift.V_measurable
-  have hnn : (0:ℝ) ≤ β * (γ * V x + K) :=
+  have hnn : (0 : ℝ) ≤ β * (γ * V x + K) :=
     mul_nonneg hβ (add_nonneg (mul_nonneg hdrift.gamma_mem.1.le (hdrift.V_nonneg x))
       hdrift.K_nonneg)
   calc ∫⁻ y, ENNReal.ofReal (1 + β * V y) ∂(κ x)
@@ -638,7 +638,7 @@ private theorem harris_num {β γ K R α ᾱ : ℝ} (hβ : 0 < β) (hγ0 : 0 < �
         + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL) := by
   have hRne : (R : ℝ) ≠ 0 := hRpos.ne'
   have hβne : (β : ℝ) ≠ 0 := hβ.ne'
-  have h2αR : (0:ℝ) ≤ 2 * α / R := (div_pos (by linarith) hRpos).le
+  have h2αR : (0 : ℝ) ≤ 2 * α / R := (div_pos (by linarith) hRpos).le
   -- (i) `1 + βK ≤ ᾱ + α`
   have e1 : ENNReal.ofReal (1 + β * K) ≤ ENNReal.ofReal ᾱ + ENNReal.ofReal α := by
     rw [← ENNReal.ofReal_add hᾱ0.le hα0.le]
@@ -746,7 +746,7 @@ private theorem harris_contraction_aux {κ : Kernel S S} [IsMarkovKernel κ] {V 
   have hJm : ENNReal.ofReal α * mL ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m := by
     rw [hm, lintegral_smul_measure]
     refine le_mul_of_one_le_right' ?_
-    calc (1:ℝ≥0∞) = ∫⁻ _, (1:ℝ≥0∞) ∂ρ := by rw [lintegral_one, measure_univ]
+    calc (1 : ℝ≥0∞) = ∫⁻ _, (1 : ℝ≥0∞) ∂ρ := by rw [lintegral_one, measure_univ]
       _ ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂ρ :=
           lintegral_mono fun x => by
             rw [← ENNReal.ofReal_one]
@@ -832,8 +832,8 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
   obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
   obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
   have hK := hdrift.K_nonneg
-  have h1γ : (0:ℝ) < 1 - γ := by linarith
-  have hRpos : (0:ℝ) < R := lt_of_le_of_lt (by positivity) hR
+  have h1γ : (0 : ℝ) < 1 - γ := by linarith
+  have hRpos : (0 : ℝ) < R := lt_of_le_of_lt (by positivity) hR
   have hKR : 2 * K < R * (1 - γ) := by rw [div_lt_iff₀ h1γ] at hR; linarith
   -- the admissible window `2α/(R(1−γ)) < β < α/K` is nonempty *exactly* under `hR`
   obtain ⟨b0, hb0pos, hb0K, hb0R⟩ :
@@ -844,11 +844,11 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
     nlinarith [mul_lt_mul_of_pos_left hKR hα0]
   obtain ⟨β, hβpos, hβK, hβR⟩ :
       ∃ β : ℝ, 0 < β ∧ β * K < α ∧ 2 * α < β * (R * (1 - γ)) := by
-    have hE : (0:ℝ) < α - b0 * K := by linarith
-    have hd : (0:ℝ) < (α - b0 * K) / (2 * (K + 1)) := div_pos hE (by linarith)
+    have hE : (0 : ℝ) < α - b0 * K := by linarith
+    have hd : (0 : ℝ) < (α - b0 * K) / (2 * (K + 1)) := div_pos hE (by linarith)
     refine ⟨b0 + (α - b0 * K) / (2 * (K + 1)), by linarith, ?_, ?_⟩
     · have hlt : (α - b0 * K) / (2 * (K + 1)) * K < α - b0 * K := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith : (0:ℝ) < 2 * (K + 1))]
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith : (0 : ℝ) < 2 * (K + 1))]
         nlinarith
       rw [add_mul]
       linarith
@@ -858,7 +858,7 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
       ∃ a : ℝ, 1 + β * K - α ≤ a ∧ γ + 2 * α / (β * R) ≤ a ∧ 0 < a ∧ a < 1 := by
     refine ⟨max (1 + β * K - α) (γ + 2 * α / (β * R)), le_max_left _ _, le_max_right _ _, ?_, ?_⟩
     · refine lt_of_lt_of_le ?_ (le_max_right _ _)
-      have : (0:ℝ) < 2 * α / (β * R) := div_pos (by linarith) (mul_pos hβpos hRpos)
+      have : (0 : ℝ) < 2 * α / (β * R) := div_pos (by linarith) (mul_pos hβpos hRpos)
       linarith
     · refine max_lt (by linarith) ?_
       have hlt : 2 * α / (β * R) < 1 - γ := by
@@ -1075,7 +1075,7 @@ private theorem jPos_univ_le_weightedTV {β : ℝ} (hβ : 0 ≤ β) {V : S → �
     (jPos μ ν) Set.univ ≤ weightedTV β V μ ν := by
   rw [weightedTV_eq β hVm μ ν]
   refine le_trans ?_ le_self_add
-  calc (jPos μ ν) Set.univ = ∫⁻ _, (1:ℝ≥0∞) ∂(jPos μ ν) := by rw [lintegral_one]
+  calc (jPos μ ν) Set.univ = ∫⁻ _, (1 : ℝ≥0∞) ∂(jPos μ ν) := by rw [lintegral_one]
     _ ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos μ ν) :=
         lintegral_mono fun x => by
           rw [← ENNReal.ofReal_one]
@@ -1362,11 +1362,11 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
       _ = (ENNReal.ofReal ᾱ * (ENNReal.ofReal r)⁻¹) ^ n * D := by rw [mul_pow]; ring
       _ = ENNReal.ofReal (ᾱ / r) ^ n * D := by rw [hq]
   -- ## Step 6: export the envelope carried by `hbound`
-  have hCt : (0:ℝ) ≤ C.toReal := ENNReal.toReal_nonneg
-  have hVx₀ : (0:ℝ) ≤ β * V x₀ := mul_nonneg hβpos.le (hVnn x₀)
+  have hCt : (0 : ℝ) ≤ C.toReal := ENNReal.toReal_nonneg
+  have hVx₀ : (0 : ℝ) ≤ β * V x₀ := mul_nonneg hβpos.le (hVnn x₀)
   refine ⟨π, hπprob, hge.isErgodicKernel.invariant, hge, β, 2 + β * V x₀ + C.toReal, ᾱ,
     hβpos.le, by linarith, hᾱpos.le, hᾱlt, fun x n => ?_⟩
-  have hVx : (0:ℝ) ≤ β * V x := mul_nonneg hβpos.le (hVnn x)
+  have hVx : (0 : ℝ) ≤ β * V x := mul_nonneg hβpos.le (hVnn x)
   have hdir : weightedTV β V (Measure.dirac x) (Measure.dirac x₀)
       ≤ ENNReal.ofReal (1 + β * V x) + ENNReal.ofReal (1 + β * V x₀) := by
     refine (weightedTV_le_add (β := β) hVm (Measure.dirac x) (Measure.dirac x₀)).trans ?_
@@ -1415,8 +1415,8 @@ private theorem level_set_pos {κ : Kernel S S} [IsMarkovKernel κ] {V : S → �
     ξ {x | V x ≤ R} ≠ 0 := by
   obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
   have hK := hdrift.K_nonneg
-  have h1γ : (0:ℝ) < 1 - γ := by linarith
-  have hRpos : (0:ℝ) < R := lt_of_le_of_lt (by positivity) hR
+  have h1γ : (0 : ℝ) < 1 - γ := by linarith
+  have hRpos : (0 : ℝ) < R := lt_of_le_of_lt (by positivity) hR
   have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
     ENNReal.measurable_ofReal.comp hdrift.V_measurable
   set t := ∫⁻ y, ENNReal.ofReal (V y) ∂ξ with htdef

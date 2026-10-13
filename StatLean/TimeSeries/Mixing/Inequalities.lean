@@ -114,9 +114,9 @@ private lemma le_alphaMixCoeff_of_measurableSet {m₁ m₂ mΩ : MeasurableSpace
   have h1 : (μ (A' ∩ B')).toReal ≤ 1 := measureReal_le_one
   have h2 : (μ A').toReal ≤ 1 := measureReal_le_one
   have h3 : (μ B').toReal ≤ 1 := measureReal_le_one
-  have h4 : (0:ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
-  have h5 : (0:ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
-  have h6 : (0:ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
+  have h4 : (0 : ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
+  have h5 : (0 : ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
+  have h6 : (0 : ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
   rw [abs_le]
   refine ⟨by nlinarith, by nlinarith⟩
 
@@ -428,8 +428,8 @@ private lemma tail_holder {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbab
   refine key.trans_eq ?_
   rw [show ∫ ω, (|u ω| ^ r) ^ P ∂μ = ∫ ω, |u ω| ^ t ∂μ from integral_congr_ae
     (Eventually.of_forall e3)]
-  rw [show (1:ℝ) / P = r / t by rw [hP]; field_simp,
-    show (1:ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
+  rw [show (1 : ℝ) / P = r / t by rw [hP]; field_simp,
+    show (1 : ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
 
 
 /-- Markov/Chebyshev in the form needed below. -/
@@ -456,8 +456,8 @@ private lemma abs_clamp_le {c x : ℝ} (hc : 0 ≤ c) : |max (-c) (min c x)| ≤
 private lemma abs_sub_clamp_le_of_lt {c x : ℝ} (hc : 0 ≤ c) (hx : c < |x|) :
     |x - max (-c) (min c x)| ≤ |x| := by
   rcases le_total c x with h | h
-  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0:ℝ) ≤ x - c),
-      abs_of_nonneg (by linarith : (0:ℝ) ≤ x)]
+  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - c),
+      abs_of_nonneg (by linarith : (0 : ℝ) ≤ x)]
     linarith
   · have h2 : x ≤ -c := by
       rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hx <;> linarith
@@ -511,12 +511,12 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
         * (eLpNorm f (ENNReal.ofReal p) μ).toReal
         * (eLpNorm g (ENNReal.ofReal q) μ).toReal := by
   -- exponent bookkeeping
-  have hp0 : (0:ℝ) < p := lt_trans one_pos hp
-  have hq0 : (0:ℝ) < q := lt_trans one_pos hq
+  have hp0 : (0 : ℝ) < p := lt_trans one_pos hp
+  have hq0 : (0 : ℝ) < q := lt_trans one_pos hq
   have hip : 0 < 1 / p := by positivity
   have hiq : 0 < 1 / q := by positivity
   set p' : ℝ := p / (p - 1) with hp'def
-  have hp1 : (0:ℝ) < p - 1 := by linarith
+  have hp1 : (0 : ℝ) < p - 1 := by linarith
   have hp'0 : 0 < p' := by positivity
   have hinvp' : 1 / p' = 1 - 1 / p := by rw [hp'def]; field_simp
   have hp'1 : 1 < p' := by
@@ -832,7 +832,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
     -- the exponent ledger
     have hβθ : β * (β ^ (-(1 / p)) * β ^ (-(1 / q))) = β ^ θ := by
       rw [← Real.rpow_add hβ0]
-      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1:ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
+      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1 : ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
             rw [Real.rpow_one]
         _ = β ^ (1 + (-(1 / p) + -(1 / q))) := (Real.rpow_add hβ0 _ _).symm
         _ = β ^ θ := by rw [hθdef]; congr 1; ring
@@ -871,11 +871,11 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   have hcontα : ContinuousAt (fun y : ℝ => 8 * y ^ θ * A * B) α :=
     (((Real.continuousAt_rpow_const α θ (Or.inr hθ0.le)).const_mul 8).mul continuousAt_const).mul
       continuousAt_const
-  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0:ℝ))
+  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0 : ℝ))
       (𝓝 (8 * α ^ θ * A * B)) := by
-    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0:ℝ)) (𝓝 α) := by
+    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0 : ℝ)) (𝓝 α) := by
       have h2 : Continuous (fun ε : ℝ => α + ε) := continuous_const.add continuous_id
-      simpa using (h2.tendsto (0:ℝ)).mono_left nhdsWithin_le_nhds
+      simpa using (h2.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
     exact hcontα.tendsto.comp h1
   refine ge_of_tendsto hlim ?_
   filter_upwards [self_mem_nhdsWithin] with ε hε using main ε hε
@@ -1165,9 +1165,9 @@ private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
   have hC0 : 0 ≤ C := le_trans (abs_nonneg _) (hbdd 0).exists.choose_spec
   have hzero : ∀ t : ℤ, (∫ ω, X t ω ∂μ) = 0 :=
     integral_eq_zero_of_stat hstat hmeas hmean
-  have hprod0 : (0:ℝ) ≤ alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat :=
+  have hprod0 : (0 : ℝ) ≤ alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat :=
     mul_nonneg (alphaCoeff_nonneg' X _) (alphaCoeff_nonneg' X _)
-  have hC4 : (0:ℝ) ≤ C ^ 4 := by positivity
+  have hC4 : (0 : ℝ) ≤ C ^ 4 := by positivity
   -- (L) the left split: `X_a` against `X_b X_c X_d`
   have hL : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
       ≤ 4 * C ^ 4 * alphaCoeff X μ (b - a).toNat := by
@@ -1246,7 +1246,7 @@ private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
       ring
     linarith
   -- pick the split at the largest gap
-  have hextra : (0:ℝ) ≤ 16 * C ^ 4 *
+  have hextra : (0 : ℝ) ≤ 16 * C ^ 4 *
       (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by positivity
   rcases max_choice (b - a).toNat (max (c - b).toNat (d - c).toNat) with hmx | hmx
   · rw [hmx]; linarith

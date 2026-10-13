@@ -99,7 +99,7 @@ theorem finiteClass_realizable_uniform (𝓗 : Finset (X → Bool)) {ε δ : ℝ
   have hlog_le : Real.log ((𝓗.card : ℝ) / δ) ≤ ε * n := by
     rw [div_le_iff₀ hε] at hn; linarith
   have hexp : Real.exp (-ε * n) ≤ ((𝓗.card : ℝ) / δ)⁻¹ := by
-    rw [← Real.exp_log (show (0:ℝ) < (𝓗.card : ℝ) / δ by positivity), ← Real.exp_neg]
+    rw [← Real.exp_log (show (0 : ℝ) < (𝓗.card : ℝ) / δ by positivity), ← Real.exp_neg]
     exact Real.exp_le_exp.mpr (by linarith)
   have hbound : (𝓗.card : ℝ) * Real.exp (-ε * n) ≤ δ := by
     calc (𝓗.card : ℝ) * Real.exp (-ε * n)

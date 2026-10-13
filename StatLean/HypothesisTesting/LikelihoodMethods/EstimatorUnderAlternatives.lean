@@ -1368,7 +1368,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
   set c : ℝ := ε / (4 * (K + H + 1)) with hcdef
   have hc0 : 0 < c := by rw [hcdef]; positivity
   have hcKH : c * (K + H) < ε / 4 := by
-    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0:ℝ) < 4)]
+    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0 : ℝ) < 4)]
     nlinarith
   -- First-order expansion of `g` at `θ₀`, with remainder `Rf`.
   set Rf : EuclideanSpace ℝ (Fin k) → ℝ :=

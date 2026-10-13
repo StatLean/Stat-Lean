@@ -27,9 +27,9 @@ degenerate, see below):
 
 * `ksPlus p ω` — the one-sided KS statistic $\max_{i}\bigl(\tfrac{i+1}{n} - p_{(i+1)}\bigr)$
   (`Fin`-indexed, so the displayed indices are $0,\dots,n-1$).
-* `ksPlus_tail_union` — the **provable union-bound** form $\Pr(\mathrm{KS}^{+} \ge u) \le n\,e^{-2nu^2}$
-  for $u \ge 0$. Deviates from the book's sharp constant; see the deviation note below and on the
-  declaration.
+* `ksPlus_tail_union` — the **provable union-bound** form
+  $\Pr(\mathrm{KS}^{+} \ge u) \le n\,e^{-2nu^2}$ for $u \ge 0$. Deviates from the book's sharp
+  constant; see the deviation note below and on the declaration.
 
 This is a theorem-agnostic `ForMathlib` brick; it is consumed by the goodness-of-fit assembly
 (the Kolmogorov–Smirnov test in `GoodnessOfFit.KolmogorovSmirnov`).
@@ -59,9 +59,9 @@ a null event.
   the positively-correlated count events to a constant requires an empirical-process reflection /
   exponential-supermartingale argument not yet in Mathlib, for which neither the union bound,
   McDiarmid, nor the maximal inequalities suffice.
-* The hypothesis $n \ge 1$ is genuinely required: at $n = 0$ the empirical sup is $\sup \emptyset = 0$,
-  so for $u = 0$ the event is all of $\Omega$ (measure $1$) while the right-hand side is $0$. The book
-  statement is implicitly about $n \ge 1$ samples.
+* The hypothesis $n \ge 1$ is genuinely required: at $n = 0$ the empirical sup is
+  $\sup \emptyset = 0$, so for $u = 0$ the event is all of $\Omega$ (measure $1$) while the
+  right-hand side is $0$. The book statement is implicitly about $n \ge 1$ samples.
 
 **Bibliographic comments.** The inequality originates with A. Dvoretzky, J. Kiefer and J. Wolfowitz,
 "Asymptotic minimax character of the sample distribution function and of the classical multinomial
@@ -230,11 +230,11 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
 
 /-- **Massart's inequality — provable union-bound form** (Candès, Lecture 3, §3.3.1, Theorem 2,
 STAT 300C). For independent super-uniform null p-values, `μ{ KS⁺ ≥ u } ≤ n · e^{−2nu²}` (`u ≥ 0`,
-`n ≥ 1`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and `{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`,
-each bounded by `e^{−2nu²}` (Hoeffding on the bounded indicators with mean `≤ k/n − u`); union over
-the `n` order statistics.
+`n ≥ 1`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and
+`{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`, each bounded by `e^{−2nu²}` (Hoeffding on the
+bounded indicators with mean `≤ k/n − u`); union over the `n` order statistics.
 
-> **Deviation from the book (CLAUDE.md §1).** Candès states the *sharp* `2·e^{−2nu²}` (Massart 1990).
+> **Deviation from the book.** Candès states the *sharp* `2·e^{−2nu²}` (Massart 1990).
 > The sharp constant requires an empirical-process exponential-supermartingale / reflection argument
 > not available in Mathlib: the `n`-fold union of the positively-correlated count events
 > `{countLE(k/n−u) ≥ k}` cannot be Bonferroni-shaved to a constant, and the McDiarmid route's

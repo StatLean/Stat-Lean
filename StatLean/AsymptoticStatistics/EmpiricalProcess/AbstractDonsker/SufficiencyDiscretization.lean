@@ -554,7 +554,8 @@ theorem gaussianPBridge_readout_isGaussian (m : ℕ) :
       ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
         (fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))))) := by
+          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+              (netRep hG_env hG hF_meas hF_ent m))))))) := by
   classical
   set k := Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)) with hk
   set ψ : Fin k → ↥F := fun i => ((netEnum hG_env hG hF_meas hF_ent m).symm i).1 with hψ
@@ -581,7 +582,8 @@ theorem gaussianPBridge_readout_mean (m : ℕ) :
         ∂((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+                (netRep hG_env hG hF_meas hF_ent m)))))))
       = ∫ x, id x
         ∂(ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
             (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -638,7 +640,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
         ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+                (netRep hG_env hG hF_meas hF_ent m)))))))
       = ProbabilityTheory.covarianceBilin
           (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
               (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -651,7 +654,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
   set R : LinfF F → EuclideanSpace ℝ (Fin k) :=
     fun z => (WithLp.toLp 2 (fun i => z (ψ i)) : EuclideanSpace ℝ (Fin k)) with hR
   have hν_prob : IsProbabilityMeasure ν :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   -- Measurability + Gaussianity + L²-membership of the readout `R`.
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
@@ -689,8 +693,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
     intro a; funext u
     rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, PiLp.inner_apply]
     have hpt : ∀ x : Fin k,
-        (inner ℝ ((EuclideanSpace.single a (1:ℝ)).ofLp x) (u.ofLp x) : ℝ)
-          = u.ofLp x * (if x = a then (1:ℝ) else 0) := by
+        (inner ℝ ((EuclideanSpace.single a (1 : ℝ)).ofLp x) (u.ofLp x) : ℝ)
+          = u.ofLp x * (if x = a then (1 : ℝ) else 0) := by
       intro x; rw [PiLp.single_apply]; rfl
     simp_rw [hpt]
     simp [Finset.sum_ite_eq']
@@ -944,7 +948,8 @@ theorem gaussianPBridge_map_netTuple_eq (m : ℕ) :
       (netTuple hG_env hG hF_meas hF_ent m)
       = fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))) := by
+          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+              (netRep hG_env hG hF_meas hF_ent m))))) := by
     funext z
     rfl
   rw [hcomp]

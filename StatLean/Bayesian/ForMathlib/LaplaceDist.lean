@@ -14,10 +14,10 @@ Mathlib lacks (it has the Gaussian and Gamma laws but not the double-exponential
 identity `P(|X| > δ) = exp(−δ/b)` used to compute the Dirichlet–Laplace marginal tail.
 
 **Reference.** Standard Laplace-distribution facts (e.g. Kotz–Kozubowski–Podgórski, *The Laplace
-Distribution and Generalizations*, Birkhäuser, 2001, §2.1). A **standard Laplace-distribution brick**:
-it carries no Dirichlet–Laplace-specific content of its own, but is consumed by the scale mixture
-`θ | ψ ~ Laplace(ψ)`, `ψ ~ Gamma(a, 1/2)` of Bhattacharya–Pati–Pillai–Dunson, *Dirichlet–Laplace
-priors for optimal shrinkage* (arXiv:1401.5398), eq. (10).
+Distribution and Generalizations*, Birkhäuser, 2001, §2.1). A **standard Laplace-distribution
+brick**: it carries no Dirichlet–Laplace-specific content of its own, but is consumed by the scale
+mixture `θ | ψ ~ Laplace(ψ)`, `ψ ~ Gamma(a, 1/2)` of Bhattacharya–Pati–Pillai–Dunson,
+*Dirichlet–Laplace priors for optimal shrinkage* (arXiv:1401.5398), eq. (10).
 
 **Proof formalization notes.** `laplacePDFReal` keeps the raw prefactor `(2b)⁻¹`, so for `b ≤ 0` the
 prefactor is `≤ 0` and `ENNReal.ofReal` collapses the density to `0`; hence `laplaceMeasure b = 0`
@@ -37,8 +37,8 @@ open scoped ENNReal NNReal
 namespace StatLean.Bayesian
 
 /-- **Centered Laplace density** `f(x) = (2b)⁻¹ exp(−|x|/b)` (scale `b`, location `0`), as a real
-number. For `b ≤ 0` the prefactor `(2b)⁻¹` is `≤ 0`, so downstream `ENNReal.ofReal` reads the density
-as `0` (junk guard; all content lemmas assume `0 < b`). -/
+number. For `b ≤ 0` the prefactor `(2b)⁻¹` is `≤ 0`, so downstream `ENNReal.ofReal` reads the
+density as `0` (junk guard; all content lemmas assume `0 < b`). -/
 noncomputable def laplacePDFReal (b x : ℝ) : ℝ := (2 * b)⁻¹ * Real.exp (-|x| / b)
 
 /-- **Centered Laplace density** as an extended nonnegative real, `ENNReal.ofReal` of
@@ -109,7 +109,8 @@ lemma lintegral_laplacePDF_eq_one {b : ℝ}
   norm_num
 
 /-- **Laplace measure** `Laplace(0, b) = volume.withDensity ((2b)⁻¹ exp(−|·|/b))`. For `b ≤ 0` the
-density vanishes, so this is the zero measure (junk guard; it is a probability measure iff `0 < b`). -/
+density vanishes, so this is the zero measure (junk
+guard; it is a probability measure iff `0 < b`). -/
 noncomputable def laplaceMeasure (b : ℝ) : Measure ℝ := volume.withDensity (laplacePDF b)
 
 /-- `Laplace(0, b)` is a probability measure for positive scale. -/
@@ -121,7 +122,8 @@ theorem isProbabilityMeasure_laplaceMeasure {b : ℝ}
   rw [laplaceMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     lintegral_laplacePDF_eq_one hb]
 
-/-- For nonpositive scale the Laplace measure degenerates to `0` (the density is identically `0`). -/
+/-- For nonpositive scale the Laplace measure
+degenerates to `0` (the density is identically `0`). -/
 theorem laplaceMeasure_of_nonpos {b : ℝ}
     -- LEAN-ONLY: nonpositive scale is the junk branch; the density collapses to 0
     (hb : b ≤ 0) :

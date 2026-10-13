@@ -55,8 +55,8 @@ open scoped ENNReal Topology RealInnerProductSpace Matrix ProbabilityTheory
 It collects the coordinate estimating functions `ψ p.1 p.2 j` as the pair
 `p = (θ,η)` ranges over `S ⊆ ℝᵏ × H` and `j` over the `k` fibers. It is the
 nuisance analogue of `paramClass` and appears in the Donsker hypothesis
-`IsPDonsker (pairClass ψ (ball ×ˢ ball)) P`. (vdV §5.4 p.60: "the class of functions {ψ_{θ,η} : ‖θ−θ₀‖ < δ,
-d(η,η₀) < δ}".) -/
+`IsPDonsker (pairClass ψ (ball ×ˢ ball)) P`. (vdV §5.4 p.60: "the class of functions {ψ_{θ,η} :
+‖θ−θ₀‖ < δ, d(η,η₀) < δ}".) -/
 def pairClass {k : ℕ} {Ω : Type*} {H : Type*}
     (ψ : EuclideanSpace ℝ (Fin k) → H → Fin k → (Ω → ℝ))
     (S : Set (EuclideanSpace ℝ (Fin k) × H)) : Set (Ω → ℝ) :=

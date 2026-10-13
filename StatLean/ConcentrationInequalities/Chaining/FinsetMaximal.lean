@@ -156,7 +156,8 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     dsimp only
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
-      exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
+      exact (le_abs_self _).trans
+          (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
     · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)
@@ -182,7 +183,8 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     refine Real.iSup_le (fun i => ?_) (Finset.sum_nonneg (fun _ _ => abs_nonneg _))
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
-      exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
+      exact (le_abs_self _).trans
+          (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
     · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)

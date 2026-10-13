@@ -9,7 +9,8 @@ the family in the square-root Kullback–Leibler divergence, with no need to con
 packing. If $N_{\mathrm{KL}}(\varepsilon; \mathcal{P})$ denotes the $\varepsilon$-covering number of
 the family $\mathcal{P}$ in the square-root KL pseudo-distance, then
 $$
-  I(Z; J) \;\le\; \inf_{\varepsilon > 0}\, \bigl\{\, \varepsilon^{2} \;+\; \log N_{\mathrm{KL}}(\varepsilon; \mathcal{P}) \,\bigr\},
+  I(Z; J) \;\le\; \inf_{\varepsilon > 0}\, \bigl\{\, \varepsilon^{2}
+  \;+\; \log N_{\mathrm{KL}}(\varepsilon; \mathcal{P}) \,\bigr\},
 $$
 which is Lemma 15.21, Eq. (15.51).
 
@@ -28,8 +29,9 @@ Eqs. (15.51)–(15.52).
 uniform mixture $\bar{Q}$, the bound reduces to controlling the unnormalized sum
 $\sum_j D(Q_j \,\|\, \bar{Q}) \le M\,(\varepsilon^{2} + \log N)$, in two book steps (Eq. (15.52)):
 1. **Mixture minimization** — replace the data mixture $\bar{Q}$ by the *cover* mixture
-   $G = \tfrac{1}{N}\sum_k \gamma_k$, using $\sum_j D(Q_j \,\|\, \bar{Q}) \le \sum_j D(Q_j \,\|\, G)$
-   (`sum_klDiv_mixture_le`), since the mixture of the model minimizes the average divergence.
+   $G = \tfrac{1}{N}\sum_k \gamma_k$, using
+   $\sum_j D(Q_j \,\|\, \bar{Q}) \le \sum_j D(Q_j \,\|\, G)$ (`sum_klDiv_mixture_le`),
+   since the mixture of the model minimizes the average divergence.
 2. **Drop the other terms** — for each $j$, pick a cover atom $\gamma_{k(j)}$ within $\varepsilon^2$
    and bound $D(Q_j \,\|\, G) \le D(Q_j \,\|\, \gamma_{k(j)}) + \log N$ (`klDiv_le_cover_mixture`).
    The key pointwise fact is $(1/N)\,\gamma_{k(j)} \le G$, which forces $d\gamma_{k(j)}/dG \le N$
@@ -70,8 +72,8 @@ private lemma klDiv_le_cover_mixture {N : ℕ} (hN : N ≠ 0) (ρ γk G : Measur
   rcases eq_or_ne (klDiv ρ γk) ⊤ with htop | hfin
   · rw [htop]; exact le_trans le_top le_top
   obtain ⟨hac, hint⟩ := klDiv_ne_top_iff.mp hfin
-  have hNℝ : (1:ℝ) ≤ (N:ℝ) := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hN
-  have hlogN_nonneg : 0 ≤ Real.log (N:ℝ) := Real.log_nonneg hNℝ
+  have hNℝ : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hN
+  have hlogN_nonneg : 0 ≤ Real.log (N : ℝ) := Real.log_nonneg hNℝ
   have hNcast_ne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN
   have hNcast_top : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hNinv_ne : (N : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.mpr hNcast_top
@@ -83,18 +85,18 @@ private lemma klDiv_le_cover_mixture {N : ℕ} (hN : N ≠ 0) (ρ γk G : Measur
   have hbase : ∀ᵐ x ∂ρ, 0 < ρ.rnDeriv γk x ∧ ρ.rnDeriv γk x < ⊤
       ∧ 0 < γk.rnDeriv G x ∧ γk.rnDeriv G x < ⊤
       ∧ ρ.rnDeriv γk x * γk.rnDeriv G x = ρ.rnDeriv G x
-      ∧ γk.rnDeriv G x ≤ (N:ℝ≥0∞) := by
+      ∧ γk.rnDeriv G x ≤ (N : ℝ≥0∞) := by
     have hrn_le : (fun x => (γk.rnDeriv G x)) ≤ᵐ[G] (fun _ => (N : ℝ≥0∞)) := by
       have h1 : ((N : ℝ≥0∞)⁻¹ • γk).rnDeriv G ≤ᵐ[G] 1 := Measure.rnDeriv_le_one_of_le hle
-      have h2 := Measure.rnDeriv_smul_left_of_ne_top γk G (r := (N:ℝ≥0∞)⁻¹)
+      have h2 := Measure.rnDeriv_smul_left_of_ne_top γk G (r := (N : ℝ≥0∞)⁻¹)
         (ENNReal.inv_ne_top.mpr hNcast_ne)
       filter_upwards [h1, h2] with x hx1 hx2
       rw [hx2, Pi.smul_apply, smul_eq_mul] at hx1
-      have hx1' : (N:ℝ≥0∞)⁻¹ * γk.rnDeriv G x ≤ 1 := by simpa [Pi.one_apply] using hx1
-      calc γk.rnDeriv G x = (N:ℝ≥0∞) * ((N:ℝ≥0∞)⁻¹ * γk.rnDeriv G x) := by
+      have hx1' : (N : ℝ≥0∞)⁻¹ * γk.rnDeriv G x ≤ 1 := by simpa [Pi.one_apply] using hx1
+      calc γk.rnDeriv G x = (N : ℝ≥0∞) * ((N : ℝ≥0∞)⁻¹ * γk.rnDeriv G x) := by
               rw [← mul_assoc, ENNReal.mul_inv_cancel hNcast_ne hNcast_top, one_mul]
-        _ ≤ (N:ℝ≥0∞) * 1 := by gcongr
-        _ = (N:ℝ≥0∞) := mul_one _
+        _ ≤ (N : ℝ≥0∞) * 1 := by gcongr
+        _ = (N : ℝ≥0∞) := mul_one _
     have hchain : ρ.rnDeriv γk * γk.rnDeriv G =ᵐ[G] ρ.rnDeriv G :=
       Measure.rnDeriv_mul_rnDeriv hac
     filter_upwards [Measure.rnDeriv_pos hac, hac.ae_le (Measure.rnDeriv_lt_top ρ γk),
@@ -104,7 +106,7 @@ private lemma klDiv_le_cover_mixture {N : ℕ} (hN : N ≠ 0) (ρ γk G : Measur
     rw [Pi.mul_apply] at h5
     exact ⟨h1, h2, h3, h4, h5, h6⟩
   -- upper bound on `llr ρ G`
-  have hllr_le : llr ρ G ≤ᵐ[ρ] (fun x => llr ρ γk x + Real.log (N:ℝ)) := by
+  have hllr_le : llr ρ G ≤ᵐ[ρ] (fun x => llr ρ γk x + Real.log (N : ℝ)) := by
     filter_upwards [hbase] with x hx
     obtain ⟨hp1, hlt1, hp3, hlt3, hchain, hle6⟩ := hx
     simp only [llr_def]
@@ -113,22 +115,22 @@ private lemma klDiv_le_cover_mixture {N : ℕ} (hN : N ≠ 0) (ρ γk G : Measur
     rw [← hchain, ENNReal.toReal_mul, Real.log_mul hne1 hne3]
     have hpos3 : 0 < (γk.rnDeriv G x).toReal := ENNReal.toReal_pos hp3.ne' hlt3.ne
     gcongr
-    calc (γk.rnDeriv G x).toReal ≤ ((N:ℝ≥0∞)).toReal := ENNReal.toReal_mono hNcast_top hle6
-      _ = (N:ℝ) := by simp
+    calc (γk.rnDeriv G x).toReal ≤ ((N : ℝ≥0∞)).toReal := ENNReal.toReal_mono hNcast_top hle6
+      _ = (N : ℝ) := by simp
   -- integrability of `llr ρ G` by domination
   have hint_rnGρ : Integrable (fun x => (G.rnDeriv ρ x).toReal) ρ := by
     refine integrable_toReal_of_lintegral_ne_top (Measure.measurable_rnDeriv G ρ).aemeasurable ?_
     exact ne_top_of_le_ne_top (by simp) (Measure.lintegral_rnDeriv_le)
   have hint_G : Integrable (llr ρ G) ρ := by
     have hdom : Integrable
-        (fun x => |llr ρ γk x| + Real.log (N:ℝ) + (G.rnDeriv ρ x).toReal) ρ :=
+        (fun x => |llr ρ γk x| + Real.log (N : ℝ) + (G.rnDeriv ρ x).toReal) ρ :=
       (hint.abs.add (integrable_const _)).add hint_rnGρ
     refine Integrable.mono' hdom (stronglyMeasurable_llr ρ G).aestronglyMeasurable ?_
     filter_upwards [hllr_le, Measure.rnDeriv_pos hρG, hρG.ae_le (Measure.rnDeriv_lt_top ρ G),
         Measure.inv_rnDeriv hρG] with x hxle hxpos hxlt hxinv
     rw [Real.norm_eq_abs, abs_le]
     have hpos' : 0 < (ρ.rnDeriv G x).toReal := ENNReal.toReal_pos hxpos.ne' hxlt.ne
-    have hGρnn : (0:ℝ) ≤ (G.rnDeriv ρ x).toReal := ENNReal.toReal_nonneg
+    have hGρnn : (0 : ℝ) ≤ (G.rnDeriv ρ x).toReal := ENNReal.toReal_nonneg
     constructor
     · have hb : -(G.rnDeriv ρ x).toReal ≤ llr ρ G x := by
         rw [llr_def]
@@ -146,16 +148,16 @@ private lemma klDiv_le_cover_mixture {N : ℕ} (hN : N ≠ 0) (ρ γk G : Measur
       linarith [hxle]
   have hfinG : klDiv ρ G ≠ ⊤ := klDiv_ne_top hρG hint_G
   -- compare via `toReal` (both probability measures: no correction term)
-  have hreal : (klDiv ρ G).toReal ≤ (klDiv ρ γk).toReal + Real.log (N:ℝ) := by
+  have hreal : (klDiv ρ G).toReal ≤ (klDiv ρ γk).toReal + Real.log (N : ℝ) := by
     rw [toReal_klDiv_of_measure_eq hρG (by simp), toReal_klDiv_of_measure_eq hac (by simp)]
-    calc ∫ x, llr ρ G x ∂ρ ≤ ∫ x, (llr ρ γk x + Real.log (N:ℝ)) ∂ρ :=
+    calc ∫ x, llr ρ G x ∂ρ ≤ ∫ x, (llr ρ γk x + Real.log (N : ℝ)) ∂ρ :=
           integral_mono_ae hint_G (hint.add (integrable_const _)) hllr_le
-      _ = ∫ x, llr ρ γk x ∂ρ + Real.log (N:ℝ) := by
+      _ = ∫ x, llr ρ γk x ∂ρ + Real.log (N : ℝ) := by
           rw [integral_add hint (integrable_const _), integral_const, measureReal_def,
             measure_univ]; simp
   calc klDiv ρ G = ENNReal.ofReal (klDiv ρ G).toReal := (ENNReal.ofReal_toReal hfinG).symm
-    _ ≤ ENNReal.ofReal ((klDiv ρ γk).toReal + Real.log (N:ℝ)) := ENNReal.ofReal_le_ofReal hreal
-    _ = klDiv ρ γk + ENNReal.ofReal (Real.log (N:ℝ)) := by
+    _ ≤ ENNReal.ofReal ((klDiv ρ γk).toReal + Real.log (N : ℝ)) := ENNReal.ofReal_le_ofReal hreal
+    _ = klDiv ρ γk + ENNReal.ofReal (Real.log (N : ℝ)) := by
         rw [ENNReal.ofReal_add ENNReal.toReal_nonneg hlogN_nonneg, ENNReal.ofReal_toReal hfin]
 
 /-- **Yang–Barron cover bound crux** (Wainwright Lemma 15.21, Eq. (15.52)): the unnormalized sum of

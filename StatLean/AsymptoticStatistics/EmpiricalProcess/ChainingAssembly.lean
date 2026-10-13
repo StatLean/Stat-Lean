@@ -1321,7 +1321,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
             rw [← pow_succ']
             congr 1; omega
           rw [hpow]; ring_nf
-          nlinarith [pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) (m - q₀), hδ.le]
+          nlinarith [pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) (m - q₀), hδ.le]
         have hCnn : 0 ≤ C * (1/2 : ℝ) ^ (m + 1 - q₀) := by rw [hCδ]; positivity
         nlinarith [hCeq, hCnn, hε_pos.le]
     · -- `q ≤ q₀`: `chainB` false (`q₀ < q` fails) ⇒ `truncOsc = 0` ⇒ `levelOscSup = 0`.
@@ -1500,7 +1500,7 @@ theorem chain_B_dyadic_bound
                 * entropyIntegrand ((1/2 : ℝ)^q * δ) F P) := by
     refine le_trans (hcB F q₀ C B hπ_meas hF_ne hδ hCδ n hn) ?_
     gcongr
-  -- combine: LHS = ENV + ∑' ; RHS = c·S + c·tail (commute the two RHS terms)
+  -- combine: LHS = ENV + ∑'; RHS = c·S + c·tail (commute the two RHS terms)
   rw [add_comm (ENNReal.ofReal c * (∑' q : ℕ, _ * _))]
   exact add_le_add hEnv hOsc
 
@@ -1785,7 +1785,7 @@ theorem chain_A_dyadic_bound
       refine hgsq_le.trans (hjump_sq_le.trans ?_)
       -- `(C·(1/2)^{m-q₀})² ≤ (2·((1/2)^q·δ))²`: `C = δ`, `m - q₀ = q`.
       rw [hCδ, hmq]
-      nlinarith [pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) q, hδ.le,
+      nlinarith [pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) q, hδ.le,
         sq_nonneg ((1/2 : ℝ)^q * δ)]
   -- ===== Sum the per-level bounds and apply the dyadic rearrangement =====
   -- The recurring conversion `ofReal((1/2)^q·δ) = (2⁻¹)^q · ofReal δ`.
@@ -2147,7 +2147,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
         (Filter.Eventually.of_forall h2G_nn')]
       rw [← MeasureTheory.lintegral_const_mul' 2 _ (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)]
       refine MeasureTheory.lintegral_congr (fun x => ?_)
-      rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]; norm_num
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
     -- The pointwise real bound on the random `empAvg` half:
     -- `√n·empAvg(2G i)(ξ) ≤ 2|𝔾ₙ(G i)(ξ)| + √n·∫2G i dP`.
     have hrand_real :
@@ -2173,7 +2173,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
       rw [habs] at hle
       nlinarith [hle, hsn_nn]
     -- Lift to `ℝ≥0∞`.
-    have hP2_nn : (0:ℝ) ≤ ∫ x, 2 * G i x ∂P :=
+    have hP2_nn : (0 : ℝ) ≤ ∫ x, 2 * G i x ∂P :=
       MeasureTheory.integral_nonneg h2G_nn'
     calc corr i ξ
         = ENNReal.ofReal
@@ -2194,7 +2194,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
           add_le_add ENNReal.ofReal_add_le le_rfl
       _ = 2 * ENNReal.ofReal |empiricalProcess P n (fun k : Fin n => X k.val ξ) (G i)|
             + 2 * det i := by
-          rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2),
+          rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2),
             ENNReal.ofReal_mul hsn_nn, hdet_def, hP_eq]
           rw [show (ENNReal.ofReal 2 : ℝ≥0∞) = 2 by simp]
           ring
@@ -3496,7 +3496,7 @@ private theorem chain_Bmean_dyadic_bound
           _ = C * (1/2 : ℝ) ^ (Q - q₀) := ENNReal.toReal_ofReal hCpow_nn
           _ = δ * (1/2 : ℝ)^q := by rw [hCδ, hQq]
       nlinarith [Real.sq_sqrt hnn, Real.sqrt_nonneg (∫ x, (B.Δ Q i x) ^ 2 ∂P), hsqrt_le,
-        mul_nonneg hδ.le (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) q)]
+        mul_nonneg hδ.le (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) q)]
     -- `a_Q = chainThreshold B δ Q > 0`, with denominator `D = 1 + √log(1+N_{Q+1})`.
     set D : ℝ := 1 + Real.sqrt (Real.log (1 + (B.Nq (Q + 1) : ℝ))) with hD_def
     have hD_pos : 0 < D := by rw [hD_def]; positivity
@@ -3556,7 +3556,7 @@ private theorem chain_Bmean_dyadic_bound
             rw [MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hlint_sq]
         _ ≤ ENNReal.ofReal (4 * (δ * (1/2 : ℝ)^q) * D) := by
             rw [show (4 : ℝ≥0∞) = ENNReal.ofReal 4 by simp,
-              ← ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
+              ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
               ← ENNReal.ofReal_mul (by positivity),
               ← ENNReal.ofReal_mul (by positivity)]
             apply ENNReal.ofReal_le_ofReal
@@ -3678,8 +3678,8 @@ private theorem chain_Bmean_dyadic_bound
       _ = ENNReal.ofReal K₀
             * (ENNReal.ofReal ((1/2 : ℝ)^q * δ) * Sum) := by
           rw [hK₀_def,
-            ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
-            ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4)]
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
           ring
   -- =====================================================================
   -- STEP 2 — Sum the per-level bounds and apply the dyadic rearrangement.
@@ -3713,7 +3713,7 @@ private theorem chain_Bmean_dyadic_bound
     _ = ENNReal.ofReal (4 * K₀)
           * (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δ)
               * entropyIntegrand ((1/2 : ℝ)^q * δ) F P) := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
           show (ENNReal.ofReal 4 : ℝ≥0∞) = 4 by simp]
         ring
 
@@ -3810,7 +3810,7 @@ theorem chain_supnorm_dyadic_bound_uniform
         ≤ ENNReal.ofReal (3 * cB) * S + ENNReal.ofReal (3 * cB) * T := by
     -- `ofReal(3cB) = 3·ofReal cB`.
     have h3cB : ENNReal.ofReal (3 * cB) = 3 * ENNReal.ofReal cB := by
-      rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 3),
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 3),
         show (ENNReal.ofReal 3 : ℝ≥0∞) = 3 by simp]
     rw [h3cB]
     -- `trunc + 3∑osc ≤ 3·trunc + 3∑osc = 3·(trunc + ∑osc) ≤ 3·(cB S + cB T)`.
@@ -3827,8 +3827,8 @@ theorem chain_supnorm_dyadic_bound_uniform
       _ = 3 * (trunc + (∑' q : ℕ, levelOscSup B μ X δ n q)) := by ring
       _ ≤ 3 * (ENNReal.ofReal cB * S + ENNReal.ofReal cB * T) := by gcongr
       _ = 3 * ENNReal.ofReal cB * S + 3 * ENNReal.ofReal cB * T := by ring
-  -- Sum the four dyadic bounds (head: cH·S ; B-block: 3cB·S + 3cB·T ;
-  -- A: cA·S ; Bmean: cM·S).
+  -- Sum the four dyadic bounds (head: cH·S; B-block: 3cB·S + 3cB·T;
+  -- A: cA·S; Bmean: cM·S).
   have hsum :
       levelRepSup B μ X Φ δ n q₀
         + ((∫⁻ ξ, supNormOver F
@@ -4169,7 +4169,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
       ENNReal.ofReal_add hcH_pos.le (by positivity),
       show (ENNReal.ofReal 4 : ℝ≥0∞) = 4 by rw [ENNReal.ofReal_ofNat]]
   have h3cOsc : ENNReal.ofReal (3 * cOsc) = 3 * ENNReal.ofReal cOsc := by
-    rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 3),
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 3),
       show (ENNReal.ofReal 3 : ℝ≥0∞) = 3 by simp]
   -- ===== Assemble =====
   rw [hMaj_split, hhead_int, hosc_sum, hjump_sum_eq]
@@ -4314,7 +4314,7 @@ theorem hChainBound_outer_of_nestedPartition
     dyadic_sum_le_bracketingEntropyIntegral hδq
   -- Numerical rewrite: `ofReal (2*c₀) = 2 * ofReal c₀`.
   have h2c : ENNReal.ofReal (2 * c₀) = 2 * ENNReal.ofReal c₀ := by
-    rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
   refine hdyadic.trans ?_
   -- `c₀·dyadic + c₀·tail ≤ 2c₀·J + 2c₀·tail`.
   rw [h2c]
@@ -4357,7 +4357,7 @@ lemma exists_q0_window {δ : ℝ} (hδ : 0 < δ) (hδ4 : δ ≤ 1 / 4) :
   classical
   -- Least index `q₀` with `(1/2)^q ≤ 8δ` exists (powers → 0).
   have hhalf_lt : (1 / 2 : ℝ) < 1 := by norm_num
-  obtain ⟨q, hq⟩ := exists_pow_lt_of_lt_one (by positivity : (0:ℝ) < 8 * δ) hhalf_lt
+  obtain ⟨q, hq⟩ := exists_pow_lt_of_lt_one (by positivity : (0 : ℝ) < 8 * δ) hhalf_lt
   have hexists : ∃ q : ℕ, (1 / 2 : ℝ) ^ q ≤ 8 * δ := ⟨q, hq.le⟩
   set q₀ := Nat.find hexists with hq₀_def
   have hq₀_le : (1 / 2 : ℝ) ^ q₀ ≤ 8 * δ := Nat.find_spec hexists
@@ -4384,7 +4384,7 @@ lemma bracketingEntropyIntegral_differenceClass_lt_top
   have hcover : ∀ ε : ℝ, 0 < ε → HasFiniteBracketingCover F (ε / 2) 2 P :=
     fun ε hε => hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by positivity)
   refine lt_of_le_of_lt
-    (bracketingEntropyIntegral_diff_le_class (by norm_num : (0:ℝ) ≤ 1) hcover) ?_
+    (bracketingEntropyIntegral_diff_le_class (by norm_num : (0 : ℝ) ≤ 1) hcover) ?_
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top h_int
 
 /-- **Per-level finite bracketing covers of the localized difference class.**

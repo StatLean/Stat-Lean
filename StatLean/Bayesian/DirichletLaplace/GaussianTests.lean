@@ -31,11 +31,12 @@ optimal shrinkage*, Journal of the American Statistical Association 110 (2015), 
 test).
 
 **Proof formalization notes.** The two tail bounds both reduce, via the 1-dimensional
-inner-product pushforward `stdGaussian_map_inner : (stdGaussian E).map (⟪c, ·⟫) = gaussianReal 0 ‖c‖₊²`
-and the Gaussian tail `stdGaussianShift_inner_ge_le` from `ForMathlib.GaussianShift`, to the scalar
-Gaussian tail `P(N(0, d²) ≥ t) ≤ exp(−t²/(2d²))` at `t = d(d − ρ)/2`, giving `exp(−(d − ρ)²/8)`.
-For the Type II bound the mean shift `⟪θ − θ₀, φ − θ₀⟫ = ⟪θ − φ, φ − θ₀⟫ + d² ≥ d(d − ρ)` (from
-`‖θ − φ‖ ≤ ρ` and Cauchy–Schwarz) is subtracted first.
+inner-product pushforward
+`stdGaussian_map_inner : (stdGaussian E).map (⟪c, ·⟫) = gaussianReal 0 ‖c‖₊²` and the Gaussian tail
+`stdGaussianShift_inner_ge_le` from `ForMathlib.GaussianShift`, to the scalar Gaussian tail
+`P(N(0, d²) ≥ t) ≤ exp(−t²/(2d²))` at `t = d(d − ρ)/2`, giving `exp(−(d − ρ)²/8)`. For the Type II
+bound the mean shift `⟪θ − θ₀, φ − θ₀⟫ = ⟪θ − φ, φ − θ₀⟫ + d² ≥ d(d − ρ)`
+(from `‖θ − φ‖ ≤ ρ` and Cauchy–Schwarz) is subtracted first.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -77,7 +78,8 @@ threshold `‖φ − θ₀‖·(‖φ − θ₀‖ − ρ)/2` gives the standard
 lemma measure_dlTestSet_le (θ₀ φ : EuclideanSpace ℝ ι) {ρ : ℝ}
     -- USER-INPUT: 0 ≤ ρ (net radius nonneg); BPPD §6 / D4
     (hρ0 : 0 ≤ ρ)
-    -- USER-INPUT: ρ < ‖φ − θ₀‖ (net point strictly separated from null; positive margin); BPPD §6 / D4
+    -- USER-INPUT: ρ < ‖φ − θ₀‖ (net point strictly
+    -- separated from null; positive margin); BPPD §6 / D4
     (hρd : ρ < ‖φ - θ₀‖) :
     (gaussShiftKernel ι θ₀) (dlTestSet θ₀ φ ρ)
       ≤ ENNReal.ofReal (Real.exp (-((‖φ - θ₀‖ - ρ) ^ 2 / 8))) := by
@@ -110,7 +112,8 @@ lemma measure_compl_dlTestSet_le (θ₀ φ θ : EuclideanSpace ℝ ι) {ρ : ℝ
     (hρ0 : 0 ≤ ρ)
     -- USER-INPUT: ρ < ‖φ − θ₀‖ (positive margin); BPPD §6 / D4
     (hρd : ρ < ‖φ - θ₀‖)
-    -- USER-INPUT: ‖θ − φ‖ ≤ ρ (alternative θ lies in the ρ-ball around the net point φ); BPPD §6 / D4
+    -- USER-INPUT: ‖θ − φ‖ ≤ ρ (alternative θ lies in
+    -- the ρ-ball around the net point φ); BPPD §6 / D4
     (hθφ : ‖θ - φ‖ ≤ ρ) :
     (gaussShiftKernel ι θ) (dlTestSet θ₀ φ ρ)ᶜ
       ≤ ENNReal.ofReal (Real.exp (-((‖φ - θ₀‖ - ρ) ^ 2 / 8))) := by

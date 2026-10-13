@@ -121,7 +121,7 @@ theorem eLpNorm_two_mul_le_of_lintegral_exp_sq_le_two {X : Ω → ℝ} {μ : Mea
     rw [lintegral_congr hptwise]; exact hcore
   -- Real bound: `2·n!·K^{2n} ≤ c^{2n}`.
   have hc_pow : c ^ (2 * n) = (2 : ℝ) ^ n * (n : ℝ) ^ n * (K : ℝ) ^ (2 * n) := by
-    rw [hcdef, mul_pow, mul_pow, pow_mul (Real.sqrt 2), Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2),
+    rw [hcdef, mul_pow, mul_pow, pow_mul (Real.sqrt 2), Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2),
       pow_mul (Real.sqrt n), Real.sq_sqrt (Nat.cast_nonneg n)]
   have hcreal : 2 * (n.factorial : ℝ) * (K : ℝ) ^ (2 * n) ≤ c ^ (2 * n) := by
     rw [hc_pow]

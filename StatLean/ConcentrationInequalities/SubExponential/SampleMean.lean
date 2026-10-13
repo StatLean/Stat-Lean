@@ -29,7 +29,8 @@ for $|\lambda| \le n/\alpha$. Minimising the Chernoff upper bound over $\lambda$
 yields both regimes:
 - Quadratic ($t \le \alpha$): optimal $\lambda = nt/\alpha^2$ gives $\exp(-nt^2/(2\alpha^2))$.
 - Linear ($t \ge \alpha$): clamped $\lambda = n/\alpha$ gives
-  $\exp(-nt/\alpha + n/2) \le \exp(-nt/(2\alpha))$ (using $n/2 \le nt/(2\alpha)$ since $t \ge \alpha$).
+  $\exp(-nt/\alpha + n/2) \le \exp(-nt/(2\alpha))$
+  (using $n/2 \le nt/(2\alpha)$ since $t \ge \alpha$).
 
 Deviation from book: Lu requires $t > 0$ (quadratic regime) and $t > \alpha$ (linear
 regime); we prove the slightly stronger forms allowing $t = 0$ and $t = \alpha$
@@ -231,7 +232,8 @@ theorem measure_sampleMean_lt_le_quadratic
     rw [hlam_def, div_le_div_iff₀ (sq_pos_of_pos hα) hα]
     nlinarith [mul_nonneg hn_pos.le hα.le]
   -- Integrability of exp(lam · (X̄ₙ − μ₀))
-  have h_int : Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
+  have h_int : Integrable (fun ω => Real.exp
+      (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
     integrable_exp_sampleMean hn hX hμ₀ hindep hα hmeas hlam_nn hlam_le
   -- Chernoff brick: μ.real {t ≤ Z} ≤ exp(-lam · t) · mgf Z μ lam
   have hchernoff :
@@ -318,7 +320,8 @@ theorem measure_sampleMean_lt_le_linear
   have hlam_nn : 0 ≤ lam := div_nonneg hn_pos.le hα.le
   have hlam_le : lam ≤ (n : ℝ) / (α : ℝ) := le_refl _
   -- Integrability
-  have h_int : Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
+  have h_int : Integrable (fun ω => Real.exp
+      (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
     integrable_exp_sampleMean hn hX hμ₀ hindep hα hmeas hlam_nn hlam_le
   -- Chernoff brick
   have hchernoff :

@@ -94,7 +94,7 @@ private lemma errorCone_smul_mem (dr : DecomposableReg E) (θstar Δ : E) {t : �
   simp only [map_smul, map_smul_eq_mul, Real.norm_eq_abs, abs_of_nonneg ht0]
   have hΦ0 : 0 ≤ dr.Φ ((dr.M)ᗮ.starProjection θstar) := apply_nonneg _ _
   nlinarith [mul_le_mul_of_nonneg_left hΔ ht0,
-    mul_nonneg (by linarith : (0:ℝ) ≤ 1 - t) hΦ0]
+    mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - t) hΦ0]
 
 /-- **Lemma 9.21** — sign control. If the objective increment `ℱ` (eq 9.31) is strictly positive on
 the slice `𝕂(δ) = ℂ ∩ {‖Δ‖ = δ}`, then `‖θ̂ − θ*‖ ≤ δ`. Proof: contrapositive via star-shapedness of
@@ -139,11 +139,11 @@ theorem norm_error_le_of_pos_on_sphere (dr : DecomposableReg E) (L : E → ℝ)
     rw [hedef]; simp only [smul_sub, sub_smul, one_smul]; abel
   have hLconv : L ((1 - t) • θstar + t • θhat) ≤ (1 - t) * L θstar + t * L θhat := by
     have hh := hL.2 (Set.mem_univ θstar) (Set.mem_univ θhat)
-      (by linarith : (0:ℝ) ≤ 1 - t) ht0.le (by ring)
+      (by linarith : (0 : ℝ) ≤ 1 - t) ht0.le (by ring)
     simpa using hh
   have hΦconv : dr.Φ ((1 - t) • θstar + t • θhat) ≤ (1 - t) * dr.Φ θstar + t * dr.Φ θhat := by
     have hh := dr.Φ.convexOn.2 (Set.mem_univ θstar) (Set.mem_univ θhat)
-      (by linarith : (0:ℝ) ≤ 1 - t) ht0.le (by ring)
+      (by linarith : (0 : ℝ) ≤ 1 - t) ht0.le (by ring)
     simpa using hh
   have hopt0 : (L θhat - L θstar) + lam * (dr.Φ θhat - dr.Φ θstar) ≤ 0 := by
     have hh := hopt θstar; nlinarith [hh]
@@ -273,7 +273,7 @@ private lemma fcal_pos_on_sphere (dr : DecomposableReg E) (L : E → ℝ)
   have key1 : 3 * lam / 2 * (Ψ * δ) ≤ κ / 8 * δ ^ 2 := by
     nlinarith [mul_le_mul_of_nonneg_right hδlb hδ0.le]
   have key2 : 2 * lam * Φ0 + 32 * τSq * Φ0 ^ 2 ≤ κ / 16 * δ ^ 2 := by
-    have h144 : (0:ℝ) ≤ 144 * lam ^ 2 * Ψ ^ 2 := by positivity
+    have h144 : (0 : ℝ) ≤ 144 * lam ^ 2 * Ψ ^ 2 := by positivity
     have hmul : κ * (2 * lam * Φ0 + 32 * τSq * Φ0 ^ 2) ≤ κ * (κ / 16 * δ ^ 2) := by
       nlinarith [hδeps, h144]
     exact le_of_mul_le_mul_left hmul hκ
@@ -366,7 +366,7 @@ theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
     have hle0 : ‖θhat - θstar‖ ≤ 0 := by
       by_contra hgt
       rw [not_le] at hgt
-      have hd : (0:ℝ) < min (‖θhat - θstar‖ / 2) R := lt_min (by linarith) hR
+      have hd : (0 : ℝ) < min (‖θhat - θstar‖ / 2) R := lt_min (by linarith) hR
       have hk : ‖θhat - θstar‖ ≤ min (‖θhat - θstar‖ / 2) R :=
         norm_error_le_of_pos_on_sphere dr L hL hdiff θstar θhat lam hlam hopt hG hd
           (fun Δ hΔc hΔn => hsphere0 hd (min_le_right _ _) Δ hΔc hΔn)

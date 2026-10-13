@@ -2693,7 +2693,7 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
       intro y hty
       have habs : |s * Real.sqrt x₁ * t y| < |s * Real.sqrt x₂ * t y| := by
         rw [abs_mul (s * Real.sqrt x₁), abs_mul (s * Real.sqrt x₂),
-          abs_of_nonneg hc₁, abs_of_nonneg (by positivity : (0:ℝ) ≤ s * Real.sqrt x₂)]
+          abs_of_nonneg hc₁, abs_of_nonneg (by positivity : (0 : ℝ) ≤ s * Real.sqrt x₂)]
         exact mul_lt_mul_of_pos_right hlt (abs_pos.mpr hty)
       have := Real.cosh_lt_cosh.mpr habs
       rw [hF]

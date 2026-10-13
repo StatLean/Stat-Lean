@@ -169,8 +169,8 @@ private lemma abs_empRad_le (hK : K.Nonempty) (hbdd : ∀ k ∈ K, ∀ z, |F k z
       |sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)| ≤ n * c := fun σ =>
     abs_sSup_image_le hk₀ fun k hk => abs_sum_signOf_le σ _ fun i => hbdd k hk (s i)
   rw [empRad_eq_signAvg F K s, abs_mul, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹),
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
   have hsum : |∑ σ : Fin n → Bool, sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)|
       ≤ (2 ^ n : ℝ) * ((n : ℝ) * c) := by
     calc |∑ σ : Fin n → Bool, sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)|
@@ -243,7 +243,7 @@ private lemma abs_empRisk_sub_update_le (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ 
     have h2 := abs_le.1 (hbdd k hk y)
     exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
   rw [empRisk, empRisk, ← mul_sub, sum_sub_sum_update (fun _ z => F k z) x j y, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
   calc (n : ℝ)⁻¹ * |F k (x j) - F k y| ≤ (n : ℝ)⁻¹ * (2 * c) := by gcongr
     _ = 2 * c / n := by field_simp
 
@@ -292,8 +292,8 @@ private lemma abs_empRad_sub_update_le (hK : K.Nonempty)
     exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
   rw [empRad_eq_signAvg F K x, empRad_eq_signAvg F K (Function.update x j y), ← mul_sub,
     ← mul_sub, ← Finset.sum_sub_distrib, abs_mul, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹),
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
   have hsum : |∑ σ : Fin n → Bool, (sSup ((fun k => ∑ i, signOf σ i * F k (x i)) '' K)
         - sSup ((fun k => ∑ i, signOf σ i * F k (Function.update x j y i)) '' K))|
       ≤ (2 ^ n : ℝ) * (2 * c) := by

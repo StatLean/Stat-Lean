@@ -303,7 +303,8 @@ theorem measure_bigOsc_le
     (j : ℕ) {a : ℝ} (ha : 0 ≤ a) :
     μ (bigOsc X net j a)
       ≤ (closePairs net j).card
-          * (2 * ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
+          * (2 * ENNReal.ofReal (Real.exp
+              (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
   classical
   -- Abbreviations.
   set σsq : ℝ := K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2 with hσsq

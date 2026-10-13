@@ -498,7 +498,8 @@ private theorem sqrtn_rate_shell_bound
     -- Per-shell measure bound (dyadic shell `[2^j, 2^{j+1})`, `j ≥ J`).
     have hshell : ∀ j : ℕ, J ≤ j →
         μ (({ξ | (2 : ℝ) ^ j ≤ Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧
-              Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < (2 : ℝ) ^ (j + 1)}) ∩ Good)
+              Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ <
+                  (2 : ℝ) ^ (j + 1)}) ∩ Good)
           ≤ ENNReal.ofReal ((4 * C₂ / C₁) * ((1 : ℝ) / 2) ^ j) := by
       intro j hjJ
       set Sh : Set Ξ :=
@@ -689,7 +690,8 @@ private theorem sqrtn_rate_shell_bound
       calc μ (A ∩ Good)
           ≤ μ (⋃ k : ℕ,
               (({ξ | (2 : ℝ) ^ (J + k) ≤ Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧
-                  Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < (2 : ℝ) ^ (J + k + 1)})
+                  Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) -
+                      θ₀‖ < (2 : ℝ) ^ (J + k + 1)})
                 ∩ Good)) := measure_mono hcover
         _ ≤ ∑' k : ℕ, μ (({ξ | (2 : ℝ) ^ (J + k) ≤
               Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧

@@ -780,7 +780,7 @@ private instance instCompleteWspan (x : ℤ → H) (m : ℤ) : CompleteSpace (ws
 omit [CompleteSpace H] in
 private lemma mem_wspan {x : ℤ → H} {m s : ℤ} (h : s ≤ m) : x s ∈ wspan x m := by
   refine Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(m - s).toNat, ?_⟩)
-  simp [Int.toNat_of_nonneg (by omega : (0:ℤ) ≤ m - s)]
+  simp [Int.toNat_of_nonneg (by omega : (0 : ℤ) ≤ m - s)]
 
 omit [CompleteSpace H] in
 private lemma isClosed_wspan (x : ℤ → H) (m : ℤ) : IsClosed (wspan x m : Set H) :=

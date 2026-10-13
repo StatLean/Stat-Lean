@@ -567,10 +567,10 @@ theorem mds_clt [IsProbabilityMeasure μ]
   set d : ℝ := 1 / (u ^ 2 + 1) with hddef
   have hd0 : (0 : ℝ) < d := by
     rw [hddef]
-    have : (0:ℝ) < u ^ 2 + 1 := by positivity
+    have : (0 : ℝ) < u ^ 2 + 1 := by positivity
     positivity
   have hdu : u ^ 2 * d ≤ 1 := by
-    rw [hddef, mul_one_div, div_le_one (by positivity : (0:ℝ) < u ^ 2 + 1)]
+    rw [hddef, mul_one_div, div_le_one (by positivity : (0 : ℝ) < u ^ 2 + 1)]
     linarith
   set X' := truncArray k X F μ c d with hX'def
   have h' : IsMDSArray k X' F μ := isMDSArray_truncArray h c d
@@ -617,8 +617,8 @@ theorem mds_clt [IsProbabilityMeasure μ]
     refine NormedAddGroup.tendsto_nhds_zero.2 fun η hη => ?_
     obtain ⟨ε, hε, hεbd⟩ : ∃ ε : ℝ, 0 < ε ∧
         2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * ε * c) < η / 3 := by
-      have hW0 : (0:ℝ) ≤ 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) := by positivity
-      have hW1 : (0:ℝ) < 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1 := by linarith
+      have hW0 : (0 : ℝ) ≤ 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) := by positivity
+      have hW1 : (0 : ℝ) < 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1 := by linarith
       refine ⟨(η / 3) / (2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1),
         div_pos (by linarith) hW1, ?_⟩
       have expand : 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 *
@@ -692,9 +692,9 @@ theorem mds_clt [IsProbabilityMeasure μ]
         + (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal)) atTop (𝓝 0) := by
       simpa using ((hvar 1 one_pos).add (hunif0 d hd0)).const_mul 2
     refine squeeze_zero (fun n => ?_) (fun n => ?_) hlim
-    · have h1 : (0:ℝ) ≤ (μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}).toReal :=
+    · have h1 : (0 : ℝ) ≤ (μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}).toReal :=
         ENNReal.toReal_nonneg
-      have h2 : (0:ℝ) ≤ (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal := ENNReal.toReal_nonneg
+      have h2 : (0 : ℝ) ≤ (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal := ENNReal.toReal_nonneg
       linarith
     have hsub : μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
         ≤ μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|} := by

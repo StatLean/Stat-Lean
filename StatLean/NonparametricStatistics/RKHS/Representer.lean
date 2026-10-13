@@ -223,7 +223,7 @@ private lemma exists_ridge_min (x : Fin n → X) (L : (Fin n → 𝕜) → ℝ)
   change J (z₀ : H) ≤ J f
   have hz0le : J (z₀ : H) ≤ J (0 : H) := by
     have h := hz₀min (Metric.mem_closedBall_self (by linarith :
-      (0:ℝ) ≤ R) : (0 : dataSpan (H := H) x) ∈ Metric.closedBall (0 : dataSpan (H := H) x) R)
+      (0 : ℝ) ≤ R) : (0 : dataSpan (H := H) x) ∈ Metric.closedBall (0 : dataSpan (H := H) x) R)
     simpa using h
   by_cases hfR : R ≤ ‖f‖
   · linarith [hcoer f hfR]

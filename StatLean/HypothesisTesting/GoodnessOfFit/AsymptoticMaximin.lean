@@ -730,9 +730,9 @@ Two further hypotheses are honest regularity requirements of the mixture argumen
 than restrictions: joint measurability of the log-likelihood field `L` in `(h, ω)` (without
 it the mixture likelihood ratio `∫ exp(L n h ·) dσ(h)` is not even a random variable), and
 a *uniform-over-the-sphere* LAN remainder, supplied as an envelope `D n` whose tail
-probabilities tend to `0` under `Q_{n,0}` (measurability of `D n` itself is never used). The frozen pointwise-in-`h` remainder does not imply
-the uniform one, and the mixture step genuinely needs the uniform one; both applications
-have it, the sphere being compact. -/
+probabilities tend to `0` under `Q_{n,0}` (measurability of `D n` itself is never used). The frozen
+pointwise-in-`h` remainder does not imply the uniform one, and the mixture step genuinely needs the
+uniform one; both applications have it, the sphere being compact. -/
 theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Type*}
     [∀ n, MeasurableSpace (Ω n)]
     {Q : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Ω n)}

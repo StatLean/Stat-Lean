@@ -192,7 +192,7 @@ private lemma psi2_layer_cake_meas_bound
         μ {ω | t < |_Z i ω|}
           ≤ ENNReal.ofReal (2 * Real.exp (-(t ^ 2) / (2 * σ_eff ^ 2)))) :
     ∫⁻ ω, ENNReal.ofReal (⨆ i : ι, |_Z i ω|) ∂μ
-      ≤ ∫⁻ t in Set.Ioi (0:ℝ),
+      ≤ ∫⁻ t in Set.Ioi (0 : ℝ),
           min 1 (ENNReal.ofReal ((Fintype.card ι : ℝ) *
             (2 * Real.exp (-(t ^ 2) / (2 * σ_eff ^ 2))))) ∂volume := by
   -- Empty-ι edge case: ⨆ over empty = 0, so LHS lintegral = 0.
@@ -304,7 +304,7 @@ Edge cases:
 -/
 private lemma psi2_calculus_integral_bound
     (N : ℕ) {σ : ℝ} (hσ_pos : 0 < σ) :
-    ∫⁻ t in Set.Ioi (0:ℝ),
+    ∫⁻ t in Set.Ioi (0 : ℝ),
         min 1 (ENNReal.ofReal ((N : ℝ) * (2 * Real.exp (-(t ^ 2) / (2 * σ ^ 2)))))
         ∂volume
       ≤ ENNReal.ofReal (12 * σ * Real.sqrt (Real.log (1 + N))) := by
@@ -343,7 +343,7 @@ private lemma psi2_calculus_integral_bound
     rw [hts_def, mul_pow, Real.sq_sqrt h_2log2N_pos.le]
     ring
   -- Step 1: split Ioi 0 = Ioc 0 tstar ∪ Ioi tstar.
-  rw [show Set.Ioi (0:ℝ) = Set.Ioc 0 tstar ∪ Set.Ioi tstar from
+  rw [show Set.Ioi (0 : ℝ) = Set.Ioc 0 tstar ∪ Set.Ioi tstar from
         (Set.Ioc_union_Ioi_eq_Ioi hts_nn).symm,
       MeasureTheory.lintegral_union measurableSet_Ioi Set.Ioc_disjoint_Ioi_same]
   -- Step 2: first piece — integrand bounded by 1.
@@ -359,7 +359,7 @@ private lemma psi2_calculus_integral_bound
         ≤ ∫⁻ _t in Set.Ioc 0 tstar, (1 : ℝ≥0∞) ∂volume := by
             apply MeasureTheory.lintegral_mono
             intro t; exact min_le_left _ _
-      _ = volume (Set.Ioc (0:ℝ) tstar) := MeasureTheory.setLIntegral_one _
+      _ = volume (Set.Ioc (0 : ℝ) tstar) := MeasureTheory.setLIntegral_one _
       _ = ENNReal.ofReal (tstar - 0) := Real.volume_Ioc
       _ = ENNReal.ofReal tstar := by rw [sub_zero]
   -- Step 3: second piece via Gaussian-to-exponential bridge with `a := -tstar/(2σ²)`.
@@ -477,10 +477,10 @@ private lemma psi2_calculus_integral_bound
         ≤ 2 * Real.sqrt (Real.log (1 + (N : ℝ))) := by
     have h_sqrt4 : Real.sqrt 4 = 2 := by
       rw [show (4 : ℝ) = 2 ^ 2 from by norm_num]
-      exact Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)
+      exact Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)
     have h_rw : (2 : ℝ) * Real.sqrt (Real.log (1 + (N : ℝ)))
         = Real.sqrt (4 * Real.log (1 + (N : ℝ))) := by
-      rw [← h_sqrt4, ← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 4)]
+      rw [← h_sqrt4, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4)]
     rw [h_rw]
     apply Real.sqrt_le_sqrt
     linarith
@@ -538,7 +538,7 @@ private lemma psi1_layer_cake_meas_bound
         μ {ω | t < |_Z i ω|}
           ≤ ENNReal.ofReal (2 * Real.exp (-t / ρ_eff))) :
     ∫⁻ ω, ENNReal.ofReal (⨆ i : ι, |_Z i ω|) ∂μ
-      ≤ ∫⁻ t in Set.Ioi (0:ℝ),
+      ≤ ∫⁻ t in Set.Ioi (0 : ℝ),
           min 1 (ENNReal.ofReal ((Fintype.card ι : ℝ) *
             (2 * Real.exp (-t / ρ_eff)))) ∂volume := by
   -- Empty-ι edge case: ⨆ over empty = 0, so LHS lintegral = 0.
@@ -629,7 +629,7 @@ Proof: split at the crossover threshold
 -/
 private lemma psi1_calculus_integral_bound
     (N : ℕ) {ρ : ℝ} (_hρ : 0 < ρ) :
-    ∫⁻ t in Set.Ioi (0:ℝ),
+    ∫⁻ t in Set.Ioi (0 : ℝ),
         min 1 (ENNReal.ofReal ((N : ℝ) * (2 * Real.exp (-t / ρ))))
         ∂volume
       ≤ ENNReal.ofReal (12 * ρ * Real.log (1 + N)) := by
@@ -662,7 +662,7 @@ private lemma psi1_calculus_integral_bound
   have hR_nn : 0 ≤ R := hR_pos.le
   have hρ_ne : ρ ≠ 0 := ne_of_gt _hρ
   -- Step 1: Ioi 0 = Ioc 0 R ∪ Ioi R, disjoint.
-  rw [show Set.Ioi (0:ℝ) = Set.Ioc 0 R ∪ Set.Ioi R from
+  rw [show Set.Ioi (0 : ℝ) = Set.Ioc 0 R ∪ Set.Ioi R from
         (Set.Ioc_union_Ioi_eq_Ioi hR_nn).symm,
       MeasureTheory.lintegral_union measurableSet_Ioi Set.Ioc_disjoint_Ioi_same]
   -- Step 2: first piece — bound by 1, integrate to ofReal R.
@@ -676,7 +676,7 @@ private lemma psi1_calculus_integral_bound
         ≤ ∫⁻ _t in Set.Ioc 0 R, (1 : ℝ≥0∞) ∂volume := by
             apply MeasureTheory.lintegral_mono
             intro t; exact min_le_left _ _
-      _ = volume (Set.Ioc (0:ℝ) R) := MeasureTheory.setLIntegral_one _
+      _ = volume (Set.Ioc (0 : ℝ) R) := MeasureTheory.setLIntegral_one _
       _ = ENNReal.ofReal (R - 0) := Real.volume_Ioc
       _ = ENNReal.ofReal R := by rw [sub_zero]
   -- Step 3: second piece — bound integrand by ofReal(2N·exp(-t/ρ)).
@@ -746,7 +746,7 @@ private lemma psi1_calculus_integral_bound
   -- log(1+2N) ≤ log(2(1+N)) = log 2 + log(1+N).
   have h_log_split :
       Real.log (1 + 2 * (N : ℝ)) ≤ Real.log 2 + Real.log (1 + (N : ℝ)) := by
-    rw [← Real.log_mul (by norm_num : (2:ℝ) ≠ 0)
+    rw [← Real.log_mul (by norm_num : (2 : ℝ) ≠ 0)
           (by linarith : (1 + (N : ℝ) : ℝ) ≠ 0)]
     exact Real.log_le_log h_1p2N_pos (by linarith)
   -- log 2 ≤ log(1 + N) since 2 ≤ 1 + N.
@@ -756,7 +756,7 @@ private lemma psi1_calculus_integral_bound
   have h_log2_ge_half : (1 : ℝ) / 2 ≤ Real.log 2 := by
     have := Real.log_two_gt_d9; linarith
   have h_1_le_2logN : (1 : ℝ) ≤ 2 * Real.log (1 + (N : ℝ)) := by
-    have : (1:ℝ)/2 ≤ Real.log (1 + (N : ℝ)) := le_trans h_log2_ge_half h_log2_le
+    have : (1 : ℝ)/2 ≤ Real.log (1 + (N : ℝ)) := le_trans h_log2_ge_half h_log2_le
     linarith
   nlinarith [h_log_split, h_log2_le, h_1_le_2logN, h_log_N_pos.le, _hρ.le]
 
@@ -869,7 +869,7 @@ private lemma orlicz_bernstein_truncated_max_l1_bound
       rw [h_set_eq]
       refine (_h_tail i t ht).trans ?_
       apply ENNReal.ofReal_le_ofReal
-      apply mul_le_mul_of_nonneg_left _ (by norm_num : (0:ℝ) ≤ 2)
+      apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
       apply Real.exp_le_exp.mpr
       -- t < T = σ²/M means tM < σ²
       have htM_lt : t * M_eff < σ_eff ^ 2 := by
@@ -988,7 +988,7 @@ private lemma orlicz_bernstein_residual_max_l1_bound
     have hTt_pos : 0 < T + t := by linarith
     refine (_h_tail i (T + t) hTt_pos).trans ?_
     apply ENNReal.ofReal_le_ofReal
-    apply mul_le_mul_of_nonneg_left _ (by norm_num : (0:ℝ) ≤ 2)
+    apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
     apply Real.exp_le_exp.mpr
     have hA_pos : 0 < 4 * (σ_eff ^ 2 + (T + t) * M_eff) := by
       have h_Tt_M : 0 < (T + t) * M_eff := mul_pos hTt_pos _hM_pos
@@ -1195,12 +1195,12 @@ private lemma orlicz_bernstein_max_l1_bound
       have h_denom :
           4 * (σ_eff ^ 2 + t * 0) = 2 * (Real.sqrt 2 * σ_eff) ^ 2 := by
         have h_sq2 : (Real.sqrt 2 : ℝ) ^ 2 = 2 :=
-          Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2)
+          Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)
         rw [mul_pow, h_sq2]; ring
       rw [h_denom] at h0
       exact h0
     have hσ_eff' : 0 < Real.sqrt 2 * σ_eff :=
-      mul_pos (Real.sqrt_pos.mpr (by norm_num : (0:ℝ) < 2)) hσ_pos
+      mul_pos (Real.sqrt_pos.mpr (by norm_num : (0 : ℝ) < 2)) hσ_pos
     have hpsi2 := orlicz_psi2_max_l1_bound
         (_Z := Z) hZ_meas (σ_eff := Real.sqrt 2 * σ_eff) hσ_eff' h_tail_psi2
     refine le_trans hpsi2 ?_
@@ -1212,7 +1212,7 @@ private lemma orlicz_bernstein_max_l1_bound
         Real.sqrt_le_sqrt (by norm_num)
       have h2 : Real.sqrt (64 : ℝ) = 8 := by
         rw [show (64 : ℝ) = 8 ^ 2 from by norm_num,
-          Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 8)]
+          Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 8)]
       linarith
     have h_sqrt2_nn : (0 : ℝ) ≤ Real.sqrt 2 := Real.sqrt_nonneg _
     have h_prod_nn : 0 ≤ σ_eff * Real.sqrt (Real.log (1 + Fintype.card ι)) :=

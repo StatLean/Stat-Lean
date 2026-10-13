@@ -53,7 +53,7 @@ lemma exists_l2_envelope_of_entropyIntegral
     (h_int : bracketingEntropyIntegral 1 F P < ⊤) :
     ∃ G, IsEnvelope F G ∧ MemLp G 2 P := by
   obtain ⟨k, l, u, hbr, hcov⟩ :=
-    hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by norm_num : (0:ℝ) < 1)
+    hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by norm_num : (0 : ℝ) < 1)
   refine ⟨fun x => ∑ i : Fin k, (|l i x| + |u i x|), ?_, ?_⟩
   · -- envelope: `|f x| ≤ |l i x| + |u i x| ≤ ∑ j, (|l j x| + |u j x|)`.
     intro f hf x

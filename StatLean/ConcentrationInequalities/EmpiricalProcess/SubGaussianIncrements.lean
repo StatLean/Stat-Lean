@@ -135,7 +135,7 @@ theorem hasSubgaussianMGF_sum_centered_comp [IsProbabilityMeasure μ]
       rw [← NNReal.coe_inj]
       push_cast
       rw [sub_neg_eq_add, ← two_mul, Real.norm_eq_abs,
-        abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * δ)]
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * δ)]
     rw [h1]
     have h2 : (2 : ℝ≥0) * δ / 2 = δ := by
       rw [mul_comm, mul_div_assoc, div_self (by norm_num : (2 : ℝ≥0) ≠ 0), mul_one]
@@ -423,7 +423,7 @@ theorem subGaussianIncrements_empiricalProcess [IsProbabilityMeasure μ]
   refine hbound.trans (le_of_eq ?_)
   -- `ofReal (√6/√n · dist t s) = (√6/√n).toNNReal * edist s t`
   rw [edist_dist, dist_comm t s,
-    ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ Real.sqrt 6 / Real.sqrt n)]
+    ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ Real.sqrt 6 / Real.sqrt n)]
   rfl
 
 end StatLean.ConcentrationInequalities

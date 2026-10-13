@@ -33,12 +33,12 @@ tensorization bound).
 **Proof formalization notes.** The headline results map to two theorems:
 
 * `sqHellinger_le_two` — the upper bound $H^2 \le 2$ (Wainwright Eq. (15.9)). Proved via the Bochner
-  bridge `sqHellinger_eq_ofReal_integral` (the `ℝ≥0∞`-valued lintegral equals `ENNReal.ofReal` of the
-  real $L^2$-residual integral, the integrand being nonnegative and integrable), then expanding the
-  square and discarding the nonnegative affinity term `integral_sqrt_mul_sqrt_nonneg`.
-* `sqHellinger_pi_le_nsmul` — the i.i.d. bound $H^2(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes
-  n}) \le n \cdot H^2(\mathbb{P} \,\|\, \mathbb{Q})$ (Wainwright Eq. (15.12b)), via
-  `1 - (1 - x)^n \le n x`.
+  bridge `sqHellinger_eq_ofReal_integral` (the `ℝ≥0∞`-valued lintegral equals `ENNReal.ofReal` of
+  the real $L^2$-residual integral, the integrand being nonnegative and integrable), then expanding
+  the square and discarding the nonnegative affinity term `integral_sqrt_mul_sqrt_nonneg`.
+* `sqHellinger_pi_le_nsmul` — the i.i.d. bound
+  $H^2(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes n}) \le n \cdot H^2(\mathbb{P} \,\|\,
+  \mathbb{Q})$ (Wainwright Eq. (15.12b)), via `1 - (1 - x)^n \le n x`.
 
 Two supporting facts about the squared Hellinger functional are packaged separately:
 `sqHellWith_transfer` (invariance of the squared-Hellinger lintegral under the choice of common
@@ -54,11 +54,11 @@ the underlying square-root-density geometry in E. Hellinger, "Neue Begründung d
 quadratischer Formen von unendlichvielen Veränderlichen", *Journal für die reine und angewandte
 Mathematik* **136** (1909), 210–271. Its modern use in statistics — the squared form, the range
 $[0,2]$, and the tensorization across i.i.d. coordinates — is textbook folklore with no single
-seminal statistical paper; the specific equation numbering followed here is that of Wainwright (2019,
-§15.1.3). The functional is closely related to (and a monotone transform of) the Bhattacharyya
-affinity / Bhattacharyya coefficient, A. Bhattacharyya, "On a measure of divergence between two
-statistical populations defined by their probability distributions", *Bulletin of the Calcutta
-Mathematical Society* **35** (1943), 99–109.
+seminal statistical paper; the specific equation numbering followed here is that of Wainwright
+(2019, §15.1.3). The functional is closely related to (and a monotone transform of) the
+Bhattacharyya affinity / Bhattacharyya coefficient, A. Bhattacharyya, "On a measure of divergence
+between two statistical populations defined by their probability distributions", *Bulletin of the
+Calcutta Mathematical Society* **35** (1943), 99–109.
 -/
 
 open MeasureTheory

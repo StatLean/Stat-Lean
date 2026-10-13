@@ -6,6 +6,7 @@ open MeasureTheory
 open scoped ENNReal
 noncomputable section
 set_option linter.style.longLine false in
+-- The lemma name does not fit in 100 columns.
 /-- A strict population square-radius bound localizes every row increment. -/
 theorem changingLocalDifferenceClass_subset_strictLocalizedDifferenceClass_of_populationSquareRadius_lt
     {Ω T : Type*} [MeasurableSpace Ω] [PseudoMetricSpace T]

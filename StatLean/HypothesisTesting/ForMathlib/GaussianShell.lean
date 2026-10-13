@@ -165,9 +165,9 @@ private lemma diam_shift_le_of_convex {J : Set ℝ} (hJ : Convex ℝ J) (c : ℝ
       exact ht.2 (hoc.out hs.1 ht.1 ⟨by linarith, by linarith⟩)
   intro s hs t ht
   rcases le_total s t with h | h
-  · rw [abs_sub_comm, abs_of_nonneg (by linarith : (0:ℝ) ≤ t - s)]
+  · rw [abs_sub_comm, abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s)]
     exact key s hs t ht h
-  · rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ s - t)]
+  · rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ s - t)]
     exact key t ht s hs h
 
 /-- Inserting an affine combination in the `i`-th slot is the affine combination of the

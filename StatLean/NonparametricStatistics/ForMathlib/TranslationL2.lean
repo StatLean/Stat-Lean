@@ -76,7 +76,8 @@ private lemma tendsto_eLpNorm_translate_sub {φ : ℝ → ℝ} (hφc : Continuou
       intro x
       by_cases hx : x ∈ K'
       · rw [Set.indicator_of_mem hx, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hC0.le]
-        have hdist : dist (φ (x + t)) (φ x) < C := hδ (by rw [Real.dist_eq, add_sub_cancel_left]; exact htδ)
+        have hdist : dist (φ (x + t)) (φ x) < C :=
+          hδ (by rw [Real.dist_eq, add_sub_cancel_left]; exact htδ)
         rw [Real.dist_eq] at hdist
         exact hdist.le
       · have hxabs : R + 1 < |x| := by

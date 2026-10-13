@@ -742,8 +742,8 @@ intersected with other high-probability events without any measurability assumpt
 Route (vdV p.69): `ℙₙψ̇_{θ̂ₙ} − V = (ℙₙψ̇_{θ̂ₙ} − ℙₙψ̇_{θ₀}) + (ℙₙψ̇_{θ₀} − V)`. The second
 bracket is `o_P(1)` entrywise by the law of large numbers; the first is bounded by
 `(ℙₙψ̈)‖θ̂ₙ − θ₀‖ = O_P(1)·o_P(1)` by the Lipschitz bound `psiDot_lipschitz` averaged
-over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness transfers to the
-quadratic form by `inner_toEuclidCLM_pert`. -/
+over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness transfers
+to the quadratic form by `inner_toEuclidCLM_pert`. -/
 private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)

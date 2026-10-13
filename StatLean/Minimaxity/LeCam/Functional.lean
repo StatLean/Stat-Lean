@@ -49,8 +49,8 @@ Eq. (15.17), Eq. (15.18).
   `(1/4)·Φ((1/2)|θ(i) − θ(j)|) ≤` minimax risk.
 * `map_iSup_le_of_lsc` / `map_biSup_le_of_lsc` — lower semicontinuity of `Φ` pushes the supremum
   inward, `Φ(½·⨆ d) ≤ ⨆ Φ(½·d)` (monotonicity alone gives only the reverse direction). The diagonal
-  pair `(i₀, i₀)` is always admissible since `H²(P i₀ ‖ P i₀) = 0`, so the modulus supremum is over a
-  nonempty index set, which is what activates the interchange.
+  pair `(i₀, i₀)` is always admissible since `H²(P i₀ ‖ P i₀) = 0`, so the modulus supremum is over
+  a nonempty index set, which is what activates the interchange.
 
 The main theorem then distributes the `2⁻¹` and `4⁻¹` factors through the modulus supremum and
 applies the per-pair bound termwise.
@@ -129,9 +129,9 @@ private lemma tvDist_le_half_of_sqHellinger (μ ν : Measure 𝓧)
 
 /-- **Per-pair two-point bound underlying Corollary 15.6.** For a Hellinger-admissible pair `(i, j)`
 (i.e. `H²(P i ‖ P j) ≤ (1/(2√n))²`), Le Cam's two-point method applied to the `n`-sample model
-gives `4⁻¹ · Φ(½ |θ(i) − θ(j)|) ≤ minimaxRiskDist Φ θfunc Pn`. The product Hellinger distance `≤ 1/4`
-(`sqHellinger_pi_le_quarter`), so `‖Pn i − Pn j‖_TV ≤ 1/2` (`tvDist_le_half_of_sqHellinger`) and the
-two-point factor `1 − ‖·‖_TV ≥ 1/2`. -/
+gives `4⁻¹ · Φ(½ |θ(i) − θ(j)|) ≤ minimaxRiskDist Φ θfunc Pn`. The product Hellinger distance
+`≤ 1/4` (`sqHellinger_pi_le_quarter`), so `‖Pn i − Pn j‖_TV ≤ 1/2` (`tvDist_le_half_of_sqHellinger`)
+and the two-point factor `1 − ‖·‖_TV ≥ 1/2`. -/
 private lemma minimax_functional_pair
     (θfunc : ι → ℝ) (P : ι → Measure 𝓧) (n : ℕ) (Pn : Kernel ι (Fin n → 𝓧)) [IsMarkovKernel Pn]
     (Φ : ℝ≥0∞ → ℝ≥0∞) (hΦ : Monotone Φ)

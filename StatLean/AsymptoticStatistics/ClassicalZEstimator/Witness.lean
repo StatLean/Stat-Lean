@@ -321,7 +321,7 @@ theorem classical_zEstimator_hypotheses_satisfiable :
           ((Vmat wP wpsi 0)⁻¹ * psiCov wP wpsi 0 * ((Vmat wP wpsi 0)⁻¹)ᵀ)) :=
   classical_zEstimator_normality_of_exact_root wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas w_hC2
     w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wthetahat wmu wX w_hX_meas
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wthetahat wmu wX w_hX_meas
     w_hX_indep w_hX_id w_hX_law w_hθhat_meas w_hroot w_hcons
 
 /-- **Normal-location root existence and consistency for vdV Theorem 5.42 (i)+(ii)**
@@ -337,7 +337,7 @@ theorem classical_zEstimator_root_hypotheses_satisfiable :
             (fun n ξ => (θ_hat n fun i : Fin n => wX i.val ξ) - (0 : E1)) :=
   classical_zEstimator_root_exists_consistent_outer wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas
     w_hC2 w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
     w_hX_id w_hX_law
 
 /-- **Normal-location local-maximizing roots for vdV Theorem 5.42, final assertion**
@@ -354,7 +354,7 @@ theorem classical_zEstimator_localmax_hypotheses_satisfiable :
             (θ_hat n fun i : Fin n => wX i.val ξ)}) Filter.atTop (𝓝 1) :=
   classical_zEstimator_localmax_roots_outer wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas w_hC2
     w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
     w_hX_id w_hX_law wm w_hm_meas w_hgrad w_hmax
 
 end AsymptoticStatistics.ClassicalZEstimator.Witness

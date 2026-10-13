@@ -32,9 +32,9 @@ appears as E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stan
 2023, Lecture 7 (False Discovery Rate), §7.2 (Martingale Theory and FDR Control), Theorem 2,
 which states $E[\mathrm{FDP}(\tau_{BH})] = q\,n_0/n$ at level $q = \alpha$.
 
-**Proof formalization notes.** *Book vs Lean.* Lu-BDA Ch20 §20.2 (and Candès Lecture 7 §7.2, Theorem 2)
-states the equality $\mathrm{FDR} = (N_0/N)\,\alpha$ for exactly-uniform null p-values; we prove
-the honest inequality $\le$, which holds under the weaker super-uniform hypothesis and
+**Proof formalization notes.** *Book vs Lean.* Lu-BDA Ch20 §20.2 (and Candès Lecture 7 §7.2,
+Theorem 2) states the equality $\mathrm{FDR} = (N_0/N)\,\alpha$ for exactly-uniform null p-values;
+we prove the honest inequality $\le$, which holds under the weaker super-uniform hypothesis and
 specializes to the book's equality when the nulls are exactly uniform.
 
 Proof outline (Lu-BDA §20.2): for each null index $i \in H_0$ the per-null contribution satisfies
@@ -269,9 +269,9 @@ private lemma bhRejects_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N �
     exact ⟨fun _ => hi_le, fun _ => by positivity⟩
   · simp [Function.update_of_ne hji]
 
-/-- Leave-one-out invariance (Lu-BDA §20.2, Theorem 20.1 proof, "second key observation"): if hypothesis `i`
-is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the constant `0`
-leaves the number of rejections equal to `k`. The deterministic combinatorial crux. -/
+/-- Leave-one-out invariance (Lu-BDA §20.2, Theorem 20.1 proof, "second key observation"): if
+hypothesis `i` is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the
+constant `0` leaves the number of rejections equal to `k`. The deterministic combinatorial crux. -/
 theorem bh_count_eq_leaveOneOut {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     -- LEAN-ONLY: positivity of N and α needed for the combinatorial argument
     (p : Fin N → Ω → ℝ) (i : Fin N) (k : ℕ) (ω : Ω)
@@ -497,7 +497,8 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
 /-! ## Per-null contribution bound -/
 
 /-- `bhKmax α p ω ≤ numRejections (bhRejects α p) ω`: the threshold index is at most the rejection
-count (at index `bhKmax`, the count is `≥ bhKmax`, and the rejection count is exactly that count). -/
+count (at index `bhKmax`, the count is `≥ bhKmax`,
+and the rejection count is exactly that count). -/
 private lemma bhKmax_le_numRej {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) :
     bhKmax α p ω ≤ numRejections (bhRejects α p) ω := by
   rcases Nat.eq_zero_or_pos (bhKmax α p ω) with h | h
@@ -549,7 +550,8 @@ private lemma bh_summand_le_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     have h1leR : (1 : ℝ) ≤ (numRejections (bhRejects α p) ω : ℝ) := by exact_mod_cast hR1
     rw [ite_eq_left hi, max_eq_left h1leR]
     -- the k = R term equals 1/R.
-    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N := bh_mem_imp_le hN α hα p i ω hi
+    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N :=
+      bh_mem_imp_le hN α hα p i ω hi
     have hRloo : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
         numRejections (bhRejects α p) ω :=
       bh_count_eq_leaveOneOut hN α hα p i (numRejections (bhRejects α p) ω) ω hi rfl
@@ -626,7 +628,8 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
           (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
             else 0)) =
         ({ω | p i ω ≤ (k : ℝ) * α / N} ∩
-          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).indicator 1 := by
+          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ)))
+              ω = k}).indicator 1 := by
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
@@ -650,11 +653,13 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
     calc (1 / (k : ℝ)) * ((μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal *
           (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal)
         ≤ (1 / (k : ℝ)) * (((k : ℝ) * α / N) *
-            (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal) := by
+            (μ {ω | numRejections (bhRejects α
+                (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal) := by
           apply mul_le_mul_of_nonneg_left _ (by positivity)
           exact mul_le_mul_of_nonneg_right hAle hBnn
       _ = (α / N) *
-            (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal := by
+            (μ {ω | numRejections (bhRejects α
+                (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal := by
           field_simp
   -- the LOO-count events are disjoint, so their measures sum to ≤ 1.
   have sum1 : ∑ k ∈ Finset.Icc 1 N,

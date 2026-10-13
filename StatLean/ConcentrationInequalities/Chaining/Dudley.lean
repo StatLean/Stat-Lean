@@ -293,52 +293,52 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
   set g : ℝ → ℝ≥0∞ := fun u => ENNReal.ofReal (sqrtLogCov T u) with hgdef
   have hg_meas : Measurable g := (measurable_sqrtLogCov T).ennreal_ofReal
   -- (a) subset-half pointwise bound on `Ioc 0 D`.
-  have ha : ∫⁻ ε in Set.Ioc (0:ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
-      ≤ ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2) := by
+  have ha : ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2) := by
     refine setLIntegral_mono' measurableSet_Ioc (fun ε hε => ?_)
     exact ENNReal.ofReal_le_ofReal
       (sqrtLogCov_subset_half_le hST hε.1.le (hcov (ε / 2) (by linarith [hε.1])))
   -- (b) change of variables `ε = 2u`.
-  have hb : ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2)
-      = 2 * ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := by
-    have hF : Measurable (Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2))) :=
+  have hb : ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2)
+      = 2 * ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := by
+    have hF : Measurable (Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2))) :=
       (hg_meas.comp (measurable_id.div_const 2)).indicator measurableSet_Ioc
     have step1 :
-        ∫⁻ u, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
-          = ENNReal.ofReal (|(2:ℝ)⁻¹|)
-              * ∫⁻ ε, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) ε ∂volume := by
+        ∫⁻ u, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
+          = ENNReal.ofReal (|(2 : ℝ)⁻¹|)
+              * ∫⁻ ε, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) ε ∂volume := by
       rw [← lintegral_map hF (measurable_const_mul 2),
-        Real.map_volume_mul_left (by norm_num : (2:ℝ) ≠ 0), lintegral_smul_measure,
+        Real.map_volume_mul_left (by norm_num : (2 : ℝ) ≠ 0), lintegral_smul_measure,
         smul_eq_mul]
     rw [lintegral_indicator measurableSet_Ioc] at step1
     have hLHS :
-        ∫⁻ u, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
-          = ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := by
+        ∫⁻ u, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
+          = ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := by
       rw [← lintegral_indicator measurableSet_Ioc]
       apply lintegral_congr
       intro u
-      by_cases hu : u ∈ Set.Ioc (0:ℝ) (D / 2)
-      · have h2u : 2 * u ∈ Set.Ioc (0:ℝ) D := ⟨by linarith [hu.1], by linarith [hu.2]⟩
+      by_cases hu : u ∈ Set.Ioc (0 : ℝ) (D / 2)
+      · have h2u : 2 * u ∈ Set.Ioc (0 : ℝ) D := ⟨by linarith [hu.1], by linarith [hu.2]⟩
         rw [Set.indicator_of_mem h2u, Set.indicator_of_mem hu]
         change g (2 * u / 2) = g u
         congr 1; ring
-      · have h2u : 2 * u ∉ Set.Ioc (0:ℝ) D := by
+      · have h2u : 2 * u ∉ Set.Ioc (0 : ℝ) D := by
           intro hmem; exact hu ⟨by linarith [hmem.1], by linarith [hmem.2]⟩
         rw [Set.indicator_of_notMem h2u, Set.indicator_of_notMem hu]
     rw [hLHS] at step1
-    have hc2 : (2:ℝ≥0∞) * ENNReal.ofReal (|(2:ℝ)⁻¹|) = 1 := by
-      rw [abs_of_pos (by norm_num : (0:ℝ) < (2:ℝ)⁻¹),
-        show (2:ℝ≥0∞) = ENNReal.ofReal 2 from by norm_num,
-        ← ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]
+    have hc2 : (2 : ℝ≥0∞) * ENNReal.ofReal (|(2 : ℝ)⁻¹|) = 1 := by
+      rw [abs_of_pos (by norm_num : (0 : ℝ) < (2 : ℝ)⁻¹),
+        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from by norm_num,
+        ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
       norm_num
     rw [step1, ← mul_assoc, hc2, one_mul]
   -- (c) shrink the cap `D/2 ≤ D`.
-  have hc : ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u ≤ ∫⁻ u in Set.Ioc (0:ℝ) D, g u :=
+  have hc : ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u ≤ ∫⁻ u in Set.Ioc (0 : ℝ) D, g u :=
     lintegral_mono_set (Set.Ioc_subset_Ioc_right (by linarith))
-  calc ∫⁻ ε in Set.Ioc (0:ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
-      ≤ ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2) := ha
-    _ = 2 * ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := hb
-    _ ≤ 2 * ∫⁻ u in Set.Ioc (0:ℝ) D, g u := by gcongr
+  calc ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2) := ha
+    _ = 2 * ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := hb
+    _ ≤ 2 * ∫⁻ u in Set.Ioc (0 : ℝ) D, g u := by gcongr
 
 /-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
 

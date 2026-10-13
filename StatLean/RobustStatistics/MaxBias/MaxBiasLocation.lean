@@ -110,7 +110,7 @@ theorem mLocationRoot_abs_le_maxBias {ψ : ℝ → ℝ} {P : Measure ℝ}
   have hintP : Integrable (fun x => ψ (x - θ)) P := integrable_psi_sub hψmeas hbd θ
   have hintQ : Integrable (fun x => ψ (x - θ)) Q := integrable_psi_sub hψmeas hbd θ
   have hε1 : ε ≤ 1 := by linarith
-  have h1ε : (0:ℝ) < 1 - ε := by linarith
+  have h1ε : (0 : ℝ) < 1 - ε := by linarith
   have hsplit : (1 - ε) * (∫ x, ψ (x - θ) ∂P) + ε * (∫ x, ψ (x - θ) ∂Q) = 0 := by
     rw [← integral_contaminate hε0 hε1 hintP hintQ]; exact hθ
   -- `|E_G ψ(x − θ)| ≤ k`: the score is bounded and `Q` is a probability measure.
@@ -161,7 +161,7 @@ theorem maxBias_attained {ψ : ℝ → ℝ} {P : Measure ℝ}
     ∀ η : ℝ, 0 < η → ∃ (x₀ θ : ℝ),
       IsMLocationRoot ψ (contaminate P (Measure.dirac x₀) ε) θ ∧ bε - η < θ := by
   intro η hη
-  have h1ε : (0:ℝ) < 1 - ε := by linarith
+  have h1ε : (0 : ℝ) < 1 - ε := by linarith
   have hε1 : ε ≤ 1 := by linarith
   -- The monotone score with limit `k` at `+∞` is bounded by `k`; oddness gives `|ψ| ≤ k`.
   have hψk : ∀ u, ψ u ≤ k := fun u =>
@@ -226,7 +226,7 @@ theorem shiftScore_sign {P : Measure ℝ} [IsProbabilityMeasure P] {b : ℝ}
     shiftScore Real.sign P b = 1 - 2 * P.real (Set.Iic (-b)) := by
   -- Off the null set `{-b}`, `sign (x + b) = 1 - 2·1_{(-∞,-b]}(x)`.
   have hae : (fun x => Real.sign (x - -b)) =ᵐ[P]
-      fun x => 1 - 2 * (Set.Iic (-b)).indicator (fun _ => (1:ℝ)) x := by
+      fun x => 1 - 2 * (Set.Iic (-b)).indicator (fun _ => (1 : ℝ)) x := by
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hatom (-b))] with x hx
     rw [Set.mem_singleton_iff] at hx
     rcases lt_trichotomy x (-b) with h | h | h
@@ -235,13 +235,13 @@ theorem shiftScore_sign {P : Measure ℝ} [IsProbabilityMeasure P] {b : ℝ}
       norm_num
     · exact absurd h hx
     · rw [Set.indicator_of_notMem (by simp only [Set.mem_Iic, not_le]; linarith),
-        Real.sign_of_pos (by linarith : (0:ℝ) < x - -b)]
+        Real.sign_of_pos (by linarith : (0 : ℝ) < x - -b)]
       norm_num
-  have hindint : Integrable (fun x => (Set.Iic (-b)).indicator (fun _ => (1:ℝ)) x) P :=
-    (integrable_const (1:ℝ)).indicator measurableSet_Iic
+  have hindint : Integrable (fun x => (Set.Iic (-b)).indicator (fun _ => (1 : ℝ)) x) P :=
+    (integrable_const (1 : ℝ)).indicator measurableSet_Iic
   rw [shiftScore, mLocationScore, integral_congr_ae hae,
-    integral_sub (integrable_const (1:ℝ)) (hindint.const_mul 2), integral_const_mul,
-    integral_indicator_const (1:ℝ) measurableSet_Iic, integral_const]
+    integral_sub (integrable_const (1 : ℝ)) (hindint.const_mul 2), integral_const_mul,
+    integral_indicator_const (1 : ℝ) measurableSet_Iic, integral_const]
   simp
 
 /-- **The median's shift score is the centered CDF** (`MMY §3.8.4`, "for the median,
@@ -286,7 +286,7 @@ theorem sign_maxBias_iff {P : Measure ℝ} [IsProbabilityMeasure P] {ε b : ℝ}
     shiftScore Real.sign P b = 1 * ε / (1 - ε) ↔
       P.real (Set.Iic b) = 1 / (2 * (1 - ε)) := by
   rw [shiftScore_sign_of_symm hatom hsym]
-  have h : (1:ℝ) - ε ≠ 0 := ne_of_gt (by linarith : (0:ℝ) < 1 - ε)
+  have h : (1 : ℝ) - ε ≠ 0 := ne_of_gt (by linarith : (0 : ℝ) < 1 - ε)
   constructor <;> intro h1 <;> field_simp at h1 ⊢ <;> linarith
 
 end StatLean.RobustStatistics

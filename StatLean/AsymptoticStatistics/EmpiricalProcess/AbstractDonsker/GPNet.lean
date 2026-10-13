@@ -223,12 +223,12 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
       have hcard_le : (2 * (net j).card : ℝ) ≤ (2 * (j + 1)) * (1 + Nfun j) := by
         have h1 : ((net j).card : ℝ) ≤ ((j + 1) * Nfun j : ℕ) := by exact_mod_cast hnet_card j
         push_cast at h1 ⊢
-        nlinarith [hNfun_nn, (by positivity : (0:ℝ) ≤ (j:ℝ))]
+        nlinarith [hNfun_nn, (by positivity : (0 : ℝ) ≤ (j : ℝ))]
       have hlog_le : Real.log (2 * (net j).card)
           ≤ Real.log (2 * (j + 1)) + Real.log (1 + Nfun j) := by
         rcases Nat.eq_zero_or_pos (net j).card with h0 | hpos
         · rw [h0]; simp only [Nat.cast_zero, mul_zero, Real.log_zero]
-          have h2 := Real.log_nonneg (by linarith : (1:ℝ) ≤ 2 * (j + 1))
+          have h2 := Real.log_nonneg (by linarith : (1 : ℝ) ≤ 2 * (j + 1))
           have h3 := Real.log_nonneg hN_ge_one
           linarith
         · have hcard_real_pos : (0 : ℝ) < 2 * (net j).card := by
@@ -240,7 +240,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
                 Real.log_mul (by positivity) (by positivity)
       -- sqrt-subadditivity: `√(a+b) ≤ √a + √b` for `a, b ≥ 0`.
       have ha : (0 : ℝ) ≤ Real.log (2 * (j + 1)) :=
-        Real.log_nonneg (by linarith : (1:ℝ) ≤ 2 * (j + 1))
+        Real.log_nonneg (by linarith : (1 : ℝ) ≤ 2 * (j + 1))
       have hb : (0 : ℝ) ≤ Real.log (1 + Nfun j) := Real.log_nonneg hN_ge_one
       have hsqrt_sub : Real.sqrt (Real.log (2 * (net j).card))
           ≤ Real.sqrt (Real.log (2 * (j + 1))) + Real.sqrt (Real.log (1 + Nfun j)) := by
@@ -277,7 +277,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
             ≤ Real.sqrt (2 * ((j : ℝ) + 1)) := Real.sqrt_le_sqrt hlog
           _ ≤ 2 * ((j : ℝ) + 1) := by
               nlinarith [Real.sq_sqrt hx.le, Real.sqrt_nonneg (2 * ((j : ℝ) + 1)),
-                Real.one_le_sqrt.mpr (show (1:ℝ) ≤ 2 * ((j:ℝ)+1) by
+                Real.one_le_sqrt.mpr (show (1 : ℝ) ≤ 2 * ((j : ℝ)+1) by
                   have := Nat.cast_nonneg (α := ℝ) j; linarith)]
       apply Summable.of_nonneg_of_le (fun j => by positivity) (fun j => by
         have := hcmp j

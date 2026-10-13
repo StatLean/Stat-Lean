@@ -68,16 +68,16 @@ noncomputable def eValue (rr : ℝ) : ℝ := rr + Real.sqrt (rr * (rr - 1))
 (Ding Lemma 17.1). -/
 theorem one_le_boundingFactor {w₁ w₂ : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1 ≤ w₂) :
     1 ≤ boundingFactor w₁ w₂ := by
-  have hpos : (0:ℝ) < w₁ + w₂ - 1 := by linarith
+  have hpos : (0 : ℝ) < w₁ + w₂ - 1 := by linarith
   rw [boundingFactor, le_div_iff₀ hpos]
   nlinarith [mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂)]
 
 /-- The bounding factor is monotone in each argument (Ding Lemma 17.1). -/
 theorem boundingFactor_le_of_le {w₁ w₂ w₁' : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1 ≤ w₂) (h : w₁ ≤ w₁') :
     boundingFactor w₁ w₂ ≤ boundingFactor w₁' w₂ := by
-  have h₁' : (1:ℝ) ≤ w₁' := h₁.trans h
-  have hp : (0:ℝ) < w₁ + w₂ - 1 := by linarith
-  have hp' : (0:ℝ) < w₁' + w₂ - 1 := by linarith
+  have h₁' : (1 : ℝ) ≤ w₁' := h₁.trans h
+  have hp : (0 : ℝ) < w₁ + w₂ - 1 := by linarith
+  have hp' : (0 : ℝ) < w₁' + w₂ - 1 := by linarith
   rw [boundingFactor, boundingFactor, div_le_div_iff₀ hp hp']
   nlinarith [mul_nonneg (mul_nonneg (zero_le_one.trans h₂) (sub_nonneg.2 h)) (sub_nonneg.2 h₂)]
 
@@ -90,7 +90,7 @@ theorem boundingFactor_le_sq_div {w₁ w₂ : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1
     intro a b; unfold boundingFactor; ring_nf
   have hw₁ : w₁ ≤ max w₁ w₂ := le_max_left _ _
   have hw₂ : w₂ ≤ max w₁ w₂ := le_max_right _ _
-  have hw1 : (1:ℝ) ≤ max w₁ w₂ := h₁.trans hw₁
+  have hw1 : (1 : ℝ) ≤ max w₁ w₂ := h₁.trans hw₁
   have hself : boundingFactor (max w₁ w₂) (max w₁ w₂)
       = max w₁ w₂ ^ 2 / (2 * max w₁ w₂ - 1) := by
     unfold boundingFactor; ring_nf
@@ -119,15 +119,15 @@ private lemma sub_one_le_sqrt_rr {rr : ℝ} (h : 1 ≤ rr) :
     rr - 1 ≤ Real.sqrt (rr * (rr - 1)) := by
   have h1 : Real.sqrt ((rr - 1) ^ 2) ≤ Real.sqrt (rr * (rr - 1)) :=
     Real.sqrt_le_sqrt (by nlinarith)
-  rwa [Real.sqrt_sq (by linarith : (0:ℝ) ≤ rr - 1)] at h1
+  rwa [Real.sqrt_sq (by linarith : (0 : ℝ) ≤ rr - 1)] at h1
 
 /-- **The defining identity of the E-value** (Ding §17.2): at `w₁ = w₂ = E` the bounding
 factor is exactly the observed risk ratio — `E` is the point at which confounding could
 just barely explain the association away. -/
 theorem boundingFactor_eValue_self {rr : ℝ} (h : 1 ≤ rr) :
     boundingFactor (eValue rr) (eValue rr) = rr := by
-  have hE : (1:ℝ) ≤ eValue rr := one_le_eValue h
-  have hden : (0:ℝ) < eValue rr + eValue rr - 1 := by linarith
+  have hE : (1 : ℝ) ≤ eValue rr := one_le_eValue h
+  have hden : (0 : ℝ) < eValue rr + eValue rr - 1 := by linarith
   have hkey : eValue rr * eValue rr = rr * (eValue rr + eValue rr - 1) := by
     simp only [eValue]
     linear_combination sq_sqrt_rr h
@@ -143,8 +143,8 @@ theorem lt_of_boundingFactor_ge {rr w₁ w₂ : ℝ} (hrr : 1 ≤ rr) (h₁ : 1 
     -- Ding Theorem 17.1
     (hexplain : rr ≤ boundingFactor w₁ w₂) :
     eValue rr ≤ max w₁ w₂ := by
-  have hw1 : (1:ℝ) ≤ max w₁ w₂ := h₁.trans (le_max_left _ _)
-  have hden : (0:ℝ) < 2 * max w₁ w₂ - 1 := by linarith
+  have hw1 : (1 : ℝ) ≤ max w₁ w₂ := h₁.trans (le_max_left _ _)
+  have hden : (0 : ℝ) < 2 * max w₁ w₂ - 1 := by linarith
   -- The one-parameter form of Cornfield's bound, cleared of its denominator.
   have hq : rr * (2 * max w₁ w₂ - 1) ≤ max w₁ w₂ ^ 2 := by
     rw [← le_div_iff₀ hden]
@@ -180,7 +180,7 @@ harder to explain away (Ding §17.2). -/
 theorem eValue_mono {rr rr' : ℝ} (h : 1 ≤ rr) (hle : rr ≤ rr') : eValue rr ≤ eValue rr' := by
   unfold eValue
   have hmono : rr * (rr - 1) ≤ rr' * (rr' - 1) := by
-    nlinarith [mul_nonneg (sub_nonneg.2 hle) (by linarith : (0:ℝ) ≤ rr' + rr - 1)]
+    nlinarith [mul_nonneg (sub_nonneg.2 hle) (by linarith : (0 : ℝ) ≤ rr' + rr - 1)]
   exact add_le_add hle (Real.sqrt_le_sqrt hmono)
 
 end StatLean.CausalInference

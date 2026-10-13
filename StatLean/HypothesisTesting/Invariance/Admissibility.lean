@@ -237,7 +237,7 @@ private theorem acceptance_subset_of_power_le_const
     refine ⟨fun ⟨ht, hlt⟩ => ?_, fun ⟨k, ht, hlt⟩ => ?_⟩
     · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
       exact ⟨k, ht, by linarith⟩
-    · have hp : (0:ℝ) < 1 / ((k : ℝ) + 1) := by positivity
+    · have hp : (0 : ℝ) < 1 / ((k : ℝ) + 1) := by positivity
       exact ⟨ht, by linarith⟩
   obtain ⟨k, hk⟩ : ∃ k : ℕ,
       statScaleBase E (A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ}) ≠ 0 := by
@@ -245,7 +245,7 @@ private theorem acceptance_subset_of_power_le_const
     push Not at hall
     exact hmass (by rw [hunion]; exact measure_iUnion_null hall)
   set δ : ℝ := 1 / ((k : ℝ) + 1) with hδdef
-  have hδpos : (0:ℝ) < δ := by rw [hδdef]; positivity
+  have hδpos : (0 : ℝ) < δ := by rw [hδdef]; positivity
   -- **Step 3.** The ray along which the natural parameter is pushed to infinity.
   obtain ⟨θs, hθs, lam, hlamtop, hlamΘ⟩ := hray a c hemp
   have hTm : Measurable E.stat := E.stat_meas
@@ -286,7 +286,7 @@ private theorem acceptance_subset_of_power_le_const
   -- **Step 4.** Pick the index at which the tilt already dominates.
   set r : ℝ := (K * M).toReal / m.toReal with hrdef
   have hmtoReal : 0 < m.toReal := ENNReal.toReal_pos hmpos hmfin
-  have hrnn : (0:ℝ) ≤ r := by rw [hrdef]; positivity
+  have hrnn : (0 : ℝ) ≤ r := by rw [hrdef]; positivity
   obtain ⟨n, hn⟩ :=
     (hlamtop.eventually_ge_atTop (max 0 ((Real.log (r + 1) + 1) / δ))).exists
   have hlam0 : 0 ≤ lam n := le_trans (le_max_left _ _) hn
@@ -555,14 +555,14 @@ private theorem power_eq_indicator_of_dominating
           · positivity
           · linarith
         exact ⟨k, by linarith, hA⟩
-      · have hp : (0:ℝ) < 1 / ((k : ℝ) + 2) := by positivity
+      · have hp : (0 : ℝ) < 1 / ((k : ℝ) + 2) := by positivity
         exact ⟨by linarith, hA⟩
     rw [hun]
     refine measure_iUnion_null fun k => hkey _ (by positivity) ?_
-    have h1' : (1:ℝ) ≤ (k : ℝ) + 2 := by
-      have : (0:ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+    have h1' : (1 : ℝ) ≤ (k : ℝ) + 2 := by
+      have : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
       linarith
-    have h2' : (0:ℝ) < (k : ℝ) + 2 := by positivity
+    have h2' : (0 : ℝ) < (k : ℝ) + 2 := by positivity
     rw [div_lt_one h2']; linarith
   -- **Step B.** Hence `φ₀ ≤ φ` off a base-null set, so `φ` is never less powerful.
   have hge : (A₀ᶜ.indicator fun _ => (1 : ℝ)) ≤ᵐ[statScaleBase E] φ := by

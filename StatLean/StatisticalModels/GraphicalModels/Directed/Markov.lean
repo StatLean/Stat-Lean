@@ -381,6 +381,8 @@ theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty
   have hfinal := key (D.nonDescendants v \ D.parents v) Finset.Subset.rfl hne
   rwa [Finset.sdiff_sdiff_eq_self hPN] at hfinal
 
+set_option linter.style.whitespace false in
+-- The whitespace linter misaligns this signature at the comment before its first binder.
 /-- **(DG) ⇒ (DP)** — the composite of the two implications above, the directed analogue of
 `globalMarkov_implies_pairwiseMarkov`. Unlike that one it does need the calculus: there is no
 direct separation argument, because the conditioning set of (DP) is `nd(v) ∖ {β}` rather than a

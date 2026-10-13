@@ -227,7 +227,7 @@ theorem exists_isMLocationRoot {ψ : ℝ → ℝ} {P : Measure ℝ} [IsProbabili
   have hB : Tendsto (mLocationScore ψ P) atBot (𝓝 k₂) :=
     tendsto_mLocationScore_atBot hψm htop hint
   obtain ⟨b, hb⟩ := eventually_atTop.1 (hT.eventually_lt_const (by linarith : -k₁ < 0))
-  obtain ⟨a, ha⟩ := eventually_atBot.1 (hB.eventually_const_lt (by linarith : (0:ℝ) < k₂))
+  obtain ⟨a, ha⟩ := eventually_atBot.1 (hB.eventually_const_lt (by linarith : (0 : ℝ) < k₂))
   have hab : min a b ≤ max a b := min_le_max
   have hga : 0 < mLocationScore ψ P (min a b) := ha _ (min_le_left a b)
   have hgb : mLocationScore ψ P (max a b) < 0 := hb _ (le_max_right a b)

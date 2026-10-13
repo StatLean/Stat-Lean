@@ -118,7 +118,7 @@ theorem sampleMedian_const_mul_of_odd {k : ℕ} (hn : n = 2 * k + 1) (c : ℝ)
   have hcw : (fun i => c * x i) = fun j => -w j := by
     funext i; rw [hw]; ring
   rw [sampleMedian_odd hn, sampleMedian_odd hn, hcw, orderStat_neg w, hmid, hw,
-    orderStat_const_mul_of_nonneg x (by linarith : (0:ℝ) ≤ -c)]
+    orderStat_const_mul_of_nonneg x (by linarith : (0 : ℝ) ≤ -c)]
   ring
 
 /-- Median of a constant sample. -/

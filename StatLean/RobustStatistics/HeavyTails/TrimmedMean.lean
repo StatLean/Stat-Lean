@@ -153,11 +153,11 @@ private theorem tail_le_of_forall_lt (P : Measure ℝ) [IsProbabilityMeasure P] 
     constructor
     · intro hx
       refine not_lt.1 fun hlt => ?_
-      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0:ℝ) < Q - x by linarith)
+      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0 : ℝ) < Q - x by linarith)
       have := hx k
       linarith
     · intro hx k
-      have : (0:ℝ) < 1 / (k + 1) := by positivity
+      have : (0 : ℝ) < 1 / (k + 1) := by positivity
       linarith
   have hten := tendsto_measure_iInter_atTop (μ := P)
     (s := fun k : ℕ => {x : ℝ | Q - 1 / (k + 1) ≤ x})
@@ -168,7 +168,7 @@ private theorem tail_le_of_forall_lt (P : Measure ℝ) [IsProbabilityMeasure P] 
   filter_upwards with k
   change c ≤ P.real {x : ℝ | Q - 1 / (k + 1) ≤ x}
   refine h _ ?_
-  have : (0:ℝ) < 1 / (k + 1) := by positivity
+  have : (0 : ℝ) < 1 / (k + 1) := by positivity
   linarith
 
 /-- The quantile's defining set is nonempty and bounded above when `0 < p < 1`
@@ -183,7 +183,7 @@ theorem quantile_set_nonempty_bddAbove (P : Measure ℝ) [IsProbabilityMeasure P
       ((tail_tendsto_atBot P).eventually_const_lt (show 1 - p < 1 by linarith)).exists
     exact ⟨M, hM.le⟩
   · obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
-      ((tail_tendsto_atTop P).eventually_lt_const (show (0:ℝ) < 1 - p by linarith))
+      ((tail_tendsto_atTop P).eventually_lt_const (show (0 : ℝ) < 1 - p by linarith))
     exact ⟨K, fun M hM => not_lt.1 fun hlt => absurd hM (not_le.2 (hK M hlt.le))⟩
 
 /-- **Right-tail mass at the quantile** (`LM §2.3` proof, "in that case
@@ -203,7 +203,7 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
     have hmono : Monotone (fun k : ℕ => {x : ℝ | quantile P p + 1 / (k + 1) ≤ x}) := by
       intro k l hkl x hx
       simp only [Set.mem_ofPred_eq] at hx ⊢
-      have h1 : (1:ℝ) / (l + 1) ≤ 1 / (k + 1) :=
+      have h1 : (1 : ℝ) / (l + 1) ≤ 1 / (k + 1) :=
         one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.succ_le_succ hkl)
       linarith
     have hU : (⋃ k : ℕ, {x : ℝ | quantile P p + 1 / (k + 1) ≤ x})
@@ -212,10 +212,10 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
       simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
       constructor
       · rintro ⟨k, hk⟩
-        have hpos : (0:ℝ) < 1 / (k + 1) := by positivity
+        have hpos : (0 : ℝ) < 1 / (k + 1) := by positivity
         linarith
       · intro hx
-        obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0:ℝ) < x - quantile P p by linarith)
+        obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0 : ℝ) < x - quantile P p by linarith)
         exact ⟨k, by linarith⟩
     have hten := tendsto_measure_iUnion_atTop (μ := P) hmono
     rw [hU] at hten
@@ -229,7 +229,7 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
         (not_le.1 hcon).le
       have hle := le_csSup hbdd hmem
       rw [← hQ] at hle
-      have hpos : (0:ℝ) < 1 / (k + 1) := by positivity
+      have hpos : (0 : ℝ) < 1 / (k + 1) := by positivity
       linarith
     have hsplit : P.real {x : ℝ | quantile P p ≤ x} ≤ P.real {x : ℝ | quantile P p < x} := by
       simp only [measureReal_def]
@@ -287,29 +287,29 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
     (hY_meas : ∀ i, Measurable (Y i)) (hY_indep : iIndepFun Y μprob)
     (hY_law : ∀ i, μprob.map (Y i) = P) (hA : MeasurableSet A)
     (hq : P.real A = q) (hq0 : 0 < q) (hq1 : q < 1) (hn : 0 < n) (ht : 0 < t) :
-    μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+    μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (q * (1 - q) + t / 3)))) := by
   have hqq : 0 < q * (1 - q) := by nlinarith
   -- ### The centred indicator and its first two moments under `P`.
-  have hgm : Measurable (fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x - q) :=
+  have hgm : Measurable (fun x : ℝ => A.indicator (fun _ => (1 : ℝ)) x - q) :=
     (measurable_const.indicator hA).sub measurable_const
-  have hindint : Integrable (fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x) P :=
-    (integrable_const (1:ℝ)).indicator hA
-  have hintind : ∫ x, A.indicator (fun _ => (1:ℝ)) x ∂P = q := by
-    rw [integral_indicator_const (1:ℝ) hA, hq, smul_eq_mul, mul_one]
-  have hmean : ∫ x, (A.indicator (fun _ => (1:ℝ)) x - q) ∂P = 0 := by
+  have hindint : Integrable (fun x : ℝ => A.indicator (fun _ => (1 : ℝ)) x) P :=
+    (integrable_const (1 : ℝ)).indicator hA
+  have hintind : ∫ x, A.indicator (fun _ => (1 : ℝ)) x ∂P = q := by
+    rw [integral_indicator_const (1 : ℝ) hA, hq, smul_eq_mul, mul_one]
+  have hmean : ∫ x, (A.indicator (fun _ => (1 : ℝ)) x - q) ∂P = 0 := by
     rw [integral_sub hindint (integrable_const q), hintind, integral_const]
     simp
-  have hsqpt : ∀ x : ℝ, (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2
-      = (1 - 2 * q) * A.indicator (fun _ => (1:ℝ)) x + q ^ 2 := by
+  have hsqpt : ∀ x : ℝ, (A.indicator (fun _ => (1 : ℝ)) x - q) ^ 2
+      = (1 - 2 * q) * A.indicator (fun _ => (1 : ℝ)) x + q ^ 2 := by
     intro x
     by_cases hx : x ∈ A
     · rw [Set.indicator_of_mem hx]; ring
     · rw [Set.indicator_of_notMem hx]; ring
-  have hsqint : Integrable (fun x : ℝ => (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2) P := by
+  have hsqint : Integrable (fun x : ℝ => (A.indicator (fun _ => (1 : ℝ)) x - q) ^ 2) P := by
     refine Integrable.congr ((hindint.const_mul (1 - 2 * q)).add (integrable_const (q ^ 2))) ?_
     exact Filter.Eventually.of_forall fun x => (hsqpt x).symm
-  have hvar : ∫ x, (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2 ∂P = q * (1 - q) := by
+  have hvar : ∫ x, (A.indicator (fun _ => (1 : ℝ)) x - q) ^ 2 ∂P = q * (1 - q) := by
     rw [integral_congr_ae (Filter.Eventually.of_forall hsqpt),
       integral_add (hindint.const_mul (1 - 2 * q)) (integrable_const (q ^ 2)),
       integral_const_mul, hintind, integral_const]
@@ -327,33 +327,33 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
     exact (lintegral_map hf (hY_meas i)).symm
   -- ### The Bernstein condition, with variance `q(1−q)` and scale `1/3`.
   have hB : ∀ i, ConcentrationInequalities.HasBernsteinCondition
-      (fun ξ => A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)
+      (fun ξ => A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q)
       (⟨q * (1 - q), hqq.le⟩ : ℝ≥0) (⟨1/3, by norm_num⟩ : ℝ≥0) μprob := by
     intro i
     refine ⟨by rw [htr _ hgm i]; exact hmean, ?_, ?_⟩
-    · rw [htr (fun x => (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2) (hgm.pow_const 2) i]
+    · rw [htr (fun x => (A.indicator (fun _ => (1 : ℝ)) x - q) ^ 2) (hgm.pow_const 2) i]
       exact hvar
     · intro k hk
-      have hpt : ∀ ξ : Ξ, |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k
-          ≤ (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2 := by
+      have hpt : ∀ ξ : Ξ, |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ k
+          ≤ (A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q) ^ 2 := by
         intro ξ
-        have hb : |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ≤ 1 := by
+        have hb : |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ≤ 1 := by
           by_cases hx : Y i ξ ∈ A
           · rw [Set.indicator_of_mem hx, abs_le]; constructor <;> linarith
           · rw [Set.indicator_of_notMem hx, abs_le]; constructor <;> linarith
-        calc |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k
-            = |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ 2
-              * |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ (k - 2) := by
+        calc |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ k
+            = |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ 2
+              * |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ (k - 2) := by
               rw [← pow_add]; congr 1; omega
-          _ ≤ |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ 2 * 1 := by
+          _ ≤ |A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ 2 * 1 := by
               gcongr
               exact pow_le_one₀ (abs_nonneg _) hb
-          _ = (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2 := by rw [mul_one, sq_abs]
-      calc ∫⁻ ξ, ENNReal.ofReal (|A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k) ∂μprob
-          ≤ ∫⁻ ξ, ENNReal.ofReal ((A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2) ∂μprob :=
+          _ = (A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q) ^ 2 := by rw [mul_one, sq_abs]
+      calc ∫⁻ ξ, ENNReal.ofReal (|A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q| ^ k) ∂μprob
+          ≤ ∫⁻ ξ, ENNReal.ofReal ((A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q) ^ 2) ∂μprob :=
             lintegral_mono fun ξ => ENNReal.ofReal_le_ofReal (hpt ξ)
         _ = ENNReal.ofReal (q * (1 - q)) := by
-            rw [htrL (fun x => ENNReal.ofReal ((A.indicator (fun _ => (1:ℝ)) x - q) ^ 2))
+            rw [htrL (fun x => ENNReal.ofReal ((A.indicator (fun _ => (1 : ℝ)) x - q) ^ 2))
               (ENNReal.measurable_ofReal.comp (hgm.pow_const 2)) i,
               ← ofReal_integral_eq_lintegral_ofReal hsqint
                 (Filter.Eventually.of_forall fun x => sq_nonneg _), hvar]
@@ -362,33 +362,33 @@ private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
             refine ENNReal.ofReal_le_ofReal ?_
             have hfac : (2 : ℝ) * 3 ^ (k - 2) ≤ (k.factorial : ℝ) := by
               exact_mod_cast two_mul_three_pow_le_factorial hk
-            have hp : (0:ℝ) < (3 ^ (k - 2) : ℝ) := by positivity
-            rw [show ((1:ℝ)/3) ^ (k - 2) = (3 ^ (k - 2) : ℝ)⁻¹ by
+            have hp : (0 : ℝ) < (3 ^ (k - 2) : ℝ) := by positivity
+            rw [show ((1 : ℝ)/3) ^ (k - 2) = (3 ^ (k - 2) : ℝ)⁻¹ by
               rw [one_div, ← inv_pow], inv_eq_one_div, mul_one_div, le_div_iff₀ hp]
             nlinarith [mul_le_mul_of_nonneg_left hfac
-              (show (0:ℝ) ≤ q * (1 - q) / 2 by positivity)]
+              (show (0 : ℝ) ≤ q * (1 - q) / 2 by positivity)]
   -- ### Bernstein at every deviation `s ∈ (0, t)`, then let `s ↑ t`.
-  have hsum : ∀ ξ : Ξ, ∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)
-      = (∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)) - q * n := by
+  have hsum : ∀ ξ : Ξ, ∑ i, (A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q)
+      = (∑ i, A.indicator (fun _ => (1 : ℝ)) (Y i ξ)) - q * n := by
     intro ξ
     rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
       nsmul_eq_mul, mul_comm (n : ℝ) q]
   have hkey : ∀ s : ℝ, 0 < s → s < t →
-      μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+      μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1 : ℝ)) (Y i ξ)}
         ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * s ^ 2 / (2 * (q * (1 - q) + s / 3)))) := by
     intro s hs hst
     have hbern := ConcentrationInequalities.bernstein_inequality
-      (X := fun i ξ => A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) (μ := μprob)
+      (X := fun i ξ => A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q) (μ := μprob)
       (fun i => (hgm.comp (hY_meas i)))
-      (hY_indep.comp (fun _ => fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x - q)
+      (hY_indep.comp (fun _ => fun x : ℝ => A.indicator (fun _ => (1 : ℝ)) x - q)
         (fun _ => hgm)) hB hn (by change (0 : ℝ) < 1 / 3; norm_num)
       (by change (0 : ℝ) < q * (1 - q); exact hqq) hs
-    have hsub : {ξ : Ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
-        ⊆ {ξ : Ξ | s < (∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)) / (n : ℝ)} := by
+    have hsub : {ξ : Ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1 : ℝ)) (Y i ξ)}
+        ⊆ {ξ : Ξ | s < (∑ i, (A.indicator (fun _ => (1 : ℝ)) (Y i ξ) - q)) / (n : ℝ)} := by
       intro ξ hξ
       simp only [Set.mem_ofPred_eq] at hξ ⊢
       rw [hsum ξ, lt_div_iff₀ (by exact_mod_cast hn)]
-      nlinarith [show (0:ℝ) < n by exact_mod_cast hn]
+      nlinarith [show (0 : ℝ) < n by exact_mod_cast hn]
     refine le_trans (measure_mono hsub) (le_trans hbern (le_of_eq ?_))
     congr 2
     simp only [NNReal.toReal]
@@ -428,7 +428,7 @@ private theorem card_ge_add_card_lt {m : ℕ} (v : Fin m → ℝ) (c : ℝ) :
 open Finset in
 /-- The indicator sum of a lower half-line is the corresponding count. -/
 private theorem sum_indicator_lt_eq_card {m : ℕ} (v : Fin m → ℝ) (c : ℝ) :
-    ∑ i, ({x : ℝ | x < c}).indicator (fun _ => (1:ℝ)) (v i)
+    ∑ i, ({x : ℝ | x < c}).indicator (fun _ => (1 : ℝ)) (v i)
       = ((univ.filter fun j => v j < c).card : ℝ) := by
   rw [Finset.card_filter]
   push_cast
@@ -440,7 +440,7 @@ private theorem sum_indicator_lt_eq_card {m : ℕ} (v : Fin m → ℝ) (c : ℝ)
 open Finset in
 /-- The indicator sum of an upper half-line is the corresponding count. -/
 private theorem sum_indicator_gt_eq_card {m : ℕ} (v : Fin m → ℝ) (c : ℝ) :
-    ∑ i, ({x : ℝ | c < x}).indicator (fun _ => (1:ℝ)) (v i)
+    ∑ i, ({x : ℝ | c < x}).indicator (fun _ => (1 : ℝ)) (v i)
       = ((univ.filter fun j => c < v j).card : ℝ) := by
   rw [Finset.card_filter]
   push_cast
@@ -480,8 +480,8 @@ private theorem exp_exponent_le {r n : ℕ} {q t v : ℝ} (hqq : 0 < q * (1 - q)
     Real.exp (-(n : ℝ) * t ^ 2 / (2 * (q * (1 - q) + t / 3)))
       ≤ Real.exp (-(3 / 16) * r) := by
   refine Real.exp_le_exp.2 ?_
-  have hB : (0:ℝ) < 2 * (q * (1 - q) + t / 3) := by linarith
-  have hr0 : (0:ℝ) ≤ (3 / 16 : ℝ) * r * 2 := by positivity
+  have hB : (0 : ℝ) < 2 * (q * (1 - q) + t / 3) := by linarith
+  have hr0 : (0 : ℝ) ≤ (3 / 16 : ℝ) * r * 2 := by positivity
   have hmain : (3 / 16 : ℝ) * r ≤ (n : ℝ) * t ^ 2 / (2 * (q * (1 - q) + t / 3)) := by
     rw [le_div_iff₀ hB]
     nlinarith [mul_le_mul_of_nonneg_left hv hr0]
@@ -497,7 +497,7 @@ private theorem bracket_event_bound {n r : ℕ} {Y : Fin n → Ξ → ℝ} {A : 
     (hq : P.real A = q) (hq0 : 0 < q) (hq1 : q < 1) (hn : 0 < n) (ht : 0 < t)
     (hv : q * (1 - q) ≤ v)
     (hkey : (3 / 16 : ℝ) * r * (2 * (v + t / 3)) ≤ n * t ^ 2) :
-    μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+    μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(3 / 16) * r)) :=
   le_trans (count_upper_deviation hY_meas hY_indep hY_law hA hq hq0 hq1 hn ht)
     (ENNReal.ofReal_le_ofReal
@@ -565,121 +565,121 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
           quantile P (1 - 2 * r / n) ≤ orderStat (fun i => Y i ξ) b ∧
           orderStat (fun i => Y i ξ) b ≤ quantile P (1 - r / (2 * n))} := by
   have hn0 : 0 < n := by omega
-  have hN : (0:ℝ) < n := by exact_mod_cast hn0
-  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
-  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hN : (0 : ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r : ℝ) < (n : ℝ) := by exact_mod_cast hrn
   -- ### The four population levels, and the masses of the corresponding half-lines.
-  have hlo : (0:ℝ) < (r:ℝ) / (2 * n) := by positivity
-  have hlo2 : (0:ℝ) < 2 * (r:ℝ) / n := by positivity
-  have hhi : 2 * (r:ℝ) / n < 1 := by rw [div_lt_one hN]; linarith
-  have hhi2 : (r:ℝ) / (2 * n) < 1 := by rw [div_lt_one (by linarith)]; linarith
-  have hA1 : P.real {x : ℝ | x < quantile P ((r:ℝ) / (2 * n))} = (r:ℝ) / (2 * n) := by
+  have hlo : (0 : ℝ) < (r : ℝ) / (2 * n) := by positivity
+  have hlo2 : (0 : ℝ) < 2 * (r : ℝ) / n := by positivity
+  have hhi : 2 * (r : ℝ) / n < 1 := by rw [div_lt_one hN]; linarith
+  have hhi2 : (r : ℝ) / (2 * n) < 1 := by rw [div_lt_one (by linarith)]; linarith
+  have hA1 : P.real {x : ℝ | x < quantile P ((r : ℝ) / (2 * n))} = (r : ℝ) / (2 * n) := by
     rw [measureReal_lt_eq, measure_ge_quantile P hatom hlo hhi2]; ring
-  have hA2 : P.real {x : ℝ | quantile P (2 * (r:ℝ) / n) < x} = 1 - 2 * (r:ℝ) / n := by
+  have hA2 : P.real {x : ℝ | quantile P (2 * (r : ℝ) / n) < x} = 1 - 2 * (r : ℝ) / n := by
     rw [measureReal_gt_eq P hatom, measure_ge_quantile P hatom hlo2 hhi]
-  have hA3 : P.real {x : ℝ | x < quantile P (1 - 2 * (r:ℝ) / n)} = 1 - 2 * (r:ℝ) / n := by
+  have hA3 : P.real {x : ℝ | x < quantile P (1 - 2 * (r : ℝ) / n)} = 1 - 2 * (r : ℝ) / n := by
     rw [measureReal_lt_eq,
       measure_ge_quantile P hatom (by linarith) (by linarith)]
     ring
-  have hA4 : P.real {x : ℝ | quantile P (1 - (r:ℝ) / (2 * n)) < x} = (r:ℝ) / (2 * n) := by
+  have hA4 : P.real {x : ℝ | quantile P (1 - (r : ℝ) / (2 * n)) < x} = (r : ℝ) / (2 * n) := by
     rw [measureReal_gt_eq P hatom, measure_ge_quantile P hatom (by linarith) (by linarith)]
     ring
   -- ### The rate arithmetic: each bracket event is a Bernstein count deviation at `3/16`.
-  have hkeyA : (3 / 16 : ℝ) * r * (2 * ((r:ℝ) / (2 * n) + ((r:ℝ) / (2 * n)) / 3))
-      ≤ n * ((r:ℝ) / (2 * n)) ^ 2 := by
-    rw [show (3 / 16 : ℝ) * r * (2 * ((r:ℝ) / (2 * n) + ((r:ℝ) / (2 * n)) / 3))
-        = (r:ℝ) ^ 2 / (4 * n) by field_simp; ring,
-      show (n:ℝ) * ((r:ℝ) / (2 * n)) ^ 2 = (r:ℝ) ^ 2 / (4 * n) by field_simp; ring]
-  have hkeyB : (3 / 16 : ℝ) * r * (2 * (2 * (r:ℝ) / n + ((r:ℝ) / n) / 3))
-      ≤ n * ((r:ℝ) / n) ^ 2 := by
-    rw [show (3 / 16 : ℝ) * r * (2 * (2 * (r:ℝ) / n + ((r:ℝ) / n) / 3))
-        = 7 * (r:ℝ) ^ 2 / (8 * n) by field_simp; ring,
-      show (n:ℝ) * ((r:ℝ) / n) ^ 2 = (r:ℝ) ^ 2 / n by field_simp]
-    have hgap : (r:ℝ) ^ 2 / n - 7 * (r:ℝ) ^ 2 / (8 * n) = (r:ℝ) ^ 2 / (8 * n) := by
+  have hkeyA : (3 / 16 : ℝ) * r * (2 * ((r : ℝ) / (2 * n) + ((r : ℝ) / (2 * n)) / 3))
+      ≤ n * ((r : ℝ) / (2 * n)) ^ 2 := by
+    rw [show (3 / 16 : ℝ) * r * (2 * ((r : ℝ) / (2 * n) + ((r : ℝ) / (2 * n)) / 3))
+        = (r : ℝ) ^ 2 / (4 * n) by field_simp; ring,
+      show (n : ℝ) * ((r : ℝ) / (2 * n)) ^ 2 = (r : ℝ) ^ 2 / (4 * n) by field_simp; ring]
+  have hkeyB : (3 / 16 : ℝ) * r * (2 * (2 * (r : ℝ) / n + ((r : ℝ) / n) / 3))
+      ≤ n * ((r : ℝ) / n) ^ 2 := by
+    rw [show (3 / 16 : ℝ) * r * (2 * (2 * (r : ℝ) / n + ((r : ℝ) / n) / 3))
+        = 7 * (r : ℝ) ^ 2 / (8 * n) by field_simp; ring,
+      show (n : ℝ) * ((r : ℝ) / n) ^ 2 = (r : ℝ) ^ 2 / n by field_simp]
+    have hgap : (r : ℝ) ^ 2 / n - 7 * (r : ℝ) ^ 2 / (8 * n) = (r : ℝ) ^ 2 / (8 * n) := by
       field_simp; ring
-    have hpos : (0:ℝ) ≤ (r:ℝ) ^ 2 / (8 * n) := by positivity
+    have hpos : (0 : ℝ) ≤ (r : ℝ) ^ 2 / (8 * n) := by positivity
     linarith
   -- ### The four count events.
-  have hE1 : μprob {ξ | (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n ≤
-      ∑ i, ({x : ℝ | x < quantile P ((r:ℝ) / (2 * n))}).indicator (fun _ => (1:ℝ)) (Y i ξ)}
+  have hE1 : μprob {ξ | (r : ℝ) / (2 * n) * n + (r : ℝ) / (2 * n) * n ≤
+      ∑ i, ({x : ℝ | x < quantile P ((r : ℝ) / (2 * n))}).indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(3 / 16) * r)) :=
-    bracket_event_bound (v := (r:ℝ) / (2 * n)) hY_meas hY_indep hY_law measurableSet_Iio
+    bracket_event_bound (v := (r : ℝ) / (2 * n)) hY_meas hY_indep hY_law measurableSet_Iio
       hA1 hlo hhi2 hn0 hlo (by nlinarith) hkeyA
-  have hE2 : μprob {ξ | (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n ≤
-      ∑ i, ({x : ℝ | quantile P (2 * (r:ℝ) / n) < x}).indicator (fun _ => (1:ℝ)) (Y i ξ)}
+  have hE2 : μprob {ξ | (1 - 2 * (r : ℝ) / n) * n + (r : ℝ) / n * n ≤
+      ∑ i, ({x : ℝ | quantile P (2 * (r : ℝ) / n) < x}).indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(3 / 16) * r)) :=
-    bracket_event_bound (v := 2 * (r:ℝ) / n) hY_meas hY_indep hY_law measurableSet_Ioi
+    bracket_event_bound (v := 2 * (r : ℝ) / n) hY_meas hY_indep hY_law measurableSet_Ioi
       hA2 (by linarith) (by linarith) hn0 (by positivity) (by nlinarith) hkeyB
-  have hE3 : μprob {ξ | (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n ≤
-      ∑ i, ({x : ℝ | x < quantile P (1 - 2 * (r:ℝ) / n)}).indicator (fun _ => (1:ℝ)) (Y i ξ)}
+  have hE3 : μprob {ξ | (1 - 2 * (r : ℝ) / n) * n + (r : ℝ) / n * n ≤
+      ∑ i, ({x : ℝ | x < quantile P (1 - 2 * (r : ℝ) / n)}).indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(3 / 16) * r)) :=
-    bracket_event_bound (v := 2 * (r:ℝ) / n) hY_meas hY_indep hY_law measurableSet_Iio
+    bracket_event_bound (v := 2 * (r : ℝ) / n) hY_meas hY_indep hY_law measurableSet_Iio
       hA3 (by linarith) (by linarith) hn0 (by positivity) (by nlinarith) hkeyB
-  have hE4 : μprob {ξ | (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n ≤
-      ∑ i, ({x : ℝ | quantile P (1 - (r:ℝ) / (2 * n)) < x}).indicator (fun _ => (1:ℝ)) (Y i ξ)}
+  have hE4 : μprob {ξ | (r : ℝ) / (2 * n) * n + (r : ℝ) / (2 * n) * n ≤
+      ∑ i, ({x : ℝ | quantile P (1 - (r : ℝ) / (2 * n)) < x}).indicator (fun _ => (1 : ℝ)) (Y i ξ)}
       ≤ ENNReal.ofReal (Real.exp (-(3 / 16) * r)) :=
-    bracket_event_bound (v := (r:ℝ) / (2 * n)) hY_meas hY_indep hY_law measurableSet_Ioi
+    bracket_event_bound (v := (r : ℝ) / (2 * n)) hY_meas hY_indep hY_law measurableSet_Ioi
       hA4 hlo hhi2 hn0 hlo (by nlinarith) hkeyA
   -- ### A bracket fails only if one of the four counts deviates.
   refine one_sub_four_le_measureReal (Real.exp_pos _).le ?_ hE1 hE2 hE3 hE4
   intro ξ hξ
   simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_and_or] at hξ
   have hrn' : r ≤ n := by omega
-  have hcast : ((n - r : ℕ) : ℝ) = (n:ℝ) - r := by
+  have hcast : ((n - r : ℕ) : ℝ) = (n : ℝ) - r := by
     push_cast [Nat.cast_sub hrn']
     ring
   rcases hξ with h | h | h | h
   · refine Or.inl (Or.inl (Or.inl ?_))
-    have hc : ¬ (n - (a:ℕ) ≤ (Finset.univ.filter fun j =>
-        quantile P ((r:ℝ) / (2 * n)) ≤ Y j ξ).card) := fun hcc =>
+    have hc : ¬ (n - (a : ℕ) ≤ (Finset.univ.filter fun j =>
+        quantile P ((r : ℝ) / (2 * n)) ≤ Y j ξ).card) := fun hcc =>
       h (le_orderStat_of_card_le (fun i => Y i ξ) a _ hcc)
-    have hsplit := card_ge_add_card_lt (fun i => Y i ξ) (quantile P ((r:ℝ) / (2 * n)))
-    have haa : (a:ℕ) < n := a.isLt
+    have hsplit := card_ge_add_card_lt (fun i => Y i ξ) (quantile P ((r : ℝ) / (2 * n)))
+    have haa : (a : ℕ) < n := a.isLt
     have hcount : r ≤ (Finset.univ.filter fun j =>
-        Y j ξ < quantile P ((r:ℝ) / (2 * n))).card := by omega
-    have hcount' : (r:ℝ) ≤ ((Finset.univ.filter fun j =>
-        Y j ξ < quantile P ((r:ℝ) / (2 * n))).card : ℝ) := by exact_mod_cast hcount
-    have hval : (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n = (r:ℝ) := by field_simp; ring
+        Y j ξ < quantile P ((r : ℝ) / (2 * n))).card := by omega
+    have hcount' : (r : ℝ) ≤ ((Finset.univ.filter fun j =>
+        Y j ξ < quantile P ((r : ℝ) / (2 * n))).card : ℝ) := by exact_mod_cast hcount
+    have hval : (r : ℝ) / (2 * n) * n + (r : ℝ) / (2 * n) * n = (r : ℝ) := by field_simp; ring
     simp only [Set.mem_ofPred_eq, sum_indicator_lt_eq_card]
     linarith
   · refine Or.inl (Or.inl (Or.inr ?_))
-    have hc : ¬ ((a:ℕ) + 1 ≤ (Finset.univ.filter fun j =>
-        Y j ξ ≤ quantile P (2 * (r:ℝ) / n)).card) := fun hcc =>
+    have hc : ¬ ((a : ℕ) + 1 ≤ (Finset.univ.filter fun j =>
+        Y j ξ ≤ quantile P (2 * (r : ℝ) / n)).card) := fun hcc =>
       h (orderStat_le_of_card_le (fun i => Y i ξ) a _ hcc)
-    have hsplit := card_le_add_card_gt (fun i => Y i ξ) (quantile P (2 * (r:ℝ) / n))
+    have hsplit := card_le_add_card_gt (fun i => Y i ξ) (quantile P (2 * (r : ℝ) / n))
     have hcount : n - r ≤ (Finset.univ.filter fun j =>
-        quantile P (2 * (r:ℝ) / n) < Y j ξ).card := by omega
-    have hcount' : (n:ℝ) - r ≤ ((Finset.univ.filter fun j =>
-        quantile P (2 * (r:ℝ) / n) < Y j ξ).card : ℝ) := by
+        quantile P (2 * (r : ℝ) / n) < Y j ξ).card := by omega
+    have hcount' : (n : ℝ) - r ≤ ((Finset.univ.filter fun j =>
+        quantile P (2 * (r : ℝ) / n) < Y j ξ).card : ℝ) := by
       rw [← hcast]; exact_mod_cast hcount
-    have hval : (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n = (n:ℝ) - r := by field_simp; ring
+    have hval : (1 - 2 * (r : ℝ) / n) * n + (r : ℝ) / n * n = (n : ℝ) - r := by field_simp; ring
     simp only [Set.mem_ofPred_eq, sum_indicator_gt_eq_card]
     linarith
   · refine Or.inl (Or.inr ?_)
-    have hc : ¬ (n - (b:ℕ) ≤ (Finset.univ.filter fun j =>
-        quantile P (1 - 2 * (r:ℝ) / n) ≤ Y j ξ).card) := fun hcc =>
+    have hc : ¬ (n - (b : ℕ) ≤ (Finset.univ.filter fun j =>
+        quantile P (1 - 2 * (r : ℝ) / n) ≤ Y j ξ).card) := fun hcc =>
       h (le_orderStat_of_card_le (fun i => Y i ξ) b _ hcc)
-    have hsplit := card_ge_add_card_lt (fun i => Y i ξ) (quantile P (1 - 2 * (r:ℝ) / n))
-    have hbb : (b:ℕ) < n := b.isLt
+    have hsplit := card_ge_add_card_lt (fun i => Y i ξ) (quantile P (1 - 2 * (r : ℝ) / n))
+    have hbb : (b : ℕ) < n := b.isLt
     have hcount : n - r ≤ (Finset.univ.filter fun j =>
-        Y j ξ < quantile P (1 - 2 * (r:ℝ) / n)).card := by omega
-    have hcount' : (n:ℝ) - r ≤ ((Finset.univ.filter fun j =>
-        Y j ξ < quantile P (1 - 2 * (r:ℝ) / n)).card : ℝ) := by
+        Y j ξ < quantile P (1 - 2 * (r : ℝ) / n)).card := by omega
+    have hcount' : (n : ℝ) - r ≤ ((Finset.univ.filter fun j =>
+        Y j ξ < quantile P (1 - 2 * (r : ℝ) / n)).card : ℝ) := by
       rw [← hcast]; exact_mod_cast hcount
-    have hval : (1 - 2 * (r:ℝ) / n) * n + (r:ℝ) / n * n = (n:ℝ) - r := by field_simp; ring
+    have hval : (1 - 2 * (r : ℝ) / n) * n + (r : ℝ) / n * n = (n : ℝ) - r := by field_simp; ring
     simp only [Set.mem_ofPred_eq, sum_indicator_lt_eq_card]
     linarith
   · refine Or.inr ?_
-    have hc : ¬ ((b:ℕ) + 1 ≤ (Finset.univ.filter fun j =>
-        Y j ξ ≤ quantile P (1 - (r:ℝ) / (2 * n))).card) := fun hcc =>
+    have hc : ¬ ((b : ℕ) + 1 ≤ (Finset.univ.filter fun j =>
+        Y j ξ ≤ quantile P (1 - (r : ℝ) / (2 * n))).card) := fun hcc =>
       h (orderStat_le_of_card_le (fun i => Y i ξ) b _ hcc)
-    have hsplit := card_le_add_card_gt (fun i => Y i ξ) (quantile P (1 - (r:ℝ) / (2 * n)))
-    have hbb : (b:ℕ) < n := b.isLt
+    have hsplit := card_le_add_card_gt (fun i => Y i ξ) (quantile P (1 - (r : ℝ) / (2 * n)))
+    have hbb : (b : ℕ) < n := b.isLt
     have hcount : r ≤ (Finset.univ.filter fun j =>
-        quantile P (1 - (r:ℝ) / (2 * n)) < Y j ξ).card := by omega
-    have hcount' : (r:ℝ) ≤ ((Finset.univ.filter fun j =>
-        quantile P (1 - (r:ℝ) / (2 * n)) < Y j ξ).card : ℝ) := by exact_mod_cast hcount
-    have hval : (r:ℝ) / (2 * n) * n + (r:ℝ) / (2 * n) * n = (r:ℝ) := by field_simp; ring
+        quantile P (1 - (r : ℝ) / (2 * n)) < Y j ξ).card := by omega
+    have hcount' : (r : ℝ) ≤ ((Finset.univ.filter fun j =>
+        quantile P (1 - (r : ℝ) / (2 * n)) < Y j ξ).card : ℝ) := by exact_mod_cast hcount
+    have hval : (r : ℝ) / (2 * n) * n + (r : ℝ) / (2 * n) * n = (r : ℝ) := by field_simp; ring
     simp only [Set.mem_ofPred_eq, sum_indicator_gt_eq_card]
     linarith
 
@@ -732,11 +732,11 @@ private theorem tail_sq_le {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) 
   have hV0 : 0 ≤ ∫ x, max (f x) 0 ^ 2 ∂P := integral_nonneg fun x => sq_nonneg _
   have hmeasset : MeasurableSet {x : ℝ | 0 < f x} := hfm measurableSet_Ioi
   have hindint : Integrable
-      (fun x => ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x) P :=
-    (integrable_const (1:ℝ)).indicator hmeasset
-  have hindval : ∫ x, ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x ∂P
+      (fun x => ({x : ℝ | 0 < f x}).indicator (fun _ => (1 : ℝ)) x) P :=
+    (integrable_const (1 : ℝ)).indicator hmeasset
+  have hindval : ∫ x, ({x : ℝ | 0 < f x}).indicator (fun _ => (1 : ℝ)) x ∂P
       = P.real {x : ℝ | 0 < f x} := by
-    rw [integral_indicator_const (1:ℝ) hmeasset, smul_eq_mul, mul_one]
+    rw [integral_indicator_const (1 : ℝ) hmeasset, smul_eq_mul, mul_one]
   have hp0 : 0 ≤ P.real {x : ℝ | 0 < f x} := measureReal_nonneg
   -- ### Cauchy–Schwarz by the elementary `ab ≤ (λa² + b²/λ)/2`.
   have hlam : ∀ l : ℝ, 0 < l → ∫ x, max (f x) 0 ∂P
@@ -744,14 +744,14 @@ private theorem tail_sq_le {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) 
     intro l hl
     have hbound : ∫ x, max (f x) 0 ∂P
         ≤ ∫ x, (l / 2 * max (f x) 0 ^ 2
-            + 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x) ∂P := by
+            + 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1 : ℝ)) x) ∂P := by
       refine integral_mono hhint ((hVint.const_mul _).add (hindint.const_mul _))
         fun x => ?_
       rcases le_or_gt (f x) 0 with hx | hx
       · rw [max_eq_right hx]
-        have hind : (0:ℝ) ≤ ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x :=
+        have hind : (0 : ℝ) ≤ ({x : ℝ | 0 < f x}).indicator (fun _ => (1 : ℝ)) x :=
           Set.indicator_nonneg (fun _ _ => zero_le_one) x
-        have hpos : 0 ≤ 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x :=
+        have hpos : 0 ≤ 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1 : ℝ)) x :=
           mul_nonneg (by positivity) hind
         nlinarith [hpos]
       · rw [max_eq_left hx.le,
@@ -796,7 +796,7 @@ private theorem tail_sq_le {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) 
           ≤ P.real {x : ℝ | 0 < f x} * (∫ x, max (f x) 0 ^ 2 ∂P)
             / (2 * ∫ x, max (f x) 0 ∂P) := by linarith
       have h6 := mul_le_mul_of_nonneg_right h5
-        (show (0:ℝ) ≤ 2 * ∫ x, max (f x) 0 ∂P by linarith)
+        (show (0 : ℝ) ≤ 2 * ∫ x, max (f x) 0 ∂P by linarith)
       rw [show (∫ x, max (f x) 0 ∂P) / 2 * (2 * ∫ x, max (f x) 0 ∂P)
             = (∫ x, max (f x) 0 ∂P) ^ 2 by ring,
         show P.real {x : ℝ | 0 < f x} * (∫ x, max (f x) 0 ^ 2 ∂P)
@@ -883,14 +883,14 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
     (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (_hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
     |(∫ x, truncate α β x ∂P) - μ₀| ≤ Real.sqrt σ2 * Real.sqrt (4 * r / n) := by
   have hn0 : 0 < n := by omega
-  have hN : (0:ℝ) < n := by exact_mod_cast hn0
-  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
-  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hN : (0 : ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r : ℝ) < (n : ℝ) := by exact_mod_cast hrn
   have hL2' : MemLp (fun x : ℝ => x) 2 P := hL2
   have hσ0 : 0 ≤ σ2 := by rw [← hvar]; exact integral_nonneg fun x => sq_nonneg _
   -- ### The tail level `p = 2r/n < 1/2`.
-  have hp0 : (0:ℝ) < 2 * (r:ℝ) / n := by positivity
-  have hphalf : 2 * (r:ℝ) / n < 1 / 2 := by rw [div_lt_iff₀ hN]; linarith
+  have hp0 : (0 : ℝ) < 2 * (r : ℝ) / n := by positivity
+  have hphalf : 2 * (r : ℝ) / n < 1 / 2 := by rw [div_lt_iff₀ hN]; linarith
   -- ### `α ≤ β`, so the truncation interval is honest.
   have hab : α ≤ β :=
     le_trans hα₂ (le_trans (quantile_mono P hp0 (by linarith) (by linarith)) hβ₁)
@@ -905,14 +905,14 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
     intro x
     rcases le_or_gt x α with hx | hx
     · rw [truncate, min_eq_right (le_trans hx hab), max_eq_left hx,
-        max_eq_left (by linarith : (0:ℝ) ≤ α - x), max_eq_right (by linarith : x - β ≤ 0)]
+        max_eq_left (by linarith : (0 : ℝ) ≤ α - x), max_eq_right (by linarith : x - β ≤ 0)]
       ring
     · rcases le_or_gt x β with hx2 | hx2
       · rw [truncate, min_eq_right hx2, max_eq_right hx.le,
           max_eq_right (by linarith : α - x ≤ 0), max_eq_right (by linarith : x - β ≤ 0)]
         ring
       · rw [truncate, min_eq_left hx2.le, max_eq_right hab,
-          max_eq_right (by linarith : α - x ≤ 0), max_eq_left (by linarith : (0:ℝ) ≤ x - β)]
+          max_eq_right (by linarith : α - x ≤ 0), max_eq_left (by linarith : (0 : ℝ) ≤ x - β)]
         ring
   have hint : ∫ x, truncate α β x ∂P
       = μ₀ + (∫ x, max (α - x) 0 ∂P) - ∫ x, max (x - β) 0 ∂P := by
@@ -926,7 +926,7 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
     rw [e0, e1, e2, hmean]
   -- ### Each tail is at most `√σ² · √(p/(1−p))`.
   have hSβ : ∫ x, max (x - β) 0 ∂P
-      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n)) := by
+      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r : ℝ) / n) / (1 - 2 * (r : ℝ) / n)) := by
     refine tail_le_sqrt (m := μ₀ - β) (measurable_id.sub_const β)
       (hL2'.sub (memLp_const β)) ?_ ?_ ?_ hp0.le (by linarith) hσ0
     · rw [integral_sub hidint (integrable_const β), hmean, integral_const]
@@ -935,15 +935,15 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
             integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
         _ = σ2 := hvar
     · have hsub : {x : ℝ | 0 < x - β}
-          ⊆ {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := fun x hx => by
+          ⊆ {x : ℝ | quantile P (1 - 2 * (r : ℝ) / n) ≤ x} := fun x hx => by
         simp only [Set.mem_ofPred_eq] at hx ⊢
         linarith
       calc P.real {x : ℝ | 0 < x - β}
-          ≤ P.real {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := measureReal_mono hsub
-        _ = 2 * (r:ℝ) / n := by
+          ≤ P.real {x : ℝ | quantile P (1 - 2 * (r : ℝ) / n) ≤ x} := measureReal_mono hsub
+        _ = 2 * (r : ℝ) / n := by
             rw [measure_ge_quantile P hatom (by linarith) (by linarith)]; ring
   have hSα : ∫ x, max (α - x) 0 ∂P
-      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n)) := by
+      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r : ℝ) / n) / (1 - 2 * (r : ℝ) / n)) := by
     refine tail_le_sqrt (m := α - μ₀) (measurable_const.sub measurable_id)
       ((memLp_const α).sub hL2') ?_ ?_ ?_ hp0.le (by linarith) hσ0
     · rw [integral_sub (integrable_const α) hidint, hmean, integral_const]
@@ -951,24 +951,24 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
     · calc ∫ x, ((α - x) - (α - μ₀)) ^ 2 ∂P = ∫ x, (x - μ₀) ^ 2 ∂P :=
             integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
         _ = σ2 := hvar
-    · have hsub : {x : ℝ | 0 < α - x} ⊆ {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} :=
+    · have hsub : {x : ℝ | 0 < α - x} ⊆ {x : ℝ | x < quantile P (2 * (r : ℝ) / n)} :=
         fun x hx => by
           simp only [Set.mem_ofPred_eq] at hx ⊢
           linarith
       calc P.real {x : ℝ | 0 < α - x}
-          ≤ P.real {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} := measureReal_mono hsub
-        _ = 2 * (r:ℝ) / n := by
+          ≤ P.real {x : ℝ | x < quantile P (2 * (r : ℝ) / n)} := measureReal_mono hsub
+        _ = 2 * (r : ℝ) / n := by
             rw [measureReal_lt_eq, measure_ge_quantile P hatom hp0 (by linarith)]; ring
   -- ### A difference of two nonnegative terms is bounded by the larger of them.
   have hSα0 : 0 ≤ ∫ x, max (α - x) 0 ∂P := integral_nonneg fun x => le_max_right _ _
   have hSβ0 : 0 ≤ ∫ x, max (x - β) 0 ∂P := integral_nonneg fun x => le_max_right _ _
-  have hfinal : Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n))
-      ≤ Real.sqrt σ2 * Real.sqrt (4 * (r:ℝ) / n) := by
+  have hfinal : Real.sqrt σ2 * Real.sqrt ((2 * (r : ℝ) / n) / (1 - 2 * (r : ℝ) / n))
+      ≤ Real.sqrt σ2 * Real.sqrt (4 * (r : ℝ) / n) := by
     refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) (Real.sqrt_nonneg _)
-    have hu : (0:ℝ) < (r:ℝ) / n := by positivity
-    have hu2 : 2 * ((r:ℝ) / n) < 1 / 2 := by rw [← mul_div_assoc]; exact hphalf
-    rw [show 2 * (r:ℝ) / n = 2 * ((r:ℝ) / n) by ring,
-      show 4 * (r:ℝ) / n = 4 * ((r:ℝ) / n) by ring, div_le_iff₀ (by linarith)]
+    have hu : (0 : ℝ) < (r : ℝ) / n := by positivity
+    have hu2 : 2 * ((r : ℝ) / n) < 1 / 2 := by rw [← mul_div_assoc]; exact hphalf
+    rw [show 2 * (r : ℝ) / n = 2 * ((r : ℝ) / n) by ring,
+      show 4 * (r : ℝ) / n = 4 * ((r : ℝ) / n) by ring, div_le_iff₀ (by linarith)]
     nlinarith [hu, hu2]
   rw [hint]
   rw [abs_le]
@@ -992,13 +992,13 @@ theorem truncated_bias_le {μ₀ σ2 : ℝ} {r n : ℕ} {α β : ℝ}
     (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
     |(∫ x, truncate α β x ∂P) - μ₀| ≤ Real.sqrt σ2 * Real.sqrt (32 * r / n) := by
   refine le_trans (truncated_bias_le_sharp hL2 hmean hvar hatom hr1 hrn hα₁ hα₂ hβ₁ hβ₂) ?_
-  have hN : (0:ℝ) < n := by
+  have hN : (0 : ℝ) < n := by
     have : 0 < n := by omega
     exact_mod_cast this
   refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) (Real.sqrt_nonneg _)
-  have : (0:ℝ) ≤ (r:ℝ) / n := by positivity
-  rw [show 4 * (r:ℝ) / n = 4 * ((r:ℝ) / n) by ring,
-    show 32 * (r:ℝ) / n = 32 * ((r:ℝ) / n) by ring]
+  have : (0 : ℝ) ≤ (r : ℝ) / n := by positivity
+  rw [show 4 * (r : ℝ) / n = 4 * ((r : ℝ) / n) by ring,
+    show 32 * (r : ℝ) / n = 32 * ((r : ℝ) / n) by ring]
   linarith
 
 /-! ### Where the truncation levels sit, and how wide the truncated variable is
@@ -1048,13 +1048,13 @@ private theorem quantile_upper_le {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmea
       intro x hx
       simp only [Set.mem_ofPred_eq] at hx ⊢
       exact le_trans (by linarith) (le_abs_self (x - μ₀))
-    have hcheb := chebyshev_tail hL2 hmean hvar (show (0:ℝ) < M - μ₀ by linarith)
+    have hcheb := chebyshev_tail hL2 hmean hvar (show (0 : ℝ) < M - μ₀ by linarith)
     have hmono : P.real {x : ℝ | M ≤ x} ≤ P.real {x : ℝ | M - μ₀ ≤ |x - μ₀|} :=
       measureReal_mono hsub
     have hchain : p ≤ σ2 / (M - μ₀) ^ 2 := by linarith
     have hsq : (M - μ₀) ^ 2 ≤ σ2 / p := by
       rw [le_div_iff₀ hp, ← sub_nonneg]
-      rw [le_div_iff₀ (pow_pos (by linarith : (0:ℝ) < M - μ₀) 2)] at hchain
+      rw [le_div_iff₀ (pow_pos (by linarith : (0 : ℝ) < M - μ₀) 2)] at hchain
       linarith
     have : M - μ₀ ≤ Real.sqrt (σ2 / p) := by
       calc M - μ₀ = Real.sqrt ((M - μ₀) ^ 2) := (Real.sqrt_sq (by linarith)).symm
@@ -1170,12 +1170,12 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
             exact_mod_cast two_mul_three_pow_le_factorial hk
           have h3 : (B / 3) ^ (k - 2) = B ^ (k - 2) / 3 ^ (k - 2) := by
             rw [div_pow]
-          have hp3 : (0:ℝ) < (3:ℝ) ^ (k - 2) := by positivity
-          have hpB : (0:ℝ) < B ^ (k - 2) := by positivity
+          have hp3 : (0 : ℝ) < (3 : ℝ) ^ (k - 2) := by positivity
+          have hpB : (0 : ℝ) < B ^ (k - 2) := by positivity
           rw [h3, show v / 2 * (k.factorial : ℝ) * (B ^ (k - 2) / 3 ^ (k - 2))
               = (v * B ^ (k - 2)) * ((k.factorial : ℝ) / (2 * 3 ^ (k - 2))) by
             field_simp]
-          have hone : (1:ℝ) ≤ (k.factorial : ℝ) / (2 * 3 ^ (k - 2)) :=
+          have hone : (1 : ℝ) ≤ (k.factorial : ℝ) / (2 * 3 ^ (k - 2)) :=
             (one_le_div (by positivity)).mpr hfac
           nlinarith [mul_nonneg hv.le hpB.le, hone]
   have hbern := ConcentrationInequalities.bernstein_inequality
@@ -1193,7 +1193,7 @@ private theorem ledger_denominator {σ2 s q y z B v : ℝ}
     (hqy : q * y = z) (hz : z ≤ 5 / 8)
     (hB : B ≤ 2 * (s * q)) (_hB0 : 0 < B) (hv : v ≤ σ2) (hv0 : 0 < v) :
     2 * (v + B / 3 * (4 * s * y)) ≤ 16 * σ2 := by
-  have hsy : (0:ℝ) ≤ 4 * s * y := by positivity
+  have hsy : (0 : ℝ) ≤ 4 * s * y := by positivity
   have hσ0 : 0 < σ2 := by nlinarith
   have h1 : B / 3 * (4 * s * y) ≤ 2 * (s * q) / 3 * (4 * s * y) := by nlinarith
   have h2 : 2 * (s * q) / 3 * (4 * s * y) = 8 / 3 * σ2 * z := by rw [← hqy, ← hs]; ring
@@ -1259,9 +1259,9 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
         < |sampleMean (fun i => truncate α₀ β₀ (X i ξ)) - ∫ x, truncate α₀ β₀ x ∂P|}
       ≤ ENNReal.ofReal (δ / 2) := by
   have hn0 : 0 < n := by omega
-  have hN : (0:ℝ) < n := by exact_mod_cast hn0
-  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
-  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hN : (0 : ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r : ℝ) < (n : ℝ) := by exact_mod_cast hrn
   have hL : 0 < Real.log (8 / δ) := Real.log_pos (by rw [lt_div_iff₀ hδ]; linarith)
   have hs2 : Real.sqrt σ2 * Real.sqrt σ2 = σ2 := Real.mul_self_sqrt hσ.le
   have hspos : 0 < Real.sqrt σ2 := Real.sqrt_pos.2 hσ
@@ -1327,7 +1327,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
       intro i
       have hms : MeasurableSet
           {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0} :=
-        (hφm.sub measurable_const) (measurableSet_singleton (0:ℝ)).compl
+        (hφm.sub measurable_const) (measurableSet_singleton (0 : ℝ)).compl
       have : μprob ((X i) ⁻¹'
           {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0}) = 0 := by
         rw [← Measure.map_apply (hX_meas i) hms, hX_law i]
@@ -1359,7 +1359,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
           exact abs_nonpos_iff.1 h
         have hz2 : ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P = 0 := by
           have hcg : ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P
-              = ∫ _x : ℝ, (0:ℝ) ∂P :=
+              = ∫ _x : ℝ, (0 : ℝ) ∂P :=
             integral_congr_ae (Filter.Eventually.of_forall fun x => by
               change (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 = 0
               rw [hzero x]; ring)
@@ -1426,14 +1426,14 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
         exact integral_mono hdint hsqint hcontr
       nlinarith [sq_nonneg ((∫ y, truncate α₀ β₀ y ∂P) - truncate α₀ β₀ μ₀)]
     -- range `B ≤ 2σ√(2n/r)`
-    have hp : (0:ℝ) < (r:ℝ) / (2 * n) := by positivity
-    have hp1 : (r:ℝ) / (2 * n) < 1 := by rw [div_lt_one (by linarith)]; linarith
+    have hp : (0 : ℝ) < (r : ℝ) / (2 * n) := by positivity
+    have hp1 : (r : ℝ) / (2 * n) < 1 := by rw [div_lt_one (by linarith)]; linarith
     have hBle : β₀ - α₀ ≤ 2 * (Real.sqrt σ2 * Real.sqrt (2 * n / r)) := by
       have hup := quantile_upper_le (P := P) hL2 hmean hvar hσ hp hp1
       have hlo := le_quantile_lower (P := P) hL2 hmean hvar hσ hp hp1
-      have hsplit : Real.sqrt (σ2 / ((r:ℝ) / (2 * n)))
+      have hsplit : Real.sqrt (σ2 / ((r : ℝ) / (2 * n)))
           = Real.sqrt σ2 * Real.sqrt (2 * n / r) := by
-        rw [show σ2 / ((r:ℝ) / (2 * n)) = σ2 * (2 * n / r) by field_simp,
+        rw [show σ2 / ((r : ℝ) / (2 * n)) = σ2 * (2 * n / r) by field_simp,
           Real.sqrt_mul hσ.le]
       rw [hsplit] at hup hlo
       linarith
@@ -1442,24 +1442,24 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
         = Real.sqrt (3 / 8) :=
       sqrt_prod_ledger hN (by linarith) (by linarith)
     have hsq38 : Real.sqrt (3 / 8) ≤ 5 / 8 := by
-      rw [show (5:ℝ) / 8 = Real.sqrt ((5 / 8) ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+      rw [show (5 : ℝ) / 8 = Real.sqrt ((5 / 8) ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
       exact Real.sqrt_le_sqrt (by norm_num)
     have hden : 2 * ((∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
         + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)))
         ≤ 16 * σ2 :=
       ledger_denominator hs2 hspos (Real.sqrt_nonneg _) (Real.sqrt_nonneg _) hprod hsq38
         hBle hBpos hvσ hv
-    have hnum : (n:ℝ) * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) ^ 2
+    have hnum : (n : ℝ) * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) ^ 2
         = 16 * σ2 * Real.log (8 / δ) :=
       ledger_numerator hs2 (Real.mul_self_sqrt hLn.le) hN
-    have hDpos : (0:ℝ) < 2 * ((∫ x, (truncate α₀ β₀ x
+    have hDpos : (0 : ℝ) < 2 * ((∫ x, (truncate α₀ β₀ x
           - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
         + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n))) := by
-      have h1 : (0:ℝ) < (β₀ - α₀) / 3
+      have h1 : (0 : ℝ) < (β₀ - α₀) / 3
           * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) :=
         mul_pos (by linarith) htpos
       linarith
-    have hexpbd : Real.exp (-(n:ℝ)
+    have hexpbd : Real.exp (-(n : ℝ)
           * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) ^ 2
           / (2 * ((∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
               + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)))))
@@ -1522,7 +1522,7 @@ private theorem measurable_orderStat {m : ℕ} {W : Fin m → Ξ → ℝ}
     exact Measurable.ite (measurableSet_le (hW j) measurable_const) measurable_const
       measurable_const
   have hset : (fun ξ => orderStat (fun i => W i ξ) k) ⁻¹' Set.Iic t
-      = (fun ξ => (univ.filter fun j => W j ξ ≤ t).card) ⁻¹' {c : ℕ | (k:ℕ) + 1 ≤ c} := by
+      = (fun ξ => (univ.filter fun j => W j ξ ≤ t).card) ⁻¹' {c : ℕ | (k : ℕ) + 1 ≤ c} := by
     ext ξ
     simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
     constructor
@@ -1692,9 +1692,9 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
         < |trimmedMeanAt a b (fun i => Z (.inl i) ξ) (fun i => Z (.inr i) ξ) - μ₀|}
       ≤ δ := by
   have hn0 : 0 < n := by omega
-  have hN : (0:ℝ) < n := by exact_mod_cast hn0
-  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
-  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hN : (0 : ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r : ℝ) < (n : ℝ) := by exact_mod_cast hrn
   have hL : 0 < Real.log (8 / δ) := Real.log_pos (by rw [lt_div_iff₀ hδ]; linarith)
   have hLn : 0 < Real.log (8 / δ) / n := by positivity
   -- ### The two blocks: each is an i.i.d. `P`-sample.
@@ -1720,59 +1720,59 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
   have hob : Measurable (fun ξ => orderStat (fun i => Z (Sum.inr i) ξ) b) :=
     measurable_orderStat hYm b
   have hGmeas : MeasurableSet {ξ |
-      quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-      orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-      quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
-      orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r:ℝ) / (2 * n))} :=
+      quantile P ((r : ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
+      orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+      quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+      orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r : ℝ) / (2 * n))} :=
     (measurableSet_le measurable_const hoa).inter
       ((measurableSet_le hoa measurable_const).inter
         ((measurableSet_le measurable_const hob).inter
           (measurableSet_le hob measurable_const)))
   have hGc : μprob.real {ξ |
-      quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-      orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-      quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
-      orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r:ℝ) / (2 * n))}ᶜ
+      quantile P ((r : ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
+      orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+      quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+      orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r : ℝ) / (2 * n))}ᶜ
       ≤ δ / 2 := by
     rw [measureReal_compl hGmeas]
     simp only [probReal_univ]
     linarith
   -- ### The admissible level set, and the fixed-level concentration on it.
   have hGoodMeas : MeasurableSet {p : ℝ × ℝ |
-      quantile P ((r:ℝ) / (2 * n)) ≤ p.1 ∧ p.1 ≤ quantile P (2 * (r:ℝ) / n) ∧
-      quantile P (1 - 2 * (r:ℝ) / n) ≤ p.2 ∧ p.2 ≤ quantile P (1 - (r:ℝ) / (2 * n))} :=
+      quantile P ((r : ℝ) / (2 * n)) ≤ p.1 ∧ p.1 ≤ quantile P (2 * (r : ℝ) / n) ∧
+      quantile P (1 - 2 * (r : ℝ) / n) ≤ p.2 ∧ p.2 ≤ quantile P (1 - (r : ℝ) / (2 * n))} :=
     (measurableSet_le measurable_const measurable_fst).inter
       ((measurableSet_le measurable_fst measurable_const).inter
         ((measurableSet_le measurable_const measurable_snd).inter
           (measurableSet_le measurable_snd measurable_const)))
-  have hp0 : (0:ℝ) < 2 * (r:ℝ) / n := by positivity
-  have hp1 : 2 * (r:ℝ) / n < 1 := by rw [div_lt_one hN]; linarith
-  have hb5 : Real.sqrt σ2 * Real.sqrt (4 * (r:ℝ) / n)
+  have hp0 : (0 : ℝ) < 2 * (r : ℝ) / n := by positivity
+  have hp1 : 2 * (r : ℝ) / n < 1 := by rw [div_lt_one hN]; linarith
+  have hb5 : Real.sqrt σ2 * Real.sqrt (4 * (r : ℝ) / n)
       ≤ 5 * (Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) := by
-    have h25 : Real.sqrt (4 * (r:ℝ) / n) ≤ 5 * Real.sqrt (Real.log (8 / δ) / n) := by
-      rw [show (5:ℝ) * Real.sqrt (Real.log (8 / δ) / n)
+    have h25 : Real.sqrt (4 * (r : ℝ) / n) ≤ 5 * Real.sqrt (Real.log (8 / δ) / n) := by
+      rw [show (5 : ℝ) * Real.sqrt (Real.log (8 / δ) / n)
           = Real.sqrt (25 * (Real.log (8 / δ) / n)) by
         rw [Real.sqrt_mul (by norm_num),
           show Real.sqrt 25 = 5 by
-            rw [show (25:ℝ) = 5 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]]
+            rw [show (25 : ℝ) = 5 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]]
       refine Real.sqrt_le_sqrt ?_
-      have hgap : 25 * (Real.log (8 / δ) / n) - 4 * (r:ℝ) / n
-          = (25 * Real.log (8 / δ) - 4 * (r:ℝ)) / n := by ring
-      have hnn : 0 ≤ (25 * Real.log (8 / δ) - 4 * (r:ℝ)) / n := by
+      have hgap : 25 * (Real.log (8 / δ) / n) - 4 * (r : ℝ) / n
+          = (25 * Real.log (8 / δ) - 4 * (r : ℝ)) / n := by ring
+      have hnn : 0 ≤ (25 * Real.log (8 / δ) - 4 * (r : ℝ)) / n := by
         refine div_nonneg ?_ hN.le
         rw [hr]; linarith
       linarith
-    nlinarith [Real.sqrt_nonneg σ2, Real.sqrt_nonneg (4 * (r:ℝ) / n)]
+    nlinarith [Real.sqrt_nonneg σ2, Real.sqrt_nonneg (4 * (r : ℝ) / n)]
   -- ### The fixed-level deviation bound: bias + Bernstein, at deterministic levels.
   have hfixed : ∀ α₀ β₀ : ℝ,
-      (quantile P ((r:ℝ) / (2 * n)) ≤ α₀ ∧ α₀ ≤ quantile P (2 * (r:ℝ) / n) ∧
-        quantile P (1 - 2 * (r:ℝ) / n) ≤ β₀ ∧ β₀ ≤ quantile P (1 - (r:ℝ) / (2 * n))) →
+      (quantile P ((r : ℝ) / (2 * n)) ≤ α₀ ∧ α₀ ≤ quantile P (2 * (r : ℝ) / n) ∧
+        quantile P (1 - 2 * (r : ℝ) / n) ≤ β₀ ∧ β₀ ≤ quantile P (1 - (r : ℝ) / (2 * n))) →
       μprob {ξ | 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
           < |sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)) - μ₀|}
         ≤ ENNReal.ofReal (δ / 2) := by
     intro α₀ β₀ hgood
-    have hhalf : 2 * (r:ℝ) / n ≤ 1 - 2 * (r:ℝ) / n := by
-      rw [le_sub_iff_add_le, show 2 * (r:ℝ) / n + 2 * (r:ℝ) / n = 4 * (r:ℝ) / n by ring,
+    have hhalf : 2 * (r : ℝ) / n ≤ 1 - 2 * (r : ℝ) / n := by
+      rw [le_sub_iff_add_le, show 2 * (r : ℝ) / n + 2 * (r : ℝ) / n = 4 * (r : ℝ) / n by ring,
         div_le_one hN]
       linarith
     have hab : α₀ ≤ β₀ :=
@@ -1797,32 +1797,32 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
       {ξ | 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
         < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ) - μ₀|}
       ⊆ {ξ |
-        quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-        orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-        quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
-        orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r:ℝ) / (2 * n))}ᶜ
-        ∪ {ξ | (quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-              orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-              quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+        quantile P ((r : ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
+        orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+        quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+        orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r : ℝ) / (2 * n))}ᶜ
+        ∪ {ξ | (quantile P ((r : ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
+              orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+              quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
               orderStat (fun i => Z (Sum.inr i) ξ) b
-                ≤ quantile P (1 - (r:ℝ) / (2 * n))) ∧
+                ≤ quantile P (1 - (r : ℝ) / (2 * n))) ∧
             9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
               < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ)
                 - μ₀|} from ?_))
     (measureReal_union_le _ _)) ?_
   · intro ξ hξ
-    by_cases hg : quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-        orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-        quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
-        orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r:ℝ) / (2 * n))
+    by_cases hg : quantile P ((r : ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
+        orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+        quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+        orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r : ℝ) / (2 * n))
     · exact Or.inr ⟨hg, hξ⟩
     · exact Or.inl hg
-  · have hDreal : μprob.real {ξ | (quantile P ((r:ℝ) / (2 * n))
+  · have hDreal : μprob.real {ξ | (quantile P ((r : ℝ) / (2 * n))
               ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
-            orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
-            quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
+            orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r : ℝ) / n) ∧
+            quantile P (1 - 2 * (r : ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
             orderStat (fun i => Z (Sum.inr i) ξ) b
-              ≤ quantile P (1 - (r:ℝ) / (2 * n))) ∧
+              ≤ quantile P (1 - (r : ℝ) / (2 * n))) ∧
           9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
             < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ)
               - μ₀|} ≤ δ / 2 := by

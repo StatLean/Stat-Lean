@@ -220,7 +220,7 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
   classical
   set M : ℝ := (eLpNorm m 2 P).toReal with hMdef
   have hMnn : 0 ≤ M := ENNReal.toReal_nonneg
-  have hs_pos : 0 < s := lt_of_le_of_lt (by positivity : (0:ℝ) ≤ 2 * ε * M) hs
+  have hs_pos : 0 < s := lt_of_le_of_lt (by positivity : (0 : ℝ) ≤ 2 * ε * M) hs
   -- The per-center bracket `[ψ c j − ε|m|, ψ c j + ε|m|]` is an `s`-bracket.
   have hbracket : ∀ c ∈ Θ, ∀ j : Fin k,
       IsEpsBracket s (fun x => ψ c j x - ε * ‖m x‖) (fun x => ψ c j x + ε * ‖m x‖) 2 P := by
@@ -400,7 +400,8 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
   rw [bracketingEntropyIntegral_eq_setLIntegral]
   apply lt_of_le_of_lt (setLIntegral_mono' measurableSet_Ioc hdom)
   have hsplit : (∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (B * s ^ (-(1/2) : ℝ)) ∂volume)
-      = ENNReal.ofReal B * ∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (s ^ (-(1/2) : ℝ)) ∂volume := by
+      = ENNReal.ofReal B * ∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal
+          (s ^ (-(1/2) : ℝ)) ∂volume := by
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine setLIntegral_congr_fun measurableSet_Ioc (fun s hs => ?_)
     rw [← ENNReal.ofReal_mul hB0]

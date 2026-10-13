@@ -64,8 +64,8 @@ J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022, �
 Expansions), where **Cramér's condition** is assumption (13.30) of Theorem 13.3.1 (p. 624) and
 its multivariate analogue is the hypothesis of the studentized expansion (p. 627, referred there
 to Hall, *The Bootstrap and Edgeworth Expansion*, 1992, Chapter 2); Lehmann–Romano assume the
-condition rather than verify it. The classical single-function statement is the Riemann–Lebesgue lemma;
-the use of a Cramér condition to control characteristic functions away from the origin goes
+condition rather than verify it. The classical single-function statement is the Riemann–Lebesgue
+lemma; the use of a Cramér condition to control characteristic functions away from the origin goes
 back to H. Cramér, *Random Variables and Probability Distributions*, Cambridge University
 Press, 1937, §10.
 -/

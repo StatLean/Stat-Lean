@@ -236,7 +236,7 @@ theorem sum_window_le_two_mul_dudleyIntegral {T : Set E}
       change MeasureTheory.volume.real (Set.Ioc _ _) = _
       rw [MeasureTheory.Measure.real, Real.volume_Ioc,
         ENNReal.toReal_ofReal
-          (by rw [hkey k]; have := show (0:ℝ) < (2:ℝ) ^ (-(k + 1)) from by positivity;
+          (by rw [hkey k]; have := show (0 : ℝ) < (2 : ℝ) ^ (-(k + 1)) from by positivity;
               linarith)]
       rw [hkey k]; ring
     rw [hvol] at hge

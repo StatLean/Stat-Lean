@@ -1019,7 +1019,7 @@ private lemma score_truth_sum_bddAbove_in_prob
         ∫ X : Fin n → Ω, (∑ i : Fin n, score_truth (X i))
           ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
       rw [MeasureTheory.integral_finsetSum (Finset.univ : Finset (Fin n))
-            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1:ℝ≥0∞) ≤ 2))]
+            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2))]
       apply Finset.sum_eq_zero
       intro i _
       exact h_int_truth_pi i
@@ -1511,8 +1511,8 @@ private lemma step5_sqrt_n_consistency
                   = ENNReal.ofReal (ε / 4 + ε / 4) :=
         (ENNReal.ofReal_add hε4_nn hε4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ ε/4 + ε/4)
-            (by linarith : (0:ℝ) ≤ ε/4 + ε/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ ε/4 + ε/4)
+            (by linarith : (0 : ℝ) ≤ ε/4 + ε/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h4 hS_apply) (add_le_add h3 hse)) ?_
@@ -1780,8 +1780,8 @@ private lemma step6_residual_oP
                   = ENNReal.ofReal (η / 4 + η / 4) :=
         (ENNReal.ofReal_add hη4_nn hη4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ η/4 + η/4)
-            (by linarith : (0:ℝ) ≤ η/4 + η/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η/4 + η/4)
+            (by linarith : (0 : ℝ) ≤ η/4 + η/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h_M_le h4) (add_le_add h3 hse)) ?_

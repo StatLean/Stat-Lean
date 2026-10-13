@@ -264,7 +264,7 @@ private lemma _pl_anderson_pi_general
       (hρ_meas.indicator hA_plus_meas)
       (hρ_meas.indicator hA_minus_meas)
       (hρ_meas.indicator hK_meas)
-      (by norm_num : (0:ℝ) < 1/2) (by norm_num : (1/2:ℝ) < 1) ?_
+      (by norm_num : (0 : ℝ) < 1/2) (by norm_num : (1/2 : ℝ) < 1) ?_
     intro u v
     simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num]
     by_cases hu : u ∈ A_plus
@@ -272,27 +272,27 @@ private lemma _pl_anderson_pi_general
       · have h_mid : (1/2 : ℝ) • u + (1/2 : ℝ) • v ∈ K := h_mean u hu v hv
         rw [Set.indicator_of_mem hu, Set.indicator_of_mem hv,
             Set.indicator_of_mem h_mid]
-        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1:ℝ)/2)
-             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1:ℝ)/2)
+        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1 : ℝ)/2)
+             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1 : ℝ)/2)
              ≤ ∏ i, gaussianPDF 0 1 (((1/2 : ℝ) • u + (1/2 : ℝ) • v) i)
-        have h_per_i : ∀ i : ι, ((1/2:ℝ) • u + (1/2:ℝ) • v) i = (u i + v i) / 2 := by
+        have h_per_i : ∀ i : ι, ((1/2 : ℝ) • u + (1/2 : ℝ) • v) i = (u i + v i) / 2 := by
           intro i; simp [Pi.smul_apply, Pi.add_apply]; ring
         simp only [h_per_i]
         exact gaussianPDF_pi_geom_mean_le u v
       · rw [Set.indicator_of_notMem hv,
-            ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2), mul_zero]
+            ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2), mul_zero]
         exact zero_le
     · rw [Set.indicator_of_notMem hu,
-          ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2), zero_mul]
+          ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2), zero_mul]
       exact zero_le
   simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num] at h_PL
   rw [← h_ν_set A_plus hA_plus_meas, ← h_ν_set A_minus hA_minus_meas,
       ← h_ν_set K hK_meas] at h_PL
   rw [h_symm] at h_PL
-  have h_sq : ν A_plus ^ ((1:ℝ)/2) * ν A_plus ^ ((1:ℝ)/2) = ν A_plus := by
-    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ 1/2)
-        (by norm_num : (0:ℝ) ≤ 1/2),
-        show ((1:ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
+  have h_sq : ν A_plus ^ ((1 : ℝ)/2) * ν A_plus ^ ((1 : ℝ)/2) = ν A_plus := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 1/2)
+        (by norm_num : (0 : ℝ) ≤ 1/2),
+        show ((1 : ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
   rw [h_sq] at h_PL
   exact h_PL
 
@@ -355,7 +355,7 @@ theorem anderson_lemma_set_pi
       (hρ_meas.indicator hA_plus_meas)
       (hρ_meas.indicator hA_minus_meas)
       (hρ_meas.indicator hC_meas)
-      (by norm_num : (0:ℝ) < 1/2) (by norm_num : (1/2:ℝ) < 1) ?_
+      (by norm_num : (0 : ℝ) < 1/2) (by norm_num : (1/2 : ℝ) < 1) ?_
     intro u v
     -- Normalise `1 - 1/2 = 1/2` so downstream rewrites match.
     have h_one_minus_half : (1 : ℝ) - 1/2 = 1/2 := by norm_num
@@ -378,18 +378,18 @@ theorem anderson_lemma_set_pi
         rw [Set.indicator_of_mem hu, Set.indicator_of_mem hv,
             Set.indicator_of_mem h_mid_in_C]
         -- Reduce to Pi log-concave at half power.
-        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1:ℝ)/2)
-             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1:ℝ)/2)
+        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1 : ℝ)/2)
+             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1 : ℝ)/2)
              ≤ ∏ i, gaussianPDF 0 1 (((1/2 : ℝ) • u + (1/2 : ℝ) • v) i)
         -- Convert the midpoint per-coord to `(u i + v i) / 2`.
-        have h_per_i : ∀ i : ι, ((1/2:ℝ) • u + (1/2:ℝ) • v) i = (u i + v i) / 2 := by
+        have h_per_i : ∀ i : ι, ((1/2 : ℝ) • u + (1/2 : ℝ) • v) i = (u i + v i) / 2 := by
           intro i; simp [Pi.smul_apply, Pi.add_apply]; ring
         simp only [h_per_i]
         exact gaussianPDF_pi_geom_mean_le u v
-      · rw [Set.indicator_of_notMem hv, ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
+      · rw [Set.indicator_of_notMem hv, ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2),
             mul_zero]
         exact zero_le
-    · rw [Set.indicator_of_notMem hu, ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
+    · rw [Set.indicator_of_notMem hu, ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2),
           zero_mul]
       exact zero_le
   -- Normalise `1 - 1/2 = 1/2` in `h_PL`.
@@ -427,10 +427,10 @@ theorem anderson_lemma_set_pi
       exact h_neg_in
   rw [h_symm] at h_PL
   -- ν(A_plus)^{1/2} * ν(A_plus)^{1/2} = ν(A_plus).
-  have h_sq : ν A_plus ^ ((1:ℝ)/2) * ν A_plus ^ ((1:ℝ)/2) = ν A_plus := by
-    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ 1/2)
-        (by norm_num : (0:ℝ) ≤ 1/2),
-        show ((1:ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
+  have h_sq : ν A_plus ^ ((1 : ℝ)/2) * ν A_plus ^ ((1 : ℝ)/2) = ν A_plus := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 1/2)
+        (by norm_num : (0 : ℝ) ≤ 1/2),
+        show ((1 : ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
   rw [h_sq] at h_PL
   exact h_PL
 
@@ -480,7 +480,7 @@ theorem anderson_lemma_image_pi
       (hρ_meas.indicator hA_plus_meas)
       (hρ_meas.indicator hA_minus_meas)
       (hρ_meas.indicator hA_target_meas)
-      (by norm_num : (0:ℝ) < 1/2) (by norm_num : (1/2:ℝ) < 1) ?_
+      (by norm_num : (0 : ℝ) < 1/2) (by norm_num : (1/2 : ℝ) < 1) ?_
     intro u v
     have h_one_minus_half : (1 : ℝ) - 1/2 = 1/2 := by norm_num
     simp only [h_one_minus_half]
@@ -498,19 +498,19 @@ theorem anderson_lemma_image_pi
           exact hC_conv hu' hv' (by norm_num) (by norm_num) (by norm_num)
         rw [Set.indicator_of_mem hu, Set.indicator_of_mem hv,
             Set.indicator_of_mem h_mid_in_A_target]
-        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1:ℝ)/2)
-             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1:ℝ)/2)
+        change (∏ i, gaussianPDF 0 1 (u i)) ^ ((1 : ℝ)/2)
+             * (∏ i, gaussianPDF 0 1 (v i)) ^ ((1 : ℝ)/2)
              ≤ ∏ i, gaussianPDF 0 1 (((1/2 : ℝ) • u + (1/2 : ℝ) • v) i)
-        have h_per_i : ∀ i : ι, ((1/2:ℝ) • u + (1/2:ℝ) • v) i = (u i + v i) / 2 := by
+        have h_per_i : ∀ i : ι, ((1/2 : ℝ) • u + (1/2 : ℝ) • v) i = (u i + v i) / 2 := by
           intro i; simp [Pi.smul_apply, Pi.add_apply]; ring
         simp only [h_per_i]
         exact gaussianPDF_pi_geom_mean_le u v
       · rw [Set.indicator_of_notMem hv,
-            ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
+            ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2),
             mul_zero]
         exact zero_le
     · rw [Set.indicator_of_notMem hu,
-          ENNReal.zero_rpow_of_pos (by norm_num : (0:ℝ) < 1/2),
+          ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1/2),
           zero_mul]
       exact zero_le
   simp only [show (1 : ℝ) - 1/2 = 1/2 from by norm_num] at h_PL
@@ -542,10 +542,10 @@ theorem anderson_lemma_image_pi
       rw [show L (-u) - y = -(L u + y) from by rw [map_neg]; abel]
       exact h_neg_in
   rw [h_symm] at h_PL
-  have h_sq : ν A_plus ^ ((1:ℝ)/2) * ν A_plus ^ ((1:ℝ)/2) = ν A_plus := by
-    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ 1/2)
-        (by norm_num : (0:ℝ) ≤ 1/2),
-        show ((1:ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
+  have h_sq : ν A_plus ^ ((1 : ℝ)/2) * ν A_plus ^ ((1 : ℝ)/2) = ν A_plus := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 1/2)
+        (by norm_num : (0 : ℝ) ≤ 1/2),
+        show ((1 : ℝ)/2 + 1/2) = 1 from by norm_num, ENNReal.rpow_one]
   rw [h_sq] at h_PL
   exact h_PL
 
@@ -768,11 +768,11 @@ theorem anderson_lemma_set
       -- Mean condition: `Φ((1/2)u + (1/2)v) = (1/2)Φu + (1/2)Φv ∈ C` by convexity
       -- of `C` (using `Φu + y, Φv - y ∈ C`).
       have h_mean : ∀ u ∈ A_plus, ∀ v ∈ A_minus,
-          ((1/2:ℝ) • u + (1/2:ℝ) • v) ∈ K := by
+          ((1/2 : ℝ) • u + (1/2 : ℝ) • v) ∈ K := by
         intro u hu v hv
         have hu' : Φ u + y ∈ C := hu
         have hv' : Φ v - y ∈ C := hv
-        change Φ ((1/2:ℝ) • u + (1/2:ℝ) • v) ∈ C
+        change Φ ((1/2 : ℝ) • u + (1/2 : ℝ) • v) ∈ C
         rw [hΦ_add, hΦ_smul, hΦ_smul]
         have h_combine : (1/2 : ℝ) • Φ u + (1/2 : ℝ) • Φ v
             = (1/2 : ℝ) • (Φ u + y) + (1/2 : ℝ) • (Φ v - y) := by
@@ -796,7 +796,7 @@ theorem anderson_lemma_set
         congr 1
         ext u
         have hΦ_neg : Φ (-u) = -Φ u := by
-          rw [show (-u : ι → ℝ) = (-1:ℝ) • u from by simp]
+          rw [show (-u : ι → ℝ) = (-1 : ℝ) • u from by simp]
           rw [hΦ_smul]; simp
         constructor
         · intro hu

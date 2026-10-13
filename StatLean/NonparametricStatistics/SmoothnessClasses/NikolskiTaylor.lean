@@ -187,13 +187,13 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
       have habs : |I x| ≤ ∫ τ in (0 : ℝ)..1, |(1 - τ) ^ (ℓ - 1) * Δ τ x| := by
         rw [hIdef]
         simpa [Real.norm_eq_abs] using
-          intervalIntegral.norm_integral_le_integral_norm (a := (0:ℝ)) (b := 1)
+          intervalIntegral.norm_integral_le_integral_norm (a := (0 : ℝ)) (b := 1)
             (μ := volume) (f := fun τ => (1 - τ) ^ (ℓ - 1) * Δ τ x) (by norm_num)
       have hnn : 0 ≤ ∫ τ in (0 : ℝ)..1, |(1 - τ) ^ (ℓ - 1) * Δ τ x| :=
         le_trans (abs_nonneg _) habs
       have hbridge : ENNReal.ofReal (∫ τ in (0 : ℝ)..1, |(1 - τ) ^ (ℓ - 1) * Δ τ x|)
           = ∫⁻ τ in Set.Icc (0 : ℝ) 1, g τ x := by
-        rw [intervalIntegral.integral_of_le (by norm_num : (0:ℝ) ≤ 1),
+        rw [intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1),
           ← MeasureTheory.integral_Icc_eq_integral_Ioc]
         rw [MeasureTheory.ofReal_integral_eq_lintegral_ofReal
           ((hτcont x).abs.integrableOn_Icc)
@@ -281,7 +281,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
     have hcontpow : Continuous fun τ : ℝ => (1 - τ) ^ (ℓ - 1) := by fun_prop
     have hIicc : (∫⁻ τ in Set.Icc (0 : ℝ) 1, ENNReal.ofReal ((1 - τ) ^ (ℓ - 1)))
         = ENNReal.ofReal (1 / (ℓ : ℝ)) := by
-      rw [← hI1, intervalIntegral.integral_of_le (by norm_num : (0:ℝ) ≤ 1),
+      rw [← hI1, intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1),
         ← MeasureTheory.integral_Icc_eq_integral_Ioc,
         MeasureTheory.ofReal_integral_eq_lintegral_ofReal hcontpow.integrableOn_Icc hnnae]
     -- Assemble.
@@ -323,7 +323,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
     have hAle : A ≤ (ENNReal.ofReal (L * |t| ^ (β - (ℓ : ℝ)))
         * ENNReal.ofReal (1 / (ℓ : ℝ))) ^ 2 := by
       have hAeq : A = (A ^ (1 / 2 : ℝ)) ^ 2 := by
-        rw [← ENNReal.rpow_natCast (A ^ (1/2:ℝ)) 2, ← ENNReal.rpow_mul]
+        rw [← ENNReal.rpow_natCast (A ^ (1/2 : ℝ)) 2, ← ENNReal.rpow_mul]
         norm_num
       rw [hAeq]; gcongr
     -- Assemble constants.
@@ -331,7 +331,7 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
     refine le_trans (mul_le_mul' (le_refl (ENNReal.ofReal (c ^ 2)))
       (le_trans hIA hAle)) ?_
     -- Reduce to a real identity: collapse the LHS product into one `ofReal`.
-    rw [← ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ L * |t| ^ (β - (ℓ:ℝ))),
+    rw [← ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ L * |t| ^ (β - (ℓ : ℝ))),
       ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_mul (sq_nonneg _)]
     apply ENNReal.ofReal_le_ofReal
     rw [le_iff_eq_or_lt]; left
@@ -350,6 +350,6 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
     have hℓne : (ℓ : ℝ) ≠ 0 := ne_of_gt hℓpos'
     rw [hcval, hfact]
     field_simp
-    nlinarith [hkeyid, sq_nonneg (t ^ ℓ), sq_nonneg (|t| ^ (β - (ℓ:ℝ)))]
+    nlinarith [hkeyid, sq_nonneg (t ^ ℓ), sq_nonneg (|t| ^ (β - (ℓ : ℝ)))]
 
 end StatLean.NonparametricStatistics

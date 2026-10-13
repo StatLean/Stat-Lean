@@ -734,7 +734,7 @@ theorem discrete_dudley_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : 
       -- `√(log(2·card CP)) ≤ √3·sqrtLogCov`
       have hstep : Real.sqrt (Real.log (2 * ((CP j).card : ℝ)))
           ≤ Real.sqrt 3 * sqrtLogCov T (ε (m + j + 1)) := by
-        rw [hslc, ← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 3)]
+        rw [hslc, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 3)]
         apply Real.sqrt_le_sqrt
         -- log(2·card) ≤ log(2 M²) ≤ log(M³) = 3 log M
         have hcard_le : (2 : ℝ) * ((CP j).card : ℝ) ≤ M ^ 3 := by

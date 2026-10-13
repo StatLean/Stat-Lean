@@ -1484,7 +1484,8 @@ private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
     have : cs n * ‖z‖ ≤ cs n * (r + 1) :=
       mul_le_mul_of_nonneg_left hcon.le (hcs0 n)
     linarith
-  have hbd := (measureReal_mono (μ := μ n) hsub (measure_ne_top _ _)).trans (hlow (μ n) inferInstance)
+  have hbd := (measureReal_mono (μ := μ n) hsub (measure_ne_top _ _)).trans
+      (hlow (μ n) inferInstance)
   rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
   linarith
 

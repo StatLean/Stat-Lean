@@ -31,15 +31,15 @@ analogue of I. Castillo and A. W. van der Vaart, "Needles and straw in a haystac
 concentration for possibly sparse sequences," *Ann. Statist.* 40 (2012), 2069–2101, Lemma 5.2.
 
 **Proof formalization notes.** `aveShift` is a genuine `EuclideanSpace ℝ ι`-valued Bochner set
-average `⨍`; its norm bound is `norm_setAverage_le`-style (each `θ − θ*` has norm `≤ r` on the ball).
-The Jensen step uses `ConvexOn.map_average_le` with `Real.convexOn_exp` on the normalized restricted
-prior `(Π B)⁻¹ • Π.restrict B` (the integrand `⟪θ − θ*, y − θ*⟫ − ‖θ − θ*‖²/2` is bounded on the
-ball, so it is integrable). The tail step reduces to the 1-dimensional Gaussian
+average `⨍`; its norm bound is `norm_setAverage_le`-style (each `θ − θ*` has norm `≤ r` on the
+ball). The Jensen step uses `ConvexOn.map_average_le` with `Real.convexOn_exp` on the normalized
+restricted prior `(Π B)⁻¹ • Π.restrict B` (the integrand `⟪θ − θ*, y − θ*⟫ − ‖θ − θ*‖²/2` is bounded
+on the ball, so it is integrable). The tail step reduces to the 1-dimensional Gaussian
 `stdGaussianShift_inner_ge_le` (from `ForMathlib.GaussianShift`) applied to the direction
 `c = aveShift` with variance `‖aveShift‖² ≤ r²`. Edge cases: `Π(B) = 0` collapses the target event
-to `∅`; `aveShift = 0` makes the standardized deviation `+∞` and the tail `0`. `[IsProbabilityMeasure
-π]` is carried because the intended `π` is the DL prior and finiteness of `Π(B)` is needed for the
-Jensen normalization.
+to `∅`; `aveShift = 0` makes the standardized deviation `+∞` and the tail `0`.
+`[IsProbabilityMeasure π]` is carried because the intended `π` is the DL prior and finiteness of
+`Π(B)` is needed for the Jensen normalization.
 -/
 
 open MeasureTheory ProbabilityTheory

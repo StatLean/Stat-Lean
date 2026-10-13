@@ -57,9 +57,9 @@ instance (n : ℕ) : IsMarkovKernel (binomialKernel n) := by
     Kernel.const_apply]
   refine ⟨?_⟩
   rw [withDensity_apply _ MeasurableSet.univ, setLIntegral_univ, lintegral_count, tsum_fintype]
-  have hc0 : (0:ℝ) ≤ unitClamp θ := le_max_left _ _
+  have hc0 : (0 : ℝ) ≤ unitClamp θ := le_max_left _ _
   have hc1 : unitClamp θ ≤ 1 := max_le zero_le_one (min_le_left _ _)
-  have h1c : (0:ℝ) ≤ 1 - unitClamp θ := by linarith
+  have h1c : (0 : ℝ) ≤ 1 - unitClamp θ := by linarith
   simp only [binomialDensity]
   rw [← ENNReal.ofReal_sum_of_nonneg (fun k _ =>
     mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (pow_nonneg hc0 _)) (pow_nonneg h1c _))]
@@ -87,15 +87,15 @@ theorem betaPDF_mul_clampPow {α β : ℝ}
           * betaPDF (α + a) (β + b) θ := by
   by_cases hθ : 0 < θ ∧ θ < 1
   · obtain ⟨h0, h1⟩ := hθ
-    have h1c : (0:ℝ) < 1 - θ := by linarith
+    have h1c : (0 : ℝ) < 1 - θ := by linarith
     have hc : unitClamp θ = θ := by
       simp only [unitClamp]; rw [min_eq_right h1.le, max_eq_right h0.le]
-    have hα' : (0:ℝ) < α + (a : ℝ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg a)
-    have hβ' : (0:ℝ) < β + (b : ℝ) := add_pos_of_pos_of_nonneg hβ (Nat.cast_nonneg b)
-    have hbpos : (0:ℝ) < beta α β := beta_pos hα hβ
+    have hα' : (0 : ℝ) < α + (a : ℝ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg a)
+    have hβ' : (0 : ℝ) < β + (b : ℝ) := add_pos_of_pos_of_nonneg hβ (Nat.cast_nonneg b)
+    have hbpos : (0 : ℝ) < beta α β := beta_pos hα hβ
     have hbα : beta α β ≠ 0 := hbpos.ne'
     have hbα' : beta (α + a) (β + b) ≠ 0 := (beta_pos hα' hβ').ne'
-    have hnn1 : (0:ℝ) ≤ 1 / beta α β * θ ^ (α - 1) * (1 - θ) ^ (β - 1) :=
+    have hnn1 : (0 : ℝ) ≤ 1 / beta α β * θ ^ (α - 1) * (1 - θ) ^ (β - 1) :=
       mul_nonneg (mul_nonneg (one_div_pos.mpr hbpos).le (Real.rpow_pos_of_pos h0 _).le)
         (Real.rpow_pos_of_pos h1c _).le
     rw [hc, betaPDF_of_pos_lt_one h0 h1, betaPDF_of_pos_lt_one h0 h1,
@@ -178,8 +178,8 @@ theorem beta_binomial_predictiveDensity {α β : ℝ}
     (measurable_betaPDFReal _ _).ennreal_ofReal
   have hg : Measurable (fun θ => binomialDensity n θ k) :=
     (measurable_uncurry_binomialDensity n).comp (measurable_id.prodMk measurable_const)
-  have hα' : (0:ℝ) < α + (k : ℕ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg _)
-  have hβ' : (0:ℝ) < β + ((n - (k : ℕ) : ℕ) : ℝ) :=
+  have hα' : (0 : ℝ) < α + (k : ℕ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg _)
+  have hβ' : (0 : ℝ) < β + ((n - (k : ℕ) : ℕ) : ℝ) :=
     add_pos_of_pos_of_nonneg hβ (Nat.cast_nonneg _)
   have hdens : ∀ θ, betaPDF α β θ * binomialDensity n θ k
       = ENNReal.ofReal ((n.choose (k : ℕ) : ℝ)

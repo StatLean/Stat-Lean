@@ -261,7 +261,8 @@ private lemma designRank_eq_finrank_columnSpace (X : Matrix (Fin n) (Fin d) ℝ)
 
 /-! ### Main theorem -/
 
-/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (Mean Squared Error of Least Squares), expectation half.**
+/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (Mean
+Squared Error of Least Squares), expectation half.**
 
 For `Y ω = X β* + ε ω` with noise `ε` having independent mean-0 coordinates each
 sub-Gaussian proxy `σ²`, every OLS estimator `βhat` satisfies

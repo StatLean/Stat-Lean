@@ -237,26 +237,26 @@ theorem meanFunctional_isTVFrechetExpansion
     fun t => memLp_sq_int (hdiff t)
   -- === Analytic sub-lemmas (filled below) ===
   have hL2rate : Tendsto (fun t => (∫ ω, (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / |t|)
-      (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+      (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
     have hq : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
+        (𝓝[≠] (0 : ℝ)) (𝓝 0) := qmdRem_norm_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
     have hqd : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal / |t|)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
-    have habs : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-      have h : Tendsto (fun t : ℝ => |t|) (𝓝 (0:ℝ)) (𝓝 0) := by
-        simpa using (continuous_abs.tendsto (0:ℝ))
+        (𝓝[≠] (0 : ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
+    have habs : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+      have h : Tendsto (fun t : ℝ => |t|) (𝓝 (0 : ℝ)) (𝓝 0) := by
+        simpa using (continuous_abs.tendsto (0 : ℝ))
       exact h.mono_left nhdsWithin_le_nhds
     -- Envelope tends to 0.
     have henv : Tendsto (fun t => |t| * ((∫ ω, (g ω * s 0 ω) ^ 2 ∂γ.dominating) / 2)
           + 2 * ((eLpNorm (r t) 2 γ.dominating).toReal
               * ((eLpNorm (r t) 2 γ.dominating).toReal / |t|)))
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+        (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
       have h1 : Tendsto (fun t : ℝ => |t| * ((∫ ω, (g ω * s 0 ω) ^ 2 ∂γ.dominating) / 2))
-          (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+          (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
         simpa using habs.mul_const ((∫ ω, (g ω * s 0 ω) ^ 2 ∂γ.dominating) / 2)
       have h2 : Tendsto (fun t : ℝ => 2 * ((eLpNorm (r t) 2 γ.dominating).toReal
               * ((eLpNorm (r t) 2 γ.dominating).toReal / |t|)))
-          (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+          (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
         simpa using (hq.mul hqd).const_mul 2
       simpa using h1.add h2
     refine squeeze_zero' ?_ ?_ henv
@@ -265,7 +265,7 @@ theorem meanFunctional_isTVFrechetExpansion
     · filter_upwards [qmdRem_memLp_eventually hg_meas h_qmd, self_mem_nhdsWithin]
         with t hr_memLp ht
       have htne : t ≠ 0 := by simpa using ht
-      have htabs : (0:ℝ) < |t| := abs_pos.mpr htne
+      have htabs : (0 : ℝ) < |t| := abs_pos.mpr htne
       have htabs_ne : |t| ≠ 0 := htabs.ne'
       have hrmem : MemLp (r t) 2 γ.dominating := hr_memLp
       have hIrsq : Integrable (fun ω => r t ω ^ 2) γ.dominating := memLp_sq_int hrmem
@@ -299,11 +299,11 @@ theorem meanFunctional_isTVFrechetExpansion
                   * ((eLpNorm (r t) 2 γ.dominating).toReal / |t|)) := by
             rw [← sq_abs t]; field_simp; ring
   have hTermI : Tendsto (fun t => (∫ ω, a ω * (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / t)
-      (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+      (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
     refine squeeze_zero_norm' ?_ (by simpa using hL2rate.const_mul C)
     filter_upwards [self_mem_nhdsWithin] with t ht
     have htne : t ≠ 0 := by simpa using ht
-    have htabs : (0:ℝ) < |t| := abs_pos.mpr htne
+    have htabs : (0 : ℝ) < |t| := abs_pos.mpr htne
     -- Pointwise `|a·(s t − s 0)²| ≤ C·(s t − s 0)²`.
     have hpw_abs : ∀ ω, |a ω * (s t ω - s 0 ω) ^ 2| ≤ C * (s t ω - s 0 ω) ^ 2 := by
       intro ω
@@ -322,21 +322,21 @@ theorem meanFunctional_isTVFrechetExpansion
           (div_le_div_iff_of_pos_right htabs).mpr habs_bound
       _ = C * ((∫ ω, (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / |t|) := mul_div_assoc C _ _
   have hTermIII : Tendsto (fun t => 2 * (∫ ω, (a ω * s 0 ω) * r t ω ∂γ.dominating) / t)
-      (𝓝[≠] (0:ℝ)) (𝓝 0) := by
+      (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
     have hqd : Tendsto (fun t => (eLpNorm (r t) 2 γ.dominating).toReal / |t|)
-        (𝓝[≠] (0:ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
+        (𝓝[≠] (0 : ℝ)) (𝓝 0) := qmdRem_norm_div_tendsto_zero hg_meas.aestronglyMeasurable h_qmd
     refine squeeze_zero_norm' ?_
       (by simpa using hqd.const_mul (2 * Real.sqrt (∫ ω, (a ω * s 0 ω) ^ 2 ∂γ.dominating)))
     filter_upwards [qmdRem_memLp_eventually hg_meas h_qmd, self_mem_nhdsWithin] with t hr_memLp ht
     have htne : t ≠ 0 := by simpa using ht
-    have htabs : (0:ℝ) < |t| := abs_pos.mpr htne
+    have htabs : (0 : ℝ) < |t| := abs_pos.mpr htne
     have hrmem : MemLp (r t) 2 γ.dominating := hr_memLp
     -- Cauchy–Schwarz with the fixed test function a·s 0.
     have hcs := abs_integral_mul_le_sqrt_integral_sq γ.dominating has0 hrmem
     rw [sqrt_integral_sq_eq_eLpNorm_toReal hrmem] at hcs
     -- ‖2·∫/t‖ = 2·|∫|/|t| ≤ 2·√(∫(a s0)²)·q(t)/|t|.
     rw [norm_div, Real.norm_eq_abs, Real.norm_eq_abs, abs_mul,
-      show |(2:ℝ)| = 2 from by norm_num]
+      show |(2 : ℝ)| = 2 from by norm_num]
     calc 2 * |∫ ω, a ω * s 0 ω * r t ω ∂γ.dominating| / |t|
         ≤ 2 * (Real.sqrt (∫ ω, (a ω * s 0 ω) ^ 2 ∂γ.dominating)
             * (eLpNorm (r t) 2 γ.dominating).toReal) / |t| :=
@@ -345,7 +345,7 @@ theorem meanFunctional_isTVFrechetExpansion
             * ((eLpNorm (r t) 2 γ.dominating).toReal / |t|) := by
           ring
   have hGeq : (fun t : ℝ => (∫ ω, a ω ∂γ.curve t - ∫ ω, a ω ∂P) / t)
-      =ᶠ[𝓝[≠] (0:ℝ)]
+      =ᶠ[𝓝[≠] (0 : ℝ)]
       (fun t : ℝ => (∫ ω, a ω * (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / t
           + (∫ ω, a ω * g ω ∂P)
           + 2 * (∫ ω, (a ω * s 0 ω) * r t ω ∂γ.dominating) / t) := by
@@ -385,7 +385,7 @@ theorem meanFunctional_isTVFrechetExpansion
   have hsum : Tendsto (fun t : ℝ => (∫ ω, a ω * (s t ω - s 0 ω) ^ 2 ∂γ.dominating) / t
         + (∫ ω, a ω * g ω ∂P)
         + 2 * (∫ ω, (a ω * s 0 ω) * r t ω ∂γ.dominating) / t)
-      (𝓝[≠] (0:ℝ)) (𝓝 (∫ ω, a ω * g ω ∂P)) := by
+      (𝓝[≠] (0 : ℝ)) (𝓝 (∫ ω, a ω * g ω ∂P)) := by
     have h := (hTermI.add_const (∫ ω, a ω * g ω ∂P)).add hTermIII
     simpa using h
   exact Filter.Tendsto.congr' hGeq.symm hsum

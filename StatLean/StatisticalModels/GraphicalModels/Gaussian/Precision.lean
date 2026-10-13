@@ -352,7 +352,8 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
     simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply,
       condCovMatrix]
   have hu1 : IsUnit S₁₁.det := (Matrix.isUnit_iff_isUnit_det _).mp h₁₁.isUnit
-  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det := (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
+  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
   rw [hblock, neg_eq_zero]
   constructor
   · intro h

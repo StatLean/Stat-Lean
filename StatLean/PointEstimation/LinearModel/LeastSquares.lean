@@ -131,7 +131,8 @@ private lemma gaussianVector_map_add_const {N : ℕ} (ξ b : EuclideanSpace ℝ 
   rw [hLHS, hRHS, Measure.map_map hmeas_add hmeas_toLp]
   have hcomp : (fun z : EuclideanSpace ℝ (Fin N) => z + b) ∘
       (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N))
-      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘ (fun x => fun i => x i + b i) := by
+      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘
+          (fun x => fun i => x i + b i) := by
     funext x; rfl
   rw [hcomp, ← Measure.map_map hmeas_toLp hmeas_g,
     Measure.pi_map_pi (f := fun (i : Fin N) (c : ℝ) => c + b i)

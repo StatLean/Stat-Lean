@@ -299,7 +299,8 @@ supremum over the `L`-Lipschitz class is `L` times the supremum over the
 1-Lipschitz class, via the bijection `f ↦ L • f` and
 `Monotone.map_ciSup_of_continuousAt`. -/
 theorem iSup_abs_empiricalProcess_lip_smul {L : ℝ≥0}
-    -- LEAN-ONLY: nondegenerate scaling (L = 0 is `iSup_abs_empiricalProcess_lipZero_eq`); no scope change
+    -- LEAN-ONLY: nondegenerate scaling (L = 0 is
+    -- `iSup_abs_empiricalProcess_lipZero_eq`); no scope change
     (hL : L ≠ 0) [IsProbabilityMeasure P] (ω : Ω) :
     (⨆ f : {f : unitInterval → ℝ // LipschitzWith L f},
         |empiricalProcess P n X (↑f) ω|)

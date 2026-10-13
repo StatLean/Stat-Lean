@@ -140,7 +140,7 @@ private lemma klDiv_gaussianReal_zero (a : ℝ≥0) (ha : a ≠ 0) :
   have hllr : llr (gaussianReal 0 a) (gaussianReal 0 1) =ᵐ[gaussianReal 0 a] F := by
     have hrn_vol : (gaussianReal 0 a).rnDeriv (gaussianReal 0 1) =ᵐ[volume]
         fun x => (gaussianPDF 0 1 x)⁻¹ * gaussianPDF 0 a x := by
-      have h1 := Measure.rnDeriv_withDensity_right (gaussianReal (0:ℝ) a) volume
+      have h1 := Measure.rnDeriv_withDensity_right (gaussianReal (0 : ℝ) a) volume
         (f := gaussianPDF 0 1) (measurable_gaussianPDF 0 1).aemeasurable
         (ae_of_all _ fun x => (gaussianPDF_pos 0 one_ne_zero x).ne')
         (ae_of_all _ fun _ => gaussianPDF_ne_top)
@@ -157,15 +157,15 @@ private lemma klDiv_gaussianReal_zero (a : ℝ≥0) (ha : a ≠ 0) :
         (gaussianPDFReal_pos 0 a x ha).ne', Real.log_inv]
     ring
   -- second moment `∫ x² ∂𝒩(0,a) = a`
-  have hsq : ∫ x, x ^ 2 ∂(gaussianReal (0:ℝ) a) = (a : ℝ) := by
-    have h := variance_eq_sub (μ := gaussianReal (0:ℝ) a) (X := id) (memLp_id_gaussianReal 2)
+  have hsq : ∫ x, x ^ 2 ∂(gaussianReal (0 : ℝ) a) = (a : ℝ) := by
+    have h := variance_eq_sub (μ := gaussianReal (0 : ℝ) a) (X := id) (memLp_id_gaussianReal 2)
     rw [variance_id_gaussianReal] at h
     simp only [integral_id_gaussianReal, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
       zero_pow, sub_zero, Pi.pow_apply, id_eq] at h
     linarith [h]
   -- integrability of F
-  have hsqint : Integrable (fun x => x ^ 2) (gaussianReal (0:ℝ) a) := by
-    have := (memLp_id_gaussianReal (μ := (0:ℝ)) (v := a) 2).integrable_sq
+  have hsqint : Integrable (fun x => x ^ 2) (gaussianReal (0 : ℝ) a) := by
+    have := (memLp_id_gaussianReal (μ := (0 : ℝ)) (v := a) 2).integrable_sq
     simpa using this
   have hFint : Integrable F (gaussianReal 0 a) := by
     refine (Integrable.congr ?_ (Filter.Eventually.of_forall fun x => (hFeq x).symm))

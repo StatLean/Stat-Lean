@@ -58,9 +58,11 @@ theorem density_estimation_hellinger_rate {ι 𝓧 Ω : Type*} [MeasurableSpace 
     [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] (n : ℕ) (hn : 1 ≤ n)
     (g : ι → Ω) (P : Kernel ι 𝓧) [IsMarkovKernel P]
     {M : ℕ} [NeZero M] (θfam : Fin M → ι) (hθ : Measurable θfam) (c : ℝ) (hM : 2 ≤ M)
-    -- USER-INPUT: a Hamming-separated subfamily with separation `δₙ = n^{-2/5}`; Wainwright §15.3, Ex 15.15.
+    -- USER-INPUT: a Hamming-separated subfamily with
+    -- separation `δₙ = n^{-2/5}`; Wainwright §15.3, Ex 15.15.
     (hsep : IsSeparatedFamily g θfam (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))))
-    -- USER-INPUT: pairwise KL control (15.35a) for the perturbed-density construction; Wainwright §15.3.
+    -- USER-INPUT: pairwise KL control (15.35a) for the
+    -- perturbed-density construction; Wainwright §15.3.
     (h35a : ∀ j k, j ≠ k → klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
       ≤ ENNReal.ofReal (c ^ 2 * n * ((n : ℝ) ^ (-(2 : ℝ) / 5)) ^ 2))
     -- USER-INPUT: packing cardinality (15.35b); Wainwright §15.3.

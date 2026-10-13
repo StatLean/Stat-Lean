@@ -735,8 +735,9 @@ theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
   simpa [Function.comp_def, Fin.val_last] using h
 
-/-- Transport of a two-time integral: `E[G((X_t,e_t),(X_{t+d},e_{t+d}))] = E[G((X_0,e_0),(X_d,e_d))]`.
-This is what turns the double covariance sum of ledger (a) into a single lag sum. -/
+/-- Transport of a two-time integral:
+`E[G((X_t,e_t),(X_{t+d},e_{t+d}))] = E[G((X_0,e_0),(X_d,e_d))]`. This is
+what turns the double covariance sum of ledger (a) into a single lag sum. -/
 theorem integral_comp_pair2_eq {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -1483,7 +1484,7 @@ theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
         2)).mul hGXm).aestronglyMeasurable (Eventually.of_forall fun ω => ?_)
     rw [Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (mul_nonneg (sq_nonneg _) (sq_nonneg _)),
-      abs_of_nonneg (by positivity : (0:ℝ) ≤ L ^ (2 - δ) *
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ L ^ (2 - δ) *
         ((|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2)), ← mul_assoc]
     exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
   have hstep1 : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
@@ -2126,7 +2127,7 @@ theorem tendsto_weighted_antitone_of_summable {a : ℕ → ℝ} {lam beta : ℝ}
       mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Real.rpow_nonneg (ha0 T) _)
     calc (m : ℝ) ^ (lam + 1) * a T ^ beta
         = (m : ℝ) * ((m : ℝ) ^ lam * a T ^ beta) := by
-          rw [Real.rpow_add hmpos, Real.rpow_one, mul_comm ((m:ℝ)^lam), mul_assoc]
+          rw [Real.rpow_add hmpos, Real.rpow_one, mul_comm ((m : ℝ)^lam), mul_assoc]
       _ ≤ ((Finset.Ico m T).card : ℝ) * ((m : ℝ) ^ lam * a T ^ beta) :=
           mul_le_mul_of_nonneg_right hcast hnn
       _ = (Finset.Ico m T).card • ((m : ℝ) ^ lam * a T ^ beta) := (nsmul_eq_mul _ _).symm
@@ -2182,7 +2183,7 @@ theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
       Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
     have hq : Tendsto (fun n : ℕ => (n : ℝ) / h n) atTop atTop := by
       refine tendsto_atTop_mono' atTop ?_ tendsto_natCast_atTop_atTop
-      filter_upwards [hh.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn
+      filter_upwards [hh.eventually_le_const (by norm_num : (0 : ℝ) < 1)] with n hn
       calc (n : ℝ) = (n : ℝ) / 1 := by ring
         _ ≤ (n : ℝ) / h n := div_le_div_of_nonneg_left (Nat.cast_nonneg n) (hh0 n) hn
     exact (Real.tendsto_sqrt_atTop.comp hq).atTop_mul_atTop₀ hlog
@@ -2239,7 +2240,7 @@ theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
         ≤ (smallBlockLen h δ lam n : ℝ) := Nat.le_ceil _
     have hs1 : Real.sqrt ((n : ℝ) / h n) * Real.log n
         ≤ (smallBlockLen h δ lam n : ℝ) ^ ((lam + 1) / (1 - 2 / δ)) := by
-      have hd2 : δ - 2 ≠ 0 := (by linarith : (0:ℝ) < δ - 2).ne'
+      have hd2 : δ - 2 ≠ 0 := (by linarith : (0 : ℝ) < δ - 2).ne'
       have hpq : ((1 - 2 / δ) / (lam + 1)) * ((lam + 1) / (1 - 2 / δ)) = 1 := by
         field_simp [hd2, hlam1.ne']
       have hid : ((Real.sqrt ((n : ℝ) / h n) * Real.log n) ^ ((1 - 2 / δ) / (lam + 1)))
@@ -2343,10 +2344,10 @@ theorem tendsto_blockCount_mul_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n,
   have hlogPH : Real.log (P * H) = Real.log P + Real.log H := Real.log_mul hP0.ne' hH0.ne'
   have hlogPdH : Real.log (P / H) = Real.log P - Real.log H := Real.log_div hP0.ne' hH0.ne'
   have hone3 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 + θ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by linarith : (0:ℝ) ≤ (1 + θ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by linarith : (0 : ℝ) ≤ (1 + θ) / 6)
     rwa [Real.one_rpow] at this
   have hone6 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 : ℝ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by norm_num : (0:ℝ) ≤ (1:ℝ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by norm_num : (0 : ℝ) ≤ (1 : ℝ) / 6)
     rwa [Real.one_rpow] at this
   have hfact1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) * (P * H ^ 3) ^ ((1 + θ) / 6)
       = Real.sqrt (P * H) := by
@@ -3971,7 +3972,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
   have hressq : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 ∂μ ≤ L ^ (2 - δ) * Eδ := by
     have hi1 : Integrable (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2) μ := by
       refine Integrable.mono he2
-        ((((hmeasE 0).sub ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
+        ((((hmeasE 0).sub
+            ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
         (Eventually.of_forall fun ω => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
         abs_of_nonneg (sq_nonneg _)]
@@ -3986,7 +3988,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
   have hq2int : ∫ ω, q (e 0 ω) ^ 2 ∂μ ≤ 2 * (L ^ (2 - δ) * Eδ) + 2 * c ^ 2 := by
     have hi1 : Integrable (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2) μ := by
       refine Integrable.mono he2
-        ((((hmeasE 0).sub ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
+        ((((hmeasE 0).sub
+            ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
         (Eventually.of_forall fun ω => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
         abs_of_nonneg (sq_nonneg _)]
@@ -5643,7 +5646,7 @@ private theorem tendsto_bigBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     positivity
   have hlogtop : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
     Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
-  filter_upwards [eventually_ge_atTop 3, hh.eventually_le_const (by norm_num : (0:ℝ) < 1),
+  filter_upwards [eventually_ge_atTop 3, hh.eventually_le_const (by norm_num : (0 : ℝ) < 1),
     hlogtop.eventually_ge_atTop 1] with n hn3 hh1 hΛ1
   have hn0 : (0 : ℝ) < (n : ℝ) := by
     have : (3 : ℕ) ≤ n := hn3
@@ -5695,7 +5698,7 @@ private theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   · filter_upwards with n
     positivity
   filter_upwards [eventually_ge_atTop 2, hnh.eventually_ge_atTop 1,
-    hh.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn2 hPH3 hh1
+    hh.eventually_le_const (by norm_num : (0 : ℝ) < 1)] with n hn2 hPH3 hh1
   set P : ℝ := (n : ℝ) with hPdef
   set H : ℝ := h n with hHdef
   set Λ : ℝ := Real.log n with hΛdef
@@ -5709,7 +5712,7 @@ private theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   have hlogPH : Real.log (P * H) = Real.log P + Real.log H := Real.log_mul hP0.ne' hH0.ne'
   have hlogPdH : Real.log (P / H) = Real.log P - Real.log H := Real.log_div hP0.ne' hH0.ne'
   have hone3 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 + θ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by linarith : (0:ℝ) ≤ (1 + θ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by linarith : (0 : ℝ) ≤ (1 + θ) / 6)
     rwa [Real.one_rpow] at this
   have hfact1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) * (P * H ^ 3) ^ ((1 + θ) / 6)
       = Real.sqrt (P * H) := by
@@ -6323,7 +6326,7 @@ private theorem tendsto_mul_bandwidth_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < 
     (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) :
     Tendsto (fun n : ℕ => (n : ℝ) * h n) atTop atTop := by
   refine tendsto_atTop_mono' _ ?_ hnh
-  filter_upwards [hh.eventually_le_const (by norm_num : (0:ℝ) < 1), eventually_ge_atTop 1]
+  filter_upwards [hh.eventually_le_const (by norm_num : (0 : ℝ) < 1), eventually_ge_atTop 1]
     with n hh1 hn1
   have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
   have hhn := hh0 n
@@ -6416,8 +6419,8 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   have hl := tendsto_bigBlockLen_div hh0 hh
   have hs := tendsto_smallBlockLen_div hh0 hh hnh hδ hlam
   filter_upwards [eventually_ge_atTop 2,
-    hl.eventually_lt_const (by norm_num : (0:ℝ) < 1/3),
-    hs.eventually_lt_const (by norm_num : (0:ℝ) < 1/3)] with n hn2 hln hsn
+    hl.eventually_lt_const (by norm_num : (0 : ℝ) < 1/3),
+    hs.eventually_lt_const (by norm_num : (0 : ℝ) < 1/3)] with n hn2 hln hsn
   have hn0 : (0 : ℝ) < (n : ℝ) := by
     have : (1 : ℕ) ≤ n := by omega
     exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one this
@@ -6431,11 +6434,11 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
     omega
   have hlR : (bigBlockLen h n : ℝ) < (n : ℝ) / 3 := by
     rw [div_lt_iff₀ hn0] at hln
-    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    rw [lt_div_iff₀ (by norm_num : (0 : ℝ) < 3)]
     linarith
   have hsR : (smallBlockLen h δ lam n : ℝ) < (n : ℝ) / 3 := by
     rw [div_lt_iff₀ hn0] at hsn
-    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    rw [lt_div_iff₀ (by norm_num : (0 : ℝ) < 3)]
     linarith
   have hqn : bigBlockLen h n + smallBlockLen h δ lam n ≤ n := by
     have : ((bigBlockLen h n + smallBlockLen h δ lam n : ℕ) : ℝ) ≤ (n : ℝ) := by

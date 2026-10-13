@@ -46,7 +46,8 @@ NPMLE): `f_{tG₀+(1−t)G₁} = t·f_{G₀} + (1−t)·f_{G₁}` (Lindsay 1983)
 theorem mixtureDensity_linear_in_mixing (p : Θ → 𝓧 → ℝ≥0∞) (t : ℝ≥0∞) (G₀ G₁ : Measure Θ) (x : 𝓧) :
     mixtureDensity p (t • G₀ + (1 - t) • G₁) x
       = t * mixtureDensity p G₀ x + (1 - t) * mixtureDensity p G₁ x := by
-  simp only [mixtureDensity, predictiveDensity, lintegral_add_measure, lintegral_smul_measure, smul_eq_mul]
+  simp only [mixtureDensity, predictiveDensity, lintegral_add_measure,
+    lintegral_smul_measure, smul_eq_mul]
 
 /-- **Existence of an NPMLE on a finite parameter space** (the compactness step, in Lindsay's
 regular/finite setting). On a nonempty finite `Θ` with finite likelihoods, the marginal likelihood
@@ -84,7 +85,8 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
   have hGhatmix : ∀ j, mixtureDensity p Ghat (x j) = ∑ θ, ENNReal.ofReal (w θ) * p θ (x j) := by
     intro j; simp only [mixtureDensity, predictiveDensity, hGhat]
     rw [lintegral_finsetSum_measure]
-    exact Finset.sum_congr rfl fun θ _ => by rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+    exact Finset.sum_congr rfl fun θ _ => by
+      rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
   -- `(∏ⱼ f_Ghat(xⱼ)).toReal = Ψ w`.
   have hprodGhat : (∏ j, mixtureDensity p Ghat (x j)).toReal = Ψ w := by
     rw [ENNReal.toReal_prod]

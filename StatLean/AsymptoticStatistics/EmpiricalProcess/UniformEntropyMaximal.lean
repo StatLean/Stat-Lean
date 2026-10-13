@@ -882,7 +882,7 @@ private lemma covering_iUnion_dyadic_Ioc_eq {δ : ℝ} (hδ : 0 < δ) :
     obtain ⟨hx0, hxδ⟩ := hx
     simp only [Set.mem_iUnion, Set.mem_Ioc]
     have hexists : ∃ q : ℕ, (1/2 : ℝ)^q * δ < x := by
-      obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (by positivity : (0:ℝ) < x / δ)
+      obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (by positivity : (0 : ℝ) < x / δ)
         (by norm_num : (1/2 : ℝ) < 1)
       exact ⟨N, (lt_div_iff₀ hδ).mp hN⟩
     classical
@@ -1052,7 +1052,7 @@ private lemma covering_shifted_dyadic_series_le
           * entropyWeight (l2CoveringNumber P F ((1/2 : ℝ)^(q+1) * δ))) := by
     intro q
     have hval : (1/2 : ℝ)^q * δ = 2 * ((1/2 : ℝ)^(q+1) * δ) := by ring
-    rw [hval, ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    rw [hval, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
     ring
   -- Tail sum ≤ full sum (drop the `q = 0` head, all terms nonneg).
   have htail : (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^(q+1) * δ)
@@ -1546,7 +1546,7 @@ private theorem covering_chain_tree_core
               * entropyWeight (l2CoveringNumber P
                   {g : Ω → ℝ | ∃ θ : EuclideanSpace ℝ (Fin d), ‖θ - θ₀‖ ≤ δ ∧
                     g = fun ω => m θ ω - m θ₀ ω} ((1/2 : ℝ)^q * δ)) := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
 /-- Populate the population-net assumptions from the finite shell covers, then convert the
@@ -1646,7 +1646,7 @@ private theorem covering_clamped_chain_bound
         gcongr
         exact covering_dyadic_sum_le_l2CoveringEntropyIntegral (P := P) (F := Mδ) hδ
     _ = ENNReal.ofReal (2 * K) * l2CoveringEntropyIntegral δ Mδ P := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
 /-- **Covering Dudley-chaining bound, vdV Thm 2.14.1 / Cor 19.35.**

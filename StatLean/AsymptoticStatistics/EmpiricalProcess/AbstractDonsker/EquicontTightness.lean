@@ -338,11 +338,11 @@ theorem marginal_sup_bound_of_clt (h_clt : IsMarginalCLT F P)
   rcases S.eq_empty_or_nonempty with hSe | hSne
   · refine ⟨0, ?_⟩
     have hempty : ∀ n,
-        {ξ | ∃ f ∈ S, (0:ℝ) < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}
+        {ξ | ∃ f ∈ S, (0 : ℝ) < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}
           = (∅ : Set Ξ) := by
       intro n; rw [hSe]; ext ξ; simp
     calc limsup (fun n => μ.outerMeasureStar
-          {ξ | ∃ f ∈ S, (0:ℝ) < |empiricalProcess P n
+          {ξ | ∃ f ∈ S, (0 : ℝ) < |empiricalProcess P n
             (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}) atTop
         = limsup (fun _ : ℕ => (0 : ℝ≥0∞)) atTop := by
           simp only [hempty]

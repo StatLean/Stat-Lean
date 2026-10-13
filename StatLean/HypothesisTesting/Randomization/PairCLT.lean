@@ -418,7 +418,8 @@ private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure 
     have haes : AEStronglyMeasurable
         (fun x : ℝ => Complex.exp ((u : ℂ) * (x : ℂ) * Complex.I)) (Q.map (signDir t s s')) :=
       (Complex.continuous_exp.comp
-        ((continuous_const.mul Complex.continuous_ofReal).mul continuous_const)).aestronglyMeasurable
+        ((continuous_const.mul Complex.continuous_ofReal).mul
+            continuous_const)).aestronglyMeasurable
     rw [charFun_apply_real, integral_map (measurable_signDir t s s').aemeasurable haes]
     refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
     unfold signFactor

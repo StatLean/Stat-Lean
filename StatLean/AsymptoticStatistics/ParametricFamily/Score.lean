@@ -315,7 +315,7 @@ lemma inner_product_continuity
       ring
     rw [h_int_eq] at h_int_le
     have h_sqrt_mono := Real.sqrt_le_sqrt h_int_le
-    rw [Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)] at h_sqrt_mono
+    rw [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)] at h_sqrt_mono
     have h_sub_le := h_sqrt_add_le
         (∫ x, (f_seq t x - f x) ^ 2 ∂μ) (∫ x, (f x) ^ 2 ∂μ)
         (L2Utils.integral_sq_nonneg μ _) (L2Utils.integral_sq_nonneg μ f)
@@ -407,7 +407,7 @@ lemma dqm_to_rescaled_l2
   -- Metric convergence: reduce to `∀ ε > 0, ∀ᶠ t, |r_sq t| < ε`.
   rw [Metric.tendsto_nhds]
   intro ε hε
-  -- Choose `c = ε / (‖u‖² + 1)` ; then `c · ‖u‖² < ε`.
+  -- Choose `c = ε / (‖u‖² + 1)`; then `c · ‖u‖² < ε`.
   set c : ℝ := ε / (‖u‖ ^ 2 + 1) with hc_def
   have hc_pos : 0 < c := div_pos hε (by positivity)
   have hc_bd : c * ‖u‖ ^ 2 < ε := by

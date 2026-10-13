@@ -22,8 +22,8 @@ $$\mathbb{E}\!\left[\frac{V_+(0)}{1 + V_-(0)}\right] \le 1.$$
 `knockoff_initial_le` proves exactly this bound. At threshold $0$ the magnitude condition
 $|W_j| \ge 0$ is vacuous, so every untied null is counted as either positive or negative and
 $V_+(0) + V_-(0) \le N_0$. By condition 3 of the knock-off score definition — the signs
-$\operatorname{sign}(W_j)$ given the magnitudes $|W_1|,\dots,|W_d|$ are i.i.d.\ $\mathrm{Ber}(1/2)$ —
-the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expectation expands to
+$\operatorname{sign}(W_j)$ given the magnitudes $|W_1|,\dots,|W_d|$ are i.i.d.\ $\mathrm{Ber}(1/2)$
+— the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expectation expands to
 the finite binomial-ratio sum
 $$\sum_{k=0}^{N_0} \binom{N_0}{k} 2^{-N_0}\, \frac{k}{1 + (N_0 - k)} \;=\; 1 - 2^{-N_0} \;\le\; 1.$$
 
@@ -335,9 +335,12 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
 are i.i.d. fair coins, `prob_Vminus0_eq`), so the expectation expands to
 `∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals the claimed sum via `k = N₀−m`. -/
 lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    -- USER-INPUT: knock-off score; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
+    (W : Fin d → Ω → ℝ)
+    -- USER-INPUT: true null set; Lu-BDA §21.3
+    (H₀ : Finset (Fin d))
+    -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) :
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
@@ -372,8 +375,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     rw [Real.norm_of_nonneg hnn,
       div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
     have hVp : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVp_le ω
-    nlinarith [hVp, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
-      (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
+    nlinarith [hVp, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0 : ℝ) ≤ _),
+      (Nat.cast_nonneg N₀ : (0 : ℝ) ≤ _)]
   have hInt_up : Integrable (fun ω => g (Vminus W H₀ 0 ω)) μ := by
     apply Integrable.mono' (integrable_const (N₀ : ℝ))
     · simp only [hgdef]
@@ -386,8 +389,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
         div_nonneg (by linarith) (by positivity)
       rw [Real.norm_of_nonneg hnn,
         div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
-      nlinarith [hVm, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
-        (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
+      nlinarith [hVm, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0 : ℝ) ≤ _),
+        (Nat.cast_nonneg N₀ : (0 : ℝ) ≤ _)]
   -- Helper: each per-value measure equals `C(N₀,m)/2^{N₀}`.
   have htoReal : ∀ m, (μ {ω | Vminus W H₀ 0 ω = m}).toReal = (N₀.choose m : ℝ) / 2 ^ N₀ := by
     intro m
@@ -442,11 +445,15 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
 
 /-- Initial bound (Lu-BDA §21.3): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
 `V₊(0)` are `Binomial(N₀, ½)`-distributed (the null signs are i.i.d. fair coins), and the
-expectation reduces to the binomial ratio sum ≤ 1 (proved algebraically via `choose_mul_succ_eq`). -/
+expectation reduces to the binomial ratio sum ≤ 1
+(proved algebraically via `choose_mul_succ_eq`). -/
 theorem knockoff_initial_le (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
+    (W : Fin d → Ω → ℝ)
+    -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
+    (H₀ : Finset (Fin d))
+    -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) :
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤ 1 :=
   le_trans (knockoff_initial_integral_le_binom_sum μ W H₀ hW)
     (binom_ratio_sum_le_one_local H₀.card)

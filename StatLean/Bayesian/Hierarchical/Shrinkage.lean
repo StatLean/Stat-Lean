@@ -103,7 +103,8 @@ private lemma gaussian_shrink_coord (c θ : ℝ) (σ2 : ℝ≥0) :
           + ∫ y, ((2 * c * (c - 1) * θ) * (y - θ) + (c - 1) ^ 2 * θ ^ 2) ∂(gaussianReal θ σ2) :=
         integral_add (hsq.const_mul _) ((hlin.const_mul _).add (integrable_const _))
     _ = c ^ 2 * (∫ y, (y - θ) ^ 2 ∂(gaussianReal θ σ2))
-          + ((2 * c * (c - 1) * θ) * (∫ y, (y - θ) ∂(gaussianReal θ σ2)) + (c - 1) ^ 2 * θ ^ 2) := by
+          + ((2 * c * (c - 1) * θ) * (∫ y, (y - θ) ∂(gaussianReal θ σ2)) +
+              (c - 1) ^ 2 * θ ^ 2) := by
         rw [integral_const_mul, integral_add (hlin.const_mul _) (integrable_const _),
           integral_const_mul, integral_const]
         simp

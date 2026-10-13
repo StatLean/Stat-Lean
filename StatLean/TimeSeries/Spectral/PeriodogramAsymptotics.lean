@@ -699,7 +699,7 @@ private lemma normSq_dftSample (Z : ℤ → Ω → ℝ) {T : ℕ} (hT : 0 < T) (
             Z ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k)) ^ 2) := by
   have hTR : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
   rw [dftSample_eq, norm_mul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (Real.sqrt T)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (Real.sqrt T)⁻¹)]
   congr 1
   · rw [inv_pow, Real.sq_sqrt hTR.le]
   · rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
@@ -1380,7 +1380,8 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
       (fun j _ => mul_nonneg (abs_nonneg _) (edgeWeight_nonneg T j))
   -- the two `N → ∞` defects
   have hAN : Tendsto (fun N : ℕ =>
-      eLpNorm (fun ω => dftSample X T k ω - dftSample (truncFilter a ε N) T k ω) 2 μ) atTop (𝓝 0) := by
+      eLpNorm (fun ω => dftSample X T k ω -
+          dftSample (truncFilter a ε N) T k ω) 2 μ) atTop (𝓝 0) := by
     have hle : ∀ N : ℕ,
         eLpNorm (fun ω => dftSample X T k ω - dftSample (truncFilter a ε N) T k ω) 2 μ
           ≤ ∑ t ∈ Finset.range T, ENNReal.ofReal ((Real.sqrt T)⁻¹) *

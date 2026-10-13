@@ -965,7 +965,7 @@ private lemma exists_adaptive_small {η : ℕ → ℝ} (hη0 : ∀ l, 0 ≤ η l
     intro n
     have h1 : (q n : ℝ) ≤ 1 / e n := by
       rw [hqdef]; exact Nat.floor_le (one_div_pos.2 (he0 n)).le
-    have h2 : d n ≤ e n := by rw [hedef]; nlinarith [(show (0:ℝ) < 1/((n:ℝ)+1) by positivity)]
+    have h2 : d n ≤ e n := by rw [hedef]; nlinarith [(show (0 : ℝ) < 1/((n : ℝ)+1) by positivity)]
     calc (q n : ℝ) * d n ≤ (1 / e n) * d n := mul_le_mul_of_nonneg_right h1 (hd0 n)
       _ ≤ (1 / e n) * e n := mul_le_mul_of_nonneg_left h2 (one_div_pos.2 (he0 n)).le
       _ = 1 := one_div_mul_cancel (ne_of_gt (he0 n))
@@ -1131,7 +1131,8 @@ private lemma exists_adaptive_small {η : ℕ → ℝ} (hη0 : ∀ l, 0 ≤ η l
       have h2 : Nat.sqrt n % a n < a n := Nat.mod_lt _ (ha1 n)
       have h3 : s n * a n = (Nat.sqrt n / a n) * a n
           + (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1) * a n := by rw [hsdef]; ring
-      have h4 : a n ≤ (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1) * a n := Nat.le_mul_of_pos_left _ (by omega)
+      have h4 : a n ≤ (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1) * a n :=
+        Nat.le_mul_of_pos_left _ (by omega)
       nlinarith [h1, h2, h3, h4]
     calc (n / s n) * Nat.sqrt n ≤ (n / s n) * (s n * a n) :=
           Nat.mul_le_mul_left _ (le_of_lt hsa)
@@ -1348,14 +1349,14 @@ private lemma norm_integral_remainder_le [IsProbabilityMeasure μ] {B : Ω → �
       calc g ω ≤ 4 * |v * B ω| ^ 3 := h1
         _ = 4 * |v| ^ 3 * |B ω| ^ 3 := by rw [habs]; ring
         _ ≤ 4 * |v| ^ 3 * (T * B ω ^ 2) := by
-            have : (0:ℝ) ≤ 4 * |v| ^ 3 := by positivity
+            have : (0 : ℝ) ≤ 4 * |v| ^ 3 := by positivity
             exact mul_le_mul_of_nonneg_left h3 this
         _ = 4 * |v| ^ 3 * T * B ω ^ 2 := by ring
     rw [integral_const_mul] at hmono
     refine hmono.trans ?_
     have hle : ∫ ω in Sᶜ, B ω ^ 2 ∂μ ≤ ∫ ω, B ω ^ 2 ∂μ :=
       setIntegral_le_integral hB2 (Eventually.of_forall fun ω => sq_nonneg _)
-    have hcnn : (0:ℝ) ≤ 4 * |v| ^ 3 * T := by positivity
+    have hcnn : (0 : ℝ) ≤ 4 * |v| ^ 3 * T := by positivity
     exact mul_le_mul_of_nonneg_left hle hcnn
   calc ‖∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
         - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ‖
@@ -1539,7 +1540,7 @@ private lemma tendsto_pow_of_tendsto_mul {k : ℕ → ℕ} {z : ℕ → ℂ} {w 
     have hz0' : ∀ᶠ n in atTop, ‖z n‖ ≤ 1 := by
       have := hz0.norm
       simp only [norm_zero] at this
-      filter_upwards [this.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn using hn
+      filter_upwards [this.eventually_le_const (by norm_num : (0 : ℝ) < 1)] with n hn using hn
     filter_upwards [hz0'] with n hn
     have hpow : Complex.exp ((k n : ℂ) * z n) = Complex.exp (z n) ^ k n := by
       rw [Complex.exp_nat_mul]
@@ -1785,7 +1786,7 @@ private lemma m4_quad_le [IsProbabilityMeasure μ]
         + 16 * C ^ 4 * (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by
   have hzero : ∀ t : ℤ, (∫ ω, X t ω ∂μ) = 0 :=
     m4_integral_eq_zero_of_stat hstat hmeas hmean
-  have hC4 : (0:ℝ) ≤ C ^ 4 := by positivity
+  have hC4 : (0 : ℝ) ≤ C ^ 4 := by positivity
   have hL : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
       ≤ 4 * C ^ 4 * alphaCoeff X μ (b - a).toNat := by
     have hgm : Measurable[sigmaGE X b] fun ω => X b ω * X c ω * X d ω :=
@@ -1860,7 +1861,7 @@ private lemma m4_quad_le [IsProbabilityMeasure μ]
       refine key.trans (le_of_eq ?_)
       ring
     linarith
-  have hextra : (0:ℝ) ≤ 16 * C ^ 4 *
+  have hextra : (0 : ℝ) ≤ 16 * C ^ 4 *
       (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by
     have := m4_alphaCoeff_nonneg (μ := μ) X (b - a).toNat
     have := m4_alphaCoeff_nonneg (μ := μ) X (d - c).toNat

@@ -241,7 +241,7 @@ private lemma abs_lanRemainder_sub_le
     _ ≤ (∑ i, G (ω i)) * (2 * c * ‖h - h'‖ / n)
           + (1 / 2 : ℝ) * (2 * c * ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * ‖h - h'‖) := by
         refine add_le_add hlin ?_
-        rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (1/2 : ℝ))]
+        rw [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (1/2 : ℝ))]
         exact mul_le_mul_of_nonneg_left hquad (by norm_num)
     _ = (2 * c * ((n : ℝ)⁻¹ * ∑ i, G (ω i))
           + c * ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖) * ‖h - h'‖ := by
@@ -301,7 +301,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
   have hfin : ((n : ℝ≥0∞) * I) ≠ ⊤ := ENNReal.mul_ne_top (by simp) hGtop
   have h2 := ENNReal.toReal_mono hfin hmarkov
   rw [ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by positivity : (0:ℝ) ≤ K * n), ENNReal.toReal_natCast] at h2
+    ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ K * n), ENNReal.toReal_natCast] at h2
   rw [measureReal_def, le_div_iff₀ hK]
   have hkey : (n : ℝ)
       * (((Measure.pi fun _ : Fin n => ν)
@@ -587,7 +587,7 @@ theorem sup_LAN_remainder_tendsto
   have hcard : (Ff.card : ℝ) * (α / (2 * (Ff.card + 1))) < α / 2 := by
     have hden : (0 : ℝ) < 2 * (Ff.card + 1) := by positivity
     rw [mul_div_assoc'] at *
-    rw [div_lt_div_iff₀ hden (by norm_num : (0:ℝ) < 2)]
+    rw [div_lt_div_iff₀ hden (by norm_num : (0 : ℝ) < 2)]
     have : (0 : ℝ) ≤ Ff.card := Nat.cast_nonneg _
     nlinarith
   linarith

@@ -5,7 +5,8 @@ import StatLean.Bayesian.Dominated.PredictiveDensity
 
 The central theorem of Bayesian inference in the dominated setting: for predictive-almost-every
 data `x`, the posterior is the prior reweighted by the normalized likelihood density,
-$$\pi(d\theta \mid x) = \frac{p(\theta, x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')}.$$
+$$\pi(d\theta \mid x) = \frac{p(\theta,
+x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')}.$$
 
 The proof identifies the explicit density kernel `bayesKernel p π` with Mathlib's abstract
 posterior `κ†π`, via the disintegration identity
@@ -112,7 +113,8 @@ theorem predictiveDensity_mul_setLIntegral_bayesDensity
   · change predictiveDensity p π x * ∫⁻ θ in s, p θ x / predictiveDensity p π x ∂π
       = ∫⁻ θ in s, p θ x ∂π
     simp_rw [div_eq_mul_inv]
-    rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable, mul_comm _ (predictiveDensity p π x)⁻¹,
+    rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable,
+      mul_comm _ (predictiveDensity p π x)⁻¹,
       ← mul_assoc, ENNReal.mul_inv_cancel hm hxlt.ne, one_mul]
 
 /-- **The prior×likelihood disintegration**: `predictive ⊗ posterior-candidate = joint (swapped)`.

@@ -67,9 +67,9 @@ theorem coveringNumber_le_of_subset_half {Y : Type*} [PseudoMetricSpace Y]
 
 /-- `log 3 ≤ 2` (LEAN-ONLY numeric brick: `3 < e²` from `Real.exp_one_gt_d9`). -/
 theorem log_three_le_two : Real.log 3 ≤ 2 := by
-  rw [Real.log_le_iff_le_exp (by norm_num : (0:ℝ) < 3)]
+  rw [Real.log_le_iff_le_exp (by norm_num : (0 : ℝ) < 3)]
   have h1 := Real.exp_one_gt_d9
-  rw [show (2:ℝ) = 1 + 1 from by norm_num, Real.exp_add]
+  rw [show (2 : ℝ) = 1 + 1 from by norm_num, Real.exp_add]
   nlinarith [h1, Real.exp_pos 1]
 
 /-- Net-cardinality arithmetic (HDP Exercise 8.9): for any mesh `m` with
@@ -97,7 +97,7 @@ theorem card_lipschitzNet_le_exp {ε : ℝ}
   have hlog : Real.log (((m : ℝ) + 1) * 3 ^ m) ≤ 3 * (m : ℝ) := by
     rw [Real.log_mul (by positivity) (by positivity), Real.log_pow]
     have hl1 : Real.log ((m : ℝ) + 1) ≤ (m : ℝ) := by
-      have := Real.log_le_sub_one_of_pos (by positivity : (0:ℝ) < (m:ℝ) + 1)
+      have := Real.log_le_sub_one_of_pos (by positivity : (0 : ℝ) < (m : ℝ) + 1)
       linarith
     have hl2 : (m : ℝ) * Real.log 3 ≤ (m : ℝ) * 2 :=
       mul_le_mul_of_nonneg_left log_three_le_two hm0.le
@@ -128,7 +128,7 @@ theorem coveringNumber_lipschitzUnitClass_toNat_le {ε : ℝ}
     have h1 : (1 : ℝ) ≤ 1 / ε := by
       rw [le_div_iff₀ hε₀]; linarith [hε₁]
     have : 3 / ε + 1 ≤ 4 / ε := by
-      rw [show (4:ℝ)/ε = 3/ε + 1/ε by ring]; linarith [h1]
+      rw [show (4 : ℝ)/ε = 3/ε + 1/ε by ring]; linarith [h1]
     linarith [hlt, this]
   -- covering number ≤ card of the net
   have hcov : coveringNumber lipschitzUnitClass ε

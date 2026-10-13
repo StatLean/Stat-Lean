@@ -292,7 +292,8 @@ private lemma pitmanEstimator_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ) (hf :
   rw [hNl, hDl]
   field_simp
 
-/-- The Pitman denominator in shear coordinates: `∫ f(x − u𝟙) du = ∫ f(snoc (diffs x) 0 + s𝟙) ds`. -/
+/-- The Pitman denominator in shear coordinates:
+`∫ f(x − u𝟙) du = ∫ f(snoc (diffs x) 0 + s𝟙) ds`. -/
 private lemma integral_den_eq_slice (f : (Fin (m + 1) → ℝ) → ℝ) (x : Fin (m + 1) → ℝ) :
     (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) = ∫ s : ℝ, f (pUnshear (diffs x, s)) := by
   simp_rw [sub_smul_one_eq_pUnshear]

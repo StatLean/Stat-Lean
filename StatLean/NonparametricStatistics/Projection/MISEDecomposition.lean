@@ -95,7 +95,7 @@ private lemma gTail_abs_le {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|) 
 
 /-- The continuous orthonormality relation, as a set integral over `[0,1]`. -/
 private lemma trigBasis_orthonormal_Icc {j k : ℕ} (hj : 1 ≤ j) (hk : 1 ≤ k) :
-    ∫ x in Set.Icc (0:ℝ) 1, trigBasis j x * trigBasis k x = if j = k then 1 else 0 := by
+    ∫ x in Set.Icc (0 : ℝ) 1, trigBasis j x * trigBasis k x = if j = k then 1 else 0 := by
   rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (zero_le_one)]
   exact trigBasis_orthonormal hj hk
 
@@ -115,9 +115,9 @@ private lemma seriesFun_split {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j
 /-- Interchange integral and tail-sum against a bounded continuous test function `h`. -/
 private lemma integral_gTail_mul {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|) (N : ℕ)
     (h : ℝ → ℝ) (hcont : Continuous h) (C : ℝ) (hC : ∀ x, |h x| ≤ C) :
-    ∫ x in Set.Icc (0:ℝ) 1, gTail θ N x * h x
+    ∫ x in Set.Icc (0 : ℝ) 1, gTail θ N x * h x
       = ∑' m : ℕ, θ (m + (N + 1))
-          * ∫ x in Set.Icc (0:ℝ) 1, trigBasis (m + (N + 1)) x * h x := by
+          * ∫ x in Set.Icc (0 : ℝ) 1, trigBasis (m + (N + 1)) x * h x := by
   have hs : Summable fun m => |θ (m + (N + 1))| :=
     (summable_nat_add_iff (f := fun j => |θ j|) (N + 1)).mpr hθ1
   have hpt : ∀ x, gTail θ N x * h x
@@ -127,18 +127,18 @@ private lemma integral_gTail_mul {θ : ℕ → ℝ} (hθ1 : Summable fun j => |�
     exact tsum_congr fun m => by ring
   have hmeas : ∀ m, AEStronglyMeasurable
       (fun x => θ (m + (N + 1)) * (trigBasis (m + (N + 1)) x * h x))
-      (volume.restrict (Set.Icc (0:ℝ) 1)) :=
+      (volume.restrict (Set.Icc (0 : ℝ) 1)) :=
     fun m => (continuous_const.mul ((continuous_trigBasis _).mul hcont)).aestronglyMeasurable
-  have hfin : (∑' m, ∫⁻ x in Set.Icc (0:ℝ) 1,
+  have hfin : (∑' m, ∫⁻ x in Set.Icc (0 : ℝ) 1,
       ‖θ (m + (N + 1)) * (trigBasis (m + (N + 1)) x * h x)‖ₑ) ≠ ∞ := by
     have hCnn : 0 ≤ C := le_trans (abs_nonneg _) (hC 0)
-    have hb : ∀ m, ∫⁻ x in Set.Icc (0:ℝ) 1,
+    have hb : ∀ m, ∫⁻ x in Set.Icc (0 : ℝ) 1,
         ‖θ (m + (N + 1)) * (trigBasis (m + (N + 1)) x * h x)‖ₑ
         ≤ ENNReal.ofReal (Real.sqrt 2 * C * |θ (m + (N + 1))|) := by
       intro m
-      calc ∫⁻ x in Set.Icc (0:ℝ) 1,
+      calc ∫⁻ x in Set.Icc (0 : ℝ) 1,
             ‖θ (m + (N + 1)) * (trigBasis (m + (N + 1)) x * h x)‖ₑ
-          ≤ ∫⁻ _ in Set.Icc (0:ℝ) 1,
+          ≤ ∫⁻ _ in Set.Icc (0 : ℝ) 1,
               ENNReal.ofReal (Real.sqrt 2 * C * |θ (m + (N + 1))|) := by
             apply lintegral_mono
             intro x
@@ -153,7 +153,7 @@ private lemma integral_gTail_mul {θ : ℕ → ℝ} (hθ1 : Summable fun j => |�
                   mul_le_mul_of_nonneg_left h1 (abs_nonneg _)
               _ = Real.sqrt 2 * C * |θ (m + (N + 1))| := by ring
         _ = ENNReal.ofReal (Real.sqrt 2 * C * |θ (m + (N + 1))|)
-              * volume (Set.Icc (0:ℝ) 1) := setLIntegral_const _ _
+              * volume (Set.Icc (0 : ℝ) 1) := setLIntegral_const _ _
         _ = ENNReal.ofReal (Real.sqrt 2 * C * |θ (m + (N + 1))|) := by
             rw [Real.volume_Icc]; simp
     refine ne_of_lt (lt_of_le_of_lt (ENNReal.tsum_le_tsum hb) ?_)
@@ -165,11 +165,11 @@ private lemma integral_gTail_mul {θ : ℕ → ℝ} (hθ1 : Summable fun j => |�
 /-- Orthogonality of `φ_p` to the tail: `∫ φ_p·g = θ_p` if `p > N`, else `0`. -/
 private lemma integral_trigBasis_mul_gTail {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|)
     (N p : ℕ) (hp : 1 ≤ p) :
-    ∫ x in Set.Icc (0:ℝ) 1, trigBasis p x * gTail θ N x = if N + 1 ≤ p then θ p else 0 := by
+    ∫ x in Set.Icc (0 : ℝ) 1, trigBasis p x * gTail θ N x = if N + 1 ≤ p then θ p else 0 := by
   rw [integral_congr_ae (ae_of_all _ fun x => mul_comm (trigBasis p x) (gTail θ N x)),
     integral_gTail_mul hθ1 N (trigBasis p) (continuous_trigBasis p) (Real.sqrt 2)
       (fun x => trigBasis_abs_le p x)]
-  have hom : ∀ m, θ (m + (N + 1)) * ∫ x in Set.Icc (0:ℝ) 1,
+  have hom : ∀ m, θ (m + (N + 1)) * ∫ x in Set.Icc (0 : ℝ) 1,
       trigBasis (m + (N + 1)) x * trigBasis p x
       = θ (m + (N + 1)) * (if m + (N + 1) = p then 1 else 0) := fun m => by
     rw [trigBasis_orthonormal_Icc (by omega) hp]
@@ -182,13 +182,13 @@ private lemma integral_trigBasis_mul_gTail {θ : ℕ → ℝ} (hθ1 : Summable f
 
 /-- The tail's squared `L²`-norm equals the tail energy `ρ_N`. -/
 private lemma integral_gTail_sq {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|) (N : ℕ) :
-    ∫ x in Set.Icc (0:ℝ) 1, gTail θ N x ^ 2 = tailEnergy θ N := by
-  have h1 : ∫ x in Set.Icc (0:ℝ) 1, gTail θ N x ^ 2
-      = ∫ x in Set.Icc (0:ℝ) 1, gTail θ N x * gTail θ N x :=
+    ∫ x in Set.Icc (0 : ℝ) 1, gTail θ N x ^ 2 = tailEnergy θ N := by
+  have h1 : ∫ x in Set.Icc (0 : ℝ) 1, gTail θ N x ^ 2
+      = ∫ x in Set.Icc (0 : ℝ) 1, gTail θ N x * gTail θ N x :=
     integral_congr_ae (ae_of_all _ fun x => pow_two (gTail θ N x))
   rw [h1, integral_gTail_mul hθ1 N (gTail θ N) (continuous_gTail hθ1 N)
     (Real.sqrt 2 * ∑' m, |θ (m + (N + 1))|) (gTail_abs_le hθ1 N)]
-  have h2 : (∑' m, θ (m + (N + 1)) * ∫ x in Set.Icc (0:ℝ) 1,
+  have h2 : (∑' m, θ (m + (N + 1)) * ∫ x in Set.Icc (0 : ℝ) 1,
       trigBasis (m + (N + 1)) x * gTail θ N x) = ∑' m, θ (m + (N + 1)) * θ (m + (N + 1)) := by
     refine tsum_congr fun m => ?_
     rw [integral_trigBasis_mul_gTail hθ1 N (m + (N + 1)) (by omega), ite_eq_left (by omega)]
@@ -199,7 +199,7 @@ private lemma integral_gTail_sq {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ
 /-- The exact `L²[0,1]` expansion of the squared projection error for fixed coefficients `c`. -/
 private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |θ j|) {N : ℕ}
     (_hN : 1 ≤ N) (c : ℕ → ℝ) :
-    ∫ x in Set.Icc (0:ℝ) 1,
+    ∫ x in Set.Icc (0 : ℝ) 1,
         ((∑ j ∈ Finset.Icc 1 N, c j * trigBasis j x) - seriesFun θ x) ^ 2
       = (∑ j ∈ Finset.Icc 1 N, (c j - θ j) ^ 2) + tailEnergy θ N := by
   have hcS : Continuous (fun x => ∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) :=
@@ -220,13 +220,13 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
         + gTail θ N x ^ 2 := fun x => by ring
   rw [integral_congr_ae (ae_of_all _ hsq)]
   have iS2 : Integrable (fun x => (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2)
-      (volume.restrict (Set.Icc (0:ℝ) 1)) := (hcS.pow 2).integrableOn_Icc
+      (volume.restrict (Set.Icc (0 : ℝ) 1)) := (hcS.pow 2).integrableOn_Icc
   have iSg : Integrable (fun x => 2 * ((∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x)
-      * gTail θ N x)) (volume.restrict (Set.Icc (0:ℝ) 1)) :=
+      * gTail θ N x)) (volume.restrict (Set.Icc (0 : ℝ) 1)) :=
     (continuous_const.mul (hcS.mul hcg)).integrableOn_Icc
   have ig2 : Integrable (fun x => gTail θ N x ^ 2)
-      (volume.restrict (Set.Icc (0:ℝ) 1)) := (hcg.pow 2).integrableOn_Icc
-  have hStwo : ∫ x in Set.Icc (0:ℝ) 1, (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2
+      (volume.restrict (Set.Icc (0 : ℝ) 1)) := (hcg.pow 2).integrableOn_Icc
+  have hStwo : ∫ x in Set.Icc (0 : ℝ) 1, (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2
       = ∑ j ∈ Finset.Icc 1 N, (c j - θ j) ^ 2 := by
     have he : ∀ x, (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2
         = ∑ j ∈ Finset.Icc 1 N, ∑ k ∈ Finset.Icc 1 N,
@@ -235,12 +235,12 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
       rw [sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
     have hInt1 : ∀ j k, Integrable (fun x => ((c j - θ j) * (c k - θ k))
-        * (trigBasis j x * trigBasis k x)) (volume.restrict (Set.Icc (0:ℝ) 1)) := fun j k =>
+        * (trigBasis j x * trigBasis k x)) (volume.restrict (Set.Icc (0 : ℝ) 1)) := fun j k =>
       (continuous_const.mul
         ((continuous_trigBasis j).mul (continuous_trigBasis k))).integrableOn_Icc
     have hInt2 : ∀ j, Integrable (fun x => ∑ k ∈ Finset.Icc 1 N,
         ((c j - θ j) * (c k - θ k)) * (trigBasis j x * trigBasis k x))
-        (volume.restrict (Set.Icc (0:ℝ) 1)) :=
+        (volume.restrict (Set.Icc (0 : ℝ) 1)) :=
       fun j => integrable_finsetSum _ (fun k _ => hInt1 j k)
     rw [integral_congr_ae (ae_of_all _ he),
       integral_finsetSum (Finset.Icc 1 N) (fun j _ => hInt2 j)]
@@ -251,7 +251,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
     rw [Finset.sum_eq_single j (fun k _ hkj => by rw [ite_eq_right (Ne.symm hkj), mul_zero])
       (fun hjj => absurd hj hjj), ite_eq_left rfl]
     ring
-  have hSg : ∫ x in Set.Icc (0:ℝ) 1,
+  have hSg : ∫ x in Set.Icc (0 : ℝ) 1,
       (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) * gTail θ N x = 0 := by
     have he : ∀ x, (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) * gTail θ N x
         = ∑ j ∈ Finset.Icc 1 N, (c j - θ j) * (trigBasis j x * gTail θ N x) := by
@@ -259,7 +259,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
       rw [Finset.sum_mul]
       exact Finset.sum_congr rfl fun j _ => by ring
     have hIntg : ∀ j, Integrable (fun x => (c j - θ j) * (trigBasis j x * gTail θ N x))
-        (volume.restrict (Set.Icc (0:ℝ) 1)) := fun j =>
+        (volume.restrict (Set.Icc (0 : ℝ) 1)) := fun j =>
       (continuous_const.mul ((continuous_trigBasis j).mul hcg)).integrableOn_Icc
     rw [integral_congr_ae (ae_of_all _ he),
       integral_finsetSum (Finset.Icc 1 N) (fun j _ => hIntg j)]
@@ -268,7 +268,7 @@ private lemma proj_L2_sq_integral {θ : ℕ → ℝ} (hθ1 : Summable fun j => |
       ite_eq_right (by have := (Finset.mem_Icc.mp hj).2; omega), mul_zero]
   have iAB : Integrable (fun x => (∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) ^ 2
       - 2 * ((∑ j ∈ Finset.Icc 1 N, (c j - θ j) * trigBasis j x) * gTail θ N x))
-      (volume.restrict (Set.Icc (0:ℝ) 1)) := iS2.sub iSg
+      (volume.restrict (Set.Icc (0 : ℝ) 1)) := iS2.sub iSg
   rw [integral_add iAB ig2, integral_sub iS2 iSg, integral_const_mul,
     hStwo, hSg, integral_gTail_sq hθ1 N]
   ring
@@ -350,7 +350,7 @@ theorem proj_mise_decomposition {Ω : Type*} [MeasurableSpace Ω] {P : Measure �
       (le_trans (Finset.mem_Icc.mp hj).2 hN') hσ hθ1 hξm hξi hξ0 hξ2
   rw [Finset.sum_congr rfl hcoeff]
   -- assemble the constants
-  have hterm : ∀ j ∈ Finset.Icc 1 N, (0:ℝ) ≤ σξ2 / n + (riemannResidual θ n j) ^ 2 :=
+  have hterm : ∀ j ∈ Finset.Icc 1 N, (0 : ℝ) ≤ σξ2 / n + (riemannResidual θ n j) ^ 2 :=
     fun j _ => add_nonneg (div_nonneg hσ (Nat.cast_nonneg n)) (sq_nonneg _)
   rw [← ENNReal.ofReal_sum_of_nonneg hterm,
     ← ENNReal.ofReal_add (Finset.sum_nonneg hterm) htailnn]

@@ -40,15 +40,15 @@ Gilbert–Varshamov packing of the `C(d,s)` weight-`s` supports with pairwise in
 `≥ 1`-separated vectors) transports that count to the sparse-vector packing.
 
 **Bibliographic comments.** The packing argument is an instance of the **Gilbert–Varshamov bound**,
-the classical volume/greedy lower bound on the size of a maximal separated code. It originates in two
-independent works: E. N. Gilbert, "A comparison of signalling alphabets," *Bell System Technical
+the classical volume/greedy lower bound on the size of a maximal separated code. It originates in
+two independent works: E. N. Gilbert, "A comparison of signalling alphabets," *Bell System Technical
 Journal* 31 (3), 504–522 (1952); and R. R. Varshamov, "Estimate of the number of signals in error
 correcting codes," *Doklady Akademii Nauk SSSR* 117, 739–741 (1957). The specialization to packing
 `s`-sparse unit vectors (or, equivalently, weight-`s` supports of `[d]` with bounded pairwise
-overlap) is **folklore**: it is a standard textbook synthesis with no single seminal origin, recorded
-e.g. as Wainwright Example 5.8 / Exercise 5.8 and used pervasively in high-dimensional minimax theory.
-The `q`-ary alphabet variant proved here (blocks of size `q = ⌊d/s⌋`) is the routine extension of the
-binary Gilbert–Varshamov code to a non-binary alphabet.
+overlap) is **folklore**: it is a standard textbook synthesis with no single seminal origin,
+recorded e.g. as Wainwright Example 5.8 / Exercise 5.8 and used pervasively in high-dimensional
+minimax theory. The `q`-ary alphabet variant proved here (blocks of size `q = ⌊d/s⌋`) is the routine
+extension of the binary Gilbert–Varshamov code to a non-binary alphabet.
 -/
 
 open scoped ENNReal

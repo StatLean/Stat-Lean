@@ -460,13 +460,16 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
                       * ((∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
                         + (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))))
                     = (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) := by
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq k))) := by
                   ring
                 rw [hstep]
                 calc (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
                         * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)))
                     ≤ (L₆ + 1) * (G + Real.sqrt 2 * G) := mul_le_mul_of_nonneg_left hb hL1nn
@@ -496,7 +499,8 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
         exact chain_telescope (fun i => X (netProj (A.seq i) t) ω)
       have hpb : ∀ k ∈ Finset.range n,
           |X (netProj (A.seq (k + 1)) t) ω - X (netProj (A.seq k) t) ω|
-            ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k)) * s k := by
+            ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) +
+                Metric.infDist t ↑(A.seq k)) * s k := by
         intro k hk
         have hpair_mem : (netProj (A.seq (k + 1)) t, netProj (A.seq k) t) ∈ PS k := by
           rw [hPSdef, Finset.mem_product]; exact ⟨hprojmem (k + 1) t, hprojmem k t⟩
@@ -513,7 +517,8 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
                 add_le_add (hprojdist (k + 1) t) (hprojdist k t)
         calc |X (netProj (A.seq (k + 1)) t) ω - X (netProj (A.seq k) t) ω|
             ≤ (K : ℝ) * dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t) * s k := hnot
-          _ ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k)) * s k := by
+          _ ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) +
+              Metric.infDist t ↑(A.seq k)) * s k := by
               apply mul_le_mul_of_nonneg_right _ (hs_nn k)
               exact mul_le_mul_of_nonneg_left hdle hKpos.le
       calc |X t ω - X a₀ ω|
@@ -1137,13 +1142,16 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
                       * ((∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
                         + (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))))
                     = (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) := by
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq k))) := by
                   ring
                 rw [hstep]
                 calc (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
                         * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)))
                     ≤ (L₆ + 1) * (G + Real.sqrt 2 * G) := mul_le_mul_of_nonneg_left hb hL1nn

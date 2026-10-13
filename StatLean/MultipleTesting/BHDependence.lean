@@ -21,9 +21,9 @@ $\alpha/H_N$ controls FDR at $(N_0/N)\,\alpha \le \alpha$ under arbitrary depend
 Benjamini–Yekutieli correction.
 
 The Lean statement (`benjamini_hochberg_dependent_fdr_le`) matches this exactly, with two routine
-additions: each $p$-value is assumed measurable (needed to integrate the false-discovery proportion),
-and super-uniformity is the explicit hypothesis `SuperUniform (p j) μ` on every null index. The
-constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
+additions: each $p$-value is assumed measurable (needed to integrate the false-discovery
+proportion), and super-uniformity is the explicit hypothesis `SuperUniform (p j) μ` on every null
+index. The constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
 
 **Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023, Lecture 5 §5.5 and Lecture 6 §6.6, Theorem 3 (Benjamini–Yekutieli bound under arbitrary
@@ -32,14 +32,14 @@ dependence); cross-referenced with Junwei Lu, *Big Data Analysis*, Springer Natu
 P-Values).
 
 **Proof formalization notes.** *(Benjamini–Yekutieli layer-cake.)* Write
-$\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is rejected
-and $R$ is the total number of rejections. For each null $i$, expand
-$\psi_i/(R\vee 1) = \sum_{k=1}^{N} (1/k)\,\mathbf{1}(R=k)\,\psi_i$ and use that on $\{R=k\}$ a rejected
-$i$ satisfies $p_i \le k\alpha/N$. Reorganizing the double sum into bands
-$C_j = \{(j-1)\alpha/N < p_i \le j\alpha/N\}$ and applying Abel summation shows each null contributes
-at most $(\alpha/N)\,H_N$, using only super-uniformity $\mathbb{P}(p_i \le k\alpha/N) \le k\alpha/N$.
-No factorization is used, hence no independence is needed. Summing over $H_0$ gives
-$(N_0/N)\,\alpha\,H_N$.
+$\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is
+rejected and $R$ is the total number of rejections. For each null $i$, expand
+$\psi_i/(R\vee 1) = \sum_{k=1}^{N} (1/k)\,\mathbf{1}(R=k)\,\psi_i$ and use that on $\{R=k\}$ a
+rejected $i$ satisfies $p_i \le k\alpha/N$. Reorganizing the double sum into bands
+$C_j = \{(j-1)\alpha/N < p_i \le j\alpha/N\}$ and applying Abel summation shows each null
+contributes at most $(\alpha/N)\,H_N$, using only super-uniformity
+$\mathbb{P}(p_i \le k\alpha/N) \le k\alpha/N$. No factorization is used, hence no independence is
+needed. Summing over $H_0$ gives $(N_0/N)\,\alpha\,H_N$.
 
 The combinatorial / measurability infrastructure for the BH rejection set is re-derived `private`ly
 here because the corresponding lemmas in `BenjaminiHochberg.lean` are `private` to that module.

@@ -145,7 +145,7 @@ private lemma quadform_le_two_sup_net
       have hgw : g w = ‖w‖ ^ 2 * g wh := by
         conv_lhs => rw [hwwh]
         rw [hghom]
-      rw [hgw, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ ‖w‖ ^ 2)]
+      rw [hgw, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖w‖ ^ 2)]
       have := hMmax wh (le_of_eq hwhnorm)
       nlinarith [abs_nonneg (g wh), sq_nonneg ‖w‖, this]
   -- sharp bilinear bound: |B x y| ≤ M · ‖x‖ · ‖y‖
@@ -167,7 +167,7 @@ private lemma quadform_le_two_sup_net
     have hunit : |B xh yh| ≤ M := by
       have hpol : B xh yh = (g (xh + yh) - g (xh - yh)) / 4 := by
         rw [hpolar]; ring
-      rw [hpol, abs_div, abs_of_pos (by norm_num : (0:ℝ) < 4)]
+      rw [hpol, abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 4)]
       have h1 : |g (xh + yh)| ≤ M * ‖xh + yh‖ ^ 2 := hghbound _
       have h2 : |g (xh - yh)| ≤ M * ‖xh - yh‖ ^ 2 := hghbound _
       have hpar : ‖xh + yh‖ ^ 2 + ‖xh - yh‖ ^ 2 = 2 * (‖xh‖ ^ 2 + ‖yh‖ ^ 2) :=
@@ -176,7 +176,7 @@ private lemma quadform_le_two_sup_net
       have htri : |g (xh + yh) - g (xh - yh)| ≤ |g (xh + yh)| + |g (xh - yh)| := by
         have h := abs_add_le (g (xh + yh)) (-(g (xh - yh)))
         simpa [sub_eq_add_neg, abs_neg] using h
-      rw [div_le_iff₀ (by norm_num : (0:ℝ) < 4)]
+      rw [div_le_iff₀ (by norm_num : (0 : ℝ) < 4)]
       nlinarith [htri, h1, h2, hpar]
     -- scale back
     have hscale : B x y = ‖x‖ * ‖y‖ * B xh yh := by

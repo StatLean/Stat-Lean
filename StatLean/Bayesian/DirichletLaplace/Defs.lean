@@ -44,11 +44,11 @@ API proofs here (the probability-measure instance, the kernel-evaluation identit
 `dlSuppCount` measurability) are laptop-closed against the `ForMathlib` bricks once those land; they
 are marked with `-- LAPTOP-DEBT`.
 
-**Bibliographic comments.** The normal means / sparse-sequence problem is classical (Donoho–Johnstone
-1994; Johnstone–Silverman 2004); the DL prior and its posterior-contraction theory are due to the
-BPPD paper formalized here, in the posterior-contraction framework of Ghosal–Ghosh–van der Vaart
-(*Ann. Statist.* 28 (2000), 500–531) and Castillo–van der Vaart (*Ann. Statist.* 40 (2012),
-2069–2101).
+**Bibliographic comments.** The normal means / sparse-sequence problem is classical
+(Donoho–Johnstone 1994; Johnstone–Silverman 2004); the DL prior and its posterior-contraction theory
+are due to the BPPD paper formalized here, in the posterior-contraction framework of
+Ghosal–Ghosh–van der Vaart (*Ann. Statist.* 28 (2000), 500–531) and Castillo–van der Vaart (*Ann.
+Statist.* 40 (2012), 2069–2101).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -83,7 +83,8 @@ instance isProbabilityMeasure_dlMarginal (a : ℝ) : IsProbabilityMeasure (dlMar
       Measure.measurable_of_measurable_coe _ (fun s hs => measurable_laplaceMeasure_apply hs)
     refine ⟨?_⟩
     rw [Measure.bind_apply MeasurableSet.univ hmeas.aemeasurable]
-    -- `gammaMeasure` is supported on `Ioi 0`, and `laplaceMeasure b` is a probability measure there.
+    -- `gammaMeasure` is supported on `Ioi 0`, and
+    -- `laplaceMeasure b` is a probability measure there.
     have hpos : ∀ᵐ b ∂(gammaMeasure a 2⁻¹), (0 : ℝ) < b := by
       rw [ae_iff]
       simp only [not_lt]

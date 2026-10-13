@@ -147,14 +147,14 @@ theorem sampleSD_breaksUnder_one (hn : 2 ≤ n) (x : Fin n → ℝ) :
   classical
   rintro ⟨lo, hi, hlo, H⟩
   have hn0 : 0 < n := by omega
-  have hnR : (2:ℝ) ≤ (n:ℝ) := by exact_mod_cast hn
-  have hnpos : (0:ℝ) < n := by linarith
-  have hn1 : (0:ℝ) < (n:ℝ) - 1 := by linarith
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hn1 : (0 : ℝ) < (n : ℝ) - 1 := by linarith
   obtain ⟨i₀⟩ : Nonempty (Fin n) := ⟨⟨0, hn0⟩⟩
   -- replace the single coordinate `i₀` by the value making its residual exactly `A`
   set S : ℝ := ∑ i ∈ Finset.univ \ {i₀}, x i with hS
-  set A : ℝ := (n:ℝ) * (|hi| + 1) with hA
-  set M : ℝ := ((n:ℝ) * A + S) / ((n:ℝ) - 1) with hM
+  set A : ℝ := (n : ℝ) * (|hi| + 1) with hA
+  set M : ℝ := ((n : ℝ) * A + S) / ((n : ℝ) - 1) with hM
   set y : Fin n → ℝ := Function.update x i₀ M with hy
   have hdist : hammingDist x y ≤ 1 := by
     refine le_trans (Finset.card_le_card (t := ({i₀} : Finset (Fin n))) fun i hi' => ?_) (by simp)
@@ -164,7 +164,7 @@ theorem sampleSD_breaksUnder_one (hn : 2 ≤ n) (x : Fin n → ℝ) :
         (by simpa [hy] using (Finset.mem_filter.mp hi').2)
   have hsum : ∑ i, y i = M + S := Finset.sum_update_of_mem (Finset.mem_univ i₀) x M
   have hmean : sampleMean y = (M + S) / n := by rw [sampleMean, hsum]
-  have hMn : M * ((n:ℝ) - 1) = (n:ℝ) * A + S := by rw [hM]; field_simp
+  have hMn : M * ((n : ℝ) - 1) = (n : ℝ) * A + S := by rw [hM]; field_simp
   -- with `n ≥ 2` the corrupted mean cannot chase the outlier: the residual is `A`
   have hd : y i₀ - sampleMean y = A := by
     have hyi : y i₀ = M := by simp [hy]
@@ -174,15 +174,15 @@ theorem sampleSD_breaksUnder_one (hn : 2 ≤ n) (x : Fin n → ℝ) :
   have hterm : (y i₀ - sampleMean y) ^ 2 ≤ ∑ i, (y i - sampleMean y) ^ 2 :=
     Finset.single_le_sum (f := fun i => (y i - sampleMean y) ^ 2)
       (fun i _ => sq_nonneg _) (Finset.mem_univ i₀)
-  have hvar : A ^ 2 / (n:ℝ) ≤ sampleMean fun i => (y i - sampleMean y) ^ 2 := by
+  have hvar : A ^ 2 / (n : ℝ) ≤ sampleMean fun i => (y i - sampleMean y) ^ 2 := by
     rw [sampleMean, ← hd]
     gcongr
-  have ha : (0:ℝ) ≤ |hi| := abs_nonneg hi
-  have hkey : |hi| ^ 2 < A ^ 2 / (n:ℝ) := by
+  have ha : (0 : ℝ) ≤ |hi| := abs_nonneg hi
+  have hkey : |hi| ^ 2 < A ^ 2 / (n : ℝ) := by
     rw [lt_div_iff₀ hnpos, hA]
-    have h1 : |hi| ^ 2 < (n:ℝ) * (|hi| + 1) ^ 2 := by nlinarith
-    calc |hi| ^ 2 * (n:ℝ) < ((n:ℝ) * (|hi| + 1) ^ 2) * (n:ℝ) := by nlinarith
-      _ = ((n:ℝ) * (|hi| + 1)) ^ 2 := by ring
+    have h1 : |hi| ^ 2 < (n : ℝ) * (|hi| + 1) ^ 2 := by nlinarith
+    calc |hi| ^ 2 * (n : ℝ) < ((n : ℝ) * (|hi| + 1) ^ 2) * (n : ℝ) := by nlinarith
+      _ = ((n : ℝ) * (|hi| + 1)) ^ 2 := by ring
   have hlt : |hi| < sampleSD y := by
     rw [sampleSD]
     exact (Real.lt_sqrt (abs_nonneg hi)).2 (lt_of_lt_of_le hkey hvar)

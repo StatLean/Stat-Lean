@@ -127,7 +127,8 @@ private lemma gaussian_lintegral_sq (v : ℝ≥0) :
     simpa [integral_id_gaussianReal] using hv
   have hint2 : Integrable (fun x : ℝ => x ^ 2) (gaussianReal 0 v) :=
     (memLp_id_gaussianReal' 2 (by simp)).integrable_sq
-  rw [← ofReal_integral_eq_lintegral_ofReal hint2 (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
+  rw [← ofReal_integral_eq_lintegral_ofReal hint2
+      (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
     hint]
 
 /-- Second moment of the `ℓ¹`-norm of the noise vector: `E[(∑ᵢ|ξᵢ|)²] ≤ n²·v`. -/

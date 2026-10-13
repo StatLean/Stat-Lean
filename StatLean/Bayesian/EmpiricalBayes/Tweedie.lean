@@ -215,12 +215,12 @@ private theorem hasDerivAt_score_gaussianMarginalPDF (G : Measure ℝ) [IsFinite
       have h1 : |(-(1 : ℝ) / (v : ℝ))| = 1 / (v : ℝ) := by
         rw [abs_div, abs_neg, abs_one, abs_of_pos hvpos]
       have h2 : |((θ - y) ^ 2 / (v : ℝ) ^ 2)| = (θ - y) ^ 2 / (v : ℝ) ^ 2 := by
-        rw [abs_div, abs_of_nonneg (sq_nonneg _), abs_of_pos (by positivity : (0:ℝ) < (v:ℝ)^2)]
+        rw [abs_div, abs_of_nonneg (sq_nonneg _), abs_of_pos (by positivity : (0 : ℝ) < (v : ℝ)^2)]
       rw [h1, h2]
       have hsqle : (θ - y) ^ 2 ≤ (|θ| + (|x| + 1)) ^ 2 := by
         rw [← sq_abs (θ - y)]
         exact pow_le_pow_left₀ (abs_nonneg _) hyx 2
-      have := (div_le_div_iff_of_pos_right (by positivity : (0:ℝ) < (v:ℝ)^2)).mpr hsqle
+      have := (div_le_div_iff_of_pos_right (by positivity : (0 : ℝ) < (v : ℝ)^2)).mpr hsqle
       linarith
     exact mul_le_mul hcoef (gaussianPDFReal_le_peak θ v y) (gaussianPDFReal_nonneg θ v y)
       (by positivity)
@@ -253,7 +253,8 @@ theorem tweedie_normal_posteriorVariance (G : Measure ℝ) [IsProbabilityMeasure
     -- USER-INPUT: nondegenerate marginal at `x`; Efron §1.5
     (x : ℝ) (hpos : 0 < gaussianMarginalPDF G v x) :
     (∫ θ, (θ - tweedieEstimator G v x) ^ 2 * gaussianPDFReal θ v x ∂G) / gaussianMarginalPDF G v x
-      = (v : ℝ) + (v : ℝ) ^ 2 * deriv (deriv (fun y => Real.log (gaussianMarginalPDF G v y))) x := by
+      = (v : ℝ) + (v : ℝ) ^ 2 *
+          deriv (deriv (fun y => Real.log (gaussianMarginalPDF G v y))) x := by
   have hvpos : (0 : ℝ) < (v : ℝ) := by rw [NNReal.coe_pos]; exact zero_lt_iff.mpr hv
   have hv' : (v : ℝ) ≠ 0 := ne_of_gt hvpos
   set C : ℝ := (Real.sqrt (2 * Real.pi * (v : ℝ)))⁻¹ with hC

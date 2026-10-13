@@ -414,8 +414,8 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
                   = ENNReal.ofReal (η / 4 + η / 4) :=
         (ENNReal.ofReal_add hη4_nn hη4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ η/4 + η/4)
-            (by linarith : (0:ℝ) ≤ η/4 + η/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η/4 + η/4)
+            (by linarith : (0 : ℝ) ≤ η/4 + η/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h_M_le h4) (add_le_add h3 hse)) ?_

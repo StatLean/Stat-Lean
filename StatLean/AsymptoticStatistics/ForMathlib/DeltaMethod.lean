@@ -59,7 +59,7 @@ theorem delta_method_remainder
       (fun k ω => sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))) := by
   intro ε hε
   refine Metric.tendsto_atTop.mpr fun η hη => ?_
-  have hη2 : (0:ℝ) < η / 2 := by positivity
+  have hη2 : (0 : ℝ) < η / 2 := by positivity
   -- tightness threshold `M > 0`
   obtain ⟨M₀, hM₀⟩ := h_OP (η / 2) hη2
   set M : ℝ := max M₀ 1 with hM_def
@@ -68,7 +68,7 @@ theorem delta_method_remainder
   have hMbound : ∀ k, (P k).real {ω | M < ‖sqn k • (T k ω - θ₀)‖} ≤ η / 2 := fun k =>
     le_trans (measureReal_mono fun ω hω => lt_of_le_of_lt (le_max_left M₀ 1) hω) (hM₀ k)
   -- little-o extraction with `c := ε / (2M)`
-  have hc : (0:ℝ) < ε / (2 * M) := by positivity
+  have hc : (0 : ℝ) < ε / (2 * M) := by positivity
   have hcM : ε / (2 * M) * M = ε / 2 := by field_simp
   obtain ⟨δ, hδ_pos, hδ⟩ :=
     Metric.eventually_nhds_iff.mp ((Asymptotics.isLittleO_iff.mp hφ.isLittleO) hc)

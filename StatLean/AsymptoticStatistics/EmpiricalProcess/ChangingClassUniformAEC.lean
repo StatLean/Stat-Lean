@@ -8,8 +8,8 @@ namespace AsymptoticStatistics.EmpiricalProcess
 open Filter MeasureTheory Topology
 open scoped ENNReal
 
-set_option linter.style.longLine false
-
+set_option linter.style.longLine false in
+-- The lemma name does not fit in 100 columns.
 /-- The repaired uniform-covering route makes every population-`L²`-null
 changing local class asymptotically negligible in outer expectation. -/
 theorem changingLocalOscillation_tendsto_zero

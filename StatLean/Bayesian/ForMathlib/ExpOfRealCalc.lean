@@ -83,62 +83,62 @@ theorem tsum_ofReal_exp_neg_sq_le (c K : ℝ) (M : ℕ)
   have hK : 0 < K := by
     by_contra hle
     push Not at hle
-    nlinarith [h, mul_nonneg (mul_pos hc (by positivity : (0:ℝ) < 2 * (M:ℝ) + 1)).le
+    nlinarith [h, mul_nonneg (mul_pos hc (by positivity : (0 : ℝ) < 2 * (M : ℝ) + 1)).le
       (neg_nonneg.mpr hle)]
   have hcK : 0 ≤ c * K := (mul_pos hc hK).le
   -- Term-by-term geometric domination: `exp(-c(M+j)²K) ≤ exp(-cM²K)·r^j`.
   have hterm : ∀ j : ℕ,
       ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ) : ℝ) ^ 2 * K))
-        ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
-          * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j := by
+        ≤ ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K))
+          * ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) ^ j := by
     intro j
-    have hexp : Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K)
-        ≤ Real.exp (-c * (M:ℝ)^2 * K) * Real.exp (-c * (2 * (M:ℝ) + 1) * K) ^ j := by
+    have hexp : Real.exp (-c * ((M + j : ℕ) : ℝ)^2 * K)
+        ≤ Real.exp (-c * (M : ℝ)^2 * K) * Real.exp (-c * (2 * (M : ℝ) + 1) * K) ^ j := by
       rw [← Real.exp_nat_mul, ← Real.exp_add]
       apply Real.exp_le_exp.mpr
       push_cast
-      have hjsq : (j:ℝ) ≤ (j:ℝ)^2 := by
+      have hjsq : (j : ℝ) ≤ (j : ℝ)^2 := by
         exact_mod_cast Nat.le_self_pow (by norm_num) j
       nlinarith [mul_nonneg hcK (sub_nonneg.mpr hjsq)]
-    calc ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K))
-        ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)
-            * Real.exp (-c * (2 * (M:ℝ) + 1) * K) ^ j) := ENNReal.ofReal_le_ofReal hexp
-      _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
-            * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j := by
+    calc ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ) : ℝ)^2 * K))
+        ≤ ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K)
+            * Real.exp (-c * (2 * (M : ℝ) + 1) * K) ^ j) := ENNReal.ofReal_le_ofReal hexp
+      _ = ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K))
+            * ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) ^ j := by
           rw [ENNReal.ofReal_mul (Real.exp_pos _).le,
             ENNReal.ofReal_pow (Real.exp_pos _).le]
   -- The ratio `r = exp(-c(2M+1)K) ≤ exp(-1) ≤ 1/2`.
-  have he2 : -c * (2 * (M:ℝ) + 1) * K ≤ -1 := by nlinarith [h]
-  have he1 : (2:ℝ) < Real.exp 1 := Real.exp_one_gt_two
+  have he2 : -c * (2 * (M : ℝ) + 1) * K ≤ -1 := by nlinarith [h]
+  have he1 : (2 : ℝ) < Real.exp 1 := Real.exp_one_gt_two
   have hexpm1 : Real.exp (-1) ≤ 1/2 := by
     have hpos := Real.exp_pos 1
     have hprodone : Real.exp (-1) * Real.exp 1 = 1 := by rw [← Real.exp_add]; simp
     nlinarith [hprodone, hpos, he1, Real.exp_pos (-1)]
   have hofhalf : ENNReal.ofReal (1/2 : ℝ) = 2⁻¹ := by
     rw [one_div, ENNReal.ofReal_inv_of_pos (by norm_num), ENNReal.ofReal_ofNat]
-  have hRhalf : ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ≤ 2⁻¹ := by
+  have hRhalf : ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) ≤ 2⁻¹ := by
     rw [← hofhalf]
     exact ENNReal.ofReal_le_ofReal (le_trans (Real.exp_le_exp.mpr he2) hexpm1)
   have hhalf : (1 : ℝ≥0∞) - 2⁻¹ = 2⁻¹ := by
     rw [ENNReal.sub_eq_of_eq_add (by simp) (ENNReal.inv_two_add_inv_two).symm]
-  have hR12 : (2 : ℝ≥0∞)⁻¹ ≤ 1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) :=
+  have hR12 : (2 : ℝ≥0∞)⁻¹ ≤ 1 - ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) :=
     hhalf ▸ tsub_le_tsub_left hRhalf 1
-  have hinv : (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹ ≤ 2 := by
-    calc (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹
-        ≤ ((2:ℝ≥0∞)⁻¹)⁻¹ := ENNReal.inv_le_inv.mpr hR12
+  have hinv : (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)))⁻¹ ≤ 2 := by
+    calc (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)))⁻¹
+        ≤ ((2 : ℝ≥0∞)⁻¹)⁻¹ := ENNReal.inv_le_inv.mpr hR12
       _ = 2 := inv_inv 2
-  calc (∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K)))
-      ≤ ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
-          * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j :=
+  calc (∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ) : ℝ)^2 * K)))
+      ≤ ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K))
+          * ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) ^ j :=
         ENNReal.tsum_le_tsum hterm
-    _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
-          * ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j :=
+    _ = ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K))
+          * ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)) ^ j :=
         ENNReal.tsum_mul_left
-    _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
-          * (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹ := by
+    _ = ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K))
+          * (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M : ℝ) + 1) * K)))⁻¹ := by
         rw [ENNReal.tsum_geometric]
-    _ ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) * 2 := mul_le_mul_right hinv _
-    _ = 2 * ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) := mul_comm _ _
+    _ ≤ ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K)) * 2 := mul_le_mul_right hinv _
+    _ = 2 * ENNReal.ofReal (Real.exp (-c * (M : ℝ)^2 * K)) := mul_comm _ _
 
 /-- **Series endgame.** If the real exponent diverges (`εₙ → ∞`) then
 `ofReal (exp (−εₙ)) → 0` in `ℝ≥0∞`. -/

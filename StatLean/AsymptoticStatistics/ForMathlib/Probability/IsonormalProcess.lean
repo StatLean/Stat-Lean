@@ -78,7 +78,7 @@ theorem countable_of_separable_index [TopologicalSpace.SeparableSpace H] {s : Se
           simpa using this
         rw [this]; norm_num
       have hnn : (0 : ℝ) ≤ ‖b x - b y‖ := norm_nonneg _
-      nlinarith [Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2), Real.sqrt_nonneg 2,
+      nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg 2,
         sq_nonneg (‖b x - b y‖ - Real.sqrt 2)]
     refine Metric.ball_disjoint_ball ?_
     rw [hdist]
@@ -519,7 +519,7 @@ theorem isonormal_charFun (b : HilbertBasis ℕ ℝ H) (h : H) (t : ℝ) :
   -- (B) the Gaussian form of each partial sum's characteristic function.
   have hBform : ∀ n, charFun (P.map (S n)) t
       = Complex.exp (↑(∫ ω, (⟪t, S n ω⟫_ℝ : ℝ) ∂P) * Complex.I
-          - ↑(Var[fun ω => ⟪t, S n ω⟫_ℝ ; P]) / 2) :=
+          - ↑(Var[fun ω => ⟪t, S n ω⟫_ℝ; P]) / 2) :=
     fun n => (hGaussS n).charFun_map_eq t
   -- `⟪t, Sₙ ω⟫_ℝ = t * Sₙ ω` and `Sₙ =ᵐ partialSum`.
   have hinnerS : ∀ n, (fun ω => ⟪t, S n ω⟫_ℝ)
@@ -552,7 +552,7 @@ theorem isonormal_charFun (b : HilbertBasis ℕ ℝ H) (h : H) (t : ℝ) :
     have := (hTendstoLp.norm).pow 2
     rwa [isonormal_norm] at this
   -- variance of each partial sum: `Var[⟪t,Sₙ⟫] = t² ‖Sₙ‖²` (centred + `L²` norm).
-  have hvarS : ∀ n, Var[fun ω => ⟪t, S n ω⟫_ℝ ; P]
+  have hvarS : ∀ n, Var[fun ω => ⟪t, S n ω⟫_ℝ; P]
       = t ^ 2 * ‖∑ i ∈ Finset.range n, b.repr h i • e i‖ ^ 2 := by
     intro n
     rw [variance_congr (hinnerS n), variance_const_mul]
@@ -770,12 +770,12 @@ theorem isonormal_hasGaussianLaw_tuple {m : ℕ} (b : HilbertBasis ℕ ℝ H) (h
         (charFunDual_map L (ContinuousLinearMap.id ℝ ℝ)).symm
     _ = charFunDual (P.map (fun ω => L (X ω))) (ContinuousLinearMap.id ℝ ℝ) := by rw [hmapmap]
     _ = Complex.exp ((∫ ω, (ContinuousLinearMap.id ℝ ℝ) (L (X ω)) ∂P : ℝ) * Complex.I
-          - Var[fun ω => (ContinuousLinearMap.id ℝ ℝ) (L (X ω)) ; P] / 2) :=
+          - Var[fun ω => (ContinuousLinearMap.id ℝ ℝ) (L (X ω)); P] / 2) :=
         hLX_gauss.charFunDual_map_eq_fun (ContinuousLinearMap.id ℝ ℝ)
     _ = Complex.exp ((∫ ω, L (X ω) ∂P : ℝ) * Complex.I
-          - Var[fun ω => L (X ω) ; P] / 2) := by simp only [ContinuousLinearMap.id_apply]
+          - Var[fun ω => L (X ω); P] / 2) := by simp only [ContinuousLinearMap.id_apply]
     _ = Complex.exp ((P[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X] : ℝ) * Complex.I
-          - Var[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X ; P] / 2) := by
+          - Var[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X; P] / 2) := by
         simp only [Function.comp_def]
 
 end

@@ -424,7 +424,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
           have h_eq : ∫ ξ, (ψ ∘ X i) ξ ∂μ = ∫ ξ, (ψ ∘ X 0) ξ ∂μ :=
             (hψX_idem i).integral_eq
           simpa [Function.comp_apply] using h_eq.trans hψX0_mean
-        -- V := ∫ ψ² ∂P_θ θ₀ ; equals Var[ψ ∘ X 0; μ] using hψX0_mean and map.
+        -- V := ∫ ψ² ∂P_θ θ₀; equals Var[ψ ∘ X 0; μ] using hψX0_mean and map.
         set V : ℝ := ∫ x, (ψ x)^2 ∂(P_θ θ₀) with hV_def
         have hV_nonneg : 0 ≤ V := by
           rw [hV_def]; exact integral_nonneg (fun _ => sq_nonneg _)

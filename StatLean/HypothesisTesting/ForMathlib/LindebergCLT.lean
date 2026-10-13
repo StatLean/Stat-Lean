@@ -121,15 +121,15 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 0: `‖exp (I z) − 1‖ ≤ z` for `z ≥ 0`.
   have hL0 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1‖ ≤ z := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
+    have hInt : (∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => he u)
         (hcontI.intervalIntegrable 0 z)]
       simp
     rw [← hInt]
-    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0:ℝ)) (b := z)
+    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := z)
       (C := 1) (f := fun u => Complex.exp (I * ↑u) * I)
       (fun u _ => by rw [norm_mul, Complex.norm_I, mul_one]; exact le_of_eq (hnorme u))
-    calc ‖∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
+    calc ‖∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
       _ = z := by rw [sub_zero, abs_of_nonneg hz, one_mul]
   -- Derivative of `A₁ w = exp (I w) − 1 − I w`.
   have hd1 : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w)
@@ -141,12 +141,12 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 1: `‖exp (I z) − 1 − I z‖ ≤ z²/2` for `z ≥ 0`.
   have hL1 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ z ^ 2 / 2 := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
+    have hInt : (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
         = Complex.exp (I * ↑z) - 1 - I * ↑z := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd1 u)
         (hcont1.intervalIntegrable 0 z)]
       simp
-    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0:ℝ)..z, u := by
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0 : ℝ)..z, u := by
       rw [← hInt]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         (continuous_id.intervalIntegrable 0 z)
@@ -173,7 +173,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     rw [heq]
     exact (hd1 u).add (hsq u)
   -- `A₂ z` as an integral of `A₁ · I`.
-  have hA2z : ∀ z : ℝ, (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
+  have hA2z : ∀ z : ℝ, (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
       = Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2 := by
     intro z
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd2 u)
@@ -185,13 +185,13 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖ ≤ min (z ^ 3 / 6) (z ^ 2) := by
     intro z hz
     have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖
-        ≤ ∫ u in (0:ℝ)..z, u ^ 2 / 2 := by
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 2 / 2 := by
       rw [← hA2z z]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         ((by fun_prop : Continuous (fun u : ℝ => u ^ 2 / 2)).intervalIntegrable 0 z)
       rw [norm_mul, Complex.norm_I, mul_one]
       exact hL1 u hu.1.le
-    have hintval : (∫ u in (0:ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
       rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
     refine le_min (hb.trans (le_of_eq hintval)) ?_
     have h1 := hL1 z hz
@@ -210,7 +210,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   rcases le_or_gt 0 y with hy | hy
   · rw [abs_of_nonneg hy]; exact key y hy
   · -- Reflect to `−y ≥ 0` via conjugation.
-    have hz : (0:ℝ) ≤ -y := by linarith
+    have hz : (0 : ℝ) ≤ -y := by linarith
     have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
       rw [← Complex.exp_conj]; congr 1
       simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
@@ -311,8 +311,8 @@ private lemma tendsto_prod_charFun_lindeberg
     simp only [hone, Finset.prod_const_one, hR]
     exact tendsto_const_nhds
   -- Basic facts about the row entries.
-  have hvnn : ∀ n i, (0:ℝ) ≤ Var[X n i; P] := fun n i => variance_nonneg _ _
-  have hunn : ∀ n i, (0:ℝ) ≤ t ^ 2 * Var[X n i; P] / 2 :=
+  have hvnn : ∀ n i, (0 : ℝ) ≤ Var[X n i; P] := fun n i => variance_nonneg _ _
+  have hunn : ∀ n i, (0 : ℝ) ≤ t ^ 2 * Var[X n i; P] / 2 :=
     fun n i => div_nonneg (mul_nonneg (sq_nonneg t) (hvnn n i)) (by norm_num)
   have hI2 : ∀ n i, Integrable (fun ω => (X n i ω) ^ 2) P := fun n i => (hL2 n i).integrable_sq
   have hI1 : ∀ n i, Integrable (X n i) P := fun n i => (hL2 n i).integrable one_le_two
@@ -393,7 +393,7 @@ private lemma tendsto_prod_charFun_lindeberg
         - (1 + Complex.I * ↑(t * X n i ω) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)‖ ≤ g ω := by
       intro ω
       refine (norm_cexp_sub_taylor_le (t * X n i ω)).trans ?_
-      have hnn0 : (0:ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
+      have hnn0 : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
         mul_nonneg (div_nonneg (mul_nonneg (pow_nonneg (abs_nonneg t) 3) hε.le) (by norm_num))
           (sq_nonneg _)
       by_cases hω : ε < |X n i ω|
@@ -424,12 +424,12 @@ private lemma tendsto_prod_charFun_lindeberg
   -- Uniform asymptotic negligibility of the row variances.
   have hsmall : ∀ c : ℝ, 0 < c → ∀ᶠ n in atTop, ∀ i, Var[X n i; P] ≤ c := by
     intro c hc
-    have hεpos : (0:ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
+    have hεpos : (0 : ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
     have hε2 : Real.sqrt (c / 2) ^ 2 = c / 2 := Real.sq_sqrt (by linarith)
     set ε := Real.sqrt (c / 2) with hεdef
     have hSlt : ∀ᶠ n in atTop,
         ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P ≤ c / 2 :=
-      (hlin ε hεpos).eventually_le_const (show (0:ℝ) < c / 2 by linarith)
+      (hlin ε hεpos).eventually_le_const (show (0 : ℝ) < c / 2 by linarith)
     filter_upwards [hSlt] with n hn i
     have hsm := hset ε n i
     have hdecomp : Var[X n i; P]
@@ -451,7 +451,7 @@ private lemma tendsto_prod_charFun_lindeberg
             setIntegral_le_integral (integrable_const _) (ae_of_all _ fun _ => by positivity)
         _ = ε ^ 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
     rw [hdecomp]; linarith
-  have ht2 : (0:ℝ) < t ^ 2 := by positivity
+  have ht2 : (0 : ℝ) < t ^ 2 := by positivity
   -- Eventually every row term satisfies `uᵢ = t²σᵢ²/2 ≤ 1`.
   have hev1 : ∀ᶠ n in atTop, ∀ i, t ^ 2 * Var[X n i; P] / 2 ≤ 1 := by
     filter_upwards [hsmall (2 / t ^ 2) (by positivity)] with n hn i
@@ -556,10 +556,10 @@ private lemma tendsto_prod_charFun_lindeberg
     set ε : ℝ := δ / (|t| ^ 3 + 1) with hεdef
     have hεpos : 0 < ε := by rw [hεdef]; exact div_pos hδ (by positivity)
     have hle : |t| ^ 3 * ε ≤ δ := by
-      have h0 : (0:ℝ) < |t| ^ 3 + 1 := by positivity
+      have h0 : (0 : ℝ) < |t| ^ 3 + 1 := by positivity
       rw [hεdef, ← mul_div_assoc, div_le_iff₀ h0]; nlinarith [abs_nonneg t, hδ.le]
     have hVarlt : ∀ᶠ n in atTop, ∑ i, Var[X n i; P] ≤ 2 :=
-      (hvar.eventually_lt_const (by norm_num : (1:ℝ) < 2)).mono fun n h => h.le
+      (hvar.eventually_lt_const (by norm_num : (1 : ℝ) < 2)).mono fun n h => h.le
     have hLinlt : ∀ᶠ n in atTop,
         t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P < δ / 3 := by
       have hlim : Tendsto (fun n => t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P)
@@ -585,7 +585,7 @@ private lemma tendsto_prod_charFun_lindeberg
       exact Finset.sum_le_sum fun i _ => hterm ε hεpos n i
     refine hsum2.trans ?_
     have hterm1 : |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P] ≤ δ / 3 := by
-      have hnn : (0:ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
+      have hnn : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
       calc |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P]
           ≤ |t| ^ 3 * ε / 6 * 2 := by apply mul_le_mul_of_nonneg_left hn2 hnn
         _ ≤ δ / 3 := by nlinarith [hle, hεpos.le, abs_nonneg t]

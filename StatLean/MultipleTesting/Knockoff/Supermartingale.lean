@@ -320,7 +320,8 @@ Lu-BDA §21.3): all magnitudes `|W|`, the non-null signs (`0` padded on nulls), 
 split-counts `(V₊(θ_n), V₋(θ_n))`. Its natural filtration `𝒢rev` exposes `Yproc n` and `FDPhat(θ_n)`
 (both functions of these) while keeping the individual null-sign *assignment* above `θ_n` hidden —
 the exchangeability that makes `Yproc` a supermartingale. See `notes/.../construction_audit.md`.
-- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA §21.3 (Definition 21.1 (Knock-Off Score), condition 3). -/
+- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA
+  §21.3 (Definition 21.1 (Knock-Off Score), condition 3). -/
 noncomputable def cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (ω : Ω) :
     (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ :=
   (fun j => |W j ω|,
@@ -406,7 +407,8 @@ lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
 post-step ratio as `A/(1+B)` plus the positive/negative sign corrections weighted by the conditional
 sign probabilities `A/(A+B)`, `B/(A+B)`, the result does not exceed `A/(1+B)`. Pure ℝ, reduces to
 `step_ratio_le`.
-- **LEAN-ONLY**: algebraic repackaging of `step_ratio_le` for the conditional-expectation assembly. -/
+- **LEAN-ONLY**: algebraic repackaging of `step_ratio_le`
+  for the conditional-expectation assembly. -/
 private lemma step_ratio_le' (a b : ℕ) :
     (a : ℝ) / (1 + b)
       + (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b))
@@ -433,7 +435,8 @@ private lemma step_ratio_le' (a b : ℕ) :
 /-- The post-condExp inequality in **coefficient-first** product order (matching the form produced
 by pulling the `𝒢rev n`-measurable coefficients out of `μ[·|𝒢rev n]`): same content as
 `step_ratio_le'`, with each product written `coeff * prob` instead of `prob * coeff`.
-- **LEAN-ONLY**: `mul_comm` repackaging of `step_ratio_le'` for the conditional-expectation assembly. -/
+- **LEAN-ONLY**: `mul_comm` repackaging of `step_ratio_le'`
+  for the conditional-expectation assembly. -/
 private lemma step_ratio_le'' (a b : ℕ) :
     (a : ℝ) / (1 + b)
       + (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b)) * ((a : ℝ) / (a + b))
@@ -704,8 +707,10 @@ private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
 
 /-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
 `sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
-(`signs_fair`), so `μ{W j = 0} = μ{0 ≤ W j} · μ{W j = 0} = ½ · μ{W j = 0}`, forcing `μ{W j = 0} = 0`.
-- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §21.3 (consequence of Definition 21.1 (Knock-Off Score), condition 3). -/
+(`signs_fair`), so `μ{W j = 0} = μ{0 ≤ W j} · μ{W j = 0} = ½ · μ{W j = 0}`,
+forcing `μ{W j = 0} = 0`.
+- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §21.3
+  (consequence of Definition 21.1 (Knock-Off Score), condition 3). -/
 private lemma null_ne_zero (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (j : Fin d) (hj : j ∈ H₀) : ∀ᵐ ω ∂μ, W j ω ≠ 0 := by
@@ -960,7 +965,8 @@ private lemma nsign_true_iff (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
 
 private lemma measurable_nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (m : {x // x ∈ H₀}) : Measurable (nsign W H₀ m) :=
-  Measurable.ite (measurableSet_le measurable_const (hWmeas m.val)) measurable_const measurable_const
+  Measurable.ite (measurableSet_le measurable_const (hWmeas m.val))
+      measurable_const measurable_const
 
 omit mΩ in
 /-- `nsign` factors through `sgnReal`: `nsign m = (· ≥ 1) ∘ sgnReal m`, the bridge that transports
@@ -1336,7 +1342,8 @@ private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
           measure_congr (hFC.inter (Filter.EventuallyEq.refl _ _))
   exact (hbridge l hl).trans (hswap.trans (hbridge j hj).symm)
 
-/-- Set-integral of a product of two `{0,1}`-indicators is the measure of the triple intersection. -/
+/-- Set-integral of a product of two `{0,1}`-indicators
+is the measure of the triple intersection. -/
 private lemma setIntegral_ite_mul_ite (μ : Measure Ω) (s : Set Ω) (P Q : Ω → Prop)
     [DecidablePred P] [DecidablePred Q]
     (hP : MeasurableSet {ω | P ω}) (hQ : MeasurableSet {ω | Q ω}) :
@@ -1367,23 +1374,24 @@ private lemma integrable_ite_mul_ite (μ : Measure Ω) [IsProbabilityMeasure μ]
       ≤ 1 * 1 := mul_le_mul h1 h2 (abs_nonneg _) zero_le_one
     _ = 1 := one_mul 1
 
-/-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §21.3). Fix a null
-`j`. Restricted to the event `{cIdx = j}` (where `j` is the rank-`n` coordinate, hence one of the
-`A + B` above-`θ_n` nonzero nulls), the conditional sign probability is the
+/-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §21.3). Fix a
+null `j`. Restricted to the event `{cIdx = j}` (where `j` is the rank-`n` coordinate, hence one of
+the `A + B` above-`θ_n` nonzero nulls), the conditional sign probability is the
 sampling-without-replacement ratio `A/(A+B)`:
 `μ[𝟙(cIdx=j)·𝟙(0<W j) | 𝒢rev n] =ᵐ 𝟙(cIdx=j)·A/(A+B)`. The conditioning data `𝒢rev n` fixes the
 magnitudes (hence `cIdx`, the above-`θ_n` null set `S_n` and `k = A+B`) and the count `A`, while the
 individual above-`θ_n` null signs are i.i.d. fair and exchangeable (`signs_iIndep`/`signs_fair`)
 and independent of the outer data + below-`θ_n` signs (`signs_indep_outer`).
 
-**Now fully assembled** from the single exchangeable nugget `aboveNulls_sign_swap`: this proof is the
-explicit `ae_eq_condExp_of_forall_setIntegral_eq` disintegration (the route the `SymmetricCondExp`
-kernel uses, no `StandardBorelSpace`/`CondIndepFun`). It partitions `Ω` over the finitely many values
-`T` of the random above-`θ_n` null set `S_n = aboveNulls`, rewrites `A = V₊(θ_n)` as the positive
-subcount of `T` and `A+B = |T|` a.e. on each cell, and reduces the per-cell set-integral identity to
-`aboveNulls_sign_swap` (the only remaining gap), which states that on a `𝒢rev n`-event where two
-nulls `l, j` are both above `θ_n`, `μ(F ∩ {0<W l}) = μ(F ∩ {0<W j})` — the exchangeability of the
-above-`θ_n` null signs. `count_condExp_minus` is derived algebraically from this.
+**Now fully assembled** from the single exchangeable nugget `aboveNulls_sign_swap`: this proof is
+the explicit `ae_eq_condExp_of_forall_setIntegral_eq` disintegration (the route the
+`SymmetricCondExp` kernel uses, no `StandardBorelSpace`/`CondIndepFun`). It partitions `Ω` over the
+finitely many values `T` of the random above-`θ_n` null set `S_n = aboveNulls`, rewrites
+`A = V₊(θ_n)` as the positive subcount of `T` and `A+B = |T|` a.e. on each cell, and reduces the
+per-cell set-integral identity to `aboveNulls_sign_swap` (the only remaining gap), which states that
+on a `𝒢rev n`-event where two nulls `l, j` are both above `θ_n`, `μ(F ∩ {0<W l}) = μ(F ∩ {0<W j})` —
+the exchangeability of the above-`θ_n` null signs.
+`count_condExp_minus` is derived algebraically from this.
 - **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §21.3. -/
 private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
@@ -1590,7 +1598,8 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
       div_self hTne, mul_one]
   · -- `j ∉ T`: the cell selector `𝟙(cIdx = j)` vanishes a.e.
     have hcidx0 : ∀ᵐ ω ∂μ,
-        ω ∈ s ∩ {ω | aboveNulls W H₀ n h ω = T} → (if cIdx W n h ω = j then (1 : ℝ) else 0) = 0 := by
+        ω ∈ s ∩ {ω | aboveNulls W H₀ n h ω = T} →
+            (if cIdx W n h ω = j then (1 : ℝ) else 0) = 0 := by
       filter_upwards [hmag] with ω hω hωsT
       have hAT : aboveNulls W H₀ n h ω = T := hωsT.2
       rw [ite_eq_right]; intro hc
@@ -1640,7 +1649,8 @@ private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
   have hfmj_eq : (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
         * (if W j ω < 0 then (1 : ℝ) else 0))
       =ᵐ[μ] (fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0)
-        - (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)) := by
+        - (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) *
+            (if 0 < W j ω then (1 : ℝ) else 0)) := by
     filter_upwards [null_ne_zero W H₀ μ hW j hj] with ω hω
     simp only [Pi.sub_apply]
     by_cases hpos : 0 < W j ω
@@ -1670,14 +1680,14 @@ private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
         have hB1 : (1 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by
           have : 1 ≤ Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := Finset.card_pos.mpr ⟨j, hmemM⟩
           exact_mod_cast this
-        have := (Nat.cast_nonneg (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0:ℝ) ≤ _); linarith
+        have := (Nat.cast_nonneg (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0 : ℝ) ≤ _); linarith
       · have hmemP : j ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by
           simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
           exact ⟨⟨le_of_eq hθ, hpos⟩, hj⟩
         have hA1 : (1 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by
           have : 1 ≤ Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := Finset.card_pos.mpr ⟨j, hmemP⟩
           exact_mod_cast this
-        have := (Nat.cast_nonneg (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0:ℝ) ≤ _); linarith
+        have := (Nat.cast_nonneg (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0 : ℝ) ≤ _); linarith
     simp only [ite_eq_left hc, one_mul]
     rw [sub_eq_iff_eq_add, ← add_div, eq_div_iff hAB.ne', one_mul]
     ring
@@ -1693,7 +1703,8 @@ null is positive with the sampling-without-replacement probability `A/(A+B)` (`A
   `signs_indep_outer`); Lu-BDA §21.3. -/
 private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
-    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ)
+        (h : n < d) (h1 : n + 1 < d) :
     μ[(fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
           - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
@@ -1745,7 +1756,8 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
 §21.3); the `V₋` analogue of `count_condExp_plus`, with conditional probability `B/(A+B)`. -/
 private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
-    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ)
+        (h : n < d) (h1 : n + 1 < d) :
     μ[(fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
           - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
@@ -1810,8 +1822,9 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
   Lu-BDA §21.3. -/
 lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
-    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §21.3.
-    -- Needed so each threshold step removes exactly one coordinate (the single-null exchangeable step).
+    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA
+    -- §21.3. Needed so each threshold step removes exactly
+    -- one coordinate (the single-null exchangeable step).
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) :
     μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
   by_cases h1 : n + 1 < d
@@ -2111,7 +2124,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
         intro j; exact orderStat_le_iff_card_lt _ ⟨n, h⟩ _
       have hpos : ∀ j ∈ H₀ᶜ, (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
           (n < rank (fun j => |W j ω|) j ∧
-            (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = 1 ∧ |W j ω| ≠ 0) := by
+            (if j ∈ H₀ then (0 : ℝ) else sgnReal W j ω) = 1 ∧ |W j ω| ≠ 0) := by
         intro j hj
         rw [Finset.mem_compl] at hj
         rw [hrankθ j, ite_eq_right hj]
@@ -2125,7 +2138,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
           · exact hlt
           · exact absurd (by rw [← heq]; simp) hne
       have hneg : ∀ j ∈ H₀ᶜ, (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ W j ω < 0) ↔
-          (n < rank (fun j => |W j ω|) j ∧ (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = -1) := by
+          (n < rank (fun j => |W j ω|) j ∧ (if j ∈ H₀ then (0 : ℝ) else sgnReal W j ω) = -1) := by
         intro j hj
         rw [Finset.mem_compl] at hj
         rw [hrankθ j, ite_eq_right hj, sgnReal]
@@ -2286,7 +2299,8 @@ private lemma ratio_eq_Yproc_hittingIdx
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio
 `V₊(tStar W α ω)/(1+V₋(tStar W α ω))`: unfolding `stoppedValue` and `tauStar` reduces the
 claim to `ratio_eq_Yproc_hittingIdx` via `(↑k : ℕ∞).untopA = k` (`WithTop.untopD_coe`).
-- **USER-INPUT**: bridge between the Yproc index space and the tStar threshold value; Lu-BDA §21.3. -/
+- **USER-INPUT**: bridge between the Yproc index space
+  and the tStar threshold value; Lu-BDA §21.3. -/
 lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
     stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω := by

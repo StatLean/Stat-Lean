@@ -19,8 +19,8 @@ The two marginal theorems of the LMM:
 **Proof formalization notes.** M1 instantiates the G-B1 covariance calculus
 (`covMatrix_map_add_prod` at `A = Z`, `B = 1`, plus the constant shift `Xβ` through
 `covMatrix_map_affine`/`meanVec_map_affine`). M2 rewrites `lmmLaw` as an affine image of the
-product Gaussian, then convolves the two independent Gaussian summands. *Book vs Lean:* M1's moment-only
-hypotheses have no Gaussianity — stronger than the books' statements.
+product Gaussian, then convolves the two independent Gaussian summands. *Book vs Lean:* M1's
+moment-only hypotheses have no Gaussianity — stronger than the books' statements.
 
 **Bibliographic comments.** The marginal covariance `Z G Zᵀ + R` is the variance-components
 decomposition of Henderson (1950) and Laird–Ware (1982).

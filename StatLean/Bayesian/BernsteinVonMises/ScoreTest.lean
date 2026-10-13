@@ -125,7 +125,7 @@ private lemma coord_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : �
   set c : NNReal := (‖L - (-L)‖₊ / 2) ^ 2 with hc
   have hcval : ((c : NNReal) : ℝ) = L ^ 2 := by
     rw [hc]; push_cast
-    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ L - (-L))]
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ L - (-L))]
     ring
   -- independence of the centered coordinates
   have hindep : iIndepFun (fun (i : Fin n) (ω : Fin n → 𝓧) => g (ω i) - ∫ x, g x ∂P) Pn := by

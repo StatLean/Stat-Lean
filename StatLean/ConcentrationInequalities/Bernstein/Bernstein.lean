@@ -319,7 +319,8 @@ private lemma bernstein_mgf_sharp {Y : Ω → ℝ} {σ2 b : ℝ≥0} {μ : Measu
 
 /-! ### Main theorem -/
 
-/-- **Bernstein's inequality for the sample mean** (Lu-BDA §6.1, Theorem 6.1 (Bernstein Inequality)).
+/-- **Bernstein's inequality for the sample mean**
+(Lu-BDA §6.1, Theorem 6.1 (Bernstein Inequality)).
 
 If `X 0, …, X (n−1)` are jointly independent, each measurable, each satisfying the Bernstein
 condition with variance `σ² > 0` and scale `b > 0` under the probability measure `μ`, then for

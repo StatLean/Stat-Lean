@@ -62,7 +62,8 @@ theorem le_fintypeArgmax [Fintype Θ] [Nonempty Θ] (g : Θ → ℝ≥0∞) (b :
 among maximizers. -/
 theorem fintypeArgmax_eq_iff [Fintype Θ] [Nonempty Θ] (g : Θ → ℝ≥0∞) (a : Θ) :
     fintypeArgmax g = a ↔
-      (∀ b, g b ≤ g a) ∧ ∀ a', (∀ b, g b ≤ g a') → Fintype.equivFin Θ a ≤ Fintype.equivFin Θ a' := by
+      (∀ b, g b ≤ g a) ∧ ∀ a', (∀ b, g b ≤ g a') → Fintype.equivFin Θ a ≤
+          Fintype.equivFin Θ a' := by
   classical
   have hSne : ((Finset.univ.filter fun a => ∀ b, g b ≤ g a).image
       (Fintype.equivFin Θ)).Nonempty := by

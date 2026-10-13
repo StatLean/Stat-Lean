@@ -11,14 +11,15 @@ $\le k\alpha/N$. The false discovery proportion is $\mathrm{FDP} = V / (R \vee 1
 number of true nulls rejected and $R$ the total number of rejections, and the false discovery rate
 is $\mathrm{FDR} = \mathbb{E}[\mathrm{FDP}]$.
 
-**Main result** (`benjamini_hochberg_fdr_eq`): if the p-values are jointly independent and every null
-p-value is **exactly** uniform on $[0,1]$ (i.e. $\mathbb{P}(p_i \le t) = t$ for $t \in [0,1]$, not
-merely the super-uniform domination $\mathbb{P}(p_i \le t) \le t$), then the BH procedure attains
-FDR control with **equality**:
+**Main result** (`benjamini_hochberg_fdr_eq`): if the p-values are jointly independent and every
+null p-value is **exactly** uniform on $[0,1]$ (i.e. $\mathbb{P}(p_i \le t) = t$ for $t \in [0,1]$,
+not merely the super-uniform domination $\mathbb{P}(p_i \le t) \le t$), then the BH procedure
+attains FDR control with **equality**:
 $$ \mathrm{FDR} = \frac{N_0}{N}\,\alpha. $$
-This is the exact-identity companion to the super-uniform inequality $\mathrm{FDR} \le (N_0/N)\alpha$
-formalized in `BenjaminiHochberg.lean`. We require $0 < \alpha \le 1$ and $N \ge 1$; the upper bound
-$\alpha \le 1$ ensures every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
+This is the exact-identity companion to the super-uniform inequality
+$\mathrm{FDR} \le (N_0/N)\alpha$ formalized in `BenjaminiHochberg.lean`. We require
+$0 < \alpha \le 1$ and $N \ge 1$; the upper bound $\alpha \le 1$ ensures
+every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
 (ISBN 978-3-032-03160-0), Chapter 20 (False Discovery Rate), §20.2 (False Discovery Rate:
@@ -54,12 +55,12 @@ Y. Benjamini and Y. Hochberg, "Controlling the false discovery rate: a practical
 approach to multiple testing", *Journal of the Royal Statistical Society, Series B* 57(1):289–300,
 1995; their Theorem 1 states $\mathrm{FDR} = (m_0/m)\,q$ for independent test statistics with the
 nulls uniformly distributed (and $\mathrm{FDR} \le (m_0/m)\,q$ in general). The martingale /
-optional-stopping reformulation underlying the lecture proof is due to J. D. Storey, J. E. Taylor and
-D. Siegmund, "Strong control, conservative point estimation and simultaneous conservative
-consistency of false discovery rates: a unified approach", *Journal of the Royal Statistical Society,
-Series B* 66(1):187–205, 2004 (their empirical-process / backwards-martingale treatment of the BH
-estimator $V(t)/t$). The leave-one-out argument formalized here is the discrete equivalent of that
-martingale identity and gives the same exact-equality conclusion.
+optional-stopping reformulation underlying the lecture proof is due to J. D. Storey, J. E. Taylor
+and D. Siegmund, "Strong control, conservative point estimation and simultaneous conservative
+consistency of false discovery rates: a unified approach", *Journal of the Royal Statistical
+Society, Series B* 66(1):187–205, 2004 (their empirical-process / backwards-martingale treatment of
+the BH estimator $V(t)/t$). The leave-one-out argument formalized here is the discrete equivalent of
+that martingale identity and gives the same exact-equality conclusion.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -474,7 +475,8 @@ private lemma bh_summand_eq_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
       change (bhRejects α p ω).card ≤ N
       exact (Finset.card_le_univ _).trans_eq (by simp [Fintype.card_fin])
     have h1leR : (1 : ℝ) ≤ (numRejections (bhRejects α p) ω : ℝ) := by exact_mod_cast hR1
-    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N := bh_mem_imp_le hN α hα p i ω hi
+    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N :=
+      bh_mem_imp_le hN α hα p i ω hi
     have hRloo : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
         numRejections (bhRejects α p) ω :=
       bh_count_eq_leaveOneOut hN α hα p i (numRejections (bhRejects α p) ω) ω hi rfl
@@ -569,7 +571,8 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
           (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
             else 0)) =
         ({ω | p i ω ≤ (k : ℝ) * α / N} ∩
-          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).indicator 1 := by
+          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ)))
+              ω = k}).indicator 1 := by
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>

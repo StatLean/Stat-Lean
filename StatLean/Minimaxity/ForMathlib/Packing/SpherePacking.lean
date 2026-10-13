@@ -29,14 +29,14 @@ Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Examp
 
 The sphere packing is the image of a Gilbert–Varshamov **binary code** under the sign embedding
 $$v_\alpha := \Bigl(i \mapsto \pm 1/\sqrt{n}\Bigr), \qquad
-\text{sign }+\text{ iff } \alpha_i = \texttt{true} \quad (\alpha : \mathrm{Fin}\,n \to \mathrm{Bool}),$$
-which lands every codeword on the unit sphere (each entry squared is $1/n$, summing to $1$). For two
-codewords the difference has entry $\pm 2/\sqrt{n}$ exactly on the Hamming-disagreement coordinates
-and $0$ elsewhere, so
+\text{sign }+\text{ iff } \alpha_i = \texttt{true} \quad (\alpha : \mathrm{Fin}\,n \to
+\mathrm{Bool}),$$ which lands every codeword on the unit sphere (each entry squared is $1/n$,
+summing to $1$). For two codewords the difference has entry $\pm 2/\sqrt{n}$ exactly on the
+Hamming-disagreement coordinates and $0$ elsewhere, so
 $$\|v_\alpha - v_\beta\|^2 = d_H(\alpha,\beta)\cdot (4/n) \ \ge\ (n/4)\cdot(4/n) = 1,$$
 using the code's pairwise Hamming separation $\ge n/4$. Hence the images are unit vectors that are
-pairwise $\ge 1$-separated (a fortiori $\ge 1/2$); distinctness of the $\ge 1$-separated images makes
-the embedding injective, so $|\mathrm{image}| = |\mathrm{code}|$ and the code's count
+pairwise $\ge 1$-separated (a fortiori $\ge 1/2$); distinctness of the $\ge 1$-separated images
+makes the embedding injective, so $|\mathrm{image}| = |\mathrm{code}|$ and the code's count
 $\log |\mathrm{code}| \ge n/10$ transports. The entire geometric content is local (per-coordinate),
 and the combinatorial count is the single imported brick `exists_hamming_packing`
 (`HammingPacking.lean`) — no measure theory. The $n = 0$ degenerate case is handled separately: no

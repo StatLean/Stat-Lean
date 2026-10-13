@@ -981,15 +981,16 @@ private lemma eLpNorm_qmdRem_tendsto (γ : QMDPath P_full) :
       (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating /
         ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) := by
     simpa only [qmdRem] using! γ.qmd_limit
-  have hofr : Tendsto (fun t : ℝ => ENNReal.ofReal |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-    have h1 : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-      have hc : Tendsto (fun t : ℝ => |t|) (𝓝 (0:ℝ)) (𝓝 |(0:ℝ)|) := continuous_abs.tendsto (0:ℝ)
+  have hofr : Tendsto (fun t : ℝ => ENNReal.ofReal |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+    have h1 : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+      have hc : Tendsto (fun t : ℝ => |t|) (𝓝 (0 : ℝ)) (𝓝 |(0 : ℝ)|) :=
+        continuous_abs.tendsto (0 : ℝ)
       simp only [abs_zero] at hc
       exact hc.mono_left nhdsWithin_le_nhds
-    have := (ENNReal.continuous_ofReal.tendsto (0:ℝ)).comp h1
+    have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp h1
     simpa using! this
-  have hprod := ENNReal.Tendsto.mul hq (Or.inr (by simp : (0:ℝ≥0∞) ≠ ⊤)) hofr
-    (Or.inr (by simp : (0:ℝ≥0∞) ≠ ⊤))
+  have hprod := ENNReal.Tendsto.mul hq (Or.inr (by simp : (0 : ℝ≥0∞) ≠ ⊤)) hofr
+    (Or.inr (by simp : (0 : ℝ≥0∞) ≠ ⊤))
   rw [mul_zero] at hprod
   refine Tendsto.congr' ?_ hprod
   filter_upwards [self_mem_nhdsWithin] with t ht
@@ -1011,9 +1012,9 @@ private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
   set C₀ : ℝ≥0∞ := eLpNorm (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating with hC₀
   have hC₀_ne : C₀ ≠ ⊤ := hsξ0.eLpNorm_lt_top.ne
   have hterm2 : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ * C₀) (𝓝[≠] 0) (𝓝 0) := by
-    have henorm : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-      have hc : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝 (0:ℝ)) (𝓝 ‖((0:ℝ) / 2 : ℝ)‖ₑ) :=
-        (continuous_enorm.comp (continuous_id.div_const 2)).tendsto (0:ℝ)
+    have henorm : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+      have hc : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝 (0 : ℝ)) (𝓝 ‖((0 : ℝ) / 2 : ℝ)‖ₑ) :=
+        (continuous_enorm.comp (continuous_id.div_const 2)).tendsto (0 : ℝ)
       simp only [zero_div, enorm_zero] at hc
       exact hc.mono_left nhdsWithin_le_nhds
     have := ENNReal.Tendsto.mul_const henorm (Or.inr hC₀_ne)
@@ -1053,7 +1054,7 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   have hupperlim : Tendsto
       (fun t => 2 * eLpNorm (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-    have := ENNReal.Tendsto.const_mul (xi_diff_L2_tendsto γ) (Or.inr (by simp : (2:ℝ≥0∞) ≠ ⊤))
+    have := ENNReal.Tendsto.const_mul (xi_diff_L2_tendsto γ) (Or.inr (by simp : (2 : ℝ≥0∞) ≠ ⊤))
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupperlim
     (Eventually.of_forall (fun t => zero_le)) ?_

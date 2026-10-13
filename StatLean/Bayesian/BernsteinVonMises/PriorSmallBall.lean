@@ -242,7 +242,7 @@ private lemma poly_mul_exp_neg_tendsto {k : ℕ} {c D : ℝ} (hc : 0 < c) (hD : 
     rw [show (1 : ℝ) = Real.sqrt 1 by simp]
     exact Real.sqrt_le_sqrt hnR
   have hn2 : Real.sqrt n ≤ (n : ℝ) := by
-    nlinarith [Real.sq_sqrt (show (0:ℝ) ≤ (n : ℝ) by positivity)]
+    nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ (n : ℝ) by positivity)]
   have hexp : Real.exp (-c * n * D ^ 2) ≤ Real.exp (-(b * Real.sqrt n)) := by
     refine Real.exp_le_exp.2 ?_
     have : b * Real.sqrt n ≤ b * n := by gcongr

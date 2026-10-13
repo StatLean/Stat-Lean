@@ -15,8 +15,8 @@ $$
 the local-packing / Fano method lower-bounds the minimax prediction risk. For the unconstrained
 problem one obtains
 $$
-  \inf_{\hat\theta}\ \sup_{\theta}\ \mathbb{E}\!\left[\frac{1}{n}\lVert X(\hat\theta - \theta)\rVert_2^2\right]
-  \ \gtrsim\ \frac{\sigma^2}{2560}\cdot\frac{\operatorname{rank}(X)}{n},
+  \inf_{\hat\theta}\ \sup_{\theta}\ \mathbb{E}\!\left[\frac{1}{n}\lVert X(\hat\theta -
+  \theta)\rVert_2^2\right] \ \gtrsim\ \frac{\sigma^2}{2560}\cdot\frac{\operatorname{rank}(X)}{n},
 $$
 which is the formalized statement here (Example 15.14), and — restricting to $s$-sparse regression
 vectors — one obtains the sparse-rate variant
@@ -89,16 +89,17 @@ private lemma exists_range_linearIsometry {n d r : ℕ}
 
 open InformationTheory in
 /-- **Crux: local packing data for fixed-design linear regression.** A `rank(A)`-dimensional packing
-of the unit sphere of `ℝʳ` (Wainwright Example 5.8, `exists_sphere_packing`), spread across the range
-of `A` through a linear isometry and pulled back by the normalized design map `g θ = Aθ/√n`, gives a
-`δ`-separated family with `δ = √(v·r/(1280n))` whose pairwise KL divergences satisfy the (15.35a)
-bound (via the multivariate equal-covariance Gaussian KL `klDiv_multivariateGaussian_smul_one`) and
-whose cardinality satisfies (15.35b).
+of the unit sphere of `ℝʳ` (Wainwright Example 5.8, `exists_sphere_packing`), spread across the
+range of `A` through a linear isometry and pulled back by the normalized design map `g θ = Aθ/√n`,
+gives a `δ`-separated family with `δ = √(v·r/(1280n))` whose pairwise KL divergences satisfy the
+(15.35a) bound (via the multivariate equal-covariance Gaussian KL
+`klDiv_multivariateGaussian_smul_one`) and whose cardinality satisfies (15.35b).
 
 The separation/rate constant is loosened from the book's `64⁻¹` (Ex 15.14) to fit the `r/10`
 Gilbert–Varshamov sphere-packing brick; see the constant tag below. -/
 private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) (hv : v ≠ 0) (r : ℕ)
-    -- LEAN-ONLY: r ≥ 40 — the local-packing/Fano condition (15.35b) needs Ω(r) hypotheses; small-rank is degenerate.
+    -- LEAN-ONLY: r ≥ 40 — the local-packing/Fano condition
+    -- (15.35b) needs Ω(r) hypotheses; small-rank is degenerate.
     (hr0 : 40 ≤ r)
     (A : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n))
     (g : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin n))
@@ -108,7 +109,8 @@ private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0)
     (hr : r = Module.finrank ℝ (LinearMap.range A)) :
     ∃ (M : ℕ) (_ : NeZero M) (θfam : Fin M → EuclideanSpace ℝ (Fin d)) (hθ : Measurable θfam)
       (c : ℝ),
-      -- USER-INPUT: separation/rate constant loosened (book 64⁻¹) to fit the r/10 sphere-packing brick; Wainwright Ex 15.14, CLAUDE.md §1.
+      -- USER-INPUT: separation/rate constant loosened (book 64⁻¹) to fit
+      -- the r/10 sphere-packing brick; Wainwright Ex 15.14.
       IsSeparatedFamily g θfam (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ∧
       (∀ j k, j ≠ k → klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
         ≤ ENNReal.ofReal (c ^ 2 * (n : ℝ) *
@@ -128,7 +130,8 @@ private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0)
   -- The separation radius `δr = √(v r / (1280 n))`.
   set δr : ℝ := Real.sqrt ((v : ℝ) * r / (1280 * n)) with hδr_def
   have hδr_nonneg : 0 ≤ δr := by rw [hδr_def]; exact Real.sqrt_nonneg _
-  have h2δ : δr ^ 2 = (v : ℝ) * r / (1280 * n) := by rw [hδr_def]; exact Real.sq_sqrt (by positivity)
+  have h2δ : δr ^ 2 = (v : ℝ) * r / (1280 * n) := by
+    rw [hδr_def]; exact Real.sq_sqrt (by positivity)
   have htoReal : (ENNReal.ofReal δr).toReal = δr := ENNReal.toReal_ofReal hδr_nonneg
   -- The leakage constant `c = √(32 / v)`.
   set c : ℝ := Real.sqrt (32 / (v : ℝ)) with hc_def
@@ -214,8 +217,8 @@ private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0)
 
 /-- **Minimax risk for fixed-design linear regression** (Wainwright Example 15.14): for the Gaussian
 model with design map `A : ℝᵈ → ℝⁿ` and noise variance `v`, the minimax risk in the prediction
-(semi)norm `ρ_X(θ,θ') = ‖A(θ−θ')‖/√n` is at least `(v/2560)·rank(A)/n`, where `g θ = A θ/√n` realizes
-`ρ_X` as the Euclidean distance.
+(semi)norm `ρ_X(θ,θ') = ‖A(θ−θ')‖/√n` is at least `(v/2560)·rank(A)/n`, where `g θ = A θ/√n`
+realizes `ρ_X` as the Euclidean distance.
 
 The book's leading constant is `128⁻¹`; we prove the looser `2560⁻¹` (= `2·1280⁻¹`), forced by the
 `r/10` Gilbert–Varshamov sphere-packing brick (see `linreg_local_packing_data`). Holds for `r ≥ 40`.
@@ -223,7 +226,8 @@ The book's leading constant is `128⁻¹`; we prove the looser `2560⁻¹` (= `2
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Example 15.14. -/
 theorem linear_regression_minimax_rate {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) (hv : v ≠ 0) (r : ℕ)
-    -- LEAN-ONLY: r ≥ 40 — the local-packing/Fano condition (15.35b) needs Ω(r) hypotheses; small-rank is degenerate.
+    -- LEAN-ONLY: r ≥ 40 — the local-packing/Fano condition
+    -- (15.35b) needs Ω(r) hypotheses; small-rank is degenerate.
     (hr0 : 40 ≤ r)
     (A : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n))
     (g : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin n))
@@ -243,7 +247,8 @@ theorem linear_regression_minimax_rate {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) 
     linreg_local_packing_data hn v hv r hr0 A g P hg hP hr
   have := hMne
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
-    (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) c (n : ℝ) hΦ hsep (by positivity) h35a h35b
+    (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) c (n : ℝ) hΦ hsep
+        (by positivity) h35a h35b
   have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (1280 * n)))) ^ 2
       = ENNReal.ofReal ((v : ℝ) * r / (1280 * n)) := by
     rw [← ENNReal.ofReal_pow hx0, Real.sq_sqrt (by positivity)]

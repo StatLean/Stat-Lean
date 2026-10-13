@@ -313,7 +313,7 @@ private lemma abs_truncSq_sub_le {M : ℝ} (hM : 0 ≤ M) (u w : ℝ) :
   have hyM : min |w| M ≤ M := min_le_right _ _
   have hfac : (min |u| M) ^ 2 - (min |w| M) ^ 2
       = (min |u| M - min |w| M) * (min |u| M + min |w| M) := by ring
-  rw [hfac, abs_mul, abs_of_nonneg (by linarith : (0:ℝ) ≤ min |u| M + min |w| M)]
+  rw [hfac, abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ min |u| M + min |w| M)]
   calc |min |u| M - min |w| M| * (min |u| M + min |w| M)
       ≤ |u - w| * (2 * M) := by
         refine mul_le_mul hminabs (by linarith) (by linarith) (abs_nonneg _)

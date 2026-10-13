@@ -55,12 +55,12 @@ lemma sqrt_log_le_two_div_sqrt {ε : ℝ}
     -- LEAN-ONLY: the comparison's domain; matches the integration interval.
     (hε : 0 < ε) (hε2 : ε ≤ 2) :
     Real.sqrt (Real.log (4 / ε)) ≤ 2 / Real.sqrt ε := by
-  have hε' : (0:ℝ) < 4 / ε := by positivity
+  have hε' : (0 : ℝ) < 4 / ε := by positivity
   have hlog : Real.log (4 / ε) ≤ 4 / ε := by
     have := Real.log_le_sub_one_of_pos hε'
     linarith
   have hsqrt4 : Real.sqrt 4 = 2 := by
-    rw [show (4:ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
   calc Real.sqrt (Real.log (4 / ε)) ≤ Real.sqrt (4 / ε) := Real.sqrt_le_sqrt hlog
     _ = 2 / Real.sqrt ε := by
         rw [Real.sqrt_div' 4 hε.le, hsqrt4]
@@ -86,7 +86,7 @@ lemma intervalIntegrable_sqrt_log_mul {c : ℝ}
   · -- pointwise domination on `Ι 0 2 = Ioc 0 2`
     rw [Filter.EventuallyLE, MeasureTheory.ae_restrict_iff' measurableSet_uIoc]
     filter_upwards with ε hε
-    rw [Set.uIoc_of_le (by norm_num : (0:ℝ) ≤ 2)] at hε
+    rw [Set.uIoc_of_le (by norm_num : (0 : ℝ) ≤ 2)] at hε
     obtain ⟨hε0, hε2⟩ := hε
     have hcs : Real.sqrt (c * Real.log (4 / ε))
         = Real.sqrt c * Real.sqrt (Real.log (4 / ε)) := Real.sqrt_mul hc _
@@ -96,7 +96,7 @@ lemma intervalIntegrable_sqrt_log_mul {c : ℝ}
     have hrpow : ε ^ (-(1/2) : ℝ) = 1 / Real.sqrt ε := by
       rw [Real.rpow_neg hε0.le, ← Real.sqrt_eq_rpow, one_div]
     rw [hrpow]
-    have hsc : (0:ℝ) ≤ Real.sqrt c := Real.sqrt_nonneg _
+    have hsc : (0 : ℝ) ≤ Real.sqrt c := Real.sqrt_nonneg _
     calc Real.sqrt c * Real.sqrt (Real.log (4 / ε))
         ≤ Real.sqrt c * (2 / Real.sqrt ε) := by
           apply mul_le_mul_of_nonneg_left hbound hsc
@@ -110,26 +110,26 @@ theorem entropyIntegral_le {d : ℕ}
     (hd1 : 1 ≤ d) :
     ∫ ε in (0 : ℝ)..2, Real.sqrt (22 * d * Real.log (4 / ε))
       ≤ 27 * Real.sqrt d := by
-  have hd0 : (0:ℝ) ≤ (d:ℝ) := Nat.cast_nonneg d
+  have hd0 : (0 : ℝ) ≤ (d : ℝ) := Nat.cast_nonneg d
   -- Integrability of LHS integrand (c = 22 d ≥ 0).
   have hInt : IntervalIntegrable
-      (fun ε => Real.sqrt (22 * (d:ℝ) * Real.log (4 / ε)))
+      (fun ε => Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)))
       MeasureTheory.volume 0 2 := by
-    exact intervalIntegrable_sqrt_log_mul (c := 22 * (d:ℝ)) (by positivity)
+    exact intervalIntegrable_sqrt_log_mul (c := 22 * (d : ℝ)) (by positivity)
   -- Bounding function `√(22 d) · (2 / √ε)`, whose integral we compute.
-  set K : ℝ := Real.sqrt (22 * (d:ℝ)) with hK
+  set K : ℝ := Real.sqrt (22 * (d : ℝ)) with hK
   have hKnn : 0 ≤ K := Real.sqrt_nonneg _
   -- The dominating function `fun ε => K * (2 / √ε) = 2K * ε^(-1/2)`.
   have hgInt : IntervalIntegrable (fun ε => 2 * K * ε ^ (-(1/2) : ℝ))
       MeasureTheory.volume 0 2 :=
     (intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1/2))).const_mul _
   -- Pointwise: LHS integrand ≤ bounding function on (0,2].
-  have hmono : ∀ ε ∈ Set.Ioo (0:ℝ) 2,
-      Real.sqrt (22 * (d:ℝ) * Real.log (4 / ε)) ≤ 2 * K * ε ^ (-(1/2) : ℝ) := by
+  have hmono : ∀ ε ∈ Set.Ioo (0 : ℝ) 2,
+      Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)) ≤ 2 * K * ε ^ (-(1/2) : ℝ) := by
     intro ε hε
     obtain ⟨hε0, hε2⟩ := hε
     have hε2 : ε ≤ 2 := hε2.le
-    have hfac : Real.sqrt (22 * (d:ℝ) * Real.log (4 / ε))
+    have hfac : Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε))
         = K * Real.sqrt (Real.log (4 / ε)) := by
       rw [hK, ← Real.sqrt_mul (by positivity)]
     have hb : Real.sqrt (Real.log (4 / ε)) ≤ 2 / Real.sqrt ε :=
@@ -141,36 +141,36 @@ theorem entropyIntegral_le {d : ℕ}
         ≤ K * (2 / Real.sqrt ε) := mul_le_mul_of_nonneg_left hb hKnn
       _ = 2 * K * (1 / Real.sqrt ε) := by ring
   -- Compare integrals.
-  have hcmp : (∫ ε in (0:ℝ)..2, Real.sqrt (22 * (d:ℝ) * Real.log (4 / ε)))
-      ≤ ∫ ε in (0:ℝ)..2, 2 * K * ε ^ (-(1/2) : ℝ) := by
+  have hcmp : (∫ ε in (0 : ℝ)..2, Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)))
+      ≤ ∫ ε in (0 : ℝ)..2, 2 * K * ε ^ (-(1/2) : ℝ) := by
     exact intervalIntegral.integral_mono_on_of_le_Ioo (by norm_num) hInt hgInt hmono
   -- Compute `∫₀² ε^(-1/2) dε = 2√2` and hence `∫₀² 2K ε^(-1/2) = 4√2 K`.
-  have hrpowInt : (∫ ε in (0:ℝ)..2, ε ^ (-(1/2) : ℝ)) = 2 * Real.sqrt 2 := by
-    rw [integral_rpow (Or.inl (by norm_num : (-1:ℝ) < -(1/2)))]
+  have hrpowInt : (∫ ε in (0 : ℝ)..2, ε ^ (-(1/2) : ℝ)) = 2 * Real.sqrt 2 := by
+    rw [integral_rpow (Or.inl (by norm_num : (-1 : ℝ) < -(1/2)))]
     have he : (-(1/2 : ℝ) + 1) = (1/2 : ℝ) := by ring
     rw [he, Real.zero_rpow (by norm_num), ← Real.sqrt_eq_rpow]
     rw [sub_zero]
     ring
-  have hgval : (∫ ε in (0:ℝ)..2, 2 * K * ε ^ (-(1/2) : ℝ)) = 4 * Real.sqrt 2 * K := by
+  have hgval : (∫ ε in (0 : ℝ)..2, 2 * K * ε ^ (-(1/2) : ℝ)) = 4 * Real.sqrt 2 * K := by
     rw [intervalIntegral.integral_const_mul, hrpowInt]; ring
   rw [hgval] at hcmp
   -- Now bound `4√2 · K = 4√2 · √(22 d) ≤ 27 √d`.
   have hKval : 4 * Real.sqrt 2 * K = 4 * Real.sqrt 2 * Real.sqrt 22 * Real.sqrt d := by
-    rw [hK, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 22)]; ring
+    rw [hK, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 22)]; ring
   have hfinal : 4 * Real.sqrt 2 * Real.sqrt 22 * Real.sqrt d ≤ 27 * Real.sqrt d := by
-    have hsd : (0:ℝ) ≤ Real.sqrt d := Real.sqrt_nonneg _
+    have hsd : (0 : ℝ) ≤ Real.sqrt d := Real.sqrt_nonneg _
     have hcoef : 4 * Real.sqrt 2 * Real.sqrt 22 ≤ 27 := by
       have h2 : Real.sqrt 2 * Real.sqrt 22 = Real.sqrt 44 := by
-        rw [← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)]; norm_num
+        rw [← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
       rw [mul_assoc, h2]
       -- `4 √44 ≤ 27` ⟺ `√44 ≤ 27/4` ⟺ `44 ≤ (27/4)²`.
       have h44 : Real.sqrt 44 ≤ 27 / 4 := by
-        rw [show (27:ℝ)/4 = Real.sqrt ((27/4)^2) by
+        rw [show (27 : ℝ)/4 = Real.sqrt ((27/4)^2) by
           rw [Real.sqrt_sq (by norm_num)]]
         apply Real.sqrt_le_sqrt; norm_num
       linarith
     exact mul_le_mul_of_nonneg_right hcoef hsd
-  calc (∫ ε in (0:ℝ)..2, Real.sqrt (22 * (d:ℝ) * Real.log (4 / ε)))
+  calc (∫ ε in (0 : ℝ)..2, Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)))
       ≤ 4 * Real.sqrt 2 * K := hcmp
     _ = 4 * Real.sqrt 2 * Real.sqrt 22 * Real.sqrt d := hKval
     _ ≤ 27 * Real.sqrt d := hfinal

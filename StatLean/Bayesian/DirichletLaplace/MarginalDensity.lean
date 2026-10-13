@@ -29,8 +29,9 @@ optimal shrinkage*, Journal of the American Statistical Association 110 (2015), 
 
 **Proof formalization notes.**
 * `dlMarginal_eq_withDensity`: unfold the mixture `bind` through `Measure.bind_withDensity` (F3)
-  and the `Gamma`-`withDensity` representation `gammaMeasure a 2⁻¹ = volume.withDensity (gammaPDF …)`;
-  `lintegral_withDensity` collapses `∫ ℓ_ψ dGamma` to the Lebesgue integral `∫ g_{a,1/2}(ψ) ℓ_ψ(·)`.
+  and the `Gamma`-`withDensity` representation
+  `gammaMeasure a 2⁻¹ = volume.withDensity (gammaPDF …)`; `lintegral_withDensity`
+  collapses `∫ ℓ_ψ dGamma` to the Lebesgue integral `∫ g_{a,1/2}(ψ) ℓ_ψ(·)`.
 * **P1** (`lintegral_dlDensity_eq_one`): total mass `1`, i.e. `f_{DL,a}` is a probability density —
   immediate from `dlMarginal_eq_withDensity` and `isProbabilityMeasure_dlMarginal`.
 * **P2** (`dlDensity_anti`): `f_{DL,a}` is nonincreasing in `|x|`, since each Laplace mixand
@@ -91,8 +92,8 @@ private lemma gammaLaplaceReal_eq {a x ψ : ℝ} (hψ : 0 < ψ) :
   rw [hpow, hψpow, ← hE, show (2⁻¹ : ℝ) = (1 / 2 : ℝ) by norm_num, mul_inv]
   ring
 
-/-- `ℝ≥0∞`-valued pointwise product identity (for `ψ > 0`): the Gamma×Laplace `ℝ≥0∞` integrand equals
-`ofReal (C(a)·ψ^{a-2}·e^{-ψ/2-|x|/ψ})`. Exposed for the density bounds (C3). -/
+/-- `ℝ≥0∞`-valued pointwise product identity (for `ψ > 0`): the Gamma×Laplace `ℝ≥0∞` integrand
+equals `ofReal (C(a)·ψ^{a-2}·e^{-ψ/2-|x|/ψ})`. Exposed for the density bounds (C3). -/
 lemma gammaLaplace_ennreal {a x ψ : ℝ} (ha : 0 < a) (hψ : 0 < ψ) :
     gammaPDF a 2⁻¹ ψ * laplacePDF ψ x
       = ENNReal.ofReal (dlNormConst a * ψ ^ (a - 2) * Real.exp (-ψ / 2 - |x| / ψ)) := by
@@ -195,7 +196,8 @@ lemma integrable_dlDensity_integrand
 /-- **Real integral form** away from the origin: for `x ≠ 0` the mixture integral is finite and is
 the `ℝ≥0∞`-coercion of the Bochner integral of `C(a) · ψ^{a-2} · exp(-ψ/2 - |x|/ψ)` over `(0, ∞)`
 (the integrand `gammaPDFReal a 2⁻¹ ψ · laplacePDFReal ψ x` on `ψ > 0`, with the two prefactors
-collected into `dlNormConst a`). This is the form on which C3's `u = |x|/ψ` substitutions operate. -/
+collected into `dlNormConst a`). This is the form
+on which C3's `u = |x|/ψ` substitutions operate. -/
 lemma dlDensity_eq_ofReal_integral
     -- USER-INPUT: nondegenerate DL shape parameter; BPPD §3.1
     (ha : 0 < a)
@@ -223,7 +225,8 @@ lemma dlDensity_eq_ofReal_integral
           (Real.rpow_nonneg hψ.le _)) (Real.exp_pos _).le))]
 
 /-- **P1 (total mass one).** `f_{DL,a}` integrates to `1` — the DL marginal is a probability density
-(BPPD eq. (10)); immediate from `dlMarginal_eq_withDensity` and `isProbabilityMeasure_dlMarginal`. -/
+(BPPD eq. (10)); immediate from `dlMarginal_eq_withDensity`
+and `isProbabilityMeasure_dlMarginal`. -/
 lemma lintegral_dlDensity_eq_one
     -- USER-INPUT: nondegenerate DL shape parameter; BPPD §3.1
     (ha : 0 < a) :

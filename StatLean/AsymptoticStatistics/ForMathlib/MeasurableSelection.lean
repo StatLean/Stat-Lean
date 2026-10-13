@@ -743,7 +743,7 @@ private theorem aumann_selector_closed_graph_polish
       obtain ⟨K, hK⟩ := htd (ε / 2) hpos
       refine ⟨K, ?_⟩
       have := hK K (le_refl K)
-      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) K)]
+      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) K)]
         using this
     refine ⟨K, fun n hn => ?_⟩
     -- Telescoping: dist (b K x) (b n x) ≤ Σ_{k=K}^{n-1} dist (b k x) (b (k+1) x)
@@ -1377,7 +1377,7 @@ private theorem aumann_selector_closed_graph_polish_singleSpace
       obtain ⟨K, hK⟩ := htd (ε / 2) hpos
       refine ⟨K, ?_⟩
       have := hK K (le_refl K)
-      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) K)]
+      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) K)]
         using this
     refine ⟨K, fun n hn => ?_⟩
     have h_tel : dist (b K x) (b n x) ≤ ∑ k ∈ Finset.Ico K n, (1 / 2 : ℝ) ^ k := by

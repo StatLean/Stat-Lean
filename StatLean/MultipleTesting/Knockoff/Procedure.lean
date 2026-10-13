@@ -8,13 +8,13 @@ The deterministic data of the knock-off filter at level $\alpha$, over a knock-o
 $W = (W_1,\dots,W_d)$ (a measurable map $W_j : \Omega \to \mathbb{R}$ for each coordinate $j$) and
 a true-null index set $H_0 \subseteq \{1,\dots,d\}$. For a threshold level $t \ge 0$ define the two
 sign-split selection sets
-$$ S^+(t) = \{\, j : |W_j| \ge t,\ W_j > 0 \,\}, \qquad S^-(t) = \{\, j : |W_j| \ge t,\ W_j < 0 \,\}, $$
-their restrictions to the true nulls $V_+(t) = \#\bigl(S^+(t) \cap H_0\bigr)$ and
+$$ S^+(t) = \{\, j : |W_j| \ge t,\ W_j > 0 \,\}, \qquad S^-(t) = \{\, j : |W_j| \ge t,\ W_j < 0
+\,\}, $$ their restrictions to the true nulls $V_+(t) = \#\bigl(S^+(t) \cap H_0\bigr)$ and
 $V_-(t) = \#\bigl(S^-(t) \cap H_0\bigr)$, and the **estimated false-discovery proportion**
-$$ \widehat{\mathrm{FDP}}(t) = \frac{\#S^-(t) + 1}{\#S^+(t) \vee 1}, \qquad a \vee b := \max\{a,b\}. $$
-The knock-off filter then selects the **data-dependent threshold**
-$$ t^* = \min\bigl\{\, t \in \{|W_1|,\dots,|W_d|\} : \widehat{\mathrm{FDP}}(t) \le \alpha \,\bigr\} $$
-and **rejects** the null $H_{0j}$ exactly when $j \in S^+(t^*)$.
+$$ \widehat{\mathrm{FDP}}(t) = \frac{\#S^-(t) + 1}{\#S^+(t) \vee 1}, \qquad a \vee b :=
+\max\{a,b\}. $$ The knock-off filter then selects the **data-dependent threshold**
+$$ t^* = \min\bigl\{\, t \in \{|W_1|,\dots,|W_d|\} : \widehat{\mathrm{FDP}}(t) \le \alpha
+\,\bigr\} $$ and **rejects** the null $H_{0j}$ exactly when $j \in S^+(t^*)$.
 
 The "$+1$" in the numerator of $\widehat{\mathrm{FDP}}$ is the more conservative **knock-off+**
 form of the filter (the variant that controls the FDR exactly in finite samples), not the plain
@@ -42,19 +42,20 @@ the modeling fidelity of the encodings:
 * The candidate threshold grid is the finite set of observed magnitudes $\{|W_j|\}_j$ (the book's
   $\min_t$ over the realized score magnitudes), implemented as `Finset.univ.image (|W · ω|)`.
 * **Degenerate-case convention for `tStar`.** When no candidate magnitude achieves
-  $\widehat{\mathrm{FDP}}(t) \le \alpha$, `tStar` returns a value strictly **above every magnitude**,
-  $1 + \sum_j |W_j|$, so that $S^+(t^*) = S^-(t^*) = \varnothing$ — nothing is rejected, matching
-  `knockoffRejects`, and the null ratio $V_+(t^*)/(1 + V_-(t^*)) = 0$. This realizes Barber &
-  Candès's "$T = +\infty$ if no such $t$ exists" convention with a finite surrogate. The earlier
-  `0` fallback left `knockoffRejects = ∅` while $V_+(0)/(1+V_-(0)) \ne 0$, an inconsistency that
-  broke the order-statistic bridge `ratio_eq_Yproc_hittingIdx`; see the `tStar` docstring.
+  $\widehat{\mathrm{FDP}}(t) \le \alpha$, `tStar` returns a value strictly **above every
+  magnitude**, $1 + \sum_j |W_j|$, so that $S^+(t^*) = S^-(t^*) = \varnothing$ — nothing is
+  rejected, matching `knockoffRejects`, and the null ratio $V_+(t^*)/(1 + V_-(t^*)) = 0$. This
+  realizes Barber & Candès's "$T = +\infty$ if no such $t$ exists" convention with a finite
+  surrogate. The earlier `0` fallback left `knockoffRejects = ∅` while $V_+(0)/(1+V_-(0)) \ne 0$, an
+  inconsistency that broke the order-statistic bridge
+  `ratio_eq_Yproc_hittingIdx`; see the `tStar` docstring.
 
 **Bibliographic comments.** The knock-off filter originates with R. F. Barber and E. J. Candès,
 "Controlling the false discovery rate via knockoffs," *The Annals of Statistics* **43**(5):
 2055–2085, 2015. The objects formalized here are their Definition 1 (Knockoff) and Definition 2
 (Knockoff+): the plain knock-off threshold is eq. (1.8),
-$T = \min\{ t \in \mathcal{W} : \#\{j : W_j \le -t\} / (\#\{j : W_j \ge t\} \vee 1) \le q \}$, and the
-knock-off+ threshold is eq. (1.9),
+$T = \min\{ t \in \mathcal{W} : \#\{j : W_j \le -t\} / (\#\{j : W_j \ge t\} \vee 1) \le q \}$, and
+the knock-off+ threshold is eq. (1.9),
 $T = \min\{ t \in \mathcal{W} : (1 + \#\{j : W_j \le -t\}) / (\#\{j : W_j \ge t\} \vee 1) \le q \}$,
 with selection set $\hat{S} = \{ j : W_j \ge T \}$. The `+1`-numerator `FDPhat` used here is the
 knock-off+ form, whose exact finite-sample FDR control is their Theorem 2 (the plain knock-off form

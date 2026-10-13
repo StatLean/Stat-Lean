@@ -1298,7 +1298,8 @@ theorem linearizationResidual_pairModulus_tendstoZero
                     (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
                     (fun i : Fin n => X i.val ξ)⟫ : ℝ)|} :=
     fun n hn => (outerMeasureStar_mono μ (hsub n hn)).trans (outerMeasureStar_union_le μ _ _)
-  calc limsup (fun n => μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+  calc limsup (fun n => μ.outerMeasureStar
+        {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
           ‖h₁.1 - h₂.1‖ < min δ₁ δ₂ ∧
           ε < |(empiricalProcess P n (fun i : Fin n => X i.val ξ)
                   (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h₁.1) ω - m θ₀ ω)
@@ -1306,7 +1307,8 @@ theorem linearizationResidual_pairModulus_tendstoZero
                 - (empiricalProcess P n (fun i : Fin n => X i.val ξ)
                   (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h₂.1) ω - m θ₀ ω)
                     - ⟪h₂.1, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω⟫))|}) atTop
-      ≤ limsup (fun n => μ.outerMeasureStar {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
+      ≤ limsup (fun n => μ.outerMeasureStar
+          {ξ : Ξ | ∃ h₁ h₂ : {h : EuclideanSpace ℝ (Fin d) // ‖h‖ ≤ M},
             ‖h₁.1 - h₂.1‖ < δ₁ ∧
             ε / 2 < |empiricalProcess P n (fun i : Fin n => X i.val ξ)
                     (fun ω => Real.sqrt n * (m (θ₀ + (Real.sqrt n)⁻¹ • h₁.1) ω - m θ₀ ω))

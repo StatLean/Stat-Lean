@@ -132,7 +132,7 @@ lemma card_le_pow_of_entropy_bound {N d : ℕ} {ε : ℝ}
   have hC : Real.log (n₀ : ℝ)
       ≤ Real.log 200 - 4 * Real.log ε + Real.log (Real.log (N : ℝ)) := by
     have hpos200 : (0 : ℝ) < 200 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by positivity
-    have h := Real.log_le_log (by exact_mod_cast hn₀pos : (0:ℝ) < (n₀:ℝ)) hn₀bound
+    have h := Real.log_le_log (by exact_mod_cast hn₀pos : (0 : ℝ) < (n₀ : ℝ)) hn₀bound
     rw [Real.log_mul (by positivity) hxne, Real.log_mul (by norm_num) (by positivity),
       Real.log_pow, Real.log_inv] at h
     push_cast at h
@@ -165,7 +165,8 @@ lemma card_le_pow_of_entropy_bound {N d : ℕ} {ε : ℝ}
   rw [heq2] at hxdB
   -- Numeric facts for the final combination.
   have hnum : 2 * Real.log 200 ≤ 19 * Real.log 2 := by
-    have h := Real.log_le_log (by norm_num : (0:ℝ) < 200 ^ 2) (by norm_num : (200:ℝ) ^ 2 ≤ 2 ^ 19)
+    have h := Real.log_le_log (by norm_num : (0 : ℝ) < 200 ^ 2)
+        (by norm_num : (200 : ℝ) ^ 2 ≤ 2 ^ 19)
     rw [Real.log_pow, Real.log_pow] at h
     push_cast at h; linarith [h]
   have hlogε_nonpos : Real.log ε ≤ 0 := Real.log_nonpos hε.le hε1.le

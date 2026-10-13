@@ -371,7 +371,8 @@ with nonsingular derivative `e'` (`he`) and satisfies the moment-matching identi
 `e θ₀ = P f` (`hμ`): the moment estimators `θhatₙ` (solving `e(θhatₙ) = ℙₙ f`) exist with
 probability tending to one and satisfy vdV's displayed expansion
 
-    √n (θhatₙ − θ₀) = e_{θ₀}⁻¹ √n (ℙₙ f − P f) + o_P(1)   ⇝   N(0, e_{θ₀}⁻¹ P[(f−Pf)(f−Pf)ᵀ] e_{θ₀}⁻ᵀ).
+    √n (θhatₙ − θ₀) = e_{θ₀}⁻¹ √n (ℙₙ f − P f) + o_P(1)
+    ⇝   N(0, e_{θ₀}⁻¹ P[(f−Pf)(f−Pf)ᵀ] e_{θ₀}⁻ᵀ).
 
 The three conclusion conjuncts are: existence w.p.→1 (`μ.real{e(θhatₙ)=ℙₙf} → 1`), the linear
 representation (`√n(θhatₙ−θ₀) − e_{θ₀}⁻¹ √n(ℙₙf−Pf) →ₚ 0`, the `o_P(1)` term), and the
@@ -491,7 +492,8 @@ theorem method_of_moments_normality {d : ℕ}
   set Zn : ℕ → Ξ → EuclideanSpace ℝ (Fin d) := fun n ξ =>
     Real.sqrt n • (θhat n ξ - θ₀) with hZndef
   have hWn_meas : ∀ n : ℕ, AEMeasurable (Wn n) μ := fun n =>
-    (((e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d)).continuous.measurable).comp
+    (((e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ
+        (Fin d)).continuous.measurable).comp
       (hZmeas n)).aemeasurable
   have hZn_meas : ∀ n : ℕ, AEMeasurable (Zn n) μ := fun n =>
     (((hθhat_meas n).sub measurable_const).const_smul (Real.sqrt n)).aemeasurable
@@ -541,7 +543,8 @@ theorem method_of_moments_normality {d : ℕ}
       simpa using (hrem ε hε).add hmassU_compl
     exact squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg)
       (Eventually.of_forall hbound) hsum0
-  -- linear representation = vdV Thm 4.1 display's `o_P` expansion (`√n(θ̂−θ₀) = e'⁻¹√n(ℙₙf−Pf)+o_P`)
+  -- linear representation = vdV Thm 4.1 display's
+  -- `o_P` expansion (`√n(θ̂−θ₀) = e'⁻¹√n(ℙₙf−Pf)+o_P`)
   have hlin : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ => Zn n ξ - Wn n ξ) := by
     intro ε hε
     refine (hDist ε hε).congr fun n => ?_

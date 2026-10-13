@@ -339,13 +339,13 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
         refine small_pos_imp_nonneg (grad.ofLp j + lam) K hpos (fun t ht htδ => ?_)
         have hr := rawopt t
         have habst : |a + t| - |a| = t := by
-          rw [abs_of_pos (by linarith : (0:ℝ) < a + t), abs_of_pos hpos]; ring
+          rw [abs_of_pos (by linarith : (0 : ℝ) < a + t), abs_of_pos hpos]; ring
         rw [habst] at hr; nlinarith [hr]
       have h2 : 0 ≤ -(grad.ofLp j + lam) := by
         refine small_pos_imp_nonneg (-(grad.ofLp j + lam)) K hpos (fun t ht htδ => ?_)
         have hr := rawopt (-t)
         have habst : |a + (-t)| - |a| = -t := by
-          rw [abs_of_pos (by linarith : (0:ℝ) < a + (-t)), abs_of_pos hpos]; ring
+          rw [abs_of_pos (by linarith : (0 : ℝ) < a + (-t)), abs_of_pos hpos]; ring
         rw [habst] at hr; nlinarith [hr]
       linarith
     · intro hneg
@@ -581,7 +581,7 @@ theorem pdw_unique (X : Matrix (Fin n) (Fin d) ℝ)
     rw [key]; ring
   -- midpoint objective inequality
   have hl1mid : l1Norm m ≤ (1 / 2) * l1Norm β0 + (1 / 2) * l1Norm β1 := by
-    rw [hm_def, l1Norm_smul, abs_of_pos (by norm_num : (0:ℝ) < 2⁻¹)]
+    rw [hm_def, l1Norm_smul, abs_of_pos (by norm_num : (0 : ℝ) < 2⁻¹)]
     have := l1Norm_add_le β0 β1
     nlinarith [this]
   have hmid : lassoObjective X Y lam m

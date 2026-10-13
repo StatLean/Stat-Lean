@@ -28,16 +28,17 @@ The **cost deviation bound** uses convexity and Hölder's inequality, conditione
 $\mathbb{G}(\lambda)$:
 $$
 L(\theta^* + \Delta) - L(\theta^*)
-  \ge -\tfrac{\lambda}{2}\bigl(\Phi(\Delta_{\overline{M}^{\perp}}) + \Phi(\Delta_{\overline{M}})\bigr).
+  \ge -\tfrac{\lambda}{2}\bigl(\Phi(\Delta_{\overline{M}^{\perp}}) +
+  \Phi(\Delta_{\overline{M}})\bigr).
 $$
 Combining these two bounds with the optimality inequality $\mathcal{F}(\widehat\Delta) \le 0$ yields
 the cone membership.
 
 All $\theta^*$ projection terms are onto $M^{\perp}$ (orthogonal complement of the model subspace
 $M$), since the decomposability step
-$\Phi(\theta^*_M + \Delta_{\overline{M}^{\perp}}) = \Phi(\theta^*_M) + \Phi(\Delta_{\overline{M}^{\perp}})$
-requires $\theta^*_M \in M$; the $\Delta$ projections are onto $\overline{M}$ and
-$\overline{M}^{\perp}$.
+$\Phi(\theta^*_M + \Delta_{\overline{M}^{\perp}}) = \Phi(\theta^*_M) +
+\Phi(\Delta_{\overline{M}^{\perp}})$ requires $\theta^*_M \in
+M$; the $\Delta$ projections are onto $\overline{M}$ and $\overline{M}^{\perp}$.
 
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
@@ -48,12 +49,13 @@ in Eq (9.29); good event Eq (9.28)/(9.46); estimator Eq (9.3)).
 **Proof formalization notes.**
 * `reg_deviation_lower` (Eq 9.32): project $\theta^*$ onto $(M, M^{\perp})$ and $\Delta$ onto
   $(\overline{M}, \overline{M}^{\perp})$. Writing $\theta^* + \Delta = (a + b') + (a' + b)$ with
-  $a = \theta^*_M$, $b' = \Delta_{\overline{M}^{\perp}}$, the reverse triangle inequality lower-bounds
-  $\Phi(\theta^* + \Delta)$, and decomposability gives the matching equality
+  $a = \theta^*_M$, $b' = \Delta_{\overline{M}^{\perp}}$, the reverse triangle inequality
+  lower-bounds $\Phi(\theta^* + \Delta)$, and decomposability gives the matching equality
   $\Phi(a + b') = \Phi(a) + \Phi(b')$ on the cross term. No convexity or good event used.
 * `cost_deviation_lower` (Eq 9.33): first-order convexity gives
-  $L(\theta^* + \Delta) - L(\theta^*) \ge \langle \nabla L(\theta^*), \Delta\rangle$; two-sided Hölder
-  gives $\langle \nabla L(\theta^*), \Delta\rangle \ge -\Phi(\Delta)\,\Phi^*(\nabla L(\theta^*))$; the
+  $L(\theta^* + \Delta) - L(\theta^*) \ge \langle \nabla L(\theta^*), \Delta\rangle$; two-sided
+  Hölder gives $\langle \nabla L(\theta^*), \Delta\rangle
+  \ge -\Phi(\Delta)\,\Phi^*(\nabla L(\theta^*))$; the
   good event $\Phi^*(\nabla L(\theta^*)) \le \lambda/2$ plus nonnegativity yields the $\lambda/2$
   bound, and $\Phi(\Delta) \le \Phi(\Delta_{\overline{M}^{\perp}}) + \Phi(\Delta_{\overline{M}})$
   finishes it.
@@ -155,10 +157,10 @@ theorem cost_deviation_lower (dr : DecomposableReg E) (L : E → ℝ)
     mul_le_mul_of_nonneg_right hΔsum hlamhalf_nn
   nlinarith [hgrad, hlow, hmul1, hmul2]
 
-/-- **Proposition 9.13** — error-cone membership. For a convex differentiable cost `L`, a decomposable
-regularizer, and any optimum `θ̂` of `L + λ·Φ` (`λ > 0`), conditioned on the good event the error
-`θ̂ − θ*` lies in the cone `ℂ(M, M̄ᗮ)` (eq 9.29). Immediate from Lemma 9.14: combining (9.32)+(9.33)
-with `ℱ(θ̂−θ*) ≤ 0` (optimality) gives `Φ(Δ̂_{M̄ᗮ}) ≤ 3Φ(Δ̂_{M̄}) + 4Φ(θ*_{Mᗮ})`. -/
+/-- **Proposition 9.13** — error-cone membership. For a convex differentiable cost `L`, a
+decomposable regularizer, and any optimum `θ̂` of `L + λ·Φ` (`λ > 0`), conditioned on the good event
+the error `θ̂ − θ*` lies in the cone `ℂ(M, M̄ᗮ)` (eq 9.29). Immediate from Lemma 9.14: combining
+(9.32)+(9.33) with `ℱ(θ̂−θ*) ≤ 0` (optimality) gives `Φ(Δ̂_{M̄ᗮ}) ≤ 3Φ(Δ̂_{M̄}) + 4Φ(θ*_{Mᗮ})`. -/
 theorem error_mem_cone (dr : DecomposableReg E) (L : E → ℝ)
     -- USER-INPUT: cost `L` is convex (A1); Wainwright §9.4.1 (A1).
     (hL : ConvexOn ℝ Set.univ L)
@@ -167,7 +169,8 @@ theorem error_mem_cone (dr : DecomposableReg E) (L : E → ℝ)
     (θstar θhat : E) (lam : ℝ)
     -- USER-INPUT: regularization weight `λ > 0`; Wainwright eq 9.3.
     (hlam : 0 < lam)
-    -- USER-INPUT: `θ̂` minimizes the regularized objective `L + λ·Φ` (the M-estimator); Wainwright eq 9.3.
+    -- USER-INPUT: `θ̂` minimizes the regularized objective
+    -- `L + λ·Φ` (the M-estimator); Wainwright eq 9.3.
     (hopt : ∀ θ, L θhat + lam * dr.Φ θhat ≤ L θ + lam * dr.Φ θ)
     -- USER-INPUT: good event `𝔾(λ)`; Wainwright eq 9.28/9.46.
     (hG : GoodEvent dr.Φstar (gradient L θstar) lam) :

@@ -10,7 +10,8 @@ version `integral_fintype_prod_eq_prod` exists):
 * `lintegral_pi_prod` — Tonelli for a product of coordinate functions,
   $$\int \prod_i f_i(x_i)\,d\mu^{\otimes n} = \prod_i \int f_i\,d\mu;$$
 * `pi_withDensity` — a finite product of `withDensity` measures is `withDensity` of the product
-  density, $\bigotimes_i \mu\!\cdot\!f_i = \mu^{\otimes n}\cdot\big(x \mapsto \prod_i f_i(x_i)\big).$
+  density, $\bigotimes_i \mu\!\cdot\!f_i = \mu^{\otimes
+  n}\cdot\big(x \mapsto \prod_i f_i(x_i)\big).$
 
 These power the iid-kernel density representation (`StatLean.Bayesian.ForMathlib.IIDKernel`) and
 hence every `n`-observation posterior in the Bayesian area.

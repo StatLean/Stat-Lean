@@ -674,7 +674,8 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       ⟪mercerCLM μ hKc a, b⟫_𝕜 = ⟪a, mercerCLM μ hKc b⟫_𝕜 :=
     fun a b => (isPositive_mercerCLM hK).1 a b
   -- (α) the eigenvalue equation in `L²`
-  have heigL : ∀ n, mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) = (d.eigval n : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+  have heigL : ∀ n, mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) =
+      (d.eigval n : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
     intro n
     refine Lp.ext ?_
     filter_upwards [mercerCLM_coeFn_ae hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
@@ -694,9 +695,11 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       (continuous_integralOp_of_continuous hKc g₀) continuous_const).mp hae
     exact congrFun this z
   -- (β) the eigenfunctions are orthogonal to the kernel of `T_K`
-  have hEEker : ∀ (n : d.ι) (g₀ : Lp 𝕜 2 μ), mercerCLM μ hKc g₀ = 0 → ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g₀⟫_𝕜 = 0 := by
+  have hEEker : ∀ (n : d.ι) (g₀ : Lp 𝕜 2 μ), mercerCLM μ hKc g₀ = 0 →
+      ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g₀⟫_𝕜 = 0 := by
     intro n g₀ h0
-    have h1 : ⟪mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)), g₀⟫_𝕜 = ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), mercerCLM μ hKc g₀⟫_𝕜 := hTsym _ _
+    have h1 : ⟪mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)), g₀⟫_𝕜 =
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), mercerCLM μ hKc g₀⟫_𝕜 := hTsym _ _
     rw [heigL n, h0, inner_zero_right, inner_smul_left, RCLike.conj_ofReal] at h1
     rcases mul_eq_zero.mp h1 with h | h
     · exact absurd h (RCLike.ofReal_ne_zero.mpr (d.eigval_pos n).ne')
@@ -727,17 +730,20 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     exact ht z
   have hGtend : Filter.Tendsto G Filter.atTop (nhds Sc) :=
     ContinuousMap.tendsto_iff_tendstoUniformly.mpr hUC
-  have hw : HasSum (fun n => ((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))
+  have hw : HasSum (fun n => ((d.eigval n : 𝕜) * conj (d.eigfun n x)) •
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))
       (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc) := by
     have h := ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜).continuous.tendsto Sc).comp hGtend
     refine h.congr fun t => ?_
     simp only [Function.comp_apply, hGdef, map_sum, map_smul]
   -- the coefficients of `w` and of `conj K(x, ·)` against the eigenfunctions agree
-  have hEEw : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜
+  have hEEw : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m),
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜
       = (d.eigval m : 𝕜) * conj (d.eigfun m x) := by
     intro m
     have h := hw.mapL (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)))
-    have heq : (fun n => (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m))) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)))
+        (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun n => if n = m then (d.eigval m : 𝕜) * conj (d.eigfun m x) else 0 := by
       funext n
       rw [innerSL_apply_apply, inner_smul_right, orthonormal_iff_ite.mp d.orthonormal m n]
@@ -755,7 +761,8 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       ⟪g₀, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜 = 0 := by
     intro g₀ h0
     have h := hw.mapL (innerSL 𝕜 g₀)
-    have heq : (fun n => (innerSL 𝕜 g₀) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (innerSL 𝕜 g₀)
+        (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun _ : d.ι => (0 : 𝕜) := by
       funext n
       rw [innerSL_apply_apply, inner_smul_right, ← inner_conj_symm, hEEker n g₀ h0,
@@ -773,7 +780,9 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     rw [hψdef, inner_sub_right, hEEw m, hEEk m, sub_self]
   have hψker : mercerCLM μ hKc ψ = 0 := by
     have h := d.opExpansion ψ
-    have heq : (fun n => (d.eigval n : 𝕜) • (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), ψ⟫_𝕜 • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (d.eigval n : 𝕜) •
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+          ψ⟫_𝕜 • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun _ : d.ι => (0 : Lp 𝕜 2 μ) := by
       funext n
       rw [hψE n, zero_smul, smul_zero]

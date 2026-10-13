@@ -8,8 +8,8 @@ convex and $L$-smooth (its gradient is $L$-Lipschitz, with $L > 0$) and $h$ is
 convex. Starting from $x_0$, the proximal-gradient method with constant step
 $1/L$ generates the iterates
 $$ x_{t+1} \;=\; \operatorname{prox}_{(1/L)\,h}\!\bigl(x_t - \tfrac{1}{L}\nabla f(x_t)\bigr), $$
-where $\operatorname{prox}_{(1/L)h}(z) = \arg\min_y \bigl\{ \tfrac1L h(y) + \tfrac12\|y - z\|^2 \bigr\}$.
-Then for every minimizer $x^\star$ of $F$ and every $t \ge 1$,
+where $\operatorname{prox}_{(1/L)h}(z) = \arg\min_y \bigl\{ \tfrac1L h(y) + \tfrac12\|y - z\|^2
+\bigr\}$. Then for every minimizer $x^\star$ of $F$ and every $t \ge 1$,
 $$ F(x_t) - F(x^\star) \;\le\; \frac{L\,\|x_0 - x^\star\|^2}{2\,t}, $$
 i.e. the objective gap decays at the $O(1/t)$ rate.
 

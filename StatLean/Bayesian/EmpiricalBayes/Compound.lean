@@ -50,7 +50,8 @@ theorem npEB_oraclePosterior_eq_withDensity (p : Θ → 𝓧 → ℝ≥0∞) (G 
 smaller posterior expected loss has smaller compound (marginal-integrated) risk (Robbins 1951). -/
 theorem oracleBayesRule_minimizes_compoundRisk {ℓ : Θ → Θ → ℝ≥0∞} (p : Θ → 𝓧 → ℝ≥0∞)
     (G : Measure Θ) (m : Measure 𝓧) (d₀ d₁ : 𝓧 → Θ)
-    -- USER-INPUT: the oracle rule dominates the competitor in posterior risk pointwise; Robbins 1951
+    -- USER-INPUT: the oracle rule dominates the competitor
+    -- in posterior risk pointwise; Robbins 1951
     (hpoint : ∀ x, ∫⁻ θ, ℓ θ (d₀ x) ∂(generalizedPosterior p G x)
       ≤ ∫⁻ θ, ℓ θ (d₁ x) ∂(generalizedPosterior p G x)) :
     ∫⁻ x, (∫⁻ θ, ℓ θ (d₀ x) ∂(generalizedPosterior p G x)) ∂m

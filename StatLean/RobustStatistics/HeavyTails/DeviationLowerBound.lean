@@ -115,7 +115,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     simp
   rw [measureReal_def, hset, Measure.pi_pi]
   simp only [hν, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← ENNReal.ofReal_pow (by linarith : (0:ℝ) ≤ 1 - p)]
+    ← ENNReal.ofReal_pow (by linarith : (0 : ℝ) ≤ 1 - p)]
   exact ENNReal.toReal_ofReal (pow_nonneg (by linarith) n)
 
 /-- **No mean estimator beats the sub-Gaussian rate** (`LM Theorem 1`): for every

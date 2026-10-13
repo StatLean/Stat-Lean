@@ -74,7 +74,7 @@ private lemma triangle_double_integral_nonneg {f : ℝ → ℝ} (hfm : Measurabl
       measurableSet_le measurable_snd measurable_fst
     exact (hfm.comp measurable_snd).indicator hset
   -- Inner integral over the fixed interval with the indicator.
-  have hinner : ∀ s ∈ Set.Ioc (0 : ℝ) t, (∫ r in (0 : ℝ)..s, f r) = ∫ r in Set.Ioc (0:ℝ) t, F s r
+  have hinner : ∀ s ∈ Set.Ioc (0 : ℝ) t, (∫ r in (0 : ℝ)..s, f r) = ∫ r in Set.Ioc (0 : ℝ) t, F s r
       := by
     intro s hs
     rw [intervalIntegral.integral_of_le hs.1.le,
@@ -91,20 +91,20 @@ private lemma triangle_double_integral_nonneg {f : ℝ → ℝ} (hfm : Measurabl
         rw [ite_eq_right h1, ite_eq_left h2, ite_eq_right hrs]
       · rw [ite_eq_right h1, ite_eq_right h2]
   -- Outer-`s` integral of `F s r` for fixed `r ∈ Ioc 0 t`.
-  have houter : ∀ r ∈ Set.Ioc (0 : ℝ) t, (∫ s in Set.Ioc (0:ℝ) t, F s r) = (t - r) * f r := by
+  have houter : ∀ r ∈ Set.Ioc (0 : ℝ) t, (∫ s in Set.Ioc (0 : ℝ) t, F s r) = (t - r) * f r := by
     intro r hr
     have hFr : (fun s => F s r) = (Set.Ici r).indicator (fun _ => f r) := by
       funext s
       simp only [hFdef, Set.indicator_apply, Set.mem_ofPred_eq, Set.mem_Ici]
-    have hint_eq : Set.Ioc (0:ℝ) t ∩ Set.Ici r = Set.Icc r t := by
+    have hint_eq : Set.Ioc (0 : ℝ) t ∩ Set.Ici r = Set.Icc r t := by
       ext s
       simp only [Set.mem_inter_iff, Set.mem_Ioc, Set.mem_Ici, Set.mem_Icc]
       constructor
       · rintro ⟨⟨_, h2⟩, h3⟩; exact ⟨h3, h2⟩
       · rintro ⟨h1, h2⟩; exact ⟨⟨lt_of_lt_of_le hr.1 h1, h2⟩, h1⟩
     rw [hFr, ← MeasureTheory.integral_indicator measurableSet_Ioc]
-    rw [show (fun s => (Set.Ioc (0:ℝ) t).indicator ((Set.Ici r).indicator (fun _ => f r)) s)
-        = (Set.Ioc (0:ℝ) t ∩ Set.Ici r).indicator (fun _ => f r) by
+    rw [show (fun s => (Set.Ioc (0 : ℝ) t).indicator ((Set.Ici r).indicator (fun _ => f r)) s)
+        = (Set.Ioc (0 : ℝ) t ∩ Set.Ici r).indicator (fun _ => f r) by
       rw [Set.indicator_indicator]]
     rw [MeasureTheory.integral_indicator (measurableSet_Ioc.inter measurableSet_Ici),
       MeasureTheory.setIntegral_const, hint_eq, MeasureTheory.measureReal_def,
@@ -140,23 +140,23 @@ private lemma triangle_double_integral {f : ℝ → ℝ} (hfm : Measurable f)
     have hnt : (0 : ℝ) ≤ -t := by linarith
     have hkey := triangle_double_integral_nonneg hgm hgii hnt
     -- inner reflection: `∫ r in 0..s, g r = -(∫ r in 0..(-s), f r)`.
-    have hinnref : ∀ s : ℝ, (∫ r in (0:ℝ)..s, g r) = -(∫ r in (0:ℝ)..(-s), f r) := by
+    have hinnref : ∀ s : ℝ, (∫ r in (0 : ℝ)..s, g r) = -(∫ r in (0 : ℝ)..(-s), f r) := by
       intro s
       have := intervalIntegral.integral_comp_neg (a := 0) (b := s) f
       simp only [neg_zero, hgdef] at this ⊢
       rw [this, intervalIntegral.integral_symm]
     -- Generic reflection of an `∫ 0..(-t)` integral into an `∫ 0..t` one.
-    have hrefl : ∀ φ : ℝ → ℝ, (∫ s in (0:ℝ)..(-t), φ s) = -(∫ x in (0:ℝ)..t, φ (-x)) := by
+    have hrefl : ∀ φ : ℝ → ℝ, (∫ s in (0 : ℝ)..(-t), φ s) = -(∫ x in (0 : ℝ)..t, φ (-x)) := by
       intro φ
       have := intervalIntegral.integral_comp_neg (a := 0) (b := t) φ
       simp only [neg_zero] at this
       rw [this, intervalIntegral.integral_symm]
     have hL : (∫ s in (0 : ℝ)..t, ∫ r in (0 : ℝ)..s, f r)
         = ∫ s in (0 : ℝ)..(-t), ∫ r in (0 : ℝ)..s, g r := by
-      rw [hrefl (fun s => ∫ r in (0:ℝ)..s, g r)]
+      rw [hrefl (fun s => ∫ r in (0 : ℝ)..s, g r)]
       rw [← intervalIntegral.integral_neg]
       refine intervalIntegral.integral_congr fun x _ => ?_
-      change (∫ r in (0:ℝ)..x, f r) = -(∫ r in (0:ℝ)..(-x), g r)
+      change (∫ r in (0 : ℝ)..x, f r) = -(∫ r in (0 : ℝ)..(-x), g r)
       rw [hinnref (-x), neg_neg, neg_neg]
     have hR : (∫ s in (0 : ℝ)..t, (t - s) * f s)
         = ∫ s in (0 : ℝ)..(-t), (-t - s) * g s := by
@@ -234,11 +234,11 @@ private lemma second_order_remainder {p w : ℝ → ℝ} (hp1 : Differentiable �
     · have hc := intervalIntegral.integral_comp_mul_left (fun s => (t - s) * f s) ht0
         (a := 0) (b := 1)
       rw [mul_zero, mul_one] at hc
-      have hval : (∫ s in (0:ℝ)..t, (t - s) * f s)
-          = t • ∫ τ in (0:ℝ)..1, (t - t * τ) * f (t * τ) := by
+      have hval : (∫ s in (0 : ℝ)..t, (t - s) * f s)
+          = t • ∫ τ in (0 : ℝ)..1, (t - t * τ) * f (t * τ) := by
         rw [hc, smul_smul, mul_inv_cancel₀ ht0, one_smul]
-      have hrw : (∫ τ in (0:ℝ)..1, (t - t * τ) * f (t * τ))
-          = t * ∫ τ in (0:ℝ)..1, (1 - τ) * w (x + τ * t) := by
+      have hrw : (∫ τ in (0 : ℝ)..1, (t - t * τ) * f (t * τ))
+          = t * ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * t) := by
         rw [← intervalIntegral.integral_const_mul]
         refine intervalIntegral.integral_congr fun τ _ => ?_
         simp only [hfdef]; ring_nf
@@ -273,7 +273,8 @@ private lemma transModSq_le {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : Me
       ≤ ENNReal.ofReal (2 * (w (x + s)) ^ 2) + ENNReal.ofReal (2 * (w x) ^ 2) := by
     intro x
     rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
-    exact ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg (w (x + s) - w x), sq_nonneg (w (x + s) + w x)])
+    exact ENNReal.ofReal_le_ofReal
+        (by nlinarith [sq_nonneg (w (x + s) - w x), sq_nonneg (w (x + s) + w x)])
   calc transModSq w s
       ≤ ∫⁻ x, (ENNReal.ofReal (2 * (w (x + s)) ^ 2) + ENNReal.ofReal (2 * (w x) ^ 2)) :=
         lintegral_mono hstep
@@ -286,7 +287,7 @@ private lemma transModSq_le {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : Me
           rw [show (∫⁻ x, ENNReal.ofReal ((w (x + s)) ^ 2))
               = ∫⁻ x, ENNReal.ofReal ((w x) ^ 2) from
             lintegral_add_right_eq_self (fun x => ENNReal.ofReal ((w x) ^ 2)) s, hΛ0,
-            ← ENNReal.ofReal_mul (by norm_num), show (2:ℝ) * I = 2 * I from rfl]
+            ← ENNReal.ofReal_mul (by norm_num), show (2 : ℝ) * I = 2 * I from rfl]
         · rw [lintegral_congr fun x => ENNReal.ofReal_mul (by norm_num),
             lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hΛ0,
             ← ENNReal.ofReal_mul (by norm_num)]
@@ -335,7 +336,8 @@ private lemma measurable_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) :
     have huc : (Function.uncurry fun s x => ENNReal.ofReal ((w (x + s) - w x) ^ 2))
         = fun q : ℝ × ℝ => ENNReal.ofReal ((w (q.2 + q.1) - w q.2) ^ 2) := rfl
     rw [huc]
-    exact (((hw_meas.comp (by fun_prop)).sub (hw_meas.comp measurable_snd)).pow_const 2).ennreal_ofReal
+    exact (((hw_meas.comp (by fun_prop)).sub
+        (hw_meas.comp measurable_snd)).pow_const 2).ennreal_ofReal
   have hΛmeas : Measurable (transModSq w) := hF.lintegral_prod_right'
   exact (ENNReal.continuous_rpow_const.measurable.comp hΛmeas).ennreal_toReal
 
@@ -358,7 +360,8 @@ private lemma stepC_tau_bound {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : 
     rw [intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1)]
     have hle := enorm_integral_le_lintegral_enorm
       (μ := μ2) (fun τ => (1 - τ) * (w (x + τ * (u * h)) - w x))
-    have heq : ENNReal.ofReal ((∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)
+    have heq : ENNReal.ofReal
+        ((∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)
         = ‖∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2 := by
       rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
     rw [heq]
@@ -883,7 +886,8 @@ private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 :
     have h1 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = (eLpNorm w 2 volume) ^ (2 : ℝ) :=
       lintegral_ofReal_sq_eq_eLpNorm_sq hw_meas.aestronglyMeasurable
     have h2 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = ENNReal.ofReal I :=
-      (ofReal_integral_eq_lintegral_ofReal hw2.integrable_sq (ae_of_all _ fun x => sq_nonneg _)).symm
+      (ofReal_integral_eq_lintegral_ofReal hw2.integrable_sq
+          (ae_of_all _ fun x => sq_nonneg _)).symm
     have h3 : (eLpNorm w 2 volume) ^ (2 : ℝ) = ENNReal.ofReal I := by rw [← h1, h2]
     have h4 : eLpNorm w 2 volume = (ENNReal.ofReal I) ^ (1 / 2 : ℝ) := by
       rw [← h3, ← ENNReal.rpow_mul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, ENNReal.rpow_one]
@@ -922,8 +926,9 @@ private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
   have haCnn : 0 ≤ aC := by rw [haCdef]; positivity
   obtain ⟨κ, hκnn, hκ0, hκb⟩ := stepC_bound hp_meas h0 h1 hp1 hw_meas hpw hw2 hK hKmeas hKu2
   -- Choose `h₀` so that `κ h · (aC·2 + κ h) ≤ ε` for `0 < h < h₀`.
-  have hev : ∀ᶠ h in nhds (0:ℝ), κ h * (2 * aC + κ h) ≤ ε := by
-    have hcont : Filter.Tendsto (fun h => κ h * (2 * aC + κ h)) (nhds 0) (nhds (0 * (2 * aC + 0))) :=
+  have hev : ∀ᶠ h in nhds (0 : ℝ), κ h * (2 * aC + κ h) ≤ ε := by
+    have hcont : Filter.Tendsto (fun h => κ h * (2 * aC + κ h)) (nhds 0)
+        (nhds (0 * (2 * aC + 0))) :=
       hκ0.mul (Filter.Tendsto.const_add _ hκ0)
     simp only [zero_mul] at hcont
     exact hcont.eventually_le_const hε
@@ -1007,14 +1012,14 @@ private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
     have h4 : (h ^ 2 * κ h) * (2 * (h ^ 2 * aC) + h ^ 2 * κ h)
         = h ^ 4 * (κ h * (2 * aC + κ h)) := by ring
     rw [abs_sub_le_iff]
-    have hκpos : (0:ℝ) ≤ 2 * aC + κ h := by have := hκnn h; positivity
+    have hκpos : (0 : ℝ) ≤ 2 * aC + κ h := by have := hκnn h; positivity
     have hh4 : 0 ≤ h ^ 4 := by positivity
     constructor <;> nlinarith [h1, h2, h3, h4, hκev, hh4, mul_nonneg (hκnn h) hκpos]
   -- Conclude.
   have hCsq : (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2)) = ENNReal.ofReal (c ^ 2) := by
     rw [lintegral_ofReal_sq_eq_eLpNorm_sq hBiasmeas, ← hCdef, ← ENNReal.ofReal_toReal hCfin,
       ← hcdef,
-      ENNReal.ofReal_rpow_of_nonneg hcnn (by norm_num : (0:ℝ) ≤ 2)]
+      ENNReal.ofReal_rpow_of_nonneg hcnn (by norm_num : (0 : ℝ) ≤ 2)]
     norm_num
   rw [hCsq, hMh]
   constructor

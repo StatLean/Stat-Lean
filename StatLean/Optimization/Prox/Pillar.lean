@@ -28,7 +28,8 @@ Descent).
 
 **Proof formalization notes.** The proof combines three ingredients:
 * $L$-smoothness of $f$ evaluated at $(y, y^{+})$:
-  $f(y^{+}) \le f(y) + \langle \nabla f(y),\, y^{+} - y\rangle + \tfrac{L}{2}\lVert y - y^{+}\rVert^{2}$;
+  $f(y^{+}) \le f(y) + \langle \nabla f(y),\, y^{+} -
+  y\rangle + \tfrac{L}{2}\lVert y - y^{+}\rVert^{2}$;
 * convexity (the first-order gradient inequality) of $f$ at $(y, x)$:
   $f(y) + \langle \nabla f(y),\, x - y\rangle \le f(x)$;
 * the variational inequality of the prox step (`prox_variational_inequality`
@@ -77,7 +78,7 @@ theorem prox_variational_inequality
     have hconv : h (z + t • (w - z)) ≤ (1 - t) * h z + t * h w := by
       rw [hcc]
       have hcvx := hh.2 (Set.mem_univ z) (Set.mem_univ w)
-        (by linarith : (0:ℝ) ≤ 1 - t) (le_of_lt ht0) (by ring)
+        (by linarith : (0 : ℝ) ≤ 1 - t) (le_of_lt ht0) (by ring)
       simpa using hcvx
     -- minimality of the prox point at the perturbed point
     have hmin := hz (z + t • (w - z))
@@ -96,7 +97,7 @@ theorem prox_variational_inequality
     linarith
   -- Let `t → 0⁺`.
   have hC : h z - h w - ⟪z - x, w - z⟫_ℝ ≤ 0 := by
-    have hKnn : (0:ℝ) ≤ ‖w - z‖ ^ 2 := sq_nonneg _
+    have hKnn : (0 : ℝ) ≤ ‖w - z‖ ^ 2 := sq_nonneg _
     refine le_of_forall_pos_le_add (fun ε hε => ?_)
     obtain ⟨t, ht0, ht1, htK⟩ :
         ∃ t : ℝ, 0 < t ∧ t ≤ 1 ∧ t / 2 * ‖w - z‖ ^ 2 ≤ ε := by

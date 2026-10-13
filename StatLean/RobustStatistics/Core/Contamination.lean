@@ -64,7 +64,7 @@ theorem contaminate_self (P : Measure Ω) {ε : ℝ} (h0 : 0 ≤ ε) (h1 : ε �
     contaminate P P ε = P := by
   refine Measure.ext fun s _ => ?_
   simp only [contaminate, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
-  rw [← add_mul, ← ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ 1 - ε) h0,
+  rw [← add_mul, ← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ 1 - ε) h0,
     show (1 - ε) + ε = (1 : ℝ) from by ring, ENNReal.ofReal_one, one_mul]
 
 /-- The measure of a set under the contaminated mixture. -/
@@ -79,7 +79,7 @@ theorem isProbabilityMeasure_contaminate (P Q : Measure Ω) [IsProbabilityMeasur
     IsProbabilityMeasure (contaminate P Q ε) := by
   refine ⟨?_⟩
   rw [contaminate_apply, measure_univ, measure_univ, mul_one, mul_one,
-    ← ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ 1 - ε) h0,
+    ← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ 1 - ε) h0,
     show (1 - ε) + ε = (1 : ℝ) from by ring, ENNReal.ofReal_one]
 
 /-- Integrability passes to the contaminated mixture. (Named without the `Integrable.`
@@ -107,7 +107,7 @@ theorem integral_contaminate {P Q : Measure Ω} {ε : ℝ} (h0 : 0 ≤ ε) (h1 :
     ∫ x, f x ∂(contaminate P Q ε) = (1 - ε) * ∫ x, f x ∂P + ε * ∫ x, f x ∂Q := by
   rw [contaminate, integral_add_measure (hfP.smul_measure ENNReal.ofReal_ne_top)
       (hfQ.smul_measure ENNReal.ofReal_ne_top), integral_smul_measure, integral_smul_measure,
-    ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - ε), ENNReal.toReal_ofReal h0,
+    ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - ε), ENNReal.toReal_ofReal h0,
     smul_eq_mul, smul_eq_mul]
 
 /-- Point-mass contamination integral: contaminating with `δ_{x₀}` adds an `ε f x₀` term.
@@ -172,7 +172,7 @@ theorem grossErrorNbhd_mono (P : Measure Ω) [IsProbabilityMeasure P] {ε δ : �
       = (ENNReal.ofReal (1 - δ) + ENNReal.ofReal δ * ENNReal.ofReal (1 - ε / δ)) * P s
         + ENNReal.ofReal δ * ENNReal.ofReal (ε / δ) * Q s := by
     ring
-  rw [key, hd, he, ← ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ 1 - δ)
-      (by linarith : (0:ℝ) ≤ δ - ε), show (1 - δ) + (δ - ε) = 1 - ε from by ring]
+  rw [key, hd, he, ← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ 1 - δ)
+      (by linarith : (0 : ℝ) ≤ δ - ε), show (1 - δ) + (δ - ε) = 1 - ε from by ring]
 
 end StatLean.RobustStatistics

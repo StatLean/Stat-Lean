@@ -513,7 +513,7 @@ theorem entropyScaleBound_tendsto_zero {d : ℕ} (C R : ℝ) (hC : 0 < C) (hR : 
         simpa using hlog_u2.abs
       refine hle.congr' ?_
       filter_upwards [eventually_gt_atTop (0 : ℝ)] with u hu
-      rw [abs_div, abs_of_nonneg (by positivity : (0:ℝ) ≤ u ^ 2)]
+      rw [abs_div, abs_of_nonneg (by positivity : (0 : ℝ) ≤ u ^ 2)]
     have := habs.const_mul ((2 * C * R) ^ 2)
     simpa using this.congr' (by
       filter_upwards [eventually_gt_atTop (0 : ℝ)] with u hu
@@ -535,7 +535,7 @@ theorem entropyScaleBound_tendsto_zero {d : ℕ} (C R : ℝ) (hC : 0 < C) (hR : 
       (Real.log 2 + d * |Real.log (2 * C * R / s)| + d) * s ^ 2) (𝓝[>] 0) (𝓝 0) := by
     have hconst : Tendsto (fun s : ℝ => (Real.log 2 + d) * s ^ 2) (𝓝[>] 0) (𝓝 0) := by
       have hs2 : Tendsto (fun s : ℝ => s ^ 2) (𝓝[>] 0) (𝓝 0) := by
-        have : Tendsto (fun s : ℝ => s ^ 2) (𝓝 (0:ℝ)) (𝓝 0) := by
+        have : Tendsto (fun s : ℝ => s ^ 2) (𝓝 (0 : ℝ)) (𝓝 0) := by
           have := (continuous_pow 2).tendsto (0 : ℝ); simpa using this
         exact this.mono_left nhdsWithin_le_nhds
       simpa using hs2.const_mul (Real.log 2 + d)
@@ -688,7 +688,7 @@ theorem envelopeTail_vanishes {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     have heq : ∀ ω, bnd ω = ENNReal.ofReal a⁻¹ * ENNReal.ofReal (|Φ ω| ^ 2) := by
       intro ω
       simp only [hbnd]
-      rw [← ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ a⁻¹), div_eq_inv_mul]
+      rw [← ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ a⁻¹), div_eq_inv_mul]
     rw [lintegral_congr heq, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hT_ne
   -- DCT: `∫⁻ G n → 0`.

@@ -20,10 +20,11 @@ on $h$.
 **Convolution theorem.** There exists a probability measure $M_{\theta_0}$ on
 $\mathbb{R}^d$ such that the regular limit law factors as a fixed Gaussian convolved with
 $M_{\theta_0}$:
-$$L_{\theta_0} = N\!\bigl(0,\ \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf T}\bigr) * M_{\theta_0}.$$
-The Gaussian factor $N(0, \dot\psi_{\theta_0} I_{\theta_0}^{-1} \dot\psi_{\theta_0}^{\mathsf T})$
-is the smallest possible limit law in the concentration ordering; it is the best regular
-estimator's law.
+$$L_{\theta_0} = N\!\bigl(0,\ \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf
+T}\bigr) * M_{\theta_0}.$$ The Gaussian factor $N(0, \dot\psi_{\theta_0} I_{\theta_0}^{-1}
+\dot\psi_{\theta_0}^{\mathsf
+T})$ is the smallest possible limit law in the concentration
+ordering; it is the best regular estimator's law.
 
 **Covariance corollary.** If, in addition, the limit law $L_{\theta_0}$ has a finite second
 moment with covariance matrix $\Sigma_{\theta_0}$, then
@@ -65,8 +66,8 @@ equivariant-in-law characterization used in the proof is Eq (8.7).
 
 The covariance corollary is the helper `cov_psd_from_conv_decomp`: variance is additive for
 independent sums, the multivariate Gaussian with covariance $V$ has covariance $V$, and any
-probability-measure covariance matrix is PSD, so $\Sigma_{\theta_0} = V + \mathrm{Cov}(M_{\theta_0})$
-with $\mathrm{Cov}(M_{\theta_0}) \succeq 0$.
+probability-measure covariance matrix is PSD, so
+$\Sigma_{\theta_0} = V + \mathrm{Cov}(M_{\theta_0})$ with $\mathrm{Cov}(M_{\theta_0}) \succeq 0$.
 
 **Bibliographic comments.** The convolution theorem originates with J. Hájek, "A
 characterization of limiting distributions of regular estimates", *Zeitschrift für

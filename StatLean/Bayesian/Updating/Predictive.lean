@@ -42,8 +42,9 @@ namespace StatLean.Bayesian
 variable {Θ 𝓧 𝓨 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
   [m𝓨 : MeasurableSpace 𝓨]
 
-/-- **Data ⊗ predictive = joint of the pair** (the pivotal disintegration behind Gelman §1.3): binding the prior through the pair experiment factors as the data marginal
-`compProd` the posterior predictive. -/
+/-- **Data ⊗ predictive = joint of the pair** (the pivotal disintegration behind Gelman §1.3):
+binding the prior through the pair experiment factors as
+the data marginal `compProd` the posterior predictive. -/
 theorem comp_prod_eq_compProd_posteriorPredictive
     [StandardBorelSpace Θ] [Nonempty Θ] {π : Measure Θ} [IsFiniteMeasure π]
     (KX : Kernel Θ 𝓧) [IsMarkovKernel KX] (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] :

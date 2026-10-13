@@ -19,8 +19,12 @@ Here $\chi^2_n$ is defined as the Gamma distribution with shape $n/2$ and rate $
 $\chi^2_n := \mathrm{Gamma}(n/2,\, 1/2)$, which is a probability measure for $n \ge 1$. Alongside
 the law we record the basic functionals of $\chi^2_n$:
 
-* the moment generating function $\;\mathbb{E}\!\left[e^{tX}\right] = \left(\tfrac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}\;$ for $t < 1/2$ (`mgf_chiSquared`);
-* the mean $\;\mathbb{E}[X] = n\;$ (`integral_id_chiSquared`) and variance $\;\mathrm{Var}(X) = 2n\;$ (`variance_chiSquared`), obtained from the Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
+* the moment generating function
+  $\;\mathbb{E}\!\left[e^{tX}\right] = \left(\tfrac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}\;$
+  for $t < 1/2$ (`mgf_chiSquared`);
+* the mean $\;\mathbb{E}[X] = n\;$ (`integral_id_chiSquared`) and variance
+  $\;\mathrm{Var}(X) = 2n\;$ (`variance_chiSquared`), obtained from the
+  Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
 
 These moments feed the chi-squared test's null-hypothesis moments $\mathbb{E}[T_n] = n$,
 $\mathrm{Var}[T_n] = 2n$ (used in `ChiSquaredTest/Distribution.lean`). The result is
@@ -41,8 +45,10 @@ appealing to the fact that equal MGFs on a neighbourhood of $0$ (equivalently, e
 characteristic functions) determine the law.
 
 * By independence, the MGF of $\sum_i Z_i^2$ factors as the product of the per-coordinate MGFs of
-  $Z_i^2$. For $t < 1/2$ each squared-standard-Gaussian MGF equals $(1 - 2t)^{-1/2} = (\sqrt{1-2t})^{-1}$ (`mgf_exp_sq_stdGaussian`), so the product is $(\sqrt{1-2t})^{-n}$; the `rpow` bridge
-  `chiSq_mgf_rpow_bridge` reconciles this with the Gamma MGF $\left(\tfrac{1/2}{1/2-t}\right)^{n/2}$.
+  $Z_i^2$. For $t < 1/2$ each squared-standard-Gaussian MGF equals
+  $(1 - 2t)^{-1/2} = (\sqrt{1-2t})^{-1}$ (`mgf_exp_sq_stdGaussian`), so the product is
+  $(\sqrt{1-2t})^{-n}$; the `rpow` bridge `chiSq_mgf_rpow_bridge` reconciles
+  this with the Gamma MGF $\left(\tfrac{1/2}{1/2-t}\right)^{n/2}$.
 * For $t \ge 1/2$ both MGFs vanish: the integrand $e^{t x^2}$ (resp. $e^{t x}$) is non-integrable
   under $N(0,1)$ (resp. $\chi^2_n$), via the dedicated half-line integrability bricks
   `integrable_exp_mul_gammaMeasure` / `not_integrable_exp_mul_gammaMeasure` and their $\chi^2$

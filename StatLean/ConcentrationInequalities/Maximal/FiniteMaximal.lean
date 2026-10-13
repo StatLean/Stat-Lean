@@ -139,17 +139,20 @@ private lemma integrable_ciSup_fin
     have h1 : ⨆ j, X j ω ≤ ∑ j : Fin d, |X j ω| :=
       ciSup_le fun j =>
         (le_abs_self _).trans
-          (Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ j))
+          (Finset.single_le_sum (f := fun k => |X k ω|)
+              (fun _ _ => abs_nonneg _) (Finset.mem_univ j))
     have h2 : -(⨆ j, X j ω) ≤ ∑ j : Fin d, |X j ω| :=
       calc -(⨆ j, X j ω)
           ≤ -(X 0 ω) := neg_le_neg (le_ciSup hbdd 0)
         _ ≤ |X 0 ω| := by rw [← abs_neg]; exact le_abs_self _
         _ ≤ ∑ j : Fin d, |X j ω| :=
-            Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ 0)
+            Finset.single_le_sum (f := fun k => |X k ω|)
+                (fun _ _ => abs_nonneg _) (Finset.mem_univ 0)
     exact abs_le.mpr ⟨by linarith, h1⟩
 
 /-- For `lam > 0` and any function `f : Fin d → ℝ`, `exp(lam · sup_j f j) ≤ ∑_j exp(lam · f j)`.
-The max is achieved at some `j₀`, and one term in the sum equals it while all others are positive. -/
+The max is achieved at some `j₀`, and one term in
+the sum equals it while all others are positive. -/
 private lemma exp_mul_ciSup_le_sum_exp
     {d : ℕ} [NeZero d] {lam : ℝ} (hlam : 0 < lam) (f : Fin d → ℝ) :
     Real.exp (lam * ⨆ j, f j) ≤ ∑ j : Fin d, Real.exp (lam * f j) := by
@@ -159,7 +162,8 @@ private lemma exp_mul_ciSup_le_sum_exp
     (ciSup_le fun j => hj0 j (Finset.mem_univ j))
     (le_ciSup (Finite.bddAbove_range _) j0)
   rw [hmax]
-  exact Finset.single_le_sum (f := fun j => Real.exp (lam * f j)) (fun _ _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
+  exact Finset.single_le_sum (f := fun j => Real.exp (lam * f j))
+      (fun _ _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
 
 /-! ### Expectation bound -/
 

@@ -7,48 +7,53 @@ import StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 
 For an $\ell_1$-regularized generalized linear model, this is the probabilistic step that
 discharges the deterministic "good event"
-$$\mathbb{G}(\lambda) \;=\; \bigl\{\, \Phi^*\!\bigl(\nabla \mathcal{L}_n(\theta^*)\bigr) \le \tfrac{\lambda}{2} \,\bigr\},$$
-where $\Phi^*$ is the dual norm of the regularizer. For the $\ell_1$ penalty the dual norm is the
-$\ell_\infty$ norm and $\nabla \mathcal{L}_n(\theta^*)$ is the empirical score vector, so the good
-event is $\{\,\lVert \text{score} \rVert_\infty \le \lambda/2\,\}$. We prove: under column
-normalization $\lVert X_{\cdot j}\rVert_2/\sqrt{n} \le C$ and a bounded cumulant constant $B$, each
-score coordinate is sub-Gaussian with variance proxy $B^2 C^2/n$, so a two-sided coordinatewise tail
-together with a union bound over the $d$ coordinates yields
-$$\Pr\!\bigl(\lVert \text{score} \rVert_\infty > t\bigr) \;\le\; 2d\,\exp\!\Bigl(-\tfrac{t^2}{2B^2C^2/n}\Bigr).$$
-Choosing the regularization level $\lambda = 4BC\bigl\{\sqrt{\log d / n} + \delta\bigr\}$ (or larger)
-and setting $t = \lambda/2$ collapses this to
-$$\Pr\!\bigl(\lVert \text{score} \rVert_\infty \le \lambda/2\bigr) \;\ge\; 1 - 2\,e^{-2n\delta^2},$$
-which is exactly `good_event_highProb`.
+$$\mathbb{G}(\lambda) \;=\; \bigl\{\, \Phi^*\!\bigl(\nabla \mathcal{L}_n(\theta^*)\bigr) \le
+\tfrac{\lambda}{2}
+\,\bigr\},$$ where $\Phi^*$ is the dual norm of the regularizer. For the $\ell_1$ penalty the dual
+norm is the $\ell_\infty$ norm and $\nabla \mathcal{L}_n(\theta^*)$ is the empirical score vector,
+so the good event is $\{\,\lVert \text{score} \rVert_\infty \le \lambda/2\,\}$. We prove: under
+column normalization $\lVert X_{\cdot j}\rVert_2/\sqrt{n} \le C$ and a bounded cumulant constant
+$B$, each score coordinate is sub-Gaussian with variance proxy $B^2 C^2/n$, so a two-sided
+coordinatewise tail together with a union bound over the $d$ coordinates yields
+$$\Pr\!\bigl(\lVert \text{score} \rVert_\infty > t\bigr) \;\le\;
+2d\,\exp\!\Bigl(-\tfrac{t^2}{2B^2C^2/n}\Bigr).$$ Choosing the regularization level $\lambda =
+4BC\bigl\{\sqrt{\log d / n} + \delta\bigr\}$ (or larger) and setting $t =
+\lambda/2$ collapses this to $$\Pr\!\bigl(\lVert \text{score} \rVert_\infty \le
+\lambda/2\bigr) \;\ge\; 1 - 2\,e^{-2n\delta^2},$$ which is exactly `good_event_highProb`.
 
 Deviations from the book statement. The result is stated for $\delta \in (0,1)$ with $B, C > 0$,
 $d \ge 1$, and $n \ge 1$ as explicit hypotheses (the book leaves the column-normalization and
 positivity conditions implicit in the GLM regularity assumptions G1/G2). The constant $4$ in
-$\lambda = 4BC\{\cdots\}$ matches the book; the conclusion uses the provable form $1 - 2e^{-2n\delta^2}$.
+$\lambda = 4BC\{\cdots\}$ matches the book; the
+conclusion uses the provable form $1 - 2e^{-2n\delta^2}$.
 
-**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge
-University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity), §9.5 (Bounds for
-sparse vector regression), §9.5.1 (Generalized linear models with sparsity), Corollary
-9.26 (proof, p. 288), good event $\mathbb{G}(\lambda) = \{\Phi^*(\nabla \mathcal{L}_n(\theta^*)) \le \lambda/2\}$
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity), §9.5
+(Bounds for sparse vector regression), §9.5.1 (Generalized linear models with sparsity), Corollary
+9.26 (proof, p. 288), good event
+$\mathbb{G}(\lambda) = \{\Phi^*(\nabla \mathcal{L}_n(\theta^*)) \le \lambda/2\}$
 with $\lambda = 4BC\{\sqrt{\log d/n} + \delta\}$.
 
 **Proof formalization notes.** A two-sided sub-Gaussian tail on each coordinate
 (`score_coord_isSubGaussian`, proxy `B²C²/n`) + a union bound over the `d` coordinates gives
 `P(‖scoreVec‖∞ > t) ≤ 2d·exp(−t²/(2B²C²/n))`; choosing `λ = 4BC{√(log d/n) + δ}` and `t = λ/2` makes
 this `≤ 2exp(−2nδ²)`, using `(√a + δ)² ≥ a + δ²` (drop the nonnegative cross term) and
-`d·exp(−2 log d) = 1/d ≤ 1`. Structurally identical to `Lasso/RandomNoise.lean` (`linfNorm_noise_tail`
+`d·exp(−2 log d) = 1/d ≤ 1`. Structurally identical
+to `Lasso/RandomNoise.lean` (`linfNorm_noise_tail`
 + the good-event split of `lasso_random_rate`). The mean-zero identity `∫ scoreCoord M j = 0` is
 re-derived here from the constitutive MGF identity `M.hmgf` (via `E[yᵢ] = ψ'(ηᵢ)`).
 
 **Bibliographic comments.** The "good event" device — choosing the regularization parameter to
-dominate the dual norm of the loss gradient at the truth, $\lambda_n \ge 2\,R^*(\nabla \mathcal{L}_n(\theta^*))$,
-and then controlling that gradient by a high-probability tail bound — originates with S. N. Negahban,
-P. Ravikumar, M. J. Wainwright and B. Yu, "A unified framework for high-dimensional analysis of
-M-estimators with decomposable regularizers," *Statistical Science* 27(4): 538–557, 2012. There the
-GLM gradient bound is one of the running examples instantiating the general decomposable-regularizer
-framework (their Theorem 1 / Corollary 1 give the deterministic bound, and the GLM corollaries supply
-the sub-Gaussian tail control of $R^*(\nabla \mathcal{L}_n(\theta^*))$). Wainwright's
-Corollary 9.26 packages that GLM instance; the $\ell_\infty$ union-bound argument formalized
-here is the standard sub-Gaussian maximal-inequality step underlying it.
+dominate the dual norm of the loss gradient at the truth,
+$\lambda_n \ge 2\,R^*(\nabla \mathcal{L}_n(\theta^*))$, and then controlling that gradient by a
+high-probability tail bound — originates with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B.
+Yu, "A unified framework for high-dimensional analysis of M-estimators with decomposable
+regularizers," *Statistical Science* 27(4): 538–557, 2012. There the GLM gradient bound is one of
+the running examples instantiating the general decomposable-regularizer framework (their Theorem 1 /
+Corollary 1 give the deterministic bound, and the GLM corollaries supply the sub-Gaussian tail
+control of $R^*(\nabla \mathcal{L}_n(\theta^*))$). Wainwright's Corollary 9.26 packages that GLM
+instance; the $\ell_\infty$ union-bound argument formalized here is
+the standard sub-Gaussian maximal-inequality step underlying it.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator
@@ -134,9 +139,10 @@ private lemma scoreCoord_integral_zero (M : GLMExpFamily n d μ) [IsProbabilityM
       integral_finsetSum Finset.univ (fun i _ => (hV_sg i).integrable),
       Finset.sum_congr rfl (fun i _ => hVi i), Finset.sum_const_zero, mul_zero]
 
-/-- **Union-bound tail on `‖scoreVec‖∞`** (Wainwright Cor 9.26 proof). For each coordinate the score is
-sub-Gaussian with proxy `B²C²/n` (`score_coord_isSubGaussian`); a two-sided tail + union bound over the
-`d` coordinates gives `P(‖scoreVec‖∞ > t) ≤ 2d·exp(−t²/(2·B²C²/n))`. (The `linfNorm_noise_tail` pattern.) -/
+/-- **Union-bound tail on `‖scoreVec‖∞`** (Wainwright Cor 9.26 proof). For each coordinate the score
+is sub-Gaussian with proxy `B²C²/n` (`score_coord_isSubGaussian`); a two-sided tail + union bound
+over the `d` coordinates gives `P(‖scoreVec‖∞ > t) ≤ 2d·exp(−t²/(2·B²C²/n))`.
+(The `linfNorm_noise_tail` pattern.) -/
 theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     -- USER-INPUT: column normalization (G1); Wainwright §9.5.1 (G1).
     (C : ℝ) (hC : IsColumnNormalized M.X C)
@@ -190,9 +196,9 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
               ← ENNReal.ofReal_mul (by positivity)]
           congr 1; ring
 
-/-- **High-probability good event** (Wainwright Cor 9.26). With `λ = 4BC{√(log d/n) + δ}` (or larger),
-`P(‖scoreVec‖∞ ≤ λ/2) ≥ 1 − 2·exp(−2nδ²)`. Setting `t = λ/2` in `score_linfNorm_tail`, the bound
-`2d·exp(−nt²/(2B²C²))` simplifies to `2·exp(−2nδ²)` via `(a+b)² ≥ a²+b²` and `d ≥ 1`. -/
+/-- **High-probability good event** (Wainwright Cor 9.26). With `λ = 4BC{√(log d/n) + δ}` (or
+larger), `P(‖scoreVec‖∞ ≤ λ/2) ≥ 1 − 2·exp(−2nδ²)`. Setting `t = λ/2` in `score_linfNorm_tail`, the
+bound `2d·exp(−nt²/(2B²C²))` simplifies to `2·exp(−2nδ²)` via `(a+b)² ≥ a²+b²` and `d ≥ 1`. -/
 theorem good_event_highProb (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (C : ℝ) (hC : IsColumnNormalized M.X C)
     -- USER-INPUT: positive sample size; Wainwright Cor 9.26.

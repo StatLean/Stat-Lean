@@ -460,7 +460,8 @@ private noncomputable def canonicalDensity (θ : CanonicalParam s) :
     EuclideanSpace ℝ (Fin (s + m)) → ℝ≥0∞ :=
   fun Y => ∏ i, gaussianPDF ((Fin.append θ.1 (0 : Fin m → ℝ)) i) θ.2.1 (Y i)
 
-/-- The `T`-side Fisher–Neyman factor: `canonicalDensity θ y = canonicalFactor θ (canonicalStat y)`. -/
+/-- The `T`-side Fisher–Neyman factor:
+`canonicalDensity θ y = canonicalFactor θ (canonicalStat y)`. -/
 private noncomputable def canonicalFactor (θ : CanonicalParam s) :
     (Fin s → ℝ) × ℝ → ℝ≥0∞ :=
   fun t => ENNReal.ofReal (canonicalC (m := m) θ) *
@@ -481,7 +482,8 @@ private lemma measurable_canonicalFactor (θ : CanonicalParam s) :
   refine (Finset.measurable_sum _ fun i _ =>
     measurable_const.mul ((measurable_pi_apply i).comp measurable_fst)).add
     (measurable_const.mul (measurable_snd.add
-      (Finset.measurable_sum _ fun i _ => ((measurable_pi_apply i).comp measurable_fst).pow_const 2)))
+      (Finset.measurable_sum _ fun i
+          _ => ((measurable_pi_apply i).comp measurable_fst).pow_const 2)))
 
 /-- The canonical model is a probability measure. -/
 private instance isProbabilityMeasure_canonicalModel (θ : CanonicalParam s) :

@@ -599,7 +599,6 @@ theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
         ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
       rw [← inner_conj_symm g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)), RCLike.conj_mul,
         ← RCLike.ofReal_pow, RCLike.ofReal_re]
-      
     have h3 : (0 : ℝ) ≤ RCLike.re ⟪g, mercerCLM μ hK.continuous g⟫_𝕜 := by
       have := sum_le_hasSum (∅ : Finset w) (fun i _ => by positivity) h2
       simpa using this

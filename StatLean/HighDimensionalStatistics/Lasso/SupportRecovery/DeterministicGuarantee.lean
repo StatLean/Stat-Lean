@@ -10,8 +10,8 @@ $j \notin S$). Assume the design matrix $X$ satisfies the **lower-eigenvalue con
 the restricted submatrix $\tfrac1n X_S^\top X_S$ has minimum eigenvalue at least $c_{\min} > 0$
 — and the **mutual-incoherence condition (A4)** with parameter $\alpha \in [0,1)$. If the
 regularization parameter satisfies the condition (7.44)
-$$\lambda \ \ge\ \frac{2}{1-\alpha}\,\bigl\|\tfrac1n X_{S^c}^\top \Pi_{S^\perp}\, w\bigr\|_\infty ,$$
-then the Lagrangian Lasso program enjoys the following variable-selection guarantees:
+$$\lambda \ \ge\ \frac{2}{1-\alpha}\,\bigl\|\tfrac1n X_{S^c}^\top \Pi_{S^\perp}\, w\bigr\|_\infty
+,$$ then the Lagrangian Lasso program enjoys the following variable-selection guarantees:
 
 * **(a) Uniqueness.** The Lasso has a *unique* optimal solution $\widehat\beta$.
 * **(b) No false inclusion.** Every Lasso minimizer is supported on $S$, i.e.

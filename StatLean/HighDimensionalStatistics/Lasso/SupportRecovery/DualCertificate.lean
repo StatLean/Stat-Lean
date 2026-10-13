@@ -10,7 +10,8 @@ This file proves the deterministic core of Lasso variable-selection consistency:
 
 Consider the Lagrangian Lasso estimator
 $$ \hat\theta \;\in\; \arg\min_{\theta\in\mathbb{R}^d}\;
-   \Bigl\{ \tfrac{1}{2n}\,\lVert Y - X\theta\rVert_2^2 \;+\; \lambda\,\lVert\theta\rVert_1 \Bigr\}, $$
+   \Bigl\{ \tfrac{1}{2n}\,\lVert Y - X\theta\rVert_2^2
+   \;+\; \lambda\,\lVert\theta\rVert_1 \Bigr\}, $$
 with response $Y = X\theta^\* + w$, where the true parameter $\theta^\*$ is supported on a
 subset $S \subseteq \{1,\dots,d\}$ (i.e. $\theta^\*_j = 0$ for $j \notin S$). Assume:
 
@@ -445,7 +446,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
                 (⟨k, hk⟩ : {x // x ∈ S})|
             = lam * |(gramInvNorm X S *ᵥ (fun i : {x // x ∈ S} => zhat.ofLp i.val))
                 (⟨k, hk⟩ : {x // x ∈ S})| := by
-          rw [← hcoord, abs_mul, abs_of_pos (by positivity : (0:ℝ) < (n:ℝ))]; ring
+          rw [← hcoord, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < (n : ℝ))]; ring
         rw [hrw, hB, mul_comm (matLinftyNorm (gramInvNorm X S)) lam]
         exact mul_le_mul_of_nonneg_left hle2 hlampos.le
       calc |(gramInv X S *ᵥ ((Xsub X S)ᵀ *ᵥ w.ofLp)) (⟨k, hk⟩ : {x // x ∈ S})
@@ -456,7 +457,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
                 *ᵥ (fun i : {x // x ∈ S} => zhat.ofLp i.val)) (⟨k, hk⟩ : {x // x ∈ S})| :=
             habs_sub _ _
         _ ≤ A + B := by
-            rw [abs_mul, abs_of_pos (by positivity : (0:ℝ) < lam * (n:ℝ))]
+            rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < lam * (n : ℝ))]
             exact add_le_add hA1 hB1
     · rw [ite_eq_right hk, abs_zero]; linarith [hAnn, hBnn]
   -- Step 6 (7.53): the ẑ_{Sᶜ} block decomposition ẑ_j = μ_j + V_j.
@@ -535,15 +536,15 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
     have hLHSabs : |(1 / (lam * (n : ℝ))) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp))|
         = (1 / lam) * |((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
             (⟨j, hjc⟩ : {x // x ∈ Sᶜ})| := by
-      rw [hcoordeq, abs_mul, abs_mul, abs_of_pos (by positivity : (0:ℝ) < 1 / (lam * (n : ℝ))),
-        abs_of_pos (by positivity : (0:ℝ) < 1 / (n : ℝ))]
+      rw [hcoordeq, abs_mul, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 1 / (lam * (n : ℝ))),
+        abs_of_pos (by positivity : (0 : ℝ) < 1 / (n : ℝ))]
       field_simp
     have hcoord_le : |((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
           (⟨j, hjc⟩ : {x // x ∈ Sᶜ})| ≤ projNoiseLinf X S w := by
       unfold projNoiseLinf
       exact le_ciSup_of_le (Finite.bddAbove_range _) (⟨j, hjc⟩ : {x // x ∈ Sᶜ}) le_rfl
     have hP : projNoiseLinf X S w ≤ (1 - α) / 2 * lam := by
-      have h2 := mul_le_mul_of_nonneg_left hlam (le_of_lt (by positivity : (0:ℝ) < (1 - α) / 2))
+      have h2 := mul_le_mul_of_nonneg_left hlam (le_of_lt (by positivity : (0 : ℝ) < (1 - α) / 2))
       have hc : (1 - α) / 2 * ((2 / (1 - α)) * projNoiseLinf X S w) = projNoiseLinf X S w := by
         field_simp
       rw [hc] at h2

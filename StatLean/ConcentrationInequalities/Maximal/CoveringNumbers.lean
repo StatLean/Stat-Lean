@@ -14,9 +14,10 @@ $$\forall\, x \in s,\ \exists\, y \in N,\ d(x, y) \le \varepsilon.$$
 
 The **covering number** $N(s, d, \varepsilon)$ is the smallest possible cardinality of
 such a net:
-$$N(s, d, \varepsilon) \;=\; \min\bigl\{\, \lvert N\rvert : N \subseteq s \text{ is a finite } \varepsilon\text{-net of } s \,\bigr\},$$
-taken to be $+\infty$ when no finite $\varepsilon$-net exists.  It is non-increasing in
-$\varepsilon$: a smaller radius requires (weakly) more centres.
+$$N(s, d, \varepsilon) \;=\; \min\bigl\{\, \lvert N\rvert : N \subseteq s \text{ is a finite }
+\varepsilon\text{-net of } s
+\,\bigr\},$$ taken to be $+\infty$ when no finite $\varepsilon$-net exists.  It is
+non-increasing in $\varepsilon$: a smaller radius requires (weakly) more centres.
 
 All non-trivial combinatorial content is delegated to
 `Mathlib.Topology.MetricSpace.CoveringNumbers`.

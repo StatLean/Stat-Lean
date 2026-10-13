@@ -357,7 +357,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
         have h1 := abs_le.1 (hbdd k hk (w.2 i))
         have h2 := abs_le.1 (hbdd k hk (w.1 i))
         exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
-    rw [abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹)]
+    rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
     calc (n : ℝ)⁻¹ * |∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))|
         ≤ (n : ℝ)⁻¹ * ((n : ℝ) * (2 * c)) := mul_le_mul_of_nonneg_left hb (by positivity)
       _ = 2 * c := by field_simp
@@ -421,7 +421,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
         (mul_le_mul_of_nonneg_left hb1 (by positivity))
     have hsum := Finset.sum_le_sum fun σ (_ : σ ∈ Finset.univ) => hper σ
     have hmono := mul_le_mul_of_nonneg_left hsum
-      (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)
+      (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)
     refine hmono.trans (le_of_eq ?_)
     rw [Finset.sum_add_distrib]
     have hflip : ∑ σ : Fin n → Bool, (n : ℝ)⁻¹ *

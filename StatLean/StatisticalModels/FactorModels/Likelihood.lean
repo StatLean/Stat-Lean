@@ -263,8 +263,8 @@ theorem multivariateGaussian_eq_withDensity_exp_gaussianLogDensity (p : ℕ)
   congr 1
   funext x
   congr 1
-  have hpi : (0:ℝ) < 2 * Real.pi := by positivity
-  have hdet : (0:ℝ) < S.det := hS.det_pos
+  have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
+  have hdet : (0 : ℝ) < S.det := hS.det_pos
   have hsqpi : Real.sqrt (2 * Real.pi) = Real.exp (Real.log (2 * Real.pi) / 2) := by
     rw [Real.sqrt_eq_rpow, Real.rpow_def_of_pos hpi]; ring_nf
   have hsqdet : Real.sqrt S.det = Real.exp (Real.log S.det / 2) := by

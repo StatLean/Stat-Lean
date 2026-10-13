@@ -103,7 +103,8 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
   classical
   have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The increasing family of good-modulus sets `S k = goodModulusSet … (1/(k+1)) c`.
   set S : ℕ → Set (LinfF F) := fun k => goodModulusSet P F ((k + 1 : ℝ)⁻¹) c with hS
@@ -244,7 +245,8 @@ theorem outerMeasure_modulusComplement_le
   intro ε η hε hη
   have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The `⇝ₒ` instance for this iid sample.
   have hwc := h μ X hX_meas hX_indep hX_id hX_law
@@ -327,7 +329,8 @@ theorem empiricalProcess_asymptoticallyTight
           (fun i : Fin n => X i.val ξ))) := by
   have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   exact AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter
     (h μ X hX_meas hX_indep hX_id hX_law)
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).tight

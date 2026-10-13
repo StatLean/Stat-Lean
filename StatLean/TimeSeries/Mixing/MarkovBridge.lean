@@ -85,9 +85,10 @@ downstream uses the identity (the model routes use the *inequality*
 
 **The one open brick** is `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's
 identity proper — note that wave 5's `betaMixCoeff_two_marginal_le_of_envelope` proves its
-`≤` half in envelope form, so nothing downstream depends on it any more; its docstring records the *verified* calibration demanded below and the
-proof of each direction — the `≥` half, which needs a measurable Hahn decomposition for
-`κⁿ(x,·) − F` approximated by rectangles, is the genuinely hard one).
+`≤` half in envelope form, so nothing downstream depends on it any more; its docstring records the
+*verified* calibration demanded below and the proof of each direction — the `≥` half, which needs a
+measurable Hahn decomposition for `κⁿ(x,·) − F`
+approximated by rectangles, is the genuinely hard one).
 
 **Normalization warning (for the closure session).** `tvDist` is the sup-over-events
 distance `sup_B |P(B) − Q(B)|`; the book's `‖·‖_TV` is twice that. FY's (2.58) is
@@ -120,7 +121,8 @@ sub-σ-algebra hypotheses do not shadow it as local instances). -/
 section Helpers
 variable {Ω : Type*}
 
-private lemma le_alphaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+private lemma le_alphaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {A B : Set Ω} (hA : MeasurableSet[m₁] A) (hB : MeasurableSet[m₂] B) :
     |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤ alphaMixCoeff μ m₁ m₂ := by
   refine le_csSup ⟨1, ?_⟩ ⟨A, B, hA, hB, rfl⟩
@@ -150,33 +152,33 @@ private lemma alphaMixCoeff_mono' {m₁ m₂ m₁' m₂' mΩ : MeasurableSpace �
 /-- `∫ 1_A * (1_B - P B) = P(A ∩ B) - P A * P B`. -/
 private lemma integral_centred_indicator_mul {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] {A B : Set Ω} (hA : MeasurableSet A) (hB : MeasurableSet B) :
-    ∫ ω, (A.indicator (fun _ => (1:ℝ)) ω) * (B.indicator (fun _ => (1:ℝ)) ω - (μ B).toReal) ∂μ
+    ∫ ω, (A.indicator (fun _ => (1 : ℝ)) ω) * (B.indicator (fun _ => (1 : ℝ)) ω - (μ B).toReal) ∂μ
       = (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by
-  have hfun : (fun ω => (A.indicator (fun _ => (1:ℝ)) ω)
-        * (B.indicator (fun _ => (1:ℝ)) ω - (μ B).toReal))
-      = fun ω => (A ∩ B).indicator (fun _ => (1:ℝ)) ω
-          - (μ B).toReal * A.indicator (fun _ => (1:ℝ)) ω := by
+  have hfun : (fun ω => (A.indicator (fun _ => (1 : ℝ)) ω)
+        * (B.indicator (fun _ => (1 : ℝ)) ω - (μ B).toReal))
+      = fun ω => (A ∩ B).indicator (fun _ => (1 : ℝ)) ω
+          - (μ B).toReal * A.indicator (fun _ => (1 : ℝ)) ω := by
     funext ω
     by_cases h1 : ω ∈ A <;> by_cases h2 : ω ∈ B <;>
       simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2]
-  rw [hfun, integral_sub ((integrable_const (1:ℝ)).indicator (hA.inter hB))
-      (((integrable_const (1:ℝ)).indicator hA).const_mul _),
-    integral_indicator_const (1:ℝ) (hA.inter hB), integral_const_mul,
-    integral_indicator_const (1:ℝ) hA]
+  rw [hfun, integral_sub ((integrable_const (1 : ℝ)).indicator (hA.inter hB))
+      (((integrable_const (1 : ℝ)).indicator hA).const_mul _),
+    integral_indicator_const (1 : ℝ) (hA.inter hB), integral_const_mul,
+    integral_indicator_const (1 : ℝ) hA]
   simp [Measure.real]
   ring
 
 private lemma integral_centred_indicator {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] {B : Set Ω} (hB : MeasurableSet B) :
-    ∫ ω, (B.indicator (fun _ => (1:ℝ)) ω - (μ B).toReal) ∂μ = 0 := by
-  rw [integral_sub ((integrable_const (1:ℝ)).indicator hB) (integrable_const _),
-    integral_indicator_const (1:ℝ) hB, integral_const]
+    ∫ ω, (B.indicator (fun _ => (1 : ℝ)) ω - (μ B).toReal) ∂μ = 0 := by
+  rw [integral_sub ((integrable_const (1 : ℝ)).indicator hB) (integrable_const _),
+    integral_indicator_const (1 : ℝ) hB, integral_const]
   simp [Measure.real]
 
 private lemma integrable_centred_indicator {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] {B : Set Ω} (hB : MeasurableSet B) :
-    Integrable (fun ω => B.indicator (fun _ => (1:ℝ)) ω - (μ B).toReal) μ :=
-  ((integrable_const (1:ℝ)).indicator hB).sub (integrable_const _)
+    Integrable (fun ω => B.indicator (fun _ => (1 : ℝ)) ω - (μ B).toReal) μ :=
+  ((integrable_const (1 : ℝ)).indicator hB).sub (integrable_const _)
 
 end Helpers
 
@@ -189,11 +191,11 @@ values in `[0,1]`, and any `m`-measurable version `p` of `μ[h|m]`,
 private lemma abs_integral_mul_le_setIntegral {m mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hm : m ≤ mΩ)
     {h : Ω → ℝ} (hh : Integrable h μ) (hh0 : ∫ ω, h ω ∂μ = 0)
-    {p : Ω → ℝ} (hp : StronglyMeasurable[m] p) (hpe : μ[h|m] =ᵐ[μ] p)
+    {p : Ω → ℝ} (hp : StronglyMeasurable[m] p) (hpe : μ[h | m] =ᵐ[μ] p)
     {Y : Ω → ℝ} (hY : StronglyMeasurable[m] Y) (hY0 : ∀ ω, 0 ≤ Y ω) (hY1 : ∀ ω, Y ω ≤ 1) :
     |∫ ω, Y ω * h ω ∂μ| ≤ ∫ ω in {ω | 0 < p ω}, h ω ∂μ := by
   have hYm : AEStronglyMeasurable Y μ := (hY.mono hm).aestronglyMeasurable
-  have hYb : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ (1:ℝ) :=
+  have hYb : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ (1 : ℝ) :=
     Filter.Eventually.of_forall fun ω => by
       rw [Real.norm_eq_abs, abs_of_nonneg (hY0 ω)]; exact hY1 ω
   have hpI : Integrable p μ := integrable_condExp.congr hpe
@@ -250,7 +252,7 @@ private lemma abs_integral_mul_le_setIntegral {m mΩ : MeasurableSpace Ω} {μ :
     rw [he] at this
     linarith
   -- (4) the positive part is a set integral of `h`
-  have hAm : MeasurableSet[m] {ω | 0 < p ω} := hp.measurable (measurableSet_Ioi (a := (0:ℝ)))
+  have hAm : MeasurableSet[m] {ω | 0 < p ω} := hp.measurable (measurableSet_Ioi (a := (0 : ℝ)))
   have hposeq : (fun ω => max (p ω) 0) = {ω | 0 < p ω}.indicator p := by
     funext ω
     by_cases hx : 0 < p ω
@@ -281,27 +283,27 @@ private lemma alphaMixCoeff_nonneg' {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : M
 
 private lemma setIntegral_eq_indicator_mul {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {s : Set Ω}
     (hs : MeasurableSet s) (f : Ω → ℝ) :
-    ∫ ω in s, f ω ∂μ = ∫ ω, s.indicator (fun _ => (1:ℝ)) ω * f ω ∂μ := by
+    ∫ ω in s, f ω ∂μ = ∫ ω, s.indicator (fun _ => (1 : ℝ)) ω * f ω ∂μ := by
   rw [← integral_indicator hs]
   refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
   by_cases hx : ω ∈ s <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hx]
 
 private lemma indicator_one_nonneg (S : Set Ω) (ω : Ω) :
-    (0:ℝ) ≤ S.indicator (fun _ => (1:ℝ)) ω := by
+    (0 : ℝ) ≤ S.indicator (fun _ => (1 : ℝ)) ω := by
   by_cases hx : ω ∈ S
   · simp only [Set.indicator_of_mem hx]; norm_num
   · simp only [Set.indicator_of_notMem hx]; exact le_rfl
 
 private lemma indicator_one_le_one (S : Set Ω) (ω : Ω) :
-    S.indicator (fun _ => (1:ℝ)) ω ≤ 1 := by
+    S.indicator (fun _ => (1 : ℝ)) ω ≤ 1 := by
   by_cases hx : ω ∈ S
   · simp only [Set.indicator_of_mem hx]; exact le_rfl
   · simp only [Set.indicator_of_notMem hx]; norm_num
 
 private lemma norm_centred_indicator_le_one {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (S : Set Ω) (ω : Ω) :
-    ‖S.indicator (fun _ => (1:ℝ)) ω - (μ S).toReal‖ ≤ 1 := by
-  have h1 : (0:ℝ) ≤ (μ S).toReal := ENNReal.toReal_nonneg
+    ‖S.indicator (fun _ => (1 : ℝ)) ω - (μ S).toReal‖ ≤ 1 := by
+  have h1 : (0 : ℝ) ≤ (μ S).toReal := ENNReal.toReal_nonneg
   have h2 : (μ S).toReal ≤ 1 := by
     simpa using ENNReal.toReal_mono (measure_ne_top μ Set.univ) (measure_mono (Set.subset_univ S))
   have h3 := indicator_one_nonneg S ω
@@ -766,7 +768,8 @@ private lemma betaMixCoeff_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : M
   linarith
 
 private lemma betaMixCoeff_zero_mem {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω)
-    [IsProbabilityMeasure μ] : (0 : ℝ) ∈ {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Ω) (B : Fin J → Set Ω),
+    [IsProbabilityMeasure μ] : (0 : ℝ) ∈
+        {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Ω) (B : Fin J → Set Ω),
       (∀ i, MeasurableSet[m₁] (A i)) ∧ (∀ j, MeasurableSet[m₂] (B j)) ∧
       (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
       (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
@@ -2132,9 +2135,9 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
     have h2 : ((μ.map (X 0)) (W' j)).toReal ≤ 1 := by
       simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
         (measure_mono (Set.subset_univ (W' j)))
-    have h3 : (0:ℝ) ≤ (((κ ^ n) (X k ω)) (W' j)).toReal := ENNReal.toReal_nonneg
-    have h4 : (0:ℝ) ≤ ((μ.map (X 0)) (W' j)).toReal := ENNReal.toReal_nonneg
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2), abs_le]
+    have h3 : (0 : ℝ) ≤ (((κ ^ n) (X k ω)) (W' j)).toReal := ENNReal.toReal_nonneg
+    have h4 : (0 : ℝ) ≤ ((μ.map (X 0)) (W' j)).toReal := ENNReal.toReal_nonneg
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_le]
     constructor <;> linarith
   have hmuB : ∀ j, (μ (Bset j)).toReal = ((μ.map (X 0)) (W' j)).toReal := by
     intro j
@@ -2145,33 +2148,33 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
     intro S hS j
     have hSΩ : MeasurableSet S := hm _ hS
     have hBΩ : MeasurableSet (Bset j) := by rw [← hW'pre j]; exact (hmeas _) (hW'm j)
-    have hfe : (fun ω => (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω))
-        = (Bset j).indicator (fun _ => (1:ℝ)) := by
+    have hfe : (fun ω => (W' j).indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω))
+        = (Bset j).indicator (fun _ => (1 : ℝ)) := by
       funext ω
-      by_cases hy : X (k + (n:ℤ)) ω ∈ W' j
+      by_cases hy : X (k + (n : ℤ)) ω ∈ W' j
       · rw [Set.indicator_of_mem hy, Set.indicator_of_mem (by rw [← hW'pre j]; exact hy)]
       · rw [Set.indicator_of_notMem hy,
           Set.indicator_of_notMem (by rw [← hW'pre j]; exact hy)]
-    have hint : Integrable (fun ω => (W' j).indicator (fun _ => (1:ℝ))
-        (X (k + (n:ℤ)) ω)) μ := by
-      rw [hfe]; exact (integrable_const (1:ℝ)).indicator hBΩ
-    have e1 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
-          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
-        = ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ :=
+    have hint : Integrable (fun ω => (W' j).indicator (fun _ => (1 : ℝ))
+        (X (k + (n : ℤ)) ω)) μ := by
+      rw [hfe]; exact (integrable_const (1 : ℝ)).indicator hBΩ
+    have e1 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1 : ℝ))
+          (X (k + (n : ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in S, (W' j).indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ :=
       setIntegral_condExp hm hint hS
-    have e2 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
-          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+    have e2 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1 : ℝ))
+          (X (k + (n : ℤ)) ω) | sigmaLE' X k]) ω ∂μ
         = ∫ ω in S, (((κ ^ n) (X k ω)) (W' j)).toReal ∂μ :=
       setIntegral_congr_ae hSΩ
         (by filter_upwards [hmarkov k n (W' j) (hW'm j)] with ω hω using fun _ => hω)
-    have e3 : ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ
+    have e3 : ∫ ω in S, (W' j).indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ
         = (μ (S ∩ Bset j)).toReal := by
-      rw [hfe, integral_indicator_const (1:ℝ) hBΩ]
+      rw [hfe, integral_indicator_const (1 : ℝ) hBΩ]
       simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
     have hgint : IntegrableOn (fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal) S μ := by
       have hgm : Measurable fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal :=
         (((κ ^ n).measurable_coe (hW'm j)).ennreal_toReal).comp (hmeas k)
-      refine Integrable.mono (integrable_const (1:ℝ)) hgm.aestronglyMeasurable.restrict
+      refine Integrable.mono (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable.restrict
         (Filter.Eventually.of_forall fun ω => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
         abs_of_nonneg ENNReal.toReal_nonneg]
@@ -2413,7 +2416,7 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
     intro j
     refine Integrable.mono (integrable_const (2 : ℝ)) (hhm j).aestronglyMeasurable
       (Filter.Eventually.of_forall fun ω => ?_)
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2), hhdef]
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), hhdef]
     exact hφb j _
   have hcovij : ∀ i j, (μ (Aset i ∩ Bset j)).toReal
       - (μ (Aset i)).toReal * (μ (Bset j)).toReal = ∫ ω in Aset i, hh j ω ∂μ := by
@@ -2447,7 +2450,7 @@ private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
           rw [hhdef]; exact abs_of_neg ((hUmem _ _ (hmem ω hω) j).2 hb'))
       have hneg : ∫ ω in Aset i, (-(hh j ω)) ∂μ = -∫ ω in Aset i, hh j ω ∂μ := integral_neg _
       rw [heq, hneg, abs_of_nonpos]
-      have : (0:ℝ) ≤ -∫ ω in Aset i, hh j ω ∂μ := by
+      have : (0 : ℝ) ≤ -∫ ω in Aset i, hh j ω ∂μ := by
         rw [← hneg, ← heq]
         exact setIntegral_nonneg hAmeas fun ω _ => abs_nonneg _
       linarith
@@ -2845,7 +2848,7 @@ private lemma condExp_sigmaGE_indicator_brick [IsProbabilityMeasure μ]
     {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
     (hmarkov : IsMarkovOf X κ μ) (t : ℤ) {B : Set Ω} (hB : MeasurableSet[sigmaGE' X t] B) :
     ∃ p : Ω → ℝ, StronglyMeasurable[MeasurableSpace.comap (X t) inferInstance] p ∧
-      μ[B.indicator (fun _ => (1:ℝ)) | sigmaLE' X t] =ᵐ[μ] p :=
+      μ[B.indicator (fun _ => (1 : ℝ)) | sigmaLE' X t] =ᵐ[μ] p :=
   condExp_sigmaGE_versionable hmeas hmarkov t hB
 
 /-- **Bradley Thms 4.1–4.2; FY §2.6.1(vi)**, general state space: for a Markov
@@ -2898,24 +2901,24 @@ theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
   rintro r ⟨A, B, hA, hB, rfl⟩
   have hAm : MeasurableSet A := hLEΩ 0 _ hA
   have hBm : MeasurableSet B := hGEΩ (n : ℤ) _ hB
-  set hB' : Ω → ℝ := fun ω => B.indicator (fun _ => (1:ℝ)) ω - (μ B).toReal with hB'def
+  set hB' : Ω → ℝ := fun ω => B.indicator (fun _ => (1 : ℝ)) ω - (μ B).toReal with hB'def
   have hB'int : Integrable hB' μ := integrable_centred_indicator hBm
   have hB'0 : ∫ ω, hB' ω ∂μ = 0 := integral_centred_indicator hBm
   -- Step 1: replace `A` by an event of `σ(X 0)`
   obtain ⟨p₀, hp₀m, hp₀e⟩ :=
     condExp_sigmaGE_indicator_brick hmeas hmarkov 0 (hGEmono _ hB)
   have hcond0 : μ[hB'|sigmaLE' X 0] =ᵐ[μ] fun ω => p₀ ω - (μ B).toReal := by
-    have h1 := condExp_sub (μ := μ) ((integrable_const (1:ℝ)).indicator hBm)
+    have h1 := condExp_sub (μ := μ) ((integrable_const (1 : ℝ)).indicator hBm)
       (integrable_const ((μ B).toReal)) (sigmaLE' X 0)
     have h2 : μ[fun _ : Ω => (μ B).toReal|sigmaLE' X 0] = fun _ => (μ B).toReal :=
       condExp_const (hLEΩ 0) _
     filter_upwards [h1, hp₀e] with ω e1 e2
     simp only [Pi.sub_apply] at e1
-    rw [show hB' = (B.indicator (fun _ => (1:ℝ)) - fun _ => (μ B).toReal) from rfl, e1, h2, e2]
+    rw [show hB' = (B.indicator (fun _ => (1 : ℝ)) - fun _ => (μ B).toReal) from rfl, e1, h2, e2]
   set A' : Set Ω := {ω | 0 < p₀ ω - (μ B).toReal} with hA'def
   have hA'm₀ : MeasurableSet[MeasurableSpace.comap (X 0) inferInstance] A' :=
     (hp₀m.sub (stronglyMeasurable_const (α := Ω) (b := (μ B).toReal))).measurable
-      (measurableSet_Ioi (a := (0:ℝ)))
+      (measurableSet_Ioi (a := (0 : ℝ)))
   have hA'Ω : MeasurableSet A' := hm0Ω _ hA'm₀
   have hstep1 : |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
       ≤ (μ (A' ∩ B)).toReal - (μ A').toReal * (μ B).toReal := by
@@ -2930,18 +2933,18 @@ theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
     rw [setIntegral_eq_indicator_mul hA'Ω, integral_centred_indicator_mul hA'Ω hBm] at hL
     exact hL
   -- Step 2: replace `B` by an event of `σ(X n)`
-  set hA'' : Ω → ℝ := fun ω => A'.indicator (fun _ => (1:ℝ)) ω - (μ A').toReal with hA''def
+  set hA'' : Ω → ℝ := fun ω => A'.indicator (fun _ => (1 : ℝ)) ω - (μ A').toReal with hA''def
   have hA''int : Integrable hA'' μ := integrable_centred_indicator hA'Ω
   have hA''0 : ∫ ω, hA'' ω ∂μ = 0 := integral_centred_indicator hA'Ω
   have hA''sm : StronglyMeasurable[sigmaLE' X (n : ℤ)] hA'' :=
     (stronglyMeasurable_const.indicator (hm0leN _ hA'm₀)).sub stronglyMeasurable_const
   obtain ⟨pn, hpnm, hpne⟩ := condExp_sigmaGE_indicator_brick hmeas hmarkov (n : ℤ) hB
   -- `w := μ[1_B | 𝓕_{≤n}]` lies in `[0,1]` a.e.
-  have hw0 : (0 : Ω → ℝ) ≤ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] :=
+  have hw0 : (0 : Ω → ℝ) ≤ᵐ[μ] μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)] :=
     condExp_nonneg (Filter.Eventually.of_forall fun ω => indicator_one_nonneg B ω)
-  have hw1 : μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] ≤ᵐ[μ] fun _ => (1:ℝ) := by
+  have hw1 : μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)] ≤ᵐ[μ] fun _ => (1 : ℝ) := by
     have := condExp_mono (m := sigmaLE' X (n : ℤ))
-      ((integrable_const (μ := μ) (1:ℝ)).indicator hBm) (integrable_const (μ := μ) (1:ℝ))
+      ((integrable_const (μ := μ) (1 : ℝ)).indicator hBm) (integrable_const (μ := μ) (1 : ℝ))
       (Filter.Eventually.of_forall fun ω => indicator_one_le_one B ω)
     rw [condExp_const (μ := μ) (hLEΩ (n : ℤ))] at this
     exact this
@@ -2951,33 +2954,33 @@ theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
       (Measurable.min measurable_const hpnm.measurable)).stronglyMeasurable
   have hY0 : ∀ ω, 0 ≤ Y ω := fun ω => le_max_left _ _
   have hY1 : ∀ ω, Y ω ≤ 1 := fun ω => max_le zero_le_one (min_le_left _ _)
-  have hYw : Y =ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] := by
+  have hYw : Y =ᵐ[μ] μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)] := by
     filter_upwards [hw0, hw1, hpne] with ω e0 e1 e2
-    have e0' : (0:ℝ) ≤ pn ω := by rw [← e2]; exact e0
+    have e0' : (0 : ℝ) ≤ pn ω := by rw [← e2]; exact e0
     have e1' : pn ω ≤ 1 := by rw [← e2]; exact e1
     rw [hYdef]
     simp only
     rw [min_eq_right e1', max_eq_right e0', e2]
   -- transfer the covariance onto `Y`
   have hkey : (μ (A' ∩ B)).toReal - (μ A').toReal * (μ B).toReal = ∫ ω, Y ω * hA'' ω ∂μ := by
-    have e1 : ∫ ω, hA'' ω * B.indicator (fun _ => (1:ℝ)) ω ∂μ
-        = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ := by
+    have e1 : ∫ ω, hA'' ω * B.indicator (fun _ => (1 : ℝ)) ω ∂μ
+        = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ := by
       have hpull := condExp_stronglyMeasurable_mul_of_bound₀ (hLEΩ (n : ℤ))
-        hA''sm.aestronglyMeasurable ((integrable_const (μ := μ) (1:ℝ)).indicator hBm) 1
+        hA''sm.aestronglyMeasurable ((integrable_const (μ := μ) (1 : ℝ)).indicator hBm) 1
         (Filter.Eventually.of_forall fun ω => norm_centred_indicator_le_one A' ω)
-      calc ∫ ω, hA'' ω * B.indicator (fun _ => (1:ℝ)) ω ∂μ
-          = ∫ ω, (μ[hA'' * B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
+      calc ∫ ω, hA'' ω * B.indicator (fun _ => (1 : ℝ)) ω ∂μ
+          = ∫ ω, (μ[hA'' * B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
             (integral_condExp (hLEΩ (n : ℤ))).symm
-        _ = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
+        _ = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
             integral_congr_ae (by filter_upwards [hpull] with ω hω using hω)
-    have e2 : ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ
+    have e2 : ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1 : ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ
         = ∫ ω, Y ω * hA'' ω ∂μ :=
       integral_congr_ae (by filter_upwards [hYw] with ω hω using by rw [hω]; ring)
     rw [← e2, ← e1]
     have := integral_centred_indicator_mul (μ := μ) hBm hA'Ω
     rw [Set.inter_comm B A'] at this
-    rw [show (fun ω => hA'' ω * B.indicator (fun _ => (1:ℝ)) ω)
-        = fun ω => B.indicator (fun _ => (1:ℝ)) ω * hA'' ω from funext fun ω => mul_comm _ _]
+    rw [show (fun ω => hA'' ω * B.indicator (fun _ => (1 : ℝ)) ω)
+        = fun ω => B.indicator (fun _ => (1 : ℝ)) ω * hA'' ω from funext fun ω => mul_comm _ _]
     rw [this]
     ring
   -- final one-sided optimisation on the `n`-side
@@ -2986,7 +2989,7 @@ theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
   set B' : Set Ω := {ω | 0 < (μ[hA''|MeasurableSpace.comap (X (n : ℤ)) inferInstance]) ω}
     with hB'sdef
   have hB'm : MeasurableSet[MeasurableSpace.comap (X (n : ℤ)) inferInstance] B' :=
-    stronglyMeasurable_condExp.measurable (measurableSet_Ioi (a := (0:ℝ)))
+    stronglyMeasurable_condExp.measurable (measurableSet_Ioi (a := (0 : ℝ)))
   have hB'Ω : MeasurableSet B' := hmnΩ _ hB'm
   rw [setIntegral_eq_indicator_mul hB'Ω, integral_centred_indicator_mul hB'Ω hA'Ω] at hL2
   refine hstep1.trans ?_
@@ -3060,7 +3063,7 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
   have hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
     (by infer_instance)
   have := isMarkovKernel_pow' κ n
-  have hTot0 : (0:ℝ) ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
+  have hTot0 : (0 : ℝ) ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
     mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
   have hAρ : Integrable (fun x => A x * ρ ^ n) (μ.map (X 0)) := hAint.mul_const _
   refine Real.sSup_le ?_ hTot0
@@ -3077,7 +3080,7 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
   have hmuA : μ (X k ⁻¹' U) = (μ.map (X 0)) U := by
     rw [← Measure.map_apply (hmeas k) hU, hmarg k 0]
   have hmuB : μ (X (k + n) ⁻¹' W) = (μ.map (X 0)) W := by
-    rw [← Measure.map_apply (hmeas _) hW, hmarg (k + (n:ℤ)) 0]
+    rw [← Measure.map_apply (hmeas _) hW, hmarg (k + (n : ℤ)) 0]
   -- the joint, via the Markov property at time `k`
   have hkle : MeasurableSpace.comap (X k) inferInstance ≤ sigmaLE' X k :=
     le_iSup₂_of_le k (Set.mem_Iic.mpr le_rfl) le_rfl
@@ -3086,38 +3089,38 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
   have hAmk : MeasurableSet[sigmaLE' X k] (X k ⁻¹' U) := hkle _ ⟨U, hU, rfl⟩
   have hAΩ : MeasurableSet (X k ⁻¹' U) := (hmeas k) hU
   have hBΩ : MeasurableSet (X (k + n) ⁻¹' W) := (hmeas _) hW
-  have hfe : (fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω))
-      = (X (k + (n:ℤ)) ⁻¹' W).indicator (fun _ => (1:ℝ)) := by
+  have hfe : (fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω))
+      = (X (k + (n : ℤ)) ⁻¹' W).indicator (fun _ => (1 : ℝ)) := by
     funext ω
-    by_cases hy : X (k + (n:ℤ)) ω ∈ W <;>
+    by_cases hy : X (k + (n : ℤ)) ω ∈ W <;>
       simp [Set.indicator_of_mem, Set.indicator_of_notMem, hy, Set.mem_preimage]
-  have hint : Integrable (fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω)) μ := by
-    rw [hfe]; exact (integrable_const (1:ℝ)).indicator hBΩ
-  have hjoint : (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal
+  have hint : Integrable (fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω)) μ := by
+    rw [hfe]; exact (integrable_const (1 : ℝ)).indicator hBΩ
+  have hjoint : (μ (X k ⁻¹' U ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal
       = ∫ x in U, (((κ ^ n) x) W).toReal ∂(μ.map (X 0)) := by
     have e1 : ∫ ω in X k ⁻¹' U,
-        (μ[fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
-        = ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ :=
+        (μ[fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ :=
       setIntegral_condExp hm hint hAmk
     have e2 : ∫ ω in X k ⁻¹' U,
-        (μ[fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        (μ[fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) | sigmaLE' X k]) ω ∂μ
         = ∫ ω in X k ⁻¹' U, (((κ ^ n) (X k ω)) W).toReal ∂μ :=
       setIntegral_congr_ae hAΩ
         (by filter_upwards [hmarkov k n W hW] with ω hω using fun _ => hω)
-    have e3 : ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ
-        = (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal := by
-      rw [hfe, integral_indicator_const (1:ℝ) hBΩ]
+    have e3 : ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ
+        = (μ (X k ⁻¹' U ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal := by
+      rw [hfe, integral_indicator_const (1 : ℝ) hBΩ]
       simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
     have e4 : ∫ x in U, (((κ ^ n) x) W).toReal ∂(μ.map (X k))
         = ∫ ω in X k ⁻¹' U, (((κ ^ n) (X k ω)) W).toReal ∂μ :=
       setIntegral_map hU hgm.aestronglyMeasurable (hmeas k).aemeasurable
     rw [← e3, ← e1, e2, ← e4, hmarg k 0]
   -- the covariance as a set integral of the centred kernel evaluation
-  have hcov : (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal
-        - (μ (X k ⁻¹' U)).toReal * (μ (X (k + (n:ℤ)) ⁻¹' W)).toReal
+  have hcov : (μ (X k ⁻¹' U ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal
+        - (μ (X k ⁻¹' U)).toReal * (μ (X (k + (n : ℤ)) ⁻¹' W)).toReal
       = ∫ x in U, ((((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal) ∂(μ.map (X 0)) := by
     have hgint : IntegrableOn (fun x : E => (((κ ^ n) x) W).toReal) U (μ.map (X 0)) := by
-      refine Integrable.mono (integrable_const (1:ℝ)) hgm.aestronglyMeasurable.restrict
+      refine Integrable.mono (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable.restrict
         (Filter.Eventually.of_forall fun x => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
         abs_of_nonneg ENNReal.toReal_nonneg]
@@ -3138,16 +3141,16 @@ theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
     exact continuous_abs.measurable.comp h
   have habsi : IntegrableOn
       (fun x : E => |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal|) U (μ.map (X 0)) := by
-    refine Integrable.mono (integrable_const (2:ℝ)) habsm.aestronglyMeasurable.restrict
+    refine Integrable.mono (integrable_const (2 : ℝ)) habsm.aestronglyMeasurable.restrict
       (Filter.Eventually.of_forall fun x => ?_)
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_abs,
-      abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2)]
+      abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
     have h1 := hg1 x
     have h2 : ((μ.map (X 0)) W).toReal ≤ 1 := by
       simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
         (measure_mono (Set.subset_univ W))
-    have h3 : (0:ℝ) ≤ (((κ ^ n) x) W).toReal := ENNReal.toReal_nonneg
-    have h4 : (0:ℝ) ≤ ((μ.map (X 0)) W).toReal := ENNReal.toReal_nonneg
+    have h3 : (0 : ℝ) ≤ (((κ ^ n) x) W).toReal := ENNReal.toReal_nonneg
+    have h4 : (0 : ℝ) ≤ ((μ.map (X 0)) W).toReal := ENNReal.toReal_nonneg
     rw [abs_le]; constructor <;> linarith
   calc |∫ x in U, ((((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal) ∂(μ.map (X 0))|
       ≤ ∫ x in U, |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal| ∂(μ.map (X 0)) :=

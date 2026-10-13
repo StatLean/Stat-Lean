@@ -36,8 +36,8 @@ errs only when $\rho\big(\hat\theta, g(\theta^J)\big) \ge \delta$: by the triang
 $2\delta$-separation, a wrong test answer forces $\rho \ge \delta$, so by monotonicity of $\Phi$,
 $\mathbb{E}\big[\Phi(\rho(\hat\theta, g(\theta^J)))\big] \ge \Phi(\delta)\,\mathbb{P}[\psi \ne J]$.
 Measurability of the $\arg\min$ selector is supplied by `exists_measurable_nearestPoint` under the
-`[OpensMeasurableSpace Ω]` instance, which makes each distance $y \mapsto \mathrm{edist}(g(\theta^\ell), y)$
-continuous, hence measurable.
+`[OpensMeasurableSpace Ω]` instance, which makes each distance
+$y \mapsto \mathrm{edist}(g(\theta^\ell), y)$ continuous, hence measurable.
 
 **Bibliographic comments.** This estimation-to-testing reduction is **folklore** with no single
 seminal origin: it is the common abstract scaffold behind the classical Le Cam, Assouad, and Fano
@@ -76,8 +76,8 @@ private lemma minimaxRisk_precomp_le {𝓨 ι : Type*} [MeasurableSpace 𝓨] [M
 (`[OpensMeasurableSpace Ω]`), the index `ℓ ∈ Fin M` minimizing `edist (g (θfam ℓ)) y` can be chosen
 measurably in `y`. Each distance `y ↦ edist (g (θfam ℓ)) y` is continuous, hence measurable; the
 argmin is built via `Nat.find` over `ℕ` (cast into `Fin M`), whose minimizer-predicate has a
-measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find` applies.
-Reused by `LeCam/ConvexHull.lean`. -/
+measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find`
+applies. Reused by `LeCam/ConvexHull.lean`. -/
 private lemma exists_measurable_nearestPoint
     [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] {M : ℕ} [NeZero M]
     (g : Θ → Ω) (θfam : Fin M → Θ) :

@@ -202,8 +202,7 @@ theorem joint_covariance_block_posSemidef
                   (0 : Matrix (Fin 1) (Fin m) ℝ)
                   (0 : Matrix (Fin m) (Fin 1) ℝ)
                   (0 : Matrix (Fin m) (Fin m) ℝ)) i j * x j := by
-        simp [dotProduct, Matrix.mulVec, mul_comm, mul_left_comm, 
-          Pi.star_apply, 
+        simp [dotProduct, Matrix.mulVec, mul_comm, mul_left_comm, Pi.star_apply,
           star_trivial]
       rw [h_dotprod_form]
       -- Compute the double sum: only the (inl 0, inl 0) term is nonzero.

@@ -1211,8 +1211,8 @@ private lemma tendstoInProb_ratio [IsProbabilityMeasure μ] {A Δ D : ℕ → Ω
     have hdiv : (∫ ω, A T ω ^ 2 ∂μ) / lam ^ 2 ≤ K / lam ^ 2 :=
       div_le_div_of_nonneg_right (hAsq T) (by positivity)
     linarith
-  have hev1 := (hD η hη0).eventually_lt_const (show (0:ℝ) < ζ / 3 by linarith)
-  have hev2 := (hΔ δ' hδ'0).eventually_lt_const (show (0:ℝ) < ζ / 3 by linarith)
+  have hev1 := (hD η hη0).eventually_lt_const (show (0 : ℝ) < ζ / 3 by linarith)
+  have hev2 := (hΔ δ' hδ'0).eventually_lt_const (show (0 : ℝ) < ζ / 3 by linarith)
   filter_upwards [hev1, hev2] with T hT1 hT2
   have hsub : {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}
       ⊆ {ω | lam ≤ |A T ω|} ∪ {ω | η ≤ |D T ω - σ2|} ∪ {ω | δ' ≤ |Δ T ω|} := by
@@ -1257,7 +1257,7 @@ private lemma tendstoInProb_ratio [IsProbabilityMeasure μ] {A Δ D : ℕ → Ω
     have : δ ≤ δ / 2 := le_trans hω hbound
     linarith
   have hfinal := toReal_measure_le_union₃ (μ := μ) hsub
-  have hnn : (0:ℝ) ≤ (μ {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}).toReal :=
+  have hnn : (0 : ℝ) ≤ (μ {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}).toReal :=
     ENNReal.toReal_nonneg
   rw [Real.norm_eq_abs, abs_of_nonneg hnn]
   have := hA T
@@ -1335,7 +1335,7 @@ private lemma tendstoInProb_sampleACVF_zero [IsProbabilityMeasure μ] (hiid : Is
       exact ENNReal.toReal_nonneg
     · filter_upwards [eventually_ge_atTop 1] with T hT
       exact hmean T hT
-  have hLLN := avgSq_noise_tendstoInProb hiid (show (0:ℝ) < η / 2 by linarith)
+  have hLLN := avgSq_noise_tendstoInProb hiid (show (0 : ℝ) < η / 2 by linarith)
   have hbound : ∀ T : ℕ, 1 ≤ T →
       (μ {ω | η ≤ |sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - σ2|}).toReal
         ≤ (μ {ω | η / 2 ≤ |(T : ℝ)⁻¹ *
@@ -1771,7 +1771,7 @@ private lemma abs_sampleACVF_sub_le_sum {T : ℕ} (k : ℕ) (y z : Fin T → ℝ
     rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
     congr 1
     exact Finset.sum_congr rfl fun t _ => hsplit t
-  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
   refine Finset.sum_le_sum fun t _ => ?_
@@ -1801,7 +1801,7 @@ private lemma abs_sampleACVF_sub_le {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) :
     rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
     congr 1
     exact Finset.sum_congr rfl fun t _ => hsplit t
-  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
   have hbd : ∀ t : Fin T, |cent d t * shiftPad k (cent y) t + cent z t * shiftPad k (cent d) t|
@@ -2308,7 +2308,7 @@ private theorem exists_sum_l2n_residDefect_le [IsProbabilityMeasure μ]
 
 /-! #### `L²` bookkeeping for the windowed statistics -/
 
-private lemma l2n_zero_fun : l2n μ (fun _ : Ω => (0:ℝ)) = 0 := by
+private lemma l2n_zero_fun : l2n μ (fun _ : Ω => (0 : ℝ)) = 0 := by
   simp [l2n]
 
 private lemma shiftPad_le {T : ℕ} {k : ℕ} (g : Fin T → ℝ) {B : ℝ} (hg : ∀ s, g s ≤ B)
@@ -2367,7 +2367,7 @@ private lemma l2n_shiftPad_eq {T : ℕ} (k : ℕ) (W : Fin T → Ω → ℝ) (t 
 private lemma memLp_cent {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemLp (W s) 2 μ)
     (t : Fin T) : MemLp (fun ω => cent (fun s => W s ω) t) 2 μ := by
   have hrw : (fun ω => cent (fun s => W s ω) t)
-      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+      = fun ω => W t ω + (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
     funext ω
     simp only [cent, sampleMean]
     ring
@@ -2387,23 +2387,23 @@ private lemma l2n_cent_le {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemL
     l2n μ (fun ω => cent (fun s => W s ω) t)
       ≤ l2n μ (W t) + (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) := by
   have hrw : (fun ω => cent (fun s => W s ω) t)
-      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+      = fun ω => W t ω + (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
     funext ω
     simp only [cent, sampleMean]
     ring
   rw [hrw]
   have hmem : MemLp (fun ω => ∑ s : Fin T, W s ω) 2 μ :=
     memLp_finsetSum _ fun s _ => hW s
-  have h1 := l2n_add_le (μ := μ) (hW t) (hmem.const_mul (-(T:ℝ)⁻¹))
-  have h2 : l2n μ (fun ω => (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω)
-      = |(-(T:ℝ)⁻¹)| * l2n μ (fun ω => ∑ s : Fin T, W s ω) := l2n_const_mul _ _
+  have h1 := l2n_add_le (μ := μ) (hW t) (hmem.const_mul (-(T : ℝ)⁻¹))
+  have h2 : l2n μ (fun ω => (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω)
+      = |(-(T : ℝ)⁻¹)| * l2n μ (fun ω => ∑ s : Fin T, W s ω) := l2n_const_mul _ _
   have h3 : l2n μ (fun ω => ∑ s : Fin T, W s ω) ≤ ∑ s : Fin T, l2n μ (W s) :=
     l2n_finset_sum_le _ _ hW
-  have habs : |(-(T:ℝ)⁻¹)| = (T:ℝ)⁻¹ := by
+  have habs : |(-(T : ℝ)⁻¹)| = (T : ℝ)⁻¹ := by
     rw [abs_neg, abs_of_nonneg (by positivity)]
   rw [h2, habs] at h1
-  have h4 : (T:ℝ)⁻¹ * l2n μ (fun ω => ∑ s : Fin T, W s ω)
-      ≤ (T:ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) :=
+  have h4 : (T : ℝ)⁻¹ * l2n μ (fun ω => ∑ s : Fin T, W s ω)
+      ≤ (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) :=
     mul_le_mul_of_nonneg_left h3 (by positivity)
   linarith
 
@@ -2501,7 +2501,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
   set e : Fin T → ℝ := fun t => l2n μ (fun ω => Y t ω - Z t ω) + (T : ℝ)⁻¹ * Δ with he
   have he0 : ∀ t, 0 ≤ e t := fun t => by
     have := l2n_nonneg μ (fun ω => Y t ω - Z t ω)
-    have : (0:ℝ) ≤ (T : ℝ)⁻¹ * Δ := by positivity
+    have : (0 : ℝ) ≤ (T : ℝ)⁻¹ * Δ := by positivity
     simp only [he]
     positivity
   have hcentD : ∀ t : Fin T,
@@ -2623,7 +2623,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
     have hB : (2 * BZ) * ∑ t : Fin T, shiftPad k e t ≤ (2 * BZ) * (2 * Δ) :=
       mul_le_mul_of_nonneg_left (le_trans (sum_shiftPad_le k e he0) hesum) (by linarith)
     nlinarith [hA, hB]
-  have hTinv : (0:ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+  have hTinv : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
   exact mul_le_mul_of_nonneg_left hsum hTinv
 
 /-- The Markov step: the `L¹` bound as a bound on the deviation probability. -/
@@ -2668,7 +2668,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
     refine le_trans ?_ (hS (t + 1))
     refine Finset.single_le_sum (f := fun i => l2n μ (residDefect b0 a0 X ε i))
       (fun i _ => l2n_nonneg _ _) (Finset.self_mem_range_succ t)
-  have hsqrtσ : (0:ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  have hsqrtσ : (0 : ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
   -- the bound, at each `T ≥ 1`
   have hbound : ∀ T : ℕ, 1 ≤ T →
       (μ {ω | δ ≤ Real.sqrt T *
@@ -2747,7 +2747,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
     set N : ℝ := 4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) *
       ((Real.sqrt σ2 + S) + Real.sqrt σ2) with hN
     have hN0 : 0 ≤ N := by
-      have : (0:ℝ) ≤ ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) :=
+      have : (0 : ℝ) ≤ ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) :=
         Finset.sum_nonneg fun t _ => l2n_nonneg _ _
       rw [hN]; positivity
     have hkey : ((T : ℝ)⁻¹ * N) / (δ / Real.sqrt T) = N / (δ * Real.sqrt T) := by
@@ -2863,17 +2863,17 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
   obtain ⟨L0, hL00, hLip0⟩ := exists_armaPi_l1_lipschitz hKc hKB
   -- a strictly positive Lipschitz constant (the bound is vacuous at `L = 0`)
   set L : ℝ := L0 + 1 with hLdef
-  have hL0 : (0:ℝ) < L := by rw [hLdef]; linarith
+  have hL0 : (0 : ℝ) < L := by rw [hLdef]; linarith
   have hLip : ∀ ba ∈ K, ∀ ba' ∈ K,
       (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n|) ≤ L * dist ba ba' := by
     intro ba hba ba' hba'
     refine le_trans (hLip0 ba hba ba' hba') ?_
     exact mul_le_mul_of_nonneg_right (by rw [hLdef]; linarith) dist_nonneg
   obtain ⟨C, r, hC, hr0, hr1, _, hπK⟩ := exists_uniform_geometric_bound_arma hKc hKB
-  have hr1' : (0:ℝ) < 1 - r := by linarith
+  have hr1' : (0 : ℝ) < 1 - r := by linarith
   set Cπ : ℝ := C * (1 - r)⁻¹ with hCπ
   have hCπ0 : 0 ≤ Cπ := by
-    have : (0:ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+    have : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
     positivity
   have hsum : ∀ ba ∈ K, Summable fun n => |armaPi ba.1 ba.2 n| := fun ba hba =>
     Summable.of_nonneg_of_le (fun n => abs_nonneg _) (hπK ba hba)
@@ -2890,7 +2890,7 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
   obtain ⟨M, hM0, hMlim⟩ := normSq_bounded_inProb h hiid hσ hB0 hcausal hmeas
   set η : ℝ := δ / (2 * Cπ * L * M + 1) with hη
   have hη0 : 0 < η := by
-    have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+    have hden : (0 : ℝ) < 2 * Cπ * L * M + 1 := by positivity
     rw [hη]
     exact div_pos hδ hden
   -- the three-event inclusion
@@ -2908,10 +2908,10 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
     simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨⟨hρ', hM'⟩, hη'⟩ := hcon
     have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
-    have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
-      rw [show (1:ℝ) = Real.sqrt 1 by simp]
+    have hsq1 : (1 : ℝ) ≤ Real.sqrt T := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
       exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
-    have hsqpos : (0:ℝ) < Real.sqrt T := by linarith
+    have hsqpos : (0 : ℝ) < Real.sqrt T := by linarith
     have hd0 : 0 ≤ dist (θ T ω) (b0, a0) := dist_nonneg
     -- the estimator is in the compact region
     have hdlt : dist (θ T ω) (b0, a0) < ρ := by
@@ -2992,10 +2992,10 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
           mul_le_mul_of_nonneg_left hQm.le hpos1
         have h2 : 2 * Cπ * (Real.sqrt T * A) * M ≤ 2 * Cπ * (L * η) * M :=
           mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_left hAd.le (by positivity : (0:ℝ) ≤ 2 * Cπ)) hM0.le
+            (mul_le_mul_of_nonneg_left hAd.le (by positivity : (0 : ℝ) ≤ 2 * Cπ)) hM0.le
         linarith
       have hlast : 2 * Cπ * (L * η) * M < δ := by
-        have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+        have hden : (0 : ℝ) < 2 * Cπ * L * M + 1 := by positivity
         have : 2 * Cπ * (L * η) * M = (2 * Cπ * L * M) * (δ / (2 * Cπ * L * M + 1)) := by
           rw [hη]; ring
         rw [this]
@@ -3341,8 +3341,8 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
         filter_upwards [eventually_ge_atTop 1] with T hT
         refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
         simp only [Set.mem_ofPred_eq] at hω ⊢
-        have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
-          rw [show (1:ℝ) = Real.sqrt 1 by simp]
+        have hsq1 : (1 : ℝ) ≤ Real.sqrt T := by
+          rw [show (1 : ℝ) = Real.sqrt 1 by simp]
           exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
         have hid : Real.sqrt T * sampleACVF (fun t : Fin T =>
               sampleResiduals (θ T ω).1 (θ T ω).2

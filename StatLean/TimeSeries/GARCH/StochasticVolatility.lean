@@ -519,7 +519,7 @@ private lemma iteratedDeriv_gexp_even (k : ℕ) :
       have : 2 * (k + 1) = (2 * k + 1) + 1 := by ring
       rw [this, Nat.factorial_succ, Nat.factorial_succ]
     rw [h2, Nat.factorial_succ]
-    have hk : (0:ℝ) < (Nat.factorial k : ℝ) := by exact_mod_cast Nat.factorial_pos k
+    have hk : (0 : ℝ) < (Nat.factorial k : ℝ) := by exact_mod_cast Nat.factorial_pos k
     push_cast
     field_simp
     ring
@@ -909,9 +909,9 @@ private lemma acf_sq_lognormal_corrected [IsProbabilityMeasure μ] {a0 a1 σe2 �
       ring_nf
     rw [e1, hcross, hsq k, hm2, hA]
     ring
-  have hden : (0:ℝ) < 3 * Real.exp σh2 - 1 := by
+  have hden : (0 : ℝ) < 3 * Real.exp σh2 - 1 := by
     nlinarith [Real.add_one_lt_exp (ne_of_gt hσh), Real.exp_pos σh2]
-  have hpos : (0:ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
+  have hpos : (0 : ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
   rw [acf, acvf, hcov1, acvf_sq_lognormal_zero hSV hgauss ha1 hcausal hlatent hσh hL4]
   rw [div_eq_div_iff (by nlinarith) (by nlinarith)]
   ring

@@ -231,7 +231,8 @@ theorem kde_exact_mise {p K w : ℝ → ℝ}
     have := hK.integrable_pow 0 (Nat.zero_le _); simpa using this
   intro ε hε
   -- Bias part: the exact asymptotic at tolerance `ε/2`.
-  obtain ⟨h₀b, hh₀b, hbias⟩ := kde_integrated_sq_bias_asymptotic hp_meas h0 h1 hp1 hw_meas hpw hw2 hK
+  obtain ⟨h₀b, hh₀b, hbias⟩ :=
+    kde_integrated_sq_bias_asymptotic hp_meas h0 h1 hp1 hw_meas hpw hw2 hK
     hKmeas hKu2 (ε / 2) (by positivity)
   set C : ℝ := (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 with hCdef
   have hCnn : (0 : ℝ) ≤ C :=

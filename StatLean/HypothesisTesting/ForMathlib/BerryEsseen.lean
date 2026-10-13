@@ -117,15 +117,15 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 0: `‖exp (I z) − 1‖ ≤ z` for `z ≥ 0`.
   have hL0 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1‖ ≤ z := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
+    have hInt : (∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => he u)
         (hcontI.intervalIntegrable 0 z)]
       simp
     rw [← hInt]
-    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0:ℝ)) (b := z)
+    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := z)
       (C := 1) (f := fun u => Complex.exp (I * ↑u) * I)
       (fun u _ => by rw [norm_mul, Complex.norm_I, mul_one]; exact le_of_eq (hnorme u))
-    calc ‖∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
+    calc ‖∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
       _ = z := by rw [sub_zero, abs_of_nonneg hz, one_mul]
   -- Derivative of `A₁ w = exp (I w) − 1 − I w`.
   have hd1 : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w)
@@ -137,12 +137,12 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 1: `‖exp (I z) − 1 − I z‖ ≤ z²/2` for `z ≥ 0`.
   have hL1 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ z ^ 2 / 2 := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
+    have hInt : (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
         = Complex.exp (I * ↑z) - 1 - I * ↑z := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd1 u)
         (hcont1.intervalIntegrable 0 z)]
       simp
-    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0:ℝ)..z, u := by
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0 : ℝ)..z, u := by
       rw [← hInt]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         (continuous_id.intervalIntegrable 0 z)
@@ -169,7 +169,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     rw [heq]
     exact (hd1 u).add (hsq u)
   -- `A₂ z` as an integral of `A₁ · I`.
-  have hA2z : ∀ z : ℝ, (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
+  have hA2z : ∀ z : ℝ, (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
       = Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2 := by
     intro z
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd2 u)
@@ -181,13 +181,13 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖ ≤ min (z ^ 3 / 6) (z ^ 2) := by
     intro z hz
     have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖
-        ≤ ∫ u in (0:ℝ)..z, u ^ 2 / 2 := by
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 2 / 2 := by
       rw [← hA2z z]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         ((by fun_prop : Continuous (fun u : ℝ => u ^ 2 / 2)).intervalIntegrable 0 z)
       rw [norm_mul, Complex.norm_I, mul_one]
       exact hL1 u hu.1.le
-    have hintval : (∫ u in (0:ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
       rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
     refine le_min (hb.trans (le_of_eq hintval)) ?_
     have h1 := hL1 z hz
@@ -206,7 +206,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   rcases le_or_gt 0 y with hy | hy
   · rw [abs_of_nonneg hy]; exact key y hy
   · -- Reflect to `−y ≥ 0` via conjugation.
-    have hz : (0:ℝ) ≤ -y := by linarith
+    have hz : (0 : ℝ) ≤ -y := by linarith
     have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
       rw [← Complex.exp_conj]; congr 1
       simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring

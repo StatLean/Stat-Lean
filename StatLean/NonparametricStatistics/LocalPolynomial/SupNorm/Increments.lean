@@ -42,7 +42,7 @@ private lemma lpBasis_normSq_le_two {ℓ : ℕ} {z : ℝ} (hz : |z| ≤ 2) :
         pow_le_pow_right₀ (by norm_num) (Nat.lt_succ_iff.mp k.isLt)
       have : (z ^ (k : ℕ)) ^ 2 ≤ (2 ^ (k : ℕ)) ^ 2 := by
         nlinarith [hzk, sq_abs (z ^ (k : ℕ)), abs_nonneg (z ^ (k : ℕ)),
-          pow_nonneg (show (0:ℝ) ≤ 2 by norm_num) (k:ℕ)]
+          pow_nonneg (show (0 : ℝ) ≤ 2 by norm_num) (k : ℕ)]
       calc (z ^ (k : ℕ)) ^ 2 ≤ (2 ^ (k : ℕ)) ^ 2 := this
         _ = (4 : ℝ) ^ (k : ℕ) := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
         _ ≤ (4 : ℝ) ^ ℓ := pow_le_pow_right₀ (by norm_num) (Nat.lt_succ_iff.mp k.isLt)
@@ -50,7 +50,7 @@ private lemma lpBasis_normSq_le_two {ℓ : ℕ} {z : ℝ} (hz : |z| ≤ 2) :
       exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
     rw [div_le_iff₀ (by positivity)]
     have hfsq : (1 : ℝ) ≤ ((Nat.factorial (k : ℕ) : ℝ)) ^ 2 := by nlinarith [hfac]
-    nlinarith [hk1, hfsq, pow_nonneg (show (0:ℝ) ≤ 4 by norm_num) ℓ]
+    nlinarith [hk1, hfsq, pow_nonneg (show (0 : ℝ) ≤ 4 by norm_num) ℓ]
   calc ∑ k, (lpBasis ℓ z k) ^ 2
       ≤ ∑ _k : Fin (ℓ + 1), (4 : ℝ) ^ ℓ := Finset.sum_le_sum (fun k _ => hterm k)
     _ = ((ℓ : ℝ) + 1) * 4 ^ ℓ := by
@@ -76,7 +76,7 @@ private lemma abs_pow_sub_le {z z' : ℝ} (hz : |z| ≤ 2) (hz' : |z'| ≤ 2) (k
           gcongr
       _ ≤ ((m : ℝ) + 1) * 2 ^ (m + 1) * |z - z'| := by
           have := abs_nonneg (z - z'); rw [pow_succ]; nlinarith [this,
-            pow_nonneg (show (0:ℝ) ≤ 2 by norm_num) m]
+            pow_nonneg (show (0 : ℝ) ≤ 2 by norm_num) m]
       _ = ((m : ℕ) + 1 : ℝ) * 2 ^ (m + 1) * |z - z'| := by ring
       _ = (↑(m + 1) : ℝ) * 2 ^ (m + 1) * |z - z'| := by push_cast; ring
 
@@ -102,11 +102,11 @@ private lemma lpBasis_abs_le_two {ℓ : ℕ} {z : ℝ} (hz : |z| ≤ 2) (k : Fin
     exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)
   rw [div_le_iff₀ (by positivity)]
   have h1 : |z ^ (k : ℕ)| ≤ 2 ^ ℓ := hnum
-  have hle1 : (1:ℝ) ≤ (ℓ:ℝ) + 1 := by have := (Nat.cast_nonneg ℓ : (0:ℝ) ≤ (ℓ:ℝ)); linarith
-  have hp : (0:ℝ) ≤ (2:ℝ) ^ ℓ := pow_nonneg (by norm_num) ℓ
-  calc |z ^ (k:ℕ)| ≤ 2 ^ ℓ := h1
+  have hle1 : (1 : ℝ) ≤ (ℓ : ℝ) + 1 := by have := (Nat.cast_nonneg ℓ : (0 : ℝ) ≤ (ℓ : ℝ)); linarith
+  have hp : (0 : ℝ) ≤ (2 : ℝ) ^ ℓ := pow_nonneg (by norm_num) ℓ
+  calc |z ^ (k : ℕ)| ≤ 2 ^ ℓ := h1
     _ = 1 * 2 ^ ℓ * 1 := by ring
-    _ ≤ ((ℓ:ℝ) + 1) * 2 ^ ℓ * |(Nat.factorial (k : ℕ) : ℝ)| := by
+    _ ≤ ((ℓ : ℝ) + 1) * 2 ^ ℓ * |(Nat.factorial (k : ℕ) : ℝ)| := by
         gcongr
 
 /-- Lipschitz bound on a basis coordinate difference for `|z|,|z'| ≤ 2`:
@@ -124,14 +124,15 @@ private lemma lpBasis_sub_abs_le_two {ℓ : ℕ} {z z' : ℝ} (hz : |z| ≤ 2) (
       have := Nat.lt_succ_iff.mp k.isLt; exact_mod_cast Nat.le_succ_of_le this
     have h2 : (2 : ℝ) ^ (k : ℕ) ≤ 2 ^ ℓ :=
       pow_le_pow_right₀ (by norm_num) (Nat.lt_succ_iff.mp k.isLt)
-    have : (0:ℝ) ≤ (k:ℝ) := Nat.cast_nonneg _
-    nlinarith [h1, h2, pow_nonneg (show (0:ℝ) ≤ 2 by norm_num) (k:ℕ), (Nat.cast_nonneg ℓ : (0:ℝ) ≤ (ℓ:ℝ))]
+    have : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg _
+    nlinarith [h1, h2, pow_nonneg (show (0 : ℝ) ≤ 2 by norm_num) (k : ℕ),
+      (Nat.cast_nonneg ℓ : (0 : ℝ) ≤ (ℓ : ℝ))]
   rw [div_le_iff₀ (by positivity)]
-  have hle : |z ^ (k:ℕ) - z' ^ (k:ℕ)| ≤ ((ℓ:ℝ) + 1) * 2 ^ ℓ * |z - z'| :=
+  have hle : |z ^ (k : ℕ) - z' ^ (k : ℕ)| ≤ ((ℓ : ℝ) + 1) * 2 ^ ℓ * |z - z'| :=
     le_trans hnum (by nlinarith [hk2, abs_nonneg (z - z')])
-  nlinarith [hle, hden, abs_nonneg (z ^ (k:ℕ) - z' ^ (k:ℕ)), abs_nonneg (z - z'),
-    mul_nonneg (mul_nonneg (by positivity : (0:ℝ) ≤ (ℓ:ℝ)+1)
-      (pow_nonneg (show (0:ℝ)≤2 by norm_num) ℓ)) (abs_nonneg (z - z'))]
+  nlinarith [hle, hden, abs_nonneg (z ^ (k : ℕ) - z' ^ (k : ℕ)), abs_nonneg (z - z'),
+    mul_nonneg (mul_nonneg (by positivity : (0 : ℝ) ≤ (ℓ : ℝ)+1)
+      (pow_nonneg (show (0 : ℝ)≤2 by norm_num) ℓ)) (abs_nonneg (z - z'))]
 
 /-- Entry expansion of the local design matrix. -/
 private lemma lpMatrix_apply {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ) (t : ℝ)
@@ -157,7 +158,7 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
   have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
   have hLK : 0 ≤ LK := by
     have hk := hKlip 1 0
-    have : |(1:ℝ) - 0| = 1 := by norm_num
+    have : |(1 : ℝ) - 0| = 1 := by norm_num
     rw [this, mul_one] at hk
     exact le_trans (abs_nonneg _) hk
   set z := (xdat i - t) / h with hz
@@ -170,7 +171,7 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
   · rw [Set.indicator_of_mem hact, mul_one]
     -- We bound in all cases assuming |z|,|z'| ≤ 2. Show that.
     -- At least one K ≠ 0 forces both ≤ 2; else summand = 0.
-    by_cases hboth : (z ∈ Set.Icc (-1:ℝ) 1) ∨ (z' ∈ Set.Icc (-1:ℝ) 1)
+    by_cases hboth : (z ∈ Set.Icc (-1 : ℝ) 1) ∨ (z' ∈ Set.Icc (-1 : ℝ) 1)
     · have hz2 : |z| ≤ 2 ∧ |z'| ≤ 2 := by
         have hdz : |z - z'| < 1 := by rw [hzz', div_lt_one hh]; exact hd
         rcases hboth with hin | hin
@@ -217,7 +218,7 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
             rw [abs_mul, abs_mul, abs_mul, abs_mul, abs_mul, abs_mul]
         _ ≤ (LK * (|t-t'|/h)) * (B * B) + Kmax * (B * (|t-t'|/h)) * B
               + Kmax * B * (B * (|t-t'|/h)) := by
-            have hnn : (0:ℝ) ≤ |t-t'|/h := div_nonneg (abs_nonneg _) hh.le
+            have hnn : (0 : ℝ) ≤ |t-t'|/h := div_nonneg (abs_nonneg _) hh.le
             gcongr <;> first
               | exact hdK | exact hbox.1 z
         _ = (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by ring
@@ -228,14 +229,14 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
       positivity
   · -- summand = 0 since both K vanish (x_i not in window)
     rw [Set.indicator_of_notMem hact, mul_zero]
-    have hz1 : z ∉ Set.Icc (-1:ℝ) 1 := by
+    have hz1 : z ∉ Set.Icc (-1 : ℝ) 1 := by
       intro hin
       apply hact
       have : |z| ≤ 1 := abs_le.mpr (Set.mem_Icc.mp hin)
       rw [hz, abs_div, abs_of_pos hh, div_le_one hh] at this
       rw [Set.mem_Icc]; rw [abs_le] at this
       constructor <;> nlinarith [this.1, this.2, hh]
-    have hz'1 : z' ∉ Set.Icc (-1:ℝ) 1 := by
+    have hz'1 : z' ∉ Set.Icc (-1 : ℝ) 1 := by
       intro hin
       apply hact
       have hb : |z'| ≤ 1 := abs_le.mpr (Set.mem_Icc.mp hin)
@@ -540,7 +541,8 @@ private lemma lp_termI_sum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ}
         * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
           - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|
       ≤ ((ℓ : ℝ) + 1) / lam0
-          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h)) * (4 * a₀ * h * n) := by
+          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 *
+              (|t - t'| / h)) * (4 * a₀ * h * n) := by
   set B : ℝ := ((ℓ : ℝ) + 1) * 2 ^ ℓ with hBdef
   set d : ℝ := |t - t'| / h with hddef
   set M : ℝ := (LK + 2 * Kmax) * B ^ 2 * d with hMdef
@@ -595,7 +597,8 @@ private lemma lp_termI_sum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ}
         refine mul_le_mul_of_nonneg_left (count_active_le hn hh hhl hdens t) ?_
         exact mul_nonneg (div_nonneg (by positivity) hlam.le) hMnn
     _ = ((ℓ : ℝ) + 1) / lam0
-          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h)) * (4 * a₀ * h * n) := by
+          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 *
+              (|t - t'| / h)) * (4 * a₀ * h * n) := by
         rw [hMdef]
 
 /-- Term II of the weight increment: `∑ᵢ |∑ₖ (Δg)ₖ V_i(t')ₖ|`, controlled by `∑ₖ|Δg|`. -/
@@ -640,7 +643,8 @@ private lemma lp_termII_sum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ
         rw [Finset.sum_comm]
         exact Finset.sum_congr rfl (fun k _ => by rw [← Finset.mul_sum])
     _ ≤ ∑ k, |(lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
-          - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k| * (Kmax * B * (4 * a₀ * h * n)) := by
+          - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k| *
+              (Kmax * B * (4 * a₀ * h * n)) := by
         refine Finset.sum_le_sum (fun k _ => mul_le_mul_of_nonneg_left (hsupp k) (abs_nonneg _))
     _ = (∑ k, |(lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
           - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k|)

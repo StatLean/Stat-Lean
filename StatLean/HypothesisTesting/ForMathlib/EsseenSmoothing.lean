@@ -789,7 +789,7 @@ private lemma trapezoid_eq_tent_combination {v u δ : ℝ} (hδ : 0 < δ) (hvu :
   have hs2 : v + δ - y = -((u - v - δ) / 2) - (y - (v + u + δ) / 2) := by ring
   rw [trapezoid, ramp, ramp, hs1, hs2, min_one_max_zero_div hδ, min_one_max_zero_div hδ,
     ← mul_sub, trapezoid_core _ _ _ hw2 hδ, hw1,
-    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0:ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
+    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0 : ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
   ring
 
 /-! ## The trapezoid as a Fourier transform, with the classical `1/|ξ|` envelope -/

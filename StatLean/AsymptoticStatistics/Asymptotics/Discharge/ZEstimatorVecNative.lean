@@ -274,7 +274,7 @@ private lemma centered_iid_sum_bddAbove
         ∫ X : Fin n → Ω, (∑ i : Fin n, g (X i))
           ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
       rw [MeasureTheory.integral_finsetSum (Finset.univ : Finset (Fin n))
-            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1:ℝ≥0∞) ≤ 2))]
+            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2))]
       exact Finset.sum_eq_zero (fun i _ => h_int_truth_pi i)
     rw [MeasureTheory.integral_const_mul, h_int_sum, mul_zero]
   have h_Z_var :
@@ -908,8 +908,8 @@ private lemma zEstimatorVec_step5
         + (ENNReal.ofReal (η / 4) + ENNReal.ofReal (η / 4))
       = ENNReal.ofReal η := by
     rw [(ENNReal.ofReal_add hη4_nn hη4_nn).symm]
-    rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ η/4 + η/4)
-          (by linarith : (0:ℝ) ≤ η/4 + η/4)).symm]
+    rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η/4 + η/4)
+          (by linarith : (0 : ℝ) ≤ η/4 + η/4)).symm]
     congr 1; ring
   exact le_trans (add_le_add (add_le_add hfr hSbnd) (add_le_add h3 hsc)) h_sum_eps.le
 

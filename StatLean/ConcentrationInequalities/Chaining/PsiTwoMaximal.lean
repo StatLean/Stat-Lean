@@ -290,7 +290,8 @@ lemma integrable_biSup_abs {ι : Type*}
     have hlint := lintegral_ofReal_le_of_tail_le (hm i hi).abs
       (Filter.Eventually.of_forall fun ω => abs_nonneg _) le_rfl (L + 1).coe_nonneg htail
     refine ⟨(hm i hi).abs.aestronglyMeasurable, ?_⟩
-    rw [MeasureTheory.hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall fun ω => abs_nonneg _)]
+    rw [MeasureTheory.hasFiniteIntegral_iff_ofReal
+        (Filter.Eventually.of_forall fun ω => abs_nonneg _)]
     exact lt_of_le_of_lt hlint ENNReal.ofReal_lt_top
   -- The finite max is dominated by the (integrable) sum of the `|Y i|`.
   have hsum : MeasureTheory.Integrable (fun ω => ∑ i ∈ s, |Y i ω|) μ :=

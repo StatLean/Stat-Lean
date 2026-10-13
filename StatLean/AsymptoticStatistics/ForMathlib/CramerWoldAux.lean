@@ -38,12 +38,12 @@ theorem Matrix.sub_PosSemidef_iff_quadratic_form_le
   rw [Matrix.PosSemidef_iff_quadratic_form_nonneg (hSigma_herm.sub hG_herm)]
   constructor
   · intro h x
-    have key : dotProduct (star x) ((Sigma - G).mulVec x) = 
+    have key : dotProduct (star x) ((Sigma - G).mulVec x) =
                dotProduct (star x) (Sigma.mulVec x) - dotProduct (star x) (G.mulVec x) := by
       simp only [Matrix.sub_mulVec, dotProduct_sub]
     linarith [h x]
   · intro h x
-    have key : dotProduct (star x) ((Sigma - G).mulVec x) = 
+    have key : dotProduct (star x) ((Sigma - G).mulVec x) =
                dotProduct (star x) (Sigma.mulVec x) - dotProduct (star x) (G.mulVec x) := by
       simp only [Matrix.sub_mulVec, dotProduct_sub]
     linarith [h x]
@@ -68,7 +68,7 @@ theorem charFun_map_inner_left (μ : Measure E) (v : E) (t : ℝ) :
   simp only [charFunDual_apply, charFun_apply]
   congr 1 with x
   change Complex.exp (↑((t • L) x) * Complex.I) = Complex.exp (↑(inner ℝ x (t • v)) * Complex.I)
-  have rhs : inner ℝ x (t • v) = t * inner ℝ v x := by 
+  have rhs : inner ℝ x (t • v) = t * inner ℝ v x := by
     rw [inner_smul_right, real_inner_comm]
   rw [show ((t • L) x : ℝ) = t * inner ℝ v x from rfl, rhs]
 

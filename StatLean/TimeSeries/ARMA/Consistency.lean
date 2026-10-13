@@ -213,7 +213,7 @@ private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a :
     (hup : ∀ z : ℂ, ‖z‖ ≤ R → ‖Polynomial.aeval z (maPoly a)‖ ≤ Mnum) (n : ℕ) :
     |armaPsi b a n| ≤ (Mnum / dlow) * (R⁻¹) ^ n := by
   classical
-  have hR0 : (0:ℝ) < R := lt_trans zero_lt_one hR
+  have hR0 : (0 : ℝ) < R := lt_trans zero_lt_one hR
   obtain ⟨A, hAdef⟩ : ∃ A : Polynomial ℂ, A = (maPoly a).map (algebraMap ℝ ℂ) := ⟨_, rfl⟩
   obtain ⟨B, hBdef⟩ : ∃ B : Polynomial ℂ, B = (arPoly b).map (algebraMap ℝ ℂ) := ⟨_, rfl⟩
   have hAc : ∀ k, A.coeff k = ((maPoly a).coeff k : ℂ) := by
@@ -284,7 +284,7 @@ private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a :
         rw [zero_add]
         refine hHasSum y ?_
         have h1 : ‖y‖ₑ < 1 := by simpa [edist_eq_enorm_sub] using hy
-        rw [show ((1:ℝ≥0∞)) = ((1:NNReal) : ℝ≥0∞) by simp, enorm_lt_coe] at h1
+        rw [show ((1 : ℝ≥0∞)) = ((1 : NNReal) : ℝ≥0∞) by simp, enorm_lt_coe] at h1
         exact_mod_cast h1 }
   -- differentiability on the larger closed ball
   have hdiff : DifferentiableOn ℂ g (Metric.closedBall 0 R) := by
@@ -295,8 +295,8 @@ private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a :
     exact A.differentiableAt.div B.differentiableAt (hBne z hz)
   obtain ⟨R', hR'c⟩ : ∃ R' : NNReal, ((R' : ℝ)) = R :=
     ⟨R.toNNReal, Real.coe_toNNReal _ hR0.le⟩
-  have hR'pos : (0:NNReal) < R' := by
-    have : (0:ℝ) < (R' : ℝ) := by rw [hR'c]; exact hR0
+  have hR'pos : (0 : NNReal) < R' := by
+    have : (0 : ℝ) < (R' : ℝ) := by rw [hR'c]; exact hR0
     exact_mod_cast this
   have hdiff' : DifferentiableOn ℂ g (Metric.closedBall 0 (R' : ℝ)) := by
     rw [hR'c]; exact hdiff
@@ -317,7 +317,7 @@ private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a :
     refine (hdiff.continuousOn.comp_continuous (continuous_circleMap 0 R) ?_).norm
     intro θ
     simp [Metric.mem_closedBall, dist_zero_right, norm_circleMap_zero, abs_of_nonneg hR0.le]
-  have hint : (∫ θ in (0:ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ 2*π*(Mnum/dlow) := by
+  have hint : (∫ θ in (0 : ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ 2*π*(Mnum/dlow) := by
     have hmono := intervalIntegral.integral_mono_on (μ := volume)
       (le_of_lt Real.two_pi_pos) (hcont.intervalIntegrable 0 (2*π))
       (intervalIntegrable_const (c := Mnum / dlow))
@@ -328,9 +328,9 @@ private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a :
   have hfin := norm_cauchyPowerSeries_le g 0 (R' : ℝ) n
   rw [← heq, hΨnorm, hR'c] at hfin
   refine hfin.trans ?_
-  have hpow : (0:ℝ) ≤ |R|⁻¹ ^ n := by positivity
-  have hfac : (2 * π)⁻¹ * (∫ θ in (0:ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ Mnum / dlow := by
-    have h2pi : (0:ℝ) < 2 * π := Real.two_pi_pos
+  have hpow : (0 : ℝ) ≤ |R|⁻¹ ^ n := by positivity
+  have hfac : (2 * π)⁻¹ * (∫ θ in (0 : ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ Mnum / dlow := by
+    have h2pi : (0 : ℝ) < 2 * π := Real.two_pi_pos
     rw [inv_mul_le_iff₀ h2pi]
     linarith [hint]
   have habsR : |R| = R := abs_of_nonneg hR0.le
@@ -353,9 +353,9 @@ private lemma exists_radius_nonvanishing {ι : Type*} [TopologicalSpace ι] {K :
       continuous_fst.prodMk (((Complex.continuous_ofReal.comp
         (continuous_snd.comp continuous_snd))).mul (continuous_fst.comp continuous_snd))
     exact hden.comp hmap
-  have hD : IsCompact (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) :=
+  have hD : IsCompact (K ×ˢ (Metric.closedBall (0 : ℂ) 1 ×ˢ Set.Icc (1 : ℝ) 2)) :=
     hK.prod ((isCompact_closedBall _ _).prod isCompact_Icc)
-  have hZ : IsCompact ((K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+  have hZ : IsCompact ((K ×ˢ (Metric.closedBall (0 : ℂ) 1 ×ˢ Set.Icc (1 : ℝ) 2)) ∩
       {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0}) :=
     hD.inter_right (isClosed_eq hcont continuous_const)
   -- the decomposition `z = s · (z / s)` with `s = max ‖z‖ 1`
@@ -373,12 +373,12 @@ private lemma exists_radius_nonvanishing {ι : Type*} [TopologicalSpace ι] {K :
           simp only [ne_eq, Complex.ofReal_eq_zero]
           exact ne_of_gt (lt_trans zero_lt_one h)
         field_simp
-  rcases Set.eq_empty_or_nonempty ((K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+  rcases Set.eq_empty_or_nonempty ((K ×ˢ (Metric.closedBall (0 : ℂ) 1 ×ˢ Set.Icc (1 : ℝ) 2)) ∩
       {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0}) with hempty | hne'
   · refine ⟨2, by norm_num, le_rfl, fun x hx z hz => ?_⟩
     obtain ⟨w, s, hw, hs1, hs2, _, hsw⟩ := hdecomp 2 le_rfl x hx z hz
     intro h0
-    have : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+    have : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0 : ℂ) 1 ×ˢ Set.Icc (1 : ℝ) 2)) ∩
         {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0} := by
       refine ⟨⟨hx, ?_, ?_⟩, ?_⟩
       · simpa [Metric.mem_closedBall, dist_zero_right] using hw
@@ -402,7 +402,7 @@ private lemma exists_radius_nonvanishing {ι : Type*} [TopologicalSpace ι] {K :
     · obtain ⟨w, s, hw, hs1, hs2, hsR, hsw⟩ :=
         hdecomp (min ((1 + w0.2.2) / 2) 2) (min_le_right _ _) x hx z hz
       intro h0
-      have hmem : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+      have hmem : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0 : ℂ) 1 ×ˢ Set.Icc (1 : ℝ) 2)) ∩
           {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0} := by
         refine ⟨⟨hx, ?_, ⟨hs1, hs2⟩⟩, ?_⟩
         · simpa [Metric.mem_closedBall, dist_zero_right] using hw
@@ -430,16 +430,16 @@ private lemma exists_disc_bounds {ι : Type*} [TopologicalSpace ι] {K : Set ι}
   obtain ⟨R, hR1, hR2, hRne⟩ := exists_radius_nonvanishing hK hden hne
   rcases Set.eq_empty_or_nonempty K with rfl | hKne
   · exact ⟨R, 0, 1, hR1, one_pos, by simp, by simp⟩
-  have hR0 : (0:ℝ) < R := lt_trans zero_lt_one hR1
-  have hcpt : IsCompact (K ×ˢ Metric.closedBall (0:ℂ) R) :=
+  have hR0 : (0 : ℝ) < R := lt_trans zero_lt_one hR1
+  have hcpt : IsCompact (K ×ˢ Metric.closedBall (0 : ℂ) R) :=
     hK.prod (isCompact_closedBall _ _)
-  have hcne : (K ×ˢ Metric.closedBall (0:ℂ) R).Nonempty :=
+  have hcne : (K ×ˢ Metric.closedBall (0 : ℂ) R).Nonempty :=
     hKne.prod (Metric.nonempty_closedBall.2 hR0.le)
   obtain ⟨x0, hx0, hmin⟩ := hcpt.exists_isMinOn hcne
     (Continuous.continuousOn (hden.norm))
   obtain ⟨x1, hx1, hmax⟩ := hcpt.exists_isMaxOn hcne
     (Continuous.continuousOn (hnum.norm))
-  have hmem : ∀ (x : ι), x ∈ K → ∀ z : ℂ, ‖z‖ ≤ R → (x, z) ∈ K ×ˢ Metric.closedBall (0:ℂ) R := by
+  have hmem : ∀ (x : ι), x ∈ K → ∀ z : ℂ, ‖z‖ ≤ R → (x, z) ∈ K ×ˢ Metric.closedBall (0 : ℂ) R := by
     intro x hx z hz
     exact ⟨hx, by simpa [Metric.mem_closedBall, dist_zero_right] using hz⟩
   refine ⟨R, ‖num x1.1 x1.2‖, ‖den x0.1 x0.2‖, hR1, ?_, ?_, ?_⟩
@@ -495,7 +495,7 @@ theorem exists_uniform_geometric_bound_arma {p q : ℕ}
       hK continuous_aeval_arPoly continuous_aeval_maPoly
       (fun ba hba z hz => (hKB ba hba).2 z hz)
   have hR : 1 < min R₁ R₂ := lt_min hR₁ hR₂
-  have hRpos : (0:ℝ) < min R₁ R₂ := lt_trans zero_lt_one hR
+  have hRpos : (0 : ℝ) < min R₁ R₂ := lt_trans zero_lt_one hR
   have hC1 : M₁ / d₁ ≤ max 1 (max (M₁ / d₁) (M₂ / d₂)) :=
     le_trans (le_max_left _ _) (le_max_right _ _)
   have hC2 : M₂ / d₂ ≤ max 1 (max (M₁ / d₁) (M₂ / d₂)) :=

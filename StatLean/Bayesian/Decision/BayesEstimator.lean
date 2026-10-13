@@ -5,9 +5,9 @@ import StatLean.Bayesian.Decision.Defs
 
 Our own formalization of Robert's Theorem 2.3.2 and Definition 2.3.3: the integrated (average)
 risk decomposes as an integral of the posterior expected loss over the predictive distribution,
-$$r(\pi, \delta) = \int_{\mathcal X} \Big(\int_\Theta \ell(\theta, \delta(x))\,\pi(d\theta\mid x)\Big)\,m(dx),$$
-so an estimator that minimizes the posterior expected loss pointwise (for predictive-a.e. `x`) is
-a Bayes estimator.
+$$r(\pi, \delta) = \int_{\mathcal X} \Big(\int_\Theta \ell(\theta, \delta(x))\,\pi(d\theta\mid
+x)\Big)\,m(dx),$$ so an estimator that minimizes the posterior expected loss pointwise (for
+predictive-a.e. `x`) is a Bayes estimator.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
 Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,

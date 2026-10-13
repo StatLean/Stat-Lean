@@ -8,8 +8,8 @@ import Mathlib.MeasureTheory.Measure.Prod
 
 The Giry-monad `bind` of a parametrized family of `withDensity` measures is again a `withDensity`,
 whose density is the mixture (marginal) density:
-$$\Big(\mu \gg\!\!= \big(b \mapsto \nu \cdot f_b\big)\Big) \;=\; \nu \cdot \Big(x \mapsto \int f_b(x)\,d\mu(b)\Big).$$
-This is the one brick that turns the Dirichlet–Laplace scale mixture
+$$\Big(\mu \gg\!\!= \big(b \mapsto \nu \cdot f_b\big)\Big) \;=\; \nu \cdot \Big(x \mapsto \int
+f_b(x)\,d\mu(b)\Big).$$ This is the one brick that turns the Dirichlet–Laplace scale mixture
 `dlMarginal a = (Gamma a).bind laplaceMeasure` into an explicit `volume.withDensity dlDensity` form.
 
 **Reference.** Bhattacharya–Pati–Pillai–Dunson, *Dirichlet–Laplace priors for optimal shrinkage*

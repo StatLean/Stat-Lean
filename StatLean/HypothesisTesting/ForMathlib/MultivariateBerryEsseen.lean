@@ -161,18 +161,19 @@ to it). The ingredients:
   `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
   comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
 
-* *Assembly brick (i) — the telescope itself* (wave 16): `abs_integral_smooth_sub_gaussian_improved`.
+* *Assembly brick (i) — the telescope itself* (wave 16):
+  `abs_integral_smooth_sub_gaussian_improved`.
   `Iⱼ = ∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
   `κ'ⱼ i = if i < j then Measure.dirac 0 else ν`. `integral_pi_sum_peel` peels coordinate `j`
   verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`; its continuity is
   `continuous_integral_add_smul`, dominated convergence with the constant bound `1`). Brick (ii)
-  identifies the `(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian,
-  so *the same single step* both kills a coordinate and widens the mollification. The step bound
-  is `abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and, for **every** `j` (in particular
+  identifies the `(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian, so
+  *the same single step* both kills a coordinate and widens the mollification. The step bound is
+  `abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and, for **every** `j` (in particular
   `j = 0`, where the smoothing has width `0`), `abs_integral_swap_step_le` applied after
-  `integral_integral_swap` moves the smoothing variable outside. Brick (iii) sums the minimum of
-  the two, giving `(J (M/6) n^{-3/2} + 3C/√J)(β_ν + β_G)` for every cut `J ≥ 2`. The endpoints
-  are `measure_pi_dirac_zero` (`⨂ δ₀ = δ₀`, by `Measure.pi_eq`) for `I n` and `√0 = 0` for `I 0`.
+  `integral_integral_swap` moves the smoothing variable outside. Brick (iii) sums the minimum of the
+  two, giving `(J (M/6) n^{-3/2} + 3C/√J)(β_ν + β_G)` for every cut `J ≥ 2`. The endpoints are
+  `measure_pi_dirac_zero` (`⨂ δ₀ = δ₀`, by `Measure.pi_eq`) for `I n` and `√0 = 0` for `I 0`.
 
   In the assembly the cut is `J = max 2 ⌈ε² n⌉`, which gives `J (M/6) n^{-3/2} ≤ C₃/(2ε√n)` and
   `3C/√J ≤ 3C/(ε√n)`. The bookkeeping `J ≤ ε² n + 2` is only useful when `ε² n ≥ 1`; in the
@@ -3267,7 +3268,7 @@ private lemma abs_exp_sub_taylor_two_le (x : ℝ) :
     have hxu : |x - u| ≤ |x| := by
       rcases le_total (0 : ℝ) x with hx | hx
       · rw [Set.uIoc_of_le hx] at hu
-        rw [abs_of_nonneg (by linarith [hu.2] : (0:ℝ) ≤ x - u), abs_of_nonneg hx]
+        rw [abs_of_nonneg (by linarith [hu.2] : (0 : ℝ) ≤ x - u), abs_of_nonneg hx]
         linarith [hu.1]
       · rw [Set.uIoc_of_ge hx] at hu
         rw [abs_of_nonpos (by linarith [hu.1] : x - u ≤ 0), abs_of_nonpos hx]
@@ -3276,7 +3277,7 @@ private lemma abs_exp_sub_taylor_two_le (x : ℝ) :
       rw [← sq_abs (x - u), ← sq_abs x]
       exact pow_le_pow_left₀ (abs_nonneg _) hxu 2
     have hexp : Real.exp u ≤ Real.exp |x| := Real.exp_le_exp.2 (le_trans (le_abs_self u) hu')
-    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (x - u) ^ 2 / 2),
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (x - u) ^ 2 / 2),
       abs_of_pos (Real.exp_pos u)]
     exact mul_le_mul (by linarith) hexp (Real.exp_pos u).le (by positivity)
   have hle := intervalIntegral.norm_integral_le_of_norm_le_const hbound
@@ -3657,7 +3658,7 @@ private lemma integral_tiltEnvSmall_le :
   have he3 : Real.exp 1 * Real.exp 2 = Real.exp 3 := by rw [← Real.exp_add]; norm_num
   have hhalf : Real.exp (1 / 2) ≤ Real.exp 3 := Real.exp_le_exp.2 (by norm_num)
   have hE31 : (1 : ℝ) ≤ Real.exp 3 := Real.one_le_exp (by norm_num)
-  nlinarith [Real.exp_pos (1:ℝ), Real.exp_pos (2:ℝ)]
+  nlinarith [Real.exp_pos (1 : ℝ), Real.exp_pos (2 : ℝ)]
 
 /-- The (parameter-free) envelope controlling the tilt remainder for large tilts, apart from
 the tilt-dependent exponential term. -/
@@ -3689,7 +3690,7 @@ private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s �
       calc |s * t - s ^ 2 / 2| ≤ |s * t| + |s ^ 2 / 2| := abs_sub _ _
         _ = s * |t| + s ^ 2 / 2 := by
             rw [abs_mul, abs_of_nonneg hs,
-              abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
+              abs_of_nonneg (by positivity : (0 : ℝ) ≤ s ^ 2 / 2)]
     nlinarith
   have hcube : |x| ^ 3 ≤ s ^ 3 * (|t| + 1 / 2) ^ 3 := by
     have h := pow_le_pow_left₀ (abs_nonneg x) hxabs 3
@@ -3717,7 +3718,7 @@ private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s �
     have e2 : (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2)
         ≤ (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2) :=
       mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_left hbig (by positivity : (0:ℝ) ≤ s ^ 3))
+        (mul_le_mul_of_nonneg_left hbig (by positivity : (0 : ℝ) ≤ s ^ 3))
         (Real.exp_pos _).le
     have e3 : (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2)
         = s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|)) := by
@@ -3729,7 +3730,7 @@ private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s �
     have e6 : s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
         = 2 * (s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))) := by
       ring
-    have hnn : (0:ℝ) ≤ s ^ 3 * (27 / 2 * Real.exp 1
+    have hnn : (0 : ℝ) ≤ s ^ 3 * (27 / 2 * Real.exp 1
         * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by positivity
     linarith [e1, e2, e5]
   have hterm2 : |(-(s ^ 3 * t / 2) + s ^ 4 / 8)|
@@ -3737,7 +3738,7 @@ private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s �
     have hAdd := abs_add_le (-(s ^ 3 * t / 2)) (s ^ 4 / 8)
     have e1 : |(-(s ^ 3 * t / 2))| = s ^ 3 / 2 * |t| := by
       rw [abs_neg, show s ^ 3 * t / 2 = s ^ 3 / 2 * t by ring, abs_mul,
-        abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 3 / 2)]
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ s ^ 3 / 2)]
     have e2 : |s ^ 4 / 8| = s ^ 4 / 8 := abs_of_nonneg (by positivity)
     rw [e1, e2] at hAdd
     have h2 : s ^ 4 ≤ s ^ 3 := by nlinarith [pow_nonneg hs 3]
@@ -3782,11 +3783,11 @@ private lemma integral_abs_tiltRemainder_le_of_one_le {s : ℝ} (hs1 : 1 ≤ s) 
     have hc : |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2|
         ≤ 1 + s * |t| + s ^ 2 * (t ^ 2 + 1) / 2 := by
       have e1 : |1 + s * t| ≤ 1 + s * |t| := by
-        calc |1 + s * t| ≤ |(1:ℝ)| + |s * t| := abs_add_le _ _
+        calc |1 + s * t| ≤ |(1 : ℝ)| + |s * t| := abs_add_le _ _
           _ = 1 + s * |t| := by rw [abs_one, abs_mul, abs_of_nonneg hs]
       have e2 : |s ^ 2 * (t ^ 2 - 1) / 2| ≤ s ^ 2 * (t ^ 2 + 1) / 2 := by
         rw [show s ^ 2 * (t ^ 2 - 1) / 2 = s ^ 2 / 2 * (t ^ 2 - 1) by ring, abs_mul,
-          abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
+          abs_of_nonneg (by positivity : (0 : ℝ) ≤ s ^ 2 / 2)]
         have habs : |t ^ 2 - 1| ≤ t ^ 2 + 1 := by
           rcases abs_cases (t ^ 2 - 1) with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> nlinarith [sq_nonneg t]
         nlinarith [sq_nonneg s]
@@ -3824,7 +3825,7 @@ private lemma integral_abs_tiltRemainder_le_of_one_le {s : ℝ} (hs1 : 1 ≤ s) 
   have hcube1 : s ≤ s ^ 3 := by nlinarith
   have hsq1 : s ^ 2 ≤ s ^ 3 := by nlinarith
   have hone : (1 : ℝ) ≤ s ^ 3 := by nlinarith
-  nlinarith [Real.exp_pos ((1:ℝ) / 2)]
+  nlinarith [Real.exp_pos ((1 : ℝ) / 2)]
 
 /-- **The tilt remainder is cubically small in the tilt parameter, in `L¹` of the Gaussian.**
 This is the analytic heart of the improved bound: the third-order Taylor error of the
@@ -4758,7 +4759,7 @@ private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
     (G := fun z => (G z - a) / 2) (by fun_prop)
     (fun z => by
       have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
-      rw [abs_div, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+      rw [abs_div, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (2 : ℝ))]
       linarith)
     hS (fun z hz => by rw [hoff z hz]; ring) hw
   have hscale : (∫ z, (G z - a) * vecTiltRemainder w z
@@ -4769,7 +4770,7 @@ private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
       (fun z => ((G z - a) / 2) * vecTiltRemainder w z)
     rw [← h]
     exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
-  rw [hdec, haR0, add_zero, hscale, abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+  rw [hdec, haR0, add_zero, hscale, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (2 : ℝ))]
   calc 2 * |∫ z, ((G z - a) / 2) * vecTiltRemainder w z
             ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
       ≤ 2 * (Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
@@ -4838,8 +4839,9 @@ marginal, exactly as the wave-19/29 bounds do), and neither half needs a fourth 
 summand law: the `‖w‖`-growth is quadratic, so against the localisation weight — which is
 itself linear in `‖w‖` — the product stays cubic.
 
-With `M = gaussianTailRadius k σ` (so `γ{‖z‖ ≥ M} ≤ σ²`, `stdGaussian_norm_ge_gaussianTailRadius_le`)
-this reads `≤ 2σ² + 52 σ (1 + ‖w‖²)`, which is the far-in-`v` input of route (b) of
+With `M = gaussianTailRadius k σ` (so `γ{‖z‖ ≥ M} ≤ σ²`,
+`stdGaussian_norm_ge_gaussianTailRadius_le`) this reads `≤ 2σ² + 52 σ (1 + ‖w‖²)`, which is the
+far-in-`v` input of route (b) of
 `abs_integral_gaussian_smoothed_swap_localised_le` at *every* shift length. -/
 private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball_any
     {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
@@ -7209,13 +7211,13 @@ theorem le_of_selfImproving_smoothed_sqrt {A C δ Δ m : ℝ} (hΔ : 0 ≤ Δ) (
   have hsub : Real.sqrt (m ^ 2 + 2 * Δ) ≤ m + Real.sqrt 2 * Real.sqrt Δ := by
     have h1 := sqrt_add_le_sqrt_add_sqrt (x := m ^ 2) (y := 2 * Δ)
       (by positivity) (by positivity)
-    rw [Real.sqrt_sq hm.le, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)] at h1
+    rw [Real.sqrt_sq hm.le, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)] at h1
     exact h1
   have hstep : Δ ≤ (Real.sqrt 2 * m) * Real.sqrt Δ + 2 * m ^ 2 := by
     nlinarith [Real.sqrt_nonneg Δ, hm.le]
   have hfix := le_of_le_sqrt_mul hΔ hstep
   have h2 : (Real.sqrt 2 * m) ^ 2 = 2 * m ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2)]
+    rw [mul_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
   rw [h2] at hfix
   linarith
 
@@ -7414,7 +7416,7 @@ theorem le_of_selfImproving_induction_forcing {A C b w : ℝ} {D : ℕ → ℝ} 
       have hδmle : δm ≤ 2 * δ := by
         rw [hδm, hδdef, div_le_iff₀ hsm]
         have h : b / Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = b := by field_simp
-        nlinarith [mul_le_mul_of_nonneg_left hsqrt (by positivity : (0:ℝ) ≤ b /
+        nlinarith [mul_le_mul_of_nonneg_left hsqrt (by positivity : (0 : ℝ) ≤ b /
           Real.sqrt (n : ℝ))]
       have hδmge : δ ≤ δm := by
         rw [hδm, hδdef]
@@ -7590,14 +7592,14 @@ theorem log_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
     have := Real.add_one_le_exp (1 : ℝ); linarith) hmax
   have hstep : 1 + (A * δ)⁻¹ ≤ 2 * max δ⁻¹ (Real.exp 1) := by linarith
   have hlog : Real.log (1 + (A * δ)⁻¹) ≤ Real.log 2 + L := by
-    have h2 : (0:ℝ) < 1 + (A * δ)⁻¹ := by positivity
+    have h2 : (0 : ℝ) < 1 + (A * δ)⁻¹ := by positivity
     calc Real.log (1 + (A * δ)⁻¹)
         ≤ Real.log (2 * max δ⁻¹ (Real.exp 1)) := Real.log_le_log h2 hstep
       _ = Real.log 2 + L := by rw [Real.log_mul (by norm_num) hpos.ne', hL]
   have hlog2 : Real.log 2 ≤ 1 := by
     calc Real.log 2 ≤ Real.log (Real.exp 1) :=
           Real.log_le_log (by norm_num) (by
-            have := Real.add_one_le_exp (1:ℝ); nlinarith [Real.exp_pos (1:ℝ)])
+            have := Real.add_one_le_exp (1 : ℝ); nlinarith [Real.exp_pos (1 : ℝ)])
       _ = 1 := Real.log_exp 1
   linarith
 
@@ -8590,13 +8592,13 @@ theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤
     have hb := gaussian_measureReal_wideShell_preimage_aff_le hk hrpos a hBm hBc hε
     rw [← hgauss]
     have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
-      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+      (by positivity : (0 : ℝ) ≤ 2 * gaussianShellConst k)
     linarith
   · have hrpos : (0 : ℝ) < r := by linarith
     have hb := measureReal_wideShell_preimage_aff_le hk (sumLaw (n - j) ν) hrpos a hBm hBc hε
     have hYm := hY (n - j) (by omega) (Nat.sub_le _ _)
     have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
-      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+      (by positivity : (0 : ℝ) ≤ 2 * gaussianShellConst k)
     linarith
 
 
@@ -10273,8 +10275,8 @@ and the pointwise engine of route (b) is proved with **no** restriction on `‖w
   `(8 C_k σ(R+s) + W) · min (C_t s³, 2+s+s²) ≤ (64 C_k σ R + 4 W) C_t s³`.
 
 **The constants the route actually delivers, and why they are not wave 39's.** Averaging the
-pointwise bound over `v ∼ τ` and then over `y ∼ ν` (resp. `ρ`) gives, with `R = gaussianTailRadius k σ`
-and `s = (c/σ)‖y‖`:
+pointwise bound over `v ∼ τ` and then over `y ∼ ν` (resp. `ρ`) gives, with
+`R = gaussianTailRadius k σ` and `s = (c/σ)‖y‖`:
 
 * the shell term: `∫ τ(shell at 2σ(R+s)) · min(...) dν ≤ (64 C_k σ R + 4 W) C_t (c/σ)³ β_ν`
   (`localised_step_weight_le` pointwise in `y`, then `hshell` at width `2σ(R+s)`);
@@ -12610,7 +12612,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   have hLP1 : (1 : ℝ) ≤ logPow32 ε := one_le_logPow32 hε
   have hlog0 : 0 ≤ dimTailConst k * logPow32 ε := by nlinarith
   have hbrk0 : 0 ≤ ε⁻¹ * (W + gaussianShellConst k * ε) := by
-    have : (0:ℝ) < gaussianShellConst k * ε := mul_pos hCk hε
+    have : (0 : ℝ) < gaussianShellConst k * ε := mul_pos hCk hε
     exact mul_nonneg (inv_pos.2 hε).le (by linarith)
   have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)
       * (ε⁻¹ * (W + gaussianShellConst k * ε)
@@ -12931,7 +12933,7 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
       have hLP0 : (0 : ℝ) ≤ logPow32 ε := by linarith
       have ht1 : 0 ≤ β / Real.sqrt (m : ℝ) * ε⁻¹
           * (4 * gaussianShellConst k * ε + 2 * Y) := by
-        have : (0:ℝ) < 4 * gaussianShellConst k * ε := by positivity
+        have : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
         exact mul_nonneg (mul_nonneg hd (inv_pos.2 hε).le) (by linarith)
       have hAle : A ≤ (A + 1) * dimTailConst k := by nlinarith
       have e1 : A * (β / Real.sqrt (m : ℝ)) * ε⁻¹

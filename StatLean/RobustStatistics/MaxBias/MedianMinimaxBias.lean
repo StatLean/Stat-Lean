@@ -66,7 +66,7 @@ private theorem densityMeasure_mixture {u v : ℝ → ℝ} (hu : Measurable u) (
     (hu0 : ∀ x, 0 ≤ u x) (hv0 : ∀ x, 0 ≤ v x) {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε ≤ 1) :
     densityMeasure (fun x => (1 - ε) * u x + ε * v x)
       = contaminate (densityMeasure u) (densityMeasure v) ε := by
-  have h1 : (0:ℝ) ≤ 1 - ε := by linarith
+  have h1 : (0 : ℝ) ≤ 1 - ε := by linarith
   refine Measure.ext fun s hs => ?_
   rw [densityMeasure, withDensity_apply _ hs, contaminate_apply, densityMeasure, densityMeasure,
     withDensity_apply _ hs, withDensity_apply _ hs,
@@ -164,7 +164,7 @@ theorem integral_minimaxWitnessDensity {f₀ : ℝ → ℝ} {bε ε : ℝ}
     -- USER-INPUT: b_ε solves the median's maximum-bias quantile equation; MMY (3.68)
     (hquant : ∫ x in Set.Iic bε, f₀ x = 1 / (2 * (1 - ε))) :
     ∫ x, minimaxWitnessDensity f₀ bε ε x = 1 := by
-  have h1ε : (0:ℝ) < 1 - ε := by linarith
+  have h1ε : (0 : ℝ) < 1 - ε := by linarith
   -- `∫_{(b_ε,∞)} f₀(x − 2b_ε) dx = ∫_{(−b_ε,∞)} f₀` (translation invariance).
   have hshift : ∫ x in Set.Ioi bε, f₀ (x - 2 * bε) = ∫ x in Set.Ioi (-bε), f₀ x := by
     rw [← integral_indicator measurableSet_Ioi, ← integral_indicator measurableSet_Ioi,

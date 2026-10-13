@@ -316,7 +316,7 @@ theorem exists_geometric_bound_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin 
     rw [hgdef]
     exact A.differentiableAt.div B.differentiableAt (hRroot z (le_trans hz hR'R))
   have hR'pos : (0 : NNReal) < R' := by
-    have : (0:ℝ) < (R' : ℝ) := by linarith
+    have : (0 : ℝ) < (R' : ℝ) := by linarith
     exact_mod_cast this
   have hcauchy := hdiff.hasFPowerSeriesOnBall hR'pos
   -- the formal series of the ARMA coefficients
@@ -328,18 +328,18 @@ theorem exists_geometric_bound_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin 
     intro n
     rw [hΨ, FormalMultilinearSeries.ofScalars_norm, hψc]
     simp
-  have hMpos : (0:ℝ) < M := by linarith
+  have hMpos : (0 : ℝ) < M := by linarith
   have hradpos : 0 < Ψ.radius := by
     have hcoe : ((M⁻¹).toNNReal : ℝ) = M⁻¹ := Real.coe_toNNReal _ (by positivity)
     have hle : (((M⁻¹).toNNReal : NNReal) : ENNReal) ≤ Ψ.radius := by
       refine Ψ.le_radius_of_bound C0 (r := (M⁻¹).toNNReal) fun n => ?_
       rw [hΨnorm, hcoe, inv_pow]
-      have hpow : (0:ℝ) < M ^ n := by positivity
+      have hpow : (0 : ℝ) < M ^ n := by positivity
       calc |armaPsi b a n| * (M ^ n)⁻¹ ≤ (C0 * M ^ n) * (M ^ n)⁻¹ := by
             exact mul_le_mul_of_nonneg_right (hcrude n) (by positivity)
         _ = C0 := by field_simp
     refine lt_of_lt_of_le ?_ hle
-    have : (0:ℝ) < ((M⁻¹).toNNReal : ℝ) := by rw [hcoe]; positivity
+    have : (0 : ℝ) < ((M⁻¹).toNNReal : ℝ) := by rw [hcoe]; positivity
     exact_mod_cast this
   have hΨball : HasFPowerSeriesOnBall Ψ.sum Ψ 0 Ψ.radius :=
     Ψ.hasFPowerSeriesOnBall hradpos
@@ -508,7 +508,8 @@ private lemma cov_noise_lin_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ}
     rw [← this, hzero N, sub_zero]
   have hbd : ∀ N : ℕ, |∫ ω, ε u ω * X 0 ω ∂μ|
       ≤ (eLpNorm (ε u) 2 μ).toReal
-        * (eLpNorm (fun ω => X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ).toReal := by
+        * (eLpNorm (fun ω => X 0 ω - ∑ j ∈ Finset.range N,
+          ψ j * ε (0 - (j : ℕ)) ω) 2 μ).toReal := by
     intro N
     rw [hsplit N]
     exact abs_integral_mul_le (hε.memLp u) ((hmX 0).sub (hmemP N))
@@ -553,7 +554,8 @@ private lemma arPoly_apply {p : ℕ} (b : Fin p → ℝ) (G : ℕ → ℝ) :
   rw [← Fin.sum_univ_eq_sum_range (fun k => (arPoly b).coeff k * G k) (p + 1), Fin.sum_univ_succ]
   have h0 : (arPoly b).coeff ((0 : Fin (p + 1)) : ℕ) * G ((0 : Fin (p + 1)) : ℕ) = G 0 := by
     simp [coeff_arPoly_zero]
-  have hs : ∀ i : Fin p, (arPoly b).coeff ((i.succ : Fin (p + 1)) : ℕ) * G ((i.succ : Fin (p+1)) : ℕ)
+  have hs : ∀ i : Fin p, (arPoly b).coeff ((i.succ : Fin (p + 1)) : ℕ) *
+      G ((i.succ : Fin (p+1)) : ℕ)
       = -(b i * G ((i : ℕ) + 1)) := by
     intro i
     simp only [Fin.val_succ]
@@ -569,7 +571,8 @@ private lemma maPoly_apply {q : ℕ} (a : Fin q → ℝ) (G : ℕ → ℝ) :
   rw [← Fin.sum_univ_eq_sum_range (fun m => (maPoly a).coeff m * G m) (q + 1), Fin.sum_univ_succ]
   have h0 : (maPoly a).coeff ((0 : Fin (q + 1)) : ℕ) * G ((0 : Fin (q + 1)) : ℕ) = G 0 := by
     simp [coeff_maPoly_zero]
-  have hs : ∀ j : Fin q, (maPoly a).coeff ((j.succ : Fin (q + 1)) : ℕ) * G ((j.succ : Fin (q+1)) : ℕ)
+  have hs : ∀ j : Fin q, (maPoly a).coeff ((j.succ : Fin (q + 1)) : ℕ) *
+      G ((j.succ : Fin (q+1)) : ℕ)
       = a j * G ((j : ℕ) + 1) := by
     intro j
     simp only [Fin.val_succ]
@@ -952,8 +955,8 @@ theorem IsARMA.acvf_exponential_decay [IsProbabilityMeasure μ] {p q : ℕ}
   have hψ := summable_abs_armaPsi a hb
   have hform := (hcausal.isStationary hψ h.whiteNoise h.measurableX).2
   have hr2 : r ^ 2 < 1 := by nlinarith
-  have hr2' : (0:ℝ) ≤ r ^ 2 := by positivity
-  have hden : (0:ℝ) < 1 - r ^ 2 := by linarith
+  have hr2' : (0 : ℝ) ≤ r ^ 2 := by positivity
+  have hden : (0 : ℝ) < 1 - r ^ 2 := by linarith
   refine ⟨|σ2| * C ^ 2 * (1 - r ^ 2)⁻¹, by positivity, r, hr0, hr1, fun k => ?_⟩
   set m := k.natAbs with hm
   have hle : ∀ j : ℕ, |armaPsi b a j * armaPsi b a (j + m)| ≤ C ^ 2 * r ^ m * (r ^ 2) ^ j := by

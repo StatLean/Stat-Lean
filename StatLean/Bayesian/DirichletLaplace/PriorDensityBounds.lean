@@ -29,13 +29,13 @@ Contents:
 optimal shrinkage*, J. Amer. Statist. Assoc. 110 (2015), 1479–1490 (arXiv:1401.5398). Prior (10),
 Lemma 3.2, eqs. (13)–(14).
 
-**Proof formalization notes.** `dlPrior_eq_withDensity` unfolds `dlPrior` (a `Measure.pi`-of-marginals
-pushed through `WithLp.toLp 2`), rewrites each marginal by `dlMarginal_eq_withDensity` (C2), applies
-`pi_withDensity'` (F4, the `Fintype ι` upgrade of `pi_withDensity`), and transports across the
-volume-preserving `WithLp.toLp 2` (`PiLp.volume_preserving_toLp`). The product bounds are `Finset`
-products of the univariate C3 bounds; `prod_dlDensity_ge` combines the per-coordinate uniform
-log-form P4 with `Real.exp_sum`. The Lebesgue comparisons are `withDensity_apply` +
-`setLIntegral_mono`/`setLIntegral_le`.
+**Proof formalization notes.** `dlPrior_eq_withDensity` unfolds `dlPrior` (a
+`Measure.pi`-of-marginals pushed through `WithLp.toLp 2`), rewrites each marginal by
+`dlMarginal_eq_withDensity` (C2), applies `pi_withDensity'` (F4, the `Fintype ι` upgrade of
+`pi_withDensity`), and transports across the volume-preserving `WithLp.toLp 2`
+(`PiLp.volume_preserving_toLp`). The product bounds are `Finset` products of the univariate C3
+bounds; `prod_dlDensity_ge` combines the per-coordinate uniform log-form P4 with `Real.exp_sum`. The
+Lebesgue comparisons are `withDensity_apply` + `setLIntegral_mono`/`setLIntegral_le`.
 *Deviations (see the milestone plan).* D5: the mixture-restriction lower bound has exponent
 `−(7/2)√|x|` (not the paper's sketched `−2√|x|`), which is why `prod_dlDensity_ge` carries the
 `7/2` factor. D8: the density **upper** bound (and hence `prod_dlDensity_le`) genuinely needs

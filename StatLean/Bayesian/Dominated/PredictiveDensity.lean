@@ -5,9 +5,9 @@ import StatLean.Bayesian.Dominated.Defs
 
 For a dominated model `κ θ = ν.withDensity (p θ)` with prior `π`, this file establishes that the
 data distribution has the prior predictive density `m` with respect to `ν`,
-$$\kappa \circ_m \pi = \nu.\mathrm{withDensity}\,(m), \qquad m(x) = \int_\Theta p(\theta,x)\,\pi(d\theta),$$
-together with the measurability of `m` and the a.e. non-degeneracy facts (`0 < m < ∞`) that hold
-automatically under a finite model.
+$$\kappa \circ_m \pi = \nu.\mathrm{withDensity}\,(m), \qquad m(x) = \int_\Theta
+p(\theta,x)\,\pi(d\theta),$$ together with the measurability of `m` and the a.e. non-degeneracy
+facts (`0 < m < ∞`) that hold automatically under a finite model.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
 Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,

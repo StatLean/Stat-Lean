@@ -23,10 +23,10 @@ the Lasso estimator $\widehat{\beta}$ satisfies, with probability at least $1 - 
 $$\bigl\lVert \widehat{\beta} - \beta^\* \bigr\rVert_2 \le \frac{3}{\kappa}\sqrt{s}\,\lambda
   = O_P\!\left(\sqrt{\frac{s \log d}{n}}\right).$$
 
-**Changed constant.** The textbook states the tuning value $\lambda = \sigma\sqrt{\log(2d/\delta)/(2n)}$,
-which is approximately $4\times$ too small to satisfy the tuning condition
-$\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ under the union-bound tail
-bound derived here. We therefore state the provable constant
+**Changed constant.** The textbook states the tuning value
+$\lambda = \sigma\sqrt{\log(2d/\delta)/(2n)}$, which is approximately $4\times$ too small to satisfy
+the tuning condition $\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ under the
+union-bound tail bound derived here. We therefore state the provable constant
 $\lambda = 2\sqrt{2\sigma^2 \log(2d/\delta)/n}$, which preserves the same
 $O_P(\sqrt{s \log d / n})$ rate order. A nondegeneracy hypothesis $\sigma^2 > 0$ is also
 added (when $\sigma^2 = 0$ the noise is almost surely zero and the bound holds trivially via
@@ -282,8 +282,8 @@ theorem lasso_random_rate
     -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §10.2, Corollary 10.1
     (hLasso : ∀ ω, IsLassoEstimator X
         (designMap X βstar + WithLp.toLp (p := 2) (fun i => ε i ω)) lam (βhat ω))
-    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2, Corollary 10.1
-    -- Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
+    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2, Corollary
+    -- 10.1 Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
     (hlam_ge : lam ≥ 2 * Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n))
     -- LEAN-ONLY: 0 < σ2; when σ2 = 0 the noise is a.s. 0 and the result holds trivially
     -- via ae_eq_zero_of_hasSubgaussianMGF_zero, which requires a separate proof path

@@ -234,7 +234,8 @@ private lemma snapStep_decode (m : ℕ) [NeZero m] {f : C(unitInterval, ℝ)}
 steps recovers the snapped values exactly (telescoping induction in `ℤ`);
 HDP Exercise 8.9. -/
 theorem gridPath_snapStep_eq (m : ℕ) [NeZero m] {f : C(unitInterval, ℝ)}
-    -- USER-INPUT: class membership (rules out clamping in `snapStart`/`snapStep`); HDP §8.2, Eq. (8.24)
+    -- USER-INPUT: class membership (rules out clamping
+    -- in `snapStart`/`snapStep`); HDP §8.2, Eq. (8.24)
     (hf : f ∈ lipschitzUnitClass) (j : Fin (m + 1)) :
     gridPath m (snapStart m f) (snapStep m f) j = (snapPath m f j : ℤ) := by
   refine Fin.induction ?_ ?_ j

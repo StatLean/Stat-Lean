@@ -11,8 +11,9 @@ import Mathlib.LinearAlgebra.Matrix.RowCol
 
 In the spiked covariance model the observations are $n$ i.i.d. draws
 $Z \sim \mathcal{N}(0,\, I_d + \nu\, \theta^* (\theta^*)^\top)$, where the leading eigenvector
-$\theta^*$ lies on the unit sphere $\mathbb{S}^{d-1}$ and $\nu > 0$ is the signal strength. Estimating
-$\theta^*$ under squared Euclidean loss $\|\cdot\|_2^2$, the minimax risk is bounded below by
+$\theta^*$ lies on the unit sphere $\mathbb{S}^{d-1}$ and $\nu > 0$ is the signal strength.
+Estimating $\theta^*$ under squared Euclidean loss
+$\|\cdot\|_2^2$, the minimax risk is bounded below by
 $$
 \inf_{\widehat\theta}\ \sup_{\theta^* \in \mathbb{S}^{d-1}}\
   \mathbb{E}\,\bigl\| \widehat\theta - \theta^* \bigr\|_2^2
@@ -37,16 +38,16 @@ mutual-information bound) and Example 5.8 ($1/2$-packing of the unit sphere).
 * **Spiked-covariance matrix algebra.** `spiked_posDef`, `spiked_det`, and `spiked_inv` establish
   that $S = I + \nu u u^\top$ is positive definite with $\det S = 1 + \nu$ and Sherman–Morrison
   inverse $S^{-1} = I - \tfrac{\nu}{1+\nu} u u^\top$ for a unit vector $u$.
-* **Pairwise KL divergence.** `trace_spiked_inv_mul`, `klDiv_spiked`, and `klDiv_pca_pair` compute the
-  single-sample KL between two spiked Gaussians as
+* **Pairwise KL divergence.** `trace_spiked_inv_mul`, `klDiv_spiked`, and `klDiv_pca_pair` compute
+  the single-sample KL between two spiked Gaussians as
   $\tfrac12\,\nu^2 (1 - \langle u_a, u_b\rangle^2)/(1+\nu)$ — the equal determinants cancel the
   log-det terms — and tensorize it to the $n$-fold product law.
 * **Sphere packing and tilting.** `pca_fano_config` builds the $2\delta$-separated hypothesis family
   by tilting a $1/2$-packing of $\mathbb{S}^{m-1}$ ($d = m+1$) into the sphere via
   $\theta_a = (s, \delta\, w_a)$ with $s^2 + \delta^2 = 1$, choosing
   $\delta^2 \asymp \min\{(1+\nu)/\nu^2 \cdot d/n,\, 1\}$; the dot-product/norm bridge lemmas
-  (`euclid_self_dot`, `euclid_dot_le`, `tilt_dot`) convert between Euclidean norms and coordinate dot
-  products.
+  (`euclid_self_dot`, `euclid_dot_le`, `tilt_dot`) convert between Euclidean norms and coordinate
+  dot products.
 * **Mutual-information bound.** The per-pair KL is bounded by $2 n \nu^2 \delta^2/(1+\nu)$, averaged
   via `mutualInformation_le_avg_pairwise_kl`, and combined with $\log M \ge m/10$ so that Fano's
   $(1 - \cdot)$ factor stays $\ge 1/2$.

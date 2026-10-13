@@ -233,7 +233,7 @@ theorem hasFDerivAt_integral_exp_inner
     intro s hs
     have h1 := habsorb s hs
     have h2 : s ≤ s * Real.exp (r * s) := by
-      nlinarith [Real.one_le_exp_iff.mpr (by positivity : (0:ℝ) ≤ r * s), hs]
+      nlinarith [Real.one_le_exp_iff.mpr (by positivity : (0 : ℝ) ≤ r * s), hs]
     linarith
   -- the dominating bound
   set bound : 𝓧 → ℝ := fun x =>
@@ -245,7 +245,7 @@ theorem hasFDerivAt_integral_exp_inner
   -- `bound` is integrable via the sign-vector envelope (with `c = 2r`)
   have henv : Integrable
       (fun x => |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + 2 * r * ‖E.stat x‖)) E.base := by
-    apply integrable_abs_exp_inner_add_norm E hf (by positivity : (0:ℝ) ≤ 2 * r)
+    apply integrable_abs_exp_inner_add_norm E hf (by positivity : (0 : ℝ) ≤ 2 * r)
     intro ww hww
     have hlt : ‖ww‖ < ρ := by
       calc ‖ww‖ ≤ 2 * (2 * r) * (N : ℝ) := hww

@@ -16,8 +16,9 @@ $i$-th linear predictor. Under
   - (G2) the **bounded-curvature exponential family**: $0 \le \psi'' \le B^2$,
 
 each coordinate of the score (negative log-likelihood gradient) evaluated at the truth,
-$$ \bigl(\nabla L_n(\theta^\star)\bigr)_j \;=\; \frac1n\sum_{i=1}^n \bigl(\psi'(\eta_i) - y_i\bigr)\,x_{ij}, $$
-is a centered sub-Gaussian random variable with variance proxy $\le B^2 C^2 / n$.
+$$ \bigl(\nabla L_n(\theta^\star)\bigr)_j \;=\; \frac1n\sum_{i=1}^n \bigl(\psi'(\eta_i) -
+y_i\bigr)\,x_{ij}, $$ is a centered sub-Gaussian
+random variable with variance proxy $\le B^2 C^2 / n$.
 
 This is the deviation bound for the empirical score that drives the choice of regularization
 parameter $\lambda_n \asymp B C\sqrt{(\log d)/n}$ in the GLM Lasso/M-estimator rate. The mean-zero
@@ -26,18 +27,18 @@ property uses $\mathbb{E}[y_i] = \psi'(\eta_i)$, the standard exponential-family
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
 within the proof of Corollary 9.26 (p. 288). Conditions (G1)/(G2) and the per-term score
-$V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ follow the book's GLM setup. The variance proxy stated here,
-$B^2 C^2/n$, is the form provable from these hypotheses; the book quotes the corresponding
+$V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ follow the book's GLM setup. The variance proxy stated
+here, $B^2 C^2/n$, is the form provable from these hypotheses; the book quotes the corresponding
 sub-Gaussian tail with the same $B^2 C^2$ scale.
 
-**Proof formalization notes.** The per-term variable $V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ has MGF
-$\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s = -t\,x_{ij}$, obtained from
-the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor remainder with
-$\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is centered sub-Gaussian
-with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and rescaling by $1/n$
-(reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and applying (G1) gives the
-final proxy $B^2 C^2 / n$. Mean-zero of each term comes from $\mathbb{E}[y_i] = \psi'(\eta_i)$, derived
-here as the derivative of the MGF at $0$.
+**Proof formalization notes.** The per-term variable $V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ has
+MGF $\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s = -t\,x_{ij}$,
+obtained from the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor
+remainder with $\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is
+centered sub-Gaussian with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and
+rescaling by $1/n$ (reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and
+applying (G1) gives the final proxy $B^2 C^2 / n$. Mean-zero of each term comes from
+$\mathbb{E}[y_i] = \psi'(\eta_i)$, derived here as the derivative of the MGF at $0$.
 
 **Bibliographic comments.** High-dimensional analysis of the GLM Lasso originates with
 S. A. van de Geer, "High-dimensional generalized linear models and the lasso," *The Annals of
@@ -132,9 +133,10 @@ theorem score_term_hasSubgaussianMGF (M : GLMExpFamily n d μ) (i : Fin n) (j : 
           psi_taylor_upper M.ψ M.ψ' M.ψ'' M.B M.hψ' M.hψ'' M.hψ''_le η (-a * t)
       _ = M.B ^ 2 * a ^ 2 * t ^ 2 / 2 := by ring
 
-/-- **GLM score coordinate sub-Gaussianity.** Under column normalization (G1, `IsColumnNormalized X C`)
-and the GLM exp-family with `0 ≤ ψ'' ≤ B²` (G2, in `M`), the score coordinate
-`scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ` is sub-Gaussian with variance proxy `B²C²/n`. -/
+/-- **GLM score coordinate sub-Gaussianity.** Under column normalization (G1,
+`IsColumnNormalized X C`) and the GLM exp-family with `0 ≤ ψ'' ≤ B²` (G2, in `M`), the score
+coordinate `scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ`
+is sub-Gaussian with variance proxy `B²C²/n`. -/
 theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (C : ℝ) (hC : IsColumnNormalized M.X C) (hn : 0 < n) (j : Fin d) :
     IsSubGaussian (scoreCoord M j) (NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) μ := by

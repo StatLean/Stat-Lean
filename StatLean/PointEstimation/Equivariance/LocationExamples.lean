@@ -111,8 +111,10 @@ private lemma locationBase_gaussDensity {v : ℝ≥0} (hv : v ≠ 0) :
   have h_each : (fun _ : Fin (m + 1) => gaussianReal 0 v)
       = fun _ : Fin (m + 1) => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
     funext _; exact gaussianReal_of_var_ne_zero 0 hv
-  rw [h_each, ← MeasureTheory.pi_withDensity_prod (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
-  change (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ENNReal.ofReal (gaussDensity v x))
+  rw [h_each, ← MeasureTheory.pi_withDensity_prod
+      (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
+  change (volume : Measure (Fin (m + 1) → ℝ)).withDensity
+      (fun x => ENNReal.ofReal (gaussDensity v x))
     = (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ∏ i, gaussianPDF 0 v (x i))
   refine withDensity_congr_ae (ae_of_all _ fun x => ?_)
   simp only [gaussDensity]

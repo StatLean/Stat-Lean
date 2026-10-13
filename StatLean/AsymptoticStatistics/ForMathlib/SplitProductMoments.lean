@@ -876,7 +876,8 @@ theorem splitMean_sub_empMean_tendstoInProbZero
   rw [hemp]
 
 set_option maxHeartbeats 800000 in
--- The product-law conditioning and finite matrix-coordinate lift need the larger elaboration budget.
+-- The product-law conditioning and finite matrix-coordinate
+-- lift need the larger elaboration budget.
 /-- Population L2 replacement and a uniform L2 anchor replace a sample-split Gram
 matrix by the empirical Gram matrix of its deterministic row anchor.  No balance
 or asymptotic-size condition is imposed on the two blocks. -/

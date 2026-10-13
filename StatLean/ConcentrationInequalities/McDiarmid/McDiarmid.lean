@@ -11,9 +11,10 @@ $$\bigl|f(x) - f(x_{-k}, y)\bigr| \le c_k \quad\text{for all } x \text{ and all 
 where $(x_{-k}, y)$ denotes $x$ with its $k$-th coordinate replaced by $y$. Then the
 centered evaluation $f(X) - \mathbb{E}[f(X)]$ has the Gaussian-style upper tail, for
 every $t \ge 0$,
-$$\mathbb{P}\bigl(f(X) - \mathbb{E}[f(X)] > t\bigr) \le \exp\!\left(\frac{-2 t^2}{\sum_{k} c_k^2}\right),$$
-and the corresponding two-sided form
-$$\mathbb{P}\bigl(\bigl|f(X) - \mathbb{E}[f(X)]\bigr| > t\bigr) \le 2\,\exp\!\left(\frac{-2 t^2}{\sum_{k} c_k^2}\right).$$
+$$\mathbb{P}\bigl(f(X) - \mathbb{E}[f(X)] > t\bigr) \le \exp\!\left(\frac{-2 t^2}{\sum_{k}
+c_k^2}\right),$$ and the corresponding two-sided form
+$$\mathbb{P}\bigl(\bigl|f(X) - \mathbb{E}[f(X)]\bigr| > t\bigr)
+\le 2\,\exp\!\left(\frac{-2 t^2}{\sum_{k} c_k^2}\right).$$
 
 Two alignments with the Lean statement. First, the book states the bound for $t > 0$; the
 Lean statement uses the weaker hypothesis $t \ge 0$, which is strictly stronger (the $t = 0$

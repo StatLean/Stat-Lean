@@ -42,8 +42,9 @@ with L. Le Cam, "Convergence of estimates under dimensionality restrictions," *T
 Statistics* **1** (1973), no. 1, 38–53, where the lower bound is expressed through the affinity /
 total-variation distance between mixtures over the two competing subfamilies. It is now standard as
 "Le Cam's method"; the form stated here follows Wainwright's textbook synthesis (Lemma 15.9), with
-related expositions in Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam* (Springer,
-1997), 423–435, and Tsybakov, *Introduction to Nonparametric Estimation* (Springer, 2009), §2.
+related expositions in Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam*
+(Springer, 1997), 423–435, and Tsybakov, *Introduction
+to Nonparametric Estimation* (Springer, 2009), §2.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -93,9 +94,10 @@ private lemma mul_measure_mem_le_avg [PseudoEMetricSpace Ω]
                 exact hΦ (hSsep i y hy)
               · rw [Set.indicator_of_notMem hy, mul_zero]; exact zero_le
 
-/-- **Le Cam's convex-hull lower bound** (Wainwright Lemma 15.9, Eq. (15.26)): for two `2δ`-separated
-subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`, the minimax risk dominates
-`(δ/2)(1 − ‖Q̄₁ − Q̄₀‖_TV)`, where `Q̄₀, Q̄₁` are the corresponding mixtures over the convex hulls.
+/-- **Le Cam's convex-hull lower bound** (Wainwright Lemma 15.9, Eq. (15.26)): for two
+`2δ`-separated subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`, the minimax
+risk dominates `(δ/2)(1 − ‖Q̄₁ − Q̄₀‖_TV)`, where `Q̄₀, Q̄₁`
+are the corresponding mixtures over the convex hulls.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.2, Lemma 15.9. -/

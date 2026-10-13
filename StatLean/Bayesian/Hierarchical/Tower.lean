@@ -10,8 +10,8 @@ and posterior expectations obey the corresponding tower rule
 `E[g(θ)∣x] = E_{λ∣x}[ E_{θ∣λ,x}[g(θ)] ]`. The same decomposition lifts to the posterior predictive.
 
 These are stated for a **dominated** hierarchical model (the setting the whole `StatLean.Bayesian`
-area uses): the likelihood and prior kernels admit densities `p`, `q` against base measures `ν`, `μ`.
-There the conditional posterior `Π_λ(·∣x)` is the density-form `generalizedPosterior p (Π_λ) x`
+area uses): the likelihood and prior kernels admit densities `p`, `q` against base measures `ν`,
+`μ`. There the conditional posterior `Π_λ(·∣x)` is the density-form `generalizedPosterior p (Π_λ) x`
 (equal a.e. to the abstract `conditionalPosterior λ x` by
 `conditionalPosterior_givenHyper_ae_eq_generalizedPosterior`), which — unlike the abstract
 measure-posterior — is jointly measurable in `(λ, x)`, so the outer hyperposterior integral is

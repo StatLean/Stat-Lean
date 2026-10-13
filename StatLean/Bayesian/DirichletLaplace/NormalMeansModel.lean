@@ -19,14 +19,17 @@ ratio `p θ y = dlLR θ₀ θ y = dN(θ,I)/dN(θ₀,I)(y)`, the model is dominat
 `K θ = (K θ₀).withDensity (dlLR θ₀ θ)` (Girsanov, `gaussShiftKernel_eq_withDensity`). Then
 `predictiveDensity p Π = dlDenom θ₀ Π` and `∫_C p(·,y) dΠ = dlNumer θ₀ Π C y`, so the dominated
 Bayes formula `posterior_apply_eq_div` (Robert §1.4) reads `(K†Π) y C = dlNumer/dlDenom` for
-predictive-a.e. `y`. Because the theorems integrate against the **truth** `P₀ = K θ₀` rather than the
-predictive `K ∘ₘ Π`, we transfer this a.e. identity along `P₀ ≪ K ∘ₘ Π` (`comp_absolutelyContinuous`;
-both are equivalent to Lebesgue since Gaussian densities are strictly positive).
+predictive-a.e. `y`. Because the theorems integrate against the **truth** `P₀ = K θ₀` rather than
+the predictive `K ∘ₘ Π`, we transfer this a.e. identity along `P₀ ≪ K ∘ₘ Π`
+(`comp_absolutelyContinuous`; both are equivalent to
+Lebesgue since Gaussian densities are strictly positive).
 
 Contents:
-* `gaussShiftKernel_eq_withDensity` — the Girsanov density identity (the dominated-model hypothesis).
+* `gaussShiftKernel_eq_withDensity` — the Girsanov
+  density identity (the dominated-model hypothesis).
 * `lintegral_dlLR_eq_one` — the likelihood ratio integrates to `1` against the base `K θ₀`.
-* `dlLR_fubini`, `lintegral_dlNumer_eq_prior` — change-of-measure Tonelli: `E_{θ₀}[dlNumer C] = Π C`.
+* `dlLR_fubini`, `lintegral_dlNumer_eq_prior` —
+  change-of-measure Tonelli: `E_{θ₀}[dlNumer C] = Π C`.
 * `comp_absolutelyContinuous` — `K θ' ≪ K ∘ₘ Π` (truth dominated by the predictive).
 * `dlDenom_pos_ae`, `dlDenom_lt_top_ae` — `0 < dlDenom < ∞` holds `P₀`-a.e. (forced, not assumed).
 * `dlRatio_le_one_ae` — the posterior ratio is `≤ 1`.

@@ -27,12 +27,12 @@ so this is no loss of generality.
 
 **Proof formalization notes.** Fix $\alpha \in (0,1)$. With $E > 0$ we have the equivalence
 $1/E \le \alpha \iff E \ge 1/\alpha$, so Markov's inequality gives
-$\mu\{E \ge 1/\alpha\} \le \alpha \cdot \mathbb{E}_\mu[E] \le \alpha$, using $\mathbb{E}_\mu[E] \le 1$.
-In Lean the event is rewritten in `ENNReal.ofReal` form and closed by the extended-nonnegative
-Markov bound `meas_ge_le_lintegral_div`, after which `ENNReal.div_le_div_right` together with the
-e-variable bound `hE.expectation_le_one` and `ENNReal.ofReal_inv_of_pos` finishes the calc. The
-super-uniform version extends the bound from $(0,1)$ to all $t \ge 0$ by separately handling $t = 0$
-(where $E > 0$ makes the event $\{1/E \le 0\}$ empty).
+$\mu\{E \ge 1/\alpha\} \le \alpha \cdot \mathbb{E}_\mu[E] \le \alpha$, using
+$\mathbb{E}_\mu[E] \le 1$. In Lean the event is rewritten in `ENNReal.ofReal` form and closed by the
+extended-nonnegative Markov bound `meas_ge_le_lintegral_div`, after which `ENNReal.div_le_div_right`
+together with the e-variable bound `hE.expectation_le_one` and `ENNReal.ofReal_inv_of_pos` finishes
+the calc. The super-uniform version extends the bound from $(0,1)$ to all $t \ge 0$ by separately
+handling $t = 0$ (where $E > 0$ makes the event $\{1/E \le 0\}$ empty).
 
 **Bibliographic comments.** The reciprocal calibrator is due to Vladimir Vovk and Ruodu Wang,
 "E-values: Calibration, combination and applications", *The Annals of Statistics* **49**(3):

@@ -7,11 +7,11 @@ import Mathlib.Probability.Distributions.Uniform
 Shared data model for the `Minimaxity` area, formalizing the core objects of
 Wainwright's minimax lower-bound framework.
 
-Fix a class of distributions $\mathcal{P} = \{P_\theta\}$, a functional $\theta \mapsto \theta(P_\theta)$
-taking values in a space equipped with a *semimetric* $\rho$ (a distance allowed to vanish
-on distinct points, Wainwright's footnote 1), and an increasing distortion
-$\Phi : [0,\infty] \to [0,\infty]$. The associated **distortion loss** of a decision $y$ under
-parameter $\theta$ is
+Fix a class of distributions $\mathcal{P} = \{P_\theta\}$, a functional
+$\theta \mapsto \theta(P_\theta)$ taking values in a space equipped with a *semimetric* $\rho$ (a
+distance allowed to vanish on distinct points, Wainwright's footnote 1), and an increasing
+distortion $\Phi : [0,\infty] \to [0,\infty]$. The associated **distortion loss** of a decision $y$
+under parameter $\theta$ is
 $$\ell(\theta, y) \;=\; \Phi\bigl(\rho(\theta(P_\theta),\, y)\bigr),$$
 and the **minimax risk** of estimating the functional is
 $$\mathfrak{M}\bigl(\theta(\mathcal{P});\, \Phi\circ\rho\bigr)

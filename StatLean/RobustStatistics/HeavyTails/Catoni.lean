@@ -66,12 +66,12 @@ increasing function"). -/
 theorem catoniPsi_neg (x : ℝ) : catoniPsi (-x) = -catoniPsi x := by
   rcases lt_trichotomy x 0 with hx | hx | hx
   · have h1 : ¬ (0 ≤ x) := not_le.2 hx
-    have h2 : (0:ℝ) ≤ -x := by linarith
+    have h2 : (0 : ℝ) ≤ -x := by linarith
     simp only [catoniPsi, ite_eq_left h2, ite_eq_right h1, neg_neg]
     ring_nf
   · simp [hx]
-  · have h1 : (0:ℝ) ≤ x := hx.le
-    have h2 : ¬ ((0:ℝ) ≤ -x) := by simpa using hx
+  · have h1 : (0 : ℝ) ≤ x := hx.le
+    have h2 : ¬ ((0 : ℝ) ≤ -x) := by simpa using hx
     simp only [catoniPsi, ite_eq_left h1, ite_eq_right h2]
     ring_nf
 
@@ -117,7 +117,7 @@ private theorem catoniPsi_neg_of_neg {y : ℝ} (hy : y < 0) : catoniPsi y < 0 :=
 theorem catoniPsi_strictMono : StrictMono catoniPsi := by
   intro a b hab
   rcases le_or_gt 0 a with ha | ha
-  · have hb : (0:ℝ) ≤ b := ha.trans hab.le
+  · have hb : (0 : ℝ) ≤ b := ha.trans hab.le
     simp only [catoniPsi, ite_eq_left ha, ite_eq_left hb]
     exact Real.log_lt_log (catoni_companion_pos a) (by nlinarith)
   · rcases le_or_gt 0 b with hb | hb
@@ -126,7 +126,7 @@ theorem catoniPsi_strictMono : StrictMono catoniPsi := by
       simp only [catoniPsi, ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb)]
       have h := Real.log_lt_log (catoni_companion_pos' b)
         (show 1 - b + b ^ 2 / 2 < 1 - a + a ^ 2 / 2 by
-          nlinarith [mul_pos (sub_pos.2 hab) (show (0:ℝ) < 2 - a - b by linarith)])
+          nlinarith [mul_pos (sub_pos.2 hab) (show (0 : ℝ) < 2 - a - b by linarith)])
       linarith
 
 /-- Catoni's `ψ` is continuous (the two branches agree at `0` with value `0`). -/
@@ -145,7 +145,7 @@ theorem catoniPsi_tendsto_atTop : Tendsto catoniPsi atTop atTop := by
     tendsto_atTop_mono (fun x => by nlinarith [sq_nonneg x] : ∀ x : ℝ, x ≤ 1 + x + x ^ 2 / 2)
       tendsto_id
   refine (Real.tendsto_log_atTop.comp hp).congr' ?_
-  filter_upwards [eventually_ge_atTop (0:ℝ)] with x hx
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
   simp [catoniPsi, hx, Function.comp]
 
 /-- Catoni's `ψ` tends to `−∞` at `−∞`. -/
@@ -195,7 +195,7 @@ theorem existsUnique_isCatoniEstimate {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα :
   have hpa : 0 < catoniR α x (x i₀ - 1) := by
     refine Finset.sum_pos (fun i _ => ?_) Finset.univ_nonempty
     have h := catoniPsi_strictMono (mul_pos hα (by have := hi₀ i; linarith) :
-      (0:ℝ) < α * (x i - (x i₀ - 1)))
+      (0 : ℝ) < α * (x i - (x i₀ - 1)))
     simpa using h
   have hnb : catoniR α x (x i₁ + 1) < 0 := by
     refine Finset.sum_neg (fun i _ => ?_) Finset.univ_nonempty

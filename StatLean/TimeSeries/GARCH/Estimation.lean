@@ -637,9 +637,9 @@ Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequ
   `tendsto_setIntegral_sq_tail` (the dominated-convergence half).
 
 **The relocated debts** (unchanged by the closure above — they are what `hlin` and `hWdef`
-now *carry*, and they remain outside the repo). After the repairs the *literature* content of GR 2001 and PY 2003
-is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀` producing
-the influence process. That is where the genuinely hard analysis lives, and it is
+now *carry*, and they remain outside the repo). After the repairs the *literature* content of GR
+2001 and PY 2003 is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀`
+producing the influence process. That is where the genuinely hard analysis lives, and it is
 different in the two cases:
 * **Whittle (GR 2001).** `hlin` comes from a Taylor expansion of `garchWhittle` in `θ`
   plus a **CLT for a weighted quadratic form of the squared process**,

@@ -609,11 +609,11 @@ private lemma logLR_sub_score_tendstoInMeasure
     have hpos : (0 : ℝ) < 2 * (C + 1) := by positivity
     have hsq : η ^ 2 ≤ ε / (2 * (C + 1)) := by
       have h := mul_self_le_mul_self hη0.le hle
-      rw [← pow_two, ← pow_two, Real.sq_sqrt (by positivity : (0:ℝ) ≤ ε / (2 * (C + 1)))] at h
+      rw [← pow_two, ← pow_two, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ ε / (2 * (C + 1)))] at h
       exact h
     have hmul : C * η ^ 2 ≤ C * (ε / (2 * (C + 1))) := mul_le_mul_of_nonneg_left hsq hC0
     have hlt : C * (ε / (2 * (C + 1))) < ε / 2 := by
-      rw [mul_div_assoc', div_lt_div_iff₀ hpos (by norm_num : (0:ℝ) < 2)]
+      rw [mul_div_assoc', div_lt_div_iff₀ hpos (by norm_num : (0 : ℝ) < 2)]
       nlinarith
     linarith
   -- The uniform LAN expansion over the ball of radius `K + 1`.
@@ -668,7 +668,7 @@ private lemma logLR_sub_score_tendstoInMeasure
     have hkey : |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω| < ε := by
       rw [logLRStatistic_sub_scoreStatistic_eq M θ₀ ℓ J hdet hHerm est n hn1 ω]
       refine lt_of_le_of_lt (abs_sub _ _) ?_
-      rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+      rw [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (2 : ℝ))]
       linarith
     exact absurd hω (not_le.2 hkey)
   -- Subadditivity and the three eventual bounds.

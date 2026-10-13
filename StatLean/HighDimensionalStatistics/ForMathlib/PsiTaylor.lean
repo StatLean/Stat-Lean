@@ -7,7 +7,8 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 
 `ψ(a+h) − ψ(a) − h·ψ'(a) ≤ (B²/2)·h²` whenever the second derivative satisfies `ψ'' ≤ B²`.
 The single analytic brick behind the GLM score's sub-Gaussian MGF (Wainwright, *High-Dimensional
-Statistics*, proof of Corollary 9.26, p. 288): `log 𝔼[e^{−tVᵢⱼ}] = ψ(ηᵢ+txᵢⱼ) − ψ(ηᵢ) − txᵢⱼψ'(ηᵢ) ≤ B²t²xᵢⱼ²/2`.
+Statistics*, proof of Corollary 9.26, p. 288):
+`log 𝔼[e^{−tVᵢⱼ}] = ψ(ηᵢ+txᵢⱼ) − ψ(ηᵢ) − txᵢⱼψ'(ηᵢ) ≤ B²t²xᵢⱼ²/2`.
 
 `ForMathlib` layer — Mathlib-only, theorem-agnostic. The bound holds for all `h` (both signs):
 `g(h) := ψ(a+h) − ψ(a) − h·ψ'(a)` satisfies `g(0) = 0`, `g'(0) = 0`, and `g'' = ψ''(a+·) ≤ B²`, so

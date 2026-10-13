@@ -14,15 +14,17 @@ coordinate object of the normal-means model along `S` and its complement `Sᶜ`:
 
 * `projS S` / `extendS S` — the coordinate restriction `ℝ^ι → ℝ^{S}` and the zero-padding section
   `ℝ^{S} → ℝ^ι`;
-* `norm_sq_split` — `‖θ‖² = ‖projS S θ‖² + ‖projS Sᶜ θ‖²` (Pythagoras over the coordinate partition);
-* `dlPrior_map_projS` / `dlPrior_prod_apply` — the DL product prior marginalizes to the sub-prior and
-  factorizes on product sets;
+* `norm_sq_split` — `‖θ‖² = ‖projS S θ‖² + ‖projS Sᶜ θ‖²`
+  (Pythagoras over the coordinate partition);
+* `dlPrior_map_projS` / `dlPrior_prod_apply` — the DL product prior marginalizes to the sub-prior
+  and factorizes on product sets;
 * `dlLR_split` — the Gaussian likelihood ratio factorizes, `dlLR θ₀ θ y = dlLR_S · dlLR_{Sᶜ}`;
 * `dlNumer_cylinder` — on a cylinder over `S` the `S`-factor of the numerator peels off (the `Sᶜ`
   coordinates integrate to the sub-model denominator);
-* `dlRatio_cylinder` — **tensorization (BPPD eq. (26))**: on a cylinder over `Sᶜ`, the full posterior
-  ratio equals the `Sᶜ`-sub-model posterior ratio, the `S`-factor cancelling between numerator and
-  denominator (which requires the `S`-factor to be finite and nonzero, `dlDenom_pos_lt_top`);
+* `dlRatio_cylinder` — **tensorization (BPPD eq. (26))**: on a cylinder over `Sᶜ`, the full
+  posterior ratio equals the `Sᶜ`-sub-model posterior ratio, the `S`-factor cancelling between
+  numerator and denominator (which requires the `S`-factor
+  to be finite and nonzero, `dlDenom_pos_lt_top`);
 * `gaussShift_map_projS` — the data measure `N(θ, I)` marginalizes to `N(projS S θ, I)` on the
   sub-space.
 
@@ -41,8 +43,9 @@ between `EuclideanSpace ℝ ι` and the plain pi type, `measurePreserving_piEqui
 (exp b) = ENNReal.ofReal (exp (a + b))`. In `dlRatio_cylinder` the `S`-factor
 `dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` is in `(0, ∞)` (integrand bounded by
 `exp(½‖·‖²)`, prior a probability measure), so it cancels in the `ℝ≥0∞` quotient. **Fallback** (per
-plan): if the `ℝ≥0∞` cancellation is intractable, prove only the `≤` direction `PosteriorCompressibility` consumes,
-or leave `dlRatio_cylinder` as the single named debt (its statement layer insulates the consumers).
+plan): if the `ℝ≥0∞` cancellation is intractable, prove only the `≤` direction
+`PosteriorCompressibility` consumes, or leave `dlRatio_cylinder` as
+the single named debt (its statement layer insulates the consumers).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -129,8 +132,8 @@ private lemma lintegral_dlPrior_eq_pi (a : ℝ) (κ : Type*) [Fintype κ]
   rw [dlPrior, lintegral_map hF (WithLp.measurable_toLp _ _)]
 
 /-- Reindexing bridge: an lintegral over the negated-predicate subtype `{i // i ∉ S}` equals the
-lintegral against `dlPrior a {j // j ∈ Sᶜ}` (the two subtypes carry different `Fintype` instances but
-are definitionally the same type). -/
+lintegral against `dlPrior a {j // j ∈ Sᶜ}` (the two subtypes carry different `Fintype` instances
+but are definitionally the same type). -/
 private lemma lintegral_pi_toLp_compl (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)]
     [DecidablePred (· ∈ Sᶜ)] {g : EuclideanSpace ℝ {j // j ∈ Sᶜ} → ℝ≥0∞} (hg : Measurable g) :
     ∫⁻ x : {i // i ∉ S} → ℝ, g (WithLp.toLp 2 x) ∂(Measure.pi fun _ => dlMarginal a)
@@ -144,8 +147,8 @@ private lemma lintegral_pi_toLp_compl (a : ℝ) (S : Set ι) [DecidablePred (· 
   congr 1
 
 /-- **Tensorization of `dlPrior`-integrals** (BPPD eq. (26), master lemma). An integrand that
-factorizes as an `S`-function of `projS S θ` times an `Sᶜ`-function of `projS Sᶜ θ` integrates to the
-product of the two sub-model integrals. -/
+factorizes as an `S`-function of `projS S θ` times an `Sᶜ`-function of `projS Sᶜ θ` integrates to
+the product of the two sub-model integrals. -/
 private lemma lintegral_dlPrior_split (a : ℝ) (S : Set ι)
     [DecidablePred (· ∈ S)] [DecidablePred (· ∈ Sᶜ)]
     {FS : EuclideanSpace ℝ {j // j ∈ S} → ℝ≥0∞}
@@ -252,8 +255,8 @@ lemma dlLR_split (S : Set ι) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ 
 
 For any finite index type `κ`, `dlDenom θ₀ (dlPrior a κ) y ∈ (0, ∞)`: the integrand
 `dlLR θ₀ θ y = exp(½‖y − θ₀‖²)·exp(−½‖θ − y‖²)` is strictly positive and bounded above by
-`exp(½‖y − θ₀‖²)`, and `dlPrior a κ` is a probability measure. This lets the `S`-factor cancel in the
-`ℝ≥0∞` quotient of `dlRatio_cylinder`. -/
+`exp(½‖y − θ₀‖²)`, and `dlPrior a κ` is a probability measure. This lets the `S`-factor cancel in
+the `ℝ≥0∞` quotient of `dlRatio_cylinder`. -/
 lemma dlDenom_pos_lt_top (a : ℝ) {κ : Type*} [Fintype κ] (θ₀ y : EuclideanSpace ℝ κ) :
     0 < dlDenom θ₀ (dlPrior a κ) y ∧ dlDenom θ₀ (dlPrior a κ) y < ⊤ := by
   have hmeas : Measurable (fun θ : EuclideanSpace ℝ κ => dlLR θ₀ θ y) := by
@@ -340,12 +343,13 @@ When the truth is supported on `S` (`projS Sᶜ θ₀ = 0`), the full-model post
       = dlNumer (projS Sᶜ θ₀) Π_{Sᶜ} B (projS Sᶜ y) / dlDenom (projS Sᶜ θ₀) Π_{Sᶜ} (projS Sᶜ y)`,
 
 where `Π = dlPrior a ι` and `Π_{Sᶜ} = dlPrior a {j // j ∈ Sᶜ}`. The `S`-factor
-`dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` appears in both numerator and denominator
-(via `dlNumer_cylinder` and `dlPrior_prod_apply`) and cancels because it is in `(0, ∞)`
+`dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` appears in both numerator and
+denominator (via `dlNumer_cylinder` and `dlPrior_prod_apply`) and cancels because it is in `(0, ∞)`
 (`dlDenom_pos_lt_top`). **Riskiest lemma of the milestone.** -/
 lemma dlRatio_cylinder (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ Sᶜ)]
     (θ₀ y : EuclideanSpace ℝ ι)
-    -- USER-INPUT: truth supported on `S` (θ₀ vanishes off `S`, i.e. `S ⊇ supp θ₀`); BPPD eq. (26) (S = S₀)
+    -- USER-INPUT: truth supported on `S` (θ₀ vanishes off
+    -- `S`, i.e. `S ⊇ supp θ₀`); BPPD eq. (26) (S = S₀)
     (hθ₀ : projS Sᶜ θ₀ = 0)
     -- LEAN-ONLY: `B` measurable (cylinder regularity)
     {B : Set (EuclideanSpace ℝ {j // j ∈ Sᶜ})} (hB : MeasurableSet B) :
@@ -393,7 +397,8 @@ lemma dlRatio_cylinder (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] [Decida
   rw [hnum, hden, ENNReal.mul_div_mul_left _ _ hX0.ne' hXtop.ne]
 
 /-- **The standard Gaussian marginalizes to the sub-space standard Gaussian** under coordinate
-restriction: `(stdGaussian (EuclideanSpace ℝ ι)).map (projS S) = stdGaussian (EuclideanSpace ℝ {S})`.
+restriction:
+`(stdGaussian (EuclideanSpace ℝ ι)).map (projS S) = stdGaussian (EuclideanSpace ℝ {S})`.
 -/
 private lemma stdGaussian_map_projS (S : Set ι) [DecidablePred (· ∈ S)] :
     (stdGaussian (EuclideanSpace ℝ ι)).map (projS S)

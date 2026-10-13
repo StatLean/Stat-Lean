@@ -15,11 +15,13 @@ divergence with Mathlib's `InformationTheory.klDiv` and proves three book identi
   $$D(\mathbb{P}_1 \otimes \mathbb{P}_2 \,\|\, \mathbb{Q}_1 \otimes \mathbb{Q}_2)
     \;=\; D(\mathbb{P}_1 \,\|\, \mathbb{Q}_1) + D(\mathbb{P}_2 \,\|\, \mathbb{Q}_2).$$
 * **I.i.d. tensorization** (Eq. (15.11b)): for the $n$-fold product measures,
-  $$D\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes n}\bigr) \;=\; n \, D(\mathbb{P} \,\|\, \mathbb{Q}).$$
+  $$D\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes
+  n}\bigr) \;=\; n \, D(\mathbb{P} \,\|\, \mathbb{Q}).$$
 * **The mixture minimizes the average KL divergence** (Exercise 15.11): for any distribution
   $\mathbb{Q}$, the uniform mixture $\bar{\mathbb{Q}} = \frac{1}{M}\sum_{j} \mathbb{P}_j$ satisfies
-  $$\sum_{j} D(\mathbb{P}_j \,\|\, \bar{\mathbb{Q}}) \;\le\; \sum_{j} D(\mathbb{P}_j \,\|\, \mathbb{Q}),$$
-  which is the variational property underlying the Yang–Barron mutual-information bound (Eq. (15.52)).
+  $$\sum_{j} D(\mathbb{P}_j \,\|\, \bar{\mathbb{Q}}) \;\le\; \sum_{j} D(\mathbb{P}_j \,\|\,
+  \mathbb{Q}),$$ which is the variational property underlying
+  the Yang–Barron mutual-information bound (Eq. (15.52)).
 
 *Alignment with the Lean statement.* Wainwright's $D(\mathbb{Q}\,\|\,\mathbb{P})$ coincides with
 Mathlib's `klDiv ℚ ℙ` on probability measures: the integrated argument — $q$, the density of
@@ -44,15 +46,17 @@ Wainwright-facing algebra.
   `klDiv_self`; the step peels off coordinate $0$ via `measurePreserving_piFinSuccAbove` and
   `MeasurableEquiv.piFinSuccAbove`, reducing to `klDiv_prod_eq_add`. Both proofs rely on the
   pushforward-invariance lemma `klDiv_map_measurableEquiv` (reparametrization invariance of the
-  $f$-divergence, from the log-likelihood-ratio integral form and `MeasurableEmbedding.rnDeriv_map`).
+  $f$-divergence, from the log-likelihood-ratio
+  integral form and `MeasurableEmbedding.rnDeriv_map`).
 * `sum_klDiv_mixture_le` is the crux of Exercise 15.11 (the variational/convexity property of
   `klDiv` in its second argument, which Mathlib does not expose directly). The proof splits on
   absolute continuity: if some $\mathbb{P}_{j_0} \not\ll \mathbb{Q}$ the right side is $\infty$;
   otherwise it lifts a pointwise *compensation inequality* (`klFun_compensation_le`, deficit exactly
   $M \cdot \mathrm{klFun}(W) \ge 0$, encoding the Gibbs identity
-  $\sum_j D(\mathbb{P}_j\,\|\,\mathbb{Q}) = \sum_j D(\mathbb{P}_j\,\|\,\bar{\mathbb{Q}}) + M\,D(\bar{\mathbb{Q}}\,\|\,\mathbb{Q})$)
-  to lintegrals against the common reference $\mathbb{Q}$, using the Radon–Nikodym chain rule and
-  the splitting `rnDeriv_finsetSum_ae` of the mixture density.
+  $\sum_j D(\mathbb{P}_j\,\|\,\mathbb{Q}) = \sum_j D(\mathbb{P}_j\,\|\,\bar{\mathbb{Q}}) +
+  M\,D(\bar{\mathbb{Q}}\,\|\,\mathbb{Q})$) to lintegrals against the common reference $\mathbb{Q}$,
+  using the Radon–Nikodym chain rule and the splitting
+  `rnDeriv_finsetSum_ae` of the mixture density.
 
 **Bibliographic comments.** The KL divergence itself originates with S. Kullback and R. A. Leibler,
 "On Information and Sufficiency," *The Annals of Mathematical Statistics* **22** (1951), no. 1,

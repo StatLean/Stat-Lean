@@ -2857,7 +2857,8 @@ theorem mean_one_imp_contiguous
       = fun k => (Q (χ k)) (A (χ k))ᶜ := by
     funext k; rw [hF_on_J (φ k)]
   rw [h_rhs_eq] at h_liminf_int
-  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ` eventually (since `δ ≤ Q (χ k) (A (χ k))`).
+  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ`
+  -- eventually (since `δ ≤ Q (χ k) (A (χ k))`).
   have hχ_ge : ∀ k, δ ≤ (Q (χ k)) (A (χ k)) := fun k => hψ_ge (φ k)
   have hcompl_le : ∀ k, (Q (χ k)) (A (χ k))ᶜ ≤ 1 - δ := by
     intro k
@@ -3384,10 +3385,10 @@ theorem limit_pos_imp_mean_one
     (continuous_const.max (continuous_const.sub (continuous_const.mul continuous_abs))) 1
     (fun x => by
       rw [Real.norm_eq_abs, abs_le]
-      refine ⟨by have : (0:ℝ) ≤ max 0 (1 - (m + 1 : ℝ) * |x|) := le_max_left _ _; linarith, ?_⟩
+      refine ⟨by have : (0 : ℝ) ≤ max 0 (1 - (m + 1 : ℝ) * |x|) := le_max_left _ _; linarith, ?_⟩
       rw [max_le_iff]
       refine ⟨by norm_num, ?_⟩
-      have : (0:ℝ) ≤ (m + 1 : ℝ) * |x| := by positivity
+      have : (0 : ℝ) ≤ (m + 1 : ℝ) * |x| := by positivity
       linarith) with hfB_def
   have hfB_apply : ∀ m x, fB m x = max 0 (1 - (m + 1 : ℝ) * |x|) := fun _ _ => rfl
   -- `ccB_m(w) = max 0 (2 - (m+2)·w)`, bounded continuous (`[0,2]` on the support), `↓ 2·1_{0}`.
@@ -3397,7 +3398,7 @@ theorem limit_pos_imp_mean_one
       continuous_const)) 2
     (fun w => by
       rw [Real.norm_eq_abs, abs_le]
-      have h0 : (0:ℝ) ≤ max 0 (min (2 - (m + 2 : ℝ) * w) 2) := le_max_left _ _
+      have h0 : (0 : ℝ) ≤ max 0 (min (2 - (m + 2 : ℝ) * w) 2) := le_max_left _ _
       refine ⟨by linarith, ?_⟩
       rw [max_le_iff]
       exact ⟨by norm_num, min_le_right _ _⟩) with hccB_def
@@ -3407,19 +3408,19 @@ theorem limit_pos_imp_mean_one
     intro m w hw0 hw2
     rw [hfB_apply, hccB_apply]
     have hmin : min (2 - (m + 2 : ℝ) * w) 2 = 2 - (m + 2 : ℝ) * w := by
-      apply min_eq_left; nlinarith [mul_nonneg (by positivity : (0:ℝ) ≤ (m + 2 : ℝ)) hw0]
+      apply min_eq_left; nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ (m + 2 : ℝ)) hw0]
     rw [hmin]
     rcases eq_or_lt_of_le hw2 with hw | hw
     · -- `w = 2`: both sides `0`.
       subst hw
       rw [sub_self, zero_mul, max_eq_left]
       have : (2 : ℝ) - (m + 2 : ℝ) * 2 ≤ 0 := by
-        have : (0:ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
+        have : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
         nlinarith
       linarith
     · -- `w < 2`: `2 - w > 0`, `w/(2-w) ≥ 0`.
-      have h2w : (0:ℝ) < 2 - w := by linarith
-      have hratio : (0:ℝ) ≤ w / (2 - w) := div_nonneg hw0 h2w.le
+      have h2w : (0 : ℝ) < 2 - w := by linarith
+      have hratio : (0 : ℝ) ≤ w / (2 - w) := div_nonneg hw0 h2w.le
       rw [abs_of_nonneg hratio]
       rw [mul_max_of_nonneg _ _ h2w.le, mul_zero]
       congr 1
@@ -3439,18 +3440,18 @@ theorem limit_pos_imp_mean_one
     have : (m + 1 : ℝ) ≤ (n + 1 : ℝ) := by exact_mod_cast Nat.add_le_add_right hmn 1
     nlinarith [abs_nonneg x]
   have hfB_tendsto : ∀ x : ℝ,
-      Tendsto (fun m => fB m x) atTop (𝓝 (Set.indicator {(0:ℝ)} (fun _ => (1:ℝ)) x)) := by
+      Tendsto (fun m => fB m x) atTop (𝓝 (Set.indicator {(0 : ℝ)} (fun _ => (1 : ℝ)) x)) := by
     intro x
     by_cases hx : x = 0
     · subst hx
       rw [Set.indicator_of_mem (Set.mem_singleton 0)]
-      have : (fun m => fB m (0:ℝ)) = fun _ => (1:ℝ) := by
+      have : (fun m => fB m (0 : ℝ)) = fun _ => (1 : ℝ) := by
         funext m; rw [hfB_apply]; simp
       rw [this]; exact tendsto_const_nhds
     · rw [Set.indicator_of_notMem (by simpa using hx)]
       -- Eventually zero: once `(m+1)|x| ≥ 1`, `fB m x = 0`.
-      have habs : (0:ℝ) < |x| := abs_pos.mpr hx
-      have h_ev : (fun m => fB m x) =ᶠ[atTop] fun _ => (0:ℝ) := by
+      have habs : (0 : ℝ) < |x| := abs_pos.mpr hx
+      have h_ev : (fun m => fB m x) =ᶠ[atTop] fun _ => (0 : ℝ) := by
         filter_upwards [Filter.eventually_atTop.mpr ⟨Nat.ceil (1 / |x|), fun m hm => hm⟩]
           with m hm
         rw [hfB_apply, max_eq_left]
@@ -3461,11 +3462,11 @@ theorem limit_pos_imp_mean_one
       exact tendsto_const_nhds
   -- `∫ fB m ∂U → (U {0}).toReal = 0`.
   have hfB_lim : Tendsto (fun m => ∫ x, fB m x ∂U) atTop (𝓝 (0 : ℝ)) := by
-    have hint_ind : Integrable (Set.indicator {(0:ℝ)} (fun _ => (1:ℝ))) U :=
-      (integrable_const (1:ℝ)).indicator (measurableSet_singleton (0:ℝ))
+    have hint_ind : Integrable (Set.indicator {(0 : ℝ)} (fun _ => (1 : ℝ))) U :=
+      (integrable_const (1 : ℝ)).indicator (measurableSet_singleton (0 : ℝ))
     have h := integral_tendsto_of_tendsto_of_antitone hfB_int hint_ind
       (Filter.Eventually.of_forall hfB_anti) (Filter.Eventually.of_forall hfB_tendsto)
-    rwa [MeasureTheory.integral_indicator (measurableSet_singleton (0:ℝ)),
+    rwa [MeasureTheory.integral_indicator (measurableSet_singleton (0 : ℝ)),
       MeasureTheory.setIntegral_const, smul_eq_mul, mul_one,
       MeasureTheory.measureReal_def, hU_zero, ENNReal.toReal_zero] at h
   -- `ccB m w ↓ 2·1_{w=0}` `LW_lim`-a.e. (support `[0,2]`); hence `∫ ccB m → 2·(LW_lim{0}).toReal`.
@@ -3481,7 +3482,7 @@ theorem limit_pos_imp_mean_one
     have hmn' : (m + 2 : ℝ) ≤ (n + 2 : ℝ) := by exact_mod_cast Nat.add_le_add_right hmn 2
     nlinarith [hw.1]
   have hccB_tendsto : ∀ᵐ w ∂LW_lim,
-      Tendsto (fun m => ccB m w) atTop (𝓝 (Set.indicator {(0:ℝ)} (fun _ => (2:ℝ)) w)) := by
+      Tendsto (fun m => ccB m w) atTop (𝓝 (Set.indicator {(0 : ℝ)} (fun _ => (2 : ℝ)) w)) := by
     have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
       rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
     filter_upwards [h_compl] with w hw
@@ -3489,12 +3490,12 @@ theorem limit_pos_imp_mean_one
     by_cases hw0 : w = 0
     · subst hw0
       rw [Set.indicator_of_mem (Set.mem_singleton 0)]
-      have : (fun m => ccB m (0:ℝ)) = fun _ => (2:ℝ) := by
+      have : (fun m => ccB m (0 : ℝ)) = fun _ => (2 : ℝ) := by
         funext m; rw [hccB_apply]; simp
       rw [this]; exact tendsto_const_nhds
     · rw [Set.indicator_of_notMem (by simpa using! hw0)]
       have hwpos : 0 < w := lt_of_le_of_ne hw.1 (Ne.symm hw0)
-      have h_ev : (fun m => ccB m w) =ᶠ[atTop] fun _ => (0:ℝ) := by
+      have h_ev : (fun m => ccB m w) =ᶠ[atTop] fun _ => (0 : ℝ) := by
         filter_upwards [Filter.eventually_atTop.mpr ⟨Nat.ceil (2 / w), fun m hm => hm⟩] with m hm
         rw [hccB_apply, max_eq_left]
         apply min_le_of_left_le
@@ -3503,22 +3504,22 @@ theorem limit_pos_imp_mean_one
         nlinarith [hwpos]
       rw [tendsto_congr' h_ev]; exact tendsto_const_nhds
   have hccB_lim : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop
-      (𝓝 (2 * (LW_lim {(0:ℝ)}).toReal)) := by
-    have hint_ind : Integrable (Set.indicator {(0:ℝ)} (fun _ => (2:ℝ))) LW_lim :=
-      (integrable_const (2:ℝ)).indicator (measurableSet_singleton (0:ℝ))
+      (𝓝 (2 * (LW_lim {(0 : ℝ)}).toReal)) := by
+    have hint_ind : Integrable (Set.indicator {(0 : ℝ)} (fun _ => (2 : ℝ))) LW_lim :=
+      (integrable_const (2 : ℝ)).indicator (measurableSet_singleton (0 : ℝ))
     have h := integral_tendsto_of_tendsto_of_antitone hccB_int hint_ind
       hccB_anti hccB_tendsto
-    rw [MeasureTheory.integral_indicator (measurableSet_singleton (0:ℝ)),
+    rw [MeasureTheory.integral_indicator (measurableSet_singleton (0 : ℝ)),
       MeasureTheory.setIntegral_const, smul_eq_mul, MeasureTheory.measureReal_def] at h
     rwa [mul_comm] at h
   -- Combine: `2·(LW_lim{0}).toReal = 0`, hence `LW_lim {0} = 0`.
-  have hFactB : LW_lim {(0:ℝ)} = 0 := by
-    have heq : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop (𝓝 (0:ℝ)) := by
+  have hFactB : LW_lim {(0 : ℝ)} = 0 := by
+    have heq : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop (𝓝 (0 : ℝ)) := by
       have : (fun m => ∫ w, ccB m w ∂LW_lim) = fun m => ∫ x, fB m x ∂U := by
         funext m; exact (hB_ident m).symm
       rw [this]; exact hfB_lim
-    have h2 : 2 * (LW_lim {(0:ℝ)}).toReal = 0 := tendsto_nhds_unique hccB_lim heq
-    have h3 : (LW_lim {(0:ℝ)}).toReal = 0 := by linarith
+    have h2 : 2 * (LW_lim {(0 : ℝ)}).toReal = 0 := tendsto_nhds_unique hccB_lim heq
+    have h3 : (LW_lim {(0 : ℝ)}).toReal = 0 := by linarith
     exact (ENNReal.toReal_eq_zero_iff _).mp h3 |>.resolve_right (measure_ne_top _ _)
   -- ══ Fact A: `∫ x ∂V = ∫ (2-w)·1_{0<w} ∂LW_lim = 1`. ══
   -- `hA m(x) = min (max x 0) m`, bounded continuous, `↑ max x 0`.
@@ -3527,8 +3528,8 @@ theorem limit_pos_imp_mean_one
     ((continuous_id.max continuous_const).min continuous_const) (m : ℝ)
     (fun x => by
       rw [Real.norm_eq_abs, abs_le]
-      have h0 : (0:ℝ) ≤ min (max x 0) (m : ℝ) := le_min (le_max_right _ _) (by positivity)
-      have hm0 : (0:ℝ) ≤ (m : ℝ) := by positivity
+      have h0 : (0 : ℝ) ≤ min (max x 0) (m : ℝ) := le_min (le_max_right _ _) (by positivity)
+      have hm0 : (0 : ℝ) ≤ (m : ℝ) := by positivity
       exact ⟨by linarith, min_le_right _ _⟩) with hA_def
   have hA_apply : ∀ m x, hA m x = min (max x 0) (m : ℝ) := fun _ _ => rfl
   -- `ccA m(w) = min (2 - cl w) (m · cl w)`, `cl = clamp [0,2]`; bdd-cont, `↑ (2-w)1_{0<w}`.
@@ -3537,11 +3538,11 @@ theorem limit_pos_imp_mean_one
     ((continuous_const.sub ((continuous_id.max continuous_const).min continuous_const)).min
       (continuous_const.mul ((continuous_id.max continuous_const).min continuous_const))) 2
     (fun w => by
-      have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+      have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
       have hcl2 : min (max w 0) 2 ≤ 2 := min_le_right _ _
       rw [Real.norm_eq_abs, abs_le]
       refine ⟨?_, ?_⟩
-      · have : (0:ℝ) ≤ min (2 - min (max w 0) 2) ((m : ℝ) * min (max w 0) 2) :=
+      · have : (0 : ℝ) ≤ min (2 - min (max w 0) 2) ((m : ℝ) * min (max w 0) 2) :=
           le_min (by linarith) (by positivity)
         linarith
       · exact le_trans (min_le_left _ _) (by linarith)) with hccA_def
@@ -3555,7 +3556,7 @@ theorem limit_pos_imp_mean_one
     · -- `w = 0`: both `0`.
       rw [← hw]; simp
     · -- `w > 0`: `(2-w)/w ≥ 0`.
-      have hratio : (0:ℝ) ≤ (2 - w) / w := div_nonneg (by linarith) hw.le
+      have hratio : (0 : ℝ) ≤ (2 - w) / w := div_nonneg (by linarith) hw.le
       rw [max_eq_left hratio, mul_min_of_nonneg _ _ hw.le]
       congr 1
       · field_simp
@@ -3567,18 +3568,18 @@ theorem limit_pos_imp_mean_one
   have hccA_le2 : ∀ m w, ccA m w ≤ 2 := by
     intro m w
     rw [hccA_apply]
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     exact le_trans (min_le_left _ _) (by linarith)
   have hccA_nonneg : ∀ m w, 0 ≤ ccA m w := by
     intro m w
     rw [hccA_apply]
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     have hcl2 : min (max w 0) 2 ≤ 2 := min_le_right _ _
     exact le_min (by linarith) (by positivity)
   have hA_le2 : ∀ m, ∫ x, hA m x ∂V ≤ 2 := by
     intro m
     rw [hA_ident m]
-    calc ∫ w, ccA m w ∂LW_lim ≤ ∫ _, (2:ℝ) ∂LW_lim :=
+    calc ∫ w, ccA m w ∂LW_lim ≤ ∫ _, (2 : ℝ) ∂LW_lim :=
           integral_mono ((ccA m).integrable LW_lim) (integrable_const _)
             (fun w => hccA_le2 m w)
       _ = 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
@@ -3643,7 +3644,7 @@ theorem limit_pos_imp_mean_one
     change ccA m w ≤ ccA n w
     rw [hccA_apply, hccA_apply]
     apply min_le_min le_rfl
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     have : (m : ℝ) ≤ (n : ℝ) := by exact_mod_cast hmn
     nlinarith
   have hccA_tendsto : ∀ᵐ w ∂LW_lim,
@@ -3653,7 +3654,7 @@ theorem limit_pos_imp_mean_one
     have h_zero : ∀ᵐ w ∂LW_lim, w ≠ 0 := by
       rw [ae_iff]
       simp only [ne_eq, Decidable.not_not]
-      have : {w : ℝ | w = 0} = {(0:ℝ)} := by ext w; simp
+      have : {w : ℝ | w = 0} = {(0 : ℝ)} := by ext w; simp
       rw [this]; exact hFactB
     filter_upwards [h_compl, h_zero] with w hw hw0
     simp only [not_or, not_lt] at hw
@@ -3670,11 +3671,11 @@ theorem limit_pos_imp_mean_one
     have : Integrable (fun w : ℝ => w) LW_lim := by
       have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
         rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
-      refine (integrable_const (2:ℝ)).mono' measurable_id.aestronglyMeasurable ?_
+      refine (integrable_const (2 : ℝ)).mono' measurable_id.aestronglyMeasurable ?_
       filter_upwards [h_compl] with w hw
       simp only [not_or, not_lt] at hw
       rw [Real.norm_eq_abs, abs_of_nonneg hw.1]; exact hw.2
-    exact (integrable_const (2:ℝ)).sub this
+    exact (integrable_const (2 : ℝ)).sub this
   have hccA_lim : Tendsto (fun m => ∫ w, ccA m w ∂LW_lim) atTop (𝓝 (∫ w, (2 - w) ∂LW_lim)) :=
     integral_tendsto_of_tendsto_of_monotone (fun m => (ccA m).integrable LW_lim) hF_int
       hccA_mono hccA_tendsto
@@ -3697,7 +3698,7 @@ theorem limit_pos_imp_mean_one
       -- `id` integrable (shown above inside hF_int's proof; reprove quickly).
       have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
         rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
-      refine (integrable_const (2:ℝ)).mono' measurable_id.aestronglyMeasurable ?_
+      refine (integrable_const (2 : ℝ)).mono' measurable_id.aestronglyMeasurable ?_
       filter_upwards [h_compl] with w hw
       simp only [not_or, not_lt] at hw
       rw [Real.norm_eq_abs, abs_of_nonneg hw.1]; exact hw.2)]

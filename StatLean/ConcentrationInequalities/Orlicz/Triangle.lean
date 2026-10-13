@@ -59,74 +59,76 @@ private lemma orliczSet_add_mem {ψ : ℝ → ℝ}
     (a + b) ∈ orliczSet ψ (fun ω => X ω + Y ω) μ := by
   obtain ⟨ha0, haInt⟩ := ha
   obtain ⟨hb0, hbInt⟩ := hb
-  have ha0' : (0:ℝ) < (a:ℝ) := by exact_mod_cast ha0
-  have hb0' : (0:ℝ) < (b:ℝ) := by exact_mod_cast hb0
-  have hab0 : (0:ℝ) < (a:ℝ) + (b:ℝ) := by linarith
-  have hwa : (0:ℝ) ≤ (a:ℝ) / ((a:ℝ) + (b:ℝ)) := by positivity
-  have hwb : (0:ℝ) ≤ (b:ℝ) / ((a:ℝ) + (b:ℝ)) := by positivity
-  have hsum' : (a:ℝ) / ((a:ℝ) + (b:ℝ)) + (b:ℝ) / ((a:ℝ) + (b:ℝ)) = 1 := by
+  have ha0' : (0 : ℝ) < (a : ℝ) := by exact_mod_cast ha0
+  have hb0' : (0 : ℝ) < (b : ℝ) := by exact_mod_cast hb0
+  have hab0 : (0 : ℝ) < (a : ℝ) + (b : ℝ) := by linarith
+  have hwa : (0 : ℝ) ≤ (a : ℝ) / ((a : ℝ) + (b : ℝ)) := by positivity
+  have hwb : (0 : ℝ) ≤ (b : ℝ) / ((a : ℝ) + (b : ℝ)) := by positivity
+  have hsum' : (a : ℝ) / ((a : ℝ) + (b : ℝ)) + (b : ℝ) / ((a : ℝ) + (b : ℝ)) = 1 := by
     rw [← add_div, div_self hab0.ne']
   -- a.e.-measurability of the two ψ-integrands (needed for the additive split)
-  have hg₁ : AEMeasurable (fun ω => ENNReal.ofReal (ψ (|X ω| / (a:ℝ)))) μ :=
+  have hg₁ : AEMeasurable (fun ω => ENNReal.ofReal (ψ (|X ω| / (a : ℝ)))) μ :=
     (hψ_meas.comp_aemeasurable (hX.abs.div_const _)).ennreal_ofReal
   -- pointwise convexity bound
-  have hpt : ∀ ω, ENNReal.ofReal (ψ (|X ω + Y ω| / ((a:ℝ) + (b:ℝ))))
-      ≤ ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ))) * ENNReal.ofReal (ψ (|X ω| / (a:ℝ)))
-        + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ))) * ENNReal.ofReal (ψ (|Y ω| / (b:ℝ))) := by
+  have hpt : ∀ ω, ENNReal.ofReal (ψ (|X ω + Y ω| / ((a : ℝ) + (b : ℝ))))
+      ≤ ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ))) * ENNReal.ofReal (ψ (|X ω| / (a : ℝ)))
+        + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ))) *
+            ENNReal.ofReal (ψ (|Y ω| / (b : ℝ))) := by
     intro ω
-    have hu0 : (0:ℝ) ≤ |X ω| := abs_nonneg _
-    have hv0 : (0:ℝ) ≤ |Y ω| := abs_nonneg _
-    have hxa : |X ω| / (a:ℝ) ∈ Set.Ici (0:ℝ) := Set.mem_Ici.mpr (by positivity)
-    have hyb : |Y ω| / (b:ℝ) ∈ Set.Ici (0:ℝ) := Set.mem_Ici.mpr (by positivity)
+    have hu0 : (0 : ℝ) ≤ |X ω| := abs_nonneg _
+    have hv0 : (0 : ℝ) ≤ |Y ω| := abs_nonneg _
+    have hxa : |X ω| / (a : ℝ) ∈ Set.Ici (0 : ℝ) := Set.mem_Ici.mpr (by positivity)
+    have hyb : |Y ω| / (b : ℝ) ∈ Set.Ici (0 : ℝ) := Set.mem_Ici.mpr (by positivity)
     have hconv := hψ_conv.2 hxa hyb hwa hwb hsum'
     simp only [smul_eq_mul] at hconv
     -- the convex combination equals the scaled sum
-    have hid : (a:ℝ) / ((a:ℝ) + (b:ℝ)) * (|X ω| / (a:ℝ))
-          + (b:ℝ) / ((a:ℝ) + (b:ℝ)) * (|Y ω| / (b:ℝ))
-        = (|X ω| + |Y ω|) / ((a:ℝ) + (b:ℝ)) := by
+    have hid : (a : ℝ) / ((a : ℝ) + (b : ℝ)) * (|X ω| / (a : ℝ))
+          + (b : ℝ) / ((a : ℝ) + (b : ℝ)) * (|Y ω| / (b : ℝ))
+        = (|X ω| + |Y ω|) / ((a : ℝ) + (b : ℝ)) := by
       field_simp
     rw [hid] at hconv
     -- monotonicity shrinks the numerator |X+Y| ≤ |X| + |Y|
-    have hmarg : |X ω + Y ω| / ((a:ℝ) + (b:ℝ)) ≤ (|X ω| + |Y ω|) / ((a:ℝ) + (b:ℝ)) :=
+    have hmarg : |X ω + Y ω| / ((a : ℝ) + (b : ℝ)) ≤ (|X ω| + |Y ω|) / ((a : ℝ) + (b : ℝ)) :=
       (div_le_div_iff_of_pos_right hab0).mpr (abs_add_le _ _)
-    have hm1 : |X ω + Y ω| / ((a:ℝ) + (b:ℝ)) ∈ Set.Ici (0:ℝ) :=
+    have hm1 : |X ω + Y ω| / ((a : ℝ) + (b : ℝ)) ∈ Set.Ici (0 : ℝ) :=
       Set.mem_Ici.mpr (by positivity)
-    have hm2 : (|X ω| + |Y ω|) / ((a:ℝ) + (b:ℝ)) ∈ Set.Ici (0:ℝ) :=
+    have hm2 : (|X ω| + |Y ω|) / ((a : ℝ) + (b : ℝ)) ∈ Set.Ici (0 : ℝ) :=
       Set.mem_Ici.mpr (by positivity)
-    have hreal : ψ (|X ω + Y ω| / ((a:ℝ) + (b:ℝ)))
-        ≤ (a:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|X ω| / (a:ℝ))
-          + (b:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|Y ω| / (b:ℝ)) :=
+    have hreal : ψ (|X ω + Y ω| / ((a : ℝ) + (b : ℝ)))
+        ≤ (a : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|X ω| / (a : ℝ))
+          + (b : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|Y ω| / (b : ℝ)) :=
       (hψ_mono hm1 hm2 hmarg).trans hconv
-    calc ENNReal.ofReal (ψ (|X ω + Y ω| / ((a:ℝ) + (b:ℝ))))
-        ≤ ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|X ω| / (a:ℝ))
-            + (b:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|Y ω| / (b:ℝ))) :=
+    calc ENNReal.ofReal (ψ (|X ω + Y ω| / ((a : ℝ) + (b : ℝ))))
+        ≤ ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|X ω| / (a : ℝ))
+            + (b : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|Y ω| / (b : ℝ))) :=
           ENNReal.ofReal_le_ofReal hreal
-      _ ≤ ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|X ω| / (a:ℝ)))
-            + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ)) * ψ (|Y ω| / (b:ℝ))) :=
+      _ ≤ ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|X ω| / (a : ℝ)))
+            + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ)) * ψ (|Y ω| / (b : ℝ))) :=
           ENNReal.ofReal_add_le
-      _ = ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ))) * ENNReal.ofReal (ψ (|X ω| / (a:ℝ)))
-            + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ))) * ENNReal.ofReal (ψ (|Y ω| / (b:ℝ))) := by
+      _ = ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ))) * ENNReal.ofReal (ψ (|X ω| / (a : ℝ)))
+            + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ))) *
+                ENNReal.ofReal (ψ (|Y ω| / (b : ℝ))) := by
           rw [ENNReal.ofReal_mul hwa, ENNReal.ofReal_mul hwb]
   refine ⟨add_pos ha0 hb0, ?_⟩
   simp only [NNReal.coe_add]
-  calc ∫⁻ ω, ENNReal.ofReal (ψ (|X ω + Y ω| / ((a:ℝ) + (b:ℝ)))) ∂μ
-      ≤ ∫⁻ ω, (ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ENNReal.ofReal (ψ (|X ω| / (a:ℝ)))
-          + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ENNReal.ofReal (ψ (|Y ω| / (b:ℝ)))) ∂μ := lintegral_mono hpt
-    _ = ∫⁻ ω, ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ENNReal.ofReal (ψ (|X ω| / (a:ℝ))) ∂μ
-          + ∫⁻ ω, ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ENNReal.ofReal (ψ (|Y ω| / (b:ℝ))) ∂μ :=
+  calc ∫⁻ ω, ENNReal.ofReal (ψ (|X ω + Y ω| / ((a : ℝ) + (b : ℝ)))) ∂μ
+      ≤ ∫⁻ ω, (ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ENNReal.ofReal (ψ (|X ω| / (a : ℝ)))
+          + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ENNReal.ofReal (ψ (|Y ω| / (b : ℝ)))) ∂μ := lintegral_mono hpt
+    _ = ∫⁻ ω, ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ENNReal.ofReal (ψ (|X ω| / (a : ℝ))) ∂μ
+          + ∫⁻ ω, ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ENNReal.ofReal (ψ (|Y ω| / (b : ℝ))) ∂μ :=
         lintegral_add_left' (hg₁.const_mul _) _
-    _ = ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ∫⁻ ω, ENNReal.ofReal (ψ (|X ω| / (a:ℝ))) ∂μ
-          + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ)))
-            * ∫⁻ ω, ENNReal.ofReal (ψ (|Y ω| / (b:ℝ))) ∂μ := by
+    _ = ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ∫⁻ ω, ENNReal.ofReal (ψ (|X ω| / (a : ℝ))) ∂μ
+          + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ)))
+            * ∫⁻ ω, ENNReal.ofReal (ψ (|Y ω| / (b : ℝ))) ∂μ := by
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
           lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    _ ≤ ENNReal.ofReal ((a:ℝ) / ((a:ℝ) + (b:ℝ))) * 1
-          + ENNReal.ofReal ((b:ℝ) / ((a:ℝ) + (b:ℝ))) * 1 := by
+    _ ≤ ENNReal.ofReal ((a : ℝ) / ((a : ℝ) + (b : ℝ))) * 1
+          + ENNReal.ofReal ((b : ℝ) / ((a : ℝ) + (b : ℝ))) * 1 := by
         gcongr
     _ = 1 := by
         rw [mul_one, mul_one, ← ENNReal.ofReal_add hwa hwb, hsum', ENNReal.ofReal_one]

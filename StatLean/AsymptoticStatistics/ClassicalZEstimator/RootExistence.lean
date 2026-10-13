@@ -362,9 +362,9 @@ theorem finite_empiricalAvg_bad_prob_tendsto_zero {Ω : Type*} [MeasurableSpace 
   rw [hset]
   exact measureReal_iUnion_fintype_le _
 
-/-- **The empirical good event has probability `→ 1`.** Applying the preceding finite-family bound to the three
-families of empirical averages the `ApproximatesLinearOn` route needs — `ℙₙψ̈`, the Jacobian
-entries `ℙₙψ̇_{θ₀,ⱼᵢ}`, and the estimating functions `ℙₙψ_{θ₀,j}` at the truth — the good
+/-- **The empirical good event has probability `→ 1`.** Applying the preceding finite-family bound
+to the three families of empirical averages the `ApproximatesLinearOn` route needs — `ℙₙψ̈`, the
+Jacobian entries `ℙₙψ̇_{θ₀,ⱼᵢ}`, and the estimating functions `ℙₙψ_{θ₀,j}` at the truth — the good
 event
 
     `Aₙ,ε = {|ℙₙψ̈ − Pψ̈| < ε} ∩ {∀ j i, |(ℙₙψ̇_{θ₀})ⱼᵢ − Vⱼᵢ| < ε}

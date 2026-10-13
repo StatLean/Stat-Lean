@@ -257,7 +257,7 @@ lemma integral_diff_le_two_mul_hellinger_eLpNorm
   have h_sqrt_B_le : Real.sqrt (∫ ω, B ω ^ 2 ∂ξ) ≤ 2 := by
     have h1 := Real.sqrt_le_sqrt hB_sq_le
     have h2 : Real.sqrt (4 : ℝ) = 2 := by
-      rw [show (4 : ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)]
+      rw [show (4 : ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
     linarith
   -- Combine: |∫ A · (f·B)| ≤ √(∫A²) · √(∫(f·B)²) ≤ √(∫A²) · M · 2 = 2M · √(∫A²).
   have h_sqrt_A_nn : 0 ≤ Real.sqrt (∫ ω, A ω ^ 2 ∂ξ) := Real.sqrt_nonneg _

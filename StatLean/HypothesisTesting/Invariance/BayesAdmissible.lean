@@ -293,7 +293,8 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
     rcases le_or_gt 0 k with hk | hk
     · -- `k ≥ 0`: `φ = φ₀` `μ`-a.e. by the vanishing Bayes objective
       have hμae : φ =ᵐ[μ] φ₀ := by
-        have hIpt : ∀ x, 0 ≤ (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) := by
+        have hIpt : ∀ x, 0 ≤ (φ₀ x - φ x) *
+            (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) := by
           intro x
           by_cases hcond : k * mixtureDensity f Λ₀ x ≤ mixtureDensity f Λ₁ x
           · have e0 : φ₀ x = 1 := by rw [hφ0def]; simp only [bayesTest, ite_eq_left hcond]

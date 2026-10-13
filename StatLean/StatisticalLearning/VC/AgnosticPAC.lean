@@ -123,7 +123,7 @@ theorem vc_empRad_le (𝓗 : Set (X → Bool)) (s : Sample (X × Bool) n)
   have hnn : Real.sqrt n * Real.sqrt n = (n : ℝ) := Real.mul_self_sqrt hnR.le
   have halg : Real.sqrt n * Real.sqrt (2 * Real.log (hfin.toFinset.card)) / n
       = Real.sqrt (2 * Real.log (hfin.toFinset.card) / n) := by
-    rw [Real.sqrt_div (by positivity : (0:ℝ) ≤ 2 * Real.log (hfin.toFinset.card)) ((n : ℝ)),
+    rw [Real.sqrt_div (by positivity : (0 : ℝ) ≤ 2 * Real.log (hfin.toFinset.card)) ((n : ℝ)),
       div_eq_div_iff (ne_of_gt hnR) (ne_of_gt hsqrtn)]
     calc Real.sqrt n * Real.sqrt (2 * Real.log (hfin.toFinset.card)) * Real.sqrt n
         = Real.sqrt (2 * Real.log (hfin.toFinset.card)) * (Real.sqrt n * Real.sqrt n) := by
@@ -244,11 +244,11 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
       Real.sqrt (2 * Real.log (4 / δ) / n) with hBdef
   have hMnn : 0 ≤ M := Real.sqrt_nonneg _
   have hsqrt4 : Real.sqrt 4 = 2 := by
-    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)]
+    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
   have h2M : 2 * M = Real.sqrt (8 * d * Real.log (Real.exp 1 * n / d) / n) := by
     rw [hMdef, show (8 : ℝ) * d * Real.log (Real.exp 1 * n / d) / n
         = 4 * (2 * d * Real.log (Real.exp 1 * n / d) / n) by ring,
-      Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 4), hsqrt4]
+      Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4), hsqrt4]
   have hδlog : (2 : ℝ) / (δ / 2) = 4 / δ := by
     rw [div_div_eq_mul_div]; norm_num
   -- the two one-sided events
@@ -306,7 +306,7 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
           Set.univ s' ∂(sampleLaw D n)) +
         1 * Real.sqrt (2 * Real.log (2 / (δ / 2)) / n) ≤ B := by
       rw [hδlog, hBdef, ← h2M]
-      have : (0:ℝ) ≤ Real.sqrt (2 * Real.log (4 / δ) / n) := Real.sqrt_nonneg _
+      have : (0 : ℝ) ≤ Real.sqrt (2 * Real.log (4 / δ) / n) := Real.sqrt_nonneg _
       linarith
     exact le_trans hk hbnd
   -- Theorem 26.5(1) on the negated loss family
@@ -331,7 +331,7 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
     rw [hrisk, hemp] at hk
     refine le_trans hk ?_
     rw [hδlog, hBdef, ← h2M]
-    have : (0:ℝ) ≤ Real.sqrt (2 * Real.log (4 / δ) / n) := Real.sqrt_nonneg _
+    have : (0 : ℝ) ≤ Real.sqrt (2 * Real.log (4 / δ) / n) := Real.sqrt_nonneg _
     linarith
   -- union bound on the complements
   have hcomplbnd : ∀ (E : Set (Sample (X × Bool) n)), MeasurableSet E →
@@ -343,7 +343,7 @@ theorem vc_uniformDeviation_hp (𝓗 : Set (X → Bool))
         tsub_le_tsub_left hE 1
       _ = ENNReal.ofReal (δ / 2) := by
         rw [← ENNReal.ofReal_one,
-          ← ENNReal.ofReal_sub _ (by linarith : (0:ℝ) ≤ 1 - δ / 2)]
+          ← ENNReal.ofReal_sub _ (by linarith : (0 : ℝ) ≤ 1 - δ / 2)]
         norm_num
   have hc1 := hcomplbnd _ hE1meas hE1
   have hc2 := hcomplbnd _ hE2meas hE2
@@ -572,9 +572,9 @@ theorem vc_isAgnosticPACLearnerWith (𝓗 : Set (X → Bool))
       rw [hWdef]; field_simp; ring
     have hfinal : Real.sqrt (8 * (d : ℝ) * Real.log (Real.exp 1 * m / d) / m)
         + Real.sqrt (2 * Real.log (4 / δ) / m) ≤ ε / 2 := by
-      rw [hu, hv, Real.sqrt_mul (by positivity : (0:ℝ) ≤ (ε / 2) ^ 2),
-        Real.sqrt_mul (by positivity : (0:ℝ) ≤ (ε / 2) ^ 2),
-        Real.sqrt_sq (by linarith : (0:ℝ) ≤ ε / 2),
+      rw [hu, hv, Real.sqrt_mul (by positivity : (0 : ℝ) ≤ (ε / 2) ^ 2),
+        Real.sqrt_mul (by positivity : (0 : ℝ) ≤ (ε / 2) ^ 2),
+        Real.sqrt_sq (by linarith : (0 : ℝ) ≤ ε / 2),
         Real.sqrt_div hPnn ((m : ℝ)), Real.sqrt_div hW ((m : ℝ))]
       have hratio : (Real.sqrt ((a / 2) * (e1 + Real.log m)) + Real.sqrt W)
           / Real.sqrt m ≤ 1 := (div_le_one hsqrtm).mpr hPW

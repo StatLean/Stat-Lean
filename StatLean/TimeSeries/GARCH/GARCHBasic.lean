@@ -1054,7 +1054,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
   have hmY : ∀ t : ℤ, Measurable fun ω => X t ω ^ 2 := fun t => (hmX t).pow_const 2
   have hmV : ∀ t : ℤ, Measurable fun ω => σvol t ω ^ 2 :=
     fun t => (h.measurableVol t).pow_const 2
-  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ := fun t => memLp_sq_of_memLp_four' (hmX t) (hL4 t)
+  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ :=
+    fun t => memLp_sq_of_memLp_four' (hmX t) (hL4 t)
   have hYint : ∀ t : ℤ, Integrable (fun ω => X t ω ^ 2) μ :=
     fun t => (hY2 t).integrable one_le_two
   have hYsqint : ∀ t : ℤ, Integrable (fun ω => (X t ω ^ 2) ^ 2) μ :=
@@ -1115,7 +1116,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
         measurable_id (measurable_id.pow_const 2)
     rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
       ((hmV t).pow_const 2).aestronglyMeasurable
-      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable,
+          iidNoise_integral_sq h.iid t, mul_one]
   ---------------------------------------------------------------- E X² fixed point
   have hmfix : m = c0 + (b1 + a1) * m := by
     have i1 : Integrable (fun ω => c0 + b1 * X (0 - 1) ω ^ 2) μ :=
@@ -1239,7 +1241,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
       (indepFun_of_sigmaLT' (h.indep_past t) hfm).comp measurable_id (measurable_id.pow_const 2)
     rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
       (((hmV t).mul (hmY 0)).aestronglyMeasurable)
-      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable,
+          iidNoise_integral_sq h.iid t, mul_one]
   have hBrec : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 * X 0 ω ^ 2 ∂μ
       = c0 * m + b1 * (∫ ω, X (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ)
         + a1 * ∫ ω, σvol (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ := by

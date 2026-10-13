@@ -76,7 +76,7 @@ private theorem hasSum_sq_of_hasSum_inner {f : ι → H} {h : H}
 /-- The defining `HasSum` of the `ℓ²` norm, specialized to `p = 2`. -/
 private theorem lp2_hasSum_sq' (x : lp (fun _ : ι => 𝕜) 2) :
     HasSum (fun i => ‖x i‖ ^ 2) (‖x‖ ^ 2) := by
-  have h2 : (0:ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
+  have h2 : (0 : ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
   simpa using lp.hasSum_norm h2 x
 
 /-- The span of the kernel functions `k_x` is dense in a scalar RKHS. -/

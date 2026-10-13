@@ -12,7 +12,7 @@ of finitely many *relabelled coordinates*. The whole first- and second-moment ca
 such statistics rests on two facts, which is what this file records: under a uniform `σ`,
 
 * a single coordinate is uniform on the `N` items,
-  $$ |\mathbf{S}_N|^{-1} \sum_\sigma h(\sigma u) = N^{-1} \sum_l h(l) ; $$
+  $$ |\mathbf{S}_N|^{-1} \sum_\sigma h(\sigma u) = N^{-1} \sum_l h(l); $$
 * a pair of *distinct* coordinates is uniform on the `N(N-1)` ordered pairs of distinct
   items,
   $$ |\mathbf{S}_N|^{-1} \sum_\sigma h(\sigma u, \sigma v)

@@ -83,7 +83,8 @@ positive/negative counts `a, b` among the remaining nulls (`k = a+b`), revealing
 sign uniformly (`+` w.p. `a/k`, `−` w.p. `b/k`) does not increase the ratio `a/(1+b)`:
 `(a/k)·(a−1)/(1+b) + (b/k)·(a/b) ≤ a/(1+b)`. Equality for `b ≥ 1`; strict at `b = 0` (`a−1 ≤ a`).
 Division uses Lean's `x/0 = 0` convention. This is the finite inequality the one-step
-conditional-expectation bound `step_condExp_le` reduces to (see `notes/.../construction_audit.md`). -/
+conditional-expectation bound `step_condExp_le`
+reduces to (see `notes/.../construction_audit.md`). -/
 lemma step_ratio_le (a b : ℕ) :
     (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b)) +
       (b : ℝ) / (a + b) * ((a : ℝ) / b) ≤ (a : ℝ) / (1 + b) := by

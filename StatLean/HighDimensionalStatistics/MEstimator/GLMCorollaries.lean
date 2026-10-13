@@ -188,7 +188,8 @@ private lemma psi_convexOn (M : GLMExpFamily n d μ) : ConvexOn ℝ Set.univ M.�
 private lemma glmSummand_convexOn (M : GLMExpFamily n d μ) (ω : Ω) (i : Fin n) :
     ConvexOn ℝ Set.univ (glmSummand M ω i) := by
   have hcomp : ConvexOn ℝ Set.univ
-      (M.ψ ∘ ⇑(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin d)) (rowVec M i)).toLinearMap) := by
+      (M.ψ ∘ ⇑(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin d))
+          (rowVec M i)).toLinearMap) := by
     have h := (psi_convexOn M).comp_linearMap
       (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin d)) (rowVec M i)).toLinearMap
     rwa [Set.preimage_univ] at h
@@ -314,8 +315,8 @@ theorem glmCost_gradient_eq_scoreVec (M : GLMExpFamily n d μ) (ω : Ω) :
 
 /-- **Corollary 9.26 — GLM Lasso `ℓ₂`/`ℓ₁` rates.** Under (G1) column normalization, (G2) the GLM
 exp-family with `0 ≤ ψ'' ≤ B²`, the RSC condition (9.62) at `θ*` (USER-INPUT), `θ*` supported on `S`
-(`s = |S|`), and `λ = 4BC{√(log d/n) + δ}`, the `ℓ₁`-regularized GLM Lasso satisfies, with probability
-`≥ 1 − 2e^{−2nδ²}`,
+(`s = |S|`), and `λ = 4BC{√(log d/n) + δ}`, the `ℓ₁`-regularized GLM Lasso satisfies, with
+probability `≥ 1 − 2e^{−2nδ²}`,
 `‖θ̂ − θ*‖₂² ≤ 144·s·λ²/κ²` and `‖θ̂ − θ*‖₁ ≤ 48·s·λ/κ`. -/
 theorem glm_lasso_l2_l1_rate (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (S : Finset (Fin d)) (C κ R δ lam : ℝ) (θhat : Ω → EuclideanSpace ℝ (Fin d))
@@ -325,7 +326,8 @@ theorem glm_lasso_l2_l1_rate (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (hδ_pos : 0 < δ) (hδ_lt : δ < 1) (hB : 0 < M.B) (hCpos : 0 < C)
     -- USER-INPUT: target is `s`-sparse, supported on `S`; Wainwright Cor 9.26.
     (hsparse : M.θstar ∈ suppSubmodule S)
-    -- USER-INPUT: RSC condition (9.62) for the GLM cost (radius `1`, tolerance `c₁ log d/n`); Wainwright Cor 9.26 (defers to Thm 9.36).
+    -- USER-INPUT: RSC condition (9.62) for the GLM cost (radius `1`,
+    -- tolerance `c₁ log d/n`); Wainwright Cor 9.26 (defers to Thm 9.36).
     (τSq : ℝ) (hτSq : 0 ≤ τSq)
     (hRSC : ∀ ω, RSC (glmCost M ω) M.θstar (l1Seminorm d) κ R τSq)
     -- USER-INPUT: slack `τ²·s ≤ κ/128`; Wainwright Cor 9.26 (sample-size condition).
@@ -374,8 +376,8 @@ theorem glm_lasso_l2_l1_rate (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     rw [hΨsq] at hb
     exact hb
 
-/-- **Corollary 9.27 — GLM Lasso `ℓ∞` rate.** In addition to the Corollary 9.26 hypotheses, under the
-`ℓ∞`-curvature condition (9.64) (USER-INPUT) and the localization `Φ*(θ̂−θ*) ≤ R`, the GLM Lasso
+/-- **Corollary 9.27 — GLM Lasso `ℓ∞` rate.** In addition to the Corollary 9.26 hypotheses, under
+the `ℓ∞`-curvature condition (9.64) (USER-INPUT) and the localization `Φ*(θ̂−θ*) ≤ R`, the GLM Lasso
 satisfies `‖θ̂ − θ*‖∞ ≤ 3λ/κ` with probability `≥ 1 − 2e^{−2nδ²}`. (Tuning `λ = 4BC{√(log d/n)+δ}`,
 the same level as Cor 9.26 — see the file header tuning note.) -/
 theorem glm_lasso_linf_rate (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
@@ -390,7 +392,8 @@ theorem glm_lasso_linf_rate (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (hslack : τ * (S.card : ℝ) < κ / 32)
     -- USER-INPUT: localization `Φ*(θ̂−θ*) ≤ R`; Wainwright Cor 9.27.
     (hRloc : ∀ ω, linfNorm (θhat ω - M.θstar) ≤ R)
-    -- USER-INPUT: tuning `λ = 4BC{√(log d/n) + δ}`; Wainwright Cor 9.27 (good-event level, see header).
+    -- USER-INPUT: tuning `λ = 4BC{√(log d/n) + δ}`;
+    -- Wainwright Cor 9.27 (good-event level, see header).
     (hlam : lam = 4 * M.B * C * (Real.sqrt (Real.log d / n) + δ))
     (hopt : ∀ ω θ, glmCost M ω (θhat ω) + lam * l1Norm (θhat ω)
         ≤ glmCost M ω θ + lam * l1Norm θ) :

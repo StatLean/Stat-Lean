@@ -703,7 +703,7 @@ private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [Measur
     rw [show (fun ω => (Y 0 ω) ^ 2) = fun ω => ((Z 0 ω) ^ 2 - 1) ^ 2 from by
       funext ω; simp [hY]]
     rw [← h, hv]; norm_num
-  have hvar : Var[Y 0 ; P₀] = (Real.sqrt 2) ^ 2 := by
+  have hvar : Var[Y 0; P₀] = (Real.sqrt 2) ^ 2 := by
     rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), variance_eq_integral (hYmeas 0).aemeasurable]
     have hmz : P₀[Y 0] = 0 := hmean
     rw [hmz]; simp only [sub_zero]; exact hYsq

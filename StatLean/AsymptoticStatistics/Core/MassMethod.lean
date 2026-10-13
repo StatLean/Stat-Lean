@@ -2236,7 +2236,7 @@ private lemma isProbabilityMeasure_convex_mixture
   refine ⟨?_⟩
   rw [Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
       measure_univ, measure_univ, smul_eq_mul, smul_eq_mul, mul_one, mul_one]
-  rw [← ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ 1 - t) ht_nn]
+  rw [← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ 1 - t) ht_nn]
   rw [show (1 - t) + t = (1 : ℝ) from by ring, ENNReal.ofReal_one]
 
 /-- *Theorem 1, Part 1 of `point_mass_vonMise.tex`.* The point-mass
@@ -2275,7 +2275,7 @@ theorem vonMises_pointMass_derivative
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0), t ∈ Set.Ioo (0:ℝ) 1 :=
+  have hE : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0), t ∈ Set.Ioo (0 : ℝ) 1 :=
     h_ioo
   have h_eventually : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (f x - μ) + h.R (ENNReal.ofReal (1 - t) • P
@@ -2309,7 +2309,7 @@ theorem vonMises_pointMass_derivative
           = (1 - t) * μ + t * f x := by
       rw [integral_add_measure h_smul_P_int h_smul_dirac_int,
           integral_smul_measure, integral_smul_measure, h_int_dirac]
-      simp [hμ_def, ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [hμ_def, ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     -- Reduce: divide both sides of h_exp by t.
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
@@ -2479,8 +2479,8 @@ theorem vonMises_imp_TVFrechetMixture
       rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
       refine ⟨Set.Iio δ, Iio_mem_nhds hδ_pos, ?_⟩
       intro y hy; exact ⟨hy.2, hy.1⟩
-    have hE_δ : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-        t ∈ Set.Ioo (0:ℝ) δ := h_ioo_δ
+    have hE_δ : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        t ∈ Set.Ioo (0 : ℝ) δ := h_ioo_δ
     filter_upwards [hev, hE_δ] with t ht_curve ht_δ
     obtain ⟨ht_pos, ht_lt_δ⟩ := ht_δ
     have ht_abs : |t| < δ := by rw [abs_of_pos ht_pos]; exact ht_lt_δ
@@ -2524,8 +2524,8 @@ theorem vonMises_imp_TVFrechetMixture
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-      t ∈ Set.Ioo (0:ℝ) 1 := h_ioo_unit
+  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      t ∈ Set.Ioo (0 : ℝ) 1 := h_ioo_unit
   have h_eventually : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (∫ ω, f ω ∂Q - ∫ ω, f ω ∂P)
           + h.R (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Q) / t
@@ -2551,7 +2551,7 @@ theorem vonMises_imp_TVFrechetMixture
           = (1 - t) * (∫ ω, f ω ∂P) + t * (∫ ω, f ω ∂Q) := by
       rw [integral_add_measure h_smul_P_int h_smul_Q_int,
           integral_smul_measure, integral_smul_measure]
-      simp [ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
     rw [h_exp, h_int_Qt]
@@ -2662,8 +2662,8 @@ theorem R_decay_of_1d_deriv
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-      t ∈ Set.Ioo (0:ℝ) 1 := h_ioo_unit
+  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      t ∈ Set.Ioo (0 : ℝ) 1 := h_ioo_unit
   have h_eq : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (Ψ (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • M) - Ψ P) / t
           - (∫ x, ϕ x ∂M - ∫ x, ϕ x ∂P)
@@ -2689,7 +2689,7 @@ theorem R_decay_of_1d_deriv
           = (1 - t) * (∫ ω, ϕ ω ∂P) + t * (∫ ω, ϕ ω ∂M) := by
       rw [integral_add_measure h_smul_P_int h_smul_M_int,
           integral_smul_measure, integral_smul_measure]
-      simp [ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
     rw [h_exp_Qt, h_int_Qt]

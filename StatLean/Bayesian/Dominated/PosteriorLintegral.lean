@@ -5,7 +5,8 @@ import StatLean.Bayesian.Dominated.PosteriorDensity
 
 The posterior expectation of a nonnegative functional, in dominated form: for predictive-a.e. `x`,
 $$\int_\Theta g(\theta)\,\pi(d\theta \mid x)
-   = \frac{\int_\Theta g(\theta)\,p(\theta, x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')},$$
+   = \frac{\int_\Theta g(\theta)\,p(\theta,
+   x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')},$$
 and its set-indicator special case `π(s | x) = ∫_s p(·,x) dπ / ∫ p(·,x) dπ`.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
