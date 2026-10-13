@@ -224,7 +224,6 @@ private lemma isFiniteMeasure_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
 private lemma empiricalMeasure_Iic_toReal {n : ℕ} (x : Fin n → ℝ) (y : ℝ) :
     ((empiricalMeasure x) (Set.Iic y)).toReal
       = (n : ℝ)⁻¹ * ∑ i, Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (x i) := by
-  have := isFiniteMeasure_empiricalMeasure x
   rw [← measureReal_def, ← integral_indicator_one (μ := empiricalMeasure x) measurableSet_Iic,
     integral_empiricalMeasure x (Set.indicator (Set.Iic y) (1 : ℝ → ℝ))]
 
@@ -522,7 +521,6 @@ private lemma exists_uniform_sq_trunc {F : ℕ → Measure ℝ} {Q : Measure ℝ
   have hvanish : ∀ (μ : Measure ℝ), IsProbabilityMeasure μ → MemLp (fun t : ℝ => t) 2 μ →
       Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop (𝓝 0) := by
     intro μ hμ hμ2
-    have := hμ
     have hsqint : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
     have hDCT : Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop
         (𝓝 (∫ _t : ℝ, (0 : ℝ) ∂μ)) := by

@@ -79,7 +79,6 @@ lemma card_le_of_isSeparated_ball {d : ℕ} [NeZero d] {ε : ℝ} (hε₀ : 0 < 
     (hsep : Metric.IsSeparated (ENNReal.ofReal ε) C) :
     (C.ncard : ℝ) ≤ (1 + 2 / ε) ^ d := by
   -- Work with the finset F = hfin.toFinset.
-  have : Fintype C := hfin.fintype
   set F := hfin.toFinset with hF_def
   have hFC : (F : Set _) = C := hfin.coe_toFinset
   have hncard : C.ncard = F.card := by rw [← hFC, Set.ncard_coe_finset]

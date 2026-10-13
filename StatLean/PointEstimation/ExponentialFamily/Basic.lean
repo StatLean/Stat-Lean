@@ -211,10 +211,6 @@ theorem pi_P_eq_pow_P (E : ExpFamily 𝓧 V)
   have hg : Measurable fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) :=
     (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
       measurable_const).exp.ennreal_ofReal
-  have : IsZeroOrProbabilityMeasure (E.base.withDensity
-      fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) := by
-    rw [← P_eq_withDensity E hη, show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl]
-    infer_instance
   rw [show (Measure.pi fun _ : Fin n => E.P η)
         = Measure.pi fun _ : Fin n => E.base.withDensity
             fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) by

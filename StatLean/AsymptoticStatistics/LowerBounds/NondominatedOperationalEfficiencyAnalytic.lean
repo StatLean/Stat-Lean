@@ -42,8 +42,6 @@ theorem proj_seq_to_eif_nd
       (∀ m, p m ∈ V m ∧ IF_eff - p m ∈ (V m)ᗮ) ∧
       Tendsto (fun m => ‖p m - IF_eff‖) atTop (nhds 0) := by
   classical
-  have : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
-    L2ZeroMean_isClosed P
   have h_clos : IF_eff ∈ closure
       ((Submodule.span ℝ C.carrier : Submodule ℝ ↥(L2ZeroMean P)) :
         Set ↥(L2ZeroMean P)) := by
@@ -1063,8 +1061,6 @@ theorem residual_subseq_limit_eq_dirac_of_regular
           fun g : ↥S => normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X)) :=
       fun k => (hpairMeas k).prodMk (hvecMeas k)
     have hpairProb : ∀ k, IsProbabilityMeasure (pairSeq k) := fun k =>
-      (by infer_instance)
-    have hvecProb : ∀ k, IsProbabilityMeasure (vecSeq k) := fun k =>
       (by infer_instance)
     have hjointProb : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
       (by infer_instance)

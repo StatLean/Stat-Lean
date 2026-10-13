@@ -242,8 +242,6 @@ private theorem pi_absCont_add' (n : ℕ) (μ ν : Measure α)
   have hμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
   set ξ : Measure α := μ + ν with hξ
   have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
-  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
-    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
   have hpiμ : (Measure.pi fun _ : Fin n => μ)
       = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
     rw [pi_withDensity_prod (fun _ => hfμ)]
@@ -266,10 +264,6 @@ private theorem sqHellinger_pi_factor' (n : ℕ) (μ ν : Measure α)
   set ξ : Measure α := μ + ν with hξ
   have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
   have hfν : Measurable (ν.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
-  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
-    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
-  have : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (ν.rnDeriv ξ)) := by
-    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hν]; infer_instance
   have hpiμ : (Measure.pi fun _ : Fin n => μ)
       = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
     rw [pi_withDensity_prod (fun _ => hfμ)]

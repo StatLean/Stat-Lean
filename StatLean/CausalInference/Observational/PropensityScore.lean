@@ -327,8 +327,7 @@ theorem propensity_mem_Icc [IsProbabilityMeasure μ] (x : 𝒳) :
   rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
   · rw [propensity, cond_eq_zero_of_meas_eq_zero h0]
     simp
-  · have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
-    refine ENNReal.toReal_le_of_le_ofReal zero_le_one ?_
+  · refine ENNReal.toReal_le_of_le_ofReal zero_le_one ?_
     simpa using prob_le_one (μ := μ[|cell X x]) (s := treatedEvent Z)
 
 /-- **The propensity score is a balancing score** (Ding Theorem 11.3): the conditional

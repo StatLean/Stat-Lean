@@ -329,8 +329,6 @@ theorem coarseningScoreSpace_eq_observedTangent_orthogonal
     (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
     coarseningScoreSpace hM hπY P_full
       = (observedTangent hM P_full (nonparametricYTangent hπY P_full))ᗮ := by
-  have : IsProbabilityMeasure (P_full.map M) :=
-    (by infer_instance)
   apply Submodule.ext
   intro b
   -- The adjoint identity `⟪Π a, b⟫ = ⟪E(doobSymm b | Y), a⟫` for any `σ(πY)`-measurable `a`.
@@ -449,8 +447,6 @@ theorem observedTangent_carScore_factors
            (b : Lp ℝ 2 (P_full.map M))⟫_ℝ = 0)
     ∧ (observedTangent hM P_full (nonparametricYTangent hπY P_full)
          ⊔ coarseningScoreSpace hM hπY P_full).topologicalClosure = ⊤ := by
-  have : IsProbabilityMeasure (P_full.map M) :=
-    (by infer_instance)
   have hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   refine ⟨inner_observedTangent_coarseningScore_eq_zero hM hπY P_full, ?_⟩
@@ -479,8 +475,6 @@ theorem observedTangent_decomp
       ∃ b ∈ coarseningScoreSpace hM hπY P_full,
       g = p + b ∧
       ⟪(p : Lp ℝ 2 (P_full.map M)), (b : Lp ℝ 2 (P_full.map M))⟫_ℝ = 0 := by
-  have : IsProbabilityMeasure (P_full.map M) :=
-    (by infer_instance)
   have hcsE : CompleteSpace ↥(L2ZeroMean (P_full.map M)) :=
     (L2ZeroMean_isClosed (P_full.map M)).completeSpace_coe
   -- `coarseningScoreSpace` is the kernel of a continuous linear map, hence closed,

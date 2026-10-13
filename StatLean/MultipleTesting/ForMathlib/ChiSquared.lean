@@ -294,8 +294,6 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     change Integrable (fun x => Real.exp (l * id x)) (chiSquared n)
     simpa only [id_eq] using integrable_exp_mul_chiSquared hn hl
   -- ASSEMBLE: equal char. functions ⇒ equal laws (imaginary axis lies in the MGF strip)
-  have : IsProbabilityMeasure (Measure.map S μ) :=
-    (by infer_instance)
   refine MeasureTheory.Measure.ext_of_charFun (funext fun t => ?_)
   rw [← complexMGF_mul_I hSmeas.aemeasurable t, ← complexMGF_id_mul_I t]
   refine eqOn_complexMGF_of_mgf hA ?_

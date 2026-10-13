@@ -472,8 +472,6 @@ private lemma jointHXY_eq_reparam
   set K_T : Kernel (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
       (EuclideanSpace ℝ (Fin d)) := T.comap Prod.snd measurable_snd with hKT_def
   have : SFinite μ_HX := by rw [hμHX_def]; infer_instance
-  have : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
-  have : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
   -- Measurability bricks.
   have hμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) => posteriorMean J τ x) :=
     (matrixToEuclideanCLMRect (posteriorCov J τ * J)).continuous.measurable
@@ -625,9 +623,6 @@ theorem G_Lambda_indep_W_Lambda
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (posteriorCov J τ) with hν_S_def
   set π_X : Measure (EuclideanSpace ℝ (Fin k)) := marginalGaussianShift J τ with hπ_X_def
   have : IsProbabilityMeasure ν_S := by rw [hν_S_def]; infer_instance
-  have : IsProbabilityMeasure π_X := by
-    rw [hπ_X_def, marginalGaussianShift]; infer_instance
-  have : IsProbabilityMeasure (π_X ⊗ₘ T) := inferInstance
   -- Measurability.
   have hAμ : Measurable (fun x : EuclideanSpace ℝ (Fin k) =>
       (WithLp.equiv 2 (Fin d → ℝ)).symm
@@ -818,7 +813,6 @@ theorem T_minus_AH_law_eq_L_under_prior
   have : IsProbabilityMeasure πτ := by rw [hπτ_def]; infer_instance
   have : IsProbabilityMeasure ν_J := by rw [hν_J_def]; infer_instance
   have : SFinite μ_HX := by rw [hμHX_def]; infer_instance
-  have : IsMarkovKernel K_T := by rw [hKT_def]; infer_instance
   -- Now compute the LHS of the goal via `compProd_apply` + Fubini.
   ext s' hs'
   -- Reduce per-`h` to `nullDist s'` via the equivariance hypothesis.
@@ -1305,7 +1299,6 @@ theorem joint_GW_weak_indep_limit
     exact hW_charFun t
   refine ⟨W, hW_prob, ?_⟩
   intros f hf_cont hf_bdd
-  have : IsProbabilityMeasure W := hW_prob
   have h_W_prob_n : ∀ n, IsProbabilityMeasure (W_Lambda_law J (τ_seq n) A T) := by
     intro n
     have : IsProbabilityMeasure

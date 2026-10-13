@@ -102,16 +102,8 @@ theorem ext_of_integral_exp_inner_eqOn
       rw [← h t₀ ht₀S, hμ0, integral_zero_measure] at hpos
       exact lt_irrefl 0 hpos
     rw [hμ0, hν0]
-  · have hνne : NeZero ν := by
-      refine ⟨?_⟩
-      intro hc
-      have hpos := integral_exp_pos (μ := μ) (f := φ) (hμ t₀ ht₀S)
-      rw [h t₀ ht₀S, hc, integral_zero_measure] at hpos
-      exact lt_irrefl 0 hpos
-    have hμint : Integrable (fun x => Real.exp (φ x)) μ := hμ t₀ ht₀S
+  · have hμint : Integrable (fun x => Real.exp (φ x)) μ := hμ t₀ ht₀S
     have hνint : Integrable (fun x => Real.exp (φ x)) ν := hν t₀ ht₀S
-    have hpμ : IsProbabilityMeasure (μ.tilted φ) := isProbabilityMeasure_tilted hμint
-    have hpν : IsProbabilityMeasure (ν.tilted φ) := isProbabilityMeasure_tilted hνint
     have hZ : (∫ x, Real.exp (φ x) ∂μ) = ∫ x, Real.exp (φ x) ∂ν := h t₀ ht₀S
     -- Tilted Laplace transforms agree on the recentered box.
     have htrans' : ∀ a, t₀ + a ∈ S →
@@ -160,10 +152,6 @@ theorem ext_of_integral_exp_inner_eqOn
       have hStint : (interior St).Nonempty := by
         rw [hStopen.interior_eq]; exact ⟨0, h0St⟩
       have hmemS : ∀ r ∈ St, t₀ + r • t ∈ S := fun r hr => interior_subset hr
-      have : IsProbabilityMeasure ((μ.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
-        (by infer_instance)
-      have : IsProbabilityMeasure ((ν.tilted φ).map (fun x => ⟪t, x⟫_ℝ)) :=
-        (by infer_instance)
       -- integrability of the pushforward Laplace transforms
       have hPint : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin s))),
           (∀ a, t₀ + a ∈ S → Integrable (fun x => Real.exp ⟪a, x⟫_ℝ) (ρ.tilted φ)) →

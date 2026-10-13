@@ -96,8 +96,6 @@ private lemma gaussianVector_zero_eq_map_smul_stdGaussian {N : ℕ} (σ2 : ℝ�
     congr 1
     apply NNReal.coe_injective
     simp [ha, Real.sq_sqrt (NNReal.coe_nonneg σ2)]
-  have hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun x => a * x)) := by
-    intro _; rw [hcoord]; infer_instance
   -- rewrite the left-hand side into the same product-of-Gaussians form
   have hLHS : gaussianVector (0 : EuclideanSpace ℝ (Fin N)) σ2
       = (Measure.pi (fun _ : Fin N => gaussianReal (0 : ℝ) σ2)).map (WithLp.toLp 2) := rfl

@@ -260,7 +260,6 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
   have : NullSingletonClass (coxMeasure β Λ₀ z hfin) := ⟨coxMeasure_singleton β Λ₀ z hfin⟩
   have hev : IsEventTimeLaw (coxMeasure β Λ₀ z hfin) :=
     isEventTimeLaw_coxMeasure β Λ₀ z hΛ0 hfin htot
-  have := hev.1
   -- the survival function of the constructed law is the Cox survival function
   have hsurv : ∀ t, survivalReal (coxMeasure β Λ₀ z hfin) t = coxSurvival β Λ₀ z t := by
     intro t

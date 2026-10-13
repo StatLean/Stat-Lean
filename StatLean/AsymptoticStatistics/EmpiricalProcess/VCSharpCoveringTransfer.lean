@@ -142,8 +142,6 @@ theorem exists_universalVCAdmissibleStrictTwoRadiusCoverConstant :
   obtain ⟨K, hK, hKpack⟩ := exists_universalVCFiniteLpPackingConstant
   refine ⟨K, hK, ?_⟩
   intro Ω mΩ F G V Q r ε hVC hG hQ hr hε₀ hε₁
-  let : MeasurableSpace Ω := mΩ
-  let : IsProbabilityMeasure Q := hQ.1
   classical
   have hr₀ : 0 < r := lt_of_lt_of_le zero_lt_one hr
   let p : ℝ≥0∞ := ENNReal.ofReal r

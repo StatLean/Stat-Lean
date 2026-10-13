@@ -1646,7 +1646,6 @@ private theorem empirical_outerLpNorm_lt_top_of_majorant
     {n : ℕ} (hn : n ≠ 0) (z : Fin n → Ω)
     (hVz : ∀ i, V (z i) < ⊤) :
     outerLpNorm (empiricalMeasure n z) G 2 < ⊤ := by
-  let : NeZero n := ⟨hn⟩
   have hnpos : 0 < n := Nat.pos_of_ne_zero hn
   have hncast : (0 : ℝ≥0∞) < n := by exact_mod_cast hnpos
   have hVemp : (∫⁻ x, V x ∂empiricalMeasure n z) < ⊤ := by

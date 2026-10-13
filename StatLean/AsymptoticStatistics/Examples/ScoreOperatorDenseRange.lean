@@ -1289,10 +1289,6 @@ private noncomputable def gaussianLocationPath (b : ℝ) : QMDPath standardGauss
 private lemma gaussian_sum_law (n : ℕ) (μ : ℝ) :
     (Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
         (fun X => ∑ i, X i) = gaussianReal (n * μ) n := by
-  let : IsProbabilityMeasure
-      ((Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
-        (fun X => ∑ i, X i)) :=
-    (by infer_instance)
   apply Measure.ext_of_charFun
   funext t
   rw [charFun_map_sum_pi_eq_prod]

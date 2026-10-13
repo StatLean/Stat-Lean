@@ -161,9 +161,6 @@ lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSp
       (Filter.Eventually.of_forall hFb)
   have hpair : ∀ g g' : G, Measurable fun x : 𝓧 => (T (g • x), T (g' • x)) :=
     fun g g' => (hT g).prodMk (hT g')
-  have hprob : ∀ g g' : G,
-      IsProbabilityMeasure (P.map fun x : 𝓧 => (T (g • x), T (g' • x))) :=
-    fun g g' => (by infer_instance)
   rw [randPairLaw, integral_smul_measure,
     integral_finsetSum_measure (fun g _ => integrable_finsetSum_measure.2
       (fun g' _ => hint _ inferInstance))]

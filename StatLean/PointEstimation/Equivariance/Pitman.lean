@@ -330,8 +330,6 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
   have hp_meas : Measurable p :=
     ENNReal.measurable_ofReal.comp (hf.comp measurable_pUnshear)
   set ρ : Measure ((Fin m → ℝ) × ℝ) := P₀.map pShear with hρ_def
-  have : IsProbabilityMeasure ρ := by
-    rw [hρ_def]; exact (by infer_instance)
   -- the slice-integral identities
   have hslice_int : ∀ t : Fin m → ℝ, Integrable (fun s : ℝ => f (pUnshear (t, s))) :=
     fun t => integrable_slice_den f hf hden t

@@ -1770,10 +1770,6 @@ private lemma map_normalized_sum_stdGaussian {k n : ℕ} (hn : 0 < n) :
       = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
   have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hspos : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnpos
-  have : IsProbabilityMeasure ((Measure.pi fun _ : Fin n =>
-      stdGaussian (EuclideanSpace ℝ (Fin k))).map
-        fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) :=
-    (by infer_instance)
   refine Measure.ext_of_charFun ?_
   funext t
   rw [charFun_map_const_smul_sum, charFun_stdGaussian, charFun_stdGaussian,
@@ -3156,8 +3152,6 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
   set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   have hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
-  have hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -5538,12 +5532,6 @@ private lemma map_stdGaussian_pair_smul_add (σ c : ℝ) :
           (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map
           fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z := by
-  have hL : IsProbabilityMeasure ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
-      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) :=
-    (by infer_instance)
-  have hR : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
-      fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) :=
-    (by infer_instance)
   -- `charFun_apply` is definitional, so both unfoldings below are `rfl`; going through them
   -- keeps every integral in one and the same notation for `rw`.
   have hunfold : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) (s : EuclideanSpace ℝ (Fin k)),
@@ -6134,8 +6122,6 @@ private lemma integral_conv_smul_gaussian (α : Measure (EuclideanSpace ℝ (Fin
       = ∫ x, (∫ z, g (x + t • z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂α := by
   set Gs : Measure (EuclideanSpace ℝ (Fin k)) :=
     (stdGaussian (EuclideanSpace ℝ (Fin k))).map fun z => t • z with hGs
-  have : IsProbabilityMeasure Gs := by
-    rw [hGs]; exact (by infer_instance)
   have hint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
       g (p.1 + p.2)) (α.prod Gs) := by
     refine (integrable_const M).mono' ?_ (Filter.Eventually.of_forall fun p => ?_)
@@ -6435,7 +6421,6 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     rw [hji1, hoff] at hpeel1
     set R : Measure ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
       Measure.pi (fun l : Fin m => κ j (i.succAbove l)) with hRdef
-    have hRp : IsProbabilityMeasure R := by rw [hRdef]; infer_instance
     have hdirac : ∀ y : (_ : Fin m) → EuclideanSpace ℝ (Fin k),
         (∫ u, G (j + 1) (u + ∑ l, y l) ∂(Measure.dirac (0 : EuclideanSpace ℝ (Fin k))))
           = ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
@@ -6923,8 +6908,6 @@ theorem berryEsseen_convex_improved {k : ℕ} (hk : 0 < k) :
   set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
     (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
   have hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
-  have hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact (by infer_instance)
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -8097,7 +8080,6 @@ theorem integral_hybridLaw_eq {n j : ℕ} (ν : Measure (EuclideanSpace ℝ (Fin
   set P : Measure ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) :=
     Measure.pi fun i : Fin n =>
       if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν with hPdef
-  have : IsProbabilityMeasure P := by rw [hPdef]; infer_instance
   set Φ : ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k)
       → EuclideanSpace ℝ (Fin k) :=
     fun p => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
@@ -8300,13 +8282,6 @@ private lemma map_sum_pi_dirac_drop {n j : ℕ} (hj : j ≤ n)
   have hinst : ∀ i : Fin n, IsProbabilityMeasure
       (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
     intro i; split <;> infer_instance
-  have : IsProbabilityMeasure (((Measure.pi fun i : Fin n =>
-      if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν).map
-      fun y => ∑ i, y i)) :=
-    (by infer_instance)
-  have : IsProbabilityMeasure (((Measure.pi fun _ : Fin (n - j) =>
-      ν).map fun y => ∑ i, y i)) :=
-    (by infer_instance)
   refine Measure.ext_of_charFun ?_
   funext t
   rw [charFun_map_sum_pi, charFun_map_sum_pi]
@@ -8340,9 +8315,6 @@ private lemma map_partial_sum_eq_smul_sumLaw {n j : ℕ} (hj : j ≤ n) (hm : 0 
       = (sumLaw (n - j) ν).map
           (fun x => (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x) := by
   classical
-  have hinst : ∀ i : Fin n, IsProbabilityMeasure
-      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
-    intro i; split <;> infer_instance
   have hn : 0 < n := lt_of_lt_of_le hm (Nat.sub_le n j)
   have hsm : (0 : ℝ) < Real.sqrt ((n - j : ℕ) : ℝ) := Real.sqrt_pos.2 (by exact_mod_cast hm)
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 (by exact_mod_cast hn)
@@ -11435,7 +11407,6 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
     rw [hji1, hoff] at hpeel1
     set R : Measure ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
       Measure.pi (fun l : Fin m => κ j (i.succAbove l)) with hRdef
-    have hRp : IsProbabilityMeasure R := by rw [hRdef]; infer_instance
     have hdirac : ∀ y : (_ : Fin m) → EuclideanSpace ℝ (Fin k),
         (∫ u, G (j + 1) (u + ∑ l, y l) ∂(Measure.dirac (0 : EuclideanSpace ℝ (Fin k))))
           = ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by

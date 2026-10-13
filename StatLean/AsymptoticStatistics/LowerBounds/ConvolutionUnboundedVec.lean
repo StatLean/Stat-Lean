@@ -611,7 +611,6 @@ theorem derived_convolution_decomp_unbounded_vec
       (fun h => ψDot_proj_vec_clm_apply g_P IF_eff h)
       (T_param_of_vec T_n) hT_param_meas hReg_param
       (unboundedParamSubmodel_isPDFOf g_P h_orth)
-  have := hM_θ_prob
   refine ⟨M_θ, hM_θ_prob, ?_⟩
   -- hReg_param.limitDist = L by construction.
   exact hConv

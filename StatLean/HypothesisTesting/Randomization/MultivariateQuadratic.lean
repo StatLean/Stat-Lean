@@ -603,12 +603,6 @@ private lemma weakConverges_randPairLaw_normSq
     randPairLaw_map (G := Fin n → ℤˣ) _ _ measurable_signSum
       (fun ε => measurable_signChange_smul_vec ε) hwm
   rw [← funext heq] at hmapped
-  have : ∀ n : ℕ, IsProbabilityMeasure
-      (randPairLaw (Fin n → ℤˣ)
-        (fun x : Fin n → EuclideanSpace ℝ (Fin p) => w ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
-        (Measure.pi fun _ : Fin n => P)) := fun n =>
-    isProbabilityMeasure_randPairLaw (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
-      (fun ε => measurable_signChange_smul_vec ε)
   have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map w) :=
     (by infer_instance)

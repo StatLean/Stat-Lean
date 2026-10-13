@@ -199,10 +199,6 @@ theorem compProd_gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁) (m₂ : Eu
   have key : (multivariateGaussian m₁ S₁₁ ⊗ₘ gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂).map
         ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm
       = multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := by
-    have : IsProbabilityMeasure
-        ((multivariateGaussian m₁ S₁₁ ⊗ₘ gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂).map
-          ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) :=
-      (by infer_instance)
     refine Measure.ext_of_charFun (funext fun t => ?_)
     have hcont : Continuous fun x : EuclideanSpace ℝ (ι₁ ⊕ ι₂) =>
         Complex.exp ((⟪x, t⟫_ℝ : ℂ) * Complex.I) := by fun_prop
@@ -336,10 +332,6 @@ theorem condKernel_ae_eq_gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁)
           (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
             (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))).condKernel x
         = gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ x := by
-  have : IsProbabilityMeasure ((multivariateGaussian (blockPair m₁ m₂)
-      (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
-        ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))) :=
-    (by infer_instance)
   have hG34 := compProd_gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ hJ h₁₁
   have hfst : ((multivariateGaussian (blockPair m₁ m₂)
         (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map

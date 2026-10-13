@@ -580,7 +580,6 @@ theorem weightedATE_propensity [IsProbabilityMeasure μ]
   have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
   have hTR : (μ (treatedEvent Z)).toReal ≠ 0 := by
     simp [ENNReal.toReal_eq_zero_iff, hT, measure_ne_top μ _]
-  have : IsProbabilityMeasure (μ[|treatedEvent Z]) := cond_isProbabilityMeasure hT
   have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
   have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
   -- Strong ignorability of the pair gives ignorability of the individual effect.
@@ -653,7 +652,6 @@ theorem weightedATE_one_sub_propensity [IsProbabilityMeasure μ]
   have hCm : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
   have hCR : (μ {ω | Z ω = false}).toReal ≠ 0 := by
     simp [ENNReal.toReal_eq_zero_iff, hC, measure_ne_top μ _]
-  have : IsProbabilityMeasure (μ[|{ω | Z ω = false}]) := cond_isProbabilityMeasure hC
   have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
   have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
   have hig : Ignorable μ Z (fun ω => y1 ω - y0 ω) X := fun x =>

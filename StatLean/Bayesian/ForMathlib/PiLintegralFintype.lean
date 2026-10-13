@@ -58,7 +58,7 @@ private theorem lintegral_pi_prod_hetero_fin {n : ℕ} {α : Fin n → Type*}
     {f : (i : Fin n) → α i → ℝ≥0∞} (hf : ∀ i, Measurable (f i)) :
     ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi μ) = ∏ i, ∫⁻ y, f i y ∂(μ i) := by
   induction n with
-  | zero => have := hμ; simp [Measure.pi_empty_univ]
+  | zero => simp [Measure.pi_empty_univ]
   | succ n ih =>
       have := hμ
       have hg : Measurable fun z : (j : Fin n) → α j.succ => ∏ i, f i.succ (z i) :=

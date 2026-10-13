@@ -2026,7 +2026,6 @@ theorem norm_mixCharFun_vecRootLaw_sub_charFun_le (F : Measure ℝ) [IsProbabili
             * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)
           + 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1))
               * |∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)| := by
-  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
   set κ : ℝ := ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκdef
   set c : E := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a with hcdef
   have h1 := norm_mixCharFun_vecRootLaw_sub_le F hZ m hb hba hba2 hmeanb

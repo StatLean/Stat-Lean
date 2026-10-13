@@ -508,8 +508,6 @@ theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : 
       atTop (nhds 1) := by
   -- A fixed alternative is the constant selection `μ n = μ`, `F n = F`, with the diverging
   -- separation `εₙ = √n · d_K(F, F₀)`; the result is exactly `ks_uniform_power`.
-  have hPinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => P) n) := fun _ => inferInstance
-  have hμinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => μ) n) := fun _ => inferInstance
   -- the separation `εₙ = √n · d_K(F, F₀)` diverges since `d_K(F, F₀) > 0`
   have hsqrt : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
     Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop

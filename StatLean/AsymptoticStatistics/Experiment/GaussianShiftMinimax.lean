@@ -1227,7 +1227,6 @@ theorem bowl_shaped_loss_risk_kernel_form
     have hsnd_meas : Measurable snd := measurable_snd
     let κ' : Kernel (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
         (EuclideanSpace ℝ (Fin d)) := κ.comap snd hsnd_meas
-    have hκ'_markov : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ hsnd_meas
     have h_int_meas : Measurable
         (fun p : (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
               × EuclideanSpace ℝ (Fin d) =>

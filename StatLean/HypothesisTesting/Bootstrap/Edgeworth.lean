@@ -17003,7 +17003,6 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
     ((Measure.pi fun _ : Fin n => F)
         {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
       = meanRootCDF (F.map f) n x := by
-  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
@@ -17037,7 +17036,6 @@ under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integ
 lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
     (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
-  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17047,7 +17045,6 @@ lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f :
 lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
     Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
-  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -18327,8 +18324,6 @@ lemma variance_map_truncAt_eq (F : Measure ℝ) [IsProbabilityMeasure F] (m : �
     Var[fun t : ℝ => t; F.map (truncAt m τ)]
       = (∫ x, (truncAt m τ x - m) ^ 2 ∂F) - (∫ x, (truncAt m τ x - m) ∂F) ^ 2 := by
   have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
-  have : IsProbabilityMeasure (F.map (truncAt m τ)) :=
-    (by infer_instance)
   have hI1 : Integrable (fun x : ℝ => (truncAt m τ x - m) ^ 1) F :=
     integrable_truncAt_sub_pow F m hτ 1
   simp only [pow_one] at hI1

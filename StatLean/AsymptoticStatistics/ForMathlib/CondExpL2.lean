@@ -84,7 +84,6 @@ private theorem lpTrimComapToMapTrim_surj
     Function.Surjective (lpTrimComapToMapTrim_pull (m0 := m0) (mβ := mβ)
       (μ' := μ') (f' := f') hf') := by
   intro u
-  have : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
   let m : MeasurableSpace α' := MeasurableSpace.comap f' mβ
   let μtrim : @Measure α' m := μ'.trim hf'.comap_le
   let ν : @Measure β' mβ := @Measure.map α' β' m mβ f' μtrim

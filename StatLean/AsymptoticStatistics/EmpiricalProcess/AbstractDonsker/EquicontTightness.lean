@@ -239,8 +239,6 @@ theorem marginal_coord_tight (h_clt : IsMarginalCLT F P)
   have hLY_aem : AEMeasurable (L ∘ Y)
       (multivariateGaussian 0 (marginalCovMatrix P ![(f : Ω → ℝ)])) :=
     hcomp.aemeasurable_limit
-  have hν_prob : IsProbabilityMeasure ν := by
-    rw [hν]; exact (by infer_instance)
   -- Tail of `ν` vanishes: the closed tails `{x | (m:ℝ) ≤ |x|}` decrease to `∅`.
   set C : ℕ → Set ℝ := fun m => {x : ℝ | (m : ℝ) ≤ |x|} with hC
   have hC_closed : ∀ m, IsClosed (C m) := fun m =>

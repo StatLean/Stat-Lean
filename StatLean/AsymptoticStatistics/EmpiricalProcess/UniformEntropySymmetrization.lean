@@ -170,8 +170,6 @@ private theorem outerLpNorm_localized_le_conditionOn
     (hf : Measurable f) :
     outerLpNorm Q (localizedFunction A f) r ≤ outerLpNorm (conditionOn Q A) f r := by
   let R : Measure Ω := conditionOn Q A
-  have hRprob : IsProbabilityMeasure R := conditionOn_isProbabilityMeasure Q A hA hQA
-  let : IsProbabilityMeasure R := hRprob
   let p : ℝ≥0∞ := ENNReal.ofReal r
   have hp_top : p ≠ ⊤ := ENNReal.ofReal_ne_top
   have hQR : Q.restrict A = Q A • R := by
@@ -241,7 +239,6 @@ theorem ae_pooledEmpiricalLaw_admissibleOrZero
     (fun i => X i.val ξ.1) (fun i => X i.val ξ.2)
   have hQprob : IsProbabilityMeasure Q :=
     pooledEmpiricalLaw_isProbabilityMeasure P n _ _
-  let : IsProbabilityMeasure Q := hQprob
   have hnpos : 0 < n := Nat.pos_of_ne_zero (NeZero.ne n)
   have hncast : (0 : ℝ≥0∞) < n := by exact_mod_cast hnpos
   have hVQ : (∫⁻ x, V x ∂Q) < ⊤ := by

@@ -198,11 +198,6 @@ theorem bernstein_von_mises
       Tendsto (fun n => productMeasure M μ θ₀ n
           {ω | δ ≤ bvmTV κ π θ₀ J sc n ω}) atTop (𝓝 0) := by
   classical
-  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
-      IsProbabilityMeasure (productMeasure M μ θ n) :=
-    fun θ n =>
-      AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
-        M μ hPDF θ n
   -- Step B at every integer radius `j + 1`, with tolerance `1/(j+1)`.
   have hBstep : ∀ j : ℕ, ∃ Nj : ℕ, ∀ n, Nj ≤ n →
       productMeasure M μ θ₀ n {ω | ENNReal.ofReal (1 / ((j : ℝ) + 1)) ≤ tvDist

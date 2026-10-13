@@ -117,8 +117,6 @@ theorem hasSufficientKernel_of_isSufficient_dominated [StandardBorelSpace 𝓧] 
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   have he : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id
-  have : IsProbabilityMeasure (ν.map fun x => (T x, x)) :=
-    (by infer_instance)
   have hρfst : (ν.map fun x => (T x, x)).fst = ν.map T :=
     Measure.fst_map_prodMk hT measurable_id
   set Q : Kernel S 𝓧 := (ν.map fun x => (T x, x)).condKernel with hQdef
@@ -190,8 +188,6 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
   choose k hkm hk1 hk using fun q : ℚ => hsuf (hA q)
   -- the graph law of `(T, e)`, a measure on `S × ℝ`
   set ρ : Θ → Measure (S × ℝ) := fun θ => (P θ).map fun x => (T x, e x) with hρdef
-  have hρprob : ∀ θ, IsProbabilityMeasure (ρ θ) :=
-    fun θ => (by infer_instance)
   have hνprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
     rw [statLaw_eq_map P T θ hT.aemeasurable]; infer_instance
   have hρfst : ∀ θ, (ρ θ).fst = statLaw P T θ :=

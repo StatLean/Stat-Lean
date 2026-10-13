@@ -157,8 +157,6 @@ theorem observedTangent_orthogonal_decomposition
   -- The observed space `↥(L²₀(P_obs))` is complete (closed subspace of `Lp`),
   -- so the closed subspace `S̄ := (observedTangent …).topologicalClosure`
   -- admits an orthogonal projection.
-  have : IsProbabilityMeasure (P_full.map M) :=
-    (by infer_instance)
   have : CompleteSpace ↥(L2ZeroMean (P_full.map M)) := by
     have := L2ZeroMean_isClosed (P_full.map M)
     exact IsClosed.completeSpace_coe

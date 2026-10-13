@@ -187,7 +187,6 @@ private theorem chainWindowLaw_eq_compProd (k : ℕ) :
     refine Fin.cases ?_ (fun j => j.elim0) i
     simp
   | succ k ih =>
-    have := isProbabilityMeasure_chainWindowLaw κ π k
     set η : Kernel (S × (Fin k → S)) S :=
       κ.comap (fun p : S × (Fin k → S) => (Fin.cons p.1 p.2 : Fin (k + 1) → S) (Fin.last k))
         (measurable_consLast k) with hη
@@ -453,13 +452,9 @@ private theorem trajMeasure_map_window (π : Measure S) [IsProbabilityMeasure π
     have hih : ((trajLaw κ π).map (frestrictLe n)).map (iicToFin n)
         = chainWindowLaw κ π n := by
       rw [Measure.map_map (measurable_iicToFin n) (measurable_frestrictLe n)]; exact ih
-    have : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
-      (by infer_instance)
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
       Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
-    have : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
-      (by infer_instance)
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
       Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure

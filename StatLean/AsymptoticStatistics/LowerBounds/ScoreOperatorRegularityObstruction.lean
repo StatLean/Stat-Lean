@@ -191,12 +191,6 @@ private theorem weakConverges_sameScore_commonDom
     fun n => Measure.pi (fun _ : Fin n => γ.curve (t n)) with hPn_def
   set Pn₀ : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => Measure.pi (fun _ : Fin n => γ₀.curve (t n)) with hPn₀_def
-  have hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
-    intro n
-    have : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
-      γ.curve_isProbability _
-    rw [hPn_def]
-    infer_instance
   have hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
     intro n
     have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>

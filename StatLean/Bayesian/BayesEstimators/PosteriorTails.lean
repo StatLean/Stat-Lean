@@ -641,7 +641,6 @@ theorem posterior_tail_lintegral_tendsto
   have hlintφ : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
       = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
     intro n
-    have := hprob θ₀ n
     refine (ofReal_integral_eq_lintegral_ofReal (hφint θ₀ n) ?_).symm
     filter_upwards with ω
     exact (hφ.mem_Icc n ω).1

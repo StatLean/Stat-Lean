@@ -405,9 +405,6 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
   have hinfluenceWCO := jointEmpirical_mixed_weakConvergesOuter
     hD.measurable (fun f hf => hD.memLp hf) ψ hκ μ X hX_meas hX_indep
       hX_id hX_law hmem k ainfluence
-  have : IsProbabilityMeasure
-      (κ.map (mixedEvalCLM (linfEvalCLM F) ainfluence)) :=
-    (by infer_instance)
   have hinfluenceTightMixed : IsAsymptoticallyTight (fun _ => μ)
       (fun n ξ => mixedEvalCLM (linfEvalCLM F) ainfluence (Wn n ξ)) :=
     AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter

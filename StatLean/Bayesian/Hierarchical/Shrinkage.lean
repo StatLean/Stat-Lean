@@ -380,7 +380,6 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
       (Measure.pi fun i => gaussianReal (θ i) σ2) := by
   classical
   set N := Measure.pi fun i => gaussianReal (θ i) σ2 with hN
-  have : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ i, (x i) ^ 2 with hS
   have hSmeas : Measurable S := by
     apply Finset.measurable_sum; intro i _; exact (measurable_pi_apply i).pow_const 2
@@ -466,7 +465,6 @@ private lemma integrable_jsG {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
     Integrable (fun x : Fin p → ℝ => (x i - θ i) * (x i / ∑ j, (x j) ^ 2))
       (Measure.pi fun j => gaussianReal (θ j) σ2) := by
   set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
-  have : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
   have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
   have hSmeas : Measurable S :=
@@ -494,7 +492,6 @@ private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
     Integrable (fun x : Fin p → ℝ => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2)
       (Measure.pi fun j => gaussianReal (θ j) σ2) := by
   set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
-  have : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
   have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
   have hSmeas : Measurable S :=
@@ -537,7 +534,6 @@ private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
       ((μ i).prod (Measure.pi fun j => μ (i.succAbove j))) :=
     measurePreserving_piFinSuccAbove μ i
   set νr : Measure (Fin n → ℝ) := Measure.pi fun j => μ (i.succAbove j) with hνr
-  have : IsProbabilityMeasure νr := by rw [hνr]; infer_instance
   have mps : MeasurePreserving e.symm ((μ i).prod νr) (Measure.pi μ) :=
     MeasurePreserving.symm e mp
   -- coordinate identities for `e.symm (a, b) = insertNth i a b`
@@ -635,7 +631,6 @@ theorem jamesStein_risk_difference {p : ℕ}
   -- Integrate termwise; the cross term uses `jamesStein_crossTerm` and the divergence identity
   -- `js_div_sum`, the last term uses Brick D `integrable_inv_normSq_pi`.
   set M := Measure.pi fun i => gaussianReal (θ i) σ2 with hM
-  have : IsProbabilityMeasure M := by rw [hM]; infer_instance
   -- integrability of the coordinate second moments
   have term1 : ∀ i, Integrable (fun x : Fin p → ℝ => (x i - θ i) ^ 2) M := by
     intro i

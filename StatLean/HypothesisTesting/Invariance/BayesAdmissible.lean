@@ -550,7 +550,6 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
   have hkey : ∀ B : Set ℝ, MeasurableSet B →
       ∫⁻ ζ, gaussianReal ζ σ2 B ∂(gaussianReal 0 (M2 - σ2)) = gaussianReal 0 M2 B := by
     intro B hB
-    have hmark := StatLean.Bayesian.isMarkovKernel_gaussKernel hσ
     have key : StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)
         = gaussianReal 0 M2 := by
       rw [StatLean.Bayesian.comp_gaussKernel_gaussianReal hσ, tsub_add_cancel_of_le hσM.le]

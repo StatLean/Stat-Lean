@@ -301,8 +301,6 @@ theorem restrictedTranslatedGaussianPrior_spec
     FiniteDimensional.of_injective S.subtype S.injective_subtype
   let hmeas : MeasurableSpace ↥S := borel ↥S
   let hborel : BorelSpace ↥S := ⟨rfl⟩
-  let hstdprob : IsProbabilityMeasure (stdGaussian ↥S) :=
-    inferInstance
   let hrealOpen : Measure.IsOpenPosMeasure (gaussianReal 0 1) :=
     (gaussianReal_absolutelyContinuous' 0 one_ne_zero).isOpenPosMeasure
   let hpiOpen : Measure.IsOpenPosMeasure

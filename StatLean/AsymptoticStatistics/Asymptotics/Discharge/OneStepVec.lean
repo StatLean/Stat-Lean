@@ -1552,7 +1552,6 @@ theorem oneStep_semiparametricallyEfficient_2557_native_vec
           (g : ↥(L2ZeroMean P))⟫_ℝ)
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)} (h_ψ : ψ P = θ₀) :
     SemiparametricallyEfficientAt_vec estimator ψ P T := by
-  let : T_nuis.HasOrthogonalProjection := proj
   have hEIF : IsEfficientInfluenceFunction_vec Dψ
       (@candidateVecEIF Ω _ P _ Θ _ _ _ d S_θ T_nuis proj e) := by
     intro j

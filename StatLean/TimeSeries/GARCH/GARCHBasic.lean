@@ -1070,7 +1070,6 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
     fun t => h.condexp_sq hL2 t
   have hV2 : ∀ t : ℤ, MemLp (fun ω => σvol t ω ^ 2) 2 μ := by
     intro t
-    have := hSF t
     exact ((hY2 t).condExp (by norm_num)).ae_eq (hcond t)
   have hVint : ∀ t : ℤ, Integrable (fun ω => σvol t ω ^ 2) μ :=
     fun t => (hV2 t).integrable one_le_two

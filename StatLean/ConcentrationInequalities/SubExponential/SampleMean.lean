@@ -88,8 +88,6 @@ private lemma mgf_sampleMean_le
     {lam : ℝ} (hlam_nn : 0 ≤ lam) (hlam_le : lam ≤ (n : ℝ) / (α : ℝ)) :
     mgf (fun ω => ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))) μ lam
       ≤ Real.exp (lam ^ 2 * (α : ℝ) ^ 2 / (2 * (n : ℝ))) := by
-  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  have : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   -- lam / n is in the valid sub-exponential range [0, 1/α]
   have h_lam_n_nn : 0 ≤ lam / (n : ℝ) := div_nonneg hlam_nn hn_pos.le

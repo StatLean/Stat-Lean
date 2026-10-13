@@ -74,10 +74,6 @@ theorem proj_seq_to_eif
       -- (f) The projection sequence `p m` converges to `IF_eff` in `L²(P)`.
       Tendsto (fun m => ‖(p m : ↥(L2ZeroMean P)) - IF_eff‖) atTop (𝓝 0) := by
   classical
-  -- Register `L2ZeroMean P` as closed (used implicitly by Mathlib's auto-resolution
-  -- of `CompleteSpace ↥(submodule)` from `[IsClosed _]`).
-  have : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
-    L2ZeroMean_isClosed P
   -- Unfold tangent-space membership to closure-of-span membership.
   have h_clos : IF_eff ∈ closure
       ((Submodule.span ℝ T_set.carrier : Submodule ℝ ↥(L2ZeroMean P)) :

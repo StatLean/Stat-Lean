@@ -870,7 +870,6 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
             (tendsto_finsetSum _ fun x _ => (hwlim x).mul tendsto_const_nhds))))
       filter_upwards [eventually_gt_atTop 0] with n hn
       have := hμprob n hn
-      have := hFprob n hn
       rw [hFeq n hn, covMatrix_map_centredIndicator π (μ n) i j]
       congr 1
       · exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x]
@@ -914,8 +913,6 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
         = (P n).map (reducedCount π (X n)) := by
     intro n hn
     have := hμprob n hn
-    have hFnprob : IsProbabilityMeasure ((μ n).map (centredIndicator π)) :=
-      (by infer_instance)
     have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
     have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=

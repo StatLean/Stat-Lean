@@ -200,7 +200,6 @@ lemma lintegral_pi_curve_eq_lintegral_pi_lr
           ∂(Measure.pi (fun _ : Fin n => γ.curve t))
         = ∫⁻ X : Fin n → Ω, f X * L_n_g X
             ∂(Measure.pi (fun _ : Fin n => P)) := by
-  have : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
   refine ⟨fun X => ∏ j : Fin n, (γ.curve t).rnDeriv P (X j),
     Finset.measurable_prod _ (fun j _ =>
       (Measure.measurable_rnDeriv _ _).comp (measurable_pi_apply j)), ?_⟩

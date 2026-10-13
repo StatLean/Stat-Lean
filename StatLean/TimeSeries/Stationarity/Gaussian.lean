@@ -511,7 +511,6 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
     (hYm : ∀ N, AEStronglyMeasurable (Y N) μ) (hZm : AEStronglyMeasurable Z μ)
     (hconv : Tendsto (fun N => eLpNorm (Y N - Z) 2 μ) atTop (𝓝 0)) :
     IsGaussian (μ.map Z) := by
-  have : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
   -- `L²` membership
   have hYL2 : ∀ N, MemLp (Y N) 2 μ := by
     intro N
@@ -562,7 +561,6 @@ private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ �
   have hchar : ∀ N, charFun (μ.map (Y N)) u
       = Complex.exp (u * (∫ ω, Y N ω ∂μ) * Complex.I - Var[Y N; μ] * u ^ 2 / 2) := by
     intro N
-    have := hYg N
     rw [(hYg N).eq_gaussianReal, charFun_gaussianReal, integral_map (hYm N).aemeasurable
       aestronglyMeasurable_id, variance_map aemeasurable_id (hYm N).aemeasurable]
     simp [Real.coe_toNNReal _ (variance_nonneg _ _)]

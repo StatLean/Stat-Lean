@@ -163,7 +163,6 @@ theorem score_linfNorm_tail (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     unfold linfNorm at hω
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · have hval : ⨆ j : Fin d, |(scoreVec M ω).ofLp j| = 0 := by
-        have := hd0
         change sSup (Set.range (fun j : Fin d => |(scoreVec M ω).ofLp j|)) = 0
         rw [Set.range_eq_empty_iff.mpr hd0, Real.sSup_empty]
       exact absurd (hval ▸ hω) (not_lt.mpr ht)

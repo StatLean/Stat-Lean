@@ -973,8 +973,6 @@ private lemma stdGaussian_map_of_coisometry
     (φ : E →L[ℝ] F) (ψ : F →L[ℝ] E) (hψ : ∀ y, ‖ψ y‖ = ‖y‖)
     (hφψ : ∀ y, φ (ψ y) = y) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖) :
     (ProbabilityTheory.stdGaussian E).map φ = ProbabilityTheory.stdGaussian F := by
-  have : IsProbabilityMeasure ((ProbabilityTheory.stdGaussian E).map φ) :=
-    (by infer_instance)
   apply Measure.ext_of_charFunDual
   ext L
   have hnorm : ‖L.comp φ‖ = ‖L‖ := by
@@ -997,7 +995,6 @@ private lemma stdGaussian_map_normSq_starProjection {p : ℕ} (hp : 0 < p)
     (ProbabilityTheory.stdGaussian (EuclideanSpace ℝ (Fin k))).map
         (fun w => ‖V.starProjection w‖ ^ 2) = MultipleTesting.chiSquared p := by
   classical
-  have : NeZero p := ⟨hp.ne'⟩
   let b : OrthonormalBasis (Fin p) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr hV)
   let e : V ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin p) := b.repr
   let φ : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin p) :=

@@ -460,8 +460,6 @@ private lemma piGauss_map_smul (N : ℕ) (c : ℝ) :
       = gaussianReal 0 (NNReal.mk (c ^ 2) (sq_nonneg c)) := by
     intro _
     rw [gaussianReal_map_const_mul (c := c), mul_zero, mul_one]
-  have : ∀ _ : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun t : ℝ => c * t)) := by
-    intro i; rw [hmap i]; infer_instance
   have hcast : (fun x : Fin N → ℝ => c • x) = fun (x : Fin N → ℝ) (i : Fin N) => c * x i := rfl
   rw [piGauss, piGauss, hcast, Measure.pi_map_pi hf]
   exact congrArg Measure.pi (funext hmap)

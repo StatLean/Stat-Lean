@@ -822,7 +822,6 @@ lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
   classical
   obtain ⟨Ω₀, mΩ₀, P₀c, Z, hZmeas, hZlaw, hZindep, hP₀cprob⟩ :=
     ProbabilityTheory.exists_iid ℕ P₀
-  let : MeasurableSpace Ω₀ := mΩ₀
   have : IsProbabilityMeasure P₀c := hP₀cprob
   have hbrick := scoreVec_weakConverges_gaussian (P₀ := P₀) (ψ := ψ)
     (P := fun _ : ℕ => P₀c) (X := fun n (i : Fin n) ω => Z (i : ℕ) ω)
@@ -1262,9 +1261,6 @@ private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : �
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift (a i)
-  have : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
-      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
-    intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
         ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
       = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by

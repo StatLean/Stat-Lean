@@ -116,7 +116,6 @@ theorem coveringNumber_ne_top_of_totallyBounded {T : Set E}
   rcases T.eq_empty_or_nonempty with rfl | hTne
   · simp [coveringNumber]
   obtain ⟨x₀, hx₀⟩ := hTne
-  have : Nonempty E := ⟨x₀⟩
   -- External `ε/2`-cover from total boundedness.
   obtain ⟨t, htfin, htcov⟩ := (Metric.totallyBounded_iff.mp hTB) (ε / 2) (by linarith)
   -- Center-swap: for each center `y` whose ball meets `T`, pick an internal

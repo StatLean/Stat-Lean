@@ -183,9 +183,6 @@ lemma WeakConverges.bind_kernel
     have hinteg : Integrable (fun z : α × β => f z.2) (ρ.compProd κ) := by
       refine ⟨hfmeas.aestronglyMeasurable, ?_⟩
       -- Bounded by ‖f‖ on a finite (probability) measure.
-      have : IsProbabilityMeasure (ρ.compProd κ) := by
-        have hρ : SFinite ρ := by infer_instance
-        infer_instance
       exact MeasureTheory.HasFiniteIntegral.of_bounded
         (C := ‖f‖)
         (Filter.Eventually.of_forall
@@ -257,8 +254,6 @@ theorem Measure.withDensity_bind_condDistrib
       (π.withDensity (fun p => f p.2)).map Prod.fst := by
   set κ := ProbabilityTheory.condDistrib (Prod.fst : α × β → α) Prod.snd π with hκ_def
   set ν := π.map Prod.snd with hν_def
-  have : MeasureTheory.IsFiniteMeasure ν := by
-    rw [hν_def]; exact MeasureTheory.Measure.isFiniteMeasure_map _ _
   refine MeasureTheory.Measure.ext (fun s hs => ?_)
   -- Measurability utilities.
   have h_κs_meas : Measurable (fun y => κ y s) := κ.measurable_coe hs
@@ -3090,7 +3085,6 @@ theorem limit_pos_imp_mean_one
   -- `LW k` is supported in `[0,2]`.
   have hLW_supp : ∀ k, (LW k) {x : ℝ | x < 0 ∨ 2 < x} = 0 := by
     intro k
-    have := hμ_prob k
     have hSmeas : MeasurableSet {x : ℝ | x < 0 ∨ 2 < x} :=
       (measurableSet_lt measurable_id measurable_const).union
         (measurableSet_lt measurable_const measurable_id)
@@ -3309,7 +3303,6 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → w * g ((2 - w) / w) = cc w) →
       ∀ j, ∫ x, g x ∂(LdQdP (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    have := hμ_prob (ρ j)
     -- LHS = `∫ g((dQ/dP).toReal) ∂P(φ(ρj))`.
     rw [hLdQdP_def, MeasureTheory.integral_map (hdQdP_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
@@ -3331,7 +3324,6 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → (2 - w) * g (w / (2 - w)) = cc w) →
       ∀ j, ∫ x, g x ∂(LdPdQ (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    have := hμ_prob (ρ j)
     rw [hLdPdQ_def, MeasureTheory.integral_map (hdPdQ_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
     -- bridge with `R = Q, S = P`: `= ∫ v·g((2-v)/v) ∂(μ(ρj).map ((Q.rnDeriv μ).toReal))`.

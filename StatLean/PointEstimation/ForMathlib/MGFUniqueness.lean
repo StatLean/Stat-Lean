@@ -169,18 +169,8 @@ theorem ext_of_integral_exp_eqOn
       rw [← h η₀ hη₀S, hμ0, integral_zero_measure] at hpos
       exact lt_irrefl 0 hpos
     rw [hμ0, hν0]
-  · have hνne : NeZero ν := by
-      refine ⟨?_⟩
-      intro hc
-      have hpos := integral_exp_pos (μ := μ) (f := fun x => η₀ * x) (hμ η₀ hη₀S)
-      rw [h η₀ hη₀S, hc, integral_zero_measure] at hpos
-      exact lt_irrefl 0 hpos
-    have hμint : Integrable (fun x => Real.exp (η₀ * x)) μ := hμ η₀ hη₀S
+  · have hμint : Integrable (fun x => Real.exp (η₀ * x)) μ := hμ η₀ hη₀S
     have hνint : Integrable (fun x => Real.exp (η₀ * x)) ν := hν η₀ hη₀S
-    have hpμ : IsProbabilityMeasure (μ.tilted fun x => η₀ * x) :=
-      isProbabilityMeasure_tilted hμint
-    have hpν : IsProbabilityMeasure (ν.tilted fun x => η₀ * x) :=
-      isProbabilityMeasure_tilted hνint
     set S' : Set ℝ := (fun t => η₀ + t) ⁻¹' interior S with hS'def
     have hS'open : IsOpen S' := isOpen_interior.preimage (by fun_prop)
     have h0S' : (0 : ℝ) ∈ S' := by

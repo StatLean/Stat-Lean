@@ -124,7 +124,6 @@ theorem integral_categoricalCount
     (hq1 : ∑ i, q i = 1) (j : Fin m) :
     ∫ a, (categoricalCounts a j : ℝ) ∂(Measure.pi fun _ : Fin n => categorical q)
       = n * q j := by
-  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
   rw [integral_finsetSum _ fun i _ => Integrable.of_finite,
     Finset.sum_congr rfl fun i _ => integral_coord_ite hq0 hq1 i j 1]
@@ -139,7 +138,6 @@ theorem variance_categoricalCount
     variance (fun a => (categoricalCounts a j : ℝ))
         (Measure.pi fun _ : Fin n => categorical q)
       = n * q j * (1 - q j) := by
-  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
   rw [variance_fun_sum fun i => memLp_two_pi hq0 hq1 _]
   have hrow : ∀ i : Fin n,
@@ -167,7 +165,6 @@ theorem covariance_categoricalCount
         (fun a => (categoricalCounts a k : ℝ))
         (Measure.pi fun _ : Fin n => categorical q)
       = -(n * q j * q k) := by
-  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
   rw [covariance_fun_sum_fun_sum (fun i => memLp_two_pi hq0 hq1 _)
     fun i => memLp_two_pi hq0 hq1 _]

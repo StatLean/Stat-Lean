@@ -583,7 +583,6 @@ private theorem power_eq_indicator_of_dominating
     exact integral_mono_ae (hIntg _ hφ₀meas hφ₀b η hη) (hIntg φ hφ.1 hφ.2 η hη)
       (hge.filter_mono (hac η).ae_le)
   -- **Step C.** On the null class the two-sided domination forces `φ = φ₀` a.e.
-  have := hprob θH hθHnat
   have hint0 : ∫ t, (φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂(statScaleFamily E θH) = 0 := by
     rw [integral_sub (hIntg φ hφ.1 hφ.2 θH hθHnat) (hIntg _ hφ₀meas hφ₀b θH hθHnat)]
     have := le_antisymm h2 (hpowge θH hθHnat)

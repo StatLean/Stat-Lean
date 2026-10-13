@@ -581,7 +581,6 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   --     `S n` infimum by `csInf_le_csInf` and the two `limsup`s compare by
   --     `Filter.limsup_le_limsup`, both sequences lying in `[0,1]`.
   classical
-  have : NeZero k := ⟨hk.ne'⟩
   -- ### 0. the whitened score system and the base cell law
   obtain ⟨sc, hcent, hortho, -⟩ := exists_multinomial_scores hπpos hπsum
   have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
@@ -677,14 +676,6 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
         ring
       rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.sum_div, hΦsum, zero_div]
     rw [h1, hπsum, h2, add_zero]
-  have htiltfin : ∀ n η, IsFiniteMeasure (tilt n η) := by
-    intro n η
-    refine ⟨?_⟩
-    rw [htiltdef]
-    simp only
-    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, lintegral_fintype]
-    refine ENNReal.sum_lt_top.mpr fun j _ => ENNReal.mul_lt_top ENNReal.ofReal_lt_top ?_
-    exact measure_lt_top _ _
   set QC : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Fin n → Fin (k + 1)) :=
     fun n η => if Good n η then Measure.pi (fun _ : Fin n => tilt n η)
       else Measure.pi (fun _ : Fin n => P₀) with hQCdef
@@ -766,8 +757,6 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       hQCgood n η hG]
     congr 1
     funext i
-    have : IsProbabilityMeasure ((Q n (Φ η)).map (X n i)) :=
-      (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [(htiltfacts n η hG).1 j,
       ← ENNReal.ofReal_toReal (measure_ne_top ((Q n (Φ η)).map (X n i)) {j})]
@@ -1408,8 +1397,6 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     simpa only [hwdef, add_zero] using tendsto_const_nhds.add hz
   -- the limit law and the drifting sequence of laws
   set Q : Measure (EuclideanSpace ℝ (Fin k)) := (ν 0).map (psiVec sc) with hQdef
-  have hQprob : IsProbabilityMeasure Q :=
-    (by infer_instance)
   set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => (ν n).map (psiVec sc) with hFdef
   have hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
     (by infer_instance)
@@ -1619,7 +1606,6 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
   have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
   have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
   set A : Measure (Fin n → Fin (k + 1)) := Measure.pi fun _ : Fin n => ν with hAdef
-  have hAprob : IsProbabilityMeasure A := by rw [hAdef]; infer_instance
   -- integrals of one coordinate
   have heval : ∀ (i : Fin n) (f : Fin (k + 1) → ℝ), ∫ d, f (d i) ∂A = ∫ x, f x ∂ν := by
     intro i f
@@ -1780,7 +1766,6 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
         '' multinomialShell π b n)) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
   classical
-  have : NeZero k := ⟨hk.ne'⟩
   obtain ⟨sc, hcent, hortho, hpars⟩ := exists_multinomial_scores hπpos hπsum
   have hπle : ∀ j, π j ≤ 1 := by
     intro j
@@ -1813,8 +1798,6 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
       simp [hcellνdef, hP₀real j]
   have hlawX : ∀ n h, ∀ i : Fin n, Measure.map (X n i) (Q n h) = cellν n h := by
     intro n h i
-    have : IsProbabilityMeasure (Measure.map (X n i) (Q n h)) :=
-      (by infer_instance)
     refine Measure.ext_of_singleton fun j => ?_
     rw [← ENNReal.ofReal_toReal (measure_ne_top (Measure.map (X n i) (Q n h)) {j}),
       ← ENNReal.ofReal_toReal (measure_ne_top (cellν n h) {j}), hcell n h i j]
@@ -2363,9 +2346,6 @@ private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : �
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift (a i)
-  have : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
-      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
-    intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
         ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
       = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by
@@ -2869,7 +2849,6 @@ private lemma ncChiSq_succ_eq_prod_map {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
       = ((noncentralChiSquared k l).prod (StatLean.MultipleTesting.chiSquared 1)).map
           (fun q : ℝ × ℝ => q.1 + q.2) := by
   classical
-  have : NeZero k := ⟨hk.ne'⟩
   set m : Fin k → ℝ := fun j => (noncentralMean k l) j with hm
   have hmnorm : ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ) :=
     ncMean_norm hk l

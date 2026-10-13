@@ -845,8 +845,6 @@ private theorem exists_nondominatedEIFVec {d : ℕ}
     ∃ φ : Fin d → ↥(L2ZeroMean P),
       IsEfficientInfluenceFunction_vec hpd.derivative φ := by
   classical
-  have : IsUniformAddGroup ↥(L2ZeroMean P) :=
-    (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hclosed : IsClosed
       (tangentSpace C : Set ↥(L2ZeroMean P)) := by
     rw [tangentSpace]
@@ -1132,7 +1130,6 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
     simp
   have hcard : 0 < I.card :=
     Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hI)
-  let : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
   let v : Fin I.card → ↥(L2ZeroMean P) := fun j =>
     (((I.equivFin).symm j).1 : ↥(L2ZeroMean P))
   let G : Matrix (Fin (I.card + d)) (Fin (I.card + d)) ℝ :=
@@ -1142,14 +1139,9 @@ private theorem finiteCarrierBenchmark_le_eifRisk {d : ℕ}
     EuclideanSpace.finAddEquivProd (𝕜 := ℝ)
   let π : Measure (EuclideanSpace ℝ (Fin I.card) ×
       EuclideanSpace ℝ (Fin d)) := (multivariateGaussian 0 G).map split
-  let : IsProbabilityMeasure π := by
-    dsimp only [π]
-    exact (by infer_instance)
   have hκMarkov : IsMarkovKernel (secondKernelOfJoint π) := by
     change IsMarkovKernel
       (ProbabilityTheory.condDistrib Prod.fst Prod.snd (π.map Prod.swap))
-    let : IsFiniteMeasure (π.map Prod.swap) :=
-      Measure.isFiniteMeasure_map π Prod.swap
     infer_instance
   let κ : MarkovDecision (EuclideanSpace ℝ (Fin I.card))
       (EuclideanSpace ℝ (Fin d)) := ⟨secondKernelOfJoint π, hκMarkov⟩
@@ -1501,7 +1493,6 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
   have hSigmaEntry : ∀ m i i',
       (A m * (A m).transpose) i i' = ⟪p m i, p m i'⟫_ℝ := by
     intro m i i'
-    have := hVfd m
     have := hVproj m
     rw [Matrix.mul_apply]
     have hswap : ∀ i0 k,
@@ -1563,7 +1554,6 @@ theorem finiteCarrierChart_exhausts_eifGram {d : ℕ}
               ∂((multivariateGaussian (finiteCarrierScoreMean C I g)
                 (finiteCarrierScoreCovariance C I)).bind κ.1) := by
     intro m
-    have := hVfd m
     let e : ↥(V m) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (r m)) := (b m).repr
     let scoreOf : EuclideanSpace ℝ (Fin (r m)) →ₗ[ℝ] ↥(L2ZeroMean P) :=
       (V m).subtype.comp e.symm.toLinearEquiv.toLinearMap
@@ -1868,7 +1858,6 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
                 (C.selectedPath g).curve ((Real.sqrt n)⁻¹))) atTop := by
         simp only [Finset.sup_empty, Filter.liminf_const, ENNReal.bot_eq_zero]
   have hcard : 0 < I.card := Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hI)
-  let : Nonempty (Fin I.card) := Fin.pos_iff_nonempty.mp hcard
   let v : Fin I.card → ↥(L2ZeroMean P) := fun j =>
     (((I.equivFin).symm j).1 : ↥(L2ZeroMean P))
   let center : Fin I.card → EuclideanSpace ℝ (Fin d) := fun j =>
@@ -1901,7 +1890,6 @@ private theorem gaussianConeKernelRisk_le_selectedPathCanonicalLHSVec_bounded {d
   have hκProfileMarkov : IsMarkovKernel (secondKernelOfJoint π) := by
     change IsMarkovKernel
       (ProbabilityTheory.condDistrib Prod.fst Prod.snd (π.map Prod.swap))
-    let : IsFiniteMeasure (π.map Prod.swap) := Measure.isFiniteMeasure_map π Prod.swap
     infer_instance
   let κProfile : MarkovDecision (EuclideanSpace ℝ (Fin I.card))
       (EuclideanSpace ℝ (Fin I.card)) := ⟨secondKernelOfJoint π, hκProfileMarkov⟩

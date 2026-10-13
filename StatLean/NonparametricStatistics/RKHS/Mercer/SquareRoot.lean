@@ -1017,7 +1017,6 @@ theorem range_integralOp_sqrtSymbol_eq
     funext x z
     rw [hKH, rangeSpace_scalarKernel]
     exact boxProd_sqrtSymbol d hK x z
-  let := rangeSpaceRKHS μ (sqrtSymbol d) hS
   rw [range_integralOp_eq_range_coe (sqrtSymbol d) hS]
   exact @range_coe_eq_of_scalarKernel_eq 𝕜 _ X (rangeSpaceCarrier μ (sqrtSymbol d) hS) _ _
     (rangeSpaceCompleteSpace μ (sqrtSymbol d) hS) H _ _ _

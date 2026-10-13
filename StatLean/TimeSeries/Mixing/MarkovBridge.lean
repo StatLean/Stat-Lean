@@ -923,7 +923,6 @@ private lemma markov_setIntegral_eq [IsProbabilityMeasure μ]
   set lam : Measure Ω := μ.restrict A with hlam
   have : IsFiniteMeasure lam := by rw [hlam]; infer_instance
   set κ' : Kernel Ω E := (κ ^ n).comap (X t) (hmeas t) with hκ'
-  have : IsMarkovKernel κ' := by rw [hκ']; infer_instance
   -- (a) the one-event Markov identity, in `ℝ≥0∞`
   have hone : ∀ B : Set E, MeasurableSet B →
       lam (X (t + n) ⁻¹' B) = ∫⁻ ω, (κ' ω) B ∂lam := by

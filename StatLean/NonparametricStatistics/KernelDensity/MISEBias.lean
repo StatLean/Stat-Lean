@@ -65,7 +65,6 @@ private lemma triangle_double_integral_nonneg {f : ℝ → ℝ} (hfm : Measurabl
     (∫ s in (0 : ℝ)..t, ∫ r in (0 : ℝ)..s, f r) = ∫ r in (0 : ℝ)..t, (t - r) * f r := by
   have hfon : IntegrableOn f (Set.Ioc 0 t) volume := by
     have := hf 0 t; rwa [intervalIntegrable_iff_integrableOn_Ioc_of_le ht] at this
-  have : Fact (volume (Set.Ioc (0 : ℝ) t) < ⊤) := ⟨measure_Ioc_lt_top⟩
   set μ : Measure ℝ := volume.restrict (Set.Ioc (0 : ℝ) t) with hμdef
   set F : ℝ → ℝ → ℝ := fun s r => {p : ℝ × ℝ | p.2 ≤ p.1}.indicator (fun p => f p.2) (s, r)
     with hFdef

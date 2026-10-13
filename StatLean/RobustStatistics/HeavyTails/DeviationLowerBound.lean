@@ -252,15 +252,11 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
   -- the product pushforwards of the coupling are the two product laws
   have hmapP : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).1) = Measure.pi fun _ : Fin n => twoPointPM c p := by
-    have : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.fst : ℝ × ℝ → ℝ)) := by
-      rw [twoPointCoupling_fst hp0.le hp1.le]; exact hPp
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.fst : ℝ × ℝ → ℝ))
       fun _ => measurable_fst.aemeasurable]
     simp only [twoPointCoupling_fst hp0.le hp1.le]
   have hmapM : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).2) = Measure.pi fun _ : Fin n => twoPointPM (-c) p := by
-    have : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.snd : ℝ × ℝ → ℝ)) := by
-      rw [twoPointCoupling_snd hp0.le hp1.le]; exact hPm
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.snd : ℝ × ℝ → ℝ))
       fun _ => measurable_snd.aemeasurable]
     simp only [twoPointCoupling_snd hp0.le hp1.le]

@@ -83,7 +83,6 @@ theorem riskRand_comp_eq_riskRand (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     -- USER-INPUT: the (possibly randomized) estimator whose risk is to be matched
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ) :
     riskRand (statLaw P T) L (κ ∘ₖ Q) θ = riskRand P L κ θ := by
-  have := isProbabilityMeasure_statLaw P hT θ
   have hF : Measurable fun x => ∫⁻ d, L θ d ∂(κ x) := (hL θ).lintegral_kernel
   calc riskRand (statLaw P T) L (κ ∘ₖ Q) θ
       = ∫⁻ t, ∫⁻ x, (∫⁻ d, L θ d ∂κ x) ∂Q t ∂(statLaw P T θ) := by

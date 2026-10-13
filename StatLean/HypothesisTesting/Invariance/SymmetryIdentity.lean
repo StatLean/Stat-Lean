@@ -229,8 +229,6 @@ private lemma integral_pi_symmetrize {N : ℕ} {φ : (Fin N → ℝ) → ℝ} (h
   classical
   have hintmap : ∀ ε : Fin N → Bool, Integrable φ ((Measure.pi ν).map (signFlip ε)) := by
     intro ε
-    have : IsProbabilityMeasure ((Measure.pi ν).map (signFlip ε)) :=
-      (by infer_instance)
     exact integrable_of_isCriticalFn hφ _
   have hintcomp : ∀ ε : Fin N → Bool,
       Integrable (fun z => φ (signFlip ε z)) (Measure.pi ν) :=

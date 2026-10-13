@@ -658,7 +658,6 @@ private lemma avgRisk_gaussianShift_ge_bayesRiskAtTau
     let snd : Θ k × Θ k → Θ k := Prod.snd
     have hsnd_meas : Measurable snd := measurable_snd
     let κ' : Kernel (Θ k × Θ k) (𝓨 d) := κ.comap snd hsnd_meas
-    have hκ'_markov : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ hsnd_meas
     have h_int_meas : Measurable
         (fun p : (Θ k × Θ k) × 𝓨 d => L (p.2 - ψDot p.1.1)) := by fun_prop
     have h_main : Measurable
@@ -1631,10 +1630,6 @@ theorem representation_kernel_identifies_le_cam_3_limit
   -- Standard-Borel / Nonempty instances for the target space (from PolishSpace).
   have : StandardBorelSpace (𝓨 d) := inferInstance
   have : Nonempty (𝓨 d) := ⟨(0 : 𝓨 d)⟩
-  -- IsProbabilityMeasure on each productMeasure from the PDF hypothesis.
-  have hProd_prob : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure
-      (AsymptoticRepresentation.productMeasure M μ θ n) :=
-    fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Subseq composition `n_k := φ (ψ_inner (ρ k))` is strictly monotone.
   have hχ_mono : StrictMono (fun k_idx => φ (ψ_inner (ρ k_idx))) :=
     _hφ_mono.comp (_hψ_inner_mono.comp _hρ_mono)

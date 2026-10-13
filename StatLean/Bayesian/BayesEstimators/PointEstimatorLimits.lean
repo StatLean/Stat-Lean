@@ -234,8 +234,6 @@ theorem bpe_tight
   -- rules out
   -- `‖√n(Tₙ − θ₀)‖ ≥ K := max (5a) (3ρ)`.
   classical
-  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
-    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   intro ε hε
   rcases isEmpty_or_nonempty (Fin k) with hk | hk
   · -- degenerate parameter space: the standardized estimator is identically `0`
@@ -556,8 +554,6 @@ theorem bayes_estimator_asymptotics
         atTop (𝓝 0) := by
   classical
   intro ε hε
-  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
-    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hAdef
   have hAeq : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmEffScore J sc n ω = A (scoreSum sc n ω) :=

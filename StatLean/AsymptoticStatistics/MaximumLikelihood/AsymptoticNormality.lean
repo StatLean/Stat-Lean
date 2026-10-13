@@ -268,9 +268,6 @@ theorem mle_asymptotic_normality
           Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
         (multivariateGaussian 0
           (fisherInformationMatrix M μ θ₀ ℓ)⁻¹) := by
-  let : IsProbabilityMeasure
-      (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :=
-    withDensity_density_isProbabilityMeasure M μ hPDF θ₀
   have hConsistent : TendstoInProbZero (fun _ : ℕ => ν)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) :=
     mle_consistentInProb_of_kl_identifiable M μ θ₀ hPDF hident husc hcompact

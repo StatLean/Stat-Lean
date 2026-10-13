@@ -140,10 +140,6 @@ private lemma doobMartingale_n_eq_f
     [IsProbabilityMeasure μ] (hf_int : Integrable (f ∘ allVars X) μ) :
     doobMartingale X hX f μ n = f ∘ allVars X := by
   simp only [doobMartingale]
-  -- SigmaFinite (μ.trim hm) is derived from IsFiniteMeasure, which follows from
-  -- IsProbabilityMeasure μ + isFiniteMeasure_trim.
-  have : IsFiniteMeasure (μ.trim ((natFiltration X hX).le n)) :=
-    isFiniteMeasure_trim ((natFiltration X hX).le n)
   exact condExp_of_stronglyMeasurable ((natFiltration X hX).le n)
     (natFiltration_n_stronglyMeasurable X hX f hf) hf_int
 
@@ -247,7 +243,6 @@ private lemma condDistrib_eq_const_of_indepFun
     {W : α → γ} {Z : α → δ} (hW : Measurable W) (hZ : Measurable Z)
     (h : IndepFun W Z μ) :
     condDistrib Z W μ =ᵐ[μ.map W] Kernel.const γ (μ.map Z) := by
-  have : IsProbabilityMeasure (μ.map Z) := (by infer_instance)
   have h2 : μ.map (fun a => (W a, Z a)) = (μ.map W) ⊗ₘ (Kernel.const γ (μ.map Z)) := by
     rw [(indepFun_iff_map_prod_eq_prod_map_map hW.aemeasurable hZ.aemeasurable).1 h,
         Measure.compProd_const]
@@ -517,7 +512,7 @@ private lemma increment_bounded_of_bounded_differences
     rw [measurable_iff_comap_le, hSp_def]; exact le_of_eq (comap_projVars_headSet X hX k)
   -- `MeasurableEq` on the (standard-Borel) product space, for the fiber-constancy of the past.
   have hMEq : MeasurableEq (Π i : Fin n, β i) := by
-    let := upgradeStandardBorel (Π i : Fin n, β i); infer_instance
+    infer_instance
   have hconst_W' := condExpKernel_ae_eq_const_of_measurable (μ := μ)
     ((natFiltration X hX).le k) hW'meas
   have hM0meas : Measurable[(natFiltration X hX) k] (doobMartingale X hX f μ k) := by

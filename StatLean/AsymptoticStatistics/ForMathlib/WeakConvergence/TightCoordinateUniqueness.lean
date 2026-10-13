@@ -66,8 +66,6 @@ theorem tightMeasure_eq_of_finiteCoordinate_laws
   let κ0 : Measure (D × E0) := κ.map embed0
   let : IsProbabilityMeasure ν := hνprob
   let : IsProbabilityMeasure κ := hκprob
-  let : IsProbabilityMeasure ν0 :=
-    (by infer_instance)
   let : IsProbabilityMeasure κ0 :=
     (by infer_instance)
   have hν0tight : IsTightMeasureSet ({ν0} : Set (Measure (D × E0))) := by

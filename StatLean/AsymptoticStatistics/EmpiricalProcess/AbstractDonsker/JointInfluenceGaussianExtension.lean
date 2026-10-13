@@ -328,7 +328,6 @@ private theorem bridgeCombination_hasGaussianLaw
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν) (u : ↥F →₀ ℝ) :
     HasGaussianLaw (⇑(bridgeCombination hν u) : LinfF F → ℝ) ν := by
   classical
-  let := hν.isProbabilityMeasure
   let e := Fintype.equivFin ↥u.support
   let a : Fin (Fintype.card ↥u.support) → ↥F := fun i => (e.symm i).1
   let L : (Fin (Fintype.card ↥u.support) → ℝ) →L[ℝ] ℝ :=
@@ -750,7 +749,6 @@ private theorem bridgeCoordinates_hasGaussianLaw
     (a : Fin m → Sum ↥F (Fin k)) :
     HasGaussianLaw
       (fun z : LinfF F => fun i => bridgeCoordinateFunction hν hF_L2 ψ (a i) z) ν := by
-  let := hν.isProbabilityMeasure
   apply hasGaussianLaw_of_forall_dual ν _
   · exact measurable_pi_iff.mpr fun i => by
       cases a i with
@@ -845,11 +843,6 @@ private theorem residualCoordinate_secondMoment
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P)) (i j : Fin k) :
     ∫ r : EuclideanSpace ℝ (Fin k), r.ofLp i * r.ofLp j ∂(residualLaw hF_L2 ψ) =
       residualCovMatrix hF_L2 ψ i j := by
-  let : IsGaussian (residualLaw hF_L2 ψ) := by
-    unfold residualLaw
-    infer_instance
-  let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
-    IsGaussian.toIsProbabilityMeasure _
   have hcov := covariance_eval_multivariateGaussian
     (μ := (0 : EuclideanSpace ℝ (Fin k)))
     (residualCovMatrix_posSemidef hF_L2 ψ) i j
@@ -1027,7 +1020,6 @@ private theorem jointInfluenceLaw_firstMarginal
     {ν : Measure (LinfF F)} (hν : IsPBrownianBridge F P ν)
     (hF_L2 : ∀ f ∈ F, MemLp f 2 P) (ψ : Fin k → ↥(L2ZeroMean P)) :
     (jointInfluenceLaw hν hF_L2 ψ).map Prod.fst = ν := by
-  let := hν.isProbabilityMeasure
   let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   rw [jointInfluenceLaw,
@@ -1069,8 +1061,6 @@ private theorem jointInfluenceLaw_mean
     ∫ w, jointEval w a ∂(jointInfluenceLaw hν hF_L2 ψ) = 0 := by
   let := hν.isProbabilityMeasure
   let : IsFiniteMeasure ν := IsZeroOrProbabilityMeasure.toIsFiniteMeasure ν
-  let : SigmaFinite ν := IsFiniteMeasure.toSigmaFinite ν
-  let : SFinite ν := by infer_instance
   let : IsProbabilityMeasure (residualLaw hF_L2 ψ) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   rw [jointInfluenceLaw, integral_map
@@ -1339,9 +1329,6 @@ private theorem jointInfluenceLaw_tight
     rw [himage]
     exact hν.tight
   · rw [Set.image_singleton]
-    let : IsProbabilityMeasure
-        ((jointInfluenceLaw hν hF_L2 ψ).map Prod.snd) :=
-      (by unfold jointInfluenceLaw; infer_instance)
     exact MeasureTheory.isTightMeasureSet_singleton
 
 /-- Existence of the finite Gaussian influence extension of a supplied

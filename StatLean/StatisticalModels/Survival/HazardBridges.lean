@@ -64,8 +64,6 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSin
     μ.map (fun t => ProbabilityTheory.cdf μ t) = volume.restrict (Ioc (0 : ℝ) 1) := by
   have hmono := ProbabilityTheory.monotone_cdf μ
   have hmeas : Measurable (fun t => ProbabilityTheory.cdf μ t) := hmono.measurable
-  have : IsProbabilityMeasure (μ.map (fun t => ProbabilityTheory.cdf μ t)) :=
-    (by infer_instance)
   refine Measure.ext_of_Iic _ _ fun u => ?_
   have hRHS : (volume.restrict (Ioc (0 : ℝ) 1)) (Iic u) = ENNReal.ofReal (min u 1) := by
     rw [Measure.restrict_apply measurableSet_Iic]

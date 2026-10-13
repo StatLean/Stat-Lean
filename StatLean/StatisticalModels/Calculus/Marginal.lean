@@ -98,7 +98,6 @@ theorem iid_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     (hT : Measurable T) [∀ θ, IsProbabilityMeasure (P θ)] (n : ℕ) :
     iid (pushforward P T) n = pushforward (iid P n) (fun x => T ∘ x) := by
   funext θ
-  have : IsProbabilityMeasure ((P θ).map T) := (by infer_instance)
   have htuple : Measurable (fun x : Fin n → 𝓧 => T ∘ x) :=
     Measurable.of_eval fun i => hT.comp (measurable_pi_apply i)
   simp only [pushforward, iid, Measure.map₀_of_measurable hT,

@@ -201,7 +201,6 @@ theorem pow_ge_window_scl {f s : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable
       ENNReal.ofReal δ ^ k *
           (Measure.map (iterPush k x) (Measure.pi fun _ : Fin k => volume.restrict J)) A
         ≤ ((sclARKernel f s ν) ^ k) x A := by
-  have : IsMarkovKernel (sclARKernel f s ν) := isMarkovKernel_sclARKernel hf hs ν
   intro k
   induction k with
   | zero =>
@@ -257,7 +256,6 @@ theorem hasMinorization_sclAR_pow
     {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1) {R : ℝ} (hR0 : 0 < R) :
     ∃ (α : ℝ) (ρ : Measure (Fin (p + 1) → ℝ)),
       HasMinorization ((sclARKernel f s ν) ^ (p + 1)) (lyapV θ) R α ρ := by
-  have : IsMarkovKernel (sclARKernel f s ν) := isMarkovKernel_sclARKernel hf hs ν
   have hspos : ∀ x, 0 < s x := fun x => lt_of_lt_of_le hs0 (hslo x)
   -- the box the level set lives in
   obtain ⟨Rb, hRbdef⟩ : ∃ r : ℝ, r = R / θ ^ p := ⟨_, rfl⟩

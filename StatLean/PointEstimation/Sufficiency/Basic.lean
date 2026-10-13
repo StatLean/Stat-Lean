@@ -99,7 +99,6 @@ theorem isSufficient_of_hasSufficientKernel (P : Θ → Measure 𝓧)
   have := hQ
   refine fun A hA => ⟨fun t => Q t A, Q.measurable_coe hA, fun t => prob_le_one, ?_⟩
   intro θ B hB
-  have := isProbabilityMeasure_statLaw P hT θ
   have e := congrArg (· (B ×ˢ A)) (hgraph θ)
   simp only [statLaw, Measure.map₀_of_measurable hT] at e
   rw [Measure.map_apply (hT.prodMk measurable_id') (hB.prod hA),

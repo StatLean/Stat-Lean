@@ -80,8 +80,6 @@ theorem probabilityIntegralTransform
       P ((cdf P) ⁻¹' Set.Iic u) = P (Set.Iic (sSup A)) := by rw [← hAeq]
       _ = ENNReal.ofReal (cdf P (sSup A)) := (ofReal_cdf P _).symm
       _ = ENNReal.ofReal u := by rw [hFu]
-  let : IsProbabilityMeasure (P.map (cdf P)) :=
-    (by infer_instance)
   apply Measure.ext_of_Iic
   intro u
   rw [Measure.map_apply hF.measurable measurableSet_Iic, uniform01,

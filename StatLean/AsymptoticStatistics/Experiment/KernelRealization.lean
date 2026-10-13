@@ -210,7 +210,6 @@ lemma leftInverse_map_uniform (F : StieltjesFunction ℝ)
     le_of_tendsto hF_atBot ((eventually_le_atBot x).mono fun z hz => F.mono hz)
   have hF_le_one : ∀ x, F x ≤ 1 := fun x =>
     ge_of_tendsto hF_atTop ((eventually_ge_atTop x).mono fun z hz => F.mono hz)
-  have : IsProbabilityMeasure F.measure := F.isProbabilityMeasure hF_atBot hF_atTop
   have : IsFiniteMeasure ((volume.restrict (Set.Ioo (0 : ℝ) 1)).map F.leftInverse) := by
     refine ⟨?_⟩
     rw [Measure.map_apply h_meas MeasurableSet.univ, Set.preimage_univ,
@@ -951,11 +950,6 @@ lemma kernel_realization_of_joint_distribution
   rw [hLHS_eq, hSwap_eq, ← hcompProd]
   -- Step 6.  Show `((P.map Δ).prod (P.map U)).map g = ((P.map Δ) ⊗ₘ κ).map Prod.swap`.
   -- Both sides are probability measures; check equality on rectangles via `Measure.ext_prod`.
-  have : IsProbabilityMeasure (P.map Δ) := (by infer_instance)
-  have : IsProbabilityMeasure (P.map U) := (by infer_instance)
-  have : IsProbabilityMeasure ((P.map Δ).prod (P.map U)) := inferInstance
-  have : IsProbabilityMeasure (((P.map Δ).prod (P.map U)).map g) :=
-    (by infer_instance)
   refine Measure.ext_prod (μ := ((P.map Δ).prod (P.map U)).map g)
     (ν := ((P.map Δ) ⊗ₘ κ).map Prod.swap) ?_
   intro A B hA hB

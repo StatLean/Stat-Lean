@@ -59,10 +59,6 @@ theorem multivariateGaussian_eq_stdGaussian_map_smul (τ : ℝ) :
           (fun x : EuclideanSpace ℝ ι => τ • x) := by
   -- charFun comparison: both sides equal `exp(-τ² ‖t‖² / 2)` at every `t`.
   have h_smul_meas : Measurable (fun x : EuclideanSpace ℝ ι => τ • x) := by fun_prop
-  have : IsProbabilityMeasure
-      ((ProbabilityTheory.stdGaussian (EuclideanSpace ℝ ι)).map
-        (fun x : EuclideanSpace ℝ ι => τ • x)) :=
-    (by infer_instance)
   refine MeasureTheory.Measure.ext_of_charFun ?_
   ext t
   rw [ProbabilityTheory.charFun_multivariateGaussian (posSemidef_sq_smul_one τ),

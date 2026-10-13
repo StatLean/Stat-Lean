@@ -709,10 +709,6 @@ private theorem harris_contraction_aux {κ : Kernel S S} [IsMarkovKernel κ] {V 
   have hVm := hdrift.V_measurable
   have hwm : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
     ENNReal.measurable_ofReal.comp (measurable_const.add (measurable_const.mul hVm))
-  have : IsProbabilityMeasure (μ.bind κ) :=
-    ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
-  have : IsProbabilityMeasure (ν.bind κ) :=
-    ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
   obtain ⟨mL, hmL⟩ : ∃ t : ℝ≥0∞,
       t = min ((jPos μ ν) {x | V x ≤ R}) ((jPos ν μ) {x | V x ≤ R}) := ⟨_, rfl⟩
   obtain ⟨m, hm⟩ : ∃ n : Measure S, n = (ENNReal.ofReal α * mL) • ρ := ⟨_, rfl⟩
@@ -1152,7 +1148,6 @@ theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
   -- ## Step 1: geometric decay along the chain, and between two chains
   obtain ⟨W, hWdef⟩ : ∃ t : ℝ≥0∞, weightedTV β V (Measure.dirac x₀) (κ x₀) = t := ⟨_, rfl⟩
   have hWne : W ≠ ⊤ := by
-    have := hprob 1 x₀
     rw [← hWdef]
     refine ne_top_of_le_ne_top ?_ (weightedTV_le_add (β := β) hVm (Measure.dirac x₀) (κ x₀))
     rw [lintegral_dirac' _ hwm]
@@ -2011,7 +2006,6 @@ theorem pow_ge_window {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
       ENNReal.ofReal δ ^ k *
           (Measure.map (iterPush k x) (Measure.pi fun _ : Fin k => volume.restrict J)) A
         ≤ ((nlARKernel f ν) ^ k) x A := by
-  have : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
   intro k
   induction k with
   | zero =>
@@ -2069,7 +2063,6 @@ theorem hasMinorization_nlAR_pow
     {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1) {R : ℝ} (hR0 : 0 < R) :
     ∃ (α : ℝ) (ρ : Measure (Fin (p + 1) → ℝ)),
       HasMinorization ((nlARKernel f ν) ^ (p + 1)) (lyapV θ) R α ρ := by
-  have : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
   -- the box the level set lives in
   obtain ⟨Rb, hRbdef⟩ : ∃ r : ℝ, r = R / θ ^ p := ⟨_, rfl⟩
   have hRb0 : 0 < Rb := hRbdef ▸ div_pos hR0 (pow_pos hθ0 p)

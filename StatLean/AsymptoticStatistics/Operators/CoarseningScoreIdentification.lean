@@ -454,8 +454,6 @@ theorem ipw_influence_characterization
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψ_obs φ_obs
       ↔ ∃ b ∈ concreteCoarseningScores Q r hM,
           φ_obs = informationLossOperator hM (Q ⊗ₘ r) φ_full + b := by
-  have hpm : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    (by infer_instance)
   -- Membership in the concrete score space is equivalent to membership in
   -- the orthogonal complement of the observed tangent.
   have hb_orth_iff : ∀ b : ↥(L2ZeroMean ((Q ⊗ₘ r).map M)),
@@ -606,8 +604,6 @@ theorem completeCaseIPW_influence_2541
       IsInfluenceFunction ((Q ⊗ₘ r).map M)
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs
         (completeCaseIPW hM Q r cc χ ε hε hπ) := by
-  let : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    (by infer_instance)
   intro g
   obtain ⟨a, ha, hga⟩ :=
     (mem_observedTangent_iff hM (Q ⊗ₘ r) (fullQTangent Q r)
@@ -677,8 +673,6 @@ theorem completeCaseIPW_characterization_2541
         (observedTangent hM (Q ⊗ₘ r) (fullQTangent Q r)) dψObs φobs ↔
       ∃ b ∈ concreteCoarseningScores Q r hM,
         φobs = completeCaseIPW hM Q r cc χ ε hε hπ + b := by
-  let : IsProbabilityMeasure ((Q ⊗ₘ r).map M) :=
-    (by infer_instance)
   have hbase := completeCaseIPW_influence_2541 Q r hM cc ε hε hπ
     dψQ χ hχ dψObs hDerivativeRestriction
   have hchar := ipw_influence_characterization Q r hM dψObs

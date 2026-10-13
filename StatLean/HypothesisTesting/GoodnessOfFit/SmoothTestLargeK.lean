@@ -433,8 +433,6 @@ private lemma law_scoreVecK {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeas
           (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) := by
   classical
   have hgmeas : Measurable (psiVecK ψ) := measurable_psiVecK hψmeas
-  have : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
-    (by infer_instance)
   set Ψ : (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
     fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hΨ
   have hΨcont : Continuous Ψ := by

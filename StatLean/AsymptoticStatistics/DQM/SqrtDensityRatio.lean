@@ -107,8 +107,6 @@ lemma dqm_sqrtDensityRatio_l2_linearization
           ring
     exact hle.trans (by nlinarith)
   let P₀ : Measure 𝒳 := μ.withDensity fun x => ENNReal.ofReal (p x)
-  let : IsFiniteMeasure P₀ :=
-    isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   let qp : EuclideanSpace ℝ (Fin k) → 𝒳 → ℝ := fun θ x => W θ x - z θ x
   have hWmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (W θ) 2 P₀ := by
     filter_upwards [hqmem] with θ hqm

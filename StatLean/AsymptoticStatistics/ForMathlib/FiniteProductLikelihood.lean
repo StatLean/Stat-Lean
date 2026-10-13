@@ -281,10 +281,6 @@ theorem positiveRectangle_restrict_eq
     rw [expLogFactor_apply p q hp0 hq0]
     obtain ⟨hp, hq⟩ := hx
     rw [ite_eq_right (ne_of_gt hp), ite_eq_right (ne_of_gt hq)]
-  have : IsFiniteMeasure ((mu.withDensity (ENNReal.ofReal ∘ p)).withDensity e) := by
-    rw [htilt]
-    exact isFiniteMeasure_withDensity_ofReal
-      (expLogFactor_integrable p q mu hpm hqm hp0 hq0 hpi hqi).hasFiniteIntegral
   have hfun : (fun x : Fin N → X =>
       ENNReal.ofReal (Real.exp (logLikelihood p q N x))) =
       fun x => ∏ i, e (x i) := by
@@ -439,11 +435,8 @@ theorem finiteProduct_expLog_comparison
     exact MeasurableSet.univ_pi fun _ =>
       (measurableSet_lt measurable_const hpm).inter
         (measurableSet_lt measurable_const hqm)
-  have hPprob : IsProbabilityMeasure P := by
-    simpa only [P] using productMeasureOfDensity_isProbabilityMeasure mu p N hpm hp0 hpi hp1
   have hQprob : IsProbabilityMeasure Q := by
     simpa only [Q] using productMeasureOfDensity_isProbabilityMeasure mu q N hqm hq0 hqi hq1
-  let : IsProbabilityMeasure P := hPprob
   let : IsProbabilityMeasure Q := hQprob
   have hTfinite : IsFiniteMeasure T := by
     simpa only [T, Function.comp_apply] using!

@@ -73,7 +73,6 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     Integrable (fun ω =>
       α * (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ))) μ := by
-  have : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
   -- Rewrite ratio as α * stoppedValue Yproc tauStar
   simp_rw [mul_div_assoc, ratio_eq_stoppedValue]
   -- Integrability from the negated supermartingale (= submartingale)

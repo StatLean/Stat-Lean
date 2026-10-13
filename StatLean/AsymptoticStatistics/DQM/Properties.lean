@@ -944,13 +944,6 @@ lemma dqm_perturbation_excess_mass_tendsto
   have hρ_toReal : ∀ x, (ρ x).toReal = M.density θ₀ x := fun x => by
     rw [hρ_def]; exact ENNReal.toReal_ofReal (M.density_nonneg θ₀ x)
   set P₀ : Measure 𝓧 := μ.withDensity ρ with hP₀_def
-  have hP₀_finite : IsFiniteMeasure P₀ := by
-    refine ⟨?_⟩
-    rw [hP₀_def, withDensity_apply ρ MeasurableSet.univ, Measure.restrict_univ]
-    have : (∫⁻ x, ρ x ∂μ) = ENNReal.ofReal (∫ x, M.density θ₀ x ∂μ) := by
-      rw [hρ_def, ← ofReal_integral_eq_lintegral_ofReal hint
-        (Filter.Eventually.of_forall (M.density_nonneg θ₀))]
-    rw [this]; exact ENNReal.ofReal_lt_top
   -- `⟨h,ℓ⟩² ∈ L¹(P₀)`.
   have hsq_int_P₀ : Integrable (fun x => ⟪h, ℓ x⟫ ^ 2) P₀ := by
     rw [hP₀_def, integrable_withDensity_iff hρ_meas hρ_lt_top]

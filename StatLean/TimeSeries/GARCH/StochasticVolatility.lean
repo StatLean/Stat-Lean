@@ -204,7 +204,6 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
     {e : ℤ → Ω' → ℝ} (hem : ∀ s : ℤ, Measurable[m] (e s)) (t : ℤ) :
     Measurable[m] fun ω =>
       limUnder atTop (fun N => ∑ j ∈ Finset.range N, a1 ^ j * e (t - (j : ℕ)) ω) := by
-  let := m
   exact (MeasureTheory.StronglyMeasurable.limUnder (l := atTop)
     (fun _N => (Finset.measurable_sum _ fun _j _ =>
       (hem _).const_mul _).stronglyMeasurable)).measurable
@@ -213,7 +212,6 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
 private lemma comap_window_le_of_measurable {Ω' : Type*} (m : MeasurableSpace Ω')
     {κ : Type*} (F : κ → Ω' → ℝ) (hF : ∀ j, Measurable[m] (F j)) :
     MeasurableSpace.comap (fun ω (j : κ) => F j ω) inferInstance ≤ m := by
-  let := m
   exact measurable_iff_comap_le.1 (Measurable.of_eval fun j => hF j)
 
 /-- **FY eq. (4.60)**: the causal latent chain is strictly stationary. The centred chain

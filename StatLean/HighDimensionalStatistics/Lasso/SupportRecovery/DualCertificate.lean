@@ -124,8 +124,7 @@ private lemma transpose_restrict (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (F
 private lemma ciSup_abs_nonneg {ι : Type*} [Finite ι] (f : ι → ℝ) : 0 ≤ ⨆ i, |f i| := by
   rcases isEmpty_or_nonempty ι with he | hne
   · have := he; simp
-  · have := Fintype.ofFinite ι
-    exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary ι) (abs_nonneg _)
+  · exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary ι) (abs_nonneg _)
 
 /-- The matrix ℓ∞ operator norm is nonnegative. -/
 private lemma matLinftyNorm_nonneg {p q : Type*} [Finite p] [Fintype q] (A : Matrix p q ℝ) :
@@ -133,8 +132,7 @@ private lemma matLinftyNorm_nonneg {p q : Type*} [Finite p] [Fintype q] (A : Mat
   unfold matLinftyNorm
   rcases isEmpty_or_nonempty p with he | hne
   · have := he; simp
-  · have := Fintype.ofFinite p
-    exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary p)
+  · exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary p)
       (Finset.sum_nonneg fun _ _ => abs_nonneg _)
 
 /-- ℓ∞-norm bound from a uniform coordinate bound (nonempty- and empty-safe). -/
@@ -525,7 +523,6 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
       |(1 / (lam * (n : ℝ))) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp))| ≤ (1 - α) / 2 := by
     intro j hj
     have hjc : j ∈ Sᶜ := Finset.mem_compl.mpr hj
-    have : Nonempty {x // x ∈ Sᶜ} := ⟨⟨j, hjc⟩⟩
     have hcoordeq : ((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
         (⟨j, hjc⟩ : {x // x ∈ Sᶜ})
         = (1 / (n : ℝ)) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp)) := by

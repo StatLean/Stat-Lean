@@ -183,7 +183,6 @@ theorem condDistrib_expFamily_of_isCanonicalUT
   have hC₀ : (0 : ℝ) < C p₀ := hCpos p₀ hp₀
   -- the conditional law of the interest statistic under the reference parameter
   set Q₀ : Measure (ℝ × Ξ) := (P p₀).map fun x => (U x, T x) with hQ₀
-  have : IsProbabilityMeasure Q₀ := hQprob p₀
   set κ₀ : Kernel Ξ ℝ := condDistrib Prod.fst Prod.snd Q₀ with hκ₀
   -- the conditional law computed from the joint law of `(U, T)` is the conditional law of `U`
   have hck : ∀ (ρ₁ ρ₂ : Measure (Ξ × ℝ)) [IsFiniteMeasure ρ₁] [IsFiniteMeasure ρ₂],
@@ -315,7 +314,6 @@ theorem condDistrib_eq_of_fst_eq
     rw [hzero] at h1
     simp at h1
   have hCq : (0 : ℝ) < C q := hCpos q hq
-  have : IsProbabilityMeasure ((P q).map fun x => (U x, T x)) := hQprob q
   have hck : ∀ (ρ₁ ρ₂ : Measure (Ξ × ℝ)) [IsFiniteMeasure ρ₁] [IsFiniteMeasure ρ₂],
       ρ₁ = ρ₂ → ρ₁.condKernel = ρ₂.condKernel := by
     rintro ρ₁ ρ₂ _ _ rfl; rfl

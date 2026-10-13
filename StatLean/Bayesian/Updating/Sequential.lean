@@ -65,7 +65,6 @@ theorem posterior_prod_ae_eq_sequential
     have h₂ : Measurable (p₂ θ) := hp₂.comp (measurable_const.prodMk measurable_id)
     rw [Kernel.prod_apply, hκ₁, hκ₂, prod_withDensity₀ h₁.aemeasurable h₂.aemeasurable]
   -- (ii) Batch-1 dominated Bayes for the pair.
-  have : IsMarkovKernel (κ₁ ×ₖ κ₂) := inferInstance
   have : SFinite (ν₁.prod ν₂) := inferInstance
   have hbayes := posterior_eq_withDensity_likelihood_div_predictive
     (π := π) (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ

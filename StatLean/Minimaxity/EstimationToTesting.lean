@@ -122,7 +122,6 @@ private lemma mul_multiwayTestingError_le
     Φ δ * multiwayTestingError (P.comap θfam hθ)
       ≤ minimaxRisk (fun j => distortionLoss Φ g (θfam j)) (P.comap θfam hθ) := by
   set Q := P.comap θfam hθ with hQ
-  have : IsMarkovKernel Q := Kernel.IsMarkovKernel.comap P hθ
   -- Pointwise geometric bound: `Φ(δ)·𝟙[T y ≠ j] ≤ Φ(ρ(g(θfam j), y))`.
   have hpt : ∀ (j : Fin M) (y : Ω),
       Φ δ * zeroOneLoss M j (T y) ≤ distortionLoss Φ g (θfam j) y := by

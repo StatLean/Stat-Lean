@@ -306,8 +306,6 @@ theorem coarsen_bayes_bridge (hM : Measurable M) (γ : QMDPath P_full)
   have hσμ : SigmaFinite (γ.dominating.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
-  have hPmap : IsProbabilityMeasure (P_full.map M) :=
-    (by infer_instance)
   have hσP : SigmaFinite (P_full.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       P_full hM
@@ -1003,7 +1001,6 @@ private lemma eLpNorm_qmdRem_tendsto (γ : QMDPath P_full) :
 private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
     Tendsto (fun t => eLpNorm (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=

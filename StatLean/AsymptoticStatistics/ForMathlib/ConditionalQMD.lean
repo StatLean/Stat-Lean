@@ -139,7 +139,7 @@ theorem conditionalScore_fibre_mean_zero
   have h_qmd : QMDAnalytic.IsQMDLimit (fun t => γ.curve t y) ν (γ.score y) :=
     γ.qmd_limit_fibre y
   have h_prob : ∀ t, IsProbabilityMeasure ((fun t => γ.curve t y) t) := by
-    intro t; have := γ.curve_markov t; infer_instance
+    intro t; infer_instance
   have h_ac : ∀ t, (fun t => γ.curve t y) t ≪ ν := fun t => γ.curve_absCont t y
   have hg_meas : Measurable (γ.score y) := γ.score_meas.comp measurable_prodMk_left
   have h_g_sqrt : MemLp (fun δ => γ.score y δ

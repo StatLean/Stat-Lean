@@ -458,7 +458,6 @@ private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧
         = ∫⁻ z, ∑ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹
             ∂(mixture Q) := by
     intro κ hκ
-    have := hκ
     have hmeas : ∀ j, Measurable fun z => (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ :=
       fun j => (Measure.measurable_rnDeriv (Q j) (mixture Q)).mul
         (Kernel.measurable_coe κ (measurableSet_singleton j).compl)

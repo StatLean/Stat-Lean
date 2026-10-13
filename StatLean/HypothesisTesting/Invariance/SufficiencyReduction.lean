@@ -240,8 +240,6 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
     (g : G') (θ : Θ') {B : Set 𝓣'} (hB : MeasurableSet B) :
     ∫ t in B, (∫ x, φ x ∂(Q (g • t))) ∂(statLaw P T θ) = ∫ x in T ⁻¹' B, φ x ∂(P θ) := by
   classical
-  have hprob : ∀ θ', IsProbabilityMeasure (statLaw P T θ') := fun θ' =>
-    (by rw [statLaw_eq_map P T _ hTmeas.aemeasurable]; infer_instance)
   have hφb : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφIcc x).1], (hφIcc x).2⟩
   have hstat : IsInvariantModel (G := G') (statLaw P T) :=

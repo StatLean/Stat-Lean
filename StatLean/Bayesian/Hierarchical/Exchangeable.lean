@@ -100,7 +100,6 @@ theorem posterior_exchangeable_of_exchangeable_hierarchy (κ : Kernel Θ 𝓧) [
     exact iidKernel_map_perm κ n θ σ.symm
   -- the candidate posterior at permuted data
   let η : Kernel (Fin n → 𝓧) Θ := Kernel.comap (κ'†π) (⇑e) e.measurable
-  have : IsMarkovKernel η := Kernel.IsMarkovKernel.comap (κ'†π) e.measurable
   -- key: the permuted joint equals the original joint, so `η` is a posterior
   have hstar : (κ' ∘ₘ π) ⊗ₘ η
       = ((κ' ∘ₘ π) ⊗ₘ (κ'†π)).map (Prod.map (⇑e.symm) id) := by

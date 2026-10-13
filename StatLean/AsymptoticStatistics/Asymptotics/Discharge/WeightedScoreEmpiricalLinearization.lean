@@ -249,7 +249,6 @@ private theorem dqm_sqrtDensityRatio_tail_sq_scaled_of_rootNBounded
       ∫ x in {x | (1 : ℝ) ≤ |M.sqrtDensityRatio theta0 (theta n) x|},
         M.sqrtDensityRatio theta0 (theta n) x ^ 2
         ∂(modelMeasure M mu theta0)) atTop (nhds 0) := by
-  let := modelMeasure_isProbabilityMeasure M mu hPDF theta0
   let : IsFiniteMeasure
       (mu.withDensity fun x => ENNReal.ofReal (M.density theta0 x)) :=
     isFiniteMeasure_withDensity_ofReal
@@ -409,7 +408,6 @@ private theorem dqm_good_complement_mass_scaled_of_rootNBounded
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
     (Eventually.of_forall fun n => mul_nonneg (Nat.cast_nonneg _) measureReal_nonneg) ?_
   filter_upwards [hWmem] with n hn
-  let := modelMeasure_isProbabilityMeasure M mu hPDF (theta n)
   have hmass : (modelMeasure M mu (theta n)).real (G n)ᶜ ≤
       (∫ x in Z, M.density (theta n) x ∂mu) +
         (9 / 4 : ℝ) * ∫ x in T n, W n x ^ 2

@@ -429,7 +429,6 @@ private theorem ueBridgePath_tendsto_of_uc
     Tendsto (fun j => ueNetApprox hHenv hH2 hFmeas hHinf hHsep net hnet j ω)
       atTop (𝓝 (ueBridgePath hHenv hH2 hFmeas hHinf hHsep net hnet ω)) :=
   by
-    let : Nonempty (LinfF F) := ⟨0⟩
     simpa only [ueBridgePath] using
       (ueNetApprox_cauchy_of_uc hHenv hH2 hFmeas hHinf hHsep net hnet huc).tendsto_limUnder
 
@@ -623,8 +622,6 @@ private theorem isTightMeasureSet_map_of_aestronglyMeasurable
   let : CompleteSpace C := isClosed_closure.completeSpace_coe
   let Ys : Ξ → C := fun ξ => ⟨Y ξ, subset_closure (Set.mem_range_self ξ)⟩
   have hYs : StronglyMeasurable Ys := hY.measurable.subtype_mk.stronglyMeasurable
-  let : IsProbabilityMeasure (μ.map Ys) :=
-    (by infer_instance)
   have hsrc : IsTightMeasureSet ({μ.map Ys} : Set (Measure C)) :=
     isTightMeasureSet_singleton
   have himg := hsrc.map (continuous_subtype_val : Continuous (fun z : C => (z : E)))
@@ -1295,7 +1292,6 @@ private theorem ueEmpirical_readout_tail_outer
               (memℓp_empiricalProcess
                 ⟨H, hHenv, hH2.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
                 (fun i : Fin n => X i.val ξ))))|)).toReal) atTop) atTop (nhds 0) := by
-  let : Nonempty (LinfF F) := ⟨0⟩
   obtain ⟨K, hK⟩ := hflip
   let 𝔾 : ℕ → Ξ → LinfF F := fun n ξ =>
     empiricalProcessLinf (fun i : Fin n => X i.val ξ)
@@ -1496,7 +1492,6 @@ private theorem ueWeakConvergesOuter_readout
             ⟨H, hHenv, hH2.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
             (fun i : Fin n => X i.val ξ))) + ‖f‖))).toReal -
         ‖f‖ * (μ Set.univ).toReal) atTop (nhds (∫ y, f y ∂nu)) := by
-  let : Nonempty (LinfF F) := ⟨0⟩
   let 𝔾 : ℕ → Ξ → LinfF F := fun n ξ =>
     empiricalProcessLinf (fun i : Fin n => X i.val ξ)
       (memℓp_empiricalProcess

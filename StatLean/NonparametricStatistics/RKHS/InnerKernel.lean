@@ -117,7 +117,6 @@ theorem dualRKHS_range_coe :
     letI := dualRKHS 𝕜 L
     Set.range (fun w : L => (w : L → 𝕜))
       = {g : L → 𝕜 | ∃ T : L →L⋆[𝕜] 𝕜, g = T} := by
-  let := dualRKHS 𝕜 L
   ext g
   constructor
   · rintro ⟨w, rfl⟩

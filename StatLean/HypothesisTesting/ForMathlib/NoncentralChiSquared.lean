@@ -196,7 +196,6 @@ theorem noncentralChiSquared_zero {k : ℕ}
     -- USER-INPUT: at least one degree of freedom (`chiSquared 0` is degenerate).
     (hk : 0 < k) :
     noncentralChiSquared k 0 = StatLean.MultipleTesting.chiSquared k := by
-  have : NeZero k := ⟨hk.ne'⟩
   rw [noncentralChiSquared, noncentralMean_zero, multivariateGaussian_zero_one,
     ← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop)]
   have hfun : ((fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2) ∘ (WithLp.toLp 2))

@@ -491,9 +491,6 @@ theorem semiparametric_convolution_theorem_vec_clause_a
     have hf_memLp : MemLp (fun v : EuclideanSpace ℝ (Fin k) =>
         ⟪lam_lifted, v⟫_ℝ) 2 L :=
       MemLp.const_inner (𝕜 := ℝ) lam_lifted hL_memLp
-    have hL_lam_prob' :
-        IsProbabilityMeasure (L.map (fun v : EuclideanSpace ℝ (Fin k) =>
-          ⟪lam_lifted, v⟫_ℝ)) := hL_lam_prob
     have hL_lam_memLp : MemLp (id : ℝ → ℝ) 2
         (L.map (fun v : EuclideanSpace ℝ (Fin k) => ⟪lam_lifted, v⟫_ℝ)) := by
       rw [memLp_map_measure_iff aestronglyMeasurable_id hf_meas.aemeasurable]

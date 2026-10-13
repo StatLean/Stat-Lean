@@ -1351,9 +1351,6 @@ private lemma map_multivariateGaussian_deriv (hpsd : covH.PosSemidef)
   have hpsd' : (D * covH * D.transpose).PosSemidef := by
     have hc := hpsd.conjTranspose_mul_mul_same (B := D.transpose)
     simpa [Matrix.conjTranspose_transpose] using hc
-  have : IsProbabilityMeasure ((multivariateGaussian
-      (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) :=
-    (by infer_instance)
   refine Measure.ext_of_charFun (funext fun t => ?_)
   -- pairing with `Df y` is pairing with the transposed direction
   set tD : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 (D.transpose.mulVec (WithLp.ofLp t)) with htD
