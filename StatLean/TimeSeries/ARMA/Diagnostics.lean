@@ -2829,8 +2829,6 @@ private lemma sum_sq_sampleResiduals_le {T : ℕ} {p q : ℕ} (b : Fin p → ℝ
 
 /-! #### The Lipschitz leg of residue (B) -/
 
--- the pathwise chain below multiplies six inequalities; the default budget is not enough
-set_option maxHeartbeats 1000000 in
 /-- **The Lipschitz leg**: `√T (γ̂_{ε̂(θ̂_T)}(k) − γ̂_{ε̂(θ₀)}(k)) →p 0`. This is finding
 28's item 1: the `ℓ¹` Lipschitz bound `Consistency.exists_armaPi_l1_lipschitz` converts the
 **super**-consistency `√T(θ̂_T − θ₀) →p 0` into an `o_p(1)` bound on the `√T`-scaled

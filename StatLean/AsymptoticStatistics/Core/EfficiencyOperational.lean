@@ -75,6 +75,8 @@ structure SelectedQMDPaths
     (P : Measure Ω) [IsProbabilityMeasure P]
     (T_set : TangentSpec P) where
   zero_mem : (0 : ↥(L2ZeroMean P)) ∈ T_set.carrier
+  /-- The QMD path through `P` selected for each tangent direction `g ∈ T_set.carrier`;
+  its score is `g` by `score_eq`. -/
   path : {g : ↥(L2ZeroMean P) // g ∈ T_set.carrier} →
     AsymptoticStatistics.Core.QMDPath.QMDPath P
   score_eq : ∀ g, (path g).score = (g : ↥(L2ZeroMean P))

@@ -668,7 +668,6 @@ private lemma lp_weight_diff_eq {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → �
   rw [← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl (fun k _ => by ring)
 
-set_option maxHeartbeats 1600000 in
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing

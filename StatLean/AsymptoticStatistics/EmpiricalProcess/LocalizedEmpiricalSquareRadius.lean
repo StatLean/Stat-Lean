@@ -2,6 +2,23 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalSquareRadius
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringBookDifference
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacherFiniteChaining
 
+/-!
+# Empirical square radius of strictly localized difference classes
+
+This file bounds the expected empirical square radius `empiricalSquareRadius` of the strictly
+localized difference class `strictLocalizedDifferenceClass F P r` under the canonical product
+law, for a pointwise-dense class `F` of measurable functions with a measurable envelope `Φ`
+in `L²(P)`. The population square radius of this class is at most `r ^ 2`
+(`populationSquareRadius_strictLocalizedDifferenceClass_le`), and on each sample its
+conditional Rademacher supremum is at most `78 √2 ‖2Φ‖ₙ J(θ, F, Φ)`
+(`conditionalRademacherSup_strictLocalizedDifferenceClass_le_rowBookEntropy`), where `‖2Φ‖ₙ`
+is the empirical `L²` seminorm of `2Φ`, `θ` the realized relative radius of the localized
+class and `J` the book uniform covering entropy integral. For a truncation level `K ≥ 0`,
+`lintegral_canonical_empiricalSquareRadius_strictLocalizedDifferenceClass_le_rowBookEntropy`
+combines these bounds: the expected empirical square radius is at most `r ^ 2`, plus
+`8 K n^{-1/2} · 78 √2 · E[‖2Φ‖ₙ J(θ, F, Φ)]`, plus the envelope tail `4 ∫_{K < 2|Φ|} Φ² dP`.
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory

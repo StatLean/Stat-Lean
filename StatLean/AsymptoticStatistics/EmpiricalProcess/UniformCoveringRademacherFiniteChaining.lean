@@ -1,8 +1,28 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 
+/-!
+# Finite dyadic chaining for conditional Rademacher suprema
+
+This file bounds the conditional Rademacher supremum of a class on a fixed sample by its
+finite-discrete uniform covering entropy integral. For dyadic nets
+`FiniteEmpiricalDyadicNets`, the Rademacher supremum over the level-`L` projections is split
+into a head term and chaining links (`projectedRademacherSup_le_head_add_sum_links`); each
+term is controlled by a finite sub-Gaussian maximal inequality, and the resulting dyadic sum
+is compared with `uniformCoveringEntropyIntegral`
+(`conditionalProjectedRademacherSup_le_entropyIntegral`). Letting `L → ∞` removes the
+projection error and gives `conditionalRademacherSup_le_uniformCoveringEntropyIntegral`:
+`conditionalRademacherSup F n X ≤ 26 ‖Φ‖ₙ J(θ, F, Φ)`, where `‖Φ‖ₙ` is the empirical `L²`
+seminorm of the envelope, `θ` the realized relative radius and `J` the entropy integral.
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 open scoped ENNReal NNReal
 
+/-- The empirical `L²` radius `(2^{-(q+1)} + 2^{-q}) θ ‖Φ‖ₙ` of the `q`-th chaining link, where
+`θ = empiricalRelativeRadiusReal F Φ n X` and `‖Φ‖ₙ = empiricalL2Seminorm n X Φ`.
+
+It is the sum of the net radii at levels `q + 1` and `q`, so by the triangle inequality it
+strictly bounds the empirical distance between consecutive projections. -/
 noncomputable def empiricalDyadicLinkRadius {Ω : Type*}
     (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
     (n : ℕ) (X : Fin n → Ω) (q : ℕ) : ℝ :=
@@ -12,6 +32,8 @@ noncomputable def empiricalDyadicLinkRadius {Ω : Type*}
 
 namespace FiniteEmpiricalDyadicNets
 
+/-- The Rademacher supremum `rademacherSup` over the level-`q` projections
+`Set.range (B.proj q)` of `F`, for a fixed sign vector `ε`. -/
 noncomputable def projectedRademacherSup
     {Ω : Type*} {F : Set (Ω → ℝ)} {Φ : Ω → ℝ}
     {n L : ℕ} {X : Fin n → Ω}
@@ -19,6 +41,9 @@ noncomputable def projectedRademacherSup
     (q : ℕ) (ε : Fin n → Bool) : ℝ≥0∞ :=
   rademacherSup (Set.range (B.proj q)) n X ε
 
+/-- The conditional Rademacher supremum `conditionalRademacherSup` over the level-`q`
+projections `Set.range (B.proj q)` of `F`, i.e. the average of `B.projectedRademacherSup q`
+over the signs. -/
 noncomputable def conditionalProjectedRademacherSup
     {Ω : Type*} {F : Set (Ω → ℝ)} {Φ : Ω → ℝ}
     {n L : ℕ} {X : Fin n → Ω}

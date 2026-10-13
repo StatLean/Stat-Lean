@@ -218,7 +218,6 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
           ∂(gaussShiftKernel {j // j ∈ Sᶜ} (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ})) := by
         rw [hθ₀']
 
-set_option maxHeartbeats 1000000 in
 /-- **Honest fixed-`n` composition** (reduction ∘ explicit ∘ event-monotonicity). Bounds the
 `E_{θ₀}`-mean of the posterior mass of `{ |supp_δ(θ)| > Aq }` by the honest engine exponent
 `card'·z·(c−1) − k·log c + r² + 2·card'·w` plus `e^{−r²/8}`, where `card' = |S₀ᶜ|`. This is the
@@ -637,7 +636,8 @@ theorem dl_theorem34_beta {β : ℝ}
     rw [add_zero] at hsum
     exact hsum
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 400000 in
+-- This proof uses about 260,000 heartbeats.
 /-- **BPPD Theorem 3.4 (posterior compressibility, `1/n`-regime).** Same conclusion with scale
 `aₙ = 1/n`, additionally requiring `qₙ ≥ C₀ log n` so the internal `r² = qₙ` (D2) forces the
 denominator error `e^{−qₙ}` to vanish. -/

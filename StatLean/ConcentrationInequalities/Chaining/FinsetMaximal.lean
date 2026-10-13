@@ -136,7 +136,8 @@ lemma integrable_sup'_finset {ι : Type*} {s : Finset ι}
       simp only [Finset.sup'_cons ht]
       exact (hint a (by simp)).sup (ih (fun i hi => hint i (by simp [hi])))
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 600000 in
+-- This proof uses about 440,000 heartbeats.
 /-- The pointwise supremum over a nonempty finite index set of integrable
 functions is integrable (public Finset twin of the private domination helper
 in `Maximal/FiniteMaximal.lean`). -/

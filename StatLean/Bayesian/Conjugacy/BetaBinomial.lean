@@ -2,8 +2,6 @@ import StatLean.Bayesian.Conjugacy.Defs
 import StatLean.Bayesian.Conjugacy.Criterion
 import Mathlib.Probability.Distributions.Beta
 
-set_option maxHeartbeats 1000000
-
 /-!
 # Beta-Binomial conjugacy
 
@@ -120,6 +118,8 @@ theorem betaPDF_mul_clampPow {α β : ℝ}
       · exact betaPDF_eq_zero_of_one_le (not_lt.mp h)
     rw [hz1, hz2, zero_mul, mul_zero]
 
+set_option maxHeartbeats 400000 in
+-- This proof uses about 250,000 heartbeats.
 /-- **Beta-Binomial posterior** (Gelman §2.4): observing `k` successes in
 `n` trials updates `Beta(α, β)` to `Beta(α + k, β + (n − k))`, predictive-a.e. -/
 theorem beta_binomial_posterior_ae {α β : ℝ}
@@ -164,6 +164,8 @@ theorem beta_binomial_posterior_ae {α β : ℝ}
     simp only [betaMeasure]
     rw [← withDensity_mul _ hbeta hg, hdens, withDensity_smul' _ _ hck]
 
+set_option maxHeartbeats 400000 in
+-- This proof uses about 250,000 heartbeats.
 /-- **Beta-Binomial marginal** (Gelman §2.4): the prior predictive pmf is
 `C(n,k) · B(α+k, β+n−k) / B(α, β)`. -/
 theorem beta_binomial_predictiveDensity {α β : ℝ}

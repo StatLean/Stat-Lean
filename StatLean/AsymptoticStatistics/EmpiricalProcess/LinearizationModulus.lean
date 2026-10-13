@@ -1528,9 +1528,6 @@ private theorem scaledDiffModulusAt_aemeasurable
 
 /-! ### The scaled-shell modulus -/
 
--- The `limsup` argument identifies two copies of the pair-oscillation event,
--- whose defeq check exceeds the default heartbeat budget.
-set_option maxHeartbeats 1000000 in
 /-- **The √n-scaled shell/linearization modulus vanishes**
 (vdV Lemma 19.34 and Theorem 19.28).
 

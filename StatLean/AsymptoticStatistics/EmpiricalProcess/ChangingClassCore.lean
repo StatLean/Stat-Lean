@@ -34,8 +34,11 @@ instance instBorelSpaceLinfT (T : Type*) : BorelSpace (LinfT T) := ⟨rfl⟩
 /-- **Constitutive (vdV Theorem 18.14):** a finite partition of the index set together with one
 representative per cell. The zero-cell case is retained. -/
 structure FiniteApproximation (T : Type*) where
+  /-- The number of cells of the partition (possibly zero). -/
   k : ℕ
+  /-- The cell `cell t` containing the index `t`. -/
   cell : T → Fin k
+  /-- The representative index `rep i` of cell `i`; it is not required to lie in cell `i`. -/
   rep : Fin k → T
 
 /-- **Evaluation at one bounded-path coordinate** (vdV Theorem 18.14), bundled as

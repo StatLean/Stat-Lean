@@ -12,6 +12,9 @@ namespace AsymptoticStatistics.LowerBounds.GaussianConePrior
 
 variable {m : ℕ}
 
+/-- The effective span of `C`: the linear span `Submodule.span ℝ C` of `C` in
+`EuclideanSpace ℝ (Fin m)`. A convex `C` with `0 ∈ C` contains an open ball of this
+subspace (`exists_effectiveInteriorBall`). -/
 noncomputable def effectiveSpan (C : Set (EuclideanSpace ℝ (Fin m))) :
     Submodule ℝ (EuclideanSpace ℝ (Fin m)) := Submodule.span ℝ C
 

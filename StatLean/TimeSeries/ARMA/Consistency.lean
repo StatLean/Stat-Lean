@@ -4323,9 +4323,6 @@ private lemma integral_defect_le [IsProbabilityMeasure μ] {ψ π : ℕ → ℝ}
   have hedge := sum_edge_le T m (c := (∑' n : ℕ, |π n|) * c0) (by positivity)
   linarith
 
--- The residual-row identity below re-unifies the full `piMat`/`dotProduct` statement at
--- width `T` several times, which exceeds the default heartbeat budget at `whnf`.
-set_option maxHeartbeats 1600000 in
 open Matrix in
 /-- **Step (C) of the `armaProfileS_tendstoInProb` route — PROVED**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
@@ -4636,11 +4633,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         have hmk := hmarkov m T hT3
         linarith
 
--- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
--- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
--- heartbeat budget at `whnf`.
 open Matrix in
-set_option maxHeartbeats 1600000 in
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
 
@@ -5436,9 +5429,6 @@ private lemma contrast_tolerance_absurd {σ2 γ e : ℝ} (hσ : 0 < σ2) (hγ : 
   have hprodγ : e * γ ≤ σ2 / 8 * γ := mul_le_mul_of_nonneg_right he1 (le_of_lt hγ)
   nlinarith [mul_pos hσ hγ]
 
--- The assembly re-unifies the full four-fold union of `Fin T`-indexed matrix events
--- several times, which exceeds the default heartbeat budget at `whnf`.
-set_option maxHeartbeats 1600000 in
 open Matrix in
 /-- **Consistency of approximate MLE sequences** over a compact identifiable
 neighbourhood: any measurable approximate-minimizer sequence of the profiled

@@ -4659,7 +4659,6 @@ lemma surrogateRemGraded_le (θ u v : ℝ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤
   rw [surrogateRemGraded, surrogateRemPoly]
   linarith [h]
 
-set_option maxHeartbeats 800000 in
 /-- **The pointwise expansion of the surrogate's character.**
 
 `e^{iθHₙ} = e^{iθu}(1 − iθ(uv)r/2 + iθu³r²/2 + 3iθ(uv²)r²/8 − θ²(uv)²r²/8) + O(r³)`,
@@ -4955,7 +4954,6 @@ lemma integrable_expansionIntegrand :
   exact hsum.congr
     (Filter.Eventually.of_forall fun w => (expansionIntegrand_eq c₂ c₃ c₄ c₅ t w).symm)
 
-set_option maxHeartbeats 1000000 in
 include h2 h3 h4 h5 in
 /-- **The surrogate's expansion integrates to the multilinear combination.**
 
@@ -5058,7 +5056,6 @@ theorem integral_expansionIntegrand_eq :
 
 end Expansion
 
-set_option maxHeartbeats 1000000 in
 /-- **The characteristic function of the delta-method surrogate, over an arbitrary law of the
 bivariate root.**
 
@@ -7221,11 +7218,20 @@ lemma abs_coord_le_norm (t : E₂) : |t 0| ≤ ‖t‖ ∧ |t 1| ≤ ‖t‖ := 
   · nlinarith [abs_nonneg (t 0), sq_abs (t 0), sq_nonneg (t 1)]
   · nlinarith [abs_nonneg (t 1), sq_abs (t 1), sq_nonneg (t 0)]
 
+/-- Entry `(0, 0)` of the covariance matrix of the studentizing pair
+`studentPair F X = (X − μ, (X − μ)² − σ²)` for `X ∼ F`, where `μ = E_F X` and `σ² = Var_F X`:
+`∫ y² d(centredLaw F)(y) = E_F (X − μ)²`. -/
 noncomputable def studentCov00 (F : Measure ℝ) : ℝ := ∫ y, y ^ 2 ∂(centredLaw F)
 
+/-- Entry `(0, 1)` of the covariance matrix of the studentizing pair `studentPair F`:
+`∫ y (y² − σ²) d(centredLaw F)(y) = E_F[(X − μ)((X − μ)² − σ²)]`, where `μ = E_F X` and
+`σ² = Var_F X`. -/
 noncomputable def studentCov01 (F : Measure ℝ) : ℝ :=
   ∫ y, y * (y ^ 2 - Var[fun s : ℝ => s; F]) ∂(centredLaw F)
 
+/-- Entry `(1, 1)` of the covariance matrix of the studentizing pair `studentPair F`:
+`∫ (y² − σ²)² d(centredLaw F)(y) = E_F((X − μ)² − σ²)²`, where `μ = E_F X` and
+`σ² = Var_F X`. -/
 noncomputable def studentCov11 (F : Measure ℝ) : ℝ :=
   ∫ y, (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2 ∂(centredLaw F)
 
@@ -7899,6 +7905,9 @@ lemma iteratedFDeriv_bulkMultiplier_eq_zero {M : ℝ} (hM : 0 < M) (σ r θ : �
   by_contra hne
   exact hns (support_iteratedFDeriv_subset m hne)
 
+/-- The bulk multiplier `bulkMultiplier σ r θ M` as a Schwartz function on `ℝ²`, for `M > 0`:
+it is smooth and supported in the closed ball of radius `2M`, so `schwartzOfCompactSupport`
+applies. -/
 noncomputable def schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) :
     SchwartzMap E₂ ℂ :=
   schwartzOfCompactSupport (bulkMultiplier σ r θ M) (contDiff_bulkMultiplier σ r θ M)
@@ -8222,9 +8231,6 @@ lemma norm_iteratedFDeriv_expPhase_le {q : E₂ → ℝ} (hq : ContDiff ℝ (⊤
 
 /-! ## The residue (A2) -/
 
--- The assembly chains a Leibniz split, a Faà di Bruno bound and the cubic-derivative
--- calculus below; the elaboration is long but shallow, and the default budget is not enough.
-set_option maxHeartbeats 1600000 in
 /-- **(A2) The sup-norm of every derivative of the bulk multiplier is polynomial in `n` and
 `|θ|`** — the wave-34 residue of input (A), and now **proved**.
 
@@ -9976,8 +9982,6 @@ lemma volume_band_le (t : E₂) {R : ℝ} (hR : 0 ≤ R) :
   congr 1
   ring
 
--- the ten-fold ledger arithmetic runs under a set integral
-set_option maxHeartbeats 1000000 in
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
@@ -10188,8 +10192,6 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
         nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 11]
 
 
--- the fourteen-fold ledger arithmetic runs under a set integral
-set_option maxHeartbeats 1000000 in
 /-- **(B) AT FOURTEEN PARTS.** The same theorem as
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, at `N = 14` and hence at accuracy
 `n^{-17/6}` rather than `n^{-3/2}`. Nothing analytic changes: the fibre estimate, the band
@@ -10927,7 +10929,6 @@ private lemma step_eight_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
   have e8 : (0 : ℝ) ≤ (n : ℝ) ^ 2 := sq_nonneg _
   linarith
 
-set_option maxHeartbeats 1000000 in
 /-- **The order-eight induction step, as pure arithmetic.** -/
 private lemma step_eight {n : ℕ} {Bd a b m3 m5 m6 m8 M4 M5 M6 M8 : ℝ}
     (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
@@ -11054,7 +11055,6 @@ private lemma step_ten_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
   have e16 : (0 : ℝ) ≤ (n : ℝ) ^ 3 := pow_nonneg (Nat.cast_nonneg n) 3
   nlinarith [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16]
 
-set_option maxHeartbeats 2000000 in
 /-- **The order-ten induction step, as pure arithmetic.** -/
 private lemma step_ten {n : ℕ} {Bd a b m3 m5 m6 m7 m8 m10 M4 M5 M6 M7 M8 M10 : ℝ}
     (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
@@ -11376,7 +11376,6 @@ lemma integral_pi_sum_pow_six_A (F : Measure ℝ) [IsProbabilityMeasure F] {V : 
   nlinarith [h6, t1, t2, t3, t4, hfin]
 
 
-set_option maxHeartbeats 1000000 in
 lemma integral_pi_sum_pow_eight_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
     (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
     (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
@@ -11444,7 +11443,6 @@ lemma integral_pi_sum_pow_eight_le (F : Measure ℝ) [IsProbabilityMeasure F] {V
     linarith [hstep]
 
 
-set_option maxHeartbeats 2000000 in
 lemma integral_pi_sum_pow_ten_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
     (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
     (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
@@ -11840,9 +11838,10 @@ private lemma sq_le_sq_of_abs_le {a b : ℝ} (h : |a| ≤ |b|) : a ^ 2 ≤ b ^ 2
   rw [← sq_abs a, ← sq_abs b]
   exact pow_le_pow_left₀ (abs_nonneg _) h 2
 
+set_option maxHeartbeats 2100000 in
 -- The assembly is one long chain of `set`-bound moment bookkeeping over two coordinates; the
 -- default heartbeat budget does not elaborate it.
-set_option maxHeartbeats 4000000 in
+-- This proof uses about 1,610,000 heartbeats.
 /-- **(C) The fourth moment of the truncated root is `O(n)`** — the third input, the only
 probabilistic one, and now **proved**.
 

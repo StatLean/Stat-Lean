@@ -114,7 +114,6 @@ theorem gammaPDF_mul_prod_poissonDensity {a r : ℝ}
       Finset.card_univ, Fintype.card_fin, Finset.prod_pow_eq_pow_sum, ← hpow, ← hexp]
     field_simp
 
-set_option maxHeartbeats 1000000 in
 /-- **Gamma-Poisson posterior** (Gelman §2.6, `n`-sample form): iid Poisson counts update
 `Gamma(a, r)` to `Gamma(a + ∑ yᵢ, r + n)`, predictive-a.e. -/
 theorem gamma_poisson_posterior_ae {a r : ℝ}

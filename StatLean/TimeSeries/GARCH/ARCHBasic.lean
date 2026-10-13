@@ -1121,7 +1121,8 @@ private lemma lintegral_archWin_one_le_pow [IsProbabilityMeasure μ] {p : ℕ} {
       refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
       rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg fun i _ => hb i, pow_succ']
 
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 300000 in
+-- This proof uses about 230,000 heartbeats.
 /-- **Giraitis–Kokoszka–Leipus 2000 / Brandt (1986)** (*not* proved in FY §4.2.1): under
 `Σ_j b_j < 1` a **strictly stationary** ARCH(p) solution automatically has a finite second
 moment. See the section header for the route. -/

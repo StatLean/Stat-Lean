@@ -87,6 +87,8 @@ spaces are continuous, and `EuclideanSpace.equiv` is a continuous linear equival
 This action is part of the Gaussian-shift API because it converts covariance-scale
 draws into the information-scale coordinates used by the experiment. -/
 
+/-- The action `x ↦ J x` of a square matrix `J` on `EuclideanSpace ℝ (Fin k)`: the
+matrix-vector product `J *ᵥ x`, transported along `EuclideanSpace.equiv`. -/
 noncomputable def matrixAction
     (J : Matrix (Fin k) (Fin k) ℝ) (x : EuclideanSpace ℝ (Fin k)) :
     EuclideanSpace ℝ (Fin k) :=

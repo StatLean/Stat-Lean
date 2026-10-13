@@ -220,10 +220,11 @@ private lemma le_biSup_mem {E : Type*} {T : Set E} (hfin : T.Finite)
       exact le_max_right _ _
   exact le_ciSup_of_le hbdd v (le_of_eq (ciSup_pos (f := fun _ : v ∈ T => g v) hv).symm)
 
+set_option maxHeartbeats 1600000 in
 -- The conditional Dudley glue assembles the whole §8.3.6 pipeline (covering
 -- construction, entropy integral, sub-Gaussian bridge) in one term, whose
 -- `Finset.sup'`/`⨆` defeq checks over `EuclideanSpace` need a raised limit.
-set_option maxHeartbeats 1600000 in
+-- This proof uses about 1,320,000 heartbeats.
 /-- **Conditional Rademacher complexity bound** (HDP §8.3.6, Theorem 8.3.15
 conditional step): for a fixed sample `x`, the expected Rademacher supremum
 over a finite class of VC dimension `≤ d` is at most `2700·√d/√n`.

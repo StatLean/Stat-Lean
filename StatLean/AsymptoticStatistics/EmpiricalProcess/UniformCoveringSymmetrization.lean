@@ -4,10 +4,28 @@ import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectatio
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Pi
 
+/-!
+# Symmetrization of the empirical-process supremum
+
+This file proves the symmetrization inequality `E ‖𝔾ₙ‖_F ≤ 2 E E_ε ‖n^{-1/2} ∑ᵢ εᵢ f(Xᵢ)‖_F`
+for a pointwise-dense class `F` of measurable functions. Writing `𝔾ₙ f` as an average over an
+independent ghost sample bounds the supremum by an integral of `ghostDifferenceSup`
+(`rawEmpiricalProcessSup_le_ghostLIntegral`). The measure-preserving swap `signedGhostSwap`
+identifies `ghostLIntegral` with its Rademacher-signed version `signedGhostLIntegral`, which
+the triangle inequality bounds by twice the expected `conditionalRademacherSup`. The result
+is stated under the canonical product law (`canonical_symmetrization_empiricalProcess`) and,
+with an outer expectation, for an iid sequence (`outer_symmetrization_empiricalProcess`).
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter
 open scoped ENNReal
 
+/-- The sign-driven swap of a sample and its ghost sample: it sends `((x, y), ε)` to
+`((x', y'), ε)`, where `(x' i, y' i) = (y i, x i)` if `ε i = true` and `(x i, y i)` otherwise.
+
+It is an involution, and for a probability measure `P` it preserves the product of the two
+`n`-fold product laws of `P` and `rademacherCube n` (`measurePreserving_signedGhostSwap`). -/
 def signedGhostSwap {Ω : Type*} (n : ℕ) :
     (((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool)) →
       (((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool)) :=
@@ -116,6 +134,12 @@ theorem measurePreserving_signedGhostSwap
     MeasurableEquiv.arrowProdEquivProdArrow, Equiv.arrowProdEquivProdArrow] <;>
     split <;> rfl
 
+/-- The Rademacher-signed ghost difference supremum
+`sup_{f ∈ F} |n^{-1/2} ∑ᵢ εᵢ (f(xᵢ) - f(yᵢ))|`, where `εᵢ = rademacherSign (ε i)`, valued in
+`ℝ≥0∞`.
+
+It equals `ghostDifferenceSup` evaluated after `signedGhostSwap`
+(`ghostDifferenceSup_signedGhostSwap`). -/
 noncomputable def signedGhostDifferenceSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (x y : Fin n → Ω)
     (ε : Fin n → Bool) : ℝ≥0∞ :=
@@ -123,6 +147,9 @@ noncomputable def signedGhostDifferenceSup {Ω : Type*}
     ∑ i, ProbabilityTheory.rademacherSign (ε i) *
       (f (x i) - f (y i)))
 
+/-- The expected ghost difference supremum `E ghostDifferenceSup F n X Y` for two independent
+samples `X` and `Y` of size `n` from `P`, as a lower Lebesgue integral against the product of
+the two `n`-fold product laws. -/
 noncomputable def ghostLIntegral
     {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=
@@ -131,6 +158,9 @@ noncomputable def ghostLIntegral
       ∂((Measure.pi (fun _ : Fin n => P)).prod
         (Measure.pi (fun _ : Fin n => P)))
 
+/-- The expected signed ghost difference supremum `E signedGhostDifferenceSup F n X Y ε` for
+two independent samples `X` and `Y` of size `n` from `P` and independent signs `ε` with law
+`rademacherCube n`, as a lower Lebesgue integral. -/
 noncomputable def signedGhostLIntegral
     {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=

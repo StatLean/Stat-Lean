@@ -68,7 +68,9 @@ Fields:
 Reference: vdV Example 25.28 (the observation `(X, Y)` with
 `Y = g_θ(X) + e`, `E(e | X) = 0`). -/
 structure RegObs (X : Type*) where
+  /-- The covariate `X`. -/
   x : X
+  /-- The real-valued response `Y = g_θ(X) + e`. -/
   y : ℝ
 
 /-- The σ-algebra on `RegObs X` is the pullback of the product σ-algebra

@@ -122,8 +122,6 @@ private lemma real_sqrt_add_le (x y : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
   rw [add_sq, Real.sq_sqrt hx, Real.sq_sqrt hy]
   nlinarith [mul_nonneg (Real.sqrt_nonneg x) (Real.sqrt_nonneg y)]
 
--- The nested log/exp/rpow algebra plus the several `nlinarith` calls exceed the default budget.
-set_option maxHeartbeats 1000000 in
 /-- **The core real-analysis inequality** behind `dlBetaRatio_le` (block-ratio, `Γ`-volumes
 cancelled). `t` stands for `‖θ₀‖`, `d = |S|`, `n = card ι`. The `S`-block numerator constant
 `(17·a·δ^{a−1})^d` times the net radius `(√5/4·jr)^d` is dominated by the density-lower constant
@@ -244,8 +242,6 @@ private lemma massRatio_real_ineq {a δ r t w : ℝ} {d n j : ℕ}
             + (-2 * (n : ℝ) * w) from by ring, Real.exp_add, Real.exp_add]
         ring
 
--- Large block-factorization proof (product-measure transport + volume cancellation + real algebra).
-set_option maxHeartbeats 2000000 in
 /-- **Combined prior mass ratio** (BPPD Lemma 6.1, corrected — see the file header D10/D11). The
 ratio of a net-piece mass (radius `ρ = (√5/4)jr`, intersected with `{ ∀ i ∈ S, |θᵢ| > δ }`) to the
 contraction-ball mass `Π(B(θ₀, r))` is at most `exp` of

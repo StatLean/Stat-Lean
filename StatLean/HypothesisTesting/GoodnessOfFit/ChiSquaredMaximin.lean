@@ -479,9 +479,6 @@ private lemma withDensity_exp_log_facts {m : ℕ} {P₀ : Measure (Fin m)}
 
 /-! ### (i) The upper bound -/
 
--- The proof is a single long assembly over the canonical multinomial experiment; see the
--- proof note below.  Elaboration exceeds the default budget.
-set_option maxHeartbeats 3200000 in
 /-- **No test beats the chi-squared value.** For any test sequence whose power at the null
 tends to `α`, the limiting minimum power over the local shell is at most
 `P{χ²_k(b²) > c_{k,1−α}}`.

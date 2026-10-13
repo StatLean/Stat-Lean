@@ -153,6 +153,7 @@ private lemma twoSidedVal_mem_Icc {C₁ C₂ γ₁ γ₂ : ℝ}
   · exact ⟨le_refl 0, zero_le_one⟩
 
 set_option maxHeartbeats 1000000 in
+-- This proof uses about 820,000 heartbeats.
 /-- **Separation of the difference of two right-shifted two-sided values.** Write
 `D t = twoSidedVal C₁' C₂' γ₁' γ₂' t − twoSidedVal C₁ C₂ γ₁ γ₂ t`. If the second rejection
 interval lies to the right of the first (`hright`), then every level `s` at which `D s > 0`

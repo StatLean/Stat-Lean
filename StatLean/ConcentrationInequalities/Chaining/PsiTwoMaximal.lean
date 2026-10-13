@@ -139,9 +139,10 @@ theorem integral_abs_le_of_subGaussianNorm_le
   rw [hval] at hbd
   exact hbd
 
+set_option maxHeartbeats 600000 in
 -- Raised limit: the finite `⨆ i ∈ s` carrier forces expensive `whnf` unfolding of the
 -- `Finset`-to-`Set` coercion when discharging the `AEMeasurable.biSup` measurability side goal.
-set_option maxHeartbeats 1000000 in
+-- This proof uses about 460,000 heartbeats.
 /-- **ψ₂ maximal inequality — expectation bound** (HDP §2.5, Eq. (2.22)):
 `E max|Y_i| ≤ 2·L·√(log(2N))`, no centering. Frozen numeral `2` (split at
 `L√(log 2N)`; Gaussian-tail remainder ≤ 0.74·L√(log 2N), see file notes). -/
@@ -251,9 +252,10 @@ theorem expectation_abs_max_le {ι : Type*}
     _ = a₀ + (L : ℝ) / (2 * S) := ENNReal.toReal_ofReal (by positivity)
     _ ≤ 2 * (L : ℝ) * S := harith
 
+set_option maxHeartbeats 600000 in
 -- Raised limit: the finite `⨆ i ∈ s` carrier forces expensive `whnf` unfolding of the
 -- `Finset`-to-`Set` coercion when discharging the `AEMeasurable.biSup` measurability side goal.
-set_option maxHeartbeats 1000000 in
+-- This proof uses about 450,000 heartbeats.
 /-- Integrability of the finite maximum of ψ₂-bounded variables, derived from
 the tail bound (never hypothesized downstream). -/
 lemma integrable_biSup_abs {ι : Type*}

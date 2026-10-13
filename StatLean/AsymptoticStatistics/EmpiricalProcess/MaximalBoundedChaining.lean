@@ -1347,7 +1347,6 @@ theorem bounded_chain_head_B0_bound :
     _ = ENNReal.ofReal (1000 * (1 + cE)) * (J + R) := by ring
 
 set_option linter.unusedVariables false in
-set_option linter.flexible false in
 /-- The small links and positive first crossings cost only a universal
 multiple of the entropy integral.  Class nonemptiness is derived internally
 after the public empty-class branch and is forwarded to the entropy budget. -/
@@ -1455,7 +1454,9 @@ theorem bounded_chain_A_Bpos_bound :
         _ ≤ Real.sqrt n * (s q / (1 + w (q + 1))) := by
           simpa only [s, w, boundedCrossingThreshold] using hgate
         _ = _ := by ring
-    · simp [boundedAJump, hx]; exact div_nonneg (mul_nonneg (Real.sqrt_nonneg _) (hs q))
+    · simp only [boundedAJump, Set.mem_ofPred_eq, hx, not_false_eq_true, Set.indicator_of_notMem,
+        mul_zero, abs_zero]
+      exact div_nonneg (mul_nonneg (Real.sqrt_nonneg _) (hs q))
         (by linarith [hw (q + 1)])
   have hAvar (q : ℕ) (i : Fin (D.partition.Nq (q + 1))) : ∫ x,
       (boundedAJump D.partition n q i x) ^ 2 ∂P ≤ (s q) ^ 2 := by
@@ -1496,7 +1497,9 @@ theorem bounded_chain_A_Bpos_bound :
           _ ≤ Real.sqrt n * (s q / (1 + w (q + 1))) := by
             simpa only [s, w, boundedCrossingThreshold] using hgate
           _ = _ := by ring
-      · simp [boundedBposOsc, hx]; exact div_nonneg (mul_nonneg (Real.sqrt_nonneg _) (hs q))
+      · simp only [boundedBposOsc, Set.mem_ofPred_eq, hx, not_false_eq_true,
+          Set.indicator_of_notMem, mul_zero, abs_zero]
+        exact div_nonneg (mul_nonneg (Real.sqrt_nonneg _) (hs q))
           (by linarith [hw (q + 1)])
     · intro i
       have hΔL2 : eLpNorm (D.partition.Δ (q + 1) i) 2 P ≤ ENNReal.ofReal (s q) := by

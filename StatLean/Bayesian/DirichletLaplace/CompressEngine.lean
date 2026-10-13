@@ -75,7 +75,6 @@ lemma measurable_dlDenom {ι : Type*} [Fintype ι] (θ₀ : EuclideanSpace ℝ �
     funext y; rw [dlDenom, dlNumer, setLIntegral_univ]; rfl
   rw [hEq]; exact measurable_predictiveDensity (measurable_dlLR_uncurry _)
 
-set_option maxHeartbeats 1000000 in
 /-- **Compressibility split bound** (BPPD Thm 3.4 core). At the true parameter `θ₀ = 0`, the
 `E_{θ₀=0}`-mean of the un-normalized posterior ratio for `{ |supp_δ(θ)| > k }` is at most the prior
 mass of that set divided by `dbar = e^{−r²}·Π(B(0,r))`, plus the denominator-event error
@@ -146,7 +145,6 @@ theorem compress_ratio_le {a δ r : ℝ}
   rw [add_comm (π C / dbar)]
   exact add_le_add hMeasBound hIntBound
 
-set_option maxHeartbeats 1000000 in
 /-- **Explicit compressibility bound** (BPPD Thm 3.4 core). Feeding the support-count Chernoff bound
 (`PriorSmallBall`, MGF parameter `c > 1`) and the small-ball lower bound into `compress_ratio_le`
 collapses the RHS to a single exponential (`m·ζ·(c−1) − k·log c` Chernoff exponent, `ζ ≤ e·a·(8+2log

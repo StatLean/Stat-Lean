@@ -28,8 +28,6 @@ C. J. Stone, *Ann. Statist.* **5** (1977), 595–620.
 
 open Matrix
 
-set_option maxHeartbeats 800000
-
 namespace StatLean.NonparametricStatistics
 
 variable {n : ℕ} {xdat Y : Fin n → ℝ} {K : ℝ → ℝ} {h : ℝ} {ℓ : ℕ} {t : ℝ}

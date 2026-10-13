@@ -1224,8 +1224,6 @@ theorem localized_weight_integral_le [IsProbabilityMeasure μ]
   rw [hdens, hpint, mul_comm ((Cp * ∫ v, G v)) hn]
   exact mul_le_mul_of_nonneg_left hlast hhn.le
 
--- the tower/density/change-of-variables chain below is elaboration-heavy
-set_option maxHeartbeats 400000 in
 /-- **FY's implicit (2.74) — PROVED from the conditional δ-moment.** If
 `E(|e_0|^δ | X_0) ≤ M` a.e. and the density `p` is bounded by `Cp`, then the
 kernel-localized summand `ξ_0 = e_0 W((X_0 − x)/h)` obeys
@@ -2458,7 +2456,6 @@ theorem large_lag_covariance_bound' [IsProbabilityMeasure μ]
   rw [hexp] at hdav
   exact hdav
 
-set_option maxHeartbeats 1000000 in
 /-- **The small-block variance estimate, over an arbitrary index family.** -/
 theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
@@ -4918,8 +4915,6 @@ private theorem abs_double_sum_subset_sub_diag_le {n : ℕ} (I : Finset ℕ) (hI
     _ = (I.card : ℝ) * (2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
         rw [Finset.sum_const, nsmul_eq_mul]
 
-set_option maxHeartbeats 2000000 in
-set_option maxHeartbeats 2000000 in
 private theorem truncArray_core [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -5395,7 +5390,6 @@ private theorem truncArray_core [IsProbabilityMeasure μ]
     have := hCG' n s d
     simpa only [hCzdef] using this
 
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -5914,7 +5908,6 @@ private theorem tendsto_bigBlockIdx_card {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n
   field_simp
   ring
 
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -6077,7 +6070,6 @@ private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
 
 
 
-set_option maxHeartbeats 1000000 in
 /-- **The row-CLT in product-of-charFuns form.** A uniformly negligible bounded array of
 zero-mean rows with converging row variances has `∏ᵢ φ_{Y_{n,i}}(u) → φ_{N(0,σ²)}(u)`, with
 **no independence assumed**: the product is transported to an independent surrogate on the
@@ -6179,7 +6171,6 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
 
 
 
-set_option maxHeartbeats 1000000 in
 /-- **FY's Volkonskii–Rozanov step (2.77).** The charFun of the sum of the big blocks is
 within `16(k_n − 1) α_pair(s_n)` of the product of the block charFuns. -/
 private theorem norm_charFun_blockSum_sub_prod_le [IsProbabilityMeasure μ]
@@ -6447,8 +6438,6 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
     exact_mod_cast this
   exact Nat.one_le_div_iff (by omega) |>.2 hqn
 
-set_option maxHeartbeats 2000000 in
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),

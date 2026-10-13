@@ -28,8 +28,6 @@ Applications*, Chapman & Hall, 1996, §3.1, and C. J. Stone, *Ann. Statist.* **5
 
 open Matrix
 
-set_option maxHeartbeats 800000
-
 namespace StatLean.NonparametricStatistics
 
 variable {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {h : ℝ} {ℓ : ℕ} {t : ℝ}

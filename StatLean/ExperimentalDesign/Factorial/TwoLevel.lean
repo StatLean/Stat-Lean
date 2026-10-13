@@ -84,7 +84,6 @@ theorem character_mul_self (S : Finset ι) (x : ι → Bool) :
   rw [← Finset.prod_mul_distrib]
   exact Finset.prod_eq_one fun j _ => levelSign_mul_self (x j)
 
-set_option maxHeartbeats 800000 in
 /-- **Multiplicativity**: `χ_S · χ_T = χ_{S Δ T}` — Mead's product rule for effect
 rows (`Mead §13.1`; the group law behind confounding, `Mead §16.2`). -/
 theorem character_mul (S T : Finset ι) (x : ι → Bool) :

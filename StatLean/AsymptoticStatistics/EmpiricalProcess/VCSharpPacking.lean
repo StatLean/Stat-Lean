@@ -78,12 +78,20 @@ private noncomputable def extendSubtypeWeight (𝒜 : Finset (Finset α))
   classical
   exact if h : B ∈ 𝒜 then w ⟨B, h⟩ else 0
 
+/-- The minimum-endpoint weighted edge sum of the unit-distance graph of `𝒜`, for vertex
+weights `w` on the members of `𝒜`.
+
+Each unoriented edge `{B, B.erase x}` (with `x ∈ B` and both endpoints in `𝒜`) contributes
+`min (w B) (w (B.erase x))` exactly once. Edge behavior: an edgeless family has sum zero;
+negative weights are allowed by the definition but excluded by `weightedUnitDistance_le`. -/
 noncomputable def edgeMinWeightSum (𝒜 : Finset (Finset α))
     (w : ↥𝒜 → ℝ) : ℝ := by
   exact edgeMinWeightSumRaw 𝒜 (extendSubtypeWeight 𝒜 w)
 
 section UnitIncidence
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` and the down-compression
+`Down.compression a 𝒜` in the unit-incidence injection below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private noncomputable def unitIncidences (𝒜 : Finset (Finset α)) :
@@ -239,6 +247,8 @@ private noncomputable def downCompressedVertex
 
 section CompressionMass
 
+/-- Classical decidable equality on `α`, used by `Finset.erase`, `Finset.image`,
+`Down.compression` and `Finset.Shatters` in the compression lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma image_downCompressedVertex
@@ -339,6 +349,8 @@ end CompressionMass
 
 section EraseClosed
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` in the erase-closed family
+lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma mem_of_subset_of_erase_closed
@@ -393,6 +405,8 @@ private lemma vcIndexLE_finset_mono
 
 section WeightedRaw
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` on members of `𝒜` and on `𝒜`
+itself in the weighted edge-sum lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma edgeMinWeightSumRaw_sub_min
@@ -508,6 +522,8 @@ theorem unitDistance_edge_card_le
 
 section WeightedRawBound
 
+/-- Classical decidable equality on `α`, used to erase a minimum-weight member from `𝒜` in
+the induction below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private theorem edgeMinWeightSumRaw_le
@@ -613,6 +629,8 @@ private noncomputable def verticalEdgeCount
 
 section VerticalEdges
 
+/-- Classical decidable equality on `α`, used by `Finset.erase`, `Finset.memberSubfamily`,
+`Finset.nonMemberSubfamily` and intersections of families in the vertical-edge count below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma image_erase_verticalFamily
@@ -725,6 +743,8 @@ noncomputable def restrictionMultiplicity (P : Finset (Finset α))
 
 section RestrictionMultiplicity
 
+/-- Classical decidable equality on `α`, used by the intersections, differences, insertions,
+erasures and membership filters of finite sets in the trace-fiber double count below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private noncomputable def traceFiber
@@ -1572,6 +1592,8 @@ theorem randomDeletion_incidence_lower
 
 section FinitePackingBound
 
+/-- Classical decidable equality on `α`, used by the intersections `A ∩ t` and symmetric
+differences `(A \ B) ∪ (B \ A)` in the finite packing lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 set_option backward.isDefEq.respectTransparency.types false in

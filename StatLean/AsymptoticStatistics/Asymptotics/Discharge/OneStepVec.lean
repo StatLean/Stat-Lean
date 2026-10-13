@@ -10,8 +10,6 @@ import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresen
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.WeightedScoreEmpiricalLinearization
 import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 
-set_option backward.isDefEq.respectTransparency false
-
 /-!
 # One-step estimator semiparametric efficiency (vector θ)
 
@@ -31,6 +29,9 @@ construction** (arbitrary, non-diagonal `Ĩ`) and no coordinatewise identificati
 Reference: vdV §25.5, thm:25.57 (vector form). Main declarations:
 `oneStep_asympLinear_native_vec`, `oneStep_semiparametricallyEfficient_native_vec`.
 -/
+
+set_option backward.isDefEq.respectTransparency false
+
 
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal Matrix.Norms.L2Operator

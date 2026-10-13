@@ -4,6 +4,21 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 
+/-!
+# Entropy-type integrals at a random radius
+
+For antitone integrands `g n : ℝ → ℝ≥0∞`, `randomRadiusEntropy_lintegral_tendsto_zero` shows
+`∫ D_n(ξ) (∫_{(0, θ_n(ξ)]} g_n) dμ(ξ) → 0`, provided `∫ D_n dμ` is bounded,
+`D_n θ_n ≤ R_n` pointwise with `∫ R_n dμ → 0`, and `∫_{(0, a_n]} g_n → 0` along every positive
+antitone sequence `a_n → 0`. `randomRadiusEntropy_lintegral_tendsto_zero_of_scale` proves this
+from a single positive scale `a_n` with `∫_{(0, a_n]} g_n → 0` and `∫ R_n dμ / a_n → 0`,
+comparing the random radius `θ_n(ξ)` with `a_n` through
+`setLIntegral_Ioc_le_initial_add_ratio_mul_initial_of_antitone`; a positive antitone null scale
+with the second property exists by `exists_pos_antitone_scale_tendsto_zero_div`. Similarly,
+`exists_pos_antitone_scale_tendsto_zero_diagonal` chooses a positive antitone sequence
+`ε_n → 0` with `T n (ε n) → 0` whenever `T n ε → 0` for each fixed `ε > 0`.
+-/
+
 namespace AsymptoticStatistics.ForMathlib
 
 open Filter MeasureTheory Topology

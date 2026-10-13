@@ -30,8 +30,6 @@ of the exact-MISE theorem, kept as a documented input here).
 probability density, I," *Ann. Math. Statist.* **34** (1963), 480–491.
 -/
 
-set_option maxHeartbeats 1600000
-
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal
 

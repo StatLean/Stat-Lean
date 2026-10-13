@@ -586,9 +586,6 @@ theorem bulk_osc_mem {F : Set (Ω → ℝ)} {P : Measure Ω} {n : ℕ}
             - empiricalProcess P n X (g : Ω → ℝ)| :=
   ⟨⟨fhat, hf⟩, ⟨ghat, hg⟩, hclose, hosc⟩
 
--- reason: the generic `limsup_add_le` `whnf`-explodes on `ℝ≥0∞`/`atTop` (even in a
--- small context); we only need the `Vf → 0` specialization, proved here directly.
-set_option maxHeartbeats 800000 in
 /-- **`limsup (Uf + Vf) ≤ a` when `limsup Uf ≤ a` and `Vf → 0`** (over `atTop`,
 `ℝ≥0∞`). For every `b > a` the `limsup`-characterization needs `Uf n + Vf n < b`
 eventually: pick `c` with `limsup Uf < c < b`, so eventually `Uf n < c` and (from
@@ -635,10 +632,6 @@ theorem limsup_add_le_of_le (Uf Vf : ℕ → ℝ≥0∞) (a b : ℝ≥0∞)
   calc Uf n + Vf n < (a + c / 2) + (b + c / 2) := ENNReal.add_lt_add hUn hVn
     _ = d := hsum
 
--- reason: the bulk/tail `limsup` split unfolds the giant empirical-process payload;
--- the `clear_value` opacity device keeps it from `whnf`-exploding but the residual
--- `limsup`/`Tendsto` arithmetic still needs headroom above the default.
-set_option maxHeartbeats 1000000 in
 /-- **Outer-sup modulus implies per-pair consistency.** From the
 `IsAsymptoticallyEquicontinuous` predicate (the vdV 18.14(ii) outer-sup modulus)
 and a concrete jointly-measurable random pair `(fhat, ghat)` valued in `F` whose

@@ -162,7 +162,8 @@ private lemma lintegral_sum_abs_sq_le {n : ℕ} {Ω : Type} [MeasurableSpace Ω]
     _ = ENNReal.ofReal ((n : ℝ) ^ 2 * v) := by
         rw [← ENNReal.ofReal_mul (by positivity)]; congr 1; ring
 
-set_option maxHeartbeats 2000000 in
+set_option maxHeartbeats 400000 in
+-- This proof uses about 250,000 heartbeats.
 /-- **Sup-norm stochastic bound**: there is `C = C(ℓ, K_max, λ₀, a₀, L_K)` such that under
 the standing design assumptions, a Lipschitz boxed kernel, and i.i.d. `N(0, v)` noise,
 `E[(sup_{t∈[0,1]} |∑ᵢ ξᵢ·W*ᵢ(t)|)²] ≤ C·v·log n/(n·h)` for all `n ≥ 2`,

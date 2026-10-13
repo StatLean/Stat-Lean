@@ -1207,7 +1207,8 @@ private lemma tendsto_affineLog_mul_natRpow_neg' {p : ℝ} (hp : 0 < p) (C D : �
   refine h3.congr fun n => ?_
   ring
 
-set_option maxHeartbeats 1600000 in
+set_option maxHeartbeats 600000 in
+-- This proof uses about 410,000 heartbeats.
 /-- **Shell double-series limit (generic scale, D14).** The engine's term-(iii) shell double series
 at radius `r = √(qₙ log n)`, support-count threshold `⌊A·qₙ⌋₊`, and ANY scale sequence `av` in the
 window `0 < av ≤ 1/2 ∧ n·av ≤ 1` with a polynomial floor `av ≥ n^{−p}` — covering BOTH regimes
@@ -1675,7 +1676,8 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
   exact lt_of_lt_of_le hbox_pos (measure_mono hbox_sub)
 
 
-set_option maxHeartbeats 3200000 in
+set_option maxHeartbeats 300000 in
+-- This proof uses about 220,000 heartbeats.
 /-- **BPPD Theorem 3.1 (posterior contraction).** In the normal-means model with the
 Dirichlet–Laplace prior at scale `aₙ = n^{−(1+β)}`, under the growth condition `‖θ₀‖² ≤ qₙ log⁴n`,
 there is a constant `M > 0` such that the posterior mass of

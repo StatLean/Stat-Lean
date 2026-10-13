@@ -128,8 +128,7 @@ omit [IsProbabilityMeasure P] in
 /-- `Lp.coeFn` commutes with finite `Finset.sum`, `a.e.` Mathlib provides
 `Lp.coeFn_add` / `Lp.coeFn_zero` for the measure-`Lp` but no finite-sum version
 (the `lp`-space `coeFn_sum` is the sequence-space analogue); this is the
-`Finset.induction` lift. Mirrors
-`ForMathlib.Probability.IsonormalProcess.coeFn_lp_finsetSum`. -/
+`Finset.induction` lift. Mirrors `IsonormalProcess.coeFn_lp_partialSum`. -/
 private lemma Lp_coeFn_finsetSum {ι : Type*} (s : Finset ι) (f : ι → Lp ℝ 2 P) :
     (⇑(∑ k ∈ s, f k) : Ω → ℝ) =ᵐ[P] fun x => ∑ k ∈ s, (f k : Ω → ℝ) x := by
   classical

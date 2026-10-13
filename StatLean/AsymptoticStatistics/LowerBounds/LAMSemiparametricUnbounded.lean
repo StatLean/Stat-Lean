@@ -426,7 +426,8 @@ private theorem basis_at_proj_m_pos_unbounded_vec
       (fun l _ => carrier_sub.smul_mem _ (hg_in_car l))),
     h_cov_sum, h_entry_proj⟩
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 500000 in
+-- This proof uses about 380,000 heartbeats.
 /-- **Vector basis-saturation: per-`m` family + `Σ_m → Matrix.gram ℝ IF_eff` convergence.**
 
 Hoists `basis_at_proj_m_pos_unbounded_vec` over all `m` and supplies the

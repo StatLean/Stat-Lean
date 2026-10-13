@@ -58,6 +58,9 @@ Central to Steps 2–6 of the LAN expansion. Writing `p_n := M.density (θ₀ + 
 
 At `n = 0` the scaling factor `(√0)⁻¹ = 0` collapses the perturbation, so `W_0` is
 identically zero on `{p > 0}` — irrelevant for `atTop` limits. -/
+
+/-- The Hellinger-type statistic `W_n(x) = 2 (√(p_n(x) / p(x)) − 1)` of the LAN expansion,
+where `p_n = M.density (θ₀ + (√n)⁻¹ • h_n n)` and `p = M.density θ₀` (vdV §7.2). -/
 noncomputable def auxStatistic
     (M : ParametricFamily 𝓧 Θ) (θ₀ : Θ) (h_n : ℕ → Θ) (n : ℕ) (x : 𝓧) : ℝ :=
   2 * (Real.sqrt (M.density (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x / M.density θ₀ x) - 1)

@@ -888,9 +888,6 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
 -- LEAN-ONLY: the pointwise Step-B majorization. Where the Bayes formula holds, the local mass
 -- is nondegenerate and the score sum is bounded by `K`, the conditioned total-variation
 -- distance is at most a `(R, K, J)`-constant times `bvmStepBBound`.
--- The elaboration of the two `withDensity` rewrites plus the normalized Jensen bound exceeds
--- the default heartbeat budget (large `ℝ≥0∞` density terms), hence the raised limit.
-set_option maxHeartbeats 1000000 in
 private lemma tvDist_cond_le_bvmStepBBound
     -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))

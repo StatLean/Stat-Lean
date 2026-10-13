@@ -768,22 +768,33 @@ The construction uses the half-geometric law on `ℕ`, compressed multiplier
 `m(n)=2^{-n/2}`, bounded mean-zero `q` outside the multiplier range, and
 normalized square tilts. -/
 structure DenseRangeScoreWitness where
+  /-- The underlying law on `ℕ`: a probability measure (`hP`) that is half-geometric with full
+  support (`geometric_fullSupport`). -/
   P : Measure ℕ
   hP : IsProbabilityMeasure P
   geometric_fullSupport : IsHalfGeometricFullSupport P
   hcomplete : CompleteSpace ↥(L2ZeroMean P)
+  /-- The score operator `A : L²₀(P) →L[ℝ] L²₀(P)` (vdV §25.5), whose parameter Hilbert space
+  is `L²₀(P)` itself. -/
   A : @ScoreOperator ℕ inferInstance ↥(L2ZeroMean P) inferInstance
     inferInstance hcomplete P hP
+  /-- The continuous linear map underlying `A`, equal to `A.toCLM` by `Amap_eq`. -/
   Amap : ↥(L2ZeroMean P) →L[ℝ] ↥(L2ZeroMean P)
   Amap_eq : Amap = @ScoreOperator.toCLM ℕ inferInstance ↥(L2ZeroMean P)
     inferInstance inferInstance hcomplete P hP A
+  /-- An adjoint `A*` of `Amap`: `⟪Astar y, v⟫ = ⟪y, Amap v⟫` by `adjoint_identity`. -/
   Astar : ↥(L2ZeroMean P) →L[ℝ] ↥(L2ZeroMean P)
+  /-- The representer `χ̃` of the parameter derivative (vdV Theorem 25.32): `ψ` has derivative
+  `⟪q, b⟫` along `paths` in direction `b`, and `q ∉ range Astar` by `q_not_mem_adjoint_range`. -/
   q : ↥(L2ZeroMean P)
   adjoint_identity : ∀ v y, ⟪Astar y, v⟫_ℝ = ⟪y, Amap v⟫_ℝ
   dense_range : DenseRange Amap
   range_not_closed : ¬ IsClosed (Amap.range : Set ↥(L2ZeroMean P))
   q_not_mem_adjoint_range : q ∉ Astar.range
+  /-- The real parameter on laws over `ℕ`, differentiated along `paths` with representer `q`. -/
   ψ : Measure ℕ → ℝ
+  /-- Selected QMD paths at `P`: the path in direction `b` has score `A b`, and the difference
+  quotients of `ψ` along it tend to `⟪q, b⟫`. -/
   paths : @ScorePathDerivativeData ℕ inferInstance P hP
     ↥(L2ZeroMean P) inferInstance inferInstance hcomplete A q ψ
 
@@ -1344,18 +1355,30 @@ the dense-range obstruction witness. -/
 structure RawRegularityWitness where
   hP : IsProbabilityMeasure standardGaussian
   hcomplete : CompleteSpace ↥(L2ZeroMean standardGaussian)
+  /-- The score operator `A : ℝ →L[ℝ] L²₀(N(0, 1))`; by `paths.score_eq`, `A b` is the score
+  of the selected location path in direction `b`. -/
   A : @ScoreOperator ℝ inferInstance ℝ inferInstance inferInstance
     inferInstance standardGaussian hP
+  /-- The representer `χ̃ ∈ ℝ` of the parameter derivative: along the selected path in
+  direction `b`, `psi` has derivative `⟪chi, b⟫`. -/
   chi : ℝ
+  /-- The parameter functional on laws over `ℝ`; by `psi_on_location` it returns `θ` at the
+  location law `N(θ, 1)`. -/
   psi : Measure ℝ → ℝ
+  /-- Selected QMD paths at `standardGaussian` with scores `A b` and `psi`-derivative
+  `⟪chi, b⟫`; by `gaussian_location_path` the path in direction `b` is `t ↦ N(t b, 1)`. -/
   paths : @ScorePathDerivativeData ℝ inferInstance standardGaussian hP ℝ
     inferInstance inferInstance inferInstance A chi psi
   gaussian_location_path : ∀ b t,
     (paths.selectedPath b).curve t = gaussianReal (t * b) ⟨1, zero_le_one⟩
   psi_on_location : ∀ θ : ℝ, psi (gaussianReal θ ⟨1, zero_le_one⟩) = θ
+  /-- The estimator sequence on samples of size `n`; by `sample_mean` it is the sample mean
+  `(∑ i, X i) / n`, with value `0` at `n = 0`. -/
   T_n : ∀ n, (Fin n → ℝ) → ℝ
   sample_mean : ∀ n X, T_n n X =
     if n = 0 then 0 else (∑ i, X i) / n
+  /-- Raw regularity of `T_n` along `paths`: one common local weak limit along every selected
+  path, equal to `N(0, 1)` by `limit_is_standardGaussian`. -/
   raw : @RawRegularity ℝ inferInstance standardGaussian hP ℝ
     inferInstance inferInstance inferInstance A chi psi paths T_n
   limit_is_standardGaussian : raw.limitLaw = standardGaussian

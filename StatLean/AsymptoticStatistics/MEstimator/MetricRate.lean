@@ -14,7 +14,6 @@ namespace AsymptoticStatistics.MEstimator
 open MeasureTheory Filter ProbabilityTheory EmpiricalProcess
 open scoped ENNReal Topology
 
-set_option linter.style.maxHeartbeats false in set_option maxHeartbeats 800000 in
 /-- The geometric-shell tail estimate in vdV Theorem 5.52.  This is the
 analytic peeling estimate; the outer-probability theorem below packages its
 eventual tail as `O_P(1)`. -/

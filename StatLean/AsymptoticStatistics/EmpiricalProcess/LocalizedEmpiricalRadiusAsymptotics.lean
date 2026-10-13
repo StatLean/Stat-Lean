@@ -2,6 +2,25 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.ChangingLindeberg
 import StatLean.AsymptoticStatistics.EmpiricalProcess.LocalizedEmpiricalSquareRadius
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringOuterMaximal
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+
+/-!
+# Vanishing localized empirical radii for changing classes
+
+This file shows that random-radius quantities of strictly localized difference classes vanish
+in expectation for a changing pointwise-dense class `F n` of measurable functions with
+measurable envelopes `Φ n` satisfying `ChangingLindeberg`, when the book uniform entropy
+integrals `J(aₙ, F n, Φ n)` tend to zero along every positive antitone `aₙ → 0`. For
+positive antitone `εₙ → 0` with vanishing envelope tail `∫_{εₙ √n < |Φ n|} (Φ n)² dP`, the
+expected empirical square radius of the localized class at radius `√εₙ` tends to zero
+(`lintegral_localized_empiricalSquareRadius_tendsto_zero`). Write `‖·‖ₙ` for the empirical
+`L²` seminorm and `θ` for the realized relative radius of the localized class with respect to
+`2Φ n`. Since `(‖2Φ n‖ₙ θ)²` is at most the empirical square radius of the localized class
+(`weightedEmpiricalRelativeRadius_sq_le_empiricalSquareRadius`), the expectation of
+`‖2Φ n‖ₙ θ` then tends to zero (`lintegral_localized_weightedRelativeRadius_tendsto_zero`),
+and so does the expectation of `‖2Φ n‖ₙ J(θ, F n, Φ n)`
+(`random_radius_book_entropy_tendsto_zero`).
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 open Filter MeasureTheory Topology
 open scoped ENNReal NNReal

@@ -240,6 +240,8 @@ noncomputable def hannanSeq {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) 
   | .inl _ => armaPsi b (Fin.elim0 : Fin 0 → ℝ)
   | .inr _ => armaPsi (fun j => -a j) (Fin.elim0 : Fin 0 → ℝ)
 
+/-- The `ℓ²` vector attached to a coordinate `s` in the Gram representation of `hannanVarZ`
+(`hannanVarZ_gram`): the filter `hannanSeq b a s` right-shifted by `hannanShift p q s`. -/
 noncomputable def hannanVec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
     (s : Fin p ⊕ Fin q) (n : ℕ) : ℝ :=
   hannanShiftSeq (hannanSeq b a s) (hannanShift p q s) n

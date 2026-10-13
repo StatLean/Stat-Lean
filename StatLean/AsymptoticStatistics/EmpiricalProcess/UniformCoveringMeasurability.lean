@@ -3,10 +3,31 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.PointwiseDense
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 import Mathlib.MeasureTheory.Measure.Prod
 
+/-!
+# Measurability of empirical suprema under pointwise density
+
+This file defines the ghost-sample difference supremum `ghostDifferenceSup` and proves that
+the suprema entering the symmetrization and chaining bounds are measurable functions of the
+sample when the class is pointwise dense (`EmpProcPointwiseDense`) and its members are
+measurable: `measurable_canonicalEmpiricalProcessSup_dense`,
+`measurable_ghostDifferenceSup_dense`, `measurable_rademacherSup_dense` (jointly in the
+sample and the signs) and `measurable_conditionalRademacherSup_dense`. A supremum of an
+evaluator that is continuous along pointwise convergence, such as one depending on finitely
+many function values, is unchanged when the class is replaced by a pointwise-dense subclass
+(`supNormOver_eq_of_pointwiseDense`); over a countable subclass it is a countable supremum of
+measurable functions. The same argument shows that the realized relative radius is
+measurable (`measurable_empiricalRelativeRadius_of_pointwiseDense`).
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter Topology
 open scoped ENNReal
 
+/-- The ghost-sample difference supremum `sup_{f ∈ F} |n^{-1/2} ∑ᵢ (f(xᵢ) - f(yᵢ))|` of a
+sample `x` and a second sample `y` of the same size, valued in `ℝ≥0∞`.
+
+It is the sup-norm over `F` of the difference of the empirical processes of the two samples.
+Edge behavior: the empty sample and the empty class give zero. -/
 noncomputable def ghostDifferenceSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (x y : Fin n → Ω) : ℝ≥0∞ :=
   supNormOver F (fun f =>

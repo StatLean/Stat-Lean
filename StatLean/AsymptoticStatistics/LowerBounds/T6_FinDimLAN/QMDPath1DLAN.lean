@@ -55,6 +55,10 @@ type expected by `LAN_expansion_iii`, invoked at `k = 1`).
 
 Density: `((curve θ).rnDeriv P).toReal`, with
 `θ ∈ EuclideanSpace ℝ (Fin 1)` extracted as `θ 0 : ℝ`. -/
+
+/-- The bounded-density QMD path `boundedDensityPath g hg` (score `g`, dominating measure
+`P`) as a `ParametricFamily` on `Ω` indexed by `EuclideanSpace ℝ (Fin 1)`: the density at `θ`
+is `(((boundedDensityPath g hg).curve (θ 0)).rnDeriv P).toReal`. -/
 noncomputable def boundedDensityPath_to1DParametricFamily
     (g : ↥(L2ZeroMean P)) (hg : IsEssBoundedMixtureScore g) :
     ParametricFamily Ω (EuclideanSpace ℝ (Fin 1)) where

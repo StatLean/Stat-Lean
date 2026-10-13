@@ -520,7 +520,8 @@ private lemma norm_charFun_sub_charFun_le (μ : Measure (EuclideanSpace ℝ (Fin
         exact ((integrable_charFun_integrand μ t).sub (integrable_charFun_integrand μ s)).norm
     _ = ‖t - s‖ * ∫ y, ‖y‖ ∂μ := integral_const_mul _ _
 
-set_option maxHeartbeats 1600000 in
+set_option maxHeartbeats 500000 in
+-- This proof uses about 320,000 heartbeats.
 /-- **The empirical sequence belongs to the mean-vector class, almost surely.**
 
 The weak-convergence clause — the multivariate Glivenko–Cantelli / Varadarajan input — is

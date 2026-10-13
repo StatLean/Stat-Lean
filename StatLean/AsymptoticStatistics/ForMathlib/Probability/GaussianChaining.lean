@@ -1,4 +1,11 @@
-/-
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.Topology.MetricSpace.Basic
+import Mathlib.MeasureTheory.Measure.Tight
+import Mathlib.Analysis.PSeries
+import Mathlib.Analysis.SpecificLimits.Normed
+
+/-!
 # Abstract Dudley / Gaussian-chaining for sub-Gaussian-increment processes
 
 This is the abstract chaining argument behind the existence of the `P`-Brownian
@@ -26,12 +33,6 @@ The analytic argument runs over the `closePairs` Dudley level set
 (`measure_bigOsc_le`, `summable_bigOsc`, `aeUC_via_borelCantelli`) and assembles
 into `gaussianChaining_UC`.
 -/
-import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.MeasureTheory.Measure.Tight
-import Mathlib.Analysis.PSeries
-import Mathlib.Analysis.SpecificLimits.Normed
 
 open MeasureTheory Real
 open scoped ENNReal NNReal

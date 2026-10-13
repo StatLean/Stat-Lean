@@ -1174,6 +1174,9 @@ private theorem scalarGaussianRisk_measurable
   exact lintegral_map
     (hℓ.comp (T.2.sub measurable_const)) (measurable_const_add h)
 
+/-- Bayes risk under the prior `π` of measurable nonrandomized scalar estimators in the
+standard Gaussian shift experiment: the infimum over measurable `T` of
+`∫ ∫ ℓ (T X - A h) dN(h, I)(X) dπ(h)`, the estimand being the linear functional `A h`. -/
 noncomputable def measurableBayesRisk
     (π : Measure (EuclideanSpace ℝ (Fin m)))
     (A : EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ) (ℓ : ℝ → ℝ≥0∞) : ℝ≥0∞ :=

@@ -176,7 +176,6 @@ theorem integral_groupAverage (μ : Measure 𝓧) {f : 𝓧 → ℝ}
   simp only [hint]
   rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, inv_mul_cancel_left₀ hcard]
 
-set_option maxHeartbeats 1000000 in
 /-- **Conditional expectation given the invariant σ-algebra is the orbit average**, for a
 `G`-invariant measure and a finite group.
 

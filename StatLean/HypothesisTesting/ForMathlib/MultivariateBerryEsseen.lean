@@ -6251,7 +6251,6 @@ private lemma abs_sub_integral_peel_le_integral {k m : ℕ}
     _ ≤ ∫ y, D (∑ l, y l) ∂(Measure.pi κ') :=
         integral_mono (hAint.sub hBint).abs hDint fun y => hbound _
 
-set_option maxHeartbeats 1600000 in
 /-- **The hybrid telescope with Gaussian smoothing (brick (i)).** For every cut `J ≥ 2` the
 normal approximation error of a `C³` test function bounded by `1` with `‖D³f‖ ≤ M` is at most
 
@@ -6749,7 +6748,6 @@ private lemma abs_integral_smooth_sub_gaussian_balanced {k n : ℕ} (hk : 0 < k)
   field_simp
   ring
 
-set_option maxHeartbeats 1600000 in
 /-- **Improved convex Berry–Esseen bound, Lévy (thickening) form.** For every dimension `k > 0`
 there is a constant `C` such that for every convex measurable `B`, every width `ε > 0` and every
 `n > 0`,
@@ -8339,7 +8337,6 @@ private lemma map_partial_sum_eq_smul_sumLaw {n j : ℕ} (hj : j ≤ n) (hm : 0 
     field_simp
   rw [hL, hR]
 
-set_option maxHeartbeats 1600000 in
 /-- **The conditioning skeleton of brick H** (wave 29: factored out). For *any* measurable set
 `S`, the hybrid mass `hybridLaw n j ν S` is bounded by any `c ≥ 0` that dominates the mass of
 every affine preimage `(r • · + a)⁻¹ S` with `r ≥ 1/2`, under the Gaussian in the
@@ -11231,7 +11228,8 @@ private lemma tail_step_le {k : ℕ} (hk : 0 < k) {Ct : ℝ}
     nlinarith [mul_nonneg hCk0 (sub_nonneg.2 h1)]
   exact mul_le_mul_of_nonneg_right hweight hfac
 
-set_option maxHeartbeats 2000000 in
+set_option maxHeartbeats 1900000 in
+-- This proof uses about 1,470,000 heartbeats.
 /-- **The LOCALISED hybrid telescope (wave 43).** -/
 private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) {Ct : ℝ}
     (hCt1 : 1 ≤ Ct)

@@ -59,3 +59,13 @@ import StatLean.PointEstimation.LinearModel.Equivariant
 import StatLean.PointEstimation.LinearModel.GaussMarkov
 import StatLean.PointEstimation.LinearModel.LeastSquares
 import StatLean.PointEstimation.LinearModel.RandomDesign
+
+/-!
+# PointEstimation — area umbrella
+
+Point estimation: exponential families, sufficiency, completeness and Basu's theorem, the
+Rao–Blackwell and Lehmann–Scheffé route to UMVU estimators, the Cramér–Rao information inequality,
+the linear model, and equivariant estimation.
+
+**Reference.** E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer, 1998.
+-/

@@ -199,6 +199,10 @@ Density: `((curve θ).rnDeriv γ.dominating).toReal`, with
 `θ ∈ EuclideanSpace ℝ (Fin 1)` extracted as `θ 0 : ℝ`. Mirrors
 `boundedDensityPath_to1DParametricFamily` modulo `P → γ.dominating` for
 the dominating measure. -/
+
+/-- The abstract QMD path `γ` as a `ParametricFamily` on `Ω` indexed by
+`EuclideanSpace ℝ (Fin 1)`: the density at `θ` is the Radon–Nikodym derivative
+`((γ.curve (θ 0)).rnDeriv γ.dominating).toReal`. -/
 noncomputable def to1DParametricFamily
     (γ : AsymptoticStatistics.Core.QMDPath.QMDPath P) :
     AsymptoticStatistics.ParametricFamily Ω

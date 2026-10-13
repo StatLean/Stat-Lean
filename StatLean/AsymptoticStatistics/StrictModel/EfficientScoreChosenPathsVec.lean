@@ -30,8 +30,12 @@ Joint witness: the multivariate Gaussian location model with nuisance `{0}`. -/
 structure VectorPaths25_26
     (Sθ : OrdinaryScore P (EuclideanSpace ℝ (Fin d)))
     (ψ : Measure Ω → EuclideanSpace ℝ (Fin d)) where
+  /-- The nuisance scores `g` for which paths are selected (vdV's nuisance tangent set `η̇Ṗ`
+  in (25.26)); it contains `0` by `nuisance_zero_mem`. -/
   nuisanceSet : Set ↥(L2ZeroMean P)
   nuisance_zero_mem : (0 : ↥(L2ZeroMean P)) ∈ nuisanceSet
+  /-- The selected QMD path at `P` for a direction `a` and a nuisance score `g ∈ nuisanceSet`
+  (vdV's submodel `t ↦ P_{θ+ta,η_t}` in (25.26)); its score is `Sθ a + g` by `score_eq`. -/
   selectedPath : ∀ (_a : EuclideanSpace ℝ (Fin d))
     (g : ↥(L2ZeroMean P)), g ∈ nuisanceSet →
       AsymptoticStatistics.Core.QMDPath.QMDPath P
@@ -76,6 +80,8 @@ structure ChosenPathwiseDifferentiableAtVec
     {Sθ : OrdinaryScore P (EuclideanSpace ℝ (Fin d))}
     {ψ : Measure Ω → EuclideanSpace ℝ (Fin d)}
     (paths : VectorPaths25_26 Sθ ψ) where
+  /-- The continuous linear derivative on the closed total tangent `paths.totalTangent`; at
+  `Sθ a + g` it is the limit of the `ψ`-quotients along the selected path (`derivative_spec`). -/
   derivative : paths.totalTangent →L[ℝ] EuclideanSpace ℝ (Fin d)
   derivative_spec : ∀ (a : EuclideanSpace ℝ (Fin d))
     (g : ↥(L2ZeroMean P)) (hg : g ∈ paths.nuisanceSet),

@@ -31,8 +31,6 @@ J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications* (1996).
 
 open Matrix
 
-set_option maxHeartbeats 800000
-
 namespace StatLean.NonparametricStatistics
 
 variable {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {h lam0 a₀ Kmax : ℝ} {ℓ : ℕ}

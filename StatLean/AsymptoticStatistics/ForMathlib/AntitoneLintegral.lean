@@ -1,6 +1,16 @@
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
+/-!
+# Integrals of antitone functions over initial intervals
+
+For an antitone `g : ℝ → ℝ≥0∞` and `0 < a`,
+`setLIntegral_Ioc_le_initial_add_ratio_mul_initial_of_antitone` bounds the Lebesgue integral
+of `g` over any interval `(0, t]` by its integral over `(0, a]`:
+`∫_{(0,t]} g ≤ ∫_{(0,a]} g + (t / a) ∫_{(0,a]} g`. For `a < t` the integral over `(a, t]` is
+at most `(t − a) g(a)`, and `a g(a) ≤ ∫_{(0,a]} g` because `g` is antitone.
+-/
+
 namespace AsymptoticStatistics.ForMathlib
 
 open MeasureTheory

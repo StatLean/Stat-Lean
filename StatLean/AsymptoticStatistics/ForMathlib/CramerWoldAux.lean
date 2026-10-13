@@ -2,10 +2,6 @@ import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
-namespace MeasureTheory
-
-open scoped RealInnerProductSpace
-
 /-!
 # Auxiliary lemmas for Cramér-Wold argument
 
@@ -13,6 +9,10 @@ This file contains helper lemmas for the Cramér-Wold decomposition, connecting
 positive semidefiniteness conditions with quadratic forms and the pushforward of
 characteristic functions via inner products.
 -/
+
+namespace MeasureTheory
+
+open scoped RealInnerProductSpace
 
 section MatrixPosSemidef
 

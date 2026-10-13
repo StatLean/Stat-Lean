@@ -146,8 +146,13 @@ size `k`, bracket families `lb, ub`, the bracket witnesses, and the covering
 property. Extracted (non-canonically, via choice) from
 `HasFiniteBracketingCover`. -/
 structure BracketingCoverData (F : Set (Ω → ℝ)) (ε : ℝ) (P : Measure Ω) where
+  /-- The number of brackets in the cover. -/
   k : ℕ
+  /-- The lower bracket functions: `lb i` is the lower end of the `i`-th bracket
+  `[lb i, ub i]`. -/
   lb : Fin k → Ω → ℝ
+  /-- The upper bracket functions: `ub i` is the upper end of the `i`-th bracket
+  `[lb i, ub i]`. -/
   ub : Fin k → Ω → ℝ
   bracket : ∀ i, IsEpsBracket ε (lb i) (ub i) 2 P
   covers : ∀ f ∈ F, ∃ i, ∀ x, lb i x ≤ f x ∧ f x ≤ ub i x
