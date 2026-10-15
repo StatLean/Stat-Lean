@@ -8,8 +8,12 @@
     {"id":"StatLean.PointEstimation.risk","label":"risk","full":"StatLean.PointEstimation.risk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
     {"id":"StatLean.PointEstimation.crossRisk","label":"crossRisk","full":"StatLean.PointEstimation.crossRisk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
     {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"StatLean.PointEstimation.IsInvariantModel.map_eq","label":"map_eq","full":"StatLean.PointEstimation.IsInvariantModel.map_eq","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.lintegral_map","label":"lintegral_map","full":"MeasureTheory.lintegral_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Map"},
-    {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
+    {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"MeasureTheory.Measure.map₀_of_aemeasurable","label":"map₀_of_aemeasurable","full":"MeasureTheory.Measure.map₀_of_aemeasurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.IsInvariantModel"},
@@ -18,8 +22,15 @@
     {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.risk"},
     {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.crossRisk"},
     {"source":"StatLean.PointEstimation.risk_smul","target":"Measurable.comp"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.IsInvariantModel.map_eq"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"Measurable.aemeasurable"},
     {"source":"StatLean.PointEstimation.risk_smul","target":"MeasureTheory.lintegral_map"},
     {"source":"StatLean.PointEstimation.risk_smul","target":"MeasureTheory.lintegral_congr"},
-    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"}
+    {"source":"StatLean.PointEstimation.IsInvariantModel","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"StatLean.PointEstimation.IsInvariantModel"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel.map_eq","target":"MeasureTheory.Measure.map₀_of_aemeasurable"},
+    {"source":"MeasureTheory.Measure.map₀_of_aemeasurable","target":"MeasureTheory.Measure.map₀"}
   ]
 }

@@ -10,8 +10,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 # Dirichlet–Laplace posterior contraction — BPPD Theorem 3.1 (C16)
 
 Assembly of BPPD **Theorem 3.1**: in the normal-means model `y = θ + ε`, `ε ~ N(0, Iₙ)`, under the
-Dirichlet–Laplace prior with scale `aₙ = n^{−(1+β)}` and the growth condition `‖θ₀‖² ≤ qₙ log⁴n`, the
-posterior mass of `{ ‖θ − θ₀‖ > M√(qₙ log n) }` tends to `0` in `E_{θ₀}`.
+Dirichlet–Laplace prior with scale `aₙ = n^{−(1+β)}` and the growth condition `‖θ₀‖² ≤ qₙ log⁴n`,
+the posterior mass of `{ ‖θ − θ₀‖ > M√(qₙ log n) }` tends to `0` in `E_{θ₀}`.
 
 Objects:
 * `dl_contraction_engine` — the fixed-`n` bound with the Theorem 3.4 compressibility Chernoff bound
@@ -19,9 +19,10 @@ Objects:
   `dbar := e^{−r²}·Π(B(θ₀,r))` via `DenominatorLowerBound.measure_dlDenom_lt_le`, plus the summed
   shell bound via `ShellDecomposition.shell_ratio_le`). Suits the β-regime; kept standalone.
 * `dl_contraction_engine'` — the **composed** fixed-`n` bound (BPPD §6 p. 15, D13 resolution): the
-  compressibility term appears **abstractly** as the posterior mass of `{|supp_δ| > K}` (consumed from
-  Theorem 3.4 as a black box, exactly as the paper does), so each regime can discharge it from the
-  proven `dl_theorem34_beta`/`dl_theorem34_recip` while the shells/denominator run at `r² = qₙ log n`.
+  compressibility term appears **abstractly** as the posterior mass of `{|supp_δ| > K}` (consumed
+  from Theorem 3.4 as a black box, exactly as the paper does), so each regime can discharge it from
+  the proven `dl_theorem34_beta`/`dl_theorem34_recip`
+  while the shells/denominator run at `r² = qₙ log n`.
 * `dl_shellSum_reduction` + shell-series machinery — structural reduction of the term-(iii) double
   series to two real tails (Type-I net count; Type-II via shell-disjointness + the box-route ball
   lower bound `dlPrior_closedBall_ge`), see D14.
@@ -38,44 +39,50 @@ Objects:
 JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Theorem 3.1 (statement p. 7, proof §6 pp. 14–16 with
 Lemma 6.1); the §6 posterior-contraction assembly.
 
-**Proof formalization notes.** The skeleton is *3.4-term + denominator event + Σ-shells* (the paper's
-p. 15 composition, D13): split the complement of the ball into radial shells (`ShellDecomposition`),
-bound each shell's posterior contribution by `shell_ratio_le`, and close the double series via
-`dl_shellSum_reduction` — Type-I support-pattern count `Σ_{|S|≤K} 33^{|S|} ≤ (K+1)(33n)^K`
-(`sum_pow_card_le_nat`) against the radial tail `tsum_ite_ge_exp_neg_sq_le`, Type-II via
-shell-disjointness + `dlPrior_closedBall_ge` (D14). The asymptotics live only in the thin corollaries.
+**Proof formalization notes.** The skeleton is *3.4-term + denominator event + Σ-shells* (the
+paper's p. 15 composition, D13): split the complement of the ball into radial shells
+(`ShellDecomposition`), bound each shell's posterior contribution by `shell_ratio_le`, and close the
+double series via `dl_shellSum_reduction` — Type-I support-pattern count
+`Σ_{|S|≤K} 33^{|S|} ≤ (K+1)(33n)^K` (`sum_pow_card_le_nat`) against the radial tail
+`tsum_ite_ge_exp_neg_sq_le`, Type-II via shell-disjointness +
+`dlPrior_closedBall_ge` (D14). The asymptotics live only in the thin corollaries.
 
 **Deviations.**
-* **D1 (rate).** The paper states `sₙ² = qₙ log(n/qₙ)` but its proof fixes `rₙ² = qₙ log n` (p. 15) and
-  only yields that. The headline `dl_theorem31` therefore states the rate `√(qₙ log n)`; the paper's
-  `sₙ` is recovered as `dl_theorem31_paper_rate` under `qₙ ≤ n^{1−c}` (where `log(n/qₙ) ≍ log n`).
+* **D1 (rate).** The paper states `sₙ² = qₙ log(n/qₙ)` but its proof fixes `rₙ² = qₙ log n` (p. 15)
+  and only yields that. The headline `dl_theorem31` therefore states the rate `√(qₙ log n)`; the
+  paper's `sₙ` is recovered as `dl_theorem31_paper_rate`
+  under `qₙ ≤ n^{1−c}` (where `log(n/qₙ) ≍ log n`).
 * **D2 (regime-dependent `r`).** Both Theorem 3.1 regimes use `r² = qₙ log n` for the shells and
-  denominator (the paper, p. 15). The Theorem 3.4 term carries its own internal radius (`r'² = qₙ` in
-  its proof, p. 19) — see D13.
+  denominator (the paper, p. 15). The Theorem 3.4 term carries its own internal radius (`r'² = qₙ`
+  in its proof, p. 19) — see D13.
 * **D4 (net / test geometry).** Inherited from `ShellDecomposition`: `jr/4`-nets (`≤ 33^{|S|}`),
   pieces of radius `≤ (√5/4)jr`, two-parameter midpoint tests with errors `≤ e^{−j²r²/12}`.
 * **D13 (two radii, composed — the `1/n` regime).** A single-radius engine that *inlines* the
   compressibility Chernoff bound (as `dl_contraction_engine` does) cannot prove the `aₙ = 1/n` case:
-  the inlined compress term needs `r² = qₙ` while the shell series needs `r² = qₙ log n` (at `r² = qₙ`
-  the Type-I net count `exp(Aqₙ·log 33n − J₀²qₙ/12) → +∞` for every fixed `J₀`; an intermediate lemma
-  asserting otherwise was false and was removed). **Resolution — the paper's own structure (p. 15):**
-  compose at the posterior-probability level. "Since `E_{θ₀}ℙ(|supp_{δₙ}(θ)| > Aqₙ | y) → 0` **by
-  Theorem 3.4**, it is enough to work with `E_{θ₀}ℙ(‖θ−θ₀‖ > 2Mrₙ, supp ∈ 𝒮ₙ | y)`" — i.e. Theorem 3.4
-  is a black box with its own internal radius, and only the sparse remainder runs at `rₙ² = qₙ log n`.
-  `dl_contraction_engine'` formalizes exactly this composition; `dl_theorem31_recip` then consumes the
-  proven `dl_theorem34_recip`.
+  the inlined compress term needs `r² = qₙ` while the shell series needs `r² = qₙ log n` (at
+  `r² = qₙ` the Type-I net count `exp(Aqₙ·log 33n − J₀²qₙ/12) → +∞` for every fixed `J₀`; an
+  intermediate lemma asserting otherwise was false and was removed). **Resolution — the paper's own
+  structure (p. 15):** compose at the posterior-probability level. "Since
+  `E_{θ₀}ℙ(|supp_{δₙ}(θ)| > Aqₙ | y) → 0` **by Theorem 3.4**, it is enough to work with
+  `E_{θ₀}ℙ(‖θ−θ₀‖ > 2Mrₙ, supp ∈ 𝒮ₙ | y)`" — i.e. Theorem 3.4 is a black box with its own internal
+  radius, and only the sparse remainder runs at `rₙ² = qₙ log n`. `dl_contraction_engine'`
+  formalizes exactly this composition; `dl_theorem31_recip`
+  then consumes the proven `dl_theorem34_recip`.
 * **D14 (coarse Type-II shell bookkeeping).** The paper bounds each net piece's prior-mass ratio
-  `β_{S,j,i}` via Lemma 6.1 (eqs. 16–20, costing `(|S|+|S₀|) log n` for general `S`). We instead bound
-  the summed Type-II contribution using only (a) shells with distinct support patterns are disjoint, so
-  `Σ_S Π(shell_S) ≤ 1`, and (b) the box-route contraction-ball lower bound `dlPrior_closedBall_ge`
-  (exponent `O(qₙ log n)` under `hnorm`). Coarser than the paper, same `√(qₙ log n)` rate; it also
-  avoids the `θ₀ ⊆ S` constraint of `dlBetaRatio_le` (which stays in `PriorMassRatio` as the faithful
-  Lemma 6.1 statement for `S ⊇ S₀`, no longer consumed by this assembly).
+  `β_{S,j,i}` via Lemma 6.1 (eqs. 16–20, costing `(|S|+|S₀|) log n` for general `S`). We instead
+  bound the summed Type-II contribution using only (a) shells with distinct support patterns are
+  disjoint, so `Σ_S Π(shell_S) ≤ 1`, and (b) the box-route contraction-ball lower bound
+  `dlPrior_closedBall_ge` (exponent `O(qₙ log n)` under `hnorm`). Coarser than the paper, same
+  `√(qₙ log n)` rate; it also avoids the `θ₀ ⊆ S` constraint of `dlBetaRatio_le` (which stays in
+  `PriorMassRatio` as the faithful Lemma 6.1 statement
+  for `S ⊇ S₀`, no longer consumed by this assembly).
 
 **Bibliographic comments.** Posterior contraction rates after Ghosal, Ghosh, and van der Vaart
-(*Ann. Statist.* 28 (2000), 500–531); sparse-normal-means Bayesian contraction after Castillo and van
-der Vaart (*Ann. Statist.* 40 (2012), 2069–2101).
+(*Ann. Statist.* 28 (2000), 500–531); sparse-normal-means Bayesian contraction after Castillo and
+van der Vaart (*Ann. Statist.* 40 (2012), 2069–2101).
 -/
+
+set_option linter.style.longFile 2500
 
 open MeasureTheory ProbabilityTheory Filter
 open scoped ENNReal NNReal RealInnerProductSpace Topology Classical
@@ -83,8 +90,8 @@ open scoped ENNReal NNReal RealInnerProductSpace Topology Classical
 namespace StatLean.Bayesian
 
 /-- **The denominator threshold** `dbar := e^{−r²}·Π(B(θ₀,r))` used throughout the engine. Below it,
-the ratio is controlled by the denominator event (`measure_dlDenom_lt_le`); above it, each shell ratio
-is bounded by `shell_ratio_le` (whose `Π(B(θ₀,r))` cancels into the mass ratio). -/
+the ratio is controlled by the denominator event (`measure_dlDenom_lt_le`); above it, each shell
+ratio is bounded by `shell_ratio_le` (whose `Π(B(θ₀,r))` cancels into the mass ratio). -/
 private noncomputable def dbarVal {ι : Type*} [Fintype ι] (a r : ℝ) (θ₀ : EuclideanSpace ℝ ι) :
     ℝ≥0∞ :=
   ENNReal.ofReal (Real.exp (-(r ^ 2))) * (dlPrior a ι) (Metric.closedBall θ₀ r)
@@ -104,14 +111,14 @@ private lemma measurableSet_dlSupp_eq {ι : Type*} [Fintype ι] (δ : ℝ) (S : 
       = ⋂ i : ι, (if i ∈ S then {θ : EuclideanSpace ℝ ι | δ < |θ i|}
           else {θ : EuclideanSpace ℝ ι | ¬ δ < |θ i|}) := by
     ext θ
-    simp only [Set.mem_setOf_eq, Set.mem_iInter]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
     constructor
     · intro hS i
       by_cases hi : i ∈ S
-      · simp only [hi, if_true, Set.mem_setOf_eq]
+      · simp only [hi, ite_true, Set.mem_ofPred_eq]
         have : i ∈ Finset.univ.filter fun i => δ < |θ i| := by rw [hS]; exact hi
         simpa [Finset.mem_filter] using this
-      · simp only [hi, if_false, Set.mem_setOf_eq]
+      · simp only [hi, ite_false, Set.mem_ofPred_eq]
         intro hlt
         have : i ∈ Finset.univ.filter fun i => δ < |θ i| := by
           simp [Finset.mem_filter, hlt]
@@ -121,17 +128,17 @@ private lemma measurableSet_dlSupp_eq {ι : Type*} [Fintype ι] (δ : ℝ) (S : 
       simp only [Finset.mem_filter, Finset.mem_univ, true_and]
       have hi := h i
       by_cases hiS : i ∈ S
-      · simp only [hiS, if_true, Set.mem_setOf_eq] at hi
+      · simp only [hiS, ite_true, Set.mem_ofPred_eq] at hi
         simp [hiS, hi]
-      · simp only [hiS, if_false, Set.mem_setOf_eq] at hi
+      · simp only [hiS, ite_false, Set.mem_ofPred_eq] at hi
         simp [hiS, hi]
   rw [hpre]
   refine MeasurableSet.iInter fun i => ?_
   have hmi : Measurable (fun θ : EuclideanSpace ℝ ι => |θ i|) :=
-    ((measurable_pi_apply i).comp (EuclideanSpace.measurableEquiv ι).measurable).abs
+    ((EuclideanSpace.proj i).continuous.measurable).abs
   by_cases hi : i ∈ S
-  · simp only [hi, if_true]; exact measurableSet_lt measurable_const hmi
-  · simp only [hi, if_false]
+  · simp only [hi, ite_true]; exact measurableSet_lt measurable_const hmi
+  · simp only [hi, ite_false]
     exact (measurableSet_lt measurable_const hmi).compl
 
 /-- The shell `dlShell θ₀ S j r δ` is measurable. -/
@@ -144,20 +151,22 @@ private lemma measurableSet_dlShell {ι : Type*} [Fintype ι] (θ₀ : Euclidean
   · exact measurableSet_lt hnorm measurable_const
 
 /-- **Fixed-`n` contraction bound** (BPPD Thm 3.1 engine, honest restatement). For a truth `θ₀`
-supported on `S₀`, the `E_{θ₀}`-mean of the posterior mass of `{ ‖θ − θ₀‖ > M·r }` is bounded by three
-pieces: the denominator event `e^{−r²/8}`, the Theorem 3.4 compressibility term (`compress_ratio_le_explicit`
-on the `S₀ᶜ`-submodel), and the **honest shell double series** — over support patterns `S` (`|S| ≤ K`)
-and radial shells `j ≥ J₀` — each term being exactly the `shell_ratio_le` bound
-`33^{|S|}·e^{−j²r²/12} + Π(shell)·e^{−j²r²/12}/dbar`.
+supported on `S₀`, the `E_{θ₀}`-mean of the posterior mass of `{ ‖θ − θ₀‖ > M·r }` is bounded by
+three pieces: the denominator event `e^{−r²/8}`, the Theorem 3.4 compressibility term
+(`compress_ratio_le_explicit` on the `S₀ᶜ`-submodel), and the **honest shell double series** — over
+support patterns `S` (`|S| ≤ K`) and radial shells `j ≥ J₀` — each term being exactly the
+`shell_ratio_le` bound `33^{|S|}·e^{−j²r²/12} + Π(shell)·e^{−j²r²/12}/dbar`.
 
-**Honest restatement (D12).** The previous RHS `… − (A−1)q log c + 3r² … + 2·e^{−M²r²/12}` is provably
-false: the `3r²` folds the small-ball correction `2·card'·w` (false as `card' → ∞`), and the closed
-`2·e^{−M²r²/12}` drops the net cardinality `33^{|S|}` and the mass ratio, which only vanish
-asymptotically. The sum form below is the guaranteed-honest bound the closed bricks actually produce. -/
+**Honest restatement (D12).** The previous RHS `… − (A−1)q log c + 3r² … + 2·e^{−M²r²/12}` is
+provably false: the `3r²` folds the small-ball correction `2·card'·w` (false as `card' → ∞`), and
+the closed `2·e^{−M²r²/12}` drops the net cardinality `33^{|S|}` and the mass ratio, which only
+vanish asymptotically. The sum form below is the
+guaranteed-honest bound the closed bricks actually produce. -/
 theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
     -- LEAN-ONLY: 0 < a ≤ 1/2 — DL scale range (both density bounds); engine-internal.
     (ha : 0 < a) (ha2 : a ≤ 1 / 2)
-    -- LEAN-ONLY: δ-threshold window (dlBetaRatio / small-ball) and net radius control; engine-internal.
+    -- LEAN-ONLY: δ-threshold window (dlBetaRatio /
+    -- small-ball) and net radius control; engine-internal.
     (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (hδnet : Real.sqrt (Fintype.card ι : ℝ) * δ ≤ r)
     -- LEAN-ONLY: 0 < r — contraction radius (rₙ); engine-internal.
     (hr : 0 < r) (θ₀ : EuclideanSpace ℝ ι) (S₀ : Finset ι)
@@ -171,11 +180,13 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
     (K J₀ : ℕ) (hJ2 : 2 ≤ J₀) (hJ₀ : (J₀ : ℝ) ≤ M / 2)
     -- LEAN-ONLY: Chernoff cut `k` for the compress event `{K < |supp_δ|}`; engine-internal.
     (k : ℕ) (hk : (S₀.card : ℝ) + (k : ℝ) ≤ (K : ℝ))
-    -- LEAN-ONLY: C3 δ-exceedance bound `z` and small-ball tail bound `w` (submodel); engine-internal.
+    -- LEAN-ONLY: C3 δ-exceedance bound `z` and small-ball
+    -- tail bound `w` (submodel); engine-internal.
     (z : ℝ) (hz : (dlMarginal a {x : ℝ | δ < |x|}).toReal ≤ z)
     (w : ℝ)
     (hw : (dlMarginal a
-        {x : ℝ | min (r / Real.sqrt (Fintype.card {i : ι // i ∉ S₀} : ℝ)) (1 / 2) < |x|}).toReal ≤ w)
+        {x : ℝ | min (r / Real.sqrt (Fintype.card {i : ι // i ∉ S₀} : ℝ))
+            (1 / 2) < |x|}).toReal ≤ w)
     (hw2 : w ≤ 1 / 2)
     -- LEAN-ONLY: 1 < c — Chernoff parameter; engine-internal.
     (c : ℝ) (hc : 1 < c) :
@@ -217,7 +228,8 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hUmeas : MeasurableSet U := by
     rw [hUdef]
     refine MeasurableSet.biUnion (Finset.countable_toSet 𝒮) fun S _ => ?_
-    exact MeasurableSet.iUnion fun j => MeasurableSet.iUnion fun _ => measurableSet_dlShell θ₀ S j r δ
+    exact MeasurableSet.iUnion fun j => MeasurableSet.iUnion
+        fun _ => measurableSet_dlShell θ₀ S j r δ
   -- `dlNumer` as the `withDensity` measure of the parameter set (for subadditivity).
   have hν_eq : ∀ (y : EuclideanSpace ℝ ι) {D : Set (EuclideanSpace ℝ ι)}, MeasurableSet D →
       dlNumer θ₀ π D y = (π.withDensity (fun θ => dlLR θ₀ θ y)) D := by
@@ -225,11 +237,11 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   -- The geometric decomposition `C ⊆ Cbad ∪ U`.
   have hdecomp : C ⊆ Cbad ∪ U := by
     intro θ hθ
-    rw [hCdef, Set.mem_setOf_eq] at hθ
+    rw [hCdef, Set.mem_ofPred_eq] at hθ
     by_cases hbad : θ ∈ Cbad
     · exact Or.inl hbad
     · refine Or.inr ?_
-      rw [hCbaddef, Set.mem_setOf_eq, not_lt] at hbad
+      rw [hCbaddef, Set.mem_ofPred_eq, not_lt] at hbad
       set S := Finset.univ.filter fun i => δ < |θ i| with hSdef
       have hScard : S.card ≤ K := by
         have : (dlSuppCount δ θ : ℝ) ≤ (K : ℝ) := hbad
@@ -255,7 +267,7 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
       refine ⟨j, ?_⟩
       rw [Set.mem_iUnion]
       refine ⟨hJ0j, ?_⟩
-      rw [dlShell, Set.mem_setOf_eq]
+      rw [dlShell, Set.mem_ofPred_eq]
       refine ⟨hSdef.symm, ?_, ?_⟩
       · calc 2 * (j : ℝ) * r = (j : ℝ) * (2 * r) := by ring
           _ ≤ (‖θ - θ₀‖ / (2 * r)) * (2 * r) := by
@@ -271,7 +283,7 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGc : Gᶜ = {y | dlDenom θ₀ π y
       < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π (Metric.closedBall θ₀ r)} := by
     rw [hGdef]; ext y
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le, hdbardef, dbarVal, hπ]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le, hdbardef, dbarVal, hπ]
   -- Term (i): the denominator event.
   have hi : ∫⁻ y in Gᶜ, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ENNReal.ofReal (Real.exp (- r ^ 2 / 8)) := by
@@ -295,9 +307,9 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGsplit : ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
         + ∫⁻ y in G, dlNumer θ₀ π U y / dlDenom θ₀ π y ∂μ := by
-    rw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
+    erw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
     refine lintegral_mono fun y => ?_
-    rw [← ENNReal.add_div]
+    rw [Pi.div_apply, ← ENNReal.add_div]
     exact ENNReal.div_le_div_right (hnumer_le y) _
   -- Term (ii): the compressibility bound.
   have hii : ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
@@ -313,8 +325,8 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
               {θ | ((S₀.card : ℝ) + (k : ℝ)) < (dlSuppCount δ θ : ℝ)} ∂μ := by
           rw [hμ]
           refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-          rw [hCbaddef, Set.mem_setOf_eq] at hθ
-          rw [Set.mem_setOf_eq]; linarith [hk, hθ]
+          rw [hCbaddef, Set.mem_ofPred_eq] at hθ
+          rw [Set.mem_ofPred_eq]; linarith [hk, hθ]
       _ ≤ _ := (dl_compress_reduction ha θ₀ S₀ hθ₀ k).trans
           (compress_ratio_le_explicit ha hr k z hz w hw hw2 c hc)
   -- Term (iii): the shell double series.
@@ -334,10 +346,10 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
         refine le_trans (measure_biUnion_finset_le 𝒮 _) (Finset.sum_le_sum fun S _ => ?_)
         refine le_trans (measure_iUnion_le _) (ENNReal.tsum_le_tsum fun j => ?_)
         by_cases hj : J₀ ≤ j
-        · rw [if_pos hj]
+        · rw [ite_eq_left hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = dlShell θ₀ S j r δ := by simp [hj]
           rw [this, ← hν_eq y (measurableSet_dlShell θ₀ S j r δ)]
-        · rw [if_neg hj]
+        · rw [ite_eq_right hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = ∅ := by simp [hj]
           rw [this, measure_empty]
       calc dlNumer θ₀ π U y / dlDenom θ₀ π y
@@ -352,29 +364,29 @@ theorem dl_contraction_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
             by_cases hj : J₀ ≤ j <;> simp [hj, div_eq_mul_inv]
     refine le_trans (setLIntegral_mono ?_ fun y _ => hUsub y) ?_
     · exact Finset.measurable_sum _ fun S _ =>
-        Measurable.ennreal_tsum fun j => by
+        Measurable.tsum fun j => by
           by_cases hj : J₀ ≤ j
-          · simp only [hj, if_true]
+          · simp only [hj, ite_true]
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-          · simp only [hj, if_false]; exact measurable_const
+          · simp only [hj, ite_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finset_sum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-        · simp only [hj, if_false]; exact measurable_const]
+        · simp only [hj, ite_false]; exact measurable_const]
     refine Finset.sum_le_sum fun S _ => ?_
     rw [lintegral_tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact ((measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)).aemeasurable
-        · simp only [hj, if_false]; exact aemeasurable_const]
+        · simp only [hj, ite_false]; exact aemeasurable_const]
     refine ENNReal.tsum_le_tsum fun j => ?_
     by_cases hj : J₀ ≤ j
-    · simp only [if_pos hj]
+    · simp only [ite_eq_left hj]
       have hj2 : 2 ≤ j := le_trans hJ2 hj
       exact shell_ratio_le θ₀ S hj2 ha hr hδnet dbar hdbarpos
-    · simp only [if_neg hj]
+    · simp only [ite_eq_right hj]
       simp
   -- Assemble the three pieces `(i) + (ii) + (iii)`.
   have hfinal := add_le_add (add_le_add hi hii) hiii
@@ -450,7 +462,8 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hUmeas : MeasurableSet U := by
     rw [hUdef]
     refine MeasurableSet.biUnion (Finset.countable_toSet 𝒮) fun S _ => ?_
-    exact MeasurableSet.iUnion fun j => MeasurableSet.iUnion fun _ => measurableSet_dlShell θ₀ S j r δ
+    exact MeasurableSet.iUnion fun j => MeasurableSet.iUnion
+        fun _ => measurableSet_dlShell θ₀ S j r δ
   -- `dlNumer` as the `withDensity` measure of the parameter set (for subadditivity).
   have hν_eq : ∀ (y : EuclideanSpace ℝ ι) {D : Set (EuclideanSpace ℝ ι)}, MeasurableSet D →
       dlNumer θ₀ π D y = (π.withDensity (fun θ => dlLR θ₀ θ y)) D := by
@@ -458,11 +471,11 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   -- The geometric decomposition `C ⊆ Cbad ∪ U`.
   have hdecomp : C ⊆ Cbad ∪ U := by
     intro θ hθ
-    rw [hCdef, Set.mem_setOf_eq] at hθ
+    rw [hCdef, Set.mem_ofPred_eq] at hθ
     by_cases hbad : θ ∈ Cbad
     · exact Or.inl hbad
     · refine Or.inr ?_
-      rw [hCbaddef, Set.mem_setOf_eq, not_lt] at hbad
+      rw [hCbaddef, Set.mem_ofPred_eq, not_lt] at hbad
       set S := Finset.univ.filter fun i => δ < |θ i| with hSdef
       have hScard : S.card ≤ K := by
         have : (dlSuppCount δ θ : ℝ) ≤ (K : ℝ) := hbad
@@ -488,7 +501,7 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
       refine ⟨j, ?_⟩
       rw [Set.mem_iUnion]
       refine ⟨hJ0j, ?_⟩
-      rw [dlShell, Set.mem_setOf_eq]
+      rw [dlShell, Set.mem_ofPred_eq]
       refine ⟨hSdef.symm, ?_, ?_⟩
       · calc 2 * (j : ℝ) * r = (j : ℝ) * (2 * r) := by ring
           _ ≤ (‖θ - θ₀‖ / (2 * r)) * (2 * r) := by
@@ -504,7 +517,7 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGc : Gᶜ = {y | dlDenom θ₀ π y
       < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π (Metric.closedBall θ₀ r)} := by
     rw [hGdef]; ext y
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le, hdbardef, dbarVal, hπ]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le, hdbardef, dbarVal, hπ]
   -- Term (i): the denominator event.
   have hi : ∫⁻ y in Gᶜ, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ENNReal.ofReal (Real.exp (- r ^ 2 / 8)) := by
@@ -528,9 +541,9 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
   have hGsplit : ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
       ≤ ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
         + ∫⁻ y in G, dlNumer θ₀ π U y / dlDenom θ₀ π y ∂μ := by
-    rw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
+    erw [← lintegral_add_left ((measurable_dlNumer θ₀ π Cbad).div (measurable_dlDenom θ₀ π))]
     refine lintegral_mono fun y => ?_
-    rw [← ENNReal.add_div]
+    rw [Pi.div_apply, ← ENNReal.add_div]
     exact ENNReal.div_le_div_right (hnumer_le y) _
   -- Term (ii): compressibility left ABSTRACT — truncated at the backwards-bridge (D13).
   have hii : ∫⁻ y in G, dlNumer θ₀ π Cbad y / dlDenom θ₀ π y ∂μ
@@ -557,10 +570,10 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
         refine le_trans (measure_biUnion_finset_le 𝒮 _) (Finset.sum_le_sum fun S _ => ?_)
         refine le_trans (measure_iUnion_le _) (ENNReal.tsum_le_tsum fun j => ?_)
         by_cases hj : J₀ ≤ j
-        · rw [if_pos hj]
+        · rw [ite_eq_left hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = dlShell θ₀ S j r δ := by simp [hj]
           rw [this, ← hν_eq y (measurableSet_dlShell θ₀ S j r δ)]
-        · rw [if_neg hj]
+        · rw [ite_eq_right hj]
           have : (⋃ (_ : J₀ ≤ j), dlShell θ₀ S j r δ) = ∅ := by simp [hj]
           rw [this, measure_empty]
       calc dlNumer θ₀ π U y / dlDenom θ₀ π y
@@ -575,29 +588,29 @@ theorem dl_contraction_engine' {ι : Type*} [Fintype ι] {a δ r : ℝ}
             by_cases hj : J₀ ≤ j <;> simp [hj, div_eq_mul_inv]
     refine le_trans (setLIntegral_mono ?_ fun y _ => hUsub y) ?_
     · exact Finset.measurable_sum _ fun S _ =>
-        Measurable.ennreal_tsum fun j => by
+        Measurable.tsum fun j => by
           by_cases hj : J₀ ≤ j
-          · simp only [hj, if_true]
+          · simp only [hj, ite_true]
             exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-          · simp only [hj, if_false]; exact measurable_const
+          · simp only [hj, ite_false]; exact measurable_const
     -- Integrate the finite sum / countable series term by term.
-    rw [lintegral_finset_sum _ fun S _ => Measurable.ennreal_tsum fun j => by
+    rw [lintegral_finsetSum _ fun S _ => Measurable.tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact (measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)
-        · simp only [hj, if_false]; exact measurable_const]
+        · simp only [hj, ite_false]; exact measurable_const]
     refine Finset.sum_le_sum fun S _ => ?_
     rw [lintegral_tsum fun j => by
         by_cases hj : J₀ ≤ j
-        · simp only [hj, if_true]
+        · simp only [hj, ite_true]
           exact ((measurable_dlNumer θ₀ π _).div (measurable_dlDenom θ₀ π)).aemeasurable
-        · simp only [hj, if_false]; exact aemeasurable_const]
+        · simp only [hj, ite_false]; exact aemeasurable_const]
     refine ENNReal.tsum_le_tsum fun j => ?_
     by_cases hj : J₀ ≤ j
-    · simp only [if_pos hj]
+    · simp only [ite_eq_left hj]
       have hj2 : 2 ≤ j := le_trans hJ2 hj
       exact shell_ratio_le θ₀ S hj2 ha hr hδnet dbar hdbarpos
-    · simp only [if_neg hj]
+    · simp only [ite_eq_right hj]
       simp
   -- Assemble the three pieces: `(posterior_Cbad) + (i) + (iii)` in the composed ordering.
   calc ∫⁻ y in G, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂μ
@@ -619,8 +632,8 @@ private lemma dlDensity_pos {a : ℝ} (ha : 0 < a) {x : ℝ} (hx : x ≠ 0) : 0 
   apply setIntegral_pos_iff_support_of_nonneg_ae ?_ (integrable_dlDensity_integrand ha hx) |>.mpr
   · -- support ∩ Ioi 0 has positive measure: it is all of Ioi 0
     have hsupp : Function.support
-        (fun ψ => dlNormConst a * ψ ^ (a - 2) * Real.exp (-ψ / 2 - |x| / ψ)) ∩ Set.Ioi (0:ℝ)
-        = Set.Ioi (0:ℝ) := by
+        (fun ψ => dlNormConst a * ψ ^ (a - 2) * Real.exp (-ψ / 2 - |x| / ψ)) ∩ Set.Ioi (0 : ℝ)
+        = Set.Ioi (0 : ℝ) := by
       ext ψ
       simp only [Set.mem_inter_iff, Function.mem_support, ne_eq, Set.mem_Ioi]
       constructor
@@ -644,7 +657,7 @@ private lemma dlMarginal_abs_sub_le_pos {a : ℝ} (ha : 0 < a) (c s : ℝ) (hs :
     0 < dlMarginal a {x : ℝ | |x - c| ≤ s} := by
   have hset : {x : ℝ | |x - c| ≤ s} = Set.Icc (c - s) (c + s) := by
     ext x
-    simp only [Set.mem_setOf_eq, Set.mem_Icc, abs_le]
+    simp only [Set.mem_ofPred_eq, Set.mem_Icc, abs_le]
     constructor
     · rintro ⟨h1, h2⟩; constructor <;> linarith
     · rintro ⟨h1, h2⟩; constructor <;> linarith
@@ -660,7 +673,7 @@ private lemma dlMarginal_abs_sub_le_pos {a : ℝ} (ha : 0 < a) (c s : ℝ) (hs :
     simp only [Function.mem_support, ne_eq]
     exact ne_of_gt (dlDensity_pos ha (by simpa using hx0))
   refine lt_of_lt_of_le ?_ (measure_mono hsub)
-  rw [measure_diff_null (measure_singleton 0), hset, Real.volume_Icc]
+  rw [measure_sdiff_null (measure_singleton 0), hset, Real.volume_Icc]
   simp only [ENNReal.ofReal_pos]
   linarith
 
@@ -679,7 +692,7 @@ private lemma tsum_ite_ge_shift {g : ℕ → ℝ≥0∞} (J₀ : ℕ) :
   calc ∑' j : ℕ, (if J₀ ≤ j then g j else 0)
       = ∑' j : ℕ, ({n : ℕ | J₀ ≤ n}.indicator g) j := by
         refine tsum_congr fun j => ?_
-        rw [Set.indicator_apply]; simp only [Set.mem_setOf_eq]
+        rw [Set.indicator_apply]; simp only [Set.mem_ofPred_eq]
     _ = ∑' x : {n : ℕ // J₀ ≤ n}, g x := (tsum_subtype {n : ℕ | J₀ ≤ n} g).symm
     _ = ∑' j : ℕ, g (J₀ + j) :=
         (Equiv.tsum_eq
@@ -712,7 +725,8 @@ private lemma sum_pow_card_le_nat (n K : ℕ) (hn : 1 ≤ n) :
       ≤ (K + 1) * (33 * n) ^ K := by
   classical
   have hset : (Finset.univ : Finset (Fin n)).powerset.filter (fun S => S.card ≤ K)
-      = (Finset.range (K + 1)).biUnion (fun k => (Finset.univ : Finset (Fin n)).powersetCard k) := by
+      = (Finset.range (K + 1)).biUnion
+          (fun k => (Finset.univ : Finset (Fin n)).powersetCard k) := by
     ext S
     simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_biUnion, Finset.mem_range,
       Finset.mem_powersetCard]
@@ -725,7 +739,8 @@ private lemma sum_pow_card_le_nat (n K : ℕ) (hn : 1 ≤ n) :
         = ∑ k ∈ Finset.range (K + 1),
             ((Finset.univ : Finset (Fin n)).powersetCard k).card * 33 ^ k := by
           refine Finset.sum_congr rfl fun k _ => ?_
-          have hc : ∀ S ∈ (Finset.univ : Finset (Fin n)).powersetCard k, (33 : ℕ) ^ S.card = 33 ^ k :=
+          have hc : ∀ S ∈ (Finset.univ : Finset (Fin n)).powersetCard k,
+              (33 : ℕ) ^ S.card = 33 ^ k :=
             fun S hS => by rw [(Finset.mem_powersetCard.mp hS).2]
           rw [Finset.sum_congr rfl hc, Finset.sum_const, smul_eq_mul]
       _ = ∑ k ∈ Finset.range (K + 1), n.choose k * 33 ^ k := by
@@ -750,7 +765,7 @@ private lemma dlMarginal_abs_sub_le_ge {a : ℝ} (ha : 0 < a) (ha1 : a ≤ 1) (c
     ENNReal.ofReal (2 * s * ((a / 64) * Real.exp (-3 - (7 / 2) * Real.sqrt (|c| + s))))
       ≤ dlMarginal a {x : ℝ | |x - c| ≤ s} := by
   have hset : {x : ℝ | |x - c| ≤ s} = Set.Icc (c - s) (c + s) := by
-    ext x; simp only [Set.mem_setOf_eq, Set.mem_Icc, abs_le]
+    ext x; simp only [Set.mem_ofPred_eq, Set.mem_Icc, abs_le]
     constructor
     · rintro ⟨h1, h2⟩; constructor <;> linarith
     · rintro ⟨h1, h2⟩; constructor <;> linarith
@@ -762,12 +777,12 @@ private lemma dlMarginal_abs_sub_le_ge {a : ℝ} (ha : 0 < a) (ha1 : a ≤ 1) (c
     have hxle : |x| ≤ |c| + s := by
       calc |x| = |c + (x - c)| := by ring_nf
         _ ≤ |c| + |x - c| := abs_add_le _ _
-        _ ≤ |c| + s := by have := hx; simp only [Set.mem_setOf_eq] at this; linarith
+        _ ≤ |c| + s := by have := hx; simp only [Set.mem_ofPred_eq] at this; linarith
     have hanti : dlDensity a (|c| + s) ≤ dlDensity a x :=
       dlDensity_anti (by rw [abs_of_nonneg (add_nonneg (abs_nonneg c) hs.le)]; exact hxle)
     refine le_trans ?_ hanti
     have hge := dlDensity_ge ha ha1 (|c| + s)
-    rwa [abs_of_nonneg (by positivity : (0:ℝ) ≤ |c| + s)] at hge
+    rwa [abs_of_nonneg (by positivity : (0 : ℝ) ≤ |c| + s)] at hge
   rw [dlMarginal_eq_withDensity ha, withDensity_apply _ hmeas]
   calc ENNReal.ofReal (2 * s * C)
       = ENNReal.ofReal C * ENNReal.ofReal (2 * s) := by
@@ -776,9 +791,10 @@ private lemma dlMarginal_abs_sub_le_ge {a : ℝ} (ha : 0 < a) (ha1 : a ≤ 1) (c
         rw [setLIntegral_const, hset, Real.volume_Icc]; congr 2; ring
     _ ≤ ∫⁻ x in {x : ℝ | |x - c| ≤ s}, dlDensity a x := setLIntegral_mono measurable_dlDensity hpt
 
-/-- **Contraction-ball prior lower bound (box route).** The DL prior charges `closedBall θ₀ r` with at
-least the coordinatewise box mass: support coordinates via `dlMarginal_abs_sub_le_ge`, zero coordinates
-via the `1 − ζ ≥ e^{−2ζ}` small-ball bound. No volume/Γ factor (the box factorizes exactly). -/
+/-- **Contraction-ball prior lower bound (box route).** The DL prior charges `closedBall θ₀ r` with
+at least the coordinatewise box mass: support coordinates via `dlMarginal_abs_sub_le_ge`, zero
+coordinates via the `1 − ζ ≥ e^{−2ζ}` small-ball bound.
+No volume/Γ factor (the box factorizes exactly). -/
 private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
     (ha : 0 < a) (ha1 : a ≤ 1) (hr : 0 < r) (θ₀ : EuclideanSpace ℝ ι)
     (hζ : dlMarginal a {x : ℝ | min (r / Real.sqrt (Fintype.card ι : ℝ)) (1 / 2) < |x|}
@@ -801,7 +817,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       rw [Finset.eq_empty_iff_forall_notMem]; exact fun j => (IsEmpty.false j).elim
     rw [huniv, measure_univ, hfilt]
     have hcard0 : Fintype.card ι = 0 := Fintype.card_eq_zero
-    simp [hcard0]
+    simp
   set m : ℝ := (Fintype.card ι : ℝ) with hm_def
   have hmpos : 0 < m := by rw [hm_def]; exact_mod_cast Fintype.card_pos
   set s : ℝ := min (r / Real.sqrt m) (1 / 2) with hs_def
@@ -817,7 +833,8 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
     rw [Metric.mem_closedBall, dist_eq_norm]
     have hsum : ∑ j, (θ j - θ₀ j) ^ 2 ≤ m * s ^ 2 := by
       calc ∑ j, (θ j - θ₀ j) ^ 2 ≤ ∑ _j : ι, s ^ 2 :=
-            Finset.sum_le_sum fun j _ => by nlinarith [hθ j, abs_nonneg (θ j - θ₀ j), sq_abs (θ j - θ₀ j)]
+            Finset.sum_le_sum fun j _ => by
+              nlinarith [hθ j, abs_nonneg (θ j - θ₀ j), sq_abs (θ j - θ₀ j)]
         _ = m * s ^ 2 := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, hm_def]
     have hnormsq : ‖θ - θ₀‖ ^ 2 = ∑ j, (θ j - θ₀ j) ^ 2 := by
       rw [EuclideanSpace.real_norm_sq_eq]
@@ -830,7 +847,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       _ ≤ r := hs_le
   -- The box mass factorizes into per-coordinate marginals.
   have hbox_meas : MeasurableSet {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
-    rw [Set.setOf_forall]
+    rw [Set.ofPred_forall]
     refine MeasurableSet.iInter fun j => measurableSet_le ?_ measurable_const
     exact (((measurable_pi_apply j).comp
       (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable).sub measurable_const).abs
@@ -838,16 +855,17 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       = ∏ j, dlMarginal a {x : ℝ | |x - θ₀ j| ≤ s} := by
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s} = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   -- Per-coordinate lower bound `exp(gexp (θ₀ j)) ≤ marginal`.
   set gexp : ℝ → ℝ := fun c =>
-    if c = 0 then -2 * ζ else Real.log (2 * s * (a / 64)) - 3 - 7 / 2 * Real.sqrt (|c| + s) with hgexp
+    if c = 0 then -2 * ζ else Real.log (2 * s * (a / 64)) - 3 - 7 / 2 *
+        Real.sqrt (|c| + s) with hgexp
   have hcoord : ∀ j : ι, ENNReal.ofReal (Real.exp (gexp (θ₀ j)))
       ≤ dlMarginal a {x : ℝ | |x - θ₀ j| ≤ s} := by
     intro j
     by_cases hj : θ₀ j = 0
-    · simp only [hgexp, hj, if_true]
+    · simp only [hgexp, hj, ite_true]
       have hcompl : dlMarginal a {x : ℝ | |x| ≤ s} = 1 - dlMarginal a {x : ℝ | s < |x|} := by
         rw [show {x : ℝ | |x| ≤ s} = {x : ℝ | s < |x|}ᶜ by ext x; simp [not_lt],
           prob_compl_eq_one_sub (measurableSet_lt measurable_const continuous_abs.measurable)]
@@ -869,7 +887,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
           _ ≤ 1 - dlMarginal a {x : ℝ | s < |x|} := by
               rw [hs_def] at hζ ⊢; exact tsub_le_tsub_left hζ 1
       simpa using hstep
-    · simp only [hgexp, hj, if_false]
+    · simp only [hgexp, hj, ite_false]
       have hpos : (0 : ℝ) < 2 * s * (a / 64) := by positivity
       have heq : Real.exp (Real.log (2 * s * (a / 64)) - 3 - 7 / 2 * Real.sqrt (|θ₀ j| + s))
           = 2 * s * ((a / 64) * Real.exp (-3 - 7 / 2 * Real.sqrt (|θ₀ j| + s))) := by
@@ -884,7 +902,7 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
       ≤ dlPrior a ι (Metric.closedBall θ₀ r) := by
     refine le_trans ?_ (le_trans (le_of_eq hbox_eq.symm) (measure_mono hbox_sub))
     rw [Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun j _ => (Real.exp_pos _).le)]
-    exact Finset.prod_le_prod' (fun j _ => hcoord j)
+    exact Finset.prod_le_prod (fun j _ => hcoord j)
   refine le_trans (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)) hprod
   -- `∑ⱼ gexp(θ₀ⱼ) ≥ LBexp`.
   rw [show (∑ j, gexp (θ₀ j))
@@ -894,14 +912,14 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
   have hzero_sum : ∑ j ∈ Finset.univ.filter (fun j => θ₀ j = 0), gexp (θ₀ j)
       = ((Finset.univ.filter (fun j => θ₀ j = 0)).card : ℝ) * (-2 * ζ) := by
     rw [Finset.sum_congr rfl (fun j hj => by
-        simp only [hgexp]; rw [if_pos (Finset.mem_filter.mp hj).2]),
+        simp only [hgexp]; rw [ite_eq_left (Finset.mem_filter.mp hj).2]),
       Finset.sum_const, nsmul_eq_mul]
   have hsupp_sum : ∑ j ∈ Finset.univ.filter (fun j => θ₀ j ≠ 0), gexp (θ₀ j)
       = ((Finset.univ.filter (fun j => θ₀ j ≠ 0)).card : ℝ) * (Real.log (2 * s * (a / 64)) - 3)
         - 7 / 2 * (∑ j ∈ Finset.univ.filter (fun j => θ₀ j ≠ 0), Real.sqrt (|θ₀ j| + s)) := by
     rw [Finset.sum_congr rfl (fun j hj => show gexp (θ₀ j)
           = (Real.log (2 * s * (a / 64)) - 3) - 7 / 2 * Real.sqrt (|θ₀ j| + s) by
-        simp only [hgexp]; rw [if_neg (Finset.mem_filter.mp hj).2]),
+        simp only [hgexp]; rw [ite_eq_right (Finset.mem_filter.mp hj).2]),
       Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum]
   rw [hzero_sum, hsupp_sum]
   have hcardle : ((Finset.univ.filter (fun j => θ₀ j = 0)).card : ℝ) ≤ m := by
@@ -911,13 +929,13 @@ private lemma dlPrior_closedBall_ge {ι : Type*} [Fintype ι] {a r ζ : ℝ}
     mul_le_mul_of_nonneg_left hcardle (by linarith)
   linarith [hprod2]
 
-/-- The shells `dlShell θ₀ S j r δ` for distinct support patterns `S` (at fixed `j, r, δ`) are disjoint
-(a point has a unique `δ`-support), so their prior masses sum to at most `1`. -/
+/-- The shells `dlShell θ₀ S j r δ` for distinct support patterns `S` (at fixed `j, r, δ`) are
+disjoint (a point has a unique `δ`-support), so their prior masses sum to at most `1`. -/
 private lemma sum_dlPrior_dlShell_le_one {ι : Type*} [Fintype ι] (a : ℝ) (θ₀ : EuclideanSpace ℝ ι)
     (j : ℕ) (r δ : ℝ) (𝒮 : Finset (Finset ι)) :
     ∑ S ∈ 𝒮, dlPrior a ι (dlShell θ₀ S j r δ) ≤ 1 := by
   classical
-  haveI : IsProbabilityMeasure (dlPrior a ι) := inferInstance
+  have : IsProbabilityMeasure (dlPrior a ι) := inferInstance
   have hdisj : (↑𝒮 : Set (Finset ι)).PairwiseDisjoint (fun S => dlShell θ₀ S j r δ) := by
     intro S _ S' _ hne
     refine Set.disjoint_left.mpr fun x hxS hxS' => ?_
@@ -937,8 +955,8 @@ private noncomputable def dlBoxS (rr : ℕ → ℝ) (n : ℕ) : ℝ :=
 private noncomputable def dlZeta (av rr : ℕ → ℝ) (n : ℕ) : ℝ :=
   Real.exp 1 * av n * (8 + 2 * Real.log (1 / dlBoxS rr n))
 
-/-- The contraction-ball prior lower-bound exponent (`dlPrior_closedBall_ge` at `a = av n`, `r = rr n`,
-`ζ = dlZeta`), specialized to `ι = Fin n` (`Fintype.card = n`). -/
+/-- The contraction-ball prior lower-bound exponent (`dlPrior_closedBall_ge` at `a = av n`,
+`r = rr n`, `ζ = dlZeta`), specialized to `ι = Fin n` (`Fintype.card = n`). -/
 private noncomputable def dlLBexp (av rr : ℕ → ℝ) (θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n))
     (n : ℕ) : ℝ :=
   ((Finset.univ.filter (fun j => θ₀ n j ≠ 0)).card : ℝ)
@@ -947,7 +965,8 @@ private noncomputable def dlLBexp (av rr : ℕ → ℝ) (θ₀ : (n : ℕ) → E
         Real.sqrt (|θ₀ n j| + dlBoxS rr n))
     - 2 * dlZeta av rr n * (n : ℝ)
 
-/-- Squeeze to `0`: a nonnegative sequence dominated by `exp(K·rrₙ²)` with `K < 0` and `rrₙ² → ∞`. -/
+/-- Squeeze to `0`: a nonnegative sequence dominated
+by `exp(K·rrₙ²)` with `K < 0` and `rrₙ² → ∞`. -/
 private lemma tendsto_of_le_exp_neg {rr f : ℕ → ℝ} {K : ℝ} (hK : K < 0)
     (hrr : Tendsto (fun n => (rr n) ^ 2) atTop atTop)
     (hf0 : ∀ᶠ n in atTop, 0 ≤ f n)
@@ -957,7 +976,8 @@ private lemma tendsto_of_le_exp_neg {rr f : ℕ → ℝ} {K : ℝ} (hK : K < 0)
     Real.tendsto_exp_atBot.comp (Tendsto.const_mul_atTop_of_neg hK hrr)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hg hf0 hfle
 
-/-- Sparse Cauchy–Schwarz: `∑_{j∈s} √|θⱼ| ≤ (card s)^{3/4}·‖θ‖^{1/2}` (uses only `∑_{j∈s}|θⱼ|² ≤ ‖θ‖²`). -/
+/-- Sparse Cauchy–Schwarz: `∑_{j∈s} √|θⱼ| ≤ (card s)^{3/4}·‖θ‖^{1/2}`
+(uses only `∑_{j∈s}|θⱼ|² ≤ ‖θ‖²`). -/
 private lemma sum_sqrt_abs_finset_le {ι : Type*} [Fintype ι] (s : Finset ι)
     (θ : EuclideanSpace ℝ ι) :
     ∑ j ∈ s, Real.sqrt |θ j| ≤ (s.card : ℝ) ^ (3 / 4 : ℝ) * ‖θ‖ ^ (1 / 2 : ℝ) := by
@@ -998,10 +1018,11 @@ private lemma sum_sqrt_abs_finset_le {ι : Type*} [Fintype ι] (s : Finset ι)
   rwa [Real.sqrt_sq hnn, Real.sqrt_sq hrhs_nn] at this
 
 /-- **Structural reduction of the shell double series.** Given the regime abbreviations `av, rr, Kf`
-and eventual per-`n` regularity, the term-(iii) double series is bounded by `ofReal RI + ofReal RII`,
-where `RI` is the Type-I (net-count) tail and `RII` the Type-II (shell/denominator) tail; hence it
-`→ 0` once both real tails do. Type II uses only `∑_S Π(shellₛ) ≤ 1` (disjointness) and the box-route
-prior lower bound `dlPrior_closedBall_ge` — no per-piece `dlBetaRatio` (which would need `θ₀ ⊆ S`). -/
+and eventual per-`n` regularity, the term-(iii) double series is bounded by
+`ofReal RI + ofReal RII`, where `RI` is the Type-I (net-count) tail and `RII` the Type-II
+(shell/denominator) tail; hence it `→ 0` once both real tails do. Type II uses only
+`∑_S Π(shellₛ) ≤ 1` (disjointness) and the box-route prior lower bound
+`dlPrior_closedBall_ge` — no per-piece `dlBetaRatio` (which would need `θ₀ ⊆ S`). -/
 private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
     {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)} (J₀ : ℕ) (hJ2 : 2 ≤ J₀)
     (hstruct : ∀ᶠ n in atTop, 1 ≤ n ∧ 0 < av n ∧ av n ≤ 1 ∧ 0 < rr n
@@ -1035,14 +1056,14 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
         + (rr n) ^ 2 - dlLBexp av rr θ₀ n))) atTop (𝓝 0) := by
     simpa using hUI.add hUII
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
-    (Eventually.of_forall fun n => zero_le _) ?_
+    (Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hstruct] with n hn
   obtain ⟨hn1, havp, hav1, hrrp, hthr, hδp, hζ2⟩ := hn
   have hδboxpos : 0 < dlBoxS rr n := by rw [dlBoxS]; exact lt_min hδp (by norm_num)
   have hδboxlt1 : dlBoxS rr n < 1 := lt_of_le_of_lt (min_le_right _ _) (by norm_num)
   set filt := (Finset.univ : Finset (Fin n)).powerset.filter (fun S => S.card ≤ Kf n) with hfilt
   set E : ℕ → ℝ≥0∞ := fun j => ENNReal.ofReal (Real.exp (-(j : ℝ) ^ 2 * (rr n) ^ 2 / 12)) with hE
-  show (∑ S ∈ filt, ∑' j : ℕ, if J₀ ≤ j then
+  change (∑ S ∈ filt, ∑' j : ℕ, if J₀ ≤ j then
         (33 : ℝ≥0∞) ^ S.card * E j
         + (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
             / dbarVal (av n) (rr n) (θ₀ n) else 0)
@@ -1080,7 +1101,8 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
       calc (∑ S ∈ filt, (33 : ℝ≥0∞) ^ S.card)
           = (((∑ S ∈ filt, 33 ^ S.card : ℕ)) : ℝ≥0∞) := by rw [hfilt]; push_cast; rfl
         _ ≤ (((Kf n + 1) * (33 * n) ^ Kf n : ℕ) : ℝ≥0∞) := by exact_mod_cast hnat
-        _ = ENNReal.ofReal (((Kf n + 1) * (33 * n) ^ Kf n : ℕ) : ℝ) := (ENNReal.ofReal_natCast _).symm
+        _ = ENNReal.ofReal (((Kf n + 1) * (33 * n) ^ Kf n : ℕ) : ℝ) :=
+          (ENNReal.ofReal_natCast _).symm
     calc (∑ S ∈ filt, (33 : ℝ≥0∞) ^ S.card) * (∑' j : ℕ, if J₀ ≤ j then E j else 0)
         ≤ ENNReal.ofReal (((Kf n + 1) * (33 * n) ^ Kf n : ℕ) : ℝ)
             * (2 * ENNReal.ofReal (Real.exp (-(J₀ : ℝ) ^ 2 * (rr n) ^ 2 / 12))) :=
@@ -1112,10 +1134,11 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
         ≤ dbarVal (av n) (rr n) (θ₀ n) := by
       rw [dbarVal]
       calc ENNReal.ofReal (Real.exp (dlLBexp av rr θ₀ n - (rr n) ^ 2))
-          = ENNReal.ofReal (Real.exp (-(rr n) ^ 2)) * ENNReal.ofReal (Real.exp (dlLBexp av rr θ₀ n)) := by
+          = ENNReal.ofReal (Real.exp (-(rr n) ^ 2)) *
+              ENNReal.ofReal (Real.exp (dlLBexp av rr θ₀ n)) := by
             rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]; congr 2; ring
         _ ≤ ENNReal.ofReal (Real.exp (-(rr n) ^ 2)) * dlPrior (av n) (Fin n)
-              (Metric.closedBall (θ₀ n) (rr n)) := mul_le_mul_left' hballge _
+              (Metric.closedBall (θ₀ n) (rr n)) := mul_le_mul_right hballge _
     have hdbar_inv : (dbarVal (av n) (rr n) (θ₀ n))⁻¹
         ≤ ENNReal.ofReal (Real.exp ((rr n) ^ 2 - dlLBexp av rr θ₀ n)) := by
       refine le_trans (ENNReal.inv_le_inv.mpr hdbar_ge) (le_of_eq ?_)
@@ -1130,16 +1153,16 @@ private lemma dl_shellSum_reduction {av rr : ℕ → ℝ} {Kf : ℕ → ℕ}
         ≤ (if J₀ ≤ j then E j / dbarVal (av n) (rr n) (θ₀ n) else 0) := by
       intro j
       by_cases hj : J₀ ≤ j
-      · simp only [hj, if_true]
+      · simp only [hj, ite_true]
         calc (∑ S ∈ filt, (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
               / dbarVal (av n) (rr n) (θ₀ n))
             = (∑ S ∈ filt, (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)))
                 * (E j / dbarVal (av n) (rr n) (θ₀ n)) := by
               rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun S _ => (mul_div_assoc _ _ _)
           _ ≤ 1 * (E j / dbarVal (av n) (rr n) (θ₀ n)) :=
-              mul_le_mul_right' (sum_dlPrior_dlShell_le_one _ _ _ _ _ _) _
+              mul_le_mul_left (sum_dlPrior_dlShell_le_one _ _ _ _ _ _) _
           _ = E j / dbarVal (av n) (rr n) (θ₀ n) := one_mul _
-      · simp only [hj, if_false, Finset.sum_const_zero, le_refl]
+      · simp only [hj, ite_false, Finset.sum_const_zero, le_refl]
     calc (∑' j : ℕ, ∑ S ∈ filt, if J₀ ≤ j then
             (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rr n) (rr n / n)) * E j
               / dbarVal (av n) (rr n) (θ₀ n) else 0)
@@ -1186,7 +1209,8 @@ private lemma tendsto_affineLog_mul_natRpow_neg' {p : ℝ} (hp : 0 < p) (C D : �
   refine h3.congr fun n => ?_
   ring
 
-set_option maxHeartbeats 1600000 in
+set_option maxHeartbeats 600000 in
+-- This proof uses about 410,000 heartbeats.
 /-- **Shell double-series limit (generic scale, D14).** The engine's term-(iii) shell double series
 at radius `r = √(qₙ log n)`, support-count threshold `⌊A·qₙ⌋₊`, and ANY scale sequence `av` in the
 window `0 < av ≤ 1/2 ∧ n·av ≤ 1` with a polynomial floor `av ≥ n^{−p}` — covering BOTH regimes
@@ -1200,7 +1224,8 @@ private lemma dl_shellSum_tendsto_zero_generic {q : ℕ → ℕ} (hq1 : ∀ n, 1
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖ ^ 2 ≤ (q n : ℝ) * (Real.log n) ^ 4)
     (av : ℕ → ℝ)
-    -- LEAN-ONLY: scale window covering both regimes (n·av ≤ 1 controls the C3 tail 2nζ); engine-internal.
+    -- LEAN-ONLY: scale window covering both regimes (n·av
+    -- ≤ 1 controls the C3 tail 2nζ); engine-internal.
     (hav : ∀ᶠ (n : ℕ) in atTop, 0 < av n ∧ av n ≤ 1 / 2 ∧ (n : ℝ) * av n ≤ 1)
     -- LEAN-ONLY: polynomial floor giving log(1/av) ≤ p·log n; p = 1+β resp. 1; engine-internal.
     (hav2 : ∃ p : ℝ, 0 < p ∧ ∀ᶠ (n : ℕ) in atTop, (n : ℝ) ^ (-p) ≤ av n)
@@ -1213,7 +1238,8 @@ private lemma dl_shellSum_tendsto_zero_generic {q : ℕ → ℕ} (hq1 : ∀ n, 1
             (33 : ℝ≥0∞) ^ S.card
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * (Real.sqrt (q n * Real.log n)) ^ 2 / 12))
             + (dlPrior (av n) (Fin n))
-                (dlShell (θ₀ n) S j (Real.sqrt (q n * Real.log n)) (Real.sqrt (q n * Real.log n) / n))
+                (dlShell (θ₀ n) S j (Real.sqrt (q n * Real.log n))
+                    (Real.sqrt (q n * Real.log n) / n))
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * (Real.sqrt (q n * Real.log n)) ^ 2 / 12))
               / dbarVal (av n) (Real.sqrt (q n * Real.log n)) (θ₀ n)
             else 0))
@@ -1283,7 +1309,8 @@ private lemma dl_shellSum_tendsto_zero_generic {q : ℕ → ℕ} (hq1 : ∀ n, 1
       rw [hrr, show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       exact Real.sqrt_le_sqrt (by nlinarith [hq1n n])
     have hsqn2 : (2 : ℝ) ≤ Real.sqrt n := by
-      rw [show (2 : ℝ) = Real.sqrt 4 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
+      rw [show (2 : ℝ) = Real.sqrt 4
+          by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
       exact Real.sqrt_le_sqrt (by exact_mod_cast hn4)
     have hsqnpos : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnpos
     rw [dlBoxS]
@@ -1511,7 +1538,8 @@ private lemma dl_shellSum_tendsto_zero_generic {q : ℕ → ℕ} (hq1 : ∀ n, 1
             ≤ 1 * (9 * Real.log n) :=
           mul_le_mul hnav key1 (by linarith [hlogbox_pos]) (by norm_num)
         calc 2 * (Real.exp 1 * av n * (8 + 2 * Real.log (1 / dlBoxS rr n))) * (n : ℝ)
-            = (2 * Real.exp 1) * (((n : ℝ) * av n) * (8 + 2 * Real.log (1 / dlBoxS rr n))) := by ring
+            = (2 * Real.exp 1) * (((n : ℝ) * av n) * (8 + 2 * Real.log (1 / dlBoxS rr n))) := by
+              ring
           _ ≤ (2 * Real.exp 1) * (1 * (9 * Real.log n)) :=
               mul_le_mul_of_nonneg_left hpp (by positivity)
           _ = 18 * Real.exp 1 * Real.log n := by ring
@@ -1564,7 +1592,8 @@ private lemma dl_shellSum_tendsto_zero_beta {β : ℝ} (hβ : 0 < β) {q : ℕ �
             (33 : ℝ≥0∞) ^ S.card
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * (Real.sqrt (q n * Real.log n)) ^ 2 / 12))
             + (dlPrior ((n : ℝ) ^ (-(1 + β))) (Fin n))
-                (dlShell (θ₀ n) S j (Real.sqrt (q n * Real.log n)) (Real.sqrt (q n * Real.log n) / n))
+                (dlShell (θ₀ n) S j (Real.sqrt (q n * Real.log n))
+                    (Real.sqrt (q n * Real.log n) / n))
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * (Real.sqrt (q n * Real.log n)) ^ 2 / 12))
               / dbarVal ((n : ℝ) ^ (-(1 + β))) (Real.sqrt (q n * Real.log n)) (θ₀ n)
             else 0))
@@ -1590,9 +1619,9 @@ private lemma dl_shellSum_tendsto_zero_beta {β : ℝ} (hβ : 0 < β) {q : ℕ �
     hav ⟨1 + β, by linarith, Eventually.of_forall fun n => le_refl _⟩ (3 + 2 / β)
     (by positivity)
 
-/-- **Prior charges the contraction ball.** For `0 < a` and `0 < r`, the DL prior gives positive mass
-to `closedBall θ₀ r`: a coordinatewise box `{θ | ∀ j, |θ j − θ₀ j| ≤ s}` with `s = r/√(card ι)` sits
-inside the ball, and factorizes into a product of positive one-dimensional interval masses. -/
+/-- **Prior charges the contraction ball.** For `0 < a` and `0 < r`, the DL prior gives positive
+mass to `closedBall θ₀ r`: a coordinatewise box `{θ | ∀ j, |θ j − θ₀ j| ≤ s}` with `s = r/√(card ι)`
+sits inside the ball, and factorizes into a product of positive one-dimensional interval masses. -/
 private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha : 0 < a) (hr : 0 < r)
     (θ₀ : EuclideanSpace ℝ ι) : 0 < dlPrior a ι (Metric.closedBall θ₀ r) := by
   classical
@@ -1613,7 +1642,8 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
     rw [Metric.mem_closedBall, dist_eq_norm]
     have hsum : ∑ j, (θ j - θ₀ j) ^ 2 ≤ m * s ^ 2 := by
       calc ∑ j, (θ j - θ₀ j) ^ 2 ≤ ∑ _j : ι, s ^ 2 :=
-            Finset.sum_le_sum fun j _ => by nlinarith [hθ j, abs_nonneg (θ j - θ₀ j), sq_abs (θ j - θ₀ j)]
+            Finset.sum_le_sum fun j _ => by
+              nlinarith [hθ j, abs_nonneg (θ j - θ₀ j), sq_abs (θ j - θ₀ j)]
         _ = m * s ^ 2 := by
               simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, hm_def]
     have hnormsq : ‖θ - θ₀‖ ^ 2 = ∑ j, (θ j - θ₀ j) ^ 2 := by
@@ -1630,7 +1660,7 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
       _ = r := hsr
   -- The box mass factorizes into positive one-dimensional masses.
   have hbox_meas : MeasurableSet {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
-    rw [Set.setOf_forall]
+    rw [Set.ofPred_forall]
     refine MeasurableSet.iInter fun j => measurableSet_le ?_ measurable_const
     exact (((measurable_pi_apply j).comp
       (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable).sub measurable_const).abs
@@ -1639,7 +1669,7 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
     have hpre : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹'
         {θ | ∀ j, |θ j - θ₀ j| ≤ s}
         = Set.univ.pi (fun j => {y : ℝ | |y - θ₀ j| ≤ s}) := by
-      ext x; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_univ_pi, PiLp.toLp_apply]
+      ext x; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_univ_pi]
     rw [dlPrior, Measure.map_apply measurable_toLp hbox_meas, hpre, Measure.pi_pi]
   have hbox_pos : 0 < dlPrior a ι {θ : EuclideanSpace ℝ ι | ∀ j, |θ j - θ₀ j| ≤ s} := by
     rw [hbox_eq, pos_iff_ne_zero, Finset.prod_ne_zero_iff]
@@ -1648,26 +1678,28 @@ private lemma dlPrior_closedBall_pos {ι : Type*} [Fintype ι] {a r : ℝ} (ha :
   exact lt_of_lt_of_le hbox_pos (measure_mono hbox_sub)
 
 
-set_option maxHeartbeats 3200000 in
-/-- **BPPD Theorem 3.1 (posterior contraction).** In the normal-means model with the Dirichlet–Laplace
-prior at scale `aₙ = n^{−(1+β)}`, under the growth condition `‖θ₀‖² ≤ qₙ log⁴n`, there is a constant
-`M > 0` such that the posterior mass of `{ θ : ‖θ − θ₀‖ > M√(qₙ log n) }` tends to `0` in `E_{θ₀}`.
+set_option maxHeartbeats 300000 in
+-- This proof uses about 220,000 heartbeats.
+/-- **BPPD Theorem 3.1 (posterior contraction).** In the normal-means model with the
+Dirichlet–Laplace prior at scale `aₙ = n^{−(1+β)}`, under the growth condition `‖θ₀‖² ≤ qₙ log⁴n`,
+there is a constant `M > 0` such that the posterior mass of
+`{ θ : ‖θ − θ₀‖ > M√(qₙ log n) }` tends to `0` in `E_{θ₀}`.
 
-**Deviation D1 (rate).** The stated rate is `√(qₙ log n)`, which is what the paper's proof (`rₙ² = qₙ
-log n`, p. 15) yields; the paper's headline `sₙ = √(qₙ log(n/qₙ))` is recovered under `qₙ ≤ n^{1−c}` in
-`dl_theorem31_paper_rate`. -/
+**Deviation D1 (rate).** The stated rate is `√(qₙ log n)`, which is what the paper's proof
+(`rₙ² = qₙ log n`, p. 15) yields; the paper's headline `sₙ = √(qₙ log(n/qₙ))` is recovered under
+`qₙ ≤ n^{1−c}` in `dl_theorem31_paper_rate`. -/
 theorem dl_theorem31 {β : ℝ}
     -- USER-INPUT: β > 0 (DL scale exponent aₙ = n^{−(1+β)}); BPPD Thm 3.1.
     (hβ : 0 < β) {q : ℕ → ℕ}
     -- USER-INPUT: qₙ ≥ 1 (nonempty approximate support; D3); BPPD Thm 3.1.
     (hq1 : ∀ n, 1 ≤ q n)
     -- USER-INPUT: qₙ = o(n) (sub-linear sparsity); BPPD Thm 3.1.
-    (hqn : Tendsto (fun n => (q n : ℝ)/n) atTop (𝓝 0))
+    (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))
     {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}
     -- USER-INPUT: θ₀ is qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n (signal-size growth condition, BPPD (11)); BPPD Thm 3.1.
-    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖ ^ 2 ≤ (q n : ℝ) * (Real.log n) ^ 4) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | M * Real.sqrt (q n * Real.log n) < ‖θ - θ₀ n‖}
@@ -1700,55 +1732,55 @@ theorem dl_theorem31 {β : ℝ}
     exact Real.rpow_pos_of_pos (by exact_mod_cast hn) _
   have hmv_le : ∀ n, mv n ≤ (n : ℝ) := by
     intro n
-    letI := Classical.decEq (Fin n)
+    let := Classical.decEq (Fin n)
     have h : Fintype.card {i : Fin n // i ∉ S₀ n} ≤ n :=
       (Fintype.card_subtype_le _).trans_eq (Fintype.card_fin n)
-    show (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ) ≤ (n : ℝ)
+    change (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ) ≤ (n : ℝ)
     exact_mod_cast h
   have hqlt : ∀ᶠ n in atTop, (q n : ℝ) < n := by
-    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1 by norm_num)),
+    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0 : ℝ) < 1 by norm_num)),
       eventually_gt_atTop 0] with n hlt hn0
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn0
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn0
     exact (div_lt_one hnpos).mp hlt
   have hmvpos : ∀ᶠ n in atTop, 0 < mv n := by
     filter_upwards [hqlt] with n hql
-    letI := Classical.decEq (Fin n)
+    let := Classical.decEq (Fin n)
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
-    haveI : Nonempty {i : Fin n // i ∉ S₀ n} := ⟨j, hj⟩
-    show (0 : ℝ) < (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ)
+    have : Nonempty {i : Fin n // i ∉ S₀ n} := ⟨j, hj⟩
+    change (0 : ℝ) < (Fintype.card {i : Fin n // i ∉ S₀ n} : ℝ)
     exact_mod_cast Fintype.card_pos
   -- `δ = rₙ/n` lies in the window `[n^{−2}, 1/2]` eventually.
   have hδwin : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δv n ∧ δv n ≤ 1/2 := by
     filter_upwards [eventually_ge_atTop 3,
-      hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1/8 by norm_num))] with n hn3 hqs
-    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn3)
-    have hnpos : (0:ℝ) < n := by linarith
+      hqn.eventually (Iio_mem_nhds (show (0 : ℝ) < 1/8 by norm_num))] with n hn3 hqs
+    have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn3)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
-    have hq1n : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
-    have hlogn1 : (1:ℝ) ≤ Real.log n := by
-      have h3 : (3:ℝ) ≤ n := by exact_mod_cast hn3
+    have hq1n : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have hlogn1 : (1 : ℝ) ≤ Real.log n := by
+      have h3 : (3 : ℝ) ≤ n := by exact_mod_cast hn3
       have := Real.exp_one_lt_d9
       have hle : Real.exp 1 ≤ n := by linarith
-      calc (1:ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
+      calc (1 : ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
         _ ≤ Real.log n := Real.log_le_log (Real.exp_pos 1) hle
     have hrv_pos : 0 < rv n := by
       rw [hrv]; exact Real.sqrt_pos.mpr (by nlinarith)
-    have hrv_ge1 : (1:ℝ) ≤ rv n := by
-      rw [hrv, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+    have hrv_ge1 : (1 : ℝ) ≤ rv n := by
+      rw [hrv, show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       exact Real.sqrt_le_sqrt (by nlinarith)
     refine ⟨?_, ?_⟩
     · -- n^{−2} ≤ rₙ/n
-      have hmono : (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) :=
+      have hmono : (n : ℝ)^(-2 : ℝ) ≤ (n : ℝ)^(-1 : ℝ) :=
         Real.rpow_le_rpow_of_exponent_le hn1R (by norm_num)
-      have hinv : (n:ℝ)^(-1:ℝ) = 1 / n := by
+      have hinv : (n : ℝ)^(-1 : ℝ) = 1 / n := by
         rw [Real.rpow_neg_one]; exact (one_div _).symm
-      calc (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) := hmono
+      calc (n : ℝ)^(-2 : ℝ) ≤ (n : ℝ)^(-1 : ℝ) := hmono
         _ = 1 / n := hinv
         _ ≤ rv n / n := by gcongr
     · -- rₙ/n ≤ 1/2
@@ -1768,32 +1800,33 @@ theorem dl_theorem31 {β : ℝ}
   have hzv_le : ∀ᶠ n in atTop, zv n ≤ Real.exp 1 * av n * (8 + 4 * Real.log n) := by
     filter_upwards [hδwin, eventually_ge_atTop 1, hav_pos] with n hδn hn1 hapos
     obtain ⟨hδlb, hδub⟩ := hδn
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
     have hδpos : 0 < δv n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
     have h1 : Real.log (1 / δv n) ≤ 2 * Real.log n := by
       rw [one_div, Real.log_inv]
-      have hle : Real.log ((n:ℝ)^(-2:ℝ)) ≤ Real.log (δv n) :=
+      have hle : Real.log ((n : ℝ)^(-2 : ℝ)) ≤ Real.log (δv n) :=
         Real.log_le_log (Real.rpow_pos_of_pos hnpos _) hδlb
       rw [Real.log_rpow hnpos] at hle; linarith
     rw [hzv]
     exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
   have hsv_ge : ∀ᶠ (n : ℕ) in atTop, 1 / Real.sqrt n ≤ sv n := by
     filter_upwards [eventually_ge_atTop 4, hmvpos] with n hn4 hmvp
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
-    have hlogn1 : (1:ℝ) ≤ Real.log n := by
-      rw [show (1:ℝ) = Real.log (Real.exp 1) by rw [Real.log_exp]]
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
+    have hlogn1 : (1 : ℝ) ≤ Real.log n := by
+      rw [show (1 : ℝ) = Real.log (Real.exp 1) by rw [Real.log_exp]]
       exact Real.log_le_log (Real.exp_pos 1) (by
         have : Real.exp 1 ≤ 3 := by have := Real.exp_one_lt_d9; linarith
-        have h3 : (4:ℝ) ≤ n := by exact_mod_cast hn4
+        have h3 : (4 : ℝ) ≤ n := by exact_mod_cast hn4
         linarith)
-    have hrv1 : (1:ℝ) ≤ rv n := by
-      rw [hrv, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+    have hrv1 : (1 : ℝ) ≤ rv n := by
+      rw [hrv, show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       apply Real.sqrt_le_sqrt
-      have hq1n : (1:ℝ) ≤ (q n:ℝ) := by exact_mod_cast hq1 n
+      have hq1n : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
       nlinarith [hlogn1, hq1n]
-    have hsqn2 : (2:ℝ) ≤ Real.sqrt n := by
-      rw [show (2:ℝ) = Real.sqrt 4 by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    have hsqn2 : (2 : ℝ) ≤ Real.sqrt n := by
+      rw [show (2 : ℝ) = Real.sqrt 4
+          by rw [show (4 : ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
       apply Real.sqrt_le_sqrt; exact_mod_cast hn4
     have hmvsqle : Real.sqrt (mv n) ≤ Real.sqrt n := Real.sqrt_le_sqrt (hmv_le n)
     have hmvsqpos : 0 < Real.sqrt (mv n) := Real.sqrt_pos.mpr hmvp
@@ -1805,11 +1838,11 @@ theorem dl_theorem31 {β : ℝ}
     · exact one_div_le_one_div_of_le (by norm_num) hsqn2
   have hlogsv_le : ∀ᶠ (n : ℕ) in atTop, Real.log (1 / sv n) ≤ (1/2) * Real.log n := by
     filter_upwards [hsv_ge, eventually_ge_atTop 4] with n hsvge hn4
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hsvpos : 0 < sv n := lt_of_lt_of_le (by positivity) hsvge
     have h1svle : 1 / sv n ≤ Real.sqrt n := by
-      have h := one_div_le_one_div_of_le (by positivity : (0:ℝ) < 1 / Real.sqrt n) hsvge
+      have h := one_div_le_one_div_of_le (by positivity : (0 : ℝ) < 1 / Real.sqrt n) hsvge
       rwa [one_div_one_div] at h
     calc Real.log (1 / sv n) ≤ Real.log (Real.sqrt n) :=
             Real.log_le_log (by positivity) h1svle
@@ -1825,14 +1858,14 @@ theorem dl_theorem31 {β : ℝ}
     rw [hav]; ring
   have hw2 : ∀ᶠ n in atTop, wv n ≤ 1 / 2 := by
     have hev : ∀ᶠ n in atTop, Real.exp 1 * av n * (8 + Real.log n) ∈ Set.Iio (1/2 : ℝ) :=
-      hWtend.eventually (Iio_mem_nhds (show (0:ℝ) < 1/2 by norm_num))
+      hWtend.eventually (Iio_mem_nhds (show (0 : ℝ) < 1/2 by norm_num))
     filter_upwards [hwv_le, hev] with n h1 h2
     have h2' : Real.exp 1 * av n * (8 + Real.log n) < 1 / 2 := h2
     linarith
   have hcv_gt1 : ∀ᶠ n in atTop, 1 < cv n := by
     filter_upwards [eventually_ge_atTop 2] with n hn2
-    have hnpos : (0:ℝ) < n := by
-      have : (2:ℝ) ≤ n := by exact_mod_cast hn2
+    have hnpos : (0 : ℝ) < n := by
+      have : (2 : ℝ) ≤ n := by exact_mod_cast hn2
       linarith
     rw [hcv]
     exact (Real.one_lt_rpow_iff_of_pos hnpos).mpr
@@ -1849,7 +1882,7 @@ theorem dl_theorem31 {β : ℝ}
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hU1 ?_ ?_
     · filter_upwards [hδwin, eventually_ge_atTop 1, hav_pos, hcv_gt1] with n hδn hn1 hapos hcvn
       obtain ⟨hδlb, hδub⟩ := hδn
-      have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
+      have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
       have hδpos : 0 < δv n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
       have hlogd : 0 ≤ Real.log (1 / δv n) :=
         Real.log_nonneg (by rw [le_div_iff₀ hδpos]; linarith)
@@ -1860,8 +1893,8 @@ theorem dl_theorem31 {β : ℝ}
     · filter_upwards [hzv_le, eventually_ge_atTop 1, hav_pos, hcv_gt1, hδwin] with
         n hzvle hn1 hapos hcvn hδn
       obtain ⟨hδlb, hδub⟩ := hδn
-      have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
-      have hn1R : (1:ℝ) ≤ n := by exact_mod_cast hn1
+      have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
+      have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast hn1
       have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
       have hδpos : 0 < δv n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
       have hlogd : 0 ≤ Real.log (1 / δv n) :=
@@ -1896,24 +1929,30 @@ theorem dl_theorem31 {β : ℝ}
       have hwvnn : 0 ≤ wv n := by
         rw [hwv]
         have : 0 ≤ Real.log (1 / sv n) :=
-          Real.log_nonneg (by rw [le_div_iff₀ hsvpos]; linarith [hsvge, show sv n ≤ 1 from le_of_lt (lt_of_le_of_lt (min_le_right _ _) (by norm_num))])
+          Real.log_nonneg (by
+              rw [le_div_iff₀ hsvpos]; linarith
+                  [hsvge, show sv n ≤ 1 from le_of_lt
+                      (lt_of_le_of_lt (min_le_right _ _) (by norm_num))])
         have hapos : 0 < av n := by
           rw [hav]; exact Real.rpow_pos_of_pos (by exact_mod_cast (le_trans (by norm_num) hn4)) _
         exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
       exact mul_nonneg hmvnn hwvnn
     · filter_upwards [hwv_le, eventually_ge_atTop 4, hav_pos, hsv_ge] with
         n hwvle hn4 hapos hsvge
-      have hn1R : (1:ℝ) ≤ n := by
-        have : (4:ℝ) ≤ n := by exact_mod_cast hn4
+      have hn1R : (1 : ℝ) ≤ n := by
+        have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
         linarith
-      have hnpos : (0:ℝ) < n := by linarith
+      have hnpos : (0 : ℝ) < n := by linarith
       have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
       have hwvnn : 0 ≤ wv n := by
         rw [hwv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le)
           (by
             have hsvpos : 0 < sv n := lt_of_lt_of_le (by positivity) hsvge
             have : 0 ≤ Real.log (1 / sv n) :=
-              Real.log_nonneg (by rw [le_div_iff₀ hsvpos]; linarith [hsvge, show sv n ≤ 1 from le_of_lt (lt_of_le_of_lt (min_le_right _ _) (by norm_num))])
+              Real.log_nonneg (by
+                  rw [le_div_iff₀ hsvpos]; linarith
+                      [hsvge, show sv n ≤ 1 from le_of_lt
+                          (lt_of_le_of_lt (min_le_right _ _) (by norm_num))])
             linarith)
       have hrpow : (n : ℝ) * av n = (n : ℝ) ^ (-β) := by
         rw [hav]
@@ -1927,24 +1966,24 @@ theorem dl_theorem31 {β : ℝ}
     apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => (β / 2) * Real.log n) ?_
       (hlogtend.const_mul_atTop (by positivity))
     filter_upwards [eventually_ge_atTop 4, hqlt] with n hn4 hql
-    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
+    have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1R
-    have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+    have hq1n : (1 : ℝ) ≤ q n := by exact_mod_cast hq1 n
     have hlogcv : Real.log (cv n) = (β / 2) * Real.log n := by rw [hcv, Real.log_rpow hnpos]
     have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
       rw [hrv]; exact Real.sq_sqrt (mul_nonneg (by positivity) hlogn)
     have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
       apply Nat.le_floor
       have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-      have h2 : (1:ℝ) ≤ A := by rw [hA_def]; nlinarith [show (0:ℝ) < 2 / β by positivity]
+      have h2 : (1 : ℝ) ≤ A := by rw [hA_def]; nlinarith [show (0 : ℝ) < 2 / β by positivity]
       nlinarith
     have hklb : (A - 1) * (q n : ℝ) - 1 ≤ (kv n : ℝ) := by
       rw [hkv, Nat.cast_sub hcard_le]
       have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
         have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
       have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-      push_cast; nlinarith
+      nlinarith
     have hAm1 : A - 1 = 2 + 2 / β := by rw [hA_def]; ring
     have hkβ : 2 * (q n : ℝ) * β + 2 * (q n) - β ≤ (kv n : ℝ) * β := by
       have h := mul_le_mul_of_nonneg_right hklb hβ.le
@@ -1952,7 +1991,7 @@ theorem dl_theorem31 {β : ℝ}
       have hLHS : ((2 + 2 / β) * (q n : ℝ) - 1) * β = 2 * (q n) * β + 2 * (q n) - β := by
         field_simp
       rwa [hLHS] at h
-    have hbr : (0:ℝ) ≤ (kv n : ℝ) * β - 2 * (q n) - β := by
+    have hbr : (0 : ℝ) ≤ (kv n : ℝ) * β - 2 * (q n) - β := by
       nlinarith [hkβ, mul_nonneg hβ.le (sub_nonneg.mpr hq1n)]
     rw [hlogcv, hrv2]
     nlinarith [mul_nonneg hlogn hbr, hlogn]
@@ -1960,10 +1999,10 @@ theorem dl_theorem31 {β : ℝ}
     apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => Real.log n / 8) ?_
       ((hlogtend).atTop_div_const (by norm_num))
     filter_upwards [eventually_ge_atTop 1] with n hn
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast hn
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
     have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
       rw [hrv]; exact Real.sq_sqrt (mul_nonneg (by positivity) (Real.log_nonneg hn1))
-    have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+    have hq1n : (1 : ℝ) ≤ q n := by exact_mod_cast hq1 n
     have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1
     rw [hrv2]; nlinarith
   have hf1 : Tendsto (fun n => ENNReal.ofReal (Real.exp (P n))) atTop (𝓝 0) := by
@@ -1988,7 +2027,8 @@ theorem dl_theorem31 {β : ℝ}
         ∑' j : ℕ, (if J₀ ≤ j then
           (33 : ℝ≥0∞) ^ S.card * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12))
           + (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rv n) (δv n))
-              * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12)) / dbarVal (av n) (rv n) (θ₀ n)
+              * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12)) /
+                  dbarVal (av n) (rv n) (θ₀ n)
           else 0)) atTop (𝓝 0) := hshell
   -- Assemble: the full engine RHS tends to `0`.
   have hRHS : Tendsto (fun n =>
@@ -1998,32 +2038,33 @@ theorem dl_theorem31 {β : ℝ}
           ∑' j : ℕ, (if J₀ ≤ j then
             (33 : ℝ≥0∞) ^ S.card * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12))
             + (dlPrior (av n) (Fin n)) (dlShell (θ₀ n) S j (rv n) (δv n))
-                * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12)) / dbarVal (av n) (rv n) (θ₀ n)
+                * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * rv n ^ 2 / 12)) /
+                    dbarVal (av n) (rv n) (θ₀ n)
             else 0)) atTop (𝓝 0) := by
     have h := ((hf2.add (hf1.add hf2)).add hshellR)
     simpa only [add_zero, zero_add] using h
   -- Squeeze the posterior mass between `0` and the engine RHS.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hRHS
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hδwin, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos] with
     n hδn hn4 hsvge hw2n hcvn hapos
   obtain ⟨hδlb, hδub⟩ := hδn
-  have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-  have hnpos : (0:ℝ) < n := by linarith
-  have hn2 : (1:ℝ) < n := by
-    have : (4:ℝ) ≤ n := by exact_mod_cast hn4
+  have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hn2 : (1 : ℝ) < n := by
+    have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
     linarith
   have hn2N : 2 ≤ n := by
-    have : (4:ℝ) ≤ n := by exact_mod_cast hn4
-    exact_mod_cast (by linarith : (2:ℝ) ≤ n)
+    have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
+    exact_mod_cast (by linarith : (2 : ℝ) ≤ n)
   have ha_le1 : av n ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hn1R (by linarith)
   have ha_le2 : av n ≤ 1/2 := by
-    show (n:ℝ)^(-(1+β)) ≤ 1/2
-    rw [Real.rpow_neg hnpos.le, show (1:ℝ)/2 = (2:ℝ)⁻¹ by norm_num]
+    change (n : ℝ)^(-(1+β)) ≤ 1/2
+    rw [Real.rpow_neg hnpos.le, show (1 : ℝ)/2 = (2 : ℝ)⁻¹ by norm_num]
     apply inv_anti₀ (by norm_num)
-    calc (2:ℝ) ≤ n := by exact_mod_cast hn2N
-      _ = (n:ℝ)^(1:ℝ) := (Real.rpow_one _).symm
-      _ ≤ (n:ℝ)^(1+β) := Real.rpow_le_rpow_of_exponent_le hn1R (by linarith)
+    calc (2 : ℝ) ≤ n := by exact_mod_cast hn2N
+      _ = (n : ℝ)^(1 : ℝ) := (Real.rpow_one _).symm
+      _ ≤ (n : ℝ)^(1+β) := Real.rpow_le_rpow_of_exponent_le hn1R (by linarith)
   have hδpos : 0 < δv n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
   have hδlt1 : δv n ≤ 1 := le_trans hδub (by norm_num)
   have hlogn_pos : 0 < Real.log n := Real.log_pos hn2
@@ -2037,7 +2078,7 @@ theorem dl_theorem31 {β : ℝ}
   have hδnet : Real.sqrt (Fintype.card (Fin n) : ℝ) * δv n ≤ rv n := by
     rw [Fintype.card_fin, hδv]
     have hsqn : Real.sqrt (n : ℝ) ≤ (n : ℝ) := by
-      calc Real.sqrt (n : ℝ) ≤ Real.sqrt ((n:ℝ)*(n:ℝ)) :=
+      calc Real.sqrt (n : ℝ) ≤ Real.sqrt ((n : ℝ)*(n : ℝ)) :=
             Real.sqrt_le_sqrt (by nlinarith)
         _ = n := by rw [Real.sqrt_mul_self hnpos.le]
     calc Real.sqrt (n : ℝ) * (rv n / n) ≤ (n : ℝ) * (rv n / n) := by
@@ -2049,7 +2090,7 @@ theorem dl_theorem31 {β : ℝ}
     have hm := dlMarginal_abs_gt_le' hapos ha_le1 hδpos hδlt1'
     have hlogd : 0 ≤ Real.log (1 / δv n) :=
       Real.log_nonneg (by rw [le_div_iff₀ hδpos]; linarith)
-    have hznn : (0:ℝ) ≤ zv n := by
+    have hznn : (0 : ℝ) ≤ zv n := by
       rw [hzv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
     calc (dlMarginal (av n) {x : ℝ | δv n < |x|}).toReal
         ≤ (ENNReal.ofReal (zv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
@@ -2061,22 +2102,22 @@ theorem dl_theorem31 {β : ℝ}
     Real.log_nonneg (by rw [le_div_iff₀ hsvpos]; linarith [hsvlt1])
   have hw : (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal ≤ wv n := by
     have hm := dlMarginal_abs_gt_le' hapos ha_le1 hsvpos hsvlt1
-    have hwnn : (0:ℝ) ≤ wv n := by
+    have hwnn : (0 : ℝ) ≤ wv n := by
       rw [hwv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
     calc (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal
         ≤ (ENNReal.ofReal (wv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
       _ = wv n := ENNReal.toReal_ofReal hwnn
   -- `hk`: the Chernoff cut inclusion.
-  have hAqn : (0:ℝ) ≤ A * q n := by rw [hA_def]; positivity
+  have hAqn : (0 : ℝ) ≤ A * q n := by rw [hA_def]; positivity
   have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
     apply Nat.le_floor
     have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-    have h2 : (1:ℝ) ≤ A := by rw [hA_def]; have : 0 < 2 / β := by positivity
-                              linarith
-    have h3 : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have h2 : (1 : ℝ) ≤ A := by rw [hA_def]; have : 0 < 2 / β := by positivity
+                                linarith
+    have h3 : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
     nlinarith
   have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ (⌊A * (q n : ℝ)⌋₊ : ℝ) := by
-    rw [hkv, Nat.cast_sub hcard_le]; push_cast; linarith
+    rw [hkv, Nat.cast_sub hcard_le]; linarith
   have hbBpos : 0 < (dlPrior (av n) (Fin n)) (Metric.closedBall (θ₀ n) (rv n)) :=
     dlPrior_closedBall_pos hapos hr_pos (θ₀ n)
   have hJ₀ : (J₀ : ℝ) ≤ M / 2 := by rw [hM_def]; linarith
@@ -2084,21 +2125,21 @@ theorem dl_theorem31 {β : ℝ}
   exact dl_contraction_engine hapos ha_le2 hδpos hδlt1 hδnet hr_pos (θ₀ n) (S₀ n) hsupp hbBpos
     M hMpos (⌊A * (q n : ℝ)⌋₊) J₀ hJ2 hJ₀ (kv n) hk (zv n) hz (wv n) hw hw2n (cv n) hcvn
 
-/-- **BPPD Theorem 3.1, ball / `𝓝 1` form** (BPPD eq. (12)). Equivalent restatement of `dl_theorem31`:
-the posterior mass of the contraction ball `{ θ : ‖θ − θ₀‖ ≤ M√(qₙ log n) }` tends to `1` in
-`E_{θ₀}`. -/
+/-- **BPPD Theorem 3.1, ball / `𝓝 1` form** (BPPD eq. (12)). Equivalent restatement of
+`dl_theorem31`: the posterior mass of the contraction ball `{ θ : ‖θ − θ₀‖ ≤ M√(qₙ log n) }` tends
+to `1` in `E_{θ₀}`. -/
 theorem dl_theorem31_ball {β : ℝ}
     -- USER-INPUT: β > 0; BPPD Thm 3.1.
     (hβ : 0 < β) {q : ℕ → ℕ}
     -- USER-INPUT: qₙ ≥ 1 (D3); BPPD Thm 3.1.
     (hq1 : ∀ n, 1 ≤ q n)
     -- USER-INPUT: qₙ = o(n); BPPD Thm 3.1.
-    (hqn : Tendsto (fun n => (q n : ℝ)/n) atTop (𝓝 0))
+    (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))
     {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖ ^ 2 ≤ (q n : ℝ) * (Real.log n) ^ 4) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | ‖θ - θ₀ n‖ ≤ M * Real.sqrt (q n * Real.log n)}
@@ -2124,7 +2165,7 @@ theorem dl_theorem31_ball {β : ℝ}
       Kernel.measurable_coe κ hcompl_meas
     have hball_eq : {θ : EuclideanSpace ℝ (Fin n) | ‖θ - θ₀ n‖ ≤ r}
         = {θ : EuclideanSpace ℝ (Fin n) | r < ‖θ - θ₀ n‖}ᶜ := by
-      ext θ; simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt]
+      ext θ; simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt]
     have hpt : ∀ y, κ y {θ : EuclideanSpace ℝ (Fin n) | ‖θ - θ₀ n‖ ≤ r}
         = 1 - κ y {θ : EuclideanSpace ℝ (Fin n) | r < ‖θ - θ₀ n‖} := by
       intro y
@@ -2144,7 +2185,7 @@ theorem dl_theorem31_ball {β : ℝ}
           rw [lintegral_one, measure_univ]
   rw [hcongr]
   have := ((ENNReal.continuous_sub_left ENNReal.one_ne_top).continuousAt (x := 0)).tendsto.comp hlim
-  simpa using this
+  simpa using! this
 
 /-- **BPPD Theorem 3.1, paper rate** (D1 recovery). Under the polynomial-sparsity regime
 `qₙ ≤ n^{1−c}` (so `log(n/qₙ) ≍ log n`), the posterior contracts at the paper's minimax rate
@@ -2157,17 +2198,17 @@ theorem dl_theorem31_paper_rate {β : ℝ}
     -- USER-INPUT: qₙ ≥ 1 (D3); BPPD Thm 3.1.
     (hq1 : ∀ n, 1 ≤ q n)
     -- USER-INPUT: qₙ = o(n); BPPD Thm 3.1.
-    (hqn : Tendsto (fun n => (q n : ℝ)/n) atTop (𝓝 0))
+    (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))
     {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖ ^ 2 ≤ (q n : ℝ) * (Real.log n) ^ 4)
     -- USER-INPUT: qₙ ≤ n^{1−c} (polynomial sparsity, D1 — makes sₙ ≍ √(qₙ log n)); BPPD Thm 3.1.
-    (hqpoly : ∀ᶠ n in Filter.atTop, (q n : ℝ) ≤ (n:ℝ)^(1-c)) :
+    (hqpoly : ∀ᶠ n in Filter.atTop, (q n : ℝ) ≤ (n : ℝ) ^ (1 - c)) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
-          {θ | M * Real.sqrt (q n * Real.log ((n:ℝ)/q n)) < ‖θ - θ₀ n‖}
+          {θ | M * Real.sqrt (q n * Real.log ((n : ℝ)/q n)) < ‖θ - θ₀ n‖}
         ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
   obtain ⟨M', hM'pos, hlim⟩ := dl_theorem31 hβ hq1 hqn hθ₀ hnorm
   have hsc : (0 : ℝ) < Real.sqrt c := Real.sqrt_pos.mpr hc
@@ -2175,7 +2216,7 @@ theorem dl_theorem31_paper_rate {β : ℝ}
   -- Under `qₙ ≤ n^{1−c}`, the paper radius dominates the `√(qₙ log n)` radius, so its exceedance
   -- set is contained in the latter's and the posterior mass is monotone.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (tendsto_const_nhds (x := (0 : ℝ≥0∞))) hlim
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hqpoly, eventually_ge_atTop 2] with n hqp hn2
   -- Radius domination `M' √(qₙ log n) ≤ (M'/√c) √(qₙ log(n/qₙ))`.
   have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.one_le_of_lt hn2
@@ -2208,7 +2249,7 @@ theorem dl_theorem31_paper_rate {β : ℝ}
           mul_le_mul_of_nonneg_left hsqrt hM'pos.le
   -- Set inclusion + monotone posterior mass.
   refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-  simp only [Set.mem_setOf_eq] at hθ ⊢
+  simp only [Set.mem_ofPred_eq] at hθ ⊢
   exact lt_of_le_of_lt hrad hθ
 
 /-- **BPPD Theorem 3.1, `1/n`-regime companion.** Same conclusion (rate `M√(qₙ log n)`) at scale
@@ -2220,12 +2261,12 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
     -- USER-INPUT: qₙ ≥ 1 (D3); BPPD Thm 3.1.
     (hq1 : ∀ n, 1 ≤ q n)
     -- USER-INPUT: qₙ = o(n); BPPD Thm 3.1.
-    (hqn : Tendsto (fun n => (q n : ℝ)/n) atTop (𝓝 0))
+    (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))
     {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖ ^ 2 ≤ (q n : ℝ) * (Real.log n) ^ 4)
     -- USER-INPUT: qₙ ≥ C₀ log n (needed for the 1/n-regime denominator error, D2); BPPD Thm 3.1.
     (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ (n : ℕ) in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
@@ -2236,14 +2277,16 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   -- The paper: "Since E_{θ₀}ℙ(|supp_{δₙ}(θ)| > Aqₙ | y) → 0 by Theorem 3.4, it is enough to work
   -- with E_{θ₀}ℙ(‖θ−θ₀‖ > 2Mrₙ, supp ∈ 𝒮ₙ | y)" — then rₙ² = qₙ log n for shells/denominator.
   -- Skeleton (mirror `dl_theorem31`'s proven envelope structure):
-  --   1. rv n := √(q n * log n), δv n := rv n / n; hδwin : ∀ᶠ n^{−2} ≤ δv n ≤ 1/2 (as in dl_theorem31).
+  --   1. rv n := √(q n * log n), δv n := rv n / n; hδwin
+  -- : ∀ᶠ n^{−2} ≤ δv n ≤ 1/2 (as in dl_theorem31).
   --   2. obtain ⟨A', hA', h34⟩ := dl_theorem34_recip hq1 hqn hθ₀ hδwin hqlog  -- 3.4-term → 0.
   --   3. K n := ⌊(A' + 1) * q n⌋₊; (K n : ℝ) ≥ A'·q n (via q n ≥ 1), so
   --      {(K:ℝ) < supp} ⊆ {A'·q < supp} and the engine's abstract 3.4-term ≤ h34's quantity
   --      (lintegral_mono + measure_mono per y).
   --   4. obtain ⟨J₀, hJ2, hshell⟩ := dl_shellSum_tendsto_zero_generic hq1 hqn hθ₀ hnorm
   --        (fun n => (n:ℝ)⁻¹) hav ⟨1, one_pos, hav2⟩ (A' + 1) (by positivity)
-  --      where hav : ∀ᶠ n, 0 < (n:ℝ)⁻¹ ∧ (n:ℝ)⁻¹ ≤ 1/2 ∧ n·(n:ℝ)⁻¹ ≤ 1 and hav2 : ∀ᶠ n, n^{-1} ≤ (n:ℝ)⁻¹.
+  --      where hav : ∀ᶠ n, 0 < (n:ℝ)⁻¹ ∧ (n:ℝ)⁻¹ ≤ 1/2
+  -- ∧ n·(n:ℝ)⁻¹ ≤ 1 and hav2 : ∀ᶠ n, n^{-1} ≤ (n:ℝ)⁻¹.
   --   5. M := 2·(J₀:ℝ); squeeze `tendsto_of_tendsto_of_tendsto_of_le_of_le'` against
   --      `dl_contraction_engine'` at a = (n:ℝ)⁻¹, r = rv n, δ = δv n, K = K n, J₀
   --      (hBpos := dlPrior_closedBall_pos; hδnet via √n ≤ n; hJ₀ by M = 2J₀).
@@ -2256,28 +2299,28 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   -- The δ-window `[n^{−2}, 1/2]` (verbatim from `dl_theorem31`).
   have hδwin : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δv n ∧ δv n ≤ 1/2 := by
     filter_upwards [eventually_ge_atTop 3,
-      hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1/8 by norm_num))] with n hn3 hqs
-    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn3)
-    have hnpos : (0:ℝ) < n := by linarith
+      hqn.eventually (Iio_mem_nhds (show (0 : ℝ) < 1/8 by norm_num))] with n hn3 hqs
+    have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn3)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
-    have hq1n : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
-    have hlogn1 : (1:ℝ) ≤ Real.log n := by
-      have h3 : (3:ℝ) ≤ n := by exact_mod_cast hn3
+    have hq1n : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have hlogn1 : (1 : ℝ) ≤ Real.log n := by
+      have h3 : (3 : ℝ) ≤ n := by exact_mod_cast hn3
       have := Real.exp_one_lt_d9
       have hle : Real.exp 1 ≤ n := by linarith
-      calc (1:ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
+      calc (1 : ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
         _ ≤ Real.log n := Real.log_le_log (Real.exp_pos 1) hle
     have hrv_pos : 0 < rv n := by
       rw [hrv]; exact Real.sqrt_pos.mpr (by nlinarith)
-    have hrv_ge1 : (1:ℝ) ≤ rv n := by
-      rw [hrv, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+    have hrv_ge1 : (1 : ℝ) ≤ rv n := by
+      rw [hrv, show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       exact Real.sqrt_le_sqrt (by nlinarith)
     refine ⟨?_, ?_⟩
-    · have hmono : (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) :=
+    · have hmono : (n : ℝ)^(-2 : ℝ) ≤ (n : ℝ)^(-1 : ℝ) :=
         Real.rpow_le_rpow_of_exponent_le hn1R (by norm_num)
-      have hinv : (n:ℝ)^(-1:ℝ) = 1 / n := by
+      have hinv : (n : ℝ)^(-1 : ℝ) = 1 / n := by
         rw [Real.rpow_neg_one]; exact (one_div _).symm
-      calc (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) := hmono
+      calc (n : ℝ)^(-2 : ℝ) ≤ (n : ℝ)^(-1 : ℝ) := hmono
         _ = 1 / n := hinv
         _ ≤ rv n / n := by gcongr
     · have hlogle : Real.log n ≤ (n : ℝ) := by
@@ -2299,7 +2342,7 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   set Kf : ℕ → ℕ := fun n => ⌊(A' + 1) * (q n : ℝ)⌋₊ with hKf
   have hA'q_le : ∀ n, A' * (q n : ℝ) ≤ (Kf n : ℝ) := by
     intro n
-    have hq1n : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have hq1n : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
     have hfl : (A' + 1) * (q n : ℝ) - 1 < (⌊(A' + 1) * (q n : ℝ)⌋₊ : ℝ) := by
       have := Nat.lt_floor_add_one ((A' + 1) * (q n : ℝ)); linarith
     have hle : A' * (q n : ℝ) ≤ (A' + 1) * (q n : ℝ) - 1 := by nlinarith
@@ -2309,24 +2352,24 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
         {θ | (Kf n : ℝ) < (dlSuppCount (δv n) θ : ℝ)}
       ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h34
-      (Filter.Eventually.of_forall fun n => zero_le _) (Filter.Eventually.of_forall fun n => ?_)
+      (Filter.Eventually.of_forall fun n => zero_le) (Filter.Eventually.of_forall fun n => ?_)
     refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact lt_of_le_of_lt (hA'q_le n) hθ
   -- 4. Shell double series limit at the generic scale window `avₙ = 1/n`.
   have hav : ∀ᶠ (n : ℕ) in atTop, 0 < (n : ℝ)⁻¹ ∧ (n : ℝ)⁻¹ ≤ 1 / 2 ∧ (n : ℝ) * (n : ℝ)⁻¹ ≤ 1 := by
     filter_upwards [eventually_ge_atTop 2] with n hn2
-    have hnpos : (0:ℝ) < n := by
-      have : (2:ℝ) ≤ n := by exact_mod_cast hn2
+    have hnpos : (0 : ℝ) < n := by
+      have : (2 : ℝ) ≤ n := by exact_mod_cast hn2
       linarith
     refine ⟨inv_pos.mpr hnpos, ?_, le_of_eq (mul_inv_cancel₀ (ne_of_gt hnpos))⟩
-    rw [show (1:ℝ)/2 = (2:ℝ)⁻¹ by norm_num]
+    rw [show (1 : ℝ)/2 = (2 : ℝ)⁻¹ by norm_num]
     exact inv_anti₀ (by norm_num) (by exact_mod_cast hn2)
   have hav2 : ∃ p : ℝ, 0 < p ∧ ∀ᶠ (n : ℕ) in atTop, (n : ℝ) ^ (-p) ≤ (n : ℝ)⁻¹ := by
     refine ⟨1, one_pos, ?_⟩
     filter_upwards [eventually_ge_atTop 1] with n hn
-    have hnn : (0:ℝ) ≤ n := by exact_mod_cast Nat.zero_le n
-    have : (n:ℝ)^(-(1:ℝ)) = (n:ℝ)⁻¹ := by rw [Real.rpow_neg hnn, Real.rpow_one]
+    have hnn : (0 : ℝ) ≤ n := by exact_mod_cast Nat.zero_le n
+    have : (n : ℝ)^(-(1 : ℝ)) = (n : ℝ)⁻¹ := by rw [Real.rpow_neg hnn, Real.rpow_one]
     exact le_of_eq this
   obtain ⟨J₀, hJ2, hshell⟩ := dl_shellSum_tendsto_zero_generic hq1 hqn hθ₀ hnorm
     (fun n => (n : ℝ)⁻¹) hav hav2 (A' + 1) (by linarith)
@@ -2337,10 +2380,10 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
     apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => Real.log n / 8) ?_
       ((hlogtend).atTop_div_const (by norm_num))
     filter_upwards [eventually_ge_atTop 1] with n hn
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast hn
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
     have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
       rw [hrv]; exact Real.sq_sqrt (mul_nonneg (by positivity) (Real.log_nonneg hn1))
-    have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+    have hq1n : (1 : ℝ) ≤ q n := by exact_mod_cast hq1 n
     have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1
     rw [hrv2]; nlinarith
   have hf2 : Tendsto (fun n => ENNReal.ofReal (Real.exp (- rv n ^ 2 / 8))) atTop (𝓝 0) := by
@@ -2354,13 +2397,13 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   have hRHS := (hterm34.add hf2).add hshell
   simp only [add_zero] at hRHS
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hRHS
-    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+    (Filter.Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [hδwin, eventually_ge_atTop 4] with n hδn hn4
   obtain ⟨hδlb, hδub⟩ := hδn
-  have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-  have hnpos : (0:ℝ) < n := by linarith
-  have hn2 : (1:ℝ) < n := by
-    have h4 : (4:ℝ) ≤ n := by exact_mod_cast hn4
+  have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hn2 : (1 : ℝ) < n := by
+    have h4 : (4 : ℝ) ≤ n := by exact_mod_cast hn4
     linarith
   have hlogn_pos : 0 < Real.log n := Real.log_pos hn2
   have hapos : 0 < (n : ℝ)⁻¹ := inv_pos.mpr hnpos
@@ -2370,7 +2413,7 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   have hδnet : Real.sqrt (Fintype.card (Fin n) : ℝ) * δv n ≤ rv n := by
     rw [Fintype.card_fin, hδv]
     have hsqn : Real.sqrt (n : ℝ) ≤ (n : ℝ) := by
-      calc Real.sqrt (n : ℝ) ≤ Real.sqrt ((n:ℝ)*(n:ℝ)) :=
+      calc Real.sqrt (n : ℝ) ≤ Real.sqrt ((n : ℝ)*(n : ℝ)) :=
             Real.sqrt_le_sqrt (by nlinarith)
         _ = n := by rw [Real.sqrt_mul_self hnpos.le]
     calc Real.sqrt (n : ℝ) * (rv n / n) ≤ (n : ℝ) * (rv n / n) := by

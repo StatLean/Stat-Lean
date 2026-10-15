@@ -36,8 +36,8 @@ errs only when $\rho\big(\hat\theta, g(\theta^J)\big) \ge \delta$: by the triang
 $2\delta$-separation, a wrong test answer forces $\rho \ge \delta$, so by monotonicity of $\Phi$,
 $\mathbb{E}\big[\Phi(\rho(\hat\theta, g(\theta^J)))\big] \ge \Phi(\delta)\,\mathbb{P}[\psi \ne J]$.
 Measurability of the $\arg\min$ selector is supplied by `exists_measurable_nearestPoint` under the
-`[OpensMeasurableSpace Ω]` instance, which makes each distance $y \mapsto \mathrm{edist}(g(\theta^\ell), y)$
-continuous, hence measurable.
+`[OpensMeasurableSpace Ω]` instance, which makes each distance
+$y \mapsto \mathrm{edist}(g(\theta^\ell), y)$ continuous, hence measurable.
 
 **Bibliographic comments.** This estimation-to-testing reduction is **folklore** with no single
 seminal origin: it is the common abstract scaffold behind the classical Le Cam, Assouad, and Fano
@@ -76,8 +76,8 @@ private lemma minimaxRisk_precomp_le {𝓨 ι : Type*} [MeasurableSpace 𝓨] [M
 (`[OpensMeasurableSpace Ω]`), the index `ℓ ∈ Fin M` minimizing `edist (g (θfam ℓ)) y` can be chosen
 measurably in `y`. Each distance `y ↦ edist (g (θfam ℓ)) y` is continuous, hence measurable; the
 argmin is built via `Nat.find` over `ℕ` (cast into `Fin M`), whose minimizer-predicate has a
-measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find` applies.
-Reused by `LeCam/ConvexHull.lean`. -/
+measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find`
+applies. Reused by `LeCam/ConvexHull.lean`. -/
 private lemma exists_measurable_nearestPoint
     [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] {M : ℕ} [NeZero M]
     (g : Θ → Ω) (θfam : Fin M → Θ) :
@@ -101,7 +101,7 @@ private lemma exists_measurable_nearestPoint
   -- The minimizer-witness set is a finite intersection of measurable `≤`-sets.
   have hpmeas : ∀ n, MeasurableSet {y | p y n} := by
     intro n
-    simp only [hp, Set.setOf_forall]
+    simp only [hp, Set.ofPred_forall]
     exact MeasurableSet.iInter fun j => measurableSet_le (hmeas _) (hmeas j)
   refine ⟨fun y => Fin.ofNat M (Nat.find (hex y)), ?_, fun y ℓ => Nat.find_spec (hex y) ℓ⟩
   exact (measurable_from_nat (f := Fin.ofNat M)).comp (measurable_find hex hpmeas)
@@ -122,7 +122,6 @@ private lemma mul_multiwayTestingError_le
     Φ δ * multiwayTestingError (P.comap θfam hθ)
       ≤ minimaxRisk (fun j => distortionLoss Φ g (θfam j)) (P.comap θfam hθ) := by
   set Q := P.comap θfam hθ with hQ
-  haveI : IsMarkovKernel Q := Kernel.IsMarkovKernel.comap P hθ
   -- Pointwise geometric bound: `Φ(δ)·𝟙[T y ≠ j] ≤ Φ(ρ(g(θfam j), y))`.
   have hpt : ∀ (j : Fin M) (y : Ω),
       Φ δ * zeroOneLoss M j (T y) ≤ distortionLoss Φ g (θfam j) y := by
@@ -130,7 +129,7 @@ private lemma mul_multiwayTestingError_le
     unfold distortionLoss zeroOneLoss
     by_cases hjy : j = T y
     · simp [hjy]
-    · rw [if_neg hjy, mul_one]
+    · rw [ite_eq_right hjy, mul_one]
       apply hΦ
       have hsep' := hsep j (T y) hjy
       have htri : edist (g (θfam j)) (g (θfam (T y)))
@@ -144,13 +143,13 @@ private lemma mul_multiwayTestingError_le
           _ ≤ edist (g (θfam j)) y + edist (g (θfam (T y))) y := htri
           _ ≤ edist (g (θfam j)) y + edist (g (θfam j)) y := by gcongr
           _ = 2 * edist (g (θfam j)) y := (two_mul _).symm
-      exact (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+      exact (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
   -- Reduce the minimax risk to a per-estimator bound.
   rw [multiwayTestingError, minimaxRisk]
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   -- The post-composed test `ψ = T ∘ κ`.
-  haveI : IsMarkovKernel (Kernel.deterministic T hT) := Kernel.isMarkovKernel_deterministic hT
+  have : IsMarkovKernel (Kernel.deterministic T hT) := Kernel.isMarkovKernel_deterministic hT
   set ψ : Kernel 𝓧 (Fin M) := (Kernel.deterministic T hT).comp κ with hψ
   have hψcomp : ψ ∘ₖ Q = (κ ∘ₖ Q).map T := by
     rw [hψ, Kernel.comp_assoc, Kernel.deterministic_comp_eq_map]

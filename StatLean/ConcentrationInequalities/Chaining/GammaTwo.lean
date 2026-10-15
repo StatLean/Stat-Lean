@@ -158,7 +158,7 @@ lemma gammaTwo_lt_top_of_finite {T : Set E}
     · exact Finset.singleton_nonempty a
   have hseq_card0 : (seq 0).card = 1 := by
     rw [hseq]; dsimp only
-    rw [if_neg (by omega)]; exact Finset.card_singleton a
+    rw [ite_eq_right (by omega)]; exact Finset.card_singleton a
   have hseq_cardle : ∀ k, (seq k).card ≤ 2 ^ 2 ^ k := by
     intro k; rw [hseq]; dsimp only; split
     · rename_i h; rw [← hN]; exact h.2
@@ -187,7 +187,7 @@ lemma gammaTwo_lt_top_of_finite {T : Set E}
       hk₀.trans (Nat.pow_le_pow_right (by norm_num)
         (Nat.pow_le_pow_right (by norm_num) hNk))
     have hseqk : seq k = hfin.toFinset := by
-      rw [hseq]; dsimp only; rw [if_pos ⟨hk1, hcond⟩]
+      rw [hseq]; dsimp only; rw [ite_eq_left ⟨hk1, hcond⟩]
     have hinf : Metric.infDist t ↑(seq k) = 0 := by
       rw [hseqk, hfin.coe_toFinset]; exact Metric.infDist_zero_of_mem ht
     rw [hinf, mul_zero, ENNReal.ofReal_zero]

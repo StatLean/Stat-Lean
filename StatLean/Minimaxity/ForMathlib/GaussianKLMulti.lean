@@ -81,8 +81,8 @@ lemma klDiv_map_eq_of_comp {α β : Type*} [MeasurableSpace α] [MeasurableSpace
     {f : α → β} {g : β → α} (hf : Measurable f) (hg : Measurable g) (hgf : g ∘ f = id)
     (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     klDiv (μ.map f) (ν.map f) = klDiv μ ν := by
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have : IsProbabilityMeasure (μ.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (ν.map f) := (by infer_instance)
   refine le_antisymm (klDiv_map_le hf μ ν) ?_
   have h := klDiv_map_le hg (μ.map f) (ν.map f)
   rwa [Measure.map_map hg hf, Measure.map_map hg hf, hgf, Measure.map_id, Measure.map_id] at h
@@ -140,7 +140,7 @@ private lemma klDiv_gaussianReal_zero (a : ℝ≥0) (ha : a ≠ 0) :
   have hllr : llr (gaussianReal 0 a) (gaussianReal 0 1) =ᵐ[gaussianReal 0 a] F := by
     have hrn_vol : (gaussianReal 0 a).rnDeriv (gaussianReal 0 1) =ᵐ[volume]
         fun x => (gaussianPDF 0 1 x)⁻¹ * gaussianPDF 0 a x := by
-      have h1 := Measure.rnDeriv_withDensity_right (gaussianReal (0:ℝ) a) volume
+      have h1 := Measure.rnDeriv_withDensity_right (gaussianReal (0 : ℝ) a) volume
         (f := gaussianPDF 0 1) (measurable_gaussianPDF 0 1).aemeasurable
         (ae_of_all _ fun x => (gaussianPDF_pos 0 one_ne_zero x).ne')
         (ae_of_all _ fun _ => gaussianPDF_ne_top)
@@ -157,15 +157,15 @@ private lemma klDiv_gaussianReal_zero (a : ℝ≥0) (ha : a ≠ 0) :
         (gaussianPDFReal_pos 0 a x ha).ne', Real.log_inv]
     ring
   -- second moment `∫ x² ∂𝒩(0,a) = a`
-  have hsq : ∫ x, x ^ 2 ∂(gaussianReal (0:ℝ) a) = (a : ℝ) := by
-    have h := variance_eq_sub (μ := gaussianReal (0:ℝ) a) (X := id) (memLp_id_gaussianReal 2)
+  have hsq : ∫ x, x ^ 2 ∂(gaussianReal (0 : ℝ) a) = (a : ℝ) := by
+    have h := variance_eq_sub (μ := gaussianReal (0 : ℝ) a) (X := id) (memLp_id_gaussianReal 2)
     rw [variance_id_gaussianReal] at h
     simp only [integral_id_gaussianReal, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
       zero_pow, sub_zero, Pi.pow_apply, id_eq] at h
     linarith [h]
   -- integrability of F
-  have hsqint : Integrable (fun x => x ^ 2) (gaussianReal (0:ℝ) a) := by
-    have := (memLp_id_gaussianReal (μ := (0:ℝ)) (v := a) 2).integrable_sq
+  have hsqint : Integrable (fun x => x ^ 2) (gaussianReal (0 : ℝ) a) := by
+    have := (memLp_id_gaussianReal (μ := (0 : ℝ)) (v := a) 2).integrable_sq
     simpa using this
   have hFint : Integrable F (gaussianReal 0 a) := by
     refine (Integrable.congr ?_ (Filter.Eventually.of_forall fun x => (hFeq x).symm))
@@ -352,7 +352,8 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   have hcomp1 : (toEuclideanCLM (𝕜 := ℝ) (R * B)) ∘ (toEuclideanCLM (𝕜 := ℝ) R) = id := by
     funext x
     change toEuclideanCLM (𝕜 := ℝ) (R * B) (toEuclideanCLM (𝕜 := ℝ) R x) = x
-    rw [← ContinuousLinearMap.mul_apply, ← map_mul, hRBR, map_one, ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hRBR, map_one,
+        one_apply_eq_self]
   have hwhiten : klDiv (multivariateGaussian 0 A) (multivariateGaussian 0 B)
       = klDiv (multivariateGaussian 0 C)
           (multivariateGaussian 0 (1 : Matrix (Fin d) (Fin d) ℝ)) := by
@@ -366,7 +367,8 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   have hcomp2 : (toEuclideanCLM (𝕜 := ℝ) U) ∘ (toEuclideanCLM (𝕜 := ℝ) Uᵀ) = id := by
     funext x
     change toEuclideanCLM (𝕜 := ℝ) U (toEuclideanCLM (𝕜 := ℝ) Uᵀ x) = x
-    rw [← ContinuousLinearMap.mul_apply, ← map_mul, hUUt, map_one, ContinuousLinearMap.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hUUt, map_one,
+        one_apply_eq_self]
   have hdiagonalize : klDiv (multivariateGaussian 0 C) (multivariateGaussian 0 1)
       = klDiv (multivariateGaussian 0 (Matrix.diagonal Λ))
           (multivariateGaussian 0 (1 : Matrix (Fin d) (Fin d) ℝ)) := by

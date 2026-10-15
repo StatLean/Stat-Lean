@@ -74,7 +74,7 @@ theorem setarResidualSS_le_arLSResidualSS {T P : ℕ} (x : Fin T → ℝ) (d : �
           x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ≤ r := by
     ext t
     simp only [tarRegimeIndices, hS, Finset.mem_filter, Finset.mem_univ, true_and,
-      Set.mem_setOf_eq]
+      Set.mem_ofPred_eq]
     constructor
     · rintro ⟨ht, -, hx⟩; exact ⟨ht, hx⟩
     · rintro ⟨ht, hx⟩; exact ⟨ht, le_of_lt (lt_of_le_of_lt hdP ht), hx⟩
@@ -83,7 +83,7 @@ theorem setarResidualSS_le_arLSResidualSS {T P : ℕ} (x : Fin T → ℝ) (d : �
           ¬ x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ≤ r := by
     ext t
     simp only [tarRegimeIndices, hS, Finset.mem_filter, Finset.mem_univ, true_and,
-      Set.mem_setOf_eq, not_le]
+      Set.mem_ofPred_eq, not_le]
     constructor
     · rintro ⟨ht, -, hx⟩; exact ⟨ht, hx⟩
     · rintro ⟨ht, hx⟩; exact ⟨ht, le_of_lt (lt_of_le_of_lt hdP ht), hx⟩

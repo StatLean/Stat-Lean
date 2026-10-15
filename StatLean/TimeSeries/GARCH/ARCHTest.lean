@@ -418,7 +418,7 @@ private lemma continuous_truncVol {p T : ℕ} (x : Fin T → ℝ) (t : ℕ) :
               (if h : n - (i : ℕ) < T then x ⟨n - (i : ℕ), h⟩ else 0) ^ 2 := by
         funext θ; rw [garchTruncVol]; simp
       rw [hrw]
-      exact continuous_fst.add (continuous_finset_sum _ fun i _ =>
+      exact continuous_fst.add (continuous_finsetSum _ fun i _ =>
         ((continuous_apply i).comp continuous_snd).mul continuous_const)
 
 /-- The admissible set is closed — a finite intersection of closed half-spaces. -/
@@ -468,7 +468,7 @@ theorem mem_interior_archAdmissible {p T : ℕ} {κ c : ℝ} (hc : κ < c) (x : 
     exact (hθ t ht).le
   · exact isOpen_biInter_finset fun t _ =>
       isOpen_lt continuous_const (continuous_truncVol x t)
-  · simp only [Set.mem_iInter, Set.mem_setOf_eq]
+  · simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     intro t _
     rw [truncVol_const]
     exact hc
@@ -494,7 +494,7 @@ private lemma continuousOn_archLogLik {p T : ℕ} {κ : ℝ} (hκ : 0 < κ) (x :
     intro t ht θ hθ
     exact ne_of_gt (lt_of_lt_of_le hκ (hθ t ht))
   simp only [archLogLik, garchQuasiLik]
-  refine continuousOn_const.mul (continuousOn_finset_sum _ fun t ht => ?_)
+  refine continuousOn_const.mul (continuousOn_finsetSum _ fun t ht => ?_)
   exact ((continuous_truncVol x t).continuousOn.log (hne t ht)).add
     (continuousOn_const.div (continuous_truncVol x t).continuousOn (hne t ht))
 
@@ -742,8 +742,6 @@ private lemma eq_map_sum_sq_gaussian_of_charFun {p : ℕ} (chiSq : Measure ℝ)
     chiSq = (Measure.pi fun _ : Fin p => gaussianReal 0 1).map
       (fun x : Fin p → ℝ => ∑ i, x i ^ 2) := by
   have hφ : Measurable fun x : Fin p → ℝ => ∑ i, x i ^ 2 := by fun_prop
-  haveI : IsProbabilityMeasure ((Measure.pi fun _ : Fin p => gaussianReal 0 1).map
-      (fun x : Fin p → ℝ => ∑ i, x i ^ 2)) := Measure.isProbabilityMeasure_map hφ.aemeasurable
   exact Measure.ext_of_charFun (funext fun u => by
     rw [hchi u, charFun_map_sum_sq_gaussian])
 

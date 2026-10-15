@@ -66,7 +66,7 @@ private theorem densityMeasure_mixture {u v : ℝ → ℝ} (hu : Measurable u) (
     (hu0 : ∀ x, 0 ≤ u x) (hv0 : ∀ x, 0 ≤ v x) {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε ≤ 1) :
     densityMeasure (fun x => (1 - ε) * u x + ε * v x)
       = contaminate (densityMeasure u) (densityMeasure v) ε := by
-  have h1 : (0:ℝ) ≤ 1 - ε := by linarith
+  have h1 : (0 : ℝ) ≤ 1 - ε := by linarith
   refine Measure.ext fun s hs => ?_
   rw [densityMeasure, withDensity_apply _ hs, contaminate_apply, densityMeasure, densityMeasure,
     withDensity_apply _ hs, withDensity_apply _ hs,
@@ -164,7 +164,7 @@ theorem integral_minimaxWitnessDensity {f₀ : ℝ → ℝ} {bε ε : ℝ}
     -- USER-INPUT: b_ε solves the median's maximum-bias quantile equation; MMY (3.68)
     (hquant : ∫ x in Set.Iic bε, f₀ x = 1 / (2 * (1 - ε))) :
     ∫ x, minimaxWitnessDensity f₀ bε ε x = 1 := by
-  have h1ε : (0:ℝ) < 1 - ε := by linarith
+  have h1ε : (0 : ℝ) < 1 - ε := by linarith
   -- `∫_{(b_ε,∞)} f₀(x − 2b_ε) dx = ∫_{(−b_ε,∞)} f₀` (translation invariance).
   have hshift : ∫ x in Set.Ioi bε, f₀ (x - 2 * bε) = ∫ x in Set.Ioi (-bε), f₀ x := by
     rw [← integral_indicator measurableSet_Ioi, ← integral_indicator measurableSet_Ioi,
@@ -214,9 +214,9 @@ theorem medianMinimaxPlus_eq_contaminate {f₀ : ℝ → ℝ} {bε ε : ℝ}
       = fun x => (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε x := by
     funext x
     by_cases h : x ≤ bε
-    · rw [if_pos h, minimaxWitnessDensity, if_neg (not_lt.2 h)]
+    · rw [ite_eq_left h, minimaxWitnessDensity, ite_eq_right (not_lt.2 h)]
       ring
-    · rw [if_neg h, minimaxWitnessDensity, if_pos (not_le.1 h)]
+    · rw [ite_eq_right h, minimaxWitnessDensity, ite_eq_left (not_le.1 h)]
       field_simp
       ring
   rw [hfun]
@@ -234,16 +234,16 @@ private theorem minimaxWitness_reflect_shift {f₀ : ℝ → ℝ} {bε ε : ℝ}
   have hne : ε ≠ 0 := hε.ne'
   rw [minimaxWitnessDensity]
   by_cases h : bε < -x
-  · rw [if_pos h, if_pos (by linarith : x + 2 * bε ≤ bε),
+  · rw [ite_eq_left h, ite_eq_left (by linarith : x + 2 * bε ≤ bε),
       show (-x - 2 * bε) = -(x + 2 * bε) from by ring, hsym (x + 2 * bε), hsym x]
     field_simp
     ring
-  · rw [if_neg h, mul_zero, add_zero]
+  · rw [ite_eq_right h, mul_zero, add_zero]
     rw [not_lt] at h
     by_cases h2 : x + 2 * bε ≤ bε
-    · rw [if_pos h2, show x = -bε from by linarith, show -bε + 2 * bε = bε from by ring,
+    · rw [ite_eq_left h2, show x = -bε from by linarith, show -bε + 2 * bε = bε from by ring,
         hsym bε]
-    · rw [if_neg h2]
+    · rw [ite_eq_right h2]
 
 /-- **`F₋` is also an `ε`-contamination of `F₀`** (`MMY §3.8.5`, "define
 `F₋(x) = F₊(x + 2b_ε)`, which also belongs to `F(F₀, ε)` by the same argument"): the
@@ -267,7 +267,7 @@ theorem medianMinimaxMinus_mem_nbhd {f₀ : ℝ → ℝ} {bε ε : ℝ}
   have hgmMass : ∫ x, minimaxWitnessDensity f₀ bε ε (-x) = 1 := by
     rw [integral_neg_eq_self (minimaxWitnessDensity f₀ bε ε) volume]
     exact integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant
-  haveI : IsProbabilityMeasure (densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x)) :=
+  have : IsProbabilityMeasure (densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x)) :=
     isProbabilityMeasure_densityMeasure hgmI hgm0 hgmMass
   refine ⟨densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x), inferInstance, ?_⟩
   have key : (densityMeasure fun x => if x ≤ bε then (1 - ε) * f₀ x
@@ -308,7 +308,7 @@ theorem locationEquivariant_maxBias_ge_median {f₀ : ℝ → ℝ} {bε ε : ℝ
     (hD : densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x
         else (1 - ε) * f₀ (x - 2 * bε)) ∈ 𝒟) :
     ∃ F ∈ grossErrorNbhd (densityMeasure f₀) ε, bε ≤ |T F| := by
-  haveI hwit : IsProbabilityMeasure (densityMeasure (minimaxWitnessDensity f₀ bε ε)) :=
+  have hwit : IsProbabilityMeasure (densityMeasure (minimaxWitnessDensity f₀ bε ε)) :=
     isProbabilityMeasure_densityMeasure (integrable_minimaxWitnessDensity hint bε ε)
       (minimaxWitnessDensity_nonneg hsym huni hbε hε hε1)
       (integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant)

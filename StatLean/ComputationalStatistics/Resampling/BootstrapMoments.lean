@@ -72,7 +72,7 @@ private theorem integrable_empiricalMeasure [NeZero n] {f : 𝓧 → ℝ}
     (hf : StronglyMeasurable f) : Integrable f (empiricalMeasure x) := by
   rw [empiricalMeasure]
   refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr ?_)
-  · exact integrable_finset_sum_measure.mpr fun i _ => integrable_dirac' hf (by simp)
+  · exact integrable_finsetSum_measure.mpr fun i _ => integrable_dirac' hf (by simp)
   · exact Nat.cast_ne_zero.mpr (NeZero.ne n)
 
 /-- Square-integrability against the empirical measure, likewise free. -/
@@ -93,7 +93,7 @@ private theorem memLp_two_mcEstimate_id [NeZero n] {P : Measure ℝ} [IsProbabil
     have h2 : MemLp id 2 ((Measure.pi fun _ : Fin n => P).map (Function.eval i)) := by
       rw [hmp.map_eq]; exact hP
     exact (memLp_map_measure_iff h2.aestronglyMeasurable hmp.measurable.aemeasurable).mp h2
-  exact (memLp_finset_sum (Finset.univ : Finset (Fin n)) fun i _ => hco i).const_mul _
+  exact (memLp_finsetSum (Finset.univ : Finset (Fin n)) fun i _ => hco i).const_mul _
 
 /-- **Bootstrap expectation of a linear statistic** (ECS ch. 4, p. 84): the
 plug-in average of `g` over a bootstrap sample has conditional expectation the

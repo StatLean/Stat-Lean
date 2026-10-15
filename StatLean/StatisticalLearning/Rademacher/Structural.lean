@@ -288,7 +288,7 @@ private lemma signAvg_exp_inner_le (n : ℕ) (lam : ℝ) (b : Fin n → ℝ) {r 
       ≤ 2 ^ n * Real.exp (lam ^ 2 * r ^ 2 / 2) := by
     calc ∏ i, ∑ x : Bool, g i x
         ≤ ∏ i : Fin n, (2 * Real.exp ((lam * b i) ^ 2 / 2)) :=
-          Finset.prod_le_prod (fun i _ => hnn i) (fun i _ => hfac i)
+          Finset.prod_le_prod₀ (fun i _ => hnn i) (fun i _ => hfac i)
       _ = 2 ^ n * Real.exp (∑ i, (lam * b i) ^ 2 / 2) := by
           rw [Finset.prod_mul_distrib, Finset.prod_const, ← Real.exp_sum]
           simp

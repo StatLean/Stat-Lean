@@ -9,7 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Data.Complex.BigOperators
+import Mathlib.Basic.Complex.BigOperators
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -76,7 +76,7 @@ lemma integrable_exp_smul_sum_abs
               push Not
               exact mul_neg_of_pos_of_neg hs_pos hx
             rw [this]
-            simp only [Bool.false_eq_true, if_false]
+            simp only [Bool.false_eq_true, ite_false]
             rw [abs_of_neg hx, abs_of_pos hs_pos]; ring
           · simp [← hs_zero]
       · push Not at hs
@@ -88,13 +88,13 @@ lemma integrable_exp_smul_sum_abs
               push Not
               exact mul_neg_of_neg_of_pos hs hx_pos
             rw [this]
-            simp only [Bool.false_eq_true, if_false]
+            simp only [Bool.false_eq_true, ite_false]
             rw [abs_of_nonneg hx, abs_of_neg hs]; ring
         · have : ε₀ i = true := by
             rw [hε₀_iff]
             exact (mul_pos_of_neg_of_neg hs hx).le
           rw [this]
-          simp only [if_true]
+          simp only [ite_true]
           rw [abs_of_neg hx, abs_of_neg hs]; ring
     have h_sum_eq :
         s * (∑ i, |X ω i|) = ∑ i, (if ε₀ i then |s| else -|s|) * X ω i := by
@@ -110,7 +110,7 @@ lemma integrable_exp_smul_sum_abs
   have h_sum_int :
       Integrable (fun ω => ∑ ε : Fin m → Bool,
         Real.exp (∑ i, (if ε i then |s| else -|s|) * X ω i)) μ :=
-    integrable_finset_sum _ (fun ε _ => h_each ε)
+    integrable_finsetSum _ (fun ε _ => h_each ε)
   have h_meas : AEStronglyMeasurable
       (fun ω => Real.exp (s * ∑ i, |X ω i|)) μ := by
     have h_sum_meas : AEStronglyMeasurable (fun ω : Ω => ∑ i, |X ω i|) μ := by
@@ -170,7 +170,7 @@ lemma integrable_pow_sum_abs
       (fun ω => (∑ i, |X ω i|) ^ n) μ := h_sum_meas.pow n
   by_cases hn : n = 0
   · subst hn
-    simpa using (integrable_const (1 : ℝ))
+    simp
   · have h_int_exp := integrable_exp_smul_sum_abs X hX h_mgf 1
     have h_const_mul :
         Integrable (fun ω => (n : ℝ) ^ n * Real.exp (∑ i, |X ω i|)) μ := by
@@ -208,7 +208,7 @@ lemma integrable_prod_X
   calc |∏ j : Fin n, X ω (ι j)|
       = ∏ j : Fin n, |X ω (ι j)| := by rw [Finset.abs_prod]
     _ ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-        refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+        refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
         exact Finset.single_le_sum (f := fun i => |X ω i|)
           (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
     _ = (∑ i, |X ω i|) ^ n := by
@@ -240,7 +240,7 @@ lemma norm_mgfMomentCoeff_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurab
     simp only [Finset.abs_prod]
     calc (∏ j, |X ω (ι j)|)
         ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-          refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+          refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
           exact Finset.single_le_sum (f := fun i => |X ω i|)
             (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
       _ = (∑ i, |X ω i|) ^ n := by
@@ -273,8 +273,8 @@ lemma mgfCoeffCMM_apply {m : ℕ} (X : Ω → Fin m → ℝ) (μ : Measure Ω) (
     mgfCoeffCMM X μ n v =
       (n.factorial : ℂ)⁻¹ * ∑ ι : Fin n → Fin m,
         mgfMomentCoeff X μ ι * ∏ j : Fin n, v j (ι j) := by
-  simp only [mgfCoeffCMM, ContinuousMultilinearMap.smul_apply,
-    ContinuousMultilinearMap.sum_apply, mgfMonomialCMM_apply, smul_eq_mul]
+  simp only [mgfCoeffCMM, smul_apply,
+    _root_.sum_apply, mgfMonomialCMM_apply, smul_eq_mul]
 
 /-! ### Diagonal evaluation -/
 
@@ -324,7 +324,7 @@ lemma mgfCoeffCMM_diag {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable X)
       gcongr ?_ * ?_
       calc (∏ j : Fin n, |X ω (ι j)|)
           ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-            refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+            refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
             exact Finset.single_le_sum (f := fun i => |X ω i|)
               (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
         _ = (∑ i, |X ω i|) ^ n := by
@@ -353,7 +353,7 @@ lemma mgfCoeffCMM_diag {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable X)
         = ∑ ι : Fin n → Fin m,
             ∫ ω, ∏ j : Fin n, y (ι j) * (X ω (ι j) : ℂ) ∂μ from
       Finset.sum_congr rfl (fun ι _ => h_each_eq ι)]
-  rw [← integral_finset_sum _ (fun ι _ => h_int_each ι)]
+  rw [← integral_finsetSum _ (fun ι _ => h_int_each ι)]
   refine integral_congr_ae (Filter.Eventually.of_forall (fun ω => ?_))
   exact sum_prod_eq_pow y (X ω)
 
@@ -511,7 +511,7 @@ lemma hasSum_mgfFormalSeries_diag {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Mea
     intro N
     rw [hs_def]
     -- ∫ ∑_{n<N} v^n / n! = ∑_{n<N} ∫ v^n / n!.
-    rw [integral_finset_sum _ (fun n _ => Integrable.div_const (h_v_pow_int n) _)]
+    rw [integral_finsetSum _ (fun n _ => Integrable.div_const (h_v_pow_int n) _)]
     refine Finset.sum_congr rfl (fun n _ => ?_)
     rw [mgfCoeffCMM_diag X hX h_mgf n y]
     -- ∫ v^n / n! = (∫ v^n) / n! = (n!)⁻¹ · ∫ v^n.
@@ -586,14 +586,14 @@ lemma hasSum_mgfFormalSeries_diag {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Mea
       have h_sum_swap :
           ∑ n ∈ Finset.range N, (∫ ω, u ω ^ n ∂μ) / (n.factorial : ℝ)
             = ∫ ω, ∑ n ∈ Finset.range N, u ω ^ n / (n.factorial : ℝ) ∂μ := by
-        rw [integral_finset_sum _ (fun n _ => Integrable.div_const (h_u_pow_int n) _)]
+        rw [integral_finsetSum _ (fun n _ => Integrable.div_const (h_u_pow_int n) _)]
         refine Finset.sum_congr rfl (fun n _ => ?_)
         exact (MeasureTheory.integral_div (n.factorial : ℝ) (fun ω => u ω ^ n)).symm
       rw [h_sum_swap]
       refine integral_mono ?_ hu_int (fun ω => ?_)
-      · refine integrable_finset_sum _ (fun n _ => Integrable.div_const (h_u_pow_int n) _)
+      · refine integrable_finsetSum _ (fun n _ => Integrable.div_const (h_u_pow_int n) _)
       · by_cases hN : N = 0
-        · subst hN; simp; exact (Real.exp_pos _).le
+        · subst hN; simp only [Finset.range_zero, sum_empty]; exact (Real.exp_pos _).le
         · exact Real.sum_le_exp_of_nonneg (hu_nn ω) N
   have h_norm_summable : Summable (fun n => ‖mgfCoeffCMM X μ n (fun _ => y)‖) :=
     Summable.of_nonneg_of_le (fun _ => norm_nonneg _) h_norm_bd h_summable_int_pow
@@ -620,7 +620,7 @@ lemma norm_mgfCoeffCMM_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable 
           ∫ ω, (∑ i, |X ω i|) ^ n ∂μ := by
       have h_int_sum : Integrable
           (fun ω => ∑ ι : Fin n → Fin m, ∏ j : Fin n, |X ω (ι j)|) μ := by
-        refine integrable_finset_sum _ (fun ι _ => ?_)
+        refine integrable_finsetSum _ (fun ι _ => ?_)
         -- |∏ X(ι j)| = ∏ |X(ι j)| ≤ (∑|X|)^n integrable.
         refine Integrable.mono' (integrable_pow_sum_abs X hX h_mgf n)
           ?_ (Filter.Eventually.of_forall (fun ω => ?_))
@@ -639,7 +639,7 @@ lemma norm_mgfCoeffCMM_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable 
             (Finset.prod_nonneg (fun _ _ => abs_nonneg _))]
           calc (∏ j : Fin n, |X ω (ι j)|)
               ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-                refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+                refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
                 exact Finset.single_le_sum (f := fun i => |X ω i|)
                   (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
             _ = (∑ i, |X ω i|) ^ n := by
@@ -667,14 +667,14 @@ lemma norm_mgfCoeffCMM_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable 
                   (Finset.prod_nonneg (fun _ _ => abs_nonneg _))]
                 calc (∏ j : Fin n, |X ω (ι j)|)
                     ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-                      refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+                      refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
                       exact Finset.single_le_sum (f := fun i => |X ω i|)
                         (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
                   _ = (∑ i, |X ω i|) ^ n := by
                       rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
             · rw [Finset.abs_prod]
         _ = ∫ ω, ∑ ι : Fin n → Fin m, ∏ j, |X ω (ι j)| ∂μ := by
-            rw [integral_finset_sum _ (fun ι _ => ?_)]
+            rw [integral_finsetSum _ (fun ι _ => ?_)]
             · refine Integrable.mono' (integrable_pow_sum_abs X hX h_mgf n) ?_
                 (Filter.Eventually.of_forall (fun ω => ?_))
               · have h_each : ∀ j : Fin n,
@@ -691,7 +691,7 @@ lemma norm_mgfCoeffCMM_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable 
                   (Finset.prod_nonneg (fun _ _ => abs_nonneg _))]
                 calc (∏ j : Fin n, |X ω (ι j)|)
                     ≤ ∏ j : Fin n, ∑ i, |X ω i| := by
-                      refine Finset.prod_le_prod (fun j _ => abs_nonneg _) (fun j _ => ?_)
+                      refine Finset.prod_le_prod₀ (fun j _ => abs_nonneg _) (fun j _ => ?_)
                       exact Finset.single_le_sum (f := fun i => |X ω i|)
                         (fun i _ => abs_nonneg _) (Finset.mem_univ (ι j))
                   _ = (∑ i, |X ω i|) ^ n := by
@@ -715,7 +715,7 @@ lemma norm_mgfCoeffCMM_le {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measurable 
         intro ι _
         rw [norm_mul, norm_prod]
         refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-        refine Finset.prod_le_prod (fun (j : Fin n) _ => norm_nonneg ((v j) (ι j)))
+        refine Finset.prod_le_prod₀ (fun (j : Fin n) _ => norm_nonneg ((v j) (ι j)))
           (fun (j : Fin n) _ => ?_)
         exact norm_le_pi_norm (v j) (ι j)
       calc (∑ ι : Fin n → Fin m,
@@ -780,7 +780,7 @@ lemma mgfFormalSeries_radius_top {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Meas
             (∫ ω, (∑ i, |X ω i|) ^ n ∂μ) / (n.factorial : ℝ) * (r : ℝ) ^ n
           = ∫ ω, ∑ n ∈ Finset.range N,
               ((r : ℝ) * ∑ i, |X ω i|) ^ n / (n.factorial : ℝ) ∂μ := by
-      rw [integral_finset_sum _ (fun n _ => Integrable.div_const (h_int_pow_r_sum n) _)]
+      rw [integral_finsetSum _ (fun n _ => Integrable.div_const (h_int_pow_r_sum n) _)]
       refine Finset.sum_congr rfl (fun n _ => ?_)
       -- Goal: (∫ (∑|X|)^n) / n! * r^n = ∫ (r ∑|X|)^n / n!.
       -- RHS: pull out 1/n! via integral_div, expand (r*x)^n, pull out r^n.
@@ -800,7 +800,7 @@ lemma mgfFormalSeries_radius_top {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Meas
       ring
     rw [h_swap]
     refine integral_mono ?_ ?_ (fun ω => ?_)
-    · refine integrable_finset_sum _ (fun n _ => ?_)
+    · refine integrable_finsetSum _ (fun n _ => ?_)
       exact Integrable.div_const (h_int_pow_r_sum n) _
     · -- exp(r · ∑|X|) integrable.
       have := integrable_exp_smul_sum_abs X hX h_mgf (r : ℝ)
@@ -808,7 +808,7 @@ lemma mgfFormalSeries_radius_top {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Meas
     · -- partial sum ≤ exp.
       by_cases hN : N = 0
       · subst hN
-        simp; exact (Real.exp_pos _).le
+        simp only [Finset.range_zero, sum_empty]; exact (Real.exp_pos _).le
       · refine Real.sum_le_exp_of_nonneg ?_ N
         positivity
 
@@ -831,7 +831,7 @@ lemma mgf_hasFPowerSeriesOnBall {m : ℕ} (X : Ω → Fin m → ℝ) (hX : Measu
     intro y _hy
     have h := hasSum_mgfFormalSeries_diag X hX h_mgf y
     -- F(0 + y) = F(y).
-    convert h using 2
+    convert! h using 2
     rw [zero_add]
 
 /-! ### AnalyticOnNhd via the power series -/

@@ -100,7 +100,8 @@ theorem condMeanMatrix_eq_neg_mul
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     condMeanMatrix S₁₁ S₁₂
       = -(condCovMatrix S₁₁ S₁₂ S₂₂
-            * (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inl) := by
+            * (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr
+                Sum.inl) := by
   have hpd := posDef_condCovMatrix hJ
   have hdet : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det :=
     (Matrix.isUnit_iff_isUnit_det _).mp hpd.isUnit
@@ -151,7 +152,8 @@ given `Y_{Γ∖{γ}} = y` is, by Proposition C.5, univariate normal; its mean �
 
 `ξ_γ + ∑_{μ ∈ Γ∖{γ}} β_{γμ ∣ Γ∖{γ}} (y_μ − ξ_μ)`,  with  `β_{γμ ∣ Γ∖{γ}} = −k_{γμ}/k_{γγ}`. -/
 theorem gaussianCondKernel_mean_coord
-    -- LEAN-ONLY: one regressed variable, as in the book; see `condMeanMatrix_apply_eq_neg_precision_div`
+    -- LEAN-ONLY: one regressed variable, as in the book;
+    -- see `condMeanMatrix_apply_eq_neg_precision_div`
     [Subsingleton ι₂]
     (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂)
     (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ : Matrix ι₁ ι₂ ℝ) (S₂₂ : Matrix ι₂ ι₂ ℝ)

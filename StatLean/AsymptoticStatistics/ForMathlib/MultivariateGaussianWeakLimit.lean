@@ -90,7 +90,7 @@ lemma multivariateGaussian_weakly_tendsto_of_psd_perturb
     Tendsto (fun ε : ℝ => multivariateGaussianPM (0 : EuclideanSpace ℝ ι)
         (S + ε • (1 : Matrix ι ι ℝ)))
       (𝓝[>] 0) (𝓝 (multivariateGaussianPM 0 S)) := by
-  haveI : (𝓝[>] (0 : ℝ)).IsCountablyGenerated :=
+  have : (𝓝[>] (0 : ℝ)).IsCountablyGenerated :=
     TopologicalSpace.isCountablyGenerated_nhdsWithin 0 _
   rw [Filter.tendsto_iff_seq_tendsto]
   intro ε_seq h_ε_seq
@@ -274,7 +274,7 @@ lemma multivariateGaussian_zero_cov :
     multivariateGaussian (0 : EuclideanSpace ℝ ι) (0 : Matrix ι ι ℝ)
       = Measure.dirac (0 : EuclideanSpace ℝ ι) := by
   rw [multivariateGaussian, CFC.sqrt_zero, map_zero]
-  simp only [zero_add, ContinuousLinearMap.zero_apply]
+  simp only [zero_add, zero_apply]
   rw [Measure.map_const, measure_univ, one_smul]
 
 /-- **`multivariateGaussian 0 S` is supported on `range (toEuclideanCLM (sqrt S))`**.
@@ -349,7 +349,8 @@ lemma multivariateGaussian_absolutelyContinuous_volume_of_posDef
     (multivariateGaussian (0 : EuclideanSpace ℝ ι) S).AbsolutelyContinuous
       (volume : Measure (EuclideanSpace ℝ ι)) := by
   -- Step 1: Build the CLE `T_cle := toEuclideanCLM (CFC.sqrt S)` from PosDef.
-  have h_sqrt_unit : IsUnit (CFC.sqrt S) := hS.posDef_sqrt.isUnit
+  have h_sqrt_unit : IsUnit (CFC.sqrt S) :=
+      CFC.isUnit_sqrt_iff_isStrictlyPositive.mpr hS.isStrictlyPositive
   have h_T_unit : IsUnit (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) :=
     (MulEquiv.isUnit_map (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := ι))).mpr h_sqrt_unit
   let T_cle : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι :=
@@ -365,9 +366,9 @@ lemma multivariateGaussian_absolutelyContinuous_volume_of_posDef
     rw [zero_add]
     rfl
   -- Step 3: Pushforward of Haar volume under CLE is Haar (= scalar multiple).
-  haveI h_map_haar : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).IsAddHaarMeasure :=
+  have h_map_haar : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).IsAddHaarMeasure :=
     ContinuousLinearEquiv.isAddHaarMeasure_map T_cle (volume : Measure (EuclideanSpace ℝ ι))
-  haveI : SigmaFinite ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle) :=
+  have : SigmaFinite ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle) :=
     MeasureTheory.Measure.IsAddHaarMeasure.sigmaFinite _
   -- Step 4: Two Haar measures on the same group are mutually AC.
   have h_volmap_ac : ((volume : Measure (EuclideanSpace ℝ ι)).map T_cle).AbsolutelyContinuous
@@ -734,7 +735,7 @@ private lemma _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
       -- coe_toEuclideanCLM_eq_toEuclideanLin]
       -- ↔ (T'' ∘L T''.adjoint).toLinearMap.IsSymmetric        [by hSS_toCLM]
       -- The last is direct from adjoint definition.
-      rw [Matrix.isHermitian_iff_isSymmetric, ← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
+      rw [← Matrix.isSymmetric_toEuclideanLin_iff, ← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
         hSS_toCLM]
       intro x y
       change inner ℝ (T'' (ContinuousLinearMap.adjoint T'' x)) y
@@ -777,7 +778,7 @@ private lemma _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
             ContinuousLinearMap.adjoint_inner_right T'' _ _
         _ = inner ℝ x_lp (T'' (ContinuousLinearMap.adjoint T'' x_lp)) := real_inner_comm _ _
   -- Identify μ' := stdGaussian.map T'' = multivariateGaussian 0 SS via IsGaussian.ext
-  haveI hμ'_gauss : IsGaussian ((stdGaussian (EuclideanSpace ℝ ι)).map T'') :=
+  have hμ'_gauss : IsGaussian ((stdGaussian (EuclideanSpace ℝ ι)).map T'') :=
     isGaussian_map T''
   have hμ'_eq_mvg :
       (stdGaussian (EuclideanSpace ℝ ι)).map T'' = multivariateGaussian 0 SS := by
@@ -894,7 +895,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
         multivariateGaussian (0 : EuclideanSpace ℝ ι) S (frontier C)
         = multivariateGaussian (0 : EuclideanSpace ℝ ι) S
             (frontier C ∩ (V : Set (EuclideanSpace ℝ ι))) := by
-      have h_decomp := MeasureTheory.measure_inter_add_diff
+      have h_decomp := MeasureTheory.measure_inter_add_sdiff
         (μ := multivariateGaussian (0 : EuclideanSpace ℝ ι) S)
         (frontier C) hV_meas
       rw [h_diff_zero, add_zero] at h_decomp
@@ -918,7 +919,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
       exact _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
         hS hS_zero hD_conv
     exact le_antisymm
-      ((measure_mono h_image_subset).trans h_image_eq_zero.le) (zero_le _)
+      ((measure_mono h_image_subset).trans h_image_eq_zero.le) (zero_le)
 
 /-- **Convex sets are continuity sets for PSD multivariate Gaussians.**
 

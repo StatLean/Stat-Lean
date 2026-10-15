@@ -70,7 +70,7 @@ theorem measure_sum_ge_le_of_subExponentialNorm_le
     μ {ω | t ≤ ∑ i, X i ω} ≤
       ENNReal.ofReal (Real.exp (-(min (t ^ 2 / (16 * ∑ i, (K i : ℝ) ^ 2))
         (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ))))))  := by
-  haveI : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
   -- Abbreviations for the two scale aggregates appearing in the exponent.
   set sumK2 : ℝ := ∑ i, (K i : ℝ) ^ 2 with hsumK2def
   set maxK : ℝ := ((Finset.univ.sup K : ℝ≥0) : ℝ) with hmaxKdef
@@ -126,7 +126,7 @@ theorem measure_sum_ge_le_of_subExponentialNorm_le
   have hmgf_sum : mgf (∑ i, X i) μ lam = ∏ i, mgf (X i) μ lam :=
     hindep.mgf_sum (t := lam) hmeas Finset.univ
   have hprod_le : ∏ i, mgf (X i) μ lam ≤ ∏ i, Real.exp (4 * lam ^ 2 * (K i : ℝ) ^ 2) :=
-    Finset.prod_le_prod (fun i _ => mgf_nonneg) (fun i _ => hmgf_i i)
+    Finset.prod_le_prod₀ (fun i _ => mgf_nonneg) (fun i _ => hmgf_i i)
   have hprod_eq : ∏ i, Real.exp (4 * lam ^ 2 * (K i : ℝ) ^ 2) = Real.exp (4 * lam ^ 2 * sumK2) := by
     rw [← Real.exp_sum, hsumK2def, Finset.mul_sum]
   have hmgf_sum_le : mgf (∑ i, X i) μ lam ≤ Real.exp (4 * lam ^ 2 * sumK2) := by
@@ -220,11 +220,11 @@ theorem bernstein_subexponential
   have hsub : {ω | t ≤ |∑ i, X i ω|}
       ⊆ {ω | t ≤ ∑ i, X i ω} ∪ {ω | t ≤ ∑ i, -(X i ω)} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     rcases le_abs.mp hω with h | h
     · exact Or.inl h
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq, Finset.sum_neg_distrib]
+      simp only [Set.mem_ofPred_eq, Finset.sum_neg_distrib]
       exact h
   calc μ {ω | t ≤ |∑ i, X i ω|}
       ≤ μ ({ω | t ≤ ∑ i, X i ω} ∪ {ω | t ≤ ∑ i, -(X i ω)}) := measure_mono hsub
@@ -279,7 +279,7 @@ theorem bernstein_subexponential_weighted
       ≤ ((‖a i‖₊ * K : ℝ≥0) : ℝ≥0∞) := by
     intro i
     rw [subExponentialNorm_const_mul (ha i), ENNReal.coe_mul]
-    exact mul_le_mul_left' (hnorm i) _
+    exact mul_le_mul_right (hnorm i) _
   have hbern := bernstein_subexponential (X := fun i ω => a i * X i ω)
     (K := fun i => ‖a i‖₊ * K) hn hmeasY hindepY hmeanY hK' hnormY ht
   -- Rewrite the two aggregate scales into the corollary's ‖a‖₂, ‖a‖∞ form.

@@ -118,7 +118,7 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
   have hf_coord : ∀ i, MemLp (fun ω => f ω i) 2 P := by
     intro i
     have h := (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hf_L2
-    simpa [Function.comp, EuclideanSpace.coe_proj] using h
+    simpa [Function.comp, EuclideanSpace.coe_proj] using! h
   -- centred coordinates are `L²`
   have hg : ∀ i, MemLp (fun ω => f ω i - ∫ y, f y i ∂P) 2 P := fun i =>
     (hf_coord i).sub (memLp_const _)
@@ -144,7 +144,7 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
   have hInt1 : ∀ i, Integrable
       (fun ω => ∑ j, x i * x j
           * ((f ω i - ∫ y, f y i ∂P) * (f ω j - ∫ y, f y j ∂P))) P := fun i =>
-    integrable_finset_sum _ fun j _ => hInt2 i j
+    integrable_finsetSum _ fun j _ => hInt2 i j
   -- RHS: expand the square, swap `∫`/`∑`
   have hRHS : ∫ ω, (∑ i, x i * (f ω i - ∫ y, f y i ∂P)) ^ 2 ∂P
       = ∑ i, ∑ j, x i * x j
@@ -156,9 +156,9 @@ private lemma fCov_quad_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Meas
       rw [sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
     simp_rw [hpt]
-    rw [integral_finset_sum _ fun i _ => hInt1 i]
+    rw [integral_finsetSum _ fun i _ => hInt1 i]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ fun j _ => hInt2 i j]
+    rw [integral_finsetSum _ fun j _ => hInt2 i j]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [integral_const_mul]
   rw [hLHS, hRHS]
@@ -195,7 +195,7 @@ theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measur
   have hf_coord : ∀ i, MemLp (fun ω => f ω i) 2 P := by
     intro i
     have h := (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hf_L2
-    simpa [Function.comp, EuclideanSpace.coe_proj] using h
+    simpa [Function.comp, EuclideanSpace.coe_proj] using! h
   -- the linear functional `⟪t, f ·⟫` is AE(strongly)measurable
   have h_asm : AEStronglyMeasurable (fun ω => ⟪t, f ω⟫) P :=
     (continuous_const.inner continuous_id).comp_aestronglyMeasurable hf_L2.aestronglyMeasurable
@@ -210,7 +210,7 @@ theorem fCov_variance_eq {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measur
   -- integral of the inner product
   have h_int_inner : ∫ y, ⟪t, f y⟫ ∂P = ∑ i, t i * ∫ y, f y i ∂P := by
     simp_rw [h_inner]
-    rw [integral_finset_sum _ fun i _ =>
+    rw [integral_finsetSum _ fun i _ =>
       ((hf_coord i).integrable (by norm_num)).const_mul (t i)]
     exact Finset.sum_congr rfl fun i _ => integral_const_mul _ _
   rw [variance_eq_integral h_AEM, fCov_quad_eq P hf_L2 t]
@@ -293,7 +293,7 @@ theorem empiricalMoment_weakConverges {d : ℕ} {Ω : Type*} [MeasurableSpace Ω
     rw [show (fun ξ => ⟪t, Y 0 ξ⟫) = (fun ω => ⟪t, f ω⟫) ∘ (X 0) from rfl, ← hvm]
     exact fCov_variance_eq P hf_L2 t
   have hS_pos : (fCov P f).PosSemidef := fCov_posSemidef P hf_L2
-  haveI : IsProbabilityMeasure (multivariateGaussian
+  have : IsProbabilityMeasure (multivariateGaussian
       (0 : EuclideanSpace ℝ (Fin d)) (fCov P f)) := inferInstance
   have hY_law : HasLaw (id : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d))
       (multivariateGaussian 0 (fCov P f)) (multivariateGaussian 0 (fCov P f)) := HasLaw.id
@@ -371,7 +371,8 @@ with nonsingular derivative `e'` (`he`) and satisfies the moment-matching identi
 `e θ₀ = P f` (`hμ`): the moment estimators `θhatₙ` (solving `e(θhatₙ) = ℙₙ f`) exist with
 probability tending to one and satisfy vdV's displayed expansion
 
-    √n (θhatₙ − θ₀) = e_{θ₀}⁻¹ √n (ℙₙ f − P f) + o_P(1)   ⇝   N(0, e_{θ₀}⁻¹ P[(f−Pf)(f−Pf)ᵀ] e_{θ₀}⁻ᵀ).
+    √n (θhatₙ − θ₀) = e_{θ₀}⁻¹ √n (ℙₙ f − P f) + o_P(1)
+    ⇝   N(0, e_{θ₀}⁻¹ P[(f−Pf)(f−Pf)ᵀ] e_{θ₀}⁻ᵀ).
 
 The three conclusion conjuncts are: existence w.p.→1 (`μ.real{e(θhatₙ)=ℙₙf} → 1`), the linear
 representation (`√n(θhatₙ−θ₀) − e_{θ₀}⁻¹ √n(ℙₙf−Pf) →ₚ 0`, the `o_P(1)` term), and the
@@ -433,7 +434,7 @@ theorem method_of_moments_normality {d : ℕ}
   -- Measurability, the multivariate CLT, boundedness, and consistency.
   have hemp_meas : ∀ n, Measurable (empiricalMoment f n X) := by
     intro n
-    show Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
+    change Measurable fun ξ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (X i ξ)
     exact (Finset.measurable_sum _ fun i _ => hf_meas.comp (hX_meas i)).const_smul ((n : ℝ)⁻¹)
   have hZmeas : ∀ n : ℕ, Measurable (fun ξ => Real.sqrt n • (empiricalMoment f n X ξ - μ_vec)) :=
     fun n => ((hemp_meas n).sub measurable_const).const_smul (Real.sqrt n)
@@ -466,9 +467,9 @@ theorem method_of_moments_normality {d : ℕ}
     have hsub : ∀ n, {ξ | empiricalMoment f n X ξ ∉ U}
         ⊆ {ξ | ε ≤ ‖empiricalMoment f n X ξ - μ_vec‖} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       exact hξ (hball (by simpa [Metric.mem_ball, dist_eq_norm] using hlt))
     exact squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg)
       (Eventually.of_forall fun n => measureReal_mono (hsub n)) (hcons ε hε)
@@ -481,7 +482,7 @@ theorem method_of_moments_normality {d : ℕ}
         (hemp_meas n) hU_open.measurableSet
       have hc : {ξ | empiricalMoment f n X ξ ∉ U}
           = {ξ | empiricalMoment f n X ξ ∈ U}ᶜ := rfl
-      rw [hc, measureReal_compl hm, measureReal_univ_eq_one]; ring
+      rw [hc, measureReal_compl hm, probReal_univ]; ring
     rw [tendsto_congr heq]
     simpa using hmassU_compl.const_sub (1 : ℝ)
   -- shared: `Wn := e'⁻¹(√n•(ℙₙf−μ))`, `Zn := √n•(θ̂−θ₀)`, and `dist(Wn,Zn) →ₚ 0`.
@@ -491,7 +492,8 @@ theorem method_of_moments_normality {d : ℕ}
   set Zn : ℕ → Ξ → EuclideanSpace ℝ (Fin d) := fun n ξ =>
     Real.sqrt n • (θhat n ξ - θ₀) with hZndef
   have hWn_meas : ∀ n : ℕ, AEMeasurable (Wn n) μ := fun n =>
-    (((e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d)).continuous.measurable).comp
+    (((e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ
+        (Fin d)).continuous.measurable).comp
       (hZmeas n)).aemeasurable
   have hZn_meas : ∀ n : ℕ, AEMeasurable (Zn n) μ := fun n =>
     (((hθhat_meas n).sub measurable_const).const_smul (Real.sqrt n)).aemeasurable
@@ -524,13 +526,12 @@ theorem method_of_moments_normality {d : ℕ}
       intro ξ hξ
       by_cases hmem : empiricalMoment f n X ξ ∈ U
       · left
-        simp only [Set.mem_setOf_eq] at hξ ⊢
+        simp only [Set.mem_ofPred_eq] at hξ ⊢
         have hWZ : Wn n ξ - Zn n ξ = -(Real.sqrt n •
             (φ (empiricalMoment f n X ξ) - φ μ_vec
               - (↑e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d))
                   (empiricalMoment f n X ξ - μ_vec))) := by
-          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub,
-            smul_neg]
+          simp only [hWndef, hZndef, hθhat_eq n ξ hmem, hφμ, map_sub, map_smul, smul_sub]
           abel
         rwa [dist_eq_norm, hWZ, norm_neg] at hξ
       · right; exact hmem
@@ -542,20 +543,21 @@ theorem method_of_moments_normality {d : ℕ}
       simpa using (hrem ε hε).add hmassU_compl
     exact squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg)
       (Eventually.of_forall hbound) hsum0
-  -- linear representation = vdV Thm 4.1 display's `o_P` expansion (`√n(θ̂−θ₀) = e'⁻¹√n(ℙₙf−Pf)+o_P`)
+  -- linear representation = vdV Thm 4.1 display's
+  -- `o_P` expansion (`√n(θ̂−θ₀) = e'⁻¹√n(ℙₙf−Pf)+o_P`)
   have hlin : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ => Zn n ξ - Wn n ξ) := by
     intro ε hε
     refine (hDist ε hε).congr fun n => ?_
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [dist_eq_norm, norm_sub_rev]
   refine ⟨θhat, hθhat_meas, ?_, ?_, ?_⟩
   · -- existence w.p. → 1
     have hsub_ex : ∀ n, {ξ | empiricalMoment f n X ξ ∈ U}
         ⊆ {ξ | e (θhat n ξ) = empiricalMoment f n X ξ} := by
       intro n ξ hξ
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       rw [hθhat_eq n ξ hξ]; exact hrinv _ hξ
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' hmassU tendsto_const_nhds
       (Eventually.of_forall fun n => measureReal_mono (hsub_ex n))

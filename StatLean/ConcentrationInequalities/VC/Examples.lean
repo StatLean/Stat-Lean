@@ -186,7 +186,7 @@ theorem vcDim_intervalClass : vcDim intervalClass = 2 := by
     intro Λ hΛ
     have hnat : Λ.card ≤ 2 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       obtain ⟨Λ', hsub, hc⟩ :=
         Finset.exists_subset_card_eq (show 3 ≤ Λ.card from hcon)
       exact not_shatters_intervalClass_of_card_three hc (hΛ.mono_right hsub)
@@ -320,7 +320,7 @@ theorem vcDim_threePointClass : vcDim threePointClass = 2 := by
     intro Λ hΛ
     have hnat : Λ.card ≤ 2 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       -- In `Fin 3` a set of card ≥ 3 is all of `univ`.
       have h3 : Λ.card = 3 := by
         have hle : Λ.card ≤ 3 := by

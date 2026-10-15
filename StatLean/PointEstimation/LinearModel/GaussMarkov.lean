@@ -98,9 +98,9 @@ private lemma variance_inner_linear (a : EuclideanSpace ℝ (Fin n)) {σ2 : ℝ}
   rw [← real_inner_self_eq_norm_sq, real_inner_euclidean]
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl (fun i _ => ?_)
-  rw [Finset.sum_eq_single i (fun j _ hji => by rw [if_neg (fun h => hji h.symm), mul_zero])
+  rw [Finset.sum_eq_single i (fun j _ hji => by rw [ite_eq_right (fun h => hji h.symm), mul_zero])
         (fun h => absurd (Finset.mem_univ i) h)]
-  rw [if_pos rfl]; ring
+  rw [ite_eq_left rfl]; ring
 
 /-- A linear statistic `⟪a, ·⟫` is square-integrable under the moment assumptions. -/
 private lemma memLp_inner_linear (a : EuclideanSpace ℝ (Fin n))
@@ -111,7 +111,7 @@ private lemma memLp_inner_linear (a : EuclideanSpace ℝ (Fin n))
       = ∑ i, (fun y => a i * y i) := by
     funext y; rw [real_inner_euclidean, Finset.sum_apply]
   rw [hbody]
-  exact memLp_finset_sum' _ (fun i _ => (hL2 i).const_mul (a i))
+  exact memLp_finsetSum' _ (fun i _ => (hL2 i).const_mul (a i))
 
 /-- The mean of a linear statistic `⟪a, ·⟫` is `⟪a, ξ⟫`. -/
 private lemma integral_inner_linear (a : EuclideanSpace ℝ (Fin n))
@@ -120,7 +120,7 @@ private lemma integral_inner_linear (a : EuclideanSpace ℝ (Fin n))
     (hint : ∀ i, Integrable (fun y => y i) P) :
     ∫ y, ⟪a, y⟫_ℝ ∂P = ⟪a, ξ⟫_ℝ := by
   simp_rw [real_inner_euclidean a]
-  rw [integral_finset_sum Finset.univ (fun i _ => (hint i).const_mul (a i))]
+  rw [integral_finsetSum Finset.univ (fun i _ => (hint i).const_mul (a i))]
   simp_rw [integral_const_mul, hmean]
 
 /-- The least-squares functional rewritten as the linear statistic `⟪P_W γ, ·⟫`. -/
@@ -157,7 +157,7 @@ theorem integral_inner_lse {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
   have hbody : ∀ y, ⟪γ, lse W y⟫_ℝ = ∑ i, (W.starProjection γ) i * y i := by
     intro y; rw [inner_lse_eq_inner_starProjection, real_inner_euclidean]
   simp_rw [hbody]
-  rw [integral_finset_sum Finset.univ
+  rw [integral_finsetSum Finset.univ
         (fun i _ => (hint i).const_mul (W.starProjection γ i))]
   simp_rw [integral_const_mul, hmean]
   rw [← real_inner_euclidean, Submodule.inner_starProjection_left_eq_right,
@@ -186,7 +186,7 @@ theorem gauss_markov {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
   have hgeom : ‖W.starProjection γ‖ ^ 2 ≤ ‖c‖ ^ 2 := by
     rw [hdecomp]; nlinarith [sq_nonneg ‖Wᗮ.starProjection c‖]
   rcases isEmpty_or_nonempty (Fin n) with he | he
-  · haveI := he
+  · have := he
     have hc0 : ‖c‖ ^ 2 = 0 := by
       rw [← real_inner_self_eq_norm_sq, real_inner_euclidean, Finset.univ_eq_empty,
         Finset.sum_empty]
@@ -195,7 +195,7 @@ theorem gauss_markov {W : Submodule ℝ (EuclideanSpace ℝ (Fin n))}
         Finset.sum_empty]
     rw [hc0, hp0]
   · obtain ⟨i⟩ := he
-    have hii := hcov i i; rw [if_pos rfl] at hii
+    have hii := hcov i i; rw [ite_eq_left rfl] at hii
     have hσ : 0 ≤ σ2 := by
       rw [← hii, covariance_self (hL2 i).aemeasurable]; exact variance_nonneg _ _
     exact mul_le_mul_of_nonneg_left hgeom hσ
@@ -244,7 +244,7 @@ theorem isSubspaceEquivariant_inner_iff (W : Submodule ℝ (EuclideanSpace ℝ (
     have hb0 := h b hb 0
     simpa using hb0
   · intro h b hb y
-    show ⟪c, y + b⟫_ℝ = ⟪c, y⟫_ℝ + ⟪γ, b⟫_ℝ
+    change ⟪c, y + b⟫_ℝ = ⟪c, y⟫_ℝ + ⟪γ, b⟫_ℝ
     rw [inner_add_right, h b hb]
 
 /-- Under squared error, the least-squares functional is minimum risk equivariant among the

@@ -221,7 +221,7 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
       (fun i (_ : i ∈ (Finset.univ : Finset (Fin m))) => hWL2 a i) hindep
     rw [hfun a] at hvs
     have hmeanS : ∫ ξ, ∑ i, (X i ξ - μ₀) a ∂μprob = 0 := by
-      rw [integral_finset_sum _ fun i _ => (hWL2 a i).integrable one_le_two]
+      rw [integral_finsetSum _ fun i _ => (hWL2 a i).integrable one_le_two]
       exact Finset.sum_eq_zero fun i _ => hWmean a i
     have hLHS : Var[fun ξ => ∑ i, (X i ξ - μ₀) a; μprob]
         = ∫ ξ, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob := by
@@ -242,17 +242,17 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
     have h1 : ∀ ξ, ‖∑ i, (X i ξ - μ₀)‖ ^ 2 = ∑ a, (∑ i, (X i ξ - μ₀) a) ^ 2 := by
       intro ξ; rw [norm_sq_eq_sum_coord]; simp
     have hSL2 : ∀ a : Fin d, MemLp (fun ξ => ∑ i, (X i ξ - μ₀) a) 2 μprob := fun a => by
-      have h := memLp_finset_sum' (μ := μprob) (p := 2) (f := fun i ξ => (X i ξ - μ₀) a)
+      have h := memLp_finsetSum' (μ := μprob) (p := 2) (f := fun i ξ => (X i ξ - μ₀) a)
         Finset.univ fun i _ => hWL2 a i
       rwa [hfun a] at h
     calc ∫ ξ, ‖∑ i, (X i ξ - μ₀)‖ ^ 2 ∂μprob
         = ∫ ξ, ∑ a, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob := by simp only [h1]
       _ = ∑ a, ∫ ξ, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob :=
-          integral_finset_sum _ fun a _ => (hSL2 a).integrable_sq
+          integral_finsetSum _ fun a _ => (hSL2 a).integrable_sq
       _ = ∑ a, (m : ℝ) * ∫ v, ((v - μ₀) a) ^ 2 ∂P := Finset.sum_congr rfl fun a _ => hWvar a
       _ = (m : ℝ) * ∑ a, ∫ v, ((v - μ₀) a) ^ 2 ∂P := by rw [Finset.mul_sum]
       _ = (m : ℝ) * ∫ v, ∑ a, ((v - μ₀) a) ^ 2 ∂P := by
-          rw [integral_finset_sum _ fun a _ => (hPWL2 a).integrable_sq]
+          rw [integral_finsetSum _ fun a _ => (hPWL2 a).integrable_sq]
       _ = (m : ℝ) * trSigma := by
           rw [← htr]; congr 1; exact integral_congr_ae
             (Filter.Eventually.of_forall fun v => (norm_sq_eq_sum_coord (v - μ₀)).symm)
@@ -310,12 +310,12 @@ private theorem iIndepFun_blockTuple {k m : ℕ}
     (hX_law : ∀ j i, μprob.map (X j i) = P) :
     iIndepFun (fun (j : Fin k) (ξ : Ξ) (i : Fin m) => X j i ξ) μprob := by
   have hTmeas : Measurable (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ) :=
-    measurable_pi_lambda _ fun q => hX_meas q.1 q.2
+    Measurable.of_eval fun q => hX_meas q.1 q.2
   have hcurry : Measurable
       (fun (f : Fin k × Fin m → EuclideanSpace ℝ (Fin d)) (j : Fin k) (i : Fin m) => f (j, i)) := by
     fun_prop
   rw [iIndepFun_iff_map_fun_eq_pi_map
-    (fun j => (measurable_pi_lambda _ fun i => hX_meas j i).aemeasurable)]
+    (fun j => (Measurable.of_eval fun i => hX_meas j i).aemeasurable)]
   have hrow : ∀ j : Fin k, μprob.map (fun ξ (i : Fin m) => X j i ξ)
       = Measure.pi (fun _ : Fin m => P) := by
     intro j
@@ -398,7 +398,7 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     exact (memLp_map_measure_iff (by fun_prop) (hX_meas j i).aemeasurable).mp h
   have hZL2 : ∀ j : Fin k, MemLp (fun ξ => (m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀) 2 μprob := by
     intro j
-    exact (((memLp_finset_sum Finset.univ fun i _ => hXL2 j i).const_smul
+    exact (((memLp_finsetSum Finset.univ fun i _ => hXL2 j i).const_smul
       ((m : ℝ)⁻¹))).sub (memLp_const μ₀)
   have hInt : ∀ j : Fin k,
       Integrable (fun ξ => ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2) μprob := fun j =>
@@ -467,9 +467,6 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
         < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
       (((measurable_const.ite (hbad_meas j) measurable_const)).aemeasurable)
       (Filter.Eventually.of_forall fun ξ => by
-        change (if 2 * Real.sqrt (trSigma / m)
-            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
-          ∈ Set.Icc (0 : ℝ) 1
         rw [Set.mem_Icc]; split_ifs <;> norm_num)
     rw [hprox] at h
     exact h
@@ -596,7 +593,7 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
   intro ξ hξ
   refine hBAD ξ fun hmaj => ?_
   have h := hgood ξ hmaj
-  simp only [Set.mem_setOf_eq] at hξ
+  simp only [Set.mem_ofPred_eq] at hξ
   linarith
 
 

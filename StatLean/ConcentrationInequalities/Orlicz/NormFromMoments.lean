@@ -67,7 +67,8 @@ lemma lintegral_pow_le_of_eLpNorm_le {X : Ω → ℝ} {μ : Measure Ω}
     have hnr : (0 : ℝ) < n := by exact_mod_cast hnpos
     positivity
   have key : ∫⁻ ω, ‖X ω‖ₑ ^ p.toReal ∂μ = (eLpNorm X p μ) ^ p.toReal := by
-    rw [eLpNorm_eq_eLpNorm' hp_ne_zero hp_ne_top, lintegral_rpow_enorm_eq_rpow_eLpNorm' hpr]
+    rw [eLpNorm_eq_eLpNorm' hp_ne_zero hp_ne_top hX.aestronglyMeasurable,
+        lintegral_rpow_enorm_eq_rpow_eLpNorm' hpr]
   have hpt : ∀ ω, ENNReal.ofReal ((X ω) ^ (2 * n)) = ‖X ω‖ₑ ^ p.toReal := by
     intro ω
     rw [hptr2, Real.enorm_eq_ofReal_abs, ENNReal.rpow_natCast,
@@ -204,7 +205,7 @@ theorem subGaussianNorm_le_of_eLpNorm_le
             rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
         _ ≤ ENNReal.ofReal (1 / (Cr ^ (2 * n) * (n.factorial : ℝ)))
               * ENNReal.ofReal ((K : ℝ) ^ (2 * n) * (2 * n : ℝ) ^ n) :=
-            mul_le_mul_left' hhelp _
+            mul_le_mul_right hhelp _
         _ = ENNReal.ofReal ((1 / (Cr ^ (2 * n) * (n.factorial : ℝ)))
               * ((K : ℝ) ^ (2 * n) * (2 * n : ℝ) ^ n)) := by
             rw [← ENNReal.ofReal_mul hcn_nonneg]

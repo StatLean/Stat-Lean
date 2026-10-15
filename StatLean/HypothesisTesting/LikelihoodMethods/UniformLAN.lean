@@ -241,7 +241,7 @@ private lemma abs_lanRemainder_sub_le
     _ ≤ (∑ i, G (ω i)) * (2 * c * ‖h - h'‖ / n)
           + (1 / 2 : ℝ) * (2 * c * ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * ‖h - h'‖) := by
         refine add_le_add hlin ?_
-        rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (1/2 : ℝ))]
+        rw [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (1/2 : ℝ))]
         exact mul_le_mul_of_nonneg_left hquad (by norm_num)
     _ = (2 * c * ((n : ℝ)⁻¹ * ∑ i, G (ω i))
           + c * ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖) * ‖h - h'‖ := by
@@ -271,7 +271,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
         = fun ω : Fin n → 𝓧 => ∑ i, ENNReal.ofReal (G (ω i)) := by
       funext ω
       exact ENNReal.ofReal_sum_of_nonneg fun i _ => hG0 _
-    rw [hpt, lintegral_finset_sum (μ := Measure.pi fun _ : Fin n => ν) Finset.univ
+    rw [hpt, lintegral_finsetSum (μ := Measure.pi fun _ : Fin n => ν) Finset.univ
       (f := fun (i : Fin n) (ω : Fin n → 𝓧) => ENNReal.ofReal (G (ω i)))
       (fun i _ => ((hGm.comp (measurable_pi_apply i)).ennreal_ofReal))]
     have heval : ∀ i : Fin n,
@@ -291,7 +291,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
       = {ω : Fin n → 𝓧 |
           ENNReal.ofReal (K * n) ≤ ENNReal.ofReal (∑ i, G (ω i))} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ => hG0 _)).symm
   have hmarkov : ENNReal.ofReal (K * n)
         * (Measure.pi fun _ : Fin n => ν) {ω : Fin n → 𝓧 | K * n ≤ ∑ i, G (ω i)}
@@ -301,7 +301,7 @@ private lemma measureReal_pi_sum_ge_le {n : ℕ} (ν : Measure 𝓧) [IsProbabil
   have hfin : ((n : ℝ≥0∞) * I) ≠ ⊤ := ENNReal.mul_ne_top (by simp) hGtop
   have h2 := ENNReal.toReal_mono hfin hmarkov
   rw [ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by positivity : (0:ℝ) ≤ K * n), ENNReal.toReal_natCast] at h2
+    ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ K * n), ENNReal.toReal_natCast] at h2
   rw [measureReal_def, le_div_iff₀ hK]
   have hkey : (n : ℝ)
       * (((Measure.pi fun _ : Fin n => ν)
@@ -328,7 +328,7 @@ private lemma exists_threshold_envelope_sum
     ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ, 1 ≤ n →
       (productMeasure M μ θ₀ n).real {ω : Fin n → 𝓧 | K * n ≤ ∑ i, G (ω i)} ≤ α := by
   set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hνdef
-  haveI hνprob : IsProbabilityMeasure ν := by
+  have hνprob : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hνdef, MeasureTheory.withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← MeasureTheory.ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ₀)
@@ -521,7 +521,7 @@ theorem sup_LAN_remainder_tendsto
         ∪ ⋃ y ∈ Ff, {ω : Fin n → 𝓧 | ε / 2 ≤ |lanRemainder M θ₀ ℓ J y n ω|} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, Set.mem_iUnion, not_or, not_exists,
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_iUnion, not_or, not_exists,
       not_le] at hcon
     obtain ⟨henvsmall, hnetsmall⟩ := hcon
     obtain ⟨h, hhc, hhε⟩ := hω
@@ -587,7 +587,7 @@ theorem sup_LAN_remainder_tendsto
   have hcard : (Ff.card : ℝ) * (α / (2 * (Ff.card + 1))) < α / 2 := by
     have hden : (0 : ℝ) < 2 * (Ff.card + 1) := by positivity
     rw [mul_div_assoc'] at *
-    rw [div_lt_div_iff₀ hden (by norm_num : (0:ℝ) < 2)]
+    rw [div_lt_div_iff₀ hden (by norm_num : (0 : ℝ) < 2)]
     have : (0 : ℝ) ≤ Ff.card := Nat.cast_nonneg _
     nlinarith
   linarith

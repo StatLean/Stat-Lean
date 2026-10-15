@@ -100,18 +100,18 @@ theorem TendstoInnerProbOne.tendsto_outerMeasureStar_compl
   obtain ⟨E, hEmeas, hES, hE⟩ := hS
   have hEmeasure : Tendsto (fun n => μ (E n)) atTop (𝓝 1) := by
     have hofReal := (ENNReal.continuous_ofReal.tendsto 1).comp hE
-    convert hofReal using 1
+    convert! hofReal using 1
     · funext n
       change μ (E n) = ENNReal.ofReal (μ.real (E n))
       rw [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top μ _)]
     · simp
   have hEcompl : Tendsto (fun n => μ ((E n)ᶜ)) atTop (𝓝 0) := by
     have hsub : Tendsto (fun n => (1 : ℝ≥0∞) - μ (E n)) atTop (𝓝 0) := by
-      simpa using ((ENNReal.continuous_sub_left ENNReal.one_ne_top).tendsto 1).comp hEmeasure
+      simpa using! ((ENNReal.continuous_sub_left ENNReal.one_ne_top).tendsto 1).comp hEmeasure
     refine hsub.congr' (Eventually.of_forall fun n => ?_)
     simpa using (measure_compl (hEmeas n) (measure_ne_top μ _)).symm
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hEcompl
-    (Eventually.of_forall fun _ => zero_le _)
+    (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall fun n => ?_)
   calc
     μ.outerMeasureStar ((S n)ᶜ) ≤ μ.outerMeasureStar ((E n)ᶜ) :=

@@ -100,7 +100,7 @@ theorem isLeastFavorable_of_isBayesEstimator_of_risk_le
     (hle : ∀ θ, risk ℓ P κ θ ≤ bayesRisk ℓ P π) :
     IsLeastFavorable ℓ P π := by
   refine ⟨‹IsProbabilityMeasure π›, fun π' hπ' => ?_⟩
-  haveI := hπ'
+  have := hπ'
   calc bayesRisk ℓ P π' ≤ avgRisk ℓ P κ π' := bayesRisk_le_avgRisk ℓ P κ π'
     _ ≤ ⨆ θ, risk ℓ P κ θ := avgRisk_le_iSup_risk ℓ P κ π'
     _ ≤ bayesRisk ℓ P π := iSup_le hle

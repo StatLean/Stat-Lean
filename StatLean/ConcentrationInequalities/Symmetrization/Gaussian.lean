@@ -81,10 +81,10 @@ private lemma integrable_normX (μ : Measure Ω) [IsProbabilityMeasure μ]
     (hX_int : ∀ i, Integrable (X i) μ) :
     Integrable (fun p : Ω × (Fin N → ℝ) => ‖∑ i, p.2 i • X i p.1‖) (μ.prod ρ) := by
   have hsum : Integrable (fun p : Ω × (Fin N → ℝ) => ∑ i, p.2 i • X i p.1) (μ.prod ρ) := by
-    refine integrable_finset_sum _ (fun i _ => ?_)
+    refine integrable_finsetSum _ (fun i _ => ?_)
     exact (hX_int i).op_fst_snd (op := fun (a : E) (r : ℝ) => r • a)
       (continuous_snd.smul continuous_fst)
-      ⟨1, fun a r => le_of_eq (by show ‖r • a‖ = 1 * ‖a‖ * ‖r‖; rw [norm_smul]; ring)⟩
+      ⟨1, fun a r => le_of_eq (by change ‖r • a‖ = 1 * ‖a‖ * ‖r‖; rw [norm_smul]; ring)⟩
       (hcoef i)
   exact hsum.norm
 
@@ -101,7 +101,7 @@ private lemma jensen_pointwise (v : Fin N → E) (s : Fin N → ℝ) :
   -- ∫ g, ∑ᵢ (sᵢ|gᵢ|)•vᵢ  =  √(2/π) • ∑ᵢ sᵢ•vᵢ
   have hA : ∫ g, (∑ i, (s i * |g i|) • v i) ∂(gaussVec N)
       = Real.sqrt (2 / Real.pi) • (∑ i, s i • v i) := by
-    rw [integral_finset_sum _ (fun i _ => hint i)]
+    rw [integral_finsetSum _ (fun i _ => hint i)]
     have hterm : ∀ i, ∫ g, (s i * |g i|) • v i ∂(gaussVec N)
         = (s i * Real.sqrt (2 / Real.pi)) • v i := by
       intro i
@@ -138,7 +138,7 @@ private lemma integrable_abs_prod (x : Fin N → E) :
   have hsum : Integrable
       (fun p : (Fin N → ℝ) × (Fin N → ℝ) => ∑ i, (p.1 i * |p.2 i|) • x i)
       ((signVec N).prod (gaussVec N)) := by
-    refine integrable_finset_sum _ (fun i _ => ?_)
+    refine integrable_finsetSum _ (fun i _ => ?_)
     exact ((integrable_eval_signVec i).mul_prod
       ((integrable_eval_gaussVec N i).abs)).smul_const (x i)
   exact hsum.norm
@@ -156,13 +156,13 @@ private lemma cov_gaussVec (x : Fin N → E) :
       (fun p : (Fin N → ℝ) × (Fin N → ℝ) => fun i => p.1 i * |p.2 i|)
       ((signVec N).prod (gaussVec N)) := by
     refine Measurable.aemeasurable ?_
-    refine measurable_pi_lambda _ (fun i => ?_)
+    refine Measurable.of_eval (fun i => ?_)
     exact ((measurable_pi_apply i).comp measurable_fst).mul
       (((measurable_pi_apply i).comp measurable_snd).abs)
   have hψ : AEStronglyMeasurable (fun h : Fin N → ℝ => ‖∑ i, h i • x i‖)
       (((signVec N).prod (gaussVec N)).map (fun p i => p.1 i * |p.2 i|)) := by
     refine Continuous.aestronglyMeasurable ?_
-    exact continuous_norm.comp (continuous_finset_sum _ (fun i _ =>
+    exact continuous_norm.comp (continuous_finsetSum _ (fun i _ =>
       (continuous_apply i).smul continuous_const))
   have himeq := integral_map hΦmeas hψ
   rw [hmap] at himeq
@@ -191,7 +191,7 @@ private lemma upper_inner (x : Fin N → E) :
 
 /-- The Pi sup-norm is invariant under coordinatewise absolute value. -/
 private lemma norm_abs_pi [NeZero N] (g : Fin N → ℝ) : ‖(fun i => |g i|)‖ = ‖g‖ := by
-  haveI : Nonempty (Fin N) := ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne N)⟩⟩
+  have : Nonempty (Fin N) := ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne N)⟩⟩
   rw [pi_norm_eq_ciSup_abs, pi_norm_eq_ciSup_abs]
   simp [abs_abs]
 
@@ -199,7 +199,7 @@ private lemma norm_abs_pi [NeZero N] (g : Fin N → ℝ) : ‖(fun i => |g i|)�
 private lemma integrable_norm_gaussVec :
     Integrable (fun g : Fin N → ℝ => ‖g‖) (gaussVec N) := by
   have hsum : Integrable (fun g : Fin N → ℝ => ∑ i, |g i|) (gaussVec N) :=
-    integrable_finset_sum _ (fun i _ => (integrable_eval_gaussVec N i).abs)
+    integrable_finsetSum _ (fun i _ => (integrable_eval_gaussVec N i).abs)
   refine hsum.mono' continuous_norm.aestronglyMeasurable (Filter.Eventually.of_forall (fun g => ?_))
   rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _),
     pi_norm_le_iff_of_nonneg (by positivity)]
@@ -328,7 +328,7 @@ theorem gaussian_symmetrization_lower {μ : Measure Ω} [IsProbabilityMeasure μ
   rcases eq_or_ne N 0 with hN0 | hN0
   · subst hN0
     simp
-  haveI : NeZero N := ⟨hN0⟩
+  have : NeZero N := ⟨hN0⟩
   have hIS := integrable_normX (X := X) μ
     (ρ := signVec N) (fun i => integrable_eval_signVec i) hX_int
   have hIG := integrable_normX (X := X) μ

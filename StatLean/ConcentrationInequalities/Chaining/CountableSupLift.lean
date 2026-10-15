@@ -78,7 +78,7 @@ lemma lintegral_biSup_le_of_forall_finset {ι : Type*} {g : ι → Ω → ℝ≥
   rcases Set.eq_empty_or_nonempty C with rfl | hCne
   · have hz : ∀ ω, (⨆ i ∈ (∅ : Set ι), g i ω) = 0 := by intro ω; simp
     simp only [hz, lintegral_zero]
-    exact zero_le B
+    exact zero_le (a := B)
   -- Prefix exhaustion of the countable index set by finite windows.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef
@@ -141,7 +141,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
   · have hE : {ω | ∃ i ∈ (∅ : Set ι), thr < f i ω} = (∅ : Set Ω) := by
       ext ω; simp
     rw [hE, measure_empty]
-    exact zero_le β
+    exact zero_le (a := β)
   -- Finite exhaustion of the countable carrier.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef
@@ -162,7 +162,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
     with hBdef
   have hBmono : Monotone B := by
     intro a b hab ω hω
-    simp only [hBdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hBdef, Set.mem_ofPred_eq] at hω ⊢
     refine lt_of_lt_of_le hω (Finset.sup'_le (hSne a) _ fun i hi => ?_)
     exact Finset.le_sup' (fun i => f i ω) (hSmono a b hab hi)
   have hincl : {ω | ∃ i ∈ C, thr < f i ω} ⊆ ⋃ n, B n := by
@@ -171,7 +171,7 @@ lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
     rw [he] at hiC
     obtain ⟨k, hk⟩ := hiC
     refine Set.mem_iUnion.mpr ⟨k, ?_⟩
-    simp only [hBdef, Set.mem_setOf_eq]
+    simp only [hBdef, Set.mem_ofPred_eq]
     have hiS : i ∈ S k :=
       Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr (Nat.lt_succ_self k), hk⟩
     exact lt_of_lt_of_le hlt (Finset.le_sup' (fun i => f i ω) hiS)
@@ -199,7 +199,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
         = (∅ : Set Ω) := by
       ext ω; simp
     rw [hE, measure_empty]
-    exact zero_le β
+    exact zero_le (a := β)
   -- Finite exhaustion of the countable carrier.
   obtain ⟨e, he⟩ := hcnt.exists_eq_range hCne
   set S : ℕ → Finset ι := fun n => (Finset.range (n + 1)).image e with hSdef
@@ -220,7 +220,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
     ((hSne n).product (hSne n)) fun p => f p.1 p.2 ω} with hBdef
   have hBmono : Monotone B := by
     intro a b hab ω hω
-    simp only [hBdef, Set.mem_setOf_eq] at hω ⊢
+    simp only [hBdef, Set.mem_ofPred_eq] at hω ⊢
     refine lt_of_lt_of_le hω
       (Finset.sup'_le ((hSne a).product (hSne a)) _ fun p hp => ?_)
     obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
@@ -233,7 +233,7 @@ lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
     obtain ⟨k, hk⟩ := hiC
     obtain ⟨l, hl⟩ := hjC
     refine Set.mem_iUnion.mpr ⟨max k l, ?_⟩
-    simp only [hBdef, Set.mem_setOf_eq]
+    simp only [hBdef, Set.mem_ofPred_eq]
     have hiS : i ∈ S (max k l) := Finset.mem_image.mpr
       ⟨k, Finset.mem_range.mpr (Nat.lt_succ_of_le (le_max_left k l)), hk⟩
     have hjS : j ∈ S (max k l) := Finset.mem_image.mpr
@@ -262,7 +262,7 @@ lemma lintegral_biSup_finset_ofReal_eq {ι : Type*} {F : Finset ι}
   have hpt : ∀ ω, (⨆ i ∈ F, ENNReal.ofReal (f i ω))
       = ENNReal.ofReal (F.sup' hFne fun i => f i ω) := by
     intro ω
-    rw [Finset.comp_sup'_eq_sup'_comp hFne ENNReal.ofReal
+    rw [Finset.apply_sup'_eq_sup'_comp hFne ENNReal.ofReal
         (fun x y => ENNReal.ofReal_max x y),
       Finset.sup'_eq_sup, Finset.sup_eq_iSup]
     rfl
@@ -284,7 +284,7 @@ private lemma biSup_nonneg_of_mem {ι : Type*} {C : Set ι} {h : ι → ℝ}
     refine le_ciSup_of_le hbdd i₀ ?_
     by_cases hi : i₀ ∈ C
     · rw [ciSup_pos hi]; exact h0 _ hi
-    · haveI : IsEmpty (i₀ ∈ C) := ⟨hi⟩
+    · have : IsEmpty (i₀ ∈ C) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
   · rw [Real.iSup_of_not_bddAbove hbdd]
 
@@ -313,7 +313,7 @@ lemma toReal_biSup_ofReal {ι : Type*} {C : Set ι} {h : ι → ℝ}
     intro i
     by_cases hi : i ∈ C
     · rw [ciSup_pos hi]; exact hmem i hi
-    · haveI : IsEmpty (i ∈ C) := ⟨hi⟩
+    · have : IsEmpty (i ∈ C) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]; exact ENNReal.toReal_nonneg
   have hbdd : BddAbove (Set.range fun i => ⨆ (_ : i ∈ C), h i) :=
     ⟨(⨆ i ∈ C, ENNReal.ofReal (h i)).toReal, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
@@ -344,7 +344,7 @@ lemma exists_lt_of_lt_biSup_real {ι : Type*} {S : Set ι} {h : ι → ℝ} {c :
   by_cases hiS : i ∈ S
   · rw [ciSup_pos hiS] at hi
     exact ⟨i, hiS, hi⟩
-  · haveI : IsEmpty (i ∈ S) := ⟨hiS⟩
+  · have : IsEmpty (i ∈ S) := ⟨hiS⟩
     rw [Real.iSup_of_isEmpty] at hi
     linarith
 

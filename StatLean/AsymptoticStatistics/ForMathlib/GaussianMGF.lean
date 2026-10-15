@@ -50,7 +50,7 @@ lemma integral_exp_mul_gaussianReal (μ : ℝ) (v : NNReal) (t : ℝ) :
       = Real.exp (μ * t + (v : ℝ) * t ^ 2 / 2) := by
   have hmap : Measure.map (id : ℝ → ℝ) (gaussianReal μ v) = gaussianReal μ v := by
     simp [Measure.map_id]
-  have := mgf_gaussianReal hmap t
+  have := mgf_gaussianReal ⟨aemeasurable_id, hmap⟩ t
   simpa [mgf, id] using this
 
 /-- **Standard Gaussian moment-generating function** on a Euclidean space.
@@ -451,9 +451,6 @@ lemma pi_gaussianReal_withDensity_exp_shift {ι : Type*} [Fintype ι] (a : ι �
   have h1d : ∀ i, (gaussianReal 0 1).withDensity
       (fun x => ENNReal.ofReal (Real.exp (a i * x - a i ^ 2 / 2)))
         = gaussianReal (a i) 1 := fun i => gaussianReal_withDensity_exp_shift (a i)
-  haveI : ∀ i, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
-      (fun x => ENNReal.ofReal (Real.exp (a i * x - a i ^ 2 / 2)))) := by
-    intro i; rw [h1d i]; infer_instance
   -- Factor the product density: `exp(∑ aᵢyᵢ - ∑ aᵢ²/2) = ∏ exp(aᵢyᵢ - aᵢ²/2)`.
   have h_density : (fun y : ι → ℝ =>
         ENNReal.ofReal (Real.exp (∑ i, a i * y i - ∑ i, a i ^ 2 / 2)))
@@ -490,10 +487,6 @@ theorem stdGaussian_withDensity_exp_shift {ι : Type*} [Fintype ι]
         (fun y => ENNReal.ofReal (Real.exp (⟪a, y⟫ - ‖a‖ ^ 2 / 2)))
       = (stdGaussian (EuclideanSpace ℝ ι)).map (fun y => y + a) := by
   classical
-  -- Each 1D shift is a probability measure; promote for `pi_map_pi`'s SigmaFinite instance.
-  haveI : ∀ i,
-      IsProbabilityMeasure ((gaussianReal 0 1).map (fun x : ℝ => x + a.ofLp i)) := by
-    intro i; rw [gaussianReal_map_add_const]; infer_instance
   -- Pull both sides back to `pi` via `map_pi_eq_stdGaussian`.
   rw [← map_pi_eq_stdGaussian (ι := ι)]
   -- LHS: commute withDensity past map. RHS: compose the two maps.
@@ -631,12 +624,8 @@ theorem multivariateGaussian_map_inner_eq_gaussianReal
   classical
   have hL_meas : Measurable (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫) :=
     (continuous_const.inner continuous_id).measurable
-  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
+  have : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
-  haveI : IsProbabilityMeasure
-      (Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫)
-        (multivariateGaussian 0 J)) :=
-    Measure.isProbabilityMeasure_map hL_meas.aemeasurable
   -- Nonneg quadratic form.
   have h_quad_nn : 0 ≤ h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
     have := hJ.re_dotProduct_nonneg (x := (h.ofLp : Fin k → ℝ))

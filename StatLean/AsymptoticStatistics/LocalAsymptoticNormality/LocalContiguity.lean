@@ -63,9 +63,9 @@ theorem mutuallyContiguous_products_of_dqm_of_scaled_tendsto_strictMono
   let L : ∀ n, (Fin (m n) → 𝒳) → ℝ :=
     fun n => movingLogLikelihood M θ₀ m θ n
   let v : NNReal := (fisherInformation M μ θ₀ ℓ h h).toNNReal
-  haveI hP_prob : ∀ n, IsProbabilityMeasure (P n) := fun n =>
+  have hP_prob : ∀ n, IsProbabilityMeasure (P n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ₀ (m n)
-  haveI hQ_prob : ∀ n, IsProbabilityMeasure (Q n) := fun n =>
+  have hQ_prob : ∀ n, IsProbabilityMeasure (Q n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF (θ n) (m n)
   obtain ⟨h_exp_int, h_mass, h_comparison⟩ :=
     movingProductMeasure_likelihood_comparison M μ θ₀ ℓ hPDF hDQM m hm θ h hθ

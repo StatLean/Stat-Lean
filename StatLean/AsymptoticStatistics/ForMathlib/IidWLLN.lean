@@ -73,7 +73,7 @@ lemma iid_lln_in_prob_l1
   -- `eval 0` is measure-preserving.
   have hY0_int : Integrable (Y 0) μ_inf := by
     have := (hMP 0).integrable_comp hf'_meas.aestronglyMeasurable
-    simpa [Y, Function.eval] using this.mpr hf'_int
+    simpa [Y, Function.eval] using! this.mpr hf'_int
   -- Pairwise independence of the `Y i`'s.
   have h_iIndep : ProbabilityTheory.iIndepFun Y μ_inf := by
     simpa [Y, Function.eval] using
@@ -126,7 +126,7 @@ lemma iid_lln_in_prob_l1
         (fun ω : ℕ → Ω => ω i) μ_inf P := (hMP i).quasiMeasurePreserving
     -- `f ∘ eval i =ᵐ[μ_inf] f' ∘ eval i` from `f =ᵐ[P] f'`.
     have h_comp_ae : (fun ω : ℕ → Ω => f (ω i)) =ᵐ[μ_inf] fun ω => f' (ω i) :=
-      h_qmp.ae_eq hff'
+      h_qmp.ae_eq_comp hff'
     exact h_comp_ae
   -- Build the goal-form a.s. convergence: `(n)⁻¹ * ∑ i : Fin n, f (ω i) → ∫ f ∂P`.
   have h_target_ae : ∀ᵐ ω ∂μ_inf,

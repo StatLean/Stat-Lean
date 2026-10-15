@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.StatisticalLearning.OnAvgReplaceOneStableWith","label":"OnAvgReplaceOneStableWith","full":"StatLean.StatisticalLearning.OnAvgReplaceOneStableWith","kind":"root","decl":"def","module":"StatLean.StatisticalLearning.Stability.Defs"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"StatLean.StatisticalLearning.Sample","label":"Sample","full":"StatLean.StatisticalLearning.Sample","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"MeasureTheory.IsProbabilityMeasure","label":"IsProbabilityMeasure","full":"MeasureTheory.IsProbabilityMeasure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},

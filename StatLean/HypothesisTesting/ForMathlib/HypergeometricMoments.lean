@@ -214,7 +214,7 @@ private lemma card_filter_two {n m : ℕ} (hm2 : 2 ≤ m) {i j : Fin n} (hij : i
     have hjt : j ∉ t := fun h => (Finset.mem_erase.mp (htsub h)).1 rfl
     have hit : i ∉ t := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp (htsub h)).2).1 rfl
     have hijt : i ∉ insert j t := by
-      rw [Finset.mem_insert]; push_neg; exact ⟨hij, hit⟩
+      rw [Finset.mem_insert]; push Not; exact ⟨hij, hit⟩
     rw [Finset.mem_filter, Finset.mem_powersetCard]
     refine ⟨⟨Finset.subset_univ _, ?_⟩,
       Finset.mem_insert_self i _, Finset.mem_insert_of_mem (Finset.mem_insert_self j t)⟩
@@ -230,7 +230,7 @@ private lemma card_filter_two {n m : ℕ} (hm2 : 2 ≤ m) {i j : Fin n} (hij : i
     have hjt : j ∉ t := fun h => (Finset.mem_erase.mp (ht.1 h)).1 rfl
     have hit : i ∉ t := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp (ht.1 h)).2).1 rfl
     have hijt : i ∉ insert j t := by
-      rw [Finset.mem_insert]; push_neg; exact ⟨hij, hit⟩
+      rw [Finset.mem_insert]; push Not; exact ⟨hij, hit⟩
     simp only [Finset.erase_insert hijt, Finset.erase_insert hjt]
 
 /-- `expect` is the expectation under the uniform law on splits: each of the
@@ -262,8 +262,7 @@ theorem expect_weight {n m : ℕ}
       obtain ⟨a, rfl⟩ : ∃ a, n = a + 1 := ⟨n - 1, by omega⟩
       obtain ⟨b, rfl⟩ : ∃ b, m = b + 1 := ⟨m - 1, by omega⟩
       simp only [Nat.add_sub_cancel]
-      have h := Nat.succ_mul_choose_eq a b
-      simp only [Nat.succ_eq_add_one] at h
+      have h := Nat.add_one_mul_choose_eq a b
       exact_mod_cast h
     rw [show (fun s : SubsetsOfCard n m => weight i s)
           = (fun s => (fun t => if i ∈ t then (1 : ℝ) else 0) s.val) from rfl,
@@ -310,9 +309,8 @@ theorem expect_weight_pair {n m : ℕ}
       obtain ⟨a, rfl⟩ : ∃ a, n = a + 2 := ⟨n - 2, by omega⟩
       obtain ⟨b, rfl⟩ : ∃ b, m = b + 2 := ⟨m - 2, by omega⟩
       simp only [Nat.add_sub_cancel]
-      have h1 := Nat.succ_mul_choose_eq (a + 1) (b + 1)
-      have h2 := Nat.succ_mul_choose_eq a b
-      simp only [Nat.succ_eq_add_one] at h1 h2
+      have h1 := Nat.add_one_mul_choose_eq (a + 1) (b + 1)
+      have h2 := Nat.add_one_mul_choose_eq a b
       have h1' : ((a + 2 : ℕ) : ℝ) * ((a + 1).choose (b + 1) : ℝ)
           = ((a + 2).choose (b + 2) : ℝ) * ((b + 2 : ℕ) : ℝ) := by exact_mod_cast h1
       have h2' : ((a + 1 : ℕ) : ℝ) * (a.choose b : ℝ)
@@ -409,12 +407,12 @@ theorem var_linear {n m : ℕ}
     intro i j
     by_cases h : i = j
     · subst h
-      rw [if_pos rfl,
+      rw [ite_eq_left rfl,
         show (fun s : SubsetsOfCard n m => weight i s * weight i s)
             = fun s => weight i s from by
             funext s; simp only [weight]; split_ifs <;> ring]
       exact expect_weight hm i
-    · rw [if_neg h]; exact expect_weight_pair hm h
+    · rw [ite_eq_right h]; exact expect_weight_pair hm h
   -- The closed form of the resulting `if`-double sum.
   have hsum : ∀ p q : ℝ,
       ∑ i, ∑ j, c i * c j * ((if i = j then p else q) - p ^ 2)
@@ -422,7 +420,7 @@ theorem var_linear {n m : ℕ}
     intro p q
     have hg : ∀ i j : Fin n, c i * c j * ((if i = j then p else q) - p ^ 2)
         = c i * c j * (q - p ^ 2) + (if i = j then c i * c j * (p - q) else 0) := by
-      intro i j; by_cases h : i = j <;> simp [h] <;> ring
+      intro i j; by_cases h : i = j <;> simp [h]; ring
     have hA : ∑ i, ∑ j, c i * c j * (q - p ^ 2) = (q - p ^ 2) * (∑ i, c i) ^ 2 := by
       rw [pow_two (∑ i, c i), Finset.sum_mul_sum, Finset.mul_sum]
       refine Finset.sum_congr rfl fun i _ => ?_
@@ -431,7 +429,7 @@ theorem var_linear {n m : ℕ}
         = (p - q) * ∑ i, (c i) ^ 2 := by
       rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun i _ => ?_
-      rw [Finset.sum_ite_eq, if_pos (Finset.mem_univ i)]
+      rw [Finset.sum_ite_eq, ite_eq_left (Finset.mem_univ i)]
       ring
     simp_rw [hg, Finset.sum_add_distrib]
     rw [hA, hB]

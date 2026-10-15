@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.Core.NondominatedQMDPath
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct
@@ -51,6 +52,24 @@ noncomputable def comparisonResidual
   residualAgainst P (γ.curve t) (canonicalDominator P (γ.curve t))
     (γ.score : Ω → ℝ) t
 
+private theorem comparisonResidual_aestronglyMeasurable
+    (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
+    AEStronglyMeasurable (γ.comparisonResidual t) (canonicalDominator P (γ.curve t)) := by
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let μ := canonicalDominator P (γ.curve t)
+  let : SigmaFinite μ := by dsimp only [μ, canonicalDominator]; infer_instance
+  have hPμ : P ≪ μ := (Measure.le_add_right le_rfl).absolutelyContinuous
+  have hw := (AsymptoticStatistics.ForMathlib.RnDerivSqrt.aestronglyMeasurable_sqrt_rnDeriv_mul_iff
+    hPμ (γ.score : Ω → ℝ)).2 (Lp.aestronglyMeasurable γ.score.val)
+  have hp := ((Measure.measurable_rnDeriv P μ).ennreal_toReal.sqrt).aestronglyMeasurable (μ := μ)
+  have hq := ((Measure.measurable_rnDeriv (γ.curve t) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have h := (hq.sub hp).sub (hw.const_mul (t / 2))
+  convert! h using 1
+  funext ω
+  simp only [comparisonResidual, residualAgainst, Pi.sub_apply, μ]
+  ring
+
 /-- Lebesgue decomposition of a path law into singular and baseline-AC parts.
 
 The proof uses Mathlib's Lebesgue decomposition with the probability-provided
@@ -58,7 +77,7 @@ sigma-finiteness instances. -/
 theorem curve_eq_singularPart_add_acPart
     (γ : NondominatedQMDPath P) (t : ℝ) (ht : 0 ≤ t) :
     γ.curve t = γ.singularPart t + γ.acPart t := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   exact Measure.haveLebesgueDecomposition_add (γ.curve t) P
 
 /-- Singular mass is bounded by the squared canonical QMD residual norm.
@@ -70,9 +89,9 @@ theorem singularMass_le_residual_sq
     γ.singularMass t ≤
       eLpNorm (γ.comparisonResidual t) 2
         (canonicalDominator P (γ.curve t)) ^ 2 := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let μ := canonicalDominator P (γ.curve t)
-  letI : SigmaFinite μ := by
+  let : SigmaFinite μ := by
     dsimp only [μ, canonicalDominator]
     infer_instance
   let hsing := Measure.mutuallySingular_singularPart (γ.curve t) P
@@ -120,8 +139,9 @@ theorem singularMass_le_residual_sq
       ∫⁻ ω, ‖γ.comparisonResidual t ω‖ₑ ^ (2 : ℝ)
         ∂(canonicalDominator P (γ.curve t)) := by
     simpa only [μ] using hlin
-  convert hlin' using 1
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
+  convert! hlin' using 1
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+        (comparisonResidual_aestronglyMeasurable γ t (by positivity)),
     ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
   norm_num
 
@@ -158,8 +178,9 @@ theorem singular_mass_localScale_tendsto
       (canonicalDominator P (γ.curve (u n)))
   have hquot : Tendsto (fun n => r n / ENNReal.ofReal (u n))
       atTop (nhds 0) := by
-    simpa only [IsRightQMD, comparisonResidual, Function.comp_apply, r] using
-      γ.qmd_limit.comp hu_right
+    simpa only [IsRightQMD, comparisonResidual, Function.comp_apply, r] using!
+      ((isRightQMD_iff_eLpNorm γ.curve γ.curve_isProbability
+        (Lp.aestronglyMeasurable γ.score.val)).1 γ.qmd_limit).comp hu_right
   have henvelope : Tendsto
       (fun n => ENNReal.ofReal a ^ 2 *
         (r n / ENNReal.ofReal (u n)) ^ 2) atTop (nhds 0) := by
@@ -284,7 +305,7 @@ theorem baseZeroLikelihoodMass_isLittleO
           4 * eLpNorm (γ.comparisonResidual t) 2
             (canonicalDominator P (γ.curve t)) ^ 2 := by
     intro t ht
-    letI : IsProbabilityMeasure (γ.curve t) :=
+    let : IsProbabilityMeasure (γ.curve t) :=
       γ.curve_isProbability t ht.le
     let μ := canonicalDominator P (γ.curve t)
     let p : Ω → ℝ≥0∞ := P.rnDeriv μ
@@ -293,7 +314,7 @@ theorem baseZeroLikelihoodMass_isLittleO
     let Z : Set Ω := {ω | (qP ω).toReal = 0}
     let B : Set Ω := {ω | 1 ≤ |t * g ω|}
     let A : Set Ω := Z \ B
-    letI : SigmaFinite μ := by
+    let : SigmaFinite μ := by
       dsimp only [μ, canonicalDominator]
       infer_instance
     have hPμ : P ≪ μ := by
@@ -318,7 +339,7 @@ theorem baseZeroLikelihoodMass_isLittleO
       simpa only [hP_eq] using hchainP
     have hchainμ : ∀ᵐ ω ∂μ, p ω ≠ 0 →
         qP ω * p ω = q ω := by
-      simpa only [p, qP, q] using
+      simpa only [p, qP, q] using!
         (ae_withDensity_iff (Measure.measurable_rnDeriv P μ)).mp hchainP'
     have hqPfinP : ∀ᵐ ω ∂P, qP ω ≠ ⊤ := by
       simpa only [qP] using Measure.rnDeriv_ne_top (γ.curve t) P
@@ -381,9 +402,10 @@ theorem baseZeroLikelihoodMass_isLittleO
     have hnormsq :
         eLpNorm (γ.comparisonResidual t) 2 μ ^ 2 =
           ∫⁻ ω, ‖γ.comparisonResidual t ω‖ₑ ^ (2 : ℝ) ∂μ := by
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)
+        (comparisonResidual_aestronglyMeasurable γ t (by positivity)),
         ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-      norm_num
+      norm_num [μ]
     have hPA : P A ≤ 4 *
         eLpNorm (γ.comparisonResidual t) 2 μ ^ 2 := by
       rw [← Measure.setLIntegral_rnDeriv hPμ A]
@@ -414,7 +436,8 @@ theorem baseZeroLikelihoodMass_isLittleO
   rw [Asymptotics.isLittleO_iff]
   intro c hc
   have htail_bound := (Asymptotics.isLittleO_iff.mp htail) (half_pos hc)
-  have hqmd := γ.qmd_limit
+  have hqmd := (isRightQMD_iff_eLpNorm γ.curve γ.curve_isProbability
+    (Lp.aestronglyMeasurable γ.score.val)).1 γ.qmd_limit
   have hqmd_real :
       Tendsto (fun t : ℝ =>
         (eLpNorm (γ.comparisonResidual t) 2
@@ -446,7 +469,7 @@ theorem baseZeroLikelihoodMass_isLittleO
     intro htop
     have hden_top : ENNReal.ofReal t ≠ ⊤ := ENNReal.ofReal_ne_top
     have hfalse : (⊤ : ℝ≥0∞) < 1 := by
-      simpa only [htop, ENNReal.top_div, if_neg hden_top] using hqmd_lt_t
+      simpa only [htop, ENNReal.top_div, ite_eq_right hden_top] using hqmd_lt_t
     exact (not_lt_of_ge le_top hfalse).elim
   have hmass_real : (γ.baseZeroLikelihoodMass t).toReal ≤
       (P {ω | 1 ≤ |t * g ω|}).toReal +
@@ -532,7 +555,7 @@ theorem base_zeroLikelihood_localScale_tendsto
     exact ⟨hu_zero, hu_pos⟩
   have hsmall : (fun n => (γ.baseZeroLikelihoodMass (u n)).toReal)
       =o[atTop] (fun n => u n ^ 2) := by
-    simpa only [Function.comp_apply] using
+    simpa only [Function.comp_apply] using!
       γ.baseZeroLikelihoodMass_isLittleO.comp_tendsto hu_right
   have hmul : (fun n : ℕ => (n : ℝ) *
       (γ.baseZeroLikelihoodMass (u n)).toReal)
@@ -583,8 +606,8 @@ theorem pi_acPart_eq_withDensity_acProductLikelihood
     Measure.pi (fun _ : Fin n => γ.acPart t) =
       (Measure.pi (fun _ : Fin n => P)).withDensity
         (γ.acProductLikelihood t n) := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
-  simpa only [acPart, acProductLikelihood] using
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  simpa only [acPart, acProductLikelihood] using!
     (MeasureTheory.pi_withDensity_prod (fun _ : Fin n =>
       Measure.measurable_rnDeriv (γ.curve t) P)).symm
 
@@ -600,7 +623,7 @@ theorem integrable_acProductLikelihood_and_integral
       ∫ X, (γ.acProductLikelihood t n X).toReal
           ∂(Measure.pi (fun _ : Fin n => P)) =
         (1 - (γ.singularMass t).toReal) ^ n := by
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   have h_one : Integrable (fun ω => ((γ.curve t).rnDeriv P ω).toReal) P := by
     simpa only [integrableOn_univ] using
       (Measure.integrableOn_toReal_rnDeriv
@@ -647,12 +670,12 @@ theorem product_integral_comparison
   refine ⟨error, ?_, ?_⟩
   · have hs := γ.singular_mass_localScale_tendsto a ha
     have hsreal := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hs
-    convert hsreal.const_mul C using 1
+    convert! hsreal.const_mul C using 1
     all_goals simp only [ENNReal.toReal_zero, mul_zero]
   intro n
   have hut : 0 ≤ u n :=
     mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _))
-  letI : IsProbabilityMeasure (γ.curve (u n)) :=
+  let : IsProbabilityMeasure (γ.curve (u n)) :=
     γ.curve_isProbability (u n) hut
   let Q : Measure Ω := γ.curve (u n)
   let A : Measure Ω := γ.acPart (u n)
@@ -663,7 +686,7 @@ theorem product_integral_comparison
   have hAQ : A ≤ Q := by
     simpa only [A, Q, acPart] using
       Measure.withDensity_rnDeriv_le (γ.curve (u n)) P
-  letI : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
+  let : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
   have hAac : A ≪ Q := hAQ.absolutelyContinuous
   have hρν : ρ ≤ ν := by
     let D : (Fin n → Ω) → ℝ≥0∞ :=
@@ -672,11 +695,11 @@ theorem product_integral_comparison
       fun _ => Measure.rnDeriv_le_one_of_le hAQ
     have hall : (fun X : Fin n → Ω => fun i => A.rnDeriv Q (X i))
         ≤ᵐ[ν] (fun _ => fun _ : Fin n => (1 : ℝ≥0∞)) := by
-      simpa only [ν] using Measure.ae_le_pi hcoord
+      simpa only [ν] using! Measure.ae_le_pi hcoord
     have hDle : D ≤ᵐ[ν] 1 := by
       filter_upwards [hall] with X hX
       dsimp only [D]
-      exact Finset.prod_le_one (fun _ _ => zero_le _)
+      exact Finset.prod_le_one₀ (fun _ _ => zero_le)
         (fun i _ => hX i)
     have htilt : ν.withDensity D = ρ := by
       have hcoordtilt : Q.withDensity (A.rnDeriv Q) = A :=
@@ -696,7 +719,7 @@ theorem product_integral_comparison
   have hνprob : IsProbabilityMeasure ν := by
     dsimp only [ν, Q]
     infer_instance
-  letI : IsProbabilityMeasure ν := hνprob
+  let : IsProbabilityMeasure ν := hνprob
   have hfν : Integrable (f n) ν := by
     refine Integrable.of_bound (hf_meas n).aestronglyMeasurable C ?_
     exact Filter.Eventually.of_forall fun X => by

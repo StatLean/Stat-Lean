@@ -69,7 +69,7 @@ lemma biSup_finset_eq_sup'_of_sup'_nonneg {ι : Type*} {s : Finset ι}
     intro i
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]; exact Finset.le_sup' f hi
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]; exact h0
   have hbdd : BddAbove (Set.range (fun i => ⨆ (_ : i ∈ s), f i)) :=
     ⟨s.sup' hs f, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
@@ -110,7 +110,7 @@ lemma le_biSup_finset {ι : Type*} {s : Finset ι} (f : ι → ℝ) {i : ι}
     dsimp only
     by_cases hj : j ∈ s
     · rw [ciSup_pos hj]; exact le_max_of_le_left (Finset.le_sup' f hj)
-    · haveI : IsEmpty (j ∈ s) := ⟨hj⟩
+    · have : IsEmpty (j ∈ s) := ⟨hj⟩
       rw [Real.iSup_of_isEmpty]; exact le_max_right _ _
   exact le_ciSup_of_le hbdd i (le_of_eq (ciSup_pos (f := fun _ => f i) hi).symm)
 
@@ -136,7 +136,8 @@ lemma integrable_sup'_finset {ι : Type*} {s : Finset ι}
       simp only [Finset.sup'_cons ht]
       exact (hint a (by simp)).sup (ih (fun i hi => hint i (by simp [hi])))
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 600000 in
+-- This proof uses about 440,000 heartbeats.
 /-- The pointwise supremum over a nonempty finite index set of integrable
 functions is integrable (public Finset twin of the private domination helper
 in `Maximal/FiniteMaximal.lean`). -/
@@ -156,15 +157,16 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     dsimp only
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
-      exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+      exact (le_abs_self _).trans
+          (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)
   have hmeas : AEMeasurable (fun ω => ⨆ i ∈ s, X i ω) μ :=
     AEMeasurable.biSup (↑s) s.countable_toSet
       (fun i hi => (hint i (Finset.mem_coe.mp hi)).aemeasurable)
   refine MeasureTheory.Integrable.mono' (g := fun ω => ∑ i ∈ s, |X i ω|)
-    (MeasureTheory.integrable_finset_sum s (fun i hi => (hint i hi).abs))
+    (MeasureTheory.integrable_finsetSum s (fun i hi => (hint i hi).abs))
     hmeas.aestronglyMeasurable ?_
   filter_upwards with ω
   rw [Real.norm_eq_abs]
@@ -180,11 +182,11 @@ lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     linarith
   · -- upper bound: `⨆ ≤ ∑`
     refine Real.iSup_le (fun i => ?_) (Finset.sum_nonneg (fun _ _ => abs_nonneg _))
-    dsimp only
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]
-      exact (le_abs_self _).trans (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
-    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+      exact (le_abs_self _).trans
+          (Finset.single_le_sum (f := fun i => |X i ω|) (fun i _ => abs_nonneg (X i ω)) hi)
+    · have : IsEmpty (i ∈ s) := ⟨hi⟩
       rw [Real.iSup_of_isEmpty]
       exact Finset.sum_nonneg (fun _ _ => abs_nonneg _)
 
@@ -206,15 +208,15 @@ theorem tail_max_finset_le {ι : Type*} {s : Finset ι}
   -- `0` never exceeds `t ≥ 0`, so it drops out of the event)
   have hsub : {ω | t < ⨆ i ∈ s, X i ω} ⊆ ⋃ i ∈ s, {ω | t < X i ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hle : (⨆ i ∈ s, X i ω) ≤ t := by
       refine Real.iSup_le (fun i => ?_) ht
       by_cases hi : i ∈ s
       · rw [ciSup_pos hi]; exact hcon i hi
-      · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+      · have : IsEmpty (i ∈ s) := ⟨hi⟩
         rw [Real.iSup_of_isEmpty]; exact ht
     exact absurd hω (not_lt.mpr hle)
   calc μ {ω | t < ⨆ i ∈ s, X i ω}
@@ -258,7 +260,7 @@ theorem expectation_max_finset_le {ι : Type*}
   classical
   -- Reindex `s` to `Fin s.card` via `s.equivFin` and transport the proven
   -- `Fin`-indexed `expectation_max_le`.
-  haveI : NeZero s.card := ⟨hs.card_pos.ne'⟩
+  have : NeZero s.card := ⟨hs.card_pos.ne'⟩
   set e := s.equivFin with he
   set Y : Fin s.card → Ω → ℝ := fun j ω => X ((e.symm j : ι)) ω with hY
   have hcenterY : ∀ j, ∫ ω, Y j ω ∂μ = 0 := fun j => hcenter _ (e.symm j).2

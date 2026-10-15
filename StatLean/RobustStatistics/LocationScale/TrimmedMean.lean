@@ -251,14 +251,14 @@ theorem trimmedMean_breaksUnder {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
       have hne : x i ≠ y i := by simpa using (Finset.mem_filter.mp hi).2
       simp only [mem_filter, mem_univ, true_and]
       by_contra hgt
-      exact hne (by rw [hyi i, if_neg hgt])
+      exact hne (by rw [hyi i, ite_eq_right hgt])
     rwa [card_le_index_filter hmn] at hsub
   -- Those `m + 1` coordinates all carry the value `C`.
   have hCcount : m + 1 ≤ (univ.filter (fun j : Fin n => C ≤ y j)).card := by
     rw [← card_le_index_filter (n := n) hmn]
     refine Finset.card_le_card fun i hi => ?_
     simp only [mem_filter, mem_univ, true_and] at hi ⊢
-    rw [hyi i, if_pos hi]
+    rw [hyi i, ite_eq_left hi]
   -- The retained rank `n - m - 1` therefore carries at least `C`.
   have hi0 : n - m - 1 < n := by omega
   have hi0mem : (⟨n - m - 1, hi0⟩ : Fin n)

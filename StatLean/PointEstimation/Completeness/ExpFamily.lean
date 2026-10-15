@@ -103,7 +103,7 @@ private lemma isCompleteFamily_of_signed {V : Type*} [NormedAddCommGroup V]
     have hexpν : Integrable (fun y => Real.exp ⟪η₀, y⟫_ℝ) ν := by
       rw [hνdef, integrable_map_measure (by fun_prop) E.stat_meas.aemeasurable]
       exact hη₀int
-    haveI : SigmaFinite ν := sigmaFinite_of_integrable_exp hexpν
+    have : SigmaFinite ν := sigmaFinite_of_integrable_exp hexpν
     -- integrability of the weighted transforms on `Ξ'`
     have hInt : ∀ t ∈ Ξ', Integrable (fun y => f y * Real.exp ⟪t, y⟫_ℝ) ν := by
       intro t ht
@@ -132,9 +132,10 @@ private lemma isCompleteFamily_of_signed {V : Type*} [NormedAddCommGroup V]
         simp only [smul_eq_mul]; field_simp
       have hI0 : ∫ x, f (E.stat x) * Real.exp ⟪t, E.stat x⟫_ℝ ∂E.base = 0 := by
         rw [hbridge, h0, mul_zero]
-      rw [hνdef,
+      erw [hνdef,
         integral_map E.stat_meas.aemeasurable
-          (hf_meas.mul (by fun_prop)).aestronglyMeasurable]
+          (hf_meas.mul (show Measurable (fun y : V => Real.exp ⟪t, y⟫_ℝ)
+              by fun_prop)).aestronglyMeasurable]
       exact hI0
     have hfν : f =ᵐ[ν] 0 := hsigned ‹SigmaFinite ν› hf_meas hInt hZero
     have habs : (E.P (θ : V)).map E.stat ≪ ν := by
@@ -155,7 +156,7 @@ theorem isCompleteStat_of_interior_nonempty {s : ℕ}
     IsCompleteFamily fun θ : Ξ' => (E.P (θ : EuclideanSpace ℝ (Fin s))).map E.stat := by
   refine isCompleteFamily_of_signed E Ξ' hΞ hint ?_
   intro ν hν f hf hIntν hZeroν
-  haveI := hν
+  have := hν
   exact ae_eq_zero_of_integral_exp_inner_eq_zero hf hint hIntν hZeroν
 
 /-- One-dimensional specialization of `isCompleteStat_of_interior_nonempty`: a real natural
@@ -171,7 +172,7 @@ theorem isCompleteStat_of_interior_nonempty_real (E : ExpFamily 𝓧 ℝ) (Ξ' :
     (RCLike.inner_apply a b).trans (by simp [mul_comm])
   refine isCompleteFamily_of_signed E Ξ' hΞ hint ?_
   intro ν hν f hf hIntν hZeroν
-  haveI := hν
+  have := hν
   refine ae_eq_zero_of_integral_exp_smul_eq_zero hf hint ?_ ?_
   · intro t ht
     have := hIntν t ht

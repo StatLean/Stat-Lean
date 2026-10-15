@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.ConcentrationInequalities.Symmetrization.Rademacher
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Constructions.Pi
@@ -69,7 +70,8 @@ theorem IsSymmetricLaw.map_mul_rad {ν : Measure ℝ} [IsProbabilityMeasure ν]
   have hmul : Measurable (fun p : ℝ × ℝ => p.1 * p.2) := measurable_fst.mul measurable_snd
   unfold radLaw
   rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left,
-    Measure.map_add _ _ hmul, Measure.map_smul, Measure.map_smul,
+    Measure.map_add _ _ hmul, Measure.map_smul _ hmul.aemeasurable,
+    Measure.map_smul _ hmul.aemeasurable,
     Measure.dirac_prod, Measure.dirac_prod,
     Measure.map_map hmul measurable_prodMk_left, Measure.map_map hmul measurable_prodMk_left]
   have h1 : (fun p : ℝ × ℝ => p.1 * p.2) ∘ (Prod.mk (1 : ℝ)) = id := by funext y; simp
@@ -120,7 +122,8 @@ theorem IsSymmetricLaw.map_mul_abs_rad {ν : Measure ℝ} [IsProbabilityMeasure 
   -- Assemble as in `map_mul_rad`.
   unfold radLaw
   rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left,
-    Measure.map_add _ _ hmul, Measure.map_smul, Measure.map_smul,
+    Measure.map_add _ _ hmul, Measure.map_smul _ hmul.aemeasurable,
+    Measure.map_smul _ hmul.aemeasurable,
     Measure.dirac_prod, Measure.dirac_prod,
     Measure.map_map hmul measurable_prodMk_left, Measure.map_map hmul measurable_prodMk_left]
   have h1 : (fun p : ℝ × ℝ => p.1 * |p.2|) ∘ (Prod.mk (1 : ℝ)) = (fun y => |y|) := by
@@ -146,10 +149,10 @@ private lemma map_signVec_prod_pi {N : ℕ} {ν : Fin N → Measure ℝ}
       ((Measure.pi fun _ : Fin N => radLaw).prod (Measure.pi ν)) :=
     measurePreserving_arrowProdEquivProdArrow ℝ ℝ (Fin N) (fun _ => radLaw) ν
   have hsymm := (MeasurePreserving.symm e hmp).map_eq
-  haveI : ∀ i, SigmaFinite ((radLaw.prod (ν i)).map f) := fun i => by
+  have : ∀ i, SigmaFinite ((radLaw.prod (ν i)).map f) := fun i => by
     rw [hfν i]; infer_instance
   have hfam : Measurable (fun w : Fin N → ℝ × ℝ => fun i => f (w i)) :=
-    measurable_pi_lambda _ (fun i => hf.comp (measurable_pi_apply i))
+    Measurable.of_eval (fun i => hf.comp (measurable_pi_apply i))
   have hcomp : (fun p : (Fin N → ℝ) × (Fin N → ℝ) => fun i => f (p.1 i, p.2 i))
       = (fun w : Fin N → ℝ × ℝ => fun i => f (w i)) ∘ e.symm := rfl
   rw [show signVec N = Measure.pi fun _ : Fin N => radLaw from rfl, hcomp,

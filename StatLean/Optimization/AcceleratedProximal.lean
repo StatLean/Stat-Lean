@@ -143,7 +143,7 @@ theorem acceleratedProximalGradient_rate
       push_cast at hnl; linarith
     set xc : E := (lam (s + 1))⁻¹ • xstar + (1 - (lam (s + 1))⁻¹) • x (s + 1) with hxc
     have hmom : lam (s + 1) • y (s + 1) - (xstar + (lam (s + 1) - 1) • x (s + 1)) = u s := by
-      simp only [hu, hyrec s]; match_scalars <;> field_simp <;> ring
+      simp only [hu, hyrec s]; match_scalars <;> field_simp; ring
     have hlamxc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
       simp only [hxc]; match_scalars <;> field_simp
     have hsc_y : lam (s + 1) • (xc - y (s + 1)) = -u s := by

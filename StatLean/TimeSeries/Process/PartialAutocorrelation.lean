@@ -108,7 +108,7 @@ private lemma linRegCoeffs_eq (X : ℤ → Ω → ℝ) (μ : Measure Ω) {n : �
 /-- Square-integrability of a linear combination of the window. -/
 private lemma memLp_window (hstat : IsStationary X μ) {n : ℕ} (w : Fin n → ℤ)
     (c : Fin n → ℝ) : MemLp (fun ω => ∑ i, c i * X (w i) ω) 2 μ :=
-  memLp_finset_sum _ fun i _ => (hstat.memLp (w i)).const_mul (c i)
+  memLp_finsetSum _ fun i _ => (hstat.memLp (w i)).const_mul (c i)
 
 /-- Square-integrability of the regression residual. -/
 private lemma memLp_linRegResidual (hstat : IsStationary X μ) {n : ℕ} (t0 : ℤ)
@@ -329,7 +329,7 @@ variable {X : ℤ → Ω → ℝ}
 /-- The `k ≤ 1` branch of `pacf`. -/
 private lemma pacf_of_le_one (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : k ≤ 1) :
     pacf X μ k = acf X μ 1 := by
-  rw [pacf, if_pos hk]
+  rw [pacf, ite_eq_left hk]
 
 /-- The `k ≥ 2` branch of `pacf`, with the window spelled out. -/
 private lemma pacf_of_two_le (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : 2 ≤ k) :
@@ -341,7 +341,7 @@ private lemma pacf_of_two_le (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ
             (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ) *
           Real.sqrt (variance (linRegResidual X μ ((k : ℤ) + 1)
             (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ)) := by
-  rw [pacf, if_neg (by omega : ¬ (k ≤ 1))]
+  rw [pacf, ite_eq_right (by omega : ¬ (k ≤ 1))]
 
 /-- **Two-moment time reversibility** at the coefficient level (FY §2.7.2): regressing
 `X_{m+2}` on `(X_2, …, X_{m+1})` gives the *reversed* coefficient vector of the regression
@@ -400,7 +400,7 @@ private lemma pacf_eq_cov_div_variance [IsProbabilityMeasure μ] (hstat : IsStat
           (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ := by
   rcases eq_or_lt_of_le hk with h1 | h2
   · -- `k = 1`: the window is empty and both residuals are the raw variables
-    haveI : IsEmpty (Fin (k - 1)) := by
+    have : IsEmpty (Fin (k - 1)) := by
       rw [show k - 1 = 0 by omega]; infer_instance
     have hres : ∀ t : ℤ,
         linRegResidual X μ t (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2) = X t := by
@@ -756,7 +756,7 @@ private lemma cov_eq_zero_of_lt [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
     cov[X s, ε t; μ] = 0 := by
   have hSm : ∀ N : ℕ,
       MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ := fun N =>
-    memLp_finset_sum _ fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)
+    memLp_finsetSum _ fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)
   -- the partial sums are exactly orthogonal to the future innovation
   have hSc : ∀ N : ℕ,
       cov[fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω, ε t; μ] = 0 := by
@@ -786,7 +786,9 @@ private lemma cov_eq_zero_of_lt [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
   have h0 : Tendsto (fun N : ℕ =>
       (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal)
       atTop (𝓝 0) := by
-    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hlin s)
+    simpa using! (ENNReal.continuousAt_toReal (by simp)).tendsto.comp ((hlin s).congr fun N => by
+      simpa only [Pi.sub_apply] using!
+        (eLpNorm_two_eq_eLpNorm' (hX.sub (hSm N)).aestronglyMeasurable).symm)
   have hlim : Tendsto (fun N : ℕ =>
       (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal
         * ‖(hε.memLp t).toLp (ε t)‖) atTop (𝓝 0) := by
@@ -842,10 +844,10 @@ theorem pacf_eq_zero_of_isAR [IsProbabilityMeasure μ] {p : ℕ} {b : Fin p → 
         (fun x hx => Finset.mem_range.2 ((Finset.mem_range.1 hx).trans hk))
         fun j hj hjn => ?_).symm
       rw [Finset.mem_range] at hjn
-      rw [dif_neg hjn, zero_mul]
+      rw [dite_eq_right hjn, zero_mul]
     rw [hg, hres, ← Fin.sum_univ_eq_sum_range
       (fun j => (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω) p]
-    exact Finset.sum_congr rfl fun i _ => by rw [dif_pos i.isLt]
+    exact Finset.sum_congr rfl fun i _ => by rw [dite_eq_left i.isLt]
   -- the candidate's prediction error is the innovation
   have hresid : (fun ω => X (k : ℤ) ω - ∑ j, c j * X (v j) ω) =ᵐ[μ] ε (k : ℤ) := by
     filter_upwards [h.recurrence (k : ℤ)] with ω hω
@@ -872,6 +874,6 @@ theorem pacf_eq_zero_of_isAR [IsProbabilityMeasure μ] {p : ℕ} {b : Fin p → 
     linarith [hexp, hkey]
   rw [hbeq]
   simp only [hc]
-  exact dif_neg (by omega)
+  exact dite_eq_right (by omega)
 
 end StatLean.TimeSeries

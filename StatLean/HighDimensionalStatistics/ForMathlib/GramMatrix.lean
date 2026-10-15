@@ -226,7 +226,6 @@ lemma projPerp_apply_norm_le (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d
 lemma matLinftyNorm_mulVec_le {p q : Type*} [Finite p] [Fintype q] [Nonempty p]
     (A : Matrix p q ℝ) (v : q → ℝ) :
     (⨆ i, |(A.mulVec v) i|) ≤ matLinftyNorm A * (⨆ j, |v j|) := by
-  haveI := Fintype.ofFinite p
   have hMv0 : 0 ≤ ⨆ j, |v j| := by
     rcases isEmpty_or_nonempty q with hq | hq
     · simp

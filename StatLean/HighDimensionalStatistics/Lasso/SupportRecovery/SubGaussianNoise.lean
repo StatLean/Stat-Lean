@@ -98,7 +98,7 @@ private lemma linearComb_isSubGaussian
     have h := (isSubGaussian_iff.mp (hw_sg i)).integrable
     simp only [hw_zero i, sub_zero] at h; exact h
   have hY_sg : ∀ i : Fin n, HasSubgaussianMGF (fun ω => a i * w i ω)
-      (⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      ((NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     intro i
     have hsg_scaled := isSubGaussian_const_mul (hw_sg i) (a i)
     have hmean : ∫ ω, a i * w i ω ∂μ = 0 := by
@@ -108,12 +108,12 @@ private lemma linearComb_isSubGaussian
   have hY_indep : iIndepFun (fun i ω => a i * w i ω) μ :=
     hw_indep.comp (fun i x => a i * x) (fun i => measurable_const.mul measurable_id)
   have hsum_mg : HasSubgaussianMGF (fun ω => ∑ i : Fin n, a i * w i ω)
-      (∑ i : Fin n, ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      (∑ i : Fin n, (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     have := HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i => ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2) (s := Finset.univ)
+      (c := fun i => (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2) (s := Finset.univ)
       (fun i _ => hY_sg i)
     simpa using this
-  have hproxy_le : (∑ i : Fin n, ⟨(a i) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) ≤ p := by
+  have hproxy_le : (∑ i : Fin n, (NNReal.mk ((a i) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) ≤ p := by
     rw [← NNReal.coe_le_coe, NNReal.coe_sum]
     simp only [NNReal.coe_mul, NNReal.coe_mk]
     rw [← Finset.sum_mul]; exact hp
@@ -121,7 +121,7 @@ private lemma linearComb_isSubGaussian
     ⟨hsum_mg.integrable_exp_mul, fun t => (hsum_mg.mgf_le t).trans (by
       apply Real.exp_le_exp.mpr; gcongr)⟩
   have hsum_mean : ∫ ω, ∑ i : Fin n, a i * w i ω ∂μ = 0 := by
-    rw [integral_finset_sum Finset.univ (fun i _ => (hw_int i).const_mul (a i))]
+    rw [integral_finsetSum Finset.univ (fun i _ => (hw_int i).const_mul (a i))]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   unfold IsSubGaussian
   simp only [hsum_mean, sub_zero]
@@ -141,7 +141,7 @@ private lemma tail_max_abs_le'
   have hbdd : ∀ ω, BddAbove (Set.range (fun j => |X j ω|)) := fun ω => Finite.bddAbove_range _
   have heq : {ω | t < ⨆ j, |X j ω|} = ⋃ j, {ω | t < |X j ω|} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     exact ⟨fun h => (lt_ciSup_iff (hbdd ω)).mp h,
            fun ⟨j, hj⟩ => lt_of_lt_of_le hj (le_ciSup (hbdd ω) j)⟩
   rw [heq]
@@ -287,7 +287,7 @@ theorem lasso_support_recovery_subgaussian
           Real.sqrt σ2 / Real.sqrt cmin * (Real.sqrt (2 * Real.log (S.card) / n) + δ)
           + matLinftyNorm (gramInvNorm X S) * lam} := by
   classical
-  haveI : IsProbabilityMeasure μ := hw_indep.isProbabilityMeasure
+  have : IsProbabilityMeasure μ := hw_indep.isProbabilityMeasure
   have hn_pos : (0 : ℝ) < n := by exact_mod_cast hn
   have hne : (n : ℝ) ≠ 0 := hn_pos.ne'
   have hcoer : ∀ v : EuclideanSpace ℝ {x // x ∈ S},
@@ -295,9 +295,9 @@ theorem lasso_support_recovery_subgaussian
   have hw_int : ∀ i, Integrable (w i) μ := fun i => by
     have h := (isSubGaussian_iff.mp (hw_sg i)).integrable
     simp only [hw_zero i, sub_zero] at h; exact h
-  haveI : Nonempty {x // x ∈ S} := by
+  have : Nonempty {x // x ∈ S} := by
     obtain ⟨a, ha⟩ := Finset.card_pos.mp hs; exact ⟨⟨a, ha⟩⟩
-  haveI : Nonempty {x // x ∈ Sᶜ} := by
+  have : Nonempty {x // x ∈ Sᶜ} := by
     have hcpos : 0 < Sᶜ.card := by rw [Finset.card_compl, Fintype.card_fin]; omega
     obtain ⟨a, ha⟩ := Finset.card_pos.mp hcpos; exact ⟨⟨a, ha⟩⟩
   set noiseVec : Ω → EuclideanSpace ℝ (Fin n) := fun ω => WithLp.toLp 2 (fun i => w i ω)
@@ -482,12 +482,12 @@ theorem lasso_support_recovery_subgaussian
   have hproj_center : ∀ j, ∫ ω, Yp j ω ∂μ = 0 := by
     intro j
     simp_rw [hproj_id j]
-    rw [integral_finset_sum Finset.univ (fun l _ => (hw_int l).const_mul _)]
+    rw [integral_finsetSum Finset.univ (fun l _ => (hw_int l).const_mul _)]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   have hgram_center : ∀ i, ∫ ω, Yg i ω ∂μ = 0 := by
     intro i
     simp_rw [hgram_id i]
-    rw [integral_finset_sum Finset.univ (fun l _ => (hw_int l).const_mul _)]
+    rw [integral_finsetSum Finset.univ (fun l _ => (hw_int l).const_mul _)]
     simp_rw [integral_const_mul, hw_zero, mul_zero, Finset.sum_const_zero]
   -- thresholds
   set t1 : ℝ := C * Real.sqrt σ2 * (Real.sqrt (2 * Real.log m1 / n) + δ) with ht1def
@@ -516,7 +516,7 @@ theorem lasso_support_recovery_subgaussian
     have hsub1 : {ω | lam ≥ (2 / (1 - α)) * projNoiseLinf X S (noiseVec ω)}ᶜ
         ⊆ {ω | t1 < ⨆ j, |Yp j ω|} := by
       intro ω hω
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, ge_iff_le, not_le] at hω
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, ge_iff_le, not_le] at hω
       have h2a : 0 < 2 / (1 - α) := by positivity
       rw [hlam_t1] at hω
       exact lt_of_mul_lt_mul_left hω h2a.le
@@ -540,7 +540,7 @@ theorem lasso_support_recovery_subgaussian
       ≤ ENNReal.ofReal (2 * Real.exp (-(n : ℝ) * δ ^ 2 / 2)) := by
     have hsub2 : {ω | (⨆ i, |Yg i ω|) ≤ t'}ᶜ ⊆ {ω | t' < ⨆ i, |Yg i ω|} := by
       intro ω hω
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hω
       exact hω
     refine le_trans (measure_mono hsub2) ?_
     have hbound := tail_max_abs_le' (μ := μ) (σ2 := p2) (X := Yg) hgram_center hgram_sg htpnn

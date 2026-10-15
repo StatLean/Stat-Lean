@@ -54,7 +54,7 @@ noncomputable def dualRKHS : RKHS 𝕜 L L 𝕜 where
 theorem dualRKHS_kernelFun (x : L) :
     letI := dualRKHS 𝕜 L
     kernelFun L x = x := by
-  letI := dualRKHS 𝕜 L
+  let := dualRKHS 𝕜 L
   refine ext_inner_right 𝕜 fun f => ?_
   rw [inner_kernelFun]
   rfl
@@ -64,7 +64,7 @@ theorem dualRKHS_kernelFun (x : L) :
 theorem dualRKHS_scalarKernel (x y : L) :
     letI := dualRKHS 𝕜 L
     scalarKernel L x y = ⟪x, y⟫_𝕜 := by
-  letI := dualRKHS 𝕜 L
+  let := dualRKHS 𝕜 L
   change (kernelFun L y) x = ⟪x, y⟫_𝕜
   rw [dualRKHS_kernelFun]
   rfl
@@ -86,7 +86,7 @@ Witness: `L = 𝕜 = ℂ`, `w = 1`, whose function is `conj`.  If `conj = ⇑T` 
 private theorem dualRKHS_range_coe_false :
     letI := dualRKHS ℂ ℂ
     Set.range (fun w : ℂ => (w : ℂ → ℂ)) ≠ {g : ℂ → ℂ | ∃ T : ℂ →L[ℂ] ℂ, g = T} := by
-  letI := dualRKHS ℂ ℂ
+  let := dualRKHS ℂ ℂ
   intro h
   have hmem : (fun v : ℂ => conj v) ∈ Set.range (fun w : ℂ => (w : ℂ → ℂ)) := by
     refine ⟨1, ?_⟩
@@ -117,7 +117,6 @@ theorem dualRKHS_range_coe :
     letI := dualRKHS 𝕜 L
     Set.range (fun w : L => (w : L → 𝕜))
       = {g : L → 𝕜 | ∃ T : L →L⋆[𝕜] 𝕜, g = T} := by
-  letI := dualRKHS 𝕜 L
   ext g
   constructor
   · rintro ⟨w, rfl⟩

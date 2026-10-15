@@ -177,7 +177,7 @@ theorem tendstoUniformly_diag {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K
   have hcont : ∀ i : ι, Continuous ((e i : H) : X → 𝕜) := fun i =>
     continuous_coe_of_continuous_scalarKernel hKsc _
   refine Monotone.tendstoUniformly_of_forall_tendsto ?_ ?_ ?_ ?_
-  · exact fun s => continuous_finset_sum s fun i _ => ((hcont i).norm).pow 2
+  · exact fun s => continuous_finsetSum s fun i _ => ((hcont i).norm).pow 2
   · exact fun s t hst x =>
       Finset.sum_le_sum_of_subset_of_nonneg hst fun i _ _ => by positivity
   · exact RCLike.continuous_re.comp'
@@ -496,7 +496,7 @@ private theorem inner_mercerCLM_finset {ι : Type*} (φ : ι → C(X, 𝕜)) (s 
         Integrable (fun y => (φ i) x * (conj ((φ i) y) * (g : X → 𝕜) y)) μ := fun i _ =>
       ((hmemc i).integrable_mul (Lp.memLp g)).const_mul ((φ i) x)
     rw [integralOp, integral_congr_ae (Filter.Eventually.of_forall hre),
-      integral_finset_sum s hintg]
+      integral_finsetSum s hintg]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_const_mul, hcoef]
   rw [inner_mercerCLM]
@@ -512,7 +512,7 @@ private theorem inner_mercerCLM_finset {ι : Type*} (φ : ι → C(X, 𝕜)) (s 
       ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜) μ := fun i _ =>
     (((Lp.memLp h).star).integrable_mul (hmem i)).mul_const _
   rw [integral_congr_ae (Filter.Eventually.of_forall hre2),
-    integral_finset_sum s hintg2]
+    integral_finsetSum s hintg2]
   exact Finset.sum_congr rfl fun i _ => by rw [integral_mul_const, hinner]
 
 /-- **`T_K` is a positive operator** when `K` is a Mercer kernel. -/
@@ -529,7 +529,7 @@ theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
   have hcs : ∀ s : Finset w,
       Continuous fun p : X × X => ∑ i ∈ s, conj ((φ i) p.2) * (φ i) p.1 := by
     intro s
-    refine continuous_finset_sum s fun i _ => ?_
+    refine continuous_finsetSum s fun i _ => ?_
     exact (RCLike.continuous_conj.comp' ((φ i).continuous.comp' continuous_snd)).mul
       ((φ i).continuous.comp' continuous_fst)
   -- the coefficientwise expansion of the inner products against `T_K`
@@ -561,7 +561,7 @@ theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
       have := hs₀ s hs (x, y)
       rw [dist_eq_norm] at this
       rw [← norm_neg]
-      simpa using this.le
+      simpa using! this.le
     have hop := norm_mercerCLM_sub_apply_le (hcs s) hK.continuous hε'.le hclose g
     have hinner : dist
         (⟪h, mercerCLM (K := fun x y => ∑ i ∈ s, conj ((φ i) y) * (φ i) x) μ (hcs s) g⟫_𝕜)
@@ -599,7 +599,6 @@ theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
         ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
       rw [← inner_conj_symm g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)), RCLike.conj_mul,
         ← RCLike.ofReal_pow, RCLike.ofReal_re]
-      
     have h3 : (0 : ℝ) ≤ RCLike.re ⟪g, mercerCLM μ hK.continuous g⟫_𝕜 := by
       have := sum_le_hasSum (∅ : Finset w) (fun i _ => by positivity) h2
       simpa using this

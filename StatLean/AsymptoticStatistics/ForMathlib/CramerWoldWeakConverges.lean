@@ -164,10 +164,10 @@ theorem cramerWold_weakConverges_proj
     WithLp.toLp 2 (V := ℝ × EuclideanSpace ℝ (Fin m))
   have h_toLp_meas : Measurable toLp_fun := WithLp.measurable_toLp _ _
   -- Probability-measure structure on the lifted measures.
-  haveI h_prob_n : ∀ n, IsProbabilityMeasure ((μ_n n).map toLp_fun) := fun n =>
-    Measure.isProbabilityMeasure_map h_toLp_meas.aemeasurable
-  haveI h_prob_lim : IsProbabilityMeasure (μ.map toLp_fun) :=
-    Measure.isProbabilityMeasure_map h_toLp_meas.aemeasurable
+  have h_prob_n : ∀ n, IsProbabilityMeasure ((μ_n n).map toLp_fun) := fun n =>
+    (by infer_instance)
+  have h_prob_lim : IsProbabilityMeasure (μ.map toLp_fun) :=
+    (by infer_instance)
   -- Bundle as `ProbabilityMeasure` for Lévy.
   let pn : ℕ → ProbabilityMeasure 𝕊L := fun n => ⟨(μ_n n).map toLp_fun, h_prob_n n⟩
   let pLim : ProbabilityMeasure 𝕊L := ⟨μ.map toLp_fun, h_prob_lim⟩
@@ -178,12 +178,12 @@ theorem cramerWold_weakConverges_proj
     set t : ℝ := (WithLp.ofLp v).1 with ht
     set h : EuclideanSpace ℝ (Fin m) := (WithLp.ofLp v).2 with hh
     -- Per-direction Lévy on ℝ, applied to `(t, h)`.
-    haveI h_prob_proj_n : ∀ n, IsProbabilityMeasure
+    have h_prob_proj_n : ∀ n, IsProbabilityMeasure
         ((μ_n n).map (proj (m := m) t h)) := fun n =>
-      Measure.isProbabilityMeasure_map (measurable_proj (m := m) t h).aemeasurable
-    haveI h_prob_proj_lim : IsProbabilityMeasure
+      (by infer_instance)
+    have h_prob_proj_lim : IsProbabilityMeasure
         (μ.map (proj (m := m) t h)) :=
-      Measure.isProbabilityMeasure_map (measurable_proj (m := m) t h).aemeasurable
+      (by infer_instance)
     let qn : ℕ → ProbabilityMeasure ℝ := fun n =>
       ⟨(μ_n n).map (proj (m := m) t h), h_prob_proj_n n⟩
     let qLim : ProbabilityMeasure ℝ :=

@@ -75,7 +75,7 @@ theorem integral_eval_gaussVec (N : ℕ) (i : Fin N) :
   have hmap := integral_map (μ := gaussVec N) (φ := fun g : Fin N → ℝ => g i)
     (f := fun x : ℝ => x) (measurable_pi_apply i).aemeasurable (by fun_prop)
   rw [(measurePreserving_eval_gaussVec N i).map_eq] at hmap
-  simp only [] at hmap
+  try simp only [] at hmap
   rw [← hmap]
   exact integral_id_gaussianReal
 
@@ -86,7 +86,7 @@ theorem integral_abs_eval_gaussVec (N : ℕ) (i : Fin N) :
   have hmap := integral_map (μ := gaussVec N) (φ := fun g : Fin N → ℝ => g i)
     (f := fun x : ℝ => |x|) (measurable_pi_apply i).aemeasurable (by fun_prop)
   rw [(measurePreserving_eval_gaussVec N i).map_eq] at hmap
-  simp only [] at hmap
+  try simp only [] at hmap
   rw [← hmap]
   exact integral_abs_id_gaussianReal
 
@@ -119,7 +119,7 @@ theorem isSubGaussian_neg_eval_gaussVec (N : ℕ) (i : Fin N) :
   have hneg : ∫ g, -g i ∂(gaussVec N) = 0 := by
     rw [integral_neg, integral_eval_gaussVec, neg_zero]
   rw [hneg]
-  simpa using (hasSubgaussianMGF_eval_gaussVec N i).neg
+  simpa using! (hasSubgaussianMGF_eval_gaussVec N i).neg
 
 /-- The coordinates of the canonical Gaussian vector are independent
 (HDP §6.6: `g₁, …, g_N` independent). -/

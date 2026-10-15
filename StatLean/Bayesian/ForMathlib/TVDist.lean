@@ -122,7 +122,7 @@ private lemma tvDist_withDensity_eq' (base : Measure α) {p q : α → ℝ≥0�
       ne_top_of_le_ne_top hqfin (lintegral_mono' Measure.restrict_le_self le_rfl)
     have hcompl : ∫⁻ x in Aᶜ, (p x - q x) ∂base = 0 := by
       refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-      simp only [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      simp only [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact tsub_eq_zero_of_le hx.le
     have hle : q ≤ᵐ[base.restrict A] p := ae_restrict_of_forall_mem hAm (fun x hx => hx)
     have key : ∫⁻ x, (p x - q x) ∂base
@@ -160,7 +160,7 @@ theorem one_sub_lintegral_le_lintegral_one_sub (ν : Measure α) [IsProbabilityM
     -- the statement is genuinely false for non-measurable `Y` (Bernstein-set counterexample)
     {Y : α → ℝ≥0∞} (hY : Measurable Y) :
     1 - ∫⁻ x, Y x ∂ν ≤ ∫⁻ x, 1 - Y x ∂ν := by
-  rw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
+  erw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
   calc (1 : ℝ≥0∞) = ∫⁻ _, (1 : ℝ≥0∞) ∂ν := by simp
     _ ≤ ∫⁻ x, ((1 - Y x) + Y x) ∂ν := lintegral_mono fun _ => le_tsub_add
 
@@ -178,7 +178,7 @@ theorem lintegral_le_lintegral_add_tvDist (μ ν : Measure α)
   have hνξ : ν ≪ μ + ν := rfl.absolutelyContinuous.add_right' _
   obtain ⟨ξ, hξ⟩ : ∃ ξ : Measure α, ξ = μ + ν := ⟨_, rfl⟩
   rw [← hξ] at hμξ hνξ
-  haveI : IsFiniteMeasure ξ := by rw [hξ]; infer_instance
+  have : IsFiniteMeasure ξ := by rw [hξ]; infer_instance
   set p := μ.rnDeriv ξ with hpdef
   set q := ν.rnDeriv ξ with hqdef
   have hpm : Measurable p := Measure.measurable_rnDeriv _ _
@@ -202,17 +202,18 @@ theorem lintegral_le_lintegral_add_tvDist (μ ν : Measure α)
   have hpt : ∀ x, p x * w x ≤ q x * w x + (p x - q x) * w x := by
     intro x
     rw [← add_mul]
-    exact mul_le_mul_right' le_add_tsub _
+    exact mul_le_mul_left le_add_tsub _
   calc ∫⁻ x, p x * w x ∂ξ
       ≤ ∫⁻ x, (q x * w x + (p x - q x) * w x) ∂ξ := lintegral_mono hpt
     _ = ∫⁻ x, q x * w x ∂ξ + ∫⁻ x, (p x - q x) * w x ∂ξ :=
         lintegral_add_left (hqm.mul hw) _
     _ ≤ ∫⁻ x, q x * w x ∂ξ + ∫⁻ x, (p x - q x) * B ∂ξ := by
         refine add_le_add le_rfl (lintegral_mono fun x => ?_)
-        exact mul_le_mul_left' (hwB x) (p x - q x)
+        exact mul_le_mul_right (hwB x) (p x - q x)
     _ = ∫⁻ x, q x * w x ∂ξ + B * ∫⁻ x, (p x - q x) ∂ξ := by
         simp_rw [mul_comm _ B]
-        rw [lintegral_const_mul _ (hpm.sub hqm)]
+        erw [lintegral_const_mul _ (hpm.sub hqm)]
+        simp only [Pi.sub_apply]
 
 -- `ℝ≥0∞` bookkeeping for the pair ratio: the `t g` factor of the `Q`-density cancels the
 -- `t g` in the denominator of the ratio, leaving a constant multiple of `s g`.
@@ -270,12 +271,12 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     simp only [div_eq_mul_inv]
     rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hZ0), ← hZeq]
     exact ENNReal.mul_inv_cancel hZ0 hZT
-  haveI hPprob : IsProbabilityMeasure (base.withDensity p) :=
+  have hPprob : IsProbabilityMeasure (base.withDensity p) :=
     ⟨by
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
       simp only [hpdef]
       exact hmass s hs Zs hZs0 hsT hZsdef⟩
-  haveI hQprob : IsProbabilityMeasure (base.withDensity q) :=
+  have hQprob : IsProbabilityMeasure (base.withDensity q) :=
     ⟨by
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
       simp only [hqdef]
@@ -291,7 +292,7 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     refine lintegral_congr_ae ?_
     filter_upwards [hs_pos, hs_fin] with x hx1 hx2
     obtain ⟨hp0, hpT⟩ := hpne x hx1.ne' hx2
-    show p x * (1 - q x / p x) = p x - q x
+    change p x * (1 - q x / p x) = p x - q x
     rw [ENNReal.mul_sub (fun _ _ => hpT), mul_one,
       ENNReal.mul_div_cancel' (fun h => absurd h hp0) (fun h => absurd h hpT)]
   -- Step 2: the inner integral of the pair ratio is `q h / p h`.
@@ -302,7 +303,7 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
     have hpt : ∀ᵐ g ∂base,
         (q * fun g => (s g * t h) / (s h * t g)) g = (t h / (Zt * s h)) * s g := by
       filter_upwards [ht_pos, ht_fin] with g hg1 hg2
-      show q g * ((s g * t h) / (s h * t g)) = (t h / (Zt * s h)) * s g
+      change q g * ((s g * t h) / (s h * t g)) = (t h / (Zt * s h)) * s g
       simp only [hqdef]
       exact ennreal_pair_ratio Zt (s h) (t g) (s g) (t h) hh0 hhT hg1.ne' hg2 hZt0 htT
     rw [lintegral_congr_ae hpt, lintegral_const_mul _ hs, ← hZsdef]

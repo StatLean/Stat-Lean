@@ -54,7 +54,7 @@ variable {𝓧 : Type*} [MeasurableSpace 𝓧] {P : Measure 𝓧} [IsProbability
 /-- The deletion map `x ↦ x ∘ Fin.succAbove i` is measurable. -/
 private theorem measurable_comp_succAbove (i : Fin (n + 1)) :
     Measurable (fun x : Fin (n + 1) → 𝓧 => x ∘ i.succAbove) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- Integrability transports along coordinate deletion: the deleted sample has law
 `P^n`, so an integrable reduced-sample statistic stays integrable after deletion. -/
@@ -74,7 +74,7 @@ private theorem integrable_jackknifeMean
     (hT'm : AEStronglyMeasurable T' (Measure.pi fun _ : Fin n => P)) :
     Integrable (jackknifeMean T') (Measure.pi fun _ : Fin (n + 1) => P) := by
   unfold jackknifeMean
-  exact (integrable_finset_sum _ fun i _ => integrable_comp_delete i hT' hT'm).const_mul _
+  exact (integrable_finsetSum _ fun i _ => integrable_comp_delete i hT' hT'm).const_mul _
 
 /-- **The delete-one average has the reduced-sample expectation** (ECS §3.3):
 `E_{P^{n+1}}[T₍•₎] = E_{P^n}[T']`, because each deleted sample is again an
@@ -100,7 +100,7 @@ theorem integral_jackknifeMean
     exact h₁.symm
   unfold jackknifeMean
   rw [integral_const_mul,
-    integral_finset_sum _ fun i _ => integrable_comp_delete i hT' hT'm]
+    integral_finsetSum _ fun i _ => integrable_comp_delete i hT' hT'm]
   simp only [hEach, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
   push_cast
   field_simp

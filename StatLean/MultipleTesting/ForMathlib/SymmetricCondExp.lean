@@ -5,8 +5,8 @@ import Mathlib.Probability.Independence.Basic
 # Symmetric conditional expectation of an exchangeable Bool vector — `ForMathlib`
 
 The **exchangeable / sampling-without-replacement** identity behind the knock-off supermartingale
-step (Lu-BDA Ch 21 (Knock-Off) §21.3): for i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the conditional
-expectation of the indicator of *one* coordinate `i₀`, given the **count** σ-algebra
+step (Lu-BDA Ch 21 (Knock-Off) §21.3): for i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the
+conditional expectation of the indicator of *one* coordinate `i₀`, given the **count** σ-algebra
 `σ(#{i : σ i = true})`, equals `count / k`.
 
 Mathlib has **no** exchangeability / de Finetti / Pólya / hypergeometric conditional-expectation
@@ -96,12 +96,12 @@ private lemma measure_evtSet {ι : Type*} [Fintype ι] (μ : Measure Ω) [IsProb
   have hfac : ∀ i, μ ((σ i) ⁻¹' (if i ∈ T then ({true} : Set Bool) else {false})) = 1 / 2 := by
     intro i
     by_cases hi : i ∈ T
-    · rw [if_pos hi]; exact hfair i
-    · rw [if_neg hi]
+    · rw [ite_eq_left hi]; exact hfair i
+    · rw [ite_eq_right hi]
       have hc : (σ i) ⁻¹' ({false} : Set Bool) = {ω | σ i ω = true}ᶜ := by
         ext ω
         simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_compl_iff,
-          Set.mem_setOf_eq, Bool.not_eq_true]
+          Set.mem_ofPred_eq, Bool.not_eq_true]
       rw [hc, prob_compl_eq_one_sub (hAi i), hfair i]
       exact ENNReal.sub_eq_of_eq_add (by simp) (ENNReal.add_halves 1).symm
   rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ]
@@ -116,7 +116,7 @@ private lemma measure_setOf_typeVec {ι : Type*} [Fintype ι] (μ : Measure Ω) 
   have hset : {ω | Q (typeVec σ ω)}
       = ⋃ T ∈ (Finset.univ.powerset.filter Q), evtSet σ T := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_powerset,
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_powerset,
       Finset.subset_univ, true_and, mem_evtSet, exists_prop]
     constructor
     · intro hQ; exact ⟨typeVec σ ω, hQ, rfl⟩
@@ -174,7 +174,7 @@ lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
     have : {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P}
         = ⋂ x, {b : ι → Bool | (b x = true ↔ x ∈ P)} := by
       ext b
-      simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
         Finset.mem_univ, true_and]
     rw [this]
     refine MeasurableSet.iInter (fun x => ?_)
@@ -191,7 +191,7 @@ lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
           {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P} := by
     intro P; ext ω
     rw [mem_evtSet]
-    simp only [Set.mem_preimage, Set.mem_setOf_eq, typeVec]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, typeVec]
   -- On `evtSet σ P` the sign vector equals `signPat (typeVec σ ω)`.
   have hsig : ∀ ω, (fun i => σ i ω : ι → Bool) = signPat (typeVec σ ω) := by
     intro ω; funext x
@@ -206,7 +206,7 @@ lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
         = ⋃ P ∈ (Finset.univ.powerset.filter (fun P => c ∈ P)),
             (Z ⁻¹' {z | (z, signPat P) ∈ C}) ∩ evtSet σ P := by
       ext ω
-      simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_iUnion,
+      simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_iUnion,
         Finset.mem_filter, Finset.mem_powerset, Finset.subset_univ, true_and, exists_prop]
       constructor
       · rintro ⟨hC', hc⟩
@@ -245,7 +245,7 @@ lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
     have hCeq : {z | (z, signPat ((Equiv.swap i j).finsetCongr P)) ∈ C}
         = {z | (z, signPat P) ∈ C} := by
       ext z
-      simp only [Set.mem_setOf_eq, hpat]
+      simp only [Set.mem_ofPred_eq, hpat]
       exact (hCinv z (signPat P)).symm
     rw [hCeq]
 
@@ -261,7 +261,7 @@ private lemma measure_inter_swap {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasu
               = {ω | (fun T => T.card ∈ B ∧ l ∈ T) (typeVec σ ω)} := by
     intro l
     ext ω
-    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_setOf_eq, signCount, typeVec,
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred_eq, signCount, typeVec,
       Finset.mem_filter, Finset.mem_univ, true_and]
   rw [hset i, hset j, measure_setOf_typeVec μ hσ hindep hfair (fun T => T.card ∈ B ∧ i ∈ T),
     measure_setOf_typeVec μ hσ hindep hfair (fun T => T.card ∈ B ∧ j ∈ T)]
@@ -277,7 +277,8 @@ private lemma measure_inter_swap {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasu
 For i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the conditional expectation of the
 indicator of coordinate `i₀` given the count σ-algebra `σ(signCount σ)` equals `signCount σ / k`.
 
-The brick the knock-off supermartingale step (`count_condExp`, Lu-BDA Ch 21 (Knock-Off) §21.3) consumes. -/
+The brick the knock-off supermartingale step (`count_condExp`,
+Lu-BDA Ch 21 (Knock-Off) §21.3) consumes. -/
 theorem condExp_coord_eq_count_div {k : ℕ} (hk : 0 < k)
     (μ : Measure Ω) [IsProbabilityMeasure μ] (σ : Fin k → Ω → Bool)
     (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)
@@ -323,7 +324,7 @@ theorem condExp_coord_eq_count_div {k : ℕ} (hk : 0 < k)
     intro l
     have hind : (fun ω => if σ l ω then (1 : ℝ) else 0)
               = {ω | σ l ω = true}.indicator (fun _ => (1 : ℝ)) := by
-      funext ω; rw [Set.indicator_apply]; simp only [Set.mem_setOf_eq]
+      funext ω; rw [Set.indicator_apply]; simp only [Set.mem_ofPred_eq]
     rw [hind, setIntegral_indicator (hAmeas l), setIntegral_const, smul_eq_mul, mul_one]
     rfl
   have hgsum : ∀ ω, (signCount σ ω : ℝ) / (k : ℝ)
@@ -336,7 +337,7 @@ theorem condExp_coord_eq_count_div {k : ℕ} (hk : 0 < k)
   have hLHS : ∫ ω in s, (signCount σ ω : ℝ) / (k : ℝ) ∂μ
             = (1 / (k : ℝ)) * ∑ l, (μ (s ∩ {ω | σ l ω = true})).toReal := by
     rw [setIntegral_congr_fun hsm0 (fun ω _ => hgsum ω), integral_const_mul,
-       integral_finset_sum Finset.univ (fun l _ => (hFint l).integrableOn)]
+       integral_finsetSum Finset.univ (fun l _ => (hFint l).integrableOn)]
     simp_rw [hF]
   have hsum : ∑ l, (μ (s ∩ {ω | σ l ω = true})).toReal
             = (k : ℝ) * (μ (s ∩ {ω | σ i₀ ω = true})).toReal := by

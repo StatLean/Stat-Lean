@@ -73,7 +73,6 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     Integrable (fun ω =>
       α * (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ))) μ := by
-  haveI : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
   -- Rewrite ratio as α * stoppedValue Yproc tauStar
   simp_rw [mul_div_assoc, ratio_eq_stoppedValue]
   -- Integrability from the negated supermartingale (= submartingale)
@@ -89,13 +88,15 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     simpa only [neg_neg] using hstop_neg.neg
   exact Integrable.const_mul hstop α
 
-/-- **Knock-off FDR control** (Lu-BDA Ch. 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off)). For a knock-off score `W`, the
-knock-off procedure at level `α` controls the false discovery rate: `FDR ≤ α`. -/
+/-- **Knock-off FDR control** (Lu-BDA Ch. 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off)). For a
+knock-off score `W`, the knock-off procedure at level
+`α` controls the false discovery rate: `FDR ≤ α`. -/
 theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (hα : 0 < α)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
     -- LEAN-ONLY: no ties on null scores (`Wⱼ ≠ 0` a.s.), so the sign is well-defined; Lu-BDA §21.3
     (hties : ∀ j ∈ H₀, ∀ᵐ ω ∂μ, W j ω ≠ 0)
-    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §21.3
+    -- USER-INPUT: a.s. distinct magnitudes (continuous
+    -- knock-off statistics, no |Wᵢ| ties); Lu-BDA §21.3
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     FDR H₀ (knockoffRejects W α) μ ≤ α := by
   simp only [FDR]

@@ -16,54 +16,58 @@ of piece mass to the mass of the contraction ball around the truth (BPPD Lemma 6
 the single consumer-facing bound `dlBetaRatio_le` on that ratio.
 
 **Reference.** Bhattacharya–Pati–Pillai–Dunson, *Dirichlet–Laplace priors for optimal shrinkage*,
-JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Lemma 6.1 (p. 15); Lemma 3.2 (density bounds (13)/(14),
-p. 8).
+JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Lemma 6.1 (p. 15); Lemma 3.2 (density bounds
+(13)/(14), p. 8).
 
 ## Formalization notes — corrected statement (D10, D11) and what the paper elides
 
 The stub for this file originally carried FOUR lemmas, two of which (`dlPrior_ball_near_ge`,
 `dlPrior_fullBall_near_truth_ge`) were **false as stated** and have been removed; a third
-(`dlPrior_piece_le`) was an awkward intermediate folded into the proof of `dlBetaRatio_le`. The reasons,
-and the corrected route, are the substance of this milestone:
+(`dlPrior_piece_le`) was an awkward intermediate folded into the proof of `dlBetaRatio_le`. The
+reasons, and the corrected route, are the substance of this milestone:
 
 * **D10 (no absolute lower bound on `Π(B(θ₀,r))`; the ratio is what matters).** The removed
-  `dlPrior_fullBall_near_truth_ge` claimed `Π(B(θ₀,r)) ≥ exp(−E)` with `E` free of any `r → 0` blow-up
-  term. That is false: `dlPrior` is atomless, so `Π(B(θ₀,r)) → 0` as `r → 0` while `exp(−E)` is a fixed
-  positive constant (take `S = ∅`, forcing `θ₀ = 0`: the claim becomes `exp(−r²) ≤ Π(B(0,r))`, false for
-  small `r`). It was believed to feed the denominator threshold `dbar`, but the assembly (`PosteriorContraction`)
-  never needs an *absolute* denominator bound: with `dbar = e^{−r²}·Π(B(θ₀,r))` the shell contribution
-  `Π(shell)·e^{−j²r²/12}/dbar = [Π(shell)/Π(B(θ₀,r))]·e^{−j²r²/12}·e^{r²}` has `Π(B(θ₀,r))` **cancel**
-  into the ratio `β`. Only `dlBetaRatio_le` (a genuine `Π/Π`, with `r` cancelling) is consumed — no
-  absolute ball-mass bound exists or is needed. Likewise the removed `dlPrior_ball_near_ge` (a
-  centered-vs-offset ball comparison) was false for the same atomless/spike reason and unused.
+  `dlPrior_fullBall_near_truth_ge` claimed `Π(B(θ₀,r)) ≥ exp(−E)` with `E` free of any `r → 0`
+  blow-up term. That is false: `dlPrior` is atomless, so `Π(B(θ₀,r)) → 0` as `r → 0` while `exp(−E)`
+  is a fixed positive constant (take `S = ∅`, forcing `θ₀ = 0`: the claim becomes
+  `exp(−r²) ≤ Π(B(0,r))`, false for small `r`). It was believed to feed the denominator threshold
+  `dbar`, but the assembly (`PosteriorContraction`) never needs an *absolute* denominator bound:
+  with `dbar = e^{−r²}·Π(B(θ₀,r))` the shell contribution
+  `Π(shell)·e^{−j²r²/12}/dbar = [Π(shell)/Π(B(θ₀,r))]·e^{−j²r²/12}·e^{r²}` has `Π(B(θ₀,r))`
+  **cancel** into the ratio `β`. Only `dlBetaRatio_le` (a genuine `Π/Π`, with `r` cancelling) is
+  consumed — no absolute ball-mass bound exists or is needed. Likewise the removed
+  `dlPrior_ball_near_ge` (a centered-vs-offset ball comparison)
+  was false for the same atomless/spike reason and unused.
 
 * **D11 (the exponent depends on `‖θ₀‖`; the paper's Lemma 6.1 hides it in a constant).** The stub's
   exponent `|S|log(64j) + C(|S|+n)log n + C'r²` **omits any dependence on the truth `θ₀`**, which is
   incorrect: the denominator ball `B(θ₀,r)` charges less mass the larger `‖θ₀‖` is (the DL density
   decays like `exp(−(7/2)Σ√|θᵢ|)`, Lemma 3.2(14)), so `β` genuinely grows with `‖θ₀‖`. The honest
-  exponent (below) carries a `|S|^{3/4}√‖θ₀‖` term. It is harmless in the assembly precisely because of
-  Theorem 3.1's hypothesis `‖θ₀‖² ≤ q log⁴n`: then `|S|^{3/4}√‖θ₀‖ ≤ (A'q)^{3/4}(q log⁴n)^{1/4} =
-  O(q log n) = O(r²)`, dominated by the shell decay. This is the role of `hnorm` in the paper's proof,
-  left implicit there.
+  exponent (below) carries a `|S|^{3/4}√‖θ₀‖` term. It is harmless in the assembly precisely because
+  of Theorem 3.1's hypothesis `‖θ₀‖² ≤ q log⁴n`: then `|S|^{3/4}√‖θ₀‖ ≤ (A'q)^{3/4}(q log⁴n)^{1/4} =
+  O(q log n) = O(r²)`, dominated by the shell decay. This is the role of `hnorm` in the paper's
+  proof, left implicit there.
 
-**Corrected route (block factorization, volume cancellation).** `β = Π(piece)/Π(B(θ₀,r))`. Factor both
-over the support block `S` and its complement `Sᶜ` (`CoordinateSplit`), using
+**Corrected route (block factorization, volume cancellation).** `β = Π(piece)/Π(B(θ₀,r))`. Factor
+both over the support block `S` and its complement `Sᶜ` (`CoordinateSplit`), using
 `B(θ₀,r) ⊇ B_S(θ₀_S, r/√2) × B_{Sᶜ}(0, r/√2)`:
 * **`S`-block (|S| dims):** numerator `≤ (17aδ^{a−1})^{|S|}·vol_S(B_ρ)` (density upper on `{δ<|θ|}`,
   `PriorDensityBounds`), denominator `≥ exp(−[|S|log(1/a)+C|S|+(7/2)Σ√|θᵢ|])·vol_S(B_{r/√2})`
   (density lower, Lemma 3.2(14)). The Euclidean ball volumes share the `Γ(|S|/2+1)` factor, which
   **cancels**, leaving the radius ratio `(√2ρ/r)^{|S|} = (√10/4·j)^{|S|}`. The `a`-powers cancel
   (`17a·(1/a) = 17`). `Σ_{i∈S}√|θᵢ|` over the ball is controlled by Cauchy–Schwarz twice:
-  `Σ√|θᵢ| ≤ |S|^{3/4}(‖θ₀‖+r)^{1/2} ≤ |S|^{3/4}(√‖θ₀‖+√r)` — the `√r` piece is `|S|^{3/4}√r = o(r²)`.
+  `Σ√|θᵢ| ≤ |S|^{3/4}(‖θ₀‖+r)^{1/2} ≤ |S|^{3/4}(√‖θ₀‖+√r)`
+  — the `√r` piece is `|S|^{3/4}√r = o(r²)`.
 * **`Sᶜ`-block (card ι − |S| dims):** numerator `≤ 1` (probability), denominator
-  `≥ exp(−2(card ι)w)` (`PriorSmallBall.dlPrior_ball_zero_ge` on the `Sᶜ` subtype), `w` a tail bound at
-  the clamped radius. Under `a = n^{−(1+β)}` this term `→ 0`.
+  `≥ exp(−2(card ι)w)` (`PriorSmallBall.dlPrior_ball_zero_ge` on the `Sᶜ` subtype), `w` a tail bound
+  at the clamped radius. Under `a = n^{−(1+β)}` this term `→ 0`.
 
-**Constants deviate from the paper (charter §1).** The radius-ratio constant is stated as `512` (roomy
-for `√10/4·17·e^C`); the `4, 4, 2` multipliers are generous placeholders. A closure session **may
-adjust these numerals and the precise form of the lower-order terms** to whatever the block bounds
-actually deliver, provided the exponent keeps the shape `|S|·log(c·j) + (terms that PosteriorContraction bounds by
-O(r²) or o(r²) or →0 under a=n^{−(1+β)}, δ≥n^{−2}, ‖θ₀‖²≤q log⁴n)`; report the final exponent so the
+**Constants deviate from the paper (charter §1).** The radius-ratio constant is stated as `512`
+(roomy for `√10/4·17·e^C`); the `4, 4, 2` multipliers are generous placeholders. A closure session
+**may adjust these numerals and the precise form of the lower-order terms** to whatever the block
+bounds actually deliver, provided the exponent keeps the shape
+`|S|·log(c·j) + (terms that PosteriorContraction bounds by O(r²) or o(r²) or →0 under
+a=n^{−(1+β)}, δ≥n^{−2}, ‖θ₀‖²≤q log⁴n)`; report the final exponent so the
 `PosteriorContraction` assembly can sum it.
 
 **Deviations (density bounds).** D5 (P4 exponent `−(3/√2)√|x|`, absorbed by the `4·|S|^{3/4}√‖θ₀‖`
@@ -105,7 +109,7 @@ private lemma measurable_coord' {κ : Type*} [Fintype κ] (i : κ) :
 /-- The δ-support cylinder `{ u | ∀ i, δ < |uᵢ| }` is measurable. -/
 private lemma measurableSet_all_lt_abs {κ : Type*} [Fintype κ] (δ : ℝ) :
     MeasurableSet {u : EuclideanSpace ℝ κ | ∀ i, δ < |u i|} := by
-  rw [Set.setOf_forall]
+  rw [Set.ofPred_forall]
   exact MeasurableSet.iInter fun i =>
     measurableSet_lt measurable_const (measurable_coord' i).abs
 
@@ -118,10 +122,8 @@ private lemma real_sqrt_add_le (x y : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
   rw [add_sq, Real.sq_sqrt hx, Real.sq_sqrt hy]
   nlinarith [mul_nonneg (Real.sqrt_nonneg x) (Real.sqrt_nonneg y)]
 
--- The nested log/exp/rpow algebra plus the several `nlinarith` calls exceed the default budget.
-set_option maxHeartbeats 1000000 in
-/-- **The core real-analysis inequality** behind `dlBetaRatio_le` (block-ratio, `Γ`-volumes cancelled).
-`t` stands for `‖θ₀‖`, `d = |S|`, `n = card ι`. The `S`-block numerator constant
+/-- **The core real-analysis inequality** behind `dlBetaRatio_le` (block-ratio, `Γ`-volumes
+cancelled). `t` stands for `‖θ₀‖`, `d = |S|`, `n = card ι`. The `S`-block numerator constant
 `(17·a·δ^{a−1})^d` times the net radius `(√5/4·jr)^d` is dominated by the density-lower constant
 `(a/64)^d·exp(−3d−(7/2)·(d^{3/4}(√t+√r)))` times the denominator radius `(r/√2)^d` times the
 `exp`-exponent; the `a`- and `r`-powers and the `Γ(d/2+1)` ball volume (elided) all cancel. -/
@@ -226,36 +228,37 @@ private lemma massRatio_real_ineq {a δ r t w : ℝ} {d n j : ℕ}
                         + (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r)))
           * (r / Real.sqrt 2) ^ d * Real.exp (-2 * (n : ℝ) * w) := by
         rw [show ((d : ℝ) * Real.log (20000 * (j : ℝ)) + (d : ℝ) * Real.log (1 / δ)
-              + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r
+              + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t + 4 * (d : ℝ) ^
+                  ((3 : ℝ) / 4) * Real.sqrt r
               + 2 * (n : ℝ) * w
             - 3 * (d : ℝ) - 7 / 2 * ((d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t
                                     + (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r) - 2 * (n : ℝ) * w)
             = ((d : ℝ) * Real.log (20000 * (j : ℝ)) + (d : ℝ) * Real.log (1 / δ)
-              + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r
+              + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t + 4 * (d : ℝ) ^
+                  ((3 : ℝ) / 4) * Real.sqrt r
               + 2 * (n : ℝ) * w)
             + (-3 * (d : ℝ) - 7 / 2 * ((d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt t
                                       + (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r))
             + (-2 * (n : ℝ) * w) from by ring, Real.exp_add, Real.exp_add]
         ring
 
--- Large block-factorization proof (product-measure transport + volume cancellation + real algebra).
-set_option maxHeartbeats 2000000 in
-/-- **Combined prior mass ratio** (BPPD Lemma 6.1, corrected — see the file header D10/D11). The ratio
-of a net-piece mass (radius `ρ = (√5/4)jr`, intersected with `{ ∀ i ∈ S, |θᵢ| > δ }`) to the
+/-- **Combined prior mass ratio** (BPPD Lemma 6.1, corrected — see the file header D10/D11). The
+ratio of a net-piece mass (radius `ρ = (√5/4)jr`, intersected with `{ ∀ i ∈ S, |θᵢ| > δ }`) to the
 contraction-ball mass `Π(B(θ₀, r))` is at most `exp` of
 
 `|S|·log(512 j) + |S|·log(1/δ) + 4|S|^{3/4}(√‖θ₀‖ + √r) + 2·(card ι)·w`,
 
 where `w` bounds the `Sᶜ`-block coordinate tail at the clamped denominator radius (mirroring
-`PriorSmallBall.dlPrior_ball_zero_ge`; the assembly `PosteriorContraction` supplies `w` via the `C3` marginal-tail
-bound and checks `w ≤ 1/2`). The radius `r` cancels between numerator and denominator (both carry the
-same `Γ(|S|/2+1)` ball volume), so unlike the removed absolute bounds this ratio has no `r → 0`
-pathology. Under the shape contract (`a = n^{−(1+β)}`, `δ ≥ n^{−2}`, `‖θ₀‖² ≤ q log⁴n`, `r² = q log n`)
-every non-`j` term is `O(r²)`, `o(r²)`, or `→ 0`, and `|S|·log(512j)` sums against the shell decay
-`e^{−j²r²/12}` — this is the exponent `PosteriorContraction.lean` sums. Constants are roomy placeholders adjustable
-at proof-closure (charter §1). -/
+`PriorSmallBall.dlPrior_ball_zero_ge`; the assembly `PosteriorContraction` supplies `w` via the `C3`
+marginal-tail bound and checks `w ≤ 1/2`). The radius `r` cancels between numerator and denominator
+(both carry the same `Γ(|S|/2+1)` ball volume), so unlike the removed absolute bounds this ratio has
+no `r → 0` pathology. Under the shape contract (`a = n^{−(1+β)}`, `δ ≥ n^{−2}`, `‖θ₀‖² ≤ q log⁴n`,
+`r² = q log n`) every non-`j` term is `O(r²)`, `o(r²)`, or `→ 0`, and `|S|·log(512j)` sums against
+the shell decay `e^{−j²r²/12}` — this is the exponent `PosteriorContraction.lean` sums. Constants
+are roomy placeholders adjustable at proof-closure (charter §1). -/
 theorem dlBetaRatio_le {a δ : ℝ}
-    -- LEAN-ONLY: 0 < a ≤ 1/2 — DL scale range (both density bounds); engine-internal (BPPD Lemma 6.1).
+    -- LEAN-ONLY: 0 < a ≤ 1/2 — DL scale range (both
+    -- density bounds); engine-internal (BPPD Lemma 6.1).
     (ha : 0 < a) (ha2 : a ≤ 1 / 2)
     -- LEAN-ONLY: 0 < δ ≤ 1 — δ-window at fixed n; engine-internal.
     (hδ : 0 < δ) (hδ1 : δ ≤ 1)
@@ -266,8 +269,9 @@ theorem dlBetaRatio_le {a δ : ℝ}
     (hj : 2 ≤ j) {r : ℝ}
     -- LEAN-ONLY: 0 < r — contraction radius; engine-internal.
     (hr : 0 < r)
-    -- USER-INPUT: `w` bounds the `Sᶜ`-block coordinate tail at the clamped denominator radius `r/√2`
-    -- (mirrors `dlPrior_ball_zero_ge`'s interface; `PosteriorContraction` discharges it via C3). BPPD Lemma 6.1.
+    -- USER-INPUT: `w` bounds the `Sᶜ`-block coordinate tail at the clamped denominator radius
+    -- `r/√2` (mirrors `dlPrior_ball_zero_ge`'s interface;
+    -- `PosteriorContraction` discharges it via C3). BPPD Lemma 6.1.
     (w : ℝ)
     (hw : (dlMarginal a {x : ℝ |
         min (r / Real.sqrt 2 / Real.sqrt (Fintype.card ι : ℝ)) (1 / 2) < |x|}).toReal ≤ w)
@@ -281,7 +285,8 @@ theorem dlBetaRatio_le {a δ : ℝ}
           + 4 * (S.card : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt ‖θ₀‖
           + 4 * (S.card : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r
           + 2 * (Fintype.card ι : ℝ) * w)) := by
-  -- PROOF RECIPE (corrected route; the two false absolute lemmas are gone — see file header D10/D11).
+  -- PROOF RECIPE (corrected route; the two false
+  -- absolute lemmas are gone — see file header D10/D11).
   --
   -- Write `ρ := (√5/4)·jr` (numerator radius). Factor the L² ball `B(θ₀,r) ⊇ B_S(θ₀_S, r/√2) ×
   -- B_{Sᶜ}(0, r/√2)` and both measures over `S ⊔ Sᶜ` via `CoordinateSplit.dlPrior_prod_apply`:
@@ -299,17 +304,19 @@ theorem dlBetaRatio_le {a δ : ℝ}
   --       `S-ratio ≤ exp(|S|log(17·√10/4·e^C·j) + (1−a)|S|log(1/δ) + (7/2)|S|^{3/4}(√‖θ₀‖+√r))`
   --       `                 ≤ exp(|S|log(512 j) + |S|log(1/δ) + 4|S|^{3/4}(√‖θ₀‖+√r))`.
   -- Sᶜ-BLOCK (card ι − |S| dims): numerator `≤ 1`; denominator `≥ exp(−2(card ι)w)` by
-  --   `dlPrior_ball_zero_ge` on the `{i // i ∉ S}` subtype (hw, hw2) ⇒ `Sᶜ-ratio ≤ exp(2(card ι)w)`.
-  -- Multiply (add exponents), `Real.exp_le_exp` + `ENNReal.ofReal` monotone. ∎
+  --   `dlPrior_ball_zero_ge` on the `{i // i ∉ S}` subtype (hw, hw2) ⇒
+  -- `Sᶜ-ratio ≤ exp(2(card ι)w)`. Multiply (add exponents),
+  -- `Real.exp_le_exp` + `ENNReal.ofReal` monotone. ∎
   --
   -- A closure session MAY tune the numeric constants (512→20000, 4, 4, 2) to whatever the block
-  -- bounds deliver, keeping the shape; report the final exponent for the `PosteriorContraction` summation.
-  -- Pin a single `DecidablePred` instance for `↑S`/`(↑S)ᶜ` so every `{j // j ∈ ↑S}` shares one
-  -- `Fintype`/`Subtype.fintype` instance (avoids a `Fintype`-diamond in `projS`/`dlPrior`).
-  letI instS : DecidablePred (· ∈ (↑S : Set ι)) := Classical.decPred _
-  letI instSc : DecidablePred (· ∈ ((↑S : Set ι)ᶜ)) := Classical.decPred _
-  letI : Fintype {j // j ∈ (↑S : Set ι)} := Subtype.fintype _
-  letI : Fintype {j // j ∈ ((↑S : Set ι)ᶜ)} := Subtype.fintype _
+  -- bounds deliver, keeping the shape; report the final exponent for the `PosteriorContraction`
+  -- summation. Pin a single `DecidablePred` instance for `↑S`/`(↑S)ᶜ` so every `{j // j ∈ ↑S}`
+  -- shares one `Fintype`/`Subtype.fintype` instance
+  -- (avoids a `Fintype`-diamond in `projS`/`dlPrior`).
+  let instS : DecidablePred (· ∈ (↑S : Set ι)) := Classical.decPred _
+  let instSc : DecidablePred (· ∈ ((↑S : Set ι)ᶜ)) := Classical.decPred _
+  let : Fintype {j // j ∈ (↑S : Set ι)} := Subtype.fintype _
+  let : Fintype {j // j ∈ ((↑S : Set ι)ᶜ)} := Subtype.fintype _
   set d : ℕ := S.card with hddef
   set n : ℕ := Fintype.card ι with hndef
   -- The `S`-subtype `K` and its complement `Kc`, with cardinality/finrank bookkeeping.
@@ -324,9 +331,11 @@ theorem dlBetaRatio_le {a δ : ℝ}
   set CLr : ℝ := (a / 64) ^ d * Real.exp (-3 * (d : ℝ)
       - 7 / 2 * ((d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt ‖θ₀‖
                 + (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r)) with hCLr
-  set Vol1 : ℝ≥0∞ := volume (Metric.ball (0 : EuclideanSpace ℝ {j // j ∈ (↑S : Set ι)}) 1) with hVol1
+  set Vol1 : ℝ≥0∞ := volume
+      (Metric.ball (0 : EuclideanSpace ℝ {j // j ∈ (↑S : Set ι)}) 1) with hVol1
   -- ===== NUMERATOR: cylinder over-approximation and `S`-block density bound. =====
-  have hA_meas : MeasurableSet (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))
+  have hA_meas : MeasurableSet
+      (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))
       ∩ {u : EuclideanSpace ℝ {j // j ∈ (↑S : Set ι)} | ∀ i, δ < |u i|}) :=
     measurableSet_closedBall.inter (measurableSet_all_lt_abs δ)
   have hnum_sub : (Metric.closedBall φ (Real.sqrt 5 / 4 * ((j : ℝ) * r))
@@ -392,7 +401,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
             prod_dlDensity_le ha ha2 hδ hδ1 (S := Finset.univ) (fun i _ => hu' i)
         _ = ENNReal.ofReal ((17 * a * δ ^ (a - 1)) ^ d) := by rw [Finset.card_univ, hcardK]
     refine le_trans (dlPrior_le_of_subset ha hA_meas hdens) ?_
-    refine mul_le_mul_left' ?_ _
+    refine mul_le_mul_right ?_ _
     calc volume (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))
             ∩ {u | ∀ i, δ < |u i|})
         ≤ volume (Metric.closedBall (projS (↑S : Set ι) φ) (Real.sqrt 5 / 4 * ((j : ℝ) * r))) :=
@@ -406,7 +415,8 @@ theorem dlBetaRatio_le {a δ : ℝ}
       exact hθ₀ i.val (fun hmem => i.property (Finset.mem_coe.mpr hmem))
     simp only [projS, h0]
     rfl
-  have hden_sup : (projS (↑S : Set ι) ⁻¹' Metric.closedBall (projS (↑S : Set ι) θ₀) (r / Real.sqrt 2)
+  have hden_sup : (projS (↑S : Set ι) ⁻¹' Metric.closedBall
+      (projS (↑S : Set ι) θ₀) (r / Real.sqrt 2)
         ∩ projS ((↑S : Set ι)ᶜ) ⁻¹' Metric.closedBall
             (0 : EuclideanSpace ℝ {j // j ∈ ((↑S : Set ι)ᶜ)}) (r / Real.sqrt 2))
       ⊆ Metric.closedBall θ₀ r := by
@@ -475,7 +485,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
       ≤ (dlPrior a {j // j ∈ ((↑S : Set ι)ᶜ)}) (Metric.closedBall
           (0 : EuclideanSpace ℝ {j // j ∈ ((↑S : Set ι)ᶜ)}) (r / Real.sqrt 2)) := by
     rcases Nat.eq_zero_or_pos (Fintype.card {j // j ∈ ((↑S : Set ι)ᶜ)}) with hKc0 | hKcpos
-    · haveI : IsEmpty {j // j ∈ ((↑S : Set ι)ᶜ)} := Fintype.card_eq_zero_iff.mp hKc0
+    · have : IsEmpty {j // j ∈ ((↑S : Set ι)ᶜ)} := Fintype.card_eq_zero_iff.mp hKc0
       have hball_univ : Metric.closedBall (0 : EuclideanSpace ℝ {j // j ∈ ((↑S : Set ι)ᶜ)})
           (r / Real.sqrt 2) = Set.univ := by
         ext x
@@ -491,11 +501,12 @@ theorem dlBetaRatio_le {a δ : ℝ}
     · have hle : (Fintype.card {j // j ∈ ((↑S : Set ι)ᶜ)} : ℝ) ≤ (n : ℝ) := by
         rw [hndef]; exact_mod_cast Fintype.card_subtype_le _
       have hwKc : (dlMarginal a {x : ℝ | min (r / Real.sqrt 2
-            / Real.sqrt (Fintype.card {j // j ∈ ((↑S : Set ι)ᶜ)} : ℝ)) (1 / 2) < |x|}).toReal ≤ w := by
+            / Real.sqrt (Fintype.card {j // j ∈ ((↑S : Set ι)ᶜ)} : ℝ))
+                (1 / 2) < |x|}).toReal ≤ w := by
         refine le_trans (ENNReal.toReal_mono ?_ (measure_mono ?_)) hw
         · exact ne_top_of_le_ne_top ENNReal.one_ne_top prob_le_one
         · intro x hx
-          simp only [Set.mem_setOf_eq] at hx ⊢
+          simp only [Set.mem_ofPred_eq] at hx ⊢
           refine lt_of_le_of_lt (min_le_min ?_ le_rfl) hx
           exact div_le_div_of_nonneg_left (by positivity)
             (Real.sqrt_pos.mpr (by exact_mod_cast hKcpos))
@@ -542,7 +553,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
             + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r + 2 * (n : ℝ) * w))
           * ENNReal.ofReal CLr * ENNReal.ofReal ((r / Real.sqrt 2) ^ d)
           * ENNReal.ofReal (Real.exp (-2 * (n : ℝ) * w))) * Vol1 :=
-        mul_le_mul_right' hC Vol1
+        mul_le_mul_left hC Vol1
     _ = ENNReal.ofReal (Real.exp ((d : ℝ) * Real.log (20000 * (j : ℝ))
             + (d : ℝ) * Real.log (1 / δ) + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt ‖θ₀‖
             + 4 * (d : ℝ) ^ ((3 : ℝ) / 4) * Real.sqrt r + 2 * (n : ℝ) * w))

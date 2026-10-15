@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.NonparametricStatistics.LocalPolynomial.WeightBounds
 import StatLean.NonparametricStatistics.LocalPolynomial.SupNorm.Increments
 import StatLean.NonparametricStatistics.ForMathlib.MaxExpSquare
@@ -126,7 +127,8 @@ private lemma gaussian_lintegral_sq (v : ℝ≥0) :
     simpa [integral_id_gaussianReal] using hv
   have hint2 : Integrable (fun x : ℝ => x ^ 2) (gaussianReal 0 v) :=
     (memLp_id_gaussianReal' 2 (by simp)).integrable_sq
-  rw [← ofReal_integral_eq_lintegral_ofReal hint2 (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
+  rw [← ofReal_integral_eq_lintegral_ofReal hint2
+      (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
     hint]
 
 /-- Second moment of the `ℓ¹`-norm of the noise vector: `E[(∑ᵢ|ξᵢ|)²] ≤ n²·v`. -/
@@ -147,7 +149,7 @@ private lemma lintegral_sum_abs_sq_le {n : ℕ} {Ω : Type} [MeasurableSpace Ω]
         rw [ENNReal.ofReal_mul (by positivity),
           ENNReal.ofReal_sum_of_nonneg (fun i _ => sq_nonneg _)]
     _ = ENNReal.ofReal (n : ℝ) * ∑ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P := by
-        rw [lintegral_const_mul _ (by fun_prop), lintegral_finset_sum _ (fun i _ => by fun_prop)]
+        rw [lintegral_const_mul _ (by fun_prop), lintegral_finsetSum _ (fun i _ => by fun_prop)]
     _ = ENNReal.ofReal (n : ℝ) * ∑ _i : Fin n, ENNReal.ofReal (v : ℝ) := by
         congr 1
         refine Finset.sum_congr rfl (fun i _ => ?_)
@@ -160,7 +162,8 @@ private lemma lintegral_sum_abs_sq_le {n : ℕ} {Ω : Type} [MeasurableSpace Ω]
     _ = ENNReal.ofReal ((n : ℝ) ^ 2 * v) := by
         rw [← ENNReal.ofReal_mul (by positivity)]; congr 1; ring
 
-set_option maxHeartbeats 2000000 in
+set_option maxHeartbeats 400000 in
+-- This proof uses about 250,000 heartbeats.
 /-- **Sup-norm stochastic bound**: there is `C = C(ℓ, K_max, λ₀, a₀, L_K)` such that under
 the standing design assumptions, a Lipschitz boxed kernel, and i.i.d. `N(0, v)` noise,
 `E[(sup_{t∈[0,1]} |∑ᵢ ξᵢ·W*ᵢ(t)|)²] ≤ C·v·log n/(n·h)` for all `n ≥ 2`,
@@ -220,7 +223,7 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
     have hL0 : ∫⁻ ω, ENNReal.ofReal ((⨆ t : Set.Icc (0 : ℝ) 1,
         |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2) ∂P = 0 := by
       simp only [hzero, ENNReal.ofReal_zero, lintegral_zero]
-    rw [hL0]; exact zero_le _
+    rw [hL0]; exact zero_le
   have hCstpos : 0 < Cst := lt_of_le_of_ne hCstnn (Ne.symm hCst0)
   -- degenerate case: `v = 0` forces the noise to vanish a.e.
   by_cases hv0 : v = 0
@@ -244,7 +247,7 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
           = 0 from by simp only [this]; exact ciSup_const]
       norm_num
     rw [lintegral_congr_ae (hZ0.mono (fun ω h => by rw [h, ENNReal.ofReal_zero]))]
-    simp only [lintegral_zero]; exact zero_le _
+    simp only [lintegral_zero]; exact zero_le
   -- main case: `Cst > 0` and `v > 0`
   have hvpos : 0 < v := pos_iff_ne_zero.mpr hv0
   have hvR : (0 : ℝ) < (v : ℝ) := NNReal.coe_pos.mpr hvpos
@@ -405,7 +408,7 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
             * ∫⁻ ω, ENNReal.ofReal ((∑ i, |ξ i ω|) ^ 2) ∂P := by
           rw [lintegral_const_mul _ (by fun_prop)]
       _ ≤ ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2) * ENNReal.ofReal ((n : ℝ) ^ 2 * v) :=
-          mul_le_mul_left' (lintegral_sum_abs_sq_le ξ v hξm hξlaw) _
+          mul_le_mul_right (lintegral_sum_abs_sq_le ξ v hξm hξlaw) _
       _ = ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2 * ((n : ℝ) ^ 2 * v)) :=
           (ENNReal.ofReal_mul hc0nn).symm
       _ ≤ ENNReal.ofReal (32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) :=
@@ -440,7 +443,7 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
           + 2 * ∫⁻ ω, ENNReal.ofReal ((E ω) ^ 2) ∂P := by rw [hA, hB]
     _ ≤ 2 * ENNReal.ofReal (24 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h))
           + 2 * ENNReal.ofReal (32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) :=
-        add_le_add (mul_le_mul_left' hgrid 2) (mul_le_mul_left' hincr 2)
+        add_le_add (mul_le_mul_right hgrid 2) (mul_le_mul_right hincr 2)
     _ = ENNReal.ofReal (48 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h))
           + ENNReal.ofReal (64 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
         rw [hdbl, hdbl]; congr 1 <;> · congr 1; ring

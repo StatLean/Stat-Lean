@@ -76,7 +76,8 @@ weight `τ²/(σ²+τ²)` (Robert §10.4.2). -/
 theorem normalParamEB_shrinkageWeight_tendsto_oracle (τ2 σ2 : ℝ)
     -- USER-INPUT: nondegenerate variances; Robert §10.4.2
     (hσ : 0 < σ2) (hτ : 0 < τ2) (vn : ℕ → ℝ)
-    -- USER-INPUT: the sample variance is consistent for the marginal variance (SLLN); Robert §10.4.2
+    -- USER-INPUT: the sample variance is consistent
+    -- for the marginal variance (SLLN); Robert §10.4.2
     (hv : Tendsto vn atTop (𝓝 (τ2 + σ2))) :
     Tendsto (fun n => max 0 (vn n - σ2) / (max 0 (vn n - σ2) + σ2)) atTop
       (𝓝 (τ2 / (τ2 + σ2))) := by

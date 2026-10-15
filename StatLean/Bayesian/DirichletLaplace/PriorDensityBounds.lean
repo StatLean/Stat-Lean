@@ -29,13 +29,13 @@ Contents:
 optimal shrinkage*, J. Amer. Statist. Assoc. 110 (2015), 1479–1490 (arXiv:1401.5398). Prior (10),
 Lemma 3.2, eqs. (13)–(14).
 
-**Proof formalization notes.** `dlPrior_eq_withDensity` unfolds `dlPrior` (a `Measure.pi`-of-marginals
-pushed through `WithLp.toLp 2`), rewrites each marginal by `dlMarginal_eq_withDensity` (C2), applies
-`pi_withDensity'` (F4, the `Fintype ι` upgrade of `pi_withDensity`), and transports across the
-volume-preserving `WithLp.toLp 2` (`PiLp.volume_preserving_toLp`). The product bounds are `Finset`
-products of the univariate C3 bounds; `prod_dlDensity_ge` combines the per-coordinate uniform
-log-form P4 with `Real.exp_sum`. The Lebesgue comparisons are `withDensity_apply` +
-`setLIntegral_mono`/`setLIntegral_le`.
+**Proof formalization notes.** `dlPrior_eq_withDensity` unfolds `dlPrior` (a
+`Measure.pi`-of-marginals pushed through `WithLp.toLp 2`), rewrites each marginal by
+`dlMarginal_eq_withDensity` (C2), applies `pi_withDensity'` (F4, the `Fintype ι` upgrade of
+`pi_withDensity`), and transports across the volume-preserving `WithLp.toLp 2`
+(`PiLp.volume_preserving_toLp`). The product bounds are `Finset` products of the univariate C3
+bounds; `prod_dlDensity_ge` combines the per-coordinate uniform log-form P4 with `Real.exp_sum`. The
+Lebesgue comparisons are `withDensity_apply` + `setLIntegral_mono`/`setLIntegral_le`.
 *Deviations (see the milestone plan).* D5: the mixture-restriction lower bound has exponent
 `−(7/2)√|x|` (not the paper's sketched `−2√|x|`), which is why `prod_dlDensity_ge` carries the
 `7/2` factor. D8: the density **upper** bound (and hence `prod_dlDensity_le`) genuinely needs
@@ -83,7 +83,7 @@ theorem dlPrior_eq_withDensity {a : ℝ}
     (ha : 0 < a) :
     dlPrior a ι
       = (volume : Measure (EuclideanSpace ℝ ι)).withDensity (fun θ => ∏ j, dlDensity a (θ j)) := by
-  haveI hsf : SigmaFinite ((volume : Measure ℝ).withDensity (dlDensity a)) := by
+  have hsf : SigmaFinite ((volume : Measure ℝ).withDensity (dlDensity a)) := by
     rw [← dlMarginal_eq_withDensity ha]; infer_instance
   have hemb : MeasurableEmbedding (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) :=
     (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding
@@ -119,7 +119,7 @@ theorem prod_dlDensity_le {a δ : ℝ}
     mul_nonneg (mul_nonneg (by norm_num) ha.le) (Real.rpow_pos_of_pos hδ _).le
   calc ∏ j ∈ S, dlDensity a (θ j)
       ≤ ∏ _j ∈ S, ENNReal.ofReal (17 * a * δ ^ (a - 1)) :=
-        Finset.prod_le_prod' fun j hj => dlDensity_le ha ha' hδ hδ1 (hθ j hj).le
+        Finset.prod_le_prod fun j hj => dlDensity_le ha ha' hδ hδ1 (hθ j hj).le
     _ = (ENNReal.ofReal (17 * a * δ ^ (a - 1))) ^ S.card := by rw [Finset.prod_const]
     _ = ENNReal.ofReal ((17 * a * δ ^ (a - 1)) ^ S.card) := (ENNReal.ofReal_pow hCnn _).symm
 
@@ -176,7 +176,7 @@ theorem prod_dlDensity_ge {a : ℝ}
         Real.exp (-3 * (Fintype.card ι : ℝ) - (7 / 2) * (∑ j, Real.sqrt |θ j|)))
       ≤ ∏ j, dlDensity a (θ j) := by
   refine le_trans (le_of_eq ?_)
-    (Finset.prod_le_prod' fun j _ => dlDensity_ge ha ha' (θ j))
+    (Finset.prod_le_prod fun j _ => dlDensity_ge ha ha' (θ j))
   rw [← ENNReal.ofReal_prod_of_nonneg fun j _ => by positivity]
   congr 1
   rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, ← Real.exp_sum]

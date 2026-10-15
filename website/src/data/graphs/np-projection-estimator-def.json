@@ -2,7 +2,7 @@
   "root": "StatLean.NonparametricStatistics.projEstimator",
   "nodes": [
     {"id":"StatLean.NonparametricStatistics.projEstimator","label":"projEstimator","full":"StatLean.NonparametricStatistics.projEstimator","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
     {"id":"Finset.Icc","label":"Icc","full":"Finset.Icc","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Finset.Defs"},
     {"id":"StatLean.NonparametricStatistics.coeffEstimator","label":"coeffEstimator","full":"StatLean.NonparametricStatistics.coeffEstimator","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
@@ -10,7 +10,7 @@
     {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
     {"id":"StatLean.NonparametricStatistics.regularDesign","label":"regularDesign","full":"StatLean.NonparametricStatistics.regularDesign","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
-    {"id":"Real.sqrt","label":"sqrt","full":"Real.sqrt","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"Real.sqrt","label":"sqrt","full":"Real.sqrt","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Real.Sqrt"},
     {"id":"Real.cos","label":"cos","full":"Real.cos","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Trigonometric"},
     {"id":"Real.pi","label":"pi","full":"Real.pi","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic"},
     {"id":"Real.sin","label":"sin","full":"Real.sin","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Trigonometric"}

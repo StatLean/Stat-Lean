@@ -77,7 +77,7 @@ prescribed by the type. -/
 private lemma typeSet_eq_inter (d1 d0 : Ω → Bool) (t : ComplianceType) :
     typeSet d1 d0 t = {ω | d1 ω = dOneOf t} ∩ {ω | d0 ω = dZeroOf t} := by
   ext ω
-  simp only [typeSet, Set.mem_setOf_eq, Set.mem_inter_iff, ComplianceType.of]
+  simp only [typeSet, Set.mem_ofPred_eq, Set.mem_inter_iff, ComplianceType.of]
   cases h1 : d1 ω <;> cases h0 : d0 ω <;> cases t <;> simp [dOneOf, dZeroOf]
 
 /-- Compliance-type events are measurable. -/
@@ -109,19 +109,19 @@ private lemma indepFun_boolComp (hrand : IVRandomized μ Z d1 d0 y1 y0) (φ₀ :
     IndepFun (fun ω => φ₀ (d1 ω, d0 ω)) Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => φ₀ p.1) (ψ := id)
     ((measurable_of_countable φ₀).comp measurable_fst) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-- Random assignment passes to `Y(1)`. -/
 private lemma indepFun_y1 (hrand : IVRandomized μ Z d1 d0 y1 y0) : IndepFun y1 Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => p.2.1) (ψ := id)
     (measurable_fst.comp measurable_snd) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-- Random assignment passes to `Y(0)`. -/
 private lemma indepFun_y0 (hrand : IVRandomized μ Z d1 d0 y1 y0) : IndepFun y0 Z μ := by
   have := hrand.comp (φ := fun p : (Bool × Bool) × (ℝ × ℝ) => p.2.2) (ψ := id)
     (measurable_snd.comp measurable_snd) measurable_id
-  simpa [Function.comp] using this
+  simpa [Function.comp] using! this
 
 /-! ### The decompositions -/
 
@@ -143,12 +143,12 @@ theorem ittContrast_eq_integral_sub [IsProbabilityMeasure μ]
   have hF : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
   have h1 : ∫ ω, obs Z y1 y0 ω ∂(μ[|{ω | Z ω = true}]) = ∫ ω, y1 ω ∂μ := by
     rw [integral_cond_congr hT (g := y1) (fun ω hω => by
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       simp [obs, hω])]
     exact integral_cond_arm_eq_of_indepFun (indepFun_y1 hrand) hi1 hy1 hZ hZ1
   have h0 : ∫ ω, obs Z y1 y0 ω ∂(μ[|{ω | Z ω = false}]) = ∫ ω, y0 ω ∂μ := by
     rw [integral_cond_congr hF (g := y0) (fun ω hω => by
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       simp [obs, hω])]
     exact integral_cond_arm_eq_of_indepFun (indepFun_y0 hrand) hi0 hy0 hZ hZ0
   simp only [ittContrast, primaFacie, treatedEvent]
@@ -174,13 +174,13 @@ theorem ittContrast_treat_eq_integral_sub [IsProbabilityMeasure μ]
   have hm0 : Measurable fun ω => ind (d0 ω) := measurable_boolComp (fun q => ind q.2) hd1 hd0
   have h1 : ∫ ω, ind (obsTreat Z d1 d0 ω) ∂(μ[|{ω | Z ω = true}]) = ∫ ω, ind (d1 ω) ∂μ := by
     rw [integral_cond_congr hT (g := fun ω => ind (d1 ω)) (fun ω hω => by
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       simp [obsTreat, hω])]
     exact integral_cond_arm_eq_of_indepFun (indepFun_boolComp hrand (fun q => ind q.1))
       hint1 hm1 hZ hZ1
   have h0 : ∫ ω, ind (obsTreat Z d1 d0 ω) ∂(μ[|{ω | Z ω = false}]) = ∫ ω, ind (d0 ω) ∂μ := by
     rw [integral_cond_congr hF (g := fun ω => ind (d0 ω)) (fun ω hω => by
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       simp [obsTreat, hω])]
     exact integral_cond_arm_eq_of_indepFun (indepFun_boolComp hrand (fun q => ind q.2))
       hint0 hm0 hZ hZ0
@@ -307,7 +307,7 @@ theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
   have hNeq : typeSet d1 d0 ComplianceType.neverTaker = {ω | d1 ω = false} := by
     rw [typeSet_eq_inter]
     ext ω
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, dOneOf, dZeroOf]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, dOneOf, dZeroOf]
     refine ⟨fun h => h.1, fun h1 => ⟨h1, ?_⟩⟩
     by_contra h0
     have h0' : d0 ω = true := by simpa using h0
@@ -333,7 +333,7 @@ theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
       = ((μ[|{ω | Z ω = true}]) {ω | obsTreat Z d1 d0 ω = false}).toReal := by
     rw [integral_cond_congr hT (g := Set.indicator {ω | obsTreat Z d1 d0 ω = false} 1)
       (fun ω hω => by
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_cases h : d1 ω = false <;>
           simp [h, obsTreat, hω]),
       integral_indicator_one hS, measureReal_def]
@@ -357,7 +357,7 @@ theorem prob_alwaysTaker_eq [IsProbabilityMeasure μ]
   have hAeq : typeSet d1 d0 ComplianceType.alwaysTaker = {ω | d0 ω = true} := by
     rw [typeSet_eq_inter]
     ext ω
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, dOneOf, dZeroOf]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, dOneOf, dZeroOf]
     exact ⟨fun h => h.2, fun h0 => ⟨hmono ω h0, h0⟩⟩
   have hmf : Measurable (fun ω => if d0 ω = true then (1 : ℝ) else 0) :=
     measurable_boolComp (fun q : Bool × Bool => if q.2 = true then (1 : ℝ) else 0) hd1 hd0
@@ -379,7 +379,7 @@ theorem prob_alwaysTaker_eq [IsProbabilityMeasure μ]
       = ((μ[|{ω | Z ω = false}]) {ω | obsTreat Z d1 d0 ω = true}).toReal := by
     rw [integral_cond_congr hF (g := Set.indicator {ω | obsTreat Z d1 d0 ω = true} 1)
       (fun ω hω => by
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_cases h : d0 ω = true <;>
           simp [h, obsTreat, hω]),
       integral_indicator_one hS, measureReal_def]

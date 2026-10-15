@@ -59,7 +59,7 @@ theorem particleResampling_unbiased [NeZero N]
     (hw1 : ∑ i, w i = 1) :
     ∫ a, mcEstimate g (x ∘ a) ∂(Measure.pi fun _ : Fin N => categorical w)
       = ∑ i, w i * g (x i) := by
-  haveI : IsProbabilityMeasure (categorical w) := isProbabilityMeasure_categorical hw0 hw1
+  have : IsProbabilityMeasure (categorical w) := isProbabilityMeasure_categorical hw0 hw1
   have hrw : (fun a : Fin N → Fin m => mcEstimate g (x ∘ a))
       = fun a : Fin N → Fin m => (N : ℝ)⁻¹ * ∑ i, g (x (a i)) := rfl
   rw [hrw]

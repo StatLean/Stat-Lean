@@ -41,8 +41,8 @@ theorem tendstoInMeasure_of_tendsto_mean_of_tendsto_variance
     filter_upwards [h_bias] with n hbias
     refine measure_mono ?_
     intro ω hω
-    rw [Set.mem_setOf_eq, Real.norm_eq_abs] at hω
-    rw [Set.mem_setOf_eq]
+    rw [Set.mem_ofPred_eq, Real.norm_eq_abs] at hω
+    rw [Set.mem_ofPred_eq]
     have hsplit : Y n ω - c = (Y n ω - ∫ a, Y n a ∂P) + ((∫ a, Y n a ∂P) - c) := by ring
     have htri : |Y n ω - c| ≤ |Y n ω - ∫ a, Y n a ∂P| + |(∫ a, Y n a ∂P) - c| := by
       rw [hsplit]; exact abs_add_le _ _
@@ -60,10 +60,10 @@ theorem tendstoInMeasure_of_tendsto_mean_of_tendsto_variance
       h_var.div_const _
     rw [zero_div] at h1
     have h2 := (ENNReal.continuous_ofReal.tendsto 0).comp h1
-    simpa using h2
+    simpa using! h2
   -- Squeeze.
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_bound
-    (Eventually.of_forall (fun _ => zero_le _)) h_cheby
+    (Eventually.of_forall (fun _ => zero_le)) h_cheby
 
 /-- A constant sequence trivially converges in probability to its value. -/
 lemma tendstoInMeasure_const
@@ -96,7 +96,7 @@ lemma tendstoInMeasure_const_mul
         = {ω | ε / |c| ≤ ‖Y n ω - a‖} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, Real.norm_eq_abs]
+    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs]
     rw [show c * Y n ω - c * a = c * (Y n ω - a) from by ring, abs_mul]
     refine ⟨fun h => ?_, fun h => ?_⟩
     · rw [div_le_iff₀ h_abs_c_pos]; linarith
@@ -128,12 +128,12 @@ lemma tendstoInMeasure_add
         {ω | ε ≤ ‖(Y n ω + Z n ω) - (a + b)‖}
           ⊆ {ω | δ ≤ ‖Y n ω - a‖} ∪ {ω | δ ≤ ‖Z n ω - b‖} := by
       intro ω hω
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs] at hω
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs] at hω
       by_contra h
       rw [Set.mem_union, not_or] at h
       obtain ⟨hY', hZ'⟩ := h
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at hY'
-      rw [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at hZ'
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at hY'
+      rw [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at hZ'
       have hdecomp : (Y n ω + Z n ω) - (a + b) = (Y n ω - a) + (Z n ω - b) := by ring
       have htri : |(Y n ω + Z n ω) - (a + b)| ≤ |Y n ω - a| + |Z n ω - b| := by
         rw [hdecomp]; exact abs_add_le _ _
@@ -146,7 +146,7 @@ lemma tendstoInMeasure_add
     simpa using this
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
     tendsto_const_nhds h_sum_tendsto
-    (Filter.Eventually.of_forall fun _ => zero_le _)
+    (Filter.Eventually.of_forall fun _ => zero_le)
     (Filter.Eventually.of_forall h_sub)
 
 end AsymptoticStatistics

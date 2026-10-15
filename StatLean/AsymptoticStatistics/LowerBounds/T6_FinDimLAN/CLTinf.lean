@@ -87,7 +87,7 @@ private lemma measurable_XseqAtom (g_P : Fin m → ↥(L2ZeroMean P)) :
     Measurable (XseqAtom (P := P) g_P) := by
   unfold XseqAtom
   refine (WithLp.measurable_toLp 2 (Fin m → ℝ)).comp ?_
-  refine measurable_pi_lambda _ (fun i => ?_)
+  refine Measurable.of_eval (fun i => ?_)
   exact (Lp.stronglyMeasurable _).measurable
 
 private lemma measurable_Xseq (g_P : Fin m → ↥(L2ZeroMean P)) (k : ℕ) :
@@ -157,7 +157,7 @@ theorem cltInf_at_orthonormal_basis
   classical
   -- Set up the iid Kolmogorov extension and the vectorised score family.
   set Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hPinf_def
-  haveI hPinf_prob : IsProbabilityMeasure Pinf := by
+  have hPinf_prob : IsProbabilityMeasure Pinf := by
     rw [hPinf_def]; infer_instance
   set Y : ℕ → (ℕ → Ω) → EuclideanSpace ℝ (Fin m) := Xseq g_P with hY_def
   -- Measurability and atom identity.
@@ -246,7 +246,7 @@ theorem cltInf_at_orthonormal_basis
         Integrable (fun x : Ω =>
           t i * ((g_P i : Lp ℝ 2 P) : Ω → ℝ) x) P := fun i =>
       (integrable_g_coe g_P i).const_mul (t i)
-    rw [MeasureTheory.integral_finset_sum _ (fun i _ => h_each_int i)]
+    rw [MeasureTheory.integral_finsetSum _ (fun i _ => h_each_int i)]
     refine Finset.sum_eq_zero (fun i _ => ?_)
     rw [MeasureTheory.integral_const_mul, h_g_int_zero i, mul_zero]
   -- ---------------------------------------------------------------
@@ -337,10 +337,10 @@ theorem cltInf_at_orthonormal_basis
         refine Finset.sum_congr rfl (fun j _ => ?_)
         ring
       rw [integral_congr_ae (Filter.Eventually.of_forall h_pointwise)]
-      rw [MeasureTheory.integral_finset_sum _ (fun i _ =>
-        MeasureTheory.integrable_finset_sum _ (fun j _ => h_each_int i j))]
+      rw [MeasureTheory.integral_finsetSum _ (fun i _ =>
+        MeasureTheory.integrable_finsetSum _ (fun j _ => h_each_int i j))]
       refine Finset.sum_congr rfl (fun i _ => ?_)
-      rw [MeasureTheory.integral_finset_sum _ (fun j _ => h_each_int i j)]
+      rw [MeasureTheory.integral_finsetSum _ (fun j _ => h_each_int i j)]
     rw [h_step2]
     -- Each inner integral collapses to `(uᵢ vⱼ) * δᵢⱼ`.
     have h_ij : ∀ i j : Fin m,
@@ -398,7 +398,7 @@ theorem cltInf_at_orthonormal_basis
         fun x => ∑ i : Fin m, (((g_P i : Lp ℝ 2 P) : Ω → ℝ) x) ^ 2 := by
       funext x; exact h_norm_sq x
     rw [h_eq]
-    refine MeasureTheory.integrable_finset_sum _ (fun i _ => ?_)
+    refine MeasureTheory.integrable_finsetSum _ (fun i _ => ?_)
     have h_i : MemLp ((g_P i : Lp ℝ 2 P) : Ω → ℝ) 2 P := Lp.memLp _
     exact h_i.integrable_sq
   have h_L2 : MemLp (Y 0) 2 Pinf := by

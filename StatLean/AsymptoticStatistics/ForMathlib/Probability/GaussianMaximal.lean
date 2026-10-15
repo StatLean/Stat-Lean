@@ -67,7 +67,7 @@ lemma integrable_iSup_of_forall_integrable [Nonempty ι] {Z : ι → Ω → ℝ}
     Integrable (fun ω ↦ ⨆ i, Z i ω) μ := by
   refine Integrable.mono' (g := fun ω ↦ ∑ i, |Z i ω|) ?_
     (aestronglyMeasurable_iSup (fun i ↦ (hZ i).aestronglyMeasurable)) ?_
-  · exact integrable_finset_sum _ (fun i _ ↦ (hZ i).abs)
+  · exact integrable_finsetSum _ (fun i _ ↦ (hZ i).abs)
   · refine Filter.Eventually.of_forall (fun ω ↦ ?_)
     rw [Real.norm_eq_abs, ← Finset.sup'_univ_eq_ciSup (fun i ↦ Z i ω)]
     obtain ⟨j, _, hj⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty (fun i ↦ Z i ω)
@@ -83,7 +83,7 @@ lemma integrable_exp_iSup_of_subgaussian [Nonempty ι] {Z : ι → Ω → ℝ} {
     (Real.continuous_exp.comp_aestronglyMeasurable
       ((aestronglyMeasurable_iSup (fun i ↦ (hZ i).aestronglyMeasurable)).const_smul lam))
   refine Integrable.mono' (g := fun ω ↦ ∑ i, Real.exp (lam * Z i ω)) ?_ hmeas ?_
-  · exact integrable_finset_sum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)
+  · exact integrable_finsetSum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)
   · refine Filter.Eventually.of_forall (fun ω ↦ ?_)
     rw [Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)]
     rw [← Finset.sup'_univ_eq_ciSup (fun i ↦ Z i ω)]
@@ -139,9 +139,9 @@ theorem expectation_iSup_le_of_subgaussian [IsProbabilityMeasure μ] [Nonempty �
       calc ∫ ω, Real.exp (lam * ⨆ i, Z i ω) ∂μ
           ≤ ∫ ω, ∑ i, Real.exp (lam * Z i ω) ∂μ :=
             integral_mono_ae (integrable_exp_iSup_of_subgaussian hZ lam)
-              (integrable_finset_sum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)) hbound
+              (integrable_finsetSum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)) hbound
         _ = ∑ i, ∫ ω, Real.exp (lam * Z i ω) ∂μ :=
-            integral_finset_sum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)
+            integral_finsetSum _ (fun i _ ↦ (hZ i).integrable_exp_mul lam)
         _ = ∑ _i : ι, mgf (Z _i) μ lam := by rfl
         _ ≤ ∑ _i : ι, Real.exp (c' * lam ^ 2 / 2) :=
             Finset.sum_le_sum (fun i _ ↦ by

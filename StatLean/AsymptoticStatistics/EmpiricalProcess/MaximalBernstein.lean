@@ -598,7 +598,7 @@ private lemma bernstein_one_sided
           have h_compl_zero : P {y : Ω | f y = 0}ᶜ = 0 := by
             have := hf_zero_ae
             rw [Filter.eventually_iff] at this
-            convert this using 1
+            convert! this using 1
           have : P {y : Ω | f y = 0} + P {y : Ω | f y = 0}ᶜ = P Set.univ :=
             measure_add_measure_compl hmeas_set
           rw [h_compl_zero, add_zero] at this
@@ -614,7 +614,7 @@ private lemma bernstein_one_sided
         rw [ae_iff]
         have h_subset : {ω : Ξ | ¬ ∀ i : Fin n, f (X i.val ω) = 0}
             ⊆ ⋃ i : Fin n, {ω : Ξ | f (X i.val ω) ≠ 0} := by
-          intro ω hω; simp only [Set.mem_setOf_eq, not_forall] at hω
+          intro ω hω; simp only [Set.mem_ofPred_eq, not_forall] at hω
           obtain ⟨i, hi⟩ := hω
           exact Set.mem_iUnion.mpr ⟨i, hi⟩
         refine measure_mono_null h_subset ?_
@@ -649,7 +649,7 @@ private lemma bernstein_one_sided
       have h_set_le : {ω : Ξ | x < empiricalProcess P n (fun j : Fin n => X j.val ω) f}
           ⊆ {ω : Ξ | empiricalProcess P n (fun j : Fin n => X j.val ω) f ≠ 0} := by
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         intro h0; rw [h0] at hω; linarith
       have h_null : μ {ω : Ξ | empiricalProcess P n (fun j : Fin n => X j.val ω) f ≠ 0} = 0 := by
         rw [← ae_iff]; exact hG_zero_ae
@@ -657,7 +657,7 @@ private lemma bernstein_one_sided
           ≤ μ {ω : Ξ | empiricalProcess P n (fun j : Fin n => X j.val ω) f ≠ 0} :=
             measure_mono h_set_le
         _ = 0 := h_null
-        _ ≤ _ := zero_le _
+        _ ≤ _ := zero_le
     -- Main case: M > 0, σ > 0.
     · have hσ_pos : 0 < σ := lt_of_le_of_ne hσ (Ne.symm hσ_zero)
       have hσ2_pos : 0 < σ ^ 2 := by positivity
@@ -777,12 +777,12 @@ private lemma bernstein_one_sided
         intros i _; exact hY_meas i.val
       have h_event_eq : {ω : Ξ | x < empiricalProcess P n (fun j : Fin n => X j.val ω) f}
           = {ω : Ξ | x * Real.sqrt n < Sω ω} := by
-        ext ω; simp only [Set.mem_setOf_eq]; rw [h_G_eq ω]
+        ext ω; simp only [Set.mem_ofPred_eq]; rw [h_G_eq ω]
         rw [lt_div_iff₀ hsqrt_n_pos]
       rw [h_event_eq]
       have h_subset : {ω : Ξ | x * Real.sqrt n < Sω ω} ⊆ {ω : Ξ | x * Real.sqrt n ≤ Sω ω} := by
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         exact le_of_lt hω
       refine (measure_mono h_subset).trans ?_
       -- ============================================================
@@ -984,7 +984,7 @@ private lemma bernstein_two_sided
   have h_subset :
       {ω : Ξ | x < |empiricalProcess P n (fun j : Fin n => X j.val ω) f|} ⊆ R₁ ∪ R₂ := by
     intro ω hω
-    simp only [Set.mem_setOf_eq, lt_abs] at hω
+    simp only [Set.mem_ofPred_eq, lt_abs] at hω
     rcases hω with hpos | hneg
     · exact Or.inl hpos
     · refine Or.inr ?_

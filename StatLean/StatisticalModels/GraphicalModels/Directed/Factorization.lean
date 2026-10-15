@@ -465,7 +465,7 @@ theorem ne_top_of_recursivelyFactorizes
     (hp : RecursivelyFactorizes D p) (x : V → α) :
     p x ≠ ∞ := by
   have h : p x ≤ ∑ y : V → α, p y :=
-    Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ x)
+    Finset.single_le_sum (f := p) (fun i _ => zero_le) (Finset.mem_univ x)
   rw [sum_eq_one_of_recursivelyFactorizes D p hp] at h
   exact ne_top_of_le_ne_top ENNReal.one_ne_top h
 

@@ -141,7 +141,7 @@ private lemma propensityLevel_inter_cell_eq {v : ℝ} {x : 𝒳} (h : propensity
     propensityLevel μ Z X v ∩ cell X x = cell X x := by
   refine Set.inter_eq_right.mpr fun ω hω => ?_
   have hx : X ω = x := hω
-  show propensity μ Z X (X ω) = v
+  change propensity μ Z X (X ω) = v
   rw [hx]; exact h
 
 omit [Fintype 𝒳] [MeasurableSingletonClass 𝒳] in
@@ -212,7 +212,7 @@ private lemma integral_ind_cond_cell [IsFiniteMeasure μ] (hZ : Measurable Z) (h
 private lemma integral_one_sub_ind_cond_cell [IsFiniteMeasure μ] (hZ : Measurable Z)
     (hX : Measurable X) {x : 𝒳} (h0 : μ (cell X x) ≠ 0) :
     ∫ ω, (1 - ind (Z ω)) ∂(μ[|cell X x]) = 1 - propensity μ Z X x := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
   rw [integral_sub (integrable_const (1 : ℝ)) (integrable_ind hZ), integral_const,
     integral_ind_cond_cell hZ hX x]
   simp
@@ -283,7 +283,7 @@ private lemma setIntegral_treated_cell [IsProbabilityMeasure μ]
       simp
     · have harm : treatedEvent Z ∩ cell X x = armCell Z X true x := rfl
       have hI : ∫ ω, y1 ω ∂(μ[|armCell Z X true x]) = ∫ ω, y1 ω ∂(μ[|cell X x]) := by
-        haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
+        have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
         rw [cond_armCell_eq hZ true x h0]
         exact integral_cond_arm_eq_of_indepFun ((hu x).comp measurable_fst measurable_id)
           (integrable_cond hint) hy1 hZ he
@@ -327,8 +327,7 @@ theorem propensity_mem_Icc [IsProbabilityMeasure μ] (x : 𝒳) :
   rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
   · rw [propensity, cond_eq_zero_of_meas_eq_zero h0]
     simp
-  · haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
-    refine ENNReal.toReal_le_of_le_ofReal zero_le_one ?_
+  · refine ENNReal.toReal_le_of_le_ofReal zero_le_one ?_
     simpa using prob_le_one (μ := μ[|cell X x]) (s := treatedEvent Z)
 
 /-- **The propensity score is a balancing score** (Ding Theorem 11.3): the conditional
@@ -347,7 +346,7 @@ theorem cond_treated_propensityLevel_eq [IsProbabilityMeasure μ]
   have hsub : cell X x ⊆ propensityLevel μ Z X (propensity μ Z X x) := by
     intro ω hω
     have hx : X ω = x := hω
-    show propensity μ Z X (X ω) = propensity μ Z X x
+    change propensity μ Z X (X ω) = propensity μ Z X x
     rw [hx]
   have hLne : μ (propensityLevel μ Z X (propensity μ Z X x)) ≠ 0 := fun h =>
     hcell (measure_mono_null hsub h)
@@ -448,7 +447,7 @@ theorem integral_ind_div_propensity_eq_one [IsProbabilityMeasure μ]
     refine Finset.sum_congr rfl fun x _ => ?_
     rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
     · simp [h0]
-    · haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
+    · have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
       have hc : MeasurableSet (cell X x) := measurableSet_cell hX x
       have he0 : propensity μ Z X x ≠ 0 := (hpos x h0).1.ne'
       congr 1

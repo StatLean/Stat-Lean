@@ -59,13 +59,13 @@ theorem wald_consistent_on_compact
         {θ : Θ | ∀ η, extendedExpectation Q (m η) ≤ extendedExpectation Q (m θ)} =
           Set.univ := by
       ext θ
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       intro η
       rw [hall η, hall θ]
     simp only [hargmax]
     have hinf (n : ℕ) (ω : Ω) : Metric.infDist (θhat n ω) (Set.univ : Set Θ) = 0 :=
       Metric.infDist_zero_of_mem (Set.mem_univ _)
-    simp only [hinf, not_le_of_gt hε, false_and, Set.setOf_false, measure_empty,
+    simp only [hinf, not_le_of_gt hε, false_and, Set.ofPred_false, measure_empty,
       tendsto_const_nhds]
   have hfinite : ∃ a : ℝ, extendedExpectation Q (m θ₀) = (a : EReal) := by
     obtain ⟨ρ, hρ, hloc⟩ := hlocal θ₀
@@ -103,6 +103,6 @@ theorem wald_consistent_on_compact
   have havoid := wald_avoids_compact_disjoint Q ℙ Xs m θ₀ θhat R
     hm_top husc hlocal hmax hfinite hXs_meas hXs_indep hXs_id hXs_law
     hnear hR B hB_compact (by simpa only [Θ₀] using hB_disjoint)
-  simpa only [B, Θ₀, Set.mem_inter_iff, Set.mem_setOf_eq, and_comm] using havoid
+  simpa only [B, Θ₀, Set.mem_inter_iff, Set.mem_ofPred_eq, and_comm] using havoid
 
 end AsymptoticStatistics.Consistency

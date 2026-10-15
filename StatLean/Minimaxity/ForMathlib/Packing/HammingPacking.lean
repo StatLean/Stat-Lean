@@ -31,9 +31,10 @@ maximal-set covering argument:
   of the ball satisfies $1 \le 3^k (1/3)^{d_H(t,y)}$, and summing the right-hand side over the
   whole cube factorises over coordinates to $3^k(1+1/3)^m = 3^k(4/3)^m$. The numeric bound
   $3^k(4/3)^m \le \exp(\tfrac{59}{100} m)$ reduces, after taking logs, to
-  $2\log 2 - \tfrac34\log 3 \le \tfrac{59}{100}$, which holds since $\log 3 \ge \tfrac{23}{15}\log 2$
-  (from $2^{23} \le 3^{15}$) and $\log 2 \le 0.6931471808$. The constant $59/100$ is a provable
-  slack above the true binary entropy $H_2(1/4) \approx 0.5623$ nats.
+  $2\log 2 - \tfrac34\log 3 \le \tfrac{59}{100}$, which holds since
+  $\log 3 \ge \tfrac{23}{15}\log 2$ (from $2^{23} \le 3^{15}$) and $\log 2 \le 0.6931471808$. The
+  constant $59/100$ is a provable slack above the
+  true binary entropy $H_2(1/4) \approx 0.5623$ nats.
 * *Covering / counting* (`gilbert_varshamov`, exported as `exists_hamming_packing`): take a
   *maximal* $m/4$-separated subset $T$. By maximality its radius-$m/4$ Hamming balls cover the cube,
   so $2^m \le |T|\cdot \mathrm{vol(ball)}$. Combined with the volume bound and $2^m = \exp(m\log 2)$

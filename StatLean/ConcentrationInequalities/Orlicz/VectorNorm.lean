@@ -84,11 +84,11 @@ theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
   have hfun : (fun ω => ⟪X ω, EuclideanSpace.single i (1 : ℝ)⟫) = (fun ω => X ω i) := by
     funext ω
     rw [PiLp.inner_apply, Finset.sum_eq_single i]
-    · show (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
-      simp [EuclideanSpace.single_apply]
+    · change (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
+      simp
     · intro j _ hj
-      show (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
-      simp [EuclideanSpace.single_apply, if_neg hj]
+      change (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
+      simp [PiLp.single_apply, ite_eq_right hj]
     · intro hi; exact absurd (Finset.mem_univ i) hi
   rwa [hfun] at h
 
@@ -108,7 +108,7 @@ theorem isSubGaussianVec_of_coords {n : ℕ}
     funext ω
     rw [PiLp.inner_apply]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    change v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
     simp
   rw [hinner]
   -- Each weighted coordinate has finite ψ₂ norm; the finset triangle bound is finite.
@@ -157,7 +157,7 @@ theorem subGaussianVecNorm_le_of_indep
     funext ω
     rw [PiLp.inner_apply]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    change v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
     simp
   rw [hinner]
   -- the `∑ (v i)² = ‖v‖² = 1` identity, over `ℝ`
@@ -166,15 +166,15 @@ theorem subGaussianVecNorm_le_of_indep
       rw [EuclideanSpace.norm_sq_eq]
       exact Finset.sum_congr rfl (fun i _ => by rw [Real.norm_eq_abs, sq_abs])
     rw [h2, hv1, one_pow]
-  have harg : (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0)) = 18 * K ^ 2 := by
+  have harg : (18 * (∑ i, (NNReal.mk ((v i) ^ 2) (sq_nonneg _)) * K ^ 2 : ℝ≥0)) = 18 * K ^ 2 := by
     apply NNReal.coe_injective
     push_cast
     rw [← Finset.sum_mul, hsumR, one_mul]
-  have hconst : NNReal.sqrt (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0))
+  have hconst : NNReal.sqrt (18 * (∑ i, (NNReal.mk ((v i) ^ 2) (sq_nonneg _)) * K ^ 2 : ℝ≥0))
       = NNReal.sqrt 18 * K := by
     rw [harg, NNReal.sqrt_mul, NNReal.sqrt_sq]
   calc subGaussianNorm (fun ω => ∑ i, v i * X ω i) μ
-      ≤ (NNReal.sqrt (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0)) : ℝ≥0∞) :=
+      ≤ (NNReal.sqrt (18 * (∑ i, (NNReal.mk ((v i) ^ 2) (sq_nonneg _)) * K ^ 2 : ℝ≥0)) : ℝ≥0∞) :=
         subGaussianNorm_weighted_sum_le (X := fun i ω => X ω i) (K := fun _ => K)
           v hmeas hindep hmean (fun _ => hK) hnorm
     _ = (NNReal.sqrt 18 * K : ℝ≥0∞) := by rw [← ENNReal.coe_mul, hconst]

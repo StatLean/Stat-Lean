@@ -23,7 +23,7 @@ def strictLocalizedDifferenceClass
     (F : Set (Ω → ℝ)) (P : Measure Ω) (r : ℝ) : Set (Ω → ℝ) :=
   {h | ∃ f ∈ F, ∃ g ∈ F,
     h = (fun x => f x - g x) ∧
-      eLpNorm h 2 P < ENNReal.ofReal r}
+      eLpNorm' h 2 P < ENNReal.ofReal r}
 
 /-- Forgetting the strict radius restriction leaves an unrestricted
 difference of two class members. -/
@@ -43,7 +43,7 @@ theorem zero_mem_strictLocalizedDifferenceClass
     (fun _ : Ω => 0) ∈ strictLocalizedDifferenceClass F P r := by
   obtain ⟨f, hf⟩ := hF
   refine ⟨f, hf, f, hf, by funext x; simp, ?_⟩
-  simpa using ENNReal.ofReal_pos.2 hr
+  simpa [eLpNorm', ENNReal.rpow_mul] using ENNReal.ofReal_pos.2 hr
 
 /-- Pointwise density passes to the strict localized difference class.
 
@@ -77,6 +77,9 @@ theorem EmpProcPointwiseDense_strictLocalizedDifferenceClass
     exact hdiff_count.mono
       (strictLocalizedDifferenceClass_subset_differenceClass F' P r)
   · rintro h ⟨f, hf, g, hg, rfl, hr⟩
+    rw [← eLpNorm_two_eq_eLpNorm'
+      (show AEStronglyMeasurable (fun x => f x - g x) P from
+          ((hF_meas f hf).sub (hF_meas g hg)).aestronglyMeasurable)] at hr
     obtain ⟨φ, hφmem, hφlim⟩ := hApprox f hf
     obtain ⟨ψ, hψmem, hψlim⟩ := hApprox g hg
     have hΦ_nonneg : ∀ x, 0 ≤ Φ x := fun x =>
@@ -111,6 +114,10 @@ theorem EmpProcPointwiseDense_strictLocalizedDifferenceClass
           strictLocalizedDifferenceClass F' P r := by
       filter_upwards [hclose] with m hm
       refine ⟨φ m, hφmem m, ψ m, hψmem m, rfl, ?_⟩
+      rw [← eLpNorm_two_eq_eLpNorm'
+        (show AEStronglyMeasurable (fun x => φ m x - ψ m x) P from
+          ((hF_meas _ (hF'sub (hφmem m))).sub
+            (hF_meas _ (hF'sub (hψmem m)))).aestronglyMeasurable)]
       calc
         eLpNorm (fun x => φ m x - ψ m x) 2 P =
             eLpNorm (fun x =>
@@ -121,10 +128,6 @@ theorem EmpProcPointwiseDense_strictLocalizedDifferenceClass
         _ ≤ eLpNorm (fun x => (φ m x - ψ m x) - (f x - g x)) 2 P +
             eLpNorm (fun x => f x - g x) 2 P := by
               apply eLpNorm_add_le
-              · exact (((hF_meas _ (hF'sub (hφmem m))).sub
-                  (hF_meas _ (hF'sub (hψmem m)))).sub
-                    ((hF_meas _ hf).sub (hF_meas _ hg))).aestronglyMeasurable
-              · exact ((hF_meas _ hf).sub (hF_meas _ hg)).aestronglyMeasurable
               · norm_num
         _ < (ENNReal.ofReal r - eLpNorm (fun x => f x - g x) 2 P) +
             eLpNorm (fun x => f x - g x) 2 P :=

@@ -424,7 +424,7 @@ lemma integral_product_residual_sq_eq
     integral_prod_sqrt_mul_prod_sqrt_eq_pow (μ := μ) (ν := ν) (ξ := ξ)
   -- Assemble: ∫ ((F − G)²) = 2 − 2 (∫ FG)^n.
   -- Strategy: expand (F − G)² = F² + G² − 2 FG pointwise, then integrate by linearity.
-  -- We use `integral_finset_sum` to handle the sum cleanly (treating it as a 3-term sum).
+  -- We use `integral_finsetSum` to handle the sum cleanly (treating it as a 3-term sum).
   set F : (Fin n → Ω) → ℝ := fun X => (∏ j, f (X j)) ^ 2 with hF_def
   set G : (Fin n → Ω) → ℝ := fun X => (∏ j, g (X j)) ^ 2 with hG_def
   set H : (Fin n → Ω) → ℝ := fun X => (∏ j, f (X j)) * ∏ j, g (X j) with hH_def
@@ -515,7 +515,7 @@ lemma hellinger_product_residual_memLp_two_perCoord
   have hG_meas : Measurable (fun X : Fin n → Ω => ∏ j, g (X j)) :=
     Finset.measurable_prod _ (fun j _ => hg_meas.comp (measurable_pi_apply j))
   have h_diff_meas := hF_meas.sub hG_meas
-  rw [memLp_two_iff_integrable_sq h_diff_meas.aestronglyMeasurable]
+  erw [memLp_two_iff_integrable_sq h_diff_meas.aestronglyMeasurable]
   -- Bound (F − G)² ≤ 2(F² + G²) pointwise; both F², G² integrable.
   have hF_sq_pt : ∀ X : Fin n → Ω,
       (∏ j, f (X j)) ^ 2 = ∏ j, (μ.rnDeriv ξ (X j)).toReal := by

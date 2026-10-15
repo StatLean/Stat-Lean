@@ -48,7 +48,7 @@ theorem measurePreserving_rademacherCoordinateFlip
   intro j
   by_cases hj : j = k
   · simpa [hj] using measurePreserving_bool_not_rademacher
-  · simpa [hj] using MeasurePreserving.id rademacherMeasure
+  · simpa [hj] using! MeasurePreserving.id rademacherMeasure
 
 theorem measurePreserving_rademacherFlipAll {n : ℕ} :
     MeasurePreserving rademacherFlipAll (rademacherCube n) (rademacherCube n) := by
@@ -194,7 +194,7 @@ theorem integral_iSup_rademacherSum_update_comp_le
     cases hε : ε k
     · simpa [rademacherSign, hε, mul_comm, mul_left_comm, mul_assoc] using
         iSup_add_comp_add_iSup_sub_comp_le c x ψ L hψ
-    · simp only [rademacherSign, if_true, mul_neg, mul_one]
+    · simp only [rademacherSign, ite_true, mul_neg, mul_one]
       simp only [sub_eq_add_neg, neg_neg]
       rw [add_comm (⨆ j, c j + -ψ (x j)),
         add_comm (⨆ j, c j + -(L * x j))]
@@ -301,10 +301,10 @@ theorem integral_iSup_abs_rademacherSum_comp_le
   classical
   cases isEmpty_or_nonempty ι with
   | inl hι =>
-      letI : IsEmpty ι := hι
+      let : IsEmpty ι := hι
       simp
   | inr hι =>
-      letI : Nonempty ι := hι
+      let : Nonempty ι := hι
       cases n with
       | zero => simp [rademacherSum]
       | succ n =>

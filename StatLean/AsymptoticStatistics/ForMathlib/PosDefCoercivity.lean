@@ -31,7 +31,7 @@ lemma exists_inner_toEuclideanCLM_ge
     simp [hx]
   · let T := Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) I
     let q : EuclideanSpace ℝ (Fin d) → ℝ := fun x => ⟪x, T x⟫
-    letI := FiniteDimensional.proper_rclike ℝ (EuclideanSpace ℝ (Fin d))
+    let := FiniteDimensional.proper_rclike ℝ (EuclideanSpace ℝ (Fin d))
     have hq_cont : Continuous q := continuous_id.inner T.continuous
     have hq_pos : ∀ x ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin d)) 1, 0 < q x := by
       intro x hx

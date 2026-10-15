@@ -56,14 +56,14 @@ theorem measurable_uncurry_multinomialWeight (m n : ℕ) :
   refine Measurable.ite ?_ ?_ measurable_const
   · -- the condition set in `q` (the `∑ v = n` conjunct is `q`-independent)
     have hA : MeasurableSet {q : Fin m → ℝ | ∀ i, 0 ≤ q i} := by
-      rw [Set.setOf_forall]
+      rw [Set.ofPred_forall]
       exact MeasurableSet.iInter fun i =>
         measurableSet_le measurable_const (measurable_pi_apply i)
     have hB : MeasurableSet {q : Fin m → ℝ | ∑ i, q i = 1} :=
       (Finset.univ.measurable_sum fun i _ => measurable_pi_apply i) (measurableSet_singleton 1)
     have hC : MeasurableSet {_q : Fin m → ℝ | ∑ i, v i = n} :=
       measurable_const (measurableSet_singleton n)
-    simp only [Set.setOf_and]
+    simp only [Set.ofPred_and]
     exact hA.inter (hB.inter hC)
   · exact (((Finset.univ.measurable_prod
       fun i _ => (measurable_pi_apply i).pow_const (v i)).const_mul
@@ -87,7 +87,7 @@ theorem multinomialKernel_apply_univ_of_mem_simplex (m n : ℕ) {q : Fin m → �
     have hne : ∑ i, v i ≠ n := fun h =>
       hv (Finset.mem_piAntidiag.mpr ⟨h, fun i _ => Finset.mem_univ i⟩)
     simp only [multinomialWeight]
-    rw [if_neg]
+    rw [ite_eq_right]
     rintro ⟨-, -, h3⟩
     exact hne h3
   rw [tsum_eq_sum hsupp]
@@ -97,7 +97,7 @@ theorem multinomialKernel_apply_univ_of_mem_simplex (m n : ℕ) {q : Fin m → �
     intro v hv
     rw [Finset.mem_piAntidiag] at hv
     simp only [multinomialWeight]
-    rw [if_pos ⟨hq0, hq1, hv.1⟩]
+    rw [ite_eq_left ⟨hq0, hq1, hv.1⟩]
   rw [Finset.sum_congr rfl hval,
     ← ENNReal.ofReal_sum_of_nonneg (fun v _ =>
       mul_nonneg (Nat.cast_nonneg _) (Finset.prod_nonneg fun i _ => pow_nonneg (hq0 i) _)),
@@ -111,7 +111,7 @@ instance (m n : ℕ) : IsFiniteKernel (multinomialKernel m n) := by
   · have hz : ∀ v, multinomialWeight m n q v = 0 := by
       intro v
       simp only [multinomialWeight]
-      rw [if_neg]
+      rw [ite_eq_right]
       rintro ⟨h1, h2, -⟩
       exact hs ⟨h1, h2⟩
     have : multinomialKernel m n q Set.univ = 0 := by
@@ -119,7 +119,7 @@ instance (m n : ℕ) : IsFiniteKernel (multinomialKernel m n) := by
         Kernel.withDensity_apply' _ (measurable_uncurry_multinomialWeight m n),
         Kernel.const_apply, Measure.restrict_univ, lintegral_count]
       simp only [hz, tsum_zero]
-    exact this ▸ zero_le 1
+    exact this ▸ zero_le (a := 1)
 
 /-- Pointwise value on singletons: the pmf formula. -/
 theorem multinomialKernel_apply_singleton (m n : ℕ) (q : Fin m → ℝ) (v : Fin m → ℕ) :

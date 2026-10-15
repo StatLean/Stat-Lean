@@ -29,7 +29,7 @@
     {"id":"le_iInf₂","label":"le_iInf₂","full":"le_iInf₂","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
     {"id":"Set.mem_univ","label":"mem_univ","full":"Set.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Operations"},
     {"id":"le_top","label":"le_top","full":"le_top","kind":"mathlib","decl":"thm","module":"Mathlib.Order.BoundedOrder.Basic"},
-    {"id":"Real.sInf_of_not_bddBelow","label":"sInf_of_not_bddBelow","full":"Real.sInf_of_not_bddBelow","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Archimedean"},
+    {"id":"Real.sInf_of_not_bddBelow","label":"sInf_of_not_bddBelow","full":"Real.sInf_of_not_bddBelow","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Archimedean.Real.Basic"},
     {"id":"not_bddBelow_iff","label":"not_bddBelow_iff","full":"not_bddBelow_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
@@ -46,7 +46,7 @@
     {"id":"exists_rat_btwn","label":"exists_rat_btwn","full":"exists_rat_btwn","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Archimedean.Basic"},
     {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"MeasurableSet.iInter","label":"iInter","full":"MeasurableSet.iInter","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
-    {"id":"Prop.countable","label":"countable","full":"Prop.countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"}
+    {"id":"Prop.countable","label":"countable","full":"Prop.countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.exists_measurable_argmin_of_convex_of_finite","target":"Measurable.comp"},

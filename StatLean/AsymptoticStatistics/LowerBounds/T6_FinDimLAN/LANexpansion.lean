@@ -180,7 +180,7 @@ theorem lanExpansion1D_to_PnProb_bridge
   -- Step 1: set up the canonical iid space `Ω' := ℕ → Ω`.
   set h' : EuclideanSpace ℝ (Fin 1) := EuclideanSpace.single 0 1 with hh'_def
   set P' : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hP'_def
-  haveI : IsProbabilityMeasure P' := by
+  have : IsProbabilityMeasure P' := by
     rw [hP'_def]; infer_instance
   set X : ℕ → (ℕ → Ω) → Ω := fun i ω => ω i with hX_def
   have hX_meas : ∀ i, Measurable (X i) := fun i => measurable_pi_apply i
@@ -212,7 +212,7 @@ theorem lanExpansion1D_to_PnProb_bridge
     -- Since `(γ h).curve 0 = P`, this is `(P.rnDeriv (γ h).dominating ω).toReal`.
     -- The `ENNReal.ofReal ∘ toReal` rewraps to `P.rnDeriv (γ h).dominating` a.e.
     -- (because rnDeriv is a.e. finite), and `withDensity_rnDeriv_eq` closes.
-    haveI hac : P ≪ (γ h).dominating := by
+    have hac : P ≪ (γ h).dominating := by
       have := (γ h).curve_absContinuous 0
       rw [(γ h).curve_at_zero] at this
       exact this
@@ -362,7 +362,7 @@ theorem lanExpansion1D_to_PnProb_bridge
           ((fun _ => (0 : ℝ)) x)}
           = {x | ε ≤ edist (F n x) ((fun _ => (0 : ℝ)) x)} := by
       intro n; ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [hF_eq n ω]
     have h_meas_pt : (fun n =>
         P' {x | ε ≤ edist
@@ -403,7 +403,7 @@ theorem lanExpansion1D_to_PnProb_bridge
         = {ω : ℕ → Ω | ε ≤ |F n ω|} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero]
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq, sub_zero]
     constructor
     · intro hle
       have habs_nn : (0 : ℝ) ≤ |F n ω| := abs_nonneg _

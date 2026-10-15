@@ -1,4 +1,5 @@
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # Sufficient statistics — core data model
@@ -13,10 +14,10 @@ area, plus minimal sufficiency:
   the defining property of conditional probability under every `P θ`;
 * `HasSufficientKernel P T` — the regular-conditional form: a single θ-free Markov
   kernel `Q : S ⇝ 𝓧` disintegrating the graph law of `(T, id)` under every `P θ`,
-  `(P θ).map (x ↦ (T x, x)) = ((P θ).map T) ⊗ₘ Q`;
+  `(P θ).map₀ (x ↦ (T x, x)) = ((P θ).map₀ T) ⊗ₘ Q`;
 * `IsFactorizedDensity p μ T g h` — the Fisher–Neyman factorization
   `p_θ = (g_θ ∘ T) · h` (`μ`-a.e., for every `θ`) of a dominated family's densities;
-* `statLaw P T θ` — the law of the statistic, `(P θ).map T`;
+* `statLaw P T θ` — the zero-fallback law of the statistic, `(P θ).map₀ T`;
 * `IsMinimalSufficient P T` — sufficient, and a.e.-factoring through every other
   sufficient statistic.
 
@@ -61,7 +62,12 @@ variable {Θ 𝓧 S : Type*} [MeasurableSpace 𝓧] [MeasurableSpace S]
 
 /-- The **law of the statistic** `T` under `P θ`. -/
 noncomputable def statLaw (P : Θ → Measure 𝓧) (T : 𝓧 → S) (θ : Θ) : Measure S :=
-  (P θ).map T
+  (P θ).map₀ T
+
+/-- For an a.e. measurable statistic, `statLaw` is the pushforward `Measure.map`. -/
+theorem statLaw_eq_map (P : Θ → Measure 𝓧) (T : 𝓧 → S) (θ : Θ)
+    (hT : AEMeasurable T (P θ)) : statLaw P T θ = (P θ).map T :=
+  Measure.map₀_of_aemeasurable hT
 
 /-- **Sufficiency, per-event form**: for every measurable event `A` there is a θ-free
 measurable determination `κA` of the conditional probability of `A` given `T`, i.e.
@@ -78,7 +84,15 @@ kernel `Q : S ⇝ 𝓧` such that under every `P θ` the joint law of `(T(X), X)
 sufficiency theorem and the workhorse form for risk arguments. -/
 def HasSufficientKernel (P : Θ → Measure 𝓧) (T : 𝓧 → S) : Prop :=
   ∃ Q : Kernel S 𝓧, IsMarkovKernel Q ∧
-    ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q
+    ∀ θ, (P θ).map₀ (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q
+
+/-- For a measurable statistic, the graph-law identity holds with `Measure.map`. -/
+theorem HasSufficientKernel.exists_map {P : Θ → Measure 𝓧} {T : 𝓧 → S}
+    (h : HasSufficientKernel P T) (hT : Measurable T) :
+    ∃ Q : Kernel S 𝓧, IsMarkovKernel Q ∧
+      ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q := by
+  simpa only [HasSufficientKernel, Measure.map₀_of_measurable (hT.prodMk measurable_id')]
+    using h
 
 /-- **Fisher–Neyman factorized densities** (a.e. form): for every `θ`,
 `p_θ = (g_θ ∘ T) · h` holds `μ`-almost everywhere. -/

@@ -74,7 +74,7 @@ does not state; needed to speak of *the* spectral distribution.) -/
 theorem ext_of_measureFourierCoeff (F G : Measure (AddCircle (2 * π)))
     [IsFiniteMeasure F] [IsFiniteMeasure G]
     (h : ∀ n, measureFourierCoeff F n = measureFourierCoeff G n) : F = G := by
-  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  have : Fact (0 < 2 * π) := ⟨by positivity⟩
   -- every continuous function on the (compact) circle is bounded, and bounded continuous
   -- functions are integrable against a finite measure
   have hmk : ∀ φ : C(AddCircle (2 * π), ℂ),
@@ -136,7 +136,7 @@ theorem tendsto_measureFourierCoeff_of_tendsto
     (h : Tendsto Fs atTop (𝓝 F)) (n : ℤ) :
     Tendsto (fun k => measureFourierCoeff (Fs k : Measure (AddCircle (2 * π))) n) atTop
       (𝓝 (measureFourierCoeff (F : Measure (AddCircle (2 * π))) n)) := by
-  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  have : Fact (0 < 2 * π) := ⟨by positivity⟩
   exact (ProbabilityMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).mp h
     (BoundedContinuousFunction.mkOfCompact (fourier (T := 2 * π) n))
 

@@ -61,14 +61,16 @@ instance : IsMarkovKernel bernoulliKernel := by
   refine ⟨?_⟩
   rw [withDensity_apply _ MeasurableSet.univ, setLIntegral_univ, lintegral_count, tsum_fintype,
     Fintype.sum_bool]
-  have hc0 : (0:ℝ) ≤ unitClamp θ := le_max_left _ _
+  have hc0 : (0 : ℝ) ≤ unitClamp θ := le_max_left _ _
   have hc1 : unitClamp θ ≤ 1 := max_le zero_le_one (min_le_left _ _)
   have ht : bernoulliDensity θ true = ENNReal.ofReal (unitClamp θ) := by simp [bernoulliDensity]
-  have hf : bernoulliDensity θ false = ENNReal.ofReal (1 - unitClamp θ) := by simp [bernoulliDensity]
+  have hf : bernoulliDensity θ false = ENNReal.ofReal (1 - unitClamp θ) := by
+    simp [bernoulliDensity]
   rw [ht, hf, ← ENNReal.ofReal_add hc0 (by linarith),
     show unitClamp θ + (1 - unitClamp θ) = 1 from by ring, ENNReal.ofReal_one]
 
-/-- **Posterior mean of a clamped success probability under a Beta law**: `α/(α+β)` (Gelman §2.4 with `n = 1`, `x = 1`; the pdf-ratio trick). -/
+/-- **Posterior mean of a clamped success probability under a Beta law**:
+`α/(α+β)` (Gelman §2.4 with `n = 1`, `x = 1`; the pdf-ratio trick). -/
 theorem lintegral_unitClamp_betaMeasure {α β : ℝ}
     -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β) :
@@ -101,8 +103,8 @@ theorem lintegral_unitClamp_betaMeasure {α β : ℝ}
 private theorem prod_bernoulliDensity {n : ℕ} (θ : ℝ) (y : Fin n → Bool) :
     ∏ i, bernoulliDensity θ (y i)
       = ENNReal.ofReal (unitClamp θ ^ successes y * (1 - unitClamp θ) ^ (n - successes y)) := by
-  have hc0 : (0:ℝ) ≤ unitClamp θ := le_max_left _ _
-  have h1c : (0:ℝ) ≤ 1 - unitClamp θ := by
+  have hc0 : (0 : ℝ) ≤ unitClamp θ := le_max_left _ _
+  have h1c : (0 : ℝ) ≤ 1 - unitClamp θ := by
     have : unitClamp θ ≤ 1 := max_le zero_le_one (min_le_left _ _); linarith
   have hn : ∑ i, ((1 - (y i).toNat) + (y i).toNat) = n := by
     have hone : ∀ i, (1 - (y i).toNat) + (y i).toNat = 1 := fun i => by cases y i <;> rfl

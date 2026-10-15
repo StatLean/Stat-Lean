@@ -142,7 +142,7 @@ theorem orliczNorm_zero
       rw [abs_zero, zero_div]; exact ENNReal.ofReal_eq_zero.mpr hψ0
     simp only [h0, lintegral_zero]
     exact zero_le_one
-  refine le_antisymm ?_ (zero_le _)
+  refine le_antisymm ?_ (zero_le)
   refine ENNReal.le_of_forall_pos_le_add (fun ε hε _ => ?_)
   rw [zero_add]
   exact orliczNorm_le_of_mem (hmem ε hε)

@@ -8,7 +8,8 @@ import StatLean.Optimization.Convex.Subgradient
 The second, sharper error guarantee of the decomposable-regularizer framework. Write
 $\Phi$ for the (decomposable) regularizer, $\Phi^*$ for its dual norm, and $\Psi(\bar M)$
 for the subspace compatibility (Lipschitz) constant of $\Phi$ relative to the model subspace
-$\bar M$. Let $\hat\theta$ be any minimizer of the penalized objective $L(\theta) + \lambda\,\Phi(\theta)$.
+$\bar M$. Let $\hat\theta$ be any minimizer of the
+penalized objective $L(\theta) + \lambda\,\Phi(\theta)$.
 
 Under the *dual-norm curvature condition* with parameters $(\kappa,\tau;R)$ — the dual-norm
 analogue of restricted strong convexity, controlling the loss curvature in $\Phi^*$ rather
@@ -22,8 +23,8 @@ $\ell_2$/$\ell_1$ bounds of the basic decomposable-regularizer theorem (the anal
 Wainwright Theorem 9.19).
 
 The key auxiliary fact is the cone comparison
-$$ \Phi(\Delta) \;\le\; 16\,\Psi^2(\bar M)\,\Phi^*(\Delta) \qquad (\theta^* \in M,\ \Delta \in \mathbb C) $$
-relating the regularizer to its dual on the error cone (Lemma 9.25, eq 9.60).
+$$ \Phi(\Delta) \;\le\; 16\,\Psi^2(\bar M)\,\Phi^*(\Delta) \qquad (\theta^* \in M,\ \Delta \in
+\mathbb C) $$ relating the regularizer to its dual on the error cone (Lemma 9.25, eq 9.60).
 
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 9 (Decomposability and restricted strong convexity),
@@ -46,12 +47,12 @@ Wainwright Thm 9.24 / Lemma 9.25; no book-vs-Lean deviation.
 **Bibliographic comments.**
 The decomposable-regularizer framework and its master M-estimator bound originate with
 S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, "A unified framework for high-dimensional
-analysis of M-estimators with decomposable regularizers", *Statistical Science* 27(4), 538–557 (2012)
-(see also the earlier NeurIPS 2009 version). That paper introduces decomposability and the subspace
-compatibility constant `Ψ(M̄)` and proves the Euclidean-norm oracle bound (its Theorem 1). The
-dual-norm refinement formalized here — controlling `Φ*(θ̂−θ*)` under a dual-norm curvature condition
-— is the book's synthesis (Wainwright 2019, Thm 9.24); the present statement and constants follow the
-book's treatment rather than a single equation in the Negahban et al. paper.
+analysis of M-estimators with decomposable regularizers", *Statistical Science* 27(4), 538–557
+(2012) (see also the earlier NeurIPS 2009 version). That paper introduces decomposability and the
+subspace compatibility constant `Ψ(M̄)` and proves the Euclidean-norm oracle bound (its Theorem 1).
+The dual-norm refinement formalized here — controlling `Φ*(θ̂−θ*)` under a dual-norm curvature
+condition — is the book's synthesis (Wainwright 2019, Thm 9.24); the present statement and constants
+follow the book's treatment rather than a single equation in the Negahban et al. paper.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator
@@ -90,9 +91,9 @@ theorem exists_stationary_subgradient (dr : DecomposableReg E) (L : E → ℝ)
     have hcomp : HasDerivAt (fun s : ℝ => L (θhat + s • w)) ((fderiv ℝ L θhat) w) 0 := by
       have hfd : HasFDerivAt L (fderiv ℝ L θhat) (θhat + (0 : ℝ) • w) := by
         simpa using (hdiff θhat).hasFDerivAt
-      simpa using hfd.comp_hasDerivAt 0 hφ
+      simpa using! hfd.comp_hasDerivAt 0 hφ
     have hval : (fderiv ℝ L θhat) w = ⟪g, w⟫_ℝ := by
-      rw [hg_def]; exact (inner_gradient_left (hdiff θhat)).symm
+      rw [hg_def]; exact inner_gradient_left.symm
     rw [hval] at hcomp
     -- Optimality + convexity of `Φ`: the slope is `≥ −λ(Φy − Φθ̂)` for `s ∈ (0,1]`.
     have hslope_lb : ∀ s : ℝ, 0 < s → s ≤ 1 →
@@ -146,7 +147,7 @@ theorem reg_le_dual_of_mem (dr : DecomposableReg E) (θstar : E)
     Submodule.starProjection_orthogonal_apply_eq_zero hmem
   have hcone : dr.Φ ((dr.Mbar)ᗮ.starProjection Δ) ≤ 3 * dr.Φ (dr.Mbar.starProjection Δ) := by
     have h := hΔ
-    simp only [errorCone, Set.mem_setOf_eq, hθ0, map_zero] at h
+    simp only [errorCone, Set.mem_ofPred_eq, hθ0, map_zero] at h
     linarith
   -- eq 9.45: `Φ(Δ) ≤ 4Φ(Δ_{M̄}) ≤ 4Ψ‖Δ‖`.
   have hsplit : dr.Mbar.starProjection Δ + (dr.Mbar)ᗮ.starProjection Δ = Δ :=
@@ -180,8 +181,8 @@ theorem reg_le_dual_of_mem (dr : DecomposableReg E) (θstar : E)
     nlinarith [hΦle, h2, hΨ0, hpos, hΦstar0]
 
 /-- **Theorem 9.24** — dual-norm error bound (eq 9.58). Given `θ* ∈ M`, the `Φ*`-curvature condition
-(A1′, Def 9.22) with `(κ, τ; R)`, decomposability (A2), and `τ·Ψ²(M̄) < κ/32`, then conditioned on the
-good event `𝔾(λ)` and `Φ*(θ̂−θ*) ≤ R`, any optimum satisfies `Φ*(θ̂ − θ*) ≤ 3λ/κ`.
+(A1′, Def 9.22) with `(κ, τ; R)`, decomposability (A2), and `τ·Ψ²(M̄) < κ/32`, then conditioned on
+the good event `𝔾(λ)` and `Φ*(θ̂−θ*) ≤ R`, any optimum satisfies `Φ*(θ̂ − θ*) ≤ 3λ/κ`.
 
 Proof: stationarity gives `∇L(θ̂) = −λz`, `Φ*(z) ≤ 1`; with the good event,
 `Φ*(∇L(θ̂)−∇L(θ*)) ≤ 3λ/2`. The curvature condition + Lemma 9.25 turn this into

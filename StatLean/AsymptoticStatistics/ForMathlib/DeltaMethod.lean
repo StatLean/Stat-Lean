@@ -59,7 +59,7 @@ theorem delta_method_remainder
       (fun k ω => sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))) := by
   intro ε hε
   refine Metric.tendsto_atTop.mpr fun η hη => ?_
-  have hη2 : (0:ℝ) < η / 2 := by positivity
+  have hη2 : (0 : ℝ) < η / 2 := by positivity
   -- tightness threshold `M > 0`
   obtain ⟨M₀, hM₀⟩ := h_OP (η / 2) hη2
   set M : ℝ := max M₀ 1 with hM_def
@@ -68,7 +68,7 @@ theorem delta_method_remainder
   have hMbound : ∀ k, (P k).real {ω | M < ‖sqn k • (T k ω - θ₀)‖} ≤ η / 2 := fun k =>
     le_trans (measureReal_mono fun ω hω => lt_of_le_of_lt (le_max_left M₀ 1) hω) (hM₀ k)
   -- little-o extraction with `c := ε / (2M)`
-  have hc : (0:ℝ) < ε / (2 * M) := by positivity
+  have hc : (0 : ℝ) < ε / (2 * M) := by positivity
   have hcM : ε / (2 * M) * M = ε / 2 := by field_simp
   obtain ⟨δ, hδ_pos, hδ⟩ :=
     Metric.eventually_nhds_iff.mp ((Asymptotics.isLittleO_iff.mp hφ.isLittleO) hc)
@@ -82,10 +82,10 @@ theorem delta_method_remainder
     by_cases hd : δ ≤ ‖T k ω - θ₀‖
     · exact Or.inl hd
     · refine Or.inr ?_
-      show M < ‖sqn k • (T k ω - θ₀)‖
-      push_neg at hd
+      change M < ‖sqn k • (T k ω - θ₀)‖
+      push Not at hd
       by_contra hM'
-      push_neg at hM'
+      push Not at hM'
       have hxδ : dist (T k ω) θ₀ < δ := by rwa [dist_eq_norm]
       have hR : ‖φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀)‖ ≤ (ε / (2 * M)) * ‖T k ω - θ₀‖ :=
         hδ hxδ
@@ -169,8 +169,8 @@ theorem delta_method
     have hmap := h_wc.map φ'.continuous φ'.continuous.measurable
     simpa only [hlaw] using hmap
   -- (5) Slutsky bridge: the target law differs from the linear law by the remainder
-  haveI : IsProbabilityMeasure (ν.map φ') :=
-    Measure.isProbabilityMeasure_map φ'.continuous.measurable.aemeasurable
+  have : IsProbabilityMeasure (ν.map φ') :=
+    (by infer_instance)
   have hXmeas : ∀ k, AEMeasurable (fun ω => sqn k • φ' (T k ω - θ₀)) (P k) := fun k =>
     ((φ'.continuous.measurable.comp ((hT_meas k).sub measurable_const)).const_smul
       (sqn k)).aemeasurable
@@ -185,7 +185,7 @@ theorem delta_method
         = {ω | ε ≤ ‖sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))‖} := by
       intro k
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       have hdiff : sqn k • φ' (T k ω - θ₀) - sqn k • (φ (T k ω) - φ θ₀)
           = -(sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀))) := by
         rw [← smul_sub, ← smul_neg]; congr 1; abel

@@ -39,7 +39,7 @@ private theorem vcIndexLE_pullbackSetFamily
     intro i hi j hj hij
     by_contra hne
     have hsingle : ({i} : Finset β) ⊆ s := by
-      simpa only [Finset.singleton_subset_iff] using hi
+      simpa only [Finset.singleton_subset_iff] using! hi
     obtain ⟨B, ⟨A, hA, rfl⟩, hB⟩ := hsh {i} hsingle
     have hii : i ∈ x ⁻¹' A := (hB i hi).mp (by simp)
     have hji : j ∉ x ⁻¹' A := by
@@ -88,7 +88,7 @@ private instance : IsProbabilityMeasure symmetricUnitInterval := by
   change ((2 : ℝ≥0∞)⁻¹ • volume.restrict (Set.Icc (-1 : ℝ) 1)) Set.univ = 1
   rw [Measure.smul_apply, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter,
     Real.volume_Icc]
-  convert ENNReal.inv_mul_cancel (a := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) using 1
+  convert! ENNReal.inv_mul_cancel (a := (2 : ℝ≥0∞)) (by norm_num) (by norm_num) using 1
   norm_num
 
 private theorem symmetricUnitInterval_Iio_symmDiff
@@ -243,7 +243,7 @@ private theorem finite_lp_packing_of_integral_separation
         simpa only [Function.comp_apply] using
           (lintegral_const_mul (μ := Q) I⁻¹ hHpowm)
       _ = 1 := by simpa only [I] using ENNReal.inv_mul_cancel hI₀' hItop'
-  letI : IsProbabilityMeasure QH := hQH
+  let : IsProbabilityMeasure QH := hQH
   let N (f : Ω → ℝ) : Ω → ℝ := normalizedBy H f
   let φ : Ω × ℝ → Ω × ℝ := fun p ↦
     (p.1, if H p.1 = 0 then p.2 else H p.1 * p.2)
@@ -262,7 +262,7 @@ private theorem finite_lp_packing_of_integral_separation
         exact le_antisymm ((hAH f hf p.1).trans_eq hx) (abs_nonneg _)
       simp [normalizedBy, hx, hfx]
     · have hHx : 0 < H p.1 := lt_of_le_of_ne (hH₀ p.1) (Ne.symm hx)
-      simp only [normalizedBy, hx, if_false]
+      simp only [normalizedBy, hx, ite_false]
       simpa only [mul_comm] using (lt_div_iff₀ hHx)
   have hVCpull : VCIndexLE
       (pullbackSetFamily φ (strictSubgraphFamily F)) V :=
@@ -278,7 +278,7 @@ private theorem finite_lp_packing_of_integral_separation
       ENNReal.ofReal (H x) ^ r * (ENNReal.ofReal |N f x - N g x| / 2) ∂Q
     have hNdistm : Measurable fun x ↦ ENNReal.ofReal |N f x - N g x| :=
       (by
-        simpa only [Real.norm_eq_abs] using
+        simpa only [Real.norm_eq_abs] using!
           (((hNm f hf).sub (hNm g hg)).norm.ennreal_ofReal))
     have hJm : Measurable fun x ↦
         ENNReal.ofReal (H x) ^ r * (ENNReal.ofReal |N f x - N g x| / 2) :=
@@ -327,7 +327,7 @@ private theorem finite_lp_packing_of_integral_separation
           ENNReal.rpow_le_self_of_le_one huhalf hr
         have hdreal : |f x - g x| = H x * |N f x - N g x| := by
           change |f x - g x| = H x * |normalizedBy H f x - normalizedBy H g x|
-          rw [normalizedBy_sub x, if_neg hx,
+          rw [normalizedBy_sub x, ite_eq_right hx,
             abs_div, abs_of_nonneg (hH₀ x)]
           exact (mul_div_cancel₀ _ hx).symm
         have hdu : ENNReal.ofReal |f x - g x| = ENNReal.ofReal (H x) * u := by
@@ -400,8 +400,8 @@ private theorem finite_measure_packing
         δ ^ (-((V - 1 : ℕ) : ℝ)) := by
   classical
   obtain ⟨Ξ, mΞ, R, X, hXm, hXlaw, hXind, hR⟩ := exists_iid ℕ P
-  letI : MeasurableSpace Ξ := mΞ
-  letI : IsProbabilityMeasure R := hR
+  let : MeasurableSpace Ξ := mΞ
+  let : IsProbabilityMeasure R := hR
   let Y (i j : ↥I) (n : ℕ) (ξ : Ξ) : ℝ :=
     (S i.1 ∆ S j.1).indicator 1 (X n ξ)
   have hYm (i j : ↥I) (n : ℕ) : Measurable (Y i j n) := by
@@ -421,7 +421,7 @@ private theorem finite_measure_packing
     intro n
     have hφ : Measurable ((S i.1 ∆ S j.1).indicator (fun _ ↦ (1 : ℝ))) :=
       measurable_const.indicator ((hSm i.1 i.2).symmDiff (hSm j.1 j.2))
-    simpa only [Y, Function.comp_apply] using
+    simpa only [Y, Function.comp_apply] using!
       ((hXlaw n).identDistrib (hXlaw 0)).comp hφ
   have hYmean (i j : ↥I) : R[Y i j 0] = (P (S i.1 ∆ S j.1)).toReal := by
     have hφ : AEStronglyMeasurable
@@ -431,7 +431,7 @@ private theorem finite_measure_packing
     rw [show Y i j 0 =
         ((S i.1 ∆ S j.1).indicator (fun _ ↦ (1 : ℝ))) ∘ X 0 by rfl,
       (hXlaw 0).integral_comp hφ]
-    simpa only [measureReal_def] using
+    simpa only [measureReal_def] using!
       (integral_indicator_one (μ := P)
         ((hSm i.1 i.2).symmDiff (hSm j.1 j.2)))
   have hae : ∀ᵐ ξ ∂R, ∀ i j : ↥I,
@@ -538,8 +538,8 @@ theorem exists_universalVCFiniteLpPackingConstant :
     ∃ K₀ : ℝ, 0 < K₀ ∧ IsUniversalVCFiniteLpPackingConstant.{u} K₀ := by
   refine ⟨1, one_pos, ?_⟩
   intro Ω mΩ F G V Q A r η hVC hG hQ hGfin hA hr hη₀ hη₁ hsep
-  letI : MeasurableSpace Ω := mΩ
-  letI : IsProbabilityMeasure Q := hQ
+  let : MeasurableSpace Ω := mΩ
+  let : IsProbabilityMeasure Q := hQ
   classical
   have hr₀ : 0 < r := lt_of_lt_of_le zero_lt_one hr
   by_cases hsmall : A.card ≤ 1

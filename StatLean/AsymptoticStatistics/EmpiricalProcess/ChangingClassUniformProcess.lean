@@ -37,7 +37,7 @@ theorem exists_finiteApproximation_dist_lt
       ∀ t : T, dist t (a.rep (a.cell t)) < r := by
   obtain ⟨s, -, hs_fin, hcover⟩ :=
     Metric.finite_approx_of_totallyBounded hTB r hr
-  letI : Fintype s := hs_fin.fintype
+  let : Fintype s := hs_fin.fintype
   let e : s ≃ Fin (Fintype.card s) := Fintype.equivFin s
   have hnear : ∀ t : T, ∃ u : s, dist t u.1 < r := by
     intro t

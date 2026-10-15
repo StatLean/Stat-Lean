@@ -91,7 +91,7 @@ theorem isMScaleRoot_iff_logScale {ρ : ℝ → ℝ} {δ : ℝ} {P : Measure ℝ
   have hae : (fun x => scaleScorePsi ρ δ (logAbs x - Real.log σ))
       =ᵐ[P] fun x => ρ (x / σ) - δ := by
     filter_upwards [h0] with x hx
-    have hxa : (0:ℝ) < |x| := abs_pos.2 hx
+    have hxa : (0 : ℝ) < |x| := abs_pos.2 hx
     have hexp : Real.exp (logAbs x - Real.log σ) = |x| / σ := by
       rw [logAbs, Real.exp_sub, Real.exp_log hxa, Real.exp_log hσ]
     rw [scaleScorePsi, hexp]
@@ -131,9 +131,9 @@ theorem scaleScorePsi_monotone_limits {ρ : ℝ → ℝ} {δ : ℝ}
     have h1 : Tendsto (fun t => ρ (Real.exp t)) atBot (𝓝 (ρ 0)) :=
       (hρc.tendsto 0).comp Real.tendsto_exp_atBot
     rw [hρ0] at h1
-    simpa [scaleScorePsi] using h1.sub_const δ
+    simpa [scaleScorePsi] using! h1.sub_const δ
   · have h2 : Tendsto (fun t => ρ (Real.exp t)) atTop (𝓝 1) := hρ_lim.comp Real.tendsto_exp_atTop
-    simpa [scaleScorePsi] using h2.sub_const δ
+    simpa [scaleScorePsi] using! h2.sub_const δ
 
 /-! ### Shared envelopes for bounded even ρ-functions
 
@@ -200,18 +200,18 @@ theorem mScaleRoot_bounded_of_contamination {ρ : ℝ → ℝ} {δ ε : ℝ} {P 
   obtain ⟨hmono, hbot, htop⟩ := scaleScorePsi_monotone_limits (δ := δ) hρ_mono hρ0 hρ_lim hρc
   have hεδ : ε < δ := lt_of_lt_of_le hε (min_le_left _ _)
   have hε1 : ε ≤ 1 := by linarith
-  haveI : IsProbabilityMeasure (P.map logAbs) :=
-    Measure.isProbabilityMeasure_map measurable_logAbs.aemeasurable
+  have : IsProbabilityMeasure (P.map logAbs) :=
+    (by infer_instance)
   -- the location breakdown data of `MMY (3.23)`: `k₁ = δ`, `k₂ = 1 − δ`, `k₁ + k₂ = 1`
   obtain ⟨B, hB⟩ := mLocationRoot_bounded_of_contamination (P := P.map logAbs)
     (ψ := scaleScorePsi ρ δ) (k₁ := δ) (k₂ := 1 - δ) hmono hbot htop hδ0 (by linarith) hε0
     (by rw [show δ + (1 - δ) = 1 by ring, div_one]; exact hε)
   refine ⟨Real.exp (-B), Real.exp B, Real.exp_pos _, fun Q hQ hQ0 σ hroot => ?_⟩
-  haveI := hQ
-  haveI : IsProbabilityMeasure (contaminate P Q ε) := isProbabilityMeasure_contaminate P Q hε0 hε1
-  haveI : IsProbabilityMeasure (Q.map logAbs) :=
-    Measure.isProbabilityMeasure_map measurable_logAbs.aemeasurable
-  have hc0 : (contaminate P Q ε) {(0:ℝ)} = 0 := by rw [contaminate_apply, hP0, hQ0]; simp
+  have := hQ
+  have : IsProbabilityMeasure (contaminate P Q ε) := isProbabilityMeasure_contaminate P Q hε0 hε1
+  have : IsProbabilityMeasure (Q.map logAbs) :=
+    (by infer_instance)
+  have hc0 : (contaminate P Q ε) {(0 : ℝ)} = 0 := by rw [contaminate_apply, hP0, hQ0]; simp
   have hσ := hroot.1
   have hloc := (isMScaleRoot_iff_logScale hσ hρ_even hρc.measurable hc0
     (integrable_rho_div hbabs hρc.measurable σ)).1 hroot
@@ -247,21 +247,21 @@ theorem mScaleRoot_explodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
   have hψc : Continuous (scaleScorePsi ρ δ) :=
     (hρc.comp Real.continuous_exp).sub continuous_const
   have hε0 : 0 ≤ ε := le_of_lt (hδ0.trans hε)
-  haveI : IsProbabilityMeasure (P.map logAbs) :=
-    Measure.isProbabilityMeasure_map measurable_logAbs.aemeasurable
+  have : IsProbabilityMeasure (P.map logAbs) :=
+    (by infer_instance)
   -- `k₁/(k₁+k₂) = δ < ε` is exactly the explosion side of `MMY (3.23)`
   obtain ⟨t₀, θ, hθgt, hloc⟩ := mLocationRoot_contamination_unbounded (P := P.map logAbs)
     (ψ := scaleScorePsi ρ δ) (k₁ := δ) (k₂ := 1 - δ) hψc hmono hbot htop hδ0 (by linarith)
     (by rw [show δ + (1 - δ) = 1 by ring, div_one]; exact hε) hε1 (Real.log (max B 1))
-  have hmax : (0:ℝ) < max B 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  have hs : (0:ℝ) < Real.exp t₀ := Real.exp_pos _
-  haveI : IsProbabilityMeasure (contaminate P (Measure.dirac (Real.exp t₀)) ε) :=
+  have hmax : (0 : ℝ) < max B 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  have hs : (0 : ℝ) < Real.exp t₀ := Real.exp_pos _
+  have : IsProbabilityMeasure (contaminate P (Measure.dirac (Real.exp t₀)) ε) :=
     isProbabilityMeasure_contaminate P _ hε0 hε1.le
   refine ⟨Real.exp t₀, Real.exp θ, ?_, ?_⟩
   · calc B ≤ max B 1 := le_max_left _ _
       _ = Real.exp (Real.log (max B 1)) := (Real.exp_log hmax).symm
       _ < Real.exp θ := Real.exp_lt_exp.2 hθgt
-  · have hc0 : (contaminate P (Measure.dirac (Real.exp t₀)) ε) {(0:ℝ)} = 0 := by
+  · have hc0 : (contaminate P (Measure.dirac (Real.exp t₀)) ε) {(0 : ℝ)} = 0 := by
       rw [contaminate_apply, hP0]
       simp [hs.ne']
     refine (isMScaleRoot_iff_logScale (Real.exp_pos θ) hρ_even hρc.measurable hc0
@@ -306,9 +306,9 @@ theorem mScaleRoot_implodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
     rw [scaleScorePsi, abs_le]
     constructor <;> linarith
   have hε0 : 0 < ε := by linarith
-  have hε1' : (0:ℝ) < 1 - ε := by linarith
-  haveI : IsProbabilityMeasure (P.map logAbs) :=
-    Measure.isProbabilityMeasure_map measurable_logAbs.aemeasurable
+  have hε1' : (0 : ℝ) < 1 - ε := by linarith
+  have : IsProbabilityMeasure (P.map logAbs) :=
+    (by infer_instance)
   have hint : ∀ θ : ℝ, Integrable (fun y => scaleScorePsi ρ δ (y - θ)) (P.map logAbs) :=
     fun θ => integrable_psi_sub hψc.measurable ⟨1, hψb⟩ θ
   have hcontLam : Continuous (mLocationScore (scaleScorePsi ρ δ) (P.map logAbs)) :=
@@ -318,7 +318,7 @@ theorem mScaleRoot_implodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
   have hψle : ∀ u, scaleScorePsi ρ δ u ≤ 1 - δ := fun u =>
     ge_of_tendsto htop (eventually_atTop.2 ⟨u, fun v hv => hmono hv⟩)
   have hLamLe : ∀ θ : ℝ, mLocationScore (scaleScorePsi ρ δ) (P.map logAbs) θ ≤ 1 - δ := fun θ => by
-    simpa using integral_mono (hint θ) (integrable_const (1 - δ)) fun y => hψle (y - θ)
+    simpa using! integral_mono (hint θ) (integrable_const (1 - δ)) fun y => hψle (y - θ)
   -- (i) push the inlying point mass down until the contaminated score at `log b − 1` is
   -- negative; `ε > 1 − δ` is exactly `(1−ε)(1−δ) < εδ`
   set Bθ : ℝ := Real.log b - 1 with hBθ
@@ -338,7 +338,7 @@ theorem mScaleRoot_implodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
       + ε * scaleScorePsi ρ δ (t₀ - θ)) atBot (𝓝 ((1 - ε) * (1 - δ) + ε * (1 - δ))) :=
     (hLamBot.const_mul _).add ((htop.comp (tendsto_const_sub_atBot_atTop' t₀)).const_mul _)
   obtain ⟨θ', hθ'⟩ := eventually_atBot.1
-    (hcT.eventually_const_lt (by nlinarith : (0:ℝ) < (1 - ε) * (1 - δ) + ε * (1 - δ)))
+    (hcT.eventually_const_lt (by nlinarith : (0 : ℝ) < (1 - ε) * (1 - δ) + ε * (1 - δ)))
   -- (iii) the intermediate value theorem on `[min Bθ θ', Bθ]`
   have hcont : Continuous fun θ => (1 - ε) * mLocationScore (scaleScorePsi ρ δ) (P.map logAbs) θ
       + ε * scaleScorePsi ρ δ (t₀ - θ) :=
@@ -348,14 +348,14 @@ theorem mScaleRoot_implodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
   have hpos := hθ' _ (min_le_right Bθ θ')
   obtain ⟨θ, hθmem, hθ0⟩ :=
     intermediate_value_Icc' hle hcont.continuousOn (Set.mem_Icc.2 ⟨hneg.le, hpos.le⟩)
-  have hs : (0:ℝ) < Real.exp t₀ := Real.exp_pos _
-  haveI : IsProbabilityMeasure (contaminate P (Measure.dirac (Real.exp t₀)) ε) :=
+  have hs : (0 : ℝ) < Real.exp t₀ := Real.exp_pos _
+  have : IsProbabilityMeasure (contaminate P (Measure.dirac (Real.exp t₀)) ε) :=
     isProbabilityMeasure_contaminate P _ hε0.le hε1.le
   refine ⟨Real.exp t₀, Real.exp θ, hs, Real.exp_pos _, ?_, ?_⟩
   · calc Real.exp θ ≤ Real.exp Bθ := Real.exp_le_exp.2 hθmem.2
       _ < Real.exp (Real.log b) := Real.exp_lt_exp.2 (by rw [hBθ]; linarith)
       _ = b := Real.exp_log hb
-  · have hc0 : (contaminate P (Measure.dirac (Real.exp t₀)) ε) {(0:ℝ)} = 0 := by
+  · have hc0 : (contaminate P (Measure.dirac (Real.exp t₀)) ε) {(0 : ℝ)} = 0 := by
       rw [contaminate_apply, hP0]
       simp [hs.ne']
     refine (isMScaleRoot_iff_logScale (Real.exp_pos θ) hρ_even hρc.measurable hc0
@@ -363,7 +363,7 @@ theorem mScaleRoot_implodes {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}
     rw [Real.log_exp, map_contaminate measurable_logAbs,
       Measure.map_dirac (f := logAbs) (Real.exp t₀),
       show logAbs (Real.exp t₀) = t₀ by rw [logAbs, abs_of_pos hs, Real.log_exp]]
-    show ∫ y, scaleScorePsi ρ δ (y - θ) ∂(contaminate (P.map logAbs) (Measure.dirac t₀) ε) = 0
+    change ∫ y, scaleScorePsi ρ δ (y - θ) ∂(contaminate (P.map logAbs) (Measure.dirac t₀) ε) = 0
     rw [integral_contaminate_dirac hε0.le hε1.le (hint θ)]
     exact hθ0
 

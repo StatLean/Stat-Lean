@@ -13,17 +13,18 @@ model under the Dirichlet–Laplace prior). Working at the true parameter `θ₀
 
 `E_{θ₀=0} [ posterior mass of { θ : |supp_δ(θ)| > k } ]`
 
-expressed on the un-normalized ratio `dlNumer / dlDenom` (the passage to the abstract posterior `κ†Π`
-happens once, in `PosteriorCompressibility.lean`, via `NormalMeansModel`).
+expressed on the un-normalized ratio `dlNumer / dlDenom` (the passage to the abstract posterior
+`κ†Π` happens once, in `PosteriorCompressibility.lean`, via `NormalMeansModel`).
 
 Objects:
-* `compress_ratio_le` — the split bound: on the event `{ D ≥ dbar }` with `dbar = e^{−r²}·Π(B(0,r))` the
-  ratio is `≤ dlNumer/dbar` and its `E_{θ₀=0}`-mean equals the prior mass (change-of-measure Tonelli,
-  BPPD §6, `NormalMeansModel`); on `{ D < dbar }` the Castillo–van der Vaart denominator event
-  (`DenominatorLowerBound`, a Jensen / one-dimensional-Gaussian argument) contributes `≤ e^{−r²/8}`.
+* `compress_ratio_le` — the split bound: on the event `{ D ≥ dbar }` with `dbar = e^{−r²}·Π(B(0,r))`
+  the ratio is `≤ dlNumer/dbar` and its `E_{θ₀=0}`-mean equals the prior mass (change-of-measure
+  Tonelli, BPPD §6, `NormalMeansModel`); on `{ D < dbar }` the Castillo–van der Vaart denominator
+  event (`DenominatorLowerBound`, a Jensen /
+  one-dimensional-Gaussian argument) contributes `≤ e^{−r²/8}`.
 * `compress_ratio_le_explicit` — plug the support-count MGF / Chernoff bound (`PriorSmallBall`,
-  `Π{|supp_δ| > k}`) and the small-ball lower bound into `compress_ratio_le`, collapsing the RHS to a
-  single exponential in the model size, the Chernoff parameter `c`, and the radius `r`.
+  `Π{|supp_δ| > k}`) and the small-ball lower bound into `compress_ratio_le`, collapsing the RHS to
+  a single exponential in the model size, the Chernoff parameter `c`, and the radius `r`.
 
 **Reference.** A. Bhattacharya, D. Pati, N. S. Pillai, D. B. Dunson, *Dirichlet–Laplace priors for
 optimal shrinkage*, JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Theorem 3.4 (statement p. 9,
@@ -35,10 +36,11 @@ integral is split at `dbar`, the denominator event handled by `measure_dlDenom_l
 mean identified with the prior mass, and the prior mass bounded by the count Chernoff bound.
 
 **Deviations.**
-* **D2 (regime-dependent `r`).** The engine keeps `r` free. The `β`-regime (`PosteriorCompressibility.lean`)
-  instantiates `r² = qₙ log n`; the `1/n`-regime uses `r² = qₙ`. A fixed choice cannot serve both:
-  `r² = qₙ` leaves the `β`-regime failure term `e^{−qₙ}` non-vanishing for bounded `qₙ`, while
-  `r² = qₙ log n` breaks the `1/n`-regime Chernoff exponent. Hence the free-`r` statement here.
+* **D2 (regime-dependent `r`).** The engine keeps `r` free. The `β`-regime
+  (`PosteriorCompressibility.lean`) instantiates `r² = qₙ log n`; the `1/n`-regime uses `r² = qₙ`. A
+  fixed choice cannot serve both: `r² = qₙ` leaves the `β`-regime failure term `e^{−qₙ}`
+  non-vanishing for bounded `qₙ`, while `r² = qₙ log n` breaks the
+  `1/n`-regime Chernoff exponent. Hence the free-`r` statement here.
 * **D3 (`1 ≤ qₙ`).** For an empty support the δ-support of a continuous prior is everything and the
   radius `r² → ∞` fails; the compressibility statement is vacuous. The dimensional hypotheses below
   are engine-internal regularity; the sequence-level `1 ≤ qₙ` is enforced in the assembly headline.
@@ -62,7 +64,7 @@ lemma measurable_dlNumer {ι : Type*} [Fintype ι] (θ₀ : EuclideanSpace ℝ �
   have huc : Measurable (Function.uncurry
       (fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)) := by
     unfold Function.uncurry dlLR; fun_prop
-  show Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
+  change Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
   exact huc.lintegral_prod_right
 
 /-- `dlDenom θ₀ π` is measurable in the data `y`. -/
@@ -73,11 +75,11 @@ lemma measurable_dlDenom {ι : Type*} [Fintype ι] (θ₀ : EuclideanSpace ℝ �
     funext y; rw [dlDenom, dlNumer, setLIntegral_univ]; rfl
   rw [hEq]; exact measurable_predictiveDensity (measurable_dlLR_uncurry _)
 
-set_option maxHeartbeats 1000000 in
 /-- **Compressibility split bound** (BPPD Thm 3.4 core). At the true parameter `θ₀ = 0`, the
 `E_{θ₀=0}`-mean of the un-normalized posterior ratio for `{ |supp_δ(θ)| > k }` is at most the prior
-mass of that set divided by `dbar = e^{−r²}·Π(B(0,r))`, plus the denominator-event error `e^{−r²/8}`.
-The two summands are the `{D ≥ dbar}` (testing/numerator) and `{D < dbar}` (denominator-event) pieces. -/
+mass of that set divided by `dbar = e^{−r²}·Π(B(0,r))`, plus the denominator-event error
+`e^{−r²/8}`. The two summands are the `{D ≥ dbar}`
+(testing/numerator) and `{D < dbar}` (denominator-event) pieces. -/
 theorem compress_ratio_le {a δ r : ℝ}
     -- LEAN-ONLY: 0 < a — DL scale at a junk-free index; engine-internal regularity.
     (ha : 0 < a)
@@ -143,7 +145,6 @@ theorem compress_ratio_le {a δ r : ℝ}
   rw [add_comm (π C / dbar)]
   exact add_le_add hMeasBound hIntBound
 
-set_option maxHeartbeats 1000000 in
 /-- **Explicit compressibility bound** (BPPD Thm 3.4 core). Feeding the support-count Chernoff bound
 (`PriorSmallBall`, MGF parameter `c > 1`) and the small-ball lower bound into `compress_ratio_le`
 collapses the RHS to a single exponential (`m·ζ·(c−1) − k·log c` Chernoff exponent, `ζ ≤ e·a·(8+2log
@@ -160,7 +161,8 @@ theorem compress_ratio_le_explicit {a δ r : ℝ}
     (hr : 0 < r) (k : ℕ)
     -- USER-INPUT: `z` bounds the per-coordinate δ-exceedance prob ζ(δ) (supplied by C3 Lemma 3.3).
     (z : ℝ) (hz : (dlMarginal a {x : ℝ | δ < |x|}).toReal ≤ z)
-    -- USER-INPUT: `w` bounds the small-ball tail at the clamped threshold s = min(r/√m, 1/2) (C3 / D7).
+    -- USER-INPUT: `w` bounds the small-ball tail at the
+    -- clamped threshold s = min(r/√m, 1/2) (C3 / D7).
     (w : ℝ)
     (hw : (dlMarginal a
         {x : ℝ | min (r / Real.sqrt (Fintype.card ι : ℝ)) (1 / 2) < |x|}).toReal ≤ w)
@@ -181,7 +183,7 @@ theorem compress_ratio_le_explicit {a δ r : ℝ}
       ≤ ENNReal.ofReal (Real.exp (m * z * (c - 1) - (k : ℝ) * Real.log c)) := by
     refine (measure_mono ?_).trans (dlPrior_count_ge_le hc k hz)
     intro θ hθ
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact le_of_lt (by exact_mod_cast hθ)
   -- Denominator: small-ball lower bound (C5, deviation D7).
   have hball : ENNReal.ofReal (Real.exp (-2 * m * w))

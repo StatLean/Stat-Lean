@@ -4,9 +4,9 @@
     {"id":"StatLean.Bayesian.HasLocalDensity","label":"HasLocalDensity","full":"StatLean.Bayesian.HasLocalDensity","kind":"root","decl":"def","module":"StatLean.Bayesian.BernsteinVonMises.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"EuclideanSpace","label":"EuclideanSpace","full":"EuclideanSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"WithLp.measurableSpace","label":"measurableSpace","full":"WithLp.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
-    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasurableSpace.pi","label":"pi","full":"MeasurableSpace.pi","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"}
   ],

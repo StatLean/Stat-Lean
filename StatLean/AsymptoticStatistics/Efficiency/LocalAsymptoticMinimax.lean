@@ -103,6 +103,8 @@ van der Vaart's Theorem 8.11 synthesizes Hájek's result within
 the LAN / convolution-theorem framework of Chapter 8.
 -/
 
+set_option linter.style.longFile 3400
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped RealInnerProductSpace ENNReal MatrixOrder
 
@@ -239,7 +241,7 @@ lemma localAsymptoticRisk_ge_avg_lower_bound
         ≤ ∑ h ∈ I, (π h : ℝ≥0∞) * (⨆ h' ∈ I, x n h') := by
           apply Finset.sum_le_sum
           intro h hI
-          exact mul_le_mul_right (le_iSup₂_of_le h hI le_rfl) (π h : ℝ≥0∞)
+          exact mul_le_mul_right (le_iSup₂_of_le h hI (by exact le_rfl)) (π h : ℝ≥0∞)
       _ = (∑ h ∈ I, (π h : ℝ≥0∞)) * (⨆ h' ∈ I, x n h') := by
           rw [← Finset.sum_mul]
       _ ≤ 1 * (⨆ h' ∈ I, x n h') :=
@@ -314,7 +316,7 @@ lemma avgRisk_lan_discretePrior_eq_sum
           ∫⁻ ω, L ((Real.sqrt n) • (T n ω - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))
                 ∂(AsymptoticRepresentation.productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n) := by
   unfold avgRisk discretePrior
-  rw [MeasureTheory.lintegral_finset_sum_measure]
+  rw [MeasureTheory.lintegral_finsetSum_measure]
   refine Finset.sum_congr rfl fun h hI => ?_
   rw [MeasureTheory.lintegral_smul_measure, MeasureTheory.lintegral_dirac' h h_meas_int]
   rw [smul_eq_mul]
@@ -462,7 +464,7 @@ lemma bayesRisk_gaussianShift_le_bayesRiskAtTau
     hψDot_meas.comp hpm_meas
   let κstar : Kernel (Θ k) (𝓨 d) := Kernel.deterministic
     (fun x => ψDot (GaussianShiftMinimax.posteriorMean J τ x)) hκstar_meas
-  haveI hκstar_markov : IsMarkovKernel κstar :=
+  have hκstar_markov : IsMarkovKernel κstar :=
     Kernel.isMarkovKernel_deterministic hκstar_meas
   -- bayesRisk ≤ avgRisk for κstar (Markov); then avgRisk = bayesRiskAtTau.
   refine le_trans (bayesRisk_le_avgRisk (lanLossLimit ψDot L) Plim κstar
@@ -491,7 +493,7 @@ lemma bayesRisk_gaussianShift_le_bayesRiskAtTau
       = ψDotMat * Sτ * ψDotMat.transpose := by
     rw [Matrix.transpose_neg, Matrix.neg_mul, Matrix.mul_neg, Matrix.neg_mul]
     exact neg_neg _
-  haveI hπ_X_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift J τ) := by
+  have hπ_X_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift J τ) := by
     unfold GaussianShiftMinimax.marginalGaussianShift; infer_instance
   -- Main computation: avgRisk = bayesRiskAtTau.
   calc avgRisk (lanLossLimit ψDot L) Plim κstar (gaussianTauPrior k τ)
@@ -649,7 +651,7 @@ private lemma avgRisk_gaussianShift_ge_bayesRiskAtTau
   -- π_X is the marginal of X under the joint experiment.
   set π_X := GaussianShiftMinimax.marginalGaussianShift J τ with hπ_X_def
   -- π_X is a probability measure (multivariateGaussian on a PSD matrix).
-  haveI hπ_X_prob : IsProbabilityMeasure π_X := by
+  have hπ_X_prob : IsProbabilityMeasure π_X := by
     rw [hπ_X_def, GaussianShiftMinimax.marginalGaussianShift]; infer_instance
   -- Joint integrand `finn h x := ∫⁻ y, L(y - ψDot h) ∂(κ x)` is measurable on `Θk × Θk`.
   let finn : Θ k → Θ k → ℝ≥0∞ := fun h x => ∫⁻ y, L (y - ψDot h) ∂(κ x)
@@ -658,14 +660,13 @@ private lemma avgRisk_gaussianShift_ge_bayesRiskAtTau
     let snd : Θ k × Θ k → Θ k := Prod.snd
     have hsnd_meas : Measurable snd := measurable_snd
     let κ' : Kernel (Θ k × Θ k) (𝓨 d) := κ.comap snd hsnd_meas
-    haveI hκ'_markov : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ hsnd_meas
     have h_int_meas : Measurable
         (fun p : (Θ k × Θ k) × 𝓨 d => L (p.2 - ψDot p.1.1)) := by fun_prop
     have h_main : Measurable
         (fun p : Θ k × Θ k => ∫⁻ y, L (y - ψDot p.1) ∂(κ' p)) :=
       Measurable.lintegral_kernel_prod_right' (κ := κ') h_int_meas
-    -- `κ' p = κ p.2` by `Kernel.comap_apply`, definitionally — so `convert` closes.
-    convert h_main using 1
+    -- `κ' p = κ p.2` by `Kernel.comap_apply`, definitionally — so `convert!` closes.
+    convert! h_main using 1
   -- Outer chain: bayesRiskAtTau ≤ … = avgRisk.
   calc GaussianShiftMinimax.bayesRiskAtTau J ψDotMat L τ
       = ∫⁻ x, ∫⁻ _y : 𝓨 d, GaussianShiftMinimax.bayesRiskAtTau J ψDotMat L τ
@@ -791,7 +792,7 @@ private theorem lanIntegrand_measurable_in_h
         fun y : 𝓨 d => L (y - ψDot h)) := by
   -- The codomain `𝓨 d → ℝ≥0∞` is a Pi-type with the product measurable
   -- space: a map into it is measurable iff its evaluation at every `y` is.
-  refine measurable_pi_lambda _ ?_
+  refine Measurable.of_eval ?_
   intro y
   -- Per-`y`: `fun h => L (y - ψDot h)` is `L ∘ (y - ψDot ·)`, which is
   -- measurable since `L` is measurable and `(fun h => y - ψDot h)` is
@@ -949,7 +950,7 @@ theorem joint_tightness_T_score_under_P_theta0
                      AsymptoticRepresentation.scoreSum ℓ n ω)))) := by
   classical
   -- IsProbabilityMeasure instances for each productMeasure and the limit mvg.
-  haveI : ∀ n, IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ₀ n) :=
+  have : ∀ n, IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ₀ n) :=
     fun n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   -- The joint pushforward set.
   set S : Set (Measure (𝓨 d × Θ k)) := Set.range (fun n : ℕ =>
@@ -1024,12 +1025,12 @@ theorem joint_tightness_T_score_under_P_theta0
         rfl
     rw [h_score_image]
     -- IsProbabilityMeasure on each score pushforward (map of a probability under measurable).
-    haveI : ∀ n, IsProbabilityMeasure
+    have : ∀ n, IsProbabilityMeasure
         ((AsymptoticRepresentation.productMeasure M μ θ₀ n).map (AsymptoticRepresentation.scoreSum ℓ
             n)) :=
-      fun n => MeasureTheory.Measure.isProbabilityMeasure_map (h_score_meas n).aemeasurable
+      fun n => (by infer_instance)
     -- multivariateGaussian is a probability measure (unconditional via IsGaussian).
-    haveI : IsProbabilityMeasure (ProbabilityTheory.multivariateGaussian (0 : Θ k) J) :=
+    have : IsProbabilityMeasure (ProbabilityTheory.multivariateGaussian (0 : Θ k) J) :=
       inferInstance
     exact AsymptoticStatistics.Prohorov.weakConverges_range_tight
       (fun n => (AsymptoticRepresentation.productMeasure M μ θ₀ n).map
@@ -1318,7 +1319,7 @@ theorem le_cam_3_per_rational_h_weak_conv
   have hT'_meas : ∀ n, Measurable (T' n) := fun n =>
     ((hT_meas n).sub measurable_const).const_smul (Real.sqrt n)
   -- Derive product-measure probability instances internally from `hPDF`.
-  haveI : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
+  have : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Unpack `hPDF`.
   have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
@@ -1434,7 +1435,7 @@ theorem le_cam_3_per_rational_h_weak_conv
                       (J.mulVec ((WithLp.equiv 2 _) h))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε
@@ -1531,8 +1532,8 @@ theorem le_cam_3_per_rational_h_weak_conv
     (continuous_const.inner continuous_id).measurable.sub measurable_const
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk (hg_meas.comp measurable_snd)
-  haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+  have h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
+    (by infer_instance)
   -- Main integral-comparison bound (full sequence) for the rescaled-shifted statistic
   -- `T'` (the bound is statistic-agnostic), then specialise to `φ_full`.
   obtain ⟨ρ_cmp, hρ_cmp_tendsto, hρ_cmp_bound⟩ :=
@@ -1629,12 +1630,8 @@ theorem representation_kernel_identifies_le_cam_3_limit
           (AsymptoticRepresentation.representationKernel J π) := by
   classical
   -- Standard-Borel / Nonempty instances for the target space (from PolishSpace).
-  haveI : StandardBorelSpace (𝓨 d) := inferInstance
-  haveI : Nonempty (𝓨 d) := ⟨(0 : 𝓨 d)⟩
-  -- IsProbabilityMeasure on each productMeasure from the PDF hypothesis.
-  haveI hProd_prob : ∀ θ : Θ k, ∀ n, IsProbabilityMeasure
-      (AsymptoticRepresentation.productMeasure M μ θ n) :=
-    fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
+  have : StandardBorelSpace (𝓨 d) := inferInstance
+  have : Nonempty (𝓨 d) := ⟨(0 : 𝓨 d)⟩
   -- Subseq composition `n_k := φ (ψ_inner (ρ k))` is strictly monotone.
   have hχ_mono : StrictMono (fun k_idx => φ (ψ_inner (ρ k_idx))) :=
     _hφ_mono.comp (_hψ_inner_mono.comp _hρ_mono)
@@ -1727,15 +1724,15 @@ theorem representation_kernel_identifies_le_cam_3_limit
     rw [← ofReal_integral_eq_lintegral_ofReal h_int_integrable
         (Filter.Eventually.of_forall (fun _ => (Real.exp_pos _).le)),
       h_int_one, ENNReal.ofReal_one]
-  haveI hWD_prob : IsProbabilityMeasure (π.withDensity (fun p => ENNReal.ofReal
+  have hWD_prob : IsProbabilityMeasure (π.withDensity (fun p => ENNReal.ofReal
       (Real.exp (⟪h, p.2⟫ - c)))) := by
     refine ⟨?_⟩
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact h_lint_one
-  haveI hL_h_prob : IsProbabilityMeasure
+  have hL_h_prob : IsProbabilityMeasure
       (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
         (Real.exp (⟪h, p.2⟫ - c))))) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   -- Apply `gaussianShift_bind_eq_limit` to the tilted marginal, with its defining
   -- formula supplied by reflexivity.
   exact AsymptoticRepresentation.gaussianShift_bind_eq_limit J hJ gauss hGauss π h
@@ -1802,7 +1799,7 @@ theorem slutsky_frechet_shift_translation_per_h
   have h_n_atTop : Tendsto n_idx atTop atTop :=
     ((_hφ_mono.tendsto_atTop.comp _hψ_inner_mono.tendsto_atTop).comp
       _hρ_mono.tendsto_atTop)
-  haveI hPn_prob : ∀ k_idx,
+  have hPn_prob : ∀ k_idx,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ
         (θ₀ + (Real.sqrt (n_idx k_idx))⁻¹ • h) (n_idx k_idx)) := fun k_idx =>
     AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF _ _
@@ -1912,7 +1909,7 @@ theorem portmanteau_lsc_assembly_per_h
         (fun y : 𝓨 d => y - ψDot h)
     with htargetShift_def
   -- IsProbabilityMeasure instances.
-  haveI hP_n : ∀ n : ℕ, ∀ θ : Θ k,
+  have hP_n : ∀ n : ℕ, ∀ θ : Θ k,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun n θ => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Measurability of the rescaling map for each `k_idx`.
@@ -1925,14 +1922,14 @@ theorem portmanteau_lsc_assembly_per_h
       (hT_meas (n_k k_idx)).sub_const _
     exact h_sub.const_smul (Real.sqrt (n_k k_idx))
   -- Each `μs k_idx` is a probability measure.
-  haveI hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
+  have hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
     intro k_idx
     simp only [hμs_def]
-    exact Measure.isProbabilityMeasure_map (hg_meas k_idx).aemeasurable
+    exact (by infer_instance)
   -- `(multivariateGaussian h J⁻¹).bind κ` is a probability measure (Markov kernel
   -- composition with a probability measure).
-  haveI h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
-  haveI h_bind_prob :
+  have h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
+  have h_bind_prob :
       IsProbabilityMeasure ((multivariateGaussian h J⁻¹).bind
         (AsymptoticRepresentation.representationKernel J π)) := by
     refine isProbabilityMeasure_bind ?_ ?_
@@ -1947,9 +1944,9 @@ theorem portmanteau_lsc_assembly_per_h
     h_shift_cont.measurable
   -- `targetShift` is therefore a probability measure (push-forward of a probability
   -- measure along a measurable map).
-  haveI h_target_prob : IsProbabilityMeasure targetShift := by
+  have h_target_prob : IsProbabilityMeasure targetShift := by
     simp only [htargetShift_def]
-    exact Measure.isProbabilityMeasure_map h_shift_meas.aemeasurable
+    exact (by infer_instance)
   -- Step 1: extract the open-set Portmanteau inequality from `_h_wc_shifted`.
   -- Bridge `WeakConverges` to a `Tendsto` of `ProbabilityMeasure`s.
   let μsPM : ℕ → ProbabilityMeasure (𝓨 d) := fun k_idx => ⟨μs k_idx, inferInstance⟩
@@ -2144,7 +2141,7 @@ theorem lhs_bound_for_rational_h_via_joint_subseq
       ((multivariateGaussian h J⁻¹).bind (AsymptoticRepresentation.representationKernel J π)).map
         (fun y : 𝓨 d => y - ψDot h)
     with htargetShift_def
-  haveI hP_n : ∀ n : ℕ, ∀ θ : Θ k,
+  have hP_n : ∀ n : ℕ, ∀ θ : Θ k,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun n θ => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   have hg_meas : ∀ k_idx, Measurable
@@ -2155,12 +2152,12 @@ theorem lhs_bound_for_rational_h_via_joint_subseq
         (fun ω : Fin (n_k k_idx) → 𝓧 => T (n_k k_idx) ω - ψ (θ_k k_idx)) :=
       (hT_meas (n_k k_idx)).sub_const _
     exact h_sub.const_smul (Real.sqrt (n_k k_idx))
-  haveI hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
+  have hμs_prob : ∀ k_idx, IsProbabilityMeasure (μs k_idx) := by
     intro k_idx
     simp only [hμs_def]
-    exact Measure.isProbabilityMeasure_map (hg_meas k_idx).aemeasurable
-  haveI h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
-  haveI h_bind_prob :
+    exact (by infer_instance)
+  have h_mvg_prob : IsProbabilityMeasure (multivariateGaussian h J⁻¹) := inferInstance
+  have h_bind_prob :
       IsProbabilityMeasure ((multivariateGaussian h J⁻¹).bind
         (AsymptoticRepresentation.representationKernel J π)) := by
     refine isProbabilityMeasure_bind ?_ ?_
@@ -2172,9 +2169,9 @@ theorem lhs_bound_for_rational_h_via_joint_subseq
     continuous_id.sub continuous_const
   have h_shift_meas : Measurable (fun y : 𝓨 d => y - ψDot h) :=
     h_shift_cont.measurable
-  haveI h_target_prob : IsProbabilityMeasure targetShift := by
+  have h_target_prob : IsProbabilityMeasure targetShift := by
     simp only [htargetShift_def]
-    exact Measure.isProbabilityMeasure_map h_shift_meas.aemeasurable
+    exact (by infer_instance)
   let μsPM : ℕ → ProbabilityMeasure (𝓨 d) := fun k_idx => ⟨μs k_idx, inferInstance⟩
   let targetShiftPM : ProbabilityMeasure (𝓨 d) := ⟨targetShift, inferInstance⟩
   have hμsPM_coe : ∀ k_idx, (μsPM k_idx : Measure (𝓨 d)) = μs k_idx := fun _ => rfl
@@ -2319,7 +2316,7 @@ theorem subseq_lan_per_h_LHS_bound_witness
                 Filter.atTop := by
   classical
   -- IsProbabilityMeasure instances for each productMeasure (from hPDF).
-  haveI : ∀ θ : Θ k, ∀ n,
+  have : ∀ θ : Θ k, ∀ n,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Step 1: joint tightness of the consumer-side + score-side under `P^n_θ₀`.
@@ -2349,10 +2346,10 @@ theorem subseq_lan_per_h_LHS_bound_witness
   have h_pair_meas : ∀ n, Measurable (fun ω : Fin n → 𝓧 =>
       ((Real.sqrt n) • (T n ω - ψ θ₀), AsymptoticRepresentation.scoreSum ℓ n ω)) :=
     fun n => (h_T_n_meas n).prodMk (h_score_meas n)
-  haveI hJointSeq_prob : ∀ n, IsProbabilityMeasure (jointSeq n) := by
+  have hJointSeq_prob : ∀ n, IsProbabilityMeasure (jointSeq n) := by
     intro n
-    exact MeasureTheory.Measure.isProbabilityMeasure_map (h_pair_meas n).aemeasurable
-  haveI hJointPhi_prob : ∀ k_idx, IsProbabilityMeasure (jointSeq (φ k_idx)) :=
+    exact (by infer_instance)
+  have hJointPhi_prob : ∀ k_idx, IsProbabilityMeasure (jointSeq (φ k_idx)) :=
     fun k_idx => hJointSeq_prob (φ k_idx)
   -- Step 3: Apply Prokhorov on the φ-subseq joint to extract a sub-subseq + π.
   obtain ⟨ψ_inner, hψ_inner_mono, π, hπ_prob, hπ_conv⟩ :=
@@ -2560,8 +2557,8 @@ theorem diagonal_subseq_kernel_lift
           (fun n : ℕ => ⨆ h ∈ I, a n h) Filter.atTop := rfl
   -- Build the rational enumeration: `Fin k → ℚ` is Countable + Nonempty (use 0),
   -- so there is a surjection `enum : ℕ → (Fin k → ℚ)`.
-  haveI : Countable (Fin k → ℚ) := inferInstance
-  haveI : Nonempty (Fin k → ℚ) := ⟨fun _ => 0⟩
+  have : Countable (Fin k → ℚ) := inferInstance
+  have : Nonempty (Fin k → ℚ) := ⟨fun _ => 0⟩
   obtain ⟨enum, h_enum_surj⟩ := exists_surjective_nat (Fin k → ℚ)
   -- The `n`-th rational coordinate vector in `Θ k`.
   let qVec : ℕ → Θ k := fun n =>

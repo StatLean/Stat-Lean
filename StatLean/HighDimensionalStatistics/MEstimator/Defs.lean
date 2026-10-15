@@ -1,5 +1,9 @@
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import Mathlib.Analysis.Seminorm
+import Mathlib.Algebra.Order.Algebra
+import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Data.EReal.Operations
+import Mathlib.Topology.Algebra.InfiniteSum.Order
+import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.Gradient.Basic
 
 /-!
@@ -7,26 +11,28 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 
 Concept-layer definitions for the `MEstimator` milestone. Consider a regularized M-estimator
 of the form
-$$\hat\theta \in \arg\min_{\theta}\bigl\{\, \mathcal L_n(\theta) + \lambda_n\,\Phi(\theta)\,\bigr\},$$
-where $\mathcal L_n$ is an empirical cost (loss) and $\Phi$ is a norm acting as the regularizer.
-This file formalizes the two structural ingredients on which the general estimation-error
-theory rests, together with the auxiliary quantities (error cone, subspace Lipschitz constant,
-good event, objective increment, error radius) used to assemble the rates.
+$$\hat\theta \in \arg\min_{\theta}\bigl\{\, \mathcal L_n(\theta) +
+\lambda_n\,\Phi(\theta)\,\bigr\},$$ where $\mathcal L_n$ is an empirical cost (loss) and $\Phi$ is a
+norm acting as the regularizer. This file formalizes the two structural ingredients on which the
+general estimation-error theory rests, together with the auxiliary quantities (error cone, subspace
+Lipschitz constant, good event, objective increment, error radius) used to assemble the rates.
 
 * **Decomposability.** A regularizer $\Phi$ is *decomposable* with respect to a subspace pair
   $(M,\,\bar M^{\perp})$ (with $M\subseteq\bar M$) when
-  $\Phi(\alpha+\beta)=\Phi(\alpha)+\Phi(\beta)$ for every $\alpha\in M$ and $\beta\in\bar M^{\perp}$.
-  We bundle $\Phi$ together with its dual norm $\Phi^*$, the subspace pair, and the generalized
-  Hölder inequality $\langle u,v\rangle\le\Phi(u)\,\Phi^*(v)$ (with $\Phi^*$ pinned down as the
-  *smallest* norm satisfying Hölder) into the structure `DecomposableReg`.
+  $\Phi(\alpha+\beta)=\Phi(\alpha)+\Phi(\beta)$ for every $\alpha\in M$ and
+  $\beta\in\bar M^{\perp}$. We bundle $\Phi$ together with its dual norm $\Phi^*$, the subspace
+  pair, and the generalized Hölder inequality $\langle u,v\rangle\le\Phi(u)\,\Phi^*(v)$ (with
+  $\Phi^*$ pinned down as the *smallest* norm satisfying
+  Hölder) into the structure `DecomposableReg`.
 * **Restricted strong convexity (RSC).** Writing the first-order Taylor error as
-  $\mathcal E_n(\Delta)=\mathcal L_n(\theta+\Delta)-\mathcal L_n(\theta)-\langle\nabla\mathcal L_n(\theta),\Delta\rangle$,
-  the cost satisfies $\mathrm{RSC}(\kappa,R,\tau^2)$ when
+  $\mathcal E_n(\Delta)=\mathcal L_n(\theta+\Delta)-\mathcal L_n(\theta)-\langle\nabla\mathcal
+  L_n(\theta),\Delta\rangle$, the cost satisfies $\mathrm{RSC}(\kappa,R,\tau^2)$ when
   $\mathcal E_n(\Delta)\ge\tfrac{\kappa}{2}\lVert\Delta\rVert^2-\tau^2\,\Phi(\Delta)^2$ for all
   $\Delta$ with $\lVert\Delta\rVert\le R$, with curvature $\kappa$ and tolerance $\tau^2$.
 * **Dual $\Phi^*$-curvature.** The dual-norm analogue of RSC,
-  $\Phi^*\!\bigl(\nabla\mathcal L_n(\theta+\Delta)-\nabla\mathcal L_n(\theta)\bigr)\ge\kappa\,\Phi^*(\Delta)-\tau\,\Phi(\Delta)$
-  for all $\Delta$ with $\Phi^*(\Delta)\le R$, underlying the $\ell_\infty$ bound.
+  $\Phi^*\!\bigl(\nabla\mathcal L_n(\theta+\Delta)-\nabla\mathcal
+  L_n(\theta)\bigr)\ge\kappa\,\Phi^*(\Delta)-\tau\,\Phi(\Delta)$ for all
+  $\Delta$ with $\Phi^*(\Delta)\le R$, underlying the $\ell_\infty$ bound.
 
 The space $E$ is a finite-dimensional real inner-product space; $\lVert\cdot\rVert$ is the
 inner-product norm and $\Phi$ is a *separate* regularizer norm (e.g. $\ell_1$ while
@@ -43,9 +49,10 @@ The regularized M-estimator is Eq (9.3); decomposability of $\Phi$ over $(M,\bar
 Definition 9.9, Eq (9.22); restricted strong convexity is Definition 9.15, Eq (9.38); the
 $\Phi^*$-curvature condition is Definition 9.22, Eq (9.55). Auxiliary objects: the subspace
 pair $\bar M\supseteq M$ is Eq (9.21); the dual norm and generalized Hölder inequality are
-Eq (9.27); the subspace Lipschitz constant $\Psi(\mathcal M)=\sup_{u\in\mathcal M\setminus\{0\}}\Phi(u)/\lVert u\rVert$
-is Definition 9.18, Eq (9.44); the good event $\Phi^*(\nabla\mathcal L_n(\theta^*))\le\lambda/2$ is
-Eq (9.28)/(9.46); the objective increment $\mathcal F(\Delta)$ is Eq (9.31); the error cone
+Eq (9.27); the subspace Lipschitz constant
+$\Psi(\mathcal M)=\sup_{u\in\mathcal M\setminus\{0\}}\Phi(u)/\lVert u\rVert$ is Definition 9.18, Eq
+(9.44); the good event $\Phi^*(\nabla\mathcal L_n(\theta^*))\le\lambda/2$ is Eq (9.28)/(9.46); the
+objective increment $\mathcal F(\Delta)$ is Eq (9.31); the error cone
 $\mathbb C(M,\bar M^{\perp})$ is Eq (9.29); the error radius $\varepsilon_n^2$ is Eq (9.47).
 
 **Proof formalization notes.** These are statement-level (concept) definitions consumed
@@ -53,7 +60,8 @@ downstream; there are no proofs in this file. The one deliberate book-vs-Lean de
 the error-radius quantity `epsilonSq` (Wainwright Eq (9.47)). The book states leading constant
 $9$, slack $(8/\kappa)$, under $\tau^2\Psi^2\le\kappa/64$. Those are only achievable as
 $\tau\to 0$: the RSC lower bound is
-$\mathcal F(\Delta)\ge(\kappa/2-32\tau^2\Psi^2)\lVert\Delta\rVert^2-(3\lambda/2)\Psi\lVert\Delta\rVert-D$,
+$\mathcal F(\Delta)
+\ge(\kappa/2-32\tau^2\Psi^2)\lVert\Delta\rVert^2-(3\lambda/2)\Psi\lVert\Delta\rVert-D$,
 so the effective curvature $c=\kappa/2-32\tau^2\Psi^2<\kappa/2$, and at
 $\lVert\Delta\rVert^2=9(\lambda/\kappa)^2\Psi^2$ one gets $\mathcal F<0$ for any $\tau>0$
 (the book's $\mathcal F>0$ argument fails). The provable bound requires $\tau^2\Psi^2\le\kappa/128$
@@ -134,8 +142,8 @@ def GoodEvent (Φstar : Seminorm ℝ E) (g : E) (lam : ℝ) : Prop :=
   Φstar g ≤ lam / 2
 
 /-- The **objective increment** `ℱ(Δ) = L(θ*+Δ) − L(θ*) + λ·(Φ(θ*+Δ) − Φ(θ*))` (Wainwright eq 9.31).
-By construction `ℱ(0) = 0`; optimality of `θ̂` forces `ℱ(θ̂ − θ*) ≤ 0`. Convex in `Δ` when `L` and `Φ`
-are convex and `λ ≥ 0`. -/
+By construction `ℱ(0) = 0`; optimality of `θ̂` forces `ℱ(θ̂ − θ*) ≤ 0`. Convex in `Δ` when `L` and
+`Φ` are convex and `λ ≥ 0`. -/
 noncomputable def Fcal (L : E → ℝ) (Φ : Seminorm ℝ E) (θstar : E) (lam : ℝ) (Δ : E) : ℝ :=
   L (θstar + Δ) - L θstar + lam * (Φ (θstar + Δ) - Φ θstar)
 
@@ -153,10 +161,10 @@ subspace `M`, as decomposability requires; the εₙ² argument label `(M̄, M^�
 **Book-constant deviation (Wainwright eq 9.47).** The book states leading `9`, slack `(8/κ)`, under
 `τ²Ψ² ≤ κ/64`. Those are only achievable as `τ → 0`: the RSC lower bound is
 `ℱ(Δ) ≥ (κ/2 − 32τ²Ψ²)‖Δ‖² − (3λ/2)Ψ‖Δ‖ − D`, so the effective curvature `c = κ/2 − 32τ²Ψ² < κ/2`,
-and at `‖Δ‖² = 9(λ/κ)²Ψ²` one gets `ℱ < 0` for any `τ > 0` (Lemma 9.21's `ℱ > 0` fails). The provable
-bound requires `τ²Ψ² ≤ κ/128` (so `c ≥ κ/4`) and uses the clean nlinarith-friendly threshold
-`δ² > (2β/c)² + 2D/c` (`β = (3λ/2)Ψ`, `D = 2λΦ + 32τ²Φ²`), giving leading `144` (`√ = 12`) and slack
-`(32/κ)`, with strict margin. Same rate `s·λ²/κ²`; only the constants differ. -/
+and at `‖Δ‖² = 9(λ/κ)²Ψ²` one gets `ℱ < 0` for any `τ > 0` (Lemma 9.21's `ℱ > 0` fails). The
+provable bound requires `τ²Ψ² ≤ κ/128` (so `c ≥ κ/4`) and uses the clean nlinarith-friendly
+threshold `δ² > (2β/c)² + 2D/c` (`β = (3λ/2)Ψ`, `D = 2λΦ + 32τ²Φ²`), giving leading `144` (`√ = 12`)
+and slack `(32/κ)`, with strict margin. Same rate `s·λ²/κ²`; only the constants differ. -/
 noncomputable def epsilonSq (dr : DecomposableReg E) (θstar : E) (lam κ τSq : ℝ) : ℝ :=
   144 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 +
     32 / κ * (lam * dr.Φ ((dr.M)ᗮ.starProjection θstar) +

@@ -127,9 +127,9 @@ private theorem exists_traceFamily_card_bound (𝓗 : Set (X → Bool))
           exact hx'
       simp only [hφdef]
       by_cases hp : h (s i).1 = (s i).2
-      · rw [if_pos, zeroOneLoss, if_pos hp]
+      · rw [ite_eq_left, zeroOneLoss, ite_eq_left hp]
         rw [hmemT, hp]
-      · rw [if_neg, zeroOneLoss, if_neg hp]
+      · rw [ite_eq_right, zeroOneLoss, ite_eq_right hp]
         rw [hmemT]
         intro hq
         exact hp (Bool.eq_iff_iff.mpr hq)

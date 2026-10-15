@@ -348,10 +348,10 @@ theorem cantor_diagonal_extract_on_countable
     if h : a ∈ D then μ_at (Classical.choose (hD_choice a h)) else 0
   refine ⟨φ, hφ_mono, μ_lim_D, ?_, ?_⟩
   · intro a ha
-    simp only [μ_lim_D, dif_pos ha]
+    simp only [μ_lim_D, dite_eq_left ha]
     exact (hμ_at_spec _).1
   · intro a ha
-    simp only [μ_lim_D, dif_pos ha]
+    simp only [μ_lim_D, dite_eq_left ha]
     -- Need: WeakConverges (fun j => κ_n (φ j) a) (μ_at k) where g k = a.
     set k : ℕ := Classical.choose (hD_choice a ha) with hk_def
     have hk_eq : g k = a := Classical.choose_spec (hD_choice a ha)
@@ -414,14 +414,14 @@ theorem measurable_kernel_lift_from_dense
     refine ⟨fun a => ?_⟩
     change IsProbabilityMeasure (f a)
     by_cases ha : a ∈ D
-    · simp only [f, if_pos ha]
+    · simp only [f, ite_eq_left ha]
       exact hμ_lim_D_prob a ha
-    · simp only [f, if_neg ha]
+    · simp only [f, ite_eq_right ha]
       exact h_default_prob
   · -- Equality on D.
     intro a ha
     change f a = μ_lim_D a
-    simp only [f, if_pos ha]
+    simp only [f, ite_eq_left ha]
 
 /-- **Kernel-level Prokhorov tightness and sub-sequence extraction**.
 

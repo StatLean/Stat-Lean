@@ -196,9 +196,9 @@ private lemma dkw_rightCont_step (a s : ℝ) :
       =ᶠ[nhdsWithin s (Set.Ioi s)] (fun t => if a ≤ t then (1 : ℝ) else 0) := by
     by_cases h : a ≤ s
     · filter_upwards [self_mem_nhdsWithin] with t ht
-      rw [if_pos h, if_pos (h.trans ht.le)]
+      rw [ite_eq_left h, ite_eq_left (h.trans ht.le)]
     · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.mp h))] with t ht
-      rw [if_neg h, if_neg (not_le.mpr ht)]
+      rw [ite_eq_right h, ite_eq_right (not_le.mpr ht)]
   exact Filter.Tendsto.congr' hl tendsto_const_nhds
 
 /-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over
@@ -363,7 +363,7 @@ private lemma measurableSet_dkwPass (a : ℝ) (j : ℕ) :
   · exact measurableSet_le measurable_const (measurable_dkwWalk σ j).abs
 
 private lemma dkwPass_disjoint (a : ℝ) :
-    (Finset.range (n + 1) : Finset ℕ).toSet.PairwiseDisjoint (dkwPass σ a) := by
+    (↑(Finset.range (n + 1)) : Set ℕ).PairwiseDisjoint (dkwPass σ a) := by
   intro j _ j' _ hne
   refine Set.disjoint_left.mpr fun s hs hs' => ?_
   rcases lt_or_gt_of_ne hne with h | h
@@ -388,7 +388,7 @@ private lemma signVec_dkwPass_le (a : ℝ) (ha : 0 < a) (j : ℕ) :
   classical
   set R : (Fin n → ℝ) → (Fin n → ℝ) := fun s i => dkwSign σ j i * s i with hR
   have hRmeas : Measurable R :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).const_mul _
+    Measurable.of_eval fun i => (measurable_pi_apply i).const_mul _
   have hmap : (signVec n).map R = signVec n := signVec_map_mul_pm (dkwSign_pm σ j)
   set B : Set (Fin n → ℝ) := {s | a ≤ |dkwWalk σ s n|} with hB
   have hBmeas : MeasurableSet B := measurableSet_le measurable_const (measurable_dkwWalk σ n).abs
@@ -403,7 +403,7 @@ private lemma signVec_dkwPass_le (a : ℝ) (ha : 0 < a) (j : ℕ) :
     intro s hs
     by_cases hb : a ≤ |dkwWalk σ s n|
     · exact Or.inl ⟨hs, hb⟩
-    · push_neg at hb
+    · push Not at hb
       refine Or.inr ⟨⟨fun l hl => ?_, ?_⟩, ?_⟩
       · change |dkwWalk σ (fun i => dkwSign σ j i * s i) l| < a
         rw [dkwWalk_refl_le σ s (le_of_lt hl)]; exact hs.1 l hl
@@ -431,7 +431,7 @@ private lemma dkw_levy {a : ℝ} (ha : 0 < a) :
   classical
   set B : Set (Fin n → ℝ) := {s | a ≤ |dkwWalk σ s n|} with hB
   have hBmeas : MeasurableSet B := measurableSet_le measurable_const (measurable_dkwWalk σ n).abs
-  have hdisj : (Finset.range (n + 1) : Finset ℕ).toSet.PairwiseDisjoint
+  have hdisj : (↑(Finset.range (n + 1)) : Set ℕ).PairwiseDisjoint
       (fun j => dkwPass σ a j ∩ B) := fun j hj j' hj' hne =>
     Disjoint.mono Set.inter_subset_left Set.inter_subset_left
       (dkwPass_disjoint σ a hj hj' hne)
@@ -448,7 +448,7 @@ private lemma dkw_levy {a : ℝ} (ha : 0 < a) :
         rw [measure_biUnion_finset hdisj
           (fun j _ => (measurableSet_dkwPass σ a j).inter hBmeas)]
     _ ≤ 2 * signVec n B := by
-        refine mul_le_mul_left' (measure_mono ?_) 2
+        refine mul_le_mul_right (measure_mono ?_) 2
         exact Set.iUnion₂_subset fun j _ => Set.inter_subset_right
 
 end Levy
@@ -469,7 +469,7 @@ private lemma dkwWalk_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) (j : 
     _ = ((dkwPre σ j).card : ℝ) := by simp
     _ ≤ (n : ℝ) := by
         have := Finset.card_le_univ (dkwPre σ j)
-        simp only [Finset.card_univ, Fintype.card_fin] at this
+        simp only [Fintype.card_fin] at this
         exact_mod_cast this
 
 private lemma dkwMax_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) :
@@ -557,11 +557,11 @@ private lemma integral_dkwWalk_sq_full :
     simp only [dkwWalk, dkwPre_full]
     rw [sq, Finset.sum_mul_sum]
   rw [hW]
-  rw [integral_finset_sum _ (fun i _ =>
-    integrable_finset_sum _ (fun j _ => integrable_coord_mul i j))]
+  rw [integral_finsetSum _ (fun i _ =>
+    integrable_finsetSum _ (fun j _ => integrable_coord_mul i j))]
   have hrow : ∀ i : Fin n, ∫ s : Fin n → ℝ, ∑ j, s i * s j ∂signVec n = 1 := by
     intro i
-    rw [integral_finset_sum _ (fun j _ => integrable_coord_mul i j)]
+    rw [integral_finsetSum _ (fun j _ => integrable_coord_mul i j)]
     rw [Finset.sum_eq_single i (fun j _ hji => integral_coord_cross (Ne.symm hji))
       (fun h => absurd (Finset.mem_univ i) h)]
     exact integral_coord_sq i
@@ -787,7 +787,7 @@ theorem integral_ksDist_le {n : ℕ}
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 4 / Real.sqrt n := by
   classical
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   set F : ℚ → ℝ → ℝ := fun q x => if x ≤ (q : ℝ) then (1 : ℝ) else 0 with hFdef
   have hFmeas : ∀ q, Measurable (F q) := fun q =>
     Measurable.ite (measurableSet_le measurable_id measurable_const)
@@ -813,7 +813,7 @@ theorem integral_ksDist_le {n : ℕ}
       have hempRC : Tendsto (fun t => empCDF X ω t) (nhdsWithin s (Set.Ioi s))
           (nhds (empCDF X ω s)) := by
         simp only [empCDF]
-        exact (tendsto_finset_sum Finset.univ
+        exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (X i ω) s).const_mul _
       have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
         ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
@@ -841,7 +841,7 @@ theorem integral_ksDist_le {n : ℕ}
           _ ≤ ∑ _i : Fin n, (1 : ℝ) := by
               refine Finset.sum_le_sum fun i _ => ?_
               rw [abs_mul]
-              exact mul_le_one₀ (hp i) (abs_nonneg _) (hFbdd q _)
+              exact (mul_le_of_le_one_left (abs_nonneg _) (hp i)).trans (hFbdd q _)
           _ = (n : ℝ) := by simp
       have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
       rw [inv_mul_le_iff₀ hn0]
@@ -963,7 +963,7 @@ theorem ksDist_concentration {n : ℕ}
       have hempRC : Tendsto (fun t => dkwEmp x t) (nhdsWithin s (Set.Ioi s))
           (nhds (dkwEmp x s)) := by
         simp only [dkwEmp]
-        exact (tendsto_finset_sum Finset.univ
+        exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (x i) s).const_mul _
       have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
         ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
@@ -990,10 +990,10 @@ theorem ksDist_concentration {n : ℕ}
           Function.update_self]
       have hind : |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)| ≤ 1 := by
         by_cases hy : y ≤ t <;> by_cases hxk : x k ≤ t
-        · rw [if_pos hy, if_pos hxk]; norm_num
-        · rw [if_pos hy, if_neg hxk]; norm_num
-        · rw [if_neg hy, if_pos hxk]; norm_num
-        · rw [if_neg hy, if_neg hxk]; norm_num
+        · rw [ite_eq_left hy, ite_eq_left hxk]; norm_num
+        · rw [ite_eq_left hy, ite_eq_right hxk]; norm_num
+        · rw [ite_eq_right hy, ite_eq_left hxk]; norm_num
+        · rw [ite_eq_right hy, ite_eq_right hxk]; norm_num
       simp only [dkwEmp]
       rw [← mul_sub, hsum, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
       calc (n : ℝ)⁻¹ * |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)|
@@ -1026,11 +1026,11 @@ theorem ksDist_concentration {n : ℕ}
     exact ⟨by linarith [hle1], by linarith [hle2]⟩
   -- transfer to the standard-Borel product space `(Fin n → ℝ, Q)`, `Q = P.map (Xᵢ)ᵢ`
   set μi : Fin n → Measure ℝ := fun i => P.map (X i) with hμi
-  haveI hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
-    rw [hμi]; exact Measure.isProbabilityMeasure_map (hmeas i).aemeasurable
+  have hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
+    rw [hμi]; exact (by infer_instance)
   set Q : Measure (Fin n → ℝ) := Measure.pi μi with hQ
   have hmeasAV : Measurable (StatLean.ConcentrationInequalities.allVars X) :=
-    measurable_pi_lambda _ fun i => hmeas i
+    Measurable.of_eval fun i => hmeas i
   have hQeq : P.map (StatLean.ConcentrationInequalities.allVars X) = Q :=
     (iIndepFun_iff_map_fun_eq_pi_map fun i => (hmeas i).aemeasurable).1 hindep
   set Y : ∀ _ : Fin n, (Fin n → ℝ) → ℝ := fun i x => x i with hY_def
@@ -1076,7 +1076,7 @@ theorem ksDist_concentration {n : ℕ}
         - ∫ x', dkwF μ (StatLean.ConcentrationInequalities.allVars Y x') ∂Q}
       = P {ω | t ≤ ksDist X μ ω - mP} := by
     simp only [hAVYx]
-    rw [hint_eq, ← hQeq,
+    erw [hint_eq, ← hQeq,
       Measure.map_apply hmeasAV (measurableSet_le measurable_const (hf.sub measurable_const))]
     rfl
   have hbound : Q {x | t ≤ dkwF μ (StatLean.ConcentrationInequalities.allVars Y x)
@@ -1089,7 +1089,7 @@ theorem ksDist_concentration {n : ℕ}
   have hfinal : {ω | d ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - mP)}
       = {ω | t ≤ ksDist X μ ω - mP} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [ht_def, div_le_iff₀' hsqrt_pos]
   rw [hfinal]
   exact hbound
@@ -1129,7 +1129,7 @@ theorem dkw_uniform {n : ℕ}
         ≤ 1 := (measure_mono (Set.subset_univ _)).trans_eq measure_univ
       _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 16)) := by
           rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hbig
-  · push_neg at hbig
+  · push Not at hbig
     -- `4 e^{-d²/16} < 1` forces `d > 4`
     have hexp14 : Real.exp (-(d ^ 2) / 16) < 1 / 4 := by
       nlinarith [Real.exp_pos (-(d ^ 2) / 16)]
@@ -1152,7 +1152,7 @@ theorem dkw_uniform {n : ℕ}
     have hsub : {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
         ⊆ {ω | d - 4 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       rw [mul_sub]
       linarith
     have hconc := ksDist_concentration hn μ X hmeas hindep hd4

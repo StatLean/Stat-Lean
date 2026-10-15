@@ -186,7 +186,7 @@ lemma w_hX_meas (i : ℕ) : Measurable (wX i) := measurable_pi_apply i
 lemma w_hX_indep : ProbabilityTheory.iIndepFun wX wmu := by
   have h := ProbabilityTheory.iIndepFun_infinitePi
     (P := fun _ : ℕ => wP) (X := fun _ : ℕ => (id : ℝ → ℝ)) fun _ => measurable_id
-  simpa [wX, wmu] using h
+  simpa [wX, wmu] using! h
 
 lemma w_hX_law' (i : ℕ) : wmu.map (wX i) = wP :=
   Measure.infinitePi_map_eval (fun _ : ℕ => wP) i
@@ -244,7 +244,7 @@ lemma w_hcons :
         = {ξ : ℕ → ℝ | ε ≤ ‖(empiricalAvg id n fun i : Fin n => wX i.val ξ) - 0‖} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, sub_zero, norm_E1, wthetahat_apply, Real.norm_eq_abs]
+    simp only [Set.mem_ofPred_eq, sub_zero, norm_E1, wthetahat_apply, Real.norm_eq_abs]
   simp only [hset]
   exact hlln ε hε
 
@@ -258,7 +258,7 @@ lemma w_hm_meas (θ : E1) : Measurable (wm θ) := by
 lemma w_hgrad (θ : E1) (_hθ : θ ∈ (Set.univ : Set E1)) (x : ℝ) :
     HasFDerivAt (fun θ' : E1 => wm θ' x) (innerSL ℝ (psiVec wpsi θ x)) θ := by
   have hu : HasFDerivAt (fun θ' : E1 => x - L1 θ') (-L1) θ := by
-    simpa using (hasFDerivAt_const x θ).sub L1.hasFDerivAt
+    simpa using! (hasFDerivAt_const x θ).sub L1.hasFDerivAt
   have hfun : (fun θ' : E1 => wm θ' x)
       = (-(1 : ℝ) / 2) • fun θ' : E1 => (x - L1 θ') * (x - L1 θ') := by
     funext θ'; simp only [wm, L1_apply, Pi.smul_apply, smul_eq_mul]; ring
@@ -267,8 +267,8 @@ lemma w_hgrad (θ : E1) (_hθ : θ ∈ (Set.univ : Set E1)) (x : ℝ) :
       ((x - L1 θ) • (-L1) + (x - L1 θ) • (-L1)) θ := hu.mul hu
   refine (h1.const_smul (-(1 : ℝ) / 2)).congr_fderiv ?_
   ext v
-  simp only [ContinuousLinearMap.coe_smul', Pi.smul_apply,
-    ContinuousLinearMap.add_apply, ContinuousLinearMap.neg_apply, smul_eq_mul,
+  simp only [FunLike.coe_smul, Pi.smul_apply,
+    add_apply, neg_apply, smul_eq_mul,
     innerSL_E1, psiVec_witness_apply, L1_apply]
   ring
 
@@ -321,7 +321,7 @@ theorem classical_zEstimator_hypotheses_satisfiable :
           ((Vmat wP wpsi 0)⁻¹ * psiCov wP wpsi 0 * ((Vmat wP wpsi 0)⁻¹)ᵀ)) :=
   classical_zEstimator_normality_of_exact_root wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas w_hC2
     w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wthetahat wmu wX w_hX_meas
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wthetahat wmu wX w_hX_meas
     w_hX_indep w_hX_id w_hX_law w_hθhat_meas w_hroot w_hcons
 
 /-- **Normal-location root existence and consistency for vdV Theorem 5.42 (i)+(ii)**
@@ -337,7 +337,7 @@ theorem classical_zEstimator_root_hypotheses_satisfiable :
             (fun n ξ => (θ_hat n fun i : Fin n => wX i.val ξ) - (0 : E1)) :=
   classical_zEstimator_root_exists_consistent_outer wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas
     w_hC2 w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
     w_hX_id w_hX_law
 
 /-- **Normal-location local-maximizing roots for vdV Theorem 5.42, final assertion**
@@ -354,7 +354,7 @@ theorem classical_zEstimator_localmax_hypotheses_satisfiable :
             (θ_hat n fun i : Fin n => wX i.val ξ)}) Filter.atTop (𝓝 1) :=
   classical_zEstimator_localmax_roots_outer wP Set.univ w_hΘ_open wpsi 0 w_hθ₀ w_hψ_meas w_hC2
     w_hPθ₀_zero w_hψ_L2 w_hVint w_hV (fun _ => 0) measurable_const (integrable_const _)
-    (by norm_num : (0:ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
+    (by norm_num : (0 : ℝ) < 1) (Set.subset_univ _) w_hdom wmu wX w_hX_meas w_hX_indep
     w_hX_id w_hX_law wm w_hm_meas w_hgrad w_hmax
 
 end AsymptoticStatistics.ClassicalZEstimator.Witness

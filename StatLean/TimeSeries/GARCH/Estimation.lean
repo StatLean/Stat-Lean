@@ -5,7 +5,8 @@ import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Probability.Independence.InfinitePi
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.ContinuousFunctionalCalculus
 
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
@@ -636,9 +637,9 @@ Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequ
   `tendsto_setIntegral_sq_tail` (the dominated-convergence half).
 
 **The relocated debts** (unchanged by the closure above — they are what `hlin` and `hWdef`
-now *carry*, and they remain outside the repo). After the repairs the *literature* content of GR 2001 and PY 2003
-is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀` producing
-the influence process. That is where the genuinely hard analysis lives, and it is
+now *carry*, and they remain outside the repo). After the repairs the *literature* content of GR
+2001 and PY 2003 is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀`
+producing the influence process. That is where the genuinely hard analysis lives, and it is
 different in the two cases:
 * **Whittle (GR 2001).** `hlin` comes from a Taylor expansion of `garchWhittle` in `θ`
   plus a **CLT for a weighted quadratic form of the squared process**,
@@ -779,7 +780,7 @@ private lemma tendsto_setIntegral_sq_tail [IsProbabilityMeasure μ] {ζ : Ω →
         Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω = 0 := by
       filter_upwards [hgo.eventually_gt_atTop (|ζ ω|)] with m hm
       refine Set.indicator_of_notMem ?_ _
-      simp only [Set.mem_setOf_eq, not_le]
+      simp only [Set.mem_ofPred_eq, not_le]
       exact hm
     exact Filter.Tendsto.congr' (Filter.EventuallyEq.symm hev) tendsto_const_nhds
   have := tendsto_integral_of_dominated_convergence (F := fun m : ℕ => Set.indicator
@@ -824,10 +825,10 @@ private lemma nonneg_influence_form [IsProbabilityMeasure μ] {n : ℕ}
       rw [sq, Finset.sum_mul_sum]
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
     rw [integral_congr_ae (Eventually.of_forall hpt),
-      integral_finset_sum _ (fun i _ => integrable_finset_sum _
+      integral_finsetSum _ (fun i _ => integrable_finsetSum _
         fun j _ => (hint i j).const_mul _)]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ (fun j _ => (hint i j).const_mul _)]
+    rw [integral_finsetSum _ (fun j _ => (hint i j).const_mul _)]
     exact Finset.sum_congr rfl fun j _ => by rw [integral_const_mul, hWdef i j]
   rw [hkey]
   exact integral_nonneg fun ω => sq_nonneg _
@@ -860,7 +861,7 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
   have hξm : ∀ k : ℕ, Measurable (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω) := fun k =>
     Finset.measurable_sum _ fun i _ => (hpsiM i _).const_mul _
   have hξL2 : ∀ k : ℕ, MemLp (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω) 2 μ := fun k =>
-    memLp_finset_sum _ (fun i _ => (hpsiL2 i _).const_mul _)
+    memLp_finsetSum _ (fun i _ => (hpsiL2 i _).const_mul _)
   -- (S2) the martingale CLT for the influence sum
   have hCLT : Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
       (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T,
@@ -882,9 +883,9 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
       have hfun : (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω)
           = ∑ i : Fin n, (fun ω => c i * psi i ((k : ℤ) + 1) ω) := by
         funext ω; simp
-      show μ[fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0
+      change μ[fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0
       rw [hfun]
-      refine (condExp_finset_sum (fun i _ => hint i) _).trans ?_
+      refine (condExp_finsetSum (fun i _ => hint i) _).trans ?_
       have hz : ∀ i : Fin n,
           μ[fun ω => c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0 := by
         intro i
@@ -909,7 +910,7 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
       have hζm : Measurable (fun ω => ∑ i, c i * psi i 0 ω) :=
         Finset.measurable_sum _ fun i _ => (hpsiM i _).const_mul _
       have hζ2 : MemLp (fun ω => ∑ i, c i * psi i 0 ω) 2 μ :=
-        memLp_finset_sum _ (fun i _ => (hpsiL2 i _).const_mul _)
+        memLp_finsetSum _ (fun i _ => (hpsiL2 i _).const_mul _)
       have hu : Measurable (fun v : Fin n → ℝ => ∑ i, c i * v i) := by fun_prop
       have hkey : ∀ m k : ℕ,
           ∫ ω in {ω | ε * Real.sqrt m ≤ |∑ i, c i * psi i ((k : ℤ) + 1) ω|},
@@ -946,7 +947,7 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
       Integrable (fun ω => (Real.sqrt T)⁻¹ *
         ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω) μ := by
     intro T i
-    exact ((memLp_finset_sum (Finset.range T)
+    exact ((memLp_finsetSum (Finset.range T)
       (fun (t : ℕ) (_ : t ∈ Finset.range T) => hpsiL2 i ((t : ℤ) + 1))).const_mul
       (Real.sqrt T)⁻¹).integrable one_le_two
   have hd : ∀ (T : ℕ) (i : Fin n), Integrable (fun ω => Real.sqrt T * (θhat T ω i - θ0 i)
@@ -968,7 +969,7 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
   · intro T
     refine Integrable.abs ?_
     refine Integrable.congr ?_ (Eventually.of_forall fun ω => (hid T ω).symm)
-    exact integrable_finset_sum _ fun i _ => (hd T i).const_mul _
+    exact integrable_finsetSum _ fun i _ => (hd T i).const_mul _
   · refine squeeze_zero (fun T => integral_nonneg fun ω => abs_nonneg _) ?_ ?_
       (g := fun T : ℕ => ∑ i, |c i| * ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
         - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ)
@@ -979,19 +980,19 @@ private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
           ≤ ∫ ω, ∑ i, |c i| * |Real.sqrt T * (θhat T ω i - θ0 i)
               - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ := by
         refine integral_mono ?_ ?_ fun ω => ?_
-        · exact (Integrable.congr (integrable_finset_sum _ fun i _ => (hd T i).const_mul _)
+        · exact (Integrable.congr (integrable_finsetSum _ fun i _ => (hd T i).const_mul _)
             (Eventually.of_forall fun ω => (hid T ω).symm)).abs
-        · exact integrable_finset_sum _ fun i _ => ((hd T i).abs).const_mul _
+        · exact integrable_finsetSum _ fun i _ => ((hd T i).abs).const_mul _
         · rw [hid T ω]
           refine (Finset.abs_sum_le_sum_abs _ _).trans (le_of_eq ?_)
           exact Finset.sum_congr rfl fun i _ => abs_mul _ _
       refine hle.trans (le_of_eq ?_)
-      rw [integral_finset_sum _ fun i _ => ((hd T i).abs).const_mul _]
+      rw [integral_finsetSum _ fun i _ => ((hd T i).abs).const_mul _]
       exact Finset.sum_congr rfl fun i _ => integral_const_mul _ _
     · have : Tendsto (fun T : ℕ => ∑ i, |c i| * ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
           - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ)
           atTop (𝓝 (∑ i : Fin n, |c i| * 0)) :=
-        tendsto_finset_sum _ fun i _ => (hlin i).const_mul _
+        tendsto_finsetSum _ fun i _ => (hlin i).const_mul _
       simpa using this
 
 /-- The **coordinate packing of a GARCH parameter** `(c₀, b, a)` into the vector the

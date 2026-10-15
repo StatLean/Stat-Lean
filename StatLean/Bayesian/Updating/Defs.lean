@@ -45,7 +45,8 @@ posterior at `x`. -/
 theorem posteriorPredictive_apply [StandardBorelSpace Θ] [Nonempty Θ]
     (KX : Kernel Θ 𝓧) [IsFiniteKernel KX] (KY : Kernel Θ 𝓨)
     (π : Measure Θ) [IsFiniteMeasure π] (x : 𝓧) :
-    posteriorPredictive KX KY π x = KY ∘ₘ ((KX†π) x) := by unfold posteriorPredictive; rw [Kernel.comp_apply]
+    posteriorPredictive KX KY π x = KY ∘ₘ ((KX†π) x) := by
+      unfold posteriorPredictive; rw [Kernel.comp_apply]
 
 instance [StandardBorelSpace Θ] [Nonempty Θ]
     (KX : Kernel Θ 𝓧) [IsFiniteKernel KX] (KY : Kernel Θ 𝓨) [IsMarkovKernel KY]

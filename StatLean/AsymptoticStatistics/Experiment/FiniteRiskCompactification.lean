@@ -251,31 +251,31 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
   · subst r
     let eta : Kernel (EuclideanSpace ℝ (Fin m)) (EuclideanSpace ℝ (Fin 0)) :=
       Kernel.deterministic (fun _ => 0) measurable_const
-    haveI : IsMarkovKernel eta := by dsimp [eta]; infer_instance
+    have : IsMarkovKernel eta := by dsimp [eta]; infer_instance
     refine ⟨id, strictMono_id, ⟨eta, inferInstance⟩, ?_, ?_⟩
     · intro i
       exact Fin.elim0 i
     · intro i
       exact Fin.elim0 i
-  · letI hmuProb (i : Fin r) : IsProbabilityMeasure (μ i) := _hprob i
-    letI hkappaN (n : ℕ) : IsMarkovKernel (κn n).1 := (κn n).2
+  · let hmuProb (i : Fin r) : IsProbabilityMeasure (μ i) := _hprob i
+    let hkappaN (n : ℕ) : IsMarkovKernel (κn n).1 := (κn n).2
     let profile := finiteLossProfile center ℓ
     have hprofile : Measurable profile := by
       exact (finiteLossProfile_uniform_center center ℓ _hfinite _hbdd _huc).1.continuous.measurable
     let etaN : ℕ → Kernel (EuclideanSpace ℝ (Fin m))
         (EuclideanSpace ℝ (Fin r)) := fun n => (κn n).1.map profile
-    letI hetaN (n : ℕ) : IsMarkovKernel (etaN n) := by
+    let hetaN (n : ℕ) : IsMarkovKernel (etaN n) := by
       dsimp [etaN]
       exact Kernel.IsMarkovKernel.map (κn n).1 hprofile
     let nu : Measure (EuclideanSpace ℝ (Fin m)) :=
       (r : ℝ≥0)⁻¹ • ∑ i, μ i
-    haveI hnuProb : IsProbabilityMeasure nu := by
+    have hnuProb : IsProbabilityMeasure nu := by
       refine ⟨?_⟩
       change (((r : ℝ≥0)⁻¹ • ∑ i, μ i) Set.univ) = 1
       rw [Measure.smul_apply]
       rw [ENNReal.smul_def, smul_eq_mul]
       have hsum : (∑ i, μ i) Set.univ = (r : ℝ≥0∞) := by
-        rw [Measure.finset_sum_apply]
+        rw [Measure.finsetSum_apply]
         simp only [measure_univ, Finset.sum_const, Finset.card_univ,
           nsmul_eq_mul, mul_one, Fintype.card_fin]
       rw [hsum]
@@ -286,7 +286,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     have hscale : (r : ℝ≥0) • nu = ∑ i, μ i := by
       have hrNN : (r : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.mpr hr
       ext s
-      simp [nu, Measure.smul_apply, hrNN]
+      simp [nu, hrNN]
     have hmuNu (i : Fin r) : μ i ≪ nu := by
       intro s hs
       have hle : μ i ≤ ∑ j, μ j :=
@@ -298,7 +298,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     let joint : ℕ → Measure
         (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin r)) :=
       fun n => nu ⊗ₘ etaN n
-    letI hjointProb (n : ℕ) : IsProbabilityMeasure (joint n) := by
+    let hjointProb (n : ℕ) : IsProbabilityMeasure (joint n) := by
       dsimp [joint]
       infer_instance
     have hfst (n : ℕ) : (joint n).map Prod.fst = nu := by
@@ -340,15 +340,15 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
       intro e he
       refine ⟨K, _hK, ?_⟩
       rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
-      letI : IsProbabilityMeasure ((joint n).map Prod.snd) :=
-        Measure.isProbabilityMeasure_map measurable_snd.aemeasurable
+      let : IsProbabilityMeasure ((joint n).map Prod.snd) :=
+        (by infer_instance)
       rw [(prob_compl_eq_zero_iff _hK.measurableSet).2 (hsndK n)]
       exact bot_le
     have hjointTight : IsTightMeasureSet (Set.range joint) :=
       Prohorov.tight_prod_of_tight_marginals _ hfstTight hsndTight
     obtain ⟨ns, hns, rho, hrhoProb₀, hrhoWeak⟩ :=
       Prohorov.extract_weak_subseq joint hjointTight
-    letI hrhoProb : IsProbabilityMeasure rho := hrhoProb₀
+    let hrhoProb : IsProbabilityMeasure rho := hrhoProb₀
     have hfstConst : WeakConverges
         (fun k => (joint (ns k)).map Prod.fst) nu := by
       intro f
@@ -360,7 +360,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
         (hrhoWeak.map continuous_fst measurable_fst) hfstConst
     let eta : Kernel (EuclideanSpace ℝ (Fin m))
         (EuclideanSpace ℝ (Fin r)) := rho.condKernel
-    haveI heta : IsMarkovKernel eta := by
+    have heta : IsMarkovKernel eta := by
       dsimp [eta]
       infer_instance
     have hdisintegrate : nu ⊗ₘ eta = rho := by
@@ -372,14 +372,14 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     have hrhoSndK : rho.snd K = 1 := by
       let Pn : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) :=
         fun k => ⟨(joint (ns k)).map Prod.snd,
-          Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+          (by infer_instance)⟩
       let P : ProbabilityMeasure (EuclideanSpace ℝ (Fin r)) :=
         ⟨rho.map Prod.snd,
-          Measure.isProbabilityMeasure_map measurable_snd.aemeasurable⟩
+          (by infer_instance)⟩
       have hsndWeak := hrhoWeak.map continuous_snd measurable_snd
       have htend : Tendsto Pn atTop (nhds P) := by
         apply ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr
-        simpa [Pn, P] using hsndWeak
+        simpa [Pn, P] using! hsndWeak
       have hclosed :=
         ProbabilityMeasure.limsup_measure_closed_le_of_tendsto htend _hK.isClosed
       have hlimsup : limsup (fun k => ((Pn k : ProbabilityMeasure
@@ -401,7 +401,7 @@ theorem finiteLossProfile_kernel_subsequence {m d r : ℕ}
     · intro i
       have hi := weakConverges_bind_of_compProd (μ i) nu (hmuNu i)
         (fun k => etaN (ns k)) eta hjointLimit
-      convert hi using 1
+      convert! hi using 1
       funext k
       dsimp [etaN]
       exact Measure.map_comp (μ i) (κn (ns k)).1 hprofile
@@ -435,12 +435,12 @@ private theorem exists_measurable_rounding_of_finite_cover
       intro z hz
       by_cases hzy : z ∈ Metric.ball y e
       · change dist z (profile (if z ∈ Metric.ball y e then ay else q z)) < e
-        rw [if_pos hzy, hay]
+        rw [ite_eq_left hzy, hay]
         exact hzy
       · have hz' : z ∈ ⋃ x ∈ s, Metric.ball x e := by
           simpa [hzy] using hz
         change dist z (profile (if z ∈ Metric.ball y e then ay else q z)) < e
-        rw [if_neg hzy]
+        rw [ite_eq_right hzy]
         exact hqRound z hz'
 
 /-- A compact profile-valued Markov kernel supported on the closure of genuine
@@ -468,8 +468,8 @@ theorem actionKernel_approx_of_lossProfileKernel {m d r : ℕ}
         |(∫ z, z j ∂((μ i).bind κProfile.1)) -
           ∫ a, (ℓ (a - center j)).toReal ∂((μ i).bind κ.1)| < ε := by
   classical
-  letI hμprob (i : Fin r) : IsProbabilityMeasure (μ i) := _hprob i
-  letI hκProfile : IsMarkovKernel κProfile.1 := κProfile.2
+  let hμprob (i : Fin r) : IsProbabilityMeasure (μ i) := _hprob i
+  let hκProfile : IsMarkovKernel κProfile.1 := κProfile.2
   let profile := finiteLossProfile center ℓ
   obtain ⟨hprofile_uc, K, hK, hprofileK⟩ :=
     finiteLossProfile_uniform_center center ℓ _hfinite _hbdd _huc
@@ -494,12 +494,12 @@ theorem actionKernel_approx_of_lossProfileKernel {m d r : ℕ}
     exact ⟨c, hc, lt_of_le_of_lt (dist_triangle z y c) (by linarith)⟩
   let κKernel : Kernel (EuclideanSpace ℝ (Fin m)) (EuclideanSpace ℝ (Fin d)) :=
     κProfile.1.map round
-  haveI hκKernel : IsMarkovKernel κKernel :=
+  have hκKernel : IsMarkovKernel κKernel :=
     Kernel.IsMarkovKernel.map κProfile.1 hroundMeas
   refine ⟨⟨κKernel, inferInstance⟩, ?_⟩
   intro i j
   let ρ : Measure (EuclideanSpace ℝ (Fin r)) := (μ i).bind κProfile.1
-  haveI hρprob : IsProbabilityMeasure ρ := by dsimp [ρ]; infer_instance
+  have hρprob : IsProbabilityMeasure ρ := by dsimp [ρ]; infer_instance
   have hsupp_i : ∀ᵐ z ∂ρ, z ∈ closure (Set.range profile) := by
     apply (ae_mem_iff_measure_eq
       (isClosed_closure.measurableSet.nullMeasurableSet)).2
@@ -566,7 +566,7 @@ theorem actionKernel_approx_of_lossProfileKernel {m d r : ℕ}
         ≤ ∫ _ : EuclideanSpace ℝ (Fin r), ε / 2 ∂ρ := by
       have hdiff : ∀ᵐ z ∂ρ,
           ‖z j - (ℓ (round z - center j)).toReal‖ ≤ ε / 2 := by
-        simpa [profile, Real.norm_eq_abs] using hcoord_i
+        simpa [profile, Real.norm_eq_abs] using! hcoord_i
       exact norm_integral_le_of_norm_le (integrable_const (ε / 2)) hdiff
     _ = ε / 2 := by simp
     _ < ε := by linarith

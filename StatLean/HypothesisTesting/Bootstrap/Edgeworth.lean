@@ -224,6 +224,8 @@ expansions to improve accuracy, is due to R. Beran ("Bootstrap methods in statis
 *Jahresber. Deutsch. Math.-Verein.* **86** (1984), 14–30).
 -/
 
+set_option linter.style.longFile 19500
+
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal Topology RealInnerProductSpace FourierTransform
 
@@ -664,7 +666,7 @@ theorem normalCDF_sub_le {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {a b : ℝ} (hab
 /-- The standard normal distribution function is `(2π)^{-1/2}`-Lipschitz. -/
 theorem stdNormalCDF_sub_le {a b : ℝ} (hab : a ≤ b) :
     stdNormalCDF b - stdNormalCDF a ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (b - a) := by
-  simpa using normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
+  simpa using! normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
 
 /-! ## The law of the root
 
@@ -687,7 +689,7 @@ noncomputable def centredLaw (F : Measure ℝ) : Measure ℝ :=
 instance isProbabilityMeasure_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] :
     IsProbabilityMeasure (centredLaw F) := by
   rw [centredLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- The root map `y ↦ √n (X̄ₙ − E_F X)` is `(√n)⁻¹` times the sum of the centred coordinates. -/
 private lemma sqrt_mul_sub_mean_eq {n : ℕ} (hn : 0 < n) (m : ℝ) (y : Fin n → ℝ) :
@@ -761,7 +763,7 @@ theorem charFun_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
 instance isProbabilityMeasure_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
     IsProbabilityMeasure (meanRootLaw F n) := by
   rw [meanRootLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- The **standardized root law**: the law of `√n(X̄ₙ − E_F X)/σ`.
 
@@ -774,7 +776,7 @@ noncomputable def stdRootLaw (F : Measure ℝ) (n : ℕ) : Measure ℝ :=
 instance isProbabilityMeasure_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
     IsProbabilityMeasure (stdRootLaw F n) := by
   rw [stdRootLaw]
-  exact Measure.isProbabilityMeasure_map (by fun_prop)
+  exact (by infer_instance)
 
 /-- **The characteristic function of the standardized root**, as an `n`-th power. -/
 theorem charFun_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ} (hn : 0 < n)
@@ -972,7 +974,7 @@ noncomputable def studentPair (F : Measure ℝ) : ℝ → EuclideanSpace ℝ (Fi
 lemma measurable_studentPair (F : Measure ℝ) : Measurable (studentPair F) := by
   have hvec : Measurable fun x : ℝ =>
       (![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun x : ℝ => x - ∫ s, s ∂F
       fun_prop
@@ -1072,8 +1074,8 @@ theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure
       rw [sampleVariance_eq_sub hn m y, hsum, e1, e2]
       field_simp
       ring
-    simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
-  rw [studentizedRootCDF, ← hm, hset, vecRootLaw,
+    simp only [Set.mem_preimage, hR, Set.mem_ofPred_eq, h0, h1, hrad]
+  rw [studentizedRootCDF, ← hm, hset, vecRootLaw_eq_map F (measurable_studentPair F),
     Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
 
 /-- The inner product with the studentizing pair, in coordinates. -/
@@ -1174,7 +1176,6 @@ lemma charFun_map_studentPair_eq (F : Measure ℝ) [IsProbabilityMeasure F] (hFa
           Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
           ∂(volume : Measure ℝ) := by
     rw [hstep1, ← hFd, integral_withDensity_eq_integral_toReal_smul hpm hplt]
-    rfl
   have hstep3 : (∫ x : ℝ, (p x).toReal *
         Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I))
       = ∫ y : ℝ, (p (y + m)).toReal *
@@ -1301,8 +1302,8 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair (F : Measure ℝ) [IsPr
     ∃ c : ℝ, c < 1 ∧ ∀ n : ℕ, 0 < n → ∀ t : EuclideanSpace ℝ (Fin 2),
       ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
         ‖charFun (vecRootLaw F (studentPair F) n) t‖ ≤ c ^ n := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
+    (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
@@ -1660,7 +1661,7 @@ theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : 
     exact absurd hω (not_le.2 hω')
   have hunion : {ω | T ω ≤ a} ∪ {ω | a < T ω ∧ T ω ≤ b} = {ω | T ω ≤ b} := by
     ext ω
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     constructor
     · rintro (h | ⟨-, h⟩)
       · linarith
@@ -2232,7 +2233,7 @@ theorem measure_inter_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSp
           Set.mem_empty_iff_false, iff_false, not_and]
         exact fun h => absurd h ha
       rw [hempty, measure_empty]
-      exact zero_le _
+      exact zero_le
   calc ∫⁻ a, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B)) ∂ν
       ≤ ∫⁻ a, A₀.indicator (fun _ => c) a ∂ν := lintegral_mono hle
     _ = ν A₀ * c := by
@@ -2266,7 +2267,7 @@ theorem measure_pi_inter_coord_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMea
       = e ⁻¹' ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') := by
     ext ω
     simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true,
-      Set.mem_setOf_eq, hB'def, MeasurableEquiv.symm_apply_apply]
+      Set.mem_ofPred_eq, hB'def, MeasurableEquiv.symm_apply_apply]
     exact Iff.rfl
   have hmeas' : MeasurableSet ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') :=
     (hA₀.prod MeasurableSet.univ).inter hB'm
@@ -2301,8 +2302,8 @@ lemma subset_union_large_summand {n : ℕ} (Y : ℝ → ℝ) (lam τ : ℝ) :
       intro i
       exact not_lt.1 fun h => hbig ⟨i, h⟩
     have hsum : (∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)) = ∑ i, Y (ω i) :=
-      Finset.sum_congr rfl fun i _ => if_pos (hall i)
-    rw [Set.mem_setOf_eq, hsum]
+      Finset.sum_congr rfl fun i _ => ite_eq_left (hall i)
+    rw [Set.mem_ofPred_eq, hsum]
     exact hω
 
 /-- **The conditional window estimate from a one-large-summand decomposition.**
@@ -2516,13 +2517,13 @@ theorem measure_pi_abs_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMea
     refine le_trans (le_of_eq ?_) h2
     congr 2
     ext ω
-    simp only [Set.mem_setOf_eq, hneg ω]
+    simp only [Set.mem_ofPred_eq, hneg ω]
   have hsub : {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}
       ⊆ {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}
         ∪ {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)} := by
     intro ω hω
     have hω' : lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)| := hω
-    simp only [Set.mem_union, Set.mem_setOf_eq]
+    simp only [Set.mem_union, Set.mem_ofPred_eq]
     rcases abs_cases (∑ i, (Y (ω i) - ∫ y, Y y ∂μ)) with ⟨he, _⟩ | ⟨he, _⟩
     · exact Or.inl (by rw [← he]; exact hω')
     · exact Or.inr (by rw [← he]; exact hω')
@@ -2553,8 +2554,8 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
   have hWbdd : ∀ y, |W y| ≤ τ := by
     intro y
     by_cases h : |Y y| ≤ τ
-    · rw [hW]; simp only [if_pos h]; exact h
-    · rw [hW]; simp only [if_neg h, abs_zero]; exact hτ
+    · rw [hW]; simp only [ite_eq_left h]; exact h
+    · rw [hW]; simp only [ite_eq_right h, abs_zero]; exact hτ
   set m : ℝ := ∫ y, W y ∂μ with hm
   have hsub : {ω : Fin n → ℝ | lam < |∑ i, W (ω i)|}
       ⊆ {ω : Fin n → ℝ | lam / 2 ≤ |∑ i, (W (ω i) - m)|} := by
@@ -2568,7 +2569,7 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
       rw [hsplit]
       refine (abs_add_le _ _).trans ?_
       rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ))]
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     linarith [hmean, h1, hω']
   have hmono := ENNReal.toReal_mono (measure_ne_top _ _)
     (measure_mono (μ := Measure.pi fun _ : Fin n => μ) hsub)
@@ -2641,7 +2642,7 @@ theorem abs_measure_pi_sub_comp_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMea
   set τmap : (Fin n → ℝ) → (Fin n → ℝ) := fun y i => T (y i) with hτmap
   set Bad : Set (Fin n → ℝ) := {y : Fin n → ℝ | ∃ i, y i ∈ {x : ℝ | T x ≠ x}} with hBad
   have hτmeas : Measurable τmap :=
-    measurable_pi_lambda _ fun i => hT.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hT.comp (measurable_pi_apply i)
   have hfix : ∀ y : Fin n → ℝ, y ∉ Bad → τmap y = y := by
     intro y hy
     funext i
@@ -2772,7 +2773,7 @@ lemma measure_abs_sub_le_of_affine {Ω : Type*} [MeasurableSpace Ω] (P : Measur
       ring
     have habs : |a + s * S ω - x| = s * |S ω - (x - a) / s| := by
       rw [hid, abs_mul, abs_of_pos hs]
-    simp only [Set.mem_setOf_eq, habs, ← le_div_iff₀' hs]
+    simp only [Set.mem_ofPred_eq, habs, ← le_div_iff₀' hs]
   rw [hset]
   refine (hwin ((x - a) / s) (w / s) (by positivity)).trans (le_of_eq ?_)
   field_simp
@@ -2826,7 +2827,7 @@ theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
         |(Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
           + s * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) - x| ≤ w} := by
     ext z
-    simp only [Set.mem_setOf_eq, root_insertNth_eq Z hn i y z]
+    simp only [Set.mem_ofPred_eq, root_insertNth_eq Z hn i y z]
     exact Iff.rfl
   rw [hset]
   refine (measure_abs_sub_le_of_affine (P := Measure.pi fun _ : Fin n => μ)
@@ -2968,7 +2969,7 @@ lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM
       ⊆ {ω : Ω | M < |u ω|} ∪ {ω : Ω | M < |v ω|} := by
   intro ω hω
   by_contra hcon
-  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_lt] at hcon
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_lt] at hcon
   have hbr := taylor3_bracket_le hM hcon.1 hcon.2
   have hmul : r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
       + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) ≤ r ^ 3 * (73 / 8 * M ^ 7) :=
@@ -3131,7 +3132,7 @@ theorem exists_surrogate_centre (r v x : ℝ) :
   set b : ℝ := 6 / 5 * |x| with hb
   have hb0 : 0 ≤ b := by positivity
   have hzero :
-      ((0:ℝ) - 0 * v * r / 2 + (0:ℝ) ^ 3 * r ^ 2 / 2 + 3 * 0 * v ^ 2 * r ^ 2 / 8) = 0 := by
+      ((0 : ℝ) - 0 * v * r / 2 + (0 : ℝ) ^ 3 * r ^ 2 / 2 + 3 * 0 * v ^ 2 * r ^ 2 / 8) = 0 := by
     ring
   have hup : x ≤ (b - b * v * r / 2 + b ^ 3 * r ^ 2 / 2 + 3 * b * v ^ 2 * r ^ 2 / 8) := by
     have h := surrogate_fst_increment_le (r := r) (v := v) hb0
@@ -3198,7 +3199,7 @@ theorem abs_surrogate_centre_sub_le {r x v₁ v₂ m₁ m₂ : ℝ}
       rw [abs_of_nonpos (by linarith : m₁ - m₂ ≤ 0), abs_of_nonpos (by linarith)]
       linarith
     · have hinc := surrogate_fst_increment_le (r := r) (v := v₂) h
-      rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ m₁ - m₂), abs_of_nonneg (by linarith)]
+      rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ m₁ - m₂), abs_of_nonneg (by linarith)]
       linarith
   -- the right-hand side factorises exactly
   have hfac : (m₁ - m₁ * v₂ * r / 2 + m₁ ^ 3 * r ^ 2 / 2 + 3 * m₁ * v₂ ^ 2 * r ^ 2 / 8)
@@ -3252,8 +3253,8 @@ theorem abs_sub_frozen_centre_le_of_surrogate_window {r x v v₀ w u m m₀ : �
         ≤ (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
       have := mul_le_mul_of_nonneg_left hsum (abs_nonneg r)
       linarith
-    have h0 : (0:ℝ) ≤ 1 / 2 + 3 * |r| * |v + v₀| / 8 := by positivity
-    have h0' : (0:ℝ) ≤ (6 / 5 * |x|) * |r| * |v - v₀| := by positivity
+    have h0 : (0 : ℝ) ≤ 1 / 2 + 3 * |r| * |v + v₀| / 8 := by positivity
+    have h0' : (0 : ℝ) ≤ (6 / 5 * |x|) * |r| * |v - v₀| := by positivity
     exact mul_le_mul hA hB h0 h0'
   have h3 : |m - m₀| ≤ 36 / 25 * |x| * |r| * |v - v₀|
       * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
@@ -3322,10 +3323,11 @@ because **no two-dimensional anti-concentration is needed**: the slab functional
 (`vecRoot_slab_eq`), and `measure_abs_sub_le_of_affine` — "this file's only anti-concentration" —
 is exactly the right tool after all. See the section note above `slabRoot`. The rest of this
 section stands verbatim: the ledger arithmetic, the eight-moment threshold, the `n^{-1/6}` gap at
-four moments, and both corrections to wave 38 are unchanged, and `measure_abs_surrogate_window_slab_le`
-is the theorem they were describing. The one thing the wave-39 phrase "direction-uniform" got
-wrong in *degree* rather than in kind: only slopes `|κ| ≤ surrogateSlopeBound = O(|x||r|)` occur,
-a **shrinking** family, and that is what makes the uniformity attainable.
+four moments, and both corrections to wave 38 are unchanged, and
+`measure_abs_surrogate_window_slab_le` is the theorem they were describing. The one thing the
+wave-39 phrase "direction-uniform" got wrong in *degree* rather than in kind: only slopes
+`|κ| ≤ surrogateSlopeBound = O(|x||r|)` occur, a **shrinking**
+family, and that is what makes the uniformity attainable.
 
 **Correction 1 to wave 38.** The assessment wrote that a two-dimensional Lévy concentration
 bound "of the shape `sup over slabs S of width w of P(root ∈ S) ≤ Cw + η` … dominates the
@@ -3432,8 +3434,8 @@ theorem exists_surrogate_slope (r m₀ v₀ : ℝ) :
           + (-(m₀ * r / 2) + 3 * m₀ * v₀ * r ^ 2 / 4) = 0
         ∧ |κ| ≤ 6 / 5 * |m₀| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4) := by
   set D : ℝ := 1 - v₀ * r / 2 + 3 * m₀ ^ 2 * r ^ 2 / 2 + 3 * v₀ ^ 2 * r ^ 2 / 8 with hD
-  have hD0 : (5:ℝ) / 6 ≤ D := surrogate_fst_slope_ge r m₀ v₀
-  have hDpos : (0:ℝ) < D := by linarith
+  have hD0 : (5 : ℝ) / 6 ≤ D := surrogate_fst_slope_ge r m₀ v₀
+  have hDpos : (0 : ℝ) < D := by linarith
   set N : ℝ := -(m₀ * r / 2) + 3 * m₀ * v₀ * r ^ 2 / 4 with hN
   refine ⟨-(N / D), by field_simp; ring, ?_⟩
   have hNb : |N| ≤ |m₀| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4) := by
@@ -3450,7 +3452,7 @@ theorem exists_surrogate_slope (r m₀ v₀ : ℝ) :
   have habs : |(-(N / D))| = |N| / D := by
     rw [abs_neg, abs_div, abs_of_pos hDpos]
   rw [habs, div_le_iff₀ hDpos]
-  have hpos : (0:ℝ) ≤ |m₀| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4) := by positivity
+  have hpos : (0 : ℝ) ≤ |m₀| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4) := by positivity
   nlinarith [hNb, hD0, hpos]
 
 /-- **The level curve of `Hₙ` is straight to second order.** If `Hₙ(m₀, v₀) = x`,
@@ -3589,16 +3591,16 @@ theorem measure_abs_surrogate_window_le
             + 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8))
           + 2 * η + ρ := by
   obtain ⟨m₀, -, hm₀⟩ := exists_surrogate_centre r v₀ x
-  have hK : (0:ℝ) ≤ 36 / 25 * |x| * |r| := by positivity
-  have hc : (0:ℝ) ≤ 3 * |r| / 8 := by positivity
-  have hd : (0:ℝ) ≤ 2 * |v₀| := by positivity
+  have hK : (0 : ℝ) ≤ 36 / 25 * |x| * |r| := by positivity
+  have hc : (0 : ℝ) ≤ 3 * |r| / 8 := by positivity
+  have hd : (0 : ℝ) ≤ 2 * |v₀| := by positivity
   have hmono : ∀ t : ℝ, 0 ≤ t → t ≤ L →
       36 / 25 * |x| * |r| * t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)
         ≤ 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) := by
     intro t ht htL
-    have e1 : (0:ℝ) ≤ 3 * |r| / 8 * (L ^ 2 - t ^ 2) :=
+    have e1 : (0 : ℝ) ≤ 3 * |r| / 8 * (L ^ 2 - t ^ 2) :=
       mul_nonneg hc (by nlinarith [ht, htL])
-    have e2 : (0:ℝ) ≤ 3 * |r| / 8 * (2 * |v₀|) * (L - t) :=
+    have e2 : (0 : ℝ) ≤ 3 * |r| / 8 * (2 * |v₀|) * (L - t) :=
       mul_nonneg (mul_nonneg hc hd) (by linarith)
     have h1 : t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)
         ≤ L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) := by nlinarith [e1, e2, htL]
@@ -3617,7 +3619,7 @@ theorem measure_abs_surrogate_window_le
     by_cases hv : L < |V ω - v₀|
     · exact Or.inr hv
     · refine Or.inl ?_
-      push_neg at hv
+      push Not at hv
       obtain ⟨m, hmb, hm⟩ := exists_surrogate_centre r (V ω) x
       have hkey := abs_sub_frozen_centre_le_of_surrogate_window (v₀ := v₀) (w := w)
         (u := U ω) hm hmb hm₀ hω
@@ -3685,10 +3687,10 @@ the slope of `exists_surrogate_slope` and the a-priori `|m₀| ≤ (6/5)|x|`), a
 of `surrogateDefect` is at least **quadratic** in `L`; the leading one is `(3r²/8)(6/5)|x|L²`.
 The frozen-centre bound's middle term is `(36/25)|x||r|L(…)`, **linear** in `L`. That is the
 entire difference, and it is worth a factor `n^{-1/3}`: writing `a = (9/20)|x|r²` (the coefficient
-of `L²`) and `b = E(V − v₀)⁴` (Chebyshev at power four, `measure_abs_gt_le_fourth_moment_of_integrable`),
-the `w`-free part of the bound is `a·L² + b/L⁴` up to lower-order terms, and
-`ledger_optimum_cube` says that at `L⁶ = b/a` the two halves are **equal** and their common value
-`aL²` satisfies
+of `L²`) and `b = E(V − v₀)⁴` (Chebyshev at power four,
+`measure_abs_gt_le_fourth_moment_of_integrable`), the `w`-free part of the bound is `a·L² + b/L⁴` up
+to lower-order terms, and `ledger_optimum_cube` says that at `L⁶ = b/a` the two halves are **equal**
+and their common value `aL²` satisfies
 
 `(a·L²)³ = a²·b`.
 
@@ -3758,7 +3760,7 @@ lemma abs_sub_affine_centre_le' {r x v₀ h m₀ m κ K L : ℝ}
   have e2 : h ^ 2 = |h| ^ 2 := (sq_abs h).symm
   rw [e1, e2]
   unfold surrogateDefect
-  gcongr <;> positivity
+  gcongr
 
 /-- **THE STRAIGHTENED SLICE BOUND.** The window mass of the surrogate, out of a
 **direction-uniform slab bound** for the pair `(U, V)` and a tail bound for `V`:
@@ -3806,8 +3808,8 @@ theorem measure_abs_surrogate_window_slab_le
     by_cases hv : L < |V ω - v₀|
     · exact Or.inr hv
     · refine Or.inl ?_
-      simp only [Set.mem_setOf_eq]
-      push_neg at hv
+      simp only [Set.mem_ofPred_eq]
+      push Not at hv
       obtain ⟨m, -, hm⟩ := exists_surrogate_centre r (V ω) x
       have hVeq : v₀ + (V ω - v₀) = V ω := by ring
       have hm' : (m - m * (v₀ + (V ω - v₀)) * r / 2 + m ^ 3 * r ^ 2 / 2
@@ -3989,8 +3991,8 @@ one-dimensional Berry–Esseen already in `ForMathlib`. -/
 
 /-- The **slab summand**: the real random variable whose one-dimensional root is the slab
 functional `u − κv` of the bivariate root. Written in coordinates rather than as an inner
-product, because the coordinates are what `deltaSurrogate` and `measure_abs_surrogate_window_slab_le`
-speak in. -/
+product, because the coordinates are what `deltaSurrogate` and
+`measure_abs_surrogate_window_slab_le` speak in. -/
 noncomputable def slabRoot (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (y : ℝ) : ℝ :=
   Z y 0 / σ - κ * (Z y 1 / σ ^ 2)
 
@@ -4013,8 +4015,8 @@ lemma abs_slabRoot_le {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ κ K : ℝ} (
   have e0 : |Z y 0 / σ| = 1 / σ * |Z y 0| := by
     rw [abs_div, abs_of_pos hσ]; ring
   have e1 : |κ * (Z y 1 / σ ^ 2)| = |κ| / σ ^ 2 * |Z y 1| := by
-    rw [abs_mul, abs_div, abs_of_pos (by positivity : (0:ℝ) < σ ^ 2)]; ring
-  have hσ2 : (0:ℝ) < σ ^ 2 := by positivity
+    rw [abs_mul, abs_div, abs_of_pos (by positivity : (0 : ℝ) < σ ^ 2)]; ring
+  have hσ2 : (0 : ℝ) < σ ^ 2 := by positivity
   have h1 : |κ| / σ ^ 2 ≤ K / σ ^ 2 := by gcongr
   have h2 : |κ| / σ ^ 2 * |Z y 1| ≤ K / σ ^ 2 * |Z y 1| :=
     mul_le_mul_of_nonneg_right h1 (abs_nonneg _)
@@ -4068,7 +4070,7 @@ theorem measure_pi_vecRoot_slab_le_of_win {n : ℕ} (μ : Measure ℝ) [IsProbab
       = {z : Fin n → ℝ |
           |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - c'| ≤ w'} := by
     ext z
-    simp only [Set.mem_setOf_eq, vecRoot_slab_eq]
+    simp only [Set.mem_ofPred_eq, vecRoot_slab_eq]
   rw [hset]
   exact hwin κ' c' w' hκ hw'
 
@@ -4124,7 +4126,7 @@ lemma inv_le_norm_slabDir {σ : ℝ} (hσ : 0 < σ) (κ : ℝ) : 1 / σ ≤ ‖s
   have h1 : (1 / σ) ^ 2 ≤ (1 / σ) ^ 2 + (-(κ / σ ^ 2)) ^ 2 :=
     le_add_of_nonneg_right (sq_nonneg _)
   calc 1 / σ = Real.sqrt ((1 / σ) ^ 2) := by
-        rw [Real.sqrt_sq (by positivity : (0:ℝ) ≤ 1 / σ)]
+        rw [Real.sqrt_sq (by positivity : (0 : ℝ) ≤ 1 / σ)]
     _ ≤ _ := Real.sqrt_le_sqrt h1
 
 lemma slabDir_ne_zero {σ : ℝ} (hσ : σ ≠ 0) (κ : ℝ) : slabDir σ κ ≠ 0 := by
@@ -4167,8 +4169,8 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
     (hFac : F ≪ volume) {σ : ℝ} (hσ : 0 < σ) {ε : ℝ} (hε : 0 < ε) :
     ∃ c : ℝ, c < 1 ∧ ∀ κ s : ℝ, ε ≤ |s| →
       ‖charFun (F.map (slabRoot (studentPair F) σ κ)) s‖ ≤ c := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
+    (by infer_instance)
   obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht)
@@ -4178,7 +4180,7 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
   refine hcbd _ ?_
   rw [norm_smul, Real.norm_eq_abs]
   have hd : 1 / σ ≤ ‖slabDir σ κ‖ := inv_le_norm_slabDir hσ κ
-  have hσ' : (0:ℝ) < 1 / σ := by positivity
+  have hσ' : (0 : ℝ) < 1 / σ := by positivity
   calc ε / σ = ε * (1 / σ) := by ring
     _ ≤ |s| * (1 / σ) := by nlinarith [hσ'.le, hs]
     _ ≤ |s| * ‖slabDir σ κ‖ := mul_le_mul_of_nonneg_left hd (abs_nonneg s)
@@ -4255,11 +4257,7 @@ lemma surrogateDefect_mono {r x v₀ v₁ K₀ K₁ L : ℝ} (hK : 0 ≤ K₀) (
   have hKL : (0 : ℝ) ≤ K₀ * L := mul_nonneg hK hL
   have hK1L : (0 : ℝ) ≤ K₁ * L := mul_nonneg hK1 hL
   unfold surrogateDefect
-  gcongr <;>
-    first
-      | assumption
-      | positivity
-      | nlinarith [hKL, hK1L, sq_nonneg r, abs_nonneg r, abs_nonneg x, abs_nonneg v₁]
+  gcongr
 
 /-- **The slice bound with the frozen value's contribution made uniform.** The slab bound is
 asked for on the larger slope range `|κ'| ≤ K̄` and the answer is expressed at the larger `v̄`, so
@@ -4335,7 +4333,7 @@ theorem measure_pi_abs_slab_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
               * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j)
             - c'| ≤ w'} := by
     ext z
-    simp only [Set.mem_setOf_eq, hkey z]
+    simp only [Set.mem_ofPred_eq, hkey z]
   rw [hset]
   exact measure_pi_abs_root_insertNth_le (Z := slabRoot Z σ κ') μ hA hn i
     (fun u w hw => hwin κ' u w hκ hw) y c' hw'
@@ -4405,7 +4403,7 @@ theorem not_ae_quadratic_eq_const_of_ac {F : Measure ℝ} [IsProbabilityMeasure 
         · exact absurd hb h
       refine Set.Finite.subset (Set.finite_singleton (c / a)) ?_
       intro y hy
-      simp only [Set.mem_setOf_eq, hb] at hy
+      simp only [Set.mem_ofPred_eq, hb] at hy
       simp only [Set.mem_singleton_iff]
       field_simp
       linarith
@@ -4413,13 +4411,13 @@ theorem not_ae_quadratic_eq_const_of_ac {F : Measure ℝ} [IsProbabilityMeasure 
       refine Set.Finite.subset
         ((Set.finite_singleton (-(a / (2 * b)) - s)).insert (-(a / (2 * b)) + s)) ?_
       intro y hy
-      simp only [Set.mem_setOf_eq] at hy
+      simp only [Set.mem_ofPred_eq] at hy
       have hd : (a / (2 * b)) ^ 2 + c / b = (y + a / (2 * b)) ^ 2 := by
         have hc' : c = a * y + b * y ^ 2 := hy.symm
         rw [hc']
         field_simp
         ring
-      have hd0 : (0:ℝ) ≤ (a / (2 * b)) ^ 2 + c / b := by rw [hd]; positivity
+      have hd0 : (0 : ℝ) ≤ (a / (2 * b)) ^ 2 + c / b := by rw [hd]; positivity
       have hss : s ^ 2 = (a / (2 * b)) ^ 2 + c / b := Real.sq_sqrt hd0
       have hzero : (y + a / (2 * b) - s) * (y + a / (2 * b) + s) = 0 := by
         have hq : (y + a / (2 * b)) ^ 2 - s ^ 2 = 0 := by rw [hss, ← hd]; ring
@@ -4447,7 +4445,7 @@ theorem integral_sq_quadratic_pos_of_ac {F : Measure ℝ} [IsProbabilityMeasure 
     (hFac : F ≪ volume) {a b c : ℝ} (hab : a ≠ 0 ∨ b ≠ 0)
     (hint : Integrable (fun y : ℝ => (a * y + b * y ^ 2 - c) ^ 2) F) :
     0 < ∫ y, (a * y + b * y ^ 2 - c) ^ 2 ∂F := by
-  have hnn : (0:ℝ) ≤ ∫ y, (a * y + b * y ^ 2 - c) ^ 2 ∂F :=
+  have hnn : (0 : ℝ) ≤ ∫ y, (a * y + b * y ^ 2 - c) ^ 2 ∂F :=
     integral_nonneg fun y => sq_nonneg _
   rcases lt_or_eq_of_le hnn with h | h
   · exact h
@@ -4579,7 +4577,7 @@ lemma surrogateRemPoly_le_of_abs_le (θ : ℝ) {u v A B : ℝ} (hu : |u| ≤ A) 
   have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg u
   have hv0 : (0 : ℝ) ≤ |v| := abs_nonneg v
   rw [surrogateRemPoly, surrogateRemPoly, abs_of_nonneg hA, abs_of_nonneg hB]
-  gcongr <;> first | assumption | positivity
+  gcongr
 
 /-! ### The envelope has to be graded in `r`, and that is what decides the truncation level
 
@@ -4663,7 +4661,6 @@ lemma surrogateRemGraded_le (θ u v : ℝ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤
   rw [surrogateRemGraded, surrogateRemPoly]
   linarith [h]
 
-set_option maxHeartbeats 800000 in
 /-- **The pointwise expansion of the surrogate's character.**
 
 `e^{iθHₙ} = e^{iθu}(1 − iθ(uv)r/2 + iθu³r²/2 + 3iθ(uv²)r²/8 − θ²(uv)²r²/8) + O(r³)`,
@@ -4959,7 +4956,6 @@ lemma integrable_expansionIntegrand :
   exact hsum.congr
     (Filter.Eventually.of_forall fun w => (expansionIntegrand_eq c₂ c₃ c₄ c₅ t w).symm)
 
-set_option maxHeartbeats 1000000 in
 include h2 h3 h4 h5 in
 /-- **The surrogate's expansion integrates to the multilinear combination.**
 
@@ -5062,7 +5058,6 @@ theorem integral_expansionIntegrand_eq :
 
 end Expansion
 
-set_option maxHeartbeats 1000000 in
 /-- **The characteristic function of the delta-method surrogate, over an arbitrary law of the
 bivariate root.**
 
@@ -5207,7 +5202,6 @@ lemma charFun_map_deltaSurrogate (μ : Measure E₂) (σ r θ : ℝ) :
   rw [charFun_apply_real,
     integral_map (measurable_deltaSurrogate σ r).aemeasurable (by fun_prop)]
   refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
-  congr 1
   push_cast
   ring
 
@@ -5271,12 +5265,12 @@ theorem exists_measurable_charFun_map_eq_one :
         * ((if 0 < w 0 then (1 : ℝ) else 0 : ℝ) : ℂ) * Complex.I) = 1 := by
     intro w
     by_cases hw : 0 < w 0
-    · rw [if_pos hw]
+    · rw [ite_eq_left hw]
       have hcast : ((2 * Real.pi : ℝ) : ℂ) * ((1 : ℝ) : ℂ) * Complex.I
           = 2 * (Real.pi : ℂ) * Complex.I := by push_cast; ring
       rw [hcast]
       exact Complex.exp_two_pi_mul_I
-    · rw [if_neg hw]
+    · rw [ite_eq_right hw]
       simp
   simp_rw [hpt]
   simp
@@ -5396,7 +5390,7 @@ lemma integral_fourierSynth (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ �
     intro s
     have h := MeasureTheory.integral_const_mul (μ := μ) (a s)
       (fun w : E₂ => Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I))
-    exact h.trans (by rw [charFun_apply]; rfl)
+    exact h.trans (by rw [charFun_apply])
   simp only [fourierSynth]
   rw [hswap]
   exact integral_congr_ae (Filter.Eventually.of_forall hinner)
@@ -5590,7 +5584,7 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le
     (hR : ε₀ * Real.sqrt (n : ℝ) ≤ ‖t₀‖ - R)
     (hcert : HasFourierCertificate (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
     ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   exact norm_charFun_map_deltaSurrogate_le_of_certificate _ σ r θ (pow_nonneg hc n) hcert
     (fun t ht => hcram t (le_trans hR ht))
 
@@ -5672,11 +5666,11 @@ theorem deltaSurrogate_slope_ge (x : ℝ) : (5 : ℝ) / 6 ≤ 1 - x / 2 + 3 * x 
 
 private lemma coordDir_add_apply_zero (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 0 = w 0 + t := by
-  simp [coordDir, EuclideanSpace.single_apply]
+  simp [coordDir]
 
 private lemma coordDir_add_apply_one (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 1 = w 1 := by
-  simp [coordDir, EuclideanSpace.single_apply]
+  simp [coordDir]
 
 /-- **The cut-off-free integrated form of `deltaSurrogate_slope_ge`.** Moving the argument by
 `t ≥ 0` along the first coordinate increases the surrogate by at least `5t/(6σ)` — at every `w`,
@@ -5968,7 +5962,7 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
     (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
     ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖
       ≤ Γ * max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   refine norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ ?_ hcert
     (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hB hcram hbulk ht)
   exact le_trans (by positivity) (le_max_left _ _)
@@ -6208,8 +6202,8 @@ theorem vecRootLaw_one {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ
   have hfun : (fun y : Fin 1 → ℝ => (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • ∑ i, Z (y i))
       = Z ∘ fun y : Fin 1 → ℝ => y 0 := by
     funext y
-    simp [Fin.sum_univ_one]
-  rw [vecRootLaw, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
+    simp
+  rw [vecRootLaw_eq_map F hZ, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
     (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => F) (0 : Fin 1)).map_eq]
 
 /-- **Truncation discharges every hypothesis of the surrogate's transform, at once.**
@@ -6231,7 +6225,7 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
       Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) (vecRootLaw F Z n) ∧
       Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2))
         (vecRootLaw F Z n) := by
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   set R : ℝ := Real.sqrt (n : ℝ) * K with hRdef
   have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
   have hR0 : (0 : ℝ) ≤ R := by rw [hRdef]; positivity
@@ -6240,7 +6234,7 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
   have hcoord : ∀ (w : E₂) (i : Fin 2), |w i| ≤ ‖w‖ := by
     intro w i
     have hnorm : ‖coordDir i‖ = 1 := by
-      rw [coordDir, EuclideanSpace.norm_single]
+      rw [coordDir, PiLp.norm_single]
       simp
     have h := abs_real_inner_le_norm w (coordDir i)
     rwa [inner_coordDir, hnorm, mul_one] at h
@@ -6322,21 +6316,21 @@ lemma measurable_truncAt (m τ : ℝ) : Measurable (truncAt m τ) := by
 lemma abs_truncAt_sub_le {m τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) : |truncAt m τ x - m| ≤ τ := by
   rw [truncAt]
   by_cases h : |x - m| ≤ τ
-  · rwa [if_pos h]
-  · rw [if_neg h, sub_self, abs_zero]; exact hτ
+  · rwa [ite_eq_left h]
+  · rw [ite_eq_right h, sub_self, abs_zero]; exact hτ
 
 /-- The set on which the truncation moves the observation is exactly the tail `{τ < |x − m|}`. -/
 lemma truncAt_ne_setOf {m τ : ℝ} (hτ : 0 ≤ τ) :
     {x : ℝ | truncAt m τ x ≠ x} = {x : ℝ | τ < |x - m|} := by
   ext x
-  simp only [Set.mem_setOf_eq, truncAt]
+  simp only [Set.mem_ofPred_eq, truncAt]
   constructor
   · intro hx
     by_contra hle
     rw [not_lt] at hle
-    exact hx (if_pos hle)
+    exact hx (ite_eq_left hle)
   · intro hx hEq
-    rw [if_neg (not_le.2 hx)] at hEq
+    rw [ite_eq_right (not_le.2 hx)] at hEq
     rw [← hEq, sub_self, abs_zero] at hx
     linarith
 
@@ -6376,7 +6370,7 @@ theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasu
             {w : EuclideanSpace ℝ (Fin 2) |
               w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
                 - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z})).toReal := by
-    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw,
+    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw_eq_map F hZm,
       Measure.map_apply (measurable_vecRoot hZm n) hRm]
   have h2 : (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
         {w : EuclideanSpace ℝ (Fin 2) |
@@ -6388,7 +6382,7 @@ theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasu
               {w : EuclideanSpace ℝ (Fin 2) |
                 w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
                   - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}))).toReal := by
-    rw [vecRootLaw, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
+    rw [vecRootLaw_eq_map F hZTm, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
     rfl
   rw [h1, h2]
   exact abs_measure_pi_sub_comp_le F hT hbad hsm
@@ -6522,8 +6516,8 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
         ‖charFun (vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
           ≤ c ^ n := by
-  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
-    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  have : IsProbabilityMeasure (F.map (studentPair F)) :=
+    (by infer_instance)
   obtain ⟨c₀, hc₀, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
     (vecCramerCondition_map_studentPair F hFac)
     (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
@@ -6664,7 +6658,7 @@ lemma bulkMultiplier_eq_of_norm_le {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) {w : E
     have : ‖M⁻¹ • w‖ ≤ 1 := by
       rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, inv_mul_le_iff₀ hM]
       simpa using hw
-    simpa [Metric.mem_closedBall] using this
+    simpa [Metric.mem_closedBall] using! this
   rw [bulkMultiplier, hone]
   push_cast
   ring
@@ -7024,8 +7018,8 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
     (hwin2 : V * ε₁ ^ 2 ≤ 2) (hwin3 : R * ε₁ ≤ 3 * lam / 2)
     {n : ℕ} (hn : 0 < n) {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
     ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
-  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have : IsProbabilityMeasure (F.map Z) := (by infer_instance)
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
   rcases eq_or_ne t 0 with rfl | htne
@@ -7226,11 +7220,20 @@ lemma abs_coord_le_norm (t : E₂) : |t 0| ≤ ‖t‖ ∧ |t 1| ≤ ‖t‖ := 
   · nlinarith [abs_nonneg (t 0), sq_abs (t 0), sq_nonneg (t 1)]
   · nlinarith [abs_nonneg (t 1), sq_abs (t 1), sq_nonneg (t 0)]
 
+/-- Entry `(0, 0)` of the covariance matrix of the studentizing pair
+`studentPair F X = (X − μ, (X − μ)² − σ²)` for `X ∼ F`, where `μ = E_F X` and `σ² = Var_F X`:
+`∫ y² d(centredLaw F)(y) = E_F (X − μ)²`. -/
 noncomputable def studentCov00 (F : Measure ℝ) : ℝ := ∫ y, y ^ 2 ∂(centredLaw F)
 
+/-- Entry `(0, 1)` of the covariance matrix of the studentizing pair `studentPair F`:
+`∫ y (y² − σ²) d(centredLaw F)(y) = E_F[(X − μ)((X − μ)² − σ²)]`, where `μ = E_F X` and
+`σ² = Var_F X`. -/
 noncomputable def studentCov01 (F : Measure ℝ) : ℝ :=
   ∫ y, y * (y ^ 2 - Var[fun s : ℝ => s; F]) ∂(centredLaw F)
 
+/-- Entry `(1, 1)` of the covariance matrix of the studentizing pair `studentPair F`:
+`∫ (y² − σ²)² d(centredLaw F)(y) = E_F((X − μ)² − σ²)²`, where `μ = E_F X` and
+`σ² = Var_F X`. -/
 noncomputable def studentCov11 (F : Measure ℝ) : ℝ :=
   ∫ y, (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2 ∂(centredLaw F)
 
@@ -7871,7 +7874,7 @@ theorem exists_bound_integral_norm_fourier_schwartz :
     rw [h, SchwartzMap.norm_toLp_one, SchwartzMap.fourierTransformCLM_apply]
     rfl
   have h2 := hC f
-  simp only [Seminorm.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul] at h2
+  simp only [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul] at h2
   rw [h1] at h2
   exact h2
 
@@ -7904,6 +7907,9 @@ lemma iteratedFDeriv_bulkMultiplier_eq_zero {M : ℝ} (hM : 0 < M) (σ r θ : �
   by_contra hne
   exact hns (support_iteratedFDeriv_subset m hne)
 
+/-- The bulk multiplier `bulkMultiplier σ r θ M` as a Schwartz function on `ℝ²`, for `M > 0`:
+it is smooth and supported in the closed ball of radius `2M`, so `schwartzOfCompactSupport`
+applies. -/
 noncomputable def schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) :
     SchwartzMap E₂ ℂ :=
   schwartzOfCompactSupport (bulkMultiplier σ r θ M) (contDiff_bulkMultiplier σ r θ M)
@@ -7918,8 +7924,8 @@ noncomputable def schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) 
 /-- Iterated derivatives of a continuous linear functional. -/
 lemma norm_iteratedFDeriv_clm_le (L : E₂ →L[ℝ] ℝ) (i : ℕ) (w : E₂) :
     ‖iteratedFDeriv ℝ i (⇑L) w‖ ≤ ‖L‖ * (1 + ‖w‖) := by
-  have hLn : (0:ℝ) ≤ ‖L‖ := norm_nonneg _
-  have hwn : (0:ℝ) ≤ ‖w‖ := norm_nonneg _
+  have hLn : (0 : ℝ) ≤ ‖L‖ := norm_nonneg _
+  have hwn : (0 : ℝ) ≤ ‖w‖ := norm_nonneg _
   match i with
   | 0 =>
       rw [norm_iteratedFDeriv_zero]
@@ -7942,7 +7948,7 @@ lemma gradedBound_const_mono {f : E₂ → ℝ} {m d : ℕ} {C C' : ℝ} (hCC : 
     ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C' * (1 + ‖w‖) ^ d := by
   intro i hi w
   refine (h i hi w).trans ?_
-  have : (0:ℝ) ≤ (1 + ‖w‖) ^ d := by positivity
+  have : (0 : ℝ) ≤ (1 + ‖w‖) ^ d := by positivity
   nlinarith
 
 /-- Weakening the degree in a graded derivative bound. -/
@@ -7951,7 +7957,7 @@ lemma gradedBound_deg_mono {f : E₂ → ℝ} {m d d' : ℕ} {C : ℝ} (hC : 0 �
     ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C * (1 + ‖w‖) ^ d' := by
   intro i hi w
   refine (h i hi w).trans ?_
-  have h1 : (1:ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
+  have h1 : (1 : ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
   exact mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h1 hd) hC
 
 lemma gradedBound_const {m : ℕ} (c : ℝ) :
@@ -7981,7 +7987,7 @@ lemma gradedBound_coord {m : ℕ} (j : Fin 2) :
   intro i _ w
   rw [heq, pow_one, one_mul]
   refine (norm_iteratedFDeriv_clm_le _ i w).trans ?_
-  have : (0:ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
+  have : (0 : ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
   nlinarith
 
 /-- Leibniz for graded derivative bounds. -/
@@ -7996,7 +8002,7 @@ lemma gradedBound_mul {f g : E₂ → ℝ} {m d₁ d₂ : ℕ} {C₁ C₂ : ℝ}
   have hmain := norm_iteratedFDeriv_mul_le (𝕜 := ℝ) (A := ℝ) (N := ((⊤ : ℕ∞) : WithTop ℕ∞))
     hf hg w (n := i) (mod_cast le_top)
   refine hmain.trans ?_
-  have hw0 : (0:ℝ) ≤ (1 + ‖w‖) := by have := norm_nonneg w; linarith
+  have hw0 : (0 : ℝ) ≤ (1 + ‖w‖) := by have := norm_nonneg w; linarith
   have hterm : ∀ j ∈ Finset.range (i + 1),
       (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j f w‖ * ‖iteratedFDeriv ℝ (i - j) g w‖
         ≤ (i.choose j : ℝ) * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
@@ -8020,7 +8026,7 @@ lemma gradedBound_mul {f g : E₂ → ℝ} {m d₁ d₂ : ℕ} {C₁ C₂ : ℝ}
         rw [← Nat.cast_sum, Nat.sum_range_choose]; push_cast; ring
     _ ≤ (2 : ℝ) ^ m * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
         have h2m : (2 : ℝ) ^ i ≤ 2 ^ m := pow_le_pow_right₀ (by norm_num) hi
-        have : (0:ℝ) ≤ C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by positivity
+        have : (0 : ℝ) ≤ C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by positivity
         nlinarith
     _ = 2 ^ m * C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by ring
 
@@ -8100,13 +8106,13 @@ lemma norm_iteratedFDeriv_cubic_le (m : ℕ) (a b c : ℝ) :
     gradedBound_add hq3 hq3' hT2 hT3
   have hsum := gradedBound_add (hq2' a) (hq3.add hq3') hT1' hT23
   refine gradedBound_const_mono ?_ hsum
-  have e1 : (2:ℝ) ^ m * (2 ^ m * |a| * 1) * 1 = 4 ^ m * |a| := by
-    rw [show (4:ℝ) = 2 * 2 by norm_num, mul_pow]; ring
-  have e2 : (2:ℝ) ^ m * (2 ^ m * (2 ^ m * |b| * 1) * 1) * 1 = 8 ^ m * |b| := by
-    rw [show (8:ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
-  have e3 : (2:ℝ) ^ m * (2 ^ m * (2 ^ m * |c| * 1) * 1) * 1 = 8 ^ m * |c| := by
-    rw [show (8:ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
-  have h48 : (4:ℝ) ^ m ≤ 8 ^ m := pow_le_pow_left₀ (by norm_num) (by norm_num) m
+  have e1 : (2 : ℝ) ^ m * (2 ^ m * |a| * 1) * 1 = 4 ^ m * |a| := by
+    rw [show (4 : ℝ) = 2 * 2 by norm_num, mul_pow]; ring
+  have e2 : (2 : ℝ) ^ m * (2 ^ m * (2 ^ m * |b| * 1) * 1) * 1 = 8 ^ m * |b| := by
+    rw [show (8 : ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
+  have e3 : (2 : ℝ) ^ m * (2 ^ m * (2 ^ m * |c| * 1) * 1) * 1 = 8 ^ m * |c| := by
+    rw [show (8 : ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
+  have h48 : (4 : ℝ) ^ m ≤ 8 ^ m := pow_le_pow_left₀ (by norm_num) (by norm_num) m
   have ha := abs_nonneg a
   rw [e1, e2, e3]
   nlinarith [mul_le_mul_of_nonneg_right h48 ha]
@@ -8121,9 +8127,9 @@ lemma exists_bound_iteratedFDeriv_bulkCutoff_single (i : ℕ) :
   have hcs : HasCompactSupport fun x : E₂ => ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ :=
     (bulkCutoff.hasCompactSupport.iteratedFDeriv i).norm
   obtain ⟨B, hB⟩ := hcs.exists_bound_of_continuous hcont
-  have h0 : (0:ℝ) ≤ B := by
+  have h0 : (0 : ℝ) ≤ B := by
     have := hB (0 : E₂)
-    have h2 : (0:ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (0 : E₂)‖ := norm_nonneg _
+    have h2 : (0 : ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (0 : E₂)‖ := norm_nonneg _
     rw [Real.norm_eq_abs, abs_of_nonneg h2] at this
     linarith
   refine ⟨B + 1, by linarith, fun x => ?_⟩
@@ -8152,7 +8158,7 @@ lemma norm_iteratedFDeriv_bulkCutoff_dilate_le {M B : ℝ} (hM : 1 ≤ M) {i : �
     (hB : ∀ x : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ ≤ B) (w : E₂) :
     ‖iteratedFDeriv ℝ i (fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ)) w‖ ≤ B := by
   set L : E₂ →L[ℝ] E₂ := M⁻¹ • ContinuousLinearMap.id ℝ E₂ with hL
-  have hM0 : (0:ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
   have hLnorm : ‖L‖ ≤ 1 := by
     have h1 : ‖L‖ ≤ ‖(M⁻¹ : ℝ)‖ * ‖ContinuousLinearMap.id ℝ E₂‖ := by
       rw [hL]; exact norm_smul_le _ _
@@ -8160,7 +8166,7 @@ lemma norm_iteratedFDeriv_bulkCutoff_dilate_le {M B : ℝ} (hM : 1 ≤ M) {i : �
     have h3 : ‖(M⁻¹ : ℝ)‖ ≤ 1 := by
       rw [Real.norm_eq_abs, abs_of_pos (by positivity)]
       rw [inv_le_one_iff₀]; right; exact hM
-    have h4 : (0:ℝ) ≤ ‖(M⁻¹ : ℝ)‖ := norm_nonneg _
+    have h4 : (0 : ℝ) ≤ ‖(M⁻¹ : ℝ)‖ := norm_nonneg _
     nlinarith
   have hcomp : (fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ)) = (⇑bulkCutoff) ∘ L := rfl
   rw [hcomp, L.iteratedFDeriv_comp_right (bulkCutoff.contDiff (n := (⊤ : ℕ∞)))
@@ -8170,7 +8176,7 @@ lemma norm_iteratedFDeriv_bulkCutoff_dilate_le {M B : ℝ} (hM : 1 ≤ M) {i : �
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
   rw [hprod]
   have hpow : ‖L‖ ^ i ≤ 1 := pow_le_one₀ (norm_nonneg _) hLnorm
-  have hnn : (0:ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (L w)‖ := norm_nonneg _
+  have hnn : (0 : ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (L w)‖ := norm_nonneg _
   nlinarith [hB (L w)]
 
 /-! ## The oscillatory factor -/
@@ -8221,15 +8227,12 @@ lemma norm_iteratedFDeriv_expPhase_le {q : E₂ → ℝ} (hq : ContDiff ℝ (⊤
   refine hmain.trans ?_
   have h1 : (Nat.factorial j : ℝ) ≤ (Nat.factorial m : ℝ) := by exact_mod_cast Nat.factorial_le hj
   have h2 : D ^ j ≤ D ^ m := pow_le_pow_right₀ hD1 hj
-  have h3 : (0:ℝ) ≤ D ^ j := by positivity
-  have h4 : (0:ℝ) ≤ (Nat.factorial j : ℝ) := by positivity
+  have h3 : (0 : ℝ) ≤ D ^ j := by positivity
+  have h4 : (0 : ℝ) ≤ (Nat.factorial j : ℝ) := by positivity
   nlinarith
 
 /-! ## The residue (A2) -/
 
--- The assembly chains a Leibniz split, a Faà di Bruno bound and the cubic-derivative
--- calculus below; the elaboration is long but shallow, and the default budget is not enough.
-set_option maxHeartbeats 1600000 in
 /-- **(A2) The sup-norm of every derivative of the bulk multiplier is polynomial in `n` and
 `|θ|`** — the wave-34 residue of input (A), and now **proved**.
 
@@ -8255,21 +8258,21 @@ theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (
   have hX0 : 0 < X := by rw [hX]; positivity
   refine ⟨2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m, 3 * m, by positivity, ?_⟩
   intro n hn θ w
-  have hn1 : (1:ℝ) ≤ (n:ℝ) := by exact_mod_cast hn
-  have hθ1 : (1:ℝ) ≤ 1 + |θ| := by have := abs_nonneg θ; linarith
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hθ1 : (1 : ℝ) ≤ 1 + |θ| := by have := abs_nonneg θ; linarith
   set r : ℝ := (Real.sqrt (n : ℝ))⁻¹ with hrdef
   set M : ℝ := bulkRadius n with hMdef
   have hM0 : 0 < M := bulkRadius_pos hn
-  have hM1 : (1:ℝ) ≤ M := by
-    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (0:ℝ) ≤ 5 / 8 by norm_num)
+  have hM1 : (1 : ℝ) ≤ M := by
+    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (0 : ℝ) ≤ 5 / 8 by norm_num)
     rw [Real.rpow_zero] at h
     rw [hMdef, bulkRadius]; exact h
-  have hMn : M ≤ (n:ℝ) := by
-    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (5:ℝ) / 8 ≤ 1 by norm_num)
+  have hMn : M ≤ (n : ℝ) := by
+    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (5 : ℝ) / 8 ≤ 1 by norm_num)
     rw [Real.rpow_one] at h
     rw [hMdef, bulkRadius]; exact h
-  have hsq1 : (1:ℝ) ≤ Real.sqrt (n:ℝ) := by
-    rw [show (1:ℝ) = Real.sqrt 1 by simp]
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt (n : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 by simp]
     exact Real.sqrt_le_sqrt hn1
   have hr0 : 0 < r := by rw [hrdef]; positivity
   have hr1 : r ≤ 1 := by
@@ -8299,8 +8302,8 @@ theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (
     exact norm_iteratedFDeriv_cubic_le m a b c i hi w
   -- the coefficients are bounded by `|θ|·Cs`
   have habc : |a| + |b| + |c| ≤ |θ| * Cs := by
-    have hs3 : (0:ℝ) < 2 * σ ^ 3 := by positivity
-    have hs5 : (0:ℝ) < 8 * σ ^ 5 := by positivity
+    have hs3 : (0 : ℝ) < 2 * σ ^ 3 := by positivity
+    have hs5 : (0 : ℝ) < 8 * σ ^ 5 := by positivity
     have ea : |a| ≤ |θ| * (1 / (2 * σ ^ 3)) := by
       rw [ha, abs_div, abs_neg, abs_mul, abs_of_pos hr0, abs_of_pos hs3]
       rw [div_le_iff₀ hs3]
@@ -8315,7 +8318,7 @@ theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (
         _ = |θ| * (1 / (2 * σ ^ 3)) * (2 * σ ^ 3) := by field_simp
     have ec : |c| ≤ |θ| * (3 / (8 * σ ^ 5)) := by
       rw [hc, abs_div, abs_mul, abs_mul, abs_pow, abs_of_pos hr0, abs_of_pos hs5,
-        show |(3:ℝ)| = 3 from by norm_num, div_le_iff₀ hs5]
+        show |(3 : ℝ)| = 3 from by norm_num, div_le_iff₀ hs5]
       have hr2 : r ^ 2 ≤ 1 := by nlinarith
       calc 3 * (|θ| * r ^ 2) ≤ 3 * (|θ| * 1) :=
             mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hr2 (abs_nonneg θ)) (by norm_num)
@@ -8323,30 +8326,30 @@ theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (
     rw [hCs]
     nlinarith [ea, eb, ec]
   -- the ball `‖w‖ ≤ 2M ≤ 2n` costs only `27 n³`
-  have hw3 : (1 + ‖w‖) ^ 3 ≤ 27 * (n:ℝ) ^ 3 := by
-    have h1 : 1 + ‖w‖ ≤ 3 * (n:ℝ) := by
-      have h2 : ‖w‖ ≤ 2 * (n:ℝ) := le_trans hw (by linarith)
+  have hw3 : (1 + ‖w‖) ^ 3 ≤ 27 * (n : ℝ) ^ 3 := by
+    have h1 : 1 + ‖w‖ ≤ 3 * (n : ℝ) := by
+      have h2 : ‖w‖ ≤ 2 * (n : ℝ) := le_trans hw (by linarith)
       linarith
-    calc (1 + ‖w‖) ^ 3 ≤ (3 * (n:ℝ)) ^ 3 :=
+    calc (1 + ‖w‖) ^ 3 ≤ (3 * (n : ℝ)) ^ 3 :=
           pow_le_pow_left₀ (by have := norm_nonneg w; linarith) h1 3
-      _ = 27 * (n:ℝ) ^ 3 := by ring
-  obtain ⟨D, hDdef⟩ : ∃ x : ℝ, x = (1 + X) * (1 + |θ|) * (n:ℝ) ^ 3 := ⟨_, rfl⟩
-  have hn3 : (1:ℝ) ≤ (n:ℝ) ^ 3 := one_le_pow₀ hn1
-  have hD1 : (1:ℝ) ≤ D := by
+      _ = 27 * (n : ℝ) ^ 3 := by ring
+  obtain ⟨D, hDdef⟩ : ∃ x : ℝ, x = (1 + X) * (1 + |θ|) * (n : ℝ) ^ 3 := ⟨_, rfl⟩
+  have hn3 : (1 : ℝ) ≤ (n : ℝ) ^ 3 := one_le_pow₀ hn1
+  have hD1 : (1 : ℝ) ≤ D := by
     rw [hDdef]
-    have h1 : (1:ℝ) ≤ 1 + X := by linarith
-    have hP : (1:ℝ) ≤ (1 + X) * (1 + |θ|) := by nlinarith [abs_nonneg θ, hX0.le]
+    have h1 : (1 : ℝ) ≤ 1 + X := by linarith
+    have hP : (1 : ℝ) ≤ (1 + X) * (1 + |θ|) := by nlinarith [abs_nonneg θ, hX0.le]
     nlinarith [hP, hn3]
   have hqD : ∀ i ≤ m,
       ‖iteratedFDeriv ℝ i (fun v : E₂ => θ * (deltaSurrogate σ r v - v 0 / σ)) w‖ ≤ D := by
     intro i hi
     refine (hq i hi).trans ?_
-    have hstep : (8:ℝ) ^ m * (|a| + |b| + |c|) * (1 + ‖w‖) ^ 3
-        ≤ 8 ^ m * (|θ| * Cs) * (27 * (n:ℝ) ^ 3) := by
+    have hstep : (8 : ℝ) ^ m * (|a| + |b| + |c|) * (1 + ‖w‖) ^ 3
+        ≤ 8 ^ m * (|θ| * Cs) * (27 * (n : ℝ) ^ 3) := by
       refine mul_le_mul ?_ hw3 (by positivity) (by positivity)
       exact mul_le_mul_of_nonneg_left habc (by positivity)
     refine hstep.trans ?_
-    have heq : (8:ℝ) ^ m * (|θ| * Cs) * (27 * (n:ℝ) ^ 3) = X * |θ| * (n:ℝ) ^ 3 := by
+    have heq : (8 : ℝ) ^ m * (|θ| * Cs) * (27 * (n : ℝ) ^ 3) = X * |θ| * (n : ℝ) ^ 3 := by
       rw [hX]; ring
     rw [heq, hDdef]
     have hle : X * |θ| ≤ (1 + X) * (1 + |θ|) := by nlinarith [abs_nonneg θ, hX0.le]
@@ -8394,23 +8397,23 @@ theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (
   refine le_trans (Finset.sum_le_sum hterm) ?_
   have hsum : ∑ j ∈ Finset.range (m + 1), (m.choose j : ℝ)
         * (B * ((Nat.factorial m : ℝ) * D ^ m))
-      = (2:ℝ) ^ m * (B * ((Nat.factorial m : ℝ) * D ^ m)) := by
+      = (2 : ℝ) ^ m * (B * ((Nat.factorial m : ℝ) * D ^ m)) := by
     rw [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]; push_cast; ring
   rw [hsum, hDdef]
-  have hpow : ((1 + X) * (1 + |θ|) * (n:ℝ) ^ 3) ^ m
-      = (1 + X) ^ m * (1 + |θ|) ^ m * (n:ℝ) ^ (3 * m) := by
+  have hpow : ((1 + X) * (1 + |θ|) * (n : ℝ) ^ 3) ^ m
+      = (1 + X) ^ m * (1 + |θ|) ^ m * (n : ℝ) ^ (3 * m) := by
     rw [mul_pow, mul_pow, ← pow_mul]
   rw [hpow]
   have hθmono : (1 + |θ|) ^ m ≤ (1 + |θ|) ^ (3 * m) :=
     pow_le_pow_right₀ hθ1 (by omega)
-  have hnn : (0:ℝ) ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m) := by
-    have : (0:ℝ) ≤ (1 + X) ^ m := by positivity
+  have hnn : (0 : ℝ) ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n : ℝ) ^ (3 * m) := by
+    have : (0 : ℝ) ≤ (1 + X) ^ m := by positivity
     positivity
-  calc (2:ℝ) ^ m * (B * ((Nat.factorial m : ℝ)
-          * ((1 + X) ^ m * (1 + |θ|) ^ m * (n:ℝ) ^ (3 * m))))
-      = 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m)
+  calc (2 : ℝ) ^ m * (B * ((Nat.factorial m : ℝ)
+          * ((1 + X) ^ m * (1 + |θ|) ^ m * (n : ℝ) ^ (3 * m))))
+      = 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n : ℝ) ^ (3 * m)
           * (1 + |θ|) ^ m := by ring
-    _ ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m)
+    _ ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n : ℝ) ^ (3 * m)
           * (1 + |θ|) ^ (3 * m) := mul_le_mul_of_nonneg_left hθmono hnn
 
 theorem exists_seminorm_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (k m : ℕ) :
@@ -8773,7 +8776,7 @@ theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
       have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
       have hε0 : 0 < ε := by
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         nlinarith
       have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
       -- the inductive hypothesis, available at order `N`
@@ -9008,7 +9011,7 @@ theorem exists_bound_iterate_ibpStep (N : ℕ) :
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
   induction k with
@@ -9084,7 +9087,7 @@ theorem norm_integral_expPhase_le_graded (N : ℕ) :
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
   have hout : ∀ x : ℝ, x ∉ Set.Icc (-A) A → f x = 0 := by
@@ -9199,7 +9202,7 @@ lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A)
       rw [iteratedDeriv_succ', iteratedDeriv_one, deriv_deriv_cubicPhase]
       have hd : (deriv fun x : ℝ => 6 * q * x) = fun _ : ℝ => 6 * q := by
         funext x
-        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+        simp
       rw [hd]
       have : |6 * q| = 6 * |q| := by rw [abs_mul]; norm_num
       rw [this]
@@ -9211,7 +9214,7 @@ lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A)
       have hd3 : deriv (deriv (deriv (cubicPhase p q))) = fun _ : ℝ => 6 * q := by
         rw [deriv_deriv_cubicPhase]
         funext x
-        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+        simp
       rw [hstep, hd3, iteratedDeriv_const_eq_zero (6 * q) (k + 1) (by omega)]
       have hnn : (0 : ℝ) ≤ 6 * |q| * (1 + A) := mul_nonneg (by positivity) (by linarith)
       simpa using hnn
@@ -9261,7 +9264,7 @@ lemma abs_deriv_fibrePhase_ge {σ : ℝ} (hσ : 0 < σ) {θ t₀ : ℝ} (r w₁ 
     have h2 : (0 : ℝ) ≤ 3 * r ^ 2 * u ^ 2 / (2 * σ ^ 2) := by positivity
     rw [hS]; linarith
   have habs : |θ| * S / σ ≤ |θ * S / σ| := by
-    rw [abs_div, abs_mul, abs_of_pos hσ, abs_of_nonneg (by linarith : (0:ℝ) ≤ S)]
+    rw [abs_div, abs_mul, abs_of_pos hσ, abs_of_nonneg (by linarith : (0 : ℝ) ≤ S)]
   have hlow : |θ| * (5 / 6) / σ ≤ |θ| * S / σ := by
     have := abs_nonneg θ
     gcongr
@@ -9284,7 +9287,7 @@ lemma abs_iteratedDeriv_deriv_fibrePhase_le {σ : ℝ} (hσ : 0 < σ) (r θ t₀
   intro j hj u hu
   refine (abs_iteratedDeriv_deriv_cubicPhase_le _ _ hA j hj u hu).trans (le_of_eq ?_)
   have h : |θ * r ^ 2 / (2 * σ ^ 3)| = |θ| * r ^ 2 / (2 * σ ^ 3) := by
-    rw [abs_div, abs_mul, abs_of_nonneg (sq_nonneg r), abs_of_pos (by positivity : (0:ℝ) < 2*σ^3)]
+    rw [abs_div, abs_mul, abs_of_nonneg (sq_nonneg r), abs_of_pos (by positivity : (0 : ℝ) < 2*σ^3)]
   rw [h]
   field_simp
   ring
@@ -9335,7 +9338,8 @@ lemma abs_iteratedDeriv_deriv_fibrePhaseScaled_le {σ : ℝ} (hσ : 0 < σ) (r �
     (le_of_eq ?_)
   have h : |θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3| = |θ| * r ^ 2 * M ^ 3 / (2 * σ ^ 3) := by
     rw [abs_mul, abs_div, abs_mul, abs_of_nonneg (sq_nonneg r),
-      abs_of_pos (by positivity : (0:ℝ) < 2 * σ ^ 3), abs_of_nonneg (by positivity : (0:ℝ) ≤ M ^ 3)]
+      abs_of_pos (by positivity : (0 : ℝ) < 2 * σ ^ 3), abs_of_nonneg
+          (by positivity : (0 : ℝ) ≤ M ^ 3)]
     ring
   rw [h]
   field_simp
@@ -9374,7 +9378,7 @@ theorem norm_integral_fibrePhase_le (N : ℕ) :
   have hεΛ : 1 ≤ ε * Λ := by
     rw [hεdef, add_mul, hE2]
     nlinarith [mul_nonneg hE1 hΛ.le]
-  have hslope : ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+  have hslope : ∀ x ∈ Set.Icc (-(2 : ℝ)) 2,
       Λ ≤ |deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x| := by
     intro x _
     rw [hΛdef]
@@ -9385,7 +9389,7 @@ theorem norm_integral_fibrePhase_le (N : ℕ) :
     rw [hx, abs_zero] at this
     have : (0 : ℝ) < M * |θ| / (3 * σ) := by positivity
     linarith
-  have hhigh : ∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+  have hhigh : ∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-(2 : ℝ)) 2,
       |iteratedDeriv j (deriv (fibrePhaseScaled σ r θ t₀ w₁ M)) x| ≤ ε * Λ ^ 2 := by
     intro j hj _ x hx
     refine (abs_iteratedDeriv_deriv_fibrePhaseScaled_le hσ r θ t₀ w₁ hM.le j hj x hx).trans ?_
@@ -9397,7 +9401,7 @@ theorem norm_integral_fibrePhase_le (N : ℕ) :
     have hnn : (0 : ℝ) ≤ (3 * σ / (M * |θ|)) * Λ ^ 2 :=
       mul_nonneg (by positivity) (sq_nonneg Λ)
     linarith
-  have hgrad : ∀ j ≤ N, ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+  have hgrad : ∀ j ≤ N, ∀ x ∈ Set.Icc (-(2 : ℝ)) 2,
       ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j := by
     intro j hj x _
     refine (hfg j hj x).trans ?_
@@ -9426,10 +9430,10 @@ cut-off and the actual surrogate, priced at the ledger`s gain. -/
 noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
 
 @[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
-  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  simp [fibreEmbed, coordDir]
 
 @[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
-  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  simp [fibreEmbed, coordDir]
 
 /-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
 full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
@@ -9446,7 +9450,7 @@ lemma norm_iteratedDeriv_comp_fibreEmbed_le {g : E₂ → ℝ} (hg : ContDiff �
       = (fun v : E₂ => g (v + c • coordDir 1))
         ∘ (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) := by
     funext u
-    simp [fibreEmbed, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply]
+    simp [fibreEmbed, ContinuousLinearMap.toSpanSingleton_apply]
   have hg' : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => g (v + c • coordDir 1) :=
     hg.comp (contDiff_id.add contDiff_const)
   rw [← Real.norm_eq_abs, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv, hcomp,
@@ -9722,7 +9726,7 @@ lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.
 
 lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
   ext i
-  fin_cases i <;> simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+  fin_cases i <;> simp [fibreEmbed, coordDir]
 
 
 /-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
@@ -9923,7 +9927,7 @@ theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
     refine le_trans (integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => norm_nonneg _)
       hmaj hle) (le_of_eq ?_)
     rw [integral_indicator measurableSet_Icc, setIntegral_const, Real.volume_real_Icc]
-    rw [max_eq_left (by linarith : (0:ℝ) ≤ 2 * M - -(2 * M)), smul_eq_mul]
+    rw [max_eq_left (by linarith : (0 : ℝ) ≤ 2 * M - -(2 * M)), smul_eq_mul]
     ring
   -- assemble
   rw [fourierWeight_bulkMultiplier_eq, norm_mul, Complex.norm_real, Real.norm_eq_abs]
@@ -9934,7 +9938,7 @@ theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
     have : (1 : ℝ) ≤ 2 * Real.pi := by nlinarith [Real.two_le_pi]
     have h2 : (2 * Real.pi)⁻¹ ≤ 1 := by
       rw [inv_le_one₀ (by positivity)]; exact this
-    nlinarith [inv_nonneg.mpr (by positivity : (0:ℝ) ≤ 2 * Real.pi)]
+    nlinarith [inv_nonneg.mpr (by positivity : (0 : ℝ) ≤ 2 * Real.pi)]
   calc |((2 * Real.pi)⁻¹ ^ 2 : ℝ)| * ‖∫ w : E₂, f w‖
       ≤ 1 * ‖∫ w : E₂, f w‖ := mul_le_mul_of_nonneg_right hcoe (norm_nonneg _)
     _ = ‖∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ := by rw [one_mul, hfi]
@@ -9945,9 +9949,9 @@ theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
             ≤ (4 * C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
           refine pow_le_pow_left₀ (by positivity) ?_ N
           nlinarith [hg0, hC0.le]
-        have h4 : (0:ℝ) ≤ 4 * C * M ^ 2 := by positivity
+        have h4 : (0 : ℝ) ≤ 4 * C * M ^ 2 := by positivity
         nlinarith [hpow, hC0.le, hM0.le, sq_nonneg M,
-          pow_nonneg (by positivity : (0:ℝ) ≤ C * (81 * M * r ^ 2 / (σ * |θ|)
+          pow_nonneg (by positivity : (0 : ℝ) ≤ C * (81 * M * r ^ 2 / (σ * |θ|)
             + 3 * σ / (M * |θ|))) N]
 
 /-- **The band has area at most `4R²`.** -/
@@ -9980,8 +9984,6 @@ lemma volume_band_le (t : E₂) {R : ℝ} (hR : 0 ≤ R) :
   congr 1
   ring
 
--- the ten-fold ledger arithmetic runs under a set integral
-set_option maxHeartbeats 1000000 in
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
@@ -10192,8 +10194,6 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
         nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 11]
 
 
--- the fourteen-fold ledger arithmetic runs under a set integral
-set_option maxHeartbeats 1000000 in
 /-- **(B) AT FOURTEEN PARTS.** The same theorem as
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, at `N = 14` and hence at accuracy
 `n^{-17/6}` rather than `n^{-3/2}`. Nothing analytic changes: the fibre estimate, the band
@@ -10329,7 +10329,7 @@ theorem integrable_norm_pow_four_vecRootLaw_truncAt (F : Measure ℝ) [IsProbabi
   have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
   set K : ℝ := τ + (τ ^ 2 + |Var[fun t : ℝ => t; F]|) with hKdef
   have hK : ∀ x, ‖Z x‖ ≤ K := fun x => norm_studentPair_truncAt_le F hτ0 x
-  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+  have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
   have hae := ae_norm_vecRootLaw_le F hZm hK n
   refine integrable_of_ae_abs_le (by fun_prop) (C := (Real.sqrt (n : ℝ) * K) ^ 4) ?_
   filter_upwards [hae] with w hw
@@ -10405,7 +10405,7 @@ lemma integral_pi_succ_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F] {n 
     have : Measurable fun p : ℝ × (Fin n → ℝ) =>
         (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm p :=
       MeasurableEquiv.measurable _
-    simpa only [hsym] using hfm.comp this
+    simpa only [hsym] using! hfm.comp this
   have hI : Integrable (fun p : ℝ × (Fin n → ℝ) => f (Fin.cons p.1 p.2))
       (F.prod (Measure.pi fun _ : Fin n => F)) :=
     integrable_of_ae_abs_le hmeas.aestronglyMeasurable
@@ -10676,7 +10676,7 @@ lemma integral_add_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measur
     rw [add_pow]
     exact Finset.sum_congr rfl fun k _ => by ring
   simp only [hexp]
-  rw [integral_finset_sum _ (fun k _ =>
+  rw [integral_finsetSum _ (fun k _ =>
     (integrable_pow_of_bounded ν hW hWb (p - k)).const_mul (a ^ k * (p.choose k : ℝ)))]
   exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
 
@@ -10721,7 +10721,7 @@ lemma integral_pi_sum_pow_succ (F : Measure ℝ) [IsProbabilityMeasure F] {V : �
     rw [integral_add_pow_of_bounded _ (hsumm n) (hsumb n) (V x) p]
     exact Finset.sum_congr rfl fun k _ => by ring
   simp only [hinner]
-  rw [integral_finset_sum _ (fun k _ =>
+  rw [integral_finsetSum _ (fun k _ =>
     (integrable_pow_of_bounded F hV hB k).mul_const _)]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [MeasureTheory.integral_mul_const]
@@ -10931,7 +10931,6 @@ private lemma step_eight_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
   have e8 : (0 : ℝ) ≤ (n : ℝ) ^ 2 := sq_nonneg _
   linarith
 
-set_option maxHeartbeats 1000000 in
 /-- **The order-eight induction step, as pure arithmetic.** -/
 private lemma step_eight {n : ℕ} {Bd a b m3 m5 m6 m8 M4 M5 M6 M8 : ℝ}
     (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
@@ -11058,7 +11057,6 @@ private lemma step_ten_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
   have e16 : (0 : ℝ) ≤ (n : ℝ) ^ 3 := pow_nonneg (Nat.cast_nonneg n) 3
   nlinarith [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16]
 
-set_option maxHeartbeats 2000000 in
 /-- **The order-ten induction step, as pure arithmetic.** -/
 private lemma step_ten {n : ℕ} {Bd a b m3 m5 m6 m7 m8 m10 M4 M5 M6 M7 M8 M10 : ℝ}
     (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
@@ -11375,12 +11373,11 @@ lemma integral_pi_sum_pow_six_A (F : Measure ℝ) [IsProbabilityMeasure F] {V : 
     nlinarith [h2, h3]
   have t4 : 15 * (n : ℝ) ^ 3 * a ^ 3 ≤ 15 * (A ^ 3 * (n : ℝ) ^ 3) := by
     have h1 : a ^ 3 ≤ A ^ 3 := pow_le_pow_left₀ ha haA 3
-    nlinarith [mul_le_mul_of_nonneg_left h1 (show (0:ℝ) ≤ 15 * (n:ℝ)^3 by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_left h1 (show (0 : ℝ) ≤ 15 * (n : ℝ)^3 by positivity)]
   have hfin : (0 : ℝ) ≤ A ^ 3 * ((n : ℝ) * B ^ 2) := by positivity
   nlinarith [h6, t1, t2, t3, t4, hfin]
 
 
-set_option maxHeartbeats 1000000 in
 lemma integral_pi_sum_pow_eight_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
     (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
     (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
@@ -11448,7 +11445,6 @@ lemma integral_pi_sum_pow_eight_le (F : Measure ℝ) [IsProbabilityMeasure F] {V
     linarith [hstep]
 
 
-set_option maxHeartbeats 2000000 in
 lemma integral_pi_sum_pow_ten_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
     (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
     (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
@@ -11788,9 +11784,9 @@ lemma abs_sub_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h)]
+  · simp only [truncAt, ite_eq_right (not_le.2 h)]
     rw [le_div_iff₀ (by positivity), ha]
     nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 3, hτ]
 
@@ -11800,9 +11796,9 @@ lemma abs_sq_sub_sq_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h), sub_self]
+  · simp only [truncAt, ite_eq_right (not_le.2 h), sub_self]
     rw [show ((0 : ℝ) ^ 2) = 0 by ring, sub_zero, abs_of_nonneg (by positivity),
       le_div_iff₀ (by positivity)]
     nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 2, hτ, sq_abs (x - m)]
@@ -11844,9 +11840,10 @@ private lemma sq_le_sq_of_abs_le {a b : ℝ} (h : |a| ≤ |b|) : a ^ 2 ≤ b ^ 2
   rw [← sq_abs a, ← sq_abs b]
   exact pow_le_pow_left₀ (abs_nonneg _) h 2
 
+set_option maxHeartbeats 2100000 in
 -- The assembly is one long chain of `set`-bound moment bookkeeping over two coordinates; the
 -- default heartbeat budget does not elaborate it.
-set_option maxHeartbeats 4000000 in
+-- This proof uses about 1,610,000 heartbeats.
 /-- **(C) The fourth moment of the truncated root is `O(n)`** — the third input, the only
 probabilistic one, and now **proved**.
 
@@ -11904,7 +11901,8 @@ theorem exists_integral_norm_pow_four_vecRootLaw_truncAt_le
   have hZm : Measurable
       (fun y : ℝ => studentPair F (truncAt m (Real.sqrt (n : ℝ)) y)) :=
     (measurable_studentPair F).comp (measurable_truncAt _ _)
-  rw [vecRootLaw, integral_map (measurable_vecRoot hZm n).aemeasurable (by fun_prop)]
+  rw [vecRootLaw_eq_map F hZm,
+    integral_map (measurable_vecRoot hZm n).aemeasurable (by fun_prop)]
   set τ : ℝ := Real.sqrt (n : ℝ) with hτdef
   have hτ2 : τ ^ 2 = (n : ℝ) := Real.sq_sqrt hn0.le
   have hτ0 : (0 : ℝ) < τ := Real.sqrt_pos.2 hn0
@@ -12251,7 +12249,7 @@ theorem exists_measure_norm_gt_bulkRadius_le (F : Measure ℝ) [IsProbabilityMea
   refine ⟨2 * A, by positivity, ?_⟩
   intro n hn
   have hM : 0 < bulkRadius n := bulkRadius_pos hn
-  haveI : IsProbabilityMeasure (vecRootLaw F
+  have : IsProbabilityMeasure (vecRootLaw F
       (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) :=
     isProbabilityMeasure_vecRootLaw F
       ((measurable_studentPair F).comp (measurable_truncAt _ _)) n
@@ -12380,7 +12378,7 @@ theorem exists_fourierCertificate_deltaSurrogate
     set Z : ℝ → E₂ :=
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
-    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
     have hAmass := hA n hn θ
     have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
@@ -12503,7 +12501,7 @@ theorem exists_fourierCertificate_deltaSurrogate_exponent
     set Z : ℝ → E₂ :=
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
-    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
     have hAmass := hA n hn θ
     have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
@@ -12610,11 +12608,11 @@ theorem exists_studentized_middle_range_bound
   -- the Cramér base is nonnegative
   have hc0 : 0 ≤ c := by
     by_contra hneg
-    push_neg at hneg
+    push Not at hneg
     have hm0 : 0 < 2 * Nc + 1 := by omega
     have hmc : Nc ≤ 2 * Nc + 1 := by omega
     have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
-      rw [coordDir, EuclideanSpace.norm_single]; simp
+      rw [coordDir, PiLp.norm_single]; simp
     have hnt : ‖(ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)‖
         = ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ) := by
       rw [norm_smul, Real.norm_eq_abs, hcd, mul_one,
@@ -12771,12 +12769,12 @@ lemma hasDerivAt_stdNormalPDF (u : ℝ) :
     HasDerivAt stdNormalPDF (-u * stdNormalPDF u) u := by
   have h1 : HasDerivAt (fun x : ℝ => -x ^ 2 / 2) (-u) u := by
     have := ((hasDerivAt_pow 2 u).neg).div_const 2
-    convert this using 1
+    convert! this using 1
     push_cast
     ring
   have h2 := (h1.exp).div_const (Real.sqrt (2 * Real.pi))
   change HasDerivAt (fun x : ℝ => Real.exp (-x ^ 2 / 2) / Real.sqrt (2 * Real.pi)) _ u
-  convert h2 using 1
+  convert! h2 using 1
   rw [stdNormalPDF]
   ring
 
@@ -12785,7 +12783,7 @@ lemma hasDerivAt_hermiteAntideriv (u : ℝ) :
     HasDerivAt hermiteAntideriv (stdNormalPDF u * (u ^ 3 - 3 * u)) u := by
   have h := ((hasDerivAt_stdNormalPDF u).mul ((hasDerivAt_pow 2 u).sub_const 1)).neg
   change HasDerivAt (fun x : ℝ => -(stdNormalPDF x * (x ^ 2 - 1))) _ u
-  convert h using 1
+  convert! h using 1
   push_cast
   ring
 
@@ -13319,7 +13317,7 @@ lemma hasDerivAt_studentizedAntideriv (t : ℝ) :
     HasDerivAt studentizedAntideriv (stdNormalPDF t * (3 * t - 2 * t ^ 3)) t := by
   have h := (hasDerivAt_stdNormalPDF t).mul (((hasDerivAt_pow 2 t).const_mul 2).add_const 1)
   change HasDerivAt (fun x : ℝ => stdNormalPDF x * (2 * x ^ 2 + 1)) _ t
-  convert h using 1
+  convert! h using 1
   push_cast
   ring
 
@@ -14060,7 +14058,7 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
   have hA : (0 : ℝ) < (2 * Real.pi * c) ^ 3 := by positivity
   by_cases hK0 : 0 < K
   case neg =>
-    push_neg at hK0
+    push Not at hK0
     have h1 := hK 1 (by norm_num)
     have hEnn : (0 : ℝ) ≤ windowEnvelope (c * Real.sqrt (1 : ℕ)) :=
       windowEnvelope_nonneg _
@@ -14083,7 +14081,6 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
     have hcoef : (5 / (Real.pi ^ 2 * c ^ 2 * n / 2)) ^ 5
         = (10 / (Real.pi ^ 2 * c ^ 2)) ^ 5 * ((n : ℝ) ^ 5)⁻¹ := by
       rw [← inv_pow, ← mul_pow]
-      congr 1
       field_simp
       ring
     have hpoly : |c * Real.sqrt n| ^ 4 + |c * Real.sqrt n| ^ 8
@@ -14112,7 +14109,7 @@ private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0
   obtain ⟨n, hn⟩ := exists_nat_gt (K * D / (2 * Real.pi * c) ^ 3)
   have hn1 : 0 < n := by
     by_contra h
-    push_neg at h
+    push Not at h
     interval_cases n
     · simp at hn
       nlinarith [hn, div_pos (mul_pos hK0 hD0) hA]
@@ -14465,14 +14462,22 @@ private lemma windowEnvelope₁_monomial_ledger {a₁ a₂ a₃ a₄ a₅ a₆ a
           + Real.exp (Real.pi ^ 2 / 2) * (b₁ + b₂ + b₃)) * windowEnvelope₁ ξ
       + (b₁ + b₂ + b₃) * |ξ| ^ 3 := by
   have hE := windowEnvelope₁_nonneg ξ
-  have k₁ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 1) (by norm_num) (by norm_num) hD0 hD
-  have k₂ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 2) (by norm_num) (by norm_num) hD0 hD
-  have k₃ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 3) (by norm_num) (by norm_num) hD0 hD
-  have k₄ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 4) (by norm_num) (by norm_num) hD0 hD
-  have k₅ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 5) (by norm_num) (by norm_num) hD0 hD
-  have k₆ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 6) (by norm_num) (by norm_num) hD0 hD
-  have k₇ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 7) (by norm_num) (by norm_num) hD0 hD
-  have k₈ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 8) (by norm_num) (by norm_num) hD0 hD
+  have k₁ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 1)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₂ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 2)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₃ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 3)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₄ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 4)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₅ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 5)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₆ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 6)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₇ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 7)
+      (by norm_num) (by norm_num) hD0 hD
+  have k₈ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 8)
+      (by norm_num) (by norm_num) hD0 hD
   rw [pow_one] at k₁
   have m₁ := abs_pow_le_windowEnvelope₁_add_cube (ξ := ξ) (d := 1) (by norm_num) (by norm_num)
   have m₂ := abs_pow_le_windowEnvelope₁_add_cube (ξ := ξ) (d := 2) (by norm_num) (by norm_num)
@@ -14787,14 +14792,14 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = Real.pi / σ ^ 3 * |ξ| * (Real.sqrt (n : ℝ))⁻¹ := by
     have h : -(2 * Real.pi * ξ) * (Real.sqrt (n : ℝ))⁻¹ / (2 * σ ^ 3)
         = -((Real.pi / σ ^ 3 * (Real.sqrt (n : ℝ))⁻¹) * ξ) := by
-      field_simp <;> ring
+      field_simp
     rw [h, abs_neg, abs_mul, abs_of_nonneg (mul_nonneg hP₂ hr0.le)]
     ring
   have eabs₃a : |-(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)|
       = Real.pi / σ ^ 3 * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)
         = -((Real.pi / σ ^ 3 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
-      field_simp <;> ring
+      field_simp
     rw [h, abs_neg, abs_mul,
       abs_of_nonneg (mul_nonneg hP₂ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
     ring
@@ -14802,7 +14807,7 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = 3 * Real.pi / (4 * σ ^ 5) * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : 3 * -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 5)
         = -((3 * Real.pi / (4 * σ ^ 5) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
-      field_simp <;> ring
+      field_simp; ring
     rw [h, abs_neg, abs_mul,
       abs_of_nonneg (mul_nonneg hP₃b (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
     ring
@@ -14810,7 +14815,7 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
       = Real.pi ^ 2 / (2 * σ ^ 6) * |ξ| ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
     have h : (-(2 * Real.pi * ξ)) ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 6)
         = (Real.pi ^ 2 / (2 * σ ^ 6) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ ^ 2 := by
-      field_simp <;> ring
+      field_simp; ring
     rw [h, abs_mul,
       abs_of_nonneg (mul_nonneg hP₄ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2)),
       abs_of_nonneg (sq_nonneg ξ), sq_abs]
@@ -15678,7 +15683,7 @@ private lemma exists_window_bound_of_bounds {R B s₀ : ℝ} (hR : 0 ≤ R) (hB 
   obtain ⟨K, hK0, hK⟩ := exists_window_core_of_bounds hR hB hs₀
   refine ⟨K, hK0, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ n hn ξ hξ
-  haveI := hGp
+  have := hGp
   have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
   have hρ0 : (0 : ℝ) ≤ ∫ x, |x| ^ 3 ∂(centredLaw G) :=
     integral_nonneg fun x => by positivity
@@ -15842,7 +15847,7 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
     exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hwnn ξ)
   have hcover : {ξ : ℝ | |ξ| ≤ ρ} ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
     ext ξ
-    simp only [Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact le_total |ξ| ρ
   have hInt : Integrable
       (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2))) := by
@@ -15854,7 +15859,7 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
     Filter.Eventually.of_forall fun ξ => mul_nonneg (hg0 ξ) (hwnn ξ)
   have hcompl : {ξ : ℝ | |ξ| ≤ ρ}ᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
     intro ξ hξ
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hξ
     exact hξ.le
   have hb2 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
   have hb3 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
@@ -15870,10 +15875,12 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
             hdom.integrableOn
             (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom_nonneg ξ))
             (Set.subset_univ {ξ : ℝ | |ξ| ≤ ρ}).eventuallyLE
-          rwa [setIntegral_univ] at h
+          have huniv : (fun _ : ℝ => True) = Set.univ := rfl
+          rw [huniv, setIntegral_univ] at h
+          exact h
       _ = Kw * ∫ ξ : ℝ, windowDom ξ := MeasureTheory.integral_const_mul _ _
   have hsplit := integral_add_compl hAmeas hInt
-  linarith
+  convert! hsplit.symm.trans_le (add_le_add hb1 (hb2.trans hb3)) using 1
 
 /-! #### The middle range costs a LOGARITHM, and wave 43's reason for not saying so is false
 
@@ -15907,7 +15914,7 @@ half is the positive half reflected (`intervalIntegral.integral_comp_neg`), so t
 private lemma annulus_eq {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
     {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} = Set.Icc (-ρ) (-ρ₁) ∪ Set.Icc ρ₁ ρ := by
   ext ξ
-  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Icc]
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Icc]
   rcases le_or_gt 0 ξ with h | h
   · rw [abs_of_nonneg h]
     constructor
@@ -16144,7 +16151,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
     exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hWnn ξ)
   have hcover : P ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
     ext ξ
-    simp only [hPdef, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [hPdef, Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact le_total |ξ| ρ
   have hInt : Integrable (fun ξ : ℝ => g ξ * W ξ) := by
     rw [← integrableOn_univ, ← hcover]
@@ -16152,7 +16159,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
   refine ⟨hInt, ?_⟩
   have hAint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) A := hPint.mono_set hAP
   have hDint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) (P \ A) :=
-    hPint.mono_set Set.diff_subset
+    hPint.mono_set Set.sdiff_subset
   have hAdom : IntegrableOn (fun ξ : ℝ => Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) A :=
     (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hAtop)
   have hbA : (∫ ξ in A, g ξ * W ξ) ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi := by
@@ -16170,7 +16177,8 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
         (integrable_windowDom₁.const_mul Kw).integrableOn
         (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom₁_nonneg ξ))
         (Set.subset_univ A).eventuallyLE
-      rw [setIntegral_univ] at h
+      have huniv : (fun _ : ℝ => True) = Set.univ := rfl
+      rw [huniv, setIntegral_univ] at h
       calc (∫ ξ in A, Kw * windowDom₁ ξ) ≤ ∫ ξ : ℝ, Kw * windowDom₁ ξ := h
         _ = Kw * ∫ ξ : ℝ, windowDom₁ ξ := MeasureTheory.integral_const_mul _ _
     have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
@@ -16195,13 +16203,13 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
       Filter.Eventually.of_forall hfnn
     have hcompl : Pᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
       intro ξ hξ
-      simp only [hPdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+      simp only [hPdef, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hξ
       exact hξ.le
     have h1 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
     have h2 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
     exact le_trans h1 h2
   have hdecomp : (∫ ξ in A, g ξ * W ξ) + (∫ ξ in P \ A, g ξ * W ξ) = ∫ ξ in P, g ξ * W ξ := by
-    have h := MeasureTheory.integral_inter_add_diff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
+    have h := MeasureTheory.integral_inter_add_sdiff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
       hAm hPint
     rwa [Set.inter_eq_right.2 hAP] at h
   have hfull := integral_add_compl hPm hInt
@@ -16682,7 +16690,7 @@ theorem edgeworth_mean_uniform_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (h
         have h3 : (0 : ℝ) ≤ 3 * (2 + 6 * Gs) := by positivity
         linarith, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn t
-  haveI := hGp
+  have := hGp
   have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
   have hgam : |skewness G| ≤ Gs := abs_skewness_le_of_bounds G hFvar hs₀ hRb hsσ
   have hgam0 : (0 : ℝ) ≤ |skewness G| := abs_nonneg _
@@ -16929,7 +16937,7 @@ theorem meanRootCDF_sub_le_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 
     exact mul_pos h1 h3
   refine ⟨Kb / s₀ + 2 * C₀, by positivity, ?_⟩
   intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a b hab
-  haveI := hGp
+  have := hGp
   set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; G] with hσdef
   have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
   set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness G|) with hKdef
@@ -16996,7 +17004,6 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
     ((Measure.pi fun _ : Fin n => F)
         {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
       = meanRootCDF (F.map f) n x := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
   have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
@@ -17006,7 +17013,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
       = (Measure.pi fun _ : Fin n => F).map (fun z : Fin n → ℝ => fun i => f (z i)) :=
     (Measure.pi_map_pi (fun _ => hf.aemeasurable)).symm
   have hmeas : Measurable (fun z : Fin n → ℝ => fun i => f (z i)) :=
-    measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hf.comp (measurable_pi_apply i)
   have hset : MeasurableSet
       {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(F.map f)) ≤ x} := by
     refine measurableSet_le ?_ measurable_const
@@ -17022,7 +17029,7 @@ lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] 
   rw [meanRootCDF, hpi, Measure.map_apply hmeas hset]
   congr 2
   ext z
-  simp only [Set.mem_preimage, Set.mem_setOf_eq, hmean', sub_zero, hscale]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, hmean', sub_zero, hscale]
 
 /-- **The moments of the root's summand, read under `F`.** For a centred summand the three
 hypotheses `edgeworth_mean_uniform_of_bounds` places on `centredLaw G` are hypotheses on `f`
@@ -17030,7 +17037,6 @@ under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integ
 lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
     (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17040,7 +17046,6 @@ lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f :
 lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
     (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
     Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
   have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
     rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
     exact hmean
@@ -17110,7 +17115,7 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   set f : ℝ → ℝ := slabRoot Z σ κ with hfdef
   have hfm : Measurable f := measurable_slabRoot hZ σ κ
   have hf0 : (∫ y, f y ∂F) = 0 := hmean κ hκ
-  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  have : IsProbabilityMeasure (F.map f) := (by infer_instance)
   have hvarG : Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := variance_map_eq F hfm hf0
   have hfl : s₀ ^ 2 ≤ ∫ y, f y ^ 2 ∂F := hfloor κ hκ
   have hvarpos : 0 < Var[fun t : ℝ => t; F.map f] := by
@@ -17233,7 +17238,7 @@ lemma studentPair_eq_pairAt (F : Measure ℝ) :
 
 lemma measurable_pairAt (c v : ℝ) : Measurable (pairAt c v) := by
   have hvec : Measurable fun x : ℝ => (![x - c, (x - c) ^ 2 - v] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun x : ℝ => x - c
       fun_prop
@@ -17315,11 +17320,12 @@ theorem vecRootLaw_pairAt_region_eq (F : Measure ℝ) [IsProbabilityMeasure F] {
       ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
   have hZ : Measurable fun y : ℝ => pairAt c v (T y) := (measurable_pairAt c v).comp hT
   have hZ' : Measurable fun y : ℝ => pairAt c' v' (T y) := (measurable_pairAt c' v').comp hT
-  rw [vecRootLaw, vecRootLaw, Measure.map_apply (measurable_vecRoot hZ n) hR,
+  rw [vecRootLaw_eq_map F hZ, vecRootLaw_eq_map F hZ',
+    Measure.map_apply (measurable_vecRoot hZ n) hR,
     Measure.map_apply (measurable_vecRoot hZ' n) hR']
   congr 1
   ext y
-  simp only [Set.mem_preimage, Set.mem_setOf_eq]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq]
   rw [pairAt_root_radicand hn c v (fun j => T (y j)),
     pairAt_root_radicand hn c' v' (fun j => T (y j)),
     pairAt_root_zero hn c v (fun j => T (y j)),
@@ -17449,8 +17455,8 @@ lemma integral_inner_studentPair_map_truncAt (F : Measure ℝ) [IsProbabilityMea
     (m : ℝ) {τ : ℝ} (hτ : 0 ≤ τ) (t : EuclideanSpace ℝ (Fin 2)) :
     ∫ w, (⟪w, t⟫ : ℝ)
         ∂((F.map (truncAt m τ)).map (studentPair (F.map (truncAt m τ)))) = 0 := by
-  haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
-    Measure.isProbabilityMeasure_map (measurable_truncAt m τ).aemeasurable
+  have : IsProbabilityMeasure (F.map (truncAt m τ)) :=
+    (by infer_instance)
   exact integral_inner_studentPair _ (memLp_id_map_truncAt F m hτ 4) t
 
 /-- **The re-centred truncated pair is bounded, at every point** — the hypothesis `hRg` needs
@@ -18172,7 +18178,7 @@ lemma second_coord_ninth_moment_threshold (q : ℕ) :
   constructor
   · intro h
     by_contra hc
-    push_neg at hc
+    push Not at hc
     interval_cases q <;> norm_num at h
   · intro h
     have : (6 : ℝ) ≤ (q : ℝ) := by exact_mod_cast h
@@ -18221,9 +18227,9 @@ lemma abs_cube_sub_cube_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
   have ha : (x - m) ^ 8 = |x - m| ^ 8 := by
     rw [← abs_pow, abs_of_nonneg (by positivity)]
   rcases le_or_gt |x - m| τ with h | h
-  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+  · simp only [truncAt, ite_eq_left h, sub_self, abs_zero]
     positivity
-  · simp only [truncAt, if_neg (not_le.2 h), sub_self]
+  · simp only [truncAt, ite_eq_right (not_le.2 h), sub_self]
     rw [show ((0 : ℝ) ^ 3) = 0 by ring, sub_zero, le_div_iff₀ (by positivity), ha]
     have h5 : τ ^ 5 ≤ |x - m| ^ 5 := pow_le_pow_left₀ hτ.le h.le 5
     have h3 : (0 : ℝ) ≤ |x - m| ^ 3 := by positivity
@@ -18319,8 +18325,6 @@ lemma variance_map_truncAt_eq (F : Measure ℝ) [IsProbabilityMeasure F] (m : �
     Var[fun t : ℝ => t; F.map (truncAt m τ)]
       = (∫ x, (truncAt m τ x - m) ^ 2 ∂F) - (∫ x, (truncAt m τ x - m) ∂F) ^ 2 := by
   have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
-  haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
-    Measure.isProbabilityMeasure_map hTm.aemeasurable
   have hI1 : Integrable (fun x : ℝ => (truncAt m τ x - m) ^ 1) F :=
     integrable_truncAt_sub_pow F m hτ 1
   simp only [pow_one] at hI1
@@ -18704,7 +18708,7 @@ lemma inner_centringMap (δ : ℝ) (w t : E₂) :
 
 lemma measurable_centringMap (δ : ℝ) : Measurable (centringMap δ) := by
   have hvec : Measurable fun w : E₂ => (![w 0, w 1 + 2 * δ * w 0] : Fin 2 → ℝ) := by
-    refine measurable_pi_lambda _ fun i => ?_
+    refine Measurable.of_eval fun i => ?_
     fin_cases i
     · change Measurable fun w : E₂ => w 0
       fun_prop
@@ -18715,7 +18719,7 @@ lemma measurable_centringMap (δ : ℝ) : Measurable (centringMap δ) := by
 
 lemma centringMap_smul (δ r : ℝ) (w : E₂) : centringMap δ (r • w) = r • centringMap δ w := by
   ext i
-  fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+  fin_cases i <;> simp [centringMap_zero, centringMap_one]; ring
 
 lemma centringMap_sum {ι : Type*} (δ : ℝ) (s : Finset ι) (f : ι → E₂) :
     centringMap δ (∑ i ∈ s, f i) = ∑ i ∈ s, centringMap δ (f i) := by
@@ -18725,7 +18729,7 @@ lemma centringMap_sum {ι : Type*} (δ : ℝ) (s : Finset ι) (f : ι → E₂) 
   | insert a s ha ih =>
       rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
       ext i
-      fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+      fin_cases i <;> simp [centringMap_zero, centringMap_one]; ring
 
 /-- **The change of centring is an affine map of the pair, with unipotent linear part.**  This is
 `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` packaged as one identity of vectors. -/
@@ -18735,7 +18739,7 @@ lemma pairAt_eq_centringMap (c v c' v' x : ℝ) :
         + (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) := by
   ext i
   fin_cases i <;>
-    simp [pairAt_zero, pairAt_one, centringMap_zero, centringMap_one] <;> ring
+    simp [pairAt_zero, pairAt_one, centringMap_zero, centringMap_one]; ring
 
 private lemma inv_sqrt_mul_natCast (n : ℕ) :
     (Real.sqrt (n : ℝ))⁻¹ * (n : ℝ) = Real.sqrt (n : ℝ) := by
@@ -18775,7 +18779,10 @@ lemma vecRootLaw_pairAt_map (F : Measure ℝ) (g : ℝ → ℝ) (hg : Measurable
   have haff : Measurable fun w : E₂ => centringMap (c' - c) w
       + Real.sqrt (n : ℝ) • (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) :=
     (measurable_centringMap _).add_const _
-  rw [vecRootLaw, vecRootLaw, Measure.map_map haff (measurable_vecRoot hZ' n)]
+  rw [vecRootLaw_eq_map F
+    (show Measurable (fun x => pairAt c v (g x)) from
+      (measurable_pairAt c v).comp hg),
+    vecRootLaw_eq_map F hZ', Measure.map_map haff (measurable_vecRoot hZ' n)]
   congr 1
   funext y
   exact vecRoot_pairAt_eq c v c' v' g y
@@ -18825,7 +18832,7 @@ lemma centringAdj_centringAdj (δ : ℝ) (t : E₂) : centringAdj (-δ) (centrin
 /-- **The change of centring distorts no radius by more than `1 + 2|δ|`.** -/
 lemma norm_centringAdj_le (δ : ℝ) (t : E₂) : ‖centringAdj δ t‖ ≤ (1 + 2 * |δ|) * ‖t‖ := by
   have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
-    rw [coordDir, EuclideanSpace.norm_single]
+    rw [coordDir, PiLp.norm_single]
     simp
   rw [centringAdj_eq_add]
   refine (norm_add_le _ _).trans ?_
@@ -18997,13 +19004,13 @@ private lemma abs_stdNormalCDF_sub_taylor_le (a b : ℝ) :
       rw [Real.norm_eq_abs]
       refine (abs_stdNormalPDF_sub_le w y).trans ?_
       rcases le_total w y with h | h
-      · rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ y - w)]; linarith [hy.2]
-      · rw [abs_of_nonpos (by linarith : y - w ≤ (0:ℝ))]; linarith [hy.1]
+      · rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ y - w)]; linarith [hy.2]
+      · rw [abs_of_nonpos (by linarith : y - w ≤ (0 : ℝ))]; linarith [hy.1]
     have hfin : volume (Set.Ioc u v) < ⊤ := by
       rw [Real.volume_Ioc]; exact ENNReal.ofReal_lt_top
     have hmain := norm_setIntegral_le_of_norm_le_const (μ := volume) hfin hbnd
     simp only [Real.norm_eq_abs, measureReal_def, Real.volume_Ioc,
-      ENNReal.toReal_ofReal (show (0:ℝ) ≤ v - u by linarith)] at hmain
+      ENNReal.toReal_ofReal (show (0 : ℝ) ≤ v - u by linarith)] at hmain
     calc |∫ y in Set.Ioc u v, (stdNormalPDF y - stdNormalPDF w)|
         ≤ (v - u) * (v - u) := hmain
       _ = (v - u) ^ 2 := by ring
@@ -19028,9 +19035,9 @@ private lemma abs_cdfPseudoInverse_sub_le {f : ℝ → ℝ} (hmono : Monotone f)
   set b := x + d
   have hlb : a ∈ lowerBounds {y : ℝ | p ≤ f y} := by
     intro y hy
-    simp only [Set.mem_setOf_eq] at hy
+    simp only [Set.mem_ofPred_eq] at hy
     by_contra h
-    push_neg at h
+    push Not at h
     exact absurd (hmono h.le) (not_le.mpr (lt_of_lt_of_le ha hy))
   have hmem : b ∈ {y : ℝ | p ≤ f y} := hb
   have h1 : a ≤ cdfPseudoInverse f p := le_csInf ⟨b, hmem⟩ hlb
@@ -19044,7 +19051,7 @@ private lemma abs_cdfPseudoInverse_sub_le {f : ℝ → ℝ} (hmono : Monotone f)
 private lemma cdfPseudoInverse_mono_level {f : ℝ → ℝ} (hF : IsCDF f) {p q : ℝ} (hp : 0 < p)
     (hpq : p ≤ q) (hq : q < 1) : cdfPseudoInverse f p ≤ cdfPseudoInverse f q :=
   csInf_le_csInf (sublevel_bddBelow hF hp) (sublevel_nonempty hF hq)
-    (fun t ht => le_trans hpq ht)
+    (fun _ ht => le_trans hpq ht)
 
 /-- The studentized sampling distribution function is a distribution function. -/
 private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityMeasure P] (n : ℕ) :
@@ -19052,11 +19059,11 @@ private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityM
   have hSmeas : Measurable (fun y : Fin n → ℝ =>
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y)) := by
     unfold sampleVariance; fun_prop
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((Measure.pi fun _ : Fin n => P).map
         (fun y : Fin n → ℝ =>
           Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y))) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+    (by infer_instance)
   have heq : studentizedRootCDF P n = fun x =>
       (((Measure.pi fun _ : Fin n => P).map
         (fun y : Fin n → ℝ =>
@@ -19083,13 +19090,13 @@ private lemma exists_bound_stdNormalQuantile {ε : ℝ} (hε : 0 < ε) (hε' : �
   set z := stdNormalQuantile p with hzdef
   have hlo : b₁ < z := by
     by_contra h
-    push_neg at h
+    push Not at h
     have := isCDF_stdNormalCDF.mono h
     rw [hz] at this
     linarith [hp.1]
   have hhi : z < b₂ := by
     by_contra h
-    push_neg at h
+    push Not at h
     have := isCDF_stdNormalCDF.mono h
     rw [hz] at this
     linarith [hp.2]
@@ -19206,13 +19213,13 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
   obtain ⟨cB, hcB0, hcB⟩ : ∃ cB : ℝ, 0 ≤ cB ∧
       ∀ z : ℝ, |z| ≤ B → |1 / 6 * γ * (2 * z ^ 2 + 1)| ≤ cB := by
     refine ⟨|γ| / 6 * (2 * B ^ 2 + 1), by positivity, fun z hz => ?_⟩
-    rw [abs_mul, abs_of_nonneg (show (0:ℝ) ≤ 2 * z ^ 2 + 1 by positivity)]
+    rw [abs_mul, abs_of_nonneg (show (0 : ℝ) ≤ 2 * z ^ 2 + 1 by positivity)]
     have h1 : |1 / 6 * γ| = |γ| / 6 := by
-      rw [abs_mul, abs_of_nonneg (show (0:ℝ) ≤ 1/6 by norm_num)]; ring
+      rw [abs_mul, abs_of_nonneg (show (0 : ℝ) ≤ 1/6 by norm_num)]; ring
     rw [h1]
     have h2 : 2 * z ^ 2 + 1 ≤ 2 * B ^ 2 + 1 := by
       nlinarith [sq_abs z, abs_nonneg z]
-    have h3 : (0:ℝ) ≤ |γ| / 6 := by positivity
+    have h3 : (0 : ℝ) ≤ |γ| / 6 := by positivity
     exact mul_le_mul_of_nonneg_left h2 h3
   obtain ⟨L₂, hL20, hL2⟩ : ∃ L₂ : ℝ, 0 ≤ L₂ ∧ ∀ x y : ℝ, |x| ≤ B + 1 → |y| ≤ B + 1 →
       |stdNormalPDF y * (2 * y ^ 2 + 1) - stdNormalPDF x * (2 * x ^ 2 + 1)|
@@ -19245,19 +19252,19 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
       rw [abs_le]
       refine ⟨?_, ?_⟩
       · have h1 := neg_abs_le (cdfPseudoInverse (S n) ε)
-        have h2 : (0:ℝ) ≤ |cdfPseudoInverse (S n) (1 - ε)| := abs_nonneg _
+        have h2 : (0 : ℝ) ≤ |cdfPseudoInverse (S n) (1 - ε)| := abs_nonneg _
         linarith
       · have h1 := le_abs_self (cdfPseudoInverse (S n) (1 - ε))
-        have h2 : (0:ℝ) ≤ |cdfPseudoInverse (S n) ε| := abs_nonneg _
+        have h2 : (0 : ℝ) ≤ |cdfPseudoInverse (S n) ε| := abs_nonneg _
         linarith
     have hzB : |stdNormalQuantile (1 - α)| ≤ B :=
       hB _ ⟨by linarith [hα.2], by linarith [hα.1]⟩
     have hsle : (Real.sqrt n)⁻¹ ≤ 1 := by
       rw [inv_le_one_iff₀]
       right
-      rw [show (1:ℝ) = Real.sqrt 1 by simp]
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
       exact Real.sqrt_le_sqrt (by exact_mod_cast hn)
-    have hsnn : (0:ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+    have hsnn : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
     have hterm : |1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹| ≤ cB := by
       rw [abs_mul, abs_of_nonneg hsnn]
       have h1 := hcB _ hzB
@@ -19273,10 +19280,10 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
           add_le_add hQ ((habs _ _).trans (add_le_add hzB hterm))
       _ = |cdfPseudoInverse (S n) ε| + |cdfPseudoInverse (S n) (1 - ε)| + B + cB := by ring
   choose M hM0 hM using hsmall
-  have hsum0 : (0:ℝ) ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i :=
+  have hsum0 : (0 : ℝ) ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i :=
     Finset.sum_nonneg fun i _ => mul_nonneg (Nat.cast_nonneg i) (hM0 i)
   refine ⟨K + 1 + ∑ i ∈ Finset.range n₁, (i : ℝ) * M i, by linarith, fun n hn α hα => ?_⟩
-  have hn0 : (0:ℝ) < n := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
   rcases lt_or_ge n n₁ with hlt | hge
   · -- finitely many small `n`, absorbed into the constant
     have h1 := hM n hn α hα
@@ -19286,7 +19293,7 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
     rw [le_div_iff₀ hn0]
     calc |cdfPseudoInverse (S n) (1 - α)
             - (stdNormalQuantile (1 - α)
-              - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)| * (n:ℝ)
+              - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)| * (n : ℝ)
         ≤ M n * (n : ℝ) := mul_le_mul_of_nonneg_right h1 hn0.le
       _ = (n : ℝ) * M n := by ring
       _ ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i := h2
@@ -19295,7 +19302,7 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
     have hp0 : 0 < 1 - α := by linarith [hα.2, hε]
     have hp1 : 1 - α < 1 := by linarith [hα.1]
     have hpmem : (1 - α) ∈ Set.Icc ε (1 - ε) := ⟨by linarith [hα.2], by linarith [hα.1]⟩
-    have hsnpos : (0:ℝ) < Real.sqrt n := Real.sqrt_pos.2 hn0
+    have hsnpos : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 hn0
     obtain ⟨s, hsdef⟩ : ∃ s : ℝ, s = (Real.sqrt n)⁻¹ := ⟨_, rfl⟩
     obtain ⟨z, hzdef⟩ : ∃ z : ℝ, z = stdNormalQuantile (1 - α) := ⟨_, rfl⟩
     obtain ⟨c, hcdef⟩ : ∃ c : ℝ, c = 1 / 6 * γ * (2 * z ^ 2 + 1) := ⟨_, rfl⟩
@@ -19303,9 +19310,9 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
     have hzB : |z| ≤ B := by rw [hzdef]; exact hB _ hpmem
     have hΦz : stdNormalCDF z = 1 - α := by
       rw [hzdef]; exact cdf_quantile_eq isCDF_stdNormalCDF continuous_stdNormalCDF hp0 hp1
-    have hspos : (0:ℝ) < s := by rw [hsdef]; positivity
-    have hssq : s ^ 2 = ((n:ℝ))⁻¹ := by rw [hsdef, inv_pow, Real.sq_sqrt hn0.le]
-    have hceil : (s₀⁻¹) ^ 2 ≤ (n:ℝ) := by
+    have hspos : (0 : ℝ) < s := by rw [hsdef]; positivity
+    have hssq : s ^ 2 = ((n : ℝ))⁻¹ := by rw [hsdef, inv_pow, Real.sq_sqrt hn0.le]
+    have hceil : (s₀⁻¹) ^ 2 ≤ (n : ℝ) := by
       have h1 : (s₀⁻¹) ^ 2 ≤ (⌈s₀⁻¹ ^ 2⌉₊ : ℝ) := Nat.le_ceil _
       have h2 : (⌈s₀⁻¹ ^ 2⌉₊ : ℕ) ≤ n := by rw [hn1def] at hge; omega
       have h3 : ((⌈s₀⁻¹ ^ 2⌉₊ : ℕ) : ℝ) ≤ (n : ℝ) := by exact_mod_cast h2
@@ -19318,8 +19325,8 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
       exact hsq
     have hs1 : s ≤ 1 := le_trans hsle0 hs0le1
     have hcabs : |c| ≤ cB := by rw [hcdef]; exact hcB z hzB
-    have hd0 : (0:ℝ) ≤ K * s ^ 2 := by positivity
-    have hs2pos : (0:ℝ) < s ^ 2 := by positivity
+    have hd0 : (0 : ℝ) ≤ K * s ^ 2 := by positivity
+    have hs2pos : (0 : ℝ) < s ^ 2 := by positivity
     have hwin : K * s ^ 2 + cB * s ≤ 1 := by
       have hle : K * s ^ 2 + cB * s ≤ (cB + K) * s := by nlinarith [hKpos.le, hspos.le]
       have hle2 : (cB + K) * s ≤ (cB + K) * s₀ :=
@@ -19363,10 +19370,10 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
           mul_le_mul_of_nonneg_left hΔ hL20
         have hfac : |1 / 6 * γ * s| = |γ| / 6 * s := by
           rw [abs_mul, abs_mul, abs_of_nonneg hspos.le,
-            abs_of_nonneg (show (0:ℝ) ≤ 1 / 6 by norm_num)]
+            abs_of_nonneg (show (0 : ℝ) ≤ 1 / 6 by norm_num)]
           ring
         rw [abs_mul, hfac]
-        have hnn : (0:ℝ) ≤ |γ| / 6 * s := by positivity
+        have hnn : (0 : ℝ) ≤ |γ| / 6 * s := by positivity
         calc |γ| / 6 * s * |stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1)
               - stdNormalPDF z * (2 * z ^ 2 + 1)|
             ≤ |γ| / 6 * s * (L₂ * (K * s ^ 2 + cB * s)) :=
@@ -19385,7 +19392,7 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
     have hmain := hstep s hspos hsle0
     have hgain : φm * (K * s ^ 2) ≤ stdNormalPDF z * (K * s ^ 2) :=
       mul_le_mul_of_nonneg_right hφz hd0
-    have hC0n : C₀ / (n:ℝ) = C₀ * s ^ 2 := by rw [hssq, div_eq_mul_inv]
+    have hC0n : C₀ / (n : ℝ) = C₀ * s ^ 2 := by rw [hssq, div_eq_mul_inv]
     have hSplus : (1 - α) ≤ S n (x + K * s ^ 2) := by
       have hg := hGest (K * s ^ 2) (by rw [abs_of_nonneg hd0])
       rw [abs_le] at hg
@@ -19425,4 +19432,3 @@ of this section. -/
 end Edgeworth
 
 end StatLean.HypothesisTesting
-

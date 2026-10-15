@@ -381,6 +381,8 @@ theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty
   have hfinal := key (D.nonDescendants v \ D.parents v) Finset.Subset.rfl hne
   rwa [Finset.sdiff_sdiff_eq_self hPN] at hfinal
 
+set_option linter.style.whitespace false in
+-- The whitespace linter misaligns this signature at the comment before its first binder.
 /-- **(DG) ⇒ (DP)** — the composite of the two implications above, the directed analogue of
 `globalMarkov_implies_pairwiseMarkov`. Unlike that one it does need the calculus: there is no
 direct separation argument, because the conditioning set of (DP) is `nd(v) ∖ {β}` rather than a
@@ -659,7 +661,7 @@ theorem directedMarkov_tfae (D : DAG V) [DecidableRel D.Adj]
   have hfin : ∀ y : V → α, p y ≠ ∞ := by
     intro y
     have hle : p y ≤ ∑ z : V → α, p z :=
-      Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ y)
+      Finset.single_le_sum (f := p) (fun i _ => zero_le) (Finset.mem_univ y)
     rw [hnorm] at hle
     exact ne_top_of_le_ne_top ENNReal.one_ne_top hle
   have hden0 : ∀ (C : Finset V) (x : V → α), blockMarginal C p x ≠ 0 :=

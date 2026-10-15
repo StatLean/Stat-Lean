@@ -70,10 +70,12 @@ private theorem measurable_fullAssoc :
 
 instance (Q : Measure (𝓧 × ℝ)) (ρ : Kernel (𝓧 × ℝ) Bool)
     [IsProbabilityMeasure Q] [IsMarkovKernel ρ] : IsProbabilityMeasure (fullLaw Q ρ) := by
-  exact Measure.isProbabilityMeasure_map measurable_fullAssoc.aemeasurable
+  unfold fullLaw
+  infer_instance
 
 instance (Q : Measure (𝓧 × ℝ)) (ρ : Kernel (𝓧 × ℝ) Bool)
     [IsProbabilityMeasure Q] [IsMarkovKernel ρ] : IsProbabilityMeasure (observedLaw Q ρ) := by
-  exact Measure.isProbabilityMeasure_map measurable_missingObserve.aemeasurable
+  unfold observedLaw
+  infer_instance
 
 end StatLean.StatisticalModels.Coarsening

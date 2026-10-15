@@ -42,7 +42,7 @@ theorem sampleLikelihood_zero_probability_le
       {ω | sampleLikelihood M θ n (fun i : Fin n => Xs i.val ω) = 0} =
         ⋃ i : Fin n, E i := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, E, Z, Set.mem_preimage]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, E, Z, Set.mem_preimage]
     simp [sampleLikelihood, Finset.prod_eq_zero_iff]
   have hcoord (i : Fin n) : P.real (E i) = P₀.real Z := by
     calc
@@ -131,7 +131,7 @@ theorem mle_logDensity_fixedComparison_tendstoInProbZero
             (M.logDensity (θhat n (fun i : Fin n => Xs i.val ω))) n
             (fun i : Fin n => Xs i.val ω)) = 0 := by
       exact max_eq_left (sub_nonpos.mpr havg_le)
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     rw [hmax, mul_zero, norm_zero] at hω
     exact (not_le_of_gt hε) hω
   have hle (n : ℕ) :

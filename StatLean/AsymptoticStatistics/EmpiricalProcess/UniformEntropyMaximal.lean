@@ -31,6 +31,8 @@ removing the `√log` and giving `E*‖𝔾ₙ‖ ≲ C_d·δq`.
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Thm 2.14.1, Cor 19.35.
 -/
 
+set_option linter.style.longFile 2000
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter
@@ -88,7 +90,7 @@ lemma distL2_centeredDiff_le
     (θ θ' : EuclideanSpace ℝ (Fin d)) :
     distL2 P (fun ω => m θ ω) (fun ω => m θ' ω)
       ≤ (eLpNorm menv 2 P).toReal * ‖θ - θ'‖ := by
-  -- `eLpNorm (m θ − m θ') ≤ eLpNorm (‖θ − θ'‖ • menv) = ofReal ‖θ − θ'‖ · eLpNorm menv`.
+  -- `eLpNorm' (m θ − m θ') ≤ eLpNorm' (‖θ − θ'‖ • menv) = ofReal ‖θ − θ'‖ · eLpNorm menv`.
   have hptwise : ∀ ω, ‖(fun ω => m θ ω) ω - (fun ω => m θ' ω) ω‖
       ≤ ‖(‖θ - θ'‖ • menv) ω‖ := by
     intro ω
@@ -97,9 +99,11 @@ lemma distL2_centeredDiff_le
       _ ≤ |menv ω| * ‖θ - θ'‖ :=
           mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)
       _ = |‖θ - θ'‖| * |menv ω| := by rw [abs_of_nonneg (norm_nonneg _)]; ring
-  have hmono : eLpNorm (fun ω => m θ ω - m θ' ω) 2 P
-      ≤ eLpNorm (‖θ - θ'‖ • menv) 2 P := eLpNorm_mono hptwise
-  rw [eLpNorm_const_smul] at hmono
+  have hmono : eLpNorm' (fun ω => m θ ω - m θ' ω) 2 P
+      ≤ eLpNorm' (‖θ - θ'‖ • menv) 2 P := eLpNorm'_mono_ae (by norm_num)
+          (Eventually.of_forall hptwise)
+  rw [eLpNorm'_const_smul _ (by norm_num), ← eLpNorm_two_eq_eLpNorm' hmenv.aestronglyMeasurable]
+      at hmono
   -- Transfer to `.toReal`.
   unfold distL2
   have hmenv_ne : eLpNorm menv 2 P ≠ ⊤ := hmenv.eLpNorm_ne_top
@@ -110,7 +114,7 @@ lemma distL2_centeredDiff_le
     rw [Real.enorm_eq_ofReal (norm_nonneg _), ← ENNReal.ofReal_toReal hmenv_ne,
       ← ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_toReal hmenv_ne]
   rw [henorm] at hmono
-  calc (eLpNorm (fun ω => m θ ω - m θ' ω) 2 P).toReal
+  calc (eLpNorm' (fun ω => m θ ω - m θ' ω) 2 P).toReal
       ≤ (ENNReal.ofReal (‖θ - θ'‖ * (eLpNorm menv 2 P).toReal)).toReal :=
         ENNReal.toReal_mono ENNReal.ofReal_ne_top hmono
     _ = ‖θ - θ'‖ * (eLpNorm menv 2 P).toReal := by
@@ -170,7 +174,7 @@ theorem l2CoveringNumber_centeredLipschitz_le
       exact ⟨c, by rw [← dist_eq_norm]; exact Metric.mem_closedBall.mp hc_ball, rfl⟩
     · -- Every `g ∈ F_full` is within `distL2 < s` of some net point.
       intro g hg
-      rw [hFdef, Set.mem_setOf_eq] at hg
+      rw [hFdef, Set.mem_ofPred_eq] at hg
       obtain ⟨θ, hθ, rfl⟩ := hg
       have hθΘ : θ ∈ Metric.closedBall θ₀ 1 := by
         rw [Metric.mem_closedBall, dist_eq_norm]; exact hθ
@@ -182,7 +186,7 @@ theorem l2CoveringNumber_centeredLipschitz_le
             = distL2 P (fun ω => m θ ω) (fun ω => m c ω) := by
           unfold distL2
           congr 1
-          apply eLpNorm_congr_ae
+          apply eLpNorm'_congr_ae
           filter_upwards with ω
           simp only [Pi.sub_apply]; ring
         rw [hdist_eq]
@@ -292,7 +296,7 @@ theorem l2CoveringNumber_shell_le
         _ = δ := mul_one δ
     · -- Coverage: every `g ∈ Mδ` is within `distL2 < s` of a dilated net point.
       intro g hg
-      rw [hMδdef, Set.mem_setOf_eq] at hg
+      rw [hMδdef, Set.mem_ofPred_eq] at hg
       obtain ⟨θ, hθ, rfl⟩ := hg
       set u : EuclideanSpace ℝ (Fin d) := θ₀ + δ⁻¹ • (θ - θ₀) with hudef
       have hu_norm : ‖u - θ₀‖ ≤ 1 := by
@@ -317,7 +321,7 @@ theorem l2CoveringNumber_shell_le
             = distL2 P (fun ω => m θ ω) (fun ω => m (θ₀ + δ • (c - θ₀)) ω) := by
           unfold distL2
           congr 1
-          apply eLpNorm_congr_ae
+          apply eLpNorm'_congr_ae
           filter_upwards with ω
           simp only [Pi.sub_apply]; ring
         rw [hdist_eq]
@@ -734,7 +738,7 @@ private lemma supNorm_clamp_lift
       (ENNReal.ofReal (empiricalAvg Ψ n (fun j : Fin n => X j.val ξ)) + T) with hBproc_def
   have hBproc_meas : Measurable Bproc := by
     refine Measurable.const_mul ?_ _
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ξ : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.ennreal_ofReal ?_
     unfold empiricalAvg
     refine Measurable.const_mul ?_ _
@@ -769,7 +773,7 @@ private lemma supNorm_clamp_lift
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       rw [ENNReal.ofReal_sum_of_nonneg (fun i _ => hΨ_nn _)]
     have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
     have hn_ne_zero : (n : ℝ≥0∞) ≠ 0 := by
@@ -786,7 +790,7 @@ private lemma supNorm_clamp_lift
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ξ, ENNReal.ofReal (Ψ (X i.val ξ)) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hΨ_ofReal_meas.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -811,7 +815,7 @@ private lemma supNorm_clamp_lift
             (∫⁻ ξ, ENNReal.ofReal
                 (empiricalAvg Ψ n (fun j : Fin n => X j.val ξ)) ∂μ + T)
         ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
-          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le)
       _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
       _ ≤ 4 * ENNReal.ofReal (Real.sqrt n) * T := by gcongr; norm_num
   calc ∫⁻ ξ, supNormOver G
@@ -880,7 +884,7 @@ private lemma covering_iUnion_dyadic_Ioc_eq {δ : ℝ} (hδ : 0 < δ) :
     obtain ⟨hx0, hxδ⟩ := hx
     simp only [Set.mem_iUnion, Set.mem_Ioc]
     have hexists : ∃ q : ℕ, (1/2 : ℝ)^q * δ < x := by
-      obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (by positivity : (0:ℝ) < x / δ)
+      obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (by positivity : (0 : ℝ) < x / δ)
         (by norm_num : (1/2 : ℝ) < 1)
       exact ⟨N, (lt_div_iff₀ hδ).mp hN⟩
     classical
@@ -1000,7 +1004,7 @@ private lemma l2CoveringNumber_exists_min_net {P : Measure Ω} {F : Set (Ω → 
       refine le_antisymm le_top (le_iInf fun S => le_iInf fun hS => ?_)
       exact absurd ⟨S, hS⟩ hcon
     rw [htop] at hle
-    exact absurd (top_le_iff.mp hle) (ENat.coe_ne_top N)
+    exact absurd (top_le_iff.mp hle) (ENat.natCast_ne_top N)
   -- The set of admissible-net cardinalities.
   set A : Set ℕ := {k | ∃ S : Finset (Ω → ℝ),
       (↑S ⊆ F ∧ ∀ f ∈ F, ∃ g ∈ S, distL2 P f g < s) ∧ S.card = k} with hA
@@ -1050,7 +1054,7 @@ private lemma covering_shifted_dyadic_series_le
           * entropyWeight (l2CoveringNumber P F ((1/2 : ℝ)^(q+1) * δ))) := by
     intro q
     have hval : (1/2 : ℝ)^q * δ = 2 * ((1/2 : ℝ)^(q+1) * δ) := by ring
-    rw [hval, ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    rw [hval, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
     ring
   -- Tail sum ≤ full sum (drop the `q = 0` head, all terms nonneg).
   have htail : (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^(q+1) * δ)
@@ -1069,7 +1073,7 @@ private lemma covering_shifted_dyadic_series_le
         rw [ENNReal.tsum_mul_left]
     _ ≤ 2 * ∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δ)
           * entropyWeight (l2CoveringNumber P F ((1/2 : ℝ)^q * δ)) :=
-        mul_le_mul_of_nonneg_left htail (zero_le 2)
+        mul_le_mul_of_nonneg_left htail (zero_le (a := 2))
 
 /-- The centered Lipschitz shell is pointwise dense.  This is the
 measurability/admissibility input for the uniform-covering symmetrization
@@ -1112,7 +1116,7 @@ private lemma centeredLipschitz_shell_empProcPointwiseDense
       have hsub : Tendsto (fun n => θseq n - θ) atTop (𝓝 0) := by
         simpa using hθseq_lim.sub
           (tendsto_const_nhds : Tendsto (fun _ : ℕ => θ) atTop (𝓝 θ))
-      simpa using (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin d))).comp hsub
+      simpa using! (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin d))).comp hsub
     have hzero : Tendsto (fun n => ‖menv x‖ * ‖θseq n - θ‖) atTop (𝓝 0) := by
       simpa using hnorm.const_mul ‖menv x‖
     apply tendsto_sub_nhds_zero_iff.mp
@@ -1181,7 +1185,7 @@ private lemma uniformL2CoveringNumber_truncate_shell_le
     by_cases hΦzero : Q.l2Seminorm (fun x => δ * |menv x|) = 0
     · rw [normalizedL2CoveringNumber_of_l2Seminorm_eq_zero Q _ _ ε hΦzero]
       exact_mod_cast Finset.one_le_card.mpr hSimg_nonempty
-    · simp only [normalizedL2CoveringNumber, if_neg hΦzero]
+    · simp only [normalizedL2CoveringNumber, ite_eq_right hΦzero]
       refine iInf_le_of_le Simg (iInf_le_of_le ?_ le_rfl)
       rintro f ⟨g, ⟨θ, hθ, rfl⟩, rfl⟩
       let u : EuclideanSpace ℝ (Fin d) := θ₀ + δ⁻¹ • (θ - θ₀)
@@ -1386,7 +1390,8 @@ private theorem covering_process_chain_shifted_core
       _ = Φ x := by dsimp [Φ]; ring
   have hΦ_norm : eLpNorm Φ 2 P = ENNReal.ofReal δ * eLpNorm menv 2 P := by
     have habs : eLpNorm (fun x => |menv x|) 2 P = eLpNorm menv 2 P := by
-      simpa [Real.norm_eq_abs] using (eLpNorm_norm (μ := P) (p := (2 : ℝ≥0∞)) menv)
+      simpa [Real.norm_eq_abs] using (eLpNorm_norm (μ := P)
+          (p := (2 : ℝ≥0∞)) menv hmenv.aestronglyMeasurable)
     have hfun : Φ = δ • (fun x => |menv x|) := by
       funext x
       simp only [Φ, Pi.smul_apply, smul_eq_mul]
@@ -1543,7 +1548,7 @@ private theorem covering_chain_tree_core
               * entropyWeight (l2CoveringNumber P
                   {g : Ω → ℝ | ∃ θ : EuclideanSpace ℝ (Fin d), ‖θ - θ₀‖ ≤ δ ∧
                     g = fun ω => m θ ω - m θ₀ ω} ((1/2 : ℝ)^q * δ)) := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
 /-- Populate the population-net assumptions from the finite shell covers, then convert the
@@ -1643,7 +1648,7 @@ private theorem covering_clamped_chain_bound
         gcongr
         exact covering_dyadic_sum_le_l2CoveringEntropyIntegral (P := P) (F := Mδ) hδ
     _ = ENNReal.ofReal (2 * K) * l2CoveringEntropyIntegral δ Mδ P := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
         ring
 
 /-- **Covering Dudley-chaining bound, vdV Thm 2.14.1 / Cor 19.35.**
@@ -1828,11 +1833,11 @@ theorem centeredLipschitz_shellModulus_bound_closed
             (fun f => empiricalProcess P 0 (fun i : Fin 0 => X i.val ξ) f))
           = fun _ => (0 : ℝ≥0∞) := by
         funext ξ
-        refine le_antisymm ?_ (zero_le _)
+        refine le_antisymm ?_ (zero_le)
         unfold supNormOver
         exact iSup₂_le fun f _ => by simp
       rw [hpt, lintegral_zero]
-    rw [hz]; exact zero_le _
+    rw [hz]; exact zero_le
   · -- `n ≥ 1`: chaining core + scale-free entropy bound + Chebyshev envelope tail.
     calc ∫⁻ ξ, supNormOver
             {g : Ω → ℝ | ∃ θ : EuclideanSpace ℝ (Fin d), ‖θ - θ₀‖ ≤ δ ∧

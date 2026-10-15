@@ -25,7 +25,7 @@ the literal statement of `F` being a `P`-Donsker class.
   via `fact_one_le_top_ennreal`) and the Borel `MeasurableSpace`.
 * `empiricalProcessLinf X hmem` — the empirical process `f ↦ 𝔾ₙ f` packaged as an
   element of `LinfF F` (membership supplied by `memℓp_empiricalProcess`).
-* `distL2 P f g` — the `L²(P)` (semi)distance `(eLpNorm (f − g) 2 P).toReal`, the
+* `distL2 P f g` — the `L²(P)` (semi)distance `(eLpNorm' (f − g) 2 P).toReal`, the
   intrinsic semimetric on `F` for the asymptotic-equicontinuity side.
 
 ## Main results
@@ -125,11 +125,19 @@ noncomputable def empiricalProcessLinf {F : Set (Ω → ℝ)} {P : Measure Ω} {
   ⟨fun f => empiricalProcess P n X (f : Ω → ℝ), hmem⟩
 
 /-- The **`L²(P)` (semi)distance** between two functions:
-`distL2 P f g = (eLpNorm (f − g) 2 P).toReal`. This is the intrinsic semimetric
+`distL2 P f g = (eLpNorm' (f − g) 2 P).toReal`. This is the intrinsic semimetric
 `ρ_P(f, g) = (P(f − g)²)^{1/2}` of van der Vaart §19.2, in which the
 asymptotic-equicontinuity / total-boundedness conditions are stated. -/
 noncomputable def distL2 (P : Measure Ω) (f g : Ω → ℝ) : ℝ :=
-  (eLpNorm (f - g) 2 P).toReal
+  (eLpNorm' (f - g) 2 P).toReal
+
+/-- For an a.e. strongly measurable difference, the integral definition of `distL2` agrees
+with the extended `L²` norm `eLpNorm`. -/
+lemma distL2_eq_eLpNorm {P : Measure Ω} {f g : Ω → ℝ}
+    (hfg : AEStronglyMeasurable (f - g) P) :
+    distL2 P f g = (eLpNorm (f - g) 2 P).toReal := by
+  simp only [distL2, eLpNorm_eq_eLpNorm' (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+    (by norm_num : (2 : ℝ≥0∞) ≠ ∞) hfg, ENNReal.toReal_ofNat]
 
 /-- **Total boundedness of `F` in the `L²(P)` semimetric.** A finite
 bracketing-entropy integral forces a finite ε-bracketing cover at every scale,
@@ -162,9 +170,9 @@ lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
   · -- `S ⊆ F`: every representative lies in `F`.
     intro g hg
     simp only [Finset.coe_image, Finset.coe_filter, Finset.mem_univ,
-      true_and, Set.mem_image, Set.mem_setOf_eq] at hg
+      true_and, Set.mem_image, Set.mem_ofPred_eq] at hg
     obtain ⟨i, hi, rfl⟩ := hg
-    simp only [rep, dif_pos hi]
+    simp only [rep, dite_eq_left hi]
     exact (hrep i hi).choose_spec.1
   · -- ε-net bound.
     intro f hf
@@ -179,7 +187,7 @@ lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
     · -- `distL2 P f (rep i) < ε`.
       -- `rep i` lies in the same bracket `i`.
       have hrep_spec : ∀ x, l i x ≤ rep i x ∧ rep i x ≤ u i x := by
-        simp only [rep, dif_pos hQi]
+        simp only [rep, dite_eq_left hQi]
         exact (hrep i hQi).choose_spec.2
       -- Pointwise: `|f x - rep i x| ≤ u i x - l i x`.
       have h_ptwise : ∀ x, ‖(f - rep i) x‖ ≤ ‖(fun y => u i y - l i y) x‖ := by
@@ -193,11 +201,14 @@ lemma totallyBounded_L2 {F : Set (Ω → ℝ)} {P : Measure Ω}
         rw [abs_sub_le_iff]
         constructor <;> linarith
       -- Hence `eLpNorm (f - rep i) 2 P ≤ eLpNorm (u i - l i) 2 P < ofReal ε`.
-      have h_eLp_le : eLpNorm (f - rep i) 2 P ≤ eLpNorm (fun y => u i y - l i y) 2 P :=
-        eLpNorm_mono h_ptwise
-      have h_size : eLpNorm (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε :=
-        (hbr i).size_lt
-      have h_lt : eLpNorm (f - rep i) 2 P < ENNReal.ofReal ε :=
+      have h_eLp_le : eLpNorm' (f - rep i) 2 P ≤ eLpNorm' (fun y => u i y - l i y) 2 P :=
+        eLpNorm'_mono_ae (by norm_num) (Filter.Eventually.of_forall h_ptwise)
+      have h_size : eLpNorm' (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε := by
+        have hwidth : AEStronglyMeasurable (fun y => u i y - l i y) P :=
+          ((hbr i).measurable_upper.sub (hbr i).measurable_lower).aestronglyMeasurable
+        simpa only [eLpNorm_eq_eLpNorm' (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+          (by norm_num : (2 : ℝ≥0∞) ≠ ∞) hwidth, ENNReal.toReal_ofNat] using (hbr i).size_lt
+      have h_lt : eLpNorm' (f - rep i) 2 P < ENNReal.ofReal ε :=
         lt_of_le_of_lt h_eLp_le h_size
       -- Transfer to the real-valued `distL2`.
       exact ENNReal.toReal_lt_of_lt_ofReal h_lt
@@ -223,12 +234,13 @@ lemma memLp_of_mem_F {F : Set (Ω → ℝ)} {P : Measure Ω} {G : Ω → ℝ}
 (`eLpNorm 0 = 0`). -/
 lemma distL2_self {P : Measure Ω} (f : Ω → ℝ) : distL2 P f f = 0 := by
   unfold distL2
-  rw [sub_self, eLpNorm_zero, ENNReal.toReal_zero]
+  rw [sub_self, eLpNorm'_zero (by norm_num), ENNReal.toReal_zero]
 
 /-- `distL2 P f g = distL2 P g f`: symmetry, from `eLpNorm (f - g) = eLpNorm (g - f)`. -/
 lemma distL2_comm {P : Measure Ω} (f g : Ω → ℝ) : distL2 P f g = distL2 P g f := by
   unfold distL2
-  rw [eLpNorm_sub_comm]
+  congr 1
+  exact eLpNorm'_congr_norm_ae (Filter.Eventually.of_forall fun x => norm_sub_rev _ _)
 
 /-- **Triangle inequality for `distL2` from direct `L²` membership.**
 
@@ -243,7 +255,9 @@ both summands are finite by `MemLp`, so `ENNReal.toReal_add` is additive and
 lemma distL2_triangle_of_memLp {P : Measure Ω} {f g h : Ω → ℝ}
     (hf : MemLp f 2 P) (hg : MemLp g 2 P) (hh : MemLp h 2 P) :
     distL2 P f h ≤ distL2 P f g + distL2 P g h := by
-  unfold distL2
+  rw [distL2_eq_eLpNorm (hf.sub hh).aestronglyMeasurable,
+    distL2_eq_eLpNorm (hf.sub hg).aestronglyMeasurable,
+    distL2_eq_eLpNorm (hg.sub hh).aestronglyMeasurable]
   -- Finiteness of all three `eLpNorm`s, from `L²`-membership.
   have hfg_ne : eLpNorm (f - g) 2 P ≠ ⊤ := (hf.sub hg).eLpNorm_ne_top
   have hgh_ne : eLpNorm (g - h) 2 P ≠ ⊤ := (hg.sub hh).eLpNorm_ne_top
@@ -252,8 +266,7 @@ lemma distL2_triangle_of_memLp {P : Measure Ω} {f g h : Ω → ℝ}
     have hfh_eq : f - h = (f - g) + (g - h) := by ring
     rw [hfh_eq]
     exact eLpNorm_add_le
-      (hf.aestronglyMeasurable.sub hg.aestronglyMeasurable)
-      (hg.aestronglyMeasurable.sub hh.aestronglyMeasurable) (by norm_num)
+       (by norm_num)
   -- Transfer to `.toReal`: monotone (RHS finite) + additive (both summands finite).
   rw [← ENNReal.toReal_add hfg_ne hgh_ne]
   exact ENNReal.toReal_mono (ENNReal.add_ne_top.mpr ⟨hfg_ne, hgh_ne⟩) h_tri

@@ -2,7 +2,7 @@
   "root": "StatLean.RobustStatistics.medianOfMeans",
   "nodes": [
     {"id":"StatLean.RobustStatistics.medianOfMeans","label":"medianOfMeans","full":"StatLean.RobustStatistics.medianOfMeans","kind":"root","decl":"def","module":"StatLean.RobustStatistics.HeavyTails.MedianOfMeans"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"StatLean.RobustStatistics.sampleMedian","label":"sampleMedian","full":"StatLean.RobustStatistics.sampleMedian","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Median"},
     {"id":"StatLean.RobustStatistics.sampleMean","label":"sampleMean","full":"StatLean.RobustStatistics.sampleMean","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Mean"},
     {"id":"StatLean.MultipleTesting.orderStat","label":"orderStat","full":"StatLean.MultipleTesting.orderStat","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.OrderStatistics"},
@@ -12,7 +12,7 @@
     {"id":"Equiv.Perm","label":"Perm","full":"Equiv.Perm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
     {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
     {"id":"Tuple.sort","label":"sort","full":"Tuple.sort","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fin.Tuple.Sort"},
-    {"id":"Real.linearOrder","label":"linearOrder","full":"Real.linearOrder","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+    {"id":"Real.linearOrder","label":"linearOrder","full":"Real.linearOrder","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"}
   ],
   "edges": [
     {"source":"StatLean.RobustStatistics.medianOfMeans","target":"Real"},

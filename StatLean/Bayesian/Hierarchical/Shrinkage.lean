@@ -103,7 +103,8 @@ private lemma gaussian_shrink_coord (c θ : ℝ) (σ2 : ℝ≥0) :
           + ∫ y, ((2 * c * (c - 1) * θ) * (y - θ) + (c - 1) ^ 2 * θ ^ 2) ∂(gaussianReal θ σ2) :=
         integral_add (hsq.const_mul _) ((hlin.const_mul _).add (integrable_const _))
     _ = c ^ 2 * (∫ y, (y - θ) ^ 2 ∂(gaussianReal θ σ2))
-          + ((2 * c * (c - 1) * θ) * (∫ y, (y - θ) ∂(gaussianReal θ σ2)) + (c - 1) ^ 2 * θ ^ 2) := by
+          + ((2 * c * (c - 1) * θ) * (∫ y, (y - θ) ∂(gaussianReal θ σ2)) +
+              (c - 1) ^ 2 * θ ^ 2) := by
         rw [integral_const_mul, integral_add (hlin.const_mul _) (integrable_const _),
           integral_const_mul, integral_const]
         simp
@@ -115,7 +116,7 @@ that both the headline theorem and the Bayes-risk theorem can invoke it. -/
 private lemma linearShrinkage_risk_value (c : ℝ) {p : ℕ} (θ : Fin p → ℝ) (σ2 : ℝ≥0) :
     (∫ x, ∑ i, (linearShrinkage c x i - θ i) ^ 2 ∂(Measure.pi fun i => gaussianReal (θ i) σ2))
       = ∑ i, ((1 - c) ^ 2 * (θ i) ^ 2 + c ^ 2 * (σ2 : ℝ)) := by
-  rw [integral_finset_sum]
+  rw [integral_finsetSum]
   · apply Finset.sum_congr rfl
     intro i _
     simp only [linearShrinkage]
@@ -158,7 +159,7 @@ theorem normalMeans_linearShrinkage_bayesRisk (c : ℝ) (p : ℕ) (τ2 σ2 : ℝ
         exact linearShrinkage_risk_value c θ σ2
     _ = ∑ i, ∫ θ, ((1 - c) ^ 2 * (θ i) ^ 2 + c ^ 2 * (σ2 : ℝ))
           ∂(Measure.pi fun _ : Fin p => gaussianReal 0 τ2) := by
-        rw [integral_finset_sum]
+        rw [integral_finsetSum]
         intro i _
         exact ((hsq i).const_mul _).add (integrable_const _)
     _ = ∑ _i : Fin p, ((1 - c) ^ 2 * (τ2 : ℝ) + c ^ 2 * (σ2 : ℝ)) := by
@@ -317,7 +318,7 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
       · rw [Set.indicator_of_notMem hy]
         have hlt : ¬ ‖y‖ ≤ 1 := by simpa [Metric.mem_closedBall, dist_eq_norm] using hy
         simp [hF, hlt]
-    haveI : Nontrivial (EuclideanSpace ℝ (Fin p)) :=
+    have : Nontrivial (EuclideanSpace ℝ (Fin p)) :=
       Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
     rw [hEq, integrable_fun_norm_addHaar, finrank_euclideanSpace_fin,
       ← Set.Ioc_union_Ioi_eq_Ioi (show (0 : ℝ) ≤ 1 by norm_num), integrableOn_union]
@@ -328,7 +329,7 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
       refine hcont.congr_fun (fun t ht => ?_) measurableSet_Ioc
       have ht1 : t ≤ 1 := ht.2
       have ht0 : t ≠ 0 := ne_of_gt ht.1
-      simp only [hF, smul_eq_mul, if_pos ht1]
+      simp only [hF, smul_eq_mul, ite_eq_left ht1]
       rw [show p - 1 = (p - 3) + 2 by omega, pow_add]
       field_simp
     · -- On `Ioi 1` the integrand vanishes.
@@ -336,24 +337,25 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
       have ht1 : ¬ t ≤ 1 := not_le.mpr ht
       simp [hF, ht1]
   -- Transfer back to `Fin p → ℝ` via the volume-preserving coordinate identification.
-  have hmp : MeasurePreserving (⇑(EuclideanSpace.measurableEquiv (Fin p)))
+  have hmp : MeasurePreserving (⇑((PiLp.homeomorph 2 (fun _ : Fin p => ℝ)).toMeasurableEquiv))
       (volume : Measure (EuclideanSpace ℝ (Fin p))) (volume : Measure (Fin p → ℝ)) := by
-    rw [EuclideanSpace.coe_measurableEquiv]; exact PiLp.volume_preserving_ofLp (Fin p)
-  have hemb : MeasurableEmbedding (⇑(EuclideanSpace.measurableEquiv (Fin p))) :=
-    (EuclideanSpace.measurableEquiv (Fin p)).measurableEmbedding
+    rw [Homeomorph.toMeasurableEquiv_coe]; exact PiLp.volume_preserving_ofLp (Fin p)
+  have hemb : MeasurableEmbedding (⇑((PiLp.homeomorph 2 (fun _ : Fin p => ℝ)).toMeasurableEquiv)) :=
+    ((PiLp.homeomorph 2 (fun _ : Fin p => ℝ)).toMeasurableEquiv).measurableEmbedding
   rw [← hmp.integrableOn_comp_preimage hemb]
   have hfun : ((fun x : Fin p → ℝ => 1 / ∑ i, (x i) ^ 2)
-        ∘ ⇑(EuclideanSpace.measurableEquiv (Fin p)))
+        ∘ ⇑((PiLp.homeomorph 2 (fun _ : Fin p => ℝ)).toMeasurableEquiv))
       = fun y : EuclideanSpace ℝ (Fin p) => 1 / ‖y‖ ^ 2 := by
     funext y
-    simp only [Function.comp_apply, EuclideanSpace.coe_measurableEquiv,
-      EuclideanSpace.real_norm_sq_eq]
-  have hset : (⇑(EuclideanSpace.measurableEquiv (Fin p))
+    change 1 / (∑ i, (y.ofLp i) ^ 2) = 1 / ‖y‖ ^ 2
+    rw [EuclideanSpace.real_norm_sq_eq]
+  have hset : (⇑((PiLp.homeomorph 2 (fun _ : Fin p => ℝ)).toMeasurableEquiv)
         ⁻¹' {x : Fin p → ℝ | ∑ i, (x i) ^ 2 ≤ 1})
       = Metric.closedBall 0 1 := by
     ext y
-    simp only [Set.mem_preimage, Set.mem_setOf_eq, EuclideanSpace.coe_measurableEquiv,
-      Metric.mem_closedBall, dist_eq_norm, sub_zero, ← EuclideanSpace.real_norm_sq_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_eq_norm, sub_zero]
+    change (∑ i, (y.ofLp i) ^ 2) ≤ 1 ↔ ‖y‖ ≤ 1
+    rw [← EuclideanSpace.real_norm_sq_eq]
     constructor
     · intro h; nlinarith [norm_nonneg y, h]
     · intro h; nlinarith [norm_nonneg y, h]
@@ -378,13 +380,12 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
       (Measure.pi fun i => gaussianReal (θ i) σ2) := by
   classical
   set N := Measure.pi fun i => gaussianReal (θ i) σ2 with hN
-  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ i, (x i) ^ 2 with hS
   have hSmeas : Measurable S := by
     apply Finset.measurable_sum; intro i _; exact (measurable_pi_apply i).pow_const 2
   have hSnonneg : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun i _ => sq_nonneg _
   -- `N` as `withDensity` of the product density against Lebesgue measure.
-  haveI : ∀ i, SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (θ i) σ2)) := by
+  have : ∀ i, SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (θ i) σ2)) := by
     intro i; rw [← gaussianReal_of_var_ne_zero (θ i) hσ]; infer_instance
   have hNwd : N = (volume : Measure (Fin p → ℝ)).withDensity
       (fun x => ∏ i, gaussianPDF (θ i) σ2 (x i)) := by
@@ -405,12 +406,12 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
     calc ∏ i, (gaussianPDF (θ i) σ2 (x i)).toReal
         = ∏ i, gaussianPDFReal (θ i) σ2 (x i) := Finset.prod_congr rfl fun i _ => hfac i
       _ ≤ ∏ _i : Fin p, (Real.sqrt (2 * Real.pi * σ2))⁻¹ :=
-          Finset.prod_le_prod (fun i _ => gaussianPDFReal_nonneg _ _ _)
+          Finset.prod_le_prod₀ (fun i _ => gaussianPDFReal_nonneg _ _ _)
             (fun i _ => gaussianPDFReal_le_peak _ _ _)
       _ = M := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, hM]
   -- Split `univ` into ball and tail.
   have huniv : (Set.univ : Set (Fin p → ℝ)) = {x | S x ≤ 1} ∪ {x | 1 ≤ S x} := by
-    ext x; simp only [Set.mem_univ, Set.mem_union, Set.mem_setOf_eq, true_iff]
+    ext x; simp only [Set.mem_univ, Set.mem_union, Set.mem_ofPred_eq, true_iff]
     exact le_total (S x) 1
   rw [← integrableOn_univ, huniv, integrableOn_union]
   refine ⟨?_, ?_⟩
@@ -464,7 +465,6 @@ private lemma integrable_jsG {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
     Integrable (fun x : Fin p → ℝ => (x i - θ i) * (x i / ∑ j, (x j) ^ 2))
       (Measure.pi fun j => gaussianReal (θ j) σ2) := by
   set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
-  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
   have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
   have hSmeas : Measurable S :=
@@ -492,7 +492,6 @@ private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
     Integrable (fun x : Fin p → ℝ => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2)
       (Measure.pi fun j => gaussianReal (θ j) σ2) := by
   set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
-  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
   set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
   have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
   have hSmeas : Measurable S :=
@@ -528,14 +527,13 @@ private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
   obtain ⟨n, rfl⟩ : ∃ n, p = n + 1 := ⟨p - 1, by omega⟩
   have hp3 : 3 ≤ n + 1 := hp
   set μ : Fin (n + 1) → Measure ℝ := fun j => gaussianReal (θ j) σ2 with hμ
-  haveI : ∀ j, IsProbabilityMeasure (μ j) := fun j => by rw [hμ]; infer_instance
+  have : ∀ j, IsProbabilityMeasure (μ j) := fun j => by rw [hμ]; infer_instance
   set e : (Fin (n + 1) → ℝ) ≃ᵐ ℝ × (Fin n → ℝ) :=
     MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) i with he
   have mp : MeasurePreserving e (Measure.pi μ)
       ((μ i).prod (Measure.pi fun j => μ (i.succAbove j))) :=
     measurePreserving_piFinSuccAbove μ i
   set νr : Measure (Fin n → ℝ) := Measure.pi fun j => μ (i.succAbove j) with hνr
-  haveI : IsProbabilityMeasure νr := by rw [hνr]; infer_instance
   have mps : MeasurePreserving e.symm ((μ i).prod νr) (Measure.pi μ) :=
     MeasurePreserving.symm e mp
   -- coordinate identities for `e.symm (a, b) = insertNth i a b`
@@ -557,11 +555,11 @@ private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
   have hn1 : 0 < n := by omega
   have hkpos : ∀ᵐ b ∂νr, (0 : ℝ) < ∑ j, (b j) ^ 2 := by
     set k : Fin n := ⟨0, hn1⟩ with hk
-    haveI : NoAtoms (μ (i.succAbove k)) := noAtoms_gaussianReal hσ
+    have : NullSingletonClass (μ (i.succAbove k)) := nullSingletonClass_gaussianReal hσ
     have hmpk : MeasurePreserving (Function.eval k) νr (μ (i.succAbove k)) := by
       rw [hνr]; exact measurePreserving_eval (μ := fun j => μ (i.succAbove j)) k
     have hatom : ∀ᵐ y ∂(μ (i.succAbove k)), y ≠ 0 := by
-      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+      simpa only [ae_iff, not_ne_iff, Set.ofPred_eq_eq_singleton] using
         measure_singleton (μ := μ (i.succAbove k)) 0
     have hbk : ∀ᵐ b ∂νr, (b k) ≠ 0 :=
       ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)
@@ -633,7 +631,6 @@ theorem jamesStein_risk_difference {p : ℕ}
   -- Integrate termwise; the cross term uses `jamesStein_crossTerm` and the divergence identity
   -- `js_div_sum`, the last term uses Brick D `integrable_inv_normSq_pi`.
   set M := Measure.pi fun i => gaussianReal (θ i) σ2 with hM
-  haveI : IsProbabilityMeasure M := by rw [hM]; infer_instance
   -- integrability of the coordinate second moments
   have term1 : ∀ i, Integrable (fun x : Fin p → ℝ => (x i - θ i) ^ 2) M := by
     intro i
@@ -649,9 +646,9 @@ theorem jamesStein_risk_difference {p : ℕ}
   have hGi : ∀ i, Integrable (fun x : Fin p → ℝ => (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) M :=
     fun i => by rw [hM]; exact integrable_jsG hp θ σ2 hσ i
   have hf1 : Integrable (fun x : Fin p → ℝ => ∑ i, (x i - θ i) ^ 2) M :=
-    integrable_finset_sum _ fun i _ => term1 i
+    integrable_finsetSum _ fun i _ => term1 i
   have hf2 : Integrable (fun x : Fin p → ℝ => ∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) M :=
-    integrable_finset_sum _ fun i _ => hGi i
+    integrable_finsetSum _ fun i _ => hGi i
   -- pointwise expansion of the loss
   have hexpand : ∀ x : Fin p → ℝ, ∑ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2
       = (∑ i, (x i - θ i) ^ 2)
@@ -677,7 +674,7 @@ theorem jamesStein_risk_difference {p : ℕ}
       ← Finset.mul_sum, ← Finset.mul_sum, hV]
   -- value of the first term: `∑ᵢ σ² = pσ²`
   have hI1 : ∫ x, (∑ i, (x i - θ i) ^ 2) ∂M = (p : ℝ) * (σ2 : ℝ) := by
-    rw [integral_finset_sum _ fun i _ => term1 i]
+    rw [integral_finsetSum _ fun i _ => term1 i]
     have : (∑ i, ∫ x, (x i - θ i) ^ 2 ∂M) = ∑ _i : Fin p, (σ2 : ℝ) := by
       refine Finset.sum_congr rfl fun i _ => ?_
       rw [hM, integral_comp_eval (μ := fun i => gaussianReal (θ i) σ2) (i := i)
@@ -697,8 +694,8 @@ theorem jamesStein_risk_difference {p : ℕ}
   -- value of the cross term: `σ²(p−2)·E‖X‖⁻²`
   have hI2 : ∫ x, (∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) ∂M
       = (σ2 : ℝ) * ((p : ℝ) - 2) * ∫ x, 1 / ∑ j, (x j) ^ 2 ∂M := by
-    rw [integral_finset_sum _ fun i _ => hGi i, Finset.sum_congr rfl fun i _ => crossM i,
-      ← Finset.mul_sum, ← integral_finset_sum _ fun i _ => jsRM i,
+    rw [integral_finsetSum _ fun i _ => hGi i, Finset.sum_congr rfl fun i _ => crossM i,
+      ← Finset.mul_sum, ← integral_finsetSum _ fun i _ => jsRM i,
       integral_congr_ae (ae_of_all _ fun x => js_div_sum x),
       show (fun x : Fin p → ℝ => ((p : ℝ) - 2) / ∑ j, (x j) ^ 2)
           = fun x => ((p : ℝ) - 2) * (1 / ∑ j, (x j) ^ 2) from by funext x; rw [mul_one_div],
@@ -729,7 +726,7 @@ theorem jamesStein_dominates_mle {p : ℕ}
   -- The risk identity plus strict positivity of the subtracted term `(p−2)²σ⁴·E‖X‖⁻²`.
   rw [jamesStein_risk_difference hp θ σ2 hσ]
   set M := Measure.pi fun i => gaussianReal (θ i) σ2 with hM
-  haveI : IsProbabilityMeasure M := by rw [hM]; infer_instance
+  have : IsProbabilityMeasure M := by rw [hM]; infer_instance
   have hnn_fn : (0 : (Fin p → ℝ) → ℝ) ≤ fun x => 1 / ∑ i, (x i) ^ 2 :=
     fun x => one_div_nonneg.mpr (Finset.sum_nonneg fun i _ => sq_nonneg _)
   have hDint : Integrable (fun x : Fin p → ℝ => 1 / ∑ i, (x i) ^ 2) M := by
@@ -738,11 +735,11 @@ theorem jamesStein_dominates_mle {p : ℕ}
   have hae : ∀ᵐ x ∂M, (0 : ℝ) < ∑ i, (x i) ^ 2 := by
     have h0lt : 0 < p := by omega
     set k : Fin p := ⟨0, h0lt⟩ with hk
-    haveI : NoAtoms (gaussianReal (θ k) σ2) := noAtoms_gaussianReal hσ
+    have : NullSingletonClass (gaussianReal (θ k) σ2) := nullSingletonClass_gaussianReal hσ
     have hmpk : MeasurePreserving (Function.eval k) M (gaussianReal (θ k) σ2) := by
       rw [hM]; exact measurePreserving_eval (μ := fun i => gaussianReal (θ i) σ2) k
     have hatom : ∀ᵐ y ∂(gaussianReal (θ k) σ2), y ≠ 0 := by
-      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+      simpa only [ae_iff, not_ne_iff, Set.ofPred_eq_eq_singleton] using
         measure_singleton (μ := gaussianReal (θ k) σ2) 0
     filter_upwards [ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)] with x hx
     exact lt_of_lt_of_le (by positivity : (0 : ℝ) < (x k) ^ 2) (coord_sq_le_sum x k)
@@ -757,7 +754,7 @@ theorem jamesStein_dominates_mle {p : ℕ}
         rw [Pi.zero_apply, one_div, inv_eq_zero] at hx0
         linarith
       rw [ae_iff] at hbad
-      simp only [not_false_iff, Set.setOf_true, measure_univ] at hbad
+      simp only [not_false_iff, Set.ofPred_true, measure_univ] at hbad
       exact one_ne_zero hbad
   have hcoef : 0 < ((p : ℝ) - 2) ^ 2 * (σ2 : ℝ) ^ 2 := by
     have hp2 : (0 : ℝ) < (p : ℝ) - 2 := by

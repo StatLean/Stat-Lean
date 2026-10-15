@@ -36,8 +36,8 @@ Eq. (15.16b).
   (lemma `gaussian_two_point_tvDist_le`, using `klDiv_gaussianReal` for the single-sample value
   and `klDiv_pi_eq_nsmul` for tensorization).
 * Plugging the separation $\theta_1$ into `minimax_two_point` with the squared-error modulus
-  gives risk $\ge (\theta_1/2)^2 \cdot (1 - \mathrm{TV}) = \sigma^2/(4n) \cdot 1/2 = \sigma^2/(16n)$,
-  which dominates the stated $\sigma^2/(24n)$.
+  gives risk $\ge (\theta_1/2)^2 \cdot (1 - \mathrm{TV}) = \sigma^2/(4n) \cdot 1/2 =
+  \sigma^2/(16n)$, which dominates the stated $\sigma^2/(24n)$.
 
 The convex-hull route (Example 15.10) and the Fano route (Example 15.13) give the same $\sigma^2/n$
 order and are not separately formalized here.
@@ -61,8 +61,9 @@ namespace StatLean.Minimaxity
 
 /-- **Crux: two-point total-variation bound for the Gaussian location family.** With the
 separation `θ₁ = √(v/n)` the single-sample KL is `θ₁²/(2v) = 1/(2n)`, so the `n`-fold product KL
-is `n·1/(2n) = 1/2`; Pinsker's inequality (Wainwright Lemma 15.2) then gives `‖·‖_TV ≤ √(KL/2) = 1/2`.
-Uses `klDiv_gaussianReal` for the single-sample value and KL tensorization over the product. -/
+is `n·1/(2n) = 1/2`; Pinsker's inequality (Wainwright Lemma 15.2) then gives
+`‖·‖_TV ≤ √(KL/2) = 1/2`. Uses `klDiv_gaussianReal` for the
+single-sample value and KL tensorization over the product. -/
 private lemma gaussian_two_point_tvDist_le (n : ℕ) (hn : 1 ≤ n) (v : ℝ≥0) (hv : v ≠ 0)
     (P : Kernel ℝ (Fin n → ℝ)) [IsMarkovKernel P]
     (hP : ∀ θ : ℝ, P θ = Measure.pi fun _ : Fin n => gaussianReal θ v) :
@@ -116,12 +117,12 @@ theorem gaussian_location_minimax_rate (n : ℕ) (hn : 1 ≤ n) (v : ℝ≥0) (h
   have hsep : 2 * ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)
       ≤ edist (0 : ℝ) (Real.sqrt ((v : ℝ) / n)) := by
     rw [edist_dist, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg hθ₁0,
-        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
+        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by
+          simp, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
     apply le_of_eq; congr 1; ring
   have htv := gaussian_two_point_tvDist_le n hn v hv P hP
-  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2))
+  have hΦδ : (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2
       = ENNReal.ofReal ((v : ℝ) / (4 * n)) := by
-    change (ENNReal.ofReal (Real.sqrt ((v : ℝ) / n) / 2)) ^ 2 = _
     rw [← ENNReal.ofReal_pow (by positivity)]
     congr 1
     rw [div_pow, Real.sq_sqrt (by positivity)]

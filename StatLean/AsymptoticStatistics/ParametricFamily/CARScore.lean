@@ -72,6 +72,27 @@ private noncomputable def condRem (γ : ConditionalQMDPath Q ν r) (t : ℝ) :
   fun p => condSqrt γ t p - condSqrt γ 0 p
     - (t / 2) * γ.score p.1 p.2 * condSqrt γ 0 p
 
+/-- Under CAR, the conditional QMD limit also holds for `eLpNorm`. -/
+private lemma jointQMDLimit_guarded
+    (M : 𝓨 × 𝓓 → 𝓧) (hM : Measurable M) (γ : ConditionalQMDPath Q ν r)
+    (hCAR : IsCARFamily M γ) :
+    Tendsto (fun t : ℝ => eLpNorm (condRem γ t) 2 (Q.prod ν) /
+      ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+  have hs : AEStronglyMeasurable (Function.uncurry γ.score) (Q.prod ν) :=
+    γ.score_meas.aestronglyMeasurable
+  have hp : ∀ t, AEStronglyMeasurable (condSqrt γ t) (Q.prod ν) :=
+    fun t => Real.continuous_sqrt.comp_aestronglyMeasurable ((hCAR t).mono hM.comap_le)
+  have hr : ∀ t, AEStronglyMeasurable (condRem γ t) (Q.prod ν) := by
+    intro t
+    exact ((hp t).sub (hp 0)).sub ((hs.const_mul (t / 2)).mul (hp 0))
+  have heq : ∀ t, eLpNorm₀ (condRem γ t) 2 (Q.prod ν) =
+      eLpNorm (condRem γ t) 2 (Q.prod ν) :=
+    fun t => eLpNorm₀_eq_eLpNorm (hr t)
+  have hraw := γ.qmd_limit
+  change Tendsto (fun t : ℝ => eLpNorm₀ (condRem γ t) 2 (Q.prod ν) /
+    ENNReal.ofReal |t|) _ _ at hraw
+  simpa only [heq] using hraw
+
 /-- Product-space `L²`-membership of the conditional square-root density:
 `√pₜ ∈ L²(Q ⊗ ν)`, where `pₜ(y, δ) = ((curve t y).rnDeriv ν δ).toReal`.
 
@@ -145,7 +166,7 @@ private lemma condScoreSqrt_memLp
       ((h_score_meas.const_mul (t / 2)).mul (hSQ_mem 0).aestronglyMeasurable)
   have h_qmd : Tendsto (fun t : ℝ =>
       eLpNorm (condRem γ t) 2 (Q.prod ν) / ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) :=
-    γ.qmd_limit
+    jointQMDLimit_guarded M hM γ hCAR
   obtain ⟨t₀, ht₀_ne, ht₀_lt⟩ : ∃ t : ℝ, t ≠ 0 ∧
       eLpNorm (condRem γ t) 2 (Q.prod ν) < ENNReal.ofReal |t| := by
     have h_lt_one : ∀ᶠ t in 𝓝[≠] (0 : ℝ),
@@ -164,7 +185,7 @@ private lemma condScoreSqrt_memLp
       _ < 1 * ENNReal.ofReal |t| := ENNReal.mul_lt_mul_left h0 htop htlt
       _ = ENNReal.ofReal |t| := one_mul _
   have hRem_mem₀ : MemLp (condRem γ t₀) 2 (Q.prod ν) :=
-    ⟨hRem_meas t₀, lt_trans ht₀_lt ENNReal.ofReal_lt_top⟩
+    lt_trans ht₀_lt ENNReal.ofReal_lt_top
   have hG_scaled_mem : MemLp (fun p => (t₀ / 2) * condScoreSqrt γ p) 2 (Q.prod ν) := by
     have h_eq : (fun p : 𝓨 × 𝓓 => (t₀ / 2) * condScoreSqrt γ p)
         = fun p => (condSqrt γ t₀ p - condSqrt γ 0 p) - condRem γ t₀ p := by
@@ -207,7 +228,7 @@ private lemma score_mul_sqrt_aestronglyMeasurable_comap
       (fun p : 𝓨 × 𝓓 => γ.score p.1 p.2
         * Real.sqrt ((γ.curve 0 p.1).rnDeriv ν p.2).toReal) (Q.prod ν) := by
   classical
-  haveI : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
+  have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
   -- Keep the observed sub-σ-algebra `m = M⁻¹σ_𝓧` explicit so the ambient
   -- product σ-algebra remains available.
   have hm : MeasurableSpace.comap M ‹MeasurableSpace 𝓧›
@@ -227,7 +248,7 @@ private lemma score_mul_sqrt_aestronglyMeasurable_comap
   -- Reinterpret the joint QMD limit through `condRem` (defeq unfold).
   have h_qmd : Tendsto (fun t : ℝ =>
       eLpNorm (condRem γ t) 2 (Q.prod ν) / ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) :=
-    γ.qmd_limit
+    jointQMDLimit_guarded M hM γ hCAR
   have hG_mem : MemLp (condScoreSqrt γ) 2 (Q.prod ν) :=
     condScoreSqrt_memLp M hM γ hCAR
   -- (2) The difference quotients `q t = (2/t)(√pₜ − √p₀)`, `m`-measurable and `L²`.

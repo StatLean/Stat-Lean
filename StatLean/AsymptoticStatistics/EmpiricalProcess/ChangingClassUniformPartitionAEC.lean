@@ -85,7 +85,7 @@ theorem partitionAEC_of_localOscillation
         ≤ μ.outerMeasureStar {ξ | ENNReal.ofReal η ≤ Z ξ} := by
       rw [Measure.outerMeasureStar, Measure.outerMeasureStar]
       apply outerExpectation_mono
-      exact Set.indicator_le_indicator_of_subset hsubset (fun _ => zero_le _)
+      exact Set.indicator_le_indicator_of_subset hsubset (fun _ => zero_le)
     _ ≤ outerExpectation μ Z / ENNReal.ofReal η :=
       outerExpectation_markov (ENNReal.ofReal η) hη0 hηtop
     _ < ENNReal.ofReal ε := by

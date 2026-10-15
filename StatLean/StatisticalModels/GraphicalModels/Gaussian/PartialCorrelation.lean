@@ -1,6 +1,6 @@
 import StatLean.StatisticalModels.GraphicalModels.Gaussian.Precision
 import Mathlib.Analysis.Matrix.PosDef
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Partial correlations — the scaled concentration matrix
@@ -166,7 +166,7 @@ theorem precisionMatrix_diag_eq_inv_condCovMatrix
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) (a : ι₂) :
     precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inr a)
       = (condCovMatrix S₁₁ S₁₂ S₂₂ a a)⁻¹ := by
-  haveI : Unique ι₂ := uniqueOfSubsingleton a
+  have : Unique ι₂ := uniqueOfSubsingleton a
   have hC : (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := posDef_condCovMatrix hJ
   have hmul : (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ * condCovMatrix S₁₁ S₁₂ S₂₂ = 1 :=
     Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp hC.isUnit)
@@ -330,7 +330,7 @@ private theorem det_principalSubmatrix_precisionMatrix
       simp [hT₁₁, hT₁₂, hT₂₂, principalSubmatrix, splitEquiv_inl, splitEquiv_inr, hsymm]
   have hT : (Matrix.fromBlocks T₁₁ T₁₂ T₁₂ᵀ T₂₂).PosDef :=
     hTeq ▸ posDef_submatrix_of_injective hS (splitEquiv A).injective
-  haveI : Invertible T₁₁ := (posDef_of_fromBlocks_inl hT).isUnit.invertible
+  have : Invertible T₁₁ := (posDef_of_fromBlocks_inl hT).isUnit.invertible
   have hdetT : (Matrix.fromBlocks T₁₁ T₁₂ T₁₂ᵀ T₂₂).det = S.det := by
     rw [← hTeq]; exact Matrix.det_submatrix_equiv_self _ S
   have hSdet : S.det = T₁₁.det * (condCovMatrix T₁₁ T₁₂ T₂₂).det := by
@@ -367,10 +367,10 @@ theorem partialCorr_sq
   have hsingle : ∀ k : ι, precisionMatrix S k k * S.det
       = (principalSubmatrix S (Finset.univ \ {k})).det := by
     intro k
-    haveI : Subsingleton ↥({k} : Finset ι) :=
+    have : Subsingleton ↥({k} : Finset ι) :=
       ⟨fun x y => Subtype.ext (by
         rw [Finset.mem_singleton.mp x.2, Finset.mem_singleton.mp y.2])⟩
-    haveI : Unique ↥({k} : Finset ι) :=
+    have : Unique ↥({k} : Finset ι) :=
       uniqueOfSubsingleton ⟨k, Finset.mem_singleton_self k⟩
     have h := det_principalSubmatrix_precisionMatrix hS {k}
     rw [Finset.compl_eq_univ_sdiff] at h

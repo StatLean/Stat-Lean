@@ -30,7 +30,7 @@ private theorem mixedEvalCLM_joint_apply
     (w : LinfF F × EuclideanSpace ℝ (Fin k)) (i : Fin m) :
     (mixedEvalCLM (linfEvalCLM F) a w).ofLp i = jointEval w (a i) := by
   cases h : a i with
-  | inl f => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]
+  | inl f => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]; rfl
   | inr j => simp [mixedEvalCLM, jointEval, linfEvalCLM, h]
 
 private theorem jointBridge_mixedEval_hasGaussianLaw
@@ -61,7 +61,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
     κ.map (mixedEvalCLM (linfEvalCLM F) a) =
       multivariateGaussian 0
         (marginalCovMatrix P (fun i => jointIndexFunction ψ (a i))) := by
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   let R := mixedEvalCLM (linfEvalCLM F) a
   let φ : Fin m → Ω → ℝ := fun i => jointIndexFunction ψ (a i)
   have hφmem : ∀ i, MemLp (φ i) 2 P := by
@@ -75,7 +75,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
   have hS : (marginalCovMatrix P φ).PosSemidef :=
     marginalCovMatrix_posSemidef_of_memLp φ hφmem
   have hRgauss : HasGaussianLaw R κ := jointBridge_mixedEval_hasGaussianLaw ψ hκ a
-  haveI hmap_gauss : IsGaussian (κ.map R) := hRgauss.isGaussian_map
+  have hmap_gauss : IsGaussian (κ.map R) := hRgauss.isGaussian_map
   have hRmem : MemLp R 2 κ := hRgauss.memLp_two
   change κ.map R = multivariateGaussian 0 (marginalCovMatrix P φ)
   refine ProbabilityTheory.IsGaussian.ext ?_ ?_
@@ -143,7 +143,7 @@ private theorem jointBridge_mixedEval_eq_multivariateGaussian
         MemLp (fun w => jointEval w (a q)) 2 κ := by
       intro q
       rw [← hcoord q]
-      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitz.comp_memLp
+      exact (EuclideanSpace.proj (𝕜 := ℝ) q).lipschitzWith.comp_memLp
         (map_zero _) hRmem
     rw [hcoord i, hcoord j]
     rw [ProbabilityTheory.covariance_eq_sub (hcoord_mem i) (hcoord_mem j),
@@ -342,7 +342,7 @@ private theorem jointEmpirical_mixed_weakConvergesOuter
       (multivariateGaussian 0 (marginalCovMatrix P φ)) := by
     have hlim_eq :
         (⟨(multivariateGaussian 0 (marginalCovMatrix P φ)).map Y,
-            Measure.isProbabilityMeasure_map hTID.aemeasurable_limit⟩ :
+            (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin m))) =
         ⟨multivariateGaussian 0 (marginalCovMatrix P φ), inferInstance⟩ :=
       Subtype.ext hYlaw.map_eq
@@ -391,8 +391,8 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
     hliteral (Ξ := Ξ) μ X hX_meas hX_indep hX_id hX_law
   obtain ⟨κ, hκ⟩ := exists_jointBridgeInfluence hν
     (fun f hf => hD.memLp hf) ψ
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   let Wn : ℕ → Ξ → LinfF F × EuclideanSpace ℝ (Fin k) := fun n ξ =>
     (empiricalProcessLinf (fun i : Fin n => X i.val ξ) (hmem n ξ),
       influenceEmpiricalVector P ψ n (fun i : Fin n => X i.val ξ))
@@ -405,10 +405,6 @@ theorem PDonskerProcessData.jointInfluence_weakConvergesOuter
   have hinfluenceWCO := jointEmpirical_mixed_weakConvergesOuter
     hD.measurable (fun f hf => hD.memLp hf) ψ hκ μ X hX_meas hX_indep
       hX_id hX_law hmem k ainfluence
-  haveI : IsProbabilityMeasure
-      (κ.map (mixedEvalCLM (linfEvalCLM F) ainfluence)) :=
-    Measure.isProbabilityMeasure_map
-      (mixedEvalCLM (linfEvalCLM F) ainfluence).continuous.measurable.aemeasurable
   have hinfluenceTightMixed : IsAsymptoticallyTight (fun _ => μ)
       (fun n ξ => mixedEvalCLM (linfEvalCLM F) ainfluence (Wn n ξ)) :=
     AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter

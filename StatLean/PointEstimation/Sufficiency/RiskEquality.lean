@@ -83,7 +83,6 @@ theorem riskRand_comp_eq_riskRand (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     -- USER-INPUT: the (possibly randomized) estimator whose risk is to be matched
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ) :
     riskRand (statLaw P T) L (κ ∘ₖ Q) θ = riskRand P L κ θ := by
-  haveI := isProbabilityMeasure_statLaw P hT θ
   have hF : Measurable fun x => ∫⁻ d, L θ d ∂(κ x) := (hL θ).lintegral_kernel
   calc riskRand (statLaw P T) L (κ ∘ₖ Q) θ
       = ∫⁻ t, ∫⁻ x, (∫⁻ d, L θ d ∂κ x) ∂Q t ∂(statLaw P T θ) := by
@@ -108,8 +107,8 @@ theorem exists_riskRand_eq_of_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsPr
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] :
     ∃ κ' : Kernel S D, IsMarkovKernel κ' ∧
       ∀ θ, riskRand (statLaw P T) L κ' θ = riskRand P L κ θ := by
-  obtain ⟨Q, hQ, hgraph⟩ := hsuf
-  haveI := hQ
+  obtain ⟨Q, hQ, hgraph⟩ := hsuf.exists_map hT
+  have := hQ
   exact ⟨κ ∘ₖ Q, inferInstance, fun θ => riskRand_comp_eq_riskRand P L hT hL hgraph κ θ⟩
 
 /-- A nonrandomized estimator, regarded as the Dirac kernel `x ↦ δ_{δ(x)}`, has its own risk

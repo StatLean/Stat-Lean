@@ -89,19 +89,19 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
   have hdomμ : ∀ θ, P θ ≪ μ := fun θ => (hP θ) ▸ withDensity_absolutelyContinuous μ (p θ)
   obtain ⟨θs, c, ν, hν, hcpos, hcsum, hdomν, -⟩ :=
     exists_equivalent_countable_mixture P μ hdomμ
-  haveI : IsProbabilityMeasure ν := ⟨by
+  have : IsProbabilityMeasure ν := ⟨by
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   -- the mixture as a density over `μ`, and its statistic-side aggregate
   set G : S → ℝ≥0∞ := fun t => ∑' i, c i * g (θs i) t with hGdef
-  have hGm : Measurable G := Measurable.ennreal_tsum fun i => measurable_const.mul (hg (θs i))
+  have hGm : Measurable G := Measurable.tsum fun i => measurable_const.mul (hg (θs i))
   set k : 𝓧 → ℝ≥0∞ := fun x => ∑' i, c i * p (θs i) x with hkdef
-  have hkm : Measurable k := Measurable.ennreal_tsum fun i => measurable_const.mul (hp (θs i))
+  have hkm : Measurable k := Measurable.tsum fun i => measurable_const.mul (hp (θs i))
   have hνk : ν = μ.withDensity k := by
     rw [hν]
     have he : (fun x => ∑' i, c i * p (θs i) x) = ∑' i, fun x => c i * p (θs i) x := by
       ext x; rw [ENNReal.tsum_apply]
-    rw [hkdef, he, withDensity_tsum (fun i => measurable_const.mul (hp (θs i)))]
+    erw [hkdef, he, withDensity_tsum (fun i => measurable_const.mul (hp (θs i)))]
     refine congrArg Measure.sum (funext fun i => ?_)
     rw [hP (θs i), ← withDensity_smul (c i) (hp (θs i))]
     congr 1
@@ -122,7 +122,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
   have hνE : ν {x | G (T x) = 0} = 0 := by
     rw [hνk, withDensity_apply k hEmeas, lintegral_congr_ae (ae_restrict_of_ae hkeq),
         setLIntegral_congr_fun hEmeas (g := 0) (fun x hx => by
-          simp only [Set.mem_setOf_eq] at hx; simp [hx])]
+          simp only [Set.mem_ofPred_eq] at hx; simp [hx])]
     simp
   -- for every member, `dPθ/dν` factors through `T`; then apply the criterion
   refine isSufficient_of_rnDeriv_comp P hT θs c ν hν hdomν (fun θ => ?_)
@@ -137,7 +137,7 @@ theorem isSufficient_of_isFactorizedDensity (P : Θ → Measure 𝓧)
     rw [hνk, ← withDensity_mul μ hkm hg'T, hP θ]
     refine withDensity_congr_ae ?_
     filter_upwards [hkeq, hkfin, hpθE, hfac θ] with x hkx hkfx hpz hpfac
-    show p θ x = k x * (g θ (T x) / G (T x))
+    change p θ x = k x * (g θ (T x) / G (T x))
     rw [hkx]
     rcases eq_or_ne (G (T x)) 0 with hb0 | hb0
     · rw [hpz hb0, hb0]; simp
@@ -173,7 +173,7 @@ theorem isFactorizedDensity_of_isSufficient (P : Θ → Measure 𝓧)
   have hdomμ : ∀ θ, P θ ≪ μ := fun θ => (hP θ) ▸ withDensity_absolutelyContinuous μ (p θ)
   obtain ⟨θs, c, ν, hν, -, hcsum, hdomν, -⟩ :=
     exists_equivalent_countable_mixture P μ hdomμ
-  haveI : IsProbabilityMeasure ν := ⟨by
+  have : IsProbabilityMeasure ν := ⟨by
     rw [hν, Measure.sum_apply _ MeasurableSet.univ]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
   have hνμ : ν ≪ μ := by

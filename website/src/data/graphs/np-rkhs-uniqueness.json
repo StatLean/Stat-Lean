@@ -7,7 +7,7 @@
     {"id":"inner_self_eq_norm_sq_to_K","label":"inner_self_eq_norm_sq_to_K","full":"inner_self_eq_norm_sq_to_K","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"RCLike.ofReal_inj","label":"ofReal_inj","full":"RCLike.ofReal_inj","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"algebraMap.coe_pow","label":"coe_pow","full":"algebraMap.coe_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
-    {"id":"Real.sqrt_sq","label":"sqrt_sq","full":"Real.sqrt_sq","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"Real.sqrt_sq","label":"sqrt_sq","full":"Real.sqrt_sq","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
     {"id":"norm_nonneg","label":"norm_nonneg","full":"norm_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"DenseRange.equalizer","label":"equalizer","full":"DenseRange.equalizer","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.DenseEmbedding"},
     {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},

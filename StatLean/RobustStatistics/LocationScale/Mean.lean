@@ -143,7 +143,7 @@ theorem meanFunctional_locationEquivariantOn :
     IsLocationEquivariantOn meanFunctional
       {P | IsProbabilityMeasure P ∧ Integrable id P} := by
   rintro P ⟨hPp, hPi⟩ a
-  haveI := hPp
+  have := hPp
   have hPi' : Integrable (fun x : ℝ => x) P := hPi
   have hmeas : Measurable (fun x : ℝ => x + a) := measurable_id.add_const a
   have h1 : ∫ y : ℝ, y ∂(P.map (fun x : ℝ => x + a)) = ∫ x : ℝ, (x + a) ∂P :=

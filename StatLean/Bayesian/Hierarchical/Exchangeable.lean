@@ -47,7 +47,7 @@ theorem iidKernel_map_perm (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) (
     (iidKernel κ n θ).map (fun x i => x (σ i)) = iidKernel κ n θ := by
   rw [iidKernel_apply]
   have hmeas : Measurable (fun (x : Fin n → 𝓧) i => x (σ i)) :=
-    measurable_pi_lambda _ (fun i => measurable_pi_apply (σ i))
+    Measurable.of_eval (fun i => measurable_pi_apply (σ i))
   refine (Measure.pi_eq fun s hs => ?_).symm
   rw [Measure.map_apply hmeas (MeasurableSet.univ_pi hs)]
   have hpre : (fun (x : Fin n → 𝓧) i => x (σ i)) ⁻¹' Set.univ.pi s
@@ -66,7 +66,7 @@ theorem conditionallyIID_implies_exchangeable (κ : Kernel Θ 𝓧) [IsMarkovKer
     IsExchangeable (iidKernel κ n ∘ₘ π) := by
   intro σ
   have hmeas : Measurable (fun (x : Fin n → 𝓧) i => x (σ i)) :=
-    measurable_pi_lambda _ (fun i => measurable_pi_apply (σ i))
+    Measurable.of_eval (fun i => measurable_pi_apply (σ i))
   ext s hs
   rw [Measure.map_apply hmeas hs,
       Measure.bind_apply hs (iidKernel κ n).measurable.aemeasurable,
@@ -89,8 +89,8 @@ theorem posterior_exchangeable_of_exchangeable_hierarchy (κ : Kernel Θ 𝓧) [
           invFun := fun x i => x (σ.symm i)
           left_inv := fun x => funext fun i => by simp only [σ.apply_symm_apply]
           right_inv := fun x => funext fun i => by simp only [σ.symm_apply_apply] }
-      measurable_toFun := measurable_pi_lambda _ (fun i => measurable_pi_apply (σ i))
-      measurable_invFun := measurable_pi_lambda _ (fun i => measurable_pi_apply (σ.symm i)) }
+      measurable_toFun := Measurable.of_eval (fun i => measurable_pi_apply (σ i))
+      measurable_invFun := Measurable.of_eval (fun i => measurable_pi_apply (σ.symm i)) }
   have he_map : (κ' ∘ₘ π).map (⇑e) = κ' ∘ₘ π :=
     conditionallyIID_implies_exchangeable κ n π σ
   -- `κ'` is invariant under permuting coordinates (both σ and σ.symm)
@@ -100,7 +100,6 @@ theorem posterior_exchangeable_of_exchangeable_hierarchy (κ : Kernel Θ 𝓧) [
     exact iidKernel_map_perm κ n θ σ.symm
   -- the candidate posterior at permuted data
   let η : Kernel (Fin n → 𝓧) Θ := Kernel.comap (κ'†π) (⇑e) e.measurable
-  haveI : IsMarkovKernel η := Kernel.IsMarkovKernel.comap (κ'†π) e.measurable
   -- key: the permuted joint equals the original joint, so `η` is a posterior
   have hstar : (κ' ∘ₘ π) ⊗ₘ η
       = ((κ' ∘ₘ π) ⊗ₘ (κ'†π)).map (Prod.map (⇑e.symm) id) := by
@@ -132,7 +131,7 @@ theorem posterior_exchangeable_of_exchangeable_hierarchy (κ : Kernel Θ 𝓧) [
         ← Measure.compProd_map e.symm.measurable, hκ'e]
   have hae := ae_eq_posterior_of_compProd_eq (μ := π) (κ := κ') h
   filter_upwards [hae] with x hx
-  show η x = (κ'†π) x
+  change η x = (κ'†π) x
   exact hx
 
 end StatLean.Bayesian

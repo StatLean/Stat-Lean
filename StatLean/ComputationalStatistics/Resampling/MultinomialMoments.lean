@@ -56,7 +56,6 @@ private theorem cast_categoricalCounts (a : Fin n → Fin m) (j : Fin m) :
 private theorem memLp_two_pi (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1)
     (F : (Fin n → Fin m) → ℝ) :
     MemLp F 2 (Measure.pi fun _ : Fin n => categorical q) := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   exact (memLp_two_iff_integrable_sq
     (Integrable.of_finite (f := F)).aestronglyMeasurable).mpr Integrable.of_finite
 
@@ -66,7 +65,7 @@ private theorem integral_coord_ite (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 
     (i : Fin n) (j : Fin m) (c : ℝ) :
     ∫ a, (if a i = j then c else 0) ∂(Measure.pi fun _ : Fin n => categorical q)
       = q j * c := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
+  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   have hmp := measurePreserving_eval (fun _ : Fin n => categorical q) i
   have hmap := integral_map (μ := Measure.pi fun _ : Fin n => categorical q)
     (φ := fun a : Fin n → Fin m => a i) (f := fun s : Fin m => if s = j then c else 0)
@@ -83,7 +82,7 @@ private theorem cov_coord_ne (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1)
     covariance (fun a : Fin n → Fin m => if a i = j then (1 : ℝ) else 0)
       (fun a : Fin n → Fin m => if a i' = k then (1 : ℝ) else 0)
       (Measure.pi fun _ : Fin n => categorical q) = 0 := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
+  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   have hind : iIndepFun (fun (i : Fin n) (a : Fin n → Fin m) => a i)
       (Measure.pi fun _ : Fin n => categorical q) :=
     iIndepFun_pi (X := fun _ : Fin n => (id : Fin m → Fin m)) fun _ => aemeasurable_id
@@ -99,7 +98,7 @@ private theorem cov_coord_same (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1)
       (fun a : Fin n → Fin m => if a i = k then (1 : ℝ) else 0)
       (Measure.pi fun _ : Fin n => categorical q)
       = (if j = k then q j else 0) - q j * q k := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
+  have : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   rw [covariance_eq_sub (memLp_two_pi hq0 hq1 _) (memLp_two_pi hq0 hq1 _)]
   have hprod : ∀ a : Fin n → Fin m,
       ((fun a : Fin n → Fin m => if a i = j then (1 : ℝ) else 0) *
@@ -125,9 +124,8 @@ theorem integral_categoricalCount
     (hq1 : ∑ i, q i = 1) (j : Fin m) :
     ∫ a, (categoricalCounts a j : ℝ) ∂(Measure.pi fun _ : Fin n => categorical q)
       = n * q j := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
-  rw [integral_finset_sum _ fun i _ => Integrable.of_finite,
+  rw [integral_finsetSum _ fun i _ => Integrable.of_finite,
     Finset.sum_congr rfl fun i _ => integral_coord_ite hq0 hq1 i j 1]
   simp
 
@@ -140,7 +138,6 @@ theorem variance_categoricalCount
     variance (fun a => (categoricalCounts a j : ℝ))
         (Measure.pi fun _ : Fin n => categorical q)
       = n * q j * (1 - q j) := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
   rw [variance_fun_sum fun i => memLp_two_pi hq0 hq1 _]
   have hrow : ∀ i : Fin n,
@@ -150,7 +147,7 @@ theorem variance_categoricalCount
         = q j - q j * q j := by
     intro i
     rw [Finset.sum_eq_single i (fun b _ hb => cov_coord_ne hq0 hq1 (Ne.symm hb) j j)
-      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j j, if_pos rfl]
+      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j j, ite_eq_left rfl]
   rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]
   ring
@@ -168,7 +165,6 @@ theorem covariance_categoricalCount
         (fun a => (categoricalCounts a k : ℝ))
         (Measure.pi fun _ : Fin n => categorical q)
       = -(n * q j * q k) := by
-  haveI : IsProbabilityMeasure (categorical q) := isProbabilityMeasure_categorical hq0 hq1
   simp only [cast_categoricalCounts]
   rw [covariance_fun_sum_fun_sum (fun i => memLp_two_pi hq0 hq1 _)
     fun i => memLp_two_pi hq0 hq1 _]
@@ -179,7 +175,7 @@ theorem covariance_categoricalCount
         = -(q j * q k) := by
     intro i
     rw [Finset.sum_eq_single i (fun b _ hb => cov_coord_ne hq0 hq1 (Ne.symm hb) j k)
-      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j k, if_neg hjk,
+      fun h => absurd (Finset.mem_univ i) h, cov_coord_same hq0 hq1 i j k, ite_eq_right hjk,
       zero_sub]
   rw [Finset.sum_congr rfl fun i _ => hrow i, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]

@@ -131,9 +131,9 @@ private lemma bddBelow_setOf_le_cdf (μ : Measure ℝ) [IsProbabilityMeasure μ]
     (ha : 0 < a) : BddBelow {x : ℝ | a ≤ cdf μ x} := by
   obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually_lt_const ha)
   refine ⟨b, fun y hy => ?_⟩
-  simp only [Set.mem_setOf_eq] at hy
+  simp only [Set.mem_ofPred_eq] at hy
   by_contra hc
-  push_neg at hc
+  push Not at hc
   exact absurd (hb y hc.le) (not_lt.mpr hy)
 
 /-- Below level `1` the sublevel set of a distribution function is nonempty, so the
@@ -280,9 +280,9 @@ theorem cdf_le_iff_exists_monotone_coupling
       exact hcdf x
     -- (The reparametrization is what buys the *global* `Monotone`; see the docstring of
     -- `exists_monotone_coupling_of_cdf_le`.)
-    haveI := isProbabilityMeasure_unitUniform
+    have := isProbabilityMeasure_unitUniform
     refine ⟨(volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv,
-      Measure.isProbabilityMeasure_map measurable_unitParamInv.aemeasurable,
+      (by infer_instance),
       (fun v => quantile (⇑(cdf μ₀)) (unitParam v)),
       (fun v => quantile (⇑(cdf μ₁)) (unitParam v)),
       monotone_quantile_unitParam μ₀, monotone_quantile_unitParam μ₁, ?_,
@@ -298,7 +298,7 @@ theorem cdf_le_iff_exists_monotone_coupling
       (nonempty_setOf_le_cdf μ₀ hp1) (bddBelow_setOf_le_cdf μ₀ hp0)).mpr
       (le_trans hq1 (hcdfc _))
   · rintro ⟨ν, hν, f₀, f₁, hf₀, hf₁, hle, hmap₀, hmap₁⟩
-    haveI := hν
+    have := hν
     exact cdf_le_of_monotone_coupling μ₀ μ₁ ν f₀ f₁ hf₀ hf₁ hle hmap₀ hmap₁
 
 end StatLean.HypothesisTesting

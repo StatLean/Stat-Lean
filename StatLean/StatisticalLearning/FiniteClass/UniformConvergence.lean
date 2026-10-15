@@ -79,7 +79,7 @@ theorem measure_empRisk_deviation_le {h : H} {ε : ℝ}
   have hindep : iIndepFun (fun (i : Fin n) (s : Sample Z n) => ℓ h (s i) - r) μ := by
     have := (iIndepFun_eval_sampleLaw (D := D) (n := n)).comp
       (fun _ : Fin n => fun z : Z => ℓ h z - r) (fun _ => hmeas.sub_const r)
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   -- one-sided Hoeffding tail, for any independent sub-Gaussian family
   have key : ∀ Y : Fin n → Sample Z n → ℝ, iIndepFun Y μ →
       (∀ i, HasSubgaussianMGF (Y i) (4⁻¹ : ℝ≥0) μ) →
@@ -176,7 +176,7 @@ theorem finiteClass_hasUniformConvergenceWith (𝓗 : Finset H)
     HasUniformConvergenceWith (↑𝓗 : Set H) ℓ
       (fun ε δ => ⌈Real.log (2 * 𝓗.card / δ) / (2 * ε ^ 2)⌉₊) := by
   intro D hD ε δ hε hδ hδ1 n hn
-  haveI := hD
+  have := hD
   have hN1 : (1 : ℝ) ≤ (𝓗.card : ℝ) := by
     exact_mod_cast Finset.card_pos.mpr h𝓗
   have hlogpos : 0 < Real.log (2 * 𝓗.card / δ) := by
@@ -211,7 +211,7 @@ theorem finiteClass_hasUniformConvergenceWith (𝓗 : Finset H)
   have hcompl : {s : Sample Z n | UniformDeviationLE D (↑𝓗 : Set H) ℓ s ε}ᶜ ⊆
       {s : Sample Z n | ∃ h ∈ 𝓗, ε < |empRisk ℓ s h - risk D ℓ h|} := by
     intro s hs
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, UniformDeviationLE, not_forall,
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, UniformDeviationLE, not_forall,
       Finset.mem_coe, not_le] at hs
     obtain ⟨h, hh, hlt⟩ := hs
     exact ⟨h, hh, hlt⟩

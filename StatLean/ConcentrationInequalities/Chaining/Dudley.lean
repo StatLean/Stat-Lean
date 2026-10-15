@@ -293,52 +293,52 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
   set g : ℝ → ℝ≥0∞ := fun u => ENNReal.ofReal (sqrtLogCov T u) with hgdef
   have hg_meas : Measurable g := (measurable_sqrtLogCov T).ennreal_ofReal
   -- (a) subset-half pointwise bound on `Ioc 0 D`.
-  have ha : ∫⁻ ε in Set.Ioc (0:ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
-      ≤ ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2) := by
+  have ha : ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2) := by
     refine setLIntegral_mono' measurableSet_Ioc (fun ε hε => ?_)
     exact ENNReal.ofReal_le_ofReal
       (sqrtLogCov_subset_half_le hST hε.1.le (hcov (ε / 2) (by linarith [hε.1])))
   -- (b) change of variables `ε = 2u`.
-  have hb : ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2)
-      = 2 * ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := by
-    have hF : Measurable (Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2))) :=
+  have hb : ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2)
+      = 2 * ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := by
+    have hF : Measurable (Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2))) :=
       (hg_meas.comp (measurable_id.div_const 2)).indicator measurableSet_Ioc
     have step1 :
-        ∫⁻ u, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
-          = ENNReal.ofReal (|(2:ℝ)⁻¹|)
-              * ∫⁻ ε, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) ε ∂volume := by
+        ∫⁻ u, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
+          = ENNReal.ofReal (|(2 : ℝ)⁻¹|)
+              * ∫⁻ ε, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) ε ∂volume := by
       rw [← lintegral_map hF (measurable_const_mul 2),
-        Real.map_volume_mul_left (by norm_num : (2:ℝ) ≠ 0), lintegral_smul_measure,
+        Real.map_volume_mul_left (by norm_num : (2 : ℝ) ≠ 0), lintegral_smul_measure,
         smul_eq_mul]
     rw [lintegral_indicator measurableSet_Ioc] at step1
     have hLHS :
-        ∫⁻ u, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
-          = ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := by
+        ∫⁻ u, Set.indicator (Set.Ioc (0 : ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
+          = ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := by
       rw [← lintegral_indicator measurableSet_Ioc]
       apply lintegral_congr
       intro u
-      by_cases hu : u ∈ Set.Ioc (0:ℝ) (D / 2)
-      · have h2u : 2 * u ∈ Set.Ioc (0:ℝ) D := ⟨by linarith [hu.1], by linarith [hu.2]⟩
+      by_cases hu : u ∈ Set.Ioc (0 : ℝ) (D / 2)
+      · have h2u : 2 * u ∈ Set.Ioc (0 : ℝ) D := ⟨by linarith [hu.1], by linarith [hu.2]⟩
         rw [Set.indicator_of_mem h2u, Set.indicator_of_mem hu]
-        show g (2 * u / 2) = g u
+        change g (2 * u / 2) = g u
         congr 1; ring
-      · have h2u : 2 * u ∉ Set.Ioc (0:ℝ) D := by
+      · have h2u : 2 * u ∉ Set.Ioc (0 : ℝ) D := by
           intro hmem; exact hu ⟨by linarith [hmem.1], by linarith [hmem.2]⟩
         rw [Set.indicator_of_notMem h2u, Set.indicator_of_notMem hu]
     rw [hLHS] at step1
-    have hc2 : (2:ℝ≥0∞) * ENNReal.ofReal (|(2:ℝ)⁻¹|) = 1 := by
-      rw [abs_of_pos (by norm_num : (0:ℝ) < (2:ℝ)⁻¹),
-        show (2:ℝ≥0∞) = ENNReal.ofReal 2 from by norm_num,
-        ← ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]
+    have hc2 : (2 : ℝ≥0∞) * ENNReal.ofReal (|(2 : ℝ)⁻¹|) = 1 := by
+      rw [abs_of_pos (by norm_num : (0 : ℝ) < (2 : ℝ)⁻¹),
+        show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from by norm_num,
+        ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]
       norm_num
     rw [step1, ← mul_assoc, hc2, one_mul]
   -- (c) shrink the cap `D/2 ≤ D`.
-  have hc : ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u ≤ ∫⁻ u in Set.Ioc (0:ℝ) D, g u :=
+  have hc : ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u ≤ ∫⁻ u in Set.Ioc (0 : ℝ) D, g u :=
     lintegral_mono_set (Set.Ioc_subset_Ioc_right (by linarith))
-  calc ∫⁻ ε in Set.Ioc (0:ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
-      ≤ ∫⁻ ε in Set.Ioc (0:ℝ) D, g (ε / 2) := ha
-    _ = 2 * ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := hb
-    _ ≤ 2 * ∫⁻ u in Set.Ioc (0:ℝ) D, g u := by gcongr
+  calc ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (sqrtLogCov S ε)
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) D, g (ε / 2) := ha
+    _ = 2 * ∫⁻ u in Set.Ioc (0 : ℝ) (D / 2), g u := hb
+    _ ≤ 2 * ∫⁻ u in Set.Ioc (0 : ℝ) D, g u := by gcongr
 
 /-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
 
@@ -631,7 +631,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
     rintro x ⟨k, rfl⟩
     refine Set.mem_iUnion.2 ⟨k + 1, ?_⟩
     rw [hS, Finset.coe_insert, Set.mem_insert_iff, Finset.coe_image]
-    exact Or.inr ⟨k, by simp [Finset.mem_range], rfl⟩
+    exact Or.inr ⟨k, by simp, rfl⟩
   -- `↑(S n)`-biSup as a `Finset.sup'` (real and `ℝ≥0∞`).
   have Ssup : ∀ (h : E → ℝ) (n : ℕ), (∀ t ∈ S n, 0 ≤ h t) →
       (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n h0 => by
@@ -679,7 +679,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
       simp only [hΦ]
       rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
         Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _),
-        Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal
+        Finset.apply_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal
           (fun x y => ENNReal.ofReal_max x y)]
       rfl
     -- Bridge the `↑(S n)`-biSup Bochner integrand to the `Finset.sup'` carrier

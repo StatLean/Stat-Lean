@@ -14,7 +14,8 @@ full-space family.
 **Proof formalization notes.** All three lemmas are one-line filter/order arguments
 (`tsub_le_tsub_left` for the level, `measure_mono` for the sets, `measure_univ` for the trivial
 family — the last needs the posterior values to be probability measures, e.g. any Markov `post`).
-The decision-theoretic refinement (HPD regions minimize volume at fixed credibility, Gelman §2.3) is a Batch-3 target recorded in `notes/bayesian/roadmap.md`.
+The decision-theoretic refinement (HPD regions minimize volume at fixed credibility,
+Gelman §2.3) is a Batch-3 target recorded in `notes/bayesian/roadmap.md`.
 
 **Bibliographic comments.** Credible regions are the Bayesian counterpart of Neyman's confidence
 sets; the highest-posterior-density convention is systematized in G. E. P. Box and G. C. Tiao,

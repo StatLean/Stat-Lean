@@ -91,7 +91,7 @@ private lemma eq_snoc_diffs_add (x : Fin (m + 1) → ℝ) :
 /-- Appending a zero last coordinate is a measurable map. -/
 private lemma measurable_snoc_zero :
     Measurable (fun y : Fin m → ℝ => (Fin.snoc y (0 : ℝ) : Fin (m + 1) → ℝ)) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro j
   induction j using Fin.lastCases with
   | last => simp only [Fin.snoc_last]; exact measurable_const
@@ -99,7 +99,7 @@ private lemma measurable_snoc_zero :
 
 /-- The difference statistic is measurable. -/
 theorem measurable_diffs : Measurable (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro i
   exact (measurable_pi_apply i.castSucc).sub (measurable_pi_apply (Fin.last m))
 
@@ -114,7 +114,7 @@ equivariant estimator. -/
 theorem IsLocEquivariant.sub_const {δ : (Fin n → ℝ) → ℝ} (hδ : IsLocEquivariant δ)
     (a : ℝ) : IsLocEquivariant fun x => δ x - a := by
   intro b x
-  show δ (x + b • (1 : Fin n → ℝ)) - a = (δ x - a) + b
+  change δ (x + b • (1 : Fin n → ℝ)) - a = (δ x - a) + b
   rw [hδ b x]; ring
 
 /-- Subtracting a translation-invariant function from an equivariant estimator leaves it
@@ -123,7 +123,7 @@ theorem IsLocEquivariant.sub_invariant {δ : (Fin n → ℝ) → ℝ} {u : (Fin 
     (hδ : IsLocEquivariant δ) (hu : IsLocInvariant u) :
     IsLocEquivariant fun x => δ x - u x := by
   intro b x
-  show δ (x + b • (1 : Fin n → ℝ)) - u (x + b • (1 : Fin n → ℝ)) = (δ x - u x) + b
+  change δ (x + b • (1 : Fin n → ℝ)) - u (x + b • (1 : Fin n → ℝ)) = (δ x - u x) + b
   rw [hδ b x, hu b x]; ring
 
 /-! ### Constant risk -/
@@ -164,11 +164,11 @@ theorem isLocEquivariant_iff_sub_invariant {δ₀ : (Fin n → ℝ) → ℝ}
     IsLocEquivariant δ ↔ IsLocInvariant fun x => δ x - δ₀ x := by
   constructor
   · intro hδ a x
-    show δ (x + a • (1 : Fin n → ℝ)) - δ₀ (x + a • (1 : Fin n → ℝ)) = δ x - δ₀ x
+    change δ (x + a • (1 : Fin n → ℝ)) - δ₀ (x + a • (1 : Fin n → ℝ)) = δ x - δ₀ x
     rw [hδ a x, h₀ a x]; ring
   · intro hu a x
     have hux := hu a x
-    show δ (x + a • (1 : Fin n → ℝ)) = δ x + a
+    change δ (x + a • (1 : Fin n → ℝ)) = δ x + a
     simp only at hux
     rw [h₀ a x] at hux
     linarith
@@ -215,10 +215,16 @@ theorem isLocEquivariant_iff_exists_diffs_rep {δ₀ : (Fin (m + 1) → ℝ) →
   constructor
   · rintro ⟨v, hv⟩
     refine ⟨fun y => - v y, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x = δ₀ x - -v (diffs x)
+    linarith
   · rintro ⟨v, hv⟩
     refine ⟨fun y => - v y, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x - δ₀ x = -v (diffs x)
+    linarith
 
 /-- Measurable version of the representation of the equivariant class: measurable
 equivariant estimators correspond to measurable functions of the differences. -/
@@ -238,7 +244,10 @@ theorem isLocEquivariant_iff_exists_diffs_rep_measurable {δ₀ : (Fin (m + 1) �
     obtain ⟨v, hvm, hv⟩ :=
       (isLocInvariant_iff_factors_diffs_measurable _).mp ⟨hδm.sub h₀meas, hinv⟩
     refine ⟨fun y => - v y, hvm.neg, fun x => ?_⟩
-    have hvx := hv x; dsimp only at hvx ⊢; linarith
+    have hvx := hv x
+    try simp only [Pi.sub_apply] at hvx
+    change δ x = δ₀ x - -v (diffs x)
+    linarith
   · rintro ⟨v, hvm, hv⟩
     have heq : IsLocEquivariant δ :=
       (isLocEquivariant_iff_exists_diffs_rep h₀ δ).mpr ⟨v, hv⟩

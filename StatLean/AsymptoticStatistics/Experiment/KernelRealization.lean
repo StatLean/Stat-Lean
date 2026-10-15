@@ -5,7 +5,8 @@ import Mathlib.Probability.Independence.Basic
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Measure.Stieltjes
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal
 import Mathlib.MeasureTheory.Function.Floor
 
@@ -92,7 +93,7 @@ lemma leftInverse_le_iff (F : StieltjesFunction ℝ)
     obtain ⟨y, hy_mem, hy_lt⟩ :=
       exists_lt_of_csInf_lt hS_ne (lt_of_le_of_lt h hr)
     exact hy_mem.trans (F.mono hy_lt.le)
-  haveI : Nonempty (Set.Ioi x) := ⟨⟨x + 1, show x < x + 1 by linarith⟩⟩
+  have : Nonempty (Set.Ioi x) := ⟨⟨x + 1, show x < x + 1 by linarith⟩⟩
   calc u ≤ ⨅ r : Set.Ioi x, F r := le_ciInf (fun r => h_all_gt r.1 r.2)
     _ = F x := F.iInf_Ioi_eq x
 
@@ -165,17 +166,17 @@ lemma leftInverse_measurable (F : StieltjesFunction ℝ)
       · rcases le_or_gt u 0 with hu0 | hu0
         · -- u ≤ 0: leftInverse u = 0, so 0 ≤ y.
           rw [leftInverse_of_nonpos F hF_atBot hu0] at h_li_le
-          left; right; rw [if_pos h_li_le]; left; exact hu0
+          left; right; rw [ite_eq_left h_li_le]; left; exact hu0
         · -- 0 < u < 1: Galois iff.
           left; left
           exact ⟨⟨hu0, hu1⟩,
             (leftInverse_le_iff F hF_atBot hF_atTop hu0 hu1).mp h_li_le⟩
       · -- u = 1.
         subst hu1
-        right; rw [if_pos h_li_le]; rfl
+        right; rw [ite_eq_left h_li_le]; rfl
       · -- u > 1: leftInverse u = 0, so 0 ≤ y.
         rw [leftInverse_of_one_lt F hF_atTop hu1] at h_li_le
-        left; right; rw [if_pos h_li_le]; right; exact hu1
+        left; right; rw [ite_eq_left h_li_le]; right; exact hu1
     · rintro ((h_gal | h_outside) | h_one)
       · obtain ⟨⟨hu0, hu1⟩, h_fy⟩ := h_gal
         exact (leftInverse_le_iff F hF_atBot hF_atTop hu0 hu1).mpr h_fy
@@ -209,8 +210,7 @@ lemma leftInverse_map_uniform (F : StieltjesFunction ℝ)
     le_of_tendsto hF_atBot ((eventually_le_atBot x).mono fun z hz => F.mono hz)
   have hF_le_one : ∀ x, F x ≤ 1 := fun x =>
     ge_of_tendsto hF_atTop ((eventually_ge_atTop x).mono fun z hz => F.mono hz)
-  haveI : IsProbabilityMeasure F.measure := F.isProbabilityMeasure hF_atBot hF_atTop
-  haveI : IsFiniteMeasure ((volume.restrict (Set.Ioo (0 : ℝ) 1)).map F.leftInverse) := by
+  have : IsFiniteMeasure ((volume.restrict (Set.Ioo (0 : ℝ) 1)).map F.leftInverse) := by
     refine ⟨?_⟩
     rw [Measure.map_apply h_meas MeasurableSet.univ, Set.preimage_univ,
       Measure.restrict_apply MeasurableSet.univ, Set.univ_inter, Real.volume_Ioo, sub_zero]
@@ -288,21 +288,21 @@ lemma parametric_leftInverse_measurable {α : Type*} [MeasurableSpace α]
       = {p : α × ℝ | p.2 ∈ Set.Ioo (0 : ℝ) 1 ∧ p.2 ≤ F p.1 y}
         ∪ (if (0 : ℝ) ≤ y then {p : α × ℝ | p.2 ∉ Set.Ioo (0 : ℝ) 1} else ∅) := by
     ext ⟨a, u⟩
-    simp only [Set.mem_setOf_eq, Set.mem_union]
+    simp only [Set.mem_ofPred_eq, Set.mem_union]
     constructor
     · intro h
       by_cases hu : u ∈ Set.Ioo (0 : ℝ) 1
-      · rw [if_pos hu] at h
+      · rw [ite_eq_left hu] at h
         obtain ⟨hu0, hu1⟩ := hu
         exact Or.inl ⟨⟨hu0, hu1⟩,
           (leftInverse_le_iff (F a) (hF_atBot a) (hF_atTop a) hu0 hu1).mp h⟩
-      · rw [if_neg hu] at h
-        exact Or.inr (by rw [if_pos h]; exact hu)
+      · rw [ite_eq_right hu] at h
+        exact Or.inr (by rw [ite_eq_left h]; exact hu)
     · rintro (⟨⟨hu0, hu1⟩, h_fy⟩ | h_out)
-      · rw [if_pos ⟨hu0, hu1⟩]
+      · rw [ite_eq_left ⟨hu0, hu1⟩]
         exact (leftInverse_le_iff (F a) (hF_atBot a) (hF_atTop a) hu0 hu1).mpr h_fy
       · split_ifs at h_out with h_0y
-        · rw [if_neg h_out]; exact h_0y
+        · rw [ite_eq_right h_out]; exact h_0y
         · exact absurd h_out (Set.notMem_empty _)
   rw [h_eq]
   refine MeasurableSet.union ?_ ?_
@@ -311,7 +311,7 @@ lemma parametric_leftInverse_measurable {α : Type*} [MeasurableSpace α]
       measurable_snd measurableSet_Ioo
     have h_le : MeasurableSet {p : α × ℝ | p.2 ≤ F p.1 y} :=
       measurableSet_le measurable_snd ((hF_meas y).comp measurable_fst)
-    convert h_Ioo.inter h_le using 1
+    convert! h_Ioo.inter h_le using 1
   · split_ifs
     · exact (measurable_snd measurableSet_Ioo).compl
     · exact MeasurableSet.empty
@@ -345,7 +345,7 @@ lemma hasUniformRealization_1d_of_stieltjes {α : Type*} [MeasurableSpace α]
           =ᵐ[volume.restrict (Set.Ioo (0 : ℝ) 1)] (F a).leftInverse := by
       refine (ae_restrict_iff' measurableSet_Ioo).mpr (ae_of_all _ ?_)
       intro u hu
-      exact if_pos hu
+      exact ite_eq_left hu
     rw [Measure.map_congr h_ae_eq]
     exact leftInverse_map_uniform (F a) (hF_atBot a) (hF_atTop a)
 
@@ -407,11 +407,11 @@ lemma hasUniformRealization_1d {α : Type*} [MeasurableSpace α]
     · -- tendsto atTop 1
       have h_ennreal : Tendsto (fun q : ℚ => (κ a) (Set.Iic (q : ℝ))) atTop (𝓝 1) :=
         h_meas_Iic_atTop.comp h_cast_atTop
-      simpa using (ENNReal.tendsto_toReal (by norm_num : (1 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
+      simpa using! (ENNReal.tendsto_toReal (by norm_num : (1 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
     · -- tendsto atBot 0
       have h_ennreal : Tendsto (fun q : ℚ => (κ a) (Set.Iic (q : ℝ))) atBot (𝓝 0) :=
         h_meas_Iic_atBot.comp h_cast_atBot
-      simpa using (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
+      simpa using! (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp h_ennreal
     · -- iInf right-continuity: ⨅ r : Ioi t, f a r = f a t.
       intro t
       -- Step A: the intersection of `Iic r` for rationals r > t equals `Iic t` (in ℝ).
@@ -515,7 +515,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
       MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0
     -- Map κ through e; first marginal; conditional kernel for the rest.
     let κ' : Kernel α (ℝ × (Fin n → ℝ)) := κ.map e
-    haveI : IsMarkovKernel κ' := Kernel.IsMarkovKernel.map κ e.measurable
+    have : IsMarkovKernel κ' := Kernel.IsMarkovKernel.map κ e.measurable
     let κ₀ : Kernel α ℝ := κ'.fst
     let κ_rest : Kernel (α × ℝ) (Fin n → ℝ) := κ'.condKernel
     -- Recursive realizations.
@@ -531,7 +531,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
       have h_u₀ : Measurable fun p : α × (Fin (n + 1) → ℝ) => p.2 0 :=
         (measurable_pi_apply 0).comp measurable_snd
       have h_tail : Measurable fun p : α × (Fin (n + 1) → ℝ) => Fin.tail p.2 :=
-        measurable_pi_lambda _ fun i =>
+        Measurable.of_eval fun i =>
           (measurable_pi_apply (Fin.succ i)).comp measurable_snd
       have h_x₀ : Measurable fun p : α × (Fin (n + 1) → ℝ) => T₁ (p.1, p.2 0) :=
         hT₁_meas.comp (measurable_fst.prodMk h_u₀)
@@ -543,7 +543,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
           (T₁ (p.1, p.2 0),
             T_rest ((p.1, T₁ (p.1, p.2 0)), Fin.tail p.2)) :=
         h_x₀.prodMk h_rest
-      convert e.symm.measurable.comp h_pair using 1
+      convert! e.symm.measurable.comp h_pair using 1
       funext p
       simp only [Function.comp, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
         Fin.insertNthEquiv_zero, Equiv.coe_fn_mk, Fin.consEquiv]
@@ -604,7 +604,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
             Fin (n + 1) → ℝ)) := by
         have h_u₀ : Measurable fun U : Fin (n + 1) → ℝ => U 0 := measurable_pi_apply 0
         have h_tail : Measurable fun U : Fin (n + 1) → ℝ => Fin.tail U :=
-          measurable_pi_lambda _ fun i => measurable_pi_apply (Fin.succ i)
+          Measurable.of_eval fun i => measurable_pi_apply (Fin.succ i)
         have h_x₀ : Measurable fun U : Fin (n + 1) → ℝ => T₁ (a, U 0) :=
           h_T₁_sec.comp h_u₀
         have h_rest_val : Measurable fun U : Fin (n + 1) → ℝ =>
@@ -613,7 +613,7 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
         have h_pair : Measurable fun U : Fin (n + 1) → ℝ =>
             (T₁ (a, U 0), T_rest ((a, T₁ (a, U 0)), Fin.tail U)) :=
           h_x₀.prodMk h_rest_val
-        convert e.symm.measurable.comp h_pair using 1
+        convert! e.symm.measurable.comp h_pair using 1
         funext U
         simp only [Function.comp, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
           Fin.insertNthEquiv_zero, Equiv.coe_fn_mk, Fin.consEquiv]
@@ -724,9 +724,9 @@ def deinterleave : (ℕ → Bool) ≃ᵐ (ℕ → Bool) × (ℕ → Bool) where
     change Measurable (fun p : (ℕ → Bool) × (ℕ → Bool) =>
       if n % 2 = 0 then p.1 (n / 2) else p.2 (n / 2))
     by_cases h : n % 2 = 0
-    · simp_rw [if_pos h]
+    · simp_rw [ite_eq_left h]
       exact (measurable_pi_apply (n / 2)).comp measurable_fst
-    · simp_rw [if_neg h]
+    · simp_rw [ite_eq_right h]
       exact (measurable_pi_apply (n / 2)).comp measurable_snd
 
 /-! ### Halmos / Lebesgue–Bernoulli isomorphism
@@ -916,7 +916,7 @@ lemma kernel_realization_of_joint_distribution
       P.map (fun ω => (T (Δ ω, U ω), Δ ω)) = P.map (fun ω => (S ω, Δ ω)) := by
   -- Step 1.  The conditional distribution `κ := condDistrib S Δ P`, a Markov kernel.
   set κ : Kernel (Fin k → ℝ) (Fin d → ℝ) := condDistrib S Δ P with hκ_def
-  haveI : IsMarkovKernel κ := by rw [hκ_def]; infer_instance
+  have : IsMarkovKernel κ := by rw [hκ_def]; infer_instance
   -- Step 2.  Step 4 — pull a measurable realization `T` of `κ` from `(Uniform[0,1])^d`.
   obtain ⟨T, hT_meas, hT_law⟩ := hasUniformRealization κ
   refine ⟨T, hT_meas, ?_⟩
@@ -924,7 +924,7 @@ lemma kernel_realization_of_joint_distribution
   have hΔU_indep : IndepFun Δ U P := by
     have := IndepFun.comp hU_indep (φ := Prod.snd) (ψ := id) measurable_snd measurable_id
     -- `(Prod.snd ∘ fun ω => (S ω, Δ ω)) = Δ`, `id ∘ U = U`.
-    simpa using this
+    simpa using! this
   -- Step 4.  Joint law of `(Δ, U)` factors as `P_Δ × P_U`.
   have hΔU_law : P.map (fun ω => (Δ ω, U ω)) = (P.map Δ).prod (P.map U) :=
     (indepFun_iff_map_prod_eq_prod_map_map hΔ.aemeasurable hU.aemeasurable).mp hΔU_indep
@@ -946,15 +946,10 @@ lemma kernel_realization_of_joint_distribution
     rw [Measure.map_map measurable_swap (hΔ.prodMk hS)]
     rfl
   have hcompProd : (P.map Δ) ⊗ₘ κ = P.map (fun ω => (Δ ω, S ω)) := by
-    simpa [hκ_def] using compProd_map_condDistrib (X := Δ) (Y := S) hS.aemeasurable
+    simpa [hκ_def] using compProd_map_condDistrib (X := Δ) (Y := S) hΔ.aemeasurable hS.aemeasurable
   rw [hLHS_eq, hSwap_eq, ← hcompProd]
   -- Step 6.  Show `((P.map Δ).prod (P.map U)).map g = ((P.map Δ) ⊗ₘ κ).map Prod.swap`.
   -- Both sides are probability measures; check equality on rectangles via `Measure.ext_prod`.
-  haveI : IsProbabilityMeasure (P.map Δ) := Measure.isProbabilityMeasure_map hΔ.aemeasurable
-  haveI : IsProbabilityMeasure (P.map U) := Measure.isProbabilityMeasure_map hU.aemeasurable
-  haveI : IsProbabilityMeasure ((P.map Δ).prod (P.map U)) := inferInstance
-  haveI : IsProbabilityMeasure (((P.map Δ).prod (P.map U)).map g) :=
-    Measure.isProbabilityMeasure_map hg_meas.aemeasurable
   refine Measure.ext_prod (μ := ((P.map Δ).prod (P.map U)).map g)
     (ν := ((P.map Δ) ⊗ₘ κ).map Prod.swap) ?_
   intro A B hA hB

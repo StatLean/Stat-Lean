@@ -14,9 +14,9 @@ exceed `δₙ` in absolute value tends to `0` in `E_{θ₀}`.
 
 Objects:
 * `dl_compress_reduction` — the single passage from the abstract posterior `κ†Π` to the ratio
-  functions (`NormalMeansModel` bridge) together with the count split `|supp_δ(θ)| ≤ q + |supp_δ|_{Sᶜ}`
-  and the tensorization (BPPD eq. (26), `CoordinateSplit`): the general-`θ₀` compress event is bounded
-  by the truth-`0` compress event on the `S₀ᶜ`-submodel.
+  functions (`NormalMeansModel` bridge) together with the count split
+  `|supp_δ(θ)| ≤ q + |supp_δ|_{Sᶜ}` and the tensorization (BPPD eq. (26), `CoordinateSplit`): the
+  general-`θ₀` compress event is bounded by the truth-`0` compress event on the `S₀ᶜ`-submodel.
 * (A fixed-`n` `dl_theorem34_engine` intermediate was **removed** — its stub exponent was provably
   unattainable and it was orphaned; the headlines call `dl_compress_reduction ∘
   compress_ratio_le_explicit` directly. See the D12 note where it stood.)
@@ -28,8 +28,8 @@ Objects:
 **Reference.** Bhattacharya–Pati–Pillai–Dunson, *Dirichlet–Laplace priors for optimal shrinkage*,
 JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Theorem 3.4 (statement p. 9, proof pp. 18–19).
 
-**Proof formalization notes.** The skeleton is *reduction → denominator event → Chernoff*: bridge the
-posterior once (`dl_compress_reduction`), split the ratio integral at the denominator threshold
+**Proof formalization notes.** The skeleton is *reduction → denominator event → Chernoff*: bridge
+the posterior once (`dl_compress_reduction`), split the ratio integral at the denominator threshold
 (`DenominatorLowerBound`), identify the numerator mean with the prior mass (`NormalMeansModel`), and
 bound the prior mass of a large δ-support by the support-count Chernoff bound (`PriorSmallBall`,
 `DensityBounds` for `ζ`). The asymptotics live only in the two thin corollaries.
@@ -42,8 +42,8 @@ bound the prior mass of a large δ-support by the support-count Chernoff bound (
   Theorem 3.4 is false. Carried as the explicit `hq1` hypothesis (implicit in the paper).
 
 **Bibliographic comments.** Posterior contraction after Ghosal, Ghosh, and van der Vaart
-(*Ann. Statist.* 28 (2000), 500–531); sparse-sequence compressibility after Castillo and van der Vaart
-(*Ann. Statist.* 40 (2012), 2069–2101).
+(*Ann. Statist.* 28 (2000), 500–531); sparse-sequence compressibility after Castillo and van der
+Vaart (*Ann. Statist.* 40 (2012), 2069–2101).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
@@ -112,7 +112,7 @@ private lemma dlSuppCount_le_card_add_projS {ι : Type*} [Fintype ι] (δ : ℝ)
   rw [hBeq]
   -- `|supp_δ θ| = |{large}∩S₀| + |{large}\S₀| ≤ |S₀| + |{large}\S₀|`.
   unfold dlSuppCount
-  have hsplit := Finset.filter_card_add_filter_neg_card_eq_card
+  have hsplit := Finset.card_filter_add_card_filter_not
     (s := Finset.univ.filter (fun j : ι => δ < |θ j|)) (p := fun j => j ∈ S₀)
   have hle : ((Finset.univ.filter (fun j : ι => δ < |θ j|)).filter (fun j => j ∈ S₀)).card
       ≤ S₀.card := by
@@ -134,7 +134,8 @@ compress-ratio integral on the `S₀ᶜ`-submodel: the posterior is bridged once
 theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
     -- LEAN-ONLY: 0 < a — DL scale at a junk-free index; engine-internal.
     (ha : 0 < a) (θ₀ : EuclideanSpace ℝ ι) (S₀ : Finset ι)
-    -- LEAN-ONLY: θ₀ supported on S₀; engine-internal (the truth's support, `= o(n)` in the assembly).
+    -- LEAN-ONLY: θ₀ supported on S₀; engine-internal
+    -- (the truth's support, `= o(n)` in the assembly).
     (hθ₀ : ∀ i ∉ S₀, θ₀ i = 0) (k : ℕ) :
     ∫⁻ y, ((gaussShiftKernel ι)†(dlPrior a ι)) y
             {θ | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)}
@@ -168,7 +169,7 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
   have hsub : {θ : EuclideanSpace ℝ ι | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)}
       ⊆ projS Sᶜ ⁻¹' {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} := by
     intro θ hθ
-    simp only [Set.mem_preimage, Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq] at hθ ⊢
     have hcount := dlSuppCount_le_card_add_projS δ S₀ θ
     have : ((S₀.card : ℝ) + k) < (S₀.card : ℝ) + (dlSuppCount δ (projS Sᶜ θ) : ℝ) :=
       lt_of_lt_of_le hθ (by exact_mod_cast hcount)
@@ -182,7 +183,7 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
   have hmproj : Measurable (projS (ι := ι) Sᶜ) := by
     unfold projS
     exact (WithLp.measurable_toLp _ _).comp
-      (measurable_pi_lambda _ fun i =>
+      (Measurable.of_eval fun i =>
         (measurable_pi_apply (i : ι)).comp (WithLp.measurable_ofLp 2 _))
   -- Assemble.
   rw [lintegral_posterior_eq_lintegral_ratio θ₀ π hCmeas]
@@ -217,7 +218,6 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
           ∂(gaussShiftKernel {j // j ∈ Sᶜ} (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ})) := by
         rw [hθ₀']
 
-set_option maxHeartbeats 1000000 in
 /-- **Honest fixed-`n` composition** (reduction ∘ explicit ∘ event-monotonicity). Bounds the
 `E_{θ₀}`-mean of the posterior mass of `{ |supp_δ(θ)| > Aq }` by the honest engine exponent
 `card'·z·(c−1) − k·log c + r² + 2·card'·w` plus `e^{−r²/8}`, where `card' = |S₀ᶜ|`. This is the
@@ -245,22 +245,22 @@ private lemma dl_thm34_reduce_explicit_event {n : ℕ} {a δ r : ℝ}
       ≤ ∫⁻ y, ((gaussShiftKernel (Fin n))†(dlPrior a (Fin n))) y
           {θ | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)} ∂(gaussShiftKernel (Fin n) θ₀) := by
     refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
-    simp only [Set.mem_setOf_eq] at hθ ⊢
+    simp only [Set.mem_ofPred_eq] at hθ ⊢
     exact lt_of_le_of_lt hk hθ
   refine hmono.trans ((dl_compress_reduction ha θ₀ S₀ hθ₀ k).trans ?_)
   convert compress_ratio_le_explicit ha hr k z hz w hw hw2 c hc using 2 <;>
     first | rfl | congr!
 
 /- **Fixed-`n` compressibility engine — REMOVED (orphaned + false stub).** The stub
-`dl_theorem34_engine` claimed the compressibility posterior mass `≤ exp((card ι)·e·a·(8+2log(1/δ))·(c−1)
-− (A−1)q·log c + 3r²) + e^{−r²/8}`. The `thm34-asym` closure session proved this exponent is **not
-attainable**: (i) the `3r²` folds the honest small-ball correction `2·card'·w` into `2r²` via
-`card'·w ≤ r²`, false for fixed `r` as `card' → ∞`; (ii) the Chernoff `−(A−1)q·log c` needs `k ≥ (A−1)q`
-but `k = ⌊Aq⌋ − |S₀| ≥ (A−1)q − 1`, off by `log c`. The asymptotic headlines `dl_theorem34_beta` /
-`dl_theorem34_recip` below **do not need it** — they call `dl_compress_reduction ∘
-compress_ratio_le_explicit` (the honest fixed-`n` bricks, `CompressEngine`) directly. The `PosteriorContraction`
-assembly likewise uses those bricks for its 3.4-term. So the intermediate is deleted rather than
-restated (D12). -/
+`dl_theorem34_engine` claimed the compressibility posterior mass
+`≤ exp((card ι)·e·a·(8+2log(1/δ))·(c−1) − (A−1)q·log c + 3r²) + e^{−r²/8}`. The `thm34-asym` closure
+session proved this exponent is **not attainable**: (i) the `3r²` folds the honest small-ball
+correction `2·card'·w` into `2r²` via `card'·w ≤ r²`, false for fixed `r` as `card' → ∞`; (ii) the
+Chernoff `−(A−1)q·log c` needs `k ≥ (A−1)q` but `k = ⌊Aq⌋ − |S₀| ≥ (A−1)q − 1`, off by `log c`. The
+asymptotic headlines `dl_theorem34_beta` / `dl_theorem34_recip` below **do not need it** — they call
+`dl_compress_reduction ∘ compress_ratio_le_explicit` (the honest fixed-`n` bricks, `CompressEngine`)
+directly. The `PosteriorContraction` assembly likewise uses those bricks for its 3.4-term. So the
+intermediate is deleted rather than restated (D12). -/
 
 /-- **BPPD Theorem 3.4 (posterior compressibility, `β`-regime).** In the normal-means model with the
 Dirichlet–Laplace prior at scale `aₙ = n^{−(1+β)}`, there is a threshold `A > 0` such that the
@@ -269,7 +269,8 @@ Internal radius `r² = qₙ log n` (D2). -/
 theorem dl_theorem34_beta {β : ℝ}
     -- USER-INPUT: β > 0 (DL scale exponent aₙ = n^{−(1+β)}); BPPD Thm 3.4.
     (hβ : 0 < β) {q : ℕ → ℕ}
-    -- USER-INPUT: qₙ ≥ 1 (nonempty approximate support; D3 — for qₙ = 0 Thm 3.4 is false); BPPD Thm 3.4.
+    -- USER-INPUT: qₙ ≥ 1 (nonempty approximate support;
+    -- D3 — for qₙ = 0 Thm 3.4 is false); BPPD Thm 3.4.
     (hq1 : ∀ n, 1 ≤ q n)
     -- USER-INPUT: qₙ = o(n) (sparsity grows sub-linearly); BPPD Thm 3.4.
     (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))
@@ -277,8 +278,9 @@ theorem dl_theorem34_beta {β : ℝ}
     -- USER-INPUT: θ₀ is qₙ-sparse (at most qₙ nonzero coordinates); BPPD Thm 3.4.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     {δ : ℕ → ℝ}
-    -- USER-INPUT: δ-window n^{−2} ≤ δₙ ≤ 1/2 (thresholding level; D2 — supports the internal δ = rₙ/n); BPPD Thm 3.4.
-    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2) :
+    -- USER-INPUT: δ-window n^{−2} ≤ δₙ ≤ 1/2 (thresholding
+    -- level; D2 — supports the internal δ = rₙ/n); BPPD Thm 3.4.
+    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ) ^ (-2 : ℝ) ≤ δ n ∧ δ n ≤ 1 / 2) :
     ∃ A : ℝ, 0 < A ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}
@@ -311,9 +313,9 @@ theorem dl_theorem34_beta {β : ℝ}
       (Fintype.card_subtype_le _).trans_eq (Fintype.card_fin n)
     simp only [hmv]; exact_mod_cast h
   have hqlt : ∀ᶠ n in atTop, (q n : ℝ) < n := by
-    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1 by norm_num)),
+    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0 : ℝ) < 1 by norm_num)),
       eventually_gt_atTop 0] with n hlt hn0
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn0
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn0
     have hlt' : (q n : ℝ) / n < 1 := hlt
     exact (div_lt_one hnpos).mp hlt'
   have hmvpos : ∀ᶠ n in atTop, 0 < mv n := by
@@ -321,7 +323,7 @@ theorem dl_theorem34_beta {β : ℝ}
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
@@ -332,11 +334,11 @@ theorem dl_theorem34_beta {β : ℝ}
   have hzv_le : ∀ᶠ n in atTop, zv n ≤ Real.exp 1 * av n * (8 + 4 * Real.log n) := by
     filter_upwards [hδ, eventually_ge_atTop 1, hav_pos] with n hδn hn1 hapos
     obtain ⟨hδlb, hδub⟩ := hδn
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
     have hδpos : 0 < δ n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
     have h1 : Real.log (1 / δ n) ≤ 2 * Real.log n := by
       rw [one_div, Real.log_inv]
-      have hle : Real.log ((n:ℝ)^(-2:ℝ)) ≤ Real.log (δ n) :=
+      have hle : Real.log ((n : ℝ)^(-2 : ℝ)) ≤ Real.log (δ n) :=
         Real.log_le_log (Real.rpow_pos_of_pos hnpos _) hδlb
       rw [Real.log_rpow hnpos] at hle; linarith
     rw [hzv]
@@ -344,23 +346,24 @@ theorem dl_theorem34_beta {β : ℝ}
   -- `sₙ ≥ 1/√n`, hence `log(1/sₙ) ≤ ½ log n` and `wₙ ≤ e·aₙ·(8 + log n)`.
   have hsv_ge : ∀ᶠ (n : ℕ) in atTop, 1 / Real.sqrt n ≤ sv n := by
     filter_upwards [eventually_ge_atTop 4, hmvpos] with n hn4 hmvp
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
-    have hlogn1 : (1:ℝ) ≤ Real.log n := by
-      rw [show (1:ℝ) = Real.log (Real.exp 1) by rw [Real.log_exp]]
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
+    have hlogn1 : (1 : ℝ) ≤ Real.log n := by
+      rw [show (1 : ℝ) = Real.log (Real.exp 1) by rw [Real.log_exp]]
       exact Real.log_le_log (Real.exp_pos 1) (by
         have : Real.exp 1 ≤ 3 := by
           have := Real.exp_one_lt_d9; linarith
-        have h3 : (4:ℝ) ≤ n := by exact_mod_cast hn4
+        have h3 : (4 : ℝ) ≤ n := by exact_mod_cast hn4
         linarith)
-    have hrv1 : (1:ℝ) ≤ rv n := by
+    have hrv1 : (1 : ℝ) ≤ rv n := by
       rw [hrv]
-      rw [show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+      rw [show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       apply Real.sqrt_le_sqrt
-      have hq1n : (1:ℝ) ≤ (q n:ℝ) := by exact_mod_cast hq1 n
+      have hq1n : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
       nlinarith [hlogn1, hq1n]
-    have hsqn2 : (2:ℝ) ≤ Real.sqrt n := by
-      rw [show (2:ℝ) = Real.sqrt 4 by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    have hsqn2 : (2 : ℝ) ≤ Real.sqrt n := by
+      rw [show (2 : ℝ) = Real.sqrt 4
+          by rw [show (4 : ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
       apply Real.sqrt_le_sqrt; exact_mod_cast hn4
     have hsqnpos : 0 < Real.sqrt n := by positivity
     have hmvsqle : Real.sqrt (mv n) ≤ Real.sqrt n := Real.sqrt_le_sqrt (hmv_le n)
@@ -375,11 +378,11 @@ theorem dl_theorem34_beta {β : ℝ}
       exact one_div_le_one_div_of_le (by norm_num) hsqn2
   have hlogsv_le : ∀ᶠ (n : ℕ) in atTop, Real.log (1 / sv n) ≤ (1/2) * Real.log n := by
     filter_upwards [hsv_ge, eventually_ge_atTop 4] with n hsvge hn4
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hsvpos : 0 < sv n := lt_of_lt_of_le (by positivity) hsvge
     have h1svle : 1 / sv n ≤ Real.sqrt n := by
-      have h := one_div_le_one_div_of_le (by positivity : (0:ℝ) < 1 / Real.sqrt n) hsvge
+      have h := one_div_le_one_div_of_le (by positivity : (0 : ℝ) < 1 / Real.sqrt n) hsvge
       rwa [one_div_one_div] at h
     calc Real.log (1 / sv n) ≤ Real.log (Real.sqrt n) :=
             Real.log_le_log (by positivity) h1svle
@@ -395,28 +398,28 @@ theorem dl_theorem34_beta {β : ℝ}
     rw [hav]; ring
   have hw2 : ∀ᶠ n in atTop, wv n ≤ 1 / 2 := by
     have hev : ∀ᶠ n in atTop, Real.exp 1 * av n * (8 + Real.log n) ∈ Set.Iio (1/2 : ℝ) :=
-      hWtend.eventually (Iio_mem_nhds (show (0:ℝ) < 1/2 by norm_num))
+      hWtend.eventually (Iio_mem_nhds (show (0 : ℝ) < 1/2 by norm_num))
     filter_upwards [hwv_le, hev] with n h1 h2
     have h2' : Real.exp 1 * av n * (8 + Real.log n) < 1 / 2 := h2
     linarith
   have hcv_gt1 : ∀ᶠ n in atTop, 1 < cv n := by
     filter_upwards [eventually_ge_atTop 2] with n hn2
-    have hnpos : (0:ℝ) < n := by
-      have : (2:ℝ) ≤ n := by exact_mod_cast hn2
+    have hnpos : (0 : ℝ) < n := by
+      have : (2 : ℝ) ≤ n := by exact_mod_cast hn2
       linarith
     rw [hcv]
     exact (Real.one_lt_rpow_iff_of_pos hnpos).mpr
       (Or.inl ⟨by exact_mod_cast hn2, by positivity⟩)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun _ => (0 : ℝ≥0∞)) (h := B)
-    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le _) ?hle
+    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le) ?hle
   case hle =>
     filter_upwards [hδ, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos]
       with n hδn hn4 hsvge hw2n hcvn hapos
     obtain ⟨hδlb, hδub⟩ := hδn
-    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
-    have hn2 : (1:ℝ) < n := by
-      have : (4:ℝ) ≤ n := by exact_mod_cast hn4
+    have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
+    have hn2 : (1 : ℝ) < n := by
+      have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
       linarith
     have ha_le1 : av n ≤ 1 :=
       Real.rpow_le_one_of_one_le_of_nonpos hn1R (by linarith)
@@ -434,7 +437,7 @@ theorem dl_theorem34_beta {β : ℝ}
     have hlogd : 0 ≤ Real.log (1 / δ n) := Real.log_nonneg (by rw [le_div_iff₀ hδpos]; linarith)
     have hz : (dlMarginal (av n) {x : ℝ | δ n < |x|}).toReal ≤ zv n := by
       have hm := dlMarginal_abs_gt_le' hapos ha_le1 hδpos hδlt1
-      have hznn : (0:ℝ) ≤ zv n := by
+      have hznn : (0 : ℝ) ≤ zv n := by
         rw [hzv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
       calc (dlMarginal (av n) {x : ℝ | δ n < |x|}).toReal
           ≤ (ENNReal.ofReal (zv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
@@ -447,26 +450,25 @@ theorem dl_theorem34_beta {β : ℝ}
       Real.log_nonneg (by rw [le_div_iff₀ hsvpos]; linarith [hsvlt1])
     have hw : (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal ≤ wv n := by
       have hm := dlMarginal_abs_gt_le' hapos ha_le1 hsvpos hsvlt1
-      have hwnn : (0:ℝ) ≤ wv n := by
+      have hwnn : (0 : ℝ) ≤ wv n := by
         rw [hwv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
       calc (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal
           ≤ (ENNReal.ofReal (wv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
         _ = wv n := ENNReal.toReal_ofReal hwnn
     -- `hk`: the event-inclusion threshold.
-    have hAqn : (0:ℝ) ≤ A * q n := by
+    have hAqn : (0 : ℝ) ≤ A * q n := by
       rw [hA_def]; positivity
     have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
       apply Nat.le_floor
       have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-      have h2 : (1:ℝ) ≤ A := by
+      have h2 : (1 : ℝ) ≤ A := by
         rw [hA_def]; have : 0 < 2 / β := by positivity
         linarith
-      have h3 : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+      have h3 : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
       nlinarith
     have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ A * q n := by
       rw [hkv, Nat.cast_sub hcard_le]
       have hfl := Nat.floor_le hAqn
-      push_cast
       linarith
     have hcvpos : (1 : ℝ) < cv n := hcvn
     exact dl_thm34_reduce_explicit_event hapos hr_pos (θ₀ n) (S₀ n) hsupp (kv n)
@@ -484,7 +486,7 @@ theorem dl_theorem34_beta {β : ℝ}
       apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hU1 ?_ ?_
       · filter_upwards [hδ, eventually_ge_atTop 1, hav_pos, hcv_gt1] with n hδn hn1 hapos hcvn
         obtain ⟨hδlb, hδub⟩ := hδn
-        have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
+        have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
         have hδpos : 0 < δ n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
         have hlogd : 0 ≤ Real.log (1 / δ n) :=
           Real.log_nonneg (by rw [le_div_iff₀ hδpos]; linarith)
@@ -496,8 +498,8 @@ theorem dl_theorem34_beta {β : ℝ}
       · filter_upwards [hzv_le, eventually_ge_atTop 1, hav_pos, hcv_gt1, hδ] with
           n hzvle hn1 hapos hcvn hδn
         obtain ⟨hδlb, hδub⟩ := hδn
-        have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
-        have hn1R : (1:ℝ) ≤ n := by exact_mod_cast hn1
+        have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
+        have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast hn1
         have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
         have hδpos : 0 < δ n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
         have hlogd : 0 ≤ Real.log (1 / δ n) :=
@@ -541,10 +543,10 @@ theorem dl_theorem34_beta {β : ℝ}
         exact mul_nonneg hmvnn hwvnn
       · filter_upwards [hwv_le, eventually_ge_atTop 4, hav_pos, hsv_ge] with
           n hwvle hn4 hapos hsvge
-        have hn1R : (1:ℝ) ≤ n := by
-          have : (4:ℝ) ≤ n := by exact_mod_cast hn4
+        have hn1R : (1 : ℝ) ≤ n := by
+          have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
           linarith
-        have hnpos : (0:ℝ) < n := by linarith
+        have hnpos : (0 : ℝ) < n := by linarith
         have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
         have hsvpos : 0 < sv n := lt_of_lt_of_le (by positivity) hsvge
         have hsvlt1 : sv n < 1 := by
@@ -568,10 +570,10 @@ theorem dl_theorem34_beta {β : ℝ}
       apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => (β / 2) * Real.log n) ?_
         (hlogtend.const_mul_atTop (by positivity))
       filter_upwards [eventually_ge_atTop 4, hqlt] with n hn4 hql
-      have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-      have hnpos : (0:ℝ) < n := by linarith
+      have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+      have hnpos : (0 : ℝ) < n := by linarith
       have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1R
-      have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+      have hq1n : (1 : ℝ) ≤ q n := by exact_mod_cast hq1 n
       -- rewrite `log(cvₙ)` and `rvₙ²`.
       have hlogcv : Real.log (cv n) = (β / 2) * Real.log n := by rw [hcv, Real.log_rpow hnpos]
       have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
@@ -580,14 +582,14 @@ theorem dl_theorem34_beta {β : ℝ}
       have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
         apply Nat.le_floor
         have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-        have h2 : (1:ℝ) ≤ A := by rw [hA_def]; nlinarith [show (0:ℝ) < 2 / β by positivity]
+        have h2 : (1 : ℝ) ≤ A := by rw [hA_def]; nlinarith [show (0 : ℝ) < 2 / β by positivity]
         nlinarith
       have hklb : (A - 1) * (q n : ℝ) - 1 ≤ (kv n : ℝ) := by
         rw [hkv, Nat.cast_sub hcard_le]
         have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
           have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
         have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-        push_cast; nlinarith
+        nlinarith
       have hAm1 : A - 1 = 2 + 2 / β := by rw [hA_def]; ring
       have hkβ : 2 * (q n : ℝ) * β + 2 * (q n) - β ≤ (kv n : ℝ) * β := by
         have h := mul_le_mul_of_nonneg_right hklb hβ.le
@@ -595,7 +597,7 @@ theorem dl_theorem34_beta {β : ℝ}
         have hLHS : ((2 + 2 / β) * (q n : ℝ) - 1) * β = 2 * (q n) * β + 2 * (q n) - β := by
           field_simp
         rwa [hLHS] at h
-      have hbr : (0:ℝ) ≤ (kv n : ℝ) * β - 2 * (q n) - β := by
+      have hbr : (0 : ℝ) ≤ (kv n : ℝ) * β - 2 * (q n) - β := by
         nlinarith [hkβ, mul_nonneg hβ.le (sub_nonneg.mpr hq1n)]
       rw [hlogcv, hrv2]
       nlinarith [mul_nonneg hlogn hbr, hlogn]
@@ -603,10 +605,10 @@ theorem dl_theorem34_beta {β : ℝ}
       apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => Real.log n / 8) ?_
         ((hlogtend).atTop_div_const (by norm_num))
       filter_upwards [eventually_ge_atTop 1] with n hn
-      have hn1 : (1:ℝ) ≤ n := by exact_mod_cast hn
+      have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
       have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
         rw [hrv]; exact Real.sq_sqrt (mul_nonneg (by positivity) (Real.log_nonneg hn1))
-      have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+      have hq1n : (1 : ℝ) ≤ q n := by exact_mod_cast hq1 n
       have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1
       rw [hrv2]
       have hle : Real.log n ≤ (q n : ℝ) * Real.log n := by nlinarith
@@ -634,7 +636,8 @@ theorem dl_theorem34_beta {β : ℝ}
     rw [add_zero] at hsum
     exact hsum
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 400000 in
+-- This proof uses about 260,000 heartbeats.
 /-- **BPPD Theorem 3.4 (posterior compressibility, `1/n`-regime).** Same conclusion with scale
 `aₙ = 1/n`, additionally requiring `qₙ ≥ C₀ log n` so the internal `r² = qₙ` (D2) forces the
 denominator error `e^{−qₙ}` to vanish. -/
@@ -648,7 +651,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     {δ : ℕ → ℝ}
     -- USER-INPUT: δ-window n^{−2} ≤ δₙ ≤ 1/2 (D2); BPPD Thm 3.4.
-    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2)
+    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ) ^ (-2 : ℝ) ≤ δ n ∧ δ n ≤ 1 / 2)
     -- USER-INPUT: qₙ ≥ C₀ log n (needed for the 1/n-regime denominator error, D2); BPPD Thm 3.4.
     (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ (n : ℕ) in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
     ∃ A : ℝ, 0 < A ∧ Tendsto (fun n => ∫⁻ y,
@@ -658,9 +661,10 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
   classical
   obtain ⟨C₀, hC₀pos, hqlogev⟩ := hqlog
   -- `1/n`-regime: constant Chernoff `cₙ = e`, threshold `A = 3 + coef/C₀` with
-  -- `coef = 4e(e−1) + 2e` (so the log-`n` coefficient of the count/small terms is exactly cancelled).
-  have he1 : (1:ℝ) ≤ Real.exp 1 := by have := Real.add_one_le_exp (1:ℝ); linarith
-  have hcoef : (0:ℝ) ≤ (4 * Real.exp 1 * (Real.exp 1 - 1) + 2 * Real.exp 1) / C₀ :=
+  -- `coef = 4e(e−1) + 2e` (so the log-`n` coefficient
+  -- of the count/small terms is exactly cancelled).
+  have he1 : (1 : ℝ) ≤ Real.exp 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+  have hcoef : (0 : ℝ) ≤ (4 * Real.exp 1 * (Real.exp 1 - 1) + 2 * Real.exp 1) / C₀ :=
     div_nonneg (by nlinarith [Real.exp_pos 1]) hC₀pos.le
   refine ⟨3 + (4 * Real.exp 1 * (Real.exp 1 - 1) + 2 * Real.exp 1) / C₀, by linarith, ?_⟩
   set A : ℝ := 3 + (4 * Real.exp 1 * (Real.exp 1 - 1) + 2 * Real.exp 1) / C₀ with hA_def
@@ -680,7 +684,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
   -- ===== shared envelope facts =====
   have hav_pos : ∀ᶠ n in atTop, 0 < av n := by
     filter_upwards [eventually_ge_atTop 1] with n hn
-    have : (0:ℝ) < n := by exact_mod_cast hn
+    have : (0 : ℝ) < n := by exact_mod_cast hn
     rw [hav]; positivity
   have hmv_le : ∀ n, mv n ≤ (n : ℝ) := by
     intro n
@@ -688,9 +692,9 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
       (Fintype.card_subtype_le _).trans_eq (Fintype.card_fin n)
     simp only [hmv]; exact_mod_cast h
   have hqlt : ∀ᶠ n in atTop, (q n : ℝ) < n := by
-    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1 by norm_num)),
+    filter_upwards [hqn.eventually (Iio_mem_nhds (show (0 : ℝ) < 1 by norm_num)),
       eventually_gt_atTop 0] with n hlt hn0
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn0
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn0
     have hlt' : (q n : ℝ) / n < 1 := hlt
     exact (div_lt_one hnpos).mp hlt'
   have hmvpos : ∀ᶠ n in atTop, 0 < mv n := by
@@ -698,7 +702,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     have hcard : (S₀ n).card < n := lt_of_le_of_lt (hθ₀ n) (by exact_mod_cast hql)
     have hex : ∃ j : Fin n, j ∉ S₀ n := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have huniv : S₀ n = Finset.univ := Finset.eq_univ_of_forall hcon
       rw [huniv, Finset.card_univ, Fintype.card_fin] at hcard; omega
     obtain ⟨j, hj⟩ := hex
@@ -708,23 +712,24 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
   have hzv_le : ∀ᶠ n in atTop, zv n ≤ Real.exp 1 * av n * (8 + 4 * Real.log n) := by
     filter_upwards [hδ, eventually_ge_atTop 1, hav_pos] with n hδn hn1 hapos
     obtain ⟨hδlb, hδub⟩ := hδn
-    have hnpos : (0:ℝ) < n := by exact_mod_cast hn1
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
     have hδpos : 0 < δ n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
     have h1 : Real.log (1 / δ n) ≤ 2 * Real.log n := by
       rw [one_div, Real.log_inv]
-      have hle : Real.log ((n:ℝ)^(-2:ℝ)) ≤ Real.log (δ n) :=
+      have hle : Real.log ((n : ℝ)^(-2 : ℝ)) ≤ Real.log (δ n) :=
         Real.log_le_log (Real.rpow_pos_of_pos hnpos _) hδlb
       rw [Real.log_rpow hnpos] at hle; linarith
     rw [hzv]
     exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
   have hsv_ge : ∀ᶠ (n : ℕ) in atTop, 1 / Real.sqrt n ≤ sv n := by
     filter_upwards [eventually_ge_atTop 4, hmvpos] with n hn4 hmvp
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hrv1 : (1:ℝ) ≤ rv n := by
-      rw [hrv, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hrv1 : (1 : ℝ) ≤ rv n := by
+      rw [hrv, show (1 : ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
       apply Real.sqrt_le_sqrt; exact_mod_cast hq1 n
-    have hsqn2 : (2:ℝ) ≤ Real.sqrt n := by
-      rw [show (2:ℝ) = Real.sqrt 4 by rw [show (4:ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    have hsqn2 : (2 : ℝ) ≤ Real.sqrt n := by
+      rw [show (2 : ℝ) = Real.sqrt 4
+          by rw [show (4 : ℝ) = 2^2 by norm_num, Real.sqrt_sq (by norm_num)]]
       apply Real.sqrt_le_sqrt; exact_mod_cast hn4
     have hmvsqle : Real.sqrt (mv n) ≤ Real.sqrt n := Real.sqrt_le_sqrt (hmv_le n)
     have hmvsqpos : 0 < Real.sqrt (mv n) := Real.sqrt_pos.mpr hmvp
@@ -736,11 +741,11 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     · exact one_div_le_one_div_of_le (by norm_num) hsqn2
   have hlogsv_le : ∀ᶠ (n : ℕ) in atTop, Real.log (1 / sv n) ≤ (1/2) * Real.log n := by
     filter_upwards [hsv_ge, eventually_ge_atTop 4] with n hsvge hn4
-    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
     have hsvpos : 0 < sv n := lt_of_lt_of_le (by positivity) hsvge
     have h1svle : 1 / sv n ≤ Real.sqrt n := by
-      have h := one_div_le_one_div_of_le (by positivity : (0:ℝ) < 1 / Real.sqrt n) hsvge
+      have h := one_div_le_one_div_of_le (by positivity : (0 : ℝ) < 1 / Real.sqrt n) hsvge
       rwa [one_div_one_div] at h
     calc Real.log (1 / sv n) ≤ Real.log (Real.sqrt n) :=
             Real.log_le_log (by positivity) h1svle
@@ -755,25 +760,25 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     rw [hav, Real.rpow_neg_one]; ring
   have hw2 : ∀ᶠ n in atTop, wv n ≤ 1 / 2 := by
     have hev : ∀ᶠ n in atTop, Real.exp 1 * av n * (8 + Real.log n) ∈ Set.Iio (1/2 : ℝ) :=
-      hWtend.eventually (Iio_mem_nhds (show (0:ℝ) < 1/2 by norm_num))
+      hWtend.eventually (Iio_mem_nhds (show (0 : ℝ) < 1/2 by norm_num))
     filter_upwards [hwv_le, hev] with n h1 h2
     have h2' : Real.exp 1 * av n * (8 + Real.log n) < 1 / 2 := h2
     linarith
   have hcv_gt1 : ∀ᶠ n in atTop, 1 < cv n := by
     filter_upwards with n
-    rw [hcv]; have := Real.add_one_le_exp (1:ℝ); linarith
+    rw [hcv]; have := Real.add_one_le_exp (1 : ℝ); linarith
   have hlogtend : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
     Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun _ => (0 : ℝ≥0∞)) (h := B)
-    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le _) ?hle
+    tendsto_const_nhds ?hbound (Filter.Eventually.of_forall fun n => zero_le) ?hle
   case hle =>
     filter_upwards [hδ, eventually_ge_atTop 4, hsv_ge, hw2, hcv_gt1, hav_pos]
       with n hδn hn4 hsvge hw2n hcvn hapos
     obtain ⟨hδlb, hδub⟩ := hδn
-    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-    have hnpos : (0:ℝ) < n := by linarith
-    have hn2 : (1:ℝ) < n := by
-      have : (4:ℝ) ≤ n := by exact_mod_cast hn4
+    have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+    have hnpos : (0 : ℝ) < n := by linarith
+    have hn2 : (1 : ℝ) < n := by
+      have : (4 : ℝ) ≤ n := by exact_mod_cast hn4
       linarith
     have ha_le1 : av n ≤ 1 := by rw [hav]; rw [inv_le_one_iff₀]; right; exact hn1R
     have hδpos : 0 < δ n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
@@ -787,7 +792,7 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     have hlogd : 0 ≤ Real.log (1 / δ n) := Real.log_nonneg (by rw [le_div_iff₀ hδpos]; linarith)
     have hz : (dlMarginal (av n) {x : ℝ | δ n < |x|}).toReal ≤ zv n := by
       have hm := dlMarginal_abs_gt_le' hapos ha_le1 hδpos hδlt1
-      have hznn : (0:ℝ) ≤ zv n := by
+      have hznn : (0 : ℝ) ≤ zv n := by
         rw [hzv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
       calc (dlMarginal (av n) {x : ℝ | δ n < |x|}).toReal
           ≤ (ENNReal.ofReal (zv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
@@ -799,22 +804,21 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
       Real.log_nonneg (by rw [le_div_iff₀ hsvpos]; linarith [hsvlt1])
     have hw : (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal ≤ wv n := by
       have hm := dlMarginal_abs_gt_le' hapos ha_le1 hsvpos hsvlt1
-      have hwnn : (0:ℝ) ≤ wv n := by
+      have hwnn : (0 : ℝ) ≤ wv n := by
         rw [hwv]; exact mul_nonneg (mul_nonneg (Real.exp_pos 1).le hapos.le) (by linarith)
       calc (dlMarginal (av n) {x : ℝ | sv n < |x|}).toReal
           ≤ (ENNReal.ofReal (wv n)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hm
         _ = wv n := ENNReal.toReal_ofReal hwnn
-    have hAqn : (0:ℝ) ≤ A * q n := by rw [hA_def]; positivity
+    have hAqn : (0 : ℝ) ≤ A * q n := by rw [hA_def]; positivity
     have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
       apply Nat.le_floor
       have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-      have h2 : (1:ℝ) ≤ A := by rw [hA_def]; linarith [hcoef]
-      have h3 : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+      have h2 : (1 : ℝ) ≤ A := by rw [hA_def]; linarith [hcoef]
+      have h3 : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
       nlinarith
     have hk : ((S₀ n).card : ℝ) + (kv n : ℝ) ≤ A * q n := by
       rw [hkv, Nat.cast_sub hcard_le]
       have hfl := Nat.floor_le hAqn
-      push_cast
       linarith
     have hcvpos : (1 : ℝ) < cv n := hcvn
     exact dl_thm34_reduce_explicit_event hapos hr_pos (θ₀ n) (S₀ n) hsupp (kv n)
@@ -832,8 +836,8 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
         · filter_upwards [hδ, eventually_ge_atTop 4, hsv_ge, hzv_le, hwv_le, hqlogev, hav_pos]
             with n hδn hn4 hsvge hzvle hwvle hqlogn hapos
           obtain ⟨hδlb, hδub⟩ := hδn
-          have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
-          have hnpos : (0:ℝ) < n := by linarith
+          have hn1R : (1 : ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+          have hnpos : (0 : ℝ) < n := by linarith
           have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
           have hnav : (n : ℝ) * av n = 1 := by rw [hav]; field_simp
           have hlogcv : Real.log (cv n) = 1 := by rw [hcv, Real.log_exp]
@@ -863,22 +867,22 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
               _ = Real.exp 1 * (8 + Real.log n) * ((n : ℝ) * av n) := by ring
               _ = Real.exp 1 * (8 + Real.log n) := by rw [hnav, mul_one]
           -- `kₙ ≥ (A−1) qₙ − 1`.
-          have hAqn : (0:ℝ) ≤ A * q n := by rw [hA_def]; positivity
+          have hAqn : (0 : ℝ) ≤ A * q n := by rw [hA_def]; positivity
           have hcard_le : (S₀ n).card ≤ ⌊A * (q n : ℝ)⌋₊ := by
             apply Nat.le_floor
             have h1 : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-            have h2 : (1:ℝ) ≤ A := by rw [hA_def]; linarith [hcoef]
-            have h3 : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+            have h2 : (1 : ℝ) ≤ A := by rw [hA_def]; linarith [hcoef]
+            have h3 : (1 : ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
             nlinarith
           have hklb : (A - 1) * (q n : ℝ) - 1 ≤ (kv n : ℝ) := by
             rw [hkv, Nat.cast_sub hcard_le]
             have hfloor : A * (q n : ℝ) - 1 < ⌊A * (q n : ℝ)⌋₊ := by
               have := Nat.lt_floor_add_one (A * (q n : ℝ)); linarith
             have hcardle : ((S₀ n).card : ℝ) ≤ q n := Nat.cast_le.mpr (hθ₀ n)
-            push_cast; nlinarith
+            nlinarith
           -- Assemble the linear lower bound (the `log n` terms cancel by choice of `A`).
-          have he0 : (0:ℝ) ≤ Real.exp 1 - 1 := by have := Real.add_one_le_exp (1:ℝ); linarith
-          have hA2 : (0:ℝ) ≤ A - 2 := by rw [hA_def]; linarith [hcoef]
+          have he0 : (0 : ℝ) ≤ Real.exp 1 - 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+          have hA2 : (0 : ℝ) ≤ A - 2 := by rw [hA_def]; linarith [hcoef]
           have hqm : (A - 2) * (C₀ * Real.log n) ≤ (A - 2) * (q n : ℝ) :=
             mul_le_mul_of_nonneg_left hqlogn hA2
           have hAC : (A - 2) * C₀ = C₀ + (4 * Real.exp 1 * (Real.exp 1 - 1) + 2 * Real.exp 1) := by

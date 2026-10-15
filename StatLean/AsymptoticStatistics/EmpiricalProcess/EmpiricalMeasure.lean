@@ -1,5 +1,6 @@
 import StatLean.AsymptoticStatistics.ForMathlib.EmpiricalAverage
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
@@ -33,7 +34,7 @@ multiple of a finite sum of Dirac measures. Edge behaviour: for $n = 0$ the inde
 $(0 : \mathbb{R}_{\ge 0}^{\infty})^{-1} = \infty$ collapses against the zero measure to
 leave the zero measure; the `IsProbabilityMeasure` instance is therefore stated under the
 `[NeZero n]` hypothesis. The probability-measure proof evaluates total mass via
-`Measure.smul_apply` / `Measure.coe_finset_sum`, uses
+`Measure.smul_apply` / `Measure.coe_finsetSum`, uses
 `Measure.dirac_apply_of_mem` to get each $\delta_{X_i}(\Omega) = 1$, sums to $n$, and
 closes with `ENNReal.inv_mul_cancel`. The real shorthand `empiricalAvg f n X` is
 $(n : \mathbb{R})^{-1} \cdot \sum_i f(X_i)$; here Lean's convention
@@ -83,7 +84,7 @@ instance instIsProbabilityMeasure_empiricalMeasure
     (n : ℕ) [NeZero n] (X : Fin n → Ω) : IsProbabilityMeasure (empiricalMeasure n X) := by
   refine ⟨?_⟩
   unfold empiricalMeasure
-  rw [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply]
+  rw [Measure.smul_apply, Measure.coe_finsetSum, Finset.sum_apply]
   have hsum : (∑ i : Fin n, (Measure.dirac (X i) : Measure Ω) Set.univ)
       = (n : ℝ≥0∞) := by
     have hi : ∀ i : Fin n, (Measure.dirac (X i) : Measure Ω) Set.univ = 1 :=

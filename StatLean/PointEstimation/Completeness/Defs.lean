@@ -1,4 +1,5 @@
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # Complete and ancillary statistics — core data model
@@ -57,15 +58,15 @@ def IsBoundedlyCompleteFamily (Q : Θ → Measure S) : Prop :=
 
 /-- A statistic `T` is **complete** for the model `P` when the family of its laws is. -/
 def IsCompleteStat (P : Θ → Measure 𝓧) (T : 𝓧 → S) : Prop :=
-  IsCompleteFamily fun θ => (P θ).map T
+  IsCompleteFamily fun θ => (P θ).map₀ T
 
 /-- A statistic `T` is **boundedly complete** for `P` when the family of its laws is. -/
 def IsBoundedlyCompleteStat (P : Θ → Measure 𝓧) (T : 𝓧 → S) : Prop :=
-  IsBoundedlyCompleteFamily fun θ => (P θ).map T
+  IsBoundedlyCompleteFamily fun θ => (P θ).map₀ T
 
 /-- A statistic `V` is **ancillary**: its law is the same under every parameter. -/
 def IsAncillary (P : Θ → Measure 𝓧) (V : 𝓧 → S) : Prop :=
-  ∀ θ θ', (P θ).map V = (P θ').map V
+  ∀ θ θ', (P θ).map₀ V = (P θ').map₀ V
 
 /-- A real statistic `V` is **first-order ancillary**: its mean is the same under every
 parameter. -/

@@ -44,10 +44,10 @@ private lemma integral_gammaMeasure_eq_setIntegral {a r : ℝ} (ha : 0 < a) (hr 
   rw [MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [mem_setOf_eq, Classical.not_imp, mem_Ioi, not_lt] at hx
+  simp only [mem_ofPred_eq, Classical.not_imp, mem_Ioi, not_lt] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
-  · exact absurd (by rw [gammaPDFReal, if_neg (not_le.mpr h), zero_mul]) hx2
+  · exact absurd (by rw [gammaPDFReal, ite_eq_right (not_le.mpr h), zero_mul]) hx2
   · exact h
 
 /-- **Raw moment of `Gamma(a, r)`**: `E[Xⁿ] = Γ(a+n) / (Γ(a)·rⁿ)` (`0 < a`, `0 < r`). -/
@@ -59,7 +59,7 @@ private lemma integral_pow_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) (n
     intro x hx
     rw [mem_Ioi] at hx
     simp only
-    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x n,
+    rw [gammaPDFReal, ite_eq_left hx.le, ← Real.rpow_natCast x n,
         show a + (n : ℝ) - 1 = (a - 1) + (n : ℝ) by ring, Real.rpow_add hx (a - 1) (n : ℝ)]
     ring
   rw [integral_gammaMeasure_eq_setIntegral ha hr, setIntegral_congr_fun measurableSet_Ioi hEqOn,
@@ -88,15 +88,16 @@ private lemma integrable_pow_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) 
   have hmodel : IntegrableOn (fun x => x ^ (a + (n : ℝ) - 1) * Real.exp (-(r * x)))
       (Ioi (0 : ℝ)) volume := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a + (n : ℝ) - 1) (b := r)
-      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) le_rfl hr
+      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) (by norm_num) hr
     refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
+    change x ^ (a + (n : ℝ) - 1) * Real.exp (-r * x ^ (1 : ℝ)) = _
     rw [Real.rpow_one, neg_mul]
   have hIoi : IntegrableOn (fun x => x ^ n * gammaPDFReal a r x) (Ioi (0 : ℝ)) volume := by
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
       (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
-    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x n,
+    rw [gammaPDFReal, ite_eq_left hx.le, ← Real.rpow_natCast x n,
         show a + (n : ℝ) - 1 = (a - 1) + (n : ℝ) by ring, Real.rpow_add hx (a - 1) (n : ℝ)]
     ring
   rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
@@ -105,11 +106,11 @@ private lemma integrable_pow_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) 
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [mem_setOf_eq, Classical.not_imp, mem_Iic] at hx
+  simp only [mem_ofPred_eq, Classical.not_imp, mem_Iic] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
   · exact absurd (show x ^ n * gammaPDFReal a r x = 0 by
-      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+      rw [gammaPDFReal, ite_eq_right (not_le.mpr h), mul_zero]).symm hx2
   · exact h
 
 /-- **MGF of `Gamma(a, r)`**: `E[e^{tX}] = (r/(r−t))^a` for `t < r` (`0 < a`, `0 < r`). At rate
@@ -122,7 +123,7 @@ theorem mgf_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t
     intro x hx
     rw [mem_Ioi] at hx
     simp only
-    rw [gammaPDFReal, if_pos hx.le, mul_assoc, ← Real.exp_add,
+    rw [gammaPDFReal, ite_eq_left hx.le, mul_assoc, ← Real.exp_add,
         show -(r * x) + t * x = -((r - t) * x) by ring]
     ring
   rw [integral_gammaMeasure_eq_setIntegral ha hr, setIntegral_congr_fun measurableSet_Ioi hEqOn,
@@ -146,7 +147,7 @@ theorem integral_id_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
 /-- **Variance of `Gamma(a, r)`**: `E[(X − a/r)²] = a/r²` (`0 < a`, `0 < r`). -/
 theorem variance_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
     ∫ x, (x - a / r) ^ 2 ∂(gammaMeasure a r) = a / r ^ 2 := by
-  haveI := isProbabilityMeasure_gammaMeasure ha hr
+  have := isProbabilityMeasure_gammaMeasure ha hr
   have hG : Real.Gamma a ≠ 0 := (Real.Gamma_pos_of_pos ha).ne'
   have hint1 : Integrable (fun x : ℝ => x) (gammaMeasure a r) := by
     have := integrable_pow_gammaMeasure ha hr 1

@@ -124,7 +124,7 @@ private lemma F_u_analytic
         (hasDerivAt_const s' (Complex.I * (u : ℂ) * (p.1 : ℂ))).add h1
       simpa using h2
     have h_exp_deriv := h_lin.cexp
-    convert h_exp_deriv using 1
+    convert! h_exp_deriv using 1
     ring
   have h_bound_pointwise : ∀ p : ℝ × ℝ, ∀ s' ∈ Metric.ball s₀ (1/2 : ℝ),
       ‖F'_param s' p‖ ≤ bound p := by
@@ -264,10 +264,6 @@ theorem bivariate_mgf_uniqueness
     ν.map (WithLp.toLp 2 (V := ℝ × ℝ)) with hνL_def
   have h_meas_toLp : Measurable (WithLp.toLp 2 (V := ℝ × ℝ)) :=
     WithLp.measurable_toLp _ _
-  haveI : IsProbabilityMeasure μ_L :=
-    Measure.isProbabilityMeasure_map h_meas_toLp.aemeasurable
-  haveI : IsProbabilityMeasure ν_L :=
-    Measure.isProbabilityMeasure_map h_meas_toLp.aemeasurable
   -- Step 2: extend the real-axis identity to all complex `s` per fixed real `u`.
   have h_F_eq_C : ∀ (u : ℝ) (s : ℂ),
       (∫ p : ℝ × ℝ,

@@ -132,8 +132,7 @@ theorem hasLaw_sum_mul_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measu
       rw [gaussianReal_map_const_mul]
       congr 1
       · ring
-      · rw [show (⟨(c i) ^ 2, sq_nonneg _⟩ : ℝ≥0) = ((c i) ^ 2).toNNReal from
-          NNReal.eq (by rw [NNReal.coe_mk, Real.coe_toNNReal _ (sq_nonneg _)])]
+      · rw [Real.toNNReal_of_nonneg (sq_nonneg (c i))]
     exact hmap.comp (hlaw i)
   -- Prove the `Finset`-indexed version by induction, then specialise to `univ`.
   suffices H : ∀ s : Finset (Fin n),
@@ -151,7 +150,7 @@ theorem hasLaw_sum_mul_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measu
     have hsumeq : (∑ j ∈ s, Y j) = fun ω => ∑ j ∈ s, Y j ω := by
       funext ω; rw [Finset.sum_apply]
     have hstep : IndepFun (Y i) (fun ω => ∑ j ∈ s, Y j ω) P := by
-      rw [← hsumeq]; exact (hYindep.indepFun_finset_sum_of_notMem hYmeas hi).symm
+      rw [← hsumeq]; exact (hYindep.indepFun_finsetSum_of_notMem hYmeas hi).symm
     have hsum : HasLaw (fun ω => Y i ω + ∑ j ∈ s, Y j ω)
         ((gaussianReal 0 (((c i) ^ 2).toNNReal * v)) ∗
           gaussianReal 0 ((∑ j ∈ s, (c j) ^ 2 : ℝ).toNNReal * v)) P :=

@@ -1,11 +1,33 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.PointwiseDense
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 import Mathlib.MeasureTheory.Measure.Prod
+
+/-!
+# Measurability of empirical suprema under pointwise density
+
+This file defines the ghost-sample difference supremum `ghostDifferenceSup` and proves that
+the suprema entering the symmetrization and chaining bounds are measurable functions of the
+sample when the class is pointwise dense (`EmpProcPointwiseDense`) and its members are
+measurable: `measurable_canonicalEmpiricalProcessSup_dense`,
+`measurable_ghostDifferenceSup_dense`, `measurable_rademacherSup_dense` (jointly in the
+sample and the signs) and `measurable_conditionalRademacherSup_dense`. A supremum of an
+evaluator that is continuous along pointwise convergence, such as one depending on finitely
+many function values, is unchanged when the class is replaced by a pointwise-dense subclass
+(`supNormOver_eq_of_pointwiseDense`); over a countable subclass it is a countable supremum of
+measurable functions. The same argument shows that the realized relative radius is
+measurable (`measurable_empiricalRelativeRadius_of_pointwiseDense`).
+-/
 
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter Topology
 open scoped ENNReal
 
+/-- The ghost-sample difference supremum `sup_{f ∈ F} |n^{-1/2} ∑ᵢ (f(xᵢ) - f(yᵢ))|` of a
+sample `x` and a second sample `y` of the same size, valued in `ℝ≥0∞`.
+
+It is the sup-norm over `F` of the difference of the empirical processes of the two samples.
+Edge behavior: the empty sample and the empty class give zero. -/
 noncomputable def ghostDifferenceSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (x y : Fin n → Ω) : ℝ≥0∞ :=
   supNormOver F (fun f =>
@@ -49,7 +71,7 @@ theorem ghostDifferenceSup_eq_of_pointwiseDense
   apply supNormOver_eq_of_pointwiseDense hsub hApprox
   intro f _ φ hφ
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     (hφ (x i)).sub (hφ (y i))
 
 theorem rademacherSup_eq_of_pointwiseDense
@@ -63,7 +85,7 @@ theorem rademacherSup_eq_of_pointwiseDense
   apply supNormOver_eq_of_pointwiseDense hsub hApprox
   intro f _ φ hφ
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     tendsto_const_nhds.mul (hφ (x i))
 
 theorem measurable_empiricalProcessSup_dense
@@ -200,7 +222,7 @@ theorem tendsto_empiricalL2Seminorm_of_pointwise
   unfold empiricalL2Seminorm empiricalAvg
   apply Real.continuous_sqrt.continuousAt.tendsto.comp
   apply tendsto_const_nhds.mul
-  exact tendsto_finset_sum Finset.univ fun i _ =>
+  exact tendsto_finsetSum Finset.univ fun i _ =>
     ((continuous_abs.tendsto _).comp (hφ (X i))).pow 2
 
 theorem empiricalRelativeRadius_eq_of_pointwiseDense
@@ -212,8 +234,8 @@ theorem empiricalRelativeRadius_eq_of_pointwiseDense
     empiricalRelativeRadius F Φ n X = empiricalRelativeRadius F' Φ n X := by
   by_cases hzero : empiricalL2Seminorm n X Φ = 0
   · simp [empiricalRelativeRadius, hzero]
-  rw [empiricalRelativeRadius, if_neg hzero,
-    empiricalRelativeRadius, if_neg hzero]
+  rw [empiricalRelativeRadius, ite_eq_right hzero,
+    empiricalRelativeRadius, ite_eq_right hzero]
   apply le_antisymm
   · refine iSup₂_le fun f hf => ?_
     obtain ⟨φ, hφmem, hφlim⟩ := hApprox f hf

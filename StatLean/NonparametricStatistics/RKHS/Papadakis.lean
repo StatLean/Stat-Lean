@@ -76,7 +76,7 @@ private theorem hasSum_sq_of_hasSum_inner {f : ι → H} {h : H}
 /-- The defining `HasSum` of the `ℓ²` norm, specialized to `p = 2`. -/
 private theorem lp2_hasSum_sq' (x : lp (fun _ : ι => 𝕜) 2) :
     HasSum (fun i => ‖x i‖ ^ 2) (‖x‖ ^ 2) := by
-  have h2 : (0:ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
+  have h2 : (0 : ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
   simpa using lp.hasSum_norm h2 x
 
 /-- The span of the kernel functions `k_x` is dense in a scalar RKHS. -/
@@ -143,7 +143,7 @@ theorem isParsevalFrame_of_hasSum_scalarKernel {f : ι → H}
   have hbdd : ∀ (h : H) (s : Finset ι), ∑ i ∈ s, ‖⟪f i, h⟫_𝕜‖ ^ 2 ≤ ‖h‖ ^ 2 := by
     intro h s
     have hc : IsClosed {z : H | ∑ i ∈ s, ‖⟪f i, z⟫_𝕜‖ ^ 2 ≤ ‖z‖ ^ 2} := by
-      refine isClosed_le (continuous_finset_sum s fun i _ => ?_) (continuous_norm.pow 2)
+      refine isClosed_le (continuous_finsetSum s fun i _ => ?_) (continuous_norm.pow 2)
       exact ((innerSL 𝕜 (f i)).continuous.norm).pow 2
     have hsub : ((Submodule.span 𝕜 (Set.range (kernelFun (𝕜 := 𝕜) (X := X) H)) :
         Submodule 𝕜 H) : Set H) ⊆ {z : H | ∑ i ∈ s, ‖⟪f i, z⟫_𝕜‖ ^ 2 ≤ ‖z‖ ^ 2} :=

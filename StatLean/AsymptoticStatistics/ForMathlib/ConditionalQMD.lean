@@ -1,5 +1,6 @@
 import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.ForMathlib.QMDAnalytic
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import Mathlib.Probability.Kernel.Basic
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.L2Space
@@ -73,11 +74,13 @@ structure ConditionalQMDPath (Q : Measure 𝓨) [IsProbabilityMeasure Q]
     `‖√pₜ − √p₀ − (t/2)·score·√p₀‖_{L²(Q ⊗ ν)} / |t| → 0`
   as `t → 0` along `𝓝[≠] 0`. The `ℝ≥0∞`-quotient form (rather than a
   `.toReal²/t²` form) genuinely forces square-integrability of the residual for
-  small `t`; see `Core.QMDPath.QMDPath.qmd_limit` for the rationale. -/
+  small `t`; see `Core.QMDPath.QMDPath.qmd_limit` for the rationale. The condition
+  uses `eLpNorm₀`, which is defined for arbitrary joint density functions; consumers stated
+  with `eLpNorm` obtain the required measurability from their CAR hypotheses. -/
   qmd_limit :
     Tendsto
       (fun t : ℝ =>
-        eLpNorm (fun p : 𝓨 × 𝓓 =>
+        eLpNorm₀ (fun p : 𝓨 × 𝓓 =>
           Real.sqrt ((curve t p.1).rnDeriv ν p.2).toReal
             - Real.sqrt ((curve 0 p.1).rnDeriv ν p.2).toReal
             - (t / 2) * score p.1 p.2
@@ -103,7 +106,7 @@ variable {Q : Measure 𝓨} [IsProbabilityMeasure Q]
 (the kernel is Markov). -/
 instance instIsProbabilityMeasureCurve (γ : ConditionalQMDPath Q ν r) (t : ℝ)
     (y : 𝓨) : IsProbabilityMeasure (γ.curve t y) := by
-  haveI := γ.curve_markov t
+  have := γ.curve_markov t
   infer_instance
 
 end ConditionalQMDPath
@@ -136,7 +139,7 @@ theorem conditionalScore_fibre_mean_zero
   have h_qmd : QMDAnalytic.IsQMDLimit (fun t => γ.curve t y) ν (γ.score y) :=
     γ.qmd_limit_fibre y
   have h_prob : ∀ t, IsProbabilityMeasure ((fun t => γ.curve t y) t) := by
-    intro t; haveI := γ.curve_markov t; infer_instance
+    intro t; infer_instance
   have h_ac : ∀ t, (fun t => γ.curve t y) t ≪ ν := fun t => γ.curve_absCont t y
   have hg_meas : Measurable (γ.score y) := γ.score_meas.comp measurable_prodMk_left
   have h_g_sqrt : MemLp (fun δ => γ.score y δ

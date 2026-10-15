@@ -160,7 +160,7 @@ private lemma tvDist_eq_lintegral_tsub (μ ν : Measure α)
       rw [Measure.setLIntegral_rnDeriv hνξ A]; exact measure_ne_top ν A
     have hcompl : ∫⁻ x in Aᶜ, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = 0 := by
       refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-      rw [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      rw [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact tsub_eq_zero_of_le hx.le
     have hDA : ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν)
         = ∫⁻ x in A, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
@@ -189,7 +189,7 @@ private lemma tvDist_eq_half_lintegral_aux (μ ν : Measure α)
         |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν)
       = ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν)
         + ∫⁻ x, (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x) ∂(μ + ν) := by
-    rw [← lintegral_add_left (hpm.sub hqm)]
+    erw [← lintegral_add_left (hpm.sub hqm)]
     refine lintegral_congr_ae ?_
     filter_upwards [μ.rnDeriv_lt_top (μ + ν), ν.rnDeriv_lt_top (μ + ν)] with x hpx hqx
     exact ofReal_abs_toReal_sub hpx.ne hqx.ne
@@ -199,8 +199,9 @@ private lemma tvDist_eq_half_lintegral_aux (μ ν : Measure α)
           + ∫⁻ x, ν.rnDeriv (μ + ν) x ∂(μ + ν)
         = ∫⁻ x, (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x) ∂(μ + ν)
           + ∫⁻ x, μ.rnDeriv (μ + ν) x ∂(μ + ν) := by
-      rw [← lintegral_add_left (hpm.sub hqm), ← lintegral_add_left (hqm.sub hpm)]
+      erw [← lintegral_add_left (hpm.sub hqm), ← lintegral_add_left (hqm.sub hpm)]
       refine lintegral_congr fun x => ?_
+      simp only [Pi.sub_apply]
       rw [tsub_add_eq_max, tsub_add_eq_max, max_comm]
     rw [hp1, hq1] at e1
     exact (ENNReal.add_left_inj ENNReal.one_ne_top).mp e1
@@ -259,10 +260,11 @@ private lemma one_sub_tvDist_eq_iInf_aux (μ ν : Measure α)
   refine le_antisymm ?_ ?_
   · refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hf0 => le_iInf fun hf1 =>
       le_iInf fun hfeas => ?_
-    rw [← lintegral_rnDeriv_mul hμξ hf0.aemeasurable,
+    erw [← lintegral_rnDeriv_mul hμξ hf0.aemeasurable,
         ← lintegral_rnDeriv_mul hνξ hf1.aemeasurable,
         ← lintegral_add_left (hpm.mul hf0)]
     refine lintegral_mono fun x => ?_
+    simp only [Pi.mul_apply]
     calc min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x)
         = min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) * 1 := (mul_one _).symm
       _ ≤ min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) * (f₀ x + f₁ x) := by
@@ -288,7 +290,7 @@ private lemma one_sub_tvDist_eq_iInf_aux (μ ν : Measure α)
     have hνB : ν Bᶜ = ∫⁻ x in Bᶜ, min (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
       rw [← Measure.setLIntegral_rnDeriv hνξ Bᶜ]
       refine setLIntegral_congr_fun hBm.compl (fun x hx => ?_)
-      rw [hB, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      rw [hB, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact (min_eq_right hx.le).symm
     rw [hμB, hνB]
     exact le_of_eq (lintegral_add_compl _ hBm)

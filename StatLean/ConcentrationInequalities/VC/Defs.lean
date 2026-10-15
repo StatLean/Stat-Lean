@@ -109,7 +109,7 @@ lemma exists_finset_coe_of_subset_coe {Λ : Finset Ω} {s : Set Ω}
   classical
   refine ⟨Λ.filter (· ∈ s), Finset.filter_subset _ _, ?_⟩
   ext x
-  simp only [Finset.coe_filter, Set.mem_setOf_eq, Finset.mem_coe]
+  simp only [Finset.coe_filter, Set.mem_ofPred_eq]
   exact ⟨fun hx => hx.2, fun hx => ⟨h hx, hx⟩⟩
 
 open Classical in
@@ -176,11 +176,11 @@ lemma empFrac_pos_iff {n : ℕ} [NeZero n] {x : Fin n → Ω} {S : Set Ω} :
   constructor
   · intro h
     by_contra hno
-    push_neg at hno
+    push Not at hno
     have hzero : empFrac x S = 0 := by
       unfold empFrac
       rw [Finset.sum_eq_zero fun i _ => ?_, mul_zero]
-      rw [Set.indicator_apply, if_neg (hno i)]
+      rw [Set.indicator_apply, ite_eq_right (hno i)]
     rw [hzero] at h
     exact lt_irrefl 0 h
   · rintro ⟨i, hi⟩
@@ -189,7 +189,7 @@ lemma empFrac_pos_iff {n : ℕ} [NeZero n] {x : Fin n → Ω} {S : Set Ω} :
     refine Finset.sum_pos' (fun j _ =>
       Set.indicator_nonneg (fun _ _ => zero_le_one) _) ?_
     refine ⟨i, Finset.mem_univ i, ?_⟩
-    rw [Set.indicator_apply, if_pos hi]
+    rw [Set.indicator_apply, ite_eq_left hi]
     norm_num
 
 /-- Measurability of the empirical fraction along a measurable data stream

@@ -27,7 +27,7 @@ namespace AsymptoticStatistics.ForMathlib.GaussianVarCharFn
 Let `v : ℕ → ℝ≥0` be a sequence of variances whose real coercion converges
 to `v_inf : ℝ` (necessarily `0 ≤ v_inf`). Then for every `t : ℝ`, the
 characteristic function `charFun (gaussianReal 0 (v m)) t` converges in
-`ℂ` to `charFun (gaussianReal 0 ⟨v_inf, h_inf_nn⟩) t`.
+`ℂ` to `charFun (gaussianReal 0 (NNReal.mk v_inf h_inf_nn)) t`.
 
 The proof rewrites both sides via Mathlib's `charFun_gaussianReal`
 formula `charFun (gaussianReal μ v) t = exp (t·μ·I − v·t²/2)` (here
@@ -44,7 +44,7 @@ theorem gaussian_variance_charFn_tendsto
     (hv : Tendsto (fun m => (v m : ℝ)) atTop (𝓝 v_inf)) (t : ℝ) :
     Tendsto
       (fun m => charFun (gaussianReal 0 (v m)) t) atTop
-      (𝓝 (charFun (gaussianReal 0 ⟨v_inf, h_inf_nn⟩) t)) := by
+      (𝓝 (charFun (gaussianReal 0 (NNReal.mk v_inf h_inf_nn)) t)) := by
   -- Rewrite both sides via the explicit char-fn formula:
   --   `charFun (gaussianReal 0 v) t = cexp (t·0·I − v·t²/2) = cexp (−v·t²/2)`.
   simp_rw [charFun_gaussianReal]
@@ -54,7 +54,7 @@ theorem gaussian_variance_charFn_tendsto
   -- Composition of `Continuous (fun z : ℂ => cexp (t·0·I − z · t² / 2))` with
   -- the cast tendsto `((v m : ℝ≥0) : ℂ) → ((⟨v_inf,_⟩ : ℝ≥0) : ℂ)`.
   have h_cast : Tendsto (fun m => ((v m : ℝ≥0) : ℂ)) atTop
-      (𝓝 ((⟨v_inf, h_inf_nn⟩ : ℝ≥0) : ℂ)) := by
+      (𝓝 (((NNReal.mk v_inf h_inf_nn) : ℝ≥0) : ℂ)) := by
     -- `((v m : ℝ≥0) : ℂ) = (((v m : ℝ≥0) : ℝ) : ℂ)`; chain `ℝ → ℂ` continuity
     -- with `hv`.
     have h_real : Tendsto (fun m => ((v m : ℝ≥0) : ℝ)) atTop (𝓝 v_inf) := hv
@@ -67,8 +67,8 @@ theorem gaussian_variance_charFn_tendsto
         = fun m => ((((v m : ℝ≥0) : ℝ)) : ℂ) := by
       funext m
       rfl
-    have h_eq_lim : (((⟨v_inf, h_inf_nn⟩ : ℝ≥0) : ℂ) : ℂ) = ((v_inf : ℝ) : ℂ) := rfl
-    rw [h_eq_seq, show ((⟨v_inf, h_inf_nn⟩ : ℝ≥0) : ℂ) = ((v_inf : ℝ) : ℂ) from
+    have h_eq_lim : ((((NNReal.mk v_inf h_inf_nn) : ℝ≥0) : ℂ) : ℂ) = ((v_inf : ℝ) : ℂ) := rfl
+    rw [h_eq_seq, show (((NNReal.mk v_inf h_inf_nn) : ℝ≥0) : ℂ) = ((v_inf : ℝ) : ℂ) from
       h_eq_lim]
     exact h_to_C
   -- Compose with continuity of `z ↦ cexp (t·0·I − z·t²/2)`.

@@ -150,7 +150,7 @@ theorem clt_finDim
     rw [h_sq, h_cov t t]
   -- Build the witness `id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k)` with
   -- law `multivariateGaussian 0 J`.
-  haveI hG_prob : IsProbabilityMeasure (multivariateGaussian
+  have hG_prob : IsProbabilityMeasure (multivariateGaussian
       (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
   have hY_id : HasLaw
       (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))

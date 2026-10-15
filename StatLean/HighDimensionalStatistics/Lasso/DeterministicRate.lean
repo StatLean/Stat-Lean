@@ -242,7 +242,7 @@ theorem lasso_l2_rate
   -- ── Step 6: Cone condition Δ ∈ reCone S 3 ─────────────────────────────────
   -- From (lam/2)v ≤ (3lam/2)u and lam > 0, divide to get v ≤ 3u.
   have hcone : Δ ∈ reCone S 3 := by
-    unfold reCone; simp only [Set.mem_setOf_eq]
+    unfold reCone; simp only [Set.mem_ofPred_eq]
     -- v ≤ 3 * u
     have hlam2 : (0 : ℝ) < lam / 2 := by linarith
     have hkey : (lam / 2) * v ≤ (lam / 2) * (3 * u) := by

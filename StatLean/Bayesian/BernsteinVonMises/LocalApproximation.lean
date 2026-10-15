@@ -56,6 +56,8 @@ restricts to the good rectangle using the DQM singular-mass controls
 (`dqm_perturbation_excess/deficit_mass_tendsto`).
 -/
 
+set_option linter.style.longFile 2100
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
@@ -247,7 +249,7 @@ private lemma lintegral_preimage_bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin 
         ∘ (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) := by
       funext hh; simp [hT, bvmLocalUnscale, hadef]
     rw [h2, ← Measure.map_map (measurable_const_add θ₀) (measurable_const_smul a), h1,
-      Measure.map_smul, Measure.IsAddLeftInvariant.map_add_left_eq_self
+      Measure.map_smul _ (by fun_prop), Measure.IsAddLeftInvariant.map_add_left_eq_self
         (μ := (volume : Measure (EuclideanSpace ℝ (Fin k)))) θ₀]
     rw [hfr, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (a ^ k)⁻¹)]
   have hpre : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' D) := (measurable_bvmLocalScale θ₀ n) hD
@@ -295,10 +297,10 @@ private lemma lintegral_preimage_eq_jac_mul_bvmNumer
       restrict_withDensity hsm, Measure.restrict_restrict_of_subset hDsub]
   rw [hres, lintegral_withDensity_eq_lintegral_mul _ hFmeas hGmeas]
   simp only [Pi.mul_apply]
-  rw [lintegral_preimage_bvmLocalScale θ₀ hn1 hD (hFmeas.mul hGmeas)]
+  erw [lintegral_preimage_bvmLocalScale θ₀ hn1 hD (hFmeas.mul hGmeas)]
   congr 1
   refine lintegral_congr fun hh => ?_
-  simp only [bvmJointDens]
+  simp only [bvmJointDens, Pi.mul_apply]
   ring
 
 -- The scalar `q` (Jacobian) and the predictive normalizer `Z` cancel in the conditional ratio.
@@ -435,7 +437,7 @@ theorem bvmLogRatio_tendsto
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}) atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   -- The LAN residual at an arbitrary fixed local parameter.
@@ -486,9 +488,9 @@ theorem bvmLogRatio_tendsto
   have hincl : {ω : Fin n → 𝓧 | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}
       ⊆ {ω : Fin n → 𝓧 | ε / 3 ≤ |res g n ω|} ∪ {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hp : |Real.log (f (bvmLocalUnscale θ₀ n g))
         - Real.log (f (bvmLocalUnscale θ₀ n h))| < ε / 3 := by
@@ -536,10 +538,10 @@ private lemma tvDist_normalize_le_double_lintegral_antisymm {α : Type*} [Measur
     simp only [div_eq_mul_inv]
     rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr h0), ← hZ]
     exact ENNReal.mul_inv_cancel h0 hT
-  haveI : IsProbabilityMeasure (base.withDensity fun x => s x / Zs) := ⟨by
+  have : IsProbabilityMeasure (base.withDensity fun x => s x / Zs) := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact hmass s Zs hZs hs0 hsT⟩
-  haveI : IsProbabilityMeasure (base.withDensity fun x => t x / Zt) := ⟨by
+  have : IsProbabilityMeasure (base.withDensity fun x => t x / Zt) := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact hmass t Zt hZt ht0 htT⟩
   rw [tvDist_withDensity_eq base hpm hqm]
@@ -558,12 +560,13 @@ private lemma tvDist_normalize_le_double_lintegral_antisymm {α : Type*} [Measur
     intro x
     rw [ENNReal.mul_sub (fun _ _ => ENNReal.inv_ne_top.mpr hZ0), e1, e2]
   simp_rw [key]
-  rw [lintegral_const_mul _ ((hs.mul_const Zt).sub (ht.mul_const Zs))]
-  refine mul_le_mul_left' (lintegral_mono fun x => ?_) _
+  erw [lintegral_const_mul _ ((hs.mul_const Zt).sub (ht.mul_const Zs))]
+  refine mul_le_mul_right (lintegral_mono fun x => ?_) _
+  simp only [Pi.sub_apply]
   have h1 : s x * Zt = ∫⁻ g, s x * t g ∂base := by
     rw [hZt, lintegral_const_mul _ ht]
   have h2 : t x * Zs = ∫⁻ g, s g * t x ∂base := by
-    rw [hZs, lintegral_mul_const _ hs, mul_comm]
+    erw [hZs, lintegral_mul_const _ hs, mul_comm]
   rw [h1, h2]
   exact lintegral_sub_le _ _ (hs.mul_const (t x))
 
@@ -872,7 +875,7 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
     rw [hkey, div_eq_mul_inv]
     calc (t g)⁻¹ * (t g / Zt * (s h * t g - s g * t h))
         ≤ (t g)⁻¹ * (c * (s h * t g - s g * t h)) :=
-          mul_le_mul_left' (mul_le_mul_right' hcg _) _
+          mul_le_mul_right (mul_le_mul_left hcg _) _
       _ = c * ((s h * t g - s g * t h) * (t g)⁻¹) := by ring
   have hE1 : (Zs * Zt)⁻¹ * ∫⁻ h, ∫⁻ g, (s h * t g - s g * t h) ∂base ∂base
       = Zs⁻¹ * ∫⁻ h, Zt⁻¹ * ∫⁻ g, (s h * t g - s g * t h) ∂base ∂base := by
@@ -882,14 +885,11 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
       = c * (Zs⁻¹ * ∫⁻ h, ∫⁻ g, (s h * t g - s g * t h) / t g ∂base ∂base) := by
     rw [lintegral_const_mul' _ _ hcT]; ring
   rw [hE1, ← hE2]
-  exact mul_le_mul_left' (lintegral_mono hinner) _
+  exact mul_le_mul_right (lintegral_mono hinner) _
 
 -- LEAN-ONLY: the pointwise Step-B majorization. Where the Bayes formula holds, the local mass
 -- is nondegenerate and the score sum is bounded by `K`, the conditioned total-variation
 -- distance is at most a `(R, K, J)`-constant times `bvmStepBBound`.
--- The elaboration of the two `withDensity` rewrites plus the normalized Jensen bound exceeds
--- the default heartbeat budget (large `ℝ≥0∞` density terms), hence the raised limit.
-set_option maxHeartbeats 1000000 in
 private lemma tvDist_cond_le_bvmStepBBound
     -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
@@ -1273,7 +1273,7 @@ private lemma lintegral_bvmPairDefect_le
     {n : ℕ} (h g : EuclideanSpace ℝ (Fin k)) :
     ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
       ≤ ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h)) := by
-  haveI : IsProbabilityMeasure (productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
+  have : IsProbabilityMeasure (productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF _ n
   calc ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
@@ -1300,11 +1300,11 @@ private lemma lintegral_le_add_measure_gt {Ω : Type*} [MeasurableSpace Ω] (P :
     calc ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P ≤ ∫⁻ _ in {ω | a < Y ω}ᶜ, a ∂P :=
           setLIntegral_mono_ae measurable_const.aemeasurable
             (Filter.Eventually.of_forall fun ω hω => by
-              simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+              simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
               exact hω)
       _ = a * P {ω | a < Y ω}ᶜ := setLIntegral_const _ _
       _ ≤ a := by
-          calc a * P {ω | a < Y ω}ᶜ ≤ a * 1 := mul_le_mul_left' prob_le_one _
+          calc a * P {ω | a < Y ω}ᶜ ≤ a * 1 := mul_le_mul_right prob_le_one _
             _ = a := mul_one a
   calc ∫⁻ ω in {ω | a < Y ω}, Y ω ∂P + ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P
       ≤ P {ω | a < Y ω} + a := add_le_add h1 h2
@@ -1343,7 +1343,7 @@ private lemma productMeasure_bvmBad_eq_zero
     exact iidKernel_withDensity hdens_meas hκ n θ
   rw [hPθ, withDensity_apply _ hS]
   refine setLIntegral_eq_zero hS fun ω hω => ?_
-  simp only [Set.mem_setOf_eq, not_forall, not_lt] at hω
+  simp only [Set.mem_ofPred_eq, not_forall, not_lt] at hω
   obtain ⟨i, hi⟩ := hω
   exact Finset.prod_eq_zero (Finset.mem_univ i) (ENNReal.ofReal_eq_zero.mpr hi)
 
@@ -1407,7 +1407,7 @@ private lemma lintegral_bvmPairDefect_tendsto
     Tendsto (fun n => ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω
         ∂(Measure.pi fun _ : Fin n => μ)) atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ n
@@ -1453,7 +1453,7 @@ private lemma lintegral_bvmPairDefect_tendsto
       intro x
       refine (hcontig h).1 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
       refine (hcontig x).2 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
-      simpa using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
+      simpa using! tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
         |>.congr fun n => (productMeasure_bvmBad_eq_zero hκ hM_joint
           (bvmLocalUnscale θ₀ n x) n).symm
     have hbad0 : Tendsto (fun n : ℕ => productMeasure M μ (bvmLocalUnscale θ₀ n h) n
@@ -1527,8 +1527,8 @@ private lemma lintegral_bvmPairDefect_tendsto
             ω ∉ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)} ∧
             ω ∉ {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|} :=
           ⟨hcon.1, hcon.2.1, hcon.2.2.1, hcon.2.2.2⟩
-        simp only [Set.mem_setOf_eq, not_not] at hc0 hcg hch
-        simp only [Set.mem_setOf_eq, not_le] at hclr
+        simp only [Set.mem_ofPred_eq, not_not] at hc0 hcg hch
+        simp only [Set.mem_ofPred_eq, not_le] at hclr
         have hexp : ρ n ω
             = ENNReal.ofReal (Real.exp (bvmLogRatio M f θ₀ J sc n g h ω)) :=
           bvmPairRatio_eq_exp_bvmLogRatio hfg hfh hc0 hcg hch
@@ -1667,7 +1667,7 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
   have hVfin : lamC Set.univ ≠ ∞ := by
     rw [hlamC, Measure.restrict_apply_univ]
     exact measure_closedBall_lt_top.ne
-  haveI : IsFiniteMeasure lamC := ⟨lt_of_le_of_ne le_top hVfin⟩
+  have : IsFiniteMeasure lamC := ⟨lt_of_le_of_ne le_top hVfin⟩
   have hsub : Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u ⊆ C :=
     Metric.ball_subset_closedBall.trans (Metric.closedBall_subset_closedBall hu)
   -- Step 1: bound the integrand by the unnormalized double integral.
@@ -1679,7 +1679,7 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
       lintegral_mono' (Measure.restrict_mono hsub le_rfl) le_rfl
     calc bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω
         ≤ bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n C ω :=
-          mul_le_mul_left' hmono _
+          mul_le_mul_right hmono _
       _ ≤ ∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume :=
           ennreal_inv_mul_mul_le _ _
   -- Step 2: Fubini.
@@ -1776,7 +1776,7 @@ private lemma exists_scoreSum_bound
     ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ,
       productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖} ≤ ε := by
   classical
-  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   have hscmeas : ∀ n : ℕ, Measurable (scoreSum sc n) := by
@@ -1785,10 +1785,10 @@ private lemma exists_scoreSum_bound
       Finset.measurable_sum Finset.univ fun i _ => hsc.comp (measurable_pi_apply i)
     unfold scoreSum
     exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
-  haveI hmapProb : ∀ n : ℕ,
+  have hmapProb : ∀ n : ℕ,
       IsProbabilityMeasure ((productMeasure M μ θ₀ n).map (scoreSum sc n)) := fun n => ⟨by
     rw [Measure.map_apply (hscmeas n) MeasurableSet.univ, Set.preimage_univ, measure_univ]⟩
-  haveI hGprob : IsProbabilityMeasure
+  have hGprob : IsProbabilityMeasure
       (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
   have hwc := AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges
     M μ θ₀ sc hsc (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
@@ -1809,7 +1809,7 @@ private lemma exists_scoreSum_bound
       = ((productMeasure M μ θ₀ n).map (scoreSum sc n))
           {x : EuclideanSpace ℝ (Fin k) | max r 1 < ‖x‖} := by
         rw [Measure.map_apply (hscmeas n) (measurableSet_lt measurable_const measurable_norm),
-          Set.preimage_setOf_eq]
+          Set.preimage_ofPred_eq]
     _ ≤ ((productMeasure M μ θ₀ n).map (scoreSum sc n)) Kcᶜ := measure_mono hsub
     _ ≤ ε := hKle _ ⟨n, rfl⟩
 
@@ -1892,7 +1892,7 @@ private lemma bvmNumer_ne_top_and_tvDist_zero_ae
   have hcond : ((bvmLocalPosterior κ π θ₀ n ω)[|C]) = 0 := by
     rw [ProbabilityTheory.cond, Measure.restrict_eq_zero.mpr hpost, smul_zero]
   rw [hcond]
-  refine le_antisymm (iSup_le fun t => iSup_le fun _ => ?_) (zero_le _)
+  refine le_antisymm (iSup_le fun t => iSup_le fun _ => ?_) (zero_le)
   simp
 
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
@@ -2016,7 +2016,7 @@ theorem local_tv_tendsto
               * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
             ≤ (c₀ * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k))⁻¹
                 * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) :=
-              mul_le_mul_right' (ENNReal.inv_le_inv.mpr hc₀n) _
+              mul_le_mul_left (ENNReal.inv_le_inv.mpr hc₀n) _
           _ = c₀⁻¹ := by
               rw [ENNReal.mul_inv (Or.inl hc₀pos.ne') (Or.inr hq0), mul_assoc,
                 ENNReal.inv_mul_cancel hq0 hqT, mul_one]
@@ -2032,7 +2032,7 @@ theorem local_tv_tendsto
           * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ) with hIv
       calc cK * ((π (Metric.ball θ₀ (R / Real.sqrt n)))⁻¹
               * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) * Iv)
-          ≤ cK * (c₀⁻¹ * Iv) := mul_le_mul_left' (mul_le_mul_right' hratio _) _
+          ≤ cK * (c₀⁻¹ * Iv) := mul_le_mul_right (mul_le_mul_left hratio _) _
         _ = cK * c₀⁻¹ / min δ 1 * Iv * min δ 1 := by
             rw [div_eq_mul_inv,
               show cK * c₀⁻¹ * (min δ 1)⁻¹ * Iv * min δ 1

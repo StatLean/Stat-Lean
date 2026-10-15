@@ -87,7 +87,7 @@ theorem posSemidef_fromBlocks_meat_bread (D : Fin N → Matrix (Fin m) (Fin q) �
     rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
   have hCovU : ∀ i, IsUnit (Covs i).det := fun i =>
     isUnit_iff_ne_zero.mpr (hCov i).det_pos.ne'
-  -- the stacked weight matrix `Wᵢ = [Dᵢᵀ Vᵢ⁻¹ ; Dᵢᵀ Σᵢ⁻¹]`
+  -- the stacked weight matrix `Wᵢ = [Dᵢᵀ Vᵢ⁻¹; Dᵢᵀ Σᵢ⁻¹]`
   let W : Fin N → Matrix (Fin q ⊕ Fin q) (Fin m) ℝ := fun i =>
     Matrix.fromRows ((D i)ᵀ * (V i)⁻¹) ((D i)ᵀ * (Covs i)⁻¹)
   have hblock : ∀ i, W i * Covs i * (W i)ᵀ
@@ -129,7 +129,7 @@ theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     (hK : (godambeInfo D Covs).PosDef) (hB : IsUnit (geeBread D V).det) :
     ((geeBread D V)⁻¹ * geeMeat D V Covs * (geeBread D V)⁻¹
       - (godambeInfo D Covs)⁻¹).PosSemidef := by
-  haveI : Invertible (godambeInfo D Covs) :=
+  have : Invertible (godambeInfo D Covs) :=
     Matrix.invertibleOfIsUnitDet _ (isUnit_iff_ne_zero.mpr hK.det_pos.ne')
   have hBt : (geeBread D V)ᵀ = geeBread D V := geeBread_transpose' D V hVsymm
   have hBinvT : ((geeBread D V)⁻¹)ᵀ = (geeBread D V)⁻¹ := by

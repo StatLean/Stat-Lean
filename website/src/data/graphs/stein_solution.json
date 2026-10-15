@@ -2,9 +2,9 @@
   "root": "StatLean.HypothesisTesting.steinSolution",
   "nodes": [
     {"id":"StatLean.HypothesisTesting.steinSolution","label":"steinSolution","full":"StatLean.HypothesisTesting.steinSolution","kind":"root","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Real.exp","label":"exp","full":"Real.exp","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Exponential"},
-    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"NPow.toPow","label":"toPow","full":"NPow.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.integral","label":"integral","full":"MeasureTheory.integral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"Real.normedAddCommGroup","label":"normedAddCommGroup","full":"Real.normedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Real"},
     {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
@@ -15,12 +15,12 @@
     {"id":"StatLean.HypothesisTesting.stdGaussianExpect","label":"stdGaussianExpect","full":"StatLean.HypothesisTesting.stdGaussianExpect","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
     {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"ProbabilityTheory.gaussianReal","label":"gaussianReal","full":"ProbabilityTheory.gaussianReal","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
-    {"id":"NNReal","label":"NNReal","full":"NNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.NNReal.Defs"}
+    {"id":"NNReal","label":"NNReal","full":"NNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.NNReal.Defs"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real"},
     {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real.exp"},
-    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Monoid.toPow"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"NPow.toPow"},
     {"source":"StatLean.HypothesisTesting.steinSolution","target":"MeasureTheory.integral"},
     {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real.normedAddCommGroup"},
     {"source":"StatLean.HypothesisTesting.steinSolution","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},

@@ -132,8 +132,7 @@ theorem pBridge_isProbabilityMeasure :
     IsProbabilityMeasure
       (gpBridgeMeasure hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) := by
   rw [gpBridgeMeasure]
-  exact Measure.isProbabilityMeasure_map
-    (gpPath_aemeasurable hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
+  exact (by infer_instance)
 
 /-- **B2 — Brownian-bridge covariance.** The second mixed moment of the coordinate
 evaluations `z ↦ z f`, `z ↦ z g` under `ν = gpBridgeMeasure` is `P(fg) − Pf·Pg`.
@@ -270,18 +269,18 @@ theorem pBridge_ucPaths_measurableSet :
     intro ε δ
     have : Cl ε δ = ⋂ f : ↥F, ⋂ g : ↥F,
         {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε} := by
-      ext z; simp only [hCldef, Set.mem_setOf_eq, Set.mem_iInter]
+      ext z; simp only [hCldef, Set.mem_ofPred_eq, Set.mem_iInter]
     rw [this]
     refine isClosed_iInter (fun f => isClosed_iInter (fun g => ?_))
     by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ
     · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε}
           = {z : LinfF F | |z f - z g| ≤ ε} := by
-        ext z; simp only [Set.mem_setOf_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
+        ext z; simp only [Set.mem_ofPred_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
       rw [hset]
       exact isClosed_le (((hcont_eval f).sub (hcont_eval g)).abs) continuous_const
     · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| ≤ ε}
           = Set.univ := by
-        ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+        ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
         exact fun h => absurd h hfg
       rw [hset]; exact isClosed_univ
   have hCl_meas : ∀ ε δ : ℝ, MeasurableSet (Cl ε δ) := fun ε δ => (hCl_closed ε δ).measurableSet
@@ -291,7 +290,7 @@ theorem pBridge_ucPaths_measurableSet :
       = ⋂ ε : ℚ, {z : LinfF F | 0 < ε →
           ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)} := by
     ext z
-    simp only [Set.mem_setOf_eq, Set.mem_iInter, hCldef]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter, hCldef]
     constructor
     · -- real ⟹ ℚ⁺ (relaxed): for rational ε>0, find rational δ below a real witness.
       intro hP ε hε
@@ -311,12 +310,12 @@ theorem pBridge_ucPaths_measurableSet :
   by_cases hε : (0 : ℚ) < ε
   · have : {z : LinfF F | 0 < ε → ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)}
         = ⋃ δ : ℚ, ⋃ (_ : 0 < δ), Cl (ε : ℝ) (δ : ℝ) := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_iUnion, hε, forall_true_left,
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_iUnion, hε, forall_true_left,
         exists_prop]
     rw [this]
     exact MeasurableSet.iUnion (fun δ => MeasurableSet.iUnion (fun _ => hCl_meas _ _))
   · have : {z : LinfF F | 0 < ε → ∃ δ : ℚ, 0 < δ ∧ z ∈ Cl (ε : ℝ) (δ : ℝ)} = Set.univ := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact fun h => absurd h hε
     rw [this]; exact MeasurableSet.univ
 
@@ -330,7 +329,7 @@ theorem pBridge_ucPaths :
     ∀ᵐ z ∂(gpBridgeMeasure hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne),
       ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
         ∀ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ → |z f - z g| < ε := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- The ε-δ predicate holds a.e. of `gpPath ω` (on the good event).
   have hae_omega : ∀ᵐ ω ∂iidStdGaussian,
       ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ f g : ↥F,
@@ -385,7 +384,7 @@ theorem pBridge_isGaussian_fdd (m : ℕ) (φ : Fin m → ↥F) :
       exact lp.norm_apply_le_norm ENNReal.top_ne_zero (z - w) i
     exact hlip.continuous
   have hR_meas : Measurable (fun z : LinfF F => (fun k => z (φ k))) :=
-    measurable_pi_lambda _ (fun k => (hcont_eval (φ k)).measurable)
+    Measurable.of_eval (fun k => (hcont_eval (φ k)).measurable)
   -- The `gpPath` tuple agrees a.e. with the isonormal tuple over `gpEmbed ∘ φ`.
   have hae : (fun ω => (fun k => gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω (φ k)))
       =ᵐ[iidStdGaussian]
@@ -410,7 +409,7 @@ theorem pBridge_isGaussian_fdd (m : ℕ) (φ : Fin m → ↥F) :
     (isonormal_hasGaussianLaw_tuple (gpBasis ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep)
       (fun k => gpEmbed ⟨G, hG_env, hG⟩ hF_meas (φ k))).congr hae.symm
   -- The readout law on `gpBridgeMeasure` is the pushforward of the tuple via `map_map`.
-  refine ⟨?_⟩
+  refine ⟨hR_meas.aemeasurable, ?_⟩
   rw [gpBridgeMeasure,
     AEMeasurable.map_map_of_aemeasurable hR_meas.aemeasurable
       (gpPath_aemeasurable hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)]

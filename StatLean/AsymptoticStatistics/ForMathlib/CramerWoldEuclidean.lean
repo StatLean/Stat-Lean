@@ -83,10 +83,10 @@ theorem cramerWold_weakConverges_euclidean
     refine ProbabilityMeasure.tendsto_of_tendsto_charFun ?_
     intro v
     -- Probability-measure structure on the projected (scalar) measures.
-    haveI h_prob_n : ∀ n, IsProbabilityMeasure ((μ_n n).map (fun x => ⟪v, x⟫_ℝ)) :=
-      fun n => Measure.isProbabilityMeasure_map (by fun_prop)
-    haveI h_prob_μ : IsProbabilityMeasure (μ.map (fun x => ⟪v, x⟫_ℝ)) :=
-      Measure.isProbabilityMeasure_map (by fun_prop)
+    have h_prob_n : ∀ n, IsProbabilityMeasure ((μ_n n).map (fun x => ⟪v, x⟫_ℝ)) :=
+      fun n => (by infer_instance)
+    have h_prob_μ : IsProbabilityMeasure (μ.map (fun x => ⟪v, x⟫_ℝ)) :=
+      (by infer_instance)
     let qn : ℕ → ProbabilityMeasure ℝ :=
       fun n => ⟨(μ_n n).map (fun x => ⟪v, x⟫_ℝ), h_prob_n n⟩
     let qμ : ProbabilityMeasure ℝ := ⟨μ.map (fun x => ⟪v, x⟫_ℝ), h_prob_μ⟩

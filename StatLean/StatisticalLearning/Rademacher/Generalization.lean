@@ -107,7 +107,7 @@ private lemma abs_sum_signOf_le (σ : Fin n → Bool) (g : Fin n → ℝ) {M : �
 private lemma measurable_sSup_image {X : Type*} [MeasurableSpace X] {K : Set ι}
     (hKc : K.Countable) {g : ι → X → ℝ} (hg : ∀ k, Measurable (g k)) :
     Measurable fun x => sSup ((fun k => g k x) '' K) := by
-  haveI := hKc.to_subtype
+  have := hKc.to_subtype
   have h : (fun x => sSup ((fun k => g k x) '' K)) = fun x => ⨆ k : K, g k x := by
     funext x; exact sSup_image_eq_iSup _ _
   rw [h]
@@ -169,8 +169,8 @@ private lemma abs_empRad_le (hK : K.Nonempty) (hbdd : ∀ k ∈ K, ∀ z, |F k z
       |sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)| ≤ n * c := fun σ =>
     abs_sSup_image_le hk₀ fun k hk => abs_sum_signOf_le σ _ fun i => hbdd k hk (s i)
   rw [empRad_eq_signAvg F K s, abs_mul, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹),
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
   have hsum : |∑ σ : Fin n → Bool, sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)|
       ≤ (2 ^ n : ℝ) * ((n : ℝ) * c) := by
     calc |∑ σ : Fin n → Bool, sSup ((fun k => ∑ i, signOf σ i * F k (s i)) '' K)|
@@ -243,7 +243,7 @@ private lemma abs_empRisk_sub_update_le (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ 
     have h2 := abs_le.1 (hbdd k hk y)
     exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
   rw [empRisk, empRisk, ← mul_sub, sum_sub_sum_update (fun _ z => F k z) x j y, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
   calc (n : ℝ)⁻¹ * |F k (x j) - F k y| ≤ (n : ℝ)⁻¹ * (2 * c) := by gcongr
     _ = 2 * c / n := by field_simp
 
@@ -292,8 +292,8 @@ private lemma abs_empRad_sub_update_le (hK : K.Nonempty)
     exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
   rw [empRad_eq_signAvg F K x, empRad_eq_signAvg F K (Function.update x j y), ← mul_sub,
     ← mul_sub, ← Finset.sum_sub_distrib, abs_mul, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹),
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)]
   have hsum : |∑ σ : Fin n → Bool, (sSup ((fun k => ∑ i, signOf σ i * F k (x i)) '' K)
         - sSup ((fun k => ∑ i, signOf σ i * F k (Function.update x j y i)) '' K))|
       ≤ (2 ^ n : ℝ) * (2 * c) := by
@@ -380,16 +380,16 @@ private lemma markov_prob {X : Type*} [MeasurableSpace X] {ν : Measure X} [IsPr
     have hnull : ν {x | ¬ (f x = 0)} = 0 := ae_iff.1 hae
     have hsub : {x | f x ≤ R / δ}ᶜ ⊆ {x | ¬ (f x = 0)} := by
       intro x hx
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       have hx' : R / δ < f x := hx
       rw [← hR', zero_div] at hx'
       exact fun h => absurd h (ne_of_gt hx')
     calc ν {x | f x ≤ R / δ}ᶜ ≤ ν {x | ¬ (f x = 0)} := measure_mono hsub
       _ = 0 := hnull
-      _ ≤ ENNReal.ofReal δ := zero_le _
+      _ ≤ ENNReal.ofReal δ := zero_le
   · have hsub : {x | f x ≤ R / δ}ᶜ ⊆ {x | R / δ ≤ f x} := by
       intro x hx
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
       exact hx.le
     have hpos : 0 < R / δ := div_pos hRpos hδ
     have hmark := mul_meas_ge_le_integral_of_nonneg (μ := ν)
@@ -420,8 +420,8 @@ private lemma mcdiarmid_event {f : Sample Z n → ℝ} (hf : Measurable f)
       ⊆ {s | c * Real.sqrt (2 * Real.log (a / δ) / n)
             < f s - ∫ s', f s' ∂(sampleLaw D n)} := by
     intro s hs
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hs
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hs
+    simp only [Set.mem_ofPred_eq]
     linarith
   calc sampleLaw D n {s | f s ≤ (∫ s', f s' ∂(sampleLaw D n))
           + c * Real.sqrt (2 * Real.log (a / δ) / n)}ᶜ
@@ -599,7 +599,7 @@ theorem rademacher_generalization_expected {δ : ℝ}
         2 * (∫ s', empRad F K s' ∂(sampleLaw D n)) +
           c * Real.sqrt (2 * Real.log (2 / δ) / n)} = Set.univ := by
       ext s
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       intro k hk
       rw [hrisk0 k hk, hemp0 s k hk, ← hc]
       simp [hrad0]
@@ -667,7 +667,7 @@ theorem rademacher_generalization_empirical {δ : ℝ}
     have hset : {s : Sample Z n | ∀ k ∈ K, risk D F k - empRisk F s k ≤
         2 * empRad F K s + 4 * c * Real.sqrt (2 * Real.log (4 / δ) / n)} = Set.univ := by
       ext s
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       intro k hk
       rw [hrisk0 k hk, hemp0 s k hk, ← hc]
       simp [hrad0]
@@ -760,7 +760,7 @@ theorem rademacher_erm_excess {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
     have hset : {s : Sample Z n | risk D F (A s) - risk D F kStar ≤
         2 * empRad F K s + 5 * c * Real.sqrt (2 * Real.log (8 / δ) / n)} = Set.univ := by
       ext s
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       rw [hrisk0 _ (hA s).1, hrisk0 _ hkStar, ← hc]
       simp [hrad0]
     rw [hset, measure_univ]
@@ -821,7 +821,7 @@ theorem rademacher_erm_excess {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
           + c * Real.sqrt (2 * Real.log (8 / δ) / n) := hs.2.2
     rw [integral_empRisk (integrable_of_abs_le (hmeas kStar) (hbdd kStar hkStar)) hn] at h4
     have h5 : empRisk F s (A s) ≤ empRisk F s kStar := (hA s).2 kStar hkStar
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     linarith
 
 

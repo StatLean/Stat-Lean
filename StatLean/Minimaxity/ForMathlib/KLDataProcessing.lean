@@ -57,14 +57,13 @@ chain rule `klDiv_compProd_left` by realizing `μ.map f` as a marginal of `μ �
 since Mathlib lacks a general data-processing inequality.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax lower bounds), §15.1.3 (Some divergence measures). -/
+Cambridge University Press, 2019. Chapter 15 (Minimax
+lower bounds), §15.1.3 (Some divergence measures). -/
 theorem klDiv_map_le {f : α → β} (hf : Measurable f) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     klDiv (μ.map f) (ν.map f) ≤ klDiv μ ν := by
   have hm : MeasurableSpace.comap f mβ ≤ mα := hf.comap_le
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
-  haveI : IsFiniteMeasure (ν.trim hm) := isFiniteMeasure_trim hm
+  have : IsFiniteMeasure (ν.trim hm) := isFiniteMeasure_trim hm
   by_cases hμν : μ ≪ ν
   · have hmap_ac : μ.map f ≪ ν.map f := hμν.map hf
     by_cases hktop : klDiv μ ν = ⊤

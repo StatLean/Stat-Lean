@@ -114,7 +114,7 @@ private lemma inner_L2_eq_integral (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
 /-- The pointwise product of two `L²` functions is integrable. -/
 private lemma integrable_L2_mul (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
     Integrable (fun x => f x * g x) μ :=
-  (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun x => real_inner_eq_mul _ _)
+  (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun _ => real_inner_eq_mul _ _)
 
 /-- Pairing an `L²` function against the indicator of a measurable set is its set-integral. -/
 private lemma inner_indicator_eq_setIntegral (μ : Measure 𝓧) [IsFiniteMeasure μ]
@@ -168,7 +168,7 @@ theorem isCompact_toWeakDualL2_image_testClass (μ : Measure 𝓧)
       {L : WeakDual ℝ (Lp ℝ 2 μ) | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → 0 ≤ L h}
         ∩ {L | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → L h ≤ toWeakDualL2 μ one h} := by
     ext L
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_image, testClassL2]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_image, testClassL2]
     constructor
     · rintro ⟨f, ⟨hf0, hf1⟩, rfl⟩
       refine ⟨fun h hh => ?_, fun h hh => ?_⟩
@@ -213,10 +213,10 @@ theorem isCompact_toWeakDualL2_image_testClass (μ : Measure 𝓧)
       ({L : WeakDual ℝ (Lp ℝ 2 μ) | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → 0 ≤ L h}
         ∩ {L | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → L h ≤ toWeakDualL2 μ one h}) := by
     refine IsClosed.inter ?_ ?_
-    · simp only [Set.setOf_forall]
+    · simp only [Set.ofPred_forall]
       exact isClosed_iInter fun h => isClosed_iInter fun _ =>
         isClosed_Ici.preimage (continuous_eval_weakDual μ h)
-    · simp only [Set.setOf_forall]
+    · simp only [Set.ofPred_forall]
       exact isClosed_iInter fun h => isClosed_iInter fun _ =>
         isClosed_Iic.preimage (continuous_eval_weakDual μ h)
   -- The image lies in a weak-* compact closed ball.
@@ -247,12 +247,12 @@ theorem isCompact_toWeakDualL2_image_constrained (μ : Measure 𝓧)
     constructor
     · rintro ⟨f, ⟨hf, hcon⟩, rfl⟩
       refine ⟨⟨f, hf, rfl⟩, ?_⟩
-      simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq]
       intro i
       rw [toWeakDualL2_apply, real_inner_comm]
       exact hcon i
     · rintro ⟨⟨f, hf, rfl⟩, hcon⟩
-      simp only [Set.mem_iInter, Set.mem_setOf_eq] at hcon
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq] at hcon
       refine ⟨f, ⟨hf, fun i => ?_⟩, rfl⟩
       have hi := hcon i
       rw [toWeakDualL2_apply] at hi

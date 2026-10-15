@@ -124,13 +124,13 @@ private lemma sigmaFinite_of_integrable_pos {μ : Measure 𝓧} {f : 𝓧 → �
   refine ⟨⟨⟨fun n => {x | (1 : ℝ) / (n + 1) < f x}, fun _ => trivial, fun n => ?_, ?_⟩⟩⟩
   · exact hf.measure_gt_lt_top (by positivity)
   · ext x
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact exists_nat_one_div_lt (hpos x)
 
 /-- The natural parameter set of a one-parameter family, spelled with multiplication. -/
 private lemma integrable_exp_of_mem_natSet (E : ExpFamily 𝓧 ℝ) {θ : ℝ} (hθ : θ ∈ E.natSet) :
     Integrable (fun x => Real.exp (θ * E.stat x)) E.base := by
-  simpa only [ExpFamily.natSet, Set.mem_setOf_eq, inner_real] using hθ
+  simpa only [ExpFamily.natSet, Set.mem_ofPred_eq, inner_real] using hθ
 
 /-- **Tilted representation.** Every integral against the canonical member `P_θ` is the
 ratio of the two exponential integrals against the reference measure. No integrability
@@ -608,9 +608,9 @@ private lemma unbiased_side_conditions (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
   have hclm : ∀ v : ℝ, (innerSL ℝ v : ℝ →L[ℝ] ℝ)
       = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) v := by
     intro v
-    ext w
-    simp only [innerSL_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.one_apply, smul_eq_mul, inner_real]
+    ext
+    simp only [innerSL_apply_apply, ContinuousLinearMap.smulRight_apply,
+      one_apply_eq_self, smul_eq_mul, inner_real]
     ring
   -- `|ψ| ≤ 1` puts the natural set inside the `ψ`-weighted one
   have hwsub : E.natSet ⊆ E.weightedNatSet ψ := by
@@ -731,7 +731,7 @@ private lemma expFamily_np_compare (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure
     integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₀))
   have hie' : Integrable (fun x => Real.exp (θ' * E.stat x)) E.base :=
     integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ'))
-  haveI : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₀ fun x => Real.exp_pos _
+  have : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₀ fun x => Real.exp_pos _
   -- the three densities
   set g₀ : 𝓧 → ℝ := fun x => Real.exp (θ₀ * E.stat x) / d₀ with hg₀
   set g₁ : 𝓧 → ℝ := fun x => E.stat x * Real.exp (θ₀ * E.stat x) / d₀ with hg₁
@@ -979,7 +979,7 @@ private lemma expFamily_level_interval (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
     integral_sub hi12 (hIF θ hθ), integral_add hi1 hi2,
     integral_const_mul, integral_const_mul, hval θ₁ hθ₁, hval θ₂ hθ₂, hval θ hθ,
     hφ1, hφ2] at hI
-  simp only [sub_self, zero_mul, mul_zero, add_zero, zero_add] at hI
+  simp only [sub_self, zero_mul, mul_zero, add_zero] at hI
   have hdpos := partition_pos E hP hθ
   nlinarith [hI, hdpos]
 
@@ -1014,7 +1014,7 @@ private lemma expFamily_np_compare_interval (E : ExpFamily 𝓧 ℝ) {P : ℝ �
   have hie₁ := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₁))
   have hie₂ := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₂))
   have hie' := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ'))
-  haveI : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₁ fun x => Real.exp_pos _
+  have : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₁ fun x => Real.exp_pos _
   set g₀ : 𝓧 → ℝ := fun x => Real.exp (θ₁ * E.stat x) / d₁ with hg₀
   set g₁ : 𝓧 → ℝ := fun x => Real.exp (θ₂ * E.stat x) / d₂ with hg₁
   set g₂ : 𝓧 → ℝ := fun x => Real.exp (θ' * E.stat x) / d' with hg₂

@@ -74,7 +74,7 @@ theorem cone_trivial_of_unique_basisPursuit
     have hLv : designMap X v = 0 := by rwa [SetLike.mem_coe, LinearMap.mem_ker] at hker
     -- `β* = restrict S v` is supported on `S`.
     have hsupp : ∀ i ∉ S, (restrict S v).ofLp i = 0 := by
-      intro i hi; rw [restrict_ofLp_apply, if_neg hi]
+      intro i hi; rw [restrict_ofLp_apply, ite_eq_right hi]
     -- Feasibility: `X (-v_{Sᶜ}) = X v_S`, since `X v = 0`.
     have hsum : designMap X (restrict S v) + designMap X (restrict Sᶜ v) = 0 := by
       rw [← map_add, restrict_add_restrict_compl]; exact hLv

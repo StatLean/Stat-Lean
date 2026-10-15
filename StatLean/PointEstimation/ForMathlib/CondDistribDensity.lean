@@ -146,11 +146,11 @@ theorem condDistrib_withDensity_prod_ae_eq
     rw [hκ_apply t, Measure.smul_apply, withDensity_apply _ MeasurableSet.univ,
         Measure.restrict_univ, smul_eq_mul]
     exact ENNReal.inv_mul_le_one _
-  haveI := hκ_fin
+  have := hκ_fin
   -- The first marginal has the slice-mass density.
   have hmap : ρ.map Prod.fst = ν.withDensity g := by
     rw [hρ]; exact map_fst_withDensity_prod hp
-  haveI : SFinite (ν.withDensity g) := by rw [← hmap]; infer_instance
+  have : SFinite (ν.withDensity g) := by rw [← hmap]; infer_instance
   -- The defining composition-product identity for the candidate.
   have hcompProd : ρ.map (fun x => (Prod.fst x, Prod.snd x)) = ρ.map Prod.fst ⊗ₘ κ := by
     have hid : (fun x : S × ℝ => (Prod.fst x, Prod.snd x)) = id := by funext x; rfl
@@ -166,9 +166,10 @@ theorem condDistrib_withDensity_prod_ae_eq
     have hker : ∀ t : S, ∫⁻ y, f (t, y) ∂(κ t)
         = (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := by
       intro t
-      rw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
+      erw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
           ← lintegral_const_mul _ ((hpt t).mul (hft t))]
-      exact lintegral_congr fun y => by rw [hq_def, mul_assoc]
+      exact lintegral_congr fun y => by
+        simp only [Pi.mul_apply]; rw [hq_def, mul_assoc]
     -- Right side: unfold the composition-product and the marginal density.
     have hJ : Measurable fun t => ∫⁻ y, p (t, y) * f (t, y) ∂volume :=
       (hp.mul hf).lintegral_prod_right'
@@ -177,14 +178,14 @@ theorem condDistrib_withDensity_prod_ae_eq
       rw [hmap, Measure.lintegral_compProd hf]
       have hcong : (fun t => ∫⁻ y, f (t, y) ∂(κ t))
           = fun t => (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := funext hker
-      rw [hcong, lintegral_withDensity_eq_lintegral_mul ν hg ((hg.inv).mul hJ)]
-      simp only [Pi.mul_apply]
+      erw [hcong, lintegral_withDensity_eq_lintegral_mul ν hg ((hg.inv).mul hJ)]
+      simp only [Pi.mul_apply, Pi.inv_apply]
     rw [hL, hR]
     refine lintegral_congr_ae ?_
     filter_upwards [hp_ne_top, hp_ne_zero] with t htop hzero
     rw [← mul_assoc, ENNReal.mul_inv_cancel hzero htop, one_mul]
   -- Conclude by a.e. uniqueness of the disintegration, then rewrite each fibre.
-  have hae := condDistrib_ae_eq_of_measure_eq_compProd (μ := ρ) Prod.fst
+  have hae := condDistrib_ae_eq_of_measure_eq_compProd (μ := ρ) measurable_fst.aemeasurable
     measurable_snd.aemeasurable (κ := κ) hcompProd
   filter_upwards [hae] with t ht
   rw [ht, hκ_apply t]

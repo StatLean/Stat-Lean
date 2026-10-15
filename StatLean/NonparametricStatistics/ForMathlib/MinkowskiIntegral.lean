@@ -86,7 +86,7 @@ private lemma sq_lintegral_le_of_duality {β : Type*} [MeasurableSpace β]
     intro m x; simp only [hΦ, Set.indicator_apply]
     split_ifs with h
     · exact min_le_left _ _
-    · exact zero_le _
+    · exact zero_le
   have hsup : ∀ x, ⨆ m, Φ m x = S x := by
     intro x
     refine le_antisymm (iSup_le fun m => hΦle m x) ?_
@@ -103,11 +103,11 @@ private lemma sq_lintegral_le_of_duality {β : Type*} [MeasurableSpace β]
     split_ifs with h1 h2
     · exact min_le_min le_rfl (by exact_mod_cast hmn)
     · exact absurd (monotone_spanningSets ν hmn h1) h2
-    · exact zero_le _
+    · exact zero_le
     · exact le_rfl
   have hΘmeas : ∀ m, Measurable fun x => S x * Φ m x := fun m => hSmeas.mul (hΦmeas m)
   have hΘmono : Monotone fun m => fun x => S x * Φ m x := by
-    intro m n hmn x; exact mul_le_mul_left' (hΦmono hmn x) (S x)
+    intro m n hmn x; exact mul_le_mul_right (hΦmono hmn x) (S x)
   have hΘsup : ∀ x, (⨆ m, S x * Φ m x) = (S x) ^ 2 := by
     intro x; rw [← ENNReal.mul_iSup, hsup x, sq]
   calc (∫⁻ x, (S x) ^ 2 ∂ν)
@@ -131,12 +131,12 @@ private lemma sq_lintegral_le_of_duality {β : Type*} [MeasurableSpace β]
       (measure_spanningSets_lt_top ν m).ne
   have hlow : am ≤ ∫⁻ x, S x * Φ m x ∂ν := by
     rw [ham]; refine lintegral_mono fun x => ?_
-    rw [ENNReal.rpow_two, sq]; exact mul_le_mul_right' (hΦle m x) (Φ m x)
+    rw [ENNReal.rpow_two, sq]; exact mul_le_mul_left (hΦle m x) (Φ m x)
   have hup : (∫⁻ x, S x * Φ m x ∂ν) ≤ R * am ^ (1 / 2 : ℝ) := hduality (Φ m) (hΦmeas m)
   have ham2 : am ≤ R * am ^ (1 / 2 : ℝ) := hlow.trans hup
   have hsqrtle : am ^ (1 / 2 : ℝ) ≤ R := by
     by_cases h0 : am = 0
-    · simp [h0, ENNReal.zero_rpow_of_pos (show (0 : ℝ) < 1 / 2 by norm_num)]
+    · simp [h0]
     · set t := am ^ (1 / 2 : ℝ) with ht
       have htfin : t ≠ ⊤ := (ENNReal.rpow_lt_top_of_nonneg (by norm_num) hamfin).ne
       have htt : t * t = am := by
@@ -146,7 +146,7 @@ private lemma sq_lintegral_le_of_duality {β : Type*} [MeasurableSpace β]
       have hcancel : t * t ≤ R * t := by rw [htt]; exact ham2
       exact (ENNReal.mul_le_mul_iff_left htne0 htfin).1 hcancel
   calc (∫⁻ x, S x * Φ m x ∂ν) ≤ R * am ^ (1 / 2 : ℝ) := hup
-    _ ≤ R * R := mul_le_mul_left' hsqrtle R
+    _ ≤ R * R := mul_le_mul_right hsqrtle R
     _ = R ^ 2 := (sq R).symm
 
 /-- **Generalized Minkowski inequality, `L²` form** (for `ℝ≥0∞`-valued integrands):

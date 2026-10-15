@@ -84,8 +84,8 @@ debt candidate of this work item; reuses `expectation_max_le` on the
 `2N`-family `(gᵢ, −gᵢ)`. -/
 theorem integral_ciSup_abs_gaussVec_le (N : ℕ) [NeZero N] :
     ∫ g, ⨆ i, |g i| ∂(gaussVec N) ≤ Real.sqrt (2 * Real.log (2 * N)) := by
-  haveI : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero N)
-  haveI : NeZero (2 * N) := ⟨Nat.mul_ne_zero (by norm_num) (NeZero.ne N)⟩
+  have : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero N)
+  have : NeZero (2 * N) := ⟨Nat.mul_ne_zero (by norm_num) (NeZero.ne N)⟩
   -- Pointwise: `⨆ᵢ |gᵢ| = ⨆ⱼ (two-sided family)ⱼ`.
   have hpt : ∀ g : Fin N → ℝ, ⨆ i, |g i| = ⨆ j, twoSidedFam N j g := by
     intro g
@@ -118,7 +118,7 @@ theorem integral_ciSup_abs_gaussVec_le (N : ℕ) [NeZero N] :
 `integral_ciSup_abs_gaussVec_le`. -/
 theorem integral_pi_norm_gaussVec_le (N : ℕ) [NeZero N] :
     ∫ g, ‖g‖ ∂(gaussVec N) ≤ Real.sqrt (2 * Real.log (2 * N)) := by
-  haveI : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero N)
+  have : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero N)
   simp_rw [pi_norm_eq_ciSup_abs]
   exact integral_ciSup_abs_gaussVec_le N
 

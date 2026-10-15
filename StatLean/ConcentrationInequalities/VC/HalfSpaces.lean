@@ -73,7 +73,7 @@ theorem shatters_halfSpaceClass_simplex (m : ℕ) :
     intro i j
     refine (EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ)
       (EuclideanSpace.single j (1 : ℝ))).trans ?_
-    simp [PiLp.single_apply, eq_comm]
+    simp [PiLp.single_apply]
   -- Inner product of `a` with a basis vector recovers the coefficient.
   have hval : ∀ j : Fin m,
       (inner ℝ a (EuclideanSpace.single j (1 : ℝ)) : ℝ) = c j := by
@@ -98,10 +98,10 @@ theorem shatters_halfSpaceClass_simplex (m : ℕ) :
     rw [hval j]
     simp only [hc]
     by_cases hj : EuclideanSpace.single j (1 : ℝ) ∈ T
-    · rw [if_pos hj]
+    · rw [ite_eq_left hj]
       refine iff_of_true ?_ hj
       rw [hb]; split_ifs <;> norm_num
-    · rw [if_neg hj]
+    · rw [ite_eq_right hj]
       refine iff_of_false ?_ hj
       rw [hb]; split_ifs <;> norm_num
   -- Combined: for each point of `Λ`, membership in the half-space ⇔ membership in `T`.
@@ -166,7 +166,7 @@ theorem not_shatters_halfSpaceClass {m : ℕ}
     rintro x ⟨y, hyIc, rfl⟩
     have hyΛ : (f y) ∈ (↑Λ : Set _) := Finset.mem_coe.mpr y.2
     by_contra hxS
-    simp only [Set.mem_setOf_eq, not_lt] at hxS
+    simp only [Set.mem_ofPred_eq, not_lt] at hxS
     have : (f y) ∈ f '' I := by rw [← hUnion]; exact ⟨hyΛ, hxS⟩
     obtain ⟨z, hzI, hz⟩ := this
     have hfinj : Function.Injective f := by rw [hf]; exact Subtype.val_injective
@@ -208,7 +208,7 @@ theorem vcDim_halfSpaceClass (m : ℕ) :
     intro Λ hΛ
     have hnat : Λ.card ≤ m + 1 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       obtain ⟨Λ', hsub, hc⟩ :=
         Finset.exists_subset_card_eq (show m + 2 ≤ Λ.card from hcon)
       exact not_shatters_halfSpaceClass hc (hΛ.mono_right hsub)

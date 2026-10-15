@@ -22,8 +22,8 @@ $$\mathbb{E}\!\left[\frac{V_+(0)}{1 + V_-(0)}\right] \le 1.$$
 `knockoff_initial_le` proves exactly this bound. At threshold $0$ the magnitude condition
 $|W_j| \ge 0$ is vacuous, so every untied null is counted as either positive or negative and
 $V_+(0) + V_-(0) \le N_0$. By condition 3 of the knock-off score definition — the signs
-$\operatorname{sign}(W_j)$ given the magnitudes $|W_1|,\dots,|W_d|$ are i.i.d.\ $\mathrm{Ber}(1/2)$ —
-the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expectation expands to
+$\operatorname{sign}(W_j)$ given the magnitudes $|W_1|,\dots,|W_d|$ are i.i.d.\ $\mathrm{Ber}(1/2)$
+— the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expectation expands to
 the finite binomial-ratio sum
 $$\sum_{k=0}^{N_0} \binom{N_0}{k} 2^{-N_0}\, \frac{k}{1 + (N_0 - k)} \;=\; 1 - 2^{-N_0} \;\le\; 1.$$
 
@@ -237,17 +237,17 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
     intro i
     have hsgn1 : ∀ ω, sgnReal W (i : Fin d) ω = 1 ↔ 0 ≤ W (i : Fin d) ω := by
       intro ω; unfold sgnReal; constructor
-      · intro h; by_contra hc; rw [if_neg hc] at h; norm_num at h
-      · intro h; rw [if_pos h]
+      · intro h; by_contra hc; rw [ite_eq_right hc] at h; norm_num at h
+      · intro h; rw [ite_eq_left h]
     have hsgnneg : ∀ ω, sgnReal W (i : Fin d) ω = -1 ↔ W (i : Fin d) ω < 0 := by
       intro ω; unfold sgnReal; constructor
-      · intro h; by_contra hc; rw [if_pos (not_lt.mp hc)] at h; norm_num at h
-      · intro h; rw [if_neg (not_le.mpr h)]
+      · intro h; by_contra hc; rw [ite_eq_left (not_lt.mp hc)] at h; norm_num at h
+      · intro h; rw [ite_eq_right (not_le.mpr h)]
     have hge : {ω | (0 : ℝ) ≤ W (i : Fin d) ω} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
       exact (hsgn1 ω).symm
     have hlt : {ω | W (i : Fin d) ω < 0} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {-1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
       exact (hsgnneg ω).symm
     have h12 : (1 : ℝ≥0∞) - 1 / 2 = 1 / 2 := by
       calc (1 : ℝ≥0∞) - 1 / 2 = (1 / 2 + 1 / 2) - 1 / 2 := by rw [ENNReal.add_halves]
@@ -255,7 +255,7 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
     split_ifs with h
     · rw [← hlt]
       have hcompl : {ω | W (i : Fin d) ω < 0} = {ω | (0 : ℝ) ≤ W (i : Fin d) ω}ᶜ := by
-        ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+        ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
       rw [hcompl, prob_compl_eq_one_sub
         (measurableSet_le measurable_const (hW.meas (i : Fin d))), hW.signs_fair _ i.2, h12]
     · rw [← hge]; exact hW.signs_fair _ i.2
@@ -282,30 +282,30 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
       · rintro ⟨hjH, hjlt⟩
         by_contra hjT
         have := h j hjH
-        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal] at this
-        rw [if_neg (not_le.mpr hjlt)] at this; norm_num at this
+        simp only [hjT, ite_false, Set.mem_singleton_iff, sgnReal] at this
+        rw [ite_eq_right (not_le.mpr hjlt)] at this; norm_num at this
       · intro hjT
         have hjH := hT hjT
         refine ⟨hjH, ?_⟩
         have := h j hjH
-        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal] at this
+        simp only [hjT, ite_true, Set.mem_singleton_iff, sgnReal] at this
         by_contra hjnlt
-        rw [if_pos (not_lt.mp hjnlt)] at this; norm_num at this
+        rw [ite_eq_left (not_lt.mp hjnlt)] at this; norm_num at this
     · intro hfilt j hjH
       by_cases hjT : j ∈ T
       · have hjlt : W j ω < 0 := by
           have : j ∈ H₀.filter (fun j => W j ω < 0) := hfilt ▸ hjT
           exact (Finset.mem_filter.mp this).2
-        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal, if_neg (not_le.mpr hjlt)]
+        simp only [hjT, ite_true, Set.mem_singleton_iff, sgnReal, ite_eq_right (not_le.mpr hjlt)]
       · have hjnlt : ¬ W j ω < 0 := by
           intro hlt
           exact hjT (hfilt ▸ Finset.mem_filter.mpr ⟨hjH, hlt⟩)
-        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal, if_pos (not_lt.mp hjnlt)]
+        simp only [hjT, ite_false, Set.mem_singleton_iff, sgnReal, ite_eq_left (not_lt.mp hjnlt)]
   -- decompose the event as a disjoint union of cells over T ∈ powersetCard m H₀
   have hdecomp : {ω | Vminus W H₀ 0 ω = m} =
       ⋃ T ∈ H₀.powersetCard m, signCell W H₀ T := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_powersetCard, exists_prop]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_powersetCard, exists_prop]
     rw [Vminus0_eq_filter_card]
     constructor
     · intro hcard
@@ -335,9 +335,12 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
 are i.i.d. fair coins, `prob_Vminus0_eq`), so the expectation expands to
 `∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals the claimed sum via `k = N₀−m`. -/
 lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    -- USER-INPUT: knock-off score; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
+    (W : Fin d → Ω → ℝ)
+    -- USER-INPUT: true null set; Lu-BDA §21.3
+    (H₀ : Finset (Fin d))
+    -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) :
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
@@ -348,7 +351,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
   have hmVp : Measurable (fun ω => Vplus W H₀ 0 ω) := measurable_Vplus0 W H₀ hW.meas
   have hVm_le : ∀ ω, Vminus W H₀ 0 ω ≤ N₀ := fun ω => Vminus0_le W H₀ ω
   have hVp_le : ∀ ω, Vplus W H₀ 0 ω ≤ N₀ := fun ω => by
-    show (Splus W 0 ω ∩ H₀).card ≤ H₀.card
+    change (Splus W 0 ω ∩ H₀).card ≤ H₀.card
     exact Finset.card_le_card Finset.inter_subset_right
   -- Step 1: pointwise `V₊/(1+V₋) ≤ g(V₋)` (since `V₊ ≤ N₀ − V₋`).
   have hpt : ∀ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ≤ g (Vminus W H₀ 0 ω) := by
@@ -372,8 +375,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     rw [Real.norm_of_nonneg hnn,
       div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
     have hVp : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVp_le ω
-    nlinarith [hVp, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
-      (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
+    nlinarith [hVp, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0 : ℝ) ≤ _),
+      (Nat.cast_nonneg N₀ : (0 : ℝ) ≤ _)]
   have hInt_up : Integrable (fun ω => g (Vminus W H₀ 0 ω)) μ := by
     apply Integrable.mono' (integrable_const (N₀ : ℝ))
     · simp only [hgdef]
@@ -386,8 +389,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
         div_nonneg (by linarith) (by positivity)
       rw [Real.norm_of_nonneg hnn,
         div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
-      nlinarith [hVm, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
-        (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
+      nlinarith [hVm, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0 : ℝ) ≤ _),
+        (Nat.cast_nonneg N₀ : (0 : ℝ) ≤ _)]
   -- Helper: each per-value measure equals `C(N₀,m)/2^{N₀}`.
   have htoReal : ∀ m, (μ {ω | Vminus W H₀ 0 ω = m}).toReal = (N₀.choose m : ℝ) / 2 ^ N₀ := by
     intro m
@@ -403,7 +406,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     have h1 : (fun ω => (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0)) =
         Set.indicator {ω | Vminus W H₀ 0 ω = m} (fun _ => 1) := by
       funext ω; by_cases h : Vminus W H₀ 0 ω = m <;>
-        simp [Set.indicator_apply, Set.mem_setOf_eq, h]
+        simp [Set.mem_ofPred_eq, h]
     have hms : MeasurableSet {ω | Vminus W H₀ 0 ω = m} := hmVm (measurableSet_singleton m)
     rw [h1, integral_indicator_const (1 : ℝ) hms, smul_eq_mul, mul_one]
     rfl
@@ -416,10 +419,10 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
               g m * (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0) := by
           funext ω
           rw [Finset.sum_eq_single (Vminus W H₀ 0 ω)
-            (fun m _ hm => by rw [if_neg (fun h => hm h.symm), mul_zero])
+            (fun m _ hm => by rw [ite_eq_right (fun h => hm h.symm), mul_zero])
             (fun hc => absurd (Finset.mem_range.mpr (Nat.lt_succ_of_le (hVm_le ω))) hc),
-            if_pos rfl, mul_one]
-        rw [hpart, integral_finset_sum _ (fun m _ => by
+            ite_eq_left rfl, mul_one]
+        rw [hpart, integral_finsetSum _ (fun m _ => by
           apply Integrable.const_mul
           apply Integrable.mono' (integrable_const (1 : ℝ))
             (Measurable.aestronglyMeasurable (Measurable.ite (hmVm (measurableSet_singleton m))
@@ -442,11 +445,15 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
 
 /-- Initial bound (Lu-BDA §21.3): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
 `V₊(0)` are `Binomial(N₀, ½)`-distributed (the null signs are i.i.d. fair coins), and the
-expectation reduces to the binomial ratio sum ≤ 1 (proved algebraically via `choose_mul_succ_eq`). -/
+expectation reduces to the binomial ratio sum ≤ 1
+(proved algebraically via `choose_mul_succ_eq`). -/
 theorem knockoff_initial_le (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
+    (W : Fin d → Ω → ℝ)
+    -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
+    (H₀ : Finset (Fin d))
+    -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) :
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤ 1 :=
   le_trans (knockoff_initial_integral_le_binom_sum μ W H₀ hW)
     (binom_ratio_sum_le_one_local H₀.card)

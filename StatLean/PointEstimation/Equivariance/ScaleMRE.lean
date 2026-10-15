@@ -103,11 +103,11 @@ private lemma scaleZ_smul' {b : ℝ} (hb : 0 < b) (x : Fin (m + 1) → ℝ) :
   have h1 : ∀ i : Fin m, (b • x) i.castSucc / (b • x) (Fin.last m)
       = x i.castSucc / x (Fin.last m) := by
     intro i
-    show b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
+    change b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
     rw [mul_div_mul_left _ _ hb0]
   have h2 : (b • x) (Fin.last m) / |(b • x) (Fin.last m)|
       = x (Fin.last m) / |x (Fin.last m)| := by
-    show b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
+    change b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
     rw [abs_mul, abs_of_pos hb, mul_div_mul_left _ _ hb0]
   exact Prod.ext_iff.mpr ⟨funext h1, h2⟩
 
@@ -154,7 +154,7 @@ private lemma integral_orbitCondKernel_eq_self_of_invariant
   have hcompProd : (P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ
       = P₀.map (fun x => (scaleZ x, x)) := by
     unfold orbitCondKernel
-    exact ProbabilityTheory.compProd_map_condDistrib aemeasurable_id
+    exact ProbabilityTheory.compProd_map_condDistrib measurable_scaleZ.aemeasurable aemeasurable_id
   have hprodMeas : Measurable (fun x : Fin (m + 1) → ℝ => (scaleZ x, x)) :=
     measurable_scaleZ.prodMk measurable_id
   have hconc_cp : ∀ᵐ q ∂((P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ),
@@ -238,7 +238,7 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
     -- equivariant of degree `r`.
     have hinv : IsScaleInvariant (fun x => wStar (scaleZ x)) := by
       intro b hb x
-      show wStar (scaleZ (b • x)) = wStar (scaleZ x)
+      change wStar (scaleZ (b • x)) = wStar (scaleZ x)
       rw [scaleZ_smul' hb x]
     exact heq₀.div_invariant hinv
   · intro δ' hδ'meas hδ'eq
@@ -249,7 +249,7 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
         (fun x => δ₀ x / δ' x) (b • x) = (fun x => δ₀ x / δ' x) x := by
       intro b hb x _
       have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
-      show δ₀ (b • x) / δ' (b • x) = δ₀ x / δ' x
+      change δ₀ (b • x) / δ' (b • x) = δ₀ x / δ' x
       rw [heq₀ hb x, hδ'eq hb x, mul_div_mul_left _ _ hbr]
     obtain ⟨w, hwm, hw⟩ :=
       isScaleInvariant_factors_scaleZ_measurable (fun x => δ₀ x / δ' x) hum huinv
@@ -274,7 +274,7 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
     have hrisk' : scaleRisk P₀ γ δ'
         = ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / w (scaleZ x))) ∂P₀ := by
       unfold scaleRisk; exact lintegral_congr_ae hae
-    show scaleRisk P₀ γ (fun x => δ₀ x / wStar (scaleZ x)) ≤ scaleRisk P₀ γ δ'
+    change scaleRisk P₀ γ (fun x => δ₀ x / wStar (scaleZ x)) ≤ scaleRisk P₀ γ δ'
     rw [hrisk']; unfold scaleRisk; exact key
 
 /-- **Existence of a minimum risk equivariant scale estimator for a logarithmically
@@ -382,7 +382,7 @@ theorem isScaleMRE_steinLoss (P₀ : Measure (Fin (m + 1) → ℝ))
   have hself := integral_orbitCondKernel_eq_self_of_invariant P₀ hδ₀ heq₀ hnull hint
   refine ⟨hδ₀.div hgMeas, ?_, ?_⟩
   · intro τ hτ x
-    show δ₀ (τ • x) / (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x))))
+    change δ₀ (τ • x) / (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x))))
       = τ ^ 0 * (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))
     rw [scaleZ_smul' hτ x, heq₀ hτ x]
     simp only [pow_zero, one_mul]
@@ -392,7 +392,7 @@ theorem isScaleMRE_steinLoss (P₀ : Measure (Fin (m + 1) → ℝ))
       have hae : (fun x => ENNReal.ofReal (steinLoss
           (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))))) =ᵐ[P₀] 0 := by
         filter_upwards [hself] with x hx
-        show ENNReal.ofReal (steinLoss
+        change ENNReal.ofReal (steinLoss
           (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))) = 0
         rw [hx, div_self (h₀pos x).ne']
         simp [steinLoss, Real.log_one]
@@ -400,7 +400,7 @@ theorem isScaleMRE_steinLoss (P₀ : Measure (Fin (m + 1) → ℝ))
       rw [lintegral_congr_ae hae]
       simp
     rw [hrisk0]
-    exact zero_le _
+    exact zero_le
 
 /-- **The minimum risk equivariant estimator of `τ^r` under the standardized
 squared-error loss** `γ(v) = (v − 1)²`, i.e. `L(τ, d) = (d − τ^r)²/τ^{2r}`: the ratio of
@@ -435,7 +435,7 @@ theorem isScaleMRE_standardizedSquared (P₀ : Measure (Fin (m + 1) → ℝ))
   obtain rfl : r = 0 := degree_eq_zero_of_pos heq₀ h₀pos
   have hinv₂ : IsScaleEquivariant 0 (fun x => δ₀ x ^ 2) := by
     intro τ hτ x
-    show δ₀ (τ • x) ^ 2 = τ ^ 0 * δ₀ x ^ 2
+    change δ₀ (τ • x) ^ 2 = τ ^ 0 * δ₀ x ^ 2
     rw [heq₀ hτ x]
     simp only [pow_zero, one_mul]
   have hg₁Meas : Measurable
@@ -450,7 +450,7 @@ theorem isScaleMRE_standardizedSquared (P₀ : Measure (Fin (m + 1) → ℝ))
     hnull hint₂
   refine ⟨(hδ₀.mul hg₁Meas).div hg₂Meas, ?_, ?_⟩
   · intro τ hτ x
-    show δ₀ (τ • x) * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x)))) /
+    change δ₀ (τ • x) * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x)))) /
         (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x))))
       = τ ^ 0 * (δ₀ x * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) /
         (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x))))
@@ -472,7 +472,7 @@ theorem isScaleMRE_standardizedSquared (P₀ : Measure (Fin (m + 1) → ℝ))
       rw [lintegral_congr_ae hae]
       simp
     rw [hrisk0]
-    exact zero_le _
+    exact zero_le
 
 end ScaleMRE
 

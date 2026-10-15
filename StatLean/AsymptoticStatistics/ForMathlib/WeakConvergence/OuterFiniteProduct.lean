@@ -578,7 +578,7 @@ private theorem abs_integral_sub_le_of_close_on
           η + B * (κ Uᶜ).toReal
         have hindicator : (∫ x, Uᶜ.indicator (fun _ => (1 : ℝ)) x ∂κ) =
             κ.real Uᶜ := by
-          simpa only [Pi.one_apply] using (integral_indicator_one (μ := κ) hU.compl)
+          simpa only [Pi.one_apply] using! (integral_indicator_one (μ := κ) hU.compl)
         rw [hindicator]
         change (κ Set.univ).toReal * η + B * (κ Uᶜ).toReal =
           η + B * (κ Uᶜ).toReal

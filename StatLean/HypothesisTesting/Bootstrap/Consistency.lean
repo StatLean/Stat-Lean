@@ -130,7 +130,7 @@ lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
 
 /-- The distribution function of a probability law with no atoms is continuous. -/
 lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
+    [NullSingletonClass ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
   have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
     funext x
     rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
@@ -145,7 +145,7 @@ lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
     have hle : Function.leftLim f x ≤ f x := f.mono.leftLim_le le_rfl
     have h0 : f x - Function.leftLim f x ≤ 0 := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact (ENNReal.ofReal_pos.mpr h).ne' hval.symm
     linarith
   have hright : Function.rightLim f x = f x := (f.right_continuous x).rightLim_eq
@@ -160,7 +160,7 @@ lemma isCDF_stdNormalCDF : IsCDF stdNormalCDF := isCDF_normalCDF 0 1
 
 /-- A nondegenerate normal distribution function is continuous. -/
 lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Continuous (normalCDF m v) :=
-  haveI : NoAtoms (gaussianReal m v) := noAtoms_gaussianReal hv
+  haveI : NullSingletonClass (gaussianReal m v) := nullSingletonClass_gaussianReal hv
   continuous_toReal_measure_Iic (gaussianReal m v)
 
 /-- The standard normal distribution function is continuous. -/
@@ -203,7 +203,7 @@ theorem normalCDF_sq_eq_stdNormalCDF {sigma : ℝ} (hsigma : 0 < sigma) (x : ℝ
   have hmap : (gaussianReal 0 1).map (fun z : ℝ => sigma * z)
       = gaussianReal 0 (Real.toNNReal (sigma ^ 2)) := by
     rw [hv]
-    simpa using gaussianReal_map_const_mul (μ := 0) (v := 1) sigma
+    simpa using! gaussianReal_map_const_mul (μ := 0) (v := 1) sigma
   have hmeas : Measurable (fun z : ℝ => sigma * z) := by fun_prop
   have hpre : (fun z : ℝ => sigma * z) ⁻¹' Set.Iic x = Set.Iic (x / sigma) := by
     ext z
@@ -299,8 +299,8 @@ theorem sublevel_bddBelow (hF : IsCDF F) {p : ℝ} (hp : 0 < p) :
   obtain ⟨b, hb⟩ := eventually_atBot.mp (hF.tendsto_atBot.eventually_lt_const hp)
   refine ⟨b, fun y hy => ?_⟩
   by_contra h
-  push_neg at h
-  simp only [Set.mem_setOf_eq] at hy
+  push Not at h
+  simp only [Set.mem_ofPred_eq] at hy
   exact absurd (hb y h.le) (not_lt.mpr hy)
 
 /-- For a continuous distribution function `F` and a level `p ∈ (0,1)`, the generalized inverse
@@ -321,7 +321,7 @@ theorem cdf_quantile_eq (hF : IsCDF F) (hcont : Continuous F) {p : ℝ}
   -- `F q ≤ p`: otherwise continuity yields points below `q` still in the set.
   refine le_antisymm ?_ hge
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   have hopen : IsOpen {y : ℝ | p < F y} := isOpen_lt continuous_const hcont
   have hev : ∀ᶠ y in 𝓝 q, p < F y := hopen.mem_nhds hlt
   have hev' : ∀ᶠ y in 𝓝[<] q, p < F y := hev.filter_mono nhdsWithin_le_nhds
@@ -352,9 +352,9 @@ theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ 
   have hup : p < Fn n (q + e) := hN₂ n (le_of_max_le_right hn)
   have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fn n x} := by
     intro x hx
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     by_contra h
-    push_neg at h
+    push Not at h
     exact absurd ((hmono n) h.le) (not_le.mpr (lt_of_lt_of_le hlow hx))
   have hmemup : (q + e) ∈ {x : ℝ | p ≤ Fn n x} := hup.le
   have h1 : q - e ≤ cdfPseudoInverse (Fn n) p := le_csInf ⟨q + e, hmemup⟩ hlb
@@ -378,11 +378,11 @@ theorem setOf_le_cdf_eq_Ici {F : ℝ → ℝ} (hF : IsCDF F) {p : ℝ} (hp0 : 0 
   have habove : ∀ t, q < t → p ≤ F t := by
     intro t ht
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hlb : t ∈ lowerBounds {u : ℝ | p ≤ F u} := by
       intro u hu
       by_contra h
-      push_neg at h
+      push Not at h
       exact absurd (le_trans hu (hF.mono h.le)) (not_le.mpr hcon)
     exact absurd (hglb.2 hlb) (not_le.mpr ht)
   have hatq : p ≤ F q := by
@@ -390,7 +390,7 @@ theorem setOf_le_cdf_eq_Ici {F : ℝ → ℝ} (hF : IsCDF F) {p : ℝ} (hp0 : 0 
       (hF.right_continuous q).mono_left (nhdsWithin_mono q Set.Ioi_subset_Ici_self)
     exact ge_of_tendsto htend (Filter.eventually_of_mem self_mem_nhdsWithin habove)
   ext t
-  simp only [Set.mem_setOf_eq, Set.mem_Ici]
+  simp only [Set.mem_ofPred_eq, Set.mem_Ici]
   constructor
   · intro ht; exact csInf_le hbdd ht
   · intro ht
@@ -414,7 +414,7 @@ theorem measurable_cdfPseudoInverse {f : Ω → ℝ → ℝ} {p : ℝ}
   have hset : (fun ω => cdfPseudoInverse (f ω) p) ⁻¹' Set.Iic c = {ω | p ≤ f ω c} := by
     ext ω
     have hEq := setOf_le_cdf_eq_Ici (hcdf ω) hp0 hp1
-    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
     constructor
     · intro h
       have hc : c ∈ Set.Ici (cdfPseudoInverse (f ω) p) := h
@@ -537,11 +537,11 @@ theorem tendsto_measure_abs_sub_of_tendstoInMeasure {Pr : Measure Ω} [IsFiniteM
       {ω | ε ≤ |f n ω - a|} = {ω | ENNReal.ofReal ε ≤ edist (f n ω) a} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq]
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq]
     exact (ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)).symm
   simp only [hset]
   have h' := h (ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
-  simpa using (ENNReal.tendsto_toReal (by simp)).comp h'
+  simpa using! (ENNReal.tendsto_toReal (by simp)).comp h'
 
 /-- **Slutsky coupling at a random threshold.**
 
@@ -587,7 +587,7 @@ theorem tendsto_measure_le_of_tendsto_cdf {μ : ℕ → Measure Ω} [∀ n, IsFi
   have hUp : ∀ n, {ω | S n ω ≤ c n ω} ⊆
       {ω | S n ω ≤ a + δ} ∪ {ω | δ ≤ |c n ω - a|} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     rcases le_or_gt (c n ω) (a + δ) with h | h
     · exact Or.inl (le_trans hω h)
     · refine Or.inr ?_
@@ -595,7 +595,7 @@ theorem tendsto_measure_le_of_tendsto_cdf {μ : ℕ → Measure Ω} [∀ n, IsFi
   have hLo : ∀ n, {ω | S n ω ≤ a - δ} ⊆
       {ω | S n ω ≤ c n ω} ∪ {ω | δ ≤ |c n ω - a|} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
     rcases lt_or_ge (c n ω) (a - δ) with h | h
     · refine Or.inr ?_
       rw [abs_of_neg (by linarith : c n ω - a < 0)]; linarith
@@ -805,8 +805,8 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
       (fun _ => ∫ t, t ∂ν) := by
   -- the common law of the entries of row `n`
   set Gm : ℕ → Measure ℝ := fun n => Pr.map (Y n 0) with hGm
-  haveI hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
-    Measure.isProbabilityMeasure_map (hYmeas n 0).aemeasurable
+  have hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
+    (by infer_instance)
   -- every entry of a row carries the row law: they share a distribution function, and a finite
   -- measure on the line is determined by its values on the rays `Iic x`
   have hlaw : ∀ (n : ℕ) (i : Fin n), Pr.map (Y n (i : ℕ)) = Gm n := by
@@ -851,7 +851,7 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
       (by simpa using hYint n)
   have hmain := triangular_wlln_of_L1 (P := Pr) (Y := fun n (i : Fin n) => Y n (i : ℕ))
     (G := Gm) (ν := ν) (fun n i => hYmeas n (i : ℕ)) hindep hlaw hGmint hweak
-    (by simpa using hint) hL1
+    (by simpa using! hint) hL1
   have hfun : (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω))
       = fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i : Fin n, Y n (i : ℕ) ω := by
     funext n ω

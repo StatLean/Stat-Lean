@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.Core.Hilbert
 import StatLean.AsymptoticStatistics.Core.QMDPath
 import StatLean.AsymptoticStatistics.Core.TangentAbstract
@@ -16,6 +17,8 @@ Copyright (c) 2026 Junwei Lu. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Junwei Lu, Claude Opus 4.7
 -/
+
+set_option linter.style.longFile 2800
 
 /-!
 # Joint LR weak convergence
@@ -140,7 +143,7 @@ lemma measurable_jointScoreSum {m : ℕ}
   have h_inner : Measurable (fun X : Fin n → Ω => fun i : Fin m =>
       AsymptoticStatistics.LowerBounds.T6_FinDimLAN.JointLAN.scoreSumScalar
         (P := P) (g_P i) n X) := by
-    refine measurable_pi_lambda _ (fun i => ?_)
+    refine Measurable.of_eval (fun i => ?_)
     exact AsymptoticStatistics.LowerBounds.T6_FinDimLAN.JointLAN.measurable_scoreSumScalar
       (g_P i) n
   exact ((EuclideanSpace.equiv (Fin m) ℝ).symm.continuous.measurable).comp h_inner
@@ -196,7 +199,7 @@ lemma inner_jointScoreSum_eq_ae_scoreSumScalar {m : ℕ}
     | empty =>
       simp only [Finset.sum_empty]
       filter_upwards with ω
-      simp [Lp.coeFn_zero]
+      simp
     | insert i s hi ih =>
       simp only [Finset.sum_insert hi]
       -- LHS: `⇑(h i • g_P i + ∑ ⋯) =ᵐ[P] (h i • g_P i) + ∑ ⋯` by `coeFn_add`.
@@ -352,18 +355,17 @@ lemma jointDelta_weakConverges_under_pi
   set ν : Measure (EuclideanSpace ℝ (Fin m)) :=
     ProbabilityTheory.stdGaussian (EuclideanSpace ℝ (Fin m)) with hν_def
   -- Probability-measure structure on `μ_n` and `ν`.
-  haveI h_prob_μn : ∀ n, IsProbabilityMeasure (μ_n n) := by
+  have h_prob_μn : ∀ n, IsProbabilityMeasure (μ_n n) := by
     intro n
     rw [hμn_def]
-    exact Measure.isProbabilityMeasure_map
-      (measurable_jointScoreSum (P := P) g_P n).aemeasurable
-  haveI h_prob_ν : IsProbabilityMeasure ν := by
+    exact (by infer_instance)
+  have h_prob_ν : IsProbabilityMeasure ν := by
     rw [hν_def]; infer_instance
   -- Step 3: apply Cramér-Wold to the lifted measures.
-  haveI h_prob_lifted_n : ∀ n, IsProbabilityMeasure ((μ_n n).map ι) := fun n =>
-    Measure.isProbabilityMeasure_map h_ι_meas.aemeasurable
-  haveI h_prob_lifted_lim : IsProbabilityMeasure (ν.map ι) :=
-    Measure.isProbabilityMeasure_map h_ι_meas.aemeasurable
+  have h_prob_lifted_n : ∀ n, IsProbabilityMeasure ((μ_n n).map ι) := fun n =>
+    (by infer_instance)
+  have h_prob_lifted_lim : IsProbabilityMeasure (ν.map ι) :=
+    (by infer_instance)
   have h_lifted : WeakConverges (fun n => (μ_n n).map ι) (ν.map ι) := by
     refine AsymptoticStatistics.ForMathlib.cramerWold_weakConverges (m := m)
       (μ_n := fun n => (μ_n n).map ι) (μ := ν.map ι) ?_
@@ -457,7 +459,7 @@ lemma jointDelta_weakConverges_under_pi
           rcases h_orth with ⟨h_norm, h_perp⟩
           by_cases hij : i = j
           · subst hij
-            rw [if_pos rfl]
+            rw [ite_eq_left rfl]
             -- Goal: `⟪(g_P i : Lp ℝ 2 P), (g_P i : Lp ℝ 2 P)⟫_ℝ = 1`.
             -- Bridge to submodule inner via `Submodule.coe_inner` (defeq), then
             -- `real_inner_self_eq_norm_sq` and `‖g_P i‖ = 1`.
@@ -471,7 +473,7 @@ lemma jointDelta_weakConverges_under_pi
             rw [h_step, h_norm i]
             norm_num
           · -- `i ≠ j`: orthogonality gives 0.
-            rw [if_neg hij]
+            rw [ite_eq_right hij]
             have h_perp_ij : (⟪(g_P i : ↥(L2ZeroMean P)), (g_P j : ↥(L2ZeroMean P))⟫_ℝ : ℝ) = 0 :=
               h_perp hij
             -- Same `Submodule.coe_inner` bridge.
@@ -485,7 +487,7 @@ lemma jointDelta_weakConverges_under_pi
         -- then `hvec i * (if i=j then ... else 0)` to `if i=j then hvec i * hvec j else 0`.
         simp_rw [mul_ite, mul_one, mul_zero]
         rw [Finset.sum_ite_eq (Finset.univ : Finset (Fin m)) i
-          (fun j => hvec i * hvec j), if_pos (Finset.mem_univ _)]
+          (fun j => hvec i * hvec j), ite_eq_left (Finset.mem_univ _)]
         ring
       rw [h_norm_sq, EuclideanSpace.real_norm_sq_eq]
     -- Now apply the per-direction CLT to `linComb g_P hvec`.
@@ -634,7 +636,7 @@ private lemma pi_tendsto_of_per_coord_pi_tendsto {m : ℕ}
             (fun i => r i n X)‖} : Set (Fin n → Ω)) = ∅ := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       have h_norm_zero :
           ‖(EuclideanSpace.equiv (Fin 0) ℝ).symm (fun i : Fin 0 => r i n X)‖ = 0 := by
         rw [EuclideanSpace.norm_eq]
@@ -685,7 +687,7 @@ private lemma pi_tendsto_of_per_coord_pi_tendsto {m : ℕ}
           rw [Finset.card_univ, Fintype.card_fin]
         rw [show (m : ℝ) * δ ^ 2 = ((Finset.univ : Finset (Fin m)).card : ℝ) * δ ^ 2 by
           rw [h_card]]
-        haveI : Nonempty (Fin m) := ⟨⟨0, hm⟩⟩
+        have : Nonempty (Fin m) := ⟨⟨0, hm⟩⟩
         calc ∑ i : Fin m, (r i n X) ^ 2 < ∑ _i : Fin m, δ ^ 2 := by
               refine Finset.sum_lt_sum_of_nonempty ?_ (fun i _ => h_each i)
               exact Finset.univ_nonempty
@@ -729,12 +731,12 @@ private lemma pi_tendsto_of_per_coord_pi_tendsto {m : ℕ}
           Tendsto (fun n : ℕ =>
             (Measure.pi (fun _ : Fin n => P)) {X : Fin n → Ω | δ ≤ |r i n X|})
             atTop (𝓝 (0 : ℝ≥0∞)) := fun i => hr_zero i δ hδ_pos
-      have := tendsto_finset_sum (Finset.univ : Finset (Fin m))
+      have := tendsto_finsetSum (Finset.univ : Finset (Fin m))
         (fun i _ => h_each_tendsto i)
       simpa using this
     -- Squeeze: `0 ≤ μ_n A ≤ ∑_i μ_n B_i → 0`.
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum_tendsto
-      (Eventually.of_forall (fun n => zero_le _))
+      (Eventually.of_forall (fun n => zero_le))
       (Eventually.of_forall h_measure_bound)
 
 /-! ### Joint LAN factorization, reduced to a per-coordinate witness
@@ -868,10 +870,10 @@ private lemma lr_n_pos_finite_ae_pi
   -- Auto-instance for HaveLebesgueDecomposition (curve t) dominating
   -- via SigmaFinite (curve t) [from IsProbabilityMeasure] +
   -- SigmaFinite dominating [from QMDPath.dominating_sigmaFinite].
-  haveI _hCurveProb : IsProbabilityMeasure (γ_g.curve ((Real.sqrt n)⁻¹)) :=
+  have _hCurveProb : IsProbabilityMeasure (γ_g.curve ((Real.sqrt n)⁻¹)) :=
     γ_g.curve_isProbability _
-  haveI _hCurveSF : SigmaFinite (γ_g.curve ((Real.sqrt n)⁻¹)) := by infer_instance
-  haveI _hDomSF : SigmaFinite γ_g.dominating := γ_g.dominating_sigmaFinite
+  have _hCurveSF : SigmaFinite (γ_g.curve ((Real.sqrt n)⁻¹)) := by infer_instance
+  have _hDomSF : SigmaFinite γ_g.dominating := γ_g.dominating_sigmaFinite
   -- Step 1: `(curve t) ≪ γ_g.dominating` from QMDPath.curve_absContinuous.
   have h_curve_ac : γ_g.curve ((Real.sqrt n)⁻¹) ≪ γ_g.dominating :=
     γ_g.curve_absContinuous _
@@ -1091,7 +1093,7 @@ private lemma bridge_residue_to_witness_one
     -- `T6_FinDimLAN/LANexpansion.lean::lanExpansion1D_to_PnProb_bridge`.
     set h' : EuclideanSpace ℝ (Fin 1) := EuclideanSpace.single 0 1 with hh'_def
     set P' : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hP'_def
-    haveI : IsProbabilityMeasure P' := by rw [hP'_def]; infer_instance
+    have : IsProbabilityMeasure P' := by rw [hP'_def]; infer_instance
     set X' : ℕ → (ℕ → Ω) → Ω := fun i ω => ω i with hX'_def
     have hX'_meas : ∀ i, Measurable (X' i) := fun i => measurable_pi_apply i
     -- iid setup boilerplate (cf. lanExpansion1D_to_PnProb_bridge body).
@@ -1116,7 +1118,7 @@ private lemma bridge_residue_to_witness_one
             (fun x => ENNReal.ofReal
               ((QMDPath.to1DParametricFamily γ_g).density 0 x))
           = P := by
-      haveI hac : P ≪ γ_g.dominating := by
+      have hac : P ≪ γ_g.dominating := by
         have := γ_g.curve_absContinuous 0
         rw [γ_g.curve_at_zero] at this
         exact this
@@ -1235,14 +1237,14 @@ private lemma bridge_residue_to_witness_one
         exact AsymptoticStatistics.pi_const_eq_infinitePi_map P k
       have h_trunc_meas : Measurable
           (fun ω : ℕ → Ω => fun j : Fin k => ω j.val) :=
-        measurable_pi_lambda _ (fun _ => measurable_pi_apply _)
+        Measurable.of_eval (fun _ => measurable_pi_apply _)
       -- Measurability of the relevant sets.
       have hpos_set_meas : MeasurableSet
           {x : Fin k → Ω |
             ∀ j : Fin k,
               0 < (γ_g.curve ((Real.sqrt k)⁻¹)).rnDeriv γ_g.dominating (x j)
               ∧ (γ_g.curve ((Real.sqrt k)⁻¹)).rnDeriv γ_g.dominating (x j) < ⊤} := by
-        rw [Set.setOf_forall]
+        rw [Set.ofPred_forall]
         refine MeasurableSet.iInter fun j => ?_
         refine MeasurableSet.inter ?_ ?_
         · exact measurableSet_lt measurable_const
@@ -1262,7 +1264,7 @@ private lemma bridge_residue_to_witness_one
           {x : Fin k → Ω | ∀ j : Fin k,
             0 < P.rnDeriv γ_g.dominating (x j)
             ∧ P.rnDeriv γ_g.dominating (x j) < ⊤} := by
-        rw [Set.setOf_forall]
+        rw [Set.ofPred_forall]
         refine MeasurableSet.iInter fun j => ?_
         refine MeasurableSet.inter ?_ ?_
         · exact measurableSet_lt measurable_const
@@ -1429,7 +1431,6 @@ private lemma bridge_residue_to_witness_one
         intro k
         apply measure_congr
         filter_upwards [hF_eq_r k] with η hη
-        change (δ ≤ edist (F k η) (0 : ℝ)) = (δ ≤ edist (r k _) (0 : ℝ))
         rw [hη]
       have h_eq_seq : (fun n => P' {x | δ ≤ edist (F n x) (0 : ℝ)})
           = (fun n => P' {x | δ ≤ edist (r n (fun j : Fin n => x j.val)) (0 : ℝ)}) := by
@@ -1444,7 +1445,7 @@ private lemma bridge_residue_to_witness_one
           = {ω : ℕ → Ω | ε ≤ |r k (fun j : Fin k => ω j.val)|} := by
       intro k
       ext ω
-      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero]
+      simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq, sub_zero]
       constructor
       · intro hle
         have habs_nn : (0 : ℝ) ≤ |r k (fun j => ω j.val)| := abs_nonneg _
@@ -1684,7 +1685,7 @@ private lemma jointLAN_factorization {m : ℕ}
     intro n
     have h_inner : Measurable
         (fun X : Fin n → Ω => fun i : Fin m => r i n X) :=
-      measurable_pi_lambda _ (fun i => hr_meas i n)
+      Measurable.of_eval (fun i => hr_meas i n)
     exact ((EuclideanSpace.equiv (Fin m) ℝ).symm.continuous.measurable).comp h_inner
   · -- `Pⁿ`-AE joint factorization.
     intro n
@@ -1715,7 +1716,7 @@ private lemma jointLAN_factorization {m : ℕ}
     -- `ENNReal.ofReal (exp ((jointScoreSum + R_n n X) i − ½‖g_P i‖²))`.
     -- LHS = ENNReal.ofReal (exp (scoreSumScalar - ½‖g_P i‖² + r i n X)).
     -- Match: `(jointScoreSum n X + R_n n X) i = scoreSumScalar (g_P i) n X + r i n X`.
-    show ENNReal.ofReal _ = ENNReal.ofReal _
+    change ENNReal.ofReal _ = ENNReal.ofReal _
     congr 1
     -- exp arguments match.
     show Real.exp _ = Real.exp _
@@ -1766,10 +1767,10 @@ private lemma cramerWold_weakConverges_of_inner_proj
   have h_ι_cont : Continuous ι :=
     continuous_prodMk.mpr ⟨continuous_const, continuous_id⟩
   have h_ι_meas : Measurable ι := h_ι_cont.measurable
-  haveI h_prob_lifted_n : ∀ n, IsProbabilityMeasure ((μ_n n).map ι) := fun n =>
-    Measure.isProbabilityMeasure_map h_ι_meas.aemeasurable
-  haveI h_prob_lifted_lim : IsProbabilityMeasure (μ.map ι) :=
-    Measure.isProbabilityMeasure_map h_ι_meas.aemeasurable
+  have h_prob_lifted_n : ∀ n, IsProbabilityMeasure ((μ_n n).map ι) := fun n =>
+    (by infer_instance)
+  have h_prob_lifted_lim : IsProbabilityMeasure (μ.map ι) :=
+    (by infer_instance)
   have h_lifted : WeakConverges (fun n => (μ_n n).map ι) (μ.map ι) := by
     refine AsymptoticStatistics.ForMathlib.cramerWold_weakConverges (m := m) ?_
     intro t hvec
@@ -1843,10 +1844,10 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
       (fun n => (Measure.pi (fun _ : Fin n => P)).map
         (fun X : Fin n → Ω => S_n n X + R_n n X)) ν := by
   -- Probability-measure instances for each per-`n` pushforward.
-  haveI h_sum_prob : ∀ n, IsProbabilityMeasure
+  have h_sum_prob : ∀ n, IsProbabilityMeasure
       ((Measure.pi (fun _ : Fin n => P)).map
         (fun X : Fin n → Ω => S_n n X + R_n n X)) := fun n =>
-    Measure.isProbabilityMeasure_map ((hS_meas n).add (hR_meas n)).aemeasurable
+    (by infer_instance)
   -- 1. Cramér–Wold reduction: a multivariate weak limit on `EuclideanSpace ℝ (Fin m)`
   --    is detected by every 1-D inner-product projection `t ↦ ⟪t, ·⟫_ℝ`.
   apply cramerWold_weakConverges_of_inner_proj (m := m)
@@ -1866,7 +1867,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
   --    measure (`Measure.infinitePi_map_eval`).
   set μ_fixed : Measure ((n : ℕ) → (Fin n → Ω)) :=
     Measure.infinitePi (fun n : ℕ => Measure.pi (fun _ : Fin n => P)) with hμ_fixed_def
-  haveI : IsProbabilityMeasure μ_fixed := by
+  have : IsProbabilityMeasure μ_fixed := by
     rw [hμ_fixed_def]; infer_instance
   have h_map_eval : ∀ n : ℕ,
       μ_fixed.map (fun X : (n : ℕ) → (Fin n → Ω) => X n)
@@ -1885,8 +1886,8 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
     (hr_meas n).comp (measurable_pi_apply n)
   -- Limit measure on the scalar side: `ν.map ⟨t, ·⟩`.
   set ν' : Measure ℝ := ν.map (fun x => ⟪t, x⟫_ℝ) with hν'_def
-  haveI hν'_prob : IsProbabilityMeasure ν' := by
-    rw [hν'_def]; exact Measure.isProbabilityMeasure_map h_inner_meas.aemeasurable
+  have hν'_prob : IsProbabilityMeasure ν' := by
+    rw [hν'_def]; exact (by infer_instance)
   -- 3. `TendstoInDistribution` for the scaled `S'_n`, derived from the multivariate
   --    `WeakConverges` hypothesis via continuous-mapping + the `infinitePi` bridge.
   have h_S_1D : WeakConverges
@@ -1913,7 +1914,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
       rw [hS'_def]
       change μ_fixed.map ((s_n n) ∘ (fun X : (n : ℕ) → (Fin n → Ω) => X n)) = _
       rw [← Measure.map_map (hs_meas n) (measurable_pi_apply n), h_map_eval n]
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
     -- The subtype-coercion of a `ProbabilityMeasure` to a `Measure` is `rfl` on
     -- integrals, so reduce both sides to underlying-measure integrals.
@@ -1939,7 +1940,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
       have h_empty : ∀ n, {X : (n : ℕ) → (Fin n → Ω) | ε ≤ dist (R'_n n X) 0} = ∅ := by
         intro n
         ext X
-        simp only [hR'_def, h_r_zero n (X n), Set.mem_setOf_eq, dist_self,
+        simp only [hR'_def, h_r_zero n (X n), Set.mem_ofPred_eq, dist_self,
           Set.mem_empty_iff_false, iff_false, not_le]
         exact hε
       simp_rw [h_empty, measure_empty]
@@ -1977,7 +1978,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
         exact (div_le_iff₀ ht_pos).mpr h_chain
       have h_tendsto := hR_zero (ε / ‖t‖) (div_pos hε ht_pos)
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_tendsto
-        (Eventually.of_forall fun _ => zero_le _)
+        (Eventually.of_forall fun _ => zero_le)
         (Eventually.of_forall fun n => ?_)
       rw [h_eq n]
       exact measure_mono (h_subset n)
@@ -2000,7 +2001,7 @@ private lemma weakConverges_add_of_tendstoInMeasure_zero {m : ℕ}
   -- Convert the resulting `TendstoInDistribution` into our `WeakConverges` shape.
   intro f
   have h_tnd := h_add_dist.tendsto
-  rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_tnd
+  erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_tnd
   have h_tnd_f := h_tnd f
   -- Reduce both subtype integrals to plain `∫ ⋯ ∂ ⋯`. The subtype coercion
   -- is definitional for the integrand evaluation, so a single `change` does it.
@@ -2372,7 +2373,7 @@ private lemma weakConverges_grid_product_pushforward
   set μ_fixed : Measure ((n : ℕ) → (Fin n → Ω)) :=
     Measure.infinitePi (fun n : ℕ => Measure.pi (fun _ : Fin n => P))
     with hμ_fixed_def
-  haveI : IsProbabilityMeasure μ_fixed := by
+  have : IsProbabilityMeasure μ_fixed := by
     rw [hμ_fixed_def]; infer_instance
   have h_map_eval : ∀ n : ℕ,
       μ_fixed.map (fun X : (n : ℕ) → (Fin n → Ω) => X n)
@@ -2400,7 +2401,7 @@ private lemma weakConverges_grid_product_pushforward
       intro n
       change μ_fixed.map ((S_n n) ∘ (fun X : (n : ℕ) → (Fin n → Ω) => X n)) = _
       rw [← Measure.map_map (hS_meas n) (measurable_pi_apply n), h_map_eval n]
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
     have h_target : Tendsto (fun n => ∫ x, f x ∂(μ_fixed.map (S'_n n)))
         atTop (𝓝 (∫ x, f x ∂(ν.map (id : EuclideanSpace ℝ (Fin m) → _)))) := by
@@ -2443,10 +2444,10 @@ private lemma weakConverges_grid_product_pushforward
         {X : (n : ℕ) → (Fin n → Ω) | ε ≤ dist (R'_n n X) (0 : ι → ℝ)} ⊆
           ⋃ i : ι, {X | ε ≤ |R_n n (X n) i|} := by
       intro n X hX
-      simp only [Set.mem_setOf_eq, dist_zero_right] at hX
+      simp only [Set.mem_ofPred_eq, dist_zero_right] at hX
       -- `hX : ε ≤ ‖R'_n n X‖`. Use contrapositive of `pi_norm_lt_iff'`.
       by_contra h_neg
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at h_neg
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le] at h_neg
       -- Reduce `dist (R'_n n X) 0 < ε` to per-coord via `dist_pi_lt_iff`.
       have h_each : ∀ i, dist (R_n n (X n) i) (0 : ℝ) < ε := fun i => by
         rw [Real.dist_eq, sub_zero]; exact h_neg i
@@ -2461,9 +2462,9 @@ private lemma weakConverges_grid_product_pushforward
         atTop (𝓝 (0 : ℝ≥0∞)) := by
       have : (0 : ℝ≥0∞) = ∑ _i : ι, (0 : ℝ≥0∞) := by simp
       rw [this]
-      exact tendsto_finset_sum _ (fun i _ => h_per_ι i)
+      exact tendsto_finsetSum _ (fun i _ => h_per_ι i)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum_zero
-      (Eventually.of_forall fun _ => zero_le _) ?_
+      (Eventually.of_forall fun _ => zero_le) ?_
     refine Eventually.of_forall fun n => ?_
     calc μ_fixed {X | ε ≤ dist (R'_n n X) (0 : ι → ℝ)}
         ≤ μ_fixed (⋃ i : ι, {X | ε ≤ |R_n n (X n) i|}) := measure_mono (h_subset n)
@@ -2484,7 +2485,7 @@ private lemma weakConverges_grid_product_pushforward
   -- Step 7: translate `TendstoInDistribution` back to `WeakConverges`.
   intro f
   have h_tendsto := h_main.tendsto
-  rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_tendsto
+  erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at h_tendsto
   have h_tendsto_f := h_tendsto f
   -- LHS sequence: μ_fixed.map (Ψ ∘ (S'_n, R'_n)) = Pⁿ.map (Ψ ∘ (S_n, R_n)).
   have h_LHS_eq : ∀ n,
@@ -2596,7 +2597,7 @@ theorem combinationLR_weakConverges
     refine ENNReal.continuous_ofReal.comp ?_
     refine Real.continuous_exp.comp ?_
     refine Continuous.sub ?_ continuous_const
-    refine continuous_finset_sum _ (fun k _ => ?_)
+    refine continuous_finsetSum _ (fun k _ => ?_)
     exact continuous_const.mul
       (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin m) k).continuous
   have hΦ_meas : Measurable Φ := hΦ_cont.measurable
@@ -2672,7 +2673,7 @@ theorem combinationLR_weakConverges
         rw [← h_linComb_eq]; exact hI.symm
       rw [h_inner_swap]
       -- Unfold Φ on the RHS.
-      show ENNReal.ofReal (Real.exp _)
+      change ENNReal.ofReal (Real.exp _)
           = ENNReal.ofReal (Real.exp _) * ENNReal.ofReal (Real.exp _)
       -- Inner product on `EuclideanSpace ℝ (Fin m)` reduces to a scalar sum.
       have h_inner_apply :
@@ -2733,7 +2734,7 @@ theorem combinationLR_weakConverges
   -- `ν := multivariateGaussian 0 1`.
   have hR_meas_joint : ∀ n,
       Measurable (fun X : Fin n → Ω => fun j : ↥J => r j n X) :=
-    fun n => measurable_pi_lambda _ (fun j => hr_meas j n)
+    fun n => Measurable.of_eval (fun j => hr_meas j n)
   exact weakConverges_grid_product_pushforward (P := P)
     (Φ := Φ) hΦ_cont hΦ_meas
     (S_n := fun n => jointScoreSum (P := P) g_P n)

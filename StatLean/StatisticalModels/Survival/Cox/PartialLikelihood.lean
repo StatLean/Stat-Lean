@@ -133,28 +133,28 @@ private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ�
     ⟨_, fun _ => rfl⟩
   have hset : {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')} = Set.univ.pi s := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_pi, Set.mem_univ, forall_const]
+    simp only [Set.mem_ofPred_eq, Set.mem_pi, Set.mem_univ, forall_const]
     constructor
     · intro h j
       rw [hs]
       by_cases hjR : j ∈ R
-      · rw [if_pos hjR]
+      · rw [ite_eq_left hjR]
         by_cases hji : j = i'
-        · rw [if_pos hji]
+        · rw [ite_eq_left hji]
           exact (h j hjR).2 hji
-        · rw [if_neg hji]
+        · rw [ite_eq_right hji]
           have hne : ¬ (ω j = true) := fun hc => hji ((h j hjR).1 hc)
           simpa using hne
-      · rw [if_neg hjR]
+      · rw [ite_eq_right hjR]
         exact Set.mem_univ _
     · intro h j hjR
       have hj := h j
-      rw [hs, if_pos hjR] at hj
+      rw [hs, ite_eq_left hjR] at hj
       by_cases hji : j = i'
-      · rw [if_pos hji] at hj
+      · rw [ite_eq_left hji] at hj
         simp only [Set.mem_singleton_iff] at hj
         exact ⟨fun _ => hji, fun _ => hj⟩
-      · rw [if_neg hji] at hj
+      · rw [ite_eq_right hji] at hj
         simp only [Set.mem_singleton_iff] at hj
         refine ⟨fun hc => ?_, fun hc => absurd hc hji⟩
         rw [hj] at hc
@@ -162,22 +162,22 @@ private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ�
   have hprod : ∏ j : Fin n, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
       = ∏ j ∈ R, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j) := by
     refine (Finset.prod_subset (Finset.subset_univ R) fun j _ hjR => ?_).symm
-    rw [hs, if_neg hjR]
+    rw [hs, ite_eq_right hjR]
     exact measure_univ
-  have hsi : s i' = ({true} : Set Bool) := by rw [hs, if_pos hi', if_pos rfl]
+  have hsi : s i' = ({true} : Set Bool) := by rw [hs, ite_eq_left hi', ite_eq_left rfl]
   have hrest : ∀ j ∈ R.erase i', (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
       = ENNReal.ofReal (1 - (prob j : ℝ)) := by
     intro j hj
     have hsj : s j = ({false} : Set Bool) := by
-      rw [hs, if_pos (Finset.mem_of_mem_erase hj), if_neg (Finset.ne_of_mem_erase hj)]
+      rw [hs, ite_eq_left (Finset.mem_of_mem_erase hj), ite_eq_right (Finset.ne_of_mem_erase hj)]
     rw [hsj, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton false),
       ENNReal.ofReal_sub _ (prob j).coe_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal]
-    simp
+    simp [PMF.bernoulli_apply]
   have htrue : (PMF.bernoulli (prob i') (h1 i')).toMeasure ({true} : Set Bool)
       = ENNReal.ofReal ((prob i' : ℝ)) := by
     rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton true),
       ENNReal.ofReal_coe_nnreal]
-    simp
+    simp [PMF.bernoulli_apply]
   have hnn : ∀ j ∈ R.erase i', (0 : ℝ) ≤ 1 - (prob j : ℝ) := fun j _ => by
     have : ((prob j : ℝ)) ≤ 1 := by exact_mod_cast h1 j
     linarith
@@ -226,7 +226,7 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
   have hSU : {ω : Fin n → Bool | (R.filter fun j => ω j = true).card = 1}
       = ⋃ i' ∈ R, {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, exists_prop]
     constructor
     · intro hcard
       obtain ⟨i', hi'⟩ := Finset.card_eq_one.1 hcard
@@ -260,7 +260,7 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
           ∩ {ω : Fin n → Bool | ω i = true}
         = {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i)} := by
       ext ω
-      simp only [Set.mem_inter_iff, Set.mem_setOf_eq]
+      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
       constructor
       · rintro ⟨hcard, hωi⟩
         obtain ⟨i', hi'⟩ := Finset.card_eq_one.1 hcard

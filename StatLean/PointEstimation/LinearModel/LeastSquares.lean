@@ -68,7 +68,7 @@ noncomputable def linearModelFull (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)
 theorem inner_lse_eq_inner_starProjection (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (γ y : EuclideanSpace ℝ (Fin n)) :
     ⟪γ, lse W y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ := by
-  show ⟪γ, W.starProjection y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ
+  change ⟪γ, W.starProjection y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ
   rw [← Submodule.inner_starProjection_left_eq_right]
 
 /-! ## Gaussian isometry-invariance (private scaffolding)
@@ -96,8 +96,6 @@ private lemma gaussianVector_zero_eq_map_smul_stdGaussian {N : ℕ} (σ2 : ℝ�
     congr 1
     apply NNReal.coe_injective
     simp [ha, Real.sq_sqrt (NNReal.coe_nonneg σ2)]
-  haveI hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun x => a * x)) := by
-    intro _; rw [hcoord]; infer_instance
   -- rewrite the left-hand side into the same product-of-Gaussians form
   have hLHS : gaussianVector (0 : EuclideanSpace ℝ (Fin N)) σ2
       = (Measure.pi (fun _ : Fin N => gaussianReal (0 : ℝ) σ2)).map (WithLp.toLp 2) := rfl
@@ -122,7 +120,7 @@ private lemma gaussianVector_map_add_const {N : ℕ} (ξ b : EuclideanSpace ℝ 
   have hcoord : ∀ i : Fin N,
       (gaussianReal (ξ i) σ2).map (fun x => x + b i) = gaussianReal (ξ i + b i) σ2 :=
     fun i => gaussianReal_map_add_const (b i)
-  haveI hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (ξ i) σ2).map (fun x => x + b i)) := by
+  have hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (ξ i) σ2).map (fun x => x + b i)) := by
     intro i; rw [hcoord i]; infer_instance
   have hLHS : gaussianVector ξ σ2
       = (Measure.pi (fun i : Fin N => gaussianReal (ξ i) σ2)).map (WithLp.toLp 2) := rfl
@@ -131,7 +129,8 @@ private lemma gaussianVector_map_add_const {N : ℕ} (ξ b : EuclideanSpace ℝ 
   rw [hLHS, hRHS, Measure.map_map hmeas_add hmeas_toLp]
   have hcomp : (fun z : EuclideanSpace ℝ (Fin N) => z + b) ∘
       (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N))
-      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘ (fun x => fun i => x i + b i) := by
+      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘
+          (fun x => fun i => x i + b i) := by
     funext x; rfl
   rw [hcomp, ← Measure.map_map hmeas_toLp hmeas_g,
     Measure.pi_map_pi (f := fun (i : Fin N) (c : ℝ) => c + b i)
@@ -264,7 +263,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     intro a b hh
     have ha := a.isLt
     have h2 : (Fin.castAdd m a).val = (Fin.natAdd s b).val := by rw [hh]
-    simp only [Fin.coe_castAdd, Fin.coe_natAdd] at h2
+    simp only [Fin.val_castAdd, Fin.val_natAdd] at h2
     omega
   have hgon : Orthonormal ℝ g := by
     rw [orthonormal_iff_ite]
@@ -273,21 +272,21 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
       refine Fin.addCases (fun j' => ?_) (fun j' => ?_) j
     · simp only [hgdef, Fin.append_left, ← Submodule.coe_inner]
       by_cases h : i' = j'
-      · subst h; rw [orthonormal_iff_ite.mp bW.orthonormal i' i', if_pos rfl, if_pos rfl]
-      · rw [orthonormal_iff_ite.mp bW.orthonormal i' j', if_neg h,
-          if_neg (fun hc => h (Fin.castAdd_injective _ _ hc))]
+      · subst h; rw [orthonormal_iff_ite.mp bW.orthonormal i' i', ite_eq_left rfl, ite_eq_left rfl]
+      · rw [orthonormal_iff_ite.mp bW.orthonormal i' j', ite_eq_right h,
+          ite_eq_right (fun hc => h (Fin.castAdd_injective _ _ hc))]
     · simp only [hgdef, Fin.append_left, Fin.append_right]
       rw [Submodule.inner_right_of_mem_orthogonal (SetLike.coe_mem (bW i'))
-            (SetLike.coe_mem (bP j')), if_neg (hne i' j')]
+            (SetLike.coe_mem (bP j')), ite_eq_right (hne i' j')]
     · simp only [hgdef, Fin.append_left, Fin.append_right]
       rw [Submodule.inner_left_of_mem_orthogonal (SetLike.coe_mem (bW j'))
-            (SetLike.coe_mem (bP i')), if_neg (hne j' i').symm]
+            (SetLike.coe_mem (bP i')), ite_eq_right (hne j' i').symm]
     · simp only [hgdef, Fin.append_right, ← Submodule.coe_inner]
       by_cases h : i' = j'
-      · subst h; rw [orthonormal_iff_ite.mp bP.orthonormal i' i', if_pos rfl, if_pos rfl]
-      · rw [orthonormal_iff_ite.mp bP.orthonormal i' j', if_neg h,
-          if_neg (fun hc => h (Fin.natAdd_injective _ _ hc))]
-  haveI : Nonempty (Fin (s + m)) := ⟨⟨0, by omega⟩⟩
+      · subst h; rw [orthonormal_iff_ite.mp bP.orthonormal i' i', ite_eq_left rfl, ite_eq_left rfl]
+      · rw [orthonormal_iff_ite.mp bP.orthonormal i' j', ite_eq_right h,
+          ite_eq_right (fun hc => h (Fin.natAdd_injective _ _ hc))]
+  have : Nonempty (Fin (s + m)) := ⟨⟨0, by omega⟩⟩
   have hcard : Fintype.card (Fin (s + m))
       = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
     rw [Fintype.card_fin, finrank_euclideanSpace_fin]; exact hsum
@@ -295,7 +294,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     (basisOfOrthonormalOfCardEqFinrank hgon hcard).toOrthonormalBasis
       (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact hgon)
   have hob : ⇑ob = g := by
-    show ⇑((basisOfOrthonormalOfCardEqFinrank hgon hcard).toOrthonormalBasis _) = g
+    change ⇑((basisOfOrthonormalOfCardEqFinrank hgon hcard).toOrthonormalBasis _) = g
     rw [Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
   have hLapp : ∀ (v : EuclideanSpace ℝ (Fin n)) (k : Fin (s + m)),
       ob.repr v k = ⟪g k, v⟫_ℝ := by
@@ -304,7 +303,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
   have hhead : ∀ (v : EuclideanSpace ℝ (Fin n)) (i : Fin s),
       canonicalHead (ob.repr v) i = ⟪(bW i : EuclideanSpace ℝ (Fin n)), v⟫_ℝ := by
     intro v i
-    show ob.repr v (Fin.castAdd m i) = _
+    change ob.repr v (Fin.castAdd m i) = _
     rw [hLapp v (Fin.castAdd m i)]
     simp only [hgdef, Fin.append_left]
   have hres : ∀ (v : EuclideanSpace ℝ (Fin n)) (j : Fin m),
@@ -317,13 +316,13 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     intro x hx
     ext k
     refine Fin.addCases (fun i => ?_) (fun j => ?_) k
-    · show ob.repr x (Fin.castAdd m i)
+    · change ob.repr x (Fin.castAdd m i)
         = (canonicalMean (canonicalHead (ob.repr x))) (Fin.castAdd m i)
       rw [show (canonicalMean (canonicalHead (ob.repr x))) (Fin.castAdd m i)
             = Fin.append (canonicalHead (ob.repr x)) (0 : Fin m → ℝ) (Fin.castAdd m i) from rfl,
           Fin.append_left]
       rfl
-    · show ob.repr x (Fin.natAdd s j)
+    · change ob.repr x (Fin.natAdd s j)
         = (canonicalMean (canonicalHead (ob.repr x))) (Fin.natAdd s j)
       rw [show (canonicalMean (canonicalHead (ob.repr x))) (Fin.natAdd s j)
             = Fin.append (canonicalHead (ob.repr x)) (0 : Fin m → ℝ) (Fin.natAdd s j) from rfl,
@@ -333,7 +332,7 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
     intro t
     refine ⟨bW.repr.symm ((WithLp.toLp 2 : (Fin s → ℝ) → EuclideanSpace ℝ (Fin s)) t), ?_⟩
     funext i
-    show canonicalHead (ob.repr
+    change canonicalHead (ob.repr
         ((bW.repr.symm ((WithLp.toLp 2 : (Fin s → ℝ) → EuclideanSpace ℝ (Fin s)) t) :
           EuclideanSpace ℝ (Fin n)))) i = t i
     rw [hhead, ← Submodule.coe_inner, ← OrthonormalBasis.repr_apply_apply,
@@ -352,14 +351,14 @@ lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n
           = ‖y - W.starProjection y‖ ^ 2 :=
       OrthonormalBasis.sum_sq_inner_right bP
         (⟨y - W.starProjection y, Submodule.sub_starProjection_mem_orthogonal y⟩ : ↥Wᗮ)
-    show ∑ j : Fin m, (ob.repr y (Fin.natAdd s j)) ^ 2 = residualSumSq W y
+    change ∑ j : Fin m, (ob.repr y (Fin.natAdd s j)) ^ 2 = residualSumSq W y
     rw [show residualSumSq W y = ‖y - W.starProjection y‖ ^ 2 from rfl, ← hnorm]
     exact Finset.sum_congr rfl (fun j _ => by rw [hcoord j])
   · -- fact 4: the least-squares functional
     intro γ hγ y
     have hproj : W.starProjection y
         = ∑ i, ⟪(bW i : EuclideanSpace ℝ (Fin n)), y⟫_ℝ • (bW i : EuclideanSpace ℝ (Fin n)) := by
-      rw [Submodule.starProjection_apply, bW.orthogonalProjection_apply_eq_sum y,
+      rw [Submodule.starProjection_apply, bW.orthogonalProjectionOnto_apply_eq_sum y,
         Submodule.coe_sum]
       exact Finset.sum_congr rfl (fun i _ => by rw [Submodule.coe_smul])
     rw [show lse W y = W.starProjection y from rfl, hproj, inner_sum]
@@ -394,10 +393,10 @@ theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
           L.toHomeomorph.toMeasurableEquiv
         = gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1 :=
       gaussianVector_map_linearIsometryEquiv L (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1
-    show (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+    change (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
         L.toHomeomorph.toMeasurableEquiv = _
     rw [hmap]
-    show gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
+    change gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
       = gaussianVector (canonicalMean (canonicalHead (L (p.1 : EuclideanSpace ℝ (Fin n))))) p.2.1
     congr 1
     exact hmean (p.1 : EuclideanSpace ℝ (Fin n)) p.1.2
@@ -447,10 +446,10 @@ theorem isUMVU_residualSumSq (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
           L.toHomeomorph.toMeasurableEquiv
         = gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1 :=
       gaussianVector_map_linearIsometryEquiv L (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1
-    show (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+    change (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
         L.toHomeomorph.toMeasurableEquiv = _
     rw [hmap]
-    show gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
+    change gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
       = gaussianVector (canonicalMean (canonicalHead (L (p.1 : EuclideanSpace ℝ (Fin n))))) p.2.1
     congr 1
     exact hmean (p.1 : EuclideanSpace ℝ (Fin n)) p.1.2

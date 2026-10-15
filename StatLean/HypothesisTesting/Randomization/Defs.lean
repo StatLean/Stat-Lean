@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
 import StatLean.HypothesisTesting.Tests.Defs
 
@@ -63,7 +64,7 @@ variable (G : Type*) [Group G] [Fintype G] {𝓧 : Type*} [MeasurableSpace 𝓧]
 /-- **Randomization hypothesis**: the null law is invariant under every element of the
 finite transformation group `G`. -/
 def RandomizationHypothesis (P : Measure 𝓧) : Prop :=
-  ∀ g : G, P.map (g • ·) = P
+  ∀ g : G, P.map₀ (g • ·) = P
 
 /-- The orbit's statistic values `(T(g·x))_g`, indexed through `Fintype.equivFin`. -/
 noncomputable def orbitValues (T : 𝓧 → ℝ) (x : 𝓧) : Fin (Fintype.card G) → ℝ :=

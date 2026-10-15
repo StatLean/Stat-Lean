@@ -9,11 +9,10 @@
     {"id":"StatLean.ConcentrationInequalities.dudleySum","label":"dudleySum","full":"StatLean.ConcentrationInequalities.dudleySum","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.Chaining.EntropySum"},
     {"id":"Metric.diam_nonneg","label":"diam_nonneg","full":"Metric.diam_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Bounded"},
     {"id":"StatLean.ConcentrationInequalities.dudleySum_nonneg","label":"dudleySum_nonneg","full":"StatLean.ConcentrationInequalities.dudleySum_nonneg","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.Chaining.EntropySum"},
-    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"NNReal.coe_nonneg","label":"coe_nonneg","full":"NNReal.coe_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"},
+    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"NNReal.coe_nonneg","label":"coe_nonneg","full":"NNReal.coe_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.NNReal.Defs"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"MeasureTheory.measure_mono_ae","label":"measure_mono_ae","full":"MeasureTheory.measure_mono_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
@@ -38,15 +37,16 @@
     {"id":"OrderTopology.to_orderClosedTopology","label":"to_orderClosedTopology","full":"OrderTopology.to_orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.Basic"},
     {"id":"StatLean.ConcentrationInequalities.measure_exists_pair_lt_le_of_forall_finset","label":"measure_exists_pair_lt_le_of_forall_finset","full":"StatLean.ConcentrationInequalities.measure_exists_pair_lt_le_of_forall_finset","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.Chaining.CountableSupLift"},
     {"id":"StatLean.ConcentrationInequalities.dudley_tail_three_term","label":"dudley_tail_three_term","full":"StatLean.ConcentrationInequalities.dudley_tail_three_term","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.Chaining.DudleyTail"},
-    {"id":"HasSubset.Subset.trans","label":"trans","full":"HasSubset.Subset.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.RelClasses"},
+    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"StatLean.ConcentrationInequalities.orliczNorm","label":"orliczNorm","full":"StatLean.ConcentrationInequalities.orliczNorm","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.Orlicz.Defs"},
     {"id":"StatLean.ConcentrationInequalities.psiTwo","label":"psiTwo","full":"StatLean.ConcentrationInequalities.psiTwo","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.Orlicz.Defs"},
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"zpow_pos","label":"zpow_pos","full":"zpow_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"zpow_pos","label":"zpow_pos","full":"zpow_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"StatLean.ConcentrationInequalities.sqrtLogCov_nonneg","label":"sqrtLogCov_nonneg","full":"StatLean.ConcentrationInequalities.sqrtLogCov_nonneg","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.Chaining.EntropyIntegrand"},
-    {"id":"isEmpty_or_nonempty","label":"isEmpty_or_nonempty","full":"isEmpty_or_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.IsEmpty.Basic"}
+    {"id":"isEmpty_or_nonempty","label":"isEmpty_or_nonempty","full":"isEmpty_or_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.IsEmpty.Basic"},
+    {"id":"Real.iSup_of_isEmpty","label":"iSup_of_isEmpty","full":"Real.iSup_of_isEmpty","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Archimedean.Real.Basic"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"StatLean.ConcentrationInequalities.coveringNumber"},
@@ -60,7 +60,6 @@
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"NNReal.coe_nonneg"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"le_of_not_gt"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"Nat.cast_zero"},
-    {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"le_trans"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"MeasureTheory.measure_mono_ae"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_separable","target":"Filter.mp_mem"},
@@ -92,7 +91,7 @@
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_exists","target":"StatLean.ConcentrationInequalities.dudleySum"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_exists","target":"StatLean.ConcentrationInequalities.measure_exists_pair_lt_le_of_forall_finset"},
     {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_exists","target":"StatLean.ConcentrationInequalities.dudley_tail_three_term"},
-    {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_exists","target":"HasSubset.Subset.trans"},
+    {"source":"StatLean.ConcentrationInequalities.dudley_tail_three_term_exists","target":"LE.le.trans"},
     {"source":"StatLean.ConcentrationInequalities.subGaussianNorm","target":"StatLean.ConcentrationInequalities.orliczNorm"},
     {"source":"StatLean.ConcentrationInequalities.subGaussianNorm","target":"StatLean.ConcentrationInequalities.psiTwo"},
     {"source":"StatLean.ConcentrationInequalities.sqrtLogCov","target":"StatLean.ConcentrationInequalities.coveringNumber"},
@@ -105,6 +104,7 @@
     {"source":"StatLean.ConcentrationInequalities.dudleySummand_nonneg","target":"PosMulStrictMono.toPosMulReflectLE"},
     {"source":"StatLean.ConcentrationInequalities.dudleySummand_nonneg","target":"StatLean.ConcentrationInequalities.sqrtLogCov_nonneg"},
     {"source":"StatLean.ConcentrationInequalities.exists_lt_of_lt_biSup_real","target":"isEmpty_or_nonempty"},
-    {"source":"StatLean.ConcentrationInequalities.exists_lt_of_lt_biSup_real","target":"Nat.cast_zero"}
+    {"source":"StatLean.ConcentrationInequalities.exists_lt_of_lt_biSup_real","target":"Nat.cast_zero"},
+    {"source":"StatLean.ConcentrationInequalities.exists_lt_of_lt_biSup_real","target":"Real.iSup_of_isEmpty"}
   ]
 }

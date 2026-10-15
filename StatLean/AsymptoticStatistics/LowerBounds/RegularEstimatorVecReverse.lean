@@ -195,7 +195,7 @@ theorem scalar_narrow_of_vector_narrow
     change IsProbabilityMeasure (L.map (fun v => ⟪lam_lifted, v⟫_ℝ))
     have h_meas : Measurable (fun v : EuclideanSpace ℝ (Fin k) =>
         ⟪lam_lifted, v⟫_ℝ) := Linner.measurable
-    exact Measure.isProbabilityMeasure_map h_meas.aemeasurable
+    exact (by infer_instance)
   · -- ============== Step 4: IsRegularEstimator_narrow ==============
     -- Extract the vector chosen family and reuse it verbatim (λ acts on the
     -- codomain only, so the chosen paths and their scores are unchanged).
@@ -204,6 +204,15 @@ theorem scalar_narrow_of_vector_narrow
     intro g hg
     -- From vector chosen-family regularity: vec weak conv to L along `cf g hg`.
     have hRegV := hcf_weak g hg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => (cf g hg).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n • (T_n n X - ψ ((cf g hg).curve ((Real.sqrt n)⁻¹))))
+      (fun n => ((hT_meas n).sub measurable_const).const_smul (Real.sqrt n))] at hRegV
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n => (cf g hg).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n_lam n X - ψ_lam ((cf g hg).curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul
+        ((Linner.measurable.comp (hT_meas n)).sub measurable_const) _)]
     -- Push through Linner (continuous + measurable) to get pushforward weak conv.
     have h_pushed := hRegV.map (f := fun v => ⟪lam_lifted, v⟫_ℝ)
         Linner.continuous Linner.measurable
@@ -225,7 +234,7 @@ theorem scalar_narrow_of_vector_narrow
           ⟪lam_lifted, v⟫_ℝ) := Linner.measurable
       have h_vec_meas : Measurable (fun X : Fin n → Ω =>
           Real.sqrt n • (T_n n X - ψ ((cf g hg).curve ((Real.sqrt n)⁻¹)))) :=
-        measurable_const.smul ((hT_meas n).sub measurable_const)
+        by fun_prop
       rw [Measure.map_map h_inner_meas h_vec_meas]
       congr 1
       funext X
@@ -291,6 +300,10 @@ theorem isRegularEstimator_vec_implies_broad
     (hT_meas : ∀ n, Measurable (T_n n)) :
     IsRegularEstimator_broad_vec P T_set ψ hψ hEIF T_n L := by
   intro g hg curve hscore
+  rw [map₀_sequence_eq_map
+    (fun n => Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)))
+    (fun n X => Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹))))
+    (fun n => ((hT_meas n).sub measurable_const).const_smul (Real.sqrt n))]
   -- Per-`n` vector sequence measure and its probability-measure structure.
   set μ_vec : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n =>
     (MeasureTheory.Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map
@@ -298,13 +311,13 @@ theorem isRegularEstimator_vec_implies_broad
         Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))) with hμ_vec
   have hF_vec_meas : ∀ n, Measurable (fun X : Fin n → Ω =>
       Real.sqrt n • (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))) := fun n =>
-    measurable_const.smul ((hT_meas n).sub measurable_const)
-  haveI hμ_prob : ∀ n, IsProbabilityMeasure (μ_vec n) := by
+    by fun_prop
+  have hμ_prob : ∀ n, IsProbabilityMeasure (μ_vec n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
+    have : ∀ _ : Fin n, IsProbabilityMeasure (curve.curve ((Real.sqrt n)⁻¹)) :=
       fun _ => curve.curve_isProbability _
     rw [hμ_vec]
-    exact Measure.isProbabilityMeasure_map (hF_vec_meas n).aemeasurable
+    exact (by infer_instance)
   -- Reverse Cramér–Wold: reduce to per-direction scalar weak convergence.
   refine AsymptoticStatistics.ForMathlib.cramerWold_weakConverges_euclidean ?_
   intro lam
@@ -322,6 +335,11 @@ theorem isRegularEstimator_vec_implies_broad
   have h_broad := isRegularEstimator_of_narrow_unconditional
     (hEIF := hEIF_lam) h_narrow hT_lam_meas
   have h_at := h_broad g hg curve hscore
+  rw [map₀_sequence_eq_map
+    (fun n => Measure.pi (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹)))
+    (fun n X => Real.sqrt n *
+      (⟪lam_lifted, T_n n X⟫_ℝ - ⟪lam_lifted, ψ (curve.curve ((Real.sqrt n)⁻¹))⟫_ℝ))
+    (fun n => Measurable.const_mul ((hT_lam_meas n).sub measurable_const) _)] at h_at
   -- Align the Cramér–Wold projected sequence/limit with the scalar ones.
   have h_seq_eq :
       (fun n => (μ_vec n).map (fun v : EuclideanSpace ℝ (Fin k) => ⟪lam, v⟫_ℝ))

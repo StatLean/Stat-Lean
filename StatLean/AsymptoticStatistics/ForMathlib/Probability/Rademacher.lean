@@ -56,7 +56,7 @@ theorem rademacherSign_hasSubgaussianMGF :
   have hbound : ∀ᵐ b ∂rademacherMeasure, rademacherSign b ∈ Set.Icc (-1 : ℝ) 1 :=
     Filter.Eventually.of_forall fun b => by
       cases b <;> simp [rademacherSign]
-  convert hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
+  convert! hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
     (X := rademacherSign) (μ := rademacherMeasure) hmeas hbound integral_rademacherSign using 1
   norm_num
 
@@ -65,6 +65,7 @@ noncomputable def rademacherSum {n : ℕ}
     (a : Fin n → ℝ) (ε : Fin n → Bool) : ℝ :=
   ∑ i, a i * rademacherSign (ε i)
 
+set_option backward.isDefEq.respectTransparency false in
 /-- A weighted sum of independent Rademacher signs is sub-Gaussian with
 proxy variance equal to the sum of the squared weights. -/
 theorem rademacherSum_hasSubgaussianMGF {n : ℕ} (a : Fin n → ℝ) :
@@ -83,20 +84,20 @@ theorem rademacherSum_hasSubgaussianMGF {n : ℕ} (a : Fin n → ℝ) :
   have h_coord (i : Fin n) :
       HasSubgaussianMGF
         (fun ε : Fin n → Bool => a i * rademacherSign (ε i))
-        ⟨(a i) ^ 2, sq_nonneg (a i)⟩ (rademacherCube n) := by
+        (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))) (rademacherCube n) := by
     have h_mapped :
         HasSubgaussianMGF (fun b => a i * rademacherSign b)
-          ⟨(a i) ^ 2, sq_nonneg (a i)⟩
+          (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i)))
           ((rademacherCube n).map fun ε => ε i) := by
       rw [rademacherCube,
         (measurePreserving_eval (fun _ : Fin n => rademacherMeasure) i).map_eq]
-      simpa using rademacherSign_hasSubgaussianMGF.const_mul (a i)
+      simpa only [mul_one] using! rademacherSign_hasSubgaussianMGF.const_mul (a i)
     simpa [Function.comp_def] using
       HasSubgaussianMGF.of_map (μ := rademacherCube n)
         (Y := fun ε : Fin n → Bool => ε i)
         (X := fun b => a i * rademacherSign b)
         (measurable_pi_apply i).aemeasurable h_mapped
-  simpa [rademacherSum] using
+  simpa [rademacherSum] using!
     (HasSubgaussianMGF.sum_of_iIndepFun (s := Finset.univ) h_indep
       (fun i _ => h_coord i))
 

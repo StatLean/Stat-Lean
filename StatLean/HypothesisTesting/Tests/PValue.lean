@@ -75,13 +75,13 @@ theorem nestedPValue_nonneg {R : ℝ → Set 𝓧}
     (x : 𝓧) :
     0 ≤ nestedPValue R x := by
   rcases Set.eq_empty_or_nonempty {α : ℝ | x ∈ R α} with h | h
-  · show 0 ≤ sInf {α : ℝ | x ∈ R α}
+  · change 0 ≤ sInf {α : ℝ | x ∈ R α}
     rw [h, Real.sInf_empty]
   · apply le_csInf h
     intro α hα
-    simp only [Set.mem_setOf_eq] at hα
+    simp only [Set.mem_ofPred_eq] at hα
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     rw [hR_neg α hlt] at hα
     exact absurd hα (Set.notMem_empty x)
 
@@ -96,9 +96,9 @@ theorem nestedPValue_le_one {R : ℝ → Set 𝓧}
   obtain ⟨α, hα1, hαx⟩ := hR_exh x
   have hbdd : BddBelow {β : ℝ | x ∈ R β} := by
     refine ⟨0, fun β hβ => ?_⟩
-    simp only [Set.mem_setOf_eq] at hβ
+    simp only [Set.mem_ofPred_eq] at hβ
     by_contra h
-    push_neg at h
+    push Not at h
     rw [hR_neg β h] at hβ
     exact absurd hβ (Set.notMem_empty x)
   have : nestedPValue R x ≤ α := csInf_le hbdd hαx
@@ -130,14 +130,14 @@ theorem superUniform_nestedPValue (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     rw [Set.mem_Ioi] at hv
     have hsub : {x : 𝓧 | nestedPValue R x ≤ t} ⊆ R v := by
       intro x hx
-      simp only [Set.mem_setOf_eq] at hx
+      simp only [Set.mem_ofPred_eq] at hx
       have hnonempty : {α : ℝ | x ∈ R α}.Nonempty := by
         obtain ⟨β, _, hβx⟩ := hR_exh x; exact ⟨β, hβx⟩
       have hbdd : BddBelow {α : ℝ | x ∈ R α} := by
         refine ⟨0, fun α hα => ?_⟩
-        simp only [Set.mem_setOf_eq] at hα
+        simp only [Set.mem_ofPred_eq] at hα
         by_contra h
-        push_neg at h
+        push Not at h
         rw [hR_neg α h] at hα
         exact absurd hα (Set.notMem_empty x)
       have hlt : sInf {α : ℝ | x ∈ R α} < v := lt_of_le_of_lt hx hv
@@ -146,7 +146,7 @@ theorem superUniform_nestedPValue (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     calc P θ {x : 𝓧 | nestedPValue R x ≤ t}
         ≤ P θ (R v) := measure_mono hsub
       _ ≤ ENNReal.ofReal v := hvalid v (by linarith) hv1' θ hθ
-  · push_neg at htlt
+  · push Not at htlt
     calc P θ {x : 𝓧 | nestedPValue R x ≤ t}
         ≤ P θ Set.univ := measure_mono (Set.subset_univ _)
       _ = 1 := measure_univ

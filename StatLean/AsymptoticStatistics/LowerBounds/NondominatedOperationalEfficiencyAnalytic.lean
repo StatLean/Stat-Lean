@@ -42,12 +42,10 @@ theorem proj_seq_to_eif_nd
       (∀ m, p m ∈ V m ∧ IF_eff - p m ∈ (V m)ᗮ) ∧
       Tendsto (fun m => ‖p m - IF_eff‖) atTop (nhds 0) := by
   classical
-  haveI : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
-    L2ZeroMean_isClosed P
   have h_clos : IF_eff ∈ closure
       ((Submodule.span ℝ C.carrier : Submodule ℝ ↥(L2ZeroMean P)) :
         Set ↥(L2ZeroMean P)) := by
-    simpa [tangentSpace, Submodule.topologicalClosure_coe] using h_mem
+    simpa [tangentSpace, Submodule.topologicalClosure_coe] using! h_mem
   have h_approx : ∀ m : ℕ, ∃ a : ↥(L2ZeroMean P),
       a ∈ (Submodule.span ℝ C.carrier : Submodule ℝ ↥(L2ZeroMean P)) ∧
         ‖IF_eff - a‖ < 1 / (m + 1 : ℝ) := by
@@ -85,7 +83,7 @@ theorem proj_seq_to_eif_nd
     exact ⟨m, by omega, hx⟩
   have hV_findim : ∀ m, FiniteDimensional ℝ (V m) := fun m =>
     @FiniteDimensional.span_finset ℝ ↥(L2ZeroMean P) _ _ _ (S m)
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hV_complete : ∀ m, CompleteSpace (V m) := fun m =>
     haveI := hV_findim m
@@ -107,7 +105,7 @@ theorem proj_seq_to_eif_nd
     (V m).starProjection IF_eff
   have h_proj_bound : ∀ m, ‖IF_eff - p m‖ ≤ ‖IF_eff - a m‖ := by
     intro m
-    haveI := hV_proj m
+    have := hV_proj m
     rw [show p m = (V m).starProjection IF_eff from rfl,
       Submodule.starProjection_minimal IF_eff]
     refine ciInf_le ⟨0, ?_⟩ (⟨a m, ha_in_V m⟩ : V m)
@@ -117,7 +115,7 @@ theorem proj_seq_to_eif_nd
   · intro m
     exact ⟨S m, hS_sub m, rfl⟩
   · intro m
-    haveI := hV_proj m
+    have := hV_proj m
     exact ⟨(V m).starProjection_apply_mem IF_eff,
       (V m).sub_starProjection_mem_orthogonal IF_eff⟩
   · have h_bound : ∀ m, ‖p m - IF_eff‖ ≤ 1 / (m + 1 : ℝ) := by
@@ -163,7 +161,7 @@ theorem nonnegativeTiltSupply_of_regular
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
     (hT : ∀ n, Measurable (T_n n))
     (hreg : IsRegularAtND C T_n ψ
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩))
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))))
     (g : {g : ↥(L2ZeroMean P) // g ∈ C.carrier})
     (χ : ℕ → ℕ) (hχ : StrictMono χ)
     (π : Measure (ℝ × ℝ))
@@ -173,20 +171,20 @@ theorem nonnegativeTiltSupply_of_regular
         (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
           normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X))) π) :
     NonnegativeTiltSupply π
-      ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
-      ⟨‖φ‖ ^ 2, sq_nonneg _⟩
+      (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
+      (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))
       ⟪φ, (g : ↥(L2ZeroMean P))⟫_ℝ := by
   classical
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   have hπsnd : π.map Prod.snd =
-      gaussianReal 0 ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ := by
+      gaussianReal 0 (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) := by
     have hscore := qmd_local_score_clt (C.selectedPath g) 0 le_rfl
       (g : ↥(L2ZeroMean P))
     have hscore' : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k)))
         (gaussianReal 0
-          ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) := by
+          (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) := by
       simpa only [zero_mul, (C.selectedPath g).curve_at_zero,
         C.selectedPath_score g] using hscore.comp hχ
     have hpairMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
@@ -205,8 +203,8 @@ theorem nonnegativeTiltSupply_of_regular
           (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
             normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X))).map Prod.snd)
         (gaussianReal 0
-          ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) := by
-      simpa only [Measure.map_map measurable_snd (hpairMeas _)] using hscore'
+          (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) := by
+      simpa only [Measure.map_map measurable_snd (hpairMeas _)] using! hscore'
     exact AsymptoticStatistics.WeakConverges.snd_eq hπ hscoreSnd
   refine ⟨hπprob, hπsnd, ?_⟩
   · intro a ha
@@ -216,8 +214,8 @@ theorem nonnegativeTiltSupply_of_regular
     let scaleSnd : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, a * q.2)
     have hscaleCont : Continuous scaleSnd := by fun_prop
     have hscaleMeas : Measurable scaleSnd := hscaleCont.measurable
-    haveI : IsProbabilityMeasure (π.map scaleSnd) :=
-      Measure.isProbabilityMeasure_map hscaleMeas.aemeasurable
+    have : IsProbabilityMeasure (π.map scaleSnd) :=
+      (by infer_instance)
     have hγscore : γ.score = a • (g : ↥(L2ZeroMean P)) := by
       simpa only [γ, ga] using C.selectedPath_score ga
     have hY : ∀ n, Measurable (centeredEstimator T_n (ψ P) n) := by
@@ -320,7 +318,7 @@ theorem nonnegativeTiltSupply_of_regular
         · simp [hk]
         · field_simp
       rw [heq]
-      simpa only [Function.comp_apply, γ] using hquot
+      simpa only [Function.comp_apply, γ] using! hquot
     let Q : (k : ℕ) → Measure (Fin (χ k) → Ω) := fun k =>
       Measure.pi (fun _ : Fin (χ k) => γ.curve ((Real.sqrt (χ k))⁻¹))
     let Xinner : ∀ k, (Fin (χ k) → Ω) → ℝ := fun k X =>
@@ -330,19 +328,24 @@ theorem nonnegativeTiltSupply_of_regular
     let Xshift : ∀ k, (Fin (χ k) → Ω) → ℝ := fun k X => Xinner k X + d
     let Youter : ∀ k, (Fin (χ k) → Ω) → ℝ := fun k =>
       centeredEstimator T_n (ψ P) (χ k)
-    haveI : ∀ k, IsProbabilityMeasure (Q k) := fun k => by
-      letI : IsProbabilityMeasure (γ.curve ((Real.sqrt (χ k))⁻¹)) :=
+    have : ∀ k, IsProbabilityMeasure (Q k) := fun k => by
+      let : IsProbabilityMeasure (γ.curve ((Real.sqrt (χ k))⁻¹)) :=
         γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
       infer_instance
-    have hinner : AsymptoticStatistics.WeakConverges
-        (fun k => (Q k).map (Xinner k))
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
-      simpa only [Q, Xinner, γ] using (hreg ga).comp hχ
     have hXinnerMeas : ∀ k, Measurable (Xinner k) := fun k =>
       Measurable.const_mul ((hT (χ k)).sub_const _) _
+    have hinner : AsymptoticStatistics.WeakConverges
+        (fun k => (Q k).map (Xinner k))
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
+      have hraw := (hreg ga).comp hχ
+      change AsymptoticStatistics.WeakConverges
+        (fun k => (Q k).map₀ (Xinner k)) _ at hraw
+      have hmaps : ∀ k, (Q k).map₀ (Xinner k) = (Q k).map (Xinner k) :=
+        fun k => Measure.map₀_of_measurable (hXinnerMeas k)
+      simpa only [hmaps] using hraw
     have hshifted : AsymptoticStatistics.WeakConverges
         (fun k => (Q k).map (Xshift k))
-        ((gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩).map (fun x => x + d)) := by
+        ((gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))).map (fun x => x + d)) := by
       have hm := hinner.map (continuous_id.add continuous_const)
         (measurable_id.add_const d)
       intro f
@@ -354,7 +357,7 @@ theorem nonnegativeTiltSupply_of_regular
               (Q k).map ((fun x : ℝ => x + d) ∘ Xinner k) := by rfl
           _ = ((Q k).map (Xinner k)).map (fun x : ℝ => x + d) :=
             (Measure.map_map (measurable_id.add_const d) (hXinnerMeas k)).symm
-      simpa only [hmap] using hm f
+      simpa only [hmap] using! hm f
     have houterMeas : ∀ k, Measurable (Youter k) := fun k => hY (χ k)
     have hdist : ∀ ε > 0, Tendsto (fun k => (Q k).real
         {X | ε ≤ dist (Xshift k X) (Youter k X)}) atTop (nhds 0) := by
@@ -367,7 +370,7 @@ theorem nonnegativeTiltSupply_of_regular
           tendsto_const_nhds.sub hshift
         have habs := (continuous_abs.tendsto
           (d - a * ⟪φ, (g : ↥(L2ZeroMean P))⟫_ℝ)).comp h0
-        simpa only [d, sub_self, abs_zero] using habs
+        simpa only [d, sub_self, abs_zero] using! habs
       have hev : ∀ᶠ k in atTop, |d - Real.sqrt (χ k) *
           (ψ (γ.curve ((Real.sqrt (χ k))⁻¹)) - ψ P)| < ε := by
         simpa only [Real.dist_eq, sub_zero, abs_abs] using
@@ -377,7 +380,7 @@ theorem nonnegativeTiltSupply_of_regular
       have hset : {X | ε ≤ dist (Xshift k X) (Youter k X)} =
           (∅ : Set (Fin (χ k) → Ω)) := by
         ext X
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
           Real.dist_eq]
         rw [show Xshift k X - Youter k X = d - Real.sqrt (χ k) *
             (ψ (γ.curve ((Real.sqrt (χ k))⁻¹)) - ψ P) by
@@ -389,16 +392,16 @@ theorem nonnegativeTiltSupply_of_regular
       (fun k => (hXinnerMeas k).add_const d |>.aemeasurable)
       (fun k => (houterMeas k).aemeasurable) hshifted hdist
     have hgaussShift :
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩).map (fun x => x + d) =
-          gaussianReal d ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))).map (fun x => x + d) =
+          gaussianReal d (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
       simpa only [zero_add] using
         ProbabilityTheory.gaussianReal_map_add_const (μ := 0)
-          (v := ⟨‖φ‖ ^ 2, sq_nonneg _⟩) d
+          (v := (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) d
     have houter : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) =>
           γ.curve ((Real.sqrt (χ k))⁻¹))).map
           (centeredEstimator T_n (ψ P) (χ k)))
-        (gaussianReal d ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+        (gaussianReal d (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
       rw [hgaussShift] at houter0
       simpa only [Q, Youter] using houter0
     have hlecam' : AsymptoticStatistics.WeakConverges
@@ -408,7 +411,7 @@ theorem nonnegativeTiltSupply_of_regular
         (((π.map scaleSnd).withDensity (fun q => ENNReal.ofReal
           (Real.exp (q.2 - (1 / 2 : ℝ) * ‖γ.score‖ ^ 2)))).map Prod.fst) := by
       simpa only [one_mul, one_pow] using hlecam
-    let vg : NNReal := ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
+    let vg : NNReal := (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
     have hExp : Integrable
         (fun q : ℝ × ℝ => Real.exp (a * q.2)) π := by
       have hG := ProbabilityTheory.integrable_exp_mul_gaussianReal
@@ -418,14 +421,14 @@ theorem nonnegativeTiltSupply_of_regular
       exact hG.comp_measurable measurable_snd
     have hTiltInt : Integrable (fun q : ℝ × ℝ => Real.exp
         (a * q.2 - (a ^ 2 / 2) * (vg : ℝ))) π := by
-      convert hExp.mul_const (Real.exp (-((a ^ 2 / 2) *
+      convert! hExp.mul_const (Real.exp (-((a ^ 2 / 2) *
         (vg : ℝ)))) using 1
       funext q
       rw [← Real.exp_add]
       congr 1
     let tiltDensity : (ℝ × ℝ) → ℝ≥0∞ := fun q => ENNReal.ofReal
       (Real.exp (a * q.2 - (a ^ 2 / 2) * (vg : ℝ)))
-    haveI hTiltFinite : IsFiniteMeasure (π.withDensity tiltDensity) :=
+    have hTiltFinite : IsFiniteMeasure (π.withDensity tiltDensity) :=
       isFiniteMeasure_withDensity_ofReal hTiltInt.hasFiniteIntegral
     have htarget :
         (((π.map scaleSnd).withDensity (fun q => ENNReal.ofReal
@@ -472,7 +475,7 @@ theorem cross_integral_eq_of_tiltSupply
     (H : NonnegativeTiltSupply π v s c) :
     Integrable (fun q : ℝ × ℝ => q.1 * q.2) π ∧
       ∫ q : ℝ × ℝ, q.1 * q.2 ∂π = c := by
-  letI : IsProbabilityMeasure π := H.isProbability
+  let : IsProbabilityMeasure π := H.isProbability
   exact AsymptoticStatistics.ForMathlib.GaussianTiltRigidity.covariance_eq_of_nonneg_gaussian_tilts
     π v s c H.snd_law H.tilted_fst_law
 
@@ -486,7 +489,7 @@ private lemma integral_sq_eq_of_map_eq_gaussianReal
       rw [hmap]
       exact ProbabilityTheory.memLp_id_gaussianReal' 2 (by norm_num)
     have hcomp := (memLp_map_measure_iff hid.aestronglyMeasurable hf.aemeasurable).1 hid
-    simpa only [id_eq, Function.comp_apply] using hcomp
+    simpa only [id_eq, Function.comp_apply] using! hcomp
   have hgaussSq : ∫ x : ℝ, x ^ 2 ∂gaussianReal 0 v = (v : ℝ) := by
     simpa only [variance_eq_integral measurable_id'.aemeasurable,
       ProbabilityTheory.integral_id_gaussianReal, sub_zero] using
@@ -510,7 +513,7 @@ theorem residual_secondMoment_bound_of_finset_extension
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
     (hT : ∀ n, Measurable (T_n n))
     (hreg : IsRegularAtND C T_n ψ
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩))
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))))
     (S : Finset ↥(L2ZeroMean P)) (hS : (↑S : Set _) ⊆ C.carrier)
     (p : ↥(L2ZeroMean P)) (hp : p ∈ Submodule.span ℝ (↑S : Set _))
     (χ : ℕ → ℕ) (hχ : StrictMono χ)
@@ -553,7 +556,7 @@ theorem residual_secondMoment_bound_of_finset_extension
         fun g : ↥S => normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X)) := by
     intro k
     exact (hpairMeas k).prodMk
-      (measurable_pi_lambda _ fun g => hscoreMeas (g : ↥(L2ZeroMean P)) k)
+      (Measurable.of_eval fun g => hscoreMeas (g : ↥(L2ZeroMean P)) k)
   have hρfstWeak : AsymptoticStatistics.WeakConverges
       (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
         (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
@@ -561,23 +564,23 @@ theorem residual_secondMoment_bound_of_finset_extension
       (ρ.map Prod.fst) := by
     have hm := hρ.map continuous_fst measurable_fst
     simpa only [Measure.map_map measurable_fst (hextMeas _), Function.comp_apply]
-      using hm
+      using! hm
   have hρfst : ρ.map Prod.fst = π :=
     AsymptoticStatistics.WeakConverges.unique hρfstWeak hπ
   have hπsnd : π.map Prod.snd =
-      gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+      gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
     have hscore := qmd_local_score_clt (C.selectedPath z) 0 le_rfl φ
     have hscore' : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum φ (χ k)))
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
       simpa only [zero_mul, (C.selectedPath z).curve_at_zero] using hscore.comp hχ
     have hscoreSnd : AsymptoticStatistics.WeakConverges
         (fun k => ((Measure.pi (fun _ : Fin (χ k) => P)).map
           (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
             normalizedScoreSum φ (χ k) X))).map Prod.snd)
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
-      simpa only [Measure.map_map measurable_snd (hpairMeas _)] using hscore'
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
+      simpa only [Measure.map_map measurable_snd (hpairMeas _)] using! hscore'
     exact AsymptoticStatistics.WeakConverges.snd_eq hπ hscoreSnd
   have hzeroCoe : ((((0 : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ)) =ᵐ[P]
       fun _ => 0 := Lp.coeFn_zero _ _ _
@@ -598,8 +601,8 @@ theorem residual_secondMoment_bound_of_finset_extension
       exact hX i trivial
     rw [hsum, mul_zero]
   let π0 : Measure (ℝ × ℝ) := π.map setSndZero
-  haveI hπ0prob : IsProbabilityMeasure π0 :=
-    Measure.isProbabilityMeasure_map hsetSndZeroMeas.aemeasurable
+  have hπ0prob : IsProbabilityMeasure π0 :=
+    (by infer_instance)
   have hbase0 : AsymptoticStatistics.WeakConverges
       (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
         (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
@@ -620,11 +623,11 @@ theorem residual_secondMoment_bound_of_finset_extension
     simpa only [hmap] using hm
   have H0 := nonnegativeTiltSupply_of_regular C hpd hEIF hT hreg z χ hχ π0
     hπ0prob hbase0
-  have hπ0fst : π0.map Prod.fst = gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+  have hπ0fst : π0.map Prod.fst = gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
     have ht := H0.tilted_fst_law 0 le_rfl
     norm_num at ht
-    simpa only [withDensity_one] using ht
-  have hπfst : π.map Prod.fst = gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+    simpa only [withDensity_one] using! ht
+  have hπfst : π.map Prod.fst = gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
     rw [← hπ0fst]
     simp only [π0, Measure.map_map measurable_fst hsetSndZeroMeas]
     rfl
@@ -643,8 +646,8 @@ theorem residual_secondMoment_bound_of_finset_extension
     have hprojGCont : Continuous projG := by fun_prop
     have hprojGMeas : Measurable projG := hprojGCont.measurable
     let πg : Measure (ℝ × ℝ) := ρ.map projG
-    haveI hπgprob : IsProbabilityMeasure πg :=
-      Measure.isProbabilityMeasure_map hprojGMeas.aemeasurable
+    have hπgprob : IsProbabilityMeasure πg :=
+      (by infer_instance)
     have hbaseg : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (fun X => (centeredEstimator T_n (ψ P) (χ k) X,
@@ -667,11 +670,11 @@ theorem residual_secondMoment_bound_of_finset_extension
     have Hg := nonnegativeTiltSupply_of_regular C hpd hEIF hT hreg gc χ hχ πg
       hπgprob (by simpa only [gc] using hbaseg)
     have hcg := cross_integral_eq_of_tiltSupply πg
-      ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
-      ⟨‖φ‖ ^ 2, sq_nonneg _⟩ ⟪φ, (g : ↥(L2ZeroMean P))⟫_ℝ
+      (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
+      (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) ⟪φ, (g : ↥(L2ZeroMean P))⟫_ℝ
       (by simpa only [gc] using Hg)
     constructor
-    · simpa only [πg, projG, Function.comp_apply] using
+    · simpa only [πg, projG, Function.comp_apply] using!
         hcg.1.comp_measurable hprojGMeas
     · calc
         ∫ r, r.1.1 * r.2 g ∂ρ = ∫ q : ℝ × ℝ, q.1 * q.2 ∂πg := by
@@ -683,8 +686,8 @@ theorem residual_secondMoment_bound_of_finset_extension
       r.1.1 * pScore r) ρ := by
     have hsum : Integrable (fun r : ((ℝ × ℝ) × (↥S → ℝ)) =>
         ∑ g : ↥S, c g * (r.1.1 * r.2 g)) ρ :=
-      integrable_finset_sum Finset.univ fun g _ => (hcrossCoord g).1.const_mul (c g)
-    convert hsum using 1
+      integrable_finsetSum Finset.univ fun g _ => (hcrossCoord g).1.const_mul (c g)
+    convert! hsum using 1
     funext r
     simp only [pScore, Finset.mul_sum]
     apply Finset.sum_congr rfl
@@ -702,7 +705,7 @@ theorem residual_secondMoment_bound_of_finset_extension
             intro g _
             ring
       _ = ∑ g : ↥S, c g * ∫ r, r.1.1 * r.2 g ∂ρ := by
-        rw [integral_finset_sum Finset.univ fun g _ =>
+        rw [integral_finsetSum Finset.univ fun g _ =>
           (hcrossCoord g).1.const_mul (c g)]
         apply Finset.sum_congr rfl
         intro g _
@@ -732,7 +735,7 @@ theorem residual_secondMoment_bound_of_finset_extension
     intro s
     induction s using Finset.induction_on with
     | empty =>
-        simpa using (Lp.coeFn_zero (E := ℝ) (p := (2 : ℝ≥0∞)) (μ := P))
+        simpa using! (Lp.coeFn_zero (E := ℝ) (p := (2 : ℝ≥0∞)) (μ := P))
     | @insert a s ha ih =>
         have hadd := Lp.coeFn_add
           (((c a • (a : ↥(L2ZeroMean P)) : ↥(L2ZeroMean P)) : Lp ℝ 2 P))
@@ -749,14 +752,14 @@ theorem residual_secondMoment_bound_of_finset_extension
                   Lp ℝ 2 P) : Ω → ℝ) ω +
                 (((∑ g ∈ s, c g • (g : ↥(L2ZeroMean P)) : ↥(L2ZeroMean P)) :
                   Lp ℝ 2 P) : Ω → ℝ) ω := by
-          simpa only [Pi.add_apply] using hadd
+          simpa only [Pi.add_apply] using! hadd
         have hsmul' :
             (((c a • (a : ↥(L2ZeroMean P)) : ↥(L2ZeroMean P)) :
               Lp ℝ 2 P) : Ω → ℝ) =ᵐ[P]
               fun ω => c a *
                 ((((a : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ) ω) := by
-          simpa only [Pi.smul_apply, smul_eq_mul] using hsmul
-        simpa only [Finset.sum_insert ha] using hadd'.trans (hsmul'.add ih)
+          simpa only [Pi.smul_apply, smul_eq_mul] using! hsmul
+        simpa only [Finset.sum_insert ha] using! hadd'.trans (hsmul'.add ih)
   have hpCoe : (((p : Lp ℝ 2 P) : Ω → ℝ)) =ᵐ[P] fun ω =>
       ∑ g : ↥S, c g *
         ((((g : ↥(L2ZeroMean P)) : Lp ℝ 2 P) : Ω → ℝ) ω) := by
@@ -786,7 +789,7 @@ theorem residual_secondMoment_bound_of_finset_extension
     intro g _
     rw [← Finset.mul_sum]
     ring
-  have hpScoreLaw : ρ.map pScore = gaussianReal 0 ⟨‖p‖ ^ 2, sq_nonneg _⟩ := by
+  have hpScoreLaw : ρ.map pScore = gaussianReal 0 (NNReal.mk (‖p‖ ^ 2) (sq_nonneg _)) := by
     have hfromρ : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum p (χ k))) (ρ.map pScore) := by
@@ -808,7 +811,7 @@ theorem residual_secondMoment_bound_of_finset_extension
     have hgauss : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum p (χ k)))
-        (gaussianReal 0 ⟨‖p‖ ^ 2, sq_nonneg _⟩) := by
+        (gaussianReal 0 (NNReal.mk (‖p‖ ^ 2) (sq_nonneg _))) := by
       simpa only [zero_mul, (C.selectedPath z).curve_at_zero] using hscore.comp hχ
     exact AsymptoticStatistics.WeakConverges.unique hfromρ hgauss
   let scoreDiff : ((ℝ × ℝ) × (↥S → ℝ)) → ℝ := fun r =>
@@ -839,7 +842,7 @@ theorem residual_secondMoment_bound_of_finset_extension
       exact hX i trivial, Finset.sum_sub_distrib]
     ring
   have hscoreDiffLaw : ρ.map scoreDiff =
-      gaussianReal 0 ⟨‖p - φ‖ ^ 2, sq_nonneg _⟩ := by
+      gaussianReal 0 (NNReal.mk (‖p - φ‖ ^ 2) (sq_nonneg _)) := by
     have hfromρ : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum (p - φ) (χ k))) (ρ.map scoreDiff) := by
@@ -863,36 +866,36 @@ theorem residual_secondMoment_bound_of_finset_extension
     have hgauss : AsymptoticStatistics.WeakConverges
         (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
           (normalizedScoreSum (p - φ) (χ k)))
-        (gaussianReal 0 ⟨‖p - φ‖ ^ 2, sq_nonneg _⟩) := by
+        (gaussianReal 0 (NNReal.mk (‖p - φ‖ ^ 2) (sq_nonneg _))) := by
       simpa only [zero_mul, (C.selectedPath z).curve_at_zero] using hscore.comp hχ
     exact AsymptoticStatistics.WeakConverges.unique hfromρ hgauss
   let tCoord : ((ℝ × ℝ) × (↥S → ℝ)) → ℝ := fun r => r.1.1
   let phiCoord : ((ℝ × ℝ) × (↥S → ℝ)) → ℝ := fun r => r.1.2
   have htCoordMeas : Measurable tCoord := by fun_prop
   have hphiCoordMeas : Measurable phiCoord := by fun_prop
-  have htCoordLaw : ρ.map tCoord = gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+  have htCoordLaw : ρ.map tCoord = gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
     calc
       ρ.map tCoord = (ρ.map Prod.fst).map Prod.fst := by
         rw [Measure.map_map measurable_fst measurable_fst]
         rfl
       _ = π.map Prod.fst := by rw [hρfst]
-      _ = gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := hπfst
+      _ = gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := hπfst
   have hphiCoordLaw : ρ.map phiCoord =
-      gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
+      gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
     calc
       ρ.map phiCoord = (ρ.map Prod.fst).map Prod.snd := by
         rw [Measure.map_map measurable_snd measurable_fst]
         rfl
       _ = π.map Prod.snd := by rw [hρfst]
-      _ = gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := hπsnd
+      _ = gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := hπsnd
   have hTsq := integral_sq_eq_of_map_eq_gaussianReal ρ tCoord htCoordMeas
-    ⟨‖φ‖ ^ 2, sq_nonneg _⟩ htCoordLaw
+    (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) htCoordLaw
   have hphisq := integral_sq_eq_of_map_eq_gaussianReal ρ phiCoord hphiCoordMeas
-    ⟨‖φ‖ ^ 2, sq_nonneg _⟩ hphiCoordLaw
+    (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) hphiCoordLaw
   have hpsq := integral_sq_eq_of_map_eq_gaussianReal ρ pScore hpScoreMeas
-    ⟨‖p‖ ^ 2, sq_nonneg _⟩ hpScoreLaw
+    (NNReal.mk (‖p‖ ^ 2) (sq_nonneg _)) hpScoreLaw
   have hdiffsq := integral_sq_eq_of_map_eq_gaussianReal ρ scoreDiff hscoreDiffMeas
-    ⟨‖p - φ‖ ^ 2, sq_nonneg _⟩ hscoreDiffLaw
+    (NNReal.mk (‖p - φ‖ ^ 2) (sq_nonneg _)) hscoreDiffLaw
   have hTminusPInt : Integrable
       (fun r : ((ℝ × ℝ) × (↥S → ℝ)) => (r.1.1 - pScore r) ^ 2) ρ := by
     have hcomb := (hTsq.1.sub (hTpInt.const_mul 2)).add hpsq.1
@@ -905,7 +908,7 @@ theorem residual_secondMoment_bound_of_finset_extension
         (fun r : ((ℝ × ℝ) × (↥S → ℝ)) => r.1.1 ^ 2) ρ := by
       simpa only [tCoord] using hTsq.1
     have hTsqVal : ∫ r : ((ℝ × ℝ) × (↥S → ℝ)), r.1.1 ^ 2 ∂ρ =
-        ‖φ‖ ^ 2 := by simpa only [tCoord] using hTsq.2
+        ‖φ‖ ^ 2 := by simpa only [tCoord] using! hTsq.2
     have hpsqVal : ∫ r : ((ℝ × ℝ) × (↥S → ℝ)), pScore r ^ 2 ∂ρ =
         ‖p‖ ^ 2 := by simpa using hpsq.2
     calc
@@ -967,7 +970,7 @@ theorem residual_secondMoment_bound_of_finset_extension
   have hresIntπ : Integrable (fun q : ℝ × ℝ => (q.1 - q.2) ^ 2) π := by
     have hm : Integrable (fun q : ℝ × ℝ => (q.1 - q.2) ^ 2) (ρ.map Prod.fst) :=
       (integrable_map_measure (by fun_prop) measurable_fst.aemeasurable).2
-        (by simpa only [Function.comp_apply] using hresIntρ)
+        (by simpa only [Function.comp_apply] using! hresIntρ)
     rwa [hρfst] at hm
   refine ⟨hsecond, ?_⟩
   intro ε hε
@@ -977,14 +980,14 @@ theorem residual_secondMoment_bound_of_finset_extension
   have hset : {q : ℝ × ℝ | ε ^ 2 ≤ (q.1 - q.2) ^ 2} =
       {q | ε ≤ |q.1 - q.2|} := by
     ext q
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     simpa [sq_abs] using (sq_le_sq₀ hε.le (abs_nonneg (q.1 - q.2)))
   rw [hset] at hm
   have hd2 : 0 < ε ^ 2 := sq_pos_of_pos hε
   calc
     (π {q | ε ≤ |q.1 - q.2|}).toReal ≤
         (∫ q, (q.1 - q.2) ^ 2 ∂π) / ε ^ 2 :=
-      (le_div_iff₀ hd2).2 (by simpa [mul_comm] using hm)
+      (le_div_iff₀ hd2).2 (by simpa [mul_comm] using! hm)
     _ ≤ 4 * ‖φ - p‖ ^ 2 / ε ^ 2 := by
       exact div_le_div_of_nonneg_right hsecond hd2.le
 
@@ -1002,7 +1005,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
     (hT : ∀ n, Measurable (T_n n))
     (hreg : IsRegularAtND C T_n ψ
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩))
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))))
     (χ : ℕ → ℕ) (hχ : StrictMono χ)
     (π : Measure (ℝ × ℝ)) [IsProbabilityMeasure π]
     (hπ : AsymptoticStatistics.WeakConverges
@@ -1051,36 +1054,34 @@ theorem residual_subseq_limit_eq_dirac_of_regular
     have hvecMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
         fun g : ↥S => normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X) := by
       intro k
-      exact measurable_pi_lambda _ fun g => hscoreMeas (g : ↥(L2ZeroMean P)) k
+      exact Measurable.of_eval fun g => hscoreMeas (g : ↥(L2ZeroMean P)) k
     have hjointMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
         ((centeredEstimator T_n (ψ P) (χ k) X,
           normalizedScoreSum φ (χ k) X),
           fun g : ↥S => normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k) X)) :=
       fun k => (hpairMeas k).prodMk (hvecMeas k)
-    haveI hpairProb : ∀ k, IsProbabilityMeasure (pairSeq k) := fun k =>
-      Measure.isProbabilityMeasure_map (hpairMeas k).aemeasurable
-    haveI hvecProb : ∀ k, IsProbabilityMeasure (vecSeq k) := fun k =>
-      Measure.isProbabilityMeasure_map (hvecMeas k).aemeasurable
-    haveI hjointProb : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
-      Measure.isProbabilityMeasure_map (hjointMeas k).aemeasurable
+    have hpairProb : ∀ k, IsProbabilityMeasure (pairSeq k) := fun k =>
+      (by infer_instance)
+    have hjointProb : ∀ k, IsProbabilityMeasure (joint k) := fun k =>
+      (by infer_instance)
     have hpairTight : IsTightMeasureSet (Set.range pairSeq) :=
       Prohorov.weakConverges_range_tight pairSeq π (by simpa only [pairSeq] using hπ)
     let z : {g : ↥(L2ZeroMean P) // g ∈ C.carrier} := ⟨0, zero_mem C⟩
     let coordSeq : ↥S → ℕ → Measure ℝ := fun g k =>
       (Measure.pi (fun _ : Fin (χ k) => P)).map
         (normalizedScoreSum (g : ↥(L2ZeroMean P)) (χ k))
-    haveI hcoordProb : ∀ (g : ↥S) k, IsProbabilityMeasure (coordSeq g k) := fun g k =>
-      Measure.isProbabilityMeasure_map (hscoreMeas (g : ↥(L2ZeroMean P)) k).aemeasurable
+    have hcoordProb : ∀ (g : ↥S) k, IsProbabilityMeasure (coordSeq g k) := fun g k =>
+      (by infer_instance)
     have hcoordTight : ∀ g : ↥S, IsTightMeasureSet (Set.range (coordSeq g)) := by
       intro g
       have hs := qmd_local_score_clt (C.selectedPath z) 0 le_rfl
         (g : ↥(L2ZeroMean P))
       have hw : AsymptoticStatistics.WeakConverges (coordSeq g)
-          (gaussianReal 0 ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) := by
+          (gaussianReal 0 (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) := by
         simpa only [coordSeq, zero_mul, (C.selectedPath z).curve_at_zero] using
           hs.comp hχ
       exact Prohorov.weakConverges_range_tight (coordSeq g)
-        (gaussianReal 0 ⟨‖(g : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩) hw
+        (gaussianReal 0 (NNReal.mk (‖(g : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))) hw
     have hcoordMarg : ∀ (g : ↥S) k,
         (vecSeq k).map (fun x => x g) = coordSeq g k := by
       intro g k
@@ -1163,10 +1164,10 @@ theorem residual_subseq_limit_eq_dirac_of_regular
         (hfstImage ▸ hpairTight) (hsndImage ▸ hvecTight)
     obtain ⟨σ, hσ, ρ, hρprob, hρweak⟩ :=
       Prohorov.extract_weak_subseq joint hjointTight
-    letI : IsProbabilityMeasure ρ := hρprob
+    let : IsProbabilityMeasure ρ := hρprob
     have hbound := residual_secondMoment_bound_of_finset_extension C hpd hEIF hT hreg
       S hS (p m) hpS (χ ∘ σ) (hχ.comp hσ) π (hπ.comp hσ) ρ
-      (by simpa only [joint, Function.comp_apply] using hρweak)
+      (by simpa only [joint, Function.comp_apply] using! hρweak)
     exact hbound.2 ε hε
   have hnorm : Tendsto (fun m => ‖φ - p m‖) atTop (nhds 0) := by
     simpa only [norm_sub_rev] using hpconv
@@ -1186,7 +1187,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
   have htailNull : ∀ n, π (tail n) = 0 := by
     intro n
     apply (measureReal_eq_zero_iff (measure_ne_top π _)).mp
-    simpa only [tail] using htailZero (((n + 1 : ℕ) : ℝ)⁻¹) (by positivity)
+    simpa only [tail] using! htailZero (((n + 1 : ℕ) : ℝ)⁻¹) (by positivity)
   have hbadSub : bad ⊆ ⋃ n, tail n := by
     intro q hq
     have habs : 0 < |q.1 - q.2| := abs_pos.mpr hq
@@ -1195,7 +1196,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
       hn.trans (by exact_mod_cast Nat.lt_succ_self n)
     have hinv : (((n + 1 : ℕ) : ℝ)⁻¹ < |q.1 - q.2|) :=
       (inv_lt_comm₀ habs (by positivity)).mp hn'
-    exact Set.mem_iUnion.2 ⟨n, by simpa only [tail, Set.mem_setOf_eq] using hinv.le⟩
+    exact Set.mem_iUnion.2 ⟨n, by simpa only [tail, Set.mem_ofPred_eq] using hinv.le⟩
   have hbadNull : π bad = 0 := by
     apply le_antisymm
     · exact (measure_mono hbadSub).trans_eq
@@ -1204,7 +1205,7 @@ theorem residual_subseq_limit_eq_dirac_of_regular
   have hresAE : (fun q : ℝ × ℝ => q.1 - q.2) =ᵐ[π] fun _ => 0 := by
     have hgood : ∀ᵐ q ∂π, q ∉ bad := compl_mem_ae_iff.2 hbadNull
     filter_upwards [hgood] with q hq
-    simpa only [bad, Set.mem_setOf_eq, not_not] using hq
+    simpa only [bad, Set.mem_ofPred_eq, not_not] using hq
   calc
     π.map (fun q : ℝ × ℝ => q.1 - q.2) = π.map (fun _ => 0) :=
       Measure.map_congr hresAE

@@ -25,7 +25,7 @@ private lemma movingDisplacement_tendsto_zero
   have hsqrt : Tendsto (fun n => Real.sqrt (m n)) atTop atTop :=
     (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop).comp hm
   have hinv : Tendsto (fun n => (Real.sqrt (m n))⁻¹) atTop (nhds 0) := by
-    simpa using hsqrt.inv_tendsto_atTop
+    simpa using! hsqrt.inv_tendsto_atTop
   have hprod := hinv.smul hθ
   simp only [zero_smul] at hprod
   refine hprod.congr' ?_
@@ -48,7 +48,7 @@ private lemma movingResidual_eventually_memLp
   have hθeq : θ₀ + (θ n - θ₀) = θ n := by simp [sub_eq_add_neg]
   rw [← hθeq]
   simp_rw [real_inner_smul_left]
-  convert hn.const_mul (Real.sqrt (m n)) using 1
+  convert! hn.const_mul (Real.sqrt (m n)) using 1
   funext x
   simp only [add_sub_cancel_left]
   ring
@@ -206,7 +206,7 @@ theorem dqm_scaled_path_excess_mass_tendsto
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)).real
         {x | M.density (θ n) x = 0}) =o[atTop]
       (fun n => ‖θ n - θ₀‖ ^ 2) := by
-    simpa only [Function.comp_apply] using
+    simpa only [Function.comp_apply] using!
       (dqm_zeroDensity_mass_isLittleO M μ θ₀ ℓ hPDF hDQM).comp_tendsto hθ₀
   have hmul := (isBigO_refl (fun n : ℕ => (m n : ℝ)) atTop).mul_isLittleO hsmall
   have hscale : (fun n => (m n : ℝ) * ‖θ n - θ₀‖ ^ 2) =

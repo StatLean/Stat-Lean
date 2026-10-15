@@ -61,7 +61,7 @@ theorem exists_isMLocationEstimate {ρ : ℝ → ℝ}
     have hb' : ∀ u, b ≤ ρ u := fun u => hb ⟨u, rfl⟩
     set i₀ : Fin n := ⟨0, hn⟩ with hi₀
     have hfc : Continuous (fun t : ℝ => ∑ i, ρ (x i - t)) :=
-      continuous_finset_sum _ fun i _ => hρc.comp (continuous_const.sub continuous_id)
+      continuous_finsetSum _ fun i _ => hρc.comp (continuous_const.sub continuous_id)
     -- `t ↦ a - t` is proper: it swaps the two ends of the line.
     have hmap : ∀ a : ℝ, Tendsto (fun t : ℝ => a - t) (cocompact ℝ) (cocompact ℝ) := by
       intro a
@@ -247,9 +247,9 @@ private theorem sum_abs_le_of_card_le (y : Fin n → ℝ) {m t : ℝ} (hmt : m <
       |y i - m| - |y i - t| ≤ (if y i ≤ m then -(t - m) else t - m) := by
     intro i
     by_cases hi : y i ≤ m
-    · rw [if_pos hi, abs_of_nonpos (by linarith), abs_of_nonpos (by linarith)]
+    · rw [ite_eq_left hi, abs_of_nonpos (by linarith), abs_of_nonpos (by linarith)]
       linarith
-    · rw [if_neg hi]
+    · rw [ite_eq_right hi]
       have h1 := abs_sub_abs_le_abs_sub (y i - m) (y i - t)
       have h2 : |y i - m - (y i - t)| = t - m := by
         rw [show y i - m - (y i - t) = t - m by ring, abs_of_pos (by linarith)]

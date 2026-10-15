@@ -134,7 +134,7 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     rw [hν'def, withDensity_apply_eq_zero hwm, hsupp, Set.univ_inter]
   have hν'univ : ν' Set.univ < 1 := by
     rw [hν'def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]; exact hwint
-  haveI : IsFiniteMeasure ν' := ⟨hν'univ.trans ENNReal.one_lt_top⟩
+  have : IsFiniteMeasure ν' := ⟨hν'univ.trans ENNReal.one_lt_top⟩
   have hν'ne : ν' Set.univ ≠ 0 := fun h =>
     hν0 (Measure.measure_univ_eq_zero.mp ((hnull _).mp h))
   set c : ℝ := (ν' Set.univ).toReal with hcdef
@@ -198,7 +198,7 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     rw [inv_inv] at hkey
     have hset : (fun y : G => y * h) ⁻¹' {g : G | F (x, g) ≠ r}
         = {g : G | F (h • x, g) ≠ r} := by
-      ext g; simp only [Set.mem_preimage, Set.mem_setOf_eq, hFeq g]
+      ext g; simp only [Set.mem_preimage, Set.mem_ofPred_eq, hFeq g]
     rw [hset] at hkey
     exact ae_iff.mpr ((hnull _).mpr hkey)
   have hstep : ∀ (h : G) (x : 𝓧), D x = 0 → A (h • x) = A x ∧ D (h • x) = 0 := fun h x hx =>
@@ -212,11 +212,11 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     intro h x
     by_cases hx : D x = 0
     · obtain ⟨hA', hD'⟩ := hstep h x hx
-      simp only [if_pos hx, if_pos hD', hA']
+      simp only [ite_eq_left hx, ite_eq_left hD', hA']
     · have hD' : D (h • x) ≠ 0 := fun hcon => by
         obtain ⟨-, hD2⟩ := hstep h⁻¹ (h • x) hcon
         rw [inv_smul_smul] at hD2; exact hx hD2
-      simp only [if_neg hx, if_neg hD']
+      simp only [ite_eq_right hx, ite_eq_right hD']
   · -- **Step 4: Fubini.** The per-`g` a.e. identity becomes a per-`x` a.e.-in-`g` identity.
     have hPmeas : MeasurableSet {q : G × 𝓧 | φ (q.1 • q.2) = φ q.2} :=
       measurableSet_eq_fun (hφmeas.comp (measurable_fst.smul measurable_snd))
@@ -228,7 +228,7 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
       filter_upwards [hx] with g hg
       simp only [hFdef, hg]
     obtain ⟨hA', hD'⟩ := hL1 x _ hr
-    simp only [if_pos hD', hA', Real.tan_arctan]
+    simp only [ite_eq_left hD', hA', Real.tan_arctan]
 
 /-! ## UMP almost invariant tests -/
 

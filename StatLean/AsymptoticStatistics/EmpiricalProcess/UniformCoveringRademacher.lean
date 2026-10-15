@@ -130,7 +130,7 @@ theorem empiricalRelativeRadius_le_one_of_isEnvelope
     empiricalRelativeRadius F Φ n X ≤ 1 := by
   by_cases hzero : empiricalL2Seminorm n X Φ = 0
   · simp [empiricalRelativeRadius, hzero]
-  · rw [empiricalRelativeRadius, if_neg hzero]
+  · rw [empiricalRelativeRadius, ite_eq_right hzero]
     refine iSup_le fun f => iSup_le fun hf => ?_
     rw [ENNReal.ofReal_le_one]
     apply (div_le_one ?_).2
@@ -173,6 +173,12 @@ theorem finiteDiscreteRelativeRadius_eq_empiricalRelativeRadius
   · simp [finiteDiscreteRelativeRadius, empiricalRelativeRadius, hQ, hzero]
   · simp [finiteDiscreteRelativeRadius, empiricalRelativeRadius, hQ, hzero]
 
+/-- The normalized Rademacher average `n^{-1/2} ∑ᵢ εᵢ f(Xᵢ)` of `f` on the sample `X`, where
+`εᵢ = rademacherSign (ε i)`.
+
+For a fixed sample, `f ↦ rademacherAverage n X ε f` is the Rademacher process whose
+expected supremum the conditional chaining argument bounds. Edge behavior: the empty sample
+gives zero. -/
 noncomputable def rademacherAverage {Ω : Type*}
     (n : ℕ) (X : Fin n → Ω) (ε : Fin n → Bool)
     (f : Ω → ℝ) : ℝ :=
@@ -211,6 +217,7 @@ theorem rademacherAverage_eq_rademacherSum
   intro i _
   ring
 
+set_option backward.isDefEq.respectTransparency false in
 theorem rademacherAverage_proxy_eq_empiricalL2Seminorm_sq
     {Ω : Type*} (n : ℕ) (X : Fin n → Ω)
     (f : Ω → ℝ) :
@@ -253,7 +260,7 @@ theorem rademacherAverage_proxy_eq_empiricalL2Seminorm_sq
       change NNReal.toRealHom
         (∑ i, (⟨((Real.sqrt n)⁻¹ * f (X i)) ^ 2,
           sq_nonneg ((Real.sqrt n)⁻¹ * f (X i))⟩ : ℝ≥0)) = _
-      rw [map_sum]
+      erw [map_sum]
       rfl
     _ = empiricalL2Seminorm n X f ^ 2 := hreal
     _ = (↑(⟨empiricalL2Seminorm n X f ^ 2,
@@ -288,11 +295,20 @@ theorem rademacherAverage_sub_hasSubgaussianMGF
   simpa [empiricalL2Dist, rademacherAverage_sub] using
     rademacherAverage_hasSubgaussianMGF n X (f - g)
 
+/-- The Rademacher supremum `sup_{f ∈ F} |rademacherAverage n X ε f|` over `F` for a fixed
+sample `X` and sign vector `ε`, valued in `ℝ≥0∞`.
+
+Edge behavior: the empty class and the empty sample give zero. -/
 noncomputable def rademacherSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (X : Fin n → Ω)
     (ε : Fin n → Bool) : ℝ≥0∞ :=
   supNormOver F (fun f => rademacherAverage n X ε f)
 
+/-- The conditional Rademacher supremum `E_ε sup_{f ∈ F} |rademacherAverage n X ε f|` for a
+fixed sample `X`: the lower integral of `rademacherSup F n X` against the uniform sign law
+`rademacherCube n`.
+
+Edge behavior: the empty class and the empty sample give zero. -/
 noncomputable def conditionalRademacherSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (X : Fin n → Ω) : ℝ≥0∞ :=
   ∫⁻ ε, rademacherSup F n X ε ∂rademacherCube n
@@ -323,6 +339,7 @@ theorem measurable_rademacherSup
     conditionalRademacherSup F 0 X = 0 := by
   simp [conditionalRademacherSup]
 
+set_option backward.isDefEq.respectTransparency false in
 theorem integral_iSup_abs_rademacherAverage_le
     {Ω ι : Type*} [Fintype ι] [Nonempty ι]
     (n : ℕ) (X : Fin n → Ω) (u : ι → Ω → ℝ)
@@ -332,7 +349,7 @@ theorem integral_iSup_abs_rademacherAverage_le
         ∂rademacherCube n ≤
       Real.sqrt
         (2 * ρ ^ 2 * Real.log (2 * (Fintype.card ι : ℝ))) := by
-  let c : ℝ≥0 := ⟨ρ ^ 2, sq_nonneg ρ⟩
+  let c : ℝ≥0 := NNReal.mk (ρ ^ 2) (sq_nonneg ρ)
   have hc : 0 < c := by
     rw [← NNReal.coe_pos]
     exact pow_pos hρ 2
@@ -341,10 +358,11 @@ theorem integral_iSup_abs_rademacherAverage_le
         (fun ε : Fin n → Bool => rademacherAverage n X ε (u i)) c
         (rademacherCube n) := by
     apply (rademacherAverage_hasSubgaussianMGF n X (u i)).mono_proxy
-    rw [← NNReal.coe_le_coe]
+    erw [← NNReal.coe_le_coe]
     change empiricalL2Seminorm n X (u i) ^ 2 ≤ ρ ^ 2
     exact pow_le_pow_left₀ (empiricalL2Seminorm_nonneg n X (u i)) (hu i) 2
-  simpa [c] using
+  simpa only [c, NNReal.coe_mk, ← Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2),
+    ← Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * ρ ^ 2)] using
     (expectation_iSup_abs_le_of_subgaussian (μ := rademacherCube n) hc hZ)
 
 theorem lintegral_iSup_ofReal_abs_rademacherAverage_le
@@ -371,6 +389,7 @@ theorem lintegral_iSup_ofReal_abs_rademacherAverage_le
   exact ENNReal.ofReal_le_ofReal
     (integral_iSup_abs_rademacherAverage_le n X u ρ hρ hu)
 
+set_option backward.isDefEq.respectTransparency false in
 theorem lintegral_iSup_ofReal_abs_rademacherIncrement_le
     {Ω ι : Type*} [Fintype ι] [Nonempty ι]
     (n : ℕ) (X : Fin n → Ω)
@@ -394,7 +413,7 @@ theorem rademacherSup_coe_finset
       ENNReal.ofReal
         (⨆ f : {f // f ∈ S},
           |rademacherAverage n X ε f|) := by
-  letI : Nonempty {f // f ∈ S} := hS.coe_sort
+  let : Nonempty {f // f ∈ S} := hS.coe_sort
   unfold rademacherSup supNormOver
   apply le_antisymm
   · refine iSup_le fun f => iSup_le fun hf => ?_
@@ -421,7 +440,7 @@ theorem conditionalRademacherSup_finset_le
   rcases S.eq_empty_or_nonempty with rfl | hS
   · simp
   · unfold conditionalRademacherSup
-    letI : Nonempty {f // f ∈ S} := hS.coe_sort
+    let : Nonempty {f // f ∈ S} := hS.coe_sort
     rw [show (fun ε => rademacherSup (S : Set (Ω → ℝ)) n X ε) =
         fun ε => ENNReal.ofReal
           (⨆ f : {f // f ∈ S}, |rademacherAverage n X ε f|) by
@@ -473,7 +492,7 @@ theorem empiricalL2Seminorm_eq_euclideanNorm
         change _ = NNReal.toRealHom
           (∑ i, (⟨((Real.sqrt n)⁻¹ * f (X i)) ^ 2,
             sq_nonneg ((Real.sqrt n)⁻¹ * f (X i))⟩ : ℝ≥0))
-        rw [map_sum]
+        erw [map_sum]
         rfl
       _ = NNReal.toReal
           (⟨empiricalL2Seminorm n X f ^ 2,
@@ -641,7 +660,7 @@ theorem empiricalL2Seminorm_le_relativeRadiusReal_mul
     have hratio : ENNReal.ofReal
           (empiricalL2Seminorm n X f / empiricalL2Seminorm n X Φ) ≤
         empiricalRelativeRadius F Φ n X := by
-      rw [empiricalRelativeRadius, if_neg hzero]
+      rw [empiricalRelativeRadius, ite_eq_right hzero]
       exact le_iSup_of_le f (le_iSup_of_le hf le_rfl)
     rw [← ofReal_empiricalRelativeRadiusReal_of_isEnvelope F Φ n X hΦ] at hratio
     have hratio_real :
@@ -664,7 +683,7 @@ theorem ofReal_empiricalL2Seminorm_mul_relativeRadiusReal_le_supNormOver
     · simp [empiricalRelativeRadiusReal, htop]
     · rw [empiricalRelativeRadiusReal,
         ENNReal.ofReal_toReal htop,
-        empiricalRelativeRadius, if_neg hD]
+        empiricalRelativeRadius, ite_eq_right hD]
       unfold supNormOver
       rw [ENNReal.mul_iSup]
       refine iSup_le fun f => ?_
@@ -869,6 +888,11 @@ theorem conditionalRademacherSup_usedAmbientCover_le
   obtain ⟨f, hf, hfg⟩ := hused g hg
   exact (empiricalL2Seminorm_center_lt F Φ n X hΦ η f hf g hfg).le
 
+/-- The finite set of differences `g - h` over the pairs `(g, h) ∈ S ×ˢ T` whose realized
+empirical `L²` distance `empiricalL2Dist n X g h` is less than `r`.
+
+It collects the possible chaining links between the nets `S` and `T`: its members have
+empirical seminorm less than `r`, and it has at most `S.card * T.card` elements. -/
 noncomputable def empiricalClosePairDifferences {Ω : Type*}
     (n : ℕ) (X : Fin n → Ω)
     (S T : Finset (Ω → ℝ)) (r : ℝ) : Finset (Ω → ℝ) :=
@@ -943,6 +967,11 @@ theorem conditionalRademacherSup_closePairDifferences_le
   · exact (empiricalClosePairDifferences_card_le n X S T r).trans
       (mul_le_mul' hS hT)
 
+/-- The relative radius `2^{-q} θ` of the `q`-th dyadic chaining level, where
+`θ = empiricalRelativeRadiusReal F Φ n X` is the realized relative radius of `F`.
+
+The nets at level `q` have empirical `L²` radius `2^{-q} θ` times
+`empiricalL2Seminorm n X Φ`. Edge behavior: level `0` is `θ` itself. -/
 noncomputable def empiricalDyadicRadius {Ω : Type*}
     (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
     (n : ℕ) (X : Fin n → Ω) (q : ℕ) : ℝ :=
@@ -961,10 +990,20 @@ theorem empiricalDyadicRadius_nonneg {Ω : Type*}
     0 ≤ empiricalDyadicRadius F Φ n X q := by
   exact mul_nonneg (by positivity) ENNReal.toReal_nonneg
 
+/-- Finite dyadic chaining nets for `F` on the fixed sample `X`, at the levels `q ≤ L`.
+
+For each `q ≤ L`, `proj q` sends every member `f` of `F` to a center in the finite set
+`net q` at realized empirical `L²` distance less than
+`empiricalDyadicRadius F Φ n X q * empiricalL2Seminorm n X Φ`; every center in `net q` lies
+within that distance of some member of `F`; and `net q` has at most
+`uniformL2CoveringNumber F Φ (empiricalDyadicRadius F Φ n X q)` elements. Centers need not
+belong to `F`, and levels above `L` are unconstrained. -/
 structure FiniteEmpiricalDyadicNets {Ω : Type*}
     (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
     (n : ℕ) (X : Fin n → Ω) (L : ℕ) where
+  /-- The finite set of centers used at chaining level `q`. -/
   net : ℕ → Finset (Ω → ℝ)
+  /-- The center `proj q f` assigned to the member `f` of `F` at chaining level `q`. -/
   proj : ℕ → F → Ω → ℝ
   proj_mem :
     ∀ (q : ℕ), q ≤ L → ∀ f : F, proj q f ∈ net q
@@ -1026,27 +1065,32 @@ theorem finiteEmpiricalDyadicNets_nonempty
     net_used := ?_
     card_le := ?_ }⟩
   · intro q hq f
-    simp only [net', proj', dif_pos hq]
+    simp only [net', proj', dite_eq_left hq]
     exact hproj_mem ⟨q, hq⟩ f
   · intro q hq f
-    simp only [proj', dif_pos hq]
+    simp only [proj', dite_eq_left hq]
     exact hproj_dist ⟨q, hq⟩ f
   · intro q hq g hg
-    simp only [net', dif_pos hq] at hg
+    simp only [net', dite_eq_left hq] at hg
     obtain ⟨f, hf, hfg⟩ := hused ⟨q, hq⟩ g hg
     exact ⟨⟨f, hf⟩, hfg⟩
   · intro q hq
-    simp only [net', dif_pos hq]
+    simp only [net', dite_eq_left hq]
     exact hcard ⟨q, hq⟩
 
 namespace FiniteEmpiricalDyadicNets
 
+/-- The coarsest chaining approximation of `f`: its level-`0` projection `B.proj 0 f`. -/
 def head {Ω : Type*} {F : Set (Ω → ℝ)} {Φ : Ω → ℝ}
     {n L : ℕ} {X : Fin n → Ω}
     (B : FiniteEmpiricalDyadicNets F Φ n X L)
     (f : F) : Ω → ℝ :=
   B.proj 0 f
 
+/-- The `q`-th chaining link of `f`, the difference `B.proj (q + 1) f - B.proj q f` of its
+projections at consecutive levels.
+
+The level-`L` projection of `f` is `B.head f` plus the links for `q < L`. -/
 def link {Ω : Type*} {F : Set (Ω → ℝ)} {Φ : Ω → ℝ}
     {n L : ℕ} {X : Fin n → Ω}
     (B : FiniteEmpiricalDyadicNets F Φ n X L)

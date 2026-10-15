@@ -19,8 +19,12 @@ Here $\chi^2_n$ is defined as the Gamma distribution with shape $n/2$ and rate $
 $\chi^2_n := \mathrm{Gamma}(n/2,\, 1/2)$, which is a probability measure for $n \ge 1$. Alongside
 the law we record the basic functionals of $\chi^2_n$:
 
-* the moment generating function $\;\mathbb{E}\!\left[e^{tX}\right] = \left(\tfrac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}\;$ for $t < 1/2$ (`mgf_chiSquared`);
-* the mean $\;\mathbb{E}[X] = n\;$ (`integral_id_chiSquared`) and variance $\;\mathrm{Var}(X) = 2n\;$ (`variance_chiSquared`), obtained from the Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
+* the moment generating function
+  $\;\mathbb{E}\!\left[e^{tX}\right] = \left(\tfrac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}\;$
+  for $t < 1/2$ (`mgf_chiSquared`);
+* the mean $\;\mathbb{E}[X] = n\;$ (`integral_id_chiSquared`) and variance
+  $\;\mathrm{Var}(X) = 2n\;$ (`variance_chiSquared`), obtained from the
+  Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
 
 These moments feed the chi-squared test's null-hypothesis moments $\mathbb{E}[T_n] = n$,
 $\mathrm{Var}[T_n] = 2n$ (used in `ChiSquaredTest/Distribution.lean`). The result is
@@ -41,8 +45,10 @@ appealing to the fact that equal MGFs on a neighbourhood of $0$ (equivalently, e
 characteristic functions) determine the law.
 
 * By independence, the MGF of $\sum_i Z_i^2$ factors as the product of the per-coordinate MGFs of
-  $Z_i^2$. For $t < 1/2$ each squared-standard-Gaussian MGF equals $(1 - 2t)^{-1/2} = (\sqrt{1-2t})^{-1}$ (`mgf_exp_sq_stdGaussian`), so the product is $(\sqrt{1-2t})^{-n}$; the `rpow` bridge
-  `chiSq_mgf_rpow_bridge` reconciles this with the Gamma MGF $\left(\tfrac{1/2}{1/2-t}\right)^{n/2}$.
+  $Z_i^2$. For $t < 1/2$ each squared-standard-Gaussian MGF equals
+  $(1 - 2t)^{-1/2} = (\sqrt{1-2t})^{-1}$ (`mgf_exp_sq_stdGaussian`), so the product is
+  $(\sqrt{1-2t})^{-n}$; the `rpow` bridge `chiSq_mgf_rpow_bridge` reconciles
+  this with the Gamma MGF $\left(\tfrac{1/2}{1/2-t}\right)^{n/2}$.
 * For $t \ge 1/2$ both MGFs vanish: the integrand $e^{t x^2}$ (resp. $e^{t x}$) is non-integrable
   under $N(0,1)$ (resp. $\chi^2_n$), via the dedicated half-line integrability bricks
   `integrable_exp_mul_gammaMeasure` / `not_integrable_exp_mul_gammaMeasure` and their $\chi^2$
@@ -128,14 +134,15 @@ private lemma integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 <
   have hmodel : IntegrableOn (fun x => x ^ (a - 1) * Real.exp (-((r - l) * x)))
       (Ioi (0 : ℝ)) volume := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a - 1) (b := r - l)
-      (by linarith) le_rfl (by linarith)
+      (by linarith) (by norm_num) (by linarith)
     refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
+    change x ^ (a - 1) * Real.exp (-(r - l) * x ^ (1 : ℝ)) = _
     rw [Real.rpow_one, neg_mul]
   have hIoi : IntegrableOn (fun x => Real.exp (l * x) * gammaPDFReal a r x) (Ioi 0) volume := by
     refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
       (fun x hx => ?_) measurableSet_Ioi
     rw [mem_Ioi] at hx
-    rw [gammaPDFReal, if_pos hx.le,
+    rw [gammaPDFReal, ite_eq_left hx.le,
       show -((r - l) * x) = l * x + -(r * x) from by ring, Real.exp_add]
     ring
   rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
@@ -144,11 +151,11 @@ private lemma integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 <
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
   refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
   intro x hx
-  simp only [mem_setOf_eq, Classical.not_imp, mem_Iic] at hx
+  simp only [mem_ofPred_eq, Classical.not_imp, mem_Iic] at hx
   obtain ⟨hx1, hx2⟩ := hx
   rcases lt_or_eq_of_le hx1 with h | h
   · exact absurd (show Real.exp (l * x) * gammaPDFReal a r x = 0 by
-      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+      rw [gammaPDFReal, ite_eq_right (not_le.mpr h), mul_zero]).symm hx2
   · exact h
 
 /-- **Non-integrability of `x ↦ exp(l·x)` under `Gamma(a,r)` for `r ≤ l`**: on `Ioi 1` the
@@ -182,7 +189,7 @@ private lemma not_integrable_exp_mul_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr :
     have hxa : (0 : ℝ) ≤ x ^ (a - 1) := Real.rpow_nonneg hx0.le _
     have hexpge : (1 : ℝ) ≤ Real.exp ((l - r) * x) :=
       Real.one_le_exp (mul_nonneg (by linarith) hx0.le)
-    rw [gammaPDFReal, if_pos hx0.le, Real.norm_eq_abs, Real.norm_eq_abs,
+    rw [gammaPDFReal, ite_eq_left hx0.le, Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ C * x ^ (a - 1)),
       abs_of_nonneg (by positivity :
         (0 : ℝ) ≤ Real.exp (l * x) * (C * x ^ (a - 1) * Real.exp (-(r * x)))),
@@ -236,14 +243,14 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     (hindep : iIndepFun Z μ) :
     Measure.map (fun ω => ∑ i, (Z i ω) ^ 2) μ = chiSquared n := by
   classical
-  haveI : NeZero n := ⟨hn.ne'⟩
+  have : NeZero n := ⟨hn.ne'⟩
   -- the statistic and the per-coordinate squared family
   set S : Ω → ℝ := fun ω => ∑ i, (Z i ω) ^ 2 with hS
   set W : Fin n → Ω → ℝ := fun i ω => (Z i ω) ^ 2 with hW
   have hWmeas : ∀ i, Measurable (W i) := fun i => (hmeas i).pow_const 2
   have hWindep : iIndepFun W μ := by
     have := hindep.comp (fun _ => fun x : ℝ => x ^ 2) (fun _ => by fun_prop)
-    simpa [Function.comp, hW] using this
+    simpa [Function.comp, hW] using! this
   have hSsum : S = ∑ i, W i := by
     funext ω; simp only [hS, hW, Finset.sum_apply]
   have hSmeas : Measurable S := by
@@ -287,12 +294,10 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     change Integrable (fun x => Real.exp (l * id x)) (chiSquared n)
     simpa only [id_eq] using integrable_exp_mul_chiSquared hn hl
   -- ASSEMBLE: equal char. functions ⇒ equal laws (imaginary axis lies in the MGF strip)
-  haveI : IsProbabilityMeasure (Measure.map S μ) :=
-    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
   refine MeasureTheory.Measure.ext_of_charFun (funext fun t => ?_)
   rw [← complexMGF_mul_I hSmeas.aemeasurable t, ← complexMGF_id_mul_I t]
   refine eqOn_complexMGF_of_mgf hA ?_
-  rw [Set.mem_setOf_eq, show ((t : ℂ) * Complex.I).re = 0 from by simp]
+  rw [Set.mem_ofPred_eq, show ((t : ℂ) * Complex.I).re = 0 from by simp]
   exact hB
 
 end StatLean.MultipleTesting

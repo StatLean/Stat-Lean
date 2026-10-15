@@ -34,7 +34,7 @@ private lemma indicatorWidth_isEpsBracket
     (hstrict : (ENNReal.ofReal mesh) ^ (1 / p.toReal) < ENNReal.ofReal eps) :
     IsEpsBracket eps l u p P := by
   refine ⟨hlu, hl, hu, hlp, hup, ?_⟩
-  rw [hdiff, eLpNorm_indicator_const hs hp0 hpTop]
+  rw [hdiff, eLpNorm_indicator_const hs.nullMeasurableSet hp0 hpTop]
   simpa using (ENNReal.rpow_le_rpow hPs (by positivity)).trans_lt hstrict
 
 private theorem halfLine_gridCover
@@ -72,7 +72,7 @@ private theorem halfLine_gridCover
       simp [heps]
     · dsimp [lo, hi]
       by_cases hjump : q j.castSucc < q j.succ
-      · simp only [if_pos hjump]
+      · simp only [ite_eq_left hjump]
         apply indicatorWidth_isEpsBracket (p := p) (eps := eps) (mesh := mesh)
           (s := Set.Ioo (q j.castSucc) (q j.succ)) P hp0 hpTop
           (measurable_halfLineIndicator _) (measurable_openHalfLineIndicator _)
@@ -94,7 +94,7 @@ private theorem halfLine_gridCover
             · simp [halfLineIndicator, openHalfLineIndicator, Set.mem_Ioo, hxj, hxjs]
         · exact (hgap j).trans (ENNReal.ofReal_le_ofReal hgridmesh)
         · exact hstrict
-      · simp only [if_neg hjump]
+      · simp only [ite_eq_right hjump]
         refine ⟨fun x ↦ le_rfl, measurable_halfLineIndicator _,
           measurable_halfLineIndicator _, halfLineIndicator_memLp P _ _,
           halfLineIndicator_memLp P _ _, ?_⟩
@@ -152,7 +152,7 @@ private theorem halfLine_gridCover
         · let R : ℕ → Prop := fun m ↦ ∃ hm : m < n + 1, t < q ⟨m, hm⟩
           have hex : ∃ m : ℕ, R m := by
             refine ⟨n, ⟨by omega, ?_⟩⟩
-            simpa using lt_of_le_of_ne (le_of_not_gt htl)
+            simpa using! lt_of_le_of_ne (le_of_not_gt htl)
               (fun h ↦ htq ⟨Fin.last n, h⟩)
           let m := Nat.find hex
           obtain ⟨hmn, hmqt⟩ := Nat.find_spec hex

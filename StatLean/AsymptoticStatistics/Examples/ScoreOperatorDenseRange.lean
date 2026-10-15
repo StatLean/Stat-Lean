@@ -26,11 +26,12 @@ def IsHalfGeometricFullSupport (P : Measure ℕ) : Prop :=
     ∀ n : ℕ, P {n + 1} = (2 : ℝ≥0∞)⁻¹ * P {n}
 
 private noncomputable def halfGeometricP : Measure ℕ :=
-  geometricMeasure (p := (1 / 2 : ℝ)) (by norm_num) (by norm_num)
+  geometricMeasure ⟨(1 / 2 : ℝ), by constructor <;> norm_num⟩
 
 private noncomputable instance halfGeometricP_isProbability :
-    IsProbabilityMeasure halfGeometricP :=
-  isProbabilityMeasure_geometricMeasure (by norm_num) (by norm_num)
+    IsProbabilityMeasure halfGeometricP := by
+  unfold halfGeometricP
+  infer_instance
 
 private instance halfGeometricL2ZeroMean_closed :
     IsClosed (L2ZeroMean halfGeometricP : Set (Lp ℝ 2 halfGeometricP)) :=
@@ -42,12 +43,14 @@ private noncomputable instance halfGeometricL2ZeroMean_complete :
 
 private lemma halfGeometricP_singleton (n : ℕ) :
     halfGeometricP {n} = ENNReal.ofReal ((1 / 2 : ℝ) ^ (n + 1)) := by
-  unfold halfGeometricP geometricMeasure
-  rw [PMF.toMeasure_apply_singleton _ _ (MeasurableSet.singleton _)]
-  change ENNReal.ofReal (geometricPMFReal (1 / 2 : ℝ) n) = _
-  unfold geometricPMFReal
+  have hp : (⟨(1 / 2 : ℝ), by constructor <;> norm_num⟩ : unitInterval) ≠ 0 := by
+    intro h
+    have hv := congrArg (fun p : unitInterval => (p : ℝ)) h
+    norm_num at hv
+  rw [halfGeometricP, geometricMeasure_singleton hp]
+  change ENNReal.ofReal ((1 - (1 / 2 : ℝ)) ^ n * (1 / 2)) = _
   congr 1
-  ring
+  rw [show (1 - (1 / 2 : ℝ)) = 1 / 2 by norm_num, pow_succ]
 
 private lemma halfGeometricP_fullSupport :
     IsHalfGeometricFullSupport halfGeometricP := by
@@ -205,7 +208,7 @@ private lemma centerHalfGeometricCLM_eq_starProjection
 private lemma compressedDenseMap_eq_projection
     (f : ↥(L2ZeroMean halfGeometricP)) :
     compressedDenseMap f =
-      (L2ZeroMean halfGeometricP).orthogonalProjection
+      (L2ZeroMean halfGeometricP).orthogonalProjectionOnto
         (multiplyDenseCLM (f : Lp ℝ 2 halfGeometricP)) := by
   apply Subtype.ext
   exact centerHalfGeometricCLM_eq_starProjection _
@@ -231,8 +234,8 @@ private lemma compressedDenseMap_symmetric
     (f g : ↥(L2ZeroMean halfGeometricP)) :
     ⟪compressedDenseMap f, g⟫_ℝ = ⟪f, compressedDenseMap g⟫_ℝ := by
   rw [compressedDenseMap_eq_projection, compressedDenseMap_eq_projection,
-    Submodule.inner_orthogonalProjection_eq_of_mem_right,
-    Submodule.inner_orthogonalProjection_eq_of_mem_left]
+    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right,
+    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
   exact multiplyDenseCLM_symmetric _ _
 
 private lemma denseMultiplier_sq (n : ℕ) :
@@ -300,7 +303,7 @@ private lemma summable_singleton_norm_of_integrable
       (fun n : ℕ => ‖u n‖ₑ)]
     exact hu.hasFiniteIntegral.ne
   have hs := ENNReal.summable_toReal htop
-  convert hs using 1
+  convert! hs using 1
   ext n
   rw [ENNReal.toReal_mul]
   simp [mul_comm]
@@ -422,7 +425,7 @@ private lemma hasSum_halfGeometric_alternating :
       (1 / 3 : ℝ) := by
   have h := (hasSum_geometric_of_norm_lt_one
     (ξ := (-1 / 2 : ℝ)) (by norm_num)).mul_left (1 / 2 : ℝ)
-  convert h using 1
+  convert! h using 1
   · ext n
     rw [pow_succ]
     rw [show (-1 / 2 : ℝ) = (1 / 2) * (-1) by ring, mul_pow]
@@ -434,7 +437,7 @@ private lemma hasSum_halfGeometric_third :
       (1 / 3 : ℝ) := by
   have h := (hasSum_geometric_of_norm_lt_one
     (ξ := (1 / 2 : ℝ)) (by norm_num)).mul_left (1 / 6 : ℝ)
-  convert h using 1
+  convert! h using 1
   · ext n
     rw [pow_succ]
     ring
@@ -662,7 +665,7 @@ private lemma densePsi_denseChart
     densePsi (denseChart f) = ⟪denseQ, f⟫_ℝ := by
   let hrep : ∃ g : ↥(L2ZeroMean halfGeometricP),
       DenseChartGood g ∧ denseChart f = denseChart g := ⟨f, hf, rfl⟩
-  rw [densePsi, dif_pos hrep]
+  rw [densePsi, dite_eq_left hrep]
   have hchosen := Classical.choose_spec hrep
   have huniq : Classical.choose hrep = f :=
     (denseChart_injective_on_good hchosen.1 hf hchosen.2.symm)
@@ -765,22 +768,33 @@ The construction uses the half-geometric law on `ℕ`, compressed multiplier
 `m(n)=2^{-n/2}`, bounded mean-zero `q` outside the multiplier range, and
 normalized square tilts. -/
 structure DenseRangeScoreWitness where
+  /-- The underlying law on `ℕ`: a probability measure (`hP`) that is half-geometric with full
+  support (`geometric_fullSupport`). -/
   P : Measure ℕ
   hP : IsProbabilityMeasure P
   geometric_fullSupport : IsHalfGeometricFullSupport P
   hcomplete : CompleteSpace ↥(L2ZeroMean P)
+  /-- The score operator `A : L²₀(P) →L[ℝ] L²₀(P)` (vdV §25.5), whose parameter Hilbert space
+  is `L²₀(P)` itself. -/
   A : @ScoreOperator ℕ inferInstance ↥(L2ZeroMean P) inferInstance
     inferInstance hcomplete P hP
+  /-- The continuous linear map underlying `A`, equal to `A.toCLM` by `Amap_eq`. -/
   Amap : ↥(L2ZeroMean P) →L[ℝ] ↥(L2ZeroMean P)
   Amap_eq : Amap = @ScoreOperator.toCLM ℕ inferInstance ↥(L2ZeroMean P)
     inferInstance inferInstance hcomplete P hP A
+  /-- An adjoint `A*` of `Amap`: `⟪Astar y, v⟫ = ⟪y, Amap v⟫` by `adjoint_identity`. -/
   Astar : ↥(L2ZeroMean P) →L[ℝ] ↥(L2ZeroMean P)
+  /-- The representer `χ̃` of the parameter derivative (vdV Theorem 25.32): `ψ` has derivative
+  `⟪q, b⟫` along `paths` in direction `b`, and `q ∉ range Astar` by `q_not_mem_adjoint_range`. -/
   q : ↥(L2ZeroMean P)
   adjoint_identity : ∀ v y, ⟪Astar y, v⟫_ℝ = ⟪y, Amap v⟫_ℝ
   dense_range : DenseRange Amap
   range_not_closed : ¬ IsClosed (Amap.range : Set ↥(L2ZeroMean P))
   q_not_mem_adjoint_range : q ∉ Astar.range
+  /-- The real parameter on laws over `ℕ`, differentiated along `paths` with representer `q`. -/
   ψ : Measure ℕ → ℝ
+  /-- Selected QMD paths at `P`: the path in direction `b` has score `A b`, and the difference
+  quotients of `ψ` along it tend to `⟪q, b⟫`. -/
   paths : @ScorePathDerivativeData ℕ inferInstance P hP
     ↥(L2ZeroMean P) inferInstance inferInstance hcomplete A q ψ
 
@@ -796,7 +810,7 @@ theorem exists_denseRangeScoreWitness :
     @ScoreOperator.mk ℕ inferInstance ↥(L2ZeroMean halfGeometricP)
       inferInstance inferInstance halfGeometricL2ZeroMean_complete
       halfGeometricP halfGeometricP_isProbability Amap
-  letI : CompleteSpace ↥(L2ZeroMean halfGeometricP) :=
+  let : CompleteSpace ↥(L2ZeroMean halfGeometricP) :=
     (L2ZeroMean_isClosed halfGeometricP).isComplete.completeSpace_coe
   let hg : ∀ f : ↥(L2ZeroMean halfGeometricP),
       IsEssBoundedMixtureScore (Amap f) :=
@@ -940,7 +954,7 @@ private lemma integral_id_mul_gaussian_exp_tilt (a : ℝ) :
     _ = ∫ x, x ∂gaussianReal a ⟨1, zero_le_one⟩ := by
       rw [show standardGaussian.withDensity w =
           gaussianReal a ⟨1, zero_le_one⟩ by
-        simpa [standardGaussian, w] using
+        simpa [standardGaussian, w] using!
           ProbabilityTheory.gaussianReal_withDensity_exp_shift a]
     _ = a := ProbabilityTheory.integral_id_gaussianReal
 
@@ -1044,26 +1058,26 @@ private lemma integral_gaussianQmdResidual_sq (a : ℝ) :
   change Integrable (fun x : ℝ => x) standardGaussian at hx
   have hxs : Integrable (fun x => x * gaussianSqrtDensity a x) standardGaussian := by
     exact (by
-      simpa only [id_eq] using
+      simpa only [id_eq] using!
         (ProbabilityTheory.memLp_id_gaussianReal' 2 (by norm_num) :
           MemLp (id : ℝ → ℝ) 2 standardGaussian).integrable_mul
             (gaussianSqrtDensity_memLp a))
   have hsum1 : Integrable (fun x : ℝ => gaussianSqrtDensity a x ^ 2 + 1)
       standardGaussian := by
-    simpa only [Pi.add_apply] using hs2.add (integrable_const (1 : ℝ))
+    simpa only [Pi.add_apply] using! hs2.add (integrable_const (1 : ℝ))
   have hsum2 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2)
       standardGaussian := by
-    simpa only [Pi.add_apply] using hsum1.add (hx2.const_mul (a ^ 2 / 4))
+    simpa only [Pi.add_apply] using! hsum1.add (hx2.const_mul (a ^ 2 / 4))
   have hsub1 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2 -
         2 * gaussianSqrtDensity a x) standardGaussian := by
-    simpa only [Pi.sub_apply] using hsum2.sub (hs.const_mul 2)
+    simpa only [Pi.sub_apply] using! hsum2.sub (hs.const_mul 2)
   have hsub2 : Integrable (fun x : ℝ =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2 -
         2 * gaussianSqrtDensity a x - a * (x * gaussianSqrtDensity a x))
       standardGaussian := by
-    simpa only [Pi.sub_apply] using hsub1.sub (hxs.const_mul a)
+    simpa only [Pi.sub_apply] using! hsub1.sub (hxs.const_mul a)
   rw [show (fun x : ℝ => gaussianQmdResidual a x ^ 2) = fun x =>
       gaussianSqrtDensity a x ^ 2 + 1 + (a ^ 2 / 4) * x ^ 2
         - 2 * gaussianSqrtDensity a x
@@ -1181,7 +1195,7 @@ private lemma gaussianQmdENNReal_rate :
   apply hlift.congr'
   filter_upwards [self_mem_nhdsWithin] with a ha
   rw [ENNReal.ofReal_div_of_pos (abs_pos.mpr ha),
-    ENNReal.ofReal_toReal (gaussianQmdResidual_memLp a).2.ne]
+    ENNReal.ofReal_toReal (gaussianQmdResidual_memLp a).ne]
 
 private lemma gaussianLocationResidual_ae (b t : ℝ) :
     (fun x : ℝ =>
@@ -1286,12 +1300,6 @@ private noncomputable def gaussianLocationPath (b : ℝ) : QMDPath standardGauss
 private lemma gaussian_sum_law (n : ℕ) (μ : ℝ) :
     (Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
         (fun X => ∑ i, X i) = gaussianReal (n * μ) n := by
-  letI : IsProbabilityMeasure
-      ((Measure.pi (fun _ : Fin n => gaussianReal μ 1)).map
-        (fun X => ∑ i, X i)) :=
-    Measure.isProbabilityMeasure_map (by fun_prop :
-      AEMeasurable (fun X : Fin n → ℝ => ∑ i, X i)
-        (Measure.pi (fun _ : Fin n => gaussianReal μ 1)))
   apply Measure.ext_of_charFun
   funext t
   rw [charFun_map_sum_pi_eq_prod]
@@ -1347,18 +1355,30 @@ the dense-range obstruction witness. -/
 structure RawRegularityWitness where
   hP : IsProbabilityMeasure standardGaussian
   hcomplete : CompleteSpace ↥(L2ZeroMean standardGaussian)
+  /-- The score operator `A : ℝ →L[ℝ] L²₀(N(0, 1))`; by `paths.score_eq`, `A b` is the score
+  of the selected location path in direction `b`. -/
   A : @ScoreOperator ℝ inferInstance ℝ inferInstance inferInstance
     inferInstance standardGaussian hP
+  /-- The representer `χ̃ ∈ ℝ` of the parameter derivative: along the selected path in
+  direction `b`, `psi` has derivative `⟪chi, b⟫`. -/
   chi : ℝ
+  /-- The parameter functional on laws over `ℝ`; by `psi_on_location` it returns `θ` at the
+  location law `N(θ, 1)`. -/
   psi : Measure ℝ → ℝ
+  /-- Selected QMD paths at `standardGaussian` with scores `A b` and `psi`-derivative
+  `⟪chi, b⟫`; by `gaussian_location_path` the path in direction `b` is `t ↦ N(t b, 1)`. -/
   paths : @ScorePathDerivativeData ℝ inferInstance standardGaussian hP ℝ
     inferInstance inferInstance inferInstance A chi psi
   gaussian_location_path : ∀ b t,
     (paths.selectedPath b).curve t = gaussianReal (t * b) ⟨1, zero_le_one⟩
   psi_on_location : ∀ θ : ℝ, psi (gaussianReal θ ⟨1, zero_le_one⟩) = θ
+  /-- The estimator sequence on samples of size `n`; by `sample_mean` it is the sample mean
+  `(∑ i, X i) / n`, with value `0` at `n = 0`. -/
   T_n : ∀ n, (Fin n → ℝ) → ℝ
   sample_mean : ∀ n X, T_n n X =
     if n = 0 then 0 else (∑ i, X i) / n
+  /-- Raw regularity of `T_n` along `paths`: one common local weak limit along every selected
+  path, equal to `N(0, 1)` by `limit_is_standardGaussian`. -/
   raw : @RawRegularity ℝ inferInstance standardGaussian hP ℝ
     inferInstance inferInstance inferInstance A chi psi paths T_n
   limit_is_standardGaussian : raw.limitLaw = standardGaussian
@@ -1367,9 +1387,9 @@ structure RawRegularityWitness where
 discharges satisfiability of the raw regularity predicate. -/
 theorem exists_rawRegularityWitness :
     Nonempty RawRegularityWitness := by
-  letI : IsClosed (L2ZeroMean standardGaussian : Set (Lp ℝ 2 standardGaussian)) :=
+  let : IsClosed (L2ZeroMean standardGaussian : Set (Lp ℝ 2 standardGaussian)) :=
     L2ZeroMean_isClosed standardGaussian
-  letI : CompleteSpace ↥(L2ZeroMean standardGaussian) := inferInstance
+  let : CompleteSpace ↥(L2ZeroMean standardGaussian) := inferInstance
   let Amap : ℝ →L[ℝ] ↥(L2ZeroMean standardGaussian) :=
     ContinuousLinearMap.toSpanSingleton ℝ gaussianLocationScore
   let A : ScoreOperator ℝ standardGaussian := ⟨Amap⟩
@@ -1453,7 +1473,7 @@ theorem exists_rawRegularityWitness :
       psi := ψ
       paths := paths
       gaussian_location_path := fun _ _ => rfl
-      psi_on_location := fun θ => by simpa using hψloc θ
+      psi_on_location := fun θ => by simpa using! hψloc θ
       T_n := T_n
       sample_mean := fun _ _ => rfl
       raw := raw

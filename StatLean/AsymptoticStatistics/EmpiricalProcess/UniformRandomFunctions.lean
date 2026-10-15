@@ -183,7 +183,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont
       {ξ | ∃ h, ε < |distL2 P (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h) (ψ θ₀ h)|} ⊆ S' n := by
     intro n ξ hξ
     obtain ⟨h₀, hh₀⟩ := hξ
-    simp only [hS', Set.mem_setOf_eq]
+    simp only [hS', Set.mem_ofPred_eq]
     by_contra hcon
     rw [not_lt] at hcon
     have hlt : ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < δ :=
@@ -200,7 +200,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont
     exact absurd hh₀ (not_lt.2 ((ENNReal.ofReal_le_ofReal_iff hε.le).1 hle))
   -- Squeeze `P*(exceedance) ≤ μ(S') → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le _)
+    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h) (ψ θ₀ h)|}
@@ -257,7 +257,7 @@ theorem modifiedRandomFunction_eq_on_good
         = ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h := by
   intro n ξ h hgood
   unfold modifiedRandomFunction
-  rw [if_pos hgood]
+  rw [ite_eq_left hgood]
 
 /-- **The modified random function has an `L²`-tail `o_P(1)`.**
 
@@ -303,13 +303,13 @@ theorem modifiedRandomFunction_tail
   have hB0 : Tendsto (fun n => μ.outerMeasureStar (Bbad n)) atTop (𝓝 0) := by
     have hbad' : Tendsto (fun n => μ (Bbad n)) atTop (𝓝 0) := h_bad
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbad'
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n => outerMeasureStar_le_measure μ (Bbad n))
   have hsum : Tendsto (fun n => μ.outerMeasureStar (A' n) + μ.outerMeasureStar (Bbad n))
       atTop (𝓝 0) := by simpa using hA0.add hB0
   -- Final squeeze via subadditivity.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (modifiedRandomFunction ψ θ₀ δcls θ_hat X n ξ h) (ψ θ₀ h)|}
       ≤ μ.outerMeasureStar (A' n ∪ Bbad n) := outerMeasureStar_mono μ (hsub n)
@@ -363,7 +363,7 @@ theorem guardedRandomFunction_eq_on_good
     ∀ n ξ h, good n ξ →
       guardedRandomFunction good fhat ψθ₀ n ξ h = fhat n ξ h := by
   intro n ξ h hg
-  simp only [guardedRandomFunction, if_pos hg]
+  simp only [guardedRandomFunction, ite_eq_left hg]
 
 /-- **The guarded random function has an `L²`-tail `o_P(1)`.** On the good event
 it equals `fhat` (whose `distL2` to `ψθ₀` is `o_P(1)`, `h_sup_distL2`); the bad
@@ -403,13 +403,13 @@ theorem guardedRandomFunction_tail
   have hB0 : Tendsto (fun n => μ.outerMeasureStar (Bbad n)) atTop (𝓝 0) := by
     have hbad' : Tendsto (fun n => μ (Bbad n)) atTop (𝓝 0) := h_bad
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbad'
-      (Eventually.of_forall fun n => zero_le _)
+      (Eventually.of_forall fun n => zero_le)
       (Eventually.of_forall fun n => outerMeasureStar_le_measure μ (Bbad n))
   have hsum : Tendsto (fun n => μ.outerMeasureStar (A' n) + μ.outerMeasureStar (Bbad n))
       atTop (𝓝 0) := by simpa using hA0.add hB0
   -- Final squeeze via subadditivity.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (guardedRandomFunction good fhat ψθ₀ n ξ h) (ψθ₀ h)|}
       ≤ μ.outerMeasureStar (A' n ∪ Bbad n) := outerMeasureStar_mono μ (hsub n)
@@ -445,7 +445,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont_metric
       {ξ | ∃ h, ε < |distL2 P (ψ (t_hat n (fun i : Fin n => X i.val ξ)) h) (ψ t₀ h)|} ⊆ S' n := by
     intro n ξ hξ
     obtain ⟨h₀, hh₀⟩ := hξ
-    simp only [hS', Set.mem_setOf_eq]
+    simp only [hS', Set.mem_ofPred_eq]
     by_contra hcon
     rw [not_lt] at hcon
     have hlt : dist (t_hat n (fun i : Fin n => X i.val ξ)) t₀ < δ :=
@@ -462,7 +462,7 @@ theorem sup_distL2_tendsto_zero_of_unif_L2_cont_metric
     exact absurd hh₀ (not_lt.2 ((ENNReal.ofReal_le_ofReal_iff hε.le).1 hle))
   -- Squeeze `P*(exceedance) ≤ μ(S') → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le _)
+    (h_consist (δ / 2) (half_pos hδpos)) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   calc μ.outerMeasureStar
         {ξ | ∃ h, ε < |distL2 P (ψ (t_hat n (fun i : Fin n => X i.val ξ)) h) (ψ t₀ h)|}

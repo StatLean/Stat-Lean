@@ -87,6 +87,8 @@ spaces are continuous, and `EuclideanSpace.equiv` is a continuous linear equival
 This action is part of the Gaussian-shift API because it converts covariance-scale
 draws into the information-scale coordinates used by the experiment. -/
 
+/-- The action `x ↦ J x` of a square matrix `J` on `EuclideanSpace ℝ (Fin k)`: the
+matrix-vector product `J *ᵥ x`, transported along `EuclideanSpace.equiv`. -/
 noncomputable def matrixAction
     (J : Matrix (Fin k) (Fin k) ℝ) (x : EuclideanSpace ℝ (Fin k)) :
     EuclideanSpace ℝ (Fin k) :=
@@ -196,8 +198,8 @@ theorem IsGaussianShift.eq_multivariateGaussian
     {C : Matrix (Fin k) (Fin k) ℝ} (hFamily : IsGaussianShift family C)
     (h : EuclideanSpace ℝ (Fin k)) :
     family h = ProbabilityTheory.multivariateGaussian h C := by
-  haveI : IsProbabilityMeasure (family h) := hFamily.isProb h
-  haveI : ProbabilityTheory.IsGaussian (family h) := hFamily.isGaussian h
+  have : IsProbabilityMeasure (family h) := hFamily.isProb h
+  have : ProbabilityTheory.IsGaussian (family h) := hFamily.isGaussian h
   have hCps : C.PosSemidef := hFamily.posDef.posSemidef
   have hInt : Integrable (fun x : EuclideanSpace ℝ (Fin k) => x) (family h) :=
     ProbabilityTheory.IsGaussian.integrable_id

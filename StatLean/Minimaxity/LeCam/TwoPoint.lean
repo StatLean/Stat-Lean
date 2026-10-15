@@ -151,7 +151,7 @@ theorem binary_testingError_eq_tvDist (Q : Kernel (Fin 2) 𝓧) [IsMarkovKernel 
         le_iInf fun hfeas => ?_
       have ha : Measurable (fun x => min (f₀ x) 1) := hf0.min measurable_const
       have h1 : ∀ x, (fun x => min (f₀ x) 1) x ≤ 1 := fun x => min_le_right _ _
-      haveI : IsMarkovKernel (binaryTest (fun x => min (f₀ x) 1) ha) :=
+      have : IsMarkovKernel (binaryTest (fun x => min (f₀ x) 1) ha) :=
         isMarkovKernel_binaryTest _ ha h1
       have e1 : ∫⁻ x, binaryTest (fun x => min (f₀ x) 1) ha x {1} ∂(Q 0)
           = ∫⁻ x, min (f₀ x) 1 ∂(Q 0) := lintegral_congr fun x => binaryTest_apply_one _ ha x
@@ -168,11 +168,11 @@ theorem binary_testingError_eq_tvDist (Q : Kernel (Fin 2) 𝓧) [IsMarkovKernel 
             refine add_le_add (lintegral_mono fun x => min_le_left _ _) (lintegral_mono fun x => ?_)
             rcases le_total (f₀ x) 1 with h | h
             · rw [min_eq_left h, tsub_le_iff_right, add_comm]; exact hfeas x
-            · rw [min_eq_right h, tsub_self]; exact zero_le _
+            · rw [min_eq_right h, tsub_self]; exact zero_le
     calc multiwayTestingError Q
         = 2⁻¹ * (2 * multiwayTestingError Q) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel h2 h2', one_mul]
-      _ ≤ 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := mul_le_mul_left' key _
+      _ ≤ 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := mul_le_mul_right key _
   · -- Lower bound: every Markov test contributes a feasible pair to the variational `iInf`.
     unfold multiwayTestingError bayesRisk
     refine le_iInf fun κ => le_iInf fun hκ => ?_
@@ -207,7 +207,7 @@ theorem minimax_two_point [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
   -- The two-point sub-family `θfam = ![θ₀, θ₁]`.
   set θfam : Fin 2 → Θ := ![θ₀, θ₁] with hfam
   have hθ : Measurable θfam := measurable_of_countable _
-  haveI : IsMarkovKernel (P.comap θfam hθ) := Kernel.IsMarkovKernel.comap P hθ
+  have : IsMarkovKernel (P.comap θfam hθ) := Kernel.IsMarkovKernel.comap P hθ
   have h01 : 2 * δ ≤ edist (g (θfam 0)) (g (θfam 1)) := by simpa [θfam] using hsep
   have hsepf : IsSeparatedFamily g θfam δ := by
     intro j k hjk

@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.CondCharFun
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Indicator
 import Mathlib.Probability.Distributions.Gaussian.Real
@@ -128,7 +129,7 @@ private lemma integrable_sq_of_mds (h : IsMDSArray k X F μ) (n : ℕ) (i : Fin 
     Integrable (fun ω => X n i ω ^ 2) μ := (h.memLp n i).integrable_sq
 
 private lemma integrable_mdsCondVariance : Integrable (mdsCondVariance k X F μ n) μ :=
-  integrable_finset_sum _ fun _ _ => integrable_condExp
+  integrable_finsetSum _ fun _ _ => integrable_condExp
 
 /-- The stopping set: the conditional variance accumulated **up to and including** `i` has
 not yet exceeded the level `c`, **and** the `i`-th conditional variance itself has not
@@ -255,7 +256,7 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
     ae_of_all _ fun ω => Set.indicator_nonneg (fun _ _ => sq_nonneg _) ω
   set Z : ℕ → Ω → ℝ := fun n ω => ∑ i, μ[Y n i | F n i.castSucc] ω with hZdef
   have hZint : ∀ n, Integrable (Z n) μ := fun n =>
-    integrable_finset_sum _ fun _ _ => integrable_condExp
+    integrable_finsetSum _ fun _ _ => integrable_condExp
   have hZnn : ∀ n, 0 ≤ᵐ[μ] Z n := fun n => by
     have hall : ∀ᵐ ω ∂μ, ∀ i : Fin (k n), 0 ≤ μ[Y n i | F n i.castSucc] ω :=
       ae_all_iff.2 fun i => condExp_nonneg (hYnn n i)
@@ -264,7 +265,7 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
   have hZmean : ∀ n, ∫ ω, Z n ω ∂μ = ∑ i, ∫ ω in {ω | ε ≤ |X n i ω|}, X n i ω ^ 2 ∂μ := by
     intro n
     rw [hZdef]
-    rw [integral_finset_sum _ fun (i : Fin (k n)) _ =>
+    rw [integral_finsetSum _ fun (i : Fin (k n)) _ =>
       (integrable_condExp : Integrable (μ[Y n i | F n i.castSucc]) μ)]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_condExp (h.le_ambient n i.castSucc), hYdef, integral_indicator (hmeasS n i)]
@@ -379,7 +380,7 @@ private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSA
   have hmem : ∀ ω ∈ {ω | ε ≤ |truncArray k X F μ c d n i ω|}, ω ∈ truncSet k X F μ c d n i := by
     intro ω hω
     by_contra hA
-    rw [Set.mem_setOf_eq, show truncArray k X F μ c d n i ω = 0 from
+    rw [Set.mem_ofPred_eq, show truncArray k X F μ c d n i ω = 0 from
       Set.indicator_of_notMem hA _] at hω
     simp only [abs_zero] at hω
     linarith
@@ -391,9 +392,9 @@ private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSA
         Set.indicator_of_mem (hmem ω hω) _]
   rw [heq]
   refine setIntegral_mono_set (integrable_sq_of_mds h n i).integrableOn
-    (ae_of_all _ fun ω => sq_nonneg _) (HasSubset.Subset.eventuallyLE fun ω hω => ?_)
+    (ae_of_all _ fun ω => sq_nonneg _) (LE.le.eventuallySubset fun ω hω => ?_)
   have := hmem ω hω
-  rw [Set.mem_setOf_eq, show truncArray k X F μ c d n i ω = X n i ω from
+  rw [Set.mem_ofPred_eq, show truncArray k X F μ c d n i ω = X n i ω from
     Set.indicator_of_mem this _] at hω
   exact hω
 
@@ -448,7 +449,7 @@ private lemma tendsto_measure_truncArray_var [IsProbabilityMeasure μ] (h : IsMD
         rw [abs_of_nonneg (by linarith)]
         linarith
     · refine Set.mem_union_right _ (Set.mem_union_right _ ?_)
-      push_neg at hdle
+      push Not at hdle
       obtain ⟨i, hi⟩ := hdle
       exact ⟨i, hi.le⟩
   refine le_trans (ENNReal.toReal_mono ?_ hsub) (le_of_eq ?_)
@@ -566,10 +567,10 @@ theorem mds_clt [IsProbabilityMeasure μ]
   set d : ℝ := 1 / (u ^ 2 + 1) with hddef
   have hd0 : (0 : ℝ) < d := by
     rw [hddef]
-    have : (0:ℝ) < u ^ 2 + 1 := by positivity
+    have : (0 : ℝ) < u ^ 2 + 1 := by positivity
     positivity
   have hdu : u ^ 2 * d ≤ 1 := by
-    rw [hddef, mul_one_div, div_le_one (by positivity : (0:ℝ) < u ^ 2 + 1)]
+    rw [hddef, mul_one_div, div_le_one (by positivity : (0 : ℝ) < u ^ 2 + 1)]
     linarith
   set X' := truncArray k X F μ c d with hX'def
   have h' : IsMDSArray k X' F μ := isMDSArray_truncArray h c d
@@ -603,7 +604,7 @@ theorem mds_clt [IsProbabilityMeasure μ]
     intro n
     have e0 : ∫ ω, mdsCondVariance k X' F μ n ω ∂μ = ∑ i, ∫ ω, cvar k X' F μ n i ω ∂μ := by
       simp only [mdsCondVariance_eq_sum_cvar]
-      exact integral_finset_sum _ fun i _ => integrable_condExp
+      exact integral_finsetSum _ fun i _ => integrable_condExp
     rw [e0]
     exact Finset.sum_congr rfl fun i _ =>
       (integral_condExp (h'.le_ambient n i.castSucc)).symm
@@ -616,8 +617,8 @@ theorem mds_clt [IsProbabilityMeasure μ]
     refine NormedAddGroup.tendsto_nhds_zero.2 fun η hη => ?_
     obtain ⟨ε, hε, hεbd⟩ : ∃ ε : ℝ, 0 < ε ∧
         2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * ε * c) < η / 3 := by
-      have hW0 : (0:ℝ) ≤ 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) := by positivity
-      have hW1 : (0:ℝ) < 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1 := by linarith
+      have hW0 : (0 : ℝ) ≤ 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) := by positivity
+      have hW1 : (0 : ℝ) < 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1 := by linarith
       refine ⟨(η / 3) / (2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 * c) + 1),
         div_pos (by linarith) hW1, ?_⟩
       have expand : 2 * Real.exp (u ^ 2 * c) * (|u| ^ 3 *
@@ -691,9 +692,9 @@ theorem mds_clt [IsProbabilityMeasure μ]
         + (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal)) atTop (𝓝 0) := by
       simpa using ((hvar 1 one_pos).add (hunif0 d hd0)).const_mul 2
     refine squeeze_zero (fun n => ?_) (fun n => ?_) hlim
-    · have h1 : (0:ℝ) ≤ (μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}).toReal :=
+    · have h1 : (0 : ℝ) ≤ (μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}).toReal :=
         ENNReal.toReal_nonneg
-      have h2 : (0:ℝ) ≤ (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal := ENNReal.toReal_nonneg
+      have h2 : (0 : ℝ) ≤ (μ {ω | ∃ i, d ≤ cvar k X F μ n i ω}).toReal := ENNReal.toReal_nonneg
       linarith
     have hsub : μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
         ≤ μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|} := by
@@ -802,8 +803,6 @@ theorem mds_clt_sequence [IsProbabilityMeasure μ]
     congr 1
     refine measure_congr ?_
     filter_upwards [hVar n] with ω hω
-    change (δ ≤ |(n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, μ[fun ω' => ξ i ω' ^ 2 | G i] ω) - σ2|)
-      = (δ ≤ |mdsCondVariance (fun n => n) X F μ n ω - σ2|)
     rw [hω]
   -- the Lindeberg sets match on the nose: `{|ξᵢ/√n| ≥ ε} = {|ξᵢ| ≥ ε√n}`
   have hlind' : ∀ ε : ℝ, 0 < ε →
@@ -818,7 +817,7 @@ theorem mds_clt_sequence [IsProbabilityMeasure μ]
         = {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|} := by
       intro i
       ext ω
-      simp only [Set.mem_setOf_eq, hXdef, abs_div, abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
+      simp only [Set.mem_ofPred_eq, hXdef, abs_div, abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
       rw [le_div_iff₀ hsqrt]
     have hterm : ∀ i : Fin n, ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ
         = ((n : ℝ))⁻¹ * ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|}, ξ (i : ℕ) ω ^ 2 ∂μ := by

@@ -80,7 +80,7 @@ theorem shellSet_eq_paramClass {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (θ₀ : EuclideanSpace ℝ (Fin d)) (δ : ℝ) :
     shellSet m θ₀ δ = paramClass (shellPsi m θ₀) (Metric.ball θ₀ δ) := by
   ext g
-  simp only [shellSet, paramClass, Set.mem_setOf_eq]
+  simp only [shellSet, paramClass, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨θ, hθ, rfl⟩
     exact ⟨θ, by rw [Metric.mem_ball, dist_eq_norm]; exact hθ, ⟨0, hd⟩, rfl⟩
@@ -139,14 +139,14 @@ theorem shellSet_radius_le {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Meas
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
               |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
     {δ : ℝ} (hδ : 0 < δ) (hδρ : δ ≤ ρ) {θ : EuclideanSpace ℝ (Fin d)} (hθ : ‖θ - θ₀‖ < δ) :
-    eLpNorm (fun ω => m θ ω - m θ₀ ω) 2 P
-      ≤ ENNReal.ofReal δ * eLpNorm menv 2 P := by
+    eLpNorm' (fun ω => m θ ω - m θ₀ ω) 2 P
+      ≤ ENNReal.ofReal δ * eLpNorm' menv 2 P := by
   have hθρ : θ ∈ Metric.closedBall θ₀ ρ :=
     Metric.mem_closedBall.mpr (by rw [dist_eq_norm]; exact (lt_of_lt_of_le hθ hδρ).le)
-  have hpt : eLpNorm (fun ω => m θ ω - m θ₀ ω) 2 P
-      ≤ eLpNorm (fun ω => δ * menv ω) 2 P := by
-    apply eLpNorm_mono
-    intro x
+  have hpt : eLpNorm' (fun ω => m θ ω - m θ₀ ω) 2 P
+      ≤ eLpNorm' (fun ω => δ * menv ω) 2 P := by
+    apply eLpNorm'_mono_ae (by norm_num)
+    filter_upwards with x
     simp only [Real.norm_eq_abs, abs_mul]
     calc |m θ x - m θ₀ x| ≤ menv x * ‖θ - θ₀‖ :=
           hLip θ hθρ θ₀ (Metric.mem_closedBall_self hρ.le) x
@@ -156,7 +156,7 @@ theorem shellSet_radius_le {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Meas
       _ = |δ| * |menv x| := by rw [abs_of_pos hδ]; ring
   refine le_trans hpt ?_
   have : (fun ω => δ * menv ω) = δ • menv := by funext ω; simp [Pi.smul_apply, smul_eq_mul]
-  rw [this, eLpNorm_const_smul]
+  rw [this, eLpNorm'_const_smul _ (by norm_num)]
   gcongr
   rw [Real.enorm_eq_ofReal_abs, abs_of_pos hδ]
 
@@ -184,9 +184,11 @@ theorem shellSet_subset_localized {d : ℕ} (hd : 1 ≤ d) {Ω : Type*} [Measura
   have hg : shellPsi m θ₀ θ₀ ⟨0, hd⟩ ∈ paramClass (shellPsi m θ₀) (Metric.ball θ₀ δ) :=
     ⟨θ₀, hθ₀mem, ⟨0, hd⟩, rfl⟩
   -- The radius bound `≤ δ·(‖menv‖₂ + 1)`.
-  have hrad : eLpNorm (fun ω => m θ ω - m θ₀ ω) 2 P
+  have hrad : eLpNorm' (fun ω => m θ ω - m θ₀ ω) 2 P
       ≤ ENNReal.ofReal (δ * ((eLpNorm menv 2 P).toReal + 1)) := by
-    refine le_trans (shellSet_radius_le m θ₀ menv ρ hρ hLip hδ hδρ hθ) ?_
+    have hshell := shellSet_radius_le (P := P) m θ₀ menv ρ hρ hLip hδ hδρ hθ
+    rw [← eLpNorm_two_eq_eLpNorm' hmenv.aestronglyMeasurable] at hshell
+    refine le_trans hshell ?_
     have hmenv_ne : eLpNorm menv 2 P ≠ ⊤ := hmenv.eLpNorm_lt_top.ne
     have hnn : 0 ≤ (eLpNorm menv 2 P).toReal := ENNReal.toReal_nonneg
     calc ENNReal.ofReal δ * eLpNorm menv 2 P
@@ -396,7 +398,7 @@ theorem shell_localizedDiff_bracketingNumber_le {d : ℕ}
       calc bracketingNumber (t / 2) F 2 P
           ≤ bracketingNumber (t / 2) Fc 2 P := bracketingNumber_mono_class hFsub
         _ ≤ (Na : ℕ∞) := hNa_le
-        _ < ⊤ := ENat.coe_lt_top Na
+        _ < ⊤ := ENat.natCast_lt_top Na
     calc bracketingNumber t (localizedDifferenceClass F P δq) 2 P
         ≤ bracketingNumber t (differenceClass F) 2 P :=
           bracketingNumber_mono_class localizedDifferenceClass_subset
@@ -630,7 +632,8 @@ theorem localizedChainBound_shell_MLower {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
   rcases Nat.eq_zero_or_pos n with hn0 | hn_pos
   · -- `n = 0`: the empirical process ≡ 0 ⟹ LHS integral = 0.
     subst hn0
-    have h_lhs : ∫⁻ ξ, supNormOver (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
+    have h_lhs : ∫⁻ ξ, supNormOver
+        (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
           (fun h => empiricalProcess P 0 (fun i : Fin 0 => X i.val ξ) h) ∂μ = 0 := by
       have h_sup0 : ∀ ξ : Ξ, supNormOver
           (localizedDifferenceClass F P (δ * ((eLpNorm menv 2 P).toReal + 1)))
@@ -639,7 +642,7 @@ theorem localizedChainBound_shell_MLower {d : ℕ} (hd : 1 ≤ d) {Ω : Type*}
         simp only [supNormOver, empiricalProcess_zero, abs_zero, ENNReal.ofReal_zero]
         exact le_antisymm (by simp) (by positivity)
       simp only [h_sup0, lintegral_zero]
-    rw [h_lhs]; exact zero_le _
+    rw [h_lhs]; exact zero_le
   · exact hbound n hn_pos
 
 /-! ### The envelope tail bound -/
@@ -693,7 +696,7 @@ theorem shellTail_fold {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
       have hΦabs : |shellDiffEnvelope menv δ ω| = 2 * δ * |menv ω| := by
         simp only [shellDiffEnvelope, Real.norm_eq_abs]
-        rw [abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * δ * |menv ω|)]
+        rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * δ * |menv ω|)]
       have hω' : Real.sqrt n * M < 2 * δ * |menv ω| := by
         rw [← hΦabs]; exact hω
       rw [hΦabs]
@@ -744,8 +747,8 @@ theorem shellTail_fold {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
         -- `4δ²/M·tr ≤ 4δ·tr/cM ≤ (4tr/cM + 1)·δ`.
         have h1 : 4 * δ ^ 2 / M * tr ≤ 4 * δ * tr / cM := by
           rw [div_mul_eq_mul_div, div_le_div_iff₀ hMpos hcM]
-          nlinarith [mul_nonneg (by linarith [hMlb] : (0:ℝ) ≤ M - cM * δ)
-            (mul_nonneg (mul_nonneg (by norm_num : (0:ℝ) ≤ 4) hδ.le) hTnn), hTnn, hδ.le]
+          nlinarith [mul_nonneg (by linarith [hMlb] : (0 : ℝ) ≤ M - cM * δ)
+            (mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hδ.le) hTnn), hTnn, hδ.le]
         have h2 : 4 * δ * tr / cM ≤ (4 * tr / cM + 1) * δ := by
           have hEq : (4 * tr / cM + 1) * δ = 4 * δ * tr / cM + δ := by ring
           rw [hEq]; linarith [hδ.le]
@@ -792,7 +795,7 @@ theorem lipschitzShellModulus_bound
           g = fun ω => m θ ω - m θ₀ ω}
         (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) = 0 := by
       intro ξ
-      apply le_antisymm _ (zero_le _)
+      apply le_antisymm _ (zero_le)
       refine iSup₂_le (fun g hg => ?_)
       obtain ⟨θ, _, rfl⟩ := hg
       have hθ : θ = θ₀ := Subsingleton.elim _ _
@@ -801,7 +804,7 @@ theorem lipschitzShellModulus_bound
       rw [h0]
       simp [empiricalProcess, empiricalAvg]
     rw [lintegral_congr hsup0, lintegral_zero]
-    exact zero_le _
+    exact zero_le
   · -- `d ≥ 1`: the genuine bracketing-route assembly.
     -- Localized chaining with a lower bound on `M`.
     obtain ⟨c, hc_pos, cM, hcM_pos, hEng⟩ :=
@@ -826,7 +829,7 @@ theorem lipschitzShellModulus_bound
     have hδρ : δ ≤ ρ := (lt_of_lt_of_le hδlt (min_le_right _ _)).le
     -- `δq ≤ 1/4`.
     have hδq_le : δ * s ≤ 1 / 4 := by
-      rw [lt_div_iff₀ (by positivity : (0:ℝ) < 4 * s)] at hδ4s
+      rw [lt_div_iff₀ (by positivity : (0 : ℝ) < 4 * s)] at hδ4s
       nlinarith [hδ4s, hs_pos, hδ.le]
     -- Localized chaining at scale `δ`.
     obtain ⟨M, hM_lb, hM_pos, hbound⟩ := hEng δ hδ hδρ hδq_le

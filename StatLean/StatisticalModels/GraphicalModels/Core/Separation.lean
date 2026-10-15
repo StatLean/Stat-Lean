@@ -1,5 +1,5 @@
-import Mathlib.Combinatorics.SimpleGraph.Walks.Decomp
-import Mathlib.Combinatorics.SimpleGraph.Walks.Maps
+import Mathlib.Combinatorics.SimpleGraph.Walk.Decomp
+import Mathlib.Combinatorics.SimpleGraph.Walk.Maps
 import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 
 /-!
@@ -167,7 +167,7 @@ theorem separates_iff_forall_path (S A B : Finset V) :
   refine ⟨fun h a ha b hb p => h a ha b hb (p : G.Walk a b), fun h a ha b hb w => ?_⟩
   -- a walk contains a path with the same endpoints and a smaller support
   obtain ⟨s, hsS, hsw⟩ := h a ha b hb ⟨w.bypass, w.bypass_isPath⟩
-  exact ⟨s, hsS, w.support_bypass_subset hsw⟩
+  exact ⟨s, hsS, w.support_bypass_subset_support hsw⟩
 
 /-- **Bridge to Mathlib's vertex deletion.** `S` separates `A` from `B` exactly when no
 vertex of `A` is reachable from a vertex of `B` in `G` with the vertices of `S` removed.
@@ -188,7 +188,9 @@ theorem separates_iff_not_reachable_deleteVerts (S A B : Finset V) :
   have hgraph : ((⊤ : G.Subgraph).deleteVerts (S : Set V)).coe
       = G.induce (((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts) := by
     ext u v
-    simp
+    have hu := u.property
+    have hv := v.property
+    simp_all
   constructor
   · intro h a b ha hb hreach
     obtain ⟨w'⟩ := hreach

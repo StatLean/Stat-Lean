@@ -101,7 +101,7 @@ theorem deriv_apply_memLp_two {P : Measure Ω} {m : E → Ω → ℝ}
   have hq_bound : ∀ᶠ n in atTop,
       eLpNorm (q n) 2 P ≤ eLpNorm (fun ω => ‖h‖ * menv ω) 2 P := by
     filter_upwards [hθ_nhds.eventually (Metric.closedBall_mem_nhds θ₀ hρ)] with n hn
-    apply eLpNorm_mono_ae
+    apply eLpNorm_mono_ae (by fun_prop)
     filter_upwards with ω
     have hdom := henv (θ n) hn ω
     rw [Real.norm_eq_abs] at hdom
@@ -122,7 +122,7 @@ theorem deriv_apply_memLp_two {P : Measure Ω} {m : E → Ω → ℝ}
   have hD_norm : eLpNorm (fun ω => D ω h) 2 P ≤
       eLpNorm (fun ω => ‖h‖ * menv ω) 2 P :=
     eLpNorm_le_of_tendstoInMeasure hq_bound hq hq_meas
-  exact ⟨hD_meas, hD_norm.trans_lt (hmenv.const_mul ‖h‖).2⟩
+  exact hD_norm.trans_lt (hmenv.const_mul ‖h‖)
 
 /-- Fixed-direction local-scale `L²(P)` convergence obtained from
 differentiability in probability and a common pointwise `L²` envelope.
@@ -213,26 +213,23 @@ theorem eLpNorm_localScale [IsFiniteMeasure P] {m : E → Ω → ℝ}
   have hshift : Tendsto (fun n : ℕ => n + N) atTop atTop :=
     (tendsto_add_atTop_iff_nat (f := fun n : ℕ => n) N).2 tendsto_id
   have hq_tail : TendstoInMeasure P (fun n => q (n + N)) atTop (fun ω => D ω h) := by
-    simpa only [Function.comp_apply] using hq.comp hshift
+    simpa only [Function.comp_apply] using! hq.comp hshift
   have hG : MemLp (fun ω => ‖h‖ * menv ω) 2 P := hmenv.const_mul ‖h‖
   have hui : UnifIntegrable (fun n => q (n + N)) 2 P := by
-    intro ε hε
-    obtain ⟨δ, hδ, hGδ⟩ := hG.eLpNorm_indicator_le (by norm_num) (by norm_num) hε
-    refine ⟨δ, hδ, fun n u hu hPu => ?_⟩
-    refine (eLpNorm_mono_ae ?_).trans (hGδ u hu hPu)
+    refine (unifIntegrable_const (by norm_num) (by norm_num) hG).ae_mono
+      (fun n => hq_meas (n + N)) ?_
+    intro n
     filter_upwards with ω
-    by_cases hω : ω ∈ u
-    · simp only [Set.indicator_of_mem hω, Real.norm_eq_abs]
-      simpa [abs_mul, abs_of_nonneg (norm_nonneg h)] using
-        hN (n + N) (Nat.le_add_left N n) ω
-    · simp [Set.indicator_of_notMem hω]
+    simp only [enorm_le_iff_norm_le, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (norm_nonneg h)]
+    exact hN (n + N) (Nat.le_add_left N n) ω
   have htail : Tendsto
       (fun n => eLpNorm ((fun ω => q (n + N) ω) - fun ω => D ω h) 2 P)
       atTop (𝓝 0) :=
     tendsto_Lp_finite_of_tendstoInMeasure (by norm_num) (by norm_num)
       (fun n => hq_meas (n + N)) hD hui hq_tail
   apply (tendsto_add_atTop_iff_nat N).1
-  simpa only [Pi.sub_apply, q, θ, t, s] using htail
+  simpa only [Pi.sub_apply, q, θ, t, s] using! htail
 
 end DifferentiableInProbabilityAt
 

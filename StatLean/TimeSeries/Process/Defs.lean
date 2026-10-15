@@ -1,6 +1,7 @@
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Probability.Moments.Covariance
 import Mathlib.MeasureTheory.Constructions.Pi
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # Time series — core data model (processes, stationarity, autocovariance)
@@ -63,10 +64,10 @@ variable [MeasurableSpace Ω]
 
 /-- **Finite-dimensional distribution** of the process at the time tuple `t : Fin n → ℤ`:
 the joint law of `(X (t 0), …, X (t (n-1)))` as a measure on `Fin n → ℝ`. Junk (the zero
-measure) when the tuple map is not a.e.-measurable, by the `Measure.map` convention. -/
+measure) when the tuple map is not a.e.-measurable, by the `Measure.map₀` convention. -/
 noncomputable def fdd (X : ℤ → Ω → ℝ) (μ : Measure Ω) {n : ℕ} (t : Fin n → ℤ) :
     Measure (Fin n → ℝ) :=
-  μ.map fun ω i => X (t i) ω
+  μ.map₀ fun ω i => X (t i) ω
 
 /-- **Strict stationarity** (FY §2.1.1, Definition 2.2): all finite-dimensional
 distributions are invariant under time shifts. Stated over arbitrary finite time tuples
@@ -75,7 +76,15 @@ distributions are invariant under time shifts. Stated over arbitrary finite time
 (`Process/Stationary.lean`). -/
 def IsStrictlyStationary (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop :=
   ∀ (n : ℕ) (t : Fin n → ℤ) (k : ℤ),
-    (μ.map fun ω (i : Fin n) => X (t i + k) ω) = μ.map fun ω (i : Fin n) => X (t i) ω
+    (μ.map₀ fun ω (i : Fin n) => X (t i + k) ω) = μ.map₀ fun ω (i : Fin n) => X (t i) ω
+
+/-- Measurable coordinates give the ordinary pushforward form of each finite law. -/
+theorem IsStrictlyStationary.map_eq {X : ℤ → Ω → ℝ} {μ : Measure Ω}
+    (h : IsStrictlyStationary X μ) (hmeas : ∀ s, Measurable (X s))
+    (n : ℕ) (t : Fin n → ℤ) (k : ℤ) :
+    (μ.map fun ω (i : Fin n) => X (t i + k) ω) = μ.map fun ω (i : Fin n) => X (t i) ω := by
+  simpa only [Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i + k)),
+    Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i))] using h n t k
 
 /-- **(Weak) stationarity** (FY §2.1.1, Definition 2.1 — the book's unqualified
 "stationary"): finite second moments, constant mean, and a covariance between `X_{t+k}`

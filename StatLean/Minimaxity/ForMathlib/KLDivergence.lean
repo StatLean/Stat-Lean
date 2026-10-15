@@ -15,11 +15,13 @@ divergence with Mathlib's `InformationTheory.klDiv` and proves three book identi
   $$D(\mathbb{P}_1 \otimes \mathbb{P}_2 \,\|\, \mathbb{Q}_1 \otimes \mathbb{Q}_2)
     \;=\; D(\mathbb{P}_1 \,\|\, \mathbb{Q}_1) + D(\mathbb{P}_2 \,\|\, \mathbb{Q}_2).$$
 * **I.i.d. tensorization** (Eq. (15.11b)): for the $n$-fold product measures,
-  $$D\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes n}\bigr) \;=\; n \, D(\mathbb{P} \,\|\, \mathbb{Q}).$$
+  $$D\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes
+  n}\bigr) \;=\; n \, D(\mathbb{P} \,\|\, \mathbb{Q}).$$
 * **The mixture minimizes the average KL divergence** (Exercise 15.11): for any distribution
   $\mathbb{Q}$, the uniform mixture $\bar{\mathbb{Q}} = \frac{1}{M}\sum_{j} \mathbb{P}_j$ satisfies
-  $$\sum_{j} D(\mathbb{P}_j \,\|\, \bar{\mathbb{Q}}) \;\le\; \sum_{j} D(\mathbb{P}_j \,\|\, \mathbb{Q}),$$
-  which is the variational property underlying the Yang–Barron mutual-information bound (Eq. (15.52)).
+  $$\sum_{j} D(\mathbb{P}_j \,\|\, \bar{\mathbb{Q}}) \;\le\; \sum_{j} D(\mathbb{P}_j \,\|\,
+  \mathbb{Q}),$$ which is the variational property underlying
+  the Yang–Barron mutual-information bound (Eq. (15.52)).
 
 *Alignment with the Lean statement.* Wainwright's $D(\mathbb{Q}\,\|\,\mathbb{P})$ coincides with
 Mathlib's `klDiv ℚ ℙ` on probability measures: the integrated argument — $q$, the density of
@@ -44,15 +46,17 @@ Wainwright-facing algebra.
   `klDiv_self`; the step peels off coordinate $0$ via `measurePreserving_piFinSuccAbove` and
   `MeasurableEquiv.piFinSuccAbove`, reducing to `klDiv_prod_eq_add`. Both proofs rely on the
   pushforward-invariance lemma `klDiv_map_measurableEquiv` (reparametrization invariance of the
-  $f$-divergence, from the log-likelihood-ratio integral form and `MeasurableEmbedding.rnDeriv_map`).
+  $f$-divergence, from the log-likelihood-ratio
+  integral form and `MeasurableEmbedding.rnDeriv_map`).
 * `sum_klDiv_mixture_le` is the crux of Exercise 15.11 (the variational/convexity property of
   `klDiv` in its second argument, which Mathlib does not expose directly). The proof splits on
   absolute continuity: if some $\mathbb{P}_{j_0} \not\ll \mathbb{Q}$ the right side is $\infty$;
   otherwise it lifts a pointwise *compensation inequality* (`klFun_compensation_le`, deficit exactly
   $M \cdot \mathrm{klFun}(W) \ge 0$, encoding the Gibbs identity
-  $\sum_j D(\mathbb{P}_j\,\|\,\mathbb{Q}) = \sum_j D(\mathbb{P}_j\,\|\,\bar{\mathbb{Q}}) + M\,D(\bar{\mathbb{Q}}\,\|\,\mathbb{Q})$)
-  to lintegrals against the common reference $\mathbb{Q}$, using the Radon–Nikodym chain rule and
-  the splitting `rnDeriv_finsetSum_ae` of the mixture density.
+  $\sum_j D(\mathbb{P}_j\,\|\,\mathbb{Q}) = \sum_j D(\mathbb{P}_j\,\|\,\bar{\mathbb{Q}}) +
+  M\,D(\bar{\mathbb{Q}}\,\|\,\mathbb{Q})$) to lintegrals against the common reference $\mathbb{Q}$,
+  using the Radon–Nikodym chain rule and the splitting
+  `rnDeriv_finsetSum_ae` of the mixture density.
 
 **Bibliographic comments.** The KL divergence itself originates with S. Kullback and R. A. Leibler,
 "On Information and Sufficiency," *The Annals of Mathematical Statistics* **22** (1951), no. 1,
@@ -81,8 +85,8 @@ private lemma klDiv_map_measurableEquiv (e : α ≃ᵐ γ) (μ ν : Measure α)
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     klDiv (μ.map e) (ν.map e) = klDiv μ ν := by
   have hf := e.measurableEmbedding
-  haveI : IsFiniteMeasure (μ.map e) := μ.isFiniteMeasure_map e
-  haveI : IsFiniteMeasure (ν.map e) := ν.isFiniteMeasure_map e
+  have : IsFiniteMeasure (μ.map e) := μ.isFiniteMeasure_map e
+  have : IsFiniteMeasure (ν.map e) := ν.isFiniteMeasure_map e
   by_cases hμν : μ ≪ ν
   · have hμν' : μ.map e ≪ ν.map e := hf.absolutelyContinuous_map hμν
     rw [klDiv_eq_lintegral_klFun_of_ac hμν', klDiv_eq_lintegral_klFun_of_ac hμν,
@@ -198,7 +202,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     ∑ j, klDiv (P j) ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) ≤ ∑ j, klDiv (P j) Q := by
   rcases eq_or_ne M 0 with rfl | hM0
   · simp
-  haveI : NeZero M := ⟨hM0⟩
+  have : NeZero M := ⟨hM0⟩
   by_cases hAC : ∀ j, P j ≪ Q
   · -- absolutely-continuous case: lift the pointwise compensation inequality to lintegrals,
     -- integrating both averages against the common reference `Q`.
@@ -206,7 +210,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
     have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
       ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
-    haveI hfin : IsFiniteMeasure ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) := by
+    have hfin : IsFiniteMeasure ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) := by
       constructor
       rw [Measure.smul_apply, smul_eq_mul]
       exact ENNReal.mul_lt_top (ENNReal.inv_ne_top.mpr hMne).lt_top (measure_lt_top _ _)
@@ -256,8 +260,8 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
       fun j => klDiv_eq_lintegral_klFun_of_ac (hAC j)
     rw [Finset.sum_congr rfl (fun j _ => hLHS j),
       Finset.sum_congr rfl (fun j _ => hRHS j),
-      ← lintegral_finset_sum _ (fun j _ => by fun_prop),
-      ← lintegral_finset_sum _ (fun j _ => by fun_prop)]
+      ← lintegral_finsetSum _ (fun j _ => by fun_prop),
+      ← lintegral_finsetSum _ (fun j _ => by fun_prop)]
     refine lintegral_mono_ae ?_
     filter_upwards [hsum_ae, hchain_ae, hPktop,
       Measure.rnDeriv_ne_top ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) Q] with x hsum hchain hktop hWtop
@@ -291,7 +295,7 @@ private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : 
     obtain ⟨j₀, hj₀⟩ := hAC
     have htop : klDiv (P j₀) Q = ⊤ := klDiv_of_not_ac hj₀
     have hle : klDiv (P j₀) Q ≤ ∑ j, klDiv (P j) Q :=
-      Finset.single_le_sum (f := fun j => klDiv (P j) Q) (fun i _ => zero_le _)
+      Finset.single_le_sum (f := fun j => klDiv (P j) Q) (fun i _ => zero_le)
         (Finset.mem_univ j₀)
     have hsum : ∑ j, klDiv (P j) Q = ⊤ := top_le_iff.mp (htop ▸ hle)
     rw [hsum]

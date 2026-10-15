@@ -339,7 +339,7 @@ bounded functional there.  Hahn--Banach extends it to the ambient
 `L2ZeroMean P`; ambient Riesz then supplies a representer whose image under
 the certified adjoint is `chiTilde`.
 
-Proof idea: `Real.exists_extension_norm_eq`, followed by ambient Riesz and
+Proof idea: `_root_.exists_extension_norm_eq`, followed by ambient Riesz and
 the adjoint identity.  No closed-range hypothesis is needed.
 
 Joint satisfiability witness: take `H = ℝ`, `A = id` (after identifying the
@@ -357,7 +357,7 @@ theorem mem_range_adjoint_of_differentiable_unrestricted
   obtain ⟨dψ, h_dψ⟩ := h_diff
   -- Hahn--Banach extends `dψ` from the possibly nonclosed score range to the
   -- ambient mean-zero `L²(P)` space.
-  obtain ⟨dψext, h_ext, _⟩ := Real.exists_extension_norm_eq A.toCLM.range dψ
+  obtain ⟨dψext, h_ext, _⟩ := _root_.exists_extension_norm_eq A.toCLM.range dψ
   -- Ambient Riesz representer of the extension.
   set y₀ : ↥(L2ZeroMean P) :=
     (@InnerProductSpace.toDual ℝ ↥(L2ZeroMean P) _ _ _ hL2).symm dψext with hy₀
@@ -385,7 +385,7 @@ theorem mem_range_adjoint_of_differentiable
   have hL2 : CompleteSpace ↥(L2ZeroMean P) :=
     (AsymptoticStatistics.Core.Hilbert.L2ZeroMean_isClosed P).completeSpace_coe
   -- Closed range ⟹ the score-range subspace is complete, so Riesz applies.
-  haveI hcomplete : CompleteSpace ↥(A.toCLM.range) :=
+  have hcomplete : CompleteSpace ↥(A.toCLM.range) :=
     completeSpace_coe_iff_isComplete.mpr h_closed.isComplete
   obtain ⟨dψ, h_dψ⟩ := h_diff
   -- Riesz representer `y₀ ∈ range A` of the continuous functional `dψ`.

@@ -95,10 +95,10 @@ theorem integral_empiricalProcess [IsProbabilityMeasure μ]
     have hasm : AEStronglyMeasurable f (μ.map (X i)) := (hlaw i) ▸ hf_int.aestronglyMeasurable
     rw [← hlaw i, integral_map (hX i).aemeasurable hasm]
   have hsum_int : Integrable (fun ω => ∑ i, f (X i ω)) μ :=
-    integrable_finset_sum _ (fun i _ => hint i)
+    integrable_finsetSum _ (fun i _ => hint i)
   simp only [empiricalProcess]
   rw [integral_sub ((hsum_int.const_mul _)) (integrable_const _), integral_const,
-    integral_const_mul, integral_finset_sum _ (fun i _ => hint i)]
+    integral_const_mul, integral_finsetSum _ (fun i _ => hint i)]
   simp only [hEi]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
     probReal_univ, one_smul, ← mul_assoc,
@@ -135,7 +135,7 @@ theorem hasSubgaussianMGF_sum_centered_comp [IsProbabilityMeasure μ]
       rw [← NNReal.coe_inj]
       push_cast
       rw [sub_neg_eq_add, ← two_mul, Real.norm_eq_abs,
-        abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * δ)]
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * δ)]
     rw [h1]
     have h2 : (2 : ℝ≥0) * δ / 2 = δ := by
       rw [mul_comm, mul_div_assoc, div_self (by norm_num : (2 : ℝ≥0) ≠ 0), mul_one]
@@ -187,7 +187,7 @@ private theorem hasSubgaussianMGF_empiricalProcess_core [IsProbabilityMeasure μ
   have hn' : (n : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
   convert hscaled using 1
   apply NNReal.coe_injective
-  push_cast
+  change (δ : ℝ) ^ 2 / n = (n : ℝ)⁻¹ ^ 2 * ((n : ℝ) * (δ : ℝ) ^ 2)
   field_simp
 
 /-- Increment MGF from an explicit integrability witness for the difference:
@@ -423,7 +423,7 @@ theorem subGaussianIncrements_empiricalProcess [IsProbabilityMeasure μ]
   refine hbound.trans (le_of_eq ?_)
   -- `ofReal (√6/√n · dist t s) = (√6/√n).toNNReal * edist s t`
   rw [edist_dist, dist_comm t s,
-    ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ Real.sqrt 6 / Real.sqrt n)]
+    ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ Real.sqrt 6 / Real.sqrt n)]
   rfl
 
 end StatLean.ConcentrationInequalities

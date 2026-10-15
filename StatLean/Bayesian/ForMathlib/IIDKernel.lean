@@ -53,7 +53,7 @@ theorem measurable_pi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n 
       exact iht.const_sub 1
   | iUnion g hgd hgm ihg =>
       simp_rw [measure_iUnion hgd hgm]
-      exact Measurable.ennreal_tsum ihg
+      exact Measurable.tsum ihg
 
 /-- The **iid product kernel** `θ ↦ (κ θ)^{⊗ n}` on `Fin n → 𝓧`: the law of an iid sample of
 size `n` from the model `κ θ` (Gelman §1.3). -/
@@ -88,7 +88,7 @@ theorem iidKernel_withDensity {κ : Kernel Θ 𝓧} [IsMarkovKernel κ] {ν : Me
     iidKernel κ n θ
       = (Measure.pi fun _ : Fin n => ν).withDensity fun x => ∏ i, p θ (x i) := by
   have hpθ : Measurable (p θ) := hp.comp (measurable_const.prodMk measurable_id)
-  haveI : SigmaFinite (ν.withDensity (p θ)) := by rw [← hκ θ]; infer_instance
+  have : SigmaFinite (ν.withDensity (p θ)) := by rw [← hκ θ]; infer_instance
   rw [iidKernel_apply]
   simp_rw [hκ θ]
   exact pi_withDensity ν (fun _ => hpθ)

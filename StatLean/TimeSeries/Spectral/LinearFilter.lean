@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.TimeSeries.Spectral.SpectralDensity
 
 /-!
@@ -39,9 +40,27 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 Y_{t−k}` as an `L²`-limit of the symmetric partial sums. -/
 def IsFilteredBy (X Y : ℤ → Ω → ℝ) (φ : ℤ → ℝ) (μ : Measure Ω) : Prop :=
   ∀ t : ℤ, Tendsto
-    (fun N : ℕ => eLpNorm
+    (fun N : ℕ => eLpNorm'
       (fun ω => X t ω - ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), φ k * Y (t - k) ω) 2 μ)
     atTop (nhds 0)
+
+/-- For a.e. strongly measurable sections, the convergence also holds for `eLpNorm`. -/
+lemma IsFilteredBy.tendsto_eLpNorm {X Y : ℤ → Ω → ℝ} {φ : ℤ → ℝ}
+    (h : IsFilteredBy X Y φ μ)
+    (hA : ∀ t, AEStronglyMeasurable (X t) μ)
+    (hB : ∀ t, AEStronglyMeasurable (Y t) μ) (t : ℤ) :
+    Tendsto (fun N : ℕ => eLpNorm
+      (fun ω => X t ω - ∑ j ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), φ j * Y (t - j) ω) 2 μ)
+      atTop (nhds 0) := by
+  refine (h t).congr fun N => ?_
+  have hr : AEStronglyMeasurable
+      (fun ω => X t ω - ∑ j ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), φ j * Y (t - j) ω) μ := by
+    convert! (hA t).sub (Finset.aestronglyMeasurable_sum (Finset.Icc (-(N : ℤ)) (N : ℤ))
+        fun j _ => (hB (t - j)).const_mul (φ j)) using 1
+    funext ω
+    simp only [Pi.sub_apply, Finset.sum_apply]
+  rw [eLpNorm_two_eq_eLpNorm' hr]
+
 
 /-- The **transfer function** `Γ(λ) = Σ_{k ∈ ℤ} φ_k e^{−ikλ}` (FY §2.3.3; junk when
 `φ ∉ ℓ¹` by the `tsum` convention). -/
@@ -71,7 +90,7 @@ private noncomputable def fpsum (φ : ℤ → ℝ) (Y : ℤ → Ω → ℝ) (t :
 
 private lemma memLp_fpsum (hY : IsStationary Y μ) (t : ℤ) (N : ℕ) :
     MemLp (fpsum φ Y t N) 2 μ :=
-  memLp_finset_sum _ fun k _ => (hY.memLp (t - k)).const_mul (φ k)
+  memLp_finsetSum _ fun k _ => (hY.memLp (t - k)).const_mul (φ k)
 
 private noncomputable def fpsumLp (hY : IsStationary Y μ) (φ : ℤ → ℝ) (t : ℤ) (N : ℕ) :
     Lp ℝ 2 μ := (memLp_fpsum (φ := φ) hY t N).toLp _
@@ -205,7 +224,9 @@ theorem exists_isFilteredBy [IsProbabilityMeasure μ] {Y : ℤ → Ω → ℝ} {
     simp_rw [heq, edist_dist]
     simpa using ENNReal.tendsto_ofReal (tendsto_iff_dist_tendsto_zero.mp hL)
   choose X hXm hXlim using main
-  exact ⟨X, hXm, hXlim⟩
+  refine ⟨X, hXm, fun t => ?_⟩
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hXlim t)
+    (fun _ => bot_le) (fun _ => eLpNorm'_two_le_eLpNorm)
 
 section Aux2
 
@@ -270,13 +291,14 @@ theorem IsFilteredBy.isStationary [IsProbabilityMeasure μ] {X Y : ℤ → Ω �
     (hmeasY : ∀ t, Measurable (Y t)) (hmeasX : ∀ t, Measurable (X t)) :
     IsStationary X μ ∧
       ∀ k : ℤ, acvf X μ k = ∑' j : ℤ, ∑' l : ℤ, φ j * φ l * acvf Y μ (k + j - l) := by
+  have hnorm := h.tendsto_eLpNorm (fun t => (hmeasX t).aestronglyMeasurable)
+    (fun t => (hmeasY t).aestronglyMeasurable)
   -- the output marginals are square integrable
   have hmem : ∀ t, MemLp (X t) 2 μ := by
     intro t
-    obtain ⟨N, hN⟩ := ((h t).eventually (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
+    obtain ⟨N, hN⟩ := ((hnorm t).eventually (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
     have hdiff : MemLp (fun ω => X t ω - fpsum φ Y t N ω) 2 μ :=
-      ⟨(hmeasX t).aestronglyMeasurable.sub (memLp_fpsum hY t N).aestronglyMeasurable,
-        lt_of_lt_of_le hN (by norm_num)⟩
+      lt_of_lt_of_le hN (by norm_num)
     have hsum2 := hdiff.add (memLp_fpsum (φ := φ) hY t N)
     have hfun : ((fun ω => X t ω - fpsum φ Y t N ω) + fpsum φ Y t N) = X t := by
       funext ω; simp
@@ -295,7 +317,7 @@ theorem IsFilteredBy.isStationary [IsProbabilityMeasure μ] {X Y : ℤ → Ω �
       filter_upwards [coeFn_fpsumLp hY φ t N, (hmem t).coeFn_toLp] with ω h1 h2
       simp only [Pi.sub_apply, h1, h2]
     simp_rw [hd]
-    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (h t)
+    simpa using! (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hnorm t)
   have hone : MemLp (fun _ : Ω => (1 : ℝ)) 2 μ := memLp_const 1
   have hI : ∀ {f : Ω → ℝ} (hf : MemLp f 2 μ),
       (inner ℝ (hf.toLp f) (hone.toLp (fun _ => (1 : ℝ))) : ℝ) = ∫ ω, f ω ∂μ := by
@@ -352,7 +374,7 @@ theorem IsFilteredBy.isStationary [IsProbabilityMeasure μ] {X Y : ℤ → Ω �
       = (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), φ k) * ∫ ω, Y 0 ω ∂μ := by
     intro t N
     simp only [fpsum]
-    rw [integral_finset_sum _ (fun k _ =>
+    rw [integral_finsetSum _ (fun k _ =>
       ((hY.memLp (t - k)).const_mul (φ k)).integrable (by norm_num)), Finset.sum_mul]
     refine Finset.sum_congr rfl fun k _ => ?_
     calc ∫ ω, φ k * Y (t - k) ω ∂μ = φ k * ∫ ω, Y (t - k) ω ∂μ :=
@@ -371,10 +393,10 @@ private def shearEquiv : ℤ × ℤ × ℤ ≃ ℤ × ℤ × ℤ where
   toFun q := (q.1 - q.2.1 + q.2.2, q.2.1, q.2.2)
   invFun q := (q.1 + q.2.1 - q.2.2, q.2.1, q.2.2)
   left_inv q := by
-    show (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2, q.2.1, q.2.2) = q
+    change (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2, q.2.1, q.2.2) = q
     rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
   right_inv q := by
-    show (q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2, q.2.1, q.2.2) = q
+    change (q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2, q.2.1, q.2.2) = q
     rw [show q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2 = q.1 by ring]
 
 /-- The `ℓ¹ ∗ ℓ¹ ∗ ℓ¹` majorant of the output ACVF, summable on `ℤ × (ℤ × ℤ)`. -/
@@ -389,7 +411,7 @@ private lemma summable_convMajorant {Y : ℤ → Ω → ℝ} {φ : ℤ → ℝ}
       hYsum.mul_of_nonneg hφ2 (fun i => abs_nonneg _) (fun p => by positivity)
     exact h1.congr fun q => mul_comm _ _
   refine (Equiv.summable_iff shearEquiv).mp (hbase.congr fun q => ?_)
-  show |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1|
+  change |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1|
       = |φ q.2.1| * |φ q.2.2| * |acvf Y μ (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2)|
   rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
 
@@ -474,10 +496,10 @@ private def convEquiv : ℤ × ℤ × ℤ ≃ (ℤ × ℤ) × ℤ where
   toFun r := ((r.2.1, r.2.2), r.1 + r.2.1 - r.2.2)
   invFun q := (q.2 - q.1.1 + q.1.2, q.1.1, q.1.2)
   left_inv r := by
-    show (r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2, r.2.1, r.2.2) = r
+    change (r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2, r.2.1, r.2.2) = r
     rw [show r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2 = r.1 by ring]
   right_inv q := by
-    show ((q.1.1, q.1.2), q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2) = q
+    change ((q.1.1, q.1.2), q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2) = q
     rw [show q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2 = q.2 by ring]
 
 end Aux3

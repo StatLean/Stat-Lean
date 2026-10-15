@@ -144,7 +144,7 @@ private lemma bracket_size_integral_lt {ε : ℝ} (hε : 0 < ε)
     (h.memLp_upper.integrable le_rfl).sub (h.memLp_lower.integrable le_rfl)
   have h_eLpNorm_eq : eLpNorm (fun x => u x - l x) 1 P
       = ENNReal.ofReal (∫ x, u x - l x ∂P) := by
-    rw [eLpNorm_one_eq_lintegral_enorm]
+    rw [eLpNorm_one_eq_lintegral_enorm h_int.aestronglyMeasurable]
     have : (fun x => ‖u x - l x‖ₑ) = (fun x => ENNReal.ofReal (u x - l x)) :=
       funext fun x => Real.enorm_eq_ofReal (h_nn x)
     rw [this]

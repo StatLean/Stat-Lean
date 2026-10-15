@@ -88,9 +88,6 @@ theorem stdGaussian_map_inner (c : EuclideanSpace ℝ ι) :
       = gaussianReal 0 (‖c‖₊ ^ 2) := by
   have hL_meas : Measurable (fun y : EuclideanSpace ℝ ι => ⟪c, y⟫) :=
     (continuous_const.inner continuous_id).measurable
-  haveI : IsProbabilityMeasure
-      ((stdGaussian (EuclideanSpace ℝ ι)).map (fun y => ⟪c, y⟫)) :=
-    Measure.isProbabilityMeasure_map hL_meas.aemeasurable
   apply MeasureTheory.Measure.ext_of_charFun
   funext t
   have hLHS : charFun ((stdGaussian (EuclideanSpace ℝ ι)).map (fun y => ⟪c, y⟫)) t
@@ -163,7 +160,7 @@ theorem stdGaussianShift_inner_ge_le (θ' c : EuclideanSpace ℝ ι) (t : ℝ)
           Measure.map_apply hmeas_inner hIci]
         congr 1
         ext x
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, add_sub_cancel_right]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, add_sub_cancel_right]
     _ = gaussianReal 0 (‖c‖₊ ^ 2) {z : ℝ | t ≤ z} := by rw [stdGaussian_map_inner]
     _ ≤ _ := by
         have hcoe : ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) = ‖c‖ ^ 2 := by push_cast; ring

@@ -67,7 +67,7 @@ private theorem signVec_eq_sum_dirac (N : ℕ) :
   rw [Measure.sum_fintype]
   refine Measure.pi_eq ?_
   intro t _
-  rw [Measure.finset_sum_apply]
+  rw [Measure.finsetSum_apply]
   rw [Finset.prod_congr rfl (fun i (_ : i ∈ Finset.univ) => radLaw_apply_eq_sum_bool (t i)),
     Fintype.prod_sum]
   refine Finset.sum_congr rfl fun σ _ => ?_
@@ -145,7 +145,7 @@ private lemma sum_bool_flip {n : ℕ} (g : (Fin n → Bool) → ℝ) :
 private lemma measurable_sSup_image {X : Type*} [MeasurableSpace X] {K : Set ι}
     (hKc : K.Countable) {g : ι → X → ℝ} (hg : ∀ k, Measurable (g k)) :
     Measurable fun x => sSup ((fun k => g k x) '' K) := by
-  haveI := hKc.to_subtype
+  have := hKc.to_subtype
   have h : (fun x => sSup ((fun k => g k x) '' K)) = fun x => ⨆ k : K, g k x := by
     funext x; exact sSup_image_eq_iSup _ _
   rw [h]
@@ -357,7 +357,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
         have h1 := abs_le.1 (hbdd k hk (w.2 i))
         have h2 := abs_le.1 (hbdd k hk (w.1 i))
         exact abs_le.2 ⟨by linarith [h1.1, h2.2], by linarith [h1.2, h2.1]⟩
-    rw [abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (n : ℝ)⁻¹)]
+    rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
     calc (n : ℝ)⁻¹ * |∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))|
         ≤ (n : ℝ)⁻¹ * ((n : ℝ) * (2 * c)) := mul_le_mul_of_nonneg_left hb (by positivity)
       _ = 2 * c := by field_simp
@@ -376,7 +376,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
       = ∫ w, ((2 ^ n : ℝ)⁻¹ * ∑ σ : Fin n → Bool,
           sSup ((fun k => (n : ℝ)⁻¹ *
             ∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))) '' K)) ∂(μ.prod μ) := by
-    rw [integral_const_mul, integral_finset_sum _ fun σ _ => hKσint σ,
+    rw [integral_const_mul, integral_finsetSum _ fun σ _ => hKσint σ,
       Finset.sum_congr rfl fun σ (_ : σ ∈ Finset.univ) => (hstepC σ).symm,
       Finset.sum_const, Finset.card_univ]
     have hcard : (Fintype.card (Fin n → Bool) : ℝ) = 2 ^ n := by simp
@@ -421,7 +421,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
         (mul_le_mul_of_nonneg_left hb1 (by positivity))
     have hsum := Finset.sum_le_sum fun σ (_ : σ ∈ Finset.univ) => hper σ
     have hmono := mul_le_mul_of_nonneg_left hsum
-      (by positivity : (0:ℝ) ≤ (2 ^ n : ℝ)⁻¹)
+      (by positivity : (0 : ℝ) ≤ (2 ^ n : ℝ)⁻¹)
     refine hmono.trans (le_of_eq ?_)
     rw [Finset.sum_add_distrib]
     have hflip : ∑ σ : Fin n → Bool, (n : ℝ)⁻¹ *
@@ -446,7 +446,7 @@ theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
       (2 ^ n : ℝ)⁻¹ * ∑ σ : Fin n → Bool,
         sSup ((fun k => (n : ℝ)⁻¹ *
           ∑ i, signOf σ i * (F k (w.2 i) - F k (w.1 i))) '' K)) (μ.prod μ) :=
-    (integrable_finset_sum _ fun σ _ => hKσint σ).const_mul _
+    (integrable_finsetSum _ fun σ _ => hKσint σ).const_mul _
   have hmarg : ∫ w : Sample Z n × Sample Z n,
       (empRad F K w.2 + empRad F K w.1) ∂(μ.prod μ) = 2 * ∫ s, empRad F K s ∂μ := by
     rw [integral_prod _ hRadint2]

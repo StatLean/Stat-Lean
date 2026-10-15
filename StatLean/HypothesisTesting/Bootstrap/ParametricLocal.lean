@@ -178,9 +178,9 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
   refine le_trans (measure_mono (?_ : _ ⊆
     {ω | M < ‖Real.sqrt (n : ℝ) • (thHat n ω - θ)‖})) ?_
   · intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     set v := Real.sqrt (n : ℝ) • (thHat n ω - θ) with hv
     have hthHat : θ + (Real.sqrt (n : ℝ))⁻¹ • v = thHat n ω := by
       rw [hv, smul_smul, inv_mul_cancel₀ hsqrtne, one_smul, add_sub_cancel]
@@ -231,9 +231,9 @@ theorem tendstoInMeasure_supCDFDist_parametric_bootstrap
   refine le_trans (measure_mono (?_ : _ ⊆
     {ω | M < ‖Real.sqrt (n : ℝ) • (thHat n ω - θ)‖})) ?_
   · intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     set v := Real.sqrt (n : ℝ) • (thHat n ω - θ) with hv
     have hthHat : θ + (Real.sqrt (n : ℝ))⁻¹ • v = thHat n ω := by
       rw [hv, smul_smul, inv_mul_cancel₀ hsqrtne, one_smul, add_sub_cancel]
@@ -300,7 +300,7 @@ theorem tendsto_bootstrapTest_local_power
           {ω | cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) < Real.sqrt n * g (thHat n ω)}).toReal)
       atTop
       (𝓝 (1 - stdNormalCDF (stdNormalQuantile (1 - α) - sigma⁻¹ * ⟪gradg, hdir⟫))) := by
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Pn n (θ + (Real.sqrt n)⁻¹ • hdir)) :=
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (Pn n (θ + (Real.sqrt n)⁻¹ • hdir)) :=
     fun n => hPn n _
   have hvne : Real.toNNReal (sigma ^ 2) ≠ 0 :=
     (Real.toNNReal_pos.mpr (by positivity)).ne'
@@ -322,7 +322,7 @@ theorem tendsto_bootstrapTest_local_power
             - sigma * stdNormalQuantile (1 - α)|} := by
       intro n
       ext ω
-      simp only [Set.mem_setOf_eq, sub_sub_sub_cancel_right]
+      simp only [Set.mem_ofPred_eq, sub_sub_sub_cancel_right]
     simp only [hsets]
     exact hcritval ε hε
   -- The Slutsky coupling: the statistic against the estimated critical value.
@@ -339,7 +339,7 @@ theorem tendsto_bootstrapTest_local_power
             ≤ cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫}ᶜ := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le, sub_lt_sub_iff_right]
+    simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le, sub_lt_sub_iff_right]
   have hmeasA : ∀ n : ℕ, MeasurableSet
       {ω | Real.sqrt n * g (thHat n ω) - ⟪gradg, hdir⟫
         ≤ cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫} :=

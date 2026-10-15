@@ -97,7 +97,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     (Measure.pi fun _ : Fin n => twoPointCoupling c p).real
         {w | ∀ i, (w i).1 = (w i).2}
       = (1 - p) ^ n := by
-  haveI : IsProbabilityMeasure (twoPointCoupling c p) :=
+  have : IsProbabilityMeasure (twoPointCoupling c p) :=
     isProbabilityMeasure_contaminate _ _ hp0 hp1
   have hD : MeasurableSet {q : ℝ × ℝ | q.1 = q.2} :=
     measurableSet_eq_fun measurable_fst measurable_snd
@@ -106,7 +106,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     ext w; simp [Set.mem_pi]
   have hcc : ((c, -c) : ℝ × ℝ) ∉ {q : ℝ × ℝ | q.1 = q.2} := by
     intro h
-    simp only [Set.mem_setOf_eq] at h
+    simp only [Set.mem_ofPred_eq] at h
     exact hc (by linarith)
   have hν : twoPointCoupling c p {q : ℝ × ℝ | q.1 = q.2} = ENNReal.ofReal (1 - p) := by
     rw [twoPointCoupling, contaminate_apply, Measure.dirac_apply' _ hD,
@@ -115,7 +115,7 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     simp
   rw [measureReal_def, hset, Measure.pi_pi]
   simp only [hν, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← ENNReal.ofReal_pow (by linarith : (0:ℝ) ≤ 1 - p)]
+    ← ENNReal.ofReal_pow (by linarith : (0 : ℝ) ≤ 1 - p)]
   exact ENNReal.toReal_ofReal (pow_nonneg (by linarith) n)
 
 /-- **No mean estimator beats the sub-Gaussian rate** (`LM Theorem 1`): for every
@@ -227,11 +227,11 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
       exact mul_lt_mul_of_pos_left
         (Real.sqrt_lt_sqrt hMn.le hpsep) (Real.sqrt_pos.mpr hσ)
   -- the two witnesses and the coupling
-  haveI hPp : IsProbabilityMeasure (twoPointPM c p) :=
+  have hPp : IsProbabilityMeasure (twoPointPM c p) :=
     isProbabilityMeasure_twoPointPM hp0.le hp1.le
-  haveI hPm : IsProbabilityMeasure (twoPointPM (-c) p) :=
+  have hPm : IsProbabilityMeasure (twoPointPM (-c) p) :=
     isProbabilityMeasure_twoPointPM hp0.le hp1.le
-  haveI hν : IsProbabilityMeasure (twoPointCoupling c p) :=
+  have hν : IsProbabilityMeasure (twoPointCoupling c p) :=
     isProbabilityMeasure_contaminate _ _ hp0.le hp1.le
   obtain ⟨t, htdef⟩ : ∃ t : ℝ, t = Real.sqrt σ2 * Real.sqrt (M / (n : ℝ)) := ⟨_, rfl⟩
   rw [← htdef] at hcsep ⊢
@@ -246,21 +246,17 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
   have hEm : MeasurableSet {x : Fin n → ℝ | t < |μhat x - p * -c|} :=
     measurableSet_lt measurable_const (habs _)
   have hFp : Measurable fun w : Fin n → ℝ × ℝ => fun i => (w i).1 :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).fst
+    Measurable.of_eval fun i => (measurable_pi_apply i).fst
   have hFm : Measurable fun w : Fin n → ℝ × ℝ => fun i => (w i).2 :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).snd
+    Measurable.of_eval fun i => (measurable_pi_apply i).snd
   -- the product pushforwards of the coupling are the two product laws
   have hmapP : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).1) = Measure.pi fun _ : Fin n => twoPointPM c p := by
-    haveI : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.fst : ℝ × ℝ → ℝ)) := by
-      rw [twoPointCoupling_fst hp0.le hp1.le]; exact hPp
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.fst : ℝ × ℝ → ℝ))
       fun _ => measurable_fst.aemeasurable]
     simp only [twoPointCoupling_fst hp0.le hp1.le]
   have hmapM : (Measure.pi fun _ : Fin n => twoPointCoupling c p).map
       (fun w i => (w i).2) = Measure.pi fun _ : Fin n => twoPointPM (-c) p := by
-    haveI : IsProbabilityMeasure ((twoPointCoupling c p).map (Prod.snd : ℝ × ℝ → ℝ)) := by
-      rw [twoPointCoupling_snd hp0.le hp1.le]; exact hPm
     rw [Measure.pi_map_pi (f := fun _ : Fin n => (Prod.snd : ℝ × ℝ → ℝ))
       fun _ => measurable_snd.aemeasurable]
     simp only [twoPointCoupling_snd hp0.le hp1.le]
@@ -278,7 +274,7 @@ theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}
     by_contra hcon
     rw [Set.mem_union, not_or] at hcon
     obtain ⟨h1, h2⟩ := hcon
-    simp only [Set.mem_preimage, Set.mem_setOf_eq, not_lt] at h1 h2
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, not_lt] at h1 h2
     have hxy : (fun i => (w i).1) = fun i => (w i).2 := funext fun i => hw i
     rw [hxy] at h1
     have h1' := abs_le.mp h1

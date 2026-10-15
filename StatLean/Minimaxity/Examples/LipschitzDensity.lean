@@ -24,16 +24,16 @@ the uniform density.
 * **Example 15.8 — quadratic functional `θ(f) = ∫₀¹ (f′)²`.** Over densities on `[0, 1]` bounded
   below by `1/2`, any estimator of the genuine quadratic functional `θ(f) = ∫₀¹ (f′(x))² dx` has
   minimax absolute-error risk at least `c · n^{-1/2}` for some `c > 0` and all `n ≥ 1`. This is the
-  *suboptimal two-point* rate: the optimal `n^{-4/9}` rate of Wainwright Example 15.11, which needs a
-  full sign-vector/χ² mixture, is out of scope here.
+  *suboptimal two-point* rate: the optimal `n^{-4/9}` rate of Wainwright Example 15.11, which needs
+  a full sign-vector/χ² mixture, is out of scope here.
 
 Both public theorems are phrased *existentially*: each exhibits a finite (two-point) family of
-densities realizing the stated rate, together with the `n`-fold i.i.d. product model, and concludes a
-lower bound on the minimax risk. The witness is the hat (wavelet) perturbation of the uniform density
-(Wainwright Eq. (15.19)), `f = 1 + φ` with `φ(x) = tent(x) − tent(x − 2δ)` a mean-zero bump and
-`tent(x) = max(δ − |x|, 0)` a triangular spike. For Example 15.7 the width scales as `δ ≍ n^{-1/3}`;
-for Example 15.8 a single calibrated, amplified bump of width `δ ≍ n^{-1/4}` and amplitude
-`a ≍ n^{-1/8}` is used.
+densities realizing the stated rate, together with the `n`-fold i.i.d. product model, and concludes
+a lower bound on the minimax risk. The witness is the hat (wavelet) perturbation of the uniform
+density (Wainwright Eq. (15.19)), `f = 1 + φ` with `φ(x) = tent(x) − tent(x − 2δ)` a mean-zero bump
+and `tent(x) = max(δ − |x|, 0)` a triangular spike. For Example 15.7 the width scales as
+`δ ≍ n^{-1/3}`; for Example 15.8 a single calibrated, amplified bump of width `δ ≍ n^{-1/4}` and
+amplitude `a ≍ n^{-1/8}` is used.
 
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Examples 15.7–15.8,
@@ -49,17 +49,18 @@ Eq. (15.19). Both reduce to Le Cam's two-point bound via the functional modulus 
   `sqHellinger_withDensity_eq`, via the Radon–Nikodym derivative of one `withDensity` against
   another), and the integrand is controlled by the contractive bound `(1 − √(1+u))² ≤ u²`.
 * *Example 15.7.* Calibrating `δ = (1/6)·n^{-1/3}` gives `H² ≤ 4δ³ = 1/(54n) ≤ (1/(2√n))²`, so the
-  pair is admissible at the critical Hellinger radius; the value-gap is `f_true(0) − f_false(0) = δ`,
-  and `minimax_functional_modulus` with distortion `Φ(x) = x²` yields the `n^{-2/3}` lower bound with
-  provable constant `c = 1/576`.
-* *Example 15.8.* A single calibrated bump on `[0,1]` makes `g = 1 + a·φ` piecewise linear with slope
-  `a` on the rising edge `(0, δ)`, so `θ(g) = ∫₀¹ (g′)² ≥ a²·δ` (lower-bounded by the mass `a²` over
-  `(0, δ)`), while `θ(1) = 0`. With `4a²δ³ = 1/(16n)` the pair is admissible, and
-  `minimax_functional_modulus` with the identity distortion `Φ = id` yields the `n^{-1/2}` lower bound
-  with provable constant `c = 1/32`.
+  pair is admissible at the critical Hellinger radius; the value-gap is
+  `f_true(0) − f_false(0) = δ`, and `minimax_functional_modulus` with distortion `Φ(x) = x²` yields
+  the `n^{-2/3}` lower bound with provable constant `c = 1/576`.
+* *Example 15.8.* A single calibrated bump on `[0,1]` makes `g = 1 + a·φ` piecewise linear with
+  slope `a` on the rising edge `(0, δ)`, so `θ(g) = ∫₀¹ (g′)² ≥ a²·δ` (lower-bounded by the mass
+  `a²` over `(0, δ)`), while `θ(1) = 0`. With `4a²δ³ = 1/(16n)` the pair is admissible, and
+  `minimax_functional_modulus` with the identity distortion `Φ = id` yields the `n^{-1/2}` lower
+  bound with provable constant `c = 1/32`.
 * *Book-vs-Lean constants.* We state the constants that are actually provable from the two-point
-  construction (`c = 1/576` for Ex 15.7, `c = 1/32` for Ex 15.8) rather than asymptotic `≍` constants;
-  these are smaller than any sharp constant and only affect the multiplicative factor in the rate.
+  construction (`c = 1/576` for Ex 15.7, `c = 1/32` for Ex 15.8) rather than asymptotic `≍`
+  constants; these are smaller than any sharp constant
+  and only affect the multiplicative factor in the rate.
 
 **Bibliographic comments.**
 
@@ -67,15 +68,16 @@ Eq. (15.19). Both reduce to Le Cam's two-point bound via the functional modulus 
   "Convergence of estimates under dimensionality restrictions," *Annals of Statistics* **1** (1973),
   38–53.
 * The pointwise rate `n^{-β/(2β+1)}` for density estimation over Hölder/Lipschitz classes (here
-  `β = 1`, giving `n^{-1/3}` for the estimate and `n^{-2/3}` for squared error, as in Example 15.7) is
-  due to C. J. Stone, "Optimal rates of convergence for nonparametric estimators," *Annals of
-  Statistics* **8**(6) (1980), 1348–1360, which establishes these as the optimal nonparametric rates.
+  `β = 1`, giving `n^{-1/3}` for the estimate and `n^{-2/3}` for squared error, as in Example 15.7)
+  is due to C. J. Stone, "Optimal rates of convergence for nonparametric estimators," *Annals of
+  Statistics* **8**(6) (1980), 1348–1360, which
+  establishes these as the optimal nonparametric rates.
 * The quadratic functional `∫ (f′)²` of Example 15.8 originates with P. J. Bickel and Y. Ritov,
   "Estimating integrated squared density derivatives: sharp best order of convergence estimates,"
   *Sankhyā: The Indian Journal of Statistics, Series A* **50**(3) (1988), 381–393. That paper
   established the optimal `n^{-4/9}` rate (and the "elbow" phenomenon) for this functional; the
-  `n^{-1/2}` bound formalized here is the simpler two-point bound of Wainwright Example 15.8, not the
-  sharp Bickel–Ritov rate (Wainwright Example 15.11).
+  `n^{-1/2}` bound formalized here is the simpler two-point bound of Wainwright Example 15.8, not
+  the sharp Bickel–Ritov rate (Wainwright Example 15.11).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -85,8 +87,8 @@ namespace StatLean.Minimaxity
 
 /-! ## The hat perturbation (Wainwright Eq. (15.19))
 
-`tent δ` is the symmetric triangular bump of height `δ` on `[-δ, δ]`; `hatφ δ = tent δ(·) − tent δ(· − 2δ)`
-is the mean-zero wavelet supported on `[-δ, 3δ]`. -/
+`tent δ` is the symmetric triangular bump of height `δ` on `[-δ, δ]`;
+`hatφ δ = tent δ(·) − tent δ(· − 2δ)` is the mean-zero wavelet supported on `[-δ, 3δ]`. -/
 
 /-- A symmetric triangular tent of height `δ` supported on `[-δ, δ]`. -/
 private noncomputable def tent (δ x : ℝ) : ℝ := max (δ - |x|) 0
@@ -127,7 +129,7 @@ private lemma hatφ_continuous (δ : ℝ) : Continuous (hatφ δ) :=
 private lemma hatφ_zero (δ : ℝ) (hδ : 0 ≤ δ) : hatφ δ 0 = δ := by
   unfold hatφ tent
   simp only [abs_zero, sub_zero, zero_sub, abs_neg]
-  rw [max_eq_left hδ, abs_of_nonneg (by linarith : (0:ℝ) ≤ 2 * δ)]
+  rw [max_eq_left hδ, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 2 * δ)]
   rw [max_eq_right (by linarith : δ - 2 * δ ≤ 0)]
   ring
 
@@ -135,37 +137,40 @@ private lemma hatφ_eq_ite (δ : ℝ) (hδ : 0 ≤ δ) (z : ℝ) :
     hatφ δ z = if z ≤ δ then tent δ z else -tent δ (z - 2 * δ) := by
   unfold hatφ
   rcases le_or_gt z δ with hz | hz
-  · rw [if_pos hz,
+  · rw [ite_eq_left hz,
       show tent δ (z - 2 * δ) = 0 from tent_eq_zero δ
         (by rw [abs_of_nonpos (by linarith : z - 2 * δ ≤ 0)]; linarith), sub_zero]
-  · rw [if_neg (not_le.mpr hz),
+  · rw [ite_eq_right (not_le.mpr hz),
       show tent δ z = 0 from tent_eq_zero δ
-        (by rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ z)]; linarith), zero_sub]
+        (by rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ z)]; linarith), zero_sub]
 
 private lemma hatφ_abs_le (δ : ℝ) (hδ : 0 ≤ δ) (x : ℝ) : |hatφ δ x| ≤ δ := by
   rw [hatφ_eq_ite δ hδ x]
   rcases le_or_gt x δ with hx | hx
-  · rw [if_pos hx, abs_of_nonneg (tent_nonneg δ x)]; exact tent_le δ hδ x
-  · rw [if_neg (not_le.mpr hx), abs_neg, abs_of_nonneg (tent_nonneg δ _)]; exact tent_le δ hδ _
+  · rw [ite_eq_left hx, abs_of_nonneg (tent_nonneg δ x)]; exact tent_le δ hδ x
+  · rw [ite_eq_right (not_le.mpr hx), abs_neg, abs_of_nonneg (tent_nonneg δ _)]
+    exact tent_le δ hδ _
 
 private lemma hatφ_eq_zero_of_lt (δ : ℝ) (hδ : 0 ≤ δ) {x : ℝ} (hx : x < -δ ∨ 3 * δ < x) :
     hatφ δ x = 0 := by
   rw [hatφ_eq_ite δ hδ x]
   rcases hx with hx | hx
-  · rw [if_pos (by linarith), tent_eq_zero δ (by rw [abs_of_neg (by linarith : x < 0)]; linarith)]
-  · rw [if_neg (by linarith),
-      tent_eq_zero δ (by rw [abs_of_pos (by linarith : (0:ℝ) < x - 2 * δ)]; linarith), neg_zero]
+  · rw [ite_eq_left (by linarith), tent_eq_zero δ
+      (by rw [abs_of_neg (by linarith : x < 0)]; linarith)]
+  · rw [ite_eq_right (by linarith),
+      tent_eq_zero δ (by rw [abs_of_pos (by linarith : (0 : ℝ) < x - 2 * δ)]; linarith), neg_zero]
 
 private lemma hatφ_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) : LipschitzWith 1 (hatφ δ) := by
   have hδδ : tent δ δ = 0 := tent_eq_zero δ (by rw [abs_of_nonneg hδ])
-  have hnδ : tent δ (-δ) = 0 := tent_eq_zero δ (by rw [abs_of_nonpos (by linarith : -δ ≤ 0)]; linarith)
+  have hnδ : tent δ (-δ) = 0 :=
+    tent_eq_zero δ (by rw [abs_of_nonpos (by linarith : -δ ≤ 0)]; linarith)
   have key : ∀ a b : ℝ, hatφ δ a - hatφ δ b ≤ |a - b| := by
     intro a b
     rw [hatφ_eq_ite δ hδ a, hatφ_eq_ite δ hδ b]
     rcases le_or_gt a δ with ha | ha <;> rcases le_or_gt b δ with hb | hb
-    · rw [if_pos ha, if_pos hb]
+    · rw [ite_eq_left ha, ite_eq_left hb]
       exact le_trans (le_abs_self _) (tent_dist_le δ a b)
-    · rw [if_pos ha, if_neg (not_le.mpr hb)]
+    · rw [ite_eq_left ha, ite_eq_right (not_le.mpr hb)]
       have t1 : tent δ a ≤ δ - a := by
         calc tent δ a = tent δ a - tent δ δ := by rw [hδδ, sub_zero]
           _ ≤ |tent δ a - tent δ δ| := le_abs_self _
@@ -177,10 +182,10 @@ private lemma hatφ_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) : LipschitzWith 1 (hat
           _ ≤ |(b - 2 * δ) - (-δ)| := tent_dist_le δ (b - 2 * δ) (-δ)
           _ = b - δ := by rw [abs_of_nonneg (by linarith)]; ring
       rw [abs_of_nonpos (by linarith : a - b ≤ 0)]; linarith
-    · rw [if_neg (not_le.mpr ha), if_pos hb]
+    · rw [ite_eq_right (not_le.mpr ha), ite_eq_left hb]
       have := tent_nonneg δ (a - 2 * δ); have := tent_nonneg δ b; have := abs_nonneg (a - b)
       linarith
-    · rw [if_neg (not_le.mpr ha), if_neg (not_le.mpr hb)]
+    · rw [ite_eq_right (not_le.mpr ha), ite_eq_right (not_le.mpr hb)]
       calc -tent δ (a - 2 * δ) - -tent δ (b - 2 * δ)
           ≤ |tent δ (b - 2 * δ) - tent δ (a - 2 * δ)| := by
             rw [show -tent δ (a - 2 * δ) - -tent δ (b - 2 * δ)
@@ -239,43 +244,43 @@ private lemma lipDensity_lipschitz (δ : ℝ) (hδ : 0 ≤ δ) (i : Bool) :
 
 /-- `∫_{Icc} ψ = ∫_ℝ ψ` when `ψ` vanishes outside the interval. -/
 private lemma setIntegral_Icc_eq_integral (ψ : ℝ → ℝ)
-    (hψ : ∀ x ∉ Set.Icc (-(1:ℝ) / 2) (1 / 2), ψ x = 0) :
-    ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), ψ x ∂volume = ∫ x, ψ x ∂volume := by
+    (hψ : ∀ x ∉ Set.Icc (-(1 : ℝ) / 2) (1 / 2), ψ x = 0) :
+    ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), ψ x ∂volume = ∫ x, ψ x ∂volume := by
   rw [← integral_indicator measurableSet_Icc]
   congr 1; funext x
-  by_cases hx : x ∈ Set.Icc (-(1:ℝ) / 2) (1 / 2)
+  by_cases hx : x ∈ Set.Icc (-(1 : ℝ) / 2) (1 / 2)
   · rw [Set.indicator_of_mem hx]
   · rw [Set.indicator_of_notMem hx, hψ x hx]
 
-private lemma integral_one_Icc : ∫ _ in Set.Icc (-(1:ℝ) / 2) (1 / 2), (1:ℝ) ∂volume = 1 := by
+private lemma integral_one_Icc : ∫ _ in Set.Icc (-(1 : ℝ) / 2) (1 / 2), (1 : ℝ) ∂volume = 1 := by
   rw [setIntegral_const, smul_eq_mul, mul_one, measureReal_def, Real.volume_Icc,
-    show (1:ℝ) / 2 - -(1:ℝ) / 2 = 1 by norm_num, ENNReal.ofReal_one, ENNReal.toReal_one]
+    show (1 : ℝ) / 2 - -(1 : ℝ) / 2 = 1 by norm_num, ENNReal.ofReal_one, ENNReal.toReal_one]
 
 private lemma hatφ_integral_zero (δ : ℝ) (hδ : 0 ≤ δ) (hδ6 : δ ≤ 1 / 6) :
-    ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), hatφ δ x ∂volume = 0 := by
-  have hsupp1 : ∀ x ∉ Set.Icc (-(1:ℝ) / 2) (1 / 2), tent δ x = 0 := by
+    ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), hatφ δ x ∂volume = 0 := by
+  have hsupp1 : ∀ x ∉ Set.Icc (-(1 : ℝ) / 2) (1 / 2), tent δ x = 0 := by
     intro x hx
     rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
     apply tent_eq_zero
     rcases hx with h | h
     · rw [abs_of_neg (by linarith)]; linarith
     · rw [abs_of_pos (by linarith)]; linarith
-  have hsupp2 : ∀ x ∉ Set.Icc (-(1:ℝ) / 2) (1 / 2), tent δ (x - 2 * δ) = 0 := by
+  have hsupp2 : ∀ x ∉ Set.Icc (-(1 : ℝ) / 2) (1 / 2), tent δ (x - 2 * δ) = 0 := by
     intro x hx
     rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
     apply tent_eq_zero
     rcases hx with h | h
     · rw [abs_of_neg (by linarith : x - 2 * δ < 0)]; linarith
-    · rw [abs_of_pos (by linarith : (0:ℝ) < x - 2 * δ)]; linarith
-  have hint1 : IntegrableOn (fun x => tent δ x) (Set.Icc (-(1:ℝ) / 2) (1 / 2)) volume :=
+    · rw [abs_of_pos (by linarith : (0 : ℝ) < x - 2 * δ)]; linarith
+  have hint1 : IntegrableOn (fun x => tent δ x) (Set.Icc (-(1 : ℝ) / 2) (1 / 2)) volume :=
     (tent_continuous δ).integrableOn_Icc
-  have hint2 : IntegrableOn (fun x => tent δ (x - 2 * δ)) (Set.Icc (-(1:ℝ) / 2) (1 / 2)) volume :=
+  have hint2 : IntegrableOn (fun x => tent δ (x - 2 * δ)) (Set.Icc (-(1 : ℝ) / 2) (1 / 2)) volume :=
     ((tent_continuous δ).comp (continuous_id.sub continuous_const)).integrableOn_Icc
-  calc ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), hatφ δ x ∂volume
-      = ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), (tent δ x - tent δ (x - 2 * δ)) ∂volume := by
+  calc ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), hatφ δ x ∂volume
+      = ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), (tent δ x - tent δ (x - 2 * δ)) ∂volume := by
         simp only [hatφ]
-    _ = (∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), tent δ x ∂volume)
-          - ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), tent δ (x - 2 * δ) ∂volume :=
+    _ = (∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), tent δ x ∂volume)
+          - ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), tent δ (x - 2 * δ) ∂volume :=
         integral_sub hint1 hint2
     _ = (∫ x, tent δ x ∂volume) - ∫ x, tent δ (x - 2 * δ) ∂volume := by
         rw [setIntegral_Icc_eq_integral _ hsupp1, setIntegral_Icc_eq_integral _ hsupp2]
@@ -284,13 +289,13 @@ private lemma hatφ_integral_zero (δ : ℝ) (hδ : 0 ≤ δ) (hδ6 : δ ≤ 1 /
 /-- Each density `1 + φ` (and the uniform `1`) integrates to one over `[-1/2,1/2]`, hence its
 `withDensity` against the restricted Lebesgue measure is a probability measure. -/
 private lemma lipDensity_isProbabilityMeasure (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ ≤ 1 / 6) (i : Bool) :
-    IsProbabilityMeasure ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+    IsProbabilityMeasure ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
       fun x => ENNReal.ofReal (lipDensity δ i x)) := by
   have hnn : ∀ x, 0 ≤ lipDensity δ i x :=
     fun x => (lipDensity_pos δ hδ.le (by linarith) i x).le
-  have hint : IntegrableOn (lipDensity δ i) (Set.Icc (-(1:ℝ) / 2) (1 / 2)) volume :=
+  have hint : IntegrableOn (lipDensity δ i) (Set.Icc (-(1 : ℝ) / 2) (1 / 2)) volume :=
     (lipDensity_continuous δ i).integrableOn_Icc
-  have hmass : ∫ x in Set.Icc (-(1:ℝ) / 2) (1 / 2), lipDensity δ i x ∂volume = 1 := by
+  have hmass : ∫ x in Set.Icc (-(1 : ℝ) / 2) (1 / 2), lipDensity δ i x ∂volume = 1 := by
     cases i
     · simp only [lipDensity_false]; exact integral_one_Icc
     · simp only [lipDensity_true]
@@ -304,14 +309,15 @@ private lemma lipDensity_isProbabilityMeasure (δ : ℝ) (hδ : 0 < δ) (hδ6 : 
 
 /-! ## The squared-Hellinger bridge for `withDensity` measures -/
 
-/-- Pointwise simplification underlying the Hellinger bridge: with `a = f x`, `b = g x` both positive,
-the common-dominating-measure integrand collapses to `(√a − √b)²`. -/
+/-- Pointwise simplification underlying the Hellinger bridge: with `a = f x`, `b = g x` both
+positive, the common-dominating-measure integrand collapses to `(√a − √b)²`. -/
 private lemma bridge_pointwise (a b : ℝ) (ha : 0 < a) (hb : 0 < b) :
     (ENNReal.ofReal a + ENNReal.ofReal b) *
-      ENNReal.ofReal ((Real.sqrt (((ENNReal.ofReal a + ENNReal.ofReal b)⁻¹ * ENNReal.ofReal a).toReal)
+      ENNReal.ofReal ((Real.sqrt
+          (((ENNReal.ofReal a + ENNReal.ofReal b)⁻¹ * ENNReal.ofReal a).toReal)
         - Real.sqrt (((ENNReal.ofReal a + ENNReal.ofReal b)⁻¹ * ENNReal.ofReal b).toReal)) ^ 2)
       = ENNReal.ofReal ((Real.sqrt a - Real.sqrt b) ^ 2) := by
-  have hs : (0:ℝ) < a + b := by linarith
+  have hs : (0 : ℝ) < a + b := by linarith
   rw [(ENNReal.ofReal_add ha.le hb.le).symm]
   rw [show ((ENNReal.ofReal (a + b))⁻¹ * ENNReal.ofReal a).toReal = a / (a + b) from by
         rw [ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_ofReal hs.le,
@@ -346,7 +352,7 @@ private lemma sqHellinger_withDensity_eq (ρ : Measure ℝ) [SigmaFinite ρ]
   have hne0 : ∀ᵐ x ∂ρ, (F + G) x ≠ 0 := by
     refine Filter.Eventually.of_forall (fun x => ?_)
     simp only [Pi.add_apply, hFdef, hGdef]
-    exact (add_pos_of_pos_of_nonneg (ENNReal.ofReal_pos.mpr (hfpos x)) (zero_le _)).ne'
+    exact (add_pos_of_pos_of_nonneg (ENNReal.ofReal_pos.mpr (hfpos x)) (zero_le)).ne'
   have hnetop : ∀ᵐ x ∂ρ, (F + G) x ≠ ⊤ := by
     refine Filter.Eventually.of_forall (fun x => ?_)
     simp only [Pi.add_apply, hFdef, hGdef]
@@ -387,31 +393,31 @@ private lemma sqHellinger_withDensity_eq (ρ : Measure ℝ) [SigmaFinite ρ]
 
 /-- Pointwise: `(1 − √(1+u))² ≤ u²` for `u ≥ -1` (the square-root residual is contractive). -/
 private lemma sqrt_perturb_sq_le (u : ℝ) (hu : -1 ≤ u) : (1 - Real.sqrt (1 + u)) ^ 2 ≤ u ^ 2 := by
-  have h1u : (0:ℝ) ≤ 1 + u := by linarith
+  have h1u : (0 : ℝ) ≤ 1 + u := by linarith
   set s := Real.sqrt (1 + u) with hs
   have hsnn : 0 ≤ s := Real.sqrt_nonneg _
   have hs2 : s ^ 2 = 1 + u := Real.sq_sqrt h1u
-  nlinarith [mul_nonneg (mul_nonneg hsnn (by linarith : (0:ℝ) ≤ s + 2)) (sq_nonneg (s - 1)), hs2,
+  nlinarith [mul_nonneg (mul_nonneg hsnn (by linarith : (0 : ℝ) ≤ s + 2)) (sq_nonneg (s - 1)), hs2,
     sq_nonneg (s - 1)]
 
 /-- The squared Hellinger distance between the uniform density and the bump density is `≤ 4δ³`. -/
 private lemma lipDensity_sqHellinger_bound (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ ≤ 1 / 6) :
     sqHellinger
-        ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+        ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
           fun x => ENNReal.ofReal (lipDensity δ false x))
-        ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+        ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
           fun x => ENNReal.ofReal (lipDensity δ true x))
       ≤ ENNReal.ofReal (4 * δ ^ 3) := by
-  haveI := lipDensity_isProbabilityMeasure δ hδ hδ6 false
-  haveI := lipDensity_isProbabilityMeasure δ hδ hδ6 true
+  have := lipDensity_isProbabilityMeasure δ hδ hδ6 false
+  have := lipDensity_isProbabilityMeasure δ hδ hδ6 true
   rw [sqHellinger_withDensity_eq _ (lipDensity δ false) (lipDensity δ true)
       (lipDensity_measurable δ false) (lipDensity_measurable δ true)
       (lipDensity_pos δ hδ.le (by linarith) false) (lipDensity_pos δ hδ.le (by linarith) true)]
   -- bound the integrand by `φ²`, then by `δ²·𝟙[-δ,3δ]`
   have hstep1 : ∫⁻ x, ENNReal.ofReal ((Real.sqrt (lipDensity δ false x)
-        - Real.sqrt (lipDensity δ true x)) ^ 2) ∂(volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2)))
+        - Real.sqrt (lipDensity δ true x)) ^ 2) ∂(volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2)))
       ≤ ∫⁻ x, (Set.Icc (-δ) (3 * δ)).indicator (fun _ => ENNReal.ofReal (δ ^ 2)) x
-          ∂(volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))) := by
+          ∂(volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))) := by
     apply lintegral_mono
     intro x
     simp only [lipDensity_false, lipDensity_true, Real.sqrt_one]
@@ -426,9 +432,10 @@ private lemma lipDensity_sqHellinger_bound (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ 
         exact hatφ_eq_zero_of_lt δ hδ.le hx
       rw [hz]; simp
   calc ∫⁻ x, ENNReal.ofReal ((Real.sqrt (lipDensity δ false x)
-          - Real.sqrt (lipDensity δ true x)) ^ 2) ∂(volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2)))
+          - Real.sqrt (lipDensity δ true x)) ^
+              2) ∂(volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2)))
       ≤ ∫⁻ x, (Set.Icc (-δ) (3 * δ)).indicator (fun _ => ENNReal.ofReal (δ ^ 2)) x
-          ∂(volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))) := hstep1
+          ∂(volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))) := hstep1
     _ ≤ ∫⁻ x, (Set.Icc (-δ) (3 * δ)).indicator (fun _ => ENNReal.ofReal (δ ^ 2)) x ∂volume :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (δ ^ 2) * volume (Set.Icc (-δ) (3 * δ)) := by
@@ -441,11 +448,11 @@ private lemma lipDensity_sqHellinger_bound (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ 
 
 /-- `4⁻¹·(2⁻¹·ofReal d)² = ofReal(d²/16)`. -/
 private lemma enn_quarter_half_sq (d : ℝ) (hd : 0 ≤ d) :
-    (4:ℝ≥0∞)⁻¹ * (2⁻¹ * ENNReal.ofReal d) ^ 2 = ENNReal.ofReal (d ^ 2 / 16) := by
-  have h2 : (2:ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 2) := by
+    (4 : ℝ≥0∞)⁻¹ * (2⁻¹ * ENNReal.ofReal d) ^ 2 = ENNReal.ofReal (d ^ 2 / 16) := by
+  have h2 : (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 2) := by
     rw [show (1 / 2 : ℝ) = 2⁻¹ by norm_num, ENNReal.ofReal_inv_of_pos (by norm_num),
       ENNReal.ofReal_ofNat]
-  have h4 : (4:ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 4) := by
+  have h4 : (4 : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 4) := by
     rw [show (1 / 4 : ℝ) = 4⁻¹ by norm_num, ENNReal.ofReal_inv_of_pos (by norm_num),
       ENNReal.ofReal_ofNat]
   rw [h2, h4, ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_pow (by positivity),
@@ -457,16 +464,16 @@ Hellinger distance is `≤ (1/(2√n))²`. -/
 private lemma lipDensity_admissible (n : ℕ) (hn : 1 ≤ n) (δ : ℝ) (hδ : 0 < δ) (hδ6 : δ ≤ 1 / 6)
     (hδ3 : δ ^ 3 = 1 / (216 * n)) :
     sqHellinger
-        ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+        ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
           fun x => ENNReal.ofReal (lipDensity δ false x))
-        ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+        ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
           fun x => ENNReal.ofReal (lipDensity δ true x))
       ≤ (ENNReal.ofReal (1 / (2 * Real.sqrt n))) ^ 2 := by
-  have hnpos : (0:ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
   refine le_trans (lipDensity_sqHellinger_bound δ hδ hδ6) ?_
   rw [← ENNReal.ofReal_pow (by positivity)]
   apply ENNReal.ofReal_le_ofReal
-  have hn0 : (n:ℝ) ≠ 0 := hnpos.ne'
+  have hn0 : (n : ℝ) ≠ 0 := hnpos.ne'
   have hsq : (1 / (2 * Real.sqrt n)) ^ 2 = 1 / (4 * n) := by
     rw [div_pow, one_pow, mul_pow, Real.sq_sqrt hnpos.le]; ring
   have e : 4 * δ ^ 3 = 1 / (54 * n) := by rw [hδ3]; field_simp; ring
@@ -477,24 +484,25 @@ private lemma lipDensity_admissible (n : ℕ) (hn : 1 ≤ n) (δ : ℝ) (hδ : 0
 family of `1`-Lipschitz densities on `[-1/2, 1/2]`, bounded below by `1/2`, whose `n`-fold i.i.d.
 product model has minimax squared-error risk for estimating `f(0)` at least `c · n^{-2/3}`.
 
--- USER-INPUT: witnessing density sub-experiment on [-1/2,1/2] realizing the rate (Wainwright Ex 15.7/15.8); a lower bound on the full-class minimax.
+-- USER-INPUT: witnessing density sub-experiment on [-1/2,1/2] realizing the
+-- rate (Wainwright Ex 15.7/15.8); a lower bound on the full-class minimax.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.7. -/
 theorem lipschitz_density_pointwise_rate (n : ℕ) (hn : 1 ≤ n) :
     ∃ (ι : Type) (_ : MeasurableSpace ι) (_ : Nonempty ι) (f : ι → ℝ → ℝ)
       (_ : ∀ i, IsProbabilityMeasure
-            ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+            ((volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
               fun x => ENNReal.ofReal (f i x)))
       (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) (_ : IsMarkovKernel Pn),
       (∀ i, θfunc i = f i 0) ∧
       (∀ i, LipschitzWith 1 (f i) ∧ ∀ x, (1 / 2 : ℝ) ≤ f i x) ∧
       (∀ i, Pn i = Measure.pi fun _ : Fin n =>
-            (volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+            (volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
               fun x => ENNReal.ofReal (f i x)) ∧
       ∃ c : ℝ, 0 < c ∧
         ENNReal.ofReal (c * (n : ℝ) ^ (-(2 : ℝ) / 3)) ≤ minimaxRiskDist (· ^ 2) θfunc Pn := by
-  have hnpos : (0:ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
   set t : ℝ := (n : ℝ) ^ (-(1 : ℝ) / 3) with ht
   have htpos : 0 < t := Real.rpow_pos_of_pos hnpos _
   have htle1 : t ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) (by norm_num)
@@ -512,15 +520,15 @@ theorem lipschitz_density_pointwise_rate (n : ℕ) (hn : 1 ≤ n) :
     rw [hδdef, div_pow, ht3]; ring
   -- the family and its model
   set P : Bool → Measure ℝ := fun i =>
-    (volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
+    (volume.restrict (Set.Icc (-(1 : ℝ) / 2) (1 / 2))).withDensity
       fun x => ENNReal.ofReal (lipDensity δ i x) with hP
-  haveI hprob : ∀ i, IsProbabilityMeasure (P i) :=
+  have hprob : ∀ i, IsProbabilityMeasure (P i) :=
     fun i => lipDensity_isProbabilityMeasure δ hδpos hδ6 i
   set Pn : Kernel Bool (Fin n → ℝ) :=
     ⟨fun i => Measure.pi fun _ : Fin n => P i, measurable_of_countable _⟩ with hPn
-  haveI hmark : IsMarkovKernel Pn := by
+  have hmark : IsMarkovKernel Pn := by
     refine ⟨fun a => ?_⟩
-    show IsProbabilityMeasure (Measure.pi fun _ : Fin n => P a)
+    change IsProbabilityMeasure (Measure.pi fun _ : Fin n => P a)
     infer_instance
   refine ⟨Bool, inferInstance, inferInstance, lipDensity δ, hprob,
     fun i => lipDensity δ i 0, Pn, hmark, fun i => rfl, ?_, fun i => rfl, ?_⟩
@@ -542,7 +550,8 @@ theorem lipschitz_density_pointwise_rate (n : ℕ) (hn : 1 ≤ n) :
         rw [hatφ_zero δ hδpos.le]; ring
       rw [this, abs_of_pos hδpos]
     have hmod : ENNReal.ofReal δ
-        ≤ hellingerModulus (fun i => lipDensity δ i 0) P (ENNReal.ofReal (1 / (2 * Real.sqrt n))) := by
+        ≤ hellingerModulus (fun i => lipDensity δ i 0) P
+            (ENNReal.ofReal (1 / (2 * Real.sqrt n))) := by
       rw [← hgap]
       exact le_iSup_of_le true (le_iSup_of_le false (le_iSup_of_le hadm le_rfl))
     calc ENNReal.ofReal (1 / 576 * (n : ℝ) ^ (-(2 : ℝ) / 3))

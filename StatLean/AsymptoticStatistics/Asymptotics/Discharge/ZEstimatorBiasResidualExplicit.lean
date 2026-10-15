@@ -224,7 +224,7 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
                   (∑ i : Fin n, score_func_seq n X (X i))
                   - bias n X|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcΔ, hcD⟩, hcR, hcLHSb⟩ := hc
@@ -414,8 +414,8 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
                   = ENNReal.ofReal (η / 4 + η / 4) :=
         (ENNReal.ofReal_add hη4_nn hη4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ η/4 + η/4)
-            (by linarith : (0:ℝ) ≤ η/4 + η/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η/4 + η/4)
+            (by linarith : (0 : ℝ) ≤ η/4 + η/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h_M_le h4) (add_le_add h3 hse)) ?_

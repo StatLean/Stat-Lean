@@ -100,10 +100,10 @@ theorem lintegral_squareTailEnvelope_two_mul_eq
         A.indicator (fun y => 4 * ENNReal.ofReal (Φ y ^ 2)) x := by
     rw [squareTailEnvelope_two_mul_eq K hK Φ x]
     by_cases hx : K < 2 * |Φ x|
-    · rw [if_pos hx, Set.indicator_of_mem (show x ∈ A from hx)]
+    · rw [ite_eq_left hx, Set.indicator_of_mem (show x ∈ A from hx)]
       rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
       norm_num
-    · rw [if_neg hx, Set.indicator_of_notMem (show x ∉ A from hx)]
+    · rw [ite_eq_right hx, Set.indicator_of_notMem (show x ∉ A from hx)]
       simp
   calc
     (∫⁻ x, ENNReal.ofReal
@@ -126,7 +126,7 @@ theorem squareTail_le_squareTailEnvelope
   have hfΦ : |f x| ≤ Φ x := hΦ f hf x
   by_cases hKΦ : |K| < |Φ x|
   · rw [squareTailEnvelope]
-    simp only [if_pos hKΦ]
+    simp only [ite_eq_left hKΦ]
     refine (squareTail_le_sq K f x).trans ?_
     exact sq_le_sq.mpr (hfΦ.trans (le_abs_self _))
   · have hfk : |f x| ≤ |K| :=
@@ -160,7 +160,7 @@ theorem EmpProcPointwiseDense_image_clippedSquare
     · intro m
       exact ⟨φ m, hφmem m, rfl⟩
     · intro x
-      simpa only [clippedSquare] using
+      simpa only [clippedSquare] using!
         (((continuous_id.pow 2).min continuous_const).tendsto (f x)).comp (hφlim x)
   · rintro _ ⟨f, hf, rfl⟩ x
     calc
@@ -203,7 +203,7 @@ theorem lintegral_canonical_empiricalAvg_le
             ∑ i : Fin (k + 1),
               ∫⁻ X, ENNReal.ofReal (Ψ (X i)) ∂ν := by
           rw [lintegral_const_mul]
-          · rw [lintegral_finset_sum]
+          · rw [lintegral_finsetSum]
             intro i hi
             exact (hΨ_meas.comp (measurable_pi_apply i)).ennreal_ofReal
           · exact Finset.measurable_sum Finset.univ fun i _ =>
@@ -446,7 +446,7 @@ theorem lintegral_canonical_empiricalSquareRadius_le
     _ = A + c * (∫⁻ X, S X ∂ν) + ∫⁻ X, T X ∂ν := hsplit
     _ ≤ A + c * (ENNReal.ofReal (8 * K) * I) + Tail :=
       add_le_add
-        (add_le_add le_rfl (mul_le_mul_of_nonneg_left hclip (zero_le c)))
+        (add_le_add le_rfl (mul_le_mul_of_nonneg_left hclip (zero_le (a := c))))
         htail
     _ = populationSquareRadius P F +
           ENNReal.ofReal (8 * K * (Real.sqrt n)⁻¹) *

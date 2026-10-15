@@ -105,7 +105,7 @@ private lemma hasSubgaussianMGF_integral_sq_le
       filter_upwards [hX0] with ω hω; simp [hω]
     rw [integral_congr_ae hsq0, integral_zero]; simp
   · -- σ2 > 0.
-    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le σ2) (Ne.symm hσ)
+    have hσpos : (0 : ℝ≥0) < σ2 := lt_of_le_of_ne (zero_le (a := σ2)) (Ne.symm hσ)
     have hσR : (0 : ℝ) < (σ2 : ℝ) := NNReal.coe_pos.mpr hσpos
     -- Key per-`t` bound from the cosh expansion of the MGF.
     have hkey : ∀ t : ℝ, t ≠ 0 →
@@ -261,7 +261,8 @@ private lemma designRank_eq_finrank_columnSpace (X : Matrix (Fin n) (Fin d) ℝ)
 
 /-! ### Main theorem -/
 
-/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (Mean Squared Error of Least Squares), expectation half.**
+/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (Mean
+Squared Error of Least Squares), expectation half.**
 
 For `Y ω = X β* + ε ω` with noise `ε` having independent mean-0 coordinates each
 sub-Gaussian proxy `σ²`, every OLS estimator `βhat` satisfies
@@ -295,9 +296,9 @@ theorem mse_ols_expectation_le
     ∫ ω, mse X (βhat ω) βstar ∂μ ≤ ↑σ2 * ↑(designRank X) / ↑n := by
   -- Setup: column space C = range(X), finite-dimensional ⟹ complete ⟹ has orthogonal projection.
   let C := columnSpace X
-  haveI hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
-  haveI hC_complete : CompleteSpace ↥C := inferInstance
-  haveI hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
+  have hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
+  have hC_complete : CompleteSpace ↥C := inferInstance
+  have hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
   let r := Module.finrank ℝ ↥C
   -- Standard ONB for C, indexed by Fin r.
   let b : OrthonormalBasis (Fin r) ℝ ↥C := stdOrthonormalBasis ℝ ↥C
@@ -324,10 +325,10 @@ theorem mse_ols_expectation_le
         = ∑ k : Fin r, ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), x⟫_ℝ ^ 2 := by
     intro x
     rw [Submodule.starProjection_apply, Submodule.norm_coe,
-        ← b.sum_sq_inner_right (C.orthogonalProjection x)]
+        ← b.sum_sq_inner_right (C.orthogonalProjectionOnto x)]
     refine Finset.sum_congr rfl fun k _ => ?_
     congr 1
-    exact Submodule.inner_orthogonalProjection_eq_of_mem_left (b k) x
+    exact Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left (b k) x
   -- Step 5: Each inner product ⟪(b k : E), ε⟫ is sub-Gaussian with proxy σ².
   have hinner_subG : ∀ k : Fin r,
       HasSubgaussianMGF (fun ω => ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ) σ2 μ := by
@@ -358,7 +359,7 @@ theorem mse_ols_expectation_le
     -- proxy equality:  σ2 = ∑ i, ⟨(e i)², _⟩ * σ2
     apply NNReal.coe_injective
     rw [NNReal.coe_sum]
-    simp only [NNReal.coe_mul, NNReal.coe_mk]
+    change (σ2 : ℝ) = ∑ i, (e i) ^ 2 * (σ2 : ℝ)
     rw [← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq e, he_norm]
     simp
   -- Step 6: Variance bound ⟹ E[⟪e_k, ε⟫²] ≤ σ2 (mean-0 is implied by `HasSubgaussianMGF`).
@@ -379,7 +380,7 @@ theorem mse_ols_expectation_le
             ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ ^ 2
           from funext h_pointwise,
         integral_const_mul,
-        integral_finset_sum Finset.univ (fun k _ => hint_inner_sq k)]
+        integral_finsetSum Finset.univ (fun k _ => hint_inner_sq k)]
     apply mul_le_mul_of_nonneg_left _ (by positivity)
     calc ∑ k : Fin r, ∫ ω, ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ ^ 2 ∂μ
         ≤ ∑ _k : Fin r, (σ2 : ℝ) := Finset.sum_le_sum (fun k _ => hE_sq k)

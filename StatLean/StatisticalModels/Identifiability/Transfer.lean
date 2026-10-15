@@ -105,7 +105,7 @@ theorem identifiesTarget_section {Ψ' Η : Type*} {P : Ψ' × Η → Measure �
 theorem identifiesTarget_of_pushforward {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (T : 𝓧 → 𝓨)
     -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget (pushforward P T) ψ) : IdentifiesTarget P ψ :=
-  identifiesTarget_of_comp (fun Q => Q.map T) h
+  identifiesTarget_of_comp (fun Q => Q.map₀ T) h
 
 /-- A target identified from data observed through a mechanism `κ` was identified from the
 full data. -/
@@ -118,7 +118,7 @@ theorem identifiesTarget_of_observe {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (
 theorem identifiable_of_pushforward {P : Θ → Measure 𝓧} (T : 𝓧 → 𝓨)
     -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : Identifiable (pushforward P T)) : Identifiable P :=
-  identifiesTarget_of_comp (fun Q => Q.map T) h
+  identifiesTarget_of_comp (fun Q => Q.map₀ T) h
 
 /-- Identifiability from the observed model implies identifiability from the full model. -/
 theorem identifiable_of_observe {P : Θ → Measure 𝓧} (κ : Kernel 𝓧 𝓨)

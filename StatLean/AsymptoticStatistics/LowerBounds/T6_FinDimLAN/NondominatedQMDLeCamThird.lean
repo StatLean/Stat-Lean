@@ -9,6 +9,8 @@ import Mathlib.Probability.Independence.InfinitePi
 
 /-! # Le Cam theory for nondominated QMD paths -/
 
+set_option linter.style.longFile 1600
+
 open MeasureTheory Filter Topology ProbabilityTheory
 open scoped ENNReal InnerProductSpace RealInnerProductSpace
 
@@ -69,7 +71,7 @@ private lemma measurable_scoreVector (v : Fin 2 → ↥(L2ZeroMean P)) :
     Measurable (scoreVector (P := P) v) := by
   unfold scoreVector
   refine (WithLp.measurable_toLp 2 (Fin 2 → ℝ)).comp ?_
-  exact measurable_pi_lambda _ fun i => (Lp.stronglyMeasurable (v i : Lp ℝ 2 P)).measurable
+  exact Measurable.of_eval fun i => (Lp.stronglyMeasurable (v i : Lp ℝ 2 P)).measurable
 
 private lemma inner_scoreVector (v : Fin 2 → ↥(L2ZeroMean P))
     (a : EuclideanSpace ℝ (Fin 2)) (x : Ω) :
@@ -116,7 +118,7 @@ private lemma acProductLikelihood_toReal_zero_mass_le
         ((γ.curve t).rnDeriv P (X i)).toReal ≠ 0 := by
       intro i hi
       exact hall i trivial
-        (by simpa only [Z, Set.mem_preimage, Set.mem_setOf_eq] using hi)
+        (by simpa only [Z, Set.mem_preimage, Set.mem_ofPred_eq] using hi)
     have hprod : (γ.acProductLikelihood t n X).toReal ≠ 0 := by
       rw [ENNReal.toReal_ne_zero]
       constructor
@@ -201,7 +203,7 @@ private lemma integral_exp_actualLogLikelihood_sub_likelihood
     funext X
     by_cases hzero : (γ.acProductLikelihood t n X).toReal = 0
     · simp [Z, hzero, actualLogLikelihood, t]
-    · simp only [Z, Set.indicator_of_notMem, Set.mem_setOf_eq, hzero, not_false_eq_true]
+    · simp only [Z, Set.indicator_of_notMem, Set.mem_ofPred_eq, hzero, not_false_eq_true]
       rw [show actualLogLikelihood γ a n X =
           Real.log (γ.acProductLikelihood t n X).toReal by rfl,
         Real.exp_log (lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hzero))]
@@ -227,7 +229,7 @@ private lemma integral_acProductLikelihood_localScale_tendsto_one
   have hsreal := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hs
   have hsreal' : Tendsto (fun n : ℕ =>
       ((n : ℝ≥0∞) * γ.singularMass (a * (Real.sqrt n)⁻¹)).toReal)
-      atTop (nhds 0) := by simpa only [Function.comp_apply, ENNReal.toReal_zero] using hsreal
+      atTop (nhds 0) := by simpa only [Function.comp_apply, ENNReal.toReal_zero] using! hsreal
   have hndiff : Tendsto (fun n : ℕ => (n : ℝ) *
       ((1 - (γ.singularMass (a * (Real.sqrt n)⁻¹)).toReal) - 1))
       atTop (nhds 0) := by
@@ -281,7 +283,7 @@ private lemma actualLog_integral_comparison_bound
   classical
   let t := a * (Real.sqrt n)⁻¹
   have ht : 0 ≤ t := mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _))
-  letI : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
+  let : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t ht
   let Q : Measure Ω := γ.curve t
   let A : Measure Ω := γ.acPart t
   let ν : Measure (Fin n → Ω) := Measure.pi (fun _ : Fin n => Q)
@@ -292,7 +294,7 @@ private lemma actualLog_integral_comparison_bound
   have hAQ : A ≤ Q := by
     simpa only [A, Q, acPart] using
       Measure.withDensity_rnDeriv_le (γ.curve t) P
-  letI : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
+  let : IsFiniteMeasure A := isFiniteMeasure_of_le Q hAQ
   have hAac : A ≪ Q := hAQ.absolutelyContinuous
   have hρν : ρ ≤ ν := by
     let D : (Fin n → Ω) → ℝ≥0∞ :=
@@ -301,10 +303,10 @@ private lemma actualLog_integral_comparison_bound
       fun _ => Measure.rnDeriv_le_one_of_le hAQ
     have hall : (fun X : Fin n → Ω => fun i : Fin n => A.rnDeriv Q (X i))
         ≤ᵐ[ν] (fun _ => fun _ : Fin n => (1 : ℝ≥0∞)) := by
-      simpa only [ν] using Measure.ae_le_pi hcoord
+      simpa only [ν] using! Measure.ae_le_pi hcoord
     have hDle : D ≤ᵐ[ν] 1 := by
       filter_upwards [hall] with X hX
-      exact Finset.prod_le_one (fun _ _ => zero_le _)
+      exact Finset.prod_le_one₀ (fun _ _ => zero_le)
         (fun i _ => hX i)
     have htilt : ν.withDensity D = ρ := by
       have hcoordtilt : Q.withDensity (A.rnDeriv Q) = A :=
@@ -422,7 +424,7 @@ private lemma actualLog_integral_comparison_bound
     funext X
     by_cases hzero : (L X).toReal = 0
     · simp [Z, hzero, actualLogLikelihood, L, t]
-    · simp only [Z, Set.indicator_of_notMem, Set.mem_setOf_eq, hzero, not_false_eq_true]
+    · simp only [Z, Set.indicator_of_notMem, Set.mem_ofPred_eq, hzero, not_false_eq_true]
       rw [show actualLogLikelihood γ a n X = Real.log (L X).toReal by rfl,
         Real.exp_log (lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hzero))]
       ring_nf
@@ -486,7 +488,7 @@ private lemma measurable_normalizedScoreSum
 private lemma scorePairGaussian_snd
     (γ : NondominatedQMDPath P) (u : ↥(L2ZeroMean P)) :
     (scorePairGaussian γ u).map Prod.snd =
-      gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩ := by
+      gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _)) := by
   classical
   let v : Fin 2 → ↥(L2ZeroMean P) := ![u, γ.score]
   let e : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![0, 1]
@@ -514,7 +516,7 @@ private lemma scorePairGaussian_tilt_fst
     (γ : NondominatedQMDPath P) (a : ℝ) (u : ↥(L2ZeroMean P)) :
     ((scorePairGaussian γ u).withDensity (fun q => ENNReal.ofReal (Real.exp
       (a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)))).map Prod.fst =
-    gaussianReal (a * ⟪u, γ.score⟫_ℝ) ⟨‖u‖ ^ 2, sq_nonneg _⟩ := by
+    gaussianReal (a * ⟪u, γ.score⟫_ℝ) (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _)) := by
   classical
   let v : Fin 2 → ↥(L2ZeroMean P) := ![u, γ.score]
   let S : Matrix (Fin 2) (Fin 2) ℝ := Matrix.gram ℝ v
@@ -560,7 +562,7 @@ private lemma scorePairGaussian_tilt_fst
     change ⟪u, γ.score⟫_ℝ * a = a * ⟪u, γ.score⟫_ℝ
     ring_nf
   have hvar : (S (0 : Fin 2) 0).toNNReal =
-      ⟨‖u‖ ^ 2, sq_nonneg _⟩ := by
+      (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _)) := by
     apply NNReal.eq
     have hdiag : 0 ≤ S (0 : Fin 2) 0 := hS.diag_nonneg
     rw [Real.coe_toNNReal _ hdiag]
@@ -571,7 +573,7 @@ private lemma exp_affine_score_integrable_and_integral
     (π : Measure (ℝ × ℝ)) [IsProbabilityMeasure π]
     (γ : NondominatedQMDPath P) (a : ℝ)
     (hsnd : π.map Prod.snd =
-      gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) :
+      gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) :
     let tiltMap : ℝ × ℝ → ℝ × ℝ := fun q =>
       (q.1, a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)
     Integrable (fun q : ℝ × ℝ => Real.exp q.2) (π.map tiltMap) ∧
@@ -582,15 +584,15 @@ private lemma exp_affine_score_integrable_and_integral
   let tiltMap : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, a * q.2 - c)
   have hg_meas : Measurable g := by fun_prop
   have htilt : Measurable tiltMap := by fun_prop
-  have hgauss : Integrable g (gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by
+  have hgauss : Integrable g (gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by
     have hbase := ProbabilityTheory.integrable_exp_mul_gaussianReal
-      (μ := (0 : ℝ)) (v := ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) a
+      (μ := (0 : ℝ)) (v := (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) a
     have hmul := hbase.mul_const (Real.exp (-c))
     exact hmul.congr (Filter.Eventually.of_forall fun x => by
       dsimp only [g]
       rw [sub_eq_add_neg, Real.exp_add])
   have hgauss_int : ∫ x, g x
-        ∂(gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) = 1 := by
+        ∂(gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) = 1 := by
     dsimp only [g]
     simp_rw [sub_eq_add_neg, Real.exp_add]
     rw [integral_mul_const,
@@ -604,14 +606,14 @@ private lemma exp_affine_score_integrable_and_integral
     exact hgauss.comp_measurable measurable_snd
   constructor
   · refine (integrable_map_measure (by fun_prop) htilt.aemeasurable).mpr ?_
-    simpa only [Function.comp_apply, tiltMap, g] using hpull
+    simpa only [Function.comp_apply, tiltMap, g] using! hpull
   · rw [integral_map htilt.aemeasurable (by fun_prop)]
     change ∫ q, g q.2 ∂π = 1
     calc
       ∫ q, g q.2 ∂π = ∫ x, g x ∂(π.map Prod.snd) := by
         rw [integral_map measurable_snd.aemeasurable hg_meas.aestronglyMeasurable]
       _ = ∫ x, g x
-          ∂(gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by rw [hsnd]
+          ∂(gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by rw [hsnd]
       _ = 1 := hgauss_int
 
 /-- Baseline joint CLT for a score pair, including singular Gram covariance.
@@ -629,7 +631,7 @@ theorem weakConverges_scorePair_under_pi
   let Pinf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P)
   let Y : ℕ → (ℕ → Ω) → EuclideanSpace ℝ (Fin 2) :=
     fun i X => scoreVector v (X i)
-  haveI : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
+  have : IsProbabilityMeasure Pinf := by dsimp [Pinf]; infer_instance
   have hYmeas : ∀ i, Measurable (Y i) := fun i =>
     (measurable_scoreVector v).comp (measurable_pi_apply i)
   have hiid : iIndepFun Y Pinf := by
@@ -660,7 +662,7 @@ theorem weakConverges_scorePair_under_pi
       MeasureTheory.integral_map (measurable_pi_apply (0 : ℕ)).aemeasurable hasm
     rw [hevalLaw 0] at hmap
     rw [← hmap, integral_congr_ae (Filter.Eventually.of_forall fun x => inner_scoreVector v a x)]
-    rw [MeasureTheory.integral_finset_sum _]
+    rw [MeasureTheory.integral_finsetSum _]
     · simp [MeasureTheory.integral_const_mul, integral_l2ZeroMean_eq_zero]
     · intro i _
       exact ((Lp.memLp (v i : Lp ℝ 2 P)).integrable (by norm_num)).const_mul (a i)
@@ -698,11 +700,11 @@ theorem weakConverges_scorePair_under_pi
       intro i j
       exact ((Lp.memLp (v i : Lp ℝ 2 P)).integrable_mul
         (Lp.memLp (v j : Lp ℝ 2 P))).const_mul (a i * b j)
-    rw [hpw, MeasureTheory.integral_finset_sum _]
+    rw [hpw, MeasureTheory.integral_finsetSum _]
     · simp only [dotProduct, Matrix.mulVec]
       apply Finset.sum_congr rfl
       intro i _
-      rw [MeasureTheory.integral_finset_sum _ (fun j _ => hint i j)]
+      rw [MeasureTheory.integral_finsetSum _ (fun j _ => hint i j)]
       simp_rw [MeasureTheory.integral_const_mul, integral_l2ZeroMean_mul]
       rw [Finset.mul_sum]
       apply Finset.sum_congr rfl
@@ -710,7 +712,7 @@ theorem weakConverges_scorePair_under_pi
       rw [Matrix.gram_apply]
       ring_nf
     · intro i _
-      apply MeasureTheory.integrable_finset_sum
+      apply MeasureTheory.integrable_finsetSum
       intro j _
       exact hint i j
   have hL2atom : MemLp (scoreVector v) 2 P := by
@@ -731,12 +733,12 @@ theorem weakConverges_scorePair_under_pi
   have hVmeas : ∀ n, Measurable (V n) := fun n => by
     dsimp only [V, normalizedScoreSum]
     refine (WithLp.measurable_toLp 2 (Fin 2 → ℝ)).comp ?_
-    exact measurable_pi_lambda _ fun i => Measurable.const_mul
+    exact Measurable.of_eval fun i => Measurable.const_mul
       (Finset.measurable_sum _ fun j _ =>
         (Lp.stronglyMeasurable (v i : Lp ℝ 2 P)).measurable.comp
           (measurable_pi_apply j)) _
   have hrestrict : ∀ n, Measurable (fun X : ℕ → Ω => fun i : Fin n => X i.val) :=
-    fun n => measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    fun n => Measurable.of_eval fun i => measurable_pi_apply i.val
   have heq : ∀ n, (Measure.pi (fun _ : Fin n => P)).map (V n) =
       Pinf.map (fun X => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i X) := by
     intro n
@@ -801,7 +803,7 @@ private lemma weakConverges_normalizedScore_under_pi
     WeakConverges
       (fun n => (Measure.pi (fun _ : Fin n => P)).map
         (normalizedScoreSum γ.score n))
-      (gaussianReal 0 ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))) := by
   have hpair := weakConverges_scorePair_under_pi γ γ.score
   have hsnd := hpair.map (f := Prod.snd) continuous_snd measurable_snd
   rw [scorePairGaussian_snd] at hsnd
@@ -813,7 +815,7 @@ private lemma weakConverges_normalizedScore_under_pi
     (fun n => ((Measure.pi (fun _ : Fin n => P)).map
       (fun X => (normalizedScoreSum γ.score n X,
         normalizedScoreSum γ.score n X))).map Prod.snd) _ at hsnd
-  simpa only [Measure.map_map measurable_snd (hpairMeas _)] using hsnd
+  simpa only [Measure.map_map measurable_snd (hpairMeas _)] using! hsnd
 
 private lemma weakConverges_actualLogLikelihood_under_pi
     (γ : NondominatedQMDPath P) (a : ℝ) (ha : 0 ≤ a) :
@@ -821,18 +823,16 @@ private lemma weakConverges_actualLogLikelihood_under_pi
       (fun n => (Measure.pi (fun _ : Fin n => P)).map
         (actualLogLikelihood γ a n))
       (gaussianReal
-        (-(⟨a ^ 2 * ‖γ.score‖ ^ 2,
-          mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩ : NNReal) / 2)
-        ⟨a ^ 2 * ‖γ.score‖ ^ 2,
-          mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩) := by
+        (-((NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2)
+          (mul_nonneg (sq_nonneg _) (sq_nonneg _))) : NNReal) / 2)
+        (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))) := by
   let c : ℝ := (a ^ 2 / 2) * ‖γ.score‖ ^ 2
-  let vScore : NNReal := ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩
-  let vLog : NNReal := ⟨a ^ 2 * ‖γ.score‖ ^ 2,
-    mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩
+  let vScore : NNReal := (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))
+  let vLog : NNReal := (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
   have haff : Measurable (fun x : ℝ => a * x - c) := by fun_prop
-  letI : IsProbabilityMeasure
+  let : IsProbabilityMeasure
       ((gaussianReal 0 vScore).map (fun x : ℝ => a * x - c)) :=
-    Measure.isProbabilityMeasure_map haff.aemeasurable
+    (by infer_instance)
   have hscore := weakConverges_normalizedScore_under_pi γ
   have hlin0 := hscore.map
     (f := fun x : ℝ => a * x - c) (by fun_prop) (by fun_prop)
@@ -845,7 +845,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
         (normalizedScoreSum γ.score n)).map (fun x : ℝ => a * x - c)) _ at hlin0
     simpa only [Measure.map_map haff
       (measurable_normalizedScoreSum γ.score _), Function.comp_apply,
-      vScore] using hlin0
+      vScore] using! hlin0
   have hdist : ∀ ε > 0, Tendsto
       (fun n => (Measure.pi (fun _ : Fin n => P)).real
         {X | ε ≤ dist
@@ -863,7 +863,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
             (a ^ 2 / 2) * ‖γ.score‖ ^ 2)|} := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Real.dist_eq, normalizedScoreSum,
+      simp only [Set.mem_ofPred_eq, Real.dist_eq, normalizedScoreSum,
         actualLogLikelihood, c]
       rw [abs_sub_comm]
       ring_nf
@@ -871,7 +871,7 @@ private lemma weakConverges_actualLogLikelihood_under_pi
       NondominatedQMDLAN.log_acProductLikelihood_lan_tendstoInMeasure γ a ha ε hε
     have hreal := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hlan
     simpa only [measureReal_def, hset, Function.comp_apply,
-      ENNReal.toReal_zero] using hreal
+      ENNReal.toReal_zero] using! hreal
   have hactual := WeakConverges.slutsky_of_tendstoInMeasure_dist
     (fun n => ((measurable_normalizedScoreSum γ.score n).const_mul a).sub_const c |>.aemeasurable)
     (fun n => (measurable_actualLogLikelihood γ a n).aemeasurable)
@@ -912,14 +912,13 @@ theorem qmd_lecamThird_along_subseq
       ((π.withDensity (fun q => ENNReal.ofReal (Real.exp
         (a * q.2 - (a ^ 2 / 2) * ‖γ.score‖ ^ 2)))).map Prod.fst) := by
   let c : ℝ := (a ^ 2 / 2) * ‖γ.score‖ ^ 2
-  let vScore : NNReal := ⟨‖γ.score‖ ^ 2, sq_nonneg _⟩
-  let vLog : NNReal := ⟨a ^ 2 * ‖γ.score‖ ^ 2,
-    mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩
+  let vScore : NNReal := (NNReal.mk (‖γ.score‖ ^ 2) (sq_nonneg _))
+  let vLog : NNReal := (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
   let tiltMap : ℝ × ℝ → ℝ × ℝ := fun q => (q.1, a * q.2 - c)
   have htilt_cont : Continuous tiltMap := by fun_prop
   have htilt : Measurable tiltMap := htilt_cont.measurable
-  haveI : IsProbabilityMeasure (π.map tiltMap) :=
-    Measure.isProbabilityMeasure_map htilt.aemeasurable
+  have : IsProbabilityMeasure (π.map tiltMap) :=
+    (by infer_instance)
   have hpairMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
       (Y (χ k) X, normalizedScoreSum γ.score (χ k) X)) := fun k =>
     (hY (χ k)).prodMk (measurable_normalizedScoreSum γ.score (χ k))
@@ -933,7 +932,7 @@ theorem qmd_lecamThird_along_subseq
       (fun k => ((Measure.pi (fun _ : Fin (χ k) => P)).map
         (fun X => (Y (χ k) X, normalizedScoreSum γ.score (χ k) X))).map Prod.snd)
       (gaussianReal 0 vScore) := by
-    simpa only [Measure.map_map measurable_snd (hpairMeas _)] using hscore_sub
+    simpa only [Measure.map_map measurable_snd (hpairMeas _)] using! hscore_sub
   have hπsnd : π.map Prod.snd = gaussianReal 0 vScore :=
     WeakConverges.snd_eq hπ hscore_as_snd
   have hlin := hπ.map htilt_cont htilt
@@ -950,7 +949,7 @@ theorem qmd_lecamThird_along_subseq
         (fun X => (Y (χ k) X,
           a * normalizedScoreSum γ.score (χ k) X - c)))
       (π.map tiltMap) := by
-    simpa only [Measure.map_map htilt (hpairMeas _), tiltMap, Function.comp_apply] using hlin
+    simpa only [Measure.map_map htilt (hpairMeas _), tiltMap, Function.comp_apply] using! hlin
   have hactualMeas : ∀ k, Measurable (fun X : Fin (χ k) → Ω =>
       (Y (χ k) X, actualLogLikelihood γ a (χ k) X)) := fun k =>
     (hY (χ k)).prodMk (measurable_actualLogLikelihood γ a (χ k))
@@ -971,7 +970,7 @@ theorem qmd_lecamThird_along_subseq
             (a ^ 2 / 2) * ‖γ.score‖ ^ 2)|} := by
       intro k
       ext X
-      simp only [Set.mem_setOf_eq, dist_prod_same_left, Real.dist_eq,
+      simp only [Set.mem_ofPred_eq, dist_prod_same_left, Real.dist_eq,
         normalizedScoreSum, actualLogLikelihood, c]
       rw [abs_sub_comm]
       ring_nf
@@ -979,7 +978,7 @@ theorem qmd_lecamThird_along_subseq
       NondominatedQMDLAN.log_acProductLikelihood_lan_tendstoInMeasure γ a ha ε hε
     have hlan_sub := hlan.comp hχ.tendsto_atTop
     have hreal := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hlan_sub
-    simpa only [measureReal_def, hset, Function.comp_apply, ENNReal.toReal_zero] using hreal
+    simpa only [measureReal_def, hset, Function.comp_apply, ENNReal.toReal_zero] using! hreal
   have hjointLog : WeakConverges
       (fun k => (Measure.pi (fun _ : Fin (χ k) => P)).map
         (fun X => (Y (χ k) X, actualLogLikelihood γ a (χ k) X)))
@@ -1015,7 +1014,7 @@ theorem qmd_lecamThird_along_subseq
       (gaussianReal (-(vLog : ℝ) / 2) vLog) := by
     have hsnd := hjointLog.map (f := Prod.snd) continuous_snd measurable_snd
     rw [htilt_snd] at hsnd
-    simpa only [Measure.map_map measurable_snd (hactualMeas _)] using hsnd
+    simpa only [Measure.map_map measurable_snd (hactualMeas _)] using! hsnd
   have h_exp_int : ∀ k, Integrable
       (fun X => Real.exp (actualLogLikelihood γ a (χ k) X))
       (Measure.pi (fun _ : Fin (χ k) => P)) := fun k =>
@@ -1024,10 +1023,10 @@ theorem qmd_lecamThird_along_subseq
       ∫ X, Real.exp (actualLogLikelihood γ a (χ k) X)
         ∂(Measure.pi (fun _ : Fin (χ k) => P))) atTop (nhds 1) :=
     (integral_exp_actualLogLikelihood_tendsto_one γ a ha).comp hχ.tendsto_atTop
-  letI : ∀ k, IsProbabilityMeasure
+  let : ∀ k, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin (χ k) => γ.curve (a * (Real.sqrt (χ k))⁻¹))) :=
     fun k => by
-      letI : IsProbabilityMeasure (γ.curve (a * (Real.sqrt (χ k))⁻¹)) :=
+      let : IsProbabilityMeasure (γ.curve (a * (Real.sqrt (χ k))⁻¹)) :=
         γ.curve_isProbability _
           (mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _)))
       infer_instance
@@ -1083,17 +1082,17 @@ theorem qmd_local_score_clt
       (fun n => (Measure.pi (fun _ : Fin n =>
         γ.curve (a * (Real.sqrt n)⁻¹))).map (normalizedScoreSum u n))
       (gaussianReal (a * ⟪u, γ.score⟫_ℝ)
-        ⟨‖u‖ ^ 2, sq_nonneg _⟩) := by
-  letI : IsProbabilityMeasure (scorePairGaussian γ u) := by
+        (NNReal.mk (‖u‖ ^ 2) (sq_nonneg _))) := by
+  let : IsProbabilityMeasure (scorePairGaussian γ u) := by
     unfold scorePairGaussian
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact (by infer_instance)
   have h := qmd_lecamThird_along_subseq γ a ha
     (fun n => normalizedScoreSum u n)
     (fun n => measurable_normalizedScoreSum u n)
     id strictMono_id (scorePairGaussian γ u)
-    (by simpa only [Function.id_def] using weakConverges_scorePair_under_pi γ u)
+    (by simpa only [Function.id_def] using! weakConverges_scorePair_under_pi γ u)
   rw [scorePairGaussian_tilt_fst] at h
-  simpa only [Function.id_def] using h
+  simpa only [Function.id_def] using! h
 
 /-- Every fixed nonnegative local path law is contiguous to the baseline.
 
@@ -1105,12 +1104,11 @@ theorem qmd_local_contiguous
       (fun n => Measure.pi (fun _ : Fin n => P))
       (fun n => Measure.pi (fun _ : Fin n =>
         γ.curve (a * (Real.sqrt n)⁻¹))) := by
-  let vLog : NNReal := ⟨a ^ 2 * ‖γ.score‖ ^ 2,
-    mul_nonneg (sq_nonneg _) (sq_nonneg _)⟩
-  letI : ∀ n, IsProbabilityMeasure
+  let vLog : NNReal := (NNReal.mk (a ^ 2 * ‖γ.score‖ ^ 2) (mul_nonneg (sq_nonneg _) (sq_nonneg _)))
+  let : ∀ n, IsProbabilityMeasure
       (Measure.pi (fun _ : Fin n => γ.curve (a * (Real.sqrt n)⁻¹))) :=
     fun n => by
-      letI : IsProbabilityMeasure (γ.curve (a * (Real.sqrt n)⁻¹)) :=
+      let : IsProbabilityMeasure (γ.curve (a * (Real.sqrt n)⁻¹)) :=
         γ.curve_isProbability _
           (mul_nonneg ha (inv_nonneg.mpr (Real.sqrt_nonneg _)))
       infer_instance
@@ -1135,7 +1133,7 @@ theorem qmd_local_contiguous
   have hPAreal : Tendsto (fun n =>
       ((Measure.pi (fun _ : Fin n => P)) (A n)).toReal) atTop (nhds 0) := by
     have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hPA
-    simpa only [Function.comp_apply, ENNReal.toReal_zero] using h
+    simpa only [Function.comp_apply, ENNReal.toReal_zero] using! h
   let Y : ∀ n, (Fin n → Ω) → ℝ := fun n => (A n).indicator (fun _ => 1)
   have hY : ∀ n, Measurable (Y n) := fun n => measurable_one.indicator (hA n)
   let clip : BoundedContinuousFunction ℝ ℝ :=
@@ -1249,7 +1247,7 @@ theorem qmd_local_contiguous
             ∂(Measure.pi (fun _ : Fin n => P)) := by
             rw [integral_add hMY htail, integral_const_mul]
             congr 2
-            simpa only [Y, measureReal_def] using
+            simpa only [Y, measureReal_def] using!
               (integral_indicator_one
                 (μ := Measure.pi (fun _ : Fin n => P)) (hA n))
       _ < ε := by linarith
@@ -1283,7 +1281,7 @@ theorem qmd_local_contiguous
         ∫ X, Y n X ∂(Measure.pi (fun _ : Fin n =>
           γ.curve (a * (Real.sqrt n)⁻¹))) := by
       intro n
-      simpa only [Y, measureReal_def] using
+      simpa only [Y, measureReal_def] using!
         (integral_indicator_one
           (μ := Measure.pi (fun _ : Fin n =>
             γ.curve (a * (Real.sqrt n)⁻¹))) (hA n)).symm
@@ -1329,7 +1327,7 @@ theorem zero_score_local_product_equivalent
         (fun n => (Measure.pi (fun _ : Fin n => P)).map
           (actualLogLikelihood γ 1 n))
         (gaussianReal (-(v₀ : ℝ) / 2) v₀) := by
-      simpa only [v₀] using
+      simpa only [v₀] using!
         weakConverges_actualLogLikelihood_under_pi γ 1 zero_le_one
     have hv₀ : v₀ = 0 := by
       apply NNReal.eq
@@ -1440,9 +1438,9 @@ theorem zero_score_local_product_equivalent
       (fun _ => ENNReal.toReal_nonneg)
       (fun n => ENNReal.toReal_mono
         (ENNReal.mul_ne_top (ENNReal.natCast_ne_top n) (measure_ne_top P _))
-        (by simpa only [one_mul] using
+        (by simpa only [one_mul] using!
           acProductLikelihood_toReal_zero_mass_le γ ((Real.sqrt n)⁻¹) n)) ?_
-    simpa only [one_mul, Function.comp_apply, ENNReal.toReal_zero] using hz
+    simpa only [one_mul, Function.comp_apply, ENNReal.toReal_zero] using! hz
   have hExpActualL1_eq : ∀ n,
       ∫ X, |Real.exp (actualLogLikelihood γ 1 n X) -
           (γ.acProductLikelihood ((Real.sqrt n)⁻¹) n X).toReal|

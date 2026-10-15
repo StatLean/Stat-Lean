@@ -111,7 +111,7 @@ theorem movingProductMeasure_likelihood_comparison
     intro n
     simpa only [FiniteProductLikelihood.productMeasureOfDensity,
       FiniteProductLikelihood.logLikelihood, Function.comp_apply, productMeasure,
-      movingLogLikelihood, D, E, c] using
+      movingLogLikelihood, D, E, c] using!
       (FiniteProductLikelihood.finiteProduct_expLog_comparison μ
         (M.density θ₀) (M.density (θ n)) (m n)
         (M.density_meas θ₀) (M.density_meas (θ n))

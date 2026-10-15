@@ -1,6 +1,6 @@
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
@@ -61,14 +61,14 @@ lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
   · obtain ⟨i⟩ := h
     exact (abs_nonneg _).trans (abs_le_linfNorm x i)
   · rw [not_nonempty_iff] at h
-    haveI : IsEmpty (Fin d) := h
+    have : IsEmpty (Fin d) := h
     have heq : linfNorm x = 0 := by
       change sSup (Set.range (fun i : Fin d => |x.ofLp i|)) = 0
       rw [Set.range_eq_empty_iff.mpr ‹_›, Real.sSup_empty]
     linarith
 
-/-- Hölder / ℓ¹–ℓ∞ duality (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso): for `x y : EuclideanSpace ℝ (Fin d)`,
-`|⟪x, y⟫_ℝ| ≤ ‖x‖₁ · ‖y‖∞`. -/
+/-- Hölder / ℓ¹–ℓ∞ duality (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of
+Lasso): for `x y : EuclideanSpace ℝ (Fin d)`, `|⟪x, y⟫_ℝ| ≤ ‖x‖₁ · ‖y‖∞`. -/
 theorem abs_inner_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |⟪x, y⟫_ℝ| ≤ l1Norm x * linfNorm y := by
   have hinner : (⟪x, y⟫_ℝ : ℝ) = ∑ i, x.ofLp i * y.ofLp i := by
@@ -104,7 +104,8 @@ theorem abs_sum_mul_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
   exact h
 
 /-- Support-restriction operator: zero out coordinates outside `S`.
-Used in Lasso / sparse-recovery analyses (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso). -/
+Used in Lasso / sparse-recovery analyses (Lu, *Big Data Analysis*
+(Springer, 2025), Ch10 Statistical Properties of Lasso). -/
 def restrict (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     EuclideanSpace ℝ (Fin d) :=
   WithLp.toLp 2 (fun i => if i ∈ S then x.ofLp i else 0)
@@ -138,8 +139,8 @@ lemma l1Norm_restrict_eq_sum (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d
   simp_rw [h1]
   exact Fintype.sum_ite_mem S _
 
-/-- √s ℓ¹–ℓ² bound on the support (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso):
-`‖x|_S‖₁ ≤ √|S| · ‖x‖₂`. Proof: Cauchy–Schwarz with the all-ones vector on `S`
+/-- √s ℓ¹–ℓ² bound on the support (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical
+Properties of Lasso): `‖x|_S‖₁ ≤ √|S| · ‖x‖₂`. Proof: Cauchy–Schwarz with the all-ones vector on `S`
 gives `(∑_{i∈S} |xᵢ|)² ≤ |S| · ∑_{i∈S} xᵢ²`; taking square roots and bounding
 `∑_{i∈S} xᵢ² ≤ ∑ᵢ xᵢ² = ‖x‖²` yields the claim. The Mathlib brick is
 `Finset.sum_mul_sq_le_sq_mul_sq` (polynomial Cauchy–Schwarz over a finset). -/
@@ -181,7 +182,10 @@ theorem l1Norm_restrict_le_sqrt_card_mul_norm
   rw [h_normsq]
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt h_sub) (Real.sqrt_nonneg _)
 
-/-! ## Additional bricks for compressed sensing (Lu, *Big Data Analysis* (Springer, 2025), Ch8 Compressive Sensing – Ch9 Restricted Isometry Property) -/
+/-! ## Additional bricks for compressed sensing
+
+Lu, *Big Data Analysis* (Springer, 2025), Ch8 Compressive Sensing – Ch9 Restricted Isometry
+Property. -/
 
 /-- The ℓ² norm as the square root of the sum of squared `.ofLp` coordinates. -/
 private lemma norm_eq_sqrt_sum_ofLp (v : EuclideanSpace ℝ (Fin d)) :
@@ -246,8 +250,8 @@ theorem restrict_compl_eq_zero (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin
   · exact h i (Finset.mem_compl.mp hi)
   · rfl
 
-/-- **Support split of the ℓ¹ norm** (Lu, *Big Data Analysis* (Springer, 2025), Ch8 §8.2 Compressive Sensing, Eq (8.3) workhorse):
-`‖x‖₁ = ‖x|_S‖₁ + ‖x|_{Sᶜ}‖₁`. -/
+/-- **Support split of the ℓ¹ norm** (Lu, *Big Data Analysis* (Springer, 2025), Ch8 §8.2 Compressive
+Sensing, Eq (8.3) workhorse): `‖x‖₁ = ‖x|_S‖₁ + ‖x|_{Sᶜ}‖₁`. -/
 theorem l1Norm_split (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     l1Norm x = l1Norm (restrict S x) + l1Norm (restrict Sᶜ x) := by
   rw [l1Norm_restrict_eq_sum, l1Norm_restrict_eq_sum]
@@ -261,8 +265,8 @@ theorem restrict_add_restrict_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ
   simp only [WithLp.ofLp_add, Pi.add_apply, restrict_ofLp_apply, Finset.mem_compl]
   split_ifs <;> simp_all
 
-/-- **ℓ²–ℓ∞ bound on a block** (Lu, *Big Data Analysis* (Springer, 2025), Ch9 Restricted Isometry Property, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse
-vectors): `‖x|_S‖₂ ≤ √|S| · ‖x|_S‖∞`. -/
+/-- **ℓ²–ℓ∞ bound on a block** (Lu, *Big Data Analysis* (Springer, 2025), Ch9 Restricted Isometry
+Property, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse vectors): `‖x|_S‖₂ ≤ √|S| · ‖x|_S‖∞`. -/
 theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     ‖restrict S x‖ ≤ Real.sqrt (S.card : ℝ) * linfNorm (restrict S x) := by
   rw [norm_eq_sqrt_sum_ofLp]
@@ -272,7 +276,7 @@ theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace 
         rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hcnn]]
   apply Real.sqrt_le_sqrt
   rw [← Finset.sum_subset (Finset.subset_univ S)
-      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+      (fun i _ hi => by simp only [restrict_ofLp_apply, ite_eq_right hi]; ring)]
   calc ∑ i ∈ S, ((restrict S x).ofLp i) ^ 2
       ≤ ∑ _i ∈ S, c ^ 2 := by
         refine Finset.sum_le_sum fun i _ => ?_
@@ -284,9 +288,9 @@ theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace 
 private lemma sum_sq_restrict (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     ∑ i, ((restrict S x).ofLp i) ^ 2 = ∑ i ∈ S, (x.ofLp i) ^ 2 := by
   rw [← Finset.sum_subset (Finset.subset_univ S)
-      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+      (fun i _ hi => by simp only [restrict_ofLp_apply, ite_eq_right hi]; ring)]
   refine Finset.sum_congr rfl fun i hi => ?_
-  rw [restrict_ofLp_apply, if_pos hi]
+  rw [restrict_ofLp_apply, ite_eq_left hi]
 
 /-- The ℓ² norm of a restriction is monotone in the index set: `S ⊆ T ⟹
 ‖x|_S‖₂ ≤ ‖x|_T‖₂`. -/

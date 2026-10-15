@@ -42,8 +42,8 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))
   let Xouter : ∀ n, (Fin n → Ω) → ℝ := fun n =>
     centeredEstimator T_n (ψ P) n
-  haveI hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
-    letI : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
+  have hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
+    let : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
       γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hXinnerMeas : ∀ n, Measurable (Xinner n) := fun n =>
@@ -52,9 +52,14 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     Measurable.const_mul ((hT n).sub_const _) _
   have hlocal : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (Xinner n)) L := by
-    simpa only [Q, Xinner, γ] using hreg z
-  haveI hlocalProb : ∀ n, IsProbabilityMeasure ((Q n).map (Xinner n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hXinnerMeas n).aemeasurable
+    have hraw := hreg z
+    change AsymptoticStatistics.WeakConverges
+      (fun n => (Q n).map₀ (Xinner n)) L at hraw
+    have hmaps : ∀ n, (Q n).map₀ (Xinner n) = (Q n).map (Xinner n) :=
+      fun n => Measure.map₀_of_measurable (hXinnerMeas n)
+    simpa only [hmaps] using hraw
+  have hlocalProb : ∀ n, IsProbabilityMeasure ((Q n).map (Xinner n)) := fun n =>
+    (by infer_instance)
   have hLreal : L.real Set.univ = 1 := by
     have h := hlocal (BoundedContinuousFunction.const ℝ (1 : ℝ))
     have h' : Tendsto (fun _ : ℕ => (1 : ℝ)) atTop
@@ -62,7 +67,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
       simpa only [BoundedContinuousFunction.const_apply', integral_const, smul_eq_mul,
         mul_one, probReal_univ] using h
     exact (tendsto_nhds_unique tendsto_const_nhds h').symm
-  letI : IsProbabilityMeasure L :=
+  let : IsProbabilityMeasure L :=
     MeasureTheory.isProbabilityMeasure_iff_real.mpr hLreal
   have htzero : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (nhds 0) :=
     (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop).inv_tendsto_atTop
@@ -77,7 +82,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
   have hquot := (hpd.derivative_spec z).comp htright
   have hderiv : hpd.derivative
       ⟨(z : ↥(L2ZeroMean P)), selected_mem_tangentSpace C z⟩ = 0 := by
-    simpa only [z] using hpd.derivative.map_zero
+    simpa only [z] using! hpd.derivative.map_zero
   have hshift : Tendsto (fun n : ℕ => Real.sqrt n *
       (ψ (γ.curve ((Real.sqrt n)⁻¹)) - ψ P)) atTop (nhds 0) := by
     rw [← hderiv]
@@ -90,7 +95,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
       · simp [hn]
       · field_simp
     rw [heq]
-    simpa only [Function.comp_apply, γ] using hquot
+    simpa only [Function.comp_apply, γ] using! hquot
   have hdist : ∀ ε > 0, Tendsto (fun n => (Q n).real
       {X | ε ≤ dist (Xinner n X) (Xouter n X)}) atTop (nhds 0) := by
     intro ε hε
@@ -103,7 +108,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
     have hset : {X | ε ≤ dist (Xinner n X) (Xouter n X)} =
         (∅ : Set (Fin n → Ω)) := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Real.dist_eq]
       rw [show Xinner n X - Xouter n X =
           -Real.sqrt n * (ψ (γ.curve ((Real.sqrt n)⁻¹)) - ψ P) by
@@ -120,7 +125,7 @@ theorem hasLimitDistributionAt_of_isRegularAtND
   have hlocalInt : Tendsto (fun n => ∫ X, f (Xouter n X) ∂(Q n)) atTop
       (nhds (∫ x, f x ∂L)) := by
     have h := hlocalOuter f
-    convert h using 1
+    convert! h using 1
     funext n
     exact (integral_map (hXouterMeas n).aemeasurable
       f.continuous.aestronglyMeasurable).symm
@@ -133,8 +138,10 @@ theorem hasLimitDistributionAt_of_isRegularAtND
       ∂(Measure.pi (fun _ : Fin n => P))) atTop (nhds (∫ x, f x ∂L)) := by
     have h := hlocalInt.sub hequiv
     simpa only [Q, γ, sub_sub_cancel, sub_zero] using h
-  convert hbaseInt using 1
+  convert! hbaseInt using 1
   funext n
+  change (∫ x, f x ∂(Measure.pi (fun _ : Fin n => P)).map₀ (Xouter n)) = _
+  rw [Measure.map₀_of_measurable (hXouterMeas n)]
   exact integral_map (hXouterMeas n).aemeasurable
     f.continuous.aestronglyMeasurable
 
@@ -154,7 +161,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
     (hT : ∀ n, Measurable (T_n n))
     (hAL : AsymptoticallyLinearAt T_n P φ (ψ P)) :
     IsRegularAtND C T_n ψ
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
   intro g
   let γ := C.selectedPath g
   let Q : (n : ℕ) → Measure (Fin n → Ω) := fun n =>
@@ -167,8 +174,8 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
   let temp : ∀ n, (Fin n → Ω) → ℝ := fun n X => base n X - c
   let localEst : ∀ n, (Fin n → Ω) → ℝ := fun n X =>
     Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))
-  haveI hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
-    letI : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
+  have hQprob : ∀ n, IsProbabilityMeasure (Q n) := fun n => by
+    let : IsProbabilityMeasure (γ.curve ((Real.sqrt n)⁻¹)) :=
       γ.curve_isProbability _ (inv_nonneg.mpr (Real.sqrt_nonneg _))
     infer_instance
   have hscoreMeas : ∀ n, Measurable (score n) := by
@@ -188,12 +195,12 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
     Measurable.const_mul ((hT n).sub_const _) _
   have hscoreRaw : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (score n))
-      (gaussianReal c ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal c (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
     have h := qmd_local_score_clt γ 1 zero_le_one φ
-    simpa only [Q, score, γ, one_mul, c, C.selectedPath_score g] using h
+    simpa only [Q, score, γ, one_mul, c, C.selectedPath_score g] using! h
   have hscore0 : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (score0 n))
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
     have hcont : Continuous (fun x : ℝ => x - c) := by fun_prop
     have hmeas : Measurable (fun x : ℝ => x - c) := hcont.measurable
     have h := hscoreRaw.map hcont hmeas
@@ -203,9 +210,9 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
       rw [Measure.map_map hmeas (hscoreMeas n)]
       rfl
     have hlim :
-        (gaussianReal c ⟨‖φ‖ ^ 2, sq_nonneg _⟩).map (fun x => x - c) =
-          gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩ := by
-      rw [ProbabilityTheory.gaussianReal_map_sub_const]
+        (gaussianReal c (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))).map (fun x => x - c) =
+          gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)) := by
+      erw [ProbabilityTheory.gaussianReal_map_sub_const]
       simp
     simpa only [hmap, hlim] using h
   let residual : ∀ n, (Fin n → Ω) → ℝ := fun n X => base n X - score n X
@@ -230,15 +237,15 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
         {X | ε ≤ |residual n X|} := by
       intro n
       ext X
-      simp only [Set.mem_setOf_eq, Real.dist_eq]
+      simp only [Set.mem_ofPred_eq, Real.dist_eq]
       rw [show score0 n X - temp n X = -residual n X by
         simp only [score0, temp, residual]
         ring, abs_neg]
     have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hresQ ε hε)
-    simpa only [hset, Function.comp_apply, ENNReal.toReal_zero] using h
+    simpa only [hset, Function.comp_apply, ENNReal.toReal_zero] using! h
   have htemp : AsymptoticStatistics.WeakConverges
       (fun n => (Q n).map (temp n))
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) :=
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) :=
     AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
       (fun n => (hscore0Meas n).aemeasurable)
       (fun n => (htempMeas n).aemeasurable) hscore0 hdist1
@@ -271,7 +278,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
       · simp [hn]
       · field_simp
     rw [heq]
-    simpa only [Function.comp_apply, γ] using hquot
+    simpa only [Function.comp_apply, γ] using! hquot
   have hdist2 : ∀ ε > 0, Tendsto (fun n => (Q n).real
       {X | ε ≤ dist (temp n X) (localEst n X)}) atTop (nhds 0) := by
     intro ε hε
@@ -292,7 +299,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
     have hset : {X | ε ≤ dist (temp n X) (localEst n X)} =
         (∅ : Set (Fin n → Ω)) := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Real.dist_eq]
       rw [show temp n X - localEst n X =
           Real.sqrt n * (ψ (γ.curve ((Real.sqrt n)⁻¹)) - ψ P) - c by
@@ -300,6 +307,11 @@ theorem regular_and_gaussian_of_asymptoticallyLinearND
         ring]
       exact hn
     rw [hset, measureReal_empty]
+  change AsymptoticStatistics.WeakConverges
+    (fun n => (Q n).map₀ (localEst n)) _
+  have hmaps : ∀ n, (Q n).map₀ (localEst n) = (Q n).map (localEst n) :=
+    fun n => Measure.map₀_of_measurable (hlocalMeas n)
+  simp only [hmaps]
   exact AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
     (fun n => (htempMeas n).aemeasurable)
     (fun n => (hlocalMeas n).aemeasurable) htemp hdist2
@@ -317,7 +329,7 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
     (hEIF : IsEfficientInfluenceFunction P (tangentSpace C) hpd.derivative φ)
     (hT : ∀ n, Measurable (T_n n))
     (hreg : IsRegularAtND C T_n ψ
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩)) :
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _)))) :
     AsymptoticallyLinearAt T_n P φ (ψ P) := by
   classical
   let est : ∀ n, (Fin n → Ω) → ℝ := fun n => centeredEstimator T_n (ψ P) n
@@ -341,23 +353,27 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
     (hestMeas n).prodMk (hscoreMeas n)
   have hresMeas : ∀ n, Measurable (fun X => est n X - score n X) := fun n =>
     (hestMeas n).sub (hscoreMeas n)
-  haveI hestProb : ∀ n, IsProbabilityMeasure (estLaw n) := fun n =>
-    Measure.isProbabilityMeasure_map (hestMeas n).aemeasurable
-  haveI hscoreProb : ∀ n, IsProbabilityMeasure (scoreLaw n) := fun n =>
-    Measure.isProbabilityMeasure_map (hscoreMeas n).aemeasurable
-  haveI hjointProb : ∀ n, IsProbabilityMeasure (jointLaw n) := fun n =>
-    Measure.isProbabilityMeasure_map (hpairMeas n).aemeasurable
+  have hestProb : ∀ n, IsProbabilityMeasure (estLaw n) := fun n =>
+    (by infer_instance)
+  have hscoreProb : ∀ n, IsProbabilityMeasure (scoreLaw n) := fun n =>
+    (by infer_instance)
+  have hjointProb : ∀ n, IsProbabilityMeasure (jointLaw n) := fun n =>
+    (by infer_instance)
   have hestWeak : AsymptoticStatistics.WeakConverges estLaw
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
-    simpa only [estLaw, baseMeasure, est, HasLimitDistributionAt] using
-      hasLimitDistributionAt_of_isRegularAtND C
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) hpd hT hreg
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
+    have hbase := hasLimitDistributionAt_of_isRegularAtND C
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) hpd hT hreg
+    change AsymptoticStatistics.WeakConverges
+      (fun n => (baseMeasure n).map₀ (est n)) _ at hbase
+    have hmaps : ∀ n, (baseMeasure n).map₀ (est n) = (baseMeasure n).map (est n) :=
+      fun n => Measure.map₀_of_measurable (hestMeas n)
+    simpa only [hmaps] using hbase
   let z : {g : ↥(L2ZeroMean P) // g ∈ C.carrier} := ⟨0, zero_mem C⟩
   have hscoreWeak : AsymptoticStatistics.WeakConverges scoreLaw
-      (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) := by
+      (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) := by
     have h := qmd_local_score_clt (C.selectedPath z) 0 le_rfl φ
     simpa only [scoreLaw, baseMeasure, score, zero_mul,
-      (C.selectedPath z).curve_at_zero] using h
+      (C.selectedPath z).curve_at_zero] using! h
   have hfst : ∀ n, (jointLaw n).map Prod.fst = estLaw n := by
     intro n
     simp only [jointLaw, estLaw, Measure.map_map measurable_fst (hpairMeas n)]
@@ -389,9 +405,9 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
   have hjointTight : IsTightMeasureSet (Set.range jointLaw) :=
     Prohorov.tight_prod_of_tight_marginals _
       (hfstImage ▸ Prohorov.weakConverges_range_tight estLaw
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) hestWeak)
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) hestWeak)
       (hsndImage ▸ Prohorov.weakConverges_range_tight scoreLaw
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) hscoreWeak)
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) hscoreWeak)
   unfold AsymptoticallyLinearAt
   intro ε hε
   apply AsymptoticStatistics.SubsequenceLimit.tendsto_of_subseq_tendsto
@@ -402,14 +418,14 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
       exact ⟨χ k, rfl⟩)
   obtain ⟨σ, hσ, π, hπprob, hπweak⟩ :=
     Prohorov.extract_weak_subseq (fun k => jointLaw (χ k)) hsubTight
-  letI : IsProbabilityMeasure π := hπprob
+  let : IsProbabilityMeasure π := hπprob
   have hπweak' : AsymptoticStatistics.WeakConverges
       (fun k => (baseMeasure (χ (σ k))).map
         (fun X => (est (χ (σ k)) X, score (χ (σ k)) X))) π := by
     simpa only [jointLaw, pair] using hπweak
   have hdirac := residual_subseq_limit_eq_dirac_of_regular C hpd hEIF hT hreg
     (χ ∘ σ) (hχ.comp hσ) π (by
-      simpa only [baseMeasure, est, score, Function.comp_apply] using hπweak')
+      simpa only [baseMeasure, est, score, Function.comp_apply] using! hπweak')
   let sub : ℝ × ℝ → ℝ := fun q => q.1 - q.2
   have hresWeak0 := hπweak'.map (by fun_prop : Continuous sub) (by fun_prop : Measurable sub)
   have hresWeak : AsymptoticStatistics.WeakConverges
@@ -429,17 +445,17 @@ theorem asymptoticallyLinear_of_regular_and_gaussianND
   let resLaw : ℕ → Measure ℝ := fun k =>
     (baseMeasure (χ (σ k))).map
       (fun X => est (χ (σ k)) X - score (χ (σ k)) X)
-  haveI hresProb : ∀ k, IsProbabilityMeasure (resLaw k) := fun k =>
-    Measure.isProbabilityMeasure_map (hresMeas _).aemeasurable
+  have hresProb : ∀ k, IsProbabilityMeasure (resLaw k) := fun k =>
+    (by infer_instance)
   let pres : ℕ → ProbabilityMeasure ℝ := fun k => ⟨resLaw k, inferInstance⟩
   let pzero : ProbabilityMeasure ℝ := ⟨Measure.dirac 0, inferInstance⟩
   have hpTendsto : Tendsto pres atTop (nhds pzero) := by
     apply ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr
-    simpa only [pres, pzero, resLaw] using hresWeak
+    simpa only [pres, pzero, resLaw] using! hresWeak
   let tail : Set ℝ := {x | ε ≤ |x|}
   have htailClosed : IsClosed tail := isClosed_Ici.preimage continuous_abs
   have hzeroTail : (0 : ℝ) ∉ tail := by
-    simpa only [tail, Set.mem_setOf_eq, abs_zero] using (not_le.mpr hε)
+    simpa only [tail, Set.mem_ofPred_eq, abs_zero] using (not_le.mpr hε)
   have hzeroFrontier : (0 : ℝ) ∉ frontier tail := by
     intro hz
     apply hzeroTail
@@ -483,7 +499,7 @@ theorem operational_efficiency_characterization_nondominated
     -- LEAN-ONLY: measurability of each estimator.
     (hT : ∀ n, Measurable (T_n n)) :
     IsRegularAtND C T_n ψ
-        (gaussianReal 0 ⟨‖φ‖ ^ 2, sq_nonneg _⟩) ↔
+        (gaussianReal 0 (NNReal.mk (‖φ‖ ^ 2) (sq_nonneg _))) ↔
       AsymptoticallyLinearAt T_n P φ (ψ P) := by
   constructor
   · exact asymptoticallyLinear_of_regular_and_gaussianND C hpd hEIF hT

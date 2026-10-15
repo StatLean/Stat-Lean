@@ -88,6 +88,7 @@ Fields, in order:
 
 Reference: vdV §25.3 (definition of influence function). -/
 structure CandidateIF (P : Measure Ω) [IsFiniteMeasure P] where
+  /-- The raw pointwise representative `Ω → ℝ` of the candidate influence function. -/
   raw : Ω → ℝ
   memLp2 : MemLp raw 2 P
   mean_zero : ∫ ω, raw ω ∂P = 0

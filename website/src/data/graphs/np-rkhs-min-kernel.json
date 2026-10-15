@@ -11,7 +11,7 @@
     {"id":"le_min","label":"le_min","full":"le_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Set.mem_Ici","label":"mem_Ici","full":"Set.mem_Ici","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Interval.Set.Defs"},
     {"id":"StatLean.NonparametricStatistics.featureKernel","label":"featureKernel","full":"StatLean.NonparametricStatistics.featureKernel","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"}
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"StatLean.NonparametricStatistics.IsKernelFun"},

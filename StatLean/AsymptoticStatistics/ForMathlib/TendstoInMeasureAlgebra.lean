@@ -30,7 +30,7 @@ theorem TendstoInMeasure.neg_zero {f : ι → α → ℝ}
   ext n
   congr 1
   ext ω
-  simp only [Set.mem_setOf_eq, edist_zero_right, Pi.neg_apply, enorm_neg]
+  simp only [Set.mem_ofPred_eq, edist_zero_right, Pi.neg_apply, enorm_neg]
 
 /-- `c · f →_P 0` from `f →_P 0`.
 Proof: case-split c=0 (trivial: set is empty), c≠0 (scale ε by 1/‖c‖ₑ
@@ -44,7 +44,7 @@ theorem TendstoInMeasure.const_mul_zero (c : ℝ) {f : ι → α → ℝ}
     have h_empty : ∀ n, {ω : α | ε ≤ edist ((0 : ℝ) * f n ω) (0 : ℝ)} = ∅ := by
       intro n
       ext ω
-      simp only [zero_mul, edist_self, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [zero_mul, edist_self, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
                  not_le]
       exact hε
     simp_rw [h_empty, measure_empty]
@@ -63,7 +63,7 @@ theorem TendstoInMeasure.const_mul_zero (c : ℝ) {f : ι → α → ℝ}
           = {ω | ε / k ≤ edist (f n ω) (0 : ℝ)} := by
       intro n
       ext ω
-      simp only [Set.mem_setOf_eq, edist_zero_right]
+      simp only [Set.mem_ofPred_eq, edist_zero_right]
       have h_enorm : ‖c * f n ω‖ₑ = k * ‖f n ω‖ₑ := by
         rw [enorm_mul, hk_def, ← Real.enorm_eq_ofReal_abs]
       rw [h_enorm, ENNReal.div_le_iff' hk_ne hk_top]
@@ -86,11 +86,11 @@ theorem TendstoInMeasure.add_zero {f g : ι → α → ℝ}
         ⊆ {ω | ε / 2 ≤ edist (f n ω) (0 : ℝ)} ∪
           {ω | ε / 2 ≤ edist (g n ω) (0 : ℝ)} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq, edist_zero_right] at hω
+    simp only [Set.mem_ofPred_eq, edist_zero_right] at hω
     by_contra h_neg
     rw [Set.mem_union, not_or] at h_neg
     obtain ⟨h1, h2⟩ := h_neg
-    simp only [Set.mem_setOf_eq, edist_zero_right, not_le] at h1 h2
+    simp only [Set.mem_ofPred_eq, edist_zero_right, not_le] at h1 h2
     have h_sum : ‖f n ω‖ₑ + ‖g n ω‖ₑ < ε := by
       calc ‖f n ω‖ₑ + ‖g n ω‖ₑ
           < ε / 2 + ε / 2 := ENNReal.add_lt_add h1 h2
@@ -102,7 +102,7 @@ theorem TendstoInMeasure.add_zero {f g : ι → α → ℝ}
     have := hf'.add hg'
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    h_sum_tendsto (.of_forall fun _ => zero_le _) (.of_forall fun n => ?_)
+    h_sum_tendsto (.of_forall fun _ => zero_le) (.of_forall fun n => ?_)
   exact (measure_mono (h_sub n)).trans (measure_union_le _ _)
 
 /-- `f - g →_P 0` from each →_P 0. Composed from `add_zero` + `neg_zero`. -/

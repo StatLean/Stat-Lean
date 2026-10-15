@@ -71,7 +71,7 @@ private lemma measurable_sampleMean :
 private lemma isLocEquivariant_sampleMean :
     IsLocEquivariant (fun x : Fin (m + 1) → ℝ => (∑ i, x i) / ((m : ℝ) + 1)) := by
   intro a x
-  show (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) / ((m : ℝ) + 1)
+  change (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) / ((m : ℝ) + 1)
     = (∑ i, x i) / ((m : ℝ) + 1) + a
   have hsum : (∑ i, (x + a • (1 : Fin (m + 1) → ℝ)) i) = (∑ i, x i) + ((m : ℝ) + 1) * a := by
     simp only [Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one,
@@ -93,7 +93,7 @@ private noncomputable def gaussDensity (v : ℝ≥0) (x : Fin (m + 1) → ℝ) :
   ∏ i, gaussianPDFReal 0 v (x i)
 
 private lemma gaussDensity_nonneg {v : ℝ≥0} (x : Fin (m + 1) → ℝ) : 0 ≤ gaussDensity v x :=
-  Finset.prod_nonneg fun i _ => gaussianPDFReal_nonneg _ _ _
+  Finset.prod_nonneg fun _ _ => gaussianPDFReal_nonneg _ _ _
 
 private lemma measurable_gaussDensity (v : ℝ≥0) :
     Measurable (gaussDensity (m := m) v) := by
@@ -106,13 +106,15 @@ Gaussian measure. -/
 private lemma locationBase_gaussDensity {v : ℝ≥0} (hv : v ≠ 0) :
     locationBase (gaussDensity (m := m) v)
       = Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v := by
-  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 v)) := by
+  have : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 v)) := by
     rw [← gaussianReal_of_var_ne_zero 0 hv]; infer_instance
   have h_each : (fun _ : Fin (m + 1) => gaussianReal 0 v)
       = fun _ : Fin (m + 1) => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
     funext _; exact gaussianReal_of_var_ne_zero 0 hv
-  rw [h_each, ← MeasureTheory.pi_withDensity_prod (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
-  show (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ENNReal.ofReal (gaussDensity v x))
+  rw [h_each, ← MeasureTheory.pi_withDensity_prod
+      (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
+  change (volume : Measure (Fin (m + 1) → ℝ)).withDensity
+      (fun x => ENNReal.ofReal (gaussDensity v x))
     = (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ∏ i, gaussianPDF 0 v (x i))
   refine withDensity_congr_ae (ae_of_all _ fun x => ?_)
   simp only [gaussDensity]
@@ -124,7 +126,7 @@ private noncomputable def meanVar (v : ℝ≥0) : ℝ≥0 := v / ((m : ℝ≥0) 
 
 private lemma meanVar_ne_zero {v : ℝ≥0} (hv : v ≠ 0) : meanVar (m := m) v ≠ 0 := by
   rw [meanVar, ne_eq, div_eq_zero_iff]
-  push_neg
+  push Not
   exact ⟨hv, by positivity⟩
 
 private lemma coe_meanVar (v : ℝ≥0) : (meanVar (m := m) v : ℝ) = (v : ℝ) / ((m : ℝ) + 1) := by
@@ -270,7 +272,7 @@ theorem isLocMRE_mean_gaussian (f : (Fin (m + 1) → ℝ) → ℝ)
   have hbase : locationBase f = locationBase (gaussDensity (m := m) v) :=
     hf.trans (locationBase_gaussDensity hv).symm
   rw [isLocMRE_congr_locationBase hbase]
-  haveI : IsProbabilityMeasure (locationBase (gaussDensity (m := m) v)) := by
+  have : IsProbabilityMeasure (locationBase (gaussDensity (m := m) v)) := by
     rw [locationBase_gaussDensity hv]; infer_instance
   -- The three slice side conditions and the finite reference risk.
   have hslice : ∀ x : Fin (m + 1) → ℝ,
@@ -345,7 +347,7 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
       MemLp (fun x : Fin (m + 1) → ℝ => x i) 2 (Measure.pi fun _ => P₁) := by
     intro i
     have := hL2.comp_measurePreserving (measurePreserving_eval (fun _ => P₁) i)
-    simpa [Function.comp] using this
+    simpa [Function.comp] using! this
   have hint_i : ∀ i, Integrable (fun x : Fin (m + 1) → ℝ => x i)
       (Measure.pi fun _ => P₁) := fun i => (hL2i i).integrable one_le_two
   have hint_ij : ∀ i j, Integrable (fun x : Fin (m + 1) → ℝ => x i * x j)
@@ -364,27 +366,27 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
           = fun x => (fun t : ℝ => t ^ 2) (x i) := by funext x; ring
       have hev := integral_comp_eval (μ := fun _ : Fin (m + 1) => P₁) (i := i)
         (f := fun t : ℝ => t ^ 2) (by fun_prop)
-      rw [if_pos rfl, heq, hev]; exact hvar
-    · rw [if_neg hij]
+      rw [ite_eq_left rfl, heq, hev]; exact hvar
+    · rw [ite_eq_right hij]
       have hpair := (hindep.indepFun hij).integral_fun_mul_eq_mul_integral
         (measurable_pi_apply i).aestronglyMeasurable
         (measurable_pi_apply j).aestronglyMeasurable
       rw [hpair, hEi i, hEi j, mul_zero]
   -- Second moment of the total: `∫ (∑ Xᵢ)² = m + 1`.
   have hSmemLp : MemLp (fun x : Fin (m + 1) → ℝ => ∑ i, x i) 2 (Measure.pi fun _ => P₁) :=
-    memLp_finset_sum _ fun i _ => hL2i i
+    memLp_finsetSum _ fun i _ => hL2i i
   have hSsq_int : Integrable (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
       (Measure.pi fun _ => P₁) := by
     have := hSmemLp.integrable_mul hSmemLp
-    simpa [Pi.mul_apply, pow_two] using this
+    simpa [Pi.mul_apply, pow_two] using! this
   have hSsq : ∫ x : Fin (m + 1) → ℝ, (∑ i, x i) ^ 2 ∂(Measure.pi fun _ => P₁) = N := by
     have hexpand : (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
         = fun x => ∑ i, ∑ j, x i * x j := by
       funext x; rw [pow_two, Fintype.sum_mul_sum]
-    rw [hexpand, integral_finset_sum _ fun i _ => integrable_finset_sum _ fun j _ => hint_ij i j]
+    rw [hexpand, integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hint_ij i j]
     have hinner : ∀ i, ∫ x : Fin (m + 1) → ℝ, ∑ j, x i * x j ∂(Measure.pi fun _ => P₁) = 1 := by
       intro i
-      rw [integral_finset_sum _ fun j _ => hint_ij i j]
+      rw [integral_finsetSum _ fun j _ => hint_ij i j]
       simp [hc i]
     simp only [hinner]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, hNdef]

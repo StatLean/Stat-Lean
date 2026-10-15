@@ -56,7 +56,7 @@ theorem hasSubgaussianMGF_of_map_eq_gaussianReal {Ω : Type*} {mΩ : MeasurableS
     exact (integrable_map_measure hg hY).1 hint
   mgf_le t := by
     -- The mean-`0` Gaussian MGF is `exp(0·t + σ2·t²/2) = exp(σ2·t²/2)`, so the bound is equality.
-    rw [mgf_gaussianReal h t]
+    rw [mgf_gaussianReal ⟨hY, h⟩ t]
     simp
 
 /-- **Monotonicity in the proxy variance.** A sub-Gaussian random variable with proxy

@@ -131,8 +131,8 @@ theorem exp_neg_one_le_Gamma {x : ℝ}
   exp_neg_one_le_Gamma_aux hx
 
 /-- `Γ(1 − a) ≤ 4` for `a ∈ [0, 1/2]` (`1 − a ∈ [1/2, 1]`, where `Γ ≤ Γ(1/2) = √π < 4`). The
-`a ≤ 1/2` ceiling is deviation D8 (the density upper bound genuinely needs it: `Γ(1 − a)` blows up as
-`a → 1`). -/
+`a ≤ 1/2` ceiling is deviation D8 (the density upper bound genuinely needs it: `Γ(1 − a)` blows up
+as `a → 1`). -/
 theorem Gamma_one_sub_le_four {a : ℝ}
     -- LEAN-ONLY: a ≥ 0, so 1 − a ≤ 1 stays in the bounded window
     (ha0 : 0 ≤ a)
@@ -144,7 +144,8 @@ theorem Gamma_one_sub_le_four {a : ℝ}
     (show (1 - a) ∈ Set.Icc (1 / 2 : ℝ) 1 from ⟨by linarith, by linarith⟩)
   rw [Real.Gamma_one_half_eq, Real.Gamma_one] at h
   have hpi : Real.sqrt Real.pi ≤ 2 := by
-    rw [show (2 : ℝ) = Real.sqrt 4 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    rw [show (2 : ℝ) = Real.sqrt 4
+        by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
     exact Real.sqrt_le_sqrt Real.pi_le_four
   calc Real.Gamma (1 - a) ≤ max (Real.sqrt Real.pi) 1 := h
     _ ≤ 4 := max_le (by linarith) (by norm_num)

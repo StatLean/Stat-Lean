@@ -2,6 +2,7 @@ import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.Core.QMDPath
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.Distributions.Gaussian.Real
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 
 /-!
 # Operational semiparametric efficiency
@@ -39,9 +40,26 @@ def HasLimitDistributionAt
     (P : Measure Ω) [IsProbabilityMeasure P]
     (c : ℝ) (L : Measure ℝ) : Prop :=
   AsymptoticStatistics.WeakConverges
-    (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+    (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map₀
       (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - c)))
     L
+
+/-- A measurable estimator sequence has the usual Mathlib pushforward limit law. -/
+theorem hasLimitDistributionAt_iff_map
+    (T_n : ∀ n, (Fin n → Ω) → ℝ)
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    (c : ℝ) (L : Measure ℝ) (hT : ∀ n, Measurable (T_n n)) :
+    HasLimitDistributionAt T_n P c L ↔
+      AsymptoticStatistics.WeakConverges
+        (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+          (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - c))) L := by
+  have hmaps : ∀ n : ℕ,
+      (Measure.pi (fun _ : Fin n => P)).map₀
+        (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - c)) =
+      (Measure.pi (fun _ : Fin n => P)).map
+        (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - c)) :=
+    fun n => Measure.map₀_of_measurable (by fun_prop)
+  simp only [HasLimitDistributionAt, hmaps]
 
 /-- A selected QMD path for every tangent direction, including the zero
 direction.
@@ -57,6 +75,8 @@ structure SelectedQMDPaths
     (P : Measure Ω) [IsProbabilityMeasure P]
     (T_set : TangentSpec P) where
   zero_mem : (0 : ↥(L2ZeroMean P)) ∈ T_set.carrier
+  /-- The QMD path through `P` selected for each tangent direction `g ∈ T_set.carrier`;
+  its score is `g` by `score_eq`. -/
   path : {g : ↥(L2ZeroMean P) // g ∈ T_set.carrier} →
     AsymptoticStatistics.Core.QMDPath.QMDPath P
   score_eq : ∀ g, (path g).score = (g : ↥(L2ZeroMean P))
@@ -74,7 +94,7 @@ def IsRegularAt
     AsymptoticStatistics.WeakConverges
       (fun n : ℕ =>
         (Measure.pi (fun _ : Fin n =>
-          (paths.path g).curve (a * (Real.sqrt n)⁻¹))).map
+          (paths.path g).curve (a * (Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X - ψ ((paths.path g).curve (a * (Real.sqrt n)⁻¹)))))

@@ -16,7 +16,8 @@ $I(X;Y) = H(X) + H(Y) - H(X,Y)$, where $H(X)$ and $H(Y)$ are the entropies of th
 The elementary properties proved here are:
 
 * nonnegativity $H(p) \ge 0$ for any pmf;
-* the maximal-entropy bound $H(p) \le \log |\mathcal{X}|$, with equality at the uniform distribution;
+* the maximal-entropy bound $H(p) \le \log |\mathcal{X}|$,
+  with equality at the uniform distribution;
 * "conditioning reduces entropy", $H(X \mid Y) \le H(X)$, equivalent to nonnegativity of the
   mutual information, $I(X;Y) \ge 0$ (equivalently subadditivity $H(X,Y) \le H(X) + H(Y)$).
 
@@ -32,8 +33,8 @@ standing "p is a probability distribution" assumption.
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4 (information-theoretic
 appendix): Definition 15.24 (Shannon entropy, Eq. (15.57)), Eq. (15.58) (discrete entropy),
 Definition 15.25 and Eq. (15.60b) (conditional entropy), Eq. (15.60d) (mutual information),
-Eq. (15.60a) (conditioning reduces entropy), Exercise 15.2 (nonnegativity and the $\log|\mathcal{X}|$
-bound).
+Eq. (15.60a) (conditioning reduces entropy), Exercise 15.2 (nonnegativity and the
+$\log|\mathcal{X}|$ bound).
 
 **Proof formalization notes.** The discrete entropy is expressed through Mathlib's
 `Real.negMulLog`, so $H(p) = \sum_i \mathrm{negMulLog}(p_i)$. Nonnegativity is termwise from
@@ -73,8 +74,8 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4, Def
 noncomputable def shannonEntropy {α : Type*} [MeasurableSpace α] (Q μ : Measure α) : ℝ :=
   -∫ x, Real.log ((Q.rnDeriv μ x).toReal) ∂Q
 
-/-- **Discrete Shannon entropy** (Wainwright Eq. (15.58)): `H(p) = −Σ p(x) log p(x) = Σ negMulLog(p x)`
-for a probability mass function `p` on a finite set.
+/-- **Discrete Shannon entropy** (Wainwright Eq. (15.58)):
+`H(p) = −Σ p(x) log p(x) = Σ negMulLog(p x)` for a probability mass function `p` on a finite set.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4, Eq. (15.58). -/

@@ -62,7 +62,7 @@ theorem bvmLocalPosterior_compl_ball [IsFiniteMeasure π] {n : ℕ}
   congr 1
   ext θ
   simp only [Set.mem_preimage, Set.mem_compl_iff, Metric.mem_ball, dist_zero_right, not_lt,
-    Set.mem_setOf_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+    Set.mem_ofPred_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
   rw [div_le_iff₀ hsq, mul_comm]
 
 /-- Fubini through the posterior disintegration `(κₙ ∘ₘ π) ⊗ₘ κₙ†π = (π ⊗ₘ κₙ).map swap`: the
@@ -165,7 +165,7 @@ private lemma tendsto_measure_ge_of_tendsto_lintegral {Ω : ℕ → Type*}
     have h2 := ENNReal.Tendsto.mul_const h (Or.inr (ENNReal.inv_ne_top.2 hε))
     rwa [zero_mul] at h2
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hb
-    (Eventually.of_forall fun n => zero_le _)
+    (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => meas_ge_le_lintegral_div (hg n).aemeasurable hε hε')
 
 /-- For a `[0,1]`-valued measurable statistic on a probability space the `ℝ≥0∞`-integral of
@@ -245,7 +245,7 @@ theorem posterior_mass_compl_ball_tendsto
   have hI1 : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
       = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
     intro n
-    haveI : IsProbabilityMeasure (productMeasure M μ θ₀ n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ₀ n) := by
       rw [hPeq θ₀ n]; infer_instance
     exact lintegral_ofReal_eq_ofReal_integral _ (hφ.measurable n)
       (fun ω => (hφ.mem_Icc n ω).1) (fun ω => (hφ.mem_Icc n ω).2)
@@ -255,7 +255,7 @@ theorem posterior_mass_compl_ball_tendsto
       ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(iidKernel κ n θ)
         ≤ ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) := by
     intro n hn θ hθ
-    haveI : IsProbabilityMeasure (productMeasure M μ θ n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ n) := by
       rw [hPeq θ n]; infer_instance
     rw [← hPeq θ n, lintegral_ofReal_eq_ofReal_integral _
       ((hφ.measurable n).const_sub 1)
@@ -276,7 +276,7 @@ theorem posterior_mass_compl_ball_tendsto
             {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω)} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have hone : ENNReal.ofReal (φ n ω) + ENNReal.ofReal (1 - φ n ω) = 1 := by
       rw [← ENNReal.ofReal_add (hφ.mem_Icc n ω).1
         (by linarith [(hφ.mem_Icc n ω).2])]
@@ -319,7 +319,7 @@ theorem posterior_mass_compl_ball_tendsto
         (Or.inr (ENNReal.inv_ne_top.2 hc₀.ne'))
       rwa [mul_zero] at h
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbnd0
-      (Eventually.of_forall fun n => zero_le _) ?_
+      (Eventually.of_forall fun n => zero_le) ?_
     filter_upwards [hball, eventually_ge_atTop (max N₀ 1)] with n hbn hn
     have hn1 : 1 ≤ n := le_of_max_le_right hn
     have hnR : (0 : ℝ) < n := by exact_mod_cast hn1
@@ -352,7 +352,7 @@ theorem posterior_mass_compl_ball_tendsto
             ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
               ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π) := mul_assoc _ _ _
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa using hS1.add hS2) (Eventually.of_forall fun n => zero_le _)
+    (by simpa using hS1.add hS2) (Eventually.of_forall fun n => zero_le)
     (Eventually.of_forall fun n => ?_)
   exact le_trans (measure_mono (hsub n)) (measure_union_le _ _)
 

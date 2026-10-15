@@ -47,15 +47,15 @@ omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 /-- On the treated arm the observed outcome is the treated potential outcome. -/
 theorem obs_eqOn_treated : Set.EqOn (obs Z y1 y0) y1 {ω | Z ω = true} := by
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω, if_true]
+  simp only [Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, ite_true]
 
 omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 /-- On the control arm the observed outcome is the control potential outcome. -/
 theorem obs_eqOn_control : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω, Bool.false_eq_true, if_false]
+  simp only [Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, Bool.false_eq_true, ite_false]
 
 /-! ### Private infrastructure
 
@@ -112,7 +112,7 @@ private theorem integral_cond_armCell_eq [IsProbabilityMeasure μ] {y : Ω → �
     (hindep : IndepFun y Z (μ[|cell X x])) (hcell : μ (cell X x) ≠ 0)
     (hpos : (μ[|cell X x]) {ω | Z ω = z} ≠ 0) :
     ∫ ω, y ω ∂(μ[|armCell Z X z x]) = ∫ ω, y ω ∂(μ[|cell X x]) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hintc : Integrable y (μ[|cell X x]) :=
     hint.restrict.smul_measure (ENNReal.inv_ne_top.mpr hcell)
   rw [cond_armCell_eq' hZ z x hcell]
@@ -206,7 +206,7 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ] [MeasurableSingleto
     simp [ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm true),
       ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm false)]
   · -- Both arms are non-null by positivity, so each arm mean is the cell mean.
-    haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+    have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
     obtain ⟨hlt0, hlt1⟩ := hpos x hcell
     have hT : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := by
       have := (ENNReal.toReal_pos_iff.mp hlt0).1

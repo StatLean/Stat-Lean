@@ -74,3 +74,14 @@ import StatLean.HypothesisTesting.Unbiased.MultiparamUMPU
 import StatLean.HypothesisTesting.Unbiased.OneParamTwoSided
 import StatLean.HypothesisTesting.Unbiased.PowerContinuity
 import StatLean.HypothesisTesting.Unbiased.SimilarityCompleteness
+
+/-!
+# HypothesisTesting — area umbrella
+
+Hypothesis testing: the Neyman–Pearson lemma, monotone likelihood ratio and uniformly most
+powerful tests, unbiasedness and Neyman structure, invariance and maximal invariants,
+likelihood-based tests, goodness-of-fit, randomization and permutation tests, and the bootstrap.
+
+**Reference.** E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer, 2022. Further sources are cited in the module docstrings.
+-/

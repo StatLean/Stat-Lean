@@ -16,15 +16,15 @@
     {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
-    {"id":"ENNReal.ofReal_nsmul","label":"ofReal_nsmul","full":"ENNReal.ofReal_nsmul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.ofReal_nsmul","label":"ofReal_nsmul","full":"ENNReal.ofReal_nsmul","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"StatLean.ConcentrationInequalities.isSubGaussian_iff","label":"isSubGaussian_iff","full":"StatLean.ConcentrationInequalities.isSubGaussian_iff","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Defs"},
     {"id":"ProbabilityTheory.HasSubgaussianMGF.measure_ge_le","label":"measure_ge_le","full":"ProbabilityTheory.HasSubgaussianMGF.measure_ge_le","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"MeasureTheory.measure_mono","label":"measure_mono","full":"MeasureTheory.measure_mono","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
-    {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
-    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"}
+    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.tail_max_le","target":"StatLean.ConcentrationInequalities.IsSubGaussian"},

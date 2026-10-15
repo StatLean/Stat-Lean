@@ -102,7 +102,7 @@ theorem mLocation_consistent
     refine (hlln ε hε).congr fun n => ?_
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq, EmpiricalProcess.empiricalAvg, mLocationScore]
+    simp only [Set.mem_ofPred_eq, EmpiricalProcess.empiricalAvg, mLocationScore]
     rw [show -((n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X (i : ℕ) ξ - θ)) - -(∫ x, ψ (x - θ) ∂P)
         = -((n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X (i : ℕ) ξ - θ) - ∫ x, ψ (x - θ) ∂P) from by ring,
       norm_neg]
@@ -112,7 +112,7 @@ theorem mLocation_consistent
     refine ((tendstoInMeasure_iff_norm.mp hnear) ε hε).congr fun n => ?_
     congr 1
     ext ξ
-    simp only [Set.mem_setOf_eq, sub_zero, norm_neg]
+    simp only [Set.mem_ofPred_eq, sub_zero, norm_neg]
   · exact fun θ hθ => neg_lt_zero.mpr (hsign_lt θ hθ)
   · exact fun θ hθ => neg_pos.mpr (hsign_gt θ hθ)
 
@@ -204,7 +204,7 @@ private theorem hasDerivAt_mLocationScore_huber_aux
   -- the atom hypotheses enter.
   have hnull : P {x : ℝ | |x - θ₀| = c} = 0 := by
     refine measure_mono_null (fun x hx => ?_) (measure_union_null h_atom_add h_atom_sub)
-    simp only [Set.mem_setOf_eq] at hx
+    simp only [Set.mem_ofPred_eq] at hx
     have : x = θ₀ + c ∨ x = θ₀ - c := by
       rcases (abs_eq hc.le).mp hx with h | h
       · exact Or.inl (by linarith)
@@ -374,7 +374,7 @@ theorem huberLocation_asymptoticNormal
       Measurable (huberPsiFin1 c θ j) := fun θ j =>
     (huberPsi_continuous c).measurable.comp (measurable_id.sub_const _)
   have hrootE : ∀ h : Fin 1, ∫ x, huberPsiFin1 c (packFin1 θ₀) h x ∂P = 0 := by
-    intro h; simpa [huberPsiFin1] using hroot
+    intro h; simpa [huberPsiFin1] using! hroot
   -- ==========================================================================
   -- (2) The Fréchet condition, from the derivative of the population score.
   -- ==========================================================================
@@ -416,7 +416,7 @@ theorem huberLocation_asymptoticNormal
   -- ==========================================================================
   have hpsiVec_meas : Measurable (EmpiricalProcess.psiVec (huberPsiFin1 c) (packFin1 θ₀)) := by
     refine (MeasurableEquiv.toLp 2 (Fin 1 → ℝ)).measurable.comp ?_
-    exact measurable_pi_lambda _ fun _ => hψmeasE _ _
+    exact Measurable.of_eval fun _ => hψmeasE _ _
   have hL2 : MemLp (EmpiricalProcess.psiVec (huberPsiFin1 c) (packFin1 θ₀)) 2 P := by
     refine MemLp.of_bound hpsiVec_meas.aestronglyMeasurable c
       (Filter.Eventually.of_forall fun x => ?_)
@@ -432,7 +432,7 @@ theorem huberLocation_asymptoticNormal
       (fun p : Ξ × ℝ => huberPsiFin1 c
         (packFin1 (θhat n (fun i : Fin n => X i.val p.1))) h p.2) := by
     intro n h
-    simpa [huberPsiFin1, packFin1] using
+    simpa [huberPsiFin1, packFin1] using!
       (huberPsi_continuous c).measurable.comp
         (measurable_snd.sub ((hθhat_meas n).comp measurable_fst))
   have hcons : ∀ ε : ℝ, 0 < ε →
@@ -440,9 +440,9 @@ theorem huberLocation_asymptoticNormal
         - packFin1 θ₀‖}) atTop (𝓝 0) := by
     intro ε hε
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h_consist ε hε)
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => measure_mono ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => measure_mono ?_)
     intro ξ hξ
-    simp only [Set.mem_setOf_eq, hcoord_sub] at hξ ⊢
+    simp only [Set.mem_ofPred_eq, hcoord_sub] at hξ ⊢
     exact hξ.le
   have hest : EmpiricalProcess.TendstoZeroInOuterProbSup μ (fun n ξ h =>
       Real.sqrt n * EmpiricalProcess.empiricalAvg
@@ -451,12 +451,12 @@ theorem huberLocation_asymptoticNormal
     intro ε hε
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       ((tendstoInMeasure_iff_norm.mp h_est_eq) ε hε)
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine le_trans (EmpiricalProcess.outerMeasureStar_mono μ ?_)
       (EmpiricalProcess.outerMeasureStar_le_measure μ _)
     intro ξ hξ
     obtain ⟨_h, hh⟩ := hξ
-    simp only [Set.mem_setOf_eq, Real.norm_eq_abs, sub_zero,
+    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, sub_zero,
       EmpiricalProcess.empiricalAvg, huberPsiFin1, packFin1_apply] at hh ⊢
     exact hh.le
   -- ==========================================================================

@@ -42,19 +42,19 @@ theorem hasGaussianLaw_of_centered_tendsto_L2
     norm_cast
   suffices hChar : ∀ t : ℝ, charFun (μ.map (Z : S → ℝ)) t =
       Complex.exp (((-(‖Z‖ ^ 2 * t ^ 2) / 2 : ℝ) : ℂ)) by
-    refine ⟨isGaussian_iff_gaussian_charFun.mpr
+    refine ⟨hZmeas, isGaussian_iff_gaussian_charFun.mpr
       ⟨0, ‖Z‖ ^ 2 • ContinuousLinearMap.mul ℝ ℝ,
         ⟨⟨fun x y => ?_⟩, ⟨fun x => ?_⟩⟩, ?_⟩⟩
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       ring
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       exact mul_nonneg (sq_nonneg _) (mul_self_nonneg x)
     · intro t
       rw [hChar t]
       congr 1
-      simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
+      simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
         inner_zero_right]
       push_cast
       ring
@@ -108,7 +108,7 @@ theorem hasGaussianLaw_of_forall_dual
     (hX : Measurable X)
     (hdual : ∀ L : StrongDual ℝ E, HasGaussianLaw (L ∘ X) μ) :
     HasGaussianLaw X μ := by
-  refine ⟨⟨fun L => ?_⟩⟩
+  refine ⟨hX.aemeasurable, ⟨fun L => ?_⟩⟩
   have hL := (hdual L).isGaussian_map.map_eq_gaussianReal
     (ContinuousLinearMap.id ℝ ℝ)
   rw [Measure.map_map L.continuous.measurable hX]
@@ -134,10 +134,10 @@ theorem hasGaussianLaw_comp_measurePreserving
     {μ : Measure S} {ρ : Measure A} {T : S → A} {X : A → E}
     (hX : HasGaussianLaw X ρ) (hT : MeasurePreserving T μ ρ) :
     HasGaussianLaw (X ∘ T) μ := by
-  refine ⟨?_⟩
   have hXmap : AEMeasurable X (μ.map T) := by
     rw [hT.map_eq]
     exact hX.aemeasurable
+  refine ⟨hXmap.comp_aemeasurable hT.measurable.aemeasurable, ?_⟩
   rw [← AEMeasurable.map_map_of_aemeasurable
       hXmap hT.measurable.aemeasurable, hT.map_eq]
   exact hX.isGaussian_map

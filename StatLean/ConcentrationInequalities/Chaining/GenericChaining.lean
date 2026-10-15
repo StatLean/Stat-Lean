@@ -47,6 +47,8 @@ matching lower bound (the majorizing measure theorem) is not formalized
 here.
 -/
 
+set_option linter.style.longFile 1700
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal BigOperators
 
@@ -99,7 +101,7 @@ private lemma biSup_le_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
   refine Real.iSup_le (fun s => ?_) hc
   by_cases hs : s ∈ T
   · rw [ciSup_pos hs]; exact h s hs
-  · haveI : IsEmpty (s ∈ T) := ⟨hs⟩
+  · have : IsEmpty (s ∈ T) := ⟨hs⟩
     rw [Real.iSup_of_isEmpty]; exact hc
 
 /-- Exponential geometric tail `∑_{k<n} exp(-(k+1)) ≤ 1`, via `exp(-1) ≤ 1/2`. -/
@@ -191,11 +193,11 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
     rw [hthr0]
     have hnull : μ {ω | (0 : ℝ) < ⨆ t ∈ T, |X t ω - X t₀ ω|} = 0 := by
       refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp hallz)
-      simp only [Set.mem_setOf_eq, not_le]; exact hω
-    rw [hnull]; exact zero_le _
+      simp only [Set.mem_ofPred_eq, not_le]; exact hω
+    rw [hnull]; exact zero_le
   · -- Main case: K > 0.
     have hKpos : (0 : ℝ) < (K : ℝ) := by
-      have : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le K) (Ne.symm hK0)
+      have : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le (a := K)) (Ne.symm hK0)
       exact_mod_cast this
     set thr : ℝ := (12 + 4 * u) * (K : ℝ) * G with hthr
     -- Number of chaining levels: past `n` every point has a net point at distance 0.
@@ -269,13 +271,13 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
           filter_upwards [haez] with ω hω; exact hω
         have hnull : μ {ω | (K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|} = 0 := by
           refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp haene)
-          simp only [Set.mem_setOf_eq] at hω ⊢
+          simp only [Set.mem_ofPred_eq] at hω ⊢
           intro h0
           rw [h0, abs_zero] at hω
           have : (0 : ℝ) ≤ (K : ℝ) * dist p.1 p.2 * s k :=
             mul_nonneg (mul_nonneg hKpos.le dist_nonneg) (hs_nn k)
           linarith
-        rw [hnull]; exact zero_le _
+        rw [hnull]; exact zero_le
       · -- non-degenerate: B1 tail with an exact exponent.
         have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
         have hKd : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
@@ -285,7 +287,7 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
           hp2T hp1T hKd hτ0
         have hsub01 : {ω | (K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|}
             ⊆ {ω | (K : ℝ) * dist p.1 p.2 * s k ≤ |X p.1 ω - X p.2 ω|} := by
-          intro ω h; simp only [Set.mem_setOf_eq] at h ⊢; exact le_of_lt h
+          intro ω h; simp only [Set.mem_ofPred_eq] at h ⊢; exact le_of_lt h
         refine le_trans (measure_mono hsub01) (le_trans htail ?_)
         apply ENNReal.ofReal_le_ofReal
         apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
@@ -460,13 +462,16 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
                       * ((∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
                         + (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))))
                     = (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) := by
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq k))) := by
                   ring
                 rw [hstep]
                 calc (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
                         * (∑ k ∈ Finset.range n, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)))
                     ≤ (L₆ + 1) * (G + Real.sqrt 2 * G) := mul_le_mul_of_nonneg_left hb hL1nn
@@ -496,12 +501,13 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
         exact chain_telescope (fun i => X (netProj (A.seq i) t) ω)
       have hpb : ∀ k ∈ Finset.range n,
           |X (netProj (A.seq (k + 1)) t) ω - X (netProj (A.seq k) t) ω|
-            ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k)) * s k := by
+            ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) +
+                Metric.infDist t ↑(A.seq k)) * s k := by
         intro k hk
         have hpair_mem : (netProj (A.seq (k + 1)) t, netProj (A.seq k) t) ∈ PS k := by
           rw [hPSdef, Finset.mem_product]; exact ⟨hprojmem (k + 1) t, hprojmem k t⟩
         have hnot := hnb k hk _ hpair_mem
-        push_neg at hnot
+        push Not at hnot
         have hdle : dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t)
             ≤ Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k) := by
           calc dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t)
@@ -513,7 +519,8 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
                 add_le_add (hprojdist (k + 1) t) (hprojdist k t)
         calc |X (netProj (A.seq (k + 1)) t) ω - X (netProj (A.seq k) t) ω|
             ≤ (K : ℝ) * dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t) * s k := hnot
-          _ ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k)) * s k := by
+          _ ≤ (K : ℝ) * (Metric.infDist t ↑(A.seq (k + 1)) +
+              Metric.infDist t ↑(A.seq k)) * s k := by
               apply mul_le_mul_of_nonneg_right _ (hs_nn k)
               exact mul_le_mul_of_nonneg_left hdle hKpos.le
       calc |X t ω - X a₀ ω|
@@ -576,11 +583,11 @@ theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T 
     have hincl : {ω | thr < ⨆ t ∈ T, |X t ω - X t₀ ω|}
         ⊆ BAD ∪ {ω | ¬ (∀ t ∈ T, X (netProj (A.seq n) t) ω = X t ω)} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       by_contra hcon
       rw [Set.mem_union, not_or] at hcon
       obtain ⟨hnBAD, hnclean⟩ := hcon
-      simp only [Set.mem_setOf_eq, not_not] at hnclean
+      simp only [Set.mem_ofPred_eq, not_not] at hnclean
       have hnb : ∀ k ∈ Finset.range n, ∀ p ∈ PS k,
           ¬ ((K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|) := by
         intro k hk p hp hlt
@@ -670,7 +677,7 @@ theorem generic_chaining_of_admissible_of_finite {X : E → Ω → ℝ} {K : ℝ
               < ⨆ t ∈ T, |X t ω - X t₀ ω|}
             = {ω | (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal
               < ⨆ t ∈ T, |X t ω - X t₀ ω|} := by
-          ext ω; simp only [Set.mem_setOf_eq, hthr]
+          ext ω; simp only [Set.mem_ofPred_eq, hthr]
         rw [hset]; exact hval
       have hInt : ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
           ≤ 12 * (K : ℝ) * (gammaFunctional A).toReal
@@ -738,7 +745,7 @@ theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
       (fun t ht => ((hmeas t ht).sub (hmeas t₀ ht₀)).abs)
   -- Integrability of the increment sup via domination by a finite sum.
   have hSumInt : Integrable (fun ω => ∑ t ∈ hfin.toFinset, |X t ω - X t₀ ω|) μ :=
-    integrable_finset_sum _
+    integrable_finsetSum _
       (fun t ht => ((hint t (hfin.mem_toFinset.mp ht)).sub (hint t₀ ht₀)).abs)
   have hWint : Integrable (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) μ := by
     refine Integrable.mono' hSumInt hWm.aestronglyMeasurable
@@ -766,7 +773,7 @@ theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
       linarith
     rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
   refine le_trans (ENNReal.ofReal_le_ofReal hred) ?_
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T
       = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by
@@ -886,10 +893,10 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     rw [hthr0]
     have hnull : μ {ω | (0 : ℝ) < F.sup' hFne (fun t => |X t ω - X t₀ ω|)} = 0 := by
       refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp hallz)
-      simp only [Set.mem_setOf_eq, not_le]; exact hω
-    rw [hnull]; exact zero_le _
+      simp only [Set.mem_ofPred_eq, not_le]; exact hω
+    rw [hnull]; exact zero_le
   · -- Main case: K > 0.
-    have hKnn : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le K) (Ne.symm hK0)
+    have hKnn : (0 : ℝ≥0) < K := lt_of_le_of_ne (zero_le (a := K)) (Ne.symm hK0)
     have hKpos : (0 : ℝ) < (K : ℝ) := by exact_mod_cast hKnn
     set thr : ℝ := (12 + 4 * u) * (K : ℝ) * G with hthr
     -- Projections onto the admissible levels.
@@ -950,13 +957,13 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           filter_upwards [haez] with ω hω; exact hω
         have hnull : μ {ω | (K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|} = 0 := by
           refine measure_mono_null (fun ω hω => ?_) (ae_iff.mp haene)
-          simp only [Set.mem_setOf_eq] at hω ⊢
+          simp only [Set.mem_ofPred_eq] at hω ⊢
           intro h0
           rw [h0, abs_zero] at hω
           have : (0 : ℝ) ≤ (K : ℝ) * dist p.1 p.2 * s k :=
             mul_nonneg (mul_nonneg hKpos.le dist_nonneg) (hs_nn k)
           linarith
-        rw [hnull]; exact zero_le _
+        rw [hnull]; exact zero_le
       · have hdpos' : 0 < dist p.2 p.1 := by rw [dist_comm]; exact hdpos
         have hKd : 0 < (K : ℝ) * dist p.2 p.1 := mul_pos hKpos hdpos'
         have hτ0 : 0 ≤ (K : ℝ) * dist p.1 p.2 * s k :=
@@ -965,7 +972,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           hp2T hp1T hKd hτ0
         have hsub01 : {ω | (K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|}
             ⊆ {ω | (K : ℝ) * dist p.1 p.2 * s k ≤ |X p.1 ω - X p.2 ω|} := by
-          intro ω h; simp only [Set.mem_setOf_eq] at h ⊢; exact le_of_lt h
+          intro ω h; simp only [Set.mem_ofPred_eq] at h ⊢; exact le_of_lt h
         refine le_trans (measure_mono hsub01) (le_trans htail ?_)
         apply ENNReal.ofReal_le_ofReal
         apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 2)
@@ -1137,13 +1144,16 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
                       * ((∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
                         + (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))))
                     = (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) := by
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq k))) := by
                   ring
                 rw [hstep]
                 calc (L₆ + 1) * (Real.sqrt 2
-                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq (k + 1)))
+                        * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k *
+                            Metric.infDist t ↑(A.seq (k + 1)))
                       + Real.sqrt 2
                         * (∑ k ∈ Finset.range m, Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)))
                     ≤ (L₆ + 1) * (G + Real.sqrt 2 * G) := mul_le_mul_of_nonneg_left hb hL1nn
@@ -1181,7 +1191,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         have hpair_mem : (netProj (A.seq (k + 1)) t, netProj (A.seq k) t) ∈ PS k := by
           rw [hPSdef, Finset.mem_product]; exact ⟨hprojmem (k + 1) t, hprojmem k t⟩
         have hnot := hnb k hk _ hpair_mem
-        push_neg at hnot
+        push Not at hnot
         have hdle : dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t)
             ≤ Metric.infDist t ↑(A.seq (k + 1)) + Metric.infDist t ↑(A.seq k) := by
           calc dist (netProj (A.seq (k + 1)) t) (netProj (A.seq k) t)
@@ -1254,7 +1264,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hδnn : ∀ m, 0 ≤ δ m := fun m => (hδpos m).le
     have hεanti : Antitone ε := by
       intro a b hab
-      show (G + 1) * r ^ b ≤ (G + 1) * r ^ a
+      change (G + 1) * r ^ b ≤ (G + 1) * r ^ a
       exact mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hr0.le hr1.le hab)
         (by linarith [hG0])
     have hδanti : Antitone δ := fun a b hab => Real.sqrt_le_sqrt (hεanti hab)
@@ -1270,7 +1280,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hxeq : ∀ m, -(δ m) ^ 2 / ((K : ℝ) * ε m) ^ 2 = -(1 / ((K : ℝ) ^ 2 * ε m)) := by
       intro m
       have hδsq : (δ m) ^ 2 = ε m := by
-        show Real.sqrt (ε m) ^ 2 = ε m
+        change Real.sqrt (ε m) ^ 2 = ε m
         exact Real.sq_sqrt (hεpos m).le
       have hpos : (δ m) ^ 2 / ((K : ℝ) * ε m) ^ 2 = 1 / ((K : ℝ) ^ 2 * ε m) := by
         rw [hδsq, mul_pow]
@@ -1332,7 +1342,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       have hincl : {ω | thr + 2 * δ m < F.sup' hFne (fun t => |X t ω - X t₀ ω|)}
           ⊆ BAD ∪ RES := by
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_contra hcon
         rw [Set.mem_union, not_or] at hcon
         obtain ⟨hnBAD, hnRES⟩ := hcon
@@ -1341,7 +1351,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           intro k hk p hp hlt
           exact hnBAD (by rw [hBADdef]; exact Set.mem_biUnion hk (Set.mem_biUnion hp hlt))
         have hRle : F'.sup' hF'ne (fun t => |X t ω - X (netProj (A.seq m) t) ω|) ≤ δ m := by
-          rw [hRESdef, Set.mem_setOf_eq, not_lt] at hnRES; exact hnRES
+          rw [hRESdef, Set.mem_ofPred_eq, not_lt] at hnRES; exact hnRES
         have hresF' : ∀ t ∈ F', |X t ω - X (netProj (A.seq m) t) ω| ≤ δ m := fun t ht =>
           le_trans (Finset.le_sup' (fun t => |X t ω - X (netProj (A.seq m) t) ω|) ht) hRle
         have hle : F.sup' hFne (fun t => |X t ω - X t₀ ω|) ≤ thr + 2 * δ m := by
@@ -1383,12 +1393,12 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hSmono : Monotone S := by
       intro a b hab ω hω
       rw [hSdef] at hω ⊢
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       have : thr + 2 * δ b ≤ thr + 2 * δ a := by linarith [hδanti hab]
       linarith [hω]
     have hUnion : (⋃ m, S m) = {ω | thr < F.sup' hFne (fun t => |X t ω - X t₀ ω|)} := by
       ext ω
-      simp only [Set.mem_iUnion, hSdef, Set.mem_setOf_eq]
+      simp only [Set.mem_iUnion, hSdef, Set.mem_ofPred_eq]
       constructor
       · rintro ⟨m, hm⟩; linarith [hδpos m]
       · intro hlt
@@ -1495,7 +1505,7 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
               < F.sup' hFne (fun t => |X t ω - X t₀ ω|)}
             = {ω | (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal
               < F.sup' hFne (fun t => |X t ω - X t₀ ω|)} := by
-          ext ω; simp only [Set.mem_setOf_eq, hthr]
+          ext ω; simp only [Set.mem_ofPred_eq, hthr]
         rw [hset]; exact hval
       have hInt : ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ
           ≤ 12 * (K : ℝ) * (gammaFunctional A).toReal
@@ -1574,7 +1584,7 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       linarith
     rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
   refine le_trans (ENNReal.ofReal_le_ofReal hred) ?_
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T
       = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by

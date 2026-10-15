@@ -113,7 +113,7 @@ private lemma marginFeasible_eq_iInter {x : Fin n → E} {lab : Fin n → ℝ}
       ⋂ (i : Fin n) (j : Fin n) (_ : lab i < 0) (_ : 0 < lab j),
         {v : E | ⟪x i, v⟫ - 1 / lab i ≤ ⟪x j, v⟫ - 1 / lab j} := by
   ext v
-  simp only [Set.mem_iInter, Set.mem_setOf_eq]
+  simp only [Set.mem_iInter, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨c, hc⟩ i j hi hj
     exact le_trans (bound_le_of_neg hi (hc i)) (le_bound_of_pos hj (hc j))
@@ -240,7 +240,7 @@ theorem min_norm_marginFeasible_mem_span [CompleteSpace E] {x : Fin n → E}
     (hw : w ∈ marginFeasible x lab)
     (hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖) :
     w ∈ Submodule.span ℝ (Set.range x) := by
-  haveI : FiniteDimensional ℝ (Submodule.span ℝ (Set.range x)) :=
+  have : FiniteDimensional ℝ (Submodule.span ℝ (Set.range x)) :=
     FiniteDimensional.span_of_finite ℝ (Set.finite_range x)
   set M : Submodule ℝ E := Submodule.span ℝ (Set.range x) with hM
   have hxM : ∀ i, x i ∈ M := fun i => Submodule.subset_span ⟨i, rfl⟩
@@ -264,7 +264,7 @@ both cases every data point is at `Metric.infDist` zero from it.
 
 private lemma le_dataMargin {x : Fin n → E} (hn : 0 < n) {v : E} {c a : ℝ}
     (h : ∀ i, a ≤ Metric.infDist (x i) (hyperplane v c)) : a ≤ dataMargin x v c := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
   exact le_ciInf h
 
 private lemma dataMargin_le (x : Fin n → E) (v : E) (c : ℝ) (i : Fin n) :
@@ -273,7 +273,7 @@ private lemma dataMargin_le (x : Fin n → E) (v : E) (c : ℝ) (i : Fin n) :
 
 private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
     dataMargin x (0 : E) c = 0 := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
   have hzero : ∀ i, Metric.infDist (x i) (hyperplane (0 : E) c) = 0 := by
     intro i
     by_cases hc : c = 0
@@ -283,7 +283,7 @@ private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
       exact Metric.infDist_zero_of_mem (Set.mem_univ _)
     · have hset : hyperplane (0 : E) c = ∅ := by
         ext y
-        simp only [hyperplane, Set.mem_setOf_eq, inner_zero_right,
+        simp only [hyperplane, Set.mem_ofPred_eq, inner_zero_right,
           Set.mem_empty_iff_false, iff_false]
         exact fun h => hc h.symm
       rw [hset, Metric.infDist_empty]

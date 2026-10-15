@@ -117,7 +117,7 @@ lemma exists_measurable_surrogate_of_measurableSet
     · exact hf₀_F
   · intro ξ hξ
     change (if fhat ξ ∈ F then fhat ξ else f₀) = fhat ξ
-    rw [if_pos hξ]
+    rw [ite_eq_left hξ]
 
 /-- **Measurable surrogate construction — closure-predicate flavour.**
 
@@ -210,7 +210,7 @@ spaces where this is automatic). -/
 theorem vw_polish_l2_space (P : Measure Ω) [IsProbabilityMeasure P]
     [MeasurableSpace.CountablyGenerated Ω] :
     SecondCountableTopology (Lp ℝ 2 P) := by
-  haveI : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
+  have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
   exact inferInstance
 
 /-- **Closed L²-subset is Borel.**
@@ -268,18 +268,18 @@ theorem vw_random_function_lp_locus_measurable
   have h_set_eq :
       {ξ | MemLp (fhat ξ) 2 P} = ψ ⁻¹' {a : ℝ≥0∞ | a < ∞} := by
     ext ξ
-    simp only [Set.mem_setOf_eq, Set.mem_preimage, ψ]
-    refine ⟨fun hξ => ?_, fun hξ => ⟨h_ae_sm ξ, ?_⟩⟩
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, ψ]
+    refine ⟨fun hξ => ?_, fun hξ => ?_⟩
     · have h_sq := eLpNorm_nnreal_pow_eq_lintegral (f := fhat ξ) (μ := P)
-        (p := (2 : ℝ≥0)) (by norm_num)
+        (p := (2 : ℝ≥0)) (by norm_num) (h_ae_sm ξ)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
       rw [← h_sq]
-      exact ENNReal.rpow_lt_top_of_nonneg (by norm_num : (0 : ℝ) ≤ 2) hξ.2.ne
+      exact ENNReal.rpow_lt_top_of_nonneg (by norm_num : (0 : ℝ) ≤ 2) hξ.ne
     · -- Goal: eLpNorm (fhat ξ) 2 P < ⊤
       have h_sq := eLpNorm_nnreal_pow_eq_lintegral (f := fhat ξ) (μ := P)
-        (p := (2 : ℝ≥0)) (by norm_num)
+        (p := (2 : ℝ≥0)) (by norm_num) (h_ae_sm ξ)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
@@ -378,9 +378,9 @@ theorem vw_random_function_lp_lift_inner_measurable
     ∃ Φ : Ξ → Lp ℝ 2 P, Measurable Φ ∧
       ∀ ξ (h : MemLp (fhat ξ) 2 P), Φ ξ = MemLp.toLp (fhat ξ) h := by
   classical
-  haveI : SecondCountableTopology (Lp ℝ 2 P) := vw_polish_l2_space P
+  have : SecondCountableTopology (Lp ℝ 2 P) := vw_polish_l2_space P
   refine ⟨fun ξ => if h : MemLp (fhat ξ) 2 P then MemLp.toLp (fhat ξ) h else 0,
-    ?_, fun ξ h => dif_pos h⟩
+    ?_, fun ξ h => dite_eq_left h⟩
   -- Measurability via pointwise distance criterion.
   apply measurable_of_pointwise_dist_measurable
   intro g
@@ -414,7 +414,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       rw [Set.piecewise_eq_of_mem _ _ _ hξ_mem]
       have h_Φ : (if h : MemLp (fhat ξ) 2 P
             then MemLp.toLp (fhat ξ) h else (0 : Lp ℝ 2 P))
-          = MemLp.toLp (fhat ξ) hξ := dif_pos hξ
+          = MemLp.toLp (fhat ξ) hξ := dite_eq_left hξ
       rw [h_Φ, Lp.dist_def]
       have h_eLpNorm_ae : eLpNorm (⇑(MemLp.toLp (fhat ξ) hξ) - ⇑g) 2 P
           = eLpNorm (fhat ξ - ⇑g) 2 P := by
@@ -425,6 +425,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       -- Relate `eLpNorm (fhat ξ - ⇑g) 2 P` to `(ψ ξ)^(1/2)`.
       have h_sq := eLpNorm_nnreal_pow_eq_lintegral
         (f := fhat ξ - ⇑g) (μ := P) (p := (2 : ℝ≥0)) (by norm_num)
+        (hξ.aestronglyMeasurable.sub (Lp.memLp g).aestronglyMeasurable)
       have hp_cast : ((2 : ℝ≥0) : ℝ≥0∞) = (2 : ℝ≥0∞) := by norm_num
       have hp_real : ((2 : ℝ≥0) : ℝ) = (2 : ℝ) := by norm_num
       rw [hp_cast, hp_real] at h_sq
@@ -439,7 +440,7 @@ theorem vw_random_function_lp_lift_inner_measurable
       rw [Set.piecewise_eq_of_notMem _ _ _ hξ_nmem]
       have h_Φ : (if h : MemLp (fhat ξ) 2 P
             then MemLp.toLp (fhat ξ) h else (0 : Lp ℝ 2 P))
-          = 0 := dif_neg hξ
+          = 0 := dite_eq_right hξ
       rw [h_Φ, dist_zero_left]
   rw [h_dist_eq]
   exact Measurable.piecewise h_locus_meas h_locus_branch h_complement_branch
@@ -562,7 +563,7 @@ theorem vw_function_class_l2_image_closed
     -- Translate via toReal and the helper.
     have h_sub_lp : MemLp (⇑(gn n) - ⇑g) 2 P :=
       (Lp.memLp (gn n)).sub hg_lp
-    have h_eLpNorm_lt_top : eLpNorm (⇑(gn n) - ⇑g) 2 P < ⊤ := h_sub_lp.2
+    have h_eLpNorm_lt_top : eLpNorm (⇑(gn n) - ⇑g) 2 P < ⊤ := h_sub_lp
     have h_toReal_lt : (eLpNorm (⇑(gn n) - ⇑g) 2 P).toReal < Real.sqrt ε := by
       rw [← ENNReal.toReal_ofReal (Real.sqrt_nonneg ε)]
       exact (ENNReal.toReal_lt_toReal h_eLpNorm_lt_top.ne ENNReal.ofReal_ne_top).mpr hn
@@ -632,8 +633,8 @@ theorem vw_l2_class_event_measurable
     (h_meas : Measurable (Function.uncurry fhat)) :
     MeasurableSet {ξ | ∃ f ∈ F, ∀ᵐ x ∂P, fhat ξ x = f x} := by
   -- Equip `Lp ℝ 2 P` with the Borel σ-algebra (Polish via `vw_polish_l2_space`).
-  letI : MeasurableSpace (Lp ℝ 2 P) := borel (Lp ℝ 2 P)
-  haveI : BorelSpace (Lp ℝ 2 P) := ⟨rfl⟩
+  let : MeasurableSpace (Lp ℝ 2 P) := borel (Lp ℝ 2 P)
+  have : BorelSpace (Lp ℝ 2 P) := ⟨rfl⟩
   -- from the jointly measurable random function, with the L²-locus
   -- `S ⊆ Ξ` measurable and `Φ ξ = MemLp.toLp (fhat ξ) h` on `S`.
   obtain ⟨Φ, S, hΦ_meas, hS_meas, hS_iff, hΦ_eq⟩ :=

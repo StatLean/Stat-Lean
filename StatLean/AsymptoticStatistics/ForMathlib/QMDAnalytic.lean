@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.ForMathlib.L2
 import Mathlib.MeasureTheory.Function.L2Space
@@ -44,8 +45,27 @@ noncomputable def qmdRem (curve : ℝ → Measure Ω) (μ : Measure Ω)
 as `t → 0` along `𝓝[≠] 0`. We give it a name to avoid repeating the
 nine-line spelling at every call site. -/
 def IsQMDLimit (curve : ℝ → Measure Ω) (μ : Measure Ω) (g : Ω → ℝ) : Prop :=
-  Tendsto (fun t : ℝ => eLpNorm (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
+  Tendsto (fun t : ℝ => eLpNorm' (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
     (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞))
+
+/-- For an a.e. strongly measurable score, the QMD limit can be stated with `eLpNorm`. -/
+lemma isQMDLimit_iff_eLpNorm {curve : ℝ → Measure Ω} {μ : Measure Ω} {g : Ω → ℝ}
+    (hg : AEStronglyMeasurable g μ) :
+    IsQMDLimit curve μ g ↔
+      Tendsto (fun t : ℝ => eLpNorm (qmdRem curve μ g t) 2 μ / ENNReal.ofReal |t|)
+        (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+  unfold IsQMDLimit
+  apply tendsto_congr
+  intro t
+  have hp := ((Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have ht := ((Measure.measurable_rnDeriv (curve t) μ).ennreal_toReal.sqrt).aestronglyMeasurable
+      (μ := μ)
+  have hr : AEStronglyMeasurable (qmdRem curve μ g t) μ := by
+    simpa only [qmdRem, Pi.sub_apply, Pi.mul_apply] using!
+      (ht.sub hp).sub ((hg.const_mul (t / 2)).mul hp)
+  rw [eLpNorm_two_eq_eLpNorm' hr]
+
 
 /-- Probability constraint ⇒ `‖√p_t‖_{L²(μ)} = 1` (more precisely the
 squared `L²` norm equals 1). Companion to
@@ -95,7 +115,8 @@ private lemma integral_qmdRem_mul_sqrt_p0_isLittleO
         |∫ ω, qmdRem curve μ g t ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal ∂μ|
           / |t|)
       (𝓝[≠] 0) (𝓝 0) := by
-  haveI : IsProbabilityMeasure (curve 0) := h_prob 0
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).1 h_qmd
+  have : IsProbabilityMeasure (curve 0) := h_prob 0
   -- L²(μ)-membership of `√p_0`, with squared L²-norm = 1.
   have hp0_memLp : MemLp (fun ω => Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac 0)
@@ -148,7 +169,7 @@ private lemma integral_qmdRem_mul_sqrt_p0_isLittleO
         ((Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt))).sub
         ((measurable_const.mul hg_meas).mul
           (Measure.measurable_rnDeriv (curve 0) μ).ennreal_toReal.sqrt)
-    exact ⟨hr_meas.aestronglyMeasurable, lt_trans h_eLp_lt ENNReal.ofReal_lt_top⟩
+    exact lt_trans h_eLp_lt ENNReal.ofReal_lt_top
   -- The pointwise bound `|∫ r_t · √p_0| ≤ (eLpNorm r_t).toReal`.
   have h_bound : ∀ᶠ t in 𝓝[≠] (0 : ℝ),
       |∫ ω, qmdRem curve μ g t ω
@@ -183,8 +204,8 @@ private lemma integral_sqrt_pt_sqrt_p0_le_one
     (h_ac : ∀ t, curve t ≪ μ) (t : ℝ) :
     ∫ ω, Real.sqrt ((curve t).rnDeriv μ ω).toReal
         * Real.sqrt ((curve 0).rnDeriv μ ω).toReal ∂μ ≤ 1 := by
-  haveI : IsProbabilityMeasure (curve t) := h_prob t
-  haveI : IsProbabilityMeasure (curve 0) := h_prob 0
+  have : IsProbabilityMeasure (curve t) := h_prob t
+  have : IsProbabilityMeasure (curve 0) := h_prob 0
   have hpt : MemLp (fun ω => Real.sqrt ((curve t).rnDeriv μ ω).toReal) 2 μ :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac t)
   have hp0 : MemLp (fun ω => Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
@@ -221,6 +242,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
     {g : Ω → ℝ} (hg_meas : Measurable g)
     (h_qmd : IsQMDLimit curve μ g) :
     MemLp (fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ := by
+  have h_qmd := (isQMDLimit_iff_eLpNorm hg_meas.aestronglyMeasurable).1 h_qmd
   set f : Ω → ℝ := fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal
     with hf_def
   -- Measurability ingredients (reused throughout).
@@ -229,7 +251,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
     (Measure.measurable_rnDeriv (curve t) μ).ennreal_toReal.sqrt
   have hf_meas : Measurable f := hg_meas.mul (h_pt_meas 0)
   -- L²(μ) memberships of `√p_0` and (after picking t) `√p_t`.
-  haveI : IsProbabilityMeasure (curve 0) := h_prob 0
+  have : IsProbabilityMeasure (curve 0) := h_prob 0
   have hp0_memLp : MemLp (fun ω => Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac 0)
   -- Step 1: extract a specific `t ≠ 0` with `eLpNorm r_t 2 μ < ENNReal.ofReal |t|`.
@@ -258,7 +280,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
     obtain ⟨t, ht⟩ := h_combined.exists
     exact ⟨t, ht.1, ht.2⟩
   -- Set up the `t`-dependent `L²(μ)` ingredients.
-  haveI : IsProbabilityMeasure (curve t) := h_prob t
+  have : IsProbabilityMeasure (curve t) := h_prob t
   have hpt_memLp : MemLp (fun ω => Real.sqrt ((curve t).rnDeriv μ ω).toReal) 2 μ :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac t)
   -- The QMD remainder is measurable.
@@ -268,7 +290,7 @@ lemma memLp_two_score_mul_sqrt_of_qmd
       (((measurable_const.mul hg_meas).mul (h_pt_meas 0)))
   -- And in L²(μ), since its eLpNorm is finite.
   have hr_memLp : MemLp (qmdRem curve μ g t) 2 μ :=
-    ⟨hr_meas.aestronglyMeasurable, lt_trans ht_lt ENNReal.ofReal_lt_top⟩
+    lt_trans ht_lt ENNReal.ofReal_lt_top
   -- Pointwise: `(t/2) • f = (√p_t - √p_0) - r_t`.
   have h_tf_eq :
       (fun ω => (t / 2) * f ω)
@@ -312,7 +334,7 @@ lemma integral_score_eq_zero_of_qmd
     (h_g_sqrt : MemLp (fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ)
     (h_qmd : IsQMDLimit curve μ g) :
     ∫ ω, g ω ∂(curve 0) = 0 := by
-  haveI : IsProbabilityMeasure (curve 0) := h_prob 0
+  have : IsProbabilityMeasure (curve 0) := h_prob 0
   set I : ℝ := ∫ ω, g ω ∂(curve 0) with hI_def
   -- Common L²(μ) ingredients.
   have hp0_memLp : MemLp (fun ω => Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=
@@ -335,7 +357,7 @@ lemma integral_score_eq_zero_of_qmd
               * Real.sqrt ((curve 0).rnDeriv μ ω).toReal ∂μ)
           - 1 - (t / 2) * I := by
     intro t
-    haveI : IsProbabilityMeasure (curve t) := h_prob t
+    have : IsProbabilityMeasure (curve t) := h_prob t
     have hpt_memLp : MemLp (fun ω => Real.sqrt ((curve t).rnDeriv μ ω).toReal) 2 μ :=
       AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (h_ac t)
     -- Integrability ingredients.

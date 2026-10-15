@@ -164,7 +164,7 @@ theorem outerExpectation_supNorm_le_truncateClass_add_tail
         exact clampReal_of_mem hft
       rw [hcl, sub_self, abs_zero]
   have hF_memLp : ∀ f ∈ F, MemLp f 2 P := fun f hf =>
-    ⟨(hF_meas f hf).aestronglyMeasurable, (hF_L2 f hf).trans ENNReal.ofReal_lt_top⟩
+    (hF_L2 f hf).trans ENNReal.ofReal_lt_top
   have h_pt : ∀ ξ : Ξ,
       supNormOver F
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ≤
@@ -237,7 +237,7 @@ theorem outerExpectation_supNorm_le_truncateClass_add_tail
       change ENNReal.ofReal ((n : ℝ)⁻¹ * ∑ i : Fin n, Ψ (X i.val ξ)) ≤ _
       rw [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
       rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       rw [ENNReal.ofReal_sum_of_nonneg (fun i _ => hΨ_nn _)]
       exact Finset.sum_le_sum (fun i _ => V.2.2 (X i.val ξ))
     have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
@@ -251,7 +251,7 @@ theorem outerExpectation_supNorm_le_truncateClass_add_tail
       _ = ((n : ℝ≥0∞))⁻¹ *
           ∑ i : Fin n, ∫⁻ ξ, (V : Ω → ℝ≥0∞) (X i.val ξ) ∂μ := by
         congr 1
-        rw [lintegral_finset_sum Finset.univ]
+        rw [lintegral_finsetSum Finset.univ]
         intro i _
         exact V.2.1.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -278,7 +278,7 @@ theorem outerExpectation_supNorm_le_truncateClass_add_tail
     refine (supNormProcess_dominated_pointwise_bound
       (P := P) 𝒢 Ψ hdom n hn ξ).trans ?_
     rw [hU_def]
-    exact mul_le_mul_of_nonneg_left (add_le_add le_rfl hlin_le_outer) (zero_le _)
+    exact mul_le_mul_of_nonneg_left (add_le_add le_rfl hlin_le_outer) (zero_le)
   have htotal : ∀ ξ : Ξ,
       supNormOver F
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ≤
@@ -294,7 +294,7 @@ theorem outerExpectation_supNorm_le_truncateClass_add_tail
           (fun ξ => ENNReal.ofReal (Real.sqrt n) * (U ξ + T))
         = ENNReal.ofReal (Real.sqrt n) *
             outerExpectation μ (fun ξ => U ξ + T) := by
-          simpa only [Pi.smul_apply, smul_eq_mul] using
+          simpa only [Pi.smul_apply, smul_eq_mul] using!
             (outerExpectation_const_smul (μ := μ)
               (ENNReal.ofReal (Real.sqrt n)) hsqrt_ne_top (fun ξ => U ξ + T))
       _ ≤ ENNReal.ofReal (Real.sqrt n) *
@@ -347,7 +347,7 @@ theorem exists_fullClampedNestedPartition
     bracketingNumber_lt_top_iff_HasFiniteBracketingCover.mpr hcovδ
   set N : ℕ := (bracketingNumber δ F 2 P).toNat with hN_def
   have hN_eq : (N : ℕ∞) = bracketingNumber δ F 2 P := by
-    rw [hN_def, ENat.coe_toNat hN_lt.ne]
+    rw [hN_def, ENat.natCast_toNat hN_lt.ne]
   have hN_one : 1 ≤ N := by
     have h := one_le_bracketingNumber_of_nonempty (P := P) hF_ne δ
     rw [← hN_eq] at h
@@ -463,10 +463,11 @@ theorem exists_fullClampedNestedPartition
       truncated_L2 := by
         rintro g ⟨f, hf, rfl⟩
         refine lt_of_le_of_lt
-          (eLpNorm_mono_ae (Filter.Eventually.of_forall (fun x => ?_)))
+          (eLpNorm_mono_ae (clampFn_measurable (hF_meas f hf)).aestronglyMeasurable
+              (Filter.Eventually.of_forall (fun x => ?_)))
           (lt_trans (hF_L2 f hf)
             ((ENNReal.ofReal_lt_ofReal_iff (by positivity)).2 (by linarith)))
-        simpa only [Real.norm_eq_abs] using abs_clampReal_le tReg htReg_nonneg (f x)
+        simpa only [Real.norm_eq_abs] using! abs_clampReal_le tReg htReg_nonneg (f x)
       original_envelope := by
         rintro g ⟨f, hf, rfl⟩ x
         exact (abs_clampReal_le tReg htReg_nonneg (f x)).trans (hΦ_env f hf x)
@@ -584,7 +585,7 @@ theorem bracketingMaximal_full :
       (hasFiniteBracketingCover_of_entropyIntegral_lt_top_at hJ hδ le_rfl)
   have htReg : 0 ≤ tReg := by
     dsimp only [tReg]
-    rw [← ENat.coe_toNat hN_lt.ne, bracketingBookCutoff_coe]
+    rw [← ENat.natCast_toNat hN_lt.ne, bracketingBookCutoff_coe]
     positivity
   obtain ⟨D⟩ := exists_fullClampedNestedPartition
     hJ hF_ne hF_meas hF_L2 hΦ_env hδ n
@@ -609,8 +610,8 @@ theorem bracketingMaximal_full :
           2 * T := by simpa only [T, tReg, mul_assoc] using hsplit
     _ ≤ ENNReal.ofReal c * J + 2 * T := add_le_add htrunc le_rfl
     _ ≤ ENNReal.ofReal (c + 2) * J + ENNReal.ofReal (c + 2) * T :=
-      add_le_add (mul_le_mul_of_nonneg_right hcC (zero_le _))
-        (mul_le_mul_of_nonneg_right htwoC (zero_le _))
+      add_le_add (mul_le_mul_of_nonneg_right hcC (zero_le))
+        (mul_le_mul_of_nonneg_right htwoC (zero_le))
     _ = ENNReal.ofReal (c + 2) * (J + T) := by ring
 
 private lemma setLIntegral_Ioc_comp_third {r : ℝ}
@@ -691,7 +692,7 @@ theorem bracketingMaximal_integrableEnvelope :
       rw [hr0]
       simp
     have hΦ_zero : Φ =ᵐ[P] 0 :=
-      (eLpNorm_eq_zero_iff hΦ_L2.aestronglyMeasurable (by norm_num)).mp hΦ_norm_zero
+      (eLpNorm_eq_zero_iff (by norm_num)).mp hΦ_norm_zero
     have hf_zero : ∀ f ∈ F, f =ᵐ[P] 0 := by
       intro f hf
       filter_upwards [hΦ_zero] with x hx
@@ -711,7 +712,7 @@ theorem bracketingMaximal_integrableEnvelope :
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) =
           fun _ : Ξ => 0 := by
         funext ξ
-        simp only [supNormOver, truncateClass, Set.mem_setOf_eq, empiricalProcess,
+        simp only [supNormOver, truncateClass, Set.mem_ofPred_eq, empiricalProcess,
           empiricalAvg, abs_mul, abs_nonneg, ENNReal.ofReal_mul, iSup_exists,
           iSup_eq_zero, mul_eq_zero, ENNReal.ofReal_eq_zero, abs_nonpos_iff,
           Nat.cast_nonneg, Real.sqrt_eq_zero, Nat.cast_eq_zero, and_imp]
@@ -734,7 +735,7 @@ theorem bracketingMaximal_integrableEnvelope :
         (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)) = 0 := by
       simpa using hsplit
     rw [hlhs]
-    exact zero_le _
+    exact zero_le
   have hr : 0 < r := lt_of_le_of_ne (by positivity) (Ne.symm hr0)
   by_cases hJtop : bracketingEntropyIntegral r F P = ⊤
   · rw [hJtop]
@@ -744,7 +745,7 @@ theorem bracketingMaximal_integrableEnvelope :
   have hF_L2 : ∀ f ∈ F, eLpNorm f 2 P < ENNReal.ofReal (3 * r) := by
     intro f hf
     have hmono : eLpNorm f 2 P ≤ eLpNorm Φ 2 P :=
-      eLpNorm_mono_ae (Filter.Eventually.of_forall fun x => by
+      eLpNorm_mono_ae (hF_meas f hf).aestronglyMeasurable (Filter.Eventually.of_forall fun x => by
         simpa only [Real.norm_eq_abs, abs_of_nonneg (hΦ_nn x)] using hΦ_env f hf x)
     calc
       eLpNorm f 2 P ≤ eLpNorm Φ 2 P := hmono

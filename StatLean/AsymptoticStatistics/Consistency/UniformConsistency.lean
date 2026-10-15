@@ -71,8 +71,8 @@ theorem mEstimator_consistent
   have hsubset : ∀ n, {ω | ε ≤ dist (θhat n ω) θ₀}
       ⊆ {ω | η ≤ ‖(2 * U n ω + R n ω) - 0‖} := by
     intro n ω hω
-    rw [Set.mem_setOf_eq] at hω
-    rw [Set.mem_setOf_eq, Real.norm_eq_abs, sub_zero]
+    rw [Set.mem_ofPred_eq] at hω
+    rw [Set.mem_ofPred_eq, Real.norm_eq_abs, sub_zero]
     have hsep_ineq := hsepη (θhat n ω) hω
     have hd0 := abs_le.mp (hU_dom n ω θ₀)
     have hdhat := abs_le.mp (hU_dom n ω (θhat n ω))
@@ -82,7 +82,7 @@ theorem mEstimator_consistent
       _ ≤ |2 * U n ω + R n ω| := le_abs_self _
   -- Squeeze `0 ≤ P{ε ≤ dist} ≤ P{η ≤ ‖2Uₙ+Rₙ‖} → 0`.
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hthresh
-    (Eventually.of_forall fun _ => zero_le _)
+    (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall fun n => measure_mono (hsubset n))
 
 /-- **van der Vaart, Theorem 5.7 with almost-everywhere exact near-maximality.**
@@ -118,7 +118,6 @@ theorem mEstimator_consistent_ae_nearmax
     filter_upwards [hnear n] with ω hnearω
     intro hω
     change ε ≤ dist (θhat n ω) θ₀ at hω
-    change η ≤ ‖(2 * U n ω) - 0‖
     rw [Real.norm_eq_abs, sub_zero]
     have hsep_ineq := hsepη (θhat n ω) hω
     have hd0 := abs_le.mp (hU_dom n ω θ₀)
@@ -128,7 +127,7 @@ theorem mEstimator_consistent_ae_nearmax
         linarith [hsep_ineq, hd0.1, hdhat.2, hnearω]
       _ ≤ |2 * U n ω| := le_abs_self _
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hthresh
-    (Eventually.of_forall fun _ => zero_le _)
+    (Eventually.of_forall fun _ => zero_le)
     (Eventually.of_forall fun n => measure_mono_ae (hsubset n))
 
 /-- **van der Vaart, Theorem 5.9 (consistency of Z-estimators).**
@@ -176,7 +175,6 @@ theorem zEstimator_consistent
     linarith [hsepη θ hθ]
   · -- near-max slack: `−‖Ψₙθ₀‖ − ‖Ψₙθ̂ₙ‖ ≤ −‖Ψₙθ̂ₙ‖` since `‖Ψₙθ₀‖ ≥ 0`
     intro n ω
-    change -‖Ψn n ω θ₀‖ - ‖Ψn n ω (θhat n ω)‖ ≤ -‖Ψn n ω (θhat n ω)‖
     linarith [norm_nonneg (Ψn n ω θ₀)]
   · -- `Rₙ = ‖Ψₙ(θ̂ₙ)‖ →ₚ 0`
     exact hnear

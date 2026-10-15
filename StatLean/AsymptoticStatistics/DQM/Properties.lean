@@ -198,7 +198,7 @@ lemma dqm_residual_rate_along
       have h1 : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop := by
         have h2 : Tendsto (fun n : ℕ => (n : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop
         exact Real.tendsto_sqrt_atTop.comp h2
-      simpa using h1.inv_tendsto_atTop
+      simpa using! h1.inv_tendsto_atTop
     have h_prod := h_inv_sqrt.mul h_norm_h_n
     simp only [zero_mul] at h_prod
     refine h_prod.congr' ?_
@@ -293,7 +293,6 @@ lemma dqm_residual_rate_along
             - (1 / 2 : ℝ) * ⟪htil n, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ ≤
         c * ((Real.sqrt n)⁻¹ ^ 2 * ‖h_n n‖ ^ 2) := by
     have := h_bd_n
-    simp only [] at this
     rw [Real.norm_eq_abs, abs_of_nonneg h_int_nn,
         Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)] at this
     rw [h_norm_htil_sq] at this
@@ -365,7 +364,7 @@ lemma dqm_sqrt_density_l2_convergence
         atTop (𝓝 0) := by
     have hconv_diff : Tendsto (fun n : ℕ => h_n n - h) atTop (𝓝 0) := by
       have := hconv.sub (tendsto_const_nhds (x := h))
-      simpa using this
+      simpa using! this
     -- Pointwise rewrite: ((1/2)⟨v, ℓ⟩√p)² = (1/4)⟨v, ℓ⟩²·p.
     have h_inner_int_eq : ∀ v : Θ,
         ∫ x, ((1 / 2 : ℝ) * ⟪v, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ
@@ -398,7 +397,7 @@ lemma dqm_sqrt_density_l2_convergence
     have h_inv_sqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) := by
       have h1 : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
         Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-      simpa using h1.inv_tendsto_atTop
+      simpa using! h1.inv_tendsto_atTop
     have h_prod := h_inv_sqrt.mul hconv.norm
     simp only [zero_mul] at h_prod
     refine h_prod.congr' (Filter.Eventually.of_forall fun n => ?_)
@@ -483,7 +482,7 @@ lemma dqm_sqrt_density_l2_convergence
     have h2 := h_second.const_mul (2 : ℝ)
     simp only [mul_zero] at h1 h2
     have := h1.add h2
-    simpa using this
+    simpa using! this
   · -- Pointwise + integration upper bound (eventually for `n ≥ 1`).
     filter_upwards [hX_memLp_eventually] with n hX_memLp_n
     -- Pointwise (X + Y)² ≤ 2X² + 2Y².
@@ -623,7 +622,7 @@ lemma dqm_norm_sq_score_integrable
     refine Finset.sum_congr rfl (fun i _ => ?_)
     rw [h_ofLp_eq_inner]
   rw [h_fun_eq]
-  refine integrable_finset_sum _ (fun i _ => ?_)
+  refine integrable_finsetSum _ (fun i _ => ?_)
   exact dqm_fisher_integrable M μ θ₀ ℓ hint hDQM
     (EuclideanSpace.single i (1 : ℝ)) (fun t => hint_perturb t _)
 
@@ -689,7 +688,7 @@ lemma dqm_fisher_cont
         (fun v : EuclideanSpace ℝ (Fin k) => ‖v‖ ^ 2) (𝓝 0) (𝓝 0) := by
       have := ((continuous_norm (E := EuclideanSpace ℝ (Fin k))).pow 2).tendsto
         (0 : EuclideanSpace ℝ (Fin k))
-      simpa [norm_zero] using this
+      simpa [norm_zero] using! this
     have := h_norm_sq_zero.mul_const C
     simpa [zero_mul] using this
   -- Squeeze: `0 ≤ ∫ ⟪v, ℓ⟫² p ≤ ‖v‖² · C` and `‖v‖² C → 0`, `0 → 0`.
@@ -753,7 +752,7 @@ lemma dqm_perturbation_deficit_mass_tendsto
     have := dqm_sqrt_density_l2_convergence M μ θ₀ ℓ hint
       (fun t u => hint_perturb t u) hDQM h_fisher_cont
       (h := h) (h_n := fun _ => h) tendsto_const_nhds
-    simpa using this
+    simpa using! this
   -- Eventual L²-membership of the residual integrand `Xₙ`, hence integrability of `gₙ = Xₙ²`.
   have hX_memLp_eventually : ∀ᶠ (n : ℕ) in atTop,
       MemLp (fun x => Real.sqrt n *
@@ -762,10 +761,10 @@ lemma dqm_perturbation_deficit_mass_tendsto
     have h_inv_sqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) := by
       have h1 : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
         Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-      simpa using h1.inv_tendsto_atTop
+      simpa using! h1.inv_tendsto_atTop
     have hhtil_tendsto : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ • h) atTop (𝓝 0) := by
       have := h_inv_sqrt.smul_const h
-      simpa using this
+      simpa using! this
     have h_mem_along := hhtil_tendsto.eventually hDQM.mem
     filter_upwards [h_mem_along, Filter.eventually_ge_atTop 1] with n h_mem_n hn_pos
     have hn_nat_pos : 0 < n := hn_pos
@@ -888,7 +887,7 @@ lemma dqm_perturbation_excess_mass_tendsto
     have := dqm_sqrt_density_l2_convergence M μ θ₀ ℓ hint
       (fun t u => hint_perturb t u) hDQM h_fisher_cont
       (h := h) (h_n := fun _ => h) tendsto_const_nhds
-    simpa using this
+    simpa using! this
   -- `G := ⟨h,ℓ⟩²·p₀ ∈ L¹(μ)`; `I := ∫ G dμ` and `Bₙ := ∫_{p_n=0} G dμ ≤ I`.
   have hG_int : Integrable (fun x => ⟪h, ℓ x⟫ ^ 2 * M.density θ₀ x) μ :=
     dqm_fisher_integrable M μ θ₀ ℓ hint hDQM h (fun t => hint_perturb t h)
@@ -912,10 +911,10 @@ lemma dqm_perturbation_excess_mass_tendsto
     have h_inv_sqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) := by
       have h1 : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
         Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-      simpa using h1.inv_tendsto_atTop
+      simpa using! h1.inv_tendsto_atTop
     have hhtil_tendsto : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ • h) atTop (𝓝 0) := by
       have := h_inv_sqrt.smul_const h
-      simpa using this
+      simpa using! this
     have h_mem_along := hhtil_tendsto.eventually hDQM.mem
     filter_upwards [h_mem_along, Filter.eventually_ge_atTop 1] with n h_mem_n hn_pos
     have hn_nat_pos : 0 < n := hn_pos
@@ -945,13 +944,6 @@ lemma dqm_perturbation_excess_mass_tendsto
   have hρ_toReal : ∀ x, (ρ x).toReal = M.density θ₀ x := fun x => by
     rw [hρ_def]; exact ENNReal.toReal_ofReal (M.density_nonneg θ₀ x)
   set P₀ : Measure 𝓧 := μ.withDensity ρ with hP₀_def
-  have hP₀_finite : IsFiniteMeasure P₀ := by
-    refine ⟨?_⟩
-    rw [hP₀_def, withDensity_apply ρ MeasurableSet.univ, Measure.restrict_univ]
-    have : (∫⁻ x, ρ x ∂μ) = ENNReal.ofReal (∫ x, M.density θ₀ x ∂μ) := by
-      rw [hρ_def, ← ofReal_integral_eq_lintegral_ofReal hint
-        (Filter.Eventually.of_forall (M.density_nonneg θ₀))]
-    rw [this]; exact ENNReal.ofReal_lt_top
   -- `⟨h,ℓ⟩² ∈ L¹(P₀)`.
   have hsq_int_P₀ : Integrable (fun x => ⟪h, ℓ x⟫ ^ 2) P₀ := by
     rw [hP₀_def, integrable_withDensity_iff hρ_meas hρ_lt_top]
@@ -1056,7 +1048,7 @@ lemma dqm_perturbation_excess_mass_tendsto
       MeasureTheory.setIntegral_mono_on
         hZ_sq_int.integrableOn h_rhs_int.integrableOn (hset n)
         (fun x _ => by
-          have := h_pt x; simpa using this)
+          have := h_pt x; simpa using! this)
     -- split the RHS integral and bound each piece by its full integral.
     have h_split :
         ∫ x in s,
@@ -1148,7 +1140,7 @@ lemma dqm_perturbation_excess_mass_tendsto
       simp only [mul_zero] at h2R
       have := h2R.add (tendsto_const_nhds
         (x := (1 / 2 : ℝ) * ∫ x, ⟪h, ℓ x⟫ ^ 2 * M.density θ₀ x ∂μ))
-      simpa using this
+      simpa using! this
     -- bound `n·mₙ ≤ C` eventually, so `mₙ ≤ C/n → 0`.  `C := L + 1` (the RHS limit).
     set C : ℝ := ((1 / 2 : ℝ) * ∫ x, ⟪h, ℓ x⟫ ^ 2 * M.density θ₀ x ∂μ) + 1 with hC_def
     have h_rhs_le_C : ∀ᶠ (n : ℕ) in atTop,
@@ -1174,7 +1166,7 @@ lemma dqm_perturbation_excess_mass_tendsto
       have h_inv : Tendsto (fun n : ℕ => (n : ℝ)⁻¹) atTop (𝓝 0) :=
         tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
       have := h_inv.const_mul (max C 0)
-      simpa using this
+      simpa using! this
     have hm_tendsto : Tendsto
         (fun n : ℕ =>
           ∫ x in {x | M.density (θ₀ + (Real.sqrt n)⁻¹ • h) x = 0}, M.density θ₀ x ∂μ)
@@ -1228,6 +1220,6 @@ lemma dqm_perturbation_excess_mass_tendsto
     have hhalfB := hBμ_tendsto.const_mul (1 / 2 : ℝ)
     simp only [mul_zero] at hhalfB
     have := h2R.add hhalfB
-    simpa using this
+    simpa using! this
 
 end AsymptoticStatistics

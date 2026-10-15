@@ -219,7 +219,7 @@ theorem varOn_ae_eq (S : Finset ι) (hfm : Measurable f) (hf : MemLp f 2 (Measur
     ∀ᵐ x ∂(Measure.pi μ),
       varOn μ S f x = avgOn μ S (fun w => f w ^ 2) x - (avgOn μ S f x) ^ 2 := by
   filter_upwards [ae_memLp_mixAt μ S hfm hf] with x hx
-  simpa [avgOn] using variance_eq_sub hx
+  simpa [varOn, avgOn] using variance_eq_sub hx
 
 theorem integral_varOn (S : Finset ι) (hfm : Measurable f)
     (hf : MemLp f 2 (Measure.pi μ)) :

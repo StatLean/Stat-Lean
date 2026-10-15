@@ -86,7 +86,7 @@ private theorem measurable_exp_inner (E : ExpFamily 𝓧 V) (c : V) :
 /-- The natural parameter set is **convex**. -/
 theorem natSet_convex (E : ExpFamily 𝓧 V) : Convex ℝ E.natSet := by
   rintro η₀ h₀ η₁ h₁ a b ha hb hab
-  simp only [ExpFamily.natSet, Set.mem_setOf_eq] at h₀ h₁ ⊢
+  simp only [ExpFamily.natSet, Set.mem_ofPred_eq] at h₀ h₁ ⊢
   refine ((h₀.const_mul a).add (h₁.const_mul b)).mono'
       (E.measurable_exp_inner _).aestronglyMeasurable
       (Filter.Eventually.of_forall fun x => ?_)
@@ -107,7 +107,7 @@ theorem isProbabilityMeasure_P (E : ExpFamily 𝓧 V) {η : V}
     -- USER-INPUT: the natural parameter lies where the family is defined
     (hη : η ∈ E.natSet) :
     IsProbabilityMeasure (E.P η) := by
-  haveI : NeZero E.base := ⟨hbase⟩
+  have : NeZero E.base := ⟨hbase⟩
   exact isProbabilityMeasure_tilted hη
 
 /-- **Junk convention**: off the natural parameter set the member is the zero measure. -/
@@ -127,7 +127,7 @@ theorem P_eq_withDensity (E : ExpFamily 𝓧 V) {η : V}
   rcases eq_or_ne E.base 0 with hb | hb
   · rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, hb,
       tilted_zero_measure, withDensity_zero_left]
-  · haveI : NeZero E.base := ⟨hb⟩
+  · have : NeZero E.base := ⟨hb⟩
     have hpos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hη
     rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, Measure.tilted]
     refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
@@ -183,7 +183,7 @@ theorem natSet_pow (E : ExpFamily 𝓧 V)
     [SigmaFinite E.base] (n : ℕ) :
     E.natSet ⊆ (E.pow n).natSet := by
   intro η hη
-  simp only [ExpFamily.natSet, Set.mem_setOf_eq] at hη ⊢
+  simp only [ExpFamily.natSet, Set.mem_ofPred_eq] at hη ⊢
   have hprod : Integrable (fun x : Fin n → 𝓧 => ∏ i, Real.exp ⟪η, E.stat (x i)⟫_ℝ)
       (Measure.pi fun _ => E.base) := Integrable.fintype_prod fun _ => hη
   refine hprod.congr (Filter.Eventually.of_forall fun x => ?_)
@@ -211,10 +211,6 @@ theorem pi_P_eq_pow_P (E : ExpFamily 𝓧 V)
   have hg : Measurable fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) :=
     (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
       measurable_const).exp.ennreal_ofReal
-  haveI : IsZeroOrProbabilityMeasure (E.base.withDensity
-      fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) := by
-    rw [← P_eq_withDensity E hη, show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl]
-    infer_instance
   rw [show (Measure.pi fun _ : Fin n => E.P η)
         = Measure.pi fun _ : Fin n => E.base.withDensity
             fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) by

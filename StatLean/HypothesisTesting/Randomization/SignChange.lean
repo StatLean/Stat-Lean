@@ -108,7 +108,7 @@ lemma signChange_smul_apply {n : ℕ} (ε : Fin n → ℤˣ) (x : Fin n → ℝ)
 
 /-- The sign-change group has `2ⁿ` elements. -/
 lemma card_signChangeGroup (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ n := by
-  simp [Fintype.card_fun, Fintype.card_units_int]
+  simp [Fintype.card_units_int]
 
 /-- The sign-change action of a fixed group element is measurable: componentwise it is
 multiplication by the constant `±1`. (Unlike the abstract action of `Randomization/Asymptotics`,
@@ -116,7 +116,7 @@ here the action is concrete and its measurability is available, so only `Measura
 implicit in the frozen signatures below.) -/
 lemma measurable_signChange_smul {n : ℕ} (ε : Fin n → ℤˣ) :
     Measurable (fun x : Fin n → ℝ => ε • x) := by
-  refine measurable_pi_lambda _ (fun i => ?_)
+  refine Measurable.of_eval (fun i => ?_)
   simp only [signChange_smul_apply]
   exact (measurable_pi_apply i).const_mul _
 
@@ -132,7 +132,7 @@ noncomputable def symmetrize (P : Measure ℝ) : Measure ℝ :=
 /-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. Right-continuity is
 built into the Stieltjes packaging; left-continuity is the vanishing of the atom at `t`. -/
 private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    [NoAtoms μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
+    [NullSingletonClass μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
   have hmono : Monotone (cdf μ) := monotone_cdf μ
   rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
   have hright : Function.rightLim (cdf μ) t = cdf μ t :=
@@ -147,8 +147,8 @@ private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasu
 
 /-- Gaussian scaling of the c.d.f.: `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` for `τ > 0`. -/
 private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
-    cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t = cdf (gaussianReal 0 1) (t / τ) := by
-  have hmap : gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)
+    cdf (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))) t = cdf (gaussianReal 0 1) (t / τ) := by
+  have hmap : gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)
       = (gaussianReal 0 1).map (fun x => τ * x) := by
     rw [gaussianReal_map_const_mul]
     congr 1
@@ -194,12 +194,12 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
       (fun n x => T n x - (Real.sqrt n)⁻¹ * ∑ i, ψ (x i)) 0) :
     WeakConverges
       (fun n => randPairLaw (Fin n → ℤˣ) (T n) (Measure.pi fun _ : Fin n => P))
-      ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
-        (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+      ((gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))).prod
+        (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ)))) := by
   classical
   -- The linear part of the statistic, and the law of the influence function.
   set Q : Measure ℝ := P.map ψ with hQdef
-  haveI hQprob : IsProbabilityMeasure Q := Measure.isProbabilityMeasure_map hψmeas.aemeasurable
+  have hQprob : IsProbabilityMeasure Q := (by infer_instance)
   have hQ2 : MemLp id 2 Q := by
     rw [hQdef, memLp_map_measure_iff aestronglyMeasurable_id hψmeas.aemeasurable]
     simpa using hψL2
@@ -231,7 +231,7 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
       rw [hset, ← Measure.map_apply measurable_neg (hs i), hsymm]
   -- Coordinatewise application of `ψ` pushes the product law to the product of `Q`.
   have hΨmeas : ∀ n : ℕ, Measurable (fun x : Fin n → ℝ => fun i => ψ (x i)) := fun n =>
-    measurable_pi_lambda _ fun i => hψmeas.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hψmeas.comp (measurable_pi_apply i)
   have hpush : ∀ n : ℕ, (Measure.pi fun _ : Fin n => P).map (fun x : Fin n → ℝ => fun i => ψ (x i))
       = Measure.pi fun _ : Fin n => Q := by
     intro n
@@ -273,14 +273,14 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
     rw [hpush n] at hcomp
     exact hcomp
   -- The bivariate sign-change CLT for the plain sum, with the Gaussian identified.
-  have hchar : ∀ v : ℝ, charFun (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) v
+  have hchar : ∀ v : ℝ, charFun (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) v
       = Complex.exp (-((∫ y, ⟪y, v⟫ ^ 2 ∂Q : ℝ) : ℂ) / 2) := by
     intro v
     have hmom : ∫ y, ⟪y, v⟫ ^ 2 ∂Q = v ^ 2 * τ ^ 2 := by
       have hpt : ∀ y : ℝ, ⟪y, v⟫ ^ 2 = v ^ 2 * y ^ 2 := by
         intro y
         have : ⟪y, v⟫ = v * y := by
-          simp [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+          simp [RCLike.inner_apply]
         rw [this]; ring
       calc ∫ y, ⟪y, v⟫ ^ 2 ∂Q = ∫ y, v ^ 2 * y ^ 2 ∂Q :=
             integral_congr_ae (Filter.Eventually.of_forall hpt)
@@ -290,12 +290,13 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
     push_cast
     ring
   have hCLT := weakConverges_randPairLaw_signSum Q hQ2
-    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) hchar
+    (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) hchar
   have hCLT' : WeakConverges
       (fun n => randPairLaw (Fin n → ℤˣ)
         (fun x : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ * ∑ i, ψ (x i))
         (Measure.pi fun _ : Fin n => P))
-      ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+      ((gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ))).prod
+          (gaussianReal 0 (NNReal.mk (τ ^ 2) (sq_nonneg τ)))) := by
     simpa only [hid] using hCLT
   -- Slutsky: replace the linear part by the statistic itself.
   refine weakConverges_randPairLaw_of_tendstoInProb (G := fun n => Fin n → ℤˣ)
@@ -341,13 +342,15 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
   -- `measurable_signChange_smul` and continuity of the Gaussian c.d.f. with
   -- `continuousAt_cdf_of_noAtoms`, then rewrite the limit via `cdf_gaussianReal_scale`.
   have hjoint := weakConverges_randPairLaw_signChange P ψ T hsymm hodd hψmeas hψL2 hτpos hτ hT hlin
-  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+  have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NoAtoms (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) := noAtoms_gaussianReal hvne
-  have hcont : ContinuousAt (cdf (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))) t :=
+  have : NullSingletonClass (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0)) :=
+      nullSingletonClass_gaussianReal hvne
+  have hcont : ContinuousAt (cdf (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))) t :=
     continuousAt_cdf_of_noAtoms _ t
   have hmain := randDist_tendstoInProb_cdf (G := fun n => Fin n → ℤˣ)
-    (fun n => Measure.pi fun _ : Fin n => P) T (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    (fun n => Measure.pi fun _ : Fin n => P) T
+        (gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0))
     hT (fun n => measurable_signChange_smul) hjoint hcont
   rwa [cdf_gaussianReal_scale hτpos t] at hmain
 
@@ -389,7 +392,8 @@ instance isProbabilityMeasure_symmetrize (P : Measure ℝ) [IsProbabilityMeasure
 private lemma symmetrize_map_neg (P : Measure ℝ) :
     (symmetrize P).map (fun t => -t) = symmetrize P := by
   have hneg : Measurable (fun t : ℝ => -t) := measurable_neg
-  rw [symmetrize, Measure.map_smul, Measure.map_add _ _ hneg, Measure.map_map hneg hneg]
+  rw [symmetrize, Measure.map_smul _ hneg.aemeasurable, Measure.map_add _ _ hneg,
+      Measure.map_map hneg hneg]
   have hid : (fun t : ℝ => -t) ∘ (fun t : ℝ => -t) = id := by ext t; simp
   rw [hid, Measure.map_id, add_comm]
 
@@ -402,7 +406,7 @@ private lemma pi_symmetrize_eq (P : Measure ℝ) [IsProbabilityMeasure P] (n : �
       = ((2 : ℝ≥0∞) ^ n)⁻¹ •
         ∑ σ : Fin n → ℤˣ, (Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x) := by
   refine Measure.pi_eq (fun s hs => ?_)
-  rw [Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   have hterm : ∀ σ : Fin n → ℤˣ,
       ((Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x)) (Set.pi Set.univ s)
         = ∏ i, P ((fun xi : ℝ => ((σ i : ℤ) : ℝ) * xi) ⁻¹' s i) := by
@@ -443,7 +447,7 @@ private lemma pi_symmetrize_apply_invariant (P : Measure ℝ) [IsProbabilityMeas
     (S : Set (Fin n → ℝ)) (hS : MeasurableSet S)
     (hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S) :
     Measure.pi (fun _ : Fin n => symmetrize P) S = Measure.pi (fun _ : Fin n => P) S := by
-  rw [pi_symmetrize_eq P n, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [pi_symmetrize_eq P n, Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   have hmap : ∀ σ : Fin n → ℤˣ,
       ((Measure.pi (fun _ : Fin n => P)).map (fun x => σ • x)) S
         = Measure.pi (fun _ : Fin n => P) S := by
@@ -502,7 +506,7 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     measurableSet_le measurable_const ((hg.sub measurable_const).abs)
   have hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S := by
     intro σ; ext x
-    simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randDist_smul_invariant]
+    simp only [hS, Set.mem_preimage, Set.mem_ofPred_eq, randDist_smul_invariant]
   rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
 /-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (its density is
@@ -528,7 +532,7 @@ private lemma strictMono_cdf_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) :
 
 /-- Every level `p ∈ (0,1)` is attained by a continuous c.d.f. of an atomless probability
 measure (intermediate value theorem, using the `0`/`1` limits at `∓∞`). -/
-private lemma exists_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ]
+private lemma exists_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ]
     {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) : ∃ q, cdf μ q = p := by
   have hcont : Continuous (cdf μ) :=
     continuous_iff_continuousAt.mpr (fun x => continuousAt_cdf_of_noAtoms μ x)
@@ -546,7 +550,7 @@ private lemma randQuantile_smul_invariant {G 𝓧 : Type*} [Group G] [Fintype G]
     randQuantile G T p (σ • x) = randQuantile G T p x := by
   unfold randQuantile
   congr 1; ext t
-  simp only [Set.mem_setOf_eq, randDist_smul_invariant]
+  simp only [Set.mem_ofPred_eq, randDist_smul_invariant]
 
 /-- The randomization quantile is a measurable function of the data: its strict sublevel set
 is a countable union (over rational thresholds) of `randDist` sublevel sets. -/
@@ -554,24 +558,24 @@ private lemma measurable_randQuantile {G 𝓧 : Type*} [Group G] [Fintype G]
     [MeasurableSpace 𝓧] [MulAction G 𝓧] {T : 𝓧 → ℝ} (hT : Measurable T)
     (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1) :
     Measurable (fun x => randQuantile G T p x) := by
-  haveI : Nonempty G := ⟨1⟩
+  have : Nonempty G := ⟨1⟩
   have hne : ∀ x : 𝓧, ({t : ℝ | p ≤ randDist G T x t}).Nonempty := by
     intro x
     refine ⟨Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x)), ?_⟩
     have hone : randDist G T x
         (Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x))) = 1 := by
       unfold randDist
-      rw [Finset.sum_congr rfl (fun g _ => if_pos
+      rw [Finset.sum_congr rfl (fun g _ => ite_eq_left
         (Finset.le_sup' (fun g : G => T (g • x)) (Finset.mem_univ g))),
         Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
         inv_mul_cancel₀ (by exact_mod_cast Fintype.card_ne_zero)]
-    rw [Set.mem_setOf_eq, hone]; exact hp1
+    rw [Set.mem_ofPred_eq, hone]; exact hp1
   apply measurable_of_Iio
   intro r
   have hset : (fun x => randQuantile G T p x) ⁻¹' Set.Iio r
       = ⋃ s : {s : ℚ // (s : ℝ) < r}, {x | p ≤ randDist G T x (s : ℝ)} := by
     ext x
-    simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_iUnion, Set.mem_setOf_eq, Subtype.exists]
+    simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_iUnion, Set.mem_ofPred_eq, Subtype.exists]
     constructor
     · intro hlt
       obtain ⟨t, ht_mem, ht_lt⟩ :=
@@ -614,14 +618,15 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
       (τ * cdfQuantile (gaussianReal 0 1) (1 - α)) := by
   -- Feed the joint law from `weakConverges_randPairLaw_signChange` (under `symmetrize P`) into
   -- `randQuantile_tendstoInProb`, with the limit `R = N(0,τ²)`: continuity from
-  -- `noAtoms_gaussianReal`, the two-sided bracketing from `strictMono_cdf_gaussianReal` at the
-  -- level `1-α` (attained by `exists_cdf_eq`). Then rewrite the limiting quantile via the
-  -- Gaussian scaling (`cdf_gaussianReal_scale` + `quantile_eq_of_strictMono`) and transfer the
-  -- level-set masses back to `Measure.pi P` (sign invariance of `randQuantile`).
-  set R := gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) with hRdef
-  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+  -- `nullSingletonClass_gaussianReal`, the two-sided bracketing from
+  -- `strictMono_cdf_gaussianReal` at the level `1-α` (attained by `exists_cdf_eq`). Then rewrite
+  -- the limiting quantile via the Gaussian scaling (`cdf_gaussianReal_scale` +
+  -- `quantile_eq_of_strictMono`) and transfer the level-set masses back to `Measure.pi P`
+  -- (sign invariance of `randQuantile`).
+  set R := gaussianReal 0 ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) with hRdef
+  have hvne : ((NNReal.mk (τ ^ 2) (sq_nonneg τ)) : ℝ≥0) ≠ 0 :=
     NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
-  haveI : NoAtoms R := noAtoms_gaussianReal hvne
+  have : NullSingletonClass R := nullSingletonClass_gaussianReal hvne
   have hp0 : (0 : ℝ) < 1 - α := by linarith
   have hp1 : (1 : ℝ) - α < 1 := by linarith
   have hSM : StrictMono (cdf R) := strictMono_cdf_gaussianReal hvne
@@ -665,7 +670,7 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     measurableSet_le measurable_const ((hgq.sub measurable_const).abs)
   have hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S := by
     intro σ; ext x
-    simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randQuantile_smul_invariant]
+    simp only [hS, Set.mem_preimage, Set.mem_ofPred_eq, randQuantile_smul_invariant]
   rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
 end StatLean.HypothesisTesting

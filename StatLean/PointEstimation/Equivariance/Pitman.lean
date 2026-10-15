@@ -84,7 +84,7 @@ private lemma pShear_pUnshear (p : (Fin m → ℝ) × ℝ) : pShear (pUnshear p)
       Fin.snoc_last, zero_add]
   refine Prod.ext ?_ hlast
   funext i
-  show diffs (pUnshear (y, s)) i = y i
+  change diffs (pUnshear (y, s)) i = y i
   simp only [diffs, pUnshear, Pi.add_apply, Pi.smul_apply, Pi.one_apply,
     smul_eq_mul, mul_one, Fin.snoc_castSucc, Fin.snoc_last]
   ring
@@ -106,7 +106,7 @@ private lemma measurable_pShear :
 
 private lemma measurable_pUnshear :
     Measurable (pUnshear : (Fin m → ℝ) × ℝ → Fin (m + 1) → ℝ) := by
-  apply measurable_pi_lambda
+  apply Measurable.of_eval
   intro j
   induction j using Fin.lastCases with
   | last =>
@@ -155,7 +155,7 @@ private lemma measurePreserving_pShear :
     intro x
     refine Prod.ext rfl ?_
     funext j
-    show x ((Fin.last m).succAbove j) = x j.castSucc
+    change x ((Fin.last m).succAbove j) = x j.castSucc
     rw [Fin.succAbove_last]
   have hfun : (Prod.swap ∘ h ∘ (MeasurableEquiv.piFinSuccAbove (fun _ => ℝ) (Fin.last m)))
       = (pShear : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) := by
@@ -211,7 +211,7 @@ private lemma sub_smul_one_eq_pUnshear (x : Fin (m + 1) → ℝ) (u : ℝ) :
     x - u • (1 : Fin (m + 1) → ℝ) = pUnshear (diffs x, x (Fin.last m) - u) := by
   have hx : Fin.snoc (diffs x) (0 : ℝ) + (x (Fin.last m)) • (1 : Fin (m + 1) → ℝ) = x :=
     pUnshear_pShear x
-  show x - u • (1 : Fin (m + 1) → ℝ)
+  change x - u • (1 : Fin (m + 1) → ℝ)
       = Fin.snoc (diffs x) 0 + (x (Fin.last m) - u) • (1 : Fin (m + 1) → ℝ)
   rw [sub_smul, ← add_sub_assoc, hx]
 
@@ -233,7 +233,7 @@ private lemma integrable_slice_den (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Mea
   have hmp : MeasurePreserving (fun u : ℝ => -u) (volume : Measure ℝ) volume := by
     simpa using Measure.measurePreserving_neg (volume : Measure ℝ)
   refine (hmp.integrable_comp (measurable_slice f hf y).aestronglyMeasurable).mp ?_
-  simpa [Function.comp] using hrefl
+  simpa [Function.comp] using! hrefl
 
 /-- The first moment of the density slice is integrable at every `y`. -/
 private lemma integrable_slice_num (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
@@ -292,7 +292,8 @@ private lemma pitmanEstimator_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ) (hf :
   rw [hNl, hDl]
   field_simp
 
-/-- The Pitman denominator in shear coordinates: `∫ f(x − u𝟙) du = ∫ f(snoc (diffs x) 0 + s𝟙) ds`. -/
+/-- The Pitman denominator in shear coordinates:
+`∫ f(x − u𝟙) du = ∫ f(snoc (diffs x) 0 + s𝟙) ds`. -/
 private lemma integral_den_eq_slice (f : (Fin (m + 1) → ℝ) → ℝ) (x : Fin (m + 1) → ℝ) :
     (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) = ∫ s : ℝ, f (pUnshear (diffs x, s)) := by
   simp_rw [sub_smul_one_eq_pUnshear]
@@ -329,8 +330,6 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
   have hp_meas : Measurable p :=
     ENNReal.measurable_ofReal.comp (hf.comp measurable_pUnshear)
   set ρ : Measure ((Fin m → ℝ) × ℝ) := P₀.map pShear with hρ_def
-  haveI : IsProbabilityMeasure ρ := by
-    rw [hρ_def]; exact Measure.isProbabilityMeasure_map measurable_pShear.aemeasurable
   -- the slice-integral identities
   have hslice_int : ∀ t : Fin m → ℝ, Integrable (fun s : ℝ => f (pUnshear (t, s))) :=
     fun t => integrable_slice_den f hf hden t
@@ -364,7 +363,8 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
   have hccomp : condDistrib δ₀ diffs P₀
       =ᵐ[P₀.map diffs] (condDistrib id diffs P₀).map δ₀ := by
     have h := condDistrib_comp (μ := P₀) (Y := id) (mβ := inferInstance)
-      (X := (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ)) (aemeasurable_id (μ := P₀))
+      (X := (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ)) measurable_diffs.aemeasurable
+      (aemeasurable_id (μ := P₀))
       (f := δ₀) hδ₀meas
     simpa using h
   -- assemble everything, a.e. in the differences
@@ -455,7 +455,7 @@ theorem pitmanEstimator_isLocEquivariant (f : (Fin n → ℝ) → ℝ)
         = ∫ u : ℝ, f (x - u • (1 : Fin n → ℝ)) :=
       integral_sub_right_eq_self (fun v : ℝ => f (x - v • (1 : Fin n → ℝ))) a
     rw [hpt, integral_add hHint (Integrable.const_mul hgint a), integral_const_mul, e1, e2]
-  show pitmanEstimator f (x + a • (1 : Fin n → ℝ)) = pitmanEstimator f x + a
+  change pitmanEstimator f (x + a • (1 : Fin n → ℝ)) = pitmanEstimator f x + a
   unfold pitmanEstimator
   rw [hNshift, hDshift, add_div, mul_div_assoc, div_self (hden0 x), mul_one]
 
@@ -519,7 +519,7 @@ theorem pitmanEstimator_isLocMRE (f : (Fin (m + 1) → ℝ) → ℝ)
   have hδ₀meas : Measurable δ₀ := measurable_pi_apply (Fin.last m)
   have heq₀ : IsLocEquivariant δ₀ := by
     intro a x
-    show (x + a • (1 : Fin (m + 1) → ℝ)) (Fin.last m) = x (Fin.last m) + a
+    change (x + a • (1 : Fin (m + 1) → ℝ)) (Fin.last m) = x (Fin.last m) + a
     simp [Pi.add_apply, Pi.smul_apply]
   set vStar : (Fin m → ℝ) → ℝ :=
     fun y => (∫ s : ℝ, s * f (pUnshear (y, s))) / (∫ s : ℝ, f (pUnshear (y, s))) with hvStarDef

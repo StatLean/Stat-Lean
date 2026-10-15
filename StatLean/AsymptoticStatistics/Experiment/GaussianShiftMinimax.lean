@@ -428,7 +428,7 @@ theorem joint_pushforward_eq
   -- `multivariateGaussian` factor + `isGaussian_map` for the CLM pushforward.
   -- Manual unfold: `marginalGaussianShift` is a non-transparent `def`, so we
   -- need to expose the underlying `multivariateGaussian` to trigger instance search.
-  haveI hπ_X : IsGaussian (marginalGaussianShift J τ) := by
+  have hπ_X : IsGaussian (marginalGaussianShift J τ) := by
     unfold marginalGaussianShift; infer_instance
   refine IsGaussian.ext_covarianceBilinDual ?_ ?_
   · -- **Means equal**: both `((prod).map CLM)[id] = CLM (prod[id]) = CLM (0, 0) = (0, 0)`.
@@ -443,7 +443,7 @@ theorem joint_pushforward_eq
         ∫ p, p ∂(μ.prod ν)
           = (0 : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) := by
       intro μ ν _ _ hμ hν
-      haveI : IsGaussian (μ.prod ν) := inferInstance
+      have : IsGaussian (μ.prod ν) := inferInstance
       have hint : Integrable (id : EuclideanSpace ℝ (Fin k)
           × EuclideanSpace ℝ (Fin k) → _) (μ.prod ν) := IsGaussian.integrable_id
       have h_pair : ∫ p, p ∂(μ.prod ν)
@@ -566,7 +566,7 @@ theorem joint_pushforward_eq
         = ⇑(L.comp (posteriorCLM J τ) : StrongDual ℝ (EuclideanSpace ℝ (Fin k)
             × EuclideanSpace ℝ (Fin k))) := rfl
     rw [h_shift, h_post]
-    haveI hπ_X_prob : IsProbabilityMeasure (marginalGaussianShift J τ) := by
+    have hπ_X_prob : IsProbabilityMeasure (marginalGaussianShift J τ) := by
       unfold marginalGaussianShift; infer_instance
     rw [ProbabilityTheory.variance_dual_prod IsGaussian.memLp_two_id IsGaussian.memLp_two_id,
         ProbabilityTheory.variance_dual_prod IsGaussian.memLp_two_id IsGaussian.memLp_two_id]
@@ -1214,9 +1214,9 @@ theorem bowl_shaped_loss_risk_kernel_form
   set π_X := marginalGaussianShift J τ with hπ_X_def
   set π_τ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k))
               ((τ^2) • (1 : Matrix (Fin k) (Fin k) ℝ)) with hπ_τ_def
-  haveI hπ_X_prob : IsProbabilityMeasure π_X := by
+  have hπ_X_prob : IsProbabilityMeasure π_X := by
     unfold π_X marginalGaussianShift; infer_instance
-  haveI hπ_τ_prob : IsProbabilityMeasure π_τ := by
+  have hπ_τ_prob : IsProbabilityMeasure π_τ := by
     unfold π_τ; infer_instance
   -- Joint measurability of `finn h x := ∫⁻ y, L(y - ψDot h) ∂(κ x)` on `Θk × Θk`.
   let finn : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) → ℝ≥0∞ :=
@@ -1227,7 +1227,6 @@ theorem bowl_shaped_loss_risk_kernel_form
     have hsnd_meas : Measurable snd := measurable_snd
     let κ' : Kernel (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
         (EuclideanSpace ℝ (Fin d)) := κ.comap snd hsnd_meas
-    haveI hκ'_markov : IsMarkovKernel κ' := Kernel.IsMarkovKernel.comap κ hsnd_meas
     have h_int_meas : Measurable
         (fun p : (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k))
               × EuclideanSpace ℝ (Fin d) =>
@@ -1236,7 +1235,7 @@ theorem bowl_shaped_loss_risk_kernel_form
         (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
             ∫⁻ y, L (y - ψDot p.1) ∂(κ' p)) :=
       Measurable.lintegral_kernel_prod_right' (κ := κ') h_int_meas
-    convert h_main using 1
+    convert! h_main using 1
   -- κ as an AEMeasurable function (needed by `lintegral_bind`).
   have hκ_meas : ∀ h : EuclideanSpace ℝ (Fin k),
       AEMeasurable (κ : EuclideanSpace ℝ (Fin k) → Measure (EuclideanSpace ℝ (Fin d)))

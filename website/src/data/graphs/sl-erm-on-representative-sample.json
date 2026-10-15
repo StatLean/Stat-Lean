@@ -12,8 +12,7 @@
     {"id":"abs_sub_le_iff","label":"abs_sub_le_iff","full":"abs_sub_le_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Abs"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"}
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.Sample"},
@@ -27,7 +26,6 @@
     {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"le_of_not_gt"},
     {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"Nat.cast_one"},
     {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"Nat.cast_zero"},
-    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.Sample"},
     {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.empRisk"},
     {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.risk"},

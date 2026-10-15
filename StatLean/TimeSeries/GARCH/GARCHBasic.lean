@@ -41,6 +41,8 @@ stationarity criterion for GARCH(1,1) is D. B. Nelson, *Stationarity and persist
 the GARCH(1,1) model* (Econometric Theory 6 (1990), 318–334).
 -/
 
+set_option linter.style.longFile 2200
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 
@@ -87,8 +89,8 @@ private lemma garch_condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
   have hFle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
     iSup₂_le fun s _ => (h.measurableX s).comap_le
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   -- `E ε_t² = 1`
   have hEeps : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := iidNoise_integral_sq h.iid t
@@ -127,8 +129,8 @@ private lemma garch_condexp_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
     μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hEeps0 : (∫ ω, ε t ω ∂μ) = 0 :=
     (h.iid.identDistrib t 0).integral_eq.trans h.iid.integral_eq_zero
@@ -157,8 +159,8 @@ private lemma garch_integral_mul_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) {s t : ℤ} (hst : s < t) :
     (∫ ω, X s ω * X t ω ∂μ) = 0 := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hmulint : Integrable (fun ω => X s ω * X t ω) μ :=
     MemLp.integrable_mul (p := 2) (q := 2) (hL2 s) (hL2 t)
@@ -182,8 +184,8 @@ private lemma garch_integral_vol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : 
     Integrable (fun ω => σvol t ω ^ 2) μ ∧
       (∫ ω, σvol t ω ^ 2 ∂μ) = ∫ ω, X t ω ^ 2 ∂μ := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hce := garch_condexp_sq h hL2 t
   exact ⟨integrable_condExp.congr hce, by rw [← integral_congr_ae hce, integral_condExp hFle]⟩
@@ -202,13 +204,13 @@ coefficients (FY p. 148: "the recursion has nonnegative solutions like (2.20)").
 private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeffGarchNum {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) : Polynomial ℝ).coeff m
       = ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite]
+  simp [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite]
 
 private lemma constantCoeffArPoly_ne_zero {p : ℕ} (b : Fin p → ℝ) :
     PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
@@ -260,17 +262,17 @@ private lemma garchInfCoeffs_rec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → 
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hj : (j : ℕ) < n
-    · rw [if_pos hj]
+    · rw [ite_eq_left hj]
       rw [Finset.sum_eq_single ((j : ℕ))]
-      · rw [if_pos rfl]
+      · rw [ite_eq_left rfl]
       · intro k _ hkj
-        rw [if_neg (by omega)]
+        rw [ite_eq_right (by omega)]
       · intro hmem
         exact absurd (Finset.mem_range.2 hj) hmem
-    · rw [if_neg hj, mul_zero]
+    · rw [ite_eq_right hj, mul_zero]
       refine Finset.sum_eq_zero fun k hk => ?_
       rw [Finset.mem_range] at hk
-      rw [if_neg (by omega)]
+      rw [ite_eq_right (by omega)]
   linarith [hconv, hswap]
 
 theorem garchInfCoeffs_nonneg {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
@@ -307,10 +309,10 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
       rw [Finset.sum_range_succ, ihN]
       by_cases hjN : j < N
       · have h1 : N + 1 - (j + 1) = (N - (j + 1)) + 1 := by omega
-        rw [if_pos hjN, h1, Finset.sum_range_succ]
+        rw [ite_eq_left hjN, h1, Finset.sum_range_succ]
       · have h1 : N + 1 - (j + 1) = 0 := by omega
         have h2 : N - (j + 1) = 0 := by omega
-        rw [if_neg hjN, h1, h2]
+        rw [ite_eq_right hjN, h1, h2]
         simp
   -- the recursion, summed over `range N`
   have hpart : ∀ N : ℕ, (∑ n ∈ Finset.range N, garchInfCoeffs b a n)
@@ -323,16 +325,16 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     · rw [Finset.sum_comm]
       refine Finset.sum_congr rfl fun i _ => ?_
       by_cases hi : (i : ℕ) + 1 < N
-      · rw [if_pos hi, Finset.sum_eq_single ((i : ℕ) + 1)]
-        · rw [if_pos rfl]
+      · rw [ite_eq_left hi, Finset.sum_eq_single ((i : ℕ) + 1)]
+        · rw [ite_eq_left rfl]
         · intro n _ hn
-          rw [if_neg hn]
+          rw [ite_eq_right hn]
         · intro hmem
           exact absurd (Finset.mem_range.2 hi) hmem
-      · rw [if_neg hi]
+      · rw [ite_eq_right hi]
         refine Finset.sum_eq_zero fun n hn => ?_
         rw [Finset.mem_range] at hn
-        rw [if_neg (by omega)]
+        rw [ite_eq_right (by omega)]
     · rw [Finset.sum_comm]
       refine Finset.sum_congr rfl fun j _ => ?_
       rw [← Finset.mul_sum, hshift]
@@ -374,11 +376,11 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     filter_upwards [Filter.eventually_ge_atTop (p + 1)] with N hN
     refine (Finset.sum_congr rfl fun i _ => ?_).symm
     have := i.isLt
-    rw [if_pos (by omega)]
+    rw [ite_eq_left (by omega)]
   have hRlim : Filter.Tendsto (fun N : ℕ => (∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0)
       + ∑ j : Fin q, a j * ∑ m ∈ Finset.range (N - ((j : ℕ) + 1)), garchInfCoeffs b a m)
       Filter.atTop (nhds ((∑ i, b i) + ∑ j : Fin q, a j * ∑' n, garchInfCoeffs b a n)) :=
-    hblim.add (tendsto_finset_sum _ fun j _ => (hshiftlim (j : ℕ)).const_mul (a j))
+    hblim.add (tendsto_finsetSum _ fun j _ => (hshiftlim (j : ℕ)).const_mul (a j))
   have heq : (∑' n, garchInfCoeffs b a n)
       = (∑ i, b i) + ∑ j : Fin q, a j * ∑' n, garchInfCoeffs b a n :=
     tendsto_nhds_unique (hTlim.congr fun N => hpart N) hRlim
@@ -421,19 +423,19 @@ private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         = ∑ i : Fin p, if m = (i : ℕ) then b i else 0 := by
       refine Finset.sum_congr rfl fun i _ => ?_
       by_cases h : m = (i : ℕ)
-      · rw [if_pos (by omega), if_pos h]
-      · rw [if_neg (by omega), if_neg h]
+      · rw [ite_eq_left (by omega), ite_eq_left h]
+      · rw [ite_eq_right (by omega), ite_eq_right h]
     have h2 : (∑ j : Fin q, a j * (if (j : ℕ) < m + 1 then d (m + 1 - ((j : ℕ) + 1)) else 0))
         = ∑ j : Fin q, (if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0) := by
       refine Finset.sum_congr rfl fun j _ => ?_
       rcases lt_trichotomy ((j : ℕ)) m with h | h | h
-      · rw [if_pos (by omega), if_pos h]
+      · rw [ite_eq_left (by omega), ite_eq_left h]
         congr 2
         omega
-      · rw [if_pos (by omega), if_neg (by omega)]
+      · rw [ite_eq_left (by omega), ite_eq_right (by omega)]
         have : m + 1 - ((j : ℕ) + 1) = 0 := by omega
         rw [this, hd0, mul_zero]
-      · rw [if_neg (by omega), if_neg (by omega), mul_zero]
+      · rw [ite_eq_right (by omega), ite_eq_right (by omega), mul_zero]
     have hs1 : (0 : ℝ) ≤ ∑ i : Fin p, if m = (i : ℕ) then b i else 0 :=
       Finset.sum_nonneg fun i _ => by split; exacts [hb i, le_rfl]
     have hs2 : (0 : ℝ) ≤ ∑ j : Fin q, if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0 :=
@@ -477,14 +479,14 @@ private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         intro m hm
         have hlt : (j : ℕ) < m := by
           by_contra hnl
-          exact hm (by simp only [if_neg hnl, zero_mul])
-        exact ⟨m - ((j : ℕ) + 1), by show (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
+          exact hm (by simp only [ite_eq_right hnl, zero_mul])
+        exact ⟨m - ((j : ℕ) + 1), by change (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
       rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
       refine tsum_congr fun k => ?_
       have hidx : (-1 - (((j : ℕ) + 1 + k : ℕ) : ℤ))
           = -1 - (k : ℤ) - 1 - ((j : ℕ) : ℤ) := by push_cast; ring
       have hsub : (j : ℕ) + 1 + k - (j : ℕ) = k + 1 := by omega
-      rw [if_pos (by omega), hsub, hidx, ENNReal.ofReal_mul (ha j), mul_assoc]
+      rw [ite_eq_left (by omega), hsub, hidx, ENNReal.ofReal_mul (ha j), mul_assoc]
   rw [hseries]
   have hRHS : (∑ j : Fin q, ENNReal.ofReal (a j)
         * (ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
@@ -503,7 +505,7 @@ can be applied at a *sub*-σ-algebra by supplying the instance explicitly. -/
 private lemma measurable_pathFun {Ω' : Type*} [MeasurableSpace Ω'] {f : ℤ → Ω' → ℝ}
     (hf : ∀ u, Measurable (f u)) {F : (ℤ → ℝ) → ℝ} (hF : Measurable F) :
     Measurable fun ω => F fun u => f u ω :=
-  hF.comp (measurable_pi_lambda _ hf)
+  hF.comp (Measurable.of_eval hf)
 
 /-- `ξ = ε²` is an ARCH(∞) noise. -/
 private lemma isARCHNoise_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
@@ -598,7 +600,7 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
   have hVm : Measurable V := by
     rw [hVdef]
     refine measurable_const.add (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)
-    exact Measurable.ennreal_ofReal (hGm.comp (measurable_pi_lambda _ fun s =>
+    exact Measurable.ennreal_ofReal (hGm.comp (Measurable.of_eval fun s =>
       (measurable_pi_apply (s - 1 - (j : ℕ))).pow_const 2))
   have hVcaus : ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → V r = V r' := by
     intro r r' h
@@ -627,7 +629,7 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
   have hXm : ∀ t, Measurable (X t) := by
     intro t
     simp only [hXdef]
-    exact hΦm.comp (measurable_pi_lambda _ fun s => hε.measurable (s + t))
+    exact hΦm.comp (Measurable.of_eval fun s => hε.measurable (s + t))
   -- ### `X_t² = Y_t` a.e.
   have hZfin : ∀ t : ℤ, ∀ᵐ ω ∂μ,
       (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ⊤ :=
@@ -692,14 +694,14 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     have heq : X s = fun ω => Φ fun u => if u + s < t then ε (u + s) ω else 0 := by
       funext ω
       simp only [hXdef]
-      exact hΦcaus _ _ fun u hu => (if_pos (by omega)).symm
+      exact hΦcaus _ _ fun u hu => (ite_eq_left (by omega)).symm
     have hcoord : ∀ u : ℤ,
         Measurable[sigmaLT ε t] fun ω => if u + s < t then ε (u + s) ω else 0 := by
       intro u
       by_cases hu : u + s < t
-      · simp only [if_pos hu]
+      · simp only [ite_eq_left hu]
         exact measurable_of_lt_sigmaLT hu
-      · simp only [if_neg hu]
+      · simp only [ite_eq_right hu]
         exact measurable_const
     have hms : Measurable[sigmaLT ε t] (X s) := by
       rw [heq]
@@ -787,8 +789,8 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     (∫ ω, X t ω ∂μ) = 0 ∧
       variance (X t) μ = c0 / (1 - (∑ i, b i) - ∑ j, a j) := by
   have hFle := sigmaLT_le_of_measurable h.measurableX t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   -- (i) `E X_t = E σ_t · E ε_t = 0`, via the conditional expectation given the strict past
   have hcondX : μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := garch_condexp_zero h hL2 t
@@ -801,9 +803,9 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     ((hstat.identDistrib h.measurableX s t).comp
       (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
   have hIb : Integrable (fun ω => ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) μ :=
-    integrable_finset_sum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
+    integrable_finsetSum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
   have hIa : Integrable (fun ω => ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) μ :=
-    integrable_finset_sum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
+    integrable_finsetSum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
   have hc : Integrable (fun _ : Ω => c0) μ := integrable_const c0
   have e1 : (∫ ω, (c0 + (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2)
         + ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
@@ -815,12 +817,12 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     integral_add hc hIb
   have e3 : (∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
       = (∑ i : Fin p, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
-    rw [integral_finset_sum (Finset.univ : Finset (Fin p)) fun i _ =>
+    rw [integral_finsetSum (Finset.univ : Finset (Fin p)) fun i _ =>
       (hL2 (t - 1 - (i : ℕ))).integrable_sq.const_mul (b i), Finset.sum_mul]
     exact Finset.sum_congr rfl fun i _ => by rw [integral_const_mul, hXsq_eq]
   have e4 : (∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
       = (∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
-    rw [integral_finset_sum (Finset.univ : Finset (Fin q)) fun j _ =>
+    rw [integral_finsetSum (Finset.univ : Finset (Fin q)) fun j _ =>
       (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).1.const_mul (a j), Finset.sum_mul]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [integral_const_mul, (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).2, hXsq_eq]
@@ -893,7 +895,7 @@ private lemma sum_range_pad_two {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → �
     have hzero : ∀ x ∈ Finset.range (max p q), x ∉ Finset.range m →
         (if hi : x < m then f ⟨x, hi⟩ else 0) * g x = 0 := by
       intro x _ hx
-      rw [dif_neg (by simpa using hx)]
+      rw [dite_eq_right (by simpa using hx)]
       ring
     rw [← Finset.sum_subset hsub hzero]
     rw [← Fin.sum_univ_eq_sum_range (fun i => (if hi : i < m then f ⟨i, hi⟩ else 0) * g i) m]
@@ -945,9 +947,9 @@ theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     ((hstat.identDistrib h.measurableX s t).comp
       (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
   have hIb : Integrable (fun ω => ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) μ :=
-    integrable_finset_sum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
+    integrable_finsetSum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
   have hIa : Integrable (fun ω => ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) μ :=
-    integrable_finset_sum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
+    integrable_finsetSum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
   have hc : Integrable (fun _ : Ω => c0) μ := integrable_const c0
   have e1 : (∫ ω, (c0 + (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2)
         + ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
@@ -959,12 +961,12 @@ theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     integral_add hc hIb
   have e3 : (∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
       = (∑ i : Fin p, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
-    rw [integral_finset_sum (Finset.univ : Finset (Fin p)) fun i _ =>
+    rw [integral_finsetSum (Finset.univ : Finset (Fin p)) fun i _ =>
       (hL2 (t - 1 - (i : ℕ))).integrable_sq.const_mul (b i), Finset.sum_mul]
     exact Finset.sum_congr rfl fun i _ => by rw [integral_const_mul, hXsq_eq]
   have e4 : (∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
       = (∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
-    rw [integral_finset_sum (Finset.univ : Finset (Fin q)) fun j _ =>
+    rw [integral_finsetSum (Finset.univ : Finset (Fin q)) fun j _ =>
       (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).1.const_mul (a j), Finset.sum_mul]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [integral_const_mul, (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).2, hXsq_eq]
@@ -978,7 +980,7 @@ theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (garch_integral_vol_sq h hL2 t).2.symm.trans hfix0
   have hm0 : 0 ≤ ∫ ω, X t ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   nlinarith [hfix, hm0, hcon, hc0]
 
 /-! ### Fourth-moment bricks for the GARCH(1,1) squared-process ACF
@@ -1054,7 +1056,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
   have hmY : ∀ t : ℤ, Measurable fun ω => X t ω ^ 2 := fun t => (hmX t).pow_const 2
   have hmV : ∀ t : ℤ, Measurable fun ω => σvol t ω ^ 2 :=
     fun t => (h.measurableVol t).pow_const 2
-  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ := fun t => memLp_sq_of_memLp_four' (hmX t) (hL4 t)
+  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ :=
+    fun t => memLp_sq_of_memLp_four' (hmX t) (hL4 t)
   have hYint : ∀ t : ℤ, Integrable (fun ω => X t ω ^ 2) μ :=
     fun t => (hY2 t).integrable one_le_two
   have hYsqint : ∀ t : ℤ, Integrable (fun ω => (X t ω ^ 2) ^ 2) μ :=
@@ -1063,14 +1066,13 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
     fun t => iSup₂_le fun s _ => (hmX s).comap_le
   have hSF : ∀ t : ℤ, SigmaFinite (μ.trim (hFle t)) := by
     intro t
-    haveI : IsFiniteMeasure (μ.trim (hFle t)) := MeasureTheory.isFiniteMeasure_trim (hFle t)
+    have : IsFiniteMeasure (μ.trim (hFle t)) := MeasureTheory.isFiniteMeasure_trim (hFle t)
     infer_instance
   have hcond : ∀ t : ℤ, μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 :=
     fun t => h.condexp_sq hL2 t
   have hV2 : ∀ t : ℤ, MemLp (fun ω => σvol t ω ^ 2) 2 μ := by
     intro t
-    haveI := hSF t
-    exact ((hY2 t).condExp).ae_eq (hcond t)
+    exact ((hY2 t).condExp (by norm_num)).ae_eq (hcond t)
   have hVint : ∀ t : ℤ, Integrable (fun ω => σvol t ω ^ 2) μ :=
     fun t => (hV2 t).integrable one_le_two
   have hVsqint : ∀ t : ℤ, Integrable (fun ω => (σvol t ω ^ 2) ^ 2) μ :=
@@ -1095,7 +1097,7 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
       _ = w := hwdef
   have hEV : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 ∂μ = m := by
     intro t
-    haveI := hSF t
+    have := hSF t
     rw [← integral_congr_ae (hcond t), integral_condExp (hFle t), hEY t]
   ---------------------------------------------------------------- the (1,1) recursion
   have hrec : ∀ t : ℤ, (fun ω => σvol t ω ^ 2) =ᵐ[μ]
@@ -1115,7 +1117,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
         measurable_id (measurable_id.pow_const 2)
     rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
       ((hmV t).pow_const 2).aestronglyMeasurable
-      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable,
+          iidNoise_integral_sq h.iid t, mul_one]
   ---------------------------------------------------------------- E X² fixed point
   have hmfix : m = c0 + (b1 + a1) * m := by
     have i1 : Integrable (fun ω => c0 + b1 * X (0 - 1) ω ^ 2) μ :=
@@ -1239,7 +1242,8 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
       (indepFun_of_sigmaLT' (h.indep_past t) hfm).comp measurable_id (measurable_id.pow_const 2)
     rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
       (((hmV t).mul (hmY 0)).aestronglyMeasurable)
-      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable,
+          iidNoise_integral_sq h.iid t, mul_one]
   have hBrec : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 * X 0 ω ^ 2 ∂μ
       = c0 * m + b1 * (∫ ω, X (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ)
         + a1 * ∫ ω, σvol (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ := by
@@ -1368,7 +1372,7 @@ private lemma measurable_nelXf (c0 b1 a1 : ℝ) : Measurable (nelXf c0 b1 a1) :=
 
 private lemma measurable_nelPath {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t)) (t : ℤ) :
     Measurable (nelPath ε t) :=
-  measurable_pi_lambda _ fun s => hm (s + t)
+  Measurable.of_eval fun s => hm (s + t)
 
 private lemma nelProd_ne_top (b1 a1 : ℝ) (k : ℕ) (p : ℤ → ℝ) : nelProd b1 a1 k p ≠ ⊤ := by
   refine (ENNReal.prod_lt_top fun i _ => ENNReal.ofReal_lt_top).ne
@@ -1441,7 +1445,7 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ} {g : ℝ 
     rw [h1]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Real.exp_sum]
-    exact Finset.prod_le_prod (fun i _ => hmnn i) fun i _ => hdom (p (-1 - (i : ℤ)))
+    exact Finset.prod_le_prod₀ (fun i _ => hmnn i) fun i _ => hdom (p (-1 - (i : ℤ)))
   -- past a threshold, the log-partial-sums drop below `k · c/2`
   obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
     (Filter.Tendsto.eventually_lt_const (show c < c / 2 by linarith) h)
@@ -1569,7 +1573,7 @@ private lemma ofReal_pow_le_nelProd {b1 a1 : ℝ} (hb1 : 0 ≤ b1) (ha1 : 0 ≤ 
   have h1 : ENNReal.ofReal a1 ^ N = ∏ _i ∈ Finset.range N, ENNReal.ofReal a1 := by
     rw [Finset.prod_const, Finset.card_range]
   rw [ENNReal.ofReal_pow ha1, h1, nelProd]
-  refine Finset.prod_le_prod' fun i _ => ENNReal.ofReal_le_ofReal ?_
+  refine Finset.prod_le_prod fun i _ => ENNReal.ofReal_le_ofReal ?_
   have := mul_nonneg hb1 (sq_nonneg (p (-1 - (i : ℤ))))
   linarith
 
@@ -1583,7 +1587,7 @@ private lemma indep_last_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurab
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance)
     (fun s => (hm s).comap_le) hi hdisj
-  simpa using this
+  simpa using! this
 
 omit [MeasurableSpace Ω] in
 /-- The random product at time `s ≤ t`, as a function of the strict past of time `t`. -/
@@ -1656,8 +1660,8 @@ private lemma isStrictlyStationary_nelX [IsProbabilityMeasure μ] {c0 b1 a1 : �
   set Ψ : (ℤ → ℝ) → (Fin n → ℝ) :=
     fun p i => nelXf c0 b1 a1 fun s => p (s + tt i) with hΨ
   have hΨm : Measurable Ψ :=
-    measurable_pi_lambda _ fun i => (measurable_nelXf c0 b1 a1).comp
-      (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+    Measurable.of_eval fun i => (measurable_nelXf c0 b1 a1).comp
+      (Measurable.of_eval fun s => measurable_pi_apply (s + tt i))
   have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => nelXf c0 b1 a1 (nelPath ε (tt i + c) ω))
       = fun ω => Ψ (nelPath ε c ω) := by
     intro c
@@ -1672,7 +1676,13 @@ private lemma isStrictlyStationary_nelX [IsProbabilityMeasure μ] {c0 b1 a1 : �
       = fun ω => Ψ (nelPath ε 0 ω) := by
     have := hfac 0
     simpa using this
-  rw [hfac k, hz]
+  rw [hfac k, hz,
+    Measure.map₀_of_measurable
+      (show Measurable (fun ω => Ψ (nelPath ε k ω)) from
+        hΨm.comp (measurable_nelPath hm k)),
+    Measure.map₀_of_measurable
+      (show Measurable (fun ω => Ψ (nelPath ε 0 ω)) from
+        hΨm.comp (measurable_nelPath hm 0))]
   exact map_comp_nelPath hm hi hid hΨm k 0
 
 /-! #### The ARCH(∞) form of the volatility, read off the *observation* path -/

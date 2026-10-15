@@ -91,7 +91,7 @@ variable {μ : Measure X} [IsFiniteMeasure μ]
 private theorem separableSpace_Lp (𝕜 : Type*) [RCLike 𝕜] {X : Type*} [MetricSpace X]
     [CompactSpace X] [MeasurableSpace X] [BorelSpace X] (μ : Measure X) [IsFiniteMeasure μ] :
     TopologicalSpace.SeparableSpace (Lp 𝕜 2 μ) := by
-  haveI : Fact ((2 : ℝ≥0∞) ≠ ⊤) := ⟨by norm_num⟩
+  have : Fact ((2 : ℝ≥0∞) ≠ ⊤) := ⟨by norm_num⟩
   infer_instance
 
 
@@ -126,7 +126,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
   have hTs : (T : E →ₗ[𝕜] E).IsSymmetric := hTp.isSymmetric
   set Pos : Type := {r : ℝ // 0 < r ∧ HasEigenvalue (T : E →ₗ[𝕜] E) ((r : ℝ) : 𝕜)} with hPos
   set W : Pos → Submodule 𝕜 E := fun p => eigenspace (T : E →ₗ[𝕜] E) (((p : ℝ) : 𝕜)) with hW
-  haveI hfd : ∀ p : Pos, FiniteDimensional 𝕜 (W p) := by
+  have hfd : ∀ p : Pos, FiniteDimensional 𝕜 (W p) := by
     intro p
     exact ContinuousLinearMap.finite_dimensional_eigenspace hTc _
       (RCLike.ofReal_ne_zero.mpr p.2.1.ne')
@@ -155,7 +155,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
     exact mem_eigenspace_iff.mp (b p i).2
   -- the kernel of `T` and a Hilbert basis of it
   obtain ⟨N, hN⟩ : ∃ N : Submodule 𝕜 E, N = LinearMap.ker (T : E →ₗ[𝕜] E) := ⟨_, rfl⟩
-  haveI hNc : CompleteSpace N := by rw [hN]; infer_instance
+  have hNc : CompleteSpace N := by rw [hN]; infer_instance
   obtain ⟨w, e, he⟩ := @exists_hilbertBasis 𝕜 _ N _ _ hNc
   set vAll : ι ⊕ w → E := Sum.elim v (fun k => ((e k : N) : E)) with hvAll
   -- membership facts
@@ -199,7 +199,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
         rintro _ ⟨k, rfl⟩
         have hz : ⟪((e k : N) : E), g⟫_𝕜 = 0 := hperp (Sum.inr k)
         simp only [SetLike.mem_coe, LinearMap.mem_ker]
-        show ⟪g, ((e k : N) : E)⟫_𝕜 = 0
+        change ⟪g, ((e k : N) : E)⟫_𝕜 = 0
         rw [← inner_conj_symm, hz, map_zero]
       intro y
       have h2 := hMle (e.dense_span.ge (Submodule.mem_top (x := y)))
@@ -272,7 +272,7 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
   have := (Sum.inl_injective (β := w)).hasSum_iff (f := fun i => ⟪vAll i, g⟫_𝕜 • T (vAll i))
     (a := T g) hvan
   rw [← this] at hTsum
-  convert hTsum using 2 with n
+  convert! hTsum using 2 with n
   have h1 : vAll (Sum.inl n) = v n := rfl
   rw [Function.comp_apply, h1, heig n, smul_comm]
 
@@ -283,7 +283,7 @@ theorem exists_mercerEigensystem {K : X → X → 𝕜} (hK : IsMercerKernel �
     -- USER-INPUT: the measure has full support
     [μ.IsOpenPosMeasure] :
     Nonempty (MercerEigensystem μ K hK.continuous) := by
-  haveI := separableSpace_Lp 𝕜 μ
+  have := separableSpace_Lp 𝕜 μ
   obtain ⟨ι, v, lam, hcount, hpos, hON, heig, hexp⟩ :=
     exists_eigen_data (mercerCLM μ hK.continuous) (isCompactOperator_mercerCLM hK)
       (isPositive_mercerCLM hK)
@@ -326,7 +326,7 @@ private theorem coeFn_finset_sum_smul' {ι : Type*} (s : Finset ι) (c : ι → 
       =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | empty => simpa using! Lp.coeFn_zero 𝕜 2 μ
   | insert a t ha ih =>
       rw [Finset.sum_insert ha]
       filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
@@ -342,7 +342,7 @@ private noncomputable def residualSymbol (d : MercerEigensystem μ K hKc) (s : F
 
 private theorem continuous_residualSymbol (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     Continuous fun p : X × X => residualSymbol d s p.1 p.2 :=
-  hKc.sub (continuous_finset_sum s fun n _ =>
+  hKc.sub (continuous_finsetSum s fun n _ =>
     continuous_const.mul (((d.eigfun n).continuous.comp continuous_fst).mul
       (RCLike.continuous_conj.comp ((d.eigfun n).continuous.comp continuous_snd))))
 
@@ -422,7 +422,7 @@ private theorem hasSum_re_quadratic (d : MercerEigensystem μ K hKc) (g : Lp �
   refine (((d.opExpansion g).mapL (innerSL 𝕜 g)).map
     (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
     fun n => ?_
-  show d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2
+  change d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2
       = RCLike.re ⟪g, (d.eigval n : 𝕜) •
           (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
             ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))⟫_𝕜
@@ -438,7 +438,7 @@ private theorem isPositive_residual (hK : IsMercerKernel 𝕜 K)
     fun a b => (isPositive_mercerCLM hK).1 a b
   constructor
   · intro h g
-    show ⟪mercerCLM μ (continuous_residualSymbol d s) h, g⟫_𝕜
+    change ⟪mercerCLM μ (continuous_residualSymbol d s) h, g⟫_𝕜
       = ⟪h, mercerCLM μ (continuous_residualSymbol d s) g⟫_𝕜
     rw [mercerCLM_residual, mercerCLM_residual, inner_sub_left, inner_sub_right, sum_inner,
       inner_sum, hTsym h g]
@@ -649,7 +649,7 @@ private theorem continuous_eig_tsum (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
     Continuous fun y => ∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) :=
   (tendstoUniformly_eig hK d x).continuous
     (Filter.Eventually.frequently (Filter.Eventually.of_forall fun t =>
-      continuous_finset_sum t fun n _ =>
+      continuous_finsetSum t fun n _ =>
         continuous_const.mul (continuous_const.mul
           (RCLike.continuous_conj.comp' (d.eigfun n).continuous))))
 
@@ -674,7 +674,8 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       ⟪mercerCLM μ hKc a, b⟫_𝕜 = ⟪a, mercerCLM μ hKc b⟫_𝕜 :=
     fun a b => (isPositive_mercerCLM hK).1 a b
   -- (α) the eigenvalue equation in `L²`
-  have heigL : ∀ n, mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) = (d.eigval n : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+  have heigL : ∀ n, mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) =
+      (d.eigval n : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
     intro n
     refine Lp.ext ?_
     filter_upwards [mercerCLM_coeFn_ae hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
@@ -694,9 +695,11 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       (continuous_integralOp_of_continuous hKc g₀) continuous_const).mp hae
     exact congrFun this z
   -- (β) the eigenfunctions are orthogonal to the kernel of `T_K`
-  have hEEker : ∀ (n : d.ι) (g₀ : Lp 𝕜 2 μ), mercerCLM μ hKc g₀ = 0 → ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g₀⟫_𝕜 = 0 := by
+  have hEEker : ∀ (n : d.ι) (g₀ : Lp 𝕜 2 μ), mercerCLM μ hKc g₀ = 0 →
+      ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g₀⟫_𝕜 = 0 := by
     intro n g₀ h0
-    have h1 : ⟪mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)), g₀⟫_𝕜 = ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), mercerCLM μ hKc g₀⟫_𝕜 := hTsym _ _
+    have h1 : ⟪mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)), g₀⟫_𝕜 =
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), mercerCLM μ hKc g₀⟫_𝕜 := hTsym _ _
     rw [heigL n, h0, inner_zero_right, inner_smul_left, RCLike.conj_ofReal] at h1
     rcases mul_eq_zero.mp h1 with h | h
     · exact absurd h (RCLike.ofReal_ne_zero.mpr (d.eigval_pos n).ne')
@@ -727,17 +730,20 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     exact ht z
   have hGtend : Filter.Tendsto G Filter.atTop (nhds Sc) :=
     ContinuousMap.tendsto_iff_tendstoUniformly.mpr hUC
-  have hw : HasSum (fun n => ((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))
+  have hw : HasSum (fun n => ((d.eigval n : 𝕜) * conj (d.eigfun n x)) •
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))
       (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc) := by
     have h := ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜).continuous.tendsto Sc).comp hGtend
     refine h.congr fun t => ?_
     simp only [Function.comp_apply, hGdef, map_sum, map_smul]
   -- the coefficients of `w` and of `conj K(x, ·)` against the eigenfunctions agree
-  have hEEw : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜
+  have hEEw : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m),
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜
       = (d.eigval m : 𝕜) * conj (d.eigfun m x) := by
     intro m
     have h := hw.mapL (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)))
-    have heq : (fun n => (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m))) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)))
+        (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun n => if n = m then (d.eigval m : 𝕜) * conj (d.eigfun m x) else 0 := by
       funext n
       rw [innerSL_apply_apply, inner_smul_right, orthonormal_iff_ite.mp d.orthonormal m n]
@@ -755,7 +761,8 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
       ⟪g₀, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜 = 0 := by
     intro g₀ h0
     have h := hw.mapL (innerSL 𝕜 g₀)
-    have heq : (fun n => (innerSL 𝕜 g₀) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (innerSL 𝕜 g₀)
+        (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun _ : d.ι => (0 : 𝕜) := by
       funext n
       rw [innerSL_apply_apply, inner_smul_right, ← inner_conj_symm, hEEker n g₀ h0,
@@ -773,7 +780,9 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     rw [hψdef, inner_sub_right, hEEw m, hEEk m, sub_self]
   have hψker : mercerCLM μ hKc ψ = 0 := by
     have h := d.opExpansion ψ
-    have heq : (fun n => (d.eigval n : 𝕜) • (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), ψ⟫_𝕜 • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have heq : (fun n => (d.eigval n : 𝕜) •
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+          ψ⟫_𝕜 • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
         = fun _ : d.ι => (0 : Lp 𝕜 2 μ) := by
       funext n
       rw [hψE n, zero_smul, smul_zero]
@@ -820,7 +829,7 @@ private theorem hasSum_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasur
   refine ((d.hasSum_kernel hK x x).map
     (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
     fun n => ?_
-  show d.eigval n * ‖d.eigfun n x‖ ^ 2
+  change d.eigval n * ‖d.eigfun n x‖ ^ 2
       = RCLike.re ((d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n x)))
   rw [RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
 
@@ -831,7 +840,7 @@ private theorem tendstoUniformly_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpe
       (fun s : Finset d.ι => fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2)
       (fun x => RCLike.re (K x x)) Filter.atTop := by
   refine Monotone.tendstoUniformly_of_forall_tendsto ?_ ?_ ?_ ?_
-  · exact fun s => continuous_finset_sum s fun n _ =>
+  · exact fun s => continuous_finsetSum s fun n _ =>
       continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
   · exact fun s t hst x => Finset.sum_le_sum_of_subset_of_nonneg hst
       fun n _ _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
@@ -865,15 +874,16 @@ private theorem integral_normSq_eigfun (d : MercerEigensystem μ K hKc) (n : d.�
 /-- The truncated eigenvalue sum is the integral of the truncated diagonal expansion. -/
 private theorem sum_eigval_eq_integral (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     (∑ n ∈ s, d.eigval n) = ∫ x, ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 ∂μ := by
-  rw [integral_finset_sum s fun n _ =>
+  erw [integral_finsetSum s fun n _ =>
     (integrable_of_cont' (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
   refine Finset.sum_congr rfl fun n _ => ?_
+  simp only [Pi.pow_apply]
   rw [integral_const_mul, integral_normSq_eigfun d n, mul_one]
 
 /-- Continuity of the truncated diagonal expansion. -/
 private theorem continuous_diag_partial (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
     Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
-  continuous_finset_sum s fun n _ =>
+  continuous_finsetSum s fun n _ =>
     continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
 
 end Trace

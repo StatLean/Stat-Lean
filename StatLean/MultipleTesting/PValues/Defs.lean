@@ -50,8 +50,8 @@ namespace StatLean.MultipleTesting
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-- `SuperUniform p μ`: the p-value `p` is *super-uniform* under `μ`, i.e. `μ {p ≤ t} ≤ t` for
-every `t ≥ 0` (Lu-BDA Ch19 (Multiple Hypotheses) §19.2). The defining null assumption; for an exactly-uniform `p` it holds
-with equality. -/
+every `t ≥ 0` (Lu-BDA Ch19 (Multiple Hypotheses) §19.2). The defining null assumption; for an
+exactly-uniform `p` it holds with equality. -/
 def SuperUniform (p : Ω → ℝ) (μ : Measure Ω) : Prop :=
   ∀ t : ℝ, 0 ≤ t → μ {ω | p ω ≤ t} ≤ ENNReal.ofReal t
 

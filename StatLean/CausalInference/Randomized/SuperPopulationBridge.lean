@@ -88,7 +88,7 @@ theorem integral_sampledFiniteATE [IsProbabilityMeasure μ] {Y1 Y0 : ℕ → Ω 
       = (n : ℝ)⁻¹ * ∫ ω, (∑ i ∈ Finset.range n, sampledEffect Y1 Y0 i ω) ∂μ := by
     simp only [sampledFiniteATE]
     exact integral_const_mul _ _
-  rw [hstep, integral_finset_sum _ fun i _ => hintI i]
+  rw [hstep, integral_finsetSum _ fun i _ => hintI i]
   have hterm : ∀ i ∈ Finset.range n,
       ∫ ω, sampledEffect Y1 Y0 i ω ∂μ = ∫ ω, sampledEffect Y1 Y0 0 ω ∂μ :=
     fun i _ => (hident i).integral_eq

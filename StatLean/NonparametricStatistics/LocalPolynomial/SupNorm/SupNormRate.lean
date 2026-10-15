@@ -90,7 +90,8 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
     refine ⟨(∑ i, |ξ i ω|) * lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h), ?_⟩
     rintro _ ⟨t, rfl⟩
     calc |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|
-        ≤ ∑ i, |ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i| := Finset.abs_sum_le_sum_abs _ _
+        ≤ ∑ i, |ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i| :=
+          Finset.abs_sum_le_sum_abs _ _
       _ = ∑ i, |ξ i ω| * |lpWeight xdat K h (holderIndex β) (t : ℝ) i| := by simp_rw [abs_mul]
       _ ≤ ∑ i, |ξ i ω| * (lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h)) := by
           refine Finset.sum_le_sum (fun i _ => mul_le_mul_of_nonneg_left ?_ (abs_nonneg _))
@@ -118,7 +119,8 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
     exact lp_bias_deterministic hβ hL hn0 hhl hlam ha₀ hx heig hbox hdens hf t.2
   -- squared pointwise bound
   have hptsq : ∀ ω, (⨆ t : Set.Icc (0 : ℝ) 1,
-        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|) ^ 2
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β)
+            (t : ℝ) - f (t : ℝ)|) ^ 2
       ≤ 2 * (⨆ t : Set.Icc (0 : ℝ) 1,
           |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2
         + 2 * (q₁ * h ^ β) ^ 2 := by
@@ -132,7 +134,8 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
       gcongr
       exact le_ciSup (hZbdd ω) t
     have hfbdd : BddAbove (Set.range fun t : Set.Icc (0 : ℝ) 1 =>
-        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|) := by
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β)
+            (t : ℝ) - f (t : ℝ)|) := by
       obtain ⟨B, hB⟩ := hZbdd ω
       refine ⟨q₁ * h ^ β + B, ?_⟩
       rintro _ ⟨t, rfl⟩
@@ -201,7 +204,7 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
         · rw [lintegral_const, measure_univ, mul_one]
     _ ≤ 2 * ENNReal.ofReal (Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
         + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) :=
-        add_le_add (mul_le_mul_left' hCsapp 2) (le_refl _)
+        add_le_add (mul_le_mul_right hCsapp 2) (le_refl _)
     _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
         + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) := by rw [hdbl]
     _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)

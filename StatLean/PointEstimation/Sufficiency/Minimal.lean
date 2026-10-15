@@ -86,7 +86,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     (hP : ∀ i, P i = μ.withDensity (p i)) :
     IsMinimalSufficient P (likelihoodRatioVec p) := by
   have hLRVm : Measurable (likelihoodRatioVec p) :=
-    measurable_pi_lambda _ fun i => (hp i.succ).div (hp 0)
+    Measurable.of_eval fun i => (hp i.succ).div (hp 0)
   -- sufficiency: the densities factor through the ratio vector with carrier `p 0`
   have hgm : ∀ i : Fin (k + 1),
       Measurable (fun v : Fin k → ℝ≥0∞ => (Fin.cons (1 : ℝ≥0∞) v : Fin (k + 1) → ℝ≥0∞) i) := by
@@ -103,13 +103,13 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     · intro i'
       filter_upwards [hpos 0, hfin 0] with x h0pos h0fin
       simp only [Fin.cons_succ]
-      show p i'.succ x = p i'.succ x / p 0 x * p 0 x
+      change p i'.succ x = p i'.succ x / p 0 x * p 0 x
       rw [ENNReal.div_mul_cancel h0pos.ne' h0fin]
   refine ⟨hLRVsuf, ?_⟩
   rintro S' _ U hU hUsuf
   obtain ⟨g', h', hg'm, _, hfacU⟩ := isFactorizedDensity_of_isSufficient P μ p hp hP hU hUsuf
   refine ⟨fun s i' => g' i'.succ s / g' 0 s,
-    measurable_pi_lambda _ fun i' => (hg'm i'.succ).div (hg'm 0), fun i => ?_⟩
+    Measurable.of_eval fun i' => (hg'm i'.succ).div (hg'm 0), fun i => ?_⟩
   have hac : P i ≪ μ := (hP i) ▸ withDensity_absolutelyContinuous μ (p i)
   refine hac.ae_eq ?_
   have hcomp : ∀ᵐ x ∂μ, ∀ i',
@@ -117,7 +117,7 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     rw [ae_all_iff]
     intro i'
     filter_upwards [hpos 0, hfin 0, hfacU i'.succ, hfacU 0] with x h0pos h0fin hfsucc hf0
-    show g' i'.succ (U x) / g' 0 (U x) = p i'.succ x / p 0 x
+    change g' i'.succ (U x) / g' 0 (U x) = p i'.succ x / p 0 x
     have hh'0 : h' x ≠ 0 := by
       intro he; rw [hf0, he, mul_zero] at h0pos; exact lt_irrefl _ h0pos
     have hh't : h' x ≠ ⊤ := by

@@ -234,7 +234,7 @@ theorem dudley_tail_separable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   have hthr := dudley_tail_threshold_le hcov hne hS hDL hD hD0 hu
   refine le_trans (measure_mono ?_)
     (dudley_tail_three_term_separable hcov hne hmeas hinc hsep hS hu)
-  refine Set.setOf_subset_setOf.mpr fun ω hω => lt_of_le_of_lt ?_ hω
+  refine Set.ofPred_subset_ofPred.mpr fun ω hω => lt_of_le_of_lt ?_ hω
   calc (K : ℝ) * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)
       ≤ (K : ℝ) * (200 * ((dudleyLIntegral T D).toReal + u * Metric.diam T)) :=
         mul_le_mul_of_nonneg_left hthr K.coe_nonneg

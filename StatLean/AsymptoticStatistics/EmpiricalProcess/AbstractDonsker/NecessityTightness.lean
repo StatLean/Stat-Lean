@@ -67,18 +67,18 @@ theorem isClosed_goodModulusSet (P : Measure Ω) (F : Set (Ω → ℝ)) (δ c : 
   have : goodModulusSet P F δ c
       = ⋂ f : ↥F, ⋂ g : ↥F,
         {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c} := by
-    ext z; simp only [goodModulusSet, Set.mem_setOf_eq, Set.mem_iInter]
+    ext z; simp only [goodModulusSet, Set.mem_ofPred_eq, Set.mem_iInter]
   rw [this]
   refine isClosed_iInter (fun f => isClosed_iInter (fun g => ?_))
   by_cases hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ
   · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c}
         = {z : LinfF F | |z f - z g| ≤ c} := by
-      ext z; simp only [Set.mem_setOf_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
+      ext z; simp only [Set.mem_ofPred_eq]; exact ⟨fun h => h hfg, fun h _ => h⟩
     rw [hset]
     exact isClosed_le (((hcont f).sub (hcont g)).abs) continuous_const
   · have hset : {z : LinfF F | distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ → |z f - z g| ≤ c}
         = Set.univ := by
-      ext z; simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact fun h => absurd h hfg
     rw [hset]; exact isClosed_univ
 
@@ -101,9 +101,10 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
       gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
         (goodModulusSet P F δ c)ᶜ ≤ ENNReal.ofReal η := by
   classical
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The increasing family of good-modulus sets `S k = goodModulusSet … (1/(k+1)) c`.
   set S : ℕ → Set (LinfF F) := fun k => goodModulusSet P F ((k + 1 : ℝ)⁻¹) c with hS
@@ -145,7 +146,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
   have hev : ∀ᶠ k in atTop, (1 : ℝ≥0∞) - ENNReal.ofReal η ≤ ν (S k) := by
     rcases le_or_gt 1 (ENNReal.ofReal η) with hle | hlt
     · refine Eventually.of_forall fun k => ?_
-      rw [tsub_eq_zero_of_le hle]; exact zero_le _
+      rw [tsub_eq_zero_of_le hle]; exact zero_le
     · refine htendsto.eventually (eventually_ge_nhds ?_)
       rw [ENNReal.sub_lt_self_iff ENNReal.one_ne_top]
       exact ⟨one_pos, ENNReal.ofReal_pos.2 hη⟩
@@ -156,7 +157,7 @@ theorem gp_goodModulusSet_compl_mass_le {c : ℝ} (hc : 0 < c)
     rw [measure_compl (isClosed_goodModulusSet P F _ c).measurableSet (measure_ne_top _ _),
       measure_univ]
   -- The goal's set is `(goodModulusSet … ((k+1)⁻¹) c)ᶜ`, which is `(S k)ᶜ` by definition.
-  show ν (S k)ᶜ ≤ ENNReal.ofReal η
+  change ν (S k)ᶜ ≤ ENNReal.ofReal η
   rw [hScompl]
   -- `1 − ν (S k) ≤ 1 − (1 − η) = η` (since `η ≤ 1` after capping; if `η > 1` the bound is trivial).
   rcases le_or_gt 1 (ENNReal.ofReal η) with hle | hlt
@@ -176,7 +177,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     (hfg : distL2 P (f : Ω → ℝ) (g : Ω → ℝ) ≤ δ) (hosc : η < |z f - z g|) :
     z ∈ (Metric.thickening (η / 4) (goodModulusSet P F δ (η / 2)))ᶜ := by
   rw [Set.mem_compl_iff, Metric.mem_thickening_iff]
-  push_neg
+  push Not
   intro w hw
   -- `w ∈ goodModulusSet` ⟹ `|w f − w g| ≤ η/2`; coordinate sup-norm bound.
   have hwmod : |w f - w g| ≤ η / 2 := hw f g hfg
@@ -191,7 +192,7 @@ theorem closePair_mem_thickening_compl {F : Set (Ω → ℝ)} {P : Measure Ω}
     exact abs_sub _ _
   -- if `dist z w < η/4`, i.e. `‖z − w‖ < η/4`, then `|z f − z g| < η`, contradiction.
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   rw [dist_eq_norm] at hlt
   have hfinal : |z f - z g| < η := by
     have h2 : ‖z - w‖ < η / 4 := hlt
@@ -242,9 +243,10 @@ theorem outerMeasure_modulusComplement_le
           atTop
         ≤ ENNReal.ofReal η := by
   intro ε η hε hη
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   set ν := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne with hν
   -- The `⇝ₒ` instance for this iid sample.
   have hwc := h μ X hX_meas hX_indep hX_id hX_law
@@ -325,9 +327,10 @@ theorem empiricalProcess_asymptoticallyTight
         (memℓp_empiricalProcess
           ⟨G, hG_env, hG.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)⟩
           (fun i : Fin n => X i.val ξ))) := by
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   exact AsymptoticStatistics.isAsymptoticallyTight_of_weakConvergesOuter
     (h μ X hX_meas hX_indep hX_id hX_law)
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).tight

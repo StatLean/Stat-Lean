@@ -10,8 +10,8 @@ $j \notin S$). Assume the design matrix $X$ satisfies the **lower-eigenvalue con
 the restricted submatrix $\tfrac1n X_S^\top X_S$ has minimum eigenvalue at least $c_{\min} > 0$
 — and the **mutual-incoherence condition (A4)** with parameter $\alpha \in [0,1)$. If the
 regularization parameter satisfies the condition (7.44)
-$$\lambda \ \ge\ \frac{2}{1-\alpha}\,\bigl\|\tfrac1n X_{S^c}^\top \Pi_{S^\perp}\, w\bigr\|_\infty ,$$
-then the Lagrangian Lasso program enjoys the following variable-selection guarantees:
+$$\lambda \ \ge\ \frac{2}{1-\alpha}\,\bigl\|\tfrac1n X_{S^c}^\top \Pi_{S^\perp}\, w\bigr\|_\infty
+,$$ then the Lagrangian Lasso program enjoys the following variable-selection guarantees:
 
 * **(a) Uniqueness.** The Lasso has a *unique* optimal solution $\widehat\beta$.
 * **(b) No false inclusion.** Every Lasso minimizer is supported on $S$, i.e.
@@ -159,7 +159,7 @@ theorem lasso_support_recovery_no_false_exclusion (X : Matrix (Fin n) (Fin d) �
   -- |β̂ᵢ − θ*ᵢ| ≤ ‖(β̂ − θ*)|_S‖_∞ ≤ B
   have hcoord : |(βhat - θstar).ofLp i| ≤ supportRecoveryBound X S w lam := by
     have h1 := abs_le_linfNorm (restrict S (βhat - θstar)) i
-    rw [restrict_ofLp_apply, if_pos hiS] at h1
+    rw [restrict_ofLp_apply, ite_eq_left hiS] at h1
     exact h1.trans hlinf
   intro hzero
   -- with β̂ᵢ = 0, |β̂ᵢ − θ*ᵢ| = |θ*ᵢ| > B, contradiction

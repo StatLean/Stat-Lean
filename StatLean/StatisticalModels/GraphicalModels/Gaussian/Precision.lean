@@ -254,7 +254,7 @@ theorem posDef_condCovMatrix
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := by
   have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
   have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
   rw [Matrix.posDef_iff_dotProduct_mulVec]
   refine ⟨(posSemidef_condCovMatrix hJ.posSemidef h₁₁).1, fun x hx => ?_⟩
@@ -287,9 +287,9 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inr
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr
       = (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ := by
   have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
-  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
-  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  have : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
     Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
   rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
   simp only [Matrix.invOf_eq_nonsing_inv]
@@ -319,9 +319,9 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inl
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inl
       = -((condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ * condMeanMatrix S₁₁ S₁₂) := by
   have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
-  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
-  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  have : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
     Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
   rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
   simp only [Matrix.invOf_eq_nonsing_inv]
@@ -340,9 +340,9 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
       ↔ S₁₂ = 0 := by
   have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
   have hcc : (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := posDef_condCovMatrix hJ
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
-  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
-  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  have : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
     Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
   have hblock : (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr
       = -(S₁₁⁻¹ * S₁₂ * (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹) := by
@@ -352,7 +352,8 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
     simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply,
       condCovMatrix]
   have hu1 : IsUnit S₁₁.det := (Matrix.isUnit_iff_isUnit_det _).mp h₁₁.isUnit
-  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det := (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
+  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
   rw [hblock, neg_eq_zero]
   constructor
   · intro h
@@ -382,7 +383,7 @@ theorem map_multivariateGaussian_fromBlocks_eq_prod_iff
       ↔ (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr = 0 := by
   have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
   have h₂₂ : S₂₂.PosDef := posDef_of_fromBlocks_inr hJ
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
   -- the diagonal joint covariance is a genuine covariance
   have hJ0 : (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂).PosSemidef := by
     have := (Matrix.PosDef.fromBlocks₁₁ (A := S₁₁) (0 : Matrix ι₁ ι₂ ℝ) S₂₂ h₁₁).mpr
@@ -669,11 +670,12 @@ private theorem condIndep_blockProj_iff_precisionMatrix_eq_zero {kC kA kB : Type
     rw [show pJ = (fJ : _ → _) ∘ (blockSnd (ι₁ := kA) (ι₂ := kB)) from rfl,
       ← Measure.map_map fJ.measurable blockSnd.continuous.measurable, hQb,
       multivariateGaussian_map_blockSnd n₁ n₂ Q₁₁ Q₁₂ Q₂₂ hQJ.posSemidef]
-  haveI : IsMarkovKernel (Kcond.map pI) := Kernel.IsMarkovKernel.map _ hpImeas
-  haveI : IsMarkovKernel (Kcond.map pJ) := Kernel.IsMarkovKernel.map _ hpJmeas
-  haveI : IsMarkovKernel (Kcond.map Θ₂) := Kernel.IsMarkovKernel.map _ hΘ₂meas
-  haveI : IsProbabilityMeasure ((multivariateGaussian m₁ T₁₁).map fC) :=
-    Measure.isProbabilityMeasure_map fC.measurable.aemeasurable
+  have : IsMarkovKernel (Kcond.map pI) := Kernel.IsMarkovKernel.map _ hpImeas
+  have : IsMarkovKernel (Kcond.map pJ) := Kernel.IsMarkovKernel.map _ hpJmeas
+  have : IsMarkovKernel (Kcond.map Θ₂) := Kernel.IsMarkovKernel.map _ hΘ₂meas
+  have : IsProbabilityMeasure ((multivariateGaussian m₁ T₁₁).map fC) :=
+    (by infer_instance)
+  rw [condIndep_iff_map (by fun_prop)]
   constructor
   · -- ⟹ : conditional independence forces the concentration entries to vanish
     rintro ⟨κ, η, hκ, hη, heq⟩
@@ -710,10 +712,10 @@ private theorem condIndep_blockProj_iff_precisionMatrix_eq_zero {kC kA kB : Type
         Measure.map_map (fI.symm.measurable.prodMap fJ.symm.measurable) hfIJ, hid,
         Measure.map_id] at hmapped
       exact hmapped
-    haveI : IsProbabilityMeasure ((κ c).map fI.symm) :=
-      Measure.isProbabilityMeasure_map fI.symm.measurable.aemeasurable
-    haveI : IsProbabilityMeasure ((η c).map fJ.symm) :=
-      Measure.isProbabilityMeasure_map fJ.symm.measurable.aemeasurable
+    have : IsProbabilityMeasure ((κ c).map fI.symm) :=
+      (by infer_instance)
+    have : IsProbabilityMeasure ((η c).map fJ.symm) :=
+      (by infer_instance)
     have hA : (κ c).map fI.symm = multivariateGaussian (blockFst nn) Q₁₁ := by
       have hfst : Measure.map Prod.fst (((κ c).map fI.symm).prod ((η c).map fJ.symm))
           = (κ c).map fI.symm := Measure.fst_prod
@@ -888,7 +890,7 @@ theorem condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero
   have hE : ({i} : Finset ι) ∪ {j} ∪ (Finset.univ \ {i, j}) = Finset.univ := by
     ext x
     simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.mem_insert,
-      Finset.mem_singleton, true_iff]
+      Finset.mem_singleton]
     tauto
   rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAB hAC hBC hE]
   -- the principal submatrix on all of `Γ` is `Σ` itself, reindexed

@@ -146,8 +146,13 @@ size `k`, bracket families `lb, ub`, the bracket witnesses, and the covering
 property. Extracted (non-canonically, via choice) from
 `HasFiniteBracketingCover`. -/
 structure BracketingCoverData (F : Set (Ω → ℝ)) (ε : ℝ) (P : Measure Ω) where
+  /-- The number of brackets in the cover. -/
   k : ℕ
+  /-- The lower bracket functions: `lb i` is the lower end of the `i`-th bracket
+  `[lb i, ub i]`. -/
   lb : Fin k → Ω → ℝ
+  /-- The upper bracket functions: `ub i` is the upper end of the `i`-th bracket
+  `[lb i, ub i]`. -/
   ub : Fin k → Ω → ℝ
   bracket : ∀ i, IsEpsBracket ε (lb i) (ub i) 2 P
   covers : ∀ f ∈ F, ∃ i, ∀ x, lb i x ≤ f x ∧ f x ≤ ub i x
@@ -200,7 +205,7 @@ lemma assignIdx_spec {ε : ℝ} (cov : BracketingCoverData F ε P) {f : Ω → �
   classical
   refine ⟨hf.choose, ?_, hf.choose_spec⟩
   unfold assignIdx
-  rw [dif_pos hf]
+  rw [dite_eq_left hf]
 
 lemma assignIdx_lt {ε : ℝ} (cov : BracketingCoverData F ε P) {f : Ω → ℝ}
     (hf : ∃ i, ∀ x, cov.lb i x ≤ f x ∧ f x ≤ cov.ub i x) :
@@ -341,7 +346,7 @@ lemma buildCell_cover {q : ℕ} (_hq : q₀ ≤ q) {f : Ω → ℝ} (hf : f ∈ 
   -- its `equivFin` image is the desired index.
   set t : AchievedTuple cov q₀ q := ⟨assignTuple cov q₀ q hf, f, hf, rfl⟩ with ht
   refine ⟨Fintype.equivFin (AchievedTuple cov q₀ q) t, ?_⟩
-  rw [mem_buildCell]
+  erw [mem_buildCell]
   refine ⟨hf, ?_⟩
   -- decode (equivFin t) = t
   show assignTuple cov q₀ q hf = (decode cov (q₀ := q₀) q
@@ -435,7 +440,7 @@ lemma buildΔ_meas {q : ℕ} (hq : q₀ ≤ q) (i : Fin (buildNq cov (q₀ := q�
   rw [hrw]
   refine Finset.inf'_induction (p := fun g : Ω → ℝ => Measurable g) _ _
     (fun (a : Ω → ℝ) (ha : Measurable a) (b : Ω → ℝ) (hb : Measurable b) =>
-      Measurable.inf' ha hb)
+      Measurable.inf ha hb)
     (fun p _ => cellWidth_meas cov i p)
 
 /-- `Δ q i ∈ L²(P)`: the `inf'` is pointwise sandwiched `0 ≤ Δ q i ≤ width_q`
@@ -478,7 +483,8 @@ lemma buildΔ_L2_le {q : ℕ} (hq : q₀ ≤ q) (i : Fin (buildNq cov (q₀ := q
   have hbound : eLpNorm (buildΔ cov hq i) 2 P
       ≤ eLpNorm (fun x => (cov q).ub (topIdx cov hq i) x
           - (cov q).lb (topIdx cov hq i) x) 2 P := by
-    refine eLpNorm_mono_ae_real (Filter.Eventually.of_forall (fun x => ?_))
+    refine eLpNorm_mono_ae_real (buildΔ_meas cov hq i).aestronglyMeasurable
+        (Filter.Eventually.of_forall (fun x => ?_))
     have hle_top : buildΔ cov hq i x
         ≤ cellWidth cov i ⟨q, Finset.mem_Icc.mpr ⟨hq, le_rfl⟩⟩ x :=
       Finset.inf'_le _ (Finset.mem_univ _)
@@ -651,17 +657,17 @@ noncomputable def nestedBracketPartition_of_covers (q₀ : ℕ)
   π_mem _ i := buildπ_mem cov i
   π_meas _ i := buildπ_meas cov hF_meas i
   diam hq i f hf g hg x := by
-    rw [dif_pos hq]; exact buildΔ_diam cov hq i hf hg x
-  Δ_meas hq i := by rw [dif_pos hq]; exact buildΔ_meas cov hq i
-  Δ_memLp hq i := by rw [dif_pos hq]; exact buildΔ_memLp cov hq i
+    rw [dite_eq_left hq]; exact buildΔ_diam cov hq i hf hg x
+  Δ_meas hq i := by rw [dite_eq_left hq]; exact buildΔ_meas cov hq i
+  Δ_memLp hq i := by rw [dite_eq_left hq]; exact buildΔ_memLp cov hq i
   Δ_L2_le hq i := by
-    rw [dif_pos hq]
+    rw [dite_eq_left hq]
     -- `scale q = (1/2)^(q−q₀)`; the field wants `1·(1/2)^(q−q₀)`.
     refine le_trans (buildΔ_L2_le (scale := fun p => (1 / 2 : ℝ) ^ (p - q₀)) cov hq i) ?_
     apply ENNReal.ofReal_le_ofReal
     rw [one_mul]
   Δ_succ_le_parent hq i x := by
-    rw [dif_pos (Nat.le_succ_of_le hq), dif_pos hq]
+    rw [dite_eq_left (Nat.le_succ_of_le hq), dite_eq_left hq]
     exact buildΔ_succ_le_parent cov hq i (buildCell_refines cov hq i).choose_spec x
   card_le hq := buildNq_card_le cov _
   coverCard_le hp := by
@@ -737,24 +743,24 @@ noncomputable def nestedBracketPartition_of_finiteEntropy (q₀ : ℕ) {δ : ℝ
     π_mem := fun _ i => buildπ_mem cov i
     π_meas := fun _ i => buildπ_meas cov hF_meas i
     diam := fun hq i f hf g hg x => by
-      rw [dif_pos hq]; exact buildΔ_diam cov hq i hf hg x
-    Δ_meas := fun hq i => by rw [dif_pos hq]; exact buildΔ_meas cov hq i
-    Δ_memLp := fun hq i => by rw [dif_pos hq]; exact buildΔ_memLp cov hq i
+      rw [dite_eq_left hq]; exact buildΔ_diam cov hq i hf hg x
+    Δ_meas := fun hq i => by rw [dite_eq_left hq]; exact buildΔ_meas cov hq i
+    Δ_memLp := fun hq i => by rw [dite_eq_left hq]; exact buildΔ_memLp cov hq i
     Δ_L2_le := fun hq i => by
-      rw [dif_pos hq]
+      rw [dite_eq_left hq]
       refine le_trans
         (buildΔ_L2_le (scale := fun p => (1 / 2 : ℝ) ^ (p - q₀) * δ) cov hq i) ?_
       apply ENNReal.ofReal_le_ofReal
       -- `buildΔ_L2_le` gives `scale q = (1/2)^(q−q₀)·δ`; the field wants `δ·(1/2)^(q−q₀)`.
       rw [mul_comm]
     Δ_succ_le_parent := fun hq i x => by
-      rw [dif_pos (Nat.le_succ_of_le hq), dif_pos hq]
+      rw [dite_eq_left (Nat.le_succ_of_le hq), dite_eq_left hq]
       exact buildΔ_succ_le_parent cov hq i (buildCell_refines cov hq i).choose_spec x
     card_le := fun hq => buildNq_card_le cov _
     coverCard_le := fun {p} hp => by
       -- on `p ≥ q₀`, the cover is the minimal one, so its size = bracketingNumber.
       show ((cov p).k : ℕ∞) ≤ bracketingNumber ((1 / 2 : ℝ) ^ (p - q₀) * δ) F 2 P
-      have hcovp : cov p = minimalCoverData _ (hcov p hp) := dif_pos hp
+      have hcovp : cov p = minimalCoverData _ (hcov p hp) := dite_eq_left hp
       rw [hcovp, minimalCoverData_k] }
 
 /-!
@@ -878,7 +884,9 @@ lemma isEpsBracket_clamp {ε : ℝ} {l u : Ω → ℝ} (hM : 0 ≤ M)
     clampFn_measurable h.measurable_lower, clampFn_measurable h.measurable_upper,
     clampFn_memLp hM h.memLp_lower, clampFn_memLp hM h.memLp_upper, ?_⟩
   refine lt_of_le_of_lt ?_ h.size_lt
-  refine eLpNorm_mono_ae_real (Filter.Eventually.of_forall (fun x => ?_))
+  refine eLpNorm_mono_ae_real ((clampFn_measurable h.measurable_upper).sub
+    (clampFn_measurable h.measurable_lower)).aestronglyMeasurable
+        (Filter.Eventually.of_forall (fun x => ?_))
   -- `0 ≤ clampFn M u x − clampFn M l x ≤ u x − l x`.
   have hbr : l x ≤ u x := h.isBracket x
   change |clampReal M (u x) - clampReal M (l x)| ≤ u x - l x
@@ -1020,7 +1028,7 @@ lemma clampedCoverFamily_of_le (q₀ : ℕ) {δ : ℝ} (M : ℝ) (hM : 0 ≤ M)
       HasFiniteBracketingCover (truncateClass G M) ((1 / 2 : ℝ) ^ (p - q₀) * δ) 2 P}
     {p : ℕ} (hp : q₀ ≤ p) :
     clampedCoverFamily q₀ M hM hcov' p = (minimalCoverData _ (hcov' p hp)).clampBrackets M hM :=
-  dif_pos hp
+  dite_eq_left hp
 
 /-- **Construction of a nested bracketing partition over the truncated class.**
 
@@ -1068,17 +1076,17 @@ noncomputable def nestedBracketPartition_of_finiteEntropy_clamped (q₀ : ℕ) {
     π_mem := fun _ i => buildπ_mem cov i
     π_meas := fun _ i => buildπ_meas cov hT_meas i
     diam := fun hq i f hf g hg x => by
-      rw [dif_pos hq]; exact buildΔ_diam cov hq i hf hg x
-    Δ_meas := fun hq i => by rw [dif_pos hq]; exact buildΔ_meas cov hq i
-    Δ_memLp := fun hq i => by rw [dif_pos hq]; exact buildΔ_memLp cov hq i
+      rw [dite_eq_left hq]; exact buildΔ_diam cov hq i hf hg x
+    Δ_meas := fun hq i => by rw [dite_eq_left hq]; exact buildΔ_meas cov hq i
+    Δ_memLp := fun hq i => by rw [dite_eq_left hq]; exact buildΔ_memLp cov hq i
     Δ_L2_le := fun hq i => by
-      rw [dif_pos hq]
+      rw [dite_eq_left hq]
       refine le_trans
         (buildΔ_L2_le (scale := fun p => (1 / 2 : ℝ) ^ (p - q₀) * δ) cov hq i) ?_
       apply ENNReal.ofReal_le_ofReal
       rw [mul_comm]
     Δ_succ_le_parent := fun hq i x => by
-      rw [dif_pos (Nat.le_succ_of_le hq), dif_pos hq]
+      rw [dite_eq_left (Nat.le_succ_of_le hq), dite_eq_left hq]
       exact buildΔ_succ_le_parent cov hq i (buildCell_refines cov hq i).choose_spec x
     card_le := fun hq => buildNq_card_le cov _
     coverCard_le := fun {p} hp => by
@@ -1114,7 +1122,7 @@ lemma nestedBracketPartition_of_finiteEntropy_clamped_Δ_le (q₀ : ℕ) {δ : �
   set cov := clampedCoverFamily q₀ M hM hcov' with hcovdef
   -- unfold the structure `Δ` to `buildΔ cov`, then bound by the `p = q` term.
   change (if hq' : q₀ ≤ q then buildΔ cov hq' i else 0) x ≤ 2 * M
-  rw [dif_pos hq]
+  rw [dite_eq_left hq]
   unfold buildΔ
   set pq : ↥(Finset.Icc q₀ q) := ⟨q, Finset.mem_Icc.mpr ⟨hq, le_rfl⟩⟩ with hpq
   refine le_trans (Finset.inf'_le _ (Finset.mem_univ pq)) ?_

@@ -182,6 +182,8 @@ estimation of regression functions for mixing processes* (Scand. J. Statist. 199
 Fan & Gijbels (1996) §6.5; the Bernstein-block scheme under (C3) follows Bosq (1998).
 -/
 
+set_option linter.style.longFile 7100
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 
@@ -514,7 +516,7 @@ theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
     (hgc : ContinuousAt g x)
     (hae : ∀ᵐ v ∂(MeasureTheory.volume : Measure ℝ), 0 ≤ g v) : 0 ≤ g x := by
   by_contra hx
-  push_neg at hx
+  push Not at hx
   have hlt : ∀ᶠ v in 𝓝 x, g v < 0 := hgc (Iio_mem_nhds hx)
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 hlt
   have hsub : Metric.ball x ε ⊆ {v : ℝ | 0 ≤ g v}ᶜ := fun v hv => not_le.2 (hball v hv)
@@ -686,14 +688,13 @@ theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
     (t : ℤ) :
     μ.map (fun ω => (X t ω, e t ω)) = μ.map (fun ω => (X 0 ω, e 0 ω)) := by
   have hmΦ : ∀ s : ℤ, Measurable (fun ω (i : Fin 1) => (X (s + (i : ℕ)) ω, e (s + (i : ℕ)) ω)) :=
-    fun s => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun s => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hmΨ : Measurable (fun ω (i : Fin 1) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hev : Measurable (fun z : Fin 1 → ℝ × ℝ => z 0) := measurable_pi_apply 0
   have h := congrArg (fun ν : Measure (Fin 1 → ℝ × ℝ) => ν.map (fun z => z 0)) (hstat 1 t)
-  simp only at h
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
-  simpa [Function.comp] using h
+  simpa [Function.comp] using! h
 
 /-- Transport of a one-time integral: `E[F(X_t, e_t)] = E[F(X_0, e_0)]`. Used to move the
 error moments off the time index — in particular `E e_t² = E e_0²`, which is what turns
@@ -724,21 +725,21 @@ theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
       = μ.map (fun ω => ((X 0 ω, e 0 ω), (X (d : ℤ) ω, e (d : ℤ) ω))) := by
   have hmΦ : ∀ s : ℤ,
       Measurable (fun ω (i : Fin (d + 1)) => (X (s + (i : ℕ)) ω, e (s + (i : ℕ)) ω)) :=
-    fun s => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun s => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hmΨ : Measurable (fun ω (i : Fin (d + 1)) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hev : Measurable
       (fun z : Fin (d + 1) → ℝ × ℝ => (z 0, z (Fin.last d))) :=
     (measurable_pi_apply _).prodMk (measurable_pi_apply _)
   have h := congrArg
     (fun ν : Measure (Fin (d + 1) → ℝ × ℝ) => ν.map (fun z => (z 0, z (Fin.last d))))
     (hstat (d + 1) t)
-  simp only at h
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
   simpa [Function.comp_def, Fin.val_last] using h
 
-/-- Transport of a two-time integral: `E[G((X_t,e_t),(X_{t+d},e_{t+d}))] = E[G((X_0,e_0),(X_d,e_d))]`.
-This is what turns the double covariance sum of ledger (a) into a single lag sum. -/
+/-- Transport of a two-time integral:
+`E[G((X_t,e_t),(X_{t+d},e_{t+d}))] = E[G((X_0,e_0),(X_d,e_d))]`. This is
+what turns the double covariance sum of ledger (a) into a single lag sum. -/
 theorem integral_comp_pair2_eq {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -788,8 +789,9 @@ theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
     (t : ℤ) {F : ℝ × ℝ → ℝ} (hF : Measurable F) {q : ℝ≥0∞}
     (h0 : MemLp (fun ω => F (X 0 ω, e 0 ω)) q μ) :
     MemLp (fun ω => F (X t ω, e t ω)) q μ :=
-  ⟨(hF.comp ((hmeasX t).prodMk (hmeasE t))).aestronglyMeasurable, by
-    rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0.2⟩
+  by
+    change eLpNorm (fun ω => F (X t ω, e t ω)) q μ < ∞
+    rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0
 
 /-- One-time marginal of `X` alone: `X_t ~ X_0`. -/
 theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
@@ -802,7 +804,6 @@ theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
   have hp0 : Measurable (fun ω => (X 0 ω, e 0 ω)) := (hmeasX 0).prodMk (hmeasE 0)
   have h := congrArg (fun ν : Measure (ℝ × ℝ) => ν.map Prod.fst)
     (map_pair_eq_of_stat hmeasX hmeasE hstat t)
-  simp only at h
   rwa [Measure.map_map measurable_fst hpt, Measure.map_map measurable_fst hp0] at h
 
 /-- An a.e. property of `X_0` is an a.e. property of `X_t`. -/
@@ -977,7 +978,7 @@ theorem exists_truncErr_repr [IsProbabilityMeasure μ]
   have hS : MeasurableSet {v : ℝ | |m v| ≤ L} := measurableSet_le hm.abs measurable_const
   filter_upwards [hrep t, ae_comp_X_of_stat hmeasX hmeasE hstat t hS hle0] with ω h1 h2
   have h2' : |m (X t ω)| ≤ L := h2
-  show clampAt L (e t ω) - _ = _
+  change clampAt L (e t ω) - _ = _
   rw [h1]
   have hcl : clampAt L (m (X t ω)) = m (X t ω) := by
     unfold clampAt
@@ -1225,8 +1226,6 @@ theorem localized_weight_integral_le [IsProbabilityMeasure μ]
   rw [hdens, hpint, mul_comm ((Cp * ∫ v, G v)) hn]
   exact mul_le_mul_of_nonneg_left hlast hhn.le
 
--- the tower/density/change-of-variables chain below is elaboration-heavy
-set_option maxHeartbeats 400000 in
 /-- **FY's implicit (2.74) — PROVED from the conditional δ-moment.** If
 `E(|e_0|^δ | X_0) ≤ M` a.e. and the density `p` is bounded by `Cp`, then the
 kernel-localized summand `ξ_0 = e_0 W((X_0 − x)/h)` obeys
@@ -1485,7 +1484,7 @@ theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
         2)).mul hGXm).aestronglyMeasurable (Eventually.of_forall fun ω => ?_)
     rw [Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (mul_nonneg (sq_nonneg _) (sq_nonneg _)),
-      abs_of_nonneg (by positivity : (0:ℝ) ≤ L ^ (2 - δ) *
+      abs_of_nonneg (by positivity : (0 : ℝ) ≤ L ^ (2 - δ) *
         ((|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2)), ← mul_assoc]
     exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
   have hstep1 : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
@@ -1821,11 +1820,11 @@ theorem var_localized_sum [IsProbabilityMeasure μ]
         = ∑ s ∈ Finset.range n, ∫ ω, (∑ t ∈ Finset.range n,
             (e ((s : ℤ) + 1) ω * W ((X ((s : ℤ) + 1) ω - x) / h n)) *
               (e ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n))) ∂μ :=
-      integral_finset_sum _ (fun s _ =>
-        integrable_finset_sum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1)))
+      integral_finsetSum _ (fun s _ =>
+        integrable_finsetSum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1)))
     rw [h1]
     refine Finset.sum_congr rfl fun s _ => ?_
-    exact integral_finset_sum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1))
+    exact integral_finsetSum _ (fun t _ => hint (h n) ((s : ℤ) + 1) ((t : ℤ) + 1))
   -- the δ-th moment input (2.74), in eLpNorm form, at every time
   have hK0 : (0 : ℝ) ≤ K := by
     have h1 : (0 : ℝ) ≤ ∫ ω, |e 0 ω * W ((X 0 ω - x) / h 0)| ^ δ ∂μ :=
@@ -2128,7 +2127,7 @@ theorem tendsto_weighted_antitone_of_summable {a : ℕ → ℝ} {lam beta : ℝ}
       mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Real.rpow_nonneg (ha0 T) _)
     calc (m : ℝ) ^ (lam + 1) * a T ^ beta
         = (m : ℝ) * ((m : ℝ) ^ lam * a T ^ beta) := by
-          rw [Real.rpow_add hmpos, Real.rpow_one, mul_comm ((m:ℝ)^lam), mul_assoc]
+          rw [Real.rpow_add hmpos, Real.rpow_one, mul_comm ((m : ℝ)^lam), mul_assoc]
       _ ≤ ((Finset.Ico m T).card : ℝ) * ((m : ℝ) ^ lam * a T ^ beta) :=
           mul_le_mul_of_nonneg_right hcast hnn
       _ = (Finset.Ico m T).card • ((m : ℝ) ^ lam * a T ^ beta) := (nsmul_eq_mul _ _).symm
@@ -2184,7 +2183,7 @@ theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
       Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
     have hq : Tendsto (fun n : ℕ => (n : ℝ) / h n) atTop atTop := by
       refine tendsto_atTop_mono' atTop ?_ tendsto_natCast_atTop_atTop
-      filter_upwards [hh.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn
+      filter_upwards [hh.eventually_le_const (by norm_num : (0 : ℝ) < 1)] with n hn
       calc (n : ℝ) = (n : ℝ) / 1 := by ring
         _ ≤ (n : ℝ) / h n := div_le_div_of_nonneg_left (Nat.cast_nonneg n) (hh0 n) hn
     exact (Real.tendsto_sqrt_atTop.comp hq).atTop_mul_atTop₀ hlog
@@ -2241,7 +2240,7 @@ theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
         ≤ (smallBlockLen h δ lam n : ℝ) := Nat.le_ceil _
     have hs1 : Real.sqrt ((n : ℝ) / h n) * Real.log n
         ≤ (smallBlockLen h δ lam n : ℝ) ^ ((lam + 1) / (1 - 2 / δ)) := by
-      have hd2 : δ - 2 ≠ 0 := (by linarith : (0:ℝ) < δ - 2).ne'
+      have hd2 : δ - 2 ≠ 0 := (by linarith : (0 : ℝ) < δ - 2).ne'
       have hpq : ((1 - 2 / δ) / (lam + 1)) * ((lam + 1) / (1 - 2 / δ)) = 1 := by
         field_simp [hd2, hlam1.ne']
       have hid : ((Real.sqrt ((n : ℝ) / h n) * Real.log n) ^ ((1 - 2 / δ) / (lam + 1)))
@@ -2345,10 +2344,10 @@ theorem tendsto_blockCount_mul_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n,
   have hlogPH : Real.log (P * H) = Real.log P + Real.log H := Real.log_mul hP0.ne' hH0.ne'
   have hlogPdH : Real.log (P / H) = Real.log P - Real.log H := Real.log_div hP0.ne' hH0.ne'
   have hone3 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 + θ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by linarith : (0:ℝ) ≤ (1 + θ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by linarith : (0 : ℝ) ≤ (1 + θ) / 6)
     rwa [Real.one_rpow] at this
   have hone6 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 : ℝ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by norm_num : (0:ℝ) ≤ (1:ℝ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by norm_num : (0 : ℝ) ≤ (1 : ℝ) / 6)
     rwa [Real.one_rpow] at this
   have hfact1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) * (P * H ^ 3) ^ ((1 + θ) / 6)
       = Real.sqrt (P * H) := by
@@ -2459,7 +2458,6 @@ theorem large_lag_covariance_bound' [IsProbabilityMeasure μ]
   rw [hexp] at hdav
   exact hdav
 
-set_option maxHeartbeats 1000000 in
 /-- **The small-block variance estimate, over an arbitrary index family.** -/
 theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
@@ -2603,9 +2601,9 @@ theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
         = ∑ s ∈ I n, ∑ t ∈ I n, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
     exact Finset.sum_congr rfl fun s _ =>
-      integral_finset_sum _ (fun t _ => hint n _ _)
+      integral_finsetSum _ (fun t _ => hint n _ _)
   -- diagonal
   have hdiag : ∀ n : ℕ, |Gz n 0| ≤ (4 * L ^ 2) * ((Cp * ∫ v, W v ^ 2) * h n) := by
     intro n
@@ -3488,7 +3486,7 @@ private theorem residual_basic [IsProbabilityMeasure μ]
     rw [← mul_sub, ← Finset.sum_sub_distrib, Finset.sum_congr rfl hω]
   have hMemSum : MemLp (fun ω => (Real.sqrt ((n : ℝ) * h n))⁻¹ *
       ∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω) 2 μ :=
-    (memLp_finset_sum (f := fun t : ℕ => R ((t : ℤ) + 1)) (Finset.range n)
+    (memLp_finsetSum (f := fun t : ℕ => R ((t : ℤ) + 1)) (Finset.range n)
       (fun t _ => hMemR2 ((t : ℤ) + 1))).const_mul _
   have hMem2 : MemLp (fun ω => locSum X e W x h n ω - locTruncSum X e μ W x h L n ω) 2 μ :=
     MemLp.ae_eq hdiff.symm hMemSum
@@ -3513,7 +3511,7 @@ private theorem residual_basic [IsProbabilityMeasure μ]
         (Eventually.of_forall fun ω => ?_)
       simp only [Real.norm_eq_abs, abs_abs]
       exact habsr (e 0 ω)
-    simpa only [hqdef] using hres1i.add (integrable_const c)
+    simpa only [hqdef] using! hres1i.add (integrable_const c)
   have hqintt : ∀ t : ℤ, Integrable (fun ω => q (e t ω)) μ := by
     intro t
     have h0 : MemLp (fun ω => (fun z : ℝ × ℝ => q z.2) (X 0 ω, e 0 ω)) 1 μ :=
@@ -3558,15 +3556,15 @@ private theorem residual_basic [IsProbabilityMeasure μ]
     rw [hω, abs_mul, abs_of_nonneg hsq0]
   rw [hfinal]
   have hsumi : Integrable (fun ω => ∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω) μ :=
-    integrable_finset_sum _ fun t _ => hRi _
+    integrable_finsetSum _ fun t _ => hRi _
   have habsi : Integrable (fun ω => ∑ t ∈ Finset.range n, |R ((t : ℤ) + 1) ω|) μ :=
-    integrable_finset_sum _ fun t _ => (hRi _).abs
+    integrable_finsetSum _ fun t _ => (hRi _).abs
   have hb1 : ∫ ω, |∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω| ∂μ
       ≤ ∑ t ∈ Finset.range n, ∫ ω, |R ((t : ℤ) + 1) ω| ∂μ := by
     have h1 : ∫ ω, |∑ t ∈ Finset.range n, R ((t : ℤ) + 1) ω| ∂μ
         ≤ ∫ ω, ∑ t ∈ Finset.range n, |R ((t : ℤ) + 1) ω| ∂μ :=
       integral_mono hsumi.abs habsi fun ω => Finset.abs_sum_le_sum_abs _ _
-    rwa [integral_finset_sum _ (fun t _ => (hRi _).abs)] at h1
+    rwa [integral_finsetSum _ (fun t _ => (hRi _).abs)] at h1
   have hb2 : ∑ t ∈ Finset.range n, ∫ ω, |R ((t : ℤ) + 1) ω| ∂μ
       ≤ (n : ℝ) * (CW * ((Eδ + M) * L ^ (1 - δ))) := by
     have := Finset.sum_le_card_nsmul (Finset.range n)
@@ -3839,8 +3837,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
             R ((s : ℤ) + 1) ω * R ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq2, hCrdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hintR _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hintR _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hintR _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hintR _ _)
   -- conversion of the goal
   have hsqinv : ((Real.sqrt ((n : ℝ) * h n))⁻¹) ^ 2 = ((n : ℝ) * h n)⁻¹ := by
     rw [inv_pow, Real.sq_sqrt (mul_nonneg (Nat.cast_nonneg n) (hh0 n).le)]
@@ -3973,7 +3971,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
   have hressq : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 ∂μ ≤ L ^ (2 - δ) * Eδ := by
     have hi1 : Integrable (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2) μ := by
       refine Integrable.mono he2
-        ((((hmeasE 0).sub ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
+        ((((hmeasE 0).sub
+            ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
         (Eventually.of_forall fun ω => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
         abs_of_nonneg (sq_nonneg _)]
@@ -3988,7 +3987,8 @@ private theorem residual_variance_bound [IsProbabilityMeasure μ]
   have hq2int : ∫ ω, q (e 0 ω) ^ 2 ∂μ ≤ 2 * (L ^ (2 - δ) * Eδ) + 2 * c ^ 2 := by
     have hi1 : Integrable (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2) μ := by
       refine Integrable.mono he2
-        ((((hmeasE 0).sub ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
+        ((((hmeasE 0).sub
+            ((measurable_clampAt L).comp (hmeasE 0)))).pow_const 2).aestronglyMeasurable
         (Eventually.of_forall fun ω => ?_)
       rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
         abs_of_nonneg (sq_nonneg _)]
@@ -4917,8 +4917,6 @@ private theorem abs_double_sum_subset_sub_diag_le {n : ℕ} (I : Finset ℕ) (hI
     _ = (I.card : ℝ) * (2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
         rw [Finset.sum_const, nsmul_eq_mul]
 
-set_option maxHeartbeats 2000000 in
-set_option maxHeartbeats 2000000 in
 private theorem truncArray_core [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -5394,7 +5392,6 @@ private theorem truncArray_core [IsProbabilityMeasure μ]
     have := hCG' n s d
     simpa only [hCzdef] using this
 
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -5448,8 +5445,8 @@ private theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
         = ∑ s ∈ I n, ∑ t ∈ I n, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hint n _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hint n _ _)
   have hsumrep : ∀ n : ℕ,
       ∫ ω, (∑ t ∈ I n, truncErr X e μ L ((t : ℤ) + 1) ω *
           W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ
@@ -5523,7 +5520,7 @@ private theorem comap_pairCode {X e : ℤ → Ω → ℝ} (t : ℤ) :
     ext z
     simp
   rw [h1, h2]
-  show MeasurableSpace.comap (fun ω => (X t ω, e t ω))
+  change MeasurableSpace.comap (fun ω => (X t ω, e t ω))
       (MeasurableSpace.comap Prod.fst inferInstance ⊔
         MeasurableSpace.comap Prod.snd inferInstance) = _
   rw [MeasurableSpace.comap_sup, MeasurableSpace.comap_comp, MeasurableSpace.comap_comp]
@@ -5542,7 +5539,7 @@ private theorem map_tuple_shift {X e : ℤ → Ω → ℝ}
   classical
   have hwin : ∀ (m : ℕ) (b : ℤ),
       Measurable (fun ω (i : Fin m) => (X (b + (i : ℕ)) ω, e (b + (i : ℕ)) ω)) :=
-    fun m b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun m b => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   set M : ℕ := Finset.univ.sup (fun i : Fin n => (t i).natAbs) with hM
   have hMle : ∀ i : Fin n, (t i).natAbs ≤ M := fun i =>
     Finset.le_sup (f := fun i : Fin n => (t i).natAbs) (Finset.mem_univ i)
@@ -5550,7 +5547,7 @@ private theorem map_tuple_shift {X e : ℤ → Ω → ℝ}
     intro i; have := hMle i; omega
   set j : Fin n → Fin (2 * M + 1) := fun i => ⟨(t i + (M : ℤ)).toNat, hj i⟩ with hjdef
   set proj : (Fin (2 * M + 1) → ℝ × ℝ) → (Fin n → ℝ × ℝ) := fun z i => z (j i) with hprojdef
-  have hprojm : Measurable proj := measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hprojm : Measurable proj := Measurable.of_eval fun i => measurable_pi_apply _
   have hcomp : ∀ b : ℤ, (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω))
       = proj ∘ (fun ω (i : Fin (2 * M + 1)) =>
           (X ((b - (M : ℤ)) + (i : ℕ)) ω, e ((b - (M : ℤ)) + (i : ℕ)) ω)) := by
@@ -5577,20 +5574,22 @@ private theorem isStrictlyStationary_pairCode {X e : ℤ → Ω → ℝ}
     IsStrictlyStationary (fun t ω => pairCode (X t ω, e t ω)) μ := by
   intro n t k
   have hm : ∀ b : ℤ, Measurable (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω)) :=
-    fun b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    fun b => Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hm0 : Measurable (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) :=
-    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+    Measurable.of_eval fun i => (hmeasX _).prodMk (hmeasE _)
   have hcode : Measurable (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i)) :=
-    measurable_pi_lambda _ fun i => pairCode.measurable.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => pairCode.measurable.comp (measurable_pi_apply i)
   have e1 : (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
       = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
         ∘ (fun ω (i : Fin n) => (X (t i + k) ω, e (t i + k) ω)) := rfl
   have e2 : (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
       = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
         ∘ (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) := rfl
-  show μ.map (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
-      = μ.map (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
-  rw [e1, e2, ← Measure.map_map hcode (hm k), ← Measure.map_map hcode hm0,
+  change μ.map₀ (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
+      = μ.map₀ (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
+  rw [e1, e2, Measure.map₀_of_measurable (hcode.comp (hm k)),
+    Measure.map₀_of_measurable (hcode.comp hm0),
+    ← Measure.map_map hcode (hm k), ← Measure.map_map hcode hm0,
     map_tuple_shift hmeasX hmeasE hstat n t k]
 
 /-- **Shift lemma for the pair series.** Under fdd stationarity the α-coefficient between
@@ -5620,7 +5619,7 @@ private theorem pairAlphaCoeff_shift [IsProbabilityMeasure μ]
   have hsh := (isStrictlyStationary_pairCode hmeasX hmeasE hstat).alphaMixCoeff_shift hZm k d
   rw [hLE k, hGE (k + (d : ℤ))] at hsh
   rw [hsh]
-  show alphaMixCoeff μ (sigmaLE (fun t ω => pairCode (X t ω, e t ω)) 0)
+  change alphaMixCoeff μ (sigmaLE (fun t ω => pairCode (X t ω, e t ω)) 0)
       (sigmaGE (fun t ω => pairCode (X t ω, e t ω)) (d : ℤ)) = _
   rw [hLE 0, hGE (d : ℤ)]
   rfl
@@ -5643,7 +5642,7 @@ private theorem tendsto_bigBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     positivity
   have hlogtop : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
     Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
-  filter_upwards [eventually_ge_atTop 3, hh.eventually_le_const (by norm_num : (0:ℝ) < 1),
+  filter_upwards [eventually_ge_atTop 3, hh.eventually_le_const (by norm_num : (0 : ℝ) < 1),
     hlogtop.eventually_ge_atTop 1] with n hn3 hh1 hΛ1
   have hn0 : (0 : ℝ) < (n : ℝ) := by
     have : (3 : ℕ) ≤ n := hn3
@@ -5695,7 +5694,7 @@ private theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   · filter_upwards with n
     positivity
   filter_upwards [eventually_ge_atTop 2, hnh.eventually_ge_atTop 1,
-    hh.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn2 hPH3 hh1
+    hh.eventually_le_const (by norm_num : (0 : ℝ) < 1)] with n hn2 hPH3 hh1
   set P : ℝ := (n : ℝ) with hPdef
   set H : ℝ := h n with hHdef
   set Λ : ℝ := Real.log n with hΛdef
@@ -5709,7 +5708,7 @@ private theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   have hlogPH : Real.log (P * H) = Real.log P + Real.log H := Real.log_mul hP0.ne' hH0.ne'
   have hlogPdH : Real.log (P / H) = Real.log P - Real.log H := Real.log_div hP0.ne' hH0.ne'
   have hone3 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 + θ) / 6) := by
-    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by linarith : (0:ℝ) ≤ (1 + θ) / 6)
+    have := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hPH3 (by linarith : (0 : ℝ) ≤ (1 + θ) / 6)
     rwa [Real.one_rpow] at this
   have hfact1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) * (P * H ^ 3) ^ ((1 + θ) / 6)
       = Real.sqrt (P * H) := by
@@ -5905,13 +5904,12 @@ private theorem tendsto_bigBlockIdx_card {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n
   have hcast : (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ)
       = (n : ℝ) - ((bigBlockIdx h δ lam n).card : ℝ) := by
     rw [hcard, Nat.cast_sub hle]
-  show 1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
+  change 1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
       = ((bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
   rw [hcast]
   field_simp
   ring
 
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -5979,8 +5977,8 @@ private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
         = ∑ s ∈ Bl n i, ∑ t ∈ Bl n i, Z n ((s : ℤ) + 1) ω * Z n ((t : ℤ) + 1) ω := by
       intro ω; rw [sq, Finset.sum_mul_sum]
     simp only [hsq, hCzdef]
-    rw [integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint n _ _))]
-    exact Finset.sum_congr rfl fun s _ => integral_finset_sum _ (fun t _ => hint n _ _)
+    rw [integral_finsetSum _ (fun s _ => integrable_finsetSum _ (fun t _ => hint n _ _))]
+    exact Finset.sum_congr rfl fun s _ => integral_finsetSum _ (fun t _ => hint n _ _)
   have hsumrep : ∀ n i : ℕ,
       ∫ ω, (∑ t ∈ Bl n i, truncErr X e μ L ((t : ℤ) + 1) ω *
           W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ
@@ -6074,7 +6072,6 @@ private theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
 
 
 
-set_option maxHeartbeats 1000000 in
 /-- **The row-CLT in product-of-charFuns form.** A uniformly negligible bounded array of
 zero-mean rows with converging row variances has `∏ᵢ φ_{Y_{n,i}}(u) → φ_{N(0,σ²)}(u)`, with
 **no independence assumed**: the product is transported to an independent surrogate on the
@@ -6100,16 +6097,16 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
     · exact hmeas _ _
     · exact measurable_const
   set P : ℕ × ℕ → Measure ℝ := fun z => μ.map (Yt z) with hPdef
-  haveI hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
-    Measure.isProbabilityMeasure_map (hYtm z).aemeasurable
+  have hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
+    (by infer_instance)
   set ν : Measure (ℕ × ℕ → ℝ) := Measure.infinitePi P with hνdef
-  haveI : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
+  have : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
   set Z : (n : ℕ) → Fin (k n) → (ℕ × ℕ → ℝ) → ℝ := fun n i z => z (n, (i : ℕ)) with hZdef
   have hZm : ∀ (n : ℕ) (i : Fin (k n)), Measurable (Z n i) := fun n i => measurable_pi_apply _
   have hYteq : ∀ (n : ℕ) (i : Fin (k n)), Yt (n, (i : ℕ)) = Y n i := by
     intro n i
     simp only [hYtdef]
-    rw [dif_pos i.2]
+    rw [dite_eq_left i.2]
   have hlaw : ∀ (n : ℕ) (i : Fin (k n)), ν.map (Z n i) = μ.map (Y n i) := by
     intro n i
     have h1 : ν.map (fun z : ℕ × ℕ → ℝ => z (n, (i : ℕ))) = P (n, (i : ℕ)) := by
@@ -6176,7 +6173,6 @@ private theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ
 
 
 
-set_option maxHeartbeats 1000000 in
 /-- **FY's Volkonskii–Rozanov step (2.77).** The charFun of the sum of the big blocks is
 within `16(k_n − 1) α_pair(s_n)` of the product of the block charFuns. -/
 private theorem norm_charFun_blockSum_sub_prod_le [IsProbabilityMeasure μ]
@@ -6323,7 +6319,7 @@ private theorem tendsto_mul_bandwidth_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < 
     (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) :
     Tendsto (fun n : ℕ => (n : ℝ) * h n) atTop atTop := by
   refine tendsto_atTop_mono' _ ?_ hnh
-  filter_upwards [hh.eventually_le_const (by norm_num : (0:ℝ) < 1), eventually_ge_atTop 1]
+  filter_upwards [hh.eventually_le_const (by norm_num : (0 : ℝ) < 1), eventually_ge_atTop 1]
     with n hh1 hn1
   have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
   have hhn := hh0 n
@@ -6416,8 +6412,8 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
   have hl := tendsto_bigBlockLen_div hh0 hh
   have hs := tendsto_smallBlockLen_div hh0 hh hnh hδ hlam
   filter_upwards [eventually_ge_atTop 2,
-    hl.eventually_lt_const (by norm_num : (0:ℝ) < 1/3),
-    hs.eventually_lt_const (by norm_num : (0:ℝ) < 1/3)] with n hn2 hln hsn
+    hl.eventually_lt_const (by norm_num : (0 : ℝ) < 1/3),
+    hs.eventually_lt_const (by norm_num : (0 : ℝ) < 1/3)] with n hn2 hln hsn
   have hn0 : (0 : ℝ) < (n : ℝ) := by
     have : (1 : ℕ) ≤ n := by omega
     exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one this
@@ -6431,11 +6427,11 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
     omega
   have hlR : (bigBlockLen h n : ℝ) < (n : ℝ) / 3 := by
     rw [div_lt_iff₀ hn0] at hln
-    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    rw [lt_div_iff₀ (by norm_num : (0 : ℝ) < 3)]
     linarith
   have hsR : (smallBlockLen h δ lam n : ℝ) < (n : ℝ) / 3 := by
     rw [div_lt_iff₀ hn0] at hsn
-    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    rw [lt_div_iff₀ (by norm_num : (0 : ℝ) < 3)]
     linarith
   have hqn : bigBlockLen h n + smallBlockLen h δ lam n ≤ n := by
     have : ((bigBlockLen h n + smallBlockLen h δ lam n : ℕ) : ℝ) ≤ (n : ℝ) := by
@@ -6444,8 +6440,6 @@ private theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h 
     exact_mod_cast this
   exact Nat.one_le_div_iff (by omega) |>.2 hqn
 
-set_option maxHeartbeats 2000000 in
-set_option maxHeartbeats 2000000 in
 private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -6520,7 +6514,7 @@ private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     intro n i
     rw [hVdef]
     simp only
-    rw [integral_const_mul, integral_finset_sum _ (fun t _ => hζint n t)]
+    rw [integral_const_mul, integral_finsetSum _ (fun t _ => hζint n t)]
     simp only [hζmean n]
     simp
   have hVb : ∀ n i : ℕ, ∀ᵐ ω ∂μ, |V n i ω| ≤ bn n := by
@@ -6671,7 +6665,7 @@ private theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
     refine this.trans (le_of_eq ?_)
     congr 1
     refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
-    show |locTruncSum X e μ W x h L n ω
+    change |locTruncSum X e μ W x h L n ω
         - (∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)| = |D n ω|
     rw [hDrep n ω]
   -- combine
@@ -6889,7 +6883,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
         hB0 hC2gen hlam hα hWm hWb hW1 hW2 hh0 hh hL mL sL hmLm hsLm (hmLv L hL) (hsLv L hL)
         (hσLc L hL) (hσLb L hL) hpc hpx hnh u
       rw [hvTdef]
-      simpa only [if_pos hL] using hpos
+      simpa only [ite_eq_left hL] using hpos
     · -- degenerate truncation levels: the statistic vanishes
       have hclampconst : ∀ z : ℝ, clampAt L z = -L := by
         intro z
@@ -6925,7 +6919,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
         intro n
         rw [Measure.map_congr (hzero n)]
         simp
-      have hvT0 : vT L = 0 := by rw [hvTdef]; simp only [if_neg (not_lt.2 hL)]
+      have hvT0 : vT L = 0 := by rw [hvTdef]; simp only [ite_eq_right (not_lt.2 hL)]
       rw [hvT0]
       have hgauss : charFun (gaussianReal 0 (Real.toNNReal (0 : ℝ))) u
           = charFun (Measure.dirac (0 : ℝ)) u := by
@@ -6950,7 +6944,7 @@ theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
       refine hbase.congr' ?_
       filter_upwards [eventually_gt_atTop (0 : ℝ)] with L hL
       rw [hvTdef]
-      simp only [if_pos hL]
+      simp only [ite_eq_left hL]
     exact (hcont.tendsto _).comp hvTlim
 
 end Ledger

@@ -80,8 +80,9 @@ theorem uniformEntropy_marginalCLT
     IsMarginalCLT F P := by
   apply isMarginalCLT_of_memLp
   intro f hf
-  refine ⟨(hF_meas f hf).aestronglyMeasurable, ?_⟩
-  rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by norm_num) ENNReal.ofNat_ne_top]
+  change eLpNorm f 2 P < ∞
+  rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by norm_num) ENNReal.ofNat_ne_top
+    (hF_meas f hf).aestronglyMeasurable]
   have houterG : outerExpectation P (fun x => ENNReal.ofReal |G x| ^ (2 : ℝ)) < ⊤ := by
     unfold outerLpNorm at hG2
     exact (ENNReal.rpow_lt_top_iff_of_pos (by norm_num : (0 : ℝ) < (2 : ℝ)⁻¹)).mp hG2

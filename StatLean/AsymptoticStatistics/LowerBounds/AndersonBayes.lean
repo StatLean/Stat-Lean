@@ -189,7 +189,7 @@ theorem anderson_bayes_inequality_gaussian_shift
   have hF_meas : Measurable (Function.uncurry F) := by
     refine hL_meas.comp ?_
     refine (EuclideanSpace.equiv (Fin 1) ℝ).symm.continuous.measurable.comp ?_
-    refine measurable_pi_lambda _ fun _ => ?_
+    refine Measurable.of_eval fun _ => ?_
     have hT_p : Measurable (fun p : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) =>
         T p.2) := hT.comp measurable_snd
     have h_lin : Measurable (fun p : EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) =>
@@ -250,7 +250,7 @@ theorem anderson_bayes_inequality_gaussian_shift
       exact ((continuous_const.inner continuous_id).measurable).sub measurable_const
     have h_F_meas : Measurable (fun Δ : EuclideanSpace ℝ (Fin m) => F h Δ) := by
       have h := hF_meas.comp (Measurable.prodMk (measurable_const (a := h)) measurable_id)
-      simpa [Function.uncurry] using h
+      simpa [Function.uncurry] using! h
     rw [show ∫⁻ Δ, ENNReal.ofReal (Real.exp (⟪h, Δ⟫_ℝ -
             h.ofLp ⬝ᵥ (1 : Matrix (Fin m) (Fin m) ℝ).mulVec h.ofLp / 2)) * F h Δ ∂N_Δ
           = ∫⁻ Δ, F h Δ ∂(N_Δ.withDensity (fun Δ : EuclideanSpace ℝ (Fin m) =>
@@ -360,7 +360,7 @@ theorem anderson_bayes_inequality_gaussian_shift
           exact anderson_lemma_loss h_Sy_psd hL (-lift_c)
       _ = ∫⁻ y, L (y + (-lift_c)) ∂N_y := rfl
   -- Step 5: Outer integral over x (marginalGaussianShift is a probability measure).
-  haveI hπX_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift
+  have hπX_prob : IsProbabilityMeasure (GaussianShiftMinimax.marginalGaussianShift
       (1 : Matrix (Fin m) (Fin m) ℝ) τ) := by
     unfold GaussianShiftMinimax.marginalGaussianShift; infer_instance
   calc ∫⁻ y, L y ∂N_y
@@ -640,7 +640,7 @@ theorem anderson_bayes_inequality_gaussian_shift_at_zero
               (fun _ : Fin 1 => (0 : ℝ) - ∑ k : Fin m, A 0 k * p.2 k)) := by
     refine hL.measurable.comp ?_
     refine (EuclideanSpace.equiv (Fin 1) ℝ).symm.continuous.measurable.comp ?_
-    refine measurable_pi_lambda _ fun _ => ?_
+    refine Measurable.of_eval fun _ => ?_
     refine Measurable.sub measurable_const ?_
     refine Finset.measurable_sum _ fun k _ => ?_
     refine measurable_const.mul ?_

@@ -112,6 +112,8 @@ steps assembled in this file are a synthesis (vdV §25.3) of these
 sources rather than a single seminal result.
 -/
 
+set_option linter.style.longFile 2200
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal NNReal Matrix ProbabilityTheory
 
@@ -244,13 +246,13 @@ theorem levyMpass
     (_hSigma : Tendsto (fun m => ((sigma_sq_m m : ℝ≥0) : ℝ)) atTop
         (𝓝 (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2))) :
     let sigma_sq : ℝ≥0 :=
-      ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩
+      (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _))
     ∃ M : Measure ℝ, IsProbabilityMeasure M ∧
       _L = MeasureTheory.Measure.conv
               (ProbabilityTheory.gaussianReal 0 sigma_sq) M := by
   -- Local notation for the Gaussian factor at variance `v`.
   set sigmaNN : ℝ≥0 :=
-    ⟨‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2, sq_nonneg _⟩ with hsigmaNN
+    (NNReal.mk (‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2) (sq_nonneg _)) with hsigmaNN
   set sigmaR : ℝ := ((sigmaNN : ℝ≥0) : ℝ) with hsigmaR
   have hsigmaR_eq : sigmaR = ‖(IF_eff : ↥(L2ZeroMean P))‖ ^ 2 := by
     simp [hsigmaR, hsigmaNN]
@@ -300,7 +302,7 @@ theorem levyMpass
   --   `charFun L t = charFun (gaussianReal 0 (sigma_sq_m m)) t * charFun (M_m m) t`.
   -- So `charFun (M_m m) t = charFun L t / charFun (gaussianReal 0 (sigma_sq_m m)) t`.
   -- Continuity of the closed-form Gaussian char-fn in `v` plus `_hSigma` gives the limit.
-  haveI : ∀ m, IsProbabilityMeasure (M_m m) := _hM_prob
+  have : ∀ m, IsProbabilityMeasure (M_m m) := _hM_prob
   have hCharFn_conv : ∀ m (t : ℝ),
       MeasureTheory.charFun _L t =
         MeasureTheory.charFun
@@ -379,7 +381,7 @@ theorem levyMpass
     have hSet : ({((μ : MeasureTheory.ProbabilityMeasure ℝ) : MeasureTheory.Measure ℝ) |
                   μ ∈ Set.range MPM}) = Set.range M_m := by
       ext μ
-      simp only [Set.mem_setOf_eq, Set.mem_range]
+      simp only [Set.mem_ofPred_eq, Set.mem_range]
       constructor
       · rintro ⟨ν, ⟨m, rfl⟩, rfl⟩
         exact ⟨m, rfl⟩
@@ -417,9 +419,6 @@ theorem levyMpass
   -- Step 8: assemble the convolution identity via the existing helper.
   refine ⟨(M : MeasureTheory.Measure ℝ), inferInstance, ?_⟩
   -- The let-bound `sigma_sq` in the conclusion is definitionally `sigmaNN`.
-  change _L = MeasureTheory.Measure.conv
-              (ProbabilityTheory.gaussianReal 0 sigmaNN)
-              ((M : MeasureTheory.Measure ℝ))
   -- Apply the char-fn factorisation extractor.
   refine
     AsymptoticStatistics.ForMathlib.CharFnConvolution.convolution_extraction_from_charFn
@@ -766,7 +765,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
       (fun n : ℕ =>
         (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
             (AsymptoticStatistics.ParametricFamily.paramSubmodel g_P hg h_orth)
-            P ((Real.sqrt n)⁻¹ • h) (n := n)).map
+            P ((Real.sqrt n)⁻¹ • h) (n := n)).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X -
@@ -787,7 +786,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
           (MeasureTheory.Measure.pi
               (fun _ : Fin n =>
                 (paramSubmodelQMDPath g_P hg h h_small).curve
-                  ((Real.sqrt n)⁻¹))).map
+                  ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X -
@@ -805,7 +804,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
         (MeasureTheory.Measure.pi
             (fun _ : Fin n =>
               (paramSubmodelQMDPath g_P hg h h_small).curve
-                ((Real.sqrt n)⁻¹))).map
+                ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n *
               (T_n n X -
@@ -813,7 +812,7 @@ theorem productMeasure_paramSubmodel_pushforward_weakConverges
                     ((Real.sqrt n)⁻¹))))
           = (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
               (AsymptoticStatistics.ParametricFamily.paramSubmodel g_P hg h_orth)
-              P ((Real.sqrt n)⁻¹ • h) (n := n)).map
+              P ((Real.sqrt n)⁻¹ • h) (n := n)).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X -
@@ -1208,7 +1207,7 @@ theorem tangent_bounded_orthonormal_approx
     set g0 : Fin m → ↥(L2ZeroMean P) := fun i => g_P i.castSucc with hg0_def
     have hg0_orth : Orthonormal ℝ (fun i : Fin m => (g0 i : ↥(L2ZeroMean P))) := by
       have := h_orth.comp (fun i : Fin m => i.castSucc) (Fin.castSucc_injective m)
-      simpa [g0, Function.comp] using this
+      simpa [g0, Function.comp] using! this
     have hg0_in_T : ∀ i, (g0 i : ↥(L2ZeroMean P)) ∈ tangentSpace T_set := by
       intro i; exact h_in_T i.castSucc
     have hm1_pos : 0 < ((m : ℝ) + 1) := by positivity
@@ -1381,13 +1380,13 @@ theorem tangent_bounded_orthonormal_approx
           rw [inner_smul_right]
           by_cases hjk : k = j
           · subst hjk
-            rw [if_pos rfl]
+            rw [ite_eq_left rfl]
             have h_norm_sq : ⟪(e' k : ↥(L2ZeroMean P)),
                               (e' k : ↥(L2ZeroMean P))⟫_ℝ = 1 := by
               have := he'_orth.norm_eq_one k
               rw [@real_inner_self_eq_norm_sq, this]; ring
             rw [h_norm_sq, mul_one]
-          · rw [if_neg hjk]
+          · rw [ite_eq_right hjk]
             have h_zero : ⟪(e' j : ↥(L2ZeroMean P)),
                             (e' k : ↥(L2ZeroMean P))⟫_ℝ = 0 := by
               apply he'_orth.inner_eq_zero
@@ -1653,7 +1652,7 @@ private lemma unperturbed_CLT
     (hReg : AsymptoticStatistics.LowerBounds.RegularEstimator.IsRegularEstimator
               P T_set ψ hψ hEIF T_n L) :
     WeakConverges
-      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map
+      (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).map₀
         (fun X : Fin n → Ω => Real.sqrt n * (T_n n X - ψ P)))
       L :=
   AsymptoticStatistics.LowerBounds.RegularEstimator.weak_limit_under_P_of_regular
@@ -1744,10 +1743,19 @@ private theorem w2c_LAN_pushforward_steps_2_to_6
                   ψ ((AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P
                       hg h).curve
                       ((Real.sqrt n)⁻¹)))))
-        L :=
-    IsRegularEstimator.shift hReg (linPerturbScore g_P h) hLin_in_T
+        L := by
+    have hweak := IsRegularEstimator.shift hReg (linPerturbScore g_P h) hLin_in_T
       (AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h)
-          hScore_eq
+      hScore_eq
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n =>
+        (AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h).curve
+          ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ
+        ((AsymptoticStatistics.LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH g_P hg h).curve
+          ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((_hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   -- Eventually-in-`n`, the curve equals the paramSubmodel density form.
   have h_curve_eq_eventually :=
     LowerBounds.RegularEstimator.paramSubmodelQMDPathAllH_curve_eq_paramSubmodel_density
@@ -1827,6 +1835,10 @@ theorem productMeasure_paramSubmodel_pushforward_all_h_weakConverges
   -- Step 1 (unperturbed CLT) feeds the LAN-route Steps 2–6 per fixed `h`.
   intro h
   have hStep1 := unperturbed_CLT T_set hψ hEIF T_n hReg
+  rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+    (fun n => Measure.pi (fun _ : Fin n => P))
+    (fun n X => Real.sqrt n * (T_n n X - ψ P))
+    (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hStep1
   exact w2c_LAN_pushforward_steps_2_to_6 T_set hψ hEIF T_n hT_meas hReg
     g_P hg h_orth h_in_T hStep1 h
 
@@ -1883,7 +1895,7 @@ private lemma single_eq_withLp_const_apply (r : ℝ) :
   -- Both sides are `WithLp.toLp 2 (fun _ : Fin 1 => r)` (the `Pi.single`
   -- on `Fin 1` collapses to the constant function on the single index).
   rw [show (fun _ : Fin 1 => r) = Pi.single 0 r from ?_]
-  · exact (EuclideanSpace.toLp_single (𝕜 := ℝ) 0 r).symm
+  · exact (PiLp.toLp_single (p := 2) (β := fun _ : Fin 1 => ℝ) 0 r).symm
   · funext i
     fin_cases i
     rfl
@@ -1996,7 +2008,7 @@ noncomputable def paramSubmodel_RegularEstimatorSequence
         (fun n : ℕ =>
           (AsymptoticStatistics.AsymptoticRepresentation.productMeasure
               (paramSubmodel g_P hg h_orth) P
-              ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n).map
+              ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n •
                 (T_n_lifted T_n n X

@@ -1,9 +1,11 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimator
 import StatLean.AsymptoticStatistics.Core.PathwiseVec
 import StatLean.AsymptoticStatistics.Core.EIFVec
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Group.Convolution
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Vector-valued regular-estimator predicate
@@ -134,7 +136,7 @@ def IsRegularEstimator_broad_vec
     WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi
-            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map
+            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n •
               (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))))
@@ -194,7 +196,7 @@ def IsRegularEstimator_vec
       WeakConverges
         (fun n : ℕ =>
           (MeasureTheory.Measure.pi
-              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map
+              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n •
                 (T_n n X - ψ ((chosenFamily g hg).curve ((Real.sqrt n)⁻¹)))))
@@ -220,7 +222,7 @@ theorem IsRegularEstimator_broad_vec.shift [IsProbabilityMeasure L]
     WeakConverges
       (fun n : ℕ =>
         (MeasureTheory.Measure.pi
-            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map
+            (fun _ : Fin n => curve.curve ((Real.sqrt n)⁻¹))).map₀
           (fun X : Fin n → Ω =>
             Real.sqrt n •
               (T_n n X - ψ (curve.curve ((Real.sqrt n)⁻¹)))))

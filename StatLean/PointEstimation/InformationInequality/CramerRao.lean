@@ -72,7 +72,7 @@ private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X 
     (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
   have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
   have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
-  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hY.mul' hX)
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.fun_mul hY)
   have hquad : ∀ t : ℝ,
       0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
     intro t
@@ -103,7 +103,7 @@ private theorem cramer_rao_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure �
     (hswap : g' = ∫ x, δ x * deriv (fun t => M.density t x) θ ∂μ)
     (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0) :
     g' ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
   set m := ∫ x, δ x ∂(M.toMeasure μ θ) with hm
   have hXL2 : MemLp (fun x => δ x - m) 2 (M.toMeasure μ θ) := hδ2.sub (memLp_const m)
@@ -111,7 +111,7 @@ private theorem cramer_rao_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure �
     rw [integral_toMeasure_eq M μ θ (score M θ)]; exact hmean0
   have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two
   have hδscore : Integrable (fun x => δ x * score M θ x) (M.toMeasure μ θ) :=
-    memLp_one_iff_integrable.mp (hscoreL2.mul' hδ2)
+    memLp_one_iff_integrable.mp (hδ2.fun_mul hscoreL2)
   have hg'core : ∫ x, δ x * score M θ x ∂(M.toMeasure μ θ) = g' := by
     rw [integral_toMeasure_eq M μ θ (fun x => δ x * score M θ x), hswap]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)

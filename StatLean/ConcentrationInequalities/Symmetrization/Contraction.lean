@@ -48,7 +48,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 private lemma continuous_sum_coeff_smul {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {N : ℕ} (x : Fin N → E) (a : Fin N → ℝ) :
     Continuous (fun s : Fin N → ℝ => ∑ i, (a i * s i) • x i) :=
-  continuous_finset_sum _ fun i _ =>
+  continuous_finsetSum _ fun i _ =>
     (continuous_const.mul (continuous_apply i)).smul continuous_const
 
 /-- On the `±1`-supported measure `signVec N`, the norm `‖∑ (aᵢ sᵢ) xᵢ‖` is
@@ -82,10 +82,10 @@ private lemma contraction_vertex {E : Type*} [NormedAddCommGroup E]
     ∫ s, ‖∑ i, (a i * s i) • x i‖ ∂(signVec N)
       = ∫ s, ‖∑ i, s i • x i‖ ∂(signVec N) := by
   have hφ : AEMeasurable (fun s : Fin N → ℝ => fun i => a i * s i) (signVec N) :=
-    (measurable_pi_lambda _ fun i => (measurable_pi_apply i).const_mul (a i)).aemeasurable
+    (Measurable.of_eval fun i => (measurable_pi_apply i).const_mul (a i)).aemeasurable
   have hg : AEStronglyMeasurable (fun s : Fin N → ℝ => ‖∑ i, s i • x i‖)
       ((signVec N).map (fun s i => a i * s i)) :=
-    (continuous_finset_sum _ fun i _ =>
+    (continuous_finsetSum _ fun i _ =>
       (continuous_apply i).smul continuous_const).norm.aestronglyMeasurable
   conv_rhs => rw [← signVec_map_mul_pm hv]
   rw [integral_map hφ hg]

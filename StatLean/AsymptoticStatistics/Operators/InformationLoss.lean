@@ -177,7 +177,7 @@ noncomputable def informationLossOperator
     {M : Ω_full → Ω_obs} (hM : Measurable M)
     (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
     ↥(L2ZeroMean P_full) →L[ℝ] ↥(L2ZeroMean (P_full.map M)) :=
-  (L2ZeroMean (P_full.map M)).orthogonalProjection.comp
+  (L2ZeroMean (P_full.map M)).orthogonalProjectionOnto.comp
     ((informationLossRaw hM P_full).comp (L2ZeroMean P_full).subtypeL)
 
 /-- *Defining action of `Π`* at the `Lp ℝ 2 (P_full.map M)` level: it is the
@@ -221,8 +221,6 @@ theorem informationLossRaw_mem_L2ZeroMean
     (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
     {x : Lp ℝ 2 P_full} (hx : x ∈ L2ZeroMean P_full) :
     informationLossRaw hM P_full x ∈ L2ZeroMean (P_full.map M) := by
-  haveI : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
   rw [mem_L2ZeroMean_iff, integral_informationLossRaw hM P_full x,
     ← mem_L2ZeroMean_iff]
   exact hx

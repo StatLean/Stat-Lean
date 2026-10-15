@@ -40,7 +40,7 @@ theorem outerLpNorm_eq_eLpNorm_of_aemeasurable
       _ = ∫⁻ x, ENNReal.ofReal |f x| ^ r ∂Q :=
         lintegral_congr_ae hpow.ae_eq_mk.symm
   rw [outerLpNorm, houter,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top]
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top hf.aestronglyMeasurable]
   simp only [ENNReal.toReal_ofReal hr.le, one_div, Real.enorm_eq_ofReal_abs]
 
 /-- A uniform bound on finite separated subsets produces a finite closed
@@ -84,7 +84,7 @@ theorem finite_closedCover_of_finset_separated_card_le
         simpa only [hSfinite.coe_toFinset] using hSsep
     simpa only [Set.ncard_eq_toFinset_card S hSfinite] using hSbound
   have hpacking_top : Metric.packingNumber epsNN A ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENat.coe_ne_top N) hpacking
+    ne_top_of_le_ne_top (ENat.natCast_ne_top N) hpacking
   let Cset : Set X := Metric.maximalSeparatedSet epsNN A
   have hCfinite : Cset.Finite := by
     apply Set.encard_ne_top_iff.mp
@@ -142,17 +142,15 @@ theorem exists_universalVCAdmissibleStrictTwoRadiusCoverConstant :
   obtain ⟨K, hK, hKpack⟩ := exists_universalVCFiniteLpPackingConstant
   refine ⟨K, hK, ?_⟩
   intro Ω mΩ F G V Q r ε hVC hG hQ hr hε₀ hε₁
-  letI : MeasurableSpace Ω := mΩ
-  letI : IsProbabilityMeasure Q := hQ.1
   classical
   have hr₀ : 0 < r := lt_of_lt_of_le zero_lt_one hr
   let p : ℝ≥0∞ := ENNReal.ofReal r
   have hp : 1 ≤ p := by
     simpa only [p, ENNReal.ofReal_one] using ENNReal.ofReal_le_ofReal hr
-  letI : Fact (1 ≤ p) := ⟨hp⟩
+  let : Fact (1 ≤ p) := ⟨hp⟩
   have hfmem (f : Ω → ℝ) (hf : f ∈ F) : MemLp f p Q := by
     have hfm := hVC.1 f hf
-    refine ⟨hfm.aestronglyMeasurable, ?_⟩
+    change eLpNorm f p Q < ∞
     rw [← outerLpNorm_eq_eLpNorm_of_aemeasurable hr₀ hfm.aemeasurable]
     refine (show outerLpNorm Q f r ≤ outerLpNorm Q G r from ?_).trans_lt hQ.2.2
     unfold outerLpNorm

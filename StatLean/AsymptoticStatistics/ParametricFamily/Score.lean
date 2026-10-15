@@ -201,11 +201,11 @@ lemma inner_product_continuity
   have hf_sqrt : Filter.Tendsto
       (fun t => Real.sqrt (∫ x, (f_seq t x - f x) ^ 2 ∂μ)) l (𝓝 0) := by
     have := (Real.continuous_sqrt.tendsto 0).comp hf
-    simpa using this
+    simpa using! this
   have hg_sqrt : Filter.Tendsto
       (fun t => Real.sqrt (∫ x, (g_seq t x - g x) ^ 2 ∂μ)) l (𝓝 0) := by
     have := (Real.continuous_sqrt.tendsto 0).comp hg
-    simpa using this
+    simpa using! this
   -- Choose `δ > 0` small enough that `δ · (Sg + 1 + Sf) + δ < ε`.
   -- A safe choice: `δ = ε / (Sg + Sf + 3)` (then bound below). For simplicity
   -- we pick `δ = min 1 (ε / (Sg + Sf + 2))` so that `δ ≤ 1` *and* the linear
@@ -315,7 +315,7 @@ lemma inner_product_continuity
       ring
     rw [h_int_eq] at h_int_le
     have h_sqrt_mono := Real.sqrt_le_sqrt h_int_le
-    rw [Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)] at h_sqrt_mono
+    rw [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)] at h_sqrt_mono
     have h_sub_le := h_sqrt_add_le
         (∫ x, (f_seq t x - f x) ^ 2 ∂μ) (∫ x, (f x) ^ 2 ∂μ)
         (L2Utils.integral_sq_nonneg μ _) (L2Utils.integral_sq_nonneg μ f)
@@ -407,7 +407,7 @@ lemma dqm_to_rescaled_l2
   -- Metric convergence: reduce to `∀ ε > 0, ∀ᶠ t, |r_sq t| < ε`.
   rw [Metric.tendsto_nhds]
   intro ε hε
-  -- Choose `c = ε / (‖u‖² + 1)` ; then `c · ‖u‖² < ε`.
+  -- Choose `c = ε / (‖u‖² + 1)`; then `c · ‖u‖² < ε`.
   set c : ℝ := ε / (‖u‖ ^ 2 + 1) with hc_def
   have hc_pos : 0 < c := div_pos hε (by positivity)
   have hc_bd : c * ‖u‖ ^ 2 < ε := by
@@ -689,7 +689,7 @@ lemma score_mean_zero
     simpa [hg_def] using h_sqrt_memLp.const_mul (2 : ℝ)
   have h_gseq_memLp : ∀ t : ℝ, MemLp (g_seq t) 2 μ := by
     intro t
-    simpa [hg_seq_def] using (h_sqrt_perturb_memLp t).add h_sqrt_memLp
+    simpa [hg_seq_def] using! (h_sqrt_perturb_memLp t).add h_sqrt_memLp
   have h_gminus_memLp : ∀ t : ℝ,
       MemLp (fun x => M.sqrtDensity (θ₀ + t • u) x - M.sqrtDensity θ₀ x) 2 μ := by
     intro t

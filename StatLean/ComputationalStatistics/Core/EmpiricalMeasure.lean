@@ -48,7 +48,7 @@ of positive size. -/
 instance isProbabilityMeasure_empiricalMeasure [NeZero n] :
     IsProbabilityMeasure (empiricalMeasure x) := by
   constructor
-  rw [empiricalMeasure, Measure.smul_apply, Measure.finset_sum_apply]
+  rw [empiricalMeasure, Measure.smul_apply, Measure.finsetSum_apply]
   simp only [measure_univ, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, mul_one, smul_eq_mul]
   exact ENNReal.inv_mul_cancel (Nat.cast_ne_zero.mpr (NeZero.ne n))
@@ -62,7 +62,7 @@ theorem empiricalMeasure_apply
     (s : Set 𝓧) (hs : MeasurableSet s) :
     empiricalMeasure x s
       = (n : ℝ≥0∞)⁻¹ * ∑ i, s.indicator (fun _ => (1 : ℝ≥0∞)) (x i) := by
-  rw [empiricalMeasure, Measure.smul_apply, Measure.finset_sum_apply, smul_eq_mul]
+  rw [empiricalMeasure, Measure.smul_apply, Measure.finsetSum_apply, smul_eq_mul]
   refine congrArg _ (Finset.sum_congr rfl fun i _ => ?_)
   rw [Measure.dirac_apply' _ hs]
   rfl
@@ -78,7 +78,7 @@ theorem integral_empiricalMeasure
   have hint : ∀ i : Fin n, Integrable f (Measure.dirac (x i)) :=
     fun i => integrable_dirac' hf (by simp)
   rw [empiricalMeasure, integral_smul_measure,
-    integral_finset_sum_measure fun i _ => hint i]
+    integral_finsetSum_measure fun i _ => hint i]
   simp only [integral_dirac' _ _ hf, ENNReal.toReal_inv, ENNReal.toReal_natCast,
     smul_eq_mul, mcEstimate]
 
@@ -87,7 +87,7 @@ theorem lintegral_empiricalMeasure {φ : 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: measurability, needed to integrate against Diracs
     (hφ : Measurable φ) :
     ∫⁻ z, φ z ∂(empiricalMeasure x) = (n : ℝ≥0∞)⁻¹ * ∑ i, φ (x i) := by
-  rw [empiricalMeasure, lintegral_smul_measure, lintegral_finset_sum_measure]
+  rw [empiricalMeasure, lintegral_smul_measure, lintegral_finsetSum_measure]
   simp only [lintegral_dirac' _ hφ, smul_eq_mul]
 
 /-- **A weighted sample carries a probability measure** (ECS §2.6): under
@@ -99,7 +99,7 @@ theorem isProbabilityMeasure_weightedMeasure
     (hw1 : ∑ i, w i = 1) :
     IsProbabilityMeasure (weightedMeasure w x) := by
   constructor
-  rw [weightedMeasure, Measure.finset_sum_apply]
+  rw [weightedMeasure, Measure.finsetSum_apply]
   simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]
   rw [← ENNReal.ofReal_sum_of_nonneg (fun i _ => hw0 i), hw1, ENNReal.ofReal_one]
 
@@ -113,7 +113,7 @@ theorem integral_weightedMeasure
     ∫ z, f z ∂(weightedMeasure w x) = ∑ i, w i * f (x i) := by
   have hint : ∀ i : Fin n, Integrable f (ENNReal.ofReal (w i) • Measure.dirac (x i)) :=
     fun i => (integrable_dirac' hf (by simp)).smul_measure (by simp)
-  rw [weightedMeasure, integral_finset_sum_measure fun i _ => hint i]
+  rw [weightedMeasure, integral_finsetSum_measure fun i _ => hint i]
   simp only [integral_smul_measure, integral_dirac' _ _ hf,
     ENNReal.toReal_ofReal (hw0 _), smul_eq_mul]
 
@@ -154,7 +154,7 @@ theorem weightedMeasure_eq_map_categorical :
   have hx : Measurable x := Measurable.of_discrete
   ext s hs
   rw [Measure.map_apply hx hs, weightedMeasure, categorical,
-    Measure.finset_sum_apply, Measure.finset_sum_apply]
+    Measure.finsetSum_apply, Measure.finsetSum_apply]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Measure.smul_apply, Measure.smul_apply, Measure.dirac_apply' _ hs,
     Measure.dirac_apply' _ (hx hs)]

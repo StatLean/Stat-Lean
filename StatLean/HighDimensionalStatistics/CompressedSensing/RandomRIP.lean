@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.HighDimensionalStatistics.CompressedSensing.GaussianChiSquared
 import StatLean.HighDimensionalStatistics.CompressedSensing.Defs
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
@@ -144,7 +145,7 @@ private lemma quadform_le_two_sup_net
       have hgw : g w = ‖w‖ ^ 2 * g wh := by
         conv_lhs => rw [hwwh]
         rw [hghom]
-      rw [hgw, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ ‖w‖ ^ 2)]
+      rw [hgw, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖w‖ ^ 2)]
       have := hMmax wh (le_of_eq hwhnorm)
       nlinarith [abs_nonneg (g wh), sq_nonneg ‖w‖, this]
   -- sharp bilinear bound: |B x y| ≤ M · ‖x‖ · ‖y‖
@@ -166,7 +167,7 @@ private lemma quadform_le_two_sup_net
     have hunit : |B xh yh| ≤ M := by
       have hpol : B xh yh = (g (xh + yh) - g (xh - yh)) / 4 := by
         rw [hpolar]; ring
-      rw [hpol, abs_div, abs_of_pos (by norm_num : (0:ℝ) < 4)]
+      rw [hpol, abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 4)]
       have h1 : |g (xh + yh)| ≤ M * ‖xh + yh‖ ^ 2 := hghbound _
       have h2 : |g (xh - yh)| ≤ M * ‖xh - yh‖ ^ 2 := hghbound _
       have hpar : ‖xh + yh‖ ^ 2 + ‖xh - yh‖ ^ 2 = 2 * (‖xh‖ ^ 2 + ‖yh‖ ^ 2) :=
@@ -175,7 +176,7 @@ private lemma quadform_le_two_sup_net
       have htri : |g (xh + yh) - g (xh - yh)| ≤ |g (xh + yh)| + |g (xh - yh)| := by
         have h := abs_add_le (g (xh + yh)) (-(g (xh - yh)))
         simpa [sub_eq_add_neg, abs_neg] using h
-      rw [div_le_iff₀ (by norm_num : (0:ℝ) < 4)]
+      rw [div_le_iff₀ (by norm_num : (0 : ℝ) < 4)]
       nlinarith [htri, h1, h2, hpar]
     -- scale back
     have hscale : B x y = ‖x‖ * ‖y‖ * B xh yh := by
@@ -411,13 +412,27 @@ theorem prob_rip_of_iid_gaussian
       rw [tsub_eq_zero_iff_le]
       calc (1 : ℝ≥0∞) = ENNReal.ofReal 1 := by simp
         _ ≤ ENNReal.ofReal ε := ENNReal.ofReal_le_ofReal hεbig
-    rw [ge_iff_le, h0]; exact zero_le _
+    rw [ge_iff_le, h0]; exact zero_le
   have hεlt : ε < 1 := not_le.mp hεbig
   -- a measurable representative `X'` of `X`, a.e. equal entrywise.
   set vn : ℝ≥0 := ⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ with hvn
   have hXae : ∀ i j, AEMeasurable (fun ω => X ω i j) μ := by
-    intro i j; apply AEMeasurable.of_map_ne_zero; rw [hlaw i j]
-    exact IsProbabilityMeasure.ne_zero _
+    intro i j
+    by_contra hnot
+    have hnpos : (0 : ℝ) < n := by
+      exact_mod_cast (lt_of_le_of_lt (Nat.zero_le i.val) i.isLt)
+    have : NullSingletonClass (gaussianReal (0 : ℝ) vn) :=
+      nullSingletonClass_gaussianReal (by
+        intro hzero
+        have hz := congrArg (fun v : ℝ≥0 => (v : ℝ)) hzero
+        exact (one_div_ne_zero hnpos.ne') hz)
+    have hd := Measure.map_of_not_aemeasurable_of_ne_zero hnot (IsProbabilityMeasure.ne_zero μ)
+    rw [hlaw i j] at hd
+    have hs := congrArg (fun ν : Measure ℝ => ν {Classical.ofNonempty}) hd
+    have hdval : (Measure.dirac (Classical.ofNonempty : ℝ)) {Classical.ofNonempty} = 1 := by simp
+    have hz : (gaussianReal (0 : ℝ) vn) {Classical.ofNonempty} = 0 := measure_singleton _
+    have hs' : (0 : ℝ≥0∞) = 1 := by simpa only [hz, hdval] using! hs
+    exact zero_ne_one hs'
   set X' : Ω → Matrix (Fin n) (Fin d) ℝ :=
     fun ω => Matrix.of (fun i j => (hXae i j).mk (fun ω' => X ω' i j) ω) with hX'def
   have hX'meas : ∀ i j, Measurable (fun ω => X' ω i j) :=
@@ -434,7 +449,7 @@ theorem prob_rip_of_iid_gaussian
     filter_upwards [hall] with ω hω; ext i j; exact hω i j
   have hRIPeq : μ {ω | IsRIP (X ω) (3 * s) δ} = μ {ω | IsRIP (X' ω) (3 * s) δ} := by
     apply measure_congr
-    rw [Filter.eventuallyEq_set]
+    rw [Filter.eventuallyEqSet_iff]
     filter_upwards [hae_mat] with ω hω
     show IsRIP (X ω) (3 * s) δ ↔ IsRIP (X' ω) (3 * s) δ
     rw [hω]
@@ -478,7 +493,7 @@ theorem prob_rip_of_iid_gaussian
   -- main case: `d ≥ 1`, `s ≥ 1`, `ε < 1`.
   set m := min (3 * s) d with hm
   have hmpos : 0 < m := lt_min (by omega) hdpos
-  haveI : NeZero m := ⟨hmpos.ne'⟩
+  have : NeZero m := ⟨hmpos.ne'⟩
   have hm3s : m ≤ 3 * s := min_le_left _ _
   have hmd : m ≤ d := min_le_right _ _
   obtain ⟨N₀, hN₀ball, hN₀cover, hN₀card⟩ := exists_quarter_net m

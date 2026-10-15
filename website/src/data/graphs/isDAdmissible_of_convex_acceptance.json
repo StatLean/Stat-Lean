@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.HypothesisTesting.isDAdmissible_of_convex_acceptance","label":"isDAdmissible_of_convex_acceptance","full":"StatLean.HypothesisTesting.isDAdmissible_of_convex_acceptance","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.Invariance.Admissibility"},
     {"id":"StatLean.PointEstimation.ExpFamily","label":"ExpFamily","full":"StatLean.PointEstimation.ExpFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.ExpFamily.natSet","label":"natSet","full":"StatLean.PointEstimation.ExpFamily.natSet","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.HypothesisTesting.IsDAdmissible","label":"IsDAdmissible","full":"StatLean.HypothesisTesting.IsDAdmissible","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.Admissibility"},
     {"id":"StatLean.HypothesisTesting.statScaleFamily","label":"statScaleFamily","full":"StatLean.HypothesisTesting.statScaleFamily","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.Admissibility"},

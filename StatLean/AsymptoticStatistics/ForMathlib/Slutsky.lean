@@ -50,10 +50,10 @@ theorem WeakConverges.slutsky_of_tendstoInMeasure_dist
         Tendsto (fun n => (P n).real {ω | ε ≤ dist (X n ω) (Y n ω)}) atTop (𝓝 0)) :
     WeakConverges (fun n => (P n).map (Y n)) ν := by
   classical
-  haveI h_prob_X : ∀ n, IsProbabilityMeasure ((P n).map (X n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hX_meas n)
-  haveI h_prob_Y : ∀ n, IsProbabilityMeasure ((P n).map (Y n)) := fun n =>
-    Measure.isProbabilityMeasure_map (hY_meas n)
+  have h_prob_X : ∀ n, IsProbabilityMeasure ((P n).map (X n)) := fun n =>
+    (by infer_instance)
+  have h_prob_Y : ∀ n, IsProbabilityMeasure ((P n).map (Y n)) := fun n =>
+    (by infer_instance)
   -- Package the pushforwards as `ProbabilityMeasure` so we can apply the Lipschitz
   -- characterisation of weak convergence. Use local `let`-bindings to keep the
   -- subtype folded under `rw [tendsto_iff_forall_lipschitz_integral_tendsto]`.
@@ -144,7 +144,7 @@ theorem WeakConverges.slutsky_of_tendstoInMeasure_dist
               (fun ω hω => ?_)
             · refine nullMeasurableSet_lt ?_ (by fun_prop)
               exact (hX_meas n).dist (hY_meas n)
-            · simp only [Set.mem_setOf_eq] at hω
+            · simp only [Set.mem_ofPred_eq] at hω
               have h_le : dist (Y n ω) (X n ω) ≤ ε / 2 := by
                 rw [dist_comm]; exact hω.le
               have := hF_lip.dist_le_mul_of_le h_le

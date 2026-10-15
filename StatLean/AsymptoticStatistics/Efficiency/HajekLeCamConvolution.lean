@@ -20,10 +20,11 @@ on $h$.
 **Convolution theorem.** There exists a probability measure $M_{\theta_0}$ on
 $\mathbb{R}^d$ such that the regular limit law factors as a fixed Gaussian convolved with
 $M_{\theta_0}$:
-$$L_{\theta_0} = N\!\bigl(0,\ \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf T}\bigr) * M_{\theta_0}.$$
-The Gaussian factor $N(0, \dot\psi_{\theta_0} I_{\theta_0}^{-1} \dot\psi_{\theta_0}^{\mathsf T})$
-is the smallest possible limit law in the concentration ordering; it is the best regular
-estimator's law.
+$$L_{\theta_0} = N\!\bigl(0,\ \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf
+T}\bigr) * M_{\theta_0}.$$ The Gaussian factor $N(0, \dot\psi_{\theta_0} I_{\theta_0}^{-1}
+\dot\psi_{\theta_0}^{\mathsf
+T})$ is the smallest possible limit law in the concentration
+ordering; it is the best regular estimator's law.
 
 **Covariance corollary.** If, in addition, the limit law $L_{\theta_0}$ has a finite second
 moment with covariance matrix $\Sigma_{\theta_0}$, then
@@ -65,8 +66,8 @@ equivariant-in-law characterization used in the proof is Eq (8.7).
 
 The covariance corollary is the helper `cov_psd_from_conv_decomp`: variance is additive for
 independent sums, the multivariate Gaussian with covariance $V$ has covariance $V$, and any
-probability-measure covariance matrix is PSD, so $\Sigma_{\theta_0} = V + \mathrm{Cov}(M_{\theta_0})$
-with $\mathrm{Cov}(M_{\theta_0}) \succeq 0$.
+probability-measure covariance matrix is PSD, so
+$\Sigma_{\theta_0} = V + \mathrm{Cov}(M_{\theta_0})$ with $\mathrm{Cov}(M_{\theta_0}) \succeq 0$.
 
 **Bibliographic comments.** The convolution theorem originates with J. Hájek, "A
 characterization of limiting distributions of regular estimates", *Zeitschrift für
@@ -115,7 +116,7 @@ theorem regularity_implies_8_2_hypothesis
     ∀ h : Θ k,
       WeakConverges
         (fun n : ℕ =>
-          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map₀
             (fun x => (Real.sqrt n) •
               (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h))))
         hReg.limitDist :=
@@ -206,14 +207,32 @@ theorem hajek_le_cam_convolution_theorem
           (ψDotMat * J⁻¹ * ψDotMat.transpose)) ∗ M_θ := by
   classical
   -- Step A: translate regularity → (8.2), then apply lower_bound_for_experiments to get κ.
-  have hT_weak := regularity_implies_8_2_hypothesis M μ θ₀ ψ T hReg
+  have hT_weak₀ := regularity_implies_8_2_hypothesis M μ θ₀ ψ T hReg
+  have hT_weak : ∀ h : Θ k, WeakConverges
+      (fun n : ℕ =>
+        (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+          (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h))))
+      hReg.limitDist := by
+    intro h
+    have hmaps :
+        (fun n : ℕ =>
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map₀
+            (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))) =
+        (fun n : ℕ =>
+          (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+            (fun x => (Real.sqrt n) • (T n x - ψ (θ₀ + (Real.sqrt n)⁻¹ • h)))) :=
+      funext fun n => Measure.map₀_of_measurable
+        ((measurable_const (a := Real.sqrt n)).smul
+          ((hT_meas n).sub measurable_const))
+    rw [← hmaps]
+    exact hT_weak₀ h
   -- The constant family L_θh ≡ hReg.limitDist; instance provided by hReg.isProb.
   obtain ⟨κ, hκ_markov, hκ⟩ :=
     LowerBoundForExperiments.lower_bound_for_experiments M μ θ₀ ℓ hℓ hDQM J hJ_pd hJ_fisher ψ ψDot
         hψ_diff
       T hT_meas (L_θh := fun _ => hReg.limitDist) hT_weak hPDF
   -- Step B: build the IsEquivariantInLaw witness.
-  haveI := hκ_markov
+  have := hκ_markov
   have hEquiv :=
     randomized_kernel_is_equivariant_in_law (k := k) (d := d)
       J hJ_pd ψDot ψDotMat h_ψDot_mat (L_θ := hReg.limitDist) κ hκ
@@ -271,8 +290,8 @@ theorem cov_psd_from_conv_decomp
   classical
   -- Abbreviation: G is the multivariate Gaussian; haveI's for instance lookup.
   set G : Measure (𝓨 d) := ProbabilityTheory.multivariateGaussian (0 : 𝓨 d) V with hG_def
-  haveI : IsProbabilityMeasure G := inferInstance
-  haveI : IsGaussian G := inferInstance
+  have : IsProbabilityMeasure G := inferInstance
+  have : IsGaussian G := inferInstance
   -- Inner-product bridge: `⟪u_lift x, w_lift⟫ = x ⬝ᵥ w` over ℝ, where
   -- `u_lift x := (WithLp.equiv 2 _).symm x`.
   have inner_bridge : ∀ x w : Fin d → ℝ,
@@ -331,7 +350,6 @@ theorem cov_psd_from_conv_decomp
     exact hRHS_eq
   have hSigma_Herm : Sigma.IsHermitian := by
     refine Matrix.IsHermitian.ext (fun i j => ?_)
-    change star (Sigma j i) = Sigma i j
     rw [star_trivial, hSigma_symm]
   -- Step 2: the variance identity at u_x := (WithLp.equiv 2 _).symm x.
   -- Convolution: L = (G.prod N).map (fun p => p.1 + p.2).
@@ -518,8 +536,8 @@ theorem cov_psd_of_regular_estimator
   obtain ⟨M_θ, hM_prob, hM_conv⟩ :=
     hajek_le_cam_convolution_theorem (k := k) (d := d) M μ θ₀ ℓ hℓ hDQM J hJ_pd
       hJ_fisher ψ ψDot hψ_diff ψDotMat h_ψDot_mat T hT_meas hReg hPDF
-  haveI := hM_prob
-  haveI := hReg.isProb
+  have := hM_prob
+  have := hReg.isProb
   -- Step 2: ψDotMat * J⁻¹ * ψDotMatᵀ is PSD.
   have hV_psd : (ψDotMat * J⁻¹ * ψDotMat.transpose).PosSemidef := by
     -- (B * A * Bᵀ).PosSemidef for A = J⁻¹ PSD, B = ψDotMat.

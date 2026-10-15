@@ -76,7 +76,7 @@ theorem exponential_tests
     (hM : Tendsto Mseq atTop atTop) :
     ∃ (φ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ) (c : ℝ), 0 < c ∧
       IsExpConsistentTestSeq M μ θ₀ Mseq c φ := by
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n => productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- The moderate-range tests, valid on `Mₙ/√n ≤ ‖θ−θ₀‖ ≤ ε`.

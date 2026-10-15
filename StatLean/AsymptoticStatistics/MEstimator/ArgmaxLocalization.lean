@@ -61,9 +61,9 @@ theorem TendstoInProbZero.add {G : Type*} [NormedAddCommGroup G]
   have hsub : ∀ k, {ω | ε ≤ ‖Z k ω + W k ω‖} ⊆
       {ω | ε / 2 ≤ ‖Z k ω‖} ∪ {ω | ε / 2 ≤ ‖W k ω‖} := by
     intro k ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have htri := norm_add_le (Z k ω) (W k ω)
     linarith [hcon.1, hcon.2]
   have hbound : ∀ k, (P k).real {ω | ε ≤ ‖Z k ω + W k ω‖} ≤
@@ -107,7 +107,7 @@ theorem TendstoInProbZero.const_smul {G : Type*} [NormedAddCommGroup G]
     have hset : ∀ k, {ω | ε ≤ ‖(0 : ℝ) • Z k ω‖} = (∅ : Set (Ω k)) := by
       intro k
       ext ω
-      simp only [zero_smul, norm_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [zero_smul, norm_zero, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_le]
       exact hε
     simp only [hset, measureReal_empty]
@@ -116,7 +116,7 @@ theorem TendstoInProbZero.const_smul {G : Type*} [NormedAddCommGroup G]
     have hset : ∀ k, {ω | ε ≤ ‖c • Z k ω‖} = {ω | ε / |c| ≤ ‖Z k ω‖} := by
       intro k
       ext ω
-      simp only [Set.mem_setOf_eq, norm_smul, Real.norm_eq_abs]
+      simp only [Set.mem_ofPred_eq, norm_smul, Real.norm_eq_abs]
       rw [div_le_iff₀ hcpos, mul_comm]
     simp only [hset]
     exact hZ (ε / |c|) (div_pos hε hcpos)
@@ -136,7 +136,7 @@ theorem tendstoInProbZero_of_norm_le {G H : Type*} [NormedAddCommGroup G]
   intro ε hε
   have hsub : ∀ k, {ω | ε ≤ ‖Z k ω‖} ⊆ {ω | ε ≤ ‖W k ω‖} := by
     intro k ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     exact le_trans hω (hle k ω)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hW ε hε)
     (Eventually.of_forall fun k => measureReal_nonneg)
@@ -183,8 +183,8 @@ theorem complete_the_square (V : Matrix (Fin d) (Fin d) ℝ)
   have hVg : Vc (Wc G) = G := by
     have hmul : Vc * Wc = 1 := by
       rw [hVc, hWc, ← map_mul, Matrix.mul_nonsing_inv V hVunit, map_one]
-    calc Vc (Wc G) = (Vc * Wc) G := (ContinuousLinearMap.mul_apply Vc Wc G).symm
-      _ = G := by rw [hmul, ContinuousLinearMap.one_apply]
+    calc Vc (Wc G) = (Vc * Wc) G := (mul_apply_eq_comp Vc Wc G).symm
+      _ = G := by rw [hmul, one_apply_eq_self]
   -- linearity of `Vc` on the shifted point.
   have hlin : Vc (x + Wc G) = Vc x + G := by rw [map_add, hVg]
   -- self-adjoint cross term.
@@ -220,7 +220,7 @@ theorem tendstoInProbZero_of_neg_def_quadform
       {ω | c * ε ^ 2 ≤
         ‖⟪u k ω, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (u k ω)⟫‖} := by
     intro k ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hneg := hVneg (u k ω)
     have hSv0 : ⟪u k ω, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (u k ω)⟫ ≤ 0 := by
       nlinarith [hneg, mul_nonneg hc.le (sq_nonneg ‖u k ω‖)]
@@ -412,7 +412,7 @@ theorem argmax_localization_of_fixed_comparisons
     induction s using Finset.induction_on with
     | empty =>
         intro a ha
-        simp only [Finset.sum_empty, norm_zero, not_le.mpr ha, Set.setOf_false,
+        simp only [Finset.sum_empty, norm_zero, not_le.mpr ha, Set.ofPred_false,
           measureReal_empty]
         exact tendsto_const_nhds
     | @insert g s hgs ih =>
@@ -488,7 +488,7 @@ theorem argmax_localization_of_fixed_comparisons
       Finset.single_le_sum hterm_nonneg hgs
     have htotal_nonneg : 0 ≤ total k ω := by
       exact add_nonneg (abs_nonneg _) (Finset.sum_nonneg fun x _hx => hterm_nonneg x _hx)
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [Real.norm_eq_abs, abs_of_nonneg htotal_nonneg]
     refine le_of_lt (hqgap.trans_le ?_)
     calc

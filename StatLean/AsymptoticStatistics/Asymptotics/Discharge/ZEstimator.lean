@@ -31,6 +31,8 @@ Theorem 7.2 + Lemma 7.6 (DQM-Taylor). Main declarations:
 `zEstimator_asympLinear_of_taylor` and `toEfficientScoreEqAssumptions`.
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal Function
 
@@ -117,7 +119,7 @@ private lemma score_l_dot_avg_plus_info_oP
                    - ∫ ω, (score_l_dot : Ω → ℝ) ω ∂P|} := by
     intro n
     ext X
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [h_bartlett]
     constructor
     · intro h; convert h using 2; ring
@@ -440,7 +442,7 @@ private lemma step1_random_index_oP
   have h_proj_meas : ∀ n : ℕ,
       Measurable (fun ξ : ℕ → Ω => fun i : Fin n => ξ i.val) := by
     intro n
-    refine measurable_pi_lambda _ (fun _ => ?_)
+    refine Measurable.of_eval (fun _ => ?_)
     exact measurable_pi_apply _
   have hf_hat_meas : ∀ n, Measurable (Function.uncurry (f_hat n)) := by
     intro n
@@ -508,7 +510,7 @@ private lemma step1_random_index_oP
         (fun n => by simpa [hghat_def] using h_l2_int_μ n)
         (by simpa [hghat_def] using h_l2_μ) hδ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds htail
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     calc
       μ.outerMeasureStar {ξ | δ < distL2 P (f_hat n ξ) score_truth}
           ≤ μ.outerMeasureStar {ξ | δ ≤ distL2 P (f_hat n ξ) score_truth} :=
@@ -537,7 +539,7 @@ private lemma step1_random_index_oP
   -- which rewrites via `empiricalProcess` def to the same shape.
   -- Squeeze `μ`-form between 0 and the Lem 19.24 bound.
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_lem19_24
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- For each n, the Pⁿ-set is ⊆ μ-preimage of an μ-set. Bridge via
     -- `pi_meas_eq_infinitePi_meas_of_truncate`.
     refine Filter.Eventually.of_forall (fun n => ?_)
@@ -586,8 +588,8 @@ private lemma step1_random_index_oP
     -- then the μ-condition with η = ε/2 holds at ξ).
     have h_incl : (fun ξ : ℕ → Ω => fun i : Fin n => ξ i.val) ⁻¹' S_pi ⊆ S_mu := by
       intro ξ hξ
-      simp only [Set.mem_preimage, hS_pi_def, Set.mem_setOf_eq] at hξ
-      simp only [hS_mu_def, Set.mem_setOf_eq]
+      simp only [Set.mem_preimage, hS_pi_def, Set.mem_ofPred_eq] at hξ
+      simp only [hS_mu_def, Set.mem_ofPred_eq]
       -- Unfold empiricalProcess.
       unfold EmpiricalProcess.empiricalProcess EmpiricalProcess.empiricalAvg
       -- Goal: ε/2 < |√n * ((1/n)·Σ (f_hat n ξ) (ξ i.val) - ∫f_hat n ξ ∂P)
@@ -752,7 +754,7 @@ private lemma step2_score_eq_to_no_bias
       atTop (𝓝 (0 : ℝ≥0∞)) := by
     simpa using h_se.add h_s1
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_upper
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- Set-inclusion + union bound (the algebraic identity step).
     -- Even without integrability of `score_func_seq n X`, the identity
     -- `A_n + B_n = C_n - D_n` holds: in the non-integrable case, both
@@ -767,7 +769,7 @@ private lemma step2_score_eq_to_no_bias
     refine Filter.Eventually.of_forall (fun n => ?_)
     refine le_trans (measure_mono ?_) (measure_union_le _ _)
     intro X hX
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+    simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
     -- Set up the four quantities A, B, C, D; show A + B = C - D, then
     -- triangle: |A + B| ≤ |C| + |D|; pair with `hX` (|A+B| ≥ ε) to get
     -- `|C| ≥ ε/2 ∨ |D| ≥ ε/2`.
@@ -864,13 +866,13 @@ lemma step3_taylor_remainder_oP
   have h_taylor := h.score_l2_taylor (ε^2) (by positivity)
   -- Squeeze: `0 ≤ Pⁿ{ε ≤ |(1/√n)·Σ r_n|} ≤ Pⁿ{ε² ≤ Σ r_n²} → 0`.
   apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_taylor
-  · exact Filter.Eventually.of_forall (fun _ => zero_le _)
+  · exact Filter.Eventually.of_forall (fun _ => zero_le)
   · -- Set inclusion via Cauchy-Schwarz: `(Σ r_n)² ≤ n · Σ r_n²`.
     -- Skip n = 0 (where the LHS set is empty since `(0)⁻¹ * 0 = 0 < ε`).
     filter_upwards [eventually_ge_atTop 1] with n hn
     apply measure_mono
     intro X hX
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     have h_n_pos : (0 : ℝ) < n := by exact_mod_cast hn
     set r_seq : Fin n → ℝ := fun i =>
       score_func_seq n X (X i)
@@ -965,7 +967,7 @@ private lemma score_truth_sum_bddAbove_in_prob
         M ≤ |(Real.sqrt (0 : ℕ))⁻¹ * (∑ i : Fin 0, score_truth (X i))|}
         = ∅ := by
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le,
         Nat.cast_zero, Real.sqrt_zero, inv_zero,
         mul_zero, abs_zero, Fin.sum_univ_zero]
       exact hM_pos
@@ -992,7 +994,7 @@ private lemma score_truth_sum_bddAbove_in_prob
   have h_sum_mLp :
       MemLp (fun X : Fin n → Ω => ∑ i : Fin n, score_truth (X i)) 2
         (Measure.pi (fun _ : Fin n => P)) :=
-    memLp_finset_sum (Finset.univ : Finset (Fin n))
+    memLp_finsetSum (Finset.univ : Finset (Fin n))
       (fun i _ => h_truth_mp i)
   -- Constant scaling by `(√n)⁻¹` preserves MemLp 2.
   have h_Z_mLp :
@@ -1018,8 +1020,8 @@ private lemma score_truth_sum_bddAbove_in_prob
     have h_int_sum :
         ∫ X : Fin n → Ω, (∑ i : Fin n, score_truth (X i))
           ∂(Measure.pi (fun _ : Fin n => P)) = 0 := by
-      rw [MeasureTheory.integral_finset_sum (Finset.univ : Finset (Fin n))
-            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1:ℝ≥0∞) ≤ 2))]
+      rw [MeasureTheory.integral_finsetSum (Finset.univ : Finset (Fin n))
+            (fun i _ => (h_truth_mp i).integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2))]
       apply Finset.sum_eq_zero
       intro i _
       exact h_int_truth_pi i
@@ -1124,13 +1126,13 @@ private lemma step5_finite_initial_segment_tightness
       exact measurableSet_le measurable_const hg_meas.abs
     have hs_anti : Antitone s := by
       intro k₁ k₂ hk X hX
-      simp only [s, Set.mem_setOf_eq] at hX ⊢
+      simp only [s, Set.mem_ofPred_eq] at hX ⊢
       have h_cast : (k₁ : ℝ) ≤ (k₂ : ℝ) := by exact_mod_cast hk
       linarith
     have hs_inter_empty : ⋂ k, s k = ∅ := by
       apply Set.eq_empty_iff_forall_notMem.mpr
       intro X hX
-      simp only [s, Set.mem_iInter, Set.mem_setOf_eq] at hX
+      simp only [s, Set.mem_iInter, Set.mem_ofPred_eq] at hX
       -- `|g X| < ⌈|g X|⌉ + 1`, but `(⌈|g X|⌉ + 1 : ℕ) ≤ |g X|`. Contradiction.
       have h_abs_nn : (0 : ℝ) ≤ |g X| := abs_nonneg _
       have h_lt : |g X| < (⌊|g X|⌋₊ + 1 : ℕ) := by
@@ -1162,7 +1164,7 @@ private lemma step5_finite_initial_segment_tightness
     exact_mod_cast Finset.le_sup (f := f) (Finset.mem_range.mpr hn)
   refine le_trans (measure_mono ?_) (hf n)
   intro X hX
-  simp only [Set.mem_setOf_eq] at hX ⊢
+  simp only [Set.mem_ofPred_eq] at hX ⊢
   exact h_le.trans hX
 
 /-- **Step 4 (LLN on `ℓ̇` + Bartlett identity).**
@@ -1328,7 +1330,7 @@ private lemma step5_sqrt_n_consistency
                 M_main * Ĩ / 6 ≤ |(Real.sqrt n)⁻¹ *
                   (∑ i : Fin n, score_func_seq n X (X i))|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcD, hcS⟩, hcR, hcLHS⟩ := hc
@@ -1499,7 +1501,7 @@ private lemma step5_sqrt_n_consistency
         ≤ ENNReal.ofReal (ε / 4) := by
       refine le_trans (measure_mono ?_) (hM_S n)
       intro X hX
-      simp only [Set.mem_setOf_eq] at hX ⊢
+      simp only [Set.mem_ofPred_eq] at hX ⊢
       exact le_trans hM_threshold hX
     -- Sum of four ENNReal.ofReal (ε/4) terms = ENNReal.ofReal ε.
     have hε4_nn : (0 : ℝ) ≤ ε / 4 := by linarith
@@ -1511,8 +1513,8 @@ private lemma step5_sqrt_n_consistency
                   = ENNReal.ofReal (ε / 4 + ε / 4) :=
         (ENNReal.ofReal_add hε4_nn hε4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ ε/4 + ε/4)
-            (by linarith : (0:ℝ) ≤ ε/4 + ε/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ ε/4 + ε/4)
+            (by linarith : (0 : ℝ) ≤ ε/4 + ε/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h4 hS_apply) (add_le_add h3 hse)) ?_
@@ -1617,7 +1619,7 @@ private lemma step6_residual_oP
                 ε * Ĩ / 3 ≤ |(Real.sqrt n)⁻¹ *
                   (∑ i : Fin n, score_func_seq n X (X i))|}) := by
       intro X hX
-      simp only [Set.mem_setOf_eq, Set.mem_union] at hX ⊢
+      simp only [Set.mem_ofPred_eq, Set.mem_union] at hX ⊢
       by_contra hc
       push Not at hc
       obtain ⟨⟨hcΔ, hcD⟩, hcR, hcLHS⟩ := hc
@@ -1780,8 +1782,8 @@ private lemma step6_residual_oP
                   = ENNReal.ofReal (η / 4 + η / 4) :=
         (ENNReal.ofReal_add hη4_nn hη4_nn).symm
       rw [h1]
-      rw [(ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ η/4 + η/4)
-            (by linarith : (0:ℝ) ≤ η/4 + η/4)).symm]
+      rw [(ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ η/4 + η/4)
+            (by linarith : (0 : ℝ) ≤ η/4 + η/4)).symm]
       congr 1; ring
     refine le_trans h_meas_bd ?_
     refine le_trans (add_le_add (add_le_add h_M_le h4) (add_le_add h3 hse)) ?_

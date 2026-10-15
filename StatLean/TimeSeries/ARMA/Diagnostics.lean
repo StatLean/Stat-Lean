@@ -28,6 +28,8 @@ the residual-ACF distribution correction is Box & Pierce (1970), refined by
 Ljung & Box (1978) — both cited by FY without statements.
 -/
 
+set_option linter.style.longFile 3500
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 
@@ -57,11 +59,11 @@ standardization really removes the scale of the data. -/
 private lemma coeff_arPoly_aux {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then 1 else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow]
 
 private lemma coeff_maPoly_zero_aux {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow]
 
 /-- `π₀ = 1`: the AR(∞) inversion is normalized, since `b(0) = a(0) = 1`. -/
 private lemma armaPi_zero {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) : armaPi b a 0 = 1 := by
@@ -108,7 +110,7 @@ private lemma sampleResiduals_ar_one {T : ℕ} (b : Fin 1 → ℝ) (x : Fin T �
     norm_num
     ring
   · intro j _ hj
-    have h2 : 2 ≤ j := by simpa using hj
+    have h2 : 2 ≤ j := by simpa using! hj
     rw [armaPi_ma_nil, coeff_arPoly_aux]
     simp [show j ≠ 0 by omega, show j ≠ 1 by omega]
 
@@ -215,7 +217,7 @@ private lemma tendsto_charFun_of_tendstoInProb_sub₂ [IsProbabilityMeasure μ]
       by_cases hω : ω ∈ {ω | δ ≤ |Z T ω - Y T ω|}
       · rw [Set.indicator_of_mem hω]
         exact le_trans (min_le_right _ (2 : ℝ)) (by simp; linarith)
-      · simp only [Set.mem_setOf_eq, not_le] at hω
+      · simp only [Set.mem_ofPred_eq, not_le] at hω
         have h1 : |u * Z T ω - u * Y T ω| ≤ |u| * δ := by
           rw [show u * Z T ω - u * Y T ω = u * (Z T ω - Y T ω) by ring, abs_mul]
           exact mul_le_mul_of_nonneg_left hω.le (abs_nonneg _)
@@ -261,9 +263,9 @@ private lemma measurable_sampleACVF₂ {T : ℕ} {Z : ℤ → Ω → ℝ} (hZ : 
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using ((hZ _).sub hmean).mul ((hZ _).sub hmean)
+    simpa [dite_eq_left hlt'] using! ((hZ _).sub hmean).mul ((hZ _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
-    simp [dif_neg hlt']
+    simp [dite_eq_right hlt']
 
 /-- The sample autocorrelation of an observation window is measurable. -/
 private lemma measurable_sampleACF₂ {T : ℕ} {Z : ℤ → Ω → ℝ} (hZ : ∀ t, Measurable (Z t))
@@ -509,8 +511,8 @@ private lemma lindeberg_acfProd [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε 
       intro n
       filter_upwards with ω
       by_cases hc : η * Real.sqrt n ≤ |acfProd ε k 0 ω|
-      · rw [if_pos hc, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-      · rw [if_neg hc]
+      · rw [ite_eq_left hc, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+      · rw [ite_eq_right hc]
         simpa using sq_nonneg (acfProd ε k 0 ω)
     have hlim : ∀ᵐ ω ∂μ, Tendsto
         (fun n : ℕ => (if η * Real.sqrt n ≤ |acfProd ε k 0 ω| then acfProd ε k 0 ω ^ 2 else 0))
@@ -521,7 +523,7 @@ private lemma lindeberg_acfProd [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε 
           (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
       refine Tendsto.congr' ?_ tendsto_const_nhds (f₁ := fun _ : ℕ => (0 : ℝ))
       filter_upwards [hgo.eventually_gt_atTop (|acfProd ε k 0 ω|)] with n hn
-      rw [if_neg (not_le.2 hn)]
+      rw [ite_eq_right (not_le.2 hn)]
     simpa using tendsto_integral_of_dominated_convergence
       (fun ω => acfProd ε k 0 ω ^ 2) hmeas hsq hbnd hlim
   -- the average is that single term
@@ -563,7 +565,7 @@ private lemma avgSq_noise_tendstoInProb [IsProbabilityMeasure μ] (hiid : IsIIDN
         = fun _ => (0 : ℝ) := by
       funext ω; rw [hsum ω]; ring
     rw [hfun]
-    simp
+    simp only [← Pi.zero_def, eLpNorm'_zero (by norm_num : (0 : ℝ) < 2)]
   have hts : ∑' n : ℕ, c n ^ 2 = 1 := by
     have : (fun n : ℕ => c n ^ 2) = fun n : ℕ => if n = 0 then (1 : ℝ) else 0 := by
       funext n; by_cases h : n = 0 <;> simp [hc, h]
@@ -608,9 +610,9 @@ private lemma integral_sq_sum_orth [IsProbabilityMeasure μ] {f : ℕ → Ω →
     intro ω
     rw [sq, Finset.sum_mul_sum]
   rw [integral_congr_ae (Eventually.of_forall hexp),
-    integral_finset_sum _ (fun i _ => integrable_finset_sum _ fun j _ => hint i j)]
+    integral_finsetSum _ (fun i _ => integrable_finsetSum _ fun j _ => hint i j)]
   refine Finset.sum_congr rfl fun i hi => ?_
-  rw [integral_finset_sum _ (fun j _ => hint i j), Finset.sum_eq_single i]
+  rw [integral_finsetSum _ (fun j _ => hint i j), Finset.sum_eq_single i]
   · simp [sq]
   · intro j _ hji
     exact horth i j (Ne.symm hji)
@@ -735,14 +737,14 @@ private theorem crossSum_clt [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2
         intro i
         rw [eventually_imp_distrib_left]
         exact fun _ => condExp_acfProd_sq hiid hk i
-      rw [Filter.eventuallyEq_set]
+      rw [Filter.eventuallyEqSet_iff]
       filter_upwards [hall] with ω hω
       have hsum : ∑ i ∈ Finset.range n,
           μ[fun ω' => acfProd ε k i ω' ^ 2 | sigmaLT ε ((i : ℤ) + 1 + (k : ℤ))] ω
             = σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl hω
-      simp only [Set.mem_setOf_eq, hsum]
+      simp only [hsum]
       have hfac : (n : ℝ)⁻¹ * (σ2 * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2) - σ2 * σ2
           = σ2 * ((n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, ε ((i : ℤ) + 1) ω ^ 2 - σ2) := by
         ring
@@ -800,8 +802,8 @@ private lemma sampleACVF_decomp (k T : ℕ) (hkT : k ≤ T) (ω : Ω) :
           (ε (((t : ℕ) : ℤ) + 1) ω - c) * (ε ((((t : ℕ) + k : ℕ) : ℤ) + 1) ω - c) else 0) := by
     intro t
     by_cases h : (t : ℕ) + k < T
-    · rw [dif_pos h, if_pos h]
-    · rw [dif_neg h, if_neg h]
+    · rw [dite_eq_left h, ite_eq_left h]
+    · rw [dite_eq_right h, ite_eq_right h]
   rw [Finset.sum_congr rfl fun t _ => hpt t,
     Fin.sum_univ_eq_sum_range (fun i => if i + k < T then
       (ε ((i : ℤ) + 1) ω - c) * (ε (((i + k : ℕ) : ℤ) + 1) ω - c) else 0) T]
@@ -983,7 +985,7 @@ variable {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
 
 private lemma memLp_noiseFinsetSum (hiid : IsIIDNoise ε σ2 μ) (s : Finset ℕ) :
     MemLp (fun ω => ∑ i ∈ s, ε ((i : ℤ) + 1) ω) 2 μ :=
-  memLp_finset_sum s fun i _ => memLp_noise hiid _
+  memLp_finsetSum s fun _ _ => memLp_noise hiid _
 
 /-- `E[(Σ_{i ∈ s} ε_{i+1})²] = #s · σ²`. -/
 private lemma integral_noiseFinsetSum_sq [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2 μ)
@@ -1013,7 +1015,7 @@ private lemma integral_abs_acfProd_le [IsProbabilityMeasure μ] (hiid : IsIIDNoi
 private lemma integrable_errBound [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2 μ)
     {k : ℕ} (hk : 1 ≤ k) (T : ℕ) : Integrable (errBound ε k T) μ := by
   unfold errBound
-  refine Integrable.add (integrable_finset_sum _ fun i _ => (integrable_acfProd hiid hk i).abs) ?_
+  refine Integrable.add (integrable_finsetSum _ fun i _ => (integrable_acfProd hiid hk i).abs) ?_
   refine Integrable.const_mul ?_ _
   have hsq : ∀ s : Finset ℕ, Integrable (fun ω => (∑ i ∈ s, ε ((i : ℤ) + 1) ω) ^ 2) μ :=
     fun s => (memLp_two_iff_integrable_sq
@@ -1035,7 +1037,7 @@ private lemma integral_errBound_le [IsProbabilityMeasure μ] (hiid : IsIIDNoise 
   have hAB : Integrable (fun ω => 4 * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2
       + (∑ i ∈ Finset.Ico (T - k) T, ε ((i : ℤ) + 1) ω) ^ 2) μ := hA.add hB
   have hI1 : Integrable (fun ω => ∑ i ∈ Finset.Ico (T - k) T, |acfProd ε k i ω|) μ :=
-    integrable_finset_sum _ fun i _ => (integrable_acfProd hiid hk i).abs
+    integrable_finsetSum _ fun i _ => (integrable_acfProd hiid hk i).abs
   have hI2 : Integrable (fun ω => (T : ℝ)⁻¹ *
       (4 * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2
         + (∑ i ∈ Finset.Ico (T - k) T, ε ((i : ℤ) + 1) ω) ^ 2
@@ -1051,7 +1053,7 @@ private lemma integral_errBound_le [IsProbabilityMeasure μ] (hiid : IsIIDNoise 
   rw [hsplit]
   -- the edge sum of `|ξ_i|`
   have h1 : ∫ ω, ∑ i ∈ Finset.Ico (T - k) T, |acfProd ε k i ω| ∂μ ≤ (k : ℝ) * σ2 := by
-    rw [integral_finset_sum _ fun i _ => (integrable_acfProd hiid hk i).abs]
+    rw [integral_finsetSum _ fun i _ => (integrable_acfProd hiid hk i).abs]
     have hle : ∑ i ∈ Finset.Ico (T - k) T, ∫ ω, |acfProd ε k i ω| ∂μ
         ≤ ∑ _i ∈ Finset.Ico (T - k) T, σ2 :=
       Finset.sum_le_sum fun i _ => integral_abs_acfProd_le hiid hk i
@@ -1211,14 +1213,14 @@ private lemma tendstoInProb_ratio [IsProbabilityMeasure μ] {A Δ D : ℕ → Ω
     have hdiv : (∫ ω, A T ω ^ 2 ∂μ) / lam ^ 2 ≤ K / lam ^ 2 :=
       div_le_div_of_nonneg_right (hAsq T) (by positivity)
     linarith
-  have hev1 := (hD η hη0).eventually_lt_const (show (0:ℝ) < ζ / 3 by linarith)
-  have hev2 := (hΔ δ' hδ'0).eventually_lt_const (show (0:ℝ) < ζ / 3 by linarith)
+  have hev1 := (hD η hη0).eventually_lt_const (show (0 : ℝ) < ζ / 3 by linarith)
+  have hev2 := (hΔ δ' hδ'0).eventually_lt_const (show (0 : ℝ) < ζ / 3 by linarith)
   filter_upwards [hev1, hev2] with T hT1 hT2
   have hsub : {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}
       ⊆ {ω | lam ≤ |A T ω|} ∪ {ω | η ≤ |D T ω - σ2|} ∪ {ω | δ' ≤ |Δ T ω|} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨⟨hA', hD'⟩, hΔ'⟩ := hcon
     have hDpos : 0 < D T ω := by
       have : |D T ω - σ2| < σ2 / 2 := lt_of_lt_of_le hD' hη1
@@ -1257,7 +1259,7 @@ private lemma tendstoInProb_ratio [IsProbabilityMeasure μ] {A Δ D : ℕ → Ω
     have : δ ≤ δ / 2 := le_trans hω hbound
     linarith
   have hfinal := toReal_measure_le_union₃ (μ := μ) hsub
-  have hnn : (0:ℝ) ≤ (μ {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}).toReal :=
+  have hnn : (0 : ℝ) ≤ (μ {ω | δ ≤ |(A T ω + Δ T ω) / D T ω - A T ω / σ2|}).toReal :=
     ENNReal.toReal_nonneg
   rw [Real.norm_eq_abs, abs_of_nonneg hnn]
   have := hA T
@@ -1335,7 +1337,7 @@ private lemma tendstoInProb_sampleACVF_zero [IsProbabilityMeasure μ] (hiid : Is
       exact ENNReal.toReal_nonneg
     · filter_upwards [eventually_ge_atTop 1] with T hT
       exact hmean T hT
-  have hLLN := avgSq_noise_tendstoInProb hiid (show (0:ℝ) < η / 2 by linarith)
+  have hLLN := avgSq_noise_tendstoInProb hiid (show (0 : ℝ) < η / 2 by linarith)
   have hbound : ∀ T : ℕ, 1 ≤ T →
       (μ {ω | η ≤ |sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - σ2|}).toReal
         ≤ (μ {ω | η / 2 ≤ |(T : ℝ)⁻¹ *
@@ -1348,9 +1350,9 @@ private lemma tendstoInProb_sampleACVF_zero [IsProbabilityMeasure μ] (hiid : Is
           ∪ {ω | η / 2 ≤ ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2} := by
       intro ω hω
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨h1, h2⟩ := hcon
-      rw [Set.mem_setOf_eq, sampleACVF_zero_eq T hT ω] at hω
+      rw [Set.mem_ofPred_eq, sampleACVF_zero_eq T hT ω] at hω
       have h3 : |(T : ℝ)⁻¹ * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω ^ 2)
           - ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω) ^ 2 - σ2|
           ≤ |(T : ℝ)⁻¹ * (∑ i ∈ Finset.range T, ε ((i : ℤ) + 1) ω ^ 2) - σ2|
@@ -1392,7 +1394,7 @@ variable {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
 private lemma memLp_scaledCross [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2 μ)
     {k : ℕ} (hk : 1 ≤ k) (T : ℕ) :
     MemLp (fun ω => (Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T, acfProd ε k i ω) 2 μ :=
-  (memLp_finset_sum _ fun i _ => memLp_acfProd hiid hk i).const_mul _
+  (memLp_finsetSum _ fun i _ => memLp_acfProd hiid hk i).const_mul _
 
 private lemma integral_scaledCross_sq_le [IsProbabilityMeasure μ] (hiid : IsIIDNoise ε σ2 μ)
     (hσ : 0 < σ2) {k : ℕ} (hk : 1 ≤ k) (T : ℕ) :
@@ -1537,18 +1539,18 @@ private lemma maPolyConvPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (
 private lemma coeffMaPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
     (maPoly a).coeff m
       = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+  simp [maPoly, Polynomial.finsetSum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
 
 private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow]
 
 private lemma continuousCoeffMaPoly {q : ℕ} (m : ℕ) :
     Continuous fun a : Fin q → ℝ => (maPoly a).coeff m := by
   simp only [coeffMaPoly]
-  refine continuous_const.add (continuous_finset_sum _ fun j _ => ?_)
+  refine continuous_const.add (continuous_finsetSum _ fun j _ => ?_)
   by_cases h : m = (j : ℕ) + 1
   · simpa [h] using (continuous_apply j)
   · simpa [h] using continuous_const
@@ -1556,7 +1558,7 @@ private lemma continuousCoeffMaPoly {q : ℕ} (m : ℕ) :
 private lemma continuousCoeffArPoly {p : ℕ} (m : ℕ) :
     Continuous fun b : Fin p → ℝ => (arPoly b).coeff m := by
   simp only [coeffArPoly]
-  refine continuous_const.sub (continuous_finset_sum _ fun i _ => ?_)
+  refine continuous_const.sub (continuous_finsetSum _ fun i _ => ?_)
   by_cases h : m = (i : ℕ) + 1
   · simpa [h] using (continuous_apply i)
   · simpa [h] using continuous_const
@@ -1577,7 +1579,7 @@ theorem continuous_armaPi_pair {p q : ℕ} (n : ℕ) :
       linarith
     simp only [hrec]
     refine (continuousCoeffArPoly n).comp continuous_fst |>.sub
-      (continuous_finset_sum _ fun i hi => ?_)
+      (continuous_finsetSum _ fun i hi => ?_)
     have hi' : i < n := Finset.mem_range.1 hi
     exact ((continuousCoeffMaPoly (i + 1)).comp continuous_snd).mul (ih _ (by omega))
 
@@ -1593,9 +1595,9 @@ private lemma measurable_sampleACVF_win {T : ℕ} {y : Ω → Fin T → ℝ}
   refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
   rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
   · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
-    simpa [dif_pos hlt'] using ((hy t).sub hmean).mul ((hy _).sub hmean)
+    simpa [dite_eq_left hlt'] using! ((hy t).sub hmean).mul ((hy _).sub hmean)
   · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
-    simp [dif_neg hlt']
+    simp [dite_eq_right hlt']
 
 private lemma measurable_sampleACF_win {T : ℕ} {y : Ω → Fin T → ℝ}
     (hy : ∀ t, Measurable fun ω => y ω t) (m : ℕ) :
@@ -1771,7 +1773,7 @@ private lemma abs_sampleACVF_sub_le_sum {T : ℕ} (k : ℕ) (y z : Fin T → ℝ
     rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
     congr 1
     exact Finset.sum_congr rfl fun t _ => hsplit t
-  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
   refine Finset.sum_le_sum fun t _ => ?_
@@ -1801,7 +1803,7 @@ private lemma abs_sampleACVF_sub_le {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) :
     rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
     congr 1
     exact Finset.sum_congr rfl fun t _ => hsplit t
-  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
   have hbd : ∀ t : Fin T, |cent d t * shiftPad k (cent y) t + cent z t * shiftPad k (cent d) t|
@@ -1849,12 +1851,12 @@ private lemma sum_sq_truncConv_le {π : ℕ → ℝ} (hπ : Summable fun n => |�
   have hpt : ∀ t : ℕ, (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
       ≤ P * ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2 := by
     intro t
-    have hcs := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul (Finset.range (t + 1))
+    have hcs := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul (Finset.range (t + 1))
       (r := fun j => |π j| * |xx (t - j)|) (f := fun j => |π j|)
       (g := fun j => |π j| * xx (t - j) ^ 2)
       (fun j _ => abs_nonneg _)
       (fun j _ => mul_nonneg (abs_nonneg _) (sq_nonneg _))
-      (fun j _ => by
+      (fun j _ => le_of_eq <| by
         rw [mul_pow, sq_abs (xx (t - j))]
         ring)
     have habs : |∑ j ∈ Finset.range (t + 1), π j * xx (t - j)|
@@ -2148,7 +2150,7 @@ private lemma sampleResiduals_eq_noise_add {T : ℕ} (t : Fin T) (ω : Ω) :
       have : ((((t : ℕ) - j : ℕ)) : ℤ) = ((t : ℕ) : ℤ) - (j : ℤ) := by
         push_cast [Nat.cast_sub hjt]
         ring
-      rw [this]; push_cast; ring
+      rw [this]; ring
     rw [hidx, mul_assoc]
   rw [hexpand]
   have hswap := sum_triangle_swap
@@ -2191,14 +2193,14 @@ private lemma memLp_truncDefect [IsProbabilityMeasure μ]
     (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (s : ℕ) :
     MemLp (truncDefect b0 a0 X ε s) 2 μ := by
   refine MemLp.sub (hcausal.memLp hψ hwn hmeas _) ?_
-  exact memLp_finset_sum _ fun n _ => (hwn.memLp _).const_mul _
+  exact memLp_finsetSum _ fun n _ => (hwn.memLp _).const_mul _
 
 private lemma memLp_residDefect [IsProbabilityMeasure μ]
     (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
     (hψ : Summable fun n => |armaPsi b0 a0 n|)
     (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (t : ℕ) :
     MemLp (residDefect b0 a0 X ε t) 2 μ :=
-  memLp_finset_sum _ fun j _ =>
+  memLp_finsetSum _ fun j _ =>
     (memLp_truncDefect hcausal hψ hwn hmeas (t - j)).const_mul _
 
 /-- Geometric control of the coefficient tail. -/
@@ -2283,7 +2285,7 @@ private theorem exists_sum_l2n_residDefect_le [IsProbabilityMeasure μ]
         ≤ ∑ j ∈ Finset.range (t + 1), K * r ^ t := by
       refine le_trans ?_ (le_of_eq (Finset.sum_congr rfl hcollapse))
       refine le_trans ?_ (Finset.sum_le_sum hbd)
-      simpa only [residDefect, hconst] using hsum
+      simpa only [residDefect, hconst] using! hsum
     simpa [Finset.sum_const, Finset.card_range, mul_comm, mul_left_comm, mul_assoc]
       using this
   -- sum the bound
@@ -2308,7 +2310,7 @@ private theorem exists_sum_l2n_residDefect_le [IsProbabilityMeasure μ]
 
 /-! #### `L²` bookkeeping for the windowed statistics -/
 
-private lemma l2n_zero_fun : l2n μ (fun _ : Ω => (0:ℝ)) = 0 := by
+private lemma l2n_zero_fun : l2n μ (fun _ : Ω => (0 : ℝ)) = 0 := by
   simp [l2n]
 
 private lemma shiftPad_le {T : ℕ} {k : ℕ} (g : Fin T → ℝ) {B : ℝ} (hg : ∀ s, g s ≤ B)
@@ -2367,12 +2369,12 @@ private lemma l2n_shiftPad_eq {T : ℕ} (k : ℕ) (W : Fin T → Ω → ℝ) (t 
 private lemma memLp_cent {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemLp (W s) 2 μ)
     (t : Fin T) : MemLp (fun ω => cent (fun s => W s ω) t) 2 μ := by
   have hrw : (fun ω => cent (fun s => W s ω) t)
-      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+      = fun ω => W t ω + (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
     funext ω
     simp only [cent, sampleMean]
     ring
   rw [hrw]
-  exact (hW t).add ((memLp_finset_sum _ fun s _ => hW s).const_mul _)
+  exact (hW t).add ((memLp_finsetSum _ fun s _ => hW s).const_mul _)
 
 private lemma memLp_shiftPad_cent [IsFiniteMeasure μ] {T : ℕ} (k : ℕ) (W : Fin T → Ω → ℝ)
     (hW : ∀ s, MemLp (W s) 2 μ) (t : Fin T) :
@@ -2387,23 +2389,23 @@ private lemma l2n_cent_le {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemL
     l2n μ (fun ω => cent (fun s => W s ω) t)
       ≤ l2n μ (W t) + (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) := by
   have hrw : (fun ω => cent (fun s => W s ω) t)
-      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+      = fun ω => W t ω + (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
     funext ω
     simp only [cent, sampleMean]
     ring
   rw [hrw]
   have hmem : MemLp (fun ω => ∑ s : Fin T, W s ω) 2 μ :=
-    memLp_finset_sum _ fun s _ => hW s
-  have h1 := l2n_add_le (μ := μ) (hW t) (hmem.const_mul (-(T:ℝ)⁻¹))
-  have h2 : l2n μ (fun ω => (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω)
-      = |(-(T:ℝ)⁻¹)| * l2n μ (fun ω => ∑ s : Fin T, W s ω) := l2n_const_mul _ _
+    memLp_finsetSum _ fun s _ => hW s
+  have h1 := l2n_add_le (μ := μ) (hW t) (hmem.const_mul (-(T : ℝ)⁻¹))
+  have h2 : l2n μ (fun ω => (-(T : ℝ)⁻¹) * ∑ s : Fin T, W s ω)
+      = |(-(T : ℝ)⁻¹)| * l2n μ (fun ω => ∑ s : Fin T, W s ω) := l2n_const_mul _ _
   have h3 : l2n μ (fun ω => ∑ s : Fin T, W s ω) ≤ ∑ s : Fin T, l2n μ (W s) :=
     l2n_finset_sum_le _ _ hW
-  have habs : |(-(T:ℝ)⁻¹)| = (T:ℝ)⁻¹ := by
+  have habs : |(-(T : ℝ)⁻¹)| = (T : ℝ)⁻¹ := by
     rw [abs_neg, abs_of_nonneg (by positivity)]
   rw [h2, habs] at h1
-  have h4 : (T:ℝ)⁻¹ * l2n μ (fun ω => ∑ s : Fin T, W s ω)
-      ≤ (T:ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) :=
+  have h4 : (T : ℝ)⁻¹ * l2n μ (fun ω => ∑ s : Fin T, W s ω)
+      ≤ (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) :=
     mul_le_mul_of_nonneg_left h3 (by positivity)
   linarith
 
@@ -2446,7 +2448,7 @@ private lemma integrable_acvfDom [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
       exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
     · have := (hmemcZ.abs.integrable_mul hmemsD.abs)
       exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
-  exact (integrable_finset_sum _ fun t _ => hint t).const_mul _
+  exact (integrable_finsetSum _ fun t _ => hint t).const_mul _
 
 /-- **The `L¹` perturbation bound for the sample autocovariance.** The `√T`-scaled
 difference of two windowed ACVFs is controlled by the *summed* `L²` sizes of the
@@ -2501,7 +2503,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
   set e : Fin T → ℝ := fun t => l2n μ (fun ω => Y t ω - Z t ω) + (T : ℝ)⁻¹ * Δ with he
   have he0 : ∀ t, 0 ≤ e t := fun t => by
     have := l2n_nonneg μ (fun ω => Y t ω - Z t ω)
-    have : (0:ℝ) ≤ (T : ℝ)⁻¹ * Δ := by positivity
+    have : (0 : ℝ) ≤ (T : ℝ)⁻¹ * Δ := by positivity
     simp only [he]
     positivity
   have hcentD : ∀ t : Fin T,
@@ -2514,7 +2516,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
     rcases Nat.eq_zero_or_pos T with hT | hT
     · subst hT
       simp only [Nat.cast_zero, inv_zero, zero_mul, mul_zero] at hsplit
-      simp [hsplit] at *
+      simp at *
       linarith
     · have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
       have : (T : ℝ) * ((T : ℝ)⁻¹ * Δ) = Δ := by field_simp
@@ -2611,7 +2613,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
       mul_le_mul (hcentZ t) hsD (l2n_nonneg _ _) (by linarith)
     linarith
   simp only [acvfDom]
-  rw [integral_const_mul, integral_finset_sum _ (fun t _ => hint t)]
+  rw [integral_const_mul, integral_finsetSum _ (fun t _ => hint t)]
   have hsum : ∑ t : Fin T, ∫ ω,
       (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
         + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) ∂μ
@@ -2623,7 +2625,7 @@ private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
     have hB : (2 * BZ) * ∑ t : Fin T, shiftPad k e t ≤ (2 * BZ) * (2 * Δ) :=
       mul_le_mul_of_nonneg_left (le_trans (sum_shiftPad_le k e he0) hesum) (by linarith)
     nlinarith [hA, hB]
-  have hTinv : (0:ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+  have hTinv : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
   exact mul_le_mul_of_nonneg_left hsum hTinv
 
 /-- The Markov step: the `L¹` bound as a bound on the deviation probability. -/
@@ -2668,7 +2670,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
     refine le_trans ?_ (hS (t + 1))
     refine Finset.single_le_sum (f := fun i => l2n μ (residDefect b0 a0 X ε i))
       (fun i _ => l2n_nonneg _ _) (Finset.self_mem_range_succ t)
-  have hsqrtσ : (0:ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  have hsqrtσ : (0 : ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
   -- the bound, at each `T ≥ 1`
   have hbound : ∀ T : ℕ, 1 ≤ T →
       (μ {ω | δ ≤ Real.sqrt T *
@@ -2736,7 +2738,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
             |sampleACVF (fun t : Fin T => Y t ω) k
               - sampleACVF (fun t : Fin T => Z t ω) k|} := by
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [div_le_iff₀ hsq, mul_comm]
     have hmk := toReal_measure_sampleACVF_sub_le (μ := μ) k Y Z hYmem hZmem
       (BY := Real.sqrt σ2 + S) (BZ := Real.sqrt σ2) hBY hBZ (by linarith) hsqrtσ
@@ -2747,7 +2749,7 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
     set N : ℝ := 4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) *
       ((Real.sqrt σ2 + S) + Real.sqrt σ2) with hN
     have hN0 : 0 ≤ N := by
-      have : (0:ℝ) ≤ ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) :=
+      have : (0 : ℝ) ≤ ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) :=
         Finset.sum_nonneg fun t _ => l2n_nonneg _ _
       rw [hN]; positivity
     have hkey : ((T : ℝ)⁻¹ * N) / (δ / Real.sqrt T) = N / (δ * Real.sqrt T) := by
@@ -2829,8 +2831,6 @@ private lemma sum_sq_sampleResiduals_le {T : ℕ} {p q : ℕ} (b : Fin p → ℝ
 
 /-! #### The Lipschitz leg of residue (B) -/
 
--- the pathwise chain below multiplies six inequalities; the default budget is not enough
-set_option maxHeartbeats 1000000 in
 /-- **The Lipschitz leg**: `√T (γ̂_{ε̂(θ̂_T)}(k) − γ̂_{ε̂(θ₀)}(k)) →p 0`. This is finding
 28's item 1: the `ℓ¹` Lipschitz bound `Consistency.exists_armaPi_l1_lipschitz` converts the
 **super**-consistency `√T(θ̂_T − θ₀) →p 0` into an `o_p(1)` bound on the `√T`-scaled
@@ -2863,17 +2863,17 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
   obtain ⟨L0, hL00, hLip0⟩ := exists_armaPi_l1_lipschitz hKc hKB
   -- a strictly positive Lipschitz constant (the bound is vacuous at `L = 0`)
   set L : ℝ := L0 + 1 with hLdef
-  have hL0 : (0:ℝ) < L := by rw [hLdef]; linarith
+  have hL0 : (0 : ℝ) < L := by rw [hLdef]; linarith
   have hLip : ∀ ba ∈ K, ∀ ba' ∈ K,
       (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n|) ≤ L * dist ba ba' := by
     intro ba hba ba' hba'
     refine le_trans (hLip0 ba hba ba' hba') ?_
     exact mul_le_mul_of_nonneg_right (by rw [hLdef]; linarith) dist_nonneg
   obtain ⟨C, r, hC, hr0, hr1, _, hπK⟩ := exists_uniform_geometric_bound_arma hKc hKB
-  have hr1' : (0:ℝ) < 1 - r := by linarith
+  have hr1' : (0 : ℝ) < 1 - r := by linarith
   set Cπ : ℝ := C * (1 - r)⁻¹ with hCπ
   have hCπ0 : 0 ≤ Cπ := by
-    have : (0:ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+    have : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
     positivity
   have hsum : ∀ ba ∈ K, Summable fun n => |armaPi ba.1 ba.2 n| := fun ba hba =>
     Summable.of_nonneg_of_le (fun n => abs_nonneg _) (hπK ba hba)
@@ -2890,7 +2890,7 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
   obtain ⟨M, hM0, hMlim⟩ := normSq_bounded_inProb h hiid hσ hB0 hcausal hmeas
   set η : ℝ := δ / (2 * Cπ * L * M + 1) with hη
   have hη0 : 0 < η := by
-    have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+    have hden : (0 : ℝ) < 2 * Cπ * L * M + 1 := by positivity
     rw [hη]
     exact div_pos hδ hden
   -- the three-event inclusion
@@ -2905,13 +2905,13 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
           ∪ {ω | η ≤ Real.sqrt T * dist (θ T ω) (b0, a0)} := by
     intro T hT ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨⟨hρ', hM'⟩, hη'⟩ := hcon
     have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
-    have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
-      rw [show (1:ℝ) = Real.sqrt 1 by simp]
+    have hsq1 : (1 : ℝ) ≤ Real.sqrt T := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
       exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
-    have hsqpos : (0:ℝ) < Real.sqrt T := by linarith
+    have hsqpos : (0 : ℝ) < Real.sqrt T := by linarith
     have hd0 : 0 ≤ dist (θ T ω) (b0, a0) := dist_nonneg
     -- the estimator is in the compact region
     have hdlt : dist (θ T ω) (b0, a0) < ρ := by
@@ -2992,10 +2992,10 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
           mul_le_mul_of_nonneg_left hQm.le hpos1
         have h2 : 2 * Cπ * (Real.sqrt T * A) * M ≤ 2 * Cπ * (L * η) * M :=
           mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_left hAd.le (by positivity : (0:ℝ) ≤ 2 * Cπ)) hM0.le
+            (mul_le_mul_of_nonneg_left hAd.le (by positivity : (0 : ℝ) ≤ 2 * Cπ)) hM0.le
         linarith
       have hlast : 2 * Cπ * (L * η) * M < δ := by
-        have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+        have hden : (0 : ℝ) < 2 * Cπ * L * M + 1 := by positivity
         have : 2 * Cπ * (L * η) * M = (2 * Cπ * L * M) * (δ / (2 * Cπ * L * M + 1)) := by
           rw [hη]; ring
         rw [this]
@@ -3033,7 +3033,7 @@ private lemma tendstoInProb_of_le_add [IsFiniteMeasure μ] {f g F : ℕ → Ω �
       ⊆ {ω | δ / 2 ≤ |f T ω|} ∪ {ω | δ / 2 ≤ |g T ω|} := by
     intro T ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have := hle T ω
     have hω' : δ ≤ |F T ω| := hω
@@ -3098,7 +3098,7 @@ private lemma tendstoInProb_residACVF_transfer [IsProbabilityMeasure μ]
       congr 1
       congr 1
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
     (fun δ' hδ' => by
       have hR := tendstoInProb_residACVF_sub hB0 hcausal hiid hσ hmeas k hδ'
@@ -3106,7 +3106,7 @@ private lemma tendstoInProb_residACVF_transfer [IsProbabilityMeasure μ]
       congr 1
       congr 1
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
     hδ
 
@@ -3340,9 +3340,9 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
         refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hbig
         filter_upwards [eventually_ge_atTop 1] with T hT
         refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
-        simp only [Set.mem_setOf_eq] at hω ⊢
-        have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
-          rw [show (1:ℝ) = Real.sqrt 1 by simp]
+        simp only [Set.mem_ofPred_eq] at hω ⊢
+        have hsq1 : (1 : ℝ) ≤ Real.sqrt T := by
+          rw [show (1 : ℝ) = Real.sqrt 1 by simp]
           exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
         have hid : Real.sqrt T * sampleACVF (fun t : Fin T =>
               sampleResiduals (θ T ω).1 (θ T ω).2
@@ -3375,7 +3375,7 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
     congr 1
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hpt : (A T ω + (Real.sqrt T * sampleACVF (fun t : Fin T =>
             sampleResiduals (θ T ω).1 (θ T ω).2
               (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω))
@@ -3408,7 +3408,7 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
     congr 1
     congr 1
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hpt : (A T ω + (Real.sqrt T *
             sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω))
           / sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - A T ω / σ2

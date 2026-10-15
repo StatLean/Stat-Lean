@@ -144,7 +144,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
       hGmeas.indicator (measurableSet_lt measurable_const (by fun_prop))
     have hbound : ∀ j : ℕ, ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G
         ≤ᵐ[multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹] G := fun _ =>
-      Eventually.of_forall fun z => Set.indicator_le_self' (fun _ _ => zero_le _) z
+      Eventually.of_forall fun z => Set.indicator_le_self' (fun _ _ => zero_le) z
     have hlim : ∀ᵐ z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹),
         Tendsto (fun j : ℕ => ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z)
           atTop (𝓝 0) := by
@@ -153,7 +153,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
           ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z = 0 := by
         filter_upwards [eventually_ge_atTop ⌈‖z‖⌉₊] with j hj
         refine Set.indicator_of_notMem ?_ _
-        simp only [Set.mem_setOf_eq, not_lt]
+        simp only [Set.mem_ofPred_eq, not_lt]
         exact le_trans (Nat.le_ceil _) (Nat.cast_le.2 hj)
       exact Tendsto.congr' (hev.mono fun j hj => hj.symm) tendsto_const_nhds
     have h := tendsto_lintegral_of_dominated_convergence G hmeas hbound hGfin hlim
@@ -165,7 +165,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
   rw [bpeGaussCriterion]
   refine le_trans (lintegral_mono fun z => ?_) hj
   by_cases hz : ‖u - z‖ ≤ max r₁ (max 1 (R + j + 1))
-  · rw [hw0 _ hz]; exact zero_le _
+  · rw [hw0 _ hz]; exact zero_le
   · rw [not_le] at hz
     have h1 : ‖u - z‖ ≤ R + ‖z‖ := le_trans (norm_sub_le u z) (by linarith)
     have hj1 : R + (j : ℝ) + 1 ≤ max r₁ (max 1 (R + j + 1)) :=
@@ -234,18 +234,16 @@ theorem bpe_tight
   -- rules out
   -- `‖√n(Tₙ − θ₀)‖ ≥ K := max (5a) (3ρ)`.
   classical
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
-    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   intro ε hε
   rcases isEmpty_or_nonempty (Fin k) with hk | hk
   · -- degenerate parameter space: the standardized estimator is identically `0`
-    haveI := hk
+    have := hk
     refine ⟨1, one_pos, Filter.Eventually.of_forall fun n => ?_⟩
     have hempty : {ω : Fin n → 𝓧 | (1 : ℝ) ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} = ∅ := by
       ext ω
       simp [EuclideanSpace.norm_eq]
     rw [hempty, measure_empty]
-    exact zero_le _
+    exact zero_le
   obtain ⟨i⟩ := hk
   -- (1) the separation gap `η` at the scale `a`, in the additive form of vdV p. 148
   obtain ⟨a, ha, c, hcle, hclt⟩ := hsep.strict
@@ -337,9 +335,9 @@ theorem bpe_tight
     rw [hℓ' h]
     split_ifs
     · exact le_rfl
-    · exact zero_le _
+    · exact zero_le
   have hℓ'0 : ∀ x : EuclideanSpace ℝ (Fin k), ‖x‖ ≤ ρ → ℓ' x = 0 := by
-    intro x hx; rw [hℓ' x, if_neg (not_lt.2 hx)]
+    intro x hx; rw [hℓ' x, ite_eq_right (not_lt.2 hx)]
   -- (7) the uniform majorant for the truncated loss
   obtain ⟨Mn, -, hMntend, hMnapprox⟩ :=
     posteriorRisk_shifted_majorant hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ hℓ'meas hp
@@ -357,20 +355,20 @@ theorem bpe_tight
         ({ω | p₀ ≤ bvmTV κ π θ₀ J sc n ω} ∪ {ω | γ ≤ Mn n ω}) := by
     intro ω hω
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hnot
     obtain ⟨hb1, hb2, hb3⟩ := hnot
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     set τ : EuclideanSpace ℝ (Fin k) := Real.sqrt n • (T n ω - θ₀) with hτdef
     set Δ : EuclideanSpace ℝ (Fin k) := bvmEffScore J sc n ω with hΔdef
     set Post : Measure (EuclideanSpace ℝ (Fin k)) := bvmLocalPosterior κ π θ₀ n ω with hPostdef
-    haveI hPostP : IsProbabilityMeasure Post := by rw [hPostdef]; infer_instance
+    have hPostP : IsProbabilityMeasure Post := by rw [hPostdef]; infer_instance
     have hΔC : ‖Δ‖ ≤ C := by
       rw [hΔdef, hAeq n ω, hCdef]
       exact (A.le_opNorm _).trans (mul_le_mul_of_nonneg_left hb1 (norm_nonneg A))
     have hτpos : 0 < ‖τ‖ := lt_of_lt_of_le hKpos hω
     -- the posterior mass of the small ball is bounded below
     have hPostB : p₀ ≤ Post Bs := by
-      haveI hGP : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+      have hGP : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
         change IsProbabilityMeasure (multivariateGaussian _ _); infer_instance
       have hGB : q₀ ≤ bvmGaussian J sc n ω Bs := hc₀ Δ hΔC Bs Set.Subset.rfl hBmeas
       have htvc : tvDist (bvmGaussian J sc n ω) Post = bvmTV κ π θ₀ J sc n ω :=
@@ -556,8 +554,6 @@ theorem bayes_estimator_asymptotics
         atTop (𝓝 0) := by
   classical
   intro ε hε
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
-    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
   set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hAdef
   have hAeq : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmEffScore J sc n ω = A (scoreSum sc n ω) :=
@@ -609,9 +605,9 @@ theorem bayes_estimator_asymptotics
         ({ω | K₂ < ‖scoreSum sc n ω‖} ∪ {ω | γ ≤ Mn n ω}) := by
     intro ω hω
     by_contra hnot
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hnot
     obtain ⟨hb1, hb2, hb3⟩ := hnot
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     set Rn : EuclideanSpace ℝ (Fin k) :=
       Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω with hRn
     have hΔnorm : ‖bvmEffScore J sc n ω‖ ≤ ‖A‖ * K₂ := by
@@ -702,9 +698,9 @@ theorem bayes_estimator_weakConverges
         (fun ω => Real.sqrt n • (T n ω - θ₀)))
       (multivariateGaussian u₀ J⁻¹) := by
   classical
-  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
-  haveI hGprob : IsProbabilityMeasure (multivariateGaussian u₀ J⁻¹) := inferInstance
+  have hGprob : IsProbabilityMeasure (multivariateGaussian u₀ J⁻¹) := inferInstance
   -- measurability of the score sums and of the estimators
   have hscsum : ∀ n : ℕ, Measurable (scoreSum sc n) := by
     intro n
@@ -755,7 +751,7 @@ theorem bayes_estimator_weakConverges
   refine hkey.congr fun n => ?_
   congr 1
   ext ω
-  simp only [Set.mem_setOf_eq, dist_eq_norm]
+  simp only [Set.mem_ofPred_eq, dist_eq_norm]
   rw [show u₀ + bvmEffScore J sc n ω - Real.sqrt n • (T n ω - θ₀)
       = -(Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀) by abel, norm_neg]
 

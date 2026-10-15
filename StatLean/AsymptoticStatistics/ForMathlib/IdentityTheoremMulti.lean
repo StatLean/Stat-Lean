@@ -34,10 +34,10 @@ private lemma analyticAt_cons_left {m : ℕ} (v : Fin m → ℂ) (t₀ : ℂ) :
   intro i
   refine Fin.cases ?_ ?_ i
   · -- 0-th component is the identity `t ↦ t`.
-    simpa using (analyticAt_id : AnalyticAt ℂ (fun t : ℂ => t) t₀)
+    simpa using! (analyticAt_id : AnalyticAt ℂ (fun t : ℂ => t) t₀)
   · -- `(j + 1)`-th component is the constant `v j`.
     intro j
-    simpa using (analyticAt_const : AnalyticAt ℂ (fun _ : ℂ => v j) t₀)
+    simpa using! (analyticAt_const : AnalyticAt ℂ (fun _ : ℂ => v j) t₀)
 
 /-- The slice map `v ↦ Fin.cons t v` for a fixed head `t : ℂ` is
 analytic at every point of `Fin m → ℂ`. Each component is either a

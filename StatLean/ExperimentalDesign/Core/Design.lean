@@ -114,8 +114,8 @@ theorem armIndicator_mul_armIndicator_of_ne {t s : T}
     armIndicator t i a * armIndicator s i a = 0 := by
   unfold armIndicator
   rcases eq_or_ne (a i) t with h | h
-  · rw [if_neg fun hs => hts (h.symm.trans hs), mul_zero]
-  · rw [if_neg h, zero_mul]
+  · rw [ite_eq_right fun hs => hts (h.symm.trans hs), mul_zero]
+  · rw [ite_eq_right h, zero_mul]
 
 /-- Assignment indicators are idempotent (`0/1`-valued). -/
 theorem armIndicator_mul_self (t : T) (i : U) (a : Allocation U T) :
@@ -165,10 +165,10 @@ theorem sum_sample_eq_sum_indicator (y : U → ℝ) (s : Finset U) :
   have h₁ : ∑ i ∈ Finset.univ.filter (· ∈ s), inclusionIndicator i s * y i = ∑ i ∈ s, y i := by
     rw [Finset.filter_mem_eq_inter, Finset.univ_inter]
     exact Finset.sum_congr rfl fun i hi => by
-      rw [inclusionIndicator, if_pos hi, one_mul]
+      rw [inclusionIndicator, ite_eq_left hi, one_mul]
   have h₂ : ∑ i ∈ Finset.univ.filter (¬ · ∈ s), inclusionIndicator i s * y i = 0 :=
     Finset.sum_eq_zero fun i hi => by
-      rw [inclusionIndicator, if_neg (Finset.mem_filter.mp hi).2, zero_mul]
+      rw [inclusionIndicator, ite_eq_right (Finset.mem_filter.mp hi).2, zero_mul]
   rw [h₁, h₂, add_zero]
 
 /-- The sample size as the sum of inclusion indicators. -/

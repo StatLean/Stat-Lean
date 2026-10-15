@@ -74,7 +74,7 @@ theorem movingLogLikelihood_weaklyConverges
   have hFull_m (n : ℕ) : hFull (m n) = Real.sqrt (m n) • (θ n - θ₀) := by
     let hr : ∃ q, m q = m n := ⟨n, rfl⟩
     rw [show hFull (m n) = if _hr : ∃ q, m q = m n then
-      Real.sqrt (m n) • (θ (Nat.find _hr) - θ₀) else h from rfl, dif_pos hr]
+      Real.sqrt (m n) • (θ (Nat.find _hr) - θ₀) else h from rfl, dite_eq_left hr]
     rw [hm.injective (Nat.find_spec hr)]
   have hFull_tendsto : Tendsto hFull atTop (nhds h) := by
     rw [Filter.tendsto_atTop'] at hθ ⊢
@@ -88,13 +88,13 @@ theorem movingLogLikelihood_weaklyConverges
       simpa [Nat.find_spec hre] using hN (Nat.find hre) hNq
     · exact mem_of_mem_nhds hs
   set ν : Measure 𝒳 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν
-  haveI : IsProbabilityMeasure ν := by
+  have : IsProbabilityMeasure ν := by
     refine ⟨?_⟩
     rw [hν, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal hint
         (Filter.Eventually.of_forall (M.density_nonneg θ₀)), h_one, ENNReal.ofReal_one]
   let Pinf : Measure (ℕ → 𝒳) := Measure.infinitePi (fun _ : ℕ => ν)
-  haveI : IsProbabilityMeasure Pinf := inferInstance
+  have : IsProbabilityMeasure Pinf := inferInstance
   let X : ℕ → (ℕ → 𝒳) → 𝒳 := fun i ω => ω i
   have hXmeas : ∀ i, Measurable (X i) := fun i => measurable_pi_apply i
   have hXiid : iIndepFun X Pinf :=
@@ -161,7 +161,7 @@ theorem movingLogLikelihood_weaklyConverges
       (gaussianReal 0 (fisherInformation M μ θ₀ ℓ h h).toNNReal) := by
     intro f
     have ht := hTID.tendsto
-    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at ht
+    erw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto] at ht
     have hmap : ∀ n : ℕ, Pinf.map (fun ω => (Real.sqrt n)⁻¹ *
           (∑ i ∈ Finset.range n, Y i ω - (n : ℝ) * ∫ x, Y 0 x ∂Pinf)) =
         Pinf.map (fun ω => (Real.sqrt n)⁻¹ *
@@ -226,7 +226,7 @@ theorem movingLogLikelihood_weaklyConverges
         simp [smul_smul, hsqrt]
       apply congrArg Pinf
       ext ω
-      simp only [Set.mem_setOf_eq, sub_zero, Real.dist_eq, Real.norm_eq_abs,
+      simp only [Set.mem_ofPred_eq, sub_zero, Real.dist_eq, Real.norm_eq_abs,
         A, B, S, X, hparam]
       have hnonneg : 0 ≤ fisherInformation M μ θ₀ ℓ h h := by
         apply integral_nonneg
@@ -246,7 +246,7 @@ theorem movingLogLikelihood_weaklyConverges
       (movingLogLikelihood M θ₀ m θ n) = Pinf.map (B n) := by
     intro n
     let R : (ℕ → 𝒳) → (Fin (m n) → 𝒳) := fun ω i => ω i.val
-    have hR : Measurable R := measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    have hR : Measurable R := Measurable.of_eval fun i => measurable_pi_apply i.val
     have hprod : Pinf.map R = productMeasure M μ θ₀ (m n) := by
       change (Measure.infinitePi (fun _ : ℕ => ν)).map R = Measure.pi (fun _ : Fin (m n) => ν)
       exact (AsymptoticStatistics.pi_const_eq_infinitePi_map ν (m n)).symm

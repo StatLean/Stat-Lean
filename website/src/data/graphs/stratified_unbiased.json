@@ -30,15 +30,14 @@
     {"id":"inv_zero","label":"inv_zero","full":"inv_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
     {"id":"Finset.card_pos","label":"card_pos","full":"Finset.card_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"},
     {"id":"div_mul_eq_mul_div","label":"div_mul_eq_mul_div","full":"div_mul_eq_mul_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"mul_inv_cancel₀","label":"mul_inv_cancel₀","full":"mul_inv_cancel₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"div_eq_inv_mul","label":"div_eq_inv_mul","full":"div_eq_inv_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"Finset.sum_fiberwise","label":"sum_fiberwise","full":"Finset.sum_fiberwise","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"StatLean.CausalInference.armIdx","label":"armIdx","full":"StatLean.CausalInference.armIdx","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"StatLean.CausalInference.ScienceTable.observed","label":"observed","full":"StatLean.CausalInference.ScienceTable.observed","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"lt_of_le_of_lt","label":"lt_of_le_of_lt","full":"lt_of_le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Nat.cast_sub","label":"cast_sub","full":"Nat.cast_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Int.Cast.Basic"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
@@ -46,7 +45,8 @@
     {"id":"StatLean.CausalInference.ind","label":"ind","full":"StatLean.CausalInference.ind","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
     {"id":"StatLean.CausalInference.stratifiedDesign_expect_ind","label":"stratifiedDesign_expect_ind","full":"StatLean.CausalInference.stratifiedDesign_expect_ind","kind":"repo","decl":"thm","module":"StatLean.CausalInference.Randomized.Stratified"},
     {"id":"Finset.sum_mul","label":"sum_mul","full":"Finset.sum_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
-    {"id":"Finset.sum_sub_distrib","label":"sum_sub_distrib","full":"Finset.sum_sub_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"}
+    {"id":"Finset.sum_sub_distrib","label":"sum_sub_distrib","full":"Finset.sum_sub_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"}
   ],
   "edges": [
     {"source":"StatLean.CausalInference.stratifiedEstimator_unbiased","target":"StatLean.CausalInference.ScienceTable"},
@@ -111,7 +111,6 @@
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"StatLean.CausalInference.stratumATE"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"lt_of_le_of_lt"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"Nat.cast_ne_zero"},
-    {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"LT.lt.ne'"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"Nat.cast_sub"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"LT.lt.le"},
@@ -128,6 +127,7 @@
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"Finset.sum_mul"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"StatLean.CausalInference.ScienceTable.unitEffect"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"Finset.sum_sub_distrib"},
+    {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"congr_arg₂"},
     {"source":"StatLean.CausalInference.stratumDiffInMeans_unbiased","target":"one_mul"}
   ]
 }

@@ -148,7 +148,7 @@ lemma empFrac_symmDiff_concentration_pair {Ξ : Type*} [MeasurableSpace Ξ]
   have hset : {ξ | empFrac (fun i : Fin n => X i ξ) (S ∆ T) ≤ μ.real (S ∆ T) - t}
       = {ξ | (n : ℝ) * t ≤ ∑ i ∈ Finset.range n, (Y i ξ - ∫ y, Y i y ∂P)} := by
     ext ξ
-    simp only [Set.mem_setOf_eq, empFrac]
+    simp only [Set.mem_ofPred_eq, empFrac]
     rw [hstep ξ,
       Fin.sum_univ_eq_sum_range
         (fun i => (S ∆ T).indicator (fun _ => (1 : ℝ)) (X i ξ)) n,
@@ -247,7 +247,7 @@ theorem dimension_reduction {Ξ : Type*} [MeasurableSpace Ξ]
       = ⋃ p ∈ F.offDiag,
           {ξ | empFrac (fun i : Fin n => X i ξ) (p.1 ∆ p.2) ≤ ε ^ 2 / 4} := by
     ext ξ
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_offDiag, Prod.exists,
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_offDiag, Prod.exists,
       exists_prop]
     constructor
     · rintro ⟨S, hS, T, hT, hne, hle⟩; exact ⟨S, T, ⟨hS, hT, hne⟩, hle⟩

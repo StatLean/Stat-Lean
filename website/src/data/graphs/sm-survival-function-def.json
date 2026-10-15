@@ -3,9 +3,9 @@
   "nodes": [
     {"id":"StatLean.StatisticalModels.Survival.survival","label":"survival","full":"StatLean.StatisticalModels.Survival.survival","kind":"root","decl":"def","module":"StatLean.StatisticalModels.Survival.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
     {"id":"Set.Ioi","label":"Ioi","full":"Set.Ioi","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Set.Defs"}
   ],

@@ -2,7 +2,7 @@
   "root": "AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec",
   "nodes": [
     {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","label":"levyMpass_vec","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.LevyMpassVec"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"Complex.exp_ne_zero","label":"exp_ne_zero","full":"Complex.exp_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
     {"id":"ProbabilityTheory.charFun_multivariateGaussian","label":"charFun_multivariateGaussian","full":"ProbabilityTheory.charFun_multivariateGaussian","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Multivariate"},
     {"id":"Continuous.div","label":"div","full":"Continuous.div","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.GroupWithZero"},
@@ -16,7 +16,7 @@
     {"id":"ProbabilityTheory.isGaussian_multivariateGaussian","label":"isGaussian_multivariateGaussian","full":"ProbabilityTheory.isGaussian_multivariateGaussian","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Multivariate"},
     {"id":"Continuous.continuousAt","label":"continuousAt","full":"Continuous.continuousAt","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
     {"id":"MeasureTheory.charFun_conv","label":"charFun_conv","full":"MeasureTheory.charFun_conv","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},

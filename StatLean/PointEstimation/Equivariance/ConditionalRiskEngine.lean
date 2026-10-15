@@ -104,7 +104,7 @@ theorem lintegral_eq_lintegral_condDistrib (P₀ : Measure 𝓧) [IsProbabilityM
       = ∫⁻ p, g p.1 p.2 ∂(P₀.map (fun x => (Z x, x))) := by
     rw [lintegral_map hg hprod]
   rw [h1, show (fun x => (Z x, x) : 𝓧 → 𝓩 × 𝓧) = (fun x => (Z x, id x)) from rfl,
-    ← compProd_map_condDistrib (μ := P₀) (X := Z) (Y := id) aemeasurable_id,
+    ← compProd_map_condDistrib (μ := P₀) (X := Z) (Y := id) hZ.aemeasurable aemeasurable_id,
     Measure.lintegral_compProd hg]
   rfl
 

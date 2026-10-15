@@ -55,6 +55,7 @@ namespace StatLean.CausalInference
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- The **compliance type** of a unit, determined by its pair of potential treatments
 (Ding §21.2.1). -/
 inductive ComplianceType

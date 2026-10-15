@@ -43,7 +43,8 @@ theorem changingLocalDifferenceClass_subset_strictLocalizedDifferenceClass
     changingLocalDifferenceClass f n δ ⊆
       strictLocalizedDifferenceClass (Set.range (f n)) P r := by
   rintro h ⟨s, t, hst, rfl⟩
-  exact ⟨f n s, ⟨s, rfl⟩, f n t, ⟨t, rfl⟩, rfl, hL2 s t hst⟩
+  exact ⟨f n s, ⟨s, rfl⟩, f n t, ⟨t, rfl⟩, rfl, lt_of_le_of_lt eLpNorm'_two_le_eLpNorm
+      (hL2 s t hst)⟩
 
 /-- Twice a changing envelope dominates every metric-local row increment. -/
 theorem isEnvelope_changingLocalDifferenceClass_two

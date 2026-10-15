@@ -120,7 +120,6 @@ private theorem softSublevelStep_lipschitz {E : Type*} [PseudoMetricSpace E]
         (thickenedIndicator hδ
           {z | L z ≤ (q : ℝ≥0∞)} x : ℝ)) by ring,
     abs_mul, abs_sub_comm]
-  norm_cast at hi
   calc
     |(q : ℝ)| *
         |↑((thickenedIndicator hδ {z | L z ≤ ↑q}) x) -
@@ -246,7 +245,7 @@ private theorem finset_sup_lipschitz {E ι : Type*} [PseudoMetricSpace E]
       rcases ih (fun j hj x => hfinite j (Finset.mem_insert_of_mem hj) x)
           (fun j hj => hlip j (Finset.mem_insert_of_mem hj)) with ⟨Ks, hKs⟩
       refine ⟨max Ki Ks, ?_⟩
-      convert hKi.max hKs using 1
+      convert! hKi.max hKs using 1
       funext x
       simp only [Finset.sup_insert]
       rw [ENNReal.toReal_sup (hfinite i (Finset.mem_insert_self i s) x)
@@ -291,7 +290,7 @@ private theorem bowlApprox_bounded {E : Type*} [PseudoEMetricSpace E]
     change (rationalThreshold i : ℝ≥0∞) ≤
       ∑ j ∈ Finset.range (n + 1), (rationalThreshold j : ℝ≥0∞)
     exact Finset.single_le_sum
-      (f := fun j => (rationalThreshold j : ℝ≥0∞)) (fun _ _ => zero_le _) hi
+      (f := fun j => (rationalThreshold j : ℝ≥0∞)) (fun _ _ => zero_le) hi
 
 private theorem bowlApprox_uniformContinuous {E : Type*} [PseudoMetricSpace E]
     (L : E → ℝ≥0∞) (n : ℕ) :
@@ -346,7 +345,7 @@ private theorem softSublevelStep_tendsto_threshold {E : Type*} [PseudoEMetricSpa
     simpa [hclosed.closure_eq, Set.indicator_of_notMem hxS] using hi x
   have hc : Continuous (fun t : ℝ≥0 => ((q * (1 - t) : ℝ≥0) : ℝ≥0∞)) := by
     fun_prop
-  convert hc.continuousAt.tendsto.comp hi0 using 1
+  convert! hc.continuousAt.tendsto.comp hi0 using 1
   · simp
 
 private theorem iSup_bowlApprox_eq {E : Type*} [PseudoEMetricSpace E]

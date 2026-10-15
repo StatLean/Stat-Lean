@@ -93,14 +93,14 @@ theorem tail_max_le
     μ {ω | t < ⨆ j, X j ω}
       ≤ ENNReal.ofReal ((d : ℝ) * Real.exp (-t ^ 2 / (2 * ↑σ2))) := by
   -- `Fin d` is nonempty since d ≥ 1.
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   -- The range of `j ↦ X j ω` is finite hence bounded above, for every fixed `ω`.
   have hbdd : ∀ ω, BddAbove (Set.range (fun j => X j ω)) := fun ω =>
     Finite.bddAbove_range _
   -- Step 1: Rewrite `{ω | t < ⨆ j, X j ω}` as the union `⋃ j, {ω | t < X j ω}`.
   have heq : {ω | t < ⨆ j, X j ω} = ⋃ j, {ω | t < X j ω} := by
     ext ω
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
     exact ⟨fun h => (lt_ciSup_iff (hbdd ω)).mp h,
            fun ⟨j, hj⟩ => lt_of_lt_of_le hj (le_ciSup (hbdd ω) j)⟩
   rw [heq]
@@ -128,9 +128,9 @@ private lemma integrable_ciSup_fin
     {d : ℕ} [NeZero d] {μ : Measure Ω}
     {X : Fin d → Ω → ℝ} (hX : ∀ j, Integrable (X j) μ) :
     Integrable (fun ω => ⨆ j, X j ω) μ := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖X j ω‖)
-  · exact integrable_finset_sum _ (fun j _ => (hX j).norm)
+  · exact integrable_finsetSum _ (fun j _ => (hX j).norm)
   · exact (AEMeasurable.iSup
       (fun j => (hX j).aestronglyMeasurable.aemeasurable)).aestronglyMeasurable
   · filter_upwards with ω
@@ -139,27 +139,31 @@ private lemma integrable_ciSup_fin
     have h1 : ⨆ j, X j ω ≤ ∑ j : Fin d, |X j ω| :=
       ciSup_le fun j =>
         (le_abs_self _).trans
-          (Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ j))
+          (Finset.single_le_sum (f := fun k => |X k ω|)
+              (fun _ _ => abs_nonneg _) (Finset.mem_univ j))
     have h2 : -(⨆ j, X j ω) ≤ ∑ j : Fin d, |X j ω| :=
       calc -(⨆ j, X j ω)
           ≤ -(X 0 ω) := neg_le_neg (le_ciSup hbdd 0)
         _ ≤ |X 0 ω| := by rw [← abs_neg]; exact le_abs_self _
         _ ≤ ∑ j : Fin d, |X j ω| :=
-            Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ 0)
+            Finset.single_le_sum (f := fun k => |X k ω|)
+                (fun _ _ => abs_nonneg _) (Finset.mem_univ 0)
     exact abs_le.mpr ⟨by linarith, h1⟩
 
 /-- For `lam > 0` and any function `f : Fin d → ℝ`, `exp(lam · sup_j f j) ≤ ∑_j exp(lam · f j)`.
-The max is achieved at some `j₀`, and one term in the sum equals it while all others are positive. -/
+The max is achieved at some `j₀`, and one term in
+the sum equals it while all others are positive. -/
 private lemma exp_mul_ciSup_le_sum_exp
     {d : ℕ} [NeZero d] {lam : ℝ} (hlam : 0 < lam) (f : Fin d → ℝ) :
     Real.exp (lam * ⨆ j, f j) ≤ ∑ j : Fin d, Real.exp (lam * f j) := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   obtain ⟨j0, _, hj0⟩ := Finset.exists_max_image Finset.univ f ⟨0, Finset.mem_univ _⟩
   have hmax : ⨆ j, f j = f j0 := le_antisymm
     (ciSup_le fun j => hj0 j (Finset.mem_univ j))
     (le_ciSup (Finite.bddAbove_range _) j0)
   rw [hmax]
-  exact Finset.single_le_sum (f := fun j => Real.exp (lam * f j)) (fun _ _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
+  exact Finset.single_le_sum (f := fun j => Real.exp (lam * f j))
+      (fun _ _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
 
 /-! ### Expectation bound -/
 
@@ -198,7 +202,7 @@ theorem expectation_max_le
   · have hX0 : ∀ j, X j =ᵐ[μ] 0 := fun j =>
       HasSubgaussianMGF.ae_eq_zero_of_hasSubgaussianMGF_zero (hσ0 ▸ hsg j)
     have hsupr0 : (fun ω => ⨆ j : Fin d, X j ω) =ᵐ[μ] fun _ => (0 : ℝ) := by
-      haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+      have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
       have hall : ∀ᵐ ω ∂μ, ∀ j : Fin d, X j ω = 0 := ae_all_iff.mpr hX0
       filter_upwards [hall] with ω hω
       simp_rw [hω]
@@ -223,7 +227,7 @@ theorem expectation_max_le
   -- *** Main case: log d > 0 and σ² > 0 ***
   have hd_pos : (0 : ℝ) < (d : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_neZero d)
   have hσ_pos : (0 : ℝ) < (σ2 : ℝ) :=
-    NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le _) (Ne.symm hσ0))
+    NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le) (Ne.symm hσ0))
   -- Integrability pieces not depending on lam.
   have hint_Xj : ∀ j, Integrable (X j) μ := fun j => (hsg j).integrable
   have hint_max : Integrable (fun ω => ⨆ j, X j ω) μ :=
@@ -243,7 +247,7 @@ theorem expectation_max_le
     fun j => (hsg j).integrable_exp_mul lam
   -- Integrability of exp(lam · max): dominated by sum of exp(lam · X_j).
   have hint_sum_exp : Integrable (fun ω => ∑ j : Fin d, Real.exp (lam * X j ω)) μ :=
-    integrable_finset_sum _ (fun j _ => hint_exp_Xj j)
+    integrable_finsetSum _ (fun j _ => hint_exp_Xj j)
   have hint_exp_max : Integrable (fun ω => Real.exp (lam * ⨆ j, X j ω)) μ := by
     apply Integrable.mono' hint_sum_exp
     · exact continuous_exp.comp_aestronglyMeasurable
@@ -261,7 +265,7 @@ theorem expectation_max_le
   -- ** Step 2: max ≤ sum bound ** E[exp(lam · max)] ≤ ∑_j E[exp(lam · X_j)]
   have h_int_bound : ∫ ω, Real.exp (lam * ⨆ j, X j ω) ∂μ ≤
       ∑ j : Fin d, ∫ ω, Real.exp (lam * X j ω) ∂μ := by
-    rw [← integral_finset_sum _ (fun j _ => hint_exp_Xj j)]
+    rw [← integral_finsetSum _ (fun j _ => hint_exp_Xj j)]
     exact integral_mono hint_exp_max hint_sum_exp
       (fun ω => exp_mul_ciSup_le_sum_exp hlam_pos (fun j => X j ω))
   -- ** Step 3: MGF bound ** ∑_j E[exp(lam · X_j)] ≤ d · exp(σ² lam² / 2)

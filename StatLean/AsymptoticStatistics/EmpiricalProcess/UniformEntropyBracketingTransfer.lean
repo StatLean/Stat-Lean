@@ -18,6 +18,8 @@ brackets back to the original class.
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, p.274.
 -/
 
+set_option linter.style.longFile 2400
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory
@@ -448,7 +450,7 @@ theorem exists_localizingMajorants
     exact lt_irrefl _ houter
   obtain ⟨U, hUint⟩ := hU_exists
   obtain ⟨F₀, hF₀_countable, hF₀_sub, hF₀_dense⟩ := hPM
-  letI : Countable (↥F₀) := hF₀_countable
+  let : Countable (↥F₀) := hF₀_countable
   let W : Ω → ℝ≥0∞ := fun x ↦ ⨆ f : ↥F₀, ENNReal.ofReal |(f : Ω → ℝ) x|
   have hWmeas : Measurable W := by
     apply Measurable.iSup
@@ -604,7 +606,7 @@ theorem localized_absoluteCover
   let N : ℕ := K.toNat + 1
   refine ⟨N, ?_⟩
   intro Q hQ
-  letI : IsProbabilityMeasure Q := hQ
+  let : IsProbabilityMeasure Q := hQ
   by_cases hQA0 : Q A = 0
   · refine ⟨{0}, by simp [N], ?_⟩
     constructor
@@ -631,7 +633,7 @@ theorem localized_absoluteCover
     have hQAtop : Q A ≠ ⊤ := measure_ne_top Q A
     let R : Measure Ω := conditionOn Q A
     have hRprob : IsProbabilityMeasure R := conditionOn_isProbabilityMeasure Q A hA hQApos
-    letI : IsProbabilityMeasure R := hRprob
+    let : IsProbabilityMeasure R := hRprob
     have hRA : ∀ᵐ x ∂R, x ∈ A := by
       change ∀ᵐ x ∂(Q A)⁻¹ • Q.restrict A, x ∈ A
       exact Measure.ae_smul_measure
@@ -665,7 +667,7 @@ theorem localized_absoluteCover
       calc
         Q A ≤ Q Set.univ := measure_mono (Set.subset_univ A)
         _ = 1 := measure_univ
-    have hKcoe : K = (K.toNat : ℕ∞) := (ENat.coe_toNat hKtop.ne).symm
+    have hKcoe : K = (K.toNat : ℕ∞) := (ENat.natCast_toNat hKtop.ne).symm
     have hNcoe : K < (N : ℕ∞) := by
       rw [hKcoe]
       exact_mod_cast Nat.lt_succ_self K.toNat
@@ -714,7 +716,7 @@ theorem localized_absoluteCover
       obtain ⟨hTcover, hTcard⟩ := hT
       let S : Finset (Ω → ℝ) := T.image (localizedFunction A)
       refine ⟨S, ?_, ?_⟩
-      · exact (Finset.card_image_le.trans (ENat.coe_lt_coe.mp hTcard).le)
+      · exact (Finset.card_image_le.trans (ENat.natCast_lt_natCast.mp hTcard).le)
       · constructor
         · intro g hgS
           rw [Finset.mem_image] at hgS
@@ -751,7 +753,7 @@ private theorem empiricalFiniteLaw_isProbabilityMeasure
     IsProbabilityMeasure (empiricalFiniteLaw S) := by
   refine ⟨?_⟩
   rw [empiricalFiniteLaw, Measure.smul_apply]
-  rw [smul_eq_mul, Measure.finset_sum_apply]
+  rw [smul_eq_mul, Measure.finsetSum_apply]
   change (S.card : ℝ≥0∞)⁻¹ *
     (∑ x : S, (Measure.dirac (x : Ω)) Set.univ) = 1
   simp only [Measure.dirac_apply_of_mem (Set.mem_univ _), Finset.sum_const,
@@ -767,7 +769,7 @@ private theorem empiricalFiniteLaw_outerExpectation_lower
   unfold outerExpectation
   refine le_iInf fun U ↦ ?_
   rw [empiricalFiniteLaw, lintegral_smul_measure, smul_eq_mul,
-    lintegral_finset_sum_measure]
+    lintegral_finsetSum_measure]
   simp_rw [lintegral_dirac' _ U.2.1]
   apply mul_le_mul_right
   apply Finset.sum_le_sum
@@ -804,9 +806,9 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
   have hε : 0 < ε := div_pos hγ (by norm_num)
   obtain ⟨N, hN⟩ := hcover ε hε
   let m : ℕ := 8 * (N + 1)
-  have hm_top : (m : ℕ∞) < ⊤ := ENat.coe_lt_top m
+  have hm_top : (m : ℕ∞) < ⊤ := ENat.natCast_lt_top m
   unfold gammaDimension at hdimtop
-  obtain ⟨S, hSlarge⟩ := (iSup_eq_top _).mp hdimtop (m : ℕ∞) hm_top
+  obtain ⟨S, hSlarge⟩ := iSup_eq_top.mp hdimtop (m : ℕ∞) hm_top
   have hSshat : GammaShatters E γ S := by
     by_contra hnot
     simp [hnot] at hSlarge
@@ -835,7 +837,7 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
   have hQprob : IsProbabilityMeasure Q :=
     empiricalFiniteLaw_isProbabilityMeasure S hSnonempty
   obtain ⟨T, hTcard, hTcover⟩ := hN Q hQprob
-  letI : IsProbabilityMeasure Q := hQprob
+  let : IsProbabilityMeasure Q := hQprob
   have hone : outerLpNorm Q (fun _ ↦ (1 : ℝ)) 1 = 1 := by
     simp [outerLpNorm, outerExpectation_const]
   have hcenter (a : C) : ∃ g ∈ T,
@@ -916,7 +918,9 @@ theorem allQ_absoluteCover_gammaDimension_lt_top
     simp only [outerLpNorm, inv_one, ENNReal.rpow_one]
     refine havg.trans ?_
     refine (mul_le_mul_right hsum _).trans ?_
-    exact empiricalFiniteLaw_outerExpectation_lower S _
+    simpa only [Q, Pi.sub_apply] using!
+      empiricalFiniteLaw_outerExpectation_lower S
+        (fun x => ENNReal.ofReal |φ (a : Fin S.card → Bool) x - φ (b : Fin S.card → Bool) x|)
   have hupper : outerLpNorm Q
       (φ (a : Fin S.card → Bool) - φ (b : Fin S.card → Bool)) 1 ≤
       ENNReal.ofReal (γ / 4) := by
@@ -1043,10 +1047,10 @@ private theorem boundary_cell_splits
       · have hxi : x ∈ i.1 := by simpa [hai] using hia
         by_cases hbi : b i = true
         · exact hai.trans hbi.symm
-        · have : x ∈ i.1ᶜ := by simpa [hbi] using hib
+        · have : x ∈ i.1ᶜ := by simpa [hbi] using! hib
           exact (this hxi).elim
       · have hai' : a i = false := Bool.eq_false_of_not_eq_true hai
-        have hxi : x ∈ i.1ᶜ := by simpa [hai'] using hia
+        have hxi : x ∈ i.1ᶜ := by simpa [hai'] using! hia
         by_cases hbi : b i = false
         · exact hai'.trans hbi.symm
         · have hbi' : b i = true := Bool.eq_true_of_not_eq_false hbi
@@ -1066,10 +1070,10 @@ private theorem vhCell_eq_of_common_mem
     by_cases hbi : b i = true
     · exact hai.trans hbi.symm
     · have hbi' : b i = false := Bool.eq_false_of_not_eq_true hbi
-      have : x ∈ i.1ᶜ := by simpa [hbi'] using hib
+      have : x ∈ i.1ᶜ := by simpa [hbi'] using! hib
       exact (this hxi).elim
   · have hai' : a i = false := Bool.eq_false_of_not_eq_true hai
-    have hxi : x ∈ i.1ᶜ := by simpa [hai'] using hia
+    have hxi : x ∈ i.1ᶜ := by simpa [hai'] using! hia
     by_cases hbi : b i = false
     · exact hai'.trans hbi.symm
     · have hbi' : b i = true := Bool.eq_true_of_not_eq_false hbi
@@ -1194,7 +1198,7 @@ private theorem exists_dualCube_of_weaklyDense
         rw [vhDualCell_succ]
         have hs := hsplit (fun i ↦ label i.castSucc)
         by_cases hl : label (Fin.last n) = true
-        · simp only [hl, if_true]
+        · simp only [hl, ite_true]
           simpa [C] using hs.2
         · have hl' : label (Fin.last n) = false := Bool.eq_false_of_not_eq_true hl
           simp only [hl']
@@ -1282,9 +1286,9 @@ private theorem not_weaklyDense_of_gammaDimension
     unfold gammaDimension
     exact le_iSup_of_le S (by simp [hSshat])
   have heq : (ENat.toNat (gammaDimension E γ) : ℕ∞) = gammaDimension E γ :=
-    ENat.coe_toNat hdim.ne
+    ENat.natCast_toNat hdim.ne
   rw [hScard, ← heq] at hle
-  exact Nat.not_succ_le_self _ (ENat.coe_le_coe.mp hle)
+  exact Nat.not_succ_le_self _ (ENat.natCast_le_natCast.mp hle)
 
 /-- A uniform positive lower bound on all essential finite-partition
 boundaries yields a weakly dense measurable support.  Banach--Alaoglu is
@@ -1313,7 +1317,7 @@ private theorem exists_weaklyDense_of_boundary_lower
     rw [norm_indicatorConstLp (p := (2 : ℝ≥0∞)) (by norm_num) (by norm_num)]
     norm_num only [norm_one, one_mul, ENNReal.toReal_ofNat]
     rw [← Real.sqrt_eq_rpow]
-    simpa using Real.sqrt_le_sqrt (hmeasure I)
+    simp
   let wI : J → WeakDual ℝ (Ω →₂[P] ℝ) := fun I ↦
     StrongDual.toWeakDual (InnerProductSpace.toDual ℝ (Ω →₂[P] ℝ) (v I))
   have hwball (I : J) : wI I ∈
@@ -1769,7 +1773,7 @@ private theorem activePattern_width_le_global
   have hs : s.Nonempty :=
     activeLevels_nonempty_of_not_exceptional P I f B δ K hδ hK hfB x hx
   rw [vhPatternUpper_apply, vhPatternLower_apply]
-  rw [dif_pos hs, dif_pos hs]
+  rw [dite_eq_left hs, dite_eq_left hs]
   have hminlevel : s.min' hs ∈ vhGridLevels B δ K :=
     (Finset.mem_filter.mp (Finset.min'_mem _ _)).1
   have hmaxlevel : s.max' hs ∈ vhGridLevels B δ K :=
@@ -1799,7 +1803,7 @@ private theorem activePattern_width_le_off_boundary
   have hs : s.Nonempty :=
     activeLevels_nonempty_of_not_exceptional P I f B δ K hδ hK hfB x hxN
   rw [vhPatternUpper_apply, vhPatternLower_apply]
-  rw [dif_pos hs, dif_pos hs]
+  rw [dite_eq_left hs, dite_eq_left hs]
   by_contra hnot
   have hwide : 2 * γ + 3 * δ < s.max' hs + δ - s.min' hs := lt_of_not_ge hnot
   have hsep : s.min' hs + δ + 2 * γ < s.max' hs := by linarith
@@ -1899,13 +1903,13 @@ private theorem activePattern_corrected_isEpsBracket
   have hlmeas : Measurable l := measurable_vhCorrectedLower N hNmeas I B patt
   have humeas : Measurable u := measurable_vhCorrectedUpper N hNmeas I B δ patt
   have hwidth_global (x : Ω) (hx : x ∉ N) : u x - l x ≤ C := by
-    simp only [l, u, vhCorrectedLower, vhCorrectedUpper, hx, if_false]
+    simp only [l, u, vhCorrectedLower, vhCorrectedUpper, hx, ite_false]
     exact activePattern_width_le_global P I f B δ K hδ hK hfB x
       (fun hxe ↦ hx (hexc hxe))
   have hlbound : ∀ x, |l x| ≤ B + C := by
     intro x
     by_cases hx : x ∈ N
-    · simp only [l, vhCorrectedLower, hx, if_true, abs_neg]
+    · simp only [l, vhCorrectedLower, hx, ite_true, abs_neg]
       rw [abs_of_nonneg hB]
       linarith
     · have ho := hout x hx
@@ -1921,7 +1925,7 @@ private theorem activePattern_corrected_isEpsBracket
   have hubound : ∀ x, |u x| ≤ B + C := by
     intro x
     by_cases hx : x ∈ N
-    · simp only [u, vhCorrectedUpper, hx, if_true]
+    · simp only [u, vhCorrectedUpper, hx, ite_true]
       rw [abs_of_nonneg hB]
       linarith
     · have ho := hout x hx
@@ -1962,13 +1966,12 @@ private theorem activePattern_corrected_isEpsBracket
   calc
     eLpNorm (fun x ↦ u x - l x) 1 P ≤
         eLpNorm (fun x ↦ good + Xi.indicator (fun _ ↦ C) x) 1 P :=
-      eLpNorm_mono_ae hmono
+      eLpNorm_mono_ae (by fun_prop) hmono
     _ ≤ eLpNorm (fun _ : Ω ↦ good) 1 P +
         eLpNorm (Xi.indicator fun _ ↦ C) 1 P := by
-      simpa only [Pi.add_apply] using
+      simpa only [Pi.add_apply] using!
         (eLpNorm_add_le (p := (1 : ℝ≥0∞)) (μ := P)
-          measurable_const.aestronglyMeasurable
-          (measurable_const.indicator hXimeas).aestronglyMeasurable le_rfl)
+           le_rfl)
     _ = ENNReal.ofReal good + ENNReal.ofReal C * P Xi := by
       have hconst : eLpNorm (fun _ : Ω ↦ good) 1 P = ENNReal.ofReal good := by
         rw [eLpNorm_const good (by norm_num) (NeZero.ne P)]
@@ -1976,7 +1979,7 @@ private theorem activePattern_corrected_isEpsBracket
         exact Real.enorm_eq_ofReal hgood
       have hind : eLpNorm (Xi.indicator fun _ ↦ C) 1 P =
           ENNReal.ofReal C * P Xi := by
-        rw [eLpNorm_indicator_const hXimeas (by norm_num) (by norm_num)]
+        rw [eLpNorm_indicator_const hXimeas.nullMeasurableSet (by norm_num) (by norm_num)]
         norm_num only [ENNReal.toReal_one, one_div, ENNReal.rpow_one]
         rw [Real.enorm_eq_ofReal hC]
       rw [hconst, hind]
@@ -2025,7 +2028,7 @@ theorem finiteBracketing_of_gammaDimension
   have hc : 0 < c := by dsimp [c]; positivity
   obtain ⟨I, hI⟩ := exists_partition_boundaries_lt E E₀ P hE₀sub hEmeas
     γ c hγ hc (hdim γ hγ) T
-  letI : Countable (↑E₀) := hE₀count
+  let : Countable (↑E₀) := hE₀count
   let N : Set Ω := ⋃ f : ↑E₀, vhExceptional P I f.1 δ levels
   have hNmeas : MeasurableSet N := by
     apply MeasurableSet.iUnion
@@ -2061,7 +2064,7 @@ theorem finiteBracketing_of_gammaDimension
   let U : Pattern → Ω → ℝ := fun patt ↦
     vhCorrectedUpper N I B₀ δ (patternFinset patt)
   let Good := {patt : Pattern // IsEpsBracket ε (L patt) (U patt) 1 P}
-  letI : Fintype Good := Fintype.ofFinite Good
+  let : Fintype Good := Fintype.ofFinite Good
   let e : Good ≃ Fin (Fintype.card Good) := Fintype.equivFin Good
   have hcover₀ : HasFiniteBracketingCover E₀ ε 1 P := by
     refine ⟨Fintype.card Good, fun i ↦ L (e.symm i).1,
@@ -2091,10 +2094,10 @@ theorem finiteBracketing_of_gammaDimension
       change L (e.symm (e q)).1 x ≤ f x ∧ f x ≤ U (e.symm (e q)).1 x
       rw [heinv]
       by_cases hx : x ∈ N
-      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, if_true]
+      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, ite_true]
         exact ⟨(abs_le.mp (hbdd₀ f (hE₀sub hf) x)).1,
           (abs_le.mp (hbdd₀ f (hE₀sub hf) x)).2⟩
-      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, if_false]
+      · simp only [L, U, vhCorrectedLower, vhCorrectedUpper, hx, ite_false]
         rw [hpatt]
         apply activePattern_contains_of_not_exceptional P I f B₀ δ K hδ hK
           (hbdd₀ f (hE₀sub hf)) x
@@ -2120,7 +2123,7 @@ theorem tailReal_small
       -- real envelope dominated by `V`.
     (ε : ℝ) (hε : 0 < ε) -- target tail radius.
     : ∃ M : ℝ, 0 < M ∧
-      eLpNorm (tailReal V H M) 1 P < ENNReal.ofReal ε := by
+      eLpNorm' (tailReal V H M) 1 P < ENNReal.ofReal ε := by
   let s : ℕ → Set Ω := fun n ↦ {x | (n : ℝ≥0∞) < V x}
   have hs_meas : ∀ n, MeasurableSet (s n) := by
     intro n
@@ -2132,7 +2135,7 @@ theorem tailReal_small
     exact lt_of_le_of_lt (by exact_mod_cast hnm) hx
   have hs_inter : ⋂ n, s n = {x | V x = ⊤} := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro hx
       apply top_unique
@@ -2168,9 +2171,9 @@ theorem tailReal_small
     change ENNReal.ofReal ((n + 1 : ℕ) : ℝ) < V x ↔ ((n + 1 : ℕ) : ℝ≥0∞) < V x
     rw [ENNReal.ofReal_natCast]
   calc
-    eLpNorm (tailReal V H (n + 1 : ℕ)) 1 P
+    eLpNorm' (tailReal V H (n + 1 : ℕ)) 1 P
         = ∫⁻ x, ‖tailReal V H (n + 1 : ℕ) x‖ₑ ∂P :=
-          eLpNorm_one_eq_lintegral_enorm
+          by simp [eLpNorm'_eq_lintegral_enorm]
     _ ≤ ∫⁻ x in {x | ENNReal.ofReal (n + 1 : ℕ) < V x}, V x ∂P := by
       rw [htailset, ← lintegral_indicator (hs_meas (n + 1))]
       refine lintegral_mono fun x ↦ ?_
@@ -2222,7 +2225,6 @@ theorem expand_localized_bracketingCover
     · simpa [t, tailReal, hx] using hHenv.1 x
     · simp [t, tailReal, hx]
   have ht_mem : MemLp t 1 P := by
-    refine ⟨ht_meas.aestronglyMeasurable, ?_⟩
     exact htail.trans (ENNReal.ofReal_lt_top.trans_le le_top)
   let l' : Fin k → Ω → ℝ := fun i x ↦ l i x - t x
   let u' : Fin k → Ω → ℝ := fun i x ↦ u i x + t x
@@ -2246,8 +2248,7 @@ theorem expand_localized_bracketingCover
       calc
         eLpNorm ((fun x ↦ u i x - l i x) + (2 • t)) 1 P
             ≤ eLpNorm (fun x ↦ u i x - l i x) 1 P + eLpNorm (2 • t) 1 P :=
-          eLpNorm_add_le (hui_meas.sub hli_meas).aestronglyMeasurable
-            (ht_meas.aestronglyMeasurable.const_smul 2) le_rfl
+          eLpNorm_add_le  le_rfl
         _ = eLpNorm (fun x ↦ u i x - l i x) 1 P +
               2 * eLpNorm t 1 P := by rw [eLpNorm_nsmul]; norm_num
         _ < ENNReal.ofReal δ + 2 * ENNReal.ofReal η :=
@@ -2305,6 +2306,11 @@ theorem uniformCovering_finiteBracketing_L1
   have hthird : 0 < ε / 3 := by positivity
   obtain ⟨M, hM, htail⟩ :=
     tailReal_small V H P hVmeas hVint hHV (ε / 3) hthird
+  have htailMeas : AEStronglyMeasurable (tailReal V H M) P :=
+    (hHmeas.indicator (measurableSet_Ioi.preimage hVmeas)).aestronglyMeasurable
+  have htail' : eLpNorm (tailReal V H M) 1 P < ENNReal.ofReal (ε / 3) := by
+    simpa only [eLpNorm_eq_eLpNorm' one_ne_zero ENNReal.coe_ne_top htailMeas,
+      ENNReal.toReal_one] using htail
   let A : Set Ω := {x | V x ≤ ENNReal.ofReal M}
   have hAmeas : MeasurableSet A := measurableSet_Iic.preimage hVmeas
   have hloc_meas : ∀ f ∈ localizedClass F A, Measurable f := by
@@ -2322,7 +2328,7 @@ theorem uniformCovering_finiteBracketing_L1
     finiteBracketing_of_gammaDimension (localizedClass F A) P M hloc_meas hloc_pm
       hloc_bound hdim (ε / 3) hthird
   have hexpand := expand_localized_bracketingCover F V H P M (ε / 3) (ε / 3)
-    hVmeas hHmeas hHenv hthird hthird htail
+    hVmeas hHmeas hHenv hthird hthird htail'
     (by simpa only [A] using hloc)
   have hradius : ε / 3 + 2 * (ε / 3) = ε := by ring
   simpa only [hradius] using hexpand

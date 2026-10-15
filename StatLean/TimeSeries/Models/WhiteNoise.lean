@@ -58,9 +58,9 @@ theorem IsWhiteNoise.isStationary [IsProbabilityMeasure μ] (h : IsWhiteNoise ε
 theorem IsWhiteNoise.acvf_eq [IsProbabilityMeasure μ] (h : IsWhiteNoise ε σ2 μ)
     (k : ℤ) : acvf ε μ k = if k = 0 then σ2 else 0 := by
   rcases eq_or_ne k 0 with rfl | hk
-  · rw [if_pos rfl, acvf,
+  · rw [ite_eq_left rfl, acvf,
       covariance_self (h.memLp 0).aestronglyMeasurable.aemeasurable, h.variance_eq 0]
-  · rw [if_neg hk, acvf, h.uncorrelated k 0 hk]
+  · rw [ite_eq_right hk, acvf, h.uncorrelated k 0 hk]
 
 /-- **Characterization** (FY §2.2.1, p. 40): a zero-mean stationary process is white
 noise (with its own variance) iff all nonzero-lag autocovariances vanish. -/
@@ -71,7 +71,7 @@ theorem isWhiteNoise_iff_acvf [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     -- USER-INPUT: zero mean (implicit in FY's WN comparison); FY §2.2.1 p. 40
     (hmean : ∀ t, ∫ ω, X t ω ∂μ = 0) :
     IsWhiteNoise X (acvf X μ 0) μ ↔ ∀ k : ℤ, k ≠ 0 → acvf X μ k = 0 := by
-  refine ⟨fun hw k hk => by rw [hw.acvf_eq k, if_neg hk], fun hk => ?_⟩
+  refine ⟨fun hw k hk => by rw [hw.acvf_eq k, ite_eq_right hk], fun hk => ?_⟩
   refine ⟨hmeas, hstat.memLp, hmean, fun t => (hstat.acvf_zero_eq_variance t).symm,
     fun s t hst => ?_⟩
   rw [hstat.cov_eq_acvf s t]

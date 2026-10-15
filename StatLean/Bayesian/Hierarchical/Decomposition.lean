@@ -12,10 +12,10 @@ hyperposterior and the conditional posteriors are ordinary dominated Bayes poste
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.3
 (hierarchical posterior factorization, eq. 5.3), p. 108.
 
-**Proof formalization notes.** `mixPrior_apply` is `Measure.bind_apply`; `dataMarginal_eq_comp_mixPrior`
-is kernel/measure composition associativity (`Measure.comp_assoc`/`bind_bind`);
-`marginalLikelihood_hier_eq_lintegral_hyperMarginal` is Tonelli (`lintegral_bind`) on the nested
-`∫λ∫θ p(θ,x)`; `hyperPosterior_ae_eq_generalizedPosterior` and
+**Proof formalization notes.** `mixPrior_apply` is `Measure.bind_apply`;
+`dataMarginal_eq_comp_mixPrior` is kernel/measure composition associativity
+(`Measure.comp_assoc`/`bind_bind`); `marginalLikelihood_hier_eq_lintegral_hyperMarginal` is Tonelli
+(`lintegral_bind`) on the nested `∫λ∫θ p(θ,x)`; `hyperPosterior_ae_eq_generalizedPosterior` and
 `conditionalPosterior_givenHyper_ae_eq_generalizedPosterior` are single applications of the Batch-2
 `posterior_ae_eq_generalizedPosterior` to the collapsed likelihood `K∘ₖΠ` (resp. `K`) with respect
 to the hyperprior (resp. the prior `Π_λ`).

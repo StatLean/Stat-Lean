@@ -129,7 +129,7 @@ lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
     Filter.Tendsto ρ Filter.atTop Filter.atTop := by
   obtain ⟨a, b, hab, hlt⟩ : ∃ a b : ℝ, a < b ∧ ρ a < ρ b := by
     rw [Antitone] at hna
-    push_neg at hna
+    push Not at hna
     obtain ⟨a, b, hab, hlt⟩ := hna
     exact ⟨a, b, lt_of_le_of_ne hab (by rintro rfl; exact lt_irrefl _ hlt), hlt⟩
   set s₀ : ℝ := (ρ b - ρ a) / (b - a) with hs₀
@@ -137,7 +137,6 @@ lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
   have hlb : ∀ x, b < x → ρ b + s₀ * (x - b) ≤ ρ x := by
     intro x hbx
     have hslope := hconv.slope_mono_adjacent (Set.mem_univ a) (Set.mem_univ x) hab hbx
-    simp only [slope_def_field] at hslope
     have hxb : 0 < x - b := by linarith
     have hstep : s₀ * (x - b) ≤ ρ x - ρ b := by
       calc s₀ * (x - b) = (ρ b - ρ a) / (b - a) * (x - b) := by rw [hs₀]
@@ -160,7 +159,7 @@ lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
     Filter.Tendsto ρ Filter.atBot Filter.atTop := by
   have hconv' : ConvexOn ℝ Set.univ (fun x => ρ (-x)) := by
     have := hconv.comp_affineMap (AffineMap.const ℝ ℝ (0 : ℝ) - AffineMap.id ℝ ℝ)
-    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using
+    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using!
       this.subset (Set.subset_univ _) convex_univ
   have hna' : ¬ Antitone (fun x => ρ (-x)) := by
     intro h
@@ -269,7 +268,7 @@ private lemma locObj_tendsto_top (μ : Measure 𝓧) [IsProbabilityMeasure μ] {
     · refine Filter.Tendsto.mono_right ?_ le_sup_left
       exact (Filter.tendsto_atBot_add_const_left atTop c
         Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
-  haveI : (cocompact ℝ).IsCountablyGenerated := by
+  have : (cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   rw [ENNReal.tendsto_nhds_top_iff_nnreal]
   intro N
@@ -408,7 +407,7 @@ private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) 
       hcoer hfin0
   refine ⟨vStar, hvStar_meas, ?_⟩
   filter_upwards [hvStar_min] with z hz w
-  show fObj z (vStar z) ≤ fObj z w
+  change fObj z (vStar z) ≤ fObj z w
   rw [hz]; exact iInf_le _ w
 
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
@@ -517,7 +516,8 @@ private lemma tendsto_lintegral_mul_of_tendsto_of_mass_eq
             _ = ψ x * h₀ x + ψ x * e n x := mul_add _ _ _
             _ ≤ ψ x * h₀ x + K * e n x := by gcongr; exact hK x
       _ = (∫⁻ x, ψ x * h₀ x ∂ν) + K * ∫⁻ x, e n x ∂ν := by
-          rw [lintegral_add_left (hψ.mul hmeas₀), lintegral_const_mul _ (hem n)]
+          erw [lintegral_add_left (hψ.mul hmeas₀), lintegral_const_mul _ (hem n)]
+          simp only [Pi.mul_apply]
       _ = _ := by rw [hde n]
   have hlb : ∀ n, ∫⁻ x, ψ x * h₀ x ∂ν ≤ (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
     intro n
@@ -529,7 +529,8 @@ private lemma tendsto_lintegral_mul_of_tendsto_of_mass_eq
             _ = ψ x * h n x + ψ x * d n x := mul_add _ _ _
             _ ≤ ψ x * h n x + K * d n x := by gcongr; exact hK x
       _ = (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
-          rw [lintegral_add_left (hψ.mul (hmeas n)), lintegral_const_mul _ (hdm n)]
+          erw [lintegral_add_left (hψ.mul (hmeas n)), lintegral_const_mul _ (hdm n)]
+          simp only [Pi.mul_apply]
   -- (iv) squeeze
   have hAfin : ∫⁻ x, ψ x * h₀ x ∂ν ≠ ∞ := by
     refine ne_top_of_le_ne_top (ENNReal.mul_ne_top hKfin hfin) ?_
@@ -603,7 +604,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     · refine Filter.Tendsto.mono_right ?_ le_sup_left
       exact (Filter.tendsto_atBot_add_const_left atTop c
         Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
-  haveI : (cocompact ℝ).IsCountablyGenerated := by
+  have : (cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   have hGtend : Tendsto G (cocompact ℝ) (𝓝 (ENNReal.ofReal M)) := by
     have key := tendsto_lintegral_filter_of_dominated_convergence
@@ -620,7 +621,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
   have hfae : AEMeasurable f (volume : Measure (Fin 1 → ℝ)) := by
     have h1 : ContinuousOn f {x | ContinuousAt f x} := fun x hx => hx.continuousWithinAt
     have h2 := h1.aemeasurable (μ := (volume : Measure (Fin 1 → ℝ)))
-      (IsGδ.setOf_continuousAt f).measurableSet
+      (IsGδ.setOfPred_continuousAt f).measurableSet
     have h3 : (volume : Measure (Fin 1 → ℝ)).restrict {x | ContinuousAt f x} = volume :=
       Measure.restrict_eq_self_of_ae_mem hcont
     rwa [h3] at h2
@@ -633,7 +634,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
       fun x => ENNReal.ofReal (g x) := by
     unfold locationBase
     refine withDensity_congr_ae (hfg.mono fun x hx => ?_)
-    show ENNReal.ofReal (f x) = ENNReal.ofReal (g x)
+    change ENNReal.ofReal (f x) = ENNReal.ofReal (g x)
     rw [hx]
   have hmass1 : ∫⁻ x, ENNReal.ofReal (g x) ∂(volume : Measure (Fin 1 → ℝ)) = 1 := by
     have h := measure_univ (μ := locationBase f)
@@ -709,7 +710,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
   -- (7) assemble
   refine ⟨fun x => x 0 - c₁, hπ.sub_const c₁, ?_, ?_⟩
   · intro a x
-    show (x + a • (1 : Fin 1 → ℝ)) 0 - c₁ = (x 0 - c₁) + a
+    change (x + a • (1 : Fin 1 → ℝ)) 0 - c₁ = (x 0 - c₁) + a
     simp only [Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
     ring
   · intro δ' _ hδ'eq
@@ -724,7 +725,7 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     have hrisk : locRisk f ρ δ' = G c := by
       unfold locRisk
       exact lintegral_congr fun x => by rw [hrep x]
-    show G c₁ ≤ locRisk f ρ δ'
+    change G c₁ ≤ locRisk f ρ δ'
     rw [hrisk]
     exact hc₁ _
 

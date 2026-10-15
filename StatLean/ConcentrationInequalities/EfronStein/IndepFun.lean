@@ -43,17 +43,17 @@ theorem variance_le_efronSteinBound_of_iIndepFun
     Var[fun ω => f (fun i => X i ω); P]
       ≤ efronSteinBound (fun i => P.map (X i)) f := by
   let allX : Ω → (Π i, 𝓧 i) := fun ω i => X i ω
-  have hallX_meas : AEMeasurable allX P := aemeasurable_pi_lambda _ hX_meas
+  have hallX_meas : AEMeasurable allX P := AEMeasurable.of_eval hX_meas
   have hmap : P.map allX = Measure.pi (fun i => P.map (X i)) :=
     (iIndepFun_iff_map_fun_eq_pi_map hX_meas).mp hX_indep
-  letI : ∀ i, IsProbabilityMeasure (P.map (X i)) := fun i =>
-    Measure.isProbabilityMeasure_map (hX_meas i)
+  let : ∀ i, IsProbabilityMeasure (P.map (X i)) := fun i =>
+    (Measure.isProbabilityMeasure_map_iff (hX_meas i)).2 inferInstance
   have hf_pi : MemLp f 2 (Measure.pi fun i => P.map (X i)) := by
     rw [← hmap]
     exact (memLp_map_measure_iff hf_meas.aestronglyMeasurable hallX_meas).mpr
-      (by simpa [allX] using hf)
+      (by simpa [allX, Function.comp_def] using hf)
   have hbound := variance_le_efronSteinBound (fun i => P.map (X i)) hf_meas hf_pi
   rw [← hmap, variance_map hf_meas.aemeasurable hallX_meas] at hbound
-  simpa [allX] using hbound
+  simpa [allX, Function.comp_def] using hbound
 
 end StatLean.ConcentrationInequalities

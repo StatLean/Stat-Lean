@@ -33,6 +33,7 @@ section LintegralProd
 
 variable {ι : Type*} [Fintype ι]
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- **ENNReal Fubini on `Fin n`**: the `lintegral` of a product of per-coordinate
 functions over `Measure.pi μ` factors as a product of per-coordinate lintegrals.
 

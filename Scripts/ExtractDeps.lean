@@ -80,7 +80,8 @@ def directDeps (env : Environment) (c : Name) : Array Name := Id.run do
   | none => return #[]
   | some info =>
     let fromType := info.type.getUsedConstants
-    let fromVal := (info.value?.map Expr.getUsedConstants).getD #[]
+    -- Lean 4.34 excludes theorem and opaque bodies from `value?` by default.
+    let fromVal := ((info.value? (allowOpaque := true)).map Expr.getUsedConstants).getD #[]
     let mut seen : NameSet := {}
     let mut out : Array Name := #[]
     for n in fromType ++ fromVal do
@@ -198,14 +199,14 @@ def main : IO Unit := do
   let mut lineNo := 0
   for rawLine in content.splitOn "\n" do
     lineNo := lineNo + 1
-    let line := rawLine.trim
+    let line := rawLine.trimAscii.toString
     if line.isEmpty then continue
     let parts := rawLine.splitOn "\t"
     if parts.length != 2 then
       throw <| IO.userError
         s!"Malformed {targetsFile}:{lineNo}: expected exactly <id>\\t<fullName>"
-    let id := parts[0]!.trim
-    let fullText := parts[1]!.trim
+    let id := parts[0]!.trimAscii.toString
+    let fullText := parts[1]!.trimAscii.toString
     if id.isEmpty || fullText.isEmpty then
       throw <| IO.userError
         s!"Malformed {targetsFile}:{lineNo}: id and fullName must both be nonempty"

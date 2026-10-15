@@ -147,7 +147,7 @@ def IsRegularEstimator_narrow_carrier
       WeakConverges
         (fun n : ℕ =>
           (MeasureTheory.Measure.pi
-              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map
+              (fun _ : Fin n => (chosenFamily g hg).curve ((Real.sqrt n)⁻¹))).map₀
             (fun X : Fin n → Ω =>
               Real.sqrt n *
                 (T_n n X - ψ ((chosenFamily g hg).curve ((Real.sqrt n)⁻¹)))))

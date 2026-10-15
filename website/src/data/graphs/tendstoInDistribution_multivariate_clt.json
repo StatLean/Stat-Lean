@@ -2,7 +2,7 @@
   "root": "ProbabilityTheory.tendstoInDistribution_multivariate_clt",
   "nodes": [
     {"id":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","label":"tendstoInDistribution_multivariate_clt","full":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
@@ -20,9 +20,7 @@
     {"id":"aemeasurable_const","label":"aemeasurable_const","full":"aemeasurable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"AEMeasurable.const_smul","label":"const_smul","full":"AEMeasurable.const_smul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
     {"id":"ContinuousSMul.toMeasurableSMul","label":"toMeasurableSMul","full":"ContinuousSMul.toMeasurableSMul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"IsBoundedSMul.continuousSMul","label":"continuousSMul","full":"IsBoundedSMul.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"Real.isBoundedSMul","label":"isBoundedSMul","full":"Real.isBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
     {"id":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun","label":"tendsto_iff_tendsto_charFun","full":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.LevyConvergence"},
     {"id":"FiniteDimensional.finiteDimensional_pi'","label":"finiteDimensional_pi'","full":"FiniteDimensional.finiteDimensional_pi'","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.FiniteDimensional.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
@@ -46,7 +44,9 @@
     {"id":"Measurable.complex_ofReal","label":"complex_ofReal","full":"Measurable.complex_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.SpecialFunctions.Basic"},
     {"id":"measurable_id'","label":"measurable_id'","full":"measurable_id'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"continuous_id'","label":"continuous_id'","full":"continuous_id'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
-    {"id":"MeasureTheory.charFun_apply_real","label":"charFun_apply_real","full":"MeasureTheory.charFun_apply_real","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"}
+    {"id":"MeasureTheory.charFun_apply_real","label":"charFun_apply_real","full":"MeasureTheory.charFun_apply_real","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"},
+    {"id":"MeasureTheory.charFun_apply","label":"charFun_apply","full":"MeasureTheory.charFun_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic"},
+    {"id":"MeasureTheory.integral_map","label":"integral_map","full":"MeasureTheory.integral_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
   ],
   "edges": [
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"fact_one_le_two_ennreal"},
@@ -67,9 +67,7 @@
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"aemeasurable_const"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"AEMeasurable.const_smul"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"ContinuousSMul.toMeasurableSMul"},
-    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"IsBoundedSMul.continuousSMul"},
-    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"Real.isBoundedSMul"},
-    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.Measure.isProbabilityMeasure_map"},
+    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"PolynormableSpace.continuousSMul"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"FiniteDimensional.finiteDimensional_pi'"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"Finite.of_fintype"},
@@ -93,6 +91,8 @@
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"Measurable.complex_ofReal"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"measurable_id'"},
     {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"continuous_id'"},
-    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.charFun_apply_real"}
+    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.charFun_apply_real"},
+    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.charFun_apply"},
+    {"source":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","target":"MeasureTheory.integral_map"}
   ]
 }

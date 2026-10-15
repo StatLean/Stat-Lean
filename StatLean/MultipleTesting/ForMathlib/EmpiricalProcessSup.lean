@@ -27,9 +27,9 @@ degenerate, see below):
 
 * `ksPlus p ω` — the one-sided KS statistic $\max_{i}\bigl(\tfrac{i+1}{n} - p_{(i+1)}\bigr)$
   (`Fin`-indexed, so the displayed indices are $0,\dots,n-1$).
-* `ksPlus_tail_union` — the **provable union-bound** form $\Pr(\mathrm{KS}^{+} \ge u) \le n\,e^{-2nu^2}$
-  for $u \ge 0$. Deviates from the book's sharp constant; see the deviation note below and on the
-  declaration.
+* `ksPlus_tail_union` — the **provable union-bound** form
+  $\Pr(\mathrm{KS}^{+} \ge u) \le n\,e^{-2nu^2}$ for $u \ge 0$. Deviates from the book's sharp
+  constant; see the deviation note below and on the declaration.
 
 This is a theorem-agnostic `ForMathlib` brick; it is consumed by the goodness-of-fit assembly
 (the Kolmogorov–Smirnov test in `GoodnessOfFit.KolmogorovSmirnov`).
@@ -59,9 +59,9 @@ a null event.
   the positively-correlated count events to a constant requires an empirical-process reflection /
   exponential-supermartingale argument not yet in Mathlib, for which neither the union bound,
   McDiarmid, nor the maximal inequalities suffice.
-* The hypothesis $n \ge 1$ is genuinely required: at $n = 0$ the empirical sup is $\sup \emptyset = 0$,
-  so for $u = 0$ the event is all of $\Omega$ (measure $1$) while the right-hand side is $0$. The book
-  statement is implicitly about $n \ge 1$ samples.
+* The hypothesis $n \ge 1$ is genuinely required: at $n = 0$ the empirical sup is
+  $\sup \emptyset = 0$, so for $u = 0$ the event is all of $\Omega$ (measure $1$) while the
+  right-hand side is $0$. The book statement is implicitly about $n \ge 1$ samples.
 
 **Bibliographic comments.** The inequality originates with A. Dvoretzky, J. Kiefer and J. Wolfowitz,
 "Asymptotic minimax character of the sample distribution function and of the classical multinomial
@@ -88,6 +88,7 @@ of the empirical process `F̂ₙ(t) − t` (attained at the order statistics). -
 noncomputable def ksPlus (p : Fin n → Ω → ℝ) (ω : Ω) : ℝ :=
   ⨆ i : Fin n, (((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i)
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- **Order statistic ↔ threshold count.** The `i`-th order statistic of `p(·, ω)` is `≤ s` iff at
 least `i + 1` of the `pⱼ(ω)` are `≤ s`, i.e. `(i : ℕ) < countLE p s ω`. This is the discrete
 reduction underlying the KS tail: the empirical-process event `{(k/n) − p₍ₖ₎ ≥ u}` becomes the
@@ -133,10 +134,10 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
         measure_mono (fun ω hω => le_trans hω (le_of_lt hs0))
       have h2 : μ {ω | p j ω ≤ 0} ≤ ENNReal.ofReal 0 := hnull j 0 le_rfl
       simp only [ENNReal.ofReal_zero] at h2
-      exact le_antisymm (le_trans h1 h2) (zero_le _)
+      exact le_antisymm (le_trans h1 h2) (zero_le)
     have hsub : {ω | k ≤ countLE p s ω} ⊆ ⋃ j, {ω | p j ω ≤ s} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω
+      simp only [Set.mem_ofPred_eq] at hω
       have hpos : 0 < countLE p s ω := by omega
       rw [countLE] at hpos
       obtain ⟨j, hj⟩ := Finset.card_pos.mp hpos
@@ -146,7 +147,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
         ≤ μ (⋃ j, {ω | p j ω ≤ s}) := measure_mono hsub
       _ ≤ ∑ j, μ {ω | p j ω ≤ s} := measure_iUnion_fintype_le _ _
       _ = 0 := by simp [hnull0]
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   · -- Main case `s ≥ 0`: Hoeffding on the centered indicators.
     set c : ℝ≥0 := (‖(1 : ℝ) - 0‖₊ / 2) ^ 2 with hc
     have hcR : (c : ℝ) = 1 / 4 := by
@@ -184,7 +185,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
               = Set.indicator {ω | p i ω ≤ s} (fun _ => (1 : ℝ)) from ?_]
         · rw [MeasureTheory.integral_indicator hA, MeasureTheory.setIntegral_const,
             smul_eq_mul, mul_one, measureReal_def]
-        · funext ω; rw [Set.indicator_apply]; simp [Set.mem_setOf_eq]
+        · funext ω; rw [Set.indicator_apply]; simp [Set.mem_ofPred_eq]
       rw [hind]
       exact ENNReal.toReal_le_of_le_ofReal hs0 (hnull i s hs0)
     have hEbound : ∑ i : Fin n, E i ≤ (k : ℝ) - (n : ℝ) * u := by
@@ -196,7 +197,7 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
     -- The count event sits inside the centered-sum tail event.
     have hsubset : {ω | k ≤ countLE p s ω} ⊆ {ω | (n : ℝ) * u ≤ ∑ i : Fin n, X i ω} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       have hsumX : ∑ i : Fin n, X i ω = (countLE p s ω : ℝ) - ∑ i : Fin n, E i := by
         simp only [hXdef]
         rw [Finset.sum_sub_distrib]
@@ -229,11 +230,11 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
 
 /-- **Massart's inequality — provable union-bound form** (Candès, Lecture 3, §3.3.1, Theorem 2,
 STAT 300C). For independent super-uniform null p-values, `μ{ KS⁺ ≥ u } ≤ n · e^{−2nu²}` (`u ≥ 0`,
-`n ≥ 1`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and `{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`,
-each bounded by `e^{−2nu²}` (Hoeffding on the bounded indicators with mean `≤ k/n − u`); union over
-the `n` order statistics.
+`n ≥ 1`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and
+`{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`, each bounded by `e^{−2nu²}` (Hoeffding on the
+bounded indicators with mean `≤ k/n − u`); union over the `n` order statistics.
 
-> **Deviation from the book (CLAUDE.md §1).** Candès states the *sharp* `2·e^{−2nu²}` (Massart 1990).
+> **Deviation from the book.** Candès states the *sharp* `2·e^{−2nu²}` (Massart 1990).
 > The sharp constant requires an empirical-process exponential-supermartingale / reflection argument
 > not available in Mathlib: the `n`-fold union of the positively-correlated count events
 > `{countLE(k/n−u) ≥ k}` cannot be Bonferroni-shaved to a constant, and the McDiarmid route's
@@ -258,18 +259,18 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
     {u : ℝ} (hu : 0 ≤ u) :
     μ {ω | u ≤ ksPlus p ω} ≤ ENNReal.ofReal ((n : ℝ) * Real.exp (-2 * n * u ^ 2)) := by
   -- Step 1: the sup event lies in the union of the per-order-statistic events.
-  haveI hne : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  have hne : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
   have hsubU : {ω | u ≤ ksPlus p ω}
       ⊆ ⋃ i : Fin n, {ω | u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i} := by
     intro ω hω
-    rw [Set.mem_setOf_eq] at hω
+    rw [Set.mem_ofPred_eq] at hω
     have hmem := Set.Nonempty.csSup_mem
       (Set.range_nonempty
         (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i))
       (Set.finite_range _)
     obtain ⟨i, hi⟩ := hmem
     refine Set.mem_iUnion.mpr ⟨i, ?_⟩
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     have hksup : ksPlus p ω
         = sSup (Set.range
             (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i)) := rfl
@@ -286,7 +287,7 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
     have hset : {ω | u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i}
         = {ω | (i : ℕ) + 1 ≤ countLE p (((i : ℕ) + 1 : ℕ) / (n : ℝ) - u) ω} := by
       ext ω
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       have hcast : (((i : ℕ) + 1 : ℕ) : ℝ) = ((i : ℕ) + 1 : ℝ) := by push_cast; ring
       rw [hcast]
       constructor

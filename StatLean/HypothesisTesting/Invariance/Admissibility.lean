@@ -176,7 +176,7 @@ private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpac
       A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ ∧ ρ (A ∩ {t | c < ⟪a, t⟫_ℝ}) ≠ 0 := by
   classical
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   refine hpos ?_
   -- a separating open half-space at every point off `A₀`
   have hsep : ∀ p : {q : EuclideanSpace ℝ (Fin s) // q ∉ A₀},
@@ -186,10 +186,10 @@ private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpac
     obtain ⟨f, u, hf, hup⟩ := geometric_hahn_banach_closed_point hA₀convex hA₀closed hp
     refine ⟨(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin s))).symm f, u, ?_, ?_⟩
     · ext y
-      simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_and, not_lt, InnerProductSpace.toDual_symm_apply]
       exact fun hy => (hf y hy).le
-    · simpa only [Set.mem_setOf_eq, InnerProductSpace.toDual_symm_apply] using hup
+    · simpa only [Set.mem_ofPred_eq, InnerProductSpace.toDual_symm_apply] using hup
   choose a c hemp hmem using hsep
   have hopen : ∀ p, IsOpen {t : EuclideanSpace ℝ (Fin s) | c p < ⟪a p, t⟫_ℝ} := fun p =>
     isOpen_lt continuous_const (continuous_const.inner continuous_id)
@@ -233,19 +233,19 @@ private theorem acceptance_subset_of_power_le_const
   have hunion : A ∩ {t | c < ⟪a, t⟫_ℝ}
       = ⋃ k : ℕ, A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ} := by
     ext t
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_iUnion]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_iUnion]
     refine ⟨fun ⟨ht, hlt⟩ => ?_, fun ⟨k, ht, hlt⟩ => ?_⟩
     · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
       exact ⟨k, ht, by linarith⟩
-    · have hp : (0:ℝ) < 1 / ((k : ℝ) + 1) := by positivity
+    · have hp : (0 : ℝ) < 1 / ((k : ℝ) + 1) := by positivity
       exact ⟨ht, by linarith⟩
   obtain ⟨k, hk⟩ : ∃ k : ℕ,
       statScaleBase E (A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ}) ≠ 0 := by
     by_contra hall
-    push_neg at hall
+    push Not at hall
     exact hmass (by rw [hunion]; exact measure_iUnion_null hall)
   set δ : ℝ := 1 / ((k : ℝ) + 1) with hδdef
-  have hδpos : (0:ℝ) < δ := by rw [hδdef]; positivity
+  have hδpos : (0 : ℝ) < δ := by rw [hδdef]; positivity
   -- **Step 3.** The ray along which the natural parameter is pushed to infinity.
   obtain ⟨θs, hθs, lam, hlamtop, hlamΘ⟩ := hray a c hemp
   have hTm : Measurable E.stat := E.stat_meas
@@ -279,14 +279,14 @@ private theorem acceptance_subset_of_power_le_const
     rw [ae_iff] at h1
     have h3 : {x : 𝓧 | ¬ F x = 0} = Set.univ := by
       ext x
-      simp only [hFdef, Set.mem_setOf_eq, Set.mem_univ, iff_true, ENNReal.ofReal_eq_zero, not_le]
+      simp only [hFdef, Set.mem_ofPred_eq, Set.mem_univ, iff_true, ENNReal.ofReal_eq_zero, not_le]
       exact Real.exp_pos _
     rw [h3, Measure.restrict_apply_univ] at h1
     exact hWpos h1
   -- **Step 4.** Pick the index at which the tilt already dominates.
   set r : ℝ := (K * M).toReal / m.toReal with hrdef
   have hmtoReal : 0 < m.toReal := ENNReal.toReal_pos hmpos hmfin
-  have hrnn : (0:ℝ) ≤ r := by rw [hrdef]; positivity
+  have hrnn : (0 : ℝ) ≤ r := by rw [hrdef]; positivity
   obtain ⟨n, hn⟩ :=
     (hlamtop.eventually_ge_atTop (max 0 ((Real.log (r + 1) + 1) / δ))).exists
   have hlam0 : 0 ≤ lam n := le_trans (le_max_left _ _) hn
@@ -328,7 +328,7 @@ private theorem acceptance_subset_of_power_le_const
           ≤ K * ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
       have h := hpow η (hlamΘ n)
       rw [hexpand A hAmeas, hexpand A₀ hA₀meas, ← mul_assoc] at h
-      exact (ENNReal.mul_le_mul_right hκ0 ENNReal.ofReal_ne_top).mp h
+      exact (ENNReal.mul_le_mul_iff_left hκ0 ENNReal.ofReal_ne_top).mp h
     -- upper bound on the `A₀` side
     have hupper :
         (∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
@@ -339,12 +339,12 @@ private theorem acceptance_subset_of_power_le_const
         intro x hx
         have hle : ⟪a, E.stat x⟫_ℝ ≤ c := by
           by_contra hgt
-          push_neg at hgt
+          push Not at hgt
           have hmem : E.stat x ∈ A₀ ∩ {t | c < ⟪a, t⟫_ℝ} := ⟨hx, hgt⟩
           rw [hemp] at hmem
           exact hmem
         rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
-        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+        exact mul_le_mul_right (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
           (mul_le_mul_of_nonneg_left hle hlam0))) _
       calc ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base
           ≤ ∫⁻ x in E.stat ⁻¹' A₀, F x * ENNReal.ofReal (Real.exp (lam n * c)) ∂E.base :=
@@ -362,7 +362,7 @@ private theorem acceptance_subset_of_power_le_const
         intro x hx
         have hgt : c + δ < ⟪a, E.stat x⟫_ℝ := hx.2
         rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
-        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+        exact mul_le_mul_right (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
           (mul_le_mul_of_nonneg_left hgt.le hlam0))) _
       calc m * ENNReal.ofReal (Real.exp (lam n * (c + δ)))
           = ∫⁻ x in W, F x * ENNReal.ofReal (Real.exp (lam n * (c + δ))) ∂E.base := by
@@ -378,8 +378,8 @@ private theorem acceptance_subset_of_power_le_const
       refine le_trans (le_of_eq ?_) (le_trans hlower (le_trans hIle ?_))
       · rw [mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
         ring_nf
-      · rw [mul_assoc]; exact mul_le_mul_left' hupper K
-    refine (ENNReal.mul_le_mul_right ?_ ENNReal.ofReal_ne_top).mp hchain
+      · rw [mul_assoc]; exact mul_le_mul_right hupper K
+    refine (ENNReal.mul_le_mul_iff_left ?_ ENNReal.ofReal_ne_top).mp hchain
     simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
     exact Real.exp_pos _
   -- **Step 6.** But the chosen index makes the left-hand side strictly bigger.
@@ -455,7 +455,7 @@ private theorem power_eq_indicator_of_dominating
   by_cases hb : E.base = 0
   · intro _ _
     simp [power, statScaleFamily, ExpFamily.P, hb, MeasureTheory.tilted_zero_measure]
-  haveI : NeZero E.base := ⟨hb⟩
+  have : NeZero E.base := ⟨hb⟩
   have hφ₀meas : Measurable (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
     measurable_const.indicator hA₀meas.compl
   have hφ₀b : ∀ t, (A₀ᶜ.indicator fun _ => (1 : ℝ)) t ∈ Set.Icc (0 : ℝ) 1 := by
@@ -465,14 +465,14 @@ private theorem power_eq_indicator_of_dominating
     · rw [Set.indicator_of_notMem h]; norm_num
   have hprob : ∀ η ∈ E.natSet, IsProbabilityMeasure (statScaleFamily E η) := by
     intro η hη
-    haveI : IsProbabilityMeasure (E.P η) :=
+    have : IsProbabilityMeasure (E.P η) :=
       MeasureTheory.isProbabilityMeasure_tilted hη
-    exact Measure.isProbabilityMeasure_map E.stat_meas.aemeasurable
+    exact (by unfold statScaleFamily; infer_instance)
   have hIntg : ∀ f : EuclideanSpace ℝ (Fin s) → ℝ, Measurable f →
       (∀ t, f t ∈ Set.Icc (0 : ℝ) 1) → ∀ η ∈ E.natSet,
       Integrable f (statScaleFamily E η) := by
     intro f hf hbd η hη
-    haveI := hprob η hη
+    have := hprob η hη
     exact (integrable_const (1 : ℝ)).mono' hf.aestronglyMeasurable
       (ae_of_all _ fun t => by
         rw [Real.norm_eq_abs, abs_le]; exact ⟨by linarith [(hbd t).1], (hbd t).2⟩)
@@ -491,7 +491,7 @@ private theorem power_eq_indicator_of_dominating
       (measurableSet_lt hφ.1 measurable_const) hray (ENNReal.ofReal ε⁻¹)
       ENNReal.ofReal_ne_top ?_
     intro η hη
-    haveI := hprob η (hΘ' hη)
+    have := hprob η (hΘ' hη)
     set Q : Measure (EuclideanSpace ℝ (Fin s)) := statScaleFamily E η with hQdef
     set Aε : Set (EuclideanSpace ℝ (Fin s)) := {t | φ t < 1 - ε} with hAεdef
     have hAεmeas : MeasurableSet Aε := measurableSet_lt hφ.1 measurable_const
@@ -519,7 +519,7 @@ private theorem power_eq_indicator_of_dominating
       rfl
     have hstep4 : ∫ t, ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂Q = (Q A₀ᶜ).toReal := by
       have := integral_indicator_one (μ := Q) hA₀meas.compl
-      simpa [measureReal_def] using this
+      simpa [measureReal_def] using! this
     have hstep5 : 1 - power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η
         = (Q A₀).toReal := by
       have hc : (Q A₀ᶜ).toReal = 1 - (Q A₀).toReal := by
@@ -547,7 +547,7 @@ private theorem power_eq_indicator_of_dominating
     have hun : {t | φ t < 1} \ A₀
         = ⋃ k : ℕ, ({t | φ t < 1 - 1 / ((k : ℝ) + 2)} \ A₀) := by
       ext t
-      simp only [Set.mem_diff, Set.mem_setOf_eq, Set.mem_iUnion]
+      simp only [Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_iUnion]
       refine ⟨fun ⟨hlt, hA⟩ => ?_, fun ⟨k, hlt, hA⟩ => ?_⟩
       · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
         have hmono : 1 / ((k : ℝ) + 2) < 1 / ((k : ℝ) + 1) := by
@@ -555,20 +555,20 @@ private theorem power_eq_indicator_of_dominating
           · positivity
           · linarith
         exact ⟨k, by linarith, hA⟩
-      · have hp : (0:ℝ) < 1 / ((k : ℝ) + 2) := by positivity
+      · have hp : (0 : ℝ) < 1 / ((k : ℝ) + 2) := by positivity
         exact ⟨by linarith, hA⟩
     rw [hun]
     refine measure_iUnion_null fun k => hkey _ (by positivity) ?_
-    have h1' : (1:ℝ) ≤ (k : ℝ) + 2 := by
-      have : (0:ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+    have h1' : (1 : ℝ) ≤ (k : ℝ) + 2 := by
+      have : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
       linarith
-    have h2' : (0:ℝ) < (k : ℝ) + 2 := by positivity
+    have h2' : (0 : ℝ) < (k : ℝ) + 2 := by positivity
     rw [div_lt_one h2']; linarith
   -- **Step B.** Hence `φ₀ ≤ φ` off a base-null set, so `φ` is never less powerful.
   have hge : (A₀ᶜ.indicator fun _ => (1 : ℝ)) ≤ᵐ[statScaleBase E] φ := by
     have hsub : {t | ¬ ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t ≤ φ t)} ⊆ {t | φ t < 1} \ A₀ := by
       intro t ht
-      simp only [Set.mem_setOf_eq, not_le] at ht
+      simp only [Set.mem_ofPred_eq, not_le] at ht
       by_cases hA : t ∈ A₀
       · rw [Set.indicator_of_notMem (by simpa using hA)] at ht
         exact absurd ht (not_lt.mpr (hφ.2 t).1)
@@ -583,7 +583,6 @@ private theorem power_eq_indicator_of_dominating
     exact integral_mono_ae (hIntg _ hφ₀meas hφ₀b η hη) (hIntg φ hφ.1 hφ.2 η hη)
       (hge.filter_mono (hac η).ae_le)
   -- **Step C.** On the null class the two-sided domination forces `φ = φ₀` a.e.
-  haveI := hprob θH hθHnat
   have hint0 : ∫ t, (φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂(statScaleFamily E θH) = 0 := by
     rw [integral_sub (hIntg φ hφ.1 hφ.2 θH hθHnat) (hIntg _ hφ₀meas hφ₀b θH hθHnat)]
     have := le_antisymm h2 (hpowge θH hθHnat)
@@ -675,7 +674,7 @@ theorem isAlphaAdmissible_of_size_attained (E : ExpFamily 𝓧 (EuclideanSpace �
         ⟨hφ.1.comp E.stat_meas, fun x => hφ.2 _⟩
   -- the level bound passes from `Θ_H` to the finite point `θ₀` by continuity
   have hθ₀le : power (statScaleFamily E) φ θ₀ ≤ α := by
-    haveI : (nhdsWithin θ₀ Θ_H).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hθ₀closure
+    have : (nhdsWithin θ₀ Θ_H).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hθ₀closure
     exact le_of_tendsto ((hcont θ₀ hθ₀nat).mono hΘHint)
       (Filter.eventually_of_mem self_mem_nhdsWithin hlevelφ)
   exact power_eq_indicator_of_dominating E hΘ' hA₀closed hA₀convex hA₀meas hray hφ h1

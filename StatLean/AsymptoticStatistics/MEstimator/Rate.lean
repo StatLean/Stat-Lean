@@ -27,6 +27,8 @@ Euclidean estimator.
 
 -/
 
+set_option linter.style.longFile 1600
+
 namespace AsymptoticStatistics.MEstimator
 
 open MeasureTheory Filter ProbabilityTheory EmpiricalProcess
@@ -139,7 +141,7 @@ private theorem exists_measureReal_gt_le {Ξ : Type*} [MeasurableSpace Ξ]
     exact lt_of_le_of_lt hcast hξ
   have hiInter : (⋂ M, s M) = ∅ := by
     ext ξ
-    simp only [hs_def, Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+    simp only [hs_def, Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
       not_forall, not_lt]
     obtain ⟨M, hM⟩ := exists_nat_gt (r ξ)
     exact ⟨M, hM.le⟩
@@ -192,7 +194,7 @@ private theorem isBoundedInProb_of_eventual_tail {Ξ : Type*} [MeasurableSpace �
   obtain ⟨M, hM₀M, hMcov⟩ := hcomb N
   refine ⟨M, fun n => ?_⟩
   have hnorm : {ω | M < ‖r n ω‖} = {ξ | M < r n ξ} := by
-    ext ξ; simp only [Set.mem_setOf_eq, Real.norm_of_nonneg (hr_nonneg n ξ)]
+    ext ξ; simp only [Set.mem_ofPred_eq, Real.norm_of_nonneg (hr_nonneg n ξ)]
   change μ.real {ω | M < ‖r n ω‖} ≤ ε
   rw [hnorm]
   rcases lt_or_ge n N with hn | hn
@@ -311,7 +313,7 @@ private theorem localizedModulus_aemeasurable
     have hsum : ContinuousOn (fun θ : EuclideanSpace ℝ (Fin d) =>
         ∑ i : Fin n, (m θ (X i.val ξ) - m θ₀ (X i.val ξ)))
         (Metric.closedBall θ₀ ρ) :=
-      continuousOn_finset_sum Finset.univ
+      continuousOn_finsetSum Finset.univ
         (fun i _ => (hm_cont (X i.val ξ)).sub continuousOn_const)
     exact (ContinuousOn.sub (hsum.const_mul ((n : ℝ)⁻¹)) hB_cont).const_mul (Real.sqrt n)
   -- Measurability of each fixed-`θ` slice `ξ ↦ ofReal|𝔾ₙ(m_θ − m_{θ₀})|`.
@@ -331,7 +333,7 @@ private theorem localizedModulus_aemeasurable
   refine Measurable.aemeasurable ?_
   by_cases hδ : 0 < δ
   · -- Nonempty `θ`-ball: reduce to a countable sup over a dense sequence.
-    haveI : Nonempty {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ} :=
+    have : Nonempty {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ} :=
       ⟨⟨θ₀, by simpa using hδ⟩⟩
     obtain ⟨q, hq⟩ := TopologicalSpace.exists_dense_seq
       {θ : EuclideanSpace ℝ (Fin d) // ‖θ - θ₀‖ < δ}
@@ -381,7 +383,7 @@ private theorem localizedModulus_aemeasurable
           (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f))
         = fun _ => (0 : ℝ≥0∞) := by
       funext ξ
-      refine le_antisymm ?_ (zero_le _)
+      refine le_antisymm ?_ (zero_le)
       simp only [supNormOver]
       refine iSup₂_le (fun f hf => ?_)
       obtain ⟨θ, hθ, -⟩ := hf
@@ -485,7 +487,7 @@ private theorem sqrtn_rate_shell_bound
     have hAe : A = (∅ : Set Ξ) := by
       rw [hAdef]
       ext ξ
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt,
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt,
         Nat.cast_zero, Real.sqrt_zero, zero_mul]
       positivity
     rw [hAe, Set.empty_inter, measureReal_empty]
@@ -498,7 +500,8 @@ private theorem sqrtn_rate_shell_bound
     -- Per-shell measure bound (dyadic shell `[2^j, 2^{j+1})`, `j ≥ J`).
     have hshell : ∀ j : ℕ, J ≤ j →
         μ (({ξ | (2 : ℝ) ^ j ≤ Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧
-              Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < (2 : ℝ) ^ (j + 1)}) ∩ Good)
+              Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ <
+                  (2 : ℝ) ^ (j + 1)}) ∩ Good)
           ≤ ENNReal.ofReal ((4 * C₂ / C₁) * ((1 : ℝ) / 2) ^ j) := by
       intro j hjJ
       set Sh : Set Ξ :=
@@ -528,7 +531,7 @@ private theorem sqrtn_rate_shell_bound
         rw [hShdef] at hξ₀Sh
         obtain ⟨hlb0, _⟩ := hξ₀Sh
         rw [hGooddef] at hξ₀Good
-        simp only [Set.mem_compl_iff, Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hξ₀Good
+        simp only [Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hξ₀Good
         obtain ⟨hρlt0, _⟩ := hξ₀Good
         have hδρ₂ : δ < ρ₂ := by
           have h1 : (2 : ℝ) ^ j < Real.sqrt n * ρloc :=
@@ -549,9 +552,9 @@ private theorem sqrtn_rate_shell_bound
           rw [hShdef] at hξSh
           obtain ⟨hlb, hub⟩ := hξSh
           rw [hGooddef] at hξGood
-          simp only [Set.mem_compl_iff, Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hξGood
+          simp only [Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hξGood
           obtain ⟨hρlt, hnear⟩ := hξGood
-          simp only [Set.mem_setOf_eq]
+          simp only [Set.mem_ofPred_eq]
           set xs : Fin n → Ω := fun i : Fin n => X i.val ξ with hxsdef
           set th : EuclideanSpace ℝ (Fin d) := θ_hat n xs with hthdef
           set g : Ω → ℝ := fun ω => m th ω - m θ₀ ω with hgdef
@@ -648,7 +651,7 @@ private theorem sqrtn_rate_shell_bound
       · -- Empty shell: measure zero.
         rw [Set.not_nonempty_iff_eq_empty] at hne
         rw [hne, measure_empty]
-        exact zero_le _
+        exact zero_le
     -- Geometric summability facts.
     have hbound_nonneg : ∀ k : ℕ, (0 : ℝ) ≤ (4 * C₂ / C₁) * ((1 : ℝ) / 2) ^ (J + k) :=
       fun k => by positivity
@@ -689,7 +692,8 @@ private theorem sqrtn_rate_shell_bound
       calc μ (A ∩ Good)
           ≤ μ (⋃ k : ℕ,
               (({ξ | (2 : ℝ) ^ (J + k) ≤ Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧
-                  Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ < (2 : ℝ) ^ (J + k + 1)})
+                  Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) -
+                      θ₀‖ < (2 : ℝ) ^ (J + k + 1)})
                 ∩ Good)) := measure_mono hcover
         _ ≤ ∑' k : ℕ, μ (({ξ | (2 : ℝ) ^ (J + k) ≤
               Real.sqrt n * ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖ ∧
@@ -1057,7 +1061,7 @@ theorem mEstimator_sqrtn_rate
     · have hTpre : T (⟨pre n ξ, hp⟩ : Θloc) = raw n ξ := by
         simp only [T, pre]
         rw [add_sub_cancel_left, smul_smul, mul_inv_cancel₀ hk.ne', one_smul, add_sub_cancel]
-      simp only [θloc, dif_pos hp, Rloc, if_pos hp]
+      simp only [θloc, dite_eq_left hp, Rloc, ite_eq_left hp]
       change empiricalAvg (m (T (⟨pre n ξ, hp⟩ : Θloc))) (n + 1)
           (fun i : Fin (n + 1) => X i.val ξ) ≥
         empiricalAvg (m (T θ₀loc)) (n + 1) (fun i : Fin (n + 1) => X i.val ξ) -
@@ -1120,7 +1124,7 @@ theorem mEstimator_sqrtn_rate
           if dist (pre n ξ) θ₀ ≤ rloc then dist (pre n ξ) θ₀ else 0 := by
         funext ξ
         by_cases h : dist (pre n ξ) θ₀ ≤ rloc
-        · simp only [θloc, Metric.mem_closedBall, h, dif_pos, if_pos]
+        · simp only [θloc, Metric.mem_closedBall, h, dite_eq_left, ite_eq_left]
           rfl
         · simp [θloc, Metric.mem_closedBall, h, θ₀loc]
       rw [heq]
@@ -1129,7 +1133,7 @@ theorem mEstimator_sqrtn_rate
     let B : ℕ → Set Ξ := fun n => {ξ | k * ε ≤ ‖raw n ξ - θ₀‖}
     have hAB : ∀ n, A n ⊆ B n := by
       intro n ξ hξ
-      simp only [A, Set.mem_setOf_eq, abs_of_nonneg dist_nonneg] at hξ
+      simp only [A, Set.mem_ofPred_eq, abs_of_nonneg dist_nonneg] at hξ
       change k * ε ≤ ‖raw n ξ - θ₀‖
       by_cases hp' : dist (pre n ξ) θ₀ ≤ rloc
       · have hp : pre n ξ ∈ Metric.closedBall θ₀ rloc := by
@@ -1152,17 +1156,17 @@ theorem mEstimator_sqrtn_rate
         exact (this (by simpa [θloc, Metric.mem_closedBall, hp'] using hξ)).elim
     have hBreal : Tendsto (fun n => μ.real (B n)) atTop (nhds 0) := by
       have hs := (hConsistent (k * ε) (mul_pos hk hε)).comp (tendsto_add_atTop_nat 1)
-      simpa [B, raw] using hs
+      simpa [B, raw] using! hs
     have hBmeasure : Tendsto (fun n => μ (B n)) atTop (nhds 0) := by
       have hofReal := (ENNReal.continuous_ofReal.tendsto 0).comp hBreal
-      convert hofReal using 1
+      convert! hofReal using 1
       · funext n
         simp only [Function.comp_apply]
         rw [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top μ _)]
       · simp
     change Tendsto (fun n => μ.outerMeasureStar (A n)) atTop (nhds 0)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hBmeasure
-      (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun n => ?_)
     rw [outerMeasureStar_eq_measure (measurableSet_lt measurable_const (hlocal_meas n).abs)]
     exact measure_mono (hAB n)
   have houter := mEstimator_rate_of_convergence_outer P μ mloc θ₀loc hmloc_meas
@@ -1180,7 +1184,7 @@ theorem mEstimator_sqrtn_rate
         if dist (pre n ξ) θ₀ ≤ rloc then dist (pre n ξ) θ₀ else 0 := by
       funext ξ
       by_cases h : dist (pre n ξ) θ₀ ≤ rloc
-      · simp only [θloc, Metric.mem_closedBall, h, dif_pos, if_pos]
+      · simp only [θloc, Metric.mem_closedBall, h, dite_eq_left, ite_eq_left]
         rfl
       · simp [θloc, Metric.mem_closedBall, h, θ₀loc]
     rw [heq]
@@ -1199,7 +1203,7 @@ theorem mEstimator_sqrtn_rate
         μ.real {ξ | ρloc ≤ ‖raw n ξ - θ₀‖} < η / 2 := by
       have hs := (hConsistent ρloc hρloc).comp (tendsto_add_atTop_nat 1)
       have hs' : Tendsto (fun n => μ.real {ξ | ρloc ≤ ‖raw n ξ - θ₀‖}) atTop
-          (nhds 0) := by simpa [raw] using hs
+          (nhds 0) := by simpa [raw] using! hs
       exact hs'.eventually (Iio_mem_nhds (by positivity))
     obtain ⟨N, hN⟩ := eventually_atTop.mp (hM_event.and hbad_event)
     refine ⟨k * M, N, fun n hn => ?_⟩
@@ -1212,7 +1216,7 @@ theorem mEstimator_sqrtn_rate
     have hAloc : μ.real Aloc ≤ η / 2 := by
       have hevent : {ξ | M < |rateScale 2 1 n * dist (θloc n ξ) θ₀loc|} = Aloc := by
         ext ξ
-        simp only [Set.mem_setOf_eq, Aloc]
+        simp only [Set.mem_ofPred_eq, Aloc]
         have hz : 0 ≤ rateScale 2 1 n * dist (θloc n ξ) θ₀loc :=
           mul_nonneg (Real.rpow_nonneg (by positivity) _) dist_nonneg
         rw [abs_of_nonneg hz]
@@ -1244,7 +1248,7 @@ theorem mEstimator_sqrtn_rate
         have hscale : rateScale 2 1 n = Real.sqrt (n + 1 : ℝ) := by
           norm_num [rateScale]
           rw [Real.sqrt_eq_rpow]
-        simp only [Aloc, Set.mem_setOf_eq]
+        simp only [Aloc, Set.mem_ofPred_eq]
         rw [← hscale, ← hTpre, hdistT] at hξ
         have : k * M < k * (rateScale 2 1 n *
             dist (⟨pre n ξ, hp⟩ : Θloc) θ₀loc) := by nlinarith
@@ -1252,7 +1256,7 @@ theorem mEstimator_sqrtn_rate
             dist (⟨pre n ξ, hp⟩ : Θloc) θ₀loc := by nlinarith
         simpa [θloc, Metric.mem_closedBall, hp'] using this
       · right
-        simp only [Abad, Set.mem_setOf_eq]
+        simp only [Abad, Set.mem_ofPred_eq]
         have hpre_dist : dist (pre n ξ) θ₀ = k⁻¹ * ‖raw n ξ - θ₀‖ := by
           simp only [pre, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
             abs_of_pos (inv_pos.mpr hk), dist_eq_norm]
@@ -1494,7 +1498,7 @@ theorem mEstimator_sqrtn_rate_of_tendstoInProbZero
   refine le_of_eq_of_le ?_ (hM n)
   congr 1
   ext ξ
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _),
       Real.norm_of_nonneg (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))]
 

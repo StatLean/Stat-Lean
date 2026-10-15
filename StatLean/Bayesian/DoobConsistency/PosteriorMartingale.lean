@@ -48,7 +48,7 @@ theorem iSup_comap_data_eq_pi :
         (fun (ω : ℕ → 𝓧) => (fun i : Fin n => ω i.val)) inferInstance
       = (inferInstance : MeasurableSpace (ℕ → 𝓧)) := by
   have hmeas : ∀ n : ℕ, Measurable (fun (ω : ℕ → 𝓧) => (fun i : Fin n => ω i.val)) :=
-    fun n => measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    fun n => Measurable.of_eval fun i => measurable_pi_apply i.val
   refine le_antisymm (iSup_le fun n => (hmeas n).comap_le) ?_
   change (⨆ a : ℕ, MeasurableSpace.comap (fun b : ℕ → 𝓧 => b a) m𝓧) ≤ _
   refine iSup_le fun a => ?_
@@ -80,7 +80,7 @@ theorem doobJoint_map_data_param (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : M
     (doobJoint K π).map (fun ω => (doobData n ω, ω.2))
       = (π ⊗ₘ iidKernel K n).map Prod.swap := by
   have hr : Measurable (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+    Measurable.of_eval fun i => measurable_pi_apply i.val
   have key : π ⊗ₘ iidKernel K n
       = (π ⊗ₘ iidSeqKernel K).map
           (Prod.map id (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)) := by

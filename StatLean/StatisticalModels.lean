@@ -70,3 +70,17 @@ import StatLean.StatisticalModels.GraphicalModels.Directed.Moralization
 import StatLean.StatisticalModels.GraphicalModels.Directed.Factorization
 import StatLean.StatisticalModels.GraphicalModels.Directed.Markov
 import StatLean.StatisticalModels.GraphicalModels.Directed.DSeparation
+
+/-!
+# StatisticalModels — area umbrella
+
+Statistical models built compositionally: a model calculus with identifiability, survival and
+event-history models (censoring, Kaplan–Meier, the Cox model), Gaussian conditioning, linear mixed
+effects and BLUP, longitudinal data and generalized estimating equations, missing data and
+coarsening with inverse-probability weighting, factor models, and graphical models with
+d-separation.
+
+**References.** S. L. Lauritzen, *Graphical Models*, Clarendon Press, 1996; D. Bartholomew,
+M. Knott and I. Moustaki, *Latent Variable Models and Factor Analysis: A Unified Approach*, 3rd
+ed., Wiley, 2011. Further sources are cited in the module docstrings.
+-/

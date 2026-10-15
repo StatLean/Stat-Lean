@@ -5,9 +5,9 @@ import StatLean.Minimaxity.ForMathlib.KLDivergence
 # Mutual information of the M-ary testing problem and its convexity (KL) bound
 
 Consider the $M$-ary testing problem: an index $J$ is drawn uniformly from $\{1,\dots,M\}$, and one
-observes $Z \sim P_{\theta^J}$. The **mutual information** $I(Z; J)$ measures how much the observation
-reveals about the index. It is defined as the Kullback–Leibler divergence between the joint law of
-$(Z, J)$ and the product of its marginals,
+observes $Z \sim P_{\theta^J}$. The **mutual information** $I(Z; J)$ measures how much the
+observation reveals about the index. It is defined as the Kullback–Leibler divergence between the
+joint law of $(Z, J)$ and the product of its marginals,
 $$ I(Z; J) = D\!\left(\mathbb{Q}_{Z,J} \,\big\|\, \mathbb{Q}_Z \otimes \mathbb{Q}_J\right), $$
 which equals the average KL divergence between each component and the uniform mixture,
 $$ I(Z; J) = \frac{1}{M} \sum_{j=1}^{M} D\!\left(P_{\theta^j} \,\big\|\, \bar Q\right),
@@ -21,7 +21,8 @@ local-packing minimax lower bounds.
 
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.1 and §15.3.3
-(Bounds based on local packings), Eq. (15.29), (15.30) (definition) and Eq. (15.34) (convexity bound).
+(Bounds based on local packings), Eq. (15.29), (15.30)
+(definition) and Eq. (15.34) (convexity bound).
 
 **Proof formalization notes.** The mutual information is *defined* here directly in its averaged
 form (Eq. (15.30)), `I(Z; J) = (1/M) Σⱼ D(P_{θʲ} ‖ Q̄)`, rather than via the joint-vs-product KL
@@ -177,7 +178,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
     have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
     have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
       ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
-    haveI : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+    have : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
     -- absolute continuity of each component (and of `Q j`) w.r.t. the mixture
     have hjξ : Q j ≪ mixture Q := by
       rw [mixture_eq_inv_smul_sum]
@@ -222,7 +223,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
       rw [klDiv_eq_lintegral_klFun_of_ac (hAC k),
         ← lintegral_rnDeriv_mul (hkξ k) (by fun_prop)]
     rw [Finset.sum_congr rfl (fun k _ => hRHS k),
-      ← lintegral_finset_sum _ (fun k _ => by fun_prop),
+      ← lintegral_finsetSum _ (fun k _ => by fun_prop),
       ← lintegral_const_mul _ (Finset.measurable_sum _ (fun k _ => by fun_prop))]
     refine lintegral_mono_ae ?_
     filter_upwards [hsum_ae, hchain_ae, hktop_ae,
@@ -255,7 +256,7 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
     obtain ⟨k₀, hk₀⟩ := hAC
     have htop : klDiv (Q j) (Q k₀) = ⊤ := klDiv_of_not_ac hk₀
     have hle : klDiv (Q j) (Q k₀) ≤ ∑ k, klDiv (Q j) (Q k) :=
-      Finset.single_le_sum (f := fun k => klDiv (Q j) (Q k)) (fun i _ => zero_le _)
+      Finset.single_le_sum (f := fun k => klDiv (Q j) (Q k)) (fun i _ => zero_le)
         (Finset.mem_univ k₀)
     have hsum : ∑ k, klDiv (Q j) (Q k) = ⊤ := top_le_iff.mp (htop ▸ hle)
     rw [hsum, ENNReal.mul_top (ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M))]

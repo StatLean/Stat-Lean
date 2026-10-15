@@ -64,8 +64,8 @@ theorem IsSpectralMeasure.unique {X : ℤ → Ω → ℝ}
     (hF : IsSpectralMeasure X μ F) (hG : IsSpectralMeasure X μ G) : F = G := by
   obtain ⟨hFfin, -, hFc⟩ := hF
   obtain ⟨hGfin, -, hGc⟩ := hG
-  haveI := hFfin
-  haveI := hGfin
+  have := hFfin
+  have := hGfin
   exact ext_of_measureFourierCoeff F G fun n => by rw [hFc n, hGc n]
 
 /-- The **mass identity** `F(circle) = γ(0)` (FY: `G(π) = γ(0) = Var X_t`). -/
@@ -73,7 +73,7 @@ theorem IsSpectralMeasure.mass {X : ℤ → Ω → ℝ} {F : Measure (AddCircle 
     (hF : IsSpectralMeasure X μ F) :
     F Set.univ = ENNReal.ofReal (acvf X μ 0) := by
   obtain ⟨hFfin, -, hFc⟩ := hF
-  haveI := hFfin
+  have := hFfin
   have h := hFc 0
   rw [measureFourierCoeff_zero] at h
   have hre : (F Set.univ).toReal = acvf X μ 0 := by exact_mod_cast h
@@ -94,9 +94,9 @@ private lemma measureFourierCoeff_haarAddCircle (k : ℤ) :
   rcases eq_or_ne k 0 with rfl | hk
   · have h1 : ∀ z : AddCircle (2 * π), fourier (T := 2 * π) 0 z = (1 : ℂ) := fun _ =>
       fourier_zero
-    rw [if_pos rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
+    rw [ite_eq_left rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
     simp
-  · rw [if_neg hk]
+  · rw [ite_eq_right hk]
     exact MeasureTheory.integral_eq_zero_of_add_right_eq_neg
       (μ := (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
       (g := ((2 * π / 2 / k : ℝ) : AddCircle (2 * π)))
@@ -119,7 +119,7 @@ private lemma measureFourierCoeff_map_neg' (F : Measure (AddCircle (2 * π)))
 `δ_{k0}`, which is even). -/
 private lemma negInvariant_haarAddCircle :
     NegInvariant (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))) := by
-  haveI : IsFiniteMeasure
+  have : IsFiniteMeasure
       ((AddCircle.haarAddCircle : Measure (AddCircle (2 * π))).map (fun z => -z)) :=
     Measure.isFiniteMeasure_map _ _
   refine ext_of_measureFourierCoeff _ _ fun m => ?_
@@ -127,7 +127,7 @@ private lemma negInvariant_haarAddCircle :
     measureFourierCoeff_haarAddCircle]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · rw [if_neg (neg_ne_zero.mpr hm), if_neg hm]
+  · rw [ite_eq_right (neg_ne_zero.mpr hm), ite_eq_right hm]
 
 /-- The spectral measure of white noise is the uniform measure of total mass `σ²`
 (FY §2.3.2: constant spectral density `σ²/2π`): `F = σ² • (normalized Haar)`. -/
@@ -138,11 +138,11 @@ theorem isSpectralMeasure_whiteNoise [IsProbabilityMeasure μ] {ε : ℤ → Ω 
   refine ⟨⟨?_⟩, ?_, fun k => ?_⟩
   · rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
     exact ENNReal.ofReal_lt_top
-  · rw [NegInvariant, Measure.map_smul, negInvariant_haarAddCircle]
+  · rw [NegInvariant, Measure.map_smul _ measurable_neg.aemeasurable, negInvariant_haarAddCircle]
   · rw [measureFourierCoeff_smul', measureFourierCoeff_haarAddCircle,
       ENNReal.toReal_ofReal hσ, hε.acvf_eq k]
     rcases eq_or_ne k 0 with rfl | hk
-    · rw [if_pos rfl, if_pos rfl, mul_one]
-    · rw [if_neg hk, if_neg hk, mul_zero, Complex.ofReal_zero]
+    · rw [ite_eq_left rfl, ite_eq_left rfl, mul_one]
+    · rw [ite_eq_right hk, ite_eq_right hk, mul_zero, Complex.ofReal_zero]
 
 end StatLean.TimeSeries

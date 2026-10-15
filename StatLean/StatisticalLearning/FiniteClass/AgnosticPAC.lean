@@ -56,7 +56,7 @@ theorem finiteClass_isAgnosticPACLearnerWith (𝓗 : Finset H)
     · field_simp
   intro D hD ε δ hε hδ hδ1 n hn
   refine hPAC D hD ε δ hε hδ hδ1 n ?_
-  show ⌈Real.log (2 * 𝓗.card / δ) / (2 * (ε / 2) ^ 2)⌉₊ ≤ n
+  change ⌈Real.log (2 * 𝓗.card / δ) / (2 * (ε / 2) ^ 2)⌉₊ ≤ n
   rwa [key]
 
 end StatLean.StatisticalLearning

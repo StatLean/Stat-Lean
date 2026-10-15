@@ -78,7 +78,7 @@ theorem coveringNumber_le_of_bounded_euclidean {k : ℕ}
           rw [Subsingleton.elim x x₀]; exact Metric.mem_ball_self hε⟩
       · simp
   · -- k ≥ 1: volume-packing count of a maximal (ε/2)-separated set.
-    haveI : Nonempty (Fin k) := ⟨⟨0, hk1⟩⟩
+    have : Nonempty (Fin k) := ⟨⟨0, hk1⟩⟩
     -- The Euclidean ball-volume constant `cst = √π^k / Γ(k/2+1)`.
     set cst : ℝ≥0∞ := ENNReal.ofReal (Real.sqrt Real.pi ^ k / Real.Gamma ((k : ℝ) / 2 + 1))
       with hcst
@@ -220,7 +220,7 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
   classical
   set M : ℝ := (eLpNorm m 2 P).toReal with hMdef
   have hMnn : 0 ≤ M := ENNReal.toReal_nonneg
-  have hs_pos : 0 < s := lt_of_le_of_lt (by positivity : (0:ℝ) ≤ 2 * ε * M) hs
+  have hs_pos : 0 < s := lt_of_le_of_lt (by positivity : (0 : ℝ) ≤ 2 * ε * M) hs
   -- The per-center bracket `[ψ c j − ε|m|, ψ c j + ε|m|]` is an `s`-bracket.
   have hbracket : ∀ c ∈ Θ, ∀ j : Fin k,
       IsEpsBracket s (fun x => ψ c j x - ε * ‖m x‖) (fun x => ψ c j x + ε * ‖m x‖) 2 P := by
@@ -235,8 +235,8 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
       have huml : (fun x => (ψ c j x + ε * ‖m x‖) - (ψ c j x - ε * ‖m x‖))
                   = (2 * ε) • (fun x => ‖m x‖) := by
         funext x; simp only [Pi.smul_apply, smul_eq_mul]; ring
-      rw [huml, eLpNorm_const_smul, eLpNorm_norm]
-      have hfin : eLpNorm m 2 P = ENNReal.ofReal M := (ENNReal.ofReal_toReal hm.2.ne).symm
+      rw [huml, eLpNorm_const_smul, eLpNorm_norm _ hm.aestronglyMeasurable]
+      have hfin : eLpNorm m 2 P = ENNReal.ofReal M := (ENNReal.ofReal_toReal hm.ne).symm
       rw [hfin, Real.enorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
       exact (ENNReal.ofReal_lt_ofReal_iff hs_pos).mpr hs
   -- Enumerate the `k · |S|` brackets via an equiv `Fin (k*|S|) ≃ Fin k × ↥S`.
@@ -400,7 +400,8 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
   rw [bracketingEntropyIntegral_eq_setLIntegral]
   apply lt_of_le_of_lt (setLIntegral_mono' measurableSet_Ioc hdom)
   have hsplit : (∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (B * s ^ (-(1/2) : ℝ)) ∂volume)
-      = ENNReal.ofReal B * ∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (s ^ (-(1/2) : ℝ)) ∂volume := by
+      = ENNReal.ofReal B * ∫⁻ s in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal
+          (s ^ (-(1/2) : ℝ)) ∂volume := by
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine setLIntegral_congr_fun measurableSet_Ioc (fun s hs => ?_)
     rw [← ENNReal.ofReal_mul hB0]
@@ -485,7 +486,7 @@ theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [Measurable
       have h2 : Tendsto (fun n => θseq n - θ) atTop (𝓝 0) := by
         simpa using hθseq_lim.sub
           (tendsto_const_nhds : Tendsto (fun _ : ℕ => θ) atTop (𝓝 θ))
-      simpa using (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin k))).comp h2
+      simpa using! (continuous_norm.tendsto (0 : EuclideanSpace ℝ (Fin k))).comp h2
     have ha : Tendsto (fun n => ‖m x‖ * ‖θseq n - θ‖) atTop (𝓝 0) := by
       simpa using hnorm.const_mul ‖m x‖
     have hbd : ∀ n, ‖ψ (θseq n) j x - ψ θ j x‖ ≤ ‖m x‖ * ‖θseq n - θ‖ := by
@@ -500,7 +501,7 @@ theorem parametricClass_empProcPointwiseDense {k : ℕ} {Ω : Type*} [Measurable
     set Δ : ℝ := max Δ₀ 0 with hΔdef
     have hΔnn : 0 ≤ Δ := le_max_right _ _
     refine ⟨fun x => (∑ j, |ψ θ₀ j x|) + Δ * ‖m x‖, ?_, ?_⟩
-    · exact (integrable_finset_sum _
+    · exact (integrable_finsetSum _
         (fun j _ => ((hψ0_L2 j).integrable (by norm_num)).abs)).add
         ((hm.integrable (by norm_num)).norm.const_mul Δ)
     · rintro g ⟨θ, hθ, j, rfl⟩ x

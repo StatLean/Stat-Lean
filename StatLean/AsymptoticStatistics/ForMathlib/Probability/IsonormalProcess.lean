@@ -78,7 +78,7 @@ theorem countable_of_separable_index [TopologicalSpace.SeparableSpace H] {s : Se
           simpa using this
         rw [this]; norm_num
       have hnn : (0 : ℝ) ≤ ‖b x - b y‖ := norm_nonneg _
-      nlinarith [Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2), Real.sqrt_nonneg 2,
+      nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg 2,
         sq_nonneg (‖b x - b y‖ - Real.sqrt 2)]
     refine Metric.ball_disjoint_ball ?_
     rw [hdist]
@@ -100,9 +100,9 @@ theorem infinite_of_not_finiteDimensional (h : ¬ FiniteDimensional ℝ H)
   intro hfin
   apply h
   -- `Finite s ⟹ range b finite ⟹ span (range b) finite-dim and closed ⟹ = ⊤`
-  haveI : Finite s := hfin
+  have : Finite s := hfin
   have hrangefin : (Set.range b).Finite := Set.finite_range b
-  haveI : FiniteDimensional ℝ ↥(Submodule.span ℝ (Set.range b)) :=
+  have : FiniteDimensional ℝ ↥(Submodule.span ℝ (Set.range b)) :=
     FiniteDimensional.span_of_finite ℝ hrangefin
   have hclosed : (Submodule.span ℝ (Set.range b)).topologicalClosure
       = Submodule.span ℝ (Set.range b) :=
@@ -110,7 +110,7 @@ theorem infinite_of_not_finiteDimensional (h : ¬ FiniteDimensional ℝ H)
   have htop : Submodule.span ℝ (Set.range b) = ⊤ := by
     rw [← hclosed, b.dense_span]
   -- `H` is the finite-dimensional span
-  haveI : FiniteDimensional ℝ ↥(⊤ : Submodule ℝ H) := htop ▸ inferInstance
+  have : FiniteDimensional ℝ ↥(⊤ : Submodule ℝ H) := htop ▸ inferInstance
   exact Module.Finite.equiv (Submodule.topEquiv (R := ℝ) (M := H))
 
 /-- **A separable infinite-dimensional real Hilbert space admits a `ℕ`-indexed
@@ -128,8 +128,8 @@ theorem exists_hilbertBasis_nat [CompleteSpace H] [TopologicalSpace.SeparableSpa
     (hH : ¬ FiniteDimensional ℝ H) : Nonempty (HilbertBasis ℕ ℝ H) := by
   classical
   obtain ⟨s, b, hb⟩ := exists_hilbertBasis ℝ H
-  haveI : Countable s := countable_of_separable_index b
-  haveI : Infinite s := infinite_of_not_finiteDimensional hH b
+  have : Countable s := countable_of_separable_index b
+  have : Infinite s := infinite_of_not_finiteDimensional hH b
   -- reindex `s ≃ ℕ`
   obtain ⟨e0⟩ : Nonempty (s ≃ ℕ) := nonempty_equiv_of_countable
   let e : ℕ ≃ s := e0.symm
@@ -174,13 +174,13 @@ mutually independent. -/
 theorem iIndepFun_coord : iIndepFun coord iidStdGaussian := by
   have h := iIndepFun_infinitePi (P := fun _ : ℕ => gaussianReal 0 1)
     (X := fun (_ : ℕ) => (id : ℝ → ℝ)) (fun _ => measurable_id)
-  simpa only [coord, iidStdGaussian, id_eq] using h
+  simpa only [coord, iidStdGaussian, id_eq] using! h
 
 /-- Each coordinate map is measure-preserving onto the standard Gaussian. -/
 theorem measurePreserving_coord (n : ℕ) :
     MeasurePreserving (coord n) iidStdGaussian (gaussianReal 0 1) := by
   have := measurePreserving_eval_infinitePi (μ := fun _ : ℕ => gaussianReal 0 1) n
-  simpa only [coord, iidStdGaussian, Function.eval] using this
+  simpa only [coord, iidStdGaussian, Function.eval] using! this
 
 /-- The law of each coordinate map is the standard Gaussian `N(0,1)`. -/
 theorem map_coord (n : ℕ) : iidStdGaussian.map (coord n) = gaussianReal 0 1 :=
@@ -341,7 +341,8 @@ theorem hasSum_isonormal (b : HilbertBasis ℕ ℝ H) (h : H) :
 theorem hasGaussianLaw_coord (n : ℕ) : HasGaussianLaw (coord n) iidStdGaussian := by
   have : IsGaussian (iidStdGaussian.map (coord n)) := by
     rw [map_coord]; infer_instance
-  exact IsGaussian.hasGaussianLaw
+  exact IsGaussian.hasGaussianLaw (X := coord n) (P := iidStdGaussian)
+    (measurable_coord n).aemeasurable
 
 /-- The finite partial sum `∑_{n ∈ s} ⟪bₙ, h⟫ • ξₙ`, as a function on `Ω`.
 Being a finite linear combination of independent Gaussians, it is Gaussian. -/
@@ -518,7 +519,7 @@ theorem isonormal_charFun (b : HilbertBasis ℕ ℝ H) (h : H) (t : ℝ) :
   -- (B) the Gaussian form of each partial sum's characteristic function.
   have hBform : ∀ n, charFun (P.map (S n)) t
       = Complex.exp (↑(∫ ω, (⟪t, S n ω⟫_ℝ : ℝ) ∂P) * Complex.I
-          - ↑(Var[fun ω => ⟪t, S n ω⟫_ℝ ; P]) / 2) :=
+          - ↑(Var[fun ω => ⟪t, S n ω⟫_ℝ; P]) / 2) :=
     fun n => (hGaussS n).charFun_map_eq t
   -- `⟪t, Sₙ ω⟫_ℝ = t * Sₙ ω` and `Sₙ =ᵐ partialSum`.
   have hinnerS : ∀ n, (fun ω => ⟪t, S n ω⟫_ℝ)
@@ -533,13 +534,13 @@ theorem isonormal_charFun (b : HilbertBasis ℕ ℝ H) (h : H) (t : ℝ) :
   have hintPS : ∀ n, Integrable (partialSum b h (Finset.range n)) P := by
     intro n
     unfold partialSum
-    refine integrable_finset_sum _ (fun i _ => ?_)
+    refine integrable_finsetSum _ (fun i _ => ?_)
     exact ((memLp_coord i).integrable (by norm_num)).const_mul _
   -- Mean of each `⟪t, Sₙ⟫`: zero, since `E[partialSum] = 0`.
   have hmeanPS : ∀ n, ∫ ω, partialSum b h (Finset.range n) ω ∂P = 0 := by
     intro n
     unfold partialSum
-    rw [integral_finset_sum _ (fun i _ => ((memLp_coord i).integrable (by norm_num)).const_mul _)]
+    rw [integral_finsetSum _ (fun i _ => ((memLp_coord i).integrable (by norm_num)).const_mul _)]
     refine Finset.sum_eq_zero (fun i _ => ?_)
     rw [integral_const_mul, integral_coord, mul_zero]
   have hmeanS : ∀ n, ∫ ω, (⟪t, S n ω⟫_ℝ : ℝ) ∂P = 0 := by
@@ -551,7 +552,7 @@ theorem isonormal_charFun (b : HilbertBasis ℕ ℝ H) (h : H) (t : ℝ) :
     have := (hTendstoLp.norm).pow 2
     rwa [isonormal_norm] at this
   -- variance of each partial sum: `Var[⟪t,Sₙ⟫] = t² ‖Sₙ‖²` (centred + `L²` norm).
-  have hvarS : ∀ n, Var[fun ω => ⟪t, S n ω⟫_ℝ ; P]
+  have hvarS : ∀ n, Var[fun ω => ⟪t, S n ω⟫_ℝ; P]
       = t ^ 2 * ‖∑ i ∈ Finset.range n, b.repr h i • e i‖ ^ 2 := by
     intro n
     rw [variance_congr (hinnerS n), variance_const_mul]
@@ -634,18 +635,18 @@ theorem hasGaussianLaw_of_l2_limit (b : HilbertBasis ℕ ℝ H) (h : H) :
   -- `exp(-‖h‖² t² / 2)`; from this `P.map X` is Gaussian, hence `HasGaussianLaw`.
   suffices hCharX : ∀ t : ℝ, charFun (P.map X) t
       = Complex.exp (((- (‖h‖ ^ 2 * t ^ 2) / 2 : ℝ) : ℂ)) by
-    refine ⟨isGaussian_iff_gaussian_charFun.mpr
+    refine ⟨hXmeas, isGaussian_iff_gaussian_charFun.mpr
       ⟨0, ‖h‖ ^ 2 • ContinuousLinearMap.mul ℝ ℝ, ⟨⟨fun x y => ?_⟩, ⟨fun x => ?_⟩⟩, ?_⟩⟩
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       ring
-    · simp only [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.smul_apply,
+    · simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
         ContinuousLinearMap.mul_apply', smul_eq_mul]
       exact mul_nonneg (sq_nonneg _) (mul_self_nonneg x)
     · intro t
       rw [hCharX t]
       congr 1
-      simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
+      simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
         inner_zero_right]
       push_cast
       ring
@@ -676,14 +677,15 @@ and `Measure.ext_of_charFun` reduces equality to equality of characteristic func
 On the left `isonormal_charFun` gives `charFun … t = exp(-‖h‖²t²/2)`; on the right
 `charFun_gaussianReal` gives `exp(t·0·I − ‖h‖²·t²/2)`, whose mean term vanishes. -/
 theorem isonormal_map_eq_gaussianReal (b : HilbertBasis ℕ ℝ H) (h : H) :
-    iidStdGaussian.map (isonormal b h) = gaussianReal 0 ⟨‖h‖ ^ 2, sq_nonneg _⟩ := by
+    iidStdGaussian.map (isonormal b h) = gaussianReal 0 (NNReal.mk (‖h‖ ^ 2) (sq_nonneg _)) := by
   refine Measure.ext_of_charFun (funext fun t => ?_)
   rw [isonormal_charFun b h t, charFun_gaussianReal t]
+  simp only [NNReal.coe_mk]
   push_cast
   ring_nf
 
 /-- The coercion of a finite `Lp`-sum equals the pointwise sum of coercions, `a.e.` -/
-theorem coeFn_lp_finset_sum {ι : Type*} (f : ι → Lp ℝ 2 iidStdGaussian) (s : Finset ι) :
+theorem coeFn_lp_finsetSum {ι : Type*} (f : ι → Lp ℝ 2 iidStdGaussian) (s : Finset ι) :
     (⇑(∑ i ∈ s, f i) : (ℕ → ℝ) → ℝ)
       =ᵐ[iidStdGaussian] fun ω => ∑ i ∈ s, (f i : (ℕ → ℝ) → ℝ) ω := by
   classical
@@ -732,7 +734,7 @@ theorem isonormal_hasGaussianLaw_tuple {m : ℕ} (b : HilbertBasis ℕ ℝ H) (h
     have hcoe : (isonormal b combo : (ℕ → ℝ) → ℝ)
         =ᵐ[P] fun ω => ∑ k, (L (Pi.single k 1)) * (isonormal b (h k) ω) := by
       rw [hiso_sum]
-      refine (coeFn_lp_finset_sum (fun k => (L (Pi.single k 1)) • isonormal b (h k))
+      refine (coeFn_lp_finsetSum (fun k => (L (Pi.single k 1)) • isonormal b (h k))
         Finset.univ).trans ?_
       have hsmul : ∀ k : Fin m, (⇑((L (Pi.single k 1)) • isonormal b (h k)) : (ℕ → ℝ) → ℝ)
           =ᵐ[P] fun ω => (L (Pi.single k 1)) * (isonormal b (h k) ω) := by
@@ -768,12 +770,12 @@ theorem isonormal_hasGaussianLaw_tuple {m : ℕ} (b : HilbertBasis ℕ ℝ H) (h
         (charFunDual_map L (ContinuousLinearMap.id ℝ ℝ)).symm
     _ = charFunDual (P.map (fun ω => L (X ω))) (ContinuousLinearMap.id ℝ ℝ) := by rw [hmapmap]
     _ = Complex.exp ((∫ ω, (ContinuousLinearMap.id ℝ ℝ) (L (X ω)) ∂P : ℝ) * Complex.I
-          - Var[fun ω => (ContinuousLinearMap.id ℝ ℝ) (L (X ω)) ; P] / 2) :=
+          - Var[fun ω => (ContinuousLinearMap.id ℝ ℝ) (L (X ω)); P] / 2) :=
         hLX_gauss.charFunDual_map_eq_fun (ContinuousLinearMap.id ℝ ℝ)
     _ = Complex.exp ((∫ ω, L (X ω) ∂P : ℝ) * Complex.I
-          - Var[fun ω => L (X ω) ; P] / 2) := by simp only [ContinuousLinearMap.id_apply]
+          - Var[fun ω => L (X ω); P] / 2) := by simp only [ContinuousLinearMap.id_apply]
     _ = Complex.exp ((P[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X] : ℝ) * Complex.I
-          - Var[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X ; P] / 2) := by
+          - Var[(L : (Fin m → ℝ) →L[ℝ] ℝ) ∘ X; P] / 2) := by
         simp only [Function.comp_def]
 
 end

@@ -100,6 +100,8 @@ the linear span, and Sheppard's bivariate orthant identity — both removed with
 served.
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology
 
@@ -252,7 +254,7 @@ private lemma abs_alpha_term_le_mul_phi {m₁ m₂ mΩ : MeasurableSpace Ω} {μ
     (hB : MeasurableSet[m₂] B) :
     |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
       ≤ (μ A).toReal * phiMixCoeff μ m₁ m₂ := by
-  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0:ℝ) ≤ (μ A).toReal) with h0 | hpos
+  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0 : ℝ) ≤ (μ A).toReal) with h0 | hpos
   · have hA0 : μ A = 0 := by
       have := (ENNReal.toReal_eq_zero_iff (μ A)).1 h0.symm
       exact this.resolve_right (measure_ne_top μ A)
@@ -407,10 +409,10 @@ theorem betaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
 private lemma toReal_inter_compl {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (A : Set Ω) {B : Set Ω} (hB : MeasurableSet B) :
     (μ (A ∩ Bᶜ)).toReal = (μ A).toReal - (μ (A ∩ B)).toReal := by
-  have h := measure_inter_add_diff (μ := μ) A hB
+  have h := measure_inter_add_sdiff (μ := μ) A hB
   have h2 : (μ (A ∩ B)).toReal + (μ (A \ B)).toReal = (μ A).toReal := by
     rw [← ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), h]
-  rw [Set.diff_eq] at h2
+  rw [Set.sdiff_eq] at h2
   linarith
 
 theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
@@ -518,7 +520,7 @@ theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
       by simp, by simp, by simp⟩
   refine Real.sSup_le ?_ hψnn
   rintro r ⟨A, B, hA, hB, hApos, rfl⟩
-  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0:ℝ) ≤ (μ B).toReal) with hB0 | hBpos
+  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0 : ℝ) ≤ (μ B).toReal) with hB0 | hBpos
   · -- `P(B) = 0`: the φ value is `0`
     have hB0' : μ B = 0 :=
       ((ENNReal.toReal_eq_zero_iff (μ B)).1 hB0.symm).resolve_right (measure_ne_top μ B)
@@ -542,7 +544,7 @@ theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
         _ = (μ B).toReal * |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := by
             rw [abs_of_pos hBpos]
     rw [key]
-    have hnn : (0:ℝ) ≤ |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := abs_nonneg _
+    have hnn : (0 : ℝ) ≤ |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := abs_nonneg _
     have hle1 := toReal_le_one (μ := μ) B
     nlinarith
 
@@ -628,16 +630,17 @@ theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpac
   have hgL : MemLp g 2 μ := MemLp.indicator hBm (memLp_const 1)
   have hfint : ∫ ω, f ω ∂μ = (μ A).toReal := by
     rw [hfdef]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hAm
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) hAm
   have hgint : ∫ ω, g ω ∂μ = (μ B).toReal := by
     rw [hgdef]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hBm
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) hBm
   have hmulint : ∫ ω, f ω * g ω ∂μ = (μ (A ∩ B)).toReal := by
     have he : (fun ω => f ω * g ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
       funext ω
-      simpa [hfdef, hgdef] using (Set.inter_indicator_mul (fun _ => (1:ℝ)) (fun _ => (1:ℝ)) ω).symm
+      simpa [hfdef, hgdef] using (Set.inter_indicator_mul (fun _ => (1 : ℝ))
+          (fun _ => (1 : ℝ)) ω).symm
     rw [he]
-    simpa using integral_indicator_const (μ := μ) (1 : ℝ) (hAm.inter hBm)
+    simpa using! integral_indicator_const (μ := μ) (1 : ℝ) (hAm.inter hBm)
   have hcov : cov[f, g; μ] = (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by
     rw [covariance_eq_sub hfL hgL]
     have : μ[f * g] = ∫ ω, f ω * g ω ∂μ := by simp [Pi.mul_apply]
@@ -661,14 +664,14 @@ theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpac
     rw [this, hsqg, hgint]
   have hsf : Real.sqrt (variance f μ) ≤ 1 / 2 := by
     have h1 := toReal_le_one (μ := μ) A
-    have h0 : (0:ℝ) ≤ (μ A).toReal := ENNReal.toReal_nonneg
+    have h0 : (0 : ℝ) ≤ (μ A).toReal := ENNReal.toReal_nonneg
     have hb : variance f μ ≤ (1 / 2) ^ 2 := by
       rw [hvarf]; nlinarith [sq_nonneg ((μ A).toReal - 1 / 2)]
     calc Real.sqrt (variance f μ) ≤ Real.sqrt ((1/2 : ℝ) ^ 2) := Real.sqrt_le_sqrt hb
       _ = 1 / 2 := Real.sqrt_sq (by norm_num)
   have hsg : Real.sqrt (variance g μ) ≤ 1 / 2 := by
     have h1 := toReal_le_one (μ := μ) B
-    have h0 : (0:ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+    have h0 : (0 : ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
     have hb : variance g μ ≤ (1 / 2) ^ 2 := by
       rw [hvarg]; nlinarith [sq_nonneg ((μ B).toReal - 1 / 2)]
     calc Real.sqrt (variance g μ) ≤ Real.sqrt ((1/2 : ℝ) ^ 2) := Real.sqrt_le_sqrt hb
@@ -716,7 +719,8 @@ private lemma toReal_inter_biUnion_finset {mΩ : MeasurableSpace Ω} {μ : Measu
       (fun j _ => hT.inter (hB j)),
     ENNReal.toReal_sum (fun j _ => measure_ne_top μ _)]
 
-private lemma sum_toReal_inter_finset {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+private lemma sum_toReal_inter_finset {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {ι : Type*} [DecidableEq ι] {T : Finset ι} {B : ι → Set Ω}
     (hB : ∀ j, MeasurableSet (B j))
     (hdB : ∀ j ∈ T, ∀ j' ∈ T, j ≠ j' → Disjoint (B j) (B j'))
@@ -783,12 +787,12 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
       ≤ 2 * Real.sqrt φ * Real.sqrt (∑ i ∈ S, a i ^ 2 * P i)
           * Real.sqrt (∑ j ∈ T, b j ^ 2 * Q j) := by
   classical
-  have hWnn : ∀ i, (0:ℝ) ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) := fun i =>
+  have hWnn : ∀ i, (0 : ℝ) ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) := fun i =>
     Finset.sum_nonneg fun j _ => mul_nonneg (sq_nonneg _)
       (by have h1 := hR i j; have h2 := mul_nonneg (hP i) (hQ j); linarith)
-  have hX : (0:ℝ) ≤ ∑ i ∈ S, a i ^ 2 * P i :=
+  have hX : (0 : ℝ) ≤ ∑ i ∈ S, a i ^ 2 * P i :=
     Finset.sum_nonneg fun i _ => mul_nonneg (sq_nonneg _) (hP i)
-  have hY : (0:ℝ) ≤ ∑ j ∈ T, b j ^ 2 * Q j :=
+  have hY : (0 : ℝ) ≤ ∑ j ∈ T, b j ^ 2 * Q j :=
     Finset.sum_nonneg fun j _ => mul_nonneg (sq_nonneg _) (hQ j)
   have hid : (∑ i ∈ S, ∑ j ∈ T, a i * b j * R i j
         - (∑ i ∈ S, a i * P i) * (∑ j ∈ T, b j * Q j))
@@ -808,13 +812,13 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
   have hrowCS : ∀ i ∈ S, ∑ j ∈ T, |b j| * |R i j - P i * Q j|
       ≤ Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)) := by
     intro i hi
-    have hCS := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul T
+    have hCS := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul T
       (r := fun j => |b j| * |R i j - P i * Q j|)
       (f := fun j => b j ^ 2 * |R i j - P i * Q j|)
       (g := fun j => |R i j - P i * Q j|)
       (fun j _ => mul_nonneg (sq_nonneg _) (abs_nonneg _)) (fun j _ => abs_nonneg _)
-      (fun j _ => by rw [mul_pow, sq_abs (b j)]; ring)
-    have hnn : (0:ℝ) ≤ ∑ j ∈ T, |b j| * |R i j - P i * Q j| :=
+      (fun j _ => le_of_eq <| by rw [mul_pow, sq_abs (b j)]; ring)
+    have hnn : (0 : ℝ) ≤ ∑ j ∈ T, |b j| * |R i j - P i * Q j| :=
       Finset.sum_nonneg fun j _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
     have h1 : ∑ j ∈ T, b j ^ 2 * |R i j - P i * Q j| ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
       Finset.sum_le_sum fun j _ => by
@@ -824,22 +828,27 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
         have h2 := mul_nonneg (hP i) (hQ j)
         constructor <;> linarith
     have h2 := hrow i hi
-    have hg0 : (0:ℝ) ≤ ∑ j ∈ T, |R i j - P i * Q j| :=
+    have hg0 : (0 : ℝ) ≤ ∑ j ∈ T, |R i j - P i * Q j| :=
       Finset.sum_nonneg fun j _ => abs_nonneg _
     have hb : (∑ j ∈ T, |b j| * |R i j - P i * Q j|) ^ 2
         ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * (2 * (P i * φ)) :=
       hCS.trans (mul_le_mul h1 h2 hg0 (hWnn i))
     calc ∑ j ∈ T, |b j| * |R i j - P i * Q j|
         = Real.sqrt ((∑ j ∈ T, |b j| * |R i j - P i * Q j|) ^ 2) := (Real.sqrt_sq hnn).symm
-      _ ≤ Real.sqrt ((∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * (2 * (P i * φ))) := Real.sqrt_le_sqrt hb
-      _ = Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)) := Real.sqrt_mul (hWnn i) _
+      _ ≤ Real.sqrt ((∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) *
+          (2 * (P i * φ))) := Real.sqrt_le_sqrt hb
+      _ = Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) *
+          Real.sqrt (2 * (P i * φ)) := Real.sqrt_mul (hWnn i) _
   have hstep2 : ∑ i ∈ S, |a i| * ∑ j ∈ T, |b j| * |R i j - P i * Q j|
-      ≤ ∑ i ∈ S, |a i| * (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ))) :=
+      ≤ ∑ i ∈ S, |a i| * (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) *
+          Real.sqrt (2 * (P i * φ))) :=
     Finset.sum_le_sum fun i hi => mul_le_mul_of_nonneg_left (hrowCS i hi) (abs_nonneg _)
   refine hstep2.trans ?_
-  have h2φ : (0:ℝ) ≤ 2 * φ := by linarith
-  have hfac : ∀ i ∈ S, |a i| * (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)))
-      = Real.sqrt (2 * φ) * (|a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := by
+  have h2φ : (0 : ℝ) ≤ 2 * φ := by linarith
+  have hfac : ∀ i ∈ S, |a i| *
+      (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)))
+      = Real.sqrt (2 * φ) * (|a i| * Real.sqrt (P i) *
+          Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := by
     intro i _
     have hsp : Real.sqrt (2 * (P i * φ)) = Real.sqrt (2 * φ) * Real.sqrt (P i) := by
       rw [← Real.sqrt_mul h2φ (P i)]
@@ -847,12 +856,12 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
       ring
     rw [hsp]; ring
   rw [Finset.sum_congr rfl hfac, ← Finset.mul_sum]
-  have hCS2 := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul S
+  have hCS2 := Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul S
     (r := fun i => |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
     (f := fun i => a i ^ 2 * P i)
     (g := fun i => (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
     (fun i _ => mul_nonneg (sq_nonneg _) (hP i)) (fun i _ => hWnn i)
-    (fun i _ => by
+    (fun i _ => le_of_eq <| by
       rw [mul_pow, mul_pow, sq_abs (a i), Real.sq_sqrt (hP i), Real.sq_sqrt (hWnn i)])
   have hWsum : ∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) = 2 * ∑ j ∈ T, b j ^ 2 * Q j := by
     have e1 : ∀ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
@@ -867,16 +876,20 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
       rw [← Finset.mul_sum, hcolsum j hj]
     rw [Finset.sum_congr rfl e2]
     ring
-  have hrnn : (0:ℝ) ≤ ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
+  have hrnn : (0 : ℝ) ≤ ∑ i ∈ S, |a i| * Real.sqrt (P i) *
+      Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
     Finset.sum_nonneg fun i _ =>
       mul_nonneg (mul_nonneg (abs_nonneg _) (Real.sqrt_nonneg _)) (Real.sqrt_nonneg _)
   have hfin : ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
       ≤ Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j) := by
     calc ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
-        = Real.sqrt ((∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) ^ 2) :=
+        = Real.sqrt ((∑ i ∈ S, |a i| * Real.sqrt (P i) *
+            Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) ^ 2) :=
           (Real.sqrt_sq hrnn).symm
-      _ ≤ Real.sqrt ((∑ i ∈ S, a i ^ 2 * P i) * ∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := Real.sqrt_le_sqrt hCS2
-      _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) :=
+      _ ≤ Real.sqrt ((∑ i ∈ S, a i ^ 2 * P i) * ∑ i ∈ S,
+        (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := Real.sqrt_le_sqrt hCS2
+      _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) *
+          Real.sqrt (∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) :=
           Real.sqrt_mul hX _
       _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j) := by
           rw [hWsum]
@@ -885,10 +898,11 @@ private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ
     rw [← Real.sqrt_mul h2φ]
     have e : (2 * φ) * (2 * ∑ j ∈ T, b j ^ 2 * Q j)
         = 2 ^ 2 * (φ * ∑ j ∈ T, b j ^ 2 * Q j) := by ring
-    rw [e, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2 ^ 2),
-      Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2), Real.sqrt_mul hφ]
+    rw [e, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2 ^ 2),
+      Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_mul hφ]
     ring
-  calc Real.sqrt (2 * φ) * ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
+  calc Real.sqrt (2 * φ) * ∑ i ∈ S, |a i| * Real.sqrt (P i) *
+        Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
       ≤ Real.sqrt (2 * φ)
           * (Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j)) :=
         mul_le_mul_of_nonneg_left hfin (Real.sqrt_nonneg _)
@@ -934,7 +948,7 @@ private lemma integral_finiteRange {mΩ : MeasurableSpace Ω} {μ : Measure Ω} 
   have hfun : (fun ω => F (f ω))
       = fun ω => ∑ y ∈ hfin.toFinset, (f ⁻¹' {y}).indicator (fun _ => F y) ω :=
     funext fun ω => finiteRange_pointwise hfin F ω
-  have hsum := integral_finset_sum (μ := μ) hfin.toFinset
+  have hsum := integral_finsetSum (μ := μ) hfin.toFinset
       (f := fun (y : ℝ) (ω : Ω) => (f ⁻¹' {y}).indicator (fun _ => F y) ω)
       (fun y _ => (integrable_const (F y)).indicator (hmeas y))
   rw [hfun, hsum]
@@ -942,7 +956,8 @@ private lemma integral_finiteRange {mΩ : MeasurableSpace Ω} {μ : Measure Ω} 
   rw [integral_indicator_const (F y) (hmeas y), smul_eq_mul, mul_comm]
   rfl
 
-private lemma integral_finiteRange_mul {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+private lemma integral_finiteRange_mul {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {f g : Ω → ℝ} (hff : (Set.range f).Finite) (hgf : (Set.range g).Finite)
     (hfm : ∀ y : ℝ, MeasurableSet (f ⁻¹' {y})) (hgm : ∀ z : ℝ, MeasurableSet (g ⁻¹' {z}))
     (F G : ℝ → ℝ) :
@@ -954,14 +969,14 @@ private lemma integral_finiteRange_mul {mΩ : MeasurableSpace Ω} {μ : Measure 
       = fun ω => ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
           ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω :=
     funext fun ω => finiteRange_pointwise_mul hff hgf F G ω
-  have hsum := integral_finset_sum (μ := μ) hff.toFinset
+  have hsum := integral_finsetSum (μ := μ) hff.toFinset
       (f := fun (y : ℝ) (ω : Ω) => ∑ z ∈ hgf.toFinset,
         ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
-      (fun y _ => integrable_finset_sum _ (fun z _ =>
+      (fun y _ => integrable_finsetSum _ (fun z _ =>
         (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z))))
   rw [hfun, hsum]
   refine Finset.sum_congr rfl fun y _ => ?_
-  have hsum2 := integral_finset_sum (μ := μ) hgf.toFinset
+  have hsum2 := integral_finsetSum (μ := μ) hgf.toFinset
       (f := fun (z : ℝ) (ω : Ω) => ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
       (fun z _ => (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z)))
   rw [hsum2]
@@ -1023,7 +1038,8 @@ private lemma abs_cov_le_of_finiteRange {m₁ m₂ mΩ : MeasurableSpace Ω} {μ
     simpa using this
 
 /-- Simple-function approximation inside a single measurable structure. -/
-private lemma exists_simple_approx {Ω' : Type*} [MeasurableSpace Ω'] {f : Ω' → ℝ} (hf : Measurable f) :
+private lemma exists_simple_approx {Ω' : Type*} [MeasurableSpace Ω']
+    {f : Ω' → ℝ} (hf : Measurable f) :
     ∃ u : ℕ → Ω' → ℝ, (∀ n, Measurable (u n)) ∧ (∀ n, (Set.range (u n)).Finite) ∧
       (∀ n ω, |u n ω| ≤ 2 * |f ω|) ∧ (∀ ω, Tendsto (fun n => u n ω) atTop (𝓝 (f ω))) := by
   refine ⟨fun n => ⇑(SimpleFunc.approxOn f hf Set.univ 0 (Set.mem_univ 0) n),
@@ -1297,11 +1313,11 @@ private lemma map_finsetTuple_shift {X : ℤ → Ω → ℝ} (hstat : IsStrictly
   set e : s ≃ Fin s.card := s.equivFin with he
   set t : Fin s.card → ℤ := fun j => ((e.symm j : s) : ℤ) with ht
   set Φ : (Fin s.card → ℝ) → (∀ _ : s, ℝ) := fun p i => p (e i) with hΦdef
-  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i => measurable_pi_apply (e i)
+  have hΦ : Measurable Φ := Measurable.of_eval fun i => measurable_pi_apply (e i)
   have hte : ∀ i : s, t (e i) = (i : ℤ) := by
     intro i; simp [ht]
   have hcomp : ∀ c : ℤ, Measurable fun ω (j : Fin s.card) => X (t j + c) ω :=
-    fun c => measurable_pi_lambda _ fun j => hmeas _
+    fun c => Measurable.of_eval fun j => hmeas _
   have hpush : ∀ c : ℤ,
       (μ.map fun ω (j : Fin s.card) => X (t j + c) ω).map Φ
         = μ.map fun ω (i : s) => X ((i : ℤ) + c) ω := by
@@ -1314,7 +1330,8 @@ private lemma map_finsetTuple_shift {X : ℤ → Ω → ℝ} (hstat : IsStrictly
       = μ.map fun ω (j : Fin s.card) => X (t j) ω := by simp
   calc (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
       = (μ.map fun ω (j : Fin s.card) => X (t j + k) ω).map Φ := (hpush k).symm
-    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by rw [hstat s.card t k]
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by
+      rw [hstat.map_eq hmeas s.card t k]
     _ = (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω).map Φ := by rw [h0]
     _ = μ.map fun ω (i : s) => X ((i : ℤ) + 0) ω := hpush 0
     _ = μ.map fun ω (i : s) => X (i : ℤ) ω := by simp
@@ -1324,17 +1341,17 @@ private lemma map_path_shift {X : ℤ → Ω → ℝ} [IsProbabilityMeasure μ]
     (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t)) (k : ℤ) :
     (μ.map fun ω (u : ℤ) => X (u + k) ω) = μ.map fun ω (u : ℤ) => X u ω := by
   have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω :=
-    measurable_pi_lambda _ fun _ => hmeas _
-  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+    Measurable.of_eval fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   refine ext_of_generate_finite (measurableCylinders fun _ : ℤ => ℝ)
     generateFrom_measurableCylinders.symm isPiSystem_measurableCylinders ?_ ?_
   · intro C hC
     obtain ⟨s, S, hSm, rfl⟩ := (mem_measurableCylinders C).mp hC
     have hcyl : MeasurableSet (cylinder s S) := MeasurableSet.cylinder (α := fun _ : ℤ => ℝ) s hSm
     have hT : Measurable fun ω (i : s) => X ((i : ℤ) + k) ω :=
-      measurable_pi_lambda _ fun _ => hmeas _
+      Measurable.of_eval fun _ => hmeas _
     have hU : Measurable fun ω (i : s) => X (i : ℤ) ω :=
-      measurable_pi_lambda _ fun _ => hmeas _
+      Measurable.of_eval fun _ => hmeas _
     have eT : (μ.map fun ω (u : ℤ) => X (u + k) ω) (cylinder s S)
         = (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω) S := by
       rw [Measure.map_apply hTm hcyl, Measure.map_apply hT hSm]
@@ -1383,8 +1400,8 @@ theorem IsStrictlyStationary.alphaMixCoeff_shift [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
     (hmeas : ∀ t, Measurable (X t)) (k : ℤ) (n : ℕ) :
     alphaMixCoeff μ (sigmaLE X k) (sigmaGE X (k + n)) = alphaCoeff X μ n := by
-  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω := measurable_pi_lambda _ fun _ => hmeas _
-  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω := Measurable.of_eval fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := Measurable.of_eval fun _ => hmeas _
   obtain ⟨ν, hν⟩ : ∃ ν : Measure (ℤ → ℝ), (μ.map fun ω (u : ℤ) => X u ω) = ν := ⟨_, rfl⟩
   have hνT : (μ.map fun ω (u : ℤ) => X (u + k) ω) = ν := by
     rw [← hν]; exact map_path_shift hstat hmeas k
@@ -1456,7 +1473,7 @@ theorem alphaCoeff_ge_of_deterministic [IsProbabilityMeasure μ]
   have hval : (μ A).toReal * (1 - (μ A).toReal)
       = |(μ (A ∩ A)).toReal - (μ A).toReal * (μ A).toReal| := by
     rw [Set.inter_self]
-    rw [abs_of_nonneg (by nlinarith : (0:ℝ) ≤ (μ A).toReal - (μ A).toReal * (μ A).toReal)]
+    rw [abs_of_nonneg (by nlinarith : (0 : ℝ) ≤ (μ A).toReal - (μ A).toReal * (μ A).toReal)]
     ring
   rw [hval]
   have hbdd := alphaMixCoeff_set_bddAbove (μ := μ) (m₁ := sigmaLE X 0) (m₂ := sigmaGE X (n : ℤ))
@@ -1553,7 +1570,7 @@ theorem alphaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure �
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
       ∀ n : ℕ, alphaCoeff X μ n ≤ C * r ^ n := by
   obtain ⟨k, V, κ, hκ, hVm, hmarg, hmarkov, hXV, A, ρ, hA0, hAint, hρ0, hρ1, henv⟩ := hchain
-  haveI := hκ
+  have := hκ
   obtain ⟨I, hIdef⟩ : ∃ t : ℝ, t = ∫ x, A x ∂(μ.map (V 0)) := ⟨_, rfl⟩
   have hI0 : 0 ≤ I := hIdef ▸ integral_nonneg hA0
   obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = max ρ (1 / 2) := ⟨_, rfl⟩
@@ -1563,7 +1580,7 @@ theorem alphaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure �
   refine ⟨max (I / r) 1, le_trans zero_le_one (le_max_right _ _), r, hr0.le, hr1, fun n => ?_⟩
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · refine le_trans alphaMixCoeff_le_one ?_
-    simpa using le_max_right (I / r) 1
+    simp
   · have hstep := alphaCoeff_le_of_state_envelope hVm hXV hmarg hmarkov hA0 hAint hρ0 henv hn
     rw [← hIdef] at hstep
     refine hstep.trans (le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left (I / r) 1)
@@ -1588,7 +1605,7 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
       ∀ n : ℕ, betaCoeff X μ n ≤ C * r ^ n := by
   obtain ⟨k, V, κ, hκ, hVm, hmarg, hmarkov, hXV, A, ρ, hA0, hAint, hρ0, hρ1, henv⟩ := hchain
-  haveI := hκ
+  have := hκ
   obtain ⟨I, hIdef⟩ : ∃ t : ℝ, t = ∫ x, A x ∂(μ.map (V 0)) := ⟨_, rfl⟩
   have hI0 : 0 ≤ I := hIdef ▸ integral_nonneg hA0
   obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = max ρ (1 / 2) := ⟨_, rfl⟩
@@ -1601,7 +1618,7 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
       (hXV s).mono (hVm (s + 1)).comap_le le_rfl
     refine le_trans (betaMixCoeff_le_one (mΩ := (inferInstance : MeasurableSpace Ω))
       (iSup₂_le fun s _ => (hXm s).comap_le) (iSup₂_le fun s _ => (hXm s).comap_le)) ?_
-    simpa using le_max_right (I / r) 1
+    simp
   · have hstep := betaCoeff_le_of_state_envelope hVm hXV hmarg hmarkov hA0 hAint hρ0 henv hn
     rw [← hIdef] at hstep
     refine hstep.trans (le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left (I / r) 1)
@@ -1652,11 +1669,11 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
     ∫⁻ y, ENNReal.ofReal (V y) ∂π ≤ ENNReal.ofReal (K / (1 - γ)) := by
   obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
   have hVm : Measurable V := hdrift.V_measurable
-  have h1γ : (0:ℝ) < 1 - γ := by linarith
-  have hK : (0:ℝ) ≤ K := hdrift.K_nonneg
+  have h1γ : (0 : ℝ) < 1 - γ := by linarith
+  have hK : (0 : ℝ) ≤ K := hdrift.K_nonneg
   have hprob : ∀ (m : ℕ), IsProbabilityMeasure ((κ ^ m) x₀) := by
     intro m
-    haveI : ProbabilityTheory.IsMarkovKernel (κ ^ m) := by
+    have : ProbabilityTheory.IsMarkovKernel (κ ^ m) := by
       induction m with
       | zero =>
           rw [pow_zero]
@@ -1677,7 +1694,7 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
         ≤ ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ))
           + (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π := by
       intro m
-      haveI := hprob m
+      have := hprob m
       have htransfer := StatLean.Bayesian.lintegral_le_lintegral_add_tvDist
         π ((κ ^ m) x₀) (hWm n) (B := (n : ENNReal)) (fun _ => min_le_right _ _)
       have hdrm : ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂((κ ^ m) x₀)
@@ -1694,7 +1711,7 @@ private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSp
         have hp : Tendsto (fun m : ℕ => γ ^ m * V x₀ + K / (1 - γ)) atTop
             (𝓝 (0 * V x₀ + K / (1 - γ))) :=
           ((tendsto_pow_atTop_nhds_zero_of_lt_one hγ0.le hγ1).mul_const _).add_const _
-        simpa using (ENNReal.continuous_ofReal.tendsto _).comp hp
+        simpa using! (ENNReal.continuous_ofReal.tendsto _).comp hp
       have h2 : Tendsto (fun m : ℕ =>
           (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π) atTop (𝓝 0) := by
         simpa using ENNReal.Tendsto.const_mul htv (Or.inr (by simp))
@@ -1757,9 +1774,9 @@ theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpa
       ∃ (A : S → ℝ) (r : ℝ), (∀ x, 0 ≤ A x) ∧ Integrable A π ∧ 0 ≤ r ∧ r < 1 ∧
         ∀ (x : S) (m : ℕ),
           StatLean.Minimaxity.tvDist ((κ ^ m) x) π ≤ ENNReal.ofReal (A x * r ^ m) := by
-  haveI := hmin.isProbability
+  have := hmin.isProbability
   -- the state space is nonempty: it carries the minorizing probability measure
-  haveI hne : Nonempty S := by
+  have hne : Nonempty S := by
     rcases isEmpty_or_nonempty S with h | h
     · exact absurd (measure_univ (μ := ν))
         (by rw [Set.univ_eq_empty_iff.2 h, measure_empty]; exact zero_ne_one)
@@ -1767,7 +1784,7 @@ theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpa
   obtain ⟨x₀⟩ := id hne
   obtain ⟨π, hπprob, hinv, hge, b, c, r, hb0, hc0, hr0, hr1, henv⟩ :=
     harris_theorem_envelope hdrift hmin hR
-  haveI := hπprob
+  have := hπprob
   obtain ⟨ρ, _, herg⟩ := hge
   have hVint : Integrable V π := integrable_lyap_of_isErgodicWithRate hdrift herg x₀
   refine ⟨π, hπprob, hinv, fun x => c + b * V x, r, fun x =>

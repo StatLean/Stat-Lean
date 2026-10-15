@@ -11,8 +11,9 @@ import Mathlib.LinearAlgebra.Matrix.RowCol
 
 In the spiked covariance model the observations are $n$ i.i.d. draws
 $Z \sim \mathcal{N}(0,\, I_d + \nu\, \theta^* (\theta^*)^\top)$, where the leading eigenvector
-$\theta^*$ lies on the unit sphere $\mathbb{S}^{d-1}$ and $\nu > 0$ is the signal strength. Estimating
-$\theta^*$ under squared Euclidean loss $\|\cdot\|_2^2$, the minimax risk is bounded below by
+$\theta^*$ lies on the unit sphere $\mathbb{S}^{d-1}$ and $\nu > 0$ is the signal strength.
+Estimating $\theta^*$ under squared Euclidean loss
+$\|\cdot\|_2^2$, the minimax risk is bounded below by
 $$
 \inf_{\widehat\theta}\ \sup_{\theta^* \in \mathbb{S}^{d-1}}\
   \mathbb{E}\,\bigl\| \widehat\theta - \theta^* \bigr\|_2^2
@@ -37,16 +38,16 @@ mutual-information bound) and Example 5.8 ($1/2$-packing of the unit sphere).
 * **Spiked-covariance matrix algebra.** `spiked_posDef`, `spiked_det`, and `spiked_inv` establish
   that $S = I + \nu u u^\top$ is positive definite with $\det S = 1 + \nu$ and Sherman–Morrison
   inverse $S^{-1} = I - \tfrac{\nu}{1+\nu} u u^\top$ for a unit vector $u$.
-* **Pairwise KL divergence.** `trace_spiked_inv_mul`, `klDiv_spiked`, and `klDiv_pca_pair` compute the
-  single-sample KL between two spiked Gaussians as
+* **Pairwise KL divergence.** `trace_spiked_inv_mul`, `klDiv_spiked`, and `klDiv_pca_pair` compute
+  the single-sample KL between two spiked Gaussians as
   $\tfrac12\,\nu^2 (1 - \langle u_a, u_b\rangle^2)/(1+\nu)$ — the equal determinants cancel the
   log-det terms — and tensorize it to the $n$-fold product law.
 * **Sphere packing and tilting.** `pca_fano_config` builds the $2\delta$-separated hypothesis family
   by tilting a $1/2$-packing of $\mathbb{S}^{m-1}$ ($d = m+1$) into the sphere via
   $\theta_a = (s, \delta\, w_a)$ with $s^2 + \delta^2 = 1$, choosing
   $\delta^2 \asymp \min\{(1+\nu)/\nu^2 \cdot d/n,\, 1\}$; the dot-product/norm bridge lemmas
-  (`euclid_self_dot`, `euclid_dot_le`, `tilt_dot`) convert between Euclidean norms and coordinate dot
-  products.
+  (`euclid_self_dot`, `euclid_dot_le`, `tilt_dot`) convert between Euclidean norms and coordinate
+  dot products.
 * **Mutual-information bound.** The per-pair KL is bounded by $2 n \nu^2 \delta^2/(1+\nu)$, averaged
   via `mutualInformation_le_avg_pairwise_kl`, and combined with $\log M \ge m/10$ so that Fano's
   $(1 - \cdot)$ factor stays $\ge 1/2$.
@@ -166,13 +167,13 @@ private lemma klDiv_pca_pair {n d : ℕ} (ua ub : Fin d → ℝ)
           (Measure.pi fun _ : Fin n =>
             multivariateGaussian 0 (1 + ν • Matrix.vecMulVec ub ub))
       = ENNReal.ofReal ((n : ℝ) * (2⁻¹ * (ν ^ 2 * (1 - (ua ⬝ᵥ ub) ^ 2) / (1 + ν)))) := by
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (1 + ν • Matrix.vecMulVec ua ua)) := by
-    haveI := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
+    have := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
       (S := 1 + ν • Matrix.vecMulVec ua ua); infer_instance
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (1 + ν • Matrix.vecMulVec ub ub)) := by
-    haveI := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
+    have := isGaussian_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin d)))
       (S := 1 + ν • Matrix.vecMulVec ub ub); infer_instance
   rw [klDiv_pi_eq_nsmul, klDiv_spiked ua ub hua hub hν, nsmul_eq_mul,
     ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg n)]
@@ -256,13 +257,13 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
   set M := T.card with hM_def
   have hlogM : (m : ℝ) / 10 ≤ Real.log M := hTlog
   have hM2 : 2 ≤ M := by
-    by_contra h; push_neg at h
+    by_contra h; push Not at h
     have hM1 : (M : ℝ) ≤ 1 := by exact_mod_cast (by omega : M ≤ 1)
     have hnp : (0 : ℝ) ≤ M := by positivity
     have := Real.log_nonpos hnp hM1
     have hmge : (39 : ℝ) ≤ m := by exact_mod_cast hm
     linarith [hlogM, this]
-  haveI : NeZero M := ⟨by omega⟩
+  have : NeZero M := ⟨by omega⟩
   -- index the packing
   set e := T.equivFin with he_def
   set pv : Fin M → EuclideanSpace ℝ (Fin m) := fun a => (e.symm a : EuclideanSpace ℝ (Fin m))
@@ -315,7 +316,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       _ ≤ Real.sqrt (‖θvec j - θvec k‖ ^ 2) := Real.sqrt_le_sqrt hsq
       _ = ‖θvec j - θvec k‖ := Real.sqrt_sq (norm_nonneg _)
   -- the comap kernel and its mutual information
-  haveI : IsMarkovKernel (P.comap θfam hθmeas) := Kernel.IsMarkovKernel.comap P hθmeas
+  have : IsMarkovKernel (P.comap θfam hθmeas) := Kernel.IsMarkovKernel.comap P hθmeas
   set Qc := P.comap θfam hθmeas with hQc_def
   set ua : Fin M → (Fin (m + 1) → ℝ) :=
     fun a => ((θfam a : EuclideanSpace ℝ (Fin (m + 1))) : Fin (m + 1) → ℝ) with hua_def
@@ -328,7 +329,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
   have hrho : ∀ j k, ua j ⬝ᵥ ua k
       = (1 - δsq) + δsq * ((pv j : Fin m → ℝ) ⬝ᵥ (pv k : Fin m → ℝ)) := by
     intro j k
-    show ((θvec j : Fin (m + 1) → ℝ)) ⬝ᵥ (θvec k : Fin (m + 1) → ℝ) = _
+    change ((θvec j : Fin (m + 1) → ℝ)) ⬝ᵥ (θvec k : Fin (m + 1) → ℝ) = _
     rw [hcoe j, hcoe k, tilt_dot, hs2, hδ0sq]
   have hQc_eq : ∀ a, Qc a = Measure.pi (fun _ : Fin n =>
       multivariateGaussian 0 (1 + ν • Matrix.vecMulVec (ua a) (ua a))) := by
@@ -372,7 +373,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       apply Finset.sum_le_sum; intro j _
       apply Finset.sum_le_sum; intro k _
       exact hbound_term j k
-    refine le_trans (mul_le_mul_left' hsumle _) ?_
+    refine le_trans (mul_le_mul_right hsumle _) ?_
     rw [Finset.sum_const, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       nsmul_eq_mul]
     have hMne0 : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
@@ -420,7 +421,7 @@ private lemma pca_fano_config {n d : ℕ} (hn : 1 ≤ n)
       rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from by simp [ENNReal.ofReal_ofNat],
         ← ENNReal.ofReal_mul (by norm_num)]
       congr 1; ring
-    show 2 * ENNReal.ofReal (δ0 / 4) ≤ edist (Subtype.val (θfam j)) (Subtype.val (θfam k))
+    change 2 * ENNReal.ofReal (δ0 / 4) ≤ edist (Subtype.val (θfam j)) (Subtype.val (θfam k))
     rw [this, edist_dist, dist_eq_norm]
     exact ENNReal.ofReal_le_ofReal (hsep_norm j k hjk)
   · -- the squared-separation × bracket bound
@@ -472,7 +473,7 @@ theorem pca_minimax_rate {n d : ℕ} (hn : 1 ≤ n)
     ENNReal.ofReal (2048⁻¹ * min ((1 + ν) / ν ^ 2 * (d / n)) 1)
       ≤ minimaxRiskDist (· ^ 2) (Subtype.val) P := by
   obtain ⟨M, hMne, θfam, hθ, δ, hM, hsep, hbound⟩ := pca_fano_config hn hd0 ν hν P hP
-  haveI := hMne
+  have := hMne
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
   have key := minimax_fano_lower_bound (fun x : ℝ≥0∞ => x ^ 2) (Subtype.val) P θfam hθ δ hM hΦ hsep
   exact le_trans hbound key

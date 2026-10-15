@@ -49,7 +49,7 @@ variable {Θ 𝓧 S : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace
 (Robert §1.3.1). -/
 theorem statKernel_apply (K : Kernel Θ 𝓧) {T : 𝓧 → S} (hT : Measurable T) (θ : Θ) :
     statKernel K hT θ = (K θ).map T := by
-  show (Kernel.deterministic T hT ∘ₖ K) θ = (K θ).map T
+  change (Kernel.deterministic T hT ∘ₖ K) θ = (K θ).map T
   rw [Kernel.comp_apply, Measure.deterministic_comp_eq_map hT]
 
 /-- A density factoring through `T` passes through the pushforward:
@@ -81,7 +81,7 @@ theorem generalizedPosterior_of_factorized {p : Θ → 𝓧 → ℝ≥0∞} {T :
   rw [generalizedPosterior_def]
   congr 1
   funext θ
-  show p θ x / predictiveDensity p π x = g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π
+  change p θ x / predictiveDensity p π x = g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π
   rw [hfac θ x, hpred, ENNReal.mul_div_mul_right _ _ hx0 hx']
 
 /-- **The posterior depends on the data only through a sufficient statistic** (Robert §1.3.1–1.3.2,
@@ -116,7 +116,7 @@ theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty �
     (κ := statKernel κ hT) (π := π) (ν := (ν.withDensity h).map T) hg hκ'
   -- The statistic law is the pushforward of the data law: `statKernel κ hT ∘ₘ π = (κ ∘ₘ π).map T`.
   have hmap : statKernel κ hT ∘ₘ π = (κ ∘ₘ π).map T := by
-    show (Kernel.deterministic T hT ∘ₖ κ) ∘ₘ π = (κ ∘ₘ π).map T
+    change (Kernel.deterministic T hT ∘ₖ κ) ∘ₘ π = (κ ∘ₘ π).map T
     rw [← Measure.comp_assoc, Measure.deterministic_comp_eq_map hT]
   rw [hmap] at hstatpost
   -- Transport the statistic-side a.e. equality back along `T`.
@@ -157,7 +157,7 @@ theorem generalizedPosterior_eq_of_likelihood_proportional {p₁ p₂ : Θ → �
   rw [generalizedPosterior_def, generalizedPosterior_def]
   congr 1
   funext θ
-  show p₁ θ x₁ / predictiveDensity p₁ π x₁ = p₂ θ x₂ / predictiveDensity p₂ π x₂
+  change p₁ θ x₁ / predictiveDensity p₁ π x₁ = p₂ θ x₂ / predictiveDensity p₂ π x₂
   rw [hprop θ, hpred, ENNReal.mul_div_mul_left _ _ hc0 hc']
 
 end StatLean.Bayesian

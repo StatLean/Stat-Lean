@@ -21,7 +21,7 @@
     {"id":"StatLean.HypothesisTesting.tendsto_measure_abs_sub_of_tendstoInMeasure","label":"tendsto_measure_abs_sub_of_tendstoInMeasure","full":"StatLean.HypothesisTesting.tendsto_measure_abs_sub_of_tendstoInMeasure","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Bootstrap.Consistency"},
     {"id":"StatLean.HypothesisTesting.sublevel_nonempty","label":"sublevel_nonempty","full":"StatLean.HypothesisTesting.sublevel_nonempty","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Bootstrap.Consistency"},
     {"id":"StatLean.HypothesisTesting.sublevel_bddBelow","label":"sublevel_bddBelow","full":"StatLean.HypothesisTesting.sublevel_bddBelow","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Bootstrap.Consistency"},
-    {"id":"Real.isGLB_sInf","label":"isGLB_sInf","full":"Real.isGLB_sInf","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Archimedean"},
+    {"id":"Real.isGLB_sInf","label":"isGLB_sInf","full":"Real.isGLB_sInf","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Archimedean.Real.Basic"},
     {"id":"IsGLB.mem_closure","label":"mem_closure","full":"IsGLB.mem_closure","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.IsLUB"},
     {"id":"isClosed_le","label":"isClosed_le","full":"isClosed_le","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.OrderClosed"},
     {"id":"HasSolidNorm.orderClosedTopology","label":"orderClosedTopology","full":"HasSolidNorm.orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
@@ -35,8 +35,8 @@
     {"id":"Filter.Eventually.exists","label":"exists","full":"Filter.Eventually.exists","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"nhdsLT_neBot","label":"nhdsLT_neBot","full":"nhdsLT_neBot","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.DenselyOrdered"},
     {"id":"LinearOrderedSemiField.toDenselyOrdered","label":"toDenselyOrdered","full":"LinearOrderedSemiField.toDenselyOrdered","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},
-    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"Filter.Eventually.and","label":"and","full":"Filter.Eventually.and","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"self_mem_nhdsWithin","label":"self_mem_nhdsWithin","full":"self_mem_nhdsWithin","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.NhdsWithin"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
@@ -46,7 +46,7 @@
     {"id":"StatLean.HypothesisTesting.tendsto_cdfPseudoInverse_of_tendsto","label":"tendsto_cdfPseudoInverse_of_tendsto","full":"StatLean.HypothesisTesting.tendsto_cdfPseudoInverse_of_tendsto","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.Bootstrap.Consistency"},
     {"id":"Metric.tendsto_atTop","label":"tendsto_atTop","full":"Metric.tendsto_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"Metric.continuousAt_iff","label":"continuousAt_iff","full":"Metric.continuousAt_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"}
+    {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.tendsto_bootstrapCoverage","target":"StatLean.HypothesisTesting.IsCDF"},

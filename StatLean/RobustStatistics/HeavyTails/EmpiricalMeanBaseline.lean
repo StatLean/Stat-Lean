@@ -97,7 +97,7 @@ theorem sampleMean_variance {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ} 
     exact (Finset.measurable_sum _ fun i _ => hX_meas i).div_const _
   have hMmean : ∫ ξ, sampleMean (fun i => X i ξ) ∂μprob = μ₀ := by
     simp only [sampleMean]
-    rw [integral_div, integral_finset_sum _ fun i _ => hint i]
+    rw [integral_div, integral_finsetSum _ fun i _ => hint i]
     simp only [hEX, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     field_simp
   have hVM : Var[fun ξ => sampleMean (fun i => X i ξ); μprob] = σ2 / n := by
@@ -151,12 +151,12 @@ theorem sampleMean_chebyshev_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → �
     exact (Finset.measurable_sum _ fun i _ => hX_meas i).div_const _
   have hMmean : ∫ ξ, sampleMean (fun i => X i ξ) ∂μprob = μ₀ := by
     simp only [sampleMean]
-    rw [integral_div, integral_finset_sum _ fun i _ => hint i]
+    rw [integral_div, integral_finsetSum _ fun i _ => hint i]
     simp only [hEX, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     field_simp
   have hM2 : MemLp (fun ξ => sampleMean (fun i => X i ξ)) 2 μprob := by
     have hsum : MemLp (fun ξ => ∑ i, X i ξ) 2 μprob :=
-      memLp_finset_sum _ fun i _ => hML i
+      memLp_finsetSum _ fun i _ => hML i
     simpa [sampleMean, div_eq_inv_mul] using hsum.const_mul ((n : ℝ)⁻¹)
   -- the variance of the empirical mean, from the previous theorem
   have hVM : Var[fun ξ => sampleMean (fun i => X i ξ); μprob] = σ2 / n := by

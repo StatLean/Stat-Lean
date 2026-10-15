@@ -130,7 +130,7 @@ variable {k : ℕ}
 /-- For `k ≥ 1` the standard Gaussian puts no mass at the origin. -/
 private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
     ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ≠ 0 := by
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   have hzero : (stdGaussian (EuclideanSpace ℝ (Fin k))) {0} = 0 := by
     rw [← map_pi_eq_stdGaussian,
       Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ)) (measurableSet_singleton _)]
@@ -141,7 +141,7 @@ private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
       rfl
     · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
         Measure.pi_map_eval]
-      haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+      have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
       simp
   have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
     rw [ae_iff]
@@ -160,16 +160,16 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
   set γ : Measure E := stdGaussian E with hγ
   set p : E → E := fun y => (b * ‖y‖⁻¹) • y with hp
   have hpmeas : Measurable p := by
-    refine Measurable.smul ?_ measurable_id
+    refine Measurable.smul (f := fun y : E => b * ‖y‖⁻¹) ?_ measurable_id
     exact measurable_const.mul measurable_norm.inv
-  refine ⟨γ.map p, Measure.isProbabilityMeasure_map hpmeas.aemeasurable, ?_, ?_⟩
+  refine ⟨γ.map p, (by infer_instance), ?_, ?_⟩
   · have hset : MeasurableSet {z : E | ¬ ‖z‖ = b} :=
       (measurableSet_eq_fun measurable_norm measurable_const).compl
     rw [ae_iff, Measure.map_apply hpmeas hset]
     refine measure_mono_null (t := {y : E | y = 0}) ?_ ?_
     · intro y hy
       by_contra hy0
-      simp only [Set.mem_setOf_eq] at hy0
+      simp only [Set.mem_ofPred_eq] at hy0
       have hn : 0 < ‖y‖ := norm_pos_iff.mpr hy0
       refine hy ?_
       simp only [hp, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hb]
@@ -177,7 +177,7 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
       exact (abs_of_nonneg (norm_nonneg y)).symm
     · have := stdGaussian_ae_ne_zero (k := k) hk
       rw [ae_iff] at this
-      simpa [hγ, Set.compl_setOf] using this
+      simpa [hγ, Set.compl_ofPred] using this
   · intro e
     have hemeas : Measurable (⇑e) := e.continuous.measurable
     have hcomm : (⇑e) ∘ p = p ∘ (⇑e) := by
@@ -208,8 +208,8 @@ private lemma sphereAverage_radial {k : ℕ} {b : ℝ}
       ∀ x : EuclideanSpace ℝ (Fin k),
         (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ) = g ‖x‖ := by
   classical
-  haveI := hσ
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have := hσ
+  have : NeZero k := ⟨hk.ne'⟩
   set E := EuclideanSpace ℝ (Fin k)
   -- Radial invariance: the sphere average depends on `x` only through `‖x‖`.
   have hradial : ∀ x y : E, ‖x‖ = ‖y‖ →
@@ -373,7 +373,7 @@ private lemma sphereAverage_radial {k : ℕ} {b : ℝ}
       exact mul_le_mul_of_nonneg_right hr.le (abs_nonneg _)
     have hsupp : {h : E | ⟪h, u⟫_ℝ ≠ 0} ⊆ Function.support F := by
       intro h hh
-      simp only [Set.mem_setOf_eq] at hh
+      simp only [Set.mem_ofPred_eq] at hh
       have hlt : Real.cosh (r₁ * ⟪h, u⟫_ℝ) < Real.cosh (r₂ * ⟪h, u⟫_ℝ) := by
         refine Real.cosh_lt_cosh.mpr ?_
         rw [abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
@@ -497,9 +497,6 @@ private lemma pi_gaussianReal_withDensity_shift' {ι : Type*} [Fintype ι] (a : 
       (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
         = gaussianReal (a i) 1 :=
     fun i => gaussianReal_withDensity_shift' (a i)
-  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
-      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
-    intro i; rw [h1d i]; infer_instance
   have hdensity : (fun y : ι → ℝ =>
         ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
       = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by
@@ -551,7 +548,7 @@ private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
   have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
-    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+    have : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
       intro i
       rw [gaussianReal_map_const_add]
       infer_instance
@@ -565,7 +562,7 @@ private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k
       = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
     rw [← hmapT, Measure.map_map (by fun_prop) hT,
       Measure.map_map hT
-        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+        (Measurable.of_eval (fun i => (measurable_pi_apply i).const_add (a i)))]
     congr 1
   rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift' a, ← hπ₀,
     map_toLp_withDensity' π₀ (by fun_prop), hmapT]
@@ -578,7 +575,7 @@ private lemma mvGaussian_one_eq_map_add' (v : EuclideanSpace ℝ (Fin k)) :
     multivariateGaussian v 1
       = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
   rw [multivariateGaussian]
-  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+  simp only [CFC.sqrt_one, map_one, one_apply_eq_self]
 
 /-- The chi-squared rejection region is measurable. -/
 private lemma measurableSet_normSq_gt (c : ℝ) :
@@ -628,7 +625,7 @@ private lemma setLIntegral_sphereAverage {b c : ℝ} {σ : Measure (EuclideanSpa
         (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
       = noncentralChiSquared k (b ^ 2).toNNReal (Set.Ioi c) := by
-  haveI := hσ
+  have := hσ
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   set A : Set (EuclideanSpace ℝ (Fin k)) := {x | c < ‖x‖ ^ 2} with hA
   have hAmeas : MeasurableSet A := measurableSet_normSq_gt c
@@ -659,7 +656,7 @@ private lemma lintegral_sphereAverage_eq_one {b : ℝ} {σ : Measure (EuclideanS
     (hσ : IsProbabilityMeasure σ) (hsphere : ∀ᵐ h ∂σ, ‖h‖ = b) :
     ∫⁻ x, (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) = 1 := by
-  haveI := hσ
+  have := hσ
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   have hjoint : AEMeasurable
       (Function.uncurry fun (x : EuclideanSpace ℝ (Fin k)) (h : EuclideanSpace ℝ (Fin k)) =>
@@ -679,7 +676,7 @@ private lemma lintegral_sphereAverage_eq_one {b : ℝ} {σ : Measure (EuclideanS
     have h2 : (γ.withDensity
         (fun z => ENNReal.ofReal (Real.exp (⟪h, z⟫_ℝ - ‖h‖ ^ 2 / 2)))) Set.univ = 1 := by
       rw [hγ, ← this]
-      exact (Measure.isProbabilityMeasure_map (by fun_prop)).measure_univ
+      exact measure_univ
     rwa [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
   rw [lintegral_congr_ae hinner, lintegral_one, measure_univ]
 
@@ -730,9 +727,9 @@ Two further hypotheses are honest regularity requirements of the mixture argumen
 than restrictions: joint measurability of the log-likelihood field `L` in `(h, ω)` (without
 it the mixture likelihood ratio `∫ exp(L n h ·) dσ(h)` is not even a random variable), and
 a *uniform-over-the-sphere* LAN remainder, supplied as an envelope `D n` whose tail
-probabilities tend to `0` under `Q_{n,0}` (measurability of `D n` itself is never used). The frozen pointwise-in-`h` remainder does not imply
-the uniform one, and the mixture step genuinely needs the uniform one; both applications
-have it, the sphere being compact. -/
+probabilities tend to `0` under `Q_{n,0}` (measurability of `D n` itself is never used). The frozen
+pointwise-in-`h` remainder does not imply the uniform one, and the mixture step genuinely needs the
+uniform one; both applications have it, the sphere being compact. -/
 theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Type*}
     [∀ n, MeasurableSpace (Ω n)]
     {Q : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Ω n)}
@@ -777,10 +774,10 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   classical
-  haveI : NeZero k := ⟨hk.ne'⟩
+  have : NeZero k := ⟨hk.ne'⟩
   -- ### Step 0. The least-favourable mixing measure and its radial profile.
   obtain ⟨σ, hσ, hsphere, hrot⟩ := exists_sphere_mixing_measure hk hb
-  haveI := hσ
+  have := hσ
   obtain ⟨g, hgcont, hgmono, hgval⟩ := sphereAverage_radial hk hb hσ hsphere hrot
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
   set G : EuclideanSpace ℝ (Fin k) → ℝ :=
@@ -823,10 +820,10 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     rw [hγ, stdGaussian_normSq_tail hk c]; exact hc
   have hc0 : 0 ≤ c := by
     by_contra hlt
-    push_neg at hlt
+    push Not at hlt
     have huniv : {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} = Set.univ := by
       ext x
-      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       exact lt_of_lt_of_le hlt (sq_nonneg _)
     rw [huniv, measure_univ] at hcA
     have : α = 1 := ENNReal.ofReal_eq_one.mp hcA.symm
@@ -847,7 +844,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     · intro hlt
       have hn : Real.sqrt c < ‖x‖ := by
         by_contra hle
-        push_neg at hle
+        push Not at hle
         exact absurd (hgmono.monotoneOn (Set.mem_Ici.mpr (norm_nonneg x)) hsqcm hle)
           (not_le.mpr hlt)
       nlinarith [Real.sqrt_nonneg c, norm_nonneg x]
@@ -1068,7 +1065,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
         {ω | δ ≤ D n ω} ∪ {ω | M ≤ R n ω} := by
       intro ω hω
       by_contra hcon
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
       obtain ⟨hD, hR⟩ := hcon
       have hexpD : Real.exp (D n ω) ≤ Real.exp δ := Real.exp_le_exp.mpr hD.le
       have hRnn' : 0 ≤ R n ω := hRnn n ω
@@ -1112,8 +1109,8 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
     linarith
   -- ### Step 6. The weak limit of the mixture ratio.
-  haveI hprobmap : IsProbabilityMeasure (γ.map G) :=
-    Measure.isProbabilityMeasure_map hGmeas.aemeasurable
+  have hprobmap : IsProbabilityMeasure (γ.map G) :=
+    (by infer_instance)
   have hGZlaw : WeakConverges (fun n => (Q n 0).map (fun ω => G (Z n ω))) (γ.map G) := by
     have h1 := hZ.map hGcont hGmeas
     have hseq : (fun n => ((Q n 0).map (Z n)).map G)
@@ -1211,7 +1208,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
           (show x ∉ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} from hx), hξdef]
         have hle : G x ≤ t := by
           by_contra hcon
-          push_neg at hcon
+          push Not at hcon
           exact hx ((hthr x).mp hcon)
         simp [max_eq_left (hGnn x), min_eq_left hle]
     have h1 : (1 : ℝ) - ∫ x, ξ (G x) ∂γ = ∫ x, (G x - ξ (G x)) ∂γ := by

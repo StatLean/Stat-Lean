@@ -27,12 +27,12 @@ so this is no loss of generality.
 
 **Proof formalization notes.** Fix $\alpha \in (0,1)$. With $E > 0$ we have the equivalence
 $1/E \le \alpha \iff E \ge 1/\alpha$, so Markov's inequality gives
-$\mu\{E \ge 1/\alpha\} \le \alpha \cdot \mathbb{E}_\mu[E] \le \alpha$, using $\mathbb{E}_\mu[E] \le 1$.
-In Lean the event is rewritten in `ENNReal.ofReal` form and closed by the extended-nonnegative
-Markov bound `meas_ge_le_lintegral_div`, after which `ENNReal.div_le_div_right` together with the
-e-variable bound `hE.expectation_le_one` and `ENNReal.ofReal_inv_of_pos` finishes the calc. The
-super-uniform version extends the bound from $(0,1)$ to all $t \ge 0$ by separately handling $t = 0$
-(where $E > 0$ makes the event $\{1/E \le 0\}$ empty).
+$\mu\{E \ge 1/\alpha\} \le \alpha \cdot \mathbb{E}_\mu[E] \le \alpha$, using
+$\mathbb{E}_\mu[E] \le 1$. In Lean the event is rewritten in `ENNReal.ofReal` form and closed by the
+extended-nonnegative Markov bound `meas_ge_le_lintegral_div`, after which `ENNReal.div_le_div_right`
+together with the e-variable bound `hE.expectation_le_one` and `ENNReal.ofReal_inv_of_pos` finishes
+the calc. The super-uniform version extends the bound from $(0,1)$ to all $t \ge 0$ by separately
+handling $t = 0$ (where $E > 0$ makes the event $\{1/E \le 0\}$ empty).
 
 **Bibliographic comments.** The reciprocal calibrator is due to Vladimir Vovk and Ruodu Wang,
 "E-values: Calibration, combination and applications", *The Annals of Statistics* **49**(3):
@@ -63,14 +63,14 @@ theorem superUniform_inv_of_isEVariable {E : Ω → ℝ} {μ : Measure Ω} [IsPr
   rcases ht.eq_or_lt with rfl | ht
   · have hempty : {ω | 1 / E ω ≤ (0 : ℝ)} = (∅ : Set Ω) := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le, one_div]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le, one_div]
       exact inv_pos.mpr (hpos ω)
     rw [hempty, measure_empty]
-    exact zero_le _
+    exact zero_le
   -- For `t > 0`: rewrite the event in `ofReal` form and apply lintegral Markov.
   have hset : {ω | 1 / E ω ≤ t} = {ω | ENNReal.ofReal t⁻¹ ≤ ENNReal.ofReal (E ω)} := by
     ext ω
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     rw [ENNReal.ofReal_le_ofReal_iff (hE.nonneg ω), one_div, inv_le_comm₀ (hpos ω) ht]
   rw [hset]
   have hmeas : AEMeasurable (fun ω => ENNReal.ofReal (E ω)) μ :=

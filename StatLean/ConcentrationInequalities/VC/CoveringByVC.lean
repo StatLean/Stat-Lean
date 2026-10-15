@@ -132,7 +132,7 @@ lemma card_le_pow_of_entropy_bound {N d : ℕ} {ε : ℝ}
   have hC : Real.log (n₀ : ℝ)
       ≤ Real.log 200 - 4 * Real.log ε + Real.log (Real.log (N : ℝ)) := by
     have hpos200 : (0 : ℝ) < 200 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by positivity
-    have h := Real.log_le_log (by exact_mod_cast hn₀pos : (0:ℝ) < (n₀:ℝ)) hn₀bound
+    have h := Real.log_le_log (by exact_mod_cast hn₀pos : (0 : ℝ) < (n₀ : ℝ)) hn₀bound
     rw [Real.log_mul (by positivity) hxne, Real.log_mul (by norm_num) (by positivity),
       Real.log_pow, Real.log_inv] at h
     push_cast at h
@@ -165,7 +165,8 @@ lemma card_le_pow_of_entropy_bound {N d : ℕ} {ε : ℝ}
   rw [heq2] at hxdB
   -- Numeric facts for the final combination.
   have hnum : 2 * Real.log 200 ≤ 19 * Real.log 2 := by
-    have h := Real.log_le_log (by norm_num : (0:ℝ) < 200 ^ 2) (by norm_num : (200:ℝ) ^ 2 ≤ 2 ^ 19)
+    have h := Real.log_le_log (by norm_num : (0 : ℝ) < 200 ^ 2)
+        (by norm_num : (200 : ℝ) ^ 2 ≤ 2 ^ 19)
     rw [Real.log_pow, Real.log_pow] at h
     push_cast at h; linarith [h]
   have hlogε_nonpos : Real.log ε ≤ 0 := Real.log_nonpos hε.le hε1.le
@@ -208,7 +209,7 @@ theorem sepFamily_card_le_of_vcDim_le {μ : Measure Ω}
   -- algebra applies and its `∀ n` hypothesis is what the spine produces.
   by_cases hcard : (F.card : ℝ) ≤ (2 / ε) ^ (21 * d)
   · exact hcard
-  push_neg at hcard
+  push Not at hcard
   -- Real preliminaries.
   have hdR : (1 : ℝ) ≤ (d : ℝ) := by exact_mod_cast hd1
   have hεinv : (1 : ℝ) ≤ ε⁻¹ := (one_le_inv₀ hε).mpr hε1.le
@@ -254,7 +255,7 @@ theorem sepFamily_card_le_of_vcDim_le {μ : Measure Ω}
         hdR]
     linarith [hstep1, hbig]
   have hdn : d ≤ n := by exact_mod_cast hdn_real
-  haveI : NeZero n := ⟨by omega⟩
+  have : NeZero n := ⟨by omega⟩
   -- Canonical i.i.d. witness on `ℕ → Ω` (product measure is a probability
   -- measure automatically).
   set X : ℕ → (ℕ → Ω) → Ω := fun i ω => ω i with hXdef
@@ -272,14 +273,14 @@ theorem sepFamily_card_le_of_vcDim_le {μ : Measure Ω}
   have hbad : ∃ ξ, ξ ∉ {ξ | ∃ S ∈ F, ∃ T ∈ F, S ≠ T ∧
       empFrac (fun i : Fin n => X i ξ) (S ∆ T) ≤ ε ^ 2 / 4} := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have huniv : {ξ | ∃ S ∈ F, ∃ T ∈ F, S ≠ T ∧
         empFrac (fun i : Fin n => X i ξ) (S ∆ T) ≤ ε ^ 2 / 4} = Set.univ :=
       Set.eq_univ_of_forall hcon
     rw [huniv, measure_univ] at hdr
     exact absurd hdr (not_le.mpr (ENNReal.ofReal_lt_one.mpr (by norm_num)))
   obtain ⟨ξ, hξ⟩ := hbad
-  simp only [Set.mem_setOf_eq, not_exists, not_and, not_le] at hξ
+  simp only [Set.mem_ofPred_eq, not_exists, not_and, not_le] at hξ
   -- The sample.
   set x : Fin n → Ω := fun i => X i ξ with hxdef
   set Λ : Finset Ω := Finset.image x Finset.univ with hΛdef
@@ -357,7 +358,7 @@ theorem exists_L2_net_of_vcDim_le {μ : Measure Ω}
   -- Maximality makes `G` a net.
   intro S hS
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hSnotin : S ∉ G := by
     intro hSin
     have h := hcon S hSin
@@ -431,7 +432,7 @@ private lemma isProbabilityMeasure_avg_dirac {n : ℕ} [NeZero n]
     IsProbabilityMeasure
       ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)) := by
   constructor
-  rw [Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  rw [Measure.smul_apply, smul_eq_mul, Measure.finsetSum_apply]
   simp only [measure_univ, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, mul_one]
   exact ENNReal.inv_mul_cancel (by exact_mod_cast NeZero.ne n)
@@ -446,7 +447,7 @@ private lemma avg_dirac_real_eq_empFrac {n : ℕ} [NeZero n] (x : Fin n → Ω)
     ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)).real S
       = empFrac x S := by
   classical
-  rw [measureReal_ennreal_smul_apply, measureReal_def, Measure.finset_sum_apply]
+  rw [measureReal_ennreal_smul_apply, measureReal_def, Measure.finsetSum_apply]
   simp_rw [Measure.dirac_apply' _ hS]
   rw [ENNReal.toReal_sum (fun i _ => by
       rw [Set.indicator_apply]; split_ifs <;> simp), empFrac]
@@ -478,7 +479,7 @@ theorem coveringNumber_empProj_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
     (hε : 0 < ε) (hε1 : ε < 1) :
     coveringNumber (empProj x '' C) ε ≤ (⌊(2 / ε) ^ (21 * d)⌋₊ : ℕ∞) := by
   classical
-  haveI : IsProbabilityMeasure ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)) :=
+  have : IsProbabilityMeasure ((n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)) :=
     isProbabilityMeasure_avg_dirac x
   obtain ⟨N, hNC, hNcard, hNnet⟩ :=
     exists_L2_net_of_vcDim_le hCmeas hd hd1 hε hε1

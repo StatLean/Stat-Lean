@@ -6,9 +6,10 @@ import Mathlib.Probability.Kernel.Posterior
 A **two-level hierarchical Bayesian model** bundles a hyperprior on a hyperparameter space `Λ`, a
 prior kernel taking a hyperparameter to a prior on the parameter space `Θ`, and a likelihood kernel
 taking a parameter to a data distribution on `𝓧`:
-$$\lambda \sim \rho, \qquad \theta \mid \lambda \sim \Pi_\lambda, \qquad X \mid \theta \sim K_\theta.$$
-Everything downstream — the mixed (marginal) prior, the data marginal, the hyperposterior, and the
-conditional posteriors given a hyperparameter — is built from these three ingredients.
+$$\lambda \sim \rho, \qquad \theta \mid \lambda \sim \Pi_\lambda, \qquad X \mid \theta \sim
+K_\theta.$$ Everything downstream — the mixed (marginal) prior, the data marginal, the
+hyperposterior, and the conditional posteriors given a
+hyperparameter — is built from these three ingredients.
 
 From `HierBayesExperiment H` this file names:
 
@@ -29,10 +30,11 @@ carries the probability/Markov requirements as instance-typed fields (registered
 because Gelman's §5.2 constitutively demands a *probability* hyperprior and *Markov* prior and
 likelihood kernels; dropping any makes the object not the hierarchical Bayesian model. The
 regularity Mathlib's posterior requires — `StandardBorelSpace` and `Nonempty` on the space being
-inferred — is Lean-side and attaches as typeclass arguments on `hyperPosterior`/`conditionalPosterior`,
-not as structure fields. The derived objects are thin wrappers over Mathlib's `Measure.bind` (`∘ₘ`),
-`Kernel.comp` (`∘ₖ`), and `ProbabilityTheory.posterior` (`†`); the substantive theorems live in
-`Hierarchical.Decomposition` and `Hierarchical.Tower`.
+inferred — is Lean-side and attaches as typeclass arguments on
+`hyperPosterior`/`conditionalPosterior`, not as structure fields. The derived objects are thin
+wrappers over Mathlib's `Measure.bind` (`∘ₘ`), `Kernel.comp` (`∘ₖ`), and
+`ProbabilityTheory.posterior` (`†`); the substantive theorems
+live in `Hierarchical.Decomposition` and `Hierarchical.Tower`.
 
 **Bibliographic comments.** Hierarchical priors are due to I. J. Good (*The Estimation of
 Probabilities*, MIT Press, 1965) and, in the modern Bayesian-linear-model form, to D. V. Lindley

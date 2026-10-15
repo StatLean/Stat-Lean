@@ -124,7 +124,7 @@ theorem posSemidef_condCovMatrix {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₁₂ : M
     -- USER-INPUT: nondegenerate conditioning block; And58 Thm 2.5.1
     (h₁₁ : S₁₁.PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosSemidef := by
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
   have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
   have h := (Matrix.PosDef.fromBlocks₁₁ (A := S₁₁) S₁₂ S₂₂ h₁₁).mp (by rwa [hconj])
   rwa [hconj] at h
@@ -138,7 +138,7 @@ theorem dotProduct_fromBlocks_split (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ 
     Sum.elim t₁ t₂ ⬝ᵥ (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) *ᵥ Sum.elim t₁ t₂
       = (t₁ + (S₁₁⁻¹ * S₁₂) *ᵥ t₂) ⬝ᵥ S₁₁ *ᵥ (t₁ + (S₁₁⁻¹ * S₁₂) *ᵥ t₂)
           + t₂ ⬝ᵥ (condCovMatrix S₁₁ S₁₂ S₂₂) *ᵥ t₂ := by
-  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have : Invertible S₁₁ := h₁₁.isUnit.invertible
   have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
   have h := Matrix.schur_complement_eq₁₁ (A := S₁₁) S₁₂ S₂₂ t₁ t₂ h₁₁.isHermitian
   rw [hconj] at h
@@ -199,10 +199,6 @@ theorem compProd_gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁) (m₂ : Eu
   have key : (multivariateGaussian m₁ S₁₁ ⊗ₘ gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂).map
         ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm
       = multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := by
-    haveI : IsProbabilityMeasure
-        ((multivariateGaussian m₁ S₁₁ ⊗ₘ gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂).map
-          ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) :=
-      Measure.isProbabilityMeasure_map hmeas.aemeasurable
     refine Measure.ext_of_charFun (funext fun t => ?_)
     have hcont : Continuous fun x : EuclideanSpace ℝ (ι₁ ⊕ ι₂) =>
         Complex.exp ((⟪x, t⟫_ℝ : ℂ) * Complex.I) := by fun_prop
@@ -336,11 +332,6 @@ theorem condKernel_ae_eq_gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁)
           (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
             (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))).condKernel x
         = gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ x := by
-  haveI : IsProbabilityMeasure ((multivariateGaussian (blockPair m₁ m₂)
-      (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
-        ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))) :=
-    Measure.isProbabilityMeasure_map
-      (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).measurable.aemeasurable
   have hG34 := compProd_gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ hJ h₁₁
   have hfst : ((multivariateGaussian (blockPair m₁ m₂)
         (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map

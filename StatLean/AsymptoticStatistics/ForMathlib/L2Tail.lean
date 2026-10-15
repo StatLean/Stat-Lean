@@ -30,7 +30,7 @@ lemma l2_markov_tail_tendsto
       (fun t => ENNReal.ofReal ((delta ^ 2)⁻¹ * ∫ x, W t x ^ 2 ∂P)) l (nhds 0) := by
     have ht : Tendsto (fun t => (delta ^ 2)⁻¹ * ∫ x, W t x ^ 2 ∂P) l (nhds 0) := by
       simpa using hW_sq_zero.const_mul (delta ^ 2)⁻¹
-    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using
+    simpa only [Function.comp_apply, ENNReal.ofReal_zero] using!
       (ENNReal.continuous_ofReal.tendsto 0).comp ht
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hu
     (Eventually.of_forall fun _ => bot_le) ?_
@@ -40,7 +40,7 @@ lemma l2_markov_tail_tendsto
     (Eventually.of_forall fun _ => sq_nonneg _) hwm.integrable_sq (delta ^ 2)
   have hset : {x | delta ^ 2 ≤ W t x ^ 2} = {x | delta ≤ |W t x|} := by
     ext x
-    simp only [Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq]
     simpa [sq_abs] using (sq_le_sq₀ hdelta.le (abs_nonneg (W t x)))
   rw [hset] at hm
   have hreal : P.real {x | delta ≤ |W t x|} ≤
@@ -79,7 +79,7 @@ lemma l2_square_tail_isLittleO
   let B : α → Set 𝒳 := fun t => {x | delta ≤ |W t x|}
   have hgtail : Tendsto (fun t => ∫ x in B t, g x ∂P) l (nhds 0) := by
     apply hg.tendsto_setIntegral_nhds_zero
-    simpa only [Function.comp_apply, B] using htail_prob
+    simpa only [Function.comp_apply, B] using! htail_prob
   rw [Asymptotics.isLittleO_iff]
   intro c hc
   have hqbd := (Asymptotics.isLittleO_iff.mp hqO) (show 0 < c / 8 by positivity)
@@ -185,20 +185,20 @@ lemma l2_envelope_tail_isLittleO
     simpa [sq_abs] using hm.integrable_sq
   have hA0 : Tendsto A l (nhds 0) :=
     hm2.tendsto_setIntegral_nhds_zero (by
-      simpa only [Function.comp_apply, B] using htail_prob)
+      simpa only [Function.comp_apply, B] using! htail_prob)
   have hAO : A =o[l] (fun _ => (1 : ℝ)) :=
     (Asymptotics.isLittleO_one_iff ℝ).2 hA0
   have hQO : Q =o[l] (fun t => s t ^ 2) := by
     simpa only [Q, B] using htail_rate
   have hAs : (fun t => Real.sqrt (A t)) =o[l] (fun _ => (1 : ℝ)) := by
-    convert hAO.sqrt (Eventually.of_forall fun _ => zero_le_one) using 1
+    convert! hAO.sqrt (Eventually.of_forall fun _ => zero_le_one) using 1
     simp
   have hQs : (fun t => Real.sqrt (Q t)) =o[l] s := by
-    convert hQO.sqrt (Eventually.of_forall fun t => sq_nonneg (s t)) using 1
+    convert! hQO.sqrt (Eventually.of_forall fun t => sq_nonneg (s t)) using 1
     funext t
     exact (Real.sqrt_sq (hs_nonneg t)).symm
   have hprod : (fun t => Real.sqrt (A t) * Real.sqrt (Q t)) =o[l] s := by
-    convert hAs.mul hQs using 1
+    convert! hAs.mul hQs using 1
     simp
   have hcross : (fun t => ∫ x in B t, |m x| ∂P) =O[l]
       (fun t => Real.sqrt (A t) * Real.sqrt (Q t)) := by
@@ -228,11 +228,11 @@ lemma l2_envelope_tail_isLittleO
       rw [show (fun x => b x ^ 2) = (B t).indicator (fun _ => (1 : ℝ)) by
         funext x
         by_cases hx : x ∈ B t <;> simp [b, hx]]
-      simpa only [Pi.one_apply] using (integral_indicator_one (μ := P) (hBmeas t))
+      simpa only [Pi.one_apply] using! (integral_indicator_one (μ := P) (hBmeas t))
     simpa [hab, ha2, hb2] using hcs
   have hcO := hcross.trans_isLittleO hprod
   have hmul := (Asymptotics.isBigO_refl s l).mul_isLittleO hcO
-  convert hmul using 1
+  convert! hmul using 1
   funext t
   ring
 

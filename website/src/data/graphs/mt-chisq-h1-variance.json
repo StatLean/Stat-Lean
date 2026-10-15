@@ -37,10 +37,10 @@
     {"id":"MeasureTheory.integral_const","label":"integral_const","full":"MeasureTheory.integral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.integral_const_mul","label":"integral_const_mul","full":"MeasureTheory.integral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"MeasureTheory.probReal_univ","label":"probReal_univ","full":"MeasureTheory.probReal_univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"MeasureTheory.integral_finset_sum","label":"integral_finset_sum","full":"MeasureTheory.integral_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"MeasureTheory.integral_finsetSum","label":"integral_finsetSum","full":"MeasureTheory.integral_finsetSum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.MultipleTesting.chiSq_H1_variance","target":"Measurable.aemeasurable"},
@@ -81,7 +81,7 @@
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"MeasureTheory.probReal_univ"},
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"one_mul"},
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"add_zero"},
-    {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"MeasureTheory.integral_finset_sum"},
+    {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"MeasureTheory.integral_finsetSum"},
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"Finset.sum_congr"},
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"Finset.sum_add_distrib"},
     {"source":"StatLean.MultipleTesting.chiSq_H1_mean","target":"Finset.sum_const"},

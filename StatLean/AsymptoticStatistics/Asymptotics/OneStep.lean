@@ -20,9 +20,9 @@ $(1/\tilde I)\,\tilde\ell$ and is asymptotically (semiparametrically) efficient.
 This formalization works with a scalar parameter and a one-dimensional score direction, so
 the nonsingular efficient information matrix becomes the positivity hypothesis
 $\tilde I > 0$. The Lean bundle additionally fixes the algebraic shape of the one-step update
-(an unnumbered display preceding Eq. (25.55)) and carries the empirical-process conclusion (asymptotic linearity) as a single
-bundled hypothesis, since the underlying Donsker / Glivenko–Cantelli machinery is out of scope
-here; see the formalization notes below.
+(an unnumbered display preceding Eq. (25.55)) and carries the empirical-process conclusion
+(asymptotic linearity) as a single bundled hypothesis, since the underlying Donsker /
+Glivenko–Cantelli machinery is out of scope here; see the formalization notes below.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
 and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 25 (Semiparametric
@@ -37,13 +37,13 @@ The empirical-process content of (25.55) + (25.56) together with the $\sqrt n$-r
 preliminary estimator and the information consistency $\hat I_n \to_P \tilde I$ is bundled as
 the structure field `asympLinear_25_57` and is not reproved here; concrete model files
 discharge it from Donsker / Glivenko–Cantelli arguments applied to the score estimate together
-with the one-step formula. The one-step update (an unnumbered display preceding (25.55)) is bundled as `estimator_def`; its role
-is to shape `asympLinear_25_57` for downstream consumers, so it is not consumed in the proof of
-the headline theorem itself. The book's sample-splitting (half-sample) trick and the grid
-discretization of $\tilde\theta_n$ are proof devices used to discharge `asympLinear_25_57`, not
-separate book theorems. The headline proof then runs in three steps: (A) build the efficient
-influence function via `eif_from_efficientScore`; (B) unwrap `asympLinear_25_57` modulo
-$\psi(P)=\theta_0$; (C) combine via
+with the one-step formula. The one-step update (an unnumbered display preceding (25.55)) is bundled
+as `estimator_def`; its role is to shape `asympLinear_25_57` for downstream consumers, so it is not
+consumed in the proof of the headline theorem itself. The book's sample-splitting (half-sample)
+trick and the grid discretization of $\tilde\theta_n$ are proof devices used to discharge
+`asympLinear_25_57`, not separate book theorems. The headline proof then runs in three steps: (A)
+build the efficient influence function via `eif_from_efficientScore`; (B) unwrap `asympLinear_25_57`
+modulo $\psi(P)=\theta_0$; (C) combine via
 `estimator_semiparametricallyEfficient_of_asympLinear_eif`.
 
 **Bibliographic comments.**

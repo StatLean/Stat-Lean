@@ -76,7 +76,7 @@ theorem dqm_logDensity_populationTaylor
   let s : EuclideanSpace ℝ (Fin k) → ℝ := fun θ => ‖θ - θ₀‖
   let I : EuclideanSpace ℝ (Fin k) → ℝ := fun θ =>
     fisherInformation M μ θ₀ ℓ (θ - θ₀) (θ - θ₀)
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   have hlinear := dqm_sqrtDensityRatio_l2_linearization M μ θ₀ ℓ hPDF hDQM
   let z : EuclideanSpace ℝ (Fin k) → 𝓧 → ℝ := fun θ x => ⟪θ - θ₀, ℓ x⟫
@@ -96,7 +96,7 @@ theorem dqm_logDensity_populationTaylor
   have hzmem (θ : EuclideanSpace ℝ (Fin k)) : MemLp (z θ) 2 P₀ := by
     have hdiv_meas : AEStronglyMeasurable
         (fun x => score θ x / M.sqrtDensity θ₀ x) P₀ :=
-      (((hscore_mem θ).1.mul
+      (((hscore_mem θ).aestronglyMeasurable.mul
         (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
           (withDensity_absolutelyContinuous _ _))
     have hzeq : (fun x => score θ x / M.sqrtDensity θ₀ x) =ᵐ[P₀] z θ := by
@@ -116,7 +116,7 @@ theorem dqm_logDensity_populationTaylor
   have hWmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (W θ) 2 P₀ := by
     filter_upwards [hlinear.1] with θ hq
     have := hq.add (hzmem θ)
-    convert this using 1
+    convert! this using 1
     funext x
     simp only [Pi.add_apply, W, z]
     ring
@@ -163,7 +163,7 @@ theorem dqm_logDensity_populationTaylor
   have hWsqO : (fun θ => ∫ x, W θ x ^ 2 ∂P₀)
       =O[𝓝 θ₀] (fun θ => s θ ^ 2) := by
     have hsum := hsquare.isBigO.add hIO
-    convert hsum using 1
+    convert! hsum using 1
     funext θ
     ring
   have hL_meas (θ : EuclideanSpace ℝ (Fin k)) : Measurable (L θ) :=

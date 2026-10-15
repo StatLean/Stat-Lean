@@ -21,7 +21,6 @@
     {"id":"StatLean.ExperimentalDesign.pmfExpect_smul","label":"pmfExpect_smul","full":"StatLean.ExperimentalDesign.pmfExpect_smul","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.ForMathlib.PMFExpectation"},
     {"id":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","label":"pmfExpect_productDesign_comp","full":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
     {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"StatLean.ExperimentalDesign.inclusionIndicator","label":"inclusionIndicator","full":"StatLean.ExperimentalDesign.inclusionIndicator","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
@@ -31,7 +30,7 @@
     {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"congr_arg","label":"congr_arg","full":"congr_arg","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"StatLean.ExperimentalDesign.populationTotal","label":"populationTotal","full":"StatLean.ExperimentalDesign.populationTotal","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.FinitePopulation"},
@@ -46,7 +45,8 @@
     {"id":"Function.update_self","label":"update_self","full":"Function.update_self","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Function.update_of_ne","label":"update_of_ne","full":"Function.update_of_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Finset.prod_eq_single","label":"prod_eq_single","full":"Finset.prod_eq_single","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"}
+    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"StatLean.ExperimentalDesign.productDesign_apply","label":"productDesign_apply","full":"StatLean.ExperimentalDesign.productDesign_apply","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.stratifiedSRS_mean_unbiased","target":"StatLean.ExperimentalDesign.Stratum"},
@@ -80,7 +80,6 @@
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"StatLean.ExperimentalDesign.sampleMean"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"StatLean.ExperimentalDesign.populationMean"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"Nat.cast_ne_zero"},
-    {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"lt_of_lt_of_le"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"LT.lt.ne'"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"StatLean.ExperimentalDesign.inclusionIndicator"},
@@ -100,7 +99,6 @@
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"StatLean.ExperimentalDesign.Stratum"},
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"StatLean.ExperimentalDesign.populationTotal"},
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"StatLean.ExperimentalDesign.populationTotal_eq_card_mul_mean"},
-    {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"Finset.sum_congr"},
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"Finset.mul_sum"},
     {"source":"StatLean.ExperimentalDesign.populationMean_stratified","target":"StatLean.ExperimentalDesign.populationTotal_stratified"},
@@ -121,6 +119,7 @@
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Function.update_of_ne"},
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.sum_congr"},
     {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.prod_eq_single"},
-    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.mem_univ"}
+    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"Finset.mem_univ"},
+    {"source":"StatLean.ExperimentalDesign.pmfExpect_productDesign_comp","target":"StatLean.ExperimentalDesign.productDesign_apply"}
   ]
 }

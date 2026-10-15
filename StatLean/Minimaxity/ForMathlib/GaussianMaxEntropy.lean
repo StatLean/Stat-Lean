@@ -31,19 +31,21 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds),
 
 **Proof formalization notes.** The proof avoids differential entropy entirely. The mixture
 distribution minimizes the average KL divergence over all candidate reference measures
-(`sum_klDiv_mixture_le`), so the average $\tfrac1M\sum_j D(\mathcal{N}(0,\Sigma^j) \,\|\, \text{mixture})$
-is bounded above by comparing against the matched zero-mean Gaussian $G = \mathcal{N}(0, \operatorname{cov}(Z))$.
-Each $D(\mathcal{N}(0,\Sigma^j) \,\|\, G)$ has the closed form
-$\tfrac12(\log\det\operatorname{cov}(Z) - \log\det\Sigma^j + \operatorname{tr}(\operatorname{cov}(Z)^{-1}\Sigma^j) - d)$
-(`klDiv_multivariateGaussian_zero`), and the trace terms average to
-$\operatorname{tr}\bigl(\operatorname{cov}(Z)^{-1}\cdot\tfrac1M\sum_j\Sigma^j\bigr) = \operatorname{tr}(I) = d$,
-cancelling the $-d$. Nonnegativity of each closed-form summand is the matrix Gibbs inequality
+(`sum_klDiv_mixture_le`), so the average
+$\tfrac1M\sum_j D(\mathcal{N}(0,\Sigma^j) \,\|\, \text{mixture})$ is bounded above by comparing
+against the matched zero-mean Gaussian $G = \mathcal{N}(0, \operatorname{cov}(Z))$. Each
+$D(\mathcal{N}(0,\Sigma^j) \,\|\, G)$ has the closed form
+$\tfrac12(\log\det\operatorname{cov}(Z) - \log\det\Sigma^j +
+\operatorname{tr}(\operatorname{cov}(Z)^{-1}\Sigma^j) -
+d)$ (`klDiv_multivariateGaussian_zero`), and the trace terms average to
+$\operatorname{tr}\bigl(\operatorname{cov}(Z)^{-1}\cdot\tfrac1M\sum_j\Sigma^j\bigr) =
+\operatorname{tr}(I) =
+d$, cancelling the $-d$. Nonnegativity of each closed-form summand is the matrix Gibbs inequality
 (`logdet_trace_nonneg`): after whitening by $R = B^{-1/2}$, the expression diagonalizes to
 $\tfrac12\sum_i (\Lambda_i - 1 - \log\Lambda_i) \ge 0$ via $\log x \le x - 1$. This replaces the
-book's appeal to the Gaussian maximum-entropy theorem (Exercise 15.14) and concavity of
-$\log\det$ with an explicit KL computation. The auxiliary lemma `logdet_trace_nonneg` shares the
-same diagonalization as `klDiv_multivariateGaussian_zero` but exposes the *sign* rather than the
-value.
+book's appeal to the Gaussian maximum-entropy theorem (Exercise 15.14) and concavity of $\log\det$
+with an explicit KL computation. The auxiliary lemma `logdet_trace_nonneg` shares the same
+diagonalization as `klDiv_multivariateGaussian_zero` but exposes the *sign* rather than the value.
 
 **Bibliographic comments.** This is a folklore consequence of the Gaussian maximum-entropy
 principle and carries no single seminal origin. The maximum-entropy property of the multivariate
@@ -51,8 +53,8 @@ Gaussian — that among all distributions with a fixed covariance the Gaussian m
 entropy — originates with C. E. Shannon, "A Mathematical Theory of Communication," *Bell System
 Technical Journal* 27 (1948), 379–423 and 623–656. The standard modern reference is T. M. Cover and
 J. A. Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006 (the maximum-entropy
-characterization is Theorem 8.6.5). The mutual-information bound stated here is the packaging of that
-principle for minimax analysis given in Wainwright (2019), Lemma 15.17; we are not aware of a
+characterization is Theorem 8.6.5). The mutual-information bound stated here is the packaging of
+that principle for minimax analysis given in Wainwright (2019), Lemma 15.17; we are not aware of a
 distinct primary-research source for this specific inequality.
 -/
 
@@ -139,7 +141,7 @@ private lemma sum_klDiv_le_logdet {M d : ℕ} [NeZero M]
       ≤ ENNReal.ofReal
           (2⁻¹ * (Real.log covZ.det - (M : ℝ)⁻¹ * ∑ j, Real.log (S j).det)) := by
   classical
-  haveI : Nonempty (Fin M) := ⟨(0 : Fin M)⟩
+  have : Nonempty (Fin M) := ⟨(0 : Fin M)⟩
   have hMpos : (0 : ℝ) < (M : ℝ) := by exact_mod_cast NeZero.pos M
   have hM0 : (M : ℝ) ≠ 0 := hMpos.ne'
   have hMinv : (0 : ℝ) ≤ (M : ℝ)⁻¹ := by positivity

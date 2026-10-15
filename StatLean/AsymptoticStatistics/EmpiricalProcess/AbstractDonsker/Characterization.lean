@@ -124,7 +124,7 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous
   let GP := gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne
   -- `G_P` is a probability measure; supply the instance so the portmanteau's
   -- `[IsProbabilityMeasure νD]` resolves without unfolding `gaussianPBridge`.
-  haveI hGP_prob : IsProbabilityMeasure GP :=
+  have hGP_prob : IsProbabilityMeasure GP :=
     (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep
       hF_ent hF_ne).isProbabilityMeasure
   -- Bounded-Lipschitz ⟹ bounded-continuous via the inf-convolution portmanteau; the

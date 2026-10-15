@@ -73,7 +73,7 @@ private lemma lp_estimator_memLp {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → �
       = ∑ i : Fin n, (fun ω => (f (xdat i) + ξ i ω) * lpWeight xdat K h ℓ t i) := by
     funext ω; simp only [lpEstimator, Finset.sum_apply]
   rw [hrw]
-  exact memLp_finset_sum' _ (fun i _ =>
+  exact memLp_finsetSum' _ (fun i _ =>
     ((memLp_const (f (xdat i))).add (lp_xi_memLp i (hξm i) (hξ2 i))).mul_const _)
 
 /-- Exact bias–variance decomposition of the pointwise squared error, in `∫⁻` form. -/
@@ -298,7 +298,7 @@ theorem lp_variance_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     have hae : ∀ i, ξ i =ᵐ[P] 0 := by
       intro i
       have hz0 : ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = 0 :=
-        le_antisymm (by rw [← ENNReal.ofReal_of_nonpos hσneg.le]; exact hξ2 i) (zero_le _)
+        le_antisymm (by rw [← ENNReal.ofReal_of_nonpos hσneg.le]; exact hξ2 i) (zero_le)
       have hmz := (lintegral_eq_zero_iff ((hξm i).pow_const 2).ennreal_ofReal).mp hz0
       filter_upwards [hmz] with ω hω
       have h2 : (ξ i ω) ^ 2 = 0 := le_antisymm (ENNReal.ofReal_eq_zero.mp hω) (sq_nonneg _)
@@ -324,7 +324,7 @@ theorem lp_variance_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
             - ∫ ω', lpEstimator xdat (fun i => f (xdat i) + ξ i ω') K h ℓ t ∂P) ^ 2) ∂P
         = ∫⁻ _ω, (0 : ℝ≥0∞) ∂P := lintegral_congr_ae hint0
       _ = 0 := lintegral_zero
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
 
 /-- **Pointwise MSE bound of LP(`ℓ`)** over `Σ(β, L)`: bias² + variance,
 `E[(f̂(t) − f(t))²] ≤ q₁²·h^{2β} + q₂/(n·h)`. -/
@@ -374,7 +374,7 @@ theorem lp_mse_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
           = ∫ ω, ∑ i, (f (xdat i) + ξ i ω) * lpWeight xdat K h (holderIndex β) t i ∂P := by
             simp only [lpEstimator]
         _ = ∑ i, ∫ ω, (f (xdat i) + ξ i ω) * lpWeight xdat K h (holderIndex β) t i ∂P :=
-            integral_finset_sum _ (fun i _ => hint i)
+            integral_finsetSum _ (fun i _ => hint i)
         _ = ∑ i, f (xdat i) * lpWeight xdat K h (holderIndex β) t i := by
             refine Finset.sum_congr rfl fun i _ => ?_
             rw [show (fun ω => (f (xdat i) + ξ i ω) * lpWeight xdat K h (holderIndex β) t i)

@@ -12,12 +12,12 @@
     {"id":"mul_mul_mul_comm","label":"mul_mul_mul_comm","full":"mul_mul_mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"inv_mul_cancel₀","label":"inv_mul_cancel₀","full":"inv_mul_cancel₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"StatLean.CausalInference.cell","label":"cell","full":"StatLean.CausalInference.cell","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
     {"id":"StatLean.CausalInference.propensity","label":"propensity","full":"StatLean.CausalInference.propensity","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
     {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
     {"id":"MeasureTheory.integral_smul_measure","label":"integral_smul_measure","full":"MeasureTheory.integral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"smul_eq_mul","label":"smul_eq_mul","full":"smul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"}
   ],
   "edges": [

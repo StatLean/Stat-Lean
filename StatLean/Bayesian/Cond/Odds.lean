@@ -6,7 +6,8 @@ import StatLean.Bayesian.Cond.FinitePartition
 The odds reformulation of Bayes' theorem for a single hypothesis event `s` against `sᶜ`:
 
 * **posterior odds = prior odds × Bayes factor**
-  $$\frac{\mu[s \mid d]}{\mu[s^c \mid d]} = \frac{\mu(s)}{\mu(s^c)} \cdot \frac{\mu[d \mid s]}{\mu[d \mid s^c]};$$
+  $$\frac{\mu[s \mid d]}{\mu[s^c \mid d]} = \frac{\mu(s)}{\mu(s^c)}
+  \cdot \frac{\mu[d \mid s]}{\mu[d \mid s^c]};$$
 * the **Bayes factor as the odds ratio** `bayesFactor = posteriorOdds / priorOdds`.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic

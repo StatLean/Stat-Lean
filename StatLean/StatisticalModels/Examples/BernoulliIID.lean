@@ -39,7 +39,7 @@ instance (p : {p : ℝ≥0 // p ≤ 1}) : IsProbabilityMeasure (bernoulliFam p) 
 /-- Point evaluation of the Bernoulli law at the success event. -/
 theorem bernoulliFam_apply_true (p : {p : ℝ≥0 // p ≤ 1}) :
     bernoulliFam p {true} = (p.1 : ℝ≥0∞) := by
-  simp [bernoulliFam]
+  simp [bernoulliFam, PMF.bernoulli_apply]
 
 /-- The Bernoulli model is identifiable: the success probability is read off the law. -/
 theorem identifiable_bernoulliFam : Identifiable bernoulliFam := by

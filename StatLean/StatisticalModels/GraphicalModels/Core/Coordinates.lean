@@ -183,13 +183,14 @@ open CondIndep.CompCounterexample
 see. -/
 def badCoord : Pt → Pt := fun p => pt (bif snd' p then 1 else 0) true
 
+set_option backward.isDefEq.respectTransparency.types false in
 theorem not_aemeasurable_badCoord : ¬ AEMeasurable badCoord mu := by
   intro h
   have hm := measurable_of_aemeasurable h
   refine not_measurableSet_snd'_true ?_
   have hpre : badCoord ⁻¹' (fst' ⁻¹' {(1 : ℝ)}) = snd' ⁻¹' {true} := by
     ext p
-    cases hb : snd' p <;> simp [badCoord, hb, Set.mem_preimage, fst', pt]
+    cases hb : snd' p <;> simp [badCoord, hb, Set.mem_preimage, fst', pt, Set.mem_singleton_iff]
   rw [← hpre]
   exact hm (measurableSet_iff.2 ⟨{(1 : ℝ)}, rfl⟩)
 
@@ -203,10 +204,10 @@ theorem coords_false_eq : coords ({false} : Finset Bool) XX = fun p _ => p := by
 
 theorem measurable_coords_false : Measurable (coords ({false} : Finset Bool) XX) := by
   rw [coords_false_eq]
-  exact measurable_pi_lambda _ fun _ => measurable_id
+  exact Measurable.of_eval fun _ => measurable_id
 
 theorem measurable_coords_empty : Measurable (coords (∅ : Finset Bool) XX) :=
-  measurable_pi_lambda _ fun i => absurd i.2 (Finset.notMem_empty _)
+  Measurable.of_eval fun i => absurd i.2 (Finset.notMem_empty _)
 
 /-- The conditioning block's law is not s-finite: evaluation at the single index is a measurable
 left inverse, and it carries that law back to `mu`. -/
@@ -227,8 +228,9 @@ s-finite). -/
 theorem condIndepCoords_holds : CondIndepCoords mu XX ∅ {true} {false} := by
   refine ⟨Kernel.const _ (Measure.dirac (fun _ => pt 0 true)),
     Kernel.const _ (Measure.dirac (fun _ => pt 0 true)), inferInstance, inferInstance, ?_⟩
-  rw [Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false]
-  refine Measure.map_of_not_aemeasurable ?_
+  rw [Measure.map₀_of_aemeasurable measurable_coords_false.aemeasurable,
+    Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false]
+  refine Measure.map₀_of_not_aemeasurable ?_
   intro hc
   have h1 : AEMeasurable (coords ({true} : Finset Bool) XX) mu :=
     measurable_snd.comp_aemeasurable (measurable_snd.comp_aemeasurable hc)
@@ -243,8 +245,9 @@ theorem not_condIndepCoords : ¬ CondIndepCoords mu XX ∅ ∅ {false} := by
   have hm : Measurable (fun p : Pt => (coords ({false} : Finset Bool) XX p,
       (coords (∅ : Finset Bool) XX p, coords (∅ : Finset Bool) XX p))) :=
     measurable_coords_false.prodMk (measurable_coords_empty.prodMk measurable_coords_empty)
-  rw [Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false,
-    Measure.map_eq_zero_iff hm.aemeasurable] at hmap
+  rw [Measure.map₀_of_aemeasurable measurable_coords_false.aemeasurable,
+    Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false,
+    Measure.map₀_eq_zero_iff hm.aemeasurable] at hmap
   exact mu_ne_zero' hmap
 
 /-- **The deleted `CondIndepCoords.decomposition` is false**: its statement, taken as a

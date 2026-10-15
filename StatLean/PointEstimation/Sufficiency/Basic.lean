@@ -65,7 +65,8 @@ theorem isProbabilityMeasure_statLaw (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     (hT : Measurable T) (θ : Θ) :
     IsProbabilityMeasure (statLaw P T θ) := by
   unfold statLaw
-  exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  rw [Measure.map₀_of_measurable hT]
+  exact (by infer_instance)
 
 /-- **Reconstruction from the statistic.** If the joint law of `(T(X), X)` disintegrates as
 `(law of T) ⊗ₘ Q`, then feeding the law of `T` through `Q` returns the law of `X`:
@@ -77,9 +78,10 @@ theorem statLaw_snd (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     Q ∘ₘ (statLaw P T θ) = P θ := by
-  haveI := isProbabilityMeasure_statLaw P hT θ
+  have := isProbabilityMeasure_statLaw P hT θ
   have h := congrArg Measure.snd (hgraph θ)
-  rw [Measure.snd_compProd, Measure.snd_map_prodMk hT, Measure.map_id'] at h
+  rw [Measure.snd_compProd, Measure.snd_map_prodMk hT
+      (show Measurable (fun x : 𝓧 => x) from measurable_id), Measure.map_id'] at h
   exact h.symm
 
 /-- **Kernel form implies the per-event form.** A θ-free Markov disintegration of the graph
@@ -93,13 +95,12 @@ theorem isSufficient_of_hasSufficientKernel (P : Θ → Measure 𝓧)
     -- of sufficiency
     (h : HasSufficientKernel P T) :
     IsSufficient P T := by
-  obtain ⟨Q, hQ, hgraph⟩ := h
-  haveI := hQ
+  obtain ⟨Q, hQ, hgraph⟩ := h.exists_map hT
+  have := hQ
   refine fun A hA => ⟨fun t => Q t A, Q.measurable_coe hA, fun t => prob_le_one, ?_⟩
   intro θ B hB
-  haveI := isProbabilityMeasure_statLaw P hT θ
   have e := congrArg (· (B ×ˢ A)) (hgraph θ)
-  simp only [statLaw] at e
+  simp only [statLaw, Measure.map₀_of_measurable hT] at e
   rw [Measure.map_apply (hT.prodMk measurable_id') (hB.prod hA),
     Measure.compProd_apply_prod hB hA,
     setLIntegral_map hB (Q.measurable_coe hA) hT] at e
@@ -119,8 +120,8 @@ theorem hasSufficientKernel_fiber [StandardBorelSpace S] (P : Θ → Measure �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     ∀ᵐ t ∂(statLaw P T θ), Q t {x | T x = t} = 1 := by
-  haveI := isProbabilityMeasure_statLaw P hT θ
-  letI := upgradeStandardBorel S
+  have := isProbabilityMeasure_statLaw P hT θ
+  let := upgradeStandardBorel S
   have hG : MeasurableSet {p : S × 𝓧 | T p.2 = p.1} :=
     measurableSet_eq_fun (hT.comp measurable_snd) measurable_fst
   have hone : ∫⁻ t, Q t {x | T x = t} ∂(statLaw P T θ) = 1 := by

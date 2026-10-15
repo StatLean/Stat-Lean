@@ -28,8 +28,6 @@ Applications*, Chapman & Hall, 1996, §3.1, and C. J. Stone, *Ann. Statist.* **5
 
 open Matrix
 
-set_option maxHeartbeats 800000
-
 namespace StatLean.NonparametricStatistics
 
 variable {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {h : ℝ} {ℓ : ℕ} {t : ℝ}
@@ -69,7 +67,7 @@ theorem lp_weight_reproduce_monomial (hpd : (lpMatrix xdat K h ℓ t).PosDef)
     Matrix.nonsing_inv_mul _ hdet, Matrix.one_mulVec, hq, Pi.single_apply]
   by_cases hk0 : k = 0
   · subst hk0
-    simp [hκ, Fin.ext_iff]
+    simp [hκ]
   · have hne : ¬ ((0 : Fin (ℓ + 1)) = κ) := by
       rw [hκ, Fin.ext_iff]
       simpa using (Ne.symm hk0)

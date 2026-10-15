@@ -8,22 +8,20 @@
     {"id":"StatLean.NonparametricStatistics.kde","label":"kde","full":"StatLean.NonparametricStatistics.kde","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.KernelDensity.Defs"},
     {"id":"CharP.cast_eq_zero","label":"cast_eq_zero","full":"CharP.cast_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharP.Defs"},
     {"id":"CharP.ofCharZero","label":"ofCharZero","full":"CharP.ofCharZero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharP.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"inv_zero","label":"inv_zero","full":"inv_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
     {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"Finset.univ_eq_empty","label":"univ_eq_empty","full":"Finset.univ_eq_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.BooleanAlgebra"},
-    {"id":"Fin.isEmpty'","label":"isEmpty'","full":"Fin.isEmpty'","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.IsEmpty.Defs"},
+    {"id":"Fin.isEmpty'","label":"isEmpty'","full":"Fin.isEmpty'","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.IsEmpty.Defs"},
     {"id":"StatLean.NonparametricStatistics.kdeMeanAt","label":"kdeMeanAt","full":"StatLean.NonparametricStatistics.kdeMeanAt","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.KernelDensity.Defs"},
     {"id":"MeasureTheory.integral_zero","label":"integral_zero","full":"MeasureTheory.integral_zero","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"zero_pow","label":"zero_pow","full":"zero_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Basic"},
-    {"id":"ENNReal.ofReal_zero","label":"ofReal_zero","full":"ENNReal.ofReal_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.ofReal_zero","label":"ofReal_zero","full":"ENNReal.ofReal_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.lintegral_zero","label":"lintegral_zero","full":"MeasureTheory.lintegral_zero","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
     {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
-    {"id":"zero_le","label":"zero_le","full":"zero_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
+    {"id":"zero_le","label":"zero_le","full":"zero_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.IsBotOne"},
     {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"MeasureTheory.Measure.restrict_univ","label":"restrict_univ","full":"MeasureTheory.Measure.restrict_univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Restrict"},
     {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"MeasurableSet.univ","label":"univ","full":"MeasurableSet.univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
@@ -46,7 +44,9 @@
     {"id":"IsTopologicalAddGroup.to_continuousSub","label":"to_continuousSub","full":"IsTopologicalAddGroup.to_continuousSub","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
     {"id":"measurable_snd","label":"measurable_snd","full":"measurable_snd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"measurable_fst","label":"measurable_fst","full":"measurable_fst","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
-    {"id":"Measurable.lintegral_prod_right'","label":"lintegral_prod_right'","full":"Measurable.lintegral_prod_right'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"}
+    {"id":"Measurable.lintegral_prod_right'","label":"lintegral_prod_right'","full":"Measurable.lintegral_prod_right'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
+    {"id":"MeasureTheory.Measure.IsAddHaarMeasure.sigmaFinite","label":"sigmaFinite","full":"MeasureTheory.Measure.IsAddHaarMeasure.sigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Measure"},
+    {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"StatLean.NonparametricStatistics.IsIIDSample"},
@@ -55,7 +55,6 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"StatLean.NonparametricStatistics.kde"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"CharP.cast_eq_zero"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"CharP.ofCharZero"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"inv_zero"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"Finset.sum_congr"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"Finset.univ_eq_empty"},
@@ -70,7 +69,6 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"zero_le"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"Nat.cast_ne_zero"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"LT.lt.ne'"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"MeasureTheory.Measure.isProbabilityMeasure_map"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"MeasureTheory.Measure.restrict_univ"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"MeasureTheory.withDensity_apply"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"MeasurableSet.univ"},
@@ -93,6 +91,8 @@
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"IsTopologicalAddGroup.to_continuousSub"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"measurable_snd"},
     {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"measurable_fst"},
-    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"Measurable.lintegral_prod_right'"}
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"Measurable.lintegral_prod_right'"},
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"MeasureTheory.Measure.IsAddHaarMeasure.sigmaFinite"},
+    {"source":"StatLean.NonparametricStatistics.kde_integrated_variance_le","target":"FiniteDimensional.rclike_to_real"}
   ]
 }

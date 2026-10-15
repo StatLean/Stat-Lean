@@ -43,9 +43,6 @@ theorem multivariateGaussian_map_reindex {ι ι' : Type*} [Fintype ι] [Fintype 
           (S.submatrix e.symm e.symm) := by
   have hf : Measurable ⇑(LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) :=
     (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).continuous.measurable
-  haveI : IsProbabilityMeasure ((multivariateGaussian m S).map
-      ⇑(LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)) :=
-    Measure.isProbabilityMeasure_map hf.aemeasurable
   refine Measure.ext_of_charFun (funext fun t => ?_)
   have hL : charFun ((multivariateGaussian m S).map
       ⇑(LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)) t

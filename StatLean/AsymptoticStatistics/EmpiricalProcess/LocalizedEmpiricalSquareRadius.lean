@@ -2,6 +2,23 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalSquareRadius
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringBookDifference
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacherFiniteChaining
 
+/-!
+# Empirical square radius of strictly localized difference classes
+
+This file bounds the expected empirical square radius `empiricalSquareRadius` of the strictly
+localized difference class `strictLocalizedDifferenceClass F P r` under the canonical product
+law, for a pointwise-dense class `F` of measurable functions with a measurable envelope `Φ`
+in `L²(P)`. The population square radius of this class is at most `r ^ 2`
+(`populationSquareRadius_strictLocalizedDifferenceClass_le`), and on each sample its
+conditional Rademacher supremum is at most `78 √2 ‖2Φ‖ₙ J(θ, F, Φ)`
+(`conditionalRademacherSup_strictLocalizedDifferenceClass_le_rowBookEntropy`), where `‖2Φ‖ₙ`
+is the empirical `L²` seminorm of `2Φ`, `θ` the realized relative radius of the localized
+class and `J` the book uniform covering entropy integral. For a truncation level `K ≥ 0`,
+`lintegral_canonical_empiricalSquareRadius_strictLocalizedDifferenceClass_le_rowBookEntropy`
+combines these bounds: the expected empirical square radius is at most `r ^ 2`, plus
+`8 K n^{-1/2} · 78 √2 · E[‖2Φ‖ₙ J(θ, F, Φ)]`, plus the envelope tail `4 ∫_{K < 2|Φ|} Φ² dP`.
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory
@@ -18,17 +35,16 @@ theorem populationSquareRadius_strictLocalizedDifferenceClass_le
   unfold populationSquareRadius
   refine iSup_le fun h => iSup_le fun hh => ?_
   rcases hh with ⟨f, hf, g, hg, heq, hr⟩
-  have hr_pos : 0 < r := ENNReal.ofReal_pos.mp ((zero_le _).trans_lt hr)
+  have hr_pos : 0 < r := ENNReal.ofReal_pos.mp ((zero_le).trans_lt hr)
   have hnorm_sq :
-      eLpNorm h 2 P ^ (2 : ℕ) =
+      eLpNorm' h 2 P ^ (2 : ℕ) =
         ∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P := by
     calc
-      eLpNorm h 2 P ^ (2 : ℕ) = eLpNorm h 2 P ^ (2 : ℝ) :=
+      eLpNorm' h 2 P ^ (2 : ℕ) = eLpNorm' h 2 P ^ (2 : ℝ) :=
         (ENNReal.rpow_natCast _ 2).symm
       _ = ∫⁻ x, ‖h x‖ₑ ^ (2 : ℝ) ∂P := by
-        simpa using eLpNorm_nnreal_pow_eq_lintegral
-          (f := h) (μ := P) (p := (2 : NNReal))
-          (show (2 : NNReal) ≠ 0 by norm_num)
+        rw [eLpNorm', ← ENNReal.rpow_mul]
+        norm_num
       _ = ∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P := by
         refine lintegral_congr fun x => ?_
         calc
@@ -39,7 +55,7 @@ theorem populationSquareRadius_strictLocalizedDifferenceClass_le
               ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
   calc
     (∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂P) =
-        eLpNorm h 2 P ^ (2 : ℕ) := hnorm_sq.symm
+        eLpNorm' h 2 P ^ (2 : ℕ) := hnorm_sq.symm
     _ ≤ ENNReal.ofReal r ^ (2 : ℕ) := by gcongr
     _ = ENNReal.ofReal (r ^ 2) :=
       (ENNReal.ofReal_pow hr_pos.le 2).symm
@@ -138,11 +154,11 @@ theorem conditionalRademacherSup_strictLocalizedDifferenceClass_le_bookEntropy
       strictLocalizedDifferenceClass F P r = ∅ := by
     have hr_nonpos : r ≤ 0 := le_of_not_gt hr
     ext h
-    simp only [strictLocalizedDifferenceClass, Set.mem_setOf_eq,
+    simp only [strictLocalizedDifferenceClass, Set.mem_ofPred_eq,
       Set.mem_empty_iff_false, iff_false]
     rintro ⟨f, hf, g, hg, heq, hnorm⟩
     rw [ENNReal.ofReal_eq_zero.mpr hr_nonpos] at hnorm
-    exact (not_lt_of_ge (zero_le _)) hnorm
+    exact (not_lt_of_ge (zero_le)) hnorm
   rcases F.eq_empty_or_nonempty with hFempty | hFnonempty
   · rw [hGempty_of_Fempty hFempty]
     simp only [conditionalRademacherSup_empty, zero_le]

@@ -6,7 +6,7 @@
     {"id":"StatLean.StatisticalModels.Survival.nelsonAalen","label":"nelsonAalen","full":"StatLean.StatisticalModels.Survival.nelsonAalen","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
     {"id":"StatLean.StatisticalModels.Survival.naJump","label":"naJump","full":"StatLean.StatisticalModels.Survival.naJump","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
     {"id":"Finset.sum_insert","label":"sum_insert","full":"Finset.sum_insert","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"StatLean.StatisticalModels.Survival.eventCount","label":"eventCount","full":"StatLean.StatisticalModels.Survival.eventCount","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
     {"id":"StatLean.StatisticalModels.Survival.atRisk","label":"atRisk","full":"StatLean.StatisticalModels.Survival.atRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"}
   ],

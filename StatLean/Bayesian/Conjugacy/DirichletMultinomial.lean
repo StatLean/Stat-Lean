@@ -73,7 +73,8 @@ theorem dirichletWeight_mul_multinomialWeight {α : Fin (k + 1) → ℝ}
     -- multinomial `if` takes its positive branch
     have hcond : (∀ i, 0 ≤ simplexExtend θ i) ∧ (∑ i, simplexExtend θ i = 1)
         ∧ (∑ i, v i = n) := ⟨fun i => (hpos i).le, hsum, hv⟩
-    rw [dirichletWeight, if_pos hc, dirichletWeight, if_pos hc, multinomialWeight, if_pos hcond]
+    rw [dirichletWeight, ite_eq_left hc, dirichletWeight, ite_eq_left hc, multinomialWeight,
+        ite_eq_left hcond]
     have hAnn : (0 : ℝ) ≤ ∏ i, simplexExtend θ i ^ (α i - 1) :=
       Finset.prod_nonneg fun i _ => (Real.rpow_pos_of_pos (hpos i) _).le
     have hMnn : (0 : ℝ) ≤ (Nat.multinomial Finset.univ v : ℝ) := Nat.cast_nonneg _
@@ -92,8 +93,9 @@ theorem dirichletWeight_mul_multinomialWeight {α : Fin (k + 1) → ℝ}
           = (Nat.multinomial Finset.univ v : ℝ)
             * ((∏ i, simplexExtend θ i ^ (α i - 1)) * ∏ i, simplexExtend θ i ^ v i) from by ring,
       hprod]
-  · have h1 : dirichletWeight α θ = 0 := by rw [dirichletWeight, if_neg hc]
-    have h2 : dirichletWeight (α + fun i => (v i : ℝ)) θ = 0 := by rw [dirichletWeight, if_neg hc]
+  · have h1 : dirichletWeight α θ = 0 := by rw [dirichletWeight, ite_eq_right hc]
+    have h2 : dirichletWeight (α + fun i => (v i : ℝ)) θ = 0 := by
+      rw [dirichletWeight, ite_eq_right hc]
     rw [h1, h2, zero_mul, mul_zero]
 
 /-- **Dirichlet-Multinomial posterior** (Gelman §3.4): observing counts `v` updates
@@ -132,7 +134,6 @@ theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}
       (fun i => by simpa using add_pos_of_pos_of_nonneg (hα i) (Nat.cast_nonneg (v i)))
   · -- recognized form at every data point
     intro v
-    dsimp only
     have hg : Measurable (fun θ => multinomialWeight (k + 1) n (simplexExtend θ) v) :=
       hp.comp (measurable_id.prodMk measurable_const)
     by_cases hv : ∑ i, v i = n
@@ -146,7 +147,7 @@ theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}
         funext θ
         simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul]
         exact dirichletWeight_mul_multinomialWeight hα n v hv θ
-      rw [if_pos hv]
+      rw [ite_eq_left hv]
       simp only [dirichletMeasure]
       rw [withDensity_smul_measure, ← withDensity_mul _ (measurable_dirichletWeight α) hg, hfun,
         withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul, smul_smul,
@@ -155,8 +156,8 @@ theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}
     · have hz : (fun θ => multinomialWeight (k + 1) n (simplexExtend θ) v) = 0 := by
         funext θ
         simp only [multinomialWeight, Pi.zero_apply]
-        rw [if_neg]
+        rw [ite_eq_right]
         rintro ⟨-, -, h3⟩; exact hv h3
-      rw [hz, withDensity_zero, if_neg hv, zero_smul]
+      rw [hz, withDensity_zero, ite_eq_right hv, zero_smul]
 
 end StatLean.Bayesian

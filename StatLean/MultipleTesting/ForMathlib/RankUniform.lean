@@ -137,10 +137,10 @@ private lemma rk_comp_perm (t : Fin m → ℝ) (σ : Equiv.Perm (Fin m)) (i : Fi
   unfold rk
   refine Finset.card_nbij' (fun j => σ j) (fun j => σ.symm j) ?_ ?_ ?_ ?_
   · intro a ha
-    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq] at ha ⊢
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq] at ha ⊢
     exact ha
   · intro a ha
-    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq] at ha ⊢
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq] at ha ⊢
     rw [Equiv.apply_symm_apply]; exact ha
   · intro a _; exact σ.symm_apply_apply a
   · intro a _; exact σ.apply_symm_apply a
@@ -207,7 +207,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
   -- the tuple map and the rank-events
   set T : Ω → (Fin m → ℝ) := fun ω => fun l => S l ω with hTdef
   have hT : Measurable T := by
-    rw [hTdef]; exact measurable_pi_lambda _ (fun l => hmeas l)
+    rw [hTdef]; exact Measurable.of_eval (fun l => hmeas l)
   have hA : ∀ j : Fin m, MeasurableSet {t : Fin m → ℝ | rk t j ≤ k} := by
     intro j
     have he : {t : Fin m → ℝ | rk t j ≤ k} = (fun t => rk t j) ⁻¹' Set.Iic k := rfl
@@ -220,7 +220,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
     intro j; rw [hTdef]; rfl
   have hprecomp : ∀ σ : Equiv.Perm (Fin m),
       Measurable (fun t : Fin m → ℝ => (fun l => t (σ l))) :=
-    fun σ => measurable_pi_lambda _ (fun l => measurable_pi_apply (σ l))
+    fun σ => Measurable.of_eval (fun l => measurable_pi_apply (σ l))
   -- Step 1+2: all rank probabilities coincide (permutation invariance of the law)
   have heq : ∀ j : Fin m, μ {ω | rankOf S j ω ≤ k} = μ {ω | rankOf S i ω ≤ k} := by
     intro j
@@ -241,7 +241,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
     rw [Measure.map_apply (hprecomp σ) (hA j)]
     congr 1
     ext t
-    simp only [Set.mem_preimage, Set.mem_setOf_eq]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
     rw [rk_comp_perm, hσ, Equiv.swap_apply_right]
   -- Step 3+4: the ranks are a.s. a bijection, so the probabilities sum to `k`
   have hsum_eq : ∑ j : Fin m, μ {ω | rankOf S j ω ≤ k} = (k : ℝ≥0∞) := by
@@ -252,7 +252,7 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
         = ∑ j : Fin m, ∫⁻ ω, ({ω | rankOf S j ω ≤ k}).indicator (1 : Ω → ℝ≥0∞) ω ∂μ := by
           simp_rw [hstep]
       _ = ∫⁻ ω, ∑ j : Fin m, ({ω | rankOf S j ω ≤ k}).indicator (1 : Ω → ℝ≥0∞) ω ∂μ :=
-          (lintegral_finset_sum _ (fun j _ => measurable_one.indicator (hB j))).symm
+          (lintegral_finsetSum _ (fun j _ => measurable_one.indicator (hB j))).symm
       _ = ∫⁻ _ω, (k : ℝ≥0∞) ∂μ := by
           refine lintegral_congr_ae ?_
           filter_upwards [hdistinct] with ω hω
@@ -262,8 +262,8 @@ theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbab
             refine Finset.sum_congr rfl (fun j _ => ?_)
             rw [Set.indicator_apply]
             by_cases h : rankOf S j ω ≤ k
-            · simp [Set.mem_setOf_eq, h]
-            · simp [Set.mem_setOf_eq, h]
+            · simp [Set.mem_ofPred_eq, h]
+            · simp [Set.mem_ofPred_eq, h]
           have hcard : (Finset.univ.filter (fun j => rankOf S j ω ≤ k)).card = k :=
             card_filter_rk_le hω hk
           rw [hsum_card, hcard]

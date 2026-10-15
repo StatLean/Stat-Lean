@@ -16,8 +16,8 @@ random variables on a probability space $(\Omega, P)$.
 * **Central Limit Theorem.** If $X_0$ has a finite variance $\sigma^2 := \operatorname{Var}(X_0)$,
   then the centered and scaled partial sums converge in distribution to a centered
   Gaussian with that variance:
-  $$ \frac{1}{\sqrt{n}}\Bigl(\sum_{k<n} X_k - n\,\mu\Bigr) \;\xrightarrow{\;d\;}\; N(0, \sigma^2). $$
-  This is the standard Lindeberg–Lévy "sum-form" normalization; the more familiar
+  $$ \frac{1}{\sqrt{n}}\Bigl(\sum_{k<n} X_k - n\,\mu\Bigr) \;\xrightarrow{\;d\;}\; N(0,
+  \sigma^2). $$ This is the standard Lindeberg–Lévy "sum-form" normalization; the more familiar
   $\sqrt{n}\,(\bar X_n - \mu)/\sigma \to N(0,1)$ form follows by dividing through by
   $\sigma > 0$ (composing with the affine map $y \mapsto y/\sigma$, which sends
   $N(0,\sigma^2)$ to $N(0,1)$).
@@ -107,7 +107,7 @@ theorem law_of_large_numbers_in_probability
   have hf_ae : ∀ (n : ℕ), AEStronglyMeasurable
       (fun ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) P := fun (n : ℕ) =>
     ((Finset.aestronglyMeasurable_sum (Finset.range n) (fun i _ => hX_ae i)).congr
-        (Filter.Eventually.of_forall fun ω => Finset.sum_apply ω _ X)).const_smul' _
+        (Filter.Eventually.of_forall fun ω => Finset.sum_apply ω _ X)).fun_const_smul _
   exact MeasureTheory.tendstoInMeasure_of_tendsto_ae hf_ae hae
 
 /-- **Central Limit Theorem** (Lu BDA §4.1).

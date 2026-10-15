@@ -174,7 +174,7 @@ private lemma taylorWithin_Icc_lagrange {a b : ℝ} (hab : a < b) {f : ℝ → �
     intro c _
     have h := ((hasDerivAt_id c).const_sub x).pow (n + 1)
     simp only [id_eq, Nat.add_sub_cancel] at h
-    rw [hGdef, hG'def]; convert h using 1; push_cast; ring
+    rw [hGdef, hG'def]; convert! h using 1; push_cast; ring
   obtain ⟨ξ, hξ, hmvt⟩ :=
     exists_ratio_hasDerivAt_eq_ratio_slope F F' hlt hFcont hFderiv G G' hGcont hGderiv
   refine ⟨ξ, hξ, ?_⟩

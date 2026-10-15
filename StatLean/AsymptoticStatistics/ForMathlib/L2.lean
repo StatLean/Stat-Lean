@@ -108,7 +108,7 @@ lemma integrable_mul_of_memLp_two
     (μ : Measure 𝓧) {f g : 𝓧 → ℝ}
     (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun x => f x * g x) μ := by
-  simpa using hf.integrable_mul hg
+  simpa using! hf.integrable_mul hg
 
 /-- **L² norm-square convergence from L²-difference convergence.**
 
@@ -148,7 +148,7 @@ lemma tendsto_integral_sq_of_tendsto_integral_diff_sq
       have h_cont : Continuous Real.sqrt := Real.continuous_sqrt
       have h_at_zero : Real.sqrt 0 = 0 := Real.sqrt_zero
       have := (h_cont.tendsto 0).comp h_diff_tendsto
-      simpa [h_at_zero] using this
+      simpa [h_at_zero] using! this
     -- Multiply by the constant `√(∫g²)`.
     have h_const : Tendsto (fun _ : ℕ => Real.sqrt (∫ x, (g x) ^ 2 ∂μ))
         atTop (𝓝 (Real.sqrt (∫ x, (g x) ^ 2 ∂μ))) := tendsto_const_nhds

@@ -4,7 +4,8 @@ import StatLean.AsymptoticStatistics.LowerBounds.LAMSemiparametricBridge
 import StatLean.AsymptoticStatistics.Efficiency.HajekLeCamConvolution
 import StatLean.AsymptoticStatistics.ParametricFamily.RegularEstimator
 import Mathlib.MeasureTheory.Group.Convolution
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
 # Semiparametric Convolution Theorem (unbounded densities, scalar form)
@@ -238,7 +239,7 @@ lemma ψ_proj_coord_zero_smul
       = ψ_P + t * ⟪(IF_eff : ↥(L2ZeroMean P)), linPerturbScore g_P h⟫_ℝ := by
   unfold ψ_proj
   rw [PiLp.single_apply]
-  simp only [if_true]
+  simp only [ite_true]
   congr 1
   -- ⟪IF_eff, linPerturbScore g_P (t • h)⟫ = t · ⟪IF_eff, linPerturbScore g_P h⟫
   -- Because linPerturbScore is linear in h.
@@ -696,10 +697,25 @@ noncomputable def unboundedParamSubmodel_RegularEstimatorSequence
       (ψ_proj g_P IF_eff (ψ P)) (T_param_of T_n) where
   limitDist := L.map (EuclideanSpace.single (0 : Fin 1)
     : ℝ → EuclideanSpace ℝ (Fin 1))
-  isProb := MeasureTheory.Measure.isProbabilityMeasure_map
-    measurable_single_zero.aemeasurable
-  tendsto := productMeasure_unbounded_pushforward_vec
-    T_set hψ hEIF T_n hT_meas hReg g_P h_orth h_in_T
+  isProb := (by infer_instance)
+  tendsto h := by
+    have ht := productMeasure_unbounded_pushforward_vec
+      T_set hψ hEIF T_n hT_meas hReg g_P h_orth h_in_T h
+    rw [AsymptoticStatistics.LowerBounds.RegularEstimator.map₀_sequence_eq_map
+      (fun n : ℕ => AsymptoticStatistics.AsymptoticRepresentation.productMeasure
+        (unboundedParamSubmodel g_P h_orth) P
+        ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h) n)
+      (fun n : ℕ => fun X => Real.sqrt n •
+        (T_param_of T_n n X - ψ_proj g_P IF_eff (ψ P)
+          ((0 : EuclideanSpace ℝ (Fin m)) + (Real.sqrt n)⁻¹ • h)))
+      (fun n : ℕ => by
+        have hmT : Measurable (T_param_of T_n n) := by
+          unfold T_param_of
+          exact (WithLp.measurable_toLp 2 (Fin 1 → ℝ)).comp
+            (Measurable.of_eval fun _ => hT_meas n)
+        exact (measurable_const_smul (Real.sqrt n)).comp
+          (hmT.sub measurable_const))]
+    exact ht
 
 /-! ## §7 — Main theorem: drift-free convolution decomposition -/
 
@@ -794,7 +810,7 @@ theorem derived_convolution_decomp_unbounded
       (fun h => ψDot_proj_clm_apply g_P IF_eff h)
       (T_param_of T_n) hT_param_meas hReg_param
       (unboundedParamSubmodel_isPDFOf g_P h_orth)
-  haveI := hM_θ_prob
+  have := hM_θ_prob
   -- hConv : hReg_param.limitDist = N(0, ψDotMat * I⁻¹ * ψDotMatᵀ) ∗ M_θ
   -- where hReg_param.limitDist = L.map (single 0).
   -- ===== Step 4: scalar collapse via pr0. =====
@@ -807,8 +823,6 @@ theorem derived_convolution_decomp_unbounded
     rw [innerSL_apply_apply, PiLp.inner_apply]
     rw [Fin.sum_univ_one]
     simp [EuclideanSpace.single]
-    change y.ofLp 0 * 1 = y.ofLp 0
-    ring
   have hpr0_single : ∀ r : ℝ, pr0 (EuclideanSpace.single (0 : Fin 1) r) = r := by
     intro r
     rw [hpr0_apply]
@@ -910,14 +924,13 @@ theorem derived_convolution_decomp_unbounded
     rw [h_dot_eq]
     exact Real.coe_toNNReal _ (by simpa [hσ_sq_real_def] using h_dot_nn.trans_eq h_dot_eq)
   -- ===== Step 5: assemble. =====
-  refine ⟨M_θ.map pr0, Measure.isProbabilityMeasure_map pr0.continuous.measurable.aemeasurable, ?_⟩
+  refine ⟨M_θ.map pr0, (by infer_instance), ?_⟩
   have h_limitDist :
       hReg_param.limitDist =
         L.map (EuclideanSpace.single (0 : Fin 1) : ℝ → EuclideanSpace ℝ (Fin 1)) := rfl
   rw [h_limitDist] at hConv
   have h_apply := congrArg (fun μ : Measure (EuclideanSpace ℝ (Fin 1)) =>
     μ.map (pr0 : _ → ℝ)) hConv
-  simp only at h_apply
   rw [h_map_LHS_eq] at h_apply
   rw [h_map_RHS_eq, h_gauss_collapse] at h_apply
   exact h_apply

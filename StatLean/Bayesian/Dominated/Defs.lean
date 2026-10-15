@@ -13,7 +13,8 @@ Given a prior `π` on the parameter space `Θ` and a nonnegative jointly-measura
 
 * the **prior predictive (marginal) density** $m(x) = \int_\Theta p(\theta, x)\,\pi(d\theta)$;
 * the **posterior density** $\theta \mapsto p(\theta, x) / m(x)$ with respect to the prior;
-* the **Bayes posterior kernel** $x \mapsto \pi.\mathrm{withDensity}(\theta \mapsto p(\theta,x)/m(x))$,
+* the **Bayes posterior kernel**
+  $x \mapsto \pi.\mathrm{withDensity}(\theta \mapsto p(\theta,x)/m(x))$,
   the explicit density-form posterior.
 
 The theorem that this explicit kernel agrees, for predictive-almost-every `x`, with Mathlib's

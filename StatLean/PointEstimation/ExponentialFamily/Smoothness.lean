@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -144,7 +145,7 @@ private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
       exact mul_le_mul_of_nonneg_left hnorm hc
     have hprod : ∏ i, Real.exp (c * |⟪b i, v⟫_ℝ|)
         ≤ ∏ i, (Real.exp (c * ⟪b i, v⟫_ℝ) + Real.exp (-(c * ⟪b i, v⟫_ℝ))) := by
-      apply Finset.prod_le_prod (fun i _ => Real.exp_nonneg _)
+      apply Finset.prod_le_prod₀ (fun i _ => Real.exp_nonneg _)
       intro i _
       rcases le_total 0 (⟪b i, v⟫_ℝ) with h | h
       · rw [abs_of_nonneg h]; linarith [Real.exp_pos (-(c * ⟪b i, v⟫_ℝ))]
@@ -181,7 +182,7 @@ private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
     (innerSL ℝ η).continuous.measurable.comp E.stat_meas
   have hg_int : Integrable
       (fun x => ∑ t : Finset (Fin N), |f x| * Real.exp ⟪η + w t, E.stat x⟫_ℝ) E.base :=
-    integrable_finset_sum _ (fun t _ => hwmem t)
+    integrable_finsetSum _ (fun t _ => hwmem t)
   refine hg_int.mono' ?_ (Filter.Eventually.of_forall fun x => ?_)
   · exact (hf.abs.aestronglyMeasurable).mul
       ((hinner_meas.add ((E.stat_meas.norm).const_mul c)).exp.aestronglyMeasurable)
@@ -232,7 +233,7 @@ theorem hasFDerivAt_integral_exp_inner
     intro s hs
     have h1 := habsorb s hs
     have h2 : s ≤ s * Real.exp (r * s) := by
-      nlinarith [Real.one_le_exp_iff.mpr (by positivity : (0:ℝ) ≤ r * s), hs]
+      nlinarith [Real.one_le_exp_iff.mpr (by positivity : (0 : ℝ) ≤ r * s), hs]
     linarith
   -- the dominating bound
   set bound : 𝓧 → ℝ := fun x =>
@@ -244,7 +245,7 @@ theorem hasFDerivAt_integral_exp_inner
   -- `bound` is integrable via the sign-vector envelope (with `c = 2r`)
   have henv : Integrable
       (fun x => |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + 2 * r * ‖E.stat x‖)) E.base := by
-    apply integrable_abs_exp_inner_add_norm E hf (by positivity : (0:ℝ) ≤ 2 * r)
+    apply integrable_abs_exp_inner_add_norm E hf (by positivity : (0 : ℝ) ≤ 2 * r)
     intro ww hww
     have hlt : ‖ww‖ < ρ := by
       calc ‖ww‖ ≤ 2 * (2 * r) * (N : ℝ) := hww
@@ -332,7 +333,7 @@ theorem hasFDerivAt_integral_exp_inner
     rw [ContinuousLinearMap.integral_apply hFη_int, innerSL_apply_apply,
       real_inner_comm, ← integral_inner hgT_int v]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    simp only [ContinuousLinearMap.smul_apply, innerSL_apply_apply, real_inner_smul_right,
+    simp only [smul_apply, innerSL_apply_apply, real_inner_smul_right,
       real_inner_comm (E.stat x) v, smul_eq_mul]
   rw [hcomm] at key
   exact key
@@ -396,10 +397,10 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hsub : {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} ⊆
         integrableExpSet Y (μof w) := by
       intro t ht
-      simp only [Set.mem_setOf_eq] at ht
+      simp only [Set.mem_ofPred_eq] at ht
       have htmem : η + t • u ∈ E.weightedNatSet f := interior_subset ht
       have hint : Integrable (fun x => |f x| * Real.exp ⟪η + t • u, E.stat x⟫_ℝ) E.base := htmem
-      simp only [integrableExpSet, Set.mem_setOf_eq, hμof]
+      simp only [integrableExpSet, Set.mem_ofPred_eq, hμof]
       rw [integrable_withDensity_iff (hdmeas w hw).ennreal_ofReal
         (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
       refine hint.mono' (((hYmeas.const_mul t).exp.aestronglyMeasurable).mul
@@ -415,7 +416,7 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
       isOpen_interior.preimage hcont
     have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
-      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+      simp only [Set.mem_ofPred_eq, zero_smul, add_zero]; exact hη
     exact interior_maximal hsub hUopen h0U
   -- (c) the `n`-th derivative of the mgf at `0` is the `n`-th `Y`-moment of `μof w`
   have hiter : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
@@ -469,7 +470,7 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
       isOpen_interior.preimage hcont
     have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
-      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+      simp only [Set.mem_ofPred_eq, zero_smul, add_zero]; exact hη
     filter_upwards [hUopen.mem_nhds h0U] with t ht
     rw [Pi.sub_apply, hmgf _ hfp hfp_nn t, hmgf _ hfm hfm_nn t,
       ← integral_sub (hintw _ hfp hfp_nn hfp_le t ht) (hintw _ hfm hfm_nn hfm_le t ht)]
@@ -538,7 +539,7 @@ theorem analyticAt_integral_exp_mul (E : ExpFamily 𝓧 ℝ) {f : 𝓧 → ℝ}
       E.weightedNatSet f ⊆ integrableExpSet E.stat (E.base.withDensity
         fun x => ENNReal.ofReal (w x)) := by
     intro w hw hwnn hwle ζ hζ
-    simp only [integrableExpSet, Set.mem_setOf_eq]
+    simp only [integrableExpSet, Set.mem_ofPred_eq]
     rw [integrable_withDensity_iff hw.ennreal_ofReal
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
     refine ((hintw w hw hwnn hwle ζ hζ).congr (Filter.Eventually.of_forall fun x => ?_))
@@ -638,7 +639,7 @@ theorem analyticOnNhd_integral_exp_inner
       rw [Finset.abs_prod]
       calc ∏ i, |⟪m i, E.stat x⟫_ℝ|
           ≤ ∏ i : Fin n, ‖m i‖ * ‖E.stat x‖ :=
-            Finset.prod_le_prod (fun i _ => abs_nonneg _)
+            Finset.prod_le_prod₀ (fun i _ => abs_nonneg _)
               (fun i _ => abs_real_inner_le_norm _ _)
         _ = (∏ i, ‖m i‖) * ‖E.stat x‖ ^ n := by
             rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
@@ -750,7 +751,7 @@ theorem analyticOnNhd_integral_exp_inner
   intro y hy
   have hyc : ‖y‖ < c := by
     have h := Metric.mem_eball.mp hy
-    rw [edist_zero_right, ← ofReal_norm_eq_enorm] at h
+    rw [edist_zero_right, ← ofReal_norm] at h
     exact (ENNReal.ofReal_lt_ofReal_iff hc).mp h
   -- the termwise integrands
   set F : ℕ → 𝓧 → ℝ :=

@@ -140,7 +140,8 @@ Null(X)` (same image) and `Δ ∈ C(S)` (by `deviation_mem_cone_of_basisPursuit`
 `Δ ∈ C(S) ∩ Null(X) = {0}`, so `β = β*`. -/
 theorem unique_basisPursuit_of_cone_trivial
     (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
-    -- USER-INPUT: cone ∩ null space is trivial, C(S) ∩ Null(X) = {0}; Lu-BDA §8.2, Definition 8.3 (Cone Condition)
+    -- USER-INPUT: cone ∩ null space is trivial, C(S) ∩ Null(X) =
+    -- {0}; Lu-BDA §8.2, Definition 8.3 (Cone Condition)
     (htriv : reCone S 1 ∩ (LinearMap.ker (designMap X) : Set (EuclideanSpace ℝ (Fin d))) = {0})
     (βstar : EuclideanSpace ℝ (Fin d))
     -- USER-INPUT: β* is supported on S; Lu-BDA §8.2, Theorem 8.1

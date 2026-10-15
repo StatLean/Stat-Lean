@@ -198,7 +198,7 @@ private lemma gaussian_tail_tendsto {c : ℝ} (hc : 0 < c) {Mseq : ℕ → ℝ}
     measurableSet_le measurable_const (by fun_prop)
   have hTanti : Antitone T := by
     intro i j hij v hv
-    simp only [hTdef, Set.mem_setOf_eq] at hv ⊢
+    simp only [hTdef, Set.mem_ofPred_eq] at hv ⊢
     exact le_trans (by exact_mod_cast hij) hv
   have hTinter : (⋂ j, T j) = (∅ : Set (EuclideanSpace ℝ (Fin k))) := by
     ext v
@@ -242,7 +242,7 @@ private lemma poly_mul_exp_neg_tendsto {k : ℕ} {c D : ℝ} (hc : 0 < c) (hD : 
     rw [show (1 : ℝ) = Real.sqrt 1 by simp]
     exact Real.sqrt_le_sqrt hnR
   have hn2 : Real.sqrt n ≤ (n : ℝ) := by
-    nlinarith [Real.sq_sqrt (show (0:ℝ) ≤ (n : ℝ) by positivity)]
+    nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ (n : ℝ) by positivity)]
   have hexp : Real.exp (-c * n * D ^ 2) ≤ Real.exp (-(b * Real.sqrt n)) := by
     refine Real.exp_le_exp.2 ?_
     have : b * Real.sqrt n ≤ b * n := by gcongr
@@ -313,7 +313,7 @@ private lemma moderate_zone_bound {c : ℝ} {n : ℕ}
     have hnorm : ‖Real.sqrt n • (θ - θ₀)‖ = Real.sqrt n * ‖θ - θ₀‖ := by
       rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
     have hmem : Real.sqrt n • (θ - θ₀) ∈ T := by
-      rw [hTdef, Set.mem_setOf_eq, hnorm]
+      rw [hTdef, Set.mem_ofPred_eq, hnorm]
       have := hsR θ hθ
       rw [div_le_iff₀ hsq] at this
       linarith [this]
@@ -323,7 +323,7 @@ private lemma moderate_zone_bound {c : ℝ} {n : ℕ}
     ring_nf
     exact le_rfl
   · rw [Set.indicator_of_notMem hθ]
-    exact zero_le _
+    exact zero_le
 
 /-- **The Step-A tail split** (vdV p. 142, final display of the concentration step): for every
 exponent `c > 0` and every `Mₙ → ∞`,
@@ -379,7 +379,7 @@ theorem prior_tail_split
     rw [add_zero] at h3
     exact h3
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound0
-    (Eventually.of_forall fun n => zero_le _) ?_
+    (Eventually.of_forall fun n => zero_le) ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   have hs : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR
@@ -390,7 +390,7 @@ theorem prior_tail_split
   have hBm : MeasurableSet B := (hSm n).diff Metric.isOpen_ball.measurableSet
   -- split the integral
   have hsplit : ∫⁻ θ in S n, g n θ ∂π ≤ ∫⁻ θ in A, g n θ ∂π + ∫⁻ θ in B, g n θ ∂π := by
-    have hSAB : S n = A ∪ B := by rw [hAdef, hBdef, Set.inter_union_diff]
+    have hSAB : S n = A ∪ B := by rw [hAdef, hBdef, Set.inter_union_sdiff]
     rw [hSAB]
     exact lintegral_union_le _ _ _
   -- moderate zone

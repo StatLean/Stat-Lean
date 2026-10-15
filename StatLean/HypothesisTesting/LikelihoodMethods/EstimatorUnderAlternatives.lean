@@ -236,7 +236,7 @@ lemma exists_radius_eventually_measureReal_norm_le
     exact this.trans hx
   have hinter : (⋂ j : ℕ, {x : E | (j : ℝ) ≤ ‖x‖}) = ∅ := by
     ext x
-    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_forall,
       not_le]
     exact exists_nat_gt ‖x‖
   have htend : Tendsto (fun j : ℕ => ν {x : E | (j : ℝ) ≤ ‖x‖}) atTop (𝓝 0) := by
@@ -273,7 +273,7 @@ lemma exists_radius_eventually_measureReal_norm_le
       intro ω
       by_cases hω : ω ∈ {ω : Ω n | c + 1 ≤ ‖V n ω‖}
       · have h1 : (1 : ℝ) ≤ ‖V n ω‖ - c := by
-          have := hω; simp only [Set.mem_setOf_eq] at this; linarith
+          have := hω; simp only [Set.mem_ofPred_eq] at this; linarith
         rw [Set.indicator_of_mem hω, hgval, min_eq_left h1]
         simp
       · rw [Set.indicator_of_notMem hω, hgval]
@@ -293,7 +293,7 @@ lemma exists_radius_eventually_measureReal_norm_le
       · rw [Set.indicator_of_mem hx, hgval]
         exact max_le zero_le_one (min_le_left _ _)
       · have hx' : ‖x‖ - c < 0 := by
-          simp only [Set.mem_setOf_eq, not_le] at hx; rw [hc]; linarith
+          simp only [Set.mem_ofPred_eq, not_le] at hx; rw [hc]; linarith
         rw [Set.indicator_of_notMem hx, hgval]
         exact max_le le_rfl ((min_le_right _ _).trans hx'.le)
     have hgint : Integrable (fun x => g x) ν :=
@@ -413,7 +413,7 @@ private lemma map_fst_withDensity_exp_tilt_graphJoint
   classical
   have hJsymm : Jᵀ = J := by
     have := hJ_psd.1
-    simpa [Matrix.conjTranspose, Matrix.transpose] using this
+    simpa [Matrix.conjTranspose, Matrix.transpose] using! this
   have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
     simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
   set c : ℝ := (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫ with hc
@@ -457,7 +457,7 @@ private lemma map_fst_withDensity_exp_tilt_graphJoint
   have hcov : J⁻¹ * J * (J⁻¹)ᴴ = J⁻¹ := by
     have hH' : (J⁻¹)ᴴ = J⁻¹ := by
       have : (J⁻¹)ᵀ = (Jᵀ)⁻¹ := Matrix.transpose_nonsing_inv J
-      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using
+      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using!
         congrArg id (this.trans (by rw [hJsymm]))
     rw [hinvmul, one_mul, hH']
   rw [hmean, hcov]
@@ -503,9 +503,9 @@ private lemma joint_weak_estimator_scoreSum
   have hF_cont : Continuous F :=
     (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id
   have hF_meas : Measurable F := hF_cont.measurable
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+    (by infer_instance)
   have hX : WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)))
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) := by
@@ -532,7 +532,7 @@ private lemma joint_weak_estimator_scoreSum
   refine Filter.Tendsto.congr (fun n => ?_) (hlin ε hε)
   congr 1
   ext ω
-  simp only [Set.mem_setOf_eq, hF, hd]
+  simp only [Set.mem_ofPred_eq, hF, hd]
 
 /-- **Joint limit of the recentred estimator and the log-likelihood ratio, under `P^n_{θ₀}`.**
 
@@ -571,10 +571,10 @@ private lemma joint_weak_estimator_logLikelihood
   have hF_meas : Measurable
       (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
     ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+    (by infer_instance)
   set G : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) →
       EuclideanSpace ℝ (Fin k) × ℝ :=
     fun p => (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫) with hG
@@ -733,16 +733,16 @@ theorem weak_limit_estimator_under_fixed_local_alternative
         (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) :=
     (continuous_fst.prodMk
       ((continuous_const.inner continuous_snd).sub continuous_const)).measurable
-  haveI hπ0 : IsProbabilityMeasure
+  have hπ0 : IsProbabilityMeasure
       ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
-    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
-  haveI hπ : IsProbabilityMeasure
+    (by infer_instance)
+  have hπ : IsProbabilityMeasure
       (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
           (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
         (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
           (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) :=
-    Measure.isProbabilityMeasure_map hG_meas.aemeasurable
+    (by infer_instance)
   -- The joint limit is carried by the graph of `J⁻¹`, so its second marginal is `N(0, J)`.
   have hmarg : ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
         (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map Prod.snd
@@ -874,7 +874,7 @@ private lemma integral_close_varying_direction
     fun θ => μ.withDensity fun x => ENNReal.ofReal (M.density θ x) with hQdef
   have hQpi : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       productMeasure M μ θ n = Measure.pi fun _ : Fin n => Q θ := fun _ _ => rfl
-  haveI hQprob : ∀ θ : EuclideanSpace ℝ (Fin k), IsProbabilityMeasure (Q θ) := by
+  have hQprob : ∀ θ : EuclideanSpace ℝ (Fin k), IsProbabilityMeasure (Q θ) := by
     intro θ
     refine ⟨?_⟩
     rw [hQdef]
@@ -1368,7 +1368,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
   set c : ℝ := ε / (4 * (K + H + 1)) with hcdef
   have hc0 : 0 < c := by rw [hcdef]; positivity
   have hcKH : c * (K + H) < ε / 4 := by
-    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0:ℝ) < 4)]
+    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0 : ℝ) < 4)]
     nlinarith
   -- First-order expansion of `g` at `θ₀`, with remainder `Rf`.
   set Rf : EuclideanSpace ℝ (Fin k) → ℝ :=
@@ -1386,7 +1386,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
       rw [hρdef] at hθ
       linarith
     have := hρ hd
-    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply] using this
+    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply_apply] using this
   -- Eventually the whole picture sits inside the ball of radius `ρ`.
   have hsqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * (K + H)) atTop (𝓝 0) := by
     have h1' : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
@@ -1406,7 +1406,7 @@ theorem weak_limit_g_estimator_under_local_alternatives
       ⊆ {ω : Fin n → 𝓧 | K ≤ ‖Real.sqrt n • (est n ω - localAlt θ₀ h_n n)‖} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_setOf_eq, not_le] at hcon
+    simp only [Set.mem_ofPred_eq, not_le] at hcon
     -- Both `θ̂ₙ` and `θₙ` are within `ρ` of `θ₀`.
     have hU : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + H := by
       have hsplit : Real.sqrt n • (est n ω - θ₀)

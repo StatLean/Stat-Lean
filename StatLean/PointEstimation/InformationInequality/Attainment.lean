@@ -95,7 +95,7 @@ theorem cramer_rao_attained_of_affine (M : ParametricFamily 𝓧 ℝ) (μ : Meas
     (haffine : ∀ᵐ x ∂(M.toMeasure μ θ), δ x = a * score M θ x + b) :
     variance δ (M.toMeasure μ θ)
       = (∫ x, δ x * score M θ x * M.density θ x ∂μ) ^ 2 / fisherInfo M μ θ := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
   -- positivity of the information makes the second moment of the score genuinely integrable
   have hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ := by
@@ -168,7 +168,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
     (hattain : variance δ (M.toMeasure μ θ) = g' ^ 2 / fisherInfo M μ θ) :
     ∀ᵐ x ∂(M.toMeasure μ θ), score M θ x
       = fisherInfo M μ θ / g' * (δ x - ∫ y, δ y ∂(M.toMeasure μ θ)) := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
   have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
   have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two
@@ -187,7 +187,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
     hδ2.sub (hscoreL2.const_mul c)
   have i1 : Integrable (fun x => (δ x - m) ^ 2) (M.toMeasure μ θ) := hδmL2.integrable_sq
   have i2 : Integrable (fun x => (δ x - m) * score M θ x) (M.toMeasure μ θ) :=
-    memLp_one_iff_integrable.mp (hscoreL2.mul' hδmL2)
+    memLp_one_iff_integrable.mp (hδmL2.fun_mul hscoreL2)
   have i3 : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := hscoreL2.integrable_sq
   have hEY : ∫ x, (δ x - c * score M θ x) ∂(M.toMeasure μ θ) = m := by
     rw [integral_sub hδ_intP (hscore_intP.const_mul c), integral_const_mul, hmean0P,
@@ -199,7 +199,7 @@ theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ :
   have hcross : ∫ x, (δ x - m) * score M θ x ∂(M.toMeasure μ θ) = g' := by
     have hsplit : (fun x => (δ x - m) * score M θ x)
         = fun x => δ x * score M θ x - m * score M θ x := by funext x; ring
-    rw [hsplit, integral_sub (memLp_one_iff_integrable.mp (hscoreL2.mul' hδ2))
+    rw [hsplit, integral_sub (memLp_one_iff_integrable.mp (hδ2.fun_mul hscoreL2))
       (hscore_intP.const_mul m), integral_const_mul, hmean0P, mul_zero, sub_zero, hcovP]
   -- the residual `δ − c·ℓ̇` has zero variance
   have hvarY : variance (fun x => δ x - c * score M θ x) (M.toMeasure μ θ) = 0 := by

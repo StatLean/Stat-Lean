@@ -11,8 +11,8 @@
     {"id":"StatLean.NonparametricStatistics.scalarKernel_eq_inner","label":"scalarKernel_eq_inner","full":"StatLean.NonparametricStatistics.scalarKernel_eq_inner","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"StatLean.NonparametricStatistics.IsKernelFun.mk","label":"mk","full":"StatLean.NonparametricStatistics.IsKernelFun.mk","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
     {"id":"inner_conj_symm","label":"inner_conj_symm","full":"inner_conj_symm","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
-    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"sum_inner","label":"sum_inner","full":"sum_inner","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"inner_smul_left","label":"inner_smul_left","full":"inner_smul_left","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"inner_sum","label":"inner_sum","full":"inner_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
@@ -23,7 +23,7 @@
     {"id":"RCLike.inner_apply'","label":"inner_apply'","full":"RCLike.inner_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"map_one","label":"map_one","full":"map_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"RingHomClass.toMonoidWithZeroHomClass","label":"toMonoidWithZeroHomClass","full":"RingHomClass.toMonoidWithZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Hom.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.isKernelFun_scalarKernel","target":"StatLean.NonparametricStatistics.IsKernelFun"},
@@ -41,8 +41,8 @@
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"StatLean.NonparametricStatistics.featureKernel"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"StatLean.NonparametricStatistics.IsKernelFun.mk"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"inner_conj_symm"},
-    {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"Finset.sum_congr"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"sum_inner"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"Finset.sum_congr"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"inner_smul_left"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"inner_sum"},
     {"source":"StatLean.NonparametricStatistics.isKernelFun_featureKernel","target":"Finset.mul_sum"},

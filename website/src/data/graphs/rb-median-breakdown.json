@@ -38,7 +38,7 @@
     {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
     {"id":"not_le","label":"not_le","full":"not_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
-    {"id":"Nat.sSup_mem","label":"sSup_mem","full":"Nat.sSup_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Lattice"},
+    {"id":"Nat.sSup_mem","label":"sSup_mem","full":"Nat.sSup_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice.Nat"},
     {"id":"le_csSup","label":"le_csSup","full":"le_csSup","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
     {"id":"StatLean.RobustStatistics.sampleMedian_eq_orderStat","label":"sampleMedian_eq_orderStat","full":"StatLean.RobustStatistics.sampleMedian_eq_orderStat","kind":"repo","decl":"thm","module":"StatLean.RobustStatistics.LocationScale.Median"},
     {"id":"Tuple.lt_card_ge_iff_apply_ge_of_antitone","label":"lt_card_ge_iff_apply_ge_of_antitone","full":"Tuple.lt_card_ge_iff_apply_ge_of_antitone","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fin.Tuple.Sort"}

@@ -105,7 +105,7 @@ theorem clt_finDim
   have hP_map_prob : ∀ n : ℕ, IsProbabilityMeasure
       (P.map (fun ω : Ω => (Real.sqrt (n : ℝ))⁻¹ •
         ∑ i ∈ Finset.range n, Y i ω : Ω → EuclideanSpace ℝ (Fin k))) := fun n =>
-    Measure.isProbabilityMeasure_map (hW_meas n).aemeasurable
+    (by infer_instance)
   -- Reduce weak convergence to pointwise charFun convergence via Lévy continuity.
   suffices h_charFun : ∀ t : EuclideanSpace ℝ (Fin k),
       Tendsto (fun n : ℕ => charFun

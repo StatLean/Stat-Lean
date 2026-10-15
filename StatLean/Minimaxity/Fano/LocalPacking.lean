@@ -9,7 +9,8 @@ the convexity upper bound on the mutual information (Eq. (15.34)). Suppose we ca
 distance more than `2δ` in the metric `ρ`) whose pairwise Kullback–Leibler divergences are
 uniformly controlled and whose cardinality `M` is large enough. Concretely, if both
 
-* condition (15.35a): `√(D(P_{θʲ} ‖ P_{θᵏ})) ≤ c √n δ`  (equivalently `D(P_{θʲ} ‖ P_{θᵏ}) ≤ c² n δ²`), and
+* condition (15.35a): `√(D(P_{θʲ} ‖ P_{θᵏ})) ≤ c √n δ`
+  (equivalently `D(P_{θʲ} ‖ P_{θᵏ}) ≤ c² n δ²`), and
 * condition (15.35b): `log M ≥ 2{c² n δ² + log 2}`,
 
 then the minimax risk for estimating `θ(𝒫)` under the distortion `Φ ∘ ρ` is bounded below by half
@@ -33,9 +34,9 @@ bound (15.32).
 information `I` of the packing by the cover radius `c² n δ²` via the convexity bound (15.34),
 realized here as `mutualInformation_le_avg_pairwise_kl` averaged against (15.35a). Step 2 deduces
 from (15.35b) that `log M > 0`, hence `M ≥ 2`, so the Fano denominator is nondegenerate. Step 3
-shows the Fano fraction `(I + log 2) / log M ≤ ½` by combining the Step-1 bound with (15.35b). Step 4
-feeds `M ≥ 2`, monotonicity of `Φ`, and the separation hypothesis into the Fano minimax lower bound
-`minimax_fano_lower_bound` (Eq. (15.32)) and uses `1 - ½ = ½` to conclude `½ Φ(δ) ≤ 𝔐`. All
+shows the Fano fraction `(I + log 2) / log M ≤ ½` by combining the Step-1 bound with (15.35b). Step
+4 feeds `M ≥ 2`, monotonicity of `Φ`, and the separation hypothesis into the Fano minimax lower
+bound `minimax_fano_lower_bound` (Eq. (15.32)) and uses `1 - ½ = ½` to conclude `½ Φ(δ) ≤ 𝔐`. All
 arithmetic is carried out over `ℝ≥0∞`, with `ENNReal.ofReal` used to inject the real-valued bounds.
 
 **Bibliographic comments.** The local-packing / generalized-Fano scheme — combining a Fano-type
@@ -56,8 +57,8 @@ namespace StatLean.Minimaxity
 variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace Ω]
   [m𝓧 : MeasurableSpace 𝓧]
 
-/-- **Local-packing minimax lower bound** (Wainwright §15.3.3, conditions (15.35a)/(15.35b)): given a
-`2δ`-separated family `θfam : Fin M → Θ` whose pairwise KL divergences satisfy
+/-- **Local-packing minimax lower bound** (Wainwright §15.3.3, conditions (15.35a)/(15.35b)): given
+a `2δ`-separated family `θfam : Fin M → Θ` whose pairwise KL divergences satisfy
 `D(P_{θʲ} ‖ P_{θᵏ}) ≤ c²nδ²` (15.35a) and whose cardinality satisfies
 `log M ≥ 2(c²nδ² + log 2)` (15.35b), the minimax risk is at least `½ Φ(δ)`.
 
@@ -70,7 +71,8 @@ theorem minimax_local_packing [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
     (hΦ : Monotone Φ)
     -- USER-INPUT: `{θfam j}` is a `2δ`-separated set; Wainwright §15.3.3.
     (hsep : IsSeparatedFamily g θfam δ)
-    -- USER-INPUT: `n ≥ 0` (sample size — implicit in the book's `√n` in (15.35a)); Wainwright §15.3.3.
+    -- USER-INPUT: `n ≥ 0` (sample size — implicit in
+    -- the book's `√n` in (15.35a)); Wainwright §15.3.3.
     (hn : 0 ≤ n)
     -- USER-INPUT: pairwise KL control (15.35a), `√D ≤ c√n δ`; Wainwright §15.3.3.
     (h35a : ∀ j k, j ≠ k →
@@ -142,7 +144,7 @@ theorem minimax_local_packing [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
   have hfano := minimax_fano_lower_bound Φ g P θfam hθ δ hM2 hΦ hsep
   refine le_trans ?_ hfano
   rw [mul_comm (2 : ℝ≥0∞)⁻¹ (Φ δ)]
-  refine mul_le_mul_left' ?_ _
+  refine mul_le_mul_right ?_ _
   calc (2 : ℝ≥0∞)⁻¹ = 1 - 2⁻¹ := (ENNReal.one_sub_inv_two).symm
     _ ≤ 1 - (mutualInformation Q + ENNReal.ofReal (Real.log 2))
           / ENNReal.ofReal (Real.log (M : ℝ)) := tsub_le_tsub_left hfrac 1

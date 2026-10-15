@@ -110,7 +110,7 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
       · intro i hi
         by_cases hiW : i ∈ W
         · simp [hiW]
-        · simp only [hiW, if_false]
+        · simp only [hiW, ite_false]
           exact Finset.mem_insert_of_mem (hf'mem i (Finset.mem_sdiff.mpr ⟨hi, hiW⟩))
       · intro t ht
         rcases Finset.mem_insert.mp ht with heq | hts'
@@ -121,10 +121,10 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
             constructor
             · rintro ⟨hiV, hi⟩
               by_contra hiW
-              rw [if_neg hiW] at hi
+              rw [ite_eq_right hiW] at hi
               exact ht₀ (hi ▸ hf'mem i (Finset.mem_sdiff.mpr ⟨hiV, hiW⟩))
             · intro hiW
-              exact ⟨hWV hiW, by rw [if_pos hiW]⟩
+              exact ⟨hWV hiW, by rw [ite_eq_left hiW]⟩
           rw [hfil, hWcard]
         · have hne : t ≠ t₀ := fun h => ht₀ (h ▸ hts')
           have hfil : (V.filter fun i => (if i ∈ W then t₀ else f' i) = t)
@@ -134,12 +134,12 @@ private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
             constructor
             · rintro ⟨hiV, hi⟩
               by_cases hiW : i ∈ W
-              · rw [if_pos hiW] at hi
+              · rw [ite_eq_left hiW] at hi
                 exact absurd hi.symm hne
-              · rw [if_neg hiW] at hi
+              · rw [ite_eq_right hiW] at hi
                 exact ⟨⟨hiV, hiW⟩, hi⟩
             · rintro ⟨⟨hiV, hiW⟩, hi⟩
-              exact ⟨hiV, by rw [if_neg hiW]; exact hi⟩
+              exact ⟨hiV, by rw [ite_eq_right hiW]; exact hi⟩
           rw [hfil]
           exact hf'card t hts'
 
@@ -149,14 +149,14 @@ theorem validAllocations_nonempty (r : T → ℕ)
     (hr : ∑ t, r t = Fintype.card U) :
     (validAllocations (U := U) r).Nonempty := by
   rcases isEmpty_or_nonempty T with hT | hT
-  · haveI := hT
+  · have := hT
     have hU : Fintype.card U = 0 := by
       rw [← hr]; simp
-    haveI : IsEmpty U := Fintype.card_eq_zero_iff.mp hU
+    have : IsEmpty U := Fintype.card_eq_zero_iff.mp hU
     refine ⟨fun i => isEmptyElim i, ?_⟩
     rw [mem_validAllocations]
     exact fun t => isEmptyElim t
-  · haveI := hT
+  · have := hT
     obtain ⟨f, -, hf⟩ :=
       exists_allocation_aux (U := U) r Finset.univ Finset.univ
         (by rw [Finset.card_univ]; exact hr)
@@ -255,7 +255,7 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
   rw [PMF.map_apply, tsum_eq_single (fun i => b (σ.symm i))]
   · have hb : (fun i => (fun k => b (σ.symm k)) (σ i)) = b := by
       funext i; simp
-    rw [if_pos hb.symm]
+    rw [ite_eq_left hb.symm]
     simp only [completeRandomization]
     by_cases hmem : b ∈ validAllocations (U := U) r
     · rw [PMF.uniformOfFinset_apply_of_mem _ hmem,
@@ -265,7 +265,7 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
         PMF.uniformOfFinset_apply_of_notMem _
           (fun h => hmem ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mp h))]
   · intro a ha
-    refine if_neg fun h => ha ?_
+    refine ite_eq_right fun h => ha ?_
     subst h
     funext i
     simp
@@ -325,7 +325,7 @@ theorem expect_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfExpect (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) / (Fintype.card U : ℝ) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hK := card_validAllocations_ne_zero (U := U) r hr
   have key := card_mul_sum_armIndicator r t i
@@ -382,7 +382,7 @@ theorem expect_armIndicator_pair_same (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator t j a)
       = (r t : ℝ) * ((r t : ℝ) - 1)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
@@ -419,7 +419,7 @@ theorem expect_armIndicator_pair_distinct (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator s j a)
       = (r t : ℝ) * (r s : ℝ)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
@@ -450,7 +450,7 @@ theorem var_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfVar (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)) / (Fintype.card U : ℝ) ^ 2 := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hsq : (fun a => armIndicator t i a ^ 2) = armIndicator t i := by
     funext a
@@ -468,7 +468,7 @@ theorem cov_armIndicator_of_ne (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U
     pmfCov (completeRandomization r hr) (armIndicator t i) (armIndicator t j)
       = -((r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)))
           / ((Fintype.card U : ℝ) ^ 2 * ((Fintype.card U : ℝ) - 1)) := by
-  haveI : Nonempty U := ⟨i⟩
+  have : Nonempty U := ⟨i⟩
   have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by

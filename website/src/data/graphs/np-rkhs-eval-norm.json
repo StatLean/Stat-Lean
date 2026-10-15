@@ -11,7 +11,7 @@
     {"id":"SeparatelyContinuousMul.to_continuousSMul","label":"to_continuousSMul","full":"SeparatelyContinuousMul.to_continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"},
     {"id":"StatLean.NonparametricStatistics.evalCLM_eq_innerSL_kernelFun","label":"evalCLM_eq_innerSL_kernelFun","full":"StatLean.NonparametricStatistics.evalCLM_eq_innerSL_kernelFun","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"innerSL_apply_norm","label":"innerSL_apply_norm","full":"innerSL_apply_norm","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.LinearMap"},
-    {"id":"ContinuousLinearMap.ext","label":"ext","full":"ContinuousLinearMap.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
+    {"id":"ContinuousLinearMap.ext","label":"ext","full":"ContinuousLinearMap.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic"},
     {"id":"StatLean.NonparametricStatistics.evalCLM_apply","label":"evalCLM_apply","full":"StatLean.NonparametricStatistics.evalCLM_apply","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
     {"id":"innerSL_apply_apply","label":"innerSL_apply_apply","full":"innerSL_apply_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.LinearMap"},
     {"id":"StatLean.NonparametricStatistics.inner_kernelFun","label":"inner_kernelFun","full":"StatLean.NonparametricStatistics.inner_kernelFun","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
@@ -19,7 +19,7 @@
     {"id":"RCLike.inner_apply'","label":"inner_apply'","full":"RCLike.inner_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"map_one","label":"map_one","full":"map_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"RingHomClass.toMonoidWithZeroHomClass","label":"toMonoidWithZeroHomClass","full":"RingHomClass.toMonoidWithZeroHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Hom.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.NonparametricStatistics.norm_evalCLM","target":"StatLean.NonparametricStatistics.evalCLM"},

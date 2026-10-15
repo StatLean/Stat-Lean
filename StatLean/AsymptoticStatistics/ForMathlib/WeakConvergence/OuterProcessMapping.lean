@@ -1,3 +1,4 @@
+import StatLean.PointEstimation.ForMathlib.MeasureMap
 import StatLean.AsymptoticStatistics.ForMathlib.VaryingSetSupremum
 import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.OuterTightness
 import Mathlib.MeasureTheory.Integral.Lebesgue.Add
@@ -117,7 +118,7 @@ def PairSupConvergesOuter
     WeakConvergesOuterERealPair μ (fun n ω =>
       (ForMathlib.setSupEReal (Mn n ω) (F ∩ K ∩ Hn n),
         ForMathlib.setSupEReal (Mn n ω) (K ∩ Hn n)))
-      (μlim.map (fun ω =>
+      (μlim.map₀ (fun ω =>
         (ForMathlib.setSupEReal (M ω) (F ∩ K ∩ H),
           ForMathlib.setSupEReal (M ω) (K ∩ H))))
 
@@ -216,7 +217,7 @@ theorem weakConvergesOuter_of_closedSet_limsup {Ω D : Type*}
         ∫⁻ x, ENNReal.ofReal (g x + η) ∂ν := by
       have heqint : (∫⁻ x, ∑ k ∈ Finset.range (m + 1), v k x ∂ν) =
           ∑ k ∈ Finset.range (m + 1), c * ν (C k) := by
-        rw [lintegral_finset_sum (Finset.range (m + 1))]
+        rw [lintegral_finsetSum (Finset.range (m + 1))]
         · apply Finset.sum_congr rfl
           intro k hk
           simp [v, lintegral_indicator, (hC k).measurableSet, c]
@@ -325,7 +326,7 @@ theorem weakConvergesOuter_of_closedSet_limsup {Ω D : Type*}
     have hlower : 2 * ‖f‖ ≤
         (outerExpectation (μ n) (fun ω => ENNReal.ofReal (f (Xn n ω) + ‖f‖))).toReal +
         (outerExpectation (μ n) (fun ω => ENNReal.ofReal (-f (Xn n ω) + ‖f‖))).toReal := by
-      simpa only [norm_neg] using htoreal
+      simpa only [norm_neg] using! htoreal
     linarith
   have hRtend : Tendsto (R f) atTop (𝓝 (∫ x, f x ∂ν)) := by
     rw [Metric.tendsto_atTop]
@@ -361,7 +362,7 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
     limsup (fun n => (μ n).outerMeasureStar
         {ω | (pairn n ω).2 ≤ (r n ω : EReal) + (pairn n ω).1}) atTop
       ≤ μlim {ω | (pairLim ω).2 ≤ (pairLim ω).1} := by
-  letI : MetricSpace EReal := TopologicalSpace.metrizableSpaceMetric EReal
+  let : MetricSpace EReal := TopologicalSpace.metrizableSpaceMetric EReal
   change WeakConvergesOuter μ pairn (μlim.map pairLim) at hpair
   have hshift_mono {a b : ℝ} (hab : a ≤ b) (x : EReal) :
       (a : EReal) + x ≤ (b : EReal) + x := by
@@ -423,7 +424,7 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
     exact hω.trans (hshift_mono hdk _)
   have hSint : (⋂ k, S k) = {ω | (pairLim ω).2 ≤ (pairLim ω).1} := by
     ext ω
-    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro h
       have hdlim : Tendsto d atTop (𝓝 0) := by
@@ -432,7 +433,7 @@ theorem outer_supComparison_limsup_of_pair_weakConvergence
           (𝓝 (pairLim ω).1) := by
         have hcoe : Tendsto (fun k => (d k : EReal)) atTop (𝓝 (0 : EReal)) :=
           EReal.tendsto_coe.mpr hdlim
-        simpa using (EReal.continuousAt_add (.inl (EReal.coe_ne_top 0))
+        simpa using! (EReal.continuousAt_add (.inl (EReal.coe_ne_top 0))
           (.inl (EReal.coe_ne_bot 0))).tendsto.comp
             (hcoe.prodMk_nhds tendsto_const_nhds)
       exact ge_of_tendsto haddlim (Eventually.of_forall h)
@@ -623,7 +624,7 @@ theorem outer_supComparison_limsup_of_local_linf
         (.inl (by rw [hdθE.limsup_eq]; exact EReal.coe_ne_bot 0))
         (.inl (by rw [hdθE.limsup_eq]; exact EReal.coe_ne_top 0))
       rw [hdθE.limsup_eq, zero_add] at hadd
-      simpa only [Pi.add_apply] using hadd
+      simpa only [Pi.add_apply] using! hadd
     calc
       ForMathlib.linfSetSup z (interior K ∩ H) ≤ liminf a atTop := hden.1
       _ ≤ limsup a atTop := hden.2.1

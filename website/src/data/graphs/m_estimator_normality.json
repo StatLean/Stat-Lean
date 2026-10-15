@@ -2,11 +2,10 @@
   "root": "AsymptoticStatistics.MEstimator.m_estimator_normality",
   "nodes": [
     {"id":"AsymptoticStatistics.MEstimator.m_estimator_normality","label":"m_estimator_normality","full":"AsymptoticStatistics.MEstimator.m_estimator_normality","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.MEstimator.AsymptoticNormality"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"Function.smulCommClass","label":"smulCommClass","full":"Function.smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
     {"id":"Algebra.to_smulCommClass","label":"to_smulCommClass","full":"Algebra.to_smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Basic"},
-    {"id":"UniformContinuousConstSMul.to_continuousConstSMul","label":"to_continuousConstSMul","full":"UniformContinuousConstSMul.to_continuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformMulAction"},
     {"id":"IsBoundedSMul.toUniformContinuousConstSMul","label":"toUniformContinuousConstSMul","full":"IsBoundedSMul.toUniformContinuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
     {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
@@ -20,15 +19,15 @@
     {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.psiCov","label":"psiCov","full":"AsymptoticStatistics.EmpiricalProcess.psiCov","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNormality"},
     {"id":"ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map","label":"isUnit_of_forall_le_norm_inner_map","full":"ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Positive"},
-    {"id":"Real.toNNReal_pos","label":"toNNReal_pos","full":"Real.toNNReal_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"},
-    {"id":"Real.coe_toNNReal","label":"coe_toNNReal","full":"Real.coe_toNNReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"},
+    {"id":"Real.toNNReal_pos","label":"toNNReal_pos","full":"Real.toNNReal_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.NNReal.Defs"},
+    {"id":"Real.coe_toNNReal","label":"coe_toNNReal","full":"Real.coe_toNNReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.NNReal.Defs"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"Real.norm_eq_abs","label":"norm_eq_abs","full":"Real.norm_eq_abs","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Real"},
     {"id":"real_inner_comm","label":"real_inner_comm","full":"real_inner_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"mul_nonneg","label":"mul_nonneg","full":"mul_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"sq_nonneg","label":"sq_nonneg","full":"sq_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"},
     {"id":"StarOrderedRing.toExistsAddOfLE","label":"toExistsAddOfLE","full":"StarOrderedRing.toExistsAddOfLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Star.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
@@ -46,14 +45,14 @@
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"}
+    {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"fact_one_le_two_ennreal"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Function.smulCommClass"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Algebra.to_smulCommClass"},
-    {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"UniformContinuousConstSMul.to_continuousConstSMul"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"IsBoundedSMul.toUniformContinuousConstSMul"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"NormedSpace.toIsBoundedSMul"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"PiLp.completeSpace"},
@@ -93,6 +92,7 @@
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"BorelSpace.opensMeasurable"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"PiLp.borelSpace"},
     {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Real.borelSpace"},
-    {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Filter.mp_mem"}
+    {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Filter.mp_mem"},
+    {"source":"AsymptoticStatistics.MEstimator.m_estimator_normality","target":"Filter.univ_mem'"}
   ]
 }

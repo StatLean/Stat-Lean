@@ -16,8 +16,8 @@ This follows immediately from the one-sided KS union-bound tail inequality (form
 union tail equal to $n\,e^{-2n\,u_\alpha^{2}} = n\cdot(\alpha/n) = \alpha$.
 
 The sharp Dvoretzky–Kiefer–Wolfowitz–Massart constant would let the threshold improve to
-$\sqrt{\log(2/\alpha)/(2n)}$; the version proved here uses the (weaker) union-bound tail, which is the
-inequality actually available in the library.
+$\sqrt{\log(2/\alpha)/(2n)}$; the version proved here uses the (weaker) union-bound tail, which is
+the inequality actually available in the library.
 
 **Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023. Lecture 3, §3.3.1 (Kolmogorov–Smirnov goodness-of-fit test).
@@ -27,13 +27,13 @@ independent, super-uniform p-values), $\mu\{\mathrm{KS}^{+} \ge u_\alpha\} \le \
 plugs the threshold $u = u_\alpha$ (which is $\ge 0$) into the one-sided union-bound KS tail
 `ksPlus_tail_union`, then simplifies the resulting bound $n\,e^{-2n u_\alpha^{2}} = \alpha$ using
 $u_\alpha^{2} = \log(n/\alpha)/(2n)$ and $e^{-\log(n/\alpha)} = \alpha/n$. The library uses the
-union-bound tail rather than the sharp Massart constant, hence the threshold $\sqrt{\log(n/\alpha)/(2n)}$
-in place of the sharper $\sqrt{\log(2/\alpha)/(2n)}$.
+union-bound tail rather than the sharp Massart constant, hence the threshold
+$\sqrt{\log(n/\alpha)/(2n)}$ in place of the sharper $\sqrt{\log(2/\alpha)/(2n)}$.
 
 **Bibliographic comments.** The two-sided KS statistic and its limiting distribution originate with
 A. N. Kolmogorov, "Sulla determinazione empirica di una legge di distribuzione," *Giornale
-dell'Istituto Italiano degli Attuari* **4** (1933), 83–91, who derived the asymptotic distribution of
-$\sqrt{n}\,\sup_t |F_n(t) - F(t)|$ for continuous $F$. N. V. Smirnov, "Table for estimating the
+dell'Istituto Italiano degli Attuari* **4** (1933), 83–91, who derived the asymptotic distribution
+of $\sqrt{n}\,\sup_t |F_n(t) - F(t)|$ for continuous $F$. N. V. Smirnov, "Table for estimating the
 goodness of fit of empirical distributions," *Annals of Mathematical Statistics* **19** (1948),
 279–281, tabulated the limiting distribution and studied the two-sample form. The *non-asymptotic*
 exponential tail bound used here (and the underlying finite-$n$ control of the empirical process

@@ -176,7 +176,7 @@ private lemma sum_rootU_pow_fin {T : ℕ} (t s : Fin T) :
   by_cases h : s = t
   · subst h
     simp [rootU_zero]
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     refine sum_rootU_pow ?_
     intro hdvd
     exact h (Fin.ext (by

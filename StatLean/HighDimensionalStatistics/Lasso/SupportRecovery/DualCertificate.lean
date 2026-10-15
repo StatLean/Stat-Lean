@@ -10,7 +10,8 @@ This file proves the deterministic core of Lasso variable-selection consistency:
 
 Consider the Lagrangian Lasso estimator
 $$ \hat\theta \;\in\; \arg\min_{\theta\in\mathbb{R}^d}\;
-   \Bigl\{ \tfrac{1}{2n}\,\lVert Y - X\theta\rVert_2^2 \;+\; \lambda\,\lVert\theta\rVert_1 \Bigr\}, $$
+   \Bigl\{ \tfrac{1}{2n}\,\lVert Y - X\theta\rVert_2^2
+   \;+\; \lambda\,\lVert\theta\rVert_1 \Bigr\}, $$
 with response $Y = X\theta^\* + w$, where the true parameter $\theta^\*$ is supported on a
 subset $S \subseteq \{1,\dots,d\}$ (i.e. $\theta^\*_j = 0$ for $j \notin S$). Assume:
 
@@ -122,25 +123,23 @@ private lemma transpose_restrict (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (F
 /-- `0 ≤ ⨆ i, |f i|` over a finite index. -/
 private lemma ciSup_abs_nonneg {ι : Type*} [Finite ι] (f : ι → ℝ) : 0 ≤ ⨆ i, |f i| := by
   rcases isEmpty_or_nonempty ι with he | hne
-  · haveI := he; simp [Real.iSup_of_isEmpty]
-  · haveI := Fintype.ofFinite ι
-    exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary ι) (abs_nonneg _)
+  · have := he; simp
+  · exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary ι) (abs_nonneg _)
 
 /-- The matrix ℓ∞ operator norm is nonnegative. -/
 private lemma matLinftyNorm_nonneg {p q : Type*} [Finite p] [Fintype q] (A : Matrix p q ℝ) :
     0 ≤ matLinftyNorm A := by
   unfold matLinftyNorm
   rcases isEmpty_or_nonempty p with he | hne
-  · haveI := he; simp [Real.iSup_of_isEmpty]
-  · haveI := Fintype.ofFinite p
-    exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary p)
+  · have := he; simp
+  · exact le_ciSup_of_le (Finite.bddAbove_range _) (Classical.arbitrary p)
       (Finset.sum_nonneg fun _ _ => abs_nonneg _)
 
 /-- ℓ∞-norm bound from a uniform coordinate bound (nonempty- and empty-safe). -/
 private lemma linfNorm_le_of_forall {x : EuclideanSpace ℝ (Fin d)} {c : ℝ} (hc : 0 ≤ c)
     (h : ∀ i, |x.ofLp i| ≤ c) : linfNorm x ≤ c := by
   rcases isEmpty_or_nonempty (Fin d) with he | hne
-  · haveI := he; simp only [linfNorm, Real.iSup_of_isEmpty]; exact hc
+  · have := he; simp only [linfNorm, Real.iSup_of_isEmpty]; exact hc
   · exact ciSup_le h
 
 /-! ## The "zero off `S`" design `X'` (PDW oracle device) -/
@@ -162,8 +161,8 @@ private lemma zeroOff_designMap_eq (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset 
   simp only [Matrix.mulVec, dotProduct, zeroOffCols, Matrix.of_apply]
   refine Finset.sum_congr rfl fun j _ => ?_
   by_cases hj : j ∈ S
-  · rw [if_pos hj]
-  · rw [if_neg hj, hθ j hj]; ring
+  · rw [ite_eq_left hj]
+  · rw [ite_eq_right hj, hθ j hj]; ring
 
 /-- For `i ∈ S`, the zeroed transpose acts like `Xᵀ`. -/
 private lemma zeroOff_transpose_coord (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
@@ -172,7 +171,7 @@ private lemma zeroOff_transpose_coord (X : Matrix (Fin n) (Fin d) ℝ) (S : Fins
   rw [designMap_ofLp, designMap_ofLp]
   simp only [Matrix.mulVec, dotProduct, Matrix.transpose_apply, zeroOffCols, Matrix.of_apply]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [if_pos hi]
+  rw [ite_eq_left hi]
 
 /-- **PDW oracle support** (Wainwright §7.5.2, step 1): every minimizer of the `X'`-Lasso
 objective is supported on `S`. -/
@@ -188,8 +187,8 @@ private lemma minimizer_supported (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (
     simp only [Matrix.mulVec, dotProduct, zeroOffCols, Matrix.of_apply, restrict_ofLp_apply]
     refine Finset.sum_congr rfl fun j _ => ?_
     by_cases hj : j ∈ S
-    · rw [if_pos hj, if_pos hj]
-    · rw [if_neg hj]; ring
+    · rw [ite_eq_left hj, ite_eq_left hj]
+    · rw [ite_eq_right hj]; ring
   have hle := hopt (restrict S θhat)
   unfold lassoObjective at hle
   rw [hdm] at hle
@@ -404,7 +403,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
     intro k
     rw [restrict_ofLp_apply]
     by_cases hk : k ∈ S
-    · rw [if_pos hk]
+    · rw [ite_eq_left hk]
       have hkeq : (θhat - θstar).ofLp k = θhat.ofLp k - θstar.ofLp k := by
         simp
       rw [hkeq]
@@ -415,7 +414,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
       have hA1 : |(gramInv X S *ᵥ ((Xsub X S)ᵀ *ᵥ w.ofLp)) (⟨k, hk⟩ : {x // x ∈ S})| ≤ A := by
         rw [hA, ← hfirst]
         exact le_ciSup_of_le (Finite.bddAbove_range _) (⟨k, hk⟩ : {x // x ∈ S}) le_rfl
-      haveI : Nonempty {x // x ∈ S} := ⟨⟨k, hk⟩⟩
+      have : Nonempty {x // x ∈ S} := ⟨⟨k, hk⟩⟩
       have hzSle1 : (⨆ i : {x // x ∈ S}, |zhat.ofLp i.val|) ≤ 1 :=
         ciSup_le (fun i => (hzS i.val i.2).2.2)
       have hsupB : (⨆ i : {x // x ∈ S},
@@ -445,7 +444,7 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
                 (⟨k, hk⟩ : {x // x ∈ S})|
             = lam * |(gramInvNorm X S *ᵥ (fun i : {x // x ∈ S} => zhat.ofLp i.val))
                 (⟨k, hk⟩ : {x // x ∈ S})| := by
-          rw [← hcoord, abs_mul, abs_of_pos (by positivity : (0:ℝ) < (n:ℝ))]; ring
+          rw [← hcoord, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < (n : ℝ))]; ring
         rw [hrw, hB, mul_comm (matLinftyNorm (gramInvNorm X S)) lam]
         exact mul_le_mul_of_nonneg_left hle2 hlampos.le
       calc |(gramInv X S *ᵥ ((Xsub X S)ᵀ *ᵥ w.ofLp)) (⟨k, hk⟩ : {x // x ∈ S})
@@ -456,9 +455,9 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
                 *ᵥ (fun i : {x // x ∈ S} => zhat.ofLp i.val)) (⟨k, hk⟩ : {x // x ∈ S})| :=
             habs_sub _ _
         _ ≤ A + B := by
-            rw [abs_mul, abs_of_pos (by positivity : (0:ℝ) < lam * (n:ℝ))]
+            rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < lam * (n : ℝ))]
             exact add_le_add hA1 hB1
-    · rw [if_neg hk, abs_zero]; linarith [hAnn, hBnn]
+    · rw [ite_eq_right hk, abs_zero]; linarith [hAnn, hBnn]
   -- Step 6 (7.53): the ẑ_{Sᶜ} block decomposition ẑ_j = μ_j + V_j.
   have zSc_eq : ∀ j ∉ S, zhat.ofLp j
       = ((Xsub X S)ᵀ *ᵥ (col X j).ofLp)
@@ -524,7 +523,6 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
       |(1 / (lam * (n : ℝ))) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp))| ≤ (1 - α) / 2 := by
     intro j hj
     have hjc : j ∈ Sᶜ := Finset.mem_compl.mpr hj
-    haveI : Nonempty {x // x ∈ Sᶜ} := ⟨⟨j, hjc⟩⟩
     have hcoordeq : ((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
         (⟨j, hjc⟩ : {x // x ∈ Sᶜ})
         = (1 / (n : ℝ)) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp)) := by
@@ -535,15 +533,15 @@ theorem pdw_witness_exists (X : Matrix (Fin n) (Fin d) ℝ)
     have hLHSabs : |(1 / (lam * (n : ℝ))) * ((col X j).ofLp ⬝ᵥ ((projPerp X S) *ᵥ w.ofLp))|
         = (1 / lam) * |((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
             (⟨j, hjc⟩ : {x // x ∈ Sᶜ})| := by
-      rw [hcoordeq, abs_mul, abs_mul, abs_of_pos (by positivity : (0:ℝ) < 1 / (lam * (n : ℝ))),
-        abs_of_pos (by positivity : (0:ℝ) < 1 / (n : ℝ))]
+      rw [hcoordeq, abs_mul, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 1 / (lam * (n : ℝ))),
+        abs_of_pos (by positivity : (0 : ℝ) < 1 / (n : ℝ))]
       field_simp
     have hcoord_le : |((Xsub X Sᶜ)ᵀ *ᵥ ((1 / (n : ℝ)) • (projPerp X S) *ᵥ w.ofLp))
           (⟨j, hjc⟩ : {x // x ∈ Sᶜ})| ≤ projNoiseLinf X S w := by
       unfold projNoiseLinf
       exact le_ciSup_of_le (Finite.bddAbove_range _) (⟨j, hjc⟩ : {x // x ∈ Sᶜ}) le_rfl
     have hP : projNoiseLinf X S w ≤ (1 - α) / 2 * lam := by
-      have h2 := mul_le_mul_of_nonneg_left hlam (le_of_lt (by positivity : (0:ℝ) < (1 - α) / 2))
+      have h2 := mul_le_mul_of_nonneg_left hlam (le_of_lt (by positivity : (0 : ℝ) < (1 - α) / 2))
       have hc : (1 - α) / 2 * ((2 / (1 - α)) * projNoiseLinf X S w) = projNoiseLinf X S w := by
         field_simp
       rw [hc] at h2

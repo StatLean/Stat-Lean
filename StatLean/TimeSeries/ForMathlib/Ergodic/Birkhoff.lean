@@ -80,6 +80,7 @@ private theorem birkhoffMax_le {g : α → ℝ} (N : ℕ) (x : α) :
   refine Finset.sup'_le _ _ fun k hk => ?_
   have hkN : k ≤ N := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
   rw [birkhoffSum_succ']
+  simp only [Pi.add_apply, Function.comp_apply]
   have h : birkhoffSum f g k (f x) ≤ max (birkhoffMax f g N (f x)) 0 := by
     cases k with
     | zero => simp
@@ -109,7 +110,7 @@ private theorem measurable_birkhoffMax {g : α → ℝ} (hfm : Measurable f) (hg
 private theorem integrable_birkhoffSum (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     (hg : Integrable g μ) (n : ℕ) : Integrable (birkhoffSum f g n) μ := by
   unfold birkhoffSum
-  exact integrable_finset_sum _ fun k _ => (hf.iterate k).integrable_comp_of_integrable hg
+  exact integrable_finsetSum _ fun k _ => (hf.iterate k).integrable_comp_of_integrable hg
 
 private theorem integrable_birkhoffMax (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     (hg : Integrable g μ) (N : ℕ) : Integrable (birkhoffMax f g N) μ := by
@@ -144,7 +145,7 @@ private theorem maximal_ergodic_aux (hf : MeasurePreserving f μ μ) {g : α →
   have hEmono : Monotone E := fun M N hMN x hx => lt_of_lt_of_le hx (birkhoffMax_mono x hMN)
   have hUnion : (⋃ N, E N) = {x | ∃ n : ℕ, 0 < birkhoffSum f g (n + 1) x} := by
     ext x
-    simp only [Set.mem_iUnion, hE, Set.mem_setOf_eq]
+    simp only [Set.mem_iUnion, hE, Set.mem_ofPred_eq]
     constructor
     · rintro ⟨N, hN⟩
       obtain ⟨k, _, hk⟩ := (Finset.lt_sup'_iff _).1 hN
@@ -213,7 +214,7 @@ theorem maximal_ergodic (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     exact Finset.sum_congr rfl fun k _ => hx k
   have hset : {x | ∃ n : ℕ, 0 < birkhoffSum f g (n + 1) x}
       =ᵐ[μ] {x | ∃ n : ℕ, 0 < birkhoffSum f g' (n + 1) x} := by
-    rw [Filter.eventuallyEq_set]
+    rw [Filter.eventuallyEqSet_iff]
     filter_upwards [hall] with x hx
     exact ⟨fun ⟨n, hn⟩ => ⟨n, (hx n) ▸ hn⟩, fun ⟨n, hn⟩ => ⟨n, (hx n).symm ▸ hn⟩⟩
   rw [setIntegral_congr_set hset,
@@ -284,7 +285,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
       rw [birkhoffSum_of_comp_eq hφf]
       simp [hφ, Pi.smul_apply, nsmul_eq_mul]
       ring
-    rw [hhPi, birkhoffSum_sub, hSφ]
+    rw [hhPi, birkhoffSum_sub, Pi.sub_apply, Pi.sub_apply, hSφ]
   -- the invariant set of points with unbounded Birkhoff sums
   set B : Set α := {x | ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x} with hB
   have hmemB : ∀ x, x ∈ B ↔ ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x :=
@@ -293,8 +294,8 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
     have hEq : B = ⋂ m : ℕ, ⋂ N : ℕ, ⋃ n : ℕ, ⋃ (_ : N ≤ n),
         {x | (m : ℝ) < birkhoffSum f h n x} := by
       ext x
-      simp only [hmemB, Set.mem_iInter, Set.mem_iUnion, Set.mem_setOf_eq,
-        Filter.frequently_atTop, ge_iff_le, exists_prop]
+      simp only [hmemB, Set.mem_iInter, Set.mem_iUnion, Set.mem_ofPred_eq,
+        Filter.frequently_atTop, exists_prop]
       refine ⟨fun hx m N => hx (m : ℝ) N, fun hx M N => ?_⟩
       obtain ⟨m, hm⟩ := exists_nat_gt M
       obtain ⟨n, hn1, hn2⟩ := hx m N
@@ -307,6 +308,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
       birkhoffSum f h n (f x) = birkhoffSum f h (n + 1) x - h x := by
     intro x n
     rw [birkhoffSum_succ']
+    simp only [Pi.add_apply, Function.comp_apply]
     ring
   have hBinv : f ⁻¹' B = B := by
     ext x
@@ -351,7 +353,7 @@ private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving
   have hmax := maximal_ergodic hf (hhint.indicator hBm)
   have hsetEq : {x | ∃ n : ℕ, 0 < birkhoffSum f (Set.indicator B h) (n + 1) x} = B := by
     ext x
-    simp only [Set.mem_setOf_eq, hSind]
+    simp only [Set.mem_ofPred_eq, hSind]
     constructor
     · rintro ⟨n, hn⟩
       by_contra hx

@@ -195,7 +195,7 @@ theorem firstOrder_condition_Pmdot_zero
       (ContinuousLinearMap.integral_comp_comm (innerSL ℝ) hpsi_int).symm.trans hFint_zero
     have hself := congrArg (fun L => L
       (∫ ω, psiVec (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ ω ∂P)) hz
-    simp only [innerSL_apply_apply, ContinuousLinearMap.zero_apply] at hself
+    simp only [innerSL_apply_apply, zero_apply] at hself
     exact inner_self_eq_zero.mp hself
   -- Extract each coordinate `P ṁ_i = 0` via the coordinate projection CLM.
   intro i
@@ -293,7 +293,7 @@ theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
     intro n ξ
     set e := empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)
     have hgapply : g e = -(Matrix.toEuclideanCLM (𝕜 := ℝ) A e) := by
-      rw [hg_def, map_neg, ContinuousLinearMap.neg_apply]
+      rw [hg_def, map_neg, neg_apply]
     rw [dist_eq_norm, hgapply,
       show -(Matrix.toEuclideanCLM (𝕜 := ℝ) A e) - T n ξ
           = -(T n ξ + Matrix.toEuclideanCLM (𝕜 := ℝ) A e) from by abel,
@@ -309,7 +309,7 @@ theorem asymptoticNormality_of_empiricalProcess_linearRepresentation
       funext n
       congr 1
       ext ξ
-      simp only [Set.mem_setOf_eq, hpt n ξ]
+      simp only [Set.mem_ofPred_eq, hpt n ξ]
     rw [hfam]
     exact hlinear ε hε
   exact WeakConverges.slutsky_of_tendstoInMeasure_dist
@@ -377,7 +377,7 @@ theorem mEstimator_hB_boundedInProb
     exact Measure.map_map
       (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) (-V⁻¹)).continuous.measurable (hG_meas n)
   rw [hfun] at hmap
-  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
+  have : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
       ((-V⁻¹) * psiCov P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ * (-V⁻¹)ᴴ)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _
   have hfG_meas : ∀ n, Measurable (fun ξ : Ξ =>
@@ -395,7 +395,7 @@ theorem mEstimator_hB_boundedInProb
           (empiricalProcessVec P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀ n
             (fun i : Fin n => X i.val ξ))) := by
     funext n ξ
-    rw [map_neg, ContinuousLinearMap.neg_apply]
+    rw [map_neg, neg_apply]
   rw [hneg] at hbdd
   exact hbdd
 
@@ -1068,9 +1068,9 @@ theorem m_estimator_normality_of_distL2_fixed_comparisons
       simp only [empiricalProcess, empiricalAvg]
       refine measurable_const.mul (Measurable.sub (measurable_const.mul ?_) measurable_const)
       exact Finset.measurable_sum _ (fun i _ => (hmdot_meas j).comp (hX_meas i.val))
-    simpa only [G] using
+    simpa only [G] using!
       (MeasurableEquiv.toLp 2 (Fin d → ℝ)).measurable.comp (measurable_pi_iff.mpr hcoord)
-  haveI : IsProbabilityMeasure
+  have : IsProbabilityMeasure
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d))
         (psiCov P (fun _ : EuclideanSpace ℝ (Fin d) => mdot) θ₀)) :=
     isGaussian_multivariateGaussian.toIsProbabilityMeasure _

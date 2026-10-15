@@ -97,7 +97,7 @@ private lemma isSubGaussian_inner_of_norm_le
     IsSubGaussian (fun ω => inner ℝ v (X ω)) σ2 μ := by
   apply isSubGaussian_mono (hX v)
   nth_rewrite 2 [← mul_one σ2]
-  apply mul_le_mul_of_nonneg_left _ (zero_le _)
+  apply mul_le_mul_of_nonneg_left _ (zero_le)
   have h_nnnorm_le : (‖v‖₊ : ℝ) ≤ 1 := by exact_mod_cast hv
   have h_sq_le : (‖v‖₊ : ℝ) ^ 2 ≤ 1 := by
     nlinarith [NNReal.coe_nonneg ‖v‖₊, sq_nonneg (1 - (‖v‖₊ : ℝ))]
@@ -117,9 +117,9 @@ private lemma integrable_iSup_fin
     {d : ℕ} [NeZero d] {μ : Measure Ω}
     {f : Fin d → Ω → ℝ} (hf : ∀ j, Integrable (f j) μ) :
     Integrable (fun ω => ⨆ j, f j ω) μ := by
-  haveI : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
+  have : Nonempty (Fin d) := Fin.pos_iff_nonempty.mp (Nat.pos_of_neZero d)
   apply Integrable.mono' (g := fun ω => ∑ j : Fin d, ‖f j ω‖)
-  · exact integrable_finset_sum _ (fun j _ => (hf j).norm)
+  · exact integrable_finsetSum _ (fun j _ => (hf j).norm)
   · exact (AEMeasurable.iSup (fun j =>
         (hf j).aestronglyMeasurable.aemeasurable)).aestronglyMeasurable
   · filter_upwards with ω
@@ -157,7 +157,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
     [DecidableEq (EuclideanSpace ℝ (Fin d))] : L2NetData d := by
   let ε' : ℝ≥0 := Real.toNNReal (1 / 2)
   have hcov_ne_top : Metric.coveringNumber ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENat.coe_ne_top _)
+    ne_top_of_le_ne_top (ENat.natCast_ne_top _)
       (coveringNumber_closedBall_le (d := d) (ε := 1 / 2) (by norm_num) (by norm_num))
   let N := Metric.minimalCover ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1)
   have hN_cov : Metric.IsCover ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) N :=
@@ -181,7 +181,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
     calc edist x v ≤ (ε' : ℝ≥0∞) := hv_edist
       _ = ENNReal.ofReal (1 / 2) := by simp [ε', ENNReal.ofReal, Real.toNNReal]
   have hF_card_le : F.card ≤ 5 ^ d := by
-    apply ENat.coe_le_coe.mp
+    apply ENat.natCast_le_natCast.mp
     calc (F.card : ℕ∞)
         = N.encard := hN_fin.encard_eq_coe_toFinset_card.symm
       _ = Metric.coveringNumber ε' (closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) :=
@@ -224,14 +224,14 @@ theorem l2_max_expectation
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
     (hX_int : Integrable X μ) :
     ∫ ω, ‖X ω‖ ∂μ ≤ 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) := by
-  haveI : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
+  have : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
   -- *** Step 1: Construct 1/2-net ***
   let net := buildL2Net d
   let F := net.F
   let k := F.card
   have hk_pos : 0 < k := Finset.card_pos.mpr net.hF_nonempty
-  haveI hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
+  have hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
   -- *** Step 2: Enumerate net as Fin k → E ***
   let e : Fin k → EuclideanSpace ℝ (Fin d) := fun j => (F.equivFin.symm j : F).val
   have he_norm : ∀ j, ‖e j‖ ≤ 1 := fun j =>
@@ -437,14 +437,14 @@ theorem l2_max_tail
     μ {ω | 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
            2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ)) < ‖X ω‖}
       ≤ ENNReal.ofReal δ := by
-  haveI : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
+  have : DecidableEq (EuclideanSpace ℝ (Fin d)) := Classical.decEq _
   -- *** Step 1: Build net ***
   let net := buildL2Net d
   let F := net.F
   let k := F.card
   have hk_pos : 0 < k := Finset.card_pos.mpr net.hF_nonempty
-  haveI hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
+  have hk_ne : NeZero k := ⟨Nat.pos_iff_ne_zero.mp hk_pos⟩
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk_pos
   let e : Fin k → EuclideanSpace ℝ (Fin d) := fun j => (F.equivFin.symm j : F).val
   have he_norm : ∀ j, ‖e j‖ ≤ 1 := fun j =>
     net.hF_norm (e j) (F.equivFin.symm j).prop
@@ -510,7 +510,7 @@ theorem l2_max_tail
     have hme : μ {ω | (0 : ℝ) < ‖X ω‖} = 0 := by
       apply measure_mono_null _ (ae_iff.mp hsupr0)
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       intro heq
       have h := hdiscr ω
       rw [heq, mul_zero] at h
@@ -520,18 +520,18 @@ theorem l2_max_tail
         ≤ μ {ω | (0 : ℝ) < ‖X ω‖} := by
             apply measure_mono
             intro ω hω
-            simp only [Set.mem_setOf_eq] at hω ⊢
+            simp only [Set.mem_ofPred_eq] at hω ⊢
             simp only [ht0] at hω
             exact hω
       _ = 0 := hme
-      _ ≤ ENNReal.ofReal δ := zero_le _
+      _ ≤ ENNReal.ofReal δ := zero_le
   · -- σ² > 0: use tail_max_le + l2_tail_numerical
     have hσ_pos : 0 < (σ2 : ℝ) :=
-      NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le σ2) (Ne.symm hσ0))
+      NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le (a := σ2)) (Ne.symm hσ0))
     set t := 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
              2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))
     have h_subset : {ω | t < ‖X ω‖} ⊆ {ω | t / 2 < ⨆ j, Y j ω} := by
-      intro ω hω; simp only [Set.mem_setOf_eq] at hω ⊢; linarith [hdiscr ω]
+      intro ω hω; simp only [Set.mem_ofPred_eq] at hω ⊢; linarith [hdiscr ω]
     calc μ {ω | t < ‖X ω‖}
         ≤ μ {ω | t / 2 < ⨆ j, Y j ω} := measure_mono h_subset
       _ ≤ ENNReal.ofReal ((k : ℝ) * Real.exp (-(t / 2) ^ 2 / (2 * ↑σ2))) :=

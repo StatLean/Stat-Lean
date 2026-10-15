@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorable
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorableVec
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.OneStep
@@ -381,3 +382,18 @@ import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreChosenPathsVec
 import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
 import StatLean.AsymptoticStatistics.StrictModel.MatrixBartlett
 import StatLean.AsymptoticStatistics.StrictModel.MatrixInfluenceEIF
+
+/-!
+# AsymptoticStatistics — area umbrella
+
+Parametric and semiparametric asymptotic statistics: consistency and asymptotic normality of
+moment, M-, Z- and one-step estimators, maximum likelihood, differentiability in quadratic mean,
+local asymptotic normality and contiguity, limits of experiments, the Hájek–Le Cam convolution and
+local asymptotic minimax theorems, empirical processes (Glivenko–Cantelli and Donsker classes
+under bracketing and uniform entropy), and semiparametric efficiency (tangent spaces, efficient
+influence functions, score operators).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and
+Probabilistic Mathematics, Cambridge University Press, 1998. Tag token `vdV §X.Y` in declaration
+docstrings.
+-/

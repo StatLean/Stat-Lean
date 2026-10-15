@@ -207,7 +207,7 @@ private lemma integral_cond_cell_aug [IsProbabilityMeasure μ] {f : Ω → ℝ}
     (hcell : μ (cell X x) ≠ 0) :
     ∫ ω, (g (X ω) + ind (Z ω) * (f ω - g (X ω)) / w (X ω)) ∂(μ[|cell X x])
       = g x + propensity μ Z X x * (cellMean μ Z X f true x - g x) / w x := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
   have ht : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
   have hfc : Integrable f (μ[|cell X x]) := integrable_cond' hf
@@ -237,7 +237,7 @@ private lemma integral_cond_cell_aug [IsProbabilityMeasure μ] {f : Ω → ℝ}
       = (g x * (w x)⁻¹) * ∫ ω, ind (Z ω) ∂(μ[|cell X x]) := integral_const_mul _ _
   rw [hcongr, e1, e2, e3, e4, integral_ind_mul_cond_cell hZ hX hf x,
     integral_ind_cond_cell hZ hX x]
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, one_mul]
+  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
   ring
 
 /-- The cell-wise mean of a general augmented control integrand. -/
@@ -246,7 +246,7 @@ private lemma integral_cond_cell_augControl [IsProbabilityMeasure μ] {f : Ω �
     (hcell : μ (cell X x) ≠ 0) :
     ∫ ω, (g (X ω) + (1 - ind (Z ω)) * (f ω - g (X ω)) / (1 - w (X ω))) ∂(μ[|cell X x])
       = g x + (1 - propensity μ Z X x) * (cellMean μ Z X f false x - g x) / (1 - w x) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
   have hfl : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
   have hfc : Integrable f (μ[|cell X x]) := integrable_cond' hf
@@ -279,7 +279,7 @@ private lemma integral_cond_cell_augControl [IsProbabilityMeasure μ] {f : Ω �
       = (g x * (1 - w x)⁻¹) * ∫ ω, (1 - ind (Z ω)) ∂(μ[|cell X x]) := integral_const_mul _ _
   rw [hcongr, e1, e2, e3, e4, integral_one_sub_ind_mul_cond_cell hZ hX hf hcell,
     integral_one_sub_ind_cond_cell hZ hX hcell]
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, one_mul]
+  simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
   ring
 
 /-- The treated arm regression function of the observed outcome is that of `y1`. -/

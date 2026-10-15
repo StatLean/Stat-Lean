@@ -233,7 +233,7 @@ theorem residual_memLp_eventually (γ : QMDPath P) :
       _ < 1 * ENNReal.ofReal |t| :=
           ENNReal.mul_lt_mul_left hofreal_ne_zero hofreal_ne_top ht_lt
       _ = ENNReal.ofReal |t| := one_mul _
-  exact ⟨h_res_aesm t, lt_trans h_eLp_lt ENNReal.ofReal_lt_top⟩
+  exact lt_trans h_eLp_lt ENNReal.ofReal_lt_top
 
 /-- Corollary of the `ℝ≥0∞`-form `qmd_limit`: the classical
 `.toReal² / t² → 0` formulation. Used by downstream consumers that need
@@ -289,7 +289,7 @@ theorem qmd_limit_toReal_sq (γ : QMDPath P) :
     filter_upwards [h_self_ne, h_mem] with t ht_ne ht_mem
     have habs : 0 < |t| := abs_pos.mpr ht_ne
     have hofreal_pos : 0 < ENNReal.ofReal |t| := ENNReal.ofReal_pos.mpr habs
-    have h_eLp_ne_top : eLpNorm _ 2 γ.dominating ≠ ⊤ := ht_mem.2.ne
+    have h_eLp_ne_top : eLpNorm _ 2 γ.dominating ≠ ⊤ := ht_mem.ne
     rw [ENNReal.toReal_div, ENNReal.toReal_ofReal habs.le]
   have h_toReal' :
       Tendsto (fun t : ℝ =>
@@ -390,7 +390,10 @@ theorem score_in_L2ZeroMean
   -- The `h_qmd` hypothesis matches `IsQMDLimit curve μ g` definitionally
   -- (the inline lambda equals `qmdRem curve μ g t` by definition).
   have h_qmd' :
-      AsymptoticStatistics.ForMathlib.QMDAnalytic.IsQMDLimit curve μ g := h_qmd
+      AsymptoticStatistics.ForMathlib.QMDAnalytic.IsQMDLimit curve μ g := by
+    apply (AsymptoticStatistics.ForMathlib.QMDAnalytic.isQMDLimit_iff_eLpNorm
+      hg_meas.aestronglyMeasurable).2
+    simpa only [AsymptoticStatistics.ForMathlib.QMDAnalytic.qmdRem] using! h_qmd
   -- Stage-1 engine: `g · √p_0 ∈ L²(μ)`.
   have h_g_sqrt :
       MemLp (fun ω => g ω * Real.sqrt ((curve 0).rnDeriv μ ω).toReal) 2 μ :=

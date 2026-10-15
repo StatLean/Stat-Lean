@@ -100,7 +100,7 @@ theorem isTightMeasureSet_probabilityMeasure_coercion
   have h_set_eq : {x | ∃ μ ∈ Set.range PM_m, (μ : MeasureTheory.Measure E) = x} =
       Set.range (fun m => (PM_m m : MeasureTheory.Measure E)) := by
     ext x
-    simp only [Set.mem_setOf, Set.mem_range]
+    simp only [Set.mem_ofPred, Set.mem_range]
     constructor
     · intro ⟨μ, ⟨m, hm⟩, hx⟩
       exact ⟨m, hm ▸ hx⟩
@@ -157,7 +157,6 @@ theorem levyMpass_vec
     ∃ M : Measure (EuclideanSpace ℝ (Fin k)),
       IsProbabilityMeasure M ∧
       L = (multivariateGaussian 0 G) ∗ M := by
-  
   -- Step 0: The Gaussian charFn never vanishes.
   have hGauss_ne : ∀ (S : Matrix (Fin k) (Fin k) ℝ) (hS : S.PosSemidef) (t : EuclideanSpace ℝ (Fin
       k)),
@@ -165,34 +164,28 @@ theorem levyMpass_vec
     intro S hS t
     exact (charFun_multivariateGaussian (μ := (0 : EuclideanSpace ℝ (Fin k))) hS t).symm ▸
       Complex.exp_ne_zero _
-  
   -- Step 1: Define the char-fn quotient f(t).
   set f : EuclideanSpace ℝ (Fin k) → ℂ := fun t =>
     charFun L t / charFun (multivariateGaussian 0 G) t
-  
   -- f is continuous.
   have hf_cont : Continuous f := by
     refine Continuous.div continuous_charFun continuous_charFun ?_
     intro t; exact hGauss_ne G hG_psd t
   have hf_cont0 : ContinuousAt f 0 := hf_cont.continuousAt
-  
   -- Step 2: Per-m equation and convergence.
-  haveI : ∀ m, IsProbabilityMeasure (M_m m) := fun m => inferInstance
-  
+  have : ∀ m, IsProbabilityMeasure (M_m m) := fun m => inferInstance
   have hCharFn_conv : ∀ m (t : EuclideanSpace ℝ (Fin k)),
       charFun L t =
         charFun (multivariateGaussian 0 (Sigma_m m)) t * charFun (M_m m) t := by
     intro m t
     rw [hL_decomp m]
     exact charFun_conv (μ := multivariateGaussian 0 (Sigma_m m)) (ν := M_m m) t
-  
   have hCharFn_M : ∀ m (t : EuclideanSpace ℝ (Fin k)),
       charFun (M_m m) t =
         charFun L t / charFun (multivariateGaussian 0 (Sigma_m m)) t := by
     intro m t
     field_simp [hGauss_ne (Sigma_m m) (hSigma_psd m) t]
     linear_combination (hCharFn_conv m t).symm
-  
   -- Pointwise convergence of charFn (M_m m) to f
   have hCharFn_M_lim : ∀ t : EuclideanSpace ℝ (Fin k),
       Filter.Tendsto (fun m => charFun (M_m m) t) Filter.atTop (𝓝 (f t)) := by
@@ -210,24 +203,18 @@ theorem levyMpass_vec
     change Filter.Tendsto (fun m => charFun (M_m m) t) Filter.atTop (𝓝 (f t))
     convert h_target using 2 with m
     exact hCharFn_M m t
-  
   -- Step 3: Tightness.
   have hTight : IsTightMeasureSet (Set.range M_m) :=
     isTightMeasureSet_of_tendsto_charFun hf_cont0 hCharFn_M_lim
-  
   -- Step 4: Prokhorov extraction on the tight family.
   let PM_m : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
     fun m => ⟨M_m m, inferInstance⟩
-  
   have hCompact : IsCompact (closure (Set.range PM_m)) := by
     apply isCompact_closure_of_isTightMeasureSet
     exact isTightMeasureSet_probabilityMeasure_coercion M_m hTight PM_m (fun _ => rfl)
-  
   obtain ⟨M_PM, hM_PM_in_closure, φ, hφ_mono, hφ_tendsto⟩ :=
     hCompact.tendsto_subseq (fun n => subset_closure (Set.mem_range_self n))
-  
   let M := (M_PM : Measure (EuclideanSpace ℝ (Fin k)))
-  
   -- Step 5: Identify charFun M = f via weak convergence.
   have hCharFn_M_eq :
       ∀ t : EuclideanSpace ℝ (Fin k),
@@ -240,21 +227,16 @@ theorem levyMpass_vec
       have : Filter.Tendsto (fun k => charFun (M_m (φ k)) t) Filter.atTop (𝓝 (f t)) :=
         (hCharFn_M_lim t).comp hφ_mono.tendsto_atTop
       simpa [PM_m] using this
-    
     have h_sub_to_M :
         Filter.Tendsto
           (fun k => charFun ((PM_m (φ k) : Measure _)) t)
           Filter.atTop (𝓝 (charFun M t)) :=
       (ProbabilityMeasure.tendsto_iff_tendsto_charFun.mp hφ_tendsto) t
-    
     exact tendsto_nhds_unique h_sub_to_M h_sub_to_f
-  
   -- Step 6: Conclude via char-fn uniqueness.
   refine ⟨M, inferInstance, ?_⟩
-  
   refine Measure.ext_of_charFun ?_
   ext t
-  
   rw [charFun_conv, hCharFn_M_eq t]
   -- Goal: charFun L t = charFun (multivariateGaussian 0 G) t * f t
   -- where f t = charFun L t / charFun (multivariateGaussian 0 G) t

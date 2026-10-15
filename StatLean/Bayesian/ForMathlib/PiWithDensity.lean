@@ -10,7 +10,8 @@ version `integral_fintype_prod_eq_prod` exists):
 * `lintegral_pi_prod` — Tonelli for a product of coordinate functions,
   $$\int \prod_i f_i(x_i)\,d\mu^{\otimes n} = \prod_i \int f_i\,d\mu;$$
 * `pi_withDensity` — a finite product of `withDensity` measures is `withDensity` of the product
-  density, $\bigotimes_i \mu\!\cdot\!f_i = \mu^{\otimes n}\cdot\big(x \mapsto \prod_i f_i(x_i)\big).$
+  density, $\bigotimes_i \mu\!\cdot\!f_i = \mu^{\otimes
+  n}\cdot\big(x \mapsto \prod_i f_i(x_i)\big).$
 
 These power the iid-kernel density representation (`StatLean.Bayesian.ForMathlib.IIDKernel`) and
 hence every `n`-observation posterior in the Bayesian area.
@@ -40,6 +41,7 @@ namespace StatLean.Bayesian
 
 variable {𝓧 : Type*} [m𝓧 : MeasurableSpace 𝓧]
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Heterogeneous Tonelli for coordinate products (private engine; the homogeneous
 `lintegral_pi_prod` and the box computation in `pi_withDensity` both consume it). Mirrors the
 Bochner `integral_fin_nat_prod_eq_prod`, peeling one coordinate with `piFinSuccAbove`. -/
@@ -48,9 +50,9 @@ private theorem lintegral_pi_prod_hetero {n : ℕ} {α : Fin n → Type*}
     {f : (i : Fin n) → α i → ℝ≥0∞} (hf : ∀ i, Measurable (f i)) :
     ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi μ) = ∏ i, ∫⁻ y, f i y ∂(μ i) := by
   induction n with
-  | zero => haveI := hμ; simp [Measure.pi_empty_univ]
+  | zero => simp [Measure.pi_empty_univ]
   | succ n ih =>
-      haveI := hμ
+      have := hμ
       have hg : Measurable fun z : (j : Fin n) → α j.succ => ∏ i, f i.succ (z i) :=
         Finset.measurable_prod _ fun i _ => (hf i.succ).comp (measurable_pi_apply i)
       rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).lintegral_comp_emb

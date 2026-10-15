@@ -116,7 +116,6 @@ theorem coveringNumber_ne_top_of_totallyBounded {T : Set E}
   rcases T.eq_empty_or_nonempty with rfl | hTne
   · simp [coveringNumber]
   obtain ⟨x₀, hx₀⟩ := hTne
-  haveI : Nonempty E := ⟨x₀⟩
   -- External `ε/2`-cover from total boundedness.
   obtain ⟨t, htfin, htcov⟩ := (Metric.totallyBounded_iff.mp hTB) (ε / 2) (by linarith)
   -- Center-swap: for each center `y` whose ball meets `T`, pick an internal
@@ -202,7 +201,7 @@ lemma one_lt_coveringNumber_of_two_mul_lt_dist {T : Set E} {ε : ℝ} {a b : E}
     (h : 2 * ε < dist a b) :
     1 < coveringNumber T ε := by
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have hnetop : Metric.coveringNumber (Real.toNNReal ε) T ≠ ⊤ :=
     ne_top_of_le_ne_top (by norm_num) hle
   obtain ⟨C, hCsub, hCfin, hCcov, hCenc⟩ := Metric.exists_set_encard_eq_coveringNumber hnetop
@@ -228,7 +227,7 @@ lemma exists_coarse_scale {D : ℝ}
     ∃ κ : ℤ, D ≤ (2 : ℝ) ^ (-κ) ∧ (2 : ℝ) ^ (-κ) < 2 * D := by
   refine ⟨-Int.clog 2 D, ?_, ?_⟩
   · rw [neg_neg]
-    simpa using Int.self_le_zpow_clog (by norm_num) D
+    simpa using! Int.self_le_zpow_clog (by norm_num) D
   · rw [neg_neg]
     have hpred := Int.zpow_pred_clog_lt_self (R := ℝ) (b := 2) (by norm_num) hD
     simp only [Nat.cast_ofNat] at hpred
@@ -304,7 +303,7 @@ lemma netProj_mem {N : Finset E}
     -- LEAN-ONLY: nonemptiness excludes the junk branch of `netProj`
     (hN : N.Nonempty) (x : E) :
     netProj N x ∈ N := by
-  simp only [netProj, dif_pos hN]
+  simp only [netProj, dite_eq_left hN]
   exact (N.exists_min_image (fun a => dist x a) hN).choose_spec.1
 
 /-- The projection beats any witness: if some net point is `ε`-close to `x`,
@@ -315,7 +314,7 @@ lemma dist_netProj_le {N : Finset E} {x : E} {ε : ℝ}
     dist x (netProj N x) ≤ ε := by
   obtain ⟨a, haN, ha⟩ := hx
   have hN : N.Nonempty := ⟨a, haN⟩
-  simp only [netProj, dif_pos hN]
+  simp only [netProj, dite_eq_left hN]
   exact le_trans ((N.exists_min_image (fun a => dist x a) hN).choose_spec.2 a haN) ha
 
 open Classical in
@@ -366,12 +365,12 @@ lemma biSup_sum_le_sum_biSup {T : Set E}
       ≤ ∑ i ∈ Finset.range n, ⨆ t ∈ T, g i t := by
   classical
   obtain ⟨t₀, ht₀⟩ := hne
-  haveI : Nonempty E := ⟨t₀⟩
+  have : Nonempty E := ⟨t₀⟩
   -- The value `⨆ (_ : t ∈ T), h t` is `h t` when `t ∈ T` and `0` (via `sSup ∅`) otherwise.
   have inner_pos : ∀ (h : E → ℝ) {t : E}, t ∈ T → (⨆ _ : t ∈ T, h t) = h t := by
-    intro h t ht; haveI : Nonempty (t ∈ T) := ⟨ht⟩; exact ciSup_const
+    intro h t ht; have : Nonempty (t ∈ T) := ⟨ht⟩; exact ciSup_const
   have inner_neg : ∀ (h : E → ℝ) {t : E}, t ∉ T → (⨆ _ : t ∈ T, h t) = 0 := by
-    intro h t ht; haveI : IsEmpty (t ∈ T) := ⟨ht⟩; exact Real.iSup_of_isEmpty _
+    intro h t ht; have : IsEmpty (t ∈ T) := ⟨ht⟩; exact Real.iSup_of_isEmpty _
   -- Each per-level `biSup` is bounded above (its range lies in a finite set).
   have hbdd : ∀ h : E → ℝ, BddAbove (Set.range fun s => ⨆ _ : s ∈ T, h s) := by
     intro h

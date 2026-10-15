@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","label":"IsPointwiseMeasurable","full":"AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural.IsPointwiseMeasurable","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropyStructural"},
     {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"Set.Countable","label":"Countable","full":"Set.Countable","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Countable"},
     {"id":"Filter.Tendsto","label":"Tendsto","full":"Filter.Tendsto","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.atTop","label":"atTop","full":"Filter.atTop","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.AtTopBot.Defs"},

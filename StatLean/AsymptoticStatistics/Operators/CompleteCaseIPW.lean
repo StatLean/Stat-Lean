@@ -124,7 +124,7 @@ theorem qScoreLiftRaw_analytic
     ⟨measurable_fst, Measure.fst_compProd Q r⟩
   have hs_mem : MemLp (((s : Lp ℝ 2 Q) : 𝓨 → ℝ)) 2 Q := Lp.memLp _
   constructor
-  · simpa only [qScoreLiftRaw, Function.comp_apply] using
+  · simpa only [qScoreLiftRaw, Function.comp_apply] using!
       hs_mem.comp_measurePreserving hfst
   · have hs_zero : ∫ y, ((s : Lp ℝ 2 Q) : 𝓨 → ℝ) y ∂Q = 0 :=
       (mem_L2ZeroMean_iff Q (s : Lp ℝ 2 Q)).mp s.2
@@ -361,14 +361,6 @@ theorem informationLoss_completeCaseIPWFull
       (↑(lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2
         (Q ⊗ₘ r)) : Set (Lp ℝ 2 (Q ⊗ₘ r))) :=
     isClosed_aestronglyMeasurable hM.comap_le
-  haveI hlp_complete : CompleteSpace
-      (lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2 (Q ⊗ₘ r)) :=
-    @IsClosed.completeSpace_coe _ _ (inferInstance : CompleteSpace (Lp ℝ 2 (Q ⊗ₘ r)))
-      _ hlp_closed
-  haveI hlp_projection :
-      (lpMeas ℝ ℝ (MeasurableSpace.comap M ‹MeasurableSpace 𝓧›) 2
-        (Q ⊗ₘ r)).HasOrthogonalProjection :=
-    @Submodule.HasOrthogonalProjection.ofCompleteSpace ℝ _ _ _ _ _ hlp_complete
   have hcond :
       condExpL2 ℝ ℝ hM.comap_le
           (completeCaseIPWFull hM Q r cc χ ε hε hπ : Lp ℝ 2 (Q ⊗ₘ r)) =
@@ -377,7 +369,7 @@ theorem informationLoss_completeCaseIPWFull
             Lp ℝ 2 ((Q ⊗ₘ r).map M)) := by
     rw [← doobSymm_completeCaseIPW_eq_full hM Q r cc χ ε hε hπ]
     unfold condExpL2
-    exact Submodule.orthogonalProjection_mem_subspace_eq_self _
+    exact Submodule.orthogonalProjectionOnto_mem_subspace_eq_self _
   apply Subtype.ext
   change (informationLossOperator hM (Q ⊗ₘ r)
       (completeCaseIPWFull hM Q r cc χ ε hε hπ) :
@@ -408,7 +400,7 @@ theorem inner_completeCaseIPW_informationLoss_qScoreLift
     (qScoreLiftRaw_analytic Q r s).1
   have hprod_int : Integrable
       (fun p => qScoreLiftRaw Q s p * ipwFullRaw Q r cc χ p) (Q ⊗ₘ r) := by
-    simpa only [Pi.mul_apply] using hscore_mem.integrable_mul hfull_mem
+    simpa only [Pi.mul_apply] using! hscore_mem.integrable_mul hfull_mem
   have hfibre : ∀ᵐ y ∂Q,
       ∫ δ, qScoreLiftRaw Q s (y, δ) * ipwFullRaw Q r cc χ (y, δ) ∂(r y) =
         ((s : Lp ℝ 2 Q) : 𝓨 → ℝ) y * ((χ : Lp ℝ 2 Q) : 𝓨 → ℝ) y := by

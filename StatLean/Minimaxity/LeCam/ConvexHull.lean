@@ -42,8 +42,9 @@ with L. Le Cam, "Convergence of estimates under dimensionality restrictions," *T
 Statistics* **1** (1973), no. 1, 38–53, where the lower bound is expressed through the affinity /
 total-variation distance between mixtures over the two competing subfamilies. It is now standard as
 "Le Cam's method"; the form stated here follows Wainwright's textbook synthesis (Lemma 15.9), with
-related expositions in Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam* (Springer,
-1997), 423–435, and Tsybakov, *Introduction to Nonparametric Estimation* (Springer, 2009), §2.
+related expositions in Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam*
+(Springer, 1997), 423–435, and Tsybakov, *Introduction
+to Nonparametric Estimation* (Springer, 2009), §2.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -91,11 +92,12 @@ private lemma mul_measure_mem_le_avg [PseudoEMetricSpace Ω]
               by_cases hy : y ∈ S
               · rw [Set.indicator_of_mem hy, Pi.one_apply, mul_one]
                 exact hΦ (hSsep i y hy)
-              · rw [Set.indicator_of_notMem hy, mul_zero]; exact zero_le _
+              · rw [Set.indicator_of_notMem hy, mul_zero]; exact zero_le
 
-/-- **Le Cam's convex-hull lower bound** (Wainwright Lemma 15.9, Eq. (15.26)): for two `2δ`-separated
-subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`, the minimax risk dominates
-`(δ/2)(1 − ‖Q̄₁ − Q̄₀‖_TV)`, where `Q̄₀, Q̄₁` are the corresponding mixtures over the convex hulls.
+/-- **Le Cam's convex-hull lower bound** (Wainwright Lemma 15.9, Eq. (15.26)): for two
+`2δ`-separated subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`, the minimax
+risk dominates `(δ/2)(1 − ‖Q̄₁ − Q̄₀‖_TV)`, where `Q̄₀, Q̄₁`
+are the corresponding mixtures over the convex hulls.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.2, Lemma 15.9. -/
@@ -119,10 +121,10 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
   -- the (possibly uncountable) class of functional values is *continuous*, hence measurable.
   set m₀ : Measure 𝓧 := P.comap a₀ ha₀ ∘ₘ π₀ with hm₀
   set m₁ : Measure 𝓧 := P.comap a₁ ha₁ ∘ₘ π₁ with hm₁
-  haveI : IsMarkovKernel (P.comap a₀ ha₀) := Kernel.IsMarkovKernel.comap P ha₀
-  haveI : IsMarkovKernel (P.comap a₁ ha₁) := Kernel.IsMarkovKernel.comap P ha₁
-  haveI : IsProbabilityMeasure m₀ := by rw [hm₀]; infer_instance
-  haveI : IsProbabilityMeasure m₁ := by rw [hm₁]; infer_instance
+  have : IsMarkovKernel (P.comap a₀ ha₀) := Kernel.IsMarkovKernel.comap P ha₀
+  have : IsMarkovKernel (P.comap a₁ ha₁) := Kernel.IsMarkovKernel.comap P ha₁
+  have : IsProbabilityMeasure m₀ := by rw [hm₀]; infer_instance
+  have : IsProbabilityMeasure m₁ := by rw [hm₁]; infer_instance
   -- The two classes of functional values and their (continuous, hence measurable) distance fields.
   set C₀ : Set Ω := Set.range (fun i₀ => g (a₀ i₀)) with hC₀
   set C₁ : Set Ω := Set.range (fun i₁ => g (a₁ i₁)) with hC₁
@@ -151,13 +153,13 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
   have hS₀meas : MeasurableSet S₀ := measurableSet_lt hd₁meas hd₀meas
   have hS₁meas : MeasurableSet S₁ := measurableSet_le hd₀meas hd₁meas
   have hSunion : S₀ ∪ S₁ = Set.univ := by
-    ext y; simp only [hS₀def, hS₁def, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    ext y; simp only [hS₀def, hS₁def, Set.mem_union, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
     exact lt_or_ge (d₁ y) (d₀ y)
   have hSdisj : Disjoint S₀ S₁ := by
     rw [Set.disjoint_left]
     intro y hy0 hy1
-    rw [hS₀def, Set.mem_setOf_eq] at hy0
-    rw [hS₁def, Set.mem_setOf_eq] at hy1
+    rw [hS₀def, Set.mem_ofPred_eq] at hy0
+    rw [hS₁def, Set.mem_ofPred_eq] at hy1
     exact absurd hy1 (not_le.mpr hy0)
   -- Separation of each decision region from the *opposite* class.
   have hsep₀ : ∀ i₀ y, y ∈ S₀ → δ ≤ edist (g (a₀ i₀)) y := by
@@ -167,7 +169,7 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
       calc 2 * δ ≤ d₀ y + d₁ y := htotal y
         _ ≤ d₀ y + d₀ y := add_le_add_right hlt.le _
         _ = 2 * d₀ y := (two_mul _).symm
-    have hδ : δ ≤ d₀ y := (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+    have hδ : δ ≤ d₀ y := (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
     refine hδ.trans ?_
     rw [hd₀ y, edist_comm (g (a₀ i₀)) y]
     exact iInf_le _ i₀
@@ -178,14 +180,14 @@ theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace
       calc 2 * δ ≤ d₀ y + d₁ y := htotal y
         _ ≤ d₁ y + d₁ y := add_le_add_left hle _
         _ = 2 * d₁ y := (two_mul _).symm
-    have hδ : δ ≤ d₁ y := (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp h2
+    have hδ : δ ≤ d₁ y := (ENNReal.mul_le_mul_iff_right (by norm_num) (by norm_num)).mp h2
     refine hδ.trans ?_
     rw [hd₁ y, edist_comm (g (a₁ i₁)) y]
     exact iInf_le _ i₁
   -- Reduce the minimax risk to a per-estimator bound.
   unfold minimaxRiskDist minimaxRisk
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   set R : Θ → ℝ≥0∞ := fun θ => ∫⁻ y, distortionLoss Φ g θ y ∂((κ ∘ₖ P) θ) with hR
   -- The averaged risks over each subfamily are each at most the supremum.
   have hsup₀ : ∫⁻ i₀, R (a₀ i₀) ∂π₀ ≤ ⨆ θ, R θ := by

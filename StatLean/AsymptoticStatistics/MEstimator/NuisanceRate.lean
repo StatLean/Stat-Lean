@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.AsymptoticStatistics.EmpiricalProcess.OuterPeeling
 
 /-!
@@ -63,7 +64,7 @@ private theorem outerMeasureStar_eq_measure_all
         · rw [Set.indicator_of_mem hξ]
           exact hξ
         · rw [Set.indicator_of_notMem hξ]
-          exact zero_le _
+          exact zero_le
 
 /-- Deterministic shell geometry used in the nuisance peeling
 argument. -/
@@ -329,9 +330,6 @@ theorem nuisanceRate_shell_tail
     have hratio : Real.rpow 2 (((j + 1 : ℕ) : ℝ) * β) /
         ((1 / 2 : ℝ) * ((2 : ℝ) ^ j) ^ 2) = Cβ * q ^ j := by
       dsimp [Cβ, q]
-      change ((2 : ℝ) ^ (((j + 1 : ℕ) : ℝ) * β)) /
-          ((1 / 2 : ℝ) * ((2 : ℝ) ^ j) ^ 2) =
-        (2 * (2 : ℝ) ^ β) * (((2 : ℝ) ^ (β - 2)) ^ j)
       rw [show (((j + 1 : ℕ) : ℝ) * β) = β + (j : ℝ) * β by push_cast; ring,
         Real.rpow_add (x := (2 : ℝ)) (by norm_num)]
       have hj2 : ((2 : ℝ) ^ j) ^ 2 = Real.rpow 2 ((j : ℝ) * 2) := by
@@ -435,7 +433,7 @@ theorem nuisanceRate_shell_tail
   have hsub := outerMeasureStar_mono μ hcover
   rw [show {ξ | (2 : ℝ) ^ J * (δn n + (dH (ηhat n ξ) η₀ : ℝ)) <
       |(dΘ n (θhat n ξ) θ₀ : ℝ)|} = A by
-    ext ξ; simp only [Set.mem_setOf_eq, A, abs_of_nonneg (NNReal.coe_nonneg _)]]
+    ext ξ; simp only [Set.mem_ofPred_eq, A, abs_of_nonneg (NNReal.coe_nonneg _)]]
   calc
     μ.outerMeasureStar A ≤ μ.outerMeasureStar (Sᶜ ∪ (B ∪ ⋃ k, Sh (J + k))) := hsub
     _ ≤ μ.outerMeasureStar Sᶜ + (μ.outerMeasureStar B +

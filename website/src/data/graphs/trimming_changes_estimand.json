@@ -18,15 +18,15 @@
     {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
     {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
     {"id":"MeasureTheory.integral_smul_measure","label":"integral_smul_measure","full":"MeasureTheory.integral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
-    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"smul_eq_mul","label":"smul_eq_mul","full":"smul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
-    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Basic"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
+    {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Logic.Basic"},
     {"id":"MeasureTheory.Measure.restrict_eq_zero","label":"restrict_eq_zero","full":"MeasureTheory.Measure.restrict_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Restrict"},
     {"id":"MeasureTheory.integral_zero_measure","label":"integral_zero_measure","full":"MeasureTheory.integral_zero_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
     {"id":"inv_zero","label":"inv_zero","full":"inv_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
     {"id":"mul_inv_cancel₀","label":"mul_inv_cancel₀","full":"mul_inv_cancel₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.CausalInference.trimmedATE_eq_sum_cate","target":"StatLean.CausalInference.trimmedSet"},

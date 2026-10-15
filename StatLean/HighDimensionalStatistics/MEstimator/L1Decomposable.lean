@@ -89,8 +89,8 @@ private lemma linfNorm_le_of_forall {v : EuclideanSpace ℝ (Fin d)} {c : ℝ} (
     (h : ∀ i, |v.ofLp i| ≤ c) : linfNorm v ≤ c := by
   unfold linfNorm
   rcases isEmpty_or_nonempty (Fin d) with he | hne
-  · haveI := he; rw [Real.iSup_of_isEmpty]; exact hc
-  · haveI := hne; exact ciSup_le h
+  · have := he; rw [Real.iSup_of_isEmpty]; exact hc
+  · have := hne; exact ciSup_le h
 
 /-- ℓ∞ as a seminorm on `EuclideanSpace ℝ (Fin d)`. -/
 noncomputable def linfSeminorm (d : ℕ) : Seminorm ℝ (EuclideanSpace ℝ (Fin d)) where
@@ -138,9 +138,9 @@ private lemma inner_single_left_ofLp (j : Fin d) (a : ℝ) (v : EuclideanSpace �
     rw [PiLp.ofLp_single, Pi.single_eq_of_ne hij, zero_mul]
   · intro h'; exact absurd (Finset.mem_univ j) h'
 
-/-- **ℓ∞ tightness** (the dual-norm variational characterization): if `⟪u, v⟫ ≤ c` for every `u` with
-`‖u‖₁ ≤ 1`, then `‖v‖∞ ≤ c`. Proof: the coordinate sign vector `±eⱼ` (which has `‖·‖₁ = 1`) achieves
-`⟪±eⱼ, v⟫ = |vⱼ|`, so `c ≥ |vⱼ|` for every `j`, hence `c ≥ ‖v‖∞`. -/
+/-- **ℓ∞ tightness** (the dual-norm variational characterization): if `⟪u, v⟫ ≤ c` for every `u`
+with `‖u‖₁ ≤ 1`, then `‖v‖∞ ≤ c`. Proof: the coordinate sign vector `±eⱼ` (which has `‖·‖₁ = 1`)
+achieves `⟪±eⱼ, v⟫ = |vⱼ|`, so `c ≥ |vⱼ|` for every `j`, hence `c ≥ ‖v‖∞`. -/
 lemma linf_tight (v : EuclideanSpace ℝ (Fin d)) (c : ℝ)
     (h : ∀ u : EuclideanSpace ℝ (Fin d), l1Norm u ≤ 1 → ⟪u, v⟫_ℝ ≤ c) :
     linfNorm v ≤ c := by
@@ -165,7 +165,8 @@ lemma linf_tight (v : EuclideanSpace ℝ (Fin d)) (c : ℝ)
     rw [inner_single_left_ofLp] at h1
     rw [abs_of_nonpos hneg]; linarith
 
-/-- `M(S)ᗮ = M(Sᶜ)`: the orthogonal complement of the `S`-supported subspace is the `Sᶜ`-supported one. -/
+/-- `M(S)ᗮ = M(Sᶜ)`: the orthogonal complement of the
+`S`-supported subspace is the `Sᶜ`-supported one. -/
 lemma suppSubmodule_orthogonal (S : Finset (Fin d)) :
     (suppSubmodule S)ᗮ = suppSubmodule Sᶜ := by
   ext u

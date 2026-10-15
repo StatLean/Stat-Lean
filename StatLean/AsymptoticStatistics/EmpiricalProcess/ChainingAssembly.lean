@@ -53,6 +53,8 @@ Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6,
 p.286-288.
 -/
 
+set_option linter.style.longFile 5900
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter
@@ -126,7 +128,7 @@ lemma NestedBracketPartition.ancestor_succ_of_le
     B.ancestor (le_trans hq (Nat.le_succ q)) i p hp₀ (le_trans hpq (Nat.le_succ q))
       = B.ancestor hq (B.parent hq i) p hp₀ hpq := by
   rw [NestedBracketPartition.ancestor]
-  rw [dif_pos hpq]
+  rw [dite_eq_left hpq]
 
 /-- **Iterated cell inclusion.** A level-`q` cell sits inside its level-`p` ancestor
 cell for any `p ∈ [q₀, q]` (iterating `cell_succ_subset_parent`). -/
@@ -236,7 +238,8 @@ lemma NestedBracketPartition.jump_L2_le
     (B : NestedBracketPartition F P q₀ C) {q : ℕ} (hq : q₀ ≤ q)
     (i : Fin (B.Nq (q + 1))) :
     eLpNorm (B.jump hq i) 2 P ≤ ENNReal.ofReal (C * (1 / 2 : ℝ) ^ (q - q₀)) := by
-  refine le_trans (eLpNorm_mono_ae_real ?_) (B.Δ_L2_le hq (B.parent hq i))
+  refine le_trans (eLpNorm_mono_ae_real (B.jump_measurable
+      (fun {q} hq i => B.π_meas hq i) hq i).aestronglyMeasurable ?_) (B.Δ_L2_le hq (B.parent hq i))
   refine Filter.Eventually.of_forall (fun x => ?_)
   rw [Real.norm_eq_abs]
   exact B.jump_abs_le hq i x
@@ -323,7 +326,7 @@ lemma supNormProcess_dominated_pointwise_bound
     unfold empiricalProcess
     rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
   rw [h_assemble]
-  refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+  refine mul_le_mul_of_nonneg_left ?_ (zero_le)
   exact le_trans h_tri_ennreal (add_le_add h_avg_ennreal h_int_ennreal)
 
 /-- **Integrated empirical-process bound for a class dominated by an integrable
@@ -408,7 +411,7 @@ lemma supNormProcess_dominated_integral_bound
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       rw [ENNReal.ofReal_sum_of_nonneg (fun i _ => hΨ_nn _)]
     have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
     have hn_ne_zero : (n : ℝ≥0∞) ≠ 0 := by
@@ -425,7 +428,7 @@ lemma supNormProcess_dominated_integral_bound
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ω, ENNReal.ofReal (Ψ (X i.val ω)) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hΨ_ofReal_meas.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -445,7 +448,7 @@ lemma supNormProcess_dominated_integral_bound
           (∫⁻ ω, ENNReal.ofReal
               (empiricalAvg Ψ n (fun j : Fin n => X j.val ω)) ∂μ + T) := h_int
     _ ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
-        mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le _)
+        mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le)
     _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
     _ ≤ 4 * ENNReal.ofReal (Real.sqrt n) * T := by gcongr; norm_num
 
@@ -476,7 +479,7 @@ lemma lintegral_empiricalAvg_le
     have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
       rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
     rw [hn_inv_eq]
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
     rw [ENNReal.ofReal_sum_of_nonneg (fun i _ => hΨ_nn _)]
   have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
   have hn_ne_zero : (n : ℝ≥0∞) ≠ 0 := by
@@ -493,7 +496,7 @@ lemma lintegral_empiricalAvg_le
     _ = ((n : ℝ≥0∞))⁻¹ *
           ∑ i : Fin n, ∫⁻ ξ, ENNReal.ofReal (Ψ (X i.val ξ)) ∂μ := by
         congr 1
-        rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+        rw [MeasureTheory.lintegral_finsetSum Finset.univ]
         intro i _
         exact hΨ_ofReal_meas.comp (hX_meas i.val)
     _ = ((n : ℝ≥0∞))⁻¹ *
@@ -925,7 +928,8 @@ theorem chain_head_dyadic_bound
             rw [mul_assoc]
     refine hterm_le.trans ?_
     gcongr
-    exact ENNReal.le_tsum 0
+    exact ENNReal.le_tsum (f := fun q : ℕ =>
+      ENNReal.ofReal ((1 / 2 : ℝ)^q * δ) * entropyIntegrand ((1 / 2 : ℝ)^q * δ) F P) 0
   · -- hg_bdd : pointwise L∞ truncation bound.
     -- The RHS equals `√n · globalThreshold B δ` (the head/envelope scale at card
     -- `Nq q₀`, and `Fintype.card (Fin (Nq q₀)) = Nq q₀`); on the truncation set
@@ -960,7 +964,6 @@ theorem chain_head_dyadic_bound
       B.cell_subset (le_refl q₀) i (B.π_mem (le_refl q₀) i)
     -- `π_{q₀} i ∈ MemLp 2 P` from its finite eLpNorm and measurability.
     have hπ_memLp : MemLp (B.π q₀ i) 2 P := by
-      refine ⟨(hπ_meas (le_refl q₀) i).aestronglyMeasurable, ?_⟩
       exact lt_of_le_of_lt (hF_L2 _ hπ_F) ENNReal.ofReal_lt_top
     -- `∫ (π_{q₀} i)² ≤ δ²` from `‖π_{q₀} i‖_{P,2} ≤ δ`.  Bridge `∫ f²` and the
     -- `eLpNorm` via `MemLp.eLpNorm_eq_integral_rpow_norm` (inlined: no cross-import
@@ -1115,7 +1118,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
                         ≤ Real.sqrt n * chainThreshold B δ p})
                 ∩ {x | Real.sqrt n * chainThreshold B δ (m + 1) < B.Δ (m + 1) i x}) := by
           ext x
-          simp only [chainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+          simp only [chainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
         rw [hset]
         refine MeasurableSet.inter (MeasurableSet.const _) ?_
         refine MeasurableSet.inter ?_ (measurableSet_lt measurable_const (B.Δ_meas hq0_le i))
@@ -1221,7 +1224,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
           refine Finset.sum_congr rfl (fun p hp => ?_)
           obtain ⟨hpq0, _⟩ := Finset.mem_Icc.mp hp
           rw [hb_def]
-          simp only [if_pos hpq0]
+          simp only [ite_eq_left hpq0]
         calc ENNReal.ofReal (K * (2 : ℝ) ^ (q₀ + 1)) * (2⁻¹ : ℝ≥0∞) ^ (m + 1)
                 * ENNReal.ofReal δ
                 * ∑ p ∈ Finset.Icc q₀ (m + 1),
@@ -1320,7 +1323,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
             rw [← pow_succ']
             congr 1; omega
           rw [hpow]; ring_nf
-          nlinarith [pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) (m - q₀), hδ.le]
+          nlinarith [pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) (m - q₀), hδ.le]
         have hCnn : 0 ≤ C * (1/2 : ℝ) ^ (m + 1 - q₀) := by rw [hCδ]; positivity
         nlinarith [hCeq, hCnn, hε_pos.le]
     · -- `q ≤ q₀`: `chainB` false (`q₀ < q` fails) ⇒ `truncOsc = 0` ⇒ `levelOscSup = 0`.
@@ -1335,7 +1338,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
             funext x
             simp only [truncOsc]
             rw [Set.indicator_of_notMem, mul_zero]
-            simp only [Set.mem_setOf_eq, chainB]
+            simp only [Set.mem_ofPred_eq, chainB]
             exact fun h => hq0q h.1
           rw [hfun]
           have : empiricalProcess P n (fun k : Fin n => X k.val ξ) (fun _ => (0 : ℝ)) = 0 := by
@@ -1344,7 +1347,7 @@ private theorem chain_B_levelOscSup_dyadic_bound
         simp_rw [hpt]
         rw [lintegral_zero]
       rw [hzero]
-      exact zero_le _
+      exact zero_le
   -- =====================================================================
   -- STEP 2 — Sum the per-level bounds and reindex.
   -- =====================================================================
@@ -1378,13 +1381,13 @@ private theorem chain_B_levelOscSup_dyadic_bound
             by_cases hpq0 : q₀ ≤ p
             · exact ⟨p - q₀, Nat.add_sub_cancel' hpq0⟩
             · exfalso; apply hp
-              rw [hb_def]; simp only [if_neg hpq0, mul_zero]
+              rw [hb_def]; simp only [ite_eq_right hpq0, mul_zero]
           rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
           refine tsum_congr fun j => ?_
           -- term `j`: `(2⁻¹)^{q₀+j} · b(q₀+j) = (2⁻¹)^{q₀}·(2⁻¹)^j·ofReal δ·integrand`.
           have hbj : b (q₀ + j)
               = ENNReal.ofReal δ * entropyIntegrand ((1/2 : ℝ) ^ j * δ) F P := by
-            rw [hb_def]; simp only [if_pos (Nat.le_add_right q₀ j), Nat.add_sub_cancel_left]
+            rw [hb_def]; simp only [ite_eq_left (Nat.le_add_right q₀ j), Nat.add_sub_cancel_left]
           rw [hbj, pow_add, hofpow j]
           rw [show ((1/2 : ℝ) ^ j * δ) = (1/2 : ℝ) ^ j * δ from rfl,
             ENNReal.ofReal_mul (by positivity)]
@@ -1499,7 +1502,7 @@ theorem chain_B_dyadic_bound
                 * entropyIntegrand ((1/2 : ℝ)^q * δ) F P) := by
     refine le_trans (hcB F q₀ C B hπ_meas hF_ne hδ hCδ n hn) ?_
     gcongr
-  -- combine: LHS = ENV + ∑' ; RHS = c·S + c·tail (commute the two RHS terms)
+  -- combine: LHS = ENV + ∑'; RHS = c·S + c·tail (commute the two RHS terms)
   rw [add_comm (ENNReal.ofReal c * (∑' q : ℕ, _ * _))]
   exact add_le_add hEnv hOsc
 
@@ -1633,7 +1636,7 @@ theorem chain_A_dyadic_bound
           = ⋂ (p : ℕ) (hp₀ : q₀ ≤ p) (hpq : p ≤ m),
               {x | B.Δ p (B.ancestor (le_trans hp₀ hpq) (B.parent hm i) p hp₀ hpq) x
                   ≤ Real.sqrt n * chainThreshold B δ p} := by
-        ext x; simp only [chainA, Set.mem_setOf_eq, Set.mem_iInter]
+        ext x; simp only [chainA, Set.mem_ofPred_eq, Set.mem_iInter]
       rw [hset]
       refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hp₀ =>
         MeasurableSet.iInter (fun hpq => ?_)))
@@ -1745,7 +1748,6 @@ theorem chain_A_dyadic_bound
     · -- hg_var : `∫ (g i)² ≤ (2·ε)²`.
       intro i
       have hjump_memLp : MemLp (B.jump hm i) 2 P := by
-        refine ⟨(B.jump_measurable hπ_meas hm i).aestronglyMeasurable, ?_⟩
         exact lt_of_le_of_lt (B.jump_L2_le hm i) ENNReal.ofReal_lt_top
       -- `∫ (jump)² ≤ (C·(1/2)^{m-q₀})²` from `‖jump‖_{P,2} ≤ C·(1/2)^{m-q₀}`.
       have hjump_sq_le :
@@ -1785,7 +1787,7 @@ theorem chain_A_dyadic_bound
       refine hgsq_le.trans (hjump_sq_le.trans ?_)
       -- `(C·(1/2)^{m-q₀})² ≤ (2·((1/2)^q·δ))²`: `C = δ`, `m - q₀ = q`.
       rw [hCδ, hmq]
-      nlinarith [pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) q, hδ.le,
+      nlinarith [pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) q, hδ.le,
         sq_nonneg ((1/2 : ℝ)^q * δ)]
   -- ===== Sum the per-level bounds and apply the dyadic rearrangement =====
   -- The recurring conversion `ofReal((1/2)^q·δ) = (2⁻¹)^q · ofReal δ`.
@@ -1888,7 +1890,7 @@ private lemma chainA_measurableSet
       = ⋂ (p : ℕ) (hp₀ : q₀ ≤ p) (hpq : p ≤ q),
           {x | B.Δ p (B.ancestor (le_trans hp₀ hpq) i p hp₀ hpq) x
               ≤ Real.sqrt n * chainThreshold B δ p} := by
-    ext x; simp only [chainA, Set.mem_setOf_eq, Set.mem_iInter]
+    ext x; simp only [chainA, Set.mem_ofPred_eq, Set.mem_iInter]
   rw [hset]
   refine MeasurableSet.iInter (fun p => MeasurableSet.iInter (fun hp₀ =>
     MeasurableSet.iInter (fun hpq => ?_)))
@@ -1914,7 +1916,7 @@ private lemma chainB_measurableSet
                   ≤ Real.sqrt n * chainThreshold B δ p})
           ∩ {x | Real.sqrt n * chainThreshold B δ q < B.Δ q i x}) := by
     ext x
-    simp only [chainB, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+    simp only [chainB, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
   rw [hset]
   refine MeasurableSet.inter (MeasurableSet.const _) ?_
   refine MeasurableSet.inter ?_ (measurableSet_lt measurable_const (B.Δ_meas hq i))
@@ -2081,7 +2083,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
       unfold empiricalProcess
       rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
     rw [hsplit, hcorr_def]
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
     -- `|empAvg(a − G) − ∫(a − G)| ≤ empAvg(2 G) + |∫(a − G)|`, with `|∫(a − G)| ≤ ∫ 2 G`.
     have hpna : |empiricalAvg (fun x => a x - G i x) n (fun k : Fin n => X k.val ξ)|
         ≤ empiricalAvg (fun x => 2 * G i x) n (fun k : Fin n => X k.val ξ) := by
@@ -2147,7 +2149,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
         (Filter.Eventually.of_forall h2G_nn')]
       rw [← MeasureTheory.lintegral_const_mul' 2 _ (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)]
       refine MeasureTheory.lintegral_congr (fun x => ?_)
-      rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]; norm_num
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
     -- The pointwise real bound on the random `empAvg` half:
     -- `√n·empAvg(2G i)(ξ) ≤ 2|𝔾ₙ(G i)(ξ)| + √n·∫2G i dP`.
     have hrand_real :
@@ -2173,7 +2175,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
       rw [habs] at hle
       nlinarith [hle, hsn_nn]
     -- Lift to `ℝ≥0∞`.
-    have hP2_nn : (0:ℝ) ≤ ∫ x, 2 * G i x ∂P :=
+    have hP2_nn : (0 : ℝ) ≤ ∫ x, 2 * G i x ∂P :=
       MeasureTheory.integral_nonneg h2G_nn'
     calc corr i ξ
         = ENNReal.ofReal
@@ -2194,7 +2196,7 @@ theorem supNormOver_link_meanSplit_pointwise_le
           add_le_add ENNReal.ofReal_add_le le_rfl
       _ = 2 * ENNReal.ofReal |empiricalProcess P n (fun k : Fin n => X k.val ξ) (G i)|
             + 2 * det i := by
-          rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2),
+          rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2),
             ENNReal.ofReal_mul hsn_nn, hdet_def, hP_eq]
           rw [show (ENNReal.ofReal 2 : ℝ≥0∞) = 2 by simp]
           ring
@@ -2342,7 +2344,7 @@ theorem supNormOver_link_meanSplit_le
 integrable functions `h : ι → Ω → ℝ`, `𝔾ₙ(Σ_{a∈s} h a) = Σ_{a∈s} 𝔾ₙ(h a)`. Proven by
 `Finset.induction`, using the binary `empiricalProcess_add` (each partial sum stays
 integrable as a finite sum of integrables). -/
-lemma empiricalProcess_finset_sum {ι : Type*} (P : Measure Ω) (n : ℕ) (X : Fin n → Ω)
+lemma empiricalProcess_finsetSum {ι : Type*} (P : Measure Ω) (n : ℕ) (X : Fin n → Ω)
     (s : Finset ι) (h : ι → Ω → ℝ) (hint : ∀ a ∈ s, Integrable (h a) P) :
     empiricalProcess P n X (fun x => ∑ a ∈ s, h a x)
       = ∑ a ∈ s, empiricalProcess P n X (h a) := by
@@ -2353,7 +2355,7 @@ lemma empiricalProcess_finset_sum {ι : Type*} (P : Measure Ω) (n : ℕ) (X : F
       have hint' : ∀ b ∈ s, Integrable (h b) P :=
         fun b hb => hint b (Finset.mem_insert_of_mem hb)
       have hsum_int : Integrable (fun x => ∑ b ∈ s, h b x) P :=
-        integrable_finset_sum s hint'
+        integrable_finsetSum s hint'
       rw [Finset.sum_insert ha]
       have hsplit : (fun x => ∑ b ∈ insert a s, h b x)
           = (fun x => h a x + ∑ b ∈ s, h b x) := by
@@ -2663,12 +2665,12 @@ private theorem Gn_telescope_link_bound
   -- `x ∈ As k ↔ ∀ j ≤ k, small j x`.
   have hAs_iff : ∀ k x, x ∈ As k ↔ ∀ j ≤ k, small j x := by
     intro k x
-    simp only [hAs_def, hc_def, Set.mem_setOf_eq]
+    simp only [hAs_def, hc_def, Set.mem_ofPred_eq]
     rw [chainA_chain_iff B hf δ n k x]
   -- `x ∈ Bs (k+1) ↔ (∀ j ≤ k, small j x) ∧ ¬ small (k+1) x`.
   have hBs_iff : ∀ k x, x ∈ Bs (k+1) ↔ (∀ j ≤ k, small j x) ∧ ¬ small (k+1) x := by
     intro k x
-    simp only [hBs_def, hc_def, Set.mem_setOf_eq]
+    simp only [hBs_def, hc_def, Set.mem_ofPred_eq]
     rw [chainB_chain_iff B hf δ n (k+1) x]
     constructor
     · rintro ⟨_, hsm, hcr⟩
@@ -2696,7 +2698,7 @@ private theorem Gn_telescope_link_bound
         have hA0 : x ∈ As 0 := (hAs_iff 0 x).mpr (fun j hj => by
           have : j = 0 := Nat.le_zero.mp hj
           subst this; exact hsmall0 x)
-        simp only [hRrem_def, hindA, if_pos hA0, mul_one]
+        simp only [hRrem_def, hindA, ite_eq_left hA0, mul_one]
     | succ K ih =>
         -- Reduce to `Rrem (K+1) + linkJ K + linkB (K+1) = Rrem K`, then use `ih`.
         rw [Finset.sum_range_succ, Finset.sum_range_succ]
@@ -2717,20 +2719,22 @@ private theorem Gn_telescope_link_bound
                 · subst h; exact hsk1)
               have hBk1 : x ∉ Bs (K+1) := by
                 rw [hBK1]; rintro ⟨_, hcr⟩; exact hcr hsk1
-              simp only [if_pos hAk, if_pos hAk1, if_neg hBk1, mul_one, mul_zero, add_zero]
+              simp only [ite_eq_left hAk, ite_eq_left hAk1, ite_eq_right hBk1, mul_one, mul_zero,
+                  add_zero]
               ring
             · -- crosses at K+1: As(K+1) fails, Bs(K+1) holds
               have hAk1 : x ∉ As (K+1) := by
                 rw [hAK1]; intro h; exact hsk1 (h (K+1) le_rfl)
               have hBk1 : x ∈ Bs (K+1) := hBK1.mpr ⟨hsmK, hsk1⟩
-              simp only [if_pos hAk, if_neg hAk1, if_pos hBk1, mul_one, mul_zero, zero_add]
+              simp only [ite_eq_left hAk, ite_eq_right hAk1, ite_eq_left hBk1, mul_one, mul_zero,
+                  zero_add]
               ring
           · -- chain already crossed before K: all three indicators are 0
             have hAk1 : x ∉ As (K+1) := by
               rw [hAK1]; intro h; exact hAk (hAK.mpr (fun j hj => h j (by omega)))
             have hBk1 : x ∉ Bs (K+1) := by
               rw [hBK1]; rintro ⟨hsm, _⟩; exact hAk (hAK.mpr hsm)
-            simp only [if_neg hAk, if_neg hAk1, if_neg hBk1, mul_zero, add_zero]
+            simp only [ite_eq_right hAk, ite_eq_right hAk1, ite_eq_right hBk1, mul_zero, add_zero]
         -- Combine the split sums via `hstep` and the inductive hypothesis.
         rw [ih]
         -- rearrange so `hstep` applies
@@ -2757,17 +2761,17 @@ private theorem Gn_telescope_link_bound
     rw [hfun]
     -- integrability of the two finite sums
     have hJsum_int : Integrable (fun x => ∑ k ∈ Finset.range K, linkJ k x) P :=
-      integrable_finset_sum _ (fun k _ => hlinkJ_int k)
+      integrable_finsetSum _ (fun k _ => hlinkJ_int k)
     have hBsum_int : Integrable (fun x => ∑ k ∈ Finset.range K, linkB (k+1) x) P :=
-      integrable_finset_sum _ (fun k _ => hlinkB_int (k+1))
+      integrable_finsetSum _ (fun k _ => hlinkB_int (k+1))
     simp only [hgn_def]
     rw [empiricalProcess_add P n Y (Rrem K)
         (fun x => (∑ k ∈ Finset.range K, linkJ k x) + (∑ k ∈ Finset.range K, linkB (k+1) x))
         (hRrem_int K) (hJsum_int.add hBsum_int)]
     rw [empiricalProcess_add P n Y (fun x => ∑ k ∈ Finset.range K, linkJ k x)
         (fun x => ∑ k ∈ Finset.range K, linkB (k+1) x) hJsum_int hBsum_int]
-    rw [empiricalProcess_finset_sum P n Y (Finset.range K) linkJ (fun k _ => hlinkJ_int k)]
-    rw [empiricalProcess_finset_sum P n Y (Finset.range K) (fun k => linkB (k+1))
+    rw [empiricalProcess_finsetSum P n Y (Finset.range K) linkJ (fun k _ => hlinkJ_int k)]
+    rw [empiricalProcess_finsetSum P n Y (Finset.range K) (fun k => linkB (k+1))
         (fun k _ => hlinkB_int (k+1))]
     ring
   -- ===== Remainder bound: `|gn (Rrem K)| ≤ 2·n·(1/2)^K·δ → 0`. =====
@@ -2845,7 +2849,7 @@ private theorem Gn_telescope_link_bound
       simpa using this
     -- ℝ≥0∞ squeeze: `0 ≤ ofReal|gn(Rrem K)| ≤ ofReal(2 n (1/2)^K δ) → 0`.
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
-      tendsto_const_nhds hbd (Filter.Eventually.of_forall (fun K => zero_le _))
+      tendsto_const_nhds hbd (Filter.Eventually.of_forall (fun K => zero_le))
       (Filter.Eventually.of_forall (fun K => ?_))
     exact ENNReal.ofReal_le_ofReal (hgnR_bd K)
   -- ===== Per-`K` ENNReal triangle bound, then pass to the limit. =====
@@ -3260,7 +3264,7 @@ private theorem chain_supnorm_le_decomposition
   -- `oscDom q`: `3·(finite-⨆ᵢ of measurable truncOsc)` + a `ξ`-constant — measurable.
   have hoscDom_meas : ∀ q, Measurable (oscDom q) := by
     intro q
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ω : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.const_mul ?_ 3
     refine measurable_iSup_ofReal_abs_empiricalProcess hX_meas n _ (fun i => ?_)
     exact (B.Δ_meas (Nat.le_add_right q₀ q) i).mul
@@ -3289,9 +3293,9 @@ private theorem chain_supnorm_le_decomposition
   refine hmono.trans ?_
   -- ===== Step 2: split `∫⁻ (Σ measurable pieces) = Σ ∫⁻ pieces` =====
   have hoscDom_sum_meas : Measurable (fun ξ => ∑' q, oscDom q ξ) :=
-    Measurable.ennreal_tsum hoscDom_meas
+    Measurable.tsum hoscDom_meas
   have hjump_sum_meas : Measurable (fun ξ => ∑' q, jump q ξ) :=
-    Measurable.ennreal_tsum hjump_meas
+    Measurable.tsum hjump_meas
   rw [lintegral_add_right' _ hjump_sum_meas.aemeasurable,
     lintegral_add_left' hhead_meas.aemeasurable,
     lintegral_add_right' _ hoscDom_sum_meas.aemeasurable,
@@ -3319,7 +3323,7 @@ private theorem chain_supnorm_le_decomposition
       ≤ 3 * (∑' q : ℕ, levelOscSup B μ X δ n q) :=
     mul_le_mul_of_nonneg_left
       (ENNReal.tsum_comp_le_tsum_of_injective (add_right_injective q₀)
-        (levelOscSup B μ X δ n)) (zero_le _)
+        (levelOscSup B μ X δ n)) (zero_le)
   -- Assemble.
   calc levelRepSup B μ X Φ δ n q₀
         + ((∫⁻ ξ, supNormOver F
@@ -3494,7 +3498,7 @@ private theorem chain_Bmean_dyadic_bound
           _ = C * (1/2 : ℝ) ^ (Q - q₀) := ENNReal.toReal_ofReal hCpow_nn
           _ = δ * (1/2 : ℝ)^q := by rw [hCδ, hQq]
       nlinarith [Real.sq_sqrt hnn, Real.sqrt_nonneg (∫ x, (B.Δ Q i x) ^ 2 ∂P), hsqrt_le,
-        mul_nonneg hδ.le (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) q)]
+        mul_nonneg hδ.le (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) q)]
     -- `a_Q = chainThreshold B δ Q > 0`, with denominator `D = 1 + √log(1+N_{Q+1})`.
     set D : ℝ := 1 + Real.sqrt (Real.log (1 + (B.Nq (Q + 1) : ℝ))) with hD_def
     have hD_pos : 0 < D := by rw [hD_def]; positivity
@@ -3532,7 +3536,7 @@ private theorem chain_Bmean_dyadic_bound
           rw [← ENNReal.ofReal_mul (by positivity)]
           exact ENNReal.ofReal_le_ofReal hΔ_le
         · rw [Set.indicator_of_notMem hx, mul_zero, ENNReal.ofReal_zero]
-          exact zero_le _
+          exact zero_le
       -- Integrate the pointwise bound; `∫⁻ ofReal(Δ²) = ofReal(∫Δ²)`.
       have hΔ_memLp : MemLp (B.Δ Q i) 2 P := B.Δ_memLp hQ i
       have hΔsq_int : Integrable (fun x => (B.Δ Q i x) ^ 2) P := hΔ_memLp.integrable_sq
@@ -3547,14 +3551,14 @@ private theorem chain_Bmean_dyadic_bound
           ≤ 4 * ENNReal.ofReal (Real.sqrt n)
               * ∫⁻ x, ENNReal.ofReal (1 / (Real.sqrt n * chainThreshold B δ Q))
                   * ENNReal.ofReal ((B.Δ Q i x) ^ 2) ∂P :=
-            mul_le_mul_of_nonneg_left (lintegral_mono hpt) (zero_le _)
+            mul_le_mul_of_nonneg_left (lintegral_mono hpt) (zero_le)
         _ = 4 * ENNReal.ofReal (Real.sqrt n)
               * (ENNReal.ofReal (1 / (Real.sqrt n * chainThreshold B δ Q))
                   * ENNReal.ofReal (∫ x, (B.Δ Q i x) ^ 2 ∂P)) := by
             rw [MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hlint_sq]
         _ ≤ ENNReal.ofReal (4 * (δ * (1/2 : ℝ)^q) * D) := by
             rw [show (4 : ℝ≥0∞) = ENNReal.ofReal 4 by simp,
-              ← ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
+              ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
               ← ENNReal.ofReal_mul (by positivity),
               ← ENNReal.ofReal_mul (by positivity)]
             apply ENNReal.ofReal_le_ofReal
@@ -3636,7 +3640,7 @@ private theorem chain_Bmean_dyadic_bound
     have hone_le_sum :
         ENNReal.ofReal (Real.sqrt (Real.log 2)) ≤ ∑ k ∈ Finset.Icc 0 (q + 1), a k := by
       have h0mem : (0 : ℕ) ∈ Finset.Icc 0 (q + 1) := Finset.mem_Icc.mpr ⟨le_rfl, by omega⟩
-      refine le_trans ?_ (Finset.single_le_sum (f := a) (fun k _ => zero_le _) h0mem)
+      refine le_trans ?_ (Finset.single_le_sum (f := a) (fun k _ => zero_le) h0mem)
       rw [ha_def]; simp only [pow_zero, one_mul]
       exact sqrt_log_two_le_entropyIntegrand hF_ne δ
     -- `ofReal D = ofReal 1 + ofReal(√log(1+N_{Q+1})) ≤ (1 + 1/√log2)·∑ a k`.
@@ -3660,7 +3664,7 @@ private theorem chain_Bmean_dyadic_bound
                 * ENNReal.ofReal (Real.sqrt (Real.log 2)) :=
               (ENNReal.inv_mul_cancel hsqrtlog2_ne ENNReal.ofReal_ne_top).symm
           _ ≤ (ENNReal.ofReal (Real.sqrt (Real.log 2)))⁻¹ * Sum :=
-              mul_le_mul_of_nonneg_left hone_le_sum (zero_le _)
+              mul_le_mul_of_nonneg_left hone_le_sum (zero_le)
       · -- `ofReal(√log(1+N_{Q+1})) ≤ ∑_{p} ofReal(√log(1+coverCard p)) ≤ Sum`.
         refine le_trans ?_ hcover_sum
         rw [← ENNReal.ofReal_sum_of_nonneg (fun _ _ => Real.sqrt_nonneg _)]
@@ -3672,12 +3676,12 @@ private theorem chain_Bmean_dyadic_bound
           congr 1; ring
       _ ≤ ENNReal.ofReal (4 * ((1/2 : ℝ)^q * δ))
             * (ENNReal.ofReal (1 + 1 / Real.sqrt (Real.log 2)) * Sum) :=
-          mul_le_mul_of_nonneg_left hD_le (zero_le _)
+          mul_le_mul_of_nonneg_left hD_le (zero_le)
       _ = ENNReal.ofReal K₀
             * (ENNReal.ofReal ((1/2 : ℝ)^q * δ) * Sum) := by
           rw [hK₀_def,
-            ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
-            ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4)]
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4)]
           ring
   -- =====================================================================
   -- STEP 2 — Sum the per-level bounds and apply the dyadic rearrangement.
@@ -3711,7 +3715,7 @@ private theorem chain_Bmean_dyadic_bound
     _ = ENNReal.ofReal (4 * K₀)
           * (∑' q : ℕ, ENNReal.ofReal ((1/2 : ℝ)^q * δ)
               * entropyIntegrand ((1/2 : ℝ)^q * δ) F P) := by
-        rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 4),
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4),
           show (ENNReal.ofReal 4 : ℝ≥0∞) = 4 by simp]
         ring
 
@@ -3808,7 +3812,7 @@ theorem chain_supnorm_dyadic_bound_uniform
         ≤ ENNReal.ofReal (3 * cB) * S + ENNReal.ofReal (3 * cB) * T := by
     -- `ofReal(3cB) = 3·ofReal cB`.
     have h3cB : ENNReal.ofReal (3 * cB) = 3 * ENNReal.ofReal cB := by
-      rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 3),
+      rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 3),
         show (ENNReal.ofReal 3 : ℝ≥0∞) = 3 by simp]
     rw [h3cB]
     -- `trunc + 3∑osc ≤ 3·trunc + 3∑osc = 3·(trunc + ∑osc) ≤ 3·(cB S + cB T)`.
@@ -3821,12 +3825,12 @@ theorem chain_supnorm_dyadic_bound_uniform
     calc trunc + 3 * (∑' q : ℕ, levelOscSup B μ X δ n q)
         ≤ 3 * trunc + 3 * (∑' q : ℕ, levelOscSup B μ X δ n q) := by
           gcongr
-          exact le_mul_of_one_le_left (zero_le _) (by norm_num)
+          exact le_mul_of_one_le_left (zero_le) (by norm_num)
       _ = 3 * (trunc + (∑' q : ℕ, levelOscSup B μ X δ n q)) := by ring
       _ ≤ 3 * (ENNReal.ofReal cB * S + ENNReal.ofReal cB * T) := by gcongr
       _ = 3 * ENNReal.ofReal cB * S + 3 * ENNReal.ofReal cB * T := by ring
-  -- Sum the four dyadic bounds (head: cH·S ; B-block: 3cB·S + 3cB·T ;
-  -- A: cA·S ; Bmean: cM·S).
+  -- Sum the four dyadic bounds (head: cH·S; B-block: 3cB·S + 3cB·T;
+  -- A: cA·S; Bmean: cM·S).
   have hsum :
       levelRepSup B μ X Φ δ n q₀
         + ((∫⁻ ξ, supNormOver F
@@ -3866,10 +3870,10 @@ theorem chain_supnorm_dyadic_bound_uniform
         calc ENNReal.ofReal (3 * cB) * T
             ≤ ENNReal.ofReal cH * T + ENNReal.ofReal (3 * cB) * T := le_add_self
           _ ≤ ENNReal.ofReal cH * T + ENNReal.ofReal (3 * cB) * T + ENNReal.ofReal cA * T :=
-              le_add_of_nonneg_right (zero_le _)
+              le_add_of_nonneg_right (zero_le)
           _ ≤ ENNReal.ofReal cH * T + ENNReal.ofReal (3 * cB) * T + ENNReal.ofReal cA * T
                 + ENNReal.ofReal cM * T :=
-              le_add_of_nonneg_right (zero_le _)
+              le_add_of_nonneg_right (zero_le)
     _ = (ENNReal.ofReal cH + ENNReal.ofReal (3 * cB) + ENNReal.ofReal cA
             + ENNReal.ofReal cM) * S
           + (ENNReal.ofReal cH + ENNReal.ofReal (3 * cB) + ENNReal.ofReal cA
@@ -4006,7 +4010,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
       (chainA_measurableSet B δ n (q₀ + q) (B.parent (Nat.le_add_right q₀ q) i))
   have hoscDom_meas : ∀ q, Measurable (oscDom q) := by
     intro q
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ω : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.const_mul ?_ 3
     refine measurable_iSup_ofReal_abs_empiricalProcess hX_meas n _ (fun i => ?_)
     exact (B.Δ_meas (Nat.le_add_right q₀ q) i).mul
@@ -4014,7 +4018,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
         (chainB_measurableSet B n (Nat.le_add_right q₀ q) i))
   have hBtrunc_meas : Measurable Btrunc := by
     refine Measurable.const_mul ?_ _
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ω : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.ennreal_ofReal ?_
     unfold empiricalAvg
     refine Measurable.const_mul ?_ _
@@ -4023,8 +4027,8 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
     exact hΨ_meas.comp (hX_meas i.val)
   have hMaj_meas : Measurable Maj := by
     refine (((hhead_meas.add hBtrunc_meas).add ?_).add ?_)
-    · exact Measurable.ennreal_tsum hoscDom_meas
-    · exact Measurable.ennreal_tsum hjump_meas
+    · exact Measurable.tsum hoscDom_meas
+    · exact Measurable.tsum hjump_meas
   -- ===== Pointwise: `g_F' ξ ≤ Maj ξ` =====
   have hptwise : ∀ ξ, supNormOver F
       (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ≤ Maj ξ := by
@@ -4119,15 +4123,15 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
               + ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P)
         ≤ ENNReal.ofReal (Real.sqrt n) *
             (∫⁻ x, ENNReal.ofReal (Ψ x) ∂P + ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P) :=
-          mul_le_mul_of_nonneg_left (add_le_add hemp_le le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add hemp_le le_rfl) (zero_le)
       _ = 2 * (ENNReal.ofReal (Real.sqrt n) * ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P) := by ring
       _ = 2 * T := by rw [hT_def, hΨ_int_eq]
       _ ≤ 4 * T := by gcongr; norm_num
   -- ===== Split `∫⁻ Maj` into the four measurable pieces =====
   have hoscDom_sum_meas : Measurable (fun ξ => ∑' q, oscDom q ξ) :=
-    Measurable.ennreal_tsum hoscDom_meas
+    Measurable.tsum hoscDom_meas
   have hjump_sum_meas : Measurable (fun ξ => ∑' q, jump q ξ) :=
-    Measurable.ennreal_tsum hjump_meas
+    Measurable.tsum hjump_meas
   have hMaj_split : ∫⁻ ξ, Maj ξ ∂μ
       = (∫⁻ ξ, head ξ ∂μ) + (∫⁻ ξ, Btrunc ξ ∂μ)
         + (∑' q, ∫⁻ ξ, oscDom q ξ ∂μ) + (∑' q, ∫⁻ ξ, jump q ξ ∂μ) := by
@@ -4152,7 +4156,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
       ≤ 3 * (∑' q : ℕ, levelOscSup B μ X δ n q) :=
     mul_le_mul_of_nonneg_left
       (ENNReal.tsum_comp_le_tsum_of_injective (add_right_injective q₀)
-        (levelOscSup B μ X δ n)) (zero_le _)
+        (levelOscSup B μ X δ n)) (zero_le)
   have hjump_sum_eq : (∑' q, ∫⁻ ξ, jump q ξ ∂μ)
       = ∑' q : ℕ, levelJumpSup B μ X δ n (Nat.le_add_right q₀ q) := by
     simp only [hjump_int]
@@ -4167,7 +4171,7 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
       ENNReal.ofReal_add hcH_pos.le (by positivity),
       show (ENNReal.ofReal 4 : ℝ≥0∞) = 4 by rw [ENNReal.ofReal_ofNat]]
   have h3cOsc : ENNReal.ofReal (3 * cOsc) = 3 * ENNReal.ofReal cOsc := by
-    rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 3),
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 3),
       show (ENNReal.ofReal 3 : ℝ≥0∞) = 3 by simp]
   -- ===== Assemble =====
   rw [hMaj_split, hhead_int, hosc_sum, hjump_sum_eq]
@@ -4179,15 +4183,15 @@ theorem chain_supnorm_measurableMajorant_dyadic_bound_uniform
           + ENNReal.ofReal cA * S := by
         refine add_le_add (add_le_add (add_le_add hHδ hBtrunc_int) ?_) hAδ
         refine add_le_add (hosc_inj.trans ?_) hMδ
-        exact mul_le_mul_of_nonneg_left hOscδ (zero_le _)
+        exact mul_le_mul_of_nonneg_left hOscδ (zero_le)
     _ = (ENNReal.ofReal cH + 3 * ENNReal.ofReal cOsc + ENNReal.ofReal cA
             + ENNReal.ofReal cM) * S + 4 * T := by ring
     _ ≤ ENNReal.ofReal c * S + ENNReal.ofReal c * T := by
         rw [hcsplit, h3cOsc]
-        refine add_le_add (mul_le_mul_of_nonneg_right ?_ (zero_le _))
-          (mul_le_mul_of_nonneg_right ?_ (zero_le _))
-        · exact le_add_of_nonneg_right (zero_le _)
-        · exact le_add_of_nonneg_left (zero_le _)
+        refine add_le_add (mul_le_mul_of_nonneg_right ?_ (zero_le))
+          (mul_le_mul_of_nonneg_right ?_ (zero_le))
+        · exact le_add_of_nonneg_right (zero_le)
+        · exact le_add_of_nonneg_left (zero_le)
 
 /-- **Integrated dyadic chaining bound for `∫⁻ supNormOver F (𝔾ₙ)`**
 (vdV Lemma 19.34).
@@ -4300,7 +4304,7 @@ theorem hChainBound_outer_of_nestedPartition
         simp only [supNormOver, empiricalProcess_zero, abs_zero, ENNReal.ofReal_zero]
         exact le_antisymm (by simp) (by positivity)
       simp only [h_sup0, lintegral_zero]
-    rw [h_lhs]; exact zero_le _
+    rw [h_lhs]; exact zero_le
   -- `n ≥ 1`: apply the dyadic bound, then substitute `dyadic ≤ 2·J`.
   have hn1 : 1 ≤ n := hn_pos
   have hdyadic := hbound Φ hΦ_meas hΦ_env hΦ_L2 hδq hCδ hF_L2 hq₀ n hn1 hΔq0_ptwise
@@ -4312,7 +4316,7 @@ theorem hChainBound_outer_of_nestedPartition
     dyadic_sum_le_bracketingEntropyIntegral hδq
   -- Numerical rewrite: `ofReal (2*c₀) = 2 * ofReal c₀`.
   have h2c : ENNReal.ofReal (2 * c₀) = 2 * ENNReal.ofReal c₀ := by
-    rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
   refine hdyadic.trans ?_
   -- `c₀·dyadic + c₀·tail ≤ 2c₀·J + 2c₀·tail`.
   rw [h2c]
@@ -4327,7 +4331,7 @@ theorem hChainBound_outer_of_nestedPartition
     have h_le : ENNReal.ofReal c₀ ≤ 2 * ENNReal.ofReal c₀ := by
       calc ENNReal.ofReal c₀ = 1 * ENNReal.ofReal c₀ := (one_mul _).symm
         _ ≤ 2 * ENNReal.ofReal c₀ := by gcongr; norm_num
-    exact mul_le_mul_of_nonneg_right h_le (zero_le _)
+    exact mul_le_mul_of_nonneg_right h_le (zero_le)
 
 /-! ## Localized chaining bound (vdV §19.2)
 
@@ -4355,7 +4359,7 @@ lemma exists_q0_window {δ : ℝ} (hδ : 0 < δ) (hδ4 : δ ≤ 1 / 4) :
   classical
   -- Least index `q₀` with `(1/2)^q ≤ 8δ` exists (powers → 0).
   have hhalf_lt : (1 / 2 : ℝ) < 1 := by norm_num
-  obtain ⟨q, hq⟩ := exists_pow_lt_of_lt_one (by positivity : (0:ℝ) < 8 * δ) hhalf_lt
+  obtain ⟨q, hq⟩ := exists_pow_lt_of_lt_one (by positivity : (0 : ℝ) < 8 * δ) hhalf_lt
   have hexists : ∃ q : ℕ, (1 / 2 : ℝ) ^ q ≤ 8 * δ := ⟨q, hq.le⟩
   set q₀ := Nat.find hexists with hq₀_def
   have hq₀_le : (1 / 2 : ℝ) ^ q₀ ≤ 8 * δ := Nat.find_spec hexists
@@ -4382,7 +4386,7 @@ lemma bracketingEntropyIntegral_differenceClass_lt_top
   have hcover : ∀ ε : ℝ, 0 < ε → HasFiniteBracketingCover F (ε / 2) 2 P :=
     fun ε hε => hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by positivity)
   refine lt_of_le_of_lt
-    (bracketingEntropyIntegral_diff_le_class (by norm_num : (0:ℝ) ≤ 1) hcover) ?_
+    (bracketingEntropyIntegral_diff_le_class (by norm_num : (0 : ℝ) ≤ 1) hcover) ?_
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top h_int
 
 /-- **Per-level finite bracketing covers of the localized difference class.**
@@ -4828,7 +4832,7 @@ lemma localized_supNorm_lift
   have hdom : ∀ g ∈ 𝒢, ∀ x, |g x| ≤ Ψ x := by
     rintro g ⟨h, hhG, rfl⟩ x
     have hhΦ : |h x| ≤ Φ x := hΦ_envG h hhG x
-    show |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
+    change |h x - clampFn Mc h x| ≤ |Φ x| * Set.indicator {y | Mc < |Φ y|} 1 x
     by_cases hx : x ∈ {y | Mc < |Φ y|}
     · -- on `{Mc < |Φ|}`: `|h − clamp h| ≤ |h| ≤ |Φ| = |Φ|·1`
       rw [Set.indicator_of_mem hx]
@@ -4912,7 +4916,7 @@ lemma localized_supNorm_lift
       (ENNReal.ofReal (empiricalAvg Ψ n (fun j : Fin n => X j.val ξ)) + T) with hBproc_def
   have hBproc_meas : Measurable Bproc := by
     refine Measurable.const_mul ?_ _
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ω : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.ennreal_ofReal ?_
     unfold empiricalAvg
     refine Measurable.const_mul ?_ _
@@ -4948,7 +4952,7 @@ lemma localized_supNorm_lift
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       rw [ENNReal.ofReal_sum_of_nonneg (fun i _ => hΨ_nn _)]
     have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
     have hn_ne_zero : (n : ℝ≥0∞) ≠ 0 := by
@@ -4965,7 +4969,7 @@ lemma localized_supNorm_lift
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ξ, ENNReal.ofReal (Ψ (X i.val ξ)) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hΨ_ofReal_meas.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -4990,7 +4994,7 @@ lemma localized_supNorm_lift
             (∫⁻ ξ, ENNReal.ofReal
                 (empiricalAvg Ψ n (fun j : Fin n => X j.val ξ)) ∂μ + T)
         ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
-          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le)
       _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
       _ ≤ 4 * ENNReal.ofReal (Real.sqrt n) * T := by gcongr; norm_num
   -- assemble the split
@@ -5144,8 +5148,8 @@ lemma localized_core_construction
       refine ⟨fun x => f x - f x, ?_⟩
       refine ⟨f, hf, f, hf, rfl, ?_⟩
       simp only [sub_self]
-      rw [show (fun _ : Ω => (0 : ℝ)) = (0 : Ω → ℝ) from rfl, eLpNorm_zero]
-      exact zero_le _
+      rw [show (fun _ : Ω => (0 : ℝ)) = (0 : Ω → ℝ) from rfl, eLpNorm'_zero (by norm_num)]
+      exact zero_le
     -- The two localized-difference bracketing numbers give an explicit
     -- lower bound on `M` in terms of `δq`.
     have hM_Nbd : ∀ N : ℕ,
@@ -5197,7 +5201,11 @@ lemma localized_core_construction
       exact (abs_clampReal_le Mc hMc_nonneg (g x)).trans (hΦ_envG g hg x)
     have hF'_L2 : ∀ f ∈ F', eLpNorm f 2 P ≤ ENNReal.ofReal δq := by
       rintro _ ⟨g, hg, rfl⟩
-      refine le_trans (eLpNorm_mono (fun x => ?_)) (localizedDifferenceClass_hF_L2 hg)
+      refine le_trans (eLpNorm_mono (clampFn_measurable (hF_diff_meas g hg)).aestronglyMeasurable
+          (fun x => ?_)) (by
+        have hb := localizedDifferenceClass_hF_L2 hg
+        rw [← eLpNorm_two_eq_eLpNorm' (hF_diff_meas g hg).aestronglyMeasurable] at hb
+        exact hb)
       simpa [clampFn, Real.norm_eq_abs] using abs_clampReal_le Mc hMc_nonneg (g x)
     -- Measurability of the partition representatives.
     have hπ_meas : ∀ {q : ℕ}, q₀ ≤ q → ∀ i, Measurable (B.π q i) :=
@@ -5273,8 +5281,8 @@ lemma localized_core_construction
           * Set.indicator {x | Real.sqrt n * globalThreshold B δq < |Φ x|} 1 ω ∂P ≤ Tail := by
       rw [hTail_def]
       refine lintegral_mono (fun ω => ?_)
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
-      refine Set.indicator_le_indicator_of_subset ?_ (fun _ => zero_le _) ω
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
+      refine Set.indicator_le_indicator_of_subset ?_ (fun _ => zero_le) ω
       intro x hx
       exact lt_of_le_of_lt hMc_le_gt hx
     -- assemble: `LHS_G ≤ LHS_F' + 4·sn·Tail ≤ (c₀·dyadic + c₀·sn·EngTail) + 4·sn·Tail`
@@ -5294,9 +5302,9 @@ lemma localized_core_construction
       _ ≤ (ENNReal.ofReal c₀ * (ENNReal.ofReal (4 * Real.sqrt 2) * J)
             + ENNReal.ofReal c₀ * (sn * Tail)) + 4 * sn * Tail := by
           refine add_le_add (add_le_add ?_ ?_) le_rfl
-          · exact mul_le_mul_of_nonneg_left hdyadic (zero_le _)
+          · exact mul_le_mul_of_nonneg_left hdyadic (zero_le)
           · exact mul_le_mul_of_nonneg_left
-              (mul_le_mul_of_nonneg_left hEngTail_le (zero_le _)) (zero_le _)
+              (mul_le_mul_of_nonneg_left hEngTail_le (zero_le)) (zero_le)
       _ = ENNReal.ofReal (c₀ * (4 * Real.sqrt 2)) * J
             + (ENNReal.ofReal c₀ + 4) * (sn * Tail) := by
           rw [ENNReal.ofReal_mul hc₀_pos.le]; ring
@@ -5311,7 +5319,7 @@ lemma localized_core_construction
           · gcongr
             rw [hC_def]; nlinarith [hc₀, hsqrt2_ge]
           · rw [hCfact]
-            refine mul_le_mul_of_nonneg_right ?_ (zero_le _)
+            refine mul_le_mul_of_nonneg_right ?_ (zero_le)
             -- `ofReal c₀ + 4 ≤ ofReal(c₀·4√2) + ofReal(4c₀)`
             have hh1 : ENNReal.ofReal c₀ ≤ ENNReal.ofReal (c₀ * (4 * Real.sqrt 2)) := by
               apply ENNReal.ofReal_le_ofReal
@@ -5435,7 +5443,7 @@ theorem localizedChainBound_of_finiteEntropy
         simp only [supNormOver, empiricalProcess_zero, abs_zero, ENNReal.ofReal_zero]
         exact le_antisymm (by simp) (by positivity)
       simp only [h_sup0, lintegral_zero]
-    rw [h_lhs]; exact zero_le _
+    rw [h_lhs]; exact zero_le
   · exact hbound n hn_pos
 /-- **M-lower-bound variant of `localizedChainBound_of_finiteEntropy`.**
 
@@ -5506,7 +5514,7 @@ theorem localizedChainBound_of_finiteEntropy_MLower
         simp only [supNormOver, empiricalProcess_zero, abs_zero, ENNReal.ofReal_zero]
         exact le_antisymm (by simp) (by positivity)
       simp only [h_sup0, lintegral_zero]
-    rw [h_lhs]; exact zero_le _
+    rw [h_lhs]; exact zero_le
   · exact hbound n hn_pos
 
 /-- **Measurable-majorant form of the localized chaining bound.**
@@ -5584,8 +5592,8 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
     refine ⟨fun x => f x - f x, ?_⟩
     refine ⟨f, hf, f, hf, rfl, ?_⟩
     simp only [sub_self]
-    rw [show (fun _ : Ω => (0 : ℝ)) = (0 : Ω → ℝ) from rfl, eLpNorm_zero]
-    exact zero_le _
+    rw [show (fun _ : Ω => (0 : ℝ)) = (0 : Ω → ℝ) from rfl, eLpNorm'_zero (by norm_num)]
+    exact zero_le
   refine ⟨M, hM_pos, fun n => ?_⟩
   -- `n = 0`: the empirical process is `0`, so `g ≡ 0`; take `Maj := 0`.
   rcases Nat.eq_zero_or_pos n with hn0 | hn_pos
@@ -5596,7 +5604,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
         simp only [supNormOver, empiricalProcess_zero, abs_zero, ENNReal.ofReal_zero]
         exact le_antisymm (by simp) (by positivity)
       rw [h0]
-    · rw [lintegral_zero]; exact zero_le _
+    · rw [lintegral_zero]; exact zero_le
   -- `n ≥ 1`: build the per-scale localized majorant.
   have hn : 1 ≤ n := hn_pos
   have hsn_nonneg : 0 ≤ Real.sqrt n := Real.sqrt_nonneg _
@@ -5616,7 +5624,11 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
     exact (abs_clampReal_le Mc hMc_nonneg (g x)).trans (hΦ_envG g hg x)
   have hF'_L2 : ∀ f ∈ F', eLpNorm f 2 P ≤ ENNReal.ofReal δq := by
     rintro _ ⟨g, hg, rfl⟩
-    refine le_trans (eLpNorm_mono (fun x => ?_)) (localizedDifferenceClass_hF_L2 hg)
+    refine le_trans (eLpNorm_mono (clampFn_measurable (hF_diff_meas g hg)).aestronglyMeasurable
+        (fun x => ?_)) (by
+        have hb := localizedDifferenceClass_hF_L2 hg
+        rw [← eLpNorm_two_eq_eLpNorm' (hF_diff_meas g hg).aestronglyMeasurable] at hb
+        exact hb)
     simpa [clampFn, Real.norm_eq_abs] using abs_clampReal_le Mc hMc_nonneg (g x)
   have hπ_meas : ∀ {q : ℕ}, q₀ ≤ q → ∀ i, Measurable (B.π q i) :=
     fun {q} hq i => B.π_meas hq i
@@ -5676,7 +5688,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
         + ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P) with hBproc_def
   have hBproc_meas : Measurable Bproc := by
     refine Measurable.const_mul ?_ _
-    refine Measurable.add ?_ measurable_const
+    refine Measurable.add (f := fun ω : Ξ => (_ : ℝ≥0∞)) ?_ measurable_const
     refine Measurable.ennreal_ofReal ?_
     unfold empiricalAvg
     refine Measurable.const_mul ?_ _
@@ -5780,7 +5792,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
               + ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P)
         ≤ ENNReal.ofReal (Real.sqrt n) *
             (∫⁻ x, ENNReal.ofReal (Ψ x) ∂P + ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P) :=
-          mul_le_mul_of_nonneg_left (add_le_add hemp_le le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add hemp_le le_rfl) (zero_le)
       _ = 2 * sn * ∫⁻ x, ENNReal.ofReal (Ψ x) ∂P := by rw [hsn_def]; ring
       _ = 2 * sn * Tail := by rw [hΨ_int_eq]
       _ ≤ 4 * sn * Tail := by gcongr; norm_num
@@ -5821,8 +5833,8 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
         * Set.indicator {x | Real.sqrt n * globalThreshold B δq < |Φ x|} 1 ω ∂P ≤ Tail := by
     rw [hTail_def]
     refine lintegral_mono (fun ω => ?_)
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
-    refine Set.indicator_le_indicator_of_subset ?_ (fun _ => zero_le _) ω
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
+    refine Set.indicator_le_indicator_of_subset ?_ (fun _ => zero_le) ω
     intro x hx
     exact lt_of_le_of_lt hMc_le_gt hx
   -- assemble: `∫⁻ Maj = ∫⁻ MajF' + ∫⁻ Bproc`, then the two tail folds give `C·J + C·sn·Tail`.
@@ -5839,9 +5851,9 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
     _ ≤ (ENNReal.ofReal c₀ * (ENNReal.ofReal (4 * Real.sqrt 2) * J)
           + ENNReal.ofReal c₀ * (sn * Tail)) + 4 * sn * Tail := by
         refine add_le_add (add_le_add ?_ ?_) le_rfl
-        · exact mul_le_mul_of_nonneg_left hdyadic (zero_le _)
+        · exact mul_le_mul_of_nonneg_left hdyadic (zero_le)
         · exact mul_le_mul_of_nonneg_left
-            (mul_le_mul_of_nonneg_left hEngTail_le (zero_le _)) (zero_le _)
+            (mul_le_mul_of_nonneg_left hEngTail_le (zero_le)) (zero_le)
     _ = ENNReal.ofReal (c₀ * (4 * Real.sqrt 2)) * J
           + (ENNReal.ofReal c₀ + 4) * (sn * Tail) := by
         rw [ENNReal.ofReal_mul hc₀_pos.le]; ring
@@ -5855,7 +5867,7 @@ theorem localizedChainBound_measurableMajorant_of_finiteEntropy
         · gcongr
           rw [hC_def]; nlinarith [hc₀, hsqrt2_ge]
         · rw [hCfact]
-          refine mul_le_mul_of_nonneg_right ?_ (zero_le _)
+          refine mul_le_mul_of_nonneg_right ?_ (zero_le)
           have hh1 : ENNReal.ofReal c₀ ≤ ENNReal.ofReal (c₀ * (4 * Real.sqrt 2)) := by
             apply ENNReal.ofReal_le_ofReal
             nlinarith [hc₀, hsqrt2_ge]

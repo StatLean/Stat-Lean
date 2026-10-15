@@ -49,7 +49,8 @@ namespace StatLean.StatisticalModels.Survival
 
 open ProbabilityTheory in
 /-- Left-continuity of the CDF of an atomless law: the left limit is the value. -/
-private lemma leftLim_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ] (a : ℝ) :
+private lemma leftLim_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ]
+    (a : ℝ) :
     Function.leftLim (cdf μ) a = cdf μ a := by
   have h := (cdf μ).measure_singleton a
   rw [measure_cdf μ, MeasureTheory.measure_singleton] at h
@@ -59,12 +60,10 @@ private lemma leftLim_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAto
 
 /-- **Probability integral transform** (reusable brick): an atomless probability law on ℝ
 pushed through its own CDF is uniform on `(0, 1]`. -/
-theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ] :
+theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ] :
     μ.map (fun t => ProbabilityTheory.cdf μ t) = volume.restrict (Ioc (0 : ℝ) 1) := by
   have hmono := ProbabilityTheory.monotone_cdf μ
   have hmeas : Measurable (fun t => ProbabilityTheory.cdf μ t) := hmono.measurable
-  haveI : IsProbabilityMeasure (μ.map (fun t => ProbabilityTheory.cdf μ t)) :=
-    Measure.isProbabilityMeasure_map hmeas.aemeasurable
   refine Measure.ext_of_Iic _ _ fun u => ?_
   have hRHS : (volume.restrict (Ioc (0 : ℝ) 1)) (Iic u) = ENNReal.ofReal (min u 1) := by
     rw [Measure.restrict_apply measurableSet_Iic]
@@ -89,7 +88,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms
   rcases eq_empty_or_nonempty A with hAe | hAne
   · have hu' : u ≤ 0 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       obtain ⟨x, hx⟩ :=
         ((ProbabilityTheory.tendsto_cdf_atBot μ).eventually (eventually_lt_nhds hcon)).exists
       have hxA : x ∈ A := (hmemA x).2 hx.le
@@ -101,7 +100,7 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms
   have hbdd : BddAbove A := by
     refine ⟨x₀, fun x hx => ?_⟩
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact absurd ((hmemA x).1 hx) (not_le.2 (hx₀.trans_le (hmono hcon.le)))
   set a := sSup A with hadef
   have hIio : Iio a ⊆ A := by
@@ -121,14 +120,14 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms
         Ioi_subset_Ici_self) ?_
       filter_upwards [self_mem_nhdsWithin] with x hx
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact absurd (le_csSup hbdd ((hmemA x).2 hcon.le)) (not_le.2 hx)
   rw [hAmeas, ← ProbabilityTheory.ofReal_cdf μ a, hcdfa]
 
 open ProbabilityTheory in
 /-- A CDF level set is null for the law itself (immediate from the PIT). -/
 private lemma measure_preimage_cdf_singleton (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    [NoAtoms μ] (c : ℝ) : μ ((fun x => cdf μ x) ⁻¹' {c}) = 0 := by
+    [NullSingletonClass μ] (c : ℝ) : μ ((fun x => cdf μ x) ⁻¹' {c}) = 0 := by
   have hmeas : Measurable (fun x => cdf μ x) := (monotone_cdf μ).measurable
   rw [← Measure.map_apply hmeas (measurableSet_singleton c), map_cdf_of_noAtoms μ,
     Measure.restrict_apply (measurableSet_singleton c)]
@@ -165,7 +164,7 @@ private lemma lintegral_inv_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
     have hne : (1 : ℝ) - u ≠ 0 := ne_of_gt (hpos u hu)
     have hd : HasDerivAt (fun y : ℝ => 1 - y) (-1) u := by
       simpa using (hasDerivAt_id u).const_sub 1
-    simpa using ((Real.hasDerivAt_log hne).comp u hd).neg
+    simpa using! ((Real.hasDerivAt_log hne).comp u hd).neg
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont'.intervalIntegrable]
   simp
 
@@ -175,11 +174,11 @@ theorem cumHazard_Ioc_eq_neg_log (μ : Measure ℝ)
     -- USER-INPUT: event-time law; ABGK §II.1
     (hev : IsEventTimeLaw μ)
     -- USER-INPUT: continuous (atomless) law — the identity FAILS with atoms; ABGK §II.6
-    [NoAtoms μ] {t : ℝ}
+    [NullSingletonClass μ] {t : ℝ}
     -- USER-INPUT: inside the support (positive survival); ABGK §II.1
     (ht : survival μ t ≠ 0) :
     (cumHazard μ (Ioc 0 t)).toReal = -Real.log (survivalReal μ t) := by
-  haveI := hev.1
+  have := hev.1
   have hmono : Monotone (fun x => ProbabilityTheory.cdf μ x) := ProbabilityTheory.monotone_cdf μ
   have hFmeas : Measurable (fun x => ProbabilityTheory.cdf μ x) := hmono.measurable
   have hSR : survivalReal μ t = 1 - ProbabilityTheory.cdf μ t := survivalReal_eq_one_sub_cdf t
@@ -235,11 +234,11 @@ theorem survivalReal_eq_exp_neg_cumHazard (μ : Measure ℝ)
     -- USER-INPUT: event-time law; ABGK §II.1
     (hev : IsEventTimeLaw μ)
     -- USER-INPUT: atomless; ABGK §II.6
-    [NoAtoms μ] {t : ℝ}
+    [NullSingletonClass μ] {t : ℝ}
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     survivalReal μ t = Real.exp (-(cumHazard μ (Ioc 0 t)).toReal) := by
-  haveI := hev.1
+  have := hev.1
   have hpos : 0 < survivalReal μ t :=
     ENNReal.toReal_pos ht (measure_ne_top _ _)
   rw [cumHazard_Ioc_eq_neg_log μ hev ht, neg_neg, Real.exp_log hpos]
@@ -250,11 +249,11 @@ theorem cumHazard_Ioc_lt_top (μ : Measure ℝ)
     -- USER-INPUT: event-time law; ABGK §II.1
     (hev : IsEventTimeLaw μ)
     -- USER-INPUT: atomless; ABGK §II.6
-    [NoAtoms μ] {t : ℝ}
+    [NullSingletonClass μ] {t : ℝ}
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     cumHazard μ (Ioc 0 t) < ⊤ := by
-  haveI := hev.1
+  have := hev.1
   have hIci : μ (Ici t) ≠ 0 := fun h => ht (measure_mono_null Ioi_subset_Ici_self h)
   calc cumHazard μ (Ioc 0 t) ≤ cumHazard μ (Iic t) := measure_mono Ioc_subset_Iic_self
     _ ≤ (μ (Ici t))⁻¹ := cumHazard_Iic_le μ t
@@ -344,7 +343,7 @@ theorem survivalReal_eq_prod_one_sub_jump (μ : Measure ℝ)
     (hsupp : μ (Iic t \ (E.filter (· ≤ t) : Finset ℝ)) = 0) :
     survivalReal μ t = ∏ s ∈ E.filter (· ≤ t), (1 - (cumHazardJump μ s).toReal) := by
   classical
-  haveI := hev.1
+  have := hev.1
   set G := E.filter (· ≤ t) with hGdef
   set M := insert t (insert (0 : ℝ) G) with hMdef
   have hM : M.Nonempty := ⟨t, Finset.mem_insert_self _ _⟩

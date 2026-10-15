@@ -127,14 +127,9 @@ theorem isRegularEstimator_of_narrow_explicit
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ.curve (t n)) with hPn_def
   set Pn₀ : ∀ n : ℕ, Measure (Fin n → Ω) :=
     fun n => MeasureTheory.Measure.pi (fun _ : Fin n => γ₀.curve (t n)) with hPn₀_def
-  haveI hPn_prob : ∀ n, IsProbabilityMeasure (Pn n) := by
+  have hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
     intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ.curve (t n)) := fun _ =>
-      γ.curve_isProbability _
-    rw [hPn_def]; infer_instance
-  haveI hPn₀_prob : ∀ n, IsProbabilityMeasure (Pn₀ n) := by
-    intro n
-    haveI : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
+    have : ∀ _ : Fin n, IsProbabilityMeasure (γ₀.curve (t n)) := fun _ =>
       γ₀.curve_isProbability _
     rw [hPn₀_def]; infer_instance
   set Fγ : ∀ n, (Fin n → Ω) → ℝ :=
@@ -153,7 +148,7 @@ theorem isRegularEstimator_of_narrow_explicit
   have h_inv_to_zero : Tendsto t atTop (𝓝 0) := by
     have h_sqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
       Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-    simpa [ht_def] using h_sqrt.inv_tendsto_atTop
+    simpa [ht_def] using! h_sqrt.inv_tendsto_atTop
   have h_inv_ne : ∀ᶠ n : ℕ in atTop, t n ≠ 0 := by
     filter_upwards [Filter.eventually_ge_atTop 1] with n hn
     have hpos : (0 : ℝ) < Real.sqrt n :=
@@ -250,7 +245,7 @@ theorem isRegularEstimator_of_narrow_explicit
           {ω : Fin n → Ω | ε ≤ dist (Fγ₀ n ω) (Fγ n ω)} = (∅ : Set _) := by
       filter_upwards [hev] with n hn
       ext X
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       rw [h_dist_const]
       exact hn
     have h_real_zero :
@@ -311,8 +306,8 @@ theorem isRegularEstimator_of_narrow_explicit
     have := γ.curve_absContinuous (t n); rwa [h_dom_γ] at this
   have h_γ₀_dom_P : ∀ n, γ₀.curve (t n) ≪ P := fun n => by
     have := γ₀.curve_absContinuous (t n); rwa [h_γ₀_dom] at this
-  haveI : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
-  haveI : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ.curve (t n)) := fun n => γ.curve_isProbability _
+  have : ∀ n, IsProbabilityMeasure (γ₀.curve (t n)) := fun n => γ₀.curve_isProbability _
   intro f
   have h_push_eq_γ : ∀ n,
       ∫ y, f y ∂((Pn n).map (Fγ n)) = ∫ X, f (Fγ n X) ∂(Pn n) := fun n =>
@@ -394,9 +389,26 @@ theorem isRegularEstimator_of_narrow
             Real.sqrt n * (T_n n X - ψ (γ.curve ((Real.sqrt n)⁻¹)))))
       L := by
   obtain ⟨h_score, h_regular⟩ := Classical.choose_spec h_narrow
+  have h_regular_map (g : ↥(L2ZeroMean P))
+      (hg : (g : ↥(L2ZeroMean P)) ∈ Submodule.span ℝ T_set.carrier) :
+      WeakConverges
+        (fun n : ℕ =>
+          (Measure.pi (fun _ : Fin n =>
+            ((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹))).map
+            (fun X : Fin n → Ω => Real.sqrt n *
+              (T_n n X - ψ (((Classical.choose h_narrow) g hg).curve
+                ((Real.sqrt n)⁻¹))))) L := by
+    have hweak := h_regular g hg
+    rw [map₀_sequence_eq_map
+      (fun n => Measure.pi (fun _ : Fin n =>
+        ((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹)))
+      (fun n X => Real.sqrt n * (T_n n X - ψ
+        (((Classical.choose h_narrow) g hg).curve ((Real.sqrt n)⁻¹))))
+      (fun n => Measurable.const_mul ((hT_meas n).sub measurable_const) _)] at hweak
+    exact hweak
   exact isRegularEstimator_of_narrow_explicit
     (IF_eff := IF_eff) (hψ := hψ) (_hEIF := hEIF)
     (chosenFamily := Classical.choose h_narrow)
-    h_chosen_dom h_score h_regular hT_meas g hg γ hscore h_dom_γ
+    h_chosen_dom h_score h_regular_map hT_meas g hg γ hscore h_dom_γ
 
 end AsymptoticStatistics.LowerBounds.RegularEstimator

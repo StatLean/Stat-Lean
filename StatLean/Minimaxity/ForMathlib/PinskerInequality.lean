@@ -7,12 +7,13 @@ import StatLean.Minimaxity.ForMathlib.KLDataProcessing
 
 The total variation distance between two probability distributions is controlled by their
 Kullback–Leibler divergence: for all distributions $\mathbb{P}$ and $\mathbb{Q}$,
-$$\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} \le \sqrt{\tfrac{1}{2}\, D(\mathbb{Q} \,\|\, \mathbb{P})},$$
-equivalently $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}^2 \le \tfrac{1}{2}\, D(\mathbb{Q} \,\|\, \mathbb{P})$.
-Here $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} = \sup_A (\mathbb{P}(A) - \mathbb{Q}(A))$ is the
-supremum form of total variation and $D(\cdot\,\|\,\cdot)$ is the KL divergence (in nats), with the
-convention $D = +\infty$ when the first argument is not absolutely continuous with respect to the
-second.
+$$\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} \le \sqrt{\tfrac{1}{2}\, D(\mathbb{Q} \,\|\,
+\mathbb{P})},$$ equivalently $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}^2 \le \tfrac{1}{2}\,
+D(\mathbb{Q} \,\|\, \mathbb{P})$. Here $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} = \sup_A
+(\mathbb{P}(A) -
+\mathbb{Q}(A))$ is the supremum form of total variation and $D(\cdot\,\|\,\cdot)$ is the KL
+divergence (in nats), with the convention $D = +\infty$ when the first
+argument is not absolutely continuous with respect to the second.
 
 The Lean statement uses the extended-nonnegative-reals square root (`rpow (1/2)` on `ℝ≥0∞`), so
 the bound holds vacuously when the KL divergence is infinite; no absolute-continuity hypothesis is
@@ -65,11 +66,11 @@ private lemma mul_log_div_hasDerivAt {c : ℝ} (hc : c ≠ 0) {y : ℝ} (hy : y 
   have hgy : HasDerivAt (fun a => a / c) (1 / c) y := (hasDerivAt_id y).div_const c
   have hlog : HasDerivAt (fun a => Real.log (a / c)) y⁻¹ y := by
     have h := (Real.hasDerivAt_log (div_ne_zero hy hc)).comp y hgy
-    convert h using 1
-    field_simp
+    convert! h using 1
+    try field_simp
   have hp := (hasDerivAt_id y).mul hlog
-  convert hp using 1
-  simp only [id_eq, one_mul]
+  convert! hp using 1
+  try simp only [id_eq, one_mul]
   rw [mul_inv_cancel₀ hy]
 
 /-- **Scalar Bernoulli–Pinsker inequality** (Wainwright Exercise 15.6, pointwise step):
@@ -88,29 +89,30 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
   -- the function whose nonnegativity we want, its derivative `G`, and second derivative `H`
   set g : ℝ → ℝ := fun a =>
     a * Real.log (a / b) + (1 - a) * Real.log ((1 - a) / (1 - b)) - 2 * (a - b) ^ 2 with hg_def
-  set G : ℝ → ℝ := fun x => Real.log (x / b) - Real.log ((1 - x) / (1 - b)) - 4 * (x - b) with hG_def
+  set G : ℝ → ℝ := fun x => Real.log (x / b) -
+      Real.log ((1 - x) / (1 - b)) - 4 * (x - b) with hG_def
   set H : ℝ → ℝ := fun x => x⁻¹ + (1 - x)⁻¹ - 4 with hH_def
   -- g'(x) = G x on (0,1)
-  have hg' : ∀ x ∈ Ioo (0:ℝ) 1, HasDerivAt g (G x) x := by
+  have hg' : ∀ x ∈ Ioo (0 : ℝ) 1, HasDerivAt g (G x) x := by
     intro x hx
     obtain ⟨hx0, hx1⟩ := hx
     have hxne : x ≠ 0 := hx0.ne'
     have hsne : (1 - x) ≠ 0 := by linarith
     have t1 := mul_log_div_hasDerivAt hb0' hxne
-    have hsub : HasDerivAt (fun a => (1:ℝ) - a) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+    have hsub : HasDerivAt (fun a => (1 : ℝ) - a) (-1) x := by
+      simpa using! (hasDerivAt_const x (1 : ℝ)).sub (hasDerivAt_id x)
     have t2base := mul_log_div_hasDerivAt hb1' hsne
     have t2 := t2base.comp x hsub
     have t3 : HasDerivAt (fun a => 2 * (a - b) ^ 2) (4 * (x - b)) x := by
       have h := ((hasDerivAt_id x).sub_const b).pow 2
       have h2 := h.const_mul (2 : ℝ)
-      convert h2 using 1
-      simp only [id_eq]; ring
+      convert! h2 using 1
+      try simp only [id_eq]; ring
     have hsum := (t1.add t2).sub t3
-    convert hsum using 1
+    convert! hsum using 1
     ring
   -- G'(x) = H x on (0,1)
-  have hG' : ∀ x ∈ Ioo (0:ℝ) 1, HasDerivAt G (H x) x := by
+  have hG' : ∀ x ∈ Ioo (0 : ℝ) 1, HasDerivAt G (H x) x := by
     intro x hx
     obtain ⟨hx0, hx1⟩ := hx
     have hxne : x ≠ 0 := hx0.ne'
@@ -118,23 +120,23 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
     have hgx : HasDerivAt (fun a => a / b) (1 / b) x := (hasDerivAt_id x).div_const b
     have hl1 : HasDerivAt (fun a => Real.log (a / b)) x⁻¹ x := by
       have h := (Real.hasDerivAt_log (div_ne_zero hxne hb0')).comp x hgx
-      convert h using 1; field_simp
-    have hsub : HasDerivAt (fun a => (1:ℝ) - a) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+      convert! h using 1; try field_simp
+    have hsub : HasDerivAt (fun a => (1 : ℝ) - a) (-1) x := by
+      simpa using! (hasDerivAt_const x (1 : ℝ)).sub (hasDerivAt_id x)
     have hgs : HasDerivAt (fun a => a / (1 - b)) (1 / (1 - b)) (1 - x) :=
       (hasDerivAt_id (1 - x)).div_const (1 - b)
     have hl2base : HasDerivAt (fun u => Real.log (u / (1 - b))) (1 - x)⁻¹ (1 - x) := by
       have h := (Real.hasDerivAt_log (div_ne_zero hsne hb1')).comp (1 - x) hgs
-      convert h using 1; field_simp
+      convert! h using 1; try field_simp
     have hl2 := hl2base.comp x hsub
     have t3 : HasDerivAt (fun a => 4 * (a - b)) (4 : ℝ) x := by
       have h := ((hasDerivAt_id x).sub_const b).const_mul (4 : ℝ)
-      convert h using 1; ring
+      convert! h using 1; ring
     have hsum := (hl1.sub hl2).sub t3
-    convert hsum using 1
+    convert! hsum using 1
     ring
   -- H x ≥ 0 on (0,1), since 1/(x(1−x)) ≥ 4
-  have hH_nonneg : ∀ x ∈ Ioo (0:ℝ) 1, 0 ≤ H x := by
+  have hH_nonneg : ∀ x ∈ Ioo (0 : ℝ) 1, 0 ≤ H x := by
     intro x hx
     obtain ⟨hx0, hx1⟩ := hx
     have hs0 : 0 < 1 - x := by linarith
@@ -144,7 +146,7 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
       nlinarith [sq_nonneg (2 * x - 1)]
     simp only [hH_def]; linarith
   -- G is monotone on (0,1) (its derivative H is nonnegative)
-  have hGmono : MonotoneOn G (Ioo (0:ℝ) 1) := by
+  have hGmono : MonotoneOn G (Ioo (0 : ℝ) 1) := by
     apply monotoneOn_of_deriv_nonneg (convex_Ioo 0 1)
     · exact fun x hx => (hG' x hx).continuousAt.continuousWithinAt
     · rw [interior_Ioo]
@@ -153,7 +155,7 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
       intro x hx
       rw [(hG' x hx).deriv]
       exact hH_nonneg x hx
-  have hbmem : b ∈ Ioo (0:ℝ) 1 := ⟨hb0, hb1⟩
+  have hbmem : b ∈ Ioo (0 : ℝ) 1 := ⟨hb0, hb1⟩
   -- G b = 0 and g b = 0 (tangent at the minimizer)
   have hGb : G b = 0 := by
     simp only [hG_def, div_self hb0', div_self hb1', Real.log_one, sub_self, mul_zero]
@@ -163,7 +165,7 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
   -- conclude g a ≥ 0 by monotonicity of g on [b,a] (resp. antitonicity on [a,b])
   have hga : 0 ≤ g a := by
     rcases le_total b a with hba | hab
-    · have hsub : Icc b a ⊆ Ioo (0:ℝ) 1 := fun x hx =>
+    · have hsub : Icc b a ⊆ Ioo (0 : ℝ) 1 := fun x hx =>
         ⟨lt_of_lt_of_le hb0 hx.1, lt_of_le_of_lt hx.2 ha1⟩
       have hgmono : MonotoneOn g (Icc b a) := by
         apply monotoneOn_of_deriv_nonneg (convex_Icc b a)
@@ -176,7 +178,7 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
           exact hGb ▸ hGmono hbmem (hsub hxin) hxin.1
       have := hgmono (left_mem_Icc.mpr hba) (right_mem_Icc.mpr hba) hba
       rw [hgb] at this; exact this
-    · have hsub : Icc a b ⊆ Ioo (0:ℝ) 1 := fun x hx =>
+    · have hsub : Icc a b ⊆ Ioo (0 : ℝ) 1 := fun x hx =>
         ⟨lt_of_lt_of_le ha0 hx.1, lt_of_le_of_lt hx.2 hb1⟩
       have hganti : AntitoneOn g (Icc a b) := by
         apply antitoneOn_of_deriv_nonpos (convex_Icc a b)
@@ -199,21 +201,21 @@ and `H'(c) = 1/(1 − c) − 4c = (2c − 1)²/(1 − c) ≥ 0`, hence is monoto
 private lemma two_sq_le_neg_log_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
     2 * c ^ 2 ≤ - Real.log (1 - c) := by
   set H : ℝ → ℝ := fun x => - Real.log (1 - x) - 2 * x ^ 2 with hH
-  have hderiv : ∀ x ∈ Set.Icc (0:ℝ) c, HasDerivAt H ((1 - x)⁻¹ - 4 * x) x := by
+  have hderiv : ∀ x ∈ Set.Icc (0 : ℝ) c, HasDerivAt H ((1 - x)⁻¹ - 4 * x) x := by
     intro x hx
     have hx1 : (1 - x) ≠ 0 := by have := hx.2; linarith
-    have h1 : HasDerivAt (fun y => (1:ℝ) - y) (-1) x := by
-      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+    have h1 : HasDerivAt (fun y => (1 : ℝ) - y) (-1) x := by
+      simpa using! (hasDerivAt_const x (1 : ℝ)).sub (hasDerivAt_id x)
     have hlog : HasDerivAt (fun y => -Real.log (1 - y)) ((1 - x)⁻¹) x := by
       have h := (Real.hasDerivAt_log hx1).comp x h1
       have h2 := h.neg
-      convert h2 using 1; field_simp
+      convert! h2 using 1; try field_simp
     have hsq : HasDerivAt (fun y => 2 * y ^ 2) (4 * x) x := by
       have h := (hasDerivAt_id x).pow 2
       have h2 := h.const_mul (2 : ℝ)
-      convert h2 using 1; simp only [id_eq]; ring
+      convert! h2 using 1; try simp only [id_eq]; ring
     have hsum := hlog.sub hsq
-    convert hsum using 1
+    convert! hsum using 1
   have hH0 : H 0 = 0 := by simp [hH]
   have hmono : MonotoneOn H (Set.Icc 0 c) := by
     apply monotoneOn_of_deriv_nonneg (convex_Icc 0 c)
@@ -221,8 +223,8 @@ private lemma two_sq_le_neg_log_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) 
     · intro x hx
       exact (hderiv x (interior_subset hx)).differentiableAt.differentiableWithinAt
     · intro x hx
-      have hxin : x ∈ Set.Icc (0:ℝ) c := interior_subset hx
-      have h1x : (0:ℝ) < 1 - x := by have := hxin.2; linarith
+      have hxin : x ∈ Set.Icc (0 : ℝ) c := interior_subset hx
+      have h1x : (0 : ℝ) < 1 - x := by have := hxin.2; linarith
       rw [(hderiv x hxin).deriv]
       have : 4 * x ≤ (1 - x)⁻¹ := by
         rw [inv_eq_one_div, le_div_iff₀ h1x]; nlinarith [sq_nonneg (2 * x - 1)]
@@ -259,7 +261,7 @@ private lemma two_sq_le_klFun_combo {a c : ℝ} (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
       have := bernoulli_pinsker_scalar ha0pos ha1lt hc0 hc1
       linarith
     · -- endpoint `a = 1`
-      have h : (1:ℝ) / c * c = 1 := by field_simp
+      have h : (1 : ℝ) / c * c = 1 := by field_simp
       have hlog : Real.log (1 / c) = - Real.log c := by rw [one_div, Real.log_inv]
       have e1 : klFun (1 / c) * c = -Real.log c + c - 1 := by
         rw [klFun_apply,
@@ -268,12 +270,12 @@ private lemma two_sq_le_klFun_combo {a c : ℝ} (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
       have e0 : klFun ((1 - 1) / (1 - c)) * (1 - c) = (1 - c) := by simp [klFun_apply]
       rw [e1, e0]
       have hd := two_sq_le_neg_log_one_sub (c := 1 - c) (by linarith) (by linarith)
-      rw [show (1:ℝ) - (1 - c) = c from by ring] at hd
+      rw [show (1 : ℝ) - (1 - c) = c from by ring] at hd
       nlinarith [hd]
   · -- endpoint `a = 0`
     rw [← ha0eq]
     have e0 : klFun (0 / c) * c = c := by simp [klFun_apply]
-    have h : (1 - 0:ℝ) / (1 - c) * (1 - c) = 1 := by rw [sub_zero]; field_simp
+    have h : (1 - 0 : ℝ) / (1 - c) * (1 - c) = 1 := by rw [sub_zero]; field_simp
     have hlog : Real.log ((1 - 0) / (1 - c)) = - Real.log (1 - c) := by
       rw [sub_zero, one_div, Real.log_inv]
     have e2 : klFun ((1 - 0) / (1 - c)) * (1 - c) = -Real.log (1 - c) + (1 - c) - 1 := by
@@ -342,12 +344,12 @@ private lemma klDiv_bool_ge (P Q : Measure Bool)
         have hQf_of : Q {false} = ENNReal.ofReal (1 - (Q {true}).toReal) := by
           rw [← hQf_eq]; exact (ENNReal.ofReal_toReal hQf_top).symm
         -- numeric facts about the masses
-        have ha0 : (0:ℝ) ≤ (P {true}).toReal := ENNReal.toReal_nonneg
+        have ha0 : (0 : ℝ) ≤ (P {true}).toReal := ENNReal.toReal_nonneg
         have ha1 : (P {true}).toReal ≤ 1 := by
           rw [← ENNReal.toReal_one]; exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
-        have hc_pos : (0:ℝ) < (Q {true}).toReal := ENNReal.toReal_pos hQt0 hQt_top
+        have hc_pos : (0 : ℝ) < (Q {true}).toReal := ENNReal.toReal_pos hQt0 hQt_top
         have hc_lt1 : (Q {true}).toReal < 1 := by
-          have hpos : (0:ℝ) < (Q {false}).toReal := ENNReal.toReal_pos hQf0 hQf_top
+          have hpos : (0 : ℝ) < (Q {false}).toReal := ENNReal.toReal_pos hQf0 hQf_top
           rw [hQf_eq] at hpos; linarith
         -- freeze the real masses so that `Q {true}` only occurs as the atom multiplier
         set a := (P {true}).toReal with ha_def
@@ -385,7 +387,7 @@ private lemma tvDist_eq_measure_sub (μ ν : Measure α)
         Measure.setLIntegral_rnDeriv hνξ A]
   have hcompl : ∫⁻ x in Aᶜ, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = 0 := by
     refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
-    rw [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+    rw [hA, Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hx
     exact tsub_eq_zero_of_le hx.le
   have hDA : ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = μ A - ν A := by
     rw [← lintegral_add_compl _ hAm, hcompl, add_zero, hAsub]
@@ -436,8 +438,8 @@ private lemma klDiv_ge_two_mul_tvDist_sq (μ ν : Measure α)
     rw [Measure.map_apply hfm (measurableSet_singleton true), hpre]
   have htv_tr : (tvDist μ ν).toReal = (μ A).toReal - (ν A).toReal := by
     rw [tvDist_eq_measure_sub μ ν, ENNReal.toReal_sub_of_le hνμA (measure_ne_top μ A)]
-  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
-  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  have : IsProbabilityMeasure (ν.map f) := (by infer_instance)
+  have : IsProbabilityMeasure (μ.map f) := (by infer_instance)
   calc ENNReal.ofReal (2 * (tvDist μ ν).toReal ^ 2)
       = ENNReal.ofReal (2 * (((ν.map f) {true}).toReal - ((μ.map f) {true}).toReal) ^ 2) := by
         rw [htv_tr, hPt, hQt]; congr 1; ring
@@ -460,7 +462,7 @@ private lemma pinsker_half_lintegral_le (μ ν : Measure α)
   rw [← tvDist_eq_half_lintegral]
   by_cases hkl : klDiv ν μ = ⊤
   · rw [hkl, ENNReal.mul_top (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top),
-        ENNReal.top_rpow_of_pos (by norm_num : (0:ℝ) < 1 / 2)]
+        ENNReal.top_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2)]
     exact le_top
   · have htv1 : tvDist μ ν ≤ 1 := tvDist_le_one μ ν
     have htvne : tvDist μ ν ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top htv1
@@ -477,10 +479,10 @@ private lemma pinsker_half_lintegral_le (μ ν : Measure α)
       exact (ENNReal.ofReal_le_ofReal_iff hk_nn).mp h
     -- Assemble in `ℝ≥0∞`.
     rw [htv_eq, hkl_eq,
-        show (2:ℝ≥0∞)⁻¹ * ENNReal.ofReal k = ENNReal.ofReal (k / 2) from by
-          rw [ENNReal.ofReal_div_of_pos (by norm_num : (0:ℝ) < 2), ENNReal.ofReal_ofNat,
+        show (2 : ℝ≥0∞)⁻¹ * ENNReal.ofReal k = ENNReal.ofReal (k / 2) from by
+          rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat,
               div_eq_mul_inv, mul_comm],
-        ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num : (0:ℝ) ≤ 1 / 2),
+        ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num : (0 : ℝ) ≤ 1 / 2),
         ← Real.sqrt_eq_rpow]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [show t = Real.sqrt (t ^ 2) from (Real.sqrt_sq ht_nn).symm]

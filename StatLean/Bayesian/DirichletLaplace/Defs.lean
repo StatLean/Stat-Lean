@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.Distributions.Gaussian.Basic
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gamma
@@ -43,11 +44,11 @@ API proofs here (the probability-measure instance, the kernel-evaluation identit
 `dlSuppCount` measurability) are laptop-closed against the `ForMathlib` bricks once those land; they
 are marked with `-- LAPTOP-DEBT`.
 
-**Bibliographic comments.** The normal means / sparse-sequence problem is classical (Donoho–Johnstone
-1994; Johnstone–Silverman 2004); the DL prior and its posterior-contraction theory are due to the
-BPPD paper formalized here, in the posterior-contraction framework of Ghosal–Ghosh–van der Vaart
-(*Ann. Statist.* 28 (2000), 500–531) and Castillo–van der Vaart (*Ann. Statist.* 40 (2012),
-2069–2101).
+**Bibliographic comments.** The normal means / sparse-sequence problem is classical
+(Donoho–Johnstone 1994; Johnstone–Silverman 2004); the DL prior and its posterior-contraction theory
+are due to the BPPD paper formalized here, in the posterior-contraction framework of
+Ghosal–Ghosh–van der Vaart (*Ann. Statist.* 28 (2000), 500–531) and Castillo–van der Vaart (*Ann.
+Statist.* 40 (2012), 2069–2101).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -68,7 +69,7 @@ noncomputable def dlMarginal (a : ℝ) : Measure ℝ :=
 
 /-- On `0 < a`, `dlMarginal a` unfolds to the mixture `bind`. -/
 lemma dlMarginal_eq_bind {a : ℝ} (ha : 0 < a) :
-    dlMarginal a = (gammaMeasure a 2⁻¹).bind laplaceMeasure := if_pos ha
+    dlMarginal a = (gammaMeasure a 2⁻¹).bind laplaceMeasure := ite_eq_left ha
 
 /-- `dlMarginal a` is a probability measure for every `a` (dirac branch trivial; mixture branch uses
 the Laplace probability-mass identity and the positivity of the Gamma support). -/
@@ -76,20 +77,21 @@ instance isProbabilityMeasure_dlMarginal (a : ℝ) : IsProbabilityMeasure (dlMar
   rw [dlMarginal]
   split
   · rename_i ha
-    haveI : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
+    have : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
       isProbabilityMeasure_gammaMeasure ha (by norm_num)
     have hmeas : Measurable (fun b => laplaceMeasure b) :=
       Measure.measurable_of_measurable_coe _ (fun s hs => measurable_laplaceMeasure_apply hs)
     refine ⟨?_⟩
     rw [Measure.bind_apply MeasurableSet.univ hmeas.aemeasurable]
-    -- `gammaMeasure` is supported on `Ioi 0`, and `laplaceMeasure b` is a probability measure there.
+    -- `gammaMeasure` is supported on `Ioi 0`, and
+    -- `laplaceMeasure b` is a probability measure there.
     have hpos : ∀ᵐ b ∂(gammaMeasure a 2⁻¹), (0 : ℝ) < b := by
       rw [ae_iff]
       simp only [not_lt]
       exact gammaMeasure_Iic_eq_zero ha (by norm_num)
     have hae : (fun b => laplaceMeasure b Set.univ) =ᵐ[gammaMeasure a 2⁻¹] fun _ => 1 := by
       filter_upwards [hpos] with b hb
-      haveI := isProbabilityMeasure_laplaceMeasure hb
+      have := isProbabilityMeasure_laplaceMeasure hb
       exact measure_univ
     rw [lintegral_congr_ae hae, lintegral_one, measure_univ]
   · infer_instance
@@ -102,7 +104,7 @@ noncomputable def dlPrior (a : ℝ) (ι : Type*) [Fintype ι] : Measure (Euclide
 instance isProbabilityMeasure_dlPrior (a : ℝ) (ι : Type*) [Fintype ι] :
     IsProbabilityMeasure (dlPrior a ι) := by
   rw [dlPrior]
-  haveI : ∀ _i : ι, IsProbabilityMeasure (dlMarginal a) := fun _ => isProbabilityMeasure_dlMarginal a
+  have : ∀ _i : ι, IsProbabilityMeasure (dlMarginal a) := fun _ => isProbabilityMeasure_dlMarginal a
   refine ⟨?_⟩
   rw [Measure.map_apply (by fun_prop) MeasurableSet.univ, Set.preimage_univ, measure_univ]
 
@@ -120,7 +122,7 @@ lemma measurable_dlSuppCount (δ : ℝ) :
   simp only [dlSuppCount, Finset.card_filter]
   refine Finset.measurable_sum _ (fun j _ => ?_)
   refine Measurable.ite (measurableSet_lt measurable_const ?_) measurable_const measurable_const
-  exact (measurable_pi_apply j).comp (EuclideanSpace.measurableEquiv ι).measurable |>.abs
+  exact (EuclideanSpace.proj j).continuous.measurable.abs
 
 /-! ### The normal-means model -/
 
@@ -134,7 +136,7 @@ noncomputable def gaussShiftKernel (ι : Type*) [Fintype ι] :
 instance isMarkovKernel_gaussShiftKernel (ι : Type*) [Fintype ι] :
     IsMarkovKernel (gaussShiftKernel ι) := by
   rw [gaussShiftKernel]
-  haveI : IsProbabilityMeasure (stdGaussian (EuclideanSpace ℝ ι)) := inferInstance
+  have : IsProbabilityMeasure (stdGaussian (EuclideanSpace ℝ ι)) := inferInstance
   exact Kernel.IsMarkovKernel.map _ (by fun_prop)
 
 /-- `gaussShiftKernel ι θ = N(θ, I) = stdGaussian shifted by θ`. -/

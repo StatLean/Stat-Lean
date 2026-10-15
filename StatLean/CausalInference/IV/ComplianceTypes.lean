@@ -38,7 +38,7 @@ theorem typeSet_disjoint {s t : ComplianceType} (hst : s ≠ t) :
     Disjoint (typeSet d1 d0 s) (typeSet d1 d0 t) := by
   rw [Set.disjoint_left]
   intro ω hs ht
-  simp only [typeSet, Set.mem_setOf_eq] at hs ht
+  simp only [typeSet, Set.mem_ofPred_eq] at hs ht
   exact hst (hs.symm.trans ht)
 
 /-- Every unit has a compliance type: the four events cover the sample space. -/
@@ -51,28 +51,28 @@ theorem iUnion_typeSet : (⋃ t : ComplianceType, typeSet d1 d0 t) = Set.univ :=
 theorem mem_typeSet_complier {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.complier ↔ d1 ω = true ∧ d0 ω = false := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 /-- Characterization of the defier event. -/
 theorem mem_typeSet_defier {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.defier ↔ d1 ω = false ∧ d0 ω = true := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 /-- Characterization of the always-taker event. -/
 private theorem mem_typeSet_alwaysTaker {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.alwaysTaker ↔ d1 ω = true ∧ d0 ω = true := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 /-- Characterization of the never-taker event. -/
 private theorem mem_typeSet_neverTaker {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.neverTaker ↔ d1 ω = false ∧ d0 ω = false := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 /-- **Monotonicity is exactly the absence of defiers** (Ding Assumption 21.2). -/

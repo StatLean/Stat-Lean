@@ -118,7 +118,7 @@ private lemma eps_inner_integrable
   have hsum : (fun ω => ⟪w, ε ω⟫_ℝ) = (fun ω => ∑ i, w i * (ε ω) i) :=
     funext fun ω => inner_eq_sum w (ε ω)
   rw [hsum]
-  apply integrable_finset_sum
+  apply integrable_finsetSum
   intro i _
   exact ((eps_coord_hasSubG hε_meanz hε_subG i).integrable).const_mul (w i)
 
@@ -133,7 +133,7 @@ private lemma eps_inner_mean0
   calc ∫ ω, ⟪w, ε ω⟫_ℝ ∂μ
       = ∫ ω, ∑ i, w i * (ε ω) i ∂μ := by simp_rw [inner_eq_sum]
     _ = ∑ i, ∫ ω, w i * (ε ω) i ∂μ :=
-          integral_finset_sum _ (fun i _ => (hcoord_int i).const_mul _)
+          integral_finsetSum _ (fun i _ => (hcoord_int i).const_mul _)
     _ = ∑ i, w i * ∫ ω, (ε ω) i ∂μ := by simp_rw [integral_const_mul]
     _ = 0 := by simp [hε_meanz]
 
@@ -166,7 +166,8 @@ private lemma eps_inner_subGaussian
   simp only [eps_inner_mean0 hε_meanz hε_subG w, sub_zero]
   convert hfinal using 2
   apply NNReal.coe_injective
-  simp only [NNReal.coe_sum, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_mk, coe_nnnorm]
+  rw [NNReal.coe_mul, NNReal.coe_pow, coe_nnnorm, NNReal.coe_sum]
+  change (σ2 : ℝ) * ‖w‖ ^ 2 = ∑ i : Fin n, (w i) ^ 2 * (σ2 : ℝ)
   rw [← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq w]
   ring
 
@@ -288,8 +289,8 @@ theorem mse_ols_highProb_tail
       ≤ ENNReal.ofReal δ := by
   -- Setup: column space, completeness, orthogonal projection.
   let C := columnSpace X
-  haveI hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
-  haveI hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
+  have hC_fd : FiniteDimensional ℝ ↥C := LinearMap.finiteDimensional_range _
+  have hC_proj : C.HasOrthogonalProjection := Submodule.HasOrthogonalProjection.ofCompleteSpace C
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   -- Step 1–3: MSE = (1/n)‖P_C ε‖².
   have hmse_eq : ∀ ω, mse X (βhat ω) βstar = (1 / (n : ℝ)) * ‖C.starProjection (ε ω)‖ ^ 2 := by
@@ -326,19 +327,19 @@ theorem mse_ols_highProb_tail
     have hempty : {ω | 32 * (σ2 : ℝ) * (designRank X : ℝ) / (n : ℝ)
         + 16 * ((σ2 : ℝ) / (n : ℝ)) * Real.log (1 / δ) < mse X (βhat ω) βstar} = ∅ := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
       rw [hmse0 ω]; exact hbnd_nonneg
     rw [hempty]; simp
   · -- r > 0: encode projected noise as an r-dimensional sub-Gaussian vector.
-    haveI : NeZero R := ⟨hRpos.ne'⟩
+    have : NeZero R := ⟨hRpos.ne'⟩
     let b : OrthonormalBasis (Fin R) ℝ ↥C := stdOrthonormalBasis ℝ ↥C
-    let Z : Ω → EuclideanSpace ℝ (Fin R) := fun ω => b.repr (C.orthogonalProjection (ε ω))
-    have hZdef : ∀ ω, Z ω = b.repr (C.orthogonalProjection (ε ω)) := fun ω => rfl
+    let Z : Ω → EuclideanSpace ℝ (Fin R) := fun ω => b.repr (C.orthogonalProjectionOnto (ε ω))
+    have hZdef : ∀ ω, Z ω = b.repr (C.orthogonalProjectionOnto (ε ω)) := fun ω => rfl
     -- coordinate formula
     have hZcoord : ∀ ω, ∀ k, (Z ω).ofLp k = ⟪((b k : ↥C) : EuclideanSpace ℝ (Fin n)), ε ω⟫_ℝ := by
       intro ω k
       rw [hZdef ω, OrthonormalBasis.repr_apply_apply]
-      exact Submodule.inner_orthogonalProjection_eq_of_mem_left (b k) (ε ω)
+      exact Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left (b k) (ε ω)
     -- norm: ‖Z ω‖ = ‖P_C ε‖
     have hZnorm : ∀ ω, ‖Z ω‖ = ‖C.starProjection (ε ω)‖ := by
       intro ω
@@ -371,7 +372,7 @@ theorem mse_ols_highProb_tail
         intro ω
         rw [hZdef ω]
         conv_lhs => rw [show u = b.repr (b.repr.symm u) from (b.repr.apply_symm_apply u).symm]
-        rw [b.repr.inner_map_map, Submodule.inner_orthogonalProjection_eq_of_mem_left]
+        rw [b.repr.inner_map_map, Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
       have hnn : ‖u‖₊ = ‖wu‖₊ := by
         rw [← NNReal.coe_inj, coe_nnnorm, coe_nnnorm]; exact hwu_norm.symm
       rw [show (fun ω => inner ℝ u (Z ω)) = (fun ω => ⟪wu, ε ω⟫_ℝ) from funext hinner_eq, hnn]
@@ -412,7 +413,7 @@ theorem mse_ols_highProb_tail
               + 16 * ((σ2 : ℝ) / (n : ℝ)) * Real.log (1 / δ) := by rw [hrank]; ring
     have hsub : {ω | bnd < mse X (βhat ω) βstar} ⊆ {ω | t < ‖Z ω‖} := by
       intro ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       by_contra hcon
       rw [not_lt] at hcon
       exact absurd (hpoint ω hcon) (not_le.mpr hω)
@@ -456,7 +457,7 @@ theorem mse_ols_highProb_le
   set bnd := 32 * (σ2 : ℝ) * (designRank X : ℝ) / (n : ℝ)
               + 16 * ((σ2 : ℝ) / (n : ℝ)) * Real.log (1 / δ) with hbnd_def
   have hcompl : {ω | mse X (βhat ω) βstar ≤ bnd}ᶜ = {ω | bnd < mse X (βhat ω) βstar} := by
-    ext ω; simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le]
+    ext ω; simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le]
   have huniv : (1 : ℝ≥0∞)
       ≤ μ {ω | mse X (βhat ω) βstar ≤ bnd} + μ {ω | bnd < mse X (βhat ω) βstar} := by
     rw [← hcompl]

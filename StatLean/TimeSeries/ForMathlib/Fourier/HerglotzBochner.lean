@@ -118,7 +118,7 @@ private lemma measureFourierCoeff_fejerMeasure_of_lt (γ : ℤ → ℝ) (h : IsP
 private lemma fejerMeasure_univ (γ : ℤ → ℝ) (h : IsPosSemidefSeq γ)
     (heven : ∀ k, γ (-k) = γ k) {n : ℕ} (hn : 0 < n) :
     (fejerMeasure γ n) Set.univ = ENNReal.ofReal (γ 0) := by
-  haveI := isFiniteMeasure_fejerMeasure γ n
+  have := isFiniteMeasure_fejerMeasure γ n
   have hzero : measureFourierCoeff (fejerMeasure γ n) 0 = (γ 0 : ℂ) := by
     rw [measureFourierCoeff_fejerMeasure_of_lt γ h heven (j := 0) (by simpa using hn)]
     have hnC : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
@@ -198,7 +198,7 @@ theorem exists_measure_of_isPosSemidefSeq (γ : ℤ → ℝ)
         ((Pn m : ProbabilityMeasure (AddCircle (2 * π))) : Measure (AddCircle (2 * π)))
           = (ENNReal.ofReal (γ 0))⁻¹ • fejerMeasure γ (m + 1) := fun _ => rfl
     -- compactness of the space of probability measures on the (compact, metrizable) circle
-    haveI : SeqCompactSpace (ProbabilityMeasure (AddCircle (2 * π))) :=
+    have : SeqCompactSpace (ProbabilityMeasure (AddCircle (2 * π))) :=
       compactSpace_iff_seqCompactSpace.mp inferInstance
     obtain ⟨P, φ, hφ, hlim⟩ := SeqCompactSpace.tendsto_subseq Pn
     have hφtop : Filter.Tendsto (fun k => φ k + 1) atTop atTop :=
@@ -237,11 +237,11 @@ theorem exists_measure_of_isPosSemidefSeq (γ : ℤ → ℝ)
       rw [measureFourierCoeff_smul, hcoef k, ENNReal.toReal_ofReal h0.le]
       push_cast
       field_simp
-    haveI hFfin : IsFiniteMeasure (ENNReal.ofReal (γ 0) • (P : Measure (AddCircle (2 * π)))) :=
+    have hFfin : IsFiniteMeasure (ENNReal.ofReal (γ 0) • (P : Measure (AddCircle (2 * π)))) :=
       ⟨by rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]; exact htop.lt_top⟩
     refine ⟨_, hFfin, ?_, hFcoef⟩
     -- negation invariance from evenness of the coefficients (uniqueness)
-    haveI := Measure.isFiniteMeasure_map
+    have := Measure.isFiniteMeasure_map
       (ENNReal.ofReal (γ 0) • (P : Measure (AddCircle (2 * π)))) (fun z => -z)
     refine ext_of_measureFourierCoeff _ _ fun m => ?_
     rw [measureFourierCoeff_map_neg, hFcoef (-m), hFcoef m, heven m]
@@ -252,7 +252,7 @@ coefficients of a finite measure form a positive semidefinite sequence
 theorem isPosSemidefSeq_measureFourierCoeff (F : Measure (AddCircle (2 * π)))
     [IsFiniteMeasure F] :
     IsPosSemidefSeq fun k => (measureFourierCoeff F k).re := by
-  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  have : Fact (0 < 2 * π) := ⟨by positivity⟩
   intro n t a
   have hint : ∀ m : ℤ, Integrable (fun z => fourier (T := 2 * π) m z) F := fun m =>
     (BoundedContinuousFunction.mkOfCompact (fourier (T := 2 * π) m)).integrable F
@@ -278,10 +278,10 @@ theorem isPosSemidefSeq_measureFourierCoeff (F : Measure (AddCircle (2 * π)))
   -- swap the finite sum with the integral (characters are bounded continuous)
   have h3 : (∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * measureFourierCoeff F (t i - t j))
       = ∫ z, ∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * fourier (T := 2 * π) (t i - t j) z ∂F := by
-    rw [integral_finset_sum _ (fun i _ =>
-      integrable_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _))]
+    rw [integral_finsetSum _ (fun i _ =>
+      integrable_finsetSum _ (fun j _ => (hint (t i - t j)).const_mul _))]
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [integral_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _)]
+    rw [integral_finsetSum _ (fun j _ => (hint (t i - t j)).const_mul _)]
     exact Finset.sum_congr rfl fun j _ => h2 i j
   rw [hre, h3, integral_congr_ae (Filter.Eventually.of_forall hkey), integral_complex_ofReal,
     Complex.ofReal_re]

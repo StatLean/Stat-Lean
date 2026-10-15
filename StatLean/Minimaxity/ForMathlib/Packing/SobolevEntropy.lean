@@ -7,14 +7,14 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 A Chapter-5 metric-entropy prerequisite for the Sobolev minimax example. Fix a smoothness index
 $\alpha > 1/2$ and consider the **Sobolev ellipsoid**
-$$\mathcal{E}_\alpha = \Bigl\{\, \theta \in \ell^2(\mathbb{N}) : \sum_{j} j^{2\alpha}\,\theta_j^2 \le 1 \,\Bigr\}.$$
-Its metric entropy — the logarithm of the smallest number of $\delta$-balls (in the $\ell^2$ norm)
-needed to cover it — obeys the Kolmogorov–Tikhomirov rate
-$$\log N(\delta;\, \mathcal{E}_\alpha,\, \lVert\cdot\rVert_2) \;\asymp\; \left(\tfrac{1}{\delta}\right)^{1/\alpha}.$$
-The minimax lower bounds use only the **packing (lower) direction**: for every
-$0 < \delta \le 1/2$ there is a constant $c > 0$ and a finite $\delta$-separated subset
-$T \subset \mathcal{E}_\alpha$ (every pair of distinct points at $\ell^2$-distance $\ge \delta$,
-every point in the ellipsoid) with
+$$\mathcal{E}_\alpha = \Bigl\{\, \theta \in \ell^2(\mathbb{N}) : \sum_{j} j^{2\alpha}\,\theta_j^2
+\le 1 \,\Bigr\}.$$ Its metric entropy — the logarithm of the smallest number of $\delta$-balls (in
+the $\ell^2$ norm) needed to cover it — obeys the Kolmogorov–Tikhomirov rate
+$$\log N(\delta;\, \mathcal{E}_\alpha,\, \lVert\cdot\rVert_2) \;\asymp\;
+\left(\tfrac{1}{\delta}\right)^{1/\alpha}.$$ The minimax lower bounds use only the **packing (lower)
+direction**: for every $0 < \delta \le 1/2$ there is a constant $c > 0$ and a finite
+$\delta$-separated subset $T \subset \mathcal{E}_\alpha$ (every pair of distinct points at
+$\ell^2$-distance $\ge \delta$, every point in the ellipsoid) with
 $$c\,\left(\tfrac{1}{\delta}\right)^{1/\alpha} \;\le\; \log |T|.$$
 
 Two deviations from the book statement are made explicit in the Lean formalization:
@@ -80,7 +80,7 @@ private noncomputable def sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace �
 private lemma sobolevCoeff_val (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin k)) (i : Fin k) :
     sobolevCoeff k ρ w i.val = ρ * w i := by
   simp only [sobolevCoeff]
-  rw [dif_pos i.isLt]
+  rw [dite_eq_left i.isLt]
 
 /-- The coercion of `sobolevEmb` to a sequence is exactly `sobolevCoeff`. -/
 private lemma coeFn_sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin k)) :
@@ -90,7 +90,7 @@ private lemma coeFn_sobolevEmb (k : ℕ) (ρ : ℝ) (w : EuclideanSpace ℝ (Fin
   split_ifs with hj
   · rfl
   · have hjk : ¬ (j < k) := by rwa [Finset.mem_range] at hj
-    simp only [sobolevCoeff, dif_neg hjk]
+    simp only [sobolevCoeff, dite_eq_right hjk]
 
 /-- The embedding is linear in `w` (here: respects subtraction). -/
 private lemma sobolevEmb_sub (k : ℕ) (ρ : ℝ) (u v : EuclideanSpace ℝ (Fin k)) :
@@ -149,7 +149,7 @@ private lemma sobolevEmb_mem (k : ℕ) (hk : 0 < k) (ρ α : ℝ) (hα0 : 0 ≤ 
     intro j hj
     rw [Finset.mem_range, not_lt] at hj
     have : sobolevCoeff k ρ w j = 0 := by
-      simp only [sobolevCoeff]; rw [dif_neg (Nat.not_lt.mpr hj)]
+      simp only [sobolevCoeff]; rw [dite_eq_right (Nat.not_lt.mpr hj)]
     rw [this]; ring
   rw [tsum_eq_sum hzero]
   have hbound : ∑ j ∈ Finset.range k, ((j : ℝ) + 1) ^ (2 * α) * (sobolevCoeff k ρ w j) ^ 2

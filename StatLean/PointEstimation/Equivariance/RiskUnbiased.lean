@@ -91,7 +91,7 @@ theorem IsEquivariant.smul {δ : 𝓧 → D}
     (g : G) :
     IsEquivariant (G := G) fun x => g • δ x := by
   intro h x
-  show g • δ (h • x) = h • g • δ x
+  change g • δ (h • x) = h • g • δ x
   rw [hδeq h x]
   exact hcomm g h (δ x)
 
@@ -128,7 +128,7 @@ theorem isRiskUnbiased_of_equivariant_min [MulAction.IsPretransitive G Θ]
     refine lintegral_congr fun x => ?_
     rw [← hg]
     exact (hL g θ' (δ x)).symm
-  show crossRisk P L δ θ θ ≤ crossRisk P L δ θ θ'
+  change crossRisk P L δ θ θ ≤ crossRisk P L δ θ θ'
   rw [hoff]
   exact hkey
 
@@ -204,7 +204,7 @@ theorem isRiskUnbiased_of_isLocMRE (f : (Fin n → ℝ) → ℝ) (ρ : ℝ → �
       = locRisk f ρ δ := locRisk_const f ρ δ hρ hmeas heq ξ
   have hoff : crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ'
       = ∫⁻ x, ENNReal.ofReal (ρ (δ x - (ξ' - ξ))) ∂(locationBase f) := by
-    show ∫⁻ x, ENNReal.ofReal (ρ (δ x - ξ')) ∂(locationFamily f ξ) = _
+    change ∫⁻ x, ENNReal.ofReal (ρ (δ x - ξ')) ∂(locationFamily f ξ) = _
     unfold locationFamily
     have hg : Measurable (fun x : Fin n → ℝ => ENNReal.ofReal (ρ (δ x - ξ'))) :=
       ENNReal.measurable_ofReal.comp (hρ.comp (hmeas.sub_const ξ'))
@@ -212,7 +212,7 @@ theorem isRiskUnbiased_of_isLocMRE (f : (Fin n → ℝ) → ℝ) (ρ : ℝ → �
     rw [lintegral_map hg hmap]
     refine lintegral_congr fun x => ?_
     rw [heq ξ x, show δ x + ξ - ξ' = δ x - (ξ' - ξ) from by ring]
-  show crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ ≤
+  change crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ ≤
       crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ'
   rw [hdiag, hoff]
   exact isLocRiskUnbiased_of_isLocMRE f ρ hδ (ξ' - ξ)

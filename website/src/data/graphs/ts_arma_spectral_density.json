@@ -28,7 +28,7 @@
     {"id":"StatLean.TimeSeries.isFilteredBy_of_ae_eq_polySum","label":"isFilteredBy_of_ae_eq_polySum","full":"StatLean.TimeSeries.isFilteredBy_of_ae_eq_polySum","kind":"repo","decl":"thm","module":"StatLean.TimeSeries.Spectral.ARMASpectral"},
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
     {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Finset.sum_neg_distrib","label":"sum_neg_distrib","full":"Finset.sum_neg_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
@@ -46,7 +46,7 @@
     {"id":"norm_ne_zero_iff","label":"norm_ne_zero_iff","full":"norm_ne_zero_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
     {"id":"Eq.le","label":"le","full":"Eq.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"eq_div_iff","label":"eq_div_iff","full":"eq_div_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Units.Basic"},
-    {"id":"contravariant_swap_add_of_contravariant_add","label":"contravariant_swap_add_of_contravariant_add","full":"contravariant_swap_add_of_contravariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"}
+    {"id":"addRightReflectLE_of_addLeftReflectLE","label":"addRightReflectLE_of_addLeftReflectLE","full":"addRightReflectLE_of_addLeftReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"}
   ],
   "edges": [
     {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"StatLean.TimeSeries.IsARMA"},
@@ -93,6 +93,6 @@
     {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"norm_ne_zero_iff"},
     {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"Eq.le"},
     {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"eq_div_iff"},
-    {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"contravariant_swap_add_of_contravariant_add"}
+    {"source":"StatLean.TimeSeries.IsARMA.spectralDensityOf_eq","target":"addRightReflectLE_of_addLeftReflectLE"}
   ]
 }

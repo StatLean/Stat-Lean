@@ -76,7 +76,7 @@ theorem oneStep_linearExpansion_core
     refine ⟨max (‖Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V0‖ * M) 0, fun n => ?_⟩
     refine (measureReal_mono (fun ξ hξ => ?_)).trans (hM n)
     have hnorm := (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V0).le_opNorm (p n ξ)
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     by_contra hnot
     have hpM : ‖p n ξ‖ ≤ M := not_lt.mp hnot
     have hop_nonneg : 0 ≤ ‖Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V0‖ := norm_nonneg _
@@ -93,7 +93,7 @@ theorem oneStep_linearExpansion_core
         (A n ξ) (R n ξ)‖} ⊆ {ξ | 1 ≤ ‖A n ξ‖} ∪ {ξ | ε ≤ ‖R n ξ‖} := by
       intro n ξ hξ
       by_contra hnot
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
       have hbound := (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (A n ξ)).le_opNorm
         (R n ξ)
       have hprod : ‖Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (A n ξ) (R n ξ)‖
@@ -116,8 +116,8 @@ theorem oneStep_linearExpansion_core
         {ξ | ε / 2 ≤ ‖Z n ξ‖} ∪ {ξ | ε / 2 ≤ ‖W n ξ‖} := by
       intro n ξ hξ
       by_contra hnot
-      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hnot
-      simp only [Set.mem_setOf_eq] at hξ
+      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+      simp only [Set.mem_ofPred_eq] at hξ
       linarith [norm_add_le (Z n ξ) (W n ξ)]
     have hsum : Filter.Tendsto (fun n => μ.real {ξ | ε / 2 ≤ ‖Z n ξ‖} +
         μ.real {ξ | ε / 2 ≤ ‖W n ξ‖}) Filter.atTop (nhds 0) := by
@@ -152,10 +152,10 @@ theorem oneStep_linearExpansion_core
       calc
         _ = (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V0⁻¹ *
             Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) V0) x :=
-          (ContinuousLinearMap.mul_apply _ _ x).symm
-        _ = x := by rw [hmul, ContinuousLinearMap.one_apply]
+          (mul_apply_eq_comp _ _ x).symm
+        _ = x := by rw [hmul, one_apply_eq_self]
     simp only [A, L, p, R, oneStepUpdate, oneStepResidual, smul_sub, map_sub, map_smul,
-      ContinuousLinearMap.sub_apply]
+      sub_apply]
     rw [hVinv, hVinv]
     module
   rw [htarget]
@@ -210,10 +210,10 @@ theorem uniformLinearization_at_preliminary
           rw [← mul_assoc, mul_inv_cancel₀ hsqrt.ne', one_mul]
           exact lt_of_le_of_lt z.2 (lt_add_one M)
       refine ⟨θ n z.1, ?_⟩
-      rw [if_pos hlocal]
+      rw [ite_eq_left hlocal]
       simpa only [D, abs_norm] using hz
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hfull ε hε)
-      (Filter.Eventually.of_forall fun _ => zero_le _)
+      (Filter.Eventually.of_forall fun _ => zero_le)
       (Filter.Eventually.of_forall fun n =>
         EmpiricalProcess.outerMeasureStar_mono μ (hsub n))
   have hcollapse := EmpiricalProcess.tendstoInProbZero_of_ball_outerProbSup

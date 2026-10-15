@@ -24,27 +24,27 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, L
 Eq. (15.10). Wainwright leaves the proof as Exercise 15.5.
 
 **Proof formalization notes.** The argument follows Exercise 15.5. Writing $p = d\mathbb{P}/d\xi$,
-$q = d\mathbb{Q}/d\xi$ for the densities against $\xi = \mu + \nu$, factor the integrand pointwise as
-$|p - q| = |\sqrt{p} - \sqrt{q}| \cdot (\sqrt{p} + \sqrt{q})$ and apply Cauchy–Schwarz:
+$q = d\mathbb{Q}/d\xi$ for the densities against $\xi = \mu + \nu$, factor the integrand pointwise
+as $|p - q| = |\sqrt{p} - \sqrt{q}| \cdot (\sqrt{p} + \sqrt{q})$ and apply Cauchy–Schwarz:
 $$\tfrac{1}{2}\!\int |p - q|\, d\xi \;\le\; \tfrac{1}{2}\,
   \sqrt{\textstyle\int (\sqrt{p} - \sqrt{q})^2 d\xi}\;\cdot\;
   \sqrt{\textstyle\int (\sqrt{p} + \sqrt{q})^2 d\xi}.$$
 The "cross" integral is computed via the identity $\int (\sqrt{p} + \sqrt{q})^2 d\xi
 = 2 + 2\int \sqrt{pq}\, d\xi = 4 - H^2$, which turns the second factor into $2\sqrt{1 - H^2/4}$ and
 yields the stated bound. The development is layered: `lecam_real_bound` is the real-analytic core
-(Cauchy–Schwarz plus the $4 - H^2$ identity over `ℝ`); `lecam_half_lintegral_le` is the Cauchy–Schwarz
-crux transported to the `ℝ≥0∞` half-`L¹` form; and the public theorem `lecam_tv_le_hellinger`
-follows by the density form `tvDist_eq_half_lintegral`.
+(Cauchy–Schwarz plus the $4 - H^2$ identity over `ℝ`); `lecam_half_lintegral_le` is the
+Cauchy–Schwarz crux transported to the `ℝ≥0∞` half-`L¹` form; and the public theorem
+`lecam_tv_le_hellinger` follows by the density form `tvDist_eq_half_lintegral`.
 
 **Bibliographic comments.** L. Le Cam, "Convergence of Estimates Under Dimensionality
 Restrictions," *The Annals of Statistics* **1**(1), 38–53, 1973. Le Cam introduced the Hellinger
 affinity / Hellinger distance as the controlling quantity for testing and estimation rates, and the
 two-sided comparison between total variation and Hellinger distance — of which the inequality
-formalized here ($\mathrm{TV} \le H\sqrt{1 - H^2/4}$) is the upper bound — originates in this line of
-work; the complementary lower bound $H^2/2 \le \mathrm{TV}$ is the other half. The sharp constants and
-the clean Cauchy–Schwarz derivation reproduced here are now standard textbook material (Wainwright
-§15.1.3); the result is commonly attributed to Le Cam rather than to a single equation in the
-original paper.
+formalized here ($\mathrm{TV} \le H\sqrt{1 - H^2/4}$) is the upper bound — originates in this line
+of work; the complementary lower bound $H^2/2 \le \mathrm{TV}$ is the other half. The sharp
+constants and the clean Cauchy–Schwarz derivation reproduced here are now standard textbook material
+(Wainwright §15.1.3); the result is commonly attributed to Le Cam rather than to a single equation
+in the original paper.
 -/
 
 open MeasureTheory
@@ -65,7 +65,7 @@ private lemma abs_sub_eq_abs_sqrt_sub_mul_add {a b : ℝ} (ha : 0 ≤ a) (hb : 0
     have hpa := Real.mul_self_sqrt ha
     have hpb := Real.mul_self_sqrt hb
     nlinarith [hpa, hpb]
-  rw [← h1, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ Real.sqrt a + Real.sqrt b)]
+  rw [← h1, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ Real.sqrt a + Real.sqrt b)]
 
 /-- **Real-analytic core of Le Cam's inequality** (Wainwright Exercise 15.5): the half-`L¹`
 distance `½ ∫ |p − q| dξ` is bounded by `√(H²) · √(1 − H²/4)`, where `H² = ∫ (√p − √q)² dξ`.
@@ -125,10 +125,10 @@ private lemma lecam_real_bound (μ ν : Measure α)
     have : 0 ≤ A := hA ▸ integral_nonneg (fun ω => mul_nonneg (hPnn ω) (hQnn ω))
     linarith
   have hsqrt4 : Real.sqrt (4 - Hr) = 2 * Real.sqrt (1 - Hr / 4) := by
-    rw [show (4:ℝ) - Hr = 4 * (1 - Hr / 4) from by ring,
-        Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 4)]
+    rw [show (4 : ℝ) - Hr = 4 * (1 - Hr / 4) from by ring,
+        Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4)]
     congr 1
-    rw [show (4:ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)]
+    rw [show (4 : ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
   rw [hsqrt4, show Real.sqrt Hr * (2 * Real.sqrt (1 - Hr / 4))
         = 2 * (Real.sqrt Hr * Real.sqrt (1 - Hr / 4)) from by ring] at hCS
   rw [hD]
@@ -180,23 +180,23 @@ private lemma lecam_half_lintegral_le (μ ν : Measure α)
   have hHr_nn : 0 ≤ Hr := integral_nonneg (fun _ => sq_nonneg _)
   have hHr_le2 : Hr ≤ 2 := by
     have h := hsqH ▸ sqHellinger_le_two μ ν
-    rwa [show (2:ℝ≥0∞) = ENNReal.ofReal 2 from (ENNReal.ofReal_ofNat 2).symm,
+    rwa [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from (ENNReal.ofReal_ofNat 2).symm,
       ENNReal.ofReal_le_ofReal_iff (by norm_num)] at h
   have h14nn : 0 ≤ 1 - Hr / 4 := by linarith
   -- Rewrite the goal into `ofReal` form.
   rw [hLH, hsqH]
-  have hL : (2:ℝ≥0∞)⁻¹ * ENNReal.ofReal D = ENNReal.ofReal (D / 2) := by
-    rw [ENNReal.ofReal_div_of_pos (by norm_num : (0:ℝ) < 2), ENNReal.ofReal_ofNat,
+  have hL : (2 : ℝ≥0∞)⁻¹ * ENNReal.ofReal D = ENNReal.ofReal (D / 2) := by
+    rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat,
         div_eq_mul_inv, mul_comm]
   have hRb1 : (ENNReal.ofReal Hr) ^ (1 / 2 : ℝ) = ENNReal.ofReal (Real.sqrt Hr) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg hHr_nn (by norm_num : (0:ℝ) ≤ 1 / 2),
+    rw [ENNReal.ofReal_rpow_of_nonneg hHr_nn (by norm_num : (0 : ℝ) ≤ 1 / 2),
         ← Real.sqrt_eq_rpow]
-  have h14 : (1:ℝ≥0∞) - ENNReal.ofReal Hr / 4 = ENNReal.ofReal (1 - Hr / 4) := by
-    rw [ENNReal.ofReal_sub 1 (by positivity : (0:ℝ) ≤ Hr / 4), ENNReal.ofReal_one,
-        ENNReal.ofReal_div_of_pos (by norm_num : (0:ℝ) < 4), ENNReal.ofReal_ofNat]
+  have h14 : (1 : ℝ≥0∞) - ENNReal.ofReal Hr / 4 = ENNReal.ofReal (1 - Hr / 4) := by
+    rw [ENNReal.ofReal_sub 1 (by positivity : (0 : ℝ) ≤ Hr / 4), ENNReal.ofReal_one,
+        ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 4), ENNReal.ofReal_ofNat]
   have hRb2 : (1 - ENNReal.ofReal Hr / 4) ^ (1 / 2 : ℝ)
       = ENNReal.ofReal (Real.sqrt (1 - Hr / 4)) := by
-    rw [h14, ENNReal.ofReal_rpow_of_nonneg h14nn (by norm_num : (0:ℝ) ≤ 1 / 2),
+    rw [h14, ENNReal.ofReal_rpow_of_nonneg h14nn (by norm_num : (0 : ℝ) ≤ 1 / 2),
         ← Real.sqrt_eq_rpow]
   rw [hL, hRb1, hRb2, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
   refine ENNReal.ofReal_le_ofReal ?_

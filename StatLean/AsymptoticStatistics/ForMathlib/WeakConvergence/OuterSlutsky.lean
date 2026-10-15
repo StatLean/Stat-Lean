@@ -101,7 +101,7 @@ theorem outerReadout_le_of_modulus {Ω D : Type*} [MeasurableSpace Ω]
     have hs' : outerExpectation μ err ≤
         outerExpectation μ (fun _ => ENNReal.ofReal η) +
           outerExpectation μ (fun ω => ENNReal.ofReal (2 * ‖f‖) * ind ω) := by
-      simpa only [err, Pi.add_apply] using hs
+      simpa only [err, Pi.add_apply] using! hs
     rw [hc, hm] at hs'
     exact hs'
   have hS5' : EX ≤ EY + outerExpectation μ err := by simpa [EX, EY] using hS5
@@ -194,7 +194,7 @@ theorem WeakConvergesOuter.slutsky_of_tendstoInOuterProbability_dist
         (μ n) {ω | δ ≤ dist (X n ω) (Y n ω)}
       exact (outerMeasureStar_le_measure (μ n) _).trans
         (measure_mono fun _ hω => by
-          simpa only [Set.mem_setOf_eq] using hω.le)
+          simpa only [Set.mem_ofPred_eq] using hω.le)
     have hI : Tendsto I atTop (𝓝 0) :=
       squeeze_zero (fun n => ENNReal.toReal_nonneg) hI_le (hDist δ hδ)
     have hscaled : Tendsto (fun n => 2 * ‖f‖ * I n) atTop (𝓝 0) := by

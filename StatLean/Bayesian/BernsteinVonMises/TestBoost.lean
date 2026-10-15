@@ -71,7 +71,7 @@ private def bvmBlockProj (n kb : ℕ) : (Fin n → 𝓧) → (Fin (n / kb) → (
 
 private lemma measurable_bvmBlockProj (n kb : ℕ) :
     Measurable (bvmBlockProj (𝓧 := 𝓧) n kb) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- Within-block index arithmetic: `(j * kb + i) / kb = j` and `(j * kb + i) % kb = i`. -/
 private lemma bvm_divMod {kb : ℕ} (hkb : 0 < kb) (j i : ℕ) (hi : i < kb) :
@@ -177,7 +177,7 @@ private lemma hoeffding_avg_le {Ω : Type*} [MeasurableSpace Ω] (ν : Measure �
   have hsubset : {ω | ((m : ℝ))⁻¹ * ∑ j, Y j ω ≤ 1 / 2}
       ⊆ {ω | (m : ℝ) / 4 ≤ ∑ j ∈ Finset.univ, X j ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hXj : ∀ j : Fin m, X j ω = (∫ ω', Y j ω' ∂ν) - Y j ω := by
       intro j; rw [hX]; simp only [hcval j]; ring
     have hXsum : ∑ j ∈ Finset.univ, X j ω
@@ -257,20 +257,20 @@ theorem blockAvg_typeII_tail
     (hn : kb ≤ n) :
     (productMeasure M μ θ n).real {ω | bvmBlockAvg kb g n ω < 1 / 2}
       ≤ Real.exp (-(↑(n / kb) : ℝ) / 8) := by
-  haveI hP : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
+  have hP : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
     refine ⟨?_⟩
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
         (Filter.Eventually.of_forall (M.density_nonneg θ)),
       hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
-  haveI : IsProbabilityMeasure (productMeasure M μ θ n) :=
+  have : IsProbabilityMeasure (productMeasure M μ θ n) :=
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ n
   have h := blockAvg_le_half_tail (μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     hkb hg_meas hg01 hpow hn
   refine le_trans ?_ h
   refine measureReal_mono (fun ω hω => ?_) (measure_ne_top _ _)
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   exact le_of_lt hω
 
 /-- Reflecting the one-block statistic reflects the block average: `avg(1 − g) = 1 − avg g`. -/
@@ -303,7 +303,7 @@ theorem exists_boosted_tests
         ∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n) ≤ Real.exp (-c * n) := by
   classical
   obtain ⟨φt, hφt_meas, hφt01, hφt_size, hφt_pow⟩ := hTests ε hε
-  haveI hPfac : ∀ θ : EuclideanSpace ℝ (Fin k),
+  have hPfac : ∀ θ : EuclideanSpace ℝ (Fin k),
       IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) := by
     intro θ
     refine ⟨?_⟩
@@ -311,7 +311,7 @@ theorem exists_boosted_tests
       ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
         (Filter.Eventually.of_forall (M.density_nonneg θ)),
       hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
-  haveI hPM : ∀ (θ : EuclideanSpace ℝ (Fin k)) (nn : ℕ),
+  have hPM : ∀ (θ : EuclideanSpace ℝ (Fin k)) (nn : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ nn) := fun θ nn =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ nn
@@ -345,7 +345,7 @@ theorem exists_boosted_tests
     intro nn
     unfold bvmBlockAvg
     exact measurable_const.mul (Finset.measurable_sum _ fun j _ =>
-      (hφt_meas kb).comp (measurable_pi_lambda _ fun _ => measurable_pi_apply _))
+      (hφt_meas kb).comp (Measurable.of_eval fun _ => measurable_pi_apply _))
   have hSmeas : ∀ nn, MeasurableSet {ω : Fin nn → 𝓧 | 1 / 2 ≤ bvmBlockAvg kb (φt kb) nn ω} :=
     fun nn => measurableSet_le measurable_const (hBAmeas nn)
   -- the boosted test: reject when at least half of the blocks reject
@@ -361,10 +361,10 @@ theorem exists_boosted_tests
         (1 : (Fin nn → 𝓧) → ℝ) ω)
         = Set.indicator {ω | bvmBlockAvg kb (φt kb) nn ω < 1 / 2} 1 := by
       funext ω
-      simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+      simp only [Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
       by_cases h : 1 / 2 ≤ bvmBlockAvg kb (φt kb) nn ω
-      · rw [if_pos h, if_neg (not_lt.mpr h)]; norm_num
-      · rw [if_neg h, if_pos (not_le.mp h)]; norm_num
+      · rw [ite_eq_left h, ite_eq_right (not_lt.mpr h)]; norm_num
+      · rw [ite_eq_right h, ite_eq_left (not_le.mp h)]; norm_num
     rw [hfun]
     exact integral_indicator_one (measurableSet_lt (hBAmeas nn) measurable_const)
   -- `⌊n/kb⌋ ≥ n/(2 kb)`, so the block-count rate dominates the linear rate `c n`
@@ -405,11 +405,12 @@ theorem exists_boosted_tests
       rw [hsplit θ₀ kb]; linarith
     have h := blockAvg_le_half_tail
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) hkb1
-      (measurable_const.sub (hφt_meas kb))
+      (show Measurable (fun ζ : Fin kb → 𝓧 => 1 - φt kb ζ) from by
+        simpa only [Pi.sub_apply] using! measurable_const.sub (hφt_meas kb))
       (fun ζ => ⟨by linarith [(hφt01 kb ζ).2], by linarith [(hφt01 kb ζ).1]⟩) hmean hnn
     refine le_trans (measureReal_mono (fun ω hω => ?_) (measure_ne_top _ _)) h
-    simp only [Set.mem_setOf_eq] at hω ⊢
-    rw [bvmBlockAvg_one_sub _ hm]
+    simp only [Set.mem_ofPred_eq] at hω ⊢
+    erw [bvmBlockAvg_one_sub _ hm]
     linarith
   -- type-II bound on the far range (lower tail for `φt kb`)
   have htII_bd : ∀ nn, kb ≤ nn → ∀ θ, ε ≤ ‖θ - θ₀‖ →

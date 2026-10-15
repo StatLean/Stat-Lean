@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Basic
@@ -75,15 +76,15 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 0: `‖exp (I z) − 1‖ ≤ z` for `z ≥ 0`.
   have hL0 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1‖ ≤ z := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
+    have hInt : (∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => he u)
         (hcontI.intervalIntegrable 0 z)]
       simp
     rw [← hInt]
-    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0:ℝ)) (b := z)
+    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := z)
       (C := 1) (f := fun u => Complex.exp (I * ↑u) * I)
       (fun u _ => by rw [norm_mul, Complex.norm_I, mul_one]; exact le_of_eq (hnorme u))
-    calc ‖∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
+    calc ‖∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
       _ = z := by rw [sub_zero, abs_of_nonneg hz, one_mul]
   have hd1 : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w)
       ((Complex.exp (I * ↑u) - 1) * I) u := by
@@ -94,12 +95,12 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 1: `‖exp (I z) − 1 − I z‖ ≤ z²/2` for `z ≥ 0`.
   have hL1 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ z ^ 2 / 2 := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
+    have hInt : (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
         = Complex.exp (I * ↑z) - 1 - I * ↑z := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd1 u)
         (hcont1.intervalIntegrable 0 z)]
       simp
-    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0:ℝ)..z, u := by
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0 : ℝ)..z, u := by
       rw [← hInt]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         (continuous_id.intervalIntegrable 0 z)
@@ -123,7 +124,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       linear_combination (-(↑u : ℂ)) * hI2
     rw [heq]
     exact (hd1 u).add (hsq u)
-  have hA2z : ∀ z : ℝ, (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
+  have hA2z : ∀ z : ℝ, (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
       = Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2 := by
     intro z
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd2 u)
@@ -135,13 +136,13 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖ ≤ min (z ^ 3 / 6) (z ^ 2) := by
     intro z hz
     have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖
-        ≤ ∫ u in (0:ℝ)..z, u ^ 2 / 2 := by
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 2 / 2 := by
       rw [← hA2z z]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         ((by fun_prop : Continuous (fun u : ℝ => u ^ 2 / 2)).intervalIntegrable 0 z)
       rw [norm_mul, Complex.norm_I, mul_one]
       exact hL1 u hu.1.le
-    have hintval : (∫ u in (0:ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
       rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
     refine le_min (hb.trans (le_of_eq hintval)) ?_
     have h1 := hL1 z hz
@@ -159,7 +160,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   rcases le_or_gt 0 y with hy | hy
   · rw [abs_of_nonneg hy]; exact key y hy
   · -- Reflect to `−y ≥ 0` via conjugation.
-    have hz : (0:ℝ) ≤ -y := by linarith
+    have hz : (0 : ℝ) ≤ -y := by linarith
     have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
       rw [← Complex.exp_conj]; congr 1
       simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
@@ -193,7 +194,7 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, norm_mul]
     have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
-      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+      rw [norm_prod]; exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) hg'
     have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
       calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
             ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
@@ -263,16 +264,16 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
   rcases eq_or_ne t 0 with rfl | ht
   · have hone : ∀ n i, charFun (μ.map (X n i)) 0 = 1 := by
       intro n i
-      haveI : IsProbabilityMeasure (μ.map (X n i)) :=
-        Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      have : IsProbabilityMeasure (μ.map (X n i)) :=
+        (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 (Real.toNNReal σ2)) 0 = 1 := by
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     simp only [hone, Finset.prod_const_one, hR]
     exact tendsto_const_nhds
   -- Basic facts about the row entries.
-  have hvnn : ∀ n i, (0:ℝ) ≤ variance (X n i) μ := fun n i => variance_nonneg _ _
-  have hunn : ∀ n i, (0:ℝ) ≤ t ^ 2 * variance (X n i) μ / 2 :=
+  have hvnn : ∀ n i, (0 : ℝ) ≤ variance (X n i) μ := fun n i => variance_nonneg _ _
+  have hunn : ∀ n i, (0 : ℝ) ≤ t ^ 2 * variance (X n i) μ / 2 :=
     fun n i => div_nonneg (mul_nonneg (sq_nonneg t) (hvnn n i)) (by norm_num)
   have hI2 : ∀ n i, Integrable (fun ω => (X n i ω) ^ 2) μ := fun n i => (hL2 n i).integrable_sq
   have hI1 : ∀ n i, Integrable (X n i) μ := fun n i => (hL2 n i).integrable one_le_two
@@ -344,7 +345,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
         - (1 + Complex.I * ↑(t * X n i ω) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)‖ ≤ g ω := by
       intro ω
       refine (norm_cexp_sub_taylor_le (t * X n i ω)).trans ?_
-      have hnn0 : (0:ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
+      have hnn0 : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
         mul_nonneg (div_nonneg (mul_nonneg (pow_nonneg (abs_nonneg t) 3) hε.le) (by norm_num))
           (sq_nonneg _)
       by_cases hω : ε < |X n i ω|
@@ -375,12 +376,12 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
   -- Uniform asymptotic negligibility of the row variances.
   have hsmall : ∀ c : ℝ, 0 < c → ∀ᶠ n in atTop, ∀ i, variance (X n i) μ ≤ c := by
     intro c hc'
-    have hεpos : (0:ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
+    have hεpos : (0 : ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
     have hε2 : Real.sqrt (c / 2) ^ 2 = c / 2 := Real.sq_sqrt (by linarith)
     set ε := Real.sqrt (c / 2) with hεdef
     have hSlt : ∀ᶠ n in atTop,
         ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂μ ≤ c / 2 :=
-      (hlin ε hεpos).eventually_le_const (show (0:ℝ) < c / 2 by linarith)
+      (hlin ε hεpos).eventually_le_const (show (0 : ℝ) < c / 2 by linarith)
     filter_upwards [hSlt] with n hn i
     have hsm := hset ε n i
     have hdecomp : variance (X n i) μ
@@ -395,14 +396,14 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
           ≤ ∫ ω in {ω | ε < |X n i ω|}ᶜ, ε ^ 2 ∂μ := by
             refine setIntegral_mono_on ((hI2 n i).integrableOn) integrableOn_const hsm.compl
               (fun ω hω => ?_)
-            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+            simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
             rw [← sq_abs (X n i ω)]
             exact pow_le_pow_left₀ (abs_nonneg _) hω 2
         _ ≤ ∫ _ω, ε ^ 2 ∂μ :=
             setIntegral_le_integral (integrable_const _) (ae_of_all _ fun _ => by positivity)
         _ = ε ^ 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
     rw [hdecomp]; linarith
-  have ht2 : (0:ℝ) < t ^ 2 := by positivity
+  have ht2 : (0 : ℝ) < t ^ 2 := by positivity
   -- Eventually every row term satisfies `uᵢ = t²σᵢ²/2 ≤ 1`.
   have hev1 : ∀ᶠ n in atTop, ∀ i, t ^ 2 * variance (X n i) μ / 2 ≤ 1 := by
     filter_upwards [hsmall (2 / t ^ 2) (by positivity)] with n hn i
@@ -421,7 +422,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
       intro n; rw [Finset.mul_sum]; apply Finset.sum_congr rfl; intro i _; ring
     have hgoal : t ^ 2 / 2 * σ2 = t ^ 2 * σ2 / 2 := by ring
     simpa [he, hgoal] using h
-  have hSnn : (0:ℝ) ≤ t ^ 2 * σ2 / 2 :=
+  have hSnn : (0 : ℝ) ≤ t ^ 2 * σ2 / 2 :=
     div_nonneg (mul_nonneg (sq_nonneg t) hσ0) (by norm_num)
   ------------------------------------------------------------------
   -- Claim G : `∑ᵢ uᵢ² → 0`.
@@ -429,7 +430,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
   have hGsq : Tendsto (fun n => ∑ i, (t ^ 2 * variance (X n i) μ / 2) ^ 2) atTop (𝓝 0) := by
     refine tendsto_zero_of_eventually_le (Eventually.of_forall fun n =>
       Finset.sum_nonneg fun i _ => sq_nonneg _) (fun δ hδ => ?_)
-    have hden : (0:ℝ) < t ^ 2 * σ2 / 2 + 2 := by linarith
+    have hden : (0 : ℝ) < t ^ 2 * σ2 / 2 + 2 := by linarith
     set M : ℝ := δ / (t ^ 2 * σ2 / 2 + 2) with hMdef
     have hMpos : 0 < M := by rw [hMdef]; exact div_pos hδ hden
     have hsmallM := hsmall (2 * M / t ^ 2) (div_pos (mul_pos (by norm_num) hMpos) ht2)
@@ -505,9 +506,9 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
     rw [tendsto_zero_iff_norm_tendsto_zero]
     refine tendsto_zero_of_eventually_le (Eventually.of_forall fun n => norm_nonneg _)
       (fun δ hδ => ?_)
-    have hKnn : (0:ℝ) ≤ |t| ^ 3 * (σ2 + 1) :=
+    have hKnn : (0 : ℝ) ≤ |t| ^ 3 * (σ2 + 1) :=
       mul_nonneg (pow_nonneg (abs_nonneg t) 3) (by linarith)
-    have hKd : (0:ℝ) < |t| ^ 3 * (σ2 + 1) + 1 := by linarith
+    have hKd : (0 : ℝ) < |t| ^ 3 * (σ2 + 1) + 1 := by linarith
     set ε : ℝ := δ / (|t| ^ 3 * (σ2 + 1) + 1) with hεdef
     have hεpos : 0 < ε := by rw [hεdef]; exact div_pos hδ hKd
     have hVarlt : ∀ᶠ n in atTop, ∑ i, variance (X n i) μ ≤ σ2 + 1 :=
@@ -519,7 +520,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
       exact hlim.eventually_lt_const (by linarith)
     filter_upwards [hev1, hVarlt, hLinlt] with n hn1 hn2 hn3
     have hpm : ∀ i, IsProbabilityMeasure (μ.map (X n i)) := fun i =>
-      Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      (by infer_instance)
     have htel := norm_prod_sub_prod_le (𝕜 := ℂ) Finset.univ
       (fun i => charFun (μ.map (X n i)) t)
       (fun i => ((1 - t ^ 2 * variance (X n i) μ / 2 : ℝ) : ℂ))
@@ -536,7 +537,7 @@ private lemma tendsto_prod_charFun_lindeberg [IsProbabilityMeasure μ]
       exact Finset.sum_le_sum fun i _ => hterm ε hεpos n i
     refine hsum2.trans ?_
     have hterm1 : |t| ^ 3 * ε / 6 * ∑ i, variance (X n i) μ ≤ δ / 3 := by
-      have hnn : (0:ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
+      have hnn : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
       have hstep : |t| ^ 3 * ε / 6 * ∑ i, variance (X n i) μ
           ≤ |t| ^ 3 * ε / 6 * (σ2 + 1) := mul_le_mul_of_nonneg_left hn2 hnn
       refine hstep.trans ?_
@@ -587,7 +588,8 @@ theorem tendsto_charFun_rowSum_gaussian_of_lindeberg [IsProbabilityMeasure μ]
     have hI2 : Integrable (fun ω => (X n i ω) ^ 2) μ := (hL2 n i).integrable_sq
     refine setIntegral_mono_set hI2.integrableOn
       (ae_of_all _ fun ω => sq_nonneg _) (ae_of_all _ fun ω hω => ?_)
-    exact le_of_lt hω
+    have hω' : ε < |X n i ω| := hω
+    exact le_of_lt hω'
   -- Independence turns the row-sum charFun into the product of the entry charFuns.
   have hcf : ∀ n, charFun (μ.map fun ω => ∑ i, X n i ω) u
       = ∏ i, charFun (μ.map (X n i)) u := fun n => by

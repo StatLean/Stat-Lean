@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","label":"covMatrix_lmmLaw","full":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.MixedEffects.Marginal"},
     {"id":"StatLean.StatisticalModels.MixedEffects.LMMDesign","label":"LMMDesign","full":"StatLean.StatisticalModels.MixedEffects.LMMDesign","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.MixedEffects.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.StatisticalModels.covMatrix","label":"covMatrix","full":"StatLean.StatisticalModels.covMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
     {"id":"StatLean.StatisticalModels.MixedEffects.lmmLaw","label":"lmmLaw","full":"StatLean.StatisticalModels.MixedEffects.lmmLaw","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.MixedEffects.Defs"},
     {"id":"MeasureTheory.MemLp.integrable","label":"integrable","full":"MeasureTheory.MemLp.integrable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
@@ -40,13 +40,13 @@
     {"id":"StatLean.StatisticalModels.covMatrix_apply","label":"covMatrix_apply","full":"StatLean.StatisticalModels.covMatrix_apply","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
     {"id":"ProbabilityTheory.covariance_map_fun","label":"covariance_map_fun","full":"ProbabilityTheory.covariance_map_fun","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
-    {"id":"add_assoc","label":"add_assoc","full":"add_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"add_assoc","label":"add_assoc","full":"add_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
     {"id":"ProbabilityTheory.covariance_const_add_left","label":"covariance_const_add_left","full":"ProbabilityTheory.covariance_const_add_left","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"ProbabilityTheory.covariance_const_add_right","label":"covariance_const_add_right","full":"ProbabilityTheory.covariance_const_add_right","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
     {"id":"StatLean.StatisticalModels.covMatrix_map_add_prod","label":"covMatrix_map_add_prod","full":"StatLean.StatisticalModels.covMatrix_map_add_prod","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Matrix.transpose_one","label":"transpose_one","full":"Matrix.transpose_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Diagonal"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.MixedEffects.covMatrix_lmmLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},

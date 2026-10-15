@@ -71,11 +71,11 @@ theorem oneDim_monotone_zEstimator_consistent
           {ω | η ≤ ‖Ψn n ω (θ₀ - ε) - Ψ (θ₀ - ε)‖}
           ∪ {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖} := by
         intro n ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_contra hcon
         rw [Set.mem_union, not_or] at hcon
         obtain ⟨h1, h2⟩ := hcon
-        simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at h1 h2
+        simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at h1 h2
         rw [abs_lt] at h1 h2
         have hmono' : Ψn n ω (θhat n ω) ≤ Ψn n ω (θ₀ - ε) :=
           hmono n ω (hθhat n ω) hmem hω
@@ -89,13 +89,13 @@ theorem oneDim_monotone_zEstimator_consistent
           + P {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖}) atTop (𝓝 0) := by
         simpa using T_lo.add T_near
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-        (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+        (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
     · -- `θ₀−ε ∉ Θ`: order-connectedness forces the event to be empty.
       have hempty : ∀ n, {ω | θhat n ω ≤ θ₀ - ε} = (∅ : Set Ω) := by
         intro n
         rw [Set.eq_empty_iff_forall_notMem]
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         exact hmem (hΘ.out (hθhat n ω) hθ₀ (Set.mem_Icc.mpr ⟨hω, by linarith⟩))
       simp only [hempty, measure_empty]
       exact tendsto_const_nhds
@@ -113,11 +113,11 @@ theorem oneDim_monotone_zEstimator_consistent
           {ω | η ≤ ‖Ψn n ω (θ₀ + ε) - Ψ (θ₀ + ε)‖}
           ∪ {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖} := by
         intro n ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_contra hcon
         rw [Set.mem_union, not_or] at hcon
         obtain ⟨h1, h2⟩ := hcon
-        simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at h1 h2
+        simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at h1 h2
         rw [abs_lt] at h1 h2
         have hmono' : Ψn n ω (θ₀ + ε) ≤ Ψn n ω (θhat n ω) :=
           hmono n ω hmem (hθhat n ω) hω
@@ -131,13 +131,13 @@ theorem oneDim_monotone_zEstimator_consistent
           + P {ω | η ≤ ‖Ψn n ω (θhat n ω) - 0‖}) atTop (𝓝 0) := by
         simpa using T_hi.add T_near
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-        (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+        (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
     · -- `θ₀+ε ∉ Θ`: order-connectedness forces the event to be empty.
       have hempty : ∀ n, {ω | θ₀ + ε ≤ θhat n ω} = (∅ : Set Ω) := by
         intro n
         rw [Set.eq_empty_iff_forall_notMem]
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         exact hmem (hΘ.out hθ₀ (hθhat n ω) (Set.mem_Icc.mpr ⟨by linarith, hω⟩))
       simp only [hempty, measure_empty]
       exact tendsto_const_nhds
@@ -145,10 +145,10 @@ theorem oneDim_monotone_zEstimator_consistent
   have hincl : ∀ n, {ω | ε ≤ |θhat n ω - θ₀|} ⊆
       {ω | θhat n ω ≤ θ₀ - ε} ∪ {ω | θ₀ + ε ≤ θhat n ω} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     rcases le_abs.mp hω with h | h
-    · exact Or.inr (by simp only [Set.mem_setOf_eq]; linarith)
-    · exact Or.inl (by simp only [Set.mem_setOf_eq]; linarith)
+    · exact Or.inr (by simp only [Set.mem_ofPred_eq]; linarith)
+    · exact Or.inl (by simp only [Set.mem_ofPred_eq]; linarith)
   have h_meas_bd : ∀ n, P {ω | ε ≤ |θhat n ω - θ₀|} ≤
       P {ω | θhat n ω ≤ θ₀ - ε} + P {ω | θ₀ + ε ≤ θhat n ω} := fun n =>
     (measure_mono (hincl n)).trans (measure_union_le _ _)
@@ -156,7 +156,7 @@ theorem oneDim_monotone_zEstimator_consistent
       P {ω | θhat n ω ≤ θ₀ - ε} + P {ω | θ₀ + ε ≤ θhat n ω}) atTop (𝓝 0) := by
     simpa using h_lo.add h_hi
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
 
 /-- **`Θ = ℝ` specialization** of `oneDim_monotone_zEstimator_consistent`, for the
 common ambient-line callers (median sign-sum etc.). Each `Ψn n ω` is nondecreasing on

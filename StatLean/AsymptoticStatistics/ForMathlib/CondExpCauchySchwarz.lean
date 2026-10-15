@@ -100,19 +100,19 @@ theorem condExp_sq_le_condExp_mul_condExp
     have e_add : μ[fun ω => f ω ^ 2 - 2 * (q : ℝ) * (f ω * g ω) + (q : ℝ) ^ 2 * g ω ^ 2 | m]
         =ᵐ[μ] fun ω => μ[fun ω => f ω ^ 2 - 2 * (q : ℝ) * (f ω * g ω) | m] ω
           + μ[fun ω => (q : ℝ) ^ 2 * g ω ^ 2 | m] ω := by
-      filter_upwards [condExp_add hfs ht m] with ω hω; simpa using hω
+      filter_upwards [condExp_add hfs ht m] with ω hω; simpa using! hω
     have e_sub : μ[fun ω => f ω ^ 2 - 2 * (q : ℝ) * (f ω * g ω) | m]
         =ᵐ[μ] fun ω => μ[fun ω => f ω ^ 2 | m] ω
           - μ[fun ω => 2 * (q : ℝ) * (f ω * g ω) | m] ω := by
-      filter_upwards [condExp_sub hf2 hs m] with ω hω; simpa using hω
+      filter_upwards [condExp_sub hf2 hs m] with ω hω; simpa using! hω
     have e_smul1 : μ[fun ω => 2 * (q : ℝ) * (f ω * g ω) | m]
         =ᵐ[μ] fun ω => 2 * (q : ℝ) * μ[fun ω => f ω * g ω | m] ω := by
       filter_upwards [condExp_smul (2 * (q : ℝ)) (fun ω => f ω * g ω) m] with ω hω
-      simpa [smul_eq_mul] using hω
+      simpa [smul_eq_mul] using! hω
     have e_smul2 : μ[fun ω => (q : ℝ) ^ 2 * g ω ^ 2 | m]
         =ᵐ[μ] fun ω => (q : ℝ) ^ 2 * μ[fun ω => g ω ^ 2 | m] ω := by
       filter_upwards [condExp_smul ((q : ℝ) ^ 2) (fun ω => g ω ^ 2) m] with ω hω
-      simpa [smul_eq_mul] using hω
+      simpa [smul_eq_mul] using! hω
     have hexp : μ[fun ω => f ω ^ 2 - 2 * (q : ℝ) * (f ω * g ω) + (q : ℝ) ^ 2 * g ω ^ 2 | m]
         =ᵐ[μ] fun ω => μ[fun ω => f ω ^ 2 | m] ω
           - 2 * (q : ℝ) * μ[fun ω => f ω * g ω | m] ω
@@ -120,7 +120,7 @@ theorem condExp_sq_le_condExp_mul_condExp
       filter_upwards [e_add, e_sub, e_smul1, e_smul2] with ω h1 h2 h3 h4
       rw [h1, h2, h3, h4]
     filter_upwards [hnn, hexp] with ω hn he
-    rw [he] at hn; simpa using hn
+    rw [he] at hn; simpa using! hn
   -- combine over all rationals
   have hall : ∀ᵐ ω ∂μ, ∀ q : ℚ, (0 : ℝ) ≤
       μ[fun ω => f ω ^ 2 | m] ω - 2 * (q : ℝ) * μ[fun ω => f ω * g ω | m] ω

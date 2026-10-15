@@ -58,7 +58,7 @@ instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel �
 instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel κ]
     (π : Measure S) [IsProbabilityMeasure π] :
     IsProbabilityMeasure ((pairLaw κ π).map Prod.swap) :=
-  Measure.isProbabilityMeasure_map measurable_swap.aemeasurable
+  (by infer_instance)
 
 /-- The **time-reversed transition kernel**: the disintegration in the *second*
 coordinate of the swapped stationary pair law. On a standard Borel space this exists by
@@ -92,21 +92,21 @@ private lemma measurable_consLast (k : ℕ) :
     Measurable fun p : S × (Fin k → S) => (Fin.cons p.1 p.2 : Fin (k + 1) → S) (Fin.last k) := by
   cases k with
   | zero => simpa using measurable_fst
-  | succ k => simpa using (measurable_pi_apply (Fin.last k)).comp measurable_snd
+  | succ k => simpa using! (measurable_pi_apply (Fin.last k)).comp measurable_snd
 
 private lemma measurable_finCons (k : ℕ) :
     Measurable fun p : S × (Fin k → S) => (Fin.cons p.1 p.2 : Fin (k + 1) → S) := by
   rw [measurable_pi_iff]
   refine Fin.cases ?_ ?_
   · simpa using measurable_fst
-  · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_snd
+  · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_snd
 
 private lemma measurable_finSnoc' (k : ℕ) :
     Measurable fun p : (Fin k → S) × S => (Fin.snoc p.1 p.2 : Fin (k + 1) → S) := by
   rw [measurable_pi_iff]
   refine Fin.lastCases ?_ ?_
   · simpa using measurable_snd
-  · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+  · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_fst
 
 /-- The **iterated-`compProd` chain window law** on `Fin (k+1) → S`: the law of
 `(X₀, …, X_k)` for the chain started from `π`. Formalizes the finite-dimensional
@@ -127,11 +127,12 @@ theorem isProbabilityMeasure_chainWindowLaw
     IsProbabilityMeasure (chainWindowLaw κ π k) := by
   induction k with
   | zero =>
-    exact Measure.isProbabilityMeasure_map
-      (measurable_pi_lambda _ fun _ => measurable_id).aemeasurable
+    unfold chainWindowLaw
+    infer_instance
   | succ k ih =>
-    haveI := ih
-    exact Measure.isProbabilityMeasure_map (measurable_finSnoc' (k + 1)).aemeasurable
+    have := ih
+    unfold chainWindowLaw
+    infer_instance
 
 /-- **Reversal disintegration**: under invariance, the swapped pair law disintegrates
 through `reverseKernel` with first marginal `π` again.
@@ -186,7 +187,6 @@ private theorem chainWindowLaw_eq_compProd (k : ℕ) :
     refine Fin.cases ?_ (fun j => j.elim0) i
     simp
   | succ k ih =>
-    haveI := isProbabilityMeasure_chainWindowLaw κ π k
     set η : Kernel (S × (Fin k → S)) S :=
       κ.comap (fun p : S × (Fin k → S) => (Fin.cons p.1 p.2 : Fin (k + 1) → S) (Fin.last k))
         (measurable_consLast k) with hη
@@ -408,7 +408,7 @@ private def iicToFin (n : ℕ) (w : (i : ↥(Finset.Iic n)) → S) : Fin (n + 1)
   fun i => w ⟨(i : ℕ), Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp i.isLt)⟩
 
 private lemma measurable_iicToFin (n : ℕ) : Measurable (iicToFin (S := S) n) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- The Ionescu–Tulcea trajectory law of the chain started from `π`. -/
 private noncomputable def trajLaw (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) :
@@ -419,7 +419,7 @@ private noncomputable def trajLaw (κ : Kernel S S) [IsMarkovKernel κ] (π : Me
 private theorem trajMeasure_map_window (π : Measure S) [IsProbabilityMeasure π] (n : ℕ) :
     (trajLaw κ π).map (fun ω (i : Fin (n + 1)) => ω (i : ℕ))
       = chainWindowLaw κ π n := by
-  haveI hprob : IsProbabilityMeasure (trajLaw κ π) := by rw [trajLaw]; infer_instance
+  have hprob : IsProbabilityMeasure (trajLaw κ π) := by rw [trajLaw]; infer_instance
   induction n with
   | zero =>
     have h1 : (trajLaw κ π).map (frestrictLe 0)
@@ -452,13 +452,9 @@ private theorem trajMeasure_map_window (π : Measure S) [IsProbabilityMeasure π
     have hih : ((trajLaw κ π).map (frestrictLe n)).map (iicToFin n)
         = chainWindowLaw κ π n := by
       rw [Measure.map_map (measurable_iicToFin n) (measurable_frestrictLe n)]; exact ih
-    haveI : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
-      Measure.isProbabilityMeasure_map (measurable_frestrictLe n).aemeasurable
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
       Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
-    haveI : IsProbabilityMeasure ((trajLaw κ π).map (frestrictLe n)) :=
-      Measure.isProbabilityMeasure_map (measurable_frestrictLe n).aemeasurable
     have key : ((trajLaw κ π).map (frestrictLe n)) ⊗ₘ stepFam κ n
         = (trajLaw κ π).map (fun ω => (frestrictLe n ω, ω (n + 1))) :=
       Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
@@ -497,15 +493,15 @@ private lemma trajLaw_dirac (x : S) : trajLaw κ (Measure.dirac x) = trajKernel 
 
 private lemma measurable_finTail (n : ℕ) :
     Measurable (Fin.tail : (Fin (n + 1) → S) → (Fin n → S)) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- (T2) The strict future of the trajectory kernel is the chain window kernel. -/
 private theorem trajKernel_map_window (n : ℕ) :
     (trajKernel κ).map (fun ω (i : Fin n) => ω ((i : ℕ) + 1)) = chainWindowKernel κ n := by
   have hidx : Measurable fun ω : ℕ → S => fun i : Fin n => ω ((i : ℕ) + 1) :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hwin : Measurable fun ω : ℕ → S => fun i : Fin (n + 1) => ω (i : ℕ) :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   refine Kernel.ext fun x => ?_
   have hcx : Measurable fun w : Fin n → S => (Fin.cons x w : Fin (n + 1) → S) :=
     (measurable_finCons n).comp (measurable_const.prodMk measurable_id)
@@ -523,7 +519,7 @@ private theorem trajKernel_map_window (n : ℕ) :
       Measure.map_map (measurable_finCons n) measurable_prodMk_left]
     rfl
   have h3 := congrArg (fun μ : Measure (Fin (n + 1) → S) => μ.map Fin.tail) (h1.trans h2)
-  simp only at h3
+  try simp only at h3
   rw [Measure.map_map (measurable_finTail n) hwin,
     Measure.map_map (measurable_finTail n) hcx] at h3
   have h4 : (Fin.tail ∘ fun w : Fin n → S => (Fin.cons x w : Fin (n + 1) → S)) = id :=
@@ -539,12 +535,12 @@ variable (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) [IsProbabilityMe
 
 private lemma measurable_finInit (N : ℕ) :
     Measurable (Fin.init : (Fin (N + 1) → S) → (Fin N → S)) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 /-- Dropping the last coordinate of a window law. -/
 private theorem chainWindowLaw_map_init (N : ℕ) :
     (chainWindowLaw κ π (N + 1)).map Fin.init = chainWindowLaw κ π N := by
-  haveI := isProbabilityMeasure_chainWindowLaw κ π N
+  have := isProbabilityMeasure_chainWindowLaw κ π N
   rw [show chainWindowLaw κ π (N + 1) = ((chainWindowLaw κ π N) ⊗ₘ
       (κ.comap (fun w : Fin (N + 1) → S => w (Fin.last N)) (measurable_pi_apply _))).map
       (fun wx => (Fin.snoc wx.1 wx.2 : Fin (N + 1 + 1) → S)) from rfl,
@@ -599,7 +595,7 @@ private theorem chainWindowLaw_map_sub (hinv : Kernel.Invariant κ π) :
     intro j k h
     have hmeas : ∀ (M m : ℕ) (hM : m + k ≤ M),
         Measurable fun (w : Fin (M + 1) → S) (i : Fin (k + 1)) => w ⟨m + (i : ℕ), by omega⟩ :=
-      fun M m hM => measurable_pi_lambda _ fun _ => measurable_pi_apply _
+      fun M m hM => Measurable.of_eval fun _ => measurable_pi_apply _
     cases j with
     | succ j =>
       have hle : j + k ≤ N := by omega
@@ -839,7 +835,7 @@ private lemma twoSidedProc_glue (n : ℕ) :
       rw [twoSidedProc]
       have h1 : ((i : ℕ) + 1 : ℤ) ≠ 0 := by positivity
       have h2 : (0 : ℤ) < ((i : ℕ) + 1 : ℤ) := by positivity
-      rw [if_neg h1, if_pos h2]
+      rw [ite_eq_right h1, ite_eq_left h2]
       congr 1
   | succ m ih =>
     intro ω j
@@ -849,7 +845,7 @@ private lemma twoSidedProc_glue (n : ℕ) :
       rw [twoSidedProc]
       have h1 : ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) ≠ 0 := by simp; omega
       have h2 : ¬ (0 : ℤ) < ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) := by simp
-      rw [if_neg h1, if_neg h2]
+      rw [ite_eq_right h1, ite_eq_right h2]
       congr 1
     · rw [twoSidedGlue]
       simp only [Fin.cons_succ]
@@ -863,9 +859,9 @@ private theorem twoSidedProc_window_law (hinv : Kernel.Invariant κ π) (n m : �
         (fun ω (j : Fin (n + m + 1)) => twoSidedProc ω ((j : ℕ) - (m : ℤ)))
       = chainWindowLaw κ π (n + m) := by
   have hwinF : Measurable fun ω : ℕ → S => fun i : Fin n => ω ((i : ℕ) + 1) :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hwinB : Measurable fun ω : ℕ → S => fun i : Fin m => ω ((i : ℕ) + 1) :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hE : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
       (ω.1, ((fun i : Fin n => ω.2.1 ((i : ℕ) + 1)), (fun i : Fin m => ω.2.2 ((i : ℕ) + 1)))) :=
     measurable_fst.prodMk ((hwinF.comp (measurable_fst.comp measurable_snd)).prodMk
@@ -909,17 +905,17 @@ theorem exists_twoSided_stationary_chain
     MeasureTheory.measurable_embeddingReal S
   set μ0 : Measure (S × ((ℕ → S) × (ℕ → S))) :=
     π ⊗ₘ ((trajKernel κ) ×ₖ (trajKernel (reverseKernel κ π))) with hμ0
-  haveI : IsProbabilityMeasure μ0 := by rw [hμ0]; infer_instance
+  have : IsProbabilityMeasure μ0 := by rw [hμ0]; infer_instance
   have hEnc : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
       fun t : ℤ => MeasureTheory.embeddingReal S (twoSidedProc ω t) :=
-    measurable_pi_lambda _ fun t => hemeas.comp (measurable_twoSidedProc t)
+    Measurable.of_eval fun t => hemeas.comp (measurable_twoSidedProc t)
   refine ⟨ℤ → ℝ, inferInstance,
     μ0.map (fun ω t => MeasureTheory.embeddingReal S (twoSidedProc ω t)),
-    fun t ω => F (ω t), Measure.isProbabilityMeasure_map hEnc.aemeasurable,
+    fun t ω => F (ω t), (by infer_instance),
     fun t => hFmeas.comp (measurable_pi_apply t), ?_⟩
   intro t k
   have hsmall : Measurable fun ω' : ℤ → ℝ => fun i : Fin (k + 1) => F (ω' (t + (i : ℕ))) :=
-    measurable_pi_lambda _ fun _ => hFmeas.comp (measurable_pi_apply _)
+    Measurable.of_eval fun _ => hFmeas.comp (measurable_pi_apply _)
   rw [Measure.map_map hsmall hEnc]
   have hcomp : ((fun ω' : ℤ → ℝ => fun i : Fin (k + 1) => F (ω' (t + (i : ℕ)))) ∘
       (fun ω : S × ((ℕ → S) × (ℕ → S)) =>
@@ -933,10 +929,10 @@ theorem exists_twoSided_stationary_chain
   have hjk : j + k ≤ n + m := by omega
   have hbig : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
       fun jj : Fin (n + m + 1) => twoSidedProc ω ((jj : ℕ) - (m : ℤ)) :=
-    measurable_pi_lambda _ fun _ => measurable_twoSidedProc _
+    Measurable.of_eval fun _ => measurable_twoSidedProc _
   have hsub : Measurable fun w : Fin (n + m + 1) → S =>
       fun i : Fin (k + 1) => w ⟨j + (i : ℕ), by omega⟩ :=
-    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    Measurable.of_eval fun _ => measurable_pi_apply _
   have hfac2 : (fun (ω : S × ((ℕ → S) × (ℕ → S))) (i : Fin (k + 1)) =>
         twoSidedProc ω (t + (i : ℕ)))
       = (fun w : Fin (n + m + 1) → S => fun i : Fin (k + 1) => w ⟨j + (i : ℕ), by omega⟩) ∘

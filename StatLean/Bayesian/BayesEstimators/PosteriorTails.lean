@@ -67,7 +67,7 @@ private theorem lintegral_tail_bvmLocalPosterior {n : ℕ} (hn : 1 ≤ n) (ω : 
     ext θ
     simp only [Set.mem_preimage, Set.mem_compl_iff, Metric.mem_ball, dist_zero_right, not_lt,
       bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hpos.le, tailSet,
-      Set.mem_setOf_eq, div_le_iff₀ hpos]
+      Set.mem_ofPred_eq, div_le_iff₀ hpos]
     constructor <;> intro h <;> linarith
   rw [lintegral_indicator (measurableSet_tailSet θ₀ R n)]
   simp only [bvmLocalPosterior, Kernel.map_apply _ hg]
@@ -371,7 +371,7 @@ private theorem weighted_prior_tail_tendsto
             + ENNReal.ofReal K * ENNReal.ofReal (Real.exp (-(c / 2) * n))
                 * (∫⁻ θ in tailSet θ₀ (Mseq n) n,
                     ENNReal.ofReal (1 + ‖θ - θ₀‖ ^ p) ∂π) := by
-          rw [lintegral_add_left (measurable_const.mul (hmG1 n)),
+          erw [lintegral_add_left (measurable_const.mul (hmG1 n)),
             lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
             lintegral_const_mul' _ _ hne]
       _ ≤ ENNReal.ofReal K * (∫⁻ θ in tailSet θ₀ (Mseq n) n,
@@ -405,7 +405,7 @@ private theorem weighted_prior_tail_tendsto
     rw [zero_mul] at h3
     simpa using h1.add h3
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hU
-    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
   have h := mul_le_mul_right (hint n) (ENNReal.ofReal (Real.sqrt n ^ k))
   refine h.trans_eq ?_
   rw [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ Real.sqrt n ^ k)]
@@ -451,7 +451,7 @@ private theorem tail_mixture_bound
   have hgmeas : Measurable g := (measurable_const.sub hφmeas).ennreal_ofReal
   have hφint : ∀ θ' : EuclideanSpace ℝ (Fin k), Integrable φn (productMeasure M μ θ' n) := by
     intro θ'
-    haveI : IsProbabilityMeasure (productMeasure M μ θ' n) := by
+    have : IsProbabilityMeasure (productMeasure M μ θ' n) := by
       rw [productMeasure_eq_iidKernel_apply hκ θ' n]; infer_instance
     refine (integrable_const (1 : ℝ)).mono' hφmeas.aestronglyMeasurable ?_
     filter_upwards with ω
@@ -514,7 +514,7 @@ private theorem tail_mixture_bound
           ≤ ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) := by
         have hpm : productMeasure M μ θ n = iidKernel κ n θ :=
           productMeasure_eq_iidKernel_apply hκ θ n
-        haveI : IsProbabilityMeasure (productMeasure M μ θ n) := by
+        have : IsProbabilityMeasure (productMeasure M μ θ n) := by
           rw [hpm]; infer_instance
         have hnn : 0 ≤ᵐ[productMeasure M μ θ n] fun ω => 1 - φn ω := by
           filter_upwards with ω
@@ -620,7 +620,7 @@ theorem posterior_tail_lintegral_tendsto
   have hφint : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       Integrable (φ n) (productMeasure M μ θ n) := by
     intro θ n
-    haveI := hprob θ n
+    have := hprob θ n
     refine (integrable_const (1 : ℝ)).mono' (hφ.measurable n).aestronglyMeasurable ?_
     filter_upwards with ω
     have h := hφ.mem_Icc n ω
@@ -632,7 +632,7 @@ theorem posterior_tail_lintegral_tendsto
       ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(productMeasure M μ θ n)
         = ENNReal.ofReal (∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n)) := by
     intro θ n
-    haveI := hprob θ n
+    have := hprob θ n
     refine (ofReal_integral_eq_lintegral_ofReal
       ((integrable_const (1 : ℝ)).sub (hφint θ n)) ?_).symm
     filter_upwards with ω
@@ -641,7 +641,6 @@ theorem posterior_tail_lintegral_tendsto
   have hlintφ : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
       = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
     intro n
-    haveI := hprob θ₀ n
     refine (ofReal_integral_eq_lintegral_ofReal (hφint θ₀ n) ?_).symm
     filter_upwards with ω
     exact (hφ.mem_Icc n ω).1
@@ -682,7 +681,7 @@ theorem posterior_tail_lintegral_tendsto
         simpa using (ENNReal.tendsto_ofReal hφ.typeI)
       simpa using ENNReal.Tendsto.const_mul h0 (Or.inr (by simp))
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-      (fun n => zero_le _) hbd
+      (fun n => zero_le) hbd
   -- the main statement, for finite thresholds
   have main : ∀ δ : ℝ≥0∞, 0 < δ → δ ≠ ∞ →
       Tendsto (fun n => productMeasure M μ θ₀ n
@@ -731,20 +730,20 @@ theorem posterior_tail_lintegral_tendsto
                 Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π)) atTop (𝓝 0) := by
         have hC : (ENNReal.ofReal ((2 : ℝ)⁻¹))⁻¹ * δ⁻¹ * c₁⁻¹ ≠ ∞ := by
           refine ENNReal.mul_ne_top (ENNReal.mul_ne_top ?_ ?_) ?_
-          · simpa [ENNReal.inv_ne_top] using hhalf
+          · simp
           · simpa [ENNReal.inv_ne_top] using hδ.ne'
           · simpa [ENNReal.inv_ne_top] using hc₁.ne'
         simpa using ENNReal.Tendsto.const_mul
           (weighted_prior_tail_tendsto hπ hp hmom hc hM) (Or.inr hC)
       exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
-        (Eventually.of_forall fun n => zero_le _) hbd
+        (Eventually.of_forall fun n => zero_le) hbd
     -- Part III: transfer to the base law by contiguity
     have hIII : Tendsto (fun n => productMeasure M μ θ₀ n (A n)) atTop (𝓝 0) :=
       (mutuallyContiguous_mixture_base hPDF hsc hDQM hJ_pd hJ hκ hπ (u := 1) one_pos).2
         A hAmeas hII
     -- Part IV: assemble
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa using hI.add hIII) (fun n => zero_le _) (fun n => ?_)
+      (by simpa using hI.add hIII) (fun n => zero_le) (fun n => ?_)
     calc productMeasure M μ θ₀ n {ω | δ ≤ Tn n ω}
         ≤ productMeasure M μ θ₀ n ({ω | (2 : ℝ)⁻¹ ≤ φ n ω} ∪ A n) := by
           refine measure_mono fun ω hω => ?_
@@ -756,7 +755,7 @@ theorem posterior_tail_lintegral_tendsto
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (main (min δ 1) (lt_min hδ zero_lt_one)
       (ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)))
-    (fun n => zero_le _) (fun _ => measure_mono fun _ hω => (min_le_left δ 1).trans hω)
+    (fun n => zero_le) (fun _ => measure_mono fun _ hω => (min_le_left δ 1).trans hω)
 
 end StatLean.Bayesian
 

@@ -69,7 +69,7 @@ private lemma covariance_congr_ae {Y Y' Z Z' : Ω → ℝ} (hY : Y =ᵐ[μ] Y') 
 /-- Square-integrability of a linear combination of the prediction window. -/
 private lemma memLp_predWindow (hstat : IsStationary X μ) {k : ℕ} (φ : Fin k → ℝ) :
     MemLp (fun ω => ∑ j, φ j * X ((k : ℤ) - (j : ℕ)) ω) 2 μ :=
-  memLp_finset_sum _ fun (j : Fin k) _ => (hstat.memLp ((k : ℤ) - (j : ℕ))).const_mul (φ j)
+  memLp_finsetSum _ fun (j : Fin k) _ => (hstat.memLp ((k : ℤ) - (j : ℕ))).const_mul (φ j)
 
 /-- Square-integrability of the prediction error. -/
 private lemma memLp_predError (hstat : IsStationary X μ) {k : ℕ} (φ : Fin k → ℝ) :
@@ -89,7 +89,7 @@ private lemma integral_predError_eq_zero [IsProbabilityMeasure μ] (hstat : IsSt
   have hterm : ∀ j : Fin k, ∫ ω, φ j * X ((k : ℤ) - (j : ℕ)) ω ∂μ = 0 := fun j => by
     rw [integral_const_mul, integral_eq_zero_of_zero_mean hstat hmean, mul_zero]
   rw [integral_sub (hint _) ((memLp_predWindow hstat φ).integrable one_le_two),
-    integral_finset_sum _ (fun (j : Fin k) _ => (hint ((k : ℤ) - (j : ℕ))).const_mul (φ j)),
+    integral_finsetSum _ (fun (j : Fin k) _ => (hint ((k : ℤ) - (j : ℕ))).const_mul (φ j)),
     integral_eq_zero_of_zero_mean hstat hmean]
   simp [hterm]
 
@@ -304,14 +304,14 @@ theorem predMSE_isMinOn_iff_yuleWalker [IsProbabilityMeasure μ]
         = t * cov[fun ω => X ((k : ℤ) + 1) ω - ∑ i, φ i * X ((k : ℤ) - (i : ℕ)) ω,
             X ((k : ℤ) - (i : ℕ)); μ] := by
       simp only [add_sub_cancel_left, ite_mul, zero_mul, Finset.sum_ite_eq',
-        Finset.mem_univ, if_true]
+        Finset.mem_univ, ite_true]
     have hvar : variance (fun ω => ∑ j, ((φ j + if j = i then t else 0) - φ j)
           * X ((k : ℤ) - (j : ℕ)) ω) μ = t ^ 2 * acvf X μ 0 := by
       have hfun : (fun ω => ∑ j, ((φ j + if j = i then t else 0) - φ j)
             * X ((k : ℤ) - (j : ℕ)) ω) = fun ω => t * X ((k : ℤ) - (i : ℕ)) ω := by
         funext ω
         simp only [add_sub_cancel_left, ite_mul, zero_mul, Finset.sum_ite_eq',
-          Finset.mem_univ, if_true]
+          Finset.mem_univ, ite_true]
       rw [hfun, variance_const_mul, ← hstat.acvf_zero_eq_variance]
     rw [hsum, hvar] at h
     linarith
@@ -444,7 +444,6 @@ theorem exists_yuleWalker_solution [IsProbabilityMeasure μ]
     (A := fun i j : Fin k => acvf X μ ((i : ℕ) - (j : ℕ) : ℤ))
     (c := fun i : Fin k => acvf X μ ((i : ℕ) + 1))
     (fun i j => by
-      change acvf X μ (((j : ℕ) : ℤ) - ((i : ℕ) : ℤ)) = acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ))
       rw [show (((j : ℕ) : ℤ) - ((i : ℕ) : ℤ)) = -(((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) from by ring,
         hstat.acvf_even]) hker
   exact ⟨b, fun i => by simpa [mul_comm] using hb i⟩

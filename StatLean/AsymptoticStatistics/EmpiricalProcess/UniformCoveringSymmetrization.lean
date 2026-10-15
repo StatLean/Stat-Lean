@@ -4,10 +4,28 @@ import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectatio
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Pi
 
+/-!
+# Symmetrization of the empirical-process supremum
+
+This file proves the symmetrization inequality `E ‖𝔾ₙ‖_F ≤ 2 E E_ε ‖n^{-1/2} ∑ᵢ εᵢ f(Xᵢ)‖_F`
+for a pointwise-dense class `F` of measurable functions. Writing `𝔾ₙ f` as an average over an
+independent ghost sample bounds the supremum by an integral of `ghostDifferenceSup`
+(`rawEmpiricalProcessSup_le_ghostLIntegral`). The measure-preserving swap `signedGhostSwap`
+identifies `ghostLIntegral` with its Rademacher-signed version `signedGhostLIntegral`, which
+the triangle inequality bounds by twice the expected `conditionalRademacherSup`. The result
+is stated under the canonical product law (`canonical_symmetrization_empiricalProcess`) and,
+with an outer expectation, for an iid sequence (`outer_symmetrization_empiricalProcess`).
+-/
+
 namespace AsymptoticStatistics.EmpiricalProcess
 open MeasureTheory Filter
 open scoped ENNReal
 
+/-- The sign-driven swap of a sample and its ghost sample: it sends `((x, y), ε)` to
+`((x', y'), ε)`, where `(x' i, y' i) = (y i, x i)` if `ε i = true` and `(x i, y i)` otherwise.
+
+It is an involution, and for a probability measure `P` it preserves the product of the two
+`n`-fold product laws of `P` and `rademacherCube n` (`measurePreserving_signedGhostSwap`). -/
 def signedGhostSwap {Ω : Type*} (n : ℕ) :
     (((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool)) →
       (((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool)) :=
@@ -34,8 +52,8 @@ theorem measurable_signedGhostSwap
     {Ω : Type*} [MeasurableSpace Ω] (n : ℕ) :
     Measurable (signedGhostSwap (Ω := Ω) n) := by
   unfold signedGhostSwap
-  refine ((measurable_pi_lambda _ fun i => ?_).prodMk
-    (measurable_pi_lambda _ fun i => ?_)).prodMk measurable_snd
+  refine ((Measurable.of_eval fun i => ?_).prodMk
+    (Measurable.of_eval fun i => ?_)).prodMk measurable_snd
   · have hε : Measurable (fun z :
         ((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool) => z.2 i) :=
       (measurable_pi_apply i).comp measurable_snd
@@ -84,12 +102,12 @@ theorem measurePreserving_signedGhostSwap
     by_cases h : ε i
     · simpa [swapAt, h] using
         (Measure.measurePreserving_swap (μ := P) (ν := P))
-    · simpa [swapAt, h] using (MeasurePreserving.id (P.prod P))
+    · simpa [swapAt, h] using! (MeasurePreserving.id (P.prod P))
   have hswapSamples (ε : Fin n → Bool) :
       MeasurePreserving (swapSamples ε) (μn.prod μn) (μn.prod μn) := by
     exact he.comp ((hswapPi ε).comp (he.symm e))
   have hswapPi_meas : Measurable (Function.uncurry swapPi) := by
-    apply measurable_pi_lambda
+    apply Measurable.of_eval
     intro i
     have hε : Measurable (fun p : (Fin n → Bool) × (Fin n → Ω × Ω) => p.1 i) :=
       (measurable_pi_apply i).comp measurable_fst
@@ -110,12 +128,18 @@ theorem measurePreserving_signedGhostSwap
     · exact ae_of_all _ fun ε => (hswapSamples ε).map_eq
   have hconj := Measure.measurePreserving_swap.comp
     (hskew.comp Measure.measurePreserving_swap)
-  convert hconj using 1
+  convert! hconj using 1
   funext z
   ext i <;> simp [signedGhostSwap, swapSamples, swapPi, swapAt, e,
     MeasurableEquiv.arrowProdEquivProdArrow, Equiv.arrowProdEquivProdArrow] <;>
     split <;> rfl
 
+/-- The Rademacher-signed ghost difference supremum
+`sup_{f ∈ F} |n^{-1/2} ∑ᵢ εᵢ (f(xᵢ) - f(yᵢ))|`, where `εᵢ = rademacherSign (ε i)`, valued in
+`ℝ≥0∞`.
+
+It equals `ghostDifferenceSup` evaluated after `signedGhostSwap`
+(`ghostDifferenceSup_signedGhostSwap`). -/
 noncomputable def signedGhostDifferenceSup {Ω : Type*}
     (F : Set (Ω → ℝ)) (n : ℕ) (x y : Fin n → Ω)
     (ε : Fin n → Bool) : ℝ≥0∞ :=
@@ -123,6 +147,9 @@ noncomputable def signedGhostDifferenceSup {Ω : Type*}
     ∑ i, ProbabilityTheory.rademacherSign (ε i) *
       (f (x i) - f (y i)))
 
+/-- The expected ghost difference supremum `E ghostDifferenceSup F n X Y` for two independent
+samples `X` and `Y` of size `n` from `P`, as a lower Lebesgue integral against the product of
+the two `n`-fold product laws. -/
 noncomputable def ghostLIntegral
     {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=
@@ -131,6 +158,9 @@ noncomputable def ghostLIntegral
       ∂((Measure.pi (fun _ : Fin n => P)).prod
         (Measure.pi (fun _ : Fin n => P)))
 
+/-- The expected signed ghost difference supremum `E signedGhostDifferenceSup F n X Y ε` for
+two independent samples `X` and `Y` of size `n` from `P` and independent signs `ε` with law
+`rademacherCube n`, as a lower Lebesgue integral. -/
 noncomputable def signedGhostLIntegral
     {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=
@@ -159,7 +189,7 @@ theorem integral_ghostDifference_eq_empiricalProcess
   have hcomp (i : Fin n) : Integrable (fun y : Fin n → Ω => f (y i))
       (Measure.pi fun _ : Fin n => P) :=
     integrable_comp_eval hf
-  rw [integral_const_mul, integral_finset_sum Finset.univ]
+  rw [integral_const_mul, integral_finsetSum Finset.univ]
   · simp_rw [integral_sub (integrable_const _) (hcomp _), integral_const,
       probReal_univ, one_smul]
     simp_rw [integral_comp_eval (μ := fun _ : Fin n => P) hf.aestronglyMeasurable]
@@ -193,7 +223,8 @@ theorem rawEmpiricalProcessSup_le_ghostLIntegral
   refine (enorm_integral_le_lintegral_enorm _).trans ?_
   refine lintegral_mono fun y => ?_
   rw [Real.enorm_eq_ofReal_abs]
-  exact le_supNormOver hfF
+  simpa only [ghostDifferenceSup] using! (le_supNormOver
+      (z := fun f => (Real.sqrt n)⁻¹ * ∑ i, (f (x i) - f (y i))) hfF)
 
 theorem ghostDifferenceSup_signedGhostSwap
     {Ω : Type*} (F : Set (Ω → ℝ)) (n : ℕ)
@@ -391,7 +422,7 @@ theorem outer_symmetrization_empiricalProcess
   let cond : (Fin n → Ω) → ℝ≥0∞ := fun x =>
     conditionalRademacherSup F n x
   have hY_meas : Measurable Y :=
-    measurable_pi_lambda _ fun i => hX_meas i.val
+    Measurable.of_eval fun i => hX_meas i.val
   have hY_map : μ.map Y = Measure.pi (fun _ : Fin n => P) :=
     AsymptoticStatistics.map_fin_restrict_eq_pi_of_iid
       P μ X hX_meas hX_iindep hX_idem hX_law n
@@ -400,7 +431,7 @@ theorem outer_symmetrization_empiricalProcess
   have hcond_meas : Measurable cond :=
     measurable_conditionalRademacherSup_dense P F hDense hF_meas n
   have hrawY_meas : Measurable (fun ξ => raw (Y ξ)) := by
-    simpa only [Function.comp_apply] using hraw_meas.comp hY_meas
+    simpa only [Function.comp_apply] using! hraw_meas.comp hY_meas
   change MeasureTheory.outerExpectation μ (fun ξ => raw (Y ξ)) ≤
     2 * ∫⁻ ξ, cond (Y ξ) ∂μ
   rw [MeasureTheory.outerExpectation_eq_lintegral hrawY_meas]

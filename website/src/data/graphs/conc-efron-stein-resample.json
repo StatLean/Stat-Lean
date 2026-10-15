@@ -8,7 +8,6 @@
     {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"StatLean.ConcentrationInequalities.integral_integral_sub_sq_update","label":"integral_integral_sub_sq_update","full":"StatLean.ConcentrationInequalities.integral_integral_sub_sq_update","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.EfronStein.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"StatLean.ConcentrationInequalities.integrable_sub_condMeanAt_sq","label":"integrable_sub_condMeanAt_sq","full":"StatLean.ConcentrationInequalities.integrable_sub_condMeanAt_sq","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.EfronStein.Defs"},
     {"id":"MeasureTheory.Integrable.integral_prod_left","label":"integral_prod_left","full":"MeasureTheory.Integrable.integral_prod_left","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Prod"},
     {"id":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","label":"toSigmaFinite","full":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
@@ -37,16 +36,17 @@
     {"id":"MeasureTheory.Measure.pi_eq","label":"pi_eq","full":"MeasureTheory.Measure.pi_eq","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
     {"id":"MeasureTheory.Measure.map_apply","label":"map_apply","full":"MeasureTheory.Measure.map_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
     {"id":"MeasurableSet.univ_pi","label":"univ_pi","full":"MeasurableSet.univ_pi","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
-    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Countable.Defs"},
+    {"id":"Finite.to_countable","label":"to_countable","full":"Finite.to_countable","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Countable.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"MeasureTheory.Measure.prod_prod","label":"prod_prod","full":"MeasureTheory.Measure.prod_prod","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
     {"id":"MeasureTheory.Measure.pi_pi","label":"pi_pi","full":"MeasureTheory.Measure.pi_pi","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
     {"id":"Function.update_self","label":"update_self","full":"Function.update_self","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
-    {"id":"Function.update.congr_simp","label":"congr_simp","full":"Function.update.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
+    {"id":"Function.update_congr","label":"update_congr","full":"Function.update_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Function.update_of_ne","label":"update_of_ne","full":"Function.update_of_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
     {"id":"Finset.prod_update_of_mem","label":"prod_update_of_mem","full":"Finset.prod_update_of_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Piecewise"},
     {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"Finset.sdiff_singleton_eq_erase","label":"sdiff_singleton_eq_erase","full":"Finset.sdiff_singleton_eq_erase","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Basic"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum","target":"StatLean.ConcentrationInequalities.efronSteinBound"},
@@ -55,7 +55,6 @@
     {"source":"StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum","target":"Finset.sum_congr"},
     {"source":"StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum","target":"StatLean.ConcentrationInequalities.integral_integral_sub_sq_update"},
     {"source":"StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum","target":"Nat.cast_one"},
-    {"source":"StatLean.ConcentrationInequalities.efronSteinBound_eq_half_sum","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ConcentrationInequalities.efronSteinBound","target":"StatLean.ConcentrationInequalities.condMeanAt"},
     {"source":"StatLean.ConcentrationInequalities.integral_integral_sub_sq_update","target":"StatLean.ConcentrationInequalities.condMeanAt"},
     {"source":"StatLean.ConcentrationInequalities.integral_integral_sub_sq_update","target":"StatLean.ConcentrationInequalities.integrable_sub_condMeanAt_sq"},
@@ -94,10 +93,11 @@
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"MeasureTheory.Measure.prod_prod"},
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"MeasureTheory.Measure.pi_pi"},
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Function.update_self"},
-    {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Function.update.congr_simp"},
+    {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Function.update_congr"},
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Function.update_of_ne"},
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Finset.prod_update_of_mem"},
     {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Finset.mem_univ"},
-    {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"one_mul"}
+    {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"one_mul"},
+    {"source":"StatLean.ConcentrationInequalities.measurePreserving_updateAt","target":"Finset.sdiff_singleton_eq_erase"}
   ]
 }

@@ -62,7 +62,7 @@ lemma tendsto_setIntegral_tail_of_integrable
     filter_upwards [ht.eventually_gt_atTop (f x)] with n hn
     symm
     rw [Set.indicator_of_notMem]
-    simp only [Set.mem_setOf_eq, not_lt]
+    simp only [Set.mem_ofPred_eq, not_lt]
     exact hn.le
   have h_DCT :=
     MeasureTheory.tendsto_integral_of_dominated_convergence

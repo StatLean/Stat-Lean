@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import StatLean.PointEstimation.InformationInequality.CramerRao
 import StatLean.PointEstimation.InformationInequality.Additivity
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -110,7 +111,7 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     (hδ2 : MemLp δ 2 (M.toMeasure μ θ)) :
     HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ)
       (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ := by
-  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hP := isProbabilityMeasure_toMeasure M μ hpdf θ
   obtain ⟨ε, hε, b, hb2, hbound⟩ := hreg
   have htoM : M.toMeasure μ θ
       = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) := rfl
@@ -167,7 +168,7 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     have hgabsL2 : MemLp (fun x => |g x|) 2 (M.toMeasure μ θ) := by
       simpa [Real.norm_eq_abs] using hg2.norm
     have hmul : Integrable (fun x => |g x| * b x) (M.toMeasure μ θ) :=
-      memLp_one_iff_integrable.mp (hb2.mul' hgabsL2)
+      memLp_one_iff_integrable.mp (hgabsL2.fun_mul hb2)
     have h := (integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)).1 hmul
     refine h.congr (Filter.Eventually.of_forall fun x => ?_)
@@ -289,7 +290,7 @@ theorem integral_score_eq_zero_of_density_regular (M : ParametricFamily 𝓧 ℝ
     -- USER-INPUT: the dominated-difference-quotient condition at `θ`
     (hreg : HasDominatedDifferenceQuotient M μ θ) :
     ∫ x, score M θ x * M.density θ x ∂μ = 0 := by
-  haveI := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have := isProbabilityMeasure_toMeasure M μ hpdf θ
   have hd := diff_under_integral_of_density_regular M μ hpdf hsupp θ hdiff hreg
     (fun _ => 1) (memLp_const 1)
   have hconst : (fun t => ∫ x, (1 : ℝ) * M.density t x ∂μ) = fun _ => (1 : ℝ) := by
@@ -328,7 +329,7 @@ private lemma measurable_score_of_regular (M : ParametricFamily 𝓧 ℝ)
         simp only [slope_def_field, sub_self, zero_div, deriv_const']
         exact tendsto_const_nhds
       · exact (hdiff x hpos).hasDerivAt.tendsto_slope.comp ha_tendsto
-  show Measurable (fun x => deriv (fun t => M.density t x) θ / M.density θ x)
+  change Measurable (fun x => deriv (fun t => M.density t x) θ / M.density θ x)
   exact hderiv_meas.div (M.density_meas θ)
 
 /-- **The information inequality under family-side regularity.** If the family has a common
@@ -436,7 +437,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
   -- the product family is a probability-density family
   have hpdf_pi : IsPDFOf (piFamily M n) (Measure.pi fun _ : Fin n => μ) := by
     refine ⟨fun t => ?_, fun t => ?_⟩
-    · show ∫ x, ∏ i, M.density t (x i) ∂(Measure.pi fun _ : Fin n => μ) = 1
+    · change ∫ x, ∏ i, M.density t (x i) ∂(Measure.pi fun _ : Fin n => μ) = 1
       rw [integral_fintype_prod_eq_prod (fun _ a => M.density t a)]
       simp [hpdf.density_integral_eq_one t]
     · exact Integrable.fintype_prod (fun _ => hpdf.density_integrable t)
@@ -452,7 +453,7 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       DifferentiableAt ℝ (fun t => (piFamily M n).density t x) θ := by
     intro x _
     simp only [piFamily]
-    exact DifferentiableAt.fun_finset_prod (fun i _ => hdiff_all (x i))
+    exact DifferentiableAt.fun_finsetProd (fun i _ => hdiff_all (x i))
   have hmeas_pi : AEStronglyMeasurable (score (piFamily M n) θ)
       (Measure.pi fun _ : Fin n => μ) :=
     (measurable_score_of_regular (piFamily M n) hsupp_pi θ hdiff_pi).aestronglyMeasurable
@@ -464,12 +465,12 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
             else M.density θ (x k)) := by
       intro x
       simp only [piFamily]
-      rw [deriv_fun_finset_prod (fun i _ => hdiff_all (x i))]
+      rw [deriv_fun_finsetProd (fun i _ => hdiff_all (x i))]
       refine Finset.sum_congr rfl (fun i _ => ?_)
       rw [smul_eq_mul, ← Finset.mul_prod_erase Finset.univ
           (fun k => if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k))
-          (Finset.mem_univ i), if_pos rfl,
-        Finset.prod_congr rfl (fun k hk => if_neg (Finset.ne_of_mem_erase hk))]
+          (Finset.mem_univ i), ite_eq_left rfl,
+        Finset.prod_congr rfl (fun k hk => ite_eq_right (Finset.ne_of_mem_erase hk))]
       ring
     have hint_i : ∀ i : Fin n, Integrable (fun x : Fin n → 𝓧 =>
         ∏ k, (if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k)))
@@ -478,10 +479,10 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       refine Integrable.fintype_prod (f := fun k a =>
         if k = i then deriv (fun t => M.density t a) θ else M.density θ a) (fun k => ?_)
       by_cases hk : k = i
-      · simp only [hk, if_pos]; exact hderiv_int
-      · simp only [if_neg hk]; exact hpdf.density_integrable θ
+      · simp only [hk, ite_eq_left]; exact hderiv_int
+      · simp only [ite_eq_right hk]; exact hpdf.density_integrable θ
     rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
-      integral_finset_sum Finset.univ (fun i _ => hint_i i)]
+      integral_finsetSum Finset.univ (fun i _ => hint_i i)]
     refine Finset.sum_eq_zero (fun i _ => ?_)
     rw [integral_fintype_prod_eq_prod (fun k a =>
       if k = i then deriv (fun t => M.density t a) θ else M.density θ a)]

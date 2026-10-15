@@ -56,7 +56,7 @@ private lemma integral_kernel_taylor_self {K p : ℝ → ℝ} {ℓ : ℕ} {h : �
     rw [Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [mul_pow]; ring
-  rw [hterm_eq, integral_finset_sum _ (fun j hj =>
+  rw [hterm_eq, integral_finsetSum _ (fun j hj =>
     (hK.integrable_pow j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))).const_mul _)]
   rw [Finset.sum_eq_single 0]
   · rw [integral_const_mul, iteratedDeriv_zero, pow_zero, mul_one, Nat.factorial_zero,
@@ -83,7 +83,7 @@ private lemma integrable_kernel_taylor_poly {K p : ℝ → ℝ} {ℓ : ℕ} {h :
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [mul_pow]; ring
   rw [hterm_eq]
-  exact integrable_finset_sum _ (fun j hj =>
+  exact integrable_finsetSum _ (fun j hj =>
     (hK.integrable_pow j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))).const_mul _)
 
 /-- **Integrated squared bias bound**: for `p ∈ P_H(β, L)`, kernel of order
@@ -139,7 +139,7 @@ theorem kde_integrated_sq_bias_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure
   -- Joint continuity/measurability of the remainder.
   have hRcont : Continuous (fun q : ℝ × ℝ => R q.2 q.1) := by
     simp only [hRdef, hTdef]
-    refine (hp_cont.comp (by fun_prop)).sub (continuous_finset_sum _ (fun j hj => ?_))
+    refine (hp_cont.comp (by fun_prop)).sub (continuous_finsetSum _ (fun j hj => ?_))
     have hcj : Continuous (iteratedDeriv j p) :=
       hp.nikolski.contDiff.continuous_iteratedDeriv j
         (by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))
@@ -215,7 +215,7 @@ theorem kde_integrated_sq_bias_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure
           have hle : ENNReal.ofReal (∫ u, |K u| * |R x u|) ≤ ∫⁻ u, g u x := by
             by_cases hint : Integrable (fun u => |K u| * |R x u|)
             · rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun u => by positivity)]
-            · rw [integral_undef hint, ENNReal.ofReal_zero]; exact zero_le _
+            · rw [integral_undef hint, ENNReal.ofReal_zero]; exact zero_le
           rw [sq, sq]; exact mul_le_mul' hle hle
   -- Generalized Minkowski (squared form).
   have hmink : (∫⁻ x, (∫⁻ u, g u x) ^ 2)
@@ -247,7 +247,7 @@ theorem kde_integrated_sq_bias_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure
         ≤ (ENNReal.ofReal (|K u| ^ 2)
             * ENNReal.ofReal ((L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β) ^ 2))
               ^ (1 / 2 : ℝ) :=
-          ENNReal.rpow_le_rpow (mul_le_mul_left' hR _) (by norm_num)
+          ENNReal.rpow_le_rpow (mul_le_mul_right hR _) (by norm_num)
       _ = ENNReal.ofReal (|K u|)
             * ENNReal.ofReal (L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β) := by
           rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ofReal_sq_rpow_half_ib (abs_nonneg _),

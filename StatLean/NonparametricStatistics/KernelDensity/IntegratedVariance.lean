@@ -62,7 +62,7 @@ private lemma lintegral_kernel_shift {F : ℝ → ℝ≥0∞} (hF : Measurable F
     rw [hcomp, ← Measure.map_map (show Measurable (fun y : ℝ => y + z / h) by fun_prop)
       (show Measurable (fun x : ℝ => x * (-h⁻¹)) by fun_prop),
       Real.map_volume_mul_right (neg_ne_zero.2 (inv_ne_zero hh.ne')),
-      Measure.map_smul, map_add_right_eq_self]
+      Measure.map_smul _ (by fun_prop), map_add_right_eq_self]
     congr 1
     rw [inv_neg, inv_inv, abs_neg, abs_of_pos hh]
   calc ∫⁻ x, F ((z - x) / h)
@@ -97,13 +97,13 @@ theorem kde_integrated_variance_le {Ω : Type*} [MeasurableSpace Ω] {P : Measur
       simp only [kdeVarianceAt, kdeMeanAt, hk, integral_zero, sub_zero, ne_eq,
         OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, ENNReal.ofReal_zero, lintegral_zero]
     rw [lintegral_congr hzero, lintegral_zero]
-    exact zero_le _
+    exact zero_le
   have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
   have hh' : h ≠ 0 := hh.ne'
   -- The density integrates to one at the `∫⁻` level.
   have hprob : IsProbabilityMeasure (densityMeasure p) := by
     rw [← (hs.law ⟨0, hn⟩).map_eq]
-    exact Measure.isProbabilityMeasure_map (hs.law ⟨0, hn⟩).aemeasurable
+    exact (by infer_instance)
   have hmass : (∫⁻ z, ENNReal.ofReal (p z)) = 1 := by
     have h := hprob.measure_univ
     rwa [densityMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
@@ -201,7 +201,7 @@ theorem kde_integrated_variance_le {Ω : Type*} [MeasurableSpace Ω] {P : Measur
     have hfun : (∑ i : Fin n, fun ω => K ((X i ω - x) / h))
         = fun ω => ∑ i, K ((X i ω - x) / h) := by funext ω; simp only [Finset.sum_apply]
     have hsum : MemLp (fun ω => ∑ i, K ((X i ω - x) / h)) 2 P := by
-      rw [← hfun]; exact memLp_finset_sum' _ (fun i _ => hmemP i)
+      rw [← hfun]; exact memLp_finsetSum' _ (fun i _ => hmemP i)
     have hL2 : MemLp (fun ω => kde X K h ω x) 2 P := hsum.const_mul ((n : ℝ) * h)⁻¹
     have hofReal : ENNReal.ofReal (∫ z, (K ((z - x) / h)) ^ 2 * p z)
         = ∫⁻ z, ENNReal.ofReal ((K ((z - x) / h)) ^ 2) * ENNReal.ofReal (p z) := by

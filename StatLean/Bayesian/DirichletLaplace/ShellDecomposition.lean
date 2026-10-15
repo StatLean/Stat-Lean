@@ -13,9 +13,9 @@ midpoint test controls the posterior mass of each net piece.
 
 Objects:
 * `dlShell θ₀ S j r δ` — the set of `θ` whose δ-support equals `S` and whose distance from `θ₀` lies
-  in the `j`-th radial shell `[2jr, 2(j+1)r)` (band floor `2jr`; see the def's D4 note). Each admissible
-  `θ` (with bounded δ-support) falls into exactly one shell, so the complement of the ball
-  `{‖θ−θ₀‖ ≥ 2Mr}` is `⋃_{S} ⋃_{j ≥ M} dlShell θ₀ S j r δ`.
+  in the `j`-th radial shell `[2jr, 2(j+1)r)` (band floor `2jr`; see the def's D4 note). Each
+  admissible `θ` (with bounded δ-support) falls into exactly one shell, so the complement of the
+  ball `{‖θ−θ₀‖ ≥ 2Mr}` is `⋃_{S} ⋃_{j ≥ M} dlShell θ₀ S j r δ`.
 * `exists_shell_net` — a `jr/4`-net of `dlShell θ₀ S j r δ` of cardinality `≤ 33^{|S|}`
   (`CoveringNets`, volumetric covering of a `|S|`-dimensional ball) whose pieces have radius
   `≤ (√5/4)·jr` (using `√n·δ ≤ r` and `j ≥ 2`).
@@ -27,25 +27,25 @@ Objects:
 JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Theorem 3.1 (statement p. 7); the shell/test machinery
 is the §6 posterior-contraction assembly, in the framework of Ghosal–Ghosh–van der Vaart.
 
-**Proof formalization notes.** The skeleton is *shells → nets → per-piece tests → series*: cover each
-shell by its net, test each net piece against `θ₀`, sum the Type I errors over the `≤ 33^{|S|}` pieces
-and the Type II errors against the piece prior mass. The outer summation over `(S, j)` is closed in
-`PosteriorContraction.lean` (`Nat.choose_le_pow` for the support patterns, `ExpOfRealCalc` for the radial
-series).
+**Proof formalization notes.** The skeleton is *shells → nets → per-piece tests → series*: cover
+each shell by its net, test each net piece against `θ₀`, sum the Type I errors over the `≤ 33^{|S|}`
+pieces and the Type II errors against the piece prior mass. The outer summation over `(S, j)` is
+closed in `PosteriorContraction.lean` (`Nat.choose_le_pow` for the support patterns, `ExpOfRealCalc`
+for the radial series).
 
 **Deviations.**
 * **D4 (net / test geometry).** The paper's `jr`-net with `2jr`-balls degenerates (a net point may
-  coincide with `θ₀`), and a `(jr/2)`-net is inconsistent with a `d/3`-margin test. We use `jr/4`-nets
-  (`≤ 33^{|S|}` points), pieces of radius `ρ ≤ (√5/4)jr` (from `√n·δ ≤ r`, `j ≥ 2`), and the
-  two-parameter midpoint test `{ y | d(d−ρ)/2 ≤ ⟪y−θ₀, φ−θ₀⟫ }` with both errors `≤ e^{−(d−ρ)²/8}` and
-  `d − ρ ≥ (7/8)jr ⇒ ≤ e^{−j²r²/12}`. The non-optimized `(1+β)` testing bound replaces the paper's
-  `2√β`, avoiding Neyman–Pearson machinery at no bookkeeping cost.
+  coincide with `θ₀`), and a `(jr/2)`-net is inconsistent with a `d/3`-margin test. We use
+  `jr/4`-nets (`≤ 33^{|S|}` points), pieces of radius `ρ ≤ (√5/4)jr` (from `√n·δ ≤ r`, `j ≥ 2`), and
+  the two-parameter midpoint test `{ y | d(d−ρ)/2 ≤ ⟪y−θ₀, φ−θ₀⟫ }` with both errors
+  `≤ e^{−(d−ρ)²/8}` and `d − ρ ≥ (7/8)jr ⇒ ≤ e^{−j²r²/12}`. The non-optimized `(1+β)` testing bound
+  replaces the paper's `2√β`, avoiding Neyman–Pearson machinery at no bookkeeping cost.
 * **D9 (degenerate index sets).** The `S = ∅` shell is covered by the singleton net `{0}`; handled
   proof-internally, not as a hypothesis.
 
 **Bibliographic comments.** Sieve/net posterior-contraction testing after Ghosal, Ghosh, and van der
-Vaart (*Ann. Statist.* 28 (2000), 500–531) and Castillo and van der Vaart (*Ann. Statist.* 40 (2012),
-2069–2101).
+Vaart (*Ann. Statist.* 28 (2000), 500–531) and Castillo and van der Vaart (*Ann. Statist.* 40
+(2012), 2069–2101).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
@@ -55,22 +55,24 @@ namespace StatLean.Bayesian
 
 variable {ι : Type*} [Fintype ι]
 
-/-- **Contraction shell** (BPPD §6): the set of `θ` whose δ-support is exactly `S` and whose distance
-from `θ₀` lies in the `j`-th radial band `[2jr, 2(j+1)r)`. The complement of the contraction ball is the
-disjoint union of these over support patterns `S` and radial indices `j`. Degenerate inputs are not
-special-cased in the definition (an empty band or `S` gives the empty shell).
+/-- **Contraction shell** (BPPD §6): the set of `θ` whose δ-support is exactly `S` and whose
+distance from `θ₀` lies in the `j`-th radial band `[2jr, 2(j+1)r)`. The complement of the
+contraction ball is the disjoint union of these over support patterns `S` and radial indices `j`.
+Degenerate inputs are not special-cased in the
+definition (an empty band or `S` gives the empty shell).
 
 **Formalization note (D4, radial-band factor 2).** The band floor is `2jr`, not the `jr` a literal
-reading of the paper's "`jrₙ`-net / `2jrₙ`-balls" text might suggest. With a `jr` floor the two-parameter
-midpoint test of `GaussianTests` is *degenerate*: a shell point sits at distance `d ≥ jr − ρ` from `θ₀`
-while its covering net-point sits within `ρ = (√5/4)jr` of it, so the usable test margin
-`d − ρ ≥ jr − 2ρ = (1 − √5/2)jr < 0` is negative and no consistent test exists. Doubling the floor to
-`2jr` restores a positive margin `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr` (for `j ≥ 2`), which is
-exactly what `shell_ratio_le`'s Type I/II error `e^{−j²r²/12}` needs. This is the geometry the paper's
-`2jrₙ`-ball language actually intends; only the net *radius* `(√5/4)jr` and error *constant* `1/12`
-differ from the paper's unspecified numerals (charter §1 "state the constants that are provable"). The
-outer series in `PosteriorContraction` is unaffected: `⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the
-complement of the contraction ball, with the ball radius rescaled by the harmless factor 2. -/
+reading of the paper's "`jrₙ`-net / `2jrₙ`-balls" text might suggest. With a `jr` floor the
+two-parameter midpoint test of `GaussianTests` is *degenerate*: a shell point sits at distance
+`d ≥ jr − ρ` from `θ₀` while its covering net-point sits within `ρ = (√5/4)jr` of it, so the usable
+test margin `d − ρ ≥ jr − 2ρ = (1 − √5/2)jr < 0` is negative and no consistent test exists. Doubling
+the floor to `2jr` restores a positive margin `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr` (for
+`j ≥ 2`), which is exactly what `shell_ratio_le`'s Type I/II error `e^{−j²r²/12}` needs. This is the
+geometry the paper's `2jrₙ`-ball language actually intends; only the net *radius* `(√5/4)jr` and
+error *constant* `1/12` differ from the paper's unspecified numerals (charter §1 "state the
+constants that are provable"). The outer series in `PosteriorContraction` is unaffected:
+`⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the complement of the
+contraction ball, with the ball radius rescaled by the harmless factor 2. -/
 noncomputable def dlShell (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) (j : ℕ) (r δ : ℝ) :
     Set (EuclideanSpace ℝ ι) :=
   {θ | (Finset.univ.filter fun i => δ < |θ i|) = S ∧
@@ -112,7 +114,7 @@ private lemma projS_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
   funext i
   rw [projS_ofLp']
   unfold extendS
-  rw [WithLp.ofLp_toLp, dif_pos i.property]
+  rw [WithLp.ofLp_toLp, dite_eq_left i.property]
 
 /-- The complementary block of `extendS S u` is zero. -/
 private lemma projS_compl_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
@@ -123,7 +125,7 @@ private lemma projS_compl_extendS_self (S : Set ι) [DecidablePred (· ∈ S)]
   rw [projS_ofLp']
   unfold extendS
   have hi : (i : ι) ∉ S := by have hp := i.property; rwa [Set.mem_compl_iff] at hp
-  rw [WithLp.ofLp_toLp, dif_neg hi]
+  rw [WithLp.ofLp_toLp, dite_eq_right hi]
   simp
 
 /-- If every coordinate of `θ` inside `T` is `≤ δ` in modulus, then the `T`-block has norm
@@ -167,7 +169,8 @@ private lemma norm_projS_le_of_coords {T : Set ι} [DecidablePred (· ∈ T)]
 (`CoveringNets` volumetric covering + `CoordinateSplit`). The radius `(√5/4)jr` uses `√n·δ ≤ r` and
 `j ≥ 2` (D4); the `S = ∅` case is the singleton net `{0}` (D9). -/
 theorem exists_shell_net (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
-    -- LEAN-ONLY: 2 ≤ j — radial index in the tested range; geometry regularity for the (√5/4)jr radius.
+    -- LEAN-ONLY: 2 ≤ j — radial index in the tested
+    -- range; geometry regularity for the (√5/4)jr radius.
     (hj : 2 ≤ j) {r δ : ℝ}
     -- LEAN-ONLY: 0 < r — radial band width; engine-internal.
     (hr : 0 < r)
@@ -267,7 +270,8 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     (ha : 0 < a) (hr : 0 < r)
     -- LEAN-ONLY: √n·δ ≤ r — piece-radius control (D4); engine-internal.
     (hδ : Real.sqrt (Fintype.card ι : ℝ) * δ ≤ r)
-    -- LEAN-ONLY: 0 < dbar — denominator lower threshold from `DenominatorLowerBound`; engine-internal.
+    -- LEAN-ONLY: 0 < dbar — denominator lower threshold
+    -- from `DenominatorLowerBound`; engine-internal.
     (dbar : ℝ≥0∞) (hdbar : 0 < dbar) :
     ∫⁻ y in {y | dbar ≤ dlDenom θ₀ (dlPrior a ι) y},
         dlNumer θ₀ (dlPrior a ι) (dlShell θ₀ S j r δ) y / dlDenom θ₀ (dlPrior a ι) y
@@ -279,30 +283,38 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   --
   -- 1. `exists_shell_net θ₀ S hj hr hδ` gives a Finset `net`, `net.card ≤ 33^{|S|}`, with
   --      `dlShell θ₀ S j r δ ⊆ ⋃ φ ∈ net, closedBall φ ρ`,  `ρ := (√5/4)·jr`.
-  -- 2. Disjointify: intersect each `closedBall φ ρ` with the shell and subtract predecessors to get a
+  -- 2. Disjointify: intersect each `closedBall φ ρ`
+  -- with the shell and subtract predecessors to get a
   --    Finset-indexed DISJOINT family `P φ ⊆ closedBall φ ρ ∩ shell` with `⋃ P φ = shell`. Then
-  --      `dlNumer θ₀ · (shell) = ∑ φ, dlNumer θ₀ · (P φ)`  (numer is a measure; `measure_biUnion_finset`)
+  --      `dlNumer θ₀ · (shell) = ∑ φ, dlNumer θ₀ · (P φ)`
+  -- (numer is a measure; `measure_biUnion_finset`)
   --      `dlPrior a ι shell    = ∑ φ, dlPrior a ι (P φ)`   (same).
-  -- 3. Fix `φ` with `P φ ≠ ∅`; pick `θ✶ ∈ P φ ⊆ shell`, so `‖θ✶ − θ₀‖ ≥ 2jr` and `‖θ✶ − φ‖ ≤ ρ`, giving
-  --      `d := ‖φ − θ₀‖ ≥ 2jr − ρ`  ⇒  margin  `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr > 0`  (j ≥ 2).
-  -- 4. `measure_dlTestSet_typeI`/`_typeII` (GaussianTests, hypothesis `ρ < d` now holds) bound both errors
+  -- 3. Fix `φ` with `P φ ≠ ∅`; pick `θ✶ ∈ P φ ⊆ shell`,
+  -- so `‖θ✶ − θ₀‖ ≥ 2jr` and `‖θ✶ − φ‖ ≤ ρ`, giving
+  --      `d := ‖φ − θ₀‖ ≥ 2jr − ρ`  ⇒  margin
+  -- `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr > 0`  (j ≥ 2).
+  -- 4. `measure_dlTestSet_typeI`/`_typeII` (GaussianTests,
+  -- hypothesis `ρ < d` now holds) bound both errors
   --    by `exp(−(d−ρ)²/8) ≤ exp(−(7/8·jr)²/8) ≤ exp(−j²r²/12)`  (since (7/8)²/8 = 49/512 ≥ 1/12).
-  -- 5. `lintegral_ratio_on_event_le_test` (TestingBound) on the event `{dbar ≤ dlDenom}` with test set
-  --    `dlTestSet θ₀ φ ρ`, dominating measure `dbar`:
-  --      `∫_{D≥dbar} dlNumer θ₀ · (P φ)/dlDenom ≤ (K θ₀)(test) + dlPrior a ι (P φ)·sup_θ (K θ)(testᶜ)/dbar`
-  --                                            `≤ exp(−j²r²/12) + dlPrior a ι (P φ)·exp(−j²r²/12)/dbar`.
+  -- 5. `lintegral_ratio_on_event_le_test` (TestingBound) on the event `{dbar ≤ dlDenom}` with
+  --    test set `dlTestSet θ₀ φ ρ`, dominating measure `dbar`:
+  --      `∫_{D≥dbar} dlNumer θ₀ · (P φ)/dlDenom`
+  --        `≤ (K θ₀)(test) + dlPrior a ι (P φ)·sup_θ (K θ)(testᶜ)/dbar`
+  --        `≤ exp(−j²r²/12) + dlPrior a ι (P φ)·exp(−j²r²/12)/dbar`.
   -- 6. Sum over `φ ∈ net` (`Finset.sum_le_sum` + `ENNReal.sum_div`): the first term sums to
-  --    `net.card · exp ≤ 33^{|S|}·exp`; the second, using `∑ φ, dlPrior a ι (P φ) = dlPrior a ι shell`
-  --    (step 2, disjoint & exact — this is why disjointification, not the raw cover, is needed), sums to
+  --    `net.card · exp ≤ 33^{|S|}·exp`; the second,
+  -- using `∑ φ, dlPrior a ι (P φ) = dlPrior a ι shell`
+  --    (step 2, disjoint & exact — this is why
+  -- disjointification, not the raw cover, is needed), sums to
   --    `dlPrior a ι shell · exp / dbar`.  ∎
   --
-  -- Final error constant: `c = 1/12` (the frozen value; `(7/8)²/8 = 49/512 ≥ 1/12`). `exists_shell_net`
-  -- was used unchanged (its statement and proof were not touched).
+  -- Final error constant: `c = 1/12` (the frozen value; `(7/8)²/8 = 49/512 ≥ 1/12`).
+  -- `exists_shell_net` was used unchanged (its statement and proof were not touched).
   classical
   obtain ⟨net, hcard, hcover⟩ := exists_shell_net θ₀ S hj hr hδ
   set π := dlPrior a ι with hπdef
-  haveI hπprob : IsProbabilityMeasure π := by rw [hπdef]; infer_instance
-  haveI : SFinite π := inferInstance
+  have hπprob : IsProbabilityMeasure π := by rw [hπdef]; infer_instance
+  have : SFinite π := inferInstance
   set shell := dlShell θ₀ S j r δ with hshelldef
   set ρ : ℝ := Real.sqrt 5 / 4 * ((j : ℝ) * r) with hρdef
   set b : ℝ≥0∞ := ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) with hbdef
@@ -313,7 +325,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     intro C
     have huc : Measurable (Function.uncurry (fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)) := by
       unfold Function.uncurry dlLR; fun_prop
-    show Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
+    change Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
     exact huc.lintegral_prod_right
   have hden_meas : Measurable (fun y => dlDenom θ₀ π y) := by
     have hEq : (fun y => dlDenom θ₀ π y) = (fun y => dlNumer θ₀ π Set.univ y) := by
@@ -323,7 +335,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   have hshell_meas : MeasurableSet shell := by
     rw [hshelldef]
     have hcoord : ∀ i, Measurable (fun θ : EuclideanSpace ℝ ι => θ i) := fun i =>
-      (measurable_pi_apply i).comp (EuclideanSpace.measurableEquiv ι).measurable
+      (EuclideanSpace.proj i).continuous.measurable
     have hnormc : Continuous (fun θ : EuclideanSpace ℝ ι => ‖θ - θ₀‖) := by fun_prop
     have h2 : MeasurableSet {θ : EuclideanSpace ℝ ι | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} :=
       measurableSet_le measurable_const hnormc.measurable
@@ -334,23 +346,23 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       have hset : {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
           = ⋂ i, {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S} := by
         ext θ
-        simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
+        simp only [Set.mem_ofPred_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
           Finset.mem_univ, true_and]
       rw [hset]
       refine MeasurableSet.iInter (fun i => ?_)
       by_cases hiS : i ∈ S
       · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
             = {θ : EuclideanSpace ℝ ι | δ < |θ i|} := by
-          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_true]
+          ext θ; simp only [Set.mem_ofPred_eq, hiS, iff_true]
         rw [hrw]; exact measurableSet_lt measurable_const (hcoord i).abs
       · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
             = {θ : EuclideanSpace ℝ ι | ¬ (δ < |θ i|)} := by
-          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_false]
+          ext θ; simp only [Set.mem_ofPred_eq, hiS, iff_false]
         rw [hrw]; exact (measurableSet_lt measurable_const (hcoord i).abs).compl
     have hinter : (dlShell θ₀ S j r δ)
         = {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
           ∩ {θ | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} ∩ {θ | ‖θ - θ₀‖ < 2 * ((j : ℝ) + 1) * r} := by
-      ext θ; simp only [dlShell, Set.mem_setOf_eq, Set.mem_inter_iff]; tauto
+      ext θ; simp only [dlShell, Set.mem_ofPred_eq, Set.mem_inter_iff]; tauto
     rw [hinter]; exact (h1.inter h2).inter h3
   -- Enumeration of the net and the covering pieces.
   set enum : Fin net.card → EuclideanSpace ℝ ι :=
@@ -361,9 +373,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     intro k
     by_cases hk : k < net.card
     · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
-        simp only [hBdef, dif_pos hk]]
+        simp only [hBdef, dite_eq_left hk]]
       exact measurableSet_closedBall.inter hshell_meas
-    · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+    · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dite_eq_right hk]]
       exact MeasurableSet.empty
   -- Disjointified pieces.
   set P : ℕ → Set (EuclideanSpace ℝ ι) := disjointed B with hPdef
@@ -374,7 +386,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   have hP_union : (⋃ k, P k) = ⋃ k, B k := iUnion_disjointed
   have hPk_empty : ∀ k, net.card ≤ k → P k = ∅ := by
     intro k hk
-    have hBk : B k = ∅ := by simp only [hBdef, dif_neg (not_lt.mpr hk)]
+    have hBk : B k = ∅ := by simp only [hBdef, dite_eq_right (not_lt.mpr hk)]
     exact Set.eq_empty_of_subset_empty (hBk ▸ hP_sub k)
   -- `⋃ k, B k = shell` (the cover, intersected with the shell).
   have hBunion : (⋃ k, B k) = shell := by
@@ -382,9 +394,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     · refine Set.iUnion_subset (fun k => ?_)
       by_cases hk : k < net.card
       · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
-          simp only [hBdef, dif_pos hk]]
+          simp only [hBdef, dite_eq_left hk]]
         exact Set.inter_subset_right
-      · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+      · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dite_eq_right hk]]
         exact Set.empty_subset _
     · intro x hx
       obtain ⟨ψ, hψ, hxψ⟩ := Set.mem_iUnion₂.mp (hcover hx)
@@ -393,7 +405,7 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       refine Set.mem_iUnion.mpr ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), ?_⟩
       have hBk : B (net.equivFin ⟨ψ, hψ⟩ : ℕ)
           = Metric.closedBall (enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩) ρ ∩ shell := by
-        simp only [hBdef, dif_pos hlt]
+        simp only [hBdef, dite_eq_left hlt]
       have henumeq : enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ = ψ := by
         have hfe : (⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ : Fin net.card) = net.equivFin ⟨ψ, hψ⟩ :=
           Fin.ext rfl
@@ -456,11 +468,11 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
           = fun _ => (0 : ℝ≥0∞) := by
         funext y; simp [dlNumer, hPk]
       rw [hzero, lintegral_zero]
-      exact zero_le _
+      exact zero_le
     · -- Nonempty piece: test the true parameter against the net point `enum ⟨k, _⟩`.
       have hk_lt : k < net.card := Finset.mem_range.mp hk
       have hBk : B k = Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := by
-        simp only [hBdef, dif_pos hk_lt]
+        simp only [hBdef, dite_eq_left hk_lt]
       obtain ⟨θs, hθs⟩ := Set.nonempty_iff_ne_empty.mpr hPk
       have hθsB : θs ∈ Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := hBk ▸ hP_sub k hθs
       have hθs_ball : ‖θs - enum ⟨k, hk_lt⟩‖ ≤ ρ := by
@@ -503,9 +515,9 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       exact le_trans hkbound (add_le_add hI (le_refl _))
   -- Sum the per-piece bounds.
   simp_rw [hdiv_sum]
-  rw [lintegral_finset_sum _ (fun k _ => (hnum_meas (P k)).div hden_meas)]
+  erw [lintegral_finsetSum _ (fun k _ => (hnum_meas (P k)).div hden_meas)]
   refine le_trans (Finset.sum_le_sum hk_all) ?_
   rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul, hsum2]
-  exact add_le_add (mul_le_mul_right' hcard_le b) (le_refl _)
+  exact add_le_add (mul_le_mul_left hcard_le b) (le_refl _)
 
 end StatLean.Bayesian

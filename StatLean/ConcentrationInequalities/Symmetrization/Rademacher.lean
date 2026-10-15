@@ -94,6 +94,7 @@ theorem radLaw_integral_abs : ∫ x, |x| ∂radLaw = 1 := by
 theorem radLaw_map_neg : radLaw.map (fun x => -x) = radLaw := by
   rw [radLaw, Measure.map_add _ _ measurable_neg, Measure.map_smul, Measure.map_smul,
       Measure.map_dirac, Measure.map_dirac]
+  all_goals try fun_prop
   simp only [neg_neg]
   rw [add_comm]
 
@@ -105,6 +106,7 @@ theorem radLaw_map_mul_pm {c : ℝ}
     radLaw.map (fun x => c * x) = radLaw := by
   rw [radLaw, Measure.map_add _ _ (by fun_prop), Measure.map_smul, Measure.map_smul,
       Measure.map_dirac, Measure.map_dirac]
+  all_goals try fun_prop
   rcases hc with rfl | rfl
   · norm_num
   · rw [show ((-1 : ℝ) * 1) = -1 from by ring, show ((-1 : ℝ) * -1) = 1 from by ring, add_comm]

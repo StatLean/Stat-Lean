@@ -245,9 +245,9 @@ theorem isMercerKernel_trace_smul_sub_boxProd {K : X → X → 𝕜}
         rw [hpt, integral_const_mul]
       rw [Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => e1 i j]
       rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) =>
-        (integral_finset_sum Finset.univ fun j _ => hintbl i j).symm]
-      rw [← integral_finset_sum Finset.univ
-        fun i _ => integrable_finset_sum Finset.univ fun j _ => hintbl i j]
+        (integral_finsetSum Finset.univ fun j _ => hintbl i j).symm]
+      rw [← integral_finsetSum Finset.univ
+        fun i _ => integrable_finsetSum Finset.univ fun j _ => hintbl i j]
       rw [← integral_ofReal]
       exact integral_congr_ae (Filter.Eventually.of_forall hcomb)
     rw [hfinal, RCLike.ofReal_re]
@@ -375,8 +375,8 @@ private theorem inner_toLp_star_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.I
     rw [inner_smul_right]
     by_cases hmn : m = n
     · subst hmn
-      rw [if_pos rfl, hself m, mul_one]
-    · rw [if_neg hmn, (orthonormal_toLp_star d).2 (Ne.symm hmn), mul_zero]
+      rw [ite_eq_left rfl, hself m, mul_one]
+    · rw [ite_eq_right hmn, (orthonormal_toLp_star d).2 (Ne.symm hmn), mul_zero]
   exact (hasSum_ite_eq n (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x)).congr_fun
     fun m => hfun m
 
@@ -407,7 +407,8 @@ private theorem coeFn_starLp (g : Lp 𝕜 2 μ) :
 private theorem norm_starLp (f : Lp 𝕜 2 μ) : ‖starLp f‖ = ‖f‖ := by
   rw [starLp, Lp.norm_toLp, Lp.norm_def]
   congr 1
-  exact eLpNorm_congr_norm_ae (Filter.Eventually.of_forall fun y => by simp)
+  exact eLpNorm_congr_norm_ae (by fun_prop) (Lp.aestronglyMeasurable f)
+      (Filter.Eventually.of_forall fun y => by simp)
 
 private theorem norm_sq_eq_integral (u : Lp 𝕜 2 μ) :
     ‖u‖ ^ 2 = ∫ x, ‖(u : X → 𝕜) x‖ ^ 2 ∂μ := by
@@ -622,7 +623,7 @@ private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → �
       =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | empty => simpa using! Lp.coeFn_zero 𝕜 2 μ
   | insert a t ha ih =>
       rw [Finset.sum_insert ha]
       filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
@@ -780,7 +781,7 @@ private theorem norm_partial_sub_le (g : Lp 𝕜 2 μ) (s : Finset d.ι) :
   have hcontK : Continuous fun x : X => RCLike.re (K x x) :=
     (RCLike.continuous_re (K := 𝕜)).comp' (hKc.comp' (continuous_id.prodMk continuous_id))
   have hcontS : Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
-    continuous_finset_sum s fun n _ =>
+    continuous_finsetSum s fun n _ =>
       continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
   have hintb : Integrable (fun x : X =>
       (RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2) * ‖g‖ ^ 2) μ :=
@@ -791,10 +792,11 @@ private theorem norm_partial_sub_le (g : Lp 𝕜 2 μ) (s : Finset d.ι) :
     rw [integral_mul_const, integral_sub (integrable_of_cont_real hcontK)
       (integrable_of_cont_real hcontS)]
     congr 2
-    rw [integral_finset_sum s fun n _ =>
+    erw [integral_finsetSum s fun n _ =>
       (integrable_of_cont_real (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
     exact Finset.sum_congr rfl fun n _ => by
-      rw [integral_const_mul, integral_normSq_eigfun' d n, mul_one]
+      simp only [Pi.pow_apply]
+      erw [integral_const_mul, integral_normSq_eigfun' d n, mul_one]
   have hnorm : ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
         ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
         ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖ ^ 2
@@ -941,8 +943,8 @@ theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hK
       rw [inner_smul_right, inner_smul_right]
       by_cases hmn : m = n
       · subst hmn
-        rw [if_pos rfl, hone m, mul_one]
-      · rw [if_neg hmn, d.orthonormal.2 (Ne.symm hmn), mul_zero, mul_zero]
+        rw [ite_eq_left rfl, hone m, mul_one]
+      · rw [ite_eq_right hmn, d.orthonormal.2 (Ne.symm hmn), mul_zero, mul_zero]
     exact h.unique hite
   have h2 : HasSum (fun n : d.ι => (d.eigval n : 𝕜) •
       (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
@@ -1015,7 +1017,6 @@ theorem range_integralOp_sqrtSymbol_eq
     funext x z
     rw [hKH, rangeSpace_scalarKernel]
     exact boxProd_sqrtSymbol d hK x z
-  letI := rangeSpaceRKHS μ (sqrtSymbol d) hS
   rw [range_integralOp_eq_range_coe (sqrtSymbol d) hS]
   exact @range_coe_eq_of_scalarKernel_eq 𝕜 _ X (rangeSpaceCarrier μ (sqrtSymbol d) hS) _ _
     (rangeSpaceCompleteSpace μ (sqrtSymbol d) hS) H _ _ _
@@ -1163,9 +1164,9 @@ theorem exists_orthonormalBasis_sqrt_eigfun
       fun n => ?_
     by_cases hnj : n = j
     · subst hnj
-      rw [if_pos rfl, inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
+      rw [ite_eq_left rfl, inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
       norm_num
-    · rw [if_neg hnj, d.orthonormal.2 hnj, mul_zero]
+    · rw [ite_eq_right hnj, d.orthonormal.2 hnj, mul_zero]
   choose b hb1 hb2 using fun j => sqrtCLM_isometry_on_ker_orthogonal d hKH (hmem j)
   have hbcoe : ∀ j : d.ι, (b j : X → 𝕜)
       = fun x => ((Real.sqrt (d.eigval j) : ℝ) : 𝕜) * d.eigfun j x := by
@@ -1294,7 +1295,7 @@ theorem range_mercerCLM_subset
   -- `f := ∫ y, g y • kernelFun H y ∂μ : H` satisfies
   -- `f x = ⟪kernelFun H x, f⟫ = ∫ y, g y * K x y ∂μ = integralOp μ K g x`
   -- by `inner_kernelFun` and `integral_inner`.
-  haveI : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
+  have : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
   have hKsc : Continuous fun p : X × X => scalarKernel H p.1 p.2 := by
     simp only [hKH]; exact hKc
   have hkf : Continuous fun y : X => kernelFun (𝕜 := 𝕜) H y := continuous_kernelFun H hKsc

@@ -106,7 +106,8 @@ theorem umpu_eq_umpAlmostInvariant_ae {P : Θ → Measure 𝓧} [∀ θ, IsProba
       power P (fun x => χ (g • x)) θ = power P χ (g • θ) := by
     intro χ hχ g θ
     simp only [power]
-    rw [← hP g θ, integral_map (hsmul g).aemeasurable hχ.aestronglyMeasurable]
+    rw [← hP.map_eq g θ (hsmul g).aemeasurable, integral_map
+        (hsmul g).aemeasurable hχ.aestronglyMeasurable]
   -- Translating a critical function keeps it critical.
   have hshiftcrit : ∀ (χ : 𝓧 → ℝ), IsCriticalFn χ → ∀ g : G,
       IsCriticalFn (fun x => χ (g • x)) := fun χ hχ g =>

@@ -172,7 +172,7 @@ theorem exists_shatters_card_eq {C : Set (Set Ω)} {d : ℕ}
   rcases Nat.eq_zero_or_pos d with hd0 | hdpos
   · exact ⟨∅, shatters_empty_iff.mpr hC, by simp [hd0]⟩
   · by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hub : vcDim C ≤ ((d - 1 : ℕ) : ℕ∞) := by
       rw [vcDim_le_iff]
       intro Λ hΛ

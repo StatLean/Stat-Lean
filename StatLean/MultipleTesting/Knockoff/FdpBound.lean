@@ -76,10 +76,10 @@ private lemma fdp_le_core (α : ℝ) (hα : 0 < α) (vp sp vm sm : ℕ) (hvm : v
       mul_le_mul_of_nonneg_left hkey hvp_r
     linarith [show (↑vp : ℝ) * (α * max (↑sp : ℝ) 1) = α * ↑vp * max (↑sp : ℝ) 1 from by ring]
 
-/-- Deterministic FDP bound (Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first display of the proof):
-`FDP(t*) ≤ α · V₊(t*)/(1 + V₋(t*))`.
-**Reference.** Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first display of the proof;
-Candès STAT 300C Lecture 11, eq. (11.1). -/
+/-- Deterministic FDP bound (Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first
+display of the proof): `FDP(t*) ≤ α · V₊(t*)/(1 + V₋(t*))`.
+**Reference.** Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first display of the
+proof; Candès STAT 300C Lecture 11, eq. (11.1). -/
 theorem knockoff_fdp_le (α : ℝ) (hα : 0 < α) (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     FDP H₀ (knockoffRejects W α) ω
       ≤ α * (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) := by
@@ -87,7 +87,8 @@ theorem knockoff_fdp_le (α : ℝ) (hα : 0 < α) (W : Fin d → Ω → ℝ) (H�
   split_ifs with h
   · -- Nonempty: t* = cands.min' h; FDPhat(t*) ≤ α from filter membership
     have hfdphat : FDPhat W
-        ((Finset.univ.image (fun j => |W j ω|)).filter (fun t => FDPhat W t ω ≤ α) |>.min' h) ω ≤ α :=
+        ((Finset.univ.image (fun j => |W j ω|)).filter
+            (fun t => FDPhat W t ω ≤ α) |>.min' h) ω ≤ α :=
       (Finset.mem_filter.mp (Finset.min'_mem _ h)).2
     simp only [FDPhat] at hfdphat
     exact fdp_le_core α hα _ _ _ _ (Finset.card_le_card Finset.inter_subset_left) hfdphat

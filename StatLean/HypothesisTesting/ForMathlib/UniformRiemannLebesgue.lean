@@ -64,8 +64,8 @@ J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022, �
 Expansions), where **Cramér's condition** is assumption (13.30) of Theorem 13.3.1 (p. 624) and
 its multivariate analogue is the hypothesis of the studentized expansion (p. 627, referred there
 to Hall, *The Bootstrap and Edgeworth Expansion*, 1992, Chapter 2); Lehmann–Romano assume the
-condition rather than verify it. The classical single-function statement is the Riemann–Lebesgue lemma;
-the use of a Cramér condition to control characteristic functions away from the origin goes
+condition rather than verify it. The classical single-function statement is the Riemann–Lebesgue
+lemma; the use of a Cramér condition to control characteristic functions away from the origin goes
 back to H. Cramér, *Random Variables and Probability Distributions*, Cambridge University
 Press, 1937, §10.
 -/
@@ -391,10 +391,9 @@ lemma integrable_quadKer {f : ℝ → ℂ} (hf : Integrable f) (t₀ t₁ : ℝ)
 /-- **The oscillatory integral is bounded by the `L¹` norm**, at every frequency. -/
 lemma norm_fourierOsc_le {g : ℝ → ℂ} (hg : Integrable g) (s : ℝ) :
     ‖fourierOsc g s‖ ≤ ∫ z : ℝ, ‖g z‖ := by
-  have h0 : (0 : ℝ → ℂ) = fun _ => (0 : ℂ) := rfl
-  have hzero : fourierOsc (fun _ => (0 : ℂ)) s = 0 := by simp [fourierOsc]
+  have hzero : fourierOsc (0 : ℝ → ℂ) s = 0 := by simp [fourierOsc]
   have h := norm_fourierOsc_sub_le hg (integrable_zero ℝ ℂ volume) s
-  simpa [hzero] using h
+  simpa only [hzero, sub_zero, Pi.sub_apply, Pi.zero_apply] using! h
 
 /-- The pointwise identity behind the autocorrelation: shifting the argument of the phase kernel
 by `h` and multiplying by the conjugate at the base point leaves the phase
@@ -566,7 +565,7 @@ theorem tendsto_integral_norm_fourierOsc_autoCorr {f : ℝ → ℂ} (hf : Integr
     (hfm : StronglyMeasurable f) :
     Filter.Tendsto (fun t₁ : ℝ => ∫ h : ℝ, ‖fourierOsc (autoCorr f h) (2 * t₁ * h)‖)
       (Filter.cocompact ℝ) (𝓝 0) := by
-  haveI : (Filter.cocompact ℝ).IsCountablyGenerated := by
+  have : (Filter.cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]; infer_instance
   have hAint := integrable_uncurry_autoCorr hf hfm
   obtain ⟨hslice, hbound⟩ := (integrable_prod_iff' (hAint.aestronglyMeasurable)).1 hAint

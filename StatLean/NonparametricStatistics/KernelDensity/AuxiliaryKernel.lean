@@ -119,7 +119,7 @@ theorem exists_bounded_kernel_of_order (ℓ : ℕ) :
     ∃ (K : ℝ → ℝ) (Kmax : ℝ), 0 < Kmax ∧ IsKernelOfOrder K ℓ ∧
       (∀ u, |K u| ≤ Kmax) ∧ ∀ u, u ∉ Set.Icc (-1 : ℝ) 1 → K u = 0 := by
   set d := ℓ / 2 + 1 with hd_def
-  haveI : NeZero d := ⟨by omega⟩
+  have : NeZero d := ⟨by omega⟩
   have hdpos : (0 : ℝ) < (d : ℝ) := by exact_mod_cast (by omega : 0 < d)
   set a : Fin d → ℝ := fun r => (((r : ℕ) : ℝ) + 1) / (d : ℝ) with ha_def
   have ha_pos : ∀ r, 0 < a r := fun r => div_pos (by positivity) hdpos
@@ -144,7 +144,7 @@ theorem exists_bounded_kernel_of_order (ℓ : ℕ) :
     have hfun : (fun u => u ^ j * ∑ r, c r * box (a r) u)
         = fun u => ∑ r, c r * (u ^ j * box (a r) u) := by
       funext u; rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun r _ => by ring)
-    rw [hfun, integral_finset_sum _ (fun r _ => (box_integrable (a r) (ha_pos r) j).const_mul _)]
+    rw [hfun, integral_finsetSum _ (fun r _ => (box_integrable (a r) (ha_pos r) j).const_mul _)]
     exact Finset.sum_congr rfl (fun r _ => integral_const_mul _ _)
   refine ⟨fun u => ∑ r, c r * box (a r) u, (∑ r, |c r| / (2 * a r)) + 1, ?_,
     ⟨?_, ?_, ?_⟩, ?_, ?_⟩
@@ -159,7 +159,7 @@ theorem exists_bounded_kernel_of_order (ℓ : ℕ) :
         = fun u => ∑ r, c r * (u ^ j * box (a r) u) := by
       funext u; rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun r _ => by ring)
     rw [hfun]
-    exact integrable_finset_sum _ (fun r _ => (box_integrable (a r) (ha_pos r) j).const_mul _)
+    exact integrable_finsetSum _ (fun r _ => (box_integrable (a r) (ha_pos r) j).const_mul _)
   · -- integral_eq_one
     show ∫ u, ∑ r, c r * box (a r) u = 1
     have h0 := hmoment 0

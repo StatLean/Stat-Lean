@@ -238,11 +238,11 @@ theorem riemannResidual_abs_le_tail {θ : ℕ → ℝ} {n j : ℕ}
     rcases Nat.eq_zero_or_pos k with rfl | hkpos
     · rw [hK0, mul_zero]
     · have hkle : k ≤ n - 1 := by have := Finset.mem_range.mp hk; omega
-      rw [hortho k hkpos hkle, if_neg hkj, mul_zero]
+      rw [hortho k hkpos hkle, ite_eq_right hkj, mul_zero]
   have h1 : j ∉ Finset.range n → θ j * aliasKernel n j j = 0 :=
     fun hjn => absurd (Finset.mem_range.mpr (by omega)) hjn
   have hhead : ∑ k ∈ Finset.range n, θ k * aliasKernel n j k = θ j := by
-    rw [Finset.sum_eq_single j h0 h1, hortho j hj hj', if_pos rfl, mul_one]
+    rw [Finset.sum_eq_single j h0 h1, hortho j hj hj', ite_eq_left rfl, mul_one]
   -- split the series at `n`
   have hsplit := hsummθc.sum_add_tsum_nat_add n
   rw [hhead] at hsplit

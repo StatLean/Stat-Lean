@@ -212,7 +212,7 @@ theorem psiDot_symm_of_grad {k : ℕ} {Ω : Type*}
     intro θ'
     ext w
     rw [hf'_def]
-    simp only [innerSL_apply_apply, ContinuousLinearMap.sum_apply, ContinuousLinearMap.smul_apply,
+    simp only [innerSL_apply_apply, sum_apply, smul_apply,
       smul_eq_mul]
     rw [real_inner_euclid]
     refine Finset.sum_congr rfl fun h _ => ?_
@@ -237,8 +237,8 @@ theorem psiDot_symm_of_grad {k : ℕ} {Ω : Type*}
       F v w = ∑ h : Fin k, (fderiv ℝ (fun θ' => ψ θ' h x) θ v) * w h := by
     intro v w
     rw [hF_def]
-    simp only [ContinuousLinearMap.sum_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.smul_apply, smul_eq_mul, innerSL_apply_apply]
+    simp only [sum_apply, ContinuousLinearMap.smulRight_apply,
+      smul_apply, smul_eq_mul, innerSL_apply_apply]
     refine Finset.sum_congr rfl fun h _ => ?_
     rw [real_inner_euclid]
     simp [EuclideanSpace.single, PiLp.single_apply, Finset.sum_ite_eq']
@@ -663,10 +663,10 @@ theorem population_taylor2_m {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Me
   set R : Ω → ℝ := fun x => m θ x - m θ₀ x - L x with hR
   -- Integrability of the linear-plus-quadratic part.
   have hLint : Integrable L P := by
-    refine Integrable.add (integrable_finset_sum _ fun j _ => (hψint j).mul_const _) ?_
+    refine Integrable.add (integrable_finsetSum _ fun j _ => (hψint j).mul_const _) ?_
     refine Integrable.const_mul ?_ _
-    exact integrable_finset_sum _ fun j _ =>
-      ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _
+    exact integrable_finsetSum _ fun j _ =>
+      ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _
   -- Integrability of the remainder, from the cubic bound.
   have hgint : Integrable (fun x => (k : ℝ) / 2 * ψddot x * ‖v‖ ^ 3) P :=
     (hψddot_int.const_mul _).mul_const _
@@ -692,19 +692,19 @@ theorem population_taylor2_m {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Me
   have hLval : ∫ x, L x ∂P = (∑ j, (∫ x, ψ θ₀ j x ∂P) * v j)
       + 1 / 2 * ∑ j, (∑ i, Vmat P ψ θ₀ j i * v i) * v j := by
     rw [hL]
-    rw [integral_add (integrable_finset_sum _ fun j _ => (hψint j).mul_const _)
-      (Integrable.const_mul (integrable_finset_sum _ fun j _ =>
-        ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _) _)]
+    rw [integral_add (integrable_finsetSum _ fun j _ => (hψint j).mul_const _)
+      (Integrable.const_mul (integrable_finsetSum _ fun j _ =>
+        ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _) _)]
     congr 1
-    · rw [integral_finset_sum _ fun j _ => (hψint j).mul_const _]
+    · rw [integral_finsetSum _ fun j _ => (hψint j).mul_const _]
       exact Finset.sum_congr rfl fun j _ => integral_mul_const _ _
     · rw [integral_const_mul,
-        integral_finset_sum _ fun j _ =>
-          ((integrable_finset_sum _ fun i _ => (hVint j i).mul_const _)).mul_const _]
+        integral_finsetSum _ fun j _ =>
+          ((integrable_finsetSum _ fun i _ => (hVint j i).mul_const _)).mul_const _]
       congr 1
       refine Finset.sum_congr rfl fun j _ => ?_
       rw [integral_mul_const,
-        integral_finset_sum _ fun i _ => (hVint j i).mul_const _]
+        integral_finsetSum _ fun i _ => (hVint j i).mul_const _]
       congr 1
       exact Finset.sum_congr rfl fun i _ => by
         rw [integral_mul_const]; rfl
@@ -742,8 +742,8 @@ intersected with other high-probability events without any measurability assumpt
 Route (vdV p.69): `ℙₙψ̇_{θ̂ₙ} − V = (ℙₙψ̇_{θ̂ₙ} − ℙₙψ̇_{θ₀}) + (ℙₙψ̇_{θ₀} − V)`. The second
 bracket is `o_P(1)` entrywise by the law of large numbers; the first is bounded by
 `(ℙₙψ̈)‖θ̂ₙ − θ₀‖ = O_P(1)·o_P(1)` by the Lipschitz bound `psiDot_lipschitz` averaged
-over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness transfers to the
-quadratic form by `inner_toEuclidCLM_pert`. -/
+over the sample together with boundedness of `ℙₙψ̈` and consistency. Entrywise closeness transfers
+to the quadratic form by `inner_toEuclidCLM_pert`. -/
 private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)
@@ -818,7 +818,7 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
   have hMsum : Tendsto (fun n => ∑ p : Fin k × Fin k, μ.real
       {ξ | ζ / 2 ≤ ‖empiricalAvg (fun x => psiDot ψ θ₀ x p.1 p.2) n
         (fun i : Fin n => X i.val ξ) - Vmat P ψ θ₀ p.1 p.2‖}) atTop (𝓝 0) := by
-    have h := tendsto_finset_sum (Finset.univ : Finset (Fin k × Fin k))
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin k × Fin k))
       (fun p _ => hD p.1 p.2 (ζ / 2) (by positivity))
     simpa using h
   obtain ⟨N₄, hN₄⟩ := Metric.tendsto_atTop.mp hMsum (η / 4) (by positivity)
@@ -835,9 +835,9 @@ private lemma empirical_hessian_negdef_bad {k : ℕ} {Ω : Type*} [MeasurableSpa
               (fun i : Fin n => X i.val ξ)) x⟫ ≤ - (c / 2) * ‖x‖ ^ 2 := by
     intro ξ h1 h3 h4 x
     rw [hS1] at h1; rw [hS3] at h3; rw [hS4] at h4
-    simp only [Set.mem_setOf_eq, not_lt, Real.norm_eq_abs] at h1
-    simp only [Set.mem_setOf_eq, not_le] at h3
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le, Real.norm_eq_abs] at h4
+    simp only [Set.mem_ofPred_eq, not_lt, Real.norm_eq_abs] at h1
+    simp only [Set.mem_ofPred_eq, not_le] at h3
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, not_exists, not_le, Real.norm_eq_abs] at h4
     set t : EuclideanSpace ℝ (Fin k) := θ_hat n (fun i : Fin n => X i.val ξ) with ht_def
     set Xs : Fin n → Ω := fun i : Fin n => X i.val ξ with hXs_def
     have hδρ : δ ≤ ρ := min_le_left _ _
@@ -958,7 +958,7 @@ theorem empirical_hessian_negdef_wp1 {k : ℕ} {Ω : Type*} [MeasurableSpace Ω]
   refine tendstoInnerProbOne_of_good μ (fun _ => Set.univ) _ _ ?_ ?_ hbad
   · intro n ξ hξ
     have hnot := hξ.2
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_not] at hnot
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_not] at hnot
     intro x hx
     have hxpos : (0 : ℝ) < ‖x‖ := norm_pos_iff.mpr hx
     have hsq : (0 : ℝ) < ‖x‖ ^ 2 := pow_pos hxpos 2
@@ -1110,10 +1110,10 @@ theorem classical_zEstimator_localmax_roots
   obtain ⟨hrootξ, hbadξ⟩ := hξ
   rw [hA_def] at hrootξ
   rw [hB_def] at hbadξ
-  simp only [Set.mem_compl_iff, Set.mem_union, not_or, Set.mem_setOf_eq, not_not,
+  simp only [Set.mem_compl_iff, Set.mem_union, not_or, Set.mem_ofPred_eq, not_not,
     not_le] at hbadξ
   obtain ⟨hneg, htb⟩ := hbadξ
-  simp only [Set.mem_setOf_eq] at hrootξ
+  simp only [Set.mem_ofPred_eq] at hrootξ
   set t : EuclideanSpace ℝ (Fin k) := θ_hat n (fun i : Fin n => X i.val ξ) with ht_def
   set Xs : Fin n → Ω := fun i : Fin n => X i.val ξ with hXs_def
   have htmem : t ∈ Metric.closedBall θ₀ (ρ / 4) :=

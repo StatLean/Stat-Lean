@@ -1,4 +1,11 @@
-/-
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.Topology.MetricSpace.Basic
+import Mathlib.MeasureTheory.Measure.Tight
+import Mathlib.Analysis.PSeries
+import Mathlib.Analysis.SpecificLimits.Normed
+
+/-!
 # Abstract Dudley / Gaussian-chaining for sub-Gaussian-increment processes
 
 This is the abstract chaining argument behind the existence of the `P`-Brownian
@@ -26,12 +33,6 @@ The analytic argument runs over the `closePairs` Dudley level set
 (`measure_bigOsc_le`, `summable_bigOsc`, `aeUC_via_borelCantelli`) and assembles
 into `gaussianChaining_UC`.
 -/
-import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.MeasureTheory.Measure.Tight
-import Mathlib.Analysis.PSeries
-import Mathlib.Analysis.SpecificLimits.Normed
 
 open MeasureTheory Real
 open scoped ENNReal NNReal
@@ -105,7 +106,7 @@ theorem dyadicProj_self
     dyadicProj net hnet j t = t := by
   classical
   unfold dyadicProj
-  rw [if_pos ht]
+  rw [ite_eq_left ht]
 
 /-- **Consecutive projections are close.** Successive dyadic projections of the
 same point differ by at most `3·2^{-j}` (triangle inequality on the two net
@@ -169,24 +170,24 @@ private theorem tail_one_sided_le {Z : Ω → ℝ} {c : ℝ≥0} {a σsq : ℝ}
     have hnull : μ {ω | a < Z ω} = 0 := by
       have hsub2 : {ω | a < Z ω} ⊆ {ω | Z ω ≠ 0} ∪ {ω | a < (0 : ℝ)} := by
         intro ω hω
-        simp only [Set.mem_setOf_eq] at hω
+        simp only [Set.mem_ofPred_eq] at hω
         by_cases hz : Z ω = 0
-        · right; rw [Set.mem_setOf_eq]; rw [hz] at hω; exact hω
+        · right; rw [Set.mem_ofPred_eq]; rw [hz] at hω; exact hω
         · left; exact hz
       have hnull0 : μ {ω | a < (0 : ℝ)} = 0 := by
         have he : {ω : Ω | a < (0 : ℝ)} = ∅ := by
-          ext ω; simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]; exact ha
+          ext ω; simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]; exact ha
         rw [he]; exact measure_empty
       have hZnull : μ {ω | Z ω ≠ 0} = 0 := by
         have he : {ω | Z ω ≠ 0} = {ω | Z ω ≠ (0 : Ω → ℝ) ω} := by simp
         rw [he]
         exact (measure_mono_null (fun ω hω => hω) (ae_iff.mp hZ0))
       exact measure_mono_null hsub2 (by simp [measure_union_null hZnull hnull0])
-    rw [hnull]; exact zero_le _
+    rw [hnull]; exact zero_le
   · -- Positive proxy: Chernoff + exp-monotonicity in the denominator.
     have hσpos : 0 < σsq := lt_of_lt_of_le hcpos hcle
     have hsub : {ω | a < Z ω} ⊆ {ω | a ≤ Z ω} := by
-      intro ω hω; simp only [Set.mem_setOf_eq] at hω ⊢; exact le_of_lt hω
+      intro ω hω; simp only [Set.mem_ofPred_eq] at hω ⊢; exact le_of_lt hω
     refine (measure_mono hsub).trans ?_
     have hreal := ProbabilityTheory.HasSubgaussianMGF.measure_ge_le hZ ha
     have hexp_mono : Real.exp (-a ^ 2 / (2 * (c : ℝ))) ≤ Real.exp (-a ^ 2 / (2 * σsq)) := by
@@ -303,7 +304,8 @@ theorem measure_bigOsc_le
     (j : ℕ) {a : ℝ} (ha : 0 ≤ a) :
     μ (bigOsc X net j a)
       ≤ (closePairs net j).card
-          * (2 * ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
+          * (2 * ENNReal.ofReal (Real.exp
+              (-a ^ 2 / (2 * (K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2))))) := by
   classical
   -- Abbreviations.
   set σsq : ℝ := K ^ 2 * (6 * (2 : ℝ) ^ (-(j : ℤ))) ^ 2 with hσsq
@@ -333,10 +335,10 @@ theorem measure_bigOsc_le
     have hcover : {ω | a < |X p.2 ω - X p.1 ω|}
         ⊆ {ω | a < Y ω} ∪ {ω | a < (-Y) ω} := by
       intro ω hω
-      rw [Set.mem_setOf_eq] at hω
+      rw [Set.mem_ofPred_eq] at hω
       rcases lt_abs.mp hω with h | h
       · left; exact h
-      · right; rw [Set.mem_setOf_eq]; simpa [hY] using h
+      · right; rw [Set.mem_ofPred_eq]; simpa [hY] using h
     calc μ {ω | a < |X p.2 ω - X p.1 ω|}
         ≤ μ ({ω | a < Y ω} ∪ {ω | a < (-Y) ω}) := measure_mono hcover
       _ ≤ μ {ω | a < Y ω} + μ {ω | a < (-Y) ω} := measure_union_le _ _
@@ -383,7 +385,7 @@ theorem summable_bigOsc
       rw [zpow_neg, ← inv_zpow, zpow_natCast]; norm_num
     · have hzero : ∀ j : ℕ, μ (bigOsc X net j ((2 : ℝ) ^ (-(j : ℤ)))) = 0 := by
         intro j
-        refine le_antisymm ?_ (zero_le _)
+        refine le_antisymm ?_ (zero_le)
         have hpair : ∀ p ∈ closePairs net j,
             μ {ω | (2 : ℝ) ^ (-(j : ℤ)) < |X p.2 ω - X p.1 ω|} = 0 := by
           intro p _
@@ -398,7 +400,7 @@ theorem summable_bigOsc
           have hsub : {ω | (2 : ℝ) ^ (-(j : ℤ)) < |X p.2 ω - X p.1 ω|}
               ⊆ {ω | X p.2 ω - X p.1 ω ≠ (0 : Ω → ℝ) ω} := by
             intro ω hω
-            rw [Set.mem_setOf_eq] at hω ⊢
+            rw [Set.mem_ofPred_eq] at hω ⊢
             simp only [Pi.zero_apply]
             intro hz
             rw [hz, abs_zero] at hω
@@ -453,7 +455,7 @@ theorem summable_bigOsc
         have hempty : closePairs net j = ∅ := Finset.card_eq_zero.mp h0
         have : bigOsc X net j (a j) = ∅ := by
           rw [bigOsc, hempty]; simp
-        rw [this, measure_empty]; exact zero_le _
+        rw [this, measure_empty]; exact zero_le
       · have hcardpos : (0 : ℝ) < (closePairs net j).card := by exact_mod_cast hpos
         have hbound := measure_bigOsc_le hK net hSG j (a := a j) (hapos j).le
         have hexparg : -(a j) ^ 2 / (2 * Dj j) = -(Lj j + Mj j) := by
@@ -854,7 +856,7 @@ theorem osc_le_of_avoid_bigOsc
     have hnot := havoid m hm
     simp only [bigOsc, Set.mem_iUnion, not_exists, exists_prop, not_and] at hnot
     have := hnot p hp
-    simpa [Set.mem_setOf_eq, not_lt] using this
+    simpa [Set.mem_ofPred_eq, not_lt] using this
   -- `s, t ∈ T₀`: extract their net levels.
   simp only [Set.mem_iUnion, Finset.mem_coe] at hs ht
   obtain ⟨jₛ, hsj⟩ := hs
@@ -917,7 +919,7 @@ theorem osc_le_of_avoid_bigOsc'
     have hnot := havoid m hm
     simp only [bigOsc, Set.mem_iUnion, not_exists, exists_prop, not_and] at hnot
     have := hnot p hp
-    simpa [Set.mem_setOf_eq, not_lt] using this
+    simpa [Set.mem_ofPred_eq, not_lt] using this
   simp only [Set.mem_iUnion, Finset.mem_coe] at hs ht
   obtain ⟨jₛ, hsj⟩ := hs
   obtain ⟨jₜ, htj⟩ := ht
@@ -1083,7 +1085,7 @@ private theorem gaussianChaining_UC_iUnion_aux
   -- BddAbove: `fun t : T₀ => |X t ω|` is uniformly continuous on the totally
   -- bounded `T₀`, so its range is totally bounded, hence bounded above.
   have hres : UniformContinuous
-      ((⋃ j : ℕ, (↑(net j) : Set T)).restrict (fun t => X t ω)) :=
+      ((⋃ j : ℕ, (↑(net j) : Set T)).domRestrict (fun t => X t ω)) :=
     (uniformContinuousOn_iff_restrict).mp hUC
   have habs : UniformContinuous
       (fun t : ↥(⋃ j : ℕ, (↑(net j) : Set T)) => |X t ω|) :=

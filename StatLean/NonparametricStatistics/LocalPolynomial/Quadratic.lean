@@ -28,8 +28,6 @@ C. J. Stone, *Ann. Statist.* **5** (1977), 595–620.
 
 open Matrix
 
-set_option maxHeartbeats 800000
-
 namespace StatLean.NonparametricStatistics
 
 variable {n : ℕ} {xdat Y : Fin n → ℝ} {K : ℝ → ℝ} {h : ℝ} {ℓ : ℕ} {t : ℝ}
@@ -160,7 +158,7 @@ private lemma isLPSolution_imp_normal (hpd : (lpMatrix xdat K h ℓ t).PosDef)
       intro hcon; simpa using congrFun hcon 0
     have hpos := hpd.dotProduct_mulVec_pos hx
     rw [show lpMatrix xdat K h ℓ t = 0 from by simp [lpMatrix, h0]] at hpos
-    simp [Matrix.zero_mulVec] at hpos
+    simp at hpos
   funext j
   have hquad : ∀ s : ℝ,
       0 ≤ (∑ i, (lpBasis ℓ ((xdat i - t) / h) j) ^ 2 * K ((xdat i - t) / h)) * s ^ 2
@@ -337,7 +335,7 @@ lemma lpEstimator_eq_invMulVec_lpRhs (xdat Y : Fin n → ℝ) (K : ℝ → ℝ) 
       = ∑ j, ∑ i, Y i * ((n : ℝ) * h)⁻¹
           * ((lpMatrix xdat K h ℓ t)⁻¹ 0 j * lpBasis ℓ ((xdat i - t) / h) j)
           * K ((xdat i - t) / h) := by
-    simp only [lpRhs, Matrix.mulVec, dotProduct, Finset.mul_sum, Finset.sum_mul]
+    simp only [lpRhs, Matrix.mulVec, dotProduct, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
   rw [hL, hR, Finset.sum_comm]
 
@@ -356,6 +354,6 @@ theorem lpEstimator_eq_isLPSolution (hpd : (lpMatrix xdat K h ℓ t).PosDef)
 weights (immediately from the closed weight form). -/
 theorem isLinearEstimator_lpEstimator (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ) :
     IsLinearEstimator fun (Y : Fin n → ℝ) (t : ℝ) => lpEstimator xdat Y K h ℓ t :=
-  ⟨fun t i => lpWeight xdat K h ℓ t i, fun Y t => rfl⟩
+  ⟨fun t i => lpWeight xdat K h ℓ t i, fun _ _ => rfl⟩
 
 end StatLean.NonparametricStatistics

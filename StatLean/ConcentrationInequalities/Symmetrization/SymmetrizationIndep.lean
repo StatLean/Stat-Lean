@@ -99,7 +99,7 @@ theorem symmetrization_upper_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure
       = ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) :=
     integral_indepFun_eq_integral_prod
       (A := fun ω i => X i ω) (B := fun ω i => ε i ω)
-      (measurable_pi_lambda _ hX_meas) (measurable_pi_lambda _ hε_meas)
+      (Measurable.of_eval hX_meas) (Measurable.of_eval hε_meas)
       hXε (map_signs_eq_signVec hε_meas hε_indep hε_law)
       (G := fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖) hG
   calc ∫ ω, ‖∑ i, X i ω‖ ∂μ
@@ -143,7 +143,7 @@ theorem symmetrization_lower_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure
       = ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) :=
     integral_indepFun_eq_integral_prod
       (A := fun ω i => X i ω) (B := fun ω i => ε i ω)
-      (measurable_pi_lambda _ hX_meas) (measurable_pi_lambda _ hε_meas)
+      (Measurable.of_eval hX_meas) (Measurable.of_eval hε_meas)
       hXε (map_signs_eq_signVec hε_meas hε_indep hε_law)
       (G := fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖) hG
   calc ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ

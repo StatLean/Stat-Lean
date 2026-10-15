@@ -75,7 +75,7 @@ section RealBridge
 theorem natSet_eq_integrableExpSet (E : ExpFamily 𝓧 ℝ) :
     E.natSet = integrableExpSet E.stat E.base := by
   ext η
-  simp only [ExpFamily.natSet, integrableExpSet, Set.mem_setOf_eq]
+  simp only [ExpFamily.natSet, integrableExpSet, Set.mem_ofPred_eq]
   exact integrable_congr (Filter.Eventually.of_forall fun x => by simp only [inner_real_eq])
 
 /-- For a real natural statistic the log-partition function is Mathlib's cumulant generating
@@ -113,7 +113,7 @@ theorem integral_exp_inner_P (E : ExpFamily 𝓧 V) {η u : V}
     (hηu : η + u ∈ E.natSet) :
     ∫ x, Real.exp ⟪u, E.stat x⟫_ℝ ∂(E.P η)
       = Real.exp (E.logPartition (η + u) - E.logPartition η) := by
-  haveI : NeZero E.base := ⟨hbase⟩
+  have : NeZero E.base := ⟨hbase⟩
   have hηu_pos : 0 < ∫ x, Real.exp ⟪η + u, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hηu
   have hη_pos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hη
   rw [show E.P η = E.base.tilted (fun x => ⟪η, E.stat x⟫_ℝ) from rfl, integral_exp_tilted]

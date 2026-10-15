@@ -76,7 +76,7 @@ theorem discrete_dudley_anchored {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E
   have hpt : ∀ ω, F.sup' hFne (fun t => X t ω - X t₀ ω)
       = (F.sup' hFne fun t => X t ω) - X t₀ ω := by
     intro ω
-    have := Finset.comp_sup'_eq_sup'_comp (s := F) hFne (f := fun t => X t ω)
+    have := Finset.apply_sup'_eq_sup'_comp (s := F) hFne (f := fun t => X t ω)
       (fun x : ℝ => x - X t₀ ω) (fun x y => (max_sub_sub_right x y (X t₀ ω)).symm)
     exact this.symm
   -- Integrability of the finite maximum (per-coordinate `hint`).

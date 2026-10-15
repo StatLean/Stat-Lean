@@ -111,8 +111,8 @@ private theorem measurable_sclStep {f s : (Fin (p + 1) → ℝ) → ℝ}
       (Fin.cons (f xe.1 + s xe.1 * xe.2) (fun i => xe.1 i.castSucc) : Fin (p + 1) → ℝ) := by
   rw [measurable_pi_iff]
   refine Fin.cases ?_ ?_
-  · simpa using (hf.comp measurable_fst).add ((hs.comp measurable_fst).mul measurable_snd)
-  · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+  · simpa using! (hf.comp measurable_fst).add ((hs.comp measurable_fst).mul measurable_snd)
+  · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
 
 theorem isMarkovKernel_sclARKernel {f s : (Fin (p + 1) → ℝ) → ℝ}
     (hf : Measurable f) (hs : Measurable s) (ν : Measure ℝ) [IsProbabilityMeasure ν] :
@@ -165,7 +165,7 @@ theorem sclAR_lintegral {f s : (Fin (p + 1) → ℝ) → ℝ}
     have hcompm : (fun e : ℝ => f x + s x * e)
         = (fun v : ℝ => f x + v) ∘ (fun e : ℝ => s x * e) := rfl
     rw [hcompm, ← Measure.map_map (measurable_const_add _) (measurable_const_mul _), h1,
-      Measure.map_smul, h2, abs_of_pos (inv_pos.2 ha)]
+      Measure.map_smul _ (measurable_const_add _).aemeasurable, h2, abs_of_pos (inv_pos.2 ha)]
   have step2 : ∫⁻ e, (fun u => sclDens f s g x u * h (shiftPush x u)) (f x + s x * e)
       = ENNReal.ofReal (s x)⁻¹ * ∫⁻ u, sclDens f s g x u * h (shiftPush x u) := by
     rw [← lintegral_map hΨm hΦ, hmapΦ, lintegral_smul_measure, smul_eq_mul]
@@ -201,7 +201,6 @@ theorem pow_ge_window_scl {f s : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable
       ENNReal.ofReal δ ^ k *
           (Measure.map (iterPush k x) (Measure.pi fun _ : Fin k => volume.restrict J)) A
         ≤ ((sclARKernel f s ν) ^ k) x A := by
-  haveI : IsMarkovKernel (sclARKernel f s ν) := isMarkovKernel_sclARKernel hf hs ν
   intro k
   induction k with
   | zero =>
@@ -257,7 +256,6 @@ theorem hasMinorization_sclAR_pow
     {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1) {R : ℝ} (hR0 : 0 < R) :
     ∃ (α : ℝ) (ρ : Measure (Fin (p + 1) → ℝ)),
       HasMinorization ((sclARKernel f s ν) ^ (p + 1)) (lyapV θ) R α ρ := by
-  haveI : IsMarkovKernel (sclARKernel f s ν) := isMarkovKernel_sclARKernel hf hs ν
   have hspos : ∀ x, 0 < s x := fun x => lt_of_lt_of_le hs0 (hslo x)
   -- the box the level set lives in
   obtain ⟨Rb, hRbdef⟩ : ∃ r : ℝ, r = R / θ ^ p := ⟨_, rfl⟩

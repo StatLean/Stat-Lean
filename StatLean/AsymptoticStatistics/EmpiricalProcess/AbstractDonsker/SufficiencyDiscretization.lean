@@ -41,6 +41,8 @@ Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), Theorem
 18.14 (book p.261), §19.2.
 -/
 
+set_option linter.style.longFile 2200
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory Filter Topology AsymptoticStatistics BoundedContinuousFunction
@@ -478,7 +480,7 @@ omit [IsProbabilityMeasure P] in
 evaluation of the input Euclidean vector at `netEnum m s`. -/
 theorem continuous_netReindex (m : ℕ) :
     Continuous (netReindex hG_env hG hF_meas hF_ent m) :=
-  continuous_pi (fun s => (continuous_apply _).comp (EuclideanSpace.equiv _ ℝ).continuous)
+  continuous_pi (fun _ => (continuous_apply _).comp (EuclideanSpace.equiv _ ℝ).continuous)
 
 omit [IsProbabilityMeasure P] in
 /-- `netReindex` is measurable. -/
@@ -498,7 +500,7 @@ omit [IsProbabilityMeasure P] in
 /-- `netReindexInv` is continuous. -/
 theorem continuous_netReindexInv (m : ℕ) :
     Continuous (netReindexInv hG_env hG hF_meas hF_ent m) :=
-  (PiLp.continuous_toLp 2 _).comp (continuous_pi (fun i => continuous_apply _))
+  (PiLp.continuous_toLp 2 _).comp (continuous_pi (fun _ => continuous_apply _))
 
 omit [IsProbabilityMeasure P] in
 /-- `netReindexInv` is measurable. -/
@@ -554,7 +556,8 @@ theorem gaussianPBridge_readout_isGaussian (m : ℕ) :
       ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
         (fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))))) := by
+          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+              (netRep hG_env hG hF_meas hF_ent m))))))) := by
   classical
   set k := Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)) with hk
   set ψ : Fin k → ↥F := fun i => ((netEnum hG_env hG hF_meas hF_ent m).symm i).1 with hψ
@@ -567,7 +570,7 @@ theorem gaussianPBridge_readout_isGaussian (m : ℕ) :
   set L := (EuclideanSpace.equiv (Fin k) ℝ).symm with hL
   have hcomp : (fun z : LinfF F => (WithLp.toLp 2 (fun j => z (ψ j)) : EuclideanSpace ℝ (Fin k)))
       = L ∘ (fun z : LinfF F => (fun j => z (ψ j))) := rfl
-  haveI hpi_gauss : ProbabilityTheory.IsGaussian
+  have hpi_gauss : ProbabilityTheory.IsGaussian
       (ν.map (fun z : LinfF F => (fun j => z (ψ j)))) := hpi.isGaussian_map
   rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
     (L.continuous.measurable.aemeasurable) hpi.aemeasurable]
@@ -581,7 +584,8 @@ theorem gaussianPBridge_readout_mean (m : ℕ) :
         ∂((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+                (netRep hG_env hG hF_meas hF_ent m)))))))
       = ∫ x, id x
         ∂(ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
             (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -596,7 +600,7 @@ theorem gaussianPBridge_readout_mean (m : ℕ) :
   -- RHS mean = `0` (`integral_id_multivariateGaussian'`, the `[id]` form).
   rw [ProbabilityTheory.integral_id_multivariateGaussian']
   -- LHS: `∫ id ∂(ν.map R) = ∫ z, R z ∂ν`; show this Euclidean integral is `0`.
-  haveI hLHS_gauss : ProbabilityTheory.IsGaussian (ν.map R) :=
+  have hLHS_gauss : ProbabilityTheory.IsGaussian (ν.map R) :=
     gaussianPBridge_readout_isGaussian hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne m
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
@@ -638,7 +642,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
         ((gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).map
           (fun z : LinfF F => (WithLp.toLp 2
             (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))))
+            EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+                (netRep hG_env hG hF_meas hF_ent m)))))))
       = ProbabilityTheory.covarianceBilin
           (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ
               (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m)))))
@@ -650,8 +655,9 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
   set S := marginalCovMatrix P (netPhi hG_env hG hF_meas hF_ent m) with hS
   set R : LinfF F → EuclideanSpace ℝ (Fin k) :=
     fun z => (WithLp.toLp 2 (fun i => z (ψ i)) : EuclideanSpace ℝ (Fin k)) with hR
-  haveI hν_prob : IsProbabilityMeasure ν :=
-    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).isProbabilityMeasure
+  have hν_prob : IsProbabilityMeasure ν :=
+    (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep hF_ent
+        hF_ne).isProbabilityMeasure
   -- Measurability + Gaussianity + L²-membership of the readout `R`.
   have hcont_eval : ∀ i : ↥F, Continuous (fun z : LinfF F => z i) := by
     intro i
@@ -667,7 +673,7 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
   have hR_meas : Measurable R :=
     ((PiLp.continuous_toLp 2 _).comp
       (continuous_pi (fun i => hcont_eval (ψ i)))).measurable
-  haveI hLHS_gauss : ProbabilityTheory.IsGaussian (ν.map R) :=
+  have hLHS_gauss : ProbabilityTheory.IsGaussian (ν.map R) :=
     gaussianPBridge_readout_isGaussian hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne m
   -- L²-membership: `id` on `ν.map R` (Gaussian) and each `R`-coordinate on `ν`.
   have hMemLp_map : MeasureTheory.MemLp id 2 (ν.map R) :=
@@ -680,7 +686,7 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
     have heq : (fun z : LinfF F => z (ψ i)) = (EuclideanSpace.proj (𝕜 := ℝ) i) ∘ R := by
       funext z; rw [EuclideanSpace.coe_proj]; rfl
     rw [heq]
-    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitz.comp_memLp (map_zero _) hMemLp_R
+    exact (EuclideanSpace.proj (𝕜 := ℝ) i).lipschitzWith.comp_memLp (map_zero _) hMemLp_R
   -- `⟪basisFun a, u⟫ = u a` for the Euclidean basis.
   have hbasis : ∀ (a : Fin k),
       (fun u : EuclideanSpace ℝ (Fin k) =>
@@ -689,8 +695,8 @@ theorem gaussianPBridge_readout_covarianceBilin (m : ℕ)
     intro a; funext u
     rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, PiLp.inner_apply]
     have hpt : ∀ x : Fin k,
-        (inner ℝ ((EuclideanSpace.single a (1:ℝ)).ofLp x) (u.ofLp x) : ℝ)
-          = u.ofLp x * (if x = a then (1:ℝ) else 0) := by
+        (inner ℝ ((EuclideanSpace.single a (1 : ℝ)).ofLp x) (u.ofLp x) : ℝ)
+          = u.ofLp x * (if x = a then (1 : ℝ) else 0) := by
       intro x; rw [PiLp.single_apply]; rfl
     simp_rw [hpt]
     simp [Finset.sum_ite_eq']
@@ -778,9 +784,9 @@ theorem gaussianPBridge_readout_eq_multivariateGaussian (m : ℕ) :
   have hS_psd : S.PosSemidef :=
     marginalCovMatrix_netPhi_posSemidef hG_env hG hF_meas hF_ent m
   -- The two measures are `IsGaussian`: RHS by construction, LHS by CLE-transport.
-  haveI hRHS_gauss : ProbabilityTheory.IsGaussian
+  have hRHS_gauss : ProbabilityTheory.IsGaussian
       (ProbabilityTheory.multivariateGaussian 0 S) := inferInstance
-  haveI hLHS_gauss : ProbabilityTheory.IsGaussian
+  have hLHS_gauss : ProbabilityTheory.IsGaussian
       (ν.map (fun z : LinfF F => (WithLp.toLp 2 (Rpi z) : EuclideanSpace ℝ (Fin k)))) :=
     gaussianPBridge_readout_isGaussian hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne m
   -- `IsGaussian.ext`: equal means + equal covariance bilinear forms.
@@ -819,8 +825,8 @@ theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
   classical
   set φ := netPhi hG_env hG hF_meas hF_ent m with hφ
   -- `P` is a probability measure (pushforward of `μ` by the measurable `X 0`).
-  haveI hP_prob : IsProbabilityMeasure P := by
-    rw [← hX_law]; exact Measure.isProbabilityMeasure_map (hX_meas 0).aemeasurable
+  have hP_prob : IsProbabilityMeasure P := by
+    rw [← hX_law]; exact (by infer_instance)
   -- Each `φ i ∈ F` is `MemLp 2 P`, hence integrable, and measurable.
   have hφ_mem : ∀ i, φ i ∈ F := netPhi_mem hG_env hG hF_meas hF_ent m
   have hφ_meas : ∀ i, Measurable (φ i) := fun i => hF_meas (φ i) (hφ_mem i)
@@ -870,7 +876,7 @@ theorem netTuple_empirical_eq_reindex_std (h_clt : IsMarginalCLT F P)
     rw [← hkey, EuclideanSpace.coe_proj]
   rw [hcoord]
   -- LHS: `netTuple (𝔾ₙ ξ) s = empiricalProcess P n (X·ξ) s.1`.
-  show empiricalProcess P n (fun j : Fin n => X j.val ξ) (s.1 : Ω → ℝ)
+  change empiricalProcess P n (fun j : Fin n => X j.val ξ) (s.1 : Ω → ℝ)
     = (Real.sqrt n)⁻¹ * ((∑ j ∈ Finset.range n, φ i (X j ξ))
         - n * ∫ ζ, φ i (X 0 ζ) ∂μ)
   -- The integral over `μ` of `φ i ∘ X 0` equals `∫ φ i dP` (law of `X 0` is `P`).
@@ -944,7 +950,8 @@ theorem gaussianPBridge_map_netTuple_eq (m : ℕ) :
       (netTuple hG_env hG hF_meas hF_ent m)
       = fun z : LinfF F => (WithLp.toLp 2
           (fun i => z ((netEnum hG_env hG hF_meas hF_ent m).symm i).1) :
-          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range (netRep hG_env hG hF_meas hF_ent m))))) := by
+          EuclideanSpace ℝ (Fin (Fintype.card ↥(Set.range
+              (netRep hG_env hG hF_meas hF_ent m))))) := by
     funext z
     rfl
   rw [hcomp]
@@ -1000,7 +1007,7 @@ theorem weakConverges_netTuple_of_marginalCLT (h_clt : IsMarginalCLT F P)
       (ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ)) := by
     -- The `ProbabilityMeasure`-valued limit point is `⟨mvg.map Y, _⟩ = ⟨mvg, _⟩`.
     have hlim_eq : (⟨(ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ)).map Y,
-          Measure.isProbabilityMeasure_map hTID.aemeasurable_limit⟩ :
+          (by infer_instance)⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ (Fin _)))
         = ⟨ProbabilityTheory.multivariateGaussian 0 (marginalCovMatrix P φ),
             inferInstance⟩ :=
@@ -1237,7 +1244,7 @@ theorem empirical_proj_error_outer (h_eq : IsAsymptoticallyEquicontinuous F P)
             ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
                   - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     -- supNorm > ε ⟹ ∃ coordinate `t : ↥F` with `ε < |(𝔾ₙ − πₘ𝔾ₙ) t|`.
     -- `↥F` must be nonempty: otherwise the difference is `0` and `ε < 0` is absurd.
     have hne : Nonempty ↥F := by
@@ -1402,7 +1409,7 @@ theorem limit_proj_error (f : LinfF F →ᵇ ℝ) :
       have := hf_tendsto.sub (tendsto_const_nhds (x := f z))
       simpa using this
     have := (continuous_abs.tendsto (0 : ℝ)).comp hsub
-    simpa [Φ] using this
+    simpa [Φ] using! this
 
 /-! ### The ε/3 argument
 
@@ -1454,13 +1461,13 @@ theorem outerReadout_le_of_modulus {Ξ D : Type*} [MeasurableSpace Ξ]
       · -- Good event: `ind = 0`, use the modulus bound.
         have hind0 : ind ξ = 0 := by
           rw [hind, Set.indicator_of_notMem]
-          rw [hbadSet]; simp only [Set.mem_setOf_eq, not_lt]; exact hg
+          rw [hbadSet]; simp only [Set.mem_ofPred_eq, not_lt]; exact hg
         rw [hind0]; simp only [ENNReal.toReal_zero, mul_zero, add_zero]
         have := hmod ξ hg; linarith
       · -- Bad event: `ind = 1`, slack `≥ 2‖f‖ ≥ f(Xξ) − f(Yξ)`.
         have hind1 : ind ξ = 1 := by
           rw [hind, Set.indicator_of_mem]
-          rw [hbadSet]; simp only [Set.mem_setOf_eq]; exact lt_of_not_ge hg
+          rw [hbadSet]; simp only [Set.mem_ofPred_eq]; exact lt_of_not_ge hg
         rw [hind1]; simp only [ENNReal.toReal_one, mul_one]
         have hfX := (abs_le.1 (f.norm_coe_le_norm (X ξ))).2
         have hfY := (abs_le.1 (f.norm_coe_le_norm (Y ξ))).1
@@ -1488,7 +1495,7 @@ theorem outerReadout_le_of_modulus {Ξ D : Type*} [MeasurableSpace Ξ]
           + outerExpectation μ (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ) := by
       have := outerExpectation_add_le (μ := μ) (fun _ => ENNReal.ofReal η)
         (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ)
-      simpa [herr, Pi.add_apply] using this
+      simpa [herr, Pi.add_apply] using! this
     have hconst : outerExpectation μ (fun _ => ENNReal.ofReal η)
         = ENNReal.ofReal η := by rw [outerExpectation_const]; simp
     have hsmul : outerExpectation μ (fun ξ => ENNReal.ofReal (2 * ‖f‖) * ind ξ)
@@ -1552,7 +1559,7 @@ theorem abs_outerReadout_diff_le {Ξ D : Type*} [MeasurableSpace Ξ]
             ({ξ | δ < dist (X ξ) (Y ξ)}.indicator (fun _ => (1 : ℝ≥0∞)))).toReal := by
   -- The bad event is symmetric in `X, Y` (`dist_comm`).
   have hsymm : {ξ | δ < dist (Y ξ) (X ξ)} = {ξ | δ < dist (X ξ) (Y ξ)} := by
-    ext ξ; simp only [Set.mem_setOf_eq, dist_comm]
+    ext ξ; simp only [Set.mem_ofPred_eq, dist_comm]
   rw [abs_sub_le_iff]
   constructor
   · -- `EX.toReal − EY.toReal ≤ η + 2‖f‖·I.toReal`.
@@ -1835,7 +1842,7 @@ theorem empirical_readout_tail_outer
       by_cases hcase : ε < ‖a - b‖
       · -- On the bad event: indicator = 1, bound by the `2‖f‖` term.
         have hmem : ξ ∈ {ξ | ε < ‖𝔾 n ξ - finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ)‖} := by
-          rw [Set.mem_setOf_eq, ← ha, ← hb]; exact hcase
+          rw [Set.mem_ofPred_eq, ← ha, ← hb]; exact hcase
         rw [Set.indicator_of_mem hmem]
         calc ENNReal.ofReal |f a - f b| ≤ ENNReal.ofReal (2 * ‖f‖) :=
               ENNReal.ofReal_le_ofReal h2f
@@ -1880,7 +1887,7 @@ theorem empirical_readout_tail_outer
                 ENNReal.ofReal_ne_top
                 ({ξ | ε < ‖𝔾 n ξ - finiteNetProj hG_env hG hF_meas hF_ent m (𝔾 n ξ)‖}.indicator
                   (1 : Ξ → ℝ≥0∞))
-              simpa only [Pi.smul_apply, smul_eq_mul] using this
+              simpa only [Pi.smul_apply, smul_eq_mul] using! this
             rw [hcs, hPstar]
             rfl
     -- Take `.toReal` (everything finite: `ofReal`, `Pstar ≤ 1`).
@@ -1963,7 +1970,7 @@ theorem empirical_readout_tail_outer
       atTop (𝓝 (Kr * ε)) := by
     have h0 : Tendsto (fun m => (limsup (fun n => Pstar m n) atTop).toReal) atTop (𝓝 0) := by
       have := (ENNReal.tendsto_toReal (by norm_num : (0 : ℝ≥0∞) ≠ ⊤)).comp hS3'
-      simpa using this
+      simpa using! this
     have hφ0 : φ 0 = Kr * ε := by simp only [hφ, mul_zero, add_zero]
     have := (hφ_cont.tendsto 0).comp h0
     rw [hφ0] at this
@@ -2057,13 +2064,13 @@ theorem isPDonsker'_of_marginalCLT_and_asymptoticallyEquicontinuous_aux
         f.continuous.aestronglyMeasurable, hLproj, hGP]
     rw [hRproj, ← hmap]
     -- The readout is exactly `Rproj m n`; the limit is the pushforward integral.
-    convert hS2 using 2
+    convert! hS2 using 2
   case _limtail =>
     -- The theorem `limit_proj_error` gives `∫|f(πₘ·) − f·| → 0`, hence
     -- `Lproj m = ∫ f(πₘ·) → ∫ f· = L`.
     have hS4 := limit_proj_error hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne f
     -- `GP` is a probability measure (so `f` and `f ∘ πₘ` are integrable).
-    haveI hprob : IsProbabilityMeasure GP := by
+    have hprob : IsProbabilityMeasure GP := by
       rw [hGP]
       exact (isPBrownianBridge_gaussianPBridge hG_env hG hF_meas hH_inf hH_sep
         hF_ent hF_ne).isProbabilityMeasure

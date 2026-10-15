@@ -55,8 +55,8 @@ private theorem polyFilterCoeffs_eq_zero (P : Polynomial ℝ) {k : ℤ}
     (hk : k < 0 ∨ (P.natDegree : ℤ) < k) : polyFilterCoeffs P k = 0 := by
   rw [polyFilterCoeffs]
   by_cases h : 0 ≤ k
-  · exact if_pos h ▸ Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
-  · exact if_neg h
+  · exact ite_eq_left h ▸ Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+  · exact ite_eq_right h
 
 /-- The index set `{0, 1, …, deg P} ⊆ ℤ` carrying the polynomial filter, as the image of
 `Finset.range (deg P + 1)` under `Nat.cast`. -/
@@ -101,7 +101,7 @@ theorem transferFun_polyFilterCoeffs (P : Polynomial ℝ) (l : AddCircle (2 * π
   rw [polyFilterSupport, Finset.sum_map, Polynomial.aeval_eq_sum_range]
   refine Finset.sum_congr rfl fun i _ => ?_
   simp only [Function.Embedding.coeFn_mk]
-  rw [polyFilterCoeffs, if_pos (Int.natCast_nonneg i), Int.toNat_natCast,
+  rw [polyFilterCoeffs, ite_eq_left (Int.natCast_nonneg i), Int.toNat_natCast,
     fourier_neg_natCast, Complex.real_smul]
 
 /-- An exact a.e. finite-sum representation realizes the polynomial filter in the `L²`
@@ -112,7 +112,7 @@ theorem isFilteredBy_of_ae_eq_polySum {X Y : ℤ → Ω → ℝ} {P : Polynomial
     IsFilteredBy X Y (polyFilterCoeffs P) μ := by
   intro t
   have key : ∀ N : ℕ, P.natDegree ≤ N →
-      (0 : ℝ≥0∞) = eLpNorm (fun ω => X t ω -
+      (0 : ℝ≥0∞) = eLpNorm' (fun ω => X t ω -
         ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), polyFilterCoeffs P k * Y (t - k) ω) 2 μ := by
     intro N hN
     have hsub : polyFilterSupport P ⊆ Finset.Icc (-(N : ℤ)) (N : ℤ) := by
@@ -131,8 +131,8 @@ theorem isFilteredBy_of_ae_eq_polySum {X Y : ℤ → Ω → ℝ} {P : Polynomial
         polyFilterSupport, Finset.sum_map]
       refine Finset.sum_congr rfl fun i _ => ?_
       simp only [Function.Embedding.coeFn_mk]
-      rw [polyFilterCoeffs, if_pos (Int.natCast_nonneg i), Int.toNat_natCast]
-    rw [eLpNorm_congr_ae hae, eLpNorm_zero]
+      rw [polyFilterCoeffs, ite_eq_left (Int.natCast_nonneg i), Int.toNat_natCast]
+    rw [eLpNorm'_congr_ae hae, eLpNorm'_zero (by norm_num)]
   refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
   filter_upwards [eventually_ge_atTop P.natDegree] with N hN using key N hN
 
@@ -142,15 +142,16 @@ theorem IsWhiteNoise.hasSummableACVF [IsProbabilityMeasure μ] {σ2 : ℝ}
     HasSummableACVF ε μ := by
   apply summable_of_ne_finset_zero (s := {0})
   intro k hk
-  rw [hε.acvf_eq k, if_neg (by simpa using hk), abs_zero]
+  rw [hε.acvf_eq k, ite_eq_right (by simpa using hk), abs_zero]
 
 /-- **White-noise spectral density** (FY §2.3.2, p. 53): `g_ε(ω) ≡ σ²/(2π)` — the flat
 spectrum ("white light"). -/
 theorem IsWhiteNoise.spectralDensityOf_eq [IsProbabilityMeasure μ] {σ2 : ℝ}
     {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ) (l : AddCircle (2 * π)) :
     spectralDensityOf ε μ l = σ2 / (2 * π) := by
-  rw [spectralDensityOf, tsum_eq_single 0 (fun k hk => by rw [hε.acvf_eq k, if_neg hk, zero_mul]),
-    hε.acvf_eq 0, if_pos rfl, fourier_zero, Complex.one_re, mul_one]
+  rw [spectralDensityOf, tsum_eq_single 0
+      (fun k hk => by rw [hε.acvf_eq k, ite_eq_right hk, zero_mul]),
+    hε.acvf_eq 0, ite_eq_left rfl, fourier_zero, Complex.one_re, mul_one]
   ring
 
 /-! ### Coefficient bookkeeping for the lag polynomials
@@ -163,7 +164,7 @@ degree at most `p`/`q`. -/
 private theorem coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private theorem coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
@@ -176,8 +177,8 @@ private theorem coeff_arPoly_succ {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
 
 private theorem natDegree_arPoly_le {p : ℕ} (b : Fin p → ℝ) : (arPoly b).natDegree ≤ p := by
   refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
-  rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
-  refine Finset.sum_eq_zero fun i _ => if_neg ?_
+  rw [coeff_arPoly, ite_eq_right (by omega), zero_sub, neg_eq_zero]
+  refine Finset.sum_eq_zero fun i _ => ite_eq_right ?_
   have := i.isLt
   omega
 
@@ -185,7 +186,7 @@ private theorem natDegree_arPoly_le {p : ℕ} (b : Fin p → ℝ) : (arPoly b).n
 private theorem coeff_maPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
     (maPoly a).coeff m
       = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
-  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private theorem coeff_maPoly_zero {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
@@ -198,8 +199,8 @@ private theorem coeff_maPoly_succ {q : ℕ} (a : Fin q → ℝ) (j : Fin q) :
 
 private theorem natDegree_maPoly_le {q : ℕ} (a : Fin q → ℝ) : (maPoly a).natDegree ≤ q := by
   refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
-  rw [coeff_maPoly, if_neg (by omega), zero_add]
-  refine Finset.sum_eq_zero fun j _ => if_neg ?_
+  rw [coeff_maPoly, ite_eq_right (by omega), zero_add]
+  refine Finset.sum_eq_zero fun j _ => ite_eq_right ?_
   have := j.isLt
   omega
 

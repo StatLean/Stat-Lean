@@ -167,7 +167,7 @@ theorem sum_causeSpecificCumHazard (P : Measure (ℝ × Option (Fin k))) [IsFini
         (Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 = some j})
         = Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 ≠ none} := by
       ext p
-      simp only [mem_iUnion, Finset.mem_univ, iUnion_true, mem_inter_iff, mem_setOf_eq,
+      simp only [mem_iUnion, Finset.mem_univ, iUnion_true, mem_inter_iff, mem_ofPred_eq,
         Set.mem_preimage]
       exact ⟨fun ⟨j, h1, h2⟩ => ⟨h1, by simp [h2]⟩,
         fun ⟨h1, h2⟩ => by obtain ⟨j, hj⟩ := Option.ne_none_iff_exists'.1 h2; exact ⟨j, h1, hj⟩⟩
@@ -177,7 +177,7 @@ theorem sum_causeSpecificCumHazard (P : Measure (ℝ × Option (Fin k))) [IsFini
       refine Set.disjoint_left.2 fun p hp hq => hij ?_
       have : (some i : Option (Fin k)) = some j := hp.2 ▸ hq.2
       exact Option.some_injective _ this
-    rw [Measure.finset_sum_apply, allCauseSubLaw, Measure.map_apply measurable_fst hA,
+    rw [Measure.finsetSum_apply, allCauseSubLaw, Measure.map_apply measurable_fst hA,
       Measure.restrict_apply hAm, ← hunion, measure_biUnion_finset hdisj fun j _ => hSm j]
     exact Finset.sum_congr rfl fun j _ => by
       rw [causeSubLaw, Measure.map_apply measurable_fst hA, Measure.restrict_apply hAm]
@@ -200,17 +200,17 @@ theorem causeSubLaw_eq_withDensity (P : Measure (ℝ × Option (Fin k))) [IsFini
       = (causeSpecificCumHazard P j).withDensity fun t => observedTimeLawCR P (Ici t) := by
   have hm : Measurable fun t : ℝ => observedTimeLawCR P (Ici t) :=
     Antitone.measurable fun _ _ hab => measure_mono (Ici_subset_Ici.2 hab)
-  haveI : IsFiniteMeasure (observedTimeLawCR P) :=
+  have : IsFiniteMeasure (observedTimeLawCR P) :=
     Measure.isFiniteMeasure_map P Prod.fst
   -- The at-risk denominator is `causeSubLaw`-a.e. nonzero (hygiene lemma via domination).
   have hnull : causeSubLaw P j {t : ℝ | observedTimeLawCR P (Ici t) = 0} = 0 :=
     le_antisymm ((causeSubLaw_le P j (hm (measurableSet_singleton 0))).trans_eq
-      (measure_survivalLeft_zero _)) (zero_le _)
+      (measure_survivalLeft_zero _)) (zero_le)
   have hae : ∀ᵐ t ∂causeSubLaw P j, observedTimeLawCR P (Ici t) ≠ 0 := by
     rw [ae_iff]
     simpa using hnull
   -- Merge the two `withDensity` layers; the merged density is a.e. `1`.
-  rw [causeSpecificCumHazard, ← withDensity_mul _ hm.inv hm]
+  erw [causeSpecificCumHazard, ← withDensity_mul _ hm.inv hm]
   refine (Eq.trans (withDensity_congr_ae ?_) withDensity_one).symm
   filter_upwards [hae] with t ht
   simpa using ENNReal.inv_mul_cancel ht (measure_ne_top _ _)
@@ -265,7 +265,7 @@ theorem graySubCumHazard_le (P : Measure (ℝ × Option (Fin k))) [IsProbability
     -- LEAN-ONLY: measurability of the event; standard regularity
     (j : Fin k) {A : Set ℝ} (hA : MeasurableSet A) :
     graySubCumHazard P j A ≤ causeSpecificCumHazard P j A := by
-  haveI : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst
+  have : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst
   have huniv : observedTimeLawCR P univ = P univ := by
     rw [observedTimeLawCR, Measure.map_apply measurable_fst MeasurableSet.univ, preimage_univ]
   rw [graySubCumHazard, causeSpecificCumHazard, withDensity_apply _ hA, withDensity_apply _ hA]

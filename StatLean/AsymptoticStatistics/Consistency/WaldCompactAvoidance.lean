@@ -24,7 +24,7 @@ private lemma extendedEmpiricalAvg_mono {X : Type*} {f g : X → EReal}
     extendedEmpiricalAvg f n s ≤ extendedEmpiricalAvg g n s := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp [extendedEmpiricalAvg]
-  rw [extendedEmpiricalAvg, if_neg hn, extendedEmpiricalAvg, if_neg hn]
+  rw [extendedEmpiricalAvg, ite_eq_right hn, extendedEmpiricalAvg, ite_eq_right hn]
   apply EReal.sub_le_sub
   · norm_cast
     gcongr with i
@@ -144,7 +144,7 @@ theorem wald_avoids_compact_disjoint
     have hlt := ae_lt_top ((hrc i).2.2.2.1.ereal_toENNReal) (hrc i).2.2.2.2
     filter_upwards [hlt] with x hx
     have hne : e i x ≠ ⊤ := EReal.toENNReal_ne_top_iff.mp hx.ne
-    simp only [g, if_neg hne]
+    simp only [g, ite_eq_right hne]
   have hgmeas (i : B) : Measurable (g i) :=
     Measurable.ite ((hrc i).2.2.2.1 (measurableSet_singleton ⊤)) measurable_const
       (hrc i).2.2.2.1
@@ -163,7 +163,7 @@ theorem wald_avoids_compact_disjoint
       change hm0ae.mk (m θ₀) x ≠ ⊤
       rw [← hx]
       exact hm_top θ₀ x
-    simpa only [f₀, if_neg hne] using hx.symm
+    simpa only [f₀, ite_eq_right hne] using hx.symm
   have hf0meas : Measurable f₀ := by
     apply Measurable.ite (hm0ae.measurable_mk (measurableSet_singleton ⊤))
     · exact measurable_const
@@ -191,7 +191,7 @@ theorem wald_avoids_compact_disjoint
         extendedEmpiricalAvg v n (fun j : Fin n => Xs j.val ω) := by
     have hs : ∀ᵐ ω ∂ℙ, ∀ j : Fin n, u (Xs j.val ω) = v (Xs j.val ω) := by
       rw [ae_all_iff]; intro j
-      exact (hmap j.val).quasiMeasurePreserving.ae_eq huv
+      exact (hmap j.val).quasiMeasurePreserving.ae_eq_comp huv
     filter_upwards [hs] with ω hω
     unfold extendedEmpiricalAvg
     simp_rw [hω]
@@ -235,7 +235,7 @@ theorem wald_avoids_compact_disjoint
     linarith
   have hsum : Tendsto (fun n => ∑ i ∈ t, ℙ {ω | ((a₀ - 3 * δ : ℝ) : EReal) ≤
       extendedEmpiricalAvg (g i) n (fun j : Fin n => Xs j.val ω)}) atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum t (fun i hi => hu i hi)
+    simpa using tendsto_finsetSum t (fun i hi => hu i hi)
   have hbound (n : ℕ) : ℙ {ω | θhat n ω ∈ B} ≤
       (∑ i ∈ t, ℙ {ω | ((a₀ - 3 * δ : ℝ) : EReal) ≤
         extendedEmpiricalAvg (g i) n (fun j : Fin n => Xs j.val ω)}) + ℙ (L n) + ℙ (D n) :=
@@ -246,6 +246,6 @@ theorem wald_avoids_compact_disjoint
             (fun j : Fin n => Xs j.val ω)})) _) le_rfl
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa [L, D] using (hsum.add hzero).add hrem)
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall hbound)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall hbound)
 
 end AsymptoticStatistics.Consistency

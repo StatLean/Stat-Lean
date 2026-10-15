@@ -8,15 +8,16 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 # Dirichlet–Laplace density and tail bounds (C3)
 
 Quantitative two-sided control of the DL marginal density `dlDensity a` (from `MarginalDensity`, C2)
-and of the marginal tail `ℙ_{DL,a}(|θ| > δ)`. These are BPPD **Lemma 3.2** (density bounds (13)/(14))
-and **Lemma 3.3** (tail bound), the analytic core consumed by the product-density estimates
-(`PriorDensityBounds`, C4), the support-count Chernoff bound (`PriorSmallBall`, C5), and Lemma 6.1
-(`PriorMassRatio`, C14).
+and of the marginal tail `ℙ_{DL,a}(|θ| > δ)`. These are BPPD **Lemma 3.2** (density bounds
+(13)/(14)) and **Lemma 3.3** (tail bound), the analytic core consumed by the product-density
+estimates (`PriorDensityBounds`, C4), the support-count Chernoff bound (`PriorSmallBall`, C5), and
+Lemma 6.1 (`PriorMassRatio`, C14).
 
 Results:
 * **P3** `dlDensity_le` — upper bound `f_{DL,a}(x) ≤ 17·a·δ^{a-1}` for `δ ≤ |x|` (BPPD eq. (13)).
 * **P4** `dlDensity_ge_of_one_le` / `dlDensity_ge` — lower bounds `f_{DL,a}(x) ≥ (a/64)·|x|^{-1/2}
-  e^{-3√|x|}` (`|x| ≥ 1`) and the uniform log-linear form `≥ (a/64) e^{-3-(7/2)√|x|}` (BPPD eq. (14)).
+  e^{-3√|x|}` (`|x| ≥ 1`) and the uniform log-linear
+  form `≥ (a/64) e^{-3-(7/2)√|x|}` (BPPD eq. (14)).
 * **P5** `dlMarginal_abs_gt_le` (+ `dlMarginal_abs_gt_le'`, `dlMarginal_abs_le_ge`) — the tail bound
   `ℙ_{DL,a}(|θ| > δ) ≤ (8 + 2 log(1/δ))/Γ(a)`, its `ζ`-form `≤ e·a·(8 + 2 log(1/δ))`, and the
   complementary box-mass lower bound (BPPD Lemma 3.3).
@@ -26,27 +27,28 @@ optimal shrinkage*, JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Lemma 3.2 (e
 Lemma 3.3.
 
 **Proof formalization notes.**
-* **P3** (`dlDensity_le`): on the real integral form (C2, `dlDensity_eq_ofReal_integral`), substitute
-  `u = |x|/ψ` and bound `∫ u^{-a} e^{-u} du` on `(0, |x|/… )`; combine with `dlNormConst_le` (C2).
-  Deviation **D8**: the upper bound genuinely needs `a ≤ 1/2` — the small-`ψ` tail of the mixture
-  produces a `Γ(1-a)` factor that blows up as `a → 1⁻`, so the paper's `a ≤ 1` is insufficient for a
-  clean constant. `17` is a roomy explicit numeral, not the paper's unspecified constant.
+* **P3** (`dlDensity_le`): on the real integral form (C2, `dlDensity_eq_ofReal_integral`),
+  substitute `u = |x|/ψ` and bound `∫ u^{-a} e^{-u} du` on `(0, |x|/… )`; combine with
+  `dlNormConst_le` (C2). Deviation **D8**: the upper bound genuinely needs `a ≤ 1/2` — the small-`ψ`
+  tail of the mixture produces a `Γ(1-a)` factor that blows up as `a → 1⁻`, so the paper's `a ≤ 1`
+  is insufficient for a clean constant. `17` is a roomy
+  explicit numeral, not the paper's unspecified constant.
 * **P4** (`dlDensity_ge_of_one_le`, `dlDensity_ge`): restrict the mixture integral to
-  `ψ ∈ [√(2|x|), 2√(2|x|)]` and bound both densities below there; combine with `dlNormConst_ge` (C2).
-  Deviation **D5**: this restriction yields the exponent `-(3/√2)√|x|`, rounded up to `-3√|x|` (the
-  paper sketches `-2√|x|`, which the restriction cannot deliver). The uniform log-linear form
+  `ψ ∈ [√(2|x|), 2√(2|x|)]` and bound both densities below there; combine with `dlNormConst_ge`
+  (C2). Deviation **D5**: this restriction yields the exponent `-(3/√2)√|x|`, rounded up to `-3√|x|`
+  (the paper sketches `-2√|x|`, which the restriction cannot deliver). The uniform log-linear form
   absorbs the algebraic factor via `|x|^{-1/2} e^{-3√|x|} ≥ e^{-3-(7/2)√|x|}` and is extended to
   `|x| < 1` by monotonicity (P2). Lower bounds need only `a ≤ 1` (contrast D8). `a/64` is roomy.
-* **P5** (`dlMarginal_abs_gt_le`): from `dlMarginal_abs_gt_eq_mixture` (C2), split the `Gamma`-mixture
-  tail `∫ e^{-δ/ψ} dGamma_{a,1/2}` at `ψ = 4δ`. Deviation **D6**: proved *without* Alzer's
-  inequality — the small part (`ψ ≤ 4δ`) is `≤ 4` via `e^{-u} ≤ u^{-(1-a)}`, the large part
+* **P5** (`dlMarginal_abs_gt_le`): from `dlMarginal_abs_gt_eq_mixture` (C2), split the
+  `Gamma`-mixture tail `∫ e^{-δ/ψ} dGamma_{a,1/2}` at `ψ = 4δ`. Deviation **D6**: proved *without*
+  Alzer's inequality — the small part (`ψ ≤ 4δ`) is `≤ 4` via `e^{-u} ≤ u^{-(1-a)}`, the large part
   (`ψ > 4δ`) is `≤ C + 2 log(1/δ)` via `ψ^{a-1} ≤ max(ψ^{-1}, 1)`; holds for all `δ ∈ (0,1)` (no
-  "`δ` small"). `Γ` numerics go through `Γ(1+a) ∈ [e^{-1}, 2]` (F2), *not* the paper's "`Γ(x) ≥ 1/x`"
-  (false as stated). The `ζ`-form uses `1/Γ(a) ≤ e·a` (`inv_e_mul_le_Gamma`, F2); the complement is
-  `1 − (tail)` via `IsProbabilityMeasure`.
+  "`δ` small"). `Γ` numerics go through `Γ(1+a) ∈ [e^{-1}, 2]` (F2), *not* the paper's
+  "`Γ(x) ≥ 1/x`" (false as stated). The `ζ`-form uses `1/Γ(a) ≤ e·a` (`inv_e_mul_le_Gamma`, F2); the
+  complement is `1 − (tail)` via `IsProbabilityMeasure`.
 
-**Bibliographic comments.** Sharp tail and density estimates of this kind are the technical engine of
-Bayesian posterior-contraction theory in the framework of Ghosal–Ghosh–van der Vaart (*Ann.
+**Bibliographic comments.** Sharp tail and density estimates of this kind are the technical engine
+of Bayesian posterior-contraction theory in the framework of Ghosal–Ghosh–van der Vaart (*Ann.
 Statist.* 28 (2000), 500–531) and Castillo–van der Vaart (*Ann. Statist.* 40 (2012), 2069–2101);
 here they quantify how the Dirichlet–Laplace marginal simultaneously concentrates near the origin
 (box-mass lower bound) and retains heavy enough tails (`ℙ(|θ| > δ)` upper bound) to recover sparse
@@ -83,11 +85,12 @@ private lemma gammaExp_ennreal {a δ ψ : ℝ} (ha : 0 < a) (hψ : 0 < ψ) :
       = ENNReal.ofReal ((2⁻¹ : ℝ) ^ a / Real.Gamma a
           * (ψ ^ (a - 1) * Real.exp (-ψ / 2) * Real.exp (-δ / ψ))) := by
   rw [gammaPDF, ← ENNReal.ofReal_mul (gammaPDFReal_nonneg ha (by norm_num) ψ),
-    gammaPDFReal, if_pos hψ.le]
+    gammaPDFReal, ite_eq_left hψ.le]
   congr 1
   rw [show -(2⁻¹ * ψ) = -ψ / 2 by ring]; ring
 
-/-- Pointwise integrand identity for the substitution `u = δ/ψ` (`p = -1` in `integral_comp_rpow_Ioi`):
+/-- Pointwise integrand identity for the substitution `u = δ/ψ` (`p = -1` in
+`integral_comp_rpow_Ioi`):
 `(|-1|·ψ^{-2})·((ψ^{-1})^{-a}·e^{-δψ^{-1}}) = ψ^{a-2}·e^{-δ/ψ}` on `ψ > 0`. -/
 private lemma covIntegrand_eq {a δ ψ : ℝ} (hψ : 0 < ψ) :
     (|(-1 : ℝ)| * ψ ^ ((-1 : ℝ) - 1))
@@ -120,7 +123,8 @@ is a roomy explicit numeral. -/
 lemma dlDensity_le
     -- USER-INPUT: nondegenerate DL shape parameter; BPPD §3.1 (Lemma 3.2)
     (ha : 0 < a)
-    -- USER-INPUT: shape ≤ 1/2 (D8: Γ(1-a) control in the density upper bound); BPPD §3.1 (Lemma 3.2)
+    -- USER-INPUT: shape ≤ 1/2 (D8: Γ(1-a) control in
+    -- the density upper bound); BPPD §3.1 (Lemma 3.2)
     (ha1 : a ≤ 1 / 2)
     -- USER-INPUT: positive threshold; BPPD §3.1 (Lemma 3.2)
     (hδ : 0 < δ)
@@ -145,7 +149,7 @@ lemma dlDensity_le
       (isUnit_iff_ne_zero.mpr (dlNormConst_pos ha).ne') _).mp h
   have hg : IntegrableOn (fun y => y ^ (1 - a - 1) * Real.exp (-(δ * y))) (Set.Ioi 0) := by
     have h := integrableOn_rpow_mul_exp_neg_mul_rpow (s := 1 - a - 1) (p := 1) (b := δ)
-      (by linarith) le_rfl hδ
+      (by linarith) (by norm_num) hδ
     simp only [Real.rpow_one, neg_mul] at h
     exact h
   have hJbigint : IntegrableOn (fun ψ => ψ ^ (a - 2) * Real.exp (-δ / ψ)) (Set.Ioi 0) := by
@@ -282,12 +286,14 @@ lemma dlDensity_ge_of_one_le
       show a * Real.sqrt 2 * Real.sqrt r * (64 * Real.sqrt r)
         = 64 * a * Real.sqrt 2 * (Real.sqrt r * Real.sqrt r) by ring,
       Real.mul_self_sqrt hr0.le]
-    nlinarith [mul_nonneg (sub_nonneg.mpr hsqrt2_ge) (show (0:ℝ) ≤ 64 * a * r by positivity)]
+    nlinarith [mul_nonneg (sub_nonneg.mpr hsqrt2_ge) (show (0 : ℝ) ≤ 64 * a * r by positivity)]
   calc a / 64 * r ^ (-(1 / 2) : ℝ) * Real.exp (-3 * Real.sqrt r)
       ≤ a / 8 * (2 * s) ^ (a - 2) * s * Real.exp (-3 * Real.sqrt r) :=
         mul_le_mul_of_nonneg_right (hfinal.trans hstep2) (Real.exp_pos _).le
     _ = L * s := by rw [hL_def]; ring
 
+set_option linter.style.whitespace false in
+-- The whitespace linter misaligns this signature at the comment before its first binder.
 /-- **P4 / Lemma 3.2 lower bound, uniform log-linear form (deviation D5).** Absorbing `|x|^{-1/2}`
 into the exponential (`|x|^{-1/2} e^{-3√|x|} ≥ e^{-3-(7/2)√|x|}`) gives a bound with a purely
 `√|x|`-linear exponent, valid for **every** `x` (the `|x| < 1` range via monotonicity P2):
@@ -337,8 +343,8 @@ lemma dlDensity_ge
 `ℙ_{DL,a}(|θ| > δ) ≤ (8 + 2 log(1/δ)) / Γ(a)` for every `0 < a ≤ 1`, `0 < δ < 1`.
 
 Deviation **D6**: proved *without* Alzer's inequality. Split the `Gamma`-mixture tail
-`∫ e^{-δ/ψ} dGamma_{a,1/2}` at `ψ = 4δ`: the small part is `≤ 4` via `e^{-u} ≤ u^{-(1-a)}`, the large
-part is `≤ C + 2 log(1/δ)` via `ψ^{a-1} ≤ max(ψ^{-1}, 1)`. Holds for all `δ ∈ (0,1)` (no "`δ`
+`∫ e^{-δ/ψ} dGamma_{a,1/2}` at `ψ = 4δ`: the small part is `≤ 4` via `e^{-u} ≤ u^{-(1-a)}`, the
+large part is `≤ C + 2 log(1/δ)` via `ψ^{a-1} ≤ max(ψ^{-1}, 1)`. Holds for all `δ ∈ (0,1)` (no "`δ`
 small"). `Γ` numerics use `Γ(1+a) ∈ [e^{-1}, 2]` (F2), not the paper's false "`Γ(x) ≥ 1/x`". -/
 lemma dlMarginal_abs_gt_le
     -- USER-INPUT: nondegenerate DL shape parameter; BPPD §3.1 (Lemma 3.3)
@@ -431,13 +437,15 @@ lemma dlMarginal_abs_gt_le
         refine Real.log_le_log (by positivity) ?_
         rw [div_le_div_iff₀ h4δ hδ]; linarith
       · rw [Set.Ioc_eq_empty (by linarith), Measure.restrict_empty, lintegral_zero_measure]
-        exact zero_le _
+        exact zero_le
     -- far part `Ioi 1`: `≤ ofReal 2`
     have hfar : ∫⁻ ψ in Set.Ioi 1, ENNReal.ofReal (G ψ) ∂volume ≤ ENNReal.ofReal 2 := by
       have hint_exp : IntegrableOn (fun ψ => Real.exp (-ψ / 2)) (Set.Ioi (1 : ℝ)) := by
         have h := integrableOn_exp_mul_Ioi (show (-1 / 2 : ℝ) < 0 by norm_num) 1
         refine h.congr_fun (fun ψ _ => ?_) measurableSet_Ioi
-        rw [show -1 / 2 * ψ = -ψ / 2 by ring]
+        change Real.exp (-1 / 2 * ψ) = Real.exp (-ψ / 2)
+        congr 1
+        ring
       have hval : ∫ ψ in Set.Ioi (1 : ℝ), Real.exp (-ψ / 2) = 2 * Real.exp (-1 / 2) := by
         rw [show (fun ψ : ℝ => Real.exp (-ψ / 2)) = (fun ψ => Real.exp (-1 / 2 * ψ)) by
           funext ψ; rw [show -ψ / 2 = -1 / 2 * ψ by ring]]
@@ -474,7 +482,7 @@ lemma dlMarginal_abs_gt_le
     calc _ ≤ ENNReal.ofReal (4 * δ ^ a) + (ENNReal.ofReal (Real.log (1 / δ)) + ENNReal.ofReal 2) :=
           add_le_add hsmall hlarge
       _ = ENNReal.ofReal (4 * δ ^ a + Real.log (1 / δ) + 2) := by
-          rw [ENNReal.ofReal_add (add_nonneg (by positivity) hlogpos) (by norm_num : (0:ℝ) ≤ 2),
+          rw [ENNReal.ofReal_add (add_nonneg (by positivity) hlogpos) (by norm_num : (0 : ℝ) ≤ 2),
             ENNReal.ofReal_add (by positivity) hlogpos, add_assoc]
   -- assemble: reduce the tail to `ofReal coeff * hbound`
   rw [dlMarginal_abs_gt_eq_mixture ha hδ.le, gammaMeasure]

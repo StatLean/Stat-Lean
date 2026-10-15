@@ -4,7 +4,8 @@ import Mathlib.Analysis.InnerProductSpace.Orthonormal
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.ContinuousFunctionalCalculus
 
 /-!
 # Joint-MGF / joint-covariance bricks
@@ -114,11 +115,11 @@ theorem gram_block_posSemidef {m : ℕ} (w : α) (g : Fin m → α)
         Matrix.one_apply]
       by_cases hij : i = j
       · subst hij
-        rw [if_pos rfl]
+        rw [ite_eq_left rfl]
         rw [@real_inner_self_eq_norm_sq]
         rw [hg.norm_eq_one i]
         ring
-      · rw [if_neg hij]
+      · rw [ite_eq_right hij]
         exact (hg.inner_eq_zero hij).symm
   rw [hentry]
   exact hPSD
@@ -201,8 +202,7 @@ theorem joint_covariance_block_posSemidef
                   (0 : Matrix (Fin 1) (Fin m) ℝ)
                   (0 : Matrix (Fin m) (Fin 1) ℝ)
                   (0 : Matrix (Fin m) (Fin m) ℝ)) i j * x j := by
-        simp [dotProduct, Matrix.mulVec, mul_comm, mul_left_comm, 
-          Pi.star_apply, 
+        simp [dotProduct, Matrix.mulVec, mul_comm, mul_left_comm, Pi.star_apply,
           star_trivial]
       rw [h_dotprod_form]
       -- Compute the double sum: only the (inl 0, inl 0) term is nonzero.

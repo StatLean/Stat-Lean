@@ -805,14 +805,14 @@ theorem dSeparated_self_left
     -- assuming `A`, `B`, `S` disjoint, so this is a Lean-side completion of the definition
     (hAS : A ⊆ S) :
     DSeparated r S A B :=
-  fun a ha _ _ c => c.blocked_of_start_mem (hAS ha)
+  fun _ ha _ _ c => c.blocked_of_start_mem (hAS ha)
 
 /-- **Degenerate case**: dual of `dSeparated_self_left`, via the last vertex of the chain. -/
 theorem dSeparated_self_right
     -- USER-INPUT: the second block sits inside the separator; see `dSeparated_self_left`
     (hBS : B ⊆ S) :
     DSeparated r S A B :=
-  fun _ _ b hb c => c.blocked_of_end_mem (hBS hb)
+  fun _ _ _ hb c => c.blocked_of_end_mem (hBS hb)
 
 /-- **Adjacent vertices are never d-separated.** The one-arrow chain `a → b` has two vertices,
 both ends, hence both non-colliders; if neither lies in `S` the chain is active. The directed
@@ -1206,7 +1206,8 @@ measure on the number of blocking colliders is needed.
 chain, respectively `S`-avoidance of the walk, supplies every non-membership of `S` that is
 needed — so the equivalence holds for arbitrary `A`, `B`, `S`. They are kept because the book
 assumes them: its blocking rule is stated for disjoint blocks. -/
-theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
+theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     -- ("let `A`, `B` and `S` be disjoint subsets")
     (hAB : Disjoint A B)
@@ -1275,7 +1276,8 @@ forces distinct vertices, and the two readings agree.
 above, and `Chain.exists_shorter_of_not_nodup` carries it as `IsAcyclicRel`. The three
 **disjointness hypotheses are not used at all**: the argument is chain-local and never looks at
 where `A`, `B` and `S` meet. They are kept to match Proposition 3.25's statement. -/
-theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
+theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     (hAB : Disjoint A B)
     -- USER-INPUT: the first block avoids the separator; Lauritzen Proposition 3.25, p. 48
@@ -1319,7 +1321,8 @@ Stated against the **abstract** relation `ci : Finset V → Finset V → Finset 
 class — the discrete mass relation, the Gaussian precision relation, the general `CondIndep` —
 gets the criterion once (Lauritzen's own remark after Proposition 3.4, p. 33, that these
 arguments depend only on the calculus). -/
-theorem condIndep_of_dSeparated (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (ci : Finset V → Finset V → Finset V → Prop)
+theorem condIndep_of_dSeparated (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (ci : Finset V → Finset V → Finset V → Prop)
     -- USER-INPUT: the directed global Markov property of the law; Lauritzen Corollary 3.23,
     -- p. 47, which is where (DG) is defined
     (hDG : IsDirectedGlobalMarkov D ci) (A B S : Finset V)

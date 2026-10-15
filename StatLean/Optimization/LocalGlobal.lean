@@ -74,7 +74,7 @@ theorem forall_le_of_isLocalMin
     (hloc : IsLocalMin f xstar) (y : E) :
     f xstar ≤ f y := by
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   -- Reach the metric ε-form of the local-min property.
   have hloc_ev : ∀ᶠ z in 𝓝 xstar, f xstar ≤ f z := hloc
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.mp hloc_ev

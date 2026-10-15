@@ -50,7 +50,7 @@ private noncomputable def scaledQMDPath
     · have hmap : Tendsto (fun t : ℝ => a * t) (𝓝[≠] 0) (𝓝[≠] 0) := by
         rw [tendsto_nhdsWithin_iff]
         refine ⟨?_, ?_⟩
-        · simpa using
+        · simpa using!
             (((continuous_const : Continuous (fun _ : ℝ => a)).mul continuous_id).tendsto 0
               |>.mono_left inf_le_left)
         · filter_upwards [self_mem_nhdsWithin] with t ht
@@ -79,7 +79,7 @@ private noncomputable def scaledQMDPath
       have hscoreP :
           (fun ω : Ω => (((a • γ.score : ↥(L2ZeroMean P)) : Ω → ℝ) ω)) =ᵐ[P]
             fun ω => a * (γ.score : Ω → ℝ) ω := by
-        simpa only [Pi.smul_apply, smul_eq_mul] using
+        simpa only [Pi.smul_apply, smul_eq_mul] using!
           (Lp.coeFn_smul a (γ.score : Lp ℝ 2 P))
       have hscoreDensity : ∀ᵐ ω ∂γ.dominating,
           P.rnDeriv γ.dominating ω ≠ 0 →
@@ -307,7 +307,7 @@ theorem hasLimitDistributionAt_of_isRegularAt
     HasLimitDistributionAt T_n P (ψ P) L := by
   let z : {g : ↥(L2ZeroMean P) // g ∈ T_set.carrier} :=
     ⟨0, paths.zero_mem⟩
-  simpa only [IsRegularAt, zero_mul, (paths.path z).curve_at_zero] using hreg z 0
+  simpa only [IsRegularAt, zero_mul, (paths.path z).curve_at_zero] using! hreg z 0
 
 /-- The forward implication: an asymptotically linear estimator with EIF is
 raw-regular with the efficient Gaussian limit and has that baseline limit.
@@ -345,7 +345,7 @@ theorem regular_and_gaussian_of_asymptoticallyLinear
   have h := hregND ag
   simpa only [C, saturatedConeOfChoice, ag, choice, targetedChoice, ↓reduceDIte,
     AsymptoticStatistics.Core.NondominatedQMDPath.QMDPath.toNondominatedQMDPath,
-    scaledQMDPath] using h
+    scaledQMDPath] using! h
 
 /-- The converse implication: raw regularity together with the baseline
 efficient Gaussian law forces the asymptotic-linear EIF expansion.

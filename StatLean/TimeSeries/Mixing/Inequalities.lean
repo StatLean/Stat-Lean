@@ -88,6 +88,8 @@ Processes* (1998), Thms 1.3–1.4. Hoeffding's covariance identity is from Hoeff
 (1940); its use here follows Doukhan (1994) §1.2.2.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
 
@@ -114,9 +116,9 @@ private lemma le_alphaMixCoeff_of_measurableSet {m₁ m₂ mΩ : MeasurableSpace
   have h1 : (μ (A' ∩ B')).toReal ≤ 1 := measureReal_le_one
   have h2 : (μ A').toReal ≤ 1 := measureReal_le_one
   have h3 : (μ B').toReal ≤ 1 := measureReal_le_one
-  have h4 : (0:ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
-  have h5 : (0:ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
-  have h6 : (0:ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
+  have h4 : (0 : ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
+  have h5 : (0 : ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
+  have h6 : (0 : ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
   rw [abs_le]
   refine ⟨by nlinarith, by nlinarith⟩
 
@@ -428,8 +430,8 @@ private lemma tail_holder {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbab
   refine key.trans_eq ?_
   rw [show ∫ ω, (|u ω| ^ r) ^ P ∂μ = ∫ ω, |u ω| ^ t ∂μ from integral_congr_ae
     (Eventually.of_forall e3)]
-  rw [show (1:ℝ) / P = r / t by rw [hP]; field_simp,
-    show (1:ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
+  rw [show (1 : ℝ) / P = r / t by rw [hP]; field_simp,
+    show (1 : ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
 
 
 /-- Markov/Chebyshev in the form needed below. -/
@@ -456,8 +458,8 @@ private lemma abs_clamp_le {c x : ℝ} (hc : 0 ≤ c) : |max (-c) (min c x)| ≤
 private lemma abs_sub_clamp_le_of_lt {c x : ℝ} (hc : 0 ≤ c) (hx : c < |x|) :
     |x - max (-c) (min c x)| ≤ |x| := by
   rcases le_total c x with h | h
-  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0:ℝ) ≤ x - c),
-      abs_of_nonneg (by linarith : (0:ℝ) ≤ x)]
+  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - c),
+      abs_of_nonneg (by linarith : (0 : ℝ) ≤ x)]
     linarith
   · have h2 : x ≤ -c := by
       rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hx <;> linarith
@@ -511,12 +513,12 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
         * (eLpNorm f (ENNReal.ofReal p) μ).toReal
         * (eLpNorm g (ENNReal.ofReal q) μ).toReal := by
   -- exponent bookkeeping
-  have hp0 : (0:ℝ) < p := lt_trans one_pos hp
-  have hq0 : (0:ℝ) < q := lt_trans one_pos hq
+  have hp0 : (0 : ℝ) < p := lt_trans one_pos hp
+  have hq0 : (0 : ℝ) < q := lt_trans one_pos hq
   have hip : 0 < 1 / p := by positivity
   have hiq : 0 < 1 / q := by positivity
   set p' : ℝ := p / (p - 1) with hp'def
-  have hp1 : (0:ℝ) < p - 1 := by linarith
+  have hp1 : (0 : ℝ) < p - 1 := by linarith
   have hp'0 : 0 < p' := by positivity
   have hinvp' : 1 / p' = 1 - 1 / p := by rw [hp'def]; field_simp
   have hp'1 : 1 < p' := by
@@ -556,12 +558,12 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
     have h := hgLq.integrable_norm_rpow (by simp [hq0]) (by simp)
     simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hq0.le] using h
   have hA : A = (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) := by
-    rw [hAdef, toReal_eLpNorm hfLp.aestronglyMeasurable,
+    rw [hAdef, toReal_eLpNorm,
       lpNorm_eq_integral_norm_rpow_toReal (by simp [hp0]) (by simp) hfLp.aestronglyMeasurable,
       ENNReal.toReal_ofReal hp0.le]
     simp [Real.norm_eq_abs, one_div]
   have hB : B = (∫ ω, |g ω| ^ q ∂μ) ^ (1 / q) := by
-    rw [hBdef, toReal_eLpNorm hgLq.aestronglyMeasurable,
+    rw [hBdef, toReal_eLpNorm,
       lpNorm_eq_integral_norm_rpow_toReal (by simp [hq0]) (by simp) hgLq.aestronglyMeasurable,
       ENNReal.toReal_ofReal hq0.le]
     simp [Real.norm_eq_abs, one_div]
@@ -575,7 +577,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   have hgLp' : MemLp g (ENNReal.ofReal p') μ :=
     hgLq.mono_exponent (ENNReal.ofReal_le_ofReal hp'q.le)
   have hfgint : Integrable (fun ω => f ω * g ω) μ := by
-    haveI : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
+    have : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
       constructor
       simpa using hconjp.inv_add_inv_ennreal
     exact hfLp.integrable_mul hgLp'
@@ -585,7 +587,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   rcases eq_or_lt_of_le hA0 with hA0' | hApos
   · have hfae : f =ᵐ[μ] 0 := by
       have hpne : ENNReal.ofReal p ≠ 0 := by simp [hp0]
-      refine (eLpNorm_eq_zero_iff hfLp.aestronglyMeasurable hpne).mp ?_
+      refine (eLpNorm_eq_zero_iff hpne).mp ?_
       have := hfLp.eLpNorm_ne_top
       rcases (ENNReal.toReal_eq_zero_iff _).mp hA0'.symm with h | h
       · exact h
@@ -601,7 +603,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   rcases eq_or_lt_of_le hB0 with hB0' | hBpos
   · have hgae : g =ᵐ[μ] 0 := by
       have hqne : ENNReal.ofReal q ≠ 0 := by simp [hq0]
-      refine (eLpNorm_eq_zero_iff hgLq.aestronglyMeasurable hqne).mp ?_
+      refine (eLpNorm_eq_zero_iff hqne).mp ?_
       have := hgLq.eLpNorm_ne_top
       rcases (ENNReal.toReal_eq_zero_iff _).mp hB0'.symm with h | h
       · exact h
@@ -696,7 +698,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
       hf''int.mul_bdd hg'm.aestronglyMeasurable hg'n
     have hfg''int : Integrable (fun ω => f ω * (g ω - g' ω)) μ := by
       have h : ∀ ω, f ω * (g ω - g' ω) = f ω * g ω - f ω * g' ω := by intro ω; ring
-      simpa [h] using hfgint.sub hfg'int
+      simpa [h] using! hfgint.sub hfg'int
     -- the three-term decomposition
     have e1 : (∫ ω, f ω * g' ω ∂μ) + (∫ ω, f ω * (g ω - g' ω) ∂μ) = ∫ ω, f ω * g ω ∂μ := by
       rw [← integral_add hfg'int hfg''int]
@@ -832,7 +834,7 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
     -- the exponent ledger
     have hβθ : β * (β ^ (-(1 / p)) * β ^ (-(1 / q))) = β ^ θ := by
       rw [← Real.rpow_add hβ0]
-      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1:ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
+      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1 : ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
             rw [Real.rpow_one]
         _ = β ^ (1 + (-(1 / p) + -(1 / q))) := (Real.rpow_add hβ0 _ _).symm
         _ = β ^ θ := by rw [hθdef]; congr 1; ring
@@ -871,11 +873,11 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
   have hcontα : ContinuousAt (fun y : ℝ => 8 * y ^ θ * A * B) α :=
     (((Real.continuousAt_rpow_const α θ (Or.inr hθ0.le)).const_mul 8).mul continuousAt_const).mul
       continuousAt_const
-  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0:ℝ))
+  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0 : ℝ))
       (𝓝 (8 * α ^ θ * A * B)) := by
-    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0:ℝ)) (𝓝 α) := by
+    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0 : ℝ)) (𝓝 α) := by
       have h2 : Continuous (fun ε : ℝ => α + ε) := continuous_const.add continuous_id
-      simpa using (h2.tendsto (0:ℝ)).mono_left nhdsWithin_le_nhds
+      simpa using (h2.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
     exact hcontα.tendsto.comp h1
   refine ge_of_tendsto hlim ?_
   filter_upwards [self_mem_nhdsWithin] with ε hε using main ε hε
@@ -922,7 +924,7 @@ theorem norm_integral_prod_sub_prod_integral_le_of_pos {k : ℕ}
     intro n
     filter_upwards [hbdd'] with ω hω
     rw [norm_prod]
-    exact Finset.prod_le_one (fun i _ => norm_nonneg _) (fun i _ => hω i)
+    exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) (fun i _ => hω i)
   have hint : ∀ l : Fin k, ‖∫ ω, ξ l ω ∂μ‖ ≤ 1 := by
     intro l
     have h := norm_integral_le_of_norm_le_const (μ := μ) (hbdd l)
@@ -1165,9 +1167,9 @@ private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
   have hC0 : 0 ≤ C := le_trans (abs_nonneg _) (hbdd 0).exists.choose_spec
   have hzero : ∀ t : ℤ, (∫ ω, X t ω ∂μ) = 0 :=
     integral_eq_zero_of_stat hstat hmeas hmean
-  have hprod0 : (0:ℝ) ≤ alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat :=
+  have hprod0 : (0 : ℝ) ≤ alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat :=
     mul_nonneg (alphaCoeff_nonneg' X _) (alphaCoeff_nonneg' X _)
-  have hC4 : (0:ℝ) ≤ C ^ 4 := by positivity
+  have hC4 : (0 : ℝ) ≤ C ^ 4 := by positivity
   -- (L) the left split: `X_a` against `X_b X_c X_d`
   have hL : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
       ≤ 4 * C ^ 4 * alphaCoeff X μ (b - a).toNat := by
@@ -1246,7 +1248,7 @@ private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
       ring
     linarith
   -- pick the split at the largest gap
-  have hextra : (0:ℝ) ≤ 16 * C ^ 4 *
+  have hextra : (0 : ℝ) ≤ 16 * C ^ 4 *
       (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by positivity
   rcases max_choice (b - a).toNat (max (c - b).toNat (d - c).toNat) with hmx | hmx
   · rw [hmx]; linarith
@@ -1294,7 +1296,7 @@ private theorem tuple4_comp_perm_invariant {Gt : (Fin 4 → ℕ) → ℝ}
   | mul x y hx hy ihx ihy =>
       intro f
       have hcomp : f ∘ (x * y) = (f ∘ x) ∘ y := by
-        funext a; simp [Equiv.Perm.mul_apply]
+        funext a; simp
       rw [hcomp, ihy (f ∘ x), ihx f]
 
 private theorem tuple4_swap_invariant {G : ℕ → ℕ → ℕ → ℕ → ℝ}
@@ -1513,7 +1515,7 @@ private theorem mixing_max_le_indicators {A : ℕ → ℝ} (hA0 : ∀ m, 0 ≤ A
         + (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3 := by
   rcases le_total g1 g2 with h12 | h12 <;> rcases le_total g2 g3 with h23 | h23 <;>
     rcases le_total g1 g3 with h13 | h13 <;>
-    simp_all [max_def] <;>
+    simp_all <;>
     split_ifs <;> linarith [hA0 g1, hA0 g2, hA0 g3]
 
 private theorem sum_triple_indicator_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hA0 : ∀ m, 0 ≤ A m)
@@ -1872,15 +1874,15 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
             * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω ∂μ := by
     rw [integral_congr_ae (ae_of_all _ fun ω =>
       sum_pow_four_expand (Finset.range n) fun t : ℕ => X ((t : ℤ) + 1) ω)]
-    rw [integral_finset_sum _ fun a _ => integrable_finset_sum _ fun b _ =>
-      integrable_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun a _ => integrable_finsetSum _ fun b _ =>
+      integrable_finsetSum _ fun c _ => integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun a _ => ?_
-    rw [integral_finset_sum _ fun b _ => integrable_finset_sum _ fun c _ =>
-      integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun b _ => integrable_finsetSum _ fun c _ =>
+      integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun b _ => ?_
-    rw [integral_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    rw [integral_finsetSum _ fun c _ => integrable_finsetSum _ fun d _ => hint a b c d]
     refine Finset.sum_congr rfl fun c _ => ?_
-    exact integral_finset_sum _ fun d _ => hint a b c d
+    exact integral_finsetSum _ fun d _ => hint a b c d
   rw [hexp]
   refine le_trans ?_ (hD n)
   refine Finset.sum_le_sum fun a _ => Finset.sum_le_sum fun b _ =>

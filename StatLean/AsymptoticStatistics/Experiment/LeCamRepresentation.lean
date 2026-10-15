@@ -82,6 +82,8 @@ van der Vaart's Theorem 8.3 / Theorem 7.10 specialize Le Cam's asymptotic
 representation theorem to the locally asymptotically normal case.
 -/
 
+set_option linter.style.longFile 1800
+
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped RealInnerProductSpace ENNReal
 
@@ -146,7 +148,7 @@ theorem joint_weak_subsequence_kernel
     fun n => (κ n) ×ₖ Kernel.deterministic (AsymptoticRepresentation.scoreSum ℓ n) (hΔ_meas n)
     with hjointK_def
   -- Markov-ness of the joint kernel (used for probability of marginals + bind).
-  haveI hjointK_Markov : ∀ n, IsMarkovKernel (jointK n) := fun n => by
+  have hjointK_Markov : ∀ n, IsMarkovKernel (jointK n) := fun n => by
     simp only [hjointK_def]
     infer_instance
   -- Short names for the joint and marginal pushforward sequences.
@@ -159,10 +161,10 @@ theorem joint_weak_subsequence_kernel
         (AsymptoticRepresentation.scoreSum ℓ n)
     with hΔseq_def
   -- The joint bind is a probability measure (`IsProbabilityMeasure` of `μ.bind κ` for Markov κ).
-  haveI h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n => inferInstance
-  haveI h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n => inferInstance
-  haveI h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
-    Measure.isProbabilityMeasure_map (hΔ_meas n).aemeasurable
+  have h_joint_prob : ∀ n, IsProbabilityMeasure (joint n) := fun n => inferInstance
+  have h_T_prob : ∀ n, IsProbabilityMeasure (Tseq n) := fun n => inferInstance
+  have h_Δ_prob : ∀ n, IsProbabilityMeasure (Δseq n) := fun n =>
+    (by infer_instance)
   -- First marginal of the joint kernel-bind equals `Tseq` (kernel-bind of `κ`).
   -- Proof: `(P^n).bind (κ_n ×ₖ det) = (κ_n ×ₖ det) ∘ₘ P^n`. Then
   -- `((κ_n ×ₖ det) ∘ₘ P^n).map Prod.fst = (Kernel.map (κ_n ×ₖ det) Prod.fst) ∘ₘ P^n`
@@ -495,9 +497,8 @@ theorem slutsky_bridge_of_lanResidual_kernel
     π.map (fun p : AsymptoticRepresentation.𝓨 d × AsymptoticRepresentation.Θ k =>
       (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) *
         ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫)) with hν_def
-  haveI hν_prob : IsProbabilityMeasure ν := by
-    refine Measure.isProbabilityMeasure_map ?_
-    fun_prop
+  have hν_prob : IsProbabilityMeasure ν := by
+    infer_instance
   -- Measurability of the inner-product map `δ ↦ ⟨h, δ⟩`.
   have h_inner_meas : Measurable (fun v : AsymptoticRepresentation.Θ k => ⟪h, v⟫) :=
     (continuous_const.inner continuous_id).measurable
@@ -525,7 +526,7 @@ theorem slutsky_bridge_of_lanResidual_kernel
   -- The compProd base measures.
   let Ptilde : ∀ n : ℕ, Measure ((Fin (φ n) → 𝓧) × AsymptoticRepresentation.𝓨 d) := fun n =>
     AsymptoticRepresentation.productMeasure M μ θ₀ (φ n) ⊗ₘ (κ (φ n))
-  haveI hPtilde_prob : ∀ n, IsProbabilityMeasure (Ptilde n) := fun n => inferInstance
+  have hPtilde_prob : ∀ n, IsProbabilityMeasure (Ptilde n) := fun n => inferInstance
   -- The kernel-bind = compProd-pushforward identities.
   have h_X_pushforward : ∀ n,
       (AsymptoticRepresentation.productMeasure M μ θ₀ (φ n)).bind
@@ -572,7 +573,7 @@ theorem slutsky_bridge_of_lanResidual_kernel
           ×ˢ Set.univ := by
     intro n
     ext ⟨ω, y⟩
-    simp only [Set.mem_setOf_eq, hX_def, hY_def, Prod.dist_eq, dist_self, Real.dist_eq,
+    simp only [Set.mem_ofPred_eq, hX_def, hY_def, Prod.dist_eq, dist_self, Real.dist_eq,
       Set.mem_prod, Set.mem_univ, and_true]
     rw [max_eq_right (abs_nonneg _), abs_sub_comm]
   -- The cylinder mass under compProd equals `(P^{φ n}) S × κ_{φ n}.univ = (P^{φ n}) S`.
@@ -596,7 +597,7 @@ theorem slutsky_bridge_of_lanResidual_kernel
     rw [Measure.compProd_apply_prod hS_meas MeasurableSet.univ]
     -- `∫_S (κ ω univ) ∂P = ∫_S 1 ∂P = P S` since `κ_{φ n}` is Markov.
     have h_kappa_univ : ∀ a, (κ (φ n)) a Set.univ = 1 := fun a => by
-      haveI : IsProbabilityMeasure ((κ (φ n)) a) :=
+      have : IsProbabilityMeasure ((κ (φ n)) a) :=
         (hκ_Markov (φ n)).isProbabilityMeasure a
       exact measure_univ
     simp_rw [h_kappa_univ]
@@ -741,8 +742,8 @@ theorem limit_law_under_h_kernel
     (continuous_const.inner continuous_id).measurable.sub measurable_const
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk (hg_meas.comp measurable_snd)
-  haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+  have h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
+    (by infer_instance)
   -- Measurability of `logLikelihood`.
   have hL_meas : ∀ n, Measurable (AsymptoticRepresentation.logLikelihood M θ₀ h n) :=
     fun n => AsymptoticRepresentation.logLikelihood_measurable M θ₀ h n
@@ -1170,11 +1171,11 @@ theorem LAN_representation_kernel
       ∀ h : AsymptoticRepresentation.Θ k, L h = (gauss h).bind κ' := by
   -- Derive `IsProbabilityMeasure (productMeasure M μ θ n)` internally from `hPDF`
   -- rather than requiring it as an external typeclass provider.
-  haveI : ∀ θ : AsymptoticRepresentation.Θ k, ∀ n,
+  have : ∀ θ : AsymptoticRepresentation.Θ k, ∀ n,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Convenient: instance is also inferred at `θ₀` for the joint-subseq lemma.
-  haveI hκM : ∀ n, IsMarkovKernel (κ n) := hκ_Markov
+  have hκM : ∀ n, IsMarkovKernel (κ n) := hκ_Markov
   -- At `h = 0`, `θ₀ + (√n)⁻¹ • 0 = θ₀`, so `hκ_weak 0` gives convergence under `P_θ₀^n`.
   have hκ_weak_0 : WeakConverges
       (fun n => (AsymptoticRepresentation.productMeasure M μ θ₀ n).bind (κ n)) (L 0) := by
@@ -1356,7 +1357,7 @@ theorem LAN_representation_kernel
                       (J.mulVec ((WithLp.equiv 2 _) h'))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε
@@ -1417,7 +1418,7 @@ theorem LAN_representation_along_subseq
           (AsymptoticRepresentation.representationKernel J π)) := by
   classical
   -- Derive product-measure probability instances internally from `hPDF`.
-  haveI hProd_prob : ∀ θ : AsymptoticRepresentation.Θ k, ∀ n,
+  have hProd_prob : ∀ θ : AsymptoticRepresentation.Θ k, ∀ n,
       IsProbabilityMeasure (AsymptoticRepresentation.productMeasure M μ θ n) :=
     fun θ n => AsymptoticRepresentation.productMeasure_isProbabilityMeasure M μ hPDF θ n
   -- Unpack `hPDF` into the per-parameter conditions that downstream helpers expect.
@@ -1559,7 +1560,7 @@ theorem LAN_representation_along_subseq
                       (J.mulVec ((WithLp.equiv 2 _) h'))⟫)|} := by
         intro n
         ext ω
-        simp only [Set.mem_setOf_eq, Real.dist_eq, hc_as_fisher]
+        simp only [Set.mem_ofPred_eq, Real.dist_eq, hc_as_fisher]
         rw [abs_sub_comm]
       simp_rw [h_set_eq]
       exact h_resid ε hε
@@ -1599,8 +1600,8 @@ theorem LAN_representation_along_subseq
   have htilt_meas : Measurable tilt_map :=
     measurable_fst.prodMk
       (((continuous_const.inner continuous_id).measurable.comp measurable_snd).sub_const _)
-  haveI h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map htilt_meas.aemeasurable
+  have h_tilt_prob : IsProbabilityMeasure (π.map tilt_map) :=
+    (by infer_instance)
   -- UI of `exp(logLikelihood)` along φ (full sequence + StrictMono.id_le).
   -- Derive the contiguity-footing companions internally from `hDQM` + `hPDF`
   -- (replaces the exact change-of-measure identity that required common support).
@@ -1705,15 +1706,15 @@ theorem LAN_representation_along_subseq
     rw [← ofReal_integral_eq_lintegral_ofReal h_int_integrable
         (Filter.Eventually.of_forall (fun _ => (Real.exp_pos _).le)),
       h_int_one, ENNReal.ofReal_one]
-  haveI hWD_prob : IsProbabilityMeasure (π.withDensity (fun p => ENNReal.ofReal
+  have hWD_prob : IsProbabilityMeasure (π.withDensity (fun p => ENNReal.ofReal
       (Real.exp (⟪h, p.2⟫ - c)))) := by
     refine ⟨?_⟩
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     exact h_lint_one
-  haveI hL_h_prob : IsProbabilityMeasure
+  have hL_h_prob : IsProbabilityMeasure
       (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
         (Real.exp (⟪h, p.2⟫ - c))))) :=
-    MeasureTheory.Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+    (by infer_instance)
   -- The Gaussian-shift bind equals the tilted-marginal target.
   have h_gauss_eq :
       Measure.map Prod.fst

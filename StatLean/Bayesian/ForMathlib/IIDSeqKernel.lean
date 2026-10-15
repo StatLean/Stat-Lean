@@ -60,7 +60,7 @@ theorem measurable_pi_fintype_const_kernel {ι' : Type*} [Fintype ι']
       exact iht.const_sub 1
   | iUnion g hgd hgm ihg =>
       simp_rw [measure_iUnion hgd hgm]
-      exact Measurable.ennreal_tsum ihg
+      exact Measurable.tsum ihg
 
 /-- The map `θ ↦ (κ θ)^{⊗ ℕ}` (countable iid product) is measurable, by π-system induction
 over the measurable cylinders. -/
@@ -83,7 +83,7 @@ theorem measurable_infinitePi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel
       exact iht.const_sub 1
   | iUnion g hgd hgm ihg =>
       simp_rw [measure_iUnion hgd hgm]
-      exact Measurable.ennreal_tsum ihg
+      exact Measurable.tsum ihg
 
 /-- The **infinite iid product kernel** `θ ↦ (κ θ)^{⊗ ℕ}` on `ℕ → 𝓧`: the law of an infinite
 iid sample from the model `κ θ` (the sampling model of Doob's consistency theorem). -/
@@ -104,7 +104,7 @@ theorem iidSeqKernel_map_restrict (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n :
     Kernel.map (iidSeqKernel κ) (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)
       = iidKernel κ n := by
   have hmeas : Measurable (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) :=
-    measurable_pi_lambda _ (fun i => measurable_pi_apply i.val)
+    Measurable.of_eval (fun i => measurable_pi_apply i.val)
   ext θ s hs
   rw [Kernel.map_apply _ hmeas, iidSeqKernel_apply, iidKernel_apply,
     ← AsymptoticStatistics.pi_const_eq_infinitePi_map (κ θ) n]

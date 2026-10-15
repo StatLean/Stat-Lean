@@ -72,7 +72,7 @@ private lemma setarPartition_eq_iInter {k : ℕ} (r : Fin k → ℝ) (i : Fin (k
       (⋂ j : Fin k, {x : ℝ | (j : ℕ) < (i : ℕ) → r j < x}) ∩
         ⋂ j : Fin k, {x : ℝ | (i : ℕ) ≤ (j : ℕ) → x ≤ r j} := by
   ext x
-  simp only [setarPartition, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+  simp only [setarPartition, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter]
 
 -- The **regime index of a point**: the number of thresholds strictly below `x`. Under
 -- `StrictMono r` the set `{j | r j < x}` is a down-closed initial segment of `Fin k`, so
@@ -89,13 +89,13 @@ private lemma mem_setarPartition_setarIndex {k : ℕ} {r : Fin k → ℝ} (hr : 
   refine ⟨fun j hj => ?_, fun j hj => ?_⟩
   · -- `j` is below the count, so `r j < x`: otherwise `{j' | r j' < x} ⊆ Iio j`.
     by_contra hx
-    push_neg at hx
+    push Not at hx
     have hsub : (Finset.univ.filter fun j' : Fin k => r j' < x) ⊆ Finset.Iio j := by
       intro j' hj'
       simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj'
       simp only [Finset.mem_Iio]
       by_contra hle
-      push_neg at hle
+      push Not at hle
       exact absurd (lt_of_lt_of_le (lt_of_lt_of_le hj' hx) (hr.monotone hle)) (lt_irrefl _)
     have hcard := Finset.card_le_card hsub
     rw [Fin.card_Iio] at hcard
@@ -103,7 +103,7 @@ private lemma mem_setarPartition_setarIndex {k : ℕ} {r : Fin k → ℝ} (hr : 
     omega
   · -- `j` is at or above the count, so `x ≤ r j`: otherwise `Iic j ⊆ {j' | r j' < x}`.
     by_contra hx
-    push_neg at hx
+    push Not at hx
     have hsub : Finset.Iic j ⊆ Finset.univ.filter fun j' : Fin k => r j' < x := by
       intro j' hj'
       simp only [Finset.mem_Iic] at hj'
@@ -194,11 +194,11 @@ private lemma sum_indicator_of_partition {k : ℕ} {A : Fin k → Set ℝ}
     (g : Fin k → ℝ) : ∑ i, (A i).indicator (fun _ => g i) y = g i0 := by
   classical
   have hone : (A i0).indicator (fun _ => g i0) y = g i0 := by
-    simp only [Set.indicator_apply, if_pos hy]
+    simp only [Set.indicator_apply, ite_eq_left hy]
   rw [← hone]
   refine Finset.sum_eq_single_of_mem i0 (Finset.mem_univ i0) fun i _ hne => ?_
   have hnot : y ∉ A i := fun hmem => Set.disjoint_left.mp (hdisj hne) hmem hy
-  simp only [Set.indicator_apply, if_neg hnot]
+  simp only [Set.indicator_apply, ite_eq_right hnot]
 
 -- Adding a constant to every branch of a partition indicator sum adds it once.
 private lemma sum_indicator_add_const {k : ℕ} {A : Fin k → Set ℝ}
@@ -261,8 +261,8 @@ private lemma nlARKernel_apply {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ} (hf
       (Fin.cons (f xe.1 + xe.2) (fun i => xe.1 i.castSucc) : Fin (P + 1) → ℝ) := by
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
-    · simpa using (hf.comp measurable_fst).add measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+    · simpa using! (hf.comp measurable_fst).add measurable_snd
+    · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
   rw [nlARKernel, Kernel.map_apply _ hmeas, Kernel.prod_apply, Kernel.id_apply,
     Kernel.const_apply, Measure.dirac_prod, Measure.map_map hmeas measurable_prodMk_left]
   rfl
@@ -296,7 +296,7 @@ private lemma map_snoc_prod_pi (n : ℕ) (ν : Measure ℝ) [IsProbabilityMeasur
     rw [measurable_pi_iff]
     refine Fin.lastCases ?_ ?_
     · simpa using measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+    · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_fst
   refine (Measure.pi_eq fun s hs => ?_).symm
   rw [Measure.map_apply hsnoc (MeasurableSet.univ_pi hs)]
   have hpre : (fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ)) ⁻¹'
@@ -320,7 +320,7 @@ private lemma nlAR_compProd_innov {α : Type*} [MeasurableSpace α] {P : ℕ}
     (μ : Measure α) [IsProbabilityMeasure μ] {g : α → (Fin (P + 1) → ℝ)} (hg : Measurable g) :
     (μ ⊗ₘ ((nlARKernel f ν).comap g hg)).map (fun p => (p.1, p.2 0 - f (g p.1)))
       = μ.prod ν := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   have hΦ : Measurable fun p : α × (Fin (P + 1) → ℝ) => (p.1, p.2 0 - f (g p.1)) :=
     measurable_fst.prodMk (((measurable_pi_apply 0).comp measurable_snd).sub
       (hf.comp (hg.comp measurable_fst)))
@@ -331,7 +331,7 @@ private lemma nlAR_compProd_innov {α : Type*} [MeasurableSpace α] {P : ℕ}
       (Fin.cons (f (g a) + e) (fun i => (g a) i.castSucc) : Fin (P + 1) → ℝ) := by
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
-    · simpa using measurable_const.add measurable_id
+    · simpa using! measurable_const.add measurable_id
     · exact fun i => by simp
   rw [Kernel.comap_apply, nlARKernel_apply hf ν (g a),
     Measure.map_apply hmc (measurable_prodMk_left (hΦ hs))]
@@ -349,19 +349,17 @@ private lemma chainWindowLaw_map_init_innov {P : ℕ} {f : (Fin (P + 1) → ℝ)
         (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
           (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)))
       = (chainWindowLaw (nlARKernel f ν) F k).prod ν := by
-  haveI := isMarkovKernel_nlARKernel hf ν
-  haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+  have := isMarkovKernel_nlARKernel hf ν
+  have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
   have hsnoc : Measurable fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
       (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) := by
     rw [measurable_pi_iff]
     refine Fin.lastCases ?_ ?_
     · simpa using measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+    · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_fst
   have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
       (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
-    (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
-      (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
-        (hf.comp (measurable_pi_apply _)))
+    by fun_prop
   have hstep : chainWindowLaw (nlARKernel f ν) F (k + 1)
       = ((chainWindowLaw (nlARKernel f ν) F k) ⊗ₘ
           ((nlARKernel f ν).comap (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) => w (Fin.last k))
@@ -389,10 +387,10 @@ private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → 
     (chainWindowLaw (nlARKernel f ν) F k).map
         (fun w (i : Fin k) => w i.succ 0 - f (w i.castSucc))
       = Measure.pi (fun _ : Fin k => ν) := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   induction k with
   | zero =>
-    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
+    have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
     have hconst : (fun (w : Fin 1 → (Fin (P + 1) → ℝ)) (i : Fin 0) =>
         w i.succ 0 - f (w i.castSucc)) = fun _ => (fun i : Fin 0 => (0 : ℝ)) := by
       funext w
@@ -401,23 +399,20 @@ private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → 
     rw [hconst, Measure.map_const, measure_univ, one_smul,
       Measure.pi_of_empty (fun _ : Fin 0 => ν) (fun _ : Fin 0 => (0 : ℝ))]
   | succ k ih =>
-    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+    have := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
     have hinnovk : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
         fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
-      measurable_pi_lambda _ fun _ =>
-        ((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
-          (hf.comp (measurable_pi_apply _))
+      Measurable.of_eval fun _ =>
+        by fun_prop
     have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
         (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
-      (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
-        (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
-          (hf.comp (measurable_pi_apply _)))
+      by fun_prop
     have hsnocR : Measurable fun q : (Fin k → ℝ) × ℝ =>
         (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ) := by
       rw [measurable_pi_iff]
       refine Fin.lastCases ?_ ?_
       · simpa using measurable_snd
-      · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+      · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_fst
     have hfac : (fun (w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) (i : Fin (k + 1)) =>
           w i.succ 0 - f (w i.castSucc))
         = ((fun q : (Fin k → ℝ) × ℝ => (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ)) ∘
@@ -455,7 +450,7 @@ private lemma nlAR_pair_shift {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ} (hf 
     {ν : Measure ℝ} [IsProbabilityMeasure ν] (F : Measure (Fin (P + 1) → ℝ))
     [IsProbabilityMeasure F] :
     (F ⊗ₘ nlARKernel f ν) (shiftSet P)ᶜ = 0 := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   have hA : MeasurableSet (shiftSet P) := measurableSet_shiftSet P
   rw [Measure.compProd_apply hA.compl]
   refine lintegral_eq_zero_of_ae_eq_zero ?_
@@ -464,13 +459,13 @@ private lemma nlAR_pair_shift {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ} (hf 
       (Fin.cons (f x + e) (fun i => x i.castSucc) : Fin (P + 1) → ℝ) := by
     rw [measurable_pi_iff]
     refine Fin.cases ?_ ?_
-    · simpa using measurable_const.add measurable_id
+    · simpa using! measurable_const.add measurable_id
     · exact fun i => by simp
   rw [nlARKernel_apply hf ν x,
     Measure.map_apply hm (measurable_prodMk_left hA.compl)]
-  convert measure_empty (μ := ν)
+  convert! measure_empty (μ := ν)
   ext e
-  simp only [Set.mem_preimage, Set.mem_compl_iff, shiftSet, Set.mem_setOf_eq,
+  simp only [Set.mem_preimage, Set.mem_compl_iff, shiftSet, Set.mem_ofPred_eq,
     Set.mem_empty_iff_false, iff_false, not_not]
   intro j
   simp
@@ -480,12 +475,12 @@ private lemma chainWindowLaw_one {S : Type*} [MeasurableSpace S] [StandardBorelS
     (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) [IsProbabilityMeasure π] :
     (chainWindowLaw κ π 1).map (fun w : Fin 2 → S => (w 0, w 1)) = π ⊗ₘ κ := by
   have hc : Measurable (fun (x : S) (_ : Fin 1) => x) :=
-    measurable_pi_lambda _ fun _ => measurable_id
+    Measurable.of_eval fun _ => measurable_id
   have hsnoc : Measurable fun wx : (Fin 1 → S) × S => (Fin.snoc wx.1 wx.2 : Fin 2 → S) := by
     rw [measurable_pi_iff]
     refine Fin.lastCases ?_ ?_
-    · simpa using measurable_snd
-    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+    · simpa using! measurable_snd
+    · exact fun i => by simpa using! (measurable_pi_apply i).comp measurable_fst
   have hsel : Measurable fun w : Fin 2 → S => (w 0, w 1) :=
     (measurable_pi_apply 0).prodMk (measurable_pi_apply 1)
   have hstep : chainWindowLaw κ π 1
@@ -544,7 +539,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
         (∀ t : ℤ, X' t =ᵐ[μ']
           fun ω => f (fun j : Fin (P + 1) => X' (t - 1 - (j : ℕ)) ω) + σ0 * ε' t ω) ∧
         IsStrictlyStationary X' μ' := by
-  haveI := isMarkovKernel_nlARKernel hf ν
+  have := isMarkovKernel_nlARKernel hf ν
   obtain ⟨Ω', mΩ', μ', Y, hprob, hYmeas, hwin⟩ :=
     exists_twoSided_stationary_chain (nlARKernel f ν) F hinv
   have hX'meas : ∀ t : ℤ, Measurable fun ω => Y t ω 0 :=
@@ -555,11 +550,10 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
   have hpair : ∀ t : ℤ, μ'.map (fun ω => (Y (t - 1) ω, Y t ω)) = F ⊗ₘ nlARKernel f ν := by
     intro t
     have hbig : Measurable fun ω (i : Fin 2) => Y (t - 1 + (i : ℕ)) ω :=
-      measurable_pi_lambda _ fun _ => hYmeas _
+      Measurable.of_eval fun _ => hYmeas _
     have h2 := congrArg
       (fun μ => Measure.map (fun w : Fin 2 → (Fin (P + 1) → ℝ) => (w 0, w 1)) μ)
       (hwin (t - 1) 1)
-    simp only at h2
     rw [Measure.map_map hsel hbig, chainWindowLaw_one] at h2
     rw [← h2]
     congr 1
@@ -601,7 +595,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     have := key (j : ℕ) j.isLt t
     simpa using this
   -- ### the innovations
-  haveI := hprob
+  have := hprob
   have hσ0 : σ0 ≠ 0 := ne_of_gt hσ
   have hZmeas : ∀ t : ℤ, Measurable fun ω => Y t ω 0 - f (Y (t - 1) ω) :=
     fun t => (hX'meas t).sub (hf.comp (hYmeas _))
@@ -614,15 +608,13 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
         = Measure.pi (fun _ : Fin k => ν) := by
     intro a k
     have hbig : Measurable fun ω (i : Fin (k + 1)) => Y (a - 1 + (i : ℕ)) ω :=
-      measurable_pi_lambda _ fun _ => hYmeas _
+      Measurable.of_eval fun _ => hYmeas _
     have hinnov : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
         fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
-      measurable_pi_lambda _ fun _ =>
-        ((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
-          (hf.comp (measurable_pi_apply _))
+      Measurable.of_eval fun _ =>
+        by fun_prop
     have h2 := congrArg (fun mm => Measure.map (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
       fun i : Fin k => w i.succ 0 - f (w i.castSucc)) mm) (hwin (a - 1) k)
-    simp only at h2
     rw [Measure.map_map hinnov hbig, chainWindowLaw_map_innov hf F k] at h2
     rw [← h2]
     congr 1
@@ -642,12 +634,11 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     intro t
     have hwin1 : Measurable fun ω (i : Fin 1) =>
         Y (t + (i : ℕ)) ω 0 - f (Y (t + (i : ℕ) - 1) ω) :=
-      measurable_pi_lambda _ fun _ => hZmeas _
+      Measurable.of_eval fun _ => hZmeas _
     have hev : ((Measure.pi fun _ : Fin 1 => ν).map fun v : Fin 1 → ℝ => v 0) = ν :=
       (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => ν) 0).map_eq
     have h2 := congrArg (fun mm : Measure (Fin 1 → ℝ) => mm.map fun v : Fin 1 → ℝ => v 0)
       (hinnovwin t 1)
-    simp only at h2
     rw [Measure.map_map (measurable_pi_apply 0) hwin1, hev] at h2
     rw [← h2]
     congr 1
@@ -705,7 +696,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
         have h1 := hN i i.2
         have hi : -(N : ℤ) + ((((i : ℤ) + (N : ℤ)).toNat : ℕ) : ℤ) = (i : ℤ) := by omega
         rw [hi]
-      show iIndepFun (fun (i : ↥s) (ω : Ω') =>
+      change iIndepFun (fun (i : ↥s) (ω : Ω') =>
         (Y (i : ℤ) ω 0 - f (Y ((i : ℤ) - 1) ω)) / σ0) μ'
       rw [← heq]
       exact hres
@@ -729,14 +720,14 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
       ⟨_, fun _ => rfl⟩
     have hWmeas : ∀ j : ℕ,
         Measurable fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω :=
-      fun j => measurable_pi_lambda _ fun _ => hYmeas _
+      fun j => Measurable.of_eval fun _ => hYmeas _
     have hmle : ∀ j : ℕ, m j ≤ mΩ' := fun j => by
       rw [hmdef j]; exact (hWmeas j).comap_le
     have hmono : Monotone m := by
       refine monotone_nat_of_le_succ fun j => ?_
       have hφ : Measurable fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
           fun i : Fin (j + 1) => w i.succ :=
-        measurable_pi_lambda _ fun _ => measurable_pi_apply _
+        Measurable.of_eval fun _ => measurable_pi_apply _
       have hcomp : (fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω)
           = (fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
               fun i : Fin (j + 1) => w i.succ) ∘
@@ -755,7 +746,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
       refine iSup₂_le fun s hs => ?_
       have hslt : s < t := hs
       obtain ⟨j, hj⟩ : ∃ j : ℕ, t - 1 - (j : ℤ) = s := ⟨(t - 1 - s).toNat, by omega⟩
-      show MeasurableSpace.comap (fun ω : Ω' => Y s ω 0) inferInstance ≤ ⨆ j : ℕ, m j
+      change MeasurableSpace.comap (fun ω : Ω' => Y s ω 0) inferInstance ≤ ⨆ j : ℕ, m j
       refine le_trans ?_ (le_iSup m j)
       have hcomp : (fun ω : Ω' => Y s ω 0)
           = (fun w : Fin (j + 1) → (Fin (P + 1) → ℝ) => w 0 0) ∘
@@ -773,12 +764,10 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
       intro j
       have hVmeas : Measurable fun ω (i : Fin (j + 1 + 1)) =>
           Y (t - 1 - (j : ℤ) + (i : ℕ)) ω :=
-        measurable_pi_lambda _ fun _ => hYmeas _
+        Measurable.of_eval fun _ => hYmeas _
       have hΘ : Measurable fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
           (Fin.init w, w (Fin.last (j + 1)) 0 - f (w (Fin.last j).castSucc)) :=
-        (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
-          (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
-            (hf.comp (measurable_pi_apply _)))
+        by fun_prop
       have hjoint : μ'.map (fun ω : Ω' =>
             ((fun i : Fin (j + 1) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω),
               Y t ω 0 - f (Y (t - 1) ω)))
@@ -787,7 +776,6 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
           Measure.map (fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
             (Fin.init w, w (Fin.last (j + 1)) 0 - f (w (Fin.last j).castSucc))) mm)
           (hwin (t - 1 - (j : ℤ)) (j + 1))
-        simp only at h2
         rw [Measure.map_map hΘ hVmeas, chainWindowLaw_map_init_innov hf F j] at h2
         rw [← h2]
         congr 1
@@ -841,18 +829,17 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     | succ n =>
       have hsel2 : Measurable fun w : Fin (n + 1) → (Fin (P + 1) → ℝ) =>
           fun i : Fin (n + 1) => w i 0 :=
-        measurable_pi_lambda _ fun _ => (measurable_pi_apply 0).comp (measurable_pi_apply _)
+        Measurable.of_eval fun _ => (measurable_pi_apply 0).comp (measurable_pi_apply _)
       have hstep : ∀ c : ℤ,
           (μ'.map fun ω (i : Fin (n + 1)) => Y ((i : ℕ) + 1 + c) ω 0)
             = (chainWindowLaw (nlARKernel f ν) F n).map
               (fun w : Fin (n + 1) → (Fin (P + 1) → ℝ) => fun i : Fin (n + 1) => w i 0) := by
         intro c
         have hbig : Measurable fun ω (i : Fin (n + 1)) => Y (1 + c + (i : ℕ)) ω :=
-          measurable_pi_lambda _ fun _ => hYmeas _
+          Measurable.of_eval fun _ => hYmeas _
         have h2 := congrArg
           (fun μ => Measure.map (fun w : Fin (n + 1) → (Fin (P + 1) → ℝ) =>
             fun i : Fin (n + 1) => w i 0) μ) (hwin (1 + c) n)
-        simp only at h2
         rw [Measure.map_map hsel2 hbig] at h2
         rw [← h2]
         congr 1
@@ -907,7 +894,7 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
     · have h0 : (0 : ℝ) ∈ ⋃ i : Fin 0, A i := by rw [hcov]; exact Set.mem_univ _
       simp at h0
     · exact h
-  haveI : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hkpos
+  have : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hkpos
   -- the uniform contraction rate and the intercept mass
   obtain ⟨lam, hlam⟩ : ∃ lam : ℝ, lam = Finset.univ.sup' Finset.univ_nonempty
       fun i : Fin k => ∑ j, |b i j| := ⟨_, rfl⟩
@@ -946,8 +933,8 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
       ProbabilityTheory.integral_id_gaussianReal
       hlam0 hlam1 hcst0
       (tarStateDrift_bound hdisj hcov d hlamle hcstle)
-  haveI := hFprob
-  haveI := isMarkovKernel_nlARKernel
+  have := hFprob
+  have := isMarkovKernel_nlARKernel
     (measurable_tarStateDrift b0 b hA d) (ProbabilityTheory.gaussianReal 0 v)
   -- the attracting law is invariant, and the brick turns it into a two-sided process
   have hinv : (nlARKernel (tarStateDrift b0 b A d)
@@ -978,7 +965,7 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
     (fun i => b0 i + ∑ j : Fin P, b i j * X' (t - 1 - (j : ℕ)) ω) (σ0 * ε' t ω)
     (X' (t - (d : ℤ)) ω)]
   rw [tarStateDrift, ← hthr]
-  simp only [Fin.coe_castSucc]
+  simp only [Fin.val_castSucc]
 
 /-- **FY eq. (4.2)** (the canonical toy SETAR): `X_t = −0.7 X_{t−1} + ε_t` when
 `X_{t−1} ≤ r` and `X_t = 0.7 X_{t−1} + ε_t` when `X_{t−1} > r` satisfies the two
@@ -1010,32 +997,29 @@ theorem exists_stationary_toy_setar [IsProbabilityMeasure μ] (r : ℝ)
     (A := fun i : Fin 2 => if i = 0 then {x : ℝ | x ≤ r} else {x : ℝ | r < x})
     (d := 1) ?_ ?_ ?_ one_pos ?_ le_rfl le_rfl hν hν2 hνmean
   · intro i
-    dsimp only
     by_cases h : i = 0
-    · rw [if_pos h]; exact measurableSet_Iic
-    · rw [if_neg h]; exact measurableSet_Ioi
+    · rw [ite_eq_left h]; exact measurableSet_Iic
+    · rw [ite_eq_right h]; exact measurableSet_Ioi
   · intro i j hij
-    dsimp only
     by_cases hi : i = 0
     · have hj : j ≠ 0 := fun h => hij (hi.trans h.symm)
-      rw [if_pos hi, if_neg hj]
+      rw [ite_eq_left hi, ite_eq_right hj]
       exact hd01
     · have hj : j = 0 := by
         by_contra hj0
         exact hij ((hfin i hi).trans (hfin j hj0).symm)
-      rw [if_neg hi, if_pos hj]
+      rw [ite_eq_right hi, ite_eq_left hj]
       exact hd01.symm
   · ext x
     simp only [Set.mem_iUnion, Set.mem_univ, iff_true]
     rcases le_or_gt x r with h | h
-    · exact ⟨0, by rw [if_pos rfl]; exact h⟩
-    · exact ⟨1, by rw [if_neg (by decide : ¬((1 : Fin 2) = 0))]; exact h⟩
+    · exact ⟨0, by rw [ite_eq_left rfl]; exact h⟩
+    · exact ⟨1, by rw [ite_eq_right (by decide : ¬((1 : Fin 2) = 0))]; exact h⟩
   · intro i
-    dsimp only
     by_cases h : i = 0
-    · rw [Fin.sum_univ_one, if_pos h]
+    · rw [Fin.sum_univ_one, ite_eq_left h]
       norm_num
-    · rw [Fin.sum_univ_one, if_neg h]
+    · rw [Fin.sum_univ_one, ite_eq_right h]
       norm_num
 
 end StatLean.TimeSeries

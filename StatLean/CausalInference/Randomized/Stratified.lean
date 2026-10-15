@@ -177,6 +177,8 @@ private lemma stratum_inter_swapA {g : Fin n → Fin K} {i j : Fin n} (hij : g i
   rw [Finset.mem_map_equiv]
   simp only [Finset.mem_inter, stratum, armIdx, Finset.mem_filter, Finset.mem_univ, true_and,
     Equiv.symm_swap, swapA, g_swap hij]
+  erw [Finset.mem_filter]
+  simp only [Finset.mem_univ, true_and]
 
 /-- The support of a **stratified randomized experiment**: assignments treating exactly
 `m k` units inside each stratum `k` (Ding Definition 5.1). -/
@@ -241,7 +243,9 @@ theorem stratifiedSupport_subset_completeSupport {g : Fin n → Fin K} {mk : Fin
     z ∈ completeSupport n (∑ k, mk k) := by
   classical
   have hz' := mem_stratifiedSupport_iff.mp hz
-  simp only [completeSupport, Finset.mem_filter, Finset.mem_univ, true_and, numTreated]
+  apply Finset.mem_filter.mpr
+  refine ⟨Finset.mem_univ _, ?_⟩
+  dsimp only [numTreated]
   rw [Finset.card_eq_sum_card_fiberwise (f := g) (t := (Finset.univ : Finset (Fin K)))
     (fun l _ => Finset.mem_univ _)]
   refine Finset.sum_congr rfl fun k _ => ?_

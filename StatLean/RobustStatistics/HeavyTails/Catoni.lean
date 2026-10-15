@@ -66,13 +66,13 @@ increasing function"). -/
 theorem catoniPsi_neg (x : ℝ) : catoniPsi (-x) = -catoniPsi x := by
   rcases lt_trichotomy x 0 with hx | hx | hx
   · have h1 : ¬ (0 ≤ x) := not_le.2 hx
-    have h2 : (0:ℝ) ≤ -x := by linarith
-    simp only [catoniPsi, if_pos h2, if_neg h1, neg_neg]
+    have h2 : (0 : ℝ) ≤ -x := by linarith
+    simp only [catoniPsi, ite_eq_left h2, ite_eq_right h1, neg_neg]
     ring_nf
   · simp [hx]
-  · have h1 : (0:ℝ) ≤ x := hx.le
-    have h2 : ¬ ((0:ℝ) ≤ -x) := by simpa using hx
-    simp only [catoniPsi, if_pos h1, if_neg h2]
+  · have h1 : (0 : ℝ) ≤ x := hx.le
+    have h2 : ¬ ((0 : ℝ) ≤ -x) := by simpa using hx
+    simp only [catoniPsi, ite_eq_left h1, ite_eq_right h2]
     ring_nf
 
 /-- **The upper log-companion bound** (`LM §2.2`): `ψ(x) ≤ log(1 + x + x²/2)` for all
@@ -89,7 +89,7 @@ theorem catoniPsi_le (x : ℝ) : catoniPsi x ≤ Real.log (1 + x + x ^ 2 / 2) :=
     have hnn : 0 ≤ Real.log (1 + x ^ 4 / 4) :=
       Real.log_nonneg (by nlinarith [sq_nonneg (x ^ 2)])
     rw [hprod] at hmul
-    simp only [catoniPsi, if_neg (not_le.2 hx)]
+    simp only [catoniPsi, ite_eq_right (not_le.2 hx)]
     linarith
 
 /-- **The lower log-companion bound** (`LM §2.2`, by antisymmetry):
@@ -103,12 +103,12 @@ theorem le_catoniPsi (x : ℝ) : -Real.log (1 - x + x ^ 2 / 2) ≤ catoniPsi x :
 
 /-- `ψ ≥ 0` on the nonnegative branch (`ψ(0) = 0` and `log` is nonnegative there). -/
 private theorem catoniPsi_nonneg_of_nonneg {y : ℝ} (hy : 0 ≤ y) : 0 ≤ catoniPsi y := by
-  simp only [catoniPsi, if_pos hy]
+  simp only [catoniPsi, ite_eq_left hy]
   exact Real.log_nonneg (by nlinarith [sq_nonneg y])
 
 /-- `ψ < 0` strictly on the negative branch. -/
 private theorem catoniPsi_neg_of_neg {y : ℝ} (hy : y < 0) : catoniPsi y < 0 := by
-  simp only [catoniPsi, if_neg (not_le.2 hy)]
+  simp only [catoniPsi, ite_eq_right (not_le.2 hy)]
   have : 0 < Real.log (1 - y + y ^ 2 / 2) :=
     Real.log_pos (by nlinarith [sq_nonneg y])
   linarith
@@ -117,16 +117,16 @@ private theorem catoniPsi_neg_of_neg {y : ℝ} (hy : y < 0) : catoniPsi y < 0 :=
 theorem catoniPsi_strictMono : StrictMono catoniPsi := by
   intro a b hab
   rcases le_or_gt 0 a with ha | ha
-  · have hb : (0:ℝ) ≤ b := ha.trans hab.le
-    simp only [catoniPsi, if_pos ha, if_pos hb]
+  · have hb : (0 : ℝ) ≤ b := ha.trans hab.le
+    simp only [catoniPsi, ite_eq_left ha, ite_eq_left hb]
     exact Real.log_lt_log (catoni_companion_pos a) (by nlinarith)
   · rcases le_or_gt 0 b with hb | hb
     · exact lt_of_lt_of_le (catoniPsi_neg_of_neg ha) (catoniPsi_nonneg_of_nonneg hb)
     · -- both on the negative branch: `1 − y + y²/2` is strictly decreasing there
-      simp only [catoniPsi, if_neg (not_le.2 ha), if_neg (not_le.2 hb)]
+      simp only [catoniPsi, ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb)]
       have h := Real.log_lt_log (catoni_companion_pos' b)
         (show 1 - b + b ^ 2 / 2 < 1 - a + a ^ 2 / 2 by
-          nlinarith [mul_pos (sub_pos.2 hab) (show (0:ℝ) < 2 - a - b by linarith)])
+          nlinarith [mul_pos (sub_pos.2 hab) (show (0 : ℝ) < 2 - a - b by linarith)])
       linarith
 
 /-- Catoni's `ψ` is continuous (the two branches agree at `0` with value `0`). -/
@@ -145,7 +145,7 @@ theorem catoniPsi_tendsto_atTop : Tendsto catoniPsi atTop atTop := by
     tendsto_atTop_mono (fun x => by nlinarith [sq_nonneg x] : ∀ x : ℝ, x ≤ 1 + x + x ^ 2 / 2)
       tendsto_id
   refine (Real.tendsto_log_atTop.comp hp).congr' ?_
-  filter_upwards [eventually_ge_atTop (0:ℝ)] with x hx
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
   simp [catoniPsi, hx, Function.comp]
 
 /-- Catoni's `ψ` tends to `−∞` at `−∞`. -/
@@ -170,7 +170,7 @@ def IsCatoniEstimate {n : ℕ} (α : ℝ) (x : Fin n → ℝ) (yhat : ℝ) : Pro
 observation), being a sum of strictly decreasing terms. -/
 theorem catoniR_strictAnti {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
     (x : Fin n → ℝ) : StrictAnti (catoniR α x) := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   intro a b hab
   refine Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun i _ => ?_
   exact catoniPsi_strictMono (mul_lt_mul_of_pos_left (by linarith) hα)
@@ -178,7 +178,7 @@ theorem catoniR_strictAnti {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
 /-- The estimating function is continuous in `y`. -/
 theorem catoniR_continuous {n : ℕ} (α : ℝ) (x : Fin n → ℝ) :
     Continuous (catoniR α x) :=
-  continuous_finset_sum _ fun i _ => catoniPsi_continuous.comp (by fun_prop)
+  continuous_finsetSum _ fun i _ => catoniPsi_continuous.comp (by fun_prop)
 
 /-- **Existence and uniqueness of Catoni's estimate** (`LM §2.2`, "the unique value `y`
 such that `R_{n,α}(y) = 0`"): for `α > 0` and a nonempty sample, the estimating function
@@ -186,7 +186,7 @@ is a continuous strictly decreasing bijection-onto-a-neighborhood-of-0 (it inher
 `±∞` limits of `ψ`), so it has exactly one root. -/
 theorem existsUnique_isCatoniEstimate {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα : 0 < α)
     (x : Fin n → ℝ) : ∃! yhat, IsCatoniEstimate α x yhat := by
-  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   -- A bracket built from the extreme observations: below `min xᵢ` every score is `> 0`,
   -- above `max xᵢ` every score is `< 0`. (Cheaper than transporting the `±∞` limits.)
   obtain ⟨i₀, hi₀⟩ := Finite.exists_min x
@@ -195,7 +195,7 @@ theorem existsUnique_isCatoniEstimate {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα :
   have hpa : 0 < catoniR α x (x i₀ - 1) := by
     refine Finset.sum_pos (fun i _ => ?_) Finset.univ_nonempty
     have h := catoniPsi_strictMono (mul_pos hα (by have := hi₀ i; linarith) :
-      (0:ℝ) < α * (x i - (x i₀ - 1)))
+      (0 : ℝ) < α * (x i - (x i₀ - 1)))
     simpa using h
   have hnb : catoniR α x (x i₁ + 1) < 0 := by
     refine Finset.sum_neg (fun i _ => ?_) Finset.univ_nonempty
@@ -422,10 +422,10 @@ private theorem integrable_exp_catoniR {n : ℕ} {X : Fin n → Ξ → ℝ} {α 
       (μprob.map (fun ω => (fun i => X i ω))) := by
     rw [hmap]; exact Integrable.fintype_prod (fun _ => hfi)
   have hgc : Continuous (fun x : Fin n → ℝ => ∏ i, f (x i)) :=
-    continuous_finset_prod _ fun i _ => hfc.comp (continuous_apply i)
+    continuous_finsetProd _ fun i _ => hfc.comp (continuous_apply i)
   have hcomp : Integrable (fun ξ => ∏ i, f (X i ξ)) μprob :=
     (integrable_map_measure hgc.aestronglyMeasurable
-      (measurable_pi_lambda _ hX_meas).aemeasurable).1 hF
+      (Measurable.of_eval hX_meas).aemeasurable).1 hF
   have heq : (fun ξ => Real.exp (catoniR α (fun i => X i ξ) y)) = fun ξ => ∏ i, f (X i ξ) := by
     funext ξ; rw [catoniR, Real.exp_sum]
   rw [heq]; exact hcomp
@@ -526,7 +526,7 @@ theorem catoni_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}
     · intro ξ hξ
       have h0 : catoniR α (fun i => X i ξ) (Yhat ξ) = 0 := hroot ξ
       have hanti := (catoniR_strictAnti hn hαpos (fun i => X i ξ)).antitone hξ
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [← Real.exp_zero]
       exact Real.exp_le_exp.2 (by linarith)
     · rw [show μ₀ - (μ₀ + B) = -B by ring]
@@ -538,7 +538,7 @@ theorem catoni_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}
     · intro ξ hξ
       have h0 : catoniR α (fun i => X i ξ) (Yhat ξ) = 0 := hroot ξ
       have hanti := (catoniR_strictAnti hn hαpos (fun i => X i ξ)).antitone hξ
-      simp only [Set.mem_setOf_eq, catoniR_neg_alpha]
+      simp only [Set.mem_ofPred_eq, catoniR_neg_alpha]
       rw [← Real.exp_zero]
       exact Real.exp_le_exp.2 (by linarith)
     · rw [show μ₀ - (μ₀ - B) = B by ring,
@@ -547,10 +547,10 @@ theorem catoni_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}
   have hsub : {ξ | B ≤ |Yhat ξ - μ₀|}
       ⊆ {ξ | μ₀ + B ≤ Yhat ξ} ∪ {ξ | Yhat ξ ≤ μ₀ - B} := by
     intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ
+    simp only [Set.mem_ofPred_eq] at hξ
     rcases le_abs.1 hξ with h | h
-    · exact Or.inl (by simp only [Set.mem_setOf_eq]; linarith)
-    · exact Or.inr (by simp only [Set.mem_setOf_eq]; linarith)
+    · exact Or.inl (by simp only [Set.mem_ofPred_eq]; linarith)
+    · exact Or.inr (by simp only [Set.mem_ofPred_eq]; linarith)
   calc μprob.real {ξ | B ≤ |Yhat ξ - μ₀|}
       ≤ μprob.real ({ξ | μ₀ + B ≤ Yhat ξ} ∪ {ξ | Yhat ξ ≤ μ₀ - B}) :=
         measureReal_mono hsub (measure_ne_top _ _)

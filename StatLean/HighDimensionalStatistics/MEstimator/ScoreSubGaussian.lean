@@ -16,8 +16,9 @@ $i$-th linear predictor. Under
   - (G2) the **bounded-curvature exponential family**: $0 \le \psi'' \le B^2$,
 
 each coordinate of the score (negative log-likelihood gradient) evaluated at the truth,
-$$ \bigl(\nabla L_n(\theta^\star)\bigr)_j \;=\; \frac1n\sum_{i=1}^n \bigl(\psi'(\eta_i) - y_i\bigr)\,x_{ij}, $$
-is a centered sub-Gaussian random variable with variance proxy $\le B^2 C^2 / n$.
+$$ \bigl(\nabla L_n(\theta^\star)\bigr)_j \;=\; \frac1n\sum_{i=1}^n \bigl(\psi'(\eta_i) -
+y_i\bigr)\,x_{ij}, $$ is a centered sub-Gaussian
+random variable with variance proxy $\le B^2 C^2 / n$.
 
 This is the deviation bound for the empirical score that drives the choice of regularization
 parameter $\lambda_n \asymp B C\sqrt{(\log d)/n}$ in the GLM Lasso/M-estimator rate. The mean-zero
@@ -26,18 +27,18 @@ property uses $\mathbb{E}[y_i] = \psi'(\eta_i)$, the standard exponential-family
 **Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
 within the proof of Corollary 9.26 (p. 288). Conditions (G1)/(G2) and the per-term score
-$V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ follow the book's GLM setup. The variance proxy stated here,
-$B^2 C^2/n$, is the form provable from these hypotheses; the book quotes the corresponding
+$V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ follow the book's GLM setup. The variance proxy stated
+here, $B^2 C^2/n$, is the form provable from these hypotheses; the book quotes the corresponding
 sub-Gaussian tail with the same $B^2 C^2$ scale.
 
-**Proof formalization notes.** The per-term variable $V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ has MGF
-$\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s = -t\,x_{ij}$, obtained from
-the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor remainder with
-$\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is centered sub-Gaussian
-with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and rescaling by $1/n$
-(reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and applying (G1) gives the
-final proxy $B^2 C^2 / n$. Mean-zero of each term comes from $\mathbb{E}[y_i] = \psi'(\eta_i)$, derived
-here as the derivative of the MGF at $0$.
+**Proof formalization notes.** The per-term variable $V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ has
+MGF $\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s = -t\,x_{ij}$,
+obtained from the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor
+remainder with $\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is
+centered sub-Gaussian with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and
+rescaling by $1/n$ (reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and
+applying (G1) gives the final proxy $B^2 C^2 / n$. Mean-zero of each term comes from
+$\mathbb{E}[y_i] = \psi'(\eta_i)$, derived here as the derivative of the MGF at $0$.
 
 **Bibliographic comments.** High-dimensional analysis of the GLM Lasso originates with
 S. A. van de Geer, "High-dimensional generalized linear models and the lasso," *The Annals of
@@ -74,7 +75,7 @@ so `0` lies in its interior — the hypothesis needed for `deriv_mgf_zero` / int
 private lemma y_integrableExpSet_univ (M : GLMExpFamily n d μ) (i : Fin n) :
     integrableExpSet (M.y i) μ = Set.univ := by
   ext t
-  simp only [integrableExpSet, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
   exact y_exp_integrable M i t
 
 /-- The mean function identity `E[yᵢ] = ψ'(ηᵢ)`. The mean is the derivative of the MGF at `0`
@@ -92,7 +93,7 @@ private lemma y_mean (M : GLMExpFamily n d μ) (i : Fin n) :
   have hinner : HasDerivAt (fun s => M.ψ (η + s) - M.ψ η) (M.ψ' η) 0 := by
     have h1 : HasDerivAt (fun s => M.ψ (η + s)) (M.ψ' η) 0 := by
       have := (M.hψ' (η + 0)).comp 0 ((hasDerivAt_id 0).const_add η)
-      simpa using this
+      simpa using! this
     simpa using h1.sub_const (M.ψ η)
   have hderiv : HasDerivAt (fun s => Real.exp (M.ψ (η + s) - M.ψ η)) (M.ψ' η) 0 := by
     simpa using hinner.exp
@@ -103,7 +104,7 @@ private lemma y_mean (M : GLMExpFamily n d μ) (i : Fin n) :
 `mgf Vᵢⱼ μ t = exp(ψ(ηᵢ + (−t·xᵢⱼ)) − ψ(ηᵢ) − (−t·xᵢⱼ)·ψ'(ηᵢ)) ≤ exp(B²·xᵢⱼ²·t²/2)`. -/
 theorem score_term_hasSubgaussianMGF (M : GLMExpFamily n d μ) (i : Fin n) (j : Fin d) :
     HasSubgaussianMGF (fun ω => (M.ψ' (linPred M.X M.θstar i) - M.y i ω) * M.X i j)
-      ⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ μ := by
+      (NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) μ := by
   set η := linPred M.X M.θstar i with hη
   set a := M.X i j with ha
   refine ⟨?_, ?_⟩
@@ -123,19 +124,22 @@ theorem score_term_hasSubgaussianMGF (M : GLMExpFamily n d μ) (i : Fin n) (j : 
         funext ω; ring
       rw [hfun, mgf_const_add, mgf_const_mul, M.hmgf i, ← hη, ← Real.exp_add]
       congr 1; ring
-    rw [hmgfeq, NNReal.coe_mk]
+    rw [hmgfeq]
+    change Real.exp (M.ψ (η + (-a * t)) - M.ψ η - (-a * t) * M.ψ' η)
+      ≤ Real.exp ((M.B ^ 2 * a ^ 2) * t ^ 2 / 2)
     apply Real.exp_le_exp.mpr
     calc M.ψ (η + (-a * t)) - M.ψ η - (-a * t) * M.ψ' η
         ≤ M.B ^ 2 / 2 * (-a * t) ^ 2 :=
           psi_taylor_upper M.ψ M.ψ' M.ψ'' M.B M.hψ' M.hψ'' M.hψ''_le η (-a * t)
       _ = M.B ^ 2 * a ^ 2 * t ^ 2 / 2 := by ring
 
-/-- **GLM score coordinate sub-Gaussianity.** Under column normalization (G1, `IsColumnNormalized X C`)
-and the GLM exp-family with `0 ≤ ψ'' ≤ B²` (G2, in `M`), the score coordinate
-`scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ` is sub-Gaussian with variance proxy `B²C²/n`. -/
+/-- **GLM score coordinate sub-Gaussianity.** Under column normalization (G1,
+`IsColumnNormalized X C`) and the GLM exp-family with `0 ≤ ψ'' ≤ B²` (G2, in `M`), the score
+coordinate `scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ`
+is sub-Gaussian with variance proxy `B²C²/n`. -/
 theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (C : ℝ) (hC : IsColumnNormalized M.X C) (hn : 0 < n) (j : Fin d) :
-    IsSubGaussian (scoreCoord M j) ⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ μ := by
+    IsSubGaussian (scoreCoord M j) (NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) μ := by
   set V : Fin n → Ω → ℝ :=
     fun i ω => (M.ψ' (linPred M.X M.θstar i) - M.y i ω) * M.X i j with hV
   -- Independence of the per-term family from `M.hindep`.
@@ -143,11 +147,11 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
     M.hindep.comp (fun i x => (M.ψ' (linPred M.X M.θstar i) - x) * M.X i j)
       (fun i => (measurable_const.sub measurable_id).mul measurable_const)
   -- Each per-term variable is sub-Gaussian with proxy `B²xᵢⱼ²`.
-  have hV_sg : ∀ i, HasSubgaussianMGF (V i) ⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ μ :=
+  have hV_sg : ∀ i, HasSubgaussianMGF (V i) (NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) μ :=
     fun i => score_term_hasSubgaussianMGF M i j
   -- Sum over the independent terms.
   have hsum : HasSubgaussianMGF (fun ω => ∑ i, V i ω)
-      (∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0)) μ :=
+      (∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0)) μ :=
     HasSubgaussianMGF.sum_of_iIndepFun hV_indep (fun i _ => hV_sg i)
   -- Rescale by `1/n`.
   have hscaled := hsum.const_mul (1 / (n : ℝ))
@@ -171,40 +175,41 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
       funext ω; simp only [scoreCoord, hV]
     simp only [hsc_eq]
     rw [integral_const_mul,
-        integral_finset_sum Finset.univ (fun i _ => (hV_sg i).integrable),
+        integral_finsetSum Finset.univ (fun i _ => (hV_sg i).integrable),
         Finset.sum_congr rfl (fun i _ => hVi i), Finset.sum_const_zero, mul_zero]
   -- Proxy monotonicity: the rescaled proxy `(1/n²)∑ᵢ B²xᵢⱼ²` is `≤ B²C²/n` by (G1).
   have hn_pos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   have hB2 : (0 : ℝ) ≤ M.B ^ 2 := sq_nonneg _
   -- Proxy bound in `ℝ≥0` (cast to `ℝ` and clear denominators).
-  have hproxy : (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩
-        * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
-      ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
+  have hproxy : ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity))
+        * ∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0))
+      ≤ ((NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) : ℝ≥0) := by
     -- Bound the sum by `B²·(n·C²)` entirely within `ℝ≥0` (cast termwise via the sum coercion).
     have hreal : ∑ i, M.B ^ 2 * M.X i j ^ 2 ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2) := by
       rw [← Finset.mul_sum]
       exact mul_le_mul_of_nonneg_left (hC j) hB2
-    have hsum_le : (∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
-        ≤ (⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ : ℝ≥0) := by
+    have hsum_le : (∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0))
+        ≤ ((NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity)) : ℝ≥0) := by
       apply NNReal.coe_le_coe.mp
-      rw [NNReal.coe_mk]
-      refine le_trans (le_of_eq ?_) hreal
-      refine (NNReal.coe_sum _ _).trans ?_
-      simp only [NNReal.coe_mk]
-    calc (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-            * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0)
-          ≤ (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-            * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ :=
-            mul_le_mul_of_nonneg_left hsum_le (zero_le _)
-      _ = ⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ := by
-            rw [show (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
-                  * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩
-                = ⟨(1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2)), by positivity⟩ from rfl]
+      rw [NNReal.coe_sum]
+      change (∑ i, M.B ^ 2 * M.X i j ^ 2) ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2)
+      exact hreal
+    calc ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+            * ∑ i, ((NNReal.mk (M.B ^ 2 * M.X i j ^ 2) (by positivity)) : ℝ≥0)
+          ≤ ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+            * (NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity)) :=
+            mul_le_mul_of_nonneg_left hsum_le (zero_le)
+      _ = (NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) := by
+            rw [show ((NNReal.mk ((1 / (n : ℝ)) ^ 2) (by positivity)) : ℝ≥0)
+                  * (NNReal.mk (M.B ^ 2 * ((n : ℝ) * C ^ 2)) (by positivity))
+                = (NNReal.mk ((1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2))) (by positivity))
+                    from rfl]
             apply NNReal.coe_injective
-            simp only [NNReal.coe_mk]
+            change (1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2))
+              = M.B ^ 2 * C ^ 2 / n
             field_simp
   have hup : HasSubgaussianMGF (fun ω => (1 / (n : ℝ)) * ∑ i, V i ω)
-      (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) μ :=
+      ((NNReal.mk (M.B ^ 2 * C ^ 2 / n) (by positivity)) : ℝ≥0) μ :=
     ⟨hscaled.integrable_exp_mul, fun t => (hscaled.mgf_le t).trans
       (Real.exp_le_exp.mpr (by gcongr; exact_mod_cast hproxy))⟩
   -- Assemble: centered (mean zero) sub-Gaussian.

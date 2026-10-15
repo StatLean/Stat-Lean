@@ -78,7 +78,7 @@ private theorem hasSum_sq_iff {f : ι → E} {h : E} :
 /-- The defining `HasSum` of the `ℓ²` norm, specialized to `p = 2`. -/
 private theorem lp2_hasSum_sq (x : lp (fun _ : ι => 𝕜) 2) :
     HasSum (fun i => ‖x i‖ ^ 2) (‖x‖ ^ 2) := by
-  have h2 : (0:ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
+  have h2 : (0 : ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
   simpa using lp.hasSum_norm h2 x
 
 /-- An orthonormal basis (as a Hilbert basis) is a Parseval frame. -/
@@ -90,7 +90,7 @@ theorem HilbertBasis.isParsevalFrame [CompleteSpace E] (e : HilbertBasis ι 𝕜
 of a Hilbert basis of `E` onto a closed subspace `M` is a Parseval frame for `M`. -/
 theorem isParsevalFrame_orthogonalProjection [CompleteSpace E]
     (e : HilbertBasis ι 𝕜 E) (M : Submodule 𝕜 E) [CompleteSpace M] :
-    IsParsevalFrame 𝕜 fun i => M.orthogonalProjection (e i) := by
+    IsParsevalFrame 𝕜 fun i => M.orthogonalProjectionOnto (e i) := by
   intro h
   have := HilbertBasis.isParsevalFrame (𝕜 := 𝕜) e (h : E)
   simpa using this

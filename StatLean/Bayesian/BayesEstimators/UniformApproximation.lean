@@ -155,7 +155,7 @@ private lemma isMarkovKernel_bvmGaussKernel (J : Matrix (Fin k) (Fin k) ℝ)
 /-- Measurability of the Bernstein–von Mises deviation in the sample. -/
 private lemma measurable_bvmTV (hsc : Measurable sc) (n : ℕ) :
     Measurable fun ω : Fin n → 𝓧 => bvmTV κ π θ₀ J sc n ω := by
-  haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+  have := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
   exact measurable_tvDist_kernel (bvmLocalPosterior κ π θ₀ n) (bvmGaussKernel J hsc n)
 
 /-! ### Convergence in probability: sums, tight multiples, and rate extraction -/
@@ -172,13 +172,13 @@ private lemma tendsto_prob_zero_add {Ω : ℕ → Type*} [∀ n, MeasurableSpace
       ⊆ {ω | δ / 2 ≤ a n ω} ∪ {ω | δ / 2 ≤ b n ω} := by
     intro n ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hcon
     have hlt : a n ω + b n ω < δ / 2 + δ / 2 := ENNReal.add_lt_add hcon.1 hcon.2
     rw [ENNReal.add_halves] at hlt
     exact absurd hω (not_le.2 hlt)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
     (h := fun n => P n {ω | δ / 2 ≤ a n ω} + P n {ω | δ / 2 ≤ b n ω})
-    tendsto_const_nhds ?_ (fun n => zero_le _) (fun n => ?_)
+    tendsto_const_nhds ?_ (fun n => zero_le) (fun n => ?_)
   · simpa using (ha _ hhalf).add (hb _ hhalf)
   · exact (measure_mono (hsub n)).trans (measure_union_le _ _)
 
@@ -201,7 +201,7 @@ private lemma tendsto_prob_zero_mul_of_tight {Ω : ℕ → Type*} [∀ n, Measur
   have hsub : {ω | δ ≤ D n ω * T n ω} ⊆ {ω | C < D n ω} ∪ {ω | δ / C ≤ T n ω} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hcon
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, not_lt] at hcon
     have h3 : D n ω * T n ω ≤ C * T n ω := by gcongr; exact hcon.1
     have h4 : T n ω * C < δ / C * C := ENNReal.mul_lt_mul_left hC0 hCtop hcon.2
     rw [ENNReal.div_mul_cancel hC0 hCtop] at h4
@@ -243,7 +243,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
   have hb0 : Tendsto b atTop (𝓝 0) := by
     have h1 : Tendsto (fun n => (∫⁻ ω, T n ω ∂(P n)).toReal) atTop (𝓝 0) := by
       have h := (ENNReal.tendsto_toReal (a := 0) (by simp)).comp hint
-      simpa using h
+      simpa using! h
     have h2 : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
     have h3 := h1.max h2
@@ -283,7 +283,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
       have hsub : P n {ω | δ ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
           ≤ P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω} :=
         measure_mono fun ω hω => by
-          simp only [Set.mem_setOf_eq] at hω ⊢
+          simp only [Set.mem_ofPred_eq] at hω ⊢
           exact (min_le_left δ 1).trans hω
       refine hsub.trans ?_
       calc P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
@@ -315,7 +315,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
         have hcont : ContinuousAt (fun x : ℝ => x ^ (1 - q * p)) 0 :=
           Real.continuousAt_rpow_const 0 (1 - q * p) (Or.inr hqp.le)
         have h := hcont.tendsto.comp hb0
-        simpa [Real.zero_rpow (ne_of_gt hqp)] using h
+        simpa [Real.zero_rpow (ne_of_gt hqp)] using! h
       have h := hb0.add hlim
       simp only [zero_add] at h
       exact h.congr fun n => (heq n).symm
@@ -325,7 +325,7 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
         (Or.inr (ENNReal.inv_ne_top.mpr hδ'0))
       simpa using h
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
-      tendsto_const_nhds hfinal (fun n => zero_le _) hbnd
+      tendsto_const_nhds hfinal (fun n => zero_le) hbnd
 
 /-! ### The Gaussian tails -/
 
@@ -441,11 +441,11 @@ private lemma gaussTail_tendsto_prob
       have h3 := Real.rpow_le_rpow (norm_nonneg (bvmEffScore J sc n ω + z)) h2 hp
       linarith
     · rw [Set.indicator_of_notMem hz]
-      exact zero_le _
+      exact zero_le
   filter_upwards [hKev, hE0.eventually (Iio_mem_nhds hδ)] with n h1 h2
   refine le_trans (measure_mono ?_) h1
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω ⊢
+  simp only [Set.mem_ofPred_eq] at hω ⊢
   by_contra hcon
   rw [not_lt] at hcon
   exact absurd hω (not_le.2 (lt_of_le_of_lt (hkey n ω hcon) h2))
@@ -473,7 +473,7 @@ private lemma tight_polyEnvelope
   · filter_upwards [hKev] with n hn
     refine le_trans (measure_mono ?_) hn
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     by_contra hcon
     rw [not_lt] at hcon
     have hΔ : ‖bvmEffScore J sc n ω‖ ≤ c * K :=
@@ -512,7 +512,7 @@ private lemma bpe_two_sided
                 + ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
                     ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω))) := by
   classical
-  haveI hGprob : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+  have hGprob : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
     change IsProbabilityMeasure (multivariateGaussian _ _)
     infer_instance
   set Δ := bvmEffScore J sc n ω with hΔ
@@ -554,7 +554,7 @@ private lemma bpe_two_sided
       rw [hB]
       gcongr
     · rw [Set.indicator_of_notMem hh]
-      exact zero_le _
+      exact zero_le
   -- the two truncated comparisons
   have hTVP : ∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn
       ≤ ∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn + D * B * tv := by
@@ -653,7 +653,7 @@ theorem posteriorRisk_shifted_majorant
           bpeGaussCriterion J ℓ τ
             ≤ bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω + Mn n ω := by
   classical
-  haveI hPn : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+  have hPn : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
     AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
       M μ hPDF θ₀ n
   have hrpow : Continuous fun t : ℝ => t ^ p :=
@@ -666,7 +666,7 @@ theorem posteriorRisk_shifted_majorant
     fun n => measurable_bvmTV hsc n
   have htvle : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmTV κ π θ₀ J sc n ω ≤ 1 := by
     intro n ω
-    haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+    have : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
       change IsProbabilityMeasure (multivariateGaussian _ _)
       infer_instance
     exact tvDist_le_one _ _
@@ -713,7 +713,7 @@ theorem posteriorRisk_shifted_majorant
     have h4 : Measurable fun ω : Fin n → 𝓧 =>
         ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
           ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω) := by
-      haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+      have := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
       exact Measurable.setLIntegral_kernel (κ := bvmGaussKernel J hsc n) hWmeas
         Metric.isOpen_ball.measurableSet.compl
     exact h1.mul (((htvmeas n).const_mul _).add (h3.add h4))

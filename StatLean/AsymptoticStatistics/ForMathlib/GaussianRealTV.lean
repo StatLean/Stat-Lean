@@ -117,7 +117,7 @@ theorem gaussianReal_TV_tendsto
     Filter.Eventually.of_forall fun x => by
       have h1 : 0 ≤ min (f n x) (f_inf x) := le_min (h_nn_n n x) (h_nn_inf x)
       have h2 : min (f n x) (f_inf x) ≤ f_inf x := min_le_right _ _
-      simpa [Real.norm_eq_abs, abs_of_nonneg h1] using h2
+      simp [Real.norm_eq_abs, abs_of_nonneg h1]
   have h_min_lim : ∀ᵐ x, Tendsto (fun n => min (f n x) (f_inf x)) atTop
       (𝓝 (f_inf x)) := by
     refine Filter.Eventually.of_forall fun x => ?_
@@ -149,7 +149,7 @@ theorem gaussianReal_TV_tendsto
     refine Filter.Eventually.of_forall fun x => ?_
     have h1 : 0 ≤ min (f n x) (f_inf x) := le_min (h_nn_n n x) (h_nn_inf x)
     have h2 : min (f n x) (f_inf x) ≤ f_inf x := min_le_right _ _
-    simpa [Real.norm_eq_abs, abs_of_nonneg h1, abs_of_nonneg (h_nn_inf x)] using h2
+    simp [Real.norm_eq_abs, abs_of_nonneg h1]
   -- ∫|f n - f_inf| = (∫ f n) + (∫ f_inf) - 2·(∫ min) = (∫ f n) + 1 - 2·(∫ min).
   have h_int_eq : ∀ n, ∫ x, |f n x - f_inf x| =
       (∫ x, f n x) + 1 - 2 * ∫ x, min (f n x) (f_inf x) := by

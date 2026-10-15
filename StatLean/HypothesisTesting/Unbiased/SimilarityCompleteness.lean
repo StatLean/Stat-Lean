@@ -91,9 +91,9 @@ theorem hasNeymanStructure_of_boundedlyComplete
     -- USER-INPUT: `φ` is similar of size `α` on the boundary set
     (hsim : IsSimilar P ω α φ) :
     ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ := by
-  haveI := hQ
-  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
-    rw [statLaw]; exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  have := hQ
+  have hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+    rw [statLaw, Measure.map₀_of_measurable hT]; exact (by infer_instance)
   -- the conditional size `t ↦ ∫ φ dQ_t`, measurable and bounded by `1`
   have hcond_meas : Measurable (fun t => ∫ x, φ x ∂(Q t)) :=
     (StronglyMeasurable.integral_kernel (κ := Q) hφ.1.stronglyMeasurable).measurable
@@ -176,9 +176,9 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
     (hall : ∀ φ : 𝓧 → ℝ, IsCriticalFn φ → IsSimilar P ω α φ →
       ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ) :
     IsBoundedlyCompleteFamily fun θ : ω => statLaw P T (θ : Θ) := by
-  haveI := hQ
-  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
-    rw [statLaw]; exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  have := hQ
+  have hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+    rw [statLaw, Measure.map₀_of_measurable hT]; exact (by infer_instance)
   intro f hf hbd hzero θ
   obtain ⟨C₀, hC₀⟩ := hbd
   -- a strictly positive bound for `f`, so that the perturbation constant is well defined
@@ -222,7 +222,8 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
   have hψ_sim : IsSimilar P ω α ψ := by
     intro θ' hθ'
     have hmap : ∫ x, f (T x) ∂(P θ') = ∫ t, f t ∂(statLaw P T θ') := by
-      rw [statLaw, integral_map hT.aemeasurable hf.aestronglyMeasurable]
+      rw [statLaw, Measure.map₀_of_measurable hT,
+          integral_map hT.aemeasurable hf.aestronglyMeasurable]
     rw [power]
     simp only [hψ_def]
     rw [integral_add (hcf_int (P θ')) (integrable_const α), integral_const, probReal_univ,
@@ -255,7 +256,9 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
   -- the graph identity: integrating `g(t)·f(T x)` two ways
   have hchain : ∫ t, g t * f t ∂ν = ∫ t, g t * h t ∂ν := by
     have e1 : ∫ t, g t * f t ∂ν = ∫ x, g (T x) * f (T x) ∂(P (θ : Θ)) := by
-      rw [hν_def, statLaw, integral_map hT.aemeasurable (hg_meas.mul hf).aestronglyMeasurable]
+      erw [hν_def, statLaw, Measure.map₀_of_measurable hT, integral_map hT.aemeasurable
+          (hg_meas.mul hf).aestronglyMeasurable]
+      simp only [Pi.mul_apply]
     have e2 : ∫ x, g (T x) * f (T x) ∂(P (θ : Θ))
         = ∫ z, g z.1 * f (T z.2) ∂((P (θ : Θ)).map (fun x => (T x, x))) := by
       have hfm : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id

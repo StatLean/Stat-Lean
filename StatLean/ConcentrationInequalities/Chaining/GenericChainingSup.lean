@@ -88,12 +88,12 @@ theorem generic_chaining_of_admissible_countable_subset {X : E → Ω → ℝ}
     have hae : (fun ω => ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω|)
         =ᵐ[μ] fun _ => (0 : ℝ≥0∞) := by
       filter_upwards [hz] with ω hω
-      refine le_antisymm (iSup₂_le fun t ht => ?_) (zero_le _)
+      refine le_antisymm (iSup₂_le fun t ht => ?_) (zero_le)
       rw [hω t ht, abs_zero, ENNReal.ofReal_zero]
     calc ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
         = ∫⁻ _, (0 : ℝ≥0∞) ∂μ := lintegral_congr_ae hae
       _ = 0 := lintegral_zero
-      _ ≤ 20 * K * gammaFunctional A := zero_le _
+      _ ≤ 20 * K * gammaFunctional A := zero_le
   · by_cases hγ : gammaFunctional A = ⊤
     · rw [hγ,
         ENNReal.mul_top (mul_ne_zero (by norm_num) (ENNReal.coe_ne_zero.mpr hK0))]
@@ -171,7 +171,7 @@ theorem generic_chaining_abs_countable_subset {X : E → Ω → ℝ} {K : ℝ≥
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ 20 * K * gammaTwo T := by
-  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ :=
     ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T

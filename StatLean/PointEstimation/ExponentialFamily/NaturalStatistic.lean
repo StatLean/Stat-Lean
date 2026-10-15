@@ -91,7 +91,7 @@ theorem map_stat_P (E : ExpFamily 𝓧 V) (η : V) :
 /-- The two families have the **same natural parameter set**. -/
 theorem natSet_statFamily (E : ExpFamily 𝓧 V) : E.statFamily.natSet = E.natSet := by
   ext η
-  simp only [ExpFamily.natSet, statFamily, id_eq, Set.mem_setOf_eq]
+  simp only [ExpFamily.natSet, statFamily, id_eq, Set.mem_ofPred_eq]
   exact integrable_map_measure (measurable_exp_inner_id η).aestronglyMeasurable
     E.stat_meas.aemeasurable
 

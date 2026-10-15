@@ -19,15 +19,17 @@ below are the standard hypotheses under which the Lasso recovers $S$ exactly.
 * **Mutual-incoherence condition (A4).** For every off-support column $X_j$ ($j \notin S$),
   the population regression of $X_j$ onto the support columns has small $\ell^1$ mass:
   $\big\lVert (X_S^\top X_S)^{-1} X_S^\top X_j \big\rVert_1 \le \alpha$ (with $\alpha < 1$).
-* **$\ell^1$ subdifferential.** $z \in \partial\lVert\theta\rVert_1$, i.e. $z_j = \operatorname{sign}(\theta_j)$
-  whenever $\theta_j \neq 0$, and $z_j \in [-1,1]$ when $\theta_j = 0$.
+* **$\ell^1$ subdifferential.** $z \in \partial\lVert\theta\rVert_1$, i.e.
+  $z_j = \operatorname{sign}(\theta_j)$ whenever
+  $\theta_j \neq 0$, and $z_j \in [-1,1]$ when $\theta_j = 0$.
 * **Zero-subgradient / KKT condition.** First-order optimality of the Lagrangian Lasso:
   $\tfrac{1}{n}X^\top(X\theta - Y) + \lambda z = 0$ for some $z \in \partial\lVert\theta\rVert_1$.
 * **Column normalization.** Every design column has $\ell^2$ norm bounded by $C\sqrt{n}$, i.e.
   $\max_j \lVert X_j\rVert_2 / \sqrt{n} \le C$.
 * **$\ell^\infty$ error bound $B(\lambda; X)$.** The estimate of the on-support $\ell^\infty$
   error, $B(\lambda; X) = \big\lVert (\tfrac{1}{n}X_S^\top X_S)^{-1} X_S^\top w / n\big\rVert_\infty
-  + \big\lvert\!\big\lvert\!\big\lvert (\tfrac{1}{n}X_S^\top X_S)^{-1}\big\rvert\!\big\rvert\!\big\rvert_\infty \cdot \lambda$,
+  + \big\lvert\!\big\lvert\!\big\lvert (\tfrac{1}{n}X_S^\top
+    X_S)^{-1}\big\rvert\!\big\rvert\!\big\rvert_\infty \cdot \lambda$,
   with $w$ the noise vector.
 * **Projected-noise quantity.** $\big\lVert X_{S^c}^\top \Pi_{S^\perp}(X)\,(w/n)\big\rVert_\infty$,
   appearing on the right-hand side of the regularization-strength condition
@@ -48,8 +50,10 @@ quantities consumed by the support-recovery assembly:
 * `IsL1Subgradient z θ`      — $z \in \partial\lVert\theta\rVert_1$ (§7.5.2).
 * `IsKKT X Y λ θ z`          — the zero-subgradient/KKT condition, Eq (7.48).
 * `ColumnNormalized X C`     — the $C$-column-normalization condition of Corollary 7.22.
-* `gramInvNorm X S`          — the inverse of the *normalized* Gram $(\tfrac{1}{n}X_S^\top X_S)^{-1}$ in (7.45).
-* `supportRecoveryBound`     — $B(\lambda; X)$, the $\ell^\infty$ error bound of Theorem 7.21(c), Eq (7.45).
+* `gramInvNorm X S`          — the inverse of the *normalized*
+  Gram $(\tfrac{1}{n}X_S^\top X_S)^{-1}$ in (7.45).
+* `supportRecoveryBound`     — $B(\lambda; X)$, the
+  $\ell^\infty$ error bound of Theorem 7.21(c), Eq (7.45).
 * `projNoiseLinf X S w`      — the projected-noise quantity on the RHS of Eq (7.44).
 
 The **Lasso objective itself is reused** from `Lasso/Defs.lean` (`lassoObjective`,

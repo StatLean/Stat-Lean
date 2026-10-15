@@ -90,7 +90,7 @@ theorem mle_asymptotic_normality_of_consistent
           Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
         (multivariateGaussian 0
           (fisherInformationMatrix M μ θ₀ ℓ)⁻¹) := by
-  letI : IsProbabilityMeasure
+  let : IsProbabilityMeasure
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :=
     withDensity_density_isProbabilityMeasure M μ hPDF θ₀
   have hm_meas : ∀ θ, Measurable (M.logDensity θ) := by
@@ -110,7 +110,7 @@ theorem mle_asymptotic_normality_of_consistent
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
       (fun θ => M.logDensity θ)
       (MEstimator.mdotProbabilityDerivative (fun i x => ℓ x i) θ₀) θ₀ := by
-    simpa only [MEstimator.mdotProbabilityDerivative, psiVec_score_eq] using hdiff₀
+    simpa only [MEstimator.mdotProbabilityDerivative, psiVec_score_eq] using! hdiff₀
   have hLip₀ : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ x,
       |M.logDensity θ x - M.logDensity θ₀ x| ≤
         ‖menv x‖ * ‖θ - θ₀‖ := by
@@ -146,7 +146,7 @@ theorem mle_asymptotic_normality_of_consistent
     convert hTaylor₀ using 1
     funext θ
     rw [fisherInformation_eq_inner_fisherInformationMatrix M μ θ₀ ℓ hFisher]
-    simp only [map_neg, ContinuousLinearMap.neg_apply, inner_neg_right]
+    simp only [map_neg, neg_apply, inner_neg_right]
     ring
   obtain ⟨c, hc, hVsymm, _, hVneg⟩ :=
     neg_posDef_as_mEstimator_curvature (I := fisherInformationMatrix M μ θ₀ ℓ) hI
@@ -175,7 +175,7 @@ theorem mle_asymptotic_normality_of_consistent
     simpa using
       Matrix.inv_smul' (fisherInformationMatrix M μ θ₀ ℓ) (-1 : ℝˣ) hIdet
   refine ⟨?_, ?_⟩
-  · simpa only [hInvNeg, map_neg, ContinuousLinearMap.neg_apply, sub_eq_add_neg] using hT8.1
+  · simpa only [hInvNeg, map_neg, neg_apply, sub_eq_add_neg] using hT8.1
   · rw [psiCov_score_eq_fisherInformationMatrix M μ θ₀ ℓ,
       mEstimator_fisher_covariance_collapse
         (fisherInformationMatrix M μ θ₀ ℓ) hI] at hT8
@@ -268,9 +268,6 @@ theorem mle_asymptotic_normality
           Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))
         (multivariateGaussian 0
           (fisherInformationMatrix M μ θ₀ ℓ)⁻¹) := by
-  letI : IsProbabilityMeasure
-      (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)) :=
-    withDensity_density_isProbabilityMeasure M μ hPDF θ₀
   have hConsistent : TendstoInProbZero (fun _ : ℕ => ν)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) :=
     mle_consistentInProb_of_kl_identifiable M μ θ₀ hPDF hident husc hcompact

@@ -23,10 +23,10 @@ the Lasso estimator $\widehat{\beta}$ satisfies, with probability at least $1 - 
 $$\bigl\lVert \widehat{\beta} - \beta^\* \bigr\rVert_2 \le \frac{3}{\kappa}\sqrt{s}\,\lambda
   = O_P\!\left(\sqrt{\frac{s \log d}{n}}\right).$$
 
-**Changed constant.** The textbook states the tuning value $\lambda = \sigma\sqrt{\log(2d/\delta)/(2n)}$,
-which is approximately $4\times$ too small to satisfy the tuning condition
-$\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ under the union-bound tail
-bound derived here. We therefore state the provable constant
+**Changed constant.** The textbook states the tuning value
+$\lambda = \sigma\sqrt{\log(2d/\delta)/(2n)}$, which is approximately $4\times$ too small to satisfy
+the tuning condition $\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ under the
+union-bound tail bound derived here. We therefore state the provable constant
 $\lambda = 2\sqrt{2\sigma^2 \log(2d/\delta)/n}$, which preserves the same
 $O_P(\sqrt{s \log d / n})$ rate order. A nondegeneracy hypothesis $\sigma^2 > 0$ is also
 added (when $\sigma^2 = 0$ the noise is almost surely zero and the bound holds trivially via
@@ -112,7 +112,7 @@ private lemma colInner_isSubGaussian
     exact h
   -- ── Step 2: scaled family Y i ω := X i j * ε i ω has proxy (X i j)² · σ² ──
   have hY_sg : ∀ i : Fin n, HasSubgaussianMGF (fun ω => X i j * ε i ω)
-      (⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      ((NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     intro i
     have hsg_scaled := isSubGaussian_const_mul (hε_sg i) (X i j)
     have hmean : ∫ ω, X i j * ε i ω ∂μ = 0 := by
@@ -125,26 +125,27 @@ private lemma colInner_isSubGaussian
   -- ── Step 4: the sum ∑ᵢ Y i is sub-Gaussian with proxy ∑ᵢ (X i j)² · σ² ─────
   have hsum_mg : HasSubgaussianMGF
       (fun ω => ∑ i : Fin n, X i j * ε i ω)
-      (∑ i : Fin n, ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 : ℝ≥0) μ := by
+      (∑ i : Fin n, (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 : ℝ≥0) μ := by
     have := HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i => ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2)
+      (c := fun i => (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2)
       (s := Finset.univ)
       (fun i _ => hY_sg i)
     simpa using this
   -- ── Step 5: upgrade proxy from ∑ᵢ (X i j)² · σ² to n · σ² (monotonicity) ────
-  have hproxy_le : ∑ i : Fin n, ⟨(X i j) ^ 2, sq_nonneg _⟩ * σ2 ≤ (n : ℝ≥0) * σ2 := by
-    rw [← Finset.sum_mul]
-    apply mul_le_mul_of_nonneg_right _ (zero_le _)
+  have hproxy_le : ∑ i : Fin n, (NNReal.mk ((X i j) ^ 2) (sq_nonneg _)) * σ2 ≤ (n : ℝ≥0) * σ2 := by
+    erw [← Finset.sum_mul]
+    apply mul_le_mul_of_nonneg_right _ (zero_le)
     rw [← NNReal.coe_le_coe]
-    simp only [NNReal.coe_sum, NNReal.coe_natCast, NNReal.coe_mk]
-    exact_mod_cast hcolnorm j
+    rw [NNReal.coe_sum, NNReal.coe_natCast]
+    change (∑ i : Fin n, (X i j) ^ 2) ≤ (n : ℝ)
+    exact hcolnorm j
   have hsum_up : HasSubgaussianMGF
       (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ :=
     ⟨hsum_mg.integrable_exp_mul, fun t => (hsum_mg.mgf_le t).trans (by
       apply Real.exp_le_exp.mpr; gcongr)⟩
   -- ── Step 6: conclude IsSubGaussian using zero mean ────────────────────────────
   have hsum_mean : ∫ ω, ∑ i : Fin n, X i j * ε i ω ∂μ = 0 := by
-    rw [integral_finset_sum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
+    rw [integral_finsetSum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
     simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
   unfold IsSubGaussian
   simp only [hsum_mean, sub_zero]
@@ -175,17 +176,16 @@ private lemma linfNorm_noise_tail
       {ω | t < linfNorm (designMap Xᵀ (noiseVec ω))} ⊆
       ⋃ j : Fin d, {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω
-    simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+    simp only [Set.mem_ofPred_eq] at hω
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     unfold linfNorm at hω
     rcases isEmpty_or_nonempty (Fin d) with hd0 | hne
     · -- d = 0: linfNorm = sSup ∅ = 0, contradicts ht
       have hval : ⨆ j : Fin d, |(designMap Xᵀ (noiseVec ω)).ofLp j| = 0 := by
-        haveI := hd0
         change sSup (Set.range (fun j : Fin d => |(designMap Xᵀ (noiseVec ω)).ofLp j|)) = 0
         rw [Set.range_eq_empty_iff.mpr hd0, Real.sSup_empty]
       exact absurd (hval ▸ hω) (not_lt.mpr ht)
-    · haveI := hne
+    · have := hne
       exact (lt_ciSup_iff (Set.finite_range _).bddAbove).mp hω
   -- ── Step 2: per-column coordinate = column inner product ──────────────────────
   have hcoord : ∀ ω j, (designMap Xᵀ (noiseVec ω)).ofLp j = ∑ i, X i j * ε i ω := by
@@ -203,11 +203,11 @@ private lemma linfNorm_noise_tail
       ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (n * (σ2 : ℝ))))) := by
     intro j
     have hm : ∫ x, ∑ i : Fin n, X i j * ε i x ∂μ = 0 := by
-      rw [integral_finset_sum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
+      rw [integral_finsetSum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
       simp_rw [integral_const_mul, hε_zero, mul_zero, Finset.sum_const_zero]
     have hset : {ω | t < |(designMap Xᵀ (noiseVec ω)).ofLp j|} =
         {ω | t < |∑ i : Fin n, X i j * ε i ω - ∫ x, (∑ i, X i j * ε i x) ∂μ|} := by
-      congr 1; ext ω; simp only [Set.mem_setOf_eq, hcoord ω j, hm, sub_zero]
+      congr 1; ext ω; simp only [hcoord ω j, hm, sub_zero]
     rw [hset]
     exact (hcol_sg j).measure_abs_sub_integral_lt_le ht
   -- ── Step 4: union bound over d columns ───────────────────────────────────────
@@ -224,7 +224,7 @@ private lemma linfNorm_noise_tail
           rw [Finset.sum_const, Finset.card_fin, nsmul_eq_mul,
               ← ENNReal.ofReal_natCast (n := d),
               ← ENNReal.ofReal_mul (by positivity)]
-          congr 1; push_cast; ring
+          congr 1; ring
 
 /-! ## Main theorem: Lasso rate under sub-Gaussian noise (Corollary 10.1) -/
 
@@ -281,8 +281,8 @@ theorem lasso_random_rate
     -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §10.2, Corollary 10.1
     (hLasso : ∀ ω, IsLassoEstimator X
         (designMap X βstar + WithLp.toLp (p := 2) (fun i => ε i ω)) lam (βhat ω))
-    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2, Corollary 10.1
-    -- Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
+    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2, Corollary
+    -- 10.1 Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
     (hlam_ge : lam ≥ 2 * Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n))
     -- LEAN-ONLY: 0 < σ2; when σ2 = 0 the noise is a.s. 0 and the result holds trivially
     -- via ae_eq_zero_of_hasSubgaussianMGF_zero, which requires a separate proof path
@@ -292,7 +292,7 @@ theorem lasso_random_rate
   -- ── Setup ──────────────────────────────────────────────────────────────────────
   set noiseVec := fun ω => WithLp.toLp (p := 2) (fun i : Fin n => ε i ω)
   set G := {ω | lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω))}
-  haveI : IsProbabilityMeasure μ := hε_indep.isProbabilityMeasure
+  have : IsProbabilityMeasure μ := hε_indep.isProbabilityMeasure
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
   -- ── Step 1: On G, lasso_l2_rate gives the bound ───────────────────────────────
   have hG_sub : G ⊆ {ω | ‖βhat ω - βstar‖ ≤ (3 / κ) * Real.sqrt (S.card : ℝ) * lam} := by
@@ -308,7 +308,7 @@ theorem lasso_random_rate
     -- Unfold G (a let-binding from `set`) via Iff.rfl, then simplify
     have hG_mem : ω ∈ G ↔ lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) :=
       Iff.rfl
-    simp only [Set.mem_compl_iff, hG_mem, Set.mem_setOf_eq, ge_iff_le, not_le]
+    simp only [Set.mem_compl_iff, hG_mem, Set.mem_ofPred_eq, ge_iff_le, not_le]
     -- Unfold t_star (also a let-binding) via rfl
     rw [show t_star = (n : ℝ) * lam / 2 from rfl]
     constructor
@@ -324,7 +324,7 @@ theorem lasso_random_rate
       -- contradicting hmul.
       have hmul : (n : ℝ) * lam < 2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by linarith
       by_contra hle
-      push_neg at hle
+      push Not at hle
       have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hn_pos)
       have heq : (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) * (n : ℝ) =
                  2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by field_simp
@@ -336,7 +336,7 @@ theorem lasso_random_rate
     -- contradicting d ≥ 1.
     have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast hd
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hδ_pos)
     have heq : (2 * (d : ℝ) / δ) * δ = 2 * d := by field_simp [ne_of_gt hδ_pos]
     nlinarith
@@ -365,7 +365,7 @@ theorem lasso_random_rate
         linarith [show Real.log (2 * ↑d / δ) * (2 * ((n : ℝ) * ↑σ2)) =
                   2 * (σ2 : ℝ) * ↑n * Real.log (2 * ↑d / δ) from by ring]
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       have hstep := mul_lt_mul_of_pos_right hlt hpos
       have heq : t_star ^ 2 / (2 * ((n : ℝ) * ↑σ2)) * (2 * ((n : ℝ) * ↑σ2)) = t_star ^ 2 := by
         field_simp [ne_of_gt hpos]

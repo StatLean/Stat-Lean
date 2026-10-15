@@ -26,9 +26,9 @@ theorems consume:
   conclusion of the cone theorem).
 * **Restricted isometry property** `IsRIP X s δ` — $X$ satisfies $s$-RIP with
   constant $\delta$ when, for every $s$-sparse $\beta$,
-  $$(1-\delta)\lVert\beta\rVert_2^2 \le \lVert X\beta\rVert_2^2 \le (1+\delta)\lVert\beta\rVert_2^2.$$
-  The restricted isometry constant $\delta = \delta_s$ is a free parameter here;
-  the threshold $\delta \in (0,1)$ is imposed by the consumer theorems, not by the
+  $$(1-\delta)\lVert\beta\rVert_2^2 \le \lVert X\beta\rVert_2^2 \le
+  (1+\delta)\lVert\beta\rVert_2^2.$$ The restricted isometry constant $\delta = \delta_s$ is a free
+  parameter here; the threshold $\delta \in (0,1)$ is imposed by the consumer theorems, not by the
   definition.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
@@ -67,9 +67,9 @@ namespace StatLean.HighDimensionalStatistics
 
 variable {n d : ℕ}
 
-/-- **`s`-sparsity** (Lu-BDA Ch8 §8.1, Definition 8.1 (Sparse Linear Model), `‖β‖₀ = ∑ⱼ 𝟙{βⱼ ≠ 0}`): `x` is `s`-sparse when its
-support is contained in some index set of cardinality at most `s`. Stated in the
-"support fits in a set" form (decidability-free, and the form the recovery proofs
+/-- **`s`-sparsity** (Lu-BDA Ch8 §8.1, Definition 8.1 (Sparse Linear Model), `‖β‖₀ = ∑ⱼ 𝟙{βⱼ ≠ 0}`):
+`x` is `s`-sparse when its support is contained in some index set of cardinality at most `s`. Stated
+in the "support fits in a set" form (decidability-free, and the form the recovery proofs
 consume) rather than via an `ℓ₀` counting function. -/
 def IsSparse (s : ℕ) (x : EuclideanSpace ℝ (Fin d)) : Prop :=
   ∃ S : Finset (Fin d), S.card ≤ s ∧ ∀ i ∉ S, x.ofLp i = 0
@@ -81,16 +81,17 @@ def IsBasisPursuit (X : Matrix (Fin n) (Fin d) ℝ) (Y : EuclideanSpace ℝ (Fin
     (βhat : EuclideanSpace ℝ (Fin d)) : Prop :=
   designMap X βhat = Y ∧ ∀ β, designMap X β = Y → l1Norm βhat ≤ l1Norm β
 
-/-- **Unique basis-pursuit solution** (Lu-BDA Ch8 §8.2, Theorem 8.1 (perfect recovery / unique basis-pursuit solution)): `βhat` is a basis-pursuit
-minimiser, and every feasible point whose ℓ¹ norm does not exceed `‖βhat‖₁` equals
-`βhat`. This is the "`β̂ = β*` is the unique solution" conclusion of the cone theorem. -/
+/-- **Unique basis-pursuit solution** (Lu-BDA Ch8 §8.2, Theorem 8.1 (perfect recovery / unique
+basis-pursuit solution)): `βhat` is a basis-pursuit minimiser, and every feasible point whose ℓ¹
+norm does not exceed `‖βhat‖₁` equals `βhat`. This is the "`β̂ = β*`
+is the unique solution" conclusion of the cone theorem. -/
 def IsUniqueBasisPursuit (X : Matrix (Fin n) (Fin d) ℝ) (Y : EuclideanSpace ℝ (Fin n))
     (βhat : EuclideanSpace ℝ (Fin d)) : Prop :=
   IsBasisPursuit X Y βhat ∧
     ∀ β, designMap X β = Y → l1Norm β ≤ l1Norm βhat → β = βhat
 
-/-- **Restricted isometry property** (Lu-BDA Ch9 §9.1, Definition 9.1 (Restricted Isometry Property)): `X`
-satisfies the `s`-RIP with constant `δ ∈ (0,1)` when, for every `s`-sparse `β`,
+/-- **Restricted isometry property** (Lu-BDA Ch9 §9.1, Definition 9.1 (Restricted Isometry
+Property)): `X` satisfies the `s`-RIP with constant `δ ∈ (0,1)` when, for every `s`-sparse `β`,
 `(1 − δ)‖β‖₂² ≤ ‖X β‖₂² ≤ (1 + δ)‖β‖₂²`. The constant `δ` (the restricted isometry
 constant `δ_s`) is left as a free parameter; the threshold `δ ∈ (0,1)` is imposed by
 the consumers, not here. -/

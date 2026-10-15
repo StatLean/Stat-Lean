@@ -76,7 +76,7 @@ theorem IsKernelFun.re_apply_self_nonneg {K : X → X → 𝕜} (hK : IsKernelFu
 /-- Conical combination: `p₁ K₁ + p₂ K₂` is a kernel function for `p₁, p₂ ≥ 0`. -/
 theorem IsKernelFun.add_smul {K₁ K₂ : X → X → 𝕜} (h₁ : IsKernelFun K₁)
     (h₂ : IsKernelFun K₂) {p₁ p₂ : ℝ}
-    (hp₁ : 0 ≤ p₁)  -- USER-INPUT: nonnegative weight
+    (hp₁ : 0 ≤ p₁) -- USER-INPUT: nonnegative weight
     (hp₂ : 0 ≤ p₂) :  -- USER-INPUT: nonnegative weight
     IsKernelFun (fun x y => (p₁ : 𝕜) * K₁ x y + (p₂ : 𝕜) * K₂ x y) := by
   refine ⟨fun x y => ?_, fun n x a => ?_⟩

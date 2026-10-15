@@ -80,8 +80,6 @@ theorem probabilityIntegralTransform
       P ((cdf P) ⁻¹' Set.Iic u) = P (Set.Iic (sSup A)) := by rw [← hAeq]
       _ = ENNReal.ofReal (cdf P (sSup A)) := (ofReal_cdf P _).symm
       _ = ENNReal.ofReal u := by rw [hFu]
-  letI : IsProbabilityMeasure (P.map (cdf P)) :=
-    Measure.isProbabilityMeasure_map hF.measurable.aemeasurable
   apply Measure.ext_of_Iic
   intro u
   rw [Measure.map_apply hF.measurable measurableSet_Iic, uniform01,
@@ -104,7 +102,7 @@ theorem probabilityIntegralTransform
     rw [hpre, hset]
     simp
   · have hzero : P ((cdf P) ⁻¹' Set.Iic 0) = 0 := by
-      apply le_antisymm _ (zero_le _)
+      apply le_antisymm _ (zero_le)
       refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
       let q : ℝ := min ((ε : ℝ) / 2) (1 / 2)
       have hε' : 0 < (ε : ℝ) := by exact_mod_cast hε
@@ -187,9 +185,14 @@ private theorem distL2_halfLine_cdf (P : Measure ℝ) [IsProbabilityMeasure P]
         distL2 P (halfLineIndicator s) (halfLineIndicator t) := by
     intro s t hst
     have hFst : cdf P s ≤ cdf P t := monotone_cdf P hst
-    unfold distL2
-    rw [hsub hFst, hsub hst, eLpNorm_indicator_const measurableSet_Ioc (by norm_num)
-      (by norm_num), eLpNorm_indicator_const measurableSet_Ioc (by norm_num) (by norm_num)]
+    rw [distL2_eq_eLpNorm ((measurable_halfLineIndicator _).sub
+        (measurable_halfLineIndicator _)).aestronglyMeasurable,
+      distL2_eq_eLpNorm ((measurable_halfLineIndicator _).sub
+          (measurable_halfLineIndicator _)).aestronglyMeasurable]
+    rw [hsub hFst, hsub hst, eLpNorm_indicator_const measurableSet_Ioc.nullMeasurableSet
+        (by norm_num)
+      (by norm_num), eLpNorm_indicator_const measurableSet_Ioc.nullMeasurableSet (by norm_num)
+          (by norm_num)]
     congr 2
     rw [uniform01, Measure.restrict_apply measurableSet_Ioc]
     have hset : Set.Ioc (cdf P s) (cdf P t) ∩ Set.Icc (0 : ℝ) 1 =
@@ -238,8 +241,9 @@ private theorem distL2_halfLine_sq (P : Measure ℝ) [IsProbabilityMeasure P]
         P (Set.Ioc s t) = (cdf P).measure (Set.Ioc s t) := by rw [measure_cdf P]
         _ = ENNReal.ofReal (cdf P t - cdf P s) :=
           StieltjesFunction.measure_Ioc (cdf P) s t
-    unfold distL2
-    rw [hsub hst, eLpNorm_indicator_const measurableSet_Ioc (by norm_num)
+    rw [distL2_eq_eLpNorm ((measurable_halfLineIndicator _).sub
+        (measurable_halfLineIndicator _)).aestronglyMeasurable]
+    rw [hsub hst, eLpNorm_indicator_const measurableSet_Ioc.nullMeasurableSet (by norm_num)
       (by norm_num), hPIoc]
     have hx : 0 ≤ cdf P t - cdf P s := sub_nonneg.mpr hFst
     rw [show ‖(-1 : ℝ)‖ₑ = 1 by simp, one_mul, ← ENNReal.toReal_rpow]
@@ -389,7 +393,7 @@ private theorem ksFunctional_cdfPullback_eq_of_uniform_uc
       rw [hdist]
       exact hδ)
     exact (lt_irrefl _ hlt)
-  letI : Nonempty ↑halfLineIndicatorClass := ⟨halfLineIndex 0⟩
+  let : Nonempty ↑halfLineIndicatorClass := ⟨halfLineIndex 0⟩
   unfold ksFunctional
   apply le_antisymm
   · rw [lp.norm_eq_ciSup]
@@ -437,7 +441,7 @@ private noncomputable def halfLineEvalCLM
       map_add' := by intros; rfl
       map_smul' := by intros; rfl }
   exact L.mkContinuous 1 fun z ↦ by
-    simpa only [one_mul, Real.norm_eq_abs] using
+    simpa only [one_mul, Real.norm_eq_abs] using!
       lp.norm_apply_le_norm ENNReal.top_ne_zero z i
 
 /-- A continuous-CDF probability-integral pullback transports a uniform
@@ -453,10 +457,10 @@ theorem isPBrownianBridge_map_cdfPullback
       (νU.map (cdfPullbackCLM P)) := by
   have _hPIT := probabilityIntegralTransform P hF
   let T := cdfPullbackCLM P
-  letI : IsProbabilityMeasure νU := hνU.isProbabilityMeasure
+  let : IsProbabilityMeasure νU := hνU.isProbabilityMeasure
   refine
     { isProbabilityMeasure :=
-        Measure.isProbabilityMeasure_map T.continuous.aemeasurable
+        (by infer_instance)
       cov := ?_
       mean := ?_
       isGaussian_fdd := ?_
@@ -500,12 +504,12 @@ theorem isPBrownianBridge_map_cdfPullback
   · intro m φ
     let ψ : Fin m → ↑halfLineIndicatorClass := fun k ↦
       halfLineIndex (cdf P (halfLineIndexEquiv.symm (φ k)))
-    refine ⟨?_⟩
+    refine ⟨(Measurable.of_eval fun k => (continuous_linfF_eval (φ k)).measurable).aemeasurable, ?_⟩
     have hgauss := (hνU.isGaussian_fdd m ψ).isGaussian_map
     rw [Measure.map_map (measurable_pi_iff.mpr fun k ↦
       (continuous_linfF_eval (φ k)).measurable)
       T.continuous.measurable]
-    convert hgauss using 1
+    convert! hgauss using 1
   · apply (ae_map_iff T.continuous.aemeasurable
       (pBridge_ucPaths_measurableSet (F := halfLineIndicatorClass) (P := P))).2
     filter_upwards [hνU.ucPaths] with z hz
@@ -546,8 +550,8 @@ theorem halfLine_brownianBridge_measure_unique
     (hκ : IsPBrownianBridge halfLineIndicatorClass P κ) :
     ν = κ := by
   classical
-  letI : IsProbabilityMeasure ν := hν.isProbabilityMeasure
-  letI : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
+  let : IsProbabilityMeasure ν := hν.isProbabilityMeasure
+  let : IsProbabilityMeasure κ := hκ.isProbabilityMeasure
   apply tightMeasure_eq_of_finiteCoordinate_laws (halfLineEvalCLM)
   · intro x y hxy
     ext i
@@ -577,10 +581,10 @@ theorem halfLine_brownianBridge_measure_unique
       funext z
       rw [hR_apply]
       rfl
-    haveI hνpi_gauss : IsGaussian
+    have hνpi_gauss : IsGaussian
         (ν.map (fun z : LinfF halfLineIndicatorClass ↦ fun i ↦ z (a i))) :=
       hνpi.isGaussian_map
-    haveI hκpi_gauss : IsGaussian
+    have hκpi_gauss : IsGaussian
         (κ.map (fun z : LinfF halfLineIndicatorClass ↦ fun i ↦ z (a i))) :=
       hκpi.isGaussian_map
     have hνR_gauss : IsGaussian (ν.map R) := by
@@ -595,8 +599,8 @@ theorem halfLine_brownianBridge_measure_unique
       rw [← AEMeasurable.map_map_of_aemeasurable
         L.continuous.measurable.aemeasurable hκpi.aemeasurable]
       exact isGaussian_map_equiv L
-    letI : IsGaussian (ν.map R) := hνR_gauss
-    letI : IsGaussian (κ.map R) := hκR_gauss
+    let : IsGaussian (ν.map R) := hνR_gauss
+    let : IsGaussian (κ.map R) := hκR_gauss
     apply IsGaussian.ext
     · have hνint : Integrable R ν :=
         (integrable_map_measure aestronglyMeasurable_id
@@ -638,7 +642,7 @@ theorem halfLine_brownianBridge_measure_unique
           rfl
         rw [heq]
         exact ((EuclideanSpace.proj i) :
-          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitz.comp_memLp
+          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitzWith.comp_memLp
             (map_zero _) hmemRν
       have hmemcoordκ : ∀ i : Fin m,
           MemLp (fun z : LinfF halfLineIndicatorClass ↦ z (a i)) 2 κ := by
@@ -650,7 +654,7 @@ theorem halfLine_brownianBridge_measure_unique
           rfl
         rw [heq]
         exact ((EuclideanSpace.proj i) :
-          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitz.comp_memLp
+          EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).lipschitzWith.comp_memLp
             (map_zero _) hmemRκ
       have hbasis : ∀ i : Fin m,
           (fun u : EuclideanSpace ℝ (Fin m) ↦
@@ -759,7 +763,7 @@ theorem continuousCDF_ks_limit_law_eq_uniform
       (cdfPullbackCLM P).continuous.measurable]
   apply Measure.map_congr
   filter_upwards [gofFunctional_cdfPullback_ae P hF hνU] with z hz
-  simpa only [gofFunctional] using congrArg Prod.fst hz
+  simpa only [gofFunctional] using! congrArg Prod.fst hz
 
 /-- Distribution-free Cramér–von Mises limit law for continuous CDFs. -/
 theorem continuousCDF_cvm_limit_law_eq_uniform
@@ -775,7 +779,7 @@ theorem continuousCDF_cvm_limit_law_eq_uniform
       (cdfPullbackCLM P).continuous.measurable]
   apply Measure.map_congr
   filter_upwards [gofFunctional_cdfPullback_ae P hF hνU] with z hz
-  simpa only [gofFunctional] using congrArg Prod.snd hz
+  simpa only [gofFunctional] using! congrArg Prod.snd hz
 
 /-- **Corollary 19.21, distribution-free joint limit.**
 For a continuous CDF, bridge laws exist both for `P` and for `uniform01`, and

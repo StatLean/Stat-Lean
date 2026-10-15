@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.SubExponential.Defs
 

@@ -52,6 +52,8 @@ of compact subsets of Hilbert space and continuity of Gaussian processes,"
 sub-gaussian extension is folklore).
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal
 
@@ -238,9 +240,9 @@ theorem discrete_dudley_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set 
     -- STEP B1: split the anchored sup along the chain.
     have hB1 : (∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ)
         ≤ ∑ j ∈ Finset.range n, ∫ ω, S j ω ∂μ := by
-      rw [← integral_finset_sum (Finset.range n) (fun j _ => hIntS j)]
+      rw [← integral_finsetSum (Finset.range n) (fun j _ => hIntS j)]
       refine integral_mono_ae hIntSupA
-        (integrable_finset_sum _ (fun j _ => hIntS j)) ?_
+        (integrable_finsetSum _ (fun j _ => hIntS j)) ?_
       filter_upwards [hclean] with ω hω
       refine Finset.sup'_le hFne _ (fun t ht => ?_)
       have htT := hmemT t ht
@@ -444,7 +446,7 @@ theorem discrete_dudley_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : 
           = (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) from funext fun ω => setToF _]
     exact hIntSup
   -- Degenerate `K = 0`: every increment vanishes a.e. (ψ₂-norm ≤ 0).
-  rcases eq_or_lt_of_le (zero_le K) with hK0 | hKpos
+  rcases eq_or_lt_of_le (zero_le (a := K)) with hK0 | hKpos
   · have hae : ∀ t ∈ T, (fun ω => X t ω - X t₀ ω) =ᵐ[μ] 0 := by
       intro t ht
       have hle : subGaussianNorm (fun ω => X t ω - X t₀ ω) μ ≤ 0 := by
@@ -695,13 +697,13 @@ theorem discrete_dudley_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : 
               linarith [hbound]
       have hIntRHS : MeasureTheory.Integrable
           (fun ω => (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω|) μ :=
-        (integrable_finset_sum _ (fun j _ => hIntCPS j)).add hIntAnchor
+        (integrable_finsetSum _ (fun j _ => hIntCPS j)).add hIntAnchor
       calc (∫ ω, ⨆ t ∈ F, |X t ω - X t₀ ω| ∂μ)
           ≤ ∫ ω, (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω| ∂μ :=
             integral_mono_ae hIntSupF hIntRHS hpt
         _ = (∑ j ∈ Finset.range n, ∫ ω, CPS j ω ∂μ) + ∫ ω, |X c ω - X t₀ ω| ∂μ := by
-            rw [integral_add (integrable_finset_sum _ (fun j _ => hIntCPS j)) hIntAnchor,
-              integral_finset_sum _ (fun j _ => hIntCPS j)]
+            rw [integral_add (integrable_finsetSum _ (fun j _ => hIntCPS j)) hIntAnchor,
+              integral_finsetSum _ (fun j _ => hIntCPS j)]
     -- **STEP C: per-level bound** `E[CPS_j] ≤ 6√3·K·dudleySummand(κ+m+1+j)`.
     have hC : ∀ j ∈ Finset.range n,
         (∫ ω, CPS j ω ∂μ) ≤ 6 * Real.sqrt 3 * K * dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ)) := by
@@ -734,7 +736,7 @@ theorem discrete_dudley_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : 
       -- `√(log(2·card CP)) ≤ √3·sqrtLogCov`
       have hstep : Real.sqrt (Real.log (2 * ((CP j).card : ℝ)))
           ≤ Real.sqrt 3 * sqrtLogCov T (ε (m + j + 1)) := by
-        rw [hslc, ← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 3)]
+        rw [hslc, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 3)]
         apply Real.sqrt_le_sqrt
         -- log(2·card) ≤ log(2 M²) ≤ log(M³) = 3 log M
         have hcard_le : (2 : ℝ) * ((CP j).card : ℝ) ≤ M ^ 3 := by
@@ -916,9 +918,9 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         rw [h1]; exact Finset.le_sup' (fun t => X t ω) hFne.choose_spec
     have hz : (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ) = 0 := by
       rw [integral_congr_ae haeeq]; exact hmean c₀ hc₀T
-    rw [hz, ENNReal.ofReal_zero]; exact zero_le _
+    rw [hz, ENNReal.ofReal_zero]; exact zero_le
   -- Degenerate `K = 0`: every increment vanishes a.e.
-  rcases eq_or_lt_of_le (zero_le K) with hK0 | hKpos
+  rcases eq_or_lt_of_le (zero_le (a := K)) with hK0 | hKpos
   · apply hdegen
     intro t ht
     have hle : subGaussianNorm (fun ω => X t ω - X c₀ ω) μ ≤ 0 := by
@@ -1051,10 +1053,10 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       calc (∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ)
           ≤ ∫ ω, ((∑ j ∈ Finset.range n, S j ω) + R ω) ∂μ :=
             integral_mono_ae hIntSupA
-              ((integrable_finset_sum _ (fun j _ => hIntS j)).add hIntR) (ae_of_all _ hpt)
+              ((integrable_finsetSum _ (fun j _ => hIntS j)).add hIntR) (ae_of_all _ hpt)
         _ = (∑ j ∈ Finset.range n, ∫ ω, S j ω ∂μ) + ∫ ω, R ω ∂μ := by
-            rw [integral_add (integrable_finset_sum _ (fun j _ => hIntS j)) hIntR,
-              integral_finset_sum _ (fun j _ => hIntS j)]
+            rw [integral_add (integrable_finsetSum _ (fun j _ => hIntS j)) hIntR,
+              integral_finsetSum _ (fun j _ => hIntS j)]
     -- STEP B2: per-level bound (identical to the finite proof's machinery).
     have hB2 : ∀ j : ℕ,
         (∫ ω, S j ω ∂μ) ≤ 6 * Real.sqrt 3 * K * dudleySummand T (κ + 1 + (j : ℤ)) := by
@@ -1247,7 +1249,7 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         Filter.atTop (nhds (ENNReal.ofReal (6 * Real.sqrt 3) * (K : ℝ≥0∞) * dudleyLSum T)) := by
       have hofB : Filter.Tendsto (fun n => ENNReal.ofReal (B n)) Filter.atTop (nhds 0) := by
         have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hBlim
-        simpa using this
+        simpa using! this
       have := (tendsto_const_nhds
         (x := ENNReal.ofReal (6 * Real.sqrt 3) * (K : ℝ≥0∞) * dudleyLSum T)).add hofB
       simpa using this
@@ -1322,9 +1324,9 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t ht))
       · obtain ⟨t₁, ht₁⟩ := hFne
         exact le_trans (abs_nonneg _) (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) ht₁)
-    rw [integral_congr_ae haeeq, integral_zero, ENNReal.ofReal_zero]; exact zero_le _
+    rw [integral_congr_ae haeeq, integral_zero, ENNReal.ofReal_zero]; exact zero_le
   -- Degenerate `K = 0`.
-  rcases eq_or_lt_of_le (zero_le K) with hK0 | hKpos
+  rcases eq_or_lt_of_le (zero_le (a := K)) with hK0 | hKpos
   · apply hdegen
     intro t ht
     have hle : subGaussianNorm (fun ω => X t ω - X t₀ ω) μ ≤ 0 := by
@@ -1381,7 +1383,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- Two carrier points at positive distance (from `diam T > 0`).
     obtain ⟨a, haT, b, hbT, hab⟩ : ∃ a ∈ T, ∃ b ∈ T, 0 < dist a b := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact absurd (Metric.diam_le_of_forall_dist_le le_rfl (fun x hx y hy => h x hx y hy))
         (not_le.mpr hDpos)
     -- A level `J` beyond which every net has ≥ 2 points (`2·ε_j < dist a b`).
@@ -1409,7 +1411,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         · have hjG : j ∈ G := by
             rw [hGdef, Finset.mem_filter]; exact ⟨Finset.mem_range.mpr (by omega), hj1⟩
           exact absurd (G.le_max' j hjG) (by omega)
-        · push_neg at hjJ
+        · push Not at hjJ
           have h2 := hJ j (le_of_lt hjJ)
           rw [hj1] at h2; exact lt_irrefl 1 h2
       have hpos : 1 ≤ (N j).card := (hN j).2.1.card_pos
@@ -1545,7 +1547,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
               linarith [hbound]
       have hIntRHS : MeasureTheory.Integrable
           (fun ω => (∑ j ∈ Finset.range n, CPS j ω) + R n ω + |X c ω - X t₀ ω|) μ :=
-        ((integrable_finset_sum _ (fun j _ => hIntCPS j)).add (hIntR n)).add hIntAnchor
+        ((integrable_finsetSum _ (fun j _ => hIntCPS j)).add (hIntR n)).add hIntAnchor
       calc (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
           ≤ ∫ ω, ((∑ j ∈ Finset.range n, CPS j ω) + R n ω + |X c ω - X t₀ ω|) ∂μ :=
             integral_mono_ae hIntSupF hIntRHS (ae_of_all _ hpt)
@@ -1555,9 +1557,9 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
                   = (∫ ω, ((∑ j ∈ Finset.range n, CPS j ω) + R n ω) ∂μ)
                       + ∫ ω, |X c ω - X t₀ ω| ∂μ
                 from integral_add
-                  ((integrable_finset_sum _ (fun j _ => hIntCPS j)).add (hIntR n)) hIntAnchor,
-              integral_add (integrable_finset_sum _ (fun j _ => hIntCPS j)) (hIntR n),
-              integral_finset_sum _ (fun j _ => hIntCPS j)]
+                  ((integrable_finsetSum _ (fun j _ => hIntCPS j)).add (hIntR n)) hIntAnchor,
+              integral_add (integrable_finsetSum _ (fun j _ => hIntCPS j)) (hIntR n),
+              integral_finsetSum _ (fun j _ => hIntCPS j)]
     -- **STEP C: per-level bound** `E[CPS_j] ≤ 6√3·K·dudleySummand(κ+m+1+j)`.
     have hC : ∀ j : ℕ,
         (∫ ω, CPS j ω ∂μ) ≤ 6 * Real.sqrt 3 * K * dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ)) := by
@@ -1811,7 +1813,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         Filter.atTop (nhds (ENNReal.ofReal 20 * (K : ℝ≥0∞) * dudleyLSum T)) := by
       have hofB : Filter.Tendsto (fun n => ENNReal.ofReal (B n)) Filter.atTop (nhds 0) := by
         have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hBlim
-        simpa using this
+        simpa using! this
       have := (tendsto_const_nhds
         (x := ENNReal.ofReal 20 * (K : ℝ≥0∞) * dudleyLSum T)).add hofB
       simpa using this

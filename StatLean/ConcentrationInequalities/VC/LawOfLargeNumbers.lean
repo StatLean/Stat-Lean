@@ -173,7 +173,7 @@ lemma subGaussianIncrements_inner_signVec {n : ℕ}
     simpa [hσ2] using h
   -- the increment is mean-zero
   have hmean : ∫ e, (∑ i, Y i e) ∂(signVec n) = 0 := by
-    rw [MeasureTheory.integral_finset_sum _ (fun i _ => hY_int i)]
+    rw [MeasureTheory.integral_finsetSum _ (fun i _ => hY_int i)]
     simp [hmean_i]
   -- package as `IsSubGaussian`
   have hSG : IsSubGaussian (fun e => ∑ i, Y i e) σ2 (signVec n) := by
@@ -215,15 +215,16 @@ private lemma le_biSup_mem {E : Type*} {T : Set E} (hfin : T.Finite)
     by_cases ht : t ∈ T
     · rw [ciSup_pos ht]
       exact le_trans (hM (Set.mem_image_of_mem g ht)) (le_max_left _ _)
-    · haveI : IsEmpty (t ∈ T) := ⟨ht⟩
+    · have : IsEmpty (t ∈ T) := ⟨ht⟩
       rw [Real.iSup_of_isEmpty]
       exact le_max_right _ _
   exact le_ciSup_of_le hbdd v (le_of_eq (ciSup_pos (f := fun _ : v ∈ T => g v) hv).symm)
 
+set_option maxHeartbeats 1600000 in
 -- The conditional Dudley glue assembles the whole §8.3.6 pipeline (covering
 -- construction, entropy integral, sub-Gaussian bridge) in one term, whose
 -- `Finset.sup'`/`⨆` defeq checks over `EuclideanSpace` need a raised limit.
-set_option maxHeartbeats 1600000 in
+-- This proof uses about 1,320,000 heartbeats.
 /-- **Conditional Rademacher complexity bound** (HDP §8.3.6, Theorem 8.3.15
 conditional step): for a fixed sample `x`, the expected Rademacher supremum
 over a finite class of VC dimension `≤ d` is at most `2700·√d/√n`.
@@ -333,8 +334,8 @@ lemma rademacher_process_expectation_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
           have hcovU' : coveringNumber T ε ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℕ∞) := by
             rw [Nat.cast_add, Nat.cast_one]; exact hcovU
           have htoNat : (coveringNumber T ε).toNat ≤ ⌊(2 / ε) ^ (21 * d)⌋₊ + 1 := by
-            have h := ENat.toNat_le_toNat hcovU' (ENat.coe_ne_top _)
-            rwa [ENat.toNat_coe] at h
+            have h := ENat.toNat_le_toNat hcovU' (ENat.natCast_ne_top _)
+            rwa [ENat.toNat_natCast] at h
           have hreal : ((coveringNumber T ε).toNat : ℝ) ≤ (2 / ε) ^ (21 * d) + 1 := by
             calc ((coveringNumber T ε).toNat : ℝ)
                 ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℝ) := by exact_mod_cast htoNat
@@ -502,8 +503,8 @@ lemma symmetrization_adapter {Ξ : Type*} [MeasurableSpace Ξ]
           |(n : ℝ)⁻¹ * ∑ i : Fin n,
             p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|)
         ∂(P.prod (signVec n)) := by
-  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
-  haveI : Nonempty {S // S ∈ F} := ⟨⟨hFne.choose, hFne.choose_spec⟩⟩
+  have : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  have : Nonempty {S // S ∈ F} := ⟨⟨hFne.choose, hFne.choose_spec⟩⟩
   have key := empirical_symmetrization (α := Ω) (ι := {S // S ∈ F})
       (μ := P) (P := μ) (n := n)
       (X := fun (i : Fin n) (ξ : Ξ) => X i ξ)
@@ -590,7 +591,7 @@ theorem vc_lln_finset {Ξ : Type*} [MeasurableSpace Ξ]
     ∫ ξ, F.sup' hFne (fun S =>
         |empFrac (fun i : Fin n => X i ξ) S - μ.real S|) ∂P
       ≤ 5400 * Real.sqrt d / Real.sqrt n := by
-  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  have : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
   refine (symmetrization_adapter hXmeas hindep hlaw F hFne hFmeas hn).trans ?_
   set g : Ξ × (Fin n → ℝ) → ℝ := fun p => F.sup' hFne (fun S =>
       |(n : ℝ)⁻¹ * ∑ i : Fin n,

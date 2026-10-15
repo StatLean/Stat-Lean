@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import StatLean.HypothesisTesting.ForMathlib.BerryEsseen
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -133,15 +134,15 @@ private lemma integral_linear_mul_cexp {a : ℂ} (ha : a ≠ 0) (c : ℂ) (p q :
       ((c + (v : ℂ)) * Complex.exp (a * v)) v := by
     intro v
     have hb : HasDerivAt (fun w : ℝ => (w : ℂ)) 1 v := by
-      simpa using Complex.ofRealCLM.hasDerivAt (x := v)
+      simpa using! Complex.ofRealCLM.hasDerivAt (x := v)
     have h1 : HasDerivAt (fun w : ℝ => (c + (w : ℂ)) / a - 1 / a ^ 2) (1 / a) v := by
       simpa using ((hb.const_add c).div_const a).sub_const (1 / a ^ 2)
     have h2 : HasDerivAt (fun w : ℝ => Complex.exp (a * w))
         (Complex.exp (a * v) * a) v := by
       simpa using ((hb.const_mul a).cexp)
     have := h1.mul h2
-    convert this using 1
-    field_simp
+    convert! this using 1
+    try field_simp
     ring
   have hint : IntervalIntegrable (fun v : ℝ => (c + (v : ℂ)) * Complex.exp (a * v))
       MeasureTheory.volume p q := by
@@ -377,7 +378,7 @@ private lemma integrable_gTent {w : ℝ} (hw : w ≠ 0) (m : ℝ) : Integrable (
     MeasureTheory.Integrable.comp_mul_left' integrable_sqSincC hw
   have hmod : Integrable
       (fun ξ : ℝ => Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * sqSincC (w * ξ)) := by
-    refine hbase.bdd_mul' (c := 1) ?_ (Filter.Eventually.of_forall fun ξ => ?_)
+    refine hbase.bdd_mul (c := 1) ?_ (Filter.Eventually.of_forall fun ξ => ?_)
     · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
     · rw [Complex.norm_exp_ofReal_mul_I]
   exact hmod.const_mul _
@@ -454,7 +455,7 @@ private lemma smul_tent_eq_max {w δ : ℝ} (hw : 0 ≤ w) (hδ : 0 < δ) (t : �
     · ring
     · field_simp
   · subst hw'
-    simp [max_eq_left (by simpa using abs_nonneg t : (0 : ℝ) - |t| ≤ 0)]
+    simp
 
 private lemma integrable_gTent' {w : ℝ} (hw : 0 ≤ w) (m : ℝ) : Integrable (gTent w m) := by
   rcases hw.lt_or_eq with h | h
@@ -788,7 +789,7 @@ private lemma trapezoid_eq_tent_combination {v u δ : ℝ} (hδ : 0 < δ) (hvu :
   have hs2 : v + δ - y = -((u - v - δ) / 2) - (y - (v + u + δ) / 2) := by ring
   rw [trapezoid, ramp, ramp, hs1, hs2, min_one_max_zero_div hδ, min_one_max_zero_div hδ,
     ← mul_sub, trapezoid_core _ _ _ hw2 hδ, hw1,
-    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0:ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
+    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0 : ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
   ring
 
 /-! ## The trapezoid as a Fourier transform, with the classical `1/|ξ|` envelope -/
@@ -825,7 +826,7 @@ theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤
     have hI : ∀ w : ℝ, 0 ≤ w → Integrable (fun ξ : ℝ =>
         Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w m ξ) := by
       intro w hw
-      refine (integrable_gTent' hw m).bdd_mul' (c := 1) ?_
+      refine (integrable_gTent' hw m).bdd_mul (c := 1) ?_
         (Filter.Eventually.of_forall fun ξ => ?_)
       · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
       · rw [Complex.norm_exp_ofReal_mul_I]
@@ -1010,7 +1011,7 @@ variable {q : ℝ → ℝ}
 
 private lemma integrable_ramp_mul (hq : Integrable q) (u δ : ℝ) :
     Integrable (fun y : ℝ => ramp u δ y * q y) :=
-  hq.bdd_mul' (c := 1) (continuous_ramp u δ).aestronglyMeasurable
+  hq.bdd_mul (c := 1) (continuous_ramp u δ).aestronglyMeasurable
     (Filter.Eventually.of_forall fun y => by
       rw [Real.norm_eq_abs, abs_of_nonneg (ramp_nonneg u δ y)]; exact ramp_le_one u δ y)
 
@@ -1316,7 +1317,7 @@ bookkeeping. -/
 
 private lemma hasDerivAt_neg_inv {x : ℝ} (hx : x ≠ 0) :
     HasDerivAt (fun t : ℝ => -t⁻¹) ((x ^ 2)⁻¹) x := by
-  simpa using (hasDerivAt_inv hx).neg
+  simpa using! (hasDerivAt_inv hx).neg
 
 private lemma tendsto_neg_inv_atTop : Filter.Tendsto (fun t : ℝ => -t⁻¹) Filter.atTop (𝓝 0) := by
   have h : Filter.Tendsto (fun t : ℝ => t⁻¹) Filter.atTop (𝓝 0) := tendsto_inv_atTop_zero
@@ -1347,7 +1348,7 @@ private lemma integrableOn_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
   have h := (integrableOn_inv_sq_Ioi hρ).comp_neg
   rw [neg_Ioi_eq_Iio] at h
   have h2 : IntegrableOn (fun x : ℝ => (x ^ 2)⁻¹) (Set.Iio (-ρ)) :=
-    h.congr_fun (fun x _ => by rw [neg_sq]) measurableSet_Iio
+    h.congr_fun (fun x _ => by change ((-x) ^ 2)⁻¹ = (x ^ 2)⁻¹; rw [neg_sq]) measurableSet_Iio
   exact h2.congr_set_ae (Iio_ae_eq_Iic (a := (-ρ : ℝ))).symm
 
 private lemma integral_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
@@ -1361,7 +1362,7 @@ private lemma integral_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
 private lemma tail_eq_union (ρ : ℝ) :
     {ξ : ℝ | ρ ≤ |ξ|} = Set.Iic (-ρ) ∪ Set.Ici ρ := by
   ext ξ
-  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici, le_abs']
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici, le_abs']
 
 private lemma measurableSet_tail (ρ : ℝ) : MeasurableSet {ξ : ℝ | ρ ≤ |ξ|} := by
   rw [tail_eq_union]
@@ -1405,7 +1406,9 @@ theorem integrableOn_esseenWeight_tail {δ ρ : ℝ} (hδ : 0 < δ) (hρ : 0 < �
     IntegrableOn (fun ξ : ℝ => min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
       {ξ : ℝ | ρ ≤ |ξ|} := by
   refine Integrable.mono' ((integrableOn_inv_sq_tail hρ).const_mul (δ * π ^ 2)⁻¹)
-    (by fun_prop) ?_
+    ((measurable_const.div (measurable_const.mul measurable_id.abs)).min
+      (measurable_const.div ((measurable_const.mul measurable_const).mul
+        (measurable_id.pow_const 2)))).aestronglyMeasurable ?_
   filter_upwards [ae_restrict_mem (measurableSet_tail ρ)] with ξ hξ
   have hξ0 : ξ ≠ 0 := by
     intro h

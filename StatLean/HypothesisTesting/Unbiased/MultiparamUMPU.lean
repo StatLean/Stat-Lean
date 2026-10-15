@@ -133,6 +133,8 @@ similar tests to tests with Neyman structure is due to E. L. Lehmann and H. Sche
 **15** (1955), 219–236).
 -/
 
+set_option linter.style.longFile 4100
+
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal InnerProductSpace
 
@@ -295,7 +297,8 @@ theorem isCanonicalUT_cx (K : Set (ℝ × ℝ)) :
     rw [ae_dirac_eq]
     refine Filter.eventually_pure.mpr ?_
     simp
-  rw [hmap, cxν, withDensity_congr_ae hae, withDensity_one]
+  rw [Measure.map₀_of_aemeasurable (by fun_prop), hmap, cxν, withDensity_congr_ae hae,
+      withDensity_one]
 
 /-- **The conditional size of any test is its value at the single atom.** The disintegration
 identity `integral_eq_integral_condDistrib` computes the conditional size without identifying
@@ -323,18 +326,17 @@ theorem condSize_cx (K : Set (ℝ × ℝ)) (p : ℝ × ℝ) (ψ : ℝ × ℝ →
 /-- On the alternative set the competitor has power `1`. -/
 theorem power_cxψ_mem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∈ K) :
     power (cxP K) cxψ p = 1 := by
-  have hP : cxP K p = Measure.dirac true := by simp only [cxP, if_pos h]
+  have hP : cxP K p = Measure.dirac true := by simp only [cxP, ite_eq_left h]
   rw [power, hP, integral_dirac]
   simp [cxψ]
 
 /-- Off the alternative set the competitor has power `1/2`. -/
 theorem power_cxψ_notMem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∉ K) :
     power (cxP K) cxψ p = 1 / 2 := by
-  have hP : cxP K p = cxCoin := by simp only [cxP, if_neg h]
+  have hP : cxP K p = cxCoin := by simp only [cxP, ite_eq_right h]
   have hint : Integrable cxψ cxCoin := Integrable.of_finite
   rw [power, hP, integral_fintype hint]
-  simp only [Fintype.sum_bool, cxψ, if_true, if_false, smul_eq_mul, mul_one, mul_zero,
-    add_zero]
+  simp only [Fintype.sum_bool, cxψ, ite_true, smul_eq_mul, mul_one]
   rw [measureReal_def, cxCoin_true]
   norm_num
 
@@ -1200,7 +1202,7 @@ variable {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → �
 private lemma isProbabilityMeasure_mapUT [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (p : ℝ × Ξ) :
     IsProbabilityMeasure ((P p).map fun x => (U x, T x)) :=
-  Measure.isProbabilityMeasure_map (hU.prodMk hT).aemeasurable
+  (by infer_instance)
 
 /-- **The normalizing constant is strictly positive on `Ω`.** If `C p ≤ 0` the canonical
 density vanishes identically and the law of `(U, T)` is the zero measure, which it is not. -/
@@ -1215,9 +1217,9 @@ private lemma canonicalUT_const_pos [OpensMeasurableSpace Ξ] [∀ p, IsProbabil
     have h := mul_nonneg (neg_nonneg.mpr hcon) (Real.exp_pos (canExp p z)).le
     rw [neg_mul] at h
     linarith
-  haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
+  have := isProbabilityMeasure_mapUT (P := P) hU hT p
   have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
-  rw [hUT p hp] at h1
+  rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable] at h1
   simp only [canExp_apply] at hdens
   rw [hdens, withDensity_zero] at h1
   simp at h1
@@ -1235,10 +1237,11 @@ private lemma integrable_canExp [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityM
     Filter.Eventually.of_forall fun z => by
       have h : (0 : ℝ) ≤ C p * Real.exp (canExp p z) := by positivity
       simpa using h
-  haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
+  have := isProbabilityMeasure_mapUT (P := P) hU hT p
   have hlin : ∫⁻ z, ENNReal.ofReal (C p * Real.exp (canExp p z)) ∂ν = 1 := by
     have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
-    rw [hUT p hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ] at h1
+    rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable, withDensity_apply _ MeasurableSet.univ,
+        setLIntegral_univ] at h1
     exact h1
   have hint : Integrable (fun z => C p * Real.exp (canExp p z)) ν :=
     (lintegral_ofReal_ne_top_iff_integrable hm.aestronglyMeasurable hnn).mp
@@ -1260,7 +1263,7 @@ private lemma integral_comp_UT_eq [OpensMeasurableSpace Ξ] [∀ p, IsProbabilit
   have hmap : ∫ x, g (U x, T x) ∂(P p)
       = ∫ z, g z ∂((P p).map fun x => (U x, T x)) :=
     (integral_map (hU.prodMk hT).aemeasurable hg.aestronglyMeasurable).symm
-  rw [hmap, hUT p hp]
+  rw [hmap, hUT.map_eq hp (hU.prodMk hT).aemeasurable]
   have hnn : ∀ z : ℝ × Ξ, 0 ≤ C p * Real.exp (canExp p z) := fun z => by
     have := canonicalUT_const_pos hU hT hUT hp
     positivity
@@ -1286,7 +1289,7 @@ private lemma integrable_comp_UT_iff [OpensMeasurableSpace Ξ] [∀ p, IsProbabi
   have hstep : Integrable (fun x => g (U x, T x)) (P p)
       ↔ Integrable g ((P p).map fun x => (U x, T x)) :=
     (integrable_map_measure hg.aestronglyMeasurable (hU.prodMk hT).aemeasurable).symm
-  rw [hstep, hUT p hp]
+  rw [hstep, hUT.map_eq hp (hU.prodMk hT).aemeasurable]
   simp only [← canExp_apply]
   rw [integrable_withDensity_iff_integrable_smul' hdm
     (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
@@ -1353,7 +1356,7 @@ private lemma mapUT_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P
     {p q : ℝ × Ξ} (hp : p ∈ Ω) (hq : q ∈ Ω) :
     (P p).map (fun x => (U x, T x)) ≪ (P q).map fun x => (U x, T x) := by
   have hCq := canonicalUT_const_pos hU hT hUT hq
-  rw [hUT p hp, hUT q hq]
+  rw [hUT.map_eq hp (hU.prodMk hT).aemeasurable, hUT.map_eq hq (hU.prodMk hT).aemeasurable]
   simp only [← canExp_apply]
   refine (withDensity_absolutelyContinuous ν _).trans
     (withDensity_absolutelyContinuous' ?_ ?_)
@@ -1475,7 +1478,7 @@ private lemma exists_mem_fst_eq (hΩ : Convex ℝ Ω) {θ₀ : ℝ}
 /-- The law of `T` is a probability measure. -/
 private lemma isProbabilityMeasure_statLaw [∀ p, IsProbabilityMeasure (P p)]
     (hT : Measurable T) (p : ℝ × Ξ) : IsProbabilityMeasure ((P p).map T) :=
-  Measure.isProbabilityMeasure_map hT.aemeasurable
+  (by infer_instance)
 
 /-- The conditional power is a measurable function of the conditioning variable. -/
 private lemma measurable_condPower (hU : Measurable U) (hT : Measurable T)
@@ -1489,7 +1492,7 @@ private lemma measurable_condPower (hU : Measurable U) (hT : Measurable T)
 private lemma abs_condPower_le (μ : Measure 𝓧) [IsFiniteMeasure μ] {φ : ℝ × Ξ → ℝ}
     (hU : Measurable U) (hT : Measurable T) (hφb : ∀ z, |φ z| ≤ 1) (t : Ξ) :
     |∫ u, φ (u, t) ∂(condDistrib U T μ t)| ≤ 1 := by
-  haveI : IsProbabilityMeasure (condDistrib U T μ t) := inferInstance
+  have : IsProbabilityMeasure (condDistrib U T μ t) := inferInstance
   have h := norm_integral_le_of_norm_le_const (C := (1 : ℝ))
     (μ := condDistrib U T μ t) (f := fun u => φ (u, t))
     (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hφb _)
@@ -1520,8 +1523,8 @@ private lemma ae_condDistrib_expTilt [BorelSpace Ξ] [∀ p, IsProbabilityMeasur
       = (νt t).withDensity fun u => ENNReal.ofReal (Ct t p₀.1 * Real.exp (p₀.1 * u)) :=
     Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₀).ae_le (hct p₀ hp₀)
   filter_upwards [hct p hp, h2] with t ht1 ht2
-  haveI hpr0 : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
-  haveI hpr : IsProbabilityMeasure (condDistrib U T (P p) t) := inferInstance
+  have hpr0 : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+  have hpr : IsProbabilityMeasure (condDistrib U T (P p) t) := inferInstance
   have hapos : 0 < Ct t p₀.1 := by
     refine expTilt_factor_pos (Q := νt t) (k := Ct t p₀.1) (c := p₀.1) ?_
     rw [expTilt, ← ht2]; exact hpr0
@@ -1717,8 +1720,6 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
   have hinnerm' : ∀ y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)),
       Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => ⟪y, z⟫_ℝ := fun y =>
     (innerSL ℝ y).continuous.measurable
-  haveI hμ₁prob : IsProbabilityMeasure ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map T) :=
-    Measure.isProbabilityMeasure_map hT.aemeasurable
   set μ₁ : Measure Ξ := (P ((θ₀, ϑ₁) : ℝ × Ξ)).map T with hμ₁
   -- (1) Every boundary law of `T` is the `(ϑ − ϑ₁)`-exponential tilt of `μ₁`, so the vanishing
   -- hypothesis becomes the vanishing of a Laplace transform on the slice.
@@ -1732,7 +1733,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     have h1 : ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁
         = C ((θ₀, ϑ₁) : ℝ × Ξ) * ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
             Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z) ∂ν := by
-      rw [hμ₁, integral_map hT.aemeasurable
+      erw [hμ₁, integral_map hT.aemeasurable
         ((hf.mul ((hinnerm (ϑ - ϑ₁)).exp)).aestronglyMeasurable)]
       exact integral_comp_UT_eq hU hT hUT hϑ₁ hgm
     have h2 : ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
@@ -1759,10 +1760,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     (stdOrthonormalBasis ℝ Ξ).repr with hedef
   have hemeas : Measurable e := e.continuous.measurable
   have hesymm : Measurable e.symm := e.symm.continuous.measurable
-  haveI : IsProbabilityMeasure μ₁ := hμ₁prob
   set ν' : Measure (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) := μ₁.map e with hν'
-  haveI hν'prob : IsProbabilityMeasure ν' := by
-    rw [hν']; exact Measure.isProbabilityMeasure_map hemeas.aemeasurable
   set f' : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) → ℝ := fun y => f (e.symm y) with hf'def
   have hf'm : Measurable f' := hf.comp hesymm
   set S' : Set (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) :=
@@ -1839,8 +1837,6 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   obtain ⟨Cb, hCb⟩ := hbdd
   refine complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hf
     (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), interior_subset hϑ, rfl⟩) p.2.1
-  haveI : IsProbabilityMeasure ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
-    Measure.isProbabilityMeasure_map hT.aemeasurable
   refine Integrable.mono' (integrable_const Cb) hf.aestronglyMeasurable
     (Filter.Eventually.of_forall fun t => ?_)
   rw [Real.norm_eq_abs]
@@ -1867,7 +1863,7 @@ private lemma ae_condPower_eq_of_similar [BorelSpace Ξ] [FiniteDimensional ℝ 
   have hzero : ∀ p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀},
       ∫ t, f t ∂((P (p : ℝ × Ξ)).map T) = 0 := by
     rintro ⟨p, hpΩ, hpθ⟩
-    haveI := isProbabilityMeasure_statLaw (P := P) hT p
+    have := isProbabilityMeasure_statLaw (P := P) hT p
     have hcd : ∀ᵐ t ∂((P p).map T),
         (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t))
           = ∫ u, ψ (u, t) ∂(condDistrib U T (P p) t) := by
@@ -1905,7 +1901,6 @@ private lemma integral_comp_sign_of_condZero [BorelSpace Ξ]
     (hgzero : ∀ᵐ t ∂((P p₀).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0) :
     (p₀.1 ≤ p.1 → 0 ≤ ∫ x, g (U x, T x) ∂(P p)) ∧
       (p.1 ≤ p₀.1 → ∫ x, g (U x, T x) ∂(P p) ≤ 0) := by
-  haveI := isProbabilityMeasure_statLaw (P := P) hT p
   have hgzero' : ∀ᵐ t ∂((P p).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0 :=
     Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₀).ae_le hgzero
   have hkey : ∀ᵐ t ∂((P p).map T),
@@ -1913,8 +1908,8 @@ private lemma integral_comp_sign_of_condZero [BorelSpace Ξ]
         (p.1 ≤ p₀.1 → (∫ u, g (u, t) ∂(condDistrib U T (P p) t)) ≤ 0) := by
     filter_upwards [hgzero', ae_condDistrib_expTilt hU hT hUT hp₀ hp] with t ht0 htilt
     obtain ⟨k, hk, htilt⟩ := htilt
-    haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
-    haveI hpr : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
+    have : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+    have hpr : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
       rw [← htilt]; infer_instance
     have hgmt : Measurable fun u : ℝ => g (u, t) :=
       hgm.comp (measurable_id.prodMk measurable_const)
@@ -1948,7 +1943,6 @@ private lemma integrable_cond_slice (μ : Measure 𝓧) [IsFiniteMeasure μ]
     (hU : Measurable U) (hT : Measurable T) {a : ℝ × Ξ → ℝ} (ham : Measurable a)
     (hab : ∀ z, |a z| ≤ 1) (t : Ξ) :
     Integrable (fun u => a (u, t)) (condDistrib U T μ t) := by
-  haveI : IsProbabilityMeasure (condDistrib U T μ t) := inferInstance
   exact Integrable.mono' (integrable_const (1 : ℝ))
     ((ham.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable)
     (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hab _)
@@ -1970,7 +1964,6 @@ private lemma integral_comp_sign_of_condZero_interval [BorelSpace Ξ]
     (hz₂ : ∀ᵐ t ∂((P p₂).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₂) t) = 0) :
     ((p.1 < p₁.1 ∨ p₂.1 < p.1) → 0 ≤ ∫ x, g (U x, T x) ∂(P p)) ∧
       (p₁.1 < p.1 → p.1 < p₂.1 → ∫ x, g (U x, T x) ∂(P p) ≤ 0) := by
-  haveI := isProbabilityMeasure_statLaw (P := P) hT p
   have e1 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₁).ae_le hz₁
   have e2 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₂).ae_le hz₂
   have t2 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₂).ae_le
@@ -1983,11 +1976,11 @@ private lemma integral_comp_sign_of_condZero_interval [BorelSpace Ξ]
     filter_upwards [e1, e2, t2, tp] with t ht1 ht2 hd₂ hdp
     obtain ⟨k₂, hk₂, hteq₂⟩ := hd₂
     obtain ⟨k', hk', hteqp⟩ := hdp
-    haveI : IsProbabilityMeasure (condDistrib U T (P p₁) t) := inferInstance
-    haveI hQ₂ :
+    have : IsProbabilityMeasure (condDistrib U T (P p₁) t) := inferInstance
+    have hQ₂ :
         IsProbabilityMeasure (expTilt (condDistrib U T (P p₁) t) k₂ (p₂.1 - p₁.1)) := by
       rw [← hteq₂]; infer_instance
-    haveI hQ' :
+    have hQ' :
         IsProbabilityMeasure (expTilt (condDistrib U T (P p₁) t) k' (p.1 - p₁.1)) := by
       rw [← hteqp]; infer_instance
     have h2' : ∫ u, g (u, t) ∂(expTilt (condDistrib U T (P p₁) t) k₂ (p₂.1 - p₁.1)) = 0 := by
@@ -2034,11 +2027,11 @@ private lemma condOneSidedTest_mem_Icc {C₀ γ₀ : Ξ → ℝ}
 
 private lemma condOneSidedTest_eq_one {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : C₀ z.2 < z.1) :
     condOneSidedTest C₀ γ₀ z = 1 := by
-  simp only [condOneSidedTest, if_pos hz]
+  simp only [condOneSidedTest, ite_eq_left hz]
 
 private lemma condOneSidedTest_eq_zero {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : z.1 < C₀ z.2) :
     condOneSidedTest C₀ γ₀ z = 0 := by
-  simp only [condOneSidedTest, if_neg (not_lt.mpr hz.le), if_neg (ne_of_lt hz)]
+  simp only [condOneSidedTest, ite_eq_right (not_lt.mpr hz.le), ite_eq_right (ne_of_lt hz)]
 
 private lemma abs_le_one_of_mem_Icc {f : ℝ × Ξ → ℝ} (h : ∀ z, f z ∈ Set.Icc (0 : ℝ) 1)
     (z : ℝ × Ξ) : |f z| ≤ 1 :=
@@ -2088,17 +2081,18 @@ private lemma condInsideTest_mem_Icc {C₁ C₂ γ₁ γ₂ : Ξ → ℝ}
 
 private lemma condOutsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
-  simp only [condOutsideTest, if_pos hz]
+  simp only [condOutsideTest, ite_eq_left hz]
 
 private lemma condOutsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
   have hn : ¬ (z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) := by
     rintro (h | h) <;> linarith
-  simp only [condOutsideTest, if_neg hn, if_neg (ne_of_gt h1), if_neg (ne_of_lt h2)]
+  simp only [condOutsideTest, ite_eq_right hn, ite_eq_right (ne_of_gt h1),
+    ite_eq_right (ne_of_lt h2)]
 
 private lemma condInsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
     (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condInsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
-  simp only [condInsideTest, if_pos (And.intro h1 h2)]
+  simp only [condInsideTest, ite_eq_left (And.intro h1 h2)]
 
 private lemma condInsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC : ∀ t, C₁ t ≤ C₂ t)
     {z : ℝ × Ξ} (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condInsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
@@ -2109,7 +2103,7 @@ private lemma condInsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC : 
                                · exact ne_of_gt (by linarith)
   have h2 : z.1 ≠ C₂ z.2 := by rcases hz with h | h; · exact ne_of_lt (by linarith)
                                · exact ne_of_gt h
-  simp only [condInsideTest, if_neg hn, if_neg h1, if_neg h2]
+  simp only [condInsideTest, ite_eq_right hn, ite_eq_right h1, ite_eq_right h2]
 
 /-! ## The four UMP unbiased tests -/
 
@@ -2174,8 +2168,6 @@ theorem isUMPU_conditional_oneSided
   have hφb : ∀ z : ℝ × Ξ, |condOneSidedTest C₀ γ₀ z| ≤ 1 := abs_le_one_of_mem_Icc hφIcc
   obtain ⟨p₀, hp₀, hp₀θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt hΩ_gt
   obtain ⟨qp, hqp, hqpθ⟩ := id hΩ_gt
-  haveI hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
-    isProbabilityMeasure_statLaw (P := P) hT p
   have hsize₀ : ∀ᵐ t ∂((P p₀).map T),
       ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p₀) t) = α :=
     hsize p₀ hp₀ hp₀θ
@@ -2215,7 +2207,6 @@ theorem isUMPU_conditional_oneSided
       linarith
     have hgz : ∀ᵐ t ∂((P p₀).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0 := by
       filter_upwards [hsize₀, hwsize] with t ht hw
-      haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
       rw [hgdef]
       rw [integral_sub (integrable_cond_slice (P p₀) hU hT hφm hφb t)
         (integrable_cond_slice (P p₀) hU hT hwm hwb t), ht, hw, sub_self]
@@ -2232,7 +2223,7 @@ theorem isUMPU_conditional_oneSided
   have hconstsize : ∀ᵐ t ∂((P p₀).map T),
       ∫ _u, (α : ℝ) ∂(condDistrib U T (P p₀) t) = α := by
     refine Filter.Eventually.of_forall fun t => ?_
-    haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+    have : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
     simp
   have hconstIcc : ∀ _z : ℝ × Ξ, (α : ℝ) ∈ Set.Icc (0 : ℝ) 1 := fun _ => ⟨hα₀.le, hα₁.le⟩
   have hconst := hcmp (fun _ => α) measurable_const hconstIcc hconstsize
@@ -2343,7 +2334,7 @@ theorem isUMPU_conditional_inside
   have hφb : ∀ z : ℝ × Ξ, |condInsideTest C₁ C₂ γ₁ γ₂ z| ≤ 1 := abs_le_one_of_mem_Icc hφIcc
   obtain ⟨p₁, hp₁, hp₁θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt₁ hΩ_gt₁
   obtain ⟨p₂, hp₂, hp₂θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt₂ hΩ_gt₂
-  haveI hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
+  have hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
     isProbabilityMeasure_statLaw (P := P) hT p
   have hp₁₂ : p₁.1 < p₂.1 := by rw [hp₁θ, hp₂θ]; exact hθ
   have hsz₁ := hsize p₁ hp₁ (Or.inl hp₁θ)
@@ -2393,7 +2384,6 @@ theorem isUMPU_conditional_inside
         ∀ᵐ t ∂((P r).map T), ∫ u, g (u, t) ∂(condDistrib U T (P r) t) = 0 := by
       intro r ha hb
       filter_upwards [ha, hb] with t hta htb
-      haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
       rw [hgdef, integral_sub (integrable_cond_slice (P r) hU hT hwm hwb t)
         (integrable_cond_slice (P r) hU hT hφm hφb t), hta, htb, sub_self]
     have hsplit : ∫ x, g (U x, T x) ∂(P p)
@@ -2416,7 +2406,7 @@ theorem isUMPU_conditional_inside
       ∀ᵐ t ∂((P r).map T), ∫ _u, (α : ℝ) ∂(condDistrib U T (P r) t) = α := by
     intro r
     refine Filter.Eventually.of_forall fun t => ?_
-    haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
+    have : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
     simp
   have hconstIcc : ∀ _z : ℝ × Ξ, (α : ℝ) ∈ Set.Icc (0 : ℝ) 1 := fun _ => ⟨hα₀.le, hα₁.le⟩
   have hconst := hcmp (fun _ => α) measurable_const hconstIcc (hconstsize p₁) (hconstsize p₂)
@@ -2554,7 +2544,7 @@ theorem isUMPU_conditional_outside
   obtain ⟨p₂, hp₂, hp₂θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt₂ hΩ_gt₂
   obtain ⟨qlo, hqlo, hqloθ⟩ := id hΩ_lt₁
   obtain ⟨qhi, hqhi, hqhiθ⟩ := id hΩ_gt₂
-  haveI hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
+  have hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
     isProbabilityMeasure_statLaw (P := P) hT p
   have hp₁₂ : p₁.1 < p₂.1 := by rw [hp₁θ, hp₂θ]; exact hθ
   have hsz₁ := hsize p₁ hp₁ (Or.inl hp₁θ)
@@ -2598,7 +2588,6 @@ theorem isUMPU_conditional_outside
         ∀ᵐ t ∂((P r).map T), ∫ u, g (u, t) ∂(condDistrib U T (P r) t) = 0 := by
       intro r ha hb
       filter_upwards [ha, hb] with t hta htb
-      haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
       rw [hgdef, integral_sub (integrable_cond_slice (P r) hU hT hφm hφb t)
         (integrable_cond_slice (P r) hU hT hwm hwb t), hta, htb, sub_self]
     have hsplit : ∫ x, g (U x, T x) ∂(P p)
@@ -2622,7 +2611,7 @@ theorem isUMPU_conditional_outside
       ∀ᵐ t ∂((P r).map T), ∫ _u, (α : ℝ) ∂(condDistrib U T (P r) t) = α := by
     intro r
     refine Filter.Eventually.of_forall fun t => ?_
-    haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
+    have : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
     simp
   have hconstIcc : ∀ _z : ℝ × Ξ, (α : ℝ) ∈ Set.Icc (0 : ℝ) 1 := fun _ => ⟨hα₀.le, hα₁.le⟩
   have hconst := hcmp (fun _ => α) measurable_const hconstIcc (hconstsize p₁) (hconstsize p₂)
@@ -3056,7 +3045,7 @@ private lemma integral_U_mul_eq_of_boundary_min {P : ℝ × Ξ → Measure 𝓧}
     have hC := canonicalUT_const_pos hU hT hUT hθ
     have h1 := hCD θ hθ
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     nlinarith
   have hpow : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω →
       ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ)) = N θ / D θ := by
@@ -3084,7 +3073,7 @@ private lemma integral_U_mul_eq_of_boundary_min {P : ℝ × Ξ → Measure 𝓧}
       rw [Metric.mem_ball, Real.dist_eq] at hθ
       exact hθ.le
     have hmem := hseg θ hθ'
-    show N θ₀ / D θ₀ ≤ N θ / D θ
+    change N θ₀ / D θ₀ ≤ N θ / D θ
     rw [← hpow θ hmem, ← hpow θ₀ h0, hval]
     exact hmin θ hθ'
   have hzero := hlocmin.hasDerivAt_eq_zero hdiv
@@ -3210,10 +3199,10 @@ private lemma exists_boundary_ae_integrable_id
     simp only []; ring
   rw [hc₁] at he₁
   rw [hc₂] at he₂
-  haveI hpr₁ : IsProbabilityMeasure
+  have hpr₁ : IsProbabilityMeasure
       (expTilt (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) k₁ δ) := by
     rw [← he₁]; infer_instance
-  haveI hpr₂ : IsProbabilityMeasure
+  have hpr₂ : IsProbabilityMeasure
       (expTilt (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) k₂ (-δ)) := by
     rw [← he₂]; infer_instance
   have hk₁pos : 0 < k₁ := expTilt_factor_pos hpr₁
@@ -3356,7 +3345,7 @@ private lemma integrable_condPower_of_integrable {P : ℝ × Ξ → Measure 𝓧
   have h : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1)) ((P p).map fun x => (T x, U x)) := by
     rw [integrable_map_measure hgm.aestronglyMeasurable (hT.prodMk hU).aemeasurable]
     exact hint
-  exact h.integral_condDistrib_map hU.aemeasurable
+  exact h.integral_condDistrib_map hT.aemeasurable hU.aemeasurable
 
 /-- **The point-null fibrewise engine, globalised.** The analogue of
 `integral_comp_sign_of_condZero_interval` for a *single* boundary surface: `g` is bounded,
@@ -3381,7 +3370,6 @@ private lemma integral_comp_sign_of_condZero_point {P : ℝ × Ξ → Measure �
     (hz : ∀ᵐ t ∂((P p₀).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0)
     (hz' : ∀ᵐ t ∂((P p₀).map T), ∫ u, u * g (u, t) ∂(condDistrib U T (P p₀) t) = 0) :
     0 ≤ ∫ x, g (U x, T x) ∂(P p) := by
-  haveI := isProbabilityMeasure_statLaw (P := P) hT p
   have hac := (statLaw_ac hU hT hUT hp hp₀).ae_le
   have e1 := Filter.Eventually.filter_mono hac hid
   have e2 := Filter.Eventually.filter_mono hac hz
@@ -3389,8 +3377,8 @@ private lemma integral_comp_sign_of_condZero_point {P : ℝ × Ξ → Measure �
   have hkey : ∀ᵐ t ∂((P p).map T), 0 ≤ ∫ u, g (u, t) ∂(condDistrib U T (P p) t) := by
     filter_upwards [e1, e2, e3, ae_condDistrib_expTilt hU hT hUT hp₀ hp] with t h1 h2 h3 hd
     obtain ⟨k, hk, hteq⟩ := hd
-    haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
-    haveI hQ : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
+    have : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+    have hQ : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
       rw [← hteq]; infer_instance
     have hgmt : Measurable fun u : ℝ => g (u, t) :=
       hgm.comp (measurable_id.prodMk measurable_const)
@@ -3583,7 +3571,7 @@ theorem isUMPU_conditional_point
   have hφIcc : ∀ z : ℝ × Ξ, condOutsideTest C₁ C₂ γ₁ γ₂ z ∈ Set.Icc (0 : ℝ) 1 :=
     condOutsideTest_mem_Icc hγ₁_mem hγ₂_mem
   have hφb : ∀ z : ℝ × Ξ, |condOutsideTest C₁ C₂ γ₁ γ₂ z| ≤ 1 := abs_le_one_of_mem_Icc hφIcc
-  haveI hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
+  have hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
     isProbabilityMeasure_statLaw (P := P) hT p
   -- the reference boundary parameter, at which `U` is conditionally integrable
   obtain ⟨ϑ₀, hp₀Ω, hp₀int⟩ :=
@@ -3627,7 +3615,6 @@ theorem isUMPU_conditional_point
     have hzc : ∀ᵐ t ∂((P ((θ₀, ϑ₀) : ℝ × Ξ)).map T),
         ∫ u, g (u, t) ∂(condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) = 0 := by
       filter_upwards [hsz₀, hw₁] with t hta htb
-      haveI : IsProbabilityMeasure (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) := inferInstance
       have hfun : (fun u : ℝ => g (u, t))
           = fun u : ℝ => condOutsideTest C₁ C₂ γ₁ γ₂ (u, t) - w (u, t) := by
         funext u; simp only [hgdef]
@@ -3663,7 +3650,7 @@ theorem isUMPU_conditional_point
   have hconstsize : ∀ᵐ t ∂((P ((θ₀, ϑ₀) : ℝ × Ξ)).map T),
       ∫ _u, (α : ℝ) ∂(condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) = α := by
     refine Filter.Eventually.of_forall fun t => ?_
-    haveI : IsProbabilityMeasure (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) := inferInstance
+    have : IsProbabilityMeasure (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) := inferInstance
     simp
   have hconstderiv : ∀ᵐ t ∂((P ((θ₀, ϑ₀) : ℝ × Ξ)).map T),
       ∫ u, u * (α : ℝ) ∂(condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t)
@@ -3750,7 +3737,7 @@ private lemma cdf_sublevel_nonempty_bddBelow (μ : Measure ℝ) [IsProbabilityMe
   · obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp
       ((tendsto_cdf_atBot μ).eventually_lt_const (show (0 : ℝ) < 1 - α by linarith))
     refine ⟨b, fun y hy => ?_⟩
-    simp only [Set.mem_setOf_eq] at hy
+    simp only [Set.mem_ofPred_eq] at hy
     by_contra hcon
     exact absurd (hb y (not_le.mp hcon).le) (not_lt.mpr hy)
 
@@ -3837,17 +3824,17 @@ private lemma integral_condOneSidedTest (μ : Measure ℝ) [IsProbabilityMeasure
     by_cases h1 : C₀ t < u
     · have hm1 : u ∈ {x : ℝ | C₀ t < x} := h1
       have hn2 : u ∉ {x : ℝ | x = C₀ t} := by
-        simp only [Set.mem_setOf_eq]; linarith
-      rw [if_pos h1, Set.indicator_of_mem hm1, Set.indicator_of_notMem hn2]
+        simp only [Set.mem_ofPred_eq]; linarith
+      rw [ite_eq_left h1, Set.indicator_of_mem hm1, Set.indicator_of_notMem hn2]
       ring
     · have hn1 : u ∉ {x : ℝ | C₀ t < x} := h1
-      rw [if_neg h1, Set.indicator_of_notMem hn1]
+      rw [ite_eq_right h1, Set.indicator_of_notMem hn1]
       by_cases h2 : u = C₀ t
       · have hm2 : u ∈ {x : ℝ | x = C₀ t} := h2
-        rw [if_pos h2, Set.indicator_of_mem hm2]
+        rw [ite_eq_left h2, Set.indicator_of_mem hm2]
         ring
       · have hn2 : u ∉ {x : ℝ | x = C₀ t} := h2
-        rw [if_neg h2, Set.indicator_of_notMem hn2]
+        rw [ite_eq_right h2, Set.indicator_of_notMem hn2]
         ring
   rw [hfun, integral_add ((integrable_const (1 : ℝ)).indicator hs₁)
     (((integrable_const (1 : ℝ)).indicator hs₂).const_mul _), integral_const_mul,
@@ -3906,7 +3893,7 @@ theorem exists_measurable_conditional_constants
     refine measurable_of_Iic fun x => ?_
     have hset : (fun t => critC (κ t) α) ⁻¹' Set.Iic x = {t | 1 - α ≤ cdf (κ t) x} := by
       ext t
-      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq]
       exact critC_le_iff (κ t) hα₀ hα₁ x
     rw [hset]
     exact measurableSet_le measurable_const (measurable_cdf_kernel κ x)
@@ -4045,16 +4032,20 @@ theorem isCanonicalUT_reparam
     rw [← inner_exponent_reparam a p.1 p.2 z.1 z.2 ha₀]
   have hkey : (ν.map (statTransformUT a₀ a)).withDensity (fun z => ENNReal.ofReal (C p *
         Real.exp ((reparamUT a₀ a p).1 * z.1 + ⟪(reparamUT a₀ a p).2, z.2⟫_ℝ)))
-      = ((P p).map fun x => (U x, T x)).map (statTransformUT a₀ a) := by
+      = ((P p).map₀ fun x => (U x, T x)).map (statTransformUT a₀ a) := by
     rw [hUT p hp, ← map_withDensity_comp ν hS hD]
     congr 1
     congr 1
     funext z
     exact hdens z
+  change (P p).map₀ (fun x => (U x / a₀, T x - (U x / a₀) • a)) = _
   rw [hkey]
   -- move the shear past the statistic; both sides vanish if the statistic is not measurable
   by_cases hf : AEMeasurable (fun x => (U x, T x)) (P p)
-  · rw [AEMeasurable.map_map_of_aemeasurable hS.aemeasurable hf]
+  · rw [Measure.map₀_of_aemeasurable hf,
+      Measure.map₀_of_aemeasurable (show AEMeasurable
+        (fun x => (U x / a₀, T x - (U x / a₀) • a)) (P p) from hS.comp_aemeasurable hf),
+      AEMeasurable.map_map_of_aemeasurable hS.aemeasurable hf]
     rfl
   · have hf' : ¬ AEMeasurable (fun x => (U x / a₀, T x - (U x / a₀) • a)) (P p) := by
       intro hc
@@ -4065,7 +4056,7 @@ theorem isCanonicalUT_reparam
       have := hS'.comp_aemeasurable hc
       rw [hcomp] at this
       exact hf this
-    rw [Measure.map_of_not_aemeasurable hf, Measure.map_of_not_aemeasurable hf']
+    rw [Measure.map₀_of_not_aemeasurable hf, Measure.map₀_of_not_aemeasurable hf']
     simp
 
 end StatLean.HypothesisTesting

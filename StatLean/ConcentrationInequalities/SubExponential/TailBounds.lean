@@ -36,10 +36,13 @@ brick supplies the bound on $\{t \le Y\} \supseteq \{t < Y\}$.
 Theorem 5.2 (Sub-exponential Tail Probability).
 
 **Proof formalization notes.** Both bounds follow from the one-sided Chernoff bound
-  $\mu\{t < Y\} \le \exp(-\lambda t)\,\mathrm{MGF}_Y(\lambda) \le \exp(-\lambda t + \lambda^2\alpha^2/2)$
+  $\mu\{t < Y\} \le \exp(-\lambda t)\,\mathrm{MGF}_Y(\lambda)
+  \le \exp(-\lambda t + \lambda^2\alpha^2/2)$
 using `mgf_le_of_mem_Icc`, then optimizing the free parameter $\lambda \in [0, 1/\alpha]$:
-- Quadratic regime: the optimal $\lambda = t/\alpha^2$ lies in range when $t \le \alpha$; gives $\exp(-t^2/2\alpha^2)$.
-- Linear regime: clamp $\lambda = 1/\alpha$; the residual $1/2 \le t/(2\alpha)$ (from $\alpha \le t$) absorbs the slack.
+- Quadratic regime: the optimal $\lambda = t/\alpha^2$ lies
+  in range when $t \le \alpha$; gives $\exp(-t^2/2\alpha^2)$.
+- Linear regime: clamp $\lambda = 1/\alpha$; the residual
+  $1/2 \le t/(2\alpha)$ (from $\alpha \le t$) absorbs the slack.
 
 Mathlib brick: `ProbabilityTheory.measure_ge_le_exp_mul_mgf`
 (in `Mathlib.Probability.Moments.Basic`, transitively via `SubGaussian`).
@@ -101,7 +104,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   -- Chernoff parameter: λ = t / α²  (the unconstrained optimizer)
   set s := t / (α : ℝ) ^ 2 with hs_def
   have hs_nn : 0 ≤ s := div_nonneg ht (sq_nonneg _)
@@ -168,7 +171,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_linear
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t / (2 * (α : ℝ)))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   have ht : 0 ≤ t := le_trans hα.le htα
   -- Chernoff parameter: λ = 1/α  (clamped at the boundary of the valid range)
   set s := 1 / (α : ℝ) with hs_def

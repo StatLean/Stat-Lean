@@ -142,7 +142,7 @@ noncomputable def pairwiseContrast (t₁ t₂ : T)
 theorem eval_pairwiseContrast (t₁ t₂ : T) (h : t₁ ≠ t₂) (μ : T → ℝ) :
     (pairwiseContrast t₁ t₂ h).eval μ = μ t₁ - μ t₂ := by
   simp only [Contrast.eval, pairwiseContrast, sub_mul, ite_mul, one_mul, zero_mul,
-    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, if_pos]
+    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_eq_left]
 
 end Pairwise
 

@@ -5,7 +5,8 @@ import StatLean.Bayesian.Dominated.PredictiveDensity
 
 The central theorem of Bayesian inference in the dominated setting: for predictive-almost-every
 data `x`, the posterior is the prior reweighted by the normalized likelihood density,
-$$\pi(d\theta \mid x) = \frac{p(\theta, x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')}.$$
+$$\pi(d\theta \mid x) = \frac{p(\theta,
+x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')}.$$
 
 The proof identifies the explicit density kernel `bayesKernel p π` with Mathlib's abstract
 posterior `κ†π`, via the disintegration identity
@@ -65,7 +66,7 @@ theorem bayesKernel_apply_univ_le_one [IsFiniteMeasure π]
     (hp : Measurable (Function.uncurry p)) (x : 𝓧) :
     bayesKernel p π x Set.univ ≤ 1 := by
   rw [bayesKernel_apply hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
-  show ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
+  change ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
   simp_rw [div_eq_mul_inv]
   rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable]
   exact ENNReal.mul_inv_le_one _
@@ -77,7 +78,7 @@ theorem isFiniteKernel_bayesKernel [IsFiniteMeasure π]
     IsFiniteKernel (bayesKernel p π) := by
   refine ⟨1, ENNReal.one_lt_top, fun x => ?_⟩
   rw [bayesKernel_apply hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
-  show ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
+  change ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
   rcases eq_or_ne (predictiveDensity p π x) 0 with hm | hm
   · -- `m x = 0`: with `hp`, `p(·,x) =ᵐ[π] 0`, so the integrand is `π`-a.e. `0`.
     have hae : (fun θ => p θ x) =ᵐ[π] 0 :=
@@ -109,10 +110,11 @@ theorem predictiveDensity_mul_setLIntegral_bayesDensity
       likelihood_ae_eq_zero_of_predictiveDensity_eq_zero hp hm
     rw [lintegral_congr_ae (ae_restrict_of_ae hae)]
     simp
-  · show predictiveDensity p π x * ∫⁻ θ in s, p θ x / predictiveDensity p π x ∂π
+  · change predictiveDensity p π x * ∫⁻ θ in s, p θ x / predictiveDensity p π x ∂π
       = ∫⁻ θ in s, p θ x ∂π
     simp_rw [div_eq_mul_inv]
-    rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable, mul_comm _ (predictiveDensity p π x)⁻¹,
+    rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable,
+      mul_comm _ (predictiveDensity p π x)⁻¹,
       ← mul_assoc, ENNReal.mul_inv_cancel hm hxlt.ne, one_mul]
 
 /-- **The prior×likelihood disintegration**: `predictive ⊗ posterior-candidate = joint (swapped)`.
@@ -124,7 +126,7 @@ theorem compProd_bayesKernel_eq_map_swap [IsFiniteMeasure π] [IsFiniteKernel κ
     -- USER-INPUT: dominated model; Robert Definition 1.2.1 / §1.4
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :
     (κ ∘ₘ π) ⊗ₘ bayesKernel p π = (π ⊗ₘ κ).map Prod.swap := by
-  haveI := isFiniteKernel_bayesKernel (π := π) hp
+  have := isFiniteKernel_bayesKernel (π := π) hp
   have key : ∀ {t : Set 𝓧} {s : Set Θ}, MeasurableSet t → MeasurableSet s →
       ((κ ∘ₘ π) ⊗ₘ bayesKernel p π) (t ×ˢ s) = ((π ⊗ₘ κ).map Prod.swap) (t ×ˢ s) := by
     intro t s ht hs
@@ -158,7 +160,7 @@ theorem bayesKernel_ae_eq_posterior [StandardBorelSpace Θ] [Nonempty Θ]
     -- USER-INPUT: dominated model; Robert Definition 1.2.1 / §1.4
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :
     bayesKernel p π =ᵐ[κ ∘ₘ π] κ†π := by
-  haveI := isFiniteKernel_bayesKernel (π := π) hp
+  have := isFiniteKernel_bayesKernel (π := π) hp
   exact ae_eq_posterior_of_compProd_eq (μ := π) (compProd_bayesKernel_eq_map_swap hp hκ)
 
 /-- **Bayes' theorem, dominated form** (Robert eq. (1.2.3)): for predictive-a.e. `x`,

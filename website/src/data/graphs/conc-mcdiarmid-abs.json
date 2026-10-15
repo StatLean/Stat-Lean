@@ -6,10 +6,10 @@
     {"id":"StatLean.ConcentrationInequalities.mgf_sub_expectation_le","label":"mgf_sub_expectation_le","full":"StatLean.ConcentrationInequalities.mgf_sub_expectation_le","kind":"repo","decl":"thm","module":"StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition"},
     {"id":"ProbabilityTheory.HasSubgaussianMGF.measure_ge_le","label":"measure_ge_le","full":"ProbabilityTheory.HasSubgaussianMGF.measure_ge_le","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"},
     {"id":"ProbabilityTheory.HasSubgaussianMGF.neg","label":"neg","full":"ProbabilityTheory.HasSubgaussianMGF.neg","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"},
-    {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
-    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"LT.lt.le","label":"le","full":"LT.lt.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"Real.exp_pos","label":"exp_pos","full":"Real.exp_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
     {"id":"lt_abs","label":"lt_abs","full":"lt_abs","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
@@ -17,12 +17,11 @@
     {"id":"MeasureTheory.measure_union_le","label":"measure_union_le","full":"MeasureTheory.measure_union_le","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
     {"id":"add_le_add","label":"add_le_add","full":"add_le_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
-    {"id":"covariant_swap_add_of_covariant_add","label":"covariant_swap_add_of_covariant_add","full":"covariant_swap_add_of_covariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
-    {"id":"ENNReal.ofReal_add","label":"ofReal_add","full":"ENNReal.ofReal_add","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"IsOrderedAddMonoid.toAddRightMono","label":"toAddRightMono","full":"IsOrderedAddMonoid.toAddRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"ENNReal.ofReal_add","label":"ofReal_add","full":"ENNReal.ofReal_add","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
     {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
-    {"id":"pow_one","label":"pow_one","full":"pow_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"pow_one","label":"pow_one","full":"pow_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"StatLean.ConcentrationInequalities.doobIncrement","label":"doobIncrement","full":"StatLean.ConcentrationInequalities.doobIncrement","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition"},
     {"id":"ProbabilityTheory.HasSubgaussianMGF.sum_of_hasCondSubgaussianMGF","label":"sum_of_hasCondSubgaussianMGF","full":"ProbabilityTheory.HasSubgaussianMGF.sum_of_hasCondSubgaussianMGF","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"},
     {"id":"StatLean.ConcentrationInequalities.natFiltration","label":"natFiltration","full":"StatLean.ConcentrationInequalities.natFiltration","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition"},
@@ -46,7 +45,8 @@
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
+    {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
+    {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
   ],
   "edges": [
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"StatLean.ConcentrationInequalities.allVars"},
@@ -64,10 +64,9 @@
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"MeasureTheory.measure_union_le"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"add_le_add"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"IsOrderedAddMonoid.toAddLeftMono"},
-    {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"covariant_swap_add_of_covariant_add"},
+    {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"IsOrderedAddMonoid.toAddRightMono"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"ENNReal.ofReal_add"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"Finset.sum_congr"},
-    {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"pow_one"},
     {"source":"StatLean.ConcentrationInequalities.McDiarmid_abs","target":"add_zero"},
     {"source":"StatLean.ConcentrationInequalities.mgf_sub_expectation_le","target":"StatLean.ConcentrationInequalities.allVars"},
@@ -103,6 +102,7 @@
     {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"Filter.mp_mem"},
     {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"Filter.univ_mem'"},
     {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"Nat.cast_zero"},
-    {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"neg_eq_zero"}
+    {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"neg_eq_zero"},
+    {"source":"StatLean.ConcentrationInequalities.increment_hasCondSubgaussianMGF","target":"sub_eq_zero_of_eq"}
   ]
 }

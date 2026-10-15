@@ -79,7 +79,7 @@ private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X 
     (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
   have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
   have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
-  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hY.mul' hX)
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hX.fun_mul hY)
   have hquad : ∀ t : ℝ,
       0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
     intro t
@@ -137,7 +137,7 @@ theorem covariance_matrix_inequality {r : ℕ} (P : Measure 𝓧)
   set q : ℝ := γ ⬝ᵥ (C⁻¹ *ᵥ γ) with hq
   -- `W ∈ L²`
   have hWmem : MemLp W 2 P := by
-    rw [hW]; exact memLp_finset_sum _ (fun i _ => (hψ i).const_mul (a i))
+    rw [hW]; exact memLp_finsetSum _ (fun i _ => (hψ i).const_mul (a i))
   -- `C⁻¹` is positive definite, so `q ≥ 0` and `C` is nonsingular
   have hCinv : (C⁻¹).PosDef := hCpos.inv
   have hqnn : 0 ≤ q := by rw [hq]; exact hCinv.posSemidef.dotProduct_mulVec_nonneg γ
@@ -216,7 +216,7 @@ theorem multiparameter_cramer_rao {s : ℕ} (M : ParametricFamily 𝓧 (Euclidea
     -- USER-INPUT: those derivatives are obtained by differentiating under the integral sign
     (hswap : ∀ i, α i = ∫ x, δ x * scoreVec M θ x i * M.density θ x ∂μ) :
     α ⬝ᵥ ((infoMatrix M μ θ)⁻¹ *ᵥ α) ≤ variance δ (M.toMeasure μ θ) := by
-  haveI hP : IsProbabilityMeasure (M.toMeasure μ θ) := by
+  have hP : IsProbabilityMeasure (M.toMeasure μ θ) := by
     refine ⟨?_⟩
     rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
       withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,

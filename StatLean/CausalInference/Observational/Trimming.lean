@@ -83,7 +83,7 @@ so its conditional mean is its value there. -/
 private lemma integral_comp_cond_cell [IsFiniteMeasure μ] (hX : Measurable X) (g : 𝒳 → ℝ)
     {x : 𝒳} (hc : μ (cell X x) ≠ 0) :
     ∫ ω, g (X ω) ∂(μ[|cell X x]) = g x := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hc
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hc
   have hae : ∀ᵐ ω ∂(μ[|cell X x]), g (X ω) = g x := by
     filter_upwards [ae_cond_mem (hX (measurableSet_singleton x))] with ω hω
     have hXω : X ω = x := hω
@@ -118,7 +118,7 @@ private lemma trimmedSet_eq_biUnion [DecidableEq 𝒳] (μ : Measure Ω) (Z : Ω
       = ⋃ x ∈ Finset.univ.filter fun x =>
             η ≤ propensity μ Z X x ∧ propensity μ Z X x ≤ 1 - η, cell X x := by
   ext ω
-  simp only [trimmedSet, Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_univ,
+  simp only [trimmedSet, Set.mem_ofPred_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_univ,
     true_and, cell, Set.mem_preimage, Set.mem_singleton_iff, exists_prop]
   exact ⟨fun h => ⟨X ω, h, rfl⟩, fun ⟨_, hx, hxe⟩ => hxe ▸ hx⟩
 
@@ -170,14 +170,14 @@ private lemma weightedATE_eq_of_constant_cate [IsProbabilityMeasure μ] {τ : �
   have hnum : ∫ ω, g (X ω) * (y1 ω - y0 ω) ∂μ = τ * ∫ ω, g (X ω) ∂μ := by
     rw [integral_eq_sum_cell hX hprod, integral_eq_sum_cell hX hgint, Finset.mul_sum]
     refine Finset.sum_congr rfl fun x _ => ?_
-    show (μ (cell X x)).toReal * ∫ ω, g (X ω) * (y1 ω - y0 ω) ∂(μ[|cell X x])
+    change (μ (cell X x)).toReal * ∫ ω, g (X ω) * (y1 ω - y0 ω) ∂(μ[|cell X x])
       = τ * ((μ (cell X x)).toReal * ∫ ω, g (X ω) ∂(μ[|cell X x]))
     rcases eq_or_ne (μ (cell X x)) 0 with hc | hc
     · rw [hc]; simp
     · rw [integral_comp_mul_cond_cell hX g _ x, integral_comp_cond_cell hX g hc,
         show ∫ ω, (y1 ω - y0 ω) ∂(μ[|cell X x]) = τ from hconst x hc]
       ring
-  show (∫ ω, g (X ω) * (y1 ω - y0 ω) ∂μ) / (∫ ω, g (X ω) ∂μ) = τ
+  change (∫ ω, g (X ω) * (y1 ω - y0 ω) ∂μ) / (∫ ω, g (X ω) ∂μ) = τ
   rw [hnum, mul_div_assoc, div_self hg, mul_one]
 
 /-- **Strict overlap bounds the treated weight** (Ding Assumption 20.1): under

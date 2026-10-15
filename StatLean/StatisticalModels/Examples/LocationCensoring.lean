@@ -42,7 +42,7 @@ noncomputable def locationFam (μ₀ : Measure ℝ) : ℝ → Measure ℝ :=
 instance (μ₀ : Measure ℝ) [IsProbabilityMeasure μ₀] (θ : ℝ) :
     IsProbabilityMeasure (locationFam μ₀ θ) := by
   unfold locationFam
-  exact Measure.isProbabilityMeasure_map (measurable_const_add θ).aemeasurable
+  exact (by infer_instance)
 
 /-- Shifting the data shifts the parameter: the location model is equivariant under
 translation (via `pushforward_pushforward`). -/
@@ -50,7 +50,8 @@ theorem pushforward_locationFam_shift (μ₀ : Measure ℝ) (c : ℝ) :
     pushforward (locationFam μ₀) (fun x => c + x) = fun θ => locationFam μ₀ (c + θ) := by
   funext θ
   simp only [pushforward, locationFam]
-  rw [Measure.map_map (measurable_const_add c) (measurable_const_add θ)]
+  rw [Measure.map₀_of_measurable (measurable_const_add c),
+    Measure.map_map (measurable_const_add c) (measurable_const_add θ)]
   have hcomp : ((fun x : ℝ => c + x) ∘ fun x : ℝ => θ + x) = fun x : ℝ => c + θ + x :=
     funext fun x => (add_assoc c θ x).symm
   rw [hcomp]

@@ -25,6 +25,8 @@ Aumann-style projection measurability; it does NOT depend on lower
 semicontinuity of `ℓ` in the second factor.
 -/
 
+set_option linter.style.longFile 2100
+
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal NNReal
 
@@ -65,7 +67,7 @@ theorem analytic_projection_aeMeasurable
   classical
   -- Endow α with a compatible Polish topology so that we can speak of
   -- analytic subsets of α.
-  letI := upgradeStandardBorel α
+  let := upgradeStandardBorel α
   -- The Borel level set `S := {(x, b) | f (x, b) < c}` is measurable.
   set S : Set (α × β) := f ⁻¹' Set.Iio c with hSdef
   have hS_meas : MeasurableSet S := hf measurableSet_Iio
@@ -159,7 +161,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
       have hset_eq : {x : α | φ x ≤ (q : ℝ≥0∞)}
           = ⋂ n : ℕ, {x : α | φ x < (q : ℝ≥0∞) + ((n + 1 : ℕ) : ℝ≥0∞)⁻¹} := by
         ext x
-        simp only [Set.mem_setOf_eq, Set.mem_iInter]
+        simp only [Set.mem_ofPred_eq, Set.mem_iInter]
         refine ⟨?_, ?_⟩
         · intro hx n
           have hpos : (0 : ℝ≥0∞) < ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
@@ -203,7 +205,7 @@ private theorem nullMeasurableSet_approx_argmin_graph
       hU_eq.inter hV_eq
     have hempty : (Sp ∩ Sq : Set α) = (∅ : Set α) := by
       ext x
-      simp only [Sp, Sq, Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Sp, Sq, Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_and, not_lt]
       intro hxp
       -- hxp : φ x < p; goal: φ x ≤ q.
@@ -275,7 +277,7 @@ private theorem nullMeasurableSet_proj_of_borel_basis
     (m : Measure α) [SFinite m] :
     NullMeasurableSet {x : α | ∃ b ∈ U, (x, b) ∈ G'} m := by
   classical
-  letI := upgradeStandardBorel α
+  let := upgradeStandardBorel α
   -- Identify the projection set with `Prod.fst '' (G' ∩ (univ ×ˢ U))`.
   set S : Set (α × β) := G' ∩ (Set.univ ×ˢ U) with hSdef
   have hS_meas : MeasurableSet S :=
@@ -337,8 +339,8 @@ private theorem cauchy_selector_inductive_step
   classical
   -- `SeparableSpace β` is automatic from `SecondCountableTopology β`; combined with
   -- `MetricSpace + CompleteSpace + SecondCountableTopology` we get `PolishSpace β`.
-  haveI : SeparableSpace β := inferInstance
-  haveI : PolishSpace β := inferInstance
+  have : SeparableSpace β := inferInstance
+  have : PolishSpace β := inferInstance
   -- The dense sequence in `β`.
   set d : ℕ → β := TopologicalSpace.denseSeq β with hd_def
   have hd_dense : DenseRange d := TopologicalSpace.denseRange_denseSeq β
@@ -381,7 +383,7 @@ private theorem cauchy_selector_inductive_step
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      rw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEqSet_iff]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -493,7 +495,7 @@ private theorem cauchy_selector_inductive_step
   let N₀ : Set α := N ∪ E_star
   have hN₀_meas : MeasurableSet N₀ := hN_meas.union hE_star_meas
   have hN₀_null : m N₀ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₀ ≤ m N + m E_star := measure_union_le _ _
       _ = 0 + 0 := by rw [hN_null, hE_star_null]
       _ = 0 := by simp
@@ -717,7 +719,7 @@ private theorem aumann_selector_closed_graph_polish
       ∃ s : α → β, Measurable s ∧ ∀ x ∉ N₀, (x, s x) ∈ F := by
   classical
   -- Endow β with a complete metric compatible with its Polish topology.
-  letI := upgradeIsCompletelyMetrizable β
+  let := upgradeIsCompletelyMetrizable β
   -- Invoke the recursive Cauchy-index sub-step to obtain a measurable sequence
   -- `b k : α → β` whose values are 2⁻ᵏ-close to the fiber `F_x` and Cauchy
   -- with rate 2⁻ᵏ off a measurable m-null set `N₀ ⊇ N`.
@@ -743,7 +745,7 @@ private theorem aumann_selector_closed_graph_polish
       obtain ⟨K, hK⟩ := htd (ε / 2) hpos
       refine ⟨K, ?_⟩
       have := hK K (le_refl K)
-      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) K)]
+      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) K)]
         using this
     refine ⟨K, fun n hn => ?_⟩
     -- Telescoping: dist (b K x) (b n x) ≤ Σ_{k=K}^{n-1} dist (b k x) (b (k+1) x)
@@ -944,7 +946,7 @@ private theorem polishRefinement_of_measurable_singleSpace
   -- making `G'` clopen.
   -- `Prod.borelSpace` fires because Polish implies `SecondCountableTopology` on
   -- each factor, supplying `SecondCountableTopologyEither α β`.
-  haveI hBorel : BorelSpace (α × β) := Prod.borelSpace
+  have hBorel : BorelSpace (α × β) := Prod.borelSpace
   -- Capture the original PolishSpace instance BEFORE `obtain` introduces `τ'`
   -- into the context — otherwise `inferInstance` for `PolishSpace (α × β)`
   -- would resolve to `τ'_polish` (closest-binder shadowing).
@@ -978,7 +980,7 @@ private theorem nullMeasurableSet_image_fst_of_borel
   -- Endow `α` with the canonical Polish topology compatible with its
   -- standard-Borel structure. This gives `TopologicalSpace α`, `PolishSpace α`,
   -- `BorelSpace α` (hence `OpensMeasurableSpace α`) and `SecondCountableTopology α`.
-  letI : UpgradedStandardBorel α := upgradeStandardBorel α
+  let : UpgradedStandardBorel α := upgradeStandardBorel α
   -- `Prod.fst : α × β → α` is measurable, so the image of the measurable set
   -- `G'` under it is an analytic subset of `α`.
   have hAnalytic : AnalyticSet (Prod.fst '' G') :=
@@ -1034,8 +1036,8 @@ private theorem cauchy_selector_inductive_step_singleSpace
   classical
   -- `SeparableSpace γ` is automatic from `SecondCountableTopology γ`; combined with
   -- `MetricSpace + CompleteSpace + SecondCountableTopology` we get `PolishSpace γ`.
-  haveI : SeparableSpace γ := inferInstance
-  haveI : PolishSpace γ := inferInstance
+  have : SeparableSpace γ := inferInstance
+  have : PolishSpace γ := inferInstance
   -- The dense sequence in `γ`.
   set d : ℕ → γ := TopologicalSpace.denseSeq γ with hd_def
   have hd_dense : DenseRange d := TopologicalSpace.denseRange_denseSeq γ
@@ -1076,7 +1078,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
     have hae_mem : ∀ᵐ x ∂m, x ∈ W' k i ↔ x ∈ W k i :=
       (hW'_ae k i).mem_iff
     have hdiff : (W' k i \ W k i) =ᵐ[m] (∅ : Set α) := by
-      rw [Filter.eventuallyEq_set]
+      erw [Filter.eventuallyEqSet_iff]
       filter_upwards [hae_mem] with x hx
       constructor
       · rintro ⟨hxW', hxnW⟩
@@ -1179,7 +1181,7 @@ private theorem cauchy_selector_inductive_step_singleSpace
   let N₀ : Set α := N ∪ E_star
   have hN₀_meas : MeasurableSet N₀ := hN_meas.union hE_star_meas
   have hN₀_null : m N₀ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₀ ≤ m N + m E_star := measure_union_le _ _
       _ = 0 + 0 := by rw [hN_null, hE_star_null]
       _ = 0 := by simp
@@ -1355,7 +1357,7 @@ private theorem aumann_selector_closed_graph_polish_singleSpace
   -- argument is structurally identical to `aumann_selector_closed_graph_polish`.
   classical
   -- Endow γ with a complete metric compatible with its Polish topology.
-  letI := upgradeIsCompletelyMetrizable γ
+  let := upgradeIsCompletelyMetrizable γ
   -- Invoke the recursive Cauchy-index sub-step (single-space form) to obtain a
   -- measurable sequence `b k : α → γ` whose values are 2⁻ᵏ-close to the fiber
   -- `Ĝ_x` and Cauchy with rate 2⁻ᵏ off a measurable m-null set `N₀ ⊇ N`.
@@ -1377,7 +1379,7 @@ private theorem aumann_selector_closed_graph_polish_singleSpace
       obtain ⟨K, hK⟩ := htd (ε / 2) hpos
       refine ⟨K, ?_⟩
       have := hK K (le_refl K)
-      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0:ℝ) ≤ 1/2) K)]
+      simpa [Real.dist_eq, abs_of_nonneg (pow_nonneg (by norm_num : (0 : ℝ) ≤ 1/2) K)]
         using this
     refine ⟨K, fun n hn => ?_⟩
     have h_tel : dist (b K x) (b n x) ≤ ∑ k ∈ Finset.Ico K n, (1 / 2 : ℝ) ^ k := by
@@ -1596,16 +1598,16 @@ private theorem aumann_suslin_scheme_cauchy
     intro x _
     exact hα_empty.elim x
   -- Endow `α` with a compatible Polish topology and Borel structure.
-  letI := upgradeStandardBorel α
+  let := upgradeStandardBorel α
   -- Obtain a Polish refinement τ' on `α × β` making `G'` clopen, together with
   -- Borel-preservation `@borel (α × β) τ' = Prod.instMeasurableSpace`.
   obtain ⟨τ', _τ'_le, τ'_polish, hτ'_borel, hG'_closed_τ', _hG'_open_τ'⟩ :=
     polishRefinement_of_measurable_singleSpace G' hG'_meas
   -- Install τ' as the topology on `α × β`. Construct `BorelSpace`
   -- instance under τ' from `hτ'_borel`.
-  letI : TopologicalSpace (α × β) := τ'
-  haveI : PolishSpace (α × β) := τ'_polish
-  haveI : BorelSpace (α × β) := ⟨hτ'_borel.symm⟩
+  let : TopologicalSpace (α × β) := τ'
+  have : PolishSpace (α × β) := τ'_polish
+  have : BorelSpace (α × β) := ⟨hτ'_borel.symm⟩
   -- Build the lifted closed graph `Ĝ ⊆ α × (α × β)`:
   --   `Ĝ := {q | q.2.1 = q.1 ∧ q.2 ∈ G'}`.
   -- Its fiber over `x` is `{(y, b) | y = x ∧ (y, b) ∈ G'} = {(x, b) | (x, b) ∈ G'}`.
@@ -1656,7 +1658,7 @@ private theorem aumann_suslin_scheme_cauchy
     refine ⟨(x, b), ?_, hxb⟩
     rfl
   -- The hypotheses supply `Nonempty α` and `Nonempty β`, hence `Nonempty (α × β)`.
-  haveI : Nonempty (α × β) := ⟨(Classical.arbitrary α, Classical.arbitrary β)⟩
+  have : Nonempty (α × β) := ⟨(Classical.arbitrary α, Classical.arbitrary β)⟩
   -- Invoke the closed-graph selector with γ := α × β (under τ').
   obtain ⟨N₀, hN₀_meas, hN₀_null, hN_sub_N₀, t, ht_meas, ht_inĜ⟩ :=
     aumann_selector_closed_graph_polish_singleSpace
@@ -1679,7 +1681,7 @@ private theorem aumann_suslin_scheme_cauchy
     have hf : Measurable (fun x : α => (t x).1) := measurable_fst.comp ht_meas
     have hne : MeasurableSet {x : α | (t x).1 ≠ x} := by
       have : {x : α | (t x).1 ≠ x} = {x : α | (t x).1 = x}ᶜ := by
-        ext x; simp [Set.mem_compl_iff, Set.mem_setOf_eq, Ne]
+        ext x; simp [Set.mem_compl_iff, Set.mem_ofPred_eq, Ne]
       rw [this]
       exact (measurableSet_eq_fun hf measurable_id).compl
     exact hne
@@ -1687,12 +1689,12 @@ private theorem aumann_suslin_scheme_cauchy
     rw [Filter.eventually_iff, MeasureTheory.mem_ae_iff] at h_proj_ae
     -- `{x | (t x).1 = x}ᶜ` has m-measure 0; this is exactly `E`.
     have : E = {x : α | (t x).1 = x}ᶜ := by
-      ext x; simp [E, Set.mem_compl_iff, Set.mem_setOf_eq, Ne]
+      ext x; simp [E, Set.mem_compl_iff, Set.mem_ofPred_eq, Ne]
     rw [this]; exact h_proj_ae
   set N₁ : Set α := N₀ ∪ E with hN₁_def
   have hN₁_meas : MeasurableSet N₁ := hN₀_meas.union hE_meas
   have hN₁_null : m N₁ = 0 := by
-    refine le_antisymm ?_ (zero_le _)
+    refine le_antisymm ?_ (zero_le)
     calc m N₁ ≤ m N₀ + m E := measure_union_le _ _
       _ = 0 + 0 := by rw [hN₀_null, hE_null]
       _ = 0 := by simp

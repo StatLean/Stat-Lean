@@ -20,12 +20,12 @@
     {"id":"mul_add","label":"mul_add","full":"mul_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"Distrib.leftDistribClass","label":"leftDistribClass","full":"Distrib.leftDistribClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
     {"id":"Finset.sum_add_distrib","label":"sum_add_distrib","full":"Finset.sum_add_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
-    {"id":"covariant_swap_add_of_covariant_add","label":"covariant_swap_add_of_covariant_add","full":"covariant_swap_add_of_covariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
-    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"IsOrderedAddMonoid.toAddRightMono","label":"toAddRightMono","full":"IsOrderedAddMonoid.toAddRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"OrderIso.map_csSup'","label":"map_csSup'","full":"OrderIso.map_csSup'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Indexed"},
     {"id":"Set.Nonempty.image","label":"image","full":"Set.Nonempty.image","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Image"},
     {"id":"Set.image_add_right","label":"image_add_right","full":"Set.image_add_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Pointwise.Set.Basic"},
-    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+    {"id":"OrderIso.addRight_apply","label":"addRight_apply","full":"OrderIso.addRight_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.OrderIso"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalLearning.massart","target":"StatLean.StatisticalLearning.radComplexity"},
@@ -51,12 +51,12 @@
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"mul_add"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"Distrib.leftDistribClass"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"Finset.sum_add_distrib"},
-    {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"covariant_swap_add_of_covariant_add"},
-    {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"IsOrderedAddMonoid.toAddRightMono"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"OrderIso.map_csSup'"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"Set.Nonempty.image"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"Set.image_add_right"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"Set.image_congr"},
+    {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"OrderIso.addRight_apply"},
     {"source":"StatLean.StatisticalLearning.radComplexity_translate","target":"add_zero"}
   ]
 }

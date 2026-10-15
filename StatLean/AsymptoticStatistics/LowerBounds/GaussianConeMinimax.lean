@@ -51,7 +51,7 @@ theorem gaussianCone_minimax_bounded
     _hbowl _hlsc _hbdd e he with
     ⟨h₀, c, hc, hgauss, hz, hztop, hprob, hsupp, hbayes⟩
   let π := restrictedTranslatedGaussianPrior C h₀ c
-  letI : IsProbabilityMeasure π := hprob
+  let : IsProbabilityMeasure π := hprob
   rcases exists_finite_quantization C π hsupp A ℓ _hfinite _hbdd _huc e he with
     ⟨I, hIC, hquant⟩
   let J : {S : Finset (EuclideanSpace ℝ (Fin m)) // (S : Set _) ⊆ C} := ⟨I, hIC⟩
@@ -88,7 +88,7 @@ theorem gaussianCone_minimax
     exact Filter.eventually_atTop.2 ⟨n, fun k hk => hmono x hk⟩
   have hcont (n : ℕ) : Continuous (ℓn n) := by
     have h := ENNReal.continuous_ofReal.comp (huc n).continuous
-    convert h using 1
+    convert! h using 1
     funext x
     exact (ENNReal.ofReal_toReal (hfinite n x)).symm
   let M : ℝ≥0∞ :=
@@ -185,7 +185,7 @@ theorem gaussianCone_minimax_vec_bounded_fullSpan {d : ℕ}
     A ℓ _hbowl _hlsc _hbdd e he with
     ⟨h₀, c, hc, hgauss, hz, hztop, hprob, hsupp, hbayes⟩
   let π := restrictedTranslatedGaussianPrior C h₀ c
-  letI : IsProbabilityMeasure π := hprob
+  let : IsProbabilityMeasure π := hprob
   rcases exists_finite_quantization_vec C π hsupp A ℓ _hfinite _hbdd _huc e he with
     ⟨I, hIC, hquant⟩
   let J : {S : Finset (EuclideanSpace ℝ (Fin m)) // (S : Set _) ⊆ C} := ⟨I, hIC⟩
@@ -227,7 +227,7 @@ theorem gaussianCone_minimax_vec_fullSpan {d : ℕ}
     exact Filter.eventually_atTop.2 ⟨n, fun k hk => hmono x hk⟩
   have hcont (n : ℕ) : Continuous (ℓn n) := by
     have h := ENNReal.continuous_ofReal.comp (huc n).continuous
-    convert h using 1
+    convert! h using 1
     funext x
     exact (ENNReal.ofReal_toReal (hfinite n x)).symm
   let M : ℝ≥0∞ :=

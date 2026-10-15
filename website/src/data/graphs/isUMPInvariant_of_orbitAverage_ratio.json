@@ -14,6 +14,7 @@
     {"id":"StatLean.HypothesisTesting.powerAgainst","label":"powerAgainst","full":"StatLean.HypothesisTesting.powerAgainst","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.HypothesisTesting.IsMostPowerful","label":"IsMostPowerful","full":"StatLean.HypothesisTesting.IsMostPowerful","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.HypothesisTesting.isMostPowerful_of_npShape","label":"isMostPowerful_of_npShape","full":"StatLean.HypothesisTesting.isMostPowerful_of_npShape","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.NeymanPearson.Lemma"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"StatLean.HypothesisTesting.IsLevel","label":"IsLevel","full":"StatLean.HypothesisTesting.IsLevel","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"Eq.le","label":"le","full":"Eq.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"}
   ],
@@ -30,6 +31,7 @@
     {"source":"StatLean.HypothesisTesting.isUMPInvariant_of_orbitAverage_ratio","target":"StatLean.HypothesisTesting.powerAgainst"},
     {"source":"StatLean.HypothesisTesting.isUMPInvariant_of_orbitAverage_ratio","target":"StatLean.HypothesisTesting.IsMostPowerful"},
     {"source":"StatLean.HypothesisTesting.isUMPInvariant_of_orbitAverage_ratio","target":"StatLean.HypothesisTesting.isMostPowerful_of_npShape"},
+    {"source":"StatLean.PointEstimation.IsInvariantModel","target":"MeasureTheory.Measure.map₀"},
     {"source":"StatLean.HypothesisTesting.IsUMPInvariant","target":"StatLean.HypothesisTesting.IsCriticalFn"},
     {"source":"StatLean.HypothesisTesting.IsUMPInvariant","target":"StatLean.HypothesisTesting.IsInvariantTest"},
     {"source":"StatLean.HypothesisTesting.IsUMPInvariant","target":"StatLean.HypothesisTesting.IsLevel"},

@@ -77,7 +77,7 @@ theorem finiteProjectionLaw_eq_of_fdd_weakConvergesOuter
     have h := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp
       htid.tendsto) f
     simpa only [ProbabilityMeasure.coe_mk, Measure.map_id] using h
-  letI : IsFiniteMeasure (ν.map p) := Measure.isFiniteMeasure_map ν p
+  let : IsFiniteMeasure (ν.map p) := Measure.isFiniteMeasure_map ν p
   exact WeakConverges.unique houterWeak htidWeak
 
 /-- Probability, singleton tightness, outer weak convergence, and FDD
@@ -92,7 +92,7 @@ theorem tightCenteredGaussianLaw_of_fdd_weakConvergesOuter
     (hνtight : IsTightMeasureSet ({ν} : Set (Measure (LinfT T))))
     (hweak : WeakConvergesOuter μ X ν) :
     TightCenteredGaussianLaw C ν := by
-  letI : IsProbabilityMeasure ν := hνprob
+  let : IsProbabilityMeasure ν := hνprob
   exact
     { prob := hνprob
       tight := hνtight

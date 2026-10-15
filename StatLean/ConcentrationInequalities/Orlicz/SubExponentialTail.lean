@@ -67,7 +67,7 @@ theorem measure_abs_ge_le_of_lintegral_exp_abs_le_two {X : Ω → ℝ} {μ : Mea
   have hchain : ε * μ {ω | t ≤ |X ω|} ≤ 2 := by
     calc ε * μ {ω | t ≤ |X ω|}
         ≤ ε * μ {ω | ε ≤ ENNReal.ofReal (Real.exp (|X ω| / (K : ℝ)))} :=
-          mul_le_mul_left' (measure_mono hsub) ε
+          mul_le_mul_right (measure_mono hsub) ε
       _ ≤ ∫⁻ ω, ENNReal.ofReal (Real.exp (|X ω| / (K : ℝ))) ∂μ := hmark
       _ ≤ 2 := h
   have hr : (2 : ℝ) * Real.exp (-t / (K : ℝ)) = 2 / Real.exp (t / (K : ℝ)) := by

@@ -1,6 +1,6 @@
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Notation.Indicator
 
@@ -172,6 +172,7 @@ with exactly `n₁` ones (Ding Definition 3.1). -/
 def completeSupport (n n₁ : ℕ) : Finset (Assignment n) :=
   Finset.univ.filter fun z => numTreated z = n₁
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Complete randomization has a possible assignment as soon as `n₁ ≤ n`. -/
 theorem completeSupport_nonempty {n n₁ : ℕ}
     -- USER-INPUT: at most `n` units can be treated; Ding Definition 3.1
@@ -181,7 +182,11 @@ theorem completeSupport_nonempty {n n₁ : ℕ}
   refine ⟨fun i => decide (i ∈ t), ?_⟩
   have harm : armIdx (fun i => decide (i ∈ t)) true = t := by
     ext i; simp [armIdx]
-  simp only [completeSupport, Finset.mem_filter, Finset.mem_univ, true_and, numTreated, harm, ht]
+  apply Finset.mem_filter.mpr
+  refine ⟨Finset.mem_univ _, ?_⟩
+  dsimp only [numTreated]
+  rw [harm]
+  exact ht
 
 /-- The **completely randomized experiment** (CRE) with `n₁` treated of `n` units: the
 uniform distribution on the `C(n, n₁)` assignment vectors with `n₁` ones

@@ -137,12 +137,12 @@ theorem frechet_remainder_sup_bound
   obtain ⟨δ, hδ, hbd⟩ := h_frechet ε hε
   -- Squeeze between `0` and `μ {δ/2 < ‖θ̂ₙ − θ₀‖} → 0`.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (h_consist (δ / 2) (half_pos hδ)) (fun n => zero_le _) (fun n => ?_)
+    (h_consist (δ / 2) (half_pos hδ)) (fun n => zero_le) (fun n => ?_)
   -- `μ*(Eₙ) ≤ μ*({δ/2 < ‖·‖}) ≤ μ({δ/2 < ‖·‖})`.
   refine le_trans (outerMeasureStar_mono μ ?_) (outerMeasureStar_le_measure μ _)
   -- Inclusion `Eₙ ⊆ {δ/2 < ‖θ̂ₙ − θ₀‖}`.
   intro ξ hξ
-  simp only [Set.mem_setOf_eq] at hξ ⊢
+  simp only [Set.mem_ofPred_eq] at hξ ⊢
   by_contra hcon
   rw [not_lt] at hcon
   obtain ⟨h, hh⟩ := hξ
@@ -226,9 +226,9 @@ theorem infinite_dim_z_estimator
       μ {ξ | δcls ≤ ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       (h_consist (δcls / 2) (half_pos hyp.hδcls))
-      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+      (Eventually.of_forall fun n => zero_le) (Eventually.of_forall fun n => ?_)
     refine measure_mono fun ξ hξ => ?_
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     linarith [half_lt_self hyp.hδcls]
   have h_tail := modifiedRandomFunction_tail P ψ θ₀ δcls θ_hat μ X h_sup h_bad
   have h_mem := modifiedRandomFunction_mem ψ θ₀ δcls θ_hat X 𝓕 hyp.hclass_mem hθ₀_mem
@@ -241,7 +241,7 @@ theorem infinite_dim_z_estimator
         - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ψ θ₀ h)) := by
     refine tendstoZeroInOuterProbSup_of_eq_off_vanishing Rmod_oP h_bad ?_
     intro n ξ hb hh
-    simp only [Set.mem_setOf_eq, not_le] at hb
+    simp only [Set.mem_ofPred_eq, not_le] at hb
     rw [modifiedRandomFunction_eq_on_good ψ θ₀ δcls θ_hat X n ξ hh hb]
   -- ============ STEP 1b: the Fréchet remainder `Sfam` is o_P (rate bootstrap). ============
   have hS := frechet_remainder_sup_bound P ψ θ₀ V hyp.hPθ₀_zero hyp.frechet μ θ_hat X h_consist
@@ -312,8 +312,10 @@ theorem infinite_dim_z_estimator
     refine le_trans (ENNReal.ofReal_le_ofReal htri) ?_
     rw [ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
     refine add_le_add ?_ ?_
-    · exact le_iSup (α := ℝ≥0∞) _ h
-    · exact le_iSup (α := ℝ≥0∞) _ h
+    · apply le_iSup_of_le h
+      exact le_rfl
+    · apply le_iSup_of_le h
+      exact le_rfl
   have hA : IsBoundedInOuterProbSup μ (fun (n : ℕ) ξ h =>
       Real.sqrt n
           * empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h) n

@@ -53,7 +53,7 @@ private lemma tendstoInProbZero_of_abs_le_three
       (add_le_add_right (measureReal_union_le
         {omega | epsilon / (3 * c) ≤ ‖B n omega‖}
         {omega | epsilon / (3 * c) ≤ ‖C n omega‖}) _)
-  simp only [Set.mem_setOf_eq, Set.mem_union] at homega ⊢
+  simp only [Set.mem_ofPred_eq, Set.mem_union] at homega ⊢
   by_contra hall
   push Not at hall
   have hbound := hle n omega
@@ -280,12 +280,12 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
         {X | M < ‖Delta n X‖} by
       ext X
       have hnonneg : 0 ≤ 1 + |Delta n X| := by positivity
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs, abs_of_nonneg hnonneg]
+      simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, abs_of_nonneg hnonneg]
       constructor <;> intro hx <;> linarith]
     exact hM n
   have hR := tendstoInProbZero_of_isBoundedInProb_mul hfactor hnorm
   have hResidual : TendstoInProbZero Pn R := by
-    convert hR using 1
+    convert! hR using 1
     funext n X
     simp only [smul_eq_mul, R, Delta]
     conv_rhs => rw [← mul_assoc, mul_inv_cancel₀ (by positivity :
@@ -297,7 +297,7 @@ theorem rawMovingBias_expansion_2559_of_sqrtN_tight
         Omega → ℝ) x)) =ᵐ[P]
         fun x => I⁻¹ * (score0 : Lp ℝ 2 P) x := by
     change (((I⁻¹ • (score0 : Lp ℝ 2 P) : Lp ℝ 2 P) : Omega → ℝ)) =ᵐ[P] _
-    simpa only [smul_eq_mul] using Lp.coeFn_smul I⁻¹ (score0 : Lp ℝ 2 P)
+    simpa only [smul_eq_mul] using! Lp.coeFn_smul I⁻¹ (score0 : Lp ℝ 2 P)
   refine (hResidual epsilon hepsilon).congr' ?_
   filter_upwards [] with n
   rw [measureReal_def]
@@ -442,7 +442,7 @@ theorem rawMovingBias_sqrtN_tight_2554
     · subst n
       have hset : {X : Fin 0 → Omega | K < ‖S 0 X‖} = ∅ := by
         ext X
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
           S, Nat.cast_zero, Real.sqrt_zero, inv_zero, Fin.sum_univ_zero,
           mul_zero, norm_zero]
         exact not_lt_of_ge hK.le
@@ -453,7 +453,7 @@ theorem rawMovingBias_sqrtN_tight_2554
       fun i => h.B0.score0_memLp.comp_measurePreserving
         (measurePreserving_eval (μ := fun _ : Fin n => P) i)
     have hSmem : MemLp (S n) 2 (Pn n) :=
-      (memLp_finset_sum Finset.univ (fun i _ => hgi i)).const_mul _
+      (memLp_finsetSum Finset.univ (fun i _ => hgi i)).const_mul _
     have hSint : ∫ X, S n X ∂(Pn n) = 0 := by
       have heach : ∀ i : Fin n,
           ∫ X : Fin n → Omega, g (X i) ∂(Pn n) = 0 := by
@@ -462,7 +462,7 @@ theorem rawMovingBias_sqrtN_tight_2554
           h.B0.score0_memLp.aestronglyMeasurable]
         exact hmean
       rw [show S n = fun X => (Real.sqrt n)⁻¹ * ∑ i : Fin n, g (X i) from rfl,
-        integral_const_mul, integral_finset_sum _
+        integral_const_mul, integral_finsetSum _
           (fun i _ => (hgi i).integrable (by norm_num))]
       simp [heach]
     have hSvar : ProbabilityTheory.variance (S n) (Pn n) = V := by
@@ -495,7 +495,7 @@ theorem rawMovingBias_sqrtN_tight_2554
     intro epsilon hepsilon
     obtain ⟨K, hK⟩ := hS epsilon hepsilon
     refine ⟨|I⁻¹| * max K 0, fun n => (measureReal_mono (fun X hX => ?_)).trans (hK n)⟩
-    simp only [Set.mem_setOf_eq, T, Real.norm_eq_abs, abs_mul] at hX ⊢
+    simp only [Set.mem_ofPred_eq, T, Real.norm_eq_abs, abs_mul] at hX ⊢
     have hc : 0 < |I⁻¹| := abs_pos.mpr (inv_ne_zero (ne_of_gt h.hI))
     have hm : max K 0 < |S n X| := by nlinarith [hX]
     exact lt_of_le_of_lt (le_max_left K 0) hm
@@ -511,7 +511,7 @@ theorem rawMovingBias_sqrtN_tight_2554
       div_le_iff₀ hc, mul_comm] using h52 (a / |I⁻¹|) (div_pos ha hc)
   have hzero : TendstoInProbZero Pn (fun n X => (0 : ℝ)) := by
     intro a ha
-    simpa only [norm_zero, not_le.mpr ha, Set.setOf_false, measureReal_empty] using
+    simpa only [norm_zero, not_le.mpr ha, Set.ofPred_false, measureReal_empty] using
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop (𝓝 0))
   have hE : TendstoInProbZero Pn
       (fun n X => R n X + I⁻¹ * (d n X * B n X)) := by
@@ -540,9 +540,9 @@ theorem rawMovingBias_sqrtN_tight_2554
   refine ⟨max M0 (2 * max K 0 + 1), fun n => ?_⟩
   by_cases hn : n < N
   · refine (measureReal_mono (fun X hX => ?_)).trans (hM0 n)
-    simp only [Set.mem_setOf_eq] at hX ⊢
+    simp only [Set.mem_ofPred_eq] at hX ⊢
     change M0 < ‖if n < N then Delta n X else 0‖
-    rw [if_pos hn]
+    rw [ite_eq_left hn]
     exact lt_of_le_of_lt (le_max_left M0 _) hX
   have hsub : {X : Fin n → Omega | max M0 (2 * max K 0 + 1) < ‖Delta n X‖} ⊆
       {X | K < ‖T n X‖} ∪ {X | 1 / 2 ≤ ‖R n X + I⁻¹ * (d n X * B n X)‖} := by
@@ -550,7 +550,7 @@ theorem rawMovingBias_sqrtN_tight_2554
     by_cases hTX : K < ‖T n X‖
     · exact Or.inl hTX
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       rw [show R n X + I⁻¹ * (d n X * B n X) = d n X * (Delta n X - T n X) by
         simp only [R, d]; ring, Real.norm_eq_abs, abs_mul,
         abs_of_nonneg (by positivity : 0 ≤ d n X)]
@@ -622,13 +622,13 @@ theorem rawMovingBias_asympLinear_2554
     refine ⟨M + 1, fun n => ?_⟩
     rw [show {X | M + 1 < ‖1 + |Delta n X|‖} = {X | M < ‖Delta n X‖} by
       ext X
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs,
+      simp only [Set.mem_ofPred_eq, Real.norm_eq_abs,
         abs_of_nonneg (by positivity : 0 ≤ 1 + |Delta n X|)]
       constructor <;> intro hX <;> linarith]
     exact hM n
   have hB0 : TendstoInProbZero Pn B := by
     have hp := tendstoInProbZero_of_isBoundedInProb_mul hfactor h52
-    convert hp using 1
+    convert! hp using 1
     funext n X
     change B n X = (1 + |Delta n X|) * ((1 + |Delta n X|)⁻¹ * B n X)
     rw [← mul_assoc, mul_inv_cancel₀ (by positivity : 1 + |Delta n X| ≠ 0), one_mul]
@@ -647,7 +647,7 @@ theorem rawMovingBias_asympLinear_2554
     simpa [Pn, A, B, Real.norm_eq_abs] using hALB a ha
   have hzero : TendstoInProbZero Pn (fun n X => (0 : ℝ)) := by
     intro a ha
-    simpa only [norm_zero, not_le.mpr ha, Set.setOf_false, measureReal_empty] using
+    simpa only [norm_zero, not_le.mpr ha, Set.ofPred_false, measureReal_empty] using
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop (𝓝 0))
   have hA : TendstoInProbZero Pn A := by
     refine tendstoInProbZero_of_abs_le_three (c := 1) zero_lt_one hR0 hBias hzero ?_
@@ -657,7 +657,7 @@ theorem rawMovingBias_asympLinear_2554
     simpa [Real.norm_eq_abs] using ht
   intro a ha
   rw [← ENNReal.tendsto_toReal_zero_iff (fun n => measure_ne_top (Pn n) _)]
-  simpa [Pn, A, Real.norm_eq_abs] using hA a ha
+  simpa [Pn, A, Real.norm_eq_abs] using! hA a ha
 
 namespace RawMovingBiasExpansionHyp
 

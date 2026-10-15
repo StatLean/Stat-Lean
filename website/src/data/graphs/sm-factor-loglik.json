@@ -6,7 +6,7 @@
     {"id":"StatLean.StatisticalModels.FactorModels.IsProperFactorParams","label":"IsProperFactorParams","full":"StatLean.StatisticalModels.FactorModels.IsProperFactorParams","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.FactorModels.factorCovariance","label":"factorCovariance","full":"StatLean.StatisticalModels.FactorModels.factorCovariance","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.FactorModels.factorLaw","label":"factorLaw","full":"StatLean.StatisticalModels.FactorModels.factorLaw","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"FiniteDimensional.finiteDimensional_pi'","label":"finiteDimensional_pi'","full":"FiniteDimensional.finiteDimensional_pi'","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.FiniteDimensional.Defs"},
     {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"},
     {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
@@ -43,10 +43,10 @@
     {"id":"StatLean.StatisticalModels.FactorModels.factorDesign_X","label":"factorDesign_X","full":"StatLean.StatisticalModels.FactorModels.factorDesign_X","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.FactorModels.toEuclideanLin_one_apply","label":"toEuclideanLin_one_apply","full":"StatLean.StatisticalModels.FactorModels.toEuclideanLin_one_apply","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Bridge"},
     {"id":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity","label":"multivariateGaussian_eq_withDensity","full":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Likelihood"},
-    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"Real.pi_pos","label":"pi_pos","full":"Real.pi_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic"},
-    {"id":"Matrix.PosDef.det_pos","label":"det_pos","full":"Matrix.PosDef.det_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Matrix.PosDef"},
-    {"id":"Real.sqrt_eq_rpow","label":"sqrt_eq_rpow","full":"Real.sqrt_eq_rpow","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Pow.Real"}
+    {"id":"Matrix.PosDef.det_pos","label":"det_pos","full":"Matrix.PosDef.det_pos","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_withDensity_exp_factorLogLik","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
@@ -114,6 +114,6 @@
     {"source":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity_exp_gaussianLogDensity","target":"mul_pos"},
     {"source":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity_exp_gaussianLogDensity","target":"Real.pi_pos"},
     {"source":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity_exp_gaussianLogDensity","target":"Matrix.PosDef.det_pos"},
-    {"source":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity_exp_gaussianLogDensity","target":"Real.sqrt_eq_rpow"}
+    {"source":"StatLean.StatisticalModels.FactorModels.multivariateGaussian_eq_withDensity_exp_gaussianLogDensity","target":"PosMulReflectLE.toPosMulReflectLT"}
   ]
 }

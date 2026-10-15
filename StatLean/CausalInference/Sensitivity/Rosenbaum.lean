@@ -160,7 +160,7 @@ theorem biasedExpect_half (f : (Fin m → Bool) → ℝ) :
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun c _ => ?_
   congr 1
-  have h : ∀ j : Fin m, (if c j then (1:ℝ)/2 else 1 - 1/2) = 1/2 := by
+  have h : ∀ j : Fin m, (if c j then (1 : ℝ)/2 else 1 - 1/2) = 1/2 := by
     intro j; cases c j <;> norm_num
   rw [Finset.prod_congr rfl (fun j _ => h j)]
   rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
@@ -194,7 +194,7 @@ theorem biasedTail_mono_single {π π' : Fin m → ℝ} {q : Fin m → ℝ} {t :
       = ∏ i : {i : Fin m // i ≠ j}, (if r i then π' i.1 else 1 - π' i.1) :=
     Finset.prod_congr rfl fun i _ => by rw [heq i.1 i.2]
   rw [← hRe]
-  have hR : (0:ℝ) ≤ ∏ i : {i : Fin m // i ≠ j}, (if r i then π i.1 else 1 - π i.1) := by
+  have hR : (0 : ℝ) ≤ ∏ i : {i : Fin m // i ≠ j}, (if r i then π i.1 else 1 - π i.1) := by
     refine Finset.prod_nonneg fun i _ => ?_
     cases hb : r i
     · simpa using (hπ i.1).2
@@ -208,8 +208,8 @@ theorem biasedTail_mono_single {π π' : Fin m → ℝ} {q : Fin m → ℝ} {t :
   have hBA : B ≤ A := by
     rw [hA, hB]
     by_cases h1 : t ≤ signScore q (rbSplit j (false, r))
-    · rw [if_pos h1, if_pos (h1.trans hmono)]
-    · rw [if_neg h1]
+    · rw [ite_eq_left h1, ite_eq_left (h1.trans hmono)]
+    · rw [ite_eq_right h1]
       split_ifs <;> norm_num
   have hB0 : 0 ≤ B := by rw [hB]; split_ifs <;> norm_num
   nlinarith [mul_nonneg (sub_nonneg.2 hle) (sub_nonneg.2 hBA)]
@@ -224,7 +224,7 @@ theorem biasedTail_mono {π π' : Fin m → ℝ} {q : Fin m → ℝ} {t : ℝ}
     (hle : ∀ i, π i ≤ π' i) :
     biasedTail π q t ≤ biasedTail π' q t := by
   classical
-  have hyb : ∀ s : Finset (Fin m), ∀ i, (if i ∈ s then π' i else π i) ∈ Set.Icc (0:ℝ) 1 := by
+  have hyb : ∀ s : Finset (Fin m), ∀ i, (if i ∈ s then π' i else π i) ∈ Set.Icc (0 : ℝ) 1 := by
     intro s i; by_cases h : i ∈ s <;> simp [h, hπ i, hπ' i]
   have H : ∀ s : Finset (Fin m),
       biasedTail π q t ≤ biasedTail (fun i => if i ∈ s then π' i else π i) q t := by
@@ -252,10 +252,10 @@ theorem biasedTail_le_extreme {π : Fin m → ℝ} {q : Fin m → ℝ} {t Γ : �
     -- USER-INPUT: a genuine sensitivity parameter; Ding Assumption 19.1
     (hΓ : 1 ≤ Γ) :
     biasedTail π q t ≤ biasedTail (fun _ => Γ / (1 + Γ)) q t := by
-  have hpos : (0:ℝ) < 1 + Γ := by linarith
+  have hpos : (0 : ℝ) < 1 + Γ := by linarith
   have hle1 : Γ / (1 + Γ) ≤ 1 := by
     rw [div_le_one hpos]; linarith
-  have hnn : (0:ℝ) ≤ Γ / (1 + Γ) := div_nonneg (by linarith) (by linarith)
+  have hnn : (0 : ℝ) ≤ Γ / (1 + Γ) := div_nonneg (by linarith) (by linarith)
   refine biasedTail_mono hq ?_ (fun _ => ⟨hnn, hle1⟩) ?_
   · intro i
     exact ⟨le_trans (div_nonneg zero_le_one hpos.le) (hmodel i).1, le_trans (hmodel i).2 hle1⟩
@@ -267,8 +267,8 @@ which significance is lost. -/
 theorem biasedTail_extreme_mono {q : Fin m → ℝ} {t Γ Γ' : ℝ} (hq : ∀ i, 0 ≤ q i)
     (hΓ : 1 ≤ Γ) (hle : Γ ≤ Γ') :
     biasedTail (fun _ => Γ / (1 + Γ)) q t ≤ biasedTail (fun _ => Γ' / (1 + Γ')) q t := by
-  have hpos : (0:ℝ) < 1 + Γ := by linarith
-  have hpos' : (0:ℝ) < 1 + Γ' := by linarith
+  have hpos : (0 : ℝ) < 1 + Γ := by linarith
+  have hpos' : (0 : ℝ) < 1 + Γ' := by linarith
   have hstep : Γ / (1 + Γ) ≤ Γ' / (1 + Γ') := by
     rw [← sub_nonneg]
     have hid : Γ' / (1 + Γ') - Γ / (1 + Γ) = (Γ' - Γ) / ((1 + Γ') * (1 + Γ)) := by

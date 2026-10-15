@@ -81,7 +81,7 @@ lemma SubGaussianIncrements.mono_const (h : SubGaussianIncrements X K T μ)
     SubGaussianIncrements X K' T μ := by
   intro s hs t ht
   refine (h s hs t ht).trans ?_
-  exact mul_le_mul_right' (by exact_mod_cast hK) _
+  exact mul_le_mul_left (by exact_mod_cast hK) _
 
 /-- A random variable with vanishing ψ₂-norm vanishes a.e.
 
@@ -167,12 +167,12 @@ theorem SubGaussianIncrements.hasSubgaussianMGF_sub
   have hbound : subGaussianNorm (fun ω => X t ω - X s ω) μ ≤ (K' : ℝ≥0∞) := by
     have hh := h s hs t ht
     rwa [edist_nndist, ← ENNReal.coe_mul] at hh
-  rcases eq_or_lt_of_le (zero_le K') with hK0 | hK0
+  rcases eq_or_lt_of_le (zero_le (a := K')) with hK0 | hK0
   · -- degenerate scale `K' = 0`: the increment vanishes a.e.
     have hz : subGaussianNorm (fun ω => X t ω - X s ω) μ = 0 := by
       have hle : subGaussianNorm (fun ω => X t ω - X s ω) μ ≤ 0 := by
         rw [← hK0] at hbound; simpa using hbound
-      exact le_antisymm hle (zero_le _)
+      exact le_antisymm hle (zero_le)
     have hae : (fun ω => X t ω - X s ω) =ᵐ[μ] 0 :=
       ae_eq_zero_of_subGaussianNorm_eq_zero (hmt.sub hms) hz
     have hgoal : (3 * K' ^ 2 : ℝ≥0) = 0 := by rw [← hK0]; ring

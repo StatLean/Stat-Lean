@@ -68,7 +68,7 @@ noncomputable def censoredLaw (μT μC : Measure ℝ) : Measure (ℝ × Bool) :=
 
 instance (μT μC : Measure ℝ) [IsProbabilityMeasure μT] [IsProbabilityMeasure μC] :
     IsProbabilityMeasure (censoredLaw μT μC) :=
-  Measure.isProbabilityMeasure_map measurable_censorObserve.aemeasurable
+  (by unfold censoredLaw; infer_instance)
 
 /-- The law of the observed time `T̃` of an observed-data law. -/
 noncomputable def observedTimeLaw (P : Measure (ℝ × Bool)) : Measure ℝ :=
@@ -128,7 +128,7 @@ theorem uncensoredSubLaw_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasu
   have hpre : censorObserve ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × Bool | p.2 = true})
       = Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2} := by
     ext p
-    simp only [censorObserve, mem_preimage, mem_inter_iff, mem_setOf_eq, decide_eq_true_eq]
+    simp only [censorObserve, mem_preimage, mem_inter_iff, mem_ofPred_eq, decide_eq_true_eq]
     constructor
     · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2] at h1, h2⟩
     · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2], h2⟩
@@ -169,15 +169,16 @@ theorem crudeCumHazard_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasure
   -- merge the two `withDensity` layers.
   rw [crudeCumHazard]
   simp only [observedTimeLaw_censoredLaw_Ici]
-  rw [uncensoredSubLaw_censoredLaw, ← withDensity_mul _ hmC (hmT.mul hmC).inv]
+  erw [uncensoredSubLaw_censoredLaw, ← withDensity_mul _ hmC (hmT.mul hmC).inv]
   congr 1
   funext t
+  simp only [Pi.inv_apply, Pi.mul_apply]
   -- Pointwise: `a · (b·a)⁻¹ = b⁻¹` when `a ≠ 0`, and `= 0` when `a = 0` (`0 · ∞ = 0`).
   rcases eq_or_ne (μC (Ici t)) 0 with h0 | h0
-  · rw [Pi.mul_apply, h0, zero_mul, indicator_of_notMem]
+  · rw [ h0, zero_mul, indicator_of_notMem]
     simp [h0]
   · have htop : μC (Ici t) ≠ ⊤ := measure_ne_top μC _
-    rw [Pi.mul_apply, indicator_of_mem (by exact pos_iff_ne_zero.2 h0),
+    rw [ indicator_of_mem (by exact pos_iff_ne_zero.2 h0),
       ENNReal.mul_inv (Or.inr htop) (Or.inr h0), ← mul_assoc, mul_comm (μC (Ici t)),
       mul_assoc, ENNReal.mul_inv_cancel h0 htop, mul_one]
 

@@ -66,7 +66,7 @@ private theorem continuous_affine (A : Matrix (Fin d) (Fin d) ℝ) (b : Fin d �
     Continuous fun x : Fin d → ℝ => A.mulVec x + b := by
   refine Continuous.add (continuous_pi fun i => ?_) continuous_const
   simp only [Matrix.mulVec, dotProduct]
-  exact continuous_finset_sum _ fun j _ => continuous_const.mul (continuous_apply j)
+  exact continuous_finsetSum _ fun j _ => continuous_const.mul (continuous_apply j)
 
 /-- Centred coordinates transform linearly under an affine map: the translation `b`
 cancels and `(Ax + b)ᵢ - (Am + b)ᵢ = ∑ₖ Aᵢₖ (xₖ - mₖ)`. -/
@@ -85,21 +85,21 @@ theorem meanVecFunctional_affineEquivariant :
     IsAffineEquivariantLocation (meanVecFunctional (d := d))
       {P | IsProbabilityMeasure P ∧ ∀ i, Integrable (fun x => x i) P} := by
   rintro P ⟨hP, hint⟩ A _ b
-  haveI : IsProbabilityMeasure P := hP
+  have : IsProbabilityMeasure P := hP
   funext i
   have hmap : meanVecFunctional (P.map fun x => A.mulVec x + b) i
       = ∫ x, (A.mulVec x + b) i ∂P :=
     integral_map (continuous_affine A b).aemeasurable
       (measurable_pi_apply i).aestronglyMeasurable
   have hint2 : Integrable (fun x : Fin d → ℝ => ∑ j, A i j * x j) P :=
-    integrable_finset_sum _ fun j _ => (hint j).const_mul _
+    integrable_finsetSum _ fun j _ => (hint j).const_mul _
   rw [hmap]
   calc ∫ x, (A.mulVec x + b) i ∂P
       = ∫ x, ((∑ j, A i j * x j) + b i) ∂P := by simp only [mulVec_add_apply]
     _ = (∫ x, ∑ j, A i j * x j ∂P) + ∫ _x, b i ∂P :=
         integral_add hint2 (integrable_const _)
     _ = (∑ j, A i j * ∫ x, x j ∂P) + b i := by
-        rw [integral_finset_sum _ fun j _ => (hint j).const_mul _]
+        rw [integral_finsetSum _ fun j _ => (hint j).const_mul _]
         simp only [integral_const_mul]
         simp
     _ = (A.mulVec (meanVecFunctional P) + b) i := by rw [mulVec_add_apply]; rfl
@@ -126,10 +126,10 @@ private theorem cov_map_entry {P : Measure (Fin d → ℝ)} [IsProbabilityMeasur
     rw [centered_coord A b m x i, centered_coord A b m x j, Finset.sum_mul_sum]
     exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
   simp only [hexp]
-  rw [integral_finset_sum _ fun k _ =>
-    integrable_finset_sum _ fun l _ => (hIkl k l).const_mul _]
+  rw [integral_finsetSum _ fun k _ =>
+    integrable_finsetSum _ fun l _ => (hIkl k l).const_mul _]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [integral_finset_sum _ fun l _ => (hIkl k l).const_mul _]
+  rw [integral_finsetSum _ fun l _ => (hIkl k l).const_mul _]
   simp only [integral_const_mul]
 
 /-- **The covariance matrix is affine equivariant scatter** (`MMY §6.17.1`, sanity
@@ -138,7 +138,7 @@ theorem covMatrixFunctional_affineEquivariant :
     IsAffineEquivariantScatter (covMatrixFunctional (d := d))
       {P | IsProbabilityMeasure P ∧ ∀ i, MemLp (fun x => x i) 2 P} := by
   rintro P ⟨hP, h2⟩ A hA b
-  haveI : IsProbabilityMeasure P := hP
+  have : IsProbabilityMeasure P := hP
   have hint : ∀ i, Integrable (fun x : Fin d → ℝ => x i) P :=
     fun i => (h2 i).integrable (by norm_num)
   -- the centring of the image is the image of the centring, by the location result

@@ -55,14 +55,14 @@ private theorem integral_cond_congr_eqOn {s : Set Ω} (hs : MeasurableSet s) {f 
 omit [MeasurableSpace Ω] in
 private theorem obs_eqOn_treated_aux : Set.EqOn (obs Z y1 y0) y1 (treatedEvent Z) := by
   intro ω hω
-  simp only [treatedEvent, Set.mem_setOf_eq] at hω
-  simp only [obs, hω, if_true]
+  simp only [treatedEvent, Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, ite_true]
 
 omit [MeasurableSpace Ω] in
 private theorem obs_eqOn_control_aux : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
   intro ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω, Bool.false_eq_true, if_false]
+  simp only [Set.mem_ofPred_eq] at hω
+  simp only [obs, hω, Bool.false_eq_true, ite_false]
 
 /-- Integrability transfers to a conditional measure of a finite measure. -/
 private theorem integrable_cond' [IsFiniteMeasure μ] {c : Set Ω} {f : Ω → ℝ}

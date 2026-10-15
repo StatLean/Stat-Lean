@@ -257,7 +257,7 @@ lemma integral_diff_le_two_mul_hellinger_eLpNorm
   have h_sqrt_B_le : Real.sqrt (∫ ω, B ω ^ 2 ∂ξ) ≤ 2 := by
     have h1 := Real.sqrt_le_sqrt hB_sq_le
     have h2 : Real.sqrt (4 : ℝ) = 2 := by
-      rw [show (4 : ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)]
+      rw [show (4 : ℝ) = 2 ^ 2 from by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
     linarith
   -- Combine: |∫ A · (f·B)| ≤ √(∫A²) · √(∫(f·B)²) ≤ √(∫A²) · M · 2 = 2M · √(∫A²).
   have h_sqrt_A_nn : 0 ≤ Real.sqrt (∫ ω, A ω ^ 2 ∂ξ) := Real.sqrt_nonneg _
@@ -339,9 +339,9 @@ lemma integral_diff_le_hellinger_product_iid
   set νn : Measure (Fin n → Ω) := Measure.pi (fun _ : Fin n => ν) with hνn_def
   set ξn : Measure (Fin n → Ω) := Measure.pi (fun _ : Fin n => ξ) with hξn_def
   -- Instances.
-  haveI : IsProbabilityMeasure μn := by rw [hμn_def]; infer_instance
-  haveI : IsProbabilityMeasure νn := by rw [hνn_def]; infer_instance
-  haveI : SigmaFinite ξn := by rw [hξn_def]; infer_instance
+  have : IsProbabilityMeasure μn := by rw [hμn_def]; infer_instance
+  have : IsProbabilityMeasure νn := by rw [hνn_def]; infer_instance
+  have : SigmaFinite ξn := by rw [hξn_def]; infer_instance
   -- Densities and product-density identity for μ^n ≪ ξ^n.
   -- μ = ξ.withDensity (μ.rnDeriv ξ) and similarly for ν.
   have hμ_eq : μ = ξ.withDensity (μ.rnDeriv ξ) :=
@@ -349,9 +349,9 @@ lemma integral_diff_le_hellinger_product_iid
   have hν_eq : ν = ξ.withDensity (ν.rnDeriv ξ) :=
     (Measure.withDensity_rnDeriv_eq ν ξ hν).symm
   -- ξ.withDensity (μ.rnDeriv ξ) is σ-finite (= μ), hence the iid version is σ-finite.
-  haveI : SigmaFinite (ξ.withDensity (μ.rnDeriv ξ)) := by
+  have : SigmaFinite (ξ.withDensity (μ.rnDeriv ξ)) := by
     rw [← hμ_eq]; infer_instance
-  haveI : SigmaFinite (ξ.withDensity (ν.rnDeriv ξ)) := by
+  have : SigmaFinite (ξ.withDensity (ν.rnDeriv ξ)) := by
     rw [← hν_eq]; infer_instance
   -- Product density identity for μn.
   have h_μ_rnDeriv_meas : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv μ ξ

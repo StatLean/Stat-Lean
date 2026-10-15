@@ -32,9 +32,9 @@ appears as E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stan
 2023, Lecture 7 (False Discovery Rate), §7.2 (Martingale Theory and FDR Control), Theorem 2,
 which states $E[\mathrm{FDP}(\tau_{BH})] = q\,n_0/n$ at level $q = \alpha$.
 
-**Proof formalization notes.** *Book vs Lean.* Lu-BDA Ch20 §20.2 (and Candès Lecture 7 §7.2, Theorem 2)
-states the equality $\mathrm{FDR} = (N_0/N)\,\alpha$ for exactly-uniform null p-values; we prove
-the honest inequality $\le$, which holds under the weaker super-uniform hypothesis and
+**Proof formalization notes.** *Book vs Lean.* Lu-BDA Ch20 §20.2 (and Candès Lecture 7 §7.2,
+Theorem 2) states the equality $\mathrm{FDR} = (N_0/N)\,\alpha$ for exactly-uniform null p-values;
+we prove the honest inequality $\le$, which holds under the weaker super-uniform hypothesis and
 specializes to the book's equality when the nulls are exactly uniform.
 
 Proof outline (Lu-BDA §20.2): for each null index $i \in H_0$ the per-null contribution satisfies
@@ -128,7 +128,7 @@ private lemma bhCount_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     (m : ℕ) (hm : bhKmax α p ω < m) (hm' : m ≤ N) :
     bhCount α p m ω < m := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hmem : m ∈ (Finset.range (N + 1)).filter (fun k => k ≤ bhCount α p k ω) := by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
@@ -161,7 +161,7 @@ the LOO count exceeds original count by 1. -/
 private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → Ω → ℝ)
     (i : Fin N) (m : ℕ) (ω : Ω) (hm : ¬ (p i ω ≤ (m : ℝ) * α / (N : ℝ))) :
     bhCount α (Function.update p i (0 : Ω → ℝ)) m ω = bhCount α p m ω + 1 := by
-  push_neg at hm
+  push Not at hm
   -- 0 ≤ m * α / N since m ≥ 0, α > 0, N ≥ 0
   have hpos : 0 ≤ (m : ℝ) * α / (N : ℝ) :=
     div_nonneg (mul_nonneg (Nat.cast_nonneg m) (le_of_lt hα)) (Nat.cast_nonneg N)
@@ -179,7 +179,7 @@ private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p :
     by_cases hji : j = i
     · subst hji
       -- (0 : Ω → ℝ) i_val ω = 0 ≤ m*α/N; and i = i, so i ∈ insert i (filter)
-      simp [Function.update_self, Pi.zero_apply, hpos]
+      simp [Function.update_self, hpos]
     · simp only [Function.update_of_ne hji, or_iff_right hji]
   rw [hset_eq, Finset.card_insert_of_notMem hi_not_mem]
 
@@ -202,7 +202,7 @@ private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → �
     obtain ⟨hmN, hm_count⟩ := hm
     -- We need m ≤ K. Suppose m > K.
     by_contra h
-    push_neg at h
+    push Not at h
     -- h : K < m (push_neg on ¬(m ≤ K) gives K < m in ℕ)
     have hmN' : m ≤ N := Nat.lt_succ_iff.mp hmN
     -- For m > K, bhCount p m < m
@@ -269,9 +269,9 @@ private lemma bhRejects_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N �
     exact ⟨fun _ => hi_le, fun _ => by positivity⟩
   · simp [Function.update_of_ne hji]
 
-/-- Leave-one-out invariance (Lu-BDA §20.2, Theorem 20.1 proof, "second key observation"): if hypothesis `i`
-is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the constant `0`
-leaves the number of rejections equal to `k`. The deterministic combinatorial crux. -/
+/-- Leave-one-out invariance (Lu-BDA §20.2, Theorem 20.1 proof, "second key observation"): if
+hypothesis `i` is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the
+constant `0` leaves the number of rejections equal to `k`. The deterministic combinatorial crux. -/
 theorem bh_count_eq_leaveOneOut {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     -- LEAN-ONLY: positivity of N and α needed for the combinatorial argument
     (p : Fin N → Ω → ℝ) (i : Fin N) (k : ℕ) (ω : Ω)
@@ -311,7 +311,7 @@ private lemma bhKmax_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω 
     intro m hm
     simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
     omega
 
@@ -323,7 +323,7 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     have heq : {ω | bhKmax α p ω ≤ k} =
         ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter₂, Finset.mem_coe]
       exact bhKmax_le_iff α p ω
     rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
@@ -333,13 +333,13 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
   change MeasurableSet {ω | bhKmax α p ω = k}
   rw [show {ω | bhKmax α p ω = k} =
       {ω | bhKmax α p ω ≤ k} ∩ {ω | k ≤ bhKmax α p ω} from by
-    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]; exact le_antisymm_iff]
   apply MeasurableSet.inter (hmeas_le k)
   cases k with
   | zero => simp
   | succ k =>
     rw [show {ω | k + 1 ≤ bhKmax α p ω} = ({ω | bhKmax α p ω ≤ k})ᶜ from by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]; omega]
     exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
@@ -458,10 +458,10 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   let recon : (↥(({i} : Finset (Fin N))ᶜ) → ℝ) → (Fin N → ℝ) :=
     fun y j => if h : j ∈ (({i} : Finset (Fin N))ᶜ) then y ⟨j, h⟩ else 0
   have hrecon_meas : Measurable recon :=
-    measurable_pi_lambda _ (fun j => by
+    Measurable.of_eval (fun j => by
       by_cases h : j ∈ (({i} : Finset (Fin N))ᶜ)
-      · simp only [recon, dif_pos h]; exact measurable_pi_apply _
-      · simp only [recon, dif_neg h]; exact measurable_const)
+      · simp only [recon, dite_eq_left h]; exact measurable_pi_apply _
+      · simp only [recon, dite_eq_right h]; exact measurable_const)
   -- `p i = eval_i ∘ (restrict to {i})`.
   have hpi_eq : (fun ω => p i ω) =
       (fun v : ↥({i} : Finset (Fin N)) → ℝ => v ⟨i, Finset.mem_singleton_self i⟩) ∘
@@ -479,17 +479,17 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     · subst h; simp [recon, Function.update_self]
     · have hjc : j ∈ (({i} : Finset (Fin N))ᶜ) := by
         simp only [Finset.mem_compl, Finset.mem_singleton]; exact h
-      simp only [Function.update_of_ne h, recon, dif_pos hjc]
+      simp only [Function.update_of_ne h, recon, dite_eq_left hjc]
   -- Hence `p i` is independent of `Z`.
   have hpiZ : IndepFun (fun ω => p i ω) Z μ := by
     rw [hpi_eq, hZ_eq]
     exact hXY.comp (measurable_pi_apply _) ((measurable_bhNumRejPt α).comp hrecon_meas)
   -- Rewrite the two events as preimages and apply the product formula.
   have e1 : {ω | p i ω ≤ t} = (fun ω => p i ω) ⁻¹' Set.Iic t := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_Iic]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_Iic]
   have e2 : {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k} =
       Z ⁻¹' {k} := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
   rw [e1, e2]
   exact hpiZ.measure_inter_preimage_eq_mul (Set.Iic t) {k} measurableSet_Iic
     (measurableSet_singleton k)
@@ -497,7 +497,8 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
 /-! ## Per-null contribution bound -/
 
 /-- `bhKmax α p ω ≤ numRejections (bhRejects α p) ω`: the threshold index is at most the rejection
-count (at index `bhKmax`, the count is `≥ bhKmax`, and the rejection count is exactly that count). -/
+count (at index `bhKmax`, the count is `≥ bhKmax`,
+and the rejection count is exactly that count). -/
 private lemma bhKmax_le_numRej {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) :
     bhKmax α p ω ≤ numRejections (bhRejects α p) ω := by
   rcases Nat.eq_zero_or_pos (bhKmax α p ω) with h | h
@@ -547,9 +548,10 @@ private lemma bh_summand_le_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
       change (bhRejects α p ω).card ≤ N
       exact (Finset.card_le_univ _).trans_eq (by simp [Fintype.card_fin])
     have h1leR : (1 : ℝ) ≤ (numRejections (bhRejects α p) ω : ℝ) := by exact_mod_cast hR1
-    rw [if_pos hi, max_eq_left h1leR]
+    rw [ite_eq_left hi, max_eq_left h1leR]
     -- the k = R term equals 1/R.
-    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N := bh_mem_imp_le hN α hα p i ω hi
+    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N :=
+      bh_mem_imp_le hN α hα p i ω hi
     have hRloo : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
         numRejections (bhRejects α p) ω :=
       bh_count_eq_leaveOneOut hN α hα p i (numRejections (bhRejects α p) ω) ω hi rfl
@@ -558,10 +560,10 @@ private lemma bh_summand_le_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
          (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
               numRejections (bhRejects α p) ω then (1 : ℝ) else 0)) =
         1 / (numRejections (bhRejects α p) ω : ℝ) := by
-      rw [if_pos hpi, if_pos hRloo, mul_one, mul_one]
+      rw [ite_eq_left hpi, ite_eq_left hRloo, mul_one, mul_one]
     rw [← hterm]
     exact Finset.single_le_sum hnn (Finset.mem_Icc.mpr ⟨hR1, hRN⟩)
-  · rw [if_neg hi, zero_div]
+  · rw [ite_eq_right hi, zero_div]
     exact Finset.sum_nonneg hnn
 
 /-- Per-null contribution bound (Lu-BDA §20.2, the claim `E[ψᵢ/(R∨1)] = α/N`, honest `≤` form):
@@ -626,11 +628,12 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
           (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
             else 0)) =
         ({ω | p i ω ≤ (k : ℝ) * α / N} ∩
-          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).indicator 1 := by
+          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ)))
+              ω = k}).indicator 1 := by
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
-        simp [Set.indicator_apply, Set.mem_inter_iff, Set.mem_setOf_eq, hA, hB]
+        simp [Set.mem_inter_iff, Set.mem_ofPred_eq, hA, hB]
     rw [integral_const_mul, hprod_eq, integral_indicator_one (hAmeas.inter hBmeas)]
     have hAle : (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal ≤ (k : ℝ) * α / N := by
       calc (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal
@@ -650,11 +653,13 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
     calc (1 / (k : ℝ)) * ((μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal *
           (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal)
         ≤ (1 / (k : ℝ)) * (((k : ℝ) * α / N) *
-            (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal) := by
+            (μ {ω | numRejections (bhRejects α
+                (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal) := by
           apply mul_le_mul_of_nonneg_left _ (by positivity)
           exact mul_le_mul_of_nonneg_right hAle hBnn
       _ = (α / N) *
-            (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal := by
+            (μ {ω | numRejections (bhRejects α
+                (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal := by
           field_simp
   -- the LOO-count events are disjoint, so their measures sum to ≤ 1.
   have sum1 : ∑ k ∈ Finset.Icc 1 N,
@@ -664,7 +669,7 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
       intro a _ b _ hab
       apply Set.disjoint_left.mpr
       intro ω ha hb
-      simp only [Set.mem_setOf_eq] at ha hb
+      simp only [Set.mem_ofPred_eq] at ha hb
       exact hab (ha.symm.trans hb)
     rw [← ENNReal.toReal_sum (fun k _ => measure_ne_top μ _),
       ← measure_biUnion_finset hdisj (fun k _ => hLOO_meas (measurableSet_singleton k))]
@@ -682,13 +687,13 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
               else 0)) ∂μ :=
         integral_mono (integrable_bh_summand hN α hα μ p hmeas i)
-          (integrable_finset_sum _ hgint)
+          (integrable_finsetSum _ hgint)
           (fun ω => bh_summand_le_sum hN α hα p i ω)
     _ = ∑ k ∈ Finset.Icc 1 N, ∫ ω, (1 / (k : ℝ)) *
           ((if p i ω ≤ (k : ℝ) * α / N then (1 : ℝ) else 0) *
            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
               else 0)) ∂μ :=
-        integral_finset_sum _ hgint
+        integral_finsetSum _ hgint
     _ ≤ ∑ k ∈ Finset.Icc 1 N, (α / N) *
           (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal :=
         Finset.sum_le_sum bound_each
@@ -742,7 +747,7 @@ theorem benjamini_hochberg_fdr_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < �
     fun ω => fdp_eq_sum_div α H₀ p ω
   simp_rw [hfdp_sum]
   -- Step 2: Swap integral and sum.
-  rw [integral_finset_sum H₀ (fun i _ => integrable_bh_summand hN α hα μ p hmeas i)]
+  rw [integral_finsetSum H₀ (fun i _ => integrable_bh_summand hN α hα μ p hmeas i)]
   -- Step 3: Bound each summand by α/N using bh_claim, then sum.
   calc ∑ i ∈ H₀, ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
           max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ

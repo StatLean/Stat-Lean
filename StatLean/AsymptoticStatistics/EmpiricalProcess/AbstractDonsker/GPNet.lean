@@ -108,10 +108,15 @@ lemma cardNet {F : Set (Ω → ℝ)} {P : Measure Ω} {ε : ℝ}
         rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ u i x - l i x)]
         rw [abs_sub_le_iff]
         constructor <;> linarith
-      have h_eLp_le : eLpNorm ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P
-          ≤ eLpNorm (fun y => u i y - l i y) 2 P := eLpNorm_mono h_ptwise
-      have h_size : eLpNorm (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε := (hbr i).size_lt
-      have h_lt : eLpNorm ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P < ENNReal.ofReal ε :=
+      have h_eLp_le : eLpNorm' ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P
+          ≤ eLpNorm' (fun y => u i y - l i y) 2 P :=
+        eLpNorm'_mono_ae (by norm_num) (Filter.Eventually.of_forall h_ptwise)
+      have h_size : eLpNorm' (fun y => u i y - l i y) 2 P < ENNReal.ofReal ε := by
+        have hwidth : AEStronglyMeasurable (fun y => u i y - l i y) P :=
+          ((hbr i).measurable_upper.sub (hbr i).measurable_lower).aestronglyMeasurable
+        simpa only [eLpNorm_eq_eLpNorm' (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+          (by norm_num : (2 : ℝ≥0∞) ≠ ∞) hwidth, ENNReal.toReal_ofNat] using (hbr i).size_lt
+      have h_lt : eLpNorm' ((t : Ω → ℝ) - (rep i hi_mem : Ω → ℝ)) 2 P < ENNReal.ofReal ε :=
         lt_of_le_of_lt h_eLp_le h_size
       exact ENNReal.toReal_lt_of_lt_ofReal h_lt
   · -- Cardinality bound: `S.card ≤ (filter Q univ).card ≤ k = bracketingNumber`.
@@ -162,7 +167,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
     fun j => bracketingNumber_lt_top_iff_HasFiniteBracketingCover.mpr (Hcov _ (hscale_pos j))
   let Nfun : ℕ → ℕ := fun j => (bracketingNumber ((1 / 2 : ℝ) ^ j) F 2 P).toNat
   have hN_eq : ∀ j : ℕ, (bracketingNumber ((1 / 2 : ℝ) ^ j) F 2 P) = (Nfun j : ℕ∞) :=
-    fun j => (ENat.coe_toNat (hbn_lt j).ne).symm
+    fun j => (ENat.natCast_toNat (hbn_lt j).ne).symm
   have hrawNet_card : ∀ j : ℕ, (rawNet j).card ≤ Nfun j := by
     intro j
     have h := (rawData j).2.2
@@ -218,12 +223,12 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
       have hcard_le : (2 * (net j).card : ℝ) ≤ (2 * (j + 1)) * (1 + Nfun j) := by
         have h1 : ((net j).card : ℝ) ≤ ((j + 1) * Nfun j : ℕ) := by exact_mod_cast hnet_card j
         push_cast at h1 ⊢
-        nlinarith [hNfun_nn, (by positivity : (0:ℝ) ≤ (j:ℝ))]
+        nlinarith [hNfun_nn, (by positivity : (0 : ℝ) ≤ (j : ℝ))]
       have hlog_le : Real.log (2 * (net j).card)
           ≤ Real.log (2 * (j + 1)) + Real.log (1 + Nfun j) := by
         rcases Nat.eq_zero_or_pos (net j).card with h0 | hpos
         · rw [h0]; simp only [Nat.cast_zero, mul_zero, Real.log_zero]
-          have h2 := Real.log_nonneg (by linarith : (1:ℝ) ≤ 2 * (j + 1))
+          have h2 := Real.log_nonneg (by linarith : (1 : ℝ) ≤ 2 * (j + 1))
           have h3 := Real.log_nonneg hN_ge_one
           linarith
         · have hcard_real_pos : (0 : ℝ) < 2 * (net j).card := by
@@ -235,7 +240,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
                 Real.log_mul (by positivity) (by positivity)
       -- sqrt-subadditivity: `√(a+b) ≤ √a + √b` for `a, b ≥ 0`.
       have ha : (0 : ℝ) ≤ Real.log (2 * (j + 1)) :=
-        Real.log_nonneg (by linarith : (1:ℝ) ≤ 2 * (j + 1))
+        Real.log_nonneg (by linarith : (1 : ℝ) ≤ 2 * (j + 1))
       have hb : (0 : ℝ) ≤ Real.log (1 + Nfun j) := Real.log_nonneg hN_ge_one
       have hsqrt_sub : Real.sqrt (Real.log (2 * (net j).card))
           ≤ Real.sqrt (Real.log (2 * (j + 1))) + Real.sqrt (Real.log (1 + Nfun j)) := by
@@ -272,7 +277,7 @@ lemma exists_dudley_net {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMe
             ≤ Real.sqrt (2 * ((j : ℝ) + 1)) := Real.sqrt_le_sqrt hlog
           _ ≤ 2 * ((j : ℝ) + 1) := by
               nlinarith [Real.sq_sqrt hx.le, Real.sqrt_nonneg (2 * ((j : ℝ) + 1)),
-                Real.one_le_sqrt.mpr (show (1:ℝ) ≤ 2 * ((j:ℝ)+1) by
+                Real.one_le_sqrt.mpr (show (1 : ℝ) ≤ 2 * ((j : ℝ)+1) by
                   have := Nat.cast_nonneg (α := ℝ) j; linarith)]
       apply Summable.of_nonneg_of_le (fun j => by positivity) (fun j => by
         have := hcmp j

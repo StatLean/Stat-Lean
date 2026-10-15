@@ -47,6 +47,8 @@ private lemma taylor_lagrange_pos {f : ℝ → ℝ} {ℓ : ℕ} (hℓ : 1 ≤ �
   obtain ⟨x', h1, h2⟩ :=
     taylor_mean_remainder_lagrange_iteratedDeriv (x := x₀ + t) (x₀ := x₀) (n := n)
       (by linarith) hf.contDiffOn
+  rw [Set.uIoo_of_lt (by linarith : x₀ < x₀ + t)] at h1
+  rw [Set.uIcc_of_le (by linarith : x₀ ≤ x₀ + t)] at h2
   -- Convert the Taylor polynomial to the explicit sum with global iterated derivatives.
   have hsum : taylorWithinEval f n (Set.Icc x₀ (x₀ + t)) x₀ (x₀ + t)
       = ∑ j ∈ Finset.range (n + 1),

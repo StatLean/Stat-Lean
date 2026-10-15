@@ -77,7 +77,7 @@ private lemma cell_pairwiseDisjoint (X : Ω → 𝒳) (F : Finset 𝒳) :
 private lemma armCell_pairwiseDisjoint (Z : Ω → Bool) (X : Ω → 𝒳) (z : Bool) (F : Finset 𝒳) :
     (F : Set 𝒳).PairwiseDisjoint (armCell Z X z) := by
   intro a _ b _ hab
-  simp only [Function.onFun, Set.disjoint_left, armCell, cell, Set.mem_inter_iff,
+  simp only [Function.onFun, Set.disjoint_left, armCell, Set.mem_inter_iff,
     Set.mem_preimage, Set.mem_singleton_iff]
   rintro ω ⟨-, ha⟩ ⟨-, hb⟩
   exact hab (ha.symm.trans hb)
@@ -199,7 +199,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
     have hsub : ∀ x ∈ Finset.univ.filter fun x => s x = k, cell X x ⊆ subclass X s k := by
       intro x hx ω hω
       have hXω : X ω = x := hω
-      show s (X ω) = k
+      change s (X ω) = k
       rw [hXω]
       exact (Finset.mem_filter.mp hx).2
     rw [h0, ENNReal.toReal_zero, zero_mul]
@@ -210,7 +210,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
     -- it does, all with the same propensity score.
     obtain ⟨x₀, hx₀F, hx₀⟩ : ∃ x ∈ Finset.univ.filter fun x => s x = k, μ (cell X x) ≠ 0 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       refine h0 ?_
       rw [subclass_eq_biUnion, measure_biUnion_finset (cell_pairwiseDisjoint X _)
         (fun x _ => hcm x)]
@@ -231,7 +231,7 @@ private lemma subclass_arm_key [IsProbabilityMeasure μ] [DecidableEq 𝒳] [Dec
       cases z with
       | true =>
           refine ⟨propensity μ Z X x₀, he0.1, fun x hx => ?_⟩
-          show propensity μ Z X x = propensity μ Z X x₀
+          change propensity μ Z X x = propensity μ Z X x₀
           exact hprop x hx
       | false =>
           refine ⟨1 - propensity μ Z X x₀, by linarith [he0.2], fun x hx => ?_⟩
@@ -284,8 +284,8 @@ theorem subclassEstimand_propensity_eq_ate [IsProbabilityMeasure μ] [DecidableE
     rw [Real.norm_eq_abs]
     simp only [obs]
     by_cases hz : Z ω = true
-    · rw [if_pos hz]; linarith [abs_nonneg (y0 ω)]
-    · rw [if_neg hz]; linarith [abs_nonneg (y1 ω)]
+    · rw [ite_eq_left hz]; linarith [abs_nonneg (y0 ω)]
+    · rw [ite_eq_right hz]; linarith [abs_nonneg (y1 ω)]
   -- Each subclass contributes the cell-weighted contrast over the cells it contains.
   have hkey : ∀ k : 𝒦, (μ (subclass X s k)).toReal
       * (∫ ω, obs Z y1 y0 ω ∂(μ[|{ω | Z ω = true} ∩ subclass X s k])

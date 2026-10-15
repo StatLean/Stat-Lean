@@ -37,6 +37,8 @@ vdV §25.3: the derivative is a continuous linear map from
 the tangent space directly into the vector codomain. -/
 structure PathwiseDifferentiableAt_vec
     (ψ : Measure Ω → EuclideanSpace ℝ (Fin k)) where
+  /-- vdV §25.3: the pathwise derivative as a continuous linear map from the tangent
+  space `T` into `EuclideanSpace ℝ (Fin k)`. -/
   derivative : T →L[ℝ] EuclideanSpace ℝ (Fin k)
   derivative_spec :
     ∀ (γ : QMDPath.QMDPath P),

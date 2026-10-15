@@ -84,10 +84,10 @@ lemma exists_finset_net_unitBall (d : ℕ) [NeZero d] {ε : ℝ}
 
 /-- **Explicit finite ε-net of an arbitrary Euclidean ball** (Lu-BDA §6.2, general form).
 
-In any finite-dimensional real inner-product space `E`, the closed ball `B(x₀, R)` (with `0 < ε < R`)
-has a finite ε-net `F ⊆ B(x₀, R)` with `|F| ≤ (1 + 2R/ε)^{finrank ℝ E}`. Obtained from the unit-ball
-net by an orthonormal-basis isometry to `EuclideanSpace ℝ (Fin (finrank))`, scaling by `R`, and
-translating by `x₀`. -/
+In any finite-dimensional real inner-product space `E`, the closed ball `B(x₀, R)` (with
+`0 < ε < R`) has a finite ε-net `F ⊆ B(x₀, R)` with `|F| ≤ (1 + 2R/ε)^{finrank ℝ E}`. Obtained from
+the unit-ball net by an orthonormal-basis isometry to `EuclideanSpace ℝ (Fin (finrank))`, scaling by
+`R`, and translating by `x₀`. -/
 lemma exists_finset_net_closedBall {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [FiniteDimensional ℝ E] (x₀ : E) (R ε : ℝ)
     -- USER-INPUT: 0 < R (ball radius positive); Lu-BDA §6.2, Lemma 6.1
@@ -115,7 +115,7 @@ lemma exists_finset_net_closedBall {E : Type*} [NormedAddCommGroup E] [InnerProd
       rw [hxx, dist_self]; exact hε.le
     · rw [hn0, pow_zero]; simp
   · -- Nontrivial space: transport the unit-ball net through the orthonormal isometry.
-    haveI : NeZero (Module.finrank ℝ E) := ⟨hnpos.ne'⟩
+    have : NeZero (Module.finrank ℝ E) := ⟨hnpos.ne'⟩
     set e := (stdOrthonormalBasis ℝ E).repr with he
     have hεR' : ε / R < 1 := (div_lt_one hR).mpr hεR
     have hεR0 : 0 < ε / R := div_pos hε hR

@@ -99,11 +99,50 @@ review guidelines.
 
 ### Lean
 
-- Follow [Mathlib style conventions](https://leanprover-community.github.io/contribute/style.html).
-- Name theorems and definitions using `camelCase` consistent with the existing
-  codebase.
-- Add a `/-! … -/` module docstring at the top of each new file.
-- Hypothesis names should be short and descriptive (`h_qmd`, `hJ`, etc.).
+StatLean follows Mathlib's [style](https://leanprover-community.github.io/contribute/style.html),
+[naming](https://leanprover-community.github.io/contribute/naming.html) and
+[documentation](https://leanprover-community.github.io/contribute/doc.html) conventions. The
+Mathlib linters enabled in `lakefile.lean` check many of them during `lake build`; new code should
+not add linter warnings.
+
+Naming:
+
+- Theorems and lemmas are named in `snake_case`.
+- `Prop`-valued definitions, types, structures and classes are named in `UpperCamelCase`, for
+  example `IsPDonsker`.
+- Other definitions are named in `lowerCamelCase`, for example `efficientInformationMatrix`.
+- Inside a `snake_case` name, an `UpperCamelCase` name is written in `lowerCamelCase`, as in
+  `isPDonsker_of_finite_bracketing_entropy_integral`.
+- Names describe the statement. Equation numbers and other source labels belong in the docstring.
+- Hypothesis names are short and descriptive (`h_qmd`, `hJ`, etc.).
+
+Formatting:
+
+- Lines have at most 100 characters.
+- Continuation lines of a statement are indented by 4 spaces and proofs by 2 spaces; `by` ends the
+  line before the first tactic.
+- `·` focuses on a goal.
+- `:`, `:=` and infix operators have a space on each side: `(x : ℝ)`, `a / b`, `x ^ 2`.
+- Functions are written with `fun`; `λ` and `$` are not used (`<|` replaces `$`).
+- Declarations contain no empty lines.
+
+Linters and options:
+
+- An intentional exception to a linter is written as `set_option linter.<name> false in` (or
+  `@[nolint <name>]` for environment linters) on the declaration, with a comment giving the
+  reason.
+- `set_option maxHeartbeats N in` applies to a single declaration and is followed by a comment
+  explaining why the proof needs it.
+- `open Classical` is not used; use `open Classical in` before a definition or the `classical`
+  tactic inside a proof.
+- A file longer than 1500 lines states its length limit with `set_option linter.style.longFile N`.
+
+Documentation:
+
+- A file starts with its imports, followed by a `/-! … -/` module docstring that describes the
+  file's contents and cites its sources.
+- Every definition, structure, structure field and class has a docstring, and so does every main
+  theorem.
 
 ### Website (TypeScript / React)
 

@@ -281,7 +281,7 @@ private lemma gd_inv_gap_bound
           linarith [h_recursive, hfac]
         have h_one_minus_pos : 0 < 1 - ω * (f (x k) - f xstar) := by
           by_contra h_neg
-          push_neg at h_neg
+          push Not at h_neg
           have h_prod_nonpos :
               (f (x k) - f xstar) * (1 - ω * (f (x k) - f xstar)) ≤ 0 :=
             mul_nonpos_of_nonneg_of_nonpos hk_pos.le h_neg
@@ -311,7 +311,7 @@ private lemma gd_inv_gap_bound
         have hsplit : ω * ((k : ℝ) + 1) = ω * (k : ℝ) + ω := by ring
         rw [hcast, hsplit]
         linarith [h_inv, h_inv_step, h_geom]
-      · push_neg at hk1
+      · push Not at hk1
         left
         linarith [hk1, hδk1_nonneg]
 

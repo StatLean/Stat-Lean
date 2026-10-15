@@ -325,12 +325,12 @@ theorem norm_gpEmbed_sub_le (s t : ↥F) :
   -- Step 1: rewrite the embedding norm as `√(∫ (Y − c)² ∂P)`.
   have hnorm_centred : ‖gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t‖
       = Real.sqrt (∫ x, (Y x - c) ^ 2 ∂P) := by
-    rw [Submodule.coe_norm, Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed,
+    rw [← Submodule.norm_coe, Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed,
         Lp.norm_def, MeasureTheory.eLpNorm_congr_ae hcoe,
         eLpNorm_toReal_eq_sqrt_integral_sq hYc]
   -- Step 2: rewrite the `L²` distance as `√(∫ Y² ∂P)`.
   have hdist : distL2 P (s : Ω → ℝ) (t : Ω → ℝ) = Real.sqrt (∫ x, Y x ^ 2 ∂P) := by
-    rw [distL2]
+    rw [distL2_eq_eLpNorm (hsLp.sub htLp).aestronglyMeasurable]
     have hYeq : (s : Ω → ℝ) - (t : Ω → ℝ) = Y := by funext x; rfl
     rw [hYeq, eLpNorm_toReal_eq_sqrt_integral_sq hYLp]
   rw [hnorm_centred, hdist]
@@ -362,7 +362,7 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
     ProbabilityTheory.HasSubgaussianMGF
       (fun ω => gpX hF_env hF_meas hH_inf hH_sep s ω
         - gpX hF_env hF_meas hH_inf hH_sep t ω)
-      ⟨(distL2 P (s : Ω → ℝ) (t : Ω → ℝ)) ^ 2, sq_nonneg _⟩ iidStdGaussian := by
+      (NNReal.mk ((distL2 P (s : Ω → ℝ) (t : Ω → ℝ)) ^ 2) (sq_nonneg _)) iidStdGaussian := by
   set b := gpBasis hF_env hF_meas hH_inf hH_sep with hb
   set h' := gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t with hh'
   -- Step 1: the increment agrees a.e. with the isonormal image of `h'`.
@@ -385,7 +385,7 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
       (gpX_measurable hF_env hF_meas hH_inf hH_sep t)
   have hlaw : iidStdGaussian.map (fun ω => gpX hF_env hF_meas hH_inf hH_sep s ω
         - gpX hF_env hF_meas hH_inf hH_sep t ω)
-      = gaussianReal 0 ⟨‖h'‖ ^ 2, sq_nonneg _⟩ := by
+      = gaussianReal 0 (NNReal.mk (‖h'‖ ^ 2) (sq_nonneg _)) := by
     rw [Measure.map_congr haeeq, isonormal_map_eq_gaussianReal b h']
   -- Step 4: sub-Gaussian with proxy `‖h'‖²`.
   have hSG := hasSubgaussianMGF_of_map_eq_gaussianReal hmeas_diff.aemeasurable hlaw
@@ -394,8 +394,8 @@ theorem gpX_subgaussian_increment (s t : ↥F) :
   -- `‖h'‖² ≤ (distL2 P s t)²` (square both sides of `norm_gpEmbed_sub_le`).
   have hle : ‖h'‖ ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) := by
     rw [hh']; exact norm_gpEmbed_sub_le hF_env hF_meas s t
-  rw [← NNReal.coe_le_coe]
-  simp only [NNReal.coe_mk]
+  erw [← NNReal.coe_le_coe]
+  change ‖h'‖ ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
   exact pow_le_pow_left₀ (norm_nonneg _) hle 2
 
 /-- **`L²`-norm of the increment is bounded by the `L²` distance.** Since
@@ -462,7 +462,7 @@ theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
           (fun t : T₀ => |gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω|))) ∧
         @UniformContinuousOn ↥F ℝ inst.toUniformSpace _
           (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω) T₀) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   obtain ⟨net, hnet, hmono, hDud⟩ := exists_dudley_net hF_ent hF_ne
   refine _root_.GaussianChaining.gaussianChaining_UC (μ := iidStdGaussian) (K := 1) zero_le_one
     (gpX_measurable ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep) net hnet hmono
@@ -470,7 +470,7 @@ theorem gpX_aeUC {G : Ω → ℝ} (hG_env : IsEnvelope F G) (hG : MemLp G 2 P)
   -- Sub-Gaussian proxy: `dist s t = distL2 P s t` (defeq under the `letI`), and the
   -- chaining wants `⟨1² · dist s t², _⟩ = ⟨distL2 P s t², _⟩` (`1² · x = x`).
   refine (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy ?_
-  rw [← NNReal.coe_le_coe]
+  erw [← NNReal.coe_le_coe]
   simp only [NNReal.coe_mk, one_pow, one_mul]
   -- `dist s t = distL2 P ↑s ↑t` (defeq under the `@[reducible]` pseudometric `letI`).
   change distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
@@ -540,7 +540,7 @@ theorem gpSkeleton_spec (hF_meas : ∀ f ∈ F, Measurable f)
           (distL2PseudoMetric hG_env hG hF_meas).toUniformSpace _
           (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)
           (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- Specs of the explicit Dudley net (= `gpSkeletonNet` by definition).
   obtain ⟨hnet, hmono, hDud⟩ := (exists_dudley_net hF_ent hF_ne).choose_spec
   -- The chaining theorem gives countability, density, and almost-sure bounded
@@ -550,7 +550,7 @@ theorem gpSkeleton_spec (hF_meas : ∀ f ∈ F, Measurable f)
     (gpSkeletonNet hF_meas hF_ent hF_ne) hnet hmono
     (fun s t => (gpX_subgaussian_increment ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep s t).mono_proxy
       (by
-        rw [← NNReal.coe_le_coe]
+        erw [← NNReal.coe_le_coe]
         simp only [NNReal.coe_mk, one_pow, one_mul]
         change distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2 ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) ^ 2
         exact le_refl _)) hDud
@@ -582,7 +582,7 @@ def pathExtend (ω : ℕ → ℝ) : ↥F → ℝ :=
     @Dense.extend ↥F ℝ inst.toUniformSpace.toTopologicalSpace _
       (gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne)
       (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).domRestrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω))
 
 /-- On the good set, the restriction of the skeleton path to `T₀` is uniformly
@@ -592,9 +592,9 @@ theorem uniformContinuous_restrict_of_good {ω : ℕ → ℝ}
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @UniformContinuous _ ℝ
       (@instUniformSpaceSubtype ↥F _ inst.toUniformSpace) _
-      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).restrict
+      ((gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).domRestrict
         (fun t => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep t ω)) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   exact (@uniformContinuousOn_iff_restrict ↥F ℝ inst.toUniformSpace _ _ _).mp hω.2
 
 /-- On the good set, the UC extension `pathExtend ω` is uniformly continuous on
@@ -604,7 +604,7 @@ theorem uniformContinuous_pathExtend_of_good {ω : ℕ → ℝ}
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @UniformContinuous _ ℝ inst.toUniformSpace _
       (pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   exact @Dense.uniformContinuous_extend ↥F ℝ inst.toUniformSpace _ _ _ _
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
     (uniformContinuous_restrict_of_good hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω)
@@ -616,7 +616,7 @@ omit [IsProbabilityMeasure P] in
 theorem totallyBounded_F (hF_ent : bracketingEntropyIntegral 1 F P < ⊤) :
     letI inst := distL2PseudoMetric hG_env hG hF_meas
     @TotallyBounded ↥F inst.toUniformSpace Set.univ := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   rw [@Metric.totallyBounded_iff ↥F inst]
   intro ε hε
   obtain ⟨S, hS_sub, hS_net⟩ := totallyBounded_L2 hF_ent ε hε
@@ -643,7 +643,7 @@ theorem bddAbove_pathExtend_of_good {ω : ℕ → ℝ}
     (hω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω) :
     BddAbove (Set.range
       (fun f : ↥F => |pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f|)) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- UC image of the totally-bounded `↥F` is totally bounded, hence bounded.
   have htb : @TotallyBounded ℝ _
       (pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω '' Set.univ) :=
@@ -667,11 +667,11 @@ theorem pathExtend_eq_on_skeleton {ω : ℕ → ℝ}
     (t : gpSkeleton hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne) :
     pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω (t : ↥F)
       = gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t : ↥F) ω := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   have := @Dense.extend_of_ind ↥F ℝ inst.toUniformSpace _ _ _ _
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1
     (uniformContinuous_restrict_of_good hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne hω) t
-  simpa [pathExtend, Set.restrict_apply] using this
+  simpa [pathExtend, Set.domRestrict_apply] using! this
 
 /-- On the good set, `pathExtend ω` is an `ℓ∞(F)` element: its range is bounded in
 `‖·‖` (`bddAbove_pathExtend_of_good`, since `‖·‖ = |·|` on ℝ), which is
@@ -702,7 +702,7 @@ theorem gpPath_apply_of_good {ω : ℕ → ℝ}
     gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f
       = pathExtend hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f := by
   classical
-  rw [gpPath, dif_pos hω]
+  rw [gpPath, dite_eq_left hω]
 
 /-- **Coordinate a.e.-agreement of `gpPath` with `gpX`.** For each fixed `f ∈ F`,
 the `f`-coordinate of the path `gpPath ω` agrees almost surely with `gpX f ω`.
@@ -717,11 +717,11 @@ pins `pathExtend ω f = gpX f ω` a.e. -/
 theorem gpPath_aeeq_coord (f : ↥F) :
     (fun ω => gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω f)
       =ᵐ[iidStdGaussian] gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep f := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- First-countability + Fréchet-Urysohn of the `distL2` pseudometric on `↥F`.
-  haveI hfc : @FirstCountableTopology ↥F inst.toUniformSpace.toTopologicalSpace :=
+  have hfc : @FirstCountableTopology ↥F inst.toUniformSpace.toTopologicalSpace :=
     @UniformSpace.firstCountableTopology ↥F inst.toUniformSpace inferInstance
-  haveI hfu : @FrechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace :=
+  have hfu : @FrechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace :=
     @FirstCountableTopology.frechetUrysohnSpace ↥F inst.toUniformSpace.toTopologicalSpace hfc
   -- `T₀ = gpSkeleton` is dense, so `f ∈ closure T₀`; first-countability gives a
   -- skeleton sequence `tₙ → f`.
@@ -757,13 +757,13 @@ theorem gpPath_aeeq_coord (f : ↥F) :
       rw [h0]
       exact (ENNReal.continuous_ofReal.tendsto 0).comp this
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdist0
-      (Filter.Eventually.of_forall (fun n => zero_le _))
+      (Filter.Eventually.of_forall (fun n => zero_le))
       (Filter.Eventually.of_forall (fun n =>
         eLpNorm_gpX_sub_le ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t n) f))
   have htim : TendstoInMeasure iidStdGaussian
       (fun n => gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep (t n)) Filter.atTop
       (gpX ⟨G, hG_env, hG⟩ hF_meas hH_inf hH_sep f) :=
-    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) hae_meas hae_meas_f htendsto_eLp
+    tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) htendsto_eLp
   obtain ⟨ns, hns_mono, hns_ae⟩ := htim.exists_seq_tendsto_ae
   -- The good event.
   have hgood := (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.2
@@ -824,7 +824,7 @@ def gpEnum : ℕ → ↥F :=
   (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
     (by
-      letI inst := distL2PseudoMetric hG_env hG hF_meas
+      let inst := distL2PseudoMetric hG_env hG hF_meas
       have hne : Nonempty ↥F := hF_ne.to_subtype
       exact @Dense.nonempty ↥F inst.toUniformSpace.toTopologicalSpace _ hne
         (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1)).choose
@@ -836,7 +836,7 @@ theorem gpEnum_mem (k : ℕ) :
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
     (by
-      letI inst := distL2PseudoMetric hG_env hG hF_meas
+      let inst := distL2PseudoMetric hG_env hG hF_meas
       have hne : Nonempty ↥F := hF_ne.to_subtype
       exact @Dense.nonempty ↥F inst.toUniformSpace.toTopologicalSpace _ hne
         (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1)).choose_spec
@@ -850,7 +850,7 @@ theorem gpEnum_surjOn {t : ↥F}
   have hsp := (Set.Countable.exists_eq_range
     (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).1
     (by
-      letI inst := distL2PseudoMetric hG_env hG hF_meas
+      let inst := distL2PseudoMetric hG_env hG hF_meas
       have hne : Nonempty ↥F := hF_ne.to_subtype
       exact @Dense.nonempty ↥F inst.toUniformSpace.toTopologicalSpace _ hne
         (gpSkeleton_spec hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne).2.1)).choose_spec
@@ -1008,7 +1008,7 @@ theorem gpNearest_eventually_close {δ : ℝ} (hδ : 0 < δ) :
     ∃ N : ℕ, ∀ n ≥ N, ∀ f : ↥F,
       distL2 P (gpNearest hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n f : Ω → ℝ)
           (f : Ω → ℝ) < δ := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   -- finite `δ/2`-net `S` of `↥F` (total boundedness).
   obtain ⟨S, hS_fin, hS_cover⟩ :=
     (@Metric.totallyBounded_iff ↥F inst _).mp
@@ -1076,7 +1076,7 @@ theorem tendsto_gpApprox_of_good {ω : ℕ → ℝ}
     (hω : gpGood hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω) :
     Filter.Tendsto (fun n => gpApprox hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne n ω)
       Filter.atTop (nhds (gpPath hG_env hG hF_meas hH_inf hH_sep hF_ent hF_ne ω)) := by
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   rw [Metric.tendsto_atTop]
   intro ε hε
   -- ε/2-δ uniform continuity of `pathExtend ω` on the good set.

@@ -97,7 +97,7 @@ theorem IsSubGaussian.measure_sub_integral_lt_le
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * σ2))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   have hsg : HasSubgaussianMGF (fun ω => X ω - ∫ x, X x ∂μ) σ2 μ :=
     isSubGaussian_iff.mp hX
   have hbrick :
@@ -134,7 +134,7 @@ theorem IsSubGaussian.measure_abs_sub_integral_lt_le
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < |X ω - ∫ x, X x ∂μ|}
       ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * σ2))) := by
-  haveI := hX.isFiniteMeasure
+  have := hX.isFiniteMeasure
   have hsg : HasSubgaussianMGF (fun ω => X ω - ∫ x, X x ∂μ) σ2 μ :=
     isSubGaussian_iff.mp hX
   have hbrickR :

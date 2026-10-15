@@ -137,7 +137,7 @@ theorem kde_memLp_two {n : ℕ} {X : Fin n → Ω → ℝ} {p K : ℝ → ℝ} {
       = fun ω => ∑ i, K ((X i ω - x) / h) := by
     funext ω; simp only [Finset.sum_apply]
   have hsum : MemLp (fun ω => ∑ i, K ((X i ω - x) / h)) 2 P := by
-    rw [← hfun]; exact memLp_finset_sum' _ (fun i _ => hmem i)
+    rw [← hfun]; exact memLp_finsetSum' _ (fun i _ => hmem i)
   exact hsum.const_mul ((n : ℝ) * h)⁻¹
 
 /-- Under square-integrability, the `ℝ≥0∞`-valued variance functional is the Bochner

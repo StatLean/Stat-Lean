@@ -119,7 +119,9 @@ theorem klDiv_multivariateGaussian_same_cov
   classical
   have hSinv : S⁻¹.PosDef := hS.inv
   set W : Matrix ι ι ℝ := CFC.sqrt S⁻¹ with hWdef
-  have hW : W.PosDef := hSinv.posDef_sqrt
+  have hW : W.PosDef :=
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hSinv.isStrictlyPositive).1).posDef
   have hWW : W * W = S⁻¹ := CFC.sqrt_mul_sqrt_self _ hSinv.posSemidef.nonneg
   have hdetS : IsUnit S.det := (Matrix.isUnit_iff_isUnit_det _).mp hS.isUnit
   have hdetW : IsUnit W.det := (Matrix.isUnit_iff_isUnit_det _).mp hW.isUnit
@@ -137,8 +139,8 @@ theorem klDiv_multivariateGaussian_same_cov
   have hcomp : ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) W⁻¹) ∘ ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) W)
       = id := by
     funext x
-    simp only [Function.comp_apply, id_eq, ← ContinuousLinearMap.mul_apply, ← map_mul,
-      Matrix.nonsing_inv_mul _ hdetW, map_one, ContinuousLinearMap.one_apply]
+    simp only [Function.comp_apply, id_eq, ← mul_apply_eq_comp, ← map_mul,
+      Matrix.nonsing_inv_mul _ hdetW, map_one, one_apply_eq_self]
   -- `‖W (a − b)‖² = ⟪a − b, S⁻¹ (a − b)⟫` by self-adjointness of `W` and `W * W = S⁻¹`.
   have hnorm : ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) W) a - (Matrix.toEuclideanCLM (𝕜 := ℝ) W) b‖ ^ 2
       = ⟪a - b, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) (a - b)⟫ := by

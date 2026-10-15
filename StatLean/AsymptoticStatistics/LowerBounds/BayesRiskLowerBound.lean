@@ -68,7 +68,7 @@ docstring of `bayes_risk_lower_bound`).
   integral is rewritten as a centred-Gaussian integral against the
   Gaussian-shift density $\exp(\langle h, X\rangle - \tfrac{1}{2}\|h\|^2)$
   (`gaussianShift_change_of_measure`), and integral linearity
-  (`integral_finset_sum`) exchanges the finite sum over $h$ with the
+  (`integral_finsetSum`) exchanges the finite sum over $h$ with the
   integral, identifying the inner integrand with the goal's right-hand side.
 
 The boundedness and uniform continuity of $\ell$ supply the
@@ -149,7 +149,7 @@ Gaussian-shift density `exp(⟨h, X⟩ − ‖h‖²/2)`:
 ```
 
 This is closed by `ProbabilityTheory.gaussianShift_change_of_measure`.
-With it in hand, integral linearity (`MeasureTheory.integral_finset_sum`)
+With it in hand, integral linearity (`MeasureTheory.integral_finsetSum`)
 exchanges `Σ_h π(h) ∫_{N(0, I_m)} = ∫_{N(0, I_m)} Σ_h π(h) ·`,
 identifying the inner integrand with the goal RHS. -/
 theorem bayes_risk_lower_bound
@@ -274,9 +274,9 @@ theorem bayes_risk_lower_bound
     intro k h
     -- `submodelAt (γ h) k = (γ h).curve ((√k)⁻¹)` is a probability
     -- measure; the `Measure.pi` over `Fin k` then is too.
-    haveI hPM_curve : IsProbabilityMeasure (submodelAt (γ h) k) :=
+    have hPM_curve : IsProbabilityMeasure (submodelAt (γ h) k) :=
       (γ h).curve_isProbability _
-    haveI hPM_pi : IsProbabilityMeasure
+    have hPM_pi : IsProbabilityMeasure
         (MeasureTheory.Measure.pi
           (fun _ : Fin k => submodelAt (γ h) k)) := by
       infer_instance
@@ -346,7 +346,7 @@ theorem bayes_risk_lower_bound
   -- · ∫_{N(h, I_m)} ℓ(...) dX`, the RHS of `hBayes_n_to_limitBayes`. Two
   -- sub-steps: (i) per-`h` Gaussian-shift identity from
   -- `gaussianShift_change_of_measure`; (ii) integral linearity
-  -- (`integral_finset_sum`) to swap `Σ` and `∫`. Step (ii) needs
+  -- (`integral_finsetSum`) to swap `Σ` and `∫`. Step (ii) needs
   -- integrability of each per-`h` summand, supplied by
   -- `gaussianShift_integrable` using `Measurable T` to derive
   -- AE-strong-measurability of the loss-composition `ℓ ∘ (T - c_h)`.
@@ -425,7 +425,7 @@ theorem bayes_risk_lower_bound
           ∂(MeasureTheory.Measure.pi
               (fun _ : Fin m => (ProbabilityTheory.gaussianReal 0 1))) := by
       -- Each summand is `π h * ∫ f_h = ∫ (π h * f_h)` via `integral_const_mul`,
-      -- then `∑ ∫ f_h = ∫ ∑ f_h` via `integral_finset_sum`.
+      -- then `∑ ∫ f_h = ∫ ∑ f_h` via `integral_finsetSum`.
       have h_each :
           ∀ h ∈ I_0,
             π h *
@@ -469,7 +469,7 @@ theorem bayes_risk_lower_bound
           fun X => hℓ_norm_bdd _
         exact (ProbabilityTheory.gaussianShift_integrable h
           (h_inner_aesm h) h_comp_bdd).const_mul (π h)
-      rw [← MeasureTheory.integral_finset_sum I_0 h_int_each]
+      rw [← MeasureTheory.integral_finsetSum I_0 h_int_each]
     -- Combine the two steps. The final integral matches the goal modulo
     -- the associativity `π h * (exp · ℓ) = π h * exp · ℓ`, applied
     -- summand-wise via `Finset.sum_congr`.

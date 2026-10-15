@@ -184,7 +184,7 @@ theorem bernstein_von_mises_efficient_centering
             (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹))})
         atTop (𝓝 0) := by
   classical
-  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+  have hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
       IsProbabilityMeasure (productMeasure M μ θ n) :=
     fun θ n =>
       AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
@@ -251,7 +251,7 @@ theorem bernstein_von_mises_efficient_centering
         ∪ {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖} := by
     intro ω hω
     by_contra hcon
-    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    simp only [Set.mem_union, not_or, Set.mem_ofPred_eq, not_le] at hcon
     obtain ⟨h1, h2⟩ := hcon
     have hdiff : ‖bvmEffScore J sc n ω - Real.sqrt n • (est n ω - θ₀)‖ < ε := by
       rw [← norm_neg, neg_sub]
@@ -259,7 +259,7 @@ theorem bernstein_von_mises_efficient_centering
     have hG : tvDist (bvmGaussian J sc n ω)
         (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹) < δ₁ / 2 :=
       hεlt _ _ hdiff
-    haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+    have : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
       unfold bvmGaussian; infer_instance
     have htri : tvDist (bvmLocalPosterior κ π θ₀ n ω)
         (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹)

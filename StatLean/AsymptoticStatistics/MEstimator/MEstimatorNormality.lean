@@ -113,9 +113,9 @@ theorem populationTaylor_at_localScale
   -- The exceedance set sits inside `{max M 0-tail of hₙ}`; the mass is `≤ η/4 < η`.
   refine lt_of_le_of_lt (le_trans (measureReal_mono ?_) (hM n)) (by linarith)
   intro ξ hξ
-  simp only [Set.mem_setOf_eq] at hξ ⊢
+  simp only [Set.mem_ofPred_eq] at hξ ⊢
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   -- `hcon : ‖hₙ n ξ‖ ≤ M`.
   set θ := θ₀ + (Real.sqrt n)⁻¹ • hₙ n ξ with hθdef
   have hnn : (n : ℝ) ≠ 0 := by exact_mod_cast (Nat.one_le_iff_ne_zero.mp hn1)
@@ -528,7 +528,7 @@ theorem mEstimator_normality_of_expansion
               (empiricalProcessVec P (fun _ => mdot) θ₀ n (fun i : Fin n => X i.val ξ))‖} := by
     intro n
     ext ξ
-    simp only [Set.mem_setOf_eq, dist_eq_norm, map_neg, ContinuousLinearMap.neg_apply]
+    simp only [Set.mem_ofPred_eq, dist_eq_norm, map_neg, neg_apply]
     rw [show -Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V⁻¹
           (empiricalProcessVec P (fun _ => mdot) θ₀ n (fun i : Fin n => X i.val ξ))
         - Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)

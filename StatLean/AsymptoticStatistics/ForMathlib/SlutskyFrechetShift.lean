@@ -133,7 +133,7 @@ theorem WeakConverges.slutsky_shift_of_tendsto
           = (∅ : Set (Ω k)) := by
       filter_upwards [h_norm_small] with k hk
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
       calc dist (sqn k • (T k ω - ψ θ₀) - ψDot h)
             (sqn k • (T k ω - ψ (θ₀ + (sqn k)⁻¹ • h)))
           = ‖sqn k • (ψ (θ₀ + (sqn k)⁻¹ • h) - ψ θ₀) - ψDot h‖ :=
@@ -143,8 +143,8 @@ theorem WeakConverges.slutsky_shift_of_tendsto
     filter_upwards [h_set_empty] with k hk
     rw [hk]
     simp
-  haveI : IsProbabilityMeasure (ν.map (fun y : E => y - ψDot h)) :=
-    Measure.isProbabilityMeasure_map hSub_meas.aemeasurable
+  have : IsProbabilityMeasure (ν.map (fun y : E => y - ψDot h)) :=
+    (by infer_instance)
   exact WeakConverges.slutsky_of_tendstoInMeasure_dist
     (P := P)
     (X := fun k ω => sqn k • (T k ω - ψ θ₀) - ψDot h)

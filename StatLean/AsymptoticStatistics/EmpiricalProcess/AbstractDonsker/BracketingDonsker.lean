@@ -53,7 +53,7 @@ lemma exists_l2_envelope_of_entropyIntegral
     (h_int : bracketingEntropyIntegral 1 F P < ⊤) :
     ∃ G, IsEnvelope F G ∧ MemLp G 2 P := by
   obtain ⟨k, l, u, hbr, hcov⟩ :=
-    hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by norm_num : (0:ℝ) < 1)
+    hasFiniteBracketingCover_of_entropyIntegral_lt_top h_int (by norm_num : (0 : ℝ) < 1)
   refine ⟨fun x => ∑ i : Fin k, (|l i x| + |u i x|), ?_, ?_⟩
   · -- envelope: `|f x| ≤ |l i x| + |u i x| ≤ ∑ j, (|l j x| + |u j x|)`.
     intro f hf x
@@ -72,7 +72,7 @@ lemma exists_l2_envelope_of_entropyIntegral
     exact Finset.single_le_sum (f := fun j => |l j x| + |u j x|)
       h_nonneg (Finset.mem_univ i)
   · -- `L²`: a finite sum of `|l i| + |u i| ∈ L²(P)`.
-    refine memLp_finset_sum _ ?_
+    refine memLp_finsetSum _ ?_
     intro i _
     exact (MemLp.abs (hbr i).memLp_lower).add (MemLp.abs (hbr i).memLp_upper)
 
@@ -101,7 +101,7 @@ lemma separableSpace_gpH_of_entropyIntegral
   set R : Set (Lp ℝ 2 P) := Set.range (fun f : ↥F => centredLp hF_env hF_meas f) with hR
   -- STEP 1: `R` is totally bounded in `L²(P)`, by Lipschitz image of totally-bounded `↥F`.
   obtain ⟨G, hG_env, hG⟩ := id hF_env
-  letI inst := distL2PseudoMetric hG_env hG hF_meas
+  let inst := distL2PseudoMetric hG_env hG hF_meas
   have hFtb : @TotallyBounded ↥F inst.toUniformSpace Set.univ :=
     totallyBounded_F hG_env hG hF_meas h_int
   -- `centredLp` is `1`-Lipschitz: `‖centredLp s − centredLp t‖ ≤ dist s t = distL2 P s t`.
@@ -117,7 +117,7 @@ lemma separableSpace_gpH_of_entropyIntegral
         = ((gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t :
             ↥(gpH hF_env hF_meas)) : Lp ℝ 2 P) := by
       rw [Submodule.coe_sub, coe_gpEmbed, coe_gpEmbed]
-    rw [hcoe, ← Submodule.coe_norm]
+    rw [hcoe, Submodule.norm_coe]
     -- `dist s t = distL2 P s t` under the pseudometric.
     change ‖gpEmbed hF_env hF_meas s - gpEmbed hF_env hF_meas t‖ ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ)
     exact norm_gpEmbed_sub_le hF_env hF_meas s t

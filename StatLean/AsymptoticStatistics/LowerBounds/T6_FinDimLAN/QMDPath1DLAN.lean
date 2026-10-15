@@ -55,6 +55,10 @@ type expected by `LAN_expansion_iii`, invoked at `k = 1`).
 
 Density: `((curve θ).rnDeriv P).toReal`, with
 `θ ∈ EuclideanSpace ℝ (Fin 1)` extracted as `θ 0 : ℝ`. -/
+
+/-- The bounded-density QMD path `boundedDensityPath g hg` (score `g`, dominating measure
+`P`) as a `ParametricFamily` on `Ω` indexed by `EuclideanSpace ℝ (Fin 1)`: the density at `θ`
+is `(((boundedDensityPath g hg).curve (θ 0)).rnDeriv P).toReal`. -/
 noncomputable def boundedDensityPath_to1DParametricFamily
     (g : ↥(L2ZeroMean P)) (hg : IsEssBoundedMixtureScore g) :
     ParametricFamily Ω (EuclideanSpace ℝ (Fin 1)) where
@@ -270,12 +274,11 @@ theorem boundedDensityPath_dqm
       simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
         zero_pow, mul_zero, zero_div, ENNReal.ofReal_zero] at h_eLp_le
       have h_eLp_zero : eLpNorm (boundedDensityPath_residual g hg (θ 0)) 2 P = 0 :=
-        le_antisymm h_eLp_le (zero_le _)
+        le_antisymm h_eLp_le (zero_le)
       have h_residual_memLp := boundedDensityPath_residual_memLp g hg ht
       have h_residual_zero_ae :
           boundedDensityPath_residual g hg (θ 0) =ᵐ[P] 0 :=
-        (eLpNorm_eq_zero_iff h_residual_memLp.aestronglyMeasurable
-          (by norm_num)).mp h_eLp_zero
+        (eLpNorm_eq_zero_iff (by norm_num)).mp h_eLp_zero
       rw [dqm_residual_sq_funext g hg θ]
       have h_sq_zero_ae :
           (fun ω => boundedDensityPath_residual g hg (θ 0) ω ^ 2) =ᵐ[P] 0 := by

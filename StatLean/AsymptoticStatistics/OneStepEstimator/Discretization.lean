@@ -166,7 +166,7 @@ theorem pointwiseLinearization_at_discretized
       (rootNGridRound_spec n hnpos θ0).2
     have hpoint : point n d = rounded + (1 / Real.sqrt n) • offset := by
       ext j
-      simp only [point, if_neg hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
+      simp only [point, ite_eq_right hnpos.ne', rounded, offset, PiLp.add_apply, PiLp.smul_apply]
       change (((((Int.floor (Real.sqrt n * θ0 j) : ℤ) +
         d j (Finset.mem_univ j) : ℤ) : ℝ) / Real.sqrt n)) =
           ((Int.floor (Real.sqrt n * θ0 j) : ℤ) : ℝ) / Real.sqrt n +
@@ -191,7 +191,7 @@ theorem pointwiseLinearization_at_discretized
   have hsum : Tendsto (fun n => ∑ d ∈ codes,
       μ.real {ξ | ε ≤ ‖oneStepResidual Ψ θ0 V0 n ξ (point n d)‖})
       atTop (𝓝 0) := by
-    simpa using tendsto_finset_sum codes (fun d _hd => hcode d ε hε)
+    simpa using tendsto_finsetSum codes (fun d _hd => hcode d ε hε)
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hsum (η / 2) (by positivity)
   refine ⟨max N 1, fun n hn => ?_⟩
   have hnN : N ≤ n := (le_max_left N 1).trans hn
@@ -216,7 +216,7 @@ theorem pointwiseLinearization_at_discretized
         exact gridCode_mem_Icc hnpos θ0 (pre n ξ) M hM_nonneg z hz hin' j
       have hpoint : point n d = pre n ξ := by
         ext j
-        simp only [point, if_neg hnpos.ne', d]
+        simp only [point, ite_eq_right hnpos.ne', d]
         change ((((Int.floor (Real.sqrt n * θ0 j) : ℤ) +
           (z j - Int.floor (Real.sqrt n * θ0 j)) : ℤ) : ℝ) / Real.sqrt n) = pre n ξ j
         rw [hz j]; congr 1; push_cast; ring

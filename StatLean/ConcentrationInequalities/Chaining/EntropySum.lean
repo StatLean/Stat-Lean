@@ -114,7 +114,7 @@ lemma summable_dudleySummand {T : Set E}
     apply summable_of_ne_finset_zero (s := Finset.range m)
     intro n hn
     rw [Finset.mem_range, not_lt] at hn
-    show dudleySummand T (-((n : ℤ) + 1)) = 0
+    change dudleySummand T (-((n : ℤ) + 1)) = 0
     unfold dudleySummand
     rw [neg_neg]
     have hdiam : Metric.diam T ≤ (2 : ℝ) ^ ((n : ℤ) + 1) :=
@@ -227,16 +227,16 @@ theorem sum_window_le_two_mul_dudleyIntegral {T : Set E}
     have hcle : ∀ x ∈ B k, sqrtLogCov T ((2 : ℝ) ^ (-k)) ≤ sqrtLogCov T x :=
       fun x hx => sqrtLogCov_anti hx.2 (hcov_fin x)
     have hmt : MeasureTheory.volume (B k) ≠ ∞ := by
-      show MeasureTheory.volume (Set.Ioc _ _) ≠ ∞
+      change MeasureTheory.volume (Set.Ioc _ _) ≠ ∞
       rw [Real.volume_Ioc]; exact ENNReal.ofReal_ne_top
     have hge := setIntegral_ge_of_const_le_real (μ := MeasureTheory.volume)
       (s := B k) (f := sqrtLogCov T) (c := sqrtLogCov T ((2 : ℝ) ^ (-k)))
       measurableSet_Ioc hmt hcle (hint_bk k hk)
     have hvol : MeasureTheory.volume.real (B k) = (2 : ℝ) ^ (-(k + 1)) := by
-      show MeasureTheory.volume.real (Set.Ioc _ _) = _
+      change MeasureTheory.volume.real (Set.Ioc _ _) = _
       rw [MeasureTheory.Measure.real, Real.volume_Ioc,
         ENNReal.toReal_ofReal
-          (by rw [hkey k]; have := show (0:ℝ) < (2:ℝ) ^ (-(k + 1)) from by positivity;
+          (by rw [hkey k]; have := show (0 : ℝ) < (2 : ℝ) ^ (-(k + 1)) from by positivity;
               linarith)]
       rw [hkey k]; ring
     rw [hvol] at hge
@@ -334,7 +334,7 @@ lemma diam_mul_sqrt_log_two_le_four_mul_dudleySum {T : Set E}
     obtain ⟨a, ha, b, hb, hab⟩ :
         ∃ a ∈ T, ∃ b ∈ T, 2 * e < dist a b := by
       by_contra h_all
-      push_neg at h_all
+      push Not at h_all
       exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
     -- Hence `𝒩(T, e) ≥ 2`, giving `sqrtLogCov T e ≥ √(log 2)`.
     have hcov : 1 < coveringNumber T e :=
@@ -477,7 +477,7 @@ lemma dudleyLSum_le_two_mul_dudleyLIntegral {T : Set E}
             * ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1))) := by
       rw [setLIntegral_const]
       congr 1
-      show MeasureTheory.volume (Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)))
+      change MeasureTheory.volume (Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)))
           = ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1)))
       rw [Real.volume_Ioc]; congr 1; rw [hkey k]; ring
     have hmono : ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))
@@ -550,7 +550,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
       ≤ 4 * dudleyLSum T := by
   have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
   rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hdiam0 | hdiam_pos
-  · rw [← hdiam0, zero_mul, ENNReal.ofReal_zero]; exact zero_le _
+  · rw [← hdiam0, zero_mul, ENNReal.ofReal_zero]; exact zero_le
   · -- Pick a dyadic scale `e = 2^{-κ}` with `diam/4 ≤ e < diam/2`.
     obtain ⟨κ, h_lo, h_hi⟩ := exists_coarse_scale (D := Metric.diam T / 4) (by linarith)
     set e : ℝ := (2 : ℝ) ^ (-κ) with he
@@ -562,7 +562,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
     obtain ⟨a, ha, b, hb, hab⟩ :
         ∃ a ∈ T, ∃ b ∈ T, 2 * e < dist a b := by
       by_contra h_all
-      push_neg at h_all
+      push Not at h_all
       exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
     have hcov1 : 1 < coveringNumber T e :=
       one_lt_coveringNumber_of_two_mul_lt_dist he_pos.le ha hb hab
@@ -591,7 +591,7 @@ lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
           rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4), ENNReal.ofReal_ofNat]
       _ ≤ 4 * dudleyLSum T := by
           gcongr
-          exact ENNReal.le_tsum κ
+          exact ENNReal.le_tsum (f := fun k => ENNReal.ofReal (dudleySummand T k)) κ
 
 /-- Capped-vs-`Ioi` display, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.7): beyond the
 diameter the integrand vanishes, so the `∫₀^∞` and capped forms agree. -/

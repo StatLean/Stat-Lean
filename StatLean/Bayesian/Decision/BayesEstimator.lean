@@ -5,9 +5,9 @@ import StatLean.Bayesian.Decision.Defs
 
 Our own formalization of Robert's Theorem 2.3.2 and Definition 2.3.3: the integrated (average)
 risk decomposes as an integral of the posterior expected loss over the predictive distribution,
-$$r(\pi, \delta) = \int_{\mathcal X} \Big(\int_\Theta \ell(\theta, \delta(x))\,\pi(d\theta\mid x)\Big)\,m(dx),$$
-so an estimator that minimizes the posterior expected loss pointwise (for predictive-a.e. `x`) is
-a Bayes estimator.
+$$r(\pi, \delta) = \int_{\mathcal X} \Big(\int_\Theta \ell(\theta, \delta(x))\,\pi(d\theta\mid
+x)\Big)\,m(dx),$$ so an estimator that minimizes the posterior expected loss pointwise (for
+predictive-a.e. `x`) is a Bayes estimator.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
 Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
@@ -124,7 +124,7 @@ theorem lintegral_iInf_posteriorRisk_le_bayesRisk [StandardBorelSpace Θ] [Nonem
     (∫⁻ x, ⨅ y, ∫⁻ θ, ℓ θ y ∂(P†π) x ∂(P ∘ₘ π)) ≤ bayesRisk ℓ P π := by
   rw [bayesRisk]
   refine le_iInf₂ fun κ hκ => ?_
-  haveI := hκ
+  have := hκ
   rw [avgRisk_eq_lintegral_lintegral_posteriorRisk ℓ hℓ P π κ]
   refine lintegral_mono fun x => ?_
   exact iInf_le_lintegral _

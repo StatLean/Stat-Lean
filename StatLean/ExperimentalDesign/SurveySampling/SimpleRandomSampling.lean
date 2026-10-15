@@ -83,10 +83,10 @@ theorem simpleRandomSampling_map_image (n : ℕ) (hn : n ≤ Fintype.card U)
     intro t; rw [Finset.image_image]; simp
   refine (tsum_eq_single (u.image (σ.symm : U → U)) ?_).trans ?_
   · intro t ht
-    refine if_neg fun h => ht ?_
+    refine ite_eq_right fun h => ht ?_
     rw [h, Finset.image_image]
     simp
-  · rw [himg u, if_pos rfl]
+  · rw [himg u, ite_eq_left rfl]
     simp only [simpleRandomSampling, PMF.uniformOfFinset_apply, Finset.mem_powersetCard,
       Finset.subset_univ, true_and, Finset.card_image_of_injective _ σ.symm.injective]
 
@@ -266,7 +266,7 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
   have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
   have hcard : 0 < Fintype.card U := lt_of_lt_of_le (Nat.pos_of_ne_zero hn0) hn
   have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
-  haveI : Nonempty U := Fintype.card_pos_iff.1 hcard
+  have : Nonempty U := Fintype.card_pos_iff.1 hcard
   rcases le_or_gt (Fintype.card U) 1 with hN1 | hN2
   · -- Degenerate population: `N = 1` forces `n = 1`, the sample is deterministic.
     have hNeq : Fintype.card U = 1 := le_antisymm hN1 hcard
@@ -299,8 +299,8 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
       intro i j
       rw [pmfCov_smul_smul, cov_inclusionIndicator]
       rcases eq_or_ne i j with rfl | hij
-      · rw [if_pos rfl, pairInclusionProb_self, srs_inclusionProb]; ring
-      · rw [if_neg hij, srs_pairInclusionProb n hn hij, srs_inclusionProb,
+      · rw [ite_eq_left rfl, pairInclusionProb_self, srs_inclusionProb]; ring
+      · rw [ite_eq_right hij, srs_pairInclusionProb n hn hij, srs_inclusionProb,
           srs_inclusionProb]
         ring
     -- the two elementary double sums
@@ -318,7 +318,7 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
       rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun i _ => ?_
       rw [Finset.sum_ite_eq Finset.univ i fun j => c * (y i * y j),
-        if_pos (Finset.mem_univ i)]
+        ite_eq_left (Finset.mem_univ i)]
       ring
     have hdouble : ∀ q r : ℝ,
         ∑ i, ∑ j, y i * y j * ((if i = j then q else r) - q ^ 2)
@@ -328,8 +328,8 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
           = (r - q ^ 2) * (y i * y j) + (if i = j then (q - r) * (y i * y j) else 0) := by
         intro i j
         rcases eq_or_ne i j with rfl | h
-        · rw [if_pos rfl, if_pos rfl]; ring
-        · rw [if_neg h, if_neg h]; ring
+        · rw [ite_eq_left rfl, ite_eq_left rfl]; ring
+        · rw [ite_eq_right h, ite_eq_right h]; ring
       calc ∑ i, ∑ j, y i * y j * ((if i = j then q else r) - q ^ 2)
           = ∑ i, ∑ j, ((r - q ^ 2) * (y i * y j)
               + (if i = j then (q - r) * (y i * y j) else 0)) :=

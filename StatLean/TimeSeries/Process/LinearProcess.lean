@@ -1,3 +1,5 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import StatLean.TimeSeries.Models.WhiteNoise
 import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 
@@ -45,9 +47,27 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 `‖X_t − Σ_{j<N} ψ_j ε_{t−j}‖_{L²(μ)} → 0`. -/
 def IsLinearProcessOf (ψ : ℕ → ℝ) (X ε : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop :=
   ∀ t : ℤ, Tendsto
-    (fun N => eLpNorm
+    (fun N => eLpNorm'
       (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ)
     atTop (𝓝 0)
+
+/-- For a.e. strongly measurable sections, the convergence also holds for `eLpNorm`. -/
+lemma IsLinearProcessOf.tendsto_eLpNorm {X ε : ℤ → Ω → ℝ} {ψ : ℕ → ℝ}
+    (h : IsLinearProcessOf ψ X ε μ)
+    (hA : ∀ t, AEStronglyMeasurable (X t) μ)
+    (hB : ∀ t, AEStronglyMeasurable (ε t) μ) (t : ℤ) :
+    Tendsto (fun N : ℕ => eLpNorm
+      (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ)
+      atTop (𝓝 0) := by
+  refine (h t).congr fun N => ?_
+  have hr : AEStronglyMeasurable
+      (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) μ := by
+    convert! (hA t).sub (Finset.aestronglyMeasurable_sum (Finset.range N)
+        fun j _ => (hB (t - (j : ℕ))).const_mul (ψ j)) using 1
+    funext ω
+    simp only [Pi.sub_apply, Finset.sum_apply]
+  rw [eLpNorm_two_eq_eLpNorm' hr]
+
 
 section Aux
 
@@ -72,7 +92,7 @@ private noncomputable def psum (ψ : ℕ → ℝ) (ε : ℤ → Ω → ℝ) (t :
 
 private lemma memLp_psum (hε : IsWhiteNoise ε σ2 μ) (t : ℤ) (N : ℕ) :
     MemLp (psum ψ ε t N) 2 μ :=
-  memLp_finset_sum _ fun j _ => (hε.memLp (t - (j : ℕ))).const_mul (ψ j)
+  memLp_finsetSum _ fun j _ => (hε.memLp (t - (j : ℕ))).const_mul (ψ j)
 
 /-- Second moments of white noise: `E[ε_a ε_b] = σ² δ_{ab}` (the means vanish, so the
 mixed moment is the covariance). -/
@@ -86,15 +106,15 @@ private lemma integral_noise_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise �
   rw [← h]
   by_cases hab : a = b
   · subst hab
-    rw [if_pos rfl, covariance_self (hε.memLp a).aestronglyMeasurable.aemeasurable,
+    rw [ite_eq_left rfl, covariance_self (hε.memLp a).aestronglyMeasurable.aemeasurable,
       hε.variance_eq a]
-  · rw [if_neg hab, hε.uncorrelated a b hab]
+  · rw [ite_eq_right hab, hε.uncorrelated a b hab]
 
 /-- The `L²` norm of the noise is `√σ²` at every time. -/
 private lemma norm_toLp_noise [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ) (a : ℤ) :
     ‖(hε.memLp a).toLp (ε a)‖ = Real.sqrt σ2 := by
   have h : ‖(hε.memLp a).toLp (ε a)‖ ^ 2 = σ2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_toLp, integral_noise_mul hε a a, if_pos rfl]
+    rw [← real_inner_self_eq_norm_sq, inner_toLp, integral_noise_mul hε a a, ite_eq_left rfl]
   have h2 := Real.sqrt_sq (norm_nonneg ((hε.memLp a).toLp (ε a)))
   rw [h] at h2
   exact h2.symm
@@ -149,23 +169,23 @@ private lemma integral_psum_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε
     simp only [psum]
     rw [Finset.sum_mul_sum]
   simp_rw [hexp]
-  rw [integral_finset_sum _ fun i _ => integrable_finset_sum _ fun j _ => hint _ _ _ _]
+  rw [integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hint _ _ _ _]
   have hstep : ∀ i ∈ Finset.range N,
       ∫ ω, ∑ j ∈ Finset.range N, (ψ i * ε (s - (i : ℕ)) ω) * (ψ j * ε (t - (j : ℕ)) ω) ∂μ
         = if m ≤ i then ψ i * ψ (i - m) * σ2 else 0 := by
     intro i hi
     rw [Finset.mem_range] at hi
-    rw [integral_finset_sum _ fun j _ => hint _ _ _ _]
+    rw [integral_finsetSum _ fun j _ => hint _ _ _ _]
     simp_rw [hterm]
     by_cases him : m ≤ i
-    · rw [if_pos him]
+    · rw [ite_eq_left him]
       rw [Finset.sum_eq_single (i - m) (fun j _ hjne => ?_) (fun hnot => ?_)]
-      · rw [if_pos (by omega)]
-      · rw [if_neg (fun h => hjne (by omega)), mul_zero]
+      · rw [ite_eq_left (by omega)]
+      · rw [ite_eq_right (fun h => hjne (by omega)), mul_zero]
       · exact absurd (Finset.mem_range.2 (by omega)) hnot
-    · rw [if_neg him]
+    · rw [ite_eq_right him]
       refine Finset.sum_eq_zero fun j _ => ?_
-      rw [if_neg (fun h => him (by omega)), mul_zero]
+      rw [ite_eq_right (fun h => him (by omega)), mul_zero]
   rw [Finset.sum_congr rfl hstep]
   have hsub : ∑ i ∈ Finset.Ico m N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0)
       = ∑ i ∈ Finset.range N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0) :=
@@ -173,8 +193,8 @@ private lemma integral_psum_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε
       (fun x hx hxn => by
         rw [Finset.mem_range] at hx
         rw [Finset.mem_Ico] at hxn
-        rw [if_neg (by omega)])
-  rw [← hsub, Finset.sum_congr rfl (fun i hi => if_pos (Finset.mem_Ico.1 hi).1),
+        rw [ite_eq_right (by omega)])
+  rw [← hsub, Finset.sum_congr rfl (fun i hi => ite_eq_left (Finset.mem_Ico.1 hi).1),
     Finset.sum_Ico_eq_sum_range, Finset.mul_sum]
   exact Finset.sum_congr rfl fun l _ => by rw [Nat.add_sub_cancel_left]; ring
 
@@ -188,7 +208,7 @@ private lemma inner_psumLp [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 
 private lemma integral_psum [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
     (ψ : ℕ → ℝ) (t : ℤ) (N : ℕ) : ∫ ω, psum ψ ε t N ω ∂μ = 0 := by
   simp only [psum]
-  rw [integral_finset_sum _ fun j _ => ((hε.memLp (t - (j : ℕ))).const_mul (ψ j)).integrable
+  rw [integral_finsetSum _ fun j _ => ((hε.memLp (t - (j : ℕ))).const_mul (ψ j)).integrable
     (by norm_num)]
   refine Finset.sum_eq_zero fun j _ => ?_
   rw [integral_const_mul, hε.integral_eq_zero, mul_zero]
@@ -232,9 +252,9 @@ private lemma map_noise_block [IsProbabilityMeasure μ] {A : Type*} [Finite A]
     exact congrArg Measure.pi (funext fun b => (hε.identDistrib _ 0).map_eq)
   -- the general block is the range block precomposed with `ρ`
   have hmb : ∀ c : ℤ, Measurable (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
-    fun c => measurable_pi_lambda _ fun b => hε.measurable _
+    fun c => Measurable.of_eval fun b => hε.measurable _
   have hcomp : Measurable (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) :=
-    measurable_pi_lambda _ fun a => measurable_pi_apply (ρ a)
+    Measurable.of_eval fun a => measurable_pi_apply (ρ a)
   have hfac : ∀ c : ℤ, (fun ω a => ε (u a + c) ω)
       = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
     fun c => rfl
@@ -256,11 +276,11 @@ private lemma map_psum_vec [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ
   set G : (Fin n × Fin N → ℝ) → (Fin n → ℝ) :=
     fun v i => ∑ j : Fin N, ψ j * v (i, j) with hG
   have hGm : Measurable G :=
-    measurable_pi_lambda _ fun i => Finset.measurable_sum _ fun j _ => by fun_prop
+    Measurable.of_eval fun i => Finset.measurable_sum _ fun j _ => by fun_prop
   have hbm : ∀ c : ℤ, Measurable (fun ω (a : Fin n × Fin N) => ε (u a + c) ω) :=
-    fun c => measurable_pi_lambda _ fun a => hε.measurable _
+    fun c => Measurable.of_eval fun a => hε.measurable _
   have hbm0 : Measurable (fun ω (a : Fin n × Fin N) => ε (u a) ω) :=
-    measurable_pi_lambda _ fun a => hε.measurable _
+    Measurable.of_eval fun a => hε.measurable _
   have hfac : (fun ω (i : Fin n) => psum ψ ε (t i + k) N ω)
       = G ∘ (fun ω (a : Fin n × Fin N) => ε (u a + k) ω) := by
     funext ω i
@@ -305,25 +325,23 @@ private lemma tendsto_windowDefect [IsProbabilityMeasure μ] {X : ℤ → Ω →
         = ∑ i : Fin n, fun ω => ‖X (t i + c) ω - psum ψ ε (t i + c) N ω‖ := by
       funext ω; simp
     rw [hfun]
-    refine (eLpNorm_sum_le (fun i _ => ?_) one_le_two).trans_eq ?_
-    · exact (((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
-    · exact Finset.sum_congr rfl fun i _ => eLpNorm_norm _
+    refine (eLpNorm_sum_le one_le_two).trans_eq ?_
+    exact Finset.sum_congr rfl fun i _ => eLpNorm_norm _
+        (((hmX _).sub (measurable_psum hmε ψ _ _)).aestronglyMeasurable)
   have hbound : ∀ N : ℕ, eLpNorm (windowDefect ψ X ε t k N) 2 μ
       ≤ (∑ i : Fin n, eLpNorm (fun ω => X (t i + k) ω - psum ψ ε (t i + k) N ω) 2 μ)
         + ∑ i : Fin n, eLpNorm (fun ω => X (t i + 0) ω - psum ψ ε (t i + 0) N ω) 2 μ := by
     intro N
-    refine le_trans (eLpNorm_add_le ?_ ?_ one_le_two) (add_le_add (hsplit k N) (hsplit 0 N))
-    · exact (Finset.measurable_sum _ fun i _ =>
-        ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
-    · exact (Finset.measurable_sum _ fun i _ =>
-        ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
+    exact le_trans (eLpNorm_add_le one_le_two) (add_le_add (hsplit k N) (hsplit 0 N))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
-    (fun N => zero_le _) hbound
+    (fun N => zero_le) hbound
   have hsum : ∀ c : ℤ, Tendsto (fun N =>
       ∑ i : Fin n, eLpNorm (fun ω => X (t i + c) ω - psum ψ ε (t i + c) N ω) 2 μ)
       atTop (𝓝 0) := by
     intro c
-    simpa using tendsto_finset_sum (Finset.univ : Finset (Fin n)) fun i _ => hX (t i + c)
+    simpa using! tendsto_finsetSum (Finset.univ : Finset (Fin n)) fun i _ =>
+      hX.tendsto_eLpNorm (fun t => (hmX t).aestronglyMeasurable)
+        (fun t => (hmε t).aestronglyMeasurable) (t i + c)
   simpa using (hsum k).add (hsum 0)
 
 /-- Along a subsequence, both windows of partial sums converge a.e. to the corresponding
@@ -335,9 +353,8 @@ private lemma exists_subseq_window [IsProbabilityMeasure μ] {X : ℤ → Ω →
       Tendsto (fun j => (fun i => psum ψ ε (t i + c) (ns j) ω : Fin n → ℝ)) atTop
         (𝓝 fun i => X (t i + c) ω) := by
   obtain ⟨ns, -, hns⟩ :=
-    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
-      (fun N => (measurable_windowDefect hmε hmX ψ t k N).aestronglyMeasurable)
-      aestronglyMeasurable_zero
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2)
+      (f := fun N => windowDefect ψ X ε t k N) (g := 0) (by norm_num)
       (by simpa using tendsto_windowDefect hX hmε hmX t k)).exists_seq_tendsto_ae
   refine ⟨ns, fun c hc => ?_⟩
   filter_upwards [hns] with ω hω
@@ -360,9 +377,11 @@ private lemma exists_subseq_window [IsProbabilityMeasure μ] {X : ℤ → Ω →
   simpa [dist_eq_norm, norm_sub_rev] using hzero
 
 /-- The `L²` convergence of the partial sums, in `psum` form. -/
-private lemma tendsto_eLpNorm_psum {X : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (t : ℤ) :
+private lemma tendsto_eLpNorm_psum {X : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ)
+    (hmX : ∀ t, AEStronglyMeasurable (X t) μ)
+    (hmε : ∀ t, AEStronglyMeasurable (ε t) μ) (t : ℤ) :
     Tendsto (fun N => eLpNorm (psum ψ ε t N - X t) 2 μ) atTop (𝓝 0) := by
-  refine (hX t).congr fun N => ?_
+  refine (hX.tendsto_eLpNorm hmX hmε t).congr fun N => ?_
   have h1 : (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
       = (X t - psum ψ ε t N) := rfl
   rw [h1, eLpNorm_sub_comm]
@@ -410,7 +429,9 @@ theorem exists_isLinearProcessOf [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {�
     simp_rw [heq, edist_dist]
     simpa using ENNReal.tendsto_ofReal (tendsto_iff_dist_tendsto_zero.mp hL)
   choose X hXm hXlim using main
-  exact ⟨X, hXm, hXlim⟩
+  refine ⟨X, hXm, fun t => ?_⟩
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hXlim t)
+    (fun _ => bot_le) (fun _ => eLpNorm'_two_le_eLpNorm)
 
 /-- Marginals of a linear process are in `L²`. -/
 theorem IsLinearProcessOf.memLp [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
@@ -418,10 +439,11 @@ theorem IsLinearProcessOf.memLp [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
     (hψ : Summable fun j => |ψ j|) (hε : IsWhiteNoise ε σ2 μ)
     -- LEAN-ONLY: measurability of the limits; supplied by `exists_isLinearProcessOf`
     (hmeas : ∀ t, Measurable (X t)) (t : ℤ) : MemLp (X t) 2 μ := by
-  obtain ⟨N, hN⟩ := ((hX t).eventually (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
+  obtain ⟨N, hN⟩ := ((hX.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+    (fun t => (hε.memLp t).aestronglyMeasurable) t).eventually
+        (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
   have hdiff : MemLp (fun ω => X t ω - psum ψ ε t N ω) 2 μ :=
-    ⟨(hmeas t).aestronglyMeasurable.sub (memLp_psum hε t N).aestronglyMeasurable,
-      lt_of_lt_of_le hN (by norm_num)⟩
+    lt_of_lt_of_le hN (by norm_num)
   have hsum := hdiff.add (memLp_psum (ψ := ψ) hε t N)
   have hfun : ((fun ω => X t ω - psum ψ ε t N ω) + psum ψ ε t N) = X t := by
     funext ω; simp
@@ -450,7 +472,9 @@ theorem IsLinearProcessOf.isStationary [IsProbabilityMeasure μ] {ψ : ℕ → �
       filter_upwards [coeFn_psumLp hε ψ t N, (hmem t).coeFn_toLp] with ω h1 h2
       simp only [Pi.sub_apply, h1, h2]
     simp_rw [hd]
-    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hX t)
+    simpa using! (ENNReal.continuousAt_toReal (by simp)).tendsto.comp
+      (hX.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) t)
   -- the mean is zero at every time, being the limit of the (zero) means of the partial sums
   have hone : MemLp (fun _ : Ω => (1 : ℝ)) 2 μ := memLp_const 1
   have hmean : ∀ t : ℤ, ∫ ω, X t ω ∂μ = 0 := by
@@ -510,14 +534,10 @@ theorem IsLinearProcessOf.isStrictlyStationary [IsProbabilityMeasure μ] {ψ : �
     IsStrictlyStationary X μ := by
   intro n t k
   have hvm : ∀ (c : ℤ) (N : ℕ), Measurable fun ω (i : Fin n) => psum ψ ε (t i + c) N ω :=
-    fun c N => measurable_pi_lambda _ fun i => measurable_psum hε.measurable ψ _ _
+    fun c N => Measurable.of_eval fun i => measurable_psum hε.measurable ψ _ _
   have hXm : ∀ c : ℤ, Measurable fun ω (i : Fin n) => X (t i + c) ω :=
-    fun c => measurable_pi_lambda _ fun i => hmeas _
+    fun c => Measurable.of_eval fun i => hmeas _
   obtain ⟨ns, hns⟩ := exists_subseq_window hX hε.measurable hmeas t k
-  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + k) ω) :=
-    Measure.isProbabilityMeasure_map (hXm k).aemeasurable
-  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + 0) ω) :=
-    Measure.isProbabilityMeasure_map (hXm 0).aemeasurable
   have hgoal : (μ.map fun ω (i : Fin n) => X (t i + k) ω)
       = μ.map fun ω (i : Fin n) => X (t i + 0) ω := by
     refine MeasureTheory.ext_of_forall_integral_eq_of_IsFiniteMeasure fun f => ?_
@@ -546,7 +566,8 @@ theorem IsLinearProcessOf.isStrictlyStationary [IsProbabilityMeasure μ] {ψ : �
       integral_map (hXm 0).aemeasurable f.continuous.aestronglyMeasurable]
     refine tendsto_nhds_unique (hlim k (Or.inl rfl)) ?_
     simpa only [hstep] using hlim 0 (Or.inr rfl)
-  simpa using hgoal
+  simpa only [Measure.map₀_of_measurable (hXm k),
+    Measure.map₀_of_measurable (Measurable.of_eval fun i => hmeas (t i)), add_zero] using hgoal
 
 /-- **Almost-sure convergence under independence** (FY cites Chow & Teicher 1997, Cor. 3
 p. 117). With `ℓ¹` coefficients the general Kolmogorov series theorem is not needed: the
@@ -559,10 +580,10 @@ theorem IsLinearProcessOf.ae_tendsto [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
     ∀ᵐ ω ∂μ, Tendsto
       (fun N => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) atTop (𝓝 (X t ω)) := by
   -- the noise has one common finite first absolute moment
-  have hC : eLpNorm (ε 0) 1 μ ≠ ∞ := (hε.memLp.mono_exponent one_le_two).2.ne
+  have hC : eLpNorm (ε 0) 1 μ ≠ ∞ := (hε.memLp.mono_exponent one_le_two).ne
   have hnorm : ∀ s : ℤ, ∫⁻ ω, ‖ε s ω‖ₑ ∂μ = eLpNorm (ε 0) 1 μ := by
     intro s
-    rw [← eLpNorm_one_eq_lintegral_enorm]
+    rw [← eLpNorm_one_eq_lintegral_enorm (hε.measurable s).aestronglyMeasurable]
     exact (hε.identDistrib s 0).eLpNorm_eq 1
   -- the coefficients are `ℓ¹`, so the series converges absolutely in `L¹`
   have hcoef : (∑' j : ℕ, ‖ψ j‖ₑ) ≠ ∞ := tsum_enorm_ne_top_of_summable hψ
@@ -576,16 +597,15 @@ theorem IsLinearProcessOf.ae_tendsto [IsProbabilityMeasure μ] {ψ : ℕ → ℝ
   -- hence it converges absolutely almost everywhere
   have hfin : ∀ᵐ ω ∂μ, (∑' j : ℕ, ‖ψ j * ε (t - (j : ℕ)) ω‖ₑ) ≠ ∞ := by
     refine (ae_lt_top' ?_ ?_).mono fun ω hω => hω.ne
-    · exact AEMeasurable.ennreal_tsum fun j =>
+    · exact AEMeasurable.tsum fun j =>
         ((hε.measurable (t - (j : ℕ))).const_mul (ψ j)).enorm.aemeasurable
     · rw [hlint]
       exact ENNReal.mul_ne_top hcoef hC
   -- an `L²`-convergent subsequence pins the a.e. limit down to `X t`
   obtain ⟨ns, hmono, hns⟩ :=
     (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
-      (fun N => (measurable_psum hε.measurable ψ t N).aestronglyMeasurable)
-      (hmeas t).aestronglyMeasurable
-      (tendsto_eLpNorm_psum hX t)).exists_seq_tendsto_ae
+      (tendsto_eLpNorm_psum hX (fun t => (hmeas t).aestronglyMeasurable)
+        (fun t => (hε.measurable t).aestronglyMeasurable) t)).exists_seq_tendsto_ae
   filter_upwards [hfin, hns] with ω hω hωns
   have hsummable : Summable fun j : ℕ => ψ j * ε (t - (j : ℕ)) ω :=
     summable_of_tsum_enorm_ne_top hω

@@ -63,12 +63,12 @@ lemma n_hasFDerivAt_npsi (x : ℝ) (j : Fin 1) (θ : E1) :
       ((2 * x * θ 0 - 1 - 3 * (θ 0) ^ 2) • L1) θ := by
   have hg : HasDerivAt (fun t : ℝ => (x - t) * (1 + t ^ 2))
       (2 * x * θ 0 - 1 - 3 * (θ 0) ^ 2) (θ 0) := by
-    convert ((hasDerivAt_const (θ 0) x).sub (hasDerivAt_id (θ 0))).mul
+    convert! ((hasDerivAt_const (θ 0) x).sub (hasDerivAt_id (θ 0))).mul
       ((hasDerivAt_const (θ 0) 1).add ((hasDerivAt_id (θ 0)).pow 2)) using 1
     all_goals
       simp [id_eq]
       ring
-  simpa only [npsi, Function.comp_apply, L1_apply] using
+  simpa only [npsi, Function.comp_apply, L1_apply] using!
     hg.comp_hasFDerivAt θ L1.hasFDerivAt
 
 /-- The nonlinear score is twice continuously differentiable on the full parameter space.
@@ -92,7 +92,7 @@ lemma n_iteratedFDeriv_two_apply (θ : E1) (j : Fin 1) (x : ℝ) (v : Fin 2 → 
     funext fun θ' => (n_hasFDerivAt_npsi x j θ').fderiv
   have hg : HasDerivAt (fun t : ℝ => 2 * x * t - 1 - 3 * t ^ 2)
       (2 * x - 6 * θ 0) (θ 0) := by
-    convert (((hasDerivAt_const (θ 0) (2 * x)).mul (hasDerivAt_id (θ 0))).sub
+    convert! (((hasDerivAt_const (θ 0) (2 * x)).mul (hasDerivAt_id (θ 0))).sub
       (hasDerivAt_const (θ 0) 1)).sub
       ((hasDerivAt_const (θ 0) 3).mul ((hasDerivAt_id (θ 0)).pow 2)) using 1
     all_goals
@@ -100,7 +100,7 @@ lemma n_iteratedFDeriv_two_apply (θ : E1) (j : Fin 1) (x : ℝ) (v : Fin 2 → 
       ring
   have hscalar : HasFDerivAt (fun θ' : E1 =>
       2 * x * θ' 0 - 1 - 3 * (θ' 0) ^ 2) ((2 * x - 6 * θ 0) • L1) θ := by
-    simpa only [Function.comp_apply, L1_apply] using
+    simpa only [Function.comp_apply, L1_apply] using!
       hg.comp_hasFDerivAt θ L1.hasFDerivAt
   have hcoeff : HasFDerivAt (fun θ' : E1 =>
       (2 * x * θ' 0 - 1 - 3 * (θ' 0) ^ 2) • L1)
@@ -271,7 +271,7 @@ lemma n_hgrad (θ : E1)
   have hg : HasDerivAt (fun t : ℝ =>
       x * t + x * t ^ 3 / 3 - t ^ 2 / 2 - t ^ 4 / 4)
       ((x - θ 0) * (1 + (θ 0) ^ 2)) (θ 0) := by
-    convert ((((hasDerivAt_const (θ 0) x).mul (hasDerivAt_id (θ 0))).add
+    convert! ((((hasDerivAt_const (θ 0) x).mul (hasDerivAt_id (θ 0))).add
       (((hasDerivAt_const (θ 0) x).mul ((hasDerivAt_id (θ 0)).pow 3)).div_const 3)).sub
       (((hasDerivAt_id (θ 0)).pow 2).div_const 2)).sub
       (((hasDerivAt_id (θ 0)).pow 4).div_const 4) using 1
@@ -280,11 +280,11 @@ lemma n_hgrad (θ : E1)
       ring
   have hnm : HasFDerivAt (fun θ' : E1 => nm θ' x)
       (((x - θ 0) * (1 + (θ 0) ^ 2)) • L1) θ := by
-    simpa only [nm, Function.comp_apply, L1_apply] using
+    simpa only [nm, Function.comp_apply, L1_apply] using!
       hg.comp_hasFDerivAt θ L1.hasFDerivAt
   refine hnm.congr_fderiv ?_
   ext v
-  simp only [ContinuousLinearMap.coe_smul', Pi.smul_apply, smul_eq_mul, L1_apply,
+  simp only [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, L1_apply,
     innerSL_E1]
   rfl
 

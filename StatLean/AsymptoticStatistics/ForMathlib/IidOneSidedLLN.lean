@@ -19,7 +19,7 @@ private lemma extendedEmpiricalAvg_le_truncatedNegative {X : Type*}
         (f x).toENNReal.toReal - (min (-f x).toENNReal (C : ENNReal)).toReal) n s : EReal) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp [extendedEmpiricalAvg]
-  rw [extendedEmpiricalAvg, if_neg hn, EmpiricalProcess.empiricalAvg]
+  rw [extendedEmpiricalAvg, ite_eq_right hn, EmpiricalProcess.empiricalAvg]
   have hp : (∑ i, (f (s i)).toENNReal) ≠ ∞ :=
     ENNReal.sum_ne_top.2 fun i _ => EReal.toENNReal_ne_top_iff.mpr (htop _)
   have hc : (∑ i, min (-f (s i)).toENNReal (C : ENNReal)) ≠ ∞ :=
@@ -203,7 +203,7 @@ theorem iid_extendedEmpiricalAvg_tendsto_finite
       extendedEmpiricalAvg (-f') n s = -extendedEmpiricalAvg f' n s := by
     rcases eq_or_ne n 0 with rfl | hn
     · simp [extendedEmpiricalAvg]
-    rw [extendedEmpiricalAvg, if_neg hn, extendedEmpiricalAvg, if_neg hn]
+    rw [extendedEmpiricalAvg, ite_eq_right hn, extendedEmpiricalAvg, ite_eq_right hn]
     simp only [Pi.neg_apply, neg_neg]
     have hA : (n : ENNReal)⁻¹ * ∑ i, (f' (s i)).toENNReal ≠ ∞ :=
       ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 (by simp [hn])) <|
@@ -249,8 +249,6 @@ theorem iid_extendedEmpiricalAvg_tendsto_finite
           simp_rw [hx]
         rcases h with h | h
         · left
-          change ((-a + ε : ℝ) : EReal) ≤ extendedEmpiricalAvg (-f') n
-            (fun i : Fin n => Xs i.val ω)
           rw [hnegAvg, havg]
           rw [show -a + ε = -(a - ε) by ring, EReal.coe_neg]
           exact EReal.neg_le_neg_iff.mpr h.le

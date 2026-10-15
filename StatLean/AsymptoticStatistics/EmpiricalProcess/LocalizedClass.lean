@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing
 import StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass
 import StatLean.AsymptoticStatistics.EmpiricalProcess.PointwiseDense
@@ -73,14 +74,14 @@ maximal-inequality bound applies. -/
 def localizedDifferenceClass (F : Set (Ω → ℝ)) (P : Measure Ω) (δq : ℝ) :
     Set (Ω → ℝ) :=
   {h : Ω → ℝ | ∃ f ∈ F, ∃ g ∈ F,
-      h = (fun x => f x - g x) ∧ eLpNorm h 2 P ≤ ENNReal.ofReal δq}
+      h = (fun x => f x - g x) ∧ eLpNorm' h 2 P ≤ ENNReal.ofReal δq}
 
 /-- **L1 (membership ⇒ radius bound).** Every `h ∈ localizedDifferenceClass F P δq`
 has `L²(P)`-radius at most `δq`. Immediate from the radius conjunct of the
 membership predicate. -/
 lemma localizedDifferenceClass_hF_L2 {F : Set (Ω → ℝ)} {P : Measure Ω} {δq : ℝ}
     {h : Ω → ℝ} (hh : h ∈ localizedDifferenceClass F P δq) :
-    eLpNorm h 2 P ≤ ENNReal.ofReal δq := by
+    eLpNorm' h 2 P ≤ ENNReal.ofReal δq := by
   obtain ⟨_f, _hf, _g, _hg, _heq, hradius⟩ := hh
   exact hradius
 
@@ -99,7 +100,7 @@ the def-native form (matching the `eLpNorm` radius spelling used by the bracket
 lemmas, e.g. `chain_head_dyadic_bound`'s `hF_L2`). -/
 lemma mem_localizedDifferenceClass {F : Set (Ω → ℝ)} {P : Measure Ω} {δq : ℝ}
     {f g : Ω → ℝ} (hf : f ∈ F) (hg : g ∈ F)
-    (hradius : eLpNorm (fun x => f x - g x) 2 P ≤ ENNReal.ofReal δq) :
+    (hradius : eLpNorm' (fun x => f x - g x) 2 P ≤ ENNReal.ofReal δq) :
     (fun x => f x - g x) ∈ localizedDifferenceClass F P δq :=
   ⟨f, hf, g, hg, rfl, hradius⟩
 
@@ -133,6 +134,8 @@ lemma mem_localizedDifferenceClass_of_integral_sq {F : Set (Ω → ℝ)} {P : Me
     (hgood : ∫ x, (f x - g x) ^ 2 ∂P < δq ^ 2) :
     (fun x => f x - g x) ∈ localizedDifferenceClass F P δq := by
   refine mem_localizedDifferenceClass hf hg ?_
+  have hnorm := eLpNorm_two_eq_eLpNorm' hmem.aestronglyMeasurable
+  rw [← hnorm]
   -- Bridge `∫(f−g)² < δq²` to `eLpNorm (f−g) 2 P ≤ ofReal δq`.
   -- `(eLpNorm (f−g) 2 P).toReal = √(∫(f−g)²) ≤ √(δq²) = δq`, then back to `ℝ≥0∞`.
   have htoReal : (eLpNorm (fun x => f x - g x) 2 P).toReal
@@ -206,7 +209,7 @@ private lemma cover_lift_difference_class
       have htri : eLpNorm (fun x => (u p.1 x - l p.1 x) + (u p.2 x - l p.2 x)) 2 P ≤
           eLpNorm (fun x => u p.1 x - l p.1 x) 2 P +
             eLpNorm (fun x => u p.2 x - l p.2 x) 2 P :=
-        eLpNorm_add_le hmeas1 hmeas2 one_le_two
+        eLpNorm_add_le  one_le_two
       have hi : eLpNorm (fun x => u p.1 x - l p.1 x) 2 P < ENNReal.ofReal (η / 2) :=
         (hbr p.1).size_lt
       have hj : eLpNorm (fun x => u p.2 x - l p.2 x) 2 P < ENNReal.ofReal (η / 2) :=

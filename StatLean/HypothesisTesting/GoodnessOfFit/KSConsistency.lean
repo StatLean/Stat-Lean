@@ -162,9 +162,9 @@ private lemma rightCont_stepIndicator (a s : ℝ) :
       =ᶠ[nhdsWithin s (Set.Ioi s)] (fun t => if a ≤ t then (1 : ℝ) else 0) := by
     by_cases h : a ≤ s
     · filter_upwards [self_mem_nhdsWithin] with t ht
-      rw [if_pos h, if_pos (h.trans ht.le)]
+      rw [ite_eq_left h, ite_eq_left (h.trans ht.le)]
     · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.mp h))] with t ht
-      rw [if_neg h, if_neg (not_le.mpr ht)]
+      rw [ite_eq_right h, ite_eq_right (not_le.mpr ht)]
   exact Tendsto.congr' hl tendsto_const_nhds
 
 /-- The empirical c.d.f. is right continuous in the threshold (it is a finite average of the
@@ -176,7 +176,7 @@ private lemma rightCont_empiricalCDF {n : ℕ} (X : Fin n → Ω → ℝ) (ω : 
       = (n : ℝ)⁻¹ * ∑ i, if X i ω ≤ t then (1 : ℝ) else 0 := by
     intro t; rw [empiricalCDF_eq_empCDF]; rfl
   simp_rw [heq]
-  exact (tendsto_finset_sum Finset.univ
+  exact (tendsto_finsetSum Finset.univ
     (fun i _ => rightCont_stepIndicator (X i ω) s)).const_mul _
 
 /-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over
@@ -288,7 +288,7 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
       ≤ P {ω | ksThreshold α ≤ Real.sqrt (n : ℝ) * ksDist X μ₀ ω} := by
         apply measure_mono
         intro ω hω
-        rw [Set.mem_setOf_eq, hF, ksStat_eq_sqrt_mul_ksDist] at hω
+        rw [Set.mem_ofPred_eq, hF, ksStat_eq_sqrt_mul_ksDist] at hω
         exact le_of_lt hω
     _ ≤ ENNReal.ofReal (4 * Real.exp (-(ksThreshold α) ^ 2 / 16)) :=
         dkw_uniform hn μ₀ X hX hindep hlaw hthr
@@ -373,7 +373,7 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
   have hsubset : {ω | Real.sqrt (n : ℝ) * ksDist X μ ω < ε - s}
       ⊆ {ω | s < ksStat X F₀ ω} := by
     intro ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
+    simp only [Set.mem_ofPred_eq] at hω ⊢
     have hEval := hEIcc ω
     -- triangle: d_K(F, F₀) ≤ d_K(F, F̂ₙ) + d_K(F̂ₙ, F₀)
     have htri : supCDFDist F F₀
@@ -400,7 +400,7 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
   have hdkw : P A ≤ ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 16)) :=
     dkw_uniform hn μ X hX hindep hlaw hd
   have hAc : {ω | Real.sqrt (n : ℝ) * ksDist X μ ω < ε - s} = Aᶜ := by
-    rw [hA]; ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    rw [hA]; ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]
   have hsub : P Aᶜ ≤ P {ω | s < ksStat X F₀ ω} := by
     rw [← hAc]; exact measure_mono hsubset
   have hunion : (1 : ℝ≥0∞) ≤ P A + P Aᶜ := by
@@ -508,8 +508,6 @@ theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : 
       atTop (nhds 1) := by
   -- A fixed alternative is the constant selection `μ n = μ`, `F n = F`, with the diverging
   -- separation `εₙ = √n · d_K(F, F₀)`; the result is exactly `ks_uniform_power`.
-  haveI hPinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => P) n) := fun _ => inferInstance
-  haveI hμinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => μ) n) := fun _ => inferInstance
   -- the separation `εₙ = √n · d_K(F, F₀)` diverges since `d_K(F, F₀) > 0`
   have hsqrt : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
     Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop

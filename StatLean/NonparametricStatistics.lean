@@ -43,3 +43,16 @@ import StatLean.NonparametricStatistics.Regression.NWKernelRepresentation
 import StatLean.NonparametricStatistics.SmoothnessClasses.Defs
 import StatLean.NonparametricStatistics.SmoothnessClasses.HolderTaylor
 import StatLean.NonparametricStatistics.SmoothnessClasses.NikolskiTaylor
+
+/-!
+# NonparametricStatistics — area umbrella
+
+Nonparametric estimation: kernel density estimation over Hölder classes, local polynomial
+regression, projection estimators, nonparametric regression, and reproducing kernel Hilbert spaces
+from the Moore–Aronszajn theorem to Mercer's theorem.
+
+**References.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, 2009; V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of
+Reproducing Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge
+University Press, 2016.
+-/

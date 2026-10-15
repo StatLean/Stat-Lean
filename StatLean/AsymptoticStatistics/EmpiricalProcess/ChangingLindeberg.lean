@@ -109,14 +109,14 @@ theorem ChangingLindeberg.exists_pos_antitone_tail_scale_div
   refine ⟨ε, hεpos, hεanti, hεzero, ?_, ?_⟩
   · exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
       tendsto_const_nhds hdiag
-      (Eventually.of_forall fun _ => zero_le _)
+      (Eventually.of_forall fun _ => zero_le)
       (Eventually.of_forall fun n => by
-        exact le_add_of_nonneg_right (zero_le _))
+        exact le_add_of_nonneg_right (zero_le))
   · exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
       tendsto_const_nhds hdiag
-      (Eventually.of_forall fun _ => zero_le _)
+      (Eventually.of_forall fun _ => zero_le)
       (Eventually.of_forall fun n => by
-        exact le_add_of_nonneg_left (zero_le _))
+        exact le_add_of_nonneg_left (zero_le))
 
 /-- A measurable envelope satisfying the changing Lindeberg condition belongs
 to `L²(P)` in every row. -/
@@ -294,7 +294,7 @@ lemma lindeberg_of_shifted_envelope
     (Or.inr (ENNReal.ofReal_ne_top (r := 4 * A ^ 2)))
   simp only [mul_zero] at hscaled
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hscaled
-    (Eventually.of_forall fun _ => zero_le _) hupper
+    (Eventually.of_forall fun _ => zero_le) hupper
 
 /-- The centered finite-coordinate vector cut from a changing class.
 

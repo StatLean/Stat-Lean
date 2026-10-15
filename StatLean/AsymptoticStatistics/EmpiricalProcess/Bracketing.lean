@@ -135,7 +135,7 @@ lemma bracketingNumber_lt_top_iff_HasFiniteBracketingCover
     rw [h_top] at hlt
     exact lt_irrefl _ hlt
   · rintro ⟨k, l, u, hbr, hcov⟩
-    refine lt_of_le_of_lt ?_ (ENat.coe_lt_top k)
+    refine lt_of_le_of_lt ?_ (ENat.natCast_lt_top k)
     refine iInf_le_of_le k ?_
     exact iInf_le_of_le ⟨l, u, hbr, hcov⟩ le_rfl
 
@@ -480,7 +480,7 @@ private lemma iUnion_dyadic_Ioc_eq {δ : ℝ} (hδ : 0 < δ) :
     simp only [Set.mem_iUnion, Set.mem_Ioc]
     -- least `q` with `(1/2)^q * δ < x`; it is ≥ 1 since `(1/2)^0 * δ = δ ≥ x`
     have hexists : ∃ q : ℕ, (1/2 : ℝ)^q * δ < x := by
-      obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (by positivity : (0:ℝ) < x / δ)
+      obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (by positivity : (0 : ℝ) < x / δ)
         (by norm_num : (1/2 : ℝ) < 1)
       exact ⟨n, (lt_div_iff₀ hδ).mp hn⟩
     classical
@@ -651,7 +651,7 @@ lemma entropyWeight_sq_le (N : ℕ∞) :
   · obtain ⟨n, rfl⟩ := ENat.ne_top_iff_exists.mp hN
     rw [show ((n : ℕ∞)) ^ 2 = ((n ^ 2 : ℕ) : ℕ∞) by push_cast; ring,
       entropyWeight_coe, entropyWeight_coe, ← ENNReal.ofReal_mul (Real.sqrt_nonneg 2),
-      ← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)]
+      ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)]
     apply ENNReal.ofReal_le_ofReal
     apply Real.sqrt_le_sqrt
     -- `log(1 + n²) ≤ 2 * log(1 + n)`
@@ -729,8 +729,8 @@ lemma setLIntegral_Ioc_comp_half {δ : ℝ}
   rw [hgcollapse] at key
   -- `key : ofReal |2⁻¹| • ∫_{Ioc 0 δ} g(y/2) = ∫_{Ioc 0 (δ/2)} g`.
   have habs : ENNReal.ofReal |(2 : ℝ)⁻¹| = (2 : ℝ≥0∞)⁻¹ := by
-    rw [abs_of_pos (by norm_num : (0:ℝ) < (2:ℝ)⁻¹),
-      ENNReal.ofReal_inv_of_pos (by norm_num : (0:ℝ) < 2), ENNReal.ofReal_ofNat]
+    rw [abs_of_pos (by norm_num : (0 : ℝ) < (2 : ℝ)⁻¹),
+      ENNReal.ofReal_inv_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat]
   rw [habs, smul_eq_mul] at key
   -- `key : 2⁻¹ * ∫_{Ioc 0 δ} g(·/2) = ∫_{Ioc 0 (δ/2)} g`; multiply by `2`.
   rw [← key, ← mul_assoc, ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]
@@ -770,7 +770,7 @@ lemma bracketingEntropyIntegral_diff_le
   -- `ofReal (2√2) = ofReal 2 * ofReal √2 = 2 * ofReal √2`.
   have hKsplit : ENNReal.ofReal (2 * Real.sqrt 2)
       = ENNReal.ofReal (Real.sqrt 2) * 2 := by
-    rw [ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
     ring
   rw [bracketingEntropyIntegral_eq_setLIntegral, hKsplit]
   calc ∫⁻ ε in Set.Ioc (0 : ℝ) δ, entropyIntegrand ε G P ∂volume

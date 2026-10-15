@@ -147,7 +147,9 @@ theorem multivariateGaussian_zero_eq_withDensity (p : ℕ) {S : Matrix (Fin p) (
             * Real.exp (-(WithLp.ofLp x ⬝ᵥ S⁻¹ *ᵥ WithLp.ofLp x) / 2))) := by
   classical
   have hQQ : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
-  have hQpd : (CFC.sqrt S).PosDef := hS.posDef_sqrt
+  have hQpd : (CFC.sqrt S).PosDef :=
+      ((CStarAlgebra.isStrictlyPositive_iff_isStrictlyPositive_sqrt_and_eq_sqrt_mul_sqrt.mp
+        hS.isStrictlyPositive).1).posDef
   have hQdetpos : 0 < (CFC.sqrt S).det := hQpd.det_pos
   have hQT : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
     rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hQpd.isHermitian
@@ -261,8 +263,8 @@ theorem multivariateGaussian_eq_withDensity_exp_gaussianLogDensity (p : ℕ)
   congr 1
   funext x
   congr 1
-  have hpi : (0:ℝ) < 2 * Real.pi := by positivity
-  have hdet : (0:ℝ) < S.det := hS.det_pos
+  have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
+  have hdet : (0 : ℝ) < S.det := hS.det_pos
   have hsqpi : Real.sqrt (2 * Real.pi) = Real.exp (Real.log (2 * Real.pi) / 2) := by
     rw [Real.sqrt_eq_rpow, Real.rpow_def_of_pos hpi]; ring_nf
   have hsqdet : Real.sqrt S.det = Real.exp (Real.log S.det / 2) := by

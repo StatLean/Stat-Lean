@@ -25,6 +25,8 @@ Main declarations:
 * `weak_limit_under_Q_of_lecam_third` — Le Cam's third lemma (vdV Theorem 6.6).
 -/
 
+set_option linter.style.longFile 3800
+
 open MeasureTheory Filter Topology BoundedContinuousFunction
 open scoped ENNReal NNReal
 
@@ -183,9 +185,6 @@ lemma WeakConverges.bind_kernel
     have hinteg : Integrable (fun z : α × β => f z.2) (ρ.compProd κ) := by
       refine ⟨hfmeas.aestronglyMeasurable, ?_⟩
       -- Bounded by ‖f‖ on a finite (probability) measure.
-      have : IsProbabilityMeasure (ρ.compProd κ) := by
-        have hρ : SFinite ρ := by infer_instance
-        infer_instance
       exact MeasureTheory.HasFiniteIntegral.of_bounded
         (C := ‖f‖)
         (Filter.Eventually.of_forall
@@ -257,8 +256,6 @@ theorem Measure.withDensity_bind_condDistrib
       (π.withDensity (fun p => f p.2)).map Prod.fst := by
   set κ := ProbabilityTheory.condDistrib (Prod.fst : α × β → α) Prod.snd π with hκ_def
   set ν := π.map Prod.snd with hν_def
-  haveI : MeasureTheory.IsFiniteMeasure ν := by
-    rw [hν_def]; exact MeasureTheory.Measure.isFiniteMeasure_map _ _
   refine MeasureTheory.Measure.ext (fun s hs => ?_)
   -- Measurability utilities.
   have h_κs_meas : Measurable (fun y => κ y s) := κ.measurable_coe hs
@@ -297,7 +294,8 @@ theorem Measure.withDensity_bind_condDistrib
   have h_compProd :
       ν.compProd κ = π.map (fun p : α × β => (p.2, p.1)) := by
     rw [hν_def, hκ_def]
-    exact ProbabilityTheory.compProd_map_condDistrib measurable_fst.aemeasurable
+    exact ProbabilityTheory.compProd_map_condDistrib measurable_snd.aemeasurable
+        measurable_fst.aemeasurable
   -- Build the common value `∫⁻ q : β × α, f q.1 * s.indicator 1 q.2 ∂(ν.compProd κ)`.
   have h_bridge :
       ∫⁻ p : α × β, f p.2 * κ p.2 s ∂π =
@@ -399,18 +397,18 @@ theorem Contiguous.comp_subseq
   have hB_at : ∀ n, B (φ n) = A n := by
     intro n
     have hex : ∃ k, φ k = φ n := ⟨n, rfl⟩
-    rw [hB_def, dif_pos hex, transportSet_comp hφ.injective]
+    rw [hB_def, dite_eq_left hex, transportSet_comp hφ.injective]
   have hB_meas : ∀ m, MeasurableSet (B m) := by
     intro m
     rw [hB_def]
     by_cases h : ∃ n, φ n = m
-    · rw [dif_pos h]
+    · rw [dite_eq_left h]
       exact measurableSet_transportSet _ (hA_meas _)
-    · rw [dif_neg h]
+    · rw [dite_eq_right h]
       exact MeasurableSet.empty
   have hB_empty : ∀ m, (¬ ∃ n, φ n = m) → B m = ∅ := by
     intro m h
-    rw [hB_def, dif_neg h]
+    rw [hB_def, dite_eq_right h]
   have hP_tendsto : Tendsto (fun m => (P m) (B m)) atTop (𝓝 0) := by
     rw [ENNReal.tendsto_nhds_zero]
     intro ε hε
@@ -448,7 +446,7 @@ private lemma integral_exp_gaussianReal_neg_half_var (v : NNReal) :
       Measure.map (id : ℝ → ℝ) (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v)
         = ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v :=
     Measure.map_id
-  have h := ProbabilityTheory.mgf_gaussianReal hX 1
+  have h := ProbabilityTheory.mgf_gaussianReal ⟨aemeasurable_id, hX⟩ 1
   rw [ProbabilityTheory.mgf] at h
   simp only [one_mul, id_eq] at h
   rw [show (-(v : ℝ) / 2 * 1 + (v : ℝ) * 1 ^ 2 / 2 : ℝ) = 0 by ring, Real.exp_zero] at h
@@ -674,7 +672,7 @@ theorem contiguous_of_asymptotically_log_normal
   have h_P_lt_top : ∀ n, (P n) (A n) ≠ ⊤ := fun n => (measure_lt_top (P n) _).ne
   have hA_real : Tendsto (fun n => ((P n) (A n)).toReal) atTop (𝓝 0) := by
     have := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hA_tendsto
-    simpa using this
+    simpa using! this
   suffices h : Tendsto (fun n => ((Q n) (A n)).toReal) atTop (𝓝 0) by
     have h_of_real :
         Tendsto (fun n => ENNReal.ofReal ((Q n) (A n)).toReal) atTop (𝓝 0) := by
@@ -2163,7 +2161,7 @@ theorem contiguous_iff_tendsto_zero_statistics
     have h_event : ∀ n, {ω | (1 / 2 : ℝ) ≤ |T n ω|} = A n := by
       intro n
       ext ω
-      simp only [Set.mem_setOf_eq, hT_def]
+      simp only [Set.mem_ofPred_eq, hT_def]
       by_cases hω : ω ∈ A n
       · rw [Set.indicator_of_mem hω, abs_one]
         simp only [hω, iff_true]; norm_num
@@ -2177,7 +2175,7 @@ theorem contiguous_iff_tendsto_zero_statistics
       -- `{ω | ε ≤ |T n ω|} ⊆ A n` for any `ε > 0`.
       have h_sub : ∀ n, {ω | ε ≤ |T n ω|} ⊆ A n := by
         intro n ω hω
-        simp only [Set.mem_setOf_eq, hT_def] at hω
+        simp only [Set.mem_ofPred_eq, hT_def] at hω
         by_contra hωA
         rw [Set.indicator_of_notMem hωA] at hω
         simp only [abs_zero] at hω
@@ -2185,7 +2183,7 @@ theorem contiguous_iff_tendsto_zero_statistics
       -- Squeeze: `0 ≤ P{|T|≥ε} ≤ P(A) → 0` (ENNReal-valued).
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
         tendsto_const_nhds hP_A
-        (Eventually.of_forall (fun n => zero_le _))
+        (Eventually.of_forall (fun n => zero_le))
         (Eventually.of_forall (fun n => measure_mono (h_sub n)))
     have hTQ := h (fun n => T n) hT_meas hTP (1 / 2) h_half
     -- Rewrite the `Q`-events back to `A n`.
@@ -2226,7 +2224,7 @@ theorem contiguous_imp_limit_pos
   set μ' : ℕ → ProbabilityMeasure ℝ :=
     fun k => ⟨(Q (φ k)).map (r k), by
       have : IsProbabilityMeasure ((Q (φ k)).map (r k)) :=
-        Measure.isProbabilityMeasure_map (hr_meas k).aemeasurable
+        (by infer_instance)
       exact this⟩ with hμ'_def
   set U' : ProbabilityMeasure ℝ := ⟨U, inferInstance⟩ with hU'_def
   have h_tendsto : Tendsto μ' atTop (𝓝 U') :=
@@ -2283,12 +2281,12 @@ theorem contiguous_imp_limit_pos
     have h_each : ∀ k, ((μ' k : Measure ℝ)) {x : ℝ | x < 0} = 0 := by
       intro k
       have h_pre : r k ⁻¹' {x : ℝ | x < 0} = (∅ : Set (Ω (φ k))) := by
-        ext ω; simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        ext ω; simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
           not_lt]
         exact hr_nonneg k ω
       rw [hμ'_apply k h_neg_open.measurableSet, h_pre, measure_empty]
     simp only [h_each, Filter.liminf_const] at h_le
-    exact le_antisymm h_le (zero_le _)
+    exact le_antisymm h_le (zero_le)
   -- ── Step B: `U {x ≤ 0} = 0` via slow-threshold contiguity. ──────────────────────────────
   have h_at_zero : U {x : ℝ | x ≤ 0} = 0 := by
     by_contra h_ne
@@ -2306,7 +2304,7 @@ theorem contiguous_imp_limit_pos
       set G : Set ℝ := {x : ℝ | x < 1 / (m + 1 : ℝ)} with hG_def
       have hG_open : IsOpen G := isOpen_lt continuous_id continuous_const
       have h_subset : {x : ℝ | x ≤ 0} ⊆ G := by
-        intro x hx; simp only [hG_def, Set.mem_setOf_eq]; exact lt_of_le_of_lt hx hc_pos
+        intro x hx; simp only [hG_def, Set.mem_ofPred_eq]; exact lt_of_le_of_lt hx hc_pos
       have h_portmanteau :=
         MeasureTheory.ProbabilityMeasure.le_liminf_measure_open_of_tendsto h_tendsto hG_open
       rw [hU'_coe] at h_portmanteau
@@ -2356,7 +2354,7 @@ theorem contiguous_imp_limit_pos
       have h1 : Tendsto (fun k => (g k : ℝ) + 1) atTop atTop := by
         have := (tendsto_natCast_atTop_atTop (R := ℝ)).comp hg_tendsto
         exact this.atTop_add tendsto_const_nhds
-      simpa [hc_def, one_div] using h1.inv_tendsto_atTop
+      simpa [hc_def, one_div] using! h1.inv_tendsto_atTop
     -- For `k` with a witness (i.e. `N 0 ≤ k`), `N (g k) ≤ k`, giving the mass lower bound.
     have h_mass_lb : ∀ k, N 0 ≤ k →
         δ / 2 < (Q (φ k)) {ω | r k ω < c k} := by
@@ -2365,7 +2363,7 @@ theorem contiguous_imp_limit_pos
         Nat.findGreatest_spec (m := 0) (P := fun m => N m ≤ k) (Nat.zero_le k) hk
       have := hN_guar (g k) k h_spec
       -- `1/(g k + 1) = c k`.
-      simpa [hc_def] using this
+      simpa [hc_def] using! this
     -- ── Build the contiguity event family along the full index. ──────────────────────────
     -- `A i := {ω | (dPᵢ/dQᵢ).toReal < c (φ⁻¹ i)}` for `i ∈ range φ`, else `∅`.
     classical
@@ -2377,15 +2375,15 @@ theorem contiguous_imp_limit_pos
       intro i
       simp only [hA_def]
       by_cases h : ∃ k, φ k = i
-      · rw [dif_pos h]
+      · rw [dite_eq_left h]
         exact measurableSet_lt
           (((P i).measurable_rnDeriv (Q i)).ennreal_toReal) measurable_const
-      · rw [dif_neg h]; exact MeasurableSet.empty
+      · rw [dite_eq_right h]; exact MeasurableSet.empty
     -- At `i = φ k`, `A (φ k) = {ω | r k ω < c k}` (uses injectivity of `φ`).
     have hA_at_φ : ∀ k, A (φ k) = {ω | r k ω < c k} := by
       intro k
       have h_ex : ∃ j, φ j = φ k := ⟨k, rfl⟩
-      simp only [hA_def, dif_pos h_ex]
+      simp only [hA_def, dite_eq_left h_ex]
       have h_choose : Classical.choose h_ex = k :=
         hφ.injective (Classical.choose_spec h_ex)
       rw [h_choose]
@@ -2414,15 +2412,15 @@ theorem contiguous_imp_limit_pos
         -- `φ K ≤ φ k ⟹ K ≤ k` (φ mono).
         have hKk : K ≤ k := by
           by_contra hlt
-          push_neg at hlt
+          push Not at hlt
           exact absurd (hφ hlt) (not_lt.mpr hi)
         rw [hA_at_φ k]
         calc (P (φ k)) {ω | r k ω < c k}
             ≤ ENNReal.ofReal (c k) := h_crux k (c k) (hc_pos k)
           _ ≤ ENNReal.ofReal ε' := ENNReal.ofReal_le_ofReal (hK k hKk).le
           _ ≤ ε := hε'_le
-      · have hAi : A i = ∅ := by simp only [hA_def, dif_neg h_ex]
-        rw [hAi, measure_empty]; exact zero_le ε
+      · have hAi : A i = ∅ := by simp only [hA_def, dite_eq_right h_ex]
+        rw [hAi, measure_empty]; exact zero_le (a := ε)
     -- Contiguity ⟹ `Q i (A i) → 0`.
     have hQ_tendsto : Tendsto (fun i => (Q i) (A i)) atTop (𝓝 0) :=
       hcont A hA_meas hP_tendsto
@@ -2548,7 +2546,7 @@ theorem mean_one_imp_contiguous
   obtain ⟨δ, hδ_pos, hψ_freq⟩ :
       ∃ δ : ℝ≥0∞, 0 < δ ∧ ∃ᶠ n in atTop, δ ≤ (Q n) (A n) := by
     by_contra h_all
-    push_neg at h_all
+    push Not at h_all
     -- `∀ δ > 0, ∀ᶠ n, Q n (A n) < δ`, i.e. `Q n (A n) → 0`.
     apply h_not
     rw [ENNReal.tendsto_atTop_zero]
@@ -2572,14 +2570,13 @@ theorem mean_one_imp_contiguous
     intro n ω; rcases hs01 n ω with h | h
     · rw [h]
     · rw [h]; exact zero_le_one
-
   -- Joint map `ω ↦ (q (ψ m) ω, s (ψ m) ω)` and its pushforward under `P (ψ m)`.
   set pair : ∀ m, Ω (ψ m) → ℝ × ℝ := fun m ω => (q (ψ m) ω, s (ψ m) ω) with hpair_def
   have hpair_meas : ∀ m, Measurable (pair m) := fun m =>
     (hq_meas (ψ m)).prodMk (hs_meas (ψ m))
   set J : ℕ → Measure (ℝ × ℝ) := fun m => (P (ψ m)).map (pair m) with hJ_def
-  haveI hJ_prob : ∀ m, IsProbabilityMeasure (J m) := fun m =>
-    Measure.isProbabilityMeasure_map (hpair_meas m).aemeasurable
+  have hJ_prob : ∀ m, IsProbabilityMeasure (J m) := fun m =>
+    (by infer_instance)
   -- ── Tightness of the joint laws (via tight marginals). ──────────────────────────────────
   -- First marginal: law of `q (ψ m)` under `P (ψ m)`.
   have hcomp_fst : ∀ m, Prod.fst ∘ pair m = q (ψ m) := fun m => by
@@ -2609,9 +2606,9 @@ theorem mean_one_imp_contiguous
       have h_sub : (q (ψ m)) ⁻¹' {x : ℝ | r < ‖x‖}
           ⊆ {ω | ENNReal.ofReal r ≤ (Q (ψ m)).rnDeriv (P (ψ m)) ω} := by
         intro ω hω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Real.norm_eq_abs,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Real.norm_eq_abs,
           abs_of_nonneg (hq_nonneg (ψ m) ω)] at hω
-        simp only [Set.mem_setOf_eq, hq_def] at hω ⊢
+        simp only [Set.mem_ofPred_eq, hq_def] at hω ⊢
         -- `r < (rnDeriv ω).toReal` with `r > 0` forces `rnDeriv ω ≠ ∞`.
         have h_ne_top : (Q (ψ m)).rnDeriv (P (ψ m)) ω ≠ ∞ := by
           intro h_top; rw [h_top, ENNReal.toReal_top] at hω; linarith
@@ -2630,7 +2627,7 @@ theorem mean_one_imp_contiguous
       rw [ENNReal.inv_top] at h
       exact h
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_lim
-      (Filter.Eventually.of_forall (fun _ => zero_le _)) ?_
+      (Filter.Eventually.of_forall (fun _ => zero_le)) ?_
     filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with r hr using h_bound r hr
   -- Tightness of the second marginals (they live in `[0,1]`, hence in a compact set).
   have h_tight_snd : IsTightMeasureSet (Set.range (fun m => (J m).map Prod.snd)) := by
@@ -2639,28 +2636,28 @@ theorem mean_one_imp_contiguous
     have h_zero : ∀ r : ℝ, 1 ≤ r →
         (⨆ μ' ∈ Set.range (fun m => (J m).map Prod.snd), μ' {x : ℝ | r < ‖x‖}) = 0 := by
       intro r hr
-      refine le_antisymm (iSup₂_le ?_) (zero_le _)
+      refine le_antisymm (iSup₂_le ?_) (zero_le)
       rintro μ' ⟨m, rfl⟩
       simp only [hJ_snd m]
       rw [Measure.map_apply (hs_meas (ψ m))
         (measurableSet_lt measurable_const measurable_norm)]
       have h_empty : (s (ψ m)) ⁻¹' {x : ℝ | r < ‖x‖} = (∅ : Set (Ω (ψ m))) := by
         ext ω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         rcases hs01 (ψ m) ω with h | h <;> rw [h] <;> simp only [Real.norm_eq_abs] <;>
           [(rw [abs_zero]; linarith); (rw [abs_one]; exact hr)]
       rw [h_empty, measure_empty]
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds tendsto_const_nhds
-      (Filter.Eventually.of_forall (fun _ => zero_le _)) ?_
+      (Filter.Eventually.of_forall (fun _ => zero_le)) ?_
     filter_upwards [Filter.eventually_ge_atTop (1 : ℝ)] with r hr using (h_zero r hr).le
   -- Joint tightness.
   have h_tight_J : IsTightMeasureSet (Set.range J) := by
     apply tight_prod_of_tight_marginals_local (Set.range J)
-    · convert h_tight_fst using 2
+    · convert! h_tight_fst using 2
       ext ρ; constructor
       · rintro ⟨_, ⟨m, rfl⟩, rfl⟩; exact ⟨m, rfl⟩
       · rintro ⟨m, rfl⟩; exact ⟨J m, ⟨m, rfl⟩, rfl⟩
-    · convert h_tight_snd using 2
+    · convert! h_tight_snd using 2
       ext ρ; constructor
       · rintro ⟨_, ⟨m, rfl⟩, rfl⟩; exact ⟨m, rfl⟩
       · rintro ⟨m, rfl⟩; exact ⟨J m, ⟨m, rfl⟩, rfl⟩
@@ -2672,8 +2669,8 @@ theorem mean_one_imp_contiguous
   have hχ_mono : StrictMono χ := hψ_mono.comp hφ_mono
   -- ── First marginal weak-limit: feed `hV` to get its mean is 1. ──────────────────────────
   set V : Measure ℝ := Jlim.map Prod.fst with hV_def
-  haveI hV_prob : IsProbabilityMeasure V := by
-    rw [hV_def]; exact Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+  have hV_prob : IsProbabilityMeasure V := by
+    rw [hV_def]; exact (by infer_instance)
   -- `(J (φ k)).map fst ⇝ V` (continuous mapping on the joint convergence).
   have hfst_conv : WeakConverges (fun k => (J (φ k)).map Prod.fst) V :=
     hJlim_conv.map continuous_fst measurable_fst
@@ -2704,13 +2701,13 @@ theorem mean_one_imp_contiguous
             have : ω ∉ (A (χ k))ᶜ := fun hc => hc hω
             simp only [hs_def, Set.indicator_of_notMem this]
           rw [hs0, Set.indicator_of_mem hω]
-          show g 0 = g 1 + (g 0 - g 1) * 1
+          change g 0 = g 1 + (g 0 - g 1) * 1
           ring
         · have hs1 : s (χ k) ω = 1 := by
             have : ω ∈ (A (χ k))ᶜ := hω
             simp only [hs_def, Set.indicator_of_mem this]
           rw [hs1, Set.indicator_of_notMem hω]
-          show g 1 = g 1 + (g 0 - g 1) * 0
+          change g 1 = g 1 + (g 0 - g 1) * 0
           ring
       rw [h_pt]
       rw [MeasureTheory.integral_add (integrable_const _)
@@ -2729,8 +2726,8 @@ theorem mean_one_imp_contiguous
         atTop (𝓝 0) := by
       have h_toReal : Tendsto (fun k => ((P (χ k)) (A (χ k))).toReal) atTop (𝓝 0) := by
         have := (ENNReal.tendsto_toReal (by simp)).comp hP_A_χ
-        simpa using this
-      simpa using h_toReal.const_mul (g 0 - g 1)
+        simpa using! this
+      simpa using! h_toReal.const_mul (g 0 - g 1)
     simpa using (tendsto_const_nhds (x := g 1)).add h_tendsto0
   -- Identify `Jlim.map snd = δ₁`.
   have hJlim_snd_eq : Jlim.map Prod.snd = Measure.dirac (1 : ℝ) := by
@@ -2774,9 +2771,9 @@ theorem mean_one_imp_contiguous
   have hV_supp : V {x : ℝ | x < 0} = 0 := by
     have h_neg_open : IsOpen {x : ℝ | x < 0} := isOpen_lt continuous_id continuous_const
     -- Bundle the first-marginal laws as probability measures.
-    haveI hfst_prob : ∀ k, IsProbabilityMeasure
+    have hfst_prob : ∀ k, IsProbabilityMeasure
         ((P (χ k)).map (fun ω => ((Q (χ k)).rnDeriv (P (χ k)) ω).toReal)) :=
-      fun k => Measure.isProbabilityMeasure_map (hq_meas (χ k)).aemeasurable
+      fun k => (by infer_instance)
     set PM : ℕ → ProbabilityMeasure ℝ := fun k =>
       ⟨(P (χ k)).map (fun ω => ((Q (χ k)).rnDeriv (P (χ k)) ω).toReal), hfst_prob k⟩ with hPM_def
     have h_tendsto_V : Tendsto PM atTop (𝓝 (⟨V, hV_prob⟩ : ProbabilityMeasure ℝ)) :=
@@ -2788,12 +2785,12 @@ theorem mean_one_imp_contiguous
       have hcoe : (PM k : Measure ℝ)
           = (P (χ k)).map (fun ω => ((Q (χ k)).rnDeriv (P (χ k)) ω).toReal) := rfl
       rw [hcoe, Measure.map_apply (hq_meas (χ k)) h_neg_open.measurableSet]
-      convert measure_empty (μ := P (χ k))
+      convert! measure_empty (μ := P (χ k))
       ext ω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
       exact hq_nonneg (χ k) ω
     simp only [h_each, Filter.liminf_const] at h_le
-    exact le_antisymm h_le (zero_le _)
+    exact le_antisymm h_le (zero_le)
   -- On the limit, `∫⁻ ofReal (F p) ∂Jlim = ∫ x ∂V = 1`.
   have hF_on_Jlim : ∫⁻ p, ENNReal.ofReal (F p) ∂Jlim = 1 := by
     -- `snd = 1` `Jlim`-a.e. (from `Jlim.map snd = dirac 1`).
@@ -2857,7 +2854,8 @@ theorem mean_one_imp_contiguous
       = fun k => (Q (χ k)) (A (χ k))ᶜ := by
     funext k; rw [hF_on_J (φ k)]
   rw [h_rhs_eq] at h_liminf_int
-  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ` eventually (since `δ ≤ Q (χ k) (A (χ k))`).
+  -- `Q (χ k) (A (χ k))ᶜ = 1 - Q (χ k) (A (χ k)) ≤ 1 - δ`
+  -- eventually (since `δ ≤ Q (χ k) (A (χ k))`).
   have hχ_ge : ∀ k, δ ≤ (Q (χ k)) (A (χ k)) := fun k => hψ_ge (φ k)
   have hcompl_le : ∀ k, (Q (χ k)) (A (χ k))ᶜ ≤ 1 - δ := by
     intro k
@@ -2913,9 +2911,9 @@ private lemma mixture_rnDeriv_facts {α : Type*} [MeasurableSpace α]
     simp only [Measure.coe_add, Measure.coe_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
       measure_univ, mul_one]
     rw [hc_eq, ← two_mul, ENNReal.mul_inv_cancel (by norm_num) (by norm_num)]
-  haveI hcP_fin : IsFiniteMeasure (c • P) := by
+  have hcP_fin : IsFiniteMeasure (c • P) := by
     constructor; rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]; exact hc_ne_top.lt_top
-  haveI hcQ_fin : IsFiniteMeasure (c • Q) := by
+  have hcQ_fin : IsFiniteMeasure (c • Q) := by
     constructor; rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]; exact hc_ne_top.lt_top
   -- Linearity of the RN derivative: `dμ/dμ = c·dP/dμ + c·dQ/dμ`, and `dμ/dμ = 1` μ-a.e.
   have h_lin : μ.rnDeriv μ =ᵐ[μ] fun x => c * P.rnDeriv μ x + c * Q.rnDeriv μ x := by
@@ -3001,7 +2999,7 @@ private lemma cov_ratio_integral {α : Type*} [MeasurableSpace α]
   have hW_pos_R : ∀ᵐ ω ∂R, 0 < W ω := by
     filter_upwards [Measure.rnDeriv_pos hRμ, hRμ.ae_le (R.rnDeriv_lt_top μ)]
       with ω hpos hlt
-    simpa [hW_def] using ENNReal.toReal_pos hpos.ne' hlt.ne
+    simpa [hW_def] using! ENNReal.toReal_pos hpos.ne' hlt.ne
   have h2W_R : ∀ᵐ ω ∂R, (S.rnDeriv μ ω).toReal = 2 - W ω := hRμ.ae_le h2W
   have h_chain_ennR : S.rnDeriv R * R.rnDeriv μ =ᵐ[R] S.rnDeriv μ :=
     Measure.rnDeriv_mul_rnDeriv' hRμ
@@ -3083,30 +3081,29 @@ theorem limit_pos_imp_mean_one
   have hW_nonneg : ∀ k ω, 0 ≤ W k ω := fun k ω => ENNReal.toReal_nonneg
   -- Law of `W k` under `μ k`, a probability measure on `ℝ` supported in `[0,2]`.
   set LW : ℕ → Measure ℝ := fun k => (μ k).map (W k) with hLW_def
-  haveI hLW_prob : ∀ k, IsProbabilityMeasure (LW k) := fun k => by
-    haveI := hμ_prob k
-    exact Measure.isProbabilityMeasure_map (hW_meas k).aemeasurable
+  have hLW_prob : ∀ k, IsProbabilityMeasure (LW k) := fun k => by
+    have := hμ_prob k
+    exact (by infer_instance)
   -- `LW k` is supported in `[0,2]`.
   have hLW_supp : ∀ k, (LW k) {x : ℝ | x < 0 ∨ 2 < x} = 0 := by
     intro k
-    haveI := hμ_prob k
     have hSmeas : MeasurableSet {x : ℝ | x < 0 ∨ 2 < x} :=
       (measurableSet_lt measurable_id measurable_const).union
         (measurableSet_lt measurable_const measurable_id)
     rw [hLW_def, Measure.map_apply (hW_meas k) hSmeas]
     have : (∀ᵐ ω ∂(μ k), ω ∉ W k ⁻¹' {x : ℝ | x < 0 ∨ 2 < x}) := by
       filter_upwards [hW_le2 k] with ω hω
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, not_or, not_lt]
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, not_or, not_lt]
       exact ⟨hW_nonneg k ω, hω⟩
     rw [ae_iff] at this
-    simpa only [not_not] using this
+    simpa only [not_not] using! this
   -- ══ Extraction 1: weak limit `U` of `dP/dQ`-laws under `Q` (Markov-tight). ══
   set LdPdQ : ℕ → Measure ℝ :=
     fun k => (Q (φ k)).map (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) with hLdPdQ_def
   have hdPdQ_meas : ∀ k, Measurable (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) :=
     fun k => ((P (φ k)).measurable_rnDeriv (Q (φ k))).ennreal_toReal
-  haveI hLdPdQ_prob : ∀ k, IsProbabilityMeasure (LdPdQ k) := fun k =>
-    Measure.isProbabilityMeasure_map (hdPdQ_meas k).aemeasurable
+  have hLdPdQ_prob : ∀ k, IsProbabilityMeasure (LdPdQ k) := fun k =>
+    (by infer_instance)
   -- `∫⁻ dP/dQ dQ ≤ 1` (it is `P_a(univ) ≤ 1`).
   have hdPdQ_total : ∀ k, ∫⁻ ω, (P (φ k)).rnDeriv (Q (φ k)) ω ∂(Q (φ k)) ≤ 1 := by
     intro k
@@ -3125,9 +3122,9 @@ theorem limit_pos_imp_mean_one
       have h_sub : (fun ω => ((P (φ k)).rnDeriv (Q (φ k)) ω).toReal) ⁻¹' {x : ℝ | r < ‖x‖}
           ⊆ {ω | ENNReal.ofReal r ≤ (P (φ k)).rnDeriv (Q (φ k)) ω} := by
         intro ω hω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Real.norm_eq_abs,
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Real.norm_eq_abs,
           abs_of_nonneg ENNReal.toReal_nonneg] at hω
-        simp only [Set.mem_setOf_eq] at hω ⊢
+        simp only [Set.mem_ofPred_eq] at hω ⊢
         have h_ne_top : (P (φ k)).rnDeriv (Q (φ k)) ω ≠ ∞ := by
           intro h_top; rw [h_top, ENNReal.toReal_top] at hω; linarith
         rw [← ENNReal.ofReal_toReal h_ne_top]
@@ -3146,28 +3143,28 @@ theorem limit_pos_imp_mean_one
       rw [ENNReal.inv_top] at h
       exact h
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_lim
-      (Filter.Eventually.of_forall (fun _ => zero_le _)) ?_
+      (Filter.Eventually.of_forall (fun _ => zero_le)) ?_
     filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with r hr using h_bound r hr
   obtain ⟨σ₁, hσ₁_mono, U, hU_prob, hU_conv⟩ := extract_weak_subseq_local LdPdQ h_tight_LdPdQ
   -- ══ Extraction 2: weak limit `LW_lim` of the bounded `LW ∘ σ₁` (compact support tight). ══
-  haveI hLWσ₁_prob : ∀ k, IsProbabilityMeasure ((LW ∘ σ₁) k) := fun k => hLW_prob (σ₁ k)
+  have hLWσ₁_prob : ∀ k, IsProbabilityMeasure ((LW ∘ σ₁) k) := fun k => hLW_prob (σ₁ k)
   have h_tight_LW : IsTightMeasureSet (Set.range (LW ∘ σ₁)) := by
     refine MeasureTheory.isTightMeasureSet_of_tendsto_measure_norm_gt ?_
     -- For `r ≥ 2`, `{|x| > r}` has zero `LW`-mass (support ⊆ [0,2]).
     have h_zero : ∀ r : ℝ, 2 ≤ r →
         (⨆ μ' ∈ Set.range (LW ∘ σ₁), μ' {x : ℝ | r < ‖x‖}) = 0 := by
       intro r hr
-      refine le_antisymm (iSup₂_le ?_) (zero_le _)
+      refine le_antisymm (iSup₂_le ?_) (zero_le)
       rintro μ' ⟨k, rfl⟩
       refine le_of_eq ?_
       refine measure_mono_null ?_ (hLW_supp (σ₁ k))
       intro x hx
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs] at hx ⊢
+      simp only [Set.mem_ofPred_eq, Real.norm_eq_abs] at hx ⊢
       rcases lt_or_ge x 0 with hx0 | hx0
       · left; rw [abs_of_neg hx0] at hx; linarith
       · right; rw [abs_of_nonneg hx0] at hx; linarith
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds tendsto_const_nhds
-      (Filter.Eventually.of_forall (fun _ => zero_le _)) ?_
+      (Filter.Eventually.of_forall (fun _ => zero_le)) ?_
     filter_upwards [Filter.eventually_ge_atTop (2 : ℝ)] with r hr using (h_zero r hr).le
   obtain ⟨σ₂, hσ₂_mono, LW_lim, hLW_lim_prob, hLW_lim_conv⟩ :=
     extract_weak_subseq_local (LW ∘ σ₁) h_tight_LW
@@ -3185,20 +3182,20 @@ theorem limit_pos_imp_mean_one
   have hU_conv' : WeakConverges (fun j => LdPdQ (ρ j)) U := by
     intro f
     have := (hU_conv f).comp hσ₂_mono.tendsto_atTop
-    simpa only [Function.comp_apply, hρ_def] using this
+    simpa only [Function.comp_apply, hρ_def] using! this
   -- `hU` applies along `χ = φ ∘ ρ`: `U {0 < x} = 1`.
   have hU_pos : U {x : ℝ | 0 < x} = 1 := by
     refine hU χ hχ_mono U hU_prob ?_
     intro f
     have := hU_conv' f
-    simpa only [hLdPdQ_def, hχ_def, Function.comp_apply] using this
+    simpa only [hLdPdQ_def, hχ_def, Function.comp_apply] using! this
   -- `V`-law convergence along `ρ` (subsequence of the given `hVconv`).
   set LdQdP : ℕ → Measure ℝ :=
     fun k => (P (φ k)).map (fun ω => ((Q (φ k)).rnDeriv (P (φ k)) ω).toReal) with hLdQdP_def
   have hdQdP_meas : ∀ k, Measurable (fun ω => ((Q (φ k)).rnDeriv (P (φ k)) ω).toReal) :=
     fun k => ((Q (φ k)).measurable_rnDeriv (P (φ k))).ennreal_toReal
-  haveI hLdQdP_prob : ∀ k, IsProbabilityMeasure (LdQdP k) := fun k =>
-    Measure.isProbabilityMeasure_map (hdQdP_meas k).aemeasurable
+  have hLdQdP_prob : ∀ k, IsProbabilityMeasure (LdQdP k) := fun k =>
+    (by infer_instance)
   have hV_conv : WeakConverges (fun j => LdQdP (ρ j)) V := by
     intro f; exact (hVconv f).comp hρ_mono.tendsto_atTop
   -- ── `LW_lim` is supported in `[0,2]`; `V` is supported in `[0,∞)`. ──
@@ -3211,7 +3208,7 @@ theorem limit_pos_imp_mean_one
     have h_le := MeasureTheory.ProbabilityMeasure.le_liminf_measure_open_of_tendsto h_tend hSopen
     have h_each : ∀ j, ((PMW j : Measure ℝ)) {x : ℝ | x < 0 ∨ 2 < x} = 0 := fun j => hLW_supp (ρ j)
     simp only [h_each, Filter.liminf_const] at h_le
-    exact le_antisymm h_le (zero_le _)
+    exact le_antisymm h_le (zero_le)
   have hV_supp : V {x : ℝ | x < 0} = 0 := by
     have h_neg_open : IsOpen {x : ℝ | x < 0} := isOpen_lt continuous_id continuous_const
     set PMV : ℕ → ProbabilityMeasure ℝ := fun j => ⟨LdQdP (ρ j), hLdQdP_prob (ρ j)⟩ with hPMV_def
@@ -3226,11 +3223,11 @@ theorem limit_pos_imp_mean_one
       have : (fun ω => ((Q (φ (ρ j))).rnDeriv (P (φ (ρ j))) ω).toReal) ⁻¹' {x : ℝ | x < 0}
           = (∅ : Set (Ω (φ (ρ j)))) := by
         ext ω
-        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         exact ENNReal.toReal_nonneg
       rw [this, measure_empty]
     simp only [h_each, Filter.liminf_const] at h_le
-    exact le_antisymm h_le (zero_le _)
+    exact le_antisymm h_le (zero_le)
   -- ── Bounded-continuous clamp `cl w = min (max w 0) 2 ∈ [0,2]`, equal to `id` on `[0,2]`. ──
   set clampBdd : ℝ →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup
     (fun w => min (max w 0) 2)
@@ -3252,14 +3249,14 @@ theorem limit_pos_imp_mean_one
     have hC_lim : ∫ w, w ∂LW_lim = ∫ w, clampBdd w ∂LW_lim := by
       refine integral_congr_ae ?_
       have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-        rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
+        rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
       filter_upwards [h_compl] with w hw
       simp only [not_or, not_lt] at hw
       exact (hclamp_id w hw.1 hw.2).symm
     -- Each `∫ clampBdd ∂LW (ρ j) = 1` exactly.
     have hC_each : ∀ j, ∫ w, clampBdd w ∂(LW (ρ j)) = 1 := by
       intro j
-      haveI := hμ_prob (ρ j)
+      have := hμ_prob (ρ j)
       -- Push to `μ (ρ j)` via `integral_map`, then `clampBdd (W) = W` `μ`-a.e.
       rw [hLW_def, MeasureTheory.integral_map (hW_meas (ρ j)).aemeasurable
         clampBdd.continuous.aestronglyMeasurable]
@@ -3308,7 +3305,6 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → w * g ((2 - w) / w) = cc w) →
       ∀ j, ∫ x, g x ∂(LdQdP (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    haveI := hμ_prob (ρ j)
     -- LHS = `∫ g((dQ/dP).toReal) ∂P(φ(ρj))`.
     rw [hLdQdP_def, MeasureTheory.integral_map (hdQdP_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
@@ -3320,7 +3316,7 @@ theorem limit_pos_imp_mean_one
     rw [h_meas_eq]
     refine integral_congr_ae ?_
     have h_compl : ∀ᵐ w ∂(LW (ρ j)), w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-      rw [ae_iff]; simpa only [not_not] using hLW_supp (ρ j)
+      rw [ae_iff]; simpa only [not_not] using! hLW_supp (ρ j)
     filter_upwards [h_compl] with w hw
     simp only [not_or, not_lt] at hw
     exact hagree w hw.1 hw.2
@@ -3330,7 +3326,6 @@ theorem limit_pos_imp_mean_one
       (∀ w, 0 ≤ w → w ≤ 2 → (2 - w) * g (w / (2 - w)) = cc w) →
       ∀ j, ∫ x, g x ∂(LdPdQ (ρ j)) = ∫ x, cc x ∂(LW (ρ j)) := by
     intro g cc hagree j
-    haveI := hμ_prob (ρ j)
     rw [hLdPdQ_def, MeasureTheory.integral_map (hdPdQ_meas (ρ j)).aemeasurable
       g.continuous.aestronglyMeasurable]
     -- bridge with `R = Q, S = P`: `= ∫ v·g((2-v)/v) ∂(μ(ρj).map ((Q.rnDeriv μ).toReal))`.
@@ -3377,17 +3372,17 @@ theorem limit_pos_imp_mean_one
       exact this
     refine measure_mono_null ?_ h1
     intro x hx; simp only [Set.mem_singleton_iff] at hx
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt, hx, le_refl]
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, hx, le_refl]
   -- `f_m(x) = max 0 (1 - (m+1)|x|)`, bounded continuous in `[0,1]`, `↓ 1_{x=0}`.
   set fB : ℕ → (ℝ →ᵇ ℝ) := fun m => BoundedContinuousFunction.ofNormedAddCommGroup
     (fun x => max 0 (1 - (m + 1 : ℝ) * |x|))
     (continuous_const.max (continuous_const.sub (continuous_const.mul continuous_abs))) 1
     (fun x => by
       rw [Real.norm_eq_abs, abs_le]
-      refine ⟨by have : (0:ℝ) ≤ max 0 (1 - (m + 1 : ℝ) * |x|) := le_max_left _ _; linarith, ?_⟩
+      refine ⟨by have : (0 : ℝ) ≤ max 0 (1 - (m + 1 : ℝ) * |x|) := le_max_left _ _; linarith, ?_⟩
       rw [max_le_iff]
       refine ⟨by norm_num, ?_⟩
-      have : (0:ℝ) ≤ (m + 1 : ℝ) * |x| := by positivity
+      have : (0 : ℝ) ≤ (m + 1 : ℝ) * |x| := by positivity
       linarith) with hfB_def
   have hfB_apply : ∀ m x, fB m x = max 0 (1 - (m + 1 : ℝ) * |x|) := fun _ _ => rfl
   -- `ccB_m(w) = max 0 (2 - (m+2)·w)`, bounded continuous (`[0,2]` on the support), `↓ 2·1_{0}`.
@@ -3397,7 +3392,7 @@ theorem limit_pos_imp_mean_one
       continuous_const)) 2
     (fun w => by
       rw [Real.norm_eq_abs, abs_le]
-      have h0 : (0:ℝ) ≤ max 0 (min (2 - (m + 2 : ℝ) * w) 2) := le_max_left _ _
+      have h0 : (0 : ℝ) ≤ max 0 (min (2 - (m + 2 : ℝ) * w) 2) := le_max_left _ _
       refine ⟨by linarith, ?_⟩
       rw [max_le_iff]
       exact ⟨by norm_num, min_le_right _ _⟩) with hccB_def
@@ -3407,19 +3402,19 @@ theorem limit_pos_imp_mean_one
     intro m w hw0 hw2
     rw [hfB_apply, hccB_apply]
     have hmin : min (2 - (m + 2 : ℝ) * w) 2 = 2 - (m + 2 : ℝ) * w := by
-      apply min_eq_left; nlinarith [mul_nonneg (by positivity : (0:ℝ) ≤ (m + 2 : ℝ)) hw0]
+      apply min_eq_left; nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ (m + 2 : ℝ)) hw0]
     rw [hmin]
     rcases eq_or_lt_of_le hw2 with hw | hw
     · -- `w = 2`: both sides `0`.
       subst hw
       rw [sub_self, zero_mul, max_eq_left]
       have : (2 : ℝ) - (m + 2 : ℝ) * 2 ≤ 0 := by
-        have : (0:ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
+        have : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
         nlinarith
       linarith
     · -- `w < 2`: `2 - w > 0`, `w/(2-w) ≥ 0`.
-      have h2w : (0:ℝ) < 2 - w := by linarith
-      have hratio : (0:ℝ) ≤ w / (2 - w) := div_nonneg hw0 h2w.le
+      have h2w : (0 : ℝ) < 2 - w := by linarith
+      have hratio : (0 : ℝ) ≤ w / (2 - w) := div_nonneg hw0 h2w.le
       rw [abs_of_nonneg hratio]
       rw [mul_max_of_nonneg _ _ h2w.le, mul_zero]
       congr 1
@@ -3439,18 +3434,18 @@ theorem limit_pos_imp_mean_one
     have : (m + 1 : ℝ) ≤ (n + 1 : ℝ) := by exact_mod_cast Nat.add_le_add_right hmn 1
     nlinarith [abs_nonneg x]
   have hfB_tendsto : ∀ x : ℝ,
-      Tendsto (fun m => fB m x) atTop (𝓝 (Set.indicator {(0:ℝ)} (fun _ => (1:ℝ)) x)) := by
+      Tendsto (fun m => fB m x) atTop (𝓝 (Set.indicator {(0 : ℝ)} (fun _ => (1 : ℝ)) x)) := by
     intro x
     by_cases hx : x = 0
     · subst hx
       rw [Set.indicator_of_mem (Set.mem_singleton 0)]
-      have : (fun m => fB m (0:ℝ)) = fun _ => (1:ℝ) := by
+      have : (fun m => fB m (0 : ℝ)) = fun _ => (1 : ℝ) := by
         funext m; rw [hfB_apply]; simp
       rw [this]; exact tendsto_const_nhds
     · rw [Set.indicator_of_notMem (by simpa using hx)]
       -- Eventually zero: once `(m+1)|x| ≥ 1`, `fB m x = 0`.
-      have habs : (0:ℝ) < |x| := abs_pos.mpr hx
-      have h_ev : (fun m => fB m x) =ᶠ[atTop] fun _ => (0:ℝ) := by
+      have habs : (0 : ℝ) < |x| := abs_pos.mpr hx
+      have h_ev : (fun m => fB m x) =ᶠ[atTop] fun _ => (0 : ℝ) := by
         filter_upwards [Filter.eventually_atTop.mpr ⟨Nat.ceil (1 / |x|), fun m hm => hm⟩]
           with m hm
         rw [hfB_apply, max_eq_left]
@@ -3461,17 +3456,17 @@ theorem limit_pos_imp_mean_one
       exact tendsto_const_nhds
   -- `∫ fB m ∂U → (U {0}).toReal = 0`.
   have hfB_lim : Tendsto (fun m => ∫ x, fB m x ∂U) atTop (𝓝 (0 : ℝ)) := by
-    have hint_ind : Integrable (Set.indicator {(0:ℝ)} (fun _ => (1:ℝ))) U :=
-      (integrable_const (1:ℝ)).indicator (measurableSet_singleton (0:ℝ))
+    have hint_ind : Integrable (Set.indicator {(0 : ℝ)} (fun _ => (1 : ℝ))) U :=
+      (integrable_const (1 : ℝ)).indicator (measurableSet_singleton (0 : ℝ))
     have h := integral_tendsto_of_tendsto_of_antitone hfB_int hint_ind
       (Filter.Eventually.of_forall hfB_anti) (Filter.Eventually.of_forall hfB_tendsto)
-    rwa [MeasureTheory.integral_indicator (measurableSet_singleton (0:ℝ)),
+    rwa [MeasureTheory.integral_indicator (measurableSet_singleton (0 : ℝ)),
       MeasureTheory.setIntegral_const, smul_eq_mul, mul_one,
       MeasureTheory.measureReal_def, hU_zero, ENNReal.toReal_zero] at h
   -- `ccB m w ↓ 2·1_{w=0}` `LW_lim`-a.e. (support `[0,2]`); hence `∫ ccB m → 2·(LW_lim{0}).toReal`.
   have hccB_anti : ∀ᵐ w ∂LW_lim, Antitone (fun m => ccB m w) := by
     have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-      rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
+      rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
     filter_upwards [h_compl] with w hw
     simp only [not_or, not_lt] at hw
     intro m n hmn
@@ -3481,20 +3476,20 @@ theorem limit_pos_imp_mean_one
     have hmn' : (m + 2 : ℝ) ≤ (n + 2 : ℝ) := by exact_mod_cast Nat.add_le_add_right hmn 2
     nlinarith [hw.1]
   have hccB_tendsto : ∀ᵐ w ∂LW_lim,
-      Tendsto (fun m => ccB m w) atTop (𝓝 (Set.indicator {(0:ℝ)} (fun _ => (2:ℝ)) w)) := by
+      Tendsto (fun m => ccB m w) atTop (𝓝 (Set.indicator {(0 : ℝ)} (fun _ => (2 : ℝ)) w)) := by
     have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-      rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
+      rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
     filter_upwards [h_compl] with w hw
     simp only [not_or, not_lt] at hw
     by_cases hw0 : w = 0
     · subst hw0
       rw [Set.indicator_of_mem (Set.mem_singleton 0)]
-      have : (fun m => ccB m (0:ℝ)) = fun _ => (2:ℝ) := by
+      have : (fun m => ccB m (0 : ℝ)) = fun _ => (2 : ℝ) := by
         funext m; rw [hccB_apply]; simp
       rw [this]; exact tendsto_const_nhds
-    · rw [Set.indicator_of_notMem (by simpa using hw0)]
+    · rw [Set.indicator_of_notMem (by simpa using! hw0)]
       have hwpos : 0 < w := lt_of_le_of_ne hw.1 (Ne.symm hw0)
-      have h_ev : (fun m => ccB m w) =ᶠ[atTop] fun _ => (0:ℝ) := by
+      have h_ev : (fun m => ccB m w) =ᶠ[atTop] fun _ => (0 : ℝ) := by
         filter_upwards [Filter.eventually_atTop.mpr ⟨Nat.ceil (2 / w), fun m hm => hm⟩] with m hm
         rw [hccB_apply, max_eq_left]
         apply min_le_of_left_le
@@ -3503,22 +3498,22 @@ theorem limit_pos_imp_mean_one
         nlinarith [hwpos]
       rw [tendsto_congr' h_ev]; exact tendsto_const_nhds
   have hccB_lim : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop
-      (𝓝 (2 * (LW_lim {(0:ℝ)}).toReal)) := by
-    have hint_ind : Integrable (Set.indicator {(0:ℝ)} (fun _ => (2:ℝ))) LW_lim :=
-      (integrable_const (2:ℝ)).indicator (measurableSet_singleton (0:ℝ))
+      (𝓝 (2 * (LW_lim {(0 : ℝ)}).toReal)) := by
+    have hint_ind : Integrable (Set.indicator {(0 : ℝ)} (fun _ => (2 : ℝ))) LW_lim :=
+      (integrable_const (2 : ℝ)).indicator (measurableSet_singleton (0 : ℝ))
     have h := integral_tendsto_of_tendsto_of_antitone hccB_int hint_ind
       hccB_anti hccB_tendsto
-    rw [MeasureTheory.integral_indicator (measurableSet_singleton (0:ℝ)),
+    rw [MeasureTheory.integral_indicator (measurableSet_singleton (0 : ℝ)),
       MeasureTheory.setIntegral_const, smul_eq_mul, MeasureTheory.measureReal_def] at h
     rwa [mul_comm] at h
   -- Combine: `2·(LW_lim{0}).toReal = 0`, hence `LW_lim {0} = 0`.
-  have hFactB : LW_lim {(0:ℝ)} = 0 := by
-    have heq : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop (𝓝 (0:ℝ)) := by
+  have hFactB : LW_lim {(0 : ℝ)} = 0 := by
+    have heq : Tendsto (fun m => ∫ w, ccB m w ∂LW_lim) atTop (𝓝 (0 : ℝ)) := by
       have : (fun m => ∫ w, ccB m w ∂LW_lim) = fun m => ∫ x, fB m x ∂U := by
         funext m; exact (hB_ident m).symm
       rw [this]; exact hfB_lim
-    have h2 : 2 * (LW_lim {(0:ℝ)}).toReal = 0 := tendsto_nhds_unique hccB_lim heq
-    have h3 : (LW_lim {(0:ℝ)}).toReal = 0 := by linarith
+    have h2 : 2 * (LW_lim {(0 : ℝ)}).toReal = 0 := tendsto_nhds_unique hccB_lim heq
+    have h3 : (LW_lim {(0 : ℝ)}).toReal = 0 := by linarith
     exact (ENNReal.toReal_eq_zero_iff _).mp h3 |>.resolve_right (measure_ne_top _ _)
   -- ══ Fact A: `∫ x ∂V = ∫ (2-w)·1_{0<w} ∂LW_lim = 1`. ══
   -- `hA m(x) = min (max x 0) m`, bounded continuous, `↑ max x 0`.
@@ -3527,8 +3522,8 @@ theorem limit_pos_imp_mean_one
     ((continuous_id.max continuous_const).min continuous_const) (m : ℝ)
     (fun x => by
       rw [Real.norm_eq_abs, abs_le]
-      have h0 : (0:ℝ) ≤ min (max x 0) (m : ℝ) := le_min (le_max_right _ _) (by positivity)
-      have hm0 : (0:ℝ) ≤ (m : ℝ) := by positivity
+      have h0 : (0 : ℝ) ≤ min (max x 0) (m : ℝ) := le_min (le_max_right _ _) (by positivity)
+      have hm0 : (0 : ℝ) ≤ (m : ℝ) := by positivity
       exact ⟨by linarith, min_le_right _ _⟩) with hA_def
   have hA_apply : ∀ m x, hA m x = min (max x 0) (m : ℝ) := fun _ _ => rfl
   -- `ccA m(w) = min (2 - cl w) (m · cl w)`, `cl = clamp [0,2]`; bdd-cont, `↑ (2-w)1_{0<w}`.
@@ -3537,11 +3532,11 @@ theorem limit_pos_imp_mean_one
     ((continuous_const.sub ((continuous_id.max continuous_const).min continuous_const)).min
       (continuous_const.mul ((continuous_id.max continuous_const).min continuous_const))) 2
     (fun w => by
-      have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+      have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
       have hcl2 : min (max w 0) 2 ≤ 2 := min_le_right _ _
       rw [Real.norm_eq_abs, abs_le]
       refine ⟨?_, ?_⟩
-      · have : (0:ℝ) ≤ min (2 - min (max w 0) 2) ((m : ℝ) * min (max w 0) 2) :=
+      · have : (0 : ℝ) ≤ min (2 - min (max w 0) 2) ((m : ℝ) * min (max w 0) 2) :=
           le_min (by linarith) (by positivity)
         linarith
       · exact le_trans (min_le_left _ _) (by linarith)) with hccA_def
@@ -3555,7 +3550,7 @@ theorem limit_pos_imp_mean_one
     · -- `w = 0`: both `0`.
       rw [← hw]; simp
     · -- `w > 0`: `(2-w)/w ≥ 0`.
-      have hratio : (0:ℝ) ≤ (2 - w) / w := div_nonneg (by linarith) hw.le
+      have hratio : (0 : ℝ) ≤ (2 - w) / w := div_nonneg (by linarith) hw.le
       rw [max_eq_left hratio, mul_min_of_nonneg _ _ hw.le]
       congr 1
       · field_simp
@@ -3567,18 +3562,18 @@ theorem limit_pos_imp_mean_one
   have hccA_le2 : ∀ m w, ccA m w ≤ 2 := by
     intro m w
     rw [hccA_apply]
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     exact le_trans (min_le_left _ _) (by linarith)
   have hccA_nonneg : ∀ m w, 0 ≤ ccA m w := by
     intro m w
     rw [hccA_apply]
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     have hcl2 : min (max w 0) 2 ≤ 2 := min_le_right _ _
     exact le_min (by linarith) (by positivity)
   have hA_le2 : ∀ m, ∫ x, hA m x ∂V ≤ 2 := by
     intro m
     rw [hA_ident m]
-    calc ∫ w, ccA m w ∂LW_lim ≤ ∫ _, (2:ℝ) ∂LW_lim :=
+    calc ∫ w, ccA m w ∂LW_lim ≤ ∫ _, (2 : ℝ) ∂LW_lim :=
           integral_mono ((ccA m).integrable LW_lim) (integrable_const _)
             (fun w => hccA_le2 m w)
       _ = 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
@@ -3636,24 +3631,24 @@ theorem limit_pos_imp_mean_one
   -- `ccA m w ↑ 2 - w` `LW_lim`-a.e. (`w ∈ (0,2]` a.e.).
   have hccA_mono : ∀ᵐ w ∂LW_lim, Monotone (fun m => ccA m w) := by
     have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-      rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
+      rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
     filter_upwards [h_compl] with w hw
     simp only [not_or, not_lt] at hw
     intro m n hmn
     change ccA m w ≤ ccA n w
     rw [hccA_apply, hccA_apply]
     apply min_le_min le_rfl
-    have hcl0 : (0:ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
+    have hcl0 : (0 : ℝ) ≤ min (max w 0) 2 := le_min (le_max_right _ _) (by norm_num)
     have : (m : ℝ) ≤ (n : ℝ) := by exact_mod_cast hmn
     nlinarith
   have hccA_tendsto : ∀ᵐ w ∂LW_lim,
       Tendsto (fun m => ccA m w) atTop (𝓝 (2 - w)) := by
     have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-      rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
+      rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
     have h_zero : ∀ᵐ w ∂LW_lim, w ≠ 0 := by
       rw [ae_iff]
       simp only [ne_eq, Decidable.not_not]
-      have : {w : ℝ | w = 0} = {(0:ℝ)} := by ext w; simp
+      have : {w : ℝ | w = 0} = {(0 : ℝ)} := by ext w; simp
       rw [this]; exact hFactB
     filter_upwards [h_compl, h_zero] with w hw hw0
     simp only [not_or, not_lt] at hw
@@ -3669,12 +3664,12 @@ theorem limit_pos_imp_mean_one
   have hF_int : Integrable (fun w => 2 - w) LW_lim := by
     have : Integrable (fun w : ℝ => w) LW_lim := by
       have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-        rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
-      refine (integrable_const (2:ℝ)).mono' measurable_id.aestronglyMeasurable ?_
+        rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
+      refine (integrable_const (2 : ℝ)).mono' measurable_id.aestronglyMeasurable ?_
       filter_upwards [h_compl] with w hw
       simp only [not_or, not_lt] at hw
       rw [Real.norm_eq_abs, abs_of_nonneg hw.1]; exact hw.2
-    exact (integrable_const (2:ℝ)).sub this
+    exact (integrable_const (2 : ℝ)).sub this
   have hccA_lim : Tendsto (fun m => ∫ w, ccA m w ∂LW_lim) atTop (𝓝 (∫ w, (2 - w) ∂LW_lim)) :=
     integral_tendsto_of_tendsto_of_monotone (fun m => (ccA m).integrable LW_lim) hF_int
       hccA_mono hccA_tendsto
@@ -3687,7 +3682,7 @@ theorem limit_pos_imp_mean_one
   have hV_id_eq : ∫ x, x ∂V = ∫ x, max x 0 ∂V := by
     refine integral_congr_ae ?_
     have h_compl : ∀ᵐ x ∂V, x ∉ {y : ℝ | y < 0} := by
-      rw [ae_iff]; simpa only [not_not] using hV_supp
+      rw [ae_iff]; simpa only [not_not] using! hV_supp
     filter_upwards [h_compl] with x hx
     simp only [not_lt] at hx
     rw [max_eq_left hx]
@@ -3696,8 +3691,8 @@ theorem limit_pos_imp_mean_one
     rw [integral_sub (integrable_const _) (by
       -- `id` integrable (shown above inside hF_int's proof; reprove quickly).
       have h_compl : ∀ᵐ w ∂LW_lim, w ∉ {x : ℝ | x < 0 ∨ 2 < x} := by
-        rw [ae_iff]; simpa only [not_not] using hLW_lim_supp
-      refine (integrable_const (2:ℝ)).mono' measurable_id.aestronglyMeasurable ?_
+        rw [ae_iff]; simpa only [not_not] using! hLW_lim_supp
+      refine (integrable_const (2 : ℝ)).mono' measurable_id.aestronglyMeasurable ?_
       filter_upwards [h_compl] with w hw
       simp only [not_or, not_lt] at hw
       rw [Real.norm_eq_abs, abs_of_nonneg hw.1]; exact hw.2)]

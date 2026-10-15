@@ -198,7 +198,7 @@ private lemma integrable_biSup_of_countable {Ξ : Type*} [MeasurableSpace Ξ]
     have hgeq : (fun ξ => (Fm m).sup' (hFm_ne m) (fun S => g S ξ))
         = (Fm m).sup' (hFm_ne m) (fun S => fun ξ => g S ξ) := by
       funext ξ; rw [Finset.sup'_apply]
-    show Measurable (fun ξ => (Fm m).sup' (hFm_ne m) (fun S => g S ξ))
+    change Measurable (fun ξ => (Fm m).sup' (hFm_ne m) (fun S => g S ξ))
     rw [hgeq]
     exact Finset.measurable_sup' (hFm_ne m) (fun S hS => hgmeas S (hFm_sub m hS))
   have hlim_aem : AEMeasurable (fun ξ => ⨆ m, netMax m ξ) P :=

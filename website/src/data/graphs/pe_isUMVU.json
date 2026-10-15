@@ -4,7 +4,7 @@
     {"id":"StatLean.PointEstimation.IsUMVU","label":"IsUMVU","full":"StatLean.PointEstimation.IsUMVU","kind":"root","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
-    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Basic.Real.Basic"},
     {"id":"StatLean.PointEstimation.IsUnbiased","label":"IsUnbiased","full":"StatLean.PointEstimation.IsUnbiased","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
     {"id":"StatLean.PointEstimation.MemEstL2","label":"MemEstL2","full":"StatLean.PointEstimation.MemEstL2","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
     {"id":"ProbabilityTheory.variance","label":"variance","full":"ProbabilityTheory.variance","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Moments.Variance"},
@@ -20,7 +20,7 @@
     {"id":"Real.normedCommRing","label":"normedCommRing","full":"Real.normedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"SeminormedAddGroup.toContinuousENorm","label":"toContinuousENorm","full":"SeminormedAddGroup.toContinuousENorm","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Continuity"},
     {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
-    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"}
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.IsUMVU","target":"MeasurableSpace"},

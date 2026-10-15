@@ -186,7 +186,7 @@ private lemma integral_arm_eq_of_ignorable [IsProbabilityMeasure μ] {y : Ω →
     (hi : Integrable y μ) {x : 𝒳} (hcell : μ (cell X x) ≠ 0) {z : Bool}
     (harm : (μ[|cell X x]) {ω | Z ω = z} ≠ 0) :
     ∫ ω, y ω ∂(μ[|armCell Z X z x]) = ∫ ω, y ω ∂(μ[|cell X x]) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
   have hzm : MeasurableSet {ω | Z ω = z} := hZ (measurableSet_singleton z)
   have hcc : (μ[|cell X x])[|{ω | Z ω = z}] = μ[|armCell Z X z x] := by
@@ -254,7 +254,6 @@ theorem att_eq_sub_sum_cellMean [IsProbabilityMeasure μ]
       = ∫ ω, obs Z y1 y0 ω ∂(μ[|treatedEvent Z])
         - ∑ x : 𝒳, ((μ[|treatedEvent Z]) (cell X x)).toReal
             * cellMean μ Z X (obs Z y1 y0) false x := by
-  haveI : IsProbabilityMeasure (μ[|treatedEvent Z]) := cond_isProbabilityMeasure hT
   have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
   have hobsT : ∫ ω, obs Z y1 y0 ω ∂(μ[|treatedEvent Z])
       = ∫ ω, y1 ω ∂(μ[|treatedEvent Z]) := by
@@ -514,7 +513,7 @@ private lemma measureReal_cell_inter_control [IsFiniteMeasure μ] (hZ : Measurab
   have hsplit : μ (cell X x ∩ treatedEvent Z) + μ (cell X x ∩ {ω | Z ω = false})
       = μ (cell X x) := by
     rw [hdiff]
-    exact measure_inter_add_diff _ hTm
+    exact measure_inter_add_sdiff _ hTm
   have h2 : (μ (cell X x ∩ treatedEvent Z)).toReal
       + (μ (cell X x ∩ {ω | Z ω = false})).toReal = (μ (cell X x)).toReal := by
     rw [← ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _), hsplit]
@@ -540,7 +539,7 @@ private lemma integral_propensity_comp [IsProbabilityMeasure μ] (hZ : Measurabl
   refine Finset.sum_congr rfl fun x _ => ?_
   rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
   · simp [h0]
-  · haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
+  · have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
     have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
     congr 1
     have hcongr : ∫ ω, propensity μ Z X (X ω) ∂(μ[|cell X x])
@@ -581,7 +580,6 @@ theorem weightedATE_propensity [IsProbabilityMeasure μ]
   have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
   have hTR : (μ (treatedEvent Z)).toReal ≠ 0 := by
     simp [ENNReal.toReal_eq_zero_iff, hT, measure_ne_top μ _]
-  haveI : IsProbabilityMeasure (μ[|treatedEvent Z]) := cond_isProbabilityMeasure hT
   have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
   have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
   -- Strong ignorability of the pair gives ignorability of the individual effect.
@@ -654,7 +652,6 @@ theorem weightedATE_one_sub_propensity [IsProbabilityMeasure μ]
   have hCm : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
   have hCR : (μ {ω | Z ω = false}).toReal ≠ 0 := by
     simp [ENNReal.toReal_eq_zero_iff, hC, measure_ne_top μ _]
-  haveI : IsProbabilityMeasure (μ[|{ω | Z ω = false}]) := cond_isProbabilityMeasure hC
   have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
   have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
   have hig : Ignorable μ Z (fun ω => y1 ω - y0 ω) X := fun x =>

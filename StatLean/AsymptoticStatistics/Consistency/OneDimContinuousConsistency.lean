@@ -106,11 +106,11 @@ theorem oneDim_continuous_zEstimator_consistent
       {ω | η ≤ ‖Ψn n ω (θ₀ - δ) - Ψ (θ₀ - δ)‖}
       ∪ {ω | η ≤ ‖Ψn n ω (θ₀ + δ) - Ψ (θ₀ + δ)‖} := by
     intro n ω hω
-    simp only [Set.mem_setOf_eq] at hω
+    simp only [Set.mem_ofPred_eq] at hω
     by_contra hcon
     rw [Set.mem_union, not_or] at hcon
     obtain ⟨h1, h2⟩ := hcon
-    simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at h1 h2
+    simp only [Set.mem_ofPred_eq, Real.norm_eq_abs, not_le] at h1 h2
     rw [abs_lt] at h1 h2
     -- Strict sign change of `Ψn` across `[θ₀−δ, θ₀+δ]`.
     have hsign_lo : Ψn n ω (θ₀ - δ) < 0 := by linarith [hbound_lo, h1.2, hη]
@@ -136,7 +136,7 @@ theorem oneDim_continuous_zEstimator_consistent
       + P {ω | η ≤ ‖Ψn n ω (θ₀ + δ) - Ψ (θ₀ + δ)‖}) atTop (𝓝 0) := by
     simpa using T_lo.add T_hi
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-    (Eventually.of_forall fun _ => zero_le _) (Eventually.of_forall h_meas_bd)
+    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall h_meas_bd)
 
 /-- **`Θ = ℝ` specialization** of `oneDim_continuous_zEstimator_consistent`: interiority
 of `θ₀` is automatic (`Set.univ ∈ 𝓝 θ₀`), each `Ψn n ω` is continuous on all of `ℝ`,

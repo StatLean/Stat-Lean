@@ -3,6 +3,16 @@ import Mathlib.Data.Nat.Find
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 
+/-!
+# A fixed scale from antitone null diagonals
+
+Let `L : ℕ → ℝ → ℝ≥0∞` satisfy `L n (δ n) → 0` along every positive antitone sequence
+`δ n → 0`. Then `exists_pos_fixed_scale_eventually_lt_of_antitone_diagonal` gives, for every
+`c > 0`, a fixed `r > 0` with `L n r < c` for all large `n`. The proof is by contradiction: if
+each scale `1 / (m + 1)` fails infinitely often, the failures splice into one positive antitone
+null sequence `δ` along which `L n (δ n)` does not tend to `0`.
+-/
+
 namespace AsymptoticStatistics.ForMathlib
 
 open Filter Topology

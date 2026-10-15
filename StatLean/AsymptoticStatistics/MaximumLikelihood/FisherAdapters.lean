@@ -96,16 +96,16 @@ lemma fisherInformation_eq_inner_fisherInformationMatrix
       ring
     _ = ∑ i, ∫ x, ∑ j, (h.ofLp i * h.ofLp j) *
           ((⟪e i, ℓ x⟫ * ⟪e j, ℓ x⟫) * M.density θ₀ x) ∂μ := by
-      apply integral_finset_sum
+      apply integral_finsetSum
       intro i _
-      apply integrable_finset_sum
+      apply integrable_finsetSum
       intro j _
       exact hterm i j
     _ = ∑ i, ∑ j, ∫ x, (h.ofLp i * h.ofLp j) *
           ((⟪e i, ℓ x⟫ * ⟪e j, ℓ x⟫) * M.density θ₀ x) ∂μ := by
       apply Finset.sum_congr rfl
       intro i _
-      apply integral_finset_sum
+      apply integral_finsetSum
       intro j _
       exact hterm i j
     _ = ∑ i, h.ofLp i * ∑ j,

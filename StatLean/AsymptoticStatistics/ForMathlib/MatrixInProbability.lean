@@ -43,7 +43,7 @@ theorem matrixInv_tendstoInProb_of_det_ne_zero
   have hsub : ∀ n, {ξ | ε ≤ ‖(Vhat n ξ)⁻¹ - V0⁻¹‖}
       ⊆ {ξ | δ ≤ ‖Vhat n ξ - V0‖} := by
     intro n ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ ⊢
+    simp only [Set.mem_ofPred_eq] at hξ ⊢
     by_contra hsmall
     have hdist : dist (Vhat n ξ) V0 < δ := by
       simpa only [dist_eq_norm] using (not_le.mp hsmall)
@@ -53,7 +53,7 @@ theorem matrixInv_tendstoInProb_of_det_ne_zero
     exact (not_lt_of_ge hξ) hnorm
   have hVhat_coords : ∀ n, Measurable (fun ξ => Matrix.of.symm (Vhat n ξ)) := by
     intro n
-    exact measurable_pi_lambda _ fun i => measurable_pi_lambda _ fun j => hVhat_meas n i j
+    exact Measurable.of_eval fun i => Measurable.of_eval fun j => hVhat_meas n i j
   have hnorm_cont : Continuous (fun W : Fin k → Fin k → ℝ => ‖Matrix.of W - V0‖) := by
     apply Continuous.norm
     refine continuous_matrix fun i j => ?_
@@ -109,7 +109,7 @@ theorem matrixApply_oP_of_tendstoInProbZero_isBoundedInProb
     by_cases hXbig : M < ‖X n ξ‖
     · exact Or.inl hXbig
     · refine Or.inr ?_
-      simp only [Set.mem_setOf_eq] at hξ ⊢
+      simp only [Set.mem_ofPred_eq] at hξ ⊢
       have hXK : ‖X n ξ‖ ≤ K := (not_lt.mp hXbig).trans hMK
       have happ :
           ‖Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (A n ξ) (X n ξ)‖

@@ -162,6 +162,7 @@ section GrowingK
 
 variable {Ω 𝓧 : Type*} [MeasurableSpace Ω] [MeasurableSpace 𝓧]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- **Helly–Bray / Lévy CDF inversion on the line.** If the distribution functions of a
 sequence of probability measures on `ℝ` converge at *every* point to the distribution
 function of a probability measure, then the measures converge weakly.
@@ -199,7 +200,7 @@ private lemma weakConverges_of_tendsto_cdf {μs : ℕ → Measure ℝ} {ν : Mea
   have hdiff : ∀ (m : Measure ℝ), IsProbabilityMeasure m → ∀ a b : ℝ, a ≤ b →
       (m (Set.Ioc a b)).toReal = (m (Set.Iic b)).toReal - (m (Set.Iic a)).toReal := by
     intro m hm a b hab
-    haveI := hm
+    have := hm
     have hun : Set.Iic a ∪ Set.Ioc a b = Set.Iic b := Set.Iic_union_Ioc_eq_Iic hab
     have hsplit := measure_union (μ := m) (s₁ := Set.Iic a) (s₂ := Set.Ioc a b)
       (Set.Iic_disjoint_Ioc (le_refl a)) measurableSet_Ioc
@@ -211,7 +212,7 @@ private lemma weakConverges_of_tendsto_cdf {μs : ℕ → Measure ℝ} {ν : Mea
     rw [← NNReal.tendsto_coe]
     simp only [hμs', hν', ← ProbabilityMeasure.measureReal_eq_coe_coeFn,
       ProbabilityMeasure.coe_mk, MeasureTheory.Measure.real]
-    rw [hdiff ν inferInstance a b hab.le]
+    erw [hdiff ν inferInstance a b hab.le]
     refine Tendsto.congr' ?_ ((hcdf b).sub (hcdf a))
     filter_upwards with n
     exact (hdiff (μs n) (hμs n) a b hab.le).symm
@@ -303,7 +304,7 @@ private noncomputable def psiVecK {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : �
 
 private lemma measurable_psiVecK {k : ℕ} {ψ : Fin k → 𝓧 → ℝ} (hψ : ∀ j, Measurable (ψ j)) :
     Measurable (psiVecK ψ) :=
-  (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψ)
+  (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (Measurable.of_eval hψ)
 
 private lemma inner_eucl_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
     ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
@@ -341,13 +342,13 @@ private lemma scoreLaw_facts {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasu
     (memLp_two_iff_integrable_sq (hψmeas i).aestronglyMeasurable).2 (hsqint i)
   have hψint : ∀ i, Integrable (ψ i) P₀ := fun i => (hψL2 i).integrable one_le_two
   have hψψint : ∀ i j, Integrable (fun x => ψ i x * ψ j x) P₀ := fun i j => by
-    simpa using (hψL2 i).integrable_mul (hψL2 j)
+    simpa using! (hψL2 i).integrable_mul (hψL2 j)
   -- the third-moment domination
   have hdom : ∀ x : 𝓧, ‖psiVecK ψ x‖ ^ 3 ≤ Real.sqrt (k : ℝ) * ∑ j, |ψ j x| ^ 3 := by
     intro x
     exact norm_cube_le_sqrt_card_mul (fun j => ψ j x)
   have hRint : Integrable (fun x => Real.sqrt (k : ℝ) * ∑ j, |ψ j x| ^ 3) P₀ :=
-    (integrable_finset_sum _ (fun j _ => hthirdint j)).const_mul _
+    (integrable_finsetSum _ (fun j _ => hthirdint j)).const_mul _
   have hcubeint : Integrable (fun x => ‖psiVecK ψ x‖ ^ 3) P₀ := by
     refine hRint.mono' ((hgmeas.norm.pow_const 3).aestronglyMeasurable) ?_
     filter_upwards with x
@@ -359,7 +360,7 @@ private lemma scoreLaw_facts {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasu
       fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ).aestronglyMeasurable]
     have hpt : (fun x => ⟪u, psiVecK ψ x⟫_ℝ) = (fun x => ∑ j, u j * ψ j x) := by
       funext x; exact inner_psiVecK ψ u x
-    rw [hpt, integral_finset_sum _ (fun j _ => (hψint j).const_mul (u j))]
+    rw [hpt, integral_finsetSum _ (fun j _ => (hψint j).const_mul (u j))]
     simp_rw [integral_const_mul, hcentred, mul_zero, Finset.sum_const_zero]
   · intro u v
     rw [integral_map hgmeas.aemeasurable (by fun_prop : Continuous
@@ -369,24 +370,24 @@ private lemma scoreLaw_facts {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasu
       funext x
       rw [inner_psiVecK, inner_psiVecK, Finset.sum_mul_sum]
       refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => by ring))
-    rw [hpt, integral_finset_sum _
-      (fun i _ => integrable_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))]
+    rw [hpt, integral_finsetSum _
+      (fun i _ => integrable_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))]
     have hRHS : ⟪u, v⟫_ℝ = ∑ i, u i * v i := inner_eucl_sum u v
     rw [hRHS]
     refine Finset.sum_congr rfl (fun i _ => ?_)
-    rw [integral_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
+    rw [integral_finsetSum _ (fun j _ => (hψψint i j).const_mul (u i * v j))]
     simp_rw [integral_const_mul, hortho i]
     rw [Finset.sum_eq_single i
-      (fun j _ hji => by rw [if_neg (Ne.symm hji), mul_zero])
+      (fun j _ hji => by rw [ite_eq_right (Ne.symm hji), mul_zero])
       (fun hi => absurd (Finset.mem_univ i) hi)]
-    rw [if_pos rfl, mul_one]
+    rw [ite_eq_left rfl, mul_one]
   · rw [integrable_map_measure ((by fun_prop : Continuous
       fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3)).aestronglyMeasurable hgmeas.aemeasurable]
     exact hcubeint
   · rw [integral_map hgmeas.aemeasurable ((by fun_prop : Continuous
       fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3)).aestronglyMeasurable]
     refine le_trans (integral_mono hcubeint hRint (fun x => hdom x)) ?_
-    rw [integral_const_mul, integral_finset_sum _ (fun j _ => hthirdint j)]
+    rw [integral_const_mul, integral_finsetSum _ (fun j _ => hthirdint j)]
     refine mul_le_mul_of_nonneg_left ?_ (Real.sqrt_nonneg _)
     calc (∑ j, ∫ x, |ψ j x| ^ 3 ∂P₀) ≤ ∑ _j : Fin k, B :=
           Finset.sum_le_sum (fun j _ => hthird j)
@@ -400,7 +401,7 @@ private noncomputable def scoreVecK {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X
 private lemma smoothStat_eq_norm_sq {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧)
     (ω : Ω) : smoothStat ψ X ω = ‖scoreVecK ψ X ω‖ ^ 2 := by
   rw [scoreVecK, EuclideanSpace.norm_eq, Real.sq_sqrt (Finset.sum_nonneg fun j _ => sq_nonneg _)]
-  exact Finset.sum_congr rfl fun j _ => by simp [smoothStat, Real.norm_eq_abs, sq_abs]
+  exact Finset.sum_congr rfl fun j _ => by simp [Real.norm_eq_abs, sq_abs]
 
 private lemma scoreVecK_eq_smul_sum {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧)
     (ω : Ω) :
@@ -417,7 +418,7 @@ private lemma measurable_scoreVecK {n k : ℕ} {ψ : Fin k → 𝓧 → ℝ} {X 
     (hψmeas : ∀ j, Measurable (ψ j)) (hX : ∀ i, Measurable (X i)) :
     Measurable (scoreVecK ψ X) := by
   have hg : Measurable fun ω => (fun j => smoothScore ψ X j ω) :=
-    measurable_pi_lambda _ fun j => by
+    Measurable.of_eval fun j => by
       simp only [smoothScore]
       exact (Finset.univ.measurable_sum fun i _ => (hψmeas j).comp (hX i)).div measurable_const
   exact (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp hg
@@ -432,16 +433,14 @@ private lemma law_scoreVecK {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeas
           (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) := by
   classical
   have hgmeas : Measurable (psiVecK ψ) := measurable_psiVecK hψmeas
-  haveI : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
-    Measure.isProbabilityMeasure_map hgmeas.aemeasurable
   set Ψ : (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
     fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hΨ
-  have hΨcont : Continuous Ψ :=
-    (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+  have hΨcont : Continuous Ψ := by
+    fun_prop
   have hXmeas : Measurable (fun ω (i : Fin n) => X i ω) :=
-    measurable_pi_lambda _ (fun i => hX i)
+    Measurable.of_eval (fun i => hX i)
   have hpsimeas : Measurable (fun (d : Fin n → 𝓧) (i : Fin n) => psiVecK ψ (d i)) :=
-    measurable_pi_lambda _ (fun i => hgmeas.comp (measurable_pi_apply i))
+    Measurable.of_eval (fun i => hgmeas.comp (measurable_pi_apply i))
   have hpiX : P.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => P₀) := by
     rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX i).aemeasurable)).1 hindep]
     congr 1; funext i; exact hlaw i
@@ -475,7 +474,7 @@ private lemma gaussian_ball_eq_chiSquared {k : ℕ} (hk : 0 < k) (t : ℝ) :
   rw [← htarget, Measure.map_apply hq_cont.measurable measurableSet_Iic]
   congr 1
   ext z
-  simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq, hqval]
+  simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq, hqval]
 
 /-- The distribution function of the standardised chi-squared law. -/
 private lemma chiSquared_standardized_Iic {k : ℕ} (hk : 0 < k) (x : ℝ) :
@@ -526,8 +525,8 @@ private lemma cdf_close {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure 
       ≤ C * ((Real.sqrt (k : ℝ) * ((k : ℝ) * B)) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
   classical
   have hgmeas : Measurable (psiVecK ψ) := measurable_psiVecK hψmeas
-  haveI hνprob : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
-    Measure.isProbabilityMeasure_map hgmeas.aemeasurable
+  have hνprob : IsProbabilityMeasure (P₀.map (psiVecK ψ)) :=
+    (by infer_instance)
   obtain ⟨hmean, hcov, hβint, hβle⟩ :=
     scoreLaw_facts (B := B) hψmeas hortho hcentred hthirdint hthird
   set t : ℝ := (k : ℝ) + x * Real.sqrt (2 * (k : ℝ)) with ht
@@ -539,17 +538,17 @@ private lemma cdf_close {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure 
         (Set.Iic x)
       = ((Measure.pi fun _ : Fin n => P₀.map (psiVecK ψ)).map
           fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) {z | ‖z‖ ^ 2 ≤ t} := by
-    rw [Measure.map_apply ((hSmeas.sub measurable_const).div measurable_const)
+    erw [Measure.map_apply ((hSmeas.sub measurable_const).div measurable_const)
       measurableSet_Iic]
     have hset : (fun ω => (smoothStat ψ X ω - (k : ℝ)) / Real.sqrt (2 * (k : ℝ)))
           ⁻¹' Set.Iic x
         = (scoreVecK ψ X) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} := by
       ext ω
-      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq, div_le_iff₀ hsk,
+      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_ofPred_eq, div_le_iff₀ hsk,
         ← smoothStat_eq_norm_sq]
       rw [ht]
       constructor <;> intro hh <;> linarith
-    rw [hset, ← Measure.map_apply (measurable_scoreVecK hψmeas hX) hball,
+    erw [hset, ← Measure.map_apply (measurable_scoreVecK hψmeas hX) hball,
       law_scoreVecK hψmeas hX hindep hlaw]
   rw [hcdf, ← gaussian_ball_eq_chiSquared hk t]
   refine le_trans (hBE k n (P₀.map (psiVecK ψ)) t hn hk hνprob hmean hcov hβint) ?_
@@ -636,10 +635,10 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
         / Real.sqrt (2 * (kseq n : ℝ))) := fun n =>
     ((measurable_smoothStat (fun j => hψmeas (j : ℕ)) (hX n)).sub
       measurable_const).div measurable_const
-  haveI hμprob : ∀ n : ℕ, IsProbabilityMeasure ((P n).map fun ω =>
+  have hμprob : ∀ n : ℕ, IsProbabilityMeasure ((P n).map fun ω =>
       (smoothStat (fun j : Fin (kseq n) => ψ (j : ℕ)) (X n) ω - (kseq n : ℝ))
         / Real.sqrt (2 * (kseq n : ℝ))) := fun n =>
-    Measure.isProbabilityMeasure_map (hmapmeas n).aemeasurable
+    (by infer_instance)
   refine weakConverges_of_tendsto_cdf ?_
   intro x
   -- (1) the standardised chi-squared distribution function converges to `Φ`
@@ -647,19 +646,19 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
     else (chiSquared k).map (fun s => (s - (k : ℝ)) / Real.sqrt (2 * (k : ℝ))) with hρ
   have hρeq : ∀ k : ℕ, 0 < k →
       ρ k = (chiSquared k).map (fun s => (s - (k : ℝ)) / Real.sqrt (2 * (k : ℝ))) := by
-    intro k hk; simp only [hρ, if_neg hk.ne']
+    intro k hk; simp only [hρ, ite_eq_right hk.ne']
   have hρprob : ∀ k, IsProbabilityMeasure (ρ k) := by
     intro k
     rcases Nat.eq_zero_or_pos k with rfl | hk
-    · simp only [hρ, if_pos rfl]; infer_instance
-    · haveI : NeZero k := ⟨hk.ne'⟩
+    · simp only [hρ, ite_eq_left rfl]; infer_instance
+    · have : NeZero k := ⟨hk.ne'⟩
       rw [hρeq k hk]
-      exact Measure.isProbabilityMeasure_map (by fun_prop)
+      exact (by infer_instance)
   set ρs : ℕ → ProbabilityMeasure ℝ := fun k => ⟨ρ k, hρprob k⟩ with hρs
   set ν' : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, inferInstance⟩ with hν'
-  haveI hnoatom : NoAtoms (ν' : Measure ℝ) := by
-    change NoAtoms (gaussianReal 0 1)
-    exact noAtoms_gaussianReal one_ne_zero
+  have hnoatom : NullSingletonClass (ν' : Measure ℝ) := by
+    change NullSingletonClass (gaussianReal 0 1)
+    exact nullSingletonClass_gaussianReal one_ne_zero
   have htend : Tendsto ρs atTop (𝓝 ν') := by
     rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
     intro f
@@ -675,7 +674,7 @@ theorem smoothStat_largeK_weakConverges_gaussian {Ω 𝓧 : Type*} [MeasurableSp
   have hportR : Tendsto (fun k => (ρ k (Set.Iic x)).toReal) atTop
       (𝓝 ((gaussianReal 0 1 (Set.Iic x)).toReal)) := by
     have := (ENNReal.tendsto_toReal (measure_ne_top (ν' : Measure ℝ) (Set.Iic x))).comp hport
-    simpa only [hρs, hν', ProbabilityMeasure.coe_mk, Function.comp] using this
+    simpa only [hρs, hν', ProbabilityMeasure.coe_mk, Function.comp] using! this
   have hGk : Tendsto (fun n : ℕ => (ρ (kseq n) (Set.Iic x)).toReal) atTop
       (𝓝 ((gaussianReal 0 1 (Set.Iic x)).toReal)) := hportR.comp hkinf
   have hGlim : Tendsto (fun n : ℕ => (chiSquared (kseq n)

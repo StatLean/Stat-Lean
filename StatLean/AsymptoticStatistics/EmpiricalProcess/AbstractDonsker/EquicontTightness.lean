@@ -239,8 +239,6 @@ theorem marginal_coord_tight (h_clt : IsMarginalCLT F P)
   have hLY_aem : AEMeasurable (L ∘ Y)
       (multivariateGaussian 0 (marginalCovMatrix P ![(f : Ω → ℝ)])) :=
     hcomp.aemeasurable_limit
-  have hν_prob : IsProbabilityMeasure ν := by
-    rw [hν]; exact Measure.isProbabilityMeasure_map hLY_aem
   -- Tail of `ν` vanishes: the closed tails `{x | (m:ℝ) ≤ |x|}` decrease to `∅`.
   set C : ℕ → Set ℝ := fun m => {x : ℝ | (m : ℝ) ≤ |x|} with hC
   have hC_closed : ∀ m, IsClosed (C m) := fun m =>
@@ -248,11 +246,11 @@ theorem marginal_coord_tight (h_clt : IsMarginalCLT F P)
   have hC_meas : ∀ m, MeasurableSet (C m) := fun m => (hC_closed m).measurableSet
   have hC_anti : Antitone C := by
     intro a b hab x hx
-    simp only [hC, Set.mem_setOf_eq] at hx ⊢
+    simp only [hC, Set.mem_ofPred_eq] at hx ⊢
     exact le_trans (by exact_mod_cast hab) hx
   have hC_iInter : ⋂ m, C m = (∅ : Set ℝ) := by
     ext x
-    simp only [hC, Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+    simp only [hC, Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
       not_forall, not_le]
     obtain ⟨m, hm⟩ := exists_nat_gt |x|
     exact ⟨m, hm⟩
@@ -302,8 +300,8 @@ theorem marginal_coord_tight (h_clt : IsMarginalCLT F P)
               (fun i : Fin n => X i.val ξ) (f : Ω → ℝ))) (C M)
         rw [Measure.map_apply (hgmeas n) (hC_meas M)]
         refine measure_mono (fun ξ hξ => ?_)
-        simp only [Set.mem_setOf_eq] at hξ
-        simp only [hC, Set.mem_preimage, Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq] at hξ
+        simp only [hC, Set.mem_preimage, Set.mem_ofPred_eq]
         exact le_of_lt hξ
     _ ≤ ν (C M) := hbridge
     _ ≤ ENNReal.ofReal δ := le_of_lt hM
@@ -338,17 +336,17 @@ theorem marginal_sup_bound_of_clt (h_clt : IsMarginalCLT F P)
   rcases S.eq_empty_or_nonempty with hSe | hSne
   · refine ⟨0, ?_⟩
     have hempty : ∀ n,
-        {ξ | ∃ f ∈ S, (0:ℝ) < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}
+        {ξ | ∃ f ∈ S, (0 : ℝ) < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}
           = (∅ : Set Ξ) := by
       intro n; rw [hSe]; ext ξ; simp
     calc limsup (fun n => μ.outerMeasureStar
-          {ξ | ∃ f ∈ S, (0:ℝ) < |empiricalProcess P n
+          {ξ | ∃ f ∈ S, (0 : ℝ) < |empiricalProcess P n
             (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|}) atTop
         = limsup (fun _ : ℕ => (0 : ℝ≥0∞)) atTop := by
           simp only [hempty]
           rw [outerMeasureStar_eq_measure MeasurableSet.empty, measure_empty]
       _ = 0 := limsup_const 0
-      _ ≤ ENNReal.ofReal ε := zero_le _
+      _ ≤ ENNReal.ofReal ε := zero_le
   -- Per-coordinate threshold for `δ := ε / |S|`.
   set δ : ℝ := ε / (S.card + 1) with hδ_def
   have hδ : 0 < δ := by positivity
@@ -386,7 +384,7 @@ theorem marginal_sup_bound_of_clt (h_clt : IsMarginalCLT F P)
     intro n
     have : U n = ⋃ f ∈ S,
         {ξ | M < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)|} := by
-      ext ξ; simp only [hU_def, Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+      ext ξ; simp only [hU_def, Set.mem_ofPred_eq, Set.mem_iUnion, exists_prop]
     rw [this]
     exact MeasurableSet.biUnion S.countable_toSet (fun f _ => hcoord_meas M f n)
   -- Step 0: the outer measure of the measurable `U n` collapses to `μ (U n)`.
@@ -396,7 +394,7 @@ theorem marginal_sup_bound_of_clt (h_clt : IsMarginalCLT F P)
   have hMge : ∀ f ∈ S, Mfun f ≤ M := fun f hf => Finset.le_sup' (fun g => Mfun g) hf
   have hsubset : ∀ n, U n ⊆ ⋃ f ∈ S, E f n := by
     intro n ξ hξ
-    simp only [hU_def, Set.mem_setOf_eq] at hξ
+    simp only [hU_def, Set.mem_ofPred_eq] at hξ
     obtain ⟨f, hfS, hfgt⟩ := hξ
     simp only [Set.mem_iUnion, exists_prop]
     exact ⟨f, hfS, lt_of_le_of_lt (hMge f hfS) hfgt⟩

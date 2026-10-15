@@ -31,15 +31,15 @@ analogue of I. Castillo and A. W. van der Vaart, "Needles and straw in a haystac
 concentration for possibly sparse sequences," *Ann. Statist.* 40 (2012), 2069–2101, Lemma 5.2.
 
 **Proof formalization notes.** `aveShift` is a genuine `EuclideanSpace ℝ ι`-valued Bochner set
-average `⨍`; its norm bound is `norm_setAverage_le`-style (each `θ − θ*` has norm `≤ r` on the ball).
-The Jensen step uses `ConvexOn.map_average_le` with `Real.convexOn_exp` on the normalized restricted
-prior `(Π B)⁻¹ • Π.restrict B` (the integrand `⟪θ − θ*, y − θ*⟫ − ‖θ − θ*‖²/2` is bounded on the
-ball, so it is integrable). The tail step reduces to the 1-dimensional Gaussian
+average `⨍`; its norm bound is `norm_setAverage_le`-style (each `θ − θ*` has norm `≤ r` on the
+ball). The Jensen step uses `ConvexOn.map_average_le` with `Real.convexOn_exp` on the normalized
+restricted prior `(Π B)⁻¹ • Π.restrict B` (the integrand `⟪θ − θ*, y − θ*⟫ − ‖θ − θ*‖²/2` is bounded
+on the ball, so it is integrable). The tail step reduces to the 1-dimensional Gaussian
 `stdGaussianShift_inner_ge_le` (from `ForMathlib.GaussianShift`) applied to the direction
 `c = aveShift` with variance `‖aveShift‖² ≤ r²`. Edge cases: `Π(B) = 0` collapses the target event
-to `∅`; `aveShift = 0` makes the standardized deviation `+∞` and the tail `0`. `[IsProbabilityMeasure
-π]` is carried because the intended `π` is the DL prior and finiteness of `Π(B)` is needed for the
-Jensen normalization.
+to `∅`; `aveShift = 0` makes the standardized deviation `+∞` and the tail `0`.
+`[IsProbabilityMeasure π]` is carried because the intended `π` is the DL prior and finiteness of
+`Π(B)` is needed for the Jensen normalization.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -114,7 +114,7 @@ lemma dlDenom_ge_jensen (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMea
   rw [dlNumer]
   -- edge case: prior gives zero mass to the ball
   rcases eq_or_ne (π B) 0 with hB0 | hB0
-  · rw [hB0, zero_mul]; exact zero_le _
+  · rw [hB0, zero_mul]; exact zero_le
   have hBtop : π B ≠ ∞ := measure_ne_top π B
   have hm_pos : 0 < π.real B := ENNReal.toReal_pos hB0 hBtop
   -- continuity of the ingredients
@@ -187,7 +187,7 @@ lemma dlDenom_ge_jensen (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMea
     rw [h, ENNReal.div_mul_cancel hB0 hBtop]
     simp_rw [hLR]
   rw [hkey, mul_comm (ENNReal.ofReal (⨍ θ in B, Real.exp (gx θ) ∂π)) (π B)]
-  apply mul_le_mul_left'
+  apply mul_le_mul_right
   apply ENNReal.ofReal_le_ofReal
   -- `A ≤ ⨍_B gx`, then Jensen `exp(⨍_B gx) ≤ ⨍_B exp gx`
   have hA : ⟪aveShift π θstar r, w⟫ - r ^ 2 / 2 ≤ ⨍ θ in B, gx θ ∂π := by
@@ -229,15 +229,15 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
   rcases eq_or_ne (π B) 0 with hB0 | hB0
   · have hEmp : E = ∅ := by
       ext y
-      simp only [hE, hB0, mul_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
-      exact zero_le _
-    rw [hEmp, measure_empty]; exact zero_le _
+      simp only [hE, hB0, mul_zero, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+      exact zero_le
+    rw [hEmp, measure_empty]; exact zero_le
   have hBtop : π B ≠ ∞ := measure_ne_top π B
   -- Jensen ⟹ the event sits inside a Gaussian half-space
   set H := {y : EuclideanSpace ℝ ι | r ^ 2 / 2 ≤ ⟪-c, y - θstar⟫} with hH
   have hsub : E ⊆ H := by
     intro y hy
-    simp only [hE, Set.mem_setOf_eq] at hy
+    simp only [hE, Set.mem_ofPred_eq] at hy
     have hjen := dlDenom_ge_jensen π θstar y hr
     have hlt : π B * ENNReal.ofReal (Real.exp (⟪c, y - θstar⟫ - r ^ 2 / 2))
         < ENNReal.ofReal (Real.exp (-(r ^ 2))) * π B := lt_of_le_of_lt hjen hy
@@ -245,20 +245,20 @@ lemma measure_dlDenom_lt_le (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilit
     have hlt2 := (ENNReal.mul_lt_mul_iff_right hB0 hBtop).mp hlt
     rw [ENNReal.ofReal_lt_ofReal_iff (Real.exp_pos _)] at hlt2
     have hlt3 := Real.exp_lt_exp.mp hlt2
-    simp only [hH, Set.mem_setOf_eq, inner_neg_left]
+    simp only [hH, Set.mem_ofPred_eq, inner_neg_left]
     linarith
   -- degenerate direction: the half-space is empty (`r²/2 ≤ 0` is false)
   rcases eq_or_ne c 0 with hc0 | hc0
   · have hrp : (0 : ℝ) < r ^ 2 / 2 := by have := pow_pos hr 2; linarith
     have hHempty : H = ∅ := by
       ext y
-      simp only [hH, hc0, neg_zero, inner_zero_left, Set.mem_setOf_eq,
+      simp only [hH, hc0, neg_zero, inner_zero_left, Set.mem_ofPred_eq,
         Set.mem_empty_iff_false, iff_false, not_le]
       linarith
     calc (gaussShiftKernel ι θstar) E
         ≤ (gaussShiftKernel ι θstar) H := measure_mono hsub
       _ = 0 := by rw [hHempty, measure_empty]
-      _ ≤ _ := zero_le _
+      _ ≤ _ := zero_le
   · -- genuine Gaussian tail: variance `‖c‖² ≤ r²`
     have hcsq : ‖c‖ ^ 2 ≤ r ^ 2 := by nlinarith [norm_nonneg c, hnorm]
     have hcsq_pos : 0 < ‖c‖ ^ 2 := by positivity

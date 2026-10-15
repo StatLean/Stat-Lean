@@ -133,7 +133,7 @@ private lemma integrable_pow_law (P : Measure Ω) [IsProbabilityMeasure P] {X : 
     Integrable (fun ω => (X ω) ^ k) P := by
   have hg : Integrable (fun x : ℝ => x ^ k) (gaussianReal 0 1) := integrable_pow_gaussian k
   rw [← hlaw] at hg
-  simpa [Function.comp] using
+  simpa [Function.comp] using!
     (integrable_map_measure hg.aestronglyMeasurable hX.aemeasurable).mp hg
 
 /-- Integrability of `X` itself under `P` (the `k = 1` case rewritten). -/
@@ -142,7 +142,7 @@ private lemma coord_integrable_id (P : Measure Ω) [IsProbabilityMeasure P] {X :
     Integrable X P := by
   have hL1 : Integrable (fun y : ℝ => y) (gaussianReal 0 1) := integrable_id_gaussian
   rw [← hlaw] at hL1
-  simpa [Function.comp] using
+  simpa [Function.comp] using!
     (integrable_map_measure hL1.aestronglyMeasurable hX.aemeasurable).mp hL1
 
 /-- `E[X] = 0` via `integral_map` and `integral_id_gaussianReal`. -/
@@ -209,7 +209,7 @@ theorem chiSq_H0_mean (P : Measure Ω) [IsProbabilityMeasure P] (z : Fin n → �
     -- USER-INPUT: each zᵢ ∼ N(0,1); Candès L2 §2.3
     (hlaw : ∀ i, Measure.map (z i) P = gaussianReal 0 1) :
     ∫ ω, ∑ i, (z i ω) ^ 2 ∂P = (n : ℝ) := by
-  rw [integral_finset_sum Finset.univ (fun i _ => integrable_pow_law P (hmeas i) (hlaw i) 2)]
+  rw [integral_finsetSum Finset.univ (fun i _ => integrable_pow_law P (hmeas i) (hlaw i) 2)]
   have hval : ∀ i, ∫ ω, (z i ω) ^ 2 ∂P = 1 := fun i => coord_integral_sq P (hmeas i) (hlaw i)
   simp_rw [hval]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
@@ -273,7 +273,7 @@ theorem chiSq_H1_mean (P : Measure Ω) [IsProbabilityMeasure P] (z : Fin n → �
           (integrable_const ((θ i) ^ 2)) (h0.const_mul (2 * θ i)),
         integral_const, integral_const_mul, hi0, hi2]
     simp
-  rw [integral_finset_sum Finset.univ (fun i _ => hint i)]
+  rw [integral_finsetSum Finset.univ (fun i _ => hint i)]
   simp_rw [hval]
   rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
       nsmul_eq_mul, mul_one]

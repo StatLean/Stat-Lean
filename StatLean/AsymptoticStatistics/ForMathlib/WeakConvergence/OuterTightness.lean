@@ -158,7 +158,7 @@ theorem limsup_outerMeasureStar_preimage_isClosed_le {Ω D : Type*}
     limsup (fun n => (μ n).outerMeasureStar (Xn n ⁻¹' C)) atTop ≤ νD C := by
   -- The bounded continuous approximating sequence `gₖ ↓ 1_C`, coerced to `ℝ`.
   set g : ℕ → (D →ᵇ ℝ) := fun k =>
-    (hC.apprSeq k).comp _ NNReal.isometry_coe.lipschitz with hg
+    (hC.apprSeq k).comp _ NNReal.isometry_coe.lipschitzWith with hg
   have hg_apply : ∀ k x, g k x = (hC.apprSeq k x : ℝ) := fun k x => rfl
   have hg_nonneg : ∀ k x, (0 : ℝ) ≤ g k x := fun k x => by
     rw [hg_apply]; positivity
@@ -284,12 +284,12 @@ theorem limsup_outerMeasureStar_preimage_isClosed_le_of_lipschitz {Ω D : Type*}
     tendsto_one_div_add_atTop_nhds_zero_nat
   -- The bounded-Lipschitz approximating sequence `gₖ ↓ 1_C`, coerced to `ℝ`.
   set g : ℕ → (D →ᵇ ℝ) := fun k =>
-    (thickenedIndicator (hδ_pos k) C).comp _ NNReal.isometry_coe.lipschitz with hg
+    (thickenedIndicator (hδ_pos k) C).comp _ NNReal.isometry_coe.lipschitzWith with hg
   have hg_apply : ∀ k x, g k x = (thickenedIndicator (hδ_pos k) C x : ℝ) := fun k x => rfl
   -- Each `g k` is bounded Lipschitz.
   have hg_lip : ∀ k, ∃ K, LipschitzWith K (g k) := fun k =>
     ⟨1 * (1 / (k + 1 : ℝ)).toNNReal⁻¹,
-      NNReal.isometry_coe.lipschitz.comp (lipschitzWith_thickenedIndicator (hδ_pos k) C)⟩
+      NNReal.isometry_coe.lipschitzWith.comp (lipschitzWith_thickenedIndicator (hδ_pos k) C)⟩
   have hg_nonneg : ∀ k x, (0 : ℝ) ≤ g k x := fun k x => by
     rw [hg_apply]; positivity
   have hg_le_one : ∀ k x, g k x ≤ 1 := fun k x => by
@@ -515,14 +515,14 @@ theorem exists_lipschitz_approx_le {D : Type*} [PseudoMetricSpace D]
   -- `-‖g‖ ≤ F m x`.
   have hFlb : ∀ (m : ℕ) (x : D), -‖g‖ ≤ F m x := by
     intro m x
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     refine le_ciInf (fun y => ?_)
     have : (0 : ℝ) ≤ (m : ℝ) * dist x y := by positivity
     linarith [hg_lb y]
   -- One-sided `m`-Lipschitz estimate: `F m x ≤ F m x' + m·dist x x'`.
   have hFstep : ∀ (m : ℕ) (x x' : D), F m x ≤ F m x' + (m : ℝ) * dist x x' := by
     intro m x x'
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     -- `F m x' + m·dist x x' = (⨅ y, g y + m·dist x' y) + m·dist x x'`; bound `F m x` below it
     -- term-by-term: `F m x ≤ g y + m·dist x y ≤ (g y + m·dist x' y) + m·dist x x'`.
     rw [show F m x' = ⨅ y, g y + (m : ℝ) * dist x' y from rfl]
@@ -565,7 +565,7 @@ theorem exists_lipschitz_approx_le {D : Type*} [PseudoMetricSpace D]
     intro m x; rw [hgm_apply]; exact hFle m x
   · -- Pointwise convergence `gm m x → g x`.
     intro x
-    haveI : Nonempty D := ⟨x⟩
+    have : Nonempty D := ⟨x⟩
     rw [Metric.tendsto_atTop]
     intro ε hε
     -- Work with `ε/2`: continuity gives `δ > 0` with `|g y - g x| < ε/2` for `dist y x < δ`,
@@ -681,7 +681,7 @@ theorem weakConvergesOuter_of_lipschitz_readout {Ω D : Type*} [MeasurableSpace 
     simpa only [norm_neg] using hGm'_norm m
   have hGm_lip : ∀ m, ∃ K, LipschitzWith K (Gm m) := by
     intro m; obtain ⟨K, hK⟩ := hGm'_lip m
-    exact ⟨K, by simpa only [hGmdef] using hK.neg⟩
+    exact ⟨K, by simpa only [hGmdef] using! hK.neg⟩
   have hGm_tendsto : ∀ x, Tendsto (fun m => Gm m x) atTop (𝓝 (g x)) := by
     intro x
     have := (hGm'_tendsto x).neg

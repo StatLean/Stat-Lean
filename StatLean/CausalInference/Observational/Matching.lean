@@ -89,7 +89,7 @@ private lemma cond_treated_ne_zero {x : 𝒳} (hpos : 0 < propensity μ Z X x) :
 private lemma cond_control_ne_zero [IsProbabilityMeasure μ] (hZ : Measurable Z) {x : 𝒳}
     (hcell : μ (cell X x) ≠ 0) (hlt : propensity μ Z X x < 1) :
     (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   have hZt : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
   have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by ext ω; simp
   intro h
@@ -110,7 +110,7 @@ private lemma integral_y0_armCell_true [IsProbabilityMeasure μ]
     (hi0 : Integrable y0 μ) {x : 𝒳} (hcell : μ (cell X x) ≠ 0)
     (harm : (μ[|cell X x]) {ω | Z ω = true} ≠ 0) :
     ∫ ω, y0 ω ∂(μ[|armCell Z X true x]) = ∫ ω, y0 ω ∂(μ[|cell X x]) := by
-  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
   rw [cond_armCell_eq hZ true x hcell]
   exact integral_cond_arm_eq_of_indepFun ((hu x).comp measurable_snd measurable_id)
     (integrable_cond_of hi0) hy0 hZ harm
@@ -161,7 +161,6 @@ theorem att_eq_integral_matched_contrast [IsProbabilityMeasure μ] {j : Ω → �
   set m₀ : 𝒳 → ℝ := cellMean μ Z X (obs Z y1 y0) false with hm₀
   have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
   have hcm : ∀ x : 𝒳, MeasurableSet (cell X x) := fun x => hX (measurableSet_singleton x)
-  haveI hνP : IsProbabilityMeasure ν := cond_isProbabilityMeasure hT
   have hi1ν : Integrable y1 ν := integrable_cond_of hi1
   have hi0ν : Integrable y0 ν := integrable_cond_of hi0
   -- `m₀ ∘ X` is a bounded measurable function: the covariate takes finitely many values.
@@ -198,11 +197,11 @@ theorem att_eq_integral_matched_contrast [IsProbabilityMeasure μ] {j : Ω → �
     rw [integral_eq_sum_cell hX hi0ν, integral_eq_sum_cell hX (hm₀int ν)]
     refine Finset.sum_congr rfl fun x _ => ?_
     -- `integral_eq_sum_cell` prints the cell as `X ⁻¹' {x}`; refold it.
-    show (ν (cell X x)).toReal * ∫ ω, y0 ω ∂(ν[|cell X x])
+    change (ν (cell X x)).toReal * ∫ ω, y0 ω ∂(ν[|cell X x])
       = (ν (cell X x)).toReal * ∫ ω, m₀ (X ω) ∂(ν[|cell X x])
     rcases eq_or_ne (ν (cell X x)) 0 with h | h
     · rw [h]; simp
-    · haveI : IsProbabilityMeasure (ν[|cell X x]) := cond_isProbabilityMeasure h
+    · have : IsProbabilityMeasure (ν[|cell X x]) := cond_isProbabilityMeasure h
       have hconst : ∫ ω, m₀ (X ω) ∂(ν[|cell X x]) = m₀ x := by
         have hae : ∀ᵐ ω ∂(ν[|cell X x]), m₀ (X ω) = m₀ x := by
           filter_upwards [ae_cond_mem (hcm x)] with ω hω

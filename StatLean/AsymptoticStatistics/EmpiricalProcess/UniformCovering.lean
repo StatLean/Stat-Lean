@@ -56,7 +56,7 @@ theorem measure_isProbability
     (Q : FiniteDiscreteProbability Ω) : IsProbabilityMeasure Q.measure := by
   refine ⟨?_⟩
   unfold measure
-  rw [Measure.coe_finset_sum, Finset.sum_apply]
+  rw [Measure.coe_finsetSum, Finset.sum_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply_of_mem,
     Set.mem_univ, smul_eq_mul, mul_one]
   exact_mod_cast Q.weight_sum
@@ -246,7 +246,7 @@ lemma uniformL2CoveringNumber_mono_class
         normalizedL2CoveringNumber Q' G Φ ε) Q)
   by_cases hΦ : Q.l2Seminorm Φ = 0
   · simp [normalizedL2CoveringNumber, hΦ]
-  · simp only [normalizedL2CoveringNumber, if_neg hΦ]
+  · simp only [normalizedL2CoveringNumber, ite_eq_right hΦ]
     refine le_iInf (α := ℕ∞) fun S => le_iInf (α := ℕ∞) fun hS => ?_
     exact iInf_le_of_le S (iInf_le_of_le (fun f hf => hS f (hFG hf)) le_rfl)
 
@@ -264,7 +264,7 @@ lemma uniformL2CoveringNumber_antitone_eps
         normalizedL2CoveringNumber Q' F Φ ε₁) Q)
   by_cases hΦ : Q.l2Seminorm Φ = 0
   · simp [normalizedL2CoveringNumber, hΦ]
-  · simp only [normalizedL2CoveringNumber, if_neg hΦ]
+  · simp only [normalizedL2CoveringNumber, ite_eq_right hΦ]
     refine le_iInf (α := ℕ∞) fun S => le_iInf (α := ℕ∞) fun hS => ?_
     refine iInf_le_of_le S (iInf_le_of_le (fun f hf => ?_) le_rfl)
     obtain ⟨g, hgS, hfg⟩ := hS f hf
@@ -290,7 +290,7 @@ private lemma normalizedL2CoveringNumber_smul_le
   · have hΦscale_ne : Q.l2Seminorm (fun x => |c| * Φ x) ≠ 0 := by
       rw [hΦscale]
       exact mul_ne_zero (abs_ne_zero.mpr hc) hΦ
-    simp only [normalizedL2CoveringNumber, if_neg hΦscale_ne, if_neg hΦ]
+    simp only [normalizedL2CoveringNumber, ite_eq_right hΦscale_ne, ite_eq_right hΦ]
     refine le_iInf (α := ℕ∞) fun S => le_iInf (α := ℕ∞) fun hS => ?_
     let S' := S.image (fun g x => c * g x)
     refine iInf_le_of_le S' (iInf_le_of_le ?_ ?_)

@@ -1,4 +1,5 @@
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Measure.Dirac.Def
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!

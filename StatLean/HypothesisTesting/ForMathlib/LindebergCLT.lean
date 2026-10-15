@@ -1,3 +1,4 @@
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
@@ -120,15 +121,15 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 0: `‖exp (I z) − 1‖ ≤ z` for `z ≥ 0`.
   have hL0 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1‖ ≤ z := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
+    have hInt : (∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I) = Complex.exp (I * ↑z) - 1 := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => he u)
         (hcontI.intervalIntegrable 0 z)]
       simp
     rw [← hInt]
-    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0:ℝ)) (b := z)
+    have hbnd := intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := z)
       (C := 1) (f := fun u => Complex.exp (I * ↑u) * I)
       (fun u _ => by rw [norm_mul, Complex.norm_I, mul_one]; exact le_of_eq (hnorme u))
-    calc ‖∫ u in (0:ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
+    calc ‖∫ u in (0 : ℝ)..z, Complex.exp (I * ↑u) * I‖ ≤ 1 * |z - 0| := hbnd
       _ = z := by rw [sub_zero, abs_of_nonneg hz, one_mul]
   -- Derivative of `A₁ w = exp (I w) − 1 − I w`.
   have hd1 : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w)
@@ -140,12 +141,12 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   -- Level 1: `‖exp (I z) − 1 − I z‖ ≤ z²/2` for `z ≥ 0`.
   have hL1 : ∀ z : ℝ, 0 ≤ z → ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ z ^ 2 / 2 := by
     intro z hz
-    have hInt : (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
+    have hInt : (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1) * I)
         = Complex.exp (I * ↑z) - 1 - I * ↑z := by
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd1 u)
         (hcont1.intervalIntegrable 0 z)]
       simp
-    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0:ℝ)..z, u := by
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z‖ ≤ ∫ u in (0 : ℝ)..z, u := by
       rw [← hInt]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         (continuous_id.intervalIntegrable 0 z)
@@ -172,7 +173,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     rw [heq]
     exact (hd1 u).add (hsq u)
   -- `A₂ z` as an integral of `A₁ · I`.
-  have hA2z : ∀ z : ℝ, (∫ u in (0:ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
+  have hA2z : ∀ z : ℝ, (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u) * I)
       = Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2 := by
     intro z
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd2 u)
@@ -184,13 +185,13 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
       ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖ ≤ min (z ^ 3 / 6) (z ^ 2) := by
     intro z hz
     have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + ↑z * ↑z / 2‖
-        ≤ ∫ u in (0:ℝ)..z, u ^ 2 / 2 := by
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 2 / 2 := by
       rw [← hA2z z]
       refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
         ((by fun_prop : Continuous (fun u : ℝ => u ^ 2 / 2)).intervalIntegrable 0 z)
       rw [norm_mul, Complex.norm_I, mul_one]
       exact hL1 u hu.1.le
-    have hintval : (∫ u in (0:ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 2 / 2) = z ^ 3 / 6 := by
       rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
     refine le_min (hb.trans (le_of_eq hintval)) ?_
     have h1 := hL1 z hz
@@ -209,7 +210,7 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
   rcases le_or_gt 0 y with hy | hy
   · rw [abs_of_nonneg hy]; exact key y hy
   · -- Reflect to `−y ≥ 0` via conjugation.
-    have hz : (0:ℝ) ≤ -y := by linarith
+    have hz : (0 : ℝ) ≤ -y := by linarith
     have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
       rw [← Complex.exp_conj]; congr 1
       simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
@@ -242,7 +243,7 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, norm_mul]
     have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
-      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+      rw [norm_prod]; exact Finset.prod_le_one₀ (fun i _ => norm_nonneg _) hg'
     have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
       calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
             ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
@@ -302,16 +303,16 @@ private lemma tendsto_prod_charFun_lindeberg
   rcases eq_or_ne t 0 with rfl | ht
   · have hone : ∀ n i, charFun (P.map (X n i)) 0 = 1 := by
       intro n i
-      haveI : IsProbabilityMeasure (P.map (X n i)) :=
-        Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      have : IsProbabilityMeasure (P.map (X n i)) :=
+        (by infer_instance)
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     have hR : charFun (gaussianReal 0 1) 0 = 1 := by
       rw [charFun_zero, probReal_univ, Complex.ofReal_one]
     simp only [hone, Finset.prod_const_one, hR]
     exact tendsto_const_nhds
   -- Basic facts about the row entries.
-  have hvnn : ∀ n i, (0:ℝ) ≤ Var[X n i; P] := fun n i => variance_nonneg _ _
-  have hunn : ∀ n i, (0:ℝ) ≤ t ^ 2 * Var[X n i; P] / 2 :=
+  have hvnn : ∀ n i, (0 : ℝ) ≤ Var[X n i; P] := fun n i => variance_nonneg _ _
+  have hunn : ∀ n i, (0 : ℝ) ≤ t ^ 2 * Var[X n i; P] / 2 :=
     fun n i => div_nonneg (mul_nonneg (sq_nonneg t) (hvnn n i)) (by norm_num)
   have hI2 : ∀ n i, Integrable (fun ω => (X n i ω) ^ 2) P := fun n i => (hL2 n i).integrable_sq
   have hI1 : ∀ n i, Integrable (X n i) P := fun n i => (hL2 n i).integrable one_le_two
@@ -359,7 +360,7 @@ private lemma tendsto_prod_charFun_lindeberg
       rw [charFun_apply_real, integral_map (hmeas n i).aemeasurable
         (Continuous.aestronglyMeasurable (by fun_prop))]
       refine integral_congr_ae (ae_of_all _ fun x => ?_)
-      congr 1; push_cast; ring
+      push_cast; ring
     -- The real (variance) part and the vanishing imaginary part.
     have hRp : ∫ ω, (1 - t ^ 2 * (X n i ω) ^ 2 / 2 : ℝ) ∂P = 1 - t ^ 2 * Var[X n i; P] / 2 := by
       rw [integral_sub (integrable_const 1) (((hI2 n i).const_mul (t ^ 2)).div_const 2),
@@ -392,7 +393,7 @@ private lemma tendsto_prod_charFun_lindeberg
         - (1 + Complex.I * ↑(t * X n i ω) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)‖ ≤ g ω := by
       intro ω
       refine (norm_cexp_sub_taylor_le (t * X n i ω)).trans ?_
-      have hnn0 : (0:ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
+      have hnn0 : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
         mul_nonneg (div_nonneg (mul_nonneg (pow_nonneg (abs_nonneg t) 3) hε.le) (by norm_num))
           (sq_nonneg _)
       by_cases hω : ε < |X n i ω|
@@ -423,12 +424,12 @@ private lemma tendsto_prod_charFun_lindeberg
   -- Uniform asymptotic negligibility of the row variances.
   have hsmall : ∀ c : ℝ, 0 < c → ∀ᶠ n in atTop, ∀ i, Var[X n i; P] ≤ c := by
     intro c hc
-    have hεpos : (0:ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
+    have hεpos : (0 : ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
     have hε2 : Real.sqrt (c / 2) ^ 2 = c / 2 := Real.sq_sqrt (by linarith)
     set ε := Real.sqrt (c / 2) with hεdef
     have hSlt : ∀ᶠ n in atTop,
         ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P ≤ c / 2 :=
-      (hlin ε hεpos).eventually_le_const (show (0:ℝ) < c / 2 by linarith)
+      (hlin ε hεpos).eventually_le_const (show (0 : ℝ) < c / 2 by linarith)
     filter_upwards [hSlt] with n hn i
     have hsm := hset ε n i
     have hdecomp : Var[X n i; P]
@@ -443,14 +444,14 @@ private lemma tendsto_prod_charFun_lindeberg
           ≤ ∫ ω in {ω | ε < |X n i ω|}ᶜ, ε ^ 2 ∂P := by
             refine setIntegral_mono_on ((hI2 n i).integrableOn) integrableOn_const hsm.compl
               (fun ω hω => ?_)
-            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+            simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt] at hω
             rw [← sq_abs (X n i ω)]
             exact pow_le_pow_left₀ (abs_nonneg _) hω 2
         _ ≤ ∫ _ω, ε ^ 2 ∂P :=
             setIntegral_le_integral (integrable_const _) (ae_of_all _ fun _ => by positivity)
         _ = ε ^ 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
     rw [hdecomp]; linarith
-  have ht2 : (0:ℝ) < t ^ 2 := by positivity
+  have ht2 : (0 : ℝ) < t ^ 2 := by positivity
   -- Eventually every row term satisfies `uᵢ = t²σᵢ²/2 ≤ 1`.
   have hev1 : ∀ᶠ n in atTop, ∀ i, t ^ 2 * Var[X n i; P] / 2 ≤ 1 := by
     filter_upwards [hsmall (2 / t ^ 2) (by positivity)] with n hn i
@@ -555,10 +556,10 @@ private lemma tendsto_prod_charFun_lindeberg
     set ε : ℝ := δ / (|t| ^ 3 + 1) with hεdef
     have hεpos : 0 < ε := by rw [hεdef]; exact div_pos hδ (by positivity)
     have hle : |t| ^ 3 * ε ≤ δ := by
-      have h0 : (0:ℝ) < |t| ^ 3 + 1 := by positivity
+      have h0 : (0 : ℝ) < |t| ^ 3 + 1 := by positivity
       rw [hεdef, ← mul_div_assoc, div_le_iff₀ h0]; nlinarith [abs_nonneg t, hδ.le]
     have hVarlt : ∀ᶠ n in atTop, ∑ i, Var[X n i; P] ≤ 2 :=
-      (hvar.eventually_lt_const (by norm_num : (1:ℝ) < 2)).mono fun n h => h.le
+      (hvar.eventually_lt_const (by norm_num : (1 : ℝ) < 2)).mono fun n h => h.le
     have hLinlt : ∀ᶠ n in atTop,
         t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P < δ / 3 := by
       have hlim : Tendsto (fun n => t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P)
@@ -567,7 +568,7 @@ private lemma tendsto_prod_charFun_lindeberg
     filter_upwards [hev1, hVarlt, hLinlt] with n hn1 hn2 hn3
     -- telescoping
     have hpm : ∀ i, IsProbabilityMeasure (P.map (X n i)) := fun i =>
-      Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      (by infer_instance)
     have htel := norm_prod_sub_prod_le (𝕜 := ℂ) Finset.univ
       (fun i => charFun (P.map (X n i)) t)
       (fun i => ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ))
@@ -584,7 +585,7 @@ private lemma tendsto_prod_charFun_lindeberg
       exact Finset.sum_le_sum fun i _ => hterm ε hεpos n i
     refine hsum2.trans ?_
     have hterm1 : |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P] ≤ δ / 3 := by
-      have hnn : (0:ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
+      have hnn : (0 : ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
       calc |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P]
           ≤ |t| ^ 3 * ε / 6 * 2 := by apply mul_le_mul_of_nonneg_left hn2 hnn
         _ ≤ δ / 3 := by nlinarith [hle, hεpos.le, abs_nonneg t]
@@ -672,7 +673,7 @@ theorem lindeberg_clt_of_bounded {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) 
       refine Finset.sum_eq_zero fun i _ => ?_
       have hempty : {ω | ε < |X n i ω|} = (∅ : Set Ω) := by
         ext ω
-        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt]
         exact le_trans (hbdd n i ω) hn.le
       rw [hempty]; simp
     exact tendsto_const_nhds.congr' (key.mono fun n hn => hn.symm)
@@ -776,14 +777,14 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
       measurableSet_lt measurable_const (hmeas 0).abs
     have hanti : Antitone fun K : ℕ => {ω | (K : ℝ) < |Y 0 ω|} := by
       intro a b hab ω hω
-      simp only [Set.mem_setOf_eq] at hω ⊢
+      simp only [Set.mem_ofPred_eq] at hω ⊢
       exact lt_of_le_of_lt (by exact_mod_cast hab) hω
     have hint : ∃ K : ℕ, IntegrableOn (fun ω => (Y 0 ω) ^ 2) {ω | (K : ℝ) < |Y 0 ω|} P :=
       ⟨0, hsq0.integrableOn⟩
     have hlim := tendsto_setIntegral_of_antitone hsm hanti hint
     have hempty : ⋂ K : ℕ, {ω | (K : ℝ) < |Y 0 ω|} = ∅ := by
       ext ω
-      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
         not_forall, not_lt]
       obtain ⟨K, hK⟩ := exists_nat_gt |Y 0 ω|
       exact ⟨K, hK.le⟩
@@ -849,12 +850,12 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
           (Eventually.of_forall fun ω => sq_nonneg _) (Eventually.of_forall fun ω hω => ?_)
         -- `{ε < |X n i|} ⊆ {K < |Y i|}`.
         have h1 : ε < |(s n)⁻¹ * w n i| * |Y (↑i : ℕ) ω| := by
-          rw [← abs_mul]; simpa only [hXdef] using hω
+          rw [← abs_mul]; simpa only [hXdef] using! hω
         have h3 : ε < (ε / K) * |Y (↑i : ℕ) ω| :=
           lt_of_lt_of_le h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
-        show (K : ℝ) < |Y (↑i : ℕ) ω|
+        change (K : ℝ) < |Y (↑i : ℕ) ω|
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         have hle : (ε / K) * |Y (↑i : ℕ) ω| ≤ (ε / K) * K :=
           mul_le_mul_of_nonneg_left hcon (by positivity)
         rw [div_mul_cancel₀ ε (ne_of_gt hKpos)] at hle
@@ -1024,11 +1025,11 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
   -- the truncated average
   set S : Ω → ℝ := fun ω => (n : ℝ)⁻¹ * ∑ i, Z i ω with hSdef
   have hSmem : MemLp S 2 P :=
-    (memLp_finset_sum (μ := P) (p := 2) Finset.univ fun i _ => hZmem i).const_mul _
+    (memLp_finsetSum (μ := P) (p := 2) Finset.univ fun i _ => hZmem i).const_mul _
   have hSmean : ∫ ω, S ω ∂P = a := by
     have hint : ∀ i : Fin n, Integrable (Z i) P := fun i => (hZmem i).integrable one_le_two
     rw [hSdef]
-    rw [integral_const_mul, integral_finset_sum _ fun i _ => hint i]
+    rw [integral_const_mul, integral_finsetSum _ fun i _ => hint i]
     simp only [hZmean]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       inv_mul_cancel_left₀ hnR.ne']
@@ -1073,7 +1074,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
     fun i => ((hYint i).sub ((hZmem i).integrable one_le_two)).abs
   have hWint : Integrable W P := by
     refine Integrable.const_mul ?_ _
-    exact integrable_finset_sum _ fun i _ => hWterm i
+    exact integrable_finsetSum _ fun i _ => hWterm i
   have hWnn : ∀ ω, 0 ≤ W ω := by
     intro ω
     have : (0 : ℝ) ≤ ∑ i, |Yn i ω - Z i ω| :=
@@ -1087,7 +1088,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
         funext ω; exact wllnTrunc_sub hK _
       rw [h1, ← hlaw i,
         integral_map (hmeas i).aemeasurable (by fun_prop)]
-    rw [hWdef, integral_const_mul, integral_finset_sum _ fun i _ => hWterm i]
+    rw [hWdef, integral_const_mul, integral_finsetSum _ fun i _ => hWterm i]
     simp only [hterm]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       inv_mul_cancel_left₀ hnR.ne']
@@ -1100,7 +1101,7 @@ private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} 
     by_cases h2 : ε / 3 ≤ W ω
     · exact Or.inr h2
     exfalso
-    push_neg at h1 h2
+    push Not at h1 h2
     have hgap : |(n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω| ≤ W ω := by
       have hrw : (n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω
           = (n : ℝ)⁻¹ * ∑ i, (Yn i ω - Z i ω) := by
@@ -1255,7 +1256,7 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
         = {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Y n i ω - ∫ y, y ∂ν|} := by
     intro n
     ext ω
-    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq]
+    simp only [Set.mem_ofPred_eq, edist_dist, Real.dist_eq]
     exact ENNReal.le_ofReal_iff_toReal_le hetop (abs_nonneg _)
   simp only [hset]
   rw [ENNReal.tendsto_nhds_zero]

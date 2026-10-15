@@ -28,6 +28,8 @@ The definitions `pbar`, `xi`, `qtilde`, `cross`, `Cdom`, `Acoef`, and `rho`
 denote the quantities in this decomposition.
 -/
 
+set_option linter.style.longFile 1900
+
 open MeasureTheory Filter Topology
 open scoped ENNReal
 
@@ -46,6 +48,12 @@ variable {Ω_full Ω_obs : Type*}
   {M : Ω_full → Ω_obs}
   {P_full : Measure Ω_full} [IsProbabilityMeasure P_full]
 
+private lemma integralQMDLimit (γ : QMDPath P_full) :
+    IsQMDLimit γ.curve γ.dominating (γ.score : Ω_full → ℝ) := by
+  apply (isQMDLimit_iff_eLpNorm
+    (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).aestronglyMeasurable).2
+  simpa only [qmdRem] using! γ.qmd_limit
+
 /-! ## Finite equivalent dominating measure -/
 
 /-- **Change of dominating measure.** Multiplication by the square root
@@ -57,8 +65,8 @@ private lemma eLpNorm_sqrt_rnDeriv_toFinite_mul_eq
     (ν : Measure Ω_full) [SigmaFinite ν] {f : Ω_full → ℝ} (hf : Measurable f) :
     eLpNorm (fun ω => Real.sqrt (ν.rnDeriv ν.toFinite ω).toReal * f ω) 2 ν.toFinite
       = eLpNorm f 2 ν := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) (by fun_prop),
+    eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hf.aestronglyMeasurable]
   have htwo : (2 : ℝ≥0∞).toReal = 2 := by norm_num
   rw [htwo]
   congr 1
@@ -93,8 +101,8 @@ private lemma eLpNorm_qmdResidual_toFinite_eq (γ : QMDPath P_full) (t : ℝ) :
         - (t / 2) * (γ.score : Ω_full → ℝ) ω
             * Real.sqrt ((γ.curve 0).rnDeriv γ.dominating ω).toReal)
       2 γ.dominating := by
-  haveI := γ.curve_isProbability t
-  haveI := γ.curve_isProbability 0
+  have := γ.curve_isProbability t
+  have := γ.curve_isProbability 0
   have hscore : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hres : Measurable (fun ω =>
@@ -246,12 +254,12 @@ lemma Acoef_apply (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_f
 lemma Acoef_of_pos (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : 0 < qtilde hM γ 0 ω) :
     Acoef hM γ t ω = cross hM γ t ω / Real.sqrt (qtilde hM γ 0 ω) := by
-  rw [Acoef_apply, if_pos h]
+  rw [Acoef_apply, ite_eq_left h]
 
 lemma Acoef_of_zero (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : ¬ 0 < qtilde hM γ 0 ω) :
     Acoef hM γ t ω = 0 := by
-  rw [Acoef_apply, if_neg h]
+  rw [Acoef_apply, ite_eq_right h]
 
 lemma rho_apply (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full) :
     rho hM γ t ω
@@ -264,12 +272,12 @@ lemma rho_of_pos (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_fu
     (h : 0 < Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) :
     rho hM γ t ω = (Real.sqrt (qtilde hM γ t ω) - Acoef hM γ t ω)
       / (Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) := by
-  rw [rho_apply, if_pos h]
+  rw [rho_apply, ite_eq_left h]
 
 lemma rho_of_zero (hM : Measurable M) (γ : QMDPath P_full) (t : ℝ) (ω : Ω_full)
     (h : ¬ 0 < Real.sqrt (qtilde hM γ t ω) + Acoef hM γ t ω) :
     rho hM γ t ω = 0 := by
-  rw [rho_apply, if_neg h]
+  rw [rho_apply, ite_eq_right h]
 
 /-! ## Auxiliary lemmas -/
 
@@ -280,7 +288,7 @@ theorem coarsen_density_transport (hM : Measurable M) (γ : QMDPath P_full)
     (fun ω => Real.sqrt
         (((γ.curve t).map M).rnDeriv (γ.dominating.map M) (M ω)).toReal)
       =ᵐ[γ.dominating] fun ω => Real.sqrt (qtilde hM γ t ω) := by
-  haveI := γ.curve_isProbability t
+  have := γ.curve_isProbability t
   filter_upwards [toReal_rnDeriv_map (γ.curve_absContinuous t) hM] with ω hω
   exact congrArg Real.sqrt hω
 
@@ -297,12 +305,10 @@ theorem coarsen_bayes_bridge (hM : Measurable M) (γ : QMDPath P_full)
   -- σ-finite side conditions for the `μ`- and `P_full`-trims of `comap M`.
   have hm : MeasurableSpace.comap M ‹MeasurableSpace Ω_obs› ≤ ‹MeasurableSpace Ω_full› :=
     hM.comap_le
-  haveI hσμ : SigmaFinite (γ.dominating.trim hm) :=
+  have hσμ : SigmaFinite (γ.dominating.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
-  haveI hPmap : IsProbabilityMeasure (P_full.map M) :=
-    Measure.isProbabilityMeasure_map hM.aemeasurable
-  haveI hσP : SigmaFinite (P_full.trim hm) :=
+  have hσP : SigmaFinite (P_full.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       P_full hM
   -- `P_full ≪ μ` and the pointwise rnDeriv form of `pbar γ 0`.
@@ -438,11 +444,11 @@ private theorem cross_sq_le_helper (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] (t : ℝ) :
     (fun ω => cross hM γ t ω ^ 2)
       ≤ᵐ[γ.dominating] fun ω => qtilde hM γ t ω * qtilde hM γ 0 ω := by
-  haveI hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
+  have hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous t)
   have hξ0 : MemLp (xi γ 0) 2 γ.dominating :=
@@ -505,8 +511,8 @@ theorem qtil_diff_le (hM : Measurable M) (γ : QMDPath P_full)
       ≤ᵐ[γ.dominating]
         γ.dominating[(fun ω => (xi γ t ω - xi γ 0 ω) ^ 2)
           | MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›] := by
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous t)
   have hξ0 : MemLp (xi γ 0) 2 γ.dominating :=
@@ -572,8 +578,8 @@ theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   -- L²(μ) memberships of `√pₜ`, `√p₀` and `s·√p₀`.
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv
       (γ.curve_absContinuous t)
@@ -583,14 +589,14 @@ theorem condExp_sq_diff_le (hM : Measurable M) (γ : QMDPath P_full)
   have hξdiff : MemLp (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating := hξt.sub hξ0
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   -- The QMD remainder is in L²(μ) (all `t`, not just eventually).
   have hrt : MemLp (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t)
       2 γ.dominating := by
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω)
             - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- Surface `Cdom` and name the three functions. (Do NOT bind the σ-algebra to a
@@ -743,7 +749,7 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
   have hP4 := sq_over_t_le hM γ t
   have hm : MeasurableSpace.comap M ‹MeasurableSpace Ω_obs› ≤ ‹MeasurableSpace Ω_full› :=
     hM.comap_le
-  haveI hσμ : SigmaFinite (γ.dominating.trim hm) :=
+  have hσμ : SigmaFinite (γ.dominating.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
   -- `Cdom ≥ 0`, integrable.
@@ -813,8 +819,8 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
     hCd_int.mono' hg_aesm hg_bound
   -- `r_t ∈ L²(μ)`.
   have hrt_mem : MemLp (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating := by
-    haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-    haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+    have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+    have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
     have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
       (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
     have hξt : MemLp (xi γ t) 2 γ.dominating :=
@@ -824,10 +830,10 @@ theorem integral_second_bracket_bound (hM : Measurable M) (γ : QMDPath P_full)
     have hξdiff : MemLp (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating := hξt.sub hξ0
     have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
       memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-        γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+        γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
     have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-      funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+      funext ω; simp only [qmdRem, xi_apply]; ring
     rw [heq]
     exact hξdiff.sub (hsξ0.const_mul (t / 2))
   -- `∫ r_t² = ‖r_t‖²`.
@@ -929,8 +935,8 @@ theorem second_term_tendsto (γ : QMDPath P_full) :
 eventually). -/
 private lemma memLp_qmdRem (γ : QMDPath P_full) (t : ℝ) :
     MemLp (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating := by
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
@@ -940,17 +946,17 @@ private lemma memLp_qmdRem (γ : QMDPath P_full) (t : ℝ) :
   have hξdiff : MemLp (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating := hξt.sub hξ0
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   have heq : qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
       = fun ω => (xi γ t ω - xi γ 0 ω) - (t / 2) * ((γ.score : Ω_full → ℝ) ω * xi γ 0 ω) := by
-    funext ω; simp only [qmdRem, xi_apply, pbar_apply]; ring
+    funext ω; simp only [qmdRem, xi_apply]; ring
   rw [heq]
   exact hξdiff.sub (hsξ0.const_mul (t / 2))
 
 /-- The unit `L²(μ)`-norm of the square-root density: `‖ξ_t‖_{L²(μ)} = 1`. -/
 private lemma eLpNorm_xi_eq_one (γ : QMDPath P_full) (t : ℝ) :
     eLpNorm (xi γ t) 2 γ.dominating = 1 := by
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
   have hmem : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous t)
   have hint : ∫ ω, xi γ t ω ^ 2 ∂γ.dominating = 1 := by
@@ -971,17 +977,20 @@ private lemma eLpNorm_xi_eq_one (γ : QMDPath P_full) (t : ℝ) :
 private lemma eLpNorm_qmdRem_tendsto (γ : QMDPath P_full) :
     Tendsto (fun t => eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t)
         2 γ.dominating) (𝓝[≠] 0) (𝓝 0) := by
-  have hq : AsymptoticStatistics.ForMathlib.QMDAnalytic.IsQMDLimit γ.curve γ.dominating
-      (γ.score : Ω_full → ℝ) := γ.qmd_limit
-  have hofr : Tendsto (fun t : ℝ => ENNReal.ofReal |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-    have h1 : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-      have hc : Tendsto (fun t : ℝ => |t|) (𝓝 (0:ℝ)) (𝓝 |(0:ℝ)|) := continuous_abs.tendsto (0:ℝ)
+  have hq : Tendsto (fun t => eLpNorm
+      (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating /
+        ENNReal.ofReal |t|) (𝓝[≠] 0) (𝓝 0) := by
+    simpa only [qmdRem] using! γ.qmd_limit
+  have hofr : Tendsto (fun t : ℝ => ENNReal.ofReal |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+    have h1 : Tendsto (fun t : ℝ => |t|) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+      have hc : Tendsto (fun t : ℝ => |t|) (𝓝 (0 : ℝ)) (𝓝 |(0 : ℝ)|) :=
+        continuous_abs.tendsto (0 : ℝ)
       simp only [abs_zero] at hc
       exact hc.mono_left nhdsWithin_le_nhds
-    have := (ENNReal.continuous_ofReal.tendsto (0:ℝ)).comp h1
-    simpa using this
-  have hprod := ENNReal.Tendsto.mul hq (Or.inr (by simp : (0:ℝ≥0∞) ≠ ⊤)) hofr
-    (Or.inr (by simp : (0:ℝ≥0∞) ≠ ⊤))
+    have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp h1
+    simpa using! this
+  have hprod := ENNReal.Tendsto.mul hq (Or.inr (by simp : (0 : ℝ≥0∞) ≠ ⊤)) hofr
+    (Or.inr (by simp : (0 : ℝ≥0∞) ≠ ⊤))
   rw [mul_zero] at hprod
   refine Tendsto.congr' ?_ hprod
   filter_upwards [self_mem_nhdsWithin] with t ht
@@ -994,18 +1003,17 @@ private lemma eLpNorm_qmdRem_tendsto (γ : QMDPath P_full) :
 private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
     Tendsto (fun t => eLpNorm (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   set C₀ : ℝ≥0∞ := eLpNorm (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating with hC₀
   have hC₀_ne : C₀ ≠ ⊤ := hsξ0.eLpNorm_lt_top.ne
   have hterm2 : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ * C₀) (𝓝[≠] 0) (𝓝 0) := by
-    have henorm : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝[≠] (0:ℝ)) (𝓝 0) := by
-      have hc : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝 (0:ℝ)) (𝓝 ‖((0:ℝ) / 2 : ℝ)‖ₑ) :=
-        (continuous_enorm.comp (continuous_id.div_const 2)).tendsto (0:ℝ)
+    have henorm : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝[≠] (0 : ℝ)) (𝓝 0) := by
+      have hc : Tendsto (fun t : ℝ => ‖(t / 2 : ℝ)‖ₑ) (𝓝 (0 : ℝ)) (𝓝 ‖((0 : ℝ) / 2 : ℝ)‖ₑ) :=
+        (continuous_enorm.comp (continuous_id.div_const 2)).tendsto (0 : ℝ)
       simp only [zero_div, enorm_zero] at hc
       exact hc.mono_left nhdsWithin_le_nhds
     have := ENNReal.Tendsto.mul_const henorm (Or.inr hC₀_ne)
@@ -1016,7 +1024,7 @@ private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
     have := (eLpNorm_qmdRem_tendsto γ).add hterm2
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupperlim
-    (Eventually.of_forall (fun t => zero_le _)) ?_
+    (Eventually.of_forall (fun t => zero_le)) ?_
   filter_upwards with t
   have hAESMr := (memLp_qmdRem γ t).aestronglyMeasurable
   have hAESMg : AEStronglyMeasurable
@@ -1026,14 +1034,14 @@ private lemma xi_diff_L2_tendsto (γ : QMDPath P_full) :
       = qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
         + (t / 2) • fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω := by
     funext ω
-    simp only [qmdRem, xi_apply, pbar_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [qmdRem, xi_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   rw [hfun]
   calc eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t
           + (t / 2) • fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating
       ≤ eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating
         + eLpNorm ((t / 2) • fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
-        eLpNorm_add_le hAESMr hAESMg one_le_two
+        eLpNorm_add_le  one_le_two
     _ = eLpNorm (qmdRem γ.curve γ.dominating (γ.score : Ω_full → ℝ) t) 2 γ.dominating
         + ‖(t / 2 : ℝ)‖ₑ * C₀ := by rw [eLpNorm_const_smul]
 
@@ -1045,13 +1053,13 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   have hupperlim : Tendsto
       (fun t => 2 * eLpNorm (fun ω => xi γ t ω - xi γ 0 ω) 2 γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-    have := ENNReal.Tendsto.const_mul (xi_diff_L2_tendsto γ) (Or.inr (by simp : (2:ℝ≥0∞) ≠ ⊤))
+    have := ENNReal.Tendsto.const_mul (xi_diff_L2_tendsto γ) (Or.inr (by simp : (2 : ℝ≥0∞) ≠ ⊤))
     simpa using this
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupperlim
-    (Eventually.of_forall (fun t => zero_le _)) ?_
+    (Eventually.of_forall (fun t => zero_le)) ?_
   filter_upwards with t
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous t)
   have hξ0 : MemLp (xi γ 0) 2 γ.dominating :=
@@ -1068,18 +1076,18 @@ private lemma qtilde_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
       congrFun (condExp_xi_sq_eq_qtilde hM γ 0) ω]
   rw [eLpNorm_congr_ae hae]
   have hb2 : eLpNorm (fun ω => xi γ t ω + xi γ 0 ω) 2 γ.dominating ≤ 2 := by
-    refine le_trans (eLpNorm_add_le hξt.aestronglyMeasurable hξ0.aestronglyMeasurable one_le_two) ?_
+    refine le_trans (eLpNorm_add_le  one_le_two) ?_
     rw [eLpNorm_xi_eq_one, eLpNorm_xi_eq_one]; norm_num
   have hDG : ((fun ω => xi γ t ω ^ 2) - fun ω => xi γ 0 ω ^ 2)
       = (fun ω => xi γ t ω - xi γ 0 ω) • fun ω => xi γ t ω + xi γ 0 ω := by
     funext ω
     change xi γ t ω ^ 2 - xi γ 0 ω ^ 2 = (xi γ t ω - xi γ 0 ω) * (xi γ t ω + xi γ 0 ω)
     ring
-  refine le_trans (eLpNorm_one_condExp_le_eLpNorm _) ?_
+  refine le_trans (eLpNorm_condExp_le_eLpNorm _ le_rfl) ?_
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
-    (hξt.add hξ0).aestronglyMeasurable (hξt.sub hξ0).aestronglyMeasurable) ?_
-  exact le_of_le_of_eq (mul_le_mul_left' hb2 _) (mul_comm _ _)
+    (hξt.sub hξ0).aestronglyMeasurable (hξt.add hξ0).aestronglyMeasurable) ?_
+  exact le_of_le_of_eq (mul_le_mul_right hb2 _) (mul_comm _ _)
 
 /-- `‖cross_t − q̃_0‖_{L¹(μ)} → 0` (condExp contraction + Hölder + `‖ξ₀‖₂ = 1`). -/
 private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
@@ -1087,10 +1095,10 @@ private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     Tendsto (fun t => eLpNorm (fun ω => cross hM γ t ω - qtilde hM γ 0 ω) 1 γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (xi_diff_L2_tendsto γ)
-    (Eventually.of_forall (fun t => zero_le _)) ?_
+    (Eventually.of_forall (fun t => zero_le)) ?_
   filter_upwards with t
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous t)
   have hξ0 : MemLp (xi γ 0) 2 γ.dominating :=
@@ -1110,10 +1118,10 @@ private lemma cross_L1_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     funext ω
     change xi γ t ω * xi γ 0 ω - xi γ 0 ω ^ 2 = (xi γ t ω - xi γ 0 ω) * xi γ 0 ω
     ring
-  refine le_trans (eLpNorm_one_condExp_le_eLpNorm _) ?_
+  refine le_trans (eLpNorm_condExp_le_eLpNorm _ le_rfl) ?_
   rw [hDG]
   refine le_trans (eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2)
-    hξ0.aestronglyMeasurable (hξt.sub hξ0).aestronglyMeasurable) ?_
+    (hξt.sub hξ0).aestronglyMeasurable hξ0.aestronglyMeasurable) ?_
   rw [eLpNorm_xi_eq_one, mul_one]
 
 /-- `0 ≤ ρ_t` a.e. (from `A_sq_le` + `A_nonneg`). -/
@@ -1187,17 +1195,17 @@ private lemma Cdom_eq_zero_of_qtilde_zero (hM : Measurable M) (γ : QMDPath P_fu
   classical
   have hm : MeasurableSpace.comap M ‹MeasurableSpace Ω_obs› ≤ ‹MeasurableSpace Ω_full› :=
     hM.comap_le
-  haveI hσμ : SigmaFinite (γ.dominating.trim hm) :=
+  have hσμ : SigmaFinite (γ.dominating.trim hm) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hξ0 : MemLp (xi γ 0) 2 γ.dominating :=
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous 0)
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   -- `G := {q̃₀ = 0}` is `𝒢`-measurable.
   have hqtSM : StronglyMeasurable[MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›]
       (qtilde hM γ 0) := stronglyMeasurable_condExp
@@ -1259,14 +1267,10 @@ theorem first_term_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     have hq_meas : TendstoInMeasure γ.dominating (fun n => qtilde hM γ (u n)) atTop
         (qtilde hM γ 0) := by
       apply tendstoInMeasure_of_tendsto_eLpNorm (p := 1) (by norm_num)
-        (fun n => integrable_condExp.aestronglyMeasurable)
-        integrable_condExp.aestronglyMeasurable
       exact (qtilde_L1_tendsto hM γ).comp hu
     have hc_meas : TendstoInMeasure γ.dominating (fun n => cross hM γ (u n)) atTop
         (qtilde hM γ 0) := by
       apply tendstoInMeasure_of_tendsto_eLpNorm (p := 1) (by norm_num)
-        (fun n => integrable_condExp.aestronglyMeasurable)
-        integrable_condExp.aestronglyMeasurable
       exact (cross_L1_tendsto hM γ).comp hu
     -- Extract a common a.e.-convergent subsequence `ns₁ ∘ ns₂`.
     obtain ⟨ns₁, hns₁_mono, hns₁_ae⟩ := hq_meas.exists_seq_tendsto_ae
@@ -1308,7 +1312,7 @@ theorem first_term_tendsto (hM : Measurable M) (γ : QMDPath P_full)
               (Real.sqrt (qtilde hM γ (u (ns₁ (ns₂ j))) ω) - Acoef hM γ (u (ns₁ (ns₂ j))) ω)
               / (Real.sqrt (qtilde hM γ (u (ns₁ (ns₂ j))) ω) + Acoef hM γ (u (ns₁ (ns₂ j))) ω))
               atTop (𝓝 0) := by
-            have := hnum.div hden (ne_of_gt hden_pos); simpa using this
+            have := hnum.div hden (ne_of_gt hden_pos); simpa using! this
           refine hratio.congr' ?_
           filter_upwards [hev] with j hj
           exact (rho_of_pos hM γ _ ω hj).symm
@@ -1342,7 +1346,7 @@ theorem first_bracket_tendsto (hM : Measurable M) (γ : QMDPath P_full)
         - t / 2 * (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)
             * Real.sqrt (qtilde hM γ 0 ω)) ^ 2 / t ^ 2 ∂γ.dominating)
       (𝓝[≠] 0) (𝓝 0) := by
-  haveI hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
+  have hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
   -- Upper envelope: `‖r_t‖₂²/t² → 0` (defeq to `qmd_limit_toReal_sq`).
@@ -1355,8 +1359,8 @@ theorem first_bracket_tendsto (hM : Measurable M) (γ : QMDPath P_full)
   filter_upwards [self_mem_nhdsWithin] with t ht
   have htne : t ≠ 0 := ht
   have ht2 : (0 : ℝ) < t ^ 2 := by positivity
-  haveI hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hpt : IsProbabilityMeasure (γ.curve t) := γ.curve_isProbability t
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
     (Lp.stronglyMeasurable (γ.score : Lp ℝ 2 P_full)).measurable
   have hξt : MemLp (xi γ t) 2 γ.dominating :=
@@ -1367,7 +1371,7 @@ theorem first_bracket_tendsto (hM : Measurable M) (γ : QMDPath P_full)
     memLp_qmdRem γ t
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   -- Integrabilities for the conditional-expectation linearity of `r_t·ξ₀`.
   have hu_int : Integrable (fun ω => xi γ t ω * xi γ 0 ω) γ.dominating := hξt.integrable_mul hξ0
   have hw_int : Integrable (fun ω => xi γ 0 ω ^ 2) γ.dominating := hξ0.integrable_sq
@@ -1532,8 +1536,8 @@ private lemma memLp_PiM_sqrt_qtilde0 (hM : Measurable M) (γ : QMDPath P_full)
     [SigmaFinite (γ.dominating.map M)] :
     MemLp (fun ω => (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)
         * Real.sqrt (qtilde hM γ 0 ω)) 2 γ.dominating := by
-  haveI hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
-  haveI hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
+  have hp0 : IsProbabilityMeasure (γ.curve 0) := γ.curve_isProbability 0
+  have hσμ : SigmaFinite (γ.dominating.trim hM.comap_le) :=
     AsymptoticStatistics.ForMathlib.SigmaFiniteTrimComap.sigmaFinite_trim_comap_of_sigmaFinite_map
       γ.dominating hM
   have hscore_meas : Measurable (γ.score : Ω_full → ℝ) :=
@@ -1542,7 +1546,7 @@ private lemma memLp_PiM_sqrt_qtilde0 (hM : Measurable M) (γ : QMDPath P_full)
     AsymptoticStatistics.ForMathlib.RnDerivSqrt.memLp_sqrt_rnDeriv (γ.curve_absContinuous 0)
   have hsξ0 : MemLp (fun ω => (γ.score : Ω_full → ℝ) ω * xi γ 0 ω) 2 γ.dominating :=
     memLp_two_score_mul_sqrt_of_qmd (g := (γ.score : Ω_full → ℝ))
-      γ.curve_isProbability γ.curve_absContinuous hscore_meas γ.qmd_limit
+      γ.curve_isProbability γ.curve_absContinuous hscore_meas (integralQMDLimit γ)
   have hPiM_sm : StronglyMeasurable
       (fun ω => (informationLossOperator hM P_full γ.score : Ω_obs → ℝ) (M ω)) :=
     (Lp.stronglyMeasurable
@@ -1817,7 +1821,7 @@ theorem coarsen_qmd_limit (hM : Measurable M) (γ : QMDPath P_full) :
   have hdom : γ'.dominating = γ.dominating.toFinite :=
     (finiteDominatorRepresentation γ).2.2.1
   have hscore : γ'.score = γ.score := (finiteDominatorRepresentation γ).2.2.2
-  haveI : SigmaFinite (γ'.dominating.map M) := by
+  have : SigmaFinite (γ'.dominating.map M) := by
     rw [hdom]
     infer_instance
   simpa only [hcurve, hdom, hscore] using coarsen_qmd_limit_withMappedSigmaFinite hM γ'

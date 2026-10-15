@@ -40,15 +40,15 @@ Gilbert–Varshamov packing of the `C(d,s)` weight-`s` supports with pairwise in
 `≥ 1`-separated vectors) transports that count to the sparse-vector packing.
 
 **Bibliographic comments.** The packing argument is an instance of the **Gilbert–Varshamov bound**,
-the classical volume/greedy lower bound on the size of a maximal separated code. It originates in two
-independent works: E. N. Gilbert, "A comparison of signalling alphabets," *Bell System Technical
+the classical volume/greedy lower bound on the size of a maximal separated code. It originates in
+two independent works: E. N. Gilbert, "A comparison of signalling alphabets," *Bell System Technical
 Journal* 31 (3), 504–522 (1952); and R. R. Varshamov, "Estimate of the number of signals in error
 correcting codes," *Doklady Akademii Nauk SSSR* 117, 739–741 (1957). The specialization to packing
 `s`-sparse unit vectors (or, equivalently, weight-`s` supports of `[d]` with bounded pairwise
-overlap) is **folklore**: it is a standard textbook synthesis with no single seminal origin, recorded
-e.g. as Wainwright Example 5.8 / Exercise 5.8 and used pervasively in high-dimensional minimax theory.
-The `q`-ary alphabet variant proved here (blocks of size `q = ⌊d/s⌋`) is the routine extension of the
-binary Gilbert–Varshamov code to a non-binary alphabet.
+overlap) is **folklore**: it is a standard textbook synthesis with no single seminal origin,
+recorded e.g. as Wainwright Example 5.8 / Exercise 5.8 and used pervasively in high-dimensional
+minimax theory. The `q`-ary alphabet variant proved here (blocks of size `q = ⌊d/s⌋`) is the routine
+extension of the binary Gilbert–Varshamov code to a non-binary alphabet.
 -/
 
 open scoped ENNReal
@@ -112,7 +112,7 @@ private theorem half_le_norm_sparseVec_sub (d s : ℕ) (hs : 0 < s) (S S' : Fins
     intro i
     rw [hχ]; simp only [Finset.mem_inter]
     by_cases h1 : i ∈ S <;> by_cases h2 : i ∈ S' <;>
-      simp only [h1, h2, if_true, if_false, and_true, and_false] <;> ring
+      simp only [h1, h2, ite_true, ite_false, and_true, and_false] <;> ring
   -- Sum the per-coordinate squared norms.
   have hsumeq : ∑ i, ‖(sparseVec d s S - sparseVec d s S') i‖ ^ 2
       = (s : ℝ)⁻¹ * (2 * s - 2 * ((S ∩ S').card : ℝ)) := by
@@ -557,7 +557,7 @@ private theorem sparse_packing (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d) :
       positivity
     have hsupp : (Finset.univ.filter fun i => (sparseVec d s S) i ≠ 0) = S := by
       ext i
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, sparseVec_apply]
+      simp only [sparseVec_apply]
       by_cases h : i ∈ S <;> simp [h, hane]
     rw [hsupp]; exact le_of_eq (hcard S hS)
   · -- Separation, transported from the support-overlap bound.

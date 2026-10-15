@@ -37,6 +37,8 @@ The construction uses ONLY `g_P i ∈ ↥(L2ZeroMean P)`: no moment-strengthenin
 (L⁴, essential boundedness) is taken anywhere.
 -/
 
+set_option linter.style.longFile 2000
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal BigOperators
 
@@ -410,7 +412,7 @@ private lemma kSigmoid_linPerturb_tendsto_one (ω : Ω) :
   have h_lin_cont : Continuous (fun θ : EuclideanSpace ℝ (Fin m) =>
       linPerturb g_P θ ω) := by
     unfold linPerturb
-    refine continuous_finset_sum _ (fun i _ => ?_)
+    refine continuous_finsetSum _ (fun i _ => ?_)
     -- θ ↦ θ i is continuous (coordinate projection), so θ i * gMk g_P i ω is continuous.
     have h_proj : Continuous (fun θ : EuclideanSpace ℝ (Fin m) => θ i) := by
       exact (continuous_apply i).comp (PiLp.continuous_ofLp 2 _)
@@ -463,7 +465,7 @@ theorem normalizer_c_integral_tendsto_one :
     (bound := fun _ => (2 : ℝ))
     (fun n => (h_meas n).aestronglyMeasurable) h_const_int h_bound
     (Filter.Eventually.of_forall h_pt)
-  simpa using h_dct
+  simpa using! h_dct
 
 /-- The normaliser `c θ = (∫ k(linPerturb θ) dP)⁻¹` tends to `1` as `θ → 0`. -/
 theorem normalizer_c_tendsto_one :
@@ -475,7 +477,7 @@ theorem normalizer_c_tendsto_one :
   have h_inv_cont : Tendsto (fun y : ℝ => y⁻¹) (𝓝 1) (𝓝 (1 : ℝ)⁻¹) :=
     tendsto_inv₀ one_ne_zero
   have := h_inv_cont.comp h_int
-  simpa using this
+  simpa using! this
 
 /-- Likewise `Real.sqrt (c θ) → 1` as `θ → 0`. -/
 theorem sqrt_normalizer_c_tendsto_one :
@@ -558,7 +560,7 @@ lemma jointPointwiseNorm_memLp_two :
       have h_mk : MemLp (gMk g_P i) 2 P :=
         MeasureTheory.MemLp.ae_eq (gMk_ae_eq g_P i).symm h_int
       exact h_mk.abs
-    exact memLp_finset_sum _ (fun i _ => h_each i)
+    exact memLp_finsetSum _ (fun i _ => h_each i)
   refine MemLp.of_le_mul (c := 1) h_sum_memLp
     (jointPointwiseNorm_meas g_P).aestronglyMeasurable ?_
   · -- |jointPointwiseNorm ω| ≤ 1 * ∑ i |gMk i ω|.
@@ -842,7 +844,7 @@ private lemma integral_kSigmoid_residual_div_norm_tendsto_zero
       have h_cont : Continuous (fun θ : EuclideanSpace ℝ (Fin m) =>
           linPerturb g_P θ ω) := by
         unfold linPerturb
-        refine continuous_finset_sum _ (fun i _ => ?_)
+        refine continuous_finsetSum _ (fun i _ => ?_)
         have h_proj : Continuous (fun θ : EuclideanSpace ℝ (Fin m) => θ i) :=
           (continuous_apply i).comp (PiLp.continuous_ofLp 2 _)
         exact h_proj.mul continuous_const
@@ -988,7 +990,7 @@ theorem normalizer_c_sub_one_div_norm_tendsto_zero_along_seq
     h_Ĉ_sub_div.neg
   rw [neg_zero] at h_neg
   have h_div := h_neg.div h_Ĉ_tendsto one_ne_zero
-  simpa using h_div
+  simpa using! h_div
 
 /-- Corollary: `(√(c(θ_n)) - 1) / ‖θ_n‖ → 0`. -/
 theorem sqrt_normalizer_c_sub_one_div_norm_tendsto_zero_along_seq
@@ -1008,7 +1010,7 @@ theorem sqrt_normalizer_c_sub_one_div_norm_tendsto_zero_along_seq
     have h_sqrt_c : Tendsto (fun n => Real.sqrt (normalizer_c g_P (θ_n n)))
         atTop (𝓝 1) := by
       have := (Real.continuous_sqrt.tendsto _).comp h_c_tendsto
-      simpa [Real.sqrt_one] using this
+      simpa [Real.sqrt_one] using! this
     have h_add := h_sqrt_c.add_const (1 : ℝ)
     have h_eq : (1 : ℝ) + 1 = 2 := by norm_num
     rw [h_eq] at h_add
@@ -1410,7 +1412,7 @@ theorem hellinger_residual_sq_div_norm_sq_tendsto_zero_along_seq
       have h_cont : Continuous (fun θ : EuclideanSpace ℝ (Fin m) =>
           linPerturb g_P θ ω) := by
         unfold linPerturb
-        refine continuous_finset_sum _ (fun i _ => ?_)
+        refine continuous_finsetSum _ (fun i _ => ?_)
         have h_proj : Continuous (fun θ : EuclideanSpace ℝ (Fin m) => θ i) :=
           (continuous_apply i).comp (PiLp.continuous_ofLp 2 _)
         exact h_proj.mul continuous_const
@@ -1723,7 +1725,7 @@ theorem unboundedParamSubmodel_DQM
       -- linPerturb = ∑ i, h i · gMk g_P i. Each component in L².
       classical
       unfold linPerturb
-      refine memLp_finset_sum _ (fun i _ => ?_)
+      refine memLp_finsetSum _ (fun i _ => ?_)
       have h_int : MemLp ((g_P i : Lp ℝ 2 P) : Ω → ℝ) 2 P := Lp.memLp _
       have h_mk : MemLp (gMk g_P i) 2 P :=
         MeasureTheory.MemLp.ae_eq (gMk_ae_eq g_P i).symm h_int
@@ -1806,14 +1808,14 @@ theorem unboundedParamSubmodel_fisher_info
     ring
   rw [integral_congr_ae (Filter.Eventually.of_forall h_expand)]
   -- Swap integral with double sum.
-  rw [integral_finset_sum]
+  rw [integral_finsetSum]
   · -- ∫ ∑ⱼ (u i · v j) · (gMk i · gMk j) ∂P = ∑ⱼ (u i · v j) · ∫ gMk i · gMk j ∂P
     have h_inner_step : ∀ i,
         ∫ ω, ∑ j, (u i * v j) * (gMk g_P i ω * gMk g_P j ω) ∂P
         = ∑ j, (u i * v j) *
             ∫ ω, gMk g_P i ω * gMk g_P j ω ∂P := by
       intro i
-      rw [integral_finset_sum]
+      rw [integral_finsetSum]
       · apply Finset.sum_congr rfl; intro j _
         rw [integral_const_mul]
       · intro j _
@@ -1835,10 +1837,10 @@ theorem unboundedParamSubmodel_fisher_info
             = if i = j then (1 : ℝ) else 0 := by
         by_cases hij : i = j
         · subst hij
-          rw [if_pos rfl]
+          rw [ite_eq_left rfl]
           have h_norm : ‖(g_P i : Lp ℝ 2 P)‖ = 1 := h_orth.norm_eq_one i
           rw [real_inner_self_eq_norm_mul_norm, h_norm]; norm_num
-        · rw [if_neg hij]
+        · rw [ite_eq_right hij]
           exact h_orth.inner_eq_zero hij
       rw [MeasureTheory.L2.inner_def] at h_inner
       have h_int_eq :
@@ -1879,7 +1881,7 @@ theorem unboundedParamSubmodel_fisher_info
         rw [h_int_gMk i j]
         by_cases hij : i = j
         · subst hij; simp
-        · simp [if_neg hij]
+        · simp [ite_eq_right hij]
       rw [Finset.sum_congr rfl (fun j _ => h_each j)]
       rw [Finset.sum_ite_eq_of_mem Finset.univ i (fun _ => u i * v i)
             (Finset.mem_univ i)]
@@ -1892,7 +1894,7 @@ theorem unboundedParamSubmodel_fisher_info
       change v i * u i = u i * v i
       ring]
   · intro i _
-    refine integrable_finset_sum _ (fun j _ => ?_)
+    refine integrable_finsetSum _ (fun j _ => ?_)
     have h_int_lp : Integrable (fun ω => ((g_P i : Lp ℝ 2 P) : Ω → ℝ) ω
                                         * ((g_P j : Lp ℝ 2 P) : Ω → ℝ) ω) P :=
       (Lp.memLp (g_P i : Lp ℝ 2 P)).integrable_mul (Lp.memLp (g_P j : Lp ℝ 2 P))

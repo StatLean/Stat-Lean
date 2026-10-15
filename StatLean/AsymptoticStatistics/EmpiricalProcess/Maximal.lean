@@ -28,6 +28,8 @@ The per-level chaining lemmas in this file
 Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
 -/
 
+set_option linter.style.longFile 2500
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 open MeasureTheory ENNReal Filter
@@ -254,7 +256,7 @@ theorem maximal_inequality_bracketing
       unfold empiricalProcess
       rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
     rw [h_assemble]
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
     calc ENNReal.ofReal
             |empiricalAvg f n (fun j : Fin n => X j.val ω) - ∫ x, f x ∂P|
         ≤ ENNReal.ofReal |empiricalAvg f n (fun j : Fin n => X j.val ω)|
@@ -317,7 +319,7 @@ theorem maximal_inequality_bracketing
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       have hsum := ENNReal.ofReal_sum_of_nonneg (s := Finset.univ)
         (f := fun i : Fin n => |Φ (X i.val ω)|)
         (fun i _ => h_sum_nn i)
@@ -337,7 +339,7 @@ theorem maximal_inequality_bracketing
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ω, ENNReal.ofReal (|Φ (X i.val ω)|) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hΦ_abs_ofReal_meas.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -367,7 +369,7 @@ theorem maximal_inequality_bracketing
       exact hΦ_abs_meas measurableSet_Iic
     have hAB : Aᶜ = {x | δ * Real.sqrt n < |Φ x|} := by
       ext x
-      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, A, not_le]
+      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, A, not_le]
     have hΦ_indic_A : ∀ x, ENNReal.ofReal (|Φ x|) * A.indicator 1 x
         ≤ ENNReal.ofReal (δ * Real.sqrt n) * A.indicator 1 x := by
       intro x
@@ -412,7 +414,7 @@ theorem maximal_inequality_bracketing
             refine add_le_add ?_ le_rfl
             calc ENNReal.ofReal (δ * Real.sqrt n) * P A
                 ≤ ENNReal.ofReal (δ * Real.sqrt n) * 1 :=
-                  mul_le_mul_of_nonneg_left prob_le_one (zero_le _)
+                  mul_le_mul_of_nonneg_left prob_le_one (zero_le)
               _ = ENNReal.ofReal (δ * Real.sqrt n) := mul_one _
       _ = ENNReal.ofReal (δ * Real.sqrt n)
           + ∫⁻ x, ENNReal.ofReal (|Φ x|) *
@@ -425,7 +427,7 @@ theorem maximal_inequality_bracketing
                 (empiricalAvg (fun x => |Φ x|) n (fun j : Fin n => X j.val ω)) ∂μ
               + Lp) := h_int
       _ ≤ ENNReal.ofReal (Real.sqrt n) * (Lp + Lp) :=
-          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le)
       _ = 2 * ENNReal.ofReal (Real.sqrt n) * Lp := by ring
   -- ===== Step 6: bound L ≤ 2 n δ + 2 √n · T =====
   have h_sqrt_sq : Real.sqrt n * Real.sqrt n = (n : ℝ) :=
@@ -446,7 +448,7 @@ theorem maximal_inequality_bracketing
     calc L ≤ 2 * ENNReal.ofReal (Real.sqrt n) * Lp := h_combine
       _ ≤ 2 * ENNReal.ofReal (Real.sqrt n) *
             (ENNReal.ofReal (δ * Real.sqrt n) + T) :=
-          mul_le_mul_of_nonneg_left h_split (zero_le _)
+          mul_le_mul_of_nonneg_left h_split (zero_le)
       _ = 2 * ENNReal.ofReal (Real.sqrt n) * ENNReal.ofReal (δ * Real.sqrt n)
             + 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
       _ = ENNReal.ofReal (2 * (n : ℝ) * δ) + 2 * ENNReal.ofReal (Real.sqrt n) * T := by
@@ -468,10 +470,10 @@ theorem maximal_inequality_bracketing
         · rw [mul_one]; exact hK_ge_2nδ
         · rw [show (2 : ℝ≥0∞) * ENNReal.ofReal (Real.sqrt n) * T
               = 2 * (ENNReal.ofReal (Real.sqrt n) * T) from by ring]
-          exact mul_le_mul_of_nonneg_right hK_ge_2 (zero_le _)
+          exact mul_le_mul_of_nonneg_right hK_ge_2 (zero_le)
     _ ≤ Ksum * 1 + Ksum * (J + ENNReal.ofReal (Real.sqrt n) * T) := by
         refine add_le_add le_rfl ?_
-        exact mul_le_mul_of_nonneg_left le_add_self (zero_le _)
+        exact mul_le_mul_of_nonneg_left le_add_self (zero_le)
     _ = Ksum * (1 + (J + ENNReal.ofReal (Real.sqrt n) * T)) := by rw [← mul_add]
     _ = Ksum * (1 + J + ENNReal.ofReal (Real.sqrt n) * T) := by rw [add_assoc]
 
@@ -970,7 +972,7 @@ lemma tight_envelope_truncation_bound
       unfold empiricalProcess
       rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
     rw [h_assemble]
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
     calc ENNReal.ofReal
             |empiricalAvg (fun x => f x * A.indicator (1 : Ω → ℝ) x) n
                 (fun j : Fin n => X j.val ω)
@@ -1036,7 +1038,7 @@ lemma tight_envelope_truncation_bound
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       have hsum := ENNReal.ofReal_sum_of_nonneg (s := Finset.univ)
         (f := fun i : Fin n => ΦA_real (X i.val ω))
         (fun i _ => h_sum_nn i)
@@ -1056,7 +1058,7 @@ lemma tight_envelope_truncation_bound
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ω, ENNReal.ofReal (ΦA_real (X i.val ω)) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hΦA_ofReal_meas.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ *
@@ -1083,7 +1085,7 @@ lemma tight_envelope_truncation_bound
           (∫⁻ ω, ENNReal.ofReal
               (empiricalAvg ΦA_real n (fun j : Fin n => X j.val ω)) ∂μ + T) := h_int
     _ ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
-        mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le _)
+        mul_le_mul_of_nonneg_left (add_le_add h_emp_to_P le_rfl) (zero_le)
     _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
     _ ≤ 4 * ENNReal.ofReal (Real.sqrt n) * T := by
         gcongr
@@ -1223,7 +1225,7 @@ lemma process_pair_mean_bound
       unfold empiricalProcess
       rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
     rw [h_split]
-    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le)
     -- `ofReal|Pₙ d − P d| ≤ ofReal(Pₙ|d|) + T`.
     have h_tri_real :
         |empiricalAvg d n (fun k : Fin n => X k.val ξ) - ∫ x, d x ∂P|
@@ -1283,7 +1285,7 @@ lemma process_pair_mean_bound
       have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
         rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
       rw [hn_inv_eq]
-      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le)
       have hsum := ENNReal.ofReal_sum_of_nonneg (s := Finset.univ)
         (f := fun i : Fin n => |d (X i.val ξ)|)
         (fun i _ => abs_nonneg _)
@@ -1299,7 +1301,7 @@ lemma process_pair_mean_bound
       _ = ((n : ℝ≥0∞))⁻¹ *
             ∑ i : Fin n, ∫⁻ ξ, ENNReal.ofReal (|d (X i.val ξ)|) ∂μ := by
           congr 1
-          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          rw [MeasureTheory.lintegral_finsetSum Finset.univ]
           intro i _
           exact hd_abs_meas.ennreal_ofReal.comp (hX_meas i.val)
       _ = ((n : ℝ≥0∞))⁻¹ * ∑ _i : Fin n, ∫⁻ x, ENNReal.ofReal (|d x|) ∂P := by
@@ -1339,7 +1341,7 @@ lemma process_pair_mean_bound
           rw [MeasureTheory.lintegral_add_left' h_empAvg_meas.aemeasurable,
             MeasureTheory.lintegral_const, measure_univ, mul_one]
       _ ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
-          mul_le_mul_of_nonneg_left (add_le_add h_empAvg_to_P le_rfl) (zero_le _)
+          mul_le_mul_of_nonneg_left (add_le_add h_empAvg_to_P le_rfl) (zero_le)
       _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
   calc ∫⁻ ξ, ENNReal.ofReal
           |empiricalProcess P n (fun k : Fin n => X k.val ξ) f| ∂μ
@@ -1424,7 +1426,7 @@ private lemma tight_chain_full_assembly_brick
           (fun j : Fin n => X j.val ω) f) ∂μ
       ≤ ENNReal.ofReal K_crude * (1 + (J + tail)) := h_crude'
     _ ≤ ENNReal.ofReal K_crude * (2 * (J + tail)) :=
-        mul_le_mul_of_nonneg_left h_absorb (zero_le _)
+        mul_le_mul_of_nonneg_left h_absorb (zero_le)
     _ = ENNReal.ofReal (2 * K_crude) * (J + tail) := by
         rw [← mul_assoc, h_K_mul]
 
@@ -1640,7 +1642,7 @@ private theorem chaining_envelope_from_bracket
     exact Finset.single_le_sum (f := fun j => |l j x| + |u j x|)
       h_nonneg (Finset.mem_univ i)
   · -- MemLp Φ 2 P
-    refine memLp_finset_sum _ ?_
+    refine memLp_finsetSum _ ?_
     intro i _
     exact (MemLp.abs (hbracket i).memLp_lower).add
       (MemLp.abs (hbracket i).memLp_upper)
@@ -1659,7 +1661,7 @@ private lemma exists_finite_bracketingNumber_of_integral_lt_top'
   push Not at h_no
   have h_int_top : bracketingEntropyIntegral 1 F P = ⊤ := by
     unfold bracketingEntropyIntegral
-    rw [setLIntegral_congr_fun (μ := volume) (s := Set.Ioc (0:ℝ) 1)
+    rw [setLIntegral_congr_fun (μ := volume) (s := Set.Ioc (0 : ℝ) 1)
         (g := fun _ => (⊤ : ℝ≥0∞)) measurableSet_Ioc (by
           intro ε hε
           have h_top : bracketingNumber ε F 2 P = ⊤ := top_unique (h_no ε hε)
@@ -2118,7 +2120,7 @@ private theorem chaining_integral_universal_K
           (z := fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) hdiff_mem
       · -- off the good event: indicator = 0.
         rw [Set.indicator_of_notMem hgood, mul_zero]
-        exact zero_le _
+        exact zero_le
     -- Step (b): the localized chaining bound at scale `δq` for this `n`.
     have h_max : ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
             (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
@@ -2465,7 +2467,7 @@ theorem chaining_per_q_max_ineq_bound
                           - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|} \
                 {ξ | (δ q) ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P})
           ≤ ENNReal.ofReal η * μ {ξ | ENNReal.ofReal η ≤ Y ξ} :=
-            mul_le_mul_of_nonneg_left (measure_mono h_sub) (zero_le _)
+            mul_le_mul_of_nonneg_left (measure_mono h_sub) (zero_le)
       _ ≤ ∫⁻ ξ, Y ξ ∂μ := h_markov
       _ ≤ ENNReal.ofReal K_chain * bracketingEntropyIntegral (δ q) F P := h_int_bound
   -- ENNReal-algebra divide-by-`η`.

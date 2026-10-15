@@ -7,7 +7,8 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 
 `ψ(a+h) − ψ(a) − h·ψ'(a) ≤ (B²/2)·h²` whenever the second derivative satisfies `ψ'' ≤ B²`.
 The single analytic brick behind the GLM score's sub-Gaussian MGF (Wainwright, *High-Dimensional
-Statistics*, proof of Corollary 9.26, p. 288): `log 𝔼[e^{−tVᵢⱼ}] = ψ(ηᵢ+txᵢⱼ) − ψ(ηᵢ) − txᵢⱼψ'(ηᵢ) ≤ B²t²xᵢⱼ²/2`.
+Statistics*, proof of Corollary 9.26, p. 288):
+`log 𝔼[e^{−tVᵢⱼ}] = ψ(ηᵢ+txᵢⱼ) − ψ(ηᵢ) − txᵢⱼψ'(ηᵢ) ≤ B²t²xᵢⱼ²/2`.
 
 `ForMathlib` layer — Mathlib-only, theorem-agnostic. The bound holds for all `h` (both signs):
 `g(h) := ψ(a+h) − ψ(a) − h·ψ'(a)` satisfies `g(0) = 0`, `g'(0) = 0`, and `g'' = ψ''(a+·) ≤ B²`, so
@@ -35,11 +36,11 @@ theorem psi_taylor_upper (ψ ψ' ψ'' : ℝ → ℝ) (B : ℝ)
     intro t
     rw [hGdef]
     have h1 : HasDerivAt (fun s => ψ (a + s)) (ψ' (a + t)) t := by
-      simpa using (hψ' (a + t)).comp t ((hasDerivAt_id t).const_add a)
+      simpa using! (hψ' (a + t)).comp t ((hasDerivAt_id t).const_add a)
     have h2 : HasDerivAt (fun s : ℝ => B ^ 2 / 2 * s ^ 2) (B ^ 2 * t) t := by
-      have hsq : HasDerivAt (fun s : ℝ => s ^ 2) (2 * t) t := by simpa using hasDerivAt_pow 2 t
+      have hsq : HasDerivAt (fun s : ℝ => s ^ 2) (2 * t) t := by simpa using! hasDerivAt_pow 2 t
       have := hsq.const_mul (B ^ 2 / 2)
-      convert this using 1
+      convert! this using 1
       ring
     have h3 : HasDerivAt (fun s : ℝ => s * ψ' a) (ψ' a) t := by
       simpa using (hasDerivAt_id t).mul_const (ψ' a)
@@ -52,7 +53,7 @@ theorem psi_taylor_upper (ψ ψ' ψ'' : ℝ → ℝ) (B : ℝ)
     have h1 : HasDerivAt (fun s : ℝ => B ^ 2 * s) (B ^ 2) t := by
       simpa using (hasDerivAt_id t).const_mul (B ^ 2)
     have h2 : HasDerivAt (fun s => ψ' (a + s)) (ψ'' (a + t)) t := by
-      simpa using (hψ'' (a + t)).comp t ((hasDerivAt_id t).const_add a)
+      simpa using! (hψ'' (a + t)).comp t ((hasDerivAt_id t).const_add a)
     exact h1.sub (h2.sub_const (ψ' a))
   have hmono : Monotone (fun s => B ^ 2 * s - (ψ' (a + s) - ψ' a)) := by
     apply monotone_of_deriv_nonneg

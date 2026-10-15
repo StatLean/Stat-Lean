@@ -105,13 +105,13 @@ private lemma measurableSet_typeSet (hd1 : Measurable d1) (hd0 : Measurable d0)
 private lemma mem_typeSet_alwaysTaker' {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.alwaysTaker ↔ d1 ω = true ∧ d0 ω = true := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 private lemma mem_typeSet_neverTaker' {ω : Ω} :
     ω ∈ typeSet d1 d0 ComplianceType.neverTaker ↔ d1 ω = false ∧ d0 ω = false := by
   unfold typeSet ComplianceType.of
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   cases d1 ω <;> cases d0 ω <;> simp
 
 /-! ### The master identity
@@ -194,12 +194,12 @@ private lemma ittContrast_obs_eq [IsProbabilityMeasure μ] {G : Bool → Bool �
       (fun ω => G (d1 ω) (b1 ω)) {ω | Z ω = true} := by
     intro ω hω
     have hz : Z ω = true := hω
-    simp only [obsTreat, obsBool, hz, if_true]
+    simp only [obsTreat, obsBool, hz, ite_true]
   have e0 : Set.EqOn (fun ω => G (obsTreat Z d1 d0 ω) (obsBool Z b1 b0 ω))
       (fun ω => G (d0 ω) (b0 ω)) {ω | Z ω = false} := by
     intro ω hω
     have hz : Z ω = false := hω
-    simp only [obsTreat, obsBool, hz, if_false, Bool.false_eq_true]
+    simp only [obsTreat, obsBool, hz, ite_false, Bool.false_eq_true]
   have hstep1 : ittContrast μ Z (fun ω => G (obsTreat Z d1 d0 ω) (obsBool Z b1 b0 ω))
       = ∫ ω, (G (d1 ω) (b1 ω) - G (d0 ω) (b0 ω)) ∂μ := by
     simp only [ittContrast, primaFacie, treatedEvent]

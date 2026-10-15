@@ -55,7 +55,9 @@ instance : IsMarkovKernel poissonKernel := by
     lintegral_count]
   simp only [poissonDensity]
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ => poissonPMFReal_nonneg)
-      (poissonPMFRealSum _).summable, (poissonPMFRealSum _).tsum_eq, ENNReal.ofReal_one]
+      (hasSum_one_poissonMeasure _).summable,
+    show (∑' n, poissonPMFReal θ.toNNReal n) = 1 from (hasSum_one_poissonMeasure _).tsum_eq,
+    ENNReal.ofReal_one]
 
 /-- Pointwise pdf algebra: Gamma pdf times an iid Poisson likelihood is an explicit constant times
 the updated Gamma pdf; both sides vanish on `θ ≤ 0`. -/
@@ -83,7 +85,7 @@ theorem gammaPDF_mul_prod_poissonDensity {a r : ℝ}
       div_nonneg (mul_nonneg (Real.rpow_nonneg hr.le a) hGaS.le)
         (mul_nonneg (mul_nonneg hGa.le hrn.le) hfac.le)
     have hga0 : 0 ≤ gammaPDFReal a r θ := by
-      rw [gammaPDFReal, if_pos hθ0]
+      rw [gammaPDFReal, ite_eq_left hθ0]
       exact mul_nonneg (mul_nonneg (div_nonneg (Real.rpow_nonneg hr.le a) hGa.le)
         (Real.rpow_nonneg hθ0 _)) (Real.exp_pos _).le
     have hθtoN : ((θ.toNNReal : ℝ)) = θ := Real.coe_toNNReal θ hθ0
@@ -107,12 +109,11 @@ theorem gammaPDF_mul_prod_poissonDensity {a r : ℝ}
     rw [← ENNReal.ofReal_prod_of_nonneg (fun i _ => poissonPMFReal_nonneg),
       ← ENNReal.ofReal_mul hga0, ← ENNReal.ofReal_mul hC]
     congr 1
-    simp only [gammaPDFReal, if_pos hθ0, poissonPMFReal, hθtoN]
+    simp only [gammaPDFReal, ite_eq_left hθ0, poissonPMFReal, hθtoN]
     rw [Finset.prod_div_distrib, Finset.prod_mul_distrib, Finset.prod_const,
       Finset.card_univ, Fintype.card_fin, Finset.prod_pow_eq_pow_sum, ← hpow, ← hexp]
     field_simp
 
-set_option maxHeartbeats 1000000 in
 /-- **Gamma-Poisson posterior** (Gelman §2.6, `n`-sample form): iid Poisson counts update
 `Gamma(a, r)` to `Gamma(a + ∑ yᵢ, r + n)`, predictive-a.e. -/
 theorem gamma_poisson_posterior_ae {a r : ℝ}
@@ -141,7 +142,6 @@ theorem gamma_poisson_posterior_ae {a r : ℝ}
       (add_pos_of_pos_of_nonneg hr (Nat.cast_nonneg n)))
     ?_
   intro y
-  dsimp only
   have hprior : Measurable (gammaPDF a r) := (measurable_gammaPDFReal a r).ennreal_ofReal
   have hprod : Measurable (fun θ => ∏ i, poissonDensity θ (y i)) :=
     Finset.measurable_prod _ (fun i _ => hunc.comp (measurable_id.prodMk measurable_const))

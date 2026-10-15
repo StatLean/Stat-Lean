@@ -142,7 +142,7 @@ private lemma measurable_archLayer (bc : ℕ → ℝ) (k : ℕ) : Measurable (ar
     refine Measurable.ennreal_tsum fun j => ?_
     exact (measurable_const.mul
       ((measurable_pi_apply _).ennreal_ofReal)).mul
-      (ih.comp (measurable_pi_lambda _ fun s => measurable_pi_apply _))
+      (ih.comp (Measurable.of_eval fun s => measurable_pi_apply _))
 
 private lemma measurable_archFun (a : ℝ) (bc : ℕ → ℝ) : Measurable (archFun a bc) :=
   (((measurable_const.mul ((measurable_pi_apply _).ennreal_ofReal)).mul
@@ -174,7 +174,7 @@ private lemma archFun_congr (a : ℝ) (bc : ℕ → ℝ) {r r' : ℤ → ℝ}
 
 private lemma measurable_archPath {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t)) (t : ℤ) :
     Measurable (archPath ξ t) :=
-  measurable_pi_lambda _ fun s => hm (s + t)
+  Measurable.of_eval fun s => hm (s + t)
 
 private lemma measurable_archSol {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
     (a : ℝ) (bc : ℕ → ℝ) (t : ℤ) : Measurable (archSol a bc ξ t) :=
@@ -205,7 +205,7 @@ theorem indep_xi_sigmaLT {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t
   have := indep_iSup_of_disjoint
     (m := fun s : ℤ => MeasurableSpace.comap (ξ s) inferInstance)
     (fun s => (hm s).comap_le) hi hdisj
-  simpa using this
+  simpa using! this
 
 omit [MeasurableSpace Ω] in
 /-- Each layer, read at time `t`, is measurable for the strict past `σ(ξ_s : s < t)`. -/
@@ -269,7 +269,7 @@ private lemma lintegral_archLayer [IsProbabilityMeasure μ] {ξ : ℤ → Ω →
           = ENNReal.ofReal (bc j) * (ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
               * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) := fun ω => mul_assoc _ _ _
       simp only [hprod]
-      rw [lintegral_const_mul _ (((hm _).ennreal_ofReal).mul
+      erw [lintegral_const_mul _ (((hm _).ennreal_ofReal).mul
           (measurable_archLayer_path hm bc k _)),
         lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
           (hm _).comap_le (sigmaLT_le hm _) (indep_xi_sigmaLT hm hi _)
@@ -277,9 +277,9 @@ private lemma lintegral_archLayer [IsProbabilityMeasure μ] {ξ : ℤ → Ω →
           (measurable_archLayer_sigmaLT bc k _),
         lintegral_ofReal_xi hnn hid hint hmean, one_mul, ih]
     simp only [archLayer_succ_path]
-    rw [lintegral_tsum fun j => ((measurable_const.mul ((hm _).ennreal_ofReal)).mul
+    erw [lintegral_tsum fun j => ((measurable_const.mul ((hm _).ennreal_ofReal)).mul
       (measurable_archLayer_path hm bc k _)).aemeasurable]
-    simp only [hterm]
+    simp only [Pi.mul_apply, hterm]
     rw [ENNReal.tsum_mul_right, pow_succ']
     rfl
 
@@ -305,7 +305,7 @@ private lemma lintegral_archZ [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → 
     (hint : Integrable (ξ 0) μ) (hmean : ∫ ω, ξ 0 ω ∂μ = 1) (t : ℤ) :
     ∫⁻ ω, archZ a bc ξ t ω ∂μ = ENNReal.ofReal a * (1 - archS bc)⁻¹ := by
   simp only [archZ, mul_assoc]
-  rw [lintegral_const_mul _ (((hm t).ennreal_ofReal).mul
+  erw [lintegral_const_mul _ (((hm t).ennreal_ofReal).mul
       (Measurable.ennreal_tsum fun k => measurable_archLayer_path hm bc k t)),
     lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
       (hm t).comap_le (sigmaLT_le hm t) (indep_xi_sigmaLT hm hi t)
@@ -372,10 +372,10 @@ theorem isStrictlyStationary_of_shift_comp [IsProbabilityMeasure μ] {ξ : ℤ �
       Ψ = fun p i => F fun s => p (s + tt i) := ⟨_, rfl⟩
   have hΨm : Measurable Ψ := by
     rw [hΨ]
-    exact measurable_pi_lambda _ fun i => hF.comp
-      (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+    exact Measurable.of_eval fun i => hF.comp
+      (Measurable.of_eval fun s => measurable_pi_apply (s + tt i))
   have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ξ (s + c) ω :=
-    fun c => measurable_pi_lambda _ fun s => hm (s + c)
+    fun c => Measurable.of_eval fun s => hm (s + c)
   have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => F fun s => ξ (s + (tt i + c)) ω)
       = Ψ ∘ fun ω (s : ℤ) => ξ (s + c) ω := by
     intro c
@@ -383,8 +383,14 @@ theorem isStrictlyStationary_of_shift_comp [IsProbabilityMeasure μ] {ξ : ℤ �
     simp only [hΨ, Function.comp_apply, add_assoc]
   have h0 : (fun ω (i : Fin n) => F fun s => ξ (s + tt i) ω)
       = Ψ ∘ fun ω (s : ℤ) => ξ s ω := by simpa using hfac 0
+  rw [Measure.map₀_of_measurable
+      (show Measurable (fun ω (i : Fin n) => F (fun s => ξ (s + (tt i + k)) ω)) from
+        Measurable.of_eval fun i => hF.comp (Measurable.of_eval fun s => hm (s + (tt i + k)))),
+    Measure.map₀_of_measurable
+      (show Measurable (fun ω (i : Fin n) => F (fun s => ξ (s + tt i) ω)) from
+        Measurable.of_eval fun i => hF.comp (Measurable.of_eval fun s => hm (s + tt i)))]
   rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
-    ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hm s),
+    ← Measure.map_map hΨm (Measurable.of_eval fun s : ℤ => hm s),
     map_path_shift hm hi hid k]
 
 /-- **FY Theorem 2.5(i), existence** (proof: §2.7.1 Volterra series): if
@@ -458,9 +464,9 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       rw [lintegral_const_mul _ (measurable_archZ hm _), hZint]
     have hTint : ∫⁻ ω, (∑' j : ℕ, ENNReal.ofReal (bc j) * archZ a bc ξ (t - 1 - (j : ℕ)) ω) ∂μ
         = archS bc * (ENNReal.ofReal a * (1 - archS bc)⁻¹) := by
-      rw [lintegral_tsum fun j =>
+      erw [lintegral_tsum fun j =>
         (measurable_const.mul (measurable_archZ hm (t - 1 - (j : ℕ)))).aemeasurable]
-      simp only [hterm]
+      simp only [Pi.mul_apply, hterm]
       exact ENNReal.tsum_mul_right
     have hTae : ∀ᵐ ω ∂μ,
         (∑' j : ℕ, ENNReal.ofReal (bc j) * archZ a bc ξ (t - 1 - (j : ℕ)) ω) < ∞ := by
@@ -603,9 +609,9 @@ theorem archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ →
       = ENNReal.ofReal (bc j) * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := fun j => by
     rw [lintegral_const_mul _ ((h.measurableY _).ennreal_ofReal),
       lintegral_ofReal_sol h hint hstat]
-  rw [lintegral_tsum fun j =>
+  erw [lintegral_tsum fun j =>
     (measurable_const.mul ((h.measurableY (t - 1 - (j : ℕ))).ennreal_ofReal)).aemeasurable]
-  simp only [hterm]
+  simp only [Pi.mul_apply, hterm]
   rw [ENNReal.tsum_mul_right]
   exact ENNReal.mul_ne_top (archS_ne_top h.bc_nonneg hsum) ENNReal.ofReal_ne_top
 
@@ -717,10 +723,10 @@ private lemma archInf_eq_archSol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ �
     have hG : ∫⁻ ω, (ENNReal.ofReal a
         + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) ∂μ
         = ENNReal.ofReal a + archS bc * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := by
-      rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
+      erw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
         lintegral_tsum fun j =>
           (measurable_const.mul ((h.measurableY (t - 1 - (j : ℕ))).ennreal_ofReal)).aemeasurable]
-      simp only [hterm]
+      simp only [Pi.mul_apply, hterm]
       rw [ENNReal.tsum_mul_right]
       rfl
     have hfix : ENNReal.ofReal (∫ ω, Y 0 ω ∂μ)
@@ -917,13 +923,13 @@ private lemma lintegral_sq_archLayer_le [IsProbabilityMeasure μ] {ξ : ℤ → 
           = ENNReal.ofReal (bc j) ^ 2 * ((∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ)
               * ∫⁻ ω, archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω) ^ 2 ∂μ) := by
         simp only [hexp]
-        rw [lintegral_const_mul _ (((hm _).ennreal_ofReal.pow_const 2).mul
+        erw [lintegral_const_mul _ (((hm _).ennreal_ofReal.pow_const 2).mul
             ((measurable_archLayer_path hm bc k _).pow_const 2)),
           lintegral_sq_xi_mul hm hi (t - 1 - (j : ℕ))
             ((measurable_archLayer_sigmaLT bc k (t - 1 - (j : ℕ))).pow_const 2),
           lintegral_sq_ofReal_xi hid]
-      rw [hI, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
-        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
+      rw [hI, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ (1 : ℝ)/2),
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ (1 : ℝ)/2),
         ennreal_sq_rpow_half, hr]
       gcongr
       exact ih (t - 1 - (j : ℕ))
@@ -1002,7 +1008,7 @@ private lemma lintegral_sq_archZ_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc 
           * (∑' k : ℕ, archLayer bc k (archPath ξ t ω)) ^ 2) := fun ω => by
     simp only [archZ]
     rw [mul_pow, mul_pow, mul_assoc]
-  rw [funext hexp, lintegral_const_mul _ ((((hξ.measurable t).ennreal_ofReal).pow_const 2).mul
+  erw [funext hexp, lintegral_const_mul _ ((((hξ.measurable t).ennreal_ofReal).pow_const 2).mul
       ((Measurable.ennreal_tsum fun k =>
         measurable_archLayer_path hξ.measurable bc k t).pow_const 2)),
     lintegral_sq_xi_mul hξ.measurable hξ.iIndep t
@@ -1174,7 +1180,7 @@ theorem archInf_acvf_recursion [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ →
       rw [add_mul, ← ENNReal.tsum_mul_right]
       exact congrArg _ (tsum_congr fun j => by ring)
     simp only [hsplit]
-    rw [lintegral_add_left (measurable_const.mul ((h.measurableY 0).ennreal_ofReal)),
+    erw [lintegral_add_left (measurable_const.mul ((h.measurableY 0).ennreal_ofReal)),
       lintegral_const_mul _ ((h.measurableY 0).ennreal_ofReal), hM0,
       lintegral_tsum fun j => (measurable_const.mul
         (((h.measurableY (k - 1 - (j : ℕ))).ennreal_ofReal).mul
@@ -1298,8 +1304,8 @@ theorem archInf_condexp_strict_past [IsProbabilityMeasure μ] {a : ℝ} {bc : �
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     μ[Y t | sigmaLT Y t] =ᵐ[μ] fun ω => a + ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := by
   have hFle := sigmaLT_le h.measurableY t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hrec := archInf_rec_drift hsum h hint hstat t
   have hprodint : Integrable (fun ω => archInfDrift a bc Y t ω * ξ t ω) μ :=
@@ -1329,8 +1335,8 @@ theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     μ[fun ω => Y t ω - archInfDrift a bc Y t ω | sigmaLT Y t] =ᵐ[μ] 0 := by
   have hFle := sigmaLT_le h.measurableY t
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+  have : SigmaFinite (μ.trim hFle) := by
+    have : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   have hdae := archInfDrift_ae_eq hsum h hint hstat t
   have hdint : Integrable (archInfDrift a bc Y t) μ := by

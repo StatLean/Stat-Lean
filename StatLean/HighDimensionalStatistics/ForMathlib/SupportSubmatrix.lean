@@ -59,12 +59,12 @@ lemma Xsub_mulVec (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
     rw [← Finset.sum_attach S (fun j => X i j * (if h : j ∈ S then v ⟨j, h⟩ else 0))]
     apply Finset.sum_congr rfl
     intro k _
-    rw [dif_pos k.2]
+    rw [dite_eq_left k.2]
   have hR : X.mulVec (fun j => if h : j ∈ S then v ⟨j, h⟩ else 0) i
       = ∑ j ∈ S, X i j * (if h : j ∈ S then v ⟨j, h⟩ else 0) := by
     simp only [Matrix.mulVec, dotProduct]
     exact (Finset.sum_subset (Finset.subset_univ S)
-      (fun j _ hj => by rw [dif_neg hj, mul_zero])).symm
+      (fun j _ hj => by rw [dite_eq_right hj, mul_zero])).symm
   rw [hL, hR]
 
 /-- Coordinate of `X_Sᵀ u`: the `i`-th entry (`i ∈ S`) is column `i.val` of `X` dotted

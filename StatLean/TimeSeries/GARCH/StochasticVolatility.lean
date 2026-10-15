@@ -80,7 +80,7 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
   have hSmem : ∀ N : ℕ,
       MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ := by
     intro N
-    have := memLp_finset_sum (μ := μ) (p := 2) (Finset.range N)
+    have := memLp_finsetSum (μ := μ) (p := 2) (Finset.range N)
       (f := fun (j : ℕ) ω => ψ j * ε (t - (j : ℕ)) ω)
       (fun j _ => (hε.memLp (t - (j : ℕ))).const_mul (ψ j))
     simpa using this
@@ -89,7 +89,7 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
     fun N => (hSmem N).integrable one_le_two
   have hS0 : ∀ N : ℕ, ∫ ω, (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) ∂μ = 0 := by
     intro N
-    rw [integral_finset_sum _ fun j _ => (hεint _).const_mul _]
+    rw [integral_finsetSum _ fun j _ => (hεint _).const_mul _]
     refine Finset.sum_eq_zero fun j _ => ?_
     rw [integral_const_mul, hε.integral_eq_zero, mul_zero]
   have hbound : ∀ N : ℕ, |∫ ω, Y t ω ∂μ|
@@ -108,12 +108,12 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
     have h2 : ∫ ω, |Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω| ∂μ
         = (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
             1 μ).toReal := by
-      rw [eLpNorm_one_eq_lintegral_enorm]
+      rw [eLpNorm_one_eq_lintegral_enorm hfint.aestronglyMeasurable]
       rw [← integral_norm_eq_lintegral_enorm hfint.aestronglyMeasurable]
       simp [Real.norm_eq_abs]
     have h3 : eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 1 μ
         ≤ eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ :=
-      eLpNorm_le_eLpNorm_of_exponent_le one_le_two hfmem.aestronglyMeasurable
+      eLpNorm_le_eLpNorm_of_exponent_le one_le_two
     rw [hval] at h1
     refine h1.trans ?_
     rw [h2]
@@ -121,7 +121,9 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
   have htend : Tendsto
       (fun N => (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
         2 μ).toReal) atTop (𝓝 0) := by
-    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hY t)
+    simpa using! (ENNReal.continuousAt_toReal (by simp)).tendsto.comp
+      (hY.tendsto_eLpNorm (fun t => (hmeas t).aestronglyMeasurable)
+        (fun t => (hε.memLp t).aestronglyMeasurable) t)
   exact abs_eq_zero.mp (le_antisymm (ge_of_tendsto' htend hbound) (abs_nonneg _))
 
 /-- **FY eq. (4.60)**: with `|a₁| < 1` the latent log-volatility is second-order
@@ -202,7 +204,6 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
     {e : ℤ → Ω' → ℝ} (hem : ∀ s : ℤ, Measurable[m] (e s)) (t : ℤ) :
     Measurable[m] fun ω =>
       limUnder atTop (fun N => ∑ j ∈ Finset.range N, a1 ^ j * e (t - (j : ℕ)) ω) := by
-  letI := m
   exact (MeasureTheory.StronglyMeasurable.limUnder (l := atTop)
     (fun _N => (Finset.measurable_sum _ fun _j _ =>
       (hem _).const_mul _).stronglyMeasurable)).measurable
@@ -211,8 +212,7 @@ private lemma measurable_limUnder_psum {Ω' : Type*} (m : MeasurableSpace Ω') {
 private lemma comap_window_le_of_measurable {Ω' : Type*} (m : MeasurableSpace Ω')
     {κ : Type*} (F : κ → Ω' → ℝ) (hF : ∀ j, Measurable[m] (F j)) :
     MeasurableSpace.comap (fun ω (j : κ) => F j ω) inferInstance ≤ m := by
-  letI := m
-  exact measurable_iff_comap_le.1 (measurable_pi_lambda _ fun j => hF j)
+  exact measurable_iff_comap_le.1 (Measurable.of_eval fun j => hF j)
 
 /-- **FY eq. (4.60)**: the causal latent chain is strictly stationary. The centred chain
 is a linear process over i.i.d. innovations, hence strictly stationary
@@ -231,9 +231,9 @@ private lemma isStrictlyStationary_latent [IsProbabilityMeasure μ] {g : ℝ →
   have hY := hcausal.isStrictlyStationary hψ hSV.iidLatent hYm
   intro n tt k
   have hc : Measurable fun v : Fin n → ℝ => fun i => v i + a0 / (1 - a1) :=
-    measurable_pi_lambda _ fun i => (measurable_pi_apply i).add_const _
+    Measurable.of_eval fun i => (measurable_pi_apply i).add_const _
   have hYw : ∀ c : ℤ, Measurable fun ω (i : Fin n) => h (tt i + c) ω - a0 / (1 - a1) :=
-    fun c => measurable_pi_lambda _ fun i => hYm _
+    fun c => Measurable.of_eval fun i => hYm _
   have e1 : ∀ c : ℤ, (fun ω (i : Fin n) => h (tt i + c) ω)
       = (fun v : Fin n → ℝ => fun i => v i + a0 / (1 - a1))
         ∘ (fun ω (i : Fin n) => h (tt i + c) ω - a0 / (1 - a1)) := by
@@ -242,10 +242,12 @@ private lemma isStrictlyStationary_latent [IsProbabilityMeasure μ] {g : ℝ →
       = (fun v : Fin n → ℝ => fun i => v i + a0 / (1 - a1))
         ∘ (fun ω (i : Fin n) => h (tt i) ω - a0 / (1 - a1)) := by
     funext ω i; simp
+  rw [Measure.map₀_of_measurable (Measurable.of_eval fun i => hSV.measurableH (tt i + k)),
+    Measure.map₀_of_measurable (Measurable.of_eval fun i => hSV.measurableH (tt i))]
   rw [e1 k, e0, ← Measure.map_map hc (hYw k), ← Measure.map_map hc
-    (measurable_pi_lambda _ fun i => hYm (tt i))]
+    (Measurable.of_eval fun i => hYm (tt i))]
   congr 1
-  simpa using hY n tt k
+  simpa using hY.map_eq hYm n tt k
 
 /-- **The observation noise is independent of the latent chain** — on finite windows,
 which is all any consumer needs: `(ε_{u i})_i ⟂ (h_{w j})_j`.
@@ -277,7 +279,7 @@ private lemma indep_noise_latent_window [IsProbabilityMeasure μ] {g : ℝ → �
     {ι κ : Type*} [Finite κ] (u : ι → ℤ) (w : κ → ℤ) :
     IndepFun (fun ω (i : ι) => ε (u i) ω) (fun ω (j : κ) => h (w j) ω) μ := by
   classical
-  haveI : Countable κ := Finite.to_countable
+  have : Countable κ := Finite.to_countable
   have hψ : Summable fun j : ℕ => |a1 ^ j| := by
     simpa [abs_pow] using summable_geometric_of_lt_one (abs_nonneg a1) ha1
   have hYm : ∀ t : ℤ, Measurable fun ω => h t ω - a0 / (1 - a1) :=
@@ -354,9 +356,9 @@ private lemma map_noise_block' [IsProbabilityMeasure μ] {ε : ℤ → Ω → �
     rw [(iIndepFun_iff_map_fun_eq_pi_map fun b => (hε.measurable _).aemeasurable).1 hindep]
     exact congrArg Measure.pi (funext fun b => (hε.identDistrib _ 0).map_eq)
   have hmb : ∀ c : ℤ, Measurable (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
-    fun c => measurable_pi_lambda _ fun b => hε.measurable _
+    fun c => Measurable.of_eval fun b => hε.measurable _
   have hcomp : Measurable (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) :=
-    measurable_pi_lambda _ fun a => measurable_pi_apply (ρ a)
+    Measurable.of_eval fun a => measurable_pi_apply (ρ a)
   have hfac : ∀ c : ℤ, (fun ω a => ε (u a + c) ω)
       = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
     fun c => rfl
@@ -402,13 +404,13 @@ theorem IsSV.isStrictlyStationary [IsProbabilityMeasure μ] {g : ℝ → ℝ}
   have hmε : ∀ s : ℤ, Measurable (ε s) := hSV.iidNoise.measurable
   have hmh : ∀ s : ℤ, Measurable (h s) := hSV.measurableH
   set Φ : ((Fin n → ℝ) × (Fin n → ℝ)) → (Fin n → ℝ) := fun p i => p.1 i * g (p.2 i) with hΦdef
-  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i =>
+  have hΦ : Measurable Φ := Measurable.of_eval fun i =>
     ((measurable_pi_apply i).comp measurable_fst).mul
       (hg.comp ((measurable_pi_apply i).comp measurable_snd))
   have hEm : ∀ c : ℤ, Measurable (fun ω (i : Fin n) => ε (tt i + c) ω) :=
-    fun c => measurable_pi_lambda _ fun i => hmε _
+    fun c => Measurable.of_eval fun i => hmε _
   have hHm : ∀ c : ℤ, Measurable (fun ω (i : Fin n) => h (tt i + c) ω) :=
-    fun c => measurable_pi_lambda _ fun i => hmh _
+    fun c => Measurable.of_eval fun i => hmh _
   -- the noise window and the latent window are independent
   have hindep : ∀ c : ℤ, IndepFun (fun ω (i : Fin n) => ε (tt i + c) ω)
       (fun ω (i : Fin n) => h (tt i + c) ω) μ := fun c =>
@@ -436,9 +438,11 @@ theorem IsSV.isStrictlyStationary [IsProbabilityMeasure μ] {g : ℝ → ℝ}
     rfl
   have hh : (μ.map fun ω (i : Fin n) => h (tt i + k) ω)
       = μ.map fun ω (i : Fin n) => h (tt i + 0) ω := by
-    simpa using hstath n tt k
+    simpa using hstath.map_eq hmh n tt k
   have hgoal0 : (fun ω (i : Fin n) => X (tt i) ω) = fun ω (i : Fin n) => X (tt i + 0) ω := by
     simp
+  rw [Measure.map₀_of_measurable (Measurable.of_eval fun i => hSV.measurableX (tt i + k)),
+    Measure.map₀_of_measurable (Measurable.of_eval fun i => hSV.measurableX (tt i))]
   rw [hgoal0, hX k, hX 0, hpair k, hpair 0, hh,
     map_noise_block' hSV.iidNoise tt k, map_noise_block' hSV.iidNoise tt 0]
 
@@ -459,7 +463,7 @@ private lemma deriv_gexp : deriv gexp = fun y => y * gexp y := by
   have h1 : HasDerivAt (fun t : ℝ => t ^ 2 / 2) y y := by
     simpa using (hasDerivAt_pow 2 y).div_const 2
   have := (Real.hasDerivAt_exp (y ^ 2 / 2)).comp y h1
-  simpa [gexp, Function.comp_def, mul_comm] using this.deriv
+  simpa [gexp, Function.comp_def, mul_comm] using! this.deriv
 
 private lemma iteratedDeriv_id_mul {g : ℝ → ℝ} (hg : ∀ m : ℕ, Differentiable ℝ (iteratedDeriv m g))
     (n : ℕ) : iteratedDeriv n (fun y => y * g y)
@@ -513,7 +517,7 @@ private lemma iteratedDeriv_gexp_even (k : ℕ) :
       have : 2 * (k + 1) = (2 * k + 1) + 1 := by ring
       rw [this, Nat.factorial_succ, Nat.factorial_succ]
     rw [h2, Nat.factorial_succ]
-    have hk : (0:ℝ) < (Nat.factorial k : ℝ) := by exact_mod_cast Nat.factorial_pos k
+    have hk : (0 : ℝ) < (Nat.factorial k : ℝ) := by exact_mod_cast Nat.factorial_pos k
     push_cast
     field_simp
     ring
@@ -546,7 +550,7 @@ the frozen statement of `log_sq_decomposition` is false (take `a₁ = 0`, `h_t =
 standard normal).
 
 *Why FY supplies it.* FY's (4.61)–(4.62) is Taylor's lognormal SV model, whose
-observation noise is standard normal; `noAtoms_gaussianReal` then gives the conclusion
+observation noise is standard normal; `nullSingletonClass_gaussianReal` then gives the conclusion
 for `ε_0`, and `IsIIDNoise.identDistrib` propagates it to every `ε_t`. -/
 private lemma noise_ne_zero_ae [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
     {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ)
@@ -556,7 +560,7 @@ private lemma noise_ne_zero_ae [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a
   have hmε : Measurable (ε t) := hSV.iidNoise.measurable t
   have hmap : μ.map (ε t) = gaussianReal 0 1 := by
     rw [(hSV.iidNoise.identDistrib t 0).map_eq, hgauss]
-  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal (by norm_num)
+  have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal (by norm_num)
   have h0 : (μ.map (ε t)) {(0 : ℝ)} = 0 := by rw [hmap]; exact measure_singleton 0
   rwa [Measure.map_apply hmε (measurableSet_singleton 0)] at h0
 
@@ -597,7 +601,7 @@ theorem IsSV.moment_even_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh
   -- (b) the lognormal moment: the Gaussian m.g.f. at `t = k`
   have hB : ∫ ω, Real.exp ((k : ℝ) * h 0 ω) ∂μ
       = Real.exp ((k : ℝ) * μh + (k : ℝ) ^ 2 * σh2 / 2) := by
-    have hm := mgf_gaussianReal hlatent (k : ℝ)
+    have hm := mgf_gaussianReal ⟨hmh.aemeasurable, hlatent⟩ (k : ℝ)
     rw [Real.coe_toNNReal σh2 hσh.le] at hm
     rw [show (∫ ω, Real.exp ((k : ℝ) * h 0 ω) ∂μ) = mgf (h 0) μ (k : ℝ) from rfl, hm]
     ring_nf
@@ -764,7 +768,7 @@ private lemma joint_lognormal_brick [IsProbabilityMeasure μ] {a0 a1 σe2 μh σ
   -- the Gaussian m.g.f. at `t = 1`
   have hlhs : (∫ ω, Real.exp (h k ω + h 0 ω) ∂μ) = mgf (fun ω => h k ω + h 0 ω) μ 1 := by
     simp [mgf]
-  rw [hlhs, mgf_gaussianReal hmv 1, hm, hv]
+  rw [hlhs, mgf_gaussianReal ⟨hSm.aemeasurable, hmv⟩ 1, hm, hv]
   congr 1
   ring
 
@@ -903,9 +907,9 @@ private lemma acf_sq_lognormal_corrected [IsProbabilityMeasure μ] {a0 a1 σe2 �
       ring_nf
     rw [e1, hcross, hsq k, hm2, hA]
     ring
-  have hden : (0:ℝ) < 3 * Real.exp σh2 - 1 := by
+  have hden : (0 : ℝ) < 3 * Real.exp σh2 - 1 := by
     nlinarith [Real.add_one_lt_exp (ne_of_gt hσh), Real.exp_pos σh2]
-  have hpos : (0:ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
+  have hpos : (0 : ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
   rw [acf, acvf, hcov1, acvf_sq_lognormal_zero hSV hgauss ha1 hcausal hlatent hσh hL4]
   rw [div_eq_div_iff (by nlinarith) (by nlinarith)]
   ring

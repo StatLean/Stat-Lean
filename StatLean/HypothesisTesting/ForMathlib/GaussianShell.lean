@@ -165,9 +165,9 @@ private lemma diam_shift_le_of_convex {J : Set ℝ} (hJ : Convex ℝ J) (c : ℝ
       exact ht.2 (hoc.out hs.1 ht.1 ⟨by linarith, by linarith⟩)
   intro s hs t ht
   rcases le_total s t with h | h
-  · rw [abs_sub_comm, abs_of_nonneg (by linarith : (0:ℝ) ≤ t - s)]
+  · rw [abs_sub_comm, abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s)]
     exact key s hs t ht h
-  · rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ s - t)]
+  · rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ s - t)]
     exact key t ht s hs h
 
 /-- Inserting an affine combination in the `i`-th slot is the affine combination of the
@@ -242,7 +242,7 @@ lemma gaussian_mem_notMem_shift_le (hk : 0 < k) (i : Fin k) (c : ℝ)
           = L (Fin.insertNth (α := fun _ => ℝ) i t y)
             + c • EuclideanSpace.single i (1 : ℝ) := by
         rw [insertNth_add_single]; rfl
-      simp only [Set.mem_preimage, hSdef, hsym, hTdef, Set.mem_setOf_eq, hJdef, hshift]
+      simp only [Set.mem_preimage, hSdef, hsym, hTdef, Set.mem_ofPred_eq, hJdef, hshift]
     rw [hset, hμdef]
     exact gaussianReal_le_of_diam_le (diam_shift_le_of_convex hJconv c)
   calc ∫⁻ y, (μ i) ((fun t => (t, y)) ⁻¹' S)
@@ -452,9 +452,9 @@ private lemma exists_isometry_apply_single (hk : 0 < k) {u : EuclideanSpace ℝ 
   classical
   obtain ⟨i⟩ : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk
   have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin k)) = Fintype.card (Fin k) := by simp
-  have horth : Orthonormal ℝ (({i} : Set (Fin k)).restrict (fun _ : Fin k => u)) := by
+  have horth : Orthonormal ℝ (({i} : Set (Fin k)).domRestrict (fun _ : Fin k => u)) := by
     constructor
-    · intro x; simpa using hu
+    · intro x; simpa using! hu
     · intro x y hxy
       exact absurd (Subtype.ext (x.2.trans y.2.symm)) hxy
   obtain ⟨b, hb⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
@@ -473,7 +473,7 @@ lemma gaussian_mem_notMem_vadd_le (hk : 0 < k) (w : EuclideanSpace ℝ (Fin k))
   rcases eq_or_ne w 0 with rfl | hw
   · have hempty : {x : EuclideanSpace ℝ (Fin k) | x ∈ V ∧ x + 0 ∉ V} = ∅ := by
       ext x
-      simp only [add_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and, not_not]
+      simp only [add_zero, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_and, not_not]
       exact fun h => h
     rw [hempty]
     simp
@@ -501,7 +501,7 @@ lemma gaussian_mem_notMem_vadd_le (hk : 0 < k) (w : EuclideanSpace ℝ (Fin k))
       ext y
       have hadd : R (y + ‖w‖ • EuclideanSpace.single i (1 : ℝ)) = R y + w := by
         rw [map_add, hRw]
-      simp only [Set.mem_preimage, Set.mem_setOf_eq, hV'def, hadd]
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, hV'def, hadd]
     have hinvar : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
         {x | x ∈ V ∧ x + w ∉ V}
         = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
@@ -583,7 +583,7 @@ private lemma integral_normSq_gaussian (k : ℕ) :
       = ∫ z, ∑ i, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
         integral_congr_ae (ae_of_all _ fun z => hnormsq z)
     _ = ∑ i, ∫ z, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
-        integral_finset_sum _ fun i _ => hint i
+        integral_finsetSum _ fun i _ => hint i
     _ = (k : ℝ) := by rw [Finset.sum_congr rfl fun i _ => hcoord i]; simp
 
 private lemma integrable_norm_gaussian (k : ℕ) :
@@ -703,7 +703,7 @@ private lemma gaussian_le_of_gaussian_shift_cover (hk : 0 < k)
                 gaussian_map_inner_unit hk hu]
           _ ≤ γ (Prod.mk x ⁻¹' A) := measure_mono hsub
       · rw [Set.indicator_of_notMem hx]
-        exact zero_le _
+        exact zero_le
     calc c₀ * γ S = ∫⁻ x, S.indicator (fun _ => c₀) x ∂γ := by
           rw [lintegral_indicator hSm, setLIntegral_const]
       _ ≤ ∫⁻ x, γ (Prod.mk x ⁻¹' A) ∂γ := lintegral_mono hpt
@@ -797,7 +797,7 @@ theorem gaussian_diff_interior_eq_zero (hk : 0 < k)
     have hzero := hdist _ hmem
     rw [dist_self] at hzero
     exact absurd hzero (not_le.2 (div_pos hc hkr))
-  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) (zero_le _)
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) (zero_le)
   have hεr : (0 : ℝ) < (ε : ℝ) := by exact_mod_cast hε
   have hcpos : 0 < (ε : ℝ) * Real.sqrt (2 * π) / (4 * k) := by positivity
   have hval : 4 * (k : ℝ) * ((ε : ℝ) * Real.sqrt (2 * π) / (4 * k)) / Real.sqrt (2 * π)
@@ -881,7 +881,7 @@ lemma isOpen_erosion (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))) : IsOpen 
     (isCompact_closedBall x ε).exists_thickening_subset_open isOpen_interior hx
   refine ⟨δ, hδ, ?_⟩
   intro x' hx'
-  simp only [erosion, Set.mem_setOf_eq]
+  simp only [erosion, Set.mem_ofPred_eq]
   intro y hy
   refine hsub (Metric.mem_thickening_iff.2 ⟨y + (x - x'), ?_, ?_⟩)
   · simp only [Metric.mem_closedBall, dist_eq_norm] at hy ⊢
@@ -898,7 +898,7 @@ lemma isOpen_erosion (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))) : IsOpen 
 lemma convex_erosion {ε : ℝ} {B : Set (EuclideanSpace ℝ (Fin k))} (hB : Convex ℝ B) :
     Convex ℝ (erosion ε B) := by
   intro x hx y hy s r hs hr hsr
-  simp only [erosion, Set.mem_setOf_eq] at hx hy ⊢
+  simp only [erosion, Set.mem_ofPred_eq] at hx hy ⊢
   intro z hz
   set v := z - (s • x + r • y) with hv
   have hvnorm : ‖v‖ ≤ ε := by

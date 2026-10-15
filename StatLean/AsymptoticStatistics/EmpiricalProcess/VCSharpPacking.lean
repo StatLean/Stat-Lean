@@ -13,6 +13,8 @@ Vaart Lemma 19.15.
 Reference: van der Vaart, *Asymptotic Statistics*, §19.2, pp.275--276.
 -/
 
+set_option linter.style.longFile 2100
+
 namespace AsymptoticStatistics.EmpiricalProcess
 
 noncomputable section
@@ -78,12 +80,20 @@ private noncomputable def extendSubtypeWeight (𝒜 : Finset (Finset α))
   classical
   exact if h : B ∈ 𝒜 then w ⟨B, h⟩ else 0
 
+/-- The minimum-endpoint weighted edge sum of the unit-distance graph of `𝒜`, for vertex
+weights `w` on the members of `𝒜`.
+
+Each unoriented edge `{B, B.erase x}` (with `x ∈ B` and both endpoints in `𝒜`) contributes
+`min (w B) (w (B.erase x))` exactly once. Edge behavior: an edgeless family has sum zero;
+negative weights are allowed by the definition but excluded by `weightedUnitDistance_le`. -/
 noncomputable def edgeMinWeightSum (𝒜 : Finset (Finset α))
     (w : ↥𝒜 → ℝ) : ℝ := by
   exact edgeMinWeightSumRaw 𝒜 (extendSubtypeWeight 𝒜 w)
 
 section UnitIncidence
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` and the down-compression
+`Down.compression a 𝒜` in the unit-incidence injection below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private noncomputable def unitIncidences (𝒜 : Finset (Finset α)) :
@@ -190,10 +200,10 @@ private lemma compressedIncidenceMap_injective
     by_cases hpL : incidenceIsLowered 𝒜 a p.1
     · by_cases hqL : incidenceIsLowered 𝒜 a q.1
       · have herase : p.1.1.1.erase a = q.1.1.1.erase a := by
-          simpa only [compressedIncidenceLarge, if_pos hpL, if_pos hqL] using hlarge
+          simpa only [compressedIncidenceLarge, ite_eq_left hpL, ite_eq_left hqL] using hlarge
         rw [← Finset.insert_erase hpL.1, ← Finset.insert_erase hqL.1, herase]
       · have herase : p.1.1.1.erase a = q.1.1.1 := by
-          simpa only [compressedIncidenceLarge, if_pos hpL, if_neg hqL] using hlarge
+          simpa only [compressedIncidenceLarge, ite_eq_left hpL, ite_eq_right hqL] using hlarge
         have hfirst : p.1.1.1.erase a ∈ 𝒜 := by
           rw [herase]
           exact q.1.1.2
@@ -203,7 +213,7 @@ private lemma compressedIncidenceMap_injective
         exact (hpL.2.2 ⟨hfirst, hsecond⟩).elim
     · by_cases hqL : incidenceIsLowered 𝒜 a q.1
       · have herase : p.1.1.1 = q.1.1.1.erase a := by
-          simpa only [compressedIncidenceLarge, if_neg hpL, if_pos hqL] using hlarge
+          simpa only [compressedIncidenceLarge, ite_eq_right hpL, ite_eq_left hqL] using hlarge
         have hfirst : q.1.1.1.erase a ∈ 𝒜 := by
           rw [← herase]
           exact p.1.1.2
@@ -211,7 +221,7 @@ private lemma compressedIncidenceMap_injective
           rw [Finset.erase_right_comm, ← hx, ← herase]
           exact hpinc.2
         exact (hqL.2.2 ⟨hfirst, hsecond⟩).elim
-      · simpa only [compressedIncidenceLarge, if_neg hpL, if_neg hqL] using hlarge
+      · simpa only [compressedIncidenceLarge, ite_eq_right hpL, ite_eq_right hqL] using hlarge
   apply Subtype.ext
   apply Prod.ext
   · exact Subtype.ext hset
@@ -239,6 +249,8 @@ private noncomputable def downCompressedVertex
 
 section CompressionMass
 
+/-- Classical decidable equality on `α`, used by `Finset.erase`, `Finset.image`,
+`Down.compression` and `Finset.Shatters` in the compression lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma image_downCompressedVertex
@@ -263,7 +275,7 @@ private lemma image_downCompressedVertex
         apply hAnot
         simpa only [Finset.insert_eq_self.mpr ha] using hins
       refine ⟨insert a A, hins, ?_⟩
-      rw [downCompressedVertex, Finset.erase_insert haA, if_neg hAnot]
+      rw [downCompressedVertex, Finset.erase_insert haA, ite_eq_right hAnot]
 
 private lemma downCompressedVertex_injOn
     (𝒜 : Finset (Finset α)) (a : α) :
@@ -271,22 +283,22 @@ private lemma downCompressedVertex_injOn
   intro A hA B hB hAB
   by_cases hAe : A.erase a ∈ 𝒜
   · by_cases hBe : B.erase a ∈ 𝒜
-    · simpa only [downCompressedVertex, if_pos hAe, if_pos hBe] using hAB
+    · simpa only [downCompressedVertex, ite_eq_left hAe, ite_eq_left hBe] using hAB
     · have hEq : A = B.erase a := by
-        simpa only [downCompressedVertex, if_pos hAe, if_neg hBe] using hAB
+        simpa only [downCompressedVertex, ite_eq_left hAe, ite_eq_right hBe] using hAB
       exact (hBe (hEq ▸ hA)).elim
   · by_cases hBe : B.erase a ∈ 𝒜
     · have hEq : A.erase a = B := by
-        simpa only [downCompressedVertex, if_neg hAe, if_pos hBe] using hAB
+        simpa only [downCompressedVertex, ite_eq_right hAe, ite_eq_left hBe] using hAB
       exact (hAe (hEq ▸ hB)).elim
     · have hEq : A.erase a = B.erase a := by
-        simpa only [downCompressedVertex, if_neg hAe, if_neg hBe] using hAB
+        simpa only [downCompressedVertex, ite_eq_right hAe, ite_eq_right hBe] using hAB
       have haA : a ∈ A := by
         by_contra ha
-        exact hAe (by simpa only [Finset.erase_eq_of_notMem ha] using hA)
+        exact hAe (by simpa only [Finset.erase_eq_of_notMem ha] using! hA)
       have haB : a ∈ B := by
         by_contra ha
-        exact hBe (by simpa only [Finset.erase_eq_of_notMem ha] using hB)
+        exact hBe (by simpa only [Finset.erase_eq_of_notMem ha] using! hB)
       rw [← Finset.insert_erase haA, ← Finset.insert_erase haB, hEq]
 
 private lemma finiteFamilyMass_compression_lt
@@ -304,7 +316,7 @@ private lemma finiteFamilyMass_compression_lt
     · exact Finset.card_erase_le
   · obtain ⟨A, hA, ha, herase⟩ := hmove
     refine ⟨A, hA, ?_⟩
-    rw [downCompressedVertex, if_neg herase, Finset.card_erase_of_mem ha]
+    rw [downCompressedVertex, ite_eq_right herase, Finset.card_erase_of_mem ha]
     have hpos : 0 < A.card := Finset.card_pos.mpr ⟨a, ha⟩
     omega
 
@@ -317,14 +329,14 @@ private lemma setFamilyShatters_finsetSetFamily_iff
     refine ⟨u, hu, ?_⟩
     ext x
     by_cases hx : x ∈ s
-    · simpa only [Finset.mem_inter, hx, true_and] using (hA x hx).symm
+    · simpa only [Finset.mem_inter, hx, true_and] using! (hA x hx).symm
     · have hxt : x ∉ t := fun hxt ↦ hx (ht hxt)
       simp only [Finset.mem_inter, hx, false_and, hxt]
   · intro h t ht
     obtain ⟨u, hu, hut⟩ := h ht
     refine ⟨(u : Set α), ⟨u, hu, rfl⟩, fun x hx ↦ ?_⟩
     have := Finset.ext_iff.mp hut x
-    simpa only [Finset.mem_inter, hx, true_and] using this.symm
+    simpa only [Finset.mem_inter, hx, true_and] using! this.symm
 
 private lemma vcIndexLE_downCompression
     (𝒜 : Finset (Finset α)) (a : α) (V : ℕ)
@@ -339,6 +351,8 @@ end CompressionMass
 
 section EraseClosed
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` in the erase-closed family
+lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma mem_of_subset_of_erase_closed
@@ -393,6 +407,8 @@ private lemma vcIndexLE_finset_mono
 
 section WeightedRaw
 
+/-- Classical decidable equality on `α`, used by `Finset.erase` on members of `𝒜` and on `𝒜`
+itself in the weighted edge-sum lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma edgeMinWeightSumRaw_sub_min
@@ -411,10 +427,10 @@ private lemma edgeMinWeightSumRaw_sub_min
   apply Finset.sum_congr rfl
   intro x hx
   by_cases herase : A.erase x ∈ 𝒜
-  · simp only [herase, if_true]
+  · simp only [herase, ite_true]
     rw [min_sub_sub_right]
     ring
-  · simp only [herase, if_false, add_zero]
+  · simp only [herase, ite_false, add_zero]
 
 private lemma edgeMinWeightSumRaw_erase_zero
     (𝒜 : Finset (Finset α)) (W : Finset α → ℝ)
@@ -442,12 +458,12 @@ private lemma edgeMinWeightSumRaw_erase_zero
         subst A
         exact (Finset.erase_ne_self.mpr hx) heq
       have hwA : 0 ≤ W A := hw A (Finset.mem_of_mem_erase hA)
-      simp only [hA₀, if_true, Finset.mem_erase, heq, ne_eq,
-        not_true_eq_false, false_and, if_false, hzero]
+      simp only [hA₀, ite_true, Finset.mem_erase, heq, ne_eq,
+        not_true_eq_false, false_and, ite_false, hzero]
       exact min_eq_right hwA
     · have hAne : A ≠ A₀ := Finset.mem_erase.mp hA |>.1
       have herase' : A.erase x ∈ 𝒜.erase A₀ := Finset.mem_erase.mpr ⟨heq, herase⟩
-      simp only [herase, herase', if_true]
+      simp only [herase, herase', ite_true]
   · have herase' : A.erase x ∉ 𝒜.erase A₀ := fun h ↦ herase (Finset.mem_of_mem_erase h)
     simp [herase, herase']
 
@@ -508,6 +524,8 @@ theorem unitDistance_edge_card_le
 
 section WeightedRawBound
 
+/-- Classical decidable equality on `α`, used to erase a minimum-weight member from `𝒜` in
+the induction below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private theorem edgeMinWeightSumRaw_le
@@ -592,7 +610,7 @@ theorem weightedUnitDistance_le
     rw [Finset.sum_subtype 𝒜 (fun _ ↦ Iff.rfl)]
     apply Finset.sum_congr rfl
     intro A _hA
-    rw [extendSubtypeWeight, dif_pos A.2]
+    rw [extendSubtypeWeight, dite_eq_left A.2]
   rw [hsum]
   exact hraw
 
@@ -613,6 +631,8 @@ private noncomputable def verticalEdgeCount
 
 section VerticalEdges
 
+/-- Classical decidable equality on `α`, used by `Finset.erase`, `Finset.memberSubfamily`,
+`Finset.nonMemberSubfamily` and intersections of families in the vertical-edge count below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private lemma image_erase_verticalFamily
@@ -725,6 +745,8 @@ noncomputable def restrictionMultiplicity (P : Finset (Finset α))
 
 section RestrictionMultiplicity
 
+/-- Classical decidable equality on `α`, used by the intersections, differences, insertions,
+erasures and membership filters of finite sets in the trace-fiber double count below. -/
 local instance : DecidableEq α := Classical.decEq α
 
 private noncomputable def traceFiber
@@ -754,11 +776,11 @@ private lemma pairCrossingSum
         if x ∈ A then (Q.filter fun B ↦ x ∉ B).card
         else (Q.filter fun B ↦ x ∈ B).card := by
     by_cases hxA : x ∈ A
-    · rw [if_pos hxA]
+    · rw [ite_eq_left hxA]
       simpa only [hxA, true_iff] using
         (Finset.sum_boole (fun B ↦ x ∉ B) Q :
           (∑ B ∈ Q, if x ∉ B then (1 : ℝ) else 0) = _)
-    · rw [if_neg hxA]
+    · rw [ite_eq_right hxA]
       simpa only [hxA, false_iff, not_not] using
         (Finset.sum_boole (fun B ↦ x ∈ B) Q :
           (∑ B ∈ Q, if x ∈ B then (1 : ℝ) else 0) = _)
@@ -774,7 +796,7 @@ private lemma pairCrossingSum
         ((Q.filter fun B ↦ x ∉ B).card : ℝ) := by
     apply Finset.sum_congr rfl
     intro A hA
-    rw [if_pos (Finset.mem_filter.mp hA).2]
+    rw [ite_eq_left (Finset.mem_filter.mp hA).2]
   have h₂ :
       (∑ A ∈ Q.filter (fun A ↦ x ∉ A),
         if x ∈ A then ((Q.filter fun B ↦ x ∉ B).card : ℝ)
@@ -783,7 +805,7 @@ private lemma pairCrossingSum
         ((Q.filter fun B ↦ x ∈ B).card : ℝ) := by
     apply Finset.sum_congr rfl
     intro A hA
-    rw [if_neg (Finset.mem_filter.mp hA).2]
+    rw [ite_eq_right (Finset.mem_filter.mp hA).2]
   rw [h₁, h₂]
   simp only [Finset.sum_const, nsmul_eq_mul]
   ring
@@ -808,13 +830,13 @@ private lemma hammingDistance_eq_crossingSum
       intro x hx
       simp only [Finset.mem_union, Finset.mem_sdiff] at hx
       rcases hx with ⟨hxA, hxB⟩ | ⟨hxB, hxA⟩
-      · rw [if_pos ⟨fun _ ↦ hxB, fun _ ↦ hxA⟩]
-      · rw [if_pos ⟨fun h ↦ False.elim (hxA h),
+      · rw [ite_eq_left ⟨fun _ ↦ hxB, fun _ ↦ hxA⟩]
+      · rw [ite_eq_left ⟨fun h ↦ False.elim (hxA h),
           fun h ↦ False.elim (h hxB)⟩]
     _ = ∑ x ∈ s, if (x ∈ A ↔ x ∉ B) then (1 : ℝ) else 0 := by
       apply Finset.sum_subset hsub
       intro x _hx hnot
-      rw [if_neg]
+      rw [ite_eq_right]
       intro hxor
       by_cases hxA : x ∈ A
       · exact hnot (Finset.mem_union_left _
@@ -941,7 +963,7 @@ private lemma vcIndexLE_restrictionFamily
   apply hVC q hV
   have hqt : q ⊆ t := by
     obtain ⟨B, hB, hqB⟩ := hsh q (Finset.Subset.rfl)
-    simp only [finsetSetFamily, Set.mem_setOf_eq] at hB
+    simp only [finsetSetFamily, Set.mem_ofPred_eq] at hB
     obtain ⟨B', hB', rfl⟩ := hB
     simp only [restrictionFamily, Finset.mem_image] at hB'
     obtain ⟨A, _hA, rfl⟩ := hB'
@@ -950,7 +972,7 @@ private lemma vcIndexLE_restrictionFamily
     exact Finset.mem_inter.mp hxinter |>.2
   intro r hr
   obtain ⟨B, hB, hrB⟩ := hsh r hr
-  simp only [finsetSetFamily, Set.mem_setOf_eq] at hB
+  simp only [finsetSetFamily, Set.mem_ofPred_eq] at hB
   obtain ⟨B', hB', rfl⟩ := hB
   simp only [restrictionFamily, Finset.mem_image] at hB'
   obtain ⟨A, hA, rfl⟩ := hB'
@@ -1312,13 +1334,13 @@ private lemma traceSplit_min_eq_edgeTerm
     traceFiberOff_eq_traceFiber P u B x hx hxB]
   by_cases hon : insert x B ∈ restrictionFamily P u
   · by_cases hoff : B ∈ restrictionFamily P u
-    · rw [if_pos ⟨hon, hoff⟩]
-    · rw [if_neg (fun h ↦ hoff h.2)]
+    · rw [ite_eq_left ⟨hon, hoff⟩]
+    · rw [ite_eq_right (fun h ↦ hoff h.2)]
       have hemp : traceFiber P u B = ∅ := by
         exact Finset.not_nonempty_iff_eq_empty.mp
           (fun hn ↦ hoff ((traceFiber_nonempty_iff P u B).mp hn))
       simp [hemp]
-  · rw [if_neg (fun h ↦ hon h.1)]
+  · rw [ite_eq_right (fun h ↦ hon h.1)]
     have hemp : traceFiber P u (insert x B) = ∅ := by
       exact Finset.not_nonempty_iff_eq_empty.mp
         (fun hn ↦ hon ((traceFiber_nonempty_iff P u (insert x B)).mp hn))
@@ -1432,12 +1454,12 @@ private lemma edgeMinWeightSum_restriction_eq_sum_coordinate
           apply Finset.sum_congr rfl
           intro x hxC
           by_cases herase : C.erase x ∈ restrictionFamily P u
-          · rw [if_pos herase, if_pos ⟨hxC, herase⟩]
-            rw [extendSubtypeWeight, dif_pos hC,
-              extendSubtypeWeight, dif_pos herase,
+          · rw [ite_eq_left herase, ite_eq_left ⟨hxC, herase⟩]
+            rw [extendSubtypeWeight, dite_eq_left hC,
+              extendSubtypeWeight, dite_eq_left herase,
               restrictionMultiplicity_eq_traceFiber_card,
               restrictionMultiplicity_eq_traceFiber_card]
-          · rw [if_neg herase, if_neg (fun h ↦ herase h.2)]
+          · rw [ite_eq_right herase, ite_eq_right (fun h ↦ herase h.2)]
         _ = ∑ x ∈ u,
               if x ∈ C ∧ C.erase x ∈ restrictionFamily P u then
                 min ((traceFiber P u C).card : ℝ)
@@ -1445,7 +1467,7 @@ private lemma edgeMinWeightSum_restriction_eq_sum_coordinate
               else 0 := by
           apply Finset.sum_subset hCu
           intro x _hxu hxC
-          rw [if_neg]
+          rw [ite_eq_right]
           exact fun h ↦ hxC h.1
     _ = ∑ x ∈ u, ∑ C ∈ restrictionFamily P u,
         if x ∈ C ∧ C.erase x ∈ restrictionFamily P u then
@@ -1572,14 +1594,17 @@ theorem randomDeletion_incidence_lower
 
 section FinitePackingBound
 
+/-- Classical decidable equality on `α`, used by the intersections `A ∩ t` and symmetric
+differences `(A \ B) ∪ (B \ A)` in the finite packing lemmas below. -/
 local instance : DecidableEq α := Classical.decEq α
 
+set_option backward.isDefEq.respectTransparency.types false in
 private lemma restrictionFamily_eq_finiteTrace
     (P : Finset (Finset α)) (t : Finset α) :
     restrictionFamily P t = finiteTrace (finsetSetFamily P) t := by
   ext B
   simp only [restrictionFamily, finiteTrace, finsetSetFamily, Finset.mem_image,
-    Finset.mem_filter, Finset.mem_powerset, Set.mem_setOf_eq]
+    Finset.mem_filter, Finset.mem_powerset, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨A, hA, rfl⟩
     refine ⟨Finset.inter_subset_right, (A : Set α), ⟨A, hA, rfl⟩, ?_⟩

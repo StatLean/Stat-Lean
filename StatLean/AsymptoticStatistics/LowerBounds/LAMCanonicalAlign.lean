@@ -187,7 +187,7 @@ theorem canonicalPath_curve_eq_unbounded_withDensity
   by_cases hg : G = 0
   · -- `g = 0` branch: `canonicalPath 0 = boundedDensityPath 0`; curve `= P`.
     -- RHS also `= P` (`linPerturbScore g_P (t•h) =ᵐ 0`, `kSigmoid =ᵐ 1`, `c = 1`).
-    simp only [hg, dif_pos]
+    simp only [hg, dite_eq_left]
     -- LHS: `(boundedDensityPath 0 ⟨0,_⟩).curve t`.
     -- Compute it directly: the curve is `if |t| < δ then withDensity (ofReal (1+t·0)) else P`,
     -- and both branches equal `P` because the score is `0`.
@@ -256,9 +256,9 @@ theorem canonicalPath_curve_eq_unbounded_withDensity
       rw [h_norm_one, hω, kSigmoid_zero, mul_one, ENNReal.ofReal_one]
     rw [withDensity_congr_ae h_dens_one, withDensity_one]
   · -- `g ≠ 0` branch: 1-dim `oneDimPath` with seed `(1/‖G‖)•G`, direction `single 0 ‖G‖`.
-    simp only [hg, dif_neg, not_false_eq_true]
+    simp only [hg, dite_eq_right, not_false_eq_true]
     -- The `oneDimPath`'s curve is `withDensity (ofReal ∘ density (t • single 0 ‖G‖))`.
-    rw [unboundedParamSubmodel_oneDimPath_curve]
+    erw [unboundedParamSubmodel_oneDimPath_curve]
     -- Align via `withDensity_congr_ae` on the a.e.-equal densities.
     refine withDensity_congr_ae ?_
     -- Build the seed's orthonormality witness (the one `canonicalPath` uses).

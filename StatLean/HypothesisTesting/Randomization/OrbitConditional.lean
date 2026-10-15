@@ -151,7 +151,9 @@ private lemma setIntegral_smul_eq (P : Measure 𝓧) (f : 𝓧 → ℝ) (hf : Me
   rw [hind]
   have h := integral_map (μ := P) (φ := fun x => g • x) (f := s.indicator f)
     (hsmul g).aemeasurable (hf.indicator hs).aestronglyMeasurable
-  rw [hrand g] at h
+  have hinv : P.map (fun x => g • x) = P := by
+    simpa only [Measure.map₀_of_measurable (hsmul g)] using hrand g
+  rw [hinv] at h
   rw [← h]
 
 /-! ### Conditioning on the orbit -/
@@ -176,8 +178,8 @@ theorem condExp_orbit_eq_orbitAverage (P : Measure 𝓧) [IsProbabilityMeasure P
     condExp (invariantSigmaAlgebra G) P f =ᵐ[P] orbitAverage G f := by
   have hcard : 0 < Fintype.card G := Fintype.card_pos
   have hcardR : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast hcard.ne'
-  haveI : SigmaFinite (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) := by
-    haveI : IsFiniteMeasure (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) :=
+  have : SigmaFinite (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) := by
+    have : IsFiniteMeasure (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) :=
       isFiniteMeasure_trim _
     infer_instance
   have hfint : Integrable f P := (integrable_const C).mono' hf.aestronglyMeasurable
@@ -192,7 +194,7 @@ theorem condExp_orbit_eq_orbitAverage (P : Measure 𝓧) [IsProbabilityMeasure P
     hfint (fun s _ _ => hoaint.integrableOn) (fun s hs_m _ => ?_) ?_).symm
   · obtain ⟨hs, hsinv⟩ := hs_m
     unfold orbitAverage
-    rw [integral_const_mul, integral_finset_sum _ fun g _ => (hfg_int g).integrableOn]
+    rw [integral_const_mul, integral_finsetSum _ fun g _ => (hfg_int g).integrableOn]
     simp_rw [setIntegral_smul_eq P f hf hsmul hrand hs hsinv]
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
       inv_mul_cancel₀ hcardR, one_mul]

@@ -8,7 +8,7 @@
     {"id":"StatLean.HypothesisTesting.IsCriticalFn","label":"IsCriticalFn","full":"StatLean.HypothesisTesting.IsCriticalFn","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"StatLean.HypothesisTesting.power","label":"power","full":"StatLean.HypothesisTesting.power","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
     {"id":"MeasureTheory.ae_iff","label":"ae_iff","full":"MeasureTheory.ae_iff","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
-    {"id":"MeasureTheory.measure_compl","label":"measure_compl","full":"MeasureTheory.measure_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"MeasureTheory.measure_compl","label":"measure_compl","full":"MeasureTheory.measure_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Basic"},
     {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"tsub_self","label":"tsub_self","full":"tsub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Sub.Basic"},

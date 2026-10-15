@@ -11,14 +11,15 @@ $\le k\alpha/N$. The false discovery proportion is $\mathrm{FDP} = V / (R \vee 1
 number of true nulls rejected and $R$ the total number of rejections, and the false discovery rate
 is $\mathrm{FDR} = \mathbb{E}[\mathrm{FDP}]$.
 
-**Main result** (`benjamini_hochberg_fdr_eq`): if the p-values are jointly independent and every null
-p-value is **exactly** uniform on $[0,1]$ (i.e. $\mathbb{P}(p_i \le t) = t$ for $t \in [0,1]$, not
-merely the super-uniform domination $\mathbb{P}(p_i \le t) \le t$), then the BH procedure attains
-FDR control with **equality**:
+**Main result** (`benjamini_hochberg_fdr_eq`): if the p-values are jointly independent and every
+null p-value is **exactly** uniform on $[0,1]$ (i.e. $\mathbb{P}(p_i \le t) = t$ for $t \in [0,1]$,
+not merely the super-uniform domination $\mathbb{P}(p_i \le t) \le t$), then the BH procedure
+attains FDR control with **equality**:
 $$ \mathrm{FDR} = \frac{N_0}{N}\,\alpha. $$
-This is the exact-identity companion to the super-uniform inequality $\mathrm{FDR} \le (N_0/N)\alpha$
-formalized in `BenjaminiHochberg.lean`. We require $0 < \alpha \le 1$ and $N \ge 1$; the upper bound
-$\alpha \le 1$ ensures every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
+This is the exact-identity companion to the super-uniform inequality
+$\mathrm{FDR} \le (N_0/N)\alpha$ formalized in `BenjaminiHochberg.lean`. We require
+$0 < \alpha \le 1$ and $N \ge 1$; the upper bound $\alpha \le 1$ ensures
+every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
 (ISBN 978-3-032-03160-0), Chapter 20 (False Discovery Rate), §20.2 (False Discovery Rate:
@@ -54,12 +55,12 @@ Y. Benjamini and Y. Hochberg, "Controlling the false discovery rate: a practical
 approach to multiple testing", *Journal of the Royal Statistical Society, Series B* 57(1):289–300,
 1995; their Theorem 1 states $\mathrm{FDR} = (m_0/m)\,q$ for independent test statistics with the
 nulls uniformly distributed (and $\mathrm{FDR} \le (m_0/m)\,q$ in general). The martingale /
-optional-stopping reformulation underlying the lecture proof is due to J. D. Storey, J. E. Taylor and
-D. Siegmund, "Strong control, conservative point estimation and simultaneous conservative
-consistency of false discovery rates: a unified approach", *Journal of the Royal Statistical Society,
-Series B* 66(1):187–205, 2004 (their empirical-process / backwards-martingale treatment of the BH
-estimator $V(t)/t$). The leave-one-out argument formalized here is the discrete equivalent of that
-martingale identity and gives the same exact-equality conclusion.
+optional-stopping reformulation underlying the lecture proof is due to J. D. Storey, J. E. Taylor
+and D. Siegmund, "Strong control, conservative point estimation and simultaneous conservative
+consistency of false discovery rates: a unified approach", *Journal of the Royal Statistical
+Society, Series B* 66(1):187–205, 2004 (their empirical-process / backwards-martingale treatment of
+the BH estimator $V(t)/t$). The leave-one-out argument formalized here is the discrete equivalent of
+that martingale identity and gives the same exact-equality conclusion.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -120,7 +121,7 @@ private lemma bhCount_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     (m : ℕ) (hm : bhKmax α p ω < m) (hm' : m ≤ N) :
     bhCount α p m ω < m := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hmem : m ∈ (Finset.range (N + 1)).filter (fun k => k ≤ bhCount α p k ω) := by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
@@ -176,7 +177,7 @@ private lemma bh_loo_le_imp_mem {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   -- r = bhCount α q (bhKmax α q ω) ω (the rejection count is the count at the threshold index).
   have hrK : r = bhCount α q (bhKmax α q ω) ω := by
     rw [hr]
-    show (bhRejects α q ω).card = bhCount α q (bhKmax α q ω) ω
+    change (bhRejects α q ω).card = bhCount α q (bhKmax α q ω) ω
     rw [bhRejects_eq_filter]; rfl
   -- bhKmax ≤ r.
   have hKr : bhKmax α q ω ≤ r := by
@@ -258,7 +259,7 @@ private lemma bhKmax_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω 
     intro m hm
     simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
     omega
 
@@ -270,7 +271,7 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     have heq : {ω | bhKmax α p ω ≤ k} =
         ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter₂, Finset.mem_coe]
       exact bhKmax_le_iff α p ω
     rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
@@ -280,13 +281,13 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
   change MeasurableSet {ω | bhKmax α p ω = k}
   rw [show {ω | bhKmax α p ω = k} =
       {ω | bhKmax α p ω ≤ k} ∩ {ω | k ≤ bhKmax α p ω} from by
-    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]; exact le_antisymm_iff]
   apply MeasurableSet.inter (hmeas_le k)
   cases k with
   | zero => simp
   | succ k =>
     rw [show {ω | k + 1 ≤ bhKmax α p ω} = ({ω | bhKmax α p ω ≤ k})ᶜ from by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]; omega]
     exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
@@ -395,10 +396,10 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   let recon : (↥(({i} : Finset (Fin N))ᶜ) → ℝ) → (Fin N → ℝ) :=
     fun y j => if h : j ∈ (({i} : Finset (Fin N))ᶜ) then y ⟨j, h⟩ else 0
   have hrecon_meas : Measurable recon :=
-    measurable_pi_lambda _ (fun j => by
+    Measurable.of_eval (fun j => by
       by_cases h : j ∈ (({i} : Finset (Fin N))ᶜ)
-      · simp only [recon, dif_pos h]; exact measurable_pi_apply _
-      · simp only [recon, dif_neg h]; exact measurable_const)
+      · simp only [recon, dite_eq_left h]; exact measurable_pi_apply _
+      · simp only [recon, dite_eq_right h]; exact measurable_const)
   have hpi_eq : (fun ω => p i ω) =
       (fun v : ↥({i} : Finset (Fin N)) → ℝ => v ⟨i, Finset.mem_singleton_self i⟩) ∘
         (fun ω (j : ↥({i} : Finset (Fin N))) => p ↑j ω) := rfl
@@ -414,15 +415,15 @@ private lemma bh_loo_indep_mul {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     · subst h; simp [recon, Function.update_self]
     · have hjc : j ∈ (({i} : Finset (Fin N))ᶜ) := by
         simp only [Finset.mem_compl, Finset.mem_singleton]; exact h
-      simp only [Function.update_of_ne h, recon, dif_pos hjc]
+      simp only [Function.update_of_ne h, recon, dite_eq_left hjc]
   have hpiZ : IndepFun (fun ω => p i ω) Z μ := by
     rw [hpi_eq, hZ_eq]
     exact hXY.comp (measurable_pi_apply _) ((measurable_bhNumRejPt α).comp hrecon_meas)
   have e1 : {ω | p i ω ≤ t} = (fun ω => p i ω) ⁻¹' Set.Iic t := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_Iic]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_Iic]
   have e2 : {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k} =
       Z ⁻¹' {k} := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
+    ext ω; simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, hZdef]
   rw [e1, e2]
   exact hpiZ.measure_inter_preimage_eq_mul (Set.Iic t) {k} measurableSet_Iic
     (measurableSet_singleton k)
@@ -474,29 +475,30 @@ private lemma bh_summand_eq_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
       change (bhRejects α p ω).card ≤ N
       exact (Finset.card_le_univ _).trans_eq (by simp [Fintype.card_fin])
     have h1leR : (1 : ℝ) ≤ (numRejections (bhRejects α p) ω : ℝ) := by exact_mod_cast hR1
-    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N := bh_mem_imp_le hN α hα p i ω hi
+    have hpi : p i ω ≤ (numRejections (bhRejects α p) ω : ℝ) * α / N :=
+      bh_mem_imp_le hN α hα p i ω hi
     have hRloo : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω =
         numRejections (bhRejects α p) ω :=
       bh_count_eq_leaveOneOut hN α hα p i (numRejections (bhRejects α p) ω) ω hi rfl
-    rw [if_pos hi, max_eq_left h1leR,
+    rw [ite_eq_left hi, max_eq_left h1leR,
       Finset.sum_eq_single (numRejections (bhRejects α p) ω)]
-    · rw [if_pos hpi, if_pos hRloo, mul_one, mul_one]
+    · rw [ite_eq_left hpi, ite_eq_left hRloo, mul_one, mul_one]
     · intro k _ hk_ne
       have hz : (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k
           then (1 : ℝ) else 0) = 0 := by
-        rw [hRloo]; exact if_neg (fun h => hk_ne h.symm)
+        rw [hRloo]; exact ite_eq_right (fun h => hk_ne h.symm)
       rw [hz, mul_zero, mul_zero]
     · intro h_not
       exact absurd (Finset.mem_Icc.mpr ⟨hR1, hRN⟩) h_not
   · -- Not rejected: LHS = 0, and every summand vanishes by the converse crux.
-    rw [if_neg hi, zero_div]
+    rw [ite_eq_right hi, zero_div]
     refine (Finset.sum_eq_zero ?_).symm
     intro k _
     by_cases hpik : p i ω ≤ (k : ℝ) * α / N
     · by_cases hRk : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k
       · exact absurd (bh_loo_le_imp_mem hN α hα p i ω (by rw [hRk]; exact hpik)) hi
-      · rw [if_neg hRk, mul_zero, mul_zero]
-    · rw [if_neg hpik, zero_mul, mul_zero]
+      · rw [ite_eq_right hRk, mul_zero, mul_zero]
+    · rw [ite_eq_right hpik, zero_mul, mul_zero]
 
 /-! ## Per-null contribution identity -/
 
@@ -569,11 +571,12 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
           (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
             else 0)) =
         ({ω | p i ω ≤ (k : ℝ) * α / N} ∩
-          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).indicator 1 := by
+          {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ)))
+              ω = k}).indicator 1 := by
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
-        simp [Set.mem_inter_iff, Set.mem_setOf_eq, hA, hB]
+        simp [Set.mem_inter_iff, Set.mem_ofPred_eq, hA, hB]
     rw [integral_const_mul, hprod_eq, integral_indicator_one (hAmeas.inter hBmeas)]
     have hAeq : (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal = (k : ℝ) * α / N := by
       rw [hi ((k : ℝ) * α / N) htk hk_le1, ENNReal.toReal_ofReal htk]
@@ -595,14 +598,14 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
       intro a _ b _ hab
       apply Set.disjoint_left.mpr
       intro ω ha hb
-      simp only [Set.mem_setOf_eq] at ha hb
+      simp only [Set.mem_ofPred_eq] at ha hb
       exact hab (ha.symm.trans hb)
     rw [← ENNReal.toReal_sum (fun k _ => measure_ne_top μ _),
       ← measure_biUnion_finset hdisj (fun k _ => hLOO_meas (measurableSet_singleton k))]
     have hcover : (⋃ k ∈ Finset.Icc 1 N,
         {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}) = Set.univ := by
       ext ω
-      simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
       refine ⟨numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω, ?_, rfl⟩
       rw [Finset.mem_Icc]
       refine ⟨numRej_loo_ge_one α hα p i ω, ?_⟩
@@ -621,7 +624,7 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
           ((if p i ω ≤ (k : ℝ) * α / N then (1 : ℝ) else 0) *
            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
               else 0)) ∂μ :=
-        integral_finset_sum _ hgint
+        integral_finsetSum _ hgint
     _ = ∑ k ∈ Finset.Icc 1 N, (α / N) *
           (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal :=
         Finset.sum_congr rfl eq_each
@@ -676,7 +679,7 @@ theorem benjamini_hochberg_fdr_eq {N : ℕ} (hN : 0 < N) {α : ℝ} (hα0 : 0 < 
     fun ω => BHMartInternal.fdp_eq_sum_div α H₀ p ω
   simp_rw [hfdp_sum]
   -- Step 2: Swap integral and sum.
-  rw [integral_finset_sum H₀ (fun i _ => BHMartInternal.integrable_bh_summand hN α hα0 μ p hmeas i)]
+  rw [integral_finsetSum H₀ (fun i _ => BHMartInternal.integrable_bh_summand hN α hα0 μ p hmeas i)]
   -- Step 3: Each summand equals α/N exactly (bh_claim_eq), then sum.
   have hsum : ∀ i ∈ H₀, ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
           max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ = α / N :=

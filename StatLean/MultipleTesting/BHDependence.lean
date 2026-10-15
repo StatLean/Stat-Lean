@@ -21,9 +21,9 @@ $\alpha/H_N$ controls FDR at $(N_0/N)\,\alpha \le \alpha$ under arbitrary depend
 Benjamini–Yekutieli correction.
 
 The Lean statement (`benjamini_hochberg_dependent_fdr_le`) matches this exactly, with two routine
-additions: each $p$-value is assumed measurable (needed to integrate the false-discovery proportion),
-and super-uniformity is the explicit hypothesis `SuperUniform (p j) μ` on every null index. The
-constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
+additions: each $p$-value is assumed measurable (needed to integrate the false-discovery
+proportion), and super-uniformity is the explicit hypothesis `SuperUniform (p j) μ` on every null
+index. The constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
 
 **Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023, Lecture 5 §5.5 and Lecture 6 §6.6, Theorem 3 (Benjamini–Yekutieli bound under arbitrary
@@ -32,14 +32,14 @@ dependence); cross-referenced with Junwei Lu, *Big Data Analysis*, Springer Natu
 P-Values).
 
 **Proof formalization notes.** *(Benjamini–Yekutieli layer-cake.)* Write
-$\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is rejected
-and $R$ is the total number of rejections. For each null $i$, expand
-$\psi_i/(R\vee 1) = \sum_{k=1}^{N} (1/k)\,\mathbf{1}(R=k)\,\psi_i$ and use that on $\{R=k\}$ a rejected
-$i$ satisfies $p_i \le k\alpha/N$. Reorganizing the double sum into bands
-$C_j = \{(j-1)\alpha/N < p_i \le j\alpha/N\}$ and applying Abel summation shows each null contributes
-at most $(\alpha/N)\,H_N$, using only super-uniformity $\mathbb{P}(p_i \le k\alpha/N) \le k\alpha/N$.
-No factorization is used, hence no independence is needed. Summing over $H_0$ gives
-$(N_0/N)\,\alpha\,H_N$.
+$\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is
+rejected and $R$ is the total number of rejections. For each null $i$, expand
+$\psi_i/(R\vee 1) = \sum_{k=1}^{N} (1/k)\,\mathbf{1}(R=k)\,\psi_i$ and use that on $\{R=k\}$ a
+rejected $i$ satisfies $p_i \le k\alpha/N$. Reorganizing the double sum into bands
+$C_j = \{(j-1)\alpha/N < p_i \le j\alpha/N\}$ and applying Abel summation shows each null
+contributes at most $(\alpha/N)\,H_N$, using only super-uniformity
+$\mathbb{P}(p_i \le k\alpha/N) \le k\alpha/N$. No factorization is used, hence no independence is
+needed. Summing over $H_0$ gives $(N_0/N)\,\alpha\,H_N$.
 
 The combinatorial / measurability infrastructure for the BH rejection set is re-derived `private`ly
 here because the corresponding lemmas in `BenjaminiHochberg.lean` are `private` to that module.
@@ -93,7 +93,7 @@ private lemma bhCountD_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → 
     (m : ℕ) (hm : bhKmaxD α p ω < m) (hm' : m ≤ N) :
     bhCountD α p m ω < m := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hmem : m ∈ (Finset.range (N + 1)).filter (fun k => k ≤ bhCountD α p k ω) := by
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
@@ -170,7 +170,7 @@ private lemma bhKmaxD_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω
     intro m hm
     simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
-    push_neg at hgt
+    push Not at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
     omega
 
@@ -182,7 +182,7 @@ private lemma measurable_bhKmaxD {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     have heq : {ω | bhKmaxD α p ω ≤ k} =
         ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCountD α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter₂, Finset.mem_coe]
       exact bhKmaxD_le_iff α p ω
     rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
@@ -192,13 +192,13 @@ private lemma measurable_bhKmaxD {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
   change MeasurableSet {ω | bhKmaxD α p ω = k}
   rw [show {ω | bhKmaxD α p ω = k} =
       {ω | bhKmaxD α p ω ≤ k} ∩ {ω | k ≤ bhKmaxD α p ω} from by
-    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]; exact le_antisymm_iff]
   apply MeasurableSet.inter (hmeas_le k)
   cases k with
   | zero => simp
   | succ k =>
     rw [show {ω | k + 1 ≤ bhKmaxD α p ω} = ({ω | bhKmaxD α p ω ≤ k})ᶜ from by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+      ext ω; simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_le]; omega]
     exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
@@ -343,14 +343,14 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         apply mul_le_mul_of_nonneg_right _ (div_nonneg hα.le (Nat.cast_nonneg N))
         push_cast; linarith
       have hthis : p i ω ≤ ((m + 1 : ℕ) : ℝ) * α / N := le_trans h hthr
-      rw [if_pos h, if_pos hthis]
-    · simp only [if_neg h]; split_ifs <;> norm_num
+      rw [ite_eq_left h, ite_eq_left hthis]
+    · simp only [ite_eq_right h]; split_ifs <;> norm_num
   -- ∫ a k = F k
   have hintegral_a : ∀ k, ∫ ω, a k ω ∂μ = F k := by
     intro k
     rw [hFdef]
     have hset : (fun ω => a k ω) = Set.indicator {ω | p i ω ≤ (k : ℝ) * α / N} 1 := by
-      funext ω; simp only [a, Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+      funext ω; simp only [a, Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply]
     rw [hset, integral_indicator_one (measurableSet_le (hmeas i) measurable_const)]
     rfl
   -- integrability building blocks
@@ -384,7 +384,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
       have h0 : ENNReal.ofReal (((0 : ℕ) : ℝ) * α / N) = 0 := by
         rw [show (((0 : ℕ) : ℝ) * α / N) = 0 from by norm_num, ENNReal.ofReal_zero]
       rw [h0] at hle
-      exact le_antisymm hle (zero_le _)
+      exact le_antisymm hle (zero_le)
     simp only [hFdef, hμ, ENNReal.toReal_zero]
   have hFle : ∀ k, F k ≤ (α / N) * k := by
     intro k
@@ -413,18 +413,18 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         change (bhRejects α p ω).card ≤ N
         exact (Finset.card_le_univ _).trans_eq (by simp [Fintype.card_fin])
       have h1leR : (1 : ℝ) ≤ (R ω : ℝ) := by exact_mod_cast hR1
-      rw [if_pos hi', max_eq_left h1leR]
+      rw [ite_eq_left hi', max_eq_left h1leR]
       have hpi : p i ω ≤ (R ω : ℝ) * α / N := bh_mem_imp_leD hN α hα p i ω hi'
       have hterm : (1 / (R ω : ℝ)) * (a (R ω) ω * b (R ω) ω) = 1 / (R ω : ℝ) := by
-        simp only [a, b, if_pos hpi, if_pos rfl, mul_one]
+        simp only [a, b, ite_eq_left hpi, ite_eq_left rfl, mul_one]
       rw [← hterm]
       exact Finset.single_le_sum hnn (Finset.mem_Icc.mpr ⟨hR1, hRN⟩)
-    · rw [if_neg hi', zero_div]
+    · rw [ite_eq_right hi', zero_div]
       exact Finset.sum_nonneg hnn
   -- ===== Step B: integrate Step A =====
   have hintegrable_sum : Integrable (fun ω => ∑ k ∈ Finset.Icc 1 N,
       (1 / (k : ℝ)) * (a k ω * b k ω)) μ :=
-    integrable_finset_sum _ (fun k _ => (hint_amb k k).const_mul _)
+    integrable_finsetSum _ (fun k _ => (hint_amb k k).const_mul _)
   have hLHS_int : Integrable (fun ω => (if i ∈ bhRejects α p ω then (1 : ℝ) else 0)
       / max (R ω : ℝ) 1) μ := by
     apply integrable_of_bdd (C := 1)
@@ -443,7 +443,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         ≤ ∫ ω, ∑ k ∈ Finset.Icc 1 N, (1 / (k : ℝ)) * (a k ω * b k ω) ∂μ :=
           integral_mono hLHS_int hintegrable_sum stepA
       _ = ∑ k ∈ Finset.Icc 1 N, ∫ ω, (1 / (k : ℝ)) * (a k ω * b k ω) ∂μ :=
-          integral_finset_sum _ (fun k _ => (hint_amb k k).const_mul _)
+          integral_finsetSum _ (fun k _ => (hint_amb k k).const_mul _)
       _ = ∑ k ∈ Finset.Icc 1 N, (1 / (k : ℝ)) * ∫ ω, a k ω * b k ω ∂μ := by
           apply Finset.sum_congr rfl; intro k _; rw [integral_const_mul]
   -- ===== Step C: bands swap =====
@@ -461,8 +461,8 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
         have := Finset.sum_range_sub (fun m => a m ω) k; linarith [this]
       rw [htel, add_mul, Finset.sum_mul]
     rw [hpt, integral_add (hint_amb 0 k)
-        (integrable_finset_sum _ (fun m _ => hint_diff_b m k)),
-      integral_finset_sum _ (fun m _ => hint_diff_b m k)]
+        (integrable_finsetSum _ (fun m _ => hint_diff_b m k)),
+      integral_finsetSum _ (fun m _ => hint_diff_b m k)]
   -- the j = 0 band has zero measure (F 0 = 0)
   have hz : ∀ k, ∫ ω, a 0 ω * b k ω ∂μ = 0 := by
     intro k
@@ -478,7 +478,7 @@ private theorem bh_claim_dependent {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < 
     have hrw : ∑ k ∈ Finset.Icc (m + 1) N, e m k
         = ∫ ω, (a (m + 1) ω - a m ω) * ∑ k ∈ Finset.Icc (m + 1) N, b k ω ∂μ := by
       rw [he_def]
-      rw [← integral_finset_sum _ (fun k _ => hint_diff_b m k)]
+      rw [← integral_finsetSum _ (fun k _ => hint_diff_b m k)]
       apply integral_congr_ae; filter_upwards with ω; rw [Finset.mul_sum]
     rw [hrw]
     have hbound_int : Integrable
@@ -582,7 +582,7 @@ theorem benjamini_hochberg_dependent_fdr_le {N : ℕ} (hN : 0 < N) (α : ℝ) (h
     FDR H₀ (bhRejects α p) μ ≤ (H₀.card : ℝ) / N * α * (harmonic N : ℝ) := by
   simp only [FDR]
   simp_rw [fun ω => fdp_eq_sum_div_dep α H₀ p ω]
-  rw [integral_finset_sum H₀ (fun i _ => integrable_summand_dep α μ p hmeas i)]
+  rw [integral_finsetSum H₀ (fun i _ => integrable_summand_dep α μ p hmeas i)]
   calc ∑ i ∈ H₀, ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
           max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ
       ≤ ∑ _i ∈ H₀, α / N * (harmonic N : ℝ) := by

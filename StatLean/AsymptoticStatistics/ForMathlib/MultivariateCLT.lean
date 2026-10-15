@@ -119,6 +119,7 @@ end MultivariateCLT
 
 open MultivariateCLT
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- *Multivariate iid Central Limit Theorem* (Cramér–Wold form).
 
 For an iid sequence `X i : Ω → EuclideanSpace ℝ (Fin m)` with finite second
@@ -247,7 +248,7 @@ theorem tendstoInDistribution_multivariate_clt
       have h_pull : P[fun ω => ⟪t, X 0 ω⟫] = ⟪t, P[X 0]⟫ := by
         -- ∫ ω, ⟪t, X 0 ω⟫ ∂P = ⟪t, ∫ ω, X 0 ω ∂P⟫ by linearity (`integral_inner`).
         have hX0_int : Integrable (X 0) P :=
-          hX.integrable (by norm_num : (1:ℝ≥0∞) ≤ 2)
+          hX.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)
         exact integral_inner hX0_int t
       rw [h_pull]
     rw [h_eq, charFun_inner (h_sum_aem n)]

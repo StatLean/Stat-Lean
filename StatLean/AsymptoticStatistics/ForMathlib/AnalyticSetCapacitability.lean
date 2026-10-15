@@ -50,7 +50,7 @@ theorem AnalyticSet.exists_isCompact_measure_diff_lt
     obtain ⟨hKc, hK⟩ := lt_iSup_iff.mp hK
     obtain ⟨hKA, hK⟩ := lt_iSup_iff.mp hK
     refine ⟨K, hKc, hKA, ?_⟩
-    apply measure_diff_lt_of_lt_add hKc.nullMeasurableSet hKA (measure_ne_top m K)
+    apply measure_sdiff_lt_of_lt_add hKc.nullMeasurableSet hKA (measure_ne_top m K)
     exact ENNReal.lt_add_of_sub_lt_right (Or.inl (measure_ne_top m A)) hK
 
 /-- Inner approximation for analytic sets under a finite Borel measure.
@@ -91,7 +91,7 @@ private theorem analyticSet_innerApprox_of_isFiniteMeasure
         ENNReal.tendsto_inv_nat_nhds_zero
     have hle0 : m (A \ ⋃ i, K i) ≤ 0 :=
       ge_of_tendsto htend (Filter.Eventually.of_forall hbd)
-    exact le_antisymm hle0 (zero_le _)
+    exact le_antisymm hle0 (zero_le)
 
 /-- In a Polish space, every analytic set is null-measurable for every s-finite Borel
 measure.
@@ -108,7 +108,7 @@ theorem AnalyticSet.nullMeasurableSet
   have hcomp : ∀ i : ℕ, ∃ B : Set β,
       B ⊆ A ∧ MeasurableSet B ∧ (sfiniteSeq m i) (A \ B) = 0 := by
     intro i
-    haveI : IsFiniteMeasure (sfiniteSeq m i) := isFiniteMeasure_sfiniteSeq i
+    have : IsFiniteMeasure (sfiniteSeq m i) := isFiniteMeasure_sfiniteSeq i
     exact analyticSet_innerApprox_of_isFiniteMeasure hA (sfiniteSeq m i)
   choose B hBA hBmeas hμ using hcomp
   set Buniv : Set β := ⋃ i, B i with hBuniv_def
@@ -134,7 +134,7 @@ theorem AnalyticSet.nullMeasurableSet
   refine ⟨hμmeas, ?_⟩
   have : Buniv \ A = ∅ := by
     ext x
-    simp only [mem_diff, mem_empty_iff_false, iff_false, not_and, not_not]
+    simp only [Set.mem_sdiff, mem_empty_iff_false, iff_false, not_and, not_not]
     intro hxB
     exact hBuniv_sub hxB
   rw [this]

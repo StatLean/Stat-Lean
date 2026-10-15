@@ -18,11 +18,12 @@
     {"id":"StatLean.TimeSeries.sigmaLT","label":"sigmaLT","full":"StatLean.TimeSeries.sigmaLT","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
     {"id":"iSup₂_le","label":"iSup₂_le","full":"iSup₂_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
     {"id":"Measurable.comap_le","label":"comap_le","full":"Measurable.comap_le","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Basic"},
-    {"id":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","label":"toSigmaFinite","full":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
     {"id":"MeasureTheory.isFiniteMeasure_trim","label":"isFiniteMeasure_trim","full":"MeasureTheory.isFiniteMeasure_trim","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Trim"},
+    {"id":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","label":"toSigmaFinite","full":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
     {"id":"StatLean.TimeSeries.IsGARCH.condexp_sq","label":"condexp_sq","full":"StatLean.TimeSeries.IsGARCH.condexp_sq","kind":"repo","decl":"thm","module":"StatLean.TimeSeries.GARCH.GARCHBasic"},
     {"id":"MeasureTheory.MemLp.ae_eq","label":"ae_eq","full":"MeasureTheory.MemLp.ae_eq","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.LpSeminorm.Basic"},
-    {"id":"MeasureTheory.MemLp.condExp","label":"condExp","full":"MeasureTheory.MemLp.condExp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic"},
+    {"id":"MeasureTheory.MemLp.condExp","label":"condExp","full":"MeasureTheory.MemLp.condExp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.ConditionalExpectation.Real"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"ProbabilityTheory.IdentDistrib.integral_eq","label":"integral_eq","full":"ProbabilityTheory.IdentDistrib.integral_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.IdentDistrib"},
     {"id":"ProbabilityTheory.IdentDistrib.comp","label":"comp","full":"ProbabilityTheory.IdentDistrib.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.IdentDistrib"},
     {"id":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","label":"identDistrib","full":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","kind":"repo","decl":"thm","module":"StatLean.TimeSeries.Process.Stationary"},
@@ -45,8 +46,7 @@
     {"id":"Measurable.aestronglyMeasurable","label":"aestronglyMeasurable","full":"Measurable.aestronglyMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"MeasureTheory.Integrable.add","label":"add","full":"MeasureTheory.Integrable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"}
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
   ],
   "edges": [
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"StatLean.TimeSeries.IsGARCH"},
@@ -65,11 +65,12 @@
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"StatLean.TimeSeries.sigmaLT"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"iSup₂_le"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"Measurable.comap_le"},
-    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.IsFiniteMeasure.toSigmaFinite"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.isFiniteMeasure_trim"},
+    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.IsFiniteMeasure.toSigmaFinite"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"StatLean.TimeSeries.IsGARCH.condexp_sq"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.MemLp.ae_eq"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.MemLp.condExp"},
+    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"Nat.cast_one"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"ProbabilityTheory.IdentDistrib.integral_eq"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"ProbabilityTheory.IdentDistrib.comp"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"Measurable.aestronglyMeasurable"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
     {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"BorelSpace.opensMeasurable"},
-    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"mul_one"},
-    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"MeasureTheory.Integrable.add"}
+    {"source":"StatLean.TimeSeries.IsGARCH.acf_sq_garch_one_one","target":"mul_one"}
   ]
 }

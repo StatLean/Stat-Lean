@@ -165,11 +165,11 @@ private lemma eq_uniformOfFinset_of_constant {α : Type*} [Fintype α]
     simpa [← mul_assoc, ENNReal.inv_mul_cancel hcard0 (ENNReal.natCast_ne_top _)]
       using h2
   ext a
-  rw [PMF.uniformOfFinset_apply]
+  erw [PMF.uniformOfFinset_apply]
   by_cases ha : a ∈ s
-  · rw [if_pos ha, ← hval]
+  · rw [ite_eq_left ha, ← hval]
     exact hconst a ha a₀ ha₀
-  · rw [if_neg ha]
+  · rw [ite_eq_right ha]
     exact hoff a ha
 
 /-- The mass the pushed-forward design gives a subset is the normalised fiber
@@ -195,10 +195,10 @@ private lemma map_arm_apply (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
           (if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)
             then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0) :=
         (Finset.sum_subset (Finset.subset_univ _)
-          fun a _ ha => if_neg ha).symm
+          fun a _ ha => ite_eq_right ha).symm
     _ = ∑ a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X),
           ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ :=
-        Finset.sum_congr rfl fun a ha => if_pos ha
+        Finset.sum_congr rfl fun a ha => ite_eq_left ha
     _ = (((validAllocations (U := U) r).filter fun a => arm t a = X).card : ℝ≥0∞)
         * ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ := by
         rw [Finset.sum_const, nsmul_eq_mul]

@@ -74,10 +74,6 @@ theorem proj_seq_to_eif
       -- (f) The projection sequence `p m` converges to `IF_eff` in `L²(P)`.
       Tendsto (fun m => ‖(p m : ↥(L2ZeroMean P)) - IF_eff‖) atTop (𝓝 0) := by
   classical
-  -- Register `L2ZeroMean P` as closed (used implicitly by Mathlib's auto-resolution
-  -- of `CompleteSpace ↥(submodule)` from `[IsClosed _]`).
-  haveI : IsClosed ((L2ZeroMean P : Submodule ℝ (Lp ℝ 2 P)) : Set (Lp ℝ 2 P)) :=
-    L2ZeroMean_isClosed P
   -- Unfold tangent-space membership to closure-of-span membership.
   have h_clos : IF_eff ∈ closure
       ((Submodule.span ℝ T_set.carrier : Submodule ℝ ↥(L2ZeroMean P)) :
@@ -85,7 +81,7 @@ theorem proj_seq_to_eif
     have := h_mem
     -- `tangentSpace T = (span … T.carrier).topologicalClosure`, whose underlying set
     -- equals `closure (span …)` by `Submodule.topologicalClosure_coe`.
-    simpa [tangentSpace, Submodule.topologicalClosure_coe] using this
+    simpa [tangentSpace, Submodule.topologicalClosure_coe] using! this
   -- Step 1: pick approximations `a m ∈ span (T_set.carrier)` with `‖IF_eff - a m‖ < 1/(m+1)`.
   have h_approx : ∀ m : ℕ, ∃ a : ↥(L2ZeroMean P),
       a ∈ (Submodule.span ℝ T_set.carrier : Submodule ℝ ↥(L2ZeroMean P)) ∧
@@ -139,7 +135,7 @@ theorem proj_seq_to_eif
   -- We need `IsUniformAddGroup ↥(V m)` for the chain to resolve;
   -- it follows from `AddSubgroup.isUniformAddGroup` once the underlying
   -- `IsUniformAddGroup ↥(L2ZeroMean P)` is in scope.
-  haveI hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
+  have hUG_L2 : IsUniformAddGroup ↥(L2ZeroMean P) :=
     (L2ZeroMean P).toAddSubgroup.isUniformAddGroup
   have hV_complete : ∀ m, CompleteSpace (V m) := fun m =>
     haveI := hV_findim m
@@ -169,7 +165,7 @@ theorem proj_seq_to_eif
   -- Convergence: `‖IF_eff - p m‖ ≤ ‖IF_eff - a m‖ < 1/(m+1) → 0`.
   have h_proj_bound : ∀ m, ‖IF_eff - p m‖ ≤ ‖IF_eff - a m‖ := by
     intro m
-    haveI := hV_proj m
+    have := hV_proj m
     -- `‖IF_eff - p m‖ = ⨅ x : V m, ‖IF_eff - x‖ ≤ ‖IF_eff - a m‖` since `a m ∈ V m`.
     rw [show p m = (V m).starProjection IF_eff from rfl,
       Submodule.starProjection_minimal IF_eff]
@@ -186,7 +182,7 @@ theorem proj_seq_to_eif
     refine ⟨S m, hS_sub m, rfl⟩
   · -- Clause (e): `p m ∈ V m` and `IF_eff - p m ∈ (V m)ᗮ`.
     intro m
-    haveI := hV_proj m
+    have := hV_proj m
     refine ⟨(V m).starProjection_apply_mem IF_eff,
       (V m).sub_starProjection_mem_orthogonal IF_eff⟩
   · -- Clause (f): convergence of the projections.

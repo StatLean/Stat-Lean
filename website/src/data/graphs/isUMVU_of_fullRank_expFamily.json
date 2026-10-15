@@ -3,7 +3,7 @@
   "nodes": [
     {"id":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","label":"isUMVU_of_fullRank_expFamily","full":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","kind":"root","decl":"thm","module":"StatLean.PointEstimation.UMVU.LehmannScheffe"},
     {"id":"StatLean.PointEstimation.ExpFamily","label":"ExpFamily","full":"StatLean.PointEstimation.ExpFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.PointEstimation.IsCanonicalRepr","label":"IsCanonicalRepr","full":"StatLean.PointEstimation.IsCanonicalRepr","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.PointEstimation.ExpFamily.FullRank","label":"FullRank","full":"StatLean.PointEstimation.ExpFamily.FullRank","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"StatLean.PointEstimation.IsUnbiased","label":"IsUnbiased","full":"StatLean.PointEstimation.IsUnbiased","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
@@ -33,20 +33,20 @@
     {"id":"StatLean.PointEstimation.IsSufficient","label":"IsSufficient","full":"StatLean.PointEstimation.IsSufficient","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
     {"id":"StatLean.PointEstimation.isSufficient_of_isFactorizedDensity","label":"isSufficient_of_isFactorizedDensity","full":"StatLean.PointEstimation.isSufficient_of_isFactorizedDensity","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Sufficiency.Factorization"},
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"MeasureTheory.withDensity_absolutelyContinuous","label":"withDensity_absolutelyContinuous","full":"MeasureTheory.withDensity_absolutelyContinuous","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"StatLean.PointEstimation.statLaw","label":"statLaw","full":"StatLean.PointEstimation.statLaw","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
-    {"id":"StatLean.PointEstimation.HasSufficientKernel","label":"HasSufficientKernel","full":"StatLean.PointEstimation.HasSufficientKernel","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"StatLean.PointEstimation.HasSufficientKernel.exists_map","label":"exists_map","full":"StatLean.PointEstimation.HasSufficientKernel.exists_map","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Sufficiency.Defs"},
     {"id":"StatLean.PointEstimation.hasSufficientKernel_of_isSufficient_dominated","label":"hasSufficientKernel_of_isSufficient_dominated","full":"StatLean.PointEstimation.hasSufficientKernel_of_isSufficient_dominated","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Sufficiency.RegularConditional"},
     {"id":"StatLean.PointEstimation.IsCompleteStat","label":"IsCompleteStat","full":"StatLean.PointEstimation.IsCompleteStat","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"},
     {"id":"StatLean.PointEstimation.IsCompleteFamily","label":"IsCompleteFamily","full":"StatLean.PointEstimation.IsCompleteFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Completeness.Defs"},
+    {"id":"MeasureTheory.Measure.map₀","label":"map₀","full":"MeasureTheory.Measure.map₀","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
+    {"id":"MeasureTheory.Measure.map₀_of_measurable","label":"map₀_of_measurable","full":"MeasureTheory.Measure.map₀_of_measurable","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.ForMathlib.MeasureMap"},
     {"id":"StatLean.PointEstimation.isCompleteStat_of_interior_nonempty","label":"isCompleteStat_of_interior_nonempty","full":"StatLean.PointEstimation.isCompleteStat_of_interior_nonempty","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Completeness.ExpFamily"},
     {"id":"interior_subset","label":"interior_subset","full":"interior_subset","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Closure"},
     {"id":"MeasureTheory.tilted_absolutelyContinuous","label":"tilted_absolutelyContinuous","full":"MeasureTheory.tilted_absolutelyContinuous","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Tilted"},
     {"id":"MeasureTheory.absolutelyContinuous_tilted","label":"absolutelyContinuous_tilted","full":"MeasureTheory.absolutelyContinuous_tilted","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Tilted"},
-    {"id":"Filter.EventuallyEq.filter_mono","label":"filter_mono","full":"Filter.EventuallyEq.filter_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
-    {"id":"MeasureTheory.Measure.AbsolutelyContinuous.ae_le","label":"ae_le","full":"MeasureTheory.Measure.AbsolutelyContinuous.ae_le","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AbsolutelyContinuous"},
-    {"id":"MeasureTheory.Measure.AbsolutelyContinuous.map","label":"map","full":"MeasureTheory.Measure.AbsolutelyContinuous.map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AbsolutelyContinuous"}
+    {"id":"Filter.EventuallyEq.filter_mono","label":"filter_mono","full":"Filter.EventuallyEq.filter_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.ExpFamily"},
@@ -83,16 +83,16 @@
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"mul_one"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.withDensity_absolutelyContinuous"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.statLaw"},
-    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.HasSufficientKernel"},
+    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.HasSufficientKernel.exists_map"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.hasSufficientKernel_of_isSufficient_dominated"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.IsCompleteStat"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.IsCompleteFamily"},
+    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.Measure.map₀"},
+    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.Measure.map₀_of_measurable"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"StatLean.PointEstimation.isCompleteStat_of_interior_nonempty"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"interior_subset"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.tilted_absolutelyContinuous"},
     {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.absolutelyContinuous_tilted"},
-    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"Filter.EventuallyEq.filter_mono"},
-    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.Measure.AbsolutelyContinuous.ae_le"},
-    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"MeasureTheory.Measure.AbsolutelyContinuous.map"}
+    {"source":"StatLean.PointEstimation.isUMVU_of_fullRank_expFamily","target":"Filter.EventuallyEq.filter_mono"}
   ]
 }

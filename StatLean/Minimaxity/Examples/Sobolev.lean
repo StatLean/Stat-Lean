@@ -42,7 +42,8 @@ them to the abstract `minimax_local_packing` (Fano / local-packing) machinery. T
 loss is encoded as the monotone map `x ↦ x²` on `ℝ≥0∞`, and the bound is stated with the
 `ENNReal.ofReal` packaging of $\tfrac12 \delta_n^2$; the arithmetic `harith` step reconciles
 `ofReal (2⁻¹ · δ²)` with `2⁻¹ · (ofReal δ)²`. The leading constant $\tfrac12$ is the constant
-delivered by `minimax_local_packing`, matching the order of Example 15.23 up to the universal factor.
+delivered by `minimax_local_packing`, matching the
+order of Example 15.23 up to the universal factor.
 
 **Bibliographic comments.** The entropy-to-minimax-rate methodology formalized here originates with
 Y. Yang and A. Barron, "Information-theoretic determination of minimax rates of convergence,"
@@ -67,7 +68,8 @@ smoothness-`α` Sobolev family with separation `δₙ = (σ²/n)^{α/(2α+1)}` a
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Example 15.23. -/
 theorem sobolev_regression_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [MeasurableSpace 𝓧]
-    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] (n : ℕ) (hn : 1 ≤ n) (α σ : ℝ)
+    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
+        (n : ℕ) (hn : 1 ≤ n) (α σ : ℝ)
     (hα : 1 / 2 < α) (hσ : 0 < σ)
     (g : ι → Ω) (P : Kernel ι 𝓧) [IsMarkovKernel P]
     {M : ℕ} [NeZero M] (θfam : Fin M → ι) (hθ : Measurable θfam) (c : ℝ) (hM : 2 ≤ M)
@@ -77,7 +79,8 @@ theorem sobolev_regression_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [Measu
     (h35a : ∀ j k, j ≠ k → klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
       ≤ ENNReal.ofReal (c ^ 2 * n * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2))
     -- USER-INPUT: packing cardinality (15.35b); Wainwright §15.3.5.
-    (h35b : 2 * (c ^ 2 * n * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2 + Real.log 2) ≤ Real.log (M : ℝ)) :
+    (h35b : 2 * (c ^ 2 * n * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2 +
+        Real.log 2) ≤ Real.log (M : ℝ)) :
     ENNReal.ofReal (2⁻¹ * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2) ≤ minimaxRiskDist (· ^ 2) g P := by
   have hx0 : (0 : ℝ) ≤ (σ ^ 2 / n) ^ (α / (2 * α + 1)) := by positivity
   have hδtoReal : (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))).toReal

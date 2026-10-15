@@ -159,7 +159,7 @@ theorem IsMA.tendstoInMeasure_inversion [IsProbabilityMeasure μ] {a1 : ℝ} {σ
       rw [hZdef, variance_const_mul, hw.variance_eq, hpow]
     have hset : {ω | ζ ≤ dist (ε t ω - Z ω) (ε t ω)} = {ω | ζ ≤ |Z ω - ∫ ω, Z ω ∂μ|} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Real.dist_eq, hZint, sub_zero,
+      simp only [Set.mem_ofPred_eq, Real.dist_eq, hZint, sub_zero,
         show ε t ω - Z ω - ε t ω = -Z ω from by ring, abs_neg]
     rw [hset]
     exact (meas_ge_le_variance_div_sq hZmem hζ).trans (by rw [hZvar])
@@ -173,7 +173,7 @@ theorem IsMA.tendstoInMeasure_inversion [IsProbabilityMeasure μ] {a1 : ℝ} {σ
       atTop (nhds 0) := by
     simpa using ENNReal.tendsto_ofReal hreal
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun _ => zero_le _) hbound
+    (fun _ => zero_le) hbound
 
 /-! ### Lag polynomials acting on processes
 
@@ -187,7 +187,7 @@ applied to the process `W` as a lag operator with the sum truncated at order `n`
 private lemma coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
     (arPoly b).coeff m
       = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
-  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul,
     Polynomial.coeff_X_pow, mul_ite]
 
 private lemma coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
@@ -200,8 +200,8 @@ private lemma coeff_arPoly_succ {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
 
 private lemma natDegree_arPoly_le {p : ℕ} (b : Fin p → ℝ) : (arPoly b).natDegree ≤ p := by
   refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
-  rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
-  refine Finset.sum_eq_zero fun i _ => if_neg ?_
+  rw [coeff_arPoly, ite_eq_right (by omega), zero_sub, neg_eq_zero]
+  refine Finset.sum_eq_zero fun i _ => ite_eq_right ?_
   have := i.isLt
   omega
 

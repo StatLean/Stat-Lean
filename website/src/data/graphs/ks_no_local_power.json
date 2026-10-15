@@ -5,16 +5,15 @@
     {"id":"StatLean.HypothesisTesting.supCDFDist","label":"supCDFDist","full":"StatLean.HypothesisTesting.supCDFDist","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Bootstrap.Defs"},
     {"id":"StatLean.HypothesisTesting.ksThreshold","label":"ksThreshold","full":"StatLean.HypothesisTesting.ksThreshold","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"StatLean.HypothesisTesting.ksStat","label":"ksStat","full":"StatLean.HypothesisTesting.ksStat","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
-    {"id":"Real.sqrt_pos","label":"sqrt_pos","full":"Real.sqrt_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
-    {"id":"lt_div_iff₀","label":"lt_div_iff₀","full":"lt_div_iff₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"MulPosReflectLE.toMulPosReflectLT","label":"toMulPosReflectLT","full":"MulPosReflectLE.toMulPosReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
-    {"id":"MulPosStrictMono.toMulPosReflectLE","label":"toMulPosReflectLE","full":"MulPosStrictMono.toMulPosReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"Real.sqrt_pos","label":"sqrt_pos","full":"Real.sqrt_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"},
+    {"id":"lt_div_iff₀","label":"lt_div_iff₀","full":"lt_div_iff₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"MulPosReflectLE.toMulPosReflectLT","label":"toMulPosReflectLT","full":"MulPosReflectLE.toMulPosReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
+    {"id":"MulPosStrictMono.toMulPosReflectLE","label":"toMulPosReflectLE","full":"MulPosStrictMono.toMulPosReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Defs"},
     {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Real.log_pos","label":"log_pos","full":"Real.log_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"StatLean.HypothesisTesting.ks_local_power_le","label":"ks_local_power_le","full":"StatLean.HypothesisTesting.ks_local_power_le","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSLocalPower"},
     {"id":"StatLean.HypothesisTesting.dkw_envelope_threshold","label":"dkw_envelope_threshold","full":"StatLean.HypothesisTesting.dkw_envelope_threshold","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
@@ -46,7 +45,8 @@
     {"id":"StatLean.HypothesisTesting.ksDist","label":"ksDist","full":"StatLean.HypothesisTesting.ksDist","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.DKWUniform"},
     {"id":"StatLean.HypothesisTesting.supCDFDist_triangle","label":"supCDFDist_triangle","full":"StatLean.HypothesisTesting.supCDFDist_triangle","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"StatLean.HypothesisTesting.bddAbove_absCDFDiff","label":"bddAbove_absCDFDiff","full":"StatLean.HypothesisTesting.bddAbove_absCDFDiff","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
-    {"id":"iSup_congr","label":"iSup_congr","full":"iSup_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"}
+    {"id":"iSup_congr","label":"iSup_congr","full":"iSup_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"Real.sqrt_nonneg","label":"sqrt_nonneg","full":"Real.sqrt_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"StatLean.HypothesisTesting.supCDFDist"},
@@ -59,7 +59,6 @@
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"lt_of_not_ge"},
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"Nat.cast_zero"},
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"Nat.cast_one"},
-    {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"Real.log_pos"},
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"mul_pos"},
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"StatLean.HypothesisTesting.ks_local_power_le"},
@@ -100,6 +99,7 @@
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"StatLean.HypothesisTesting.supCDFDist_triangle"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"StatLean.HypothesisTesting.bddAbove_absCDFDiff"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"iSup_congr"},
+    {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"Real.sqrt_nonneg"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"mul_pos"}
   ]
 }

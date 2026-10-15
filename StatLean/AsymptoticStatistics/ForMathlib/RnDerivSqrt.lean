@@ -23,6 +23,36 @@ namespace AsymptoticStatistics.ForMathlib.RnDerivSqrt
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
+/-- Multiplication by the square-root density transports a.e. strong measurability. -/
+theorem aestronglyMeasurable_sqrt_rnDeriv_mul_iff {ν ξ : Measure Ω} [SigmaFinite ν] [SigmaFinite ξ]
+    (hνξ : ν ≪ ξ) (h : Ω → ℝ) :
+    AEStronglyMeasurable (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * h ω) ξ ↔
+      AEStronglyMeasurable h ν := by
+  have hw : Measurable (fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal) :=
+    (Measure.measurable_rnDeriv ν ξ).ennreal_toReal.sqrt
+  constructor
+  · rintro ⟨k, hk, heq⟩
+    refine ⟨fun ω => (Real.sqrt (ν.rnDeriv ξ ω).toReal)⁻¹ * k ω,
+      hw.inv.stronglyMeasurable.mul hk, ?_⟩
+    filter_upwards [hνξ.ae_le heq, Measure.rnDeriv_pos hνξ,
+      hνξ.ae_le (Measure.rnDeriv_lt_top ν ξ)] with ω hω hp ht
+    have hw0 : Real.sqrt (ν.rnDeriv ξ ω).toReal ≠ 0 :=
+      (Real.sqrt_pos.2 (ENNReal.toReal_pos hp.ne' ht.ne)).ne'
+    rw [← hω, ← mul_assoc, inv_mul_cancel₀ hw0, one_mul]
+  · rintro ⟨k, hk, heq⟩
+    refine ⟨fun ω => Real.sqrt (ν.rnDeriv ξ ω).toReal * k ω,
+      hw.stronglyMeasurable.mul hk, ?_⟩
+    have heq' : h =ᵐ[ξ.withDensity (ν.rnDeriv ξ)] k := by
+      rw [Measure.withDensity_rnDeriv_eq ν ξ hνξ]
+      exact heq
+    rw [Filter.EventuallyEq, ae_withDensity_iff (Measure.measurable_rnDeriv ν ξ)] at heq'
+    filter_upwards [heq'] with ω hω
+    by_cases hd : ν.rnDeriv ξ ω = 0
+    · simp [hd]
+    · rw [hω hd]
+
+
+
 /-- Pointwise identity: `√(x.toReal)² = x.toReal` since `x.toReal ≥ 0`. -/
 private lemma sqrt_rnDeriv_sq_eq (ν μ : Measure Ω) :
     (fun ω => Real.sqrt ((ν.rnDeriv μ ω).toReal) ^ 2)

@@ -28,7 +28,7 @@ theorem measurable_diag_of_countable_range
     (hf : ∀ t, Measurable (fun x => f x t)) :
     Measurable (fun x => f x (p x)) := by
   intro s hs
-  letI : Countable (Set.range p) := hrange.to_subtype
+  let : Countable (Set.range p) := hrange.to_subtype
   have hpreimage : (fun x => f x (p x)) ⁻¹' s =
       ⋃ t : Set.range p, (p ⁻¹' ({t.1} : Set τ)) ∩ ((fun x => f x t.1) ⁻¹' s) := by
     ext x

@@ -1,4 +1,4 @@
-import Mathlib.MeasureTheory.Measure.MeasureSpace
+import Mathlib.MeasureTheory.Measure.Basic
 
 /-!
 # Monotone likelihood ratio — core data model

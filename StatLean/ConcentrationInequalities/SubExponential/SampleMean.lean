@@ -29,7 +29,8 @@ for $|\lambda| \le n/\alpha$. Minimising the Chernoff upper bound over $\lambda$
 yields both regimes:
 - Quadratic ($t \le \alpha$): optimal $\lambda = nt/\alpha^2$ gives $\exp(-nt^2/(2\alpha^2))$.
 - Linear ($t \ge \alpha$): clamped $\lambda = n/\alpha$ gives
-  $\exp(-nt/\alpha + n/2) \le \exp(-nt/(2\alpha))$ (using $n/2 \le nt/(2\alpha)$ since $t \ge \alpha$).
+  $\exp(-nt/\alpha + n/2) \le \exp(-nt/(2\alpha))$
+  (using $n/2 \le nt/(2\alpha)$ since $t \ge \alpha$).
 
 Deviation from book: Lu requires $t > 0$ (quadratic regime) and $t > \alpha$ (linear
 regime); we prove the slightly stronger forms allowing $t = 0$ and $t = \alpha$
@@ -87,8 +88,6 @@ private lemma mgf_sampleMean_le
     {lam : ℝ} (hlam_nn : 0 ≤ lam) (hlam_le : lam ≤ (n : ℝ) / (α : ℝ)) :
     mgf (fun ω => ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))) μ lam
       ≤ Real.exp (lam ^ 2 * (α : ℝ) ^ 2 / (2 * (n : ℝ))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   -- lam / n is in the valid sub-exponential range [0, 1/α]
   have h_lam_n_nn : 0 ≤ lam / (n : ℝ) := div_nonneg hlam_nn hn_pos.le
@@ -148,8 +147,8 @@ private lemma integrable_exp_sampleMean
     (hmeas : ∀ i, Measurable (X i))
     {lam : ℝ} (hlam_nn : 0 ≤ lam) (hlam_le : lam ≤ (n : ℝ) / (α : ℝ)) :
     Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   have h_lam_n_nn : 0 ≤ lam / (n : ℝ) := div_nonneg hlam_nn hn_pos.le
   have h_lam_n_le : lam / (n : ℝ) ≤ 1 / (α : ℝ) := by
@@ -207,8 +206,8 @@ theorem measure_sampleMean_lt_le_quadratic
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   -- Algebraic identity: (1/n) ∑ X i - μ₀ = ∑ (1/n) * (X i - μ₀)
   have halg : ∀ ω, (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀ =
@@ -222,7 +221,7 @@ theorem measure_sampleMean_lt_le_quadratic
   -- Rewrite event
   have hset_eq : {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀} =
       {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
-    Set.ext (fun ω => by simp only [Set.mem_setOf_eq, halg ω])
+    Set.ext (fun ω => by simp only [Set.mem_ofPred_eq, halg ω])
   rw [hset_eq]
   -- Chernoff parameter: λ = n·t/α² (optimal; lies in [0, n/α] since t ≤ α)
   set lam := (n : ℝ) * t / (α : ℝ) ^ 2 with hlam_def
@@ -231,7 +230,8 @@ theorem measure_sampleMean_lt_le_quadratic
     rw [hlam_def, div_le_div_iff₀ (sq_pos_of_pos hα) hα]
     nlinarith [mul_nonneg hn_pos.le hα.le]
   -- Integrability of exp(lam · (X̄ₙ − μ₀))
-  have h_int : Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
+  have h_int : Integrable (fun ω => Real.exp
+      (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
     integrable_exp_sampleMean hn hX hμ₀ hindep hα hmeas hlam_nn hlam_le
   -- Chernoff brick: μ.real {t ≤ Z} ≤ exp(-lam · t) · mgf Z μ lam
   have hchernoff :
@@ -261,7 +261,7 @@ theorem measure_sampleMean_lt_le_quadratic
   -- Lift from μ.real to μ via strict ⊆ and ENNReal bridge
   have hsub : {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ⊆ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} := by
-    intro ω hω; exact (Set.mem_setOf_eq.mp hω).le
+    intro ω hω; exact (Set.mem_ofPred_eq.mp hω).le
   calc μ {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ≤ μ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
         measure_mono hsub
@@ -296,8 +296,8 @@ theorem measure_sampleMean_lt_le_linear
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t / (2 * (α : ℝ)))) := by
-  haveI hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  haveI hfin : IsFiniteMeasure μ := inferInstance
+  have hprob : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
+  have hfin : IsFiniteMeasure μ := inferInstance
   have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
   have ht : 0 ≤ t := le_trans hα.le htα
   -- Algebraic identity
@@ -311,14 +311,15 @@ theorem measure_sampleMean_lt_le_linear
     field_simp
   have hset_eq : {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀} =
       {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
-    Set.ext (fun ω => by simp only [Set.mem_setOf_eq, halg ω])
+    Set.ext (fun ω => by simp only [Set.mem_ofPred_eq, halg ω])
   rw [hset_eq]
   -- Chernoff parameter: λ = n/α (clamped at the boundary of the valid range)
   set lam := (n : ℝ) / (α : ℝ) with hlam_def
   have hlam_nn : 0 ≤ lam := div_nonneg hn_pos.le hα.le
   have hlam_le : lam ≤ (n : ℝ) / (α : ℝ) := le_refl _
   -- Integrability
-  have h_int : Integrable (fun ω => Real.exp (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
+  have h_int : Integrable (fun ω => Real.exp
+      (lam * ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀)))) μ :=
     integrable_exp_sampleMean hn hX hμ₀ hindep hα hmeas hlam_nn hlam_le
   -- Chernoff brick
   have hchernoff :
@@ -358,7 +359,7 @@ theorem measure_sampleMean_lt_le_linear
   -- ENNReal bridge
   have hsub : {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ⊆ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} := by
-    intro ω hω; exact (Set.mem_setOf_eq.mp hω).le
+    intro ω hω; exact (Set.mem_ofPred_eq.mp hω).le
   calc μ {ω | t < ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))}
       ≤ μ {ω | t ≤ ∑ i : Fin n, ((1 / (n : ℝ)) * (X i ω - μ₀))} :=
         measure_mono hsub

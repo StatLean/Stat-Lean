@@ -33,10 +33,10 @@ at $(y, z)$, $f(z) \le f(y) + \langle\nabla f(y), z - y\rangle + \tfrac{L}{2}\|y
 The displacement satisfies $z - y = \tfrac{1}{L}(\nabla f(x) - \nabla f(y))$, so the
 quadratic term collapses to $\tfrac{L}{2}\|y-z\|^2 = \tfrac{1}{2L}\|\nabla f(x) - \nabla f(y)\|^2$,
 and the inner-product cross terms combine via
-$\langle\nabla f(x) - \nabla f(y),\, \nabla f(x) - \nabla f(y)\rangle = \|\nabla f(x) - \nabla f(y)\|^2$.
-Tracking the coefficient identity $2 \cdot \tfrac{1}{2L} = \tfrac{1}{L}$ closes the bound.
-The monotonicity corollary symmetrizes this in $x, y$ and uses non-negativity of the
-quadratic term.
+$\langle\nabla f(x) - \nabla f(y),\, \nabla f(x) - \nabla f(y)\rangle = \|\nabla f(x) - \nabla
+f(y)\|^2$. Tracking the coefficient identity $2 \cdot \tfrac{1}{2L} =
+\tfrac{1}{L}$ closes the bound. The monotonicity corollary symmetrizes this in $x,
+y$ and uses non-negativity of the quadratic term.
 
 **Bibliographic comments.** Gradient co-coercivity for convex Lipschitz-smooth
 functions is the *Baillon–Haddad theorem*: J.-B. Baillon and G. Haddad, "Quelques

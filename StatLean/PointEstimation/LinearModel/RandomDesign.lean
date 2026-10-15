@@ -175,7 +175,7 @@ theorem designMean_lseCoeff {A : Matrix (Fin s) (Fin n) ℝ}
       rw [designMean]
       exact (map_sub (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm _ _)
     rw [hsub]
-    show (A r) ⬝ᵥ star ((fun i => y i) - c ᵥ* A) = 0
+    change (A r) ⬝ᵥ star ((fun i => y i) - c ᵥ* A) = 0
     have hstar : star ((fun i => y i) - c ᵥ* A) = (fun i => y i) - c ᵥ* A := by
       funext i; exact star_trivial _
     rw [hstar, dotProduct_sub]
@@ -265,7 +265,7 @@ theorem isUMVU_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
   have hinner : ∀ θ : Fin s → ℝ, ⟪γ, designMean A θ⟫_ℝ = ∑ i, c i * θ i := by
     intro θ
     rw [hγdef, designMean]
-    show (θ ᵥ* A) ⬝ᵥ star (Aᵀ *ᵥ w) = ∑ i, c i * θ i
+    change (θ ᵥ* A) ⬝ᵥ star (Aᵀ *ᵥ w) = ∑ i, c i * θ i
     rw [show star (Aᵀ *ᵥ w) = Aᵀ *ᵥ w from by funext i; exact star_trivial _]
     calc (θ ᵥ* A) ⬝ᵥ (Aᵀ *ᵥ w)
         = (θ ᵥ* (A * Aᵀ)) ⬝ᵥ w := by rw [Matrix.dotProduct_mulVec, Matrix.vecMul_vecMul]
@@ -326,15 +326,15 @@ private lemma covariance_coord_gaussianVector {N : ℕ} (ξ : EuclideanSpace ℝ
   rw [show gaussianVector ξ σ2 = μ.map (WithLp.toLp 2) from rfl,
       covariance_map_fun (hgc a).aestronglyMeasurable (hgc b).aestronglyMeasurable
         (WithLp.measurable_toLp 2 (Fin N → ℝ)).aemeasurable]
-  show covariance (Function.eval a) (Function.eval b) μ = _
+  change covariance (Function.eval a) (Function.eval b) μ = _
   have hcoord : ∀ k : Fin N, MemLp (Function.eval (β := fun _ : Fin N => ℝ) k) 2 μ := fun k =>
     (memLp_id_gaussianReal 2).comp_measurePreserving (measurePreserving_eval _ k)
   by_cases hab : a = b
   · subst hab
     have hmp := measurePreserving_eval (fun i => gaussianReal (ξ i) σ2) a
-    rw [if_pos rfl, covariance_self hmp.measurable.aemeasurable,
+    rw [ite_eq_left rfl, covariance_self hmp.measurable.aemeasurable,
         ← variance_id_map hmp.measurable.aemeasurable, hmp.map_eq, variance_id_gaussianReal]
-  · rw [if_neg hab]
+  · rw [ite_eq_right hab]
     have hindep : IndepFun (Function.eval a) (Function.eval b) μ :=
       (iIndepFun_pi fun _ => aemeasurable_id).indepFun hab
     exact hindep.covariance_eq_zero (hcoord a) (hcoord b)
@@ -346,11 +346,11 @@ theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
     covariance (fun y => lseCoeff A y i) (fun y => lseCoeff A y j) (regressionModel A p)
       = (p.2.1 : ℝ) * (A * Aᵀ)⁻¹ i j := by
   classical
-  haveI : IsProbabilityMeasure (gaussianVector (designMean A p.1) p.2.1) := by
+  have : IsProbabilityMeasure (gaussianVector (designMean A p.1) p.2.1) := by
     rw [show gaussianVector (designMean A p.1) p.2.1
         = (Measure.pi fun i => gaussianReal ((designMean A p.1) i) p.2.1).map (WithLp.toLp 2)
         from rfl]
-    exact Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 _).aemeasurable
+    exact (by infer_instance)
   have hunit := isUnit_mulTranspose_of_rank hA
   have hunitdet : IsUnit (A * Aᵀ).det := by rw [← Matrix.isUnit_iff_isUnit_det]; exact hunit
   set M : Matrix (Fin n) (Fin s) ℝ := Aᵀ * (A * Aᵀ)⁻¹ with hMdef
@@ -396,8 +396,8 @@ theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
       = M l i * M l j * (p.2.1 : ℝ) := by
     intro l
     rw [Finset.sum_eq_single l]
-    · rw [if_pos rfl]
-    · intro l' _ hl'; rw [if_neg (fun h => hl' h.symm), mul_zero]
+    · rw [ite_eq_left rfl]
+    · intro l' _ hl'; rw [ite_eq_right (fun h => hl' h.symm), mul_zero]
     · intro h; exact absurd (Finset.mem_univ l) h
   rw [Finset.sum_congr rfl (fun l _ => hcollapse l)]
   rw [show (∑ l, M l i * M l j * (p.2.1 : ℝ)) = (∑ l, M l i * M l j) * (p.2.1 : ℝ) from by

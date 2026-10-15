@@ -12,8 +12,7 @@
     {"id":"StatLean.StatisticalModels.FactorModels.FactorParams","label":"FactorParams","full":"StatLean.StatisticalModels.FactorModels.FactorParams","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.FactorModels.factorLaw","label":"factorLaw","full":"StatLean.StatisticalModels.FactorModels.factorLaw","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.FactorModels.measurementKernel","label":"measurementKernel","full":"StatLean.StatisticalModels.FactorModels.measurementKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
-    {"id":"StatLean.StatisticalModels.affineNoiseKernel","label":"affineNoiseKernel","full":"StatLean.StatisticalModels.affineNoiseKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Affine"},
-    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"}
+    {"id":"StatLean.StatisticalModels.affineNoiseKernel","label":"affineNoiseKernel","full":"StatLean.StatisticalModels.affineNoiseKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Affine"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"StatLean.StatisticalModels.IdentifiesTarget"},
@@ -30,7 +29,6 @@
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw","target":"StatLean.StatisticalModels.FactorModels.measurementKernel"},
     {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
-    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"StatLean.StatisticalModels.affineNoiseKernel"},
-    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"fact_one_le_two_ennreal"}
+    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"StatLean.StatisticalModels.affineNoiseKernel"}
   ]
 }

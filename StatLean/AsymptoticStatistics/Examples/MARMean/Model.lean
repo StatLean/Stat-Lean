@@ -39,8 +39,12 @@ Fields:
 Reference: vdV §25.6 (the `(X, Δ, ΔY)` tuple, with `Δ ∈ {0, 1}` the
 missingness indicator). -/
 structure MARObs (X : Type*) where
+  /-- The always-observed covariate `X`. -/
   x : X
+  /-- The response indicator `R`: `true` if the response is observed, `false` otherwise. -/
   r : Bool
+  /-- The partial response `R · Y`: equal to `Y` when `r = true`, arbitrary when
+  `r = false`. -/
   ry : ℝ
 
 /-- Boolean-to-real indicator: `ind true = 1`, `ind false = 0`. Used

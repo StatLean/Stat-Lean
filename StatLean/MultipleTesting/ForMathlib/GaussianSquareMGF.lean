@@ -84,7 +84,7 @@ theorem not_integrable_exp_sq_stdGaussian {l : ℝ} (hl : 1 / 2 ≤ l) :
   rw [integrable_const_iff] at hconst
   rcases hconst with hc0 | hfin
   · exact hcpos.ne' hc0
-  · haveI := hfin
+  · have := hfin
     exact absurd Real.volume_univ (measure_ne_top volume Set.univ)
 
 /-- Integrability of `x ↦ exp(l·x²)` under the standard Gaussian, for `l < 1/2`. -/

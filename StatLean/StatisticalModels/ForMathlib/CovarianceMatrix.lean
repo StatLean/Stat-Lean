@@ -111,7 +111,7 @@ theorem posSemidef_covMatrix (μ : Measure (EuclideanSpace ℝ ι)) [IsFiniteMea
       exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
     rw [key, covariance_self]
     · exact variance_nonneg _ _
-    · exact (memLp_finset_sum Finset.univ fun i _ =>
+    · exact (memLp_finsetSum Finset.univ fun i _ =>
         hmem i).aestronglyMeasurable.aemeasurable
 
 /-- Mean vector of the multivariate Gaussian. Unconditional in `S`: the pin's
@@ -200,7 +200,7 @@ theorem covMatrix_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace �
   have hmem : ∀ (k : ι₂) (l : ι₁), MemLp (fun x : EuclideanSpace ℝ ι₁ => A k l * x l) 2 μ :=
     fun k l => (memLp_eval hL2 l).const_mul (A k l)
   have hrow : ∀ k : ι₂, Integrable (fun x : EuclideanSpace ℝ ι₁ => ∑ l, A k l * x l) μ :=
-    fun k => (memLp_finset_sum Finset.univ fun l _ => hmem k l).integrable (by norm_num)
+    fun k => (memLp_finsetSum Finset.univ fun l _ => hmem k l).integrable (by norm_num)
   ext i j
   rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) (by fun_prop)]
   simp only [PiLp.add_apply, toEuclideanLin_coord]
@@ -243,9 +243,9 @@ theorem covMatrix_map_add_prod [DecidableEq ι₁] [DecidableEq ι₂]
         Matrix.toEuclideanLin (𝕜 := ℝ) A p.1 + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2)
       = A * covMatrix μ * Aᵀ + B * covMatrix ν * Bᵀ := by
   have hmemμ : ∀ k : ι₃, MemLp (fun x : EuclideanSpace ℝ ι₁ => ∑ l, A k l * x l) 2 μ :=
-    fun k => memLp_finset_sum _ fun l _ => (memLp_eval hμ l).const_mul (A k l)
+    fun k => memLp_finsetSum _ fun l _ => (memLp_eval hμ l).const_mul (A k l)
   have hmemν : ∀ k : ι₃, MemLp (fun y : EuclideanSpace ℝ ι₂ => ∑ m, B k m * y m) 2 ν :=
-    fun k => memLp_finset_sum _ fun m _ => (memLp_eval hν m).const_mul (B k m)
+    fun k => memLp_finsetSum _ fun m _ => (memLp_eval hν m).const_mul (B k m)
   have hPμ : ∀ k : ι₃, MemLp (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
       ∑ l, A k l * p.1 l) 2 (μ.prod ν) := fun k => (hmemμ k).comp_fst ν
   have hPν : ∀ k : ι₃, MemLp (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
@@ -296,7 +296,7 @@ theorem covMatrix_map_sum_pi [DecidableEq ι₁] {N : ℕ}
   -- the `k`-th block of the `i`-th coordinate, on the factor and on the product
   have hg : ∀ (k : Fin N) (i : ι₃),
       MemLp (fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k i l * y l) 2 (μs k) :=
-    fun k i => memLp_finset_sum _ fun l _ => (memLp_eval (hL2 k) l).const_mul (A k i l)
+    fun k i => memLp_finsetSum _ fun l _ => (memLp_eval (hL2 k) l).const_mul (A k i l)
   have hgp : ∀ (k : Fin N) (i : ι₃),
       MemLp (fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k i l * x k l) 2
         (Measure.pi μs) := by
@@ -339,7 +339,7 @@ theorem covMatrix_map_sum_pi [DecidableEq ι₁] {N : ℕ}
     fun k => (matrixCLM (A k)).continuous.comp (continuous_apply k)
   have hmeas : AEMeasurable (fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ =>
       ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) (Measure.pi μs) :=
-    (continuous_finset_sum Finset.univ fun k _ => hcont k).aemeasurable
+    (continuous_finsetSum Finset.univ fun k _ => hcont k).aemeasurable
   ext i j
   rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) hmeas]
   simp only [hcoord]

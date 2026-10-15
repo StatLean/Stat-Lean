@@ -1,3 +1,4 @@
+import StatLean.AsymptoticStatistics.ForMathlib.LpSeminorm
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCovering
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformCoveringRademacher
 import StatLean.AsymptoticStatistics.ForMathlib.AntitoneLintegral
@@ -38,13 +39,13 @@ admissible finite ambient cover exists. -/
 noncomputable def allProbabilityNormalizedL2CoveringNumber
     (Q : ProbabilityMeasure Ω) (F : Set (Ω → ℝ))
     (Φ : Ω → ℝ) (ε : ℝ) : ℕ∞ :=
-  if eLpNorm Φ 2 (Q : Measure Ω) = 0 then 1 else
+  if eLpNorm' Φ 2 (Q : Measure Ω) = 0 then 1 else
     ⨅ (S : Finset (Ω → ℝ))
       (_ : (∀ g ∈ S,
           Measurable g ∧ MemLp g 2 (Q : Measure Ω)) ∧
         ∀ f ∈ F, ∃ g ∈ S,
-          eLpNorm (f - g) 2 (Q : Measure Ω) <
-            ENNReal.ofReal ε * eLpNorm Φ 2 (Q : Measure Ω)),
+          eLpNorm' (f - g) 2 (Q : Measure Ω) <
+            ENNReal.ofReal ε * eLpNorm' Φ 2 (Q : Measure Ω)),
       (S.card : ℕ∞)
 
 /-- The book-layer uniform normalized covering number, taking the supremum
@@ -98,7 +99,7 @@ noncomputable def bookUniformCoveringEntropyIntegral
 @[simp] theorem allProbabilityNormalizedL2CoveringNumber_of_eLpNorm_eq_zero
     (Q : ProbabilityMeasure Ω) (F : Set (Ω → ℝ))
     (Φ : Ω → ℝ) (ε : ℝ)
-    (hΦ : eLpNorm Φ 2 (Q : Measure Ω) = 0) :
+    (hΦ : eLpNorm' Φ 2 (Q : Measure Ω) = 0) :
     allProbabilityNormalizedL2CoveringNumber Q F Φ ε = 1 := by
   simp [allProbabilityNormalizedL2CoveringNumber, hΦ]
 
@@ -111,13 +112,13 @@ theorem eLpNorm_toProbabilityMeasure_eq_l2Seminorm
     (hf : Measurable f) :
     eLpNorm f 2 (Q.toProbabilityMeasure : Measure Ω) =
       ENNReal.ofReal (Q.l2Seminorm f) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num) hf.aestronglyMeasurable]
   simp only [ENNReal.toReal_ofNat, one_div]
   change
     (∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂Q.measure) ^ (2 : ℝ)⁻¹ =
       ENNReal.ofReal (Real.sqrt
         (∑ i, (Q.weight i : ℝ) * |f (Q.atom i)| ^ 2))
-  rw [FiniteDiscreteProbability.measure, lintegral_finset_sum_measure]
+  rw [FiniteDiscreteProbability.measure, lintegral_finsetSum_measure]
   simp only [lintegral_smul_measure, smul_eq_mul]
   have hmeas : Measurable (fun x => ‖f x‖ₑ ^ (2 : ℝ)) :=
     hf.enorm.pow_const _
@@ -156,17 +157,18 @@ theorem normalizedL2CoveringNumber_le_allProbabilityNormalizedL2CoveringNumber
   have hΦeq :=
     FiniteDiscreteProbability.eLpNorm_toProbabilityMeasure_eq_l2Seminorm
       Q Φ hΦ_meas
+  rw [eLpNorm_two_eq_eLpNorm' hΦ_meas.aestronglyMeasurable] at hΦeq
   by_cases hΦ : Q.l2Seminorm Φ = 0
   · simp [normalizedL2CoveringNumber, allProbabilityNormalizedL2CoveringNumber,
       hΦ, hΦeq]
   · have hΦe :
-        eLpNorm Φ 2 (Q.toProbabilityMeasure : Measure Ω) ≠ 0 := by
+        eLpNorm' Φ 2 (Q.toProbabilityMeasure : Measure Ω) ≠ 0 := by
       rw [hΦeq]
       exact ENNReal.ofReal_ne_zero_iff.mpr
         (lt_of_le_of_ne
           (FiniteDiscreteProbability.l2Seminorm_nonneg Q Φ) (Ne.symm hΦ))
-    simp only [normalizedL2CoveringNumber, if_neg hΦ,
-      allProbabilityNormalizedL2CoveringNumber, if_neg hΦe]
+    simp only [normalizedL2CoveringNumber, ite_eq_right hΦ,
+      allProbabilityNormalizedL2CoveringNumber, ite_eq_right hΦe]
     refine le_iInf fun S => le_iInf fun hS => ?_
     refine iInf_le_of_le S (iInf_le_of_le ?_ le_rfl)
     intro f hf
@@ -175,6 +177,8 @@ theorem normalizedL2CoveringNumber_le_allProbabilityNormalizedL2CoveringNumber
     have hdiff :=
       FiniteDiscreteProbability.eLpNorm_toProbabilityMeasure_eq_l2Seminorm
         Q (f - g) ((hF_meas f hf).sub (hS.1 g hgS).1)
+    rw [eLpNorm_two_eq_eLpNorm'
+      ((hF_meas f hf).sub (hS.1 g hgS).1).aestronglyMeasurable] at hdiff
     rw [hdiff, hΦeq, ← ENNReal.ofReal_mul hε] at hfg
     exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg
       (FiniteDiscreteProbability.l2Seminorm_nonneg Q (f - g))).mp hfg
@@ -239,9 +243,9 @@ theorem allProbabilityNormalizedL2CoveringNumber_antitone_eps
     {ε₁ ε₂ : ℝ} (hε : ε₁ ≤ ε₂) :
     allProbabilityNormalizedL2CoveringNumber Q F Φ ε₂ ≤
       allProbabilityNormalizedL2CoveringNumber Q F Φ ε₁ := by
-  by_cases hΦ : eLpNorm Φ 2 (Q : Measure Ω) = 0
+  by_cases hΦ : eLpNorm' Φ 2 (Q : Measure Ω) = 0
   · simp [allProbabilityNormalizedL2CoveringNumber, hΦ]
-  · simp only [allProbabilityNormalizedL2CoveringNumber, if_neg hΦ]
+  · simp only [allProbabilityNormalizedL2CoveringNumber, ite_eq_right hΦ]
     refine le_iInf fun S => le_iInf fun hS => ?_
     refine iInf_le_of_le S (iInf_le_of_le ?_ le_rfl)
     refine ⟨hS.1, fun f hf => ?_⟩
@@ -392,7 +396,7 @@ theorem empiricalRadius_head_le_two_mul_bookEntropyIntegral
     intro hn
     subst n
     exact hθzero (empiricalRelativeRadiusReal_zero F Φ x)
-  letI : NeZero n := ⟨hn⟩
+  let : NeZero n := ⟨hn⟩
   have hD : D ≠ 0 := by
     intro hD
     exact hθzero
@@ -426,7 +430,7 @@ theorem empiricalRadius_head_le_two_mul_bookEntropyIntegral
         ENNReal.ofReal (2 * ε) < empiricalRelativeRadius F Φ n x := by
       rw [← hRadius_eq]
       exact (ENNReal.ofReal_lt_ofReal_iff hθpos).2 h2εθ
-    rw [empiricalRelativeRadius, if_neg hD, lt_iSup_iff] at hlt_radius
+    rw [empiricalRelativeRadius, ite_eq_right hD, lt_iSup_iff] at hlt_radius
     obtain ⟨f, hf⟩ := hlt_radius
     rw [lt_iSup_iff] at hf
     obtain ⟨hfF, hfratio_enorm⟩ := hf
@@ -436,7 +440,7 @@ theorem empiricalRadius_head_le_two_mul_bookEntropyIntegral
       (lt_div_iff₀ hDpos).mp hfratio
     have hfinite :
         (2 : ℕ∞) ≤ normalizedL2CoveringNumber Q F Φ ε := by
-      simp only [normalizedL2CoveringNumber, if_neg hQΦ]
+      simp only [normalizedL2CoveringNumber, ite_eq_right hQΦ]
       refine le_iInf fun S => le_iInf fun hS => ?_
       obtain ⟨g₀, hg₀S, h0g₀⟩ := hS (0 : Ω → ℝ) hzero
       obtain ⟨gf, hgfS, hfgf⟩ := hS f hfF
@@ -467,7 +471,7 @@ theorem empiricalRadius_head_le_two_mul_bookEntropyIntegral
       ENNReal.ofReal (Real.sqrt (Real.log 2)) ≤
         bookEntropyWeight (allProbabilityUniformL2CoveringNumber F Φ ε) := by
     intro ε hε
-    simpa only [bookEntropyWeight_coe] using
+    simpa only [bookEntropyWeight_coe] using!
       bookEntropyWeight_mono (hcover_two ε hε)
   have hhalf_subset : Set.Ioo (0 : ℝ) (θ / 2) ⊆ Set.Ioc 0 θ := by
     intro ε hε

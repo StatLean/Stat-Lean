@@ -49,12 +49,12 @@ noncomputable def huberPsi (c u : ℝ) : ℝ :=
 /-- On the central region the Huber loss is the (half) squared loss. -/
 theorem huberRho_of_abs_le {c u : ℝ} (h : |u| ≤ c) : huberRho c u = u ^ 2 / 2 := by
   unfold huberRho
-  rw [if_pos h]
+  rw [ite_eq_left h]
 
 /-- Outside the central region the Huber loss is linear in `|u|`. -/
 theorem huberRho_of_lt_abs {c u : ℝ} (h : c < |u|) : huberRho c u = c * |u| - c ^ 2 / 2 := by
   unfold huberRho
-  rw [if_neg (not_le.mpr h)]
+  rw [ite_eq_right (not_le.mpr h)]
 
 /-- On the central region the Huber score is the identity. -/
 theorem huberPsi_of_abs_le {c u : ℝ} (hc : 0 ≤ c) (h : |u| ≤ c) : huberPsi c u = u := by
@@ -273,7 +273,7 @@ the existence of Huber M-estimates). -/
 theorem huberRho_tendsto_cocompact {c : ℝ} (hc : 0 < c) :
     Tendsto (huberRho c) (cocompact ℝ) atTop := by
   have habs : Tendsto (fun u : ℝ => |u|) (cocompact ℝ) atTop := by
-    simpa only [Real.norm_eq_abs] using (tendsto_norm_cocompact_atTop (E := ℝ))
+    simpa only [Real.norm_eq_abs] using! (tendsto_norm_cocompact_atTop (E := ℝ))
   have h1 : Tendsto (fun u : ℝ => c * |u| + -(c ^ 2 / 2)) (cocompact ℝ) atTop :=
     tendsto_atTop_add_const_right _ _ ((tendsto_const_mul_atTop_of_pos hc).2 habs)
   refine tendsto_atTop_mono (fun u => ?_) h1

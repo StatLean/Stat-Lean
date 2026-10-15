@@ -126,6 +126,8 @@ no original research paper states this exact equivalence under these
 hypotheses.
 -/
 
+set_option linter.style.longFile 3100
+
 open MeasureTheory Filter Topology
 open scoped InnerProductSpace ENNReal
 
@@ -374,7 +376,7 @@ noncomputable def boundedDensityPath
         linarith
       change (if |(0 : ℝ)| < δ then P.withDensity
              (fun ω => ENNReal.ofReal (f 0 ω)) else P) = P
-      rw [abs_zero, if_pos hδ_pos]
+      rw [abs_zero, ite_eq_left hδ_pos]
       -- f 0 ω = 1 + 0 * g_ω = 1, ENNReal.ofReal 1 = 1
       have h_const :
           (fun ω => ENNReal.ofReal (f 0 ω)) = (fun _ => (1 : ℝ≥0∞)) := by
@@ -388,7 +390,7 @@ noncomputable def boundedDensityPath
       by_cases h : |t| < δ
       · -- For |t| < δ: density 1+t·g is a.e. ≥ 0 (since g ≥ -1 and |t·g| ≤ |t|·M < 1)
         -- and integrates to 1.
-        simp only [curve, h, if_true]
+        simp only [curve, h, ite_true]
         -- Goal: IsProbabilityMeasure (P.withDensity (fun ω => ENNReal.ofReal (f t ω)))
         refine ⟨?_⟩
         -- Standing facts about M and δ.
@@ -464,14 +466,14 @@ noncomputable def boundedDensityPath
         rw [← ofReal_integral_eq_lintegral_ofReal h_f_int h_f_nn,
             h_integral_f, ENNReal.ofReal_one]
       · -- For |t| ≥ δ: curve = P.
-        simp only [curve, h, if_false]; infer_instance
+        simp only [curve, h, ite_false]; infer_instance
     dominating := P
     dominating_sigmaFinite := inferInstance
     curve_absContinuous := fun t => by
       by_cases h : |t| < δ
-      · simp only [curve, h, if_true]
+      · simp only [curve, h, ite_true]
         exact MeasureTheory.withDensity_absolutelyContinuous _ _
-      · simp only [curve, h, if_false]
+      · simp only [curve, h, ite_false]
         exact Measure.AbsolutelyContinuous.refl P
     score := g
     qmd_limit := by
@@ -543,7 +545,7 @@ noncomputable def boundedDensityPath
       apply tendsto_of_tendsto_of_tendsto_of_le_of_le' h_lower_tendsto
               h_upper_tendsto
       · -- Lower bound: ∀ᶠ t in 𝓝[≠] 0, 0 ≤ eLpNorm / ofReal|t|.
-        refine Eventually.of_forall (fun t => zero_le _)
+        refine Eventually.of_forall (fun t => zero_le)
       · -- Upper bound: eventually `eLpNorm / ofReal|t| ≤ ofReal(|t|·M²/2)`.
         -- Use the open neighborhood `Set.Ioo (-δ) δ ∈ 𝓝 0`, restricted to
         -- `𝓝[≠] 0`, and require `t ≠ 0`.
@@ -562,10 +564,10 @@ noncomputable def boundedDensityPath
         --   and (curve 0).rnDeriv P =ᵐ[P] 1.
         have h_curve_t_eq :
             (curve t) = P.withDensity (fun ω => ENNReal.ofReal (f t ω)) := by
-          simp only [curve, ht_abs, if_true]
+          simp only [curve, ht_abs, ite_true]
         have h_curve_0_eq : (curve 0) = P := by
           have h0_lt : |(0 : ℝ)| < δ := by rw [abs_zero]; exact hδ_pos
-          simp only [curve, h0_lt, if_true]
+          simp only [curve, h0_lt, ite_true]
           have h_const :
               (fun ω => ENNReal.ofReal (f 0 ω)) = (fun _ => (1 : ℝ≥0∞)) := by
             funext ω
@@ -642,7 +644,10 @@ noncomputable def boundedDensityPath
                         (mul_le_mul_of_nonneg_left h_g_sq_le ht2_nn) h_two_nn
         -- eLpNorm LSE 2 P ≤ ENNReal.ofReal (t²·M²/2) via eLpNorm_le_of_ae_bound.
         have h_LSE'_bound : eLpNorm LSE' 2 P ≤ ENNReal.ofReal (t ^ 2 * M ^ 2 / 2) := by
-          have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞)) h_LSE_bound
+          have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞))
+            (show AEStronglyMeasurable LSE' P from by
+              dsimp only [LSE']
+              fun_prop) h_LSE_bound
           have h_univ : P Set.univ = 1 := measure_univ
           rw [h_univ] at this
           have h_pow : (1 : ℝ≥0∞) ^ ((2 : ℝ≥0∞).toReal⁻¹) = 1 := by
@@ -817,7 +822,7 @@ theorem boundedDensityPath_curve_eq_withDensity
             P.withDensity (fun ω => ENNReal.ofReal
               (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
           else P) = _
-  rw [if_pos ht]
+  rw [ite_eq_left ht]
 
 /-- Radon–Nikodym derivative of `(boundedDensityPath g hg).curve t`
 w.r.t. `P` for `|t| < truncRadius`: a.e. equals
@@ -956,7 +961,10 @@ theorem boundedDensityPath_residual_eLpNorm_le
                   (mul_le_mul_of_nonneg_left h_g_sq_le ht2_nn) h_two_nn
   -- eLpNorm RES' 2 P ≤ ENNReal.ofReal (t²·M²/2) via eLpNorm_le_of_ae_bound.
   have h_RES'_eLp : eLpNorm RES' 2 P ≤ ENNReal.ofReal (t ^ 2 * M ^ 2 / 2) := by
-    have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞)) h_RES'_bound
+    have := eLpNorm_le_of_ae_bound (μ := P) (p := (2 : ℝ≥0∞))
+      (show AEStronglyMeasurable RES' P from by
+        dsimp only [RES']
+        fun_prop) h_RES'_bound
     have h_univ : P Set.univ = 1 := measure_univ
     rw [h_univ] at this
     have h_pow : (1 : ℝ≥0∞) ^ ((2 : ℝ≥0∞).toReal⁻¹) = 1 := by
@@ -970,22 +978,8 @@ theorem boundedDensityPath_residual_memLp
     (g : ↥(L2ZeroMean P)) (hg : IsEssBoundedMixtureScore g) {t : ℝ}
     (ht : |t| < boundedDensityPath_truncRadius hg) :
     MemLp (boundedDensityPath_residual g hg t) 2 P := by
-  refine ⟨?_, ?_⟩
-  · -- AEStronglyMeasurable.
-    unfold boundedDensityPath_residual
-    have h_meas_t : AEStronglyMeasurable
-        (fun ω => Real.sqrt (((boundedDensityPath g hg).curve t).rnDeriv P ω).toReal) P :=
-      ((Measure.measurable_rnDeriv _ _).ennreal_toReal.sqrt).aestronglyMeasurable
-    have h_meas_0 : AEStronglyMeasurable
-        (fun ω => Real.sqrt (((boundedDensityPath g hg).curve 0).rnDeriv P ω).toReal) P :=
-      ((Measure.measurable_rnDeriv _ _).ennreal_toReal.sqrt).aestronglyMeasurable
-    have h_meas_g : AEStronglyMeasurable (((g : Lp ℝ 2 P) : Ω → ℝ)) P :=
-      (Lp.aestronglyMeasurable (g : Lp ℝ 2 P))
-    exact ((h_meas_t.sub h_meas_0).sub
-      (((aestronglyMeasurable_const).mul h_meas_g).mul h_meas_0))
-  · -- eLpNorm < ⊤.
-    exact lt_of_le_of_lt (boundedDensityPath_residual_eLpNorm_le g hg ht)
-      ENNReal.ofReal_lt_top
+  exact lt_of_le_of_lt (boundedDensityPath_residual_eLpNorm_le g hg ht)
+    ENNReal.ofReal_lt_top
 
 /-- **`P`-AE positive-and-finite Radon-Nikodym derivative**, valid for
 all `t : ℝ`.
@@ -1037,7 +1031,7 @@ theorem boundedDensityPath_curve_rnDeriv_pos_finite_ae
                 P.withDensity (fun ω => ENNReal.ofReal
                   (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
               else P) = P
-      rw [if_neg ht]
+      rw [ite_eq_right ht]
     rw [h_curve_P]
     filter_upwards [P.rnDeriv_self] with ω hω
     rw [hω]
@@ -1102,7 +1096,7 @@ theorem boundedDensityPath_curve_eq_mixture_eventually
             P.withDensity (fun ω => ENNReal.ofReal
               (1 + t * ((g : Lp ℝ 2 P) : Ω → ℝ) ω))
           else P) = _
-    rw [if_pos ht_abs]
+    rw [ite_eq_left ht_abs]
   rw [h_curve_t]
   -- Pointwise mixture decomposition (a.e. via g ≥ -1).
   have h_g_ge : ∀ᵐ ω ∂P, -1 ≤ ((g : Lp ℝ 2 P) : Ω → ℝ) ω := hg.2
@@ -1704,7 +1698,7 @@ theorem gateaux_representer_eq_pathwise_derivative
             h_int_h_zero]
         simp
       rw [h_int_eq, ENNReal.ofReal_one]
-    haveI : IsProbabilityMeasure Q := hQ_prob
+    have : IsProbabilityMeasure Q := hQ_prob
     -- (3d) Q ≪ P from withDensity_absolutelyContinuous.
     have hQ_ac : Q ≪ P := by
       rw [hQ_def]; exact MeasureTheory.withDensity_absolutelyContinuous _ _
@@ -1874,7 +1868,7 @@ theorem gateaux_representer_eq_pathwise_derivative
           Set ↥(L2ZeroMean P)) = Set.univ := by
       have := congrArg (fun S : Submodule ℝ ↥(L2ZeroMean P) =>
           (S : Set ↥(L2ZeroMean P))) h_eq_top
-      simpa [Submodule.topologicalClosure] using this
+      simpa only [Submodule.topologicalClosure_coe, Submodule.top_coe] using! this
     exact dense_iff_closure_eq.mpr h_carrier
   -- *Step 3.* `ContinuousLinearMap.ext_on` from Mathlib gives equal
   -- CLMs on the whole space.
@@ -2244,7 +2238,7 @@ private lemma isProbabilityMeasure_convex_mixture
   refine ⟨?_⟩
   rw [Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
       measure_univ, measure_univ, smul_eq_mul, smul_eq_mul, mul_one, mul_one]
-  rw [← ENNReal.ofReal_add (by linarith : (0:ℝ) ≤ 1 - t) ht_nn]
+  rw [← ENNReal.ofReal_add (by linarith : (0 : ℝ) ≤ 1 - t) ht_nn]
   rw [show (1 - t) + t = (1 : ℝ) from by ring, ENNReal.ofReal_one]
 
 /-- *Theorem 1, Part 1 of `point_mass_vonMise.tex`.* The point-mass
@@ -2283,7 +2277,7 @@ theorem vonMises_pointMass_derivative
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0), t ∈ Set.Ioo (0:ℝ) 1 :=
+  have hE : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0), t ∈ Set.Ioo (0 : ℝ) 1 :=
     h_ioo
   have h_eventually : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (f x - μ) + h.R (ENNReal.ofReal (1 - t) • P
@@ -2295,7 +2289,7 @@ theorem vonMises_pointMass_derivative
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
     -- IsProbabilityMeasure Q_t.
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Measure.dirac x) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     -- Integrability of f against Q_t.
@@ -2317,7 +2311,7 @@ theorem vonMises_pointMass_derivative
           = (1 - t) * μ + t * f x := by
       rw [integral_add_measure h_smul_P_int h_smul_dirac_int,
           integral_smul_measure, integral_smul_measure, h_int_dirac]
-      simp [hμ_def, ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [hμ_def, ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     -- Reduce: divide both sides of h_exp by t.
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
@@ -2487,8 +2481,8 @@ theorem vonMises_imp_TVFrechetMixture
       rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
       refine ⟨Set.Iio δ, Iio_mem_nhds hδ_pos, ?_⟩
       intro y hy; exact ⟨hy.2, hy.1⟩
-    have hE_δ : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-        t ∈ Set.Ioo (0:ℝ) δ := h_ioo_δ
+    have hE_δ : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        t ∈ Set.Ioo (0 : ℝ) δ := h_ioo_δ
     filter_upwards [hev, hE_δ] with t ht_curve ht_δ
     obtain ⟨ht_pos, ht_lt_δ⟩ := ht_δ
     have ht_abs : |t| < δ := by rw [abs_of_pos ht_pos]; exact ht_lt_δ
@@ -2501,7 +2495,7 @@ theorem vonMises_imp_TVFrechetMixture
               P.withDensity (fun ω => ENNReal.ofReal
                 (1 + t * ((g_L20 : Lp ℝ 2 P) : Ω → ℝ) ω))
             else P) = _
-      rw [if_pos ht_abs]
+      rw [ite_eq_left ht_abs]
     -- Now `ht_curve` says `curve t = (1-t)P + t·Q_target`; compose with
     -- `hQ_target_eq_Q` to get `(1-t)P + t·Q`.
     rw [← h_curve_eq, ht_curve, ← hQ_target_def, hQ_target_eq_Q]
@@ -2532,8 +2526,8 @@ theorem vonMises_imp_TVFrechetMixture
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-      t ∈ Set.Ioo (0:ℝ) 1 := h_ioo_unit
+  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      t ∈ Set.Ioo (0 : ℝ) 1 := h_ioo_unit
   have h_eventually : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (∫ ω, f ω ∂Q - ∫ ω, f ω ∂P)
           + h.R (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Q) / t
@@ -2542,7 +2536,7 @@ theorem vonMises_imp_TVFrechetMixture
     obtain ⟨ht_pos, ht_lt_one⟩ := ht
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • Q) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     have h_smul_P_int : Integrable f (ENNReal.ofReal (1 - t) • P) :=
@@ -2559,7 +2553,7 @@ theorem vonMises_imp_TVFrechetMixture
           = (1 - t) * (∫ ω, f ω ∂P) + t * (∫ ω, f ω ∂Q) := by
       rw [integral_add_measure h_smul_P_int h_smul_Q_int,
           integral_smul_measure, integral_smul_measure]
-      simp [ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
     rw [h_exp, h_int_Qt]
@@ -2670,8 +2664,8 @@ theorem R_decay_of_1d_deriv
     rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
     refine ⟨Set.Iio 1, Iio_mem_nhds one_pos, ?_⟩
     intro y hy; exact ⟨hy.2, hy.1⟩
-  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0:ℝ) (Set.Ioi 0),
-      t ∈ Set.Ioo (0:ℝ) 1 := h_ioo_unit
+  have hE_unit : ∀ᶠ t : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      t ∈ Set.Ioo (0 : ℝ) 1 := h_ioo_unit
   have h_eq : ∀ᶠ t : ℝ in nhdsWithin 0 (Set.Ioi 0),
       (Ψ (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • M) - Ψ P) / t
           - (∫ x, ϕ x ∂M - ∫ x, ϕ x ∂P)
@@ -2680,7 +2674,7 @@ theorem R_decay_of_1d_deriv
     obtain ⟨ht_pos, ht_lt_one⟩ := ht
     have ht_nn : (0 : ℝ) ≤ t := ht_pos.le
     have ht_le : t ≤ 1 := ht_lt_one.le
-    haveI : IsProbabilityMeasure
+    have : IsProbabilityMeasure
         (ENNReal.ofReal (1 - t) • P + ENNReal.ofReal t • M) :=
       isProbabilityMeasure_convex_mixture _ ht_nn ht_le
     have h_smul_P_int : Integrable ϕ (ENNReal.ofReal (1 - t) • P) :=
@@ -2697,7 +2691,7 @@ theorem R_decay_of_1d_deriv
           = (1 - t) * (∫ ω, ϕ ω ∂P) + t * (∫ ω, ϕ ω ∂M) := by
       rw [integral_add_measure h_smul_P_int h_smul_M_int,
           integral_smul_measure, integral_smul_measure]
-      simp [ENNReal.toReal_ofReal (by linarith : (0:ℝ) ≤ 1 - t),
+      simp [ENNReal.toReal_ofReal (by linarith : (0 : ℝ) ≤ 1 - t),
             ENNReal.toReal_ofReal ht_nn]
     have ht_ne : t ≠ 0 := ne_of_gt ht_pos
     rw [h_exp_Qt, h_int_Qt]
@@ -2981,7 +2975,7 @@ theorem eif_via_Point_mass_Frechet
       rw [hcomm, ha, mul_one]
     rw [h_int_eq] at h_inner
     exact h_inner
-  haveI hM_prob : IsProbabilityMeasure M := by
+  have hM_prob : IsProbabilityMeasure M := by
     refine ⟨?_⟩
     rw [hM_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [← ofReal_integral_eq_lintegral_ofReal h_one_plus_g_int h_one_plus_g_nn]

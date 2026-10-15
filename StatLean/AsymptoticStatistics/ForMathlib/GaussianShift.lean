@@ -83,9 +83,6 @@ private lemma pi_gaussianReal_withDensity_exp_shift
       (fun x => ENNReal.ofReal (Real.exp (h i * x - (h i) ^ 2 / 2)))
         = gaussianReal (h i) 1 :=
     fun i => gaussianReal_withDensity_exp_shift_1d (h i)
-  haveI : ∀ i, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
-      (fun x => ENNReal.ofReal (Real.exp (h i * x - (h i) ^ 2 / 2)))) := by
-    intro i; rw [h1d i]; infer_instance
   -- Factor `exp(∑ - ∑) = ∏ exp(_ - _)` so `pi_withDensity_prod` applies.
   have h_density : (fun y : ι → ℝ =>
         ENNReal.ofReal (Real.exp ((∑ i, h i * y i) - ∑ i, (h i) ^ 2 / 2)))

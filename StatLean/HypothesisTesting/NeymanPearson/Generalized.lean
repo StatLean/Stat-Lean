@@ -133,7 +133,7 @@ private lemma exists_l2_reduction {n : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
   let S : 𝓧 → ℝ := fun x => ∑ i, |f i x|
   have hSmeas : Measurable S :=
     Finset.measurable_sum Finset.univ fun i _ => _root_.continuous_abs.measurable.comp (hmeas i)
-  have hSint : Integrable S μ := integrable_finset_sum Finset.univ fun i _ => (hint i).abs
+  have hSint : Integrable S μ := integrable_finsetSum Finset.univ fun i _ => (hint i).abs
   let w : 𝓧 → ℝ := fun x => S x + h x
   have hwval : ∀ x, w x = S x + h x := fun _ => rfl
   have hwpos : ∀ x, 0 < w x := fun x =>
@@ -141,7 +141,7 @@ private lemma exists_l2_reduction {n : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
   have hwmeas : Measurable w := hSmeas.add hhmeas
   have hwint : Integrable w μ := hSint.add hhint
   set ν : Measure 𝓧 := μ.withDensity (fun x => ENNReal.ofReal (w x)) with hν
-  haveI : IsFiniteMeasure ν := by rw [hν]; exact isFiniteMeasure_withDensity_ofReal hwint.2
+  have : IsFiniteMeasure ν := by rw [hν]; exact isFiniteMeasure_withDensity_ofReal hwint.2
   have hμν : μ ≪ ν := by
     rw [hν]
     exact withDensity_absolutelyContinuous' hwmeas.ennreal_ofReal.aemeasurable
@@ -242,7 +242,7 @@ theorem exists_test_max_integral_of_constraints {m : ℕ}
         ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ := by
   classical
   obtain ⟨ν, g, hνfin, hμν, hred⟩ := exists_l2_reduction μ f hmeas hint
-  haveI := hνfin
+  have := hνfin
   -- A critical function meeting the side conditions is a member of the constrained class.
   have hmemb : ∀ (φ : 𝓧 → ℝ) (hφ : IsCriticalFn φ),
       (∀ i, ∫ x, φ x * f i.castSucc x ∂μ = c i) →
@@ -303,7 +303,7 @@ theorem isMax_of_multiplier_form {m : ℕ}
   have hfi : ∀ i, Integrable (fun x => φ x * f i x) μ := fun i => integrable_crit_mul (hint i) hφ
   have hgi : ∀ i, Integrable (fun x => ψ x * f i x) μ := fun i => integrable_crit_mul (hint i) hψ
   have hSint : Integrable S μ := by
-    refine integrable_finset_sum Finset.univ fun i _ => ?_
+    refine integrable_finsetSum Finset.univ fun i _ => ?_
     exact ((hint i.castSucc).const_mul (k i))
   have hφlast := hfi (Fin.last m)
   have hψlast := hgi (Fin.last m)
@@ -318,7 +318,7 @@ theorem isMax_of_multiplier_form {m : ℕ}
       rw [show (fun x => φ x * ∑ i, k i * f i.castSucc x)
           = fun x => ∑ i, k i * (φ x * f i.castSucc x) from by
         funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
-      rw [integral_finset_sum Finset.univ
+      rw [integral_finsetSum Finset.univ
         (fun i _ => (integrable_crit_mul (hint i.castSucc) hφ).const_mul (k i))]
       refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
     have hψSeq : ∫ x, ψ x * S x ∂μ = ∑ i, k i * ∫ x, ψ x * f i.castSucc x ∂μ := by
@@ -326,7 +326,7 @@ theorem isMax_of_multiplier_form {m : ℕ}
       rw [show (fun x => ψ x * ∑ i, k i * f i.castSucc x)
           = fun x => ∑ i, k i * (ψ x * f i.castSucc x) from by
         funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
-      rw [integral_finset_sum Finset.univ
+      rw [integral_finsetSum Finset.univ
         (fun i _ => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i))]
       refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
     have hAB : ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
@@ -404,7 +404,7 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
   have hfi : ∀ i, Integrable (fun x => φ x * f i x) μ := fun i => integrable_crit_mul (hint i) hφ
   have hgi : ∀ i, Integrable (fun x => ψ x * f i x) μ := fun i => integrable_crit_mul (hint i) hψ
   have hSint : Integrable S μ := by
-    refine integrable_finset_sum Finset.univ fun i _ => ?_
+    refine integrable_finsetSum Finset.univ fun i _ => ?_
     exact ((hint i.castSucc).const_mul (k i))
   have hφlast := hfi (Fin.last m)
   have hψlast := hgi (Fin.last m)
@@ -419,7 +419,7 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
       rw [show (fun x => φ x * ∑ i, k i * f i.castSucc x)
           = fun x => ∑ i, k i * (φ x * f i.castSucc x) from by
         funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
-      rw [integral_finset_sum Finset.univ
+      rw [integral_finsetSum Finset.univ
         (fun i _ => (integrable_crit_mul (hint i.castSucc) hφ).const_mul (k i))]
       refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
     have hψSeq : ∫ x, ψ x * S x ∂μ = ∑ i, k i * ∫ x, ψ x * f i.castSucc x ∂μ := by
@@ -427,7 +427,7 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
       rw [show (fun x => ψ x * ∑ i, k i * f i.castSucc x)
           = fun x => ∑ i, k i * (ψ x * f i.castSucc x) from by
         funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
-      rw [integral_finset_sum Finset.univ
+      rw [integral_finsetSum Finset.univ
         (fun i _ => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i))]
       refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
     have hAB : ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
@@ -473,13 +473,13 @@ private lemma integral_lagrangian {m : ℕ} {μ : Measure 𝓧} {f : Fin (m + 1)
   have hi : ∀ i : Fin m, Integrable (fun x => k i * (ψ x * f i.castSucc x)) μ :=
     fun i => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i)
   have hsum : Integrable (fun x => ∑ i, k i * (ψ x * f i.castSucc x)) μ :=
-    integrable_finset_sum _ fun i _ => hi i
+    integrable_finsetSum _ fun i _ => hi i
   rw [show (fun x => ψ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x))
       = fun x => ψ x * f (Fin.last m) x - ∑ i, k i * (ψ x * f i.castSucc x) from by
     funext x
     rw [mul_sub, Finset.mul_sum]
     exact congrArg _ (Finset.sum_congr rfl fun i _ => by ring)]
-  rw [integral_sub hlast hsum, integral_finset_sum _ fun i _ => hi i]
+  rw [integral_sub hlast hsum, integral_finsetSum _ fun i _ => hi i]
   exact congrArg _ (Finset.sum_congr rfl fun i _ => integral_const_mul _ _)
 
 /-- **The multiplier shape is exactly Lagrangian optimality.** A critical function that
@@ -501,7 +501,7 @@ private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
   have hGmeas : Measurable G :=
     (hmeas _).sub (Finset.measurable_sum Finset.univ fun i _ => (hmeas i.castSucc).const_mul (k i))
   have hGint : Integrable G μ :=
-    (hint _).sub (integrable_finset_sum Finset.univ fun i _ => (hint i.castSucc).const_mul (k i))
+    (hint _).sub (integrable_finsetSum Finset.univ fun i _ => (hint i.castSucc).const_mul (k i))
   -- The indicator of `{G > 0}` is a critical function attaining the supremum.
   set ind : 𝓧 → ℝ := fun x => if 0 < G x then 1 else 0 with hinddef
   have hindc : IsCriticalFn ind := by
@@ -516,7 +516,7 @@ private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
     simp only [hinddef]
     split_ifs with hx
     · rw [one_mul]; nlinarith [(hφ.2 x).2]
-    · rw [zero_mul]; push_neg at hx; nlinarith [(hφ.2 x).1]
+    · rw [zero_mul]; push Not at hx; nlinarith [(hφ.2 x).1]
   have hnn : 0 ≤ᵐ[μ] fun x => ind x * G x - φ x * G x :=
     Filter.Eventually.of_forall fun x => sub_nonneg.mpr (hpt x)
   have hi1 : Integrable (fun x => ind x * G x) μ := integrable_crit_mul hGint hindc
@@ -528,13 +528,13 @@ private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
   constructor
   · filter_upwards [hae] with x hx hgt
     have hG : 0 < G x := by simp only [hGdef]; linarith
-    simp only [Pi.zero_apply, hinddef, if_pos hG, one_mul] at hx
+    simp only [Pi.zero_apply, hinddef, ite_eq_left hG, one_mul] at hx
     have hfac : G x * (1 - φ x) = 0 := by linear_combination hx
     have := (mul_eq_zero.mp hfac).resolve_left (ne_of_gt hG)
     linarith
   · filter_upwards [hae] with x hx hlt
     have hG : G x < 0 := by simp only [hGdef]; linarith
-    simp only [Pi.zero_apply, hinddef, if_neg (not_lt.mpr hG.le), zero_mul, zero_sub,
+    simp only [Pi.zero_apply, hinddef, ite_eq_right (not_lt.mpr hG.le), zero_mul, zero_sub,
       neg_eq_zero] at hx
     exact (mul_eq_zero.mp hx).resolve_right (ne_of_lt hG)
 
@@ -552,7 +552,7 @@ private lemma isClosed_momentSet {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
     IsClosed (momentSet μ f) := by
   classical
   obtain ⟨ν, gL, hνfin, hμν, hred⟩ := exists_l2_reduction μ f hmeas hint
-  haveI := hνfin
+  have := hνfin
   -- Restate the reduction in weak-dual form.
   have reduction : ∀ (φ : 𝓧 → ℝ) (φ' : Lp ℝ 2 ν), ⇑φ' =ᵐ[ν] φ → ∀ i,
       toWeakDualL2 ν φ' (gL i) = ∫ x, φ x * f i x ∂μ := by
@@ -752,13 +752,13 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
   set U : Set (Fin (m + 1) → ℝ) :=
     {y | β + Lip * ‖(fun i : Fin m => y i.castSucc) - c‖ < y (Fin.last m)} with hUdef
   have hprojcont : Continuous fun y : Fin (m + 1) → ℝ => (fun i : Fin m => y i.castSucc) - c :=
-    (continuous_pi fun i => continuous_apply i.castSucc).sub continuous_const
+    (continuous_pi fun i : Fin m => continuous_apply i.castSucc).sub continuous_const
   have hUopen : IsOpen U :=
     isOpen_lt (continuous_const.add (continuous_const.mul hprojcont.norm))
       (continuous_apply (Fin.last m))
   have hUconv : Convex ℝ U := by
     rintro y₁ h₁ y₂ h₂ a b ha hb hab
-    simp only [hUdef, Set.mem_setOf_eq] at h₁ h₂ ⊢
+    simp only [hUdef, Set.mem_ofPred_eq] at h₁ h₂ ⊢
     have hproj : (fun i : Fin m => (a • y₁ + b • y₂) i.castSucc) - c
         = a • ((fun i : Fin m => y₁ i.castSucc) - c)
           + b • ((fun i : Fin m => y₂ i.castSucc) - c) := by
@@ -819,10 +819,10 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
       funext i
       have hne : (i.castSucc : Fin (m + 1)) ≠ Fin.last m := (Fin.castSucc_lt_last i).ne
       simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
-        hsbdef, if_neg hne, mul_zero, add_zero, hzc i, sub_self]
+        hsbdef, ite_eq_right hne, mul_zero, add_zero, hzc i, sub_self]
     have hlast : (z + δ • sb (Fin.last m)) (Fin.last m) = β + δ := by
       simp [hsbdef, hzlast]
-    simp only [hUdef, Set.mem_setOf_eq]
+    simp only [hUdef, Set.mem_ofPred_eq]
     rw [hproj, hlast, norm_zero, mul_zero, add_zero]
     linarith
   have hLray : ∀ δ : ℝ, L (z + δ • sb (Fin.last m)) = L z + δ * b := by
@@ -837,7 +837,7 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
   have hzeq : L z = u₀ := by
     refine le_antisymm ?_ hzu
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hδpos : 0 < (L z - u₀) / (-b) := div_pos (by linarith) (by linarith)
     have h1 := hUlt _ (hray _ hδpos)
     rw [hLray] at h1
@@ -865,10 +865,10 @@ private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFi
     rw [e1, e2, hzeq]
     exact hMge _ hyM
   rw [hsplit, hsplit] at hge
-  simp only [hzdef, hzlast] at hge
+  simp only [hzdef] at hge
   rw [integral_lagrangian hint _ hψ, integral_lagrangian hint _ hφ₀]
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   linarith [mul_lt_mul_of_neg_left hcon hbneg]
 
 /-- **Multipliers exist, and are forced (iv, second clause).** If the constraint vector is
@@ -956,7 +956,7 @@ private lemma density_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : M
   have h1 : powerAgainst P (fun _ => (1 : ℝ)) = ∫ x, (1 : ℝ) * p x ∂μ :=
     powerAgainst_density_eq h _
   unfold powerAgainst at h1
-  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, mul_one, one_mul] at h1
+  simp only [integral_const, probReal_univ, smul_eq_mul, mul_one, one_mul] at h1
   exact h1.symm
 
 /-- The **bounded measurable functions**, as a submodule of all real functions. This is the
@@ -1032,7 +1032,7 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
       α < powerAgainst (P (Fin.last m)) φ
   · exact Or.inr hR
   refine Or.inl ?_
-  push_neg at hR
+  push Not at hR
   have hint : ∀ i, Integrable (p i) μ := fun i => density_integrable (hp i)
   have hone : ∀ i, ∫ x, p i x ∂μ = 1 := fun i => density_integral_one (hp i)
   -- Perturbing the constant test `α` in a direction with vanishing first `m` moments cannot
@@ -1100,7 +1100,7 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
     simpa [hLdef, hKdef, momentFunctional, LinearMap.sum_apply, smul_eq_mul] using this
   set F : 𝓧 → ℝ := fun x => p (Fin.last m) x - ∑ i, k i * p i.castSucc x with hFdef
   have hFint : Integrable F μ :=
-    (hint _).sub (integrable_finset_sum _ fun i _ => (hint _).const_mul _)
+    (hint _).sub (integrable_finsetSum _ fun i _ => (hint _).const_mul _)
   have hFzero : ∀ s : Set 𝓧, MeasurableSet s → μ s < ⊤ → ∫ x in s, F x ∂μ = 0 := by
     intro s hs _
     have hind : Set.indicator s (1 : 𝓧 → ℝ) ∈ bddMeas 𝓧 := by
@@ -1109,8 +1109,8 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
     have hsplit : ∫ x in s, F x ∂μ
         = (∫ x in s, p (Fin.last m) x ∂μ) - ∑ i, k i * ∫ x in s, p i.castSucc x ∂μ := by
       rw [hFdef, integral_sub (hint _).integrableOn
-        (integrable_finset_sum _ fun i _ => ((hint _).const_mul _).integrableOn),
-        integral_finset_sum _ fun i _ => ((hint _).const_mul _).integrableOn]
+        (integrable_finsetSum _ fun i _ => ((hint _).const_mul _).integrableOn),
+        integral_finsetSum _ fun i _ => ((hint _).const_mul _).integrableOn]
       exact congrArg _ (Finset.sum_congr rfl fun i _ => integral_const_mul _ _)
     rw [hsplit, ← integral_indicator_one_mul hs, ← hkfun ⟨_, hind⟩]
     simp only [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) =>

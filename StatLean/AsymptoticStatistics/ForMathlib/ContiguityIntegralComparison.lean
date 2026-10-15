@@ -62,7 +62,7 @@ private lemma eventually_measureReal_lowerTail_lt_of_weakConverges
     (hweak : WeakConverges (fun n => (P n).map (L n)) nu) {ε : ℝ} (hε : 0 < ε) :
     ∃ K : ℕ, ∀ᶠ n in atTop, (P n).real {ω | L n ω ≤ -(K : ℝ)} < ε := by
   let pn : ℕ → ProbabilityMeasure ℝ := fun n =>
-    ⟨(P n).map (L n), Measure.isProbabilityMeasure_map (hL n).aemeasurable⟩
+    ⟨(P n).map (L n), (by infer_instance)⟩
   let pnu : ProbabilityMeasure ℝ := ⟨nu, inferInstance⟩
   have ht : Tendsto pn atTop (nhds pnu) :=
     ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr hweak
@@ -81,7 +81,7 @@ private lemma eventually_measureReal_lowerTail_lt_of_weakConverges
   have htail : Tendsto (fun K => nu (C K)) atTop (nhds 0) := by
     have h := tendsto_measure_iInter_atTop (μ := nu) (fun K => (hCmeas K).nullMeasurableSet)
       hCanti ⟨0, measure_ne_top nu _⟩
-    simpa [hCinter] using h
+    simpa [hCinter] using! h
   obtain ⟨K, hK⟩ := (htail.eventually (Iio_mem_nhds (ENNReal.ofReal_pos.mpr hε))).exists
   have hport := ProbabilityMeasure.limsup_measure_closed_le_of_tendsto ht
     (isClosed_Iic : IsClosed (C K))

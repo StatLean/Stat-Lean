@@ -44,10 +44,10 @@ lemma dqm_sqrtDensityRatio_l2_linearization
       - (1 / 2 : ℝ) * z θ x * M.sqrtDensity θ₀ x
   have hshift : Tendsto (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀)
       (𝓝 θ₀) (𝓝 0) := by
-    simpa using (continuous_id.sub
+    simpa using! (continuous_id.sub
       (continuous_const : Continuous (fun _ : EuclideanSpace ℝ (Fin k) => θ₀))).tendsto θ₀
   have hrO : (fun θ => ∫ x, r θ x ^ 2 ∂μ) =o[𝓝 θ₀] (fun θ => s θ ^ 2) := by
-    simpa only [Function.comp_apply, r, s, z] using
+    simpa only [Function.comp_apply, r, s, z] using!
       hDQM.isLittleO.comp_tendsto hshift
   have hrmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (r θ) 2 μ := by
     simpa only [Function.comp_apply, r, z] using hshift.eventually hDQM.mem
@@ -107,8 +107,6 @@ lemma dqm_sqrtDensityRatio_l2_linearization
           ring
     exact hle.trans (by nlinarith)
   let P₀ : Measure 𝒳 := μ.withDensity fun x => ENNReal.ofReal (p x)
-  letI : IsFiniteMeasure P₀ :=
-    isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   let qp : EuclideanSpace ℝ (Fin k) → 𝒳 → ℝ := fun θ x => W θ x - z θ x
   have hWmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (W θ) 2 P₀ := by
     filter_upwards [hqmem] with θ hqm
@@ -137,7 +135,8 @@ lemma dqm_sqrtDensityRatio_l2_linearization
     filter_upwards [hWmem] with θ hwm
     have hdiv_meas : AEStronglyMeasurable
         (fun x => score θ x / M.sqrtDensity θ₀ x) P₀ :=
-      (((hscore_mem θ).1.mul (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
+      (((hscore_mem θ).aestronglyMeasurable.mul
+          (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
         (withDensity_absolutelyContinuous _ _))
     have hzeq : (fun x => score θ x / M.sqrtDensity θ₀ x) =ᵐ[P₀] z θ := by
       filter_upwards [hbase_pos] with x hx
@@ -168,7 +167,7 @@ lemma dqm_sqrtDensityRatio_l2_linearization
     ring
   have hqpO : (fun θ => ∫ x, qp θ x ^ 2 ∂P₀) =o[𝓝 θ₀]
       (fun θ => s θ ^ 2) := by
-    convert hqO using 1
+    convert! hqO using 1
     funext θ
     exact hqpSq θ
   simpa only [qp, W, z, P₀, p, s] using And.intro hqpmem hqpO
@@ -200,10 +199,10 @@ lemma dqm_sqrtDensityRatio_mean_expansion
       - (1 / 2 : ℝ) * z θ x * M.sqrtDensity θ₀ x
   have hshift : Tendsto (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀)
       (𝓝 θ₀) (𝓝 0) := by
-    simpa using (continuous_id.sub
+    simpa using! (continuous_id.sub
       (continuous_const : Continuous (fun _ : EuclideanSpace ℝ (Fin k) => θ₀))).tendsto θ₀
   have hrO : (fun θ => ∫ x, r θ x ^ 2 ∂μ) =o[𝓝 θ₀] (fun θ => s θ ^ 2) := by
-    simpa only [Function.comp_apply, r, score, z, s] using
+    simpa only [Function.comp_apply, r, score, z, s] using!
       hDQM.isLittleO.comp_tendsto hshift
   have hrmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (r θ) 2 μ := by
     simpa only [Function.comp_apply, r, score, z] using hshift.eventually hDQM.mem
@@ -248,7 +247,7 @@ lemma dqm_sqrtDensityRatio_mean_expansion
     simp only [score, z, p, mul_pow, M.sqrtDensity_sq]
   have hscoreO : (fun θ => ∫ x, score θ x ^ 2 ∂μ) =O[𝓝 θ₀]
       (fun θ => s θ ^ 2) := by
-    convert hJO using 1
+    convert! hJO using 1
     funext θ
     exact hscoreSq θ
   have hrscoreO : (fun θ => ∫ x, r θ x * score θ x ∂μ) =o[𝓝 θ₀]
@@ -390,7 +389,8 @@ lemma dqm_sqrtDensityRatio_sq_expansion
   have hzmem (θ : EuclideanSpace ℝ (Fin k)) : MemLp (z θ) 2 P₀ := by
     have hdiv_meas : AEStronglyMeasurable
         (fun x => score θ x / M.sqrtDensity θ₀ x) P₀ :=
-      (((hscore_mem θ).1.mul (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
+      (((hscore_mem θ).aestronglyMeasurable.mul
+          (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
         (withDensity_absolutelyContinuous _ _))
     have hzeq : (fun x => score θ x / M.sqrtDensity θ₀ x) =ᵐ[P₀] z θ := by
       filter_upwards [hbase_pos] with x hx
@@ -449,7 +449,7 @@ lemma dqm_sqrtDensityRatio_sq_expansion
     ring
   have hzO : (fun θ => ∫ x, z θ x ^ 2 ∂P₀) =O[𝓝 θ₀]
       (fun θ => s θ ^ 2) := by
-    convert hJO using 1
+    convert! hJO using 1
     funext θ
     exact hzSq θ
   have hqzO : (fun θ => ∫ x, q θ x * z θ x ∂P₀) =o[𝓝 θ₀]
@@ -516,7 +516,7 @@ lemma dqm_sqrtDensityRatio_tail_controls
   let q : EuclideanSpace ℝ (Fin k) → 𝒳 → ℝ := fun θ x => W θ x - z θ x
   let s : EuclideanSpace ℝ (Fin k) → ℝ := fun θ => ‖θ - θ₀‖
   let g : 𝒳 → ℝ := fun x => ‖ℓ x‖ ^ 2
-  letI : IsFiniteMeasure P₀ :=
+  let : IsFiniteMeasure P₀ :=
     isFiniteMeasure_withDensity_ofReal (hPDF.density_integrable θ₀).hasFiniteIntegral
   have hW_meas (θ : EuclideanSpace ℝ (Fin k)) : Measurable (W θ) := by
     exact (((M.density_meas θ).div (M.density_meas θ₀)).sqrt.sub_const 1).const_mul 2
@@ -544,7 +544,8 @@ lemma dqm_sqrtDensityRatio_tail_controls
   have hzmem (θ : EuclideanSpace ℝ (Fin k)) : MemLp (z θ) 2 P₀ := by
     have hdiv_meas : AEStronglyMeasurable
         (fun x => score θ x / M.sqrtDensity θ₀ x) P₀ :=
-      (((hscore_mem θ).1.mul (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
+      (((hscore_mem θ).aestronglyMeasurable.mul
+          (M.sqrtDensity_meas θ₀).inv.aestronglyMeasurable).mono_ac
         (withDensity_absolutelyContinuous _ _))
     have hzeq : (fun x => score θ x / M.sqrtDensity θ₀ x) =ᵐ[P₀] z θ := by
       filter_upwards [hbase_pos] with x hx
@@ -562,12 +563,12 @@ lemma dqm_sqrtDensityRatio_tail_controls
     ring
   have hWmem : ∀ᶠ θ in 𝓝 θ₀, MemLp (W θ) 2 P₀ := by
     filter_upwards [hqmem] with θ hqm
-    convert hqm.add (hzmem θ) using 1
+    convert! hqm.add (hzmem θ) using 1
     funext x
     simp [q]
   have hs0 : Tendsto (fun θ => s θ ^ 2) (𝓝 θ₀) (𝓝 0) := by
     have hs : Tendsto s (𝓝 θ₀) (𝓝 0) := by
-      simpa [s] using (continuous_norm.comp
+      simpa [s] using! (continuous_norm.comp
         (continuous_id.sub
           (continuous_const : Continuous
             (fun _ : EuclideanSpace ℝ (Fin k) => θ₀)))).tendsto θ₀
@@ -583,13 +584,13 @@ lemma dqm_sqrtDensityRatio_tail_controls
           simpa only [W, P₀, p, s] using hsqrem).trans_tendsto hs0
   have hshift : Tendsto (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀)
       (𝓝 θ₀) (𝓝 0) := by
-    simpa using (continuous_id.sub
+    simpa using! (continuous_id.sub
       (continuous_const : Continuous
         (fun _ : EuclideanSpace ℝ (Fin k) => θ₀))).tendsto θ₀
   have hfisher0 : Tendsto
       (fun θ => fisherInformation M μ θ₀ ℓ (θ - θ₀) (θ - θ₀))
       (𝓝 θ₀) (𝓝 0) := by
-    simpa [fisherInformation, pow_two] using
+    simpa [fisherInformation, pow_two] using!
       (dqm_fisher_cont M μ θ₀ ℓ (hPDF.density_integrable θ₀) hDQM
         (fun _ _ => hPDF.density_integrable _)).comp hshift
   have hWsq0 : Tendsto (fun θ => ∫ x, W θ x ^ 2 ∂P₀) (𝓝 θ₀) (𝓝 0) := by

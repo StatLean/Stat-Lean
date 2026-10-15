@@ -2,8 +2,8 @@
   "root": "StatLean.Minimaxity.klDiv_gaussianReal",
   "nodes": [
     {"id":"StatLean.Minimaxity.klDiv_gaussianReal","label":"klDiv_gaussianReal","full":"StatLean.Minimaxity.klDiv_gaussianReal","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.GaussianKL"},
-    {"id":"NNReal.coe_pos","label":"coe_pos","full":"NNReal.coe_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"},
-    {"id":"pos_iff_ne_zero","label":"pos_iff_ne_zero","full":"pos_iff_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
+    {"id":"NNReal.coe_pos","label":"coe_pos","full":"NNReal.coe_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.NNReal.Defs"},
+    {"id":"pos_iff_ne_zero","label":"pos_iff_ne_zero","full":"pos_iff_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.IsBotOne"},
     {"id":"LT.lt.ne'","label":"ne'","full":"LT.lt.ne'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"MeasureTheory.Measure.AbsolutelyContinuous.trans","label":"trans","full":"MeasureTheory.Measure.AbsolutelyContinuous.trans","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AbsolutelyContinuous"},
     {"id":"ProbabilityTheory.gaussianReal_absolutelyContinuous","label":"gaussianReal_absolutelyContinuous","full":"ProbabilityTheory.gaussianReal_absolutelyContinuous","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
@@ -33,20 +33,20 @@
     {"id":"ProbabilityTheory.gaussianReal_of_var_ne_zero","label":"gaussianReal_of_var_ne_zero","full":"ProbabilityTheory.gaussianReal_of_var_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"MeasureTheory.Measure.AbsolutelyContinuous.ae_eq","label":"ae_eq","full":"MeasureTheory.Measure.AbsolutelyContinuous.ae_eq","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.AbsolutelyContinuous"},
-    {"id":"ENNReal.toReal_mul","label":"toReal_mul","full":"ENNReal.toReal_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
-    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"ENNReal.toReal_mul","label":"toReal_mul","full":"ENNReal.toReal_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Real"},
+    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"ProbabilityTheory.toReal_gaussianPDF","label":"toReal_gaussianPDF","full":"ProbabilityTheory.toReal_gaussianPDF","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
     {"id":"Real.log_mul","label":"log_mul","full":"Real.log_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
     {"id":"inv_ne_zero","label":"inv_ne_zero","full":"inv_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"ProbabilityTheory.gaussianPDFReal_pos","label":"gaussianPDFReal_pos","full":"ProbabilityTheory.gaussianPDFReal_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
     {"id":"Real.log_inv","label":"log_inv","full":"Real.log_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
     {"id":"congr_arg","label":"congr_arg","full":"congr_arg","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
-    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"}
   ],
   "edges": [
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"NNReal.coe_pos"},
@@ -87,12 +87,12 @@
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"inv_ne_zero"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"ProbabilityTheory.gaussianPDFReal_pos"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"Real.log_inv"},
-    {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"RCLike.charZero_rclike"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"congr_arg₂"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"congr_arg"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"one_mul"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"div_one"},
     {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"mul_one"},
-    {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"Nat.cast_zero"}
+    {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"Nat.cast_zero"},
+    {"source":"StatLean.Minimaxity.klDiv_gaussianReal","target":"one_ne_zero"}
   ]
 }
