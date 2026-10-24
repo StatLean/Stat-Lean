@@ -41576,5 +41576,336 @@
       "resampling",
       "concentration inequality"
     ]
+  },
+  {
+    "id": "prob-marcinkiewicz",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "charFun_eq_exp_polynomial_degree_le_two",
+    "fullName": "StatLean.AsymptoticStatistics.Marcinkiewicz.charFun_eq_exp_polynomial_degree_le_two",
+    "title": "Marcinkiewicz's Theorem",
+    "citation": "Marcinkiewicz (1939)",
+    "shortRef": "Marcinkiewicz (1939)",
+    "file": "StatLean/AsymptoticStatistics/ForMathlib/Probability/Marcinkiewicz.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ForMathlib/Probability/Marcinkiewicz.html#StatLean.AsymptoticStatistics.Marcinkiewicz.charFun_eq_exp_polynomial_degree_le_two",
+    "informal": "<p>Let $\\mu$ be a <span data-link=\"h1\">probability measure</span> on $\\mathbb{R}$, with characteristic function $\\varphi(t) = \\int e^{itx} \\, d\\mu(x)$, and let $p$ be a polynomial with complex coefficients. If <span data-link=\"h2\">$\\varphi(t) = e^{p(t)}$ for every real $t$</span>, then $$\\deg p \\;\\le\\; 2.$$ In particular, no function of the form $e^{p(t)}$ with $\\deg p \\ge 3$, such as $e^{-t^4}$, is the characteristic function of a probability measure on $\\mathbb{R}$.</p>",
+    "summary": "A characteristic function that is the exponential of a polynomial forces that polynomial to have degree at most two.",
+    "leanSignature": "theorem charFun_eq_exp_polynomial_degree_le_two\n    {μ : Measure ℝ} {p : Polynomial ℂ} [IsProbabilityMeasure μ]\n    (hp : ∀ t : ℝ, charFun μ t = Complex.exp (p.eval (t : ℂ))) :\n    p.degree ≤ 2",
+    "formalizationNotes": "The theorem is stated for a probability measure on $\\mathbb{R}$ rather than a random variable, and concludes only the degree bound. That a law with $\\varphi = e^{p}$ is then normal, possibly degenerate, is recorded in cumulant form on the page <a href=\"#/result/prob-marcinkiewicz-cumulants\">Laws with Finitely Many Nonzero Cumulants Are Normal</a>. The proof is the classical one. The hypothesis makes every even moment finite with $\\int x^{2n}\\,d\\mu = |\\varphi^{(2n)}(0)|$, and since $e^{p}$ is entire these moments grow slowly enough that every exponential moment $\\int e^{cx}\\,d\\mu(x)$ is finite (the analytic characteristic function theorem, `hasAllExpMoments_of_charFun_eq_exp`). The two-sided Laplace transform is then the entire function $z \\mapsto e^{p(-iz)}$ by the identity theorem; bounding its modulus by its value on the real axis gives $\\operatorname{Re} p(w) \\le \\operatorname{Re} p(i \\operatorname{Im} w)$ for every complex $w$, and a polynomial satisfying this inequality has degree at most $2$. The result is not the Marcinkiewicz interpolation theorem. Janson (1988) cites the result as Théorème 2bis of the 1939 paper.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure μ",
+        "label": "probability measure",
+        "note": "$\\mu$ is a probability measure on the real line."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hp : ∀ t : ℝ",
+        "label": "exponential-polynomial characteristic function",
+        "note": "The characteristic function of $\\mu$ equals $e^{p(t)}$ at every real $t$, for a fixed complex polynomial $p$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618.",
+      "pointer": "Théorème 2bis, as cited by Janson (1988)",
+      "keys": [
+        "marcinkiewicz1939",
+        "janson1988",
+        "cramer1937"
+      ],
+      "biblio": "The equivalent cumulant formulation, that a law whose cumulants vanish for all sufficiently large orders is normal, is the uniqueness step in S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312, where it yields normal convergence from the vanishing in the limit of the cumulants of high order only. Janson also observes (Remark 2) that, by a symmetrization and Cramér's decomposition theorem (H. Cramér, *Random Variables and Probability Distributions*, Cambridge University Press, 1937, Théorème 19), it suffices that the cumulants vanish for all sufficiently large even orders."
+    },
+    "keywords": [
+      "Marcinkiewicz's theorem",
+      "characteristic function",
+      "Gaussian distribution"
+    ]
+  },
+  {
+    "id": "prob-marcinkiewicz-cumulants",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "eq_gaussianReal_of_cumulant_eq_zero",
+    "fullName": "StatLean.AsymptoticStatistics.Cumulant.eq_gaussianReal_of_cumulant_eq_zero",
+    "title": "Laws with Finitely Many Nonzero Cumulants Are Normal",
+    "citation": "Janson (1988), §1",
+    "shortRef": "Janson (1988), §1",
+    "file": "StatLean/AsymptoticStatistics/ForMathlib/Probability/CumulantCharFun.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ForMathlib/Probability/CumulantCharFun.html#StatLean.AsymptoticStatistics.Cumulant.eq_gaussianReal_of_cumulant_eq_zero",
+    "informal": "<p>Let $\\mu$ be a <span data-link=\"h1\">probability measure</span> on $\\mathbb{R}$ with <span data-link=\"h2\">finite moments of all orders</span>, and let $X$ have law $\\mu$. Write $\\kappa_j = \\kappa_j(X)$ for the $j$-th cumulant (semi-invariant), determined from the moments by $$\\mathbb{E}X^n \\;=\\; \\sum_{\\pi} \\prod_{B \\in \\pi} \\kappa_{|B|}(X), \\qquad n \\ge 1,$$ the sum running over all partitions $\\pi$ of $\\{1, \\dots, n\\}$ into nonempty blocks; in particular $\\kappa_1 = \\mathbb{E}X$ and $\\kappa_2 = \\operatorname{Var}(X)$. If, for some integer <span data-link=\"h3\">$m_0 \\ge 1$</span>, <span data-link=\"h4\">$\\kappa_j = 0$ for every $j \\ge m_0$</span>, then $$\\mu \\;=\\; N(\\kappa_1, \\kappa_2),$$ the normal law with mean $\\kappa_1$ and variance $\\kappa_2 \\ge 0$, which is the point mass at $\\kappa_1$ when $\\kappa_2 = 0$. In particular $\\kappa_j = 0$ for every $j \\ge 3$.</p>",
+    "summary": "A probability law on the real line with all moments whose cumulants vanish from some order on is normal, with mean and variance given by its first two cumulants.",
+    "leanSignature": "theorem eq_gaussianReal_of_cumulant_eq_zero\n    {μ : Measure ℝ} [IsProbabilityMeasure μ]\n    (hint : ∀ n : ℕ, Integrable (fun x : ℝ => x ^ n) μ)\n    {m₀ : ℕ} (hm₀ : 1 ≤ m₀) (hzero : ∀ j, m₀ ≤ j → cumulant id j μ = 0) :\n    μ = gaussianReal (cumulant id 1 μ) (cumulant id 2 μ).toNNReal",
+    "formalizationNotes": "Cumulants are defined combinatorially, by Möbius inversion of the moment–cumulant relation over set partitions, which needs only finite moments; it agrees with the classical definition through derivatives of $\\log \\varphi$ at $0$, equation (2.1) of the source, but that agreement is not formalized here. The proof combines two steps. First, when the cumulants vanish from order $m_0$ on, the moments satisfy $|\\mathbb{E}X^n| \\le C_\\varepsilon \\varepsilon^n n!$ for every $\\varepsilon > 0$, so every exponential moment is finite and the characteristic function is $\\exp\\bigl(\\sum_{j < m_0} \\kappa_j (it)^j / j!\\bigr)$ on the whole real line (`charFun_eq_exp_charPoly`; this is the case of the source's Lemma 2 in which only finitely many cumulants are nonzero). Second, Marcinkiewicz's theorem bounds the degree of that polynomial by $2$, so $\\kappa_j = 0$ for $j \\ge 3$ (`cumulant_eq_zero_of_three_le`), and the law is identified with $N(\\kappa_1, \\kappa_2)$ by uniqueness of characteristic functions. The variance enters the Lean statement through its nonnegative part, which equals $\\kappa_2$ because $\\kappa_2 = \\operatorname{Var}(X) \\ge 0$. The hypothesis $m_0 \\ge 1$ excludes the order-zero cumulant, which is $1$ by convention.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure μ",
+        "label": "probability measure",
+        "note": "$\\mu$ is a probability measure on the real line."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hint",
+        "label": "all moments finite",
+        "note": "$\\int |x|^n \\, d\\mu(x) < \\infty$ for every $n \\ge 0$, so that every cumulant of $\\mu$ is defined."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hm₀",
+        "label": "positive order",
+        "note": "The cut-off order satisfies $m_0 \\ge 1$."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hzero",
+        "label": "cumulants eventually zero",
+        "note": "$\\kappa_j(\\mu) = 0$ for every $j \\ge m_0$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312.",
+      "pointer": "§1 (semi-invariant form of Marcinkiewicz's theorem) and §2, Lemma 2",
+      "keys": [
+        "janson1988",
+        "marcinkiewicz1939",
+        "cramer1946"
+      ],
+      "biblio": "The statement is the cumulant form of the theorem of J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618 (Théorème 2bis), that a characteristic function of the form $e^{p(t)}$ with $p$ a polynomial forces $\\deg p \\le 2$. For the elementary theory of semi-invariants and their relation to moments see H. Cramér, *Mathematical Methods of Statistics*, Princeton University Press, 1946."
+    },
+    "keywords": [
+      "Marcinkiewicz's theorem",
+      "cumulant",
+      "Gaussian distribution"
+    ]
+  },
+  {
+    "id": "prob-janson-higher-cumulants",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "tendsto_gaussPM",
+    "fullName": "StatLean.AsymptoticStatistics.Janson.tendsto_gaussPM",
+    "title": "Normal Convergence by Higher Cumulants",
+    "citation": "Janson (1988), Thm 1",
+    "shortRef": "Janson (1988), Thm 1",
+    "file": "StatLean/AsymptoticStatistics/DependencyGraphCLT/JansonCLT.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/DependencyGraphCLT/JansonCLT.html#StatLean.AsymptoticStatistics.Janson.tendsto_gaussPM",
+    "informal": "<p>Let $X_1, X_2, \\dots$ be real random variables with laws $P_1, P_2, \\dots$, each with <span data-link=\"h1\">finite moments of all orders</span>. Write $\\kappa_j(X)$ for the $j$-th cumulant (semi-invariant) of $X$, determined from the moments by $$\\mathbb{E}X^n \\;=\\; \\sum_{\\pi} \\prod_{B \\in \\pi} \\kappa_{|B|}(X), \\qquad n \\ge 1,$$ the sum running over all partitions $\\pi$ of $\\{1, \\dots, n\\}$ into nonempty blocks; in particular $\\kappa_1(X) = \\mathbb{E}X$ and $\\kappa_2(X) = \\operatorname{Var}(X)$. Suppose that, for real numbers $\\mu$ and $\\sigma^2$ and an integer $m$, as $n \\to \\infty$, <span data-link=\"h2\">$\\kappa_1(X_n) \\to \\mu$</span>, <span data-link=\"h3\">$\\kappa_2(X_n) \\to \\sigma^2$</span>, and <span data-link=\"h4\">$\\kappa_j(X_n) \\to 0$ for every $j \\ge m$</span>. Then $$X_n \\;\\rightsquigarrow\\; N(\\mu, \\sigma^2),$$ where $\\sigma^2 \\ge 0$, being a limit of variances, and $N(\\mu, 0)$ is the point mass at $\\mu$. No condition is placed on the cumulants of orders $3, \\dots, m-1$.</p>",
+    "summary": "If the means and variances of a sequence of random variables converge and every cumulant of sufficiently high order tends to zero, the variables converge in distribution to the corresponding normal law.",
+    "leanSignature": "theorem tendsto_gaussPM {P : ℕ → ProbabilityMeasure ℝ}\n    (hint : ∀ n p, Integrable (fun x : ℝ => x ^ p) (P n : Measure ℝ))\n    {m : ℕ} {mu s2 : ℝ}\n    (h1 : Tendsto (fun n => Cumulant.cumulant id 1 (P n : Measure ℝ)) atTop (𝓝 mu))\n    (h2 : Tendsto (fun n => Cumulant.cumulant id 2 (P n : Measure ℝ)) atTop (𝓝 s2))\n    (h3 : ∀ j, m ≤ j → Tendsto (fun n => Cumulant.cumulant id j (P n : Measure ℝ)) atTop (𝓝 0)) :\n    Tendsto P atTop (𝓝 (gaussPM mu s2))",
+    "formalizationNotes": "The theorem is stated for the laws $P_n$, and convergence in distribution is convergence in the weak topology on probability measures on $\\mathbb{R}$. Cumulants are defined combinatorially, by Möbius inversion of the moment–cumulant relation over set partitions (the Leonov–Shiryaev formula), which needs only finite moments; it agrees mathematically with the definition through derivatives of $\\log \\varphi$ at $0$, equation (2.1) of the source, but that agreement is not formalized. We assume every $X_n$ has finite moments of all orders, whereas the source requires the $j$-th moment to be finite only for $n \\ge n_j$. The integer $m$ is unrestricted: the source takes $m \\ge 3$, and for smaller $m$ the hypothesis only becomes stronger. The source's further assertion, that every moment of $X_n$ converges to the corresponding moment of $N(\\mu, \\sigma^2)$, is the companion theorem `tendsto_integral_pow_gaussPM` under the same hypotheses. The proof follows Section 3 of the source: if the cumulants of orders $3, \\dots, m-1$ did not all tend to zero, a rescaled subsequence would converge to a law whose cumulants vanish from order $m$ on but not from order $3$ on, contradicting the cumulant form of Marcinkiewicz's theorem. We rescale the variables instead of adding the source's auxiliary independent Gaussian, and extract the convergent subsequence by Prokhorov's theorem, with tightness from the bounded moments; the semi-invariant method of moments (Lemma 1 of the source) is proved along the way.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hint",
+        "label": "all moments finite",
+        "note": "Every $X_n$ has $\\mathbb{E}|X_n|^p < \\infty$ for every $p \\ge 0$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "h1 : Tendsto",
+        "label": "means converge",
+        "note": "$\\kappa_1(X_n) = \\mathbb{E}X_n \\to \\mu$."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h2 : Tendsto",
+        "label": "variances converge",
+        "note": "$\\kappa_2(X_n) = \\operatorname{Var}(X_n) \\to \\sigma^2$."
+      },
+      {
+        "id": "h4",
+        "leanToken": "h3 : ∀ j, m ≤ j",
+        "label": "high cumulants vanish",
+        "note": "$\\kappa_j(X_n) \\to 0$ for every order $j \\ge m$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312.",
+      "pointer": "§1, Theorem 1",
+      "keys": [
+        "janson1988",
+        "marcinkiewicz1939",
+        "cramer1946",
+        "cramer1937"
+      ],
+      "biblio": "The uniqueness input is J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618 (Théorème 2bis): a characteristic function $e^{p(t)}$ with $p$ a polynomial forces $\\deg p \\le 2$, equivalently a law whose cumulants vanish from some order on is normal. For $m = 3$ the theorem is a reformulation of the method of moments, phrased through the semi-invariants of H. Cramér, *Mathematical Methods of Statistics*, Princeton University Press, 1946. By a symmetrization and Cramér's decomposition theorem (H. Cramér, *Random Variables and Probability Distributions*, Cambridge University Press, 1937, Théorème 19), it suffices that $\\kappa_j(X_n) \\to 0$ for all sufficiently large even $j$."
+    },
+    "keywords": [
+      "central limit theorem",
+      "cumulant",
+      "convergence in distribution"
+    ]
+  },
+  {
+    "id": "prob-janson-dependency-graph-clt",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "tendsto_gaussPM_of_depGraph_janson15",
+    "fullName": "StatLean.AsymptoticStatistics.Janson.tendsto_gaussPM_of_depGraph_janson15",
+    "title": "Janson's Central Limit Theorem for Dependency Graphs",
+    "citation": "Janson (1988), Thm 2",
+    "shortRef": "Janson (1988), Thm 2",
+    "file": "StatLean/AsymptoticStatistics/DependencyGraphCLT/JansonCLT.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/DependencyGraphCLT/JansonCLT.html#StatLean.AsymptoticStatistics.Janson.tendsto_gaussPM_of_depGraph_janson15",
+    "informal": "<p>For each $n$, let $X_{n,1}, \\dots, X_{n,N_n}$ be real random variables on a <span data-link=\"h1\">probability space</span>, with sum $S_n = \\sum_{i} X_{n,i}$, and let $\\Gamma_n$ be a <span data-link=\"h2\">dependency graph</span> for them: a graph on the indices $\\{1, \\dots, N_n\\}$ such that each $X_{n,i}$ is measurable and, whenever two sets of indices are joined by no edge, the corresponding families of variables are independent. Let $M_n$ be an integer such that <span data-link=\"h3\">every vertex of $\\Gamma_n$ has at most $M_n$ neighbours</span>, with <span data-link=\"h4\">$M_n \\ge 1$</span> and <span data-link=\"h5\">$M_n \\le N_n$</span>. Suppose the variables are <span data-link=\"h7\">bounded, $|X_{n,i}| \\le A_n$ almost surely</span>, for constants <span data-link=\"h6\">$A_n \\ge 0$</span>, and let <span data-link=\"h9\">$\\sigma_n^2 = \\operatorname{Var}(S_n)$</span> with <span data-link=\"h8\">$\\sigma_n > 0$</span>. If, for some integer <span data-link=\"h10\">$m \\ge 3$</span>, <span data-link=\"h11\">$(N_n / M_n)^{1/m} \\, M_n A_n / \\sigma_n \\to 0$</span> as $n \\to \\infty$, then $$\\frac{S_n - \\mathbb{E}S_n}{\\sigma_n} \\;\\rightsquigarrow\\; N(0, 1).$$</p>",
+    "summary": "Standardized sums of bounded random variables with a dependency graph are asymptotically normal when the number of summands, the maximal degree and the bound are small relative to the standard deviation.",
+    "leanSignature": "theorem tendsto_gaussPM_of_depGraph_janson15\n    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {μ : ∀ n, Measure (Ω n)}\n    [∀ n, IsProbabilityMeasure (μ n)]\n    {ι : ℕ → Type*} [∀ n, Fintype (ι n)] [∀ n, DecidableEq (ι n)]\n    {X : ∀ n, ι n → Ω n → ℝ} (D : ∀ n, DepGraph (X n) (μ n))\n    {M : ℕ → ℕ} (hdeg : ∀ n, ∀ i : ι n, #(((D n).nbhd i).erase i) ≤ M n)\n    (hM1 : ∀ n, 1 ≤ M n) (hMN : ∀ n, M n ≤ Fintype.card (ι n))\n    {A : ℕ → ℝ} (hA : ∀ n, 0 ≤ A n) (hbd : ∀ n, ∀ i, ∀ᵐ ω ∂(μ n), |X n i ω| ≤ A n)\n    {σ : ℕ → ℝ} (hσ : ∀ n, 0 < σ n)\n    (hσsq : ∀ n, σ n ^ 2 = Cumulant.cumulant (fun ω => ∑ i, X n i ω) 2 (μ n))\n    {m : ℕ} (hm : 3 ≤ m)\n    (h15 : Tendsto (fun n => ((Fintype.card (ι n) : ℝ) / (M n : ℝ)) ^ ((m : ℝ)⁻¹)\n      * ((M n : ℝ) * (A n / σ n))) atTop (𝓝 0)) :\n    Tendsto (fun n => stdSumPM (μ n) (X n) (σ n) (-(∫ ω, (∑ i, X n i ω) ∂(μ n)) / σ n)) atTop\n      (𝓝 (gaussPM 0 1))",
+    "formalizationNotes": "Each row lives on its own probability space and is indexed by an arbitrary finite type with $N_n$ elements. A dependency graph is encoded as a reflexive, symmetric adjacency relation together with measurability of every variable and the independence of any two index sets joined by no edge; the degree of a vertex counts its neighbours other than itself. The source takes $M_n$ to be the maximal degree of $\\Gamma_n$, set to $1$ when $\\Gamma_n$ has no edges; we allow any integer bound on the degrees with $1 \\le M_n \\le N_n$, which includes the source's choice. The restriction $m \\ge 3$, which the source notes is necessary, and the positivity $\\sigma_n > 0$, implicit in the normalization, are stated as hypotheses; $\\sigma_n^2$ is the second cumulant of $S_n$, which is its variance. The conclusion is weak convergence of the law of $(S_n - \\mathbb{E}S_n)/\\sigma_n$. The proof follows Section 4 of the source: (1.5) is transferred to the closed-neighbourhood count $M_n + 1$ and yields $N_n (M_n + 1)^{j-1} (A_n/\\sigma_n)^j \\to 0$ for every $j \\ge m$, the cumulant bound of Lemma 4 then sends every cumulant of order $j \\ge m$ of the standardized sum to zero, and normal convergence by higher cumulants (Theorem 1) concludes. The intermediate form, with this rate hypothesis in place of (1.5), is the companion theorem `tendsto_gaussPM_of_depGraph`. The extension to unbounded summands by truncation (Remark 3 of the source) is not formalized.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure (μ n)",
+        "label": "probability spaces",
+        "note": "The $n$-th row is defined on a probability space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "DepGraph (X n) (μ n)",
+        "label": "dependency graph",
+        "note": "$\\Gamma_n$ is a graph on the indices of the $n$-th row such that the variables are measurable and any two sets of indices joined by no edge carry independent families of variables."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hdeg",
+        "label": "degree bound",
+        "note": "Every vertex of $\\Gamma_n$ has at most $M_n$ neighbours other than itself."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hM1",
+        "label": "degree bound at least one",
+        "note": "$M_n \\ge 1$ for every $n$."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hMN",
+        "label": "degree bound at most $N_n$",
+        "note": "$M_n$ does not exceed the number $N_n$ of summands."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hA : ∀ n, 0 ≤ A n",
+        "label": "nonnegative bound",
+        "note": "$A_n \\ge 0$ for every $n$."
+      },
+      {
+        "id": "h7",
+        "leanToken": "hbd",
+        "label": "uniformly bounded summands",
+        "note": "$|X_{n,i}| \\le A_n$ almost surely, for every $i$."
+      },
+      {
+        "id": "h8",
+        "leanToken": "hσ : ∀ n, 0 < σ n",
+        "label": "positive scale",
+        "note": "$\\sigma_n > 0$ for every $n$."
+      },
+      {
+        "id": "h9",
+        "leanToken": "hσsq",
+        "label": "variance of the sum",
+        "note": "$\\sigma_n^2 = \\operatorname{Var}(S_n)$, the second cumulant of $S_n$."
+      },
+      {
+        "id": "h10",
+        "leanToken": "hm : 3 ≤ m",
+        "label": "order at least three",
+        "note": "The integer $m$ in the rate condition satisfies $m \\ge 3$."
+      },
+      {
+        "id": "h11",
+        "leanToken": "h15",
+        "label": "Janson's rate condition",
+        "note": "$(N_n/M_n)^{1/m} M_n A_n / \\sigma_n \\to 0$ as $n \\to \\infty$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312.",
+      "pointer": "§1, Theorem 2",
+      "keys": [
+        "janson1988",
+        "leonov-shiryaev1959",
+        "noether1970",
+        "marcinkiewicz1939"
+      ],
+      "biblio": "The mixed semi-invariants and their expansion over set partitions, which drive the cumulant bound behind the theorem, are from V. P. Leonov and A. N. Shiryaev, “On a method of calculation of semi-invariants,” *Theory of Probability and Its Applications* **4**(3), 1959, pp. 319–329. The theorem contains the central limit theorem of G. E. Noether, “A central limit theorem with nonparametric applications,” *The Annals of Mathematical Statistics* **41**(5), 1970, pp. 1753–1755, for double sums $\\sum_{i \\in I_n, j \\in J_n} X_{nij}$ of uniformly bounded variables whose dependency graph joins index pairs sharing a subscript, with $\\# I_n, \\# J_n \\le C K_n$; Noether assumes $\\operatorname{Var} S_n \\ge c K_n^3$, and the dependency-graph theorem needs only $\\operatorname{Var} S_n \\ge c K_n^{2 + \\varepsilon}$. For $m \\ge 4$ the proof rests on the theorem of J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618, that a law whose cumulants vanish from some order on is normal."
+    },
+    "keywords": [
+      "central limit theorem",
+      "dependency graph"
+    ]
+  },
+  {
+    "id": "prob-janson-cumulant-bound",
+    "category": "probability",
+    "kind": "lemma",
+    "leanName": "abs_cumulant_sum_le",
+    "fullName": "StatLean.AsymptoticStatistics.Janson.abs_cumulant_sum_le",
+    "title": "Cumulant Bound for Sums over a Dependency Graph",
+    "citation": "Janson (1988), Lemma 4",
+    "shortRef": "Janson (1988), Lemma 4",
+    "file": "StatLean/AsymptoticStatistics/DependencyGraphCLT/Lemma4.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/DependencyGraphCLT/Lemma4.html#StatLean.AsymptoticStatistics.Janson.abs_cumulant_sum_le",
+    "informal": "<p>Let $X_1, \\dots, X_N$ be real random variables on a <span data-link=\"h1\">probability space</span>, with sum $S = \\sum_{i} X_i$, and let $\\Gamma$ be a <span data-link=\"h2\">dependency graph</span> for them: a graph on $\\{1, \\dots, N\\}$ such that each $X_i$ is measurable and, whenever two sets of indices are joined by no edge, the corresponding families of variables are independent. Suppose <span data-link=\"h3\">every vertex of $\\Gamma$ has at most $M$ neighbours</span> and the variables are <span data-link=\"h5\">bounded, $|X_i| \\le A$ almost surely</span>, for a constant <span data-link=\"h4\">$A \\ge 0$</span>. Write $\\kappa_j(S)$ for the $j$-th cumulant of $S$, determined from the moments by $\\mathbb{E}S^n = \\sum_{\\pi} \\prod_{B \\in \\pi} \\kappa_{|B|}(S)$ over the partitions $\\pi$ of $\\{1, \\dots, n\\}$ into nonempty blocks. Then for every <span data-link=\"h6\">order $j \\ge 1$</span>, $$|\\kappa_j(S)| \\;\\le\\; C'_j \\, N \\, (M + 1)^{j-1} A^j, \\qquad C'_j \\;=\\; j! \\, (j-1)! \\sum_{\\pi} (|\\pi| - 1)!,$$ where the last sum runs over the partitions $\\pi$ of $\\{1, \\dots, j\\}$ into nonempty blocks and $|\\pi|$ is the number of blocks.</p>",
+    "summary": "The j-th cumulant of a sum of N bounded variables with a dependency graph of maximal degree M is at most a constant times N (M+1)^(j-1) A^j.",
+    "leanSignature": "theorem abs_cumulant_sum_le\n    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]\n    {ι : Type*} [Fintype ι] [DecidableEq ι] {X : ι → Ω → ℝ}\n    (D : DepGraph X μ) {M : ℕ}\n    (hdeg : ∀ i : ι, #((D.nbhd i).erase i) ≤ M) {A : ℝ} (hA : 0 ≤ A)\n    (hbd : ∀ i, ∀ᵐ ω ∂μ, |X i ω| ≤ A) {j : ℕ} (hj : 0 < j) :\n    |Cumulant.cumulant (fun ω => ∑ i, X i ω) j μ|\n      ≤ jansonConst j * ((Fintype.card ι : ℝ) * ((M : ℝ) + 1) ^ (j - 1) * A ^ j)",
+    "formalizationNotes": "The source states the bound with unspecified universal constants $C'_j = j!\\,(j-1)!\\,C_j$, where $C_j$ is a constant in the bound $|\\kappa(X_1, \\dots, X_j)| \\le C_j \\|X_1\\|_j \\cdots \\|X_j\\|_j$ for mixed cumulants, equation (4.4). We make the constant explicit: for variables bounded by $A$, the partition expansion of a mixed cumulant gives $|\\kappa(X_{i_1}, \\dots, X_{i_j})| \\le C_j A^j$ with $C_j = \\sum_{\\pi} (|\\pi| - 1)!$, the sum of the absolute Möbius weights. The proof follows the source: the multilinear expansion $\\kappa_j(S) = \\sum_{i_1, \\dots, i_j} \\kappa(X_{i_1}, \\dots, X_{i_j})$, equation (4.2); the vanishing of mixed cumulants of a family that splits into two independent nonempty parts (Lemma 3 of the source), so that only index sequences spanning a connected subgraph contribute; and the count of at most $j!\\,(j-1)!\\,N\\,(M+1)^{j-1}$ such sequences. The graph is encoded through closed neighbourhoods, so the degree of a vertex is the size of its neighbourhood minus one. The companion `abs_cumulant_standardized_le` gives the same bound with $A$ replaced by $A/\\sigma$ for the standardized sum $S/\\sigma + c$ and $j \\ge 2$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure μ",
+        "label": "probability space",
+        "note": "The variables are defined on a probability space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "DepGraph X μ",
+        "label": "dependency graph",
+        "note": "$\\Gamma$ is a graph on the indices such that the variables are measurable and any two sets of indices joined by no edge carry independent families of variables."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hdeg",
+        "label": "degree bound",
+        "note": "Every vertex of $\\Gamma$ has at most $M$ neighbours other than itself."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hA : 0 ≤ A",
+        "label": "nonnegative bound",
+        "note": "$A \\ge 0$."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hbd",
+        "label": "uniformly bounded summands",
+        "note": "$|X_i| \\le A$ almost surely, for every $i$."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hj : 0 < j",
+        "label": "positive order",
+        "note": "The cumulant order satisfies $j \\ge 1$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312.",
+      "pointer": "§4, Lemma 4",
+      "keys": [
+        "janson1988",
+        "leonov-shiryaev1959"
+      ],
+      "biblio": "Mixed semi-invariants, their multilinearity, and the expression of a mixed semi-invariant as a linear combination of products $\\prod_k \\mathbb{E} \\prod_{i \\in I_k} X_i$ over the partitions $I_1, \\dots, I_l$ of the index set (formula (II.c) there), on which the bound rests, are from V. P. Leonov and A. N. Shiryaev, “On a method of calculation of semi-invariants,” *Theory of Probability and Its Applications* **4**(3), 1959, pp. 319–329."
+    },
+    "keywords": [
+      "cumulant",
+      "dependency graph"
+    ]
   }
 ]

@@ -490,6 +490,11 @@
     "html": "J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
   },
   {
+    "key": "janson1988",
+    "sortKey": "Janson",
+    "html": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312."
+  },
+  {
     "key": "johnson-kotz-balakrishnan1997",
     "sortKey": "Johnson",
     "html": "N. L. Johnson, S. Kotz, and N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley Series in Probability and Statistics, Wiley, New York, 1997."
@@ -500,9 +505,24 @@
     "html": "H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1**(5), 1953, pp. 263–278."
   },
   {
+    "key": "leonov-shiryaev1959",
+    "sortKey": "Leonov",
+    "html": "V. P. Leonov and A. N. Shiryaev, “On a method of calculation of semi-invariants,” *Theory of Probability and Its Applications* **4**(3), 1959, pp. 319–329."
+  },
+  {
+    "key": "marcinkiewicz1939",
+    "sortKey": "Marcinkiewicz",
+    "html": "J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618."
+  },
+  {
     "key": "metropolis-ulam1949",
     "sortKey": "Metropolis",
     "html": "N. Metropolis and S. Ulam, \"The Monte Carlo method,\" *Journal of the American Statistical Association* **44**(247), 1949, pp. 335–341."
+  },
+  {
+    "key": "noether1970",
+    "sortKey": "Noether",
+    "html": "G. E. Noether, “A central limit theorem with nonparametric applications,” *The Annals of Mathematical Statistics* **41**(5), 1970, pp. 1753–1755."
   },
   {
     "key": "quenouille1949",
