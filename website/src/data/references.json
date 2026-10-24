@@ -490,6 +490,11 @@
     "html": "J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
   },
   {
+    "key": "janson1988",
+    "sortKey": "Janson",
+    "html": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312."
+  },
+  {
     "key": "johnson-kotz-balakrishnan1997",
     "sortKey": "Johnson",
     "html": "N. L. Johnson, S. Kotz, and N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley Series in Probability and Statistics, Wiley, New York, 1997."
@@ -498,6 +503,11 @@
     "key": "kahn-marshall1953",
     "sortKey": "Kahn",
     "html": "H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1**(5), 1953, pp. 263–278."
+  },
+  {
+    "key": "marcinkiewicz1939",
+    "sortKey": "Marcinkiewicz",
+    "html": "J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618."
   },
   {
     "key": "metropolis-ulam1949",

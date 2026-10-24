@@ -41576,5 +41576,109 @@
       "resampling",
       "concentration inequality"
     ]
+  },
+  {
+    "id": "prob-marcinkiewicz",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "charFun_eq_exp_polynomial_degree_le_two",
+    "fullName": "StatLean.AsymptoticStatistics.Marcinkiewicz.charFun_eq_exp_polynomial_degree_le_two",
+    "title": "Marcinkiewicz's Theorem",
+    "citation": "Marcinkiewicz (1939)",
+    "shortRef": "Marcinkiewicz (1939)",
+    "file": "StatLean/AsymptoticStatistics/ForMathlib/Probability/Marcinkiewicz.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ForMathlib/Probability/Marcinkiewicz.html#StatLean.AsymptoticStatistics.Marcinkiewicz.charFun_eq_exp_polynomial_degree_le_two",
+    "informal": "<p>Let $\\mu$ be a <span data-link=\"h1\">probability measure</span> on $\\mathbb{R}$, with characteristic function $\\varphi(t) = \\int e^{itx} \\, d\\mu(x)$, and let $p$ be a polynomial with complex coefficients. If <span data-link=\"h2\">$\\varphi(t) = e^{p(t)}$ for every real $t$</span>, then $$\\deg p \\;\\le\\; 2.$$ In particular, no function of the form $e^{p(t)}$ with $\\deg p \\ge 3$, such as $e^{-t^4}$, is the characteristic function of a probability measure on $\\mathbb{R}$.</p>",
+    "summary": "A characteristic function that is the exponential of a polynomial forces that polynomial to have degree at most two.",
+    "leanSignature": "theorem charFun_eq_exp_polynomial_degree_le_two\n    {μ : Measure ℝ} {p : Polynomial ℂ} [IsProbabilityMeasure μ]\n    (hp : ∀ t : ℝ, charFun μ t = Complex.exp (p.eval (t : ℂ))) :\n    p.degree ≤ 2",
+    "formalizationNotes": "The theorem is stated for a probability measure on $\\mathbb{R}$ rather than a random variable, and concludes only the degree bound. That a law with $\\varphi = e^{p}$ is then normal, possibly degenerate, is recorded in cumulant form on the page <a href=\"#/result/prob-marcinkiewicz-cumulants\">Laws with Finitely Many Nonzero Cumulants Are Normal</a>. The proof is the classical one. The hypothesis makes every even moment finite with $\\int x^{2n}\\,d\\mu = |\\varphi^{(2n)}(0)|$, and since $e^{p}$ is entire these moments grow slowly enough that every exponential moment $\\int e^{cx}\\,d\\mu(x)$ is finite (the analytic characteristic function theorem, `hasAllExpMoments_of_charFun_eq_exp`). The two-sided Laplace transform is then the entire function $z \\mapsto e^{p(-iz)}$ by the identity theorem; bounding its modulus by its value on the real axis gives $\\operatorname{Re} p(w) \\le \\operatorname{Re} p(i \\operatorname{Im} w)$ for every complex $w$, and a polynomial satisfying this inequality has degree at most $2$. The result is not the Marcinkiewicz interpolation theorem. Janson (1988) cites the result as Théorème 2bis of the 1939 paper.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure μ",
+        "label": "probability measure",
+        "note": "$\\mu$ is a probability measure on the real line."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hp : ∀ t : ℝ",
+        "label": "exponential-polynomial characteristic function",
+        "note": "The characteristic function of $\\mu$ equals $e^{p(t)}$ at every real $t$, for a fixed complex polynomial $p$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618.",
+      "pointer": "Théorème 2bis, as cited by Janson (1988)",
+      "keys": [
+        "marcinkiewicz1939",
+        "janson1988",
+        "cramer1937"
+      ],
+      "biblio": "The equivalent cumulant formulation, that a law whose cumulants vanish for all sufficiently large orders is normal, is the uniqueness step in S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312, where it yields normal convergence from the vanishing in the limit of the cumulants of high order only. Janson also observes (Remark 2) that, by a symmetrization and Cramér's decomposition theorem (H. Cramér, *Random Variables and Probability Distributions*, Cambridge University Press, 1937, Théorème 19), it suffices that the cumulants vanish for all sufficiently large even orders."
+    },
+    "keywords": [
+      "Marcinkiewicz's theorem",
+      "characteristic function",
+      "Gaussian distribution"
+    ]
+  },
+  {
+    "id": "prob-marcinkiewicz-cumulants",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "eq_gaussianReal_of_cumulant_eq_zero",
+    "fullName": "StatLean.AsymptoticStatistics.Cumulant.eq_gaussianReal_of_cumulant_eq_zero",
+    "title": "Laws with Finitely Many Nonzero Cumulants Are Normal",
+    "citation": "Janson (1988), §1",
+    "shortRef": "Janson (1988), §1",
+    "file": "StatLean/AsymptoticStatistics/ForMathlib/Probability/CumulantCharFun.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ForMathlib/Probability/CumulantCharFun.html#StatLean.AsymptoticStatistics.Cumulant.eq_gaussianReal_of_cumulant_eq_zero",
+    "informal": "<p>Let $\\mu$ be a <span data-link=\"h1\">probability measure</span> on $\\mathbb{R}$ with <span data-link=\"h2\">finite moments of all orders</span>, and let $X$ have law $\\mu$. Write $\\kappa_j = \\kappa_j(X)$ for the $j$-th cumulant (semi-invariant), determined from the moments by $$\\mathbb{E}X^n \\;=\\; \\sum_{\\pi} \\prod_{B \\in \\pi} \\kappa_{|B|}(X), \\qquad n \\ge 1,$$ the sum running over all partitions $\\pi$ of $\\{1, \\dots, n\\}$ into nonempty blocks; in particular $\\kappa_1 = \\mathbb{E}X$ and $\\kappa_2 = \\operatorname{Var}(X)$. If, for some integer <span data-link=\"h3\">$m_0 \\ge 1$</span>, <span data-link=\"h4\">$\\kappa_j = 0$ for every $j \\ge m_0$</span>, then $$\\mu \\;=\\; N(\\kappa_1, \\kappa_2),$$ the normal law with mean $\\kappa_1$ and variance $\\kappa_2 \\ge 0$, which is the point mass at $\\kappa_1$ when $\\kappa_2 = 0$. In particular $\\kappa_j = 0$ for every $j \\ge 3$.</p>",
+    "summary": "A probability law on the real line with all moments whose cumulants vanish from some order on is normal, with mean and variance given by its first two cumulants.",
+    "leanSignature": "theorem eq_gaussianReal_of_cumulant_eq_zero\n    {μ : Measure ℝ} [IsProbabilityMeasure μ]\n    (hint : ∀ n : ℕ, Integrable (fun x : ℝ => x ^ n) μ)\n    {m₀ : ℕ} (hm₀ : 1 ≤ m₀) (hzero : ∀ j, m₀ ≤ j → cumulant id j μ = 0) :\n    μ = gaussianReal (cumulant id 1 μ) (cumulant id 2 μ).toNNReal",
+    "formalizationNotes": "Cumulants are defined combinatorially, by Möbius inversion of the moment–cumulant relation over set partitions, which needs only finite moments; it agrees with the classical definition through derivatives of $\\log \\varphi$ at $0$, equation (2.1) of the source, but that agreement is not formalized here. The proof combines two steps. First, when the cumulants vanish from order $m_0$ on, the moments satisfy $|\\mathbb{E}X^n| \\le C_\\varepsilon \\varepsilon^n n!$ for every $\\varepsilon > 0$, so every exponential moment is finite and the characteristic function is $\\exp\\bigl(\\sum_{j < m_0} \\kappa_j (it)^j / j!\\bigr)$ on the whole real line (`charFun_eq_exp_charPoly`; this is the case of the source's Lemma 2 in which only finitely many cumulants are nonzero). Second, Marcinkiewicz's theorem bounds the degree of that polynomial by $2$, so $\\kappa_j = 0$ for $j \\ge 3$ (`cumulant_eq_zero_of_three_le`), and the law is identified with $N(\\kappa_1, \\kappa_2)$ by uniqueness of characteristic functions. The variance enters the Lean statement through its nonnegative part, which equals $\\kappa_2$ because $\\kappa_2 = \\operatorname{Var}(X) \\ge 0$. The hypothesis $m_0 \\ge 1$ excludes the order-zero cumulant, which is $1$ by convention.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsProbabilityMeasure μ",
+        "label": "probability measure",
+        "note": "$\\mu$ is a probability measure on the real line."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hint",
+        "label": "all moments finite",
+        "note": "$\\int |x|^n \\, d\\mu(x) < \\infty$ for every $n \\ge 0$, so that every cumulant of $\\mu$ is defined."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hm₀",
+        "label": "positive order",
+        "note": "The cut-off order satisfies $m_0 \\ge 1$."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hzero",
+        "label": "cumulants eventually zero",
+        "note": "$\\kappa_j(\\mu) = 0$ for every $j \\ge m_0$."
+      }
+    ],
+    "hasGraph": true,
+    "reference": {
+      "formal": "S. Janson, “Normal convergence by higher semiinvariants with applications to sums of dependent random variables and random graphs,” *The Annals of Probability* **16**(1), 1988, pp. 305–312.",
+      "pointer": "§1 (semi-invariant form of Marcinkiewicz's theorem) and §2, Lemma 2",
+      "keys": [
+        "janson1988",
+        "marcinkiewicz1939",
+        "cramer1946"
+      ],
+      "biblio": "The statement is the cumulant form of the theorem of J. Marcinkiewicz, “Sur une propriété de la loi de Gauß,” *Mathematische Zeitschrift* **44**(1), 1939, pp. 612–618 (Théorème 2bis), that a characteristic function of the form $e^{p(t)}$ with $p$ a polynomial forces $\\deg p \\le 2$. For the elementary theory of semi-invariants and their relation to moments see H. Cramér, *Mathematical Methods of Statistics*, Princeton University Press, 1946."
+    },
+    "keywords": [
+      "Marcinkiewicz's theorem",
+      "cumulant",
+      "Gaussian distribution"
+    ]
   }
 ]
