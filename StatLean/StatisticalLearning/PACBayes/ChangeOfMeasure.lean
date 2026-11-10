@@ -9,7 +9,6 @@ measures `Q ≪ P` on a countable index and any functional `f`,
 `E_Q[f] ≤ D(Q‖P) + log E_P[e^f]`.
 
 **Reference.** SSBD §31.1, Eq. (31.2) ("change of measure + Jensen").
-Transcription: `notes/statistical_learning/book_statements/ch26-31-appB.md`.
 
 **Formalization notes.** Proved for a countable discrete index (Round-1
 scope): write `E_Q[f] − D(Q‖P)` as `E_Q[log(e^f · (dP/dQ))]` on the support of

@@ -24,8 +24,8 @@ norm has no book-numbered definition (HDP Remark 2.8.9 / Exercises 2.42–2.43),
 so nothing is constitutive. `psiTwo`/`psiOne` are fresh definitions in this
 area: `StatLean.AsymptoticStatistics.EmpiricalProcess` has its own `psi_1`/
 `psi_2` in a *concept* layer of another area, and importing it would invert
-the area DAG (project charter §3 allows only cross-area `ForMathlib` imports);
-the ≈60-line duplication is deliberate, with laptop-side unification deferred.
+the area DAG (only cross-area `ForMathlib` imports are allowed); the ≈60-line
+duplication is deliberate.
 Convexity of `psiTwo` on `[0,∞)` is `ConvexOn.comp` of `exp` after `x ↦ x²`
 (it fails on all of ℝ only in the sense that the book never needs it there);
 all other proofs are one-step compositions.

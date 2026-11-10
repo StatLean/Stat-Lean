@@ -60,7 +60,7 @@ minimizers of a parametrized convex scan. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
   same density argument relativized to `Set.Iic q`, which is the special case of
   `⨅ x ∈ closure s, g x = ⨅ x ∈ s, g x` for continuous `g`.
 * **Convexity is `ConvexOn ℝ≥0 Set.univ`.** For an `ℝ≥0∞`-valued function this is the only
-  convexity predicate that typechecks at this pin: `ConvexOn 𝕜` needs `SMul 𝕜 ℝ≥0∞`, and
+  convexity predicate that typechecks: `ConvexOn 𝕜` needs `SMul 𝕜 ℝ≥0∞`, and
   `ℝ≥0∞` is a module over `ℝ≥0` but not over `ℝ`. On `[0, ∞]`-valued functions of a real
   variable the `ℝ≥0`-coefficient definition is the usual midpoint-convexity condition, so
   nothing is lost.

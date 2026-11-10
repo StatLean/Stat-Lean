@@ -29,7 +29,7 @@ positivity and finiteness of `m(x)` are genuine USER-INPUTs here (for σ-finite 
 forced by the setup — that is the entire subtlety of improper priors, in contrast with the
 probability-prior facts `predictiveDensity_pos_ae`/`_lt_top_ae_comp`). Scaling:
 `withDensity_smul_measure` + `lintegral_smul_measure` + `ℝ≥0∞` division algebra. The bridge is a
-restatement of the Batch-1 headline `posterior_eq_withDensity_likelihood_div_predictive`.
+restatement of the dominated Bayes formula `posterior_eq_withDensity_likelihood_div_predictive`.
 
 **Bibliographic comments.** The scale-invariance of generalized posteriors and the resulting
 indeterminacy of Bayes factors under improper priors were emphasized by H. Jeffreys (1939) and are
@@ -95,7 +95,7 @@ theorem bayesFactorM_smul_left {p₀ : Θ₀' → 𝓧 → ℝ≥0∞} {π₀ : 
   rw [bayesFactorM, bayesFactorM, predictiveDensity_smul_prior, mul_div_assoc]
 
 /-- **Bridge to the abstract posterior**: on probability (or finite) priors, the generalized
-posterior agrees predictive-a.e. with `κ†π` (restatement of the Batch-1 dominated Bayes
+posterior agrees predictive-a.e. with `κ†π` (restatement of the dominated Bayes
 theorem). -/
 theorem posterior_ae_eq_generalizedPosterior [StandardBorelSpace Θ] [Nonempty Θ]
     {π : Measure Θ} [IsFiniteMeasure π] {κ : Kernel Θ 𝓧} [IsFiniteKernel κ]

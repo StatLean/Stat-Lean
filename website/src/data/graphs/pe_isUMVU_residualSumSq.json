@@ -38,7 +38,7 @@
     {"id":"Fin.castAdd_injective","label":"castAdd_injective","full":"Fin.castAdd_injective","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fin.SuccPred"},
     {"id":"Fin.append_right","label":"append_right","full":"Fin.append_right","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fin.Tuple.Basic"},
     {"id":"Submodule.inner_right_of_mem_orthogonal","label":"inner_right_of_mem_orthogonal","full":"Submodule.inner_right_of_mem_orthogonal","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Orthogonal"},
-    {"id":"SetLike.coe_mem","label":"coe_mem","full":"SetLike.coe_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Data.SetLike.Basic"},
+    {"id":"SetLike.coe_mem","label":"coe_mem","full":"SetLike.coe_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.SetLike.Basic"},
     {"id":"Submodule.inner_left_of_mem_orthogonal","label":"inner_left_of_mem_orthogonal","full":"Submodule.inner_left_of_mem_orthogonal","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Orthogonal"},
     {"id":"Fin.natAdd_injective","label":"natAdd_injective","full":"Fin.natAdd_injective","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Fin.Basic"},
     {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},

@@ -30,7 +30,7 @@ class-specific `integral_biSup_le_of_forall_finset` of the VC cluster.
 Cambridge University Press, Remark 7.2.1 and the p. 227 footnote ("the
 general case typically follows by approximation"): these engines are the
 approximation step, shared by every countable/separable supremum form of the
-chaining batch.
+chaining inequalities.
 
 **Proof formalization notes.** No probability hypothesis anywhere — the
 engines hold for an arbitrary measure (`B = ⊤` and `C = ∅` branches are
@@ -42,8 +42,7 @@ the statement); the formal-`⨆` displays are recovered downstream through
 exhaustion `S n := (Finset.range (n+1)).image f` of an enumeration
 (`Set.Countable.exists_eq_range`); events use
 `tendsto_measure_iUnion_atTop` (measures are continuous from below on
-arbitrary monotone sequences). Named-sorry fallback of this work item:
-`toReal_biSup_ofReal` (the guarded `ofReal`/`⨆` commutation).
+arbitrary monotone sequences).
 
 **Bibliographic comments.** The finite-subset reading of `E sup` is standard
 in the chaining literature (Talagrand, *Upper and Lower Bounds for
@@ -58,14 +57,14 @@ namespace StatLean.ConcentrationInequalities
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
-/-- **Countable-sup lift engine, lintegral form** (sup policy): if every
+/-- **Countable-sup lift engine, lintegral form**: if every
 finite subfamily's `∫⁻`-sup obeys a bound `B : ℝ≥0∞`, so does the countable
 family's — monotone convergence along a prefix exhaustion. Index-polymorphic
 `ℝ≥0∞` twin of the VC cluster's `integral_biSup_le_of_forall_finset`; no
 probability hypothesis, and the `C = ∅` / `B = ⊤` corners are trivial. -/
 lemma lintegral_biSup_le_of_forall_finset {ι : Type*} {g : ι → Ω → ℝ≥0∞}
     {C : Set ι}
-    -- LEAN-ONLY: countable index family per the sup policy
+    -- LEAN-ONLY: countable index family
     (hcnt : C.Countable)
     -- LEAN-ONLY: a.e.-measurability of each coordinate (MCT)
     (hmeas : ∀ i ∈ C, AEMeasurable (g i) μ)
@@ -121,7 +120,7 @@ lemma lintegral_biSup_le_of_forall_finset {ι : Type*} {g : ι → Ω → ℝ≥
         have hn := hB (S n) (hSsub n) (hSne n)
         simpa only [hΦ, Finset.iSup_coe] using hn
 
-/-- **Countable-sup lift engine, tail form** (sup policy): a uniform
+/-- **Countable-sup lift engine, tail form**: a uniform
 per-finite-window tail bound at a fixed threshold passes to the event that
 SOME member of the countable family exceeds the threshold — continuity of
 the measure from below along the windows. The existential event is
@@ -129,7 +128,7 @@ deliberately junk-free (no real supremum appears); combine with
 `exists_lt_of_lt_biSup_real` to bound formal-`⨆` events. -/
 lemma measure_exists_lt_le_of_forall_finset {ι : Type*} {f : ι → Ω → ℝ}
     {C : Set ι}
-    -- LEAN-ONLY: countable index family per the sup policy
+    -- LEAN-ONLY: countable index family
     (hcnt : C.Countable)
     {thr : ℝ} {β : ℝ≥0∞}
     -- LEAN-ONLY: the per-finite-window tail bound being lifted
@@ -185,7 +184,7 @@ PAIR of the countable family exceeds the threshold (the shape of
 Eq. (8.15)). -/
 lemma measure_exists_pair_lt_le_of_forall_finset {ι : Type*}
     {f : ι → ι → Ω → ℝ} {C : Set ι}
-    -- LEAN-ONLY: countable index family per the sup policy
+    -- LEAN-ONLY: countable index family
     (hcnt : C.Countable)
     {thr : ℝ} {β : ℝ≥0∞}
     -- LEAN-ONLY: the per-finite-window pair tail bound being lifted
@@ -364,7 +363,7 @@ lemma exists_pair_lt_of_lt_biSup_real {ι : Type*} {S : Set ι}
 (a.e. finiteness + countable measurability + `toReal_biSup_ofReal`). -/
 lemma integrable_biSup_of_lintegral_biSup_ne_top {ι : Type*} {C : Set ι}
     {f : ι → Ω → ℝ}
-    -- LEAN-ONLY: countable index family per the sup policy
+    -- LEAN-ONLY: countable index family
     (hcnt : C.Countable)
     -- LEAN-ONLY: a.e.-measurability of each coordinate
     (hmeas : ∀ i ∈ C, AEMeasurable (f i) μ)
@@ -387,7 +386,7 @@ lemma integrable_biSup_of_lintegral_biSup_ne_top {ι : Type*} {C : Set ι}
 countable-sup lintegral bound, under the `≠ ⊤` guard. -/
 lemma integral_biSup_le_of_lintegral_biSup_le {ι : Type*} {C : Set ι}
     {f : ι → Ω → ℝ}
-    -- LEAN-ONLY: countable index family per the sup policy
+    -- LEAN-ONLY: countable index family
     (hcnt : C.Countable)
     -- LEAN-ONLY: a.e.-measurability of each coordinate
     (hmeas : ∀ i ∈ C, AEMeasurable (f i) μ)

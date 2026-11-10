@@ -38,9 +38,8 @@ of Theorem 21.2 (Knock-Off).
 $\sum_{k=0}^{N} \binom{N}{k} 2^{-N}\, k/(1+(N-k)) = 1 - 2^{-N} \le 1$. Each term equals
 $\binom{N+1}{k} 2^{-N} - \binom{N}{k} 2^{-N}$, from the identity
 $\binom{N}{k}(N+1) = \binom{N+1}{k}(N+1-k)$ (`Nat.choose_mul_succ_eq`); the sum then telescopes via
-the partial-sum formula $\sum_{k=0}^{N} \binom{N+1}{k} = 2^{N+1} - 1$. This is proved locally and
-is deliberately independent of `BinomialRatio.binom_ratio_sum_le_one` (the imported general version
-still carries a `sorry`), which is why the local copy is used.
+the partial-sum formula $\sum_{k=0}^{N} \binom{N+1}{k} = 2^{N+1} - 1$. This is proved locally,
+independently of `BinomialRatio.binom_ratio_sum_le_one`.
 *Probability half.* `knockoff_initial_integral_le_binom_sum` reduces the expectation to that sum:
 pointwise $V_+(0)/(1+V_-(0)) \le (N_0 - V_-(0))/(1 + V_-(0))$ from $V_+(0) \le N_0 - V_-(0)$
 (`vplus_add_vminus_le`); both integrands are bounded by $N_0$, hence integrable; and the law of
@@ -48,8 +47,7 @@ $V_-(0)$ is obtained from `signCell_measure` (each fixed sign configuration on $
 $2^{-N_0}$, by the i.i.d.\ fair-sign field of condition 3, via
 `KnockoffScore.signs_iIndep`/`signs_fair`), giving
 `prob_Vminus0_eq` : $\mu\{V_-(0) = m\} = \binom{N_0}{m} 2^{-N_0}$. Integrating against this
-binomial law and reindexing $k = N_0 - m$ yields the claimed sum. (Earlier drafts left this half as
-a named sorry; it is now fully proved here.)
+binomial law and reindexing $k = N_0 - m$ yields the claimed sum.
 
 **Bibliographic comments.** The knock-off framework originates with R. F. Barber and E. J. Candès,
 "Controlling the false discovery rate via knockoffs," *The Annals of Statistics* 43(5):2055–2085,
@@ -109,7 +107,7 @@ private lemma vplus_add_vminus_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
 
 Proof: each term equals `C(N+1,k)/2^N − C(N,k)/2^N` (from `Nat.choose_mul_succ_eq`), the sum
 telescopes to `(∑_{k=0}^N C(N+1,k) − ∑_{k=0}^N C(N,k)) / 2^N = (2^{N+1}−1−2^N)/2^N = 1−1/2^N ≤ 1`.
-This is independent of `BinomialRatio.binom_ratio_sum_le_one` (which has a sorry). -/
+This is independent of `BinomialRatio.binom_ratio_sum_le_one`. -/
 
 /-- Per-term identity: `C(N,k)/2^N · k/(1+(N−k)) = C(N+1,k)/2^N − C(N,k)/2^N`. Follows from
 `Nat.choose_mul_succ_eq N k : C(N,k)·(N+1) = C(N+1,k)·(N+1−k)`. -/

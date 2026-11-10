@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.ForMathlib.TotalVariation
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Le Cam's two-point method and the Bayes-error / total-variation identity
@@ -69,7 +70,7 @@ variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace 
 /-- The singleton mass of the uniform prior on `Fin 2` is `½`. -/
 private lemma uniformPrior_two_apply (j : Fin 2) : uniformPrior 2 {j} = 2⁻¹ := by
   unfold uniformPrior
-  rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton j), PMF.uniformOfFintype_apply]
+  rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton j), PMF.uniform_apply]
   simp [Fintype.card_fin]
 
 /-- Integration against the uniform prior on `Fin 2` averages the two values. -/

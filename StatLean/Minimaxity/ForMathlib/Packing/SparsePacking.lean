@@ -21,7 +21,7 @@ Example 15.16 (minimax rate for sparse linear regression).
 
 **Proof formalization notes.**
 
-*Constant deviation (CLAUDE.md §1).* The combinatorial heart is proved with a *weakened* additive
+*Constant deviation.* The combinatorial heart is proved with a *weakened* additive
 slack: `log |T| ≥ (s/2) log((d−s)/s) − s·log 2`. The sharp book constant is not reachable by an
 elementary Gilbert–Varshamov volume estimate (it needs the binary-entropy ball count / an algebraic
 Reed–Solomon code); the weakened bound is still exponentially large. See
@@ -140,7 +140,7 @@ private theorem half_le_norm_sparseVec_sub (d s : ℕ) (hs : 0 < s) (S S' : Fins
 /-! ### `q`-ary Gilbert–Varshamov (the engine of the large-`d` regime)
 
 We mirror the binary `gilbert_varshamov` (`HammingPacking.lean`) over an arbitrary alphabet
-`Fin q`. The single combinatorial debt is a crude Hamming-ball volume estimate
+`Fin q`. The single combinatorial input is a crude Hamming-ball volume estimate
 `qary_ball_card_le`, after which a maximal-separated-set argument gives an exponential code. -/
 
 /-- **Crude `q`-ary Hamming-ball volume bound.** Over the alphabet `Fin q` (`q ≥ 2`), the number of
@@ -404,7 +404,7 @@ pairwise with intersection `2|S ∩ S'| ≤ s`, and
 log |𝒮| ≥ (s/2) · log((d − s)/s) − s · log 2.
 ```
 
-**Deviation from the book (CLAUDE.md §1).** Wainwright's Example 5.8 states the sharp constant
+**Deviation from the book.** Wainwright's Example 5.8 states the sharp constant
 `(s/2)·log((d−s)/s)`. That exact constant is *not* reachable by an elementary Gilbert–Varshamov
 volume argument — e.g. for `d = 40, s = 10` the crude block / `q`-ary count yields only
 `≈ 50`–`135` codewords versus the `≈ 243` the sharp constant demands (the sharp count needs the
@@ -485,7 +485,7 @@ subtracting the nonnegative `s·log 2` keeps the whole right side `≤ 0 = log 1
 support family attains. The genuine `2s < d` combinatorics are deferred to
 `exists_bounded_overlap_supports_gv`.
 
-**Deviation (CLAUDE.md §1).** The bound is the weakened `(s/2)·log((d−s)/s) − s·log 2`; see
+**Deviation.** The bound is the weakened `(s/2)·log((d−s)/s) − s·log 2`; see
 `exists_bounded_overlap_supports_gv` for why the sharp book constant is unreachable by
 elementary GV. -/
 private theorem exists_bounded_overlap_supports (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d) :
@@ -524,7 +524,7 @@ private theorem exists_bounded_overlap_supports (d s : ℕ) (hs : 0 < s) (hsd : 
       nlinarith [mul_nonneg hhalf (neg_nonneg.mpr hlognonpos)]
 
 -- USER-INPUT: `log |𝒮| ≥ (s/2) log((d−s)/s)` support-count bound; Wainwright Ex 5.8.
--- Supplied internally by `exists_bounded_overlap_supports` (named residual), not as a hypothesis.
+-- Supplied internally by `exists_bounded_overlap_supports` (auxiliary lemma), not as a hypothesis.
 /-- **Packing of sparse unit vectors**, construction form (Wainwright Example 5.8): the set of
 `s`-sparse unit vectors in `ℝᵈ` contains a `1/2`-separated set `T` with
 `log |T| ≥ (s/2) log((d−s)/s) − s·log 2` (weakened constant; see
@@ -575,7 +575,7 @@ distance `≥ 1/2`.
 
 The cardinality bound is the weakened `log |T| ≥ (s/2) log((d−s)/s) − s·log 2`; the sharp book
 constant `(s/2) log((d−s)/s)` is not reachable by an elementary Gilbert–Varshamov volume estimate
-(see `exists_bounded_overlap_supports_gv` for the deviation rationale, CLAUDE.md §1).
+(see `exists_bounded_overlap_supports_gv` for the deviation rationale).
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.8. -/

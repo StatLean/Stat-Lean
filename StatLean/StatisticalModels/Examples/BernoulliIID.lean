@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.Identifiability.Transfer
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
+import StatLean.ForMathlib.UnitInterval
 
 /-!
 # Worked instance: the Bernoulli iid model
@@ -12,11 +13,10 @@ identifiability, the success probability as an identified target, and identifiab
 **Reference.** TPE2 §1.1 (the binomial/Bernoulli model as the introductory example of a
 statistical model); A. C. Davison, *Statistical Models*, CUP 2003, Ch. 2 (verify §).
 
-**Proof formalization notes.** The family is `PMF.bernoulli` pushed to measures; probability
-of the members is Mathlib's `PMF.toMeasure` instance. Identifiability is by evaluating at the
-event `{true}` (`PMF.toMeasure_apply` + `PMF.bernoulli_apply`); the iid statement is a pure
-application of `identifiable_iid_iff` — no new measure theory. This file must stay green for
-the whole program: it certifies that the Core API composes.
+**Proof formalization notes.** The family is Mathlib's `bernoulliMeasure true false p`; probability
+of the members is its `IsProbabilityMeasure` instance. Identifiability is by evaluating at the event
+`{true}` (`bernoulliMeasure_apply_of_mem_of_notMem`); the iid statement is a pure application of
+`identifiable_iid_iff` — no new measure theory.
 
 **Bibliographic comments.** The Bernoulli model is Jacob Bernoulli's (*Ars Conjectandi*,
 1713); its role as the canonical identifiable one-parameter model is textbook folklore.
@@ -31,7 +31,7 @@ open StatLean.PointEstimation
 
 /-- The Bernoulli model: parameter `p ∈ [0,1]`, law of one coin flip on `Bool`. -/
 noncomputable def bernoulliFam : {p : ℝ≥0 // p ≤ 1} → Measure Bool :=
-  fun p => (PMF.bernoulli p.1 p.2).toMeasure
+  fun p => bernoulliMeasure true false (unitInterval.ofNNReal p.1 p.2)
 
 instance (p : {p : ℝ≥0 // p ≤ 1}) : IsProbabilityMeasure (bernoulliFam p) := by
   unfold bernoulliFam; infer_instance
@@ -39,7 +39,9 @@ instance (p : {p : ℝ≥0 // p ≤ 1}) : IsProbabilityMeasure (bernoulliFam p) 
 /-- Point evaluation of the Bernoulli law at the success event. -/
 theorem bernoulliFam_apply_true (p : {p : ℝ≥0 // p ≤ 1}) :
     bernoulliFam p {true} = (p.1 : ℝ≥0∞) := by
-  simp [bernoulliFam, PMF.bernoulli_apply]
+  rw [bernoulliFam, bernoulliMeasure_apply_of_mem_of_notMem _ (measurableSet_singleton _) rfl
+    (by simp)]
+  simp
 
 /-- The Bernoulli model is identifiable: the success probability is read off the law. -/
 theorem identifiable_bernoulliFam : Identifiable bernoulliFam := by

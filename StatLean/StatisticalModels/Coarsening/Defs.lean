@@ -29,10 +29,10 @@ Objects:
 581–592, §2 (the MCAR/MAR taxonomy); R. J. A. Little and D. B. Rubin, *Statistical Analysis
 with Missing Data*, 3rd ed., Wiley, 2019, §1.3 (verify §). (`Rubin76`, `LR §1.3`.)
 
-**Proof formalization notes.** Laptop-only data model — definitions only. *Book vs Lean:*
+**Proof formalization notes.** Data model — definitions only. *Book vs Lean:*
 Rubin's general MAR ("missingness depends only on observed components") specializes, for a
 single-outcome monotone pattern, to exactly the kernel factorization `ρ = ρ' ∘ comap fst`
-used here; the general multi-pattern formulation is a designated future milestone. Masking
+used here; the general multi-pattern formulation is not covered here. Masking
 with the junk value `0` (not an `Option`) keeps the observed space standard Borel and matches
 `MARObs`'s `ry = r·y` encoding; nothing downstream reads the outcome slot when `r = false`.
 

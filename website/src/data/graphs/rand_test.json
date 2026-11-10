@@ -27,7 +27,7 @@
     {"id":"Monoid.toSemigroup","label":"toSemigroup","full":"Monoid.toSemigroup","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
     {"id":"Equiv.Perm","label":"Perm","full":"Equiv.Perm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
-    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
+    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Basic.FunLike.Equiv"},
     {"id":"Tuple.sort","label":"sort","full":"Tuple.sort","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fin.Tuple.Sort"},
     {"id":"Equiv","label":"Equiv","full":"Equiv","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
     {"id":"Equiv.symm","label":"symm","full":"Equiv.symm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},

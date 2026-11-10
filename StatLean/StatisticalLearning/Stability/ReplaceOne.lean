@@ -12,12 +12,11 @@ of i.i.d. draws), together with the two evaluation identities it feeds:
 `E[ℓ(A(S), z')] = E_S[L_D(A(S))]` and `n⁻¹∑ᵢ E[ℓ(A(S), sᵢ)] = E_S[L_S(A(S))]`.
 
 **Reference.** SSBD Theorem 13.2 proof ("since `S` and `z'` are drawn i.i.d.,
-swap the roles of `zᵢ` and `z'`"). Transcription:
-`notes/statistical_learning/book_statements/ch12-13.md`.
+swap the roles of `zᵢ` and `z'`").
 
 **Formalization notes.** The swap reduces to a coordinate permutation of the
 `(n+1)`-fold product via `(Fin n → Z) × Z ≃ᵐ (Fin (n+1) → Z)`
-(`MeasurableEquiv.piFinSuccAbove`-style, cf. CLAUDE.md §7.14–15) and
+(`MeasurableEquiv.piFinSuccAbove`-style) and
 permutation invariance of `Measure.pi`.
 -/
 

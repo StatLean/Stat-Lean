@@ -14,7 +14,16 @@
     {"id":"MeasureTheory.Measure.bind","label":"bind","full":"MeasureTheory.Measure.bind","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
     {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
     {"id":"PMF.toMeasure","label":"toMeasure","full":"PMF.toMeasure","kind":"mathlib","decl":"def","module":"Mathlib.Probability.ProbabilityMassFunction.Basic"},
-    {"id":"PMF.uniformOfFintype","label":"uniformOfFintype","full":"PMF.uniformOfFintype","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Distributions.Uniform"}
+    {"id":"PMF.uniform","label":"uniform","full":"PMF.uniform","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"PMF","label":"PMF","full":"PMF","kind":"mathlib","decl":"def","module":"Mathlib.Probability.ProbabilityMassFunction.Basic"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"Finset.univ_nonempty","label":"univ_nonempty","full":"Finset.univ_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.BooleanAlgebra"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"Finset.Nonempty","label":"Nonempty","full":"Finset.Nonempty","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Empty"},
+    {"id":"PMF.ofFinset","label":"ofFinset","full":"PMF.ofFinset","kind":"mathlib","decl":"def","module":"Mathlib.Probability.ProbabilityMassFunction.Constructions"},
+    {"id":"Finset.decidableMem","label":"decidableMem","full":"Finset.decidableMem","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"Finset.card","label":"card","full":"Finset.card","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Card"}
   ],
   "edges": [
     {"source":"StatLean.Minimaxity.mutualInformation","target":"MeasurableSpace"},
@@ -33,7 +42,19 @@
     {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"},
     {"source":"StatLean.Minimaxity.uniformPrior","target":"MeasureTheory.Measure"},
     {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.toMeasure"},
-    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniformOfFintype"},
-    {"source":"StatLean.Minimaxity.uniformPrior","target":"Fin.fintype"}
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniform"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"Fin.fintype"},
+    {"source":"PMF.uniform","target":"Fintype"},
+    {"source":"PMF.uniform","target":"PMF"},
+    {"source":"PMF.uniform","target":"PMF.uniformOn"},
+    {"source":"PMF.uniform","target":"Finset.univ"},
+    {"source":"PMF.uniform","target":"Finset.univ_nonempty"},
+    {"source":"PMF.uniformOn","target":"Finset"},
+    {"source":"PMF.uniformOn","target":"Finset.Nonempty"},
+    {"source":"PMF.uniformOn","target":"PMF"},
+    {"source":"PMF.uniformOn","target":"PMF.ofFinset"},
+    {"source":"PMF.uniformOn","target":"ENNReal"},
+    {"source":"PMF.uniformOn","target":"Finset.decidableMem"},
+    {"source":"PMF.uniformOn","target":"Finset.card"}
   ]
 }

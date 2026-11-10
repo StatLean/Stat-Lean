@@ -13,9 +13,8 @@ i.i.d. `categorical q` draws:
 * `variance_categoricalCount` — `Var(V_j) = n·q_j·(1 − q_j)`;
 * `covariance_categoricalCount` — `Cov(V_j, V_k) = −n·q_j·q_k` for `j ≠ k`.
 
-Noted absent from the repo by the 2026-08-10 survey; they are the moment
-inputs for resampling-scheme comparisons (e.g. multinomial vs. residual
-resampling variances) in later rounds.
+They are the moment inputs for resampling-scheme comparisons (e.g. multinomial
+vs. residual resampling variances).
 
 **Reference.** James E. Gentle, *Elements of Computational Statistics*, Springer,
 2002 (ISBN 0-387-95489-9), ch. 4 p. 84 (the multinomial resampling vector);

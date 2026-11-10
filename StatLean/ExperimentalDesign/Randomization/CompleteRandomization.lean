@@ -1,6 +1,7 @@
 import Mathlib.GroupTheory.Perm.Basic
 import StatLean.ExperimentalDesign.Core.Design
 import StatLean.ExperimentalDesign.ForMathlib.PMFExpectation
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # The completely randomised design
@@ -169,12 +170,12 @@ theorem validAllocations_nonempty (r : T → ℕ)
 distribution on the valid allocations (`Mead §6.2`, `Mead §9.2`). -/
 noncomputable def completeRandomization (r : T → ℕ)
     (hr : ∑ t, r t = Fintype.card U) : RandomizationDesign U T :=
-  PMF.uniformOfFinset (validAllocations r) (validAllocations_nonempty r hr)
+  PMF.uniformOn (validAllocations r) (validAllocations_nonempty r hr)
 
 theorem mem_support_completeRandomization {r : T → ℕ}
     {hr : ∑ t, r t = Fintype.card U} {a : Allocation U T} :
     a ∈ (completeRandomization r hr).support ↔ ∀ t, (arm t a).card = r t :=
-  (PMF.mem_support_uniformOfFinset_iff _ a).trans mem_validAllocations
+  (PMF.mem_support_uniformOn_iff _ a).trans mem_validAllocations
 
 /-- On the support of the design, arm sizes are the prescribed replications. -/
 theorem card_arm_of_mem_validAllocations {r : T → ℕ} {a : Allocation U T}
@@ -258,11 +259,11 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
     rw [ite_eq_left hb.symm]
     simp only [completeRandomization]
     by_cases hmem : b ∈ validAllocations (U := U) r
-    · rw [PMF.uniformOfFinset_apply_of_mem _ hmem,
-        PMF.uniformOfFinset_apply_of_mem _
+    · rw [PMF.uniformOn_apply_of_mem _ hmem,
+        PMF.uniformOn_apply_of_mem _
           ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mpr hmem)]
-    · rw [PMF.uniformOfFinset_apply_of_notMem _ hmem,
-        PMF.uniformOfFinset_apply_of_notMem _
+    · rw [PMF.uniformOn_apply_of_notMem _ hmem,
+        PMF.uniformOn_apply_of_notMem _
           (fun h => hmem ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mp h))]
   · intro a ha
     refine ite_eq_right fun h => ha ?_

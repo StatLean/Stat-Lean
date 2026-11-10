@@ -39,7 +39,7 @@ Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, 1971, §XVI.3
 
 ## Status
 
-The **characteristic-function half of Berry–Esseen is complete and axiom-clean**
+The **characteristic-function half of Berry–Esseen is complete**
 (`norm_charFun_iidSum_sub_gaussian_le` and its inputs).
 
 **Target 1, Esseen's smoothing inequality, is no longer open, and the verdict this file used
@@ -69,7 +69,7 @@ factor `e^{−v s²/4}` is supplied by `norm_charFun_le_exp_neg_sq`.
 The two elementary estimates `norm_cexp_sub_taylor_le` (uniform third-order Taylor bound
 for `exp (I y)`) and `norm_prod_sub_prod_le` (telescoping product bound) are needed both
 here and in `LindebergCLT.lean`, where they are `private`. Rather than edit that file we
-restate and reprove them verbatim, as the task requires.
+restate and reprove them verbatim, for use here.
 
 **Reference.** W. Feller, *An Introduction to Probability Theory and Its Applications*,
 Vol. II, 2nd ed., Wiley, 1971, §XVI.3 (smoothing) and §XVI.5 (Berry–Esseen).

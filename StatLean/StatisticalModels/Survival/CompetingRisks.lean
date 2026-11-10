@@ -1,4 +1,5 @@
 import StatLean.StatisticalModels.Survival.Censoring
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Competing risks — cause-specific hazards and cumulative incidence
@@ -22,7 +23,7 @@ carrier through `toBoolObs`):
 * `graySubCumHazard` — Gray's subdistribution hazard, with its comparison to the
   cause-specific hazard.
 
-`k`-cause crude=net and Aalen–Johansen/multistate are named future debts (D-S6, D-S1).
+`k`-cause crude=net and Aalen–Johansen/multistate are not formalized here.
 
 **Reference.** ABGK §IV.4 (competing risks, cause-specific quantities) (verify §);
 R. L. Prentice et al., "The analysis of failure times in the presence of competing risks,"
@@ -222,7 +223,7 @@ noncomputable def crObserve₂ : ℝ × ℝ → ℝ × Option (Fin 2) :=
 
 /-- The two-cause independent competing-risks law. -/
 noncomputable def crLaw₂ (μ₁ μ₂ : Measure ℝ) : Measure (ℝ × Option (Fin 2)) :=
-  (μ₁.prod μ₂).map crObserve₂
+  (μ₁.bindProd μ₂).map crObserve₂
 
 /-- LEAN-ONLY: the two-cause observation map is measurable. -/
 private theorem measurable_crObserve₂ : Measurable crObserve₂ :=

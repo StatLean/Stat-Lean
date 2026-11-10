@@ -22,10 +22,8 @@ distance**, hence a unique invariant law approached at a geometric rate.
   AR kernel of FY Theorem 2.4 only holds after `p` steps, once every coordinate has
   been refreshed).
 
-This file exists to discharge the last structural debt of the TimeSeries area,
-`nlARKernel_geometricallyErgodic` (FY Theorem 2.4(ii)); the Meyn–Tweedie
-ψ-irreducibility/petite-set apparatus is deliberately avoided. **That debt is now closed
-here**, in the `NLAR` section at the foot of the file:
+The `NLAR` section applies this construction to `nlARKernel_geometricallyErgodic`
+(FY Theorem 2.4(ii)) without the Meyn–Tweedie ψ-irreducibility/petite-set apparatus:
 
 * `HasLyapunovDrift.pow` — the drift iterates: `κ^n` drifts with `γⁿ` and `K/(1−γ)`;
 * `hasLyapunovDrift_nlAR` — the geometrically weighted sup-norm `V(𝐱) = ⨆ᵢ θⁱ|xᵢ|` is a
@@ -36,12 +34,8 @@ here**, in the `NLAR` section at the foot of the file:
   `harris_theorem` on `κ^{p+1}`, `eq_of_invariant_of_isErgodicKernel` (to move invariance
   back to `κ`) and `IsGeometricallyErgodic.of_pow`.
 
-The statement of FY Theorem 2.4(ii) used to live in `GeometricErgodicity.lean` as a named
-`sorry`; it had to move here because its proof consumes this file's engine while this file
-imports that one. Nothing outside its own file referenced it.
-
-**STATUS.** All five headline results are proved and axiom-clean. Three features of the
-formalization are worth flagging, because each replaces a step of the textbook argument:
+All five headline results are proved. Three features of the formalization are worth
+flagging, because each replaces a step of the textbook argument:
 
 * **No coupling.** Hairer–Mattingly close the contraction with a coupling construction.
   Here the same estimate falls out of the *minimality* of the Jordan decomposition,
@@ -66,24 +60,12 @@ formalization are worth flagging, because each replaces a step of the textbook a
   identification with Lebesgue measure on a cube — only the fact that it does not depend on
   the starting state, which `iterPush_congr` proves from index arithmetic alone.
 
-The two definitions this file rests on were each *refuted* in an earlier pass and have
-since been repaired:
-
-* `weightedTV` used to be built from `Measure.singularPart` rather than from the Jordan
-  decomposition of `μ − ν`, so it ignored every absolutely-continuous overlap of the two
-  laws and did not even separate measures; `harris_contraction` was false against it.
-* `HasLyapunovDrift.drift` used to be stated with the *Bochner* integral, which Mathlib
-  sets to `0` on non-integrable functions, so the drift hypothesis said nothing at states
-  where `∫⁻ V d(κ x) = ∞`; a chain could escape to infinity, and `harris_theorem` was
-  false against it.
-
-Both machine-checked counterexamples are **retained below as block comments** (search for
-`REFUTATION`). They no longer type-check — that is the point: each was a witness against a
-definition that no longer exists, and against the repaired definitions the very same data
-is harmless (for the first witness the honest `|μ − ν|` weighting drops from `1 + 10β` to
-`1 + 5.5β` in one step; for the second the `∫⁻` drift simply fails at every nonzero state).
-They are kept verbatim, demoted to comments, because they are the record of *why* the
-definitions read the way they now do.
+Two details in the definitions are essential. The weighted total-variation distance
+uses the Jordan decomposition of `μ − ν`; the mutually singular parts alone miss
+absolutely continuous disagreement and do not separate distinct equivalent laws.
+The Lyapunov drift uses a lower integral. A Bochner integral with no integrability
+hypothesis would be zero on non-integrable functions and would impose no useful
+bound at states with infinite expected Lyapunov function.
 
 Note that the uniqueness proof here does **not** go through any contraction: it splits
 `π − π'` by a Hahn set, shows each half is separately `κ`-invariant, and then uses the
@@ -102,7 +84,7 @@ minorization formulation is Meyn & Tweedie, *Markov Chains and Stochastic Stabil
 Hairer–Mattingly simplification, which needs no irreducibility theory.
 -/
 
-set_option linter.style.longFile 2300
+set_option linter.style.longFile 2100
 
 open MeasureTheory ProbabilityTheory Filter StatLean.Minimaxity StatLean.Bayesian
 open scoped ProbabilityTheory Topology ENNReal
@@ -148,11 +130,8 @@ private theorem bind_add' (κ : Kernel S S) [IsSFiniteKernel κ] (μ ν : Measur
 absolute difference is the sum of the two truncated subtractions. At `β = 0` this is
 twice `StatLean.Minimaxity.tvDist`.
 
-**Definition repaired 2026-08-09.** The first version used
-`μ.singularPart ν + ν.singularPart μ`, which is *not* the Jordan decomposition of the
-signed difference — it discards the absolutely-continuous disagreement entirely — and a
-machine-checked counterexample (`cNoContraction`, retained below) refuted the
-contraction theorem stated against it. -/
+Using the mutually singular parts instead would discard absolutely continuous
+disagreement, so it would not give the total variation of the signed difference. -/
 noncomputable def weightedTV (β : ℝ) (V : S → ℝ) (μ ν : Measure S) : ℝ≥0∞ :=
   ∫⁻ x, ENNReal.ofReal (1 + β * V x) *
     ((μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x)
@@ -328,7 +307,7 @@ structure HasLyapunovDrift (κ : Kernel S S) (V : S → ℝ) (γ K : ℝ) : Prop
   /-- Constitutive (H–M Assumption 1): the additive constant is nonnegative. -/
   K_nonneg : 0 ≤ K
   /-- Constitutive (H–M Assumption 1): the drift inequality `PV ≤ γV + K`, stated with
-  the **lower** integral. Repaired 2026-08-09: with the Bochner integral, Mathlib's
+  the **lower** integral. With the Bochner integral, Mathlib's
   `integral_undef` convention makes the inequality vacuous at every state where `V` is
   not `κ x`-integrable (both sides are then trivially ordered), so the hypothesis
   constrained nothing where it mattered most and both existence and uniqueness failed. -/
@@ -398,163 +377,6 @@ theorem HasLyapunovDrift.pow {κ : Kernel S S} [IsMarkovKernel κ] {V : S → �
   obtain ⟨hγ0, hγ1⟩ := h.gamma_mem
   exact ⟨h.V_nonneg, h.V_measurable, ⟨pow_pos hγ0 n, pow_lt_one₀ hγ0.le hγ1 hn.ne'⟩,
     div_nonneg h.K_nonneg (by linarith), fun x => h.lintegral_pow_le n x⟩
-
-
--- ## REFUTATION of `harris_contraction` against the *old* `weightedTV` (historical record)
---
--- Everything from here to the end of the `cNoContraction` block is **demoted to a comment**:
--- it was a machine-checked refutation of `harris_contraction` as stated against the previous,
--- `singularPart`-based `weightedTV`, and it no longer type-checks against the repaired
--- definition — which is exactly the outcome one wants.  Re-run on the repaired `weightedTV`
--- the same data is no longer a counterexample: `|μ − ν|` is `½δ₀ + ½δ₁`, so the distance is
--- `1 + 10β`, and after one step `|δ₂ − (½δ₀+½δ₂)| = ½δ₀ + ½δ₂` gives `1 + 5.5β < 1 + 10β`.
--- The analysis is kept because it is the reason the definition reads the way it now does.
---
--- `weightedTV` used to be built from `Measure.singularPart`, **not** from the Jordan decomposition
--- of the signed difference `μ − ν`: it sees only the parts of `μ` and `ν` that are *mutually
--- singular*, and drops every absolutely-continuous overlap.  (In particular `weightedTV β V μ ν
--- = 0` whenever `μ ≪ ν ≪ μ` with `μ ≠ ν`, so it does not separate measures.)  That makes the
--- frozen contraction statement false: mixing an `ε` of one law into the other can annihilate an
--- arbitrarily large share of the right-hand side while leaving the left-hand side untouched.
---
--- The witness below lives on `ℕ` with `V = (0, 20, 11, 11, …)`, `γ = 1/2`, `K = 1`, `R = 10`
--- (so `2K/(1−γ) = 4 < 10`), `α = 1`, `ρ = δ₀`, and the deterministic kernel `1 ↦ 2`, `n ↦ 0`
--- otherwise.  For `μ = δ₁` and `ν = ½δ₀ + ½δ₁`:
---   * `μ` is `ν`-absolutely continuous, so `singularPart μ ν = 0` and `weightedTV β V μ ν
---     = ∫(1+βV) d(½δ₀) = ½`;
---   * one step sends `μ ↦ δ₂` and `ν ↦ ½δ₀ + ½δ₂`, the *same* configuration, so the pushed
---     distance is again `½`.
--- Hence `½ ≤ ᾱ · ½` for every admissible `β`, forcing `1 ≤ ᾱ` — no `ᾱ < 1` can work.
--- `cNoContraction (harris_contraction cDrift cMinorize cHR)` has type `False` (checked).
---
--- The defect is *only* about `weightedTV`: every kernel below is a Dirac, so `V` is integrable
--- at every step and the Bochner/`∫⁻` forms of the drift agree.  The counterexample therefore
--- survives the drift repair described before `harris_theorem`.
---
--- The repair is to define `weightedTV` from the Jordan decomposition of `μ − ν` (equivalently,
--- from a Hahn set for the pair), which is what Hairer–Mattingly's `ρ_β` actually is.  With that
--- definition the contraction *is* provable without any coupling step: writing `μ − ν = a − b`
--- with `a ⊥ b` and `a S = b S = c`, one subtracts the common minorization mass
--- `m = α·min(a L, b L)·ρ` from both `a.bind κ` and `b.bind κ` (Jordan minimality gives
--- `a₁ ≤ a.bind κ − m`, `b₁ ≤ b.bind κ − m`), and the drift plus Markov's inequality
--- `a Lᶜ ≤ (∫V da)/R` close the estimate with
--- `ᾱ = max (1 + βK − α) (γ + 2α/(βR))` for any `2α/(R(1−γ)) < β < α/K`; such a `β` exists
--- exactly when `2K/(1−γ) < R`, i.e. under `hR`.  (The equal masses `a S = b S` are what the
--- `singularPart` version lacks, and are the whole reason the frozen version fails.)
-
-/- BEGIN historical refutation block (does not compile against the repaired `weightedTV`).
-
-/-- Counterexample data: `V 0 = 0`, `V 1 = 20`, `V n = 11` otherwise. -/
-private noncomputable def cV : ℕ → ℝ := fun n => if n = 0 then 0 else if n = 1 then 20 else 11
-
-/-- Counterexample kernel: `1 ↦ 2`, everything else `↦ 0`. -/
-private noncomputable def cK : Kernel ℕ ℕ :=
-  ⟨fun n => if n = 1 then Measure.dirac 2 else Measure.dirac 0, Measurable.of_discrete⟩
-
-private theorem cK_apply (n : ℕ) :
-    cK n = if n = 1 then Measure.dirac 2 else Measure.dirac 0 := rfl
-
-private instance : IsMarkovKernel cK :=
-  ⟨fun n => by rw [cK_apply]; split <;> infer_instance⟩
-
-/-- The half-and-half mixture `½δ_a + ½δ_b`. -/
-private noncomputable def cMix (a b : ℕ) : Measure ℕ :=
-  (2 : ℝ≥0∞)⁻¹ • Measure.dirac a + (2 : ℝ≥0∞)⁻¹ • Measure.dirac b
-
-private instance (a b : ℕ) : IsProbabilityMeasure (cMix a b) := by
-  refine ⟨?_⟩
-  rw [cMix, Measure.add_apply, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul]
-  simp only [measure_univ, mul_one]
-  exact ENNReal.inv_two_add_inv_two
-
-private theorem cMix_apply (a b : ℕ) (s : Set ℕ) :
-    cMix a b s = (2 : ℝ≥0∞)⁻¹ * Measure.dirac a s + (2 : ℝ≥0∞)⁻¹ * Measure.dirac b s := by
-  rw [cMix, Measure.add_apply, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul]
-
-private theorem sing_dirac_mix (a b : ℕ) :
-    (Measure.dirac b : Measure ℕ).singularPart (cMix a b) = 0 := by
-  refine (Measure.singularPart_eq_zero _ _).2 ?_
-  refine Measure.AbsolutelyContinuous.mk fun s hs hzero => ?_
-  rw [cMix_apply] at hzero
-  have h := (add_eq_zero.1 hzero).2
-  simpa using h
-
-private theorem sing_mix_dirac (a b : ℕ) (hab : a ≠ b) :
-    (cMix a b).singularPart (Measure.dirac b) = (2 : ℝ≥0∞)⁻¹ • Measure.dirac a := by
-  refine (Measure.eq_singularPart (f := fun _ => (2 : ℝ≥0∞)⁻¹) measurable_const ?_ ?_).symm
-  · refine ⟨{a}ᶜ, (MeasurableSet.singleton a).compl, ?_, ?_⟩
-    · rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ (MeasurableSet.singleton a).compl]
-      simp
-    · rw [compl_compl, Measure.dirac_apply' _ (MeasurableSet.singleton a)]
-      simp only [Set.indicator_apply, Set.mem_singleton_iff, Pi.one_apply]
-      exact if_neg fun h => hab h.symm
-  · rw [withDensity_const, cMix]
-
-private theorem lintegral_smul_dirac (c : ℝ≥0∞) (a : ℕ) (f : ℕ → ℝ≥0∞) :
-    ∫⁻ x, f x ∂(c • Measure.dirac a) = c * f a := by
-  rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
-
-private theorem cWeightedTV (β : ℝ) (a b : ℕ) (hab : a ≠ b) :
-    weightedTV β cV (Measure.dirac b) (cMix a b)
-      = (2 : ℝ≥0∞)⁻¹ * ENNReal.ofReal (1 + β * cV a) := by
-  rw [weightedTV, sing_dirac_mix, sing_mix_dirac a b hab, lintegral_zero_measure, zero_add,
-    lintegral_smul_dirac]
-
-
-private theorem cDrift : HasLyapunovDrift cK cV (1/2) 1 where
-  V_nonneg x := by rw [cV]; split_ifs <;> norm_num
-  V_measurable := Measurable.of_discrete
-  gamma_mem := ⟨by norm_num, by norm_num⟩
-  K_nonneg := by norm_num
-  drift x := by
-    have hnn : ∀ y : ℕ, (0:ℝ) ≤ cV y := fun y => by rw [cV]; split_ifs <;> norm_num
-    rw [cK_apply]
-    split_ifs with h
-    · subst h
-      rw [integral_dirac]
-      norm_num [cV]
-    · rw [integral_dirac]
-      have : cV 0 = 0 := by norm_num [cV]
-      rw [this]
-      nlinarith [hnn x]
-
-private theorem cMinorize : HasMinorization cK cV 10 1 (Measure.dirac 0) where
-  alpha_mem := ⟨one_pos, le_rfl⟩
-  isProbability := inferInstance
-  minorize x hx A _ := by
-    have hx0 : x = 0 := by
-      by_contra hne
-      rw [cV, if_neg hne] at hx
-      split_ifs at hx <;> norm_num at hx
-    subst hx0
-    rw [cK_apply, if_neg (by norm_num), ENNReal.ofReal_one, one_mul]
-
-private theorem cHR : 2 * (1:ℝ) / (1 - 1/2) < 10 := by norm_num
-
-private theorem cNoContraction :
-    ¬ ∃ β ᾱ : ℝ, 0 < β ∧ 0 < ᾱ ∧ ᾱ < 1 ∧
-      ∀ μ ν : Measure ℕ, IsProbabilityMeasure μ → IsProbabilityMeasure ν →
-        weightedTV β cV (μ.bind cK) (ν.bind cK) ≤ ENNReal.ofReal ᾱ * weightedTV β cV μ ν := by
-  rintro ⟨β, ᾱ, hβ, hα0, hα1, h⟩
-  have hV0 : cV 0 = 0 := by norm_num [cV]
-  have hbind1 : (Measure.dirac 1 : Measure ℕ).bind cK = Measure.dirac 2 := by
-    rw [Measure.dirac_bind cK.measurable, cK_apply, if_pos rfl]
-  have hbind0 : (Measure.dirac 0 : Measure ℕ).bind cK = Measure.dirac 0 := by
-    rw [Measure.dirac_bind cK.measurable, cK_apply, if_neg (by norm_num)]
-  have hbindmix : (cMix 0 1).bind cK = cMix 0 2 := by
-    rw [cMix, bind_add', Measure.bind_smul, Measure.bind_smul, hbind0, hbind1, cMix]
-  have key := h (Measure.dirac 1) (cMix 0 1) inferInstance inferInstance
-  rw [hbind1, hbindmix, cWeightedTV β 0 2 (by norm_num), cWeightedTV β 0 1 (by norm_num),
-    hV0] at key
-  norm_num at key
-  have hcancel : (1 : ℝ≥0∞) ≤ ENNReal.ofReal ᾱ := by
-    have h2 : (1 : ℝ≥0∞) * (2:ℝ≥0∞)⁻¹ ≤ ENNReal.ofReal ᾱ * (2:ℝ≥0∞)⁻¹ := by
-      rw [one_mul]; exact key
-    exact (ENNReal.mul_le_mul_iff_left (by simp) (by simp)).1 h2
-  have : ENNReal.ofReal ᾱ < 1 := ENNReal.ofReal_lt_one.2 hα1
-  exact absurd hcancel (not_le.2 this)
-
-END historical refutation block. -/
 
 -- The minorization, integrated: one step from any initial law dominates `α·ρ` on the mass that
 -- the law puts on the level set.
@@ -867,191 +689,6 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
   have := hμ
   have := hν
   exact harris_contraction_aux hdrift hmin hβpos hᾱpos hRpos hᾱ1 hᾱ2 μ ν
-
--- ## REFUTATION of `harris_theorem` against the *old* Bochner drift (historical record)
---
--- As with the block above, everything down to the end of `tNoErgodic` is **demoted to a
--- comment**: it refuted `harris_theorem` as stated against the previous, Bochner-integral
--- form of `HasLyapunovDrift.drift`, and `tDrift` no longer type-checks — because with the
--- `∫⁻` drift the witness kernel simply *fails* the hypothesis at every nonzero state
--- (`∫⁻ V dν = ∞ > ofReal (γ V x + K)`), which is precisely the repair.  The chain itself is
--- still genuinely non-ergodic; it is only the drift hypothesis that it no longer satisfies.
---
--- `HasLyapunovDrift.drift` used to be stated with the **Bochner** integral `∫ y, V y ∂(κ x)`, which
--- Mathlib defines to be `0` when the integrand is not integrable (`integral_undef`).  Since
--- `V ≥ 0` and `γ V x + K ≥ 0`, the drift hypothesis is therefore **vacuous at every state `x`
--- where `∫⁻ V d(κ x) = ∞`** — it constrains nothing there.  A chain may then leave the level set
--- forever, and both existence *and* uniqueness of an attracting law fail.
---
--- The witness below lives on `ℕ` with `V 0 = 0`, `V n = 4ⁿ` (`n ≥ 1`), `γ = 1/2`, `K = 0`,
--- `R = 1` (so `2K/(1−γ) = 0 < 1`), `α = 1`, `ρ = δ₀`, and the kernel `0 ↦ δ₀`, `n ↦ ν`
--- (`n ≥ 1`) for the heavy-tailed law `ν = Σⱼ 2^{-(j+1)} δ_{j+1}`, which satisfies
--- `∫⁻ V dν = Σⱼ 2^{j+1} = ∞`.  The level set is `{0}`, where the minorization is exact; the
--- drift holds genuinely at `0` and vacuously everywhere else.  But `κⁿ(0,·) = δ₀` and
--- `κⁿ(1,·) = ν` for all `n ≥ 1`, and `δ₀ ≠ ν`, so no single law attracts every state:
--- `tNoErgodic (harris_theorem tDrift tMinorize tHR)` has type `False` (checked).
---
--- The repair is at the level of `HasLyapunovDrift`: state the drift as
--- `∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K)` (or add `∀ x, Integrable V
--- (κ x)`).  `harris_invariant_unique` above is unaffected: its `Integrable V π` hypotheses buy
--- exactly the `π`-a.e. `∫⁻` form of the drift, which is what `drift_lintegral_ae` extracts.
-
-/- BEGIN historical refutation block (does not compile against the repaired `drift`).
-
-private noncomputable def tV : ℕ → ℝ := fun n => if n = 0 then 0 else 4 ^ n
-
-private noncomputable def tNu : Measure ℕ :=
-  Measure.sum fun j : ℕ => ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) • Measure.dirac (j + 1)
-
-private noncomputable def tK : Kernel ℕ ℕ :=
-  ⟨fun n => if n = 0 then Measure.dirac 0 else tNu, Measurable.of_discrete⟩
-
-private theorem tK_apply (n : ℕ) : tK n = if n = 0 then Measure.dirac 0 else tNu := rfl
-
-private theorem tNu_apply {s : Set ℕ} (hs : MeasurableSet s) :
-    tNu s = ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * Measure.dirac (j + 1) s := by
-  rw [tNu, Measure.sum_apply _ hs]
-  exact tsum_congr fun j => by rw [Measure.smul_apply, smul_eq_mul]
-
-private theorem tsum_half : ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) = 1 := by
-  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) = ((2 : ℝ≥0∞)⁻¹) ^ j * (2 : ℝ≥0∞)⁻¹ :=
-    fun j => pow_succ _ _
-  rw [tsum_congr h, ENNReal.tsum_mul_right, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two,
-    inv_inv]
-  exact ENNReal.mul_inv_cancel two_ne_zero (by simp)
-
-private instance : IsProbabilityMeasure tNu := by
-  refine ⟨?_⟩
-  rw [tNu_apply MeasurableSet.univ]
-  simpa using tsum_half
-
-private theorem tNu_zero : tNu {0} = 0 := by
-  rw [tNu_apply (MeasurableSet.singleton 0)]
-  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * Measure.dirac (j + 1) {0} = 0 := by
-    intro j
-    rw [Measure.dirac_apply' _ (MeasurableSet.singleton 0)]
-    simp
-  rw [tsum_congr h, tsum_zero]
-
-private instance : IsMarkovKernel tK :=
-  ⟨fun n => by rw [tK_apply]; split <;> infer_instance⟩
-
-private theorem tNu_not_integrable : ¬ Integrable tV tNu := by
-  intro hint
-  have hlt : ∫⁻ y, ENNReal.ofReal (tV y) ∂tNu < ∞ := by
-    have h2 := hint.2
-    rw [HasFiniteIntegral] at h2
-    refine lt_of_le_of_lt (le_of_eq ?_) h2
-    refine lintegral_congr fun y => (Real.enorm_eq_ofReal ?_).symm
-    rw [tV]; split_ifs <;> positivity
-  refine absurd hlt (not_lt.2 (le_of_eq ?_))
-  symm
-  rw [tNu, lintegral_sum_measure]
-  have hterm : ∀ j : ℕ, ∫⁻ y, ENNReal.ofReal (tV y) ∂(((2 : ℝ≥0∞)⁻¹) ^ (j + 1) •
-      Measure.dirac (j + 1)) = (2 : ℝ≥0∞) ^ (j + 1) := by
-    intro j
-    rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul, tV, if_neg (Nat.succ_ne_zero j),
-      ENNReal.ofReal_pow (by norm_num : (0:ℝ) ≤ 4), ← mul_pow]
-    norm_num
-    congr 1
-    rw [show (4:ℝ≥0∞) = 2 * 2 by norm_num, ← mul_assoc,
-      ENNReal.inv_mul_cancel two_ne_zero (by simp), one_mul]
-  rw [tsum_congr hterm]
-  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)) ^ (j + 1) = ((2 : ℝ≥0∞)) ^ j * (2 : ℝ≥0∞) :=
-    fun j => pow_succ _ _
-  rw [tsum_congr h, ENNReal.tsum_mul_right, ENNReal.tsum_geometric,
-    show (1 : ℝ≥0∞) - 2 = 0 by simp [tsub_eq_zero_of_le], ENNReal.inv_zero,
-    ENNReal.top_mul (by norm_num)]
-
-private theorem tDrift : HasLyapunovDrift tK tV (1/2) 0 where
-  V_nonneg x := by rw [tV]; split_ifs <;> positivity
-  V_measurable := Measurable.of_discrete
-  gamma_mem := ⟨by norm_num, by norm_num⟩
-  K_nonneg := le_rfl
-  drift x := by
-    have hnn : (0:ℝ) ≤ tV x := by rw [tV]; split_ifs <;> positivity
-    rw [tK_apply]
-    split_ifs with h
-    · subst h
-      rw [integral_dirac]
-      norm_num [tV]
-    · rw [integral_undef tNu_not_integrable]
-      nlinarith
-
-private theorem tMinorize : HasMinorization tK tV 1 1 (Measure.dirac 0) where
-  alpha_mem := ⟨one_pos, le_rfl⟩
-  isProbability := inferInstance
-  minorize x hx A _ := by
-    have hx0 : x = 0 := by
-      by_contra hne
-      rw [tV, if_neg hne] at hx
-      have : (4:ℝ) ^ x ≥ 4 ^ 1 := by
-        refine pow_le_pow_right₀ (by norm_num) ?_
-        omega
-      norm_num at this
-      linarith
-    subst hx0
-    rw [tK_apply, if_pos rfl, ENNReal.ofReal_one, one_mul]
-
-private theorem tHR : 2 * (0:ℝ) / (1 - 1/2) < 1 := by norm_num
-
-
-private theorem tNu_lintegral (f : ℕ → ℝ≥0∞) :
-    ∫⁻ x, f x ∂tNu = ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * f (j + 1) := by
-  rw [tNu, lintegral_sum_measure]
-  exact tsum_congr fun j => by rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
-
-private theorem tNu_invariant : Kernel.Invariant tK tNu := by
-  ext s hs
-  rw [Measure.bind_apply hs tK.aemeasurable, tNu_lintegral]
-  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * (tK (j + 1)) s
-      = ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * tNu s := by
-    intro j; rw [tK_apply, if_neg (Nat.succ_ne_zero j)]
-  rw [tsum_congr h, ENNReal.tsum_mul_right, tsum_half, one_mul]
-
-private theorem tPow_succ_apply (n : ℕ) (x : ℕ) : (tK ^ (n + 1)) x = ((tK ^ n) x).bind tK := by
-  rw [pow_succ']
-  exact Kernel.comp_apply tK (tK ^ n) x
-
-private theorem tK_pow_zero : ∀ n : ℕ, (tK ^ n) 0 = Measure.dirac 0
-  | 0 => by rw [pow_zero]; rfl
-  | n + 1 => by
-      rw [tPow_succ_apply, tK_pow_zero n, Measure.dirac_bind tK.measurable, tK_apply, if_pos rfl]
-
-private theorem tK_pow_one : ∀ n : ℕ, (tK ^ (n + 1)) 1 = tNu
-  | 0 => by rw [pow_one, tK_apply, if_neg one_ne_zero]
-  | n + 1 => by rw [tPow_succ_apply, tK_pow_one n]; exact tNu_invariant.def
-
-private theorem tv_le_of_zero {μ ν : Measure ℕ} (h : tvDist μ ν = 0) {s : Set ℕ}
-    (hs : MeasurableSet s) : μ s ≤ ν s := by
-  have h1 : μ s - ν s ≤ tvDist μ ν :=
-    le_iSup₂ (f := fun t (_ : MeasurableSet t) => μ t - ν t) s hs
-  rw [h] at h1
-  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le))
-
-private theorem tNoErgodic : ¬ ∃ π : Measure ℕ, IsProbabilityMeasure π ∧
-    Kernel.Invariant tK π ∧ IsGeometricallyErgodic tK π := by
-  rintro ⟨π, hπp, -, ρ, hρ1, hrate⟩
-  haveI := hπp
-  have e0 : tvDist (Measure.dirac 0 : Measure ℕ) π = 0 := by
-    have h : Tendsto (fun _ : ℕ => tvDist (Measure.dirac 0 : Measure ℕ) π) atTop (𝓝 0) := by
-      simpa [tK_pow_zero] using hrate.tendsto_tvDist 0
-    exact tendsto_nhds_unique (tendsto_const_nhds (α := ℕ) (f := atTop)) h
-  have e1 : tvDist tNu π = 0 := by
-    have h : Tendsto (fun _ : ℕ => tvDist tNu π) atTop (𝓝 0) := by
-      have h2 := (hrate.tendsto_tvDist 1).comp (tendsto_add_atTop_nat 1)
-      simp only [Function.comp_def, tK_pow_one] at h2
-      exact h2
-    exact tendsto_nhds_unique (tendsto_const_nhds (α := ℕ) (f := atTop)) h
-  have hlow : (1 : ℝ≥0∞) ≤ π {0} := by
-    have := tv_le_of_zero e0 (MeasurableSet.singleton 0)
-    simpa using this
-  have hhigh : π {0} ≤ 0 := by
-    have h := tv_le_of_zero (by rwa [tvDist_comm] at e1) (MeasurableSet.singleton 0)
-    rwa [tNu_zero] at h
-  exact absurd (le_trans hlow hhigh) (by simp)
-
-END historical refutation block. -/
 
 /-! ### From the contraction to the invariant law
 
@@ -1393,7 +1030,7 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
   obtain ⟨π, hπ, hinv, hge, -⟩ := harris_theorem_envelope hdrift hmin hR
   exact ⟨π, hπ, hinv, hge⟩
 
--- Since the repair of `HasLyapunovDrift.drift` (2026-08-09) the drift is *already* the `∫⁻`
+-- Since `HasLyapunovDrift.drift` is stated with `∫⁻`, the drift is *already* the `∫⁻`
 -- statement, so this wrapper is now a one-liner; it is kept (with its hypotheses inert) so that
 -- `level_set_pos` below reads the same as before the repair.
 private theorem drift_lintegral_ae {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
@@ -2172,9 +1809,8 @@ sup-norm contraction up to a constant, `|f(𝐱)| ≤ λ‖𝐱‖_∞ + c` with
 has an everywhere-positive **continuous** density and a finite first moment, then the chain
 is geometrically ergodic toward a (unique) stationary probability law.
 
-This is the statement that used to sit in `GeometricErgodicity.lean` as a named `sorry`; it
-moved here because its proof consumes this file's Harris engine, and this file imports that
-one. It is the last structural debt of the TimeSeries area.
+It lives here rather than in `GeometricErgodicity.lean` because its proof consumes this
+file's Harris engine, and this file imports that one.
 
 **Proof.** `V(𝐱) := ⨆ᵢ θⁱ|xᵢ|` with `θ := λ'^{1/(p+1)}`, `λ' := max λ ½` (the boost keeps
 `θ > 0` when `λ = 0`), is a Lyapunov function: the shifted coordinates each gain a factor

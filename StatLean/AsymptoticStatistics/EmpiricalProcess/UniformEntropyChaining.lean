@@ -1,6 +1,7 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformEntropySymmetrization
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
 import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Conditional uniform-entropy chaining
@@ -752,7 +753,7 @@ noncomputable def conditionalRademacherIncrement {n : ℕ} (z : Fin n → Ω)
   (Real.sqrt n)⁻¹ * ∑ i, (if σ i then (1 : ℝ) else -1) * f (z i)
 
 private noncomputable def chainingFairBoolMeasure : Measure Bool :=
-  (PMF.uniformOfFintype Bool).toMeasure
+  (PMF.uniform Bool).toMeasure
 
 private instance : IsProbabilityMeasure chainingFairBoolMeasure := by
   unfold chainingFairBoolMeasure
@@ -788,18 +789,18 @@ private instance (n : ℕ) : IsProbabilityMeasure (chainingFairBoolCube n) := by
 
 private theorem chainingFairBoolCube_eq_uniform (n : ℕ) :
     chainingFairBoolCube n =
-      (PMF.uniformOfFintype (Fin n → Bool)).toMeasure := by
+      (PMF.uniform (Fin n → Bool)).toMeasure := by
   apply Measure.ext_of_singleton
   intro σ
   have hpoint (b : Bool) :
       chainingFairBoolMeasure {b} = (2 : ℝ≥0∞)⁻¹ := by
     rw [chainingFairBoolMeasure, PMF.toMeasure_apply_singleton,
-      PMF.uniformOfFintype_apply, Fintype.card_bool]
+      PMF.uniform_apply, Fintype.card_bool]
     · norm_num
     · exact MeasurableSet.singleton b
   rw [chainingFairBoolCube, Measure.pi_singleton, PMF.toMeasure_apply_fintype]
   simp_rw [hpoint]
-  simp only [Set.indicator_singleton, PMF.uniformOfFintype_apply,
+  simp only [Set.indicator_singleton, PMF.uniform_apply,
     Fintype.card_pi, Fintype.card_bool, Finset.prod_const, Finset.card_univ,
     Fintype.card_fin, Nat.cast_pow, Nat.cast_ofNat, Finset.sum_pi_single',
     Finset.mem_univ, ite_true]
@@ -812,7 +813,7 @@ private theorem chaining_rademacherSum_hasSubgaussianMGF
       (fun σ : Fin n → Bool =>
         ∑ i, chainingFairBoolSign (σ i) * a i)
       (∑ i, (NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))))
-      (PMF.uniformOfFintype (Fin n → Bool)).toMeasure := by
+      (PMF.uniform (Fin n → Bool)).toMeasure := by
   have hindep : ProbabilityTheory.iIndepFun
       (fun i (σ : Fin n → Bool) => a i * chainingFairBoolSign (σ i))
       (chainingFairBoolCube n) := by
@@ -852,7 +853,7 @@ use the displayed totalized real expression and are included literally. -/
 theorem conditionalRademacher_increment_tail
     {n : ℕ} (z : Fin n → Ω) (f g : Ω → ℝ) (t : ℝ) (ht : 0 < t)
       -- positivity isolates the nontrivial tail threshold.
-    : (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    : (PMF.uniform (Fin n → Bool)).toMeasure
         {σ | t < |conditionalRademacherIncrement z σ f -
           conditionalRademacherIncrement z σ g|} ≤
       ENNReal.ofReal (2 * Real.exp (-(t ^ 2) /
@@ -868,7 +869,7 @@ theorem conditionalRademacher_increment_tail
     rw [hempty]
     rw [measure_empty]
     exact (bot_le : (0 : ℝ≥0∞) ≤ _)
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   let a : Fin n → ℝ := fun i =>
     (Real.sqrt n)⁻¹ * ((f - g) (z i))
   let Y : (Fin n → Bool) → ℝ := fun σ =>
@@ -943,13 +944,13 @@ private theorem conditionalRademacherIncrement_sub_hasSubgaussianMGF
       (fun σ : Fin n → Bool => conditionalRademacherIncrement z σ f -
         conditionalRademacherIncrement z σ g)
       (NNReal.mk (sampleL2Seminorm z (f - g) ^ 2) (sq_nonneg _))
-      (PMF.uniformOfFintype (Fin n → Bool)).toMeasure := by
+      (PMF.uniform (Fin n → Bool)).toMeasure := by
   classical
   by_cases hn : n = 0
   · subst n
     have hz : ProbabilityTheory.HasSubgaussianMGF
         (fun _ : Fin 0 → Bool => (0 : ℝ)) 0
-        (PMF.uniformOfFintype (Fin 0 → Bool)).toMeasure :=
+        (PMF.uniform (Fin 0 → Bool)).toMeasure :=
       ProbabilityTheory.HasSubgaussianMGF.fun_zero
     convert! hz using 1
     · funext σ
@@ -1000,14 +1001,14 @@ private theorem outerExpectation_iSup_abs_increment_le
     {n : ℕ} (z : Fin n → Ω) (T : Finset ((Ω → ℝ) × (Ω → ℝ)))
     (hT : T.Nonempty) (ρ : ℝ) (hρ : 0 < ρ)
     (hdist : ∀ p ∈ T, sampleL2Seminorm z (p.1 - p.2) ≤ ρ) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (⨆ p : ↥T,
           |conditionalRademacherIncrement z σ p.1.1 -
             conditionalRademacherIncrement z σ p.1.2|)) ≤
       ENNReal.ofReal (Real.sqrt 2 * ρ *
         Real.sqrt (Real.log (2 * T.card))) := by
   classical
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   let Z : ↥T → (Fin n → Bool) → ℝ := fun p σ =>
     conditionalRademacherIncrement z σ p.1.1 -
       conditionalRademacherIncrement z σ p.1.2
@@ -2294,9 +2295,9 @@ private theorem lintegral_signedGhostDeviation_eq_tail
     (E : Set (Ω → ℝ)) {n : ℕ} (z z' : Fin n → Ω)
     (hfinite : ∀ σ : Fin n → Bool, signedGhostDeviation E n z z' σ ≠ ⊤) :
     ∫⁻ σ, signedGhostDeviation E n z z' σ
-        ∂(PMF.uniformOfFintype (Fin n → Bool)).toMeasure =
+        ∂(PMF.uniform (Fin n → Bool)).toMeasure =
       ∫⁻ t in Set.Ioi (0 : ℝ), conditionalRademacherTail E n z z' t ∂volume := by
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   have hmeas : Measurable (fun σ : Fin n → Bool =>
       (signedGhostDeviation E n z z' σ).toReal) := measurable_of_finite _
   calc
@@ -2313,7 +2314,7 @@ private theorem lintegral_signedGhostDeviation_eq_tail
       apply setLIntegral_congr_fun measurableSet_Ioi
       intro t ht
       rw [conditionalRademacherTail]
-      apply congrArg ((PMF.uniformOfFintype (Fin n → Bool)).toMeasure)
+      apply congrArg ((PMF.uniform (Fin n → Bool)).toMeasure)
       ext σ
       change (t < (signedGhostDeviation E n z z' σ).toReal) ↔
         ENNReal.ofReal t < signedGhostDeviation E n z z' σ
@@ -2333,11 +2334,11 @@ private theorem outerExpectation_ghostDeviation_le_signed
         (fun i => X i.val ξ.2) σ ≠ ⊤) :
     outerExpectation (μ.prod μ) (fun ξ => ghostDeviation E X n ξ.1 ξ.2) ≤
       outerExpectation (μ.prod μ) (fun ξ =>
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => signedGhostDeviation E n (fun i => X i.val ξ.1)
             (fun i => X i.val ξ.2) σ)) := by
   let ρ := μ.prod μ
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   have hPM : IsPointwiseMeasurable E :=
     ⟨E, hEcount, Set.Subset.rfl, fun f hf =>
       ⟨fun _ => f, fun _ => hf, fun _ => tendsto_const_nhds⟩⟩
@@ -2436,12 +2437,12 @@ private theorem outerExpectation_scaled_ghostDeviation_le_signed
     outerExpectation (μ.prod μ) (fun ξ => ENNReal.ofReal (Real.sqrt n) *
         ghostDeviation E X n ξ.1 ξ.2) ≤
       outerExpectation (μ.prod μ) (fun ξ =>
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => ENNReal.ofReal (Real.sqrt n) *
             signedGhostDeviation E n (fun i => X i.val ξ.1)
               (fun i => X i.val ξ.2) σ)) := by
   let c : ℝ≥0∞ := ENNReal.ofReal (Real.sqrt n)
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   have hc : c ≠ ⊤ := ENNReal.ofReal_ne_top
   have hnode := outerExpectation_ghostDeviation_le_signed
     μ E X n hEcount hEmeas hXmeas hXiindep hghostfinite hsignedfinite
@@ -2496,11 +2497,11 @@ private theorem measurable_conditionalScaledSignedExpectation_countable
     (X : ℕ → Ξ → Ω) (n : ℕ) (hEcount : E.Countable)
     (hEmeas : ∀ f ∈ E, Measurable f) (hXmeas : ∀ i, Measurable (X i)) :
     Measurable (fun ξ : Ξ × Ξ =>
-      outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (Real.sqrt n) *
           signedGhostDeviation E n (fun i => X i.val ξ.1)
             (fun i => X i.val ξ.2) σ)) := by
-  let ν := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let ν := (PMF.uniform (Fin n → Bool)).toMeasure
   have heq (ξ : Ξ × Ξ) : outerExpectation ν (fun σ =>
       ENNReal.ofReal (Real.sqrt n) * signedGhostDeviation E n
         (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) σ) =
@@ -3649,7 +3650,7 @@ omit [MeasurableSpace Ω] in
 private theorem outerExpectation_scheduleSamplePairs_iSup_le
     {F : Set (Ω → ℝ)} (T : Finset ↥F) {n : ℕ} (z : Fin n → Ω)
     (ρ : ℝ) (hρ : 0 < ρ) (hU : (scheduleSamplePairs T z ρ).Nonempty) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (⨆ p : ↥(scheduleSamplePairs T z ρ),
           |conditionalRademacherIncrement z σ p.1.1 -
             conditionalRademacherIncrement z σ p.1.2|)) ≤
@@ -3973,7 +3974,7 @@ private theorem outerExpectation_scheduleHorizontalMaximum_le
     (S : UniformDudleySchedule F G) {n : ℕ} (z : Fin n → Ω)
     (hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z))
     (hF : F.Nonempty) (J : ℕ) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (scheduleHorizontalMaximum S z hQ J σ)) ≤
       ENNReal.ofReal (6 * Real.sqrt 2 * (1 / 2 : ℝ) ^ J *
         (outerLpNorm (empiricalMeasure n z) G 2).toReal *
@@ -3996,7 +3997,7 @@ private theorem outerExpectation_scheduleVerticalMaximum_le
     (S : UniformDudleySchedule F G) {n : ℕ} (hn : n ≠ 0) (z : Fin n → Ω)
     (hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z))
     (hF : F.Nonempty) (j : ℕ) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (scheduleVerticalMaximum S z hQ j σ)) ≤
       ENNReal.ofReal (4 * Real.sqrt 2 * (1 / 2 : ℝ) ^ j *
         (outerLpNorm (empiricalMeasure n z) G 2).toReal *
@@ -4020,7 +4021,7 @@ private theorem outerExpectation_scheduleVerticalTail_le
     (S : UniformDudleySchedule F G) {n : ℕ} (hn : n ≠ 0) (z : Fin n → Ω)
     (hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z))
     (hF : F.Nonempty) (J : ℕ) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal
           (∑' k : ℕ, scheduleVerticalMaximum S z hQ (J + k) σ)) ≤
       ∑' k : ℕ, ENNReal.ofReal
@@ -4107,13 +4108,13 @@ private theorem outerExpectation_conditionalRademacherLocalOscillation_le
     (S : UniformDudleySchedule F G) {n : ℕ} (hn : n ≠ 0) (z : Fin n → Ω)
     (hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z))
     (hF : F.Nonempty) (J : ℕ) :
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (conditionalRademacherLocalOscillation F z
           ((1 / 2 : ℝ) ^ J *
             (outerLpNorm (empiricalMeasure n z) G 2).toReal)) ≤
       ENNReal.ofReal (40 * (outerLpNorm (empiricalMeasure n z) G 2).toReal *
         dudleyScheduleTail S (empiricalMeasure n z) hQ J) := by
-  let μ := (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+  let μ := (PMF.uniform (Fin n → Bool)).toMeasure
   let L := (outerLpNorm (empiricalMeasure n z) G 2).toReal
   let H : (Fin n → Bool) → ℝ := fun σ => scheduleHorizontalMaximum S z hQ J σ
   let V : (Fin n → Bool) → ℝ := fun σ =>
@@ -4240,7 +4241,7 @@ theorem conditionalRademacher_chaining
       outerLpNorm (empiricalMeasure n z) G 2 < ⊤ →
       outerLpNorm (empiricalMeasure n z) G 2 = 0 ∨
         ∃ hQ : IsAdmissibleMeasure G 2 (empiricalMeasure n z),
-          outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+          outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
               (conditionalRademacherLocalOscillation F z
                 ((1 / 2 : ℝ) ^ J *
                   (outerLpNorm (empiricalMeasure n z) G 2).toReal)) ≤
@@ -4261,7 +4262,7 @@ theorem conditionalRademacher_chaining
   · exact outerExpectation_conditionalRademacherLocalOscillation_le
       S hn z hQ hF J
   · have hFempty : F = ∅ := Set.not_nonempty_iff_eq_empty.mp hF
-    have hleft : outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    have hleft : outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (conditionalRademacherLocalOscillation F z
           ((1 / 2 : ℝ) ^ J *
             (outerLpNorm (empiricalMeasure n z) G 2).toReal)) = 0 := by
@@ -4287,7 +4288,7 @@ private theorem conditionalRademacher_global_chaining
     (hJ : uniformEntropyIntegral 1 F G 2 < ⊤) :
     ∃ C : ℝ, 0 < C ∧ ∀ {n : ℕ} (_hn : n ≠ 0) (z : Fin n → Ω),
       outerLpNorm (empiricalMeasure n z) G 2 < ⊤ →
-      outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (conditionalRademacherGlobalOscillation F z) ≤
         ENNReal.ofReal (C * (outerLpNorm (empiricalMeasure n z) G 2).toReal *
           uniformDudleyLedgerTail F (fourEnvelope G) 0) := by
@@ -4325,7 +4326,7 @@ private theorem conditionalRademacher_global_chaining
       intro σ
       simpa using conditionalRademacherGlobalOscillation_le_four_local
         hEnv hn z hfinite hpos σ
-    have houter : outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    have houter : outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (conditionalRademacherGlobalOscillation F z) ≤
         ENNReal.ofReal (C₄ *
           (outerLpNorm (empiricalMeasure n z) (fourEnvelope G) 2).toReal *
@@ -4360,7 +4361,7 @@ private theorem conditionalRademacher_skeletonGlobal_chaining
       (z z' : Fin n → Ω),
       outerLpNorm (empiricalMeasure n z) G 2 < ⊤ →
       outerLpNorm (empiricalMeasure n z') G 2 < ⊤ →
-      outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => ENNReal.ofReal (Real.sqrt n) *
             signedGhostDeviation (skeletonLocalDifferenceClass F₀ P δ)
               n z z' σ) ≤
@@ -4380,17 +4381,17 @@ private theorem conditionalRademacher_skeletonGlobal_chaining
     scaled_signedGhostDeviation_le_globalOscillations
       hF₀sub hEnv P δ hn z z' hfinite hfinite' σ
   calc
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (Real.sqrt n) *
           signedGhostDeviation (skeletonLocalDifferenceClass F₀ P δ)
             n z z' σ) ≤
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => conditionalRademacherGlobalOscillation F z σ +
             conditionalRademacherGlobalOscillation F z' σ) :=
       outerExpectation_mono hpoint
-    _ ≤ outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    _ ≤ outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (conditionalRademacherGlobalOscillation F z) +
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (conditionalRademacherGlobalOscillation F z') :=
       outerExpectation_add_le _ _
     _ ≤ ENNReal.ofReal (C *
@@ -4420,7 +4421,7 @@ private theorem conditionalRademacher_skeletonLocal_chaining
       (∀ f ∈ F₀, ∀ g ∈ F₀, distL2 P f g < δ →
         sampleL2Seminorm z' (f - g) < (1 / 2 : ℝ) ^ J *
           (outerLpNorm (empiricalMeasure n z') G 2).toReal) →
-      outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+      outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => ENNReal.ofReal (Real.sqrt n) *
             signedGhostDeviation (skeletonLocalDifferenceClass F₀ P δ)
               n z z' σ) ≤
@@ -4458,11 +4459,11 @@ private theorem conditionalRademacher_skeletonLocal_chaining
   have htail0 := dudleyScheduleTail_nonneg S (empiricalMeasure n z) hQ J
   have htail0' := dudleyScheduleTail_nonneg S (empiricalMeasure n z') hQ' J
   calc
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
         (fun σ => ENNReal.ofReal (Real.sqrt n) *
           signedGhostDeviation (skeletonLocalDifferenceClass F₀ P δ)
             n z z' σ) ≤
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (fun σ => conditionalRademacherLocalOscillation F z
               ((1 / 2 : ℝ) ^ J *
                 (outerLpNorm (empiricalMeasure n z) G 2).toReal) σ +
@@ -4470,11 +4471,11 @@ private theorem conditionalRademacher_skeletonLocal_chaining
               ((1 / 2 : ℝ) ^ J *
                 (outerLpNorm (empiricalMeasure n z') G 2).toReal) σ) :=
       outerExpectation_mono hpoint
-    _ ≤ outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    _ ≤ outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (conditionalRademacherLocalOscillation F z
             ((1 / 2 : ℝ) ^ J *
               (outerLpNorm (empiricalMeasure n z) G 2).toReal)) +
-        outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+        outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
           (conditionalRademacherLocalOscillation F z'
             ((1 / 2 : ℝ) ^ J *
               (outerLpNorm (empiricalMeasure n z') G 2).toReal)) :=
@@ -4814,7 +4815,7 @@ private theorem limsup_outerExpectation_skeletonLocal_le_fixedScale
   have hRmeas (n : ℕ) : Measurable (R n) :=
     measurable_empiricalMajorantRMS V X hVmeas hXmeas n
   let K : ℕ → Ξ × Ξ → ℝ≥0∞ := fun n ξ =>
-    outerExpectation (PMF.uniformOfFintype (Fin n → Bool)).toMeasure
+    outerExpectation (PMF.uniform (Fin n → Bool)).toMeasure
       (fun σ => ENNReal.ofReal (Real.sqrt n) *
         signedGhostDeviation (skeletonLocalDifferenceClass F₀ P δ) n
           (fun i => X i.val ξ.1) (fun i => X i.val ξ.2) σ)

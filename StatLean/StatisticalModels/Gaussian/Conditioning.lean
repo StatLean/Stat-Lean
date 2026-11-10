@@ -26,8 +26,8 @@ models (M-B2) and any finite-dimensional Gaussian regression.
 * `condKernel_ae_eq_gaussianCondKernel` (G3.5) — the abstract disintegration kernel of the
   joint agrees a.e. with the explicit Gaussian kernel (uniqueness of disintegration).
 
-PSD-degenerate `S₁₁` (pseudoinverse form) is a named future debt (D-G1); the conditional-
-expectation corollary is deferred with it.
+PSD-degenerate `S₁₁` (pseudoinverse form) is not covered here; the conditional-expectation
+corollary is deferred with it.
 
 **Reference.** T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*,
 Wiley, 1958, Thm 2.5.1 (the conditional normal law) (verify §) (`And58 Thm 2.5.1`);

@@ -15,11 +15,11 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §1.5 (improper prior distributions), pp. 26–30; the generalized
 posterior display on p. 28 and the propriety condition `∫ f(x|θ)π(θ)dθ < ∞` on p. 30.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. The definition reuses
-the Batch-1 `bayesDensity p π x = p θ x / predictiveDensity p π x` verbatim; `Measure.withDensity`
+**Proof formalization notes.** Definitions and basic constructions. The definition reuses
+the `bayesDensity p π x = p θ x / predictiveDensity p π x` verbatim; `Measure.withDensity`
 needs no finiteness of `π`, so the same formula covers proper and improper priors. On probability
-priors it agrees `(κ ∘ₘ π)`-a.e. with the abstract posterior `κ†π` (Batch-1
-`posterior_eq_withDensity_likelihood_div_predictive`); the pinned `posterior` itself requires
+priors it agrees `(κ ∘ₘ π)`-a.e. with the abstract posterior `κ†π`
+(`posterior_eq_withDensity_likelihood_div_predictive`); the pinned `posterior` itself requires
 `IsFiniteMeasure π` and thus does not exist in the improper case — this definition is the
 extension. Junk: the zero measure wherever `m(x) ∈ {0, ∞}` (`0/0 = 0`, `·/∞ = 0`).
 

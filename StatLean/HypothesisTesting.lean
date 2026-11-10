@@ -1,6 +1,4 @@
 -- Area umbrella: StatLean.HypothesisTesting
--- Maintained by the laptop session only (see CLAUDE.md §10). Imported by StatLean.lean once
--- the batch merges to main; until then it serves as the batch build target.
 import StatLean.HypothesisTesting.Bootstrap.Consistency
 import StatLean.HypothesisTesting.Bootstrap.Defs
 import StatLean.HypothesisTesting.Bootstrap.Edgeworth

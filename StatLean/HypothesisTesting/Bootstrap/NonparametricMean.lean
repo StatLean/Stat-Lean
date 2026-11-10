@@ -563,9 +563,9 @@ The entries of row `n` are independent and nonnegative with a common mean `s n �
 excess above a common truncation level has arbitrarily small integral **uniformly in the row**.
 Then the row averages converge to `c` in probability.
 
-This is the self-contained replacement for `Bootstrap/Consistency`'s
+This is a self-contained alternative to `Bootstrap/Consistency`'s
 `tendstoInMeasure_rowMean_triangular`, which derives uniform integrability from a Feller-type
-weak law and therefore carries that file's `sorryAx`. Here uniform integrability is supplied
+weak law. Here uniform integrability is supplied
 directly — by `exists_uniform_sq_trunc` at the application site — and the proof is the classical
 truncation argument: split each entry as `min (Z, M) + (Z − M)⁺`, control the bounded part by
 Chebyshev (its variance is at most `M²/n`) and the excess by Markov. -/

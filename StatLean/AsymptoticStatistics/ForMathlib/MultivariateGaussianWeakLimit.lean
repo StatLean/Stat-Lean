@@ -10,7 +10,7 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Analysis.Matrix.Order
-import Mathlib.Topology.Algebra.Module.Equiv
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.Analysis.LocallyConvex.Separation
 
 /-!
@@ -869,7 +869,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
     -- `0 ∉ frontier C` (from `0 ∈ interior C`).
     subst hS_zero
     rw [multivariateGaussian_zero_cov,
-      MeasureTheory.dirac_eq_zero_iff_not_mem h_front_meas]
+      MeasureTheory.dirac_eq_zero_iff_notMem h_front_meas]
     exact h0_not_in_frontier
   · -- **Case `S ≠ 0` singular PSD**: support subspace `V := range(sqrt S)` is a
     -- proper non-trivial subspace. Three reductions:

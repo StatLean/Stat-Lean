@@ -16,7 +16,7 @@ Ser. B* 57 (1995), 289–300).
 **Proof formalization notes.** `twoGroupMarginalDensity_eq` and `localFDR_eq_posteriorNullProb`
 are definitional unfoldings of `twoGroupsMixture`/`localFDR`; `localFDR_bayesRule_threshold` is
 `ENNReal.div_le_iff` (with the nondegenerate-marginal side conditions), turning the threshold on
-the ratio into a weighted-density comparison — the same posterior-odds thresholding as the Batch-2
+the ratio into a weighted-density comparison — the same posterior-odds thresholding as the
 `bayesTest` (`ModelChoice.Testing`).
 
 **Bibliographic comments.** The two-groups model and local false discovery rate are B. Efron's

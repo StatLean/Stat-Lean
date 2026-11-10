@@ -9,8 +9,7 @@ SSBD Lemma 26.2: `E_{S∼Dⁿ}[Rep_D(𝓕,S)] ≤ 2 E_{S∼Dⁿ}[R(𝓕∘S)]`, 
 `Rep_D(𝓕,S) = sup_{f∈𝓕}(L_D(f) − L_S(f))` — the one-sided, non-absolute
 ghost-sample symmetrization that powers all of Ch. 26's generalization bounds.
 
-**Reference.** SSBD §26.1, Lemma 26.2 (Eqs. (26.6)–(26.9)). Transcription:
-`notes/statistical_learning/book_statements/ch26-31-appB.md`.
+**Reference.** SSBD §26.1, Lemma 26.2 (Eqs. (26.6)–(26.9)).
 
 **Formalization notes.** The project's
 `ConcentrationInequalities/Symmetrization/Empirical.lean` proves the
@@ -26,7 +25,7 @@ proved at the *measure* level: `signVec N = ∑_σ 2⁻ᴺ δ_{signOf σ}`
 (`Measure.pi_eq` tested on boxes, the two-atom `radLaw` masses expanding by
 `Fintype.prod_sum`), so `integral_dirac` disposes of every measurability side
 condition and the identity holds for an arbitrary `g`. Index sets are countable
-and sups are `sSup`-of-image with a uniform bound `c`, per the batch sup policy.
+and sups are `sSup`-of-image with a uniform bound `c`.
 -/
 
 open MeasureTheory ProbabilityTheory StatLean.ConcentrationInequalities
@@ -163,7 +162,7 @@ countable index type and a uniformly bounded measurable family `F`,
 `E_{S∼Dⁿ} sup_{k∈K} (L_D(F k) − L_S(F k)) ≤ 2 E_{S∼Dⁿ} R(F ∘ S)`. -/
 theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
     (F : ι → Z → ℝ) (K : Set ι) {c : ℝ}
-    -- LEAN-ONLY: countable family per the batch sup policy
+    -- LEAN-ONLY: countable family, so the supremum is measurable
     (hKc : K.Countable)
     -- USER-INPUT: nonempty family; SSBD §26.1 (implicit)
     (hK : K.Nonempty)

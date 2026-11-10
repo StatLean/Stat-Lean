@@ -21,7 +21,7 @@ which is why the null limit law is nonstandard — and why FY never states it.
 **Non-targets (documented).** FY eq. (4.10) is Chan's (1991) Poisson-clump *heuristic*
 tail approximation, and Tables 4.1–4.2 are simulated percentage points; neither is a
 theorem and neither is stated here. **The null limit law of `S_T` is never stated in
-the book**, so there is nothing to formalize — not even as a debt.
+the book**, so there is nothing to formalize.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.1.3,
 eqs. (4.9)–(4.10) (pp. 134–136). (`FY §4.1.3`.)

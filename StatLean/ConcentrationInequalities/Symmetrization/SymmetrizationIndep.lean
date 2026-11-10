@@ -27,9 +27,7 @@ our pin). `map_signs_eq_signVec` upgrades per-index marginals + independence
 to the joint identity `μ.map (fun ω i => ε i ω) = signVec N`; the two public
 corollaries then follow from `symmetrization_upper`/`lower` via
 `integral_indepFun_eq_integral_prod` (`ForMathlib/IndepTransport`).
-Constants `2`, `2` exactly as the book. Named-sorry fallback of this work
-item: `symmetrization_lower_of_indepFun` (upper corollary +
-`map_signs_eq_signVec` proven).
+Constants `2`, `2` exactly as the book.
 
 **Bibliographic comments.** See `Symmetrization.lean`; the observation that
 the auxiliary signs may live on any enlargement of the probability space is
@@ -108,7 +106,7 @@ theorem symmetrization_upper_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure
     _ = 2 * ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ := by rw [htransport]
 
 /-- **Symmetrization, lower bound, book statement** (HDP §6.3, Lemma 6.3.2):
-`E‖∑ εᵢXᵢ‖ ≤ 2 E‖∑ Xᵢ‖`. Named-sorry debt candidate of this work item. -/
+`E‖∑ εᵢXᵢ‖ ≤ 2 E‖∑ Xᵢ‖`. -/
 theorem symmetrization_lower_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure μ]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {N : ℕ}

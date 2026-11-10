@@ -311,8 +311,8 @@ theorem nuisanceRate_shell_tail
       calc
         φ n D ≤ (Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2 /
             Real.rpow (δn n) β) * Real.rpow D β := h1.trans (by
-              gcongr
-              exact hbalance n)
+              exact mul_le_mul_of_nonneg_right
+                (div_le_div_of_nonneg_right (hbalance n) hpδ.le) hpD.le)
         _ = Real.sqrt ((n + 1 : ℕ) : ℝ) * (δn n) ^ 2 *
             Real.rpow 2 (((j + 1 : ℕ) : ℝ) * β) := by
           rw [show D = (2 : ℝ) ^ (j + 1) * δn n by rfl]

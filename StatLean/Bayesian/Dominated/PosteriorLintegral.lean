@@ -17,8 +17,8 @@ posterior and expectations under it); the formula is eq. (1.2.3) integrated agai
 **Proof formalization notes.** Follows from `posterior_eq_withDensity_likelihood_div_predictive`
 by `lintegral_withDensity_eq_lintegral_mul` and pulling the constant `(m x)⁻¹` out of the
 `lintegral` with `lintegral_mul_const''` (unconditional in `ℝ≥0∞`, so **no positivity hypotheses
-needed**). Stated for `ℝ≥0∞`-valued `g`; a real-integrable version can follow later. Watch
-CLAUDE.md gotcha 12 (`simp_rw` after the withDensity rewrite).
+needed**). Stated for `ℝ≥0∞`-valued `g`; a real-integrable version can follow later. Use `simp_rw`
+after the withDensity rewrite.
 
 **Bibliographic comments.** Ratios of the form `∫ g·p dπ / ∫ p dπ` are the computational core of
 Bayesian inference — already Laplace's 1774 memoir evaluates posterior expectations of exactly

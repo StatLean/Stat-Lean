@@ -24,7 +24,7 @@ JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Lemma 6.1 (p. 15); Lemma 3.2 (de
 The stub for this file originally carried FOUR lemmas, two of which (`dlPrior_ball_near_ge`,
 `dlPrior_fullBall_near_truth_ge`) were **false as stated** and have been removed; a third
 (`dlPrior_piece_le`) was an awkward intermediate folded into the proof of `dlBetaRatio_le`. The
-reasons, and the corrected route, are the substance of this milestone:
+reasons, and the corrected route, are the substance of this formalization:
 
 * **D10 (no absolute lower bound on `Π(B(θ₀,r))`; the ratio is what matters).** The removed
   `dlPrior_fullBall_near_truth_ge` claimed `Π(B(θ₀,r)) ≥ exp(−E)` with `E` free of any `r → 0`
@@ -62,13 +62,11 @@ both over the support block `S` and its complement `Sᶜ` (`CoordinateSplit`), u
   `≥ exp(−2(card ι)w)` (`PriorSmallBall.dlPrior_ball_zero_ge` on the `Sᶜ` subtype), `w` a tail bound
   at the clamped radius. Under `a = n^{−(1+β)}` this term `→ 0`.
 
-**Constants deviate from the paper (charter §1).** The radius-ratio constant is stated as `512`
-(roomy for `√10/4·17·e^C`); the `4, 4, 2` multipliers are generous placeholders. A closure session
-**may adjust these numerals and the precise form of the lower-order terms** to whatever the block
-bounds actually deliver, provided the exponent keeps the shape
+**Constants deviate from the paper.** The radius-ratio constant is stated as `512`
+(roomy for `√10/4·17·e^C`); the `4, 4, 2` multipliers are generous placeholders. The numerals and
+the precise form of the lower-order terms matter only through the shape of the exponent,
 `|S|·log(c·j) + (terms that PosteriorContraction bounds by O(r²) or o(r²) or →0 under
-a=n^{−(1+β)}, δ≥n^{−2}, ‖θ₀‖²≤q log⁴n)`; report the final exponent so the
-`PosteriorContraction` assembly can sum it.
+a=n^{−(1+β)}, δ≥n^{−2}, ‖θ₀‖²≤q log⁴n)`, which the `PosteriorContraction` assembly sums.
 
 **Deviations (density bounds).** D5 (P4 exponent `−(3/√2)√|x|`, absorbed by the `4·|S|^{3/4}√‖θ₀‖`
 slack); D8 (`a ≤ 1/2` for the density upper bound, `a ≤ 1` for the lower — both carried, discharged
@@ -255,7 +253,7 @@ marginal-tail bound and checks `w ≤ 1/2`). The radius `r` cancels between nume
 no `r → 0` pathology. Under the shape contract (`a = n^{−(1+β)}`, `δ ≥ n^{−2}`, `‖θ₀‖² ≤ q log⁴n`,
 `r² = q log n`) every non-`j` term is `O(r²)`, `o(r²)`, or `→ 0`, and `|S|·log(512j)` sums against
 the shell decay `e^{−j²r²/12}` — this is the exponent `PosteriorContraction.lean` sums. Constants
-are roomy placeholders adjustable at proof-closure (charter §1). -/
+are roomy and not optimized. -/
 theorem dlBetaRatio_le {a δ : ℝ}
     -- LEAN-ONLY: 0 < a ≤ 1/2 — DL scale range (both
     -- density bounds); engine-internal (BPPD Lemma 6.1).
@@ -308,9 +306,7 @@ theorem dlBetaRatio_le {a δ : ℝ}
   -- `Sᶜ-ratio ≤ exp(2(card ι)w)`. Multiply (add exponents),
   -- `Real.exp_le_exp` + `ENNReal.ofReal` monotone. ∎
   --
-  -- A closure session MAY tune the numeric constants (512→20000, 4, 4, 2) to whatever the block
-  -- bounds deliver, keeping the shape; report the final exponent for the `PosteriorContraction`
-  -- summation. Pin a single `DecidablePred` instance for `↑S`/`(↑S)ᶜ` so every `{j // j ∈ ↑S}`
+  -- Pin a single `DecidablePred` instance for `↑S`/`(↑S)ᶜ` so every `{j // j ∈ ↑S}`
   -- shares one `Fintype`/`Subtype.fintype` instance
   -- (avoids a `Fintype`-diamond in `projS`/`dlPrior`).
   let instS : DecidablePred (· ∈ (↑S : Set ι)) := Classical.decPred _

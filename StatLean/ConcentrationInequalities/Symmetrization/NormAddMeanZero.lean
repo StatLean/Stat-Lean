@@ -27,9 +27,7 @@ needed). Product form: integrate the pointwise inequality over `P₁` with
 `Integrable.integral_norm_prod_left` and
 `MeasurePreserving.integrable_comp` along `measurePreserving_fst`/`snd`.
 Integrability of `f` and `g` is a genuine hypothesis (the book's
-`E‖·‖ < ∞` standing assumption). Named-sorry fallback of this work item:
-`integral_norm_le_integral_norm_add_prod` (the product/Fubini form), with the
-pointwise core fully proven.
+`E‖·‖ < ∞` standing assumption).
 
 **Bibliographic comments.** This inequality is folklore (a one-line
 consequence of Jensen's inequality for the norm); in the Banach-space
@@ -66,8 +64,7 @@ theorem norm_le_integral_norm_add {β : Type*} {mβ : MeasurableSpace β}
 
 /-- **HDP Eq. (6.13)**, product form: for independent `Y ∼ P₁`-component `f`
 and mean-zero `Z ∼ P₂`-component `g` (independence by construction on
-`P₁.prod P₂`), `E‖Y‖ ≤ E‖Y + Z‖`. Named-sorry debt candidate of this work
-item. -/
+`P₁.prod P₂`), `E‖Y‖ ≤ E‖Y + Z‖`. -/
 theorem integral_norm_le_integral_norm_add_prod {α β : Type*}
     {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
     (P₁ : Measure α) (P₂ : Measure β)

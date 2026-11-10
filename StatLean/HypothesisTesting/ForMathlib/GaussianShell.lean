@@ -30,7 +30,7 @@ dimension factor `k^{1/4}` of Bentkus (2003). The elementary assembly only needs
 `C_k = 4 e² √k` (`gaussianShellConst`),
 
 i.e. the dimension factor `√k`. Ball's `k^{1/4}` is not reached, but the crude `k^{3/2}` of the
-coordinate-slice cover is improved by a full factor `k` (wave 22).
+coordinate-slice cover is improved by a full factor `k`.
 
 ## The argument
 
@@ -53,10 +53,10 @@ Everything rests on one elementary observation about convex sets and *lines*.
   produced by `exists_isometry_apply_single`) upgrades it to an **arbitrary** shift direction:
   `gaussian_mem_notMem_vadd_le`.
 
-The wave-3 covering combined these by unioning the `2k` sets `{x ∈ Bᵋ : x ± c • eᵢ ∉ Bᵋ}` with
-`c = 2ε√k`, giving `γ(shell) ≤ 2k · 2c/√(2π) ∼ k^{3/2} ε`: a factor `k` from the union and a
-factor `√k` from the escape step. The `k` is an artefact of the coordinate cover, and wave 22
-removes it (`gaussian_le_of_gaussian_shift_cover`): take a **single** random shift `w = 2ε Z`
+A coordinate covering combines these by unioning the `2k` sets `{x ∈ Bᵋ : x ± c • eᵢ ∉ Bᵋ}`
+with `c = 2ε√k`, giving `γ(shell) ≤ 2k · 2c/√(2π) ∼ k^{3/2} ε`: a factor `k` from the union and
+a factor `√k` from the escape step. The `k` is an artefact of the coordinate cover, and
+`gaussian_le_of_gaussian_shift_cover` removes it: take a **single** random shift `w = 2ε Z`
 with `Z ∼ N(0, I_k)` and integrate the two sides of
 
 `1_{S}(x) · 1{x + w ∉ V}`
@@ -762,8 +762,8 @@ private lemma gaussian_le_of_gaussian_shift_cover (hk : 0 < k)
 
 /-! ### The shell bounds -/
 
-/-- The constant of the Gaussian shell bound, `C_k = 4 e² √k` (wave 22; the wave-3 coordinate
-cover gave `8 k^{3/2}/√(2π)`, a factor `k` worse). Ball's sharp constant is `4 k^{1/4}`; the
+/-- The constant of the Gaussian shell bound, `C_k = 4 e² √k` (the coordinate cover gives
+`8 k^{3/2}/√(2π)`, a factor `k` worse). Ball's sharp constant is `4 k^{1/4}`; the
 `√k` here is what the single-Gaussian-shift cover of `gaussian_le_of_gaussian_shift_cover`
 provably gives, and per the provable-constants rule that is what is recorded. -/
 noncomputable def gaussianShellConst (k : ℕ) : ℝ := 4 * Real.exp 2 * Real.sqrt k

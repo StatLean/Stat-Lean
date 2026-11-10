@@ -25,8 +25,8 @@
     {"id":"AsymptoticStatistics.Core.Hilbert.integralL2","label":"integralL2","full":"AsymptoticStatistics.Core.Hilbert.integralL2","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Hilbert"},
     {"id":"AsymptoticStatistics.Core.Pathwise.IsEfficientInfluenceFunction","label":"IsEfficientInfluenceFunction","full":"AsymptoticStatistics.Core.Pathwise.IsEfficientInfluenceFunction","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Pathwise"},
     {"id":"Submodule.le_topologicalClosure","label":"le_topologicalClosure","full":"Submodule.le_topologicalClosure","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.Basic"},
+    {"id":"Submodule.smulMemClass","label":"smulMemClass","full":"Submodule.smulMemClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Defs"},
     {"id":"IsBoundedSMul.toUniformContinuousConstSMul","label":"toUniformContinuousConstSMul","full":"IsBoundedSMul.toUniformContinuousConstSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"NormedSpace.toIsBoundedSMul","label":"toIsBoundedSMul","full":"NormedSpace.toIsBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Module.Basic"},
     {"id":"Submodule.isTopologicalAddGroup","label":"isTopologicalAddGroup","full":"Submodule.isTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.Basic"},
     {"id":"Submodule.subset_span","label":"subset_span","full":"Submodule.subset_span","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Span.Defs"},
     {"id":"AddSubgroup.isUniformAddGroup","label":"isUniformAddGroup","full":"AddSubgroup.isUniformAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.IsUniformGroup.Basic"},
@@ -44,9 +44,9 @@
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"SMulMemClass.continuousSMul","label":"continuousSMul","full":"SMulMemClass.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.MulAction"},
     {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
-    {"id":"Submodule.smulMemClass","label":"smulMemClass","full":"Submodule.smulMemClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Defs"},
     {"id":"Submodule.HasOrthogonalProjection.ofCompleteSpace","label":"ofCompleteSpace","full":"Submodule.HasOrthogonalProjection.ofCompleteSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Projection.Basic"},
-    {"id":"squeeze_zero","label":"squeeze_zero","full":"squeeze_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Lemmas"}
+    {"id":"squeeze_zero","label":"squeeze_zero","full":"squeeze_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Lemmas"},
+    {"id":"norm_nonneg","label":"norm_nonneg","full":"norm_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.LowerBounds.LAMSemiparametricCone.semiparametric_local_asymptotic_minimax_nondominated","target":"AsymptoticStatistics.Core.NondominatedTangent.NondominatedTangentCone"},
@@ -115,9 +115,8 @@
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"AsymptoticStatistics.Core.NondominatedTangent.tangentSpace"},
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"Submodule.le_topologicalClosure"},
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"Submodule.smulMemClass"},
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"IsBoundedSMul.toUniformContinuousConstSMul"},
-    {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"NormedSpace.toIsBoundedSMul"},
-    {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"IsScalarTower.right"},
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"Submodule.isTopologicalAddGroup"},
     {"source":"AsymptoticStatistics.Core.NondominatedTangent.selected_mem_tangentSpace","target":"Submodule.subset_span"},
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"AsymptoticStatistics.Core.NondominatedTangent.NondominatedTangentCone"},
@@ -154,6 +153,7 @@
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"Submodule.smulMemClass"},
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"Submodule.HasOrthogonalProjection.ofCompleteSpace"},
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"squeeze_zero"},
+    {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"norm_nonneg"},
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"Submodule.subset_span"},
     {"source":"AsymptoticStatistics.LowerBounds.NondominatedFiniteExperimentMinimax.finiteCarrierChart_exhausts_eifGram","target":"LE.le.trans"}
   ]

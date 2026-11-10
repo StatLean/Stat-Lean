@@ -24,11 +24,11 @@ formula, verbatim but unnumbered), p. 231.
 
 **Proof formalization notes.** The test: posterior expected losses of the two actions are
 `a₁·post(Θ₀ᶜ)` and `a₀·post(Θ₀)` (indicator lintegrals of `hypLoss`), so the a.e.-argmin engine
-`isBayesEstimator_of_ae_argmin` (Batch 1) applies with a `Bool.rec` over actions; measurability of
+`isBayesEstimator_of_ae_argmin` applies with a `Bool.rec` over actions; measurability of
 `bayesTest` comes from `Kernel.measurable_coe`. The point-null formula: the mixture prior is
 finite by instances (`w : ℝ≥0` smul), the predictive density over it splits by
 `lintegral_add_measure`/`lintegral_smul_measure`/`lintegral_dirac'`, and the posterior singleton
-mass follows from the Batch-1 headline with `withDensity_apply` on `{θ₀}` (the hypothesis
+mass follows from the dominated Bayes formula with `withDensity_apply` on `{θ₀}` (the hypothesis
 `π₁{θ₀} = 0` keeps the alternative from contaminating the atom).
 
 **Bibliographic comments.** The threshold structure of Bayes tests is the Bayesian counterpart of
@@ -127,8 +127,10 @@ theorem bayesTest_eq_threshold [StandardBorelSpace Θ] [Nonempty Θ]
       ↔ (a₁ / (a₀ + a₁) ≤ (κ†π) x Θ₀) := by
     rw [hcompl, ENNReal.div_le_iff' h0 h1, add_mul,
       ← ENNReal.add_le_add_iff_right hfin, ← mul_add, tsub_add_cancel_of_le hp, mul_one]
-  simp only [bayesTest]
-  exact decide_eq_decide.mpr hiff
+  by_cases htest : a₁ * (κ†π) x Θ₀ᶜ ≤ a₀ * (κ†π) x Θ₀
+  · simp [bayesTest, htest, hiff.mp htest]
+  · have hnot : ¬a₁ / (a₀ + a₁) ≤ (κ†π) x Θ₀ := fun h => htest (hiff.mpr h)
+    simp [bayesTest, htest, hnot]
 
 /-- **Point-null posterior probability** (Robert §5.2.4, p. 231): under the mixture prior
 `w·δ_{θ₀} + (1−w)·π₁` with `π₁{θ₀} = 0`, the posterior mass of the null atom is

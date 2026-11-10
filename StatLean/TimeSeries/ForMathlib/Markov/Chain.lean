@@ -14,7 +14,7 @@ and the iterated-kernel picture: invariance propagates to all powers, so a chain
 at an invariant law has all one-dimensional marginals equal — the marginal core of FY
 Theorem 2.2 ("ergodicity ⇒ initializing at the stationary law gives a strictly
 stationary process"; the full finite-dimensional statement needs the path-space
-construction and is deferred to the batch that builds it).
+construction, which is not carried out here).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.4
 (pp. 33–35): the Markov-chain framework, eq. (2.9) (`n`-step laws), Theorem 2.2.

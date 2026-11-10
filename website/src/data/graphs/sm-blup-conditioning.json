@@ -14,6 +14,7 @@
     {"id":"StatLean.StatisticalModels.blockPair","label":"blockPair","full":"StatLean.StatisticalModels.blockPair","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.BlockIndex"},
     {"id":"StatLean.StatisticalModels.compProd_gaussianCondKernel","label":"compProd_gaussianCondKernel","full":"StatLean.StatisticalModels.compProd_gaussianCondKernel","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Gaussian.Conditioning"},
     {"id":"StatLean.StatisticalModels.MixedEffects.lmmJointLaw_eq_blockGaussian","label":"lmmJointLaw_eq_blockGaussian","full":"StatLean.StatisticalModels.MixedEffects.lmmJointLaw_eq_blockGaussian","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.MixedEffects.BLUP"},
+    {"id":"MeasureTheory.Measure.bindProd","label":"bindProd","full":"MeasureTheory.Measure.bindProd","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindProd"},
     {"id":"StatLean.StatisticalModels.affineNoiseKernel","label":"affineNoiseKernel","full":"StatLean.StatisticalModels.affineNoiseKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Affine"},
     {"id":"StatLean.StatisticalModels.condCovMatrix","label":"condCovMatrix","full":"StatLean.StatisticalModels.condCovMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Conditioning"},
     {"id":"StatLean.StatisticalModels.condMeanMatrix","label":"condMeanMatrix","full":"StatLean.StatisticalModels.condMeanMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Conditioning"},
@@ -45,8 +46,7 @@
     {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
     {"id":"completableTopField_of_complete","label":"completableTopField_of_complete","full":"completableTopField_of_complete","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformField"},
-    {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
-    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"}
+    {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.MixedEffects.compProd_lmmJointLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
@@ -62,10 +62,12 @@
     {"source":"StatLean.StatisticalModels.MixedEffects.compProd_lmmJointLaw","target":"StatLean.StatisticalModels.compProd_gaussianCondKernel"},
     {"source":"StatLean.StatisticalModels.MixedEffects.compProd_lmmJointLaw","target":"StatLean.StatisticalModels.MixedEffects.lmmJointLaw_eq_blockGaussian"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.gaussianCondKernel","target":"StatLean.StatisticalModels.affineNoiseKernel"},
     {"source":"StatLean.StatisticalModels.gaussianCondKernel","target":"StatLean.StatisticalModels.condCovMatrix"},
     {"source":"StatLean.StatisticalModels.gaussianCondKernel","target":"StatLean.StatisticalModels.condMeanMatrix"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmJointLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.lmmJointLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"StatLean.StatisticalModels.MixedEffects.lmmLaw"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"RingHomInvPair.ids"},
@@ -99,7 +101,6 @@
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"PiLp.completeSpace"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"completableTopField_of_complete"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"EMetricSpace.metrizableSpace"},
-    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"}
+    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw_multivariateGaussian","target":"EMetricSpace.metrizableSpace"}
   ]
 }

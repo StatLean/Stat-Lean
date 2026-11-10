@@ -2,6 +2,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.MeasureTheory.Measure.Prod
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Linear mixed-effects models — the latent-variable structure
@@ -14,7 +15,7 @@ parametric families:
 * `LMMDesign n p q` — the constitutive design pair: fixed-effects design `X` and
   random-effects design `Z`;
 * `lmmLaw D β G R` — the observation law of `Y = Xβ + Z b + ε` with `b ∼ G` and `ε ∼ R`
-  independent (`(G.prod R).map (affine)` — independence of latent effects and noise is
+  independent (`(G.bindProd R).map (affine)` — independence of latent effects and noise is
   structural);
 * `lmmClusterLaw` — `M` independent clusters, each drawing its own latent effect
   (`Measure.pi` of per-cluster laws).
@@ -29,7 +30,7 @@ mixed effects) (verify §) (`FLW Ch. 8`); C. E. McCulloch, S. R. Searle, and J. 
 *Generalized, Linear, and Mixed Models*, 2nd ed., Wiley, 2008, Ch. 6 (verify §)
 (`MSN Ch. 6`).
 
-**Proof formalization notes.** Laptop-only data model — definitions only. *Book vs Lean:*
+**Proof formalization notes.** Data model — definitions only. *Book vs Lean:*
 the books state the model with Gaussian `b` and `ε`; here the laws are free parameters with
 mean/covariance entering as USER-INPUT moment hypotheses in `Marginal` — the first-moment and
 second-moment conclusions (`E Y = Xβ`, `Cov Y = Z G Zᵀ + R`) hold with no Gaussianity, a
@@ -58,7 +59,7 @@ independent — the latent law `G` arbitrary (`LW82` Eq. (1.1); `FLW Ch. 8`). -/
 noncomputable def lmmLaw {n p q : ℕ} (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p))
     (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n))) :
     Measure (EuclideanSpace ℝ (Fin n)) :=
-  (G.prod R).map fun be =>
+  (G.bindProd R).map fun be =>
     Matrix.toEuclideanLin (𝕜 := ℝ) D.X β + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2
 
 /-- `M` independent clusters, each with its own design and its own latent draw

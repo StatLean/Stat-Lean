@@ -60,7 +60,4 @@ import StatLean.TimeSeries.GARCH.StochasticVolatility
 Time series analysis after J. Fan and Q. Yao, *Nonlinear Time Series: Nonparametric and
 Parametric Methods*, Springer, 2003 (`FY` in tags). Scope: FY ch. 1 model definitions;
 §2.1–§2.4 and §2.6 (skipping §2.1.4, with §2.7 proofs); §3.1–§3.5; §4.1–§4.2.
-Roadmap and status: `notes/time_series/` (laptop-local).
-
-Laptop-only file: edited by the laptop session at wave merges.
 -/

@@ -29,10 +29,7 @@ hypotheses (they are USER-INPUT "T totally bounded", HDP p.227 footnote, not
 laundering). Measurability is UNCONDITIONAL: `ε ↦ coveringNumber T ε` is a
 globally antitone `ℕ∞`-valued function (`Antitone.measurable`), `toNat` is
 measurable on the countable discrete `ℕ∞`, and cast/log/sqrt are continuous —
-so no measurability hypotheses pollute the integral statements. Named-sorry
-fallback of the entropy work item lives in `Chaining/EntropySum.lean`
-(`sum_window_le_two_mul_dudleyIntegral`); this file's lemmas are all
-elementary.
+so no measurability hypotheses pollute the integral statements.
 
 **Bibliographic comments.** The metric entropy $\log \mathcal{N}$ is due to
 A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets in

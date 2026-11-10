@@ -80,8 +80,7 @@ theorem card_sampleMedian_le (hn : n ≠ 0) (x : Fin n → ℝ) :
 The nonemptiness hypothesis is not removable: at `n = 0` the junk value
 `sampleMedian = 0` would force `0 = 0 + a` for every `a`, and the counterexample
 `¬ IsLocEquivariant (sampleMedian (n := 0))` is machine-checked
-(`intro h; have := h 1 (fun _ => 0); simp [sampleMedian] at this`). The round-1 stub
-omitted the guard; repaired at wave-A merge. -/
+(`intro h; have := h 1 (fun _ => 0); simp [sampleMedian] at this`). -/
 theorem sampleMedian_locEquivariant (hn : n ≠ 0) :
     -- LEAN-ONLY: nonempty sample — the n = 0 junk median is not equivariant (see docstring)
     PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by

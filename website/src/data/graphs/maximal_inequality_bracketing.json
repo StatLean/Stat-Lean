@@ -17,7 +17,8 @@
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
     {"id":"iSup_congr_Prop","label":"iSup_congr_Prop","full":"iSup_congr_Prop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
-    {"id":"iSup_neg","label":"iSup_neg","full":"iSup_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"iSup_of_empty'","label":"iSup_of_empty'","full":"iSup_of_empty'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
+    {"id":"sSup_empty","label":"sSup_empty","full":"sSup_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Bounds.Basic"},
     {"id":"bot_eq_zero'","label":"bot_eq_zero'","full":"bot_eq_zero'","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
     {"id":"ciSup_const","label":"ciSup_const","full":"ciSup_const","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompletePartialOrder.Indexed"},
     {"id":"MeasureTheory.outerExpectation_const","label":"outerExpectation_const","full":"MeasureTheory.outerExpectation_const","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation"},
@@ -45,8 +46,7 @@
     {"id":"LT.lt.ne","label":"ne","full":"LT.lt.ne","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.bracketingBookCutoff_coe","label":"bracketingBookCutoff_coe","full":"AsymptoticStatistics.EmpiricalProcess.bracketingBookCutoff_coe","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.BracketingMaximalGeneral"},
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
-    {"id":"Real.sqrt_pos_of_pos","label":"sqrt_pos_of_pos","full":"Real.sqrt_pos_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"}
+    {"id":"mul_pos","label":"mul_pos","full":"mul_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope"},
@@ -64,7 +64,8 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"Nat.cast_zero"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"neg_neg_of_pos"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"iSup_congr_Prop"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"iSup_neg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"iSup_of_empty'"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"sSup_empty"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"bot_eq_zero'"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"ciSup_const"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"MeasureTheory.outerExpectation_const"},
@@ -92,7 +93,6 @@
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"LT.lt.ne"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"AsymptoticStatistics.EmpiricalProcess.bracketingBookCutoff_coe"},
     {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"le_of_lt"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"mul_pos"},
-    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"Real.sqrt_pos_of_pos"}
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingMaximal_full","target":"mul_pos"}
   ]
 }

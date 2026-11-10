@@ -3,6 +3,7 @@ import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import Mathlib.Probability.ConditionalProbability
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Analysis.Convex.Basic
+import StatLean.ForMathlib.UnitInterval
 
 /-!
 # The Cox partial likelihood — definition and the discrete conditional theorem
@@ -23,7 +24,7 @@ Cox's partial likelihood on right-censored covariate data
 
 *Deliberate non-theorems, documented:* the continuous-time version of S5.5 (the conditional
 *density* of the failing subject given the risk set) needs conditional-density calculus for
-order statistics — named future debt, `Cox75` / S. A. Murphy and A. W. van der Vaart, "On
+order statistics — not formalized here; see `Cox75` / S. A. Murphy and A. W. van der Vaart, "On
 profile likelihood," *JASA* **95** (2000), 449–465. The factor-by-factor assembly of the
 product over event times as iterated conditioning (Cox's own §5 narrative) is a modeling
 bridge with no additional mathematical content beyond S5.5 — narrated here, not formalized.
@@ -32,7 +33,7 @@ bridge with no additional mathematical content beyond S5.5 — narrated here, no
 "Partial likelihood," *Biometrika* **62** (1975), 269–276 (`Cox75`); ABGK §VII.2 (verify §).
 
 **Proof formalization notes.** S5.5 is a finite computation over Bernoulli cubes:
-`Measure.pi` of `PMF.bernoulli`s, `ProbabilityTheory.cond`, and `Finset` algebra — the
+`Measure.pi` of `bernoulliMeasure`s, `ProbabilityTheory.cond`, and `Finset` algebra — the
 one-failure event probability factorizes as `p_i ∏_{j≠i}(1−p_j)`; dividing by the sum and
 substituting the odds `p_j/(1−p_j) = θ₀ e^{⟪β,z_j⟫}` cancels `θ₀` and the common
 `∏(1−p_j)` factor (needs `p_j < 1`, USER-INPUT). Denominator positivity of the partial
@@ -125,7 +126,7 @@ exactly the coordinates in `R`, so `Measure.pi_pi` evaluates it as
 `p_{i'} ∏_{j ∈ R \ {i'}} (1 − p_j)`. -/
 private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ≥0)
     (h1 : ∀ j, prob j ≤ 1) {i' : Fin n} (hi' : i' ∈ R) :
-    (Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure)
+    (Measure.pi fun j => bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)))
         {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')}
       = ENNReal.ofReal ((prob i' : ℝ) * ∏ j ∈ R.erase i', (1 - (prob j : ℝ))) := by
   obtain ⟨s, hs⟩ : ∃ s : Fin n → Set Bool, ∀ j,
@@ -159,25 +160,28 @@ private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ�
         refine ⟨fun hc => ?_, fun hc => absurd hc hji⟩
         rw [hj] at hc
         simp at hc
-  have hprod : ∏ j : Fin n, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
-      = ∏ j ∈ R, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j) := by
+  have hprod :
+      ∏ j : Fin n, bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)) (s j)
+        = ∏ j ∈ R, bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)) (s j) := by
     refine (Finset.prod_subset (Finset.subset_univ R) fun j _ hjR => ?_).symm
     rw [hs, ite_eq_right hjR]
     exact measure_univ
   have hsi : s i' = ({true} : Set Bool) := by rw [hs, ite_eq_left hi', ite_eq_left rfl]
-  have hrest : ∀ j ∈ R.erase i', (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
-      = ENNReal.ofReal (1 - (prob j : ℝ)) := by
+  have hrest : ∀ j ∈ R.erase i',
+      bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)) (s j)
+        = ENNReal.ofReal (1 - (prob j : ℝ)) := by
     intro j hj
     have hsj : s j = ({false} : Set Bool) := by
       rw [hs, ite_eq_left (Finset.mem_of_mem_erase hj), ite_eq_right (Finset.ne_of_mem_erase hj)]
-    rw [hsj, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton false),
+    rw [hsj, bernoulliMeasure_apply_of_notMem_of_mem _ (measurableSet_singleton _) (by simp) rfl,
       ENNReal.ofReal_sub _ (prob j).coe_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal]
-    simp [PMF.bernoulli_apply]
-  have htrue : (PMF.bernoulli (prob i') (h1 i')).toMeasure ({true} : Set Bool)
-      = ENNReal.ofReal ((prob i' : ℝ)) := by
-    rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton true),
+    simp [ENNReal.coe_sub]
+  have htrue :
+      bernoulliMeasure true false (unitInterval.ofNNReal (prob i') (h1 i')) ({true} : Set Bool)
+        = ENNReal.ofReal ((prob i' : ℝ)) := by
+    rw [bernoulliMeasure_apply_of_mem_of_notMem _ (measurableSet_singleton _) rfl (by simp),
       ENNReal.ofReal_coe_nnreal]
-    simp [PMF.bernoulli_apply]
+    simp
   have hnn : ∀ j ∈ R.erase i', (0 : ℝ) ≤ 1 - (prob j : ℝ) := fun j _ => by
     have : ((prob j : ℝ)) ≤ 1 := by exact_mod_cast h1 j
     linarith
@@ -202,12 +206,12 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
     (hlt : ∀ j ∈ R, (prob j : ℝ) < 1)
     -- USER-INPUT: the queried subject belongs to the risk set; Cox72 §6
     {i : Fin n} (hi : i ∈ R) :
-    (Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure)[|{ω |
+    (Measure.pi fun j => bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)))[|{ω |
         (R.filter fun j => ω j = true).card = 1}] {ω | ω i = true}
       = ENNReal.ofReal
           (Real.exp ⟪β, z i⟫_ℝ / ∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ) := by
   set μ : Measure (Fin n → Bool) :=
-    Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure with hμ
+    Measure.pi fun j => bernoulliMeasure true false (unitInterval.ofNNReal (prob j) (h1 j)) with hμ
   have hQpos : (0 : ℝ) < ∏ j ∈ R, (1 - (prob j : ℝ)) :=
     Finset.prod_pos fun j hj => by have := hlt j hj; linarith
   have hEsum : (0 : ℝ) < ∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ :=

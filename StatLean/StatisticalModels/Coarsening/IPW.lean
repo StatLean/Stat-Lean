@@ -10,7 +10,7 @@ $$\mathbb E_{\text{obs}}\Big[\frac{R\,Y}{\pi(X)}\Big] = \mathbb E_Q[Y].$$
 This is exactly the identification statement that the semiparametric example
 `AsymptoticStatistics.Examples.MARMean` *assumes* of its estimand `marMean_Ψ` ("supplied
 separately by the caller") — supplied here at the model level; the agreement lemma with
-`marMean_Ψ` lands in `Coarsening.Ignorability` (batch C-B2) after the observed-carrier
+`marMean_Ψ` lands in `Coarsening.Ignorability` after the observed-carrier
 transport.
 
 **Reference.** D. G. Horvitz and D. J. Thompson, "A generalization of sampling without

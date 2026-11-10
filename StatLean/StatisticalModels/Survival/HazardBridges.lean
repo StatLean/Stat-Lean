@@ -20,10 +20,10 @@ deferred, see below):
   $S(t) = \prod_{s \le t} (1 - \Delta\Lambda(s))$ — the population product-limit identity
   mirrored by the Kaplan–Meier estimator.
 
-**Deferred (named debt D-S1):** the mixed-case bridge via the product integral
+**Deferred:** the mixed-case bridge via the product integral
 $S(t) = \prodi_{(0,t]} (1 - \Lambda(ds))$ requires genuine product-integration theory
 (R. D. Gill and S. Johansen, "A survey of product-integration with a view toward application
-in survival analysis," *Ann. Statist.* **18** (1990), 1501–1555) — a future milestone; the
+in survival analysis," *Ann. Statist.* **18** (1990), 1501–1555) — outside the present scope; the
 two regime bridges here cover the textbook uses.
 
 **Reference.** ABGK §II.1 (the `Λ = −log S` identity in the continuous case; the discrete

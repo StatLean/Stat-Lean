@@ -25,8 +25,6 @@ even-moment core is the termwise comparison `|x|^{2n} ≤ K^{2n}·n!·e^{(x/K)²
 `[IsProbabilityMeasure μ]`). Statement language: `eLpNorm` at
 `ENNReal.ofReal p`; the raw core is a plain lintegral-of-pow bound so the
 rpow/coercion conversion is confined to one private helper at proof time.
-Named-sorry fallback of this work item: `eLpNorm_le_of_subGaussianNorm_le`
-(the real-`p` reduction); the even-moment core must close.
 
 **Bibliographic comments.** Moment growth `‖X‖_p ≍ √p` as the second face of
 sub-Gaussianity is classical (Khinchin-type inequalities; Buldygin–Kozachenko

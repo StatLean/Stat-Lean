@@ -38,6 +38,7 @@
     {"id":"StatLean.StatisticalModels.FactorModels.toEuclideanLin_one_apply","label":"toEuclideanLin_one_apply","full":"StatLean.StatisticalModels.FactorModels.toEuclideanLin_one_apply","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Bridge"},
     {"id":"StatLean.StatisticalModels.FactorModels.measurementKernel","label":"measurementKernel","full":"StatLean.StatisticalModels.FactorModels.measurementKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
     {"id":"StatLean.StatisticalModels.MixedEffects.LMMDesign","label":"LMMDesign","full":"StatLean.StatisticalModels.MixedEffects.LMMDesign","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.MixedEffects.Defs"},
+    {"id":"MeasureTheory.Measure.bindProd","label":"bindProd","full":"MeasureTheory.Measure.bindProd","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindProd"},
     {"id":"StatLean.StatisticalModels.MixedEffects.LMMDesign.mk","label":"mk","full":"StatLean.StatisticalModels.MixedEffects.LMMDesign.mk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.MixedEffects.Defs"},
     {"id":"Continuous.measurable","label":"measurable","full":"Continuous.measurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
@@ -45,8 +46,7 @@
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
     {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
-    {"id":"Measurable.add","label":"add","full":"Measurable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
-    {"id":"ContinuousAdd.measurableMul₂","label":"measurableMul₂","full":"ContinuousAdd.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"}
+    {"id":"Measurable.add","label":"add","full":"Measurable.add","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"}
   ],
   "edges": [
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_multivariateGaussian","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
@@ -87,6 +87,7 @@
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw","target":"StatLean.StatisticalModels.FactorModels.measurementKernel"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorCovariance","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
     {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.lmmLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorDesign","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorDesign","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorDesign","target":"StatLean.StatisticalModels.MixedEffects.LMMDesign.mk"},
@@ -111,9 +112,9 @@
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"Finite.of_fintype"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"FiniteDimensional.rclike_to_real"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"Measurable.add"},
-    {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"ContinuousAdd.measurableMul₂"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"PiLp.secondCountableTopology"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"StatLean.StatisticalModels.FactorModels.measurementKernel"},
+    {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"MeasureTheory.Measure.bindProd"},
     {"source":"StatLean.StatisticalModels.FactorModels.factorLaw_eq_lmmLaw","target":"StatLean.StatisticalModels.FactorModels.toEuclideanLin_one_apply"}
   ]
 }

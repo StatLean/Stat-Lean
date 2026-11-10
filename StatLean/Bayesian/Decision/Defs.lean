@@ -32,7 +32,7 @@ and Definition 2.3.3 (Bayes estimator, integrated risk `r(π,δ)`, posterior exp
 mean), p. 77–78; §2.5.3, eq. (2.5.5), and §4.1.2 (MAP estimator, 0–1 loss → posterior mode),
 p. 81 and p. 166.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. Terminology bridge:
+**Proof formalization notes.** Definitions and basic constructions. Terminology bridge:
 Robert's *integrated risk* `r(π,δ)` is Mathlib's `avgRisk`, and Robert's *Bayes risk* `r(π)` is
 Mathlib's `bayesRisk`; `IsBayesEstimator ℓ P κ π := avgRisk ℓ P κ π = bayesRisk ℓ P π` is our own
 formalization of Robert Definition 2.3.3, not taken from any external Lean source. Design choices:

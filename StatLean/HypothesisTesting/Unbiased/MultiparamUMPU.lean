@@ -7,6 +7,7 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import Mathlib.Analysis.Convex.Topology
 import StatLean.PointEstimation.ForMathlib.MGFUniquenessPi
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # UMP unbiased tests for multiparameter exponential families
@@ -3543,7 +3544,7 @@ theorem isUMPU_conditional_point
         = α * ∫ u, u ∂(condDistrib U T (P p) t)) :
     IsUMPU P {p ∈ Ω | p.1 = θ₀} {p ∈ Ω | p.1 ≠ θ₀} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- REPAIRED AND PROVED (wave 8). Both repairs of the other three theorems are applied here
+  -- REPAIRED AND PROVED. Both repairs of the other three theorems are applied here
   -- as well (`hsuff`, `hΩ_aff`, `[BorelSpace Ξ] [FiniteDimensional ℝ Ξ]`): the frozen form was
   -- FALSE, refuted by
   -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample`, and the
@@ -3717,7 +3718,7 @@ theorem isUMPU_conditional_point
 /-- The conditional critical value at level `α`: the `(1−α)`-quantile of the distribution
 function of `μ`. Explicit — this is what makes the selection measurable in the conditioning
 variable, `t ↦ critC (κ t) α` being a quantile of a measurable family of CDFs. -/
-private noncomputable def critC (μ : Measure ℝ) (α : ℝ) : ℝ := quantile (⇑(cdf μ)) (1 - α)
+private noncomputable def critC (μ : Measure ℝ) (α : ℝ) : ℝ := quantile (⇑(bindCDF μ)) (1 - α)
 
 /-- The matching randomization weight: the fraction of the atom at `critC μ α` needed to make
 the size exactly `α`. Division by zero returns `0`, which is precisely the correct value when
@@ -3745,9 +3746,10 @@ private lemma cdf_sublevel_nonempty_bddBelow (μ : Measure ℝ) [IsProbabilityMe
 already reached `1 − α` at `x`. This is what turns the measurability of `t ↦ cdf (κ t) x`
 into the measurability of `t ↦ critC (κ t) α`. -/
 private lemma critC_le_iff (μ : Measure ℝ) [IsProbabilityMeasure μ] {α : ℝ}
-    (hα0 : 0 < α) (hα1 : α < 1) (x : ℝ) : critC μ α ≤ x ↔ 1 - α ≤ cdf μ x :=
-  quantile_le_iff (monotone_cdf (μ := μ)) (fun y => (cdf μ).right_continuous y)
-    (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).1 (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).2
+    (hα0 : 0 < α) (hα1 : α < 1) (x : ℝ) : critC μ α ≤ x ↔ 1 - α ≤ cdf μ x := by
+  simpa only [critC, bindCDF_eq_cdf] using
+    (quantile_le_iff (monotone_cdf (μ := μ)) (fun y => (cdf μ).right_continuous y)
+      (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).1 (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).2)
 
 /-- **The explicit constants attain the level exactly.** The one-sided test with threshold
 `critC μ α` and boundary weight `critGamma μ α` has size exactly `α`, and the weight is a

@@ -50,9 +50,6 @@ insert-contradiction) — no Zorn, no `Metric.packingNumber`. The two
 `private` lemmas duplicate ~15 lines of `AsymptoticStatistics` empirical-
 measure content (deliberate: importing another area's concept layer is
 forbidden); documented for future promotion to a shared `ForMathlib`.
-Named-sorry fallback of this work item: `card_le_pow_of_entropy_bound`
-(the footnote-4 algebra); the probabilistic/combinatorial spine
-`sepFamily_card_le_of_vcDim_le` must close against it.
 
 **Bibliographic comments.** Covering numbers of VC classes are due to
 R. M. Dudley, "Central limit theorems for empirical measures," *Ann.

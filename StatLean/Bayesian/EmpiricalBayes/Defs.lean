@@ -21,7 +21,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 are not in Robert; see B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation,
 Testing, and Prediction*, Cambridge University Press, 2010, §2.1 and §5.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `mixtureDensity` is
+**Proof formalization notes.** Definitions and basic constructions. `mixtureDensity` is
 definitionally `predictiveDensity`; it is renamed to match the empirical-Bayes and large-scale-
 inference literature (there the mixing distribution `G` is the object of interest, not a Bayesian
 prior). All densities are `ℝ≥0∞`-valued; `localFDR` uses extended-nonnegative division, taking the

@@ -25,7 +25,7 @@ research-level dimension factor obtained by Fourier analysis over convex bodies.
 `(β/√n)^{1/4}`, over balls (`berryEsseen_ball_elementary`, which discharges
 `bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`) — and, over
 convex sets, the strictly better `(β/√n)^{1/2}` of `berryEsseen_convex_improved`, obtained by
-the Cameron–Martin route of the wave-13/16 sections at the end of the file.
+the Cameron–Martin route of the sections at the end of the file.
 
 What this file records instead is the strongest bound the elementary route yields *honestly*.
 The single ingredient that is proved unconditionally and is genuinely dimension-free is the
@@ -41,7 +41,7 @@ route for a half-space, and it is the one-dimensional marginal statement: the pr
 ## Honest accounting of the elementary route (see the module docstring below for the report)
 
 For the **ball** route the elementary programme is now **complete**: `berryEsseen_ball_elementary`
-is proved outright and is axiom-clean (it depends on no `sorry`, direct or transitive). Every
+is proved outright. Every
 ingredient is proved here unconditionally, each with a dimension-free constant:
 
 * `gaussian_slab_measure_le` — slab anti-concentration (`1/√(2π)`);
@@ -74,7 +74,7 @@ With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussia
 public χ² moments) these suffice and the ball assembly closes.
 
 The *convex* route is **now complete as well**: `berryEsseen_convex_elementary` is proved
-outright and is axiom-clean. Its two ingredients are
+outright. Its two ingredients are
 
 * `exists_smoothed_convex_indicator` — the smoothed convex indicator (mollification by a
   `ContDiffBump`, dimension-dependent constant); see its docstring for the construction and the
@@ -85,14 +85,14 @@ outright and is axiom-clean. Its two ingredients are
   erosion twin `γ(B) ≤ γ(B₋ᵋ) + C_k ε`. These are `gaussian_thickening_le` and
   `gaussian_le_erosion_add` of `StatLean.HypothesisTesting.ForMathlib.GaussianShell`, proved
   there elementarily (convex slice + supporting hyperplane + `2k` coordinate shifts) with the
-  explicit constant `C_k = 4 e² √k` (wave 22; the wave-3 coordinate cover gave the factor-`k`
+  explicit constant `C_k = 4 e² √k` (a plain coordinate cover gives the factor-`k`
   worse `8 k^{3/2}/√(2π)`). Ball's Gaussian-surface-area theorem gives the
   sharp `4 k^{1/4}` — exactly the dimension factor of Bentkus's constant — but the assembly
   needs only finiteness of `C_k` at fixed `k`.
 
 With `ε` optimised in `ε^{-3} β/√n + C_k ε` the assembled bound is `(β/√n)^{1/4} = n^{-1/8}`.
 
-## Wave-13 amendment: the exponent `1/4` is **not** intrinsic; the elementary ceiling is `1/2`
+## Amendment: the exponent `1/4` is **not** intrinsic; the elementary ceiling is `1/2`
 
 Earlier notes in this file (and in `SmoothTestLargeK`) asserted that the balance
 `ε^{-3} β/√n + C_k ε` "cannot do better whatever the shell constant is, so the gap is the rate".
@@ -127,12 +127,12 @@ whereas `D³` of a mollified indicator is supported on the `ε`-shell of `∂B`.
 factor `P(hybrid ∈ shell)`, which requires the anti-concentration bound for the **hybrid** laws,
 not just for `γ`; that is a self-improving induction over `n` (`Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) +
 C_k ε`, which closes at `Δ ≲ C_k δ^{1/3}` and, iterated with the Gaussian smoothing above, at
-the sharp rate). That induction is Bentkus's actual argument; its two ingredients are proved in
-wave 19 (see the amendment below), its probabilistic assembly is not. So the honest ceiling of
+the sharp rate). That induction is Bentkus's actual argument; its two ingredients are proved
+below (see the next amendment). So the honest ceiling of
 the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap to Bentkus is a
 further factor `(β/√n)^{1/2}`.
 
-**Status of the improvement (wave 16: COMPLETE, `0`-sorry and axiom-clean).** The improved
+**Status of the improvement: complete.** The improved
 headline is
 
 `berryEsseen_convex_improved` — `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})` for measurable
@@ -161,7 +161,7 @@ to it). The ingredients:
   `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
   comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
 
-* *Assembly brick (i) — the telescope itself* (wave 16):
+* *Assembly brick (i) — the telescope itself*:
   `abs_integral_smooth_sub_gaussian_improved`.
   `Iⱼ = ∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
   `κ'ⱼ i = if i < j then Measure.dirac 0 else ν`. `integral_pi_sum_peel` peels coordinate `j`
@@ -180,10 +180,10 @@ to it). The ingredients:
   complementary window the asserted bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so
   that case is discharged from `μₙ(B) ≤ 1` alone.
 
-## Wave-19 amendment: the two ingredients of the induction, and what is still missing
+## Amendment: the two ingredients of the induction, and what is still missing
 
-The wave-16 note named the missing induction as a *two-part project* rather than a verdict. Both
-parts are now discharged, each as a standalone, `0`-sorry, axiom-clean statement. (The
+The note above names the missing induction as a *two-part project* rather than a verdict. Both
+parts are now discharged, each as a standalone statement. (The
 consumer-free reference statement `SmoothTestLargeK.bentkus_berry_esseen_convex`, which quoted
 Bentkus's sharp constant, has since been removed; the two parts do not by themselves produce
 the recursion — see below.)
@@ -203,29 +203,29 @@ test function supported on the `ε`-shell of `∂B` costs `√(γ(shell))` inste
 **(2) The self-improving recursion**, solved in the `SelfImproving` section at the end of the
 file. Three shapes, all proved:
 
-* `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` (the wave-16 note verbatim) ⟹ `Δ³ ≤ 63 C³ A δ`;
+* `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` (the note above verbatim) ⟹ `Δ³ ≤ 63 C³ A δ`;
 * `Δ ≤ A δ ε⁻¹ (C ε + 2Δ) + C ε` (after the Gaussian smoothing that this file already proves,
   which is what turns `ε⁻³` into `ε⁻¹`) ⟹ `Δ ≤ 10 A C δ`, i.e. **exactly the sharp `β/√n`
   rate**, with the dimension only in `C = C_k`;
 * `Δ ≤ A δ ε⁻¹ √(C ε + 2Δ) + C ε` — the shape the `L²` weighting of (1) actually delivers —
   ⟹ `Δ³ ≤ 216 (C A δ)²`, i.e. `O(n^{-1/3})`.
 
-## Wave-20 amendment: the recursion is produced; the residue is two named bricks
+## Amendment: the recursion is produced; the residue is two named bricks
 
-Wave 19 left the *production* of `hrec` open, with two structural obstacles. Both are now
+The *production* of `hrec` faces two structural obstacles. Both are now
 resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the sharp rate
 
 `|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
-`le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
+`le_of_selfImproving_induction`. It rests on two named,
 precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
-proved in wave 22, below; the second's weight hypothesis is amended in wave 29, its conclusion
-in wave 32). Everything between the bricks and the headline is proved.
+proved below; the second's weight hypothesis and its conclusion are amended in later sections).
+Everything between the bricks and the headline is proved.
 
-*(As frozen in wave 20 the headline is log-free. Wave 32 amends it to carry one logarithm,
+*(As stated here the headline is log-free. A later amendment makes it carry one logarithm,
 `C (β/√n)(1 + log(max (√n/β) e))`, and replaces `le_of_selfImproving_induction` by
-`le_of_selfImproving_induction_log`; see the wave-32 section below for the forcing.)*
+`le_of_selfImproving_induction_log`; see the logarithm section below for the forcing.)*
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -245,13 +245,13 @@ normalised sum of `m = n − j ≥ n/2` summands, so only the discrepancies at s
 exactly the neighbour range of `le_of_selfImproving_induction`, which closes at `K = 18 A C`
 with no base case.
 
-## Wave-22 amendment: brick H is proved, and the shell constant drops from `k^{3/2}` to `√k`
+## Amendment: brick H is proved, and the shell constant drops from `k^{3/2}` to `√k`
 
-**Brick H is discharged.** `hybridLaw_shell_le` is now a theorem, axiom-clean. The debt wave 20
-identified — the Fubini factorisation of `hybridLaw` — is supplied by applying `Measure.prod`'s
+**Brick H is discharged.** `hybridLaw_shell_le` is now a theorem. The missing piece
+— the Fubini factorisation of `hybridLaw` — is supplied by applying `Measure.prod`'s
 two Fubini identities to the explicit hybrid map: `Measure.prod_apply` in the Gaussian-dominant
 regime `2j ≥ n`, `Measure.prod_apply_symm` in the sum-dominant regime `2j ≤ n`, in each case
-landing on the wave-20 affine transport `measureReal_shell_preimage_aff_le`. The only genuinely
+landing on the affine transport `measureReal_shell_preimage_aff_le`. The only genuinely
 new ingredient is `map_sum_pi_dirac_drop`: the `δ₀` factors of the hybrid product measure drop
 out of the law of the coordinate sum, so the sum-dominant regime really does see `sumLaw (n−j) ν`
 (proved by characteristic functions — `charFun_map_sum_pi` — with no index surgery). The moment
@@ -261,14 +261,14 @@ hypotheses turn out to be unnecessary for brick H: it is purely geometric.
 `abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin remainder
 in place of the uniform one, so that each step of the telescope is weighted by the *hybrid's*
 shell mass. Note that it asks for the `L^∞` weight `W`, which is strictly stronger than the
-wave-19 `L²` lemma `abs_integral_mul_vecTiltRemainder_le_of_support` (that one gives `√W`, hence
+`L²` lemma `abs_integral_mul_vecTiltRemainder_le_of_support` (that one gives `√W`, hence
 only `O(n^{-1/3})`), and is not a corollary of it: the weight must be carried by the hybrid law,
 not by `γ`. The best *proved* convex bound remains `berryEsseen_convex_improved` at
 `(β/√n)^{1/2}`.
 
-## Wave-24 amendment: brick L as frozen is FALSE; the amended brick, and its provable half
+## Amendment: brick L as frozen is FALSE; the amended brick, and its provable half
 
-**The wave-20 statement of brick L is false.** It asserted
+**The original statement of brick L is false.** It asserted
 `|∫f dμₙ − ∫f dγ| ≤ A (β/√n) ε⁻¹ W` for the *bare* weight `W`, and the bare weight can sit far
 below the Gaussian shell scale `C_k ε` while the two laws are still far apart. The witness, in
 full at `exists_localised_swap_bound`, is `k = 1`, `n = 1`, `ε = 1` and a two-point law with an
@@ -287,25 +287,27 @@ unweighted `abs_integral_smooth_sub_gaussian_balanced`, and for `ε√n < 1` it 
 ≤ 2` together with `(β/√n) ε⁻¹ ≥ β ≥ k^{3/2} ≥ 1`. What is left is the named brick
 `localised_swap_bound_small_weight`, the same statement under `W + C_k ε ≤ 1`.
 
-**What that residue actually needs** (this corrects the wave-22 reading, which called the
-localisation a mechanical substitution of the wave-19 lemma). Along the Cameron–Martin route the
+**What that residue actually needs** (this corrects an earlier reading, which called the
+localisation a mechanical substitution of `abs_integral_mul_vecTiltRemainder_le_of_support`).
+Along the Cameron–Martin route the
 test function enters as `G(z) = f(v + σⱼ z)` — the function, not its third derivative, which has
 been moved onto the Gaussian density — and `G` is *not* supported on the shell, since `f = 1` on
 `B`. Splitting `f = 1_{interior B} + g` leaves the indicator part
-`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex. Wave 24 concluded that controlling
-that by the shell mass is a Gaussian surface-area statement about convex bodies (Ball's input);
-**wave 29 overturns this** — see the next section.
+`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex. Controlling
+that by the shell mass looks like a Gaussian surface-area statement about convex bodies (Ball's
+input); **the next section shows that it is not**.
 
-## Wave-29 amendment: no surface area is needed; the two-sided shell; the residue re-scoped
+## Amendment: no surface area is needed; the two-sided shell; the residue re-scoped
 
-**The wave-24 obstruction is not real.** The tilt remainder has *mean zero*,
+**The surface-area obstruction is not real.** The tilt remainder has *mean zero*,
 `integral_vecTiltRemainder_eq_zero`, so a constant may be subtracted from the test function for
-free (`abs_integral_mul_vecTiltRemainder_le_of_const_off`, the wave-19 lemma extended from
+free (`abs_integral_mul_vecTiltRemainder_le_of_const_off`, the `L²` lemma
+`abs_integral_mul_vecTiltRemainder_le_of_support` extended from
 "vanishes off `S`" to "is constant off `S`"). A mollified convex indicator is constant on the
 ball of radius `r` about any `v` at distance `≥ r` from the shell, so the indicator part is
 localised by the plain **Gaussian tail** `γ{‖z‖ ≥ r/σ}`
 (`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), which `stdGaussian_norm_ge_le` supplies
-by Markov at any order. All of these are proved, axiom-clean, and dimension-free; no surface
+by Markov at any order. All of these are proved and dimension-free; no surface
 measure occurs anywhere.
 
 **The shell must be two-sided, and controlled at every width.** The set of points where the
@@ -319,20 +321,20 @@ conditioning that both bricks H share is factored out as `hybridLaw_le_of_affine
 **Consequently the weight hypothesis of brick L is amended** (hypothesis only, conclusion
 untouched, and free at the only call site): see `localised_swap_bound_small_weight`.
 
-**Two gaps the wave-24/29 plans did not see**, both recorded in full there: the `L²` tilt bound
-needs `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does *not* apply verbatim to the shell part
+**Two further gaps**, both recorded in full there: the `L²` tilt bound
+needs `‖w‖ = ‖y‖/√j ≤ 1`, so `abs_integral_mul_vecTiltRemainder_le_of_support` does *not* apply
+verbatim to the shell part
 either, and the large-`‖y‖` region has to be handled by the tilt identity directly (its
 `v`-average costs a two-sided shell at width `c‖y‖` — which is why the amended hypothesis is
 stated at all widths); and the summed weight is `δ(2 C_k log(1/ε) + W/ε)`, so this route yields
 the sharp rate **up to one logarithm**. The logarithm is intrinsic to a single mollification
 width.
 
-## Wave-32 amendment: the logarithm is EXECUTED, headline included
+## Amendment: the logarithm is EXECUTED, headline included
 
-Wave 29 predicted the logarithm but left every conclusion frozen, on the ground that weakening
-them then "would be a guess rather than a forced amendment". Wave 32 supplies the forcing — the
-summation ledger, recorded in full at `localised_swap_bound_small_weight` — and carries the term
-through the whole chain. Both exponents in that ledger are verified as part of the amendment:
+The forcing is the summation ledger, recorded in full at `localised_swap_bound_small_weight`,
+and the term is carried through the whole chain. Both exponents in that ledger are verified as
+part of the amendment:
 `j^{-3/2}·σⱼ = c·j^{-1}` is a **harmonic** sum over `J < j ≤ n` (this, and only this, is where
 the logarithm comes from), while `∑_{j>J} j^{-3/2} ≤ 2J^{-1/2} = 2(ε√n)^{-1}` reproduces the
 `ε⁻¹` the frozen statements already carried.
@@ -341,7 +343,7 @@ the logarithm comes from), while `∑_{j>J} j^{-3/2} ≤ 2J^{-1/2} = 2(ε√n)^{
   `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`. Still the file's one and only brick.
 * `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` — amended; the proved
   large-weight half is untouched (its log-free conclusion is *smaller*, so it still closes the
-  amended goal), and the doubling of `A` that wave 24 introduced also absorbs the new term.
+  amended goal), and the doubling of `A` from the brick-L amendment also absorbs the new term.
 * `le_of_selfImproving_induction_log` (**new, proved**) — the strong induction re-solved with the
   extra `A δ C (1 + log(1 + ε⁻¹))`. It still closes **linearly**, at `K = 20 A C`, because the
   log factor `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)` is monotone in the *right* direction along the
@@ -357,19 +359,19 @@ A remark on the alternative: using the Gaussian tail `stdGaussian_norm_ge_le` at
 restructured for it.
 
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
-`gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
-that the `2k`-fold coordinate cover used to contribute to the shell bound — a single random
+`gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. The factor `k`
+that a `2k`-fold coordinate cover would contribute to the shell bound is avoided — a single random
 Gaussian shift replaces it (`gaussian_le_of_gaussian_shift_cover`) — and the residual `√k` is
 the first absolute moment `E‖Z‖ ≤ √k` of that shift. Closing the last gap to `k^{1/4}` needs
 Ball's Gaussian-surface-area theorem; nothing in the recursion depends on it.
 
-## Wave-39 amendment: the sub-Gaussian norm tail, and a `3/2` power of the logarithm
+## Amendment: the sub-Gaussian norm tail, and a `3/2` power of the logarithm
 
-Wave 38 proved the head half of the per-step estimate (`abs_integral_swap_step_localised_le`)
-and showed that the *tail* half cannot be produced at the wave-32 frozen weight `4 C_k σⱼ + W`:
-the only Gaussian norm tail this file had was Markov at a fixed order, and localising the
-Cameron–Martin swap needs the tail to be `≲ σ²` at a radius `≍ σ`, which no polynomial tail
-gives. Wave 39 supplies the missing ingredient and pays its price openly.
+The head half of the per-step estimate is proved (`abs_integral_swap_step_localised_le`), but
+the *tail* half cannot be produced at the frozen weight `4 C_k σⱼ + W` with only a Markov tail
+at a fixed order: localising the Cameron–Martin swap needs the Gaussian norm tail to be `≲ σ²`
+at a radius `≍ σ`, which no polynomial tail gives. This amendment supplies the missing
+ingredient and pays its price openly.
 
 * `stdGaussian_norm_ge_le_exp` (**new, proved**) — `γ{‖z‖ ≥ M} ≤ 2k exp(-M²/(2k))`, by the
   coordinate union bound over `stdGaussian_map_inner_unit` and the one-dimensional Chernoff
@@ -382,10 +384,10 @@ gives. Wave 39 supplies the missing ingredient and pays its price openly.
   ledger with the extra radius factor. `gaussianTailRadius` is antitone, so no new summation
   lemma is needed; `gaussianTailRadius_le_dimTailConst` splits it as
   `dimTailConst k · √(1 + log(1 + ε⁻¹))`, and multiplying by the harmonic factor gives the
-  `3/2` power `logPow32 ε`. Constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t` (wave 41: `→ 444 C_t`,
+  `3/2` power `logPow32 ε`. Constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t` (later `→ 444 C_t`,
   the exact re-solution once the tail brick's own constants are known).
 * `le_of_selfImproving_induction_forcing` (**new, proved**) — the fixed point with an abstract
-  forcing factor. The wave-32 argument uses only `G ≥ 1` and antitonicity of `G`, so the `3/2`
+  forcing factor. The logarithmic argument uses only `G ≥ 1` and antitonicity of `G`, so the `3/2`
   power self-improves **at the same constant** `20 A C`; `le_of_selfImproving_induction_log` is
   now its `G = 1 + log(1 + ε⁻¹)` instance and `le_of_selfImproving_induction_logPow32` the one
   the amended ledger consumes.
@@ -399,10 +401,10 @@ intrinsic — it is the price of proving the norm tail by a union bound rather t
 `γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` (Chernoff on `‖z‖² ∼ χ²_k`, or Borell–TIS, neither of which
 Mathlib has). Sharpening it would give `≍ √k` there and change nothing else.
 
-## Wave-40 amendment: the shift-length restriction is gone; the tail brick is bookkeeping only
+## Amendment: the shift-length restriction is gone; the tail brick is bookkeeping only
 
-Every wave from 32 to 39 recorded the same open input of the tail brick
-`abs_integral_gaussian_smoothed_swap_localised_le`: the far-in-`v` localisation
+The tail brick `abs_integral_gaussian_smoothed_swap_localised_le` had a single open input: the
+far-in-`v` localisation
 `abs_integral_shift_vecTiltRemainder_le_of_const_ball` needs `‖w‖ ≤ 1`, because it runs through
 the `L²` bound `integral_sq_vecTiltRemainder_le`, which is *false* for large tilts. At step `j`
 the shift is `w = (c/σ)y`, so the restriction is `‖y‖ ≤ √j`, and the complement is not
@@ -427,7 +429,8 @@ no new concentration input:
 **Constants, amended honestly.** The per-step ledger `localised_step_weight_le` turns the
 resulting product (shell mass at the varying width `2σ(R+‖w‖)`, times
 `min(C_t‖w‖³, 2+‖w‖+‖w‖²)`) back into a third moment, and the weight it delivers is
-`68 C_k σ R + 4 W`, not wave 39's `12 C_k σ R + W` — wave 39 priced only the `‖w‖ ≤ 1` regime.
+`68 C_k σ R + 4 W`, not the `12 C_k σ R + W` of the previous amendment, which priced only the
+`‖w‖ ≤ 1` regime.
 The tail brick's statement is amended accordingly; `localised_swap_bound_of_weighted_telescope`
 carries a flag recording the corresponding re-run of `htel` (`12 → 68`, `3 → 12`) and of
 `weighted_ledger_balance`'s `81 C_t`. **No shape moves**: the `(1 + log(1+ε⁻¹))^{3/2}` power,
@@ -439,20 +442,19 @@ the fixed point, and `berryEsseen_convex_sharp` are unaffected up to an absolute
 which is `integral_far_shell_le` with a different bracket; and the two-law triangle
 inequality). No analytic input is missing — the first time that has been true of this brick.
 
-## Wave-41 amendment: the tail brick is PROVED, and brick L's residue is re-diagnosed
+## Amendment: the tail brick is PROVED, and brick L's residue is re-diagnosed
 
-**The tail brick `abs_integral_gaussian_smoothed_swap_localised_le` is closed**, open since
-wave 32. Wave 40's verdict — "no analytic input is missing, three named bookkeeping pieces
-remain" — is confirmed exactly: the pieces are `integral_gaussian_smoothed_sub_common_eq` (the
-tilt representation, now exported and the old `abs_…_sub_common_le` refactored into its
+**The tail brick `abs_integral_gaussian_smoothed_swap_localised_le` is closed.** The three named
+bookkeeping pieces are `integral_gaussian_smoothed_sub_common_eq` (the
+tilt representation, exported, with `abs_…_sub_common_le` as its
 corollary), `integral_localised_shell_le` (the Fubini at the varying width), and the two-law
 triangle inequality against the law-independent Cameron–Martin number. **No constant needed
-amending**: wave 40's `68 C_k σ R + 4 W` ledger is exact. Consequently the wave-40 FLAG on
+amending**: the `68 C_k σ R + 4 W` ledger is exact. Consequently the FLAG on
 `localised_swap_bound_of_weighted_telescope` is executed — `htel`'s tail summands are now
-`68 …` and `12 …`, and `weighted_ledger_balance` re-solves at `306 C₃ + 444 C_t` (wave 40
-guessed `459 C_t` would suffice; `444` is exact, and the `C₃` half is untouched).
+`68 …` and `12 …`, and `weighted_ledger_balance` re-solves at `306 C₃ + 444 C_t` (the cruder
+`459 C_t` would suffice; `444` is exact, and the `C₃` half is untouched).
 
-**A claim of waves 36–40 is OVERTURNED, and it is what brick L still owes.** Both localised
+**A docstring claim is OVERTURNED, and it is what brick L still owes.** Both localised
 per-step bricks carry the docstring line "`τ` is `hybridLaw n j ν`". It is not. At step `j` the
 telescope peels coordinate `j`, so the base point of the step is `c·(∑ of the OTHER
 coordinates) + σⱼ z` and the swapped coordinate enters only as the `c u` *inside* the absolute
@@ -463,16 +465,16 @@ Neither is a special case of the other: the peeled law is `hybridLaw` with the d
 `j + 1` but the smoothing still at `j`, and `hybridLaw n j ν = (peeled law) ∗ (c·ν)`, which is
 the wrong direction to deconvolve.
 
-## Wave-42 amendment: the transfer is deconvolution, and the window strengthens to `√k ≤ ε√n`
+## Amendment: the transfer is deconvolution, and the window strengthens to `√k ≤ ε√n`
 
-**The repair is DECONVOLUTION, not shifting (wave 42).** Wave 41 proposed
+**The repair is DECONVOLUTION, not shifting.** Using
 `indicator_wideShell_le_shift` (`1_{shell at s}(a) ≤ 1_{shell at s+t}(a+w)` for `‖w‖ ≤ t`) to
-move each brick's indicator to the shifted point. That fails: the width at which either brick
+move each brick's indicator to the shifted point fails: the width at which either brick
 consults its shell hypothesis is a function of the *same* variable as the shift, so what the
 move produces is the shell mass of a **translate** of the base law, which a constant-width
-hypothesis on the convolution does not bound (formalized witness in the wave-42 note of
-`localised_swap_bound_small_weight`). What does work is `wideShell_le_of_deconvolution`, proved
-in wave 42: `τ(shell s)·η(closedBall 0 t) ≤ (τ ∗ η)(shell (s+t))`, so a shell bound for the
+hypothesis on the convolution does not bound (formalized witness in the note of
+`localised_swap_bound_small_weight`). What does work is `wideShell_le_of_deconvolution`:
+`τ(shell s)·η(closedBall 0 t) ≤ (τ ∗ η)(shell (s+t))`, so a shell bound for the
 convolution *does* give one for the factor, at the price of `η`'s concentration radius. It costs
 `C_k → 3 C_k`, `W → 2W + 11 C_k t`, and a strengthening of the localisation window from
 `1 ≤ ε √n` to `√k ≤ ε √n` (free at the call site). What remains for brick L is then: the two
@@ -949,7 +951,7 @@ Of the analytic bricks of the Lindeberg-swap route, the third-order Taylor remai
 indicator (`exists_smoothed_radial_indicator`) are now proved here, unconditionally and with
 dimension-free constants. The **multivariate Lindeberg swap** `abs_integral_smooth_sub_gaussian_le`
 and — for the *convex* route — `exists_smoothed_convex_indicator` are proved here as well, so no
-brick of the route is left as debt. The honest final bounds
+brick of the route is left unproved. The honest final bounds
 `berryEsseen_ball_elementary` / `berryEsseen_convex_elementary` record the exact statements the
 route delivers; their exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the
 module docstring). -/
@@ -1033,7 +1035,7 @@ private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
 
 /-! #### The smoothed indicator of an arbitrary set (mollification)
 
-This block pays what the wave-4 note called the "`precompR` bookkeeping" debt: it constructs,
+This block supplies the "`precompR` bookkeeping": it constructs,
 for an arbitrary set `B ⊆ ℝ^k` and an arbitrary width `ε > 0`, a `C³` function `f : ℝ^k → [0,1]`
 that is `1` on `B`, vanishes outside the `ε`-thickening of `B`, and satisfies
 `‖D³f‖ ≤ C₃(k)/ε³` with `C₃(k)` fixed *before* `B` and `ε`.
@@ -1056,7 +1058,7 @@ clause because the whole mass of the kernel sits inside the thickening when `x �
 For the third derivative we use the only differentiation formula Mathlib v4.29.1 has for
 convolutions, the first-order `HasCompactSupport.hasFDerivAt_convolution_right`, three times;
 the resulting tower `L`, `L.precompR`, `L.precompR.precompR` is glued to `iteratedFDeriv` by
-three applications of `norm_iteratedFDeriv_fderiv`, exactly as the wave-4 note predicted. The
+three applications of `norm_iteratedFDeriv_fderiv`. The
 `precompR` tower costs nothing quantitatively because `‖L.precompR E‖ ≤ ‖L‖`
 (`ContinuousLinearMap.norm_precompR_le`) and `‖lsmul ℝ ℝ‖ ≤ 1`, so the bound is simply
 `‖D³f‖ ≤ ∫ ‖D³φ‖` for the fixed kernel `φ`.
@@ -1130,9 +1132,11 @@ private lemma norm_convolution_le_of_bounded (L : ℝ →L[ℝ] E' →L[ℝ] F) 
 
 end GenericConvolutionBound
 
+set_option maxSynthPendingDepth 8 in
 set_option maxHeartbeats 1000000 in
 -- The `precompR` tower forces defeq checks on the continuous-linear-map type
 -- `ℝ →L (E →L E →L E →L ℝ) →L (E →L E →L E →L ℝ)`; those are what exhaust the default budget.
+-- Instance synthesis on the same tower needs a pending-synthesis depth above the default.
 /-- The third derivative of a mollification is bounded by the `L¹`-norm of the third derivative
 of the kernel, uniformly over all `ind` bounded by `1`.
 
@@ -1192,7 +1196,7 @@ set_option maxHeartbeats 1000000 in
 -- Same `precompR` defeq checks as the third-order bound, at one level.
 /-- The **first** derivative of a mollification is bounded by the `L¹`-norm of the first
 derivative of the kernel — the order-`1` case of the same convolution estimate that gives
-`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+`norm_iteratedFDeriv_three_convolution_le`. -/
 private lemma norm_iteratedFDeriv_one_convolution_le {k : ℕ}
     {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
     (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
@@ -1223,7 +1227,7 @@ set_option maxHeartbeats 1000000 in
 -- Same `precompR` defeq checks as the third-order bound, at two levels.
 /-- The **second** derivative of a mollification is bounded by the `L¹`-norm of the second
 derivative of the kernel — the order-`2` case of the same convolution estimate that gives
-`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+`norm_iteratedFDeriv_three_convolution_le`. -/
 private lemma norm_iteratedFDeriv_two_convolution_le {k : ℕ}
     {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
     (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
@@ -1268,12 +1272,12 @@ Take `f` to be the mollification of the indicator of `Metric.thickening (1/2) B`
 `mbeMollifier k`. Note the empty set needs no special treatment: then `f = 0` and both the
 value and the support clause are vacuous.
 
-**Wave 37.** The conclusion now carries the first- and second-order bounds as well, produced by
+The conclusion carries the first- and second-order bounds as well, produced by
 `norm_iteratedFDeriv_one_convolution_le` / `norm_iteratedFDeriv_two_convolution_le` — the same
 convolution estimate at one and two `precompR` levels instead of three. A *single* constant
 dominates all three orders (the `max` below), which is what the far-regime head estimate of
 brick L consumes; and it is `≥ 1` by construction, so `1 ≤ C₃` is free and is now part of the
-conclusion (wave 36 flagged this normalisation as the cheaper of its two options). -/
+conclusion. -/
 private lemma exists_smoothed_indicator_unit (k : ℕ) :
     ∃ C₃ : ℝ, 1 ≤ C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
@@ -1418,7 +1422,7 @@ degenerate dimension `k = 0` (where `‖id‖ = 0`) is covered too.
 
 Convexity of `B` is not used; it is kept only because the statement is frozen.
 
-**Wave 37.** The first- and second-order bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` are now part
+The first- and second-order bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` are part
 of the conclusion, with the *same* constant `C₃ ≥ 1`: they are needed by the far regime of brick
 L's head estimate, which does not Taylor-expand and must bound the swap remainder by its
 lower-order terms. The scaling is the one already used for the third order, factored out as
@@ -2090,7 +2094,7 @@ private lemma integral_pi_sum_peel {k m : ℕ}
           ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) :=
         integral_prod_symm _ hF
 
-/-- **Peeling one coordinate, at the level of measures (wave 42).** The law of the coordinate
+/-- **Peeling one coordinate, at the level of measures.** The law of the coordinate
 sum is the law of `u + ∑ₗ yₗ` with `u ∼ κ i` independent of the remaining coordinates.
 
 This is `integral_pi_sum_peel` with the bounded continuous test function stripped off, and it is
@@ -2134,7 +2138,7 @@ theorem conv_reassoc {k : ℕ} {α β ζ : Measure (EuclideanSpace ℝ (Fin k))}
     ((α ∗ β) ∗ ζ) = ((β ∗ ζ) ∗ α) := by
   rw [Measure.conv_assoc, Measure.conv_comm α (β ∗ ζ)]
 
-/-- **Peeling one coordinate off the SCALED coordinate-sum law (wave 43).** `map_pi_sum_peel`
+/-- **Peeling one coordinate off the SCALED coordinate-sum law.** `map_pi_sum_peel`
 with the telescope's scaling `c` applied, and stated as a convolution — which is what
 `wideShell_le_of_deconvolution` consumes. -/
 theorem map_pi_sum_smul_peel {k m : ℕ}
@@ -2860,7 +2864,7 @@ gives `β_G ≤ 2 k^{3/2} ≤ 2 β` from the two *public* χ² moments (`E X = k
 
 **The assembly below is complete and consumes nothing on faith**: its last ingredient,
 `abs_integral_smooth_sub_gaussian_le` (the third-order multivariate Lindeberg swap), is proved
-above, so `berryEsseen_ball_elementary` is axiom-clean. Concretely, with `ε := (β/√n)^{1/4}`:
+above, so `berryEsseen_ball_elementary` is proved outright. Concretely, with `ε := (β/√n)^{1/4}`:
 
 * upper: `μₙ{‖z‖ ≤ s} ≤ ∫ f_ε dμₙ ≤ ∫ f_ε dγ + (C₃/ε³)(β+β_G)/(6√n) ≤ γ{‖z‖ ≤ s+ε} + (C₃/2)ε`
   with `f_ε` the smoothed radial indicator at radius `s`, and then
@@ -3115,11 +3119,11 @@ factor: it is
 `C = C₀ + C_k` with `C₀` the third-derivative constant of `exists_smoothed_convex_indicator` and
 `C_k = gaussianShellConst k = 4 e² √k` the Gaussian boundary-shell constant.
 
-**This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
+**This exponent is not the ceiling of the elementary route** (correction of an earlier
 note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
-free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. As of
-wave 16 that improvement is **proved**, as `berryEsseen_convex_improved` at the end of this file
-(`0`-sorry, axiom-clean); this theorem is kept as it stands because it has consumers and is a
+free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. That
+improvement is **proved**, as `berryEsseen_convex_improved` at the end of this file; this theorem
+is kept as it stands because it has consumers and is a
 different, weaker statement. The sharp `400 k^{1/4} · β/√n` needs Bentkus's self-improving
 induction and is still not attempted.
 (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
@@ -3205,12 +3209,12 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
 
 end ElementaryRoute
 
-/-! ### Wave-13: the Cameron–Martin (Gaussian-smoothing) route to a better exponent
+/-! ### The Cameron–Martin (Gaussian-smoothing) route to a better exponent
 
 The material below is the analytic core of a **strict improvement of the exponent** of
 `berryEsseen_convex_elementary`, from `(β/√n)^{1/4}` to `(β/√n)^{1/2}`; see the
-"wave-13 amendment" in the module docstring for the derivation. Everything here is proved
-outright, and as of wave 16 so is the assembly: the improved headline is
+amendment "the exponent `1/4` is not intrinsic" in the module docstring for the derivation.
+Everything here is proved outright, and so is the assembly: the improved headline is
 `berryEsseen_convex_improved`, at the very end of the file.
 
 The point is that the `j`-th step of the hybrid telescope already carries an independent
@@ -3397,7 +3401,7 @@ private lemma integral_sq_gauss : (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) = 1
   rw [ProbabilityTheory.variance_eq_integral (by fun_prop)] at hV
   simpa using hV
 
-/-- **`t⁴ ≤ 256 (eᵗ + e⁻ᵗ)`** (wave 40). The fourth-power analogue of `sq_le_exp_add_exp` and
+/-- **`t⁴ ≤ 256 (eᵗ + e⁻ᵗ)`**. The fourth-power analogue of `sq_le_exp_add_exp` and
 `cube_le_exp`, proved the same way from `1 + y/4 ≤ exp (y/4)`. It is what gives the fourth
 moment of `N(0,1)` an explicit bound without any Gamma-function apparatus. -/
 private lemma pow_four_le_cosh (t : ℝ) : t ^ 4 ≤ 256 * (Real.exp t + Real.exp (-t)) := by
@@ -3436,7 +3440,7 @@ private lemma exp_half_le : Real.exp (1 / 2) ≤ 1.65 := by
     rw [sq, ← Real.exp_add]; norm_num
   nlinarith [Real.exp_pos (1 / 2 : ℝ), hsq, h]
 
-/-- **An explicit bound on the fourth moment of `N(0,1)`** (wave 40). The exact value is `3`;
+/-- **An explicit bound on the fourth moment of `N(0,1)`**. The exact value is `3`;
 all that is needed downstream is *some* explicit constant, and the exponential envelope
 `pow_four_le_cosh` supplies one. -/
 private lemma integral_pow_four_gauss_le :
@@ -3449,7 +3453,7 @@ private lemma integral_pow_four_gauss_le :
   rw [he, integral_cosh_one] at hmono
   nlinarith [exp_half_le]
 
-/-- **The `L²` size of the Cameron–Martin *polynomial*** (wave 40):
+/-- **The `L²` size of the Cameron–Martin *polynomial***:
 `∫ (1 + s t + s²(t²−1)/2)² dγ₁ ≤ 640 (1 + s²)²`, at **every** tilt parameter `s`.
 
 The `L²` bound `integral_sq_tiltRemainder_le` on the *remainder* is available only for `s ≤ 1`
@@ -3503,7 +3507,7 @@ private lemma integral_sq_tiltPoly_le (s : ℝ) :
   nlinarith [hmono, mul_le_mul_of_nonneg_left h4 (by positivity : (0 : ℝ) ≤ 3 * s ^ 4 / 4),
     sq_nonneg s, sq_nonneg (s ^ 2)]
 
-/-- **The `L¹` size of the Cameron–Martin polynomial** (wave 40):
+/-- **The `L¹` size of the Cameron–Martin polynomial**:
 `∫ |1 + s t + s²(t²−1)/2| dγ₁ ≤ 1 + s + s²` for `s ≥ 0`. Used for the crude, *at most
 quadratic in `‖w‖`*, bound on a swap step — which is what keeps the near-in-`v` half of the
 large-shift regime inside a third moment. -/
@@ -3587,7 +3591,7 @@ private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRema
 
 This is the identity `∫ exp(st − s²/2) dγ = 1` together with `∫ t dγ = 0` and `∫ t² dγ = 1`:
 the subtracted polynomial is precisely the second-order Hermite truncation of the tilt, and the
-tilt itself is a probability density. Wave 29: this innocuous fact is the whole reason the
+tilt itself is a probability density. This innocuous fact is the whole reason the
 *indicator* half of a mollified convex indicator can be localised — see
 `abs_integral_mul_vecTiltRemainder_le_of_const_off`. -/
 private lemma integral_tiltRemainder_eq_zero (s : ℝ) :
@@ -3673,7 +3677,7 @@ private lemma integral_tiltEnvLarge :
 
 /-- **The pointwise envelope for small tilts.** For `0 ≤ s ≤ 1` the tilt remainder is at most
 `s³` times a fixed, tilt-independent exponential envelope. Extracted from (and consumed by)
-`integral_abs_tiltRemainder_le_of_le_one`; the `L²` refinement of §wave-19 reuses it verbatim. -/
+`integral_abs_tiltRemainder_le_of_le_one`; the `L²` refinement below reuses it verbatim. -/
 private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) (t : ℝ) :
     |tiltRemainder s t| ≤ s ^ 3 * tiltEnvSmall t := by
   set x : ℝ := s * t - s ^ 2 / 2 with hx
@@ -3835,7 +3839,7 @@ private lemma exists_tiltRemainder_bound :
   · exact integral_abs_tiltRemainder_le_of_le_one hs h
   · exact integral_abs_tiltRemainder_le_of_one_le h
 
-/-! ### Wave-19: the same remainder in `L²` (the weighted / Hölder refinement)
+/-! ### The same remainder in `L²` (the weighted / Hölder refinement)
 
 `integral_abs_vecTiltRemainder_le` bounds the Cameron–Martin remainder in `L¹(γ)`, which is
 exactly what a swap against a test function with `‖G‖_∞ ≤ 1` needs. The *localised* swap — the
@@ -3885,7 +3889,7 @@ private noncomputable def tiltSqConst : ℝ := 4 * (27 / 2 * Real.exp 1 + 1) ^ 2
 private lemma tiltSqConst_pos : 0 < tiltSqConst := by
   unfold tiltSqConst; positivity
 
-/-- `√tiltSqConst ≥ 53` (wave 40). An explicit lower bound, so that the crude constant `106`
+/-- `√tiltSqConst ≥ 53`. An explicit lower bound, so that the crude constant `106`
 which the *large*-shift regime of the localised swap step pays is absorbed by the
 Cauchy–Schwarz constant `2√tiltSqConst` that the *short*-shift regime pays anyway — the two
 regimes can then be reported with a single constant. -/
@@ -4030,7 +4034,7 @@ private lemma integral_abs_vecTiltRemainder_le {C : ℝ}
       (continuous_tiltRemainder ‖w‖).abs hu]
     exact hC ‖w‖ hnw.le
 
-/-- **`L²` version of `integral_abs_vecTiltRemainder_le`** (wave 19), for shifts of length at
+/-- **`L²` version of `integral_abs_vecTiltRemainder_le`**, for shifts of length at
 most `1`, with the same dimension-free constant mechanism: the one-dimensional marginal. -/
 private lemma integral_sq_vecTiltRemainder_le {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
     (∫ z, vecTiltRemainder w z ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
@@ -4109,7 +4113,7 @@ private lemma integrable_sq_vecTiltPoly (w : EuclideanSpace ℝ (Fin k)) :
     nlinarith [sq_nonneg (1 - ‖w‖ * t), sq_nonneg (1 - ‖w‖ ^ 2 * (t ^ 2 - 1) / 2),
       sq_nonneg (‖w‖ * t - ‖w‖ ^ 2 * (t ^ 2 - 1) / 2)]
 
-/-- **The `L²` size of the Cameron–Martin polynomial, dimension-free** (wave 40). The vector
+/-- **The `L²` size of the Cameron–Martin polynomial, dimension-free**. The vector
 form of `integral_sq_tiltPoly_le`, by the one-dimensional marginal. -/
 private lemma integral_sq_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
     (∫ z, (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2
@@ -4129,7 +4133,7 @@ private lemma integral_sq_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
       (φ := fun t : ℝ => (1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2) ^ 2) (by fun_prop) hu]
     exact integral_sq_tiltPoly_le ‖w‖
 
-/-- **The `L¹` size of the Cameron–Martin polynomial, dimension-free** (wave 40). -/
+/-- **The `L¹` size of the Cameron–Martin polynomial, dimension-free**. -/
 private lemma integral_abs_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
     (∫ z, |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|
         ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
@@ -4150,7 +4154,7 @@ private lemma integral_abs_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
     exact integral_abs_tiltPoly_le (norm_nonneg w)
 
 /-- **The weighted (Hölder / `L²`) form of `integral_abs_vecTiltRemainder_le`** — the first of
-the two ingredients the sharp Bentkus rate needs (wave 19).
+the two ingredients the sharp Bentkus rate needs.
 
 `integral_abs_vecTiltRemainder_le` bounds `∫ |R_w| dγ ≤ C‖w‖³`, which is what one pairs with a
 test function bounded by `‖G‖_∞ = 1`. Here the remainder is paired with `|G|` itself:
@@ -4204,7 +4208,7 @@ private lemma integral_abs_mul_vecTiltRemainder_le
 
 `|∫ G · R_w dγ| ≤ √(γ S) · √tiltSqConst · ‖w‖³`.
 
-This is the localisation the wave-16 note identified as missing. The `√` (rather than a bare
+This is the localisation the module docstring identifies as missing. The `√` (rather than a bare
 `γ S`) is the price of Cauchy–Schwarz; see `le_of_selfImproving_smoothed_sqrt` at the end of the
 file for what the resulting recursion closes at. -/
 private lemma abs_integral_mul_vecTiltRemainder_le_of_support
@@ -4290,7 +4294,7 @@ private lemma integrable_norm_gauss :
 
 /-- **The Gaussian norm tail, by Markov at any order.** `γ{‖z‖ ≥ R} ≤ E‖z‖^p / R^p`.
 
-Wave 29: this is the *only* input the localisation of the indicator half needs beyond
+This is the *only* input the localisation of the indicator half needs beyond
 `integral_vecTiltRemainder_eq_zero` — in particular no Gaussian surface area, and no
 concentration inequality: plain Markov at a high enough order `p`. -/
 private lemma stdGaussian_norm_ge_le (p : ℕ) {R : ℝ} (hR : 0 < R) :
@@ -4318,7 +4322,7 @@ private lemma stdGaussian_norm_ge_le (p : ℕ) {R : ℝ} (hR : 0 < R) :
         rw [measureReal_def]; ring
     _ ≤ _ := hmk
 
-/-- **One-dimensional Gaussian upper tail (Chernoff), wave 39.** `N(0,1)[s, ∞) ≤ e^{-s²/2}`.
+/-- **One-dimensional Gaussian upper tail (Chernoff).** `N(0,1)[s, ∞) ≤ e^{-s²/2}`.
 
 Immediate from the Chernoff bound at `t = s` together with the exact Gaussian mgf
 `∫ e^{s x} dN(0,1) = e^{s²/2}` (`integral_exp_mul_gaussianReal`). -/
@@ -4336,7 +4340,7 @@ private lemma gaussianReal_ge_le {s : ℝ} (hs : 0 ≤ s) :
   congr 1
   ring
 
-/-- **One-dimensional Gaussian two-sided tail (wave 39).** `N(0,1){|x| ≥ s} ≤ 2 e^{-s²/2}`. -/
+/-- **One-dimensional Gaussian two-sided tail.** `N(0,1){|x| ≥ s} ≤ 2 e^{-s²/2}`. -/
 private lemma gaussianReal_abs_ge_le {s : ℝ} (hs : 0 ≤ s) :
     (gaussianReal 0 1).real {x : ℝ | s ≤ |x|} ≤ 2 * Real.exp (-(s ^ 2) / 2) := by
   have hint : Integrable (fun x : ℝ => Real.exp (-s * x)) (gaussianReal 0 1) :=
@@ -4369,14 +4373,14 @@ private lemma gaussianReal_abs_ge_le {s : ℝ} (hs : 0 ≤ s) :
   have hup := gaussianReal_ge_le hs
   linarith
 
-/-- **The sub-Gaussian NORM tail of `N(0, I_k)` (wave 39: PROVED).** *The ingredient wave 38
-identified as missing, and the reason the tail brick's frozen weight was unreachable.*
+/-- **The sub-Gaussian NORM tail of `N(0, I_k)`.** *The ingredient the tail brick was
+missing, and the reason the tail brick's frozen weight was unreachable.*
 
   `γ{‖z‖ ≥ M} ≤ 2 k · exp(-M²/(2k))`   for every `M ≥ 0` and `k ≥ 1`.
 
-Wave 38's note on `abs_integral_gaussian_smoothed_swap_localised_le` established that the only
-Gaussian norm tail this file had was `stdGaussian_norm_ge_le`, i.e. Markov at a *fixed* order
-`p`, and that at a fixed order the tail steps of the ledger sum to a **power** `ε^{-2/p}` of
+The note on `abs_integral_gaussian_smoothed_swap_localised_le` establishes that the Markov
+tail `stdGaussian_norm_ge_le`, used at a *fixed* order
+`p`, is not enough: at a fixed order the tail steps of the ledger sum to a **power** `ε^{-2/p}` of
 `ε⁻¹` rather than to a logarithm. Any genuinely sub-Gaussian decay repairs that; this is the
 cheapest such statement.
 
@@ -4387,7 +4391,7 @@ computation the slab bound at the top of the file already uses — and the one-d
 `gaussianReal_abs_ge_le`. No Gaussian isoperimetry, no `χ²` moment generating function, no
 Borell–TIS.
 
-**The price of that route, recorded honestly (wave 39).** The bound wave 38 asked for was
+**The price of that route, recorded honestly.** The bound one would want is
 `γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)`, whose inversion is the *additive* radius
 `√k + √(2 log(1/σ))`. The union bound gives the weaker exponent `M²/(2k)` in place of
 `(M − √k)²/2`, whose inversion is the *multiplicative* radius `√(2k log 2k) + 2√(k log(1/σ))`
@@ -4479,7 +4483,7 @@ private lemma stdGaussian_norm_ge_le_exp (hk : 0 < k) {M : ℝ} (hM : 0 ≤ M) :
   rw [hexp] at hsum
   linarith
 
-/-- **The radius at which the Gaussian norm tail drops below `σ²` (wave 39).**
+/-- **The radius at which the Gaussian norm tail drops below `σ²`.**
 
   `gaussianTailRadius k σ = √(2k log(2k)) + 2√(k log(1/σ))`.
 
@@ -4495,7 +4499,7 @@ noncomputable def gaussianTailRadius (k : ℕ) (σ : ℝ) : ℝ :=
 lemma gaussianTailRadius_nonneg (k : ℕ) (σ : ℝ) : 0 ≤ gaussianTailRadius k σ := by
   unfold gaussianTailRadius; positivity
 
-/-- **The tail radius does what it is for (wave 39).** For `0 < σ ≤ 1`,
+/-- **The tail radius does what it is for.** For `0 < σ ≤ 1`,
 `γ{‖z‖ ≥ gaussianTailRadius k σ} ≤ σ²`, hence `2√(that tail) ≤ 2σ`: the far-in-`v` half of
 route (b) is weighted by `O(σ)`, exactly as the ledger's tail summands need. -/
 lemma stdGaussian_norm_ge_gaussianTailRadius_le (hk : 0 < k) {σ : ℝ}
@@ -4541,12 +4545,12 @@ lemma stdGaussian_norm_ge_gaussianTailRadius_le (hk : 0 < k) {σ : ℝ}
         rw [← h2]; exact mul_le_mul_of_nonneg_left h1 (by positivity)
     _ = σ ^ 2 := by field_simp
 
-/-- **The dimension factor the amended ledger carries (wave 39).**
+/-- **The dimension factor the amended ledger carries.**
 `dimTailConst k = √(2k log 2k) + 2√k`. It is the `σ`-free envelope of `gaussianTailRadius`:
 `gaussianTailRadius k σ ≤ dimTailConst k · √(1 + log(1 + σ⁻¹))`
 (`gaussianTailRadius_le_dimTailConst`). Splitting the tail radius this way is what turns the
 ledger's harmonic sum into a `3/2` power of the logarithm times a pure dimension constant, and
-it is where the headline's `k`-dependence changes from `√k` (wave 32) to `√(k log k)`. -/
+it is where the headline's `k`-dependence changes from `√k` to `√(k log k)`. -/
 noncomputable def dimTailConst (k : ℕ) : ℝ :=
   Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) + 2 * Real.sqrt (k : ℝ)
 
@@ -4559,7 +4563,7 @@ lemma one_le_dimTailConst {k : ℕ} (hk : 0 < k) : 1 ≤ dimTailConst k := by
   linarith
 
 /-- The tail radius is at least `1` at every width — so the amended per-step weight
-`12 C_k σ · gaussianTailRadius k σ + W` really does dominate the wave-32 frozen weight
+`12 C_k σ · gaussianTailRadius k σ + W` really does dominate the frozen weight
 `4 C_k σ + W`, and the `ε` of the near/far split is absorbed by `σ ≤ σ·R`. Numerically the
 bound is `√(2 log 2) ≈ 1.177` at `k = 1` and grows. -/
 lemma one_le_gaussianTailRadius {k : ℕ} (hk : 0 < k) (σ : ℝ) :
@@ -4575,7 +4579,7 @@ lemma one_le_gaussianTailRadius {k : ℕ} (hk : 0 < k) (σ : ℝ) :
   rw [gaussianTailRadius]
   linarith
 
-/-- **The tail radius dominates `√k` at every width (wave 43).** This is what pays for the
+/-- **The tail radius dominates `√k` at every width.** This is what pays for the
 deconvolution radius on the tail side of brick L: the factor to be deconvolved away there is the
 smoothing Gaussian of width `σ_{j+1}`, whose concentration radius is `2 √k σ_{j+1}`, and the
 weight the tail brick already carries is `σⱼ · gaussianTailRadius k σⱼ`. Since
@@ -4593,7 +4597,7 @@ lemma sqrt_dim_le_gaussianTailRadius {k : ℕ} (hk : 0 < k) (σ : ℝ) :
   rw [gaussianTailRadius]
   linarith
 
-/-- **The tail radius is antitone in the width (wave 43).** The tail steps of the ledger are
+/-- **The tail radius is antitone in the width.** The tail steps of the ledger are
 summed at the *single* radius `gaussianTailRadius k ε`, while step `j` produces
 `gaussianTailRadius k σⱼ` with `σⱼ ≥ ε`; this is the comparison that lets them be summed. -/
 lemma gaussianTailRadius_anti {k : ℕ} {ε σ : ℝ} (hε : 0 < ε) (hεσ : ε ≤ σ) :
@@ -4607,7 +4611,7 @@ lemma gaussianTailRadius_anti {k : ℕ} {ε σ : ℝ} (hε : 0 < ε) (hεσ : ε
   rw [gaussianTailRadius, gaussianTailRadius]
   linarith
 
-/-- **The split that produces the `3/2` power (wave 39).** `log(1/ε) ≤ log(1 + ε⁻¹)`, so the
+/-- **The split that produces the `3/2` power.** `log(1/ε) ≤ log(1 + ε⁻¹)`, so the
 `√log` half of the tail radius is at most `2√k · √(1 + log(1 + ε⁻¹))`, and the dimension half is
 at most itself times the same (`≥ 1`) factor. -/
 lemma gaussianTailRadius_le_dimTailConst {k : ℕ} (hk : 0 < k) {ε : ℝ} (hε : 0 < ε) :
@@ -4700,17 +4704,17 @@ private lemma integrable_vecTiltRemainder (a : EuclideanSpace ℝ (Fin k)) :
   refine (h1.sub h2).congr (Filter.Eventually.of_forall fun z => ?_)
   simp only [Pi.sub_apply, one_mul, vecTiltRemainder]
 
-/-- **The localised weighted bound, for a test function that is CONSTANT off a small set**
-(wave 29). If `|G| ≤ 1` and `G ≡ a` off a measurable set `S`, with `|a| ≤ 1`, then
+/-- **The localised weighted bound, for a test function that is CONSTANT off a small set.**
+If `|G| ≤ 1` and `G ≡ a` off a measurable set `S`, with `|a| ≤ 1`, then
 
 `|∫ G · R_w dγ| ≤ 2 √(γ S) · √tiltSqConst · ‖w‖³`.
 
 `abs_integral_mul_vecTiltRemainder_le_of_support` is the case `a = 0`. The extension to a
 general constant is *not* cosmetic: it is exactly what the indicator half of a mollified convex
 indicator needs. Writing the mollified indicator `f = 1_{interior B} + g` with `g` shell-
-supported, the wave-19 lemma applies to `g` but not to `1_{interior B}`, whose Cameron–Martin
-error is `γ(K − w) − Q_w(K)` for the convex set `K = (interior B − v)/σ`. Wave 24's docstring
-concluded that bounding *that* by the shell mass is a Gaussian-surface-area statement, i.e.
+supported, the `a = 0` case applies to `g` but not to `1_{interior B}`, whose Cameron–Martin
+error is `γ(K − w) − Q_w(K)` for the convex set `K = (interior B − v)/σ`. One might conclude
+that bounding *that* by the shell mass is a Gaussian-surface-area statement, i.e.
 Ball's theorem. **That verdict is wrong.** Since `∫ R_w dγ = 0`
 (`integral_vecTiltRemainder_eq_zero`), one may subtract from `1_K` the constant it takes near
 the centre: if `v` is at distance `≥ r` from `∂B` then `1_K` is constant on the ball of radius
@@ -4775,7 +4779,7 @@ private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
     _ = 2 * Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
           * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by ring
 
-/-- **The localised Cameron–Martin error at a point far from the boundary** (wave 29). If the
+/-- **The localised Cameron–Martin error at a point far from the boundary**. If the
 bounded test function `F` is *constant* on the ball of radius `r` around `v` — which for a
 mollified convex indicator means exactly that `v` is at distance `≥ r` from the `ε`-shell of
 `∂B`, the constant being `1` inside and `0` outside — then the `σ`-smoothed Cameron–Martin
@@ -4784,7 +4788,7 @@ remainder at `v` is weighted by the **Gaussian tail** `γ{‖z‖ ≥ r/σ}`:
 `|∫ F(v + σ z) R_w(z) dγ(z)| ≤ 2 √(γ{‖z‖ ≥ r/σ}) · √tiltSqConst · ‖w‖³`.
 
 Combined with `stdGaussian_norm_ge_le` at order `p`, the weight is `2 (E‖z‖^p)^{1/2}(σ/r)^{p/2}`.
-This is the localisation that wave 24 declared to be Ball's theorem; it is not. -/
+This localisation does not need Ball's theorem. -/
 private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball
     {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
     (v : EuclideanSpace ℝ (Fin k)) {σ r : ℝ} (hσ : 0 < σ) (hr : 0 < r)
@@ -4808,16 +4812,17 @@ private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball
   linarith [hlt, heq.le, heq.ge]
 
 /-- **The localised Cameron–Martin error at a point far from the boundary, at EVERY shift
-length (wave 40 — the `‖w‖ ≤ 1` restriction is REMOVED).**
+length (the `‖w‖ ≤ 1` restriction is REMOVED).**
 
-Waves 29–39 could only localise a swap step at a point `v` far from `∂B` when the shift `w`
-was short: `abs_integral_shift_vecTiltRemainder_le_of_const_ball` runs through
+The bound above localises a swap step at a point `v` far from `∂B` only when the shift `w`
+is short: `abs_integral_shift_vecTiltRemainder_le_of_const_ball` runs through
 `integral_sq_vecTiltRemainder_le`, whose hypothesis `‖w‖ ≤ 1` is *not* removable — the `L²`
-norm of the tilt remainder grows like `e^{‖w‖²/2}`. Every one of waves 32, 35, 38 and 39
-recorded "the `‖w‖ ≤ 1` restriction is still open" as the residue of the tail brick; at step
+norm of the tilt remainder grows like `e^{‖w‖²/2}`. This restriction is the residue of the tail
+brick: at step
 `j` the shift is `w = (c/σ)y`, so the restriction is `‖y‖ ≤ √j`, and the complement is *not*
 priceable by the third moment alone (a bare constant in the per-step weight sums to `A δ ε⁻¹`,
-which is outside brick L's allowed shape — wave 35's Correction 1).
+which is outside brick L's allowed shape — Correction 1 in the note of
+`localised_swap_bound_small_weight`).
 
 **The repair, in one line.** Do not bound the tilt remainder in `L²`. Split it into its two
 halves and treat each with the structure it actually has:
@@ -4831,7 +4836,7 @@ halves and treat each with the structure it actually has:
   Gaussian tail gives `2 √(γ{‖z‖ ≥ M}) · 26(1 + ‖w‖²)`.
 
 Both constants are **dimension-free** (the polynomial bound goes through the one-dimensional
-marginal, exactly as the wave-19/29 bounds do), and neither half needs a fourth moment of the
+marginal, exactly as the bounds above do), and neither half needs a fourth moment of the
 summand law: the `‖w‖`-growth is quadratic, so against the localisation weight — which is
 itself linear in `‖w‖` — the product stays cubic.
 
@@ -5072,7 +5077,7 @@ private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball_any
           ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| := abs_sub _ _
     _ ≤ _ := by linarith [hexpbd, hpolybd]
 
-/-- **The crude swap-step bound: at most QUADRATIC in the shift** (wave 40).
+/-- **The crude swap-step bound: at most QUADRATIC in the shift**.
 `|∫ G R_w dγ| ≤ 2 + ‖w‖ + ‖w‖²` whenever `|G| ≤ 1`.
 
 The uniform bound `integral_abs_vecTiltRemainder_le` is *cubic* in `‖w‖`. That is the right
@@ -5286,7 +5291,7 @@ private lemma tiltPoly_fubini {τ : Measure (EuclideanSpace ℝ (Fin k))}
     ring
   simpa using hinner
 
-/-- **The tilt representation of the Gaussian-smoothed step (wave 41).** *Exact*, and with no
+/-- **The tilt representation of the Gaussian-smoothed step.** *Exact*, and with no
 moment hypothesis beyond the two the Cameron–Martin polynomial consumes.
 
 Averaging `F(v + σz + cy)` over `y ∼ τ` and `z ∼ γ` and subtracting the number
@@ -5294,8 +5299,8 @@ Averaging `F(v + σz + cy)` over `y ∼ τ` and `z ∼ γ` and subtracting the n
 its first two moments only, hence is the *same* for every centred, identity-covariance law —
 leaves exactly the `τ`-average of the Cameron–Martin **tilt remainder** at shift `(c/σ)y`.
 
-Waves 32–40 recorded this identity as "established inside
-`abs_integral_gaussian_smoothed_sub_common_le` but not exported"; it is the first of the three
+This identity is the exact part of
+`abs_integral_gaussian_smoothed_sub_common_le`, exported; it is the first of the three
 bookkeeping pieces the tail brick `abs_integral_gaussian_smoothed_swap_localised_le` needs, and
 it is what lets that brick apply the *localised* pointwise estimate
 `abs_integral_shift_vecTiltRemainder_localised_le` under the `τ`-average, rather than the
@@ -5411,7 +5416,7 @@ through the Cameron–Martin formula. This is the ingredient that replaces the f
 the mollifier route by `σ⁻³`, and hence improves the exponent of the elementary
 Berry–Esseen rate.
 
-Wave 41: the exact part of the argument is now
+The exact part of the argument is
 `integral_gaussian_smoothed_sub_common_eq`, and what is left here is the third moment. -/
 private lemma abs_integral_gaussian_smoothed_sub_common_le {C : ℝ}
     (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
@@ -5716,8 +5721,8 @@ private lemma inv_mul_sqrt_le_telescope {j : ℕ} (hj : 2 ≤ j) :
 
 /-- **The `j^{-3/2}` tail of the telescope**, as a standalone sum bound: for every cut `J ≥ 2`,
 `∑_{J ≤ j < m} j^{-3/2} ≤ 3 J^{-1/2}`. This is `inv_mul_sqrt_le_telescope` summed, and it is the
-piece of the ledger that produces the `ε⁻¹` (at `J = ⌈ε²n⌉`, `J^{-1/2} = (ε√n)^{-1}`). Wave 32
-factored it out of `sum_le_of_bounded_and_decay` so that the *weighted* ledger
+piece of the ledger that produces the `ε⁻¹` (at `J = ⌈ε²n⌉`, `J^{-1/2} = (ε√n)^{-1}`). It is
+factored out of `sum_le_of_bounded_and_decay` so that the *weighted* ledger
 `sum_le_of_bounded_and_weighted_decay` can reuse it. -/
 private lemma sum_Ico_inv_mul_sqrt_le {J m : ℕ} (hJ : 2 ≤ J) :
     ∑ j ∈ Finset.Ico J m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
@@ -5789,7 +5794,7 @@ private lemma one_div_le_log_sub_log {j : ℕ} (hj : 2 ≤ j) :
   rw [hval] at h
   linarith
 
-/-- **The harmonic tail of the ledger** (wave 32): `∑_{J ≤ j < m} j^{-1} ≤ 1 + log(m/J)`.
+/-- **The harmonic tail of the ledger**: `∑_{J ≤ j < m} j^{-1} ≤ 1 + log(m/J)`.
 
 This is the **only** source of the logarithm in `berryEsseen_convex_sharp`. It appears because
 the per-step localisation weight of the telescope is `4 C_k σⱼ + W` with `σⱼ = √(j/n)`, and
@@ -5928,7 +5933,7 @@ private lemma sum_le_of_bounded_and_decay_const {K θ : ℝ} (hK : 0 < K) (hθ :
   refine h.trans_eq ?_
   field_simp
 
-/-- **The summation ledger of the WEIGHTED telescope** (wave 32, PROVED).
+/-- **The summation ledger of the WEIGHTED telescope**.
 
 This is the arithmetic certificate behind the logarithm in `berryEsseen_convex_sharp`, isolated
 from all the measure theory. The *localised* telescope of `localised_swap_bound_small_weight`
@@ -6090,9 +6095,9 @@ private lemma continuous_integral_add_smul {σ : Measure (EuclideanSpace ℝ (Fi
     (Filter.Eventually.of_forall fun u =>
       hF.comp (continuous_id.add continuous_const))
 
-/-! #### Wave-43 helpers: the same three facts at an arbitrary constant bound, plus the two
+/-! #### Helpers: the same three facts at an arbitrary constant bound, plus the two
 convolution/smoothing identities the LOCALISED telescope needs.  The localised per-step bounds
-`D v` are differences of two averages, hence bounded by `2` and not by `1`, so the wave-16
+`D v` are differences of two averages, hence bounded by `2` and not by `1`, so the
 helpers above do not apply to them verbatim. -/
 
 /-- A continuous function with an arbitrary constant bound is integrable. -/
@@ -6206,9 +6211,9 @@ private lemma continuous_double_smooth {ν : Measure (EuclideanSpace ℝ (Fin k)
   exact hΨb _
 
 /-- **The telescope step with a bound that may depend on the remaining coordinates**
-(wave 36: the *structural* half of brick L's residue).
+(the *structural* half of brick L's residue).
 
-The wave-16 telescope estimates one step by a **constant** pointwise bound `D` on the peeled
+The unweighted telescope estimates one step by a **constant** pointwise bound `D` on the peeled
 difference `|∫ g(u + v) dν − ∫ g(u + v) dσ|`, uniformly in the remaining sum `v = ∑ₗ yₗ`. The
 two localised swap estimates that brick L needs
 (`localised_swap_bound_small_weight`) are not of that form: their weight is the mass of a
@@ -6216,7 +6221,7 @@ two-sided shell under the hybrid law, i.e. an *average*, not a pointwise bound. 
 supply is a bound `D v` that varies with `v` — typically `D v = (shell indicator averaged over
 the peeled coordinate and the smoothing Gaussian) × cost`.
 
-This lemma is that generalisation, and it is exactly as cheap: the wave-16 argument never used
+This lemma is that generalisation, and it is exactly as cheap: the argument never used
 constancy of `D`, only `integral_mono` against a constant. Replacing the constant by an
 integrable function of `∑ₗ yₗ` costs one integrability hypothesis and nothing else.
 
@@ -6387,7 +6392,7 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     · exact hν
   set I : ℕ → ℝ := fun j => ∫ x, G j (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
   -- one telescope step, given a bound on the peeled difference that may itself depend on the
-  -- remaining coordinates (wave 36: the `v`-dependent form, via
+  -- remaining coordinates (the `v`-dependent form, via
   -- `abs_sub_integral_peel_le_integral`; the constant case is `hstepgen` below)
   have hstepfun : ∀ j : ℕ, ∀ hj : j < m + 1, ∀ D : EuclideanSpace ℝ (Fin k) → ℝ,
       Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) => D (∑ l, y l))
@@ -6879,7 +6884,7 @@ moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
 `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})`.
 
 This is a strict improvement on the exponent `1/4` of `berryEsseen_convex_elementary`
-(`n^{-1/8}`), and it is the ceiling of the *non-inductive* elementary route: see the wave-13
+(`n^{-1/8}`), and it is the ceiling of the *non-inductive* elementary route: see the first
 amendment in the module docstring. The residual gap to Bentkus's `400 k^{1/4} β/√n` is a further
 factor `(β/√n)^{1/2}`, obtainable only by the self-improving induction
 `Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) + C_k ε`, which is not attempted here.
@@ -7050,9 +7055,9 @@ theorem berryEsseen_ball_improved :
 end ImprovedAssembly
 
 
-/-! ### Wave-19: the fixed points of Bentkus's self-improving recursion
+/-! ### The fixed points of Bentkus's self-improving recursion
 
-The wave-16 note isolated *two* missing ingredients for the sharp rate. The first is the
+The module docstring isolates *two* missing ingredients for the sharp rate. The first is the
 weighted Cameron–Martin bound `integral_abs_mul_vecTiltRemainder_le` proved above. The second is
 the **self-improving induction over `n`**: the localised swap bounds the discrepancy at sample
 size `n` by an expression in which the discrepancy *itself* reappears, through the
@@ -7066,11 +7071,11 @@ discrepancy being bounded. The recursions that result are the following three; t
 solves all three as statements about real numbers, so that the only thing left for the
 probabilistic side is to *produce* the hypothesis `hrec`.
 
-* `le_of_selfImproving_cube` / `cube_le_of_selfImproving_cube`: the recursion of the wave-16
-  note verbatim, `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` for every `ε > 0`, closes at
+* `le_of_selfImproving_cube` / `cube_le_of_selfImproving_cube`: the recursion of the module
+  docstring verbatim, `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` for every `ε > 0`, closes at
   `Δ ≤ (5/2) C e` with `e³ = 4Aδ`, i.e. `Δ³ ≤ 63 C³ A δ`, i.e. `Δ ≲ C δ^{1/3}`.
 * `le_of_selfImproving_smoothed`: the same recursion **after** the Gaussian smoothing of the
-  hybrid telescope, which turns `ε⁻³` into `ε⁻¹` (this is the wave-13/16 improvement,
+  hybrid telescope, which turns `ε⁻³` into `ε⁻¹` (this is the Cameron–Martin improvement,
   `abs_integral_smooth_sub_gaussian_improved`). It closes at `Δ ≤ 10 A C δ` — **linear in
   `δ = β/√n`, i.e. exactly the sharp Bentkus rate**, with the dimension entering only through
   the shell constant `C = C_k`. This is the precise sense in which "the induction, iterated
@@ -7226,9 +7231,9 @@ theorem cube_le_of_selfImproving_smoothed_sqrt {A C δ Δ : ℝ} (hΔ : 0 ≤ Δ
 
 end SelfImproving
 
-/-! ### Wave-20: the recursion run as an induction over the hybrid family
+/-! ### The recursion run as an induction over the hybrid family
 
-The wave-19 fixed points solve the recursion at a *single* scale: they take the inequality
+The fixed points above solve the recursion at a *single* scale: they take the inequality
 `Δ ≤ A δ ε⁻¹ (C ε + 2Δ) + C ε` as given, with the *same* `Δ` on both sides. That is not the shape
 the telescope produces. The `2Δ` on the right is the shell mass of a **hybrid** law
 `c ∑_{i ≥ j} Yᵢ + sⱼ Z`, whose non-Gaussian part is a normalised sum of `m = n − j` summands, so
@@ -7248,7 +7253,7 @@ present section supplies the two missing pieces of bookkeeping.
 * `convexDiscrepancy` and `measureReal_shell_le_of_convexDiscrepancy` — the class the induction
   runs on, and the *derivation* of the shape `C ε + 2Δ`. The `ε`-shell of a convex `B` is
   `Bᵋ \ interior B`, a **difference of two convex sets**; that is why the factor is `2Δ` and not
-  `Δ`. But — and this corrects the wave-19 reading of the obstacle — the induction does **not**
+  `Δ`. But — and this corrects a naive reading of the obstacle — the induction does **not**
   have to be enlarged to the class of differences of convex sets: a difference `B₁ \ B₂` with
   `B₂ ⊆ B₁` has `μ(B₁ \ B₂) = μ(B₁) − μ(B₂)`, so two applications of the *convex* bound suffice
   (`measureReal_diff_le_of_convexDiscrepancy`). The class of measurable convex sets is closed
@@ -7334,23 +7339,23 @@ theorem le_of_selfImproving_induction {A C b : ℝ} {D : ℕ → ℝ}
       rw [hKdef]
       nlinarith [hA.le, hC.le, hδpos.le]
 
-/-- **The self-improving induction with an ABSTRACT forcing factor (wave 39: PROVED).**
+/-- **The self-improving induction with an ABSTRACT forcing factor.**
 
-Wave 32 solved the fixed point with the specific forcing term `1 + log(1 + ε⁻¹)`
-(`le_of_selfImproving_induction_log`, now a corollary of this). Wave 39's amended ledger
+The fixed point with the specific forcing term `1 + log(1 + ε⁻¹)` is
+`le_of_selfImproving_induction_log`, a corollary of this. The amended ledger
 produces a *different* forcing term — the `3/2` power `(1 + log(1 + ε⁻¹))^{3/2}`, see
 `logPow32` and the note on `abs_integral_gaussian_smoothed_swap_localised_le` — so the question
-"does the fixed point still close, and at what constant?" had to be re-asked rather than
-assumed. The answer is that the wave-32 argument never used anything about the logarithm except
-two properties, which are exactly the hypotheses below:
+"does the fixed point still close, and at what constant?" has to be re-asked rather than
+assumed. The answer is that the logarithmic argument never used anything about the logarithm
+except two properties, which are exactly the hypotheses below:
 
 * `1 ≤ G ε` — so the log-free term `9 A C δ` can be absorbed into `K δ G`;
 * `G` is **antitone** — so `G` propagates in the right direction along the neighbour range
   `n/2 ≤ m ≤ n`, on which `δₘ ≥ δₙ` and hence `8 A δₘ ≥ 8 A δₙ`.
 
 With those, the two cases close at `K = 20 A C` and `K = (40/3) A C` exactly as before: **the
-constant is unchanged, whatever the forcing factor**. In particular the deviation wave 39 has to
-record in the headline is a change of the *log power* and of the dimension factor, and not of
+constant is unchanged, whatever the forcing factor**. In particular the deviation the headline
+records is a change of the *log power* and of the dimension factor, and not of
 the recursion constant. As with `le_of_selfImproving_induction` no base case is needed. -/
 theorem le_of_selfImproving_induction_forcing {A C b w : ℝ} {D : ℕ → ℝ} {G : ℝ → ℝ}
     (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : w ≤ 8 * A * b)
@@ -7419,7 +7424,7 @@ theorem le_of_selfImproving_induction_forcing {A C b w : ℝ} {D : ℕ → ℝ} 
     have hεpos : 0 < 8 * A * δ := by positivity
     -- the induction only ever runs the recursion at the width `ε = 8 A δ`, and there
     -- `ε √n = 8 A b` does not depend on `n`; so the localisation window is a hypothesis
-    -- on the *constants* alone (wave 36).
+    -- on the *constants* alone.
     have hwin : w ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
       have h : 8 * A * δ * Real.sqrt (n : ℝ) = 8 * A * b := by
         rw [hδdef]; field_simp
@@ -7445,8 +7450,7 @@ theorem le_of_selfImproving_induction_forcing {A C b w : ℝ} {D : ℕ → ℝ} 
       rw [hKdef]
       nlinarith [hACδ, hM1]
 
-/-- **The self-improving induction with the mollification logarithm** (wave 32; wave 39: proof
-re-based on `le_of_selfImproving_induction_forcing`, statement unchanged).
+/-- **The self-improving induction with the mollification logarithm**.
 
 The hybrid telescope smooths step `j` at width `σⱼ = √(j/n)`, sweeping from `ε` to `1`, while
 the test function has the *single* width `ε`. The localised swap therefore pays, at step `j`,
@@ -7466,9 +7470,9 @@ because `m ≤ n` gives `δₘ ≥ δₙ`. So `K δ M` self-propagates with `Y =
 same cut `ε = 8Aδₙ` the recursion reads `D n ≤ 9ACδ + Y/4 + ACδM`. Using `M ≥ 1` to absorb the
 log-free term, the two cases close at `K = 20 A C` and `K = (40/3) A C` respectively.
 
-**Wave 39.** Those two italicised facts — `M ≥ 1` and antitonicity — are *all* the argument
-uses, so the whole proof has been moved to `le_of_selfImproving_induction_forcing` and this is
-now the instance `G ε = 1 + log(1 + ε⁻¹)`. The instance the amended ledger actually consumes is
+Those two italicised facts — `M ≥ 1` and antitonicity — are *all* the argument
+uses, so the proof is that of `le_of_selfImproving_induction_forcing` and this is
+the instance `G ε = 1 + log(1 + ε⁻¹)`. The instance the amended ledger actually consumes is
 `le_of_selfImproving_induction_logPow32`.
 
 The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliberate: it makes the extra
@@ -7497,14 +7501,14 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
     have := Real.log_le_log h1 (by linarith : (1 : ℝ) + y⁻¹ ≤ 1 + x⁻¹)
     linarith
 
-/-- **The `3/2`-power forcing factor (wave 39).** `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`,
+/-- **The `3/2`-power forcing factor.** `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`,
 written as a product rather than an `rpow` so that `positivity`/`nlinarith` can see it.
 
 This is the forcing term the *amended* ledger produces. Its source is the amended tail weight
 `4 C_k σⱼ · Λ(σⱼ) + W` of `abs_integral_gaussian_smoothed_swap_localised_le`, whose extra
 factor `Λ(σ) = gaussianTailRadius k σ` carries a `√(log(1/σ))`: summing
 `Λ(σⱼ) σⱼ / (j √j) = Λ(σⱼ)/(√n · j)` over the tail steps `J < j ≤ n` costs
-`√(log(1/ε)) · log(1/ε)` in place of the wave-32 `log(1/ε)`. See the ledger note on the tail
+`√(log(1/ε)) · log(1/ε)` in place of a single `log(1/ε)`. See the ledger note on the tail
 brick for the derivation, and `le_of_selfImproving_induction_logPow32` for the fixed point. -/
 noncomputable def logPow32 (x : ℝ) : ℝ :=
   (1 + Real.log (1 + x⁻¹)) * Real.sqrt (1 + Real.log (1 + x⁻¹))
@@ -7533,13 +7537,13 @@ lemma logPow32_anti {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) : logPow32 y ≤ lo
   rw [logPow32, logPow32]
   exact mul_le_mul hlog (Real.sqrt_le_sqrt hlog) (Real.sqrt_nonneg _) (by linarith)
 
-/-- **The fixed point of the AMENDED ledger (wave 39: PROVED).** The recursion with forcing term
-`(1 + log(1 + ε⁻¹))^{3/2}` self-improves, at the *same* constant `20 A C` as the wave-32
-logarithmic one; only the factor carried into the answer changes.
+/-- **The fixed point of the AMENDED ledger.** The recursion with forcing term
+`(1 + log(1 + ε⁻¹))^{3/2}` self-improves, at the *same* constant `20 A C` as the logarithmic one;
+only the factor carried into the answer changes.
 
-This is the statement wave 39 had to check rather than assume: the amended tail weight of
+This statement has to be checked rather than assumed: the amended tail weight of
 `abs_integral_gaussian_smoothed_swap_localised_le` raises the ledger's log power from `1` to
-`3/2`, and it was not a priori clear that a `3/2` power still self-improves linearly. It does,
+`3/2`, and it is not a priori clear that a `3/2` power still self-improves linearly. It does,
 and by `le_of_selfImproving_induction_forcing` the reason is structural: only `G ≥ 1` and
 antitonicity of `G` are used, both of which `logPow32` has. -/
 theorem le_of_selfImproving_induction_logPow32 {A C b w : ℝ} {D : ℕ → ℝ}
@@ -7586,7 +7590,7 @@ theorem log_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
       _ = 1 := Real.log_exp 1
   linarith
 
-/-- **`log_shift_le` for the `3/2` power (wave 39).** The headline records its logarithm as
+/-- **`log_shift_le` for the `3/2` power.** The headline records its logarithm as
 `1 + log(max δ⁻¹ e)`; the induction produces `logPow32 (8 A δ)`. Since `log_shift_le` turns the
 inner factor into `2 (1 + log(max δ⁻¹ e))`, the `3/2` power costs `2^{3/2} = 2√2 ≤ 3`. -/
 theorem logPow32_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
@@ -7881,7 +7885,7 @@ theorem gaussian_measureReal_shell_preimage_aff_le (hk : 0 < k)
   rw [convexDiscrepancy_self] at h
   linarith
 
-/-! #### Wave-29: the *two-sided* shell, and its affine transport
+/-! #### The *two-sided* shell, and its affine transport
 
 The localised swap step needs more than the outer shell `Bᵋ \ interior B`. A point `v` is
 harmless for the localisation exactly when the mollified indicator is **constant** on a ball
@@ -8016,7 +8020,7 @@ theorem gaussian_measureReal_wideShell_preimage_aff_le (hk : 0 < k)
   rw [convexDiscrepancy_self] at h
   linarith
 
-/-! ### Wave-20: the hybrid family, and the recursion it produces -/
+/-! ### The hybrid family, and the recursion it produces -/
 
 /-- The law of the normalised sum `n^{-1/2} ∑ᵢ Yᵢ` of `n` i.i.d. copies of `ν`. -/
 noncomputable def sumLaw (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) :
@@ -8051,9 +8055,9 @@ instance isProbabilityMeasure_hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpac
     intro i; split <;> infer_instance
   exact (by infer_instance)
 
-/-- **The hybrid law IS the telescope's `j`-th test measure** (wave 36).
+/-- **The hybrid law IS the telescope's `j`-th test measure**.
 
-`hybridLaw` was introduced (wave 20) with the comment that it is "exactly the measure against
+`hybridLaw` was introduced with the comment that it is "exactly the measure against
 which `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
 identity was never recorded in Lean — brick H speaks about `hybridLaw`, the telescope speaks
 about `Iⱼ = ∫ Gⱼ(∑ₗ xₗ) d(⨂ κⱼ)`, and nothing connected them. It is needed as soon as the
@@ -8094,7 +8098,7 @@ theorem integral_hybridLaw_eq {n j : ℕ} (ν : Measure (EuclideanSpace ℝ (Fin
     integral_map hΦmeas.aemeasurable hf.aestronglyMeasurable]
   exact integral_prod _ hint
 
-/-- **The peeled average IS a hybrid-law average** (wave 36).
+/-- **The peeled average IS a hybrid-law average**.
 
 The second half of the bridge. `abs_sub_integral_peel_le_integral` bounds a telescope step by
 `∫ D(∑ₗ yₗ) dR`, an average over the *remaining* `n − 1` coordinates; brick H
@@ -8142,7 +8146,7 @@ theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
   rw [hν] at h
   exact h
 
-/-- **The hybrid law is a convolution, at the level of measures (wave 42).** `hybridLaw n j ν`
+/-- **The hybrid law is a convolution, at the level of measures.** `hybridLaw n j ν`
 is the law of `A + G` with `A` the (scaled) coordinate sum and `G` the smoothing Gaussian,
 independent.
 
@@ -8170,14 +8174,14 @@ theorem hybridLaw_eq_map_add (n j : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin 
     Measure.map_map (by fun_prop) (by fun_prop), hybridLaw]
   rfl
 
-/-- **The head-side convolution identity (wave 43).** *The `j`-th hybrid law is the law of the
+/-- **The head-side convolution identity.** *The `j`-th hybrid law is the law of the
 head step's base point, convolved with the swapped coordinate.*
 
 At step `j` the telescope peels coordinate `j`, so the base point of the head brick — after the
 smoothing integral has been pulled outside the modulus, as `hboundA` already does — is
-`c ∑_{l ≠ j} Yₗ + σⱼ Z`, the *peeled* law. Wave 41 established that this is **not**
-`hybridLaw n j ν`; wave 42 established that the correct relation is that `hybridLaw n j ν` is
-that law convolved with `c ν`, and that a shell bound therefore transfers by *deconvolution*
+`c ∑_{l ≠ j} Yₗ + σⱼ Z`, the *peeled* law. This is **not**
+`hybridLaw n j ν`; the correct relation is that `hybridLaw n j ν` is
+that law convolved with `c ν`, and a shell bound therefore transfers by *deconvolution*
 (`wideShell_le_of_deconvolution_uniform`), not by shifting the indicator.
 
 The proof is pure convolution algebra: `hybridLaw_eq_map_add` writes the hybrid law as
@@ -8202,7 +8206,7 @@ theorem hybridLaw_conv_head {m j : ℕ} (hj : j < m + 1)
     map_pi_sum_smul_peel κ (⟨j, hj⟩ : Fin (m + 1)) (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹, hν,
     conv_reassoc]
 
-/-- **The tail-side convolution identity (wave 43).** *The `(j+1)`-st hybrid law is the law of the
+/-- **The tail-side convolution identity.** *The `(j+1)`-st hybrid law is the law of the
 tail step's base point, convolved with the whole smoothing Gaussian of width `σ_{j+1}`.*
 
 `abs_integral_gaussian_smoothed_swap_localised_le` evaluates its shell indicator at `v`, i.e.
@@ -8339,7 +8343,7 @@ private lemma map_partial_sum_eq_smul_sumLaw {n j : ℕ} (hj : j ≤ n) (hm : 0 
     field_simp
   rw [hL, hR]
 
-/-- **The conditioning skeleton of brick H** (wave 29: factored out). For *any* measurable set
+/-- **The conditioning skeleton of brick H**. For *any* measurable set
 `S`, the hybrid mass `hybridLaw n j ν S` is bounded by any `c ≥ 0` that dominates the mass of
 every affine preimage `(r • · + a)⁻¹ S` with `r ≥ 1/2`, under the Gaussian in the
 Gaussian-dominant regime `n ≤ 2j` and under `sumLaw (n-j) ν` in the sum-dominant regime.
@@ -8456,7 +8460,7 @@ private lemma hybridLaw_le_of_affine_le {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
           lintegral_mono hinner
       _ = ENNReal.ofReal c := by rw [lintegral_const, measure_univ, mul_one]
 
-/-- **Brick H (wave 22: PROVED).** *The shell mass of every hybrid law is `≤ 2 C_k ε + 2Y`,
+/-- **Brick H.** *The shell mass of every hybrid law is `≤ 2 C_k ε + 2Y`,
 uniformly in `j`.*
 
 This is where the induction is consumed, and the reason the neighbour range of
@@ -8478,14 +8482,13 @@ This is where the induction is consumed, and the reason the neighbour range of
 Both regimes use the affine transport proved just above (`measureReal_shell_preimage_aff_le`,
 via `preimage_aff_thickening` and `preimage_aff_interior`): the preimage of an `ε`-shell of a
 convex set under `x ↦ r x + a` is the `(ε/r)`-shell of a convex set, so the class the induction
-runs on is affine-invariant. The convolution bookkeeping that wave 20 left open is supplied by
+runs on is affine-invariant. The convolution bookkeeping is supplied by
 the two Fubini identities above together with `map_partial_sum_eq_smul_sumLaw`, whose only
 non-formal ingredient is `map_sum_pi_dirac_drop` — the `δ₀` factors of the hybrid product drop
 out of the law of the coordinate sum.
 
-Wave 29 factored the two-regime conditioning out as `hybridLaw_le_of_affine_le`, which knows
-nothing about the shell; what is left here is the two affine-transport estimates. The statement
-is unchanged.
+The two-regime conditioning is factored out as `hybridLaw_le_of_affine_le`, which knows
+nothing about the shell; what is left here is the two affine-transport estimates.
 
 The moment hypotheses `hmean`, `hcov`, `hβ` are **not used**: the shell bound is purely
 geometric, and only enters the recursion through `convexDiscrepancy`, where the moments are
@@ -8525,7 +8528,7 @@ theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
     have h2 := mul_le_mul_of_nonneg_left (hbound r hr) hCk.le
     linarith
 
-/-- **Brick H for the two-sided shell (wave 29: PROVED).** *The mass every hybrid law puts on
+/-- **Brick H for the two-sided shell.** *The mass every hybrid law puts on
 `Bᵋ \ B_{-ε}` is `≤ 4 C_k ε + 2Y`, uniformly in `j`.*
 
 The same instance of `hybridLaw_le_of_affine_le` as `hybridLaw_shell_le`, with the two-sided
@@ -8573,11 +8576,11 @@ theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤
     linarith
 
 
-/-! #### Localising the swap remainder (wave 37)
+/-! #### Localising the swap remainder
 
 The head steps of the weighted telescope need the elementary swap *localised*: its cost must be
 multiplied by the indicator of a two-sided shell, whose mass under `hybridLaw n j ν` is what the
-amended weight hypothesis bounds. Wave 36 identified the obstruction — the Lagrange remainder
+amended weight hypothesis bounds. The obstruction is that the Lagrange remainder
 controls `D³f` along the whole segment `[a, a + w]`, so the shell width is `‖w‖`, which is
 unbounded in `w`. The three lemmas here supply the localisation *at that varying width*, which
 is exactly what the two-regime split of the head estimate consumes.
@@ -8658,8 +8661,8 @@ private lemma abs_taylor_remainder_localised_le {B : Set (EuclideanSpace ℝ (Fi
 /-- **The localised lower-order remainder bound (head, far regime).** For `‖w‖` large the
 third-order bound is worse than simply discarding the expansion: the remainder is at most
 `2 + ‖D¹f‖‖w‖ + ½‖D²f‖‖w‖²`, and this too carries the shell indicator at width `‖w‖`. Together
-with the mollifier bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` of `exists_smoothed_convex_indicator`
-(wave 37, item 1) this is what prices the far regime with only a *third* moment of `ν`. -/
+with the mollifier bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` of `exists_smoothed_convex_indicator` this
+is what prices the far regime with only a *third* moment of `ν`. -/
 private lemma abs_taylor_remainder_localised_lower_le {B : Set (EuclideanSpace ℝ (Fin k))}
     {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε : ℝ}
     (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
@@ -8707,12 +8710,12 @@ private lemma abs_taylor_remainder_localised_lower_le {B : Set (EuclideanSpace �
       Set.indicator_of_notMem ha]
     simp
 
-/-- **The far regime priced (wave 37, PROVED).** For a displacement `t = c‖u‖` beyond the
+/-- **The far regime priced.** For a displacement `t = c‖u‖` beyond the
 mollification width `ε`, the lower-order remainder bound times the shell weight at width `t` is
 dominated by `t³` and `t²` terms with an `ε^{-2}` in front. This is the pointwise arithmetic of
 the far half of the head estimate; combined with `setIntegral_norm_pow_tail_le` it shows that
 the far regime costs only a **third** moment of `ν`, which is why the naive fourth-moment
-obstruction of wave 36 is not real. -/
+obstruction is not real. -/
 private lemma far_regime_pointwise_le {C₃ Ck W ε t : ℝ} (hε : 0 < ε) (ht : ε ≤ t)
     (hC₃ : 1 ≤ C₃) (hCk : 0 ≤ Ck) (hW : 0 ≤ W) :
     (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * (8 * Ck * t + W)
@@ -8736,7 +8739,7 @@ private lemma far_regime_pointwise_le {C₃ Ck W ε t : ℝ} (hε : 0 < ε) (ht 
       ≤ (4 * C₃ * t ^ 2 / ε ^ 2) * (8 * Ck * t + W) := mul_le_mul_of_nonneg_right hbr hw
     _ = 32 * C₃ * Ck * t ^ 3 / ε ^ 2 + 4 * C₃ * W * t ^ 2 / ε ^ 2 := by ring
 
-/-- **The far tail of a third moment (wave 37, PROVED).** `∫_{‖u‖ > R} ‖u‖^p dν ≤ β / R^q` for
+/-- **The far tail of a third moment.** `∫_{‖u‖ > R} ‖u‖^p dν ≤ β / R^q` for
 `p + q = 3`. This is the only integrability input the far regime needs: no fourth moment, and no
 moment beyond the `hβint` the brick already carries. -/
 private lemma setIntegral_norm_pow_tail_le {p q : ℕ} (hpq : p + q = 3) {R : ℝ} (hR : 0 < R)
@@ -8846,14 +8849,15 @@ private lemma indicator_one_mono {α : Type*} {s t : Set α} (h : s ⊆ t) (a : 
   · rw [Set.indicator_of_notMem hm]
     exact indicator_one_nonneg t a
 
-/-- **The two-sided shell moves with a shift, at the price of the shift length (wave 41).**
+/-- **The two-sided shell moves with a shift, at the price of the shift length.**
 `1_{shell at s}(a) ≤ 1_{shell at s + t}(a + w)` whenever `‖w‖ ≤ t`.
 
-Wave 41 identified this as the missing link between the two localised per-step bricks and the
+This looks like the missing link between the two localised per-step bricks and the
 weight hypothesis of `localised_swap_bound_small_weight`, by moving each brick's indicator to
-the shifted point. **Wave 42 overturned that use** — the shell width in both bricks is a
+the shifted point. **That use fails:** the shell width in both bricks is a
 function of the *same* variable as the shift, so the move produces the shell mass of a translate
-of the base law rather than of the convolution; see the wave-42 section of that theorem's note.
+of the base law rather than of the convolution; see "Why shifting the indicator cannot work" in
+that theorem's note.
 What the lemma is actually used for is the *reverse* reading, inside
 `wideShell_le_of_deconvolution`: it says that the shell grows under a bounded shift, which is
 what makes `τ(shell s) · η(closedBall 0 t) ≤ (τ ∗ η)(shell (s + t))` true.
@@ -8894,12 +8898,13 @@ private lemma indicator_wideShell_le_shift {B : Set (EuclideanSpace ℝ (Fin k))
   · rw [Set.indicator_of_notMem ha]
     exact indicator_one_nonneg _ _
 
-/-- **Deconvolution of a two-sided-shell bound (wave 42).** *A shell bound for a convolution
+/-- **Deconvolution of a two-sided-shell bound.** *A shell bound for a convolution
 `μ = τ ∗ η` gives one for the factor `τ`, at the price of the concentration radius of `η`.*
 
 This is the transfer brick L actually needs, and it is **not** `indicator_wideShell_le_shift`;
-see the wave-42 section of `localised_swap_bound_small_weight` for why that lemma cannot do the
-job. The mechanism here is the reverse one: `mem_wideShell_shift` says that the shell *grows*
+see "Why shifting the indicator cannot work" in the note of
+`localised_swap_bound_small_weight` for why that lemma cannot do the job. The mechanism here is
+the reverse one: `mem_wideShell_shift` says that the shell *grows*
 under a bounded shift, so
 
 `τ(shell s) · η(closedBall 0 t) = (τ ⊗ η)(shell s × closedBall 0 t) ≤ μ(shell (s + t))`,
@@ -8963,7 +8968,7 @@ private lemma wideShell_le_of_deconvolution {B : Set (EuclideanSpace ℝ (Fin k)
   rw [le_div_iff₀ hq0]
   nlinarith [hstep, hCk, hts]
 
-/-- **The deconvolution radius, by Chebyshev (wave 42).** `η(closedBall 0 t) ≥ 1 − E‖y‖²/t²`,
+/-- **The deconvolution radius, by Chebyshev.** `η(closedBall 0 t) ≥ 1 − E‖y‖²/t²`,
 which at `t = 2 √(E‖y‖²)` gives the constant `q = 3/4` that
 `wideShell_le_of_deconvolution` consumes. Both laws that brick L has to deconvolve away have
 `E‖y‖² = k` times the square of their scale (`integral_normSq_eq_dim`), so the radius is
@@ -9007,11 +9012,12 @@ private lemma wideShell_mono {B : Set (EuclideanSpace ℝ (Fin k))} {s t : ℝ} 
     (fun _ hx _ hy => hx (Metric.closedBall_subset_closedBall hst hy))
 
 /-- **Deconvolution of a two-sided-shell bound, in the UNIFORM form the two per-step bricks
-consume (wave 43).**
+consume.**
 
 `wideShell_le_of_deconvolution` gives the factor's shell bound only at widths `s ≥ t`, `t` the
 concentration radius of the deconvolved factor `η`. Both per-step bricks, however, consult their
-`hshell` hypothesis at *every* width (that is the wave-29 amendment), so what they need is a
+`hshell` hypothesis at *every* width (that is the two-sided-shell amendment), so what they
+need is a
 statement of exactly the frozen shape `∀ s > 0, τ(shell s) ≤ 4 C_k' s + W'`. Running the
 deconvolution at `t = 2r` with `r ≥ √(E‖y‖²)` — where Chebyshev
 (`measureReal_closedBall_ge_of_normSq`) gives the mass `q = 3/4` — and completing the range
@@ -9019,7 +9025,7 @@ deconvolution at `t = 2r` with `r ≥ √(E‖y‖²)` — where Chebyshev
 
   `C_k' = 3 C_k`,  `W' = 2W + 22 C_k r`.
 
-Both constants are wave 42's, and both are absorbed at the call sites by the localisation window
+Both constants are absorbed at the call sites by the localisation window
 `√k ≤ ε √n`, which is what makes `r ≤ ε` on the head side and `r ≲ σⱼ R(σⱼ)` on the tail side. -/
 private lemma wideShell_le_of_deconvolution_uniform {B : Set (EuclideanSpace ℝ (Fin k))}
     {τ η μ : Measure (EuclideanSpace ℝ (Fin k))}
@@ -9431,21 +9437,21 @@ private lemma integral_far_shell_le
     field_simp
   linarith
 
-/-- **The per-step head estimate (wave 37: stated; wave 38: PROVED).** *One head step of the
+/-- **The per-step head estimate.** *One head step of the
 hybrid telescope, localised, averaged against the step's own hybrid law.*
 
 `τ` is the law of the step's base point, `ν` is the swapped-in law and `ρ` the standard
 Gaussian, and `c = n^{-1/2}` is the step's scale.
 
-**ERRATUM (wave 41).** Waves 37–40 wrote here that "`τ` is `hybridLaw n j ν` (wave 36's
-`integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th
-test measure with it)". It is not: the base point of step `j` is `c·(∑ of the coordinates other
+**The averaging law.** `τ` is not `hybridLaw n j ν`: the base point of step `j` is
+`c·(∑ of the coordinates other
 than `j`) + σⱼ z`, the swapped coordinate appearing only as the `c u` inside the absolute value,
-whereas `hybridLaw n j ν` is the law of that base point *plus* `c u`. Wave 41 proposed
-`indicator_wideShell_le_shift` as the transfer; wave 42 overturned that (the shell width here is
-a function of the shift variable) and replaced it by `wideShell_le_of_deconvolution`, which
-deconvolves the `c ν` factor away at the price of `C_k → 3 C_k`, `W → 2W + 22 C_k ε` and the
-window `√k ≤ ε √n`. See the wave-42 section of `localised_swap_bound_small_weight`. The
+whereas `hybridLaw n j ν` is the law of that base point *plus* `c u`. Shifting the indicator
+(`indicator_wideShell_le_shift`) does not transfer the shell bound (the shell width here is
+a function of the shift variable); `wideShell_le_of_deconvolution` does, by deconvolving the
+`c ν` factor away at the price of `C_k → 3 C_k`, `W → 2W + 22 C_k ε` and the
+window `√k ≤ ε √n`. See "Why shifting the indicator cannot work" in the note of
+`localised_swap_bound_small_weight`. The
 right-hand side is *exactly* the pair of head summands that
 `localised_swap_bound_of_weighted_telescope` consumes, once summed over the `J` head steps.
 
@@ -9465,16 +9471,15 @@ proved in this file; what is missing is only the assembly.
 * The shell `thickening (ε + s) B \ erosion s B` is **monotone in `s`**, so at `c‖u‖ ≤ ε` it is
   contained in `thickening 2ε B \ erosion 2ε B` (mass `≤ 8 C_k ε + W`) and at `c‖u‖ ≥ ε` in
   `thickening (2c‖u‖) B \ erosion (2c‖u‖) B` (mass `≤ 8 C_k c‖u‖ + W`). That is the *only* place
-  the amended two-sided-shell hypothesis at **all** widths is used, and it is exactly why wave 29
-  had to amend it.
+  the amended two-sided-shell hypothesis at **all** widths is used, and it is exactly why that
+  hypothesis is stated at all widths.
 * Fubini turns `∫_τ ∫_ν` into `∫_ν ∫_τ`, the inner `τ`-integral of the shell indicator is the
   shell mass, and the split at `‖u‖ = R := ε/c = ε√n` is priced by `far_regime_pointwise_le` and
   `setIntegral_norm_pow_tail_le` (`p = 3` and `p = 2`, `q = 0` and `q = 1`) — a **third** moment
   and nothing more.
 
-**Wave 38: PROVED, and wave 37's description of the residual bookkeeping is corrected.** Wave 37
-wrote that what was left is "measurability of `u ↦ τ(shell at width c‖u‖)` (monotone in `‖u‖`,
-hence measurable)". Monotonicity does give measurability of that *scalar* function, but it is not
+**The measurability the Fubini step needs.** Monotonicity in `‖u‖` does give measurability of
+the *scalar* function `u ↦ τ(shell at width c‖u‖)`, but it is not
 what the Fubini step needs: `integral_integral_swap` needs the **jointly** measurable integrand
 `(a, u) ↦ 1_{shell at width 2c‖u‖}(a)`, and the section-wise monotone argument says nothing about
 the pair. The joint statement is `measurableSet_wideShell_prod`, and it rests on a fact that had
@@ -9720,7 +9725,7 @@ private lemma abs_integral_swap_step_localised_le
       = C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
         * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by ring
   linarith
-/-- **The localised swap step at a single shift, at EVERY shift length (wave 40).**
+/-- **The localised swap step at a single shift, at EVERY shift length.**
 
 This is the pointwise-in-`(v, w)` engine of route (b) of the tail brick, and it is the first
 form of it that carries no restriction on `‖w‖`. Writing `R = gaussianTailRadius k σ` and
@@ -9733,9 +9738,9 @@ form of it that carries no restriction on `‖w‖`. Writing `R = gaussianTailRa
   product with the (linear in `‖w‖`) shell mass inside a *third* moment;
 * otherwise `F` is constant on `closedBall v u`
   (`const_on_closedBall_of_notMem_wideShell`), and the step costs only `4 C_k C_t σ ‖w‖³` — a
-  factor `σ` of gain, with no shell mass at all. For `‖w‖ ≤ 1` this is the wave-29 bound
+  factor `σ` of gain, with no shell mass at all. For `‖w‖ ≤ 1` this is the bound
   `abs_integral_shift_vecTiltRemainder_le_of_const_ball` (Cauchy–Schwarz in `L²`), and for
-  `‖w‖ > 1` — the case every previous wave left open — it is the wave-40 bound
+  `‖w‖ > 1` — the remaining case — it is the bound
   `abs_integral_shift_vecTiltRemainder_le_of_const_ball_any`, whose constant `106σ‖w‖³` is
   absorbed into `4 C_k C_t σ ‖w‖³` by `le_sqrt_tiltSqConst` together with `hCw`.
 
@@ -9886,7 +9891,7 @@ private lemma abs_integral_shift_vecTiltRemainder_localised_le
     have hfin := hfar a haabs hconst
     linarith
 
-/-- **The per-step ledger of the localised tail estimate (wave 40).** The pointwise bound of
+/-- **The per-step ledger of the localised tail estimate.** The pointwise bound of
 `abs_integral_shift_vecTiltRemainder_localised_le`, once averaged over `v`, produces the shell
 mass `8 C_k σ(R + s) + W` at the varying width, multiplied by
 `min (C_t s³) (2 + s + s²)` with `s = ‖w‖`. This lemma is the arithmetic that turns that
@@ -9896,7 +9901,8 @@ product back into a pure *third* moment, at the price of the stated constants:
 
 Both branches of the `min` are used, and neither can be dropped: for `s ≤ 1` the quadratic
 branch has a *constant* term (which would integrate to a bare constant weight, outside brick
-L's allowed shape — wave 35's Correction 1), and for `s > 1` the cubic branch multiplied by the
+L's allowed shape — Correction 1 in the note of `localised_swap_bound_small_weight`), and for
+`s > 1` the cubic branch multiplied by the
 linear-in-`s` shell mass would be quartic (a fourth moment, unavailable). `1 ≤ C_t` is used
 only to report both branches with one constant. -/
 private lemma localised_step_weight_le {Ck Ct W R s σ : ℝ}
@@ -9946,7 +9952,7 @@ private lemma localised_step_weight_le {Ck Ct W R s σ : ℝ}
       mul_le_mul_of_nonneg_left hCt1 (by linarith)
     nlinarith [hP1, hP2]
 
-/-- **The Fubini step of the tail brick, at the VARYING shell width (wave 41).** The exact
+/-- **The Fubini step of the tail brick, at the VARYING shell width.** The exact
 analogue of `integral_far_shell_le` on the head side, with three differences, each forced by
 what the tail route actually produces:
 
@@ -9959,9 +9965,9 @@ what the tail route actually produces:
 * the bracket is `min (C_t (λ‖y‖)³) (2 + λ‖y‖ + (λ‖y‖)²)`, and the pricing is
   `localised_step_weight_le` (both branches of the `min`), not `far_regime_pointwise_le`.
 
-The conclusion is a pure **third** moment, at the weight `64 C_k σR + 4W` of the wave-40
-ledger. As on the head side, the integrability of the outer integrand is returned alongside:
-the tail brick needs it to split the `τ`-integral of the two-law majorant. -/
+The conclusion is a pure **third** moment, at the weight `64 C_k σR + 4W` of
+`localised_step_weight_le`. As on the head side, the integrability of the outer integrand is
+returned alongside: the tail brick needs it to split the `τ`-integral of the two-law majorant. -/
 private lemma integral_localised_shell_le
     {ν τ : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] [IsProbabilityMeasure τ]
@@ -10097,8 +10103,8 @@ private lemma integral_localised_shell_le
   exact le_of_eq hfin
 
 set_option linter.unusedVariables false in
--- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
-/-- **The per-step TAIL estimate (wave 38: STATED, NOT proved; wave 39: the WEIGHT is AMENDED
+-- the hypotheses are the interface, see the docstring
+/-- **The per-step TAIL estimate (the WEIGHT is AMENDED
 to what route (b) can actually deliver).** *One tail step `j > J` of the hybrid telescope,
 localised, averaged against the step's own hybrid law.*
 
@@ -10108,17 +10114,17 @@ unweighted `abs_integral_gaussian_smoothed_swap_le`, and the weight `4 C_k σ + 
 `localised_swap_bound_of_weighted_telescope`'s tail summands consume once summed over `J < j ≤ n`
 (the harmonic sum `∑ σⱼ/(j√j) = c ∑ 1/j` is where the logarithm comes from).
 
-## What wave 32/35 said the residue was
+## The residue as first recorded
 
-"Its two analytic ingredients are in place (the wave-19 weighted lemma
-`abs_integral_mul_vecTiltRemainder_le_of_support` and its wave-29 constant-off/Gaussian-tail
+"Its two analytic ingredients are in place (the weighted lemma
+`abs_integral_mul_vecTiltRemainder_le_of_support` and its constant-off/Gaussian-tail
 extensions), but the shift-length restriction `‖w‖ ≤ 1` has to be handled."
 
-## What wave 38 finds: a THIRD ingredient is missing, and it is not bookkeeping
+## A THIRD ingredient is missing, and it is not bookkeeping
 
 The two available routes both fail to produce the frozen weight `4 C_k σ + W`.
 
-**Route (a), Cauchy–Schwarz against the shell (the wave-19 form).** Take `G(z) = F(v + σz)`,
+**Route (a), Cauchy–Schwarz against the shell (the `L²` form).** Take `G(z) = F(v + σz)`,
 constant off `S_v = {z : v + σz ∈ shell}`, and apply
 `abs_integral_mul_vecTiltRemainder_le_of_const_off`. The weight at `v` is `2√(γ S_v)`, and
 averaging over `v` with Jensen gives `2√(∫ γ S_v dτ) = 2√(shell mass) ≍ √(4 C_k σ + W)`. This is
@@ -10126,7 +10132,7 @@ the `√W` form the note on `localised_swap_bound_small_weight` already records,
 point `cube_le_of_selfImproving_smoothed_sqrt` then gives `O(n^{-1/3})`, not `β/√n`. So route (a)
 cannot close brick L as stated.
 
-**Route (b), the near/far split in `v` (the wave-29 form).** Fix a radius `r` and split:
+**Route (b), the near/far split in `v` (the constant-off form).** Fix a radius `r` and split:
 
 * `v` within `r` of the shell: use the *unweighted* per-step bound (weight `1`, cost
   `Ct (c/σ)³ X`). The `τ`-mass of that set of `v` is `≤ 4 C_k (r + ε) + W` by the amended
@@ -10147,7 +10153,7 @@ tail available is `stdGaussian_norm_ge_le p`, Markov at order `p`:
 `r ≍ σ^{1 - 2/p}` and weight `≍ C_k σ^{1-2/p} + W`. Summing that over `J < j ≤ n` gives
 `≍ p·C_t·X·n^{-1/2}·ε^{-2/p}`, i.e. `≍ p C_t δ ε^{-2/p}` — a *power* of `ε⁻¹`, not a logarithm,
 and hence **not** of brick L's allowed shape `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`
-(whose only `ε⁻¹` is the one multiplied by `W + C_k ε`; this is wave-35's Correction 1 argument
+(whose only `ε⁻¹` is the one multiplied by `W + C_k ε`; this is the Correction 1 argument
 again). This is the same phenomenon the note on `localised_swap_bound_small_weight` records as
 "Remark (trading the log for a power)", now seen from the other side: at a *fixed* Markov order
 the conclusion itself weakens to `(β/√n)^{m/(m+1)}`.
@@ -10169,18 +10175,15 @@ starting point, since `‖z‖² ~ χ²_k`.
 produces `4 C_k σ · (√k + √(2 log(1/σ)))+ W`, not `4 C_k σ + W`: the extra factor is
 `≤ √k + √(2 log(1/ε))` for every tail step (since `σ ≥ σ_J ≍ ε`), so the tail summands of
 `localised_swap_bound_of_weighted_telescope` — and therefore brick L's constant and the
-dimension factor `C ≍ √k` of `berryEsseen_convex_sharp` — would have to absorb it. Wave 39 must
-decide that explicitly rather than assume it away; the statement below is left in the frozen
-shape precisely so that the discrepancy stays visible.
+dimension factor `C ≍ √k` of `berryEsseen_convex_sharp` — would have to absorb it.
 
-**The `‖w‖ ≤ 1` restriction is still open too**, unchanged from wave 32: at step `j` the shift is
-`w = (c/σ)y`, so the wave-29 lemmas apply only on `{‖y‖ ≤ √j}`, and the complement needs the
-direct tilt identity described in the note on `localised_swap_bound_small_weight`. Wave 38 did
-not attempt it, because the obstruction above is upstream of it.
+**The `‖w‖ ≤ 1` restriction is a separate issue**: at step `j` the shift is
+`w = (c/σ)y`, so the constant-off lemmas apply only on `{‖y‖ ≤ √j}`, and the complement needs the
+direct tilt identity described in the note on `localised_swap_bound_small_weight`.
 
-## Wave 39: the missing ingredient is SUPPLIED, and the weight is AMENDED accordingly
+## The missing ingredient is SUPPLIED, and the weight is AMENDED accordingly
 
-The sub-Gaussian norm tail wave 38 named is now proved — `stdGaussian_norm_ge_le_exp`, together
+The sub-Gaussian norm tail named above is proved — `stdGaussian_norm_ge_le_exp`, together
 with its inversion `gaussianTailRadius` / `stdGaussian_norm_ge_gaussianTailRadius_le`. With it,
 route (b) closes, and the weight it delivers is **not** the frozen `4 C_k σ + W`. The statement
 below has therefore been amended to the provable one; the deviation is recorded here rather than
@@ -10202,7 +10205,8 @@ conclusion below.
 
 **Why `12 C_k σ · R` and not `4 C_k σ`, in one line.** `R = √(2k log 2k) + 2√(k log(1/σ))` is
 unbounded as `σ ↓ 0`; there is no radius at which the Gaussian norm tail is `≲ σ²` with `r ≍ σ`,
-which is exactly what wave 38 showed. The factor `12` is bookkeeping; the factor `R` is not.
+which is exactly what the route-(b) analysis above shows. The factor `12` is bookkeeping; the
+factor `R` is not.
 
 **What it costs downstream, all of it machine-checked.** `R` is antitone in `σ` and
 `σⱼ ≥ σ_J ≥ ε` on the tail range, so `R(σⱼ) ≤ R(ε)` and the per-step bound is still of the
@@ -10210,7 +10214,7 @@ shape `K₁/j + K₂/(j√j)` that `sum_le_of_bounded_and_weighted_decay` consum
 lemma is needed, only `K₁` acquires the constant factor `R(ε)`. Then
 `gaussianTailRadius_le_dimTailConst` splits `R(ε) ≤ dimTailConst k · √(1 + log(1 + ε⁻¹))`, and
 multiplying by the harmonic factor `1 + log(n/J) ≤ 2(1 + log(1 + ε⁻¹))` produces the **`3/2`
-power** `logPow32 ε`. The consequences, each amended and re-proved this wave:
+power** `logPow32 ε`. The consequences, each amended and re-proved:
 `weighted_ledger_balance` (constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t`),
 `localised_swap_bound_of_weighted_telescope`, `localised_swap_bound_small_weight`,
 `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion`,
@@ -10218,15 +10222,9 @@ power** `logPow32 ε`. The consequences, each amended and re-proved this wave:
 `berryEsseen_convex_sharp` (whose log power is now `3/2` and whose dimension factor is now
 `C_k · dimTailConst k ≍ k √(log k)`).
 
-**What is still open in THIS brick.** The assembly itself: the near/far split in `v` under the
-`τ`-average (a Fubini over `hybridLaw`, with the measurability of `v ↦ τ(near set)` to supply,
-as on the head side), and the `‖w‖ ≤ 1` complement above, which wave 39 did not attempt either.
-The analytic *inputs* are now all present; what is missing is the same kind of bookkeeping the
-head brick needed in wave 38.
+## The `‖w‖ ≤ 1` complement is DISCHARGED, and the CONSTANTS are amended again
 
-## Wave 40: the `‖w‖ ≤ 1` complement is DISCHARGED, and the CONSTANTS are amended again
-
-Every wave from 32 on recorded the shift-length restriction as an open input. It is now closed,
+The shift-length restriction was the remaining open input of route (b). It is now closed,
 and the pointwise engine of route (b) is proved with **no** restriction on `‖w‖`:
 
 * `abs_integral_shift_vecTiltRemainder_le_of_const_ball_any` — the far-in-`v` estimate at every
@@ -10245,7 +10243,7 @@ and the pointwise engine of route (b) is proved with **no** restriction on `‖w
 * `localised_step_weight_le` — the per-step ledger:
   `(8 C_k σ(R+s) + W) · min (C_t s³, 2+s+s²) ≤ (64 C_k σ R + 4 W) C_t s³`.
 
-**The constants the route actually delivers, and why they are not wave 39's.** Averaging the
+**The constants the route actually delivers.** Averaging the
 pointwise bound over `v ∼ τ` and then over `y ∼ ν` (resp. `ρ`) gives, with
 `R = gaussianTailRadius k σ` and `s = (c/σ)‖y‖`:
 
@@ -10253,20 +10251,21 @@ pointwise bound over `v ∼ τ` and then over `y ∼ ν` (resp. `ρ`) gives, wit
   (`localised_step_weight_le` pointwise in `y`, then `hshell` at width `2σ(R+s)`);
 * the far term: `4 C_k C_t σ (c/σ)³ β_ν ≤ 4 C_k C_t σ R (c/σ)³ β_ν` (`R ≥ 1`).
 
-Total `(68 C_k σ R + 4 W) C_t (c/σ)³ (β_ν + β_ρ)`, which is the conclusion below — wave 39's
-`12` and `W` have become `68` and `4W`. The reason is structural, not bookkeeping: wave 39's
-sketch priced only the `‖w‖ ≤ 1` regime, where no crude branch and no varying shell width
-occur. The `8` is the shell doubling forced by `hshell` being stated at a single width; the
-`4` is `2 + s + s² ≤ 4s²` at `s = 1`; the `2` is `R + s ≤ 2Rs`. (A finer split at `s = 2`
-would give `36` and `2W`; the shape is unaffected, and the coarser constants are the ones that
-are machine-checked.)
+Total `(68 C_k σ R + 4 W) C_t (c/σ)³ (β_ν + β_ρ)`, which is the conclusion below — the
+`12` and `W` of the previous section have become `68` and `4W`. The reason is structural, not
+bookkeeping: the previous sketch priced only the `‖w‖ ≤ 1` regime, where no crude branch and no
+varying shell width occur. The `8` is the shell doubling forced by `hshell` being stated at a
+single width; the `4` is `2 + s + s² ≤ 4s²` at `s = 1`; the `2` is `R + s ≤ 2Rs`. (A finer
+split at `s = 2` would give `36` and `2W`; the shape is unaffected, and the coarser constants
+are the ones that are machine-checked.)
 
 Two hypotheses are added, both free at the call site: `hk : 0 < k` (needed for
 `gaussianTailRadius`, and available in brick L) and `hCt1 : 1 ≤ C_t` (`C_t` may always be
 enlarged, and `hCt` and the conclusion are both monotone in it).
 
-**FLAG, not absorbed.** `localised_swap_bound_of_weighted_telescope`'s hypothesis `htel` still
-carries wave 39's `12 * gaussianShellConst k * Ct * …` and `3 * (W * Ct * X) / √J`. When this
+**FLAG, not absorbed.** `localised_swap_bound_of_weighted_telescope`'s hypothesis `htel` was
+stated with the tail constants `12 * gaussianShellConst k * Ct * …` and
+`3 * (W * Ct * X) / √J`. When this
 brick lands those must become `68 * …` and `12 * (W * Ct * X) / √J`, and
 `weighted_ledger_balance`'s constant `306 C₃ + 81 C_t` must be re-solved (the `C_t` half scales
 by at most `68/12 < 6`, so `459 C_t` certainly suffices; the `C₃` half is untouched, since the
@@ -10283,9 +10282,9 @@ which is `integral_far_shell_le` verbatim with a different bracket and the varyi
 `g(y) = 2σ(R + (c/σ)‖y‖)` (`measurableSet_wideShell_prod` already accepts any continuous
 nonnegative width); (3) the two-law triangle inequality. No analytic input is missing.
 
-## Wave 41: PROVED, at wave 40's constants exactly
+## PROVED, at exactly these constants
 
-All three pieces are executed as wave 40 named them, and nothing else was needed.
+All three pieces are executed as named above, and nothing else was needed.
 
 * (1) is `integral_gaussian_smoothed_sub_common_eq`, which also returns the `τ`-integrability
   of the `y`-integrand; `abs_integral_gaussian_smoothed_sub_common_le` is refactored into its
@@ -10300,24 +10299,24 @@ All three pieces are executed as wave 40 named them, and nothing else was needed
 Two remarks on the assembly. First, every exchange of an inequality with an integral is by
 `integral_mono_of_nonneg`, which asks for integrability of the **majorant only**; so the
 absolute-value integrands — for which integrability would have to be proved separately at each
-of the three levels — are never required to be integrable. Second, the constants are wave 40's
+of the three levels — are never required to be integrable. Second, the constants above are
 unchanged: the shell half gives `64 C_k σR + 4W` (`localised_step_weight_le` pointwise in `y`,
 then `hshell` at the varying width) and the far half `4 C_k C_t σ ≤ 4 C_k C_t σ R`, totalling
-`68 C_k σ R + 4 W`. The wave-40 ledger was exact.
+`68 C_k σ R + 4 W`. The ledger was exact.
 
-**What this brick's `τ` is, and what it is NOT** (wave 41; see also the head brick, which
+**What this brick's `τ` is, and what it is NOT** (see also the head brick, which
 carries the same erratum). The docstring above says "`τ` is `hybridLaw n j ν`". That is wrong,
 and it is now brick L's only remaining obstruction: `τ` is the law of the step's base point,
 which at step `j` *excludes* the swapped coordinate, while `hybridLaw n j ν` includes it.
-Wave 41 named `indicator_wideShell_le_shift` as the transfer; wave 42 overturned that and
-replaced it by `wideShell_le_of_deconvolution`. Note that this brick's `τ` is the base law
+The transfer is not `indicator_wideShell_le_shift` but
+`wideShell_le_of_deconvolution`. Note that this brick's `τ` is the base law
 **before** the smoothing (the indicator is evaluated at `v`, not at `v + σ z`), so what has to
 be deconvolved away here is the *whole* Gaussian of width `σ_{j+1}`, against
-`hybridLaw n (j+1) ν` — the index moves by one, unlike on the head side. See the wave-42 section
-of `localised_swap_bound_small_weight`. -/
+`hybridLaw n (j+1) ν` — the index moves by one, unlike on the head side. See "Why shifting the
+indicator cannot work" in the note of `localised_swap_bound_small_weight`. -/
 private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
-    -- LEAN-ONLY (wave 40), free: `Ct` may always be enlarged
+    -- LEAN-ONLY, free: `Ct` may always be enlarged
     (hCt1 : 1 ≤ Ct) (hk : 0 < k)
     {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
@@ -10341,7 +10340,7 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hshell : ∀ s : ℝ, 0 < s →
       (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
     {σ c : ℝ} (hσ : 0 < σ) (hσε : ε ≤ σ) (hσ1 : σ ≤ 1) (hc : 0 < c)
-    -- LEAN-ONLY (wave 39): the Cauchy–Schwarz constant of the far-in-`v` half is folded into
+    -- LEAN-ONLY: the Cauchy–Schwarz constant of the far-in-`v` half is folded into
     -- `Ct`. Free: `Ct` may always be enlarged, and `Ck = gaussianShellConst k = 4e²√k ≥ 29`.
     (hCw : Real.sqrt tiltSqConst ≤ 2 * Ck * Ct) :
     (∫ v, |(∫ y, (∫ z, F (v + σ • z + c • y)
@@ -10565,7 +10564,7 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
           * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by ring
   linarith [hΘνbd, hΘρbd, hextra, hid]
 
-/-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
+/-- **Brick L above the Gaussian shell scale (no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
 `abs_integral_smooth_sub_gaussian_balanced` together with `W ≥ 1`, and for `ε √n < 1` it is the
@@ -10646,9 +10645,9 @@ set_option maxHeartbeats 800000 in
 -- three `field_simp`-normalised term matchings against a common `δ P`/`δ Q` basis, each with
 -- its own `nlinarith`/`positivity` side goals, in one declaration
 set_option maxHeartbeats 1000000 in
--- the amended ledger (wave 39) carries a square root in `Q`, which pushes the
+-- the amended ledger carries a square root in `Q`, which pushes the
 -- `positivity`/`nlinarith` calls of the four term-matchings past the default budget.
-/-- **The `ε`-balance of the weighted ledger, as pure arithmetic (wave 35, PROVED).**
+/-- **The `ε`-balance of the weighted ledger, as pure arithmetic.**
 
 This is the second — and last — bookkeeping half of brick L, isolated from all measure theory
 exactly as `sum_le_of_bounded_and_weighted_decay` isolates the first. Given the output of a
@@ -10664,15 +10663,15 @@ explicit constant `306 C₃ + 33 C_t`:
 
 `D ≤ (306 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
 
-**Wave 37: the second summand is new, and it is not optional.** It is the *far* half of the
+**The second summand is not optional.** It is the *far* half of the
 head estimate — the head steps at which the swap displacement `c‖u‖` exceeds `ε`, where the
 third-order Taylor bound is discarded in favour of the lower-order terms
-`2 + ‖D¹f‖ c‖u‖ + ½‖D²f‖ c²‖u‖²` (see `abs_taylor_remainder_localised_lower_le`). Wave 36
-conjectured that this half is absorbed by the *first* summand as soon as `C₃ ≥ 1`. **That is
+`2 + ‖D¹f‖ c‖u‖ + ½‖D²f‖ c²‖u‖²` (see `abs_taylor_remainder_localised_lower_le`). One might
+expect this half to be absorbed by the *first* summand as soon as `C₃ ≥ 1`. **That is
 false**: at `Jr ≍ ε² nr` the first summand is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while the far half is
 `≍ 288 C₃ C_k δ + 36 C₃ W δ/ε`, i.e. a *constant multiple* (≈ 25×) of it, not a smaller
-quantity. So the ledger takes wave 36's other branch: `htel` gains the summand, and the constant
-moves from `18 C₃` to `306 C₃ = (18 + 288) C₃`. (The normalisation `C₃ ≥ 1` of wave 37's item 1
+quantity. So `htel` carries the summand, and the constant
+is `306 C₃ = (18 + 288) C₃` rather than `18 C₃`. (The normalisation `C₃ ≥ 1`
 is still convenient — it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²` — but it is
 not what makes the far half fit, and the far half is priced by a *third* moment either way.)
 
@@ -10685,8 +10684,8 @@ middle against `24 C_t δ C_k (1 + log(1 + ε⁻¹))` (using `nr/Jr ≤ ε⁻² 
 where the logarithm is finally priced), and the summable tail against `9 C_t δ ε⁻¹(W + C_k ε)`
 (using `√Jr ≥ t`).
 
-**Wave 35 correction to the wave-32 ledger.** The head term *must carry the shell weight too*.
-The wave-32 note estimates it as `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹`, unweighted; but the amended
+**The head term *must carry the shell weight too*.**
+An unweighted estimate of it is `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹`; but the amended
 conclusion contains **no bare `ε⁻¹`** — its `ε⁻¹` always appears as `ε⁻¹(W + C_k ε)`, which
 stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up. So an unweighted head
 cannot be absorbed, at any constant `A`. The head steps are the ones smoothed at width
@@ -10694,12 +10693,11 @@ cannot be absorbed, at any constant `A`. The head steps are the ones smoothed at
 steps supplies exactly the missing factor `4 C_k σ_J + W ≤ 12 C_k ε + W`; that is the shape
 hypothesised here, and with it the head lands on `ε⁻¹(W + C_k ε)` as the conclusion requires.
 
-**Wave 35: the window `1 ≤ ε √n` is not optional.** For `ε √n < 1` the cut degenerates to
+**The window `1 ≤ ε √n` is not optional.** For `ε √n < 1` the cut degenerates to
 `Jr = 2` and the head is `≍ C₃ β (W/t³ + C_k ε/t⁴)`, which exceeds brick L's right-hand side
 `≍ β(W/t + C_k/√n)` by `t^{-2}`; no choice of cut repairs this, since the elementary step bound
 is only ever better than the Cameron–Martin one for `j ≲ ε² n < 1`, i.e. for no step at all.
-Wave 32's ledger is silent about that regime; see the note on
-`localised_swap_bound_small_weight`. -/
+See the note on `localised_swap_bound_small_weight`. -/
 private lemma weighted_ledger_balance
     {C₃ Ct Ck ε W β X D t Jr sn nr Lam Dk : ℝ}
     (hC₃ : 0 < C₃) (hCt : 0 < Ct) (hCk : 0 < Ck) (hε : 0 < ε) (hW : 0 ≤ W)
@@ -10782,7 +10780,7 @@ private lemma weighted_ledger_balance
       rw [hδP]; field_simp; ring
     have hgap0 : (0 : ℝ) ≤ 33 / 2 * (C₃ * β * W / t) := by positivity
     linarith
-  -- ### term 1b: the FAR half of the head (wave 37)
+  -- ### term 1b: the FAR half of the head
   have hT4 : Jr * (C₃ / (sn ^ 2 * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
       ≤ 288 * C₃ * (δ * P) := by
     have hfac0 : (0 : ℝ) ≤ 32 * Ck / ε ^ 2 + 4 * W / ε ^ 3 := by positivity
@@ -10873,12 +10871,12 @@ private lemma weighted_ledger_balance
     linarith
   linarith
 
-/-- **Brick L reduced to its analytic half (wave 35, PROVED).**
+/-- **Brick L reduced to its analytic half.**
 
 `localised_swap_bound_small_weight` *follows from the weighted hybrid telescope alone*: given
 the telescoped estimate at **every** cut `J ≥ 2` — head steps estimated by the localised
 elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W` *plus* its far half at
-the varying width (wave 37, second summand), tail steps by the localised Cameron–Martin swap,
+the varying width, tail steps by the localised Cameron–Martin swap,
 summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
 conclusion follows with the explicit constant `306 C₃ + 33 C_t`, by choosing the cut
 `J = max 2 ⌈ε² n⌉` and running `weighted_ledger_balance`. Nothing about `B`, `f`, or the shell
@@ -10895,24 +10893,24 @@ The two measure-theoretic hypotheses are used only for the two moment facts the 
 The window `1 ≤ ε √n` is required, and is not a technicality: see the last paragraph of
 `weighted_ledger_balance`.
 
-**WAVE-40 FLAG — this hypothesis is now out of step with the tail brick, deliberately.** `htel`
-below carries wave 39's per-step tail constants (`12 * gaussianShellConst k * Ct * …` and
-`3 * (W * Ct * X) / √J`). Wave 40 proved the pointwise engine of the tail brick at every shift
-length and re-derived its constants honestly:
-`abs_integral_gaussian_smoothed_swap_localised_le` now concludes with weight
+**FLAG — this hypothesis was out of step with the tail brick, deliberately.** `htel`
+was first stated with the per-step tail constants of the `‖w‖ ≤ 1` sketch
+(`12 * gaussianShellConst k * Ct * …` and `3 * (W * Ct * X) / √J`). The pointwise engine of the
+tail brick at every shift length re-derives its constants honestly:
+`abs_integral_gaussian_smoothed_swap_localised_le` concludes with weight
 `68 C_k σ R + 4 W`, not `12 C_k σ R + W` (see its docstring for the derivation — the extra
 factors are the shell doubling `8`, the crude branch `2+s+s² ≤ 4s²`, and `R+s ≤ 2Rs`, none of
-which occur in the `‖w‖ ≤ 1` regime wave 39 priced). When the brick's remaining Fubini
+which occur in the `‖w‖ ≤ 1` regime). When the brick's remaining Fubini
 bookkeeping lands, `htel`'s two tail summands must become `68 * …` and `12 * (W * Ct * X) / √J`,
 and `weighted_ledger_balance`'s `81 * Ct` must be re-solved (`459 * Ct` certainly suffices; the
 `306 * C₃` head half is untouched). **No shape moves**, so the fixed point and
 `berryEsseen_convex_sharp` re-solve at the same `(1 + log(1+ε⁻¹))^{3/2}` power. The mismatch is
 left visible here rather than silently propagated, per the provable-constants rule.
 
-**Wave 41: the flag is EXECUTED.** The tail brick landed, so `htel` now carries `68 * …` and
+**The flag is EXECUTED.** The tail brick is proved, so `htel` now carries `68 * …` and
 `12 * …`, and the ledger is re-solved: the harmonic middle scales by exactly `68/12` (`72 → 408`)
-and the summable tail by exactly `12/3` (`9 → 36`), so the constant is `306 C₃ + 444 C_t` — wave
-40's `459` was an over-estimate. Nothing else moved. -/
+and the summable tail by exactly `12/3` (`9 → 36`), so the constant is `306 C₃ + 444 C_t` — the
+estimate `459` was an over-estimate. Nothing else moved. -/
 theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 0 < n)
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
     (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
@@ -10994,7 +10992,7 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
     (one_le_dimTailConst hk) (gaussianTailRadius_le_dimTailConst hk hε)
     hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3 (htel J hJ2 (by rw [← ht2]; exact hJlow))
 
-/-- **One HEAD step of the localised telescope, with the deconvolution done (wave 43).** -/
+/-- **One HEAD step of the localised telescope, with the deconvolution done.** -/
 private lemma head_step_le {k : ℕ} (hk : 0 < k)
     {ν τ η μ : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] [IsProbabilityMeasure τ] [IsProbabilityMeasure η]
@@ -11127,7 +11125,7 @@ private lemma head_step_le {k : ℕ} (hk : 0 < k)
       _ = 12 * (C₃ * c ^ 3) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by ring
   linarith
 
-/-- **One TAIL step of the localised telescope, with the deconvolution done (wave 43).** -/
+/-- **One TAIL step of the localised telescope, with the deconvolution done.** -/
 private lemma tail_step_le {k : ℕ} (hk : 0 < k) {Ct : ℝ}
     (hCtb : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
     (hCt1 : 1 ≤ Ct)
@@ -11232,7 +11230,7 @@ private lemma tail_step_le {k : ℕ} (hk : 0 < k) {Ct : ℝ}
 
 set_option maxHeartbeats 1900000 in
 -- This proof uses about 1,470,000 heartbeats.
-/-- **The LOCALISED hybrid telescope (wave 43).** -/
+/-- **The LOCALISED hybrid telescope.** -/
 private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) {Ct : ℝ}
     (hCt1 : 1 ≤ Ct)
     (hCtb : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
@@ -11870,8 +11868,8 @@ private lemma abs_integral_smooth_sub_gaussian_localised {n : ℕ} (hk : 0 < k) 
   refine hfin.trans (le_of_eq ?_)
   rw [hθdef, hK₂def]
   ring
-/-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
-wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
+/-- **Brick L below the Gaussian shell scale (hypothesis AMENDED).** *The hybrid telescope
+with every step estimated by the localised weighted swap
 bound*, in the only regime that has any content: the total weight `W + C_k ε` is at most `1`.
 
 This is `abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin
@@ -11880,13 +11878,14 @@ with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` g
 in place of the unweighted `A (β/√n) ε⁻¹`.
 
 The `L^∞` form is stated (weight `W`, not `√W`), which is what the sharp `β/√n` rate needs; the
-wave-19 `L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
+`L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
 instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`.
 
-## Wave 29: the wave-24 diagnosis is WRONG, and the hypothesis is amended
+## The surface-area diagnosis is WRONG, and the hypothesis is amended
 
-Wave 24 wrote: splitting `f = 1_{interior B} + g` localises the `g` half by the wave-19 lemma,
-but leaves the indicator half `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)`, and "bounding *that* by the
+Splitting `f = 1_{interior B} + g` localises the `g` half by
+`abs_integral_mul_vecTiltRemainder_le_of_support`, but leaves the indicator half
+`∫ 1_K R_w dγ = γ(K − w) − Q_w(K)`, and one might conclude that "bounding *that* by the
 shell mass is a Gaussian surface-area statement about convex bodies — the same input as Ball's
 theorem". **That verdict is overturned.** No surface area is involved. The tilt remainder has
 mean zero, `integral_vecTiltRemainder_eq_zero`, so a *constant* may be subtracted from the test
@@ -11895,10 +11894,10 @@ indicator *is* constant on the ball of radius `r`. Cauchy–Schwarz against the 
 tail** `γ{‖z‖ ≥ r/σ}` then localises the indicator half:
 `abs_integral_mul_vecTiltRemainder_le_of_const_off` and
 `abs_integral_shift_vecTiltRemainder_le_of_const_ball`, with `stdGaussian_norm_ge_le` (Markov at
-any order) supplying the tail. All four are proved and axiom-clean; none of them mentions a
+any order) supplying the tail. All four are proved; none of them mentions a
 surface measure, and their constants are dimension-free.
 
-**Why the hypothesis had to change.** Two corrections to the wave-24 interface, both forced by
+**Why the hypothesis had to change.** Two corrections to the original interface, both forced by
 the localisation just described and both *free* at the only call site:
 
 1. *The shell must be two-sided.* The per-point weight is small exactly when `f` is constant on
@@ -11910,18 +11909,17 @@ the localisation just described and both *free* at the only call site:
    `ε`. For `j > J = ⌈ε²n⌉` one has `σⱼ ≥ ε`, and for `j` near `n` one has `σⱼ ≈ 1 ≫ ε`; the
    frozen hypothesis says nothing about neighbourhoods at those scales.
 
-`hybridLaw_wideShell_le` (wave 29, proved) supplies exactly the amended hypothesis at the call
+`hybridLaw_wideShell_le` supplies exactly the amended hypothesis at the call
 site, at every width, with the constant `4 C_k` and the same `2Y` that brick H already carries —
 so `exists_convexDiscrepancy_recursion`, `berryEsseen_convex_sharp` and its constant are
 unaffected. Note that the amendment does not weaken the *content*: the frozen statement is true
 (it is implied by Bentkus's theorem, since its right-hand side is `≥ A C_k β/√n`); what the
 amendment records is the interface the *proof* needs.
 
-## Wave 32: the CONCLUSION is amended too — the logarithm is forced
+## The CONCLUSION is amended too — the logarithm is forced
 
-Wave 29 left the conclusion in its frozen (log-free) form on the ground that weakening it then
-"would be a guess rather than a forced amendment". It is not a guess: the summation ledger below
-*forces* it, and wave 32 executes the amendment.
+Weakening the frozen (log-free) conclusion is not a guess: the summation ledger below
+*forces* it.
 
 **The ledger.** Write `c = n^{-1/2}`, `σⱼ = c√j`, `δ = β/√n`, `J = ⌈ε²n⌉`. The telescope has
 `n` steps; step `j` is smoothed at width `σⱼ` and its localised Cameron–Martin cost is
@@ -11969,7 +11967,7 @@ per-step weight is `(σⱼ/r)^{m}` and the harmonic sum is replaced by a converg
 logarithm becomes `ε^{-1/(m+1)}` and the headline `(β/√n)^{m/(m+1)}`. That is strictly weaker
 than the log form for every fixed `m`, so the route below is not restructured for it.
 
-## What is still missing (wave 32, re-derived)
+## What is still missing
 
 One item, and it is now sharply delimited: **the per-step weighted swap bound**, i.e. the
 hypothesis `hTdec` of `sum_le_of_bounded_and_weighted_decay`. Concretely, a weighted rerun of
@@ -11979,15 +11977,15 @@ hypothesis `hTdec` of `sum_le_of_bounded_and_weighted_decay`. Concretely, a weig
 
 in place of the unweighted `C_t (β + β_G)/(j√j)`. Everything downstream of it — the summation,
 the cut `J = ⌈ε²n⌉`, the fixed point, the headline — is proved. Its two analytic ingredients are
-in place (the wave-19 weighted lemma `abs_integral_mul_vecTiltRemainder_le_of_support` and its
-wave-29 constant-off/Gaussian-tail extensions), but the shift-length restriction has to be
+in place (the weighted lemma `abs_integral_mul_vecTiltRemainder_le_of_support` and its
+constant-off/Gaussian-tail extensions), but the shift-length restriction has to be
 handled:
 
-* **The `‖w‖ ≤ 1` restriction.** Both the wave-19 lemma and its wave-29 constant-off extension
+* **The `‖w‖ ≤ 1` restriction.** Both the weighted lemma and its constant-off extension
   require a Cameron–Martin shift of length at most `1` (for `‖w‖ > 1` the `L²` norm of the tilt
   blows up like `e^{‖w‖²}` — see `integral_sq_tiltRemainder_le`). At step `j` the shift is
   `w = (c/σⱼ) y` with `c = n^{-1/2}`, i.e. `‖w‖ = ‖y‖/√j`, so the bound applies only on
-  `{‖y‖ ≤ √j}`. Wave 24's claim that the wave-19 lemma "applies to `g` verbatim" is therefore
+  `{‖y‖ ≤ √j}`. The claim that the weighted lemma "applies to `g` verbatim" is therefore
   also too optimistic. On `{‖y‖ > √j}` one must instead use the tilt identity directly:
   `∫ G R_w dγ = ∫ (G(· + w) − a) dγ − ∫ (G − a)·Q_w dγ`, whose second term is localised with the
   factor `1 + ‖w‖²  ≤ 2‖w‖³` and whose first term is localised *after averaging in `v`*, the
@@ -11996,20 +11994,20 @@ handled:
   at *all* widths and not merely at the `σⱼ`. Third-moment integrability of `y` prices the
   `{‖y‖ > √j}` tail.
 
-## Wave 35: the bookkeeping side is CLOSED, and two ledger corrections
+## The bookkeeping side is CLOSED, and two ledger corrections
 
-Wave 35 discharges the rest of the bookkeeping in Lean and sharpens the residue. The reduction
+The rest of the bookkeeping is discharged in Lean, and the residue is sharpened. The reduction
 
 `localised_swap_bound_of_weighted_telescope`
 
-is proved and axiom-clean: it derives this theorem's conclusion, with the explicit constant
+is proved: it derives this theorem's conclusion, with the explicit constant
 `18 C₃ + 33 C_t`, from the weighted hybrid telescope at every cut `J ≥ 2`, by taking
 `J = max 2 ⌈ε² n⌉` and running the arithmetic of `weighted_ledger_balance`. Its `D` is an
 arbitrary real and no hypothesis about `B` or `f` is used, so it is exactly the reduction and
-nothing more. With `sum_le_of_bounded_and_weighted_decay` (wave 32, the summation half) the
+nothing more. With `sum_le_of_bounded_and_weighted_decay` (the summation half) the
 entire non-analytic side of this brick is now machine-checked.
 
-**Correction 1 (the head must be weighted too).** The wave-32 ledger estimates the head
+**Correction 1 (the head must be weighted too).** The ledger above estimates the head
 `j ≤ J` as `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹`, *unweighted*. That cannot close: the amended
 conclusion contains **no bare `ε⁻¹`** — every `ε⁻¹` in it appears as `ε⁻¹(W + C_k ε)`, which
 stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up. So the elementary
@@ -12018,7 +12016,7 @@ stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up
 recorded in the hypothesis of `localised_swap_bound_of_weighted_telescope` and is now the
 *second* analytic item, alongside the Cameron–Martin one below.
 
-**Correction 2 (the window `1 ≤ ε √n`) — RESOLVED in wave 36: it is now a hypothesis, and it
+**Correction 2 (the window `1 ≤ ε √n`) — RESOLVED: it is now a hypothesis, and it
 is discharged at the call site.** The ledger is silent about `ε √n < 1`, and there it fails: the
 cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)` with `t = ε √n`, and
 this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut repairs it, because
@@ -12030,7 +12028,7 @@ in that window — it is implied by Bentkus's theorem, as the whole amended stat
 this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
 exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself.
 
-Wave 35 left open whether threading the window costs anything downstream. **It costs nothing**,
+Does threading the window cost anything downstream? **It costs nothing**,
 and the reason is that the fixed point never visits the small window:
 
 * `le_of_selfImproving_induction_log` instantiates its `hrec` at exactly **one** width,
@@ -12051,35 +12049,35 @@ its constant unchanged. **The small window is no longer an open gap of this rout
 `J = max 2 ⌈ε² n⌉` is non-degenerate wherever the theorem is now stated, so the head/tail
 crossover below is genuine.
 
-**The residue, after wave 35.** Two per-step estimates on the hybrid telescope, both localised
+**The residue.** Two per-step estimates on the hybrid telescope, both localised
 by the two-sided-shell hypothesis, and nothing else:
 
 * *head steps* (`j ≤ J`): the elementary swap `abs_integral_swap_step_le` localised to weight
   `4 C_k σ_J + W`, cost `(M/6) n^{-3/2}(β + β_G)` — correction 1;
 * *tail steps* (`j > J`): the Cameron–Martin swap `abs_integral_gaussian_smoothed_swap_le`
-  localised to weight `4 C_k σⱼ + W`, cost `C_t(β + β_G)/(j√j)` — the wave-32 item, whose
+  localised to weight `4 C_k σⱼ + W`, cost `C_t(β + β_G)/(j√j)` — the Cameron–Martin item, whose
   `‖w‖ ≤ 1` obstruction is analysed above.
 
 Both are averaged statements (the weight is a *mass* under `hybridLaw n j ν`, not a pointwise
 bound), so `hstepgen` inside `abs_integral_smooth_sub_gaussian_improved` has to be generalised
 from a constant `D` to a `v`-dependent one integrated against the remaining coordinates. That
-generalisation, and the two estimates, are all that stand between this `sorry` and the headline.
+generalisation, and the two estimates, are all this brick needs.
 
-## Wave 36: the structural half is BUILT, and the head estimate is not what wave 35 said
+## The structural half is BUILT, and the head estimate is not what Correction 1 says
 
-**Built and machine-checked this wave** (besides Correction 2 above, now resolved):
+**Built and machine-checked** (besides Correction 2 above, now resolved):
 
 * `abs_sub_integral_peel_le_integral` — the telescope step with a `v`-*dependent* bound. The
-  wave-16 argument never used constancy of `D`, only `integral_mono` against a constant, so the
+  unweighted argument never used constancy of `D`, only `integral_mono` against a constant, so the
   generalisation costs one integrability hypothesis and nothing else.
   `abs_integral_smooth_sub_gaussian_improved` is rewired through it (its `hstepfun`), with the
   old constant-`D` `hstepgen` re-derived in three lines; the telescope's conclusion is
   unchanged.
-* `integral_hybridLaw_eq` and `integral_peel_eq_integral_hybridLaw` — the **bridge**. Wave 20
-  asserted that `hybridLaw n j ν` "is exactly the measure against which
-  `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
-  identity had never been recorded in Lean: brick H speaks about `hybridLaw`, the telescope
-  about `Iⱼ`, and nothing connected them. It is a *prerequisite*, not a convenience — the
+* `integral_hybridLaw_eq` and `integral_peel_eq_integral_hybridLaw` — the **bridge**:
+  `hybridLaw n j ν` "is exactly the measure against which
+  `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", and this
+  identity connects brick H, which speaks about `hybridLaw`, with the telescope, which speaks
+  about `Iⱼ`. It is a *prerequisite*, not a convenience — the
   weight of both localised estimates is a shell mass under `hybridLaw n j ν`, so without the
   bridge neither estimate can be stated in the form the reduction consumes. The two lemmas
   together say: if `D v` is the average over the peeled coordinate `u ~ ν` and the smoothing
@@ -12087,9 +12085,9 @@ generalisation, and the two estimates, are all that stand between this `sorry` a
   `∫ F d(hybridLaw n j ν)`. So a shell indicator there produces precisely the mass the amended
   weight hypothesis bounds.
 
-**The head estimate is NOT `abs_integral_swap_step_le` localised.** Wave 35's Correction 1
+**The head estimate is NOT `abs_integral_swap_step_le` localised.** Correction 1
 describes the head as "the elementary swap `abs_integral_swap_step_le` localised to weight
-`4 C_k σ_J + W`". That understates it in the same way wave 24's "the wave-19 lemma applies to
+`4 C_k σ_J + W`". That understates it in the same way "the weighted lemma applies to
 `g` verbatim" understated the Cameron–Martin half. `abs_integral_swap_step_le` bounds the
 third-order Taylor remainder by the **global** `‖D³f‖_∞ ≤ C₃/ε³`. Localising means using
 instead that `D³f` is *supported* in the shell — but the Lagrange remainder controls `D³f`
@@ -12103,19 +12101,19 @@ Pricing the segment naively costs `∫ ‖y‖³ · 4 C_k c‖y‖ dν`, i.e. a 
 `≥ 1` exactly by the window of Correction 2, which is why item 1 above had to come first:
 
 * `‖y‖ ≤ R`: the segment stays within `c‖y‖ ≤ ε` of `a`, so the shell is at width `≍ 2ε` and
-  the localised Taylor bound gives the wave-35 head shape, weight `4 C_k (ε + σ_J) + W`;
+  the localised Taylor bound gives the Correction 1 head shape, weight `4 C_k (ε + σ_J) + W`;
 * `‖y‖ > R`: do not Taylor-expand at all — bound the remainder by its lower-order terms,
   localised at the varying width `c‖y‖`, so the weight is `4 C_k c‖y‖ + W` and only
   `∫_{‖y‖>R} ‖y‖^p dν ≤ β / R^{3−p}` (`p ≤ 2`) is needed. Summed over the `J ≍ ε² n` head
   steps this contributes `≍ C_k δ + W δ ε⁻¹`, which **is** of the allowed shape
   `δ(ε⁻¹(W + C_k ε) + C_k …)`.
 
-Two consequences, both of which wave 37 should treat as claims to check rather than as settled:
+Two consequences, both claims to check rather than settled facts:
 
 1. *The interface is missing hypotheses.* The far regime bounds the remainder by its first- and
    second-order terms, so it needs `‖Df‖ ≤ C₁/ε` and `‖D²f‖ ≤ C₂/ε²`. Neither this theorem's
    hypotheses nor `exists_smoothed_convex_indicator`'s conclusion supplies them — both carry
-   only the *third*-order bound (checked this wave). They are presumably free from the
+   only the *third*-order bound (checked). They are presumably free from the
    `ContDiffBump` construction, but they have to be added and proved, not assumed.
 2. *`htel`'s head shape may need one extra additive term.* The far regime's contribution is not
    of the form `(M/6) c³ X · (4 C_k (ε + σ_J) + W)` that
@@ -12124,13 +12122,12 @@ Two consequences, both of which wave 37 should treat as claims to check rather t
    normalisation is added, or `htel` gains a `+ (C_k δ + W δ ε⁻¹)` summand — a weakening the
    ledger has room for, since both pieces are already in the conclusion's shape.
 
-**The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
-unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
-changes what the residue *is*, not because it is finished.
+**The arithmetic of this section is a paper derivation; the next section checks it.** It is
+recorded here because it changes what the residue *is*, not because it is finished.
 
-## Wave 37: the head estimate's inputs are supplied, and consequence 2 is OVERTURNED
+## The head estimate's inputs are supplied, and consequence 2 is OVERTURNED
 
-Both of wave 36's flagged claims were checked. One survived, one did not.
+Both flagged claims are checked. One survives, one does not.
 
 **Consequence 1 (the missing interface hypotheses): CONFIRMED, and supplied.** The far regime
 does need `‖D¹f‖ ≤ C₃/ε` and `‖D²f‖ ≤ C₃/ε²`, and nothing supplied them. They are free from the
@@ -12142,8 +12139,8 @@ now dominates `‖Dⁱf‖ εⁱ` for `i = 1, 2, 3`, and `1 ≤ C₃` is free be
 already a `max 1 …`. Both bounds are hypotheses of this theorem now (marked LEAN-ONLY) and are
 discharged at every call site.
 
-**Consequence 2 (`htel` needs one extra summand): the `C₃ ≥ 1` branch is FALSE.** Wave 36 wrote
-that the far regime "is absorbed by that term only if `C₃ ≥ 1`". It is not absorbed at any
+**Consequence 2 (`htel` needs one extra summand): the `C₃ ≥ 1` branch is FALSE.** Consequence 2
+says that the far regime "is absorbed by that term only if `C₃ ≥ 1`". It is not absorbed at any
 normalisation. At the cut `J ≍ ε² n` the frozen head term is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while
 the far regime contributes `≍ 288 C₃ C_k δ + 36 C₃ W δ/ε` — a *constant multiple*, ≈ 25×, of it.
 So the ledger takes the other branch: `htel` (and `weighted_ledger_balance`) now carry the
@@ -12152,8 +12149,8 @@ summand `J·C₃/(n√n)·X·(32 C_k/ε² + 4W/ε³)`, and the reduction's const
 because it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²`, but it is *not* what
 makes the far half fit.
 
-**The localisation mechanism, PROVED — and it needs no Taylor theory.** Wave 36 described the
-obstruction correctly (the Lagrange remainder controls `D³f` along the whole segment, so the
+**The localisation mechanism, PROVED — and it needs no Taylor theory.** The obstruction above is
+described correctly (the Lagrange remainder controls `D³f` along the whole segment, so the
 shell width is `‖w‖`, unbounded) but the repair is cheaper than expected. Off the two-sided
 shell at width `‖w‖`, the test function is *constant on `closedBall a ‖w‖`* — equal to `1` if
 `a` is in the erosion, to `0` if `a` is outside the `(ε + ‖w‖)`-thickening
@@ -12164,7 +12161,7 @@ lower-order bound may each simply be multiplied by the shell indicator at width 
 (`abs_taylor_remainder_localised_le`, `abs_taylor_remainder_localised_lower_le`). Since
 `thickening (ε + s) B \ erosion s B` is **monotone in `s`**, the near regime (`c‖u‖ ≤ ε`) is
 dominated by the shell at width `2ε` and the far regime (`c‖u‖ ≥ ε`) by the shell at width
-`2c‖u‖` — which is precisely why wave 29 had to state the weight hypothesis at *all* widths.
+`2c‖u‖` — which is precisely why the weight hypothesis has to be stated at *all* widths.
 
 **The third-moment claim, CONFIRMED.** `far_regime_pointwise_le` and
 `setIntegral_norm_pow_tail_le` are proved: the far regime's integrand is at most
@@ -12174,30 +12171,30 @@ it with `β` alone. No fourth moment appears anywhere.
 **What is left.** The head side is now a single named statement,
 `abs_integral_swap_step_localised_le`, in exactly the shape the amended reduction consumes; its
 docstring records the whole derivation, and every analytic input it needs is proved above. What
-that `sorry` still owes is bookkeeping: measurability of `u ↦ τ(shell at width c‖u‖)` (monotone
-in `‖u‖`) and the Fubini exchange. The **tail** side (item 3) was not attempted this wave, and
-note that wave 37's localisation mechanism does *not* transfer to it: the tail's integrand is
+it still needs is bookkeeping: measurability of `u ↦ τ(shell at width c‖u‖)` (monotone
+in `‖u‖`) and the Fubini exchange. Note that this localisation mechanism does *not* transfer
+to the **tail** side: the tail's integrand is
 `f` smeared by a Gaussian of width `σⱼ`, which for `j > J` is `≥ ε` and near `j = n` is `≍ 1`, so
-`f` being locally constant near `a` says nothing about it. The tail still needs the wave-29
+`f` being locally constant near `a` says nothing about it. The tail still needs the
 constant-off/Gaussian-tail lemmas and the `‖w‖ ≤ 1` analysis recorded above, unchanged.
 
-## Wave 38: the head brick is CLOSED, and the tail's ingredient list was INCOMPLETE
+## The head brick is CLOSED, and the tail's ingredient list was INCOMPLETE
 
 **The head side is proved.** `abs_integral_swap_step_localised_le` is now a theorem; see its
 docstring for the two new named bricks it rests on (`erosion_eq_ofReal_lt_infEdist` and the
-*joint* measurability `measurableSet_wideShell_prod`) and for the one correction wave 38 had to
-make to wave 37's account of the bookkeeping. So of the two per-step estimates listed at the end
-of the wave-35 residue, the first is discharged.
+*joint* measurability `measurableSet_wideShell_prod`) and for the one correction it makes to the
+account of the bookkeeping above. So of the two per-step estimates listed in "The residue"
+above, the first is discharged.
 
-**The tail side is now a named brick, `abs_integral_gaussian_smoothed_swap_localised_le`, and it
-is still open — but not for the reason recorded above.** Wave 32 wrote that the tail's "two
-analytic ingredients are in place" and that only the `‖w‖ ≤ 1` restriction had to be handled.
-Wave 38 checked that and it is **not** the case: a third ingredient is missing, and it is
+**The tail side is a named brick, `abs_integral_gaussian_smoothed_swap_localised_le`, and its
+residue is not the one recorded above.** "What is still missing" says that the tail's "two
+analytic ingredients are in place" and that only the `‖w‖ ≤ 1` restriction has to be handled.
+That is **not** the case: a third ingredient is missing, and it is
 upstream of the `‖w‖ ≤ 1` question. In brief (the full arithmetic is on that brick):
 
-* The Cauchy–Schwarz route (wave 19) gives the weight as `√(shell mass)`, which is the `√W` form
+* The Cauchy–Schwarz route gives the weight as `√(shell mass)`, which is the `√W` form
   and closes only at `O(n^{-1/3})`.
-* The near/far-in-`v` route (wave 29) gives the weight
+* The near/far-in-`v` route gives the weight
   `4 C_k (r + ε) + W + 2√(γ{‖z‖ ≥ r/σ})·√tiltSqConst/C_t` at every radius `r`. To reach the
   frozen `4 C_k σ + W` one needs the Gaussian *norm* tail to be `≲ σ²` already at `r/σ ≍ 1`,
   which is false; and with the only tail this file has — `stdGaussian_norm_ge_le p`, Markov at a
@@ -12208,13 +12205,13 @@ upstream of the `‖w‖ ≤ 1` question. In brief (the full arithmetic is on th
   absent. It is a new dimension-explicit concentration statement, not bookkeeping.
 * Even with it, the route produces `4 C_k σ (√k + √(2 log(1/σ))) + W`, so `htel`'s tail summands
   — and hence brick L's constant and the `C ≍ √k` of `berryEsseen_convex_sharp` — carry an extra
-  `√(k + log(1/ε))` that wave 39 must price explicitly rather than assume away.
+  `√(k + log(1/ε))` that must be priced explicitly rather than assumed away.
 
-So this `sorry` now has exactly one open input on the head side (none) and one on the tail side
+So the head side has no open input and the tail side has one
 (the brick above), and the tail's own residue is three items, ordered: the Gaussian norm tail,
 the near/far-in-`v` assembly, and the `‖w‖ ≤ 1` complement.
 
-## Wave 39: the CONCLUSION is amended, and the ledger behind it is re-proved
+## The CONCLUSION is amended, and the ledger behind it is re-proved
 
 The first of those three items is discharged (`stdGaussian_norm_ge_le_exp`), and with it the
 amended tail weight `12 C_k σⱼ · gaussianTailRadius k σⱼ + W` is what the tail brick now states.
@@ -12223,24 +12220,25 @@ The ledger consequence is **not** absorbable, so this statement's conclusion cha
   `A δ (ε⁻¹(W + C_k ε) + C_k · dimTailConst k · logPow32 ε)`,
   `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`, `dimTailConst k = √(2k log 2k) + 2√k`,
 
-in place of wave 32's `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`. Both new factors are
+in place of the logarithmic `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`. Both new
+factors are
 `≥ 1`, so the amended conclusion is strictly weaker and every consumer still closes; and
 `localised_swap_bound_of_weighted_telescope` — the *proved* reduction of this brick to its
 per-step hypothesis `htel` — has been re-run at the amended shape and is green, with constant
-`306 C₃ + 81 C_t`. So the shape of the answer is settled in Lean, not on paper; what this
-`sorry` still owes is the analytic production of `htel`'s tail summand, i.e. the assembly of
+`306 C₃ + 81 C_t`. So the shape of the answer is settled in Lean, not on paper; what remains
+is the analytic production of `htel`'s tail summand, i.e. the assembly of
 `abs_integral_gaussian_smoothed_swap_localised_le`.
 
-## Wave 41: BOTH per-step estimates are now theorems, and the residue is re-diagnosed
+## BOTH per-step estimates are now theorems, and the residue is re-diagnosed
 
-`abs_integral_gaussian_smoothed_swap_localised_le` is proved, at wave 40's constants exactly.
-Both per-step estimates that wave 35 listed as the residue — the head one (wave 38) and the tail
-one (wave 41) — are therefore theorems, and the ledger constants they feed are amended and
+`abs_integral_gaussian_smoothed_swap_localised_le` is proved, at the constants of its docstring.
+Both per-step estimates listed in "The residue" above — the head one and the tail
+one — are therefore theorems, and the ledger constants they feed are amended and
 machine-checked (`306 C₃ + 444 C_t`). **No analytic input is missing anywhere on this route.**
 
-**But the residue is not "just wire them up", and the reason overturns a claim of waves 36–40.**
-Every wave since 36 has recorded that `τ` in the two bricks "is `hybridLaw n j ν`", citing
-`integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw`. Checked this wave, it is false,
+**But the residue is not "just wire them up", and the reason overturns an earlier claim.**
+The two bricks' docstrings record that `τ` "is `hybridLaw n j ν`", citing
+`integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw`. That is false,
 and the discrepancy is exactly one swapped coordinate:
 
 * at step `j` the telescope peels coordinate `j` (`hstepfun`, via
@@ -12268,8 +12266,8 @@ what neither brick provides — both evaluate it at the base point, with `u` set
 `1_{shell at s}(a) ≤ 1_{shell at s + t}(a + w)` whenever `‖w‖ ≤ t`. Both bricks already carry a
 width that dominates the shift: `2c‖u‖` in the far regime and `2ε ≥ 2c‖u‖` in the near one, so
 absorbing `c u` costs one more `c‖u‖`, i.e. `2 → 3` in the width and `8 C_k → 12 C_k` in the far
-half of the ledger — a constant, not a shape. So what this `sorry` owes, in full and for the
-first time with no analytic component, is:
+half of the ledger — a constant, not a shape. So what this brick needs, in full and with no
+analytic component, is:
 
 1. re-run `integral_abs_remainder_split_le` / `integral_far_shell_le` (head) and
    `integral_localised_shell_le` (tail) with the indicator at the **shifted** point, via
@@ -12280,11 +12278,12 @@ first time with no analytic component, is:
 3. feed `htel` to `localised_swap_bound_of_weighted_telescope`, which is proved and green at
    `306 C₃ + 444 C_t`.
 
-Step 3 is done, step 1's tool is built, and step 2 is the wiring wave 35 already described.
+Step 3 is done, step 1's tool is built, and step 2 is the wiring described in "The residue"
+above.
 
-## Wave 42: step 1 is FALSE as stated, and the transfer is deconvolution, not shifting
+## Step 1 is FALSE as stated, and the transfer is deconvolution, not shifting
 
-Wave 41's item 1 — "re-run the two bricks with the shell indicator at the shifted point, via
+Item 1 above — "re-run the two bricks with the shell indicator at the shifted point, via
 `indicator_wideShell_le_shift`, so that both bricks' `τ` becomes `hybridLaw n j ν`" — does not
 close, and the reason is structural rather than a matter of constants.
 
@@ -12337,7 +12336,7 @@ is a hybrid law:
 `t ≤ s`, and the smallest width either brick consults is `2ε`. On the head side that is
 `2 c √k ≤ 2ε`, i.e. **`√k ≤ ε √n`** in place of the present `1 ≤ ε √n`. It is free at the unique
 call site — `ε √n = 8 (A+1) β ≥ 8 k^{3/2} ≥ √k` by `sqrt_dim_mul_dim_le_integral_norm_cube`, the
-same computation that already discharges `1 ≤ ε √n` (wave 36, Correction 2) — but it has to be
+same computation that already discharges `1 ≤ ε √n` (Correction 2) — but it has to be
 threaded through `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` and the
 `hrec` window of `le_of_selfImproving_induction_logPow32`. On the tail side the requirement is
 `2 √k σ_{j+1} ≤ 2 σⱼ R(σⱼ)`, which is free from `gaussianTailRadius` itself:
@@ -12358,7 +12357,7 @@ constant becomes `3672 C₃ + 2220 Ct`, which brick L's existential `A` absorbs.
 the ledger, the fixed point and the headline are all untouched.** This is the amendment the
 provable-constants rule asks for: a constant, at the smallest place, recorded.
 
-**What is left, after wave 42.** Three items, none analytic:
+**What is left.** Three items, none analytic:
 
 1. *the two convolution identities*, which are what `wideShell_le_of_deconvolution`'s hypothesis
    `hμ` asks for. The tail one, `hybridLaw n (j+1) ν = ((c ∑_{i ≥ j+1} Yᵢ) ⊗ (σ_{j+1} γ)).map(+)`,
@@ -12375,12 +12374,9 @@ provable-constants rule asks for: a constant, at the smallest place, recorded.
    `sum_le_of_bounded_and_decay_const`;
 3. the window amendment and the constants above.
 
-Wave 41's closing sentence, "what this `sorry` owes, in full and for the first time with no
-analytic component", survives; its item 1 does not.
+## PROVED, exactly along the deconvolution route, at these constants
 
-## Wave 43: PROVED, exactly along the deconvolution route, at wave 42's constants
-
-All three of wave 42's remaining items are executed and nothing new was needed.
+All three remaining items are executed and nothing new was needed.
 
 1. *The two convolution identities.* `hybridLaw_conv_head` and `hybridLaw_conv_tail`. Both are
    pure convolution algebra once one notices that Mathlib's `Measure.conv` **is** the shape both
@@ -12389,14 +12385,14 @@ All three of wave 42's remaining items are executed and nothing new was needed.
    `map_pi_sum_smul_peel` (peeling one coordinate off the *scaled* coordinate sum) and, on the
    tail side, `Measure.dirac_zero_conv` to erase the Dirac at the peeled index.
    `wideShell_le_of_deconvolution_uniform` packages the deconvolution at every width — the shape
-   the wave-29 amended `hshell` hypothesis of both per-step bricks asks for — by running the
+   the amended `hshell` hypothesis of both per-step bricks asks for — by running the
    deconvolution at `t = 2r` and completing `s < 2r` by monotonicity of the shell
-   (`wideShell_mono`). Wave 42's `C_k' = 3 C_k`, `W' = 2W + 11 C_k t` are confirmed exactly.
+   (`wideShell_mono`). The constants `C_k' = 3 C_k`, `W' = 2W + 11 C_k t` are confirmed exactly.
 2. *The localised telescope.* `abs_integral_smooth_sub_gaussian_localised` is
    `abs_integral_smooth_sub_gaussian_improved` re-run with the `v`-dependent `D` of `hstepfun`,
    summed by `sum_le_of_bounded_and_weighted_decay`. Two remarks on what it costs:
    * the per-step `D` is a *difference of two averages*, hence bounded by `2` and not by `1`, so
-     the wave-16 helpers (`integrable_of_bounded_continuous`, `abs_integral_le_one`,
+     the unweighted helpers (`integrable_of_bounded_continuous`, `abs_integral_le_one`,
      `continuous_integral_add_smul`) had to be re-issued at an arbitrary constant bound;
    * the head side's `D v = ∫ z |…| dγ` is transferred to the brick's `τ = (peeled law) ∗ (σⱼ γ)`
      by `integral_conv_smul_gaussian` (Fubini through the convolution), the tail side's
@@ -12405,7 +12401,7 @@ All three of wave 42's remaining items are executed and nothing new was needed.
      order than `continuous_integral_add_smul` produces.
 3. *The window and the constants.* The window `√k ≤ ε √n` is threaded (see the LEAN-ONLY
    hypothesis below) and discharged at the unique call site. The per-step deconvolution constants
-   fit the frozen `htel` at `C₃ → 12 C₃` and `Ct → 5 Ct` exactly as wave 42 computed:
+   fit the frozen `htel` at `C₃ → 12 C₃` and `Ct → 5 Ct` exactly as computed above:
    * head, first summand `8·(3C_k)ε + W' = 46 C_k ε + 2W ≤ 12(4 C_k ε + W)` using `c√k ≤ ε`;
    * head, second summand `184 C_k/ε² + 8W/ε³ ≤ 12(32 C_k/ε² + 4W/ε³)`;
    * tail `68·(3C_k)σR + 4W' = 204 C_k σR + 8W + 88 C_k σ_{j+1}√k ≤ 336 C_k σR + 8W`, using
@@ -12413,7 +12409,7 @@ All three of wave 42's remaining items are executed and nothing new was needed.
      (`sqrt_dim_le_gaussianTailRadius`), and `336 ≤ 5·68`.
    So the brick's constant is `306·(12 C₃) + 444·(5 C_t) = 3672 C₃ + 2220 C_t`, absorbed by the
    existential `A`. **The `htel` shape, the ledger, the fixed point and the headline are all
-   untouched**, exactly as wave 42 predicted.
+   untouched**, exactly as predicted above.
 
 The tail brick is instantiated with `C_t := max (max C 1) (√tiltSqConst)`, `C` the absolute
 constant of `exists_tiltRemainder_bound`: that discharges its two LEAN-ONLY hypotheses
@@ -12429,8 +12425,8 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
       -- LEAN-ONLY: the localisation window; discharged at the unique call site from
-      -- `k^{3/2} ≤ β`, see the note (wave 36, "Correction 2, RESOLVED"; strengthened from
-      -- `1 ≤ ε √n` to `√k ≤ ε √n` in wave 43, for the deconvolution radius).
+      -- `k^{3/2} ≤ β`, see the note ("Correction 2, RESOLVED"; strengthened from
+      -- `1 ≤ ε √n` to `√k ≤ ε √n` for the deconvolution radius).
       Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
@@ -12484,10 +12480,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
   exact abs_integral_smooth_sub_gaussian_localised hk hCt1 hCtb hCw hn hνp hmean hcov hβint
     hf hfb hC₃ hε hD3 hD1 hD2 hone hsupp hW0 hwin hshell hJ2 hJε
 
-/-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
+/-- **Brick L (AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
 hybrid telescope with every step estimated by the localised weighted swap bound.*
 
-**The wave-20 form of this statement is FALSE**, with the conclusion
+**The original form of this statement is FALSE**, with the conclusion
 `≤ A (β/√n) ε⁻¹ W` for the bare weight `W`. Witness (`k = 1`, `n = 1`, `ε = 1`, `p ↓ 0`): let
 `ν` put mass `p` at `−a` and mass `1 − p` at `b`, with `a = √((1−p)/p)` and `b = √(p/(1−p))`, so
 that `ν` is centred with unit variance and `β = ∫|y|³ dν ∼ p^{-1/2}`. Take `B = (−∞, −T]` with
@@ -12516,21 +12512,21 @@ The proof splits at `W + C_k ε = 1`: above it,
 `exists_smooth_swap_bound_of_one_le_weight` closes the goal with no localisation at all; below
 it, the content is the named brick `localised_swap_bound_small_weight`.
 
-**Wave 29 amended the weight hypothesis.** `W` is no longer a bound on the mass of the single
+**The weight hypothesis is amended too.** `W` is no longer a bound on the mass of the single
 outer shell `B^{2ε} \ interior B`, but on the excess over `4 C_k s` of the mass of the
 *two-sided* shell `B^s \ B_{-s}`, **at every width `s > 0`**. Both changes are forced by the
 localisation the proof actually uses — see the analysis on `localised_swap_bound_small_weight` —
 and both are free here, because `hybridLaw_wideShell_le` proves exactly that, at every width,
 with the same `2Y`.
 
-**Wave 32 amends the conclusion**, adding `+ C_k (1 + log(1 + ε⁻¹))` inside the bracket: the
+**The conclusion is amended**, adding `+ C_k (1 + log(1 + ε⁻¹))` inside the bracket: the
 summation ledger on `localised_swap_bound_small_weight` forces a logarithm, because the
 telescope's own smoothing widths `σⱼ = √(j/n)` sweep from `ε` to `1` while the test function has
 the single width `ε`. The large-weight half `exists_smooth_swap_bound_of_one_le_weight` is
 proved and is *unaffected*: its conclusion is the log-free one, which is smaller, so it still
 closes the amended goal. Only the small-weight half changes.
 
-**Wave 39 amends that term again**, to `+ C_k · dimTailConst k · logPow32 ε`: the tail weight
+**That term is amended again**, to `+ C_k · dimTailConst k · logPow32 ε`: the tail weight
 that the sub-Gaussian norm tail actually delivers carries the extra radius factor
 `gaussianTailRadius k σⱼ`, which raises the ledger's log power from `1` to `3/2` and multiplies
 the dimension constant by `dimTailConst k = √(2k log 2k) + 2√k`. See the tail brick
@@ -12548,8 +12544,8 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
       -- LEAN-ONLY: the localisation window; ignored by the large-weight branch, passed to
-      -- `localised_swap_bound_small_weight` by the small-weight one (wave 36; strengthened to
-      -- `√k ≤ ε √n` in wave 43).
+      -- `localised_swap_bound_small_weight` by the small-weight one (strengthened to
+      -- `√k ≤ ε √n` for the deconvolution radius).
       Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
@@ -12628,22 +12624,23 @@ which is exactly the hypothesis of `le_of_selfImproving_induction_log`. Bricks H
 the weighted swap estimate; everything else here is the two-sided thickening/erosion sandwich of
 `berryEsseen_convex_improved` with the mollifier of `exists_smoothed_convex_indicator`.
 
-Wave 24: brick L now delivers the weight `W + C_k ε` rather than `W` (its wave-20 form is false,
+Brick L now delivers the weight `W + C_k ε` rather than `W` (its original form is false,
 see `exists_localised_swap_bound`). Since the call site supplies `W = 4 C_k ε + 2 Y` with
 `Y ≥ 0`, one has `W + C_k ε ≤ 2 W`, so the extra term is absorbed by doubling `A`; the statement
 here was unchanged.
 
-Wave 29: brick L's weight hypothesis is now the *two-sided* shell at *every* width, supplied
+Brick L's weight hypothesis is now the *two-sided* shell at *every* width, supplied
 here by `hybridLaw_wideShell_le` instead of `hybridLaw_shell_le`. The same `W = 4 C_k ε + 2 Y`
 works verbatim, so the statement here was again unchanged.
 
-Wave 32: brick L's *conclusion* now carries `+ C_k (1 + log(1 + ε⁻¹))`, forced by the summation
+Brick L's *conclusion* now carries `+ C_k (1 + log(1 + ε⁻¹))`, forced by the summation
 ledger (see there), and that term is inherited here verbatim — it does not interact with the
 `W`-bookkeeping at all, since the sandwich only ever adds `|∫f dμ − ∫f dγ|` to Gaussian shell
 masses. The same doubling of `A` absorbs `C_k ≤ 8 C_k = 2·(4 C_k)` in the new term. Downstream,
 `le_of_selfImproving_induction` is replaced by `le_of_selfImproving_induction_log`.
 
-Wave 39: brick L's conclusion carries `+ C_k · dimTailConst k · logPow32 ε` instead, and that
+With the `3/2`-power amendment, brick L's conclusion carries `+ C_k · dimTailConst k · logPow32 ε`
+instead, and that
 term is again inherited here verbatim — the `W`-bookkeeping is untouched, and the same doubling
 of `A` absorbs `C_k ≤ 8 C_k`. Downstream, `le_of_selfImproving_induction_log` is replaced by
 `le_of_selfImproving_induction_logPow32`, run with the forcing constant `C = 4 C_k` and the
@@ -12655,8 +12652,8 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
-      -- LEAN-ONLY: the localisation window brick L needs; free here, see the note (wave 36,
-      -- strengthened to `√k ≤ ε √n` in wave 43).
+      -- LEAN-ONLY: the localisation window brick L needs; free here (see the note on
+      -- the window condition `√k ≤ ε √n`).
       Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n →
         convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
@@ -12706,7 +12703,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       have := hρ
       exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
         (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
-    -- brick H for the two-sided shell, at EVERY width, uniformly in `j` (wave 29)
+    -- brick H for the two-sided shell, at EVERY width, uniformly in `j`
     have hW0 : (0 : ℝ) ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
       have : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
       linarith
@@ -12790,7 +12787,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   · linarith
 
 /-- **The sharp convex Berry–Esseen bound, up to a `3/2` power of one logarithm** (conclusion
-AMENDED in wave 32, and AMENDED AGAIN in wave 39). For every dimension `k > 0` there is a
+AMENDED twice). For every dimension `k > 0` there is a
 constant `C` with
 
 `|μₙ(B) − γ(B)| ≤ C (β/√n) (1 + log(max (√n/β) e))^{3/2}` for every measurable convex `B`,
@@ -12800,7 +12797,7 @@ i.e. Bentkus's rate up to `(log)^{3/2}`, with the dimension entering only throug
 `dimTailConst k = √(2k log 2k) + 2√k`, so `C ≍ k √(log k)`. This is still strictly better than
 the *proved* `(β/√n)^{1/2}` of `berryEsseen_convex_improved`.
 
-**Wave 39's two deviations from the wave-32 form, both recorded rather than absorbed.** The
+**Two deviations from the logarithmic form, both recorded rather than absorbed.** The
 localised tail swap can only be run at the radius at which the Gaussian *norm* tail is `≲ σ²`,
 and that radius is `σ · gaussianTailRadius k σ`, not `σ`; see
 `abs_integral_gaussian_smoothed_swap_localised_le`. Splitting the radius as
@@ -12809,27 +12806,23 @@ forcing term `1 + log(1 + ε⁻¹)` into `logPow32 ε = (1 + log(1 + ε⁻¹))^{
 constant by `dimTailConst k`. Both changes were checked, not assumed: the fixed point re-solves
 at the *same* constant `20 A C` (`le_of_selfImproving_induction_forcing`), and the ledger is
 re-proved at the amended shape (`weighted_ledger_balance`, constant `306 C₃ + 81 C_t`, and
-`306 C₃ + 444 C_t` after wave 41 folded in the tail brick's own constants).
+`306 C₃ + 444 C_t` once the tail brick's own constants are folded in).
 Sharpening `stdGaussian_norm_ge_le_exp` from the coordinate union bound to the additive form
 `γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` would replace `dimTailConst k ≍ √(k log k)` by `≍ √k` and
 nothing else; the `3/2` power is intrinsic to this route, not an artefact of that bound (a
-*fixed* Markov order gives a power of `ε⁻¹` instead, which is worse — wave 38).
+*fixed* Markov order gives a power of `ε⁻¹` instead, which is worse).
 
 This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction_logPow32`.
-It is
-**not** axiom-clean: it inherits exactly **one** stated-but-unproved brick,
-`localised_swap_bound_small_weight` — the small-weight half of brick L (brick H,
-`hybridLaw_shell_le` / `hybridLaw_wideShell_le`, is proved; the large-weight half of brick L,
-`exists_smooth_swap_bound_of_one_le_weight`, is proved; brick L's wave-20 form was false and is
-amended, see `exists_localised_swap_bound`).
+It rests on brick H (`hybridLaw_shell_le` / `hybridLaw_wideShell_le`) and on brick L, whose two
+halves are `exists_smooth_swap_bound_of_one_le_weight` (large weight) and
+`localised_swap_bound_small_weight` (small weight); brick L's original form was false and is
+amended, see `exists_localised_swap_bound`.
 
-**Why the logarithm (wave 32: the amendment is EXECUTED; wave 39: it is a `3/2` power).**
-Wave 29's docstring predicted it;
-wave 32 records the forcing ledger on `localised_swap_bound_small_weight` and carries the term
-through. The telescope smooths step `j` at width `σⱼ = √(j/n)`, and those widths sweep from `ε`
-to `1` while the test function has the single width `ε`; the per-step localisation weight is
-therefore `4 C_k σⱼ + W`, and `∑_{J<j≤n} j^{-3/2} σⱼ = c ∑_{J<j≤n} j^{-1}` is a *harmonic* sum,
-worth `2 log(1/ε)` at the cut `J = ⌈ε² n⌉`. At the fixed point `ε ≍ A δ` that is
+**Why the logarithm, and why a `3/2` power.** The forcing ledger is recorded on
+`localised_swap_bound_small_weight`. The telescope smooths step `j` at width `σⱼ = √(j/n)`, and
+those widths sweep from `ε` to `1` while the test function has the single width `ε`; the per-step
+localisation weight is therefore `4 C_k σⱼ + W`, and `∑_{J<j≤n} j^{-3/2} σⱼ = c ∑_{J<j≤n} j^{-1}` is
+a *harmonic* sum, worth `2 log(1/ε)` at the cut `J = ⌈ε² n⌉`. At the fixed point `ε ≍ A δ` that is
 `log(1/(Aδ)) ≍ log(√n/β)`. Killing the logarithm needs per-step mollification widths
 `εⱼ ≍ σⱼ`, which a single frozen `f` cannot provide.
 
@@ -12838,8 +12831,8 @@ theorem — it is simply not what this route proves, and the provable-constants 
 recording it here.
 
 Note the `k`-power: `gaussianShellConst k = 4 e² √k` and `dimTailConst k ≍ √(k log k)`, so this
-route gives `C ∼ k √(log k)`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the
-coordinate-slice cover of `gaussian_thickening_le` used to contribute (see
+route gives `C ∼ k √(log k)`, not Bentkus's `400 k^{1/4}`. The factor `k` that a
+coordinate-slice cover in `gaussian_thickening_le` would contribute is avoided (see
 `gaussian_le_of_gaussian_shift_cover`); the remaining `√k` is the first absolute moment `E‖Z‖ ≤
 √k` of the Gaussian shift, and closing the gap to `k^{1/4}` needs Ball's Gaussian-surface-area
 theorem. Nothing in the recursion changes.
@@ -12873,7 +12866,7 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
   -- `β ≥ k^{3/2} ≥ 1`, which is what discharges brick L's localisation window: the induction
-  -- runs the recursion only at `ε √m = 8 (A + 1) β ≥ 8` (wave 36).
+  -- runs the recursion only at `ε √m = 8 (A + 1) β ≥ 8`.
   have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
   have hsk1 : 1 ≤ Real.sqrt (k : ℝ) := by
     rw [show (1 : ℝ) = Real.sqrt 1 by simp]
@@ -12881,7 +12874,7 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
   have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
   rw [← hβdef] at hlyap
   have hβ1 : 1 ≤ β := by nlinarith
-  -- wave 43: the window is `√k ≤ ε √m`, and `β ≥ k^{3/2} ≥ √k` still discharges it
+  -- the window is `√k ≤ ε √m`, and `β ≥ k^{3/2} ≥ √k` still discharges it
   have hβk : Real.sqrt (k : ℝ) ≤ β := by nlinarith
   -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
   have hADk : (1 : ℝ) ≤ (A + 1) * dimTailConst k := by nlinarith

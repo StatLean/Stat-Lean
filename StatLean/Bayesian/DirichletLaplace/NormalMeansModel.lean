@@ -174,8 +174,8 @@ theorem dlRatio_le_one_ae (θ₀ : EuclideanSpace ℝ ι) (π : Measure (Euclide
 /-- **The posterior ↔ ratio bridge.** For a measurable parameter set `C`, the truth-averaged
 posterior mass of `C` equals the truth-average of the explicit likelihood-ratio function
 `dlNumer θ₀ Π C / dlDenom θ₀ Π`. This is the *sole* invocation of the dominated Bayes formula
-`posterior_apply_eq_div` in the milestone; the predictive-a.e. identity it provides is transferred
-to a `P₀`-a.e. identity via `comp_absolutelyContinuous`. -/
+`posterior_apply_eq_div` in the posterior-contraction argument; the predictive-a.e. identity it
+provides is transferred to a `P₀`-a.e. identity via `comp_absolutelyContinuous`. -/
 theorem lintegral_posterior_eq_lintegral_ratio (θ₀ : EuclideanSpace ℝ ι)
     (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure π]
     {C : Set (EuclideanSpace ℝ ι)}

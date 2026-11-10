@@ -253,8 +253,8 @@ private lemma dl_thm34_reduce_explicit_event {n : ℕ} {a δ r : ℝ}
 
 /- **Fixed-`n` compressibility engine — REMOVED (orphaned + false stub).** The stub
 `dl_theorem34_engine` claimed the compressibility posterior mass
-`≤ exp((card ι)·e·a·(8+2log(1/δ))·(c−1) − (A−1)q·log c + 3r²) + e^{−r²/8}`. The `thm34-asym` closure
-session proved this exponent is **not attainable**: (i) the `3r²` folds the honest small-ball
+`≤ exp((card ι)·e·a·(8+2log(1/δ))·(c−1) − (A−1)q·log c + 3r²) + e^{−r²/8}`. This exponent is
+**not attainable**: (i) the `3r²` folds the honest small-ball
 correction `2·card'·w` into `2r²` via `card'·w ≤ r²`, false for fixed `r` as `card' → ∞`; (ii) the
 Chernoff `−(A−1)q·log c` needs `k ≥ (A−1)q` but `k = ⌊Aq⌋ − |S₀| ≥ (A−1)q − 1`, off by `log c`. The
 asymptotic headlines `dl_theorem34_beta` / `dl_theorem34_recip` below **do not need it** — they call

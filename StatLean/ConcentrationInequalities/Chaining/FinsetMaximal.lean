@@ -47,7 +47,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 /-- Conversion between the set-bounded supremum `⨆ i ∈ s, f i` and
 `Finset.sup'` over a nonempty Finset — sharp form.
 
-Junk-value caveat (why `h0` is REQUIRED, statement fix at the debt gate): over
+Junk-value caveat (why `h0` is REQUIRED): over
 a general `f : ι → ℝ` the unguarded equality is **false**: the outer
 `⨆ i, ⨆ (_ : i ∈ s), f i` ranges over *all* of `ι`, and for `i ∉ s` the inner
 supremum is the junk value `sSup (∅ : Set ℝ) = 0`. Hence
@@ -87,8 +87,8 @@ lemma biSup_finset_eq_sup' {ι : Type*} {s : Finset ι}
     -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined and the real biSup
     -- is not junk; no book content
     (hs : s.Nonempty) (f : ι → ℝ)
-    -- LEAN-ONLY: nonnegative family — junk-value guard (statement fix at the
-    -- debt gate: for i ∉ s the inner sup is junk 0, so the unguarded identity
+    -- LEAN-ONLY: nonnegative family — junk-value guard (for i ∉ s the
+    -- inner sup is junk 0, so the unguarded identity
     -- is FALSE for negative values); no book content
     (h0 : ∀ i ∈ s, 0 ≤ f i) :
     (⨆ i ∈ s, f i) = s.sup' hs f := by
@@ -235,7 +235,7 @@ theorem tail_max_finset_le {ι : Type*} {s : Finset ι}
 6.2 / HDP §2.5, Eq. (2.22)): Finset reindex of `expectation_max_le` via
 `s.equivFin`; the per-level engine of HDP §8.1, Eq. (8.11).
 
-Carrier note (statement fix at the debt gate). The conclusion is stated with
+Carrier note. The conclusion is stated with
 the junk-free `Finset.sup'` maximum, exactly mirroring the proven
 `Fin`-indexed `expectation_max_le`. The old set-bounded `⨆ i ∈ s, X i ω` form
 was **false**: over a general index type `ι ⊋ s` that biSup equals
@@ -252,7 +252,7 @@ theorem expectation_max_finset_le {ι : Type*}
     (hcenter : ∀ i ∈ s, ∫ ω, X i ω ∂μ = 0)
     -- USER-INPUT: X_i sub-Gaussian with variance proxy σ²; Lu-BDA §6.2
     (hX : ∀ i ∈ s, IsSubGaussian (X i) σ2 μ) :
-    -- Statement fix at the debt gate: the conclusion is stated with
+    -- The conclusion is stated with
     -- `Finset.sup'` (junk-free), exactly mirroring the proven Fin-indexed
     -- `expectation_max_le`; the old biSup form was FALSE at |s| = 1.
     ∫ ω, s.sup' hs (fun i => X i ω) ∂μ

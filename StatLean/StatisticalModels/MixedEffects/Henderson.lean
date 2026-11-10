@@ -220,7 +220,7 @@ theorem lmmLaw_dirac (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p))
     (R : Measure (EuclideanSpace ℝ (Fin n))) [IsProbabilityMeasure R] :
     lmmLaw D β (MeasureTheory.Measure.dirac 0) R
       = R.map fun ε => Matrix.toEuclideanLin (𝕜 := ℝ) D.X β + ε := by
-  rw [lmmLaw, Measure.dirac_prod,
+  rw [lmmLaw, Measure.bindProd_eq_prod, Measure.dirac_prod,
     Measure.map_map (measurable_lmmMap D β) measurable_prodMk_left]
   congr 1
   funext ε

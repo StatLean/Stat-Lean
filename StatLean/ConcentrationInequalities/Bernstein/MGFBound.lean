@@ -344,7 +344,7 @@ with parameter `α = 2 · (√σ2 ⊔ b)`.
 - `mgf_le`: since `E[X] = 0`, the centered MGF equals the uncentered one; apply `bernstein_key`.
 - `integrable_exp_mul`: same centering, integrability from `bernstein_key`.
 
-**Constant deviation from the task statement** — the task asks for `α = 2*(σ2⊔b)`.
+**Constant deviation**: a naive transcription asks for `α = 2*(σ2⊔b)`.
 See the module header for why this is incorrect and `α = 2*(NNReal.sqrt σ2 ⊔ b)` is the
 provable form.
 

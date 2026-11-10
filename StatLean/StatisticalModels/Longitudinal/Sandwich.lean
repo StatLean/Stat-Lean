@@ -28,7 +28,7 @@ covariance); FLW Ch. 13 (verify §).
 **Proof formalization notes.** *Book vs Lean:* LZ86 state the sandwich asymptotically; here
 the estimator is exactly linear in the data, so its mean and covariance are exact matrix
 identities — a strict finite-sample strengthening. The design is conditional-on-covariates
-(fixed matrices); the random-`X` version is a named future debt (D-M1). Working covariances
+(fixed matrices); the random-`X` version is not covered here. Working covariances
 are required symmetric (USER-INPUT `hVsymm` — every covariance model is); invertibility of
 the bread enters as `IsUnit (geeBread D V).det`.
 

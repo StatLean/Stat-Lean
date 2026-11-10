@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 -/
 import StatLean.AsymptoticStatistics.EmpiricalProcess.GoodnessOfFit
 import StatLean.AsymptoticStatistics.ForMathlib.WeakConvergence.TightCoordinateUniqueness
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # Probability-integral transport of half-line Brownian bridges
@@ -315,27 +316,32 @@ noncomputable def cdfPullbackCLM (P : Measure ℝ) :
   let L : LinfF halfLineIndicatorClass →ₗ[ℝ]
       LinfF halfLineIndicatorClass :=
     { toFun := fun z ↦
-        ⟨fun i ↦ z (halfLineIndex (cdf P (halfLineIndexEquiv.symm i))),
+        ⟨fun i ↦ z (halfLineIndex (bindCDF P (halfLineIndexEquiv.symm i))),
           memℓp_infty ⟨‖z‖, by
             rintro _ ⟨i, rfl⟩
             exact lp.norm_apply_le_norm ENNReal.top_ne_zero z
-              (halfLineIndex (cdf P (halfLineIndexEquiv.symm i)))⟩⟩
+              (halfLineIndex (bindCDF P (halfLineIndexEquiv.symm i)))⟩⟩
       map_add' := by intros; ext; rfl
       map_smul' := by intros; ext; rfl }
   exact L.mkContinuous 1 fun z ↦ by
     rw [one_mul, lp.norm_eq_ciSup]
     exact ciSup_le fun i ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero z
-      (halfLineIndex (cdf P (halfLineIndexEquiv.symm i)))
+      (halfLineIndex (bindCDF P (halfLineIndexEquiv.symm i)))
 
 /-- Coordinate formula for the CDF pullback. -/
 theorem cdfPullbackCLM_apply (P : Measure ℝ)
     (z : LinfF halfLineIndicatorClass) (t : ℝ) :
     cdfPullbackCLM P z (halfLineIndex t) =
-      z (halfLineIndex (cdf P t)) := by
+      z (halfLineIndex (bindCDF P t)) := by
   rw [cdfPullbackCLM]
-  change z (halfLineIndex (cdf P (halfLineIndexEquiv.symm (halfLineIndex t)))) = _
+  change z (halfLineIndex (bindCDF P (halfLineIndexEquiv.symm (halfLineIndex t)))) = _
   have hindex : halfLineIndexEquiv t = halfLineIndex t := rfl
   rw [← hindex, halfLineIndexEquiv.symm_apply_apply]
+
+private theorem cdfPullbackCLM_apply_native (P : Measure ℝ) [SFinite P]
+    (z : LinfF halfLineIndicatorClass) (t : ℝ) :
+    cdfPullbackCLM P z (halfLineIndex t) = z (halfLineIndex (cdf P t)) := by
+  rw [cdfPullbackCLM_apply, bindCDF_eq_cdf]
 
 private theorem ksFunctional_cdfPullback_eq_of_uniform_uc
     (P : Measure ℝ) [IsProbabilityMeasure P]
@@ -357,7 +363,7 @@ private theorem ksFunctional_cdfPullback_eq_of_uniform_uc
         (Ioi_mem_nhds hu.2)).exists
       exact ⟨b, hb.le⟩
     obtain ⟨t, ht⟩ := mem_range_of_exists_le_of_exists_ge hF hbelow habove
-    rw [← ht, ← cdfPullbackCLM_apply]
+    rw [← ht, ← cdfPullbackCLM_apply_native]
     simpa only [Real.norm_eq_abs] using
       lp.norm_apply_le_norm ENNReal.top_ne_zero (cdfPullbackCLM P z)
         (halfLineIndex t)
@@ -401,7 +407,7 @@ private theorem ksFunctional_cdfPullback_eq_of_uniform_uc
     intro i
     let t := halfLineIndexEquiv.symm i
     have hi : halfLineIndex t = i := halfLineIndexEquiv.apply_symm_apply i
-    rw [← hi, cdfPullbackCLM_apply]
+    rw [← hi, cdfPullbackCLM_apply_native]
     exact lp.norm_apply_le_norm ENNReal.top_ne_zero z
       (halfLineIndex (cdf P t))
   · rw [lp.norm_eq_ciSup]
@@ -425,7 +431,7 @@ private theorem cvmFunctional_cdfPullback_eq_of_uniform_uc
       ((continuous_halfLine_eval_of_uniform_uc z hz).pow 2).measurable
   unfold cvmFunctional
   congr 1
-  simp_rw [cdfPullbackCLM_apply]
+  simp_rw [cdfPullbackCLM_apply_native]
   change outerExpectation P (g ∘ cdf P) = outerExpectation uniform01 g
   rw [outerExpectation_eq_lintegral (hg.comp hF.measurable),
     outerExpectation_eq_lintegral hg]
@@ -477,7 +483,7 @@ theorem isPBrownianBridge_map_cdfPullback
         rw [integral_map T.continuous.aemeasurable hcont.aestronglyMeasurable]
       _ = ∫ z, z (halfLineIndex (cdf P s)) *
           z (halfLineIndex (cdf P t)) ∂νU := by
-        simp_rw [T, cdfPullbackCLM_apply]
+        simp_rw [T, cdfPullbackCLM_apply_native]
       _ = cdf uniform01 (min (cdf P s) (cdf P t)) -
           cdf uniform01 (cdf P s) * cdf uniform01 (cdf P t) :=
         halfLine_bridge_covariance uniform01 hνU _ _
@@ -499,7 +505,7 @@ theorem isPBrownianBridge_map_cdfPullback
         rw [integral_map T.continuous.aemeasurable
           (continuous_halfLine_evaluation s).aestronglyMeasurable]
       _ = ∫ z, z (halfLineIndex (cdf P s)) ∂νU := by
-        simp_rw [T, cdfPullbackCLM_apply]
+        simp_rw [T, cdfPullbackCLM_apply_native]
       _ = 0 := hνU.mean (halfLineIndex (cdf P s))
   · intro m φ
     let ψ : Fin m → ↑halfLineIndicatorClass := fun k ↦
@@ -510,6 +516,15 @@ theorem isPBrownianBridge_map_cdfPullback
       (continuous_linfF_eval (φ k)).measurable)
       T.continuous.measurable]
     convert! hgauss using 1
+    congr 1
+    funext z k
+    change cdfPullbackCLM P z (φ k) =
+      z (halfLineIndex (cdf P (halfLineIndexEquiv.symm (φ k))))
+    have hi : halfLineIndex (halfLineIndexEquiv.symm (φ k)) = φ k :=
+      halfLineIndexEquiv.apply_symm_apply (φ k)
+    have happly := cdfPullbackCLM_apply_native P z (halfLineIndexEquiv.symm (φ k))
+    rw [hi] at happly
+    exact happly
   · apply (ae_map_iff T.continuous.aemeasurable
       (pBridge_ucPaths_measurableSet (F := halfLineIndicatorClass) (P := P))).2
     filter_upwards [hνU.ucPaths] with z hz
@@ -532,7 +547,7 @@ theorem isPBrownianBridge_map_cdfPullback
     rw [← hf, ← hg]
     change |cdfPullbackCLM P z (halfLineIndex s) -
       cdfPullbackCLM P z (halfLineIndex t)| < ε
-    rw [cdfPullbackCLM_apply, cdfPullbackCLM_apply]
+    rw [cdfPullbackCLM_apply_native, cdfPullbackCLM_apply_native]
     apply hzδ (halfLineIndex (cdf P s)) (halfLineIndex (cdf P t))
     change distL2 uniform01 (halfLineIndicator (cdf P s))
       (halfLineIndicator (cdf P t)) < δ

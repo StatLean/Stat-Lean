@@ -3,6 +3,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.IIdJointLaw
 import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Pi
+import StatLean.ForMathlib.BindProd
 
 /-!
 # Symmetrization of the empirical-process supremum
@@ -155,7 +156,7 @@ noncomputable def ghostLIntegral
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=
   ∫⁻ z : (Fin n → Ω) × (Fin n → Ω),
     ghostDifferenceSup F n z.1 z.2
-      ∂((Measure.pi (fun _ : Fin n => P)).prod
+      ∂(Measure.bindProd (Measure.pi (fun _ : Fin n => P))
         (Measure.pi (fun _ : Fin n => P)))
 
 /-- The expected signed ghost difference supremum `E signedGhostDifferenceSup F n X Y ε` for
@@ -166,8 +167,9 @@ noncomputable def signedGhostLIntegral
     (P : Measure Ω) (F : Set (Ω → ℝ)) (n : ℕ) : ℝ≥0∞ :=
   ∫⁻ z : ((Fin n → Ω) × (Fin n → Ω)) × (Fin n → Bool),
     signedGhostDifferenceSup F n z.1.1 z.1.2 z.2
-      ∂(((Measure.pi (fun _ : Fin n => P)).prod
-          (Measure.pi (fun _ : Fin n => P))).prod
+      ∂(Measure.bindProd
+        (Measure.bindProd (Measure.pi (fun _ : Fin n => P))
+          (Measure.pi (fun _ : Fin n => P)))
         (ProbabilityTheory.rademacherCube n))
 
 theorem integral_ghostDifference_eq_empiricalProcess
@@ -256,6 +258,7 @@ theorem ghostLIntegral_eq_signedGhostLIntegral
     (measurable_ghostDifferenceSup_dense P F hDense hF_meas n).comp measurable_fst
   have hmp := measurePreserving_signedGhostSwap P n
   unfold ghostLIntegral signedGhostLIntegral
+  simp only [Measure.bindProd_eq_prod]
   change (∫⁻ z, ghostDifferenceSup F n z.1 z.2 ∂μpair) =
     ∫⁻ z, signedGhostDifferenceSup F n z.1.1 z.1.2 z.2 ∂μpair.prod ν
   symm
@@ -342,6 +345,7 @@ theorem signedGhostLIntegral_le_two_conditionalRademacher
     · exact (measurable_conditionalRademacherSup_dense P F hDense hF_meas n).comp
         measurable_snd |>.aemeasurable
   unfold signedGhostLIntegral
+  simp only [Measure.bindProd_eq_prod]
   change (∫⁻ z, signedGhostDifferenceSup F n z.1.1 z.1.2 z.2
       ∂μpair.prod ν) ≤ _
   calc
@@ -392,6 +396,7 @@ theorem canonical_symmetrization_empiricalProcess
         rawEmpiricalProcessSup_le_ghostLIntegral P F hDense hF_meas n x
     _ = ghostLIntegral P F n := by
       rw [ghostLIntegral]
+      simp only [Measure.bindProd_eq_prod]
       exact (lintegral_prod _ hghost.aemeasurable).symm
     _ ≤ 2 * ∫⁻ x : Fin n → Ω, conditionalRademacherSup F n x
         ∂Measure.pi (fun _ : Fin n => P) :=

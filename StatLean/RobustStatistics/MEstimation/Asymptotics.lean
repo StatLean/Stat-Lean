@@ -306,7 +306,7 @@ only ever uses the composite; but establishing it here would require generalizin
 engine's estimator argument through `zEstimator_asymptotic_normality`,
 `zEstimator_linear_representation`, `infinite_dim_z_estimator`, `modifiedRandomFunction`
 and their dependents (5 files, ~210 occurrences) in `StatLean/AsymptoticStatistics/`,
-which is out of this wave's scope. No such factorization is derivable from the hypotheses,
+which is out of the scope of this module. No such factorization is derivable from the hypotheses,
 so the general form is not obtainable from this one.
 
 *Universe restriction.* `Ξ : Type` (not `Type*`) is inherited from the engine, which fixes

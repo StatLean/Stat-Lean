@@ -19,9 +19,8 @@ Cambridge University Press, §8.2 (application arithmetic; Exercise 8.9-
 flavored entropy bound for Lipschitz classes) and the Exercise 8.9/8.10
 pipeline.
 
-**Proof formalization notes.** Per the batch's consumer-ownership rule, this
-file keeps ONLY the exponential branch: the polynomial (`(2/ε)^m`, VC-type)
-branch and its integral evaluation are OWNED by the VC cluster
+**Proof formalization notes.** This file keeps ONLY the exponential branch:
+the polynomial (`(2/ε)^m`, VC-type) branch and its integral evaluation are OWNED by the VC cluster
 (`VC/EntropyIntegral.lean`), which plugs `dudley_inequality_abs_of_finite` (frozen
 constant `40`) directly. The integral evaluation
 `∫_0^D √(C/ε) dε = 2√(CD)` is exact (via `integral_rpow`), deliberately
@@ -29,9 +28,7 @@ avoiding the `Γ(3/2)` change-of-variables. Headline constant frozen to
 `80·K·√(C·D)` (= `40` from `dudley_inequality_abs_of_finite` × `2` from the integral
 evaluation). The covering hypothesis shape
 `hcov : ∀ ε ∈ Ioc 0 D, coveringNumber T ε ≠ ⊤ ∧ (toNat 𝒩 : ℝ) ≤ exp (C/ε)`
-is frozen for the gaussian-lln cluster. Named-sorry fallback of this work
-item: `integral_sqrt_div_le` (the `integral_rpow` arithmetic), with the two
-corollary skeletons standing on it.
+is frozen for the gaussian-lln cluster.
 
 **Bibliographic comments.** Entropy bounds of order $e^{C/\varepsilon}$ for
 Lipschitz function classes go back to Kolmogorov–Tikhomirov (1959, §2); the
@@ -239,7 +236,7 @@ theorem dudley_abs_of_cov_le_exp_div_countable {X : E → Ω → ℝ} {K : ℝ�
     {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- LEAN-ONLY: nonemptiness of the carrier
     (hne : T.Nonempty)

@@ -22,16 +22,13 @@ $\mathrm{vc} \le 2$ via Example 8.3.2; we compute the exact value
 `vcDim iicClass = 1` (half-lines cannot realize the labeling
 $g(p) = 0, g(q) = 1$ for $p < q$) — documented deviation, giving
 `√d = 1`. (2) Frozen numeral `5400/√n` inherited from `vc_lln_countable`
-(formula `2 × 40 × √6 × 27`, see `VC/LawOfLargeNumbers.lean`). Sup policy:
+(formula `2 × 40 × √6 × 27`, see `VC/LawOfLargeNumbers.lean`). Indexing:
 `vc_lln_countable` is applied to the countable rational subclass
 `iicRatClass`; the ℝ-sup equals the ℚ-sup pointwise by right-continuity of
 both the empirical CDF (`empFrac_iic_rightContinuous`, finitely many jumps)
-and the population CDF (`real_iic_rightContinuous`, R6 split helper —
+and the population CDF (`real_iic_rightContinuous`, from the
 `StieltjesFunction` fields of `ProbabilityTheory.cdf`), through the generic
 bridge `iSup_eq_iSup_rat_of_right_approx` (`ForMathlib/SupRatApprox.lean`).
-Work-item single named-sorry fallback: `iSup_iic_diff_eq_iSup_rat` (the
-deterministic ℝ→ℚ sup bridge); `vcDim_iicClass` and the LLN instantiation
-must close.
 
 **Bibliographic comments.** V. Glivenko and F. P. Cantelli (1933),
 *Giornale dell'Istituto Italiano degli Attuari* 4; the in-expectation
@@ -166,10 +163,9 @@ lemma empFrac_iic_rightContinuous {n : ℕ} (x : Fin n → ℝ) :
   rw [heq]
   exact hsum.const_mul _
 
-/-- The population CDF `t ↦ μ.real (Iic t)` is right-continuous (LEAN-ONLY,
-batch reconciliation R6 split helper: `StieltjesFunction` fields of
-`ProbabilityTheory.cdf` transported to `μ.real ∘ Set.Iic`). Kept separate
-from `iSup_iic_diff_eq_iSup_rat` so debts stay atomic. -/
+/-- The population CDF `t ↦ μ.real (Iic t)` is right-continuous (LEAN-ONLY:
+`StieltjesFunction` fields of `ProbabilityTheory.cdf` transported to
+`μ.real ∘ Set.Iic`). -/
 lemma real_iic_rightContinuous (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     ∀ t : ℝ, ContinuousWithinAt (fun s => μ.real (Set.Iic s))
       (Set.Ici t) t := by
@@ -224,8 +220,7 @@ private lemma biSup_iicRatClass_eq {g : Set ℝ → ℝ}
     exact le_ciSup hFbd (Set.Iic (q : ℝ))
 
 /-- Deterministic ℝ→ℚ sup recovery for the CDF deviation (HDP §8.3.6 proof;
-via `iSup_eq_iSup_rat_of_right_approx` + the two right-continuity lemmas).
-This work item's single named-sorry fallback. -/
+via `iSup_eq_iSup_rat_of_right_approx` + the two right-continuity lemmas). -/
 lemma iSup_iic_diff_eq_iSup_rat {n : ℕ} (x : Fin n → ℝ) (μ : Measure ℝ)
     [IsProbabilityMeasure μ] :
     (⨆ t : ℝ, |empFrac x (Set.Iic t) - μ.real (Set.Iic t)|) =

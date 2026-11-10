@@ -18,13 +18,13 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §7.2.1, eq. (7.2.2), p. 348; §7.2.2 (Bayes factors between
 models), p. 350; Definition 5.2.5 and eq. (5.2.2), p. 227.
 
-**Proof formalization notes.** The model index is a new *parameter space*: `2E.1` is the Batch-1
-dominated Bayes theorem applied to `Θ := M` (finite discrete — `StandardBorelSpace` comes from
+**Proof formalization notes.** The model index is a new *parameter space*: `2E.1` is the dominated
+Bayes theorem applied to `Θ := M` (finite discrete — `StandardBorelSpace` comes from
 the pinned countable-discrete instance), with the posterior singleton mass computed by
 `withDensity_apply` on `{m}` + `lintegral_singleton`, and the predictive density as the finite sum
 `∑ j, ϖ{j}·q j x` (`lintegral_fintype`-style). To *instantiate* `q m` as a genuine marginal
-likelihood `predictiveDensity (p m) (π m)`, feed Batch-1's
-`comp_eq_withDensity_predictiveDensity` for each within-model experiment. The odds form is
+likelihood `predictiveDensity (p m) (π m)`, feed `comp_eq_withDensity_predictiveDensity` for each
+within-model experiment. The odds form is
 `ℝ≥0∞` division algebra on the ratio of two such formulas.
 
 **Bibliographic comments.** Posterior model probabilities go back to Jeffreys's testing calculus
@@ -57,7 +57,7 @@ theorem posteriorModelProb_eq_div [Fintype M] [MeasurableSingletonClass M] [None
     {ν : Measure 𝓧} [SFinite ν] {q : M → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the marginal densities (regularity)
     (hq : Measurable (Function.uncurry q))
-    -- USER-INPUT: each model's data law has marginal density q m (feed with Batch-1
+    -- USER-INPUT: each model's data law has marginal density q m (feed with
     -- comp_eq_withDensity_predictiveDensity: q m := predictiveDensity (p m) (π m));
     -- Robert §7.2.1
     (hQ : ∀ m, Q m = ν.withDensity (q m)) :

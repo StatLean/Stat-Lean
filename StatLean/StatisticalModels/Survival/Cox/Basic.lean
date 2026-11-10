@@ -11,8 +11,8 @@ the total baseline hazard is infinite (else the defect is the cure mass); and �
 realization theorem **S5.2** — the constructed family has exactly the proportional-hazards
 structure it was built from: `cumHazard (coxMeasure β Λ₀ z) = e^{⟪β,z⟫} • Λ₀`.
 
-S5.2 is this batch's designated hard theorem (it rides the S-B4 analytic bricks); it is the
-single allowed carry if the bridge batch slips.
+S5.2 is this module's main theorem; it rests on the analytic lemmas shared with
+`HazardBridges`.
 
 **Reference.** `Cox72 §2`; ABGK §III.1.2 (verify §): the multiplicative-hazard model and its
 absolutely-continuous construction.
@@ -328,8 +328,7 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
 
 /-- **S5.2, the realization theorem** (`Cox72 §2`; ABGK §III.1.2): the constructed Cox law
 has exactly the proportional-hazards structure — its cumulative-hazard measure is
-`e^{⟪β,z⟫} • Λ₀` (restricted to the positive axis carrying the baseline). Designated hard
-theorem of this batch (rides the S-B4 bricks; the single allowed carry). -/
+`e^{⟪β,z⟫} • Λ₀` (restricted to the positive axis carrying the baseline). -/
 theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2

@@ -29,9 +29,6 @@ that point in the disjoint convex sets `{⟨a,·⟩ ≤ b}` and `{b < ⟨a,·⟩
 contradiction. `Shatters.mono_right` extends "no `(m+2)`-set is shattered"
 to `vcDim ≤ m + 1`. Example 8.3.3 is *derived* as the `m = 2`
 instantiation, not re-proved. Constants: exact equality, no slack.
-Named-sorry fallback of this work item: `not_shatters_halfSpaceClass` (the
-Radon upper bound); the explicit lower-bound witness and the `vcDim`
-assembly must close.
 
 **Bibliographic comments.** The half-space computation is the classical
 example of Vapnik–Chervonenkis theory (*Theory Probab. Appl.* 16 (1971),

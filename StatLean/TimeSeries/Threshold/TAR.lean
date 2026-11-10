@@ -21,16 +21,16 @@ carries the §4.1.1 structural facts:
   (a) equal regime scales `σ₁ = ⋯ = σ_k` *(the book prints `σ_p` — typo)* and
   (b) `max_i Σ_j |b_{ij}| < 1`, a strictly stationary solution exists. FY delegates
   this entirely to §2.1.4's Theorem 2.4 + Example 2.1, so we state it as a corollary
-  of the Markov-layer theorem `nlARKernel_geometricallyErgodic` (PROVED in batch F,
-  axiom-clean, in `ForMathlib/Markov/HarrisTheorem.lean`): the TAR autoregression
+  of the Markov-layer theorem `nlARKernel_geometricallyErgodic` (proved in
+  `ForMathlib/Markov/HarrisTheorem.lean`): the TAR autoregression
   function is the `nlARKernel`
   drift function, and the contraction condition (b) is the Lyapunov input;
 * the **canonical toy instance** eq. (4.2), `X_t = ∓0.7 X_{t−1} + ε_t` according to the
   sign of `X_{t−1} − r`, exhibited as a two-regime SETAR satisfying (a)+(b).
 
 **Scope.** FY Theorems 4.1 and 4.2 (Chan 1993a: strong consistency; `T(r̂ − r) = O_p(1)`
-and the associated asymptotics) and their consumers were **descoped on 2026-08-04** at
-the user's direction and are not stated anywhere in this area.
+and the associated asymptotics) and their consumers are not formalized and are not stated anywhere
+in this area.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.1.1,
 Definition 4.1, eqs. (4.1)–(4.3) and the stationarity discussion pp. 126–127.
@@ -503,7 +503,7 @@ kernel, a two-sided strictly stationary realization of the recursion driven by
 standardized iid innovations.
 
 The path space is now available: `ForMathlib/Markov/Markov/TwoSidedChain.lean`'s
-`exists_twoSided_stationary_chain` (PROVED, axiom-clean) builds the two-sided stationary
+`exists_twoSided_stationary_chain` builds the two-sided stationary
 chain by the *natural extension* — the time-reversed kernel obtained by disintegration
 plus two Ionescu–Tulcea trajectories glued at the shared time-`0` value — so no
 Kolmogorov extension over `ℤ` is needed. Instantiating it at `κ = nlARKernel f ν`
@@ -854,7 +854,7 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
 the uniform contraction `max_i Σ_j |b_{ij}| < 1`, the TAR state chain is geometrically
 ergodic, hence admits a strictly stationary solution. Stated as a corollary of the
 Markov-layer statement `nlARKernel_geometricallyErgodic` (FY Thm 2.4(ii)), which is
-PROVED and axiom-clean. That theorem additionally requires the innovation density to be
+proved. That theorem additionally requires the innovation density to be
 **continuous** (a documented strengthening); the Gaussian law used here supplies it via
 `continuous_gaussianPDF` above.
 

@@ -38,7 +38,7 @@
     {"id":"OrderTopology.to_orderClosedTopology","label":"to_orderClosedTopology","full":"OrderTopology.to_orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.Basic"},
     {"id":"essSup_le_of_ae_le","label":"essSup_le_of_ae_le","full":"essSup_le_of_ae_le","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.EssSup"},
     {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
-    {"id":"inf_le_right","label":"inf_le_right","full":"inf_le_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice"},
+    {"id":"inf_le_right","label":"inf_le_right","full":"inf_le_right","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.Lattice"},
     {"id":"Filter.isCobounded_le_of_bot","label":"isCobounded_le_of_bot","full":"Filter.isCobounded_le_of_bot","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.IsBounded"},
     {"id":"ne_of_lt","label":"ne_of_lt","full":"ne_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"lt_of_le_of_lt","label":"lt_of_le_of_lt","full":"lt_of_le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},

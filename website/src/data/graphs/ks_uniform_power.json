@@ -100,6 +100,7 @@
     {"source":"StatLean.HypothesisTesting.ks_power_lower_bound","target":"StatLean.HypothesisTesting.empCDF"},
     {"source":"StatLean.HypothesisTesting.ks_power_lower_bound","target":"StatLean.MultipleTesting.empiricalCDF"},
     {"source":"StatLean.HypothesisTesting.ks_power_lower_bound","target":"StatLean.HypothesisTesting.empiricalCDF_eq_empCDF"},
+    {"source":"StatLean.HypothesisTesting.ks_power_lower_bound","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.HypothesisTesting.ks_power_lower_bound","target":"MeasureTheory.measure_mono"}
   ]
 }

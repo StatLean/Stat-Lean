@@ -1,7 +1,5 @@
 import StatLean.PointEstimation.ForMathlib.MeasureMap
 -- Area umbrella: StatLean.PointEstimation
--- Maintained by the laptop session only (see CLAUDE.md §10). Imported by StatLean.lean once
--- the batch merges to main; until then it serves as the batch build target.
 import StatLean.PointEstimation.ForMathlib.CondDistribDensity
 import StatLean.PointEstimation.ForMathlib.CondExpWithDensity
 import StatLean.PointEstimation.ForMathlib.ConvexMinimizers

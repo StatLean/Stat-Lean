@@ -28,9 +28,8 @@ and "using (C.4) we find the partial regression coefficient as `β_{γμ ∣ Γ�
 Clarendon Press, Oxford, **1996 (first edition)**, §5.1.3, p. 130 (the conditional expectation
 display and `β_{γμ ∣ Γ∖{γ}} = −k_{γμ}/k_{γγ}` — both **unnumbered**), deriving it from
 Appendix C, p. 256: Proposition C.5 and the identity (C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`
-(`Lauritzen §5.1.3`, `Lauritzen App. C`). Page numbers and item kinds follow
-`notes/factor_graphical/books.md`; on the generalized inverse `Σ₂₂⁻` versus `Σ₂₂⁻¹` see the
-module docstring of `Gaussian.Precision`.
+(`Lauritzen §5.1.3`, `Lauritzen App. C`). On the generalized inverse `Σ₂₂⁻` versus `Σ₂₂⁻¹`
+see the module docstring of `Gaussian.Precision`.
 
 **Proof formalization notes.**
 

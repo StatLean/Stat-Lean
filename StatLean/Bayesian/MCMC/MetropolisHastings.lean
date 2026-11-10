@@ -27,7 +27,8 @@ construction. Stationarity is the pinned `IsReversible.invariant` — the textbo
 for statistical mechanics; Hastings (1970) the general ratio used here. That detailed balance
 (reversibility) suffices for stationarity is the classical reversible-chain argument (A. N.
 Kolmogorov's reversibility criterion, 1936), with the convergence theory (irreducibility, Harris
-recurrence, ergodic theorems) deferred to Meyn–Tweedie-style analysis outside this batch's scope.
+recurrence, ergodic theorems) deferred to Meyn–Tweedie-style analysis outside the scope of this
+module.
 -/
 
 open MeasureTheory ProbabilityTheory

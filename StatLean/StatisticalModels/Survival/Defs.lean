@@ -24,7 +24,7 @@ Based on Counting Processes*, Springer Series in Statistics, Springer, 1993
 (ISBN 0-387-97872-0), §II.1 (verify §): the integrated (cumulative) hazard
 `Λ(t) = ∫₀ᵗ dF/S(s−)` as the primitive, with `ΔΛ = ΔF/S(−)` at atoms. (`ABGK §II.1`.)
 
-**Proof formalization notes.** Laptop-only data model — definitions only; all lemmas live in
+**Proof formalization notes.** Data model — definitions only; all lemmas live in
 `Survival.Survival` and `Survival.CumulativeHazard`. *Book vs Lean:* ABGK work on `[0, ∞]`
 allowing a defect (mass at `+∞`); we encode the defect as **sub-probability total mass**
 (`IsSubEventTimeLaw`), not as a point at infinity — `Measure ℝ` keeps the entire Stieltjes /

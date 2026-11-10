@@ -17,6 +17,7 @@
     {"id":"StatLean.ExperimentalDesign.populationMean","label":"populationMean","full":"StatLean.ExperimentalDesign.populationMean","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.FinitePopulation"},
     {"id":"StatLean.ExperimentalDesign.sum_prod_pmf","label":"sum_prod_pmf","full":"StatLean.ExperimentalDesign.sum_prod_pmf","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
     {"id":"StatLean.ExperimentalDesign.SamplingDesign","label":"SamplingDesign","full":"StatLean.ExperimentalDesign.SamplingDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
     {"id":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","label":"samplesOfCard_nonempty","full":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
     {"id":"StatLean.ExperimentalDesign.pmfVar_productDesign_sum","label":"pmfVar_productDesign_sum","full":"StatLean.ExperimentalDesign.pmfVar_productDesign_sum","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
     {"id":"StatLean.ExperimentalDesign.pmfVar_smul","label":"pmfVar_smul","full":"StatLean.ExperimentalDesign.pmfVar_smul","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.ForMathlib.PMFExpectation"},
@@ -45,8 +46,7 @@
     {"id":"eq_or_ne","label":"eq_or_ne","full":"eq_or_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.Logic.Basic"},
     {"id":"StatLean.ExperimentalDesign.pairInclusionProb_self","label":"pairInclusionProb_self","full":"StatLean.ExperimentalDesign.pairInclusionProb_self","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.InclusionProbability"},
     {"id":"StatLean.ExperimentalDesign.srs_inclusionProb","label":"srs_inclusionProb","full":"StatLean.ExperimentalDesign.srs_inclusionProb","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
-    {"id":"StatLean.ExperimentalDesign.srs_pairInclusionProb","label":"srs_pairInclusionProb","full":"StatLean.ExperimentalDesign.srs_pairInclusionProb","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
-    {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"}
+    {"id":"StatLean.ExperimentalDesign.srs_pairInclusionProb","label":"srs_pairInclusionProb","full":"StatLean.ExperimentalDesign.srs_pairInclusionProb","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.stratifiedSRS_mean_variance","target":"StatLean.ExperimentalDesign.Stratum"},
@@ -69,6 +69,7 @@
     {"source":"StatLean.ExperimentalDesign.populationVariance","target":"StatLean.ExperimentalDesign.populationMean"},
     {"source":"StatLean.ExperimentalDesign.productDesign","target":"StatLean.ExperimentalDesign.sum_prod_pmf"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.SamplingDesign"},
+    {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"PMF.uniformOn"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.samplesOfCard_nonempty"},
     {"source":"StatLean.ExperimentalDesign.stratified_var","target":"StatLean.ExperimentalDesign.pmfVar"},
     {"source":"StatLean.ExperimentalDesign.stratified_var","target":"StatLean.ExperimentalDesign.productDesign"},
@@ -107,7 +108,6 @@
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.pairInclusionProb_self"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.srs_inclusionProb"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.srs_pairInclusionProb"},
-    {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"Finset.mul_sum"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_variance","target":"StatLean.ExperimentalDesign.pmfVar_smul"}
   ]
 }

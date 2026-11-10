@@ -128,6 +128,6 @@ then `f_n x → f x` for every `x`. -/
 theorem tendsto_apply_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → H} {g : H}
     (h : Filter.Tendsto f l (nhds g)) (x : X) :
     Filter.Tendsto (fun n => f n x) l (nhds (g x)) :=
-  ((RKHS.continuous_eval x).tendsto g).comp h
+  ((RKHS.continuous_eval_const x).tendsto g).comp h
 
 end StatLean.NonparametricStatistics

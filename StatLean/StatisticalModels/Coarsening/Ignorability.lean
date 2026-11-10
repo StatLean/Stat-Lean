@@ -20,11 +20,11 @@ complete-case density as exactly `f · (π ∘ fst)`.
 
 *Book vs Lean:* the slice decomposition is stated for **arbitrary** outcome laws — no
 domination, no densities; Rubin's dominated formulation is the corollary, strictly weaker.
-The distinctness-of-parameters clause and the Bayesian reading of ignorability are named
-future work (D-C4). The formal agreement lemma with the semiparametric
+The distinctness-of-parameters clause and the Bayesian reading of ignorability are outside the
+present formulation. The formal agreement lemma with the semiparametric
 `Examples.MARMean.marMean_Ψ` estimand (C4) is deliberately not stated: it would import an
 assembly-layer example file for a near-`rfl` transport; the connection is documented at
-`Coarsening.IPW` instead (deviation recorded in the batch ledger).
+`Coarsening.IPW` instead.
 
 **Reference.** D. B. Rubin, "Inference and missing data," *Biometrika* **63** (1976),
 581–592, §2–3 (the ignorability theorem) (`Rubin76 §2–3`); R. J. A. Little and D. B. Rubin,

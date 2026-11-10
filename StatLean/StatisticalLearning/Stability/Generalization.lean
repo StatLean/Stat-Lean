@@ -10,7 +10,6 @@ Theorem 13.12 (Exercise 13.3): an on-average-stable AERM learns its class in
 expectation with rate `ε₁(n) + ε₂(n)`.
 
 **Reference.** SSBD §13.2, Theorem 13.2; Exercise 13.3 (Theorem 13.12).
-Transcription: `notes/statistical_learning/book_statements/ch12-13.md`.
 
 **Formalization notes.** Theorem 13.2 is pure exchangeability: expand both
 sides via `ReplaceOne.lean`'s three bricks — no concentration. Theorem 13.12
@@ -89,7 +88,8 @@ theorem integral_risk_sub_empRisk_eq_stabilityGap (A : Sample Z n → H)
     rw [integral_sub (hint₂ i) (hint₃' i), hswap i, hcoord i]
   rw [integral_sub hrisk hemp, ← integral_loss_fresh_eq_integral_risk ℓ A hint₁,
     ← sum_integral_loss_at_coord_eq_integral_empRisk ℓ A hint₃ hn, stabilityGap]
-  simp only [key, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+  simp only [Measure.bindProd_eq_prod, key, Finset.sum_sub_distrib,
+    Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul]
   field_simp
 

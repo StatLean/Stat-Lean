@@ -30,8 +30,8 @@ re-prove) and the probabilistic side (indicators into `ℝ` via `empFrac`).
 class shatters nothing (not even `∅`, since no witness set exists), so
 `vcDim ∅ = ⨆ over empty = 0` — degenerate but harmless: every downstream
 theorem assumes a nonempty class. `empFrac` at `n = 0` is `0` (junk `0⁻¹`
-times empty sum). This file is a laptop-only Defs surface: definitions plus
-`Iff.rfl`/short API only, everything proved (0-sorry).
+times empty sum). This file is a Defs surface: definitions plus
+`Iff.rfl`/short API only.
 
 **Bibliographic comments.** VC dimension is due to V. N. Vapnik and A. Ya.
 Chervonenkis, "On the uniform convergence of relative frequencies of events

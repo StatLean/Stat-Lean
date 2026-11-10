@@ -7,7 +7,7 @@ import Mathlib.Probability.StrongLaw
 /-!
 # Consistency of the ARMA Gaussian MLE (Hannan program, step 1)
 
-The consistency half of the commissioned Hannan Theorem 3.2 proof: the profiled
+The consistency half of the Hannan Theorem 3.2 proof: the profiled
 Gaussian criterion `armaProfileCriterion` converges (uniformly on compact subsets of
 the constraint set) to a deterministic contrast that is uniquely minimized at the true
 parameter, so approximate minimizers converge in probability.
@@ -23,33 +23,30 @@ parameter, so approximate minimizers converge in probability.
   unit-variance model ACVF, geometric rate on the constraint set);
 * `criterion_tendsto_contrast` — pointwise stochastic convergence of the profiled
   criterion (ergodic-type LLN for the quadratic form; the α-mixing route via the
-  batch-C toolbox after Pham–Tran, or the direct L² route via MA(∞) truncation —
-  proof plan in the lane prompt);
+  mixing toolbox after Pham–Tran, or the direct L² route via MA(∞) truncation);
 * `mle_consistent` — approximate minimizers over the constraint set converge in
   probability to `θ₀` (argmin-consistency wiring following the
   `StatLean/Bayesian` `ArgminConsistency` pattern; compactness supplied by
   restricting to a compact `𝓑`-subset containing `θ₀`, as Hannan does).
 
-**Status (2026-08-09, wave `ts/s1b-arma-finish`): this module is `sorry`-free and
-axiom-clean.** `mle_consistent` is proved; its last ingredient — local stochastic
-equicontinuity — is the public `armaProfileS_locallyEquicontinuous`. Two further public
-bricks were produced on the way and are meant to be cited downstream:
+`mle_consistent` is proved; its last ingredient — local stochastic equicontinuity — is the
+public `armaProfileS_locallyEquicontinuous`. Further public bricks, meant to be cited
+downstream:
 
 * `linearProcess_avgSq_tendstoInProb` — the *generic* one-filter second-moment LLN
   `T⁻¹ Σ_{t<T} W_{t+1}² →p σ² Σ_n c_n²` for any absolutely summable `c`, proved by the
   same ergodic-theorem-free progression device as `armaResidualSS_tendstoInProb` (of
   which it is **not** an instance: a general `c` is not an ARMA transfer sequence);
 * `exists_armaPi_l1_lipschitz` — the **Lipschitz** `ℓ¹` bound on `θ ↦ π(θ)` over a compact
-  set of invertible parameters (new in wave `ts/s12b-model-repairs`, 2026-08-09; proved by
-  the resolvent identity plus the `ℓ¹` convolution inequality, *not* by Cauchy estimates on
-  `∂π/∂θ`). This is the quantitative upgrade of `exists_armaPi_l1_modulus` that
-  `ARMA/Diagnostics.lean`'s residue (B) needs;
-* `exists_uniform_geometric_bound_arma` and `exists_armaPi_l1_modulus` (from the previous
-  wave), the deterministic uniformity inputs.
+  set of invertible parameters (proved by the resolvent identity plus the `ℓ¹` convolution
+  inequality, *not* by Cauchy estimates on `∂π/∂θ`). This is the quantitative upgrade of
+  `exists_armaPi_l1_modulus` that `ARMA/Diagnostics.lean`'s residue (B) needs;
+* `exists_uniform_geometric_bound_arma` and `exists_armaPi_l1_modulus`, the deterministic
+  uniformity inputs.
 
-The Gram-tail *difference* modulus that the 2026-08-09 route note demanded turned out to
-be unnecessary: consistency only needs a one-sided bound, so a `θ`-uniform `o_p(1)` bound
-on the correction term suffices, and that follows from the entrywise rank-one dominance
+A Gram-tail *difference* modulus is unnecessary: consistency only needs a one-sided bound,
+so a `θ`-uniform `o_p(1)` bound on the correction term suffices, and that follows from the
+entrywise rank-one dominance
 `|G_{ij}| ≤ (1 − r²)⁻¹h_ih_j` — see `gramTail_uniform_tendstoInProb`.
 
 **Reference.** Hannan (1973) §2; Brockwell & Davis (1991) §10.8 (Props 10.8.1–10.8.3);
@@ -127,9 +124,9 @@ bound that is uniform over a compact family of parameters. This block redoes its
 estimate carrying the radius and the sup-bound as parameters
 (`abs_armaPsi_le_of_disc_bounds`), and then runs the compactness recipe
 (`exists_radius_nonvanishing`, `exists_disc_bounds`) to obtain the uniform statement
-`exists_uniform_geometric_bound_arma`, which is the single brick both halves of
-`mle_consistent`'s remaining debt — the continuity of `θ ↦ armaContrastVar θ₀ θ` and the
-stochastic-equicontinuity estimate — were reduced to. -/
+`exists_uniform_geometric_bound_arma`. This bound supplies both the continuity of
+`θ ↦ armaContrastVar θ₀ θ` and the stochastic-equicontinuity estimate used by
+`mle_consistent`. -/
 
 section GeometricBrick
 
@@ -936,7 +933,7 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
     -- USER-INPUT: coprime minimal true orders; Hannan 1973
     (hcop : IsCoprime (arPoly b0) (maPoly a0))
-    -- USER-INPUT: minimality of the *working* model too. Added 2026-08-09 after a
+    -- USER-INPUT: minimality of the *working* model too. A
     -- Lean witness (`armaContrastVar_eq_one_not_identifiable`: `p = q = 1`,
     -- `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`) showed that constraining only the true
     -- pair leaves the contrast blind to common factors in the working pair — the
@@ -1100,7 +1097,6 @@ private lemma exists_contrast_gap {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q �
     have hle := hmin (Set.mem_inter hba hd)
     simp only [Set.mem_ofPred_eq] at hle
     linarith
-
 
 
 /-- **The `ℓ¹` modulus of continuity of the inversion filter on a compact set** — the
@@ -2204,8 +2200,8 @@ gives `Γ_T⁻¹ = Π_Tᵀ (1 + G_T)⁻¹ Π_T`, hence
 where `u_i = Σ_{j ≤ i} π_{i−j}(θ) x_j` is exactly the **truncated θ-residual** at time
 `i`. This is the deterministic half of `armaProfileS_tendstoInProb`: it converts the
 matrix-inverse statistic into the residual sum of squares plus a correction governed by
-`G_T`, whose trace is bounded uniformly in `T` (`trace_gramTail_le`). See the debt note
-at `armaProfileS_tendstoInProb` for what remains. -/
+`G_T`, whose trace is bounded uniformly in `T` (`trace_gramTail_le`). See the docstring
+of `armaProfileS_tendstoInProb` for the rest of the route. -/
 private lemma armaProfileS_eq_gramTail_quadForm (hB : ARMAInvertibleParams b a) (T : ℕ)
     (x : Fin T → ℝ) :
     armaProfileS b a x
@@ -2280,7 +2276,7 @@ variable — one Markov inequality then controls the whole supremum. The route:
 
 Both `C` and `r` come from the locally uniform brick
 `exists_uniform_geometric_bound_arma`, which is exactly why the envelope is `θ`-free.
-This **supersedes** the 2026-08-09 route note at `mle_consistent`, which asked for the
+This **supersedes** the route note at `mle_consistent`, which asked for the
 Gram tail's *difference* modulus `Σ_j |G_T(θ)_{ij} − G_T(θ′)_{ij}| ≤ L(ρ)`: no such
 modulus is needed, because a uniform `o_p(1)` bound on the correction term itself is
 enough for the one-sided (lower) estimate that consistency uses. -/
@@ -4329,12 +4325,7 @@ open Matrix in
 /-- **Step (C) of the `armaProfileS_tendstoInProb` route — PROVED**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
 
-This is the **only** remaining gap in `armaProfileS_tendstoInProb`; steps (A) and (B) are
-proved. It is stated here as a named theorem rather than left as an anonymous `have` inside
-that proof, so that a sorry census names it (project charter §2, "`sorry` is a planned
-debt": lift it to a top-level lemma so future sessions see the gap).
-
-**The route, as executed (ergodic-theorem-free).** The Mathlib pin has **no** pointwise
+**The route (ergodic-theorem-free).** The Mathlib pin has **no** pointwise
 (Birkhoff) ergodic theorem — only von Neumann's mean ergodic theorem, an `L²` statement
 that does not reach the `L¹` variable `r_t(θ)²` — and a *direct* `L²` LLN for `r_t(θ)²`
 is genuinely blocked by fourth cumulants. Neither is needed:
@@ -4636,29 +4627,25 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         linarith
 
 open Matrix in
-/-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
-law of large numbers*
+/-- **The quadratic-form law of large numbers**
 
   `T⁻¹ · xᵀ Γ_T(θ)⁻¹ x  →p  σ² · armaContrastVar θ₀ θ`
 
 for data from the true ARMA law. Everything else in `criterion_tendsto_contrast` is
-discharged from this input below (the `log`-continuity transfer and the deterministic
+discharged from this input (the `log`-continuity transfer and the deterministic
 `T⁻¹ log det Γ_T → 0`, which is PROVED as `logdet_armaToeplitz_vanishes`).
 
-**The earlier verdict on this debt — "needs the pointwise ergodic theorem, which the
-pin does not have" — is OVERTURNED.** The pin really does lack Birkhoff (it carries
-only von Neumann's mean ergodic theorem, `Analysis/InnerProductSpace/MeanErgodic.lean`,
-which is an `L²` statement and so does not reach the `L¹` variable `r_t(θ)²`; the repo
-records the same gap at `Mixing/LimitTheorems.slln_of_alphaMixing_debt`). But *this*
-statistic does not need it. The route, and what is actually left:
+**No pointwise ergodic theorem is needed.** The pin lacks Birkhoff (it carries only von
+Neumann's mean ergodic theorem, `Analysis/InnerProductSpace/MeanErgodic.lean`, which is an
+`L²` statement and so does not reach the `L¹` variable `r_t(θ)²`). But *this* statistic
+does not need it. The route:
 
 * **(A) deterministic half — PROVED** as `armaProfileS_eq_gramTail_quadForm`:
   `S_T = uᵀ (1 + G_T)⁻¹ u` with `u = Π_T x` the vector of truncated `θ`-residuals.
   Writing `(1 + G)⁻¹ = 1 − (1 + G)⁻¹G` splits this into `‖u‖² − uᵀ (1+G)⁻¹G u`.
 * **(B) the correction term — PROVED** as `gramTail_quadForm_tendstoInProb`, and the
   deterministic sandwich it feeds is `armaProfileS_sandwich`:
-  `‖u‖² − uᵀ G_T u ≤ S_T ≤ ‖u‖²`. Two amendments to the plan recorded above were
-  needed, and both simplify it:
+  `‖u‖² − uᵀ G_T u ≤ S_T ≤ ‖u‖²`. Two simplifications:
   - the positive semidefiniteness of `(1+G)⁻¹G` is **not** needed, and neither is any
     eigenbasis: substituting `x = (1+G)y` turns both halves of the sandwich into the
     polynomial identities `b + c ≥ 0`, `c + d ≥ 0` (`quadForm_one_add_inv_bounds`);
@@ -4667,20 +4654,20 @@ statistic does not need it. The route, and what is actually left:
     redistributes the pairing onto the diagonal:
     `tr(M S) ≤ (max_i Σ_j |S_ij|) · tr M` (`sum_entry_mul_le_of_posSemidef`). This
     Schur test is what the row sums of `E[u_i u_j] = σ² Σ_{k,l} π̃(i,k) π̃(j,l) γ(k−l)`
-    feed, via `summable_abs_armaPi` and `summable_abs_armaACVF` exactly as predicted
+    feed, via `summable_abs_armaPi` and `summable_abs_armaACVF`
     (`rowSum_kernel_le`). Since `Cov u` never appears as an operator, no bound on it is
     needed; the second-moment matrix is used directly, and its mean-zero input
     (`integral_linearProcess_eq_zero`, `integral_mul_linearProcess`) is proved here.
 * **(C) — PROVED** as the named lemma `armaResidualSS_tendstoInProb` above:
-  `T⁻¹‖u‖² →p σ² Σ_j c_j²`, ergodic-theorem-free. See its docstring for the executed
-  route. Two amendments to the plan recorded here were needed:
+  `T⁻¹‖u‖² →p σ² Σ_j c_j²`, ergodic-theorem-free. See its docstring for the
+  route. Two points of that route:
   - the truncation must be *double* (`blockResid`): truncating only the composite filter
     at lag `m` leaves each `r_t^{(m)}` a function of the *entire* noise past, so the
     progressions are not independent. Truncating the linear process at `m` as well makes
     the window `[i+1−m, i+m]` finite, and the progression step is `2m`, not `m`;
-  - the `m → ∞` transfer is *not* the two-factor Cauchy–Schwarz recorded above but the
+  - the `m → ∞` transfer is *not* a two-factor Cauchy–Schwarz but the
     row-by-row one, `∫|u_i² − z_i²| ≤ ‖u_i − z_i‖₂ (‖u_i‖₂ + ‖z_i‖₂)`, followed by a
-    single Markov inequality. Both use second moments only, so the recorded "fourth
+    single Markov inequality. Both use second moments only, so the "fourth
     cumulants" obstruction (real, but only against a *direct* `L²` LLN for `r_t(θ)²`)
     is untouched. The edge effect appears as the `min(T − i, m)` in the `π`-tail and
     costs `O(m/T)`.
@@ -4708,9 +4695,8 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
           - σ2 * armaContrastVar b0 a0 b a|}).toReal)
       atTop (𝓝 0) := by
-  -- **(C)** — the residual sum of squares LLN; the single remaining gap, now the named
-  -- debt `armaResidualSS_tendstoInProb` above.
-  -- no type ascription: the `have` takes the debt's stated type verbatim, so there is
+  -- **(C)**: the residual sum of squares LLN, `armaResidualSS_tendstoInProb` above.
+  -- no type ascription: the `have` takes the lemma's stated type verbatim, so there is
   -- no second copy of the matrix statement to re-unify against
   have hCLLN := fun (η' : ℝ) (hη' : 0 < η') =>
     armaResidualSS_tendstoInProb (b := b) (a := a) h hiid hσ hB0 hB hcausal hmeas hη'
@@ -5446,7 +5432,7 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
     -- USER-INPUT: compact identifiable search region containing the truth; Hannan §2
     (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
-    -- USER-INPUT: the search region consists of MINIMAL models. Added 2026-08-09 after
+    -- USER-INPUT: the search region consists of MINIMAL models; see
     -- the Lean witness `mle_consistent_not_identifiable` (`K = {(0,0), (1/2, −1/2)}`,
     -- on which the profiled criterion is constant, so a constant estimator sequence
     -- satisfies `hargmin` while staying a fixed distance from θ₀). Hannan 1973 §2.
@@ -5471,14 +5457,13 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   -- `δT = 0` while staying a fixed distance from `θ₀`) attacked the OLD signature, which
   -- did not constrain the working pairs in `K`. The repair it asked for —
   -- `hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2)` — is now a hypothesis, and
-  -- it excludes that witness. What remains is analytic debt, not falsity:
+  -- it excludes that witness. What remains is analytic, not falsity:
   --
   --   (i)   `criterion_tendsto_contrast` — PROVED here and now UNCONDITIONAL: steps (A),
   --         (B) and (C) of `armaProfileS_tendstoInProb` are all proved
-  --         (`armaResidualSS_tendstoInProb` closed the last one), so this item is no
-  --         longer debt;
+  --         (`armaResidualSS_tendstoInProb` closed the last one);
   --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`
-  --         — **PROVED** (2026-08-09) as `exists_contrast_gap` above. Its pointwise half
+  --         — proved as `exists_contrast_gap` above. Its pointwise half
   --         was already available (`armaContrastVar_eq_one_iff` + `one_le_armaContrastVar`
   --         give `armaContrastVar θ₀ θ > 1` for `θ ∈ K`, `θ ≠ θ₀`); the missing
   --         continuity of `θ ↦ armaContrastVar θ₀ θ` is `continuousOn_armaContrastVar`,
@@ -5492,10 +5477,10 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   --         needs equicontinuity of `θ ↦ armaProfileCriterion θ (data_T)` in probability
   --         (`MLEAsymptotics.armaProfileS_equicontinuous`, still open).
   --
-  --  **The geometric-bound brick is PROVED** (2026-08-09):
+  --  **The geometric-bound brick is proved**:
   --  `exists_uniform_geometric_bound_arma` (above) supplies, for any compact `K ⊆ 𝓑`,
   --  one pair `(C, r)` with `r < 1` bounding `|armaPi θ n|` *and* `|armaPsi θ n|` by
-  --  `C rⁿ` uniformly in `θ ∈ K`. Its proof does what the 2026-08-08 note asked for:
+  --  `C rⁿ` uniformly in `θ ∈ K`. Its proof does the following:
   --  `exists_geometric_bound_armaPsi` really cannot be used as a black box (it is stated
   --  non-quantitatively), so its Cauchy estimate is redone carrying the radius and the
   --  sup-bound as parameters (`abs_armaPsi_le_of_disc_bounds`), and the compactness step
@@ -5520,11 +5505,11 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   --  (Recorded after checking that the shortcuts do **not** work: the pathwise bound
   --  `T⁻¹ uᵀG u ≤ K P² · T⁻¹‖x‖²` is `O_p(1)`, not `o_p(1)`, and the sandwich's constant
   --  factor `(1 + K)⁻¹ ⪯ (1+G)⁻¹` costs an `O(1)` additive `log(1+K)` in the criterion,
-  --  so neither replaces the modulus. The `∂π/∂θ` companion the 2026-08-08 note asked
-  --  for is **not** needed: a modulus of continuity suffices, and it is free from
+  --  so neither replaces the modulus. A `∂π/∂θ` companion
+  --  is **not** needed: a modulus of continuity suffices, and it is free from
   --  compactness of `K × K` plus the brick.)
   --
-  --  **(iii) is now PROVED** (2026-08-09, wave `ts/s1b-arma-finish`), and the Gram-tail
+  --  **(iii) is now PROVED**, and the Gram-tail
   --  *difference* modulus asked for just above turned out to be **unnecessary**: the
   --  consistency argument only ever needs a one-sided (lower) bound on `S_T(θ)/T` over
   --  the far set, so it suffices that the correction term `T⁻¹uᵀG_T(θ)u` be `o_p(1)`

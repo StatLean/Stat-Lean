@@ -5,7 +5,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 /-!
 # Coordinate splitting and tensorization of the DL posterior ratio (C11)
 
-**This is the riskiest file of the milestone** — it carries the whole `WithLp.toLp` / subtype-pi /
+This file develops the whole `WithLp.toLp` / subtype-pi /
 product-measure transport stack, plus the `ℝ≥0∞`-cancellation that turns the full-model posterior
 ratio into the sub-model posterior ratio (BPPD eq. (26), tensorization).
 
@@ -42,11 +42,7 @@ between `EuclideanSpace ℝ ι` and the plain pi type, `measurePreserving_piEqui
 `norm_sq_split` with the analogous inner-product split and `ENNReal.ofReal (exp a) * ENNReal.ofReal
 (exp b) = ENNReal.ofReal (exp (a + b))`. In `dlRatio_cylinder` the `S`-factor
 `dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` is in `(0, ∞)` (integrand bounded by
-`exp(½‖·‖²)`, prior a probability measure), so it cancels in the `ℝ≥0∞` quotient. **Fallback** (per
-plan): if the `ℝ≥0∞` cancellation is intractable, prove only the `≤` direction
-`PosteriorCompressibility` consumes, or leave `dlRatio_cylinder` as
-the single named debt (its statement layer insulates the consumers).
--/
+`exp(½‖·‖²)`, prior a probability measure), so it cancels in the `ℝ≥0∞` quotient. -/
 
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal RealInnerProductSpace Classical
@@ -345,7 +341,7 @@ When the truth is supported on `S` (`projS Sᶜ θ₀ = 0`), the full-model post
 where `Π = dlPrior a ι` and `Π_{Sᶜ} = dlPrior a {j // j ∈ Sᶜ}`. The `S`-factor
 `dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` appears in both numerator and
 denominator (via `dlNumer_cylinder` and `dlPrior_prod_apply`) and cancels because it is in `(0, ∞)`
-(`dlDenom_pos_lt_top`). **Riskiest lemma of the milestone.** -/
+(`dlDenom_pos_lt_top`). -/
 lemma dlRatio_cylinder (a : ℝ) (S : Set ι) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ Sᶜ)]
     (θ₀ y : EuclideanSpace ℝ ι)
     -- USER-INPUT: truth supported on `S` (θ₀ vanishes off

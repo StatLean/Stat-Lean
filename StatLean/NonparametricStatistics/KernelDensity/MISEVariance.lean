@@ -23,8 +23,8 @@ exact asymptotic MISE; proof in the Appendix, Proposition A.1).
 the convolution-type mean, bounded by Young/Minkowski
 (`‖|K|_h ⋆ p‖₂ ≤ ‖|K|_h‖₁·‖p‖₂ = ∫|K|·‖p‖₂`, via `lintegral_lintegral_sq_rpow_le`), giving
 the correction `n⁻¹·(∫|K|)²·∫p²`. Requires `p ∈ L²` — supplied as a hypothesis
-(`MemLp p 2`); see the batch ledger for its status (derivable in principle for the densities
-of the exact-MISE theorem, kept as a documented input here).
+(`MemLp p 2`; derivable in principle for the densities of the exact-MISE theorem, kept as a
+documented input here).
 
 **Bibliographic comments.** G. S. Watson and M. R. Leadbetter, "On the estimation of the
 probability density, I," *Ann. Math. Statist.* **34** (1963), 480–491.
