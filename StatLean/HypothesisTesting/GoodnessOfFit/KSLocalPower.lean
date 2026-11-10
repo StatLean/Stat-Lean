@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # The Kolmogorov–Smirnov test has no power at `o(n^{-1/2})`
@@ -133,7 +134,7 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
         simp only [ksStat, supCDFDist, empiricalCDF_eq_empCDF]
       have hdist : ksDist (X n) (μ n) ω = supCDFDist (fun t => empCDF (X n) ω t) (F n) := by
         unfold ksDist supCDFDist
-        exact iSup_congr fun t => by rw [hF n t]
+        exact iSup_congr fun t => by rw [hF n t, bindCDF_eq_cdf]
       have hsqrt_nonneg : 0 ≤ Real.sqrt (n : ℝ) := Real.sqrt_nonneg _
       have hchain : ksStat (X n) F₀ ω
           ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω + dseq n := by

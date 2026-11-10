@@ -23,7 +23,8 @@
     {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"Finset.card_pos","label":"card_pos","full":"Finset.card_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Card"},
     {"id":"StatLean.HypothesisTesting.continuous_of_lipschitz_bound","label":"continuous_of_lipschitz_bound","full":"StatLean.HypothesisTesting.continuous_of_lipschitz_bound","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
-    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
+    {"id":"IsModuleTopology.toContinuousSMul","label":"toContinuousSMul","full":"IsModuleTopology.toContinuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"},
+    {"id":"IsTopologicalSemiring.toIsModuleTopology","label":"toIsModuleTopology","full":"IsTopologicalSemiring.toIsModuleTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"},
     {"id":"StatLean.HypothesisTesting.steinSolution","label":"steinSolution","full":"StatLean.HypothesisTesting.steinSolution","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
     {"id":"HasDerivAt.deriv","label":"deriv","full":"HasDerivAt.deriv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.Deriv.Basic"},
     {"id":"StatLean.HypothesisTesting.hasDerivAt_steinSolution","label":"hasDerivAt_steinSolution","full":"StatLean.HypothesisTesting.hasDerivAt_steinSolution","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
@@ -45,8 +46,7 @@
     {"id":"le_of_lt","label":"le_of_lt","full":"le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"inv_pos_of_pos","label":"inv_pos_of_pos","full":"inv_pos_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Basic"},
     {"id":"abs_of_pos","label":"abs_of_pos","full":"abs_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
-    {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"},
-    {"id":"congr_arg","label":"congr_arg","full":"congr_arg","kind":"mathlib","decl":"thm","module":"Batteries.Logic"}
+    {"id":"congr_arg₂","label":"congr_arg₂","full":"congr_arg₂","kind":"mathlib","decl":"thm","module":"Batteries.Logic"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"StatLean.HypothesisTesting.stdGaussianExpect"},
@@ -70,7 +70,8 @@
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"Fintype.card_fin"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"Finset.card_pos"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"StatLean.HypothesisTesting.continuous_of_lipschitz_bound"},
-    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"PolynormableSpace.continuousSMul"},
+    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"IsModuleTopology.toContinuousSMul"},
+    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"IsTopologicalSemiring.toIsModuleTopology"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"StatLean.HypothesisTesting.steinSolution"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"HasDerivAt.deriv"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"StatLean.HypothesisTesting.hasDerivAt_steinSolution"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"le_of_lt"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"inv_pos_of_pos"},
     {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"abs_of_pos"},
-    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"congr_arg₂"},
-    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"congr_arg"}
+    {"source":"StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le","target":"congr_arg₂"}
   ]
 }

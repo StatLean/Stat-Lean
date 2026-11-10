@@ -9,8 +9,7 @@ The deterministic heart of learning via uniform convergence: on an
 convergence property is agnostically PAC learnable by any ERM selector with
 `m(ε,δ) ≤ m^{UC}(ε/2, δ)` (SSBD Corollary 4.4).
 
-**Reference.** SSBD §4.1 (Lemma 4.2, Corollary 4.4). Transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+**Reference.** SSBD §4.1 (Lemma 4.2, Corollary 4.4).
 
 **Formalization notes.** Lemma 4.2's three-inequality chain
 `L_D(h_S) ≤ L_S(h_S) + ε/2 ≤ L_S(g) + ε/2 ≤ L_D(g) + ε` is verbatim; the

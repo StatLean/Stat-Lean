@@ -1007,7 +1007,7 @@ genuinely splits, and **both halves contribute at the same order**:
   is `O(n^{-1/2})` when `Z` is centred — so this block is `n^{-1} · n² · O(n⁻¹) = O(1)` as well.
 
 Discarding the off-diagonal block, as the `k = 1` picture invites, would therefore change the
-*limit* and not merely the remainder. That is why `Bootstrap/Edgeworth.lean`'s wave-23 note
+*limit* and not merely the remainder. That is why `Bootstrap/Edgeworth.lean`'s note
 records the `k ≥ 2` estimate as a genuine analytic residue rather than as wiring.
 
 `multiCharFun_vecRootLaw_two` is the exact combinatorial half of that estimate: it evaluates the
@@ -1214,7 +1214,7 @@ studentized surrogate's coefficient `c₂ = θr/2σ³` requires. Three points ar
 
 *The off-diagonal limit is `−κ₀κ₁`, not `0`.* The product of the two purely imaginary leading
 terms is `(i N^{-1/2}κ₀)(i N^{-1/2}κ₁) = −κ₀κ₁/N`, and the block's multiplicity `N − 1` cancels
-the `N⁻¹` exactly. This is the quantitative form of the wave-23 warning: the block is of the
+the `N⁻¹` exactly. This is the quantitative form of the warning: the block is of the
 same order as the diagonal, and its sign is opposite.
 
 *The error of the multiplicity is `O(N⁻¹)`, not `O(1)`.* `(N − 1)/N = 1 − N⁻¹`, so replacing
@@ -1310,7 +1310,7 @@ root.**
 with `c = N^{-1/2} • a`, `κ₀₁ = ∫⟪x,b₀⟫⟪x,b₁⟫`, `κ_j = ∫⟪x,b_j⟫⟪x,a⟫`, for a law centred in
 both slot directions.
 
-This is the analytic half of the item the wave-23 note of `Bootstrap/Edgeworth.lean` records as
+This is the analytic half of the item the note of `Bootstrap/Edgeworth.lean` records as
 residue (i) at `k = 2`, and its accuracy `O(N^{-1/2})` is what the studentized surrogate's
 coefficient `c₂ = θr/2σ³` needs. The off-diagonal contribution `−κ₀κ₁ φ^{N−2}` is *not* a
 remainder: it is of the same order as the diagonal and of opposite sign, so the `k = 1` picture
@@ -1583,7 +1583,7 @@ kept instead of being rounded up to `1`.
 The companion of `norm_multiCharFun_vecRootLaw_damped_le` at `k = 2`, and needed for the same
 reason: the studentized window of `Bootstrap/Edgeworth.lean` evaluates this at `a = (θ/σ)•e₀`
 with `|θ|` growing like `√N`, where `multiTwoRemConst` is a polynomial in `|θ|` of degree four
-and the undamped bound has nothing to control it. See the wave-42 note there. -/
+and the undamped bound has nothing to control it. See the note there. -/
 theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → E} (hZ : Measurable Z) {N : ℕ} (hN : 1 ≤ N) (b : Fin 2 → E) (a : E)
     (hint : ∀ T : Finset (Fin 2),
@@ -2060,7 +2060,7 @@ normalised sum, so its characteristic function *is* an `n`-th power, and the res
 
 It is the exact analogue, for the bivariate law, of what `edgeworthGap_tail_le` does for the
 centred root, and it shows that **no conditioning device is needed at the level of `ρ_n`**: the
-transfer that wave 13 attributed to Hall's trick of conditioning on `n − k` of the coordinates
+transfer otherwise attributed to Hall's trick of conditioning on `n − k` of the coordinates
 is free here. Conditioning would be needed only for the law of a *nonlinear* functional of the
 root, which the (M1)(b) route never forms. -/
 theorem norm_charFun_vecRootLaw_le_pow (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
@@ -2083,8 +2083,8 @@ end OneFactor
 /-! ## Bounded summands: the root has bounded support, so every moment of it is finite
 
 The multilinear weights of the studentized surrogate's transform are moments of the *root*, and
-under a finite fourth moment of the sampling law two of them are **infinite** — see the wave-25
-note on `edgeworth_studentized_uniform` in `Bootstrap/Edgeworth.lean`. The classical repair is
+under a finite fourth moment of the sampling law two of them are **infinite** — see the note on
+`edgeworth_studentized_uniform` in `Bootstrap/Edgeworth.lean`. The classical repair is
 to truncate the summands before expanding. What truncation buys, at the level of this file, is
 completely elementary and is recorded here: if `‖Z‖ ≤ K` pointwise then the root
 `n^{-1/2}∑Z(yᵢ)` is bounded by `√n·K` pointwise, so its law is carried by a ball and *every*
@@ -2152,7 +2152,7 @@ end BoundedRoot
 The `k = 2` estimate `norm_multiCharFun_vecRootLaw_two_sub_le` identifies the *limit* of
 `multi_{ρ_N}(b,a)` to accuracy `O(N^{-1/2})`, and for that the exact split of the assignment sum
 into its diagonal and off-diagonal blocks is unavoidable: the two blocks are of the same order
-and of opposite sign. The wave-25 note of `Bootstrap/Edgeworth.lean` records the `k = 3, 4`
+and of opposite sign. The note of `Bootstrap/Edgeworth.lean` records the `k = 3, 4`
 residue as "the same thing with the partition lattice of `Fin k` in place of a single diagonal,
 and the counting is the only new work".
 
@@ -2177,7 +2177,7 @@ the assignment sum can be estimated term by term, and the partition lattice neve
 The graded hypothesis `hQ2` is the whole content: a single uniform bound `Q` on every slot moment
 would give `Q^k` with `Q ≍ N` and is useless, whereas the *graded* allowance
 `Q·(√N)^{|T|-2}` is exactly what makes every fibre factor `Q/N`. This is the same phenomenon as
-the grading of the envelope in `r` (wave 25, `surrogateRemGraded`), one level up.
+the grading of the envelope in `r` (`surrogateRemGraded`), one level up.
 
 The estimate applies verbatim at `k = 2` (with a worse constant than
 `norm_multiCharFun_vecRootLaw_two_sub_le`, and without the limit), at `k = 1` and at `k = 0`. -/
@@ -2297,7 +2297,7 @@ root, at every `k`.**
 * `∫|⟪x,b_l⟫||⟪x,a⟫| ≤ Q` for each single slot (used together with the centring), and
 * `∫∏_{l∈T}|⟪x,b_l⟫| ≤ Q·(√N)^{|T|-2}` for every `T` with `|T| ≥ 2`.
 
-This is residue (i) of the wave-25 note of `Bootstrap/Edgeworth.lean` at `k = 3, 4` — and it is
+This is residue (i) of the note of `Bootstrap/Edgeworth.lean` at `k = 3, 4` — and it is
 uniform in `N`, in `a` and in `k`. The `k = 2` case is subsumed, though
 `norm_multiCharFun_vecRootLaw_two_sub_le` is sharper there (it identifies the limit to
 `O(N^{-1/2})`, which the surrogate's coefficient `c₂` needs; `c₃`, `c₄`, `c₅` are `O(n⁻¹)` and
@@ -2475,7 +2475,7 @@ one at a time (`‖φ(c)‖ ≤ 1`), which is harmless when `a` is fixed and fat
 `|θ|` up to `c√N`, where the `O(1)` bound has *polynomial growth in `θ`* and cannot be dominated
 by any envelope that the Esseen split can integrate. The damping factor is what restores
 `e^{−θ²/2}`, and the only change in the proof is that the empty fibres keep `‖φ(c)‖` instead of
-being rounded up to `1`. See the wave-42 note in `Bootstrap/Edgeworth.lean` on the shape of
+being rounded up to `1`. See the note in `Bootstrap/Edgeworth.lean` on the shape of
 (U4). -/
 theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → E} (hZ : Measurable Z) {k N : ℕ} (hN : 1 ≤ N) (b : Fin k → E) (a : E)

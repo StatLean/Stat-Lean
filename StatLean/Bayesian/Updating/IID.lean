@@ -15,7 +15,7 @@ $$\pi(d\theta \mid x_{1:n})
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3
 (posterior ∝ prior × iid likelihood), p. 6.
 
-**Proof formalization notes.** A one-shot application of the Batch-1 dominated Bayes theorem
+**Proof formalization notes.** A one-shot application of the dominated Bayes theorem
 (`posterior_eq_withDensity_likelihood_div_predictive`) to `iidKernel κ n`, whose domination with
 the product density is `iidKernel_withDensity` and whose density's joint measurability is
 `measurable_uncurry_prod_likelihood`; the dominating measure is `Measure.pi (fun _ => ν)`

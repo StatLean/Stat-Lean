@@ -32,9 +32,7 @@ a.e.-constancy averaging over `signVec`, then the triangle inequality and
 marginalization along `measurePreserving_fst`/`snd`. Mixed public forms follow
 by the `ForMathlib/IndepTransport` wrappers. Constants: `2` and `2`, exactly
 as the book. Degenerate case: both mixed forms are true and provable at
-`N = 0` (empty sums; no `NeZero` hypotheses). Named-sorry fallback of this
-work item: `symmetrization_lower_pi` (the upper direction — the one Ex 8.11
-and Lemma 6.6.2 consume — fully proven, mixed forms derived).
+`N = 0` (empty sums; no `NeZero` hypotheses).
 
 **Bibliographic comments.** Symmetrization goes back to P. Lévy; the modern
 two-sided Banach-space form is due to J.-P. Kahane and is often called the
@@ -348,8 +346,7 @@ theorem symmetrization_upper_pi {E : Type*} [NormedAddCommGroup E]
 
 /-- **Symmetrization, lower bound, canonical form** (HDP §6.3, Lemma 6.3.2):
 for mean-zero laws, the expected norm of the sign-randomized sum is at most
-twice the expected norm of the plain sum. Named-sorry debt candidate of this
-work item. -/
+twice the expected norm of the plain sum. -/
 theorem symmetrization_lower_pi {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
     [SecondCountableTopology E] {N : ℕ}

@@ -13,6 +13,7 @@
     {"id":"StatLean.ExperimentalDesign.expect_armIndicator","label":"expect_armIndicator","full":"StatLean.ExperimentalDesign.expect_armIndicator","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Randomization.CompleteRandomization"},
     {"id":"StatLean.ExperimentalDesign.productDesign","label":"productDesign","full":"StatLean.ExperimentalDesign.productDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Stratified.ProductDesign"},
     {"id":"StatLean.ExperimentalDesign.RandomizationDesign","label":"RandomizationDesign","full":"StatLean.ExperimentalDesign.RandomizationDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
     {"id":"StatLean.ExperimentalDesign.validAllocations","label":"validAllocations","full":"StatLean.ExperimentalDesign.validAllocations","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Randomization.CompleteRandomization"},
     {"id":"StatLean.ExperimentalDesign.validAllocations_nonempty","label":"validAllocations_nonempty","full":"StatLean.ExperimentalDesign.validAllocations_nonempty","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Randomization.CompleteRandomization"},
     {"id":"Function.update_self","label":"update_self","full":"Function.update_self","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.Function.Basic"},
@@ -45,8 +46,7 @@
     {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
     {"id":"ENNReal.toReal_sum","label":"toReal_sum","full":"ENNReal.toReal_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.BigOperators"},
     {"id":"PMF.apply_ne_top","label":"apply_ne_top","full":"PMF.apply_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.ProbabilityMassFunction.Basic"},
-    {"id":"tsum_fintype","label":"tsum_fintype","full":"tsum_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.InfiniteSum.Basic"},
-    {"id":"PMF.tsum_coe","label":"tsum_coe","full":"PMF.tsum_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.ProbabilityMassFunction.Basic"}
+    {"id":"tsum_fintype","label":"tsum_fintype","full":"tsum_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.InfiniteSum.Basic"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.blocked_expect_armIndicator","target":"StatLean.ExperimentalDesign.Stratum"},
@@ -66,6 +66,7 @@
     {"source":"StatLean.ExperimentalDesign.glueAllocation","target":"StatLean.ExperimentalDesign.Allocation"},
     {"source":"StatLean.ExperimentalDesign.glueAllocation","target":"StatLean.ExperimentalDesign.Stratum"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.RandomizationDesign"},
+    {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"PMF.uniformOn"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.Allocation"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.validAllocations"},
     {"source":"StatLean.ExperimentalDesign.completeRandomization","target":"StatLean.ExperimentalDesign.validAllocations_nonempty"},
@@ -115,7 +116,6 @@
     {"source":"StatLean.ExperimentalDesign.productDesign_apply","target":"StatLean.ExperimentalDesign.productDesign"},
     {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"ENNReal.toReal_sum"},
     {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"PMF.apply_ne_top"},
-    {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"tsum_fintype"},
-    {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"PMF.tsum_coe"}
+    {"source":"StatLean.ExperimentalDesign.sum_pmf_toReal","target":"tsum_fintype"}
   ]
 }

@@ -15,16 +15,13 @@ unweighted display is the $v \equiv 1$ instance).
 
 **Proof formalization notes.** Constant frozen: `C = 18 = 6 · 3` — the
 composite of bridge B2 (`hasSubgaussianMGF_of_subGaussianNorm_le`, proxy
-`3K²`, R1 freeze) routed through Mathlib's
+`3K²`, explicit constant) routed through Mathlib's
 `HasSubgaussianMGF.sum_of_iIndepFun` (proxies add) and back through bridge
 B3 (`subGaussianNorm_le_of_isSubGaussian`, factor `√6`). The book's absolute
 constant `C` is thus explicit; the deviation from any sharper constant is
-documented here per the batch's formula+numeral rule. `hK : ∀ i, 0 < K i` is
+documented here. `hK : ∀ i, 0 < K i` is
 a mild LEAN-ONLY strengthening (zero bound forces `Xᵢ = 0` a.e.). Consumed by
 `Orlicz/VectorNorm.lean` (Lemma 3.4.2 upper bound, `∑ vᵢ² = ‖v‖² = 1`).
-Work-item fallback: this file belongs to `hdp-orlicz-vector`, whose single
-named-sorry fallback is `subGaussianVecNorm_le_of_indep` in
-`Orlicz/VectorNorm.lean` — everything here must close.
 
 **Bibliographic comments.** The rotation-invariance-style additivity of
 sub-Gaussian norms under independent sums is classical (Hoeffding/Kahane);
@@ -40,7 +37,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Weighted independent sums keep sub-Gaussian MGF with additive proxies
 (LEAN-ONLY composite of B2 + `mgf` scaling + `sum_of_iIndepFun`; HDP §2.7
-machinery). Proxy: `∑ vᵢ² · (3 Kᵢ²)` with the R1-frozen B2 factor `3`. -/
+machinery). Proxy: `∑ vᵢ² · (3 Kᵢ²)` with the frozen B2 factor `3`. -/
 theorem hasSubgaussianMGF_weighted_sum
     -- LEAN-ONLY: probability measure; MGF machinery
     [IsProbabilityMeasure μ] {n : ℕ} {X : Fin n → Ω → ℝ} {K : Fin n → ℝ≥0}

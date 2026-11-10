@@ -20,18 +20,17 @@ matrix `A` of full row rank; the least-squares estimator of the coefficient vect
 
 **Not present: the random-design nonexistence clause.** The source's claim that no best
 linear unbiased estimator exists when the design is random with a known second moment
-(Shaffer's phenomenon) was formalized and found to be **false as printed**, and has been
-removed rather than carried as a debt. Its nondegeneracy hypothesis — "the design law is not
-a point mass" — is strictly too weak: for the two-point law `½·δ_a + ½·δ_{-a}` the designs
-`a` and `-a` carry the *same* information `1/‖a‖²`, so in the total-variance decomposition
+(Shaffer's phenomenon) is **false as printed** and is not formalized. Its nondegeneracy
+hypothesis — "the design law is not a point mass" — is strictly too weak: for the two-point
+law `½·δ_a + ½·δ_{-a}` the designs `a` and `-a` carry the *same* information `1/‖a‖²`, so in
+the total-variance decomposition
 `σ²·E[λ² i] + θ²·Var(λ)` (subject to `E λ = 1`) both terms are minimised at the same weighting
 `λ ≡ 1`, and the conditional least-squares estimator *is* best linear unbiased. Shaffer's
 phenomenon needs the two terms to be minimised at *different* weightings, which happens
 exactly when the design information `cᵀ (A Aᵀ)⁻¹ c` genuinely varies. Restoring the clause is
 a **statement change** — replace the point-mass hypothesis by "the design information is not
 `Q`-a.s. constant", plus a.s. full row rank — and a decision for the library, not a proof
-obligation. The full analysis, with the counterexample and the repair, is in
-`notes/point_estimation/defective-statements.tex`.
+obligation.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal

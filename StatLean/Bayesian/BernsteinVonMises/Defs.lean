@@ -35,7 +35,7 @@ Procedures), §10.2, pp. 139–141: the local reparametrization `h = √n(θ −
 centering `Δ_{n,θ₀} = n^{-1/2} ∑ I_{θ₀}^{-1} ℓ̇_{θ₀}(Xᵢ)` (p. 140), the tests condition
 (10.2) and the prior condition (Theorem 10.1, p. 141).
 
-**Proof formalization notes.** Laptop-only data model — definitions and trivial wiring only.
+**Proof formalization notes.** Definitions and basic constructions.
 The posterior object is Mathlib's canonical `ProbabilityTheory.posterior` (`κ†π`); vdV's
 total-variation norm `‖·‖` is `2 · tvDist` (sup-form vs `L¹`-form) — immaterial for the
 convergence-to-zero statements, recorded here once. The tests conditions avoid `iSup` over
@@ -72,7 +72,6 @@ noncomputable def bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ)
 lemma measurable_bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
     Measurable (bvmLocalUnscale θ₀ n) := by
   unfold bvmLocalUnscale; fun_prop
-
 
 
 /-- **Local-parameter posterior**: the posterior law of `h = √n(θ − θ₀)` given the `n`-sample,

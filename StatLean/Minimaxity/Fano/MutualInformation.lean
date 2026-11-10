@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.Defs
 import StatLean.Minimaxity.ForMathlib.KLDivergence
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Mutual information of the M-ary testing problem and its convexity (KL) bound
@@ -74,7 +75,7 @@ lemma mixture_eq_inv_smul_sum {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) :
   have hpt : ∀ k : Fin M, (uniformPrior M) {k} = (M : ℝ≥0∞)⁻¹ := by
     intro k
     rw [uniformPrior, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton k),
-      PMF.uniformOfFintype_apply, Fintype.card_fin]
+      PMF.uniform_apply, Fintype.card_fin]
   simp_rw [hpt]
   rw [← Finset.smul_sum]
 

@@ -212,7 +212,7 @@ Graphs are **generated, never authored**. One file per result with
 `hasGraph: true`, at `src/data/graphs/<id>.json`.
 
 ```bash
-# on the cluster, from the repository root (this laptop cannot `lake build`)
+# From the repository root, using the pinned Lean toolchain.
 lake build
 lake exe deps
 cd website

@@ -229,10 +229,10 @@ open scoped RealInnerProductSpace in
 /-- **Adapted-basis rotation to canonical coordinates (remaining geometric brick).** An
 orthonormal change of coordinates `L` carrying the mean subspace `W` onto the canonical head
 subspace, together with the four consequences needed to transport the canonical-model
-optimality statements. This isolates the *only* remaining debt behind `isUMVU_lse_functional`
-and `isUMVU_residualSumSq`: the measure-theoretic core (Gaussian isometry invariance,
+optimality statements. This is the geometric input behind `isUMVU_lse_functional` and
+`isUMVU_residualSumSq`; the measure-theoretic core (Gaussian isometry invariance,
 `gaussianVector_map_linearIsometryEquiv`, and the `IsUMVU` sample transport,
-`isUMVU_map_equiv`) is proved above, 0-sorry. -/
+`isUMVU_map_equiv`) is proved above. -/
 lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (hW : Module.finrank ℝ W < n) :
     ∃ (m : ℕ) (_ : 0 < m) (_ : Module.finrank ℝ W + m = n)

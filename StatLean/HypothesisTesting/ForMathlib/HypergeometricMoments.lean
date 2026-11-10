@@ -1,6 +1,7 @@
 import Mathlib.Probability.Distributions.Uniform
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Data.Fintype.BigOperators
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Moments of sampling without replacement
@@ -43,7 +44,7 @@ Finite Population), the moments of sampling without replacement from a finite po
   and it avoids the bookkeeping of the equivalent "random permutation of `Fin n`, take the
   first `m`" model.
 * The uniform law is available both as a probability mass function
-  (`sampleUnif = PMF.uniformOfFintype`, the least-friction Mathlib carrier: it needs no
+  (`sampleUnif = PMF.uniform`, the least-friction carrier: it needs no
   σ-algebra on the subtype, unlike `Measure.count` normalisation) and, for computations, as
   the normalised counting average `expect`. `expect_eq_sum_uniform` is the bridge; all
   moment statements are phrased with `expect`, so that no `Nonempty` instance argument
@@ -100,7 +101,7 @@ behind `expect`. Requires the split to exist (`m ≤ n`), which is what the `Non
 instance argument records. -/
 noncomputable def sampleUnif (n m : ℕ) [Nonempty (SubsetsOfCard n m)] :
     PMF (SubsetsOfCard n m) :=
-  PMF.uniformOfFintype (SubsetsOfCard n m)
+  PMF.uniform (SubsetsOfCard n m)
 
 /-! ### Private helpers: cardinalities, `expect` linearity, and split counts -/
 
@@ -241,7 +242,7 @@ lemma expect_eq_sum_uniform {n m : ℕ} [Nonempty (SubsetsOfCard n m)]
   unfold expect sampleUnif
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl (fun s _ => ?_)
-  rw [PMF.uniformOfFintype_apply, ENNReal.toReal_inv, ENNReal.toReal_natCast]
+  rw [PMF.uniform_apply, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
 /-- **First moment**: `E Wᵢ = m/n`. Counting: the `m`-subsets containing a fixed index are
 `binom(n-1, m-1)` out of `binom(n, m)`. -/

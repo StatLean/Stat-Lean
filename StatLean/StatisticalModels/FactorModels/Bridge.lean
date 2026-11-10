@@ -67,7 +67,7 @@ theorem factorLaw_eq_lmmLaw (P : FactorParams p q) (F : Measure (EuclideanSpace 
   ext s hs
   rw [factorLaw, MixedEffects.lmmLaw,
     Measure.bind_apply hs (Kernel.measurable _).aemeasurable,
-    Measure.map_apply hg hs, Measure.prod_apply (hg hs)]
+    Measure.map_apply hg hs, Measure.bindProd_eq_prod, Measure.prod_apply (hg hs)]
   refine lintegral_congr fun y => ?_
   rw [measurementKernel_apply, Measure.map_apply (by fun_prop) hs]
   congr 1

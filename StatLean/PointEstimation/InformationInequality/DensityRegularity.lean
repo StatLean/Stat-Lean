@@ -100,10 +100,6 @@ the statistic with the score, the score being centered.
 Cauchy–Schwarz bounds the integrand `|δ| · |difference quotient|` by `|δ| b`, which is
 integrable because both factors are square-integrable; dominated convergence then exchanges
 the limit and the integral. -/
--- TODO: the dominated-convergence core of the family-side differentiation-under-the-integral
--- step — bounding the difference quotients `δ · (p_{θ+Δ} − p_θ)/Δ` by the `L²` envelope
--- `|δ| · b · p_θ` (Cauchy–Schwarz) and passing to the limit — is the single sanctioned analytic
--- debt of this file; every downstream theorem is a genuine reduction to it.
 private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     (hpdf : IsPDFOf M μ) (hsupp : HasCommonSupport M) (θ : ℝ)
     (hdiff : ∀ x, 0 < M.density θ x → DifferentiableAt ℝ (fun t => M.density t x) θ)

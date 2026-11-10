@@ -44,10 +44,9 @@ against the least favourable shell is `P{χ²_k(b²) > c_{k,1−α}}`. The helpe
 step that turns an abstract mixture bound into the concrete chi-squared number, and it is
 also the reason the *same* number appears in both consumers.
 
-**Status.** `asymptotic_maximin_upper_bound` was registered in the batch ledger as a
-conditional fallback; the fallback was *not* taken — it is CLOSED, by the mixture–Neyman–
-Pearson route above. Two amendments to the frozen statement were forced and are recorded on
-the declaration: the conclusion is quantified over any family of alternatives containing the
+**Status.** `asymptotic_maximin_upper_bound` is proved by the mixture–Neyman–Pearson route
+above. Two amendments to the frozen statement were forced and are recorded on the declaration:
+the conclusion is quantified over any family of alternatives containing the
 least-favourable sphere (the frozen single shell is a strict superset of both consumers'
 shells, so `sInf` transferred the wrong way), and the experiment is standardized to
 `I = Iₖ`, the general positive-definite case being the reparametrisation `η = I^{1/2}h` that

@@ -23,7 +23,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 Definition 1.2.1 (Bayesian statistical model), p. 9; §1.4, items (a)–(d) (joint, marginal
 `m(x)`, posterior, predictive), p. 22.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `BayesExperiment`
+**Proof formalization notes.** Definitions and basic constructions. `BayesExperiment`
 carries the probability/Markov requirements as instance-typed fields (registered as instances),
 because Robert's Definition 1.2.1 constitutively demands a *probability* prior and a *family of
 probability distributions* for the likelihood; dropping either makes the object not Robert's

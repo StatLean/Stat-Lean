@@ -316,7 +316,7 @@ The classical argument Rao–Blackwellizes the competitor `δ'` through `T` and 
 unbiased functions of the complete statistic `T`, hence a.e. equal, so the variance of the
 former equals that of `rbEstimator Q δ' ∘ T`, which does not exceed `var δ'`.
 
-**Added hypothesis (private lemma, pre-authorized).** `hδ'm : Measurable δ'`. Both the kernel
+**Added hypothesis (private lemma).** `hδ'm : Measurable δ'`. Both the kernel
 average `t ↦ ∫ δ' dQ_t = rbEstimator Q δ'` and the completeness test function require `δ'` to
 carry a genuine (global) measurable representative. The `IsUMVU` minimality quantifies over
 competitors holding only `MemEstL2 P δ'`, i.e. a *per-parameter* `AEStronglyMeasurable`
@@ -357,7 +357,7 @@ private lemma variance_rbEstimator_le_of_complete (P : Θ → Measure 𝓧)
 over the fibers of a *complete* sufficient statistic produces the uniformly minimum variance
 unbiased estimator of the estimand.
 
-**Added hypothesis (authorized signature amendment): the family is dominated.** `μ` σ-finite
+**Added hypothesis (signature amendment): the family is dominated.** `μ` σ-finite
 with `∀ θ, P θ ≪ μ` — the standing hypothesis of the whole dominated theory of sufficiency
 (and the setting of the source: completeness and sufficiency are developed there for
 dominated families), already carried by the only consumer of this theorem,
@@ -485,7 +485,7 @@ theorem risk_le_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProb
 full rank, every estimable function admits a uniformly minimum variance unbiased estimator,
 and it is a function of the natural statistic.
 
-**Deviation from the printed statement (authorized signature amendment).** The natural
+**Deviation from the printed statement (signature amendment).** The natural
 statistic is specialized from an abstract real inner-product space `V` to
 `EuclideanSpace ℝ (Fin s)`, and one instance on the reference measure is added,
 `[SigmaFinite E.base]`. Both are forced:

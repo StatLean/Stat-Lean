@@ -48,8 +48,7 @@ Clarendon Press, Oxford, **1996 (first edition)**: §5.1.3 "Conditional independ
 Proposition 5.2 and the displays (5.10), (5.11); Appendix C, pp. 256–257 — Proposition C.5 with
 (C.2) and the identities (C.3) `K₁₁⁻¹ = Σ₁₁ − Σ₁₂Σ₂₂⁻Σ₂₁` and (C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻` on
 p. 256, the determinant identity (C.5) and Corollary C.6 on p. 257
-(`Lauritzen §5.1.3`, `Lauritzen App. C`). Page numbers and item kinds follow
-`notes/factor_graphical/books.md`.
+(`Lauritzen §5.1.3`, `Lauritzen App. C`).
 
 *Generalized versus ordinary inverse.* Lauritzen writes `Σ₂₂⁻`, "an arbitrary generalized
 inverse", in (C.2)–(C.4), but his own proof of Proposition C.5 assumes `Σ` regular and then

@@ -23,6 +23,7 @@
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"StatLean.ExperimentalDesign.SamplingDesign","label":"SamplingDesign","full":"StatLean.ExperimentalDesign.SamplingDesign","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
     {"id":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","label":"samplesOfCard_nonempty","full":"StatLean.ExperimentalDesign.samplesOfCard_nonempty","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.SurveySampling.SimpleRandomSampling"},
     {"id":"Finset.sum_filter_add_sum_filter_not","label":"sum_filter_add_sum_filter_not","full":"Finset.sum_filter_add_sum_filter_not","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
     {"id":"Finset.filter_mem_eq_inter","label":"filter_mem_eq_inter","full":"Finset.filter_mem_eq_inter","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Basic"},
@@ -45,8 +46,7 @@
     {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
     {"id":"Finset.sum_comm","label":"sum_comm","full":"Finset.sum_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Sigma"},
     {"id":"Finset.powersetCard_nonempty","label":"powersetCard_nonempty","full":"Finset.powersetCard_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Powerset"},
-    {"id":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","label":"card_sample_eq_sum_indicator","full":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Core.Design"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
+    {"id":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","label":"card_sample_eq_sum_indicator","full":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Core.Design"}
   ],
   "edges": [
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"StatLean.ExperimentalDesign.pmfExpect"},
@@ -70,6 +70,7 @@
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"one_ne_zero"},
     {"source":"StatLean.ExperimentalDesign.srs_sampleMean_unbiased","target":"NeZero.one"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.SamplingDesign"},
+    {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"PMF.uniformOn"},
     {"source":"StatLean.ExperimentalDesign.simpleRandomSampling","target":"StatLean.ExperimentalDesign.samplesOfCard_nonempty"},
     {"source":"StatLean.ExperimentalDesign.sum_sample_eq_sum_indicator","target":"StatLean.ExperimentalDesign.inclusionIndicator"},
     {"source":"StatLean.ExperimentalDesign.sum_sample_eq_sum_indicator","target":"Finset.sum_filter_add_sum_filter_not"},
@@ -113,12 +114,6 @@
     {"source":"StatLean.ExperimentalDesign.expect_sampleCard","target":"StatLean.ExperimentalDesign.inclusionProb"},
     {"source":"StatLean.ExperimentalDesign.expect_sampleCard","target":"StatLean.ExperimentalDesign.inclusionIndicator"},
     {"source":"StatLean.ExperimentalDesign.expect_sampleCard","target":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator"},
-    {"source":"StatLean.ExperimentalDesign.expect_sampleCard","target":"StatLean.ExperimentalDesign.pmfExpect_sum"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"StatLean.ExperimentalDesign.inclusionIndicator"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"StatLean.ExperimentalDesign.sum_sample_eq_sum_indicator"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"Finset.sum_const"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"nsmul_eq_mul"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"mul_one"},
-    {"source":"StatLean.ExperimentalDesign.card_sample_eq_sum_indicator","target":"Finset.sum_congr"}
+    {"source":"StatLean.ExperimentalDesign.expect_sampleCard","target":"StatLean.ExperimentalDesign.pmfExpect_sum"}
   ]
 }

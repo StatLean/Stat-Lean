@@ -27,7 +27,7 @@ The analytic bricks of the Brown/Hall–Heyde martingale CLT
 
 **Retired statement.**  An earlier plan routed the argument through an *unweighted*
 telescope `‖E e^{iuS_n} − E ∏_i ψ_i‖ ≤ Σ_i (conditional Taylor errors)`
-(`norm_integral_exp_rowSum_sub_prod_le`, deleted 2026-08-08).  That statement is
+(`norm_integral_exp_rowSum_sub_prod_le`).  That statement is
 **false** as frozen.  Writing `φ_i = e^{iuX_i}` (modulus `1`, `𝓕_{i+1}`-measurable),
 any telescoping of `∏φ − ∏ψ` has summands `Φ_j(φ_j − ψ_j)Λ_j` with `Φ_j = ∏_{i<j}φ_i`,
 `Λ_j = ∏_{i>j}ψ_i`, and `φ_j − ψ_j = T_j + iuX_j + (u²/2)(v_j − X_j²)` with
@@ -48,7 +48,7 @@ proof-search failure.  The nesting-free telescope above avoids it entirely: keep
 **Proof formalization notes.**
 * Conditional expectations of complex-valued integrands are taken componentwise
   (`Complex.re/im` through Mathlib's real `condExp`); the statements below pre-split
-  them so the closure sessions never need a ℂ-valued `condExp` API.
+  them so that no ℂ-valued `condExp` API is needed.
 * All statements are a.e. inequalities between real quantities — no conditional
   independence is ever invoked (that is the point of the martingale method).
 -/
@@ -1014,7 +1014,7 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
     (hunif : ∀ δ : ℝ, 0 < δ →
       Tendsto (fun n => (μ {ω | ∃ i, δ ≤ μ[fun ω' => X n i ω' ^ 2
           | F n i.castSucc] ω}).toReal) atTop (𝓝 0))
-    -- LEAN-ONLY (repair, 2026-08-05): pointwise clamp on the conditional variance
+    -- LEAN-ONLY: pointwise clamp on the conditional variance
     -- PROCESS (supplied by the Hall–Heyde truncated array, whose variance process is
     -- bounded by the truncation level); an `L¹` bound on `V_n` does NOT suffice and what
     -- makes the Taylor product uniformly bounded — see the witness recorded below.
@@ -1023,8 +1023,8 @@ theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
     Tendsto (fun n => ∫ ω, |(∏ i, (1 - u ^ 2 / 2 *
           μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))
         - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ) atTop (𝓝 0) := by
-  -- DEBT (wave 2): FALSE as frozen, with an explicit witness — REPAIRED 2026-08-05 by
-  -- the `hclamp` hypothesis (a pointwise bound on the conditional variance PROCESS).
+  -- Without the `hclamp` hypothesis (a pointwise bound on the conditional variance PROCESS)
+  -- the statement is FALSE, with an explicit witness.
   -- `hbdd` (an L¹ bound on `V_n`) does not rule out mass escape, because the factors
   -- `1 - u²v/2` are NOT bounded by 1: a single index with `v ≈ 1/p` on an event of
   -- probability `p` contributes `p · u²/(2p) = u²/2` to the integral while carrying
@@ -1224,7 +1224,7 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
     -- LEAN-ONLY: a uniform L¹ bound on the variance process.  Unused (the pointwise
     -- clamp `hclamp` subsumes it); retained so that the frozen call sites are unaffected.
     (_hbdd : ∃ B : ℝ, ∀ n, ∫ ω, mdsCondVariance k X F μ n ω ∂μ ≤ B)
-    -- LEAN-ONLY (repair, 2026-08-05): pointwise clamp on the conditional variance PROCESS
+    -- LEAN-ONLY: pointwise clamp on the conditional variance PROCESS
     {c : ℝ} (hclamp : ∀ n, ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c)
     (u : ℝ) :
     Tendsto (fun n => ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *

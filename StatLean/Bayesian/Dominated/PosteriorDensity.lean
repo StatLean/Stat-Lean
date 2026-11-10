@@ -22,7 +22,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 computation on measurable rectangles. `IsFiniteKernel (bayesKernel p π)` is proved unconditionally
 (the total mass is `≤ 1` where measurable, and the junk branch of `Kernel.withDensity` is the zero
 kernel). No `IsMarkovKernel κ` is required — `bayesKernel` self-normalizes. `SFinite ν` is needed
-for the Tonelli/withDensity manipulations. Watch CLAUDE.md gotcha 12: after
+for the Tonelli/withDensity manipulations. After
 `lintegral_withDensity_eq_lintegral_mul` the integrand is un-β-reduced — use `simp_rw`. Key
 bricks: `ext_of_generate_finite`, `generateFrom_prod`, `isPiSystem_prod`,
 `Measure.compProd_apply_prod`, `Measure.map_apply`, `Set.preimage_swap_prod`,

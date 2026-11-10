@@ -27,7 +27,7 @@ argument through `Prod.swap`. Two-block is `Invariant.comp`; random-scan is `bin
 distributions of statistical mechanics; its two-stage (data-augmentation) form is Tanner and Wong
 (1987) and its statistical mainstreaming Gelfand and Smith (1990). The "exact conditional preserves
 the joint" argument formalized here is the validity core; convergence rates and ergodicity are
-beyond this batch.
+beyond this module.
 -/
 
 open MeasureTheory ProbabilityTheory

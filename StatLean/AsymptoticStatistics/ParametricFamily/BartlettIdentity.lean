@@ -31,7 +31,6 @@ not an extension of `QMDPath`.
 Reference: vdV §5.3 / §7.2; Mathlib
 `Mathlib/Analysis/Calculus/ParametricIntegral.lean`
 (`hasDerivAt_integral_of_dominated_loc_of_deriv_le`).
-
 -/
 
 open MeasureTheory Filter Topology

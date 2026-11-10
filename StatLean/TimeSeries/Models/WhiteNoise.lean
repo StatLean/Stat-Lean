@@ -10,7 +10,7 @@ and flat ACF; and among zero-mean stationary processes, white noise is character
 the vanishing of all nonzero-lag autocorrelations (FY §2.2.1, p. 40).
 
 (The remaining §1.3.1 claim — a *Gaussian* white noise is i.i.d. normal — needs the
-Gaussian-process layer and is scheduled with `Stationarity/Gaussian.lean` in batch B.)
+Gaussian-process layer of `Stationarity/Gaussian.lean` and is not stated here.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §1.3.1
 (p. 10) and §2.2.1 (p. 40). (`FY §1.3.1; §2.2.1`.)

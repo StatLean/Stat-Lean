@@ -7,7 +7,7 @@ import Mathlib.Probability.Kernel.Posterior
 The easy, useful direction of de Finetti: a **conditionally i.i.d.** sample — drawn i.i.d. from
 `f(·|θ)` with `θ` itself random — has an **exchangeable** marginal law, and its posterior depends on
 the data only through their (permutation-invariant) empirical content. The full de Finetti
-representation theorem is postponed (recorded in `roadmap.md`, Batch 4).
+representation theorem is not included here.
 
 **Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.2

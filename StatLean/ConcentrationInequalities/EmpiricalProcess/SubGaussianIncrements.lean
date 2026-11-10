@@ -42,9 +42,7 @@ never arises (all lemmas assume explicit sup bounds, hence integrability
 under the probability `P` is derived in proofs, not exported). The
 `SubGaussianIncrements` package is stated with `T = Set.univ` over all of
 `C(unitInterval, ℝ)` and is restricted downstream via
-`SubGaussianIncrements.mono_set`. Named-sorry fallback of the work item
-`hdp-emp-increments`: `subGaussianNorm_empiricalProcess_sub_le_dist` (the
-MGF-level core and the `δ`-form must close for real).
+`SubGaussianIncrements.mono_set`.
 
 **Bibliographic comments.** The bounded-difference MGF bound is
 W. Hoeffding, "Probability inequalities for sums of bounded random
@@ -231,8 +229,8 @@ theorem hasSubgaussianMGF_empiricalProcess_sub [IsProbabilityMeasure μ]
     (hf : Measurable f) (hg : Measurable g)
     -- USER-INPUT: sup-distance bound ‖f − g‖∞ ≤ δ; HDP §8.2 Step 1
     (hfg : ∀ x, |f x - g x| ≤ (δ : ℝ))
-    -- LEAN-ONLY: individual integrability — REQUIRED (statement fix at the
-    -- debt gate: without it the population terms are Bochner junk and the
+    -- LEAN-ONLY: individual integrability — REQUIRED (without it the
+    -- population terms are Bochner junk and the
     -- claim is FALSE, e.g. non-integrable f with g = f − 1 makes the
     -- increment the constant 1; holds at every call site since class
     -- members are bounded)
@@ -329,8 +327,8 @@ theorem subGaussianNorm_empiricalProcess_sub_le [IsProbabilityMeasure μ]
     (hf : Measurable f) (hg : Measurable g)
     -- USER-INPUT: sup-distance bound ‖f − g‖∞ ≤ δ; HDP §8.2 Step 1
     (hfg : ∀ x, |f x - g x| ≤ (δ : ℝ))
-    -- LEAN-ONLY: individual integrability — REQUIRED (statement fix at the
-    -- debt gate: without it the population terms are Bochner junk and the
+    -- LEAN-ONLY: individual integrability — REQUIRED (without it the
+    -- population terms are Bochner junk and the
     -- claim is FALSE, e.g. non-integrable f with g = f − 1 makes the
     -- increment the constant 1; holds at every call site since class
     -- members are bounded)
@@ -350,8 +348,7 @@ theorem subGaussianNorm_empiricalProcess_sub_le [IsProbabilityMeasure μ]
 
 /-- **Increment condition over `C([0,1], ℝ)`** (HDP §8.1, Definition 8.1.1):
 `‖X_f − X_g‖_{ψ₂} ≤ (√6/√n) · dist f g` for *all* continuous `f, g` on the
-sup-metric index space (`dist_apply_le_dist` supplies the pointwise bound).
-Named-sorry fallback of `hdp-emp-increments`. -/
+sup-metric index space (`dist_apply_le_dist` supplies the pointwise bound). -/
 theorem subGaussianNorm_empiricalProcess_sub_le_dist [IsProbabilityMeasure μ]
     {P : Measure unitInterval} [IsProbabilityMeasure P] [NeZero n]
     {X : Fin n → Ω → unitInterval} {f g : C(unitInterval, ℝ)}

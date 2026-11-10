@@ -11,6 +11,7 @@
     {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
+    {"id":"completableTopField_of_complete","label":"completableTopField_of_complete","full":"completableTopField_of_complete","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.UniformField"},
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
     {"id":"StatLean.Bayesian.dlPrior","label":"dlPrior","full":"StatLean.Bayesian.dlPrior","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
@@ -45,8 +46,7 @@
     {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"StarOrderedRing.toIsOrderedRing","label":"toIsOrderedRing","full":"StarOrderedRing.toIsOrderedRing","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Star"},
     {"id":"Real.log_nonneg","label":"log_nonneg","full":"Real.log_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"Real.exp_one_lt_d9","label":"exp_one_lt_d9","full":"Real.exp_one_lt_d9","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.ExponentialBounds"},
-    {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"}
+    {"id":"Real.exp_one_lt_d9","label":"exp_one_lt_d9","full":"Real.exp_one_lt_d9","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.ExponentialBounds"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.gaussShiftKernel"},
@@ -58,6 +58,7 @@
     {"source":"StatLean.Bayesian.dl_theorem31","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"PiLp.completeSpace"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"completableTopField_of_complete"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"EMetricSpace.metrizableSpace"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.dlPrior"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.Bayesian.dl_theorem31","target":"le_trans"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"StarOrderedRing.toIsOrderedRing"},
     {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.log_nonneg"},
-    {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.exp_one_lt_d9"},
-    {"source":"StatLean.Bayesian.dl_theorem31","target":"le_of_not_gt"}
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.exp_one_lt_d9"}
   ]
 }

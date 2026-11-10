@@ -10,9 +10,9 @@ import StatLean.Bayesian.ForMathlib.LaplaceDist
 import StatLean.Bayesian.ForMathlib.GammaBounds
 
 /-!
-# Dirichlet–Laplace contraction — core data model (laptop-only `Defs`)
+# Dirichlet–Laplace contraction — core data model (`Defs`)
 
-Shared definitions for the posterior-contraction milestone (Bhattacharya–Pati–Pillai–Dunson,
+Shared definitions for the posterior-contraction theory (Bhattacharya–Pati–Pillai–Dunson,
 *Dirichlet–Laplace priors for optimal shrinkage*, JASA 2015 / arXiv:1401.5398; tag `BPPD §X.Y`).
 
 The Dirichlet–Laplace prior is taken in its **product / scale-mixture form** (BPPD eq. (10)):
@@ -37,12 +37,9 @@ Objects defined here:
 optimal shrinkage*, Journal of the American Statistical Association 110 (2015), 1479–1490
 (arXiv:1401.5398). Model (1), prior (10), §3.
 
-**Proof formalization notes.** Laptop-only shared data model. `dlMarginal`'s guard makes
+**Proof formalization notes.** Shared definitions. `dlMarginal`'s guard makes
 `IsProbabilityMeasure` a global instance. `gaussShiftKernel` is built truth-free as
-`(id ×ₖ const _ (stdGaussian E)).map (+)` so that no `θ₀` is baked in. A handful of the basic
-API proofs here (the probability-measure instance, the kernel-evaluation identity, and
-`dlSuppCount` measurability) are laptop-closed against the `ForMathlib` bricks once those land; they
-are marked with `-- LAPTOP-DEBT`.
+`(id ×ₖ const _ (stdGaussian E)).map (+)` so that no `θ₀` is baked in.
 
 **Bibliographic comments.** The normal means / sparse-sequence problem is classical
 (Donoho–Johnstone 1994; Johnstone–Silverman 2004); the DL prior and its posterior-contraction theory

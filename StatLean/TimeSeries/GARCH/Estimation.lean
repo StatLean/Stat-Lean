@@ -11,7 +11,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
 
-Definitions only, plus the two cited asymptotic statements as literature debts:
+Definitions, plus the two cited asymptotic statements:
 
 * **eq. (4.35)/(4.36)**: the ARCH(∞) expansion of the GARCH volatility and its
   **truncated** version `σ̃_t²(θ)` (started from a fixed presample constant), the object
@@ -23,14 +23,14 @@ Definitions only, plus the two cited asymptotic statements as literature debts:
   the standardized-`t` and generalized-Gaussian densities recorded as instances;
 * **eqs. (4.39)–(4.40)**: AIC/BIC for GARCH order selection;
 * **eq. (4.41)**: the Whittle criterion on the squared process, built from the
-  periodogram of `Y_t = X_t²` against the model spectral density — its asymptotics are
-  a DEBT (Giraitis & Robinson 2001);
+  periodogram of `Y_t = X_t²` against the model spectral density — its asymptotics
+  (Giraitis & Robinson 2001) are `whittle_clt_debt`;
 * **eq. (4.42)**: the LAD criterion in the median-1 reparametrization — `√T`-normality
-  is a DEBT (Peng & Yao 2002).
+  (Peng & Yao 2002) is `lad_clt_debt`.
 
-**Scope.** §4.2.4 (Hall–Yao Theorems 4.5/4.6) and §4.2.5 (bootstrap CIs) were
-**descoped on 2026-08-04** at the user's direction, together with the stable-law /
-domain-of-attraction scaffolding that existed only to state them. The QMLE definitions
+**Scope.** §4.2.4 (Hall–Yao Theorems 4.5/4.6) and §4.2.5 (bootstrap CIs) are
+not formalized, nor is the stable-law / domain-of-attraction scaffolding needed to state
+them. The QMLE definitions
 stay because §4.2.6's tests consume them.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.3,
@@ -266,8 +266,8 @@ private lemma garchTruncVol_diff_le {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {
 under `Σ a_j < 1` the effect of the presample value decays geometrically, so two
 presample choices give criteria differing by `O(ρ^ν)` for **some** rate `ρ < 1`.
 
-**Rate repaired 2026-08-09.** The statement previously claimed the rate `Σ a_j`; that is
-false for `q ≥ 2` with mass on the higher lags, since the recursion contracts at the
+**Rate.** The rate is not `Σ a_j`: that rate is false
+for `q ≥ 2` with mass on the higher lags, since the recursion contracts at the
 dominant root `ρ` of `ρ^q = Σ_j a_j ρ^{q−1−j}`, which exceeds `Σ a_j`. The witness
 `a = (0, 9/10)` is formalized just above (`presample_stable_rate_false`). Only the
 existence of *a* geometric rate is used downstream, so the rate is now existentially
@@ -318,9 +318,8 @@ theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ
 /-! ### The frozen `whittle_clt_debt` / `lad_clt_debt` statements are FALSE — a witness
 
 Both statements were frozen at a granularity that leaves **three** of their objects
-completely unlinked to the model, which is one more than the defect list of wave `ts/s12`
-for `Threshold/Estimation`'s eq. (4.8) debt (that debt has since been removed; its witness
-`tarLS_clt_debt_false` is kept there):
+completely unlinked to the model (compare the witness `tarLS_clt_debt_false` for the
+analogous eq. (4.8) statement in `Threshold/Estimation`):
 
 1. **`W` is a free parameter.** The docstrings call it "the limiting covariance matrix of
    the Whittle (LAD) estimator", but formally it ranges over *all* positive-definite
@@ -341,7 +340,7 @@ function is the constant `1`, while the frozen limit at `W = 1`, `c = 1`, `u = 1
 `exp(−1/2)`.
 
 The instance is built from scratch on `(ℤ → ℝ, ⊗ Rademacher)`, so the witness is
-**axiom-clean** and independent of `exists_stationary_garch`. The **Rademacher** noise
+independent of `exists_stationary_garch`. The **Rademacher** noise
 (rather than the Gaussian of `Threshold/Estimation.lean`) is forced by `lad_clt_debt`'s
 median hypothesis `hmed`: it asks the median of `ε₀²` to be `1`, which for a mean-zero
 unit-variance law means `ε₀² = 1` a.s. up to the two-sided tail balance — the two-point
@@ -547,11 +546,9 @@ private theorem lad_clt_debt_false
 
 /-! ### The repaired asymptotic statements
 
-**Statement strengthening (wave `ts/s13-whittle-lad`, 2026-08-09).** Both frozen forms are
-FALSE — see `whittle_clt_debt_false` / `lad_clt_debt_false` above, kept verbatim against
-the *frozen* shapes as the permanent record. Four repairs are applied to each, in the house
-style of `Threshold/Estimation`'s eq. (4.8) debt (since removed); every added or changed
-hypothesis is tagged `USER-INPUT`.
+**Statement strengthening.** Both frozen forms are FALSE — see `whittle_clt_debt_false` /
+`lad_clt_debt_false` above, kept verbatim against the *frozen* shapes. Four repairs are
+applied to each; every added or changed hypothesis is tagged `USER-INPUT`.
 
 1. **`θ₀` is the true parameter.** `hθ0` pins it to `garchParamVec c₀ b a`, the coordinate
    packing of the `IsGARCH` instance's own `(c₀, b, a)`. Without this even a perfect
@@ -563,7 +560,7 @@ hypothesis is tagged `USER-INPUT`.
    compact search region `K`
    with the truth in its interior, and exact minimization over `K` at every sample.
 3. **`W` is pinned to the process** — the defect that killed the frozen form outright
-   (`W` and `2W` both admissible). Unlike the removed eq. (4.8) debt, whose `W_i` is a
+   (`W` and `2W` both admissible). Unlike the eq. (4.8) statement, whose `W_i` is a
    plain conditional second-moment matrix (`tarRegimeDesignCov`), the Whittle and LAD limiting
    covariances are *sandwiches* that the repo cannot yet write down: Giraitis–Robinson's
    is `A⁻¹BA⁻¹` with `A` an integral of `∂_θ log g(λ; θ)` against Lebesgue measure on
@@ -589,8 +586,7 @@ nondegeneracy assumption on `E[ψ₀ψ₀ᵀ]`.
 
 ### Residue note: what is left to prove
 
-**Both statements are now PROVED** (wave `ts/f3-spectral-garch-finale`, 2026-08-09):
-`whittle_clt_debt` and `lad_clt_debt` are `sorry`-free and axiom-clean. The two steps
+**Both statements are proved.** The two steps
 (S1)/(S2) described below were executed verbatim, and they are literally the *same* proof
 in the two cases — the engine `clt_of_asymptotically_linear` below is applied twice, with
 no Whittle- or LAD-specific input. Nothing in the two proofs uses `hL4`, `hmed`, `hstat`,
@@ -644,8 +640,8 @@ different in the two cases:
 * **Whittle (GR 2001).** `hlin` comes from a Taylor expansion of `garchWhittle` in `θ`
   plus a **CLT for a weighted quadratic form of the squared process**,
   `T^{−1/2} Σ_{j,k} w_{j−k} (Y_j − EY)(Y_k − EY)`. The reduction of the periodogram average
-  to such a quadratic form is *available*: `Spectral/DFT.lean`'s Parseval layer (batch B,
-  proved) does exactly that. The quadratic-form CLT for a non-linear, non-Gaussian,
+  to such a quadratic form is *available*: `Spectral/DFT.lean`'s Parseval layer (proved) does
+  exactly that. The quadratic-form CLT for a non-linear, non-Gaussian,
   long-memory-capable process is the open piece; GR get it from their own
   `Σ_h |Cov(Y_0, Y_h)| < ∞` bookkeeping plus a fourth-cumulant condition — which is why
   `hL4` is there and why `B ≠ A` in their sandwich.
@@ -1028,14 +1024,14 @@ private lemma exists_bound_garchParamVec {p q : ℕ}
       _ ≤ ‖x‖ := norm_fst_le x
       _ ≤ R := hxR
 
-/-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
+/-- **Whittle CLT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
 Whittle estimator of a GARCH model under fourth-order stationarity, in Cramér–Wold/charFun
 form.
 
-**Repaired 2026-08-09** — the frozen form is refuted by `whittle_clt_debt_false` above;
+**Repaired.** The frozen form is refuted by `whittle_clt_debt_false` above;
 see the section note for the four repairs and for the residue map.
 
-**PROVED 2026-08-09 (`ts/f3-spectral-garch-finale`)** from the repaired hypotheses, by
+Proved from the repaired hypotheses, by
 `clt_of_asymptotically_linear`: (S1) `L¹`-Slutsky along `hlin`, then (S2) Brown's
 martingale CLT for the influence sum. Giraitis–Robinson's own analysis is exactly what
 `hlin`/`hWdef` package. -/
@@ -1098,17 +1094,17 @@ theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
   rw [hpack T ω]
   exact hRbd _ (hmin T ω).1 i
 
-/-- **DEBT (Peng & Yao 2002/2003; FY §4.2.3)**: `√T`-asymptotic normality of the LAD
+/-- **LAD CLT (Peng & Yao 2002/2003; FY §4.2.3)**: `√T`-asymptotic normality of the LAD
 estimator, which unlike the QMLE needs no moment condition beyond the model's own —
 the heavy-tail-robust alternative FY highlights.
 
-**Repaired 2026-08-09** — the frozen form is refuted by `lad_clt_debt_false` above; see the
+**Repaired.** The frozen form is refuted by `lad_clt_debt_false` above; see the
 section note for the four repairs and for the residue map. Note that the LAD score is a
 *bounded* martingale difference (the signs `sign(log ε_t²)` are `±1`), so `hpsiL2` is
 automatic for the true influence process and the whole (S2) half is free of moment
 conditions — which is exactly FY's stated reason for preferring LAD.
 
-**PROVED 2026-08-09 (`ts/f3-spectral-garch-finale`)** by the *same* application of
+Proved by the *same* application of
 `clt_of_asymptotically_linear` as `whittle_clt_debt`: the two proofs are character for
 character identical, which is the sharpest confirmation that repair 3 relocated the
 GR/PY-specific analysis entirely into `hlin`/`hWdef`. -/

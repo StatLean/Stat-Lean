@@ -30,9 +30,7 @@ Mathlib bricks: `ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map`,
 `MeasureTheory.MeasurePreserving.prod`, and `MeasureTheory.integral_map`.
 Measurability of the integrand is taken as `AEStronglyMeasurable` with respect
 to the *pushforward* measure — the natural hypothesis for `integral_map`.
-Mathlib-only imports; candidate upstream. Named-sorry fallback of this work
-item: `integral_prod_eq_integral_pi_prod` (the passenger-coordinate
-transport); the two single-map transports are direct wraps.
+Mathlib-only imports; candidate upstream. The two single-map transports are direct wraps.
 
 **Bibliographic comments.** The identification of an independent family with
 the product of its marginal laws is Kolmogorov's construction (*Grundbegriffe
@@ -72,8 +70,7 @@ theorem integral_eq_integral_pi_map {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 /-- Transport with a passenger product factor: an integral over `μ.prod ρ` of
 a function of the independent family in the first coordinate equals the
-integral over the canonical product `(⊗ᵢ (Xᵢ)#μ).prod ρ`. Named-sorry debt
-candidate of this work item. -/
+integral over the canonical product `(⊗ᵢ (Xᵢ)#μ).prod ρ`. -/
 theorem integral_prod_eq_integral_pi_prod {μ : Measure Ω} [IsProbabilityMeasure μ]
     {ι : Type*} [Fintype ι] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
     {X : (i : ι) → Ω → β i}

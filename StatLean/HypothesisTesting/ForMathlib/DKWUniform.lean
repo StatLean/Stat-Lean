@@ -8,6 +8,7 @@ import StatLean.ConcentrationInequalities.McDiarmid.McDiarmid
 import StatLean.ConcentrationInequalities.Symmetrization.Empirical
 import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.Data.Fin.Tuple.Sort
+import StatLean.ForMathlib.BindCDF
 
 /-!
 # A uniform-in-`n` exponential tail for the empirical process
@@ -184,7 +185,7 @@ the distribution function of a law `μ`: `Dₙ = supₜ |F̂ₙ(t) − F(t)|`.
 The supremum ranges over all of `ℝ`; by right-continuity of both functions it agrees with
 the supremum over the rationals, which is how measurability of `Dₙ` is obtained. -/
 noncomputable def ksDist {n : ℕ} (X : Fin n → Ω → ℝ) (μ : Measure ℝ) (ω : Ω) : ℝ :=
-  ⨆ t : ℝ, |empCDF X ω t - cdf μ t|
+  ⨆ t : ℝ, |empCDF X ω t - bindCDF μ t|
 
 /-! ### Deterministic reduction to a rational supremum -/
 
@@ -794,13 +795,13 @@ theorem integral_ksDist_le {n : ℕ}
       measurable_const measurable_const
   have hFbdd : ∀ q x, |F q x| ≤ 1 := by
     intro q x; simp only [hFdef]; split_ifs <;> norm_num
-  have hFmean : ∀ q : ℚ, ∫ x, F q x ∂μ = cdf μ (q : ℝ) := by
+  have hFmean : ∀ q : ℚ, ∫ x, F q x ∂μ = bindCDF μ (q : ℝ) := by
     intro q
     have hind : F q = Set.indicator (Set.Iic ((q : ℝ))) (fun _ => (1 : ℝ)) := by
       funext x
       simp [hFdef, Set.indicator_apply, Set.mem_Iic]
     rw [hind, integral_indicator_const _ measurableSet_Iic, smul_eq_mul, mul_one,
-      cdf_eq_real]
+      bindCDF_eq_real]
   -- Step 1: symmetrisation over the countable class of half-lines.
   have hsym := StatLean.ConcentrationInequalities.empirical_symmetrization_countable
     (μ := P) (P := μ) (X := X) (F := F) hmeas hindep hlaw hFmeas hFbdd
@@ -808,15 +809,16 @@ theorem integral_ksDist_le {n : ℕ}
   have hLHS : ∫ ω, ⨆ q : ℚ, |(n : ℝ)⁻¹ * (∑ i, F q (X i ω)) - ∫ x, F q x ∂μ| ∂P
       = ∫ ω, ksDist X μ ω ∂P := by
     refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
-    have hrat : ksDist X μ ω = ⨆ q : ℚ, |empCDF X ω (q : ℝ) - cdf μ (q : ℝ)| := by
-      refine dkw_iSup_real_eq_iSup_rat (fun t => |empCDF X ω t - cdf μ t|) fun s => ?_
+    have hrat : ksDist X μ ω = ⨆ q : ℚ, |empCDF X ω (q : ℝ) - bindCDF μ (q : ℝ)| := by
+      refine dkw_iSup_real_eq_iSup_rat (fun t => |empCDF X ω t - bindCDF μ t|) fun s => ?_
       have hempRC : Tendsto (fun t => empCDF X ω t) (nhdsWithin s (Set.Ioi s))
           (nhds (empCDF X ω s)) := by
         simp only [empCDF]
         exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (X i ω) s).const_mul _
-      have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
-        ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
+      have hcdfRC : Tendsto (fun t => bindCDF μ t)
+          (nhdsWithin s (Set.Ioi s)) (nhds (bindCDF μ s)) :=
+        ((bindCDF μ).right_continuous s).mono Set.Ioi_subset_Ici_self
       exact Filter.Tendsto.abs (hempRC.sub hcdfRC)
     rw [hrat]
     refine iSup_congr fun q => ?_
@@ -902,7 +904,7 @@ private noncomputable def dkwEmp {n : ℕ} (x : Fin n → ℝ) (t : ℝ) : ℝ :
 /-- The Kolmogorov distance as a function of the sample vector `x : Fin n → ℝ`.
 Equal to `ksDist X μ ω` at `x = (Xᵢ ω)ᵢ`; the bounded-differences function of McDiarmid. -/
 private noncomputable def dkwF {n : ℕ} (μ : Measure ℝ) (x : Fin n → ℝ) : ℝ :=
-  ⨆ t : ℝ, |dkwEmp x t - cdf μ t|
+  ⨆ t : ℝ, |dkwEmp x t - bindCDF μ t|
 
 /-- **Concentration of the Kolmogorov distance around its mean.**
 Changing one observation moves `Dₙ` by at most `1/n`, so the bounded-differences inequality
@@ -943,11 +945,11 @@ theorem ksDist_concentration {n : ℕ}
     simp only [dkwEmp]
     rw [inv_mul_le_iff₀ (by positivity), mul_one]
     exact hsum_le z t
-  have hA1 : ∀ (z : Fin n → ℝ) t, |dkwEmp z t - cdf μ t| ≤ 1 := fun z t => by
+  have hA1 : ∀ (z : Fin n → ℝ) t, |dkwEmp z t - bindCDF μ t| ≤ 1 := fun z t => by
     rw [abs_le]
-    exact ⟨by linarith [hemp0 z t, cdf_le_one μ t], by linarith [hemp1 z t, cdf_nonneg μ t]⟩
+    exact ⟨by linarith [hemp0 z t, bindCDF_le_one μ t], by linarith [hemp1 z t, bindCDF_nonneg μ t]⟩
   have hbddAx : ∀ z : Fin n → ℝ,
-      BddAbove (Set.range fun t => |dkwEmp z t - cdf μ t|) :=
+      BddAbove (Set.range fun t => |dkwEmp z t - bindCDF μ t|) :=
     fun z => ⟨1, by rintro _ ⟨t, rfl⟩; exact hA1 z t⟩
   have hF0 : ∀ z, 0 ≤ dkwF μ z := fun z => by
     simp only [dkwF]
@@ -957,18 +959,19 @@ theorem ksDist_concentration {n : ℕ}
   -- measurability of `dkwF μ` (reduce the real sup to a rational one)
   have hf : Measurable (dkwF (n := n) μ) := by
     have hFrat : ∀ x : Fin n → ℝ,
-        dkwF μ x = ⨆ q : ℚ, |dkwEmp x (q : ℝ) - cdf μ (q : ℝ)| := by
+        dkwF μ x = ⨆ q : ℚ, |dkwEmp x (q : ℝ) - bindCDF μ (q : ℝ)| := by
       intro x
-      refine dkw_iSup_real_eq_iSup_rat (fun t => |dkwEmp x t - cdf μ t|) fun s => ?_
+      refine dkw_iSup_real_eq_iSup_rat (fun t => |dkwEmp x t - bindCDF μ t|) fun s => ?_
       have hempRC : Tendsto (fun t => dkwEmp x t) (nhdsWithin s (Set.Ioi s))
           (nhds (dkwEmp x s)) := by
         simp only [dkwEmp]
         exact (tendsto_finsetSum Finset.univ
           fun i _ => dkw_rightCont_step (x i) s).const_mul _
-      have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
-        ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
+      have hcdfRC : Tendsto (fun t => bindCDF μ t)
+          (nhdsWithin s (Set.Ioi s)) (nhds (bindCDF μ s)) :=
+        ((bindCDF μ).right_continuous s).mono Set.Ioi_subset_Ici_self
       exact Filter.Tendsto.abs (hempRC.sub hcdfRC)
-    rw [show dkwF μ = fun x => ⨆ q : ℚ, |dkwEmp x (q : ℝ) - cdf μ (q : ℝ)| from funext hFrat]
+    rw [show dkwF μ = fun x => ⨆ q : ℚ, |dkwEmp x (q : ℝ) - bindCDF μ (q : ℝ)| from funext hFrat]
     refine Measurable.iSup fun q : ℚ => Measurable.abs (Measurable.sub ?_ measurable_const)
     simp only [dkwEmp]
     exact (Finset.univ.measurable_sum fun i _ =>
@@ -999,27 +1002,29 @@ theorem ksDist_concentration {n : ℕ}
       calc (n : ℝ)⁻¹ * |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)|
           ≤ (n : ℝ)⁻¹ * 1 := mul_le_mul_of_nonneg_left hind (by positivity)
         _ = (n : ℝ)⁻¹ := mul_one _
-    have hApt : ∀ t, |(|dkwEmp (Function.update x k y) t - cdf μ t|)
-        - (|dkwEmp x t - cdf μ t|)| ≤ (n : ℝ)⁻¹ := by
+    have hApt : ∀ t, |(|dkwEmp (Function.update x k y) t - bindCDF μ t|)
+        - (|dkwEmp x t - bindCDF μ t|)| ≤ (n : ℝ)⁻¹ := by
       intro t
-      have h1 : |(|dkwEmp (Function.update x k y) t - cdf μ t|) - (|dkwEmp x t - cdf μ t|)|
-          ≤ |(dkwEmp (Function.update x k y) t - cdf μ t) - (dkwEmp x t - cdf μ t)| :=
+      have h1 : |(|dkwEmp (Function.update x k y) t - bindCDF μ t|) - (|dkwEmp x t - bindCDF μ t|)|
+          ≤ |(dkwEmp (Function.update x k y) t - bindCDF μ t) - (dkwEmp x t - bindCDF μ t)| :=
         abs_abs_sub_abs_le_abs_sub _ _
-      have h2 : (dkwEmp (Function.update x k y) t - cdf μ t) - (dkwEmp x t - cdf μ t)
+      have h2 : (dkwEmp (Function.update x k y) t - bindCDF μ t) - (dkwEmp x t - bindCDF μ t)
           = dkwEmp (Function.update x k y) t - dkwEmp x t := by ring
       rw [h2] at h1
       exact h1.trans (hemp_diff t)
     have hle1 : dkwF μ (Function.update x k y) ≤ dkwF μ x + (n : ℝ)⁻¹ := by
       simp only [dkwF]
       refine ciSup_le fun t => ?_
-      have hb : |dkwEmp x t - cdf μ t| ≤ ⨆ t', |dkwEmp x t' - cdf μ t'| := le_ciSup (hbddAx x) t
+      have hb : |dkwEmp x t - bindCDF μ t| ≤
+          ⨆ t', |dkwEmp x t' - bindCDF μ t'| :=
+        le_ciSup (hbddAx x) t
       have hh := hApt t; rw [abs_le] at hh
       linarith [hh.2, hb]
     have hle2 : dkwF μ x ≤ dkwF μ (Function.update x k y) + (n : ℝ)⁻¹ := by
       simp only [dkwF]
       refine ciSup_le fun t => ?_
-      have hb : |dkwEmp (Function.update x k y) t - cdf μ t|
-          ≤ ⨆ t', |dkwEmp (Function.update x k y) t' - cdf μ t'| := le_ciSup (hbddAx _) t
+      have hb : |dkwEmp (Function.update x k y) t - bindCDF μ t|
+          ≤ ⨆ t', |dkwEmp (Function.update x k y) t' - bindCDF μ t'| := le_ciSup (hbddAx _) t
       have hh := hApt t; rw [abs_le] at hh
       linarith [hh.1, hb]
     rw [abs_le]

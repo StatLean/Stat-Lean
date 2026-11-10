@@ -1602,7 +1602,7 @@ theorem qmdModel_scoreCrossTransport_oP_of_2576
     have hS : MeasurableSet S := by
       exact measurableSet_lt measurable_const (M.score_measurable.norm)
     have hgTailP : MemLp gTail 2 P := by
-      simpa only [gTail, g] using M.score_memLp.indicator hS
+      simpa only [gTail, g] using M.score_memLp.indicator hS.nullMeasurableSet
     have hgTailMeas : Measurable gTail := by
       exact M.score_measurable.indicator hS
     have hgSmallMeas : Measurable gSmall := by

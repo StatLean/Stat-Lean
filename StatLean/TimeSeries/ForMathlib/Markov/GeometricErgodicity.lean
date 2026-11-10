@@ -22,11 +22,10 @@ Also here: the transition kernel `nlARKernel` of the vectorized nonlinear autore
 the fact that an ergodic kernel has *only one* invariant law.
 
 **FY Theorem 2.4(ii)** — the drift/contraction criterion for geometric ergodicity of that
-chain — was carried here as a named `sorry` (§2.1.4 is excluded from the formalization scope
-by project decision, `TimeSeries_plan.md`, but its Theorem 2.4 is the certificate that
-§2.1.5's remark and §4.1's TAR stationarity claims consume). It is now **proved**, in
-`ForMathlib/Markov/HarrisTheorem.lean`, which is where the Harris engine it consumes lives;
-see the comment at the foot of this file.
+chain — is **proved** in `ForMathlib/Markov/HarrisTheorem.lean`, which is where the Harris
+engine it consumes lives; see the comment at the foot of this file. (§2.1.4 is excluded from
+the formalization scope, but its Theorem 2.4 is the certificate that §2.1.5's remark and
+§4.1's TAR stationarity claims consume.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.4:
 Definition 2.4 with eq. (2.10) (p. 34), eqs. (2.7)–(2.8) (vectorization), Theorem 2.4
@@ -267,9 +266,8 @@ theorem isMarkovKernel_nlARKernel {p : ℕ} {f : (Fin (p + 1) → ℝ) → ℝ}
     · exact fun i => by simpa using! (measurable_pi_apply i.castSucc).comp measurable_fst
   exact Kernel.IsMarkovKernel.map _ hmeas
 
--- **FY Theorem 2.4(ii)** (`nlARKernel_geometricallyErgodic`) used to be stated here as a
--- named `sorry`.  It is now **PROVED**, and lives one file downstream, in
--- `ForMathlib/Markov/HarrisTheorem.lean`: its proof consumes `harris_theorem`,
+-- **FY Theorem 2.4(ii)** (`nlARKernel_geometricallyErgodic`) is **PROVED** and lives one
+-- file downstream, in `ForMathlib/Markov/HarrisTheorem.lean`: its proof consumes `harris_theorem`,
 -- `IsGeometricallyErgodic.of_pow` and `HasLyapunovDrift`, all of which are defined there,
 -- and `HarrisTheorem.lean` imports *this* file (for `IsGeometricallyErgodic`,
 -- `IsErgodicWithRate` and `nlARKernel`), so the statement cannot stay on this side of the

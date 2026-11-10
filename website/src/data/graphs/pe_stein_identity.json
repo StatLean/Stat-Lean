@@ -11,7 +11,8 @@
     {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"Differentiable.continuous","label":"continuous","full":"Differentiable.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Calculus.FDeriv.Basic"},
     {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
-    {"id":"PolynormableSpace.continuousSMul","label":"continuousSMul","full":"PolynormableSpace.continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.LocallyConvex.WithSeminorms"},
+    {"id":"IsModuleTopology.toContinuousSMul","label":"toContinuousSMul","full":"IsModuleTopology.toContinuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"},
+    {"id":"IsTopologicalSemiring.toIsModuleTopology","label":"toIsModuleTopology","full":"IsTopologicalSemiring.toIsModuleTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"},
     {"id":"StatLean.PointEstimation.ExpFamily.logPartition","label":"logPartition","full":"StatLean.PointEstimation.ExpFamily.logPartition","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
     {"id":"Measurable.ennreal_ofReal","label":"ennreal_ofReal","full":"Measurable.ennreal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"},
     {"id":"Measurable.exp","label":"exp","full":"Measurable.exp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.SpecialFunctions.Basic"},
@@ -45,8 +46,7 @@
     {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
     {"id":"ne_of_gt","label":"ne_of_gt","full":"ne_of_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"Real.exp_pos","label":"exp_pos","full":"Real.exp_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
-    {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
-    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"}
+    {"id":"div_one","label":"div_one","full":"div_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
   ],
   "edges": [
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"StatLean.PointEstimation.ExpFamily"},
@@ -58,7 +58,8 @@
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"Real.borelSpace"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"Differentiable.continuous"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"IsTopologicalRing.toIsSemitopologicalRing"},
-    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"PolynormableSpace.continuousSMul"},
+    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"IsModuleTopology.toContinuousSMul"},
+    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"IsTopologicalSemiring.toIsModuleTopology"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"StatLean.PointEstimation.ExpFamily.logPartition"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"Measurable.ennreal_ofReal"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"Measurable.exp"},
@@ -92,7 +93,6 @@
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"one_mul"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"ne_of_gt"},
     {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"Real.exp_pos"},
-    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"div_one"},
-    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"mul_one"}
+    {"source":"StatLean.PointEstimation.ExpFamily.stein_identity","target":"div_one"}
   ]
 }

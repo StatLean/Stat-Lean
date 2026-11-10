@@ -1488,10 +1488,9 @@ private lemma eLpNorm_dft_edge_le [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ
   refine add_le_add le_rfl (le_trans (eLpNorm_add_le one_le_two) ?_)
   exact add_le_add le_rfl (hFN N)
 
-/-- **THE EDGE-EFFECT CORE (FY eq. (2.72)) — PROVED** (wave `ts/f3-spectral-garch-finale`,
-2026-08-09; it was the single open debt of this file, which is now `sorry`-free and
-axiom-clean).  The four-step route recorded below was executed *verbatim*; the bricks are
-in the section just above.  Two implementation notes worth keeping:
+/-- **THE EDGE-EFFECT CORE (FY eq. (2.72)).** The four-step route recorded below was
+executed *verbatim*; the bricks are in the section just above.  Two implementation notes
+worth keeping:
 
 * the symmetric difference of the two windows is never formed — the weight
   `1_{W_j} − 1_{W_0}` is summed over any common superset and its energy is read off

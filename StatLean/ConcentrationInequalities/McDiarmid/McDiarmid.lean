@@ -36,9 +36,7 @@ form, `t < |Y|` splits as `t < Y ∨ t < −Y`; the left tail is the right tail 
 `HasSubgaussianMGF.neg`, and the two are combined by `measure_union_le`.
 
 The strict inequality `<` on the event is faithful to the book; the brick gives `≤`, and
-the slack is absorbed via the inclusion `{t < y} ⊆ {t ≤ y}`. This file rests on the fully
-proved `mgf_sub_expectation_le` (DoobDecomposition); the whole McDiarmid chain is
-`sorry`-free.
+the slack is absorbed via the inclusion `{t < y} ⊆ {t ≤ y}`.
 
 **Bibliographic comments.** The independent bounded-differences inequality is due to
 C. McDiarmid, "On the method of bounded differences", in *Surveys in Combinatorics, 1989*

@@ -18,7 +18,7 @@
     {"id":"SeminormedCommRing.toNonUnitalSeminormedCommRing","label":"toNonUnitalSeminormedCommRing","full":"SeminormedCommRing.toNonUnitalSeminormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"NormedCommRing.toSeminormedCommRing","label":"toSeminormedCommRing","full":"NormedCommRing.toSeminormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
     {"id":"Real.normedCommRing","label":"normedCommRing","full":"Real.normedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
-    {"id":"SeminormedAddGroup.toContinuousENorm","label":"toContinuousENorm","full":"SeminormedAddGroup.toContinuousENorm","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Continuity"},
+    {"id":"SeminormedAddGroup.toESeminormedAddMonoid","label":"toESeminormedAddMonoid","full":"SeminormedAddGroup.toESeminormedAddMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Continuity"},
     {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
     {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Basic.ENNReal.Basic"}
   ],
@@ -45,7 +45,7 @@
     {"source":"StatLean.PointEstimation.MemEstL2","target":"SeminormedCommRing.toNonUnitalSeminormedCommRing"},
     {"source":"StatLean.PointEstimation.MemEstL2","target":"NormedCommRing.toSeminormedCommRing"},
     {"source":"StatLean.PointEstimation.MemEstL2","target":"Real.normedCommRing"},
-    {"source":"StatLean.PointEstimation.MemEstL2","target":"SeminormedAddGroup.toContinuousENorm"},
+    {"source":"StatLean.PointEstimation.MemEstL2","target":"SeminormedAddGroup.toESeminormedAddMonoid"},
     {"source":"StatLean.PointEstimation.MemEstL2","target":"Real.pseudoMetricSpace"},
     {"source":"StatLean.PointEstimation.MemEstL2","target":"ENNReal"}
   ]

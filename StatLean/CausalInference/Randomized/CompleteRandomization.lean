@@ -30,7 +30,7 @@ Part II. (`IR Part II`.)
   `z ↦ {i | zᵢ = 1}` / `s ↦ (i ↦ i ∈ s)`, which is a bijection. Every moment identity is
   then a restatement of `expect_weight`, `expect_weight_pair` and `cov_weight`.
 * This is a **cross-area import of another area's `ForMathlib/` layer**, which the project
-  layering rules permit (`CLAUDE.md` §3): `HypergeometricMoments` is Mathlib-only and
+  layering rules permit: `HypergeometricMoments` is Mathlib-only and
   theorem-agnostic. Nothing from the `HypothesisTesting` concept layer is used.
 -/
 

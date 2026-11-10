@@ -19,8 +19,8 @@ Two coherence properties of Bayesian updating:
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3, p. 6.
 
 **Proof formalization notes.** Sequential: the pair kernel is dominated by `ν₁.prod ν₂` with the
-product density (pinned `prod_withDensity_left/right` + `withDensity_mul`); apply the Batch-1
-headline and rearrange with `ENNReal` algebra; the first-coordinate nondegeneracy `0 < m₁ < ∞`
+product density (pinned `prod_withDensity_left/right` + `withDensity_mul`); apply the dominated
+Bayes formula and rearrange with `ENNReal` algebra; the first-coordinate nondegeneracy `0 < m₁ < ∞`
 transports along `Prod.fst` (`Kernel.fst_prod`, `Measure.map_comp`). Reparameterization is
 abstract (no domination): verify the disintegration property of `((κ†π) ·).map φ` with
 `ae_eq_posterior_of_compProd_eq`, `Measure.compProd_map`, and the rectangle lemma
@@ -64,7 +64,7 @@ theorem posterior_prod_ae_eq_sequential
     have h₁ : Measurable (p₁ θ) := hp₁.comp (measurable_const.prodMk measurable_id)
     have h₂ : Measurable (p₂ θ) := hp₂.comp (measurable_const.prodMk measurable_id)
     rw [Kernel.prod_apply, hκ₁, hκ₂, prod_withDensity₀ h₁.aemeasurable h₂.aemeasurable]
-  -- (ii) Batch-1 dominated Bayes for the pair.
+  -- (ii) dominated Bayes for the pair.
   have : SFinite (ν₁.prod ν₂) := inferInstance
   have hbayes := posterior_eq_withDensity_likelihood_div_predictive
     (π := π) (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ

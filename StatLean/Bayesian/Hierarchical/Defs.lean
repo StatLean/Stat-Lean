@@ -25,7 +25,7 @@ From `HierBayesExperiment H` this file names:
 *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.2–5.3
 (hierarchical model setup), pp. 104–108.
 
-**Proof formalization notes.** Laptop-only data model — definitions only. `HierBayesExperiment`
+**Proof formalization notes.** Definitions and basic constructions. `HierBayesExperiment`
 carries the probability/Markov requirements as instance-typed fields (registered as instances),
 because Gelman's §5.2 constitutively demands a *probability* hyperprior and *Markov* prior and
 likelihood kernels; dropping any makes the object not the hierarchical Bayesian model. The

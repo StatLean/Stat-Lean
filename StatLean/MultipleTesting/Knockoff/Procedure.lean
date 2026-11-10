@@ -22,7 +22,7 @@ knock-off estimate $\#S^-(t) / (\#S^+(t) \vee 1)$.
 
 This file provides the shared **concept layer** of definitions (`Splus`, `Sminus`, `Vplus`,
 `Vminus`, `FDPhat`, `tStar`, `knockoffRejects`) reused by the knock-off assembly files (`FdpBound`,
-`Initial`, `Supermartingale`, the final `Knockoff`). It is theorem-agnostic and laptop-owned.
+`Initial`, `Supermartingale`, the final `Knockoff`). It is theorem-agnostic.
 
 **Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
 (ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3 (Knock-Off): Definition 21.1

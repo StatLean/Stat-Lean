@@ -20,8 +20,7 @@ junk-values to `0` without integrability, so the lemmas would be silently vacuou
 
 The library has three prior ad-hoc special cases (`HypothesisTesting.covMatrix` on
 `Fin k`-Euclidean space, `sampleCovMatrix`, `marginalCovMatrix`); this file is the general
-carrier. Deduplication of those is a documented laptop follow-up — no other area is touched
-here.
+carrier.
 
 **Reference.** T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, Wiley,
 1958, Ch. 2 (moments of random vectors; the affine transformation law) (verify §)

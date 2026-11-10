@@ -11,28 +11,12 @@ import Mathlib.MeasureTheory.Integral.Prod
   criteria for ARMA order selection, defined on the profiled likelihood criterion of
   `ARMA/Likelihood.lean` with FY's penalties;
 * the **Taylor equivalence** `AICC = AIC + O(1/T)`-form (in-text; the FPE display
-  absorbs an additive constant, harmless for argmin);
-* literature DEBTS: the Akaike bias approximation `≈ p_m/T` (Akaike 1973) — the book
-  cites it without proof. BIC consistency (Hannan 1980) was carried here as a debt over
-  two sorried residues and has been removed; see **Removed** below.
+  absorbs an additive constant, harmless for argmin).
 
-**Removed (2026-08-10, user directive).** The BIC-consistency assembly — the module's two
-sorried residues, the headline they were assembled into, and the two `private` helpers used
-only by that headline — was deleted. The criterion definitions (`armaAIC`, `armaAICC`,
-`armaBIC`, `armaBICmin`), the KL apparatus and the Taylor equivalence are untouched and
-remain proved.
-* `bic_underfit_residue` — residue (U): asserted that each *underfitting* grid cell
-  (`p < p₀` or `q < q₀`) has selection probability `→ 0`, the contrast-gap mechanism.
-* `bic_overfit_residue` — residue (O): the same for each *overfitting* cell
-  (`p₀ ≤ p`, `q₀ ≤ q`, `(p,q) ≠ (p₀,q₀)`), the penalty-vs-likelihood-ratio race.
-* `bic_consistency_debt` — the headline (Hannan 1980; FY §3.4.3): a measurable
-  BIC-minimizing order selection over a fixed grid containing `(p₀, q₀)` picks the true
-  orders with probability `→ 1`. Proved from (U) and (O), hence deleted with them.
-* `measurableSet_sel`, `tendsto_sel_of_cells` (both `private`, both **proved**) — the
-  measurability of a selection cell and the grid union bound reducing the headline to the
-  cells. They had no other consumer.
-
-Recover from `bdc8143f`.
+**Scope.** The Akaike bias approximation `≈ p_m/T` (Akaike 1973), which the book cites
+without proof, and the consistency of BIC order selection (Hannan 1980; FY §3.4.3) are not
+proved here. The module provides criterion definitions, KL inequalities and deterministic
+Taylor comparisons.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.4,
 eqs. (3.15)–(3.24) (pp. 99–109). (`FY §3.4`.)

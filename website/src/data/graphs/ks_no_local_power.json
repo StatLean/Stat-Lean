@@ -45,8 +45,8 @@
     {"id":"StatLean.HypothesisTesting.ksDist","label":"ksDist","full":"StatLean.HypothesisTesting.ksDist","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.DKWUniform"},
     {"id":"StatLean.HypothesisTesting.supCDFDist_triangle","label":"supCDFDist_triangle","full":"StatLean.HypothesisTesting.supCDFDist_triangle","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
     {"id":"StatLean.HypothesisTesting.bddAbove_absCDFDiff","label":"bddAbove_absCDFDiff","full":"StatLean.HypothesisTesting.bddAbove_absCDFDiff","kind":"repo","decl":"thm","module":"StatLean.HypothesisTesting.GoodnessOfFit.KSConsistency"},
-    {"id":"iSup_congr","label":"iSup_congr","full":"iSup_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
-    {"id":"Real.sqrt_nonneg","label":"sqrt_nonneg","full":"Real.sqrt_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Real.Sqrt"}
+    {"id":"ProbabilityTheory.bindCDF","label":"bindCDF","full":"ProbabilityTheory.bindCDF","kind":"repo","decl":"def","module":"StatLean.ForMathlib.BindCDF"},
+    {"id":"iSup_congr","label":"iSup_congr","full":"iSup_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"}
   ],
   "edges": [
     {"source":"StatLean.HypothesisTesting.ks_no_local_power","target":"StatLean.HypothesisTesting.supCDFDist"},
@@ -98,8 +98,8 @@
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"StatLean.HypothesisTesting.ksDist"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"StatLean.HypothesisTesting.supCDFDist_triangle"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"StatLean.HypothesisTesting.bddAbove_absCDFDiff"},
+    {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"ProbabilityTheory.bindCDF"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"iSup_congr"},
-    {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"Real.sqrt_nonneg"},
     {"source":"StatLean.HypothesisTesting.ks_local_power_le","target":"mul_pos"}
   ]
 }

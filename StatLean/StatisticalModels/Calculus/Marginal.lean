@@ -83,7 +83,7 @@ theorem pushforward_iid_eval (P : Θ → Measure 𝓧)
   simp only [pushforward, Measure.map₀_of_measurable (measurable_pi_apply i)]
   exact (measurePreserving_eval (fun _ : Fin n => P θ) i).map_eq
 
--- **Batch-0 finding: the probability hypothesis is not decorative.** Mathlib's `Measure.pi`
+-- **The probability hypothesis is not decorative.** Mathlib's `Measure.pi`
 -- API is σ-finite throughout (`Measure.pi_pi`, `Measure.pi_eq` and `Measure.pi_map_pi` all
 -- demand `SigmaFinite`), and `SFinite μ` does not supply `SigmaFinite (μ.map T)`; at the
 -- s-finite level only the inequality `≤` is free (the preimage of a `𝓨`-box is a `𝓧`-box of

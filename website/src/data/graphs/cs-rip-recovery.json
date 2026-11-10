@@ -10,7 +10,7 @@
     {"id":"StatLean.HighDimensionalStatistics.IsBasisPursuit","label":"IsBasisPursuit","full":"StatLean.HighDimensionalStatistics.IsBasisPursuit","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.CompressedSensing.Defs"},
     {"id":"StatLean.HighDimensionalStatistics.l1Norm","label":"l1Norm","full":"StatLean.HighDimensionalStatistics.l1Norm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
     {"id":"StatLean.HighDimensionalStatistics.reCone","label":"reCone","full":"StatLean.HighDimensionalStatistics.reCone","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.Lasso.Defs"},
-    {"id":"SetLike.mem_coe","label":"mem_coe","full":"SetLike.mem_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Data.SetLike.Basic"},
+    {"id":"SetLike.mem_coe","label":"mem_coe","full":"SetLike.mem_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.SetLike.Basic"},
     {"id":"LinearMap.mem_ker","label":"mem_ker","full":"LinearMap.mem_ker","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Ker"},
     {"id":"map_sub","label":"map_sub","full":"map_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"SemilinearMapClass.distribMulActionSemiHomClass","label":"distribMulActionSemiHomClass","full":"SemilinearMapClass.distribMulActionSemiHomClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.LinearMap.Defs"},

@@ -15,14 +15,14 @@ package "StatLean" where
 
 -- doc-gen4 is only required in the `dev` environment so normal users of the
 -- library do not have to build the documentation generator. Pinned to the tag
--- matching the project's Lean toolchain (v4.34.1); `main` tracks newer Lean.
+-- matching the project's Lean toolchain (v4.35.0); `main` tracks newer Lean.
 -- Required BEFORE mathlib so that Mathlib's pinned versions of shared transitive
 -- dependencies (e.g. plausible) win, keeping `lake exe cache get` hashes correct.
 meta if get_config? env = some "dev" then
   require «doc-gen4» from git
-    "https://github.com/leanprover/doc-gen4" @ "v4.34.1"
+    "https://github.com/leanprover/doc-gen4" @ "v4.35.0"
 
-require "leanprover-community" / "mathlib" @ git "v4.34.1"
+require "leanprover-community" / "mathlib" @ git "v4.35.0"
 
 @[default_target]
 lean_lib «StatLean» where

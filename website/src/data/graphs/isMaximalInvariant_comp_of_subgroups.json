@@ -6,7 +6,7 @@
     {"id":"one_smul","label":"one_smul","full":"one_smul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
     {"id":"mul_inv_cancel","label":"mul_inv_cancel","full":"mul_inv_cancel","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"smul_smul","label":"smul_smul","full":"smul_smul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
-    {"id":"sup_le","label":"sup_le","full":"sup_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Lattice"},
+    {"id":"sup_le","label":"sup_le","full":"sup_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.Lattice"},
     {"id":"Subgroup.mem_top","label":"mem_top","full":"Subgroup.mem_top","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Subgroup.Lattice"}
   ],
   "edges": [

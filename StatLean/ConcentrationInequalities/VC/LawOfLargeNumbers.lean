@@ -25,7 +25,7 @@ Cambridge University Press, §8.3.6, Theorem 8.3.15 (the book's unnamed
 absolute constant `C`).
 
 **Proof formalization notes.** This is the ONLY VC file touching other
-Batch-10 clusters; all contact is confined to the adapter lemmas here.
+clusters; all contact is confined to the adapter lemmas here.
 Pipeline: (1) `symmetrization_adapter` cites the symmetrization cluster's
 Exercise 8.11 (`empirical_symmetrization`, instantiated at `ι := ↥F` via
 `Set.indicator`, `Fin n ↔ ℕ` by precomposition, and
@@ -48,7 +48,7 @@ unconditioning is `integral_mono` against a constant plus Fubini
 (`MeasureTheory.integral_integral_swap` / `Measure.prod`). (4) The entropy
 integral `≤ 27√d` is `entropyIntegral_le` (`VC/EntropyIntegral.lean`).
 
-**Constants (frozen numerals, recomputed from the batch's frozen
+**Constants (frozen numerals, recomputed from the formalization's frozen
 interfaces — DEVIATION from the design's provisional 500/1000).**
 Conditional Rademacher step: `40 · √6 · 27 = 1080·√6 ≈ 2645.5 ≤ 2700`
 (frozen `2700` in `rademacher_process_expectation_le`). Headline:
@@ -56,10 +56,7 @@ Conditional Rademacher step: `40 · √6 · 27 = 1080·√6 ≈ 2645.5 ≤ 2700`
 `2 (symmetrization, Ex 8.11) × 40 (dudley_inequality_abs_of_finite) × √6 (B3 bridge)
 × 27 (entropy integral) = 2160·√6 ≈ 5290.9 ≤ 5400`). Downstream consumers
 scale linearly: `5400/√n` (Glivenko–Cantelli), `2·5400 = 10800`
-(generalization). Named-sorry fallback of this work item:
-`rademacher_process_expectation_le` (the conditional Dudley glue over the
-three cross-cluster stubs); `symmetrization_adapter` and the Fubini
-assembly must close.
+(generalization).
 
 **Bibliographic comments.** The uniform LLN over VC classes is the
 Vapnik–Chervonenkis theorem (*Theory Probab. Appl.* 16 (1971), 264–280);
@@ -85,7 +82,7 @@ lemma integral_indicator_one_real {μ : Measure Ω} {S : Set Ω}
   rw [integral_indicator_const (1 : ℝ) hS, measureReal_def, smul_eq_mul, mul_one]
 
 /-- `Finset.sup'` equals the subtype-indexed `ciSup` (LEAN-ONLY adapter
-between the sup policy's finite core and Exercise 8.11's `⨆ k : ι` shape;
+between the finite-index bound and Exercise 8.11's `⨆ k : ι` shape;
 no book content). -/
 lemma finset_sup'_eq_iSup_subtype {α : Type*} {F : Finset α}
     (hFne : F.Nonempty) (f : α → ℝ) :
@@ -230,7 +227,7 @@ conditional step): for a fixed sample `x`, the expected Rademacher supremum
 over a finite class of VC dimension `≤ d` is at most `2700·√d/√n`.
 Frozen numeral: `40 (dudley_inequality_abs_of_finite) × √6 (B3) × 27 (entropy
 integral) = 1080·√6 ≈ 2645.5 ≤ 2700` — DEVIATION from the design's
-provisional `500`, recomputed from the batch's frozen constants. Applied
+provisional `500`, recomputed from the formalization's frozen constants. Applied
 over `T' = empProj x '' F ∪ (−(empProj x '' F))` with the
 sample-independent entropy bound `N(T', ε) ≤ (4/ε)^{22d}` from
 `coveringNumber_empProj_le`. -/
@@ -489,7 +486,7 @@ lemma symmetrization_adapter {Ξ : Type*} [MeasurableSpace Ξ]
     -- Theorem 8.3.15.
     (hindep : iIndepFun X P)
     -- USER-INPUT: each X i has law μ; HDP §8.3.6 (map form;
-    -- `ProbabilityTheory.HasLaw` not used per batch interface).
+    -- `ProbabilityTheory.HasLaw` not used in this interface).
     (hlaw : ∀ i, P.map (X i) = μ)
     (F : Finset (Set Ω)) (hFne : F.Nonempty)
     -- LEAN-ONLY: measurability of the class members; Exercise 8.11 input.
@@ -562,7 +559,7 @@ private lemma abs_finset_sup'_le {α : Type*} {F : Finset α} (hFne : F.Nonempty
 dimension `≤ d`. Frozen numeral: `2 (symmetrization) × 40
 (dudley_inequality_abs_of_finite) × √6 (B3) × 27 (entropy integral) = 2160·√6
 ≈ 5290.9 ≤ 5400` — DEVIATION from the design's provisional `1000`,
-recomputed from the batch's frozen constants. Proof: symmetrize
+recomputed from the formalization's frozen constants. Proof: symmetrize
 (`symmetrization_adapter`) → Fubini → conditional Dudley with
 sample-independent RHS (`rademacher_process_expectation_le`). -/
 theorem vc_lln_finset {Ξ : Type*} [MeasurableSpace Ξ]

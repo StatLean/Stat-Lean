@@ -14,7 +14,6 @@ shape `R(A) ≤ r √(2 log |A|)/n` when every `a ∈ A` lies in the `ℓ₂`-ba
 radius `r` around a fixed center.
 
 **Reference.** SSBD §26.1 (Lemmas 26.6, 26.8), Appendix A (Lemma A.6).
-Transcriptions: `notes/statistical_learning/book_statements/ch26-31-appB.md`.
 
 **Formalization notes.** Everything here is finite real analysis — the sign
 average is a finite sum, so Massart's proof is the book's verbatim:

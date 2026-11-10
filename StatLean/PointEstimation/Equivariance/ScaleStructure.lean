@@ -202,7 +202,7 @@ theorem isScaleInvariant_iff_factors_scaleZ (u : (Fin (m + 1) → ℝ) → ℝ) 
       exact mul_ne_zero (ne_of_gt hb) hx
     rw [hw (b • x) hbx, scaleZ_smul hb x, hw x hx]
 
-/-- **Forward (sorry-free) half of the measurable factorization.** A measurable function
+/-- **Forward half of the measurable factorization.** A measurable function
 that is scale-invariant off the null set factors *measurably* through `scaleZ` there, via
 the explicit section `scaleSect`. This is the only direction consumed by the
 conditional-minimization argument; the converse (recovering global measurability) is false

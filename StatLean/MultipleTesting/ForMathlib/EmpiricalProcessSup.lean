@@ -48,7 +48,7 @@ a null event.
 
 * `ksPlus_tail_union` is a complete theorem: it takes the union over the $n$ order statistics,
   giving the $n\,e^{-2nu^2}$ bound.
-* **Deviation from the book (CLAUDE.md §1).** Candès states the *sharp* constant $2$ (Massart 1990).
+* **Deviation from the book.** Candès states the *sharp* constant $2$ (Massart 1990).
   The sharp constant requires an empirical-process exponential-supermartingale / reflection argument
   not available in Mathlib: the $n$-fold union of the positively-correlated count events cannot be
   Bonferroni-shaved to a constant, and the McDiarmid route's $e^{4nuE}$ cross-term is unbounded in

@@ -19,7 +19,7 @@ $$\lambda \mid y_{1:n} \sim \mathrm{Gamma}\Big(a + \sum_i y_i,\ r + n\Big)
 Gelman's `𝒢(α, β)` with `β` a rate, so the update reads `Gamma(a + S, r + n)` with no
 reparameterization. The rate clamp `Real.toNNReal` is invisible under the Gamma prior (its pdf
 vanishes on `θ ≤ 0`); the Poisson kernel is Markov for every real parameter since
-`poissonPMFReal` sums to `1` at every `ℝ≥0` rate (pinned `poissonPMFRealSum`; at rate `0` the law
+`poissonPMFReal` sums to `1` at every `ℝ≥0` rate (`hasSum_one_poissonMeasure`; at rate `0` the law
 is the Dirac mass at `0`). Pointwise algebra: `gammaPDF a r θ · ∏ᵢ e^{−θ}θ^{yᵢ}/yᵢ! =
 C(y) · gammaPDF (a + Σyᵢ) (r + n) θ` on `θ > 0` (`Real.rpow_natCast`, `rpow_add`,
 `Real.exp_add`), fed to the criterion via `iidKernel_withDensity`.

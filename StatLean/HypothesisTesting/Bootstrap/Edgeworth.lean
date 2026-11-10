@@ -23,8 +23,7 @@ one for the centred root and one for the studentized root — and their `n^{-1/2
 which is the analytic reason the studentized (bootstrap-t) construction is preferable.
 
 The centred-root expansion `edgeworth_mean_uniform` is proved. The studentized headline and its
-quantile corollary are **not present**: they were removed (user-authorized, 2026-08-03) rather
-than kept as `sorry`d statements — see the removal notes in their sections below; every piece of
+quantile corollary are **not present** (see the notes in their sections below); every piece of
 supporting analysis built for them is proved and retained:
 
 * `skewness`, `stdNormalPDF`, `CramerCondition` — the carriers;
@@ -80,7 +79,7 @@ supporting analysis built for them is proved and retained:
 * `surrogateRemGraded`, `norm_cexp_surrogate_sub_expansion_graded_le`,
   `norm_integral_cexp_deltaSurrogate_sub_graded_le`, `surrogateRemGraded_le` — the same
   expansion and the same transform with the envelope **graded in `r`**, each power of `r` left
-  attached to the monomial it came from. This is the wave-25 correction: the collapsed envelope
+  attached to the monomial it came from. The grading is essential: the collapsed envelope
   `surrogateRemPoly` cannot be made `O(n⁻¹)` under a fourth moment at *any* truncation level,
   and the graded one is `O(n⁻¹)` at the classical level `τ = √n` and only there. The collapsed
   statements are retained as corollaries;
@@ -129,7 +128,7 @@ supporting analysis built for them is proved and retained:
   costs six moments of `F`;
 * `windowEnvelope₁`, `windowDom₁`, `integrable_windowDom₁`, `esseen_split_low`,
   `low_range_ledger_exponent`, `low_range_ledger_gt` — the (U4′) **split window**: the
-  degree-one envelope wave 42 prescribed, its three-regime Esseen split (envelope plus an
+  degree-one envelope, its three-regime Esseen split (envelope plus an
   undamped cubic on the low range, a constant on the middle range, the old tail) and the sharp
   low-range exponent `a = 1/6`;
 * `surrogateSlopeBound`, `surrogateDefect`, `abs_sub_affine_centre_le'`,
@@ -153,9 +152,9 @@ supporting analysis built for them is proved and retained:
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
   remainder, under a finite fourth moment and Cramér's condition;
-* *(removed)* the studentized expansion and its Cornish–Fisher quantile corollary — removal
-  notes in their sections record what was removed, why, and how to restore them; the generic
-  inversion `cornishFisher_of_edgeworth` is proved and retained.
+* the studentized expansion and its Cornish–Fisher quantile corollary are not stated here (see
+  the notes in their sections); the generic inversion `cornishFisher_of_edgeworth` is proved and
+  retained.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
@@ -174,8 +173,8 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   it.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
-* **`edgeworth_mean_uniform` is now PROVED, axiom-clean**; only the two *studentized* results
-  are statements at this pin. Its supporting chain: `ForMathlib/EsseenSmoothing.lean` proves
+* **`edgeworth_mean_uniform` is proved**; the two *studentized* results are not
+  formalized. Its supporting chain: `ForMathlib/EsseenSmoothing.lean` proves
   Esseen's smoothing inequality at the level of distribution functions
   (`abs_measure_Iic_sub_le_charFun`), with `normalCDF_sub_le` below supplying its Lipschitz
   input, **and its signed-density form** (`abs_measure_Iic_sub_densityCDF_le_charFun`), which is
@@ -253,7 +252,7 @@ def CramerCondition (F : Measure ℝ) : Prop :=
 The Cramér tail of an Edgeworth expansion needs a bound `‖φ_F s‖ ≤ c < 1` valid on a whole
 region `ε ≤ |s|`, whereas `CramerCondition` supplies one only *off a compact set*. The three
 results below close that gap. The classical argument passes through the characterisation
-"`‖φ_F s₀‖ = 1` iff `F` is carried by a lattice", which is absent from Mathlib at this pin; it
+"`‖φ_F s₀‖ = 1` iff `F` is carried by a lattice", which Mathlib does not provide; it
 is not needed. All that is used is that the modulus-one set is closed under integer multiples,
 and that is the equality case of `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is elementary:
 `1 − Re(θ̄ e^{i s x})` is nonnegative with vanishing integral, so `e^{i s x}` is a.e. constant. -/
@@ -1127,9 +1126,8 @@ is, up to a unimodular factor, exactly a quadratic-phase integral of the centred
 large, for every `f ∈ L¹` — the bounded-`t₁` regime by uniform Riemann–Lebesgue on a compactly
 parametrised `L¹` family, and the `|t₁| → ∞` regime by the autocorrelation identity. On the unit
 sphere `|Rθ₀| + |Rθ₁| = R(|θ₀| + |θ₁|) ≥ R‖θ‖ = R`, so the two combine with no loss and (M3) is
-complete: wave 13's diagnosis that "multivariate Cramér is strictly stronger than Cramér in
-every direction" for this parabola-carried law was right, and the extra content is precisely the
-quadratic-phase estimate. -/
+complete. For this parabola-carried law multivariate Cramér is strictly stronger than Cramér in
+every direction, and the extra content is precisely the quadratic-phase estimate. -/
 
 /-- The density of the **centred** sampling law, as a complex-valued `L¹` function:
 `y ↦ (dF/dx)(y + m)`. This is the `f` to which the quadratic-phase estimates of
@@ -1232,7 +1230,7 @@ away from `1` off every compact set. This is the hypothesis
 `norm_charFun_vecRootLaw_le_pow` consumes to produce the Cramér tail of the studentized
 expansion, and with it the whole of (M3) is closed.
 
-The proof is the wiring wave 17 identified: the projected characteristic function *is* a
+The proof is a short wiring: the projected characteristic function *is* a
 quadratic-phase integral of the centred density (`charFun_map_studentPair_eq`), and
 `exists_bound_norm_quadPhaseInt_of_integrable` bounds those uniformly once `|t₀| + |t₁|` is
 large, for every `f ∈ L¹`. No smoothness of `F` beyond `F ≪ volume` is used. -/
@@ -1393,7 +1391,7 @@ theorem abs_studentFactor_sub_taylor_le (u v r : ℝ)
 /-! ### (M2) re-derived: the second-order surrogate is not accurate enough, and the
 third-order one is
 
-Wave 13 recorded the remaining half of (M2) as the tail estimate
+One might take the remaining half of (M2) to be the tail estimate
 `P(|u|³r²/2 + |u|x² > εn⁻¹) = O(n⁻¹)`. **That claim is false**, and the reason is arithmetic
 rather than technical. With `r = n^{-1/2}` the first term is `|u|³/(2n)`, so
 
@@ -1627,9 +1625,9 @@ theorem abs_measure_le_sub_le_of_dist_le {Ω : Type*} [MeasurableSpace Ω] (P : 
 
 /-! ### The anti-concentration hypothesis is free
 
-Wave 14's note recorded the anti-concentration `sup_x P(H_n ∈ (x, x + n⁻¹]) = O(n⁻¹)` for the
-delta-method surrogate as one of the two things left of (M2), to be obtained by "first proving a
-cruder `O(n^{-1/2})` expansion and bootstrapping". **That is both unnecessary and insufficient**,
+The anti-concentration `sup_x P(H_n ∈ (x, x + n⁻¹]) = O(n⁻¹)` for the delta-method surrogate
+looks like one of the two things left of (M2), to be obtained by first proving a cruder
+`O(n^{-1/2})` expansion and bootstrapping. **That is both unnecessary and insufficient**,
 and the reason is arithmetic. A Berry–Esseen-grade bound `|P(H_n ≤ x) − Φ(x)| ≤ Cn^{-1/2}` gives
 only `P(H_n ∈ (x, x + n⁻¹]) ≤ C'n⁻¹ + 2Cn^{-1/2} = O(n^{-1/2})`, one whole order short of what
 the assembly consumes; a cruder expansion can never produce a finer interval bound than its own
@@ -1947,8 +1945,8 @@ the section note for the three candidate substitutes and why each fails.
 
 ---
 
-**WAVE 38 — A PRECISE ASSESSMENT OF THIS RESIDUE.** This is item **(U3)** of the wave-37 audit
-of `edgeworth_studentized_uniform`, the item that file's corollary has named since wave 17. No
+**A PRECISE ASSESSMENT OF THIS RESIDUE.** This is item **(U3)** of the residue of the
+studentized expansion `edgeworth_studentized_uniform`. No
 proof is attempted here; what follows fixes the statement, names the one decomposition that
 survives inspection, records the part of it that is now proved, and prices what is left.
 
@@ -1973,7 +1971,7 @@ is the entire content — **no dependence of the right-hand side on the frozen v
 frozen index `i`, or on the window centre `x`**. It is a Lévy concentration-function bound for
 `Hₙ` at an `(n+1)`-sample bivariate root with one coordinate frozen, with modulus linear in the
 half-width `w` up to an additive `η`. `measure_pi_abs_root_insertNth_le` is exactly this
-statement for a *root*, and is free; the caveat recorded there since wave 21 is why it does not
+statement for a *root*, and is free; the caveat recorded there is why it does not
 transfer.
 
 **(b) The decomposition that survives: monotonicity in the first standardized coordinate.** Of
@@ -2034,13 +2032,13 @@ neither is present as a usable brick:
   anti-concentration is the one-dimensional `measure_abs_sub_le_of_affine`.
 
 **Net price.** The reduction in (b) is free and is now in the file. What remains after it is a
-**new** analytic brick, one dimension smaller than the one wave 21 named, and it is still not
+**new** analytic brick, one dimension smaller than the original one, and it is still not
 bookkeeping.
 
 ---
 
-**WAVE 39 — THE CENTRE IS BUILT, THE RESIDUE IS PRICED, AND TWO CLAIMS ABOVE ARE CORRECTED.**
-Wave 38 named the centre `m(v, x)` but did not construct it. It is now in the file, together
+**THE CENTRE IS BUILT, THE RESIDUE IS PRICED, AND TWO CLAIMS ABOVE ARE CORRECTED.**
+The centre `m(v, x)` named above is in the file, together
 with its calculus, in the two sections above `exactStudent_eq`:
 
 * `exists_surrogate_centre`, `abs_sub_surrogate_centre_le` — the centre exists, satisfies the
@@ -2064,9 +2062,9 @@ straightened, and the straightening cost is precisely the second-order defect ab
 takes its supremum over `x` only at the end, where large `|x|` is absorbed by the tails of the
 two distribution functions. An `|x|^{2/3}η` constant is admissible — and requiring
 `x`-uniformity here would discard the only route that meets the ledger. The `y`- and
-`i`-uniformity requirements are genuine, and wave 39 adds a new observation about the first: the
+`i`-uniformity requirements are genuine, and there is a further observation about the first: the
 frozen part of the second coordinate, `a₁(y) = ((Y(y) − μ)² − σ²)/(σ²√(n+1))`, is unbounded in
-`y`, so `y`-uniformity is achievable **only** because the wave-37 truncation at `τ = √n` bounds
+`y`, so `y`-uniformity is achievable **only** because the truncation at `τ = √n` bounds
 it. See the section note on `measure_abs_surrogate_window_le`.
 
 **The residue, now with a number on it.** Granted a **direction-uniform slab bound**
@@ -2079,10 +2077,10 @@ gap; it is not attempted here and is not claimed.
 
 ---
 
-**WAVE 40 — (U3)'s `hslice` IS PROVED, AND "A NEW ANALYTIC BRICK" IS OVERTURNED.** Wave 38's
-"Net price" above concludes that what remains after its reduction "is a **new** analytic brick,
-one dimension smaller than the one wave 21 named, and it is still not bookkeeping". Wave 39
-sharpened that to "a direction-uniform slab bound". **Both are wrong about the character of the
+**(U3)'s `hslice` IS PROVED, AND "A NEW ANALYTIC BRICK" IS OVERTURNED.** The "Net price" above
+concludes that what remains after its reduction "is a **new** analytic brick, one dimension
+smaller than the original one, and it is still not bookkeeping", and the residue paragraph
+sharpens that to "a direction-uniform slab bound". **Both are wrong about the character of the
 item, and the reason is one line**: the slab functional `u − κv` of a bivariate root is a linear
 functional of a sum, hence *is* a one-dimensional root
 (`vecRoot_slab_eq`, `measure_pi_vecRoot_slab_le_of_win`). There is no two-dimensional statement
@@ -2094,8 +2092,8 @@ left. The chain now in the file is
 (`measure_pi_abs_deltaSurrogate_insertNth_le`),
 
 with the frozen value absorbed by monotonicity in `|v₀|`
-(`measure_abs_deltaSurrogate_sub_le_of_slab_unif`) and the truncation of wave 37 supplying the
-bound on it. Every step is proved and axiom-clean.
+(`measure_abs_deltaSurrogate_sub_le_of_slab_unif`) and the truncation at `τ = √n` supplying the
+bound on it. Every step is proved.
 
 What is left of (U3) is the *input* to that chain: the marginal one-dimensional window bound at
 accuracy `O(n^{-2/3})`, slope-uniform. Its three analytic ingredients — four moments of the
@@ -2145,7 +2143,7 @@ of `v`), `B = B₀n^{-1/3}`, `δ = n⁻¹`, `η = Cn⁻¹`, `2^K ≍ n` — the 
 `∑_{k<K}2^{k/3} = (n^{1/3} − 1)/(2^{1/3} − 1)`, so the first term is
 `2AB₀ n^{-1/3}·n^{-1}·O(n^{1/3}) = O(n⁻¹)` and the second is `O(n^{-4/3})`; together with the
 base term `Aδ + η = O(n⁻¹)` and the final tail `τ_K = B₀n^{-1/3}·2^{-2K/3} = O(n⁻¹)`, the
-whole peeled bound is `O(n⁻¹)`. **This confirms the wave-15 arithmetic**: the single-scale split
+whole peeled bound is `O(n⁻¹)`. **This confirms the arithmetic**: the single-scale split
 cannot reach `O(n⁻¹)` (its tail term is `n^{-1/3}`), and the peeled one can — granted, and only
 granted, the conditional window estimate. -/
 lemma sum_dyadic_strata_le {A η δ B q : ℝ} (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hη : 0 ≤ η)
@@ -2412,10 +2410,10 @@ theorem abs_measure_le_sub_le_of_peel_strata {Ω : Type*} [MeasurableSpace Ω] (
 
 /-! ### (X3)(b): the truncated-sum remainder, by an exponential inequality
 
-Wave 18 recorded that the remainder `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` left by the one-large-summand
+The remainder `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` left by the one-large-summand
 decomposition **cannot** be closed by Chebyshev — truncation does not decrease the second
 moment, so `P ≤ n E[Y²]/λ²` is *exactly* the untruncated bound and the decomposition has gained
-nothing — and that what closes it is an exponential inequality for sums of **bounded**
+nothing — and what closes it is an exponential inequality for sums of **bounded**
 independent summands. That inequality is in the repository: the sub-Gaussian half of
 `ConcentrationInequalities` has `isSubGaussian_of_mem_Icc` (Hoeffding's lemma: a variable in
 `[a, b]` is sub-Gaussian with proxy `(b − a)²/4`), which composes with Mathlib's
@@ -2590,7 +2588,7 @@ is here: replacing every summand by its truncation changes the law of the sample
 costs is the probability that *any one* coordinate is truncated.
 
 **That price is a union bound, not a concentration inequality**, and this is worth recording
-because wave 23 recorded it as "the change of law paid for separately by exactly the tail
+because it is easily mistaken for "the change of law paid for separately by exactly the tail
 estimate `measure_pi_truncated_sum_le_exp` supplies". It is not the same object:
 `measure_pi_truncated_sum_le_exp` bounds `P(λ < |∑ Ỹ(ωᵢ)|)`, the tail of a truncated *sum*,
 which is what (X3)(b)'s one-large-summand remainder needs. The change of law needs
@@ -2704,12 +2702,12 @@ theorem measure_abs_gt_le_fourth_moment (F : Measure ℝ) [IsProbabilityMeasure 
 
 /-! ### (X3)(a): the frozen-coordinate window bound, uniform in the frozen value
 
-Wave 18 recorded the second half of (X3) as: "*Transferring the (M1)(b) expansion to the
-retained block uniformly over the frozen value is the honest remaining content*", the retained
-block being "a root law of the same kind on the remaining `n` coordinates, but with an
-`n`-dependent shift **and scale** inherited from the frozen coordinate".
+The second half of (X3) can be read as transferring the (M1)(b) expansion to the retained block
+uniformly over the frozen value, the retained block being a root law of the same kind on the
+remaining `n` coordinates, but with an `n`-dependent shift **and scale** inherited from the
+frozen coordinate.
 
-**That is more than is needed, and the parenthetical about the scale is wrong.** Freezing
+**That is more than is needed, and the claim about the scale is wrong.** Freezing
 coordinate `i` of the size-`(n+1)` root at the value `y` gives, by `root_insertNth_eq`,
 
 `(n+1)^{-1/2} ∑_j Z((insertNth i y z)_j) = (n+1)^{-1/2}Z(y) + s_n · (n^{-1/2} ∑_j Z(z_j))`,
@@ -2724,9 +2722,7 @@ costs nothing at all: `measure_abs_sub_le_of_affine` re-centres the window and r
 width, and the constant degrades only by the factor `1/s_n ≤ √2`.
 
 So (X3)(a) does **not** require re-running (M1)(b) on the block: it is a corollary of the
-*marginal* window bound at size `n`, which is exactly the estimate wave 15 already recorded as
-free. This is the second wave-18 requirement to be found overstated (the first being the
-literal product shape of wave 17), and the reason is the same in both cases: the peeled
+*marginal* window bound at size `n`, which is free. The reason is that the peeled
 arithmetic consumes location-uniform bounds, and location-uniformity is preserved by every
 affine reparametrisation of the argument. -/
 
@@ -2789,9 +2785,9 @@ dependence on `y`**.
 Together with `measure_pi_truncated_sum_le_exp` this discharges both halves of (X3) **for a
 root-type window**: see `measure_pi_stratum_root_le`.
 
-**Caveat, and it is the wave-21 finding that matters most.** This is (X3)(a) exactly as wave 18
-and the brief for this wave stated it — "the remaining coordinates form a root law of the same
-kind" — and as such it is closed, and free. But it is **not** the statement the peeled assembly
+**Caveat, and it is the finding that matters most.** This is (X3)(a) in the form "the
+remaining coordinates form a root law of the same kind", and as such it is closed, and free.
+But it is **not** the statement the peeled assembly
 consumes. In `abs_measure_le_sub_le_of_peel_strata` the window is on `T`, and in the studentized
 route `T` is the delta-method surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8`, a degree-four
 polynomial in the bivariate mean — not a root. Freezing a coordinate makes `(u, v)` an affine
@@ -2844,7 +2840,7 @@ theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
   nlinarith [hratio, hw, hA]
 
 /-- **(X3), assembled: the joint stratum bound over an arbitrary statistic.** The two inputs
-wave 18 left compose with the four conditioning bricks it built, and the result is a single
+of (X3) compose with the four conditioning bricks above, and the result is a single
 estimate of the joint mass of
 
 * a **tail event carried by a coordinate sum**, `{λ < |∑ᵢ Y(ωᵢ)|}`, and
@@ -2857,9 +2853,9 @@ Every probabilistic ingredient is proved: `subset_union_large_summand` decompose
 the `n+1` one-coordinate events plus a truncated-sum remainder; `measure_pi_inter_coord_le`
 conditions each one-coordinate event on its dominant coordinate; and
 `measure_pi_truncated_sum_le_exp` — Hoeffding on the product measure — estimates the remainder,
-where wave 18 correctly recorded that Chebyshev cannot.
+which Chebyshev cannot.
 
-The three properties wave 17 established this shape must have are all visible here: the product
+The three properties this shape must have are all visible here: the product
 structure survives on the one-coordinate part (where it is true), the remainder is separated
 rather than absorbed, and no lower bound on the tail probability is needed. What the peeled
 assembly consumes is exactly this, as its per-stratum hypothesis `hstrat`; the arithmetic that
@@ -2982,7 +2978,7 @@ lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM
 
 Everything above speaks *about* the surrogate `Hₙ` without ever naming it: the deterministic
 core `abs_studentFactor_sub_taylor3_le'` carries it as a bare polynomial in two real variables,
-and the peeled assembly carries it as an abstract statistic `T`. The wave-21 re-derivation
+and the peeled assembly carries it as an abstract statistic `T`. The re-derivation of (M2)
 located the whole remaining residue in the surrogate's own distribution theory, so it has to
 become an object. This is that object.
 
@@ -3016,7 +3012,7 @@ lemma measurable_deltaSurrogate (σ r : ℝ) : Measurable (deltaSurrogate σ r) 
 
 /-! ### The surrogate is uniformly increasing in its first standardized coordinate
 
-The deterministic end of the route this file's wave-38 assessment of `hcond` recommends; see
+The deterministic end of the route this file's assessment of `hcond` recommends; see
 the assessment block on `abs_measure_le_sub_le_of_peel_window`. The point is a fact about
 `Hₙ(u, v) = u − uvr/2 + u³r²/2 + 3uv²r²/8` that is stronger than one expects and that has not
 been recorded before: since
@@ -3086,8 +3082,8 @@ lemma abs_sub_le_of_deltaSurrogate_window {σ r x w : ℝ} (hσ : 0 < σ)
 
 /-! ### The implicit centre of the surrogate window, and its Lipschitz dependence on `v`
 
-**WAVE 39.** The two lemmas above turn the window `{|Hₙ(u, v) − x| ≤ w}` into a window in the
-first coordinate alone, *at frozen `v`*; the wave-38 assessment of `hcond` (on
+The two lemmas above turn the window `{|Hₙ(u, v) − x| ≤ w}` into a window in the
+first coordinate alone, *at frozen `v`*; the assessment of `hcond` (on
 `abs_measure_le_sub_le_of_peel_window`) then names the residue as anti-concentration of `u`
 about a centre `m(v, x)` that is measurable for `v`. This section builds that centre and
 records the one property of it the assessment did not use: **`m(v, x)` is Lipschitz in `v`,
@@ -3184,7 +3180,7 @@ finite-difference form of `∂m/∂v = −(∂Hₙ/∂v)/(∂Hₙ/∂u)` and use
 
 The factor `|r|` is the whole point: at `r = n^{-1/2}` the centre moves by `O(n^{-1/2})` per
 unit of `v`, so on the scale on which `v` itself fluctuates the centre is *almost* frozen. See
-the wave-39 pricing note on `abs_measure_le_sub_le_of_peel_window` for what that does and does
+the pricing note on `abs_measure_le_sub_le_of_peel_window` for what that does and does
 not buy. -/
 theorem abs_surrogate_centre_sub_le {r x v₁ v₂ m₁ m₂ : ℝ}
     (h₁ : (m₁ - m₁ * v₁ * r / 2 + m₁ ^ 3 * r ^ 2 / 2 + 3 * m₁ * v₁ ^ 2 * r ^ 2 / 8) = x)
@@ -3271,7 +3267,7 @@ theorem abs_sub_frozen_centre_le_of_surrogate_window {r x v v₀ w u m m₀ : �
 
 /-! ### The level curve is straight to second order — and this changes the verdict
 
-**WAVE 39, and it corrects the wave-38 assessment twice.** The frozen-centre bound
+**This corrects the assessment of `hcond` twice.** The frozen-centre bound
 (`measure_abs_surrogate_window_le`, below) pays `A·Lip·L ≍ |x|·|r|·L`, *linear* in the
 truncation level `L`, and the note there shows no moment hypothesis on the second coordinate
 beats a term linear in `L`. But the centre is not merely Lipschitz: **the level curve of `Hₙ` is
@@ -3316,20 +3312,20 @@ assumes.** Its nondegeneracy input is free (`integral_studentPair_dir_sq_pos`); 
 anti-concentration theory in any dimension; this file's only anti-concentration remains the
 one-dimensional `measure_abs_sub_le_of_affine`.
 
-**WAVE 40 CORRECTS THE LAST SENTENCE, AND IT IS THE ONLY THING IN THIS SECTION THAT NEEDED
-CORRECTING.** "Mathlib has no anti-concentration theory in any dimension" is true and irrelevant,
+**A CORRECTION TO THE LAST SENTENCE, AND THE ONLY ONE THIS SECTION NEEDS.** "Mathlib has no
+anti-concentration theory in any dimension" is true and irrelevant,
 because **no two-dimensional anti-concentration is needed**: the slab functional `u − κv` is
 *linear*, so a slab of the bivariate root is a *window* of a one-dimensional root
 (`vecRoot_slab_eq`), and `measure_abs_sub_le_of_affine` — "this file's only anti-concentration" —
 is exactly the right tool after all. See the section note above `slabRoot`. The rest of this
 section stands verbatim: the ledger arithmetic, the eight-moment threshold, the `n^{-1/6}` gap at
-four moments, and both corrections to wave 38 are unchanged, and
+four moments, and both corrections below are unchanged, and
 `measure_abs_surrogate_window_slab_le` is the theorem they were describing. The one thing the
-wave-39 phrase "direction-uniform" got wrong in *degree* rather than in kind: only slopes
+phrase "direction-uniform" got wrong in *degree* rather than in kind: only slopes
 `|κ| ≤ surrogateSlopeBound = O(|x||r|)` occur, a **shrinking**
 family, and that is what makes the uniformity attainable.
 
-**Correction 1 to wave 38.** The assessment wrote that a two-dimensional Lévy concentration
+**Correction 1 to the assessment of `hcond`.** It wrote that a two-dimensional Lévy concentration
 bound "of the shape `sup over slabs S of width w of P(root ∈ S) ≤ Cw + η` … dominates the
 random-centre form directly". **It does not.** The window event is the *curvilinear* strip
 `{(u, v) : |u − m(v, x)| ≤ (6/5)w}`, not a slab; a slab bound applies only after the strip has
@@ -3337,8 +3333,8 @@ been straightened, and straightening is exactly the second-order defect proved h
 `|x|r²L²`. What a slab bound dominates directly is the straightened strip, and the whole content
 of the paragraph above is the price of the straightening.
 
-**Correction 2 to wave 38.** The assessment demanded "**no dependence of the right-hand side on
-the frozen value `y`, on the frozen index `i`, or on the window centre `x`**". The first two are
+**Correction 2 to the assessment of `hcond`.** It demanded "**no dependence of the right-hand side
+on the frozen value `y`, on the frozen index `i`, or on the window centre `x`**". The first two are
 genuine — `hslice` in `measure_pi_stratum_le` quantifies over `i` and `y` inside the constant
 `c`. The third is **too strong**: `abs_measure_le_sub_le_of_peel_strata` is applied at a *fixed*
 `x`, and `edgeworth_studentized_uniform` takes its supremum over `x` only at the very end, where
@@ -3464,7 +3460,7 @@ Combined with `|m₀| ≤ (6/5)|x|` (`exists_surrogate_centre`) and `|κ| = O(|x
 (`exists_surrogate_slope`) this says: on `|h| ≤ L` the window event lies within
 `(6/5)w + O(|x|r²L²)` of a **straight line**, so a direction-uniform slab bound applies with a
 *quadratic* rather than linear penalty in `L`. See the section note for the ledger arithmetic
-that follows, and for the two wave-38 claims it corrects. -/
+that follows, and for the two claims it corrects. -/
 theorem abs_sub_affine_centre_le {r x v₀ h m₀ m κ : ℝ}
     (hm0 : (m₀ - m₀ * v₀ * r / 2 + m₀ ^ 3 * r ^ 2 / 2 + 3 * m₀ * v₀ ^ 2 * r ^ 2 / 8) = x)
     (hm : (m - m * (v₀ + h) * r / 2 + m ^ 3 * r ^ 2 / 2
@@ -3501,7 +3497,7 @@ theorem abs_sub_affine_centre_le {r x v₀ h m₀ m κ : ℝ}
 
 /-! ### The frozen-centre slice bound, and what it is worth against the ledger
 
-**WAVE 39, and this is the item to check.** `measure_abs_surrogate_window_le` is the honest
+`measure_abs_surrogate_window_le` is the honest
 probabilistic consequence of the centre calculus above: it is an *unconditional* bound on the
 window mass of `Hₙ` in terms of (i) the **marginal** window bound for the first standardized
 coordinate — which is free, `measure_pi_abs_root_insertNth_le` supplies it uniformly in the
@@ -3537,7 +3533,7 @@ only `|x|n^{-1/2}√(log n)`, still short of `n^{-2/3}`. **No moment hypothesis 
 coordinate repairs the deterministic-centre route**, because the term it has to beat is the
 *displacement of the centre itself*, `A·Lip·L`, which is linear in the truncation level.
 
-**What the Lipschitz estimate is actually worth — the wave-39 number.** Granted a rectangle
+**What the Lipschitz estimate is actually worth.** Granted a rectangle
 (equivalently: conditional) bound `P(U ∈ I, V ∈ J) ≤ (A|I| + η₀)·P(V ∈ J)` valid for `J` of
 length `h`, partitioning `v`-space into cells of width `h` and applying
 `abs_sub_frozen_centre_le_of_surrogate_window` on each cell gives
@@ -3547,14 +3543,14 @@ length `h`, partitioning `v`-space into cells of width `h` and applying
 and the ledger closes iff `A·Lip·h = O(n^{-2/3})`, i.e. **iff the rectangle bound holds down to
 `h ≲ n^{-1/6}`**. A rectangle bound at scale `h = O(1)` — the strength of a two-dimensional
 Berry–Esseen at rectangles — is *not* enough; what is needed is a two-dimensional **local**
-limit theorem, resolving the second coordinate at scale `n^{-1/6}`. Wave 38 said "a
+limit theorem, resolving the second coordinate at scale `n^{-1/6}`. The assessment asked for "a
 two-dimensional Lévy concentration bound"; this is the same brick with its required strength
 priced. (Note that a *perfect* conditional bound makes the Lipschitz estimate unnecessary
 altogether: conditionally on `V`, the centre `m(V, x)` is deterministic. The Lipschitz estimate
 is exactly the device that converts the conditional statement into a rectangle statement at a
 finite scale, and `n^{-1/6}` is that scale.)
 
-**Uniformity in the frozen value, and why the wave-37 truncation is what makes it possible.**
+**Uniformity in the frozen value, and why the truncation is what makes it possible.**
 `measure_pi_stratum_le`'s `hslice` demands a bound uniform over the frozen value `y`. Freezing
 coordinate `i` at `y` makes the second standardized coordinate
 `V(z) = a₁(y) + s·(second-coordinate root of the retained block)` with
@@ -3564,9 +3560,9 @@ above then carries `|v₀| = |a₁(y)|`, which is unbounded in `y`, and it stays
 multiplication by `|r|` **exactly when `|Y(y) − μ| = O(√n)`**. That is precisely what
 `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n` supplies: on the truncated law
 `|a₁(y)| ≤ (n + σ²)/(σ²√(n+1)) = O(√n)`, hence `|r||v₀| = O(1)`. So the truncation step is not
-only the moment device wave 37 used it as — **it is what makes `hslice`'s uniformity in the
+only a moment device — **it is what makes `hslice`'s uniformity in the
 frozen value achievable at all**, and any route that drops it loses the uniformity, not just
-the moments. This obstruction is not recorded anywhere before wave 39. -/
+the moments. -/
 
 /-- **The window mass of the surrogate, from a marginal window bound and a tail bound.**
 
@@ -3661,7 +3657,7 @@ theorem measure_abs_deltaSurrogate_sub_le_of_window
 
 /-! ### The STRAIGHTENED slice bound, and the ledger it meets
 
-**WAVE 40.** The section above prices the *frozen-centre* route and records that it is short of
+The section above prices the *frozen-centre* route and records that it is short of
 the ledger by `n^{-1/3}`, and the section before it proves that the level curve of `Hₙ` is
 straight to second order. What was missing was the theorem that spends the second fact: the
 straightened slice bound. This section is that theorem, together with the two pieces of pricing
@@ -3676,7 +3672,7 @@ and returns the window mass of `Hₙ(U, V)` as
 
 `A·((6/5)w + (6/5)·surrogateDefect r x v₀ K L) + η₀ + P(|V − v₀| > L)`,  `K = surrogateSlopeBound`.
 
-The containment behind it is the wave-39 calculus, used exactly once each: the window pulls back
+The containment behind it is the centre calculus, used exactly once each: the window pulls back
 to `|U − m(V, x)| ≤ (6/5)w` (`abs_sub_surrogate_centre_le`), the centre at `V` is within
 `(6/5)·surrogateDefect` of the *straight line* `m₀ + κ(V − v₀)` (`abs_sub_affine_centre_le`, with
 the slope of `exists_surrogate_slope` and the a-priori `|m₀| ≤ (6/5)|x|`), and the two add.
@@ -3702,8 +3698,7 @@ polynomial identity, so no real-power arithmetic enters the file and no constant
 At the optimum `L² ≍ (b(n+1)/(c|x|))^{1/3} ≍ n^{1/3}`, hence `|r|L ≍ n^{-1/3} → 0` and `|κ|L ≍
 |x|n^{-1/2}·n^{1/6} → 0` for `|x| = o(n^{1/3})`: every term of `surrogateDefect` beyond the
 leading `(3r²/8)|m₀|L²` carries an extra `|κ|` or `|r|L` and is therefore lower order. The ledger
-is self-consistent, which is what wave 39 predicted and this section verifies at the level of the
-constants.
+is self-consistent, and this section verifies that at the level of the constants.
 
 **What is still an input, and it is one thing.** `hslab` is the direction-uniform slab bound for
 the bivariate root, at accuracy `η₀ = O(n^{-2/3})`. The next section reduces it, by projection,
@@ -3714,7 +3709,7 @@ remains after that reduction. Nothing else in this section is hypothetical. -/
 and the frozen second coordinate `v₀`. This is `exists_surrogate_slope`'s bound with `|m₀|`
 replaced by its own a-priori bound `(6/5)|x|` from `exists_surrogate_centre`, so it depends only
 on data the caller has. It is `O(|x||r|)`, and on the studentized route `|r||v₀| = O(1)` by the
-wave-37 truncation, so it is `O(|x|n^{-1/2})`. -/
+truncation at `τ = √n`, so it is `O(|x|n^{-1/2})`. -/
 noncomputable def surrogateSlopeBound (r x v₀ : ℝ) : ℝ :=
   36 / 25 * |x| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4)
 
@@ -3770,13 +3765,13 @@ lemma abs_sub_affine_centre_le' {r x v₀ h m₀ m κ K L : ℝ}
 The hypothesis `hslab` is uniform over all offsets `c'` and over the slopes `κ'` the level curve
 can actually produce, `|κ'| ≤ surrogateSlopeBound r x v₀ = O(|x||r|)`. **The restriction to a
 bounded — indeed shrinking — slope range is not a technicality; it is what makes the hypothesis
-attainable**, and it is a correction to the wave-39 phrasing "direction-uniform slab bound",
+attainable**, and it is a correction to the phrasing "direction-uniform slab bound",
 which suggested a supremum over the whole circle of directions. Only directions within
 `O(|x|n^{-1/2})` of the first coordinate axis are ever used, and along that shrinking family the
 projected summand is a *perturbation* of the first standardized coordinate; see the section
 below on `slabRoot`.
 
-This is the wave-40 replacement for `measure_abs_surrogate_window_le`, and it differs from it in
+This is the replacement for `measure_abs_surrogate_window_le`, and it differs from it in
 exactly one place: the deviation of the level curve from the frozen centre is paid at the
 *straight line* through it rather than at the centre itself, so the penalty is quadratic in the
 truncation level `L` rather than linear. See the section note for the ledger arithmetic. -/
@@ -3904,12 +3899,12 @@ theorem measure_abs_gt_le_fourth_moment_of_integrable {Ω : Type*} [MeasurableSp
 
 /-! ### The slab bound BY PROJECTION: a slab of the bivariate root is a one-dimensional root
 
-**WAVE 40, and this is the item that changes the shape of the residue.** The straightened slice
+**This is the item that changes the shape of the residue.** The straightened slice
 bound above consumes `hslab`, a bound on the mass the bivariate root gives to the slab
-`{|u − κ'v − c'| ≤ w'}`, uniformly over the slopes `|κ'| ≤ surrogateSlopeBound = O(|x||r|)`. Wave
-39 called this "a direction-uniform slab bound … Mathlib has no anti-concentration theory in any
-dimension". **That framing is wrong, and the reason is one line of algebra**: the slab functional
-is *linear*, so
+`{|u − κ'v − c'| ≤ w'}`, uniformly over the slopes `|κ'| ≤ surrogateSlopeBound = O(|x||r|)`. The
+notes above call this "a direction-uniform slab bound … Mathlib has no anti-concentration theory
+in any dimension". **That framing is wrong, and the reason is one line of algebra**: the slab
+functional is *linear*, so
 
 `u(z) − κ'v(z) = n^{-1/2} ∑_j (Z(z_j)₀/σ − κ'·Z(z_j)₁/σ²) = n^{-1/2} ∑_j slabRoot Z σ κ' (z_j)`
 
@@ -3928,7 +3923,7 @@ hypotheses are:
    moments of it are **eight** moments of `X` — the same eight that item 2's ledger spends, and
    for a *different* reason. `abs_slabRoot_le` is the domination that makes the bound on those
    moments uniform over the slope range: `|slabRoot| ≤ |Z₀|/σ + K|Z₁|/σ²` when `|κ'| ≤ K`.
-2. **Nondegeneracy, uniformly in the slope.** Free, and **not by the route the wave-39 note
+2. **Nondegeneracy, uniformly in the slope.** Free, and **not by the route the earlier note
    suggested.** That note pointed at `integral_studentPair_dir_sq_pos` and, implicitly, at a
    smallest-eigenvalue-over-the-sphere argument. No compactness is needed, because *the slope
    range shrinks*: `slabRoot Z σ κ' = f − κ'g` with `f` the first standardized coordinate, so the
@@ -3961,13 +3956,12 @@ an explicit expression, increasing in `(ρ₃, β₄, |m₃|)` and decreasing in
 moment bounds of (1), the uniform variance floor of (2) and the uniform Cramér constant of (3),
 and every constant in `edgeworth_mean_uniform`'s proof — including the geometric sums from
 `exists_pow_mul_geometric_le`, which are monotone in the ratio — becomes slope-uniform. **So the
-residue of (U3) is now bookkeeping: threading an existing proof's constants. It is not a missing
-analytic tool.** That is a strictly better verdict than wave 39's, and it is the one this wave
-is willing to defend; the threading itself is not done here and is not claimed.
+residue of (U3) is bookkeeping: threading an existing proof's constants. It is not a missing
+analytic tool.**
 
-**WAVE 41 — THE THREADING IS DONE, AND THE PARAGRAPH ABOVE IS NOW HISTORY.**
-`edgeworth_mean_uniform_of_bounds` is the quantitative restatement this note asked for, and
-`exists_window_bound_slabRoot` is the slope-indexed window bound it was wanted for: **one** `A`
+**THE THREADING IS DONE.**
+`edgeworth_mean_uniform_of_bounds` is the quantitative restatement this note asks for, and
+`exists_window_bound_slabRoot` is the slope-indexed window bound it is wanted for: **one** `A`
 and **one** `η = O(n⁻¹)`, at every slope. Two corrections to the pricing above, both in the
 direction of more work rather than less, and both recorded on `edgeworth_studentized_uniform`.
 
@@ -3980,7 +3974,7 @@ at every one of its three occurrences, which is a fact about the assembly and no
 *Second*, "Cramér uniformly and for free" is very nearly true but not literally true.
 `exists_bound_norm_charFun_map_slabRoot` bounds `‖φ‖` on a *fixed* region `ε ≤ |s|`, while the
 quantitative theorem consumes the bound on `2πc/σ_κ ≤ |s|`; matching the two needs an **upper**
-bound on `σ_κ`, which no earlier wave recorded. It is again `abs_slabRoot_le`, so it is cheap,
+bound on `σ_κ`. It is again `abs_slabRoot_le`, so it is cheap,
 but it is an obligation and it is listed with the rest of (U3)'s remaining moment arithmetic.
 
 **One rate check, because it is the thing that would silently break.** The ledger needs
@@ -4187,28 +4181,28 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
 
 /-! ### (U3) COMPOSED: `hslice` for the surrogate, out of a one-dimensional marginal bound
 
-**WAVE 40.** The two halves now meet. `measure_pi_abs_deltaSurrogate_insertNth_le` is the
+The two halves now meet. `measure_pi_abs_deltaSurrogate_insertNth_le` is the
 frozen-coordinate window bound for `T = deltaSurrogate σ r ∘ (bivariate root)` — the statement
-`measure_pi_stratum_le` calls `hslice` and the one this file has named as the residue of (U3)
-since wave 21 — proved from
+`measure_pi_stratum_le` calls `hslice` and the one this file names as the residue of (U3) —
+proved from
 
 * the **marginal, slope-uniform, one-dimensional** window bound at size `n` (`hwin`), and
 * a **tail bound** for the second standardized coordinate (`htail`),
 
 and from nothing else. The route is: the slab functional of the frozen root is a one-dimensional
 root of `slabRoot` (`vecRoot_slab_eq` at size `n + 1`), so
-`measure_pi_abs_root_insertNth_le` — the wave-18 transfer that is *free*, uniform in the frozen
+`measure_pi_abs_root_insertNth_le` — the transfer that is *free*, uniform in the frozen
 value `y` and the frozen index `i`, at the cost of a single factor `√2` — applies to it
 (`measure_pi_abs_slab_insertNth_le`); and then the straightened slice bound converts a slab
 bound into a window bound for `Hₙ` (`measure_abs_deltaSurrogate_sub_le_of_slab`).
 
-**This is the wave-21 caveat discharged.** The note on `measure_pi_abs_root_insertNth_le` says,
+**This is the caveat discharged.** The note on `measure_pi_abs_root_insertNth_le` says,
 correctly, that the transfer "is not the statement the peeled assembly consumes", because `Hₙ` is
 a degree-four polynomial of the bivariate root and `measure_abs_sub_le_of_affine` does not apply
-to it. That is still true of `Hₙ`. What wave 40 supplies is the intermediate object for which it
-*is* true — the slab functional, which is affine — together with the two theorems that get from
-`Hₙ` down to it (monotonicity in the first coordinate, straightening of the level curve) and back
-up (the slab-to-window conversion). Neither wave 21 nor wave 38 had that object.
+to it. That is still true of `Hₙ`. What this section supplies is the intermediate object for
+which it *is* true — the slab functional, which is affine — together with the two theorems that
+get from `Hₙ` down to it (monotonicity in the first coordinate, straightening of the level curve)
+and back up (the slab-to-window conversion).
 
 **The `y`-uniformity, and how it is discharged.** `hslice` demands a constant free of `i` and
 `y`. Freezing coordinate `i` at `y` makes the second standardized coordinate
@@ -4217,10 +4211,10 @@ up (the slab-to-window conversion). Neither wave 21 nor wave 38 had that object.
 `surrogateDefect r x v₀ K L`. `measure_abs_deltaSurrogate_sub_le_of_slab_unif` closes that loop:
 both are **monotone in `|v₀|`** (`surrogateSlopeBound_mono`, `surrogateDefect_mono`), so it
 suffices to bound `|a₁(y)|` by a single `v̄` and to ask for the slab bound on the correspondingly
-larger slope range `|κ'| ≤ K̄`. On the truncated law of the wave-37 step at `τ = √n` one has
+larger slope range `|κ'| ≤ K̄`. On the truncated law at `τ = √n` one has
 `|a₁(y)| ≤ (n + σ²)/(σ²√(n+1)) = O(√n)` and hence `|r|v̄ = O(1)`, which is exactly the size at
 which `surrogateSlopeBound = O(|x||r|)` and `surrogateDefect`'s leading term stays
-`O(|x|r²L²)`. So the truncation is not merely a moment device — wave 39's finding — and now the
+`O(|x|r²L²)`. So the truncation is not merely a moment device, and the
 bookkeeping that spends it is in the file.
 
 **What the headline still needs, and it is two things, neither of them (U3)'s geometry.**
@@ -4228,13 +4222,12 @@ bookkeeping that spends it is in the file.
 1. *The quantitative `edgeworth_mean_uniform`* — see the section note above `slabRoot`. Until its
    constant is exposed, `hwin` cannot be produced slope-uniformly, and `hwin` is the one
    hypothesis of `measure_pi_abs_deltaSurrogate_insertNth_le` that is not discharged anywhere.
-2. *The quantitative half of (U4)* — unchanged since wave 38: the `k = 3, 4` and
+2. *The quantitative half of (U4)*: the `k = 3, 4` and
    graded-remainder terms of `norm_charFun_map_deltaSurrogate_sub_graded_le` priced against
-   `windowEnvelope`. Also unchanged: input (B), which the certificate rests on.
+   `windowEnvelope`, together with input (B), which the certificate rests on.
 
-`edgeworth_studentized_uniform` therefore remains `sorry`, and this wave does **not** claim
-otherwise. What changed is the character of its residue: after wave 39 it contained a missing
-analytic theory (two-dimensional anti-concentration); after wave 40 it does not. -/
+What this section changes is the character of the residue of `edgeworth_studentized_uniform`: it
+no longer contains a missing analytic theory (two-dimensional anti-concentration). -/
 
 /-- `surrogateSlopeBound` is monotone in `|v₀|` — one of the two facts that make the slice
 constant uniform in the frozen value. -/
@@ -4341,7 +4334,7 @@ theorem measure_pi_abs_slab_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
 /-- **(U3)'s `hslice`, for the surrogate.** The frozen-coordinate window bound for
 `deltaSurrogate σ r ∘ (bivariate root)`, out of the marginal slope-uniform one-dimensional
 window bound at size `n` and a tail bound for the second standardized coordinate. This is the
-statement `measure_pi_stratum_le` consumes and the one wave 21 named as the residue; see the
+statement `measure_pi_stratum_le` consumes and the residue of (U3); see the
 section note for what discharging it does and does not settle. -/
 theorem measure_pi_abs_deltaSurrogate_insertNth_le {n : ℕ} (μ : Measure ℝ)
     [IsProbabilityMeasure μ] {Z : ℝ → EuclideanSpace ℝ (Fin 2)}
@@ -4372,7 +4365,7 @@ theorem measure_pi_abs_deltaSurrogate_insertNth_le {n : ℕ} (μ : Measure ℝ)
 
 /-! ### Nondegeneracy of the studentized pair from absolute continuity
 
-**WAVE 39.** Every route to a two-dimensional limit theorem for the bivariate root needs the
+Every route to a two-dimensional limit theorem for the bivariate root needs the
 limit covariance to be **nondegenerate**, and the hypothesis of `edgeworth_studentized_uniform`
 carries only `hFac : F ≪ volume`. That is enough, and the reason is elementary: a nonzero
 directional combination of the two coordinates of `studentPair F` is a nonconstant **quadratic**
@@ -4380,8 +4373,8 @@ in the sample, and a quadratic takes any given value on at most two points, a Le
 So `⟪studentPair F ·, t⟫` cannot be a.s. constant for `t ≠ 0`, and its second moment is
 therefore strictly positive.
 
-This is the formal content of "a law with a density is not two-valued"; it is not in the file
-before this wave, and it is the one ingredient of the missing rectangle brick (see the note on
+This is the formal content of "a law with a density is not two-valued", and it is the one
+ingredient of the missing rectangle brick (see the note on
 `measure_abs_surrogate_window_le`) that is *not* missing. Both statements are recorded for an
 arbitrary quadratic so that they also cover the truncation-shifted and re-centred variants the
 studentized route produces. -/
@@ -4525,8 +4518,8 @@ it is `(iθq)²/2` with `q = −uvr/2` the leading correction — and it is why
 
 `norm_cexp_surrogate_sub_expansion_le` is that expansion, pointwise and with no probability in
 it. Its remainder is `r³ · surrogateRemPoly θ u v`, an explicit polynomial of degree nine in
-`(|u|, |v|)`. **The degree is the whole content of the wave-18 warning** and is recorded here in
-a form no later wave can misread: integrating `surrogateRemPoly` against the law of the root
+`(|u|, |v|)`. **The degree is the whole point** and is recorded here in
+explicit form: integrating `surrogateRemPoly` against the law of the root
 needs moments of the root far beyond the fourth, so the expansion is legitimate under a finite
 fourth moment of `F` only after the summands are truncated — which is what
 `measure_pi_truncated_sum_le_exp` is for. -/
@@ -4583,7 +4576,7 @@ lemma surrogateRemPoly_le_of_abs_le (θ : ℝ) {u v A B : ℝ} (hu : |u| ≤ A) 
 
 `surrogateRemPoly` is obtained from the pointwise expansion by collapsing every power of `r`
 onto a single `r³` (the step `r² ≤ r` in the proof below). **That collapse is not harmless**, and
-the wave-25 re-derivation of residue (ii) is exactly this: with it, *no* truncation level makes
+the re-derivation of residue (ii) is exactly this: with it, *no* truncation level makes
 the remainder `O(n⁻¹)` under a fourth moment; without it, the classical level `τ = √n` makes
 every single monomial `O(n⁻¹)` and nothing else does.
 
@@ -4604,7 +4597,7 @@ Now compare the two envelopes on the worst monomial `|u|³|v|⁶`.
   `τ = O(n^{5/16})`; but the change of law (`abs_measure_pi_sub_comp_le` with Markov) needs
   `n·Eξ⁴/τ⁴ = O(n⁻¹)`, i.e. `τ ≥ n^{1/2}`. **The two requirements are incompatible**, so the
   collapsed envelope cannot be repaired by any choice of truncation level. This overturns the
-  wave-23 prescription ("choose the truncation level so both halves are `O(n⁻¹)`; level `√n` is
+  prescription ("choose the truncation level so both halves are `O(n⁻¹)`; level `√n` is
   the classical choice") as stated: with `surrogateRemPoly` there is no such level.
 * **Graded.** `surrogateRemGraded` keeps `r⁶A³`, so the same monomial contributes
   `r⁶E|ṽ|⁶ ≍ n^{-3}n² = n⁻¹`. Every other monomial lands on `n⁻¹` too, and *exactly* on it:
@@ -4753,7 +4746,7 @@ theorem norm_cexp_surrogate_sub_expansion_graded_le (θ u v r : ℝ) (hr : 0 ≤
   rw [surrogateRemGraded, ← hAdef]
   linarith [hcube, hquad]
 
-/-- **The pointwise expansion with the collapsed envelope**, as the earlier waves stated it.
+/-- **The pointwise expansion with the collapsed envelope**, a corollary of the graded one.
 It is the graded bound of `norm_cexp_surrogate_sub_expansion_graded_le` followed by
 `surrogateRemGraded_le`; the note above records why the collapsed form is the one that cannot be
 made `O(n⁻¹)` under a fourth moment, at any truncation level. -/
@@ -4771,7 +4764,7 @@ theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr
 
 /-! ### The surrogate's characteristic function, assembled from the multilinear identity
 
-This is the construction the wave-21 note recorded as absent. `E[e^{iθHₙ}]` is not a power of a
+This section constructs the surrogate's characteristic function. `E[e^{iθHₙ}]` is not a power of a
 characteristic function and no expansion above applies to it; what
 `norm_cexp_surrogate_sub_expansion_le` supplies is a *pointwise* second-order expansion whose
 four weights are exactly the ones `multiCharFun_vecRootLaw` evaluates. Integrating it against an
@@ -4785,8 +4778,8 @@ with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`, `c₅ = �
 `r³ ∫ surrogateRemPoly`. Each `multi` is a `multiCharFun` at `k = 2, 3, 3, 4`, so (X2) factorises
 it over the coordinates and the assembly can proceed exactly as in the scalar case.
 
-**What this does and does not settle.** The identity and the remainder bound are unconditional
-and axiom-clean. The *size* of the remainder is not: `∫ surrogateRemPoly` is a ninth moment of
+**What this does and does not settle.** The identity and the remainder bound are
+unconditional. The *size* of the remainder is not: `∫ surrogateRemPoly` is a ninth moment of
 the root's coordinates, finite under a fourth moment of `F` only after truncation. That is the
 one place where `measure_pi_truncated_sum_le_exp` has to enter, and it is the reason the Esseen
 chain on top of this cannot simply copy the scalar one. -/
@@ -5066,8 +5059,8 @@ bivariate root.**
 at the direction `(θ/σ) • e₀` and with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`,
 `c₅ = θ²r²/8σ⁶`.
 
-**This is the construction wave 21 recorded as missing**, and it is stated over an arbitrary
-`μ` on purpose: the peeled assembly needs the surrogate's distribution theory both marginally
+**It is stated over an arbitrary `μ` on purpose**: the peeled
+assembly needs the surrogate's distribution theory both marginally
 and on a block whose bivariate mean is additively perturbed, and by
 `measure_abs_sub_le_of_abs_cdf_sub_le` those are the same statement at two different laws. Taking
 `μ = vecRootLaw F (studentPair F) n` gives the marginal instance and feeds each `multiCharFun` to
@@ -5148,7 +5141,7 @@ theorem norm_integral_cexp_deltaSurrogate_sub_graded_le (μ : Measure E₂)
     integral_mono (hF.sub hG).norm hrem hpt
   exact hmono
 
-/-- **The assembled transform with the collapsed envelope**, the form the earlier waves recorded.
+/-- **The assembled transform with the collapsed envelope**, a corollary of the graded one.
 It is `norm_integral_cexp_deltaSurrogate_sub_graded_le` composed with `surrogateRemGraded_le`;
 see the note on the grading for why the collapsed form cannot reach `O(n⁻¹)` under a fourth
 moment at any truncation level, while the graded one does at `τ = √n`. -/
@@ -5194,7 +5187,7 @@ This is the bridge between `norm_integral_cexp_deltaSurrogate_sub_graded_le` and
 machinery: `abs_measure_Iic_sub_densityCDF_le_charFun` consumes a *characteristic function of a
 law on the line*, and the law in question is the pushforward of the bivariate root's law under
 the surrogate — not the root's law itself. Recording the bridge as its own statement is what
-makes that distinction visible; see the wave-26 note on `edgeworth_studentized_uniform` for why
+makes that distinction visible; see the note on `edgeworth_studentized_uniform` for why
 it matters on the outer range. -/
 lemma charFun_map_deltaSurrogate (μ : Measure E₂) (σ r θ : ℝ) :
     charFun (μ.map (deltaSurrogate σ r)) θ
@@ -5245,11 +5238,11 @@ The witness is the two-valued `G(w) = 1_{w₀ > 0}`, whose pushforward is carrie
 lattice; it is *not* degenerate — for any `μ` charging both half-planes the pushforward has full
 support in `{0,1}` — so non-degeneracy of the functional is not what is missing either.
 
-This is the formalized half of the wave-26 correction on `edgeworth_studentized_uniform`: the
+This is the formalized half of the correction on `edgeworth_studentized_uniform`: the
 Esseen chain's outer range is on the law of the surrogate `Hₙ`, and
 `exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the characteristic function of the
 *root*. `Hₙ` is of course not `⌊·⌋`, and its outer-range bound is true; the point is that
-deducing it is an analytic item — the same category distinction wave 21 found for the *window*
+deducing it is an analytic item — the same category distinction as for the *window*
 of the peeled assembly, one level up. -/
 theorem exists_measurable_charFun_map_eq_one :
     ∃ G : E₂ → ℝ, Measurable G ∧
@@ -5308,7 +5301,7 @@ bandwidth:
 * the `L¹(ρ)` error `η` is at most `ρ{‖w‖ > M}`, and at `M = n^{3/8}` a fourth moment of the
   root gives `O(n^{-3/2})`.
 
-**The correction this records.** The wave-26 note and the wave-27 prompt prescribe Hall's
+**The correction this records.** The natural route is Hall's
 conditioning device — freeze `n − k` coordinates, linearise `Hₙ` in the free block, and multiply
 the conditional Cramér bounds. That composition **cannot reach `O(n^{-3/2})`, at any `k`**, and
 the reason is deterministic: `deltaSurrogate_sub_linear_ge` shows the linearisation error of
@@ -5317,7 +5310,7 @@ the reason is deterministic: `deltaSurrogate_sub_linear_ge` shows the linearisat
 On a free block of `k` coordinates the increment has `|h₀| ≍ σ√(k/n)` and `|h₁| ≍ σ²√(k/n)`, so
 with `|θ| ≍ √n` and `r = n^{-1/2}` the additive price of the linearisation is
 `|θ| · r · |h₀h₁|/(2σ³) ≍ k/n`, while the Cramér gain from the block is `ρ^k`. The first
-demands `k = O(n^{-1/2})` and the second `k ≍ n`: **incompatible**, exactly as wave 25 found for
+demands `k = O(n^{-1/2})` and the second `k ≍ n`: **incompatible**, exactly as for
 the truncation level. Freezing the second coordinate instead (Hall's own variant: condition on
 `|X_i − m|`, leaving the signs free) removes the `uv` term but leaves `u³r²/2`, and the same
 computation gives a price `≍ k n^{-1/2}/n^{0}`, again `O(n^{-1/2})` at `k ≍ n`. The
@@ -5571,7 +5564,7 @@ tail.** The composition `exists_bound_norm_charFun_vecRootLaw_studentPair` (whic
 
 `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖ ≤ Γcⁿ + ε + η`.
 
-This is the statement wave 26 recorded as "not a composition". It *is* one — the missing datum
+This statement *is* a composition — the missing datum
 was not a probabilistic estimate but the certificate, and `exists_measurable_charFun_map_eq_one`
 is consistent with that: its two-valued witness admits no certificate with small leakage,
 because the Fourier transform of an indicator has no decay. -/
@@ -5590,13 +5583,13 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le
 
 /-! ### (W30) The leakage ball belongs at the origin of *frequency*, not of `s`
 
-The wave-27 certificate measures the leakage of the weight `a` **outside a ball of radius
+The certificate measures the leakage of the weight `a` **outside a ball of radius
 `R = |θ|/(2σ)` centred at `s = 0`**, so that every frequency carrying mass satisfies
 `‖t₀ + s‖ ≥ ‖t₀‖ − R`. That shape is unreachable, for two independent arithmetic reasons, and
 the repair is not a change of constants but a relocation of the ball.
 
 **(1) The `L¹(ρ)` error is not `O(M^{-4})` under the standing hypothesis.** The error is at best
-`ρ{‖w‖ > M}`, and the wave-27 note prices that by "a fourth moment of the root". There is no
+`ρ{‖w‖ > M}`, and the note above prices that by "a fourth moment of the root". There is no
 such thing here. The root's *second* coordinate is `w₁ = n^{-1/2}∑((Xᵢ − m)² − σ²)`, so a fourth
 moment of `F` — which is all `hF4` gives — is only a **second** moment of its summand `ζ`. On
 the truncated law, whose level `τ = √n` is forced from both sides by the change of law
@@ -5607,7 +5600,7 @@ the truncated law, whose level `τ = √n` is forced from both sides by the chan
 
 and this is sharp — for `P(|ξ| > t) ≍ t^{-4}(log t)^{-2}` the first term is `≍ n/(log n)²`. So
 `ρ{‖w‖ > M} ≲ min(M^{-2}, n M^{-4})`, and `η = O(n^{-3/2})` forces `M ≥ n^{5/8}`, not the
-`M = n^{3/8}` the wave-27 note records. (A rectangle `|w₀| ≤ n^{3/8}`, `|w₁| ≤ n^{5/8}` is
+`M = n^{3/8}` the note above records. (A rectangle `|w₀| ≤ n^{3/8}`, `|w₁| ≤ n^{5/8}` is
 admissible — `w₀` does have four moments — but does not lower the `w₁` radius, which is what the
 phase's gradient sees.)
 
@@ -5615,8 +5608,8 @@ phase's gradient sees.)
 `θ(Hₙ − w₀/σ)` has gradient `≍ |θ|(Mr + M²r²) = |θ| n^{1/8}` on a bulk of radius `M = n^{5/8}`,
 which exceeds the admitted bandwidth `R = |θ|/(2σ)` by `n^{1/8}`; and `R` cannot be enlarged,
 since `‖t₀‖ − R ≥ ε₀√n` caps it at `|θ|/σ`. Integration by parts against `‖s‖ > R` therefore has
-no gain to extract. This is the fourth arithmetic incompatibility in the series (wave 25: the
-truncation level; wave 26: the uniform moment allowance; wave 27: the linearisation block size).
+no gain to extract. This is the fourth arithmetic incompatibility in the series (after the
+truncation level, the uniform moment allowance and the linearisation block size).
 
 **(3) The repair, and it is structural.** What the transfer inequality actually needs is not that
 the weight sit near the carrier, but that it put little mass on the frequencies where `‖φ_ρ‖` is
@@ -5644,12 +5637,12 @@ varying — a demand the bulk radius `M` defeats.
 With the ball relocated the arithmetic closes at `M = n^{5/8}`: each integration by parts in `w₀`
 gains `‖χ'‖σ/(M|θ|) + (27/16)Mr²σ/|θ| = O(n^{-9/8}) + O(n^{-7/8})` against a prefactor
 `∫χ(·/M) = O(M²) = O(n^{5/4})` and a bad-set area `≍ ε₀²n`, so `N = 5` integrations by parts give
-`O(n^{9/4} · n^{-35/8}) = O(n^{-3/2})`. Twelve, let alone the wave-27 note's twenty-six, are not
+`O(n^{9/4} · n^{-35/8}) = O(n^{-3/2})`. Twelve, let alone twenty-six, are not
 needed; what was needed was the right bad set.
 
 **(4) The mass may not be taken uniform in `θ`.** `Γ` is at least the `L¹` mass of the transform
 of a function oscillating at frequency `≍ |θ|n^{1/4}` over a ball of radius `M`, hence grows like
-`M²(|θ|n^{1/4})² ≍ n^{7/4}θ²`; the construction offers no `θ`-uniform bound, and the wave-27
+`M²(|θ|n^{1/4})² ≍ n^{7/4}θ²`; the construction offers no `θ`-uniform bound, and the
 signature's `Γ : ℕ → ℝ` is amended to `Γ : ℕ → ℝ → ℝ` bounded polynomially in `n` and `|θ|`
 jointly. This is free downstream: `Γ(n, θ)cⁿ` exceeds the trivial bound `‖φ‖ ≤ 2` only for
 `|θ| ≳ c^{-n/K}`, and the Esseen weight `min(1/(π|ξ|), 1/(δπ²ξ²))` prices the whole range beyond
@@ -5666,11 +5659,11 @@ theorem deltaSurrogate_slope_ge (x : ℝ) : (5 : ℝ) / 6 ≤ 1 - x / 2 + 3 * x 
 
 private lemma coordDir_add_apply_zero (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 0 = w 0 + t := by
-  simp [coordDir]
+  simp [coordDir, PiLp.single_apply]
 
 private lemma coordDir_add_apply_one (w : E₂) (t : ℝ) :
     (w + t • (coordDir 0 : E₂)) 1 = w 1 := by
-  simp [coordDir]
+  simp [coordDir, PiLp.single_apply]
 
 /-- **The cut-off-free integrated form of `deltaSurrogate_slope_ge`.** Moving the argument by
 `t ≥ 0` along the first coordinate increases the surrogate by at least `5t/(6σ)` — at every `w`,
@@ -5856,12 +5849,12 @@ theorem norm_charFun_map_deltaSurrogate_le_of_bandCertificate (μ : Measure E₂
 
 /-! ### The two-regime `κ`, and why the band no longer has to start at the Cramér radius
 
-**WAVE 44.** The consumer below asks for one thing off the band: a number `κ` with
-`‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`. Wave 31 supplied it from the Cramér tail alone, `κ = cⁿ`,
-which is available only past `ε₀√n` and therefore forced `R ≥ ε₀√n` — and, through
-`band_radius_incompatible`, the whole certificate up to `|θ| ≍ √n`. Wave 43 identified that as
-the certificate's only obstruction and produced the missing ingredient
-(`norm_charFun_vecRootLaw_le_exp_neg_sq`): on the bulk `‖t‖ ≤ ε₁√n` the root's transform has
+The consumer below asks for one thing off the band: a number `κ` with
+`‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`. The Cramér tail alone supplies `κ = cⁿ`,
+which is available only past `ε₀√n` and therefore forces `R ≥ ε₀√n` — and, through
+`band_radius_incompatible`, the whole certificate up to `|θ| ≍ √n`. That is
+the certificate's only obstruction, and the missing ingredient is
+`norm_charFun_vecRootLaw_le_exp_neg_sq`: on the bulk `‖t‖ ≤ ε₁√n` the root's transform has
 Gaussian decay. The two together cover **every** `t` off a ball of radius `R ≥ 0`, at
 
 `κ = max(e^{−λR²/4}, cⁿ)`,
@@ -5874,8 +5867,8 @@ with `Γ` merely polynomial (`band_kappa_ledger`).
 The shift lemmas are here because the Gaussian majorant is a statement about a **centred** law
 and the truncated studentizing pair is not centred: truncation moves the mean by the mass it
 moves. Since `‖φ‖` does not see a translation, the majorant may be applied to `Z − a` for the
-mean vector `a` and read off for `Z`; that is `norm_charFun_vecRootLaw_sub_const`. No wave before
-this one noticed that the moment list of item (ii) has a fourth entry. -/
+mean vector `a` and read off for `Z`; that is `norm_charFun_vecRootLaw_sub_const`. So the
+moment list of item (ii) has a fourth entry. -/
 
 section BandKappa
 
@@ -5944,8 +5937,8 @@ end BandKappa
 /-- **The outer *and middle* range of the Esseen chain, on the surrogate's law, from a band
 certificate and a two-regime bound on the root's transform.**
 
-**WAVE 44 AMENDS THE HYPOTHESIS, AND THIS IS WHAT WIDENS THE BAND.** The wave-31 form took the
-Cramér tail `cⁿ` and the constraint `ε₀√n ≤ R`, which `band_radius_incompatible` turns into
+**THE AMENDED HYPOTHESIS IS WHAT WIDENS THE BAND.** A form taking only the
+Cramér tail `cⁿ` and the constraint `ε₀√n ≤ R` is confined by `band_radius_incompatible` to
 `|θ| ≥ 2σε₀√n`. Here the root's transform is controlled in **both** regimes — Gaussian decay on
 `‖t‖ ≤ ε₁√n`, Cramér past it — so the band radius `R` is free (`0 ≤ R` is the only requirement)
 and the price is `κ = max(e^{−λR²/4}, cⁿ)` instead of `cⁿ`. At `R = K√(log n)` that is a
@@ -6161,7 +6154,7 @@ theorem abs_deltaSurrogate_sub_linear_ge {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr
 
 /-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
 
-Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
+Residue (ii) is naturally read as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
 under a fourth moment". **That understates it, and the understatement matters.** The hypotheses
 `h4` and `h5` of `norm_integral_cexp_deltaSurrogate_sub_le` — the integrability of the weights
 `w₀w₁²` and `(w₀w₁)²` against the law of the root — are themselves *false* for the untruncated
@@ -6182,7 +6175,7 @@ the root *is* the law of the summand, so `h5` reads verbatim `Integrable (ξ·η
 a sixth-moment condition on the sampling law. A law with `Eξ⁴ < ∞ = Eξ⁶` therefore falsifies the
 hypothesis outright.
 
-**The consequence for the programme.** Residues (i) and (ii) of the wave-23 note are *not*
+**The consequence for the programme.** Residues (i) and (ii) are *not*
 independent: the `k = 3, 4` estimates asked for by (i) are estimates of quantities that (ii)
 must first make finite. Both are discharged at once by running the expansion on the law of the
 *truncated* summands, and `integrable_surrogate_inputs_of_bounded` is that discharge: once
@@ -6432,7 +6425,7 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
 
 /-! ### The Cramér tail on the truncated law
 
-**Wave 37: an unrecorded gap in the outer range of the studentized chain, and the brick that
+**A gap in the outer range of the studentized chain, and the brick that
 closes it.** `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes a Cramér tail
 `hcram` and a certificate `hcert` **for the same law**, and
 `exists_fourierCertificate_deltaSurrogate` is stated — necessarily, since input (C) is a fourth
@@ -6581,28 +6574,29 @@ theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
 
 /-! ### The bulk multiplier, built; and the exponent ledger, verified
 
-Wave 30 reduced the certificate to "two bounds on `𝓕 g`" for `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, but
-left `g` itself as prose. It is built here — `bulkMultiplier`, with `bulkCutoff` the smooth
+The certificate reduces to two bounds on `𝓕 g` for `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, and
+`g` itself is built here — `bulkMultiplier`, with `bulkCutoff` the smooth
 `ContDiffBump` equal to `1` on the unit ball and supported in the ball of radius `2` — together
 with the five elementary facts `hasFourierCertificateOnBand_of_bulkMultiplier` consumes:
 continuity, integrability (compact support), modulus at most `1`, and the identification with the
 perturbation character on the bulk `‖w‖ ≤ M`.
 
-**The exponent ledger, checked line by line, and the wave-30 numerology stands.** The wave-30
-note asserts that at `M = n^{5/8}`, gain `n^{-7/8}` per part, prefactor `M² = n^{5/4}` and bad-set
-area `≍ n`, five integrations by parts close the leakage at `O(n^{-3/2})`. The four lemmas
+**The exponent ledger, checked line by line, and the numerology stands.** The note on the
+leakage ball asserts that at `M = n^{5/8}`, gain `n^{-7/8}` per part, prefactor `M² = n^{5/4}`
+and bad-set area `≍ n`, five integrations by parts close the leakage at `O(n^{-3/2})`.
+The four lemmas
 `bulkRadius_pow`, `leakage_ledger_exponent`, `leakage_ledger_five_le` and `tail_ledger_exponent`
 turn that arithmetic into checkable statements, and it is correct: the ledger returns
 `n^{9/4 − 7N/8}`, which at `N = 5` is `n^{-17/8} ≤ n^{-3/2}`.
 
 **What the check adds: `N = 5` is not a safe margin, it is the minimum.**
 `leakage_ledger_four_gt` is the formalized witness — at `N = 4` the ledger returns `n^{-5/4}`,
-which *exceeds* `n^{-3/2}` at every `n ≥ 2`. The wave-30 prompt's remark that "a sixth part costs
-nothing" is right, but a fourth-and-final one would have been fatal. (Three waves in a row
-corrected their predecessor's numerology; this one does not have to.)
+which *exceeds* `n^{-3/2}` at every `n ≥ 2`. A sixth part costs
+nothing, but a fourth-and-final one would have been fatal.
 
-**One correction, and it is a misplaced `σ`.** The wave-30 note prices the second term of an
-integration by parts as `(27/16)Mr²σ/|θ|`. The scale sits on the wrong side: the phase's second
+**One correction, and it is a misplaced `σ`.** The note on the leakage ball prices the
+second term of an integration by parts as `(27/16)Mr²σ/|θ|`. The scale sits on the wrong
+side: the phase's second
 derivative is `∂²_{w₀}(θHₙ) = 3θur²/σ² ≤ 3|θ|Mr²/σ³` on the support, and dividing by
 `|∂_{w₀}(θHₙ − ⟪·,s⟫)|² ≥ (4/3)²θ²/σ²` gives `(27/16)Mr²/(σ|θ|)`. Nothing downstream moves —
 `σ` is a constant of the problem and the `n`-exponent is unchanged — but the ledger lemma
@@ -6685,7 +6679,8 @@ lemma integrable_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
 
 /-- The **bulk radius** `M = n^{5/8}`, forced by `tail_ledger_exponent`: the truncated root has
 `E‖w‖⁴ = O(n)` and no more, so Markov at the fourth moment reaches `O(n^{-3/2})` exactly at this
-radius. Wave 27's `n^{3/8}` came from a fourth moment of the root that `hF4` does not supply. -/
+radius. The smaller radius `n^{3/8}` would need a fourth moment of the root that `hF4` does not
+supply. -/
 noncomputable def bulkRadius (n : ℕ) : ℝ := (n : ℝ) ^ ((5 : ℝ) / 8)
 
 lemma bulkRadius_pos {n : ℕ} (hn : 0 < n) : 0 < bulkRadius n :=
@@ -6777,9 +6772,10 @@ lemma leakage_ledger_four_gt {n : ℕ} (hn : 2 ≤ n) :
 
 /-! ### The middle range `n^{1/6} ≤ |θ| ≤ c₀√n`: which of the two routes survives
 
-**WAVE 43 — THE GAP WAVE 42 NAMED IS COVERED BY THE CERTIFICATE AND NOT BY THE EXPANSION, AND
-WHAT STOPS THE CERTIFICATE TODAY IS ITS *BAND GEOMETRY*, NOT ITS LEDGER.** Wave 42 left the
-range `n^{a} ≤ |θ| ≤ c₀√n` covered by nothing and offered two candidate routes. Both are run to
+**THE MIDDLE RANGE IS COVERED BY THE CERTIFICATE AND NOT BY THE EXPANSION, AND WHAT STOPS THE
+CERTIFICATE AS FIRST STATED IS ITS *BAND GEOMETRY*, NOT ITS LEDGER.** The note above
+`not_exists_const_mul_windowEnvelope_ge` leaves the range `n^{a} ≤ |θ| ≤ c₀√n` covered by
+nothing, and there are two candidate routes. Both are run to
 the end here, on paper and in the arithmetic below. One survives.
 
 **Route (a) — extend the certificate's band downward. THE LEDGER SURVIVES; THE BAND DOES NOT.**
@@ -6791,8 +6787,8 @@ the end here, on paper and in the arithmetic below. One survives.
   bad-set area — kept at the conservative `≍ n` of the current construction — the ledger returns
   `n^{9/4 − N(3/8 + b)}` (`leakage_ledger_band_exponent`, of which `leakage_ledger_exponent` is
   again `b = 1/2`). The requirement `≤ n^{-3/2}` is `N ≥ (15/4)/(3/8 + b)`: at `b = 1/2` that is
-  `30/7`, reproducing wave 31's `N = 5` and its minimality; at `b = 0` it is `10`. **So `N = 10`
-  clears the whole band at once**, at the same bulk radius, for every `b ≥ 0`
+  `30/7`, reproducing the outer range's `N = 5` and its minimality; at `b = 0` it is `10`.
+  **So `N = 10` clears the whole band at once**, at the same bulk radius, for every `b ≥ 0`
   (`leakage_ledger_ten_le`). The bulk radius itself does not move: `tail_ledger_exponent` forces
   `M ≥ n^{5/8}` from input (C) alone, which has no `θ` in it, and larger `M` only worsens the
   gain. **The number of integrations by parts is therefore finite and explicit at every band
@@ -6809,8 +6805,7 @@ the end here, on paper and in the arithmetic below. One survives.
   Together they force `|θ| ≥ 2σε₀√n`: `band_radius_incompatible`. **The `c₀√n` in
   `exists_fourierCertificate_deltaSurrogate` is therefore not a convenience and not an artefact
   of the ledger — it is `2σε₀`, and the certificate as stated cannot be run anywhere below order
-  `√n`.** No wave before this one identified which of the certificate's two ingredients carries
-  the `√n`.
+  `√n`.**
 * *The repair, and it is one named input rather than a theory.* Requirement 1 asks for far more
   than the transfer inequality uses. `norm_integral_fourierSynth_le_of_band` prices the good
   frequencies by `Γκ`, and `Γ` is polynomial in `n` and `|θ|`
@@ -6819,19 +6814,19 @@ the end here, on paper and in the arithmetic below. One survives.
   root's transform has Gaussian decay, `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}`, and that is
   `norm_charFun_vecRootLaw_le_exp_neg_sq` below — proved from `charFun_vecRootLaw` and the
   one-dimensional Gaussian majorant `norm_charFun_smul_le_exp_neg_sq` restricted to the ray
-  through `t`, with no two-dimensional argument anywhere, exactly as the wave-12 note predicted
+  through `t`, with no two-dimensional argument anywhere, exactly as
   for the bivariate expansion. Taking `R = K√(log n)` then gives
   `κ = max(e^{−λK²(log n)/4}, cⁿ)`, a negative power of `n` of any prescribed order, while
   requirement 2 relaxes to `|θ| ≥ 2σK√(log n)` — below `n^{a}` for **every** `a > 0`. The
   bad-set area drops from `≍ n` to `≍ log n` at the same time, which only helps the ledger.
-* *What the repair costs, itemised.* (i) input (B) — the non-stationary-phase estimate, a
-  `sorry` in this file since wave 31 — has to be restated at `R = K√(log n)` and `N = 10`
-  instead of `ε₀√n/(2σ)` and `N = 5`; since it is a `sorry` either way this is a statement
-  amendment, and the ledger above is the check that the amended statement is the true one.
+* *What the repair costs, itemised.* (i) input (B) — the non-stationary-phase estimate — has
+  to be restated at `R = K√(log n)` and `N = 10`
+  instead of `ε₀√n/(2σ)` and `N = 5`, and the ledger above is the check that the amended
+  statement is the true one.
   (ii) the direction-uniform moment hypotheses of `norm_charFun_vecRootLaw_le_exp_neg_sq` have
   to be discharged for `studentPair F ∘ truncAt`; they are a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²`, a
   variance ceiling and a third absolute moment, i.e. the nonsingular covariance of `(X, X²)`
-  that the wave-12 note already names, available under `hFac`. (iii) inputs (A) and (C) are
+  available under `hFac`. (iii) inputs (A) and (C) are
   untouched — neither mentions `θ` or `R`. **No new analytic theory appears in that list.**
 
 **Route (b) — individual smallness. IT CANNOT REACH THE TOP OF THE MIDDLE RANGE, AND NO MOMENT
@@ -6843,10 +6838,10 @@ HYPOTHESIS MAKES IT.**
   statement about `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` alone, with no comparison in it.
 * Grading the perturbation character to order `m` leaves
   `‖φ‖ ≤ Σ_{k<m}(|θ|r)^k C_k‖φ(rθ/σ)‖^{n−2k} + (|θ|r)^m E|q|^m/m!`. The damped slots are
-  harmless throughout `|θ| ≥ n^{a}` — that is exactly what wave 42's two new damped inputs
+  harmless throughout `|θ| ≥ n^{a}` — that is exactly what the two damped inputs
   (`norm_multiCharFun_vecRootLaw_damped_le`,
   `norm_multiCharFun_vecRootLaw_two_sub_damped_le`) buy. The remainder is the undamped one
-  (wave 42's item 4, shown there not to be repairable at any truncation level) and equals
+  (see the outer-end item of the note above `not_exists_const_mul_windowEnvelope_ge`) and equals
   `n^{m(b − 1/2)}` at `|θ| ≍ n^{b}`, which meets `n⁻¹` exactly when `b ≤ 1/2 − 1/m`
   (`graded_order_ledger`). Coarser grading — fewer terms, since only smallness is wanted here —
   makes this **worse**, not better: `m` appears only in `1/2 − 1/m`.
@@ -6860,8 +6855,7 @@ HYPOTHESIS MAKES IT.**
 
 **Verdict: route (a), amended as above; route (b) is executed here only as far as the arithmetic
 that refutes it.** The residue of the middle range is therefore items (i) and (ii) of the repair
-list, and it is strictly smaller than the residue wave 42 recorded — the middle range is no
-longer covered by nothing. -/
+list, and the middle range is no longer covered by nothing. -/
 
 /-- **The leakage ledger at a general band exponent.** With `|θ| ≍ n^{b}` the gain per part is
 `n^{-3/8 − b}`; against the bad-set area `≍ n` and the prefactor `M² = n^{5/4}` the ledger
@@ -6994,14 +6988,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 really needs, in place of the exponentially stronger `cⁿ` that is available only past the
 Cramér radius `ε₀√n` and that is what forces the band down to the outer range.
 
-The proof is the wave-12 observation, used once more: the restriction of `φ` to the ray through
+The proof is a projection argument: the restriction of `φ` to the ray through
 `t` *is* the characteristic function of a one-dimensional projected law, so
 `norm_charFun_smul_le_exp_neg_sq` applies to it verbatim at the unit vector `e = t/‖t‖` and
 scale `s = ‖t‖/√n`, and `charFun_vecRootLaw` raises the result to the `n`-th power, where
 `n s² = ‖t‖²` collapses the `n`. **No two-dimensional argument occurs.**
 
-The three moment hypotheses are direction-uniform and are exactly the nondegeneracy the wave-12
-note records: a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²` (this is where a nonsingular covariance of
+The three moment hypotheses are direction-uniform and amount to
+nondegeneracy: a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²` (this is where a nonsingular covariance of
 `(X, X²)` is spent), a variance ceiling `V`, and a third absolute moment `R`. `ε₁` is any radius
 meeting the two window conditions of the majorant, `Vε₁² ≤ 2` and `Rε₁ ≤ 3λ/2`; discharging the
 three for `studentPair F ∘ truncAt` is item (ii) of the repair list in the section note and is
@@ -7076,8 +7070,8 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
 
 /-- **The bulk majorant survives truncation, and it survives it for free.**
 
-**WAVE 44 — THIS REPLACES ITEM (ii) OF WAVE 43'S REPAIR LIST BY SOMETHING STRICTLY SMALLER.**
-That list asked for the three direction-uniform moment hypotheses of
+**THIS REPLACES ITEM (ii) OF THE REPAIR LIST BY SOMETHING STRICTLY SMALLER.**
+That list asks for the three direction-uniform moment hypotheses of
 `norm_charFun_vecRootLaw_le_exp_neg_sq` to be discharged *for the truncated pair*
 `studentPair F ∘ truncAt m √n`. They cannot be, as stated: the truncated pair is **not
 centred** — truncation moves the mean by the mass it moves — and the majorant is a statement
@@ -7176,13 +7170,13 @@ theorem norm_charFun_vecRootLaw_comp_le_exp_neg_sq
 
 end MiddleRangeBulk
 
-/-! ### Item (ii) of the wave-43 repair list: the moment inputs of the bulk majorant
+/-! ### Item (ii) of the repair list: the moment inputs of the bulk majorant
 
-**WAVE 44 — ITEM (ii) IS DISCHARGED, AND IT IS DISCHARGED FOR THE UNTRUNCATED PAIR.** Wave 43
-left the middle range covered by the certificate modulo two things: (i) restating input (B) at
+**ITEM (ii) IS DISCHARGED, AND IT IS DISCHARGED FOR THE UNTRUNCATED PAIR.** The middle-range note
+leaves the middle range covered by the certificate modulo two things: (i) restating input (B) at
 the repaired band, and (ii) supplying the three direction-uniform moment hypotheses of
 `norm_charFun_vecRootLaw_le_exp_neg_sq` for `studentPair F ∘ truncAt`. (i) is done above.
-(ii) is done here, and the shape of the answer differs from the wave-43 note in two places:
+(ii) is done here, and the shape of the answer differs from the middle-range note in two places:
 
 * **the truncated pair never appears.** `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` moves the
   majorant across the truncation at the cost of a constant, so all that is needed is the
@@ -7195,12 +7189,12 @@ the repaired band, and (ii) supplying the three direction-uniform moment hypothe
   `C > 0` are the form at the two axes, `AC − B² > 0` is the form at `(B, −A)`
   (`= A(AC − B²)`, and `A > 0`), and a positive-definite binary quadratic form dominates
   `λ(t₀² + t₁²)` at `λ = min(A, C, (AC − B²)/(A + C))`. **No compactness of the sphere and no
-  continuity of `t ↦ ∫⟪x,t⟫²` are used** — the wave-43 note's "direction-uniform" is a
+  continuity of `t ↦ ∫⟪x,t⟫²` are used** — the middle-range note's "direction-uniform" is a
   two-dimensional linear-algebra fact, not an analytic one. Positivity at each fixed direction
   is `integral_studentPair_dir_sq_pos`, which is where `hFac` is spent and the only place.
 * **the moment cost is six, not four.** The variance floor and ceiling need four moments of `F`;
   the third absolute moment of a *quadratic* in `X` needs **six**. `hF8` covers it, so nothing
-  downstream moves, but the wave-43 note's "available under `hFac`" understates what is spent.
+  downstream moves, but the middle-range note's "available under `hFac`" understates what is spent.
 
 `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` is the conclusion, in exactly the form
 `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes as `hbulk`. -/
@@ -7634,8 +7628,8 @@ lemma exp_neg_sq_band_radius_eq_rpow {lam K : ℝ} {n : ℕ} (hn : 1 ≤ n) :
 /-- **A polynomial mass against a negative-power `κ` clears the ledger.** The transfer inequality
 `norm_integral_fourierSynth_le_of_band` prices the good frequencies by `Γκ`; since `Γ` is
 polynomial, any `κ ≤ n^{−q}` with `q ≥ p + 3/2` returns the required `O(n^{-3/2})`. This is why
-the exponentially strong `cⁿ` — the only bound wave 31 had, and the reason its band started at
-the Cramér radius — was overkill. -/
+the exponentially strong `cⁿ` — the bound that forces the band to start at
+the Cramér radius — is overkill. -/
 lemma band_kappa_ledger {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
     (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
     (hpq : p + 3 / 2 ≤ q) :
@@ -7655,7 +7649,7 @@ lemma band_kappa_ledger {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤
           (Real.rpow_le_rpow_of_exponent_le hn1 (by linarith)) hC
     _ = C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by rw [hval, ← div_eq_mul_inv]
 
-/-- **The band ledger at a general target (wave 47).**  `band_kappa_ledger` is this statement at
+/-- **The band ledger at a general target.**  `band_kappa_ledger` is this statement at
 `target = −3/2`, which is the accuracy the *mean's* outer radius `ρ = c√n` dictates.  The
 studentized chain does not run at that radius — `Γ` is polynomial in `θ`, so the outer radius has
 to be pushed out to `ρ = n²` (see the section note above `middle_range_ledger_exponent`) — and
@@ -7676,8 +7670,8 @@ lemma band_kappa_ledger_general {C Γ κ p q target : ℝ} {n : ℕ} (hn : 1 ≤
     _ ≤ C * (n : ℝ) ^ target :=
         mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hn1 hpq) hC
 
-/-- **The middle range's twin of `band_kappa_ledger`.**  This is the one arithmetic item wave 46
-recorded as still owed by the middle range: the certificate's polynomial mass against the
+/-- **The middle range's twin of `band_kappa_ledger`.**  This is the arithmetic item
+owed by the middle range: the certificate's polynomial mass against the
 band's `κ`, priced at the accuracy the outer radius `ρ = n²` dictates. -/
 lemma band_kappa_ledger_middle {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
     (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
@@ -7696,8 +7690,8 @@ Lebesgue measure on `ℝ²`; the third is a fourth moment of the truncated root.
 
 **(A) The mass, polynomial** — `exists_integral_norm_fourier_bulkMultiplier_le`. `g` is `C^∞` with
 support in `‖w‖ ≤ 2M` (`contDiff_bulkMultiplier`, `hasCompactSupport_bulkMultiplier`), so `𝓕 g` is
-Schwartz and integrable — **wave 33 proves that half** (`schwartzOfCompactSupport`,
-`integrable_fourier_bulkMultiplier`) and it is no longer part of the statement — and integrating
+Schwartz and integrable — **that half is proved** (`schwartzOfCompactSupport`,
+`integrable_fourier_bulkMultiplier`) and it is not part of the statement — and integrating
 by parts three times
 in each variable gives `∫‖𝓕 g‖ ≲ M²·sup_{|α| ≤ 3}‖∂^α g‖_∞`; every derivative of the phase is a
 polynomial in `M` and `|θ|` (degree `≤ 3` in `w₀`, `≤ 2` in `w₁`, coefficients carrying
@@ -7717,7 +7711,7 @@ of `θ`). Five applications of `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` to the cu
 support is compact.
 
 **(C) The fourth moment of the truncated root** —
-`exists_integral_norm_pow_four_vecRootLaw_truncAt_le`, and **wave 33 proves it**. `ρ_n` is the
+`exists_integral_norm_pow_four_vecRootLaw_truncAt_le`, which is **proved**. `ρ_n` is the
 law of `n^{-1/2}∑Z(Xᵢ)` for `Z = studentPair F ∘ truncAt m √n`, bounded by
 `norm_studentPair_truncAt_le`; the fourth-moment expansion of an iid sum is built here
 (`integral_pi_succ_of_bounded`, `integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`) and
@@ -7727,18 +7721,18 @@ too: `measure_norm_gt_le_fourth_moment` is Markov on the plane,
 and `tail_ledger_exponent` turns `O(n/M⁴)` into `O(n^{-3/2})` at `M = n^{5/8}` exactly. This is
 the only probabilistic input of the three, and it is the line that *forces* the bulk radius.
 
-**One `sorry` after wave 35, and it is (B).** (A) is **proved end to end**: the mass bound is
+(A) is **proved end to end**: the mass bound is
 *not* an integration-by-parts estimate at all but a continuity statement about
-`𝓢 --𝓕--> 𝓢 --toLp 1--> L¹` (wave 34), and its last elementary residue
+`𝓢 --𝓕--> 𝓢 --toLp 1--> L¹`, and its last elementary input
 `exists_norm_iteratedFDeriv_bulkMultiplier_le` --- one bound on `‖D^m g‖_∞`, polynomial in `n`
-and `1 + |θ|`, at each fixed order `m` --- is closed by wave 35, through the graded derivative
+and `1 + |θ|`, at each fixed order `m` --- is proved through the graded derivative
 calculus `gradedBound_const`/`gradedBound_coord`/`gradedBound_mul`/`gradedBound_add` and
 `norm_iteratedFDeriv_cubic_le`. (C), the assembly below, and the exponent ledger are proved.
 
-(B) is the only open item. Wave 35 proves its *identity* half --- `integral_expPhase_ibp`, one
+(B) has an *identity* half --- `integral_expPhase_ibp`, one
 integration by parts against a non-vanishing phase, together with `contDiff_ibpStep` and
-`hasCompactSupport_ibpStep`, which make the five-fold iteration legitimate --- and leaves the
-*quantitative* half open, with its three pieces named on the theorem itself. -/
+`hasCompactSupport_ibpStep`, which make the five-fold iteration legitimate --- and a
+*quantitative* half, with its three pieces named on the theorem itself. -/
 
 /-! ### Input (A), first half: the transform of the bulk multiplier is integrable
 
@@ -7827,8 +7821,8 @@ Schwartz function `g`, the norm of the composite continuous linear map
 `schwartz_withSeminorms` returns a **finite** set `s` of Schwartz indices and one universal
 constant `C` with `∫‖𝓕 g‖ ≤ C·max_{(k,m) ∈ s} S_{k,m}(g)` --- for *every* `g` at once
 (`exists_bound_integral_norm_fourier_schwartz`). No decay estimate on `𝓕 g` is needed and no
-integration by parts is performed: the `M²`-and-three-derivatives bookkeeping the wave-31 note
-describes is what Mathlib's construction of `fourierTransformCLM` already carries.
+integration by parts is performed: the `M²`-and-three-derivatives bookkeeping the section note
+above describes is what Mathlib's construction of `fourierTransformCLM` already carries.
 
 That reduces (A) to the *Schwartz seminorms of `g` itself*. Since `g` is supported in
 `‖w‖ ≤ 2M` (`tsupport_bulkMultiplier_subset`, and `iteratedFDeriv_bulkMultiplier_eq_zero` off
@@ -8234,7 +8228,7 @@ lemma norm_iteratedFDeriv_expPhase_le {q : E₂ → ℝ} (hq : ContDiff ℝ (⊤
 /-! ## The residue (A2) -/
 
 /-- **(A2) The sup-norm of every derivative of the bulk multiplier is polynomial in `n` and
-`|θ|`** — the wave-34 residue of input (A), and now **proved**.
+`|θ|`** — the residue of input (A), and now **proved**.
 
 `g = χ(·/M)·e^{iθQ}` with `Q = Hₙ − w₀/σ`. Off `‖w‖ ≤ 2M` every derivative vanishes
 (`iteratedFDeriv_bulkMultiplier_eq_zero`), so the bound is only needed on that ball. There
@@ -8659,7 +8653,7 @@ derivatives of the slope. Two facts make it work and both are proved here:
   transform, which is exactly why `N` parts gain `ε^N` and not `(εμ)^N`
   (`exists_bound_iteratedDeriv_ibpStep`, `exists_bound_iterate_ibpStep`).
 
-**This corrects wave 44's assessment of the residue.** That note recorded that the missing
+**This corrects a natural assessment of the residue**: that the missing
 calculus needs *negative* powers and that "an existential constant is useless there, since the
 exponent (B) has to produce is carried by the explicit `L^{-(k+1)}`". The first half is right;
 the second is not, and the reason is the fixed point above: only **one** negative power of `Λ`
@@ -9430,10 +9424,10 @@ cut-off and the actual surrogate, priced at the ledger`s gain. -/
 noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
 
 @[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
-  simp [fibreEmbed, coordDir]
+  simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 @[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
-  simp [fibreEmbed, coordDir]
+  simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 /-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
 full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
@@ -9569,7 +9563,7 @@ theorem norm_integral_fibre_bulkMultiplier_le (N : ℕ) :
           * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N :=
         mul_le_mul_of_nonneg_right (le_max_left _ _) h2
 
-/-! ### The wave-45 ledger: the fibre estimate meets the leakage ledger unamended -/
+/-! ### The ledger: the fibre estimate meets the leakage ledger unamended -/
 
 /-- **The fibre estimate's gain is the ledger's gain.** The two branches of an integration by
 parts — `81Mr²/(σ|θ|)` from the phase's curvature and `3σ/(M|θ|)` from the cut-off — are both
@@ -9607,11 +9601,11 @@ lemma fibre_gain_le_bulk_gain {n : ℕ} (hn : 0 < n) {σ θ : ℝ} (hσ : 0 < σ
   rw [hA, add_mul]
   linarith
 
-/-- **THE WAVE-45 LEDGER.** Ten applications of `norm_integral_fibrePhase_le`, against the
+/-- **THE FIBRE LEDGER.** Ten applications of `norm_integral_fibrePhase_le`, against the
 prefactor `M² = n^{5/4}` and a bad set of area `≤ n`, clear `O(n^{-3/2})` at every band exponent
 `b ≥ 0` — including `b = 0`, which is the constant floor `c₀ ≤ |θ|` the restated input (B) runs
-at. The `81/σ + 3σ` is the price of the fibre estimate's two branches; the shape is wave 43's,
-unamended. -/
+at. The `81/σ + 3σ` is the price of the fibre estimate's two branches; the shape is that of
+`leakage_ledger_ten_le`, unamended. -/
 lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
     (hσ : 0 < σ) (hc₀ : 0 < c₀) (hb : 0 ≤ b) (hθ : c₀ * (n : ℝ) ^ b ≤ |θ|) :
     (n : ℝ) * bulkRadius n ^ 2
@@ -9654,7 +9648,7 @@ lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
     _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
         mul_le_mul_of_nonneg_left hled hc10
 
-/-- **The wave-46 ledger at fourteen parts.** `fibre_gain_ledger_ten_le` at the constant floor
+/-- **The ledger at fourteen parts.** `fibre_gain_ledger_ten_le` at the constant floor
 `b = 0` and `N = 14`, landing at `n^{-17/6}` instead of `n^{-3/2}`. -/
 lemma fibre_gain_ledger_fourteen_le {n : ℕ} (hn : 0 < n) {c₀ σ θ : ℝ}
     (hσ : 0 < σ) (hc₀ : 0 < c₀) (hθ : c₀ ≤ |θ|) :
@@ -9726,7 +9720,7 @@ lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.
 
 lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
   ext i
-  fin_cases i <;> simp [fibreEmbed, coordDir]
+  fin_cases i <;> simp [fibreEmbed, coordDir, PiLp.single_apply]
 
 
 /-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
@@ -9985,15 +9979,14 @@ lemma volume_band_le (t : E₂) {R : ℝ} (hR : 0 ≤ R) :
   ring
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
-low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
-only open analytic item of the certificate after wave 44**.
+low-frequency ball** — the second input, and the analytic heart of the certificate.
 
-**WAVE 44 RESTATES THIS AT THE REPAIRED BAND, AND THE RESTATEMENT IS THE POINT.** Wave 43 showed
-that what confined the certificate to `|θ| ≍ √n` was not this estimate's ledger but the band
+**THIS IS STATED AT THE REPAIRED BAND, AND THE RESTATEMENT IS THE POINT.** The middle-range note
+shows that what confined the certificate to `|θ| ≍ √n` was not this estimate's ledger but the band
 geometry it was stated at: the radius `R` had to be at least the Cramér radius `ε₀√n`, because
 `cⁿ` was the only bound on `‖φ_{ρₙ}‖` off a ball, and at most `|θ|/(2σ)`, whence
 `|θ| ≥ 2σε₀√n` (`band_radius_incompatible`). With the Gaussian bulk bound in hand
-(`norm_charFun_vecRootLaw_le_exp_neg_sq`, wave 43) and the two-regime `κ` assembled
+(`norm_charFun_vecRootLaw_le_exp_neg_sq`) and the two-regime `κ` assembled
 (`norm_charFun_vecRootLaw_le_max_of_band`, above), the radius may be taken to be `K√(log n)`,
 and the hypothesis on the frequency becomes
 
@@ -10004,7 +9997,7 @@ and the hypothesis on the frequency becomes
 * the band condition `2σ·K√(log n) ≤ |θ|`, which is below `n^{a}` for every `a > 0`.
 
 Together these cover the whole middle range `n^{1/6} ≤ |θ|` that `esseen_split_low` leaves, as
-well as the outer range wave 31 had. **The price of the wider band is `N = 10` integrations by
+well as the outer range. **The price of the wider band is `N = 10` integrations by
 parts instead of `N = 5`** — the ledger returns `n^{9/4 − N(3/8 + b)}` at `|θ| ≍ n^{b}`
 (`leakage_ledger_band_exponent`), and `N ≥ (15/4)/(3/8 + b)` is `30/7` at `b = 1/2` and `10` at
 `b = 0`. The bulk radius does not move: input (C) fixes `M = n^{5/8}` with no `θ` in it.
@@ -10015,22 +10008,21 @@ least `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate
 applications of `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gains
 `σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-3/8})`.
 
-**WHAT IS PROVED AFTER WAVE 45, AND WHAT IS HONESTLY LEFT.** Wave 35 supplied the *identity*
+**WHAT IS PROVED.** The *identity*
 half: `integral_expPhase_ibp` is one integration by parts against a non-vanishing phase on the
 line, in the exact form the iteration needs, and `contDiff_ibpStep` / `hasCompactSupport_ibpStep`
 say the transform `L` preserves the class, so the ten-fold iteration is legitimate as stated.
 
-**Wave 45 supplies the quantitative half, and the phase side of the fibrewise reduction.** The
-first of the three items below — the one wave 44 called "the one with real content" — is now a
-theorem:
+**The quantitative half, and the phase side of the fibrewise reduction.** The
+first of the items below is the one with real content:
 
 * `norm_integral_expPhase_le_graded` (order `N`, on an interval): a smooth amplitude supported in
   `[-A, A]` and graded by the single scale `μ = εΛ` oscillates away all but `2A·P·(Cε)^N` of its
   mass. Its engine is `exists_bound_iteratedDeriv_recipDeriv` — the derivatives of `1/∂Φ` off the
   slope floor, obtained from the Riccati identity `(1/∂Φ)' = −∂²Φ·(1/∂Φ)²` by a two-line
-  induction. **Wave 44's reading of this item is overturned**: it recorded that "an existential
-  constant is useless there, since the exponent (B) has to produce is carried by the explicit
-  `L^{-(k+1)}`". Only **one** negative power of `Λ` ever appears, because the graded induction
+  induction. An existential constant is **not** useless here, although the exponent (B) has
+  to produce is carried by the explicit `L^{-(k+1)}`: only **one** negative power of `Λ` ever
+  appears, because the graded induction
   reinvests the surplus powers of `Λ` into `μ = εΛ`, which is a *fixed point* of `L`; the exponent
   is carried explicitly by `μ^j` and `ε^N` and the residual constant is purely combinatorial.
   A second correction: the estimate **must** be local. The surrogate phase is a cubic in `w₀`, so
@@ -10047,7 +10039,7 @@ theorem:
 * `fibre_gain_le_bulk_gain` / `fibre_gain_ledger_ten_le`: that gain is dominated by the single
   quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices (because `M²r² = n^{1/4} ≥ 1`), and ten
   of them against the prefactor `M²` and a bad set of area `≤ n` land at `O(n^{-3/2})` at every
-  band exponent `b ≥ 0`, `b = 0` included. **The wave-43/44 numerology needs no amendment.**
+  band exponent `b ≥ 0`, `b = 0` included. **The leakage-ledger numerology needs no amendment.**
 
 * `norm_integral_fibre_bulkMultiplier_le`: the two previous items applied to the **actual**
   integrand. The cut-off restricted to a fibre and rescaled is scale-free
@@ -10055,9 +10047,8 @@ theorem:
   `norm_iteratedDeriv_comp_fibreEmbed_le`), so one horizontal fibre of the leakage integral,
   with the actual `χ(·/M)` and the actual `θHₙ − t₀w₀`, is `O(gain^N)`.
 
-**WAVE 46 CLOSES IT. THIS THEOREM IS NO LONGER A `sorry`.** The last item was the one wave 45
-named — the reduction of `𝓕 g` to an iterated integral, and the outer bookkeeping it feeds —
-and it went through exactly as budgeted, with no amendment to any constant proved above.
+**The reduction of `𝓕 g` to an iterated integral, and the outer bookkeeping it feeds**, go
+through with no amendment to any constant proved above.
 
 * `planeEquiv` / `measurePreserving_planeEquiv` is the measure-preserving identification of `E₂`
   with `ℝ × ℝ`; it is the composite of the two equivalences Mathlib already supplies, `ofLp` off
@@ -10069,7 +10060,7 @@ and it went through exactly as budgeted, with no amendment to any constant prove
   `w₁`-component is a **constant**, and `norm_integral_fibre_shift_le` discards it in modulus;
   what survives is a shift `a = θ/σ + s₀` of the slope, and the band condition `2σR ≤ |θ|`
   together with `|v_i| ≤ ‖v‖` keeps `|a| ≤ |θ|/(2σ)` — which is precisely the non-stationarity
-  hypothesis of the wave-45 fibre estimate. **The band condition is not an extra assumption
+  hypothesis of the fibre estimate. **The band condition is not an extra assumption
   here; it is the same inequality, read on the frequency side.**
 * `norm_fourierWeight_bulkMultiplier_le` runs the outer `w₁`-integration. The `M²` prefactor is
   produced as two separate factors of `M`: the Jacobian of the rescaling `w₀ = Mx` inside each
@@ -10080,13 +10071,11 @@ and it went through exactly as budgeted, with no amendment to any constant prove
 * the `s`-integration is `volume_band_le` plus the same majorant device. The band is a ball, but
   no ball-volume formula is used: transported through `planeEquiv` it sits inside a rectangle of
   area `4R²`, which is all the ledger wants. `R² = Kb² log n` against the ledger's conservative
-  `n` needs only `log n ≤ n − 1`, so the `≍ log n` area is spent with room to spare, exactly as
-  wave 45 recorded.
+  `n` needs only `log n ≤ n − 1`, so the `≍ log n` area is spent with room to spare.
 * the ledger is `fibre_gain_ledger_ten_le` at `b = 0`, **unamended**, and the resulting constant
   is `4(Kb² + 1)C^{11}((81/σ + 3σ)/c₀)^{10}` with `C` the fibre estimate's.
 
-`exists_fourierCertificate_deltaSurrogate` is therefore proved outright and axiom-clean, and the
-certificate — open in this file since wave 30 — has no `sorry` under it. -/
+`exists_fourierCertificate_deltaSurrogate` is therefore proved outright. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
@@ -10624,7 +10613,7 @@ lemma integral_pi_sum_pow_four_le (F : Measure ℝ) [IsProbabilityMeasure F] {U 
   nlinarith [hmono, h4, hp, hq2, hn0, sq_nonneg ((n : ℝ) * c)]
 
 
-/-! ### WAVE 50, ITEM 1: the moment recursion at every order, and Rosenthal at order six
+/-! ### The moment recursion at every order, and Rosenthal at order six
 
 The file has the order-four analogue (`integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`)
 and nothing above it.  What follows is the general device and the two orders the graded ledger
@@ -10653,7 +10642,7 @@ truncation level `τ = √n` they are what the ledger reads directly.
 **Where it lands.**  On the first coordinate (`|Ṽ| ≤ τ = √n`, `m₄ ≤ μ₄`), all four terms are
 `O(n³)` against the normalisation `n⁻³`, so `E|w₀|⁶ = O(1)`.  On the second
 (`|Ṽ| ≤ τ² = n`, `m₄ ≲ μ₈` by `hF8`), `m₆ ≤ τ⁴m₄ ≲ n²μ₈` and again every term is `O(n³)`, so
-`E|w₁|⁶ = O(1)` — this is the wave-49 arithmetic, and it is correct at order six.  It is order
+`E|w₁|⁶ = O(1)` — this arithmetic is correct at order six.  It is order
 *nine* on the second coordinate that is not, which is what the section above corrects. -/
 
 private lemma integrable_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
@@ -10784,11 +10773,11 @@ lemma integral_pi_sum_pow_six_le (F : Measure ℝ) [IsProbabilityMeasure F] {V :
       mul_nonneg hm2n hm4n, mul_nonneg (mul_nonneg hm2n hm2n) hm2n,
       mul_nonneg hn0 (mul_nonneg (mul_nonneg hm2n hm2n) hm2n)]
 
-/-! ### WAVE 51, ITEM 1(i): the moment recursion at orders eight and ten
+/-! ### The moment recursion at orders eight and ten
 
-Wave 50 ran the recursion `integral_pi_sum_pow_succ` at orders three and six and left orders
-eight and ten -- the two the *graded* interface `integral_surrogateRemGraded_le_of_graded`
-consumes -- open.  What follows closes them, and with them the odd order nine, by
+The section above runs the recursion `integral_pi_sum_pow_succ` at orders three and six; orders
+eight and ten are the two the *graded* interface `integral_surrogateRemGraded_le_of_graded`
+consumes.  What follows closes them, and with them the odd order nine, by
 `|s|⁹ ≤ (s⁸ + s¹⁰)/2`.
 
 **The shape, and why it is not the order-six shape.**  Order six is stated with its four
@@ -11590,7 +11579,7 @@ rather than their sum — which is `n^{3/2}` and `n^{1/2}` respectively, both on
 (`weighted_sandwich_ledger`, and `unweighted_sandwich_ledger_gt` is the witness that the
 unweighted sandwich is strictly worse at every `n ≥ 2`).
 
-**This corrects the wave-50 plan**, which prescribed the odd order nine "via `|s|⁹ ≤ s⁸ + s¹⁰`".
+**This corrects the unweighted route** to the odd order nine "via `|s|⁹ ≤ s⁸ + s¹⁰`".
 The interpolation has to be weighted; the sum is not enough. -/
 
 /-! ### The WEIGHTED sandwich: the unweighted one is lossy at the second coordinate -/
@@ -12285,12 +12274,12 @@ Granting this, `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` produces 
 bound `Γ(n,θ)·cⁿ + O(n^{-3/2})` that the Esseen chain consumes at `δ = n⁻¹`, `ρ = c√n`, and the
 studentized expansion closes.
 
-**TWO AMENDMENTS OFF THE WAVE-27 STATEMENT, both forced; see the section note above
+**TWO AMENDMENTS TO THE NAIVE STATEMENT, both forced; see the section note above
 `deltaSurrogate_slope_ge` for the arithmetic.**
 
 * **The leakage ball is relocated**, from `{s : |θ|/(2σ) < ‖s‖}` to `{s : ‖t₀ + s‖ < c₀√n/(2σ)}`.
-  The wave-27 shape cannot be met. Its `L¹` error is priced by `ρ_n{‖w‖ > M}`, and the wave-27
-  note's `O(M^{-4})` is not available: the root's second coordinate is a normalized sum of
+  The naive shape cannot be met. Its `L¹` error is priced by `ρ_n{‖w‖ > M}`, and the
+  bound `O(M^{-4})` is not available: the root's second coordinate is a normalized sum of
   `(Xᵢ − m)²`, of which `hF4` is only a *second* moment, so on the truncated law
   `E w₁⁴ = O(n)` and `η = O(n^{-3/2})` forces `M ≥ n^{5/8}` rather than `n^{3/8}`; and at that
   radius the phase `θ(Hₙ − w₀/σ)` has gradient `≍ |θ|n^{1/8}`, which exceeds the admitted
@@ -12307,8 +12296,8 @@ studentized expansion closes.
 
 **What is unchanged.** The item is still deterministic — one explicit polynomial phase against
 Lebesgue measure on `ℝ²`, with no sampling law, no `n`-fold product and no conditioning — and it
-is still strictly smaller than the conditioning device the wave-26 note and the wave-27 prompt
-prescribed, which `deltaSurrogate_sub_linear_ge` shows cannot work at all.
+is still strictly smaller than Hall's conditioning device, which `deltaSurrogate_sub_linear_ge`
+shows cannot work at all.
 
 **The construction, as corrected, and what is left of it.** Take
 `g = e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)` at `M = n^{5/8}`, `χ` a smooth cut-off equal to `1` on the unit
@@ -12325,17 +12314,16 @@ The synthesis step is *gone*: `fourierSynth_fourierWeight` gives
 non-stationary-phase estimate for one explicit polynomial phase, with the gradient lower bound
 already in hand (`deltaSurrogate_slope_ge`).
 
-**WAVE 31: this theorem is no longer a `sorry`.** `g` is built (`bulkMultiplier` at
+`g` is built (`bulkMultiplier` at
 `M = bulkRadius n = n^{5/8}`), its five elementary hypotheses are proved, and the proof below
 assembles the certificate from the three named inputs (A), (B), (C) of the section note with no
 analytic content of its own: `Γ n θ` is taken to be the (A)-bound itself, and the single constant
-`C` of the signature is the maximum of the three. The residue is those three `sorry`s — two
-deterministic bounds on `𝓕 g` and one fourth moment of the truncated root — and the exponent
-ledger that ties them together is verified (`leakage_ledger_five_le`, `tail_ledger_exponent`),
+`C` of the signature is the maximum of the three. The exponent ledger that ties the three
+inputs together is verified (`leakage_ledger_five_le`, `tail_ledger_exponent`),
 including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`).
 
-**WAVE 44: THE BAND IS WIDENED, AND WITH IT THE RANGE OF `θ` THE CERTIFICATE COVERS.** The
-radius is now `Kb√(log n)` and the frequency hypothesis is a constant floor `c₀ ≤ |θ|` together
+**THE BAND IS WIDENED, AND WITH IT THE RANGE OF `θ` THE CERTIFICATE COVERS.** The
+radius is `Kb√(log n)` and the frequency hypothesis is a constant floor `c₀ ≤ |θ|` together
 with the band condition `2σ·Kb√(log n) ≤ |θ|`, in place of the single `c₀√n ≤ |θ|`. Nothing in
 the assembly below changes — the widened band is entirely a property of input (B), and (A) and
 (C) never mention `θ` or `R` — but the consumer does: at radius `Kb√(log n)` the bound off the
@@ -12397,7 +12385,7 @@ theorem exists_fourierCertificate_deltaSurrogate
       exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
 
 
-/-! ### The middle range, from the certificate at `N = 10` (wave 53)
+/-! ### The middle range, from the certificate at `N = 10`
 
 With the logarithmic middle weight in hand the middle range is no longer a budget statement but
 a theorem, and it is the certificate the file already has that proves it.  Three elementary
@@ -13739,8 +13727,8 @@ Item **(U4)** of the residue is the studentized analogue of `exists_window_bound
 all proved (`norm_charFun_map_deltaSurrogate_sub_graded_le` for the graded comparison,
 `norm_charFun_smul_pow_sub_edgeworth_le` for the leading `n`-th-power slot,
 `multiCharFun_vecRootLaw_two` and `norm_multiCharFun_vecRootLaw_two_sub_le` for the `k = 2`
-slot, and the wave-26 `O(1)` bound for `k = 3, 4`), but the estimate is not a rewriting, and it
-has one part that is not an estimate at all and that no earlier wave has checked: whether the
+slot, and the `O(1)` bound for `k = 3, 4`), but the estimate is not a rewriting, and it
+has one part that is not an estimate at all: whether the
 two leading slots, evaluated, actually **add up to** the studentized approximant's transform.
 
 They do, and `studentized_window_leading_identity` is that check, stated in the exact shape the
@@ -13760,16 +13748,16 @@ order `n^{-1/2}` are:
   `κ₀₁ = ∫⟪x,e₀⟫⟪x,e₁⟫ = E[(X−m)((X−m)² − σ²)] = γσ³`,
   `κ₀ = ∫⟪x,e₀⟫⟪x,(θ/σ)e₀⟫ = θσ` and `κ₁ = ∫⟪x,e₁⟫⟪x,(θ/σ)e₀⟫ = θγσ²`.
 
-The `−κ₀κ₁ φ^{n−2}` summand is the off-diagonal one wave 23 found cannot be dropped, and here is
+The `−κ₀κ₁ φ^{n−2}` summand is the off-diagonal one that cannot be dropped, and here is
 what it does: without it the bracket would be `γσ³` instead of `γσ³(1 − θ²)`, and the sum below
 would come out as `He₃` alone — the *mean* approximant — instead of the studentized one. So the
-identity is also a check on wave 23's finding.
+identity is also a check that it cannot be dropped.
 
-**Wave 42.** The *estimate* half described in the first paragraph above — the shape
+The *estimate* half described in the first paragraph above — the shape
 `≤ (K/n)·windowEnvelope ξ` on the whole window `|ξ| ≤ c√n` — is **false**, at the origin and at
 the window edge both, and the four inputs cannot produce it for any envelope. The identity below
 is unaffected, and the amended shape uses it unchanged. See the section note above
-`not_exists_const_mul_windowEnvelope_ge` and the wave-42 block on
+`not_exists_const_mul_windowEnvelope_ge` and the block on
 `edgeworth_studentized_uniform`. -/
 
 /-- **(U4) — the leading-order identity of the studentized window, in the shape the two inputs
@@ -13916,16 +13904,16 @@ private lemma add_sq_le_two_mul (a b : ℝ) : (a + b) ^ 2 ≤ 2 * a ^ 2 + 2 * b 
 
 /-! ### The studentized window cannot be shaped like the mean one
 
-**WAVE 42 — THE SHAPE PRESCRIBED FOR (U4) IS FALSE, AT BOTH ENDS OF THE WINDOW, AND THE THREE
-STATEMENTS BELOW ARE THE TWO REFUTATIONS AND THE SCALE COMPUTATION BETWEEN THEM.** Since wave 26
-the file has priced item (U4) — the studentized twin of `exists_window_bound` — as
+**THE SHAPE PRESCRIBED FOR (U4) IS FALSE, AT BOTH ENDS OF THE WINDOW, AND THE THREE
+STATEMENTS BELOW ARE THE TWO REFUTATIONS AND THE SCALE COMPUTATION BETWEEN THEM.** The natural
+pricing of item (U4) — the studentized twin of `exists_window_bound` — is
 
 `‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ (K/n)·windowEnvelope ξ`  on  `|ξ| ≤ c√n`,  `θ = −2πξ`,
 
 "an estimate, not a rewriting", to be assembled from four proved inputs
 (`norm_charFun_map_deltaSurrogate_sub_graded_le`, `norm_charFun_smul_pow_sub_edgeworth_le`,
 `multiCharFun_vecRootLaw_two` with `norm_multiCharFun_vecRootLaw_two_sub_le`, and
-`norm_multiCharFun_vecRootLaw_le`). Wave 42 attempted that assembly. It does not exist, and the
+`norm_multiCharFun_vecRootLaw_le`). That assembly does not exist, and the
 reason is not budget: **no constant `K` makes that inequality true**, and separately **the four
 inputs cannot produce it for any envelope at all**.
 
@@ -13960,9 +13948,9 @@ inputs cannot produce it for any envelope at all**.
 `|ξ| ≤ c√n`; they suffice on `|ξ| ≤ n^{a}` for small `a > 0` — where the undamped remainder
 `r³|θ|³ = n^{3a − 3/2}` is still `o(n⁻¹)` after the Esseen weight — and input (B)'s certificate
 covers `|θ| ≥ c₀√n`. **The range `n^{a} ≤ |θ| ≤ c₀√n` is covered by neither.** That middle range
-is a new gap: no wave before this one has named it, and closing it needs a bound on
+is a gap, and closing it needs a bound on
 `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` there which is not a Taylor expansion (the expansion has no damping) and not
-the certificate (whose band starts at order `√n`). See the wave-42 block on
+the certificate (whose band starts at order `√n`). See the block on
 `edgeworth_studentized_uniform`. -/
 
 /-- Below `1` the envelope is at most `2|ξ|⁴` — the shape of `windowEnvelope` at the origin. -/
@@ -14230,18 +14218,18 @@ end WindowEnvelope
 
 /-! ## The window estimate: the degree-one envelope of (U4′)
 
-Wave 42 refuted the shape `≤ (K/n)·windowEnvelope ξ` at both ends of the window and recorded
-what has to replace it. Two things change, and they are independent of each other.
+The shape `≤ (K/n)·windowEnvelope ξ` fails at both ends of the window. Two things change, and
+they are independent of each other.
 
 * **The envelope starts at degree one, not four.** `windowEnvelope₁ ξ = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`.
   The degree at the origin is forced by the inputs and not chosen: the `k = 3` slot's prefactor
   `θr²/(2σ³)` multiplies an `O(1)` multilinear factor and is `Θ(|θ|)`, and the `k = 2` remainder
   is `Θ(θ²)`; `not_exists_const_mul_windowEnvelope_ge` is the proof that degree four is too
-  small. The Gaussian factor is *not* cosmetic — it is `‖φ(rθ/σ)‖^{n−k}`, the damping wave 42
-  had to add to three of the four inputs, weakened to `e^{−π²ξ²/2}`.
+  small. The Gaussian factor is *not* cosmetic — it is `‖φ(rθ/σ)‖^{n−k}`, the damping
+  three of the four inputs carry, weakened to `e^{−π²ξ²/2}`.
 * **The window itself is split.** `esseen_split_low` replaces `esseen_split`: the envelope
   governs `|ξ| ≤ ρ₁` only; an *undamped* monomial `Kr|ξ|³` is admitted there as well — that is
-  the graded remainder, which carries no damping and, by wave 42's item 4, cannot be given any;
+  the graded remainder, which carries no damping and cannot be given any;
   and a bare constant `M₁` governs the middle range `ρ₁ ≤ |ξ| ≤ ρ`. The three contributions to
   the Esseen integral are `Kw∫windowDom₁`, `2Krρ₁³/π` and `2M₁ρ/(πρ₁)`, plus the old tail
   `2M/(δπ²ρ)`.
@@ -14252,12 +14240,12 @@ Against the target `n⁻¹` that is `a ≤ 1/6`, with equality admissible:
 `low_range_ledger_exponent` is the identity `n^{-3/2}·(n^{1/6})³ = n⁻¹`, and
 `low_range_ledger_gt` is the witness that every `a > 1/6` overshoots at every `n ≥ 2`. So
 **`a = 1/6` is the honest low-range exponent and it is the largest one**, and the range the
-split leaves uncovered is `n^{1/6} ≤ |ξ| ≤ c√n` — the middle range wave 42 named. See the note
+split leaves uncovered is `n^{1/6} ≤ |ξ| ≤ c√n` — the middle range. See the note
 above `norm_charFun_vecRootLaw_le_exp_neg_sq` for which of its two candidate routes survives.
 
 Note that `∫ windowDom₁ < ∞` is still a Gaussian moment (`integrable_windowDom₁`), so the
 degree-one envelope is admissible for the Esseen weight exactly as the degree-four one was. The
-failure wave 42 found at the *outer* end was never about the envelope, and lowering its degree
+failure at the *outer* end was never about the envelope, and lowering its degree
 does not repair it; only the split does. -/
 
 section WindowEnvelopeOne
@@ -14300,7 +14288,7 @@ private lemma windowEnvelope₁_mul_weight_le (ξ : ℝ) :
     exact le_of_eq heq
 
 /-- `∫ Env₁(ξ)/|ξ|` is a Gaussian moment, so the degree-one envelope is admissible for the
-Esseen weight — the requirement wave 42 identified as the one an envelope must meet. -/
+Esseen weight — the requirement an envelope must meet. -/
 private lemma integrable_windowDom₁ : Integrable windowDom₁ := by
   have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
   have h0 : Integrable (fun ξ : ℝ => Real.exp (-(ξ ^ 2 / 2))) := by
@@ -14350,8 +14338,7 @@ lemma low_range_ledger_gt {a : ℝ} (ha : (1 : ℝ) / 6 < a) {n : ℕ} (hn : 2 �
 
 /-! ### (U4′) — the low-range window bound
 
-Wave 46 recorded the residue of item 2 in four items and named this one as "the item with
-content, named since wave 43 and built by no wave".  It is built here, in three pieces, and the
+This is the low-range item with content.  It is built here, in three pieces, and the
 pieces are of three different kinds.
 
 * **Two envelope dominations.**  `abs_pow_mul_le_windowEnvelope₁` says a *damped* monomial of
@@ -14363,12 +14350,12 @@ pieces are of three different kinds.
   three (`surrogateRemGraded`'s second summand is `θ²/2·(r³·2PA + r⁴A²)`), and it carries no
   damping, so it fits neither the envelope nor the cube on its own.  It fits both together,
   because below `|ξ| = 1` the Gaussian factor of `windowEnvelope₁` is bounded away from zero and
-  above `|ξ| = 1` the cube dominates.  Wave 43's shape therefore survives the extra term without
+  above `|ξ| = 1` the cube dominates.  The shape therefore survives the extra term without
   amendment — but only just, and only for degrees `≥ 1`: a degree-**zero** undamped term would
   break it, and there is none only because every slot of the expansion carries at least one
   power of `θ`.
 
-* **The ledger.**  `exists_studentized_low_range_core` is the arithmetic the wave-43 note calls
+* **The ledger.**  `exists_studentized_low_range_core` is the arithmetic that is
   the whole point of the low range, carried out: the eight priced contributions of the five
   slots sum to `Kw r²·windowEnvelope₁ ξ + Kr r³|ξ|³`.  What has to be checked, and is, is that
   *every damped contribution carries `r²` and a monomial of degree between `1` and `8`* and
@@ -14391,7 +14378,7 @@ pieces are of three different kinds.
   ledger's degree `7` comes from.
 
 What is *not* here is the production of the eight bounds from the four inputs, which is
-per-input moment bookkeeping on `vecRootLaw F (studentPair F) n`; see the wave-47 block on
+per-input moment bookkeeping on `vecRootLaw F (studentPair F) n`; see the block on
 `edgeworth_studentized_uniform`. -/
 
 /-- Every monomial of degree between `1` and `8` is dominated by `|ξ| + |ξ|⁸`. -/
@@ -14717,11 +14704,12 @@ inputs and of the graded remainder, evaluated at `a = (θ/σ)•e₀`, in their 
 * `hB2` — `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, damped, `r` times a quartic;
 * `hB5`, `hB6` — the two comparisons of `φ^{n−1}` and `φ^{n−2}` with `e^{−θ²/2}` that the
   composition needs and that no earlier statement of (U4′) lists.  **Their bracket starts at
-  `|ξ|²`, not at `|ξ|³` as wave 47 stated it, and that is forced** (wave 48): the Gaussian
+  `|ξ|²`, not at `|ξ|³`, and that is forced**: the Gaussian
   mismatch `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}` contributes `e^{−θ²/2}·θ²r²/2`, of `θ`-degree
   **two** with coefficient `r²`, and `Kb·r(|ξ|³+|ξ|⁴)·D` cannot dominate `r²|ξ|²` as `ξ → 0` at
-  fixed `n` — the ratio is `≍ r/|ξ|`, unbounded.  The wave-47 shape was therefore satisfied by
-  nothing; `|ξ|²` in the bracket is the minimal repair and it is free in the ledger, since the
+  fixed `n` — the ratio is `≍ r/|ξ|`, unbounded.  A bracket starting at `|ξ|³` would
+  therefore be satisfied by nothing;
+  `|ξ|²` in the bracket is the minimal repair and it is free in the ledger, since the
   slot's own prefactor `θr/(2σ³)` carries the contribution to `r²|ξ|³·D`, degree `3 ≤ 8`
   (`exists_studentized_low_range_core`'s `α₃` and `α₅` absorb it);
 * `h3a`, `h3b`, `h4` — `norm_multiCharFun_vecRootLaw_damped_le` at `k = 3, 3, 4`, damped and
@@ -14833,12 +14821,12 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
     (hcore ((Real.sqrt (n : ℝ))⁻¹) ξ D hr0 hr1 hD0 hD)
 
 
-/-! ### Producing the eight: the damping ledger of the low range (wave 48)
+/-! ### Producing the eight: the damping ledger of the low range
 
 The eight hypotheses of `exists_studentized_low_range_window_bound` are its interface to the four
-proved damped inputs, and the wave-47 note calls their production "moment bookkeeping".  It is
-that on the measure side, but there is an arithmetic question underneath it that no wave had
-asked, and the three lemmas here answer it.
+proved damped inputs, and their production looks like "moment bookkeeping".  It is
+that on the measure side, but there is an arithmetic question underneath it, and the three
+lemmas here answer it.
 
 Every damped input returns `‖φ(c)‖^{N−k}` as its damping, where `φ(c)` is the transform of the
 summand's law at `c = r(θ/σ)•e₀`, together with a factor that is **polynomial in the frequency**:
@@ -14994,7 +14982,7 @@ private lemma exists_const_of_damped_poly (k : ℕ) {C : ℝ} (hC : 0 ≤ C) :
   linarith [hS, hstep, hfin]
 
 
-/-! ### The outer radius of the three-regime split, and what it costs (wave 46)
+/-! ### The outer radius of the three-regime split, and what it costs
 
 The mean's assembly runs `esseen_split` at `δ = n⁻¹` and `ρ = c√n`, and the tail term
 `2M/(δπ²ρ) ≍ M√n` is `O(n⁻¹)` there **only because `M` is geometric in `n`**: on the tail the
@@ -15033,10 +15021,9 @@ general `N`. What has to be restated at `N = 14` is the chain
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, all three of which are proved at a
 general `N` already and are specialised to `10` only at the last step.
 
-**This is a budget statement, not a verdict.** It is also the first wave to name the outer
-radius as a parameter of the studentized assembly at all: every restatement of the six-step
-chain since wave 37 has carried the mean's `ρ = c√n`, which the polynomial `Γ` does not
-support. -/
+**This is a budget statement, not a verdict.** It names the outer
+radius as a parameter of the studentized assembly: the six-step
+chain with the mean's `ρ = c√n` is not supported by the polynomial `Γ`. -/
 
 lemma middle_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
     (n : ℝ) ^ (-(17 : ℝ) / 6) * ((n : ℝ) ^ p / (n : ℝ) ^ ((1 : ℝ) / 6))
@@ -15063,10 +15050,10 @@ lemma middle_range_ledger_radius_two {n : ℕ} (hn : 0 < n) :
   rw [middle_range_ledger_exponent _ hn, show (2 : ℝ) - 3 = -1 by norm_num,
     Real.rpow_neg_one]
 
-/-! #### The same middle range, at the price `esseen_split_low` actually charges (wave 53)
+/-! #### The same middle range, at the price `esseen_split_low` actually charges
 
 `middle_range_ledger_radius_two` reads the middle range at the *ratio* `ρ/ρ₁`, which is what
-wave 43's form of `esseen_split_low` charged and what forced `M₁ = n^{−17/6}`.  The split now
+a crude form of `esseen_split_low` charges and what forces `M₁ = n^{−17/6}`.  The split
 charges `log(ρ/ρ₁)`, and the three lemmas below are the whole of the consequence: at
 `ρ₁ = n^{1/6}`, `ρ = n²` the logarithm is `(11/6)log n`, and `log n ≤ 2√n`, so the certificate's
 own `M₁ = C/(n√n)` delivers `22C/(3π)·n⁻¹` — the headline accuracy, with `n^{-1/2}log n` of
@@ -15109,8 +15096,8 @@ lemma middle_range_log_ledger {C : ℝ} (hC : 0 ≤ C) {n : ℕ} (hn : 1 ≤ n) 
   ring
 
 /-- **The outer range's tail weight at `δ = n⁻¹` and `ρ = n²`.**  `2M/(δπ²ρ) = (2M/π²)·n⁻¹`: a
-*bare constant* `M` already delivers the headline accuracy there.  This is the whole of item 3
-of the wave-46 residue, and it is why the outer radius can be pushed out at all. -/
+*bare constant* `M` already delivers the headline accuracy there.  This is why the outer
+radius can be pushed out at all. -/
 lemma outer_range_tail_weight_eq (M : ℝ) {n : ℕ} (hn : 0 < n) :
     2 * M / (((n : ℝ))⁻¹ * Real.pi ^ 2 * (n : ℝ) ^ 2) = 2 * M / Real.pi ^ 2 / (n : ℝ) := by
   have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
@@ -15120,8 +15107,8 @@ lemma outer_range_tail_weight_eq (M : ℝ) {n : ℕ} (hn : 0 < n) :
 /-- **And the constant is free.**  On `ρ ≤ |ξ|` the gap between *any* probability law's transform
 and the studentized comparison density's is at most `2 + 1030π³|γ|`, because both are bounded:
 the first by `1` and the second by `norm_charFunDensity_studentizedEdgeworthDensity_le` together
-with `studentizedEdgeworthCharFun_tail_le`.  No property of the surrogate is used — which is
-exactly wave 46's "free once `ρ` is chosen at `n²`". -/
+with `studentizedEdgeworthCharFun_tail_le`.  No property of the surrogate is used, so the
+constant is free once `ρ` is chosen at `n²`. -/
 lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : Measure ℝ)
     [IsProbabilityMeasure μ] {ρ ξ : ℝ} (hρ : 0 ≤ ρ) (hξ : ρ ≤ |ξ|) :
     ‖charFun μ (-(2 * Real.pi * ξ))
@@ -15196,7 +15183,7 @@ lemma studentized_esseen_ledger {Kw Kr C₁ M I : ℝ} (hC₁ : 0 ≤ C₁) {n :
   linarith
 
 
-/-! #### The middle range in the shape `esseen_split_low`'s `hmid` consumes (wave 53)
+/-! #### The middle range in the shape `esseen_split_low`'s `hmid` consumes
 
 `exists_studentized_middle_range_bound` bounds the surrogate's transform; `hmid` asks for the
 *gap* to the comparison density's transform.  The second half is free: past `ρ₁ = n^{1/6}` the
@@ -15300,11 +15287,11 @@ theorem exists_studentized_middle_range_gap_bound
   linarith
 
 
-/-! #### The cost of the wider outer radius, on input (C) — SUPERSEDED BY WAVE 53
+/-! #### The cost of the wider outer radius, on input (C) — SUPERSEDED BY THE LOGARITHMIC SPLIT
 
 **THE REQUIREMENT THIS SUBSECTION PRICES DOES NOT EXIST.**  It is the cost of reaching
-`M₁ = n^{−17/6}` in the middle range, and `M₁ = n^{−17/6}` was forced only by wave 43's crude
-form of `esseen_split_low`, which charged the middle range the *ratio* `ρ/ρ₁` instead of
+`M₁ = n^{−17/6}` in the middle range, and `M₁ = n^{−17/6}` is forced only by a crude
+form of `esseen_split_low`, which charges the middle range the *ratio* `ρ/ρ₁` instead of
 `log(ρ/ρ₁)`.  With the logarithm — see `middle_range_log_ledger` above and the section note over
 `esseen_split_low` — the certificate's own `M₁ = C/(n√n)` at `N = 10`, `M = n^{5/8}` clears the
 middle range with `n^{-1/2}log n` to spare.  The lemmas below are true arithmetic and are kept as
@@ -15313,7 +15300,7 @@ the record of the route not taken; **nothing in the composition calls them.**
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le` gives the *leakage* half of
 the certificate at `n^{−17/6}`, but the certificate's `ε` and `η` are input (C)'s, and (C) is
 pinned: `tail_ledger_exponent` says `n/M⁴ = n^{−3/2}` **exactly** at the bulk radius
-`M = n^{5/8}`, which is why wave 30 chose it. Reaching `n^{−17/6}` therefore forces the bulk
+`M = n^{5/8}`, which is why that radius is chosen. Reaching `n^{−17/6}` therefore forces the bulk
 radius up, and the bulk radius is also the prefactor and the scale of the leakage estimate, so
 the requirement feeds back into `N`. The lemmas below run that loop once and it terminates.
 
@@ -15330,7 +15317,7 @@ the requirement feeds back into `N`. The lemmas below run that loop once and it 
 So the outer-radius route is bounded, not free: it is `N = 138` at `M = n^{23/24}`, against
 `N = 10` at `M = n^{5/8}` for the `n^{−3/2}` the file currently proves. Every ingredient is
 already stated at a general `N` and a general radius except `bulkRadius` itself, which is a
-`def`; a wave taking this route should parameterise it rather than re-derive the estimates.
+`def`; taking this route means parameterising it rather than re-deriving the estimates.
 
 **The alternative remains open and is cheaper if it exists:** a `θ`-uniform, geometrically small
 bound on `‖φ_{ρₙ∘Hₙ}‖` on `|θ| ≥ c√n` would keep the mean's `ρ = c√n` and leave `N = 10` alone.
@@ -15882,13 +15869,13 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
   have hsplit := integral_add_compl hAmeas hInt
   convert! hsplit.symm.trans_le (add_le_add hb1 (hb2.trans hb3)) using 1
 
-/-! #### The middle range costs a LOGARITHM, and wave 43's reason for not saying so is false
+/-! #### The middle range costs a LOGARITHM, and the reason for pricing it at the ratio is false
 
-`esseen_split_low` prices its middle range with the crude weight `1/(π|ξ|)`, and wave 43 bounded
-that weight by its value at the inner edge, `1/(πρ₁)`, giving `2M₁ρ/(πρ₁)` — the middle constant
-against the **ratio** of the two radii.  The docstring of that wave records the sharper price and
-declines it: *"the logarithm would be sharper and is not needed, since every candidate route for
-the middle range produces an `M₁` that is smaller than any power of `n`."*
+`esseen_split_low` prices its middle range with the crude weight `1/(π|ξ|)`.  Bounding
+that weight by its value at the inner edge, `1/(πρ₁)`, gives `2M₁ρ/(πρ₁)` — the middle constant
+against the **ratio** of the two radii — and the sharper price can be
+declined on the ground that *"the logarithm would be sharper and is not needed, since every
+candidate route for the middle range produces an `M₁` that is smaller than any power of `n`."*
 
 **That justification is false, and it is the sole source of the `N = 138` budget item.**  The
 route the file actually has for the middle range is the certificate, and
@@ -15990,7 +15977,7 @@ private lemma integrableOn_inv_abs_annulus {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁)
     (integrableOn_inv_abs_Icc hρ₁)
 
 /-- **The middle range of the Esseen split costs a logarithm of the ratio of the two radii, not
-the ratio itself.**  This is the whole of the wave-53 correction; everything downstream of it is
+the ratio itself.**  This is the whole of the correction; everything downstream of it is
 bookkeeping. -/
 private lemma middle_annulus_bound {f : ℝ → ℝ} {M₁ ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ)
     (hM₁ : 0 ≤ M₁)
@@ -16024,7 +16011,8 @@ private lemma middle_annulus_bound {f : ℝ → ℝ} {M₁ ρ₁ ρ : ℝ} (hρ�
 `esseen_split`.** Three regimes instead of two. On `|ξ| ≤ ρ₁` the integrand is dominated by
 `Kw·windowEnvelope₁ ξ` **plus an undamped cubic** `Kr|ξ|³`: the envelope part is the damped
 expansion, the cubic is the graded remainder, which carries no `φ^{n−k}` factor and therefore
-cannot be folded into any envelope (wave 42's outer-end refutation). On `ρ₁ ≤ |ξ| ≤ ρ` only a
+cannot be folded into any envelope (see the outer-end refutation in the note above
+`not_exists_const_mul_windowEnvelope_ge`). On `ρ₁ ≤ |ξ| ≤ ρ` only a
 constant `M₁` is asked for — that is the middle range, where nothing is expanded. On `ρ ≤ |ξ|`
 the old constant `M` and the old tail bound.
 
@@ -16033,9 +16021,9 @@ value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹`:
 envelope, `2Krρ₁³/π` for the cubic — this is the term `low_range_ledger_exponent` prices, and it
 is the reason `ρ₁` cannot exceed `n^{1/6}` — and `2M₁log(ρ/ρ₁)/π` for the middle range.
 
-**WAVE 53: the middle term is the LOGARITHM of the ratio of the two radii, not the ratio.**
-Wave 43 stated it as `2M₁ρ/(πρ₁)` and its docstring declined the logarithm as "sharper and not
-needed"; see the section note above.  That is the difference between `n^{1/3}` and `n^{-3/2}log n`
+**The middle term is the LOGARITHM of the ratio of the two radii, not the ratio.**
+The crude price is `2M₁ρ/(πρ₁)`; see the section note above.  That is the difference between
+`n^{1/3}` and `n^{-3/2}log n`
 at `ρ₁ = n^{1/6}`, `ρ = n²`, `M₁ = n^{-3/2}`, and therefore between a middle range that the
 certificate cannot cover and one it covers with `n^{-1/2}log n` to spare. -/
 private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ}
@@ -16287,7 +16275,7 @@ centred and scaled sample mean equals the normal approximation `Φ(t/σ)` correc
 skewness term `−(1/6) γ φ(t/σ) (t²/σ² − 1) n^{-1/2}`, with a remainder bounded by `C/n`
 uniformly in the argument, for a constant `C` depending only on the sampling law.
 
-**PROVED, axiom-clean.** This is Hall (1992), Thm 2.2 with `j = 1`. The programme (E1)–(E4)
+**PROVED.** This is Hall (1992), Thm 2.2 with `j = 1`. The programme (E1)–(E4)
 recorded below is complete: the assembly takes `δ = n⁻¹` and splits the Esseen integral at
 `|ξ| = c√n` with `c = min(1/(π√2), 3σ³/(4π(ρ₃ + 1)))`, bounds the window by
 `exists_window_bound` and the outer range by `edgeworthGap_tail_le`, glues the two with
@@ -16298,8 +16286,8 @@ recorded below is complete: the assembly takes `δ = n⁻¹` and splits the Esse
 CDF-level (Stieltjes) Lévy/Esseen inversion — "the identity `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T}
 ((φ_P − φ_Q)/(−it)) e^{−itx}(1 − |t|/T) dt`" — as *the estimate that fails*, on the ground that
 the integrand is integrable at `t = 0` only through cancellation and that `F_P − F_Q` is not
-`L¹`. That is no longer the situation. `ForMathlib/EsseenSmoothing.lean` now proves, axiom-clean
-and **without any Stieltjes-level inversion**,
+`L¹`. That is no longer the situation. `ForMathlib/EsseenSmoothing.lean` now proves,
+**without any Stieltjes-level inversion**,
 
 * `abs_measure_Iic_sub_le_of_integral_ramp` — the de-smoothing step ("E2"), and
 * `abs_measure_Iic_sub_le_charFun` — Esseen's smoothing inequality at CDF level:
@@ -16312,7 +16300,7 @@ transforms cancel to exactly `1/(π|ξ|)`. The Lipschitz constant `A` for the Ga
 is `normalCDF_sub_le` above.
 
 **(G2) is now CLOSED; the note that named it "the estimate that fails" is superseded.**
-`ForMathlib/BerryEsseen.lean` proves, axiom-clean,
+`ForMathlib/BerryEsseen.lean` proves
 
 * `norm_charFun_sub_cubic_le` — the fourth-order Taylor expansion
   `‖φ_F(u) − (1 − v u²/2 − i m₃ u³/6)‖ ≤ (E X⁴) |u|⁴/24`, retaining the third cumulant;
@@ -16621,9 +16609,10 @@ theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
             + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
             + 3 * (2 + 6 * |skewness F|) + 1 := by linarith
 
-/-- **`edgeworth_mean_uniform` with the constant quantified outside the law — wave 41, item 1.**
+/-- **`edgeworth_mean_uniform` with the constant quantified outside the law.**
 
-This is the theorem (U3) needs and the one the wave-40 note asked for. The statement is
+This is the theorem (U3) needs and the one the section note above `slabRoot` asks for. The
+statement is
 `edgeworth_mean_uniform` verbatim, except that the constant `C` is produced *before* the law is
 chosen, from four numbers: an upper bound `R` on the absolute third moment of the centred law, an
 upper bound `B` on its fourth moment, a lower bound `s₀` on the standard deviation, and a Cramér
@@ -16823,7 +16812,7 @@ an interval of length `δ`. For the *centred* root that is a corollary of the cl
 `edgeworth_mean_uniform` and costs nothing beyond the Lipschitz modulus of the approximant,
 which `setIntegral_abs_edgeworthDensity_le` already supplies with a constant independent of
 `n`. This is the half of the anti-concentration companion that is not circular: the surrogate
-of the studentized problem is a perturbation of this root, and what a later wave has to add is
+of the studentized problem is a perturbation of this root, and what remains to be added is
 only the transfer across that perturbation. -/
 
 /-- **The Edgeworth approximant is Lipschitz, with a constant independent of `n`.**
@@ -16902,7 +16891,7 @@ theorem meanRootCDF_sub_le [IsProbabilityMeasure F]
     linarith
   linarith [hAa, hAb, hlip, hmono, hcn]
 
-/-- **`meanRootCDF_sub_le` with the constant quantified outside the law — wave 41, item 1.**
+/-- **`meanRootCDF_sub_le` with the constant quantified outside the law.**
 
 The anti-concentration companion of `edgeworth_mean_uniform_of_bounds`, in the same class form:
 one `C`, chosen from `(R, B, s₀, cr, c)` before the law, such that *every* law meeting the
@@ -17053,12 +17042,12 @@ lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → �
   simp only [sub_zero]
   rw [integral_map (f := fun t : ℝ => t ^ 2) hf.aemeasurable (by fun_prop)]
 
-/-- **(U3)'s window hypothesis, produced — wave 41, item 1d.**
+/-- **(U3)'s window hypothesis, produced.**
 
 This is `hwin` of `measure_pi_abs_deltaSurrogate_insertNth_le` (and of
 `measure_pi_abs_slab_insertNth_le`, and of `measure_pi_vecRoot_slab_le_of_win`) with
 `A = Kb/s₀` and `η = C₀/n`: **one** pair of constants, valid at every slope `|κ| ≤ Kslope` and
-every `n`, with the additive term `O(n⁻¹)` — which is the accuracy the wave-39/40 ledger needs
+every `n`, with the additive term `O(n⁻¹)` — which is the accuracy the ledger needs
 and which a Berry–Esseen bound cannot supply.
 
 The chain is short because everything under it is now available. `measure_pi_root_eq_meanRootCDF`
@@ -17075,7 +17064,7 @@ deliberate — they are moment arithmetic about `slabRoot (studentPair F) σ ·`
 of `F`, verified in the section note above `slabRoot` (`abs_slabRoot_le` dominates the summand
 slope-uniformly, `integral_slabRoot_sq_ge` is the variance floor by perturbation, and
 `exists_bound_norm_charFun_map_slabRoot` is the one Cramér constant for all slopes), but the
-arithmetic itself is *not* discharged here and this wave does not claim it. See the status note
+arithmetic itself is *not* discharged here. See the status note
 on `edgeworth_studentized_uniform` for the exact remaining list. -/
 theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → EuclideanSpace ℝ (Fin 2)} (hZ : Measurable Z) (σ : ℝ)
@@ -17187,14 +17176,14 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   exact measure_abs_sub_le_of_abs_cdf_sub_le (Measure.pi fun _ : Fin n => F) hTm
     (by positivity : (0 : ℝ) ≤ Kb / s₀) hAlip happrox u hw
 
-/-! ### The re-centred truncated pair `Zₙ`, and the CDF-level comparison (wave 49)
+/-! ### The re-centred truncated pair `Zₙ`, and the CDF-level comparison
 
-Wave 48 found that no single law supports all eight hypotheses of
+No single law supports all eight hypotheses of
 `exists_studentized_low_range_window_bound`: `hB1`, `hB2` and the `k`-slot bounds need the
 summand to be **exactly** centred, while `hRg` needs it **bounded**, and
-`studentPair F ∘ truncAt m √n` — the pair every statement of the chain since wave 37 has carried
-— is bounded but *not* centred, because truncation moves the mean.  The repair wave 48
-prescribed is to truncate **and re-centre**, i.e. to run the low range on
+`studentPair F ∘ truncAt m √n` — the pair the chain carries
+— is bounded but *not* centred, because truncation moves the mean.  The repair
+is to truncate **and re-centre**, i.e. to run the low range on
 
 `Zₙ(x) = (T x − mₙ, (T x − mₙ)² − vₙ)`,  `T = truncAt m √n`, `mₙ = ∫T dF`, `vₙ = ∫(T − mₙ)² dF`.
 
@@ -17219,12 +17208,12 @@ all; that is the whole reason the re-centring is affordable.  The shift is bound
 `√n·μ₄/τ³ = μ₄/n` at `τ = √n` (`abs_integral_truncAt_sub_le`), so it is of the target order and
 what removes it is the peel, exactly as for the other perturbations of the region.
 
-`abs_studentizedRootCDF_sub_recentred_le` is the composition of that identity with wave 37's
-`abs_studentizedRootCDF_sub_truncAt_le`: it is item (a) of the wave-48 residue. -/
+`abs_studentizedRootCDF_sub_recentred_le` is the composition of that identity with
+`abs_studentizedRootCDF_sub_truncAt_le`: it is item (a) of the residue. -/
 
 /-- The **studentizing pair at an arbitrary centring** `(c, v)`: `x ↦ (x − c, (x − c)² − v)`.
 `studentPair G` is `pairAt (∫s∂G) Var[G]`, definitionally, and the re-centred truncated pair
-`Zₙ` of the wave-48 residue is `pairAt mₙ vₙ ∘ truncAt m √n = studentPair (F.map T) ∘ T`. -/
+`Zₙ` of the residue is `pairAt mₙ vₙ ∘ truncAt m √n = studentPair (F.map T) ∘ T`. -/
 noncomputable def pairAt (c v : ℝ) : ℝ → EuclideanSpace ℝ (Fin 2) := fun x =>
   WithLp.toLp 2 ![x - c, (x - c) ^ 2 - v]
 
@@ -17365,14 +17354,14 @@ lemma abs_integral_truncAt_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
       _ ≤ (x - m) ^ 4 / τ ^ 3 := h
   · rw [integral_div]
 
-/-- **(a) OF THE WAVE-48 RESIDUE — THE RE-CENTRED TRUNCATED PAIR AND ITS CDF-LEVEL
+/-- **(a) OF THE RESIDUE — THE RE-CENTRED TRUNCATED PAIR AND ITS CDF-LEVEL
 COMPARISON.**  The studentized distribution function of the sample and the mass the root law of
 the **re-centred** truncated pair `Zₙ = studentPair (F.map T) ∘ T` gives to the studentized
 region *of the truncated law*, with the numerator shifted by `√n(mₙ − m)`, differ by at most
 `n·μ₄/τ⁴` — at `τ = √n`, by `μ₄/n`.
 
 Both defects are of the target order and neither is an estimate on the pair: the first is the
-change of law (wave 37, `abs_studentizedRootCDF_sub_truncAt_le`) and the second is the exact
+change of law (`abs_studentizedRootCDF_sub_truncAt_le`) and the second is the exact
 identity `vecRootLaw_pairAt_region_eq`.  What the shift then costs is priced by
 `abs_integral_truncAt_sub_le` and removed by the peel. -/
 theorem abs_studentizedRootCDF_sub_recentred_le (F : Measure ℝ) [IsProbabilityMeasure F]
@@ -17397,12 +17386,12 @@ theorem abs_studentizedRootCDF_sub_recentred_le (F : Measure ℝ) [IsProbability
 /-! ### (b) the moment side of the six damped bounds, at the truncated law
 
 The equalities `hmean`/`hthird` of `norm_charFun_smul_pow_sub_edgeworth_le` and `hm0`/`hm1`/
-`hcent` of the two multilinear theorems are what wave 48 found the truncated pair could not
+`hcent` of the two multilinear theorems are what the un-re-centred truncated pair cannot
 supply.  At `Zₙ` they are supplied by *construction* and by nothing else: `Zₙ = studentPair G ∘ T`
 with `G = F.map T`, `G` is a probability measure all of whose moments are finite because `T` is
 bounded (`memLp_id_map_truncAt`), and `integral_inner_studentPair` at `G` is then free — it needs
 no hypothesis on `F` at all.  `hF8` is *not* spent here; it is spent on the sizes, which is where
-wave 47's account of the eight put it and where it belongs. -/
+it belongs. -/
 
 /-- The pair at an arbitrary centring is bounded by its coordinates. -/
 lemma norm_pairAt_le (c v x : ℝ) :
@@ -17419,7 +17408,7 @@ lemma norm_pairAt_le (c v x : ℝ) :
 `L(a, b) = (a, b + 2δa)` and translated by `(δ, v′ + δ² − v)`.  `L` is linear, unipotent and
 therefore invertible, and `‖L − I‖ = 2|δ|`; this is the device by which a bound proved for one
 of the two truncated pairs transfers to the other, at the cost of `t ↦ Lᵀt` in the frequency and
-a unimodular factor.  See the wave-49 status note on `edgeworth_studentized_uniform`. -/
+a unimodular factor.  See the status note on `edgeworth_studentized_uniform`. -/
 lemma pairAt_zero_eq_affine (c v c' v' x : ℝ) :
     (pairAt c v x) 0 = (pairAt c' v' x) 0 + (c' - c) := by
   simp only [pairAt_zero]; ring
@@ -17490,8 +17479,8 @@ lemma norm_studentPair_map_truncAt_le (F : Measure ℝ) [IsProbabilityMeasure F]
 
 /-! ### (c) what `hRg` owes at `Zₙ`, named exactly: two moment integrals of the bounded root
 
-Wave 48 calls (c) "a Rosenthal-type bound at the truncation level … the only one of the eight
-with any content left".  `integral_surrogateRemGraded_le` below is the reduction that says what
+Item (c) is a Rosenthal-type bound at the truncation level, the only one of the eight
+with any content left.  `integral_surrogateRemGraded_le` below is the reduction that says what
 that bound has to be, and it removes every transform from the statement: `hRg` holds, at the
 constants `C₃ = 4π³M₃/3` and `C₂ = 2π²M₂`, as soon as
 
@@ -17502,8 +17491,8 @@ are polynomials in `|w₀|, |w₁|` of degree **nine** and **six**, so what (c) 
 sixth moment of a normalised sum of bounded, exactly centred summands — Rosenthal, and nothing
 weaker.
 
-**AND THE CRUDE POINTWISE ROUTE IS DEAD, WHICH WAVE 48 LEFT OPEN.**  Wave 48 offers "a crude
-`‖Zₙ‖ ≤ C√n` pointwise route if the ledger tolerates it".  It does not, and the margin is not
+**AND THE CRUDE POINTWISE ROUTE IS DEAD.**  A crude `‖Zₙ‖ ≤ C√n` pointwise route would
+work if the ledger tolerated it.  It does not, and the margin is not
 close.  `Zₙ`'s *second* coordinate is bounded by `τ² = n`, not by `τ = √n`, so the pointwise
 bound on the summand is `‖Zₙ‖ = O(n)` and on the root `‖w‖ = O(√n · n) = O(n^{3/2})` — hence
 `surrGradedCube ≤ O(n^{27/2})`, and against the `r³ = n^{-3/2}` the shape carries that is
@@ -17542,7 +17531,7 @@ lemma surrogateRemPoly_eq_graded (σ θ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) 
 exactly the shape `exists_studentized_low_range_window_bound`'s `hRg` asks for — `r³` times a
 quadratic *and* a cubic in `|ξ|` with **`n`-free** coefficients — as soon as the two moment
 functionals `surrGradedCube`, `surrGradedQuad` of the root's law are bounded uniformly in `n`.
-That is the whole of item (c) of the wave-48 residue, and this lemma is what turns it from an
+That is the whole of item (c) of the residue, and this lemma is what turns it from an
 estimate on a transform into two named integrals of a bounded random vector. -/
 theorem integral_surrogateRemGraded_le (μ : Measure (EuclideanSpace ℝ (Fin 2))) {σ r : ℝ}
     (hr : 0 ≤ r) (hr1 : r ≤ 1) (ξ : ℝ) {M₂ M₃ : ℝ}
@@ -17784,20 +17773,20 @@ lemma crude_graded_ledger_exponent_graded {n : ℕ} (hn : 0 < n) :
     ← Real.rpow_add h0]
   norm_num
 
-/-! ### WAVE 50, THE FIRST CORRECTION: the reduction of (c) to four scalar moments is LOSSY,
-and the loss is exactly the `r²≤r` collapse wave 25 already proved fatal
+/-! ### A correction: the reduction of (c) to four scalar moments is LOSSY,
+and the loss is exactly the `r²≤r` collapse already shown to be fatal
 
 `integral_surrogateRemGraded_le` proves `hRg` by passing through `surrogateRemGraded_le`, i.e.
-by **collapsing** every power of `r` onto a single `r³`.  The wave-25 note above
+by **collapsing** every power of `r` onto a single `r³`.  The note above
 (`surrogateRemGraded`) is a formal record that this collapse is not harmless: the worst monomial
 of the cubic block is `|u|³|v|⁶`, it carries `r⁶` in the graded envelope and `r³` in the
 collapsed one, and the two ledgers differ by `r³ = n^{-3/2}`.
 
-Wave 49 read that difference as absorbed, and reduced `hRg` to four scalar moments of the root
-of `Zₙ`, `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹`, asserting all four `O(1)`.  **Three of the four are;
+Reading that difference as absorbed reduces `hRg` to four scalar moments of the root
+of `Zₙ`, `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹`, each of which must be `O(1)`.  **Three of the four are;
 the fourth is not, and no moment hypothesis available to the headline makes it so.**  Write
 `η = ξ² − σ²` for the second summand and `η̃` for its truncation at `τ² = n`.  `hF8` gives
-`E η̃⁴ ≲ μ₈ = O(1)` — this is the wave-49 improvement over wave 25, which had only `Eη² = O(1)`,
+`E η̃⁴ ≲ μ₈ = O(1)` — an improvement over `Eη² = O(1)` —
 and it is what makes `E|w₁|⁶ = O(1)` (`second_coord_root_moment_exponent` at `p = 6`).  But the
 same ledger at `p = 9` reads
 
@@ -17932,13 +17921,13 @@ theorem integral_surrogateRemGraded_le_of_graded (μ : Measure (EuclideanSpace �
     mul_le_mul_of_nonneg_left h₅ c₃, mul_le_mul_of_nonneg_left h₆ c₄,
     mul_le_mul_of_nonneg_left hQ₃ c₅, mul_le_mul_of_nonneg_left hQ₄ c₆]
 
-/-! ### WAVE 51, ITEM 1(ii): the six blocks in five scalar absolute moments
+/-! ### The six blocks in five scalar absolute moments
 
 `integral_surrogateRemGraded_le_of_graded` asks for six *bivariate* block integrals.  What a
 moment inequality for a normalised sum delivers is a scalar absolute moment of one coordinate at
-a time, so the six have to be identified against those -- item 1(ii) of the wave-50 residue.
+a time, so the six have to be identified against those.
 
-Wave 50 called this "the Hölder identification"; it does not need Hölder.  Every monomial of
+This identification does not need Hölder.  Every monomial of
 every block has a total degree (`6, 7, 8, 9, 5, 6` for `N₃, N₄, N₅, N₆, Q₃, Q₄`), and the whole
 identification is `XⁱYʲ ≤ Mᵈ ≤ Xᵈ + Yᵈ` at `M = max X Y`, `d = i + j` -- the device already used
 for `surrGradedCube_le_moments`, run block by block instead of on the collapsed cube.  Because
@@ -17957,8 +17946,8 @@ deliver), the discounted combination reads, at `r = n^{-1/2}`,
 
 and `2Q₃ + rQ₄ ≲ 1 + n^{-1/2} = O(1)`.  Every one of the four graded slots is `O(1)` **and no
 two of them are of the same order** -- the combination is flat precisely because each block's
-growth is cancelled by its own power of `r`.  That is the whole content of the wave-50
-correction, now discharged.
+growth is cancelled by its own power of `r`.  That is the whole content of the correction, now
+discharged.
 
 **The odd `S d` must come from the WEIGHTED sandwich.**  Three of the five scalar moments this
 theorem consumes are of odd order (`d = 5, 7, 9`), and the flatness above leaves *no* margin:
@@ -18129,7 +18118,7 @@ lemma second_coord_root_moment_exponent {n : ℕ} (hn : 0 < n) (p : ℝ) :
   rw [← Real.rpow_add h0]
   ring_nf
 
-/-- At `p = 6` the exponent is `0`: `E|w₁|⁶ = O(1)`, which is the wave-49 arithmetic and is
+/-- At `p = 6` the exponent is `0`: `E|w₁|⁶ = O(1)`, which is
 correct. -/
 lemma second_coord_root_sixth_moment_bounded {n : ℕ} (hn : 0 < n) :
     (n : ℝ) ^ (1 - (6 : ℝ) / 2) * (n : ℝ) ^ ((6 : ℝ) - 4) = 1 := by
@@ -18137,8 +18126,8 @@ lemma second_coord_root_sixth_moment_bounded {n : ℕ} (hn : 0 < n) :
   rw [← Real.rpow_add h0]
   norm_num
 
-/-- At `p = 9` the exponent is `3/2`: `E|w₁|⁹ ≍ n^{3/2}`, **not** `O(1)`.  This is the wave-49
-claim that fails, and with it the hypothesis `h9` of
+/-- At `p = 9` the exponent is `3/2`: `E|w₁|⁹ ≍ n^{3/2}`, **not** `O(1)`.  So the bound
+`E|w₁|⁹ = O(1)` fails, and with it the hypothesis `h9` of
 `integral_surrogateRemGraded_le_of_moments`. -/
 lemma second_coord_root_ninth_moment_exponent {n : ℕ} (hn : 0 < n) :
     (n : ℝ) ^ (1 - (9 : ℝ) / 2) * (n : ℝ) ^ ((9 : ℝ) - 4) = (n : ℝ) ^ ((3 : ℝ) / 2) := by
@@ -18184,12 +18173,11 @@ lemma second_coord_ninth_moment_threshold (q : ℕ) :
     have : (6 : ℝ) ≤ (q : ℝ) := by exact_mod_cast h
     linarith
 
-/-! ### Item 4 of the wave-49 residue: the skewness comparison `|γₙ − γ|`
+/-! ### Item 4 of the residue: the skewness comparison `|γₙ − γ|`
 
 The low range produces the studentized approximant at `γₙ`, the skewness of the **truncated**
-law `G = F.map T`, and the headline is stated at `skewness F`.  Wave 48 named the defect in
-passing and priced it at `n^{-1/2}·n^{-1/2}`; wave 49 listed it as item 4 of the residue and
-recorded that it "is not proved and is not part of items 1–3".  It is proved here, and the true
+law `G = F.map T`, and the headline is stated at `skewness F`.  The defect is priced in
+passing at `n^{-1/2}·n^{-1/2}`.  It is proved here, and the true
 order is `O(n⁻¹)` — one power better than the price, with the surplus coming from the fact that
 the *centring* defect enters the third central moment linearly and is itself `O(n^{-3/2})`.
 
@@ -18450,7 +18438,7 @@ lemma integral_sq_truncAt_le (F : Measure ℝ) [IsProbabilityMeasure F] (m : ℝ
   have h := abs_truncAt_sub_le_abs m τ x
   nlinarith [abs_nonneg (truncAt m τ x - m), sq_abs (truncAt m τ x - m), sq_abs (x - m)]
 
-/-- **ITEM 4 OF THE WAVE-49 RESIDUE — THE SKEWNESS COMPARISON, AT A GENERAL TRUNCATION
+/-- **ITEM 4 OF THE RESIDUE — THE SKEWNESS COMPARISON, AT A GENERAL TRUNCATION
 LEVEL.**  The skewness of the truncated law differs from that of the sampling law by the
 truncation defects of the second and third moments, transported through the ratio. -/
 theorem abs_skewness_map_truncAt_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
@@ -18597,7 +18585,7 @@ private lemma skewness_ledger {μ₃ μ₄ μ₈ v s₃ s₅ nR : ℝ} (h₄ : 0
   have hpos : (0 : ℝ) < 1 / nR := by positivity
   linarith
 
-/-- **ITEM 4 OF THE WAVE-49 RESIDUE, AT THE CHAIN'S OWN TRUNCATION LEVEL `τ = √n`.**  The
+/-- **ITEM 4 OF THE RESIDUE, AT THE CHAIN'S OWN TRUNCATION LEVEL `τ = √n`.**  The
 skewness of the truncated law and the skewness of the sampling law differ by `O(n⁻¹)`. -/
 theorem exists_abs_skewness_map_truncAt_sqrt_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF1 : Integrable (fun x : ℝ => x) F)
@@ -18658,7 +18646,7 @@ theorem exists_abs_skewness_map_truncAt_sqrt_sub_le (F : Measure ℝ) [IsProbabi
   exact hcore.trans (skewness_ledger hμ₄nn hμ₈nn hFvar hs3 hs5 hnR)
 
 
-/-! ### Item 3 of the wave-49 residue: the affine transfer of the middle and outer ranges
+/-! ### Item 3 of the residue: the affine transfer of the middle and outer ranges
 
 `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` record that the two centrings differ by the
 unipotent affine map `L(a,b) = (a, b + 2δa)` plus a translation.  What the composition needs is
@@ -18670,7 +18658,7 @@ proved here in one line of measure theory and one of algebra:
   because `κ` is added once per summand and the root divides by `√n`;
 * therefore `‖φ(t)‖ = ‖φ′(Lᵀt)‖` **exactly** (`norm_charFun_vecRootLaw_pairAt_transfer`): the
   translation contributes only a unimodular exponential, which the modulus discards.  There is
-  no loss at all in the transfer — wave 49 priced it as if there might be.
+  no loss at all in the transfer.
 
 The only quantitative content is the distortion of the frequency, and `Lᵀ = centringAdj δ` is
 `t ↦ t + 2δt₁·e₀`, so `‖Lᵀt‖ ≤ (1 + 2|δ|)‖t‖` and `‖t‖ ≤ (1 + 2|δ|)‖Lᵀt‖`
@@ -18787,7 +18775,7 @@ lemma vecRootLaw_pairAt_map (F : Measure ℝ) (g : ℝ → ℝ) (hg : Measurable
   funext y
   exact vecRoot_pairAt_eq c v c' v' g y
 
-/-- **ITEM 3 OF THE WAVE-49 RESIDUE — THE AFFINE TRANSFER.**  A bound on the modulus of the
+/-- **ITEM 3 OF THE RESIDUE — THE AFFINE TRANSFER.**  A bound on the modulus of the
 transform of the root at one centring is a bound at the other, at the transposed frequency and
 with no loss whatever: the translation contributes a unimodular factor. -/
 theorem norm_charFun_vecRootLaw_pairAt_transfer (F : Measure ℝ) [IsProbabilityMeasure F]
@@ -18849,7 +18837,7 @@ lemma norm_le_norm_centringAdj (δ : ℝ) (t : E₂) :
   have h := norm_centringAdj_le (-δ) (centringAdj δ t)
   rwa [centringAdj_centringAdj, abs_neg] at h
 
-/-- **ITEM 3 OF THE WAVE-49 RESIDUE, AT THE TWO CONCRETE PAIRS.**  Every transform bound on the
+/-- **ITEM 3 OF THE RESIDUE, AT THE TWO CONCRETE PAIRS.**  Every transform bound on the
 root of the *un*-re-centred truncated pair `studentPair F ∘ T` — the certificate, the Gaussian
 bulk majorant and the Cramér tail all carry that law — is a transform bound on the root of the
 re-centred pair `Zₙ = studentPair (F.map T) ∘ T`, at the transposed frequency. -/
@@ -18880,24 +18868,22 @@ theorem norm_centringAdj_recentred_le (F : Measure ℝ) [IsProbabilityMeasure F]
 
 /-! ### The studentized Edgeworth expansion (reference statement removed)
 
-**Not present: `edgeworth_studentized_uniform`.** An earlier revision stated here, with a `sorry`
-body, the one-term Edgeworth expansion for the studentized sample mean, uniform in the argument
-(the classical statement of Hall's §2.4 line, under an eight-moment hypothesis). It was removed
-(user-authorized, 2026-08-03) together with its sole consumer,
+**Not present: `edgeworth_studentized_uniform`.** The one-term Edgeworth expansion for the
+studentized sample mean, uniform in the argument (the classical statement of Hall's §2.4 line,
+under an eight-moment hypothesis), is not stated in this file, and neither is its sole consumer,
 `cornishFisher_studentized_quantile`, so that the library carries no unproven statement. The
-removal is of the *assembled headline only*: every ingredient the twenty-wave development built
-for it is proved, axiom-clean, and retained in this file — the mean expansion
+omission is of the *assembled headline only*: every ingredient built
+for it is proved and retained in this file — the mean expansion
 `edgeworth_mean_uniform` and its moment-explicit variant, the Fourier certificate
 `exists_fourierCertificate_deltaSurrogate` over its proved inputs (A), (B), (C) at the repaired
 band, the middle-range theorem `exists_studentized_middle_range_gap_bound`, the low-range window
 bound, the surrogate anti-concentration chain (the (U3) development), the exact iid moment
 recursion with Rosenthal bounds at orders six through ten, the affine transfer between the two
 truncated studentizations, the skewness comparison, and the four-slot Esseen ledger
-`studentized_esseen_ledger`. What was never assembled is only the final composition of these
-into the headline inequality; the wave-53 status notes (see git history) record the last known
-state: the residue was the eight moment identifications at the re-centred pair plus the assembly
-itself, with no known obstruction. Re-adding the statement means re-running exactly that
-assembly on top of the retained machinery. The generic inversion
+`studentized_esseen_ledger`. What is not assembled is only the final composition of these
+into the headline inequality: the residue is the eight moment identifications at the re-centred
+pair plus the assembly itself, with no known obstruction. Adding the statement means running
+exactly that assembly on top of the retained machinery. The generic inversion
 `cornishFisher_of_edgeworth` below is proved and takes the expansion as a hypothesis, so the
 quantile corollary is recoverable verbatim the moment the headline is restored. -/
 
@@ -19421,10 +19407,10 @@ theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC
 
 /-! ### The Cornish–Fisher quantile corollary (removed with its input)
 
-**Not present: `cornishFisher_studentized_quantile`.** Its proof was complete and is one
-`obtain` + one application of `cornishFisher_of_edgeworth` (see git history at wave 37); it
-consumed `edgeworth_studentized_uniform`, removed above, and was removed with it
-(user-authorized, 2026-08-03) so the library carries no sorry-transitive statement. All the
+**Not present: `cornishFisher_studentized_quantile`.** Its proof is one
+`obtain` + one application of `cornishFisher_of_edgeworth`; it
+consumes `edgeworth_studentized_uniform`, which is not stated above, so it is not stated
+either. All the
 inversion mathematics survives, proved, in `cornishFisher_of_edgeworth` and the private lemmas
 of this section. -/
 

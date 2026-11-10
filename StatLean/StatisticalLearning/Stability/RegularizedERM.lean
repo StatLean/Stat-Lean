@@ -12,11 +12,10 @@ inequality `E[L_D(A(S))] ≤ L_D(wStar) + λ‖wStar‖² + 2ρ²/(λn)` (SSBD C
 convex-Lipschitz-bounded problems (SSBD Corollary 13.9).
 
 **Reference.** SSBD Ch. 13 (Definitions 13.3/13.4, Lemma 13.5, Corollaries
-13.6, 13.8, 13.9); Ch. 12 (Definition 12.12). Transcriptions:
-`notes/statistical_learning/book_statements/ch12-13.md`.
+13.6, 13.8, 13.9); Ch. 12 (Definition 12.12).
 
 **Formalization notes.** The smooth-loss track (Corollaries 13.7/13.10/13.11,
-the `48β` constants) is excluded from Round 1. Hypotheses are `W` a real
+the `48β` constants) is not formalized. Hypotheses are `W` a real
 inner-product space, loss convex in `w` for each `z` (`ConvexOn ℝ univ`) and
 globally `ρ`-Lipschitz in `w`; the RLM selector is data (`IsRLMMin` per
 sample). Lemma 13.5(1) is the exact inner-product identity
@@ -262,8 +261,7 @@ private theorem rlm_replaceOne_dist_le_aux {s : Sample Z n} {i : Fin n} {z' : Z}
 /-- **RLM sensitivity** (SSBD Eqs. (13.7)–(13.11)): for a convex `ρ`-Lipschitz
 loss, replace-one RLM minimizers are `2ρ/(λn)`-close.
 
-The hypothesis `0 ≤ ρ` was added at the verification gate (statement repair,
-2026-08-10): without it the statement is false on a trivial (subsingleton) `W`,
+The hypothesis `0 ≤ ρ` is needed: without it the statement is false on a trivial (subsingleton) `W`,
 where `hlip` degenerates to `0 ≤ ρ·0` and carries no sign information while the
 goal still asserts `0 ≤ 2ρ/(λn)` — witness `W := EuclideanSpace ℝ (Fin 0)`,
 `ℓ := 0`, `ρ := -1`, `lam := 1`, `n := 1`. The book's `ρ` (SSBD Def. 12.6) is a
@@ -340,7 +338,7 @@ theorem rlm_stabilityGap_le (D : Measure Z) [IsProbabilityMeasure D]
   have hle := Finset.sum_le_sum fun (i : Fin n) (_ : i ∈ Finset.univ) => hbound i
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hle
   have hmul := mul_le_mul_of_nonneg_left hle (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)
-  simp only [stabilityGap]
+  simp only [stabilityGap, Measure.bindProd_eq_prod]
   refine le_trans hmul (le_of_eq ?_)
   rw [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hnpos), one_mul]
 

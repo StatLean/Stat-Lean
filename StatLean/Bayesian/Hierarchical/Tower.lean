@@ -32,7 +32,7 @@ via the dominated predictive) turns the outer integral into a `withDensity` agai
 per-`λ` normalizer `Z_λ(x)` **cancels** the conditional normalizer inside; `∫λ Z_λ(x) ∂ρ = Z(x)` is
 `marginalLikelihood_hier_eq_lintegral_hyperMarginal`. No prior density is needed. The abstract
 density-free version (dropping `hlik` too) needs a jointly-measurable conditional-posterior kernel
-family (a ForMathlib disintegration primitive; see `notes/bayesian/roadmap.md`, Batch 4).
+family (a ForMathlib disintegration primitive).
 
 **Bibliographic comments.** The mixture/tower decomposition of a hierarchical posterior is the
 Rao–Blackwellization structure exploited by every hierarchical Gibbs sampler (Gelfand and Smith,
@@ -163,7 +163,7 @@ theorem posteriorExpectation_tower_hierarchical
     rw [hA0]; simp
   · rw [mul_assoc, ENNReal.inv_mul_cancel hz hlamfin.ne, mul_one]
 
-/-- **The mixture identity** (3A.6, the single most important theorem of the batch), in evaluated
+/-- **The mixture identity** (3A.6, the single most important theorem of this module), in evaluated
 form: the parameter posterior of a set is the hyperposterior average of the conditional posteriors
 of that set — `Π(s∣x) = ∫ Π_λ(s∣x) ρ(dλ∣x)` (Gelman §5.3). -/
 theorem thetaPosterior_apply_eq_lintegral_hyperPosterior

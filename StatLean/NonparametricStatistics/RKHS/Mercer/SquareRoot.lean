@@ -1288,7 +1288,7 @@ theorem range_mercerCLM_subset
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (g : Lp 𝕜 2 μ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ K g := by
-  -- Route (Bochner-integral, written out by the round-2 session): from `hKH ▸ hKc` get
+  -- Route (Bochner integral): from `hKH ▸ hKc` get
   -- `hKsc : Continuous (scalarKernel H ·×·)`, hence `continuous_kernelFun H hKsc` and a
   -- uniform bound `C` on `‖kernelFun H y‖` by compactness; `y ↦ g y • kernelFun H y` is
   -- integrable (`Integrable.mono'` against `‖g ·‖ * C`), and

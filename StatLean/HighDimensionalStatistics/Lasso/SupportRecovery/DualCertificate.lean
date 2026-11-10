@@ -58,12 +58,12 @@ Cambridge University Press, 2019. Chapter 7 (Sparse linear models in high dimens
   `‖V_{Sᶜ}‖_∞ ≤ ½(1−α)` (choice of λ);
 * the **ℓ∞ bound** `‖θ̂_S − θ*_S‖_∞ ≤ B(λ;X)` (7.54 / 7.45).
 
-Internal proof roadmap (named `private` lemmas / `have`s, see cluster prompt):
+Proof outline (named `private` lemmas / `have`s):
 `theta_diff_eq` (7.52), `zSc_eq` (7.53), `incoherence_bound`, `noise_bound`,
 `strict_dual_feasibility`, `linf_error_bound`. Uses the Gram/inverse/projection bounds
 from `GramMatrix.lean`.
 
-*Deviation from the roadmap.*
+*Choice of proof route.*
 The oracle `θ̂` (step 1) and its on-support subgradient `ẑ_S` (step 3) are obtained by
 applying the *existing* `lasso_minimizer_exists` / `kkt_of_isLassoEstimator` to the design
 `X'` obtained from `X` by **zeroing every column outside `S`** (`zeroOffCols`). Because `X'`
@@ -73,7 +73,7 @@ supported on `S` (`minimizer_supported`), and on `S` the `X'`-gradient coincides
 convex-analysis machinery of `Subgradient.lean` verbatim and avoids re-indexing through
 `Fin S.card`. Steps 4–9 are realized as named `have`s inside the main proof (rather than
 top-level `private` lemmas) because they share the constructed witness `(θ̂, ẑ)` and a long
-list of hypotheses; with `0` `sorry`s the gap structure is still fully explicit.
+list of hypotheses.
 
 **Bibliographic comments.** The primal–dual witness construction and the strict-dual-
 feasibility / mutual-incoherence analysis of the Lasso originate with M. J. Wainwright,

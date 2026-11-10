@@ -7,7 +7,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.PrekopaLeindler
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Analysis.Matrix.Order
-import Mathlib.Topology.Algebra.Module.Equiv
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # Anderson's lemma for centered multivariate Gaussians

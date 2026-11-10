@@ -16,7 +16,7 @@ $$ \sup_{\|f\|_{\mathrm{Lip}} \le L} |X_f|
 where $\mathcal{F}$ is the $[0,1]$-valued class (8.24) and $N_m$ is the
 monotone finite exhaustion `lipschitzNetUnion m` of a countable
 $L^\infty$-dense subfamily. No `Countable` hypothesis appears anywhere: the
-recovery is deterministic, exactly as the fixed measurability/sup policy
+recovery is deterministic, exactly as the fixed measurability requirement
 prescribes.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
@@ -37,9 +37,7 @@ deterministic oscillation bound `|X_f − X_g| ≤ 2 · dist f g`
 argument; `ℝ` is conditionally complete, so every `⨆` step carries explicit
 `BddAbove` side conditions (`bddAbove_range_abs_empiricalProcess`, from
 `|X_f| ≤ 2`). Edge behavior: `lipschitzNetUnion m` uses meshes `j + 1` so
-every `lipschitzNet` call has its `NeZero` instance. Named-sorry fallback of
-the work item `hdp-emp-dense`: `iSup_abs_empiricalProcess_eq_iSup_netUnion`
-(R3; the R1/R2 rewrites must close for real).
+every `lipschitzNet` call has its `NeZero` instance.
 
 **Bibliographic comments.** Reduction to a countable dense subclass is the
 classical device for measurability of empirical suprema, systematized in
@@ -133,11 +131,11 @@ theorem bddAbove_range_abs_empiricalProcess [IsProbabilityMeasure P] (ω : Ω) :
     (f := ⇑(f : C(unitInterval, ℝ))) hB ω
   linarith
 
-/-- **R3, dense-net reduction** (measurability/sup policy; HDP §8.2): the
+/-- **R3, dense-net reduction** (measurability requirement; HDP §8.2): the
 full supremum over the uncountable class (8.24) equals the countable
 monotone limit of finite maxima over the exhaustion — deterministically, for
 every `ω`. Engine: `|X_f − X_g| ≤ 2 · dist f g` + density `3/(m+1)` +
-ε-of-room. Named-sorry fallback of `hdp-emp-dense`. -/
+ε-of-room. -/
 theorem iSup_abs_empiricalProcess_eq_iSup_netUnion [IsProbabilityMeasure P]
     (ω : Ω) :
     (⨆ f : lipschitzUnitClass,

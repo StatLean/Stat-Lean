@@ -14,7 +14,7 @@
     {"id":"StatLean.HighDimensionalStatistics.restrict_ofLp_apply","label":"restrict_ofLp_apply","full":"StatLean.HighDimensionalStatistics.restrict_ofLp_apply","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
     {"id":"subset_antisymm","label":"subset_antisymm","full":"subset_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.RelClasses"},
     {"id":"LinearMap.mem_ker","label":"mem_ker","full":"LinearMap.mem_ker","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Ker"},
-    {"id":"SetLike.mem_coe","label":"mem_coe","full":"SetLike.mem_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Data.SetLike.Basic"},
+    {"id":"SetLike.mem_coe","label":"mem_coe","full":"SetLike.mem_coe","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.SetLike.Basic"},
     {"id":"map_add","label":"map_add","full":"map_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Hom.Defs"},
     {"id":"LinearMap.semilinearMapClass","label":"semilinearMapClass","full":"LinearMap.semilinearMapClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.LinearMap.Defs"},
     {"id":"StatLean.HighDimensionalStatistics.restrict_add_restrict_compl","label":"restrict_add_restrict_compl","full":"StatLean.HighDimensionalStatistics.restrict_add_restrict_compl","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},

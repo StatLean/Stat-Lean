@@ -172,8 +172,7 @@ theorem min_eq_integral_indicator (x y : ℝ)
     volume_real_Icc_zero _ (le_min hx hy), smul_eq_mul, mul_one]
 
 /-- A real Gram function is a kernel function: the quadratic form is `‖∑ᵢ aᵢ φ(xᵢ)‖² ≥ 0`.
-(A self-contained copy of `isKernelFun_featureKernel` over `ℝ`, so that `isKernelFun_min`
-does not inherit that file's `sorry`.) -/
+(A self-contained copy of `isKernelFun_featureKernel` over `ℝ`.) -/
 private theorem isKernelFun_featureKernel_real {X : Type*} {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] (φ : X → E) : IsKernelFun (featureKernel ℝ φ) where
   conj_symm x y := by

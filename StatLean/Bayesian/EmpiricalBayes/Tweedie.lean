@@ -243,7 +243,7 @@ private theorem hasDerivAt_score_gaussianMarginalPDF (G : Measure ℝ) [IsFinite
     hF_meas hF_int hF'_meas h_bound hbound_int h_diff
   exact main.2
 
-/-- **Tweedie's variance formula** (3F.10, stretch): the posterior variance is
+/-- **Tweedie's variance formula** (3F.10): the posterior variance is
 `v + v²·(log f_G)''(x)` (Efron §1.5). -/
 theorem tweedie_normal_posteriorVariance (G : Measure ℝ) [IsProbabilityMeasure G] (v : ℝ≥0)
     -- USER-INPUT: nondegenerate variance; Efron §1.5

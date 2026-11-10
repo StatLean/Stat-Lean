@@ -1,5 +1,6 @@
 import StatLean.AsymptoticStatistics.Examples.MARMean.Tangent
 import StatLean.AsymptoticStatistics.Core.BoundedLinearFunctional
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Efficient influence function for the MAR-mean parameter (vdV Example 25.43)
@@ -668,7 +669,7 @@ theorem fairMAR_bounded_headline_inputs :
         (F (obs false) + F (obs true)) / 2 := by
     rw [hP, integral_map_of_stronglyMeasurable hobs hF, fairBoolMeasure,
       integral_fintype Integrable.of_finite]
-    simp [measureReal_def, PMF.uniformOfFintype_apply]
+    simp [measureReal_def, PMF.uniform_apply]
     ring
   have hraw_zero :
       (fun o : MARObs Unit ↦ ind o.r * o.ry / (fun _ : Unit ↦ (1 / 2 : ℝ)) o.x)

@@ -16,7 +16,7 @@ hyperposterior and the conditional posteriors are ordinary dominated Bayes poste
 `dataMarginal_eq_comp_mixPrior` is kernel/measure composition associativity
 (`Measure.comp_assoc`/`bind_bind`); `marginalLikelihood_hier_eq_lintegral_hyperMarginal` is Tonelli
 (`lintegral_bind`) on the nested `∫λ∫θ p(θ,x)`; `hyperPosterior_ae_eq_generalizedPosterior` and
-`conditionalPosterior_givenHyper_ae_eq_generalizedPosterior` are single applications of the Batch-2
+`conditionalPosterior_givenHyper_ae_eq_generalizedPosterior` are single applications of the
 `posterior_ae_eq_generalizedPosterior` to the collapsed likelihood `K∘ₖΠ` (resp. `K`) with respect
 to the hyperprior (resp. the prior `Π_λ`).
 

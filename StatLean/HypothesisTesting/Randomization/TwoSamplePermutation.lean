@@ -419,8 +419,7 @@ private lemma tendsto_perm_cdf_blockSum_varying {N m : ℕ → ℕ}
 The combinatorial central limit theorem is a statement about a *fixed* sequence of finite
 populations, whereas the population a two-sample permutation test acts on is the observed
 pooled sample, so its hypotheses hold only **in probability**. The following brick performs
-that transfer once and for all, and it is exactly the step the wave-6 status note described:
-no measurable selection is involved, only existence.
+that transfer once and for all: no measurable selection is involved, only existence.
 
 Given two nonnegative "hypothesis functionals" `A k`, `B k` that tend to `0` in probability,
 and a bounded functional `F k` with the property that `F` converges to `L` along *every*
@@ -1259,8 +1258,7 @@ private lemma lindebergDefect_le {m n : ℕ} {v K : ℝ} (hv : 0 < v) (hK : 1 �
 /-- **The pooled population satisfies the hypotheses of the combinatorial central limit
 theorem in probability.**
 
-STATUS (wave 9): **CLOSED**, axiom-clean. It was the last debt of the two-sample permutation
-chain, and it is a pure law-of-large-numbers statement about the *pooled empirical moments* —
+This is a pure law-of-large-numbers statement about the *pooled empirical moments* —
 no permutation, no central limit theorem, no measurable selection. The two arithmetic
 ingredients used to sit in `Randomization/Studentized`, which is *above* this file in the
 import graph; they have been moved to the shared section of this file
@@ -1521,7 +1519,7 @@ automatic and needs no separate argument. So the whole content is the scalar cor
 of the unstudentized statistic converges in probability to the c.d.f. of `N(0, τ²)`, with the
 permutation scale `τ² = λ σ²(P_Y) + σ²(P_Z)`.
 
-STATUS (wave 8): PROVED here, over the single named brick
+STATUS: PROVED here, over the single named brick
 `tendstoInProb_pooled_hypotheses` above (a pure law-of-large-numbers statement about the
 pooled empirical moments, with a fully re-derived route note). The three steps that used to
 be the mathematical content are now all discharged:
@@ -1535,7 +1533,7 @@ be the mathematical content are now all discharged:
     data, with threshold `θ_k = t√(n/N)/√v̄` in units of `blockSumScale`; and `θ_k → t/τ`
     because `n/N → 1/(1+λ)` and `v̄ = τ²/(1+λ)`.
 (3) *The deterministic-array-to-random-array transfer.* `tendstoInProb_of_deterministic`
-    (proved above) is the abstract form of the argument the wave-6 note sketched: it takes
+    (proved above) is the abstract form of this transfer argument: it takes
     two nonnegative hypothesis functionals vanishing in probability together with the
     deterministic statement along arbitrary subsequences, and returns convergence in
     probability. No measurable selection is involved, only existence. The `ε`-indexed Hájek

@@ -39,14 +39,14 @@
     {"id":"MeasureTheory.withDensity_smul'","label":"withDensity_smul'","full":"MeasureTheory.withDensity_smul'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
     {"id":"ENNReal.ofReal_ne_top","label":"ofReal_ne_top","full":"ENNReal.ofReal_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Basic"},
     {"id":"StatLean.Bayesian.measurable_pi_const_kernel","label":"measurable_pi_const_kernel","full":"StatLean.Bayesian.measurable_pi_const_kernel","kind":"repo","decl":"thm","module":"StatLean.Bayesian.ForMathlib.IIDKernel"},
+    {"id":"ProbabilityTheory.poissonPMFReal","label":"poissonPMFReal","full":"ProbabilityTheory.poissonPMFReal","kind":"repo","decl":"def","module":"StatLean.ForMathlib.PoissonPMF"},
     {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
     {"id":"StatLean.Bayesian.predictiveDensity","label":"predictiveDensity","full":"StatLean.Bayesian.predictiveDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.Dominated.Defs"},
     {"id":"StatLean.Bayesian.predictiveDensity_lt_top_ae_comp","label":"predictiveDensity_lt_top_ae_comp","full":"StatLean.Bayesian.predictiveDensity_lt_top_ae_comp","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PredictiveDensity"},
     {"id":"StatLean.Bayesian.predictiveDensity_pos_ae","label":"predictiveDensity_pos_ae","full":"StatLean.Bayesian.predictiveDensity_pos_ae","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PredictiveDensity"},
     {"id":"StatLean.Bayesian.posterior_eq_withDensity_likelihood_div_predictive","label":"posterior_eq_withDensity_likelihood_div_predictive","full":"StatLean.Bayesian.posterior_eq_withDensity_likelihood_div_predictive","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Dominated.PosteriorDensity"},
     {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
-    {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
-    {"id":"MeasurableSet.univ","label":"univ","full":"MeasurableSet.univ","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+    {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.gamma_poisson_posterior_ae","target":"standardBorel_of_polish"},
@@ -87,6 +87,7 @@
     {"source":"StatLean.Bayesian.gamma_poisson_posterior_ae","target":"ENNReal.ofReal_ne_top"},
     {"source":"StatLean.Bayesian.iidKernel","target":"StatLean.Bayesian.measurable_pi_const_kernel"},
     {"source":"StatLean.Bayesian.poissonKernel","target":"StatLean.Bayesian.poissonDensity"},
+    {"source":"StatLean.Bayesian.poissonDensity","target":"ProbabilityTheory.poissonPMFReal"},
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"IsScalarTower.right"},
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"Filter.mp_mem"},
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"StatLean.Bayesian.predictiveDensity"},
@@ -94,7 +95,6 @@
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"StatLean.Bayesian.predictiveDensity_pos_ae"},
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"StatLean.Bayesian.posterior_eq_withDensity_likelihood_div_predictive"},
     {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"Filter.univ_mem'"},
-    {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"MeasureTheory.withDensity_apply"},
-    {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"MeasurableSet.univ"}
+    {"source":"StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul","target":"MeasureTheory.withDensity_apply"}
   ]
 }

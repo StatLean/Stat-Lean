@@ -36,7 +36,10 @@
     {"id":"ENNReal.add_div","label":"add_div","full":"ENNReal.add_div","kind":"mathlib","decl":"thm","module":"Mathlib.Basic.ENNReal.Inv"},
     {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.DivInvMonoid"},
     {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Monoid"},
-    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"}
+    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Semigroup"},
+    {"id":"PMF.uniform","label":"uniform","full":"PMF.uniform","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"PMF.uniformOn","label":"uniformOn","full":"PMF.uniformOn","kind":"repo","decl":"def","module":"StatLean.ForMathlib.UniformPMF"},
+    {"id":"Finset.univ_nonempty","label":"univ_nonempty","full":"Finset.univ_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.BooleanAlgebra"}
   ],
   "edges": [
     {"source":"StatLean.Minimaxity.pca_minimax_rate","target":"fact_one_le_two_ennreal"},
@@ -85,6 +88,9 @@
     {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.multiwayTestingError"},
     {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.minimaxRiskDist"},
     {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"le_trans"},
-    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.distortionLoss"}
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.distortionLoss"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniform"},
+    {"source":"PMF.uniform","target":"PMF.uniformOn"},
+    {"source":"PMF.uniform","target":"Finset.univ_nonempty"}
   ]
 }

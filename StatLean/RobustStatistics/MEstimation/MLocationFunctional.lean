@@ -142,7 +142,7 @@ private theorem tendsto_const_sub_atBot_atTop (x : ℝ) :
 /-- The population score inherits the limit of `ψ` at `-∞` as `θ → ∞` (dominated
 convergence; `MMY §3.8.3`, eq. (3.62)–(3.63) machinery).
 
-**Amendment to the frozen statement (wave F).** The hypothesis-free form is *false*: with
+**Amendment to the frozen statement.** The hypothesis-free form is *false*: with
 `ψ = max (· , -1)` (monotone, `ψ(-∞) = -1`) and a `P` with no first moment the translated
 scores are never `P`-integrable, so `mLocationScore ψ P` is the Bochner junk value `0` at
 every `θ` and cannot tend to `-k₁ = -1`. The minimal repair is the LEAN-ONLY
@@ -178,7 +178,7 @@ theorem tendsto_mLocationScore_atTop {ψ : ℝ → ℝ} {P : Measure ℝ} [IsPro
 
 /-- The population score inherits the limit of `ψ` at `+∞` as `θ → -∞`.
 
-**Amendment to the frozen statement (wave F).** See `tendsto_mLocationScore_atTop`: the
+**Amendment to the frozen statement.** See `tendsto_mLocationScore_atTop`: the
 LEAN-ONLY integrability input is required to rule out the Bochner junk value. -/
 theorem tendsto_mLocationScore_atBot {ψ : ℝ → ℝ} {P : Measure ℝ} [IsProbabilityMeasure P]
     {k₂ : ℝ}

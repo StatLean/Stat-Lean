@@ -37,7 +37,7 @@ dominated family admits an equivalent countable mixture. (`TSH4 Thm 2.6.2`.)
   finite selection be padded by repetition (repeating an index only merges into a larger
   weight for the same member, which changes neither the null sets nor absolute continuity).
 * **The null-set equivalence is stated for an ARBITRARY set `A`,** with no `MeasurableSet`
-  hypothesis. This is safe *and* strictly stronger at this pin: `Measure.sum_apply_eq_zero`
+  hypothesis. This is safe *and* strictly stronger: `Measure.sum_apply_eq_zero`
   holds for a countable index without measurability, and `Measure.AbsolutelyContinuous` is
   itself defined by an implication between outer-measure values of arbitrary sets. Callers
   that only have a measurable set lose nothing.

@@ -1,6 +1,7 @@
 import Mathlib.Probability.Distributions.Uniform
 import Mathlib.Probability.ProbabilityMassFunction.Integrals
 import Mathlib.Probability.Moments.SubGaussian
+import StatLean.ForMathlib.UniformPMF
 
 /-!
 # Rademacher signs and their finite product law
@@ -15,7 +16,7 @@ namespace ProbabilityTheory
 
 /-- The uniform probability mass function on the two Boolean values. -/
 noncomputable def rademacherPMF : PMF Bool :=
-  PMF.uniformOfFintype Bool
+  PMF.uniform Bool
 
 /-- The uniform probability measure on the two Boolean values. -/
 noncomputable def rademacherMeasure : Measure Bool :=

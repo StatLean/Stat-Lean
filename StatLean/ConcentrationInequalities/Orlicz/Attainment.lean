@@ -30,9 +30,6 @@ condition on `ψ = exp − 1` and the threshold-2 book condition on `exp` is don
 *additively* (`ofReal (e^u − 1) + 1 = ofReal (e^u)` pointwise, then
 `lintegral_add_right'`) to avoid `ENNReal` truncated subtraction; the
 conversions therefore need `[IsProbabilityMeasure μ]` (`∫⁻ 1 ∂μ = μ univ`).
-Named-sorry fallback of this work item: `orliczNorm_eq_zero_iff` (the
-least-consumed declaration; the attainment lemma and the four conversions
-must close since every bridge consumes them).
 
 **Bibliographic comments.** Attainment of the Luxemburg gauge under
 continuity is classical Orlicz-space theory (Luxemburg 1955; see also

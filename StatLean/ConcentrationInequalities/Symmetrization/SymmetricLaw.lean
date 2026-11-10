@@ -29,9 +29,7 @@ pieces). Vector versions are assembled by the same
 `MeasurableEquiv.arrowProdEquivProdArrow` + `measurePreserving_pi` pattern as
 `SignFlip.lean`, stated in the exact `(signVec N).prod (Measure.pi ν)` order
 in which `Gaussian.lean` consumes them. Gaussian symmetry via
-`gaussianReal_map_neg`. Named-sorry fallback of this work item:
-`IsSymmetricLaw.map_mul_abs_rad` (the `|·|` partition case); the plain mixing
-identity and the vector assemblies proven.
+`gaussianReal_map_neg`.
 
 **Bibliographic comments.** Symmetrization by an independent sign is
 classical (P. Lévy, *Théorie de l'addition des variables aléatoires*, 1937).
@@ -81,8 +79,8 @@ theorem IsSymmetricLaw.map_mul_rad {ν : Measure ℝ} [IsProbabilityMeasure ν]
     ← add_smul, ENNReal.inv_two_add_inv_two, one_smul]
 
 /-- **Rademacher mixing with absolute value** (HDP §6.3, Lemma 6.3.1(b)):
-`ξ|X| =ᵈ X` for symmetric `X`. Named-sorry debt candidate of this work item
-(four-piece partition of the line at `0`; no atom condition needed). -/
+`ξ|X| =ᵈ X` for symmetric `X` (four-piece partition of the line at `0`; no
+atom condition needed). -/
 theorem IsSymmetricLaw.map_mul_abs_rad {ν : Measure ℝ} [IsProbabilityMeasure ν]
     -- USER-INPUT: ν symmetric; HDP §6.3 Lemma 6.3.1(b)
     (hν : IsSymmetricLaw ν) :

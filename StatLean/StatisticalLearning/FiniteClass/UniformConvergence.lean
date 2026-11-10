@@ -12,8 +12,7 @@ Hoeffding's inequality for each fixed hypothesis (SSBD Eq. (4.2), tail
 convergence property with `m^{UC}(ε,δ) ≤ ⌈log(2|𝓗|/δ)/(2ε²)⌉`
 (SSBD Corollary 4.6, first half — exact constants frozen).
 
-**Reference.** SSBD §4.2, Lemma 4.5, Corollary 4.6. Transcriptions:
-`notes/statistical_learning/book_statements/ch2-5.md`.
+**Reference.** SSBD §4.2, Lemma 4.5, Corollary 4.6.
 
 **Formalization notes.** The per-hypothesis tail is assembled from the
 project's `hoeffding` (`ConcentrationInequalities/SubGaussian/Hoeffding.lean`,

@@ -39,6 +39,4 @@ correctness (`StatLean.Bayesian.MCMC`), Markov-chain ergodicity
 Fisher), simple random sampling (`StatLean.ExperimentalDesign`), bootstrap
 asymptotics (`StatLean.HypothesisTesting` Bootstrap), and inverse-CDF
 sampling (`StatLean.HypothesisTesting` `ForMathlib/QuantileFunction`).
-
-Laptop-only file: edited by the laptop session at wave merges.
 -/

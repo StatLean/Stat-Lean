@@ -17,7 +17,7 @@ $$\theta \sim \mathcal D_{k+1}(\alpha), \quad v \mid \theta \sim \mathcal M_{k+1
 
 **Proof formalization notes.** The conjugacy kernel `dmKernel` is the multinomial kernel pulled
 back along `simplexExtend`, so it is dominated by counting measure on the countable data space
-`Fin (k+1) → ℕ` — the Batch-1 dominated machinery applies verbatim. Pointwise algebra on the open
+`Fin (k+1) → ℕ` — the dominated machinery applies verbatim. Pointwise algebra on the open
 corner: `dirichletWeight α θ · q(v | simplexExtend θ) = multinomial coefficient ·
 dirichletWeight (α + v) θ` (`Real.rpow_natCast`, `rpow_add` on positive coordinates,
 `Fin.snoc_castSucc`/`snoc_last`, `Fin.prod_univ_castSucc`); off the corner both sides vanish. The

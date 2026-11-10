@@ -23,8 +23,7 @@ are the unnamed numeric steps inside Proposition 2.6.1 ((iii)⇒(iv), (iii)⇒(i
 numerals. The Taylor–Lagrange bound `exp_le_one_add_add_sq_half_mul_exp_abs`
 splits into a series-comparison branch for `x ≥ 0` (via
 `Real.sum_le_exp_of_nonneg`) and the alternating-series/convexity branch
-`exp_le_one_add_add_sq_half_of_nonpos` for `x ≤ 0`; the latter is this work
-item's designated named-sorry fallback. `(n/e)^n ≤ n!` follows from
+`exp_le_one_add_add_sq_half_of_nonpos` for `x ≤ 0`. `(n/e)^n ≤ n!` follows from
 `x^n/n! ≤ e^x` at `x = n` (backup brick: `Stirling.le_factorial_stirling`).
 
 **Bibliographic comments.** Taylor–Lagrange bounds on the exponential are

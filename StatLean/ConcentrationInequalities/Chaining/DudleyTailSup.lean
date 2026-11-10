@@ -36,8 +36,7 @@ supremum transport is needed for events). Measures of the possibly
 non-measurable sup events are sound: only outer-measure monotonicity and
 continuity from below along a.e.-measurable finite windows are used. The
 diagonal pair `t = s` is harmless on both sides (value `0`, threshold
-nonnegative). Named-sorry fallback of this work item:
-`dudley_tail_threshold_le` (the `nlinarith` constant arithmetic).
+nonnegative).
 
 **Bibliographic comments.** Eq. (8.15) is HDP Exercise 8.1 (Gaussian case:
 Exercise 8.2 via concentration); the chaining tail argument is standard
@@ -73,9 +72,9 @@ theorem dudley_tail_three_term_exists {X : E → Ω → ℝ} {K : ℝ≥0} {T : 
     -- USER-INPUT: deviation parameter u ≥ 0; HDP §8.1, Eq (8.15)
     {u : ℝ} (hu : 0 ≤ u)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     μ {ω | ∃ t ∈ C, ∃ s ∈ C,
         K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)
@@ -247,7 +246,7 @@ the published three-term `dudley_tail_three_term_countable`). -/
 theorem dudley_tail_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)

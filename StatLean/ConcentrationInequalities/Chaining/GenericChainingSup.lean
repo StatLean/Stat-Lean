@@ -29,9 +29,7 @@ Remark-7.2.1 finite maximum of `X` itself — see `generic_chaining`). The
 countable-subset integrability plumbing has no covering package to bound
 increments with; it branches on `K = 0` and `gammaFunctional A = ⊤` and
 otherwise bounds `dist t t₀` through the level-0 singleton
-(`ofReal_infDist_zero_le_gammaFunctional`). Named-sorry fallback of this
-work item: `generic_chaining_of_admissible_countable_subset` (that
-integrability plumbing).
+(`ofReal_infDist_zero_le_gammaFunctional`).
 
 **Bibliographic comments.** M. Talagrand, *Upper and Lower Bounds for
 Stochastic Processes*, Springer 2014, §2.2–2.3 (the majorizing-measure
@@ -65,9 +63,9 @@ theorem generic_chaining_of_admissible_countable_subset {X : E → Ω → ℝ}
     (ht₀ : t₀ ∈ T)
     (A : AdmissibleSequence T)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ 20 * K * gammaFunctional A := by
@@ -165,9 +163,9 @@ theorem generic_chaining_abs_countable_subset {X : E → Ω → ℝ} {K : ℝ≥
     -- LEAN-ONLY: anchor point
     (ht₀ : t₀ ∈ T)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     ∫⁻ ω, ⨆ t ∈ C, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
       ≤ 20 * K * gammaTwo T := by
@@ -206,9 +204,9 @@ theorem generic_chaining_tail_exists {X : E → Ω → ℝ} {K : ℝ≥0} {T : S
     -- USER-INPUT: deviation parameter u ≥ 0; HDP Eq (8.50)
     (hu : 0 ≤ u)
     {C : Set E}
-    -- LEAN-ONLY: the countable approximating subfamily (sup policy)
+    -- LEAN-ONLY: the countable approximating subfamily
     (hC : C ⊆ T)
-    -- LEAN-ONLY: countability of the subfamily (sup policy)
+    -- LEAN-ONLY: countability of the subfamily
     (hCcnt : C.Countable) :
     μ {ω | ∃ t ∈ C, (12 + 4 * u) * K * (gammaFunctional A).toReal
         < |X t ω - X t₀ ω|}
@@ -384,7 +382,7 @@ theorem generic_chaining_abs_countable {X : E → Ω → ℝ} {K : ℝ≥0}
     {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- LEAN-ONLY: nonempty index
     (hne : T.Nonempty)
@@ -406,7 +404,7 @@ theorem generic_chaining_tail_countable {X : E → Ω → ℝ} {K : ℝ≥0}
     {T : Set E}
     -- LEAN-ONLY: probability measure; bridge-B1 tail machinery requires it
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- LEAN-ONLY: nonempty index so the anchor exists
     (hne : T.Nonempty)
@@ -441,7 +439,7 @@ theorem generic_chaining_abs_countable_real {X : E → Ω → ℝ} {K : ℝ≥0}
     {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy
+    -- LEAN-ONLY: countable T
     (hcnt : T.Countable)
     -- LEAN-ONLY: nonempty index
     (hne : T.Nonempty)

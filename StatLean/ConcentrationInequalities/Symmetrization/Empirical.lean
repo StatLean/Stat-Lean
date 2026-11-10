@@ -14,9 +14,8 @@ $$ \mathbb{E}\,\sup_{k}\Bigl|\frac1n \sum_{i=1}^n f_k(X_i)
    \;\le\; 2\, \mathbb{E}\,\sup_{k}\Bigl|\frac1n \sum_{i=1}^n
      \varepsilon_i f_k(X_i)\Bigr|, $$
 with the book's factor `2` exactly; the signs live on the product extension
-`μ.prod (signVec n)`. Finite-index core plus a `Countable`-index lift per the
-batch sup policy. **The RHS is deliberately uncentered** — this is the point
-of the exercise.
+`μ.prod (signVec n)`. Finite-index core plus a `Countable`-index lift. **The RHS is deliberately
+uncentered** — this is the point of the exercise.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.3, Exercise 8.11 (Symmetrization for empirical
@@ -41,10 +40,7 @@ convergence with constant dominators `2` resp. `1` from the class bound.
 Consumer note (VC cluster, Theorem 8.3.15): a `Finset` class is consumed as
 the subtype `↥s` with `F := Subtype.val`; the RHS integral over
 `μ.prod (signVec n)` is designed to be Fubini'd (`integral_prod`) and
-attacked per-`ω` by `FiniteMaximal` over the sign coordinate. Named-sorry
-fallback of this work item: `empirical_symmetrization_countable` (the
-finite-index core — the VC cluster's actual consumption shape — fully
-proven).
+attacked per-`ω` by `FiniteMaximal` over the sign coordinate.
 
 **Bibliographic comments.** Symmetrization of empirical processes is the
 Giné–Zinn school's basic tool, going back to V. N. Vapnik and A. Ya.
@@ -200,10 +196,9 @@ private lemma biSup_coe_finset_eq_sup' {ι : Type*} {s : Finset ι} (hne : s.Non
   · exact Finset.sup'_le hne f (fun x hx => le_ciSup hbdd ⟨x, hx⟩)
 
 /-- **Symmetrization for empirical processes, countable class** (HDP §8.3,
-Exercise 8.11): the `Countable ι` lift of `empirical_symmetrization` per the
-batch sup policy, by exhaustion along a surjective enumeration + dominated
-convergence (constant dominators from the class bound). Named-sorry debt
-candidate of this work item. -/
+Exercise 8.11): the `Countable ι` lift of `empirical_symmetrization`, by
+exhaustion along a surjective enumeration + dominated convergence (constant
+dominators from the class bound). -/
 theorem empirical_symmetrization_countable {α : Type*} [MeasurableSpace α]
     {ι : Type*} [Countable ι] [Nonempty ι] {μ : Measure Ω}
     [IsProbabilityMeasure μ] {n : ℕ} [NeZero n] {X : Fin n → Ω → α}

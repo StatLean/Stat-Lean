@@ -11,10 +11,10 @@ conditional variance process converges in probability to a constant `σ²` and w
 satisfies the (unconditional) Lindeberg condition has asymptotically `N(0, σ²)` row
 sums — stated through pointwise characteristic-function convergence.
 
-This is the probability pillar commissioned for Hannan's Theorem 3.2 (FY §3.2): the
+This is the probability pillar for Hannan's Theorem 3.2 (FY §3.2): the
 ARMA quasi-score at the true parameter is a stationary ergodic martingale-difference
 sequence, and the array `X_{n,i} = ξ_i/√n` fed into `mds_clt` yields asymptotic
-normality of the score (batch D wires this through `ARMA/ScoreAnalysis`).
+normality of the score (see `ARMA/ScoreAnalysis`).
 
 **Assembly plan** (from `MartingaleCLT/CondCharFun.lean`), as executed:
 0. replace the array by its Hall–Heyde **truncation**, at level `σ² + 1` for the
@@ -36,9 +36,9 @@ normality of the score (batch D wires this through `ARMA/ScoreAnalysis`).
 The unweighted telescope originally planned for step 1 is **false** as frozen and was
 deleted; see the "Retired statement" note in `MartingaleCLT/CondCharFun.lean`.
 
-**Correction to the commissioned plan** (wave `ts/c-mds-clt`). The plan asserted that
-the truncation/stopping refinement is not needed because the `hbdd` input of step 2
-follows from `hvar` + `hlind` through the row variance identity `Σᵢ E Xᵢ² = E V_n`.
+**Why the truncation is needed.** It is tempting to argue that the truncation/stopping
+refinement is not needed because the `hbdd` input of step 2 follows from `hvar` + `hlind`
+through the row variance identity `Σᵢ E Xᵢ² = E V_n`.
 That identity is true but the conclusion is **false**: `E V_n` can diverge while both
 Brown conditions hold. Take `𝓕_{n,0}`-measurable events `A_n` with `μ(A_n) = 1/n`,
 `k_n = n⁴`, and `X_{n,i} = n⁻¹ 1_{A_n} ε_i` with `ε_i` iid signs; then
@@ -170,7 +170,8 @@ private lemma isMDSArray_truncArray [IsProbabilityMeasure μ] (h : IsMDSArray k 
     (h.adapted n i).indicator
       (h.mono n (Fin.castSucc_le_succ i) _ (measurableSet_truncSet h c d n i))
   memLp := fun n i =>
-    (h.memLp n i).indicator (h.le_ambient n _ _ (measurableSet_truncSet h c d n i))
+    (h.memLp n i).indicator
+      (h.le_ambient n _ _ (measurableSet_truncSet h c d n i)).nullMeasurableSet
   condexp_zero := fun n i => by
     have h1 := condExp_indicator (m := F n i.castSucc) (integrable_of_mds h n i)
       (measurableSet_truncSet h c d n i)
@@ -392,9 +393,10 @@ private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSA
         Set.indicator_of_mem (hmem ω hω) _]
   rw [heq]
   refine setIntegral_mono_set (integrable_sq_of_mds h n i).integrableOn
-    (ae_of_all _ fun ω => sq_nonneg _) (LE.le.eventuallySubset fun ω hω => ?_)
+    (ae_of_all _ fun ω => sq_nonneg _) (Filter.Eventually.of_forall fun ω hω => ?_)
   have := hmem ω hω
-  rw [Set.mem_ofPred_eq, show truncArray k X F μ c d n i ω = X n i ω from
+  change ε ≤ |truncArray k X F μ c d n i ω| at hω
+  rw [show truncArray k X F μ c d n i ω = X n i ω from
     Set.indicator_of_mem this _] at hω
   exact hω
 

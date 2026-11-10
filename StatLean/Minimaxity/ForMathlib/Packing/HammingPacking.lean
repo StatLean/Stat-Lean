@@ -41,9 +41,8 @@ maximal-set covering argument:
   with $\log 2 \ge 69/100 = 1/10 + 59/100$, this yields $\exp(m/10) \le |T|$, hence
   $m/10 \le \log|T|$. The $m=0$ edge case is handled separately with the singleton cube.
 
-The whole argument is discharged with no `sorry`; the only constant that deviates from the book is
-the explicit $1/10$ rate (vs. the book's asymptotic statement), chosen for machine-checkable
-numerics.
+The only constant that deviates from the book is the explicit $1/10$ rate (vs. the book's
+asymptotic statement), chosen for machine-checkable numerics.
 
 **Bibliographic comments.** The bound originates independently with E. N. Gilbert, "A comparison of
 signalling alphabets", *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov,
@@ -144,7 +143,7 @@ Take a *maximal* `m/4`-separated subset `T ⊆ {0,1}^m`. By maximality its radiu
 cover the cube, so `2^m ≤ |T| · vol(ball)`. The binary-entropy volume bound
 `hamming_ball_card_le` gives `vol(ball) ≤ exp((59/100)·m)`, and since `2^m = exp(m·log 2)` with
 `log 2 ≥ 69/100 = 1/10 + 59/100`, we get `exp(m/10) ≤ |T|`, hence `m/10 ≤ log |T|`. The entire
-argument is discharged here modulo the single named volume debt `hamming_ball_card_le`. -/
+argument rests on the single volume bound `hamming_ball_card_le`. -/
 private theorem gilbert_varshamov (m : ℕ) :
     ∃ T : Finset (Fin m → Bool),
       (m / 10 : ℝ) ≤ Real.log T.card ∧

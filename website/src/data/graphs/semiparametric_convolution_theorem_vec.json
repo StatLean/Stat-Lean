@@ -150,8 +150,8 @@
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.RegularEstimatorVec.IsRegularEstimator_broad_vec"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.RegularEstimatorVec.isRegularEstimator_vec_implies_broad"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AddSubgroup.isUniformAddGroup"},
-    {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"IsScalarTower.right"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"Matrix.isHermitian_gram"},
+    {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"IsScalarTower.right"},
     {"source":"AsymptoticStatistics.LowerBounds.ConvolutionVec.semiparametric_convolution_theorem_vec_clause_b","target":"AsymptoticStatistics.LowerBounds.ConvolutionVec.eif_linear_combo_norm_sq"}
   ]
 }
