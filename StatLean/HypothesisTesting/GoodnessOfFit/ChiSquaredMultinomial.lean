@@ -51,7 +51,7 @@ Hypothesis): Pearson's chi-squared statistic converges to `χ²_k`. (`TSH4 §16.
   limiting covariance matrix is singular without it.
 * Convergence in law is `AsymptoticStatistics.WeakConverges` applied to the pushforwards
   of the stage-`n` sampling laws under the statistic, matching the convention of that
-  area's `ForMathlib/Contiguity.lean`.
+  area's `StatLean/AsymptoticStatistics/ForMathlib/Contiguity.lean`.
 * The intended proof of the first two items is the multivariate central limit theorem
   (`ProbabilityTheory.tendstoInDistribution_multivariate_clt`) applied to the vector of
   the first `k` centred cell frequencies, followed by the continuous mapping theorem for
@@ -59,9 +59,9 @@ Hypothesis): Pearson's chi-squared statistic converges to `χ²_k`. (`TSH4 §16.
   equals `Qₙ` (which reintroduces the `(k+1)`-st cell) is the only combinatorial step.
 * The third item is the law of large numbers: if `pⱼ ≠ πⱼ` for some `j` then
   `Qₙ ≥ n (Yⱼ/n − πⱼ)²/πⱼ → ∞` in probability.
-* `noncentralChiSquared` of `ForMathlib/NoncentralChiSquared.lean` takes its noncentrality
-  parameter in `ℝ≥0`, while `multinomialNoncentrality` is a real sum; the two are joined
-  by `Real.toNNReal`, which is the identity here because all `πⱼ > 0` makes the sum
+* `noncentralChiSquared` of `StatLean/HypothesisTesting/ForMathlib/NoncentralChiSquared.lean` takes
+  its noncentrality parameter in `ℝ≥0`, while `multinomialNoncentrality` is a real sum; the two are
+  joined by `Real.toNNReal`, which is the identity here because all `πⱼ > 0` makes the sum
   nonnegative.
 
 **Bibliographic comments.** The statistic and the chi-squared approximation to its null
@@ -1252,9 +1252,9 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
 
 The nondegenerate-power theorem below needs three facts about `noncentralChiSquared` that are
 finer than the (non-strict) shrink monotonicity `noncentralChiSquared_tail_mono` of the sibling
-brick `ForMathlib/NoncentralChiSquared.lean`: at a positive threshold a positive noncentrality
-**strictly** increases the upper tail, that tail is **strictly** below one, and the law carries
-no atom at the threshold.
+brick `StatLean/HypothesisTesting/ForMathlib/NoncentralChiSquared.lean`: at a positive threshold a
+positive noncentrality **strictly** increases the upper tail, that tail is **strictly** below one,
+and the law carries no atom at the threshold.
 
 All three are proved in the product ("Pi") picture: the standard Gaussian on `Fin k → ℝ` is
 `volume.withDensity ρ` with `ρ x = ∏ᵢ φ(xᵢ)`

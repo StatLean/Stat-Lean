@@ -28,7 +28,7 @@ The first two notions (`IsInfluenceFunction`, `IsEfficientInfluenceFunction`) ar
 purely in Hilbert-space terms: they take an abstract derivative
 $\dot{\psi}_P : T \to \mathbb{R}$ and do not mention curves. The third
 (`PathwiseDifferentiableAt`) is the curve-based assertion built on the `QMDPath`
-machinery of `Core/QMDPath.lean`.
+machinery of `StatLean/AsymptoticStatistics/Core/QMDPath.lean`.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
 Statistical and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 25
@@ -119,7 +119,8 @@ score lies in `T`, the difference quotient `(ψ(γ.curve t) - ψ P)/t`
 converges to `dψ ⟨γ.score, _⟩` as `t → 0`.
 
 Reference: vdV §25.3, definition immediately following lem:25.14 (curve-based).
-Its faithful formulation depends on the QMD curves of `Core/QMDPath.lean`.
+Its faithful formulation depends on the QMD curves of
+`StatLean/AsymptoticStatistics/Core/QMDPath.lean`.
 
 Edge behavior: when `T = ⊥`, the only QMDPath with score in `T` has score
 `0`, and the difference quotient must tend to `dψ 0 = 0` — which forces

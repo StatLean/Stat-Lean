@@ -9,9 +9,10 @@ import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 **Herglotz/Bochner for ℤ**: a real sequence is even and positive semidefinite **iff** it
 is the Fourier-coefficient sequence of a (negation-invariant) finite measure on the
 circle `AddCircle (2π)`. This is the measure-theoretic core of FY Theorem 2.10
-(Wiener–Khintchine): combined with FY Theorem 2.7 (`Process/Autocovariance.lean`) it
-characterizes autocovariance functions of stationary time series; uniqueness of the
-measure is `ext_of_measureFourierCoeff` (`MeasureFourierCoeff.lean`).
+(Wiener–Khintchine): combined with FY Theorem 2.7
+(`StatLean/TimeSeries/Process/Autocovariance.lean`) it characterizes autocovariance functions of
+stationary time series; uniqueness of the measure is `ext_of_measureFourierCoeff`
+(`MeasureFourierCoeff.lean`).
 
 Proof route for existence (FY §2.7.4, self-contained): the Fejér densities
 `fejerSum γ n ≥ 0` define measures `F_n` on the circle with trigonometric moments

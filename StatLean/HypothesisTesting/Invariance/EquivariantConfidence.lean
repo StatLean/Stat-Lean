@@ -39,8 +39,8 @@ invariant acceptance regions). (`TSH4 §6.11 Lem 6.11.1`.)
 
 **Dependency note.** `confidenceSet`, `IsConfidenceFamily`, `acceptanceTest` and the two
 bridge lemmas `isCriticalFn_acceptanceTest` / `power_acceptanceTest` come from the sibling
-`Tests/Confidence.lean`, which carries the test–confidence-set duality; the optimality
-transfer below is proved through those bridges.
+`StatLean/HypothesisTesting/Tests/Confidence.lean`, which carries the test–confidence-set duality;
+the optimality transfer below is proved through those bridges.
 
 **Proof formalization notes.**
 * The induced action on parameter sets is the image `(g • ·) '' S`, so equivariance reads
@@ -59,11 +59,11 @@ transfer below is proved through those bridges.
   covering each *false* value `θ' ≠ θ`.
 * **Definition amendment (documented deviation).** `IsUMAEquivariant` quantifies its
   competitors over families with **measurable slices**, matching `IsUMAConfidence` in
-  `Tests/Confidence.lean`. Without it the optimality transfer is not even expressible: the
-  argument inverts the competitor `S'` into the test `1_{Bᶜ}` with `B = {x | θ' ∈ S' x}`,
-  which must be a critical function, and `P θ B` on the right-hand side of the conclusion
-  is not a probability unless `B` is measurable. This is the standing convention of the
-  sibling file, not a weakening special to this one.
+  `StatLean/HypothesisTesting/Tests/Confidence.lean`. Without it the optimality transfer is not even
+  expressible: the argument inverts the competitor `S'` into the test `1_{Bᶜ}` with
+  `B = {x | θ' ∈ S' x}`, which must be a critical function, and `P θ B` on the right-hand side of
+  the conclusion is not a probability unless `B` is measurable. This is the standing convention of
+  the sibling file, not a weakening special to this one.
 
 **Bibliographic comments.** The duality between families of tests and confidence sets is
 due to J. Neyman ("Outline of a theory of statistical estimation based on the classical
@@ -96,9 +96,9 @@ confidence family at that level which, among all such families, minimizes the pr
 of covering every false parameter value.
 
 Competitors are quantified with **measurable slices** `{x | θ ∈ S' x}`, exactly as in
-`IsUMAConfidence` in `Tests/Confidence.lean`. This is a Lean-side necessity, not a
-weakening of the classical statement: the argument inverts the competitor into a genuine
-test, and a critical function must be measurable — and the coverage of a family with
+`IsUMAConfidence` in `StatLean/HypothesisTesting/Tests/Confidence.lean`. This is a Lean-side
+necessity, not a weakening of the classical statement: the argument inverts the competitor into a
+genuine test, and a critical function must be measurable — and the coverage of a family with
 non-measurable slices is not a probability statement in the first place. -/
 def IsUMAEquivariant (G : Type*) [Group G] [MulAction G 𝓧] [MulAction G Θ]
     (P : Θ → Measure 𝓧) (lvl : ℝ) (S : 𝓧 → Set Θ) : Prop :=

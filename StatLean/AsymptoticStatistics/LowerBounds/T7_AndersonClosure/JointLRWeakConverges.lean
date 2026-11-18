@@ -115,10 +115,10 @@ noncomputable def gaussianShiftLRLaw {m : ℕ}
 /-! ## Bridging lemma 1: joint `Δ_n` weak convergence via Cramér-Wold
 
 The per-direction CLT `weakConverges_scoreSumScalar_under_pi` (shipped
-in `T6_FinDimLAN/JointLAN.lean`) gives `Δ_{n,g} ⇒ N(0, ‖g‖²)` for any
-`g`. Cramér-Wold (`ForMathlib/CramerWoldWeakConverges.lean`) lifts to
-joint convergence by checking every linear functional projects to a
-per-direction score sum.
+in `StatLean/AsymptoticStatistics/LowerBounds/T6_FinDimLAN/JointLAN.lean`) gives
+`Δ_{n,g} ⇒ N(0, ‖g‖²)` for any `g`. Cramér-Wold
+(`StatLean/AsymptoticStatistics/ForMathlib/CramerWoldWeakConverges.lean`) lifts to joint convergence
+by checking every linear functional projects to a per-direction score sum.
 -/
 
 /-- The **joint score sum** `Δ_n : (Fin n → Ω) → EuclideanSpace ℝ (Fin m)`
@@ -561,8 +561,9 @@ lemma jointDelta_weakConverges_under_pi
 
 /-! ## Bridging lemma 2: from joint Δ to joint LR via LAN + Slutsky
 
-The LAN expansion (`lanRemainder` in `T6_FinDimLAN/LANexpansion.lean`) gives,
-for any `g_P i ∈ ↥(L2ZeroMean P)`,
+The LAN expansion (`lanRemainder` in
+`StatLean/AsymptoticStatistics/LowerBounds/T6_FinDimLAN/LANexpansion.lean`) gives, for any
+`g_P i ∈ ↥(L2ZeroMean P)`,
 
     `log L_{n,g_i}(X) = Δ_{n,g_i}(X) − ½‖g_i‖² + R_{n,g_i}(X)`
 

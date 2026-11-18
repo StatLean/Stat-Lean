@@ -12,7 +12,7 @@ In particular this holds when `h` is right-continuous at every point
 (density of ℚ). This is the deterministic device of the project's fixed sup
 policy: it recovers an *uncountable* supremum from a countable one with no
 measure theory involved, and is consumed by the Glivenko–Cantelli theorem
-(`VC/GlivenkoCantelli.lean`).
+(`StatLean/ConcentrationInequalities/VC/GlivenkoCantelli.lean`).
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press — no numbered statement; this is the unspoken

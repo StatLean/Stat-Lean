@@ -156,8 +156,8 @@ theorem IsWhiteNoise.spectralDensityOf_eq [IsProbabilityMeasure μ] {σ2 : ℝ}
 
 /-! ### Coefficient bookkeeping for the lag polynomials
 
-These mirror the (file-private) computations of `Models/Linear.lean`: `arPoly` and
-`maPoly` have constant coefficient `1`, coefficient `∓bᵢ`/`aⱼ` in degree `i+1`/`j+1`, and
+These mirror the (file-private) computations of `StatLean/TimeSeries/Models/Linear.lean`: `arPoly`
+and `maPoly` have constant coefficient `1`, coefficient `∓bᵢ`/`aⱼ` in degree `i+1`/`j+1`, and
 degree at most `p`/`q`. -/
 
 /-- The coefficients of the AR polynomial `b(z) = 1 - b₁z - ⋯ - b_pz^p`. -/

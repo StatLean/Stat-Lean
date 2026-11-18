@@ -34,12 +34,13 @@ are the setup notation of that chapter.
 
 **Proof formalization notes.** This is a concept (definition-only) file; there
 are no proofs to outline. It reuses the $\ell^1$ norm and support-restriction
-operators from `ForMathlib/VecNorms.lean` (`l1Norm`, `restrict`) and the design
-map from `LinearModel/Defs.lean` (`designMap`). It is theorem-agnostic and is
-consumed downstream by `Lasso/DeterministicRate.lean` (the deterministic
-Lasso rate, Theorem 10.1) and `Lasso/RandomNoise.lean` (the random-noise
-corollary, Corollary 10.1). The $\ell^2$ norms in $\mathrm{RE}$ and in $L_n$ are the
-Euclidean norms of the underlying `EuclideanSpace ℝ (Fin _)` vectors.
+operators from `StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean` (`l1Norm`, `restrict`)
+and the design map from `StatLean/HighDimensionalStatistics/LinearModel/Defs.lean` (`designMap`). It
+is theorem-agnostic and is consumed downstream by
+`StatLean/HighDimensionalStatistics/Lasso/DeterministicRate.lean` (the deterministic Lasso rate,
+Theorem 10.1) and `StatLean/HighDimensionalStatistics/Lasso/RandomNoise.lean` (the random-noise
+corollary, Corollary 10.1). The $\ell^2$ norms in $\mathrm{RE}$ and in $L_n$ are the Euclidean norms
+of the underlying `EuclideanSpace ℝ (Fin _)` vectors.
 
 **Bibliographic comments.** The Lasso estimator originates with R. Tibshirani,
 "Regression shrinkage and selection via the lasso," *Journal of the Royal

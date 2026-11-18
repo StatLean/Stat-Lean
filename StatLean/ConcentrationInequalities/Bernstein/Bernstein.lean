@@ -40,8 +40,9 @@ $\lambda^2 \sigma^2/(2(1-\lambda b)) = \lambda^2(\sigma^2 + b t)/2$ and $-\lambd
 \lambda^2(\sigma^2 + b t)/2 = -t^2/(2(\sigma^2 + b t))$, so the exponent collapses to
 $-n t^2/(2(\sigma^2 + b t))$.
 
-*Why the per-variable MGF bound (Step 1) is re-derived here.* `Bernstein/MGFBound.lean` proves only
-the *loose* sub-exponential bound $\mathrm{mgf}\,X_i(\lambda) \le \exp(\lambda^2 \alpha^2/2)$ with
+*Why the per-variable MGF bound (Step 1) is re-derived here.*
+`StatLean/ConcentrationInequalities/Bernstein/MGFBound.lean` proves only the *loose* sub-exponential
+bound $\mathrm{mgf}\,X_i(\lambda) \le \exp(\lambda^2 \alpha^2/2)$ with
 $\alpha = 2(\sqrt{\sigma^2} \vee b)$ (via `isSubExponential_of_hasBernsteinCondition`, whose
 `bernstein_key` core bounds the geometric series $1/(1-|\lambda|b) \le 2$).  That constant yields a
 sub-Gaussian-type tail $\exp(-n t^2/(4\sigma^2))$, **not** the sharp Bernstein constant
@@ -87,10 +88,10 @@ For `0 ≤ l` with `l · b < 1`, the exponential `ω ↦ exp(l · Y ω)` is inte
 `mgf Y μ l ≤ exp(σ² l² / (2(1 − l b)))`.
 
 This is the sharp version (geometric factor `1/(1 − l b)` retained) needed for the Bernstein
-inequality; `Bernstein/MGFBound.lean` only exposes the looser `exp(λ²α²/2)` form (see the module
-header).  Proof by the elementary monotone-convergence route: expand the exponential tail as a
-power series, push through `lintegral_tsum`, and sum the geometric series, which converges because
-`l · b < 1`.
+inequality; `StatLean/ConcentrationInequalities/Bernstein/MGFBound.lean` only exposes the looser
+`exp(λ²α²/2)` form (see the module header).  Proof by the elementary monotone-convergence route:
+expand the exponential tail as a power series, push through `lintegral_tsum`, and sum the geometric
+series, which converges because `l · b < 1`.
 
 (`maxHeartbeats` raised because the closed-form proof is long; no single step is expensive.) -/
 private lemma bernstein_mgf_sharp {Y : Ω → ℝ} {σ2 b : ℝ≥0} {μ : Measure Ω}
@@ -334,7 +335,8 @@ factorises the sum-MGF (`iIndepFun.mgf_sum`); each factor is controlled by the s
 bound `bernstein_mgf_sharp`.  With `1 − λ b = σ²/(σ²+b t)` the per-variable exponent becomes
 `λ²(σ²+b t)/2`, and the Chernoff exponent `−λ n t + n λ²(σ²+b t)/2` collapses to
 `−n t²/(2(σ²+b t))`.
-The `μ.real → μ` ENNReal bridge mirrors `SubGaussian/TailBounds.lean`.
+The `μ.real → μ` ENNReal bridge mirrors
+`StatLean/ConcentrationInequalities/SubGaussian/TailBounds.lean`.
 
 **Constant.** Exactly Lu's `(σ² + b t)`; no deviation. -/
 theorem bernstein_inequality {n : ℕ} {X : Fin n → Ω → ℝ} {σ2 b : ℝ≥0} {μ : Measure Ω}

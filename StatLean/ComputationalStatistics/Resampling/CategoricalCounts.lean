@@ -19,7 +19,7 @@ vector `V_j = #{i | Aᵢ = j}` has the multinomial distribution `ℳ_m(n; q)`.
 This is the missing link between
 `StatLean.Bayesian.multinomialKernel` and any i.i.d.-sampling representation;
 the Efron bootstrap-counts representation in
-`Resampling/BootstrapMoments.lean` is the `q = (1/n, …, 1/n)` case.
+`StatLean/ComputationalStatistics/Resampling/BootstrapMoments.lean` is the `q = (1/n, …, 1/n)` case.
 
 **Reference.** James E. Gentle, *Elements of Computational Statistics*, Springer,
 2002 (ISBN 0-387-95489-9), ch. 4 p. 84 (the resampling vector `nP*` "has an

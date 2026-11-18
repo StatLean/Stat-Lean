@@ -48,7 +48,7 @@ Def 4.2–4.3, §4.2.9`.)
   coefficients to `0`; no scope change). The book's misprint `σ₁ = ⋯ = σ_p` (p. 126) is
   a typo for `σ_k` and does not affect the definition.
 * `IsARIMA` requires `IsStationary` of the differenced process, imported from
-  `Process/Defs.lean` — the book's forward reference from §1.3.5 to §2.1.
+  `StatLean/TimeSeries/Process/Defs.lean` — the book's forward reference from §1.3.5 to §2.1.
 
 **Bibliographic comments.** Autoregressions are due to G. U. Yule ("On a method of
 investigating periodicities in disturbed series", *Phil. Trans. Roy. Soc. A* **226**
@@ -152,7 +152,7 @@ def diff (Y : ℤ → Ω → ℝ) : ℤ → Ω → ℝ := fun t ω => Y t ω - Y
 
 /-- **ARIMA(p, d, q) model** (FY §1.3.5): `Y` is ARIMA iff its `d`-fold difference
 `(1-B)^d Y` is a *stationary* ARMA(p, q), `d ≥ 1`. Not self-contained in FY ch. 1 — the
-stationarity notion is §2.1's, imported here from `Process/Defs.lean`. -/
+stationarity notion is §2.1's, imported here from `StatLean/TimeSeries/Process/Defs.lean`. -/
 structure IsARIMA {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (d : ℕ) (σ2 : ℝ)
     (Y ε : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop where
   /-- Constitutive (FY §1.3.5): the differencing order is at least one. -/

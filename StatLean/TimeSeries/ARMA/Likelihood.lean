@@ -26,7 +26,7 @@ The parametric objects of ARMA maximum likelihood:
 **MLE (FY eq. (3.10)).** The book prints `arg min` — corrected to `arg max` of the
 likelihood, i.e. minimization of `armaNegTwoLogLik`; estimator sequences are treated
 as hypotheses ("a measurable sequence minimizing the criterion over the constraint
-set"), consumed by `ARMA/MLEAsymptotics.lean`.
+set"), consumed by `StatLean/TimeSeries/ARMA/MLEAsymptotics.lean`.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.3.1,
 eqs. (3.9)–(3.13) (pp. 93–95). (`FY §3.3.1`.)

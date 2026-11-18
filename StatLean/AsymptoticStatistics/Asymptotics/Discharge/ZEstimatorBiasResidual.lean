@@ -45,7 +45,8 @@ A type alias for `ZEstimatorTaylorCore`: the discharge of vdV thm:25.59
 takes the same primitive hypotheses as thm:25.54 **minus** the no-bias
 condition (25.52). The aliasing makes the call site and downstream
 documentation read in vdV's thm:25.59 vocabulary while reusing the
-already-proved Taylor route from `Discharge/ZEstimator.lean`.
+already-proved Taylor route from
+`StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimator.lean`.
 
 Reference: vdV §25.8 (Efficient Score Equations), thm:25.59 hypotheses
 (everything in thm:25.54 except eq:25.52). -/

@@ -21,8 +21,8 @@ absolute constant).
 
 **Proof formalization notes.** VC owns its own entropy integral: this file
 is self-contained interval-integral analysis with no
-stub dependencies, and `VC/LawOfLargeNumbers.lean` plugs it into the
-chaining cluster's `dudley_inequality_abs` directly. The `22` (not the
+stub dependencies, and `StatLean/ConcentrationInequalities/VC/LawOfLargeNumbers.lean` plugs it into
+the chaining cluster's `dudley_inequality_abs` directly. The `22` (not the
 covering theorem's `21`) absorbs the factor-2 covering loss from the
 symmetrized index set `T' = empProj '' F ∪ (−(empProj '' F))`, and the
 `4/ε` (not `2/ε`) extends the bound to the full diameter range

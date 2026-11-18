@@ -22,13 +22,14 @@ $\mathrm{vc} \le 2$ via Example 8.3.2; we compute the exact value
 `vcDim iicClass = 1` (half-lines cannot realize the labeling
 $g(p) = 0, g(q) = 1$ for $p < q$) — documented deviation, giving
 `√d = 1`. (2) Frozen numeral `5400/√n` inherited from `vc_lln_countable`
-(formula `2 × 40 × √6 × 27`, see `VC/LawOfLargeNumbers.lean`). Indexing:
-`vc_lln_countable` is applied to the countable rational subclass
+(formula `2 × 40 × √6 × 27`, see `StatLean/ConcentrationInequalities/VC/LawOfLargeNumbers.lean`).
+Indexing: `vc_lln_countable` is applied to the countable rational subclass
 `iicRatClass`; the ℝ-sup equals the ℚ-sup pointwise by right-continuity of
 both the empirical CDF (`empFrac_iic_rightContinuous`, finitely many jumps)
 and the population CDF (`real_iic_rightContinuous`, from the
 `StieltjesFunction` fields of `ProbabilityTheory.cdf`), through the generic
-bridge `iSup_eq_iSup_rat_of_right_approx` (`ForMathlib/SupRatApprox.lean`).
+bridge `iSup_eq_iSup_rat_of_right_approx`
+(`StatLean/ConcentrationInequalities/ForMathlib/SupRatApprox.lean`).
 
 **Bibliographic comments.** V. Glivenko and F. P. Cantelli (1933),
 *Giornale dell'Istituto Italiano degli Attuari* 4; the in-expectation

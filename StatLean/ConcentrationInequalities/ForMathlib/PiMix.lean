@@ -21,7 +21,8 @@ products and `Function.updateFinset` coercions that `Mathlib/MeasureTheory/Integ
 Marginal.lean` needs for its `ℝ≥0∞`-valued `lmarginal`.
 
 The payoff is `integral_integral_mixAt`: averaging a block of coordinates does not change
-an expectation. With `avgOn` (see `EfronStein/Tensorization.lean`) this is what turns the
+an expectation. With `avgOn` (see
+`StatLean/ConcentrationInequalities/EfronStein/Tensorization.lean`) this is what turns the
 block-by-block variance recursion into a statement about `⨂ⱼ μ j` itself.
 
 **Reference.** Stéphane Boucheron, Gábor Lugosi and Pascal Massart, *Concentration

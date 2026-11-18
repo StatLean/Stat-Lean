@@ -10,14 +10,14 @@ Honest `sup_{t ∈ T}` forms of the discrete Dudley inequality
 arbitrary — possibly uncountable — index set, against the dyadic entropy
 series `dudleyLSum T`: the per-finite-subset anchored form, countable-subset
 cores, countable displays, and separable-supremum forms. Companion of
-`Chaining/DudleySup.lean` (integral RHS) at the series RHS; constants `6√3`
-(anchored/mean-zero) and `20` (absolute) frozen as in `discrete_dudley` /
+`StatLean/ConcentrationInequalities/Chaining/DudleySup.lean` (integral RHS) at the series RHS;
+constants `6√3` (anchored/mean-zero) and `20` (absolute) frozen as in `discrete_dudley` /
 `discrete_dudley_abs`.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.1, Theorem 8.1.4, Eq. (8.2), Remark 8.1.5;
 uncountable forms per the p. 227 footnote through separable versions
-(`Chaining/SeparableProcess.lean`).
+(`StatLean/ConcentrationInequalities/Chaining/SeparableProcess.lean`).
 
 **Proof formalization notes.** Same engine recipe as `DudleySup.lean` with
 `discrete_dudley` / `discrete_dudley_abs` as the per-finite-subset inputs

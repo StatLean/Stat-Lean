@@ -14,8 +14,9 @@ Closed forms for `Gamma(a, r)` (Mathlib's `gammaMeasure a r`: shape `a`, rate `r
 * `integral_id_gammaMeasure` — `E[X] = a/r`;
 * `variance_gammaMeasure` — `Var[X] = E[(X − a/r)²] = a/r²`.
 
-Theorem-agnostic. Consumed by `ForMathlib/ChiSquared.lean` (the χ²ₖ definition and the
-sum-of-squares law) in the chi-squared test development (Candès, Lecture 2, §2.3).
+Theorem-agnostic. Consumed by `StatLean/MultipleTesting/ForMathlib/ChiSquared.lean` (the χ²ₖ
+definition and the sum-of-squares law) in the chi-squared test development (Candès, Lecture 2,
+§2.3).
 
 Reference: Candès, Lecture 2, §2.3, STAT 300C Notes.
 -/

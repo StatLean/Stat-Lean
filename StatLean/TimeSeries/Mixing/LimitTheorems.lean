@@ -62,8 +62,8 @@ import StatLean.TimeSeries.ForMathlib.Ergodic.Birkhoff
   invariance of the path law on `ℤ → ℝ`,
   `α(n) → 0 ⇒` ergodicity of the shift, Birkhoff, transport back to `Ω` — are executed in
   the `BirkhoffSLLN` section below; the pointwise ergodic theorem itself is the new
-  `ForMathlib/Ergodic/Birkhoff.lean` (Garsia's maximal inequality ⇒ a.e. convergence to the
-  conditional expectation on the invariant σ-algebra ⇒ the ergodic corollary).
+  `StatLean/TimeSeries/ForMathlib/Ergodic/Birkhoff.lean` (Garsia's maximal inequality ⇒ a.e.
+  convergence to the conditional expectation on the invariant σ-algebra ⇒ the ergodic corollary).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.3,
 Prop 2.8, Thms 2.20–2.21, eq. (2.63) (pp. 74–76). (`FY §2.6.3`.)
@@ -4472,9 +4472,10 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
 
 The route the book cites: the path law `ν = μ ∘ (ω ↦ (X_t ω)_t)⁻¹` on `ℤ → ℝ` is shift
 invariant by strict stationarity, `α(n) → 0` makes the shift ergodic for `ν`, and Birkhoff's
-pointwise ergodic theorem (`ForMathlib/Ergodic/Birkhoff.lean`) applied to the coordinate
-observable gives the strong law. The bricks below rebuild, privately, the path-space
-machinery of `Mixing/Relations.lean` (which is `private` there) and add the ergodicity step.
+pointwise ergodic theorem (`StatLean/TimeSeries/ForMathlib/Ergodic/Birkhoff.lean`) applied to the
+coordinate observable gives the strong law. The bricks below rebuild, privately, the path-space
+machinery of `StatLean/TimeSeries/Mixing/Relations.lean` (which is `private` there) and add the
+ergodicity step.
 -/
 
 section BirkhoffSLLN
@@ -4876,17 +4877,17 @@ ergodic theorem, which does not give the a.e. statement.
     `cylinderEvents (Ici (p+m))`-measurable, so the α-bound `le_csSup` gives
     `|ν(B ∩ σ^{-n}B) − ν(B) ν(σ^{-n}B)| ≤ α(m)`, using the transfer of the coefficient to the
     path law (`alphaMix_comap`) and the **re-anchoring lemma**
-    `IsStrictlyStationary.alphaMixCoeff_shift` of `Mixing/Relations.lean` — a cylinder sits in
-    an arbitrary finite window, not in `(−∞, 0]`, so re-anchoring is genuinely needed.
-    Together with `|ν(A) − ν(A)²| ≤ 4δ + α(m)` this forces `ν(A) ∈ {0,1}`.
+    `IsStrictlyStationary.alphaMixCoeff_shift` of `StatLean/TimeSeries/Mixing/Relations.lean` — a
+    cylinder sits in an arbitrary finite window, not in `(−∞, 0]`, so re-anchoring is genuinely
+    needed. Together with `|ν(A) − ν(A)²| ≤ 4δ + α(m)` this forces `ν(A) ∈ {0,1}`.
 (iii) `maximal_ergodic` (Garsia) and `birkhoffAverage_ae_tendsto_integral` in the new file.
 (iv) Transport back to `Ω` along the path map, free via `MeasureTheory.ae_of_ae_map`.
 **Indexing note.** The statement sums `X_1, …, X_n`, while `birkhoffSum shiftPath (· 0) n`
 sums `y_0, …, y_{n−1}`; the two are matched by evaluating the a.e. statement at `σ y` rather
 than by changing the observable, which is free because `σ` is measure preserving.
 
-**Duplication note.** `Mixing/Relations.lean` proves items of the path-space machinery
-(`comap_path_cylinderEvents`, `iSup_Iic_shift`, `iSup_Ici_shift`, `alphaMixCoeff_comap`,
+**Duplication note.** `StatLean/TimeSeries/Mixing/Relations.lean` proves items of the path-space
+machinery (`comap_path_cylinderEvents`, `iSup_Iic_shift`, `iSup_Ici_shift`, `alphaMixCoeff_comap`,
 `map_finsetTuple_shift`, `map_path_shift`) but keeps them `private`, i.e. file-scoped, so
 they are re-proved verbatim above as `comap_path_cyl`, `iSup_Iic_sh`, `iSup_Ici_sh`,
 `alphaMix_comap`, `map_fintuple_sh`, `map_path_sh`. Un-privatizing them in `Relations.lean`

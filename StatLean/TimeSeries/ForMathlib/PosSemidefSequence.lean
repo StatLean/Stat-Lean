@@ -9,8 +9,8 @@ import Mathlib.Tactic.Linarith
 A real sequence `γ : ℤ → ℝ` is **positive semidefinite** when every quadratic form
 `Σᵢⱼ aᵢ aⱼ γ(tᵢ − tⱼ)` built from finitely many time points is nonnegative (FY
 eq. (2.17)). This is the characterizing property of autocovariance functions
-(FY Theorem 2.7, `Process/Autocovariance.lean`) and the sole input to the Herglotz
-theorem (FY Theorem 2.10, `ForMathlib/Fourier/HerglotzBochner.lean`).
+(FY Theorem 2.7, `StatLean/TimeSeries/Process/Autocovariance.lean`) and the sole input to the
+Herglotz theorem (FY Theorem 2.10, `StatLean/TimeSeries/ForMathlib/Fourier/HerglotzBochner.lean`).
 
 Basic consequences stated here: `γ(0) ≥ 0`; `|γ(k)| ≤ γ(0)` for even `γ`; and the
 upgrade from real to complex coefficient vectors (for even `γ` the Hermitian quadratic

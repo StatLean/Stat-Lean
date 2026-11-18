@@ -764,8 +764,9 @@ private lemma integral_expTilt_signed {Q : Measure ℝ} [IsProbabilityMeasure Q]
     rw [hsplit] at hI
     linarith
 
-/-! ### Three-exponential separation (ported from `Unbiased/OneParamTwoSided.lean`,
-where these are `private`; they are the convex-geometry core of the two-constraint
+/-! ### Three-exponential separation (ported from
+`StatLean/HypothesisTesting/Unbiased/OneParamTwoSided.lean`, where these are `private`; they are the
+convex-geometry core of the two-constraint
 Neyman–Pearson step and are reused here fibrewise) -/
 
 /-- **Chord separation for a convex function on `[0,∞)`.** Given `0 < w₁ ≤ w₂` and a

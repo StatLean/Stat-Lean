@@ -5,9 +5,10 @@ import Mathlib.Data.List.TFAE
 # The directed Markov properties — pairwise, local, global
 
 Lauritzen's three Markov properties of a probability law relative to a **directed acyclic**
-graph `D` (pp. 47, 50), stated — exactly as in `Undirected/Markov.lean` — over an **abstract**
-conditional-independence relation `ci : Finset V → Finset V → Finset V → Prop`, read
-`ci A B C` as `X_A ⫫ X_B ∣ X_C`:
+graph `D` (pp. 47, 50), stated — exactly as in
+`StatLean/StatisticalModels/GraphicalModels/Undirected/Markov.lean` — over an **abstract**
+conditional-independence relation `ci : Finset V → Finset V → Finset V → Prop`, read `ci A B C` as
+`X_A ⫫ X_B ∣ X_C`:
 
 * `IsDirectedPairwiseMarkov D ci` — **(DP)**, p. 50: `α ⫫ β ∣ nd(α) ∖ {β}` for non-adjacent
   `α`, `β` with `β ∈ nd(α)`;

@@ -32,7 +32,7 @@ stated here as the identity `g(b) = 2 F₀(b) − 1` for atomless `P`.
 *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.)
 §3.3 (the neighbourhood `F_{ε,θ}` and `MB`), §3.8.4 (eqs. (3.66)–(3.68) with proofs).
 The minimax-bias optimality of the median over location-equivariant functionals is the
-companion file `MaxBias/MedianMinimaxBias.lean` (`MMY §3.8.5`).
+companion file `StatLean/RobustStatistics/MaxBias/MedianMinimaxBias.lean` (`MMY §3.8.5`).
 
 **Bibliographic comments.** The maximum-bias function of a location M-estimator and its
 `g(b) = kε/(1−ε)` characterization are due to Huber ("Robust estimation of a location

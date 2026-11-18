@@ -14,8 +14,9 @@ import Mathlib.Algebra.BigOperators.Field
 For every `ℓ` there is a kernel of order `ℓ` that is bounded and supported in `[−1, 1]`.
 
 This existence result is the auxiliary device behind the uniform bound on Hölder densities
-(`KernelDensity/UniformDensityBound.lean`): applying the bias inequality with bandwidth `1`
-and such a kernel `K*` yields `p(x) ≤ C₂* + sup|K*|` uniformly over the density class.
+(`StatLean/NonparametricStatistics/KernelDensity/UniformDensityBound.lean`): applying the bias
+inequality with bandwidth `1` and such a kernel `K*` yields `p(x) ≤ C₂* + sup|K*|` uniformly over
+the density class.
 
 **Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
 Statistics, Springer, New York, 2009. Chapter 1, §1.2.2 (construction of a kernel of order $\ell$;

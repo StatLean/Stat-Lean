@@ -9,7 +9,7 @@ Fourier frequencies `ω_k = 2πk/T`, the unitary DFT
 `α_k = T^{-1/2} Σ_{t=1}^{T} x_t e^{−itω_k}` (FY eqs. (2.49)–(2.51); we index data by
 `Fin T` with `t + 1` playing the book's `t ∈ {1, …, T}`), the orthonormality of the
 harmonic vectors (in-text proof: geometric sums of roots of unity — the same engine as
-`NonparametricStatistics/ForMathlib/TrigDiscreteSums.lean`), and the discrete Parseval
+`StatLean/NonparametricStatistics/ForMathlib/TrigDiscreteSums.lean`), and the discrete Parseval
 identity (FY eq. (2.52)).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.4.1
@@ -43,7 +43,7 @@ noncomputable def dft {T : ℕ} (x : Fin T → ℝ) (k : ℤ) : ℂ :=
 
 All the discrete orthogonality sums below are geometric sums of the root of unity
 `ζ_{T,m} = e^{2πim/T}`; the proof pattern is the one of
-`NonparametricStatistics/ForMathlib/TrigDiscreteSums.lean`. -/
+`StatLean/NonparametricStatistics/ForMathlib/TrigDiscreteSums.lean`. -/
 
 /-- The root of unity `ζ_{T,m} = e^{2πim/T}`. Junk value `1` when `T = 0`. -/
 private noncomputable def rootU (T : ℕ) (m : ℤ) : ℂ :=

@@ -87,8 +87,8 @@ and `An(A)` is the smallest ancestral set containing `A`. `G_A` denotes the subg
    `V`, apply to the moralized restriction — the alternative would drag a subtype transport
    through every statement of Corollary 3.23.
 6. **The topological order is stated as an existence theorem, not a sort.** Mathlib's
-   `extend_partialOrder` (`Order/Extension/Linear.lean`, the Szpilrajn extension theorem) turns
-   the partial order `Relation.ReflTransGen D.Adj` into a linear one, and on a finite type
+   `extend_partialOrder` (`Mathlib/Order/Extension/Linear.lean`, the Szpilrajn extension theorem)
+   turns the partial order `Relation.ReflTransGen D.Adj` into a linear one, and on a finite type
    `monoEquivOfFin` converts a linear order into an enumeration by `Fin (Fintype.card V)`.
 
 **Bibliographic comments.** Directed graphical models and their ancestral vocabulary are due to

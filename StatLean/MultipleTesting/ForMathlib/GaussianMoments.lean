@@ -15,12 +15,13 @@ test's mean/variance computations (Candès, Lecture 2, §2.3):
 
 Under `H₀` these give `E[∑ Zᵢ²] = n`, `Var[∑ Zᵢ²] = 2n`; the `E[Z³] = 0` / `E[Z⁴] = 3` pair feed
 the noncentral `H₁` moments `E[(μ+Z)²] = μ²+1`, `Var[(μ+Z)²] = 4μ²+2` in the assembly file
-`ChiSquaredTest/Distribution.lean`. (`E[Z] = 0` is Mathlib's `integral_id_gaussianReal`.)
+`StatLean/MultipleTesting/ChiSquaredTest/Distribution.lean`. (`E[Z] = 0` is Mathlib's
+`integral_id_gaussianReal`.)
 
 Theorem-agnostic. The χ²₁ MGF integral `∫ exp(l x²) dN(0,1) = (1−2l)^{−1/2}` and the existing
 `∫ x² dN(0,1) = 1` derivation in
-`HighDimensionalStatistics/CompressedSensing/GaussianChiSquared.lean` are a style reference (that
-file proves the second moment via `variance_fun_id_gaussianReal`).
+`StatLean/HighDimensionalStatistics/CompressedSensing/GaussianChiSquared.lean` are a style reference
+(that file proves the second moment via `variance_fun_id_gaussianReal`).
 
 ## Proof routes
 

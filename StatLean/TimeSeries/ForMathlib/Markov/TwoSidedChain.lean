@@ -24,7 +24,7 @@ construction.
 
 **Reference.** Natural extension: Rokhlin (1961); the reverse-kernel construction of a
 stationary two-sided Markov chain is classical (e.g. Meyn & Tweedie, *Markov Chains and
-Stochastic Stability*, ch. 3 notes). Consumed by `Threshold/TAR.lean`
+Stochastic Stability*, ch. 3 notes). Consumed by `StatLean/TimeSeries/Threshold/TAR.lean`
 (`exists_stationary_nlAR_of_invariant`, FY §4.1.1).
 
 **Bibliographic comments.** The disintegration input is Mathlib's

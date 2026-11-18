@@ -1872,11 +1872,11 @@ linearly in the shell radius, uniformly in `n`:
 
     ∃ C > 0, ∃ ρ > 0, ∀ 0 < δ < ρ, ∀ n,   ∫⁻ ξ, ‖𝔾ₙ‖_{M_δ} ∂μ ≤ C · δ.
 
-This is the conclusion used by `modulus_maximal_bound` in `MEstimator/Rate.lean`.
-The bound is over the fixed-center shell `M_δ`, not
-the pairwise-difference slice `localizedDifferenceClass` — the latter form is FALSE for nonlinear
-Lipschitz `m` (vdV Lemma 19.38 note, book p.289; its envelope is `2·menv`, no `δ` in the covering
-numerator, and the `√log(1/δ)` does not cancel). See `l2CoveringNumber_shell_le` for the
+This is the conclusion used by `modulus_maximal_bound` in
+`StatLean/AsymptoticStatistics/MEstimator/Rate.lean`. The bound is over the fixed-center shell
+`M_δ`, not the pairwise-difference slice `localizedDifferenceClass` — the latter form is FALSE for
+nonlinear Lipschitz `m` (vdV Lemma 19.38 note, book p.289; its envelope is `2·menv`, no `δ` in the
+covering numerator, and the `√log(1/δ)` does not cancel). See `l2CoveringNumber_shell_le` for the
 corresponding covering bound.
 
 Proof: the covering-chaining core `centeredLipschitz_shellModulus_bound_closed` delivers the clean

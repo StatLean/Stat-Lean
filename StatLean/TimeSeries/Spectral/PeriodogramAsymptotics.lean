@@ -32,8 +32,8 @@ double-array CLT. (`FY §2.4.2 Thm 2.14`.)
 
 **Proof formalization notes.**
 * The frequencies use `fourierFreq T k = 2πk/T` and the time index `t = 1, …, T` as in
-  `Spectral/DFT.lean` (whose exponential-orthogonality lemmas drive the exact variance
-  computation in (i)).
+  `StatLean/TimeSeries/Spectral/DFT.lean` (whose exponential-orthogonality lemmas drive the exact
+  variance computation in (i)).
 * In (ii) the remainder bound is uniform over `k ≤ n`: stated with an explicit
   vanishing envelope sequence `b : ℕ → ℝ` rather than a `Finset.sup`, avoiding junk
   when the frequency window is empty (`T ≤ 2`).
@@ -76,8 +76,8 @@ noncomputable def dftNoiseXi (ε : ℤ → Ω → ℝ) (σ2 : ℝ) (T : ℕ) (j 
 
 The exact variance computation behind Theorem 2.14(i) is the classical orthogonality of
 the Fourier trigonometric vectors on the grid `t = 1, …, T`. Everything is derived from
-`Spectral/DFT.lean`'s exponential orthogonality by taking real and imaginary parts and
-by the product-to-sum identities.
+`StatLean/TimeSeries/Spectral/DFT.lean`'s exponential orthogonality by taking real and imaginary
+parts and by the product-to-sum identities.
 -/
 
 /-- `e^{ir} = cos r + i sin r` in the shape used below. -/

@@ -13,7 +13,7 @@ $|T_0| = 1$ and $|T_k| \le 2^{2^k}$, and
 $$ \gamma_2(T, d) \;=\; \inf_{(T_k)} \; \sup_{t \in T}
      \sum_{k=0}^{\infty} 2^{k/2}\, d(t, T_k), $$
 the infimum over admissible sequences. Concept-layer file (no probability);
-consumed by `Chaining/GenericChaining.lean`.
+consumed by `StatLean/ConcentrationInequalities/Chaining/GenericChaining.lean`.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.5.1, Definition 8.5.1, Eqs. (8.43) (admissible

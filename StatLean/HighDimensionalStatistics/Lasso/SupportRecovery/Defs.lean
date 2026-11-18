@@ -56,8 +56,8 @@ quantities consumed by the support-recovery assembly:
   $\ell^\infty$ error bound of Theorem 7.21(c), Eq (7.45).
 * `projNoiseLinf X S w`      — the projected-noise quantity on the RHS of Eq (7.44).
 
-The **Lasso objective itself is reused** from `Lasso/Defs.lean` (`lassoObjective`,
-`IsLassoEstimator`) — identical to Wainwright's Lagrangian Lasso (7.18). Reuses
+The **Lasso objective itself is reused** from `StatLean/HighDimensionalStatistics/Lasso/Defs.lean`
+(`lassoObjective`, `IsLassoEstimator`) — identical to Wainwright's Lagrangian Lasso (7.18). Reuses
 `designSub` / `Xsub` / `col` (`SupportSubmatrix.lean`), `gram` / `gramInv` / `matLinftyNorm`
 (`GramMatrix.lean`), and `designMap` / `restrict` (`LinearModel`, `VecNorms`).
 

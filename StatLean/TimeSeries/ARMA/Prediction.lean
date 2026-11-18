@@ -22,7 +22,7 @@ Definition 3.1, Theorem 3.1, eqs. (3.3)–(3.8) (pp. 91–93). (`FY §3.2`.)
 
 **Proof formalization notes.**
 * The predictor window is `X_1, …, X_k` predicting `X_{k+1}`, per FY's indexing; the
-  time reversal against `Process/PartialAutocorrelation.lean`'s
+  time reversal against `StatLean/TimeSeries/Process/PartialAutocorrelation.lean`'s
   `linRegCoeffs`-machinery is handled by `acvf_even`.
 * `predMSE` is an integral of a square, not a `variance` — the process is zero-mean by
   hypothesis, keeping the statements free of centering.

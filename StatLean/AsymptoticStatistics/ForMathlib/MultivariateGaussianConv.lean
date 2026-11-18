@@ -12,8 +12,8 @@ measures is Gaussian, but it does not give the explicit mean / covariance
 addition formula at the level of `multivariateGaussian m S`. This file
 supplies that formula via the `charFun` + Lévy uniqueness route.
 
-Used in `Experiment/GaussianShiftMinimax.lean` Step D (PSD-monotone-Anderson):
-`N(0, Σ₁) ∗ N(0, Σ₂ - Σ₁) = N(0, Σ₂)` for PSD `Σ₁ ≤ Σ₂` rewrites the larger
+Used in `StatLean/AsymptoticStatistics/Experiment/GaussianShiftMinimax.lean` Step D
+(PSD-monotone-Anderson): `N(0, Σ₁) ∗ N(0, Σ₂ - Σ₁) = N(0, Σ₂)` for PSD `Σ₁ ≤ Σ₂` rewrites the larger
 Gaussian as an independent shift of the smaller, then Anderson on independent
 shifts gives the lower-bound monotonicity `∫ L dN(0, Σ₁) ≤ ∫ L dN(0, Σ₂)`.
 -/

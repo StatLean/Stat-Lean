@@ -26,7 +26,7 @@ This is a `ForMathlib/` theorem-agnostic primitive.
 **Relation to `StatLean.ConcentrationInequalities`.** The library's
 concentration area proves the closely related
 `StatLean.ConcentrationInequalities.expectation_max_le`
-(`ConcentrationInequalities/Maximal/FiniteMaximal.lean`): a `Fin d`-indexed,
+(`StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`): a `Fin d`-indexed,
 `IsSubGaussian`-phrased `E[max] ≤ √(2σ² log d)`. The two cannot share a home
 today because cross-area imports are restricted to `ForMathlib/` layers and
 that lemma lives in a concept layer; this generic-`Fintype`,

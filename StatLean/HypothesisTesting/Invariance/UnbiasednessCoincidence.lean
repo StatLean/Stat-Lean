@@ -45,7 +45,7 @@ almost-invariant test coincide). (`TSH4 §6.6 Thm 6.6.1`.)
   not a test at all, so the hypothesis `hsmul : ∀ g, Measurable (g • ·)` — the content of
   `[MeasurableSMul G 𝓧]`, stated as a plain hypothesis so no `MeasurableSpace G` structure
   has to be imposed — is added. This is the same amendment as in
-  `Invariance/SufficiencyReduction.lean`.
+  `StatLean/HypothesisTesting/Invariance/SufficiencyReduction.lean`.
 * The proof turns out not to use `hequiv` (the "family-null ⟹ `μ`-null" half of the
   equivalence of `μ` with the family): only `hdom` is needed, to push the `μ`-a.e. almost
   invariance of `φ*` down to each member. `hequiv` is retained in the signature because it

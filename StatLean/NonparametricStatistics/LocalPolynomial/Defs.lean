@@ -33,8 +33,8 @@ estimator $LP(\ell)$), Eqs. (1.65)–(1.67) (objective, normal equations, weight
 * *Closed form vs minimiser.* Mirroring the library's least-squares precedent, the estimator is
   defined by the closed-form weights (total, with `Matrix.inv` returning the junk `0` matrix at
   singular `B_t`), and `IsLPSolution` is the honest minimiser predicate; the equivalence under
-  `PosDef` is proved in `LocalPolynomial/Quadratic.lean`. Note `(B⁻¹ v) 0 = U(0)ᵀ B⁻¹ v` since
-  `U(0) = e₀`.
+  `PosDef` is proved in `StatLean/NonparametricStatistics/LocalPolynomial/Quadratic.lean`. Note
+  `(B⁻¹ v) 0 = U(0)ᵀ B⁻¹ v` since `U(0) = e₀`.
 * *Assumptions at fixed `n`.* The classical assumptions quantify over all `n ≥ n₀`; here each
   predicate speaks about one design vector of one sample size, and asymptotic statements
   quantify externally. (LP2) is stated for all real intervals `[a, b]`; given a design contained
@@ -98,7 +98,8 @@ noncomputable def lpWeight {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h
 
 /-- The **local polynomial estimator of order `ℓ`** at `t`, in closed weight form:
 `f̂(t) = ∑ i, Y i · W*ᵢ(t)`. Coincides with the first coordinate of any minimiser of
-`lpObjective` when `B_t ≻ 0` (proved in `LocalPolynomial/Quadratic.lean`). -/
+`lpObjective` when `B_t ≻ 0` (proved in
+`StatLean/NonparametricStatistics/LocalPolynomial/Quadratic.lean`). -/
 noncomputable def lpEstimator {n : ℕ} (xdat Y : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)
     (t : ℝ) : ℝ :=
   ∑ i, Y i * lpWeight xdat K h ℓ t i

@@ -18,8 +18,8 @@ $$ v \;=\; \tfrac12 \sum_{i=1}^n \mathbf{E}\bigl[(Z - Z_i')^2\bigr], \qquad
 which is the form in which the bound is actually applied.
 
 The inequality $\operatorname{Var}(Z) \le v$ itself is proved in
-`EfronStein/Tensorization.lean`, by tensorization of the variance over blocks of
-coordinates.
+`StatLean/ConcentrationInequalities/EfronStein/Tensorization.lean`, by tensorization of the variance
+over blocks of coordinates.
 
 **Reference.** Stéphane Boucheron, Gábor Lugosi and Pascal Massart, *Concentration
 Inequalities: A Nonasymptotic Theory of Independence*, Oxford University Press, 2013
@@ -62,8 +62,9 @@ $(\mathbf{E}^{(i)}Z)^2$ by $\mathbf{E}^{(i)}[Z^2]$.
 
 **Bibliographic comments.** Boucheron–Lugosi–Massart §3.9 says: "The proof shown in
 Section 3.1 appears in Rhee and Talagrand (1986)." The formalization in
-`EfronStein/Tensorization.lean` realizes the same variance decomposition and Jensen step
-through a block-tensorization recursion on the canonical product space.
+`StatLean/ConcentrationInequalities/EfronStein/Tensorization.lean` realizes the same variance
+decomposition and Jensen step through a block-tensorization recursion on the canonical product
+space.
 -/
 
 open MeasureTheory ProbabilityTheory Set

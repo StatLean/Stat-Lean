@@ -14,9 +14,9 @@ $$\rho_c(u) = \begin{cases} u^2/2, & |u| \le c\\ c|u| - c^2/2, & |u| > c\end{cas
 \psi_c(u) = \max(-c, \min(c, u)).$$
 
 The bounded score `|ψ_c| ≤ c` is the mathematical reason the Huber location estimator has
-bounded influence (`MEstimation/Influence.lean`) and positive asymptotic breakdown
-(`MEstimation/AsymptoticBreakdown.lean`), while the unbounded score `ψ(u) = u` of squared
-loss makes the mean fragile.
+bounded influence (`StatLean/RobustStatistics/MEstimation/Influence.lean`) and positive asymptotic
+breakdown (`StatLean/RobustStatistics/MEstimation/AsymptoticBreakdown.lean`), while the unbounded
+score `ψ(u) = u` of squared loss makes the mean fragile.
 
 **Deviation from the book statement.** `MMY` eq. (2.28) normalizes `ρ_k(u) = u²` on the
 central region, so that `ρ_k' = 2ψ_k`. We use Huber's original normalization `u²/2`, giving

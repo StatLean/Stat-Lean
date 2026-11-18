@@ -34,8 +34,9 @@ import StatLean.MultipleTesting.GoodnessOfFit.KolmogorovSmirnov
 Multiple hypothesis testing: false discovery rate and family-wise error rate control, formalized
 from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
 
-* **Concepts**: `FDP` / `FDR` / `FWER` (`FDP/Defs.lean`); `SuperUniform` null p-values
-  (`PValues/Defs.lean`); `KnockoffScore` (`Knockoff/Defs.lean`).
+* **Concepts**: `FDP` / `FDR` / `FWER` (`StatLean/MultipleTesting/FDP/Defs.lean`); `SuperUniform`
+  null p-values (`StatLean/MultipleTesting/PValues/Defs.lean`); `KnockoffScore`
+  (`StatLean/MultipleTesting/Knockoff/Defs.lean`).
 * **ForMathlib**: order statistics of a real tuple (`OrderStatistics.lean`); the optional
   stopping theorem `thm:optstop` as a supermartingale bridge to Mathlib (`OptionalStopping.lean`);
   the binomial-ratio inequalities (`BinomialRatio.lean`); the exchangeable conditional expectation
@@ -49,8 +50,9 @@ from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
 testing area). Landing incrementally:
 
 * **E-values** (Candès L15, Defs. 3–4, Prop. 3): `IsEVariable` / `IsPVariable`
-  (`EValues/Defs.lean`); `isPVariable_inv_of_isEVariable`, `superUniform_inv_of_isEVariable`
-  (`EValues/Conversion.lean`) — `1/E` is a (super-uniform) p-value.
+  (`StatLean/MultipleTesting/EValues/Defs.lean`); `isPVariable_inv_of_isEVariable`,
+  `superUniform_inv_of_isEVariable` (`StatLean/MultipleTesting/EValues/Conversion.lean`) — `1/E` is
+  a (super-uniform) p-value.
 
 Modules are imported above as each lands.
 -/

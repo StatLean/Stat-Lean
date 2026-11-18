@@ -13,7 +13,8 @@ $$\bar x_{(m)} = \frac{1}{n-2m} \sum_{i=m}^{n-m-1} x_{(i)},$$
 interpolating between the sample mean (`m = 0`) and the median (`m → ⌊(n-1)/2⌋`). Its
 finite-sample robustness — resistance to `m` replacements — follows from the
 replacement-perturbation bound on order statistics
-(`ForMathlib/OrderStatPerturb.lean`), matching `m* = [nα]` in `MMY §3.2.5`.
+(`StatLean/RobustStatistics/ForMathlib/OrderStatPerturb.lean`), matching `m* = [nα]` in
+`MMY §3.2.5`.
 
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.4 (trimmed

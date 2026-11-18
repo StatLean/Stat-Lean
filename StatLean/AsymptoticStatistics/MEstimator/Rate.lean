@@ -19,10 +19,10 @@ localized empirical modulus satisfies `E*‖𝔾ₙ‖_{ℳδ} ≲ δ` (rate exp
 `β = 1`), a near-maximizer `θ̂ₙ` with `ℙₙm_{θ̂} ≥ ℙₙm_{θ₀} − O_P(n⁻¹)` and
 `θ̂ₙ →ₚ θ₀` satisfies `√n(θ̂ₙ − θ₀) = O_P(1)`.
 
-The proof specializes the general form of vdV Theorem 5.52 in `MEstimator/MetricRate.lean`.
-It localizes to a closed ball and dilates the parameter so the curvature and modulus bounds
-share one constant, instantiates `α = 2`, `β = 1`,
-and transfers the resulting outer-probability rate back to the measurable
+The proof specializes the general form of vdV Theorem 5.52 in
+`StatLean/AsymptoticStatistics/MEstimator/MetricRate.lean`. It localizes to a closed ball and
+dilates the parameter so the curvature and modulus bounds share one constant, instantiates `α = 2`,
+`β = 1`, and transfers the resulting outer-probability rate back to the measurable
 Euclidean estimator.
 -/
 

@@ -17,8 +17,8 @@ every `comap Prod.fst`-measurable rectangle by `Measure.setIntegral_compProd`, s
 it is a version of the conditional expectation.
 
 It is the measure-theoretic bridge feeding the CAR coarsening-score
-identification (`Operators/CoarseningScoreIdentification.lean`, vdV §25.5.3
-thm:25.40): the tower `E_{Q,R}(b(X) | Y = y) = ∫ b(M(y, δ)) r(δ | y) dν(δ)` is
+identification (`StatLean/AsymptoticStatistics/Operators/CoarseningScoreIdentification.lean`, vdV
+§25.5.3 thm:25.40): the tower `E_{Q,R}(b(X) | Y = y) = ∫ b(M(y, δ)) r(δ | y) dν(δ)` is
 this lemma applied to `f = b ∘ M`.
 
 Headline declaration: `condExp_compProd_fst`.

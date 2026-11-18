@@ -18,7 +18,8 @@ square-integrability to that product space, and `variance_map` transports the va
 back. The coordinate maps need only be almost-everywhere measurable.
 
 **Bibliographic comments.** This wrapper changes only the probability-space interface;
-the historical notes for the inequality are recorded in `EfronStein/Defs.lean`.
+the historical notes for the inequality are recorded in
+`StatLean/ConcentrationInequalities/EfronStein/Defs.lean`.
 -/
 
 open MeasureTheory ProbabilityTheory

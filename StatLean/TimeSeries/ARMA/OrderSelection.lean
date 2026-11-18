@@ -9,7 +9,7 @@ import Mathlib.MeasureTheory.Integral.Prod
   self-contained target);
 * the **AIC** (3.17)/(3.18), **AICC** (3.19), **FPE**, and **BIC** (3.23)/(3.24)
   criteria for ARMA order selection, defined on the profiled likelihood criterion of
-  `ARMA/Likelihood.lean` with FY's penalties;
+  `StatLean/TimeSeries/ARMA/Likelihood.lean` with FY's penalties;
 * the **Taylor equivalence** `AICC = AIC + O(1/T)`-form (in-text; the FPE display
   absorbs an additive constant, harmless for argmin).
 

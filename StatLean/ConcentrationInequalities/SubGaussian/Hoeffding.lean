@@ -14,8 +14,8 @@ Equivalently, the centered sum $\sum_{i=1}^{n}(X_i - \mathbb{E}X_i)$ exceeds
 $nt$ with the same bound; this is the form we state and prove directly, since
 it matches Mathlib's sum-tail lemma applied at threshold $\varepsilon := nt$ to
 the centered variables $X_i - \mathbb{E}X_i$. Sub-Gaussianity here is the
-`IsSubGaussian` predicate of `…/SubGaussian/Defs.lean`, whose engine is exactly
-the centered sub-Gaussian moment-generating-function bound that Mathlib's lemma
+`IsSubGaussian` predicate of `StatLean/ConcentrationInequalities/SubGaussian/Defs.lean`, whose
+engine is exactly the centered sub-Gaussian moment-generating-function bound that Mathlib's lemma
 consumes.
 
 **Deviation from the book statement.** We state the tail with the

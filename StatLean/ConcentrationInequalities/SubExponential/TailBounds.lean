@@ -48,7 +48,7 @@ Mathlib brick: `ProbabilityTheory.measure_ge_le_exp_mul_mgf`
 (in `Mathlib.Probability.Moments.Basic`, transitively via `SubGaussian`).
 
 `IsFiniteMeasure μ` is derived privately from `integrable_exp_mul` at `l = 0`,
-mirroring the pattern in `SubGaussian/TailBounds.lean`.
+mirroring the pattern in `StatLean/ConcentrationInequalities/SubGaussian/TailBounds.lean`.
 
 **Bibliographic comments.** The two-regime sub-exponential tail bound is folklore
 with no single seminal origin; it is the standard packaging of the sub-exponential MGF

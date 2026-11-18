@@ -26,8 +26,9 @@ of Theorem 1.8, via Lemma 1.6 and Corollary 1.3 on a grid of $M = n^4$ points).
    `|∑ξW*| ≤ ‖η_j‖·…/λ₀·(nh)^{-1/2}`, and `lintegral_iSup_normSq_gaussian_le` gives
    `E max_j ‖η_j‖² ≲ (ℓ+1)·vmax·log(√2·M(ℓ+1)) = O(log n)`.
 2. *Increments.* Between grid points, `∑ᵢ|W*ᵢ(t) − W*ᵢ(t_j)| ≤ C_L·|t−t_j|/h³`
-   (`lp_weight_lipschitz_sum`, from `SupNorm/Increments.lean`), so the continuum supremum
-   exceeds the grid maximum by at most `max_i|ξ_i|·C_L·n^{-4}/h³`, whose second moment is
+   (`lp_weight_lipschitz_sum`, from
+   `StatLean/NonparametricStatistics/LocalPolynomial/SupNorm/Increments.lean`), so the continuum
+   supremum exceeds the grid maximum by at most `max_i|ξ_i|·C_L·n^{-4}/h³`, whose second moment is
    `O(σ_ξ²·log n·n^{-8}/h⁶) = o(σ_ξ²·log n/(nh))` for `h ≥ 1/(2n)`.
 
 The constant is existential with the stated dependence (by binder position before the

@@ -16,7 +16,7 @@ $M$-fibres.
 This file collects the three observed-data semiparametric results under CAR,
 all built on the information-loss (orthogonal projection / conditional
 expectation) operator $\Pi = \Pi_{M, P_{\mathrm{full}}}$ from
-`Operators/InformationLoss.lean`:
+`StatLean/AsymptoticStatistics/Operators/InformationLoss.lean`:
 
 * **Observed tangent space (Theorem 25.40).** Under CAR, the tangent space of
   the observed-data model equals the image $\Pi(\dot{\mathcal P})$ of the
@@ -37,12 +37,12 @@ Chapter 25 (Semiparametric Models), §25.6, Theorem 25.40, Lemma 25.41,
 Corollary 25.42.
 
 **Proof formalization notes.** Builds on the information-loss operator
-`Π = informationLossOperator M hM P_full` from `Operators/InformationLoss.lean`.
-The CAR predicate `IsCoarseningAtRandom` uses the kernel-disintegration form: an
-existential of a `ProbabilityTheory.Kernel Ω_obs Ω_full` disintegrating
-`P_full` over `P_full.map M`, together with the regularity clause that the
-kernel is concentrated on the `M`-fibre (`κ y` lives on `{x | M x = y}`, a.e.).
-For deterministic coarsenings on standard Borel spaces, CAR is essentially
+`Π = informationLossOperator M hM P_full` from
+`StatLean/AsymptoticStatistics/Operators/InformationLoss.lean`. The CAR predicate
+`IsCoarseningAtRandom` uses the kernel-disintegration form: an existential of a
+`ProbabilityTheory.Kernel Ω_obs Ω_full` disintegrating `P_full` over `P_full.map M`, together with
+the regularity clause that the kernel is concentrated on the `M`-fibre (`κ y` lives on
+`{x | M x = y}`, a.e.). For deterministic coarsenings on standard Borel spaces, CAR is essentially
 automatic via Mathlib's `ProbabilityTheory.Kernel.condDistrib` disintegration;
 the substantive content of CAR appears at the *family* level (independence of
 the kernel from the unobserved coordinate across submodels), so theorems

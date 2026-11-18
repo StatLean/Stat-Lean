@@ -43,10 +43,11 @@ Isometry Property).
 Encoding choices: $s$-sparsity is stated in the decidability-free "support
 fits in a set of cardinality $\le s$" form rather than via an $\ell^0$ counting
 function, because that is the form the recovery proofs consume. The predicates
-reuse `l1Norm` / `EuclideanSpace` from `ForMathlib/VecNorms.lean` and the design
-map `designMap X : β ↦ X β` from `LinearModel/Defs.lean`. The cone $C(S)$ used by
-the recovery theorems is the existing `reCone S 1` (`Lasso/Defs.lean`); the null
-space of the design is `LinearMap.ker (designMap X)`.
+reuse `l1Norm` / `EuclideanSpace` from `StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean`
+and the design map `designMap X : β ↦ X β` from
+`StatLean/HighDimensionalStatistics/LinearModel/Defs.lean`. The cone $C(S)$ used by the recovery
+theorems is the existing `reCone S 1` (`StatLean/HighDimensionalStatistics/Lasso/Defs.lean`); the
+null space of the design is `LinearMap.ker (designMap X)`.
 
 **Bibliographic comments.** The restricted isometry property originates with
 E. J. Candès and T. Tao, "Decoding by linear programming," *IEEE Transactions on

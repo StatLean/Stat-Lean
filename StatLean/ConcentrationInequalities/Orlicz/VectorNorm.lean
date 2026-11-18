@@ -91,7 +91,8 @@ theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
 
 /-- Finite-dimensional marginal criterion (LEAN-ONLY: expand
 `⟪X, v⟫ = ∑ vᵢ Xᵢ` and use the finset-sum triangle inequality +
-homogeneity from `Orlicz/Triangle.lean`/`Orlicz/Basic.lean`). -/
+homogeneity from `StatLean/ConcentrationInequalities/Orlicz/Triangle.lean` and
+`StatLean/ConcentrationInequalities/Orlicz/Basic.lean`). -/
 theorem isSubGaussianVec_of_coords {n : ℕ}
     {X : Ω → EuclideanSpace ℝ (Fin n)} {μ : Measure Ω}
     -- LEAN-ONLY: a.e.-measurable coordinates; triangle-lemma regularity

@@ -5,8 +5,8 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 Total-variation / L¹ continuity of `gaussianReal 0 v` in the variance parameter.
 
 This is the analytic upgrade of the pointwise characteristic-function continuity
-shipped in `ForMathlib/GaussianVarCharFn.lean`: as a sequence of variances
-`σ² : ℕ → ℝ≥0` converges (in `ℝ`) to a *positive* limit `σ²_∞`, the densities
+shipped in `StatLean/AsymptoticStatistics/ForMathlib/GaussianVarCharFn.lean`: as a sequence of
+variances `σ² : ℕ → ℝ≥0` converges (in `ℝ`) to a *positive* limit `σ²_∞`, the densities
 `gaussianPDFReal 0 (σ² n)` converge to `gaussianPDFReal 0 σ²_∞` in **L¹(volume)**
 (Scheffé's theorem). This is strictly stronger than weak convergence and yields
 integral convergence against any bounded measurable test function — in particular

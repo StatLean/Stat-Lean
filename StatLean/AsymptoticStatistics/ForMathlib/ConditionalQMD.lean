@@ -21,7 +21,7 @@ kernels `t ↦ rₜ : Kernel 𝓨 𝓓`, with the Hellinger limit taken against 
 
 The genuinely deep censoring-score facts that CAR forces on `b₀`:
   * `conditionalScore_factorsThrough` — `b₀(δ | y)` is a function of `x = M(y,δ)`
-    only (proved in `ParametricFamily/CARScore.lean`);
+    only (proved in `StatLean/AsymptoticStatistics/ParametricFamily/CARScore.lean`);
   * `conditionalScore_fibre_mean_zero` — `∫ b₀(δ|y) r(δ|y) dν(δ) = 0` for a.e. `y`
     (proved below).
 

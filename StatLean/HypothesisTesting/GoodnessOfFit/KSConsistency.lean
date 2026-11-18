@@ -59,8 +59,9 @@ Kolmogorov–Smirnov test) and Theorem 16.2.2 (uniform power when `√n · d_K �
 
 **Proof formalization notes.**
 * `ksStat` reuses `MultipleTesting.empiricalCDF` (the counting c.d.f. `card {j | Xⱼ ≤ t}/n`)
-  and the frozen `supCDFDist` of `Bootstrap/Defs.lean`, so the KS statistic, the bootstrap
-  Kolmogorov distance and the multiple-testing empirical c.d.f. are the same objects.
+  and the frozen `supCDFDist` of `StatLean/HypothesisTesting/Bootstrap/Defs.lean`, so the KS
+  statistic, the bootstrap Kolmogorov distance and the multiple-testing empirical c.d.f. are the
+  same objects.
 * The sibling brick states its bound through its own `empCDF` / `ksDist`. The two
   presentations are reconciled once and for all by `empiricalCDF_eq_empCDF` and
   `ksStat_eq_sqrt_mul_ksDist`, which every proof below routes through; no statement in

@@ -15,7 +15,7 @@ convergence property with `m^{UC}(ε,δ) ≤ ⌈log(2|𝓗|/δ)/(2ε²)⌉`
 **Reference.** SSBD §4.2, Lemma 4.5, Corollary 4.6.
 
 **Formalization notes.** The per-hypothesis tail is assembled from the
-project's `hoeffding` (`ConcentrationInequalities/SubGaussian/Hoeffding.lean`,
+project's `hoeffding` (`StatLean/ConcentrationInequalities/SubGaussian/Hoeffding.lean`,
 sub-Gaussian sum tail `exp(−n t²/(2σ²))`) with proxy `σ² = 1/4` from
 `isSubGaussian_of_mem_Icc` on `[0,1]` — recovering the book's `exp(−2nε²)`
 exactly — applied to the coordinate stream of `sampleLaw`

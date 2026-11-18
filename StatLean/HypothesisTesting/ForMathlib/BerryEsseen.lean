@@ -226,9 +226,10 @@ open Complex in
 `‖exp (I y) − (1 + I y − y²/2)‖ ≤ |y|³/6`.
 
 This is the `min`-free half of the private `norm_cexp_sub_taylor_le`, exported because the
-*studentized* Edgeworth chain of `Bootstrap/Edgeworth.lean` expands `E[e^{iθHₙ}]` for the
-delta-method surrogate `Hₙ` and needs the **cubic** — not the quadratic — remainder in order to
-reach an `O(n⁻¹)` accuracy: the leading correction of the surrogate is itself of size `n^{-1/2}`,
+*studentized* Edgeworth chain of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` expands
+`E[e^{iθHₙ}]` for the delta-method surrogate `Hₙ` and needs the **cubic** — not the quadratic —
+remainder in order to reach an `O(n⁻¹)` accuracy: the leading correction of the surrogate is itself
+of size `n^{-1/2}`,
 so a quadratic remainder would only be `O(n⁻¹)` and would swamp the second-order term. -/
 lemma norm_cexp_sub_quadratic_le (y : ℝ) :
     ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2)‖ ≤ |y| ^ 3 / 6 :=
@@ -240,7 +241,8 @@ consumes: `‖exp (I y) − 1 − I y‖ ≤ 3 y² / 2`.
 
 A corollary of `norm_cexp_sub_taylor_le` and the triangle inequality against the quadratic
 monomial. The constant is not the sharp one (`1/2`) and does not need to be: in
-`ForMathlib/BivariateEdgeworth.lean` it multiplies a remainder that is already `O(n^{-1/2})`
+`StatLean/HypothesisTesting/ForMathlib/BivariateEdgeworth.lean` it multiplies a remainder that is
+already `O(n^{-1/2})`
 after the `n`-fold factorisation, so only its finiteness matters. -/
 lemma norm_cexp_sub_one_sub_mul_I_le (y : ℝ) :
     ‖Complex.exp (I * y) - 1 - I * y‖ ≤ 3 * y ^ 2 / 2 := by
@@ -843,9 +845,9 @@ the Edgeworth approximant: in the standardized scaling `s = t/(σ√n)`, `v = σ
 factor is `e^{−t²/2}` and the correction is `1 + (γ/6)(it)³ n^{−1/2}` with `γ = m₃/σ³` the
 skewness.
 
-**This is the estimate recorded as missing in `Bootstrap/Edgeworth.lean` (G2).** The two new
-ingredients over `norm_charFun_pow_sub_gaussian_le` are `norm_charFun_sub_cubic_le`
-(fourth-order Taylor expansion of `φ`, retaining the third cumulant) and
+**This is the estimate recorded as missing in `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`
+(G2).** The two new ingredients over `norm_charFun_pow_sub_gaussian_le` are
+`norm_charFun_sub_cubic_le` (fourth-order Taylor expansion of `φ`, retaining the third cumulant) and
 `norm_charFun_le_exp_neg_sq` (the quadratic majorant `|φ(s)| ≤ e^{−v s²/4}`), combined through
 the damping-preserving telescoping bound `norm_pow_sub_pow_sub_lin_le`. -/
 theorem norm_charFun_pow_sub_edgeworth_le (μ : Measure ℝ) [IsProbabilityMeasure μ]

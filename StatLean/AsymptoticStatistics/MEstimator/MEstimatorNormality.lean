@@ -14,11 +14,12 @@ with nonsingular symmetric negative-definite `V`, and `θ̂ₙ →ₚ θ₀`,
     √n(θ̂ₙ − θ₀) ⇝ N(0, V⁻¹ P[ṁ_{θ₀}ṁ_{θ₀}ᵀ] V⁻¹).
 
 The distinctive step versus the Z-estimator (vdV 5.21) is the argmax complete-the-
-square localization `argmax_localization` (`MEstimator/ArgmaxLocalization.lean`); the
-CLT / covariance / normality glue is shared with T6
-(`EmpiricalProcess/ZEstimatorNormality.lean`): we reuse `empiricalProcessVec`,
-`psiCov`, `empiricalProcessVec_weakConverges` with `ψ := fun _ => mdot` (`ṁ_{θ₀}` is
-`θ`-independent for the CLT of the score at `θ₀`).
+square localization `argmax_localization`
+(`StatLean/AsymptoticStatistics/MEstimator/ArgmaxLocalization.lean`); the CLT / covariance /
+normality glue is shared with T6
+(`StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNormality.lean`): we reuse
+`empiricalProcessVec`, `psiCov`, `empiricalProcessVec_weakConverges` with `ψ := fun _ => mdot`
+(`ṁ_{θ₀}` is `θ`-independent for the CLT of the score at `θ₀`).
 
 ## Main results
 
@@ -27,8 +28,9 @@ CLT / covariance / normality glue is shared with T6
 * `mEstimator_linear_representation` derives the linear expansion through
   `argmax_localization`.
 * `mEstimator_normality_of_expansion` combines the linear expansion with the CLT.
-* `m_estimator_normality` is stated in `MEstimator/AsymptoticNormality.lean` to avoid
-  an import cycle with the rate theorem.
+* `m_estimator_normality` is stated in
+  `StatLean/AsymptoticStatistics/MEstimator/AsymptoticNormality.lean` to avoid an import cycle with
+  the rate theorem.
 -/
 
 namespace AsymptoticStatistics.MEstimator
@@ -545,8 +547,9 @@ The book-faithful headline `m_estimator_normality` (which reduces to
 `mEstimator_normality_of_expansion` above) has **moved** to
 `StatLean/AsymptoticStatistics/MEstimator/AsymptoticNormality.lean`. It must consume both
 `Rate.mEstimator_sqrtn_rate` (§D) and `LinearizationEquicontinuity` (§C); since
-`MEstimator/Rate.lean` imports *this* file, the headline cannot live here without an
-import cycle. The new file imports `Rate` + `LinearizationEquicontinuity` + this file
+`StatLean/AsymptoticStatistics/MEstimator/Rate.lean` imports *this* file, the headline cannot live
+here without an import cycle. The new file imports `Rate` + `LinearizationEquicontinuity` + this
+file
 and hosts the reduction. -/
 
 end AsymptoticStatistics.MEstimator

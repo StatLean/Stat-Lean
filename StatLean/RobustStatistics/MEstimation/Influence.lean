@@ -338,7 +338,7 @@ theorem huberLocation_influence {P : Measure ℝ} [IsProbabilityMeasure P] {c : 
 
 /-- **The Huber location functional has bounded influence** (`MMY §3.3`): the influence
 value at any contamination point is bounded by `c / P(|x - θ₀| < c)`. Contrast with the
-unbounded influence of the mean (`LocationScale/Mean.lean`). -/
+unbounded influence of the mean (`StatLean/RobustStatistics/LocationScale/Mean.lean`). -/
 theorem huberLocation_influence_bounded {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ}
     (hc : 0 < c) {θ : ℝ → ℝ} {θ₀ x₀ d : ℝ}
     (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)

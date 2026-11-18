@@ -42,10 +42,10 @@ Eq. (15.31) (Fano's inequality), Proposition 15.12 with Eq. (15.32) (Fano minima
 bound), via the Shannon-entropy form Eq. (15.61).
 
 **Proof formalization notes.** The proof of Fano's inequality (Eq. (15.31)) goes through the
-Shannon-entropy form (Eq. (15.61)) supported by the entropy appendix `ForMathlib/Entropy.lean`.
-The chain is assembled in stages: the mutual-information identity
-$I(Z; J) = \log M - H(J \mid Z)$ under the uniform prior (`mutualInformation_toReal_eq`, a pure
-Radon–Nikodym computation) and the conditional-entropy bound
+Shannon-entropy form (Eq. (15.61)) supported by the entropy appendix
+`StatLean/Minimaxity/ForMathlib/Entropy.lean`. The chain is assembled in stages: the
+mutual-information identity $I(Z; J) = \log M - H(J \mid Z)$ under the uniform prior
+(`mutualInformation_toReal_eq`, a pure Radon–Nikodym computation) and the conditional-entropy bound
 $H(J \mid Z) \le \log 2 + q\,\log M$ with $q$ the testing error (`condEntropy_le_fano`, the
 information-theoretic crux, built from the pointwise discrete Fano inequality
 `discrete_fano_pointwise`, the sub-probability entropy bound `negMulLog_sum_le_card`, and the
@@ -94,7 +94,8 @@ private lemma negMulLog_inv_mul {M : ℕ} (hM : (M : ℝ) ≠ 0) {x : ℝ} (hx :
     ring
 
 /-- Radon–Nikodym derivative of a finite sum of finite measures splits over the sum, a.e. against a
-common dominating measure. (Local copy of the same fact used in `Fano/MutualInformation.lean`;
+common dominating measure. (Local copy of the same fact used in
+`StatLean/Minimaxity/Fano/MutualInformation.lean`;
 proved by induction from the two-term `rnDeriv_add'`.) -/
 private lemma rnDeriv_finset_sum_ae {α : Type*} [MeasurableSpace α] {ι : Type*} (s : Finset ι)
     (P : ι → Measure α) (ξ : Measure α) [SigmaFinite ξ] [∀ i, IsFiniteMeasure (P i)] :

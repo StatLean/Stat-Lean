@@ -5,19 +5,19 @@ import StatLean.PointEstimation.ForMathlib.MeasureMap
 /-!
 # The damped Edgeworth expansion in an inner product space
 
-`ForMathlib/BerryEsseen.lean` proves the one-dimensional damped one-term Edgeworth expansion
-`norm_charFun_pow_sub_edgeworth_le`: for a centred law `μ` on the line with second moment `v`,
-third moment `m₃` and a finite fourth moment, and for `s` in the window `v s² ≤ 2`,
-`ρ|s| ≤ 3v/2`,
+`StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` proves the one-dimensional damped one-term
+Edgeworth expansion `norm_charFun_pow_sub_edgeworth_le`: for a centred law `μ` on the line with
+second moment `v`, third moment `m₃` and a finite fourth moment, and for `s` in the window
+`v s² ≤ 2`, `ρ|s| ≤ 3v/2`,
 
 `‖φ_μ(s)ⁿ − e^{−n v s²/2}(1 − n i m₃ s³/6)‖ ≤ e^{−(n−2) v s²/4}(…)`.
 
-The studentized Edgeworth expansion of `Bootstrap/Edgeworth.lean` needs the same estimate for a
-law on `ℝ²` — the joint law of `(X − μ, (X − μ)² − σ²)`, whose sample mean carries both the
-numerator and the denominator of the studentized root. This file supplies it, and the point of
-the file is that **no genuinely two-dimensional argument is required**: the characteristic
-function of a measure on an inner product space, evaluated along a ray `s • t`, is the
-characteristic function of the *one-dimensional projection* `⟪·, t⟫` evaluated at `s`
+The studentized Edgeworth expansion of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` needs
+the same estimate for a law on `ℝ²` — the joint law of `(X − μ, (X − μ)² − σ²)`, whose sample mean
+carries both the numerator and the denominator of the studentized root. This file supplies it, and
+the point of the file is that **no genuinely two-dimensional argument is required**: the
+characteristic function of a measure on an inner product space, evaluated along a ray `s • t`, is
+the characteristic function of the *one-dimensional projection* `⟪·, t⟫` evaluated at `s`
 (`charFun_smul_eq_charFun_map_inner`). Every hypothesis and every conclusion of the
 one-dimensional theorem therefore transfers verbatim, with the moments of `μ` replaced by the
 moments of the projected law.
@@ -26,7 +26,7 @@ moments of the projected law.
 
 * `vecRootLaw F Z n` — the law of `n^{-1/2} ∑_{i<n} Z(yᵢ)` under `n` independent draws from `F`,
   a measure on the inner product space `E`. For `E = ℝ` and `Z = id − E_F X` this is
-  `Bootstrap/Edgeworth.lean`'s `meanRootLaw`.
+  `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`'s `meanRootLaw`.
 
 ## Main statements
 
@@ -88,9 +88,9 @@ moments of the projected law.
   window conditions for every direction. That step is a hypothesis of the consumer, not of this
   file.
 * `charFun_vecRootLaw` is proved exactly as `charFun_meanRootLaw` is in
-  `Bootstrap/Edgeworth.lean`: the root map is a scalar multiple of a sum of one-variable
-  functions of the coordinates, `Complex.exp_sum` turns the exponential of the sum into a
-  product, and `MeasureTheory.integral_fintype_prod_eq_pow` is Fubini for such a product on
+  `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`: the root map is a scalar multiple of a sum
+  of one-variable functions of the coordinates, `Complex.exp_sum` turns the exponential of the sum
+  into a product, and `MeasureTheory.integral_fintype_prod_eq_pow` is Fubini for such a product on
   `Measure.pi`. No transfer through the canonical i.i.d. construction is needed.
 
 **Reference.** P. Hall, *The Bootstrap and Edgeworth Expansion*, Springer, 1992, Chapter 2
@@ -156,9 +156,10 @@ end Projection
 
 /-! ## The expansion, transferred
 
-Both estimates of `ForMathlib/BerryEsseen.lean` that the Edgeworth remainder consumes — the
-Gaussian majorant on a window and the damped one-term expansion of the `n`-th power — hold in
-an inner product space along every ray, with the moments replaced by the directional moments
+Both estimates of `StatLean/HypothesisTesting/ForMathlib/BerryEsseen.lean` that the Edgeworth
+remainder consumes — the Gaussian majorant on a window and the damped one-term expansion of the
+`n`-th power — hold in an inner product space along every ray, with the moments replaced by the
+directional moments
 `∫ ⟪x, t⟫^k ∂μ`. Both are corollaries of the projection identity. -/
 
 section Expansion
@@ -172,7 +173,8 @@ On the window `v s² ≤ 2`, `ρ|s| ≤ 3v/2` built from the directional moments
 `‖φ_μ(s • t)‖ ≤ exp(−v s²/4)`.
 
 This is the two-dimensional analogue of `norm_charFun_le_exp_neg_sq` that
-`Bootstrap/Edgeworth.lean` records as missing; it needs no two-dimensional argument. -/
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` records as missing; it needs no
+two-dimensional argument. -/
 theorem norm_charFun_smul_le_exp_neg_sq (μ : Measure E) [IsProbabilityMeasure μ]
     {t : E} {v : ℝ}
     (hint1 : Integrable (fun x : E => ⟪x, t⟫) μ)
@@ -203,8 +205,9 @@ directional third moment `m₃` and a finite directional fourth moment, and for 
 
 with the same right-hand side as `norm_charFun_pow_sub_edgeworth_le`, written with `n = m + 2`.
 
-**This is step 1 of the studentized route of `Bootstrap/Edgeworth.lean`.** For the pair
-`Z = (X − μ, (X − μ)² − σ²)` it is the bivariate expansion recorded there as missing, and the
+**This is step 1 of the studentized route of
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`.** For the pair `Z = (X − μ, (X − μ)² − σ²)`
+it is the bivariate expansion recorded there as missing, and the
 directional moments are the contractions of the cumulant tensors of `Z` with `t`. -/
 theorem norm_charFun_smul_pow_sub_edgeworth_le (μ : Measure E) [IsProbabilityMeasure μ]
     {t : E} {v m₃ : ℝ}
@@ -260,7 +263,8 @@ lemma measurable_vecRoot {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
     (Finset.measurable_sum _ fun i _ => hZ.comp (measurable_pi_apply i))
 
 /-- The **law of the vector root** `n^{-1/2} ∑_{i<n} Z(yᵢ)` under `n` independent draws from
-`F`. For `E = ℝ` and `Z = (· − E_F X)` this is `Bootstrap/Edgeworth.lean`'s `meanRootLaw`. -/
+`F`. For `E = ℝ` and `Z = (· − E_F X)` this is
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`'s `meanRootLaw`. -/
 noncomputable def vecRootLaw (F : Measure ℝ) (Z : ℝ → E) (n : ℕ) : Measure E :=
   (Measure.pi fun _ : Fin n => F).map₀ fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i)
 
@@ -323,8 +327,8 @@ functions.** For a directionally centred `Z` with directional second moment `v`,
 written with `n = m + 2`. The Gaussian factor and the `n^{-1/2}` correction are exactly the
 Fourier transform of the multivariate Edgeworth signed density in the direction `t`.
 
-**This is the bivariate expansion that `Bootstrap/Edgeworth.lean` records as the sole missing
-ingredient of the studentized expansion**, specialised to `E = ℝ²` and
+**This is the bivariate expansion that `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` records
+as the sole missing ingredient of the studentized expansion**, specialised to `E = ℝ²` and
 `Z = studentPair F = (X − μ, (X − μ)² − σ²)`. It is the composition of `charFun_vecRootLaw`
 with `norm_charFun_smul_pow_sub_edgeworth_le`; the scaling `n s² = 1` at `s = n^{-1/2}` turns
 `e^{−n v s²/2}` into `e^{−v/2}` and `n s³` into `s`. -/
@@ -384,8 +388,8 @@ end VecRoot
 
 /-! ## The mixed characteristic function
 
-The studentized route of `Bootstrap/Edgeworth.lean` needs, besides the expansion of
-`ψ_n(θ, s) = φ_{ρ_n}(θ e₁/σ + s e₂/σ²)` supplied by
+The studentized route of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` needs, besides the
+expansion of `ψ_n(θ, s) = φ_{ρ_n}(θ e₁/σ + s e₂/σ²)` supplied by
 `norm_charFun_vecRootLaw_sub_edgeworth_le`, an expansion of the *`s`-derivative* of `ψ_n` at
 `s = 0`. Differentiating an inequality is not legitimate, so that estimate cannot be read off
 from the expansion; it is proved here from scratch, for the quantity the derivative is:
@@ -674,9 +678,9 @@ vector root.**
 `κ = ∫ ⟪x,b⟫⟪x,a⟫` the covariance of the two directions and
 `M = ∫ |⟪x,b⟫|⟪x,a⟫²` the mixed third moment, for a law centred in the direction `b`.
 
-This is the estimate the studentized route of `Bootstrap/Edgeworth.lean` records as (M1)(b) —
-the expansion of `∂_s ψ_n(θ, s)|_{s=0}`, equivalently of `E[V e^{iθU}]`, which cannot be
-obtained by differentiating the inequality of `norm_charFun_vecRootLaw_sub_edgeworth_le`.
+This is the estimate the studentized route of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`
+records as (M1)(b) — the expansion of `∂_s ψ_n(θ, s)|_{s=0}`, equivalently of `E[V e^{iθU}]`, which
+cannot be obtained by differentiating the inequality of `norm_charFun_vecRootLaw_sub_edgeworth_le`.
 
 Two features are worth recording. First, the leading term is *not* damped by the extra `n^{-1/2}`
 that the naive count suggests: the `√n` produced by the factorisation cancels exactly against
@@ -1007,8 +1011,9 @@ genuinely splits, and **both halves contribute at the same order**:
   is `O(n^{-1/2})` when `Z` is centred — so this block is `n^{-1} · n² · O(n⁻¹) = O(1)` as well.
 
 Discarding the off-diagonal block, as the `k = 1` picture invites, would therefore change the
-*limit* and not merely the remainder. That is why `Bootstrap/Edgeworth.lean`'s note
-records the `k ≥ 2` estimate as a genuine analytic residue rather than as wiring.
+*limit* and not merely the remainder. That is why
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`'s note records the `k ≥ 2` estimate as a
+genuine analytic residue rather than as wiring.
 
 `multiCharFun_vecRootLaw_two` is the exact combinatorial half of that estimate: it evaluates the
 assignment sum in closed form, leaving only a one-factor Taylor bound on `slot_{\{0\}}`,
@@ -1310,10 +1315,11 @@ root.**
 with `c = N^{-1/2} • a`, `κ₀₁ = ∫⟪x,b₀⟫⟪x,b₁⟫`, `κ_j = ∫⟪x,b_j⟫⟪x,a⟫`, for a law centred in
 both slot directions.
 
-This is the analytic half of the item the note of `Bootstrap/Edgeworth.lean` records as
-residue (i) at `k = 2`, and its accuracy `O(N^{-1/2})` is what the studentized surrogate's
-coefficient `c₂ = θr/2σ³` needs. The off-diagonal contribution `−κ₀κ₁ φ^{N−2}` is *not* a
-remainder: it is of the same order as the diagonal and of opposite sign, so the `k = 1` picture
+This is the analytic half of the item the note of
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` records as residue (i) at `k = 2`, and its
+accuracy `O(N^{-1/2})` is what the studentized surrogate's coefficient `c₂ = θr/2σ³` needs. The
+off-diagonal contribution `−κ₀κ₁ φ^{N−2}` is *not* a remainder: it is of the same order as the
+diagonal and of opposite sign, so the `k = 1` picture
 — where no off-diagonal exists — would give the wrong limit. -/
 theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → E} (hZ : Measurable Z) {N : ℕ} (hN : 1 ≤ N) (b : Fin 2 → E) (a : E)
@@ -1581,8 +1587,9 @@ strict sharpening. Both error terms of the decomposition multiply `φ(c)^{N−1}
 kept instead of being rounded up to `1`.
 
 The companion of `norm_multiCharFun_vecRootLaw_damped_le` at `k = 2`, and needed for the same
-reason: the studentized window of `Bootstrap/Edgeworth.lean` evaluates this at `a = (θ/σ)•e₀`
-with `|θ|` growing like `√N`, where `multiTwoRemConst` is a polynomial in `|θ|` of degree four
+reason: the studentized window of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` evaluates
+this at `a = (θ/σ)•e₀` with `|θ|` growing like `√N`, where `multiTwoRemConst` is a polynomial in
+`|θ|` of degree four
 and the undamped bound has nothing to control it. See the note there. -/
 theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → E} (hZ : Measurable Z) {N : ℕ} (hN : 1 ≤ N) (b : Fin 2 → E) (a : E)
@@ -2084,15 +2091,16 @@ end OneFactor
 
 The multilinear weights of the studentized surrogate's transform are moments of the *root*, and
 under a finite fourth moment of the sampling law two of them are **infinite** — see the note on
-`edgeworth_studentized_uniform` in `Bootstrap/Edgeworth.lean`. The classical repair is
-to truncate the summands before expanding. What truncation buys, at the level of this file, is
-completely elementary and is recorded here: if `‖Z‖ ≤ K` pointwise then the root
+`edgeworth_studentized_uniform` in `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`. The
+classical repair is to truncate the summands before expanding. What truncation buys, at the level of
+this file, is completely elementary and is recorded here: if `‖Z‖ ≤ K` pointwise then the root
 `n^{-1/2}∑Z(yᵢ)` is bounded by `√n·K` pointwise, so its law is carried by a ball and *every*
 polynomial in its coordinates is integrable — no moment hypothesis on `F` survives at all.
 
 The price of the truncation is a change of law, and that is paid on the other side, by the
-union bound `measure_pi_exists_coord_mem_le` of `Bootstrap/Edgeworth.lean`. The two are
-complementary and neither is `measure_pi_truncated_sum_le_exp`, which bounds the tail of a
+union bound `measure_pi_exists_coord_mem_le` of
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean`. The two are complementary and neither is
+`measure_pi_truncated_sum_le_exp`, which bounds the tail of a
 truncated *sum*. -/
 
 section BoundedRoot
@@ -2152,9 +2160,9 @@ end BoundedRoot
 The `k = 2` estimate `norm_multiCharFun_vecRootLaw_two_sub_le` identifies the *limit* of
 `multi_{ρ_N}(b,a)` to accuracy `O(N^{-1/2})`, and for that the exact split of the assignment sum
 into its diagonal and off-diagonal blocks is unavoidable: the two blocks are of the same order
-and of opposite sign. The note of `Bootstrap/Edgeworth.lean` records the `k = 3, 4`
-residue as "the same thing with the partition lattice of `Fin k` in place of a single diagonal,
-and the counting is the only new work".
+and of opposite sign. The note of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` records the
+`k = 3, 4` residue as "the same thing with the partition lattice of `Fin k` in place of a single
+diagonal, and the counting is the only new work".
 
 **That is more than is needed, and the re-derivation below replaces it.** At `k = 3, 4` the
 consumer (`norm_integral_cexp_deltaSurrogate_sub_graded_le`, whose coefficients `c₃`, `c₄`, `c₅`
@@ -2297,8 +2305,8 @@ root, at every `k`.**
 * `∫|⟪x,b_l⟫||⟪x,a⟫| ≤ Q` for each single slot (used together with the centring), and
 * `∫∏_{l∈T}|⟪x,b_l⟫| ≤ Q·(√N)^{|T|-2}` for every `T` with `|T| ≥ 2`.
 
-This is residue (i) of the note of `Bootstrap/Edgeworth.lean` at `k = 3, 4` — and it is
-uniform in `N`, in `a` and in `k`. The `k = 2` case is subsumed, though
+This is residue (i) of the note of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` at
+`k = 3, 4` — and it is uniform in `N`, in `a` and in `k`. The `k = 2` case is subsumed, though
 `norm_multiCharFun_vecRootLaw_two_sub_le` is sharper there (it identifies the limit to
 `O(N^{-1/2})`, which the surrogate's coefficient `c₂` needs; `c₃`, `c₄`, `c₅` are `O(n⁻¹)` and
 need only this).
@@ -2471,11 +2479,12 @@ sharpening (`‖φ‖ ≤ 1`, so the damping factor is at most `1`).
 leaves `N − |image σ| ≥ N − k` coordinates *unweighted*, and each of them contributes the plain
 factor `slot_∅(c) = φ_{F∘Z⁻¹}(c)`. `norm_multiCharFun_vecRootLaw_le` throws those factors away
 one at a time (`‖φ(c)‖ ≤ 1`), which is harmless when `a` is fixed and fatal when `a` grows with
-`N`: the studentized window of `Bootstrap/Edgeworth.lean` evaluates this at `a = (θ/σ)•e₀` with
-`|θ|` up to `c√N`, where the `O(1)` bound has *polynomial growth in `θ`* and cannot be dominated
-by any envelope that the Esseen split can integrate. The damping factor is what restores
-`e^{−θ²/2}`, and the only change in the proof is that the empty fibres keep `‖φ(c)‖` instead of
-being rounded up to `1`. See the note in `Bootstrap/Edgeworth.lean` on the shape of
+`N`: the studentized window of `StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` evaluates this
+at `a = (θ/σ)•e₀` with `|θ|` up to `c√N`, where the `O(1)` bound has *polynomial growth in `θ`* and
+cannot be dominated by any envelope that the Esseen split can integrate. The damping factor is what
+restores `e^{−θ²/2}`, and the only change in the proof is that the empty fibres keep `‖φ(c)‖`
+instead of being rounded up to `1`. See the note in
+`StatLean/HypothesisTesting/Bootstrap/Edgeworth.lean` on the shape of
 (U4). -/
 theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
     {Z : ℝ → E} (hZ : Measurable Z) {k N : ℕ} (hN : 1 ≤ N) (b : Fin k → E) (a : E)

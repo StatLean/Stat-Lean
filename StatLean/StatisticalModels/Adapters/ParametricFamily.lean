@@ -26,12 +26,13 @@ L. J. Savage, "Application of the Radon–Nikodym theorem to the theory of suffi
 statistics," *Ann. Math. Statist.* **20** (1949), 225–241; TPE2 §1.4 (verify §).
 
 **Proof formalization notes.** `isProbabilityMeasure_toMeasure` hoists the inline computation
-already performed at `LocalAsymptoticNormality/AsymptoticRepresentation.lean` (~line 100)
-(`withDensity`-mass via `ENNReal.ofReal` of the normalization integral) into a named reusable
-lemma — hoisted, not duplicated: that file can later rewrite through this one. `ofDominated`
-takes real-valued densities `(∂P θ/∂μ).toReal`; the round trip needs σ-finiteness of the
-members (LEAN-ONLY, satisfied by probability models) so that
-`withDensity_rnDeriv_eq`-style reconstruction applies.
+already performed at
+`StatLean/AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean` (~line 100)
+(`withDensity`-mass via `ENNReal.ofReal` of the normalization integral) into a named reusable lemma
+— hoisted, not duplicated: that file can later rewrite through this one. `ofDominated` takes
+real-valued densities `(∂P θ/∂μ).toReal`; the round trip needs σ-finiteness of the members
+(LEAN-ONLY, satisfied by probability models) so that `withDensity_rnDeriv_eq`-style reconstruction
+applies.
 
 **Bibliographic comments.** Radon–Nikodym reconstruction of dominated families is the
 Halmos–Savage device; the `toReal`/`ofReal` round trip is Lean-side bookkeeping with no book

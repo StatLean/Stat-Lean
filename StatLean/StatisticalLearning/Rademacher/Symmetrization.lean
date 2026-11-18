@@ -12,15 +12,15 @@ ghost-sample symmetrization that powers all of Ch. 26's generalization bounds.
 **Reference.** SSBD §26.1, Lemma 26.2 (Eqs. (26.6)–(26.9)).
 
 **Formalization notes.** The project's
-`ConcentrationInequalities/Symmetrization/Empirical.lean` proves the
+`StatLean/ConcentrationInequalities/Symmetrization/Empirical.lean` proves the
 *absolute-value* form; SSBD's constants in Theorem 26.5 need this one-sided
 non-absolute form, so it is proved here afresh by the book's argument: ghost
 sample `S' ∼ Dⁿ` + Jensen (sup of expectation ≤ expectation of sup), per-
 coordinate swap invariance introducing the signs, and the `σ ≍ −σ` split
 giving the factor 2. The per-coordinate swap is the project's
-`Symmetrization/SignFlip.lean` brick `measurePreserving_condSwap`, applied on
-`(sampleLaw D n).prod (sampleLaw D n)` with `ν i = D`. The sign average is
-bridged to the `signVec` product measure by `signAvg_eq_integral_signVec`,
+`StatLean/ConcentrationInequalities/Symmetrization/SignFlip.lean` brick
+`measurePreserving_condSwap`, applied on `(sampleLaw D n).prod (sampleLaw D n)` with `ν i = D`. The
+sign average is bridged to the `signVec` product measure by `signAvg_eq_integral_signVec`,
 proved at the *measure* level: `signVec N = ∑_σ 2⁻ᴺ δ_{signOf σ}`
 (`Measure.pi_eq` tested on boxes, the two-atom `radLaw` masses expanding by
 `Fintype.prod_sum`), so `integral_dirac` disposes of every measurability side

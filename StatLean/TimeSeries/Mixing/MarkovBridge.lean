@@ -24,7 +24,7 @@ The bridge between the Markov layer (`ForMathlib/Markov/*`) and the mixing coeff
 
 **The whole bridge is stated over an arbitrary measurable state space `E`**
 (`IsMarkovOf : (ℤ → Ω → E) → Kernel E E → Measure Ω → Prop`, with
-`sigmaLE'`/`sigmaGE'` the state-space-free forms of `Process/Defs.lean`'s
+`sigmaLE'`/`sigmaGE'` the state-space-free forms of `StatLean/TimeSeries/Process/Defs.lean`'s
 `sigmaLE`/`sigmaGE`, definitionally equal to them at `E = ℝ`). Nothing in the proofs uses
 any property of `ℝ` beyond measurability; the frozen real-valued theorems
 (`alphaCoeff_eq_two_marginal_debt`, `betaCoeff_eq_integral_tvDist_debt`,
@@ -102,8 +102,9 @@ namespace StatLean.TimeSeries
 
 /-! ### Measure-theoretic bricks for the two-marginal reduction
 
-Pure two-σ-algebra material, stated in the `Mixing/Relations.lean` binder convention (the
-ambient σ-algebra `mΩ` is a plain implicit bound *after* the sub-σ-algebras, so that the
+Pure two-σ-algebra material, stated in the `StatLean/TimeSeries/Mixing/Relations.lean` binder
+convention (the ambient σ-algebra `mΩ` is a plain implicit bound *after* the sub-σ-algebras, so that
+the
 sub-σ-algebra hypotheses do not shadow it as local instances). -/
 
 section Helpers
@@ -695,7 +696,8 @@ private lemma beta_shrink_right {𝒩 𝒮 mΩ : MeasurableSpace Ω} {μ : Measu
     _ = ∑ k, ∑ l, |(μ (A k ∩ C l)).toReal - (μ (A k)).toReal * (μ (C l)).toReal| :=
         Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by rw [hCcov k l]
 
-/-! ### β-coefficient plumbing (re-derived here: `Mixing/Relations.lean` is downstream) -/
+/-! ### β-coefficient plumbing (re-derived here: `StatLean/TimeSeries/Mixing/Relations.lean` is
+downstream) -/
 
 private lemma sum_measure_inter_partition {m mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hm : m ≤ mΩ) {J : ℕ} {B : Fin J → Set Ω}
@@ -807,19 +809,19 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {E : Type*} [Measur
 
 /-! ### The state σ-algebras of a process with values in an arbitrary measurable space
 
-`Process/Defs.lean`'s `sigmaLE`/`sigmaGE` are frozen at real-valued processes. The Markov
-bridge below is run on the **state** of a model (the ARMA companion vector, the GARCH
+`StatLean/TimeSeries/Process/Defs.lean`'s `sigmaLE`/`sigmaGE` are frozen at real-valued processes.
+The Markov bridge below is run on the **state** of a model (the ARMA companion vector, the GARCH
 volatility vector), so it needs the same two σ-algebras for an arbitrary measurable state
 space `E`. The definitions are literally the same expressions, hence `sigmaLE'_eq_sigmaLE`
 and `sigmaGE'_eq_sigmaGE` below are `rfl`: nothing in the scalar layer changes. -/
 
 /-- `σ{V_s : s ≤ n}` for a process with values in an arbitrary measurable space
-(`Process/Defs.lean`'s `sigmaLE`, freed of `ℝ`). -/
+(`StatLean/TimeSeries/Process/Defs.lean`'s `sigmaLE`, freed of `ℝ`). -/
 @[reducible] noncomputable def sigmaLE' (V : ℤ → Ω → E) (n : ℤ) : MeasurableSpace Ω :=
   ⨆ s ∈ Set.Iic n, MeasurableSpace.comap (V s) inferInstance
 
 /-- `σ{V_s : s ≥ n}` for a process with values in an arbitrary measurable space
-(`Process/Defs.lean`'s `sigmaGE`, freed of `ℝ`). -/
+(`StatLean/TimeSeries/Process/Defs.lean`'s `sigmaGE`, freed of `ℝ`). -/
 @[reducible] noncomputable def sigmaGE' (V : ℤ → Ω → E) (n : ℤ) : MeasurableSpace Ω :=
   ⨆ s ∈ Set.Ici n, MeasurableSpace.comap (V s) inferInstance
 
@@ -851,7 +853,8 @@ space `E` to a kernel on `E`: the conditional law of `X_{t+n}` given the past th
 
 Stated for `Kernel E E`. The scalar case
 `E = ℝ` is the original form (`sigmaLE'` is definitionally `sigmaLE`); the vector case is what
-the model statements of `Mixing/Relations.lean` consume, since the Markov object of an ARMA or a
+the model statements of `StatLean/TimeSeries/Mixing/Relations.lean` consume, since the Markov object
+of an ARMA or a
 GARCH is its *state* vector, not the observed scalar series. -/
 def IsMarkovOf (X : ℤ → Ω → E) (κ : ProbabilityTheory.Kernel E E) (μ : Measure Ω) :
     Prop :=
@@ -1412,8 +1415,8 @@ to `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` and to its consumer
 `betaCoeff_eq_integral_tvDist_debt` (`E = ℝ`) is **unaffected in substance** — `ℝ` is
 countably generated — but as long as it is derived from the general theorem it inherits
 the defect, so the repair must be made upstream. Nothing else in this file, or in
-`Mixing/Relations.lean`, depends on the identity: the model routes go through the
-*inequality* `betaMixCoeff_two_marginal_le_of_envelope`, whose proof (a `≤` bound against
+`StatLean/TimeSeries/Mixing/Relations.lean`, depends on the identity: the model routes go through
+the *inequality* `betaMixCoeff_two_marginal_le_of_envelope`, whose proof (a `≤` bound against
 a supplied envelope) never inspects `tvDist` pointwise and is therefore correct at a
 general `E`.
 
@@ -2534,9 +2537,9 @@ countable–cocountable σ-algebra, `μ = F` the `0`–`1` measure, `X_t = id` a
 right-hand side is `1`. The `≤` half (the display above) is *not* what fails; the `≥` half
 does, and it fails maximally. Under `[MeasurableSpace.CountablyGenerated E]` Mathlib
 supplies the jointly measurable Hahn selection (`Kernel.rnDerivAux`) that the `≥` half
-needs. Nothing downstream is affected: the model routes of `Mixing/Relations.lean`
-go through the *inequality* `betaMixCoeff_two_marginal_le_of_envelope`, which is correct
-at a general `E`.
+needs. Nothing downstream is affected: the model routes of
+`StatLean/TimeSeries/Mixing/Relations.lean` go through the *inequality*
+`betaMixCoeff_two_marginal_le_of_envelope`, which is correct at a general `E`.
 
 Notes on the intended route for the two halves:
 
@@ -2712,8 +2715,8 @@ theorem betaMixCoeff_le_of_geometric_envelope [IsProbabilityMeasure μ]
 /-! ### Scalar corollaries (`E = ℝ`)
 
 The bridge above is stated for an arbitrary measurable state space; `sigmaLE'`/`sigmaGE'`
-are definitionally `Process/Defs.lean`'s `sigmaLE`/`sigmaGE` at `E = ℝ`, so the frozen
-real-valued statements of FY §2.6.1 are immediate specialisations. The only work is
+are definitionally `StatLean/TimeSeries/Process/Defs.lean`'s `sigmaLE`/`sigmaGE` at `E = ℝ`, so the
+frozen real-valued statements of FY §2.6.1 are immediate specialisations. The only work is
 extracting the *equality of one-dimensional marginals* from strict stationarity. -/
 
 /-- Strict stationarity equalises the one-dimensional marginals. -/
@@ -2983,8 +2986,8 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
 
 /-! ### The α-envelope and the process-vs-state comparison
 
-Two additions the model statements of `Mixing/Relations.lean` consume, and which do **not**
-depend on Davydov's identity:
+Two additions the model statements of `StatLean/TimeSeries/Mixing/Relations.lean` consume, and which
+do **not** depend on Davydov's identity:
 
 * `alphaMixCoeff_two_marginal_le_of_envelope` — the *inequality* half of (2.58) at the α
   level. Only `IsMarkovOf` at one time and a change of variables along `X_k` are used; no

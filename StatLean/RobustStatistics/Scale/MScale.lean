@@ -31,7 +31,7 @@ with `δ` the explosion BP and `1 − δ` the implosion BP.
 reduction; eq. (3.23)). The population MAD (`MMY (2.62)`) is the scale M-functional of
 the *discontinuous* loss `ρ = 1{|x| ≥ 1}` at `δ = 1/2`; it is outside the continuous-`ρ`
 hypotheses used here and is treated only through its finite-sample breakdown
-(`Scale/DispersionBreakdown.lean`).
+(`StatLean/RobustStatistics/Scale/DispersionBreakdown.lean`).
 
 **Bibliographic comments.** M-estimators of scale and their breakdown are part of Huber's
 original program (Huber 1964; Huber and Ronchetti, *Robust Statistics*, 2nd ed., Wiley,

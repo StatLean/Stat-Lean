@@ -46,10 +46,10 @@ separately as a consistency result for users with bare-function scores; its
 proof outline (square-integrability via triangle inequality on the QMD
 remainder plus `‖√pₜ‖²_{L²(μ)} = 1`; mean zero via Cauchy–Schwarz against
 `√p₀` and the affinity bound `∫√pₜ√p₀ ≤ 1`) lives in that lemma's
-docstring, with the two analytic engines in `ForMathlib/QMDAnalytic.lean`.
-The QMD limit is stated in `ℝ≥0∞`-quotient form `eLpNorm … / ofReal |t| → 0`
-rather than the classical `.toReal²/t² → 0` form: the latter would be
-vacuously satisfied whenever the residual leaves `L²(μ)` (since
+docstring, with the two analytic engines in
+`StatLean/AsymptoticStatistics/ForMathlib/QMDAnalytic.lean`. The QMD limit is stated in
+`ℝ≥0∞`-quotient form `eLpNorm … / ofReal |t| → 0` rather than the classical `.toReal²/t² → 0` form:
+the latter would be vacuously satisfied whenever the residual leaves `L²(μ)` (since
 `(⊤ : ℝ≥0∞).toReal = 0`), whereas the `ℝ≥0∞` form genuinely forces
 finiteness of the residual L²-norm near `t = 0`. The classical form and a
 `MemLp` witness are recovered as corollaries `QMDPath.qmd_limit_toReal_sq`
@@ -165,7 +165,7 @@ is in `L²(γ.dominating)` for `t` in a punctured neighbourhood of `0`.
 `MemLp` follows from `qmd_limit` by the standard "if `eLpNorm / ofReal |t|
 → 0` then eventually `eLpNorm < ofReal |t|` which is `< ⊤`" pattern
 (mirrors the `QMDAnalytic.IsQMDLimit ⇒ MemLp` chain in
-`ForMathlib/QMDAnalytic.lean`). -/
+`StatLean/AsymptoticStatistics/ForMathlib/QMDAnalytic.lean`). -/
 theorem residual_memLp_eventually (γ : QMDPath P) :
     ∀ᶠ t in 𝓝[≠] (0 : ℝ),
       MemLp (fun ω : Ω =>
@@ -368,8 +368,8 @@ Proof outline:
    two-sided (`t ↘ 0` and `t ↗ 0`) forces `∫ g dP = 0`.
 3. Package into `CandidateIF P` and apply `CandidateIF.toL2ZeroMean`.
 
-The two analytic engines live in `ForMathlib/QMDAnalytic.lean`; their
-density helpers in `ForMathlib/RnDerivSqrt.lean`. -/
+The two analytic engines live in `StatLean/AsymptoticStatistics/ForMathlib/QMDAnalytic.lean`; their
+density helpers in `StatLean/AsymptoticStatistics/ForMathlib/RnDerivSqrt.lean`. -/
 theorem score_in_L2ZeroMean
     {P : Measure Ω} [IsProbabilityMeasure P]
     {μ : Measure Ω} [SigmaFinite μ] (curve : ℝ → Measure Ω)

@@ -15,7 +15,7 @@ probability measure $\mu$ on the sample space $\Omega$.
   restricted to $(0,1)$. Its realized values are *p-values*.
 
 The two notions are linked by the conversion $P = 1/E$, proved in the sibling assembly file
-`EValues/Conversion.lean`. These definitions are theorem-agnostic.
+`StatLean/MultipleTesting/EValues/Conversion.lean`. These definitions are theorem-agnostic.
 
 **Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023, Lecture 15 (E-values), Definition 3 (e-variable) and Definition 4 (p-variable); the

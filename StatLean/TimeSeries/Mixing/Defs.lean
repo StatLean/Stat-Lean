@@ -13,12 +13,12 @@ tends to `0` (FY Definition 2.11). α-mixing = *strong mixing*; β-mixing = *abs
 regularity*.
 
 All coefficients are real suprema (`sSup`) over description sets; on a probability space
-each set is nonempty and bounded (`BddAbove` lemmas in `Mixing/Relations.lean`), and by
-Lean's `Real.sSup` junk convention the definitions are total. The β-coefficient uses the
+each set is nonempty and bounded (`BddAbove` lemmas in `StatLean/TimeSeries/Mixing/Relations.lean`),
+and by Lean's `Real.sSup` junk convention the definitions are total. The β-coefficient uses the
 finite-partition formula `β = ½ sup Σᵢⱼ |P(Aᵢ ∩ Bⱼ) − P(Aᵢ)P(Bⱼ)|` (equivalent to the
 book's conditional-probability form `E[sup_B |P(B) − P(B | 𝓕_{-∞}^0)|]`; the equivalence
-on standard Borel spaces is recorded in `Mixing/Relations.lean` as a lemma against
-`condDistrib`).
+on standard Borel spaces is recorded in `StatLean/TimeSeries/Mixing/Relations.lean` as a lemma
+against `condDistrib`).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.1,
 eq. (2.57) and Definition 2.11 (pp. 68–69). (`FY §2.6.1 eq. (2.57), Def 2.11`.)

@@ -11,7 +11,7 @@ import Mathlib.Analysis.Normed.Group.Tannery
 
 Deterministic and asymptotic properties of the sample autocovariance `γ̂` and sample
 autocorrelation `ρ̂` (divisor-`T`, mean-corrected — FY eq. (2.23), defined in
-`Process/Defs.lean`):
+`StatLean/TimeSeries/Process/Defs.lean`):
 
 * the divisor-`T` sample ACVF is a **positive semidefinite sequence** (FY §2.2.2's
   "may be shown" claim; false for the `1/(T−k)` divisor);
@@ -46,8 +46,8 @@ failure for `1/(T−k)` are discussed in B&D (1991), §7.2 and Percival–Walden
 The CLT statements are phrased through pointwise characteristic-function convergence
 (Lévy-equivalent to convergence in distribution), matching the conventions of the area.
 The linear-process hypothesis is spelled as an explicit two-sided `L²`
-partial-sum limit — definitionally `IsFilteredBy` (`Spectral/LinearFilter.lean`), which
-this Process-layer file must not import.
+partial-sum limit — definitionally `IsFilteredBy`
+(`StatLean/TimeSeries/Spectral/LinearFilter.lean`), which this Process-layer file must not import.
 -/
 
 set_option linter.style.longFile 2800
@@ -241,7 +241,7 @@ second-order facts below (stationarity, `γ(0)`) are read off the one bilinear c
 computation `cov_eq_of_ma`, whose value depends on `(s, t)` only through `s − t`. -/
 
 /-- Covariance only sees the a.e. class of each argument (private copy of the
-`Models/Linear.lean` helper). -/
+`StatLean/TimeSeries/Models/Linear.lean` helper). -/
 private lemma covariance_congr_ae {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') (hY : Y =ᵐ[μ] Y') :
     cov[X, Y; μ] = cov[X', Y'; μ] := by
   have hIX : ∫ x, X x ∂μ = ∫ x, X' x ∂μ := integral_congr_ae hX
@@ -313,7 +313,7 @@ private lemma IsMA.integral_eq_zero [IsProbabilityMeasure μ] {q : ℕ} {a : Fin
   simp [integral_const_mul, h.whiteNoise.integral_eq_zero]
 
 /-- An MA(q) process (finite MA of white noise) is weakly stationary. (Stated here for
-the (2.27) assembly; candidate for promotion to `Models/Linear.lean`.) -/
+the (2.27) assembly; candidate for promotion to `StatLean/TimeSeries/Models/Linear.lean`.) -/
 theorem IsMA.isStationary [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → ℝ} {σ2 : ℝ}
     {X ε : ℤ → Ω → ℝ} (h : IsMA a σ2 X ε μ) (hmeas : ∀ t, Measurable (X t)) :
     IsStationary X μ := by
@@ -2394,7 +2394,8 @@ genuine number).  The `η`-block needs one more reindexing, `tsum_sqConv`
 which is where `(Σ_i a_i²)² = (γ(0)/σ²)²` comes from.
 
 The triangular-weight identity and the Tannery step are re-proved here at an **abstract
-kernel** `K : ℤ → ℝ`; `Mixing/LimitTheorems.lean` runs the same argument, but only at
+kernel** `K : ℤ → ℝ`; `StatLean/TimeSeries/Mixing/LimitTheorems.lean` runs the same argument, but
+only at
 `K = acvf X μ` and behind `private`. -/
 
 section CesaroKernel

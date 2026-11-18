@@ -33,7 +33,7 @@ hence certifies it as the efficient influence function.
 The theorem `marMean_isEIF` uses the induced law `marObsMeasure Q r`
 and the constructed closed tangent `marObservedTangent Q r`. The bridge from the
 latent full-data/kernel representation to abstract Theorem 25.40 is derived in
-`MARMean/Tangent.lean`.
+`StatLean/AsymptoticStatistics/Examples/MARMean/Tangent.lean`.
 
 * **orthogonality / efficiency membership**: the relation
   `marMean_eif_orthogonal_coarsening` is proved from the MAR moment identities, and

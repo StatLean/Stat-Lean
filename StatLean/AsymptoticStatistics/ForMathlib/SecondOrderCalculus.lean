@@ -6,8 +6,9 @@ import Mathlib.Analysis.Asymptotics.Lemmas
 # Second-order calculus bricks for the classical Z-estimator (vdV §*5.6)
 
 Theorem-agnostic (`ForMathlib` layer) helpers used by the local-maximum assertion of
-vdV Theorem 5.42 (`ClassicalZEstimator/GradientLocalMax.lean`) and by the diagonal
-δ-extraction of the root-existence proof (`ClassicalZEstimator/RootExistence.lean`).
+vdV Theorem 5.42 (`StatLean/AsymptoticStatistics/ClassicalZEstimator/GradientLocalMax.lean`) and by
+the diagonal δ-extraction of the root-existence proof
+(`StatLean/AsymptoticStatistics/ClassicalZEstimator/RootExistence.lean`).
 
 Contents:
 
@@ -22,11 +23,11 @@ Contents:
   a sequence `δₙ ↓ 0` with `p n (δₙ) →ₙ 1`.
 
 The Hessian is represented as a `Matrix (Fin k) (Fin k) ℝ` acting through
-`Matrix.toEuclideanCLM`, matching the encoding of `MEstimator/ArgmaxLocalization.lean`.
-The second-order Taylor form (little-o remainder + no linear term) packages "critical
-point" and "locally Lipschitz Hessian" into a single hypothesis; it is the honest
-mathematical content and matches the `hTaylor` convention of the M-estimator theorem
-(vdV 5.23).
+`Matrix.toEuclideanCLM`, matching the encoding of
+`StatLean/AsymptoticStatistics/MEstimator/ArgmaxLocalization.lean`. The second-order Taylor form
+(little-o remainder + no linear term) packages "critical point" and "locally Lipschitz Hessian" into
+a single hypothesis; it is the honest mathematical content and matches the `hTaylor` convention of
+the M-estimator theorem (vdV 5.23).
 -/
 
 open Filter

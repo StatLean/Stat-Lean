@@ -32,7 +32,7 @@ the **unconstrained** parametrization.
 
 `IsARCH.iid_of_b_eq_zero` is proved, so the structural input FY relies on is available.
 Instantiating `logLR_tendsto_chiSquared_affine` (and its score / Wald companions) of
-`HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` at the null `b = 0` does not
+`StatLean/HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` at the null `b = 0` does not
 work, for two independent reasons, in order of severity.
 
 **(1) Statements with unconstrained estimator arguments are false, for every `p ≥ 1`.**
@@ -126,7 +126,8 @@ set** `K ∩ archAdmissible κ`, where
 * `archAdmissible κ x ν = {(c₀, b) : σ̃_t²(c₀, b) ≥ κ for all t ∈ Ico ν T}` is the
   *data-adapted* locus on which the criterion is even defined, and
 * `K` is a compact search region with the truth `(c₀, 0)` in its **interior** — the
-  `hargmin`-over-`K` pattern of `ARMA/Consistency.lean`'s `mle_consistent` (Hannan §2);
+  `hargmin`-over-`K` pattern of `StatLean/TimeSeries/ARMA/Consistency.lean`'s `mle_consistent`
+  (Hannan §2);
 * the null problem is posed on the slice `archNullSlice K = K ∩ {b = 0}`;
 * the floor is **strict**, `0 < κ < c₀`.
 
@@ -251,7 +252,8 @@ theorem IsARCH.iid_of_b_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
 
 /-- The ARCH(p) **conditional Gaussian log-likelihood** of the data at parameters
 `(c₀, b)` (the `§4.2.6` likelihood: `−½ Σ_t (log σ_t² + X_t²/σ_t²)` up to constants),
-written through the truncated volatility of `GARCH/Estimation.lean` with no MA part. -/
+written through the truncated volatility of `StatLean/TimeSeries/GARCH/Estimation.lean` with no MA
+part. -/
 noncomputable def archLogLik {p : ℕ} (c0 : ℝ) (b : Fin p → ℝ) {T : ℕ}
     (x : Fin T → ℝ) (ν : ℕ) : ℝ :=
   -(1 / 2) * garchQuasiLik c0 b (Fin.elim0 : Fin 0 → ℝ) c0 x ν
@@ -508,7 +510,8 @@ removed LR and Wald debts were jointly satisfiable, exactly what
 *(Measurability of the selection is a separate matter: those theorems carried
 `hmeas` as a `USER-INPUT`, and this certificate produces the sequences by pointwise choice,
 not by a measurable-selection theorem. The repo's `exists_measurable_argmin_of_convex`
-(`EstimationTheory/.../MeasurableArgmin.lean`) is the tool for upgrading it, and does not
+(`StatLean/PointEstimation/ForMathlib/MeasurableArgmin.lean`) is the tool for upgrading it, and does
+not
 apply off the shelf: the ARCH criterion is not convex in `(c₀, b)`.)* -/
 theorem exists_archMLE_sequences {p : ℕ} {κ c : ℝ} (hκ : 0 < κ) (hc : κ ≤ c)
     {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
@@ -575,7 +578,7 @@ characteristic function of a Gaussian quadratic form `Σ_{i<p} Z_i²`, which is 
 (`eq_map_sum_sq_gaussian_of_charFun`). The proof uses the Fresnel-type Gaussian integral
 `∫ exp(−b x²) = (π/b)^{1/2}` at `b = (1 − 2iu)/2`, tensored over the `p` coordinates by
 Fubini. For the Gamma-distribution formulation, see
-`MultipleTesting/ForMathlib/ChiSquared.lean`: its `chiSquared p` is `Gamma(p/2, 1/2)`,
+`StatLean/MultipleTesting/ForMathlib/ChiSquared.lean`: its `chiSquared p` is `Gamma(p/2, 1/2)`,
 and `map_sum_sq_eq_chiSquared` identifies the law of `Σ Z_i²`. -/
 
 /-- The principal square root of a right-half-plane point has positive real part: its

@@ -12,10 +12,10 @@ consumes the three linear-space closure hypotheses `_hLin_smul` / `_hLin_add` /
 canonical theorem's body can forward to the reduction.
 
 Note on `_hLin_zero`: `TangentSpec.carrier` is a bare `Set` with no
-zero-membership field and may be empty (see `Core/TangentAbstract.lean`).
-`0 ∈ carrier` therefore requires `carrier.Nonempty`; the forwarding theorem
-handles the empty case separately, where the LAM-LHS supremum is the empty-set
-baseline `0` and the conclusion is trivial.
+zero-membership field and may be empty (see
+`StatLean/AsymptoticStatistics/Core/TangentAbstract.lean`). `0 ∈ carrier` therefore requires
+`carrier.Nonempty`; the forwarding theorem handles the empty case separately, where the LAM-LHS
+supremum is the empty-set baseline `0` and the conclusion is trivial.
 
 Reference: van der Vaart, *Asymptotic Statistics*, §25.3.
 -/

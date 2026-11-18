@@ -27,7 +27,8 @@ nonnegative density). Lower-Lebesgue transfer: `HasLaw.lintegral_comp`-style map
 `lintegral_withDensity_eq_lintegral_mul`. The mean formula composes the transfer with the
 scaling change of variables `z = x + u·h` (`Measure.integral_comp_mul_left` family and
 translation invariance); its integrability hypothesis is discharged by consumers
-(`integrable_kernel_mul_holder` in `KernelDensity/Bias.lean` for Hölder densities).
+(`integrable_kernel_mul_holder` in `StatLean/NonparametricStatistics/KernelDensity/Bias.lean` for
+Hölder densities).
 
 **Bibliographic comments.** Routine measure-theoretic plumbing; no attribution applicable.
 -/

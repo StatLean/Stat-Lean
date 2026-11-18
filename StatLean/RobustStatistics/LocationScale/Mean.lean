@@ -16,8 +16,8 @@ diagnostics that all agree on their fragility (`MMY §3.1–§3.3`):
   functional arbitrarily far at any fixed level `ε > 0`.
 
 This is the negative pole of the flagship contrast; the positive pole is the median
-(`LocationScale/Median.lean`, `MedianBreakdown.lean`) and the Huber M-functional
-(`MEstimation/Influence.lean`).
+(`StatLean/RobustStatistics/LocationScale/Median.lean`, `MedianBreakdown.lean`) and the Huber
+M-functional (`StatLean/RobustStatistics/MEstimation/Influence.lean`).
 
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.1 (mean IF),

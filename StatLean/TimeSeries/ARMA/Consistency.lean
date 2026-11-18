@@ -40,7 +40,7 @@ downstream:
 * `exists_armaPi_l1_lipschitz` — the **Lipschitz** `ℓ¹` bound on `θ ↦ π(θ)` over a compact
   set of invertible parameters (proved by the resolvent identity plus the `ℓ¹` convolution
   inequality, *not* by Cauchy estimates on `∂π/∂θ`). This is the quantitative upgrade of
-  `exists_armaPi_l1_modulus` that `ARMA/Diagnostics.lean`'s residue (B) needs;
+  `exists_armaPi_l1_modulus` that `StatLean/TimeSeries/ARMA/Diagnostics.lean`'s residue (B) needs;
 * `exists_uniform_geometric_bound_arma` and `exists_armaPi_l1_modulus`, the deterministic
   uniformity inputs.
 
@@ -1171,8 +1171,8 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
 /-! ### From the modulus to a Lipschitz bound
 
 The modulus above is what `mle_consistent` needs; the residual-correlogram claim of
-`ARMA/Diagnostics.lean` needs the *quantitative* form, because it must convert an
-`o_p(T^{−1/2})` parameter error into an `o_p(T^{−1/2})` filter error — a modulus only
+`StatLean/TimeSeries/ARMA/Diagnostics.lean` needs the *quantitative* form, because it must convert
+an `o_p(T^{−1/2})` parameter error into an `o_p(T^{−1/2})` filter error — a modulus only
 delivers `o_p(1)`, one full factor of `√T` short (the point recorded at that file's
 residue (B)). The route is the **resolvent identity** rather than derivatives: with
 `A = a(z)`, `B = b(z)` and `π = B/A`,
@@ -4636,7 +4636,7 @@ discharged from this input (the `log`-continuity transfer and the deterministic
 `T⁻¹ log det Γ_T → 0`, which is PROVED as `logdet_armaToeplitz_vanishes`).
 
 **No pointwise ergodic theorem is needed.** The pin lacks Birkhoff (it carries only von
-Neumann's mean ergodic theorem, `Analysis/InnerProductSpace/MeanErgodic.lean`, which is an
+Neumann's mean ergodic theorem, `Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean`, which is an
 `L²` statement and so does not reach the `L¹` variable `r_t(θ)²`). But *this* statistic
 does not need it. The route:
 
@@ -4761,8 +4761,8 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
 
 `armaResidualSS_tendstoInProb` is stated for the *composite* filter `π(θ) ∗ ψ(θ₀)` of the
 ARMA problem; the ingredient that the rest of the Hannan program consumed (the Brown
-input (2) and the sample-PACF linearization of `ARMA/MLEAsymptotics.lean`, both since
-removed) is the plain one-filter statement for an **arbitrary** absolutely summable
+input (2) and the sample-PACF linearization of `StatLean/TimeSeries/ARMA/MLEAsymptotics.lean`, both
+since removed) is the plain one-filter statement for an **arbitrary** absolutely summable
 coefficient sequence, which
 is *not* an instance of it (a general `c` is not an ARMA transfer sequence). It is proved
 here by the same ergodic-theorem-free device, and is strictly simpler: with `π = δ` the

@@ -5,8 +5,9 @@ import StatLean.AsymptoticStatistics.DQM.ZeroDensity
 
 Support-free consequences of differentiability in quadratic mean along parameter
 sequences whose sample-size-scaled displacement converges.  These statements extend
-the fixed-direction residual and singular-mass controls in `DQM/Properties.lean` to
-the moving directions needed by local product-experiment comparisons.
+the fixed-direction residual and singular-mass controls in
+`StatLean/AsymptoticStatistics/DQM/Properties.lean` to the moving directions needed by local
+product-experiment comparisons.
 -/
 
 open MeasureTheory Asymptotics Filter Topology

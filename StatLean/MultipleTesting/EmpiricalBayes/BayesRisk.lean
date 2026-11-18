@@ -62,7 +62,8 @@ namespace StatLean.MultipleTesting
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-- `E[Z²] = v` for `Z ∼ N(0,v)` (second moment = variance, mean `0`); the `v = 1` case is the
-merged `ForMathlib/GaussianMoments.lean` `integral_sq_stdGaussian`, here for arbitrary variance. -/
+merged `StatLean/MultipleTesting/ForMathlib/GaussianMoments.lean` `integral_sq_stdGaussian`, here
+for arbitrary variance. -/
 private lemma integral_sq_gaussianReal (v : ℝ≥0) :
     ∫ x, x ^ 2 ∂(gaussianReal 0 v) = (v : ℝ) := by
   have hv := variance_fun_id_gaussianReal (μ := (0 : ℝ)) (v := v)

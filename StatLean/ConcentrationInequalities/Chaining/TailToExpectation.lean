@@ -31,7 +31,7 @@ the lintegral bound (never hypothesizes it). The auxiliary
 `integral_exp_neg_mul_sq_Ioi_le` (tail of the Gaussian integral,
 $\int_a^\infty e^{-\beta s^2} ds \le e^{-\beta a^2}/(2\beta a)$ via the
 $s/a \ge 1$ majorization) is exported for the split-point optimization in
-`Chaining/PsiTwoMaximal.lean`.
+`StatLean/ConcentrationInequalities/Chaining/PsiTwoMaximal.lean`.
 
 **Bibliographic comments.** The layer-cake (Cavalieri) representation of the
 expectation is classical measure theory; its use to integrate chaining tail

@@ -17,10 +17,10 @@ convex symmetric $C \subset \mathbb R^d$, $\nu(C - y) \le \nu(C)$ for any
 $y \in \mathbb R^d$. Equivalently $\int L \, d\nu \le \int L(\cdot + y) \, d\nu$
 for any bowl-shaped $L$.
 
-Anderson is built via the Prékopa-Leindler route (`ForMathlib/PrekopaLeindler.lean`):
-the multivariate Gaussian density is log-concave, so PL gives Anderson. The set
-form `anderson_lemma_set` is the technical core; the loss / independent /
-PSD-monotone forms (`anderson_lemma_loss`, `anderson_lemma_independent`,
+Anderson is built via the Prékopa-Leindler route
+(`StatLean/AsymptoticStatistics/ForMathlib/PrekopaLeindler.lean`): the multivariate Gaussian density
+is log-concave, so PL gives Anderson. The set form `anderson_lemma_set` is the technical core; the
+loss / independent / PSD-monotone forms (`anderson_lemma_loss`, `anderson_lemma_independent`,
 `gaussian_lintegral_mono_of_psd_le`) are corollaries.
 -/
 

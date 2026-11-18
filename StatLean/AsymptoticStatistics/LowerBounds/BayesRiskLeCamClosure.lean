@@ -95,7 +95,7 @@ single chained input `hLeCamBayesPassage`. The closure of
    by the iInf over (measurable, deterministic) estimators in the limit
    experiment.
 
-Each step's brick is in `ForMathlib/Contiguity.lean` (Le Cam 3rd,
+Each step's brick is in `StatLean/AsymptoticStatistics/ForMathlib/Contiguity.lean` (Le Cam 3rd,
 contiguity), `ForMathlib/` (weak convergence machinery), and Mathlib
 (DCT / UI / measurable function spaces).
 

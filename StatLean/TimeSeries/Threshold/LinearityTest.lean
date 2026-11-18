@@ -44,7 +44,7 @@ noncomputable def arLSResidualSS {T P : ℕ} (x : Fin T → ℝ) (β0 : ℝ) (β
       x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩) ^ 2
 
 /-- The `H₁` (two-regime SETAR at threshold `r`) residual sum of squares: the sum of the
-two regime residual sums of squares of `Threshold/Estimation.lean`. -/
+two regime residual sums of squares of `StatLean/TimeSeries/Threshold/Estimation.lean`. -/
 noncomputable def setarResidualSS {T P : ℕ} (x : Fin T → ℝ) (d : ℕ) (r : ℝ)
     (β0 : Fin 2 → ℝ) (β : Fin 2 → Fin P → ℝ) : ℝ :=
   tarLSResidualSS x {y : ℝ | y ≤ r} d (β0 0) (β 0)

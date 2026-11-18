@@ -4,7 +4,7 @@ import StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 # Finset-indexed maximal inequalities for sub-Gaussian variables
 
 Finset-indexed adapters of the existing `Fin d`-indexed maximal inequalities
-(`Maximal/FiniteMaximal.lean`): for a nonempty finite index set
+(`StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`): for a nonempty finite index set
 $s$ and centered sub-Gaussian variables $(X_i)_{i \in s}$ with variance
 proxy $\sigma^2$,
 $$ \mathbb{P}\Bigl(\max_{i \in s} X_i > t\Bigr)
@@ -19,10 +19,10 @@ Cambridge University Press, §2.5, Eq. (2.22) / Exercise 2.5.10; the underlying
 Maximal Inequality). Used at each chaining level in HDP §8.1, Eq. (8.11).
 
 **Proof formalization notes.** Pure reindexing via `s.equivFin` of
-`tail_max_le` and `expectation_max_le` (`Maximal/FiniteMaximal.lean`) — no
-new probabilistic content. Carriers: the tail form takes the set-bounded
-supremum `⨆ i ∈ s, X i ω` (junk-safe there since the threshold is `≥ 0`),
-while the expectation form is stated with the junk-free `Finset.sup'`
+`tail_max_le` and `expectation_max_le`
+(`StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`) — no new probabilistic content.
+Carriers: the tail form takes the set-bounded supremum `⨆ i ∈ s, X i ω` (junk-safe there since the
+threshold is `≥ 0`), while the expectation form is stated with the junk-free `Finset.sup'`
 maximum, exactly mirroring the proven `Fin`-indexed `expectation_max_le`.
 `biSup_finset_eq_sup'` (and its sharp core
 `biSup_finset_eq_sup'_of_sup'_nonneg`) converts between the two carriers
@@ -140,7 +140,7 @@ set_option maxHeartbeats 600000 in
 -- This proof uses about 440,000 heartbeats.
 /-- The pointwise supremum over a nonempty finite index set of integrable
 functions is integrable (public Finset twin of the private domination helper
-in `Maximal/FiniteMaximal.lean`). -/
+in `StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`). -/
 lemma integrable_biSup_finset {ι : Type*} {s : Finset ι}
     -- LEAN-ONLY: nonemptiness guards the real biSup junk value; HDP §8.1
     (hs : s.Nonempty) {X : ι → Ω → ℝ}

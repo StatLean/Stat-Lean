@@ -56,12 +56,13 @@ log 4 = 1.386` (at `d = 64/15`), while the vacuous regime of `4 e^{−d²/8}` on
 `d = √(8 log 4) = 3.330 < 4`, so the band `d ∈ (3.330, 4)` would be covered by neither
 regime. Per the charter rule *state the constants that are actually provable*, the two
 statements were amended to `4/√n` and `4 e^{−d²/16}`, and the single downstream consumer of
-`c`, the numeral inside `ksThreshold` in `GoodnessOfFit/KSConsistency.lean`, was changed from
-`√(8 log(4/α))` to `√(16 log(4/α))` (the deviation is recorded at that definition too).
-Every statement in `KSConsistency.lean` and `KSLocalPower.lean` is phrased through
-`ksThreshold` and re-derives its level from the defining equation `4 e^{−s²/16} = α`, so no
-other edit was required: the calibrated thresholds are `√2` times larger, i.e. the tests are
-more conservative, and all four headline theorems there hold verbatim.
+`c`, the numeral inside `ksThreshold` in
+`StatLean/HypothesisTesting/GoodnessOfFit/KSConsistency.lean`, was changed from `√(8 log(4/α))` to
+`√(16 log(4/α))` (the deviation is recorded at that definition too). Every statement in
+`KSConsistency.lean` and `KSLocalPower.lean` is phrased through `ksThreshold` and re-derives its
+level from the defining equation `4 e^{−s²/16} = α`, so no other edit was required: the calibrated
+thresholds are `√2` times larger, i.e. the tests are more conservative, and all four headline
+theorems there hold verbatim.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of

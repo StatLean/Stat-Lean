@@ -40,9 +40,10 @@ Cambridge University Press, 2019, Chapter 7 (Sparse linear models in high dimens
 (Variable or model selection consistency), Corollary 7.22; regularization choice Eq (7.46),
 $\ell_\infty$ bound Eq (7.47). The deterministic backbone is Theorem 7.21.
 
-**Proof formalization notes.** Proof shell (mirrors `Lasso/RandomNoise.lean`): the two random
-max-terms of (7.45)/(7.44) — $\lVert X_{S^c}^\top \Pi_{S^\perp}(X)\, w/n\rVert_\infty$ (max over
-$d-s$ coordinates, each sub-Gaussian with proxy $\le C^2\sigma^2/n$ via projection contractivity
+**Proof formalization notes.** Proof shell (mirrors
+`StatLean/HighDimensionalStatistics/Lasso/RandomNoise.lean`): the two random max-terms of
+(7.45)/(7.44) — $\lVert X_{S^c}^\top \Pi_{S^\perp}(X)\, w/n\rVert_\infty$ (max over $d-s$
+coordinates, each sub-Gaussian with proxy $\le C^2\sigma^2/n$ via projection contractivity
 + column normalization) and $\lVert (X_S^\top X_S/n)^{-1} X_S^\top\, w/n\rVert_\infty$ (max over
 $s$ coordinates, each sub-Gaussian with proxy $\le \sigma^2/(c_{\min} n)$ via the inverse-Gram
 operator bound) — are controlled by the maximal inequality `tail_max_le`; the $\lambda$ choice

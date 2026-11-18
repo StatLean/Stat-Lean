@@ -13,7 +13,8 @@ $$ \varepsilon \longmapsto \sqrt{\log \mathcal{N}(T, d, \varepsilon)}, $$
 as a total real-valued function `sqrtLogCov`, with its monotonicity,
 vanishing beyond the diameter, boundedness by $\sqrt{\log |T|}$,
 unconditional measurability, and integrability on $(0, D]$. Concept-layer
-file, consumed by `Chaining/EntropySum.lean` and all chaining assembly files.
+file, consumed by `StatLean/ConcentrationInequalities/Chaining/EntropySum.lean` and all chaining
+assembly files.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.1, Theorem 8.1.3 (the integrand of the Dudley

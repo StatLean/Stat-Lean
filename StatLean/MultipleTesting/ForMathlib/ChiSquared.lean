@@ -27,8 +27,8 @@ the law we record the basic functionals of $\chi^2_n$:
   Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
 
 These moments feed the chi-squared test's null-hypothesis moments $\mathbb{E}[T_n] = n$,
-$\mathrm{Var}[T_n] = 2n$ (used in `ChiSquaredTest/Distribution.lean`). The result is
-theorem-agnostic and is placed in the `ForMathlib` layer.
+$\mathrm{Var}[T_n] = 2n$ (used in `StatLean/MultipleTesting/ChiSquaredTest/Distribution.lean`). The
+result is theorem-agnostic and is placed in the `ForMathlib` layer.
 
 Note on hypotheses: the Lean statement requires $n \ge 1$ (so that $\chi^2_n$ is a genuine
 probability measure), and takes the three standard inputs of the i.i.d. setup explicitly —

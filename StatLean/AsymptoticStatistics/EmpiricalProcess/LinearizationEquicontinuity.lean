@@ -641,7 +641,7 @@ theorem empiricalProcess_inner_empiricalProcessVec
   exact hRHS.symm
 
 /-! The reusable iid Chebyshev bound used below lives in
-`EmpiricalProcess/IIDChebyshev.lean`. -/
+`StatLean/AsymptoticStatistics/EmpiricalProcess/IIDChebyshev.lean`. -/
 
 /-- **The fixed-direction marginal vanishes.**
 

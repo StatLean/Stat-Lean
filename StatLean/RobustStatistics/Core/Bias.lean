@@ -7,9 +7,9 @@ The asymptotic bias of a functional `T` at a contaminated distribution is
 `T((1-ε)P + εQ) - T(P)`, and the *maximum bias* is its supremum over all contaminating
 `Q` (`MMY §3.3`). Following the statement-first design, the primitive here is the bounded
 form: `ContaminationBiasLE T P ε b` says every contamination of size `ε` moves `T` by at
-most `b`. Unbounded maximum bias (the mean, `LocationScale/Mean.lean`) is the negation
-`∀ b, ¬ ContaminationBiasLE …`; the extended-real supremum can be layered on later without
-touching consumers.
+most `b`. Unbounded maximum bias (the mean, `StatLean/RobustStatistics/LocationScale/Mean.lean`) is
+the negation `∀ b, ¬ ContaminationBiasLE …`; the extended-real supremum can be layered on later
+without touching consumers.
 
 * `ContaminationBiasLE T P ε b` — every `ε`-contamination moves `T` by at most `b`.
 * monotonicity in the bound, the `ε = 0` degenerate case, and the point-mass specialization.

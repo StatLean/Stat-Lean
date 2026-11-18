@@ -327,7 +327,8 @@ set_option linter.unusedFintypeInType false in
 /-- **Finite family of empirical averages: union bound over the WLLN.** For a finite
 family `g : ι → Ω → ℝ` of measurable integrable functions, the probability that *some*
 empirical average deviates from its mean by `ε` tends to `0`. Finite union bound over
-`iid_lln_in_prob_seq` (`ForMathlib/IidWLLN.lean`). No measurability of the event is needed:
+`iid_lln_in_prob_seq` (`StatLean/AsymptoticStatistics/ForMathlib/IidWLLN.lean`). No measurability of
+the event is needed:
 `measureReal_iUnion_fintype_le` is an outer-measure bound. -/
 theorem finite_empiricalAvg_bad_prob_tendsto_zero {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P]

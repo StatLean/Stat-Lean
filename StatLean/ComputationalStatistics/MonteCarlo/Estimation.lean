@@ -14,7 +14,8 @@ The correctness core of ordinary Monte Carlo (ECS §2.2): for
 
 The i.i.d. sample is the canonical product space
 `Measure.pi (fun _ : Fin n => P)`; the statements are textbook-named wrappers of
-the `ForMathlib/PiMoments.lean` coordinate-average lemmas at `g ∘ eval`.
+the `StatLean/ComputationalStatistics/ForMathlib/PiMoments.lean` coordinate-average lemmas at
+`g ∘ eval`.
 
 **Reference.** James E. Gentle, *Elements of Computational Statistics*, Springer,
 2002 (ISBN 0-387-95489-9), §2.2 (Monte Carlo estimation, eqs. (2.5)–(2.9); the
@@ -22,9 +23,9 @@ strong-law display on p. 53).  (`ECS §2.2`.)
 
 **Proof formalization notes.**
 
-* The estimator is `mcEstimate g : (Fin n → 𝓧) → ℝ` from `Core/Defs.lean`;
-  unfolding it reduces every statement to the corresponding
-  `*_avg_eval_pi` lemma.
+* The estimator is `mcEstimate g : (Fin n → 𝓧) → ℝ` from
+  `StatLean/ComputationalStatistics/Core/Defs.lean`; unfolding it reduces every statement to the
+  corresponding `*_avg_eval_pi` lemma.
 * `[NeZero n]` excludes the `n = 0` junk average.
 * Consistency is along the canonical sequence space
   `Measure.infinitePi (fun _ : ℕ => P)`, restricting each finite prefix through

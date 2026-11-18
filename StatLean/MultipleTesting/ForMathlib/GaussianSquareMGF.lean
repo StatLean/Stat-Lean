@@ -12,7 +12,7 @@ chi-squared law `∑ᵢ Zᵢ² ∼ χ²ₙ` (Candès, Lecture 2, §2.3):
 
 (This re-derives, as a public `ForMathlib` lemma, the closed form proved `private`ly as
 `integral_exp_mul_sq_stdGaussian` in
-`HighDimensionalStatistics/CompressedSensing/GaussianChiSquared.lean`
+`StatLean/HighDimensionalStatistics/CompressedSensing/GaussianChiSquared.lean`
 — that file is a concept-layer module and cannot be imported upward.) Consumed by
 `ForMathlib/ChiSquared.map_sum_sq_eq_chiSquared`.
 

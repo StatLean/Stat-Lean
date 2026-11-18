@@ -13,7 +13,8 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 The finite-state model class: a vertex set `V`, a state space `α`, both finite, configurations
 `V → α`, and a **mass function** `p : (V → α) → ℝ≥0∞`. This is the layer where the whole
 graphoid calculus becomes elementary algebra of finite sums and products, and it is the layer
-the factorization theory (`Discrete/Factorization.lean`) is built on.
+the factorization theory (`StatLean/StatisticalModels/GraphicalModels/Discrete/Factorization.lean`)
+is built on.
 
 * `agreeOn A x` — the configurations that agree with `x` on the block `A`;
 * `blockMarginal A p` — the **marginal mass on `A`**, `p_A(x) = ∑ p(y)` over `y ∈ agreeOn A x`;
@@ -24,14 +25,16 @@ the factorization theory (`Discrete/Factorization.lean`) is built on.
 * `CondIndepMass.symm` / `.decomposition` / `.weakUnion` / `.contraction` / `.intersection` —
   the five properties (C1)–(C5), each stated with exactly the hypotheses it needs;
 * **`isSemigraphoid_condIndepMass`** — the headline: (C1)–(C4) hold for **every** finite mass
-  function, so the abstract Markov hierarchy of `Undirected/Markov.lean` instantiates here;
+  function, so the abstract Markov hierarchy of
+  `StatLean/StatisticalModels/GraphicalModels/Undirected/Markov.lean` instantiates here;
 * **`isGraphoid_condIndepMass_of_pos`** — (C5) as well, under strict positivity: Lauritzen
   **Proposition 3.1**, p. 29;
 * `condIndepMass_of_exists_factorization` / `condIndepMass_iff_exists_factorization` —
   Lauritzen's **eq. (3.6)**, `f(x, y, z) = h(x, z) k(y, z)`; the `mpr` half is deliberately
   separated out because it needs neither finiteness nor positivity;
 * `condIndepMass_of_condIndepCoords` — the bridge from the general measure-theoretic
-  `CondIndepCoords` of `Core/Coordinates.lean` down to the mass identity.
+  `CondIndepCoords` of `StatLean/StatisticalModels/GraphicalModels/Core/Coordinates.lean` down to
+  the mass identity.
 
 **Carrier choice.** `p : (V → α) → ℝ≥0∞`, a bare function with **no** normalisation built in.
 Three reasons. (i) Lauritzen's identity (3.2) is homogeneous of degree two in `p` — replacing
@@ -86,7 +89,8 @@ A. P. Dawid, "Conditional independence in statistical theory," *ibid.* **41** (1
 with the names *symmetry / decomposition / weak union / contraction / intersection* due to
 J. Pearl, *Probabilistic Reasoning in Intelligent Systems*, Morgan Kaufmann, 1988. That
 (C1)–(C4) are sound but not complete for probabilistic conditional independence is
-M. Studený's theorem (1992); see the `Core/Semigraphoid.lean` docstring.
+M. Studený's theorem (1992); see the
+`StatLean/StatisticalModels/GraphicalModels/Core/Semigraphoid.lean` docstring.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -698,8 +702,8 @@ theorem CondIndepMass.intersection {p : (V → α) → ℝ≥0∞} {A B C D : Fi
 
 /-- **The headline of the file.** Every finite discrete mass function satisfies Lauritzen's
 (C1)–(C4), so `CondIndepMass p` is a semi-graphoid and the abstract Markov hierarchy of
-`Undirected/Markov.lean` — (G) ⇒ (L) ⇒ (P), Lauritzen Proposition 3.4 — instantiates at it
-without further work.
+`StatLean/StatisticalModels/GraphicalModels/Undirected/Markov.lean` — (G) ⇒ (L) ⇒ (P), Lauritzen
+Proposition 3.4 — instantiates at it without further work.
 
 The structure's disjointness hypotheses are strictly more than the four identities need, and
 are simply discarded. Only `hp` is needed, and only by (C3) and (C4). -/
@@ -799,8 +803,9 @@ theorem condIndepMass_iff_exists_factorization {p : (V → α) → ℝ≥0∞} {
 /-! ### Bridge to the general conditional-independence predicate -/
 
 /-- **Bridge: `CondIndepCoords ⇒ CondIndepMass`.** If the random vector `X` satisfies the
-measure-theoretic conditional independence `X_A ⫫ X_B ∣ X_C` of `Core/Coordinates.lean`, then
-its mass function `p x = μ (X ⁻¹' {x})` satisfies Lauritzen's identity (3.2).
+measure-theoretic conditional independence `X_A ⫫ X_B ∣ X_C` of
+`StatLean/StatisticalModels/GraphicalModels/Core/Coordinates.lean`, then its mass function
+`p x = μ (X ⁻¹' {x})` satisfies Lauritzen's identity (3.2).
 
 Evaluate the disintegration identity
 `μ.map (X_C, (X_A, X_B)) = (μ.map X_C) ⊗ₘ (κ ×ₖ η)` at the singleton `(x_C, (x_A, x_B))`,

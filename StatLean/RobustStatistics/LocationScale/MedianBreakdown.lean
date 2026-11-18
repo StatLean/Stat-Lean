@@ -7,8 +7,9 @@ import StatLean.RobustStatistics.Core.BreakdownPoint
 The flagship finite-sample robustness contrast (`MMY §3.2.5`): for `n = 2k+1`
 observations, the sample median resists `k` arbitrary replacements but breaks under
 `k+1`, so its breakdown count is exactly `m* = k = ⌊(n-1)/2⌋` — the maximum possible for
-any location-equivariant estimator (`MMY` eq. (3.26), `Core/BreakdownPoint.lean`) — while
-the sample mean has `m* = 0` (`LocationScale/Mean.lean`).
+any location-equivariant estimator (`MMY` eq. (3.26),
+`StatLean/RobustStatistics/Core/BreakdownPoint.lean`) — while the sample mean has `m* = 0`
+(`StatLean/RobustStatistics/LocationScale/Mean.lean`).
 
 * `sampleMedian_resists` — with at most `k` replacements, the median stays within the
   range of the original data (via the replacement-perturbation bound

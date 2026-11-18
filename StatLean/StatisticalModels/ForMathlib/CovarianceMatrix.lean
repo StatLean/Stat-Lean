@@ -27,11 +27,12 @@ carrier.
 (`And58 Ch. 2`).
 
 **Proof formalization notes.** PSD generalizes the `Fin k` argument used privately at
-`HypothesisTesting/Bootstrap/Multivariate.lean` (quadratic form = variance of `⟪u, ·⟫ ≥ 0`).
-Affine pushforward is coordinate bilinearity of `covariance` (`covariance_add_left`-family)
-plus `integral_map`; the Gaussian values are `integral_id_multivariateGaussian` and
-`covariance_eval_multivariateGaussian`. Independent additivity kills cross terms with the
-independence-vanishing lemma for `covariance` under `Measure.prod` coordinates.
+`StatLean/HypothesisTesting/Bootstrap/Multivariate.lean` (quadratic form = variance of
+`⟪u, ·⟫ ≥ 0`). Affine pushforward is coordinate bilinearity of `covariance`
+(`covariance_add_left`-family) plus `integral_map`; the Gaussian values are
+`integral_id_multivariateGaussian` and `covariance_eval_multivariateGaussian`. Independent
+additivity kills cross terms with the independence-vanishing lemma for `covariance` under
+`Measure.prod` coordinates.
 
 **Bibliographic comments.** The covariance-matrix calculus is 19th-century (Bravais, Pearson);
 its systematic matrix form is Anderson (1958). Nothing here is original.

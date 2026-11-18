@@ -13,7 +13,7 @@ $$ \psi\Bigl(\frac{u + v}{a+b}\Bigr)
    \le \frac{a}{a+b}\,\psi\Bigl(\frac{u}{a}\Bigr)
      + \frac{b}{a+b}\,\psi\Bigl(\frac{v}{b}\Bigr). $$
 Instances for the ψ₂/ψ₁ generators (first half of the B4 bridge; homogeneity
-is `Orlicz/Basic.lean`) and the finite-sum corollary.
+is `StatLean/ConcentrationInequalities/Orlicz/Basic.lean`) and the finite-sum corollary.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, Exercise 2.42 (‖·‖_{ψ₂} is a norm) and the display

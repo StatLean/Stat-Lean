@@ -288,7 +288,8 @@ noncomputable def sobolevScalarKernel (x y : unitInterval01) : ℝ :=
   @scalarKernel ℝ _ unitInterval01 SobolevH01 _ _ sobolevH01CompleteSpace _ x y
 
 /-- The reproducing identity for the Sobolev kernel functions, obtained directly from
-Mathlib's `RKHS.kerFun_inner` (so it does not depend on `RKHS/Basic.lean`). -/
+Mathlib's `RKHS.kerFun_inner` (so it does not depend on
+`StatLean/NonparametricStatistics/RKHS/Basic.lean`). -/
 private theorem inner_sobolevKernelFun (x : unitInterval01) (f : SobolevH01) :
     ⟪sobolevKernelFun x, f⟫_ℝ = f x := by
   have h := @RKHS.kerFun_inner ℝ _ unitInterval01 ℝ _ _ SobolevH01 _ _ _

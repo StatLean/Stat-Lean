@@ -15,7 +15,7 @@ arbitrary ball `B(x₀, R)` in any finite-dimensional real inner-product space (
 `(1 + 2R/ε)^{finrank}`).
 
 Both statements reuse the covering bricks; no new geometry is proved here. The unit-ball extraction
-mirrors `HighDimensionalStatistics/CompressedSensing/RandomRIP.lean`'s `exists_quarter_net`
+mirrors `StatLean/HighDimensionalStatistics/CompressedSensing/RandomRIP.lean`'s `exists_quarter_net`
 (minimal-cover / `encard` idiom). This cross-area import of the concentration-inequalities concept
 layer follows that established precedent.
 

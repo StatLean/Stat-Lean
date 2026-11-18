@@ -31,8 +31,8 @@ weighted Corollary 2.9.2 is `bernstein_subexponential_weighted`.
 variables under exponential-moment conditions go back to S. N. Bernstein
 (1920s–1930s); the ψ₁-norm formulation is the modern synthesis due to
 Vershynin. The moment-condition
-variant is formalized separately in `Bernstein/Bernstein.lean` (Lu-BDA); the
-two are deliberately distinct results.
+variant is formalized separately in `StatLean/ConcentrationInequalities/Bernstein/Bernstein.lean`
+(Lu-BDA); the two are deliberately distinct results.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -178,7 +178,7 @@ theorem measure_sum_ge_le_of_subExponentialNorm_le
 book's absolute constant realized as `c = 1/16` quadratic / `1/4` linear):
 two-sided tail for sums of independent mean-zero sub-exponential variables.
 Name avoids the taken `bernstein_inequality` (moment-condition version in
-`Bernstein/Bernstein.lean`). -/
+`StatLean/ConcentrationInequalities/Bernstein/Bernstein.lean`). -/
 theorem bernstein_subexponential
     -- LEAN-ONLY: probability measure; Chernoff/MGF machinery requires it
     [IsProbabilityMeasure μ] {n : ℕ} {X : Fin n → Ω → ℝ} {K : Fin n → ℝ≥0}

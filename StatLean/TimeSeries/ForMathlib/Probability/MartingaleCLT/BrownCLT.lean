@@ -16,7 +16,8 @@ ARMA quasi-score at the true parameter is a stationary ergodic martingale-differ
 sequence, and the array `X_{n,i} = ξ_i/√n` fed into `mds_clt` yields asymptotic
 normality of the score (see `ARMA/ScoreAnalysis`).
 
-**Assembly plan** (from `MartingaleCLT/CondCharFun.lean`), as executed:
+**Assembly plan** (from
+`StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/CondCharFun.lean`), as executed:
 0. replace the array by its Hall–Heyde **truncation**, at level `σ² + 1` for the
    variance *process* and at level `d = 1/(u² + 1)` for each *individual* conditional
    variance (see below);
@@ -34,7 +35,8 @@ normality of the score (see `ARMA/ScoreAnalysis`).
 3. rewrite `charFun (gaussianReal 0 σ²) u = e^{−u²σ²/2}`.
 
 The unweighted telescope originally planned for step 1 is **false** as frozen and was
-deleted; see the "Retired statement" note in `MartingaleCLT/CondCharFun.lean`.
+deleted; see the "Retired statement" note in
+`StatLean/TimeSeries/ForMathlib/Probability/MartingaleCLT/CondCharFun.lean`.
 
 **Why the truncation is needed.** It is tempting to argue that the truncation/stopping
 refinement is not needed because the `hbdd` input of step 2 follows from `hvar` + `hlind`

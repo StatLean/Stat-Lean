@@ -41,7 +41,7 @@ variable {d : ℕ}
 
 This is the matrix generalization of the scalar product `ℓ̇(x) · (θ̂ − θ₀)`
 appearing in the scalar DQM-Taylor remainder (`score_l2_taylor` in
-`Discharge/ZEstimator.lean`). -/
+`StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimator.lean`). -/
 noncomputable def scoreDerivApply
     {P : Measure Ω} [IsProbabilityMeasure P]
     (M : Matrix (Fin d) (Fin d) (Lp ℝ 2 P)) (x : Ω)
@@ -988,7 +988,7 @@ private lemma crossterm_oP
 and `ℓ̃(x) = tupleEval P (ℓ̃(e·)) x` is the vector efficient score.
 
 The sign agrees with the scalar master identity in
-`Discharge/ZEstimator.lean`, which reads
+`StatLean/AsymptoticStatistics/Asymptotics/Discharge/ZEstimator.lean`, which reads
 `Ĩ·√n·(est − θ₀) − (√n)⁻¹·Σ ℓ̃ = o_P` (minus on the empirical-process term) so
 that applying `Ĩ⁻¹` yields `+Ĩ⁻¹ℓ̃ = candidateVecEIF`. -/
 theorem zEstimatorVec_master_identity
@@ -1167,8 +1167,9 @@ to the vector efficient score `ℓ̃(x)` yields the sample evaluation of the vec
 `toEuclideanCLM Ĩ⁻¹ (ℓ̃(x)) = candidateVecEIF(x)`.
 
 This identity is almost-everywhere rather than pointwise because `tupleEval P φ x`
-(`Core/EfficiencyOperationalVec.lean`) reads the `Lp.coeFn` a.e.-representative, and
-the underlying identity `⇑(∑ₖ (Ĩ⁻¹)ⱼₖ • ℓ̃ₖ) x = ∑ₖ (Ĩ⁻¹)ⱼₖ · ⇑ℓ̃ₖ x` holds only
+(`StatLean/AsymptoticStatistics/Core/EfficiencyOperationalVec.lean`) reads the `Lp.coeFn`
+a.e.-representative, and the underlying identity `⇑(∑ₖ (Ĩ⁻¹)ⱼₖ • ℓ̃ₖ) x = ∑ₖ (Ĩ⁻¹)ⱼₖ · ⇑ℓ̃ₖ x` holds
+only
 `P`-a.e. -/
 theorem native_influence_eq_candidateVecEIF
     (S_θ : OrdinaryScore P Θ) (T_nuis : NuisanceTangentSpace P)

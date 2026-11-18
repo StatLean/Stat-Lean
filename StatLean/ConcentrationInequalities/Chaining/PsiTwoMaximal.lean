@@ -23,12 +23,12 @@ inequality in ψ₂-norm), §2.5.2 (moment equivalences).
 **Proof formalization notes.** Bridge-B1 consumption
 (`measure_abs_ge_le_of_subGaussianNorm_le`, normalization `c = 1`, tail
 `2exp(−τ²/L²)`) is confined to this file and to
-`Chaining/SubGaussianIncrements.lean`. The route is B1 per-variable tail +
-union bound + layer-cake (`Chaining/TailToExpectation.lean`) — deliberately
-avoiding centering / ψ₂-norm-of-a-constant lemmas that are outside the frozen
-Orlicz interface. Committed constants (book's unnamed absolute constants):
-expectation bound `2·L·√(log(2N))` — split the layer cake at
-`a = L√(log(2N))`; the Gaussian-tail remainder is
+`StatLean/ConcentrationInequalities/Chaining/SubGaussianIncrements.lean`. The route is B1
+per-variable tail + union bound + layer-cake
+(`StatLean/ConcentrationInequalities/Chaining/TailToExpectation.lean`) — deliberately avoiding
+centering / ψ₂-norm-of-a-constant lemmas that are outside the frozen Orlicz interface. Committed
+constants (book's unnamed absolute constants): expectation bound `2·L·√(log(2N))` — split the layer
+cake at `a = L√(log(2N))`; the Gaussian-tail remainder is
 `≤ L/(2√log 2) ≤ 0.74·L√(log(2N))`, slack to the frozen numeral `2`. First
 moment: `E|Y| ≤ ∫₀^∞ 2exp(−t²/L²) dt = √π·L`, exact. All tail lemmas carry
 `[IsProbabilityMeasure μ]` (bridge B1 requires it).

@@ -36,9 +36,10 @@ MGF $\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s
 obtained from the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor
 remainder with $\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is
 centered sub-Gaussian with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and
-rescaling by $1/n$ (reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and
-applying (G1) gives the final proxy $B^2 C^2 / n$. Mean-zero of each term comes from
-$\mathbb{E}[y_i] = \psi'(\eta_i)$, derived here as the derivative of the MGF at $0$.
+rescaling by $1/n$ (reusing the `StatLean/HighDimensionalStatistics/Lasso/RandomNoise.lean`
+`colInner_isSubGaussian` pattern) and applying (G1) gives the final proxy $B^2 C^2 / n$. Mean-zero
+of each term comes from $\mathbb{E}[y_i] = \psi'(\eta_i)$, derived here as the derivative of the MGF
+at $0$.
 
 **Bibliographic comments.** High-dimensional analysis of the GLM Lasso originates with
 S. A. van de Geer, "High-dimensional generalized linear models and the lasso," *The Annals of

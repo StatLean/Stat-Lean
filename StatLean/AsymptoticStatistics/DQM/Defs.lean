@@ -29,7 +29,7 @@ must be made explicit once the Bochner integral is used.
 Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
 Chapter 7 (Local Asymptotic Normality), §7.2 (Differentiable in Quadratic Mean),
 Eq. (7.1). Consequences and discharges of DQM auxiliary hypotheses live in
-`DQM/Properties.lean`.
+`StatLean/AsymptoticStatistics/DQM/Properties.lean`.
 
 **Proof formalization notes.** In van der Vaart's definition the displayed
 integral is the Lebesgue integral of a non-negative function, where finiteness of

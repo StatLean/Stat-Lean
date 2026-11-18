@@ -9,8 +9,8 @@ import Mathlib.Probability.Moments.MGFAnalytic
 # Basic properties of ARCH(p) (FY §4.2.1, Theorem 4.3, Proposition 4.1)
 
 The finite-order ARCH theory, all of it routed through the ARCH(∞) Volterra machinery
-of `Stationarity/ARCH.lean` (FY Theorem 2.5) — §2.1.4's Markov apparatus is never used
-in §4.2:
+of `StatLean/TimeSeries/Stationarity/ARCH.lean` (FY Theorem 2.5) — §2.1.4's Markov apparatus is
+never used in §4.2:
 
 * **Theorem 4.3(i)** (sufficiency half): `Σ_j b_j < 1` ⇒ a unique strictly stationary
   ARCH(p) solution with `E X_t² < ∞`, and then `E X_t = 0`,
@@ -56,8 +56,8 @@ noncomputable def archInfCoeffs {p : ℕ} (b : Fin p → ℝ) : ℕ → ℝ := f
 
 /-! ### Elementary bricks
 
-The `σ`-algebra bookkeeping of `Stationarity/ARCH.lean` (whose copies there are `private`),
-the closed form of `archVol²`, and the two moment identities of a unit-variance i.i.d.
+The `σ`-algebra bookkeeping of `StatLean/TimeSeries/Stationarity/ARCH.lean` (whose copies there are
+`private`), the closed form of `archVol²`, and the two moment identities of a unit-variance i.i.d.
 noise. -/
 
 omit [MeasurableSpace Ω] in
@@ -267,7 +267,7 @@ theorem IsARCH.isARCHInf_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : 
 
 /-! ### The stationary solution (FY Theorem 4.3(i), existence)
 
-`Stationarity/ARCH.lean` builds the stationary ARCH(∞) solution, but only as an
+`StatLean/TimeSeries/Stationarity/ARCH.lean` builds the stationary ARCH(∞) solution, but only as an
 *existential*: its Volterra functional is `private` there, and the ARCH(p) statement needs
 strictly more than the `IsARCHInf` package exports — that the solution's past sits inside
 the *noise's* past, which is what makes `ε_t` independent of `σ(X_s : s < t)` (rather than

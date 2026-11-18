@@ -8,7 +8,7 @@ import StatLean.TimeSeries.ForMathlib.PosSemidefSequence
 For a weakly stationary process: evenness `γ(−k) = γ(k)`, the bound `|γ(k)| ≤ γ(0)`
 (Cauchy–Schwarz), and **FY Theorem 2.7 (necessity)**: the autocovariance function is an
 even, positive semidefinite sequence — `Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0`.
-The **sufficiency** half lives in `Stationarity/Gaussian.lean`
+The **sufficiency** half lives in `StatLean/TimeSeries/Stationarity/Gaussian.lean`
 (`exists_stationary_of_isPosSemidefSeq`, proved by the random-phase construction over
 the Herglotz spectral measure). Basic ACF facts (`ρ(0) = 1`, `|ρ(k)| ≤ 1`) close the
 section.

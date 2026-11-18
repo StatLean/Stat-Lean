@@ -16,7 +16,7 @@ innovations (FY cites Chow & Teicher 1997, Cor. 3 p. 117).
 `IsLinearProcessOf ψ X ε μ` says the partial sums converge to `X t` in `L²`
 (`eLpNorm … 2 μ → 0`) at every time — the convergence mode FY works with. (The
 *two-sided* linear process of FY Theorem 2.8/2.14 generalizes this; see
-`Spectral/LinearFilter.lean`.)
+`StatLean/TimeSeries/Spectral/LinearFilter.lean`.)
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.2,
 eqs. (2.1)–(2.2) (pp. 30–31). (`FY §2.1.2 eq. (2.1)–(2.2)`.)

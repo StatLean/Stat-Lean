@@ -34,7 +34,7 @@ the law-of-large-numbers discussion on p. 53).  (`ECS §X.Y`.)
 * `[NeZero n]` rules out the `n = 0` junk value `(0 : ℝ)⁻¹ = 0` of the average.
 * The strong-law statement is in `Finset.range`-sum form on the sequence space
   `ℕ → 𝓧`; the `Fin`-indexed Monte Carlo wrapper lives in
-  `MonteCarlo/Estimation.lean`.
+  `StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean`.
 
 **Bibliographic comments.** The variance identity for sample means is classical
 (Laplace); the almost-sure law of large numbers is Kolmogorov's (1933), here

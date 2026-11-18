@@ -21,8 +21,8 @@ pipeline.
 
 **Proof formalization notes.** This file keeps ONLY the exponential branch:
 the polynomial (`(2/ε)^m`, VC-type) branch and its integral evaluation are OWNED by the VC cluster
-(`VC/EntropyIntegral.lean`), which plugs `dudley_inequality_abs_of_finite` (frozen
-constant `40`) directly. The integral evaluation
+(`StatLean/ConcentrationInequalities/VC/EntropyIntegral.lean`), which plugs
+`dudley_inequality_abs_of_finite` (frozen constant `40`) directly. The integral evaluation
 `∫_0^D √(C/ε) dε = 2√(CD)` is exact (via `integral_rpow`), deliberately
 avoiding the `Γ(3/2)` change-of-variables. Headline constant frozen to
 `80·K·√(C·D)` (= `40` from `dudley_inequality_abs_of_finite` × `2` from the integral
